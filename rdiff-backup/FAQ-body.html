@@ -27,7 +27,13 @@ bandwidth usage, as in rsync's --bwlimit option?</a></li>
 memory leak?</a></li>
 
 <li><a href="#dir_not_empty">I use NFS and keep getting some error that includes "OSError: [Errno 39] Directory not empty"</a></li>
+
+<li><a href="#regress_failure">For some reason rdiff-backup failed
+while backing up.  Now every time it runs it says "regressing
+destination" and then fails again.  What should I do?</a></li>
+
 </ol>
+
 
 <h3>Questions and Answers</h3>
 
@@ -375,6 +381,25 @@ I think this is probably a bug in NFS, although tell me if you know
 how to make rdiff-backup more NFS-friendly.  To avoid this problem,
 run rdiff-backup locally on both ends instead of over NFS.  This
 should be faster anyway.
+</li>
+
+<a name="regress_failure">
+<li><strong>For some reason rdiff-backup failed
+while backing up.  Now every time it runs it says "regressing
+destination" and then fails again.  What should I do?</strong>
+
+<P>Firstly, this shouldn't happen.  If it does, it indicates a
+corrupted destination directory, a bug in rdiff-backup, or some other
+serious recurring problem.</p>
+
+<p>However, here is a workaround that you might want to use, even
+though it probably won't solve the underlying problem:  In the
+destination's rdiff-backup-data directory, there should be two
+"current_mirror" files, for instance
+current_mirror.2003-09-08T04:22:01-07:00.data and
+current_mirror.2003-09-07T16:43:00-07:00.data.  Just delete the one
+with the earlier date.  The next time rdiff-backup runs it won't try
+regressing the destination.
 </li>
 
 </ol>
