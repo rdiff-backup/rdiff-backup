@@ -48,4 +48,8 @@
 /* Canonical GNU hostname */
 #define RS_CANONICAL_HOST "unknown"
 
+/* Define to a replacement type if intmax_t is not a builtin, or in
+   sys/types.h or stdlib.h or stddef.h */
+#undef intmax_t
+
 /* end of acconfig.h */
