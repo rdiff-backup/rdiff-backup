@@ -28,8 +28,6 @@
 #include "private.h"
 #include "compress.h"
 
-#define HS_ALWAYS_READ_SHORT
-
 const int filebuf_tag = 24031976;
 
 struct file_buf {
