@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- the library for network deltas
  * 
@@ -50,43 +50,54 @@
 
 /**
  * Run a job continuously, with input to/from the two specified files.
- * The job should already be set up, and it is freed before the
- * function returns.
+ * The job should already be set up, and it is freed when the function
+ * returns.
+ *
+ * Buffers of ::hs_inbuflen and ::hs_outbuflen are allocated for
+ * temporary storage.
+ *
+ * \param in_file Source of input bytes, or NULL if the input buffer
+ * should not be filled.
+ *
+ * \return HS_OK if the job completed, or otherwise an error result.
  */
 hs_result
 hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
 {
-        hs_stream_t     *stream = job->stream;
-        hs_result       result, iores;
-        hs_filebuf_t    *in_fb, *out_fb;
-        int             ending = 0;
+    hs_stream_t     *stream = job->stream;
+    hs_result       result, iores;
+    hs_filebuf_t    *in_fb = NULL, *out_fb = NULL;
+    int             ending = 0;
 
-        in_fb = in_file ? hs_filebuf_new(in_file, stream, hs_inbuflen) : NULL;
-        
-        out_fb = out_file ? hs_filebuf_new(out_file, stream, hs_outbuflen)
-                : NULL;
+    if (in_file)
+        in_fb = hs_filebuf_new(in_file, stream, hs_inbuflen);
 
-        do {
-                if (in_fb) {
-                        iores = hs_infilebuf_fill(in_fb, &ending);
-                        if (iores != HS_OK)
-                                return iores;
-                }
+    if (out_file)
+        out_fb = hs_filebuf_new(out_file, stream, hs_outbuflen);
 
-                result = hs_job_iter(job, ending);
-                if (result != HS_OK  &&  result != HS_BLOCKED)
-                        return result;
+    do {
+        if (in_fb) {
+            iores = hs_infilebuf_fill(in_fb, &ending);
+            if (iores != HS_OK)
+                return iores;
+        }
 
-                if (out_fb) {
-                        iores = hs_outfilebuf_drain(out_fb);
-                        if (iores != HS_OK)
-                                return iores;
-                }
-        } while (result != HS_OK);
+        result = hs_job_iter(job, ending);
+        if (result != HS_OK  &&  result != HS_BLOCKED)
+            return result;
 
-        hs_job_free(job);
+        if (out_fb) {
+            iores = hs_outfilebuf_drain(out_fb);
+            if (iores != HS_OK)
+                return iores;
+        }
+    } while (result != HS_OK);
+
+    /* FIXME: At the moment we leak if there's an IO error.  That's no
+     * good. */
+    hs_job_free(job);
                 
-        return result;
+    return result;
 }
 
 
@@ -98,29 +109,36 @@ hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
  * \param new_block_len block size for signature generation, in bytes
  * 
  * \param strong_len truncated length of strong checksums, in bytes
+ *
+ * \sa hs_sig_begin()
  */
 hs_result
-hs_whole_signature(FILE *old_file, FILE *sig_file, size_t new_block_len,
-                   size_t strong_len)
+hs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
+            size_t strong_len)
 {
         hs_job_t        *job;
         hs_stream_t     stream;
+        hs_result       r;
 
         hs_stream_init(&stream);
-        job = hs_mksum_begin(&stream, new_block_len, strong_len);
+        job = hs_sig_begin(&stream, new_block_len, strong_len);
 
-        return hs_whole_run(job, old_file, sig_file);
+        r = hs_whole_run(job, old_file, sig_file);
 
         hs_job_free(job);
+
+        return r;
 }
 
 
 /**
  * Load signatures from a signature file into memory.  Return a
  * pointer to the newly allocated structure in SUMSET.
+ *
+ * \sa hs_readsig_begin()
  */
 hs_result
-hs_file_readsums(FILE *sig_file, hs_sumset_t **sumset)
+hs_readsig_file(FILE *sig_file, hs_sumset_t **sumset)
 {
         hs_job_t        *job;
         hs_stream_t     stream;
