@@ -4,6 +4,6 @@ sites=front.linuxcare.com.au:/var/www/projects/rproxy \
 
 upload-doxy:
 	for i in $(sites); do \
-	rsync --delete -avz html/ $$i/doxygen/libhsync; \
+	rsync --delete -avz html/ rproxy-small-logo.png $$i/doxygen/libhsync; \
 	done
 
