@@ -1,7 +1,8 @@
 /**
 \mainpage The libhsync delta-encoding library
 \author Martin Pool <mbp@samba.org>
-\version $Id$
+
+$Id$
 
 \section intro Introduction
 
@@ -38,7 +39,7 @@ The library also provides the \ref rdiff command-line tool.
 
 Why not start with hs_mksum_begin() and ::hs_job_t?
 
-\section Programming Interface
+\section api Programming Interface
 
 The main public interface to libhsync is through the hsync.h header
 file.
@@ -63,18 +64,18 @@ accumulate data or produce output as the file is processed.</p>
 documented in the <it>hsync Protocol Definition</it> document.
 Other formats may be supported in the future.</p>
 
-\subsection Generate Signature
+\subsection mksum Generate Signature
 
 Functions that generate signatures read from the file whose signature
 will be taken.  Signature data is written out to another stream as it
-is produced.</p>
+is produced.
 
-\subsection Read Signature
+\subsection readsig Read Signature
 
 Reads from a signature stream and produces an in-memory
-signature structure.</p>
+signature structure.
 
-\subsection Low-level interface
+\subsection lowlevel Low-level interface
 
 Low level functions compress data in memory, between caller-specified
 input and output buffers.  They do no IO and have minimum dependencies
@@ -90,10 +91,18 @@ buffers, plus an opaque state object.  Each routine processes as
 much data as possible, and returns when the input buffer is empty
 or the output buffer is full.
 
-\section High-level Interface
+\section highlevel High-level Interface
 
 The high-level interface works similarly to the C library's stdio
 routines, and builds upon them.  It is simpler to use, and appropriate
 for applications that do not need to filter or throttle their IO.
+
+\subsection api_trace Debugging Trace
+
+libhsync can output trace or log messages as it proceeds.  These
+follow a fairly standard priority-based filtering system
+(hs_trace_set_level()), using the same severity levels as UNIX syslog.
+Messages by default are sent to stderr, but may be passed to an
+application-provided callback (hs_trace_to(), hs_trace_fn_t()).
 
 */
