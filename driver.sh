@@ -50,6 +50,7 @@ fi
 test_script=$1
 shift
 test_name=`basename $test_script`
+test_base=`basename $test_script .test`
 
 # TODO: Add more pair instructions here
 delta_instr="
@@ -70,7 +71,7 @@ delta_instr="
 10,1:8,4:6,8:4,10:2,12
 0,10000:0,10000:0,10000
 "
-bufsizes='1 2 3 7 15 30 100 1000 4096 10000 200000'
+bufsizes='1 2 3 7 15 30 100 500 600 1000 4096 10000 200000'
 
 # Process command-line options
 stats=
@@ -108,27 +109,28 @@ builddir=`pwd`
 PATH=$builddir:$srcdir:$PATH
 export PATH
 
-testdir=$srcdir/$test_name.input
-tmpdir=$builddir/$test_name.tmp
+testdir=$srcdir/$test_base.input
+tmpdir=$builddir/$test_base.tmp
 [ -d $tmpdir ] || mkdir $tmpdir || exit 2
 
 test_skipped () {
     echo $test_name: skipped; exit 77
 }
 
+fail_test () {
+    echo $test_name: failed: "$@" >&2
+    exit 2
+}
+
 run_test () {
     if [ -n "${VERBOSE:-}" ] 
     then
 	echo "    $@" >&2
+    else
+        show_progress
     fi
 
-    if "$@"
-    then
-	:
-    else
-	echo $test_name: failed: "$@" >&2
-	exit 2
-    fi
+    "$@" >$builddir/testout.tmp 2>$builddir/testerr.tmp|| fail_test "$@" 
 }
 
 # more than this many on any one test gets boring
@@ -141,13 +143,15 @@ make_input () {
     cat $srcdir/COPYING
 }
 
-#  make_manyfiles() {
-#      find $srcdir $builddir -type f |head -1000
-#  }
+show_progress () {
+    echo -n .
+}
 
-echo "$test_name"
+echo -n "$test_name: "
 
 . $test_script $*
+
+echo OK
 
 rm -f $tmpdir/*
 rmdir $tmpdir
