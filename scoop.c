@@ -21,7 +21,8 @@
  */
 
 /*
- * ahead.c -- This file deals with readahead from caller-supplied buffers.
+ * scoop.c -- This file deals with readahead from caller-supplied
+ * buffers.
  *
  * Many functions require a certain minimum amount of input to do their
  * processing.  For example, to calculate a strong checksum of a block
@@ -84,13 +85,14 @@ static void _hs_scoop_input(hs_stream_t *stream, size_t len)
         if (impl->scoop_alloc < len) {
                 /* need to allocate a new buffer, too */
                 char *newbuf;
-                newbuf = _hs_alloc(len, "scoop buffer");
+                int newsize = 2 * len;
+                newbuf = _hs_alloc(newsize, "scoop buffer");
                 if (impl->scoop_avail)
                         memcpy(newbuf, impl->scoop_next, impl->scoop_avail);
                 if (impl->scoop_buf)
                         free(impl->scoop_buf);
                 impl->scoop_buf = impl->scoop_next = newbuf;
-                impl->scoop_alloc = len;
+                impl->scoop_alloc = newsize;
                 _hs_trace("resized scoop buffer to %d bytes",
                           impl->scoop_alloc);
         } else {
@@ -115,17 +117,47 @@ static void _hs_scoop_input(hs_stream_t *stream, size_t len)
 }
 
 
+/*
+ * Advance the input cursor forward LEN bytes.  This is used after
+ * doing readahead, when you decide you want to keep it.  LEN must be
+ * no more than the amount of available data, so you can't cheat.
+ *
+ * So when creating a delta, we require one block of readahead.  But
+ * after examining that block, we might decide to advance over all of
+ * it (if there is a match), or just one byte (if not).
+ */
+void _hs_scoop_advance(hs_stream_t *stream, size_t len)
+{
+        hs_simpl_t *impl = stream->impl;
+        
+        if (impl->scoop_avail) {
+                /* reading from the scoop buffer */
+                _hs_trace("advance over %d bytes from scoop", len);
+                assert(len <= impl->scoop_avail);
+                impl->scoop_avail -= len;
+                impl->scoop_next += len;
+        } else {
+                _hs_trace("advance over %d bytes from input buffer", len);
+                assert(len <= stream->avail_in);
+                stream->avail_in -= len;
+                stream->next_in += len;
+        }
+}
+
+
 
 /*
  * Ask for LEN bytes of input from the stream.  If that much data is
  * available, then return a pointer to it in PTR, advance the stream
  * input pointer over the data, and return HS_OK.  If there's not
- * enough data, then accept whatever is there into a buffer, advance over it,
- * and return HS_BLOCKED.
+ * enough data, then accept whatever is there into a buffer, advance
+ * over it, and return HS_BLOCKED.
  *
- * Once data has been scooped up it cannot be put back.
+ * The data is not actually removed from the input, so this function
+ * lets you do readahead.  If you want to keep any of the data, you
+ * should also call _hs_scoop_advance to skip over it.
  */
-int _hs_stream_require(hs_stream_t *stream, size_t len, void **ptr)
+enum hs_result _hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
 {
         hs_simpl_t *impl = stream->impl;
         
@@ -135,7 +167,6 @@ int _hs_stream_require(hs_stream_t *stream, size_t len, void **ptr)
                  * so go straight from the scoop buffer. */
                 _hs_trace("got %d bytes direct from scoop", len);
                 *ptr = impl->scoop_next;
-                impl->scoop_avail -= len;
                 return HS_OK;
         } else if (impl->scoop_avail) {
                 /* We have some data in the scoop, but not enough to
@@ -151,15 +182,12 @@ int _hs_stream_require(hs_stream_t *stream, size_t len, void **ptr)
                         _hs_trace("scoop now has %d bytes, this is enough",
                                   impl->scoop_avail);
                         *ptr = impl->scoop_next;
-                        impl->scoop_avail -= len;
                         return HS_OK;
                 }
         } else if (stream->avail_in >= len) {
                 /* There's enough data in the stream's input */
                 _hs_trace("got %d bytes direct from input", len);
                 *ptr = stream->next_in;
-                stream->next_in += len;
-                stream->avail_in -= len;
                 return HS_OK;
         } else {
                 /* Nothing was queued before, but we don't have enough
@@ -170,4 +198,17 @@ int _hs_stream_require(hs_stream_t *stream, size_t len, void **ptr)
                 _hs_scoop_input(stream, len);
                 return HS_BLOCKED;
         }
+}
+
+
+
+enum hs_result _hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr)
+{
+        enum hs_result result;
+
+        result = _hs_scoop_readahead(stream, len, ptr);
+        if (result == HS_OK)
+                _hs_scoop_advance(stream, len);
+
+        return result;
 }

@@ -88,7 +88,7 @@ enum hs_result _hs_suck_n32(hs_stream_t *stream, int *v)
         void *p;
         int result;
 
-        if ((result = _hs_stream_require(stream, sizeof (uint32_t), &p)))
+        if ((result = _hs_scoop_read(stream, sizeof (uint32_t), &p)))
                 return result;
 
         *v = ntohl(* (uint32_t const *) p);
@@ -102,7 +102,7 @@ enum hs_result _hs_suck_n8(hs_stream_t *stream, int *v)
         void *p;
         int result;
 
-        if ((result = _hs_stream_require(stream, sizeof (uint8_t), &p)))
+        if ((result = _hs_scoop_read(stream, sizeof (uint8_t), &p)))
                 return result;
 
         *v = * (uint8_t const *) p;

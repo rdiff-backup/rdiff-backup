@@ -65,8 +65,7 @@ libhsync_la_SOURCES =				\
 
 TESTS_ENVIRONMENT = bash $(srcdir)/driver.sh
 
-test_scripts = emitcmds.test isprefix.test mdfour.test stream.test \
-	tube.test
+test_scripts = delta.test
 
 man_MANS = man/libhsync.3 man/rdiff.1
 
@@ -112,17 +111,11 @@ bin_PROGRAMS = rdiff
 rdiff_SOURCES = rdiff.c				\
 	isprefix.c isprefix.h
 
-check_PROGRAMS = emit.driver stream.driver tube.driver	\
-	isprefix.driver inhale.driver squirt.driver
+check_PROGRAMS = isprefix.driver
 
 isprefix_driver_SOURCES = isprefix.driver.c	\
 	isprefix.c isprefix.h
 isprefix_driver_LDADD = $(LIBOBJS)
-
-tube_driver_SOURCES = tube.driver.c
-
-stream_driver_SOURCES = stream.driver.c		\
-	streamcpy.c streamcpy.h
 
 .PHONY: check_programs
 check_programs: $(check_PROGRAMS)

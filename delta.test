@@ -26,7 +26,7 @@ for delta in $testdir/*.delta
 do
     for io_opts in -I1 -I2 -I3 -I4 -I7 -I8
     do
-        run_test rdiff $io_opts patch /dev/null $delta $new
+        run_test rdiff -f $io_opts patch /dev/null $delta $new
         expect=$testdir/`basename $delta .delta`.expect
         run_test diff -u $expect $new
     done

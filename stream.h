@@ -60,4 +60,7 @@ void _hs_blow_copy(hs_stream_t *, int len);
 int _hs_tube_is_idle(hs_stream_t const *);
 void _hs_check_tube(hs_stream_t *);
 
-int _hs_stream_require(hs_stream_t *stream, size_t len, void **ptr);
+void _hs_scoop_advance(hs_stream_t *stream, size_t len);
+enum hs_result _hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr);
+enum hs_result _hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr);
+
