@@ -115,10 +115,11 @@ typedef enum {
                                  * This value should never be returned
                                  * to the caller.  */
     
-    HS_IO_ERROR =	100,   /**< Error in file or network IO. */
-    HS_SYNTAX_ERROR =   101,   /**< Command line syntax error. */
-    HS_MEM_ERROR =	102,   /**< Out of memory. */
-    HS_SHORT_STREAM =	103,	/**< Unexpected end of input file. */
+    HS_IO_ERROR =	100,    /**< Error in file or network IO. */
+    HS_SYNTAX_ERROR =   101,    /**< Command line syntax error. */
+    HS_MEM_ERROR =	102,    /**< Out of memory. */
+    HS_INPUT_ENDED =	103,	/**< End of input file, possibly
+                                   unexpected. */
     HS_BAD_MAGIC =      104,   /**< Bad magic number at start of
                                    stream.  Probably not a libhsync
                                    file, or possibly the wrong kind of

@@ -173,7 +173,7 @@ hs_result hs_file_copy_cb(void *arg, size_t *len, void **buf)
                 return HS_IO_ERROR;
         } else if (got == 0) {
                 hs_error("unexpected eof");
-                return HS_SHORT_STREAM;
+                return HS_INPUT_ENDED;
         } else {
                 *len = got;
                 return HS_DONE;
