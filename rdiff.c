@@ -75,17 +75,22 @@ enum {
     OPT_GZIP = 1069, OPT_BZIP2
 };
 
+extern int rs_roll_paranoia;
+
 const struct poptOption opts[] = {
     { "verbose",     'v', POPT_ARG_NONE, 0,             'v' },
     { "version",     'V', POPT_ARG_NONE, 0,             'V' },
     { "input-size",  'I', POPT_ARG_INT,  &rs_inbuflen },
     { "output-size", 'O', POPT_ARG_INT,  &rs_outbuflen },
     { "help",        '?', POPT_ARG_NONE, 0,             'h' },
+    {  0,            'h', POPT_ARG_NONE, 0,             'h' },
     { "block-size",  'b', POPT_ARG_INT,  &block_len },
     { "sum-size",    'S', POPT_ARG_INT,  &strong_len },
     { "statistics",  's', POPT_ARG_NONE, &show_stats },
     { "stats",        0,  POPT_ARG_NONE, &show_stats },
     { "gzip",         0,  POPT_ARG_NONE, 0,             OPT_GZIP },
+    { "bzip2",        0,  POPT_ARG_NONE, 0,             OPT_BZIP2 },
+    { "paranoia",     0,  POPT_ARG_NONE, &rs_roll_paranoia },
     { 0 }
 };
 
@@ -132,6 +137,7 @@ static void help(void) {
            "Delta-encoding options:\n"
            "  -b, --block-size=BYTES    Signature block size\n"
            "  -S, --sum-size=BYTES      Set signature strength\n"
+           "      --paranoia            Verify all rolling checksums\n"
            "IO options:\n"
            "  -I, --input-size=BYTES    Input buffer size\n"
            "  -O, --output-size=BYTES   Output buffer size\n"
@@ -149,7 +155,7 @@ static void rdiff_show_version(void)
      * unacknowledged version of GNU Keyring in violation of the licence
      * and all laws of politeness and good taste.
      */
-    char const *bzlib = "", *zlib = "";
+    char const *bzlib = "", *zlib = "", *trace = "";
     
 #ifdef HAVE_LIBZ
     zlib = ", gzip";
@@ -158,18 +164,22 @@ static void rdiff_show_version(void)
 #ifdef HAVE_LIBBZ2
     bzlib = ", bzip2";
 #endif
+
+#ifndef DO_RS_TRACE
+    trace = ", trace disabled";
+#endif
    
     printf("rdiff (%s) [%s]\n"
            "Copyright (C) 1997-2001 by Martin Pool, Andrew Tridgell and others.\n"
            "http://rproxy.samba.org/\n"
-           "Capabilities: %d bit files%s%s\n"
+           "Capabilities: %d bit files%s%s%s\n"
            "\n"
            "librsync comes with NO WARRANTY, to the extent permitted by law.\n"
            "You may redistribute copies of librsync under the terms of the GNU\n"
            "Lesser General Public License.  For more information about these\n"
            "matters, see the files named COPYING.\n",
            rs_librsync_version, RS_CANONICAL_HOST,
-           8 * sizeof(rs_long_t), zlib, bzlib);
+           8 * sizeof(rs_long_t), zlib, bzlib, trace);
 }
 
 
@@ -208,7 +218,8 @@ static void rdiff_options(poptContext opcon)
                 else
                     bzip2_level = 9;      /* demand the best */
             }
-            break;
+            rs_error("sorry, compression is not really implemented yet");
+            exit(RS_UNIMPLEMENTED);
             
         default:
             bad_option(opcon, c);
@@ -223,13 +234,22 @@ static void rdiff_options(poptContext opcon)
 static rs_result rdiff_sig(poptContext opcon)
 {
     FILE            *basis_file, *sig_file;
+    rs_stats_t      stats;
+    rs_result       result;
     
     basis_file = rs_file_open(poptGetArg(opcon), "rb");
     sig_file = rs_file_open(poptGetArg(opcon), "wb");
 
     rdiff_no_more_args(opcon);
     
-    return rs_sig_file(basis_file, sig_file, block_len, strong_len);
+    result = rs_sig_file(basis_file, sig_file, block_len, strong_len, &stats);
+    if (result != RS_DONE)
+        return result;
+
+    if (show_stats) 
+        rs_log_stats(&stats);
+
+    return result;
 }
 
 
@@ -253,9 +273,12 @@ static rs_result rdiff_delta(poptContext opcon)
 
     rdiff_no_more_args(opcon);
 
-    result = rs_loadsig_file(sig_file, &sumset);
+    result = rs_loadsig_file(sig_file, &sumset, &stats);
     if (result != RS_DONE)
         return result;
+
+    if (show_stats) 
+        rs_log_stats(&stats);
 
     if ((result = rs_build_hash_table(sumset)) != RS_DONE)
         return result;
