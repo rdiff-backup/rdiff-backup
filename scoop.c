@@ -118,10 +118,10 @@ void rs_scoop_input(rs_job_t *job, size_t len)
 }
 
 
-/*
- * Advance the input cursor forward LEN bytes.  This is used after
- * doing readahead, when you decide you want to keep it.  LEN must be
- * no more than the amount of available data, so you can't cheat.
+/**
+ * Advance the input cursor forward \p len bytes.  This is used after
+ * doing readahead, when you decide you want to keep it.  \p len must
+ * be no more than the amount of available data, so you can't cheat.
  *
  * So when creating a delta, we require one block of readahead.  But
  * after examining that block, we might decide to advance over all of
@@ -130,6 +130,10 @@ void rs_scoop_input(rs_job_t *job, size_t len)
 void rs_scoop_advance(rs_job_t *job, size_t len)
 {
     rs_buffers_t *stream = job->stream;
+
+    /* It never makes sense to advance over a mixture of bytes from
+     * the scoop and input, because you couldn't possibly have looked
+     * at them all at the same time. */
     if (job->scoop_avail) {
         /* reading from the scoop buffer */
          rs_trace("advance over %d bytes from scoop", len); 
