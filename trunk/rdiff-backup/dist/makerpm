@@ -34,10 +34,12 @@ redhat_noarchrpm = base+"rh7x.noarch.rpm"
 redhat_patch = "rdiff-backup-rh7x.patch"
 redhat_specfile = "rdiff-backup-%s-1.rh7x.spec" % version
 
-os.system("install -o root -g root -m 644 %s %s /usr/src/redhat/SOURCES" %
-		  tarfile, redhat_patch)
+#os.system("install -o root -g root -m 644 %s %s /usr/src/redhat/SOURCES" %
+#		  (tarfile, redhat_patch))
+os.system("install -o root -g root -m 644 %s /usr/src/redhat/SOURCES" %
+		  (tarfile,))
 os.system("rpm -ba --sign -vv --target noarch " + specfile)
-os.system("rpm -ba --sign -vv --target noarch.rh7x " + redhat
+#os.system("rpm -ba --sign -vv --target noarch.rh7x " + redhat
  
 #os.system("install -o ben -g ben -m 644 /usr/src/redhat/SRPMS/%s ." % srcrpm)
 os.system("install -o ben -g ben -m 644 /usr/src/redhat/RPMS/noarch/%s ." %
