@@ -138,6 +138,9 @@ isprefix_driver_SOURCES = isprefix.driver.c	\
 	isprefix.c isprefix.h
 isprefix_driver_LDADD = $(LIBOBJS)
 
+popt/libpopt.a:
+	(cd popt && $(MAKE) $(AM_MAKEFLAGS) libpopt.a)
+
 .PHONY: check_programs
 check_programs: $(check_PROGRAMS)
 
