@@ -26,6 +26,13 @@
                                */
 
 
+/*
+ * buf.c -- Buffers that map between stdio file streams and libhsync
+ * streams.  As the stream consumes input and produces output, it is
+ * refilled from appropriate input and output FILEs.  A dynamically
+ * allocated buffer of configurable size is used as an intermediary.
+ */
+
 
 #include <config.h>
 
@@ -41,7 +48,9 @@
 #include "buf.h"
 #include "util.h"
 
-
+/**
+ * File IO buffer sizes.
+ */
 int hs_inbuflen = 16000, hs_outbuflen = 16000;
 
 
