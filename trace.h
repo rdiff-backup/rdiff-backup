@@ -42,7 +42,7 @@ void rs_trace0(char const *s, ...);
 
 void rs_log0_nofn(int level, char const *fmt, ...);
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__APPLE__)
 
 void rs_log0(int level, char const *fn, char const *fmt, ...)
     __attribute__ ((format(printf, 3, 4)));
