@@ -13,6 +13,7 @@ configure
 configure.scan
 hsdecode
 hsemit
+hsemit
 hsencode
 hsinhale
 libhsync-*.tar.gz

@@ -3,6 +3,9 @@
 /* Define if you have the ANSI C header files.  */
 #undef STDC_HEADERS
 
+/* Define this to enable trace code */
+#undef DO_HS_TRACE
+
 /* Define if you have the z library (-lz).  */
 #undef HAVE_LIBZ
 

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-CFLAGS += -W -Wall -g @trace_flags@
+CFLAGS += -W -Wall -g @DEFS@
 
 lib_LTLIBRARIES = libhsync.la libhsyncdecode.la
 
@@ -11,14 +11,15 @@ libhsync_la_SOURCES = dec.c enc.c \
 	mdfour.c search.c \
 	filebuf.c membuf.c ptrbuf.c \
 	checksum.c copyq.c \
-	compress.c compress.h inbuf.c test-\
-	inhale.c trace.c
+	compress.c compress.h inbuf.c \
+	inhale.c trace.c \
+	hex.c
 
 libhsyncdecode_la_SOURCES = dec.c \
 	private.h netio.c includes.h \
 	compress.c compress.h \
 	filebuf.c membuf.c ptrbuf.c \
-	inhale.c trace.c
+	inhale.c trace.c hex.c
 
 noinst_SCRIPTS = test-decode.sh test-encode.sh test-chain.sh test-cmds.sh \
 	make-cmds.py test-thrice.sh

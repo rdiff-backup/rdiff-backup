@@ -26,7 +26,7 @@ AC_ARG_ENABLE(ccmalloc,
 
 AC_ARG_ENABLE(trace,
         [  --enable-trace          turn on library tracing],
-	[ trace_flags="-DDO_HS_TRACE" ])
+	[ AC_DEFINE(DO_HS_TRACE) ])
 
 dnl Checks for header files.
 AC_HEADER_STDC
@@ -35,6 +35,5 @@ AC_SUBST(OBJ_SAVE)
 AC_SUBST(OBJ_RESTORE)
 AC_SUBST(CC_SHOBJ_FLAG)
 AC_SUBST(CCMALLOC_LIB)
-AC_SUBST(trace_flags)
 
 AC_OUTPUT(./Makefile)
