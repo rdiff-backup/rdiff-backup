@@ -416,6 +416,7 @@ class FinalCorrupt(PathSetter):
 	def make_dir(self):
 		self.delete_tmpdirs()
 		rp1 = rpath.RPath(Globals.local_connection, 'testfiles/final_deleted1')
+		print rp1
 		if rp1.lstat(): Myrm(rp1.path)
 		rp1.mkdir()
 		rp1_1 = rp1.append('regfile')

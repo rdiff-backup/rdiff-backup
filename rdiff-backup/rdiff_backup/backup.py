@@ -228,7 +228,7 @@ static.MakeClass(DestinationStruct)
 class CacheCollatedPostProcess:
 	"""Cache a collated iter of (source_rorp, dest_rorp) pairs
 
-	This is necessary for two reasons:
+	This is necessary for three reasons:
 
 	1.  The patch function may need the original source_rorp or
 	    dest_rp information, which is not present in the diff it
@@ -240,6 +240,11 @@ class CacheCollatedPostProcess:
 	    the file is deleted on the other end..  Thus we cannot write
 	    any metadata until we know the file has been procesed
 	    correctly.
+
+	3.  We may lack permissions on certain destination directories.
+	    The permissions of these directories need to be relaxed before
+	    we enter them to computer signatures, and then reset after we
+	    are done patching everything inside them.
 
 	The class caches older source_rorps and dest_rps so the patch
 	function can retrieve them if necessary.  The patch function can
@@ -273,6 +278,11 @@ class CacheCollatedPostProcess:
 		self.cache_dict = {}
 		self.cache_indicies = []
 
+		# Contains a list of pairs (destination_rps, permissions) to
+		# be used to reset the permissions of certain directories
+		# after we're finished with them
+		self.dir_perms_list = []
+
 	def __iter__(self): return self
 
 	def next(self):
@@ -296,10 +306,21 @@ class CacheCollatedPostProcess:
 		"""
 		if source_rorp: Hardlink.add_rorp(source_rorp, source = 1)
 		if dest_rorp: Hardlink.add_rorp(dest_rorp, source = 0)
-		if (dest_rorp and dest_rorp.isdir() and Globals.process_uid != 0 and
-			dest_rorp.getperms() % 01000 < 0700):
-			dest_rp = self.dest_root_rp.new_index(dest_rorp.index)
-			dest_rp.chmod(0700 | dest_rorp.getperms())
+		if (dest_rorp and dest_rorp.isdir() and Globals.process_uid != 0
+			and dest_rorp.getperms() % 01000 < 0700):
+			self.unreadable_dir_init(source_rorp, dest_rorp)
+
+	def unreadable_dir_init(self, source_rorp, dest_rorp):
+		"""Initialize an unreadable dir.
+
+		Make it readable, and if necessary, store the old permissions
+		in self.dir_perms_list so the old perms can be restored.
+
+		"""
+		dest_rp = self.dest_root_rp.new_index(dest_rorp.index)
+		dest_rp.chmod(0700 | dest_rorp.getperms())
+		if source_rorp and source_rorp.isdir():
+			self.dir_perms_list.append((dest_rp, source_rorp.getperms()))
 
 	def shorten_cache(self):
 		"""Remove one element from cache, possibly adding it to metadata"""
@@ -314,6 +335,7 @@ class CacheCollatedPostProcess:
 		del self.cache_dict[first_index]
 		self.post_process(old_source_rorp, old_dest_rorp,
 						  changed_flag, success_flag, inc)
+		if self.dir_perms_list: self.reset_dir_perms(first_index)
 
 	def post_process(self, source_rorp, dest_rorp, changed, success, inc):
 		"""Post process source_rorp and dest_rorp.
@@ -338,12 +360,14 @@ class CacheCollatedPostProcess:
 		if Globals.file_statistics:
 			statistics.FileStats.update(source_rorp, dest_rorp, changed, inc)
 
-		# Update permissions of unreadable directory
-		if (source_rorp and source_rorp.isdir() and Globals.process_uid != 0
-			and success and source_rorp.getperms() % 01000 < 0700):
-			dest_rp = self.dest_root_rp.new_index(source_rorp.index)
-			assert dest_rp.isdir(), dest_rp
-			dest_rp.chmod(source_rorp.getperms())
+	def reset_dir_perms(self, current_index):
+		"""Reset the permissions of directories when we have left them"""
+		dir_rp, perms = self.dir_perms_list[-1]
+		dir_index = dir_rp.index
+		if (current_index > dir_index and
+			current_index[:len(dir_index)] != dir_index):
+			dir_rp.chmod(perms) # out of directory, reset perms now
+			del self.dir_perms_list[-1]
 
 	def in_cache(self, index):
 		"""Return true if given index is cached"""
@@ -383,6 +407,9 @@ class CacheCollatedPostProcess:
 	def close(self):
 		"""Process the remaining elements in the cache"""
 		while self.cache_indicies: self.shorten_cache()
+		while self.dir_perms_list:
+			dir_rp, perms = self.dir_perms_list.pop()
+			dir_rp.chmod(perms)
 		metadata.CloseMetadata()
 		if Globals.print_statistics: statistics.print_active_stats()
 		if Globals.file_statistics: statistics.FileStats.close()
@@ -490,6 +517,7 @@ class PatchITRB(rorpiter.ITRBranch):
 		"""Set self.dir_replacement, which holds data until done with dir
 
 		This is used when base_rp is a dir, and diff_rorp is not.
+		Returns 1 for success or 0 for failure
 
 		"""
 		assert diff_rorp.get_attached_filetype() == 'snapshot'
@@ -499,10 +527,8 @@ class PatchITRB(rorpiter.ITRBranch):
 			# Was an error, so now restore original directory
 			rpath.copy_with_attribs(self.CCPP.get_mirror_rorp(diff_rorp.index),
 									self.dir_replacement)
-			success = 0
-		else: success = 1
-		if base_rp.isdir() and Globals.change_permissions: base_rp.chmod(0700)
-		return success
+			return 0
+		else: return 1
 
 	def prepare_dir(self, diff_rorp, base_rp):
 		"""Prepare base_rp to turn into a directory"""
@@ -514,7 +540,6 @@ class PatchITRB(rorpiter.ITRBranch):
 		else: # maybe no change, so query CCPP before tagging success
 			if self.CCPP.in_cache(diff_rorp.index):
 				self.CCPP.flag_success(diff_rorp.index)
-		if Globals.change_permissions: base_rp.chmod(0700)
 
 	def end_process(self):
 		"""Finish processing directory"""
