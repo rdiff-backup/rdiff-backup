@@ -53,7 +53,7 @@ static PyObject *c_make_file_dict(self, args)
   inode = PyInt_FromLong((long)sbuf.st_ino);
 #endif
   mode = (long)sbuf.st_mode;
-  perms = mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+  perms = mode & 07777;
 #if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
   devloc = PyLong_FromLongLong((LONG_LONG)sbuf.st_dev);
 #else

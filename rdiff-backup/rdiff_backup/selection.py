@@ -20,6 +20,7 @@ import re
 from log import *
 from robust import *
 from destructive_stepping import *
+import FilenameMapping
 
 
 class SelectError(Exception):

@@ -19,8 +19,8 @@ them over the usual 255 character limit.
 
 import re
 from log import *
+from robust import *
 import Globals
-
 
 max_filename_length = 255
 
@@ -43,7 +43,7 @@ def set_init_quote_vals():
 
 def set_init_quote_vals_local():
 	"""Set value on local connection, initialize regexps"""
-	global chars_to_quote
+	global chars_to_quote, quoting_char
 	chars_to_quote = Globals.chars_to_quote
 	if len(Globals.quoting_char) != 1:
 		Log.FatalError("Expected single character for quoting char,"

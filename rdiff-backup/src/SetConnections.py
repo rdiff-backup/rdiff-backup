@@ -163,6 +163,7 @@ def init_connection_settings(conn):
 	conn.Log.setterm_verbosity(Log.term_verbosity)
 	for setting_name in Globals.changed_settings:
 		conn.Globals.set(setting_name, Globals.get(setting_name))
+	FilenameMapping.set_init_quote_vals()
 
 def init_connection_remote(conn_number):
 	"""Run on server side to tell self that have given conn_number"""
@@ -187,6 +188,11 @@ def BackupInitConnections(reading_conn, writing_conn):
 	writing_conn.Globals.set("isbackup_writer", 1)
 	UpdateGlobal("backup_reader", reading_conn)
 	UpdateGlobal("backup_writer", writing_conn)
+	if (Globals.change_source_perms and
+		reading_conn.Globals.get("process_uid") == 0):
+		Log("Warning: --change_source_perms should usually not be used when\n"
+			"the reading connection is running as root, because root can\n"
+			"read all files regardless of their permissions.", 2)
 
 def CloseConnections():
 	"""Close all connections.  Run by client"""
@@ -224,4 +230,5 @@ Remote version: %s""" % (Globals.version, version)
 from log import *
 from rpath import *
 from connection import *
-import Globals
+import Globals, FilenameMapping
+
