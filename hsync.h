@@ -83,8 +83,8 @@ enum hs_result {
         HS_OK =			0,	/* completed successfully */
         HS_BLOCKED =		1, 	/* OK, but more remains to be done */
         HS_RUN_OK  =            2,      /* not finished or blocked */
-        HS_IO_ERROR =		(-1),
-        HS_MEM_ERROR =		(-2),
+        HS_IO_ERROR =		(-1),   /* error in file or network IO */
+        HS_MEM_ERROR =		(-2),   /* out of memory */
         HS_SHORT_STREAM	=	(-3),	/* unexpected eof */
         HS_BAD_MAGIC =          (-4)    /* illegal value on stream */
 };
@@ -158,10 +158,12 @@ void hs_stream_init(hs_stream_t *);
 /***********************************************************************
  * Low-level delta interface.  
  ***********************************************************************/
-   
+
+#define HS_DEFAULT_STRONG_LEN 8
+#define HS_DEFAULT_BLOCK_LEN 2048
+
+
 typedef struct hs_mksum_job hs_mksum_job_t;
-
-
 hs_mksum_job_t *hs_mksum_begin(hs_stream_t *stream,
                                size_t new_block_len, size_t strong_sum_len);
 int             hs_mksum_iter(hs_mksum_job_t * job, int ending);
@@ -173,44 +175,13 @@ int             hs_delta_iter(hs_delta_job_t *, int ending);
 int             hs_delta_finish(hs_delta_job_t *);
 
 
+/* Callback used to retrieve parts of the basis file. */
+typedef enum hs_result (hs_copy_cb)(void *opaque, size_t *len, void **result);
+
 typedef struct hs_patch_job hs_patch_job_t;
-hs_patch_job_t *hs_patch_begin(hs_stream_t *stream);
+hs_patch_job_t *hs_patch_begin(hs_stream_t *stream, hs_copy_cb *, void *copy_arg);
 int             hs_patch_iter(hs_patch_job_t *);
 int             hs_patch_finish(hs_patch_job_t *);
 
 
 
-/**********************************************************************/
-
-/*
- * High-level file-based interfaces.  One end of the task is connected
- * to a stdio file stream, and the other to your program.
- */
-
-
-/*
- * Buffer sizes for file IO.  You probably only need to change these
- * in testing.
- */
-extern int hs_inbuflen, hs_outbuflen;
-
-
-/* stdio-like file type */
-typedef void HSFILE;
-
-/*
- * Open a patch file, supplying the basis.  Reading from this will
- * return the newly patched file.
- */
-HSFILE *hs_patch_open(FILE *basis, FILE *delta);
-
-enum hs_result hs_patch_read(HSFILE *, void *buf, size_t *len);
-
-enum hs_result hs_patch_close(HSFILE *);
-
-
-/*
- * Calculate the MD4 sum of IN_FILE into RESULT.  RESULT is binary,
- * not hex.
- */
-void hs_mdfour_file(FILE *in_file, char *result);
