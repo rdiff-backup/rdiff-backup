@@ -27,6 +27,7 @@ import Globals, metadata, rorpiter, TempFile, Hardlink, robust, increment, \
 
 def Mirror(src_rpath, dest_rpath):
 	"""Turn dest_rpath into a copy of src_rpath"""
+	log.Log("Starting mirror %s to %s" % (src_rpath.path, dest_rpath.path), 4)
 	SourceS = src_rpath.conn.backup.SourceStruct
 	DestS = dest_rpath.conn.backup.DestinationStruct
 
@@ -38,6 +39,8 @@ def Mirror(src_rpath, dest_rpath):
 
 def Mirror_and_increment(src_rpath, dest_rpath, inc_rpath):
 	"""Mirror + put increments in tree based at inc_rpath"""
+	log.Log("Starting increment operation %s to %s" %
+			(src_rpath.path, dest_rpath.path), 4)
 	SourceS = src_rpath.conn.backup.SourceStruct
 	DestS = dest_rpath.conn.backup.DestinationStruct
 

@@ -16,6 +16,9 @@ Fixed bug in EA/ACL restoring, noticed by Greg Freemyer.  Also updated
 quoting of filenames and extended attributes names to match
 forthcoming attr/facl utilities.
 
+Fixed problems with --restrict options that would cause proper
+sessions to fail.  Thanks to Randall Nortman for error report.
+
 
 New in v0.13.1 (2003/08/08)
 ---------------------------

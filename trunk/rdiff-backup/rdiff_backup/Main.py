@@ -230,14 +230,13 @@ def Main(arglist):
 
 def Backup(rpin, rpout):
 	"""Backup, possibly incrementally, src_path to dest_path."""
+	global incdir
 	SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
 	backup_check_dirs(rpin, rpout)
-	backup_set_fs_globals(rpin, rpout)
-	if Globals.chars_to_quote:
-		rpout = FilenameMapping.get_quotedrpath(rpout)
-		SetConnections.UpdateGlobal(
-			'rbdir', FilenameMapping.get_quotedrpath(Globals.rbdir))
 	backup_set_rbdir(rpin, rpout)
+	backup_set_fs_globals(rpin, rpout)
+	if Globals.chars_to_quote: rpout = backup_quoted_rpaths(rpout)
+	backup_final_init(rpout)
 	backup_set_select(rpin)
 	if prevtime:
 		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
@@ -247,6 +246,14 @@ def Backup(rpin, rpout):
 	else:
 		backup.Mirror(rpin, rpout)
 		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
+
+def backup_quoted_rpaths(rpout):
+	"""Get QuotedRPath versions of important RPaths.  Return rpout"""
+	global incdir
+	SetConnections.UpdateGlobal(
+		'rbdir', FilenameMapping.get_quotedrpath(Globals.rbdir))
+	incdir = FilenameMapping.get_quotedrpath(incdir)
+	return FilenameMapping.get_quotedrpath(rpout)
 
 def backup_set_select(rpin):
 	"""Create Select objects on source connection"""
@@ -275,11 +282,9 @@ def backup_check_dirs(rpin, rpout):
 
 def backup_set_rbdir(rpin, rpout):
 	"""Initialize data dir and logging"""
-	global incdir, prevtime
+	global incdir
 	SetConnections.UpdateGlobal('rbdir', Globals.rbdir)
-	checkdest_if_necessary(rpout)
 	incdir = Globals.rbdir.append_path("increments")
-	prevtime = backup_get_mirrortime()
 
 	assert rpout.lstat(), (rpout.path, rpout.lstat())
 	if rpout.isdir() and not rpout.listdir(): # rpout is empty dir
@@ -296,11 +301,6 @@ want to update or overwrite it, run rdiff-backup with the --force
 option.""" % rpout.path)
 
 	if not Globals.rbdir.lstat(): Globals.rbdir.mkdir()
-	inc_base = Globals.rbdir.append_path("increments")
-	if not inc_base.lstat(): inc_base.mkdir()
-	if Log.verbosity > 0:
-		Log.open_logfile(Globals.rbdir.append("backup.log"))
-	ErrorLog.open(Time.curtimestr, compress = Globals.compression)
 
 def backup_warn_if_infinite_regress(rpin, rpout):
 	"""Warn user if destination area contained in source area"""
@@ -325,6 +325,21 @@ def backup_get_mirrortime():
 	if mirror_rps: return mirror_rps[0].getinctime()
 	else: return None
 
+def backup_final_init(rpout):
+	"""Open the backup log and the error log, create increments dir"""
+	global prevtime
+	prevtime = backup_get_mirrortime()
+	need_check = checkdest_need_check(rpout)
+	if Log.verbosity > 0:
+		Log.open_logfile(Globals.rbdir.append("backup.log"))
+	ErrorLog.open(Time.curtimestr, compress = Globals.compression)
+	if need_check:
+		Log("Previous backup seems to have failed, regressing "
+			"destination now.", 2)
+		rpout.conn.regress.Regress(rpout)
+	inc_base = Globals.rbdir.append_path("increments")
+	if not inc_base.lstat(): inc_base.mkdir()
+
 def backup_set_fs_globals(rpin, rpout):
 	"""Use fs_abilities to set the globals that depend on filesystem"""
 	def update_bool_global(attr, bool):
@@ -332,10 +347,10 @@ def backup_set_fs_globals(rpin, rpout):
 		if Globals.get(attr) is None:
 			SetConnections.UpdateGlobal(attr, bool)
 
-	src_fsa = fs_abilities.FSAbilities('source').init_readonly(rpin)
+	src_fsa = rpin.conn.fs_abilities.get_fsabilities_readonly('source', rpin)
 	Log(str(src_fsa), 3)
-	dest_fsa = fs_abilities.FSAbilities('destination').init_readwrite(
-		Globals.rbdir, override_chars_to_quote = Globals.chars_to_quote)
+	dest_fsa = rpout.conn.fs_abilities.get_fsabilities_readwrite(
+		'destination', Globals.rbdir, 1, Globals.chars_to_quote)
 	Log(str(dest_fsa), 3)
 
 	update_bool_global('read_acls', src_fsa.acls)
@@ -425,10 +440,10 @@ def restore_set_fs_globals(target):
 		"""If bool is not None, update Globals.attr accordingly"""
 		if Globals.get(attr) is None: SetConnections.UpdateGlobal(attr, bool)
 
-	target_fsa = fs_abilities.FSAbilities('destination').init_readwrite(
-		target, 0)
+	target_fsa = target.conn.fs_abilities.get_fsabilities_readwrite(
+		'destination', target, 0)
 	Log(str(target_fsa), 3)
-	mirror_fsa = fs_abilities.FSAbilities('source').init_readwrite(
+	mirror_fsa = Globals.rbdir.conn.fs_abilities.get_fsabilities_restoresource(
 		Globals.rbdir)
 	Log(str(mirror_fsa), 3)
 
@@ -462,7 +477,8 @@ def restore_set_select(mirror_rp, target):
 def restore_start_log(rpin, target, time):
 	"""Open restore log file, log initial message"""
 	try: Log.open_logfile(Globals.rbdir.append("restore.log"))
-	except LoggerError, e: Log("Warning, " + str(e), 2)
+	except (LoggerError, Security.Violation), e:
+		Log("Warning - Unable to open logfile: " + str(e), 2)
 
 	# Log following message at file verbosity 3, but term verbosity 4
 	log_message = ("Starting restore of %s to %s as it was as of %s." %
@@ -513,11 +529,15 @@ def restore_set_root(rpin):
 	global restore_root, restore_index, restore_root_set
 	if rpin.isincfile(): relpath = rpin.getincbase().path
 	else: relpath = rpin.path
-	pathcomps = os.path.join(rpin.conn.os.getcwd(), relpath).split("/")
-	assert len(pathcomps) >= 2 # path should be relative to /
+	if rpin.conn is not Globals.local_connection:
+		# For security checking consistency, don't get absolute path
+		pathcomps = relpath.split('/')
+	else: pathcomps = os.path.join(os.getcwd(), relpath).split("/")
+	if not pathcomps[0]: min_len_pathcomps = 2 # treat abs paths differently
+	else: min_len_pathcomps = 1
 
 	i = len(pathcomps)
-	while i >= 2:
+	while i >= min_len_pathcomps:
 		parent_dir = rpath.RPath(rpin.conn, "/".join(pathcomps[:i]))
 		if (parent_dir.isdir() and
 			"rdiff-backup-data" in parent_dir.listdir()): break
@@ -662,8 +682,14 @@ def checkdest_need_check(dest_rp):
 The rdiff-backup data directory
 %s
 exists, but we cannot find a valid current_mirror marker.  You can
-avoid this message by removing this directory; however any data in it
-will be lost.
+avoid this message by removing the rdiff_backup_data directory;
+however any data in it will be lost.
+
+Probably this error was caused because the first rdiff-backup session
+into a new directory failed.  If this is the case it is safe to delete
+the rdiff_backup_data directory because there is no important
+information in it.
+
 """ % (Globals.rbdir.path,))
 	elif len(curmir_incs) == 1: return 0
 	else:

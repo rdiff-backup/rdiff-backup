@@ -623,8 +623,10 @@ class RPath(RORPath):
 	def setdata(self):
 		"""Set data dictionary using C extension"""
 		self.data = self.conn.C.make_file_dict(self.path)
-		if Globals.read_eas and self.lstat(): self.get_ea()
-		if Globals.read_acls and self.lstat(): self.get_acl()
+		if Globals.read_eas and self.lstat():
+			self.data['ea'] = self.conn.rpath.ea_get(self)
+		if Globals.read_acls and self.lstat():
+			self.data['acl'] = self.conn.rpath.acl_get(self)
 		if Globals.read_resource_forks and self.isreg():
 			self.get_resource_fork()
 

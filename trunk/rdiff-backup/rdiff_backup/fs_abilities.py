@@ -97,7 +97,7 @@ class FSAbilities:
 		return '\n'.join(s)
 
 	def init_readonly(self, rp):
-		"""Set variables using fs tested at RPath rp
+		"""Set variables using fs tested at RPath rp.  Run locally.
 
 		This method does not write to the file system at all, and
 		should be run on the file system when the file system will
@@ -106,6 +106,7 @@ class FSAbilities:
 		Only self.acls and self.eas are set.
 
 		"""
+		assert rp.conn is Globals.local_connection
 		self.root_rp = rp
 		self.read_only = 1
 		self.set_eas(rp, 0)
@@ -115,7 +116,7 @@ class FSAbilities:
 
 	def init_readwrite(self, rbdir, use_ctq_file = 1,
 					   override_chars_to_quote = None):
-		"""Set variables using fs tested at rp_base
+		"""Set variables using fs tested at rp_base.  Run locally.
 
 		This method creates a temp directory in rp_base and writes to
 		it in order to test various features.  Use on a file system
@@ -128,13 +129,14 @@ class FSAbilities:
 		file in directory.
 
 		"""
+		assert rbdir.conn is Globals.local_connection
 		if not rbdir.isdir():
 			assert not rbdir.lstat(), (rbdir.path, rbdir.lstat())
 			rbdir.mkdir()
 		self.root_rp = rbdir
 		self.read_only = 0
 
-		subdir = rbdir.conn.TempFile.new_in_dir(rbdir)
+		subdir = TempFile.new_in_dir(rbdir)
 		subdir.mkdir()
 		self.set_ownership(subdir)
 		self.set_hardlinks(subdir)
@@ -211,7 +213,13 @@ rdiff-backup-data/chars_to_quote.
 
 	def set_fsync_dirs(self, testdir):
 		"""Set self.fsync_dirs if directories can be fsync'd"""
-		self.fsync_dirs = testdir.conn.fs_abilities.test_fsync_local(testdir)
+		assert testdir.conn is Globals.local_connection
+		try: testdir.fsync()
+		except (IOError, OSError), exc:
+			log.Log("Directories on file system at %s are not fsyncable.\n"
+					"Assuming it's unnecessary." % (testdir.path,), 4)
+			self.fsync_dirs = 0
+		else: self.fsync_dirs = 1
 
 	def set_chars_to_quote(self, subdir):
 		"""Set self.chars_to_quote by trying to write various paths"""
@@ -259,11 +267,48 @@ rdiff-backup-data/chars_to_quote.
 
 	def set_acls(self, rp):
 		"""Set self.acls based on rp.  Does not write.  Needs to be local"""
-		self.acls = rp.conn.fs_abilities.test_acls_local(rp)
+		assert Globals.local_connection is rp.conn
+		assert rp.lstat()
+		try: import posix1e
+		except ImportError:
+			log.Log("Unable to import module posix1e from pylibacl "
+					"package.\nACLs not supported on filesystem at %s" %
+					(rp.path,), 4)
+			self.acls = 0
+			return
+
+		try: posix1e.ACL(file=rp.path)
+		except IOError, exc:
+			if exc[0] == errno.EOPNOTSUPP:
+				log.Log("ACLs appear not to be supported by "
+						"filesystem at %s" % (rp.path,), 4)
+				self.acls = 0
+			else: raise
+		else: self.acls = 1
 		
 	def set_eas(self, rp, write):
 		"""Set extended attributes from rp. Tests writing if write is true."""
-		self.eas = rp.conn.fs_abilities.test_eas_local(rp, write)
+		assert Globals.local_connection is rp.conn
+		assert rp.lstat()
+		try: import xattr
+		except ImportError:
+			log.Log("Unable to import module xattr.  EAs not "
+					"supported on filesystem at %s" % (rp.path,), 4)
+			self.eas = 0
+			return
+
+		try:
+			xattr.listxattr(rp.path)
+			if write:
+				xattr.setxattr(rp.path, "user.test", "test val")
+				assert xattr.getxattr(rp.path, "user.test") == "test val"
+		except IOError, exc:
+			if exc[0] == errno.EOPNOTSUPP:
+				log.Log("Extended attributes not supported by "
+						"filesystem at %s" % (rp.path,), 4)
+				self.eas = 0
+			else: raise
+		else: self.eas = 1
 
 	def set_dir_inc_perms(self, rp):
 		"""See if increments can have full permissions like a directory"""
@@ -282,17 +327,17 @@ rdiff-backup-data/chars_to_quote.
 
 	def set_resource_fork_readwrite(self, dir_rp):
 		"""Test for resource forks by writing to regular_file/rsrc"""
+		assert dir_rp.conn is Globals.local_connection
 		reg_rp = dir_rp.append('regfile')
 		reg_rp.touch()
 
 		s = 'test string---this should end up in resource fork'
 		try:
-			fp_write = reg_rp.conn.open(os.path.join(reg_rp.path, 'rsrc'),
-										'wb')
+			fp_write = open(os.path.join(reg_rp.path, 'rsrc'), 'wb')
 			fp_write.write(s)
 			assert not fp_write.close()
 
-			fp_read = reg_rp.conn.open(os.path.join(reg_rp.path, 'rsrc'), 'rb')
+			fp_read = open(os.path.join(reg_rp.path, 'rsrc'), 'rb')
 			s_back = fp_read.read()
 			assert not fp_read.close()
 		except (OSError, IOError), e: self.resource_forks = 0
@@ -322,56 +367,23 @@ rdiff-backup-data/chars_to_quote.
 		self.resource_forks = 0
 
 
-def test_eas_local(rp, write):
-	"""Test ea support.  Must be called locally.  Usedy by set_eas above."""
-	assert Globals.local_connection is rp.conn
-	assert rp.lstat()
-	try: import xattr
-	except ImportError:
-		log.Log("Unable to import module xattr.  EAs not "
-				"supported on filesystem at %s" % (rp.path,), 4)
-		return 0
+def get_fsabilities_readonly(desc_string, rp):
+	"""Return an FSAbilities object with given description_string
 
-	try:
-		xattr.listxattr(rp.path)
-		if write:
-			xattr.setxattr(rp.path, "user.test", "test val")
-			assert xattr.getxattr(rp.path, "user.test") == "test val"
-	except IOError, exc:
-		if exc[0] == errno.EOPNOTSUPP:
-			log.Log("Extended attributes not supported by "
-					"filesystem at %s" % (rp.path,), 4)
-			return 0
-		else: raise
-	else: return 1
+	Will be initialized read_only with given RPath rp.
 
-def test_acls_local(rp):
-	"""Test acl support.  Call locally.  Does not write."""
-	assert Globals.local_connection is rp.conn
-	assert rp.lstat()
-	try: import posix1e
-	except ImportError:
-		log.Log("Unable to import module posix1e from pylibacl "
-				"package.\nACLs not supported on filesystem at %s" %
-				(rp.path,), 4)
-		return 0
+	"""
+	return FSAbilities(desc_string).init_readonly(rp)
 
-	try: posix1e.ACL(file=rp.path)
-	except IOError, exc:
-		if exc[0] == errno.EOPNOTSUPP:
-			log.Log("ACLs appear not to be supported by "
-					"filesystem at %s" % (rp.path,), 4)
-			return 0
-		else: raise
-	else: return 1
+def get_fsabilities_readwrite(desc_string, rb, use_ctq_file = 1, ctq = None):
+	"""Like above but initialize read/write and pass other arguments"""
+	return FSAbilities(desc_string).init_readwrite(
+		rb, use_ctq_file = use_ctq_file, override_chars_to_quote = ctq)
 
-def test_fsync_local(rp):
-	"""Test fsyncing directories locally"""
-	assert rp.conn is Globals.local_connection
-	try: rp.fsync()
-	except (IOError, OSError), exc:
-		log.Log("Directories on file system at %s are not "
-				"fsyncable.\nAssuming it's unnecessary." % (rp.path,), 4)
-		return 0
-	else: return 1
-
+def get_fsabilities_restoresource(rp):
+	"""Used when restoring, get abilities of source directory"""
+	fsa = FSAbilities('source').init_readonly(rp)
+	ctq_rp = rp.append("chars_to_quote")
+	if ctq_rp.lstat(): fsa.chars_to_quote = ctq_rp.get_data()
+	else: fsa.chars_to_quote = ""
+	return fsa
