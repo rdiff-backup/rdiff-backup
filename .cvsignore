@@ -17,6 +17,7 @@ config.log
 config.status
 configure
 stamp-h
+stamp-h1
 stamp-h.in
 *.lo
 rdiff
@@ -24,3 +25,4 @@ librsync.la
 prototab.c
 prototab.h
 ChangeLog
+librsync-config.h
