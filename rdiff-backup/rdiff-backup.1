@@ -125,7 +125,7 @@ Like
 .BR --include-filelist ,
 but read the list of included files from standard input.
 .TP
-.BI "--include-regexp" regexp
+.BI "--include-regexp " regexp
 Include files matching the regular expression
 .IR regexp .
 Only files explicitly matched by
@@ -182,9 +182,12 @@ section for more information.
 .BI "--remove-older-than " time_interval
 Remove the incremental backup information in the destination directory
 that has been around longer than time_interval.  The time interval is
-an integer followed by the character s, m, h, D, M, or Y, indicating
-seconds, minutes, hours, days, months, or years respectively.  Thus
-32m means 32 minutes, while 1M means one month (30 days).
+an integer followed by the character s, m, h, D, W, M, or Y,
+indicating seconds, minutes, hours, days, weeks, months, or years
+respectively, or a number of these concatenated.  For example, 32m
+means 32 minutes, and 3W2D10h7s means 3 weeks, 2 days, 10 hours, and 7
+seconds.  In this context, a month means 30 days, a year is 365 days,
+and a day is always 86400 seconds.
 
 Note that this option is incompatible with backing up or restoring and
 must be run in a separate instance of rdiff-backup.  Remember also
