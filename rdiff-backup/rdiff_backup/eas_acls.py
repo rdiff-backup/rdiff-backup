@@ -33,6 +33,11 @@ except ImportError: pass
 import static, Globals, metadata, connection, rorpiter, log, C, \
 	   rpath, user_group
 
+# When an ACL gets dropped, put name in dropped_acl_names.  This is
+# only used so that only the first dropped ACL for any given name
+# triggers a warning.
+dropped_acl_names = {}
+
 class ExtendedAttributes:
 	"""Hold a file's extended attribute information"""
 	def __init__(self, index, attr_dict = None):
@@ -288,6 +293,7 @@ class AccessControlLists:
 		"""
 		assert isinstance(acl, self.__class__)
 		if self.index != acl.index: return 0
+		if self.is_basic(): return acl.is_basic()
 		return (self.cmp_entry_list(self.entry_list, acl.entry_list) and
 				self.cmp_entry_list(self.default_entry_list,
 									acl.default_entry_list))
@@ -327,21 +333,23 @@ class AccessControlLists:
 		self.entry_list, self.default_entry_list = \
 						 rp.conn.eas_acls.get_acl_lists_from_rp(rp)
 
-	def write_to_rp(self, rp):
+	def write_to_rp(self, rp, map_names = 1):
 		"""Write current access control list to RPath rp"""
 		rp.conn.eas_acls.set_rp_acl(rp, self.entry_list,
-									self.default_entry_list)
+									self.default_entry_list, map_names)
 
 
-def set_rp_acl(rp, entry_list = None, default_entry_list = None):
+def set_rp_acl(rp, entry_list = None, default_entry_list = None,
+			   map_names = 1):
 	"""Set given rp with ACL that acl_text defines.  rp should be local"""
 	assert rp.conn is Globals.local_connection
-	if entry_list: acl = list_to_acl(entry_list)
+	if entry_list: acl = list_to_acl(entry_list, map_names)
 	else: acl = posix1e.ACL()
 	acl.applyto(rp.path)
 
 	if rp.isdir():
-		if default_entry_list: def_acl = list_to_acl(default_entry_list)
+		if default_entry_list:
+			def_acl = list_to_acl(default_entry_list, map_names)
 		else: def_acl = posix1e.ACL()
 		def_acl.applyto(rp.path, posix1e.ACL_TYPE_DEFAULT)
 
@@ -388,18 +396,55 @@ def acl_to_list(acl):
 		return (entry.tag_type, owner_pair, perms)
 	return map(entry_to_tuple, acl)
 
-def list_to_acl(entry_list):
-	"""Return posix1e.ACL object from list representation"""
+def list_to_acl(entry_list, map_names = 1):
+	"""Return posix1e.ACL object from list representation
+
+	If map_names is true, use user_group to update the names for the
+	current system, and drop if not available.  Otherwise just use the
+	same id.
+
+	"""
+	def warn_drop(name):
+		"""Warn about acl with name getting dropped"""
+		global dropped_acl_names
+		if Globals.never_drop_acls:
+			log.Log.FatalError(
+"--never-drop-acls specified but cannot map name\n"
+"%s occurring inside an ACL." % (name,))
+		if dropped_acl_names.has_key(name): return
+		log.Log("Warning: name %s not found on system, dropping ACL entry.\n"
+				"Further ACL entries dropped with this name will not "
+				"trigger further warnings" % (name,), 2)
+		dropped_acl_names[name] = name
+
+	def map_id_name(owner_pair, group = None):
+		"""Return id of mapped id and user given original owner_pair"""
+		id, name = owner_pair
+		Map = group and user_group.GroupMap or user_group.UserMap
+		if name: return Map.get_id_from_name(name)
+		else:
+			assert id is not None
+			return Map.get_id_from_id(id)
+
 	acl = posix1e.ACL()
 	for tag, owner_pair, perms in entry_list:
+		id = None
+		if owner_pair:
+			if map_names:
+				if tag == posix1e.ACL_USER: id = map_id_name(owner_pair, 0)
+				else:
+					assert tag == posix1e.ACL_GROUP, (tag, owner_pair, perms)
+					id = map_id_name(owner_pair, 1)
+				if id is None:
+					warn_drop(owner_pair[1])
+					continue
+			else:
+				assert owner_pair[0] is not None, (tag, owner_pair, perms)
+				id = owner_pair[0]
+
 		entry = posix1e.Entry(acl)
 		entry.tag_type = tag
-		if owner_pair:
-			if tag == posix1e.ACL_USER:
-				entry.qualifier = user_group.UserMap.get_id(*owner_pair)
-			else:
-				assert tag == posix1e.ACL_GROUP, (tag, owner_pair, perms)
-				entry.qualifier = user_group.GroupMap.get_id(*owner_pair)
+		if id is not None: entry.qualifier = id
 		entry.permset.read = perms >> 2
 		entry.permset.write = perms >> 1 & 1
 		entry.permset.execute = perms & 1

@@ -57,9 +57,10 @@ def parse_cmdlineoptions(arglist):
 		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=", "include-regexp=",
 		  "list-at-time=", "list-changed-since=", "list-increments",
-		  "list-increment-sizes", "no-compare-inode",
-		  "no-compression", "no-compression-regexp=",
-		  "no-file-statistics", "no-hard-links", "null-separator",
+		  "list-increment-sizes", "never-drop-acls",
+		  "no-compare-inode", "no-compression",
+		  "no-compression-regexp=", "no-file-statistics",
+		  "no-hard-links", "null-separator",
 		  "override-chars-to-quote=", "parsable-output",
 		  "print-statistics", "remote-cmd=", "remote-schema=",
 		  "remove-older-than=", "restore-as-of=", "restrict=",
@@ -109,6 +110,7 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "-l" or opt == "--list-increments":
 			action = "list-increments"
 		elif opt == '--list-increment-sizes': action = 'list-increment-sizes'
+		elif opt == "--never-drop-acls": Globals.set("never_drop_acls", 1)
 		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
@@ -368,6 +370,9 @@ def backup_set_fs_globals(rpin, rpout):
 	dest_fsa = rpout.conn.fs_abilities.get_fsabilities_readwrite(
 		'destination', Globals.rbdir, 1, Globals.chars_to_quote)
 	Log(str(dest_fsa), 3)
+	if Globals.never_drop_acls and not dest_fsa.acls:
+		Log.FatalError("--never-drop-acls specified, but ACL support\n"
+					   "disabled on destination filesystem")
 
 	update_bool_global('read_acls', src_fsa.acls)
 	update_bool_global('read_eas', src_fsa.eas)
@@ -462,6 +467,9 @@ def restore_set_fs_globals(target):
 	mirror_fsa = Globals.rbdir.conn.fs_abilities.get_fsabilities_restoresource(
 		Globals.rbdir)
 	Log(str(mirror_fsa), 3)
+	if Globals.never_drop_acls and not target_fsa.acls:
+		Log.FatalError("--never-drop-acls specified, but ACL support\n"
+					   "disabled on destination filesystem")
 
 	update_bool_global('read_acls', target_fsa.acls)
 	update_bool_global('write_acls', target_fsa.acls)

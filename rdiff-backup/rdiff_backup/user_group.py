@@ -60,6 +60,16 @@ def gid2gname(gid):
 		gid2gname_dict[gid] = gname
 		return gname
 
+def uname2uid(uname):
+	"""Given uname, return uid or None if cannot find"""
+	try: uname = pwd.getpwnam(uname)[2]
+	except KeyError: return None
+
+def gname2gid(gname):
+	"""Given gname, return gid or None if cannot find"""
+	try: gname = grp.getgrnam(gname)[2]
+	except KeyError: return None
+
 
 class Map:
 	"""Used for mapping names and id on source side to dest side"""
@@ -77,12 +87,25 @@ class Map:
 			self.name2id_dict[name] = out_id
 			return out_id
 
+	def get_id_from_name(self, name):
+		"""Return mapped id from name only, or None if cannot"""
+		try: return self.name2id_dict[name]
+		except KeyError:
+			out_id = self.find_id_from_name(name)
+			self.name2id_dict[name] = out_id
+			return out_id
+
 	def get_id_from_id(self, id): return id
 
 	def find_id(self, id, name):
 		"""Find the proper id to use with given id and name"""
 		try: return self.name2id_func(name)
 		except KeyError: return id
+
+	def find_id_from_name(self, name):
+		"""Look up proper id to use with name, or None"""
+		try: return self.name2id_func(name)
+		except KeyError: return None
 			
 class DefinedMap(Map):
 	"""Map names and ids on source side to appropriate ids on dest side
@@ -133,6 +156,11 @@ class DefinedMap(Map):
 		except KeyError:
 			try: return self.id_mapping_dict[id]
 			except KeyError: return Map.find_id(self, id, name)
+
+	def find_id_from_name(self, name):
+		"""Find id to map name to, or None if we can't"""
+		try: return self.name_mapping_dict[name]
+		except KeyError: return Map.find_id_from_name(name)
 
 def init_user_mapping(mapping_string = None):
 	"""Initialize user mapping with given mapping string or None"""

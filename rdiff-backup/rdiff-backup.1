@@ -205,6 +205,12 @@ to --remove-older-than.  Specifying a subdirectory is allowable; then
 only the sizes of the mirror and increments pertaining to that
 subdirectory will be listed.
 .TP
+.B --never-drop-acls
+Exit with error instead of dropping acls or acl entries.  Normally
+this may happen (with a warning) because the destination does not
+support them or because the relevant user/group names do not exist on
+the destination side.
+.TP
 .B --no-compare-inode
 This relatively esoteric option prevents rdiff-backup from flagging a
 file as changed when its inode changes.  This option may be useful if
