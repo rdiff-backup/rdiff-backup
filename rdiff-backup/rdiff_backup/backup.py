@@ -180,8 +180,9 @@ class DestinationStruct:
 			dest_sig = dest_rorp.getRORPath()
 			if dest_rorp.isreg():
 				dest_rp = dest_base_rpath.new_index(index)
-				assert dest_rp.isreg()
-				dest_sig.setfile(Rdiff.get_signature(dest_rp))
+				if dest_rp.isreg(): # otherwise file has changed type from reg
+					dest_sig.setfile(Rdiff.get_signature(dest_rp))
+				else: dest_sig = dest_rp.getRORPath()
 		else: dest_sig = rpath.RORPath(index)
 		return dest_sig			
 
