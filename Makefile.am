@@ -24,7 +24,7 @@ MAINTAINERCLEANFILES = Makefile.in \
 	depcomp install-sh ltmain.sh missing mkinstalldirs \
 	prototab.c prototab.h ChangeLog
 
-include_HEADERS = rsync.h
+include_HEADERS = librsync.h librsync-config.h
 
 lib_LTLIBRARIES = librsync.la
 
@@ -32,7 +32,7 @@ librsync_la_SOURCES =  prototab.c prototab.h \
 	base64.c buf.c buf.h checksum.c checksum.h command.c \
 	command.h delta.c emit.c emit.h fileutil.c fileutil.h \
 	hex.c job.c job.h mdfour.c mdfour.h mksum.c msg.c netint.c netint.h \
-	patch.c protocol.h readsums.c rsync.h \
+	patch.c protocol.h readsums.c librsync.h librsync-config.h \
 	scoop.c search.c search.h stats.c stream.c stream.h sumset.c \
 	sumset.h trace.c trace.h tube.c types.h util.c util.h \
 	version.c whole.c whole.h
@@ -66,7 +66,7 @@ LDADD = librsync.la @LIBOBJS@
 noinst_PROGRAMS = rdiff
 noinst_SCRIPTS = mkprototab.pl
 
-rdiff_SOURCES = rdiff.c isprefix.c isprefix.h rsync.h trace.h
+rdiff_SOURCES = rdiff.c isprefix.c isprefix.h librsync.h librsync-config.h trace.h
 rdiff_LDADD = @BUILD_POPT@ librsync.la
 rdiff_DEPENDENCIES = @BUILD_POPT@ librsync.la
 
