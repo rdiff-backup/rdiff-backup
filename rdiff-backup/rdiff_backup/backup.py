@@ -154,7 +154,7 @@ class DestinationStruct:
 				Hardlink.islinked(src_rorp or dest_rorp)):
 				dest_sig = rpath.RORPath(index)
 				dest_sig.flaglinked(Hardlink.get_link_index(dest_sig))
-			elif dest_rorp: 
+			elif dest_rorp:
 				dest_sig = dest_rorp.getRORPath()
 				if dest_rorp.isreg():
 					dest_rp = dest_base_rpath.new_index(index)
@@ -311,6 +311,7 @@ class CacheCollatedPostProcess:
 		"""Process the remaining elements in the cache"""
 		while self.cache_indicies: self.shorten_cache()
 		metadata.CloseMetadata()
+		if Globals.print_statistics: statistics.print_active_stats()
 		statistics.write_active_statfileobj()
 
 

@@ -20,7 +20,7 @@
 """Generate and process aggregated backup information"""
 
 import re, os, time
-import Globals, robust, Time, rorpiter, increment
+import Globals, robust, Time, rorpiter, increment, log
 
 class StatsException(Exception): pass
 
@@ -342,3 +342,11 @@ def write_active_statfileobj():
 	_active_statfileobj.finish()
 	_active_statfileobj.write_stats_to_rp(session_stats_rp)
 	_active_statfileobj = None
+
+def print_active_stats():
+	"""Print statistics of active statobj to stdout and log"""
+	global _active_statfileobj
+	assert _active_statfileobj
+	statmsg = _active_statfileobj.get_stats_logstring("Session statistics")
+	log.Log.log_to_file(statmsg)
+	Globals.client_conn.sys.stdout.write(statmsg)

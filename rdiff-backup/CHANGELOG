@@ -1,11 +1,18 @@
 New in v0.11.3 (2003/04/01)
 ---------------------------
 
-Brought some old parts of the man page up-to-date (thanks to Olivier
-Mueller).
+Fixed a number of bugs reported by Olivier Mueller:
 
-Fixed bug if unrecoverable error on second backup to a directory (also
-repored Olivier Mueller).
+	Brought some old parts of the man page up-to-date.
+
+	Fixed bug if unrecoverable error on second backup to a directory.
+
+	Fixed spurious error message that could appear after a successful
+	backup.
+
+	--print-statistics option works again (before it would silently
+	ignored).
+
 
 
 New in v0.11.2 (2003/03/01)
