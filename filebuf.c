@@ -148,26 +148,3 @@ hs_filebuf_write(void *private, char const *buf, size_t len)
 
      return n;
 }
-
-
-ssize_t
-hs_filebuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
-{
-     struct file_buf *fbuf = (struct file_buf *) private;
-     size_t n;
-
-     assert(fbuf->dogtag == filebuf_tag);
-     if (lseek(fbuf->fd, ofs, SEEK_SET) == -1) {
-	  _hs_fatal("hs_filebuf_read_ofs: "
-		    "seek to %ld failed: %s", (long) ofs, strerror(errno));
-	  return -1;
-     }
-
-     n = read(fbuf->fd, buf, len);
-     if (n != len) {
-	  _hs_trace("** short read in " __FUNCTION__ ", result=%d",
-		    n);
-     }
-
-     return n;
-}

@@ -114,11 +114,6 @@ int _hs_write_netbyte(hs_write_fn_t write_fn, void *write_priv,
 int _hs_write_netvar(hs_write_fn_t write_fn, void *write_priv,
 		     uint32_t value, int type);
 
-int _hs_copy_ofs(uint32_t offset, uint32_t length,
-		 hs_readofs_fn_t readofs_fn, void *readofs_priv,
-		 hs_write_fn_t write_fn, void *write_priv,
-		 hs_mdfour_t *);
-
 /* ========================================
 
    Literal output buffer.
