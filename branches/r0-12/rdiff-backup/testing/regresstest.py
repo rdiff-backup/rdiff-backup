@@ -93,4 +93,49 @@ class RegressTest(unittest.TestCase):
 		"""Run regress test remotely"""
 		self.runtest(self.regress_to_time_remote)
 
+	def test_unreadable(self):
+		"""Run regress test when regular file is unreadable"""
+		self.output_rp.setdata()
+		if self.output_rp.lstat(): Myrm(self.output_rp.path)
+		unreadable_rp = self.make_unreadable()
+
+		rdiff_backup(1, 1, unreadable_rp.path, self.output_rp.path,
+					 current_time = 1)
+		rbdir = self.output_rp.append('rdiff-backup-data')
+		marker = rbdir.append('current_mirror.2000-12-31T21:33:20-07:00.data')
+		marker.touch()
+		self.change_unreadable()
+
+		cmd = "rdiff-backup --check-destination-dir " + self.output_rp.path
+		print "Executing:", cmd
+		assert not os.system(cmd)
+
+	def make_unreadable(self):
+		"""Make unreadable input directory
+
+		The directory needs to be readable initially (otherwise it
+		just won't get backed up, and then later we will turn it
+		unreadable.
+
+		"""
+		rp = rpath.RPath(Globals.local_connection, "testfiles/regress")
+		if rp.lstat(): Myrm(rp.path)
+		rp.setdata()
+		rp.mkdir()
+		rp1 = rp.append('unreadable_dir')
+		rp1.mkdir()
+		rp1_1 = rp1.append('to_be_unreadable')
+		rp1_1.write_string('aensuthaoeustnahoeu')
+		return rp
+
+	def change_unreadable(self):
+		"""Change attributes in directory, so regress will request fp"""
+		subdir = self.output_rp.append('unreadable_dir')
+		assert subdir.lstat()
+		filerp = subdir.append('to_be_unreadable')
+		filerp.chmod(0)
+		subdir.chmod(0)
+		
+
 if __name__ == "__main__": unittest.main()
+
