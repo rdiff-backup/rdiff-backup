@@ -20,7 +20,8 @@ libhsyncdecode_la_SOURCES = dec.c \
 	filebuf.c membuf.c ptrbuf.c \
 	inhale.c trace.c
 
-noinst_SCRIPTS = test-decode.sh test-encode.sh test-chain.sh test-cmds.sh
+noinst_SCRIPTS = test-decode.sh test-encode.sh test-chain.sh test-cmds.sh \
+	make-cmds.py
 
 test_data=test-chain/empty-sig  \
 test-decode/01-diff \
