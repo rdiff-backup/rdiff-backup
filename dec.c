@@ -128,7 +128,7 @@ _hs_check_checksum(hs_read_fn_t ltread_fn, void *ltread_priv,
 }
 
 int
-_hs_copy_ofs(uint32_t offset, uint32_t length,
+_hs_dec_copy(uint32_t offset, uint32_t length,
 	     hs_readofs_fn_t readofs_fn, void *readofs_priv,
 	     hs_write_fn_t write_fn, void *write_priv,
 	     hs_mdfour_t *newsum)
@@ -222,7 +222,7 @@ hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
 	       stats->sig_bytes += length;
 	  } else if (kind == op_kind_copy) {
 	       _hs_trace("COPY(offset=%d, len=%d)", offset, length);
-	       ret = _hs_copy_ofs(offset, length,
+	       ret = _hs_dec_copy(offset, length,
 				  oldread_fn, oldread_priv,
 				  write_fn, write_priv,
 				  &newsum);
