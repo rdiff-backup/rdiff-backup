@@ -25,9 +25,9 @@ do
     do
         for new in $testdir/*.in
         do
-            run_test rdiff -I$buf -O$buf signature $old $tmpdir/sig
-            run_test rdiff -I$buf -O$buf delta $tmpdir/sig $new $tmpdir/delta
-            run_test rdiff -I$buf -O$buf patch $old $tmpdir/delta $tmpdir/new
+            run_test rdiff $debug -I$buf -O$buf signature $old $tmpdir/sig
+            run_test rdiff $debug -I$buf -O$buf delta $tmpdir/sig $new $tmpdir/delta
+            run_test rdiff $debug -I$buf -O$buf patch $old $tmpdir/delta $tmpdir/new
 
             check_compare $new $tmpdir/new "triple -I$buf -O$buf $old $new"
         done

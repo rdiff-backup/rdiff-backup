@@ -81,7 +81,7 @@ for o in "$@"
 do
     case "$o" in 
     -D)
-	debug=-D
+	debug=-v
 	;;
     -S)
 	stats=-S
