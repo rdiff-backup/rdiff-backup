@@ -1,0 +1,22 @@
+-*- indented-text -*- 
+
+Instructions for people wanting to work on librsync.  Please consider
+them even if you're doing your own fork.
+
+ * If you make a significant change (of more than 15 lines, say), then
+   add yourself to the copyright for that file, and to the AUTHORS file.
+
+ * NEWS contains a list of user-visible changes in the library in each
+   version.  This includes changes to the way it's packaged, bug
+   fixes, portability notes, changes to the API, and so on.  Add items
+   as you go along, so that we don't need to work out what happened
+   when it's time for a release.
+
+ * ChangeLog contains a list of detailed developer-visible changes.
+   See the GNU Coding Standards for a description of what ought to go
+   in here.  Please put your changes in here even though they're
+   likely to duplicate your CVS commit messages.  It makes it a lot
+   easier if people ever create their own trees away from the central
+   CVS server.
+
+ * Please try to update docs and tests in parallel with code changes.
