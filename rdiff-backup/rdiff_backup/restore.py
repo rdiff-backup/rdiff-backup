@@ -94,7 +94,6 @@ def ListAtTime(mirror_rp, inc_rp, time):
 	assert mirror_rp.conn is Globals.local_connection, "Run locally only"
 	MirrorStruct.set_mirror_and_rest_times(time)
 	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
-
 	old_iter = MirrorStruct.get_mirror_rorp_iter(_rest_time, 1)
 	for rorp in old_iter: yield rorp
 	
@@ -152,9 +151,8 @@ class MirrorStruct:
 		and what was actually on the mirror side will correspond to the
 		older one.
 
-		So here we assume all rdiff-backup events were recorded in
-		"increments" increments, and if it's in-between we pick the
-		older one here.
+		So if restore_to_time is inbetween two increments, return the
+		older one.
 
 		"""
 		inctimes = cls.get_increment_times()
@@ -164,11 +162,21 @@ class MirrorStruct:
 			return min(inctimes)
 
 	def get_increment_times(cls, rp = None):
-		"""Return list of times of backups, including current mirror"""
-		if not _mirror_time: return_list = [cls.get_mirror_time()]
-		else: return_list = [_mirror_time]
+		"""Return list of times of backups, including current mirror
+
+		Take the total list of times from the increments.<time>.dir
+		file and the mirror_metadata file.  Sorted ascending.
+
+		"""
+		# use dictionary to remove dups
+		if not _mirror_time: d = {cls.get_mirror_time(): None}
+		else: d = {_mirror_time: None}
 		if not rp or not rp.index: rp = Globals.rbdir.append("increments")
-		for inc in get_inclist(rp): return_list.append(inc.getinctime())
+		for inc in get_inclist(rp): d[inc.getinctime()] = None
+		for inc in get_inclist(Globals.rbdir.append("mirror_metadata")):
+			d[inc.getinctime()] = None
+		return_list = d.keys()
+		return_list.sort()
 		return return_list
 
 	def initialize_rf_cache(cls, mirror_base, inc_base):

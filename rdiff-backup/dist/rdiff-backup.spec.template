@@ -14,7 +14,7 @@ License: GPL
 Group: Applications/Archiving
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires: %{PYTHON_NAME} >= %{PYTHON_VERSION}, %{PYTHON_NAME} < %{NEXT_PYTHON_VERSION}
-BuildPrereq: %{PYTHON_NAME}-devel >= 2.2, librsync-devel >= 0.9.6
+BuildPrereq: %{PYTHON_NAME}-devel >= 2.2, librsync-devel >= 0.9.7
 
 %description
 rdiff-backup is a script, written in Python, that backs up one
@@ -54,6 +54,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc CHANGELOG COPYING FAQ.html examples.html README
 
 %changelog
+* Mon Mar 28 2005 Ben Escoto <ben@emerose.org> - 0.13.5-1
+- Set librsync >= 0.9.7 to encourage upgrade
+
 * Sat Dec 15 2003 Ben Escoto <bescoto@stanford.edu> - 0.12.6-2
 - Readded python2/python code; turns out not everyone calls it python
 - A number of changes from Fedora rpm.
