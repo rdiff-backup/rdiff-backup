@@ -1,10 +1,10 @@
-/*				       	-*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
- * Copyright (C) 1999 by mbp@samba.org.
+ * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -41,56 +41,33 @@
 #include "trace.h"
 
 
-void
-hs_file_close(int fd)
-{
-    if (fd == -1)
-        hs_error("warning: close called with fd of -1");
-    
-    if (close(fd) == -1) {
-        hs_error("error closing fd %d: %s",
-                  fd, strerror(errno));
-    }
-}
 
-
-/*
- * Open a file, with special handling for `-' on input and output.
+/**
+ * \brief Open a file, with special handling for `-' or unspecified
+ * parameters on input and output.
+ *
+ * \param fopen-style mode string.
  */
 FILE *
-hs_file_open(char const *filename, int mode)
+hs_file_open(char const *filename, char const *mode)
 {
-    int             fd;
     FILE           *f;
     int		    is_write;
 
-    if ((mode & O_ACCMODE) == O_WRONLY) {
-	is_write = 1;
-    } else {
-	is_write = 0;
-	assert((mode & O_ACCMODE) == O_RDONLY);
-    }
+    is_write = mode[0] == 'w';
 
-    if (!strcmp("-", filename)) {
+    if (!filename  ||  !strcmp("-", filename)) {
 	if (is_write)
 	    return stdout;
 	else
 	    return stdin;
     }
 
-    fd = open(filename, mode, 0666);
-    if (fd == -1) {
+    if (!(f = fopen(filename, mode))) {
 	hs_error("Error opening \"%s\" for %s: %s", filename,
-		  (mode & O_WRONLY) ? "write" : "read",
+		  is_write ? "write" : "read",
 		  strerror(errno));
-	exit(1);
-    }
-
-    f = fdopen(fd, is_write ? "w" : "r");
-    if (!f) {
-	hs_error("Error opening stream on fd%d: %s", fd,
-		  strerror(errno));
-	exit(1);
+	exit(HS_EXIT_FILEIO);
     }
     
     return f;
