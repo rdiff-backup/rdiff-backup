@@ -1,6 +1,7 @@
 /* 
    mdfour code from Samba
-   Copyright (C) Andrew Tridgell 1997-1998.
+   Copyright (C) 2000 by Martin Pool
+   Copyright (C) 1997-1998 by Andrew Tridgell
    
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,9 +32,9 @@
 #define uint32 uint32_t
 #endif
 
-#include "mdfour.h"
+#include "hsync.h"
 
-static struct mdfour *m;
+static struct hs_mdfour *m;
 
 #define F(X,Y,Z) (((X)&(Y)) | ((~(X))&(Z)))
 #define G(X,Y,Z) (((X)&(Y)) | ((X)&(Z)) | ((Y)&(Z)))
@@ -49,7 +50,7 @@ static struct mdfour *m;
 #define ROUND3(a,b,c,d,k,s) a = lshift(a + H(b,c,d) + X[k] + 0x6ED9EBA1,s)
 
 /* this applies md4 to 64 byte chunks */
-static void mdfour64(uint32 * M)
+static void hs_mdfour64(uint32 * M)
 {
     int j;
     uint32 AA, BB, CC, DD;
@@ -157,7 +158,7 @@ static void copy4(unsigned char *out, uint32 x)
     out[3] = (x >> 24) & 0xFF;
 }
 
-void mdfour_begin(struct mdfour *md)
+void hs_mdfour_begin(struct hs_mdfour *md)
 {
     md->A = 0x67452301;
     md->B = 0xefcdab89;
@@ -167,7 +168,7 @@ void mdfour_begin(struct mdfour *md)
 }
 
 
-static void mdfour_tail(unsigned char const *in, int n)
+static void hs_mdfour_tail(unsigned char const *in, int n)
 {
     unsigned char buf[128];
     uint32 M[16];
@@ -185,39 +186,39 @@ static void mdfour_tail(unsigned char const *in, int n)
     if (n <= 55) {
 	copy4(buf + 56, b);
 	copy64(M, buf);
-	mdfour64(M);
+	hs_mdfour64(M);
     } else {
 	copy4(buf + 120, b);
 	copy64(M, buf);
-	mdfour64(M);
+	hs_mdfour64(M);
 	copy64(M, buf + 64);
-	mdfour64(M);
+	hs_mdfour64(M);
     }
 }
 
-void mdfour_update(struct mdfour *md, unsigned char const *in, int n)
+void hs_mdfour_update(struct hs_mdfour *md, unsigned char const *in, int n)
 {
     uint32 M[16];
 
     if (n == 0)
-	mdfour_tail(in, n);
+	hs_mdfour_tail(in, n);
 
     m = md;
 
     while (n >= 64) {
 	copy64(M, in);
-	mdfour64(M);
+	hs_mdfour64(M);
 	in += 64;
 	n -= 64;
 	m->totalN += 64;
     }
 
     if (n)
-	mdfour_tail(in, n);
+	hs_mdfour_tail(in, n);
 }
 
 
-void mdfour_result(struct mdfour *md, unsigned char *out)
+void hs_mdfour_result(struct hs_mdfour *md, unsigned char *out)
 {
     m = md;
 
@@ -228,10 +229,10 @@ void mdfour_result(struct mdfour *md, unsigned char *out)
 }
 
 
-void mdfour(unsigned char *out, unsigned char const *in, int n)
+void hs_mdfour(unsigned char *out, unsigned char const *in, int n)
 {
-    struct mdfour md;
-    mdfour_begin(&md);
-    mdfour_update(&md, in, n);
-    mdfour_result(&md, out);
+    struct hs_mdfour md;
+    hs_mdfour_begin(&md);
+    hs_mdfour_update(&md, in, n);
+    hs_mdfour_result(&md, out);
 }

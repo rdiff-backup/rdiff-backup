@@ -120,3 +120,19 @@ hs_ptrbuf_t *hs_ptrbuf_on_buffer(char *buf, int len);
 void hs_ptrbuf_truncate(hs_ptrbuf_t * mb);
 size_t hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, char const **buf);
 hs_ptrbuf_t *hs_ptrbuf_on_buffer(char *buf, int len);
+
+
+/* ============================================================
+
+   MD4 hash
+*/
+
+struct hs_mdfour {
+    uint32_t A, B, C, D;
+    uint32_t totalN;
+};
+
+void hs_mdfour(unsigned char *out, unsigned char const *in, int n);
+void hs_mdfour_begin(struct hs_mdfour *md);
+void hs_mdfour_update(struct hs_mdfour *md, unsigned char const *in, int n);
+void hs_mdfour_result(struct hs_mdfour *md, unsigned char *out);

@@ -65,12 +65,12 @@ uint32_t _hs_calc_weak_sum(char const *buf1, int len)
    useful in rproxy. */
 uint32_t _hs_calc_strong_sum(char const *buf, int len, char *sum)
 {
-    struct mdfour m;
+    struct hs_mdfour m;
     char tsum[MD4_LENGTH];
 
-    mdfour_begin(&m);
-    mdfour_update(&m, (char *) buf, len);
-    mdfour_result(&m, (char *) tsum);
+    hs_mdfour_begin(&m);
+    hs_mdfour_update(&m, (char *) buf, len);
+    hs_mdfour_result(&m, (char *) tsum);
 
     memcpy(sum, tsum, SUM_LENGTH);
 
