@@ -70,6 +70,20 @@ open_socket(int *psock, int port)
 }
 
 
+static int
+child_main(int sock)
+{
+    
+    int ret;
+
+    ret = _hs_file_copy_all(sock, STDOUT_FILENO) < 0;
+    if (close(sock) < 0) {
+        _hs_error("close write socket: %s", strerror(errno));
+        return -1;
+    }
+    _hs_trace("child finished");        
+    return ret;
+}
 
 static int
 fork_reader(int sock)
@@ -81,7 +95,7 @@ fork_reader(int sock)
         _hs_error("error forking child: %s", strerror(errno));
         return -1;
     } else if (pid == 0) {
-        exit(_hs_file_copy_all(sock, STDOUT_FILENO) < 0);
+        exit(child_main(sock));
     } else {
         _hs_trace("forked child %d", pid);
         return pid;
@@ -90,11 +104,11 @@ fork_reader(int sock)
 
 
 static int
-reap_child(void)
+reap_child(int pid)
 {
     int status;
 
-    if (wait(&status) < 0) {
+    if (waitpid(pid, &status, 0) < 0) {
         _hs_error("wait error: %s", strerror(errno));
         return -1;
     }
@@ -111,7 +125,15 @@ reap_child(void)
 static int
 writer(int sock)
 {
-    return _hs_file_copy_all(STDIN_FILENO, sock);
+    int ret;
+    
+    ret = _hs_file_copy_all(STDIN_FILENO, sock);
+    if (close(sock) < 0) {
+        _hs_error("close write socket: %s", strerror(errno));
+        return -1;
+    }
+
+    return ret;
 }
 
 
@@ -154,8 +176,9 @@ main(int argc, char **argv)
     pid = fork_reader(sock);
     if (writer(sock) < 0)
         return 1;
+    _hs_trace("writer finished!");
 
-    if (reap_child() < 0)
+    if (reap_child(pid) < 0)
         return 1;
 
     return 0;

@@ -133,6 +133,12 @@ child_main(int newsock, char **argv)
         _hs_error("dup2 in child failed: %s", strerror(errno));
         return 1;
     }
+           
+    if (close(newsock) < 0) {
+        _hs_error("close spare child socket: %s", strerror(errno));
+        return -1;
+    }
+
 
     if ((execvp(argv[0], argv)) < 0) {
         _hs_error("exec in child failed: %s", strerror(errno));
@@ -144,7 +150,7 @@ child_main(int newsock, char **argv)
 
 
 static int
-fork_and_serve(int newsock, char **argv)
+fork_and_serve(int srvr_sock, int newsock, char **argv)
 {
     int pid;
 
@@ -153,6 +159,10 @@ fork_and_serve(int newsock, char **argv)
         _hs_error("error forking child: %s", strerror(errno));
         return -1;
     } else if (pid == 0) {
+        if (close(srvr_sock) < 0) {
+            _hs_error("close listen socket: %s", strerror(errno));
+            return -1;
+        }
         exit(child_main(newsock, argv));
     } else {
         _hs_trace("forked child %d", pid);
@@ -241,7 +251,7 @@ main(int argc, char **argv)
             else
                 return 0;
         } else {
-            if ((fork_and_serve(newsock, argv)) < 0)
+            if ((fork_and_serve(sock, newsock, argv)) < 0)
                 return 1;
         }
     }
