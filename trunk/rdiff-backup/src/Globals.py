@@ -14,7 +14,7 @@ import re, os
 
 
 # The current version of rdiff-backup
-version = "0.9.1"
+version = "$version"
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
@@ -167,9 +167,9 @@ print_statistics = None
 # replaced by the source and mirror Select objects respectively.
 select_source, select_mirror = None, None
 
-# On the backup writer connection, holds the main incrementing
-# function.  Access is provided to increment error counts.
-ITR = None
+# On the backup writer connection, holds the root incrementing branch
+# object.  Access is provided to increment error counts.
+ITRB = None
 
 def get(name):
 	"""Return the value of something in this module"""

@@ -217,18 +217,17 @@ class StatsObj:
 		return s
 
 
-class StatsITR(IterTreeReducer, StatsObj):
+class StatsITRB(ITRBranch, StatsObj):
 	"""Keep track of per directory statistics
 
 	This is subclassed by the mirroring and incrementing ITRs.
 
 	"""
-	def __init__(self, *args):
+	def __init__(self):
 		"""StatsITR initializer - zero out statistics"""
 		attr_dict = self.__dict__
 		for attr in StatsObj.stat_file_attrs: attr_dict[attr] = 0
 		self.ElapsedTime = self.Filename = None
-		IterTreeReducer.__init__(self, *args)
 
 	def start_stats(self, mirror_dsrp):
 		"""Record status of mirror dsrp
@@ -273,16 +272,24 @@ class StatsITR(IterTreeReducer, StatsObj):
 				self.DeletedFileSize += self.mirror_base_size
 				self.stats_incr_incfiles(inc_rp)
 
+	def fast_process(self, mirror_rorp):
+		"""Use when there is no change from source to mirror"""
+		source_size = self.stats_getsize(mirror_rorp)
+		self.SourceFiles += 1
+		self.MirrorFiles += 1
+		self.SourceFileSize += source_size
+		self.MirrorFileSize += source_size
+
 	def stats_incr_incfiles(self, inc_rp):
 		"""Increment IncrementFile statistics"""
 		if inc_rp:
 			self.IncrementFiles += 1
 			self.IncrementFileSize += self.stats_getsize(inc_rp)
 
-	def add_file_stats(self, subinstance):
-		"""Add all file statistics from subinstance to current totals"""
+	def add_file_stats(self, branch):
+		"""Add all file statistics from branch to current totals"""
 		for attr in self.stat_file_attrs:
-			self.__dict__[attr] += subinstance.__dict__[attr]
+			self.__dict__[attr] += branch.__dict__[attr]
 
 
 from log import *

@@ -116,9 +116,8 @@ class Select:
 	def Iterate_fast(self, dsrpath, sel_func):
 		"""Like Iterate, but don't recur, saving time
 
-		This is a bit harder to read than Iterate/iterate_in_dir, but
-		it should be faster because it only recurs to half as much
-		depth.  It doesn't handle the quoting case.
+		Only handles standard case (quoting off, starting from
+		beginning).
 
 		"""
 		def error_handler(exc, filename):
@@ -126,38 +125,40 @@ class Select:
 			return None
 
 		def diryield(dsrpath):
-			s = sel_func(dsrpath)
-			if s == 0: return
-			elif s == 1:
-				yield dsrpath
-				for filename in Robust.listrp(dsrpath):
-					new_dsrp = Robust.check_common_error(error_handler,
-											  dsrpath.append, [filename])
-					if new_dsrp:
-						if new_dsrp.isdir():
-							for dsrp in diryield(new_dsrp): yield dsrp
-						elif sel_func(new_dsrp) == 1: yield new_dsrp
-			elif s == 2:
-				yielded_something = None
-				for filename in Robust.listrp(dsrpath):
-					new_dsrp = Robust.check_common_error(error_handler,
-											  dsrpath.append, [filename])
-					if new_dsrp:
-						if new_dsrp.isdir():
-							for dsrp in diryield(new_dsrp):
-								if not yielded_something:
-									yielded_something = 1
-									yield dsrpath
-								yield dsrp
-						elif sel_func(new_dsrp) == 1:
-							if not yielded_something:
-								yielded_something = 1
-								yield dsrpath
-							yield new_dsrp
+			"""Generate relevant files in directory dsrpath
 
-		if dsrpath.isdir():
-			for dsrp in diryield(dsrpath): yield dsrp
-		elif sel_func(dsrpath) == 1: yield dsrpath
+			Returns (dsrp, num) where num == 0 means dsrp should be
+			generated normally, num == 1 means the dsrp is a directory
+			and should be included iff something inside is included.
+
+			"""
+			for filename in Robust.listrp(dsrpath):
+				new_dsrp = Robust.check_common_error(error_handler,
+										dsrpath.append, (filename,))
+				if new_dsrp:
+					s = sel_func(new_dsrp)
+					if s == 1: yield (new_dsrp, 0)
+					elif s == 2 and new_dsrp.isdir(): yield (new_dsrp, 1)
+
+		yield dsrpath
+		diryield_stack = [diryield(dsrpath)]
+		delayed_dsrp_stack = []
+
+		while diryield_stack:
+			try: dsrp, val = diryield_stack[-1].next()
+			except StopIteration:
+				diryield_stack.pop()
+				if delayed_dsrp_stack: delayed_dsrp_stack.pop()
+				continue
+			if val == 0:
+				if delayed_dsrp_stack:
+					for delayed_dsrp in delayed_dsrp_stack: yield delayed_dsrp
+					del delayed_dsrp_stack[:]
+				yield dsrp
+				if dsrp.isdir(): diryield_stack.append(diryield(dsrp))
+			elif val == 1:
+				delayed_dsrp_stack.append(dsrp)
+				diryield_stack.append(diryield(dsrp))
 
 	def Iterate(self, dsrpath, rec_func, sel_func):
 		"""Return iterator yielding dsrps in dsrpath
@@ -219,7 +220,7 @@ class Select:
 
 	def iterate_with_finalizer(self):
 		"""Like Iterate, but missing some options, and add finalizer"""
-		finalize = DestructiveSteppingFinalizer()
+		finalize = IterTreeReducer(DestructiveSteppingFinalizer, ())
 		for dsrp in self:
 			yield dsrp
 			finalize(dsrp.index, dsrp)

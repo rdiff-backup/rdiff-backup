@@ -74,40 +74,37 @@ static PyObject *c_make_file_dict(self, args)
 	else if S_ISDIR(mode) strcpy(filetype, "dir");
 	else if S_ISSOCK(mode) strcpy(filetype, "sock");
 	else strcpy(filetype, "fifo");
-	return Py_BuildValue("{s:s,s:N,s:l,s:l,s:l,s:N,s:N,s:l,s:N,s:N}",
-						 "type", filetype,
-						 "size", size,
-						 "perms", perms,
-						 "uid", (long)sbuf.st_uid,
-						 "gid", (long)sbuf.st_gid,
-						 "inode", inode,
-						 "devloc", devloc,
-						 "nlink", (long)sbuf.st_nlink,
-						 "mtime", mtime,
-						 "atime", atime);
+	return_val =  Py_BuildValue("{s:s,s:O,s:l,s:l,s:l,s:O,s:O,s:l,s:O,s:O}",
+								"type", filetype,
+								"size", size,
+								"perms", perms,
+								"uid", (long)sbuf.st_uid,
+								"gid", (long)sbuf.st_gid,
+								"inode", inode,
+								"devloc", devloc,
+								"nlink", (long)sbuf.st_nlink,
+								"mtime", mtime,
+								"atime", atime);
   } else if S_ISLNK(mode) {
 	/* Symbolic links */
 	char linkname[1024];
 	int len_link = readlink(filename, linkname, 1023);
 	if (len_link < 0) {
 	  PyErr_SetFromErrno(PyExc_OSError);
-	  return NULL;
+	  return_val = NULL;
+	} else {
+	  linkname[len_link] = '\0';
+	  return_val = Py_BuildValue("{s:s,s:O,s:l,s:l,s:l,s:O,s:O,s:l,s:s}",
+								 "type", "sym",
+								 "size", size,
+								 "perms", perms,
+								 "uid", (long)sbuf.st_uid,
+								 "gid", (long)sbuf.st_gid,
+								 "inode", inode,
+								 "devloc", devloc,
+								 "nlink", (long)sbuf.st_nlink,
+								 "linkname", linkname);
 	}
-
-	linkname[len_link] = '\0';
-	return_val = Py_BuildValue("{s:s,s:N,s:l,s:l,s:l,s:N,s:N,s:l,s:s}",
-							   "type", "sym",
-							   "size", size,
-							   "perms", perms,
-							   "uid", (long)sbuf.st_uid,
-							   "gid", (long)sbuf.st_gid,
-							   "inode", inode,
-							   "devloc", devloc,
-							   "nlink", (long)sbuf.st_nlink,
-							   "linkname", linkname);
-	Py_DECREF(mtime);
-	Py_DECREF(atime);
-	return return_val;
   } else if (S_ISCHR(mode) || S_ISBLK(mode)) {
 	/* Device files */
 	char devtype[2];
@@ -121,7 +118,7 @@ static PyObject *c_make_file_dict(self, args)
 	int minor_num = (int)(devnums & 0xff);
 	if S_ISCHR(mode) strcpy(devtype, "c");
 	else strcpy(devtype, "b");
-	return_val = Py_BuildValue("{s:s,s:N,s:l,s:l,s:l,s:N,s:N,s:l,s:N}",
+	return_val = Py_BuildValue("{s:s,s:O,s:l,s:l,s:l,s:O,s:O,s:l,s:N}",
 							   "type", "dev",
 							   "size", size,
 							   "perms", perms,
@@ -132,19 +129,18 @@ static PyObject *c_make_file_dict(self, args)
 							   "nlink", (long)sbuf.st_nlink,
 							   "devnums", Py_BuildValue("(s,O,i)", devtype,
 														major_num, minor_num));
-	Py_DECREF(mtime);
-	Py_DECREF(atime);
-	return return_val;
+	Py_DECREF(major_num);
   } else {
 	/* Unrecognized file type - raise exception */
-	Py_DECREF(size);
-	Py_DECREF(inode);
-	Py_DECREF(devloc);
-	Py_DECREF(mtime);
-	Py_DECREF(atime);
 	PyErr_SetString(UnknownFileTypeError, filename);
-	return NULL;
+	return_val = NULL;
   }
+  Py_DECREF(size);
+  Py_DECREF(inode);
+  Py_DECREF(devloc);
+  Py_DECREF(mtime);
+  Py_DECREF(atime);
+  return return_val;
 }
 
 
