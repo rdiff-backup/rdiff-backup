@@ -1,4 +1,4 @@
-execfile("selection.py")
+execfile("destructive_stepping.py")
 
 #######################################################################
 #
@@ -43,27 +43,14 @@ class Inc:
 		
 	def makesnapshot_action(mirror, incpref):
 		"""Copy mirror to incfile, since new is quite different"""
-		if (mirror.isreg() and Globals.compression and
-			not Globals.no_compression_regexp.match(mirror.path)):
-			snapshotrp = Inc.get_inc_ext(incpref, "snapshot.gz")
-			return Robust.copy_with_attribs_action(mirror, snapshotrp, 1)
-		else:
-			snapshotrp = Inc.get_inc_ext(incpref, "snapshot")
-			return Robust.copy_with_attribs_action(mirror, snapshotrp, None)
+		snapshotrp = Inc.get_inc_ext(incpref, "snapshot")
+		return Robust.copy_with_attribs_action(mirror, snapshotrp)
 
 	def makediff_action(new, mirror, incpref):
 		"""Make incfile which is a diff new -> mirror"""
-		if (Globals.compression and
-			not Globals.no_compression_regexp.match(mirror.path)):
-			diff = Inc.get_inc_ext(incpref, "diff.gz")
-			return Robust.chain([Rdiff.write_delta_action(new, mirror,
-														  diff, 1),
-								 Robust.copy_attribs_action(mirror, diff)])
-		else: 
-			diff = Inc.get_inc_ext(incpref, "diff")
-			return Robust.chain([Rdiff.write_delta_action(new, mirror,
-														  diff, None),
-								 Robust.copy_attribs_action(mirror, diff)])
+		diff = Inc.get_inc_ext(incpref, "diff")
+		return Robust.chain([Rdiff.write_delta_action(new, mirror, diff),
+							 Robust.copy_attribs_action(mirror, diff)])
 
 	def makedir_action(mirrordir, incpref):
 		"""Make file indicating directory mirrordir has changed"""
@@ -154,14 +141,11 @@ class Inc:
 
 			"""
 			if diff_rorp:
-				if diff_rorp.isreg() and (dsrp.isreg() or
-										  diff_rorp.isflaglinked()):
+				if dsrp.isreg() and diff_rorp.isreg():
 					tf = TempFileManager.new(dsrp)
 					def init_thunk():
-						if diff_rorp.isflaglinked():
-							Hardlink.link_rp(diff_rorp, tf, dsrp)
-						else: Rdiff.patch_with_attribs_action(dsrp, diff_rorp,
-															  tf).execute()
+						Rdiff.patch_with_attribs_action(dsrp, diff_rorp,
+														tf).execute()
 						Inc.Increment_action(tf, dsrp, incpref).execute()
 					Robust.make_tf_robustaction(init_thunk, (tf,),
 												(dsrp,)).execute()

@@ -109,26 +109,15 @@ class SetConnections:
 		conn_number = len(Globals.connections)
 		conn = PipeConnection(stdout, stdin, conn_number)
 
-		cls.check_connection_version(conn, remote_cmd)
+		cls.check_connection_version(conn)
 		Log("Registering connection %d" % conn_number, 7)
 		cls.init_connection_routing(conn, conn_number, remote_cmd)
 		cls.init_connection_settings(conn)
 		return conn
 
-	def check_connection_version(cls, conn, remote_cmd):
+	def check_connection_version(cls, conn):
 		"""Log warning if connection has different version"""
-		try: remote_version = conn.Globals.get('version')
-		except ConnectionReadError, exception:
-			Log.FatalError("""%s
-
-Couldn't start up the remote connection by executing
-
-    %s
-
-Remember that, under the default settings, rdiff-backup must be
-installed in the PATH on the remote system.  See the man page for more
-information.""" % (exception, remote_cmd))
-		
+		remote_version = conn.Globals.get('version')
 		if remote_version != Globals.version:
 			Log("Warning: Local version %s does not match remote version %s."
 				% (Globals.version, remote_version), 2)
@@ -176,6 +165,7 @@ information.""" % (exception, remote_cmd))
 		writing_conn.Globals.set("isbackup_writer", 1)
 		cls.UpdateGlobal("backup_reader", reading_conn)
 		cls.UpdateGlobal("backup_writer", writing_conn)
+
 
 	def CloseConnections(cls):
 		"""Close all connections.  Run by client"""

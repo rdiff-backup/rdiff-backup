@@ -1,5 +1,5 @@
 from __future__ import generators
-execfile("manage.py")
+execfile("filelist.py")
 
 #######################################################################
 #
@@ -37,7 +37,7 @@ class HighLevel:
 
 		SourceS.set_session_info(session_info)
 		DestS.set_session_info(session_info)
-		src_init_dsiter = SourceS.split_initial_dsiter()
+		src_init_dsiter = SourceS.split_initial_dsiter(src_rpath)
 		dest_sigiter = DestS.get_sigs(dest_rpath, src_init_dsiter)
 		diffiter = SourceS.get_diffs_and_finalize(dest_sigiter)
 		DestS.patch_and_finalize(dest_rpath, diffiter, checkpoint)
@@ -53,7 +53,7 @@ class HighLevel:
 		SourceS.set_session_info(session_info)
 		DestS.set_session_info(session_info)
 		if not session_info: dest_rpath.conn.SaveState.touch_last_file()
-		src_init_dsiter = SourceS.split_initial_dsiter()
+		src_init_dsiter = SourceS.split_initial_dsiter(src_rpath)
 		dest_sigiter = DestS.get_sigs(dest_rpath, src_init_dsiter)
 		diffiter = SourceS.get_diffs_and_finalize(dest_sigiter)
 		DestS.patch_increment_and_finalize(dest_rpath, diffiter, inc_rpath)
@@ -61,22 +61,12 @@ class HighLevel:
 		dest_rpath.setdata()
 		inc_rpath.setdata()
 
-	def Restore(rest_time, mirror_base, rel_index, baseinc_tup, target_base):
+	def Restore(rest_time, mirror_base, baseinc_tup, target_base):
 		"""Like Restore.RestoreRecursive but check arguments"""
-		if (Globals.preserve_hardlinks != 0 and
-			Hardlink.retrieve_final(rest_time)):
-			Log("Hard link information found, attempting to preserve "
-				"hard links.", 4)
-			SetConnections.UpdateGlobal('preserve_hardlinks', 1)
-		else: SetConnections.UpdateGlobal('preserve_hardlinks', None)
-
 		if not isinstance(target_base, DSRPath):
 			target_base = DSRPath(target_base.conn, target_base.base,
 								  target_base.index, target_base.data)
-		if not isinstance(mirror_base, DSRPath):
-			mirror_base = DSRPath(mirror_base.conn, mirror_base.base,
-								  mirror_base.index, mirror_base.data)
-		Restore.RestoreRecursive(rest_time, mirror_base, rel_index,
+		Restore.RestoreRecursive(rest_time, mirror_base,
 								 baseinc_tup, target_base)
 
 MakeStatic(HighLevel)
@@ -88,15 +78,16 @@ class HLSourceStruct:
 	def set_session_info(cls, session_info):
 		cls._session_info = session_info
 
-	def iterate_from(cls):
+	def iterate_from(cls, rpath):
 		"""Supply more aruments to DestructiveStepping.Iterate_from"""
-		if cls._session_info is None: Globals.select_source.set_iter()
-		else: Globals.select_source.set_iter(cls._session_info.last_index)
-		return Globals.select_source
+		if cls._session_info:
+			return DestructiveStepping.Iterate_from(rpath, 1,
+									   cls._session_info.last_index)
+		else: return DestructiveStepping.Iterate_from(rpath, 1)
 
-	def split_initial_dsiter(cls):
+	def split_initial_dsiter(cls, rpath):
 		"""Set iterators of all dsrps from rpath, returning one"""
-		dsiter = cls.iterate_from()
+		dsiter = cls.iterate_from(rpath)
 		initial_dsiter1, cls.initial_dsiter2 = Iter.multiplex(dsiter, 2)
 		return initial_dsiter1
 
@@ -133,15 +124,17 @@ class HLDestinationStruct:
 	def set_session_info(cls, session_info):
 		cls._session_info = session_info
 
-	def iterate_from(cls):
+	def iterate_from(cls, rpath):
 		"""Supply more arguments to DestructiveStepping.Iterate_from"""
-		if cls._session_info is None: Globals.select_mirror.set_iter()
-		else: Globals.select_mirror.set_iter(cls._session_info.last_index)
-		return Globals.select_mirror
+		if cls._session_info:
+			return DestructiveStepping.Iterate_from(rpath, None,
+							       cls._session_info.last_index)
+		else: return DestructiveStepping.Iterate_from(rpath, None)
 
-	def split_initial_dsiter(cls):
+	def split_initial_dsiter(cls, rpath):
 		"""Set initial_dsiters (iteration of all dsrps from rpath)"""
-		result, cls.initial_dsiter2 = Iter.multiplex(cls.iterate_from(), 2)
+		dsiter = cls.iterate_from(rpath)
+		result, cls.initial_dsiter2 = Iter.multiplex(dsiter, 2)
 		return result
 
 	def get_dissimilar(cls, baserp, src_init_iter, dest_init_iter):
@@ -161,43 +154,32 @@ class HLDestinationStruct:
 
 		"""
 		collated = RORPIter.CollateIterators(src_init_iter, dest_init_iter)
-		def compare(src_rorp, dest_dsrp):
-			"""Return dest_dsrp if they are different, None if the same"""
-			if not dest_dsrp:
-				dest_dsrp = DSRPath(baserp.conn, baserp.base, src_rorp.index)
-				if dest_dsrp.lstat():
-					Log("Warning: Found unexpected destination file %s, "
-						"not processing it." % dest_dsrp.path, 2)
-					return None
-			elif (src_rorp and src_rorp == dest_dsrp and
-				  (not Globals.preserve_hardlinks or
-				   Hardlink.rorp_eq(src_rorp, dest_dsrp))):
-				return None
-			if src_rorp and src_rorp.isreg() and Hardlink.islinked(src_rorp):
-				dest_dsrp.flaglinked()
-			return dest_dsrp
-
 		def generate_dissimilar():
 			counter = 0
 			for src_rorp, dest_dsrp in collated:
-				if Globals.preserve_hardlinks:
-					if src_rorp: Hardlink.add_rorp(src_rorp, 1)
-					if dest_dsrp: Hardlink.add_rorp(dest_dsrp, None)
-				dsrp = compare(src_rorp, dest_dsrp)
-				if dsrp:
+				if not dest_dsrp:
+					dsrp = DSRPath(baserp.conn, baserp.base, src_rorp.index)
+					if dsrp.lstat():
+						Log("Warning: Found unexpected destination file %s."
+							% dsrp.path, 2)
+						if DestructiveStepping.isexcluded(dsrp, None): continue
 					counter = 0
 					yield dsrp
-				elif counter == 20:
-					placeholder = RORPath(src_rorp.index)
-					placeholder.make_placeholder()
+				elif not src_rorp or not src_rorp == dest_dsrp:
 					counter = 0
-					yield placeholder
-				else: counter += 1
+					yield dest_dsrp
+				else: # source and destinition both exist and are same
+					if counter == 20:
+						placeholder = RORPath(src_rorp.index)
+						placeholder.make_placeholder()
+						counter = 0
+						yield placeholder
+					else: counter += 1
 		return generate_dissimilar()
 
 	def get_sigs(cls, baserp, src_init_iter):
 		"""Return signatures of all dissimilar files"""
-		dest_iters1 = cls.split_initial_dsiter()
+		dest_iters1 = cls.split_initial_dsiter(baserp)
 		dissimilars = cls.get_dissimilar(baserp, src_init_iter, dest_iters1)
 		return RORPIter.Signatures(dissimilars)
 
@@ -238,13 +220,11 @@ class HLDestinationStruct:
 
 		try:
 			while 1:
-				try: dsrp = cls.check_skip_error(error_checked, dsrp)
+				try: dsrp = cls.check_skip_error(error_checked)
 				except StopIteration: break
 				if checkpoint: SaveState.checkpoint_mirror(finalizer, dsrp)
 		except: cls.handle_last_error(dsrp, finalizer)
 		finalizer.getresult()
-		if Globals.preserve_hardlinks and Globals.rbdir:
-			Hardlink.final_writedata()
 		if checkpoint: SaveState.checkpoint_remove()
 
 	def patch_increment_and_finalize(cls, dest_rpath, diffs, inc_rpath):
@@ -272,16 +252,15 @@ class HLDestinationStruct:
 
 		try:
 			while 1:
-				try: dsrp = cls.check_skip_error(error_checked, dsrp)
+				try: dsrp = cls.check_skip_error(error_checked)
 				except StopIteration: break
 				SaveState.checkpoint_inc_backup(ITR, finalizer, dsrp)
-			cls.check_skip_error(ITR.getresult, dsrp)
-			cls.check_skip_error(finalizer.getresult, dsrp)
 		except: cls.handle_last_error(dsrp, finalizer, ITR)
-		if Globals.preserve_hardlinks: Hardlink.final_writedata()
+		ITR.getresult()
+		finalizer.getresult()
 		SaveState.checkpoint_remove()
 
-	def check_skip_error(cls, thunk, dsrp):
+	def check_skip_error(cls, thunk):
 		"""Run thunk, catch certain errors skip files"""
 		try: return thunk()
 		except (IOError, OSError, SkipFileException), exp:
@@ -292,11 +271,11 @@ class HLDestinationStruct:
 							 5,  # Reported by docv (see list)
 							 13, # Permission denied IOError
 							 20, # Means a directory changed to non-dir
-							 26] # Requested by Campbell (see list) -
+							 26, # Requested by Campbell (see list) -
                                  # happens on some NT systems
+							 36] # filename too long
 				 ))):
-				Log("Skipping file because of error after %s" %
-					(dsrp and dsrp.index,), 2)
+				Log("Skipping file", 2)
 				return None
 			else: raise
 
@@ -305,8 +284,6 @@ class HLDestinationStruct:
 		Log.exception(1)
 		if ITR: SaveState.checkpoint_inc_backup(ITR, finalizer, dsrp, 1)
 		else: SaveState.checkpoint_mirror(finalizer, dsrp, 1)
-		if Globals.preserve_hardlinks:
-			Hardlink.final_checkpoint(Globals.rbdir)
 		SaveState.touch_last_file_definitive()
 		raise
 

@@ -40,7 +40,6 @@ class Logger:
 		write commands off to it.
 
 		"""
-		assert not self.log_file_open
 		for conn in Globals.connections:
 			conn.Log.open_logfile_allconn(rpath.conn)
 		rpath.conn.Log.open_logfile_local(rpath)
@@ -72,7 +71,6 @@ class Logger:
 		"""Run by logging connection - close logfile"""
 		assert self.log_file_conn is Globals.local_connection
 		assert not self.logfp.close()
-		self.log_file_local = None
 
 	def format(self, message, verbosity):
 		"""Format the message, possibly adding date information"""

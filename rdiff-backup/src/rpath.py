@@ -1,5 +1,5 @@
 execfile("connection.py")
-import os, stat, re, sys, shutil, gzip
+import os, stat, re, sys, shutil
 
 #######################################################################
 #
@@ -73,7 +73,7 @@ class RPathStatic:
 		try:
 			if rpout.conn is rpin.conn:
 				rpout.conn.shutil.copyfile(rpin.path, rpout.path)
-				rpout.setdata()
+				rpout.data = {'type': rpin.data['type']}
 				return
 		except AttributeError: pass
 		rpout.write_from_fileobj(rpin.open("rb"))
@@ -173,11 +173,28 @@ class RPathStatic:
 
 		Later versions of os.lstat return a special lstat object,
 		which can confuse the pickler and cause errors in remote
-		operations.  This has been fixed in Python 2.2.1.
+		operations.
 
 		"""
 		try: return tuple(os.lstat(filename))
 		except os.error: return None
+
+	def cmp_recursive(rp1, rp2):
+		"""True if rp1 and rp2 are at the base of same directories
+
+		Includes only attributes, no file data.  This function may not
+		be used in rdiff-backup but it comes in handy in the unit
+		tests.
+
+		"""
+		rp1.setdata()
+		rp2.setdata()
+		dsiter1, dsiter2 = map(DestructiveStepping.Iterate_with_Finalizer,
+							   [rp1, rp2], [1, None])
+		result = Iter.equal(dsiter1, dsiter2, 1)
+		for i in dsiter1: pass # make sure all files processed anyway
+		for i in dsiter2: pass
+		return result
 
 MakeStatic(RPathStatic)
 
@@ -198,20 +215,15 @@ class RORPath(RPathStatic):
 		self.file = None
 
 	def __eq__(self, other):
-		"""True iff the two rorpaths are equivalent"""
-		if self.index != other.index: return None
-
-		for key in self.data.keys(): # compare dicts key by key
-			if ((key == 'uid' or key == 'gid') and
-				(not Globals.change_ownership or self.issym())):
-				# Don't compare gid/uid for symlinks or if not change_ownership
-				pass
-			elif key == 'devloc' or key == 'inode' or key == 'nlink': pass
-			elif (not other.data.has_key(key) or
-				  self.data[key] != other.data[key]): return None
-		return 1
-
-	def __ne__(self, other): return not self.__eq__(other)
+		"""Signal two files equivalent"""
+		if not Globals.change_ownership or self.issym() and other.issym():
+			# Don't take file ownership into account when comparing
+			data1, data2 = self.data.copy(), other.data.copy()
+			for d in (data1, data2):
+				for key in ('uid', 'gid'):
+					if d.has_key(key): del d[key]
+			return self.index == other.index and data1 == data2
+		else: return self.index == other.index and self.data == other.data
 
 	def __str__(self):
 		"""Pretty print file statistics"""
@@ -312,18 +324,6 @@ class RORPath(RPathStatic):
 		"""Return modification time in seconds"""
 		return self.data['mtime']
 	
-	def getinode(self):
-		"""Return inode number of file"""
-		return self.data['inode']
-
-	def getdevloc(self):
-		"""Device number file resides on"""
-		return self.data['devloc']
-
-	def getnumlinks(self):
-		"""Number of places inode is linked to"""
-		return self.data['nlink']
-
 	def readlink(self):
 		"""Wrapper around os.readlink()"""
 		return self.data['linkname']
@@ -351,19 +351,6 @@ class RORPath(RPathStatic):
 	def set_attached_filetype(self, type):
 		"""Set the type of the attached file"""
 		self.data['filetype'] = type
-
-	def isflaglinked(self):
-		"""True if rorp is a signature/diff for a hardlink file
-
-		This indicates that a file's data need not be transferred
-		because it is hardlinked on the remote side.
-
-		"""
-		return self.data.has_key('linked')
-
-	def flaglinked(self):
-		"""Signal that rorp is a signature/diff for a hardlink file"""
-		self.data['linked'] = 1
 
 	def open(self, mode):
 		"""Return file type object if any was given using self.setfile"""
@@ -403,9 +390,6 @@ class RPath(RORPath):
 		the rpath after the base split up.  For instance ("foo",
 		"bar") for "foo/bar" (no base), and ("local", "bin") for
 		"/usr/local/bin" if the base is "/usr".
-
-		For the root directory "/", the index is empty and the base is
-		"/".
 
 		"""
 		self.conn = connection
@@ -463,9 +447,6 @@ class RPath(RORPath):
 		data['perms'] = stat.S_IMODE(mode)
 		data['uid'] = statblock[stat.ST_UID]
 		data['gid'] = statblock[stat.ST_GID]
-		data['inode'] = statblock[stat.ST_INO]
-		data['devloc'] = statblock[stat.ST_DEV]
-		data['nlink'] = statblock[stat.ST_NLINK]
 
 		if not (type == 'sym' or type == 'dev'):
 			# mtimes on symlinks and dev files don't work consistently
@@ -490,6 +471,9 @@ class RPath(RORPath):
 
 	def _getdevnums(self):
 		"""Return tuple for special file (major, minor)"""
+		if Globals.exclude_device_files:
+			# No point in finding numbers because it will be excluded anyway
+			return ()
 		s = self.conn.reval("lambda path: os.lstat(path).st_rdev", self.path)
 		return (s >> 8, s & 0xff)
 
@@ -536,11 +520,6 @@ class RPath(RORPath):
 		self.conn.os.symlink(linktext, self.path)
 		self.setdata()
 		assert self.issym()
-
-	def hardlink(self, linkpath):
-		"""Make self into a hardlink joined to linkpath"""
-		self.conn.os.link(linkpath, self.path)
-		self.setdata()
 
 	def mkfifo(self):
 		"""Make a fifo at self.path"""
@@ -596,9 +575,10 @@ class RPath(RORPath):
 			def helper(dsrp, base_init_output, branch_reduction):
 				if dsrp.isdir(): dsrp.rmdir()
 				else: dsrp.delete()
+			dsiter = DestructiveStepping.Iterate_from(self, None)
 			itm = IterTreeReducer(lambda x: None, lambda x,y: None, None,
 								  helper)
-			for dsrp in Select(self, None).set_iter(): itm(dsrp)
+			for dsrp in dsiter: itm(dsrp)
 			itm.getresult()
 		else: self.conn.os.unlink(self.path)
 		self.setdata()
@@ -647,75 +627,44 @@ class RPath(RORPath):
 		"""Return similar RPath but with new index"""
 		return self.__class__(self.conn, self.base, index)
 
-	def open(self, mode, compress = None):
-		"""Return open file.  Supports modes "w" and "r".
+	def open(self, mode):
+		"""Return open file.  Supports modes "w" and "r"."""
+		return self.conn.open(self.path, mode)
 
-		If compress is true, data written/read will be gzip
-		compressed/decompressed on the fly.
-
-		"""
-		if compress: return self.conn.gzip.GzipFile(self.path, mode)
-		else: return self.conn.open(self.path, mode)
-
-	def write_from_fileobj(self, fp, compress = None):
-		"""Reads fp and writes to self.path.  Closes both when done
-
-		If compress is true, fp will be gzip compressed before being
-		written to self.
-
-		"""
+	def write_from_fileobj(self, fp):
+		"""Reads fp and writes to self.path.  Closes both when done"""
 		Log("Writing file object to " + self.path, 7)
 		assert not self.lstat(), "File %s already exists" % self.path
-		outfp = self.open("wb", compress = compress)
+		outfp = self.open("wb")
 		RPath.copyfileobj(fp, outfp)
 		if fp.close() or outfp.close():
 			raise RPathException("Error closing file")
 		self.setdata()
 
 	def isincfile(self):
-		"""Return true if path looks like an increment file
-
-		Also sets various inc information used by the *inc* functions.
-
-		"""
-		if self.index: dotsplit = self.index[-1].split(".")
-		else: dotsplit = self.base.split(".")
-		if dotsplit[-1] == "gz":
-			compressed = 1
-			if len(dotsplit) < 4: return None
-			timestring, ext = dotsplit[-3:-1]
-		else:
-			compressed = None
-			if len(dotsplit) < 3: return None
-			timestring, ext = dotsplit[-2:]
+		"""Return true if path looks like an increment file"""
+		dotsplit = self.path.split(".")
+		if len(dotsplit) < 3: return None
+		timestring, ext = dotsplit[-2:]
 		if Time.stringtotime(timestring) is None: return None
-		if not (ext == "snapshot" or ext == "dir" or
-				ext == "missing" or ext == "diff"): return None
-		self.inc_timestr = timestring
-		self.inc_compressed = compressed
-		self.inc_type = ext
-		if compressed: self.inc_basestr = ".".join(dotsplit[:-3])
-		else: self.inc_basestr = ".".join(dotsplit[:-2])
-		return 1
-
-	def isinccompressed(self):
-		"""Return true if inc file is compressed"""
-		return self.inc_compressed
+		return (ext == "snapshot" or ext == "dir" or
+				ext == "missing" or ext == "diff")
 
 	def getinctype(self):
 		"""Return type of an increment file"""
-		return self.inc_type
+		return self.path.split(".")[-1]
 
 	def getinctime(self):
 		"""Return timestring of an increment file"""
-		return self.inc_timestr
+		return self.path.split(".")[-2]
 	
 	def getincbase(self):
 		"""Return the base filename of an increment file in rp form"""
 		if self.index:
 			return self.__class__(self.conn, self.base, self.index[:-1] +
-								  (self.inc_basestr,))
-		else: return self.__class__(self.conn, self.inc_basestr)
+							 ((".".join(self.index[-1].split(".")[:-2])),))
+		else: return self.__class__(self.conn,
+									".".join(self.base.split(".")[:-2]), ())
 
 	def getincbase_str(self):
 		"""Return the base filename string of an increment file"""

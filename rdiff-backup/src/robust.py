@@ -1,5 +1,5 @@
 import tempfile
-execfile("hardlink.py")
+execfile("rpath.py")
 
 #######################################################################
 #
@@ -142,14 +142,13 @@ class Robust:
 				tfl[0].rename(rpout)
 		return RobustAction(init, final, lambda e: tfl[0] and tfl[0].delete())
 
-	def copy_with_attribs_action(rorpin, rpout, compress = None):
+	def copy_with_attribs_action(rorpin, rpout):
 		"""Like copy_action but also copy attributes"""
 		tfl = [None] # Need mutable object that init and final can access
 		def init(): 
 			if not (rorpin.isdir() and rpout.isdir()): # already a dir
 				tfl[0] = TempFileManager.new(rpout)
-				if rorpin.isreg():
-					tfl[0].write_from_fileobj(rorpin.open("rb"), compress)
+				if rorpin.isreg(): tfl[0].write_from_fileobj(rorpin.open("rb"))
 				else: RPath.copy(rorpin, tfl[0])
 				if tfl[0].lstat(): # Some files, like sockets, won't be created
 					RPathStatic.copy_attribs(rorpin, tfl[0])
@@ -259,16 +258,6 @@ class TempFile(RPath):
 				rp_dest.chmod(self.getperms())
 				self.chmod(0700)
 		RPathStatic.rename(self, rp_dest)
-
-		# Sometimes this just seems to fail silently, as in one
-		# hardlinked twin is moved over the other.  So check to make
-		# sure below.
-		self.setdata()
-		if self.lstat():
-			rp_dest.delete()
-			RPathStatic.rename(self, rp_dest)
-			self.setdata()
-			if self.lstat(): raise OSError("Cannot rename tmp file correctly")
 		TempFileManager.remove_listing(self)
 
 	def delete(self):
@@ -294,8 +283,7 @@ class SaveState:
 			return Globals.backup_writer.SaveState.init_filenames(incrementing)
 
 		assert Globals.local_connection is Globals.rbdir.conn, \
-			   (Globals.rbdir.conn, Globals.backup_writer)
-
+			   Globals.rbdir.conn
 		if incrementing: cls._last_file_sym = Globals.rbdir.append(
 			"last-file-incremented.%s.snapshot" % Time.curtimestr)
 		else: cls._last_file_sym = Globals.rbdir.append(
@@ -308,7 +296,7 @@ class SaveState:
 	def touch_last_file(cls):
 		"""Touch last file marker, indicating backup has begun"""
 		if not cls._last_file_sym.lstat(): cls._last_file_sym.touch()
-
+		
 	def touch_last_file_definitive(cls):
 		"""Create last-file-definitive marker
 
@@ -374,7 +362,6 @@ class SaveState:
 	def checkpoint_remove(cls):
 		"""Remove all checkpointing data after successful operation"""
 		for rp in Resume.get_relevant_rps(): rp.delete()
-		if Globals.preserve_hardlinks: Hardlink.remove_all_checkpoints()
 
 MakeClass(SaveState)
 
@@ -394,7 +381,6 @@ class Resume:
 		specified.
 
 		"""
-		assert Globals.isbackup_writer
 		if Time.prevtime > later_than: return Time.prevtime # usual case
 
 		for si in cls.get_sis_covering_index(index):
@@ -521,11 +507,6 @@ class Resume:
 				Log("Resuming aborted backup dated %s" %
 					Time.timetopretty(si.time), 2)
 				Time.setcurtime(si.time)
-				if Globals.preserve_hardlinks:
-					if (not si.last_definitive or not
-						Hardlink.retrieve_checkpoint(Globals.rbdir, si.time)):
-						Log("Hardlink information not successfully "
-							"recovered.", 2)
 				return si
 			else:
 				Log("Last backup dated %s was aborted, but we aren't "

@@ -1,4 +1,4 @@
-Summary: Convenient and transparent local/remote incremental mirror/backup
+Summary: A backup prog that combines mirroring with incremental backup
 Name: rdiff-backup
 Release: 1
 URL: http://www.stanford.edu/~bescoto/rdiff-backup/

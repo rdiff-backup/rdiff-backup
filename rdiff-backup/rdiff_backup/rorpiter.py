@@ -1,6 +1,6 @@
 execfile("robust.py")
 from __future__ import generators
-import tempfile, UserList
+import tempfile
 
 #######################################################################
 #
@@ -61,9 +61,7 @@ class RORPIter:
 			if rp.isplaceholder(): yield rp
 			else:
 				rorp = rp.getRORPath()
-				if rp.isreg():
-					if rp.isflaglinked(): rorp.flaglinked()
-					else: rorp.setfile(Rdiff.get_signature(rp))
+				if rp.isreg(): rorp.setfile(Rdiff.get_signature(rp))
 				yield rorp
 
 	def GetSignatureIter(base_rp):
@@ -174,12 +172,7 @@ class RORPIter:
 
 	def diffonce(sig_rorp, new_rp):
 		"""Return one diff rorp, based from signature rorp and orig rp"""
-		if sig_rorp and Globals.preserve_hardlinks and sig_rorp.isflaglinked():
-			if new_rp: diff_rorp = new_rp.getRORPath()
-			else: diff_rorp = RORPath(sig_rorp.index)
-			diff_rorp.flaglinked()
-			return diff_rorp
-		elif sig_rorp and sig_rorp.isreg() and new_rp and new_rp.isreg():
+		if sig_rorp and sig_rorp.isreg() and new_rp and new_rp.isreg():
 			diff_rorp = new_rp.getRORPath()
 			diff_rorp.setfile(Rdiff.get_delta_sigfileobj(sig_rorp.open("rb"),
 														 new_rp))
@@ -208,12 +201,7 @@ class RORPIter:
 		if not diff_rorp.lstat():
 			return RobustAction(lambda: None, basisrp.delete, lambda e: None)
 
-		if Globals.preserve_hardlinks and diff_rorp.isflaglinked():
-			if not basisrp: basisrp = base_rp.new_index(diff_rorp.index)
-			return RobustAction(lambda: None,
-								lambda: Hardlink.link_rp(diff_rorp, basisrp),
-								lambda e: None)
-		elif basisrp and basisrp.isreg() and diff_rorp.isreg():
+		if basisrp and basisrp.isreg() and diff_rorp.isreg():
 			assert diff_rorp.get_attached_filetype() == 'diff'
 			return Rdiff.patch_with_attribs_action(basisrp, diff_rorp)
 		else: # Diff contains whole file, just copy it over
@@ -224,7 +212,7 @@ MakeStatic(RORPIter)
 
 
 
-class IndexedTuple(UserList.UserList):
+class IndexedTuple:
 	"""Like a tuple, but has .index
 
 	This is used by CollateIterator above, and can be passed to the
@@ -238,15 +226,9 @@ class IndexedTuple(UserList.UserList):
 	def __len__(self): return len(self.data)
 
 	def __getitem__(self, key):
-		"""This only works for numerical keys (easier this way)"""
+		"""This only works for numerical keys (faster that way)"""
 		return self.data[key]
 
-	def __lt__(self, other): return self.__cmp__(other) == -1
-	def __le__(self, other): return self.__cmp__(other) != 1
-	def __ne__(self, other): return not self.__eq__(other)
-	def __gt__(self, other): return self.__cmp__(other) == 1
-	def __ge__(self, other): return self.__cmp__(other) != -1
-	
 	def __cmp__(self, other):
 		assert isinstance(other, IndexedTuple)
 		if self.index < other.index: return -1
@@ -261,4 +243,6 @@ class IndexedTuple(UserList.UserList):
 		else: return None
 
 	def __str__(self):
-		return  "(%s).%s" % (", ".join(map(str, self.data)), self.index)
+		assert len(self.data) == 2
+		return "(%s, %s).%s" % (str(self.data[0]), str(self.data[1]),
+								str(self.index))

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-execfile("setconnections.py")
+execfile("highlevel.py")
 import getopt, sys, re
 
 #######################################################################
@@ -13,29 +13,21 @@ class Main:
 		self.action = None
 		self.remote_cmd, self.remote_schema = None, None
 		self.force = None
-		self.select_opts, self.select_mirror_opts = [], []
+		self.exclude_regstrs = ["/proc"]
+		self.exclude_mirror_regstrs = []
 
 	def parse_cmdlineoptions(self):
 		"""Parse argument list and set global preferences"""
-		def sel_fl(filename):
-			"""Helper function for including/excluding filelists below"""
-			try: return open(filename, "r")
-			except IOError: Log.FatalError("Error opening file %s" % filename)
-
-		try: optlist, self.args = getopt.getopt(sys.argv[1:], "blmsv:V",
-			 ["backup-mode", "change-source-perms",
-			  "checkpoint-interval=", "current-time=", "exclude=",
-			  "exclude-device-files", "exclude-filelist=",
-			  "exclude-filelist-stdin", "exclude-mirror=",
-			  "exclude-regexp=", "force", "include=",
-			  "include-filelist=", "include-filelist-stdin",
-			  "include-regexp=", "list-increments", "mirror-only",
-			  "no-compression", "no-compression-regexp=",  
-			  "no-hard-links", "no-resume", "remote-cmd=",
-			  "remote-schema=", "remove-older-than=", "resume",
-			  "resume-window=", "server", "terminal-verbosity=",
-			  "test-server", "verbosity", "version",
-			  "windows-time-format"])
+		try: optlist, self.args = getopt.getopt(sys.argv[1:], "blmv:Vs",
+			 ["backup-mode", "version", "verbosity=", "exclude=",
+			  "exclude-mirror=", "server", "test-server",
+			  "remote-cmd=", "mirror-only", "force",
+			  "change-source-perms", "list-increments",
+			  "remove-older-than=", "remote-schema=",
+			  "include-from-stdin", "terminal-verbosity=",
+			  "exclude-device-files", "resume", "no-resume",
+			  "resume-window=", "windows-time-format",
+			  "checkpoint-interval="])
 		except getopt.error:
 			self.commandline_error("Error parsing commandline options")
 
@@ -45,35 +37,16 @@ class Main:
 				Globals.set('change_source_perms', 1)
 			elif opt == "--checkpoint-interval":
 				Globals.set_integer('checkpoint_interval', arg)
-			elif opt == "--current-time":
-				Globals.set_integer('current_time', arg)
-			elif opt == "--exclude": self.select_opts.append((opt, arg))
+			elif opt == "--exclude": self.exclude_regstrs.append(arg)
 			elif opt == "--exclude-device-files":
-				self.select_opts.append((opt, arg))
-			elif opt == "--exclude-filelist":
-				self.select_opts.append((opt, (arg, sel_fl(arg))))
-			elif opt == "--exclude-filelist-stdin":
-				self.select_opts.append(("--exclude-filelist",
-										 ("standard input", sys.stdin)))
+				Globals.set('exclude_device_files', 1)
 			elif opt == "--exclude-mirror":
-				self.select_mirror_opts.append(("--exclude", arg))
-			elif opt == "--exclude-regexp": self.select_opts.append((opt, arg))
+				self.exclude_mirror_regstrs.append(arg)
 			elif opt == "--force": self.force = 1
-			elif opt == "--include": self.select_opts.append((opt, arg))
-			elif opt == "--include-filelist":
-				self.select_opts.append((opt, (arg, sel_fl(arg))))
-			elif opt == "--include-filelist-stdin":
-				self.select_opts.append(("--include-filelist",
-										 ("standard input", sys.stdin)))
-			elif opt == "--include-regexp":
-				self.select_opts.append((opt, arg))
+			elif opt == "--include-from-stdin": Globals.include_from_stdin = 1
 			elif opt == "-l" or opt == "--list-increments":
 				self.action = "list-increments"
 			elif opt == "-m" or opt == "--mirror-only": self.action = "mirror"
-			elif opt == "--no-compression": Globals.set("compression", None)
-			elif opt == "--no-compression-regexp":
-				Globals.set("no_compression_regexp_string", arg)
-			elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 			elif opt == '--no-resume': Globals.resume = 0
 			elif opt == "--remote-cmd": self.remote_cmd = arg
 			elif opt == "--remote-schema": self.remote_schema = arg
@@ -127,7 +100,7 @@ class Main:
 		sys.exit(1)
 
 	def misc_setup(self, rps):
-		"""Set default change ownership flag, umask, relay regexps"""
+		"""Set default change ownership flag, umask, excludes"""
 		if ((len(rps) == 2 and rps[1].conn.os.getuid() == 0) or
 			(len(rps) < 2 and os.getuid() == 0)):
 			# Allow change_ownership if destination connection is root
@@ -136,11 +109,10 @@ class Main:
 			for rp in rps: rp.setdata() # Update with userinfo
 
 		os.umask(077)
-
-		# This is because I originally didn't think compiled regexps
-		# could be pickled, and so must be compiled on remote side.
-		Globals.postset_regexp('no_compression_regexp',
-							   Globals.no_compression_regexp_string)
+		for regex_string in self.exclude_regstrs:
+			Globals.add_regexp(regex_string, None)
+		for regex_string in self.exclude_mirror_regstrs:
+			Globals.add_regexp(regex_string, 1)
 
 	def take_action(self, rps):
 		"""Do whatever self.action says"""
@@ -149,9 +121,12 @@ class Main:
 		elif self.action == "backup": self.Backup(rps[0], rps[1])
 		elif self.action == "restore": apply(self.Restore, rps)
 		elif self.action == "mirror": self.Mirror(rps[0], rps[1])
-		elif self.action == "test-server": SetConnections.TestConnections()
-		elif self.action == "list-increments": self.ListIncrements(rps[0])
-		elif self.action == "remove-older-than": self.RemoveOlderThan(rps[0])
+		elif self.action == "test-server":
+			SetConnections.TestConnections()
+		elif self.action == "list-increments":
+			self.ListIncrements(rps[0])
+		elif self.action == "remove-older-than":
+			self.RemoveOlderThan(rps[0])
 		else: raise AssertionError("Unknown action " + self.action)
 
 	def cleanup(self):
@@ -191,9 +166,8 @@ rdiff-backup with the --force option if you want to mirror anyway.""" %
 	def Backup(self, rpin, rpout):
 		"""Backup, possibly incrementally, src_path to dest_path."""
 		SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
-		self.backup_init_select(rpin, rpout)
 		self.backup_init_dirs(rpin, rpout)
-		Time.setcurtime(Globals.current_time)
+		Time.setcurtime()
 		RSI = Globals.backup_writer.Resume.ResumeCheck()
 		if self.prevtime:
 			Time.setprevtime(self.prevtime)
@@ -203,11 +177,6 @@ rdiff-backup with the --force option if you want to mirror anyway.""" %
 			SaveState.init_filenames(None)
 			HighLevel.Mirror(rpin, rpout, 1, RSI)
 		self.backup_touch_curmirror(rpin, rpout)
-
-	def backup_init_select(self, rpin, rpout):
-		"""Create Select objects on source and dest connections"""
-		rpin.conn.Globals.set_select(1, rpin, self.select_opts)
-		rpout.conn.Globals.set_select(None, rpout, self.select_mirror_opts)
 
 	def backup_init_dirs(self, rpin, rpout):
 		"""Make sure rpin and rpout are valid, init data dir and logging"""
@@ -230,11 +199,8 @@ rdiff-backup with the --force option if you want to mirror anyway.""" %
 													 "increments"))
 		self.prevtime = self.backup_get_mirrortime()
 
-		if rpout.lstat():
-			if rpout.isdir() and not rpout.listdir(): # rpout is empty dir
-				rpout.chmod(0700) # just make sure permissions aren't too lax
-			elif not self.datadir.lstat() and not self.force:
-				Log.FatalError(
+		if rpout.lstat() and not self.datadir.lstat() and not self.force:
+			Log.FatalError(
 """Destination directory %s exists, but does not look like a
 rdiff-backup directory.  Running rdiff-backup like this could mess up
 what is currently in it.  If you want to overwrite it, run
@@ -245,6 +211,8 @@ rdiff-backup with the --force option.""" % rpout.path)
 			except os.error:
 				Log.FatalError("Unable to create directory %s" % rpout.path)
 		if not self.datadir.lstat(): self.datadir.mkdir()
+		Globals.add_regexp(self.datadir.path, 1)
+		Globals.add_regexp(rpin.append("rdiff-backup-data").path, None)
 		if Log.verbosity > 0:
 			Log.open_logfile(self.datadir.append("backup.log"))
 		self.backup_warn_if_infinite_regress(rpin, rpout)
@@ -258,8 +226,8 @@ rdiff-backup with the --force option.""" % rpout.path)
 				(rpin.path == "." and rpout.path[0] != '/' and
 				 rpout.path[:2] != '..')):
 				# Just a few heuristics, we don't have to get every case
-				if Globals.backup_reader.Globals.select_source \
-				   .Select(rpout): Log(
+				if not DestructiveStepping.isexcluded(rpout, 1):
+					Log(
 """Warning: The destination directory '%s' may be contained in the
 source directory '%s'.  This could cause an infinite regress.  You
 may need to use the --exclude option.""" % (rpout.path, rpin.path), 2)
@@ -281,7 +249,7 @@ may need to use the --exclude option.""" % (rpout.path, rpin.path), 2)
 """Warning: duplicate current_mirror files found.  Perhaps something
 went wrong during your last backup?  Using """ + mirrorrps[-1].path, 2)
 
-		timestr = mirrorrps[-1].getinctime()
+		timestr = self.datadir.append(mirrorrps[-1].path).getinctime()
 		return Time.stringtotime(timestr)
 	
 	def backup_touch_curmirror(self, rpin, rpout):
@@ -302,12 +270,11 @@ went wrong during your last backup?  Using """ + mirrorrps[-1].path, 2)
 		"""Main restoring function - take src_path to dest_path"""
 		Log("Starting Restore", 5)
 		rpin, rpout = self.restore_check_paths(src_rp, dest_rp)
-		self.restore_init_select(rpin, rpout)
 		inc_tup = self.restore_get_inctup(rpin)
-		mirror_base, mirror_rel_index = self.restore_get_mirror(rpin)
+		mirror_base = self.restore_get_mirror(rpin)
 		rtime = Time.stringtotime(rpin.getinctime())
 		Log.open_logfile(self.datadir.append("restore.log"))
-		HighLevel.Restore(rtime, mirror_base, mirror_rel_index, inc_tup, rpout)
+		HighLevel.Restore(rtime, mirror_base, inc_tup, rpout)
 
 	def restore_check_paths(self, rpin, rpout):
 		"""Check paths and return pair of corresponding rps"""
@@ -326,17 +293,6 @@ Try restoring from an increment file (the filenames look like
 						   "Will not overwrite." % rpout.path)
 		return rpin, rpout
 
-	def restore_init_select(self, rpin, rpout):
-		"""Initialize Select
-
-		Unlike the backup selections, here they are on the local
-		connection, because the backup operation is pipelined in a way
-		the restore operation isn't.
-
-		"""
-		Globals.set_select(1, rpin, self.select_mirror_opts) 
-		Globals.set_select(None, rpout, self.select_opts)
-
 	def restore_get_inctup(self, rpin):
 		"""Return increment tuple (incrp, list of incs)"""
 		rpin_dir = rpin.dirsplit()[0]
@@ -350,16 +306,13 @@ Try restoring from an increment file (the filenames look like
 		return IndexedTuple((), (incbase, inclist))
 
 	def restore_get_mirror(self, rpin):
-		"""Return (mirror file, relative index) and set the data dir
+		"""Return mirror file and set the data dir
 
 		The idea here is to keep backing up on the path until we find
 		something named "rdiff-backup-data".  Then use that as a
 		reference to calculate the oldfile.  This could fail if the
 		increment file is pointed to in a funny way, using symlinks or
 		somesuch.
-
-		The mirror file will have index (), so also return the index
-		relative to the rootrp.
 
 		"""
 		pathcomps = os.path.join(rpin.conn.os.getcwd(),
@@ -370,7 +323,8 @@ Try restoring from an increment file (the filenames look like
 				break
 		else: Log.FatalError("Unable to find rdiff-backup-data dir")
 
-		Globals.rbdir = self.datadir = datadirrp
+		self.datadir = datadirrp
+		Globals.add_regexp(self.datadir.path, 1)
 		rootrp = RPath(rpin.conn, "/".join(pathcomps[:i]))
 		if not rootrp.lstat():
 			Log.FatalError("Root of mirror area %s does not exist" %
@@ -378,12 +332,14 @@ Try restoring from an increment file (the filenames look like
 		else: Log("Using root mirror %s" % rootrp.path, 6)
 
 		from_datadir = pathcomps[i+1:]
-		if not from_datadir: raise RestoreError("Problem finding mirror file")
-		rel_index = tuple(from_datadir[1:])
-		mirrorrp = RPath(rootrp.conn,
-						 apply(os.path.join, (rootrp.path,) + rel_index))
-		Log("Using mirror file %s" % mirrorrp.path, 6)
-		return (mirrorrp, rel_index)
+		if len(from_datadir) == 1: result = rootrp
+		elif len(from_datadir) > 1:
+			result = RPath(rootrp.conn, apply(os.path.join,
+									      [rootrp.path] + from_datadir[1:]))
+		else: raise RestoreError("Problem finding mirror file")
+
+		Log("Using mirror file %s" % result.path, 6)
+		return result
 
 
 	def ListIncrements(self, rootrp):
@@ -440,6 +396,6 @@ Try finding the increments first using --list-increments.""")
 
 
 
-if __name__ == "__main__" and not globals().has_key('__no_execute__'):
+if __name__ == "__main__":
 	Globals.Main = Main()
 	Globals.Main.Main()

@@ -8,12 +8,8 @@ import re, os
 class Globals:
 
 	# The current version of rdiff-backup
-	version = "0.7.3"
+	version = "0.6.1"
 	
-	# If this is set, use this value in seconds as the current time
-	# instead of reading it from the clock.
-	current_time = None
-
 	# This determines how many bytes to read at a time when copying
 	blocksize = 32768
 
@@ -45,8 +41,25 @@ class Globals:
 	# If true, try to reset the atimes of the source partition.
 	preserve_atime = None
 
+	# This is a list of compiled regular expressions.  If one of them
+	# matches a file in the source area, do not process that file.
+	exclude_regexps = []
+
+	# Another list of compiled regexps; this time the file is excluded
+	# if it matches something in the destination area.
+	exclude_mirror_regexps = []
+
+	# If this is true, rdiff-backup will exclude any dev files it
+	# sees, in the same way it excludes files matching the exclude
+	# regexps.
+	exclude_device_files = None
+
 	# This will be set as soon as the LocalConnection class loads
 	local_connection = None
+
+	# If this is true, instead of processing whole directory, just
+	# examine files read in from standard input.
+	include_from_stdin = None
 
 	# All connections should be added to the following list, so
 	# further global changes can be propagated to the remote systems.
@@ -108,29 +121,6 @@ class Globals:
 	# under MS windows NT.
 	time_separator = ":"
 
-	# If true, then hardlinks will be preserved to mirror and recorded
-	# in the increments directory.  There is also a difference here
-	# between None and 0.  When restoring, None or 1 means to preserve
-	# hardlinks iff can find a hardlink dictionary.  0 means ignore
-	# hardlink information regardless.
-	preserve_hardlinks = 1
-
-	# If this is false, then rdiff-backup will not compress any
-	# increments.  Default is to compress based on regexp below.
-	compression = 1
-
-	# Increments based on files whose names match this
-	# case-insensitive regular expression won't be compressed (applies
-	# to .snapshots and .diffs).  The second below will be the
-	# compiled version of the first.
-	no_compression_regexp_string = "(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|" \
-							"jpg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
-	no_compression_regexp = None
-
-	# On the reader and writer connections, the following will be
-	# replaced by the source and mirror Select objects respectively.
-	select_source, select_mirror = None, None
-
 	def get(cls, name):
 		"""Return the value of something in this class"""
 		return cls.__dict__[name]
@@ -168,24 +158,15 @@ class Globals:
 		cls.__dict__[name][key] = val
 	set_dict_val = classmethod(set_dict_val)
 
-	def postset_regexp(cls, name, re_string, flags = None):
-		"""Compile re_string on all existing connections, set to name"""
+	def add_regexp(cls, regstr, mirror=None):
+		"""Add a regular expression to the exclude list"""
 		for conn in Globals.connections:
-			conn.Globals.postset_regexp_local(name, re_string, flags)
-	postset_regexp = classmethod(postset_regexp)
+			conn.Globals.add_regexp_local(regstr, mirror)
+	add_regexp = classmethod(add_regexp)
 
-	def postset_regexp_local(cls, name, re_string, flags):
-		"""Set name to compiled re_string locally"""
-		if flags: cls.__dict__[name] = re.compile(re_string, flags)
-		else: cls.__dict__[name] = re.compile(re_string)
-	postset_regexp_local = classmethod(postset_regexp_local)
-
-	def set_select(cls, source, dsrpath, tuplelist):
-		"""Initialize select object using tuplelist"""
-		if source:
-			cls.select_source = Select(dsrpath, 1)
-			cls.select_source.ParseArgs(tuplelist)
-		else:
-			cls.select_mirror = Select(dsrpath, None)
-			cls.select_mirror.ParseArgs(tuplelist)
-	set_select = classmethod(set_select)
+	def add_regexp_local(cls, regstr, mirror):
+		"""Add the regex only to the local Globals class"""
+		compiled = re.compile(regstr)
+		if mirror: Globals.exclude_mirror_regexps.append(compiled)
+		else: Globals.exclude_regexps.append(compiled)
+	add_regexp_local = classmethod(add_regexp_local)
