@@ -1,6 +1,6 @@
+# -*- shell-script -*-
 dnl Process this file with autoconf to produce a configure script. 
 AC_REVISION($Id$)
-# -*- shell-script -*-
 
 # Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
 
@@ -23,6 +23,8 @@ AM_CONFIG_HEADER(config.h)
 # Set up to get as many features as we can manage
 AC_DEFINE(_GNU_SOURCE)
 
+# ac2.50 complains about this next line being redundant.  I'm not
+# sure: perhaps it's still required for earlier versions?
 AC_CANONICAL_HOST
 
 dnl Checks for programs.
@@ -82,7 +84,7 @@ then
     AC_CHECK_LIB(popt, poptGetContext, , [with_included_popt=yes])
 fi
 
-AC_MSG_CHECKING("whether to use included libpopt")
+AC_MSG_CHECKING([whether to use included libpopt])
 if test x"$with_included_popt" = x"yes"
 then
     AC_MSG_RESULT("$srcdir/popt")
@@ -106,7 +108,7 @@ AC_ARG_ENABLE(ccmalloc,
 
 AC_ARG_ENABLE(trace,
         [  --disable-trace         turn off library tracing])
-AC_MSG_CHECKING("whether to include trace code")
+AC_MSG_CHECKING([whether to include trace code])
 if test "$enable_trace" = "yes" -o -z "$enable_trace"
 then
     AC_MSG_RESULT(yes)
@@ -116,7 +118,7 @@ then
     AC_MSG_RESULT(no)
 else
     AC_MSG_RESULT(failed)
-    AC_MSG_ERROR("--enable-trace must be set to yes or no")
+    AC_MSG_ERROR([--enable-trace must be set to yes or no])
 fi
 
 AC_CHECK_SIZEOF([unsigned char], 1)
@@ -126,12 +128,12 @@ then
 fi
 
 AC_CHECK_SIZEOF(short, 2)
-AC_CHECK_SIZEOF(unsigned short, 2)
+AC_CHECK_SIZEOF([unsigned short], 2)
 AC_CHECK_SIZEOF(int, 4)
-AC_CHECK_SIZEOF(unsigned int, 4)
+AC_CHECK_SIZEOF([unsigned int], 4)
 AC_CHECK_SIZEOF(long, 4)
-AC_CHECK_SIZEOF(unsigned long, 4)
-AC_CHECK_SIZEOF(long long, 0)
+AC_CHECK_SIZEOF([unsigned long], 4)
+AC_CHECK_SIZEOF([long long], 0)
 AC_CHECK_SIZEOF(off_t, 4)
 AC_CHECK_SIZEOF(size_t, 4)
 
