@@ -105,7 +105,6 @@ rs_emit_copy_cmd(rs_job_t *job, rs_long_t where, rs_long_t len)
     rs_stats_t     *stats = &job->stats;
     int where_bytes = rs_int_len(where);
     int len_bytes   = rs_int_len(len);
-    int bytes       = 10 * where_bytes + len_bytes;
 
     switch (10 * where_bytes + len_bytes) {
         case 88 :   cmd = RS_OP_COPY_N8_N8; break;
