@@ -27,10 +27,10 @@ do
 
     for new in $files
     do
-	run_test hsnad $origsig $new $diff $oldsig
-         hsdecode $old $newsig $out $diff 
+	run_test hsnad $origsig <$new >$diff 
+        run_test hsdecode $old $newsig $out $diff 
    
-         cmp $out $new
+        run_test cmp $out $new
    done
 done
     

@@ -102,7 +102,7 @@ _hs_check_gd_header(hs_read_fn_t ltread_fn, void *ltread_priv)
 
 
 static int
-_hs_check_checksum(hs_read_fn_t ltread_fn, void *ltread_priv,
+_hs_check_filesum(hs_read_fn_t ltread_fn, void *ltread_priv,
 		   int length, hs_mdfour_t * newsum)
 {
     char           *buf;
@@ -119,6 +119,7 @@ _hs_check_checksum(hs_read_fn_t ltread_fn, void *ltread_priv,
     hs_mdfour_result(newsum, actual_result);
 
     assert(memcmp(actual_result, buf, MD4_LENGTH) == 0);
+    _hs_trace("file checksum matches");
     free(buf);
 
     return 1;
@@ -232,7 +233,7 @@ hs_decode(int oldread_fd,
 	    stats->copy_bytes += length;
 	} else if (kind == op_kind_checksum) {
 	    _hs_trace("CHECKSUM(len=%d)", length);
-	    ret = _hs_check_checksum(ltread_fn, ltread_priv, length, &newsum);
+	    ret = _hs_check_filesum(ltread_fn, ltread_priv, length, &newsum);
 	    if (ret < 0)
 		goto out;
 	} else {

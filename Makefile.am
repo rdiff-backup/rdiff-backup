@@ -5,7 +5,7 @@
 
 CFLAGS += -W -Wall -g @DEFS@
 
-lib_LTLIBRARIES = libhsync.la libhsyncdecode.la
+lib_LTLIBRARIES = libhsync.la
 
 libhsync_la_SOURCES = dec.c enc.c \
 	emit.h emit.c \
@@ -24,25 +24,15 @@ libhsync_la_SOURCES = dec.c enc.c \
 	mksum.c sumset.c \
 	rollsum.c nad.c
 
-# compress.c compress.h 
-
-libhsyncdecode_la_SOURCES = dec.c \
-	private.h netio.c includes.h \
-	compress.c compress.h \
-	filebuf.c membuf.c ptrbuf.c \
-	inhale.c trace.c hex.c stats.c  \
-	mdfour.c fileutil.c \
-	mapptr.c mapptr.h \
-	util.c util.h
-
 test_scripts := \
+	test-tricky.sh \
 	test-chain.sh \
 	test-seqnad.sh \
 	test-md4sizes.sh \
 	test-cat.sh \
 	test-mapread.sh \
 	test-cmds.sh \
-	test-thrice.sh 
+	test-thrice.sh \
 	test-delta.sh \
 	test-seq.sh \
 	test-mappipe.sh \
@@ -54,38 +44,46 @@ test_scripts := \
 noinst_SCRIPTS = \
 	$(test_scripts)
 
-test_data=test-chain/empty-sig  \
-test-decode/01-diff \
-test-decode/01-new \
-test-decode/01-old \
-test-decode/01-sig \
-test-decode/02-diff \
-test-decode/02-new \
-test-decode/02-old \
-test-decode/02-sig \
-test-decode/03-diff \
-test-decode/03-new \
-test-decode/03-old \
-test-decode/03-sig \
-test-decode/04-diff \
-test-decode/04-new \
-test-decode/04-old \
-test-decode/04-sig \
-test-decode/05-diff \
-test-decode/05-new \
-test-decode/05-old \
-test-decode/05-sig \
-test-decode/README \
-test-encode/01-diff \
-test-encode/01-new \
-test-encode/01-out \
-test-encode/01-sig \
-test-seq/in-01 \
-test-seq/in-04 \
-test-seq/in-07 \
-test-seq/in-08 \
-test-cmds/cmds \
-test-thrice/01-data
+test_data=test-chain/empty-sig			\
+test-decode/01-diff				\
+test-decode/01-new				\
+test-decode/01-old				\
+test-decode/01-sig				\
+test-decode/02-diff				\
+test-decode/02-new				\
+test-decode/02-old				\
+test-decode/02-sig				\
+test-decode/03-diff				\
+test-decode/03-new				\
+test-decode/03-old				\
+test-decode/03-sig				\
+test-decode/04-diff				\
+test-decode/04-new				\
+test-decode/04-old				\
+test-decode/04-sig				\
+test-decode/05-diff				\
+test-decode/05-new				\
+test-decode/05-old				\
+test-decode/05-sig				\
+test-decode/README				\
+test-encode/01-diff				\
+test-encode/01-new				\
+test-encode/01-out				\
+test-encode/01-sig				\
+test-seq/in-01					\
+test-seq/in-04					\
+test-seq/in-07					\
+test-seq/in-08					\
+test-cmds/cmds					\
+test-thrice/01-data				\
+in-tricky/01					\
+in-tricky/02					\
+in-tricky/03					\
+in-tricky/04					\
+in-tricky/05					\
+in-tricky/06					\
+in-tricky/07
+
 
 # TODO: Delete the test-*.d directories when cleaning up.  Yeah! 
 CLEANFILES = test-*.d/*
@@ -108,13 +106,13 @@ hsmksum_SOURCES = hsmksum.c
 hsmksum_LDADD = libhsync.la
 
 hsmdfour_SOURCES = hsmdfour.c 
-hsmdfour_LDADD = libhsyncdecode.la
+hsmdfour_LDADD = libhsync.la
 
 hsfilebufcat_SOURCES = hsfilebufcat.c
-hsfilebufcat_LDADD = libhsyncdecode.la
+hsfilebufcat_LDADD = libhsync.la
 
 hsdecode_SOURCES = hsdecode.c
-hsdecode_LDADD = libhsyncdecode.la
+hsdecode_LDADD = libhsync.la
 
 hsencode_SOURCES = hsencode.c
 hsencode_LDADD = libhsync.la
@@ -123,10 +121,10 @@ hsemit_SOURCES = hsemit.c
 hsemit_LDADD = libhsync.la
 
 hsinhale_SOURCES = hsinhale.c
-hsinhale_LDADD = libhsyncdecode.la
+hsinhale_LDADD = libhsync.la
 
 hsmapread_SOURCES = hsmapread.c 
-hsmapread_LDADD = libhsyncdecode.la
+hsmapread_LDADD = libhsync.la
 
 # Thus spake the master programmer:
 # 

@@ -1,79 +1,28 @@
-/* -*- mode: c; c-file-style: "bsd" -*-
-
-   $Id$
-
-   private.h -- Private headers for libhsync
-
-   Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the Free 
-   Software Foundation; either version 2 of the License, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-   for more details.
-
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, write to the Free Software Foundation, Inc., 59 
-   Temple Place, Suite 330, Boston, MA 02111-1307 USA */
-
+/*				       	-*- c-file-style: "bsd" -*-
+ *
+ * $Id$
+ * 
+ * Copyright (C) 2000 by Martin Pool
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 
 
-#ifdef DO_HS_TRACE
 
-void
-_hs_trace0(char const *fmt, ...)
-#ifdef __GNUC__
-    __attribute__ ((format(printf, 1, 2)))
-#endif
-    ;
-
-#  ifdef __GNUC__
-void _hs_trace0(char const *fmt, ...)
-    __attribute__ ((format(printf, 1, 2)));
-#    define _hs_trace(fmt, arg...)			\
-    do { _hs_trace0(__FUNCTION__ ": " fmt, ##arg);	\
-    } while (0)
-#  else
-
-#    define _hs_trace _hs_trace0
-    void _hs_trace0(char const *, ...);
-#  endif /* ! __GNUC__ */
-
-#else				/* !DO_HS_TRACE */
-#define _hs_trace(s, str...)
-#endif				/* !DO_HS_TRACE */
-
-
-#define return_val_if_fail(expr, val) if (!(expr))	\
-  { fprintf(stderr, "%s(%d): %s: assertion failed\n",	\
-    __FILE__, __LINE__, __FUNCTION__); return (val); }
-
-#ifdef __GNUC__
-
-#  define _hs_fatal(s, str...) do { fprintf (stderr,	\
-    "libhsync: " __FUNCTION__ ": "			\
-    s "\n" , ##str); abort(); } while(0)
-
-#define _hs_error(s, str...) {				\
-     fprintf(stderr,					\
-	     "libhsync: " __FUNCTION__ ": " s "\n" , ##str);	\
-     } while (0)
-
-#else /* ! __GNUC__ */
-
-#  define _hs_fatal(s, str...) do { fprintf (stderr,    \
-    "libhsync: " s "\n" , ##str); abort(); } while(0)
-
-#  define _hs_error(s, str...) do { fprintf (stderr,    \
-    "libhsync: " s "\n" , ##str); } while(0)
-
-#endif /* ! __GNUC__ */
-
+#include "trace.h"
 
 /* ========================================
 

@@ -48,7 +48,10 @@
 
 /* TODO: Test this through a unix-domain socket and see what happens.
  * 
- * TODO: Optionally debug this by simulating short reads. */
+ * TODO: Optionally debug this by simulating short reads.
+ *
+ * TODO: Make the default buffer smaller and make sure we test what
+ * happens when it grows. */
 
 /* The Unix98 pread(2) function is pretty interesting: it reads data
    at a given offset, but without moving the file offset and in only a
@@ -60,7 +63,11 @@
 #define IO_BUFFER_SIZE (4092)
 
 /* We'll read data in windows of this size, unless otherwise indicated. */
+#if HS_BIG_WINDOW
 static ssize_t const DEFAULT_WINDOW_SIZE = (ssize_t) (256 * 1024);
+#else
+static ssize_t const DEFAULT_WINDOW_SIZE = (ssize_t) (16 * 1024);
+#endif
 static int const HS_MAP_TAG = 189900;
 
 
