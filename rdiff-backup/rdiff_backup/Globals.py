@@ -207,11 +207,6 @@ compare_inode = 1
 # guarantee that any changes have been committed to disk.
 fsync_directories = 1
 
-# If set, directory increments are given the same permissions as the
-# directories they represent.  Otherwise they have the default
-# permissions.
-change_dir_inc_perms = 1
-
 
 def get(name):
 	"""Return the value of something in this module"""

@@ -116,7 +116,8 @@ def MakeTar():
 					 "robust.py", "rorpiter.py", "rpath.py",
 					 "Security.py", "selection.py",
 					 "SetConnections.py", "static.py",
-					 "statistics.py", "TempFile.py", "Time.py"]:
+					 "statistics.py", "TempFile.py", "Time.py",
+					 "user_group.py"]:
 		assert not os.system("cp %s/%s %s/rdiff_backup" %
 							 (SourceDir, filename, tardir)), filename
 
