@@ -211,6 +211,36 @@ class Final(PathSetter):
 		self.set_connections(None, None, "test2/tmp/", "../../")
 		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
 
+	def testWindowsMode(self):
+		"""Test backup with the --windows-mode option"""
+		old_schema = self.rb_schema
+		self.rb_schema = old_schema + " --windows-mode "
+		self.set_connections(None, None, None, None)
+
+		self.delete_tmpdirs()
+		
+		# Back up increment2, this contains a file with colons
+		self.exec_rb(20000, 'testfiles/increment2', 'testfiles/output')
+		time.sleep(1)
+
+		# Back up increment3
+		self.exec_rb(30000, 'testfiles/increment3', 'testfiles/output')
+
+		Globals.time_separator = "_"
+		inc_paths = self.getinc_paths("increments.",
+									  "testfiles/output/rdiff-backup-data")
+		Globals.time_separator = ":"
+		assert len(inc_paths) == 1
+		# Restore increment2
+		self.exec_rb(None, inc_paths[0], 'testfiles/restoretarget2')
+		assert CompareRecursive(Local.inc2rp, Local.rpout2)
+
+		# Now check to make sure no ":" in output directory
+		popen_fp = os.popen("find testfiles/output -name '*:*' | wc")
+		wc_output = popen_fp.read()
+		popen_fp.close()
+		assert wc_output.split() == ["0", "0", "0"], wc_output
+
 
 class FinalSelection(PathSetter):
 	"""Test selection options"""
