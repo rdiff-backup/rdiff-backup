@@ -1,0 +1,913 @@
+New in v0.11.4 (2003/03/15)
+---------------------------
+
+Fixed bug incrementing sockets whose filenames were pretty long, but
+not super long.  Reported by Olivier Mueller.
+
+Added Albert Chin-A-Young's patch to add a few options to the setup.py
+install script.
+
+Apparently fixed rare utime type bug.  Thanks to Christian Skarby for
+report and testing.
+
+Added detailed file_statistics (in addition to session_statistics) as
+requested by Dean Gaudet.  Disable with --no-file-statistics option.
+
+Minor speed enhancements.
+
+
+New in v0.11.3 (2003/03/04)
+---------------------------
+
+Fixed a number of bugs reported by Olivier Mueller:
+
+	Brought some old parts of the man page up-to-date.
+
+	Fixed bug if unrecoverable error on second backup to a directory.
+
+	Fixed spurious error message that could appear after a successful
+	backup.
+
+	--print-statistics option works again (before it would silently
+	ignored).
+
+	Fixed cache pipeline overflow bug.  This error could appear on
+	large remote backups when many files have not changed.
+
+
+New in v0.11.2 (2003/03/01)
+---------------------------
+
+Fixed seg fault bug reported by a couple sparc/openbsd users.  Thanks
+to Dave Steinberg for giving me an account on his system for testing.
+
+Re-enabled --windows-mode and filename quoting.
+
+Fixed selection bug:  In 0.11.1, files which were included in one
+backup would be automatically included in the next.  Now you can
+include/exclude files session-by-session.
+
+Fixed ownership compare bug:  In 0.11.1, backups where the destination
+side was not root would preserve ownership information by recording it
+in the metadata file.  However, mere ownership changes would not
+trigger creation of new increments.  This has been fixed.
+
+Added the --no-inode-compare switch.  You probably don't need to use
+it though.
+
+If a special file cannot be created on the destination side, a 0
+length regular file will be written instead as a placeholder.
+(Restores should work fine because of the metadata file.)
+
+Yet another error handling strategy (hopefully this is the last one
+for a while, because this stuff isn't very exciting, and takes a long
+time to write):
+
+	All recoverable errors are classified into one of three groups:
+	ListErrors, UpdateErrors, and SpecialFileErrors.  rdiff-backup's
+	reaction to each error is more formally defined (see the error
+	policy page, currently at
+	http://rdiff-backup.stanford.edu/error_policy.html).
+
+	rdiff-backup makes no attempt to recover or clean up after
+	unrecoverable errors.
+
+	However, it now uses fsync() to increment the destination
+	directory in a reversable way.  If there is an error, the next
+	backup will regress the destination directory into its state
+	before the aborted backup.
+
+	The above process can be done without a backup with the
+	--check-destination-dir option.
+
+Improved error logging.  Instead of the old haphazard reporting
+method, which sometimes didn't indicate the file an error occurred on,
+now all recoverable errors are reported in a standard format and also
+written to the error_log.<time>.data file in the rdiff-backup-data
+directory.  Thanks to Dean Gaudet and others for repeatedly bugging me
+about this.
+
+
+New in v0.11.1 (2002/12/31)
+---------------------------
+
+**Warning** Various features have been removed from this version, so
+this is not a safe upgrade.  Also this version has less error
+checking, and, if it crashes, this version may be more prone to leave
+the destination directory in an inconsistent state.  I plan to look at
+these issues in the next version.  Also, this version is quite
+different from previous ones, so you cannot run version 0.11.1 on one
+end of a connection and any previous version on the other side.
+
+The following features have been removed:
+
+	--mirror-only option:  If you just want to mirror something, use
+	rsync.  (Or you could use rdiff-backup and then just delete the
+	rdiff-backup-data directory, and then update the root mtime.)
+
+	--change-source-perms option:  This feature was pretty complicated
+	to implement, and if something happened to rdiff-backup during a
+	transfer, the old permissions could not be restored.
+
+	All "resume" related functionality, like --checkpoint-interval:
+	This was complicated to implement, and didn't seem to work all
+	that well.
+
+	Directory statistics file:  Although the session statistics file is
+	still generated, the directory statistics file no longer is,
+	because the new code structure makes it less inconvenient.
+
+	The various --exclude and --include options no longer work when
+	restoring.  This may be added later if there is demand.
+
+	--windows-mode and filename quoting doesn't work.  There have been
+	several requests for this in the past, so it will probably be
+	re-added in the next version.
+
+Extensive refactoring.  A lot of rdiff-backup's code was structured as
+if it were still in one file, so it didn't make enough use of Python's
+module system.
+
+Now rdiff-backup writes metadata (uid, gid, mtime, etc.) to a
+compressed text file in the rdiff-backup-data directory.  Here are
+some ramifications:
+
+	A user does not need root access on the destination side to record
+	file ownership information.
+
+	Some files may be recognized as not having changed based on this
+	metadata, so it may not be necessary to traverse the whole mirror
+	directory.  This can reduce file access on the destination side.
+
+	Even when the --no-hard-links option is given when backing up,
+	link relationships can be restored properly.  However, if this
+	option is given, mirror files will not be linked together.
+
+	Special file types like device and sockets which cannot be created
+	on the remote side for some reason can still be backed up and
+	restored properly.
+
+Fixed bug with the --{include|exclude}-globbing-filelist options
+(reported by Claus Herwig).
+
+Added --list-changed-since option to list the files changed since the
+given date, and added Bud Bruegger's patch to that.  The format and
+information this option provides will probably change in the near
+future.
+
+Restoring is now pipelined for better high latency performance, and
+unchanged files in the target directory will not be recopied.
+
+
+New in v0.11.0 (2002/10/05)
+---------------------------
+
+If get a socket error from trying to create a socket whose name is too
+long, just skip file instead of exiting with error (bug report by Ivo
+De Decker).
+
+Added --exclude-special-files switch, which excludes fifos, symlinks,
+sockets, and device files.
+
+--windows-mode is now short for --windows-time-format --chars-to-quote
+A-Z: --no-hard-links --exclude-special-files.  Thanks to Paul-Erik
+Törrönen for some helpful windows info.
+
+Multiple --include and --exclude statements can now be given in a
+single file.  See the documentation on
+--{include|exclude}-globbing-filelist.  Thanks to Henrik Lewander for
+pointing out that command line length could otherwise be a problem.
+
+Fixed bug in filelist processing that ignored leading or trailing
+whitespace in filelists.  Now filenames with, for instance, trailing
+spaces can be used in filelists.  Filelists which took advantage of
+this bug for formatting may have to be editted.
+
+Applied major/minor patch contributed by David S.  rdiff-backup should
+now correctly copy device files on platforms such as NetBSD.
+
+It is now possible to restore from a read-only filesystem (before
+rdiff-backup would fail when trying to open log file).  Thanks to
+Gregor Zattler for bug report.
+
+Fixed bug that prevented certain restores when the source directory
+was specified with a trailing backslash.
+
+Added a bit more logging so it should be apparent which file was being
+processed when an error occurs (thanks to Gerd Knops for suggestion).
+
+Fixed bug when using --chars-to-quote and directory deleted that has
+quoted characters in it.
+
+
+New in v0.10.1 (2002/09/16)
+---------------------------
+
+rdiff-backup should now correctly handle files larger than 2GB.
+Thanks to Russ Allbery for telling me how to do this.
+
+
+New in v0.10.0 (2002/09/10)
+---------------------------
+
+Fixed bug, probably introduced in 0.9.3, which prevented restores from
+a local source to a remote destination.  Reported by Phillip Eby.
+
+Fixed another bug reported by Phillip Eby, where restores would fail
+if rdiff-backup had only been run once and no increments were
+available.
+
+A few man page additions regarding restoring, statistics, and
+--test-server (thanks to Gregor Zattler, Christopher Schanzle, and
+Tobias Polzin for suggestions).
+
+Fixed comparison bug where rdiff-backup would unnecessarily report a
+directory as changed when its source size differed from its mirror
+size.  Thanks to Tim Allen for report.
+
+
+New in v0.9.5 (2002/08/09)
+--------------------------
+
+Fixed --verbosity option (now both -v and --verbosity work).  Thanks
+to Chris Dumont for report.
+
+****** IMPORTANT ****** Fixed serious permissions bug found by Robert
+Weber.  Previous versions in the 0.9.x branch would throw away high
+bit permissions (like the setuid and setuid bits).  This would be
+especially bad when running with the --change-source-perms operation.
+Anyone running 0.9.0 - 0.9.4 should upgrade immediately.
+
+Complain about --change-source-perms when running as root, as this
+option should not be necessary then.
+
+Fixed bug with --windows-mode.  Thanks to Chris Grindstaff for report.
+
+
+New in v0.9.4 (2002/07/24)
+--------------------------
+
+Man page now correctly included in rpm.
+
+To prevent confusion, rdiff-backup script does not have exec
+permissions until it is installed (thanks Jason Piterak).
+
+Sockets are now replicated.  Why not?  (Suggestion by Mickey Everts)
+
+Bad resuming information (because, say, it is left over from a
+previous version) should no longer cause exit, except when --resume is
+specified.
+
+Better error handling in certain cases when errors occur in file reads
+(thanks to John Goerzen for report).
+
+
+New in v0.9.3 (2002/07/15)
+--------------------------
+
+Added --sleep-ratio option after hearing that rdiff-backup was too
+hard on hard disks (thanks to Steve Alexander for the suggestion).
+Quick example:  --sleep-ratio 0.25 makes rdiff-backup sleep about 25%
+of the time.  Maybe this will help on bandwidth usage also.
+
+Fixed -m/--mirror-only option.
+
+Added --exclude-other-filesystems option.  Thanks to Paul Wouters for
+the suggestion.
+
+Added convenience field TotalDestinationSizeChange (total change in
+destination directory - mirror change + increments change) to
+session_statistics file.
+
+Handle a particular situation better where a file changes in a certain
+way while rdiff-backup is processing it.  Before rdiff-backup would
+just crash; now it skips the file.  Thanks to Scott Bender for the bug
+report.
+
+A couple interface fixes to --remove-older-than.
+
+Added some security features to the protocol, so rdiff-backup will now
+only allow commands from remote connections.  The extra security will
+be enabled automatically on the client (it knows what to expect), but
+the extra switches --restrict, --restrict-update-only, and
+--restrict-read-only have been added for use with --server.
+
+
+New in v0.9.2 (2002/06/27)
+--------------------------
+
+Interface directly with librsync(.a|.so) instead of running "rdiff"
+command line utility.  This can significant save fork()ing time when
+processing lots of smallish files that have changed.  Also, rdiff is
+no longer required to be in the PATH.
+
+Further speed optimizations, mostly reducing CPU consumption when
+scanning through unchanged files.
+
+Fixed Path bug which could caused globbing and regexp include/exclude
+statements to malfunction when the base of the source directory was
+"/" (root of filesystem).  Thanks to Vlastimil Adamovsky for noting
+this bug.
+
+Added quoting for spaces in directory_statistics file, hopefully
+making it easier to parse.
+
+
+New in v0.9.1 (2002/06/19)
+--------------------------
+
+Fixed some bad C.  Besides being unportable and leaking memory, it may
+have lead to someone's backup directory getting deleted (?).
+
+Tweaked some error recovery code to make it more like 0.8.0.
+
+Improved the installation a bit.
+
+
+New in v0.9.0 (2002/06/17)
+--------------------------
+
+Changed lots of the code to distribute as standard python package
+instead of single script.  Installation procedure is also different.
+
+Speed optimizations - average user might see speed increase of 2 or
+more.
+
+
+New in v0.8.0 (2002/06/14)
+--------------------------
+
+Added --null-separator argument so filenames can safely include
+newlines in an include/exclude filelist.
+
+Fixed bug that affected restoring from current mirror with the '-r
+now' option.
+
+
+New in v0.7.6 (2002/05/31)
+--------------------------
+
+Improved statistics support, and added --print-statistics and
+--calculate-average switches.  See the directory_statistics and
+session_statistics files in the rdiff-backup-data directory.
+
+Major improvements to error correction and resuming.
+
+Now signals SIGQUIT, SIGHUP, and SIGTERM are caught to exit more
+gracefully.
+
+Fixed crankyness when --exclude-filelist is the last exclude option
+and it is given an empty file (thanks to Bryce C for report).
+
+
+New in v0.7.5 (2002/05/21)
+--------------------------
+
+Fixed resuming bug.
+
+After a bit of empirical testing, increased Globals.conn_bufsize and
+enabled ssh compression by default (and also added
+--ssh-no-compression option).  This should speed up the "typical"
+remote session.
+
+Fixed bug noticed by Dean Gaudet in processing of
+--(include|exclude)-filelist[-stdin] options when source directory was
+remote.
+
+Fixed --include error reporting bug reported by Ben Edwards.
+
+Small change so 'door' files and other unknown file types will be
+ignored.  (Thanks for Steve Simitzis for sending in a patch for this.)
+
+Fixed bug noticed by Dean Gaudet where, unless the
+--change-source-perms option is specified, rdiff-backup wouldn't even
+attempt to open files lacking ownership permissions.
+
+
+New in v0.7.4 (2002/05/11)
+--------------------------
+
+Added new restore syntax and corresponding -r and --restore-as-of
+options.  For instance, "rdiff-backup -r 1/3/2002 /backup/foo out"
+will try to restore /backup/foo (a file on the mirror directory) to
+out, as it was January 3rd, 2002.  See man page for more information.
+
+directory_statistics.<time>.data files will now be created in the
+directories underneath rdiff-backup-data/increments.  Just look at one
+to see what's inside.
+
+Added extra options --chars-to-quote, --quoting-char, and
+--windows-mode, mostly to allow files whose names have colons (:) in
+them to be backed up to windows machines.
+
+Now the -l and --list-increments switches can list the increments
+corresponding to any mirror file, not just the root directory.  Also
+the option --parsable-output was added to control whether the
+--list-increments output looks better for a human, or computer.
+
+Improved remove-earlier-than handling so it should run approximately
+as fast locally and remotely.
+
+Probably fixed bug noticed by Erminio Baranzini which caused
+rdiff-backup to try to preserve access times unnecessarily (the
+default is not preserve access times).
+
+Rewrote a few large chunks of code for clarity and simplicity.
+
+Allow extended time strings for the --remove-older-than option.
+
+Added RESTORING section to the manual page because there seemed to be
+some general confusion about this.
+
+hardlink_data, current_mirror, and a few other files now carry the
+.data extension (instead of .snapshot), to make it clearer they are
+not copies of source files.
+
+
+New in v0.7.3 (2002/04/29)
+--------------------------
+
+Fixed broken remote operation in v0.7.2 by applying (a variant of)
+Daniel Robbins' patch.  Also fixed associated bug in test set.
+
+Fixed bug recognizing --[include|exclude]-filelist-stdin options, and
+IndexError bug reading some filelists.
+
+--force is no longer necessary if the target directory is empty.
+
+--include/--exclude/etc now work for restoring as they do for backing up.
+
+Raised verbosity level for traceback output - if long log error
+messages are annoying you, set verbosity to 2.  Will come up with a
+better logging system later.
+
+May have fixed a problem encountered by Matthew Farrellee and Kevin
+Spicer wherein the _session_info_list information was stored on the
+wrong computer.  This could cause rdiff-backup to fail when running
+after another backup that failed for a different reason.  May backport
+this fix to 0.6.0 later.
+
+May have fixed a problem also noticed by Matthew Farrellee which can
+cause rdiff-backup to exit when a directory changes into a
+non-directory file while rdiff-backup is processing the directory.
+(May also apply to 0.6.0).
+
+Fixed a bug noticed by Jamie Heilman where restoring could fail if a
+recent rdiff-backup process which produced the backup set was aborted
+while processing a new directory.  (May also apply to 0.6.0)
+
+
+New in v0.7.2 (2002/04/11)
+--------------------------
+
+Added new selection options --exclude-filelist,
+--exclude-filelist-stdin, --exclude-regexp, --include-filelist,
+--include-filelist-stdin, --include-regexp.
+
+*** WARNING *** the --include and --exclude options have changed.  The
+new --include-regexp and --exclude-regexp are close to, but still
+different from the old --include and --exclude options.  See the man
+page for details.
+
+Friendlier error reporting when remote connection doesn't start.
+
+
+New in v0.7.1 (2002/03/25)
+--------------------------
+
+Now by default .snapshot and .diff increments are compressed with
+python's internal gzip.  The new increments format is backwards
+compatible, but only rdiff-backup >0.7.1 will be able to restore if
+any gzipped increments are present.
+
+Added --no-compression and --no-compression-regexp to control which
+files are compressed.
+
+
+New in v0.7.0 (2002/03/21)
+--------------------------
+
+Added hardlink support.  This is now the default, but can be turned
+off with --no-hardlinks.
+
+Clarified a bit of the manual.
+
+May have fixed a bug with remote handling of device files.
+
+
+New in v0.6.0 (2002/03/14)
+--------------------------
+
+Fixed some assorted manual "bugs".
+
+Fixed endless loop bug in certain error recovery situation reported by
+Nick Duffek, and slightly changed around some other error correction
+code.
+
+Switching to new version numbering system:  versions x.2n+1.x are
+unstable, versions x.2n.x are supposed to be more stable.
+
+
+New in v0.5.4 (2002/03/06)
+--------------------------
+
+Fixed bug present since 0.5.0 wherein rdiff-backup would make
+snapshots instead of diffs when regular files change.
+
+May have fixed race condition involving rdiff execution.
+
+
+New in v0.5.3 (2002/03/03)
+--------------------------
+
+It turns out the previous version broke device handling.  Sorry about
+that..
+
+
+New in v0.5.2 (2002/03/02)
+--------------------------
+
+Fixed bugs which made rdiff-backup try to preserve mod times when it
+wasn't necessary, and exit instead of warning when it wasn't being run
+as root and found a file it didn't own.  (Reported by Alberto
+Accomazi.)
+
+Added some more error checking; maybe this will fix a bug reported by
+John Goerzen wherein rdiff-backup can crash if file is deleted while
+rdiff-backup is processing it.
+
+Changed locations of some of the temp files; filenames will be
+determined by the tempfile module.
+
+
+New in v0.5.1 (2002/02/22)
+--------------------------
+
+When establishing a connection, print a warning if the server version
+is different from the client version.
+
+When find rdiff error value 256, tell user that it is probably because
+rdiff couldn't be found in the path.
+
+Fixed a serious bug that can apparently cause a remote backups to fail
+(reported by John Goerzen).
+
+May have fixed a bug that causes recovery from certain errors to fail.
+
+
+New in v0.5.0 (2002/02/17)
+--------------------------
+
+Now every so often (default is 20 seconds, the --checkpoint-interval
+option controls it) rdiff-backup checkpoints by dumping its state to
+temporary files in the rdiff-backup-data directory.  If rdiff-backup
+is rerun with the same destination directory, it can either try to
+resume the previous backup or at least clean things up so the archive
+is consistent and accurate.
+
+Added new options --resume, --no-resume, and --resume-interval, which
+control when rdiff-backup tries to resume a previous failed backup.
+
+Fixed a bug with the --exclude-device-files option which caused the
+option to be ignored when the source directory was remote.
+
+By default, if rdiff-backup encounters a certain kind of IOError
+(currently types 26 and 5) while trying to access a file, it logs the
+error, skips the file, and tries to continue.
+
+If settings requiring an integer argument (like -v or
+--checkpoint-interval) are given a bad (non-integer) argument, fail
+with better explanation.
+
+Fixed annoying logging bug.  Now no matter which computer a logging
+message originates on, it should be routed to the process which is
+writing to the logging file, and written correctly.  However, logging
+messages about network traffic will not be routed, as this will
+generate more traffic and lead to an infinite regress.
+
+When calling rdiff, uses popen2.Popen3 and os.spawnvp instead of
+os.popen and os.system.  This should make rdiff-backup more secure.
+Thanks to Jamie Heilman for the suggestion.
+
+Instead of calling the external shell command 'stat', rdiff-backup
+uses os.lstat().st_rdev to determine a device file's major and minor
+numbers.  The new method should be more portable.  Thanks to Jamie
+Heilman for the suggestion.
+
+All the file operations were examined and tweaked to try to
+minimize/eliminate the chance of leaving the backup directory in an
+inconsistent state.
+
+Upon catchable kinds of errors, try to checkpoint before exiting so
+later rdiff-backup processes have more information to work with.
+
+At the suggestion of Jason Piterak, added a --windows-time-format
+option so rdiff-backup will (perhaps) work under MS windows NT.
+
+
+New in v0.4.4 (2002/01/09)
+--------------------------
+
+Applied Berkan Eskikaya's "xmas patch" (I was travelling and didn't
+have a chance on Christmas).  He fixed important bugs in the
+--terminal-verbosity and --remove-older-than options.
+
+Added an --exclude-device-files option, which makes rdiff-backup skip
+any device files in the same way it skips files selected with the
+--exclude option.
+
+
+New in v0.4.3 (2001/12/17)
+--------------------------
+
+Plugged another memory hole.  At first I thought it might have been
+python's fault, but it was all me.  If rdiff-backup uses more than a
+few megabytes of memory, tell me because it is probably another memory
+hole..
+
+rdiff-backup is now a bit more careful about deleting temporary files
+it creates when it is done with them.
+
+Changed the rpm spec a little.  The enclosed man page is gzipped and
+the package file is GPG signed (it can be checked with, for example,
+"rpm --checksig -v rdiff-backup-0.4.3-1.noarch.rpm").
+
+rdiff-backup no longer checks the mtimes or atimes of device files.
+Use of these times was inconsistent (sometimes writing to device files
+updates their times, sometimes not) and leads to unnecessary backing
+up of files.
+
+
+New in v0.4.2 (2001/11/19)
+--------------------------
+
+Significant speed increases (maybe 20% for local sessions) when
+dealing with directories that do not need to be updated much.
+
+Fixed memory leak.  rdiff-backup should now run in almost constant
+memory (about 6MB on my system).
+
+Enabled buffering of object transfers, so remote sessions can be
+50-100%+ faster.
+
+rdiff-backup now thinks it is running as root if the destination
+connection is root.  Thus rdiff-backup will preserve ownership even if
+it is not running as root on the source end.
+
+If you abort rdiff-backup or it fails for some reason, it is now more
+robust about recovering the next time it is run (before it could fail
+in ways which made subsequent sessions fail also).  However, it is
+still not a good idea to abort, as individual files could be in the
+process of being written and could get corrupted.
+
+If rdiff-backup encounters an unreadable file (or, if
+--change-source-perms is given, a file whose permissions it cannot
+change), it will log a warning, ignore the file, and continue, instead
+of exiting with an error.
+
+
+New in v0.4.1 (2001/11/9)
+-------------------------
+
+Now either the source, or the target, or both can be remote.  To make
+this less confusing, now rdiff-backup supports host::file notation.
+So it is legal to run:
+
+rdiff-backup bill@host1.net::source_file jones@host2.net::target
+
+Also, the test suites have been improved and found a number of bugs
+(which were then fixed).
+
+
+New in v0.4.0 (2001/11/4)
+-------------------------
+
+Much of the rdiff-backup internals were rewritten.  The result should
+be better performance when operating remotely over a pipe with
+significant latency.  Also the code dealing with changing permissions
+is much cleaner, and should generalize later to similar jobs (for
+instance preserving atimes.)
+
+Listing and deleting increments and restoring should work remotely
+now.  In earlier versions a file or directory had to be restored
+locally and then copied over to its final destination.
+
+At the request of the FSF, a copy of the GPL has been included in the
+packaged distributions.  It is in the file "COPYING".
+
+
+New in v0.3.4 (2001/10/31)
+--------------------------
+
+A change in python from the 2.2a series to 2.2b series made remote
+backup on version 0.3.3 stop work, a small change fixes it.  (Thanks
+to Berkan Eskikaya for telling me about this.)
+
+Listed some missing features/bugs on the manual page.
+
+
+New in v0.3.3 (2001/10/16)
+--------------------------
+
+Changed quoting system yet again after learning that the old system
+was not very portable between shells (thanks Hans
+<hguevremont@eternitee.com>)
+
+
+New in v0.3.2 (2001/10/9)
+-------------------------
+
+Added --list-increments and --remove-older-than commands.
+--list-increments will just tell you what increments you have and
+their dates.  This isn't anything you couldn't get from "ls", but it
+may be formatted more nicely.  The --remove-older-than command is used
+to delete older increments that you don't want, or don't have space
+for.
+
+Also, on some systems ssh was adding a spurious "Broken pipe" message,
+even though everything went fine.  Maybe this version will prevent
+this confusing message.
+
+
+New in v0.3.1 (2001/9/11)
+-------------------------
+
+Fix for stupid bug - when running remotely as users with different
+uids, rdiff-backup now doesn't check the uid/gid.  Before it kept
+thinking that the files needed to be updated because they didn't have
+the right ownership.  This shouldn't have resulted in any data loss -
+just some unnecessary .rdiff files.  (Thanks to Michael Friedlander
+for finding this.)
+
+Added check to make sure that rdiff exits successfully.
+
+
+New in v0.3.0 (2001/9/9 - Billennium edition)
+---------------------------------------------
+
+rdiff-backup has been almost completely rewritten for v0.3.0, as it
+was for v0.1.0.  The main problem with versions 0.2.x was that the
+networking code was added to the not-remote-capable v0.1, and the
+result was unyieldy and prone to bugs when operating over a pipe.
+
+There are some new features:
+
+- Hopefully very few bugs, at least in basic file handling.
+  rdiff-backup has an extensive testing suite now, so it should be
+  much more reliable.
+
+- Complete support for reading and writing from and to files and
+  directories that lack permissions, by temporarily changing them, and
+  then changing them back later.  (See for instance the
+  --change-source-perms switch.)  As I found out there is a lot to
+  this, so much that I'm not sure in retrospect I should have
+  bothered. :-)
+
+- New more standard format for increment files.  See
+  http://www.w3.org/TR/NOTE-datetime for the time standard.  The old
+  format, besides being less standard, didn't take timezones into
+  account.
+
+- In the initial mirroring, rdiff-backup only copies the files that it
+  needs to, so it is much quicker when you almost have an initial
+  mirror already.  You can even the --mirror-only switch and make
+  rdiff-backup into a slow version of rsync.
+
+- Terminal and file verbosity levels can be selected separately.  So
+  if you like a lot in your backup.log/restore.log but not much on
+  your terminal, or vice-versa, you can set them at different numbers.
+
+- New --test-server option so if something goes wrong you can see if
+  it is because the server on the other side isn't being initialized
+  properly.
+
+- New --no-rdiff-copy option, which disables using rdiff to move files
+  across a connection (it will still be used to make increment files
+  however).  If the bottleneck is not bandwidth but local disks/CPUs,
+  this options should speed things up.
+
+There are, however, a few negatives:
+
+- rdiff-backup now requires Python version 2.2 or later.  Sorry for
+  the inconvenience but I use the new features a lot.
+
+- It may be slightly slower overall than versions 0.2.x - the remote
+  code is cleaner, but probably has higher overhead.  At least on my
+  computer, rdiff-backup is still quicker than rsync for local
+  mirroring of large files, but for remote mirroring, rsync will
+  usually be much quicker, because it uses a fairly low-overhead
+  pipelining protocol.
+
+- Any old increments are incompatible because they use a different
+  date/time standard.  If this is a big deal, try mailing me.  A
+  converter shouldn't be very difficult to write, but I didn't want to
+  take the time unless someone really wanted it.
+
+
+New in v0.2.8 (2001/9/4)
+-------------------------
+
+Fixed two stupid bugs that would cause rdiff-backup to exit with an
+exception.  (I can't believe they were in there.)
+
+
+New in v0.2.7 (2001/8/29)
+-------------------------
+
+Added new long options --backup-mode and --verbosity which are
+equivalent to -b and -v.
+
+rdiff-backup should be a little more resistant to the filesystem it is
+backup up changing underneath it (although it is not setup to handle
+this in general).  Thanks Alberto Accomazzi
+<aaccomazzi@cfa.harvard.edu> for these suggestions.
+
+
+New in v0.2.6 (2001/8/27)
+-------------------------
+
+Fixed bug where, for non-root users, rdiff-backup could, in the
+process of mirroring an unwritable directory, make the copy
+unwriteable and then fail.  Now rdiff-backup goes through and makes
+what it needs to be readable and writeable, and then changes things
+back at the end.  (Another one found by Jeb Campbell!)
+
+
+New in v0.2.5 (2001/8/26)
+-------------------------
+
+Added better error reporting when server throws an exception.
+
+Fixed bug so that backed-up setuid files will also be setuid.
+
+Now rdiff-backup thinks it's running as root only if both client and
+server are running as root (Thanks to Jeb Campbell for finding these
+previous two bugs).
+
+Fixed miscellaneous Path bug that could occur in remote operation.
+
+
+New in v0.2.4 (2001/8/25)
+-------------------------
+
+Added more logging options that may help other track down a mysterious
+bug.
+
+
+New in v0.2.3 (2001/8/24)
+-------------------------
+
+Fixed typing bug that caused an Assertion Error in remote operation,
+thanks again to Jeb Campbell for finding it.
+
+
+New in v0.2.2 (2001/8/24)
+-------------------------
+
+Fixed bug in remote creation of special files and symlinks (thanks to
+Jeb Campbell <jebc@c4solutions.net> for finding it).
+
+Fixed another error report.
+
+
+New in v0.2.1 (2001/8/7)
+------------------------
+
+Now if rdiff-backup isn't running as root, it doesn't try to change
+file ownership.
+
+Fixed an error report.
+
+Stopped flushing an open pipe to fix a race condition on IRIX.
+
+
+New in v0.2 (2001/8/3)
+----------------------
+
+rdiff-backup can now operate in a bandwidth efficient manner (a la
+rsync) using a pipe setup with, for instance, ssh.
+
+I was too hasty with the last bug fix and didn't deal with all
+filenames properly.  Maybe this one will work.
+
+
+New in v0.1.1 (2001/8/2)
+-------------------------
+
+Bug fix:  Filenames that may contain spaces, backslashes, and other
+special characters are quoted now and should be handled correctly.
+
+
+New in v0.1 (2001/7/15)
+----------------------
+
+Large portion (majority?) of rdiff-backup was rewritten for v0.1.  New
+version highlights:
+
+ -  No new features!
+ -  No speed improvements!  It may even be slower...
+ -  No bug fixes!  (ok maybe a few)
+
+However, the new version is much cleaner and better documented.  This
+version should have fewer bugs, and it should be easier to fix any
+future bugs.

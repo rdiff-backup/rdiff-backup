@@ -1,0 +1,28 @@
+
+---------[ Medium term ]---------------------------------------
+
+Look at Kent Borg's suggestion for restore options and digests.
+
+Add --list-files-changed-between or similar option, to list files that
+have changed between two times
+
+Add ACL support
+
+Add --dry-run option (target for v1.1.x)
+
+Add # of increments option to --remove-older-than
+
+Make argument shortcut for cstream
+
+Write configuration file, to make sure settings like --quoting-char,
+--windows-time-format, etc., don't change between sessions,
+backup/restoring, etc.
+
+---------[ Long term ]---------------------------------------
+
+Think about adding Gaudet's idea for keeping track of renamed files.
+
+Look into different inode generation techniques (see treescan, Dean
+Gaudet's other post).
+
+
