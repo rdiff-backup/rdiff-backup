@@ -283,12 +283,12 @@ probably isn't what you meant.""" %
 		for line in filelist_fp:
 			if not line.strip(): continue # skip blanks
 			try: tuple = self.filelist_parse_line(line, include)
-			except FilePrefixError, exp:
+			except FilePrefixError, exc:
 				prefix_warnings += 1
 				if prefix_warnings < 6:
 					Log("Warning: file specification %s in filelist %s\n"
 						"doesn't start with correct prefix %s, ignoring." %
-						(exp, filelist_name, self.prefix), 2)
+						(exc, filelist_name, self.prefix), 2)
 					if prefix_warnings == 5:
 						Log("Future prefix errors will not be logged.", 2)
 			tuple_list.append(tuple)

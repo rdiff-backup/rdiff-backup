@@ -100,11 +100,11 @@ class HLSourceStruct:
 				if dest_sig:
 					if dest_sig.isplaceholder(): yield dest_sig
 					else:
-						try: yield RORPIter.diffonce(dest_sig, dsrp)
-						except (IOError, OSError, RdiffException):
-							Log.exception()
-							Log("Error producing a diff of %s" %
-								dsrp and dsrp.path)
+						diff = Robust.check_common_error(
+							lambda: RORPIter.diffonce(dest_sig, dsrp),
+							lambda exc: Log("Error %s producing a diff of %s" %
+											(str(exc), dsrp and dsrp.path), 2))
+						if diff: yield diff
 				if dsrp: finalizer(dsrp.index, dsrp)
 			finalizer.Finish()
 		return diffs()
@@ -269,10 +269,10 @@ class HLDestinationStruct:
 		"""Run thunk, catch certain errors skip files"""
 		try: return thunk()
 		except (EnvironmentError, SkipFileException, DSRPPermError,
-				RPathException), exp:
+				RPathException), exc:
 			Log.exception()
 			if (not isinstance(exc, EnvironmentError) or
-				(errno.errorcode[exp[0]] in
+				(errno.errorcode[exc[0]] in
 				 ['EPERM', 'ENOENT', 'EACCES', 'EBUSY', 'EEXIST',
 				  'ENOTDIR', 'ENAMETOOLONG', 'EINTR', 'ENOTEMPTY',
 				  'EIO', # reported by docv
