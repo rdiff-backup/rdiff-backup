@@ -47,7 +47,7 @@ class PathSetter(unittest.TestCase):
 
 	def reset_schema(self):
 		self.rb_schema = (SourceDir +
-						  "/../rdiff-backup -v3 --no-compare-inode " 
+						  "/../rdiff-backup -v9 --no-compare-inode " 
 						  "--remote-schema './chdir-wrapper2 %s' ")
 
 	def refresh(self, *rp_list):
@@ -637,6 +637,54 @@ class FinalCorrupt(PathSetter):
 
 		self.exec_rb_restore(10000, 'testfiles/output',
 							 'testfiles/restoretarget1')
+
+
+class FinalBugs(PathSetter):
+	"""Test for specific bugs that have been reported"""
+	def test_symlink_popple(self):
+		"""Test for Popple's symlink bug
+
+		Earlier, certain symlinks could cause data loss in _source_
+		directory when regressing.  See mailing lists around 4/2/05
+		for more info.
+
+		"""
+		self.delete_tmpdirs()
+		self.set_connections(None, None, None, None)
+
+		# Make directories
+		rp1 = rpath.RPath(Globals.local_connection, 'testfiles/sym_in1')
+		if rp1.lstat(): rp1.delete()
+		rp1.mkdir()
+		rp1_d = rp1.append('subdir')
+		rp1_d.mkdir()
+		rp1_d_f = rp1_d.append('file')
+		rp1_d_f.touch()
+		
+		rp2 = rpath.RPath(Globals.local_connection, 'testfiles/sym_in2')
+		if rp2.lstat(): rp2.delete()
+		rp2.mkdir()
+		rp2_s = rp2.append('subdir')
+		rp2_s.symlink("%s/%s" % (os.getcwd(), rp1_d.path))
+
+		# Backup
+		self.exec_rb(10000, rp1.path, 'testfiles/output')
+		self.exec_rb(20000, rp2.path, 'testfiles/output')
+
+		# Make failed backup
+		rbdir = rpath.RPath(Globals.local_connection,
+							'testfiles/output/rdiff-backup-data')
+		curmir = rbdir.append('current_mirror.%s.data' %
+							  (Time.timetostring(30000),))
+		curmir.touch()
+
+		# Regress
+		self.exec_rb_extra_args(30000, '--check-destination-dir',
+								'testfiles/output')
+
+		# Check to see if file still there
+		rp1_d_f.setdata()
+		assert rp1_d_f.isreg(), 'File %s corrupted' % (rp1_d_f.path,)
 
 		
 if __name__ == "__main__": unittest.main()
