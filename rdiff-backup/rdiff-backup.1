@@ -1,0 +1,283 @@
+.TH RDIFF-BACKUP 1 "AUGUST 2001" "Version 0.2.1" "User Manuals" \" -*- nroff -*-
+.SH NAME
+rdiff-backup \- rsync-like incremental backup utility
+.SH SYNOPSIS
+.B rdiff-backup
+.BI [ options ]
+.BI [[[ user@ ] host1.foo ]:: source_directory ]
+.BI [[[ user@ ] host2.foo ]:: destination_directory ]
+
+
+.SH DESCRIPTION
+.B rdiff-backup
+is a script, written in
+.BR python (1) ,
+that uses the
+.BR rdiff (1)
+program to back up one directory to another.  The target directory
+ends up a copy of the source directory, but extra reverse diffs are
+stored in the target directory, so you can still recover files lost
+some time ago.  The idea is to combine the best features of a mirror
+and an incremental backup.  rdiff-backup also preserves symlinks,
+special files, permissions, uid/gid ownership (if it is running as
+root), and modification times.
+
+.B rdiff-backup
+can also operate
+in a bandwidth efficient manner over a pipe, like
+.BR rsync (1).
+Thus you can use ssh and rdiff-backup to securely back a hard drive up
+to a remote location, and only the differences will be transmitted.
+Using the default settings, rdiff-backup requires that the remote
+system accept ssh connections, and that
+.B rdiff-backup
+is installed in the user's PATH on the remote system.  For information
+on other options, see the section on
+.B REMOTE OPERATION.
+
+
+.SH OPTIONS
+.TP
+.B -b, --backup-mode
+Force backup mode even if first argument appears to be an increment file.
+.TP
+.B --change-source-perms
+If this option is set, rdiff-backup will try to change the mode of any
+unreadable files or unreadable/unexecutable directories in the source
+directory so it can back them up.  It will then restore their original
+permissions and mtimes afterwards.
+.TP
+.BI "--checkpoint-interval " seconds
+This option controls every how many seconds rdiff-backup checkpoints
+its current status.  The default is 20.
+.TP
+.BI "--exclude " regexp
+Exclude files matching regexp.  This argument can be used multiple times.
+.TP
+.B "--exclude-device-files"
+Exclude all device files.  This can be useful for security/permissions
+reasons or if rdiff-backup is not handling device files correctly.
+.TP
+.BI "--exclude-mirror " regexp
+Exclude files in the mirror area matching regexp.  This argument can
+be used multiple times.  The rdiff-backup-data directory is
+automatically excluded.
+.TP
+.B --force
+Authorize overwriting of a destination directory.  rdiff-backup will
+generally tell you if it needs this.
+.TP
+.B "-l, --list-increments"
+List the number and date of partial incremental backups contained in
+the specified destination directory.
+.TP
+.B "-m, --mirror-only"
+Do not create an rdiff-backup-data directory or make any increments.
+In this mode rdiff-backup is similar to rsync (but usually
+slower).
+.TP
+.B --no-resume
+Do not resume last aborted backup even if it falls within the resume
+window.
+.TP
+.BI "--remote-cmd " command
+This command has been depreciated as of version 0.4.1.  Use
+--remote-schema instead.
+.TP
+.BI "--remote-schema " schema
+Specify an alternate method of connecting to a remote computer.  This
+is necessary to get rdiff-backup not to use ssh for remote backups, or
+if, for instance, rdiff-backup is not in the PATH on the remote side.
+See the
+.B REMOTE OPERATION
+section for more information.
+.TP
+.BI "--remove-older-than " time_interval
+Remove the incremental backups in the destination directory that have
+been around longer than time_interval.  The time interval is an
+integer followed by the character s, m, h, D, M, or Y, indicating
+seconds, minutes, hours, days, months, or years respectively.  Thus
+32m means 32 minutes, while 1M means one month (30 days).
+.TP
+.B --resume
+Resume the last aborted backup.  If no aborted backups are found, exit
+with error.
+.TP
+.BI "--resume-window " seconds
+Resume the last aborted backup if it started less than the specified
+number of seconds ago.  Otherwise start a new backup.  The default is
+7200 (2 hours).
+.TP
+.B --server
+Enter server mode (not to be invoked directly, but instead used by
+another rdiff-backup process on a remote computer).
+.TP
+.BI "--terminal-verbosity " [0-9]
+Select which messages will be displayed to the terminal.  If missing
+the level defaults to the verbosity level.
+.TP
+.B --test-server
+Test for the presence of a compatible rdiff-backup server as specified
+in the following host::filename argument(s).  The filename section
+will be ignored.
+.TP
+.BI -v [0-9] ", --verbosity " [0-9]
+Specify verbosity level (0 is totally silent, 3 is the default, and 9
+is noisiest).  This determines how much is written to the log file.
+.TP
+.B "-V, --version"
+Print the current version and exit
+.TP
+.B --windows-time-format
+If this option is present, use underscores instead of colons in
+increment files, so 2001-07-15T04:09:38-07:00 becomes
+2001-07-15T04_09_38-07_00.  This option may be useful under MS windows
+NT, which prohibits colons in filenames.
+
+.SH EXAMPLES
+Simplest case---backup directory foo to directory bar, with increments
+in bar/rdiff-backup-data:
+.PP
+.RS
+rdiff-backup foo bar
+.PP
+.RE
+This is exactly the same as previous example because trailing slashes
+are ignored:
+.PP
+.RS
+rdiff-backup foo/ bar/
+.PP
+.RE
+Back files up from /home/bob to /mnt/backup, leaving increments in /mnt/backup/rdiff-backup-data.  Do not back up directory /home/bob/tmp or any files in it.
+.PP
+.RS
+rdiff-backup --exclude /home/bob/tmp /home/bob /mnt/backup
+.PP
+.RE
+You can also use regular expressions in the --exclude statements.
+This will skip any files whose full pathnames contain the word
+"cache", or any files whose name is "tmp" or "temp".
+.PP
+.RS
+rdiff-backup --exclude '.*cache.*' --exclude '.*/te?mp' /home/bob /mnt/backup
+.PP
+.RE
+After the previous command was completed, this command will list the
+backups present on the destination disk:
+.PP
+.RS
+rdiff-backup --list-increments /mnt/backup
+.PP
+.RE
+If space is running out on the /mnt/backup directory, older
+incremental backups can be erased.  The following command erases
+backup information older than a week:
+.PP
+.RS
+rdiff-backup --remove-older-than 7D /mnt/backup
+.PP
+.RE
+The following reads the file
+important-data.2001-07-15T04:09:38-07:00.dir and restores the
+resulting directory important-data as it was on Februrary 14, 2001,
+calling the new directory "temp".  Note that rdiff-backup goes into
+restore mode because it recognizes the suffix of the file.  The -v9
+means keep lots of logging information.
+.PP
+.RS
+rdiff-backup -v9 important-data.2001-07-15T04:09:38-07:00.dir temp
+.PP
+.RE
+This command causes rdiff-backup to backup the directory
+/some/local-dir to the directory /whatever/remote-dir on the machine
+hostname.net.  It uses ssh to open the necessary pipe to the remote
+copy of rdiff-backup.  Here the username on the local machine and on
+hostname.net are the same.
+.PP
+.RS
+rdiff-backup /some/local-dir hostname.net::/whatever/remote-dir
+.PP
+.RE
+This command logs into hostname.net as smith and restores the remote
+increment old-file on a remote computer to the current directory on
+the local computer:
+.PP
+.RS
+rdiff-backup smith@hostname.net::/foo/rdiff-backup-data/increments/bar/old-file.2001-11-09T12:43:53-04:00.diff
+.PP
+.RE
+Backup foo on one remote machine to bar on another.  This will
+probably be slower than running rdiff-backup from either machine.
+.PP
+.RS
+rdiff-backup smith@host1::foo jones@host2::bar
+.PP
+.RE
+Test to see if the specified ssh command really opens up a working
+rdiff-backup server on the remote side.
+.RS
+rdiff-backup --test-server hostname.net::/this/is/ignored
+
+.SH REMOTE OPERATION
+In order to access remote files, rdiff-backup opens up a pipe to a
+copy of rdiff-backup running on the remote machine.  Thus rdiff-backup
+must be installed on both ends.  To open this pipe, rdiff-backup first
+splits the filename into host_info::pathname.  It then substitutes
+host_info into the remote schema, and runs the resulting command,
+reading its input and output.
+.PP
+The default remote schema is 'ssh %s rdiff-backup --server' meaning if
+the host_info is user@host.net, then rdiff-backup runs 'ssh
+user@host.net rdiff-backup --server'.  The '%s' keyword is substituted
+with the host_info.  Using --remote-schema, rdiff-backup can invoke an
+arbitrary command in order to open up a remote pipe.  For instance,
+.RS
+rdiff-backup --remote-schema 'cd /usr; %s' foo 'rdiff-backup
+--server'::bar
+.RE
+is basically equivalent to (but slower than)
+.RS
+rdiff-backup foo /usr/bar
+.RE
+.PP
+Concerning quoting, if for some reason you need to put two consecutive
+colons in the host_info section of a host_info::pathname argument, or
+in the pathname of a local file, you can quote one of them by
+prepending a backslash.  So in 'a\\::b::c', host_info is 'a::b' and
+the pathname is 'c'.  Similarly, if you want to refer to a local file
+whose filename contains two consecutive colons, like 'strange::file',
+you'll have to quote one of the colons as in 'strange\\::file'.
+Because the backslash is a quote character in these circumstances, it
+too must be quoted to get a literal backslash, so 'foo\\::\\\\bar'
+evaluates to 'foo::\\bar'.  To make things more complicated, because
+the backslash is also a common shell quoting character, you may need
+to type in '\\\\\\\\' at the shell prompt to get a literal backslash
+(if it makes you feel better, I had to type in 8 backslashes to get
+that in this man page...).  And finally, to include a literal % in the
+string specified by --remote-schema, quote it with another %, as in
+%%.
+
+.SH BUGS
+Hard linking is not preserved.
+
+rdiff-backup uses the shell command
+.BR mknod (1)
+to backup device files (e.g. /dev/ttyS0), so device files won't be
+handled correctly on systems with non-standard mknod syntax.
+
+.SH AUTHOR
+Ben Escoto <bescoto@stanford.edu>
+.PP
+Feel free to ask me questions or send me bug reports, but also check
+out the mailing list mentioned below.
+
+.SH SEE ALSO
+.BR python (1),
+.BR rdiff (1),
+.BR rsync (1),
+.BR ssh (1).
+The main rdiff-backup web page is at
+.IR http://www.stanford.edu/~bescoto/rdiff-backup .
+There also a mailing list described at
+.IR http://keywest.Stanford.EDU/mailman/listinfo/rdiff-backup .
