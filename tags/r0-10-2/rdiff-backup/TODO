@@ -1,0 +1,30 @@
+Update FAQ on cstream
+
+Write some better selection test cases to test new Iterate_fast func.
+
+Work on killtest code - avoid returning a failure when a file is
+simply skipped.
+
+---------[ Medium term ]---------------------------------------
+
+Interpret a list of filenames in globbing form
+(--include-globbing-filelist maybe).
+
+Add --dry-run option (target for v1.1.x)
+
+Add # of increments option to --remove-older-than
+
+Restore only changed files
+
+Make argument shortcut for cstream
+
+Make --calculate-averages work with directory_statistics file.
+
+---------[ Long term ]---------------------------------------
+
+Think about adding Gaudet's idea for keeping track of renamed files.
+
+Look into different inode generation techniques (see treescan, Dean
+Gaudet's other post).
+
+
