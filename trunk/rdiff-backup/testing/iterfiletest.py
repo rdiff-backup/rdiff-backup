@@ -1,6 +1,6 @@
 import unittest, StringIO
-execfile("commontest.py")
-rbexec("iterfile.py")
+from commontest import *
+from iterfile import *
 
 
 class testIterFile(unittest.TestCase):

@@ -1,8 +1,6 @@
 import unittest
-
-execfile("commontest.py")
-rbexec("main.py")
-
+from commontest import *
+import Globals, SetConnections
 
 class RemoteMirrorTest(unittest.TestCase):
 	"""Test mirroring"""

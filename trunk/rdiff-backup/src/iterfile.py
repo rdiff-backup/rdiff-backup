@@ -1,5 +1,5 @@
-execfile("ttime.py")
 import cPickle
+import Globals
 
 #######################################################################
 #

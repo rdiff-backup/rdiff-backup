@@ -1,6 +1,6 @@
 import unittest, types
-execfile("commontest.py")
-rbexec("static.py")
+from commontest import *
+from static import *
 
 
 class D:

@@ -1,5 +1,7 @@
 import traceback
-execfile("statistics.py")
+from static import *
+from statistics import *
+from lazy import *
 
 #######################################################################
 #
@@ -256,7 +258,7 @@ class IncrementITR(ErrorITR, StatsITR):
 
 		self.end_stats(diff_rorp, dsrp, self.incrp)
 		if self.mirror_isdirectory or dsrp.isdir():
-			Stats.write_dir_stats_line(self, dsrp.index)
+			MiscStats.write_dir_stats_line(self, dsrp.index)
 
 	def branch_process(self, subinstance):
 		"""Update statistics, and the has_changed flag if change in branch"""
@@ -286,8 +288,15 @@ class MirrorITR(ErrorITR, StatsITR):
 		"""Update statistics when leaving"""
 		self.end_stats(self.diff_rorp, self.mirror_dsrp)
 		if self.mirror_dsrp.isdir():
-			Stats.write_dir_stats_line(self, self.mirror_dsrp.index)
+			MiscStats.write_dir_stats_line(self, self.mirror_dsrp.index)
 
 	def branch_process(self, subinstance):
 		"""Update statistics with subdirectory results"""
 		self.add_file_stats(subinstance)
+
+
+from log import *
+from rpath import *
+from robust import *
+from rorpiter import *
+import Globals, Time, MiscStats

@@ -1,6 +1,6 @@
 import unittest
-execfile("commontest.py")
-rbexec("statistics.py")
+from commontest import *
+from statistics import *
 
 class StatsObjTest(unittest.TestCase):
 	"""Test StatsObj class"""

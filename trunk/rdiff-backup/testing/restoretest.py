@@ -1,7 +1,9 @@
 import unittest
+from commontest import *
+from log import *
+from restore import *
+import Globals
 
-execfile("commontest.py")
-rbexec("main.py")
 Log.setverbosity(3)
 
 

@@ -1,7 +1,10 @@
 from __future__ import generators
 import re, StringIO, unittest
-execfile("commontest.py")
-rbexec("highlevel.py")
+from commontest import *
+from selection import *
+from destructive_stepping import *
+import Globals
+
 
 class MatchingTest(unittest.TestCase):
 	"""Test matching of file names against various selection functions"""

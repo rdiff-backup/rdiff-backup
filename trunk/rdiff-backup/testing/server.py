@@ -21,12 +21,10 @@ if len(sys.argv) > 2:
 	sys.exit(1)
 
 try:
-	if len(sys.argv) == 2:
-		olddir = os.getcwd()
-		os.chdir(sys.argv[1])
-	execfile("setconnections.py")
-	if len(sys.argv) == 2: os.chdir(olddir)
-except (OSError, IOError):
+	if len(sys.argv) == 2: sys.path.insert(0, sys.argv[1])
+	import Globals
+	from connection import *
+except (OSError, IOError, ImportError):
 	print_usage()
 	raise
 

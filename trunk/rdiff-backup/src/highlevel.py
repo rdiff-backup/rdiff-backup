@@ -1,5 +1,12 @@
 from __future__ import generators
-execfile("manage.py")
+from static import *
+from log import *
+from rpath import *
+from robust import *
+from increment import *
+from destructive_stepping import *
+from rorpiter import *
+import Globals, Hardlink, MiscStats
 
 #######################################################################
 #
@@ -248,7 +255,7 @@ class HLDestinationStruct:
 		"""Apply diffs and finalize, with checkpointing and statistics"""
 		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
 		finalizer, ITR = cls.get_finalizer(), cls.get_MirrorITR(inc_rpath)
-		Stats.open_dir_stats_file()
+		MiscStats.open_dir_stats_file()
 		dsrp, finished_dsrp = None, None
 
 		try:
@@ -266,15 +273,15 @@ class HLDestinationStruct:
 		except: cls.handle_last_error(finished_dsrp, finalizer, ITR)
 
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
-		Stats.close_dir_stats_file()
-		Stats.write_session_statistics(ITR)
+		MiscStats.close_dir_stats_file()
+		MiscStats.write_session_statistics(ITR)
 		SaveState.checkpoint_remove()
 
 	def patch_increment_and_finalize(cls, dest_rpath, diffs, inc_rpath):
 		"""Apply diffs, write increment if necessary, and finalize"""
 		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
 		finalizer, ITR = cls.get_finalizer(), cls.get_ITR(inc_rpath)
-		Stats.open_dir_stats_file()
+		MiscStats.open_dir_stats_file()
 		dsrp, finished_dsrp = None, None
 
 		try:
@@ -293,8 +300,8 @@ class HLDestinationStruct:
 		except: cls.handle_last_error(finished_dsrp, finalizer, ITR)
 
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
-		Stats.close_dir_stats_file()
-		Stats.write_session_statistics(ITR)
+		MiscStats.close_dir_stats_file()
+		MiscStats.write_session_statistics(ITR)
 		SaveState.checkpoint_remove()
 
 	def handle_last_error(cls, dsrp, finalizer, ITR):

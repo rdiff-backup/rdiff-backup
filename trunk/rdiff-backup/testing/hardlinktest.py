@@ -1,7 +1,7 @@
 import os, unittest
-execfile("commontest.py")
-rbexec("main.py")
-
+from commontest import *
+from rpath import *
+import Globals, Hardlink
 
 Log.setverbosity(7)
 

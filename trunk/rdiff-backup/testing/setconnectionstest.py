@@ -1,6 +1,6 @@
 import unittest
-execfile("commontest.py")
-rbexec("setconnections.py")
+from commontest import *
+import SetConnections
 
 class SetConnectionsTest(unittest.TestCase):
 	"""Set SetConnections Class"""
@@ -18,9 +18,10 @@ class SetConnectionsTest(unittest.TestCase):
 		assert pfd("foobar") == (None, "foobar")
 		assert pfd(r"hello\::there") == (None, "hello\::there")
 
-		self.assertRaises(SetConnectionsException, pfd, r"hello\:there::")
-		self.assertRaises(SetConnectionsException, pfd, "foobar\\")
-
+		self.assertRaises(SetConnections.SetConnectionsException,
+						  pfd, r"hello\:there::")
+		self.assertRaises(SetConnections.SetConnectionsException,
+						  pfd, "foobar\\")
 
 
 if __name__ == "__main__": unittest.main()

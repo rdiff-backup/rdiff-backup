@@ -1,12 +1,13 @@
 import unittest, os, re, sys
-execfile("commontest.py")
-rbexec("restore.py")
+from commontest import *
+from log import *
+from rpath import *
+import Globals
 
 """Regression tests"""
 
 Globals.exclude_mirror_regexps = [re.compile(".*/rdiff-backup-data")]
 Log.setverbosity(7)
-Make()
 
 lc = Globals.local_connection
 
@@ -43,7 +44,7 @@ class PathSetter(unittest.TestCase):
 
 	def reset_schema(self):
 		self.rb_schema = SourceDir + \
-			 "/rdiff-backup -v3 --remote-schema './chdir-wrapper %s' "
+			 "/../rdiff-backup -v3 --remote-schema './chdir-wrapper2 %s' "
 
 	def refresh(self, *rp_list):
 		"""Reread data for the given rps"""

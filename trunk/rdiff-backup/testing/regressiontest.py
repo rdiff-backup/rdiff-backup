@@ -1,7 +1,8 @@
 import unittest, os
-
-execfile("commontest.py")
-rbexec("main.py")
+from commontest import *
+from log import *
+from rpath import *
+import Globals, SetConnections
 
 
 """Regression tests
@@ -50,7 +51,7 @@ class PathSetter(unittest.TestCase):
 		"""Return (prefix, connection) tuple"""
 		if path:
 			return (return_path,
-					SetConnections.init_connection("python ./chdir-wrapper "+path))
+					SetConnections.init_connection("./chdir-wrapper "+path))
 		else: return ('./', Globals.local_connection)
 
 	def get_src_rp(self, path):
@@ -193,25 +194,25 @@ class IncrementTest2(PathSetter):
 		Time.setcurtime()
 		SaveState.init_filenames()
 
-		_get_main().backup_init_select(Local.inc1rp, Local.rpout)
+		Main.backup_init_select(Local.inc1rp, Local.rpout)
 		HighLevel.Mirror(self.inc1rp, self.rpout)
 		assert CompareRecursive(Local.inc1rp, Local.rpout)
 
 		Time.setcurtime()
 		Time.setprevtime(999500000)
-		_get_main().backup_init_select(self.inc2rp, self.rpout)
+		Main.backup_init_select(self.inc2rp, self.rpout)
 		HighLevel.Mirror_and_increment(self.inc2rp, self.rpout, self.rpout_inc)
 		assert CompareRecursive(Local.inc2rp, Local.rpout)
 
 		Time.setcurtime()
 		Time.setprevtime(999510000)
-		_get_main().backup_init_select(self.inc3rp, self.rpout)
+		Main.backup_init_select(self.inc3rp, self.rpout)
 		HighLevel.Mirror_and_increment(self.inc3rp, self.rpout, self.rpout_inc)
 		assert CompareRecursive(Local.inc3rp, Local.rpout)
 
 		Time.setcurtime()
 		Time.setprevtime(999520000)
-		_get_main().backup_init_select(self.inc4rp, self.rpout)
+		Main.backup_init_select(self.inc4rp, self.rpout)
 		HighLevel.Mirror_and_increment(self.inc4rp, self.rpout, self.rpout_inc)
 		assert CompareRecursive(Local.inc4rp, Local.rpout)
 		
@@ -419,8 +420,8 @@ class MirrorTest(PathSetter):
 
 	def Mirror(self, rpin, rpout, write_increments = 1):
 		"""Like HighLevel.Mirror, but run misc_setup first"""
-		_get_main().misc_setup([rpin, rpout])
-		_get_main().backup_init_select(rpin, rpout)
+		Main.misc_setup([rpin, rpout])
+		Main.backup_init_select(rpin, rpout)
 		if write_increments:
 			HighLevel.Mirror(rpin, rpout,
 							 rpout.append_path("rdiff-backup-data/increments"))

@@ -1,5 +1,4 @@
 from __future__ import generators
-execfile("rdiff.py")
 import types, os, tempfile, cPickle, shutil, traceback
 
 #######################################################################
@@ -38,10 +37,9 @@ class LocalConnection(Connection):
 		self.conn_number = 0 # changed by SetConnections for server
 
 	def __getattr__(self, name):
-		try: return globals()[name]
-		except KeyError:
-			try: return __builtins__.__dict__[name]
-			except KeyError: raise NameError, name
+		if name in globals(): return globals()[name]
+		elif isinstance(__builtins__, dict): return __builtins__[name]
+		else: return __builtins__.__dict__[name]
 
 	def __setattr__(self, name, value):
 		globals()[name] = value
@@ -55,11 +53,6 @@ class LocalConnection(Connection):
 		return apply(eval(function_string), args)
 
 	def quit(self): pass
-
-Globals.local_connection = LocalConnection()
-Globals.connections.append(Globals.local_connection)
-# Following changed by server in SetConnections
-Globals.connection_dict[0] = Globals.local_connection
 
 
 class ConnectionRequest:
@@ -493,3 +486,30 @@ class VirtualFile:
 			line = self.readline()
 			if not line: break
 			yield line
+
+
+# everything has to be available here for remote connection's use, but
+# put at bottom to reduce circularities.
+import Globals, Time, Rdiff, Hardlink, FilenameMapping
+from static import *
+from lazy import *
+from log import *
+from iterfile import *
+from connection import *
+from rpath import *
+from robust import *
+from rorpiter import *
+from destructive_stepping import *
+from selection import *
+from statistics import *
+from increment import *
+from restore import *
+from manage import *
+from highlevel import *
+
+
+Globals.local_connection = LocalConnection()
+Globals.connections.append(Globals.local_connection)
+# Following changed by server in SetConnections
+Globals.connection_dict[0] = Globals.local_connection
+

@@ -1,7 +1,7 @@
 import unittest, types, tempfile, os, sys
-execfile("commontest.py")
-rbexec("setconnections.py")
-
+from commontest import *
+from connection import *
+import Globals
 
 class LocalConnectionTest(unittest.TestCase):
 	"""Test the dummy connection"""

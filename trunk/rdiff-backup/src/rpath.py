@@ -1,5 +1,5 @@
-execfile("connection.py")
 import os, stat, re, sys, shutil, gzip
+from static import *
 
 #######################################################################
 #
@@ -778,6 +778,10 @@ class RPathFileHook:
 		self.closing_thunk()
 		return result
 
+# Import these late to avoid circular dependencies
+from lazy import *
+from selection import *
+from destructive_stepping import *
 
 class RpathDeleter(IterTreeReducer):
 	"""Delete a directory.  Called by RPath.delete()"""

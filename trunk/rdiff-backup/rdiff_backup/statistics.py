@@ -1,4 +1,4 @@
-execfile("filename_mapping.py")
+from lazy import *
 
 #######################################################################
 #
@@ -277,73 +277,7 @@ class StatsITR(IterTreeReducer, StatsObj):
 			self.__dict__[attr] += subinstance.__dict__[attr]
 
 
-class Stats:
-	"""Misc statistics methods, pertaining to dir and session stat files"""
-	# This is the RPath of the directory statistics file, and the
-	# associated open file.  It will hold a line of statistics for
-	# each directory that is backed up.
-	_dir_stats_rp = None
-	_dir_stats_fp = None
-
-	# This goes at the beginning of the directory statistics file and
-	# explains the format.
-	_dir_stats_header = """# rdiff-backup directory statistics file
-#
-# Each line is in the following format:
-# RelativeDirName %s
-""" % " ".join(StatsObj.stat_file_attrs)
-
-	def open_dir_stats_file(cls):
-		"""Open directory statistics file, write header"""
-		assert not cls._dir_stats_fp, "Directory file already open"
-
-		if Globals.compression: suffix = "data.gz"
-		else: suffix = "data"
-		cls._dir_stats_rp = Inc.get_inc(Globals.rbdir.append(
-			"directory_statistics"), Time.curtime, suffix)
-
-		if cls._dir_stats_rp.lstat():
-			Log("Warning, statistics file %s already exists, appending" %
-				cls._dir_stats_rp.path, 2)
-			cls._dir_stats_fp = cls._dir_stats_rp.open("ab",
-													   Globals.compression)
-		else: cls._dir_stats_fp = \
-			  cls._dir_stats_rp.open("wb", Globals.compression)
-		cls._dir_stats_fp.write(cls._dir_stats_header)
-
-	def write_dir_stats_line(cls, statobj, index):
-		"""Write info from statobj about rpath to statistics file"""
-		if Globals.null_separator:
-			cls._dir_stats_fp.write(statobj.get_stats_line(index, None) + "\0")
-		else: cls._dir_stats_fp.write(statobj.get_stats_line(index) + "\n")
-
-	def close_dir_stats_file(cls):
-		"""Close directory statistics file if its open"""
-		if cls._dir_stats_fp:
-			cls._dir_stats_fp.close()
-			cls._dir_stats_fp = None
-
-	def write_session_statistics(cls, statobj):
-		"""Write session statistics into file, log"""
-		stat_inc = Inc.get_inc(Globals.rbdir.append("session_statistics"),
-							   Time.curtime, "data")
-		statobj.StartTime = Time.curtime
-		statobj.EndTime = time.time()
-
-		# include hardlink data and dir stats in size of increments
-		if Globals.preserve_hardlinks and Hardlink.final_inc:
-			# include hardlink data in size of increments
-			statobj.IncrementFiles += 1
-			statobj.IncrementFileSize += Hardlink.final_inc.getsize()
-		if cls._dir_stats_rp and cls._dir_stats_rp.lstat():
-			statobj.IncrementFiles += 1
-			statobj.IncrementFileSize += cls._dir_stats_rp.getsize()
-
-		statobj.write_stats_to_rp(stat_inc)
-		if Globals.print_statistics:
-			message = statobj.get_stats_logstring("Session statistics")
-			Log.log_to_file(message)
-			Globals.client_conn.sys.stdout.write(message)
-
-MakeClass(Stats)
-
+from log import *
+from increment import *
+from robust import *
+import Globals

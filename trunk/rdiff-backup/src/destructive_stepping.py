@@ -1,6 +1,7 @@
 from __future__ import generators
 import types
-execfile("rorpiter.py")
+from rpath import *
+from lazy import *
 
 #######################################################################
 #
@@ -206,3 +207,6 @@ class DestructiveSteppingFinalizer(ErrorITR):
 			if self.dsrpath: self.dsrpath.write_changes()
 
 
+from log import *
+from robust import *
+import Globals

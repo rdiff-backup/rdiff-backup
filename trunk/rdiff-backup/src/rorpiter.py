@@ -1,6 +1,11 @@
-execfile("robust.py")
 from __future__ import generators
-import tempfile, UserList
+import tempfile, UserList, types
+from static import *
+from log import *
+from rpath import *
+from robust import *
+from iterfile import *
+import Globals, Rdiff, Hardlink
 
 #######################################################################
 #

@@ -1,7 +1,8 @@
 import os, unittest
+from commontest import *
+from rpath import *
+from robust import *
 
-execfile("commontest.py")
-rbexec("setconnections.py")
 
 class TestRobustAction(unittest.TestCase):
 	"""Test some robust actions"""

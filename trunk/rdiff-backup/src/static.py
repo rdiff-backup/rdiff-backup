@@ -1,5 +1,3 @@
-execfile("globals.py")
-
 #######################################################################
 #
 # static - MakeStatic and MakeClass
