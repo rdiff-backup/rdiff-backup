@@ -169,6 +169,7 @@ def cmp_attribs(rp1, rp2):
 	if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
 		result = None
 	elif rp1.getperms() != rp2.getperms(): result = None
+	elif rp1.getctime() != rp2.getctime(): result = None
 	elif rp1.issym() and rp2.issym(): # Don't check times for some types
 		result = 1
 	elif rp1.isblkdev() and rp2.isblkdev(): result = 1
@@ -264,6 +265,7 @@ class RORPath:
 				pass # Don't compare gid/uid for symlinks
 			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
+			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
 			elif (key == 'inode' and
@@ -293,6 +295,7 @@ class RORPath:
 				  other.isreg() and other.getsize() == 0):
 				pass # Special files may be replaced with empty regular files
 			elif key == 'atime' and not Globals.preserve_atime: pass
+			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'perms' and not Globals.change_permissions: pass
@@ -316,6 +319,7 @@ class RORPath:
 				pass
 			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
+			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'inode' and (not self.isreg() or not compare_inodes):
@@ -430,6 +434,10 @@ class RORPath:
 	def getmtime(self):
 		"""Return modification time in seconds"""
 		return self.data['mtime']
+
+	def getctime(self):
+		"""Return change time in seconds"""
+		return self.data['ctime']
 	
 	def getinode(self):
 		"""Return inode number of file"""
