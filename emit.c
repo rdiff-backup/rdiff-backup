@@ -65,6 +65,29 @@ int _hs_emit_eof(hs_write_fn_t write_fn, void *write_priv,
 }
 
 
+int
+_hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
+		 char const *buf, uint32_t size)
+{
+     int ret;
+     
+     _hs_trace("Writing CHECKSUM(len=%d)", size);
+     ret = _hs_write_netbyte(write_fn, write_priv, op_checksum_short);
+     if (ret != 1)
+	  return -1;
+
+     ret = _hs_write_netshort(write_fn, write_priv, size);
+     if (ret != 2)
+	  return -1;
+
+     ret = _hs_write_loop(write_fn, write_priv, buf, size);
+     if (ret != (int) size)
+	  return -1;
+
+     return 3 + size;
+}
+
+
 /* Emit the command header for literal data. */
 int
 _hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv, uint32_t size)

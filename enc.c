@@ -336,12 +336,16 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
      int got_old;		/* true if there is an old signature */
      int need_bytes;		/* how much readahead do we need? */
      char *stats_str;
+     hs_mdfour_t filesum;
+     char filesum_result[MD4_LENGTH], filesum_hex[MD4_LENGTH * 2 + 2];
      
      _hs_trace("**** beginning %s", __FUNCTION__);
 
      bzero(stats, sizeof *stats);
      bzero(&copyq, sizeof copyq);
      bzero(&new_roll, sizeof new_roll);
+
+     hs_mdfour_begin(&filesum);
 
      got_old = 1;
      ret = _hs_check_sig_version(sigread_fn, sigreadprivate);
@@ -441,6 +445,7 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
                        in the right way? */
 		    if (ret < 0)
 			 goto out;
+		    hs_mdfour_update(&filesum, inbuf->buf + inbuf->cursor, short_block);
 		    inbuf->cursor += short_block;
 		    rollsum->havesum = new_roll.havesum = 0;
 	       } else {
@@ -452,6 +457,7 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 					     inbuf->buf[inbuf->cursor]);
 		    _hs_trim_sums(inbuf, rollsum, short_block);
 		    _hs_trim_sums(inbuf, &new_roll, short_block);
+		    hs_mdfour_update(&filesum, inbuf->buf + inbuf->cursor, 1);
 		    inbuf->cursor++;
 	       }
 	  }
@@ -482,6 +488,15 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 
      ret = _hs_push_literal_buf(sig_tmpbuf, write_fn, write_priv,
 				 stats, op_kind_signature);
+     if (ret < 0)
+	  goto out;
+
+     hs_mdfour_result(&filesum, filesum_result);
+     hs_hexify_buf(filesum_hex, filesum_result, MD4_LENGTH);
+     _hs_trace("filesum is %s", filesum_hex);
+
+     ret = _hs_emit_filesum(write_fn, write_priv,
+			    filesum_result, MD4_LENGTH);
      if (ret < 0)
 	  goto out;
 

@@ -277,6 +277,9 @@ extern struct hs_op_kind_name const _hs_op_kind_names[];
 int _hs_emit_signature_cmd(hs_write_fn_t write_fn, void *write_priv,
 		       uint32_t size);
 
+int _hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
+		     char const *buf, uint32_t size);
+
 int _hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv,
 		       uint32_t size);
 

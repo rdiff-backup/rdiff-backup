@@ -134,6 +134,20 @@ _hs_is_gd_signature(uint8_t cmd,
 }
 
 
+static int
+_hs_is_op_checksum(uint8_t cmd,
+		   uint32_t * length,
+		   hs_read_fn_t read_fn, void *read_priv)
+{
+     int ret = 0;
+     if (cmd == op_checksum_short) {
+	  uint16_t tmp;
+	  
+	  ret = _hs_read_netshort(read_fn, read_priv, &tmp);
+	  *length = tmp;
+     } 
+     return ret;
+}
 
 
 /*
@@ -166,9 +180,10 @@ _hs_inhale_command(hs_read_fn_t read_fn, void * read_priv,
 	  *kind = op_kind_literal;
      } else if (_hs_is_gd_signature(type, len, read_fn, read_priv) > 0) {
 	  *kind = op_kind_signature;
-     } else if (_hs_is_gd_copy(type, off, len,
-			       read_fn, read_priv) > 0) {
+     } else if (_hs_is_gd_copy(type, off, len, read_fn, read_priv) > 0) {
 	  *kind = op_kind_copy;
+     } else if (_hs_is_op_checksum(type, len, read_fn, read_priv) > 0) {
+	  *kind = op_kind_checksum;
      } else {
 	  _hs_fatal("unexpected command %#x!", type);
 	  return -1;

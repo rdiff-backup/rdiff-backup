@@ -157,15 +157,15 @@ hs_ptrbuf_t *hs_ptrbuf_on_buffer(char *buf, int len);
    MD4 hash
 */
 
-struct hs_mdfour {
+typedef struct hs_mdfour {
     uint32_t A, B, C, D;
     uint32_t totalN;
-};
+} hs_mdfour_t;
 
 void hs_mdfour(unsigned char *out, unsigned char const *in, int n);
-void hs_mdfour_begin(struct hs_mdfour *md);
-void hs_mdfour_update(struct hs_mdfour *md, unsigned char const *in, int n);
-void hs_mdfour_result(struct hs_mdfour *md, unsigned char *out);
+void hs_mdfour_begin(hs_mdfour_t *md);
+void hs_mdfour_update(hs_mdfour_t *md, unsigned char const *in, int n);
+void hs_mdfour_result(hs_mdfour_t *md, unsigned char *out);
 
 void
 hs_hexify_buf(char *to_buf, unsigned char const *from_buf, int from_len);

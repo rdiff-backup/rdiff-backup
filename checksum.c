@@ -63,9 +63,10 @@ uint32_t _hs_calc_weak_sum(char const *buf1, int len)
 
    Since we can't retry a web transaction I'm not sure if it's very
    useful in rproxy. */
-uint32_t _hs_calc_strong_sum(char const *buf, int len, char *sum)
+uint32_t
+_hs_calc_strong_sum(char const *buf, int len, char *sum)
 {
-    struct hs_mdfour m;
+    hs_mdfour_t m;
     char tsum[MD4_LENGTH];
 
     hs_mdfour_begin(&m);

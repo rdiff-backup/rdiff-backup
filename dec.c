@@ -147,6 +147,9 @@ hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
 	     return_val_if_fail(ret >= 0, -1);
 	     stats->copy_cmds++;
 	     stats->copy_bytes += length;
+	} else if (kind == op_kind_checksum) {
+	     _hs_trace("CHECKSUM(len=%d)", length);
+	     ret = _hs_check_checksum(ltread_fn, ltread_priv, length, filesum);
 	} else {
 	    _hs_fatal("unexpected op kind %d!", type);
 	}
