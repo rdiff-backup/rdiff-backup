@@ -135,7 +135,7 @@ hs_job_t * hs_sig_begin(hs_stream_t *stream,
 {
     hs_job_t *job;
 
-    job = hs_job_new(stream);
+    job = hs_job_new(stream, "signature");
 
     job->block_len = new_block_len;
 

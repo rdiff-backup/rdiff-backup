@@ -85,7 +85,7 @@ hs_job_t *hs_delta_begin(hs_stream_t *stream)
 {
 	hs_job_t *job;
 
-	job = hs_job_new(stream);
+	job = hs_job_new(stream, "delta");
 
         job->statefn = hs_delta_s_header;
 	

@@ -183,7 +183,7 @@ hs_job_t *hs_loadsig_begin(hs_stream_t *stream, hs_signature_t **sumset)
 {
     hs_job_t *job;
 
-    job = hs_job_new(stream);
+    job = hs_job_new(stream, "loadsig");
     job->statefn = hs_loadsig_s_magic;
         
     return job;

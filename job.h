@@ -22,6 +22,9 @@
 
 
 struct hs_job {
+    /** Human-readable job operation name. */
+    const char      *job_name;
+    
     hs_stream_t *stream;
 
     /** Callback for each processing step. */
@@ -57,4 +60,4 @@ struct hs_job {
 };
 
 
-hs_job_t * hs_job_new(hs_stream_t *stream);
+hs_job_t * hs_job_new(hs_stream_t *stream, const char *);

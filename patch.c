@@ -220,15 +220,15 @@ static hs_result hs_patch_s_header(hs_job_t *job)
 hs_job_t *hs_patch_begin(hs_stream_t *stream, hs_copy_cb *copy_cb,
                          void *copy_arg)
 {
-	hs_job_t *job = hs_job_new(stream);
+    hs_job_t *job = hs_job_new(stream, "patch");
 
-        job->statefn = hs_patch_s_header;
-        job->stream = stream;
+    job->statefn = hs_patch_s_header;
+    job->stream = stream;
         
-        job->copy_cb = copy_cb;
-        job->copy_arg = copy_arg;
+    job->copy_cb = copy_cb;
+    job->copy_arg = copy_arg;
 
-	hs_mdfour_begin(&job->output_md4);
+    hs_mdfour_begin(&job->output_md4);
 
-        return job;
+    return job;
 }
