@@ -6,7 +6,7 @@ Source: %{name}-%{version}.tar.gz
 Copyright: GPL
 Group: Applications/Archiving
 BuildRoot: %{_tmppath}/%{name}-root
-requires: librsync, python >= 2.2
+requires: librsync, python2 >= 2.2
 
 %description
 rdiff-backup is a script, written in Python, that backs up one
