@@ -1,4 +1,4 @@
-execfile("filename_mapping.py")
+execfile("statistics.py")
 
 #######################################################################
 #
@@ -108,7 +108,7 @@ class Inc:
 MakeStatic(Inc)
 
 
-class IncrementITR(IterTreeReducer):
+class IncrementITR(StatsITR):
 	"""Patch and increment iterator of increment triples
 
 	This has to be an ITR because directories that have files in them
@@ -127,13 +127,13 @@ class IncrementITR(IterTreeReducer):
 	Remember this object needs to be pickable.
 	
 	"""
-	directory, directory_replacement = None, None
+	mirror_isdirectory, directory_replacement = None, None
 	changed = None
 
 	def __init__(self, inc_rpath):
 		"""Set inc_rpath, an rpath of the base of the tree"""
 		self.inc_rpath = inc_rpath
-		IterTreeReducer.__init__(self, inc_rpath)
+		StatsITR.__init__(self, inc_rpath)
 
 	def start_process(self, index, diff_rorp, dsrp):
 		"""Initial processing of file
@@ -142,34 +142,15 @@ class IncrementITR(IterTreeReducer):
 		dsrp is the local file to be incremented
 
 		"""
-		self.init_statistics(diff_rorp, dsrp)
+		self.start_stats(dsrp)
 		incpref = self.inc_rpath.new_index(index)
 		if Globals.quoting_enabled: incpref.quote_path()
 		if dsrp.isdir():
 			self.init_dir(dsrp, diff_rorp, incpref)
-			self.setvals(diff_rorp, dsrp, incpref)
+			self.mirror_isdirectory = 1
 		else: self.init_non_dir(dsrp, diff_rorp, incpref)
-
-	def init_statistics(self, diff_rorp, dsrp):
-		"""Set initial values for various statistics
-
-		These refer to the old mirror or to new increment files.  Note
-		that changed_file_size could be bigger than total_file_size.
-		The other statistic, increment_file_size, is set later when we
-		have that information.
-
-		"""
-		if dsrp.lstat():
-			self.total_files = 1
-			self.total_file_size = dsrp.getsize()
-		else: self.total_files = self.total_file_size = 0
-		if diff_rorp:
-			self.changed_files = 1
-			if dsrp.lstat(): self.changed_file_size = dsrp.getsize()
-			else: self.changed_file_size = 0
-		else: self.changed_files = self.changed_file_size = 0
-		self.increment_file_size = 0
-
+		self.setvals(diff_rorp, dsrp, incpref)
+		
 	def override_changed(self):
 		"""Set changed flag to true
 
@@ -187,7 +168,6 @@ class IncrementITR(IterTreeReducer):
 		superclass.
 
 		"""
-		self.directory = 1
 		self.diff_rorp = diff_rorp
 		self.dsrp = dsrp
 		self.incpref = incpref
@@ -224,53 +204,32 @@ class IncrementITR(IterTreeReducer):
 			Robust.chain([Inc.Increment_action(diff_rorp, dsrp, incpref),
 						  RORPIter.patchonce_action(None, dsrp, diff_rorp)]
 						 ).execute()
-
-		self.increment_file_size += ((Inc._inc_file and Inc._inc_file.lstat()
-									  and Inc._inc_file.getsize()) or 0)
 		self.changed = 1
 
 	def end_process(self):
 		"""Do final work when leaving a tree (directory)"""
-		if not self.directory: return
 		diff_rorp, dsrp, incpref = self.diff_rorp, self.dsrp, self.incpref
-		if not diff_rorp and not self.changed: return
+		if self.mirror_isdirectory:
+			if not diff_rorp and not self.changed: return
 
-		if self.directory_replacement:
-			tf = self.directory_replacement
-			Inc.Increment(tf, dsrp, incpref)
-			RORPIter.patchonce_action(None, dsrp, tf).execute()
-			tf.delete()
-		else:
-			Inc.Increment(diff_rorp, dsrp, incpref)
-			if diff_rorp:
-				RORPIter.patchonce_action(None, dsrp, diff_rorp).execute()
+			if self.directory_replacement:
+				tf = self.directory_replacement
+				Inc.Increment(tf, dsrp, incpref)
+				RORPIter.patchonce_action(None, dsrp, tf).execute()
+				tf.delete()
+			else:
+				Inc.Increment(diff_rorp, dsrp, incpref)
+				if diff_rorp:
+					RORPIter.patchonce_action(None, dsrp, diff_rorp).execute()
 
-		self.increment_file_size += ((Inc._inc_file and Inc._inc_file.lstat()
-									  and Inc._inc_file.getsize()) or 0)
-		self.write_statistics()
-
-	def write_statistics(self):
-		"""Write the accumulated totals into file in inc directory"""
-		if not self.incpref.isdir(): return # only write for directories
-		statrp = Inc.get_inc_ext(self.incpref.append("directory_statistics"),
-								 "data")
-		tf = TempFileManager.new(statrp)
-		def init_thunk():
-			fp = tf.open("w")
-			fp.write("TotalFiles %d\n" % self.total_files)
-			fp.write("TotalFileSize %d\n" % self.total_file_size)
-			fp.write("ChangedFiles %d\n" % self.changed_files)
-			fp.write("ChangedFileSize %d\n" % self.changed_file_size)
-			fp.write("IncrementFileSize %d\n" % self.increment_file_size)
-			fp.close()
-		Robust.make_tf_robustaction(init_thunk, (tf,), (statrp,)).execute()
+		self.end_stats(diff_rorp, dsrp, Inc._inc_file)
+		if self.incpref.isdir() and (self.mirror_isdirectory or dsrp.isdir()):
+			self.write_stats_to_rp(Inc.get_inc_ext(
+				self.incpref.append("directory_statistics"), "data"))
 
 	def branch_process(self, subinstance):
 		"""Update statistics, and the has_changed flag if change in branch"""
 		if subinstance.changed: self.changed = 1	
+		self.add_file_stats(subinstance)
 
-		self.total_files += subinstance.total_files
-		self.total_file_size += subinstance.total_file_size
-		self.changed_files += subinstance.changed_files
-		self.changed_file_size += subinstance.changed_file_size
-		self.increment_file_size += subinstance.increment_file_size
+

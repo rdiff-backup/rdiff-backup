@@ -24,8 +24,9 @@ files = ["globals.py", "static.py", "lazy.py", "log.py", "ttime.py",
 		 "iterfile.py", "rdiff.py", "connection.py", "rpath.py",
 		 "hardlink.py", "robust.py", "rorpiter.py",
 		 "destructive_stepping.py", "selection.py",
-		 "filename_mapping.py", "increment.py", "restore.py",
-		 "manage.py", "highlevel.py", "setconnections.py", "main.py"]
+		 "filename_mapping.py", "statistics.py", "increment.py",
+		 "restore.py", "manage.py", "highlevel.py",
+		 "setconnections.py", "main.py"]
 
 os.system("cp header.py rdiff-backup")
 
