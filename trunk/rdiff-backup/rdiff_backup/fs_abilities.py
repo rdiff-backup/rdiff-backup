@@ -39,7 +39,8 @@ class FSAbilities:
 	hardlinks = None # True if hard linking supported
 	fsync_dirs = None # True if directories can be fsync'd
 	read_only = None # True if capabilities were determined non-destructively
-	name = None # 
+	dir_inc_perms = None # True if regular files can have full permissions
+	name = None # Short string, not used for any technical purpose
 
 	def __init__(self, name = None):
 		"""FSAbilities initializer.  name is only used in logging"""
@@ -61,10 +62,11 @@ class FSAbilities:
 		addline('Characters needing quoting', ctq_str)
 
 		for desc, val in [('Ownership changing', self.ownership),
-						  ('Access Control Lists', self.acls),
-						  ('Extended Attributes', self.eas),
+						  ('Access control lists', self.acls),
+						  ('Extended attributes', self.eas),
 						  ('Hard linking', self.hardlinks),
-						  ('fsync() directories', self.fsync_dirs)]:
+						  ('fsync() directories', self.fsync_dirs),
+						  ('Directory inc permissions', self.dir_inc_perms)]:
 			if val: val_text = 'On'
 			elif val is None: val_text = 'N/A'
 			else:
@@ -118,6 +120,7 @@ class FSAbilities:
 		self.set_fsync_dirs(subdir)
 		self.set_eas(subdir, 1)
 		self.set_acls(subdir)
+		self.set_dir_inc_perms(subdir)
 		if override_chars_to_quote is None: self.set_chars_to_quote(subdir)
 		else: self.chars_to_quote = override_chars_to_quote
 		if use_ctq_file: self.compare_chars_to_quote(rbdir)
@@ -240,6 +243,20 @@ rdiff-backup-data/chars_to_quote.
 		"""Set extended attributes from rp. Tests writing if write is true."""
 		self.eas = rp.conn.fs_abilities.test_eas_local(rp, write)
 
+	def set_dir_inc_perms(self, rp):
+		"""See if increments can have full permissions like a directory"""
+		test_rp = rp.append('dir_inc_check')
+		test_rp.touch()
+		try: test_rp.chmod(07777)
+		except OSError:
+			test_rp.delete()
+			self.dir_inc_perms = 0
+			return
+		test_rp.setdata()
+		assert test_rp.isreg()
+		if test_rp.getperms() == 07777: self.dir_inc_perms = 1
+		else: self.dir_inc_perms = 0
+		test_rp.delete()
 
 def test_eas_local(rp, write):
 	"""Test ea support.  Must be called locally.  Usedy by set_eas above."""
