@@ -22,6 +22,15 @@ whitespace in filelists.  Now filenames with, for instance, trailing
 spaces can be used in filelists.  Filelists which took advantage of
 this bug for formatting may have to be editted.
 
+Applied major/minor patch contributed by David S.  rdiff-backup should
+now correctly copy device files on platforms such as NetBSD.
+
+It is now possible to restore from a read-only filesystem (before
+rdiff-backup would fail when trying to open log file).  Thanks to
+Gregor Zattler for bug report.
+
+Fixed bug that prevented certain restores when source directory given
+with trailing backslash.
 
 
 New in v0.10.1 (2002/09/16)
