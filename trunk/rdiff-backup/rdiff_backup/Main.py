@@ -579,7 +579,6 @@ def restore_set_root(rpin):
 		parent_dir = rpath.RPath(rpin.conn, "/".join(pathcomps[:i]))
 		if (parent_dir.isdir() and
 			"rdiff-backup-data" in parent_dir.listdir()): break
-		print "##########", parent_dir.path, Globals.restrict_path
 		if parent_dir.path == rpin.conn.Globals.get('restrict_path'):
 			return None
 		i = i-1
