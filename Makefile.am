@@ -72,7 +72,7 @@ include_HEADERS = hsync.h hsyncproto.h
 bin_PROGRAMS = hsdecode hsencode hsmdfour
 check_PROGRAMS = hsemit hsinhale hsfilebufcat
 
-test-cmds/cmds.txt: make-cmds.py
+test-cmds/cmds: make-cmds.py
 	mkdir -p test-cmds
 	$(PYTHON) $(srcdir)/make-cmds.py > $@
 
