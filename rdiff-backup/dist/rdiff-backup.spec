@@ -6,7 +6,8 @@ Source: %{name}-%{version}.tar.gz
 Copyright: GPL
 Group: Applications/Archiving
 BuildRoot: %{_tmppath}/%{name}-root
-requires: librsync, python >= 2.2
+requires: librsync, python2 >= 2.2
+BuildPrereq: python2-devel >= 2.2
 
 %description
 rdiff-backup is a script, written in Python, that backs up one
@@ -24,22 +25,20 @@ differences from the previous backup will be transmitted.
 %setup
 
 %build
+./setup.py build
 
 %install
-rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT/usr/bin
-mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
-
-install -m 755 rdiff-backup $RPM_BUILD_ROOT/usr/bin/rdiff-backup
-install -m 644 rdiff-backup.1 $RPM_BUILD_ROOT/usr/share/man/man1/rdiff-backup.1
+./setup.py install --prefix=$RPM_BUILD_ROOT/usr
 %clean
 
 %files
 %defattr(-,root,root)
 
+%doc CHANGELOG COPYING README FAQ.html
+/usr/lib/python2.2/site-packages/rdiff_backup
 /usr/bin/rdiff-backup
 /usr/share/man/man1/rdiff-backup.1.gz
-%doc CHANGELOG COPYING README FAQ.html
+
 
 %changelog
 * Sun Nov 4 2001 Ben Escoto <bescoto@stanford.edu>
