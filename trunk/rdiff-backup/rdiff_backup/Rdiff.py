@@ -23,10 +23,24 @@ import os, librsync
 import Globals, log, static, TempFile, rpath
 
 
-def get_signature(rp):
+def get_signature(rp, blocksize = None):
 	"""Take signature of rpin file and return in file object"""
-	log.Log("Getting signature of %s" % rp.get_indexpath(), 7)
-	return librsync.SigFile(rp.open("rb"))
+	if not blocksize: blocksize = find_blocksize(rp.getsize())
+	log.Log("Getting signature of %s with blocksize %s" %
+			(rp.get_indexpath(), blocksize), 7)
+	return librsync.SigFile(rp.open("rb"), blocksize)
+
+def find_blocksize(file_len):
+	"""Return a reasonable block size to use on files of length file_len
+
+	If the block size is too big, deltas will be bigger than is
+	necessary.  If the block size is too small, making deltas and
+	patching can take a really long time.
+
+	"""
+	if file_len < 1024000: return 512 # set minimum of 512 bytes
+	else: # Split file into about 2000 pieces, rounding to 512
+		return long((file_len/(2000*512))*512)
 
 def get_delta_sigfileobj(sig_fileobj, rp_new):
 	"""Like get_delta but signature is in a file object"""
@@ -43,8 +57,7 @@ def write_delta(basis, new, delta, compress = None):
 	"""Write rdiff delta which brings basis to new"""
 	log.Log("Writing delta %s from %s -> %s" %
 			(basis.path, new.path, delta.path), 7)
-	sigfile = librsync.SigFile(basis.open("rb"))
-	deltafile = librsync.DeltaFile(sigfile, new.open("rb"))
+	deltafile = librsync.DeltaFile(get_signature(basis), new.open("rb"))
 	delta.write_from_fileobj(deltafile, compress)
 
 def write_patched_fp(basis_fp, delta_fp, out_fp):
@@ -79,8 +92,8 @@ def patch_local(rp_basis, rp_delta, outrp = None, delta_compressed = None):
 def copy_local(rpin, rpout, rpnew = None):
 	"""Write rpnew == rpin using rpout as basis.  rpout and rpnew local"""
 	assert rpout.conn is Globals.local_connection
-	sigfile = librsync.SigFile(rpout.open("rb"))
-	deltafile = rpin.conn.librsync.DeltaFile(sigfile, rpin.open("rb"))
+	deltafile = rpin.conn.librsync.DeltaFile(get_signature(rpout),
+											 rpin.open("rb"))
 	patched_file = librsync.PatchedFile(rpout.open("rb"), deltafile)
 
 	if rpnew: rpnew.write_from_fileobj(patched_file)
