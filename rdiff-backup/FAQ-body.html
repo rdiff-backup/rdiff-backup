@@ -124,7 +124,9 @@ link information will not be recorded.)
 <p>If you are backing up one windows system to another, full
 --windows-mode is not necessary, but you'll still need
 <strong>--windows-time-format</strong>, which stops rdiff-backup from
-trying to make increment files with colons in them.
+trying to make increment files with colons in them.  Whichever
+--windows* option you use, remember to use the same one when restoring
+or listing that backup directory.
 </li>
 
 <P>
@@ -152,7 +154,9 @@ these instructions build it fine with all tests running OK
 </pre>
 
 Also, if you are backing up to a file system that is not case
-sensitive you may need to use "--chars-to-quote A-Z".
+sensitive you may need to use "--chars-to-quote A-Z".  If you do use
+--chars-to-quote, remember to use it with the same arguments when
+restoring or listing incrementes.
 </li>
 
 <P>
