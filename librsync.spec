@@ -1,11 +1,11 @@
 Summary:  	Rsync libraries
 Name:     	librsync
-Version:  	0.9.4
+Version:  	0.9.6
 Release:  	1
 Copyright:	LGPL
 Group:    	System Environment/Libraries
-Source:  	http://ftp1.sourceforge.net/rproxy/librsync-0.9.4.tar.gz
-URL:       	http://www.sf.net/projects/rproxy
+Source:  	http://prdownloads.sourceforge.net/librsync/librsync-0.9.6.tar.gz?download
+URL:       	http://www.sourceforge.net/projects/librsync
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
 
 %description

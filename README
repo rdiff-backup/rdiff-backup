@@ -48,6 +48,21 @@ using the 'kgcc' version of the compiler:
   $ ./autogen.sh
   $ make all check
 
+>> Note for Windows
+
+With cygwin you can build using gcc as under a normal unix system. It is
+also possible to compile under cygwin using MSVC++.  This needs autotools to
+be run again to update config.sub to support the "windows32" build option.
+You must have environment variables needed by MSCV set using the
+Vcvars32.bat script. With these variables set, you just do;
+  
+  $ ./autogen.sh
+  $ ./configure.msc
+
+The PCbuild directory contains a project and pre-generated config.h for use
+with the MSVC++ IDE. This should be enought to compile rdiff.exe without
+requiring cygwin.
+
 >> Library Versions
 
 librsync uses the GNU libtool library versioning system, so the filename
@@ -65,6 +80,8 @@ SUNWspro: (use -v for more warnings)
 
 mips-sgi-irix6.5: works, but you must use GNU Make rather than the default
 SGI Make.  I used gcc.
+
+windows32: see above.
 
 >> API Documentation
 

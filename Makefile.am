@@ -17,28 +17,22 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-
-			      # Thus spake the master programmer:
-			      # 
-			      # ``When the program is being tested, it
-			      # is too late to make design changes.''
-
-AUX_DIST = install-sh missing mkinstalldirs ltmain.sh config.sub config.guess
 AUTOMAKE_OPTIONS = foreign
 SUBDIRS = doc popt testsuite
-MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure \
-	config.h.in stamp-h.in $(AUX_DIST) \
+MAINTAINERCLEANFILES = Makefile.in \
+	aclocal.m4 config.guess config.h.in config.sub configure \
+	depcomp install-sh ltmain.sh missing mkinstalldirs \
 	prototab.c prototab.h ChangeLog
 
 include_HEADERS = rsync.h
 
 lib_LTLIBRARIES = librsync.la
 
-librsync_la_SOURCES = \
+librsync_la_SOURCES =  prototab.c prototab.h \
 	base64.c buf.c buf.h checksum.c checksum.h command.c \
 	command.h delta.c emit.c emit.h fileutil.c fileutil.h \
 	hex.c job.c job.h mdfour.c mdfour.h mksum.c msg.c netint.c netint.h \
-	patch.c protocol.h prototab.c prototab.h readsums.c rsync.h \
+	patch.c protocol.h readsums.c rsync.h \
 	scoop.c search.c search.h stats.c stream.c stream.h sumset.c \
 	sumset.h trace.c trace.h tube.c types.h util.c util.h \
 	version.c whole.c whole.h

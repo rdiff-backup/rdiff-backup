@@ -1,3 +1,21 @@
+Changes in 0.9.6
+
+ * Migration to sourceforge for hosting.
+
+ * Rollsum bugfix that produces much smaller deltas.
+ 
+ * Memory leaks bugfix patches.
+
+ * mdfour bigendian and >512M bugfix, plus optimisations patch.
+ 
+ * autoconf/automake updates and cleanups
+ 
+ * Windows compilation patch.
+ 
+ * MacOSX compilation patch. 
+
+ * Debian package build scripts patch.
+ 
 Changes in 0.9.5:
 
  * Bugfix patch from Shirish Hemant Phatak

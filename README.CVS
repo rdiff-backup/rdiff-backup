@@ -17,7 +17,7 @@ http://sourceforge.net/projects/librsync/
 To build from CVS you'll need automake, autoconf, and libtool, plus a
 compiler, make and so on.  On Debian, you can simply say
 
-  # apt-get install automake autoconf libtool
+  # apt-get install automake1.7 autoconf libtool
 
 To generate API documentation, you will need Doxygen, Latex and GhostView:
 

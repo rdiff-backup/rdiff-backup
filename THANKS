@@ -19,3 +19,37 @@ Luke Kenneth Casson Leighton <lkcl@samba.org>
 Tim Potter <tpot@linuxcare.com.au>
 Hugh Blemings <hugh@linuxcare.com.au>
 David Gibson <dgibson@linuxcare.com.au>
+
+The release of 0.9.6 was contributed to mostly by the following people;
+
+Wayne Davidson <wayned@users.sourceforge.net>
+  - librsync sf project admin
+  - sf project creation, import cvs etc
+  - many cvs commits of submitted patches
+Martin Pool <mbp@users.sourceforge.net>
+  - sf project admin 
+  - sf project developers setup
+Donovan Baarda <abo@minkirri.apana.org.au>
+  - librsync sf project admin
+  - sf project tracker and lists setup
+  - MSVC6 and cygwin compiling patch
+  - mdfour optimisations and cleanups patch
+  - autconf/autmake cleanups
+  - build and release
+Ben Escoto <bescoto@users.sourceforge.net>
+  - librsync sf project admin
+Ben Elliston <bje@air.net.au>
+  - many cvs commits before migrating to sf
+Robert Weber <chipsforbrains@users.sourceforge.net>
+  - bigendian and >512M mdfour patch
+Skip Montanaro <montanaro@users.sourceforge.net>
+  - librsync on MacOSX patch
+Diego Liziero <diegoliz@users.sourceforge.net>
+  - memory leak patches
+  - again rdiff cosmetic patch
+Berkan Eskikaya <berkan@users.sourceforge.net>
+  - Control files for librsync debian packages patch
+Mark Moraes <moraes@sbcglobal.net>
+  - cygwin testsuite fixes email patch
+Robert Collins <robert.collins@itdomain.com.au>
+  - autoconf/automake cleanups email (old patch)

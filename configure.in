@@ -1,111 +1,53 @@
-# -*- shell-script -*-
-dnl Process this file with autoconf to produce a configure script. 
-AC_REVISION($Id$)
-
-# Copyright (C) 1999, 2000, 2001, 2002 by Martin Pool <mbp@samba.org>
-
-                    # Linux is the gateway drug for freedom.
-                    #                -- Don Marti
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.53)
-AC_INIT(trace.c)
-AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(librsync, 0.9.6)
+AC_INIT([librsync],[0.9.6])
+AC_REVISION([$Revision$])
+AC_COPYRIGHT([Copyright (C) 1999, 2000, 2001, 2002 by Martin Pool <mbp@samba.org>])
+AC_CONFIG_SRCDIR([trace.c])
+AC_CONFIG_HEADER([config.h])
+AM_INIT_AUTOMAKE
 
 # GNU library versioning: This is NOT the librsync release number.
 # See libversions.txt and the libtool manual for an explanation of the
 # library versioning
 librsync_libversion=1:2:0
 
-dnl Checks for programs.
-AC_PROG_CC
-AC_PROG_CPP
-AC_ISC_POSIX
-AC_PROG_INSTALL
-
+# Disable shared libs by default.
 AC_DISABLE_SHARED
+
+# Checks for programs.
+AC_GNU_SOURCE
+AC_PROG_CC
+AC_ISC_POSIX
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 
-# Set up to get as many features as we can manage
-AC_DEFINE(_GNU_SOURCE)
-
-AC_TYPE_SIZE_T
-AC_TYPE_OFF_T
-
-AC_C_CONST
-AC_C_BIGENDIAN
-
-AC_SYS_LARGEFILE
-
-# See if the compiler has the nice GNU feature of 
-# putting argv[0] into a global
-AC_MSG_CHECKING([for program_invocation_short_name])
-AC_TRY_COMPILE([#include <errno.h>], 
-    [strlen(program_invocation_short_name)],
-    [ AC_DEFINE(HAVE_PROGRAM_INVOCATION_NAME)
-      AC_MSG_RESULT(yes) ],
-    [ AC_MSG_RESULT(no) ])
-
-# supply a snprintf if the system doesn't have one
-AC_REPLACE_FUNCS(snprintf)
-AC_CHECK_FUNCS(vsnprintf)
-AC_CHECK_FUNCS(strerror mtrace)
-AC_CHECK_FUNC(setreuid, [], [
-    AC_CHECK_LIB(ucb, setreuid, [if echo $LIBS | grep -- -lucb >/dev/null ;then :; else LIBS="$LIBS -lc -lucb" USEUCB=y;fi])
-])
-
-dnl Checks for declarations
-AC_MSG_CHECKING(for sockaddr.sin_len)
-AC_EGREP_HEADER(sin_len, sys/socket.h, 
-	[ AC_DEFINE(HAVE_SOCK_SIN_LEN)
-          AC_MSG_RESULT(yes) ],
-        [ AC_MSG_RESULT(no) ])
-
-AC_MSG_CHECKING(for intmax_t in stdint.h)
-AC_EGREP_HEADER(intmax_t, stdint.h,
-        [ AC_MSG_RESULT(yes) ],
-        [ AC_DEFINE(intmax_t, long)
-          AC_MSG_RESULT(no) ])
-
-dnl Checks for libraries
-
+# Checks for libraries.
 AC_CHECK_LIB(z, deflate)
 AC_CHECK_LIB(bz2, BZ2_bzCompress)
-AC_CHECK_LIB(popt, poptGetContext)
+AC_CHECK_LIB(popt, poptGetContext,,[BUILD_POPT='popt/libpopt.a'; CFLAGS="$CFLAGS -I$srcdir/popt"])
 
-dnl Check configuration options
-if test "$GCC" = "yes" 
-then 
-    # I'm fussy.
-    CFLAGS="-Wall -Wshadow -Wundef -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wstrict-prototypes -Wpointer-arith -Wcast-qual -Wcast-align $CFLAGS"
-fi
-# TODO: Similar conditions for other known compilers.  For SUNWspro, use `-v'.
+# Checks for header files.
+AC_FUNC_ALLOCA
+AC_HEADER_STDC
+AC_CHECK_HEADERS([mcheck.h bzlib.h zlib.h])
+AC_CHECK_HEADERS([fcntl.h inttypes.h libintl.h limits.h malloc.h stdint.h stdlib.h string.h sys/file.h unistd.h])
 
-AC_ARG_ENABLE(ccmalloc,
-	[  --enable-ccmalloc       use ccmalloc debugger (default no)],
-	[ LIBS="$LIBS -lccmalloc -ldl" ])
-
-AC_ARG_ENABLE(trace,
-        [  --disable-trace         turn off library tracing])
-AC_MSG_CHECKING([whether to include trace code])
-if test "$enable_trace" = "yes" -o -z "$enable_trace"
-then
-    AC_MSG_RESULT(yes)
-    AC_DEFINE(DO_RS_TRACE)
-elif test "$enable_trace" = "no"
-then
-    AC_MSG_RESULT(no)
-else
-    AC_MSG_RESULT(failed)
-    AC_MSG_ERROR([--enable-trace must be set to yes or no])
-fi
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_BIGENDIAN
+AC_TYPE_SIZE_T
+AC_TYPE_OFF_T
+AC_SYS_LARGEFILE
 
 AC_CHECK_SIZEOF([unsigned char], 1)
-if test "$ac_cv_sizeof_unsigned_char" -ne 1
-then
-    AC_MSG_WARN(unsigned char seems to be $ac_cv_sizeof_unsigned_char bytes.  Expect trouble.)
+if test "$ac_cv_sizeof_unsigned_char" -ne 1; then
+  AC_MSG_WARN(unsigned char seems to be $ac_cv_sizeof_unsigned_char bytes.  Expect trouble.)
 fi
-
 AC_CHECK_SIZEOF(short, 2)
 AC_CHECK_SIZEOF([unsigned short], 2)
 AC_CHECK_SIZEOF(int, 4)
@@ -116,25 +58,55 @@ AC_CHECK_SIZEOF([long long], 0)
 AC_CHECK_SIZEOF(off_t, 4)
 AC_CHECK_SIZEOF(size_t, 4)
 
-dnl Checks for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADERS(config.h unistd.h alloca.h libintl.h mcheck.h)
-AC_CHECK_HEADERS(zlib.h bzlib.h stdint.h fcntl.h inttypes.h sys/file.h)
+# Checks for library functions.
+#AC_FUNC_MALLOC      #XXX: needs malloc.c replacement  
+#AC_FUNC_MEMCMP      #XXX: needs memcmp.c replacement
+#AC_FUNC_REALLOC     #XXX: needs realloc.c replacement
+AC_CHECK_FUNCS([memmove memset strchr strerror strtol])
+AC_CHECK_FUNCS([gettext dgettext])
+AC_CHECK_FUNC(setreuid, [],
+  [ AC_CHECK_LIB(ucb, setreuid, 
+    [ if echo $LIBS | grep -- -lucb >/dev/null ;then :; 
+      else LIBS="$LIBS -lc -lucb"; USEUCB=y;fi])
+])
+# supply a snprintf if the system doesn't have one
+AC_REPLACE_FUNCS(snprintf)
+AC_CHECK_FUNCS(vsnprintf)
 
-AC_DEFINE_UNQUOTED(RS_LIBVERSION, "$librsync_libversion")
-AC_DEFINE_UNQUOTED(RS_CANONICAL_HOST, "$host")
+# See if the compiler has the nice GNU feature of 
+# putting argv[0] into a global
+AC_MSG_CHECKING([for program_invocation_short_name])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+  [[#include <errno.h>]],
+  [[strlen(program_invocation_short_name)]])],
+  [ AC_DEFINE(HAVE_PROGRAM_INVOCATION_NAME,,
+      [GNU extension of saving argv[0] to program_invocation_short_name])
+    AC_MSG_RESULT(yes) ],
+  [ AC_MSG_RESULT(no) ])
+
+if test "$GCC" = "yes"; then 
+  CFLAGS="-Wall -Wshadow -Wundef -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wstrict-prototypes -Wpointer-arith -Wcast-qual -Wcast-align $CFLAGS"
+fi
+# TODO: Similar conditions for other known compilers.  For SUNWspro, use `-v'.
+
+AC_ARG_ENABLE(ccmalloc,
+  AC_HELP_STRING([--enable-ccmalloc],[use ccmalloc debugger (default no)]),
+  [ LIBS="$LIBS -lccmalloc -ldl" ])
+
+AC_ARG_ENABLE(trace,
+  AC_HELP_STRING([--enable-trace],[turn on library tracing]),
+  [AC_DEFINE(DO_RS_TRACE,,[Define this to enable trace code])])
+
+AC_DEFINE_UNQUOTED(RS_LIBVERSION, "$librsync_libversion",[Version of the libtool interface.])
+AC_DEFINE_UNQUOTED(RS_CANONICAL_HOST, "$host",[Canonical GNU hostname])
 
 AC_SUBST(librsync_libversion)
-AC_SUBST(OBJ_SAVE)
-AC_SUBST(OBJ_RESTORE)
-AC_SUBST(CC_SHOBJ_FLAG)
-AC_SUBST(CCMALLOC_LIB)
-AC_SUBST(net_libs)
-AC_SUBST(LIBTOOL_DEPS)
 AC_SUBST(BUILD_POPT)
 
-AC_OUTPUT([Makefile 
-           doc/Makefile 
-           doc/Doxyfile 
-           popt/Makefile 
-           testsuite/Makefile])
+AC_CONFIG_FILES([ 
+  Makefile 
+  doc/Makefile 
+  doc/Doxyfile 
+  popt/Makefile 
+  testsuite/Makefile])
+AC_OUTPUT
