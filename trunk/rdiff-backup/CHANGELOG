@@ -10,6 +10,14 @@ link information is not restored unless it is current in the mirror.
 Fixed problem with door files locally when repository is remote.
 (Reported by Robert Weber.)
 
+Patch by Jeffrey Marshall fixes socket/fifo recognition on Mac OS X
+(which apparently has buggy macros).
+
+Patch by Jeffrey Marshall fixes --calculate-average mode, which seems
+to have broken recently.
+
+rdiff-backup should now work with python 2.3.
+
 
 New in v0.13.0 (2003/07/22)
 ---------------------------
