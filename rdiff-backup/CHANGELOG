@@ -9,6 +9,8 @@ Kaltenecker for bug report.
 Fixed error when --restrict path given with trailing backslash.  Bug
 report by Åke Brännström.
 
+Backported regress fix from 0.13.x.  But noticed by Alan Horn.
+
 
 New in v0.12.6 (2003/11/02)
 ---------------------------
