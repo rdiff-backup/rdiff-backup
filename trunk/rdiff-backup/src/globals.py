@@ -141,7 +141,7 @@ class Globals:
 	# to .snapshots and .diffs).  The second below is the compiled
 	# version of the first.
 	no_compression_regexp_string = ".*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|" \
-								   "mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
+							"jpg|gif|png|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
 	no_compression_regexp = None
 
 	def get(cls, name):
