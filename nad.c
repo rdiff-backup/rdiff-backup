@@ -82,41 +82,6 @@
 
 const int hs_encode_job_magic = 23452345;
 
-#if 0
-/* This structure holds all the state of the encoding operation.  Yes,
-   it's a bit ugly to stick random variables in here like this, but we
-   can't keep them on the stack, because we want to be able to suspend
-   and resume the encoding operation to allow operation in a
-   nonforking server.  */
-typedef struct hs_encode_job {
-    hs_sum_set_t *sums;
-
-    hs_off_t sum_cursor;	/* we're about to sum the block here */
-    hs_off_t search_cursor;	/* we're looking for a match or
-                                   literal here */
-#if 0
-    ssize_t file_len;	/* total file length -- only know
-                                   after seeing eof */
-#endif
-    rollsum_t *rollsum;
-    _hs_inbuf_t *inbuf;
-    rollsum_t new_roll;
-    int block_len, short_block;
-    hs_membuf_t *sig_tmpbuf, *lit_tmpbuf;
-    _hs_copyq_t copyq;
-    int token;
-    int at_eof;			/* true if approaching end of the new
-                                   file */
-    int got_old;		/* true if there is an old signature */
-    int need_bytes;		/* how much readahead do we need? */
-    char *stats_str;
-    hs_mdfour_t filesum;
-    char filesum_result[MD4_LENGTH], filesum_hex[MD4_LENGTH * 2 + 2];
-} hs_encode_job_t;
-
-
-#endif
-
 
 struct hs_encode_job {
     int			tag;
@@ -197,7 +162,9 @@ hs_encode_begin(int in_fd, hs_write_fn_t write_fn, void *write_priv,
     job->write_priv = write_priv;
     job->write_fn = write_fn;
 
-    job->input_block = 16<<10;
+    /* FIXME: Should we use input blocks, or should we just read
+     * enough to run a coroutine? */
+    job->input_block = 32<<10;
 				    
     job->sums = sums;
     job->stats = stats;
@@ -360,7 +327,17 @@ hs_encode_iter(hs_encode_job_t *job)
     hs_off_t		map_off;
      
     /* Map some data.  We advance the map to the earliest point in the
-     * datastream that anybody needs to see. */
+     * datastream that anybody needs to see.
+     *
+     * Several things can happen here:
+     *
+     * If the stream is in blocking mode, then we'll read at least
+     * enough data to run one of the coroutines.  If the stream is in
+     * nonblocking mode, we might not get enough, in which case we'll
+     * return and the caller will presumably call select(2).
+     *
+     * In either case, if we reach EOF we'll finish up processing
+     * immediately.  */
     p = _hs_nad_map(job, &map_off, &map_len);
 
     /* We have essentially three coroutines to run here.  We know
@@ -377,6 +354,11 @@ hs_encode_iter(hs_encode_job_t *job)
 
     /* There is no need to flush: these functions all do output as
      * soon as they can. */
+
+    /* The problem here is that we might be near EOF, but mapptr won't
+     * realize it has to do another read, and we won't know that we
+     * should force it.  All we see is that we have not enough data to
+     * do a full read.  What now? */
 
     if (job->seen_eof) {
 	_hs_emit_eof(job->write_fn, job->write_priv, job->stats);
