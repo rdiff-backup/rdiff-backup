@@ -110,34 +110,36 @@ static const int RS_STREAM_DOGTAG = 2001125;
  */
 int rs_buffers_copy(rs_buffers_t *stream, int max_len)
 {
-        int len = max_len;
+    int len = max_len;
     
-        assert(len > 0);
+    assert(len > 0);
 
-        if ((unsigned) len > stream->avail_in) {
-                rs_trace("copy limited to %d available input bytes",
-                          stream->avail_in);
-                len = stream->avail_in;
-        }
+    if ((unsigned) len > stream->avail_in) {
+        rs_trace("copy limited to %d available input bytes",
+                 stream->avail_in);
+        len = stream->avail_in;
+    }
 
 
-        if ((unsigned) len > stream->avail_out) {
-                rs_trace("copy limited to %d available output bytes",
-                          stream->avail_out);
-                len = stream->avail_out;
-        }
+    if ((unsigned) len > stream->avail_out) {
+        rs_trace("copy limited to %d available output bytes",
+                 stream->avail_out);
+        len = stream->avail_out;
+    }
 
-        rs_trace("stream copied chunk of %d bytes", len);
+    if (!len)
+        return 0;
+    rs_trace("stream copied chunk of %d bytes", len);
 
-        memcpy(stream->next_out, stream->next_in, len);
+    memcpy(stream->next_out, stream->next_in, len);
     
-        stream->next_out += len;
-        stream->avail_out -= len;
+    stream->next_out += len;
+    stream->avail_out -= len;
 
-        stream->next_in += len;
-        stream->avail_in -= len;
+    stream->next_in += len;
+    stream->avail_in -= len;
 
-        return len;
+    return len;
 }
 
 
