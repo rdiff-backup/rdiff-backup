@@ -623,6 +623,10 @@ insensitive), then this prefix will be removed and any character in
 the string can be replaced with an upper- or lowercase version of
 itself.
 
+Remember that you may need to quote these characters when typing them
+into a shell, so the shell does not interpret the globbing patterns
+before rdiff-backup sees them.
+
 The
 .BI "--exclude " pattern
 option matches a file iff:
@@ -658,7 +662,7 @@ For example,
 .PP
 .RE
 matches /usr/local, /usr/local/lib, and /usr/local/lib/netscape.  It
-is the same as --exclude /usr/local --exclude /usr/local/**.
+is the same as --exclude /usr/local --exclude '/usr/local/**'.
 .PP
 .RS
 .B --include
@@ -672,7 +676,7 @@ that included subdirectories have somewhere to go.  Finally,
 .PP
 .RS
 .B --include
-ignorecase:/usr/[a-z0-9]foo/*/**.py
+ignorecase:'/usr/[a-z0-9]foo/*/**.py'
 .PP
 .RE
 would match a file like /usR/5fOO/hello/there/world.py.  If it did

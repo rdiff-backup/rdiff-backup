@@ -1,8 +1,19 @@
-New in v0.9.5 (2002/08/07)
+New in v0.9.5 (2002/08/09)
 --------------------------
 
 Fixed --verbosity option (now both -v and --verbosity work).  Thanks
 to Chris Dumont for report.
+
+****** IMPORTANT ****** Fixed serious permissions bug found by Robert
+Weber.  Previous versions in the 0.9.x branch would throw away high
+bit permissions (like the setuid and setuid bits).  This would be
+especially bad when running with the --change-source-perms operation.
+Anyone running 0.9.0 - 0.9.4 should upgrade immediately.
+
+Complain about --change-source-perms when running as root, as this
+option should not be necessary then.
+
+Fixed bug with --windows-mode.  Thanks to Chris Grindstaff for report.
 
 
 New in v0.9.4 (2002/07/24)

@@ -1,8 +1,3 @@
-Fix --windows-mode and FilenameMapping in rpath.py.  Bug reported by
-Chris Grindstaff.
-
-Check on --verbosity.
-
 Write some better selection test cases to test new Iterate_fast func.
 
 ---------[ Long term ]---------------------------------------
