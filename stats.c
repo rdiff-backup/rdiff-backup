@@ -49,21 +49,31 @@ hs_format_stats(hs_stats_t const * stats,
 {
     char const *op = stats->op;
     char const *alg = stats->algorithm;
+    int len;
 
     if (!op)
         op = "noop";
     if (!alg)
         alg = "none";
     
-    snprintf(buf, size,
-	     "%s/%s literal[%d cmds, %d bytes], "
-	     "signature[%d cmds, %d bytes], "
-	     "copy[%d cmds, %d bytes, %d false]",
-	     op, alg,
-	     stats->lit_cmds, stats->lit_bytes,
-	     stats->sig_cmds, stats->sig_bytes,
-	     stats->copy_cmds, stats->copy_bytes,
-	     stats->false_matches);
+    len = snprintf(buf, size, "%s/%s ", op, alg);
 
+    if (stats->lit_cmds) {
+        len += snprintf(buf+len, size-len, "literal[%d cmds, %d bytes] ",
+                        stats->lit_cmds, stats->lit_bytes);
+    }
+
+    if (stats->sig_cmds) {
+        len += snprintf(buf+len, size-len, "signature[%d cmds, %d bytes] ",
+                        stats->sig_cmds, stats->sig_bytes);
+    }
+
+    if (stats->copy_cmds || stats->false_matches) {
+        len += snprintf(buf+len, size-len, 
+                        "copy[%d cmds, %d bytes, %d false]",
+                        stats->copy_cmds, stats->copy_bytes,
+                        stats->false_matches);
+    }
+        
     return buf;
 }
