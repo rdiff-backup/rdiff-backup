@@ -74,6 +74,15 @@
    FIXME: Something seems to be wrong with the trailing chunk; it
    doesn't match.  */
 
+/*
+ * TODO: Maybe flush signature or literal data in here
+ * somewhere too?  Doing this avoids accumulating a lot of
+ * stuff in memory, at the price of sending commands more
+ * frequently than is really necessary.  If we do it, we
+ * should spit it out e.g. on the 64K boundary so that we
+ * just avoid going to a larger command. 
+ */
+
 #include "includes.h"
 #include "hsync.h"
 #include "hsyncproto.h"
@@ -103,7 +112,7 @@ _hs_update_sums(inbuf_t * inbuf, int this_block_len, rollsum_t * rollsum)
      if (!rollsum->havesum) {
 	  rollsum->weak_sum =
 	       _hs_calc_weak_sum(inbuf->buf + inbuf->cursor, this_block_len);
-	  _hs_trace("new weak checksum: %u", rollsum->weak_sum);
+	  _hs_trace("recalculate checksum: weak=%#x", rollsum->weak_sum);
 	  rollsum->havesum = 1;
 	  rollsum->s1 = rollsum->weak_sum & 0xFFFF;
 	  rollsum->s2 = rollsum->weak_sum >> 16;
@@ -152,26 +161,32 @@ _hs_find_match(int this_block_size, rollsum_t * rollsum, inbuf_t * inbuf,
 
 static int
 _hs_output_block_hash(rs_write_fn_t write_fn, void *write_priv,
-		      inbuf_t * inbuf, int new_block_len,
+		      inbuf_t * inbuf, int shortened_block_len,
 		      rollsum_t * rollsum)
 {
      char strong_sum[SUM_LENGTH];
 
-//     _hs_trace("called, abspos=%d", inbuf->abspos + inbuf->cursor);
-
      _hs_write_netint(write_fn, write_priv, rollsum->weak_sum);
-     _hs_calc_strong_sum(inbuf->buf + inbuf->cursor, new_block_len,
+     _hs_calc_strong_sum(inbuf->buf + inbuf->cursor, shortened_block_len,
 			 strong_sum);
+
      write_fn(write_priv, strong_sum, SUM_LENGTH);
+
+     _hs_trace("called, abspos=%d weak=%#x", inbuf->abspos + inbuf->cursor,
+	       rollsum->weak_sum);
 
      return 0;
 }
 
 
-static int _hs_signature_ready(inbuf_t * inbuf, int new_block_len)
+static int
+_hs_signature_ready(inbuf_t * inbuf, int new_block_len)
 {
      int abs_cursor = (inbuf->abspos + inbuf->cursor);
 
+     /* Is this the right calculation?  Are we really called on every
+        byte? */
+     
      return (abs_cursor % new_block_len) == 0;
 }
 
@@ -249,6 +264,7 @@ hs_encode(rs_read_fn_t read_fn, void *readprivate,
      int ret;
      rollsum_t real_rollsum, *const rollsum = &real_rollsum;
      inbuf_t real_inbuf, *const inbuf = &real_inbuf;
+     rollsum_t new_roll;
      int block_len, shortened_block_len;
      hs_membuf_t *sig_tmpbuf, *lit_tmpbuf;
      _hs_copyq_t copyq;
@@ -260,6 +276,7 @@ hs_encode(rs_read_fn_t read_fn, void *readprivate,
 
      bzero(stats, sizeof *stats);
      bzero(&copyq, sizeof copyq);
+     bzero(&new_roll, sizeof new_roll);
 
      rollsum->havesum = 0;
 
@@ -315,18 +332,10 @@ hs_encode(rs_read_fn_t read_fn, void *readprivate,
 		 : inbuf->cursor + block_len <= inbuf->amount) {
 	       shortened_block_len = MIN(block_len, inbuf->amount - inbuf->cursor);
 	       _hs_update_sums(inbuf, shortened_block_len, rollsum);
-
+	       _hs_update_sums(inbuf, shortened_block_len, &new_roll);
 	       if (_hs_signature_ready(inbuf, block_len)) {
-		    /*
-		     * TODO: Maybe flush signature or literal data in here
-		     * somewhere too?  Doing this avoids accumulating a lot of
-		     * stuff in memory, at the price of sending commands more
-		     * frequently than is really necessary.  If we do it, we
-		     * should spit it out e.g. on the 64K boundary so that we
-		     * just avoid going to a larger command. 
-		     */
 		    _hs_output_block_hash(hs_membuf_write, sig_tmpbuf,
-					  inbuf, block_len, rollsum);
+					  inbuf, shortened_block_len, &new_roll);
 	       }
 
 	       if (got_old)
@@ -351,20 +360,28 @@ hs_encode(rs_read_fn_t read_fn, void *readprivate,
 		    if (ret < 0)
 			 goto out;
 		    inbuf->cursor += shortened_block_len;
-		    rollsum->havesum = 0;
+		    rollsum->havesum = new_roll.havesum = 0;
 	       } else {
 		    _hs_copyq_flush(write_fn, write_priv, &copyq, stats);
 		 
 		    /* Append this character to the outbuf */
 		    ret = _hs_append_literal(lit_tmpbuf,
 					     inbuf->buf[inbuf->cursor]);
-		    _hs_roll_sums(inbuf, rollsum, block_len);
+		    _hs_roll_sums(inbuf, rollsum, shortened_block_len);
+		    _hs_roll_sums(inbuf, &new_roll, shortened_block_len);
 		    inbuf->cursor++;
 	       }
 	  }
 
 	  _hs_slide_inbuf(inbuf);
      } while (!at_eof);
+
+     /* If we didn't just send a block hash, then send it now for the
+        last short block. */
+     if (!_hs_signature_ready(inbuf, block_len)) {
+	  _hs_output_block_hash(hs_membuf_write, sig_tmpbuf,
+				inbuf, shortened_block_len, &new_roll);
+     }
 
      /* Flush any literal or copy data remaining.  Only one or the
 	other should happen. */
