@@ -1,3 +1,12 @@
+New in v0.9.2 (2022/06/24)
+--------------------------
+
+Fixed Path bug which could caused globbing and regexp include/exclude
+statements to malfunction when the base of the source directory was
+"/" (root of filesystem).  Thanks to Vlastimil Adamovsky for noting
+this bug.
+
+
 New in v0.9.1 (2002/06/19)
 --------------------------
 
