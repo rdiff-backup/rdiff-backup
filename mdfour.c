@@ -3,7 +3,7 @@
  * libhsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1997-1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or modify

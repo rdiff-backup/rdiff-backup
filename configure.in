@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_REVISION($Id$)
 # -*- shell-script -*-
 
-# Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
+# Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
 
 AC_INIT(trace.c)
 

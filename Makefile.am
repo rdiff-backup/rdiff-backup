@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# Copyright (C) 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
+# Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
 # $Id$
 
 # This program is free software; you can redistribute it and/or
