@@ -28,12 +28,17 @@
                                */
 
 
-/*! \mainpage The libhsync delta-encoding library
+/**
+ * \mainpage The libhsync delta-encoding library
+ * \author Martin Pool <mbp@samba.org>
+ * \version 0.7
  *
  * \section intro Introduction
  *
- * This is an library for rsync-encoding, designed to be easily embedded
- * into diverse applications.
+ * This is an library for rsync-encoding, designed to be easily
+ * embedded into diverse applications.  \em libhsync is being
+ * developed as part of the \b rproxy <http://rproxy.samba.org/>
+ * and \b rsync <http://rsync.samba.org/> projects.
  *
  * \section overview Overview
  *
@@ -87,17 +92,26 @@ void hs_base64(unsigned char const *buf, int n, char *out);
 
 
 
-/* Return codes */
-typedef enum hs_result {
-        HS_OK =			0,	/* completed successfully */
-        HS_BLOCKED =		1, 	/* OK, but more remains to be done */
-        HS_RUN_OK  =            2,      /* not yet finished or blocked */
-        HS_IO_ERROR =		(-1),   /* error in file or network IO */
-        HS_MEM_ERROR =		(-2),   /* out of memory */
-        HS_SHORT_STREAM	=	(-3),	/* unexpected eof */
-        HS_BAD_MAGIC =          (-4)    /* illegal value on stream */
-} hs_result;
+/**
+ * \brief Return codes from nonblocking hsync operations.
+ *
+ * \sa hs_result
+ */
+enum hs_result {
+        HS_OK =			0,	/**< completed successfully */
+        HS_BLOCKED =		1, 	/**< OK, but more remains to be done */
+        HS_RUN_OK  =            2,      /**< not yet finished or blocked */
+        HS_IO_ERROR =		(-1),   /**< error in file or network IO */
+        HS_MEM_ERROR =		(-2),   /**< out of memory */
+        HS_SHORT_STREAM	=	(-3),	/**< unexpected eof */
+        HS_BAD_MAGIC =          (-4)    /**< illegal value on stream */
+};
 
+/** \brief Return codes from nonblocking hsync operations.
+ *
+ * \sa enum hs_result
+ */
+typedef enum hs_result hs_result;
 
 /***********************************************************************
  * Statistics about an encode/decode operation
@@ -117,6 +131,13 @@ typedef struct hs_stats {
  * MD4 hash
  ***********************************************************************/
 
+/** \typedef struct hs_mdfour hs_mdfour_t
+ *
+ * \brief MD4 message-digest accumulator.
+ *
+ * \sa mdfour.c: hs_mdfour(), hs_mdfour_begin(), hs_mdfour_update(),
+ * hs_mdfour_result()
+ */
 typedef struct hs_mdfour {
     int                 A, B, C, D;
     int                 totalN;
