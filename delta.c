@@ -69,8 +69,7 @@
 #include "search.h"
 
 
-static rs_result rs_delta_scan_short(rs_job_t *, rs_long_t avail_len, void *);
-static rs_result rs_delta_scan_full(rs_job_t *, rs_long_t avail_len, void *);
+static rs_result rs_delta_scan(rs_job_t *, rs_long_t avail_len, void *);
 
 static rs_result rs_delta_s_deferred_copy(rs_job_t *job);
 
@@ -127,39 +126,7 @@ rs_delta_s_scan(rs_job_t *job)
     if (result != RS_DONE)
         return result;
     
-    if (is_ending)
-        return rs_delta_scan_short(job, avail_len, inptr);
-    else {
-        assert(avail_len >= job->block_len);
-        return rs_delta_scan_full(job, avail_len, inptr);
-    }
-}
-
-
-/**
- * Scan for a possibly-short block in the next \p avail_len bytes of input.
- */
-static rs_result
-rs_delta_scan_short(rs_job_t *job, rs_long_t avail_len, void *inptr)
-{
-/*     rs_result      result; */
-/*     rs_long_t      this_len; */
-
-    /* common case of not being near the end, and therefore trying
-     * to read a whole block. */
-
-    /* TODO: Instead of this, calculate the checksum, rolling if
-     * possible.  Then look it up in the hashtable.  If we match, emit
-     * that and advance over the scooed data.  Otherwise, emit a
-     * literal byte and keep searching while there's input data. */
-
-    /* TODO: Handle short end blocks. */
-    
-    rs_trace("emit lazy literal for %ld bytes", (long) avail_len);
-    rs_emit_literal_cmd(job, avail_len);
-    rs_tube_copy(job, avail_len);
-
-    return RS_RUNNING;
+    return rs_delta_scan(job, avail_len, inptr);
 }
 
 
@@ -170,11 +137,11 @@ rs_delta_scan_short(rs_job_t *job, rs_long_t avail_len, void *inptr)
  * Emit exactly one LITERAL or COPY command.
  */
 static rs_result
-rs_delta_scan_full(rs_job_t *job, rs_long_t avail_len, void *p)
+rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
 {
     rs_weak_sum_t        weak_sum;
     rs_long_t            match_where;
-    int                  search_pos;
+    int                  search_pos, end_pos;
     unsigned char        *inptr = (unsigned char *) p;
     
     /* So, we have avail_len bytes of data, and we want to look
@@ -192,18 +159,31 @@ rs_delta_scan_full(rs_job_t *job, rs_long_t avail_len, void *p)
 
     /* TODO: Don't recalculate from scratch, but rather roll forwards
      * if possible. */
-    for (search_pos = 0; search_pos <= avail_len - job->block_len; search_pos++) {
-        weak_sum = rs_calc_weak_sum(inptr + search_pos, job->block_len);
-        if (rs_search_for_block(weak_sum, inptr + search_pos, job->block_len,
+    if (job->stream->eof_in)
+        end_pos = avail_len - 1;
+    else
+        end_pos = avail_len - job->block_len;
+    
+    for (search_pos = 0; search_pos <= end_pos; search_pos++) {
+        size_t this_len = job->block_len;
+
+        if (search_pos + this_len > avail_len) {
+            this_len = avail_len - search_pos;
+            rs_trace("block reduced to %d", this_len);
+        }
+        
+        weak_sum = rs_calc_weak_sum(inptr + search_pos, this_len);
+        if (rs_search_for_block(weak_sum, inptr + search_pos, this_len,
                                 job->signature, &job->stats, &match_where)) {
             /* So, we got a match.  cool.  now, if there was literal data
              * ahead of that, we need to flush it first.  otherwise, we
              * can emit the copy command. */
             /* TODO: Perhaps instead store this in the job, and set a new
              * statefn. */
-            rs_trace("matched %ld!", (long) match_where);
+            rs_trace("matched %ld bytes at %ld!",
+                     (long) this_len, (long) match_where);
             job->basis_pos = match_where;
-            job->basis_len = job->block_len;
+            job->basis_len = this_len;
             job->statefn = rs_delta_s_deferred_copy;
             break;
         }
