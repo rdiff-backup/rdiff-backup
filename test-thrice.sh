@@ -16,7 +16,10 @@ fi
 srcdir=`cd $srcdir; pwd`
 
 PATH=$srcdir:$PATH
-cd $srcdir/test-thrice
+
+testdir=$srcdir/test-thrice
+[ -d $testdir ] || mkdir $testdir
+cd $testdir
 
 echo -n `basename $0` ' '
 
