@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*=                    -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- the library for network deltas
  * $Id$
@@ -21,64 +21,32 @@
  */
 
 
-
-
-/*
- * High-level file-based interfaces.  One end of the task is connected
- * to a stdio file stream, and the other to your program.
+/*!
+ * \file hsyncfile.h
+ * \brief High-level file-based interfaces.
+ * \author Martin Pool <mbp@samba.org>
+ * $Id$
  */
 
 
-/*
- * Buffer sizes for file IO.  You probably only need to change these
- * in testing.
+/*!
+ * Buffer sizes for file IO.
+ *
+ * You probably only need to change these in testing.
  */
 extern int hs_inbuflen, hs_outbuflen;
 
 
-/* stdio-like file type */
-typedef void HSFILE;
-
-/*
- * Open a patch file, supplying the basis.  Reading from this will
- * return the newly patched file.
- */
-HSFILE *hs_patch_open(FILE *basis, FILE *delta);
-
-enum hs_result hs_patch_read(HSFILE *, void *buf, size_t *len);
-
-enum hs_result hs_patch_close(HSFILE *);
-
-enum hs_result hs_file_copy_cb(void *, size_t *, void **);
-
-
-/*
- * Accept data written in, and write its signature out to a file.
- */
-HSFILE *hs_mksum_open(FILE *sigfile, int block_len, int strong_sum_len);
-
-enum hs_result hs_mksum_write(HSFILE *, void *buf, size_t len);
-
-enum hs_result hs_mksum_close(HSFILE *);
-
-
-/*
- * Calculate the MD4 sum of IN_FILE into RESULT.  RESULT is binary,
- * not hex.
+/**
+ * Calculate the MD4 sum of a file.
+ *
+ * \param result Binary (not hex) MD4 of the whole contents of the
+ * file.
  */
 void hs_mdfour_file(FILE *in_file, char *result);
 
+hs_result hs_sig_file(FILE *old_file, FILE *sig_file, size_t, size_t); 
 
+hs_result hs_readsig_file(FILE *sig_file, hs_sumset_t **sumset);
 
-/*
- * rdiff-style whole-file commands.
- */
-enum hs_result hs_rdiff_signature(int argc, char *argv[]);
-enum hs_result hs_rdiff_delta(int argc, char *argv[]);
-enum hs_result hs_rdiff_patch(int argc, char *argv[]);
-enum hs_result hs_rdiff_sum(int argc, char *argv[]);
-
-hs_result hs_whole_signature(FILE *old_file, FILE *sig_file, size_t, size_t); 
-
-
-hs_result hs_file_readsums(FILE *sig_file, hs_sumset_t **sumset);
+hs_result hs_file_copy_cb(void *arg, size_t *len, void **buf);
