@@ -34,7 +34,8 @@ recovered.
 """
 
 from __future__ import generators
-import Globals, restore, log, rorpiter, TempFile, metadata, rpath, C, Time
+import Globals, restore, log, rorpiter, TempFile, metadata, rpath, C, \
+	   Time, backup
 
 # regress_time should be set to the time we want to regress back to
 # (usually the time of the last successful backup)
@@ -211,7 +212,10 @@ class RegressITRB(rorpiter.ITRBranch):
 			if rf.metadata_rorp.isreg(): self.restore_orig_regfile(rf)
 			else:
 				if rf.mirror_rp.lstat(): rf.mirror_rp.delete()
-				rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
+				if diff_rorp.isspecial():
+					robust.check_common_error(None, rpath.copy_with_attribs,
+											  (rf.metadata_rorp, rf.mirror_rp))
+				else: rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
 		if rf.regress_inc:
 			log.Log("Deleting increment " + rf.regress_inc.path, 5)
 			rf.regress_inc.delete()
@@ -244,7 +248,7 @@ class RegressITRB(rorpiter.ITRBranch):
 			if not rf.mirror_rp.isdir():
 				if rf.mirror_rp.lstat(): rf.mirror_rp.delete()
 				rf.mirror_rp.mkdir()
-			if Globals.change_permission and not rf.mirror_rp.hasfullperms():
+			if Globals.change_permissions and not rf.mirror_rp.hasfullperms():
 				rf.mirror_rp.chmod(0700)
 		self.rf = rf
 

@@ -149,7 +149,7 @@ def parse_cmdlineoptions(arglist):
 			Globals.set('quoting_enabled', 1)
 			Globals.set('preserve_hardlinks', 0)
 			Globals.set('change_ownership', 0)
-			Globals.set('change_permission', 0)
+			Globals.set('change_permissions', 0)
 			Globals.set('fsync_directories', 0)
 		else: Log.FatalError("Unknown option %s" % opt)
 
@@ -288,7 +288,7 @@ def backup_init_dirs(rpin, rpout):
 
 	if rpout.lstat():
 		if rpout.isdir() and not rpout.listdir(): # rpout is empty dir
-			if Globals.change_permission:
+			if Globals.change_permissions:
 				rpout.chmod(0700) # just make sure permissions aren't too lax
 		elif not datadir.lstat() and not force: Log.FatalError(
 """Destination directory

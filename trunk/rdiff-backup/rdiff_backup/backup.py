@@ -468,7 +468,7 @@ class PatchITRB(rorpiter.ITRBranch):
 									self.dir_replacement)
 			success = 0
 		else: success = 1
-		if base_rp.isdir() and Globals.change_permission: base_rp.chmod(0700)
+		if base_rp.isdir() and Globals.change_permissions: base_rp.chmod(0700)
 		return success
 
 	def prepare_dir(self, diff_rorp, base_rp):
@@ -481,7 +481,7 @@ class PatchITRB(rorpiter.ITRBranch):
 		else: # maybe no change, so query CCPP before tagging success
 			if self.CCPP.in_cache(diff_rorp.index):
 				self.CCPP.flag_success(diff_rorp.index)
-		if Globals.change_permission: base_rp.chmod(0700)
+		if Globals.change_permissions: base_rp.chmod(0700)
 
 	def end_process(self):
 		"""Finish processing directory"""
