@@ -18,6 +18,8 @@ syntax".  What's happening?</a></li>
 <li><a href="#windows">Does rdiff-backup run under Windows?</a></li>
 
 <li><a href="#remove_dir">My backup set contains some files that I just realized I don't want/need backed up.  How do I remove them from the backup volume to save space?</li>
+
+<li><a href="#redhat">How do I install the RPMs on Redhat linux system?</a></li>
 </ol>
 
 <h2>FAQ</h2>
@@ -141,6 +143,32 @@ rm /backup/rdiff-backup-data/increments/usr/local.*.dir</pre>
 
 </li>
 
+<P>
+<a name="redhat">
+<li><strong>How do I install the RPMs on a Redhat linux system?</strong>
+
+<P>The problem is that the default version of python for Redhat 7.x is
+1.5.x, and rdiff-backup requires python >= 2.2.  Redhat/rawhide
+provides python 2.2 RPMs, but they are packaged under the "python2"
+name.
+
+<P>So, if you are running Redhat 7.x:
+
+<ol>
+<li>Make sure the python2 >= 2.2 package is installed,
+leaving python 1.5 the way it is
+<li>Install the rdiff-backup RPM, using --nodeps if it only complains
+    about python 2.2 missing.
+<li>Edit the first line of /usr/bin/rdiff-backup so it says<pre>
+#!/usr/bin/env python2
+</pre>
+so "python2" gets run instead of "python".
+</ol>
+
+<P>You can also upgrade using a non-Redhat python 2.2 RPM and avoid
+the above steps (this is what I did).  Because of all the dependencies
+it is usually easier to use source RPMs for this.
+</li>
 
 
 </ol>
@@ -148,7 +176,7 @@ rm /backup/rdiff-backup-data/increments/usr/local.*.dir</pre>
     <a href="http://www.stanford.edu/~bescoto">Ben Escoto</a> <address><a href="mailto:bescoto@stanford.edu">&lt;bescoto@stanford.edu&gt;</a></address>
 <!-- Created: Fri Sep  7 15:34:45 PDT 2001 -->
 <!-- hhmts start -->
-Last modified: Sun Mar 24 13:10:18 PST 2002
+Last modified: Sun Apr  7 12:04:13 PDT 2002
 <!-- hhmts end -->
   </body>
 </html>
