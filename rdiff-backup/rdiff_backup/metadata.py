@@ -55,7 +55,7 @@ field names and values.
 """
 
 from __future__ import generators
-import re, gzip
+import re, gzip, os
 import log, Globals, rpath, Time, robust, increment
 
 class ParsingError(Exception):
@@ -280,6 +280,9 @@ def WriteMetadata(rorp):
 def CloseMetadata():
 	"""Close the metadata file"""
 	global metadata_rp, metadata_fileobj
+	try: fileno = metadata_fileobj.fileno() # will not work if GzipFile
+	except AttributeError: fileno = metadata_fileobj.fileobj.fileno()
+	os.fsync(fileno)
 	result = metadata_fileobj.close()
 	metadata_fileobj = None
 	metadata_rp.setdata()

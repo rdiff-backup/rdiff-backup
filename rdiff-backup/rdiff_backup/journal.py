@@ -17,6 +17,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 
+# UPDATE: I have decided not to use journaling and use the regress
+# stuff exclusively.  This code is left here for posterity.
+
 """Application level journaling for better error recovery
 
 This module has routines for maintaining a "journal" to keep track of
@@ -49,11 +52,14 @@ Two caveats:
 
 """
 
-import Globals, log, rpath, cPickle, TempFile
+import Globals, log, rpath, cPickle, TempFile, os, restore
 
 # Holds an rpath of the journal directory, a file object, and then
 journal_dir_rp = None
 journal_dir_fp = None
+
+# Set to time in seconds of previous aborted backup
+unsuccessful_backup_time = None
 
 def open_journal():
 	"""Make sure the journal dir exists (creating it if necessary)"""
@@ -74,7 +80,12 @@ def close_journal():
 	journal_dir_rp = journal_dir_fp = None
 
 def sync_journal():
-	"""fsync the journal directory"""
+	"""fsync the journal directory.
+
+	Note that fsync'ing a particular entry file may also be required
+	to guarantee writes have been committed.
+
+	"""
 	journal_dir_rp.fsync(journal_dir_fp)
 
 def recover_journal():
@@ -94,74 +105,91 @@ def get_entries_from_journal():
 		else: entry_list.append(e)
 	return entry_list
 
-def write_entry(test_filename, test_filename_type,
-				increment_filename, temp_filename):
+def write_entry(index, temp_index, testfile_option, testfile_type):
 	"""Write new entry given variables into journal, return entry"""
 	e = Entry()
-	e.test_filename = test_filename
-	e.test_filename_type = test_filename_type
-	e.increment_filename = increment_filename
-	e.temp_filename = temp_filename
+	e.index = index
+	e.temp_index = index
+	e.testfile_option = testfile_option
+	e.testfile_type = testfile_type
 	e.write()
 	return e
 	
-def remove_entry(entry_rp):
-	"""Remove the entry in entry_rp from the journal"""
-	entry_rp.delete()
-	sync_journal()
-
 
 class Entry:
 	"""A single journal entry, describing one transaction
 
 	Although called a journal entry, this is less a description of
-	what is going happen than a short recipe of what to do if
+	what is going happen than a short recipe of how to recover if
 	something goes wrong.
 
 	Currently the recipe needs to be very simple and is determined by
-	the four variables test_filename, test_filename_type,
-	increment_filename, and temp_filename.  See the recover() method
-	for details.
+	the four variables index, temp_index, testfile_option,
+	testfile_type.  See the recover() method for details.
 
 	"""
-	test_filename = None
-	test_filename_type = None # None is a valid value for this variable
-	increment_filename = None
-	temp_filename = None
+	index = None
+	temp_index = None
+	testfile_option = None
+	testfile_type = None # None is a valid value for this variable
 
-	# This holds the rpath in the journal dir that holds self
+	# This points to the rpath in the journal dir that holds this entry
 	entry_rp = None
 
 	def recover(self):
 		"""Recover the current journal entry
 
-		See if test_filename matches test_filename_type.  If so,
-		delete increment_filename.  Delete temp_filename regardless.
+		self.testfile_option has 3 possibilities:
+		1 - testfile is mirror file
+		2 - testfile is increment file
+		3 - testfile is temp file
+
+		Either way, see if the type of the testfile matches
+		testfile_type.  If so, delete increment file.  Deleted
+		tempfile regardless.
+
+		We express things in terms of indicies because we need paths
+		relative to a fixed directory (like Globals.dest_root).
+
 		It's OK to recover the same entry multiple times.
 
 		"""
-		assert self.test_filename and self.temp_filename
-		test_rp = rpath.RPath(Globals.local_connection, self.test_filename)
-		temp_rp = rpath.RPath(Globals.local_connection, self.temp_filename)
-		inc_rp = rpath.RPath(Globals.local_connection, self.increment_filename)
-		if test_rp.lstat() == self.test_filename_type:
-			if inc_rp.lstat():
-				inc_rp.delete()
-				inc_rp.get_parent_rp().fsync()
-		if temp_rp.lstat():
-			temp_rp.delete()
-			temp_rp.get_parent_rp().fsync()
+		assert self.index is not None and self.temp_index is not None
+		mirror_rp = Globals.dest_root.new_index(self.index)
+		if self.temp_index:
+			temp_rp = Globals.dest_root.new_index(self.temp_index)
+		inc_rp = self.get_inc()
+
+		assert 1 <= self.testfile_option <= 3
+		if self.testfile_option == 1: test_rp = mirror_rp
+		elif self.testfile_option == 2: test_rp = inc_rp
+		else: test_rp = temp_rp
+
+		if test_rp and test_rp.lstat() == self.testfile_type:
+			if inc_rp and inc_rp.lstat(): inc_rp.sync_delete()
+		if temp_rp and temp_rp.lstat(): temp_rp.sync_delete()
+
+	def get_inc(self):
+		"""Return inc_rpath, if any, corresponding to self.index"""
+		incroot = Globals.rbdir.append_path("increments")
+		incbase = incroot.new_index(self.index)
+		inclist = restore.get_inclist(incbase)
+		inclist = filter(lambda inc:
+						 inc.getinctime() == unsuccessful_backup_time, inclist)
+		assert len(inclist) <= 1
+		if inclist: return inclist[0]
+		else: return None
 
 	def to_string(self):
 		"""Return string form of entry"""
-		return cPickle.dumps({'test_filename': self.test_filename,
-							  'test_filename_type': self.test_filename_type,
-							  'increment_filename': self.increment_filename,
-							  'temp_filename': self.temp_filename})
+		return cPickle.dumps({'index': self.index,
+							  'testfile_option': self.testfile_option,
+							  'testfile_type': self.testfile_type,
+							  'temp_index': self.temp_index})
 
 	def write(self):
 		"""Write the current entry into the journal"""
-		entry_rp = TempFile.new(journal_dir_rp.append("foo"))
+		entry_rp = TempFile.new_in_dir(journal_dir_rp)
 		fp = entry_rp.open("wb")
 		fp.write(self.to_string())
 		entry_rp.fsync(fp)
@@ -174,10 +202,10 @@ class Entry:
 		try: val_dict = cPickle.loads(s)
 		except cPickle.UnpicklingError: return 0
 		try:
-			self.test_filename = val_dict['test_filename']
-			self.test_filename_type = val_dict['test_filename_type']
-			self.increment_filename = val_dict['increment_filename']
-			self.temp_filename = val_dict['temp_filename']
+			self.index = val_dict['index']
+			self.testfile_type = val_dict['testfile_type']
+			self.testfile_option = val_dict['testfile_option']
+			self.temp_index = val_dict['temp_index']
 		except TypeError, KeyError: return 0
 		return 1
 
@@ -191,5 +219,4 @@ class Entry:
 
 	def delete(self):
 		"""Remove entry from the journal.  self.entry_rp must be set"""
-		self.entry_rp.delete()
-		sync_journal()
+		self.entry_rp.sync_delete()

@@ -99,7 +99,7 @@ client_conn = None
 # list.
 changed_settings = []
 
-# The RPath of the rdiff-backup-data directory.
+# The RPath or QuotedRPath of the rdiff-backup-data directory.
 rbdir = None
 
 # quoting_enabled is true if we should quote certain characters in

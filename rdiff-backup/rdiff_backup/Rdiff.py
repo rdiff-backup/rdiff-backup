@@ -56,7 +56,7 @@ def write_via_tempfile(fp, rp):
 	"""Write fileobj fp to rp by writing to tempfile and renaming"""
 	tf = TempFile.new(rp)
 	tf.write_from_fileobj(fp)
-	tf.rename(rp)
+	rpath.rename(tf, rp)
 
 def patch_local(rp_basis, rp_delta, outrp = None, delta_compressed = None):
 	"""Patch routine that must be run locally, writes to outrp

@@ -20,7 +20,7 @@
 """Generate and process aggregated backup information"""
 
 import re, os, time
-import Globals, TempFile, robust, Time, rorpiter, increment
+import Globals, robust, Time, rorpiter, increment
 
 class StatsException(Exception): pass
 

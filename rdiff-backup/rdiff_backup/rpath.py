@@ -208,9 +208,13 @@ def rename(rp_source, rp_dest):
 			(rp_source.path, rp_dest.path), 7)
 	if not rp_source.lstat(): rp_dest.delete()
 	else:
-		rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+		if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode():
+			# You can't rename one hard linked file over another
+			rp_source.delete()
+		else: rp_source.conn.os.rename(rp_source.path, rp_dest.path)
 		rp_dest.data = rp_source.data
 		rp_source.data = {'type': None}
+
 
 def tupled_lstat(filename):
 	"""Like os.lstat, but return only a tuple, or None if os.error
@@ -872,6 +876,25 @@ class RPath(RORPath):
 			assert not fp.close()
 		else: os.fsync(fp.fileno())
 
+	def fsync_with_dir(self, fp = None):
+		"""fsync self and directory self is under"""
+		self.fsync(fp)
+		self.get_parent_rp().fsync()
+
+	def sync_delete(self):
+		"""Delete self with sync to guarantee completion
+
+		On some filesystems (like linux's ext2), we must sync both the
+		file and the directory to make sure.
+
+		"""
+		if self.lstat() and not self.issym():
+			fp = self.open("rb")
+			self.delete()
+			os.fsync(fp.fileno())
+		assert not fp.close()
+		self.get_parent_rp().fsync()
+
 	def get_data(self):
 		"""Open file as a regular file, read data, close, return data"""
 		fp = self.open("rb")
@@ -895,4 +918,3 @@ class RPathFileHook:
 		self.closing_thunk()
 		return result
 
-	

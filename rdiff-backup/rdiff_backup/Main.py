@@ -24,7 +24,7 @@ import getopt, sys, re, os
 from log import Log, LoggerError
 import Globals, Time, SetConnections, selection, robust, rpath, \
 	   manage, backup, connection, restore, FilenameMapping, \
-	   Security, Hardlink
+	   Security, Hardlink, regress, C
 
 
 action = None
@@ -44,12 +44,12 @@ def parse_cmdlineoptions(arglist):
 
 	try: optlist, args = getopt.getopt(arglist, "blr:sv:V",
 		 ["backup-mode", "calculate-average", "chars-to-quote=",
-		  "current-time=", "exclude=", "exclude-device-files",
-		  "exclude-filelist=", "exclude-filelist-stdin",
-		  "exclude-globbing-filelist=", "exclude-mirror=",
-		  "exclude-other-filesystems", "exclude-regexp=",
-		  "exclude-special-files", "force", "include=",
-		  "include-filelist=", "include-filelist-stdin",
+		  "check-destination-dir", "current-time=", "exclude=",
+		  "exclude-device-files", "exclude-filelist=",
+		  "exclude-filelist-stdin", "exclude-globbing-filelist=",
+		  "exclude-mirror=", "exclude-other-filesystems",
+		  "exclude-regexp=", "exclude-special-files", "force",
+		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=", "include-regexp=",
 		  "list-changed-since=", "list-increments", "no-compression",
 		  "no-compression-regexp=", "no-hard-links", "null-separator",
@@ -66,6 +66,7 @@ def parse_cmdlineoptions(arglist):
 	for opt, arg in optlist:
 		if opt == "-b" or opt == "--backup-mode": action = "backup"
 		elif opt == "--calculate-average": action = "calculate-average"
+		elif opt == "--check-destination-dir": action = "check-destination-dir"
 		elif opt == "--chars-to-quote":
 			Globals.set('chars_to_quote', arg)
 			Globals.set('quoting_enabled', 1)
@@ -176,7 +177,8 @@ def set_action():
 		commandline_error("Two arguments are required (source, destination).")
 	if l == 2 and (action == "list-increments" or
 				   action == "remove-older-than" or
-				   action == "list-changed-since"):
+				   action == "list-changed-since" or
+				   action == "check-destination-dir"):
 		commandline_error("Only use one argument, "
 						  "the root of the backup directory")
 	if l > 2 and action != "calculate-average":
@@ -211,6 +213,7 @@ def take_action(rps):
 	elif action == "list-increments": ListIncrements(rps[0])
 	elif action == "remove-older-than": RemoveOlderThan(rps[0])
 	elif action == "calculate-average": CalculateAverage(rps)
+	elif action == "check-destination-dir": CheckDest(rps[0])
 	else: raise AssertionError("Unknown action " + action)
 
 def cleanup():
@@ -239,10 +242,13 @@ def Backup(rpin, rpout):
 	backup_set_select(rpin)
 	backup_init_dirs(rpin, rpout)
 	if prevtime:
+		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
 		Time.setprevtime(prevtime)
 		backup.Mirror_and_increment(rpin, rpout, incdir)
-	else: backup.Mirror(rpin, rpout)
-	rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
+		rpout.conn.Main.backup_remove_curmirror_local()
+	else:
+		backup.Mirror(rpin, rpout)
+		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
 
 def backup_set_select(rpin):
 	"""Create Select objects on source connection"""
@@ -266,6 +272,7 @@ def backup_init_dirs(rpin, rpout):
 
 	datadir = rpout.append_path("rdiff-backup-data")
 	SetConnections.UpdateGlobal('rbdir', datadir)
+	checkdest_if_necessary(rpout)
 	incdir = datadir.append_path("increments")
 	prevtime = backup_get_mirrortime()
 
@@ -305,39 +312,45 @@ def backup_warn_if_infinite_regress(rpin, rpout):
 source directory '%s'.  This could cause an infinite regress.  You
 may need to use the --exclude option.""" % (rpout.path, rpin.path), 2)
 
-def backup_get_mirrorrps():
-	"""Return list of current_mirror rps"""
-	datadir = Globals.rbdir
-	if not datadir.isdir(): return []
-	mirrorrps = [datadir.append(fn) for fn in datadir.listdir()
-				 if fn.startswith("current_mirror.")]
-	return filter(lambda rp: rp.isincfile(), mirrorrps)
-
 def backup_get_mirrortime():
 	"""Return time in seconds of previous mirror, or None if cannot"""
-	mirrorrps = backup_get_mirrorrps()
-	if not mirrorrps: return None
-	if len(mirrorrps) > 1:
-		Log(
-"""Warning: duplicate current_mirror files found.  Perhaps something
-went wrong during your last backup?  Using """ + mirrorrps[-1].path, 2)
-
-	return mirrorrps[-1].getinctime()
+	incbase = Globals.rbdir.append_path("current_mirror")
+	mirror_rps = restore.get_inclist(incbase)
+	assert len(mirror_rps) <= 1, \
+		   "Found %s current_mirror rps, expected <=1" % (len(mirror_rps),)
+	if mirror_rps: return mirror_rps[0].getinctime()
+	else: return None
 
 def backup_touch_curmirror_local(rpin, rpout):
 	"""Make a file like current_mirror.time.data to record time
 
-	Also updates rpout so mod times don't get messed up.  This should
-	be run on the destination connection.
+	When doing an incremental backup, this should happen before any
+	other writes, and the file should be removed after all writes.
+	That way we can tell whether the previous session aborted if there
+	are two current_mirror files.
+
+	When doing the initial full backup, the file can be created after
+	everything else is in place.
 
 	"""
-	datadir = Globals.rbdir
-	map(rpath.RPath.delete, backup_get_mirrorrps())
-	mirrorrp = datadir.append("current_mirror.%s.%s" % (Time.curtimestr,
-														"data"))
+	mirrorrp = Globals.rbdir.append("current_mirror.%s.%s" % (Time.curtimestr,
+															  "data"))
 	Log("Touching mirror marker %s" % mirrorrp.path, 6)
 	mirrorrp.touch()
-	rpath.copy_attribs(rpin, rpout)
+	mirrorrp.fsync_with_dir()
+
+def backup_remove_curmirror_local():
+	"""Remove the older of the current_mirror files.  Use at end of session"""
+	assert Globals.rbdir.conn is Globals.local_connection
+	curmir_incs = restore.get_inclist(Globals.rbdir.append("current_mirror"))
+	assert len(curmir_incs) == 2
+	if curmir_incs[0].getinctime() < curmir_incs[1].getinctime():
+		older_inc = curmir_incs[0]
+	else: older_inc = curmir_incs[1]
+
+	C.sync() # Make sure everything is written before curmirror is removed
+	older_inc.sync_delete()
+
 
 def Restore(src_rp, dest_rp = None):
 	"""Main restoring function
@@ -366,6 +379,7 @@ def restore_common(rpin, target, time):
 	if target.conn.os.getuid() == 0:
 		SetConnections.UpdateGlobal('change_ownership', 1)
 	mirror_root, index = restore_get_root(rpin)
+	restore_check_backup_dir(mirror_root)
 	mirror = mirror_root.new_index(index)
 	inc_rpath = datadir.append_path('increments', index)
 	restore_init_select(mirror_root, target)
@@ -403,6 +417,17 @@ Try restoring from an increment file (the filenames look like
 		Log.FatalError("Restore target %s already exists, "
 					   "specify --force to overwrite." % rpout.path)
 	return rpin, rpout
+
+def restore_check_backup_dir(rpin):
+	"""Make sure backup dir root rpin is in consistent state"""
+	result = checkdest_need_check(rpin)
+	if result is None:
+		Log.FatalError("%s does not appear to be an rdiff-backup directory."
+					   % (rpin.path,))
+	elif result == 1: Log.FatalError(
+		"Previous backup to %s seems to have failed."
+		"Rerun rdiff-backup with --check-destination-dir option to revert"
+		"directory to state before unsuccessful session." % (rpin.path,))
 
 def restore_init_select(rpin, rpout):
 	"""Initialize Select
@@ -465,6 +490,7 @@ def restore_get_root(rpin):
 def ListIncrements(rp):
 	"""Print out a summary of the increments and their times"""
 	mirror_root, index = restore_get_root(rp)
+	restore_check_backup_dir(mirror_root)
 	mirror_rp = mirror_root.new_index(index)
 	inc_rpath = Globals.rbdir.append_path('increments', index)
 	incs = restore.get_inclist(inc_rpath)
@@ -484,11 +510,7 @@ def CalculateAverage(rps):
 
 def RemoveOlderThan(rootrp):
 	"""Remove all increment files older than a certain time"""
-	datadir = rootrp.append_path("rdiff-backup-data")
-	if not datadir.lstat() or not datadir.isdir():
-		Log.FatalError("Unable to open rdiff-backup-data dir %s" %
-					   (datadir.path,))
-
+	rom_check_dir(rootrp)
 	try: time = Time.genstrtotime(remove_older_than_string)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
 	timep = Time.timetopretty(time)
@@ -512,13 +534,56 @@ def RemoveOlderThan(rootrp):
 	else: Log("Deleting increments at times:\n" + inc_pretty_time, 3)
 	manage.delete_earlier_than(datadir, time)
 
+def rom_check_dir(rootrp):
+	"""Check destination dir before RemoveOlderThan"""
+	SetConnections.UpdateGlobal('rbdir',
+								rootrp.append_path("rdiff-backup-data"))
+	if not Globals.rbdir.isdir():
+		Log.FatalError("Unable to open rdiff-backup-data dir %s" %
+					   (datadir.path,))
+	checkdest_if_necessary(rootrp)
+
 
 def ListChangedSince(rp):
 	"""List all the files under rp that have changed since restoretime"""
 	try: rest_time = Time.genstrtotime(restore_timestr)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
 	mirror_root, index = restore_get_root(rp)
+	restore_check_backup_dir(mirror_root)
 	mirror_rp = mirror_root.new_index(index)
 	inc_rp = mirror_rp.append_path("increments", index)
 	restore.ListChangedSince(mirror_rp, inc_rp, rest_time)
 
+
+def CheckDest(dest_rp):
+	"""Check the destination directory, """
+	need_check = checkdest_need_check(dest_rp)
+	if need_check is None:
+		Log.FatalError("No destination dir found at %s" % (dest_rp.path,))
+	elif need_check == 0:
+		Log.FatalError("Destination dir %s does not need checking" %
+					   (dest_rp.path,))
+	regress.Regress(dest_rp)
+
+def checkdest_need_check(dest_rp):
+	"""Return None if no dest dir found, 1 if dest dir needs check, 0 o/w"""
+	assert dest_rp.conn is Globals.rbdir.conn
+	if not dest_rp.isdir() or not Globals.rbdir.isdir(): return None
+	curmirroot = Globals.rbdir.append("current_mirror")
+	curmir_incs = restore.get_inclist(curmirroot)
+	if not curmir_incs: return None
+	elif len(curmir_incs) == 1: return 0
+	else:
+		assert len(curmir_incs) == 2, "Found too many current_mirror incs!"
+		return 1
+
+def checkdest_if_necessary(dest_rp):
+	"""Check the destination dir if necessary.
+
+	This can/should be run before an incremental backup.
+
+	"""
+	need_check = checkdest_need_check(dest_rp)
+	if need_check == 1:
+		Log("Previous backup seems to have failed, checking now.", 2)
+		regress.Regress(dest_rp)

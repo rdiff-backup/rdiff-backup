@@ -32,20 +32,6 @@ class TimeTest(unittest.TestCase):
 		assert cmp("2001-09-01T12:00:00-08:00",
 				   "2001-09-01T12:00:00-07:00") == 1
 
-	def testCmp_separator(self):
-		"""Like testCmp but with new separator"""
-		Globals.time_separator = "_"
-		cmp = Time.cmp
-		assert cmp(1,2) == -1
-		assert cmp(2,2) == 0
-		assert cmp(5,1) == 1
-		assert cmp("2001-09-01T21_49_04Z", "2001-08-01T21_49_04Z") == 1
-		assert cmp("2001-09-01T04_49_04+03_23", "2001-09-01T21_49_04Z") == -1
-		assert cmp("2001-09-01T12_00_00Z", "2001-09-01T04_00_00-08_00") == 0
-		assert cmp("2001-09-01T12_00_00-08_00",
-				   "2001-09-01T12_00_00-07_00") == 1
-		Globals.time_separator = ":"
-
 	def testStringtotime(self):
 		"""Test converting string to time"""
 		timesec = int(time.time())

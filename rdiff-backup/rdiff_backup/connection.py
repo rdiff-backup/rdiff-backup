@@ -95,7 +95,6 @@ class LowLevelPipeConnection(Connection):
 	f - file object
 	b - string
 	q - quit signal
-	t - TempFile
 	R - RPath
 	r - RORPath only
 	c - PipeConnection object
@@ -121,8 +120,6 @@ class LowLevelPipeConnection(Connection):
 		Log.conn("sending", obj, req_num)
 		if type(obj) is types.StringType: self._putbuf(obj, req_num)
 		elif isinstance(obj, connection.Connection):self._putconn(obj, req_num)
-		elif isinstance(obj, TempFile.TempFile):
-			self._puttempfile(obj, req_num)
 		elif isinstance(obj, rpath.RPath): self._putrpath(obj, req_num)
 		elif isinstance(obj, rpath.RORPath): self._putrorpath(obj, req_num)
 		elif ((hasattr(obj, "read") or hasattr(obj, "write"))
@@ -147,12 +144,6 @@ class LowLevelPipeConnection(Connection):
 		"""Put an iterator through the pipe"""
 		self._write("i", str(VirtualFile.new(rorpiter.ToFile(iterator))),
 					req_num)
-
-	def _puttempfile(self, tempfile, req_num):
-		"""Put a tempfile into pipe.  See _putrpath"""
-		tf_repr = (tempfile.conn.conn_number, tempfile.base,
-				   tempfile.index, tempfile.data)
-		self._write("t", cPickle.dumps(tf_repr, 1), req_num)
 
 	def _putrpath(self, rpath, req_num):
 		"""Put an rpath into the pipe
@@ -235,7 +226,6 @@ class LowLevelPipeConnection(Connection):
 		elif format_string == "i":
 			result = rorpiter.FromFile(iterfile.BufferedRead(
 				VirtualFile(self, int(data))))
-		elif format_string == "t": result = self._gettempfile(data)
 		elif format_string == "r": result = self._getrorpath(data)
 		elif format_string == "R": result = self._getrpath(data)
 		else:
@@ -248,12 +238,6 @@ class LowLevelPipeConnection(Connection):
 		"""Reconstruct RORPath object from raw data"""
 		index, data = cPickle.loads(raw_rorpath_buf)
 		return rpath.RORPath(index, data)
-
-	def _gettempfile(self, raw_tf_buf):
-		"""Return TempFile object indicated by raw_tf_buf"""
-		conn_number, base, index, data = cPickle.loads(raw_tf_buf)
-		return TempFile.TempFile(Globals.connection_dict[conn_number],
-								 base, index, data)
 
 	def _getrpath(self, raw_rpath_buf):
 		"""Return RPath object indicated by raw_rpath_buf"""

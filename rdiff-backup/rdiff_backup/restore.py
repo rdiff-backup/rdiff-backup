@@ -401,7 +401,7 @@ class RestoreFile:
 			else: inc_rp, inc_list = inc_pair
 			if not mirror_rp:
 				mirror_rp = self.mirror_rp.new_index(inc_rp.index)
-			yield RestoreFile(mirror_rp, inc_rp, inc_list)
+			yield self.__class__(mirror_rp, inc_rp, inc_list)
 
 	def yield_mirrorrps(self, mirrorrp):
 		"""Yield mirrorrps underneath given mirrorrp"""
