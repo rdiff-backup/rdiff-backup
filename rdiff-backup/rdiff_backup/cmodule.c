@@ -31,6 +31,9 @@
 #	define FSTAT fstat
 #	define STRUCT_STAT struct stat
 #endif
+#ifndef PY_LONG_LONG 
+    #define PY_LONG_LONG LONG_LONG 
+#endif
 
 static PyObject *UnknownFileTypeError;
 static PyObject *c_make_file_dict(PyObject *self, PyObject *args);
@@ -66,8 +69,8 @@ static PyObject *c_make_file_dict(self, args)
 	}
   }
 #ifdef HAVE_LARGEFILE_SUPPORT
-  size = PyLong_FromLongLong((LONG_LONG)sbuf.st_size);
-  inode = PyLong_FromLongLong((LONG_LONG)sbuf.st_ino);
+  size = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_size);
+  inode = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_ino);
 #else
   size = PyInt_FromLong(sbuf.st_size);
   inode = PyInt_FromLong((long)sbuf.st_ino);
@@ -75,13 +78,13 @@ static PyObject *c_make_file_dict(self, args)
   mode = (long)sbuf.st_mode;
   perms = mode & 07777;
 #if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
-  devloc = PyLong_FromLongLong((LONG_LONG)sbuf.st_dev);
+  devloc = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_dev);
 #else
   devloc = PyInt_FromLong((long)sbuf.st_dev);
 #endif
 #if SIZEOF_TIME_T > SIZEOF_LONG
-  mtime = PyLong_FromLongLong((LONG_LONG)sbuf.st_mtime);
-  atime = PyLong_FromLongLong((LONG_LONG)sbuf.st_atime);
+  mtime = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_mtime);
+  atime = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_atime);
 #else
   mtime = PyInt_FromLong((long)sbuf.st_mtime);
   atime = PyInt_FromLong((long)sbuf.st_atime);
@@ -129,7 +132,7 @@ static PyObject *c_make_file_dict(self, args)
 	/* Device files */
 	char devtype[2];
 #if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
-	LONG_LONG devnums = (LONG_LONG)sbuf.st_rdev;
+	PY_LONG_LONG devnums = (PY_LONG_LONG)sbuf.st_rdev;
 	PyObject *major_num = PyLong_FromLongLong(major(devnums));
 #else
 	long int devnums = (long)sbuf.st_dev;
