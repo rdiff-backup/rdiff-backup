@@ -81,6 +81,11 @@ int _hs_read_loop(hs_read_fn_t, void *readprivate,
 int _hs_write_loop(hs_write_fn_t, void *writeprivate,
 		   char const *buf, int len);
 
+int hs_must_write(hs_write_fn_t write_fn, void *write_priv,
+		  void const *buf, int len);
+
+int _hs_must_read(hs_read_fn_t, void *, char *, ssize_t);
+
 int _hs_read_netint(hs_read_fn_t read_fn, void *read_priv,
 		    uint32_t * result);
 
@@ -204,8 +209,6 @@ typedef struct sum_struct {
 /* All blocks are the same length in the current algorithm except for
    the last block which may be short. */
 typedef struct sum_buf {
-    hs_off_t offset;		/* offset in file of this chunk */
-    int len;			/* length of chunk of file */
     int i;			/* index of this chunk */
     uint32_t sum1;		/* simple checksum */
     char strong_sum[SUM_LENGTH];	/* checksum  */
