@@ -12,5 +12,5 @@ import os, sys
 if len(sys.argv) > 1: os.chdir(sys.argv[1])
 #PipeConnection(sys.stdin, sys.stdout).Server()
 
-os.system("/home/ben/prog/python/rdiff-backup/rdiff-backup --server")
+os.system("/home/ben/prog/rdiff-backup/rdiff-backup --server")
 
