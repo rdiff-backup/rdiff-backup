@@ -58,6 +58,22 @@ $Id$
    blocks in the same order that they occur in the input.
    
    But for now we ought to at least check for consecutive blocks.
+
+   On the other hand, abo says:
+
+        In reality copy's are such a huge gain that merging them efficiently
+        is a bit of a non-issue. Each copy command is only a couple of
+        bytes... who cares if we output twice as many as we need to... it's
+        the misses that take up whole blocks of data that people will notice.
+
+        I believe we are already outputing consecutive blocks as a single
+        "copy" command, but have you looked at the "search" code? We have far
+        more serious problems with the hash-table that need to be fixed first
+        :-)
+
+        We are not getting all the hits that we could due to a limited
+        hash-table, and this is going to make a much bigger difference than
+        optimizing the copy commands.
    
  * Optimisations and code cleanups;
  
@@ -236,6 +252,22 @@ $Id$
    compression.  On the other hand we have to important and maintain
    our own zlib fork, at least until we can persuade the upstream to
    take the necessary patch.  Can that be done?
+
+   abo says
+
+        It does get better compression, but at a price. I actually
+        think that getting the code to a point where a feature like
+        this can be easily added or removed is more important than the
+        feature itself. Having generic pre and post processing layers
+        for hit/miss data would be useful. I would not like to see it
+        added at all if it tangled and complicated the code.
+
+        It also doesn't require a modified zlib... pysync uses the
+        standard zlib to do it by compressing the data, then throwing
+        it away. I don't know how much benefit the rsync modifications
+        to zlib actually are, but if I was implementing it I would
+        stick to a stock zlib until it proved significantly better to
+        go with the fork.
 
  * Licensing
 
