@@ -337,11 +337,11 @@ overly restrictive.</li>
 
 <li>cstream may be "bursty", limiting average bandwidth but allowing
 rdiff-backup to exceed it for significant periods.</li>
-
 </ol>
 
+<p>
 Another option is to limit bandwidth at a lower (and perhaps more
-appropriate) level.  Adam Lazur suggests <a
+appropriate) level.  Adam Lazur mentions <a
 href="http://lartc.org/wondershaper/">The Wonder Shaper</a>.
 
 </li>
