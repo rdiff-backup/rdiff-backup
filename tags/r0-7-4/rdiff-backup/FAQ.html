@@ -1,0 +1,183 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>rdiff-backup FAQ</title>
+  </head>
+
+  <body>
+    <h1>rdiff-backup FAQ</h1>
+
+<h2>Table of contents</h2>
+
+<ol><li><a href="#__future__">When I try to run rdiff-backup it says
+"ImportError: No module named __future__" or "SyntaxError: invalid
+syntax".  What's happening?</a></li>
+
+<li><a href="#verbosity">What do the different verbosity levels mean?</a></li>
+
+<li><a href="#windows">Does rdiff-backup run under Windows?</a></li>
+
+<li><a href="#remove_dir">My backup set contains some files that I just realized I don't want/need backed up.  How do I remove them from the backup volume to save space?</li>
+
+<li><a href="#redhat">How do I install the RPMs on Redhat linux system?</a></li>
+</ol>
+
+<h2>FAQ</h2>
+
+<ol>
+
+<a name="__future__">
+<li><strong>When I try to run rdiff-backup it says "ImportError: No
+module named __future__" or "SyntaxError: invalid syntax".  What's
+happening?</strong>
+
+<P>rdiff-backup versions 0.2.x require Python version 2.1 or later,
+and versions 0.3.x and later require Python version 2.2 or later.  If
+you don't know what version of python you are running, type in "python
+-V" from the shell.  I'm sorry if this is inconvenient, but
+rdiff-backup uses generators, iterators, nested scoping, and
+static/class methods extensively, and these were only added in version
+2.2.
+
+<P>If you have two versions of python installed, and running "python"
+defaults to an early version, you'll probably have to change the first
+line of the rdiff-backup script.  For instance, you could set it to:
+
+<pre>
+#/usr/bin/env python2.2
+</pre>
+</li>
+
+<a name="verbosity">
+<li><strong>What do the different verbosity levels mean?</strong>
+
+<P>There is no formal specification, but here is a rough description
+(settings are always cumulative, so 5 displays everything 4 does):
+
+<P>
+<table cellspacing="10">
+<tr><td>0</td><td>No information given</td></tr>
+<tr><td>1</td><td>Fatal Errors displayed</td></tr>
+<tr><td>2</td><td>Warnings</td></tr>
+<tr><td>3</td><td>Important messages, and maybe later some global statistics (default)</td></tr>
+<tr><td>4</td><td>Some global settings, miscellaneous messages</td></tr>
+<tr><td>5</td><td>Mentions which files were changed</td></tr>
+<tr><td>6</td><td>More information on each file processed</td></tr>
+<tr><td>7</td><td>More information on various things</td></tr>
+<tr><td>8</td><td>All logging is dated</td></tr>
+<tr><td>9</td><td>Details on which objects are moving across the connection</td></tr>
+</table>
+
+<a name="windows">
+<li><strong>Does rdiff-backup run under Windows?</strong>
+
+<P>Yes, apparently it is possible.  First, follow Jason Piterak's
+instructions:
+
+<pre>
+Subject: Cygwin rdiff-backup
+From: Jason  Piterak &lt;Jason_Piterak@c-i-s.com&gt;
+Date: Mon, 4 Feb 2002 16:54:24 -0500 (13:54 PST)
+To: rdiff-backup@keywest.Stanford.EDU
+
+Hello all,
+  On a lark, I thought I would attempt to get rdiff-backup to work under
+Windows98 under Cygwin. We have a number of NT/Win2K servers in the field
+that I'd love to be backing up via rdiff-backup, and this was the start of
+getting that working. 
+
+SUMMARY: 
+  o You can get all the pieces for rdiff-backup working under Cygwin.
+  o The backup process works up to the point of writing any files with
+timestamps.
+      ... This is because the ':' character is reserved for Alternate Data
+Stream (ADS) file designations under NTFS.
+
+HOW TO GET IT WORKING (to a point, anyway):
+  o Install Cygwin
+  o Download the Python 2.2 update through the Cygwin installer and install.
+  o Download the librsync libraries from the usual place, but before
+compiling...
+  o Cygwin does not use/provide glibc. Because of this, you have to repoint
+some header files in the Makefile:
+
+   -- Make sure that you have /usr/include/inttypes.h
+      redirected to /usr/include/sys/types.h. Do this by:
+
+      create a file /usr/include/inttypes.h with the contents:
+      #include &lt;sys/types.h&gt;
+  o Put rdiff-backup in your PATH, as you normally would.
+
+</pre>
+
+Then, whenever you use rdiff-backup (or at least if you are backing up
+to or restoring from a Windows system), use the
+<strong>--windows-time-format</strong> switch, which will tell
+rdiff-backup not to put a colon (":") in a filename (this option was
+added after Jason posted his message).  Finally, as Michael Muegel
+points out, you have to exclude all files from the source directory
+which have colons in them, so add something like the --exclude ".*:.*"
+option.  In the near future some quoting facility may be added to deal
+with these issues.
+</li>
+
+<P>
+<a name="remove_dir">
+<li><strong>My backup set contains some files that I just realized I
+don't want/need backed up.  How do I remove them from the backup
+volume to save space?</strong>
+
+<P>Let's take an example.  Suppose you ran
+<pre>rdiff-backup /usr /backup</pre>
+and now realize that you don't want /usr/local backed up on /backup.
+Next time you back up, you run
+<pre>rdiff-backup --exclude /usr/local /usr /backup</pre>
+so that /usr/local is no longer copied to /backup/usr/local.
+
+However, old information about /usr/local is still present in
+/backup/rdiff-backup-data/increments/usr/local.  You could wait for
+this information to expire and then run rdiff-backup with the
+--remove-older-than option, or you could remove the increments
+manually by typing:
+<pre>rm -rf /backup/rdiff-backup-data/increments/usr/local
+rm /backup/rdiff-backup-data/increments/usr/local.*.dir</pre>
+
+</li>
+
+<P>
+<a name="redhat">
+<li><strong>How do I install the RPMs on a Redhat linux system?</strong>
+
+<P>The problem is that the default version of python for Redhat 7.x is
+1.5.x, and rdiff-backup requires python >= 2.2.  Redhat/rawhide
+provides python 2.2 RPMs, but they are packaged under the "python2"
+name.
+
+<P>So, if you are running Redhat 7.x:
+
+<ol>
+<li>Make sure the python2 >= 2.2 package is installed,
+leaving python 1.5 the way it is
+<li>Install the rdiff-backup RPM, using --nodeps if it only complains
+    about python 2.2 missing.
+<li>Edit the first line of /usr/bin/rdiff-backup so it says<pre>
+#!/usr/bin/env python2
+</pre>
+so "python2" gets run instead of "python".
+</ol>
+
+<P>You can also upgrade using a non-Redhat python 2.2 RPM and avoid
+the above steps (this is what I did).  Because of all the dependencies
+it is usually easier to use source RPMs for this.
+</li>
+
+
+</ol>
+    <hr>
+    <a href="http://www.stanford.edu/~bescoto">Ben Escoto</a> <address><a href="mailto:bescoto@stanford.edu">&lt;bescoto@stanford.edu&gt;</a></address>
+<!-- Created: Fri Sep  7 15:34:45 PDT 2001 -->
+<!-- hhmts start -->
+Last modified: Mon Apr 29 23:59:11 PDT 2002
+<!-- hhmts end -->
+  </body>
+</html>
