@@ -72,8 +72,11 @@ class Restore:
 		base_incs = Restore.get_inclist(Globals.rbdir.append("increments"))
 		if not base_incs: return old_rest_time
 		inctimes = [Time.stringtotime(inc.getinctime()) for inc in base_incs]
-		return max(filter(lambda time: time <= old_rest_time,
-						  inctimes + [mirror_time]))
+		inctimes.append(mirror_time)
+		older_times = filter(lambda time: time <= old_rest_time, inctimes)
+		if older_times: return max(older_times)
+		else: # restore time older than oldest increment, just return that
+			return min(inctimes)
 
 	def get_inclist(inc_rpath):
 		"""Returns increments with given base"""
