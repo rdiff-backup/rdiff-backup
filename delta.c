@@ -65,10 +65,11 @@
 #include "sumset.h"
 #include "job.h"
 #include "trace.h"
+#include "checksum.h"
 
 
-static rs_result rs_delta_scan_short(rs_job_t *, rs_long_t avail_len);
-static rs_result rs_delta_scan_full(rs_job_t *, rs_long_t avail_len);
+static rs_result rs_delta_scan_short(rs_job_t *, rs_long_t avail_len, void *);
+static rs_result rs_delta_scan_full(rs_job_t *, rs_long_t avail_len, void *);
 
 
 static rs_result rs_delta_s_end(rs_job_t *job)
@@ -89,30 +90,45 @@ rs_delta_s_scan(rs_job_t *job)
 {
     size_t         this_len, avail_len;
     int            is_ending;
+    void           *inptr;
+    rs_result      result;
 
     rs_job_check(job);
 
     avail_len = rs_scoop_total_avail(job);
     this_len = job->block_len;
+    is_ending = job->stream->eof_in;
 
     /* Now, we have avail_len bytes, and we need to scan through them
      * looking for a match.  We'll always end up emitting exactly one
      * command, either a literal or a copy, and after discovering that
      * we will skip over the appropriate number of bytes. */
-
-    if ((is_ending = rs_job_input_is_ending(job))) {
-        if (avail_len == 0) {
+    if (avail_len == 0) {
+        if (is_ending) {
             /* no more delta to do */
             job->statefn = rs_delta_s_end;
-            return RS_BLOCKED;
-        } else
-            return rs_delta_scan_short(job, avail_len);
-    } else 
-        if (avail_len < job->block_len)
-            /* don't have enough to continue */
-            return RS_BLOCKED;
-        else
-            return rs_delta_scan_full(job, avail_len); 
+        }
+        return RS_BLOCKED;
+    } 
+
+    /* must read at least one block, or give up */
+    if ((avail_len < job->block_len) && !is_ending) {
+        /* we know we won't get it, but we have to try for a whole
+         * block anyhow so that it gets into the scoop. */
+        rs_scoop_input(job, job->block_len);
+        return RS_BLOCKED;
+    }
+    
+    result = rs_scoop_readahead(job, avail_len, &inptr);
+    if (result != RS_DONE)
+        return result;
+    
+    if (is_ending)
+        return rs_delta_scan_short(job, avail_len, inptr);
+    else {
+        assert(avail_len >= job->block_len);
+        return rs_delta_scan_full(job, avail_len, inptr);
+    }
 }
 
 
@@ -120,16 +136,13 @@ rs_delta_s_scan(rs_job_t *job)
  * Scan for a possibly-short block in the next \p avail_len bytes of input.
  */
 static rs_result
-rs_delta_scan_short(rs_job_t *job, rs_long_t avail_len)
+rs_delta_scan_short(rs_job_t *job, rs_long_t avail_len, void *inptr)
 {
-    rs_result      result;
-    void           *inptr;
+/*     rs_result      result; */
+/*     rs_long_t      this_len; */
 
     /* common case of not being near the end, and therefore trying
      * to read a whole block. */
-    result = rs_scoop_readahead(job, avail_len, &inptr);
-    if (result != RS_DONE)
-        return result;
 
     /* TODO: Instead of this, calculate the checksum, rolling if
      * possible.  Then look it up in the hashtable.  If we match, emit
@@ -151,9 +164,23 @@ rs_delta_scan_short(rs_job_t *job, rs_long_t avail_len)
  * Emit exactly one LITERAL or COPY command.
  */
 static rs_result
-rs_delta_scan_full(rs_job_t *job, rs_long_t avail_len)
+rs_delta_scan_full(rs_job_t *job, rs_long_t avail_len, void *inptr)
 {
-    return rs_delta_scan_short(job, avail_len);
+    rs_strong_sum_t      strong_sum;
+    rs_weak_sum_t        weak_sum;
+    char                 strong_sum_hex[RS_MD4_LENGTH * 2 + 1];
+
+    weak_sum = rs_calc_weak_sum(inptr, job->block_len);
+    rs_calc_strong_sum(inptr, job->block_len, &strong_sum);
+    rs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
+
+    rs_trace("got weak %#10x and strong sum %s",
+             weak_sum, strong_sum_hex);
+
+    rs_emit_literal_cmd(job, job->block_len);
+    rs_tube_copy(job, job->block_len);
+
+    return RS_RUNNING;
 }
 
 
@@ -215,8 +242,19 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
 
     job = rs_job_new("delta", rs_delta_s_header);
     job->signature = sig;
-    job->block_len = sig->block_len;
+    
+    if ((job->block_len = sig->block_len) < 0) {
+        rs_log(RS_LOG_ERR, "unreasonable block_len %d in signature",
+               job->block_len);
+        return NULL;
+    }
+
     job->strong_sum_len = sig->strong_sum_len;
+    if (job->strong_sum_len < 0  ||  job->strong_sum_len > RS_MD4_LENGTH) {
+        rs_log(RS_LOG_ERR, "unreasonable strong_sum_len %d in signature",
+               job->strong_sum_len);
+        return NULL;
+    }
 	
     return job;
 }
