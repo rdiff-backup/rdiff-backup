@@ -37,5 +37,9 @@ class CTest(unittest.TestCase):
 		for l in 0L, 1L, 4000000000L, 34234L, 234234234L:
 			assert C.str2long(C.long2str(l)) == l
 
+	def test_sync(self):
+		"""Test running C.sync"""
+		C.sync()
+
 
 if __name__ == "__main__": unittest.main()
