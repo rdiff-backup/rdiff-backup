@@ -27,6 +27,20 @@
 #include <unistd.h>
 #include <errno.h>
 
+/* Some of the following code to define major/minor taken from code by
+ * Jörg Schilling's star archiver.
+ */
+#if !defined(major) && (defined(sgi) || defined(__sgi) || defined(__SVR4)) && !defined(__CYGWIN32__)
+#include <sys/mkdev.h>
+#endif
+
+#ifndef major
+#	define major(dev)		(((dev) >> 8) & 0xFF)
+#	define minor(dev)		((dev) & 0xFF)
+#	define makedev(majo, mino)	(((majo) << 8) | (mino))
+#endif
+/* End major/minor section */
+
 /* choose the appropriate stat and fstat functions and return structs */
 /* This code taken from Python's posixmodule.c */
 #undef STAT
@@ -147,7 +161,7 @@ static PyObject *c_make_file_dict(self, args)
 	PyObject *major_num = PyLong_FromLongLong(major(devnums));
 #else
 	long int devnums = (long)sbuf.st_dev;
-	PyObject *major_num = PyInt_FromLong(devnums >> 8);
+	PyObject *major_num = PyInt_FromLong(major(devnums));
 #endif
 	int minor_num = (int)(minor(devnums));
 	if S_ISCHR(mode) strcpy(devtype, "c");

@@ -89,13 +89,14 @@ def MakeTar():
 
 	os.mkdir(tardir+"/rdiff_backup")
 	for filename in ["eas_acls.py", "backup.py", "connection.py",
-					 "FilenameMapping.py", "Hardlink.py",
-					 "increment.py", "__init__.py", "iterfile.py",
-					 "lazy.py", "librsync.py", "log.py", "Main.py",
-					 "manage.py", "metadata.py", "Rdiff.py",
-					 "regress.py", "restore.py", "robust.py",
-					 "rorpiter.py", "rpath.py", "Security.py",
-					 "selection.py", "SetConnections.py", "static.py",
+					 "FilenameMapping.py", "fs_abilities.py",
+					 "Hardlink.py", "increment.py", "__init__.py",
+					 "iterfile.py", "lazy.py", "librsync.py",
+					 "log.py", "Main.py", "manage.py", "metadata.py",
+					 "Rdiff.py", "regress.py", "restore.py",
+					 "robust.py", "rorpiter.py", "rpath.py",
+					 "Security.py", "selection.py",
+					 "SetConnections.py", "static.py",
 					 "statistics.py", "TempFile.py", "Time.py"]:
 		assert not os.system("cp %s/%s %s/rdiff_backup" %
 							 (SourceDir, filename, tardir)), filename
