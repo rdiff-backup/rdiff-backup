@@ -7,6 +7,10 @@ rdiff-backup \- rsync-like incremental backup utility
 .BI [[[ user@ ] host1.foo ]:: source_directory ]
 .BI [[[ user@ ] host2.foo ]:: destination_directory ]
 
+.B rdiff-backup
+.B {{ -l | --list-increments }
+.BI "| --remove-older-than " time_interval }
+.BI [[[ user@ ] host2.foo ]:: destination_directory ]
 
 .SH DESCRIPTION
 .B rdiff-backup
@@ -69,7 +73,9 @@ generally tell you if it needs this.
 .TP
 .B "-l, --list-increments"
 List the number and date of partial incremental backups contained in
-the specified destination directory.
+the specified destination directory.  This option is incompatible with
+backing up or restoring and must be run in a separate instance of
+rdiff-backup.
 .TP
 .B "-m, --mirror-only"
 Do not create an rdiff-backup-data directory or make any increments.
@@ -93,11 +99,17 @@ See the
 section for more information.
 .TP
 .BI "--remove-older-than " time_interval
-Remove the incremental backups in the destination directory that have
-been around longer than time_interval.  The time interval is an
-integer followed by the character s, m, h, D, M, or Y, indicating
+Remove the incremental backup information in the destination directory
+that has been around longer than time_interval.  The time interval is
+an integer followed by the character s, m, h, D, M, or Y, indicating
 seconds, minutes, hours, days, months, or years respectively.  Thus
 32m means 32 minutes, while 1M means one month (30 days).
+
+Note that this option is incompatible with backing up or restoring and
+must be run in a separate instance of rdiff-backup.  Remember also
+that snapshots of deleted files are covered by this operation, so if
+you deleted a file and backed up two weeks ago, and then run
+--remove-older-than 10D today, no trace of that file will remain.
 .TP
 .B --resume
 Resume the last aborted backup.  If no aborted backups are found, exit
