@@ -1,5 +1,8 @@
 Changes in 0.9.3:
 
+ * Big speed improvements in MD4 routines and generation of weak
+   checksums.
+
  * Patch to build on FreeBSD by Jos Backus <josb@cncdsl.com>
 
  * Suggestions to build on Solaris 2.6 from Alberto Accomazzi
@@ -8,9 +11,6 @@ Changes in 0.9.3:
  * Add rs_job_drive, a generic mechanism for turning the library into
    blocking mode.  rs_whole_run now builds on top of this.  The
    filebuf interface has changed a little to accomodate it.
-
- * Big speed improvements in MD4 routines and generation of weak
-   checksums.
 
  * Generating and loading signatures now generates statistics.
 
