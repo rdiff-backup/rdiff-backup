@@ -564,10 +564,22 @@ def ListChangedSince(rp):
 		for sub_rid in Restore.yield_rids(rid, rest_time, mirror_time):
 			for sub_sub_rid in get_rids_recursive(sub_rid): yield sub_sub_rid
 
+	def determineChangeType(incList):
+		"returns the type of change determined from incList"
+		assert len(incList) > 0
+		last_inc_type = incList[-1].getinctype() # examine earliest change
+		if last_inc_type == 'snapshot': return "misc change"
+		elif last_inc_type == 'missing': return "new file"
+		elif last_inc_type == 'diff' or last_inc_type == 'dir':
+			return "modified"
+		else: return "Unknown!"
+
 	inc_rpath = datadir.append_path('increments', index)
 	inc_list = Restore.get_inclist(inc_rpath)
 	root_rid = RestoreIncrementData(index, inc_rpath, inc_list)
 	for rid in get_rids_recursive(root_rid):
-		if rid.inc_list: print "/".join(rid.index)
-
+		if rid.inc_list:
+			if not rid.index: path = "."
+			else: path = "/".join(rid.index)
+			print "%-11s: %s" % (determineChangeType(rid.inc_list), path)
 
