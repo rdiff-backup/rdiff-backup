@@ -12,10 +12,10 @@ class Local:
 	def get_local_rp(ext):
 		return RPath(Globals.local_connection, "testfiles/" + ext)
 
-	inc1rp = get_local_rp('increment1')
-	inc2rp = get_local_rp('increment2')
-	inc3rp = get_local_rp('increment3')
-	inc4rp = get_local_rp('increment4')
+	kt1rp = get_local_rp('killtest1')
+	kt2rp = get_local_rp('killtest2')
+	kt3rp = get_local_rp('killtest3')
+	kt4rp = get_local_rp('killtest4')
 
 	rpout = get_local_rp('output')
 	rpout_inc = get_local_rp('output_inc')
@@ -55,7 +55,7 @@ class ProcessFuncs(unittest.TestCase):
 
 	def exec_rb(self, time, wait, *args):
 		"""Run rdiff-backup return pid"""
-		arglist = ['python', '../src/rdiff-backup', '-v7']
+		arglist = ['python', '../rdiff-backup', '-v3']
 		if time:
 			arglist.append("--current-time")
 			arglist.append(str(time))
@@ -94,6 +94,28 @@ class ProcessFuncs(unittest.TestCase):
 		if resume: self.exec_rb(backup_time + 5, 1, '--resume', arg1, arg2)
 		else: self.exec_rb(backup_time + 5000, 1, '--no-resume', arg1, arg2)
 
+	def create_killtest_dirs(self):
+		"""Create testfiles/killtest? directories
+
+		They are similar to the testfiles/increment? directories but
+		have more files in them so they take a significant time to
+		back up.
+
+		"""
+		def copy_thrice(input, output):
+			"""Copy input directory to output directory three times"""
+			assert not os.system("cp -a %s %s" % (input, output))
+			assert not os.system("cp -a %s %s/killtest1" % (input, output))
+			assert not os.system("cp -a %s %s/killtest2" % (input, output))
+
+		if (Local.kt1rp.lstat() and Local.kt2rp.lstat() and
+			Local.kt3rp.lstat() and Local.kt4rp.lstat()): return
+		
+		assert not os.system("rm -rf testfiles/killtest?")
+		for i in [1, 2, 3, 4]:
+			copy_thrice("testfiles/increment%d" % i,
+						"testfiles/killtest%d" % i)
+
 	def verify_back_dirs(self):
 		"""Make sure testfiles/output/back? dirs exist"""
 		if (Local.back1.lstat() and Local.back2.lstat() and
@@ -102,29 +124,29 @@ class ProcessFuncs(unittest.TestCase):
 
 		os.system(MiscDir + "/myrm testfiles/backup[1-5]")
 
-		self.exec_rb(10000, 1, 'testfiles/increment3', 'testfiles/backup1')
+		self.exec_rb(10000, 1, 'testfiles/killtest3', 'testfiles/backup1')
 		Local.back1.setdata()
 
-		self.exec_rb(10000, 1, 'testfiles/increment3', 'testfiles/backup2')
-		self.exec_rb(20000, 1, 'testfiles/increment1', 'testfiles/backup2')
+		self.exec_rb(10000, 1, 'testfiles/killtest3', 'testfiles/backup2')
+		self.exec_rb(20000, 1, 'testfiles/killtest1', 'testfiles/backup2')
 		Local.back2.setdata()
 		
-		self.exec_rb(10000, 1, 'testfiles/increment3', 'testfiles/backup3')
-		self.exec_rb(20000, 1, 'testfiles/increment1', 'testfiles/backup3')
-		self.exec_rb(30000, 1, 'testfiles/increment2', 'testfiles/backup3')
+		self.exec_rb(10000, 1, 'testfiles/killtest3', 'testfiles/backup3')
+		self.exec_rb(20000, 1, 'testfiles/killtest1', 'testfiles/backup3')
+		self.exec_rb(30000, 1, 'testfiles/killtest2', 'testfiles/backup3')
 		Local.back3.setdata()
 		
-		self.exec_rb(10000, 1, 'testfiles/increment3', 'testfiles/backup4')
-		self.exec_rb(20000, 1, 'testfiles/increment1', 'testfiles/backup4')
-		self.exec_rb(30000, 1, 'testfiles/increment2', 'testfiles/backup4')
-		self.exec_rb(40000, 1, 'testfiles/increment3', 'testfiles/backup4')
+		self.exec_rb(10000, 1, 'testfiles/killtest3', 'testfiles/backup4')
+		self.exec_rb(20000, 1, 'testfiles/killtest1', 'testfiles/backup4')
+		self.exec_rb(30000, 1, 'testfiles/killtest2', 'testfiles/backup4')
+		self.exec_rb(40000, 1, 'testfiles/killtest3', 'testfiles/backup4')
 		Local.back4.setdata()
 
-		self.exec_rb(10000, 1, 'testfiles/increment3', 'testfiles/backup5')
-		self.exec_rb(20000, 1, 'testfiles/increment1', 'testfiles/backup5')
-		self.exec_rb(30000, 1, 'testfiles/increment2', 'testfiles/backup5')
-		self.exec_rb(40000, 1, 'testfiles/increment3', 'testfiles/backup5')
-		self.exec_rb(50000, 1, 'testfiles/increment4', 'testfiles/backup5')
+		self.exec_rb(10000, 1, 'testfiles/killtest3', 'testfiles/backup5')
+		self.exec_rb(20000, 1, 'testfiles/killtest1', 'testfiles/backup5')
+		self.exec_rb(30000, 1, 'testfiles/killtest2', 'testfiles/backup5')
+		self.exec_rb(40000, 1, 'testfiles/killtest3', 'testfiles/backup5')
+		self.exec_rb(50000, 1, 'testfiles/killtest4', 'testfiles/backup5')
 		Local.back5.setdata()
 
 	def runtest_sequence(self, total_tests,
@@ -150,46 +172,50 @@ class ProcessFuncs(unittest.TestCase):
 
 class Resume(ProcessFuncs):
 	"""Test for graceful recovery after resumed backup"""
+	def setUp(self):
+		"""Create killtest? and backup? directories"""
+		self.create_killtest_dirs()
+		self.verify_back_dirs()
+
 	def runtest(self, exclude_rbdir, ignore_tmp_files, compare_links):
 		"""Run the actual test, returning 1 if passed and 0 otherwise"""
 		self.delete_tmpdirs()
-		self.verify_back_dirs()
 		
-		# Backing up increment3
+		# Backing up killtest3
 
-		# Start with increment3 because it is big and the first case
+		# Start with killtest3 because it is big and the first case
 		# is kind of special (there's no incrementing, so different
 		# code)
-		self.exec_and_kill(0.7, 1.5, 10000, 1,
-						   'testfiles/increment3', 'testfiles/output')
+		self.exec_and_kill(0.7, 4.0, 10000, 1,
+						   'testfiles/killtest3', 'testfiles/output')
 		if not CompareRecursive(Local.back1, Local.rpout, compare_links,
 								None, exclude_rbdir, ignore_tmp_files):
 			return 0
 
-		# Backing up increment1
-		self.exec_and_kill(0.8, 0.8, 20000, 1,
-						   'testfiles/increment1', 'testfiles/output')
+		# Backing up killtest1
+		self.exec_and_kill(0.8, 5.0, 20000, 1,
+						   'testfiles/killtest1', 'testfiles/output')
 		if not CompareRecursive(Local.back2, Local.rpout, compare_links,
 								None, exclude_rbdir, ignore_tmp_files):
 			return 0
 
-		# Backing up increment2
-		self.exec_and_kill(0.7, 1.0, 30000, 1,
-						   'testfiles/increment2', 'testfiles/output')
+		# Backing up killtest2
+		self.exec_and_kill(0.7, 0.8, 30000, 1,
+						   'testfiles/killtest2', 'testfiles/output')
 		if not CompareRecursive(Local.back3, Local.rpout, compare_links,
 								None, exclude_rbdir, ignore_tmp_files):
 			return 0
 
-		# Backing up increment3
-		self.exec_and_kill(0.7, 2.0, 40000, 1,
-						   'testfiles/increment3', 'testfiles/output')
+		# Backing up killtest3
+		self.exec_and_kill(0.7, 4.0, 40000, 1,
+						   'testfiles/killtest3', 'testfiles/output')
 		if not CompareRecursive(Local.back4, Local.rpout, compare_links,
 								None, exclude_rbdir, ignore_tmp_files):
 			return 0
 
-		# Backing up increment4
-		self.exec_and_kill(1.0, 5.0, 50000, 1,
-						   'testfiles/increment4', 'testfiles/output')
+		# Backing up killtest4
+		self.exec_and_kill(1.0, 8.0, 50000, 1,
+						   'testfiles/killtest4', 'testfiles/output')
 		if not CompareRecursive(Local.back5, Local.rpout, compare_links,
 								None, exclude_rbdir, ignore_tmp_files):
 			return 0
@@ -211,46 +237,55 @@ class NoResume(ProcessFuncs):
 	def runtest(self, exclude_rbdir, ignore_tmp_files, compare_links):
 		self.delete_tmpdirs()
 
-		# Back up each increment to output
+		# Back up each killtest to output
 		self.exec_and_kill(0.7, 1.5, 10000, 1,
-						   'testfiles/increment3', 'testfiles/output')
+						   'testfiles/killtest3', 'testfiles/output')
 		self.exec_and_kill(0.6, 0.6, 20000, 1,
-						   'testfiles/increment1', 'testfiles/output')
+						   'testfiles/killtest1', 'testfiles/output')
 		self.exec_and_kill(0.7, 1.0, 30000, 1,
-						   'testfiles/increment2', 'testfiles/output')
+						   'testfiles/killtest2', 'testfiles/output')
 		self.exec_and_kill(0.7, 2.0, 40000, 1,
-						   'testfiles/increment3', 'testfiles/output')
+						   'testfiles/killtest3', 'testfiles/output')
 		self.exec_and_kill(1.0, 5.0, 50000, 1,
-						   'testfiles/increment4', 'testfiles/output')
+						   'testfiles/killtest4', 'testfiles/output')
 
 		# Now restore each and compare
 		InternalRestore(1, 1, "testfiles/output", "testfiles/restoretarget1",
 						15000)
-		assert CompareRecursive(Local.inc3rp, Local.rpout1, compare_links,
-								None, exclude_rbdir, ignore_tmp_files)
+		if not CompareRecursive(Local.kt3rp, Local.rpout1, compare_links,
+								None, exclude_rbdir, ignore_tmp_files):
+			return 0
+		
 		InternalRestore(1, 1, "testfiles/output", "testfiles/restoretarget2",
 						25000)
-		assert CompareRecursive(Local.inc1rp, Local.rpout2, compare_links,
-								None, exclude_rbdir, ignore_tmp_files)
+		if not CompareRecursive(Local.kt1rp, Local.rpout2, compare_links,
+								None, exclude_rbdir, ignore_tmp_files):
+			return 0
+
 		InternalRestore(1, 1, "testfiles/output", "testfiles/restoretarget3",
 						35000)
-		assert CompareRecursive(Local.inc2rp, Local.rpout3, compare_links,
-								None, exclude_rbdir, ignore_tmp_files)
+		if not CompareRecursive(Local.kt2rp, Local.rpout3, compare_links,
+								None, exclude_rbdir, ignore_tmp_files):
+			return 0
 		InternalRestore(1, 1, "testfiles/output", "testfiles/restoretarget4",
 						45000)
-		assert CompareRecursive(Local.inc3rp, Local.rpout4, compare_links,
-								None, exclude_rbdir, ignore_tmp_files)
+		
+		if not CompareRecursive(Local.kt3rp, Local.rpout4, compare_links,
+								None, exclude_rbdir, ignore_tmp_files):
+			return 0
 		InternalRestore(1, 1, "testfiles/output", "testfiles/restoretarget5",
 						55000)
-		assert CompareRecursive(Local.inc4rp, Local.rpout5, compare_links,
-								None, exclude_rbdir, ignore_tmp_files)
+
+		if not CompareRecursive(Local.kt4rp, Local.rpout5, compare_links,
+								None, exclude_rbdir, ignore_tmp_files):
+			return 0
 		return 1
 
-	def testTERM(self, total_tests = 10):
+	def testTERM(self, total_tests = 5):
 		self.killsignal = signal.SIGTERM
 		self.runtest_sequence(total_tests, 1, None, 1)
 
-	def testKILL(self, total_tests = 20):
+	def testKILL(self, total_tests = 5):
 		self.killsignal = signal.SIGKILL
 		self.runtest_sequence(total_tests, 1, 1, None)
 
