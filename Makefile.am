@@ -16,7 +16,9 @@ libhsync_la_SOURCES = dec.c enc.c \
 	checksum.c copyq.c \
 	inbuf.c \
 	inhale.c trace.c \
-	hex.c stats.c mapptr.c fileutil.c \
+	hex.c stats.c \
+	mapptr.c mapptr.h \
+	fileutil.c \
 	gdproto.c readsums.c \
 	util.c util.h
 
@@ -27,7 +29,8 @@ libhsyncdecode_la_SOURCES = dec.c \
 	compress.c compress.h \
 	filebuf.c membuf.c ptrbuf.c \
 	inhale.c trace.c hex.c stats.c  \
-	mdfour.c fileutil.c mapptr.c \
+	mdfour.c fileutil.c \
+	mapptr.c mapptr.h \
 	readsums.c \
 	util.c util.h
 
@@ -88,9 +91,11 @@ test-cmds/cmds: make-cmds.py
 	mkdir -p test-cmds
 	$(PYTHON) $(srcdir)/make-cmds.py > $@
 
-hsmdfour_SOURCES = hsmdfour.c mdfour.c filebuf.c fileutil.c hex.c trace.c
+hsmdfour_SOURCES = hsmdfour.c 
+hsmdfour_LDADD = libhsyncdecode.la
 
-hsfilebufcat_SOURCES = hsfilebufcat.c filebuf.c fileutil.c trace.c netio.c
+hsfilebufcat_SOURCES = hsfilebufcat.c
+hsfilebufcat_LDADD = libhsyncdecode.la
 
 hsdecode_SOURCES = hsdecode.c
 hsdecode_LDADD = libhsyncdecode.la
@@ -104,8 +109,8 @@ hsemit_LDADD = libhsync.la
 hsinhale_SOURCES = hsinhale.c
 hsinhale_LDADD = libhsyncdecode.la
 
-hsmapread_SOURCES = hsmapread.c mapptr.c filebuf.c trace.c netio.c \
-	fileutil.c
+hsmapread_SOURCES = hsmapread.c 
+hsmapread_LDADD = libhsyncdecode.la
 
 # Thus spake the master programmer:
 # 

@@ -122,30 +122,38 @@ _hs_map_file(int fd)
 }
 
 
-/* Read up to READ_SIZE bytes of data into MAP at &p[READ_OFFSET].
-   Return the number of bytes added to the buffer, and set REACHED_EOF
-   if appropriate. */
+/* Read data into MAP at &p[READ_OFFSET].  Return the number of bytes
+   added to the buffer, and set REACHED_EOF if appropriate.
+
+   The amount of data is specified in an opportunistic, lazy way, with
+   the idea being that we make IO operations as large as possible
+   without blocking for any longer than is necessary when waiting for
+   data from a network.
+
+   Therefore, the function tries to read at least MIN_SIZE bytes,
+   unless it encounters an EOF or error.  It reads up to MAX_SIZE
+   bytes, and there must be that much space in the buffer.  Once
+   MIN_SIZE bytes have been received, no new IO operations will
+   start. */
 static ssize_t
 _hs_map_do_read(hs_map_t *map,
 		hs_off_t const read_offset,
-		ssize_t const read_size,
+		ssize_t const max_size, ssize_t const min_size,
 		int *reached_eof)
 {
-    ssize_t total_read = 0;
+    ssize_t total_read = 0;	/* total amount read in */
     ssize_t nread;
+    ssize_t buf_remain = max_size; /* buffer space left */
+    char *p = map->p + read_offset;
     
     do {
-	nread = read(map->fd,
-		     map->p + read_offset + total_read,
-		     (size_t) read_size - total_read);
+	nread = read(map->fd, p, (size_t) buf_remain);
 
 	if (nread < 0) {
 	    _hs_error("read error in hs_mapptr: %s", strerror(errno));
 	    /* Should we return null here? */
 	    break;
 	}
-
-	total_read += nread;
 
 	if (nread == 0) {
 	    /* GNU libc manual: A value of zero indicates end-of-file
@@ -156,10 +164,14 @@ _hs_map_do_read(hs_map_t *map,
 	    *reached_eof = 1;
 	    break;
 	}
-    } while (total_read < read_size);
 
-    _hs_trace("wanted %d bytes, read %d bytes%s",
-	      read_size, total_read,
+	total_read += nread;
+	p += nread;
+	buf_remain -= nread;
+    } while (total_read < min_size);
+
+    _hs_trace("wanted %ld to %ld bytes, read %ld bytes%s",
+	      (long) min_size, (long) max_size, (long) total_read,
 	      *reached_eof ? ", now at eof" : "");
 
     return total_read;
@@ -190,7 +202,9 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
        to read; we'll put it into the buffer starting at
        &p[read_offset]. */
     hs_off_t        window_start, read_start;
-    ssize_t window_size, read_size;
+    ssize_t window_size;
+    ssize_t          read_max_size; /* space remaining */
+    ssize_t read_min_size;	/* needed to fill this request */
     hs_off_t read_offset;
     ssize_t             total_read, avail;
 
@@ -237,16 +251,19 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     }
 
     /* make sure we have allocated enough memory for the window */
-    if (window_size > map->p_size) {
+    if (!map->p) {
+	assert(map->p_size == 0);
+	map->p = (char *) malloc((size_t) window_size);
+	map->p_size = window_size;
+    } else if (window_size > map->p_size) {
 	map->p = (char *) realloc(map->p, (size_t) window_size);
-	if (!map->p) {
-	    _hs_fatal("map_ptr: out of memory");
-	}
 	map->p_size = window_size;
     }
 
-    assert(map->p != NULL);
-    
+    if (!map->p) {
+	_hs_fatal("map_ptr: out of memory");
+    }
+
     /* now try to avoid re-reading any bytes by reusing any bytes from the
      * previous buffer. */
     if (window_start >= map->p_offset &&
@@ -254,18 +271,18 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
 	window_start + window_size >= map->p_offset + map->p_len) {
 	read_start = map->p_offset + map->p_len;
 	read_offset = read_start - window_start;
-	read_size = window_size - read_offset;
+	read_max_size = window_size - read_offset;
 	memmove(map->p, map->p + (map->p_len - read_offset),
 		(size_t) read_offset);
     } else {
 	read_start = window_start;
-	read_size = window_size;
+	read_max_size = window_size;
 	read_offset = 0;
     }
 
-    if (read_size <= 0) {
+    if (read_max_size <= 0) {
 	_hs_trace("Warning: unexpected read size of %d in map_ptr\n",
-		  read_size);
+		  read_max_size);
 	return NULL;
     }
 
@@ -277,7 +294,12 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
 	map->p_fd_offset = read_start;
     }
 
-    total_read = _hs_map_do_read(map, read_offset, read_size, reached_eof);
+    /* XXX: For the moment we require reading the whole thing; this should be
+       changed to read just as much as is required. */
+    read_min_size = read_max_size;
+    total_read = _hs_map_do_read(map, read_offset, read_max_size,
+				 read_min_size, reached_eof);
+    assert(*reached_eof  ||  total_read >= read_min_size);
     map->p_fd_offset += total_read;
 
     map->p_offset = window_start;
@@ -290,7 +312,7 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
      * last time, plus the data now read in. */
     map->p_len = read_offset + total_read;
 
-    if (total_read == read_size) {
+    if (total_read == read_max_size) {
 	/* This was the formula before we worried about EOF, so * assert that 
 	 * it's still the same. */
 	assert(map->p_len == window_size);

@@ -296,18 +296,8 @@ int             _hs_inhale_command(hs_read_fn_t read_fn, void *read_priv,
 
 int _hs_check_sig_version(hs_read_fn_t, void *);
 
-/* ========================================
 
-   map_ptr IO */
-
-typedef struct hs_map hs_map_t;
-
-hs_map_t       *_hs_map_file(int fd);
-/*@null@*/ char const     *_hs_map_ptr(hs_map_t *, hs_off_t, ssize_t *len, int *reached_eof);
-void            _hs_unmap_file(hs_map_t * map);
-
-int             hs_file_open(char const *filename, int mode);
-
+#include "mapptr.h"
 
 /* This structure holds all the state of the encoding operation.  Yes,
    it's a bit ugly to stick random variables in here like this, but we
