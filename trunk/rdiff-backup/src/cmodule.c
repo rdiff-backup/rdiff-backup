@@ -32,6 +32,7 @@
 #	define STRUCT_STAT struct stat
 #endif
 
+extern int lstat(const char *, struct stat *);
 
 static PyObject *UnknownFileTypeError;
 static PyObject *c_make_file_dict(PyObject *self, PyObject *args);
@@ -47,25 +48,21 @@ static PyObject *c_make_file_dict(self, args)
 {
   PyObject *size, *inode, *mtime, *atime, *devloc, *return_val;
   char *filename, filetype[5];
-  STRUCT_STAT sbuf;
+  struct stat sbuf;
   long int mode, perms;
   int res;
 
   if (!PyArg_ParseTuple(args, "s", &filename)) return NULL;
 
   Py_BEGIN_ALLOW_THREADS
-#if HAVE_LARGEFILE_SUPPORT
-  res = lstat64(filename, &sbuf);
-#else
   res = lstat(filename, &sbuf);
-#endif
   Py_END_ALLOW_THREADS
 
   if (res != 0) {
 	if (errno == ENOENT || errno == ENOTDIR)
 	  return Py_BuildValue("{s:s}", "type", NULL);
 	else {
-	  PyErr_SetFromErrno(PyExc_OSError);
+	  PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
 	  return NULL;
 	}
   }
