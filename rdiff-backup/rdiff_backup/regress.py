@@ -35,7 +35,7 @@ recovered.
 
 from __future__ import generators
 import Globals, restore, log, rorpiter, TempFile, metadata, rpath, C, \
-	   Time, backup
+	   Time, backup, robust
 
 # regress_time should be set to the time we want to regress back to
 # (usually the time of the last successful backup)
@@ -212,7 +212,7 @@ class RegressITRB(rorpiter.ITRBranch):
 			if rf.metadata_rorp.isreg(): self.restore_orig_regfile(rf)
 			else:
 				if rf.mirror_rp.lstat(): rf.mirror_rp.delete()
-				if diff_rorp.isspecial():
+				if rf.metadata_rorp.isspecial():
 					robust.check_common_error(None, rpath.copy_with_attribs,
 											  (rf.metadata_rorp, rf.mirror_rp))
 				else: rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
