@@ -18,10 +18,17 @@ i386rpm = base+".i386.rpm"
 source_rpm = base+".src.rpm"
 tarfile = "-".join(base.split("-")[:-1]) + ".tar.gz"
 
-assert not os.system("install -o root -g root -m 644 %s "
-					 "/usr/src/redhat/SOURCES" % (tarfile,))
+# These assume the rpm root directory $HOME/rpm.  The
+# nonstandard location allows for building by non-root user.
+assert not os.system("cp %s $HOME/rpm/SOURCES" % (tarfile,))
 assert not os.system("rpm -ba --sign -vv --target i386 " + specfile)
-assert not os.system("install -o ben -g ben -m 644 "
-					 "/usr/src/redhat/RPMS/i386/%s ." % i386rpm)
-assert not os.system("install -o ben -g ben -m 644 "
-					 "/usr/src/redhat/SRPMS/%s ." % source_rpm)
+assert not os.system("cp $HOME/rpm/RPMS/i386/%s ." % i386rpm)
+assert not os.system("cp $HOME/rpm/SRPMS/%s ." % source_rpm)
+
+# Old root RPM instructions
+#assert not os.system("install -o root -g root -m 644 %s "
+#					 "/usr/src/redhat/SOURCES" % (tarfile,))
+#assert not os.system("install -o ben -g ben -m 644 "
+#					 "/usr/src/redhat/RPMS/i386/%s ." % i386rpm)
+#assert not os.system("install -o ben -g ben -m 644 "
+#					 "/usr/src/redhat/SRPMS/%s ." % source_rpm)

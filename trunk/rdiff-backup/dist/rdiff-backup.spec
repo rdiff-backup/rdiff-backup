@@ -36,6 +36,7 @@ python2 setup.py install --prefix=$RPM_BUILD_ROOT/usr
 %defattr(-,root,root)
 /usr/bin/rdiff-backup
 /usr/share/doc/rdiff-backup-%{version}
+/usr/share/man/man1
 /usr/lib
 
 
