@@ -62,14 +62,6 @@ Enter calculate average mode.  The arguments should be a number of
 statistics files.  rdiff-backup will print the average of the listed
 statistics files and exit.
 .TP
-.B --change-source-perms
-If this option is set, rdiff-backup will try to change the mode of any
-unreadable files or unreadable/unexecutable directories in the source
-directory so it can back them up.  It will then restore their original
-permissions and mtimes afterwards.  This option should generally not
-be used if rdiff-backup has root access to the source directory, as
-root can access files regardless of their permissions.
-.TP
 .BI "--chars-to-quote " chars
 If this option is set, any characters in
 .I chars
@@ -324,11 +316,6 @@ Like
 but only allow writes as part of an incremental backup.  Requests for other types of writes (for instance, deleting 
 .IR path )
 will be rejected.
-.TP
-.BI "--resume-window " seconds
-Resume the last aborted backup if it started less than the specified
-number of seconds ago.  Otherwise start a new backup.  The default is
-7200 (2 hours).
 .TP
 .B --server
 Enter server mode (not to be invoked directly, but instead used by
