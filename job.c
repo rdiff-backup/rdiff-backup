@@ -53,16 +53,17 @@
 #include "trace.h"
 
 
-hs_job_t * hs_job_new(hs_stream_t *stream)
+hs_job_t * hs_job_new(hs_stream_t *stream, char const *job_name)
 {
-        hs_job_t *job;
+    hs_job_t *job;
 
-        job = hs_alloc_struct(hs_job_t);
+    job = hs_alloc_struct(hs_job_t);
 
-        hs_stream_check(stream);
-        job->stream = stream;
+    hs_stream_check(stream);
+    job->stream = stream;
+    job->job_name = job_name;
 
-        return job;
+    return job;
 }
 
 
@@ -78,7 +79,9 @@ hs_result hs_job_free(hs_job_t *job)
 
 static hs_result hs_job_s_complete(hs_job_t *job)
 {
-    hs_trace("job has finished, status: %s", hs_strerror(job->final_result));
+    hs_log(HS_LOG_WARNING,
+           "job has already finished, status: %s",
+           hs_strerror(job->final_result));
     
     return HS_DONE;
 }
@@ -86,6 +89,11 @@ static hs_result hs_job_s_complete(hs_job_t *job)
 
 static hs_result hs_job_complete(hs_job_t *job, hs_result result)
 {
+    if (result != HS_DONE)
+        hs_error("%s job failed: %s", job->job_name, hs_strerror(result));
+    else
+        hs_trace("%s job done", job->job_name);
+
     job->final_result = result;
     job->statefn = hs_job_s_complete;
     
