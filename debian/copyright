@@ -1,8 +1,17 @@
-This package was debianized by Martin Pool mbp@linuxcare.com.au on
-Mon, 19 Mar 2001 01:57:44 +1100.
+This package was debianized by John Goerzen <jgoerzen@complete.org> on
+Mon, 11 Feb 2002 13:03:19 -0500.
 
-It was downloaded from <fill in ftp site>
+The homepage is http://rproxy.sourceforge.net/.
+
+It was downloaded from http://prdownloads.sourceforge.net/rproxy/
+
+0.9.5.1 was found at http://rdiff-backup.stanford.edu/ -- it looks like new
+versions might appear there.
+
+Upstream Author(s): Martin Pool <mbp@samba.org>
+Andrew Tridgell <tridge@samba.org>
+
 
 Copyright:
 
-<Must follow here>
+GNU LGPL version 2.1, found at /usr/share/common-licenses/LGPL-2.1

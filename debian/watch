@@ -2,4 +2,5 @@
 # Rename this file to "watch" and then you can run the "uscan" command
 # to check for upstream updates and more.
 # Site		Directory		Pattern			Version	Script
-metalab.unc.edu	/pub/Linux/Incomingu	librsync-(.*)\.tar\.gz	debian	uupdate
+#sunsite.unc.edu	/pub/Linux/Incoming	librsync-(.*)\.tar\.gz	debian	uupdate
+ftp.sourceforge.net /pub/sourceforge/rproxy librsync-(.*)\.tar\.gz debian uupdate
