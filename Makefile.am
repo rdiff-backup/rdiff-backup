@@ -61,7 +61,8 @@ test-seq/in-01 \
 test-seq/in-04 \
 test-seq/in-07 \
 test-seq/in-08 \
-test-cmds/cmds.txt
+test-cmds/cmds.txt \
+test-thrice/01-data
 
 
 EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)

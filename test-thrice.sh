@@ -11,20 +11,20 @@
 
 source ${srcdir:-.}/testfns.sh $0 $@
 
-data=../INSTALL
+data=$testdir/01-data
 
 rm -f *.tmp
 
-run_test hsencode $data lt.tmp /dev/null
-run_test hsdecode $data sig01.tmp new01.tmp lt.tmp
-run_test cmp $data new01.tmp
+run_test hsencode $data $tmpdir/lt.tmp /dev/null
+run_test hsdecode $data $tmpdir/sig01.tmp $tmpdir/new01.tmp $tmpdir/lt.tmp
+run_test cmp $data $tmpdir/new01.tmp
 
-run_test hsencode $data lt.tmp sig01.tmp 
-run_test hsdecode $data sig02.tmp new02.tmp lt.tmp
-run_test cmp sig01.tmp sig02.tmp
-run_test cmp $data new02.tmp
+run_test hsencode $data $tmpdir/lt.tmp $tmpdir/sig01.tmp 
+run_test hsdecode $data $tmpdir/sig02.tmp $tmpdir/new02.tmp $tmpdir/lt.tmp
+run_test cmp $tmpdir/sig01.tmp $tmpdir/sig02.tmp
+run_test cmp $data $tmpdir/new02.tmp
 
-run_test hsencode $data lt.tmp sig02.tmp
-run_test hsdecode $data sig03.tmp new03.tmp lt.tmp
-run_test cmp sig02.tmp sig03.tmp
-run_test cmp $data new03.tmp
+run_test hsencode $data $tmpdir/lt.tmp $tmpdir/sig02.tmp
+run_test hsdecode $data $tmpdir/sig03.tmp $tmpdir/new03.tmp $tmpdir/lt.tmp
+run_test cmp $tmpdir/sig02.tmp $tmpdir/sig03.tmp
+run_test cmp $data $tmpdir/new03.tmp

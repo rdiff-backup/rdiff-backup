@@ -21,16 +21,13 @@ then
     srcdir=`dirname $0`
 fi
 srcdir=`cd $srcdir; pwd`
-PATH=$srcdir:$PATH
+builddir=`pwd`
 
-if [ "$srcdir" = "" ]
-then
-    srcdir=`dirname $0`
-fi
+PATH=$builddir:$srcdir:$PATH
 
 testdir=$srcdir/$test_name
-[ -d $testdir ] || mkdir $testdir
-cd $testdir
+tmpdir=/tmp/$test_name
+[ -d $tmpdir ] || mkdir $tmpdir
 
 function run_test {
     $* || (echo $test_name: failed: "$*" >&2; return 2)
