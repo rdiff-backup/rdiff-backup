@@ -16,7 +16,7 @@ remote systems transparent.
 
 """
 
-import os, stat, re, sys, shutil, gzip
+import os, stat, re, sys, shutil, gzip, socket
 from static import *
 
 
@@ -75,7 +75,7 @@ class RPathStatic:
 			major, minor = rpin.getdevnums()
 			rpout.makedev("b", major, minor)
 		elif rpin.isfifo(): rpout.mkfifo()
-		elif rpin.issock(): Log("Found socket, ignoring", 1)
+		elif rpin.issock(): rpout.mksock()
 		else: raise RPathException("File %s has unknown type" % rpin.path)
 
 	def copy_reg_file(rpin, rpout):
@@ -199,6 +199,11 @@ class RPathStatic:
 		"""
 		try: return tuple(os.lstat(filename))
 		except os.error: return None
+
+	def make_socket(path):
+		"""Make a local socket at the given path"""
+		s = socket.socket(socket.AF_UNIX)
+		s.bind(path)
 
 MakeStatic(RPathStatic)
 
@@ -579,6 +584,12 @@ class RPath(RORPath):
 		self.conn.os.mkfifo(self.path)
 		self.setdata()
 		assert self.isfifo()
+
+	def mksock(self):
+		"""Make a socket at self.path"""
+		self.conn.RPathStatic.make_socket(self.path)
+		self.setdata()
+		assert self.issock()
 
 	def touch(self):
 		"""Make sure file at self.path exists"""

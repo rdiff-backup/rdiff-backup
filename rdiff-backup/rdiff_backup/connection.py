@@ -11,7 +11,7 @@
 """Support code for remote execution and data transfer"""
 
 from __future__ import generators
-import types, os, tempfile, cPickle, shutil, traceback, pickle
+import types, os, tempfile, cPickle, shutil, traceback, pickle, socket
 
 
 class ConnectionError(Exception): pass
