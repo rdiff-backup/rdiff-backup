@@ -8,7 +8,7 @@ libhsync_la_SOURCES = dec.c enc.c emit.c litbuf.c \
 	private.h netio.c includes.h \
 	mdfour.c search.c \
 	filebuf.c membuf.c ptrbuf.c \
-	checksum.c \
+	checksum.c copyq.c \
 	compress.c compress.h inbuf.c
 
 libhsyncdecode_la_SOURCES = dec.c \
