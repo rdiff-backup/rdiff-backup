@@ -87,4 +87,6 @@ Contributors for 0.9.7 (release pending)
  * Donovan Baarda <abo@minkirri.apana.org.au>
    - librsync sf project admin
 
- * XXX
+ * Dave Coombs <dcoombs@nit.ca>
+   - C++ wrapper patch
+   

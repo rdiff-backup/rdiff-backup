@@ -40,8 +40,8 @@
  */
 
 
-#include <sys/types.h>
 #include <config.h>
+#include <sys/types.h>
 
 #include <assert.h>
 #include <stdlib.h>
