@@ -40,7 +40,7 @@ typedef struct hs_block_sig hs_block_sig_t;
  * search.
  */
 struct hs_signature {
-    off_t           flength;	/* total file length */
+    hs_long_t       flength;	/* total file length */
     int             count;      /* how many chunks */
     int             remainder;	/* flength % block_length */
     int             block_len;	/* block_length */

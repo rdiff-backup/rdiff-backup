@@ -29,7 +29,4 @@ hs_result hs_suck_netint(hs_stream_t *stream, hs_long_t *v, int len);
 hs_result hs_suck_byte(hs_stream_t *stream, unsigned char *);
 hs_result hs_suck_n4(hs_stream_t *stream, int *);
 
-int hs_fits_in_n1(size_t val);
-int hs_fits_in_n2(size_t val);
-int hs_fits_in_n4(size_t val);
-int hs_int_len(off_t val);
+int hs_int_len(hs_long_t val);
