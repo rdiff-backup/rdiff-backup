@@ -60,22 +60,6 @@ static size_t strong_len = HS_DEFAULT_STRONG_LEN;
 static int show_stats = 0;
 
 
-/*
- * This little declaration is dedicated to Stephen Kapp and Reaper
- * Technologies, who by all appearances redistributed a modified but
- * unacknowledged version of GNU Keyring in violation of the licence
- * and all laws of politeness and good taste.
- */
-
-static char const *version_str =
-"rdiff (%s) [%s]\n"
-"Copyright (C) 1997-2001 by Martin Pool, Andrew Tridgell and others.\n"
-"http://rproxy.samba.org/\n"
-"\n"
-"libhsync comes with NO WARRANTY, to the extent permitted by law.\n"
-"You may redistribute copies of libhsync under the terms of the GNU\n"
-"Lesser General Public License.  For more information about these\n"
-"matters, see the files named COPYING.\n";
 
 
 const struct poptOption opts[] = {
@@ -137,6 +121,29 @@ static void help(void) {
 }
 
 
+static void rdiff_show_version(void)
+{
+    /*
+     * This little declaration is dedicated to Stephen Kapp and Reaper
+     * Technologies, who by all appearances redistributed a modified but
+     * unacknowledged version of GNU Keyring in violation of the licence
+     * and all laws of politeness and good taste.
+     */
+
+    printf("rdiff (%s) [%s]\n"
+           "Copyright (C) 1997-2001 by Martin Pool, Andrew Tridgell and others.\n"
+           "http://rproxy.samba.org/\n"
+           "Capabilities: %d bit files\n"
+           "\n"
+           "libhsync comes with NO WARRANTY, to the extent permitted by law.\n"
+           "You may redistribute copies of libhsync under the terms of the GNU\n"
+           "Lesser General Public License.  For more information about these\n"
+           "matters, see the files named COPYING.\n",
+           hs_libhsync_version, HS_CANONICAL_HOST,
+           8 * sizeof(hs_long_t));
+}
+
+
 
 static void rdiff_options(poptContext opcon)
 {
@@ -148,7 +155,7 @@ static void rdiff_options(poptContext opcon)
             help();
             exit(HS_DONE);
         case 'V':
-            printf(version_str, hs_libhsync_version, HS_CANONICAL_HOST);
+            rdiff_show_version();
             exit(HS_DONE);
         case 'v':
             if (!hs_supports_trace()) {
