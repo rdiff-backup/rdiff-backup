@@ -14,12 +14,6 @@ $Id$
    * Remember to update them if we ever ship a buggy version (nah!) so
      that other parties can know not to trust the encoded data.
 
- * slprintf
-
-   If we don't have it in the OS, then link it into the library.  I
-   think we probably should *not* mangle it's name, but perhaps we
-   should.
-
  * abstract encoding
 
    In fact, we can vary on several different variables:
@@ -39,6 +33,10 @@ $Id$
 
    * What happens if the user terminates the request?
 
+ * Do HTTP CONNECT
+
+   * This might be a nice place to use select!
+
  * Non-blocking IO
 
    * Rewrite decoder to use mapptr for input.
@@ -48,6 +46,8 @@ $Id$
      refrain from input when there's no more space.
 
    * Also, this should interoperate smoothly with zlib.
+
+   * Then we could use select for custom timeouts!
 
  * Delete rubbish modules from CVS
 
