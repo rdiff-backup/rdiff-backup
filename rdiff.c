@@ -214,7 +214,7 @@ static void rdiff_options(poptContext opcon)
                     bzip2_level = l;
             } else {
                 if (c == OPT_GZIP)
-                    gzip_level = Z_DEFAULT_COMPRESSION;
+                    gzip_level = -1;      /* library default */
                 else
                     bzip2_level = 9;      /* demand the best */
             }
