@@ -3,7 +3,7 @@
  * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000,2001 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -57,7 +57,7 @@
 void
 hs_emit_delta_header(hs_stream_t *stream)
 {
-    hs_trace("emit DELTA");
+    hs_trace("emit DELTA magic");
     hs_squirt_n32(stream, HS_DELTA_MAGIC);
 }
 
@@ -67,7 +67,20 @@ hs_emit_delta_header(hs_stream_t *stream)
 void
 hs_emit_literal_cmd(hs_stream_t *stream, int len)
 {
-    hs_trace("emit LITERAL(%d)", len);
-    hs_squirt_n8(stream, HS_OP_LITERAL_N32);
+    int cmd = HS_OP_LITERAL_N32;
+    
+    hs_trace("emit LITERAL_N32(len=%d), cmd_byte=%#x", len, cmd);
+    hs_squirt_n8(stream, cmd);
     hs_squirt_n32(stream, len);
+}
+
+
+/** Write an END command. */
+void
+hs_emit_end_cmd(hs_stream_t *stream)
+{
+    int cmd = HS_OP_END;
+    
+    hs_trace("emit END, cmd_byte=%#x", cmd);
+    hs_squirt_n8(stream, cmd);
 }
