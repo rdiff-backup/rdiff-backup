@@ -1,4 +1,4 @@
-#! /bin/sh -pe 
+#! /bin/sh -e
 
 # Regression test driver for librsync.
 
@@ -92,7 +92,7 @@ do
 	time='time'
 	;;
     *)
-	echo "unrecognized driver option $o" >&2
+	echo "unrecognized driver option \"$o\"" >&2
 	exit 1
 	;;
     esac

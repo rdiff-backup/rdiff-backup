@@ -19,7 +19,8 @@ Changes in 0.9.3:
  * I suspect there may be a bug in rolling checksums, but it probably
    only causes inefficiency and not corruption.
 
- * Portability fixes for alphaev67-dec-osf5.1
+ * Portability fixes for alphaev67-dec-osf5.1; at the moment builds
+   but does not work because librsync tries to do unaligned accesses.
 
  * Works on sparc64-unknown-linux-gnu (Debian/2.2)
 

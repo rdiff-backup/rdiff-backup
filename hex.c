@@ -34,7 +34,7 @@ void
 rs_hexify(char *to_buf, void const *from, int from_len)
 {
     static const char hex_chars[] = "0123456789abcdef";
-    char const *from_buf = (unsigned char const *) from;
+    unsigned char const *from_buf = (unsigned char const *) from;
 
     while (from_len-- > 0) {
 	*(to_buf++) = hex_chars[((*from_buf) >> 4) & 0xf];

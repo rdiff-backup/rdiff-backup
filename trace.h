@@ -40,12 +40,12 @@ void rs_fatal0(char const *s, ...);
 void rs_error0(char const *s, ...);
 void rs_trace0(char const *s, ...);
 
-void rs_log0(int level, char const *fn, char const *fmt, ...)
-    __attribute__ ((format(printf, 3, 4)));
-
 void rs_log0_nofn(int level, char const *fmt, ...);
 
 #ifdef __GNUC__
+
+void rs_log0(int level, char const *fn, char const *fmt, ...)
+    __attribute__ ((format(printf, 3, 4)));
 
 #ifdef DO_RS_TRACE
 #  define rs_trace(fmt, arg...)                            \
@@ -91,6 +91,9 @@ void rs_log0_nofn(int level, char const *fmt, ...);
 #    define rs_trace rs_trace0
 #  endif			/* DO_RS_TRACE */
 #endif				/* ! __GNUC__ */
+
+
+void rs_log0(int level, char const *fn, char const *fmt, ...);
 
 
 enum {
