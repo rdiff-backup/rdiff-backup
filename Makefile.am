@@ -187,3 +187,6 @@ upload-men: $(converted_men)
 		rsync -avz --delete $(converted_men) $(man_MANS) $$i/man; \
 	done
 
+# Cater to people who prefer the name 'make test'
+.PHONY: test
+test: check;

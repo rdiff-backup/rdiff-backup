@@ -95,4 +95,4 @@ $srcdir/configure --enable-maintainer-mode "$@"
 
 echo 
 echo "Now type 'make' to compile $PROJECT."
-
+echo "I suggest you also use 'make check' to see if it works."
