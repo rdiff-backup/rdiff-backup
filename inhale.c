@@ -19,6 +19,19 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+                                        /*
+                                         | I think if you've ordered
+                                         | somebody to do something
+                                         | you should probably resist
+                                         | the urge to thank them.
+                                         |  -- abc.net.au/thegames/
+                                         */
+
+/*
+ * TODO: Inhale from a mapptr, rather than doing hard IO because bad
+ * things happen if it stops short.
+ */
+
 #include "includes.h"
 
 /* For debugging porpoises, here are some human-readable forms. */

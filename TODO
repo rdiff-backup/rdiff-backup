@@ -1,6 +1,10 @@
                                                   -*- indented-text -*- 
 $Id$
 
+ * Error handling
+
+   * What happens if the user terminates the request?
+
  * Non-blocking IO
 
    * Rewrite decoder to use mapptr for input.
