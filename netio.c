@@ -92,16 +92,23 @@ _hs_copy_ofs(uint32_t offset, uint32_t length,
     buf = malloc(length);
 
     ret = readofs_fn(readofs_priv, buf, length, offset);
-    if (ret < 0)
+    if (ret < 0) {
+	 _hs_error("error in read callback: off=%d, len=%d",
+		   offset, length);
 	goto fail;
-    else if (ret >= 0 && ret < (int) length) {
-	errno = ENODATA;
-	goto fail;
+    } else if (ret >= 0 && ret < (int) length) {
+	 _hs_error("short read: off=%d, len=%d, result=%d",
+		   offset, length, ret);
+	 errno = ENODATA;
+	 goto fail;
     }
 
     ret = write_fn(write_priv, buf, ret);
-    if (ret != (int) length)
-	goto fail;
+    if (ret != (int) length) {
+	 _hs_error("error in write callback: off=%d, len=%d",
+		   offset, length);
+	 goto fail;
+    }
 
     free(buf);
     return length;
