@@ -57,9 +57,9 @@ def parse_cmdlineoptions(arglist):
 		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=", "include-regexp=",
 		  "list-at-time=", "list-changed-since=", "list-increments",
-		  "list-increment-sizes", "never-drop-acls",
+		  "list-increment-sizes", "never-drop-acls", "no-acls",
 		  "no-compare-inode", "no-compression",
-		  "no-compression-regexp=", "no-file-statistics",
+		  "no-compression-regexp=", "no-eas", "no-file-statistics",
 		  "no-hard-links", "null-separator",
 		  "override-chars-to-quote=", "parsable-output",
 		  "print-statistics", "remote-cmd=", "remote-schema=",
@@ -111,10 +111,12 @@ def parse_cmdlineoptions(arglist):
 			action = "list-increments"
 		elif opt == '--list-increment-sizes': action = 'list-increment-sizes'
 		elif opt == "--never-drop-acls": Globals.set("never_drop_acls", 1)
+		elif opt == "--no-acls": Globals.set("read_acls", 0)
 		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
 			Globals.set("no_compression_regexp_string", arg)
+		elif opt == "--no-eas": Globals.set("read_eas", 0)
 		elif opt == "--no-file-statistics": Globals.set('file_statistics', 0)
 		elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 		elif opt == "--null-separator": Globals.set("null_separator", 1)
@@ -374,8 +376,8 @@ def backup_set_fs_globals(rpin, rpout):
 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
 					   "disabled on destination filesystem")
 
-	update_bool_global('read_acls', src_fsa.acls)
-	update_bool_global('read_eas', src_fsa.eas)
+	if Globals.read_acls != 0: update_bool_global('read_acls', src_fsa.acls)
+	if Globals.read_eas != 0: update_bool_global('read_eas', src_fsa.eas)
 	update_bool_global('read_resource_forks', src_fsa.resource_forks)
 
 	SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks)
@@ -471,10 +473,12 @@ def restore_set_fs_globals(target):
 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
 					   "disabled on destination filesystem")
 
-	update_bool_global('read_acls', target_fsa.acls)
-	update_bool_global('write_acls', target_fsa.acls)
-	update_bool_global('read_eas', target_fsa.eas)
-	update_bool_global('write_eas', target_fsa.eas)
+	if Globals.read_acls != 0:
+		update_bool_global('read_acls', target_fsa.acls)
+		update_bool_global('write_acls', target_fsa.acls)
+	if Globals.read_eas != 0:
+		update_bool_global('read_eas', target_fsa.eas)
+		update_bool_global('write_eas', target_fsa.eas)
 	update_bool_global('read_resource_forks', target_fsa.resource_forks)
 	update_bool_global('write_resource_forks', target_fsa.resource_forks)
 	SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
