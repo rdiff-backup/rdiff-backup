@@ -108,7 +108,7 @@ class HLSourceStruct:
 
 		"""
 		collated = RORPIter.CollateIterators(cls.initial_dsiter2, sigiter)
-		finalizer = DestructiveSteppingFinalizer()
+		finalizer = IterTreeReducer(DestructiveSteppingFinalizer, [])
 		def error_handler(exc, dest_sig, dsrp):
 			Log("Error %s producing a diff of %s" %
 				(exc, dsrp and dsrp.path), 2)
@@ -213,26 +213,26 @@ class HLDestinationStruct:
 		"""Return finalizer, starting from session info if necessary"""
 		old_finalizer = cls._session_info and cls._session_info.finalizer
 		if old_finalizer: return old_finalizer
-		else: return DestructiveSteppingFinalizer()
+		else: return IterTreeReducer(DestructiveSteppingFinalizer, [])
 
 	def get_ITR(cls, inc_rpath):
 		"""Return ITR, starting from state if necessary"""
 		if cls._session_info and cls._session_info.ITR:
 			return cls._session_info.ITR
 		else:
-			iitr = IncrementITR(inc_rpath)
-			iitr.override_changed()
-			Globals.ITR = iitr
-			iitr.Errors = 0
+			iitr = IterTreeReducer(IncrementITRB, [inc_rpath])
+			iitr.root_branch.override_changed()
+			Globals.ITRB = iitr.root_branch
+			iitr.root_branch.Errors = 0
 			return iitr
 
 	def get_MirrorITR(cls, inc_rpath):
 		"""Return MirrorITR, starting from state if available"""
 		if cls._session_info and cls._session_info.ITR:
 			return cls._session_info.ITR
-		ITR = MirrorITR(inc_rpath)
-		Globals.ITR = ITR
-		ITR.Errors = 0
+		ITR = IterTreeReducer(MirrorITRB, [inc_rpath])
+		Globals.ITRB = ITR.root_branch
+		ITR.root_branch.Errors = 0
 		return ITR
 
 	def patch_and_finalize(cls, dest_rpath, diffs):
@@ -282,7 +282,7 @@ class HLDestinationStruct:
 
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
 		MiscStats.close_dir_stats_file()
-		MiscStats.write_session_statistics(ITR)
+		MiscStats.write_session_statistics(ITR.root_branch)
 		SaveState.checkpoint_remove()
 
 	def patch_increment_and_finalize(cls, dest_rpath, diffs, inc_rpath):
@@ -309,7 +309,7 @@ class HLDestinationStruct:
 
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
 		MiscStats.close_dir_stats_file()
-		MiscStats.write_session_statistics(ITR)
+		MiscStats.write_session_statistics(ITR.root_branch)
 		SaveState.checkpoint_remove()
 
 	def handle_last_error(cls, dsrp, finalizer, ITR):

@@ -433,7 +433,9 @@ class RPath(RORPath):
 		self.conn = connection
 		self.index = index
 		self.base = base
-		if base is not None: self.path = "/".join((base,) + index)
+		if base is not None:
+			if base == "/": self.path = "/" + "/".join(index)
+			else: self.path = "/".join((base,) + index)
 		self.file = None
 		if data or base is None: self.data = data
 		else: self.data = self.conn.C.make_file_dict(self.path)
@@ -623,7 +625,7 @@ class RPath(RORPath):
 		self.setdata()
 		if not self.lstat(): return # must have been deleted in meantime
 		elif self.isdir():
-			itm = RpathDeleter()
+			itm = IterTreeReducer(RpathDeleter, [])
 			for dsrp in Select(DSRPath(None, self)).set_iter():
 				itm(dsrp.index, dsrp)
 			itm.Finish()
@@ -795,7 +797,8 @@ from lazy import *
 from selection import *
 from destructive_stepping import *
 
-class RpathDeleter(IterTreeReducer):
+
+class RpathDeleter(ITRBranch):
 	"""Delete a directory.  Called by RPath.delete()"""
 	def start_process(self, index, dsrp):
 		self.dsrp = dsrp

@@ -264,8 +264,8 @@ class Robust:
 				Log.exception()
 				conn = Globals.backup_writer
 				if conn is not None: # increment error count
-					ITR_exists = conn.Globals.is_not_None('ITR')
-					if ITR_exists: conn.Globals.ITR.increment_stat('Errors')
+					ITRB_exists = conn.Globals.is_not_None('ITRB')
+					if ITRB_exists: conn.Globals.ITRB.increment_stat('Errors')
 				if error_handler: return error_handler(exc, *args)
 			else:
 				Log.exception(1, 2)

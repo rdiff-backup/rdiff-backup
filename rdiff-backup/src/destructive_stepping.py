@@ -199,7 +199,7 @@ class DSRPath(RPath):
 		return self.__class__(self.source, self.conn, self.base, index)
 
 
-class DestructiveSteppingFinalizer(ErrorITR):
+class DestructiveSteppingFinalizer(ITRBranch):
 		"""Finalizer that can work on an iterator of dsrpaths
 
 		The reason we have to use an IterTreeReducer is that some files
@@ -213,6 +213,12 @@ class DestructiveSteppingFinalizer(ErrorITR):
 			self.dsrpath = dsrpath
 
 		def end_process(self):
+			if self.dsrpath: self.dsrpath.write_changes()
+
+		def can_fast_process(self, index, dsrpath):
+			return not self.dsrpath.isdir()
+
+		def fast_process(self, index, dsrpath):
 			if self.dsrpath: self.dsrpath.write_changes()
 
 

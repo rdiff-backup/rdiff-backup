@@ -123,7 +123,7 @@ class Inc:
 MakeStatic(Inc)
 
 
-class IncrementITR(ErrorITR, StatsITR):
+class IncrementITRB(StatsITRB):
 	"""Patch and increment mirror directory
 
 	This has to be an ITR because directories that have files in them
@@ -155,7 +155,7 @@ class IncrementITR(ErrorITR, StatsITR):
 	def __init__(self, inc_rpath):
 		"""Set inc_rpath, an rpath of the base of the tree"""
 		self.inc_rpath = inc_rpath
-		StatsITR.__init__(self, inc_rpath)
+		StatsITRB.__init__(self)
 
 	def start_process(self, index, diff_rorp, dsrp):
 		"""Initial processing of file
@@ -266,20 +266,28 @@ class IncrementITR(ErrorITR, StatsITR):
 		if self.mirror_isdirectory or dsrp.isdir():
 			MiscStats.write_dir_stats_line(self, dsrp.index)
 
-	def branch_process(self, subinstance):
+	def can_fast_process(self, index, diff_rorp, dsrp):
+		"""True if there is no change in file and is just a leaf"""
+		return not diff_rorp and dsrp.isreg()
+
+	def fast_process(self, index, diff_rorp, dsrp):
+		"""Just update statistics"""
+		StatsITRB.fast_process(self, dsrp)
+
+	def branch_process(self, branch):
 		"""Update statistics, and the has_changed flag if change in branch"""
-		if subinstance.changed: self.changed = 1	
-		self.add_file_stats(subinstance)
+		if branch.changed: self.changed = 1	
+		self.add_file_stats(branch)
 
 
-class MirrorITR(ErrorITR, StatsITR):
+class MirrorITRB(StatsITRB):
 	"""Like IncrementITR, but only patch mirror directory, don't increment"""
 	# This is always None since no increments will be created
 	incrp = None
 	def __init__(self, inc_rpath):
 		"""Set inc_rpath, an rpath of the base of the inc tree"""
 		self.inc_rpath = inc_rpath
-		StatsITR.__init__(self, inc_rpath)
+		StatsITRB.__init__(self)
 
 	def start_process(self, index, diff_rorp, mirror_dsrp):
 		"""Initialize statistics, do actual writing to mirror"""
@@ -296,9 +304,17 @@ class MirrorITR(ErrorITR, StatsITR):
 		if self.mirror_dsrp.isdir():
 			MiscStats.write_dir_stats_line(self, self.mirror_dsrp.index)
 
-	def branch_process(self, subinstance):
+	def can_fast_process(self, index, diff_rorp, mirror_dsrp):
+		"""True if there is no change in file and it is just a leaf"""
+		return not diff_rorp and mirror_dsrp.isreg()
+
+	def fast_process(self, index, diff_rorp, mirror_dsrp):
+		"""Just update statistics"""
+		StatsITRB.fast_process(self, mirror_dsrp)
+
+	def branch_process(self, branch):
 		"""Update statistics with subdirectory results"""
-		self.add_file_stats(subinstance)
+		self.add_file_stats(branch)
 
 
 from log import *

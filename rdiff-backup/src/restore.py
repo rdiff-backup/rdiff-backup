@@ -119,8 +119,8 @@ class Restore:
 		assert isinstance(mirror, DSRPath) and isinstance(target, DSRPath)
 		assert mirror.index == rid.index
 
-		mirror_finalizer = DestructiveSteppingFinalizer()
-		target_finalizer = DestructiveSteppingFinalizer()
+		mirror_finalizer = IterTreeReducer(DestructiveSteppingFinalizer, ())
+		target_finalizer = IterTreeReducer(DestructiveSteppingFinalizer, ())
 		for rcd in Restore.yield_rcds(rid.index, mirror, rid,
 									  target, time, mirror_time):
 			rcd.RestoreFile()
