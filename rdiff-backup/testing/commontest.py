@@ -19,6 +19,13 @@ def Myrm(dirstring):
 		if rp.isdir(): rp.chmod(0700) # otherwise may not be able to remove
 	assert not os.system("rm -rf %s" % (dirstring,))
 
+def re_init_dir(rp):
+	"""Delete directory if present, then recreate"""
+	if rp.lstat():
+		Myrm(rp.path)
+		rp.setdata()
+	rp.mkdir()
+
 def Make():
 	"""Make sure the rdiff-backup script in the source dir is up-to-date"""
 	os.chdir(SourceDir)
@@ -298,7 +305,8 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 						restore_dirname = "testfiles/rest_out",
 						compare_backups = 1,
 						compare_eas = 0,
-						compare_acls = 0):
+						compare_acls = 0,
+						compare_ownership = 0):
 	"""Test backing up/restoring of a series of directories
 
 	The dirnames correspond to a single directory at different times.
@@ -325,7 +333,8 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 		if compare_backups:
 			assert CompareRecursive(src_rp, dest_rp, compare_hardlinks,
 									compare_eas = compare_eas,
-									compare_acls = compare_acls)
+									compare_acls = compare_acls,
+									compare_ownership = compare_ownership)
 
 	time = 10000
 	for dirname in list_of_dirnames[:-1]:
@@ -337,7 +346,8 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 		src_rp = rpath.RPath(Globals.local_connection, dirname)
 		assert CompareRecursive(src_rp, restore_rp,
 								compare_eas = compare_eas,
-								compare_acls = compare_acls)
+								compare_acls = compare_acls,
+								compare_ownership = compare_ownership)
 
 		# Restore should default back to newest time older than it
 		# with a backup then.

@@ -17,13 +17,6 @@ log.Log.setverbosity(7)
 def get_local_rp(extension):
 	return rpath.RPath(Globals.local_connection, "testfiles/" + extension)
 
-def re_init_dir(rp):
-	"""Delete directory if present, then recreate"""
-	if rp.lstat():
-		Myrm(rp.path)
-		rp.setdata()
-	rp.mkdir()
-
 class Local:
 	"""This is just a place to put increments relative to the local
 	connection"""
