@@ -1,5 +1,7 @@
 #serial 12
 
+# This file is used by aclocal to generate aclocal.m4
+
 dnl By default, many hosts won't let programs access large files;
 dnl one must use special compiler options to get large-file access to work.
 dnl For more details about this brain damage please see:
@@ -9,14 +11,14 @@ dnl Written by Paul Eggert <eggert@twinsun.com>.
 
 dnl Internal subroutine of AC_SYS_LARGEFILE.
 dnl AC_SYS_LARGEFILE_TEST_INCLUDES
-AC_DEFUN(AC_SYS_LARGEFILE_TEST_INCLUDES,
+AC_DEFUN([AC_SYS_LARGEFILE_TEST_INCLUDES],
   [[#include <sys/types.h>
     int a[(off_t) 9223372036854775807 == 9223372036854775807 ? 1 : -1];
   ]])
 
 dnl Internal subroutine of AC_SYS_LARGEFILE.
 dnl AC_SYS_LARGEFILE_MACRO_VALUE(C-MACRO, VALUE, CACHE-VAR, COMMENT, INCLUDES, FUNCTION-BODY)
-AC_DEFUN(AC_SYS_LARGEFILE_MACRO_VALUE,
+AC_DEFUN([AC_SYS_LARGEFILE_MACRO_VALUE],
   [AC_CACHE_CHECK([for $1 value needed for large files], $3,
      [$3=no
       AC_TRY_COMPILE(AC_SYS_LARGEFILE_TEST_INCLUDES
@@ -34,7 +36,7 @@ $5
      AC_DEFINE_UNQUOTED([$1], [$]$3, [$4])
    fi])
 
-AC_DEFUN(AC_SYS_LARGEFILE,
+AC_DEFUN([AC_SYS_LARGEFILE],
   [AC_ARG_ENABLE(largefile,
      [  --disable-largefile     omit support for large files])
    if test "$enable_largefile" != no; then
