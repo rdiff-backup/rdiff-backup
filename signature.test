@@ -19,19 +19,14 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-block_len=200
-for buf in $bufsizes
+new=$tmpdir/signature
+
+for input in "$testdir"/*.in
 do
-    for old in $srcdir/*.[ch]
+    for inbuf in $bufsizes
     do
-        for new in $old $old*~
-        do
-            test ! -r $new && continue
-            test ! -r $old && continue
-            test -n "$stats" && echo $old $new
-            triple_test $buf $old $new 
-            triple_test $buf $new $old
-            countdown
-        done
+        expect=`echo $input | sed -e 's/.in$/.sig/'`
+        run_test rdiff -I$inbuf signature "$input" "$new"
+        cmp "$expect" "$new" || fail_test "signature -I$inbuf $input"
     done
 done

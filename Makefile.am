@@ -79,7 +79,7 @@ librsync_la_LDFLAGS = -version-info 1:1:0
 
 TESTS_ENVIRONMENT = $(SH) $(srcdir)/driver.sh
 
-test_scripts = mutate.test \
+test_scripts = signature.test mutate.test sources.test \
 	isprefix.test delta.test mksum.test triple.test changes.test
 
 # These are extra documents to be included in the source tarball.
@@ -120,6 +120,8 @@ triple.input/copying.in				\
 triple.input/half.in				\
 triple.input/hello.in				\
 triple.input/zero.in				\
+signature.input/01.in				\
+signature.input/01.sig				\
 dot
 
 
@@ -213,3 +215,15 @@ upload-news: NEWS
 # Cater to people who prefer the name 'make test'
 .PHONY: test
 test: check;
+
+
+
+# test commands for maintainer use:
+/tmp/food:
+	find /usr/include -type f -exec cat {} \; >$@
+
+/tmp/doof: /tmp/food
+	tr '[a-zA-Z0123456789]' '[A-Za-z9876543210]' </tmp/food >$@
+
+/tmp/fodo: /tmp/food
+	tr 'z' 'Z' </tmp/food >$@
