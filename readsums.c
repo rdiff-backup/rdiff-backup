@@ -48,6 +48,23 @@
 #include "util.h"
 
 
+
+static hs_result hs_loadsig_s_stronglen(hs_job_t *job)
+{
+    int                 l;
+    hs_result           result;
+
+    if ((result = hs_suck_n32(job->stream, &l)) != HS_DONE)
+        return result;
+    job->strong_sum_len = l;
+    hs_trace("got strong_sum len %d", job->strong_sum_len);
+
+    job->statefn = hs_job_s_complete;
+    
+    return HS_RUNNING;
+}
+
+
 static hs_result hs_loadsig_s_blocklen(hs_job_t *job)
 {
     int                 l;
@@ -55,36 +72,31 @@ static hs_result hs_loadsig_s_blocklen(hs_job_t *job)
 
     if ((result = hs_suck_n32(job->stream, &l)) != HS_DONE)
         return result;
-
     job->block_len = l;
-    hs_trace("got block size %d", job->block_len);
-    
-    job->statefn = hs_job_s_complete;
+    hs_trace("got strong sum %d", job->block_len);
 
-    return HS_DONE;
+    job->statefn = hs_loadsig_s_stronglen;
+    return HS_RUNNING;
 }
 
 
 static hs_result hs_loadsig_s_header(hs_job_t *job)
 {
-    int                 magic;
+    int                 l;
     hs_result           result;
 
-    if ((result = hs_suck_n32(job->stream, &magic)) != HS_DONE)
+    if ((result = hs_suck_n32(job->stream, &l)) != HS_DONE) {
         return result;
-
-    if (magic != HS_SIG_MAGIC) {
-        hs_error("wrong magic number %#10x for signature", magic);
+    } else if (l != HS_SIG_MAGIC) {
+        hs_error("wrong magic number %#10x for signature", l);
         return HS_BAD_MAGIC;
     } else {
-        hs_trace("got signature magic %#10x", magic);
+        hs_trace("got signature magic %#10x", l);
     }
 
-    /* TODO: Get block size; store in sumset. */
-
     job->statefn = hs_loadsig_s_blocklen;
-    
-    return HS_DONE;
+
+    return HS_RUNNING;
 }
 
 
