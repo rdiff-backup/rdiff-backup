@@ -1,0 +1,13 @@
+Security audit
+
+--read-only and --write-only /usr/foo switches to tighten security up some.
+
+
+Think about adding Gaudet's idea for keeping track of renamed files.
+
+
+
+If don't recover hardlink support and hardlink support on, don't resume.
+
+
+
