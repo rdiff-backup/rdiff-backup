@@ -22,8 +22,7 @@
 
 
 /*
- * hsync.h: public interface to libhsync.  This shouldn't contain
- * anything that's not potentially part of the public interface.
+ * hsync.h: public interface to libhsync.  
  */
 
 extern char const *const hs_libhsync_version;
@@ -181,20 +180,29 @@ int             hs_patch_finish(hs_patch_job_t *);
 
 
 
-/***********************************************************************
- * High-level file-based interfaces.  Just pass in open file
- * descriptors and all the data will be processed.
- ***********************************************************************/
+/**********************************************************************/
 
-void hs_mksum_files(FILE *old_file, FILE *sig_file, int block_len);
+/*
+ * High-level file-based interfaces.  One end of the task is connected
+ * to a stdio file stream, and the other to your program.
+ */
 
-void hs_loadsig_file(FILE *sig_file);
 
-void hs_delta_files(FILE *input, FILE *output);
+/* stdio-like file type */
+typedef void HSFILE;
 
-void hs_mdfour_file(FILE *input, char *result);
+/*
+ * Open a patch file, supplying the basis.  Reading from this will
+ * return the newly patched file.
+ */
+HSFILE *hs_patch_open(FILE *basis, FILE *delta);
 
-int hs_patch_files(FILE *basis_file, FILE *delta_file, FILE *new_file);
+/*
+ * Read from a HSFILE.
+ */
+enum hs_result hs_patch_read(HSFILE *, void *buf, size_t *len);
+
+enum hs_result hs_patch_close(HSFILE *);
 
 extern int hs_inbuflen, hs_outbuflen;
 

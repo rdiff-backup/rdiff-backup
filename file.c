@@ -44,87 +44,76 @@
 
 int hs_inbuflen = 500, hs_outbuflen = 600;
 
+static const int HS_PATCHFILE_TAG = 201214;
 
-void hs_mksum_files(FILE *in_file, FILE *out_file, int block_len)
+typedef struct hs_patchfile {
+        int tag;
+        FILE *basis_file, *delta_file;
+	char *delta_buf;
+        hs_stream_t *stream;
+        hs_patch_job_t *job;
+} hs_patchfile_t;
+
+
+/*
+ * Extract from a void pointer, and check the dogtag.
+ */
+static hs_patchfile_t *_hs_patchfile_check(void *p) {
+        hs_patchfile_t *pf = (hs_patchfile_t *) p;
+        assert(pf->tag == HS_PATCHFILE_TAG);
+        return pf;
+}
+
+
+/*
+ * Open a new hsync file which will apply a patch.  As you read from
+ * the file using hs_read(), you'll receive parts of the new file.
+ */
+HSFILE *hs_patch_open(FILE *basis_file, FILE *delta_file)
 {
-	_hs_fatal("not implemented!");
+        hs_patchfile_t *pf;
+
+        pf = _hs_alloc_struct(hs_patchfile_t);
+        
+        pf->tag = HS_PATCHFILE_TAG;
+        pf->basis_file = basis_file;
+        pf->delta_file = delta_file;
+        pf->stream = _hs_alloc_struct(hs_stream_t);
+
+        pf->delta_buf = _hs_alloc(hs_inbuflen, "delta input buffer");
+
+	hs_stream_init(pf->stream);
+	pf->job = hs_patch_begin(pf->stream);
+
+        return pf;
 }
 
 
 
 /*
- * Calculate a delta between two files; write the results to OUT_FILE.
+ * Read up to *LEN bytes from PF.  At end of file, return HS_OK; if
+ * the patch is not yet complete returns HS_BLOCKED; if an error
+ * occurred returns an appropriate code.  Adjusts LEN to show how much
+ * was actually read.
  */
-void hs_delta_files(FILE *new_file, FILE *delta_file)
+enum hs_result hs_patch_read(HSFILE *f, void *buf, size_t *len)
 {
-	_hs_fatal("not implemented!");
-}
+        hs_patchfile_t *pf = _hs_patchfile_check(f);
+        enum hs_result result;
 
-
-/*
- * Copy until EOF.  This is only used for testing.
- */
-int _hs_stream_copy_file(hs_stream_t *stream, FILE *in_file, FILE *out_file)
-{
-	char *in_buf, *out_buf;
-	
-	in_buf = _hs_alloc(hs_inbuflen, "stream copy input buffer");
-	out_buf = _hs_alloc(hs_outbuflen, "stream copy output buffer");
-
+        pf->stream->next_out = buf;
+        pf->stream->avail_out = *len;
+        
 	do {
-		_hs_fill_from_file(stream, in_buf, hs_inbuflen, in_file);
-		_hs_stream_copy(stream, INT_MAX);
-		_hs_drain_to_file(stream, out_buf, hs_outbuflen, out_file);
-	} while (!feof(in_file) || stream->avail_in);
-
-	free(in_buf);
-	free(out_buf);
-
-	return HS_OK;
-}
-
-
-/*
- * Apply a patch from DELTA to BASIS and write output to NEW
- */
-int hs_patch_files(FILE *basis_file, FILE *delta_file,
-		   FILE *out_file)
-{
-	void *delta_buf, *out_buf;
-	hs_stream_t stream;
-	int input_done = 0, result;
-	hs_patch_job_t *job;
-
-	delta_buf = _hs_alloc(hs_inbuflen, "delta input buffer");
-	out_buf = _hs_alloc(hs_outbuflen, "patch output buffer");
-
-	hs_stream_init(&stream);
-	job = hs_patch_begin(&stream);
-
-	do {
-		_hs_fill_from_file(&stream, delta_buf, hs_inbuflen, delta_file);
+		_hs_fill_from_file(pf->stream, pf->delta_buf, hs_inbuflen,
+                                   pf->delta_file);
 		
-		result = hs_patch_iter(job);
-		if (result == HS_BLOCKED && feof(delta_file) && !stream.avail_in)
+		result = hs_patch_iter(pf->job);
+		if (result == HS_BLOCKED && feof(pf->delta_file) && !pf->stream->avail_in)
 			result = HS_SHORT_STREAM;
-
-		_hs_drain_to_file(&stream, out_buf, hs_outbuflen, out_file);
 	} while (result == HS_BLOCKED);
 
-        _hs_trace("file patch concluded with result %d: %s", result,
-                  hs_strerror(result));
-
-	free(delta_buf);
-	free(out_buf);
+        *len = pf->stream->avail_out;
 
 	return result;
 }
-
-
-
-void hs_mdfour_file(FILE *in_file, char *result)
-{
-	_hs_fatal("not implemented any more");
-}
-
-
