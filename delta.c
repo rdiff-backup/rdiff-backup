@@ -51,6 +51,16 @@
  * length from the signature.
  */
 
+/*
+ * Profiling results as of v1.26, 2001-03-18:
+ *
+ * If everything matches, then we spend almost all our time in
+ * rs_mdfour64 and rs_weak_sum, which is unavoidable and therefore a
+ * good profile.
+ *
+ * If nothing matches, it is not so good.
+ */
+
 
 #include <config.h>
 
@@ -67,6 +77,13 @@
 #include "trace.h"
 #include "checksum.h"
 #include "search.h"
+#include "types.h"
+
+
+/**
+ * Turn this on to make all rolling checksums be checked from scratch.
+ */
+int rs_roll_paranoia = 0;
 
 
 static rs_result rs_delta_scan(rs_job_t *, rs_long_t avail_len, void *);
@@ -132,33 +149,28 @@ rs_delta_s_scan(rs_job_t *job)
 
 
 /**
- * Scan for a full-size block in the next \p avail_len bytes of input.
- * 
- * Emit exactly one LITERAL or COPY command.
+ * Scan for a matching block in the next \p avail_len bytes of input.
+ *
+ * If nonmatching data is found, then a LITERAL command will be put in
+ * the tube immediately.  If matching data is found, then its position
+ * will be saved in the job, and the job state set up to write out a
+ * COPY command after handling the literal.
  */
 static rs_result
 rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
 {
-    rs_weak_sum_t        weak_sum;
     rs_long_t            match_where;
     int                  search_pos, end_pos;
     unsigned char        *inptr = (unsigned char *) p;
+    uint32_t             s1 = job->weak_sig & 0xFFFF;
+    uint32_t             s2 = job->weak_sig >> 16;
     
     /* So, we have avail_len bytes of data, and we want to look
      * through it for a match at some point.  It's OK if it's not at
      * the start of the available input data.  If we're approaching
      * the end and can't get a match, then we just block and get more
      * later. */
-
-    /* TODO: If we don't match immediately, just queue up *one*
-     * literal and then keep going. */
-
-    /* TODO: Also do this for short blocks if we can.  That affects
-     * when we give up, and also the current block length has to
-     * reduce as we get near the end. */
-
-    /* TODO: Don't recalculate from scratch, but rather roll forwards
-     * if possible. */
+    
     if (job->stream->eof_in)
         end_pos = avail_len - 1;
     else
@@ -166,30 +178,66 @@ rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
     
     for (search_pos = 0; search_pos <= end_pos; search_pos++) {
         size_t this_len = job->block_len;
-
+            
         if (search_pos + this_len > avail_len) {
             this_len = avail_len - search_pos;
             rs_trace("block reduced to %d", this_len);
+        } else if (job->have_weak_sig) {
+            unsigned char a = inptr[search_pos + this_len - 1];
+            /* roll in the newly added byte, if any */
+            s1 += a + RS_CHAR_OFFSET;
+            s2 += s1;
+
+            job->weak_sig = (s1 & 0xffff) | (s2 << 16);
         }
+
+        if (!job->have_weak_sig) {
+            rs_trace("calculate weak sum from scratch");
+            job->weak_sig = rs_calc_weak_sum(inptr + search_pos, this_len);
+            s1 = job->weak_sig & 0xFFFF;
+            s2 = job->weak_sig >> 16;
+            job->have_weak_sig = 1;
+        }
+
+        if (rs_roll_paranoia) {
+            rs_weak_sum_t verify = rs_calc_weak_sum(inptr + search_pos, this_len);
+            if (verify != job->weak_sig) {
+                rs_fatal("mismatch between rolled sum %#x and check %#x",
+                         job->weak_sig, verify);
+            }
+        }            
         
-        weak_sum = rs_calc_weak_sum(inptr + search_pos, this_len);
-        if (rs_search_for_block(weak_sum, inptr + search_pos, this_len,
+        if (rs_search_for_block(job->weak_sig, inptr + search_pos, this_len,
                                 job->signature, &job->stats, &match_where)) {
-            /* So, we got a match.  cool.  now, if there was literal data
- of that, we need to flush it first.  otherwise, we
-             * can emit the copy command. */
-            /* TODO: Perhaps instead store this in the job, and set a new
-             * statefn. */
-            rs_trace("matched %f bytes at %f!",
+            /* So, we got a match.  Cool.  However, there may be
+             * leading unmatched data that we need to flush.  Thus we
+             * set our statefn to be rs_delta_s_deferred_copy so that
+             * we can write out the command later. */
+
+            rs_trace("matched %.0f bytes at %.0f!",
                      (double) this_len, (double) match_where);
             job->basis_pos = match_where;
             job->basis_len = this_len;
             job->statefn = rs_delta_s_deferred_copy;
+            job->have_weak_sig = 0;
             break;
+        } else {
+            /* advance by one; roll out the byte we just moved over. */
+            unsigned char a = inptr[search_pos];
+            unsigned char shift = a + RS_CHAR_OFFSET;
+
+            s1 -= shift;
+            s2 -= this_len * shift;
+            job->weak_sig = (s1 & 0xffff) | (s2 << 16);
         }
     }
 
-    if (search_pos) {
+    if (search_pos > 0) {
+        /* We may or may not have found a block, but we know we found
+         * some literal data at the start of the buffer.  Therefore,
+         * we have to flush that out before we can continue on and
+         * emit the copy command or keep searching. */
+         
         /* FIXME: At the moment, if you call with very short buffers,
          * then you will get a series of very short LITERAL commands.
          * Perhaps this is what you deserve, or perhaps we should try
@@ -204,6 +252,7 @@ rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
     
     return RS_RUNNING;
 }
+
 
 
 static rs_result rs_delta_s_deferred_copy(rs_job_t *job)
@@ -223,16 +272,16 @@ static rs_result rs_delta_s_deferred_copy(rs_job_t *job)
 
 
 /**
- * \brief State function that does a fake delta containing only
+ * \brief State function that does a slack delta containing only
  * literal data to recreate the input.
  */
-static rs_result rs_delta_s_fake(rs_job_t *job)
+static rs_result rs_delta_s_slack(rs_job_t *job)
 {
     rs_buffers_t * const stream = job->stream;
     size_t avail = stream->avail_in;
 
     if (avail) {
-        rs_trace("emit fake delta for %f available bytes", (double) avail);
+        rs_trace("emit slack delta for %.0f available bytes", (double) avail);
         rs_emit_literal_cmd(job, avail);
         rs_tube_copy(job, avail);
         return RS_RUNNING;
@@ -262,8 +311,8 @@ static rs_result rs_delta_s_header(rs_job_t *job)
         job->statefn = rs_delta_s_scan;
     } else {
         rs_trace("block length is zero for this delta; "
-                 "therefore using lazy deltas");
-        job->statefn = rs_delta_s_fake;
+                 "therefore using slack deltas");
+        job->statefn = rs_delta_s_slack;
     }
 
     return RS_RUNNING;

@@ -32,10 +32,6 @@
 #include "checksum.h"
 
 
-/* We should make this something other than zero to improve the
- * checksum algorithm: tridge suggests a prime number. */
-#define CHAR_OFFSET 31
-
 /* This can possibly be used to restart the checksum system in the
  * case where we detected corruption.  I'm not sure yet how to make
  * this useful in librsync. */
@@ -54,39 +50,32 @@ unsigned int rs_calc_weak_sum(void const *p, int len)
         s1 = s2 = 0;
         for (i = 0; i < (len - 4); i += 4) {
                 s2 += 4 * (s1 + buf[i]) + 3 * buf[i + 1] +
-                        2 * buf[i + 2] + buf[i + 3] + 10 * CHAR_OFFSET;
+                        2 * buf[i + 2] + buf[i + 3] + 10 * RS_CHAR_OFFSET;
                 s1 += (buf[i + 0] + buf[i + 1] + buf[i + 2] + buf[i + 3] +
-                       4 * CHAR_OFFSET);
+                       4 * RS_CHAR_OFFSET);
         }
         for (; i < len; i++) {
-                s1 += (buf[i] + CHAR_OFFSET);
+                s1 += (buf[i] + RS_CHAR_OFFSET);
                 s2 += s1;
         }
         return (s1 & 0xffff) + (s2 << 16);
 }
 
 
-/*
+/**
  * Calculate and store into SUM a strong MD4 checksum of the file
  * blocks seen so far.
  *
- * The checksum is perturbed by a seed value.  This is used when
- * retrying a failed transmission: we've discovered that the hashes
- * collided at some point, so we're going to try again with different
- * hashes to see if we can get it right.  (Check tridge's thesis for
- * details and to see if that's correct.)
+ * In plain rsync, the checksum is perturbed by a seed value.  This is
+ * used when retrying a failed transmission: we've discovered that the
+ * hashes collided at some point, so we're going to try again with
+ * different hashes to see if we can get it right.  (Check tridge's
+ * thesis for details and to see if that's correct.)
  *
  * Since we can't retry a web transaction I'm not sure if it's very
  * useful in rproxy.
  */
 void rs_calc_strong_sum(void const *buf, size_t len, rs_strong_sum_t *sum)
 {
-    rs_mdfour_t m;
-
-    rs_mdfour_begin(&m);
-    rs_mdfour_update(&m, buf, len);
-    rs_mdfour_result(&m, (unsigned char *) sum);
+    rs_mdfour((unsigned char *) sum, buf, len);
 }
-
-
-
