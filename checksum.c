@@ -1,6 +1,7 @@
-/* -*- mode: c; c-file-style: "java" -*-  */
-
-/* checksum.c -- calculate and search table of checksums
+/* -*- mode: c; c-file-style: "stroustrup" -*-
+ * $Id$
+ * 
+ * checksum.c -- calculate and search table of checksums
    
    Copyright (C) 2000 by Martin Pool
    Copyright (C) Andrew Tridgell 1996
@@ -25,10 +26,11 @@
 #include "hsync.h"
 #include "private.h"
 
+/* XXX: I think this is obsolete. */
 int checksum_seed = 0;
 
 /*
-  a simple 32 bit checksum that can be upadted from either end
+  a simple 32 bit checksum that can be updated from either end
   (inspired by Mark Adler's Adler-32 checksum)
   */
 uint32_t _hs_calc_weak_sum(char const *buf1, int len)
@@ -84,9 +86,8 @@ _hs_calc_strong_sum(char const *buf, int len, char *sum)
 
    The signature stream contains pair of short (4-byte) weak checksums, and
    long (SUM_LENGTH) strong checksums. */
-int
-_hs_make_sum_struct(struct sum_struct **signatures,
-		    hs_read_fn_t sigread_fn, void *sigreadprivate,
+struct sum_struct *
+_hs_make_sum_struct(hs_read_fn_t sigread_fn, void *sigreadprivate,
 		    int block_len)
 {
      struct sum_buf *asignature;
@@ -95,10 +96,11 @@ _hs_make_sum_struct(struct sum_struct **signatures,
      int checksum1;
      struct sum_struct *sumbuf;
 
-     sumbuf = *signatures = calloc(1, sizeof(struct sum_struct));
+     sumbuf = calloc(1, sizeof(struct sum_struct));
      if (!sumbuf) {
 	  errno = ENOMEM;
-	  return -1;
+	  _hs_error("no memory to allocate sum_struct");
+	  return NULL;
      }
      sumbuf->n = block_len;
 
@@ -114,7 +116,7 @@ _hs_make_sum_struct(struct sum_struct **signatures,
 	       break;
 	  if (ret < 0) {
 	       _hs_error("IO error while reading in signatures");
-	       return -1;
+	       return NULL;	/* THIS LEAKS! */
 	  }
 	  assert(ret == 4);
 	 
@@ -139,26 +141,35 @@ _hs_make_sum_struct(struct sum_struct **signatures,
 	  }
      }
      if (ret < 0) {
-	  /* error reading */
-	  return ret;
+	 _hs_error("error reading checksums");
+	 return NULL;
      }
 
      sumbuf->count = index;
      _hs_trace("Read %d sigs", index);
 
-     ret = _hs_build_hash_table(*signatures) < 0;
+     if (_hs_build_hash_table(sumbuf) < 0) {
+	 _hs_error("error building checksum hashtable");
+	 return NULL;		/* XXX: THIS LEAKS (but is unreachable
+                                   at present) */
+     }
 
-     return ret;
+     return sumbuf;
 }
 
 
-void _hs_free_sum_struct(struct sum_struct **psums)
+void
+_hs_free_sum_struct(struct sum_struct *psums)
 {
-     struct sum_struct *sums = *psums;
+    assert(psums->sums);
+    free(psums->sums);
 
-     free(sums->sums);
-     /* XXX: I don't understand why we *don't* have to free this --
-	wasn't it allocated in make_sum_struct? -- mbp/20000125 */
-     //_hs_free(s, sums);
-     *psums = 0;
+    assert(psums->tag_table);
+    free(psums->tag_table);
+
+    if (psums->targets)
+	free(psums->targets);
+    
+    bzero(psums, sizeof *psums);
+    free(psums);
 }
