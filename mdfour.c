@@ -26,7 +26,15 @@
  * TODO: Perhaps use the MD4 routine from OpenSSL if it's installed.
  * It's probably not worth the trouble.
  *
- * This was originally written by Andrew Tridgell for use in Samba. */
+ * This was originally written by Andrew Tridgell for use in Samba. 
+ * It was then modified by;
+ * 
+ * 2002-06-xx: Robert Weber <robert.weber@Colorado.edu> 
+ *   optimisations and fixed >512M support.
+ * 
+ * 2002-06-27: Donovan Baarda <abo@minkirri.apana.org.au>
+ *   further optimisations and cleanups.
+ */
 
 #include <config.h>
 
@@ -48,6 +56,14 @@
 #define ROUND1(a,b,c,d,k,s) a = lshift(a + F(b,c,d) + X[k], s)
 #define ROUND2(a,b,c,d,k,s) a = lshift(a + G(b,c,d) + X[k] + 0x5A827999,s)
 #define ROUND3(a,b,c,d,k,s) a = lshift(a + H(b,c,d) + X[k] + 0x6ED9EBA1,s)
+
+/** padding data used for finalising */
+static unsigned char PADDING[64] = {
+    0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
 
 /**
  * Update an MD4 accumulator from a 64-byte chunk.
@@ -141,27 +157,14 @@ rs_mdfour64(rs_mdfour_t * m, const void *p)
 }
 
 
-#ifdef WORDS_BIGENDIAN
-/* These next two routines are necessary because MD4 is specified in
- * terms of little-endian int32s, but we have a byte buffer.  On
- * little-endian platforms, I think we can just use the buffer pointer
- * directly.
- *
- * There are some nice endianness routines in glib, including
- * assembler variants.  If we ever depended on glib, then it could be
- * good to use them instead. */
-static void
-copy64( /* @out@ */ uint32_t * M, unsigned char const *in)
-{
-    int i=16;
-
-    while (i--) {
-        *M++ = (in[3] << 24) | (in[2] << 16) | (in[1] << 8) | in[0];
-        in += 4;
-    }
-}
-#endif
-
+/**
+ * These next routines are necessary because MD4 is specified in terms of
+ * little-endian int32s, but we have a byte buffer.  On little-endian
+ * platforms, I think we can just use the buffer pointer directly.
+ * 
+ * There are some nice endianness routines in glib, including assembler
+ * variants. If we ever depended on glib, then it could be good to use them
+ * instead. */
 static void
 copy4( /* @out@ */ unsigned char *out, uint32_t const x)
 {
@@ -171,8 +174,10 @@ copy4( /* @out@ */ unsigned char *out, uint32_t const x)
     out[3] = x >> 24;
 }
 
-#if HAVE_UINT64
+
 /* We need this if there is a uint64 */
+/* --robert.weber@Colorado.edu	     */
+#ifdef HAVE_UINT64
 static void
 copy8( /* @out@ */ unsigned char *out, uint64_t const x)
 {
@@ -185,25 +190,40 @@ copy8( /* @out@ */ unsigned char *out, uint64_t const x)
     out[6] = x >> 48;
     out[7] = x >> 56;
 }
-#endif
+#endif /* HAVE_UINT64 */
 
 
+/* We only need this if we are big-endian */
 #ifdef WORDS_BIGENDIAN
+static void
+copy64( /* @out@ */ uint32_t * M, unsigned char const *in)
+{
+    int i=16;
+
+    while (i--) {
+        *M++ = (in[3] << 24) | (in[2] << 16) | (in[1] << 8) | in[0];
+        in += 4;
+    }
+}
+
+
 /**
  * Accumulate a block, making appropriate conversions for bigendian
  * machines.
  */
-static void
-rs_mdfour_block(rs_mdfour_t *md, void const *p)
+void rs_mdfour_block(rs_mdfour_t *md, void const *p)
 {
     uint32_t        M[16];
 
     copy64(M, p);
     rs_mdfour64(md, M);
 }
-#else 
+
+
+#else /* WORDS_BIGENDIAN */
+/* if we are little endian, we can process directly */
 #define rs_mdfour_block(md,p) rs_mdfour64(md,p)
-#endif
+#endif /* WORDS_BIGENDIAN */
 
 
 void
@@ -227,54 +247,38 @@ rs_mdfour_begin(rs_mdfour_t * md)
  * when calculating its MD4 checksum.
  *
  * This must be called exactly once per file.
+ *
+ * Modified by Robert Weber to use uint64 in order that we can sum files
+ * > 2^29 = 512 MB.  
+ * --Robert.Weber@colorado.edu
  */
 static void
-rs_mdfour_tail(rs_mdfour_t * m, unsigned char const *in, int n)
+rs_mdfour_tail(rs_mdfour_t * m)
 {
-    unsigned char   buf[128];
-#if HAVE_UINT64
-    uint64_t        b;
-#else 
-    uint32_t        b_hi, b_lo;
-#endif
+#ifdef HAVE_UINT64
+    uint64_t         b;
+#else /* HAVE_UINT64 */
+    uint32_t         b[2];
+#endif /* HAVE_UINT64 */
+    unsigned char   buf[8];
+    size_t          pad_len;
 
-#if HAVE_UINT64
-    m->totalN += n;
-#else 
-    if ((m->totalN_lo += n) < n) 
-        m->totalN_hi++; 
-#endif
-
-#if HAVE_UINT64
+    /* convert the totalN byte count into a bit count buffer */
+#ifdef HAVE_UINT64
     b = m->totalN << 3;
-#else 
-    b_lo = m->totalN_lo << 3;
-    b_hi = ((m->totalN_hi << 3) | (m->totalN_lo >> 29)); 
-#endif
+    copy8(buf, b);
+#else /* HAVE_UINT64 */
+    b[0] = m->totalN_lo << 3;
+    b[1] = ((m->totalN_hi << 3) | (m->totalN_lo >> 29));
+    copy4(buf, b[0]);
+    copy4(buf + 4, b[1]);
+#endif /* HAVE_UINT64 */
 
-    memset(buf, 0, 128);
-    if (n)
-        memcpy(buf, in, n);
-    buf[n] = 0x80;
-
-    if (n <= 55) {
-#if HAVE_UINT64
-        copy8(buf + 56, b);
-#else 
-        copy4(buf + 56, b_lo);
-        copy4(buf + 60, b_hi);
-#endif
-        rs_mdfour_block(m, buf);
-    } else {
-#if HAVE_UINT64
-        copy8(buf + 120, b);
-#else 
-        copy4(buf + 120, b_lo);
-        copy4(buf + 124, b_hi);
-#endif
-        rs_mdfour_block(m, buf);
-        rs_mdfour_block(m, buf + 64);
-    }
+    /* calculate length and process the padding data */
+    pad_len=(m->tail_len <56) ? (56 - m->tail_len) : (120 - m->tail_len);
+    rs_mdfour_update(m,PADDING,pad_len);
+    /* process the bit count */
+    rs_mdfour_update(m,buf,8);
 }
 
 
@@ -288,49 +292,36 @@ rs_mdfour_update(rs_mdfour_t * md, void const *in_void, size_t n)
 {
     unsigned char const        *in = (unsigned char const *) in_void;
 
-    if (n == 0)
-        return;
+    /* increment totalN */
+#ifdef HAVE_UINT64
+    md->totalN+=n;
+#else /* HAVE_UINT64 */
+    if ((md->totalN_lo += n) < n) 
+	md->totalN_hi++;
+#endif /* HAVE_UINT64 */
 
+    /* If there's any leftover data in the tail buffer, then first we have
+     * to make it up to a whole block to process it.  */
     if (md->tail_len) {
-        size_t                     tail_gap = 64 - md->tail_len;
-
-        /* If there's any leftover data in the tail buffer, then first
-         * we have to make it up to a whole block and process it. */
-        if (tail_gap > n)
-            tail_gap = n;
-        memcpy(&md->tail[md->tail_len], in, tail_gap);
-        md->tail_len += tail_gap;
-        in += tail_gap;
-        n -= tail_gap;
-
-        if (md->tail_len != 64)
-            return;
-
-        rs_mdfour_block(md, md->tail);
-        md->tail_len = 0;
-#if HAVE_UINT64
-        md->totalN += 64;
-#else 
-    if ((md->totalN_lo += 64) < 64) 
-        md->totalN_hi++; 
-#endif
+        size_t  tail_gap = 64 - md->tail_len;
+        if (tail_gap <= n) {
+            memcpy(&md->tail[md->tail_len], in, tail_gap);
+            rs_mdfour_block(md, md->tail);
+            in += tail_gap;
+            n -= tail_gap;
+            md->tail_len = 0;
+        }
     }
-
+    /* process complete blocks of input */
     while (n >= 64) {
         rs_mdfour_block(md, in);
         in += 64;
         n -= 64;
-#if HAVE_UINT64
-        md->totalN += 64;
-#else 
-    if ((md->totalN_lo += 64) < 64) 
-        md->totalN_hi++; 
-#endif
     }
-
+    /* Put remaining bytes onto tail*/
     if (n) {
-        memcpy(md->tail, in, n);
-        md->tail_len = n;
+        memcpy(&md->tail[md->tail_len], in, n);
+        md->tail_len += n;
     }
 }
 
@@ -338,7 +329,7 @@ rs_mdfour_update(rs_mdfour_t * md, void const *in_void, size_t n)
 void
 rs_mdfour_result(rs_mdfour_t * md, unsigned char *out)
 {
-    rs_mdfour_tail(md, md->tail, md->tail_len);
+    rs_mdfour_tail(md);
 
     copy4(out, md->A);
     copy4(out + 4, md->B);
