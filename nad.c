@@ -152,6 +152,11 @@ _hs_nad_sum_begin(hs_encode_job_t *job)
 }
 
 
+/*
+ * Start a new job of nad encoding.  After calling this, the return
+ * value should be passed repeatedly to hs_encode_iter until all the
+ * work is done.
+ */
 hs_encode_job_t *
 hs_encode_begin(int in_fd, hs_write_fn_t write_fn, void *write_priv,
                 hs_sumset_t *sums,
@@ -174,8 +179,9 @@ hs_encode_begin(int in_fd, hs_write_fn_t write_fn, void *write_priv,
         assert(job->sums->block_len > 0);
         job->search_block_len = job->sums->block_len;
     } else {
-        /* we can read and process one byte at a time, because we can
-         * never match. */
+        /* We can read and process one byte at a time, because we can
+         * never match.  Of course we hope mapptr will give us back
+         * more data than that. */
         job->search_block_len = 1;
     }
     

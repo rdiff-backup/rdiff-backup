@@ -1,21 +1,25 @@
-/* -*- mode: c; c-file-style: "bsd" -*-  */
-/* $Id$ */
-/* hsyncproto -- Protocol special numbers Copyright (C) 2000 by Martin Pool
-   <mbp@humbug.org.au>
+/*				       	-*- c-file-style: "bsd" -*-
+ * rproxy -- dynamic caching and delta update in HTTP
+ * $Id$
+ * 
+ * Copyright (C) 1999, 2000 by Martin Pool
+ * Copyright (C) 1999 by Andrew Tridgell
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the Free 
-   Software Foundation; either version 2 of the License, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-   for more details.
-
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, write to the Free Software Foundation, Inc., 59 
-   Temple Place, Suite 330, Boston, MA 02111-1307 USA */
 
 /* 
    TODO: Have a way to copy from the old signature into the new one. This
@@ -48,17 +52,21 @@ enum hs_op_kind {
 };
 
 
-/* ========================================
-
-   Encoding opcodes.
-
-   We require 6 + 3 + 3 + 1 = 13 non-inline opcodes; we'll reserve three to
-   keep things simple.  That means we have 240 inline opcodes, or 120 each
-   for literals and signature.
-
-   TODO: What about a special case for offset=0?  This will be pretty common. 
+/* 
+ * Encoding opcodes.
+ * 
+ * We require 6 + 3 + 3 + 1 = 13 non-inline opcodes; we'll reserve three to
+ * keep things simple.  That means we have 240 inline opcodes, or 120 each
+ * for literals and signature.
+ * 
+ * TODO: What about a special case for offset=0?  This will be pretty common.
+ *
+ * Actually, perhaps we should release some of the hardcoded cases.
+ * If we're encoding a 100-byte run it doesn't hurt too much to
+ * explicitly give the length, but it would be good to have some space
+ * to add new commands in the future.  If a decoder sees a command it
+ * doesn't recognize, it should flag an error.
  */
-
 enum {
     op_eof = 0,
 

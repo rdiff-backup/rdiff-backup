@@ -117,6 +117,9 @@
  *
  * TODO: As a test case, build this thing into a filter that reads
  * commands from stdin and writes them to stdout.  In combination with
- * hsinhale and hsemit we can then test that the effect of the commands is
- * not altered.
+ * hsinhale and hsemit we can then test that the effect of the
+ * commands is not altered.  Can we also build a program that checks
+ * whether the command streams are identical, or will we just do that
+ * by inspection or constructing the expected results?  I guess this
+ * will be tested pretty well by the general-purpose test cases.
  */
