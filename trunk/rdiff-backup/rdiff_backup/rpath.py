@@ -404,6 +404,15 @@ class RORPath(RPathStatic):
 		self.file = RPathFileHook(file, closing_hook)
 		self.file_already_open = None
 
+	def get_indexpath(self):
+		"""Return path of index portion
+
+		For instance, if the index is ("a", "b"), return "a/b".
+
+		"""
+		if not self.index: return "."
+		return "/".join(self.index)
+
 	def get_attached_filetype(self):
 		"""If there is a file attached, say what it is
 
