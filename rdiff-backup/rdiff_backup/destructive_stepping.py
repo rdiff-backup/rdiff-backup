@@ -15,7 +15,6 @@ import types
 from rpath import *
 from lazy import *
 
-
 class DSRPPermError(Exception):
 	"""Exception used when a DSRPath can't get sufficient permissions"""
 	pass

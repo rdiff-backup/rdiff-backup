@@ -19,7 +19,6 @@ from robust import *
 from iterfile import *
 import Globals, Rdiff, Hardlink
 
-
 class RORPIterException(Exception): pass
 
 class RORPIter:
