@@ -2,7 +2,7 @@ from __future__ import generators
 import unittest, pickle
 
 execfile("commontest.py")
-rbexec("lazy.py")
+rbexec("robust.py")
 
 class Iterators(unittest.TestCase):
 	one_to_100 = lambda s: iter(range(1, 101))
@@ -261,7 +261,7 @@ class TreeReducerTest(unittest.TestCase):
 		itm = ITRadder()
 		for index in self.i1:
 			val = itm(index)
-			assert val, elem.index
+			assert val, (val, index)
 		itm.Finish()
 		assert itm.total == 6, itm.total
 
