@@ -132,8 +132,8 @@ class RegressTest(unittest.TestCase):
 		"""Change attributes in directory, so regress will request fp"""
 		subdir = self.output_rp.append('unreadable_dir')
 		assert subdir.lstat()
-		filerp = subdir.append('to_be_unreadable')
-		filerp.chmod(0)
+		rp1_1 = subdir.append('to_be_unreadable')
+		rp1_1.chmod(0)
 		subdir.chmod(0)
 		
 

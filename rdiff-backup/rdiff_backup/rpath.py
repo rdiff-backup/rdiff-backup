@@ -151,7 +151,7 @@ def copy_attribs(rpin, rpout):
 
 	"""
 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
-	assert rpin.lstat() == rpout.lstat() is not None, "different file types"
+	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
 	if rpin.issym(): return # symlinks have no valid attributes
 	if Globals.write_resource_forks and rpin.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
