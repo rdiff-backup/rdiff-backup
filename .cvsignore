@@ -17,3 +17,4 @@ libtool
 stamp-h
 stamp-h.in
 libhsync-*.tar.gz
+libhsync-*.tar.gz.asc
