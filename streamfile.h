@@ -1,9 +1,9 @@
-/*=                                     -*- c-file-style: "bsd" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+/*=                                     -*- c-file-style: "linux" -*-
+ *
+ * libhsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
- * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
+ * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -21,3 +21,5 @@
  */
 
 
+int _hs_fill_from_file(hs_stream_t *stream, char *buf, size_t buf_len, FILE *f);
+int _hs_drain_to_file(hs_stream_t *stream, char *buf, size_t buf_len, FILE *f);
