@@ -49,6 +49,7 @@ typedef int     (*hs_write_fn_t) (void *writeprivate, char const *buf,
  */
 /* LEVEL is a syslog level. */
 typedef void    hs_trace_fn_t( int level, char const *fmt, va_list);
+void            hs_trace_set_level(int level);
 void            hs_trace_to(hs_trace_fn_t *);
 void            hs_trace_to_stderr(int level, char const *fmt, va_list va);
 int             hs_supports_trace(void);

@@ -54,6 +54,7 @@ _hs_int_len(hs_off_t val)
 	return 4;
     else {
 	_hs_fatal("can't handle files this long yet");
+        return -1;
     }
 }
 

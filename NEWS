@@ -9,6 +9,11 @@ Changes in 0.5.3:
 
  * Add test cases that run across localhost TCP sockets.
 
+ * Improved build code; should now build easily from CVS through
+   autogen.sh.
+
+ * Improved trace code.
+
 Changes in 0.5.2:
 
  * Use mapptr for input. 

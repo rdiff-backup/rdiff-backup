@@ -33,7 +33,6 @@ process_args(int argc, char **argv)
 {
     int             c;
 
-    hs_trace_to(NULL);		/* may turn it on later */
     while ((c = getopt(argc, argv, "D")) != -1) {
 	switch (c) {
 	case '?':
@@ -46,7 +45,7 @@ process_args(int argc, char **argv)
 	    if (!hs_supports_trace()) {
 		_hs_error("library does not support trace");
 	    }
-	    hs_trace_to(hs_trace_to_stderr);
+	    hs_trace_set_level(LOG_DEBUG);
 	    break;
 	}
     }

@@ -59,7 +59,8 @@ open_socket(int *psock, int port)
     addr.sin_addr.s_addr = htonl(0x7f000001);
 
     if (connect(sock, (struct sockaddr *) &addr, sizeof addr) < 0) {
-        _hs_error("connect socket failed: %s", strerror(errno));
+        _hs_error("connect socket to localhost:%d failed: %s",
+                  port, strerror(errno));
 	return (-1);
     }
 
@@ -73,7 +74,6 @@ open_socket(int *psock, int port)
 static int
 child_main(int sock)
 {
-    
     int ret;
 
     ret = _hs_file_copy_all(sock, STDOUT_FILENO) < 0;
@@ -126,7 +126,7 @@ static int
 writer(int sock)
 {
     int ret;
-    
+
     ret = _hs_file_copy_all(STDIN_FILENO, sock);
     if (close(sock) < 0) {
         _hs_error("close write socket: %s", strerror(errno));
@@ -145,7 +145,7 @@ main(int argc, char **argv)
     int                 c;
     int                 pid;
 
-    hs_trace_to(NULL);		/* may turn it on later */
+    /* may turn it on later */
     while ((c = getopt(argc, argv, "D")) != -1) {
 	switch (c) {
 	case '?':
@@ -155,7 +155,7 @@ main(int argc, char **argv)
 	    if (!hs_supports_trace()) {
 		_hs_error("library does not support trace");
 	    }
-	    hs_trace_to(hs_trace_to_stderr);
+	    hs_trace_set_level(LOG_DEBUG);
 	    break;
         default:
             abort();
@@ -168,6 +168,10 @@ main(int argc, char **argv)
     }
 
     port = atoi(argv[optind]);
+    if (!port) {
+        show_usage();
+        return 1;
+    }
 
     if (open_socket(&sock, port) < 0) {
         return 1;

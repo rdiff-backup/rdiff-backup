@@ -35,7 +35,7 @@ libhsync_la_SOURCES = dec.c enc.c \
 	nad.c 
 
 # NB: tests should exit with code 77 if they can't be run but haven't failed.
-TESTS_ENVIRONMENT = $(SHELL)
+TESTS_ENVIRONMENT = time $(SHELL)
 test_scripts := \
 	test-tricky.sh \
 	test-chain.sh \
@@ -52,6 +52,13 @@ test_scripts := \
 	test-mapover.sh \
 	test-nadsum.sh \
 	test-thricenad.sh
+
+# Thus spake the master programmer:
+# 
+# ``When the program is being tested, it is too late to make design
+# changes.''
+
+TESTS = $(test_scripts)
 
 noinst_SCRIPTS = \
 	$(test_scripts) \
@@ -142,10 +149,3 @@ hsemit_SOURCES = hsemit.c
 hsinhale_SOURCES = hsinhale.c
 
 hsmapread_SOURCES = hsmapread.c 
-
-# Thus spake the master programmer:
-# 
-# ``When the program is being tested, it is too late to make design
-# changes.''
-
-TESTS = $(test_scripts)

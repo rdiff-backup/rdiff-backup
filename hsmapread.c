@@ -165,7 +165,7 @@ chew_options(int argc, char **argv, int *nonblocking,
 {
     int             c;
 
-    hs_trace_to(NULL);		/* may turn it on later */
+    		/* may turn it on later */
     while ((c = getopt(argc, argv, "knsD")) != -1) {
 	switch (c) {
 	case '?':
@@ -184,7 +184,7 @@ chew_options(int argc, char **argv, int *nonblocking,
 	    if (!hs_supports_trace()) {
 		_hs_error("library does not support trace");
 	    }
-	    hs_trace_to(hs_trace_to_stderr);
+	    hs_trace_set_level(LOG_DEBUG);
 	    break;
 	}
     }

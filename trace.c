@@ -19,14 +19,14 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-
 #include "includes.h"
 
 char const     *const hs_libhsync_version = PACKAGE " " VERSION;
 char const *const hs_libhsync_libversion = HS_LIBVERSION;
 
 hs_trace_fn_t  *_hs_trace_impl = hs_trace_to_stderr;
+
+static int _hs_trace_level = LOG_NOTICE;
 
 
 /* Called by the application to set the destination of trace * information. */
@@ -37,6 +37,14 @@ hs_trace_to(hs_trace_fn_t * new_impl)
 }
 
 
+/* Set the least import message severity that will be output. */
+void
+hs_trace_set_level(int level)
+{
+    _hs_trace_level = level;
+}
+
+
 /* This function is called by a macro that prepends the calling function
  * name, etc.  */
 void
@@ -44,7 +52,7 @@ _hs_log0(int level, char const *fmt, ...)
 {
     va_list         va;
 
-    if (_hs_trace_impl) {
+    if (_hs_trace_impl && level <= _hs_trace_level) {
 	va_start(va, fmt);
 	_hs_trace_impl(level, fmt, va);
 	va_end(va);

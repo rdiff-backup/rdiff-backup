@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
      int c;
      int			show_stats = 0;
 
-     hs_trace_to(NULL);
+     
 
      while ((c = getopt(argc, argv, "DS")) != -1) {
 	 switch (c) {
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 	 case ':':
 	     return 1;
 	 case 'D':
-	     hs_trace_to(hs_trace_to_stderr);
+	     hs_trace_set_level(LOG_DEBUG);
 	     break;
 	 case 'S':
 	     show_stats = 1;
