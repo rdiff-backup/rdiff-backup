@@ -1,5 +1,5 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
-
+/* -*- mode: c; c-file-style: "bsd" -*-  */
+/* $Id$ */
 /* libhsync/trace.c -- Control debug trace, etc
    
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -37,7 +37,7 @@ hs_trace_to(hs_trace_fn_t *new_impl)
 
 #ifdef DO_HS_TRACE
 void
-_hs_trace(char const *fmt, ...)
+_hs_trace0(char const *fmt, ...)
 {
      va_list va;
      
@@ -49,9 +49,19 @@ _hs_trace(char const *fmt, ...)
 }
 #endif /* DO_HS_TRACE */
 
+
 void
 hs_trace_to_stderr(char const *fmt, va_list va)
 {
-     vfprintf(stderr, fmt, va);
-     fputc('\n', stderr);
+    char buf[1000];
+    int n;
+
+    n = 0;
+    buf[n++] = '\t';
+    vsnprintf(buf+n, sizeof buf - 1, fmt, va);
+    n = strlen(buf);
+    buf[n++] = '\n';
+
+    /* NOTE NO TRAILING NUL */
+    write(STDERR_FILENO, buf, n);
 }
