@@ -64,13 +64,20 @@ def get_inclist(inc_rpath):
 	return inc_list
 
 def ListChangedSince(mirror_rp, inc_rp, restore_to_time):
-	"""List the changed files under mirror_rp since rest time"""
-	MirrorS = mirror_rp.conn.restore.MirrorStruct
-	MirrorS.set_mirror_and_rest_times(restore_to_time)
-	MirrorS.initialize_rf_cache(mirror_rp, inc_rp)
+	"""List the changed files under mirror_rp since rest time
 
-	cur_iter = MirrorS.get_mirror_rorp_iter(_mirror_time, 1)
-	old_iter = MirrorS.get_mirror_rorp_iter(_rest_time, 1)
+	Notice the output is an iterator of RORPs.  We do this because we
+	want to give the remote connection the data in buffered
+	increments, and this is done automatically for rorp iterators.
+	Encode the lines in the first element of the rorp's index.
+
+	"""
+	assert mirror_rp.conn is Globals.local_connection, "Run locally only"
+	MirrorStruct.set_mirror_and_rest_times(restore_to_time)
+	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
+
+	old_iter = MirrorStruct.get_mirror_rorp_iter(_rest_time, 1)
+	cur_iter = MirrorStruct.get_mirror_rorp_iter(_mirror_time, 1)
 	collated = rorpiter.Collate2Iters(old_iter, cur_iter)
 	for old_rorp, cur_rorp in collated:
 		if not old_rorp: change = "new"
@@ -79,17 +86,22 @@ def ListChangedSince(mirror_rp, inc_rp, restore_to_time):
 		else: change = "changed"
 		path_desc = (old_rorp and old_rorp.get_indexpath() or
 					 cur_rorp.get_indexpath())
-		print "%-7s %s" % (change, path_desc)
+		yield rpath.RORPath(("%-7s %s" % (change, path_desc),))
 
 
 def ListAtTime(mirror_rp, inc_rp, time):
-	"""List the files in archive at the given time"""
-	MirrorS = mirror_rp.conn.restore.MirrorStruct
-	MirrorS.set_mirror_and_rest_times(time)
-	MirrorS.initialize_rf_cache(mirror_rp, inc_rp)
+	"""List the files in archive at the given time
 
-	old_iter = MirrorS.get_mirror_rorp_iter(_rest_time, 1)
-	for rorp in old_iter: print rorp.get_indexpath()
+	Output is a RORP Iterator with info in index.  See ListChangedSince.
+
+	"""
+	assert mirror_rp.conn is Globals.local_connection, "Run locally only"
+	MirrorStruct.set_mirror_and_rest_times(time)
+	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
+
+	old_iter = MirrorStruct.get_mirror_rorp_iter(_rest_time, 1)
+	for rorp in old_iter:
+		yield rpath.RORPath((rorp.get_indexpath(),))
 	
 
 class MirrorStruct:
