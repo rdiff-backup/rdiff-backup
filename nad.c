@@ -102,6 +102,8 @@
 
    */
 
+/*
+ * TODO: Check all return codes when writing. */
 
 
 const int hs_encode_job_magic = 23452345;

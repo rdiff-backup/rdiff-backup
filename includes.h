@@ -39,9 +39,13 @@
 /* This contains GCC-specific stuff that confuses lclint */
 #include <netinet/in.h>		/* ntohs, etc */
 #endif				/* __LCLINT__ */
+#include <unistd.h>
+#include <signal.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
 
 
 /* libhsync headers. */

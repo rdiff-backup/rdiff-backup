@@ -5,3 +5,6 @@
 
 /* Version of the libtool interface. */
 #define HS_LIBVERSION "unknown"
+
+/* Define this if your sockaddr structure contains sin_len */
+#undef HAVE_SOCK_SIN_LEN

@@ -105,39 +105,37 @@ EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 
 include_HEADERS = hsync.h hsyncproto.h
 
+# This is the default for any programs that don't specify a
+# preference.
+LDADD = libhsync.la
+
 bin_PROGRAMS = hsdecode hsencode hsmdfour hsmksum hsmapread hsnad \
 		libhsyncinfo
-check_PROGRAMS = hsemit hsinhale hsfilebufcat genmaptest
+check_PROGRAMS = hsemit hsinhale hsfilebufcat genmaptest \
+	socksvr
+
+socksvr_SOURCES = socksvr.c trace.c util.c
+socksvr_LDADD =
 
 libhsyncinfo_SOURCES = libhsyncinfo.c
-libhsyncinfo_LDADD = libhsync.la
 
 hsnad_SOURCES = hsnad.c
-hsnad_LDADD = libhsync.la
 
 hsmksum_SOURCES = hsmksum.c
-hsmksum_LDADD = libhsync.la
 
 hsmdfour_SOURCES = hsmdfour.c 
-hsmdfour_LDADD = libhsync.la
 
 hsfilebufcat_SOURCES = hsfilebufcat.c
-hsfilebufcat_LDADD = libhsync.la
 
 hsdecode_SOURCES = hsdecode.c
-hsdecode_LDADD = libhsync.la
 
 hsencode_SOURCES = hsencode.c
-hsencode_LDADD = libhsync.la
 
 hsemit_SOURCES = hsemit.c
-hsemit_LDADD = libhsync.la
 
 hsinhale_SOURCES = hsinhale.c
-hsinhale_LDADD = libhsync.la
 
 hsmapread_SOURCES = hsmapread.c 
-hsmapread_LDADD = libhsync.la
 
 # Thus spake the master programmer:
 # 
