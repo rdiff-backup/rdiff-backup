@@ -58,7 +58,7 @@ hs_result hs_job_free(hs_job_t *job)
         hs_bzero(job, sizeof *job);
         free(job);
 
-        return HS_OK;
+        return HS_DONE;
 }
 
 
@@ -80,11 +80,11 @@ hs_result hs_job_iter(hs_job_t *job, int ending)
 
         while (1) {
                 result = hs_tube_catchup(job->stream);
-                if (result != HS_OK)
+                if (result != HS_DONE)
                         return result;
                 
                 result = job->statefn(job);
-                if (result != HS_RUN_OK)
+                if (result != HS_RUNNING)
                         return result;
         } 
 }
@@ -94,7 +94,7 @@ hs_result hs_job_s_complete(hs_job_t *UNUSED(job))
 {
         hs_trace("job has finished");
 
-        return HS_OK;
+        return HS_DONE;
 }
 
 

@@ -58,7 +58,7 @@ static hs_result hs_delta_s_fake(hs_job_t *job)
 	hs_blow_copy(stream, avail);
 
 	if (hs_stream_is_empty(stream))
-		return HS_OK;
+		return HS_DONE;
 	else
 		return HS_BLOCKED;
 }
@@ -73,7 +73,7 @@ static hs_result hs_delta_s_header(hs_job_t *job)
 
         job->statefn = hs_delta_s_fake;
 
-        return HS_OK;
+        return HS_DONE;
 }
 
 

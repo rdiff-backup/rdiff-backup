@@ -149,7 +149,7 @@ void hs_scoop_advance(hs_stream_t *stream, size_t len)
 /*
  * Ask for LEN bytes of input from the stream.  If that much data is
  * available, then return a pointer to it in PTR, advance the stream
- * input pointer over the data, and return HS_OK.  If there's not
+ * input pointer over the data, and return HS_DONE.  If there's not
  * enough data, then accept whatever is there into a buffer, advance
  * over it, and return HS_BLOCKED.
  *
@@ -167,7 +167,7 @@ hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
                  * so go straight from the scoop buffer. */
                 hs_trace("got %d bytes direct from scoop", len);
                 *ptr = impl->scoop_next;
-                return HS_OK;
+                return HS_DONE;
         } else if (impl->scoop_avail) {
                 /* We have some data in the scoop, but not enough to
                  * satisfy the request. */
@@ -182,13 +182,13 @@ hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
                         hs_trace("scoop now has %d bytes, this is enough",
                                   impl->scoop_avail);
                         *ptr = impl->scoop_next;
-                        return HS_OK;
+                        return HS_DONE;
                 }
         } else if (stream->avail_in >= len) {
                 /* There's enough data in the stream's input */
                 hs_trace("got %d bytes direct from input", len);
                 *ptr = stream->next_in;
-                return HS_OK;
+                return HS_DONE;
         } else {
                 /* Nothing was queued before, but we don't have enough
                  * data to satisfy the request.  So queue what little
@@ -211,7 +211,7 @@ hs_result hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr)
         hs_result result;
 
         result = hs_scoop_readahead(stream, len, ptr);
-        if (result == HS_OK)
+        if (result == HS_DONE)
                 hs_scoop_advance(stream, len);
 
         return result;

@@ -121,7 +121,7 @@ static void hs_tube_catchup_copy(hs_stream_t *stream)
 
 /*
  * Put whatever will fit from the tube into the output of the stream.
- * Return HS_OK if the tube is now empty and ready to accept another
+ * Return HS_DONE if the tube is now empty and ready to accept another
  * command, HS_BLOCKED if there is still stuff waiting to go out.
  */
 int hs_tube_catchup(hs_stream_t *stream)
@@ -142,7 +142,7 @@ int hs_tube_catchup(hs_stream_t *stream)
         if (tube->copy_len)
                 return HS_BLOCKED;
 
-        return HS_OK;
+        return HS_DONE;
 }
 
 

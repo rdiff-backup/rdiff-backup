@@ -72,7 +72,7 @@ static const char *hs_severities[] = {
 hs_exit_value hs_result_to_exit(hs_result r)
 {
     switch (r) {
-    case HS_OK:
+    case HS_DONE:
         return HS_EXIT_OK;
     default:
         return HS_EXIT_INTERNAL;

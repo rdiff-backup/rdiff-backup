@@ -59,7 +59,7 @@
  * \param in_file Source of input bytes, or NULL if the input buffer
  * should not be filled.
  *
- * \return HS_OK if the job completed, or otherwise an error result.
+ * \return HS_DONE if the job completed, or otherwise an error result.
  */
 hs_result
 hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
@@ -78,20 +78,20 @@ hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
     do {
         if (in_fb) {
             iores = hs_infilebuf_fill(in_fb, &ending);
-            if (iores != HS_OK)
+            if (iores != HS_DONE)
                 return iores;
         }
 
         result = hs_job_iter(job, ending);
-        if (result != HS_OK  &&  result != HS_BLOCKED)
+        if (result != HS_DONE  &&  result != HS_BLOCKED)
             return result;
 
         if (out_fb) {
             iores = hs_outfilebuf_drain(out_fb);
-            if (iores != HS_OK)
+            if (iores != HS_DONE)
                 return iores;
         }
-    } while (result != HS_OK);
+    } while (result != HS_DONE);
 
     /* FIXME: At the moment we leak if there's an IO error.  That's no
      * good. */

@@ -32,7 +32,7 @@
  * Network-byte-order output to the tube.
  *
  * All the `suck' routines return a result code.  The most common
- * values are HS_OK if they have enough data, or HS_BLOCKED if there
+ * values are HS_DONE if they have enough data, or HS_BLOCKED if there
  * is not enough input to proceed.
  */
 

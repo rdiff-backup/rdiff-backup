@@ -120,9 +120,9 @@ void hs_base64(unsigned char const *buf, int n, char *out);
  * \brief Return codes from nonblocking hsync operations.
  */
 typedef enum {
-        HS_OK =			0,	/**< Completed successfully. */
+        HS_DONE =			0,	/**< Completed successfully. */
         HS_BLOCKED =		1, 	/**< Blocked waiting for more data. */
-        HS_RUN_OK  =            2,      /**< Not yet finished or
+        HS_RUNNING  =            2,      /**< Not yet finished or
                                          * blocked.  This value should
                                          * never be returned to the
                                          * caller.  */

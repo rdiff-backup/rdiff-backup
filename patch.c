@@ -65,7 +65,7 @@ static hs_result hs_patch_s_cmdbyte(hs_job_t *job)
 {
         hs_result result;
         
-        if ((result = hs_suck_n8(job->stream, &job->op)) != HS_OK)
+        if ((result = hs_suck_n8(job->stream, &job->op)) != HS_DONE)
                 return result;
 
         assert(job->op >= 0 && job->op <= 0xff);
@@ -79,7 +79,7 @@ static hs_result hs_patch_s_cmdbyte(hs_job_t *job)
         else
                 job->statefn = hs_patch_s_run;
 
-        return HS_RUN_OK;
+        return HS_RUNNING;
 }
 
 
@@ -96,23 +96,23 @@ static hs_result hs_patch_s_params(hs_job_t *job)
         assert(len);
 
         result = hs_scoop_readahead(job->stream, len, &p);
-        if (result != HS_OK)
+        if (result != HS_DONE)
                 return result;
 
         /* we now must have LEN bytes buffered */
         result = hs_suck_netint(job->stream, job->cmd->len_1, &job->param1);
         /* shouldn't fail, since we already checked */
-        assert(result == HS_OK);
+        assert(result == HS_DONE);
 
         if (job->cmd->len_2) {
                 result = hs_suck_netint(job->stream, job->cmd->len_2, 
                                         &job->param2);
-                assert(result == HS_OK);
+                assert(result == HS_DONE);
         }
 
         job->statefn = hs_patch_s_run;
 
-        return HS_RUN_OK;
+        return HS_RUNNING;
 }
 
 
@@ -127,10 +127,10 @@ static hs_result hs_patch_s_run(hs_job_t *job)
         switch (job->cmd->kind) {
         case HS_KIND_LITERAL:
                 job->statefn = hs_patch_s_literal;
-                return HS_RUN_OK;
+                return HS_RUNNING;
         case HS_KIND_EOF:
                 job->statefn = hs_patch_s_complete;
-                return HS_OK;
+                return HS_DONE;
                 /* so we exit here; trying to continue causes an error */
         default:
                 hs_error("bogus command 0x%02x", job->op);
@@ -155,7 +155,7 @@ static hs_result hs_patch_s_literal(hs_job_t *job)
         hs_blow_copy(job->stream, len);
 
         job->statefn = hs_patch_s_cmdbyte;
-        return HS_RUN_OK;
+        return HS_RUNNING;
 }
 
 
@@ -176,7 +176,7 @@ static hs_result hs_patch_s_header(hs_job_t *job)
         int v;
         int result;
 
-        if ((result =hs_suck_n32(job->stream, &v)) != HS_OK)
+        if ((result =hs_suck_n32(job->stream, &v)) != HS_DONE)
                 return result;
 
         if (v != HS_DELTA_MAGIC)
@@ -186,7 +186,7 @@ static hs_result hs_patch_s_header(hs_job_t *job)
 
         job->statefn = hs_patch_s_cmdbyte;
 
-        return HS_RUN_OK;
+        return HS_RUNNING;
 }
 
 

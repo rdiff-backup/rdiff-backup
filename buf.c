@@ -109,7 +109,7 @@ hs_result hs_infilebuf_fill(hs_filebuf_t *fb, int *seen_eof)
                 hs_trace("seen end of file on input");
         }
 
-        return HS_OK;
+        return HS_DONE;
 }
 
 
@@ -132,7 +132,7 @@ hs_result hs_outfilebuf_drain(hs_filebuf_t *fb)
                 stream->next_out = fb->buf;
                 stream->avail_out = fb->buf_len;
                 
-                return HS_OK;
+                return HS_DONE;
         }
         
         assert(stream->avail_out <= fb->buf_len);
@@ -156,7 +156,7 @@ hs_result hs_outfilebuf_drain(hs_filebuf_t *fb)
                 stream->avail_out = fb->buf_len;
         }
         
-        return HS_OK;
+        return HS_DONE;
 }
 
 
@@ -176,6 +176,6 @@ hs_result hs_file_copy_cb(void *arg, size_t *len, void **buf)
                 return HS_SHORT_STREAM;
         } else {
                 *len = got;
-                return HS_OK;
+                return HS_DONE;
         }
 }

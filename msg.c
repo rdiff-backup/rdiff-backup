@@ -29,9 +29,9 @@
 char const *hs_strerror(hs_result r)
 {
         switch (r) {
-        case HS_OK:
+        case HS_DONE:
                 return "OK";
-        case HS_RUN_OK:
+        case HS_RUNNING:
                 return "still running";
         case HS_BAD_MAGIC:
                 return "bad magic or stream corrupt";

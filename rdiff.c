@@ -178,7 +178,7 @@ static hs_exit_value rdiff_delta(poptContext opcon)
     delta_file = hs_file_open(poptGetArg(opcon), "wb");
 
     result = hs_loadsig_file(sig_file, &sumset);
-    if (result != HS_OK) 
+    if (result != HS_DONE) 
         return hs_result_to_exit(result);
 
     result = hs_delta_file(sumset, new_file, delta_file);

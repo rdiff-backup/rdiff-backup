@@ -62,7 +62,7 @@ static hs_result hs_sig_s_header(hs_job_t *job)
 
         hs_trace("send header magic %#x", HS_SIG_MAGIC);
 
-        return HS_RUN_OK;
+        return HS_RUNNING;
 }
 
 
@@ -84,7 +84,7 @@ hs_sig_do_block(hs_job_t *job, const void *block, size_t len)
         hs_trace("sent weak sum 0x%08x and strong sum %s", weak_sum,
                   strong_sum_hex);
 
-        return HS_RUN_OK;
+        return HS_RUNNING;
 }
 
 
@@ -106,7 +106,7 @@ static hs_result hs_sig_s_generate(hs_job_t *job)
         if (result == HS_BLOCKED && job->near_end) {
                 result = hs_scoop_read_rest(job->stream, &len, &block);
                 job->statefn = hs_job_s_complete;
-        } else if (result != HS_OK) {
+        } else if (result != HS_DONE) {
                 hs_trace("generate stopped: %s", hs_strerror(result));
                 return result;
         }
