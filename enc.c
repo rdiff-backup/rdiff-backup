@@ -211,10 +211,10 @@ _hs_read_blocksize(rs_read_fn_t sigread_fn, void *sigreadprivate,
 
     ret = _hs_read_netint(sigread_fn, sigreadprivate, block_len);
     if (ret < 0) {
-	_hs_fatal("couldn't read block length from signature");
+	_hs_error("couldn't read block length from signature");
 	return -1;
     } else if (ret != 4) {
-	_hs_fatal("short read while trying to get block length");
+	_hs_error("short read while trying to get block length");
 	return -1;
     }
 
@@ -258,6 +258,7 @@ hs_encode(rs_read_fn_t read_fn, void *readprivate,
     hs_membuf_t *sig_tmpbuf, *lit_tmpbuf;
     int token;
     int at_eof;
+    int got_old;		/* true if there is an old signature */
 
     _hs_trace("**** beginning %s", __FUNCTION__);
 
@@ -265,21 +266,31 @@ hs_encode(rs_read_fn_t read_fn, void *readprivate,
 
     rollsum->havesum = 0;
 
+    got_old = 1;
     ret = _hs_check_sig_version(sigread_fn, sigreadprivate);
     if (ret < 0)
-	return ret;
+	 got_old = 0;
 
-    if (_hs_read_blocksize(sigread_fn, sigreadprivate, &old_block_len) < 0)
-	return -1;
+    if (got_old) {
+	 if (_hs_read_blocksize(sigread_fn, sigreadprivate, &old_block_len) < 0)
+	      got_old = 0;
+	 
+	 if (!new_block_len)
+	      new_block_len = old_block_len;
+    }
+
     if (!new_block_len)
-	 new_block_len = old_block_len;
+	 new_block_len = 512;
+    
     return_val_if_fail(new_block_len > 0, -1);
 
-    /* Put the char * sigbuffer into our structures */
-    ret = _hs_make_sum_struct(&sums, sigread_fn, sigreadprivate,
-			      old_block_len);
-    if (ret < 0)
-	goto out;
+    if (got_old) {
+	 /* Put the char * sigbuffer into our structures */
+	 ret = _hs_make_sum_struct(&sums, sigread_fn, sigreadprivate,
+				   old_block_len);
+	 if (ret < 0)
+	      got_old = 0;
+    }
 
     if ((ret = _hs_littok_header(write_fn, write_priv)) < 0)
 	goto out;
@@ -324,23 +335,25 @@ hs_encode(rs_read_fn_t read_fn, void *readprivate,
 				      inbuf, new_block_len, rollsum);
 	    }
 
-	    token = _hs_find_match(this_block_len, rollsum, inbuf, sums);
+	    if (got_old)
+		 token = _hs_find_match(this_block_len, rollsum, inbuf, sums);
+	    else
+		 token = 0;
+	    
 	    if (token > 0) {
 		if (_hs_flush_literal_buf
 		    (lit_tmpbuf, write_fn, write_priv, stats,
 		     op_literal_1) < 0)
 		    return -1;
 
-		/*
-		 * TODO: Rather than actually sending a copy command, queue
-		 * it up in the hope that we'll also match on succeeding
-		 * blocks and can send one larger copy command.  This is just 
-		 * an optimization. 
-		hx */
+		/* TODO: Rather than actually sending a copy command,
+		   queue it up in the hope that we'll also match on
+		   succeeding blocks and can send one larger copy
+		   command.  This is just an optimization.  */
 
 		/* Write the token */
 		ret = _hs_emit_copy(write_fn, write_priv,
-				    token * old_block_len, this_block_len,
+				    (token-1) * old_block_len, this_block_len,
 				    stats);
 		if (ret < 0)
 		    return -1;
