@@ -100,8 +100,7 @@ def ListAtTime(mirror_rp, inc_rp, time):
 	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
 
 	old_iter = MirrorStruct.get_mirror_rorp_iter(_rest_time, 1)
-	for rorp in old_iter:
-		yield rpath.RORPath((rorp.get_indexpath(),))
+	for rorp in old_iter: yield rorp
 	
 
 class MirrorStruct:
