@@ -67,6 +67,7 @@ class SourceStruct:
 		sel.set_iter()
 		cache_size = Globals.pipeline_max_length * 3 # to and from+leeway
 		cls._source_select = rorpiter.CacheIndexable(sel, cache_size)
+		Globals.set('select_mirror', sel)
 
 	def get_source_select(cls):
 		"""Return source select iterator, set by set_source_select"""
