@@ -127,10 +127,9 @@ hs_must_write(hs_write_fn_t write_fn, void *write_priv,
     } else if (ret > len) {
 	_hs_fatal("something's really crazy: "
 		  "we wanted to send %d bytes, but wrote %d", len, ret);
-	abort();
 	return -1;
     } else {
-	return -1;
+        _hs_fatal("impossible!");
     }
 }
 
