@@ -42,20 +42,6 @@ $Id$
 
    * This might be a nice place to use select!
 
- * Non-blocking IO
-
-   * Rewrite decoder to use mapptr for input.
-
-   * Somehow do nonblocking output.  Presumably we want a different
-     callback to say when we're ready to do output, but also to
-     refrain from input when there's no more space.
-
-   * Also, this should interoperate smoothly with zlib.
-
-   * Then we could use select for custom timeouts!
-
- * Delete rubbish modules from CVS
-
  * Encoding implementation
 
    * Join up copy commands through the copyq if this is not done yet.
@@ -191,49 +177,3 @@ $Id$
 
  * Selective trace of particular areas of the library.
 
- * Try to make libhsync more generally useful
-
-   * Tease apart the different algorithms inside the library so that
-     they can be independently re-used.
-
-   * Use more specific names than `encode' and `decode'.  I like
-     `apply' as a description of what the client does.
-
-   * Don't imply any particular encoding format.  I don't think we
-     need callbacks; it's enough that all the users can write their
-     own implementations of the loops.
-
-   * This ought to make it simpler to get push-structured interfaces.
-
- * More thorough testing
-
-   * mdfour
-
-     * keep some example files and check that they give the expected
-       results.
-
-     * try using different input chunk sizes
-
-   * abstract i/o
-
-     * rewrite cat to use our routines, and make sure it passes the
-       file through correctly however we call it.  Different
-       strategies are possible: using the loop functions or not, using
-       mapptrs, etc.
-
-   * test within the proxy
-
-     * We need dynamically generated reproducible content that varies
-       in an interesting way.  cvsweb sounds ideal: we'll mirror the
-       output of cvsweb through a proxy and then not through a proxy,
-       and see how we go.
-
-   * run regression suite from CVS every night
-
- * Portability
-
-   * Tux only knows what portability assumptions we've made.
-
-   * In particular, running this on a risc box would be interesting.
-     Endianness?  We now have us4.samba.org which is a big SGI MIPS
-     machine, and so it will do pretty well as a test.
