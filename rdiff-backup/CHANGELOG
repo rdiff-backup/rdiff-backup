@@ -18,6 +18,8 @@ that contain unreadable files and directories as long as they are
 owned by that user.  Bug report by Arkadiusz Miskiewicz.  Hopefully
 this is the last of the unreadable file bugs...
 
+Rewrote hard link tracking system.  New way should use less memory.
+
 
 New in v0.13.2 (2003/09/16)
 ---------------------------

@@ -2,7 +2,7 @@ import os, unittest, time
 from commontest import *
 from rdiff_backup import Globals, Hardlink, selection, rpath
 
-Log.setverbosity(3)
+Log.setverbosity(6)
 
 class HardlinkTest(unittest.TestCase):
 	"""Test cases for Hard links"""
@@ -34,62 +34,24 @@ class HardlinkTest(unittest.TestCase):
 		Globals.preserve_hardlinks = 1
 		reset_hardlink_dicts()
 		for dsrp in selection.Select(self.hardlink_dir3).set_iter():
-			Hardlink.add_rorp(dsrp, 1)
+			Hardlink.add_rorp(dsrp)
 		
-		assert len(Hardlink._src_inode_indicies.keys()) == 3, \
-			   Hardlink._src_inode_indicies
-		assert len(Hardlink._src_index_indicies.keys()) == 3, \
-			   Hardlink._src_index_indicies
-		vals1 = Hardlink._src_inode_indicies.values()
-		vals2 = Hardlink._src_index_indicies.values()
-		vals1.sort()
-		vals2.sort()
-		assert vals1 == vals2
-
-	def testBuildingDict2(self):
-		"""Same as testBuildingDict but test destination building"""
-		Globals.preserve_hardlinks = 1
-		reset_hardlink_dicts()
-		for dsrp in selection.Select(self.hardlink_dir3).set_iter():
-			Hardlink.add_rorp(dsrp, None)
-		
-		assert len(Hardlink._dest_inode_indicies.keys()) == 3, \
-			   Hardlink._dest_inode_indicies
-		assert len(Hardlink._dest_index_indicies.keys()) == 3, \
-			   Hardlink._dest_index_indicies
-		vals1 = Hardlink._dest_inode_indicies.values()
-		vals2 = Hardlink._dest_index_indicies.values()
-		vals1.sort()
-		vals2.sort()
-		assert vals1 == vals2
+		assert len(Hardlink._inode_index.keys()) == 3, \
+			   Hardlink._inode_index
 
 	def testCompletedDict(self):
 		"""See if the hardlink dictionaries are built correctly"""
 		reset_hardlink_dicts()
 		for dsrp in selection.Select(self.hardlink_dir1).set_iter():
-			Hardlink.add_rorp(dsrp, 1)
-		assert Hardlink._src_inode_indicies == {}, \
-			   Hardlink._src_inode_indicies
-
-		hll1 = [('file1',), ('file2',), ('file3',)]
-		hll2 = [('file4',), ('file5',), ('file6',)]
-		dict = {}
-		for index in hll1: dict[index] = hll1
-		for index in hll2: dict[index] = hll2
-		assert Hardlink._src_index_indicies == dict
+			Hardlink.add_rorp(dsrp)
+			Hardlink.del_rorp(dsrp)
+		assert Hardlink._inode_index == {}, Hardlink._inode_index
 
 		reset_hardlink_dicts()
 		for dsrp in selection.Select(self.hardlink_dir2).set_iter():
-			Hardlink.add_rorp(dsrp, 1)
-		assert Hardlink._src_inode_indicies == {}, \
-			   Hardlink._src_inode_indicies
-
-		hll1 = [('file1',), ('file3',), ('file4',)]
-		hll2 = [('file2',), ('file5',), ('file6',)]
-		dict = {}
-		for index in hll1: dict[index] = hll1
-		for index in hll2: dict[index] = hll2
-		assert Hardlink._src_index_indicies == dict
+			Hardlink.add_rorp(dsrp)
+			Hardlink.del_rorp(dsrp)
+		assert Hardlink._inode_index == {}, Hardlink._inode_index
 
 	def testSeries(self):
 		"""Test hardlink system by backing up and restoring a few dirs"""

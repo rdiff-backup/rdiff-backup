@@ -235,15 +235,17 @@ class MirrorStruct:
 	def get_diffs_from_collated(cls, collated):
 		"""Get diff iterator from collated"""
 		for mir_rorp, target_rorp in collated:
-			if Globals.preserve_hardlinks:
-				if mir_rorp: Hardlink.add_rorp(mir_rorp, source = 1)
-				if target_rorp: Hardlink.add_rorp(target_rorp, source = 0)
-
+			if Globals.preserve_hardlinks and mir_rorp:
+				Hardlink.add_rorp(mir_rorp, target_rorp)
 			if (not target_rorp or not mir_rorp or
 				not mir_rorp == target_rorp or
 				(Globals.preserve_hardlinks and not
 				 Hardlink.rorp_eq(mir_rorp, target_rorp))):
-				yield cls.get_diff(mir_rorp, target_rorp)
+				diff = cls.get_diff(mir_rorp, target_rorp)
+			else: diff = None
+			if Globals.preserve_hardlinks and mir_rorp:
+				Hardlink.del_rorp(mir_rorp)
+			if diff: yield diff
 
 	def get_diff(cls, mir_rorp, target_rorp):
 		"""Get a diff for mir_rorp at time"""

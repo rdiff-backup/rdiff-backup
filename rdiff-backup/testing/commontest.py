@@ -3,7 +3,7 @@ import os, sys, code
 from rdiff_backup.log import Log
 from rdiff_backup.rpath import RPath
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
-	 selection, lazy, Time, rpath, eas_acls
+	 selection, lazy, Time, rpath, eas_acls, rorpiter
 
 RBBin = "../rdiff-backup"
 SourceDir = "../rdiff_backup"
@@ -175,62 +175,77 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 	specified.
 
 	"""
-	if compare_hardlinks: reset_hardlink_dicts()
-	src_rp.setdata()
-	dest_rp.setdata()
+	def get_selection_functions():
+		"""Return generators of files in source, dest"""
+		src_rp.setdata()
+		dest_rp.setdata()
+		src_select = selection.Select(src_rp)
+		dest_select = selection.Select(dest_rp)
+
+		if ignore_tmp_files:
+			# Ignoring temp files can be useful when we want to check the
+			# correctness of a backup which aborted in the middle.  In
+			# these cases it is OK to have tmp files lying around.
+			src_select.add_selection_func(src_select.regexp_get_sf(
+				".*rdiff-backup.tmp.[^/]+$", 0))
+			dest_select.add_selection_func(dest_select.regexp_get_sf(
+				".*rdiff-backup.tmp.[^/]+$", 0))
+
+		if exclude_rbdir: # Exclude rdiff-backup-data directory
+			src_select.parse_rbdir_exclude()
+			dest_select.parse_rbdir_exclude()
+
+		return src_select.set_iter(), dest_select.set_iter()
+
+	def preprocess(src_rorp, dest_rorp):
+		"""Initially process src and dest_rorp"""
+		if compare_hardlinks and src_rorp:
+			Hardlink.add_rorp(src_rorp, dest_rorp)
+
+	def postprocess(src_rorp, dest_rorp):
+		"""After comparison, process src_rorp and dest_rorp"""
+		if compare_hardlinks and src_rorp:
+			Hardlink.del_rorp(src_rorp)
+
+	def equality_func(src_rorp, dest_rorp):
+		"""Combined eq func returns true iff two files compare same"""
+		if not src_rorp:
+			Log("Source rorp missing: " + str(dest_rorp), 3)
+			return 0
+		if not dest_rorp:
+			Log("Dest rorp missing: " + str(src_rorp), 3)
+			return 0
+		if not src_rorp.equal_verbose(dest_rorp,
+									  compare_ownership = compare_ownership):
+			return 0
+		if compare_hardlinks and not Hardlink.rorp_eq(src_rorp, dest_rorp):
+			Log("Hardlink compare failure", 3)
+			Log("%s: %s" % (src_rorp.index,
+							Hardlink.get_inode_key(src_rorp)), 3)
+			Log("%s: %s" % (dest_rorp.index,
+							Hardlink.get_inode_key(dest_rorp)), 3)
+			return 0
+		if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
+			Log("Different EAs in files %s and %s" %
+				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
+			return 0
+		if compare_acls and not eas_acls.acl_compare_rps(src_rorp, dest_rorp):
+			Log("Different ACLs in files %s and %s" %
+				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
+			return 0
+		return 1
 
 	Log("Comparing %s and %s, hardlinks %s, eas %s, acls %s" %
 		(src_rp.path, dest_rp.path, compare_hardlinks,
 		 compare_eas, compare_acls), 3)
-	src_select = selection.Select(src_rp)
-	dest_select = selection.Select(dest_rp)
+	if compare_hardlinks: reset_hardlink_dicts()
+	src_iter, dest_iter = get_selection_functions()
+	for src_rorp, dest_rorp in rorpiter.Collate2Iters(src_iter, dest_iter):
+		preprocess(src_rorp, dest_rorp)
+		if not equality_func(src_rorp, dest_rorp): return 0
+		postprocess(src_rorp, dest_rorp)
+	return 1
 
-	if ignore_tmp_files:
-		# Ignoring temp files can be useful when we want to check the
-		# correctness of a backup which aborted in the middle.  In
-		# these cases it is OK to have tmp files lying around.
-		src_select.add_selection_func(src_select.regexp_get_sf(
-			".*rdiff-backup.tmp.[^/]+$", 0))
-		dest_select.add_selection_func(dest_select.regexp_get_sf(
-			".*rdiff-backup.tmp.[^/]+$", 0))
-
-	if exclude_rbdir:
-		src_select.parse_rbdir_exclude()
-		dest_select.parse_rbdir_exclude()
-	else:
-		# include rdiff-backup-data/increments
-		src_select.add_selection_func(src_select.glob_get_tuple_sf(
-			('rdiff-backup-data', 'increments'), 1))
-		dest_select.add_selection_func(dest_select.glob_get_tuple_sf(
-			('rdiff-backup-data', 'increments'), 1))
-		
-		# but exclude rdiff-backup-data
-		src_select.add_selection_func(src_select.glob_get_tuple_sf(
-			('rdiff-backup-data',), 0))
-		dest_select.add_selection_func(dest_select.glob_get_tuple_sf(
-			('rdiff-backup-data',), 0))
-
-	dsiter1, dsiter2 = src_select.set_iter(), dest_select.set_iter()
-
-	def hardlink_equal(src_rorp, dest_rorp):
-		if not src_rorp.equal_verbose(dest_rorp,
-									  compare_ownership = compare_ownership):
-			return None
-		if not Hardlink.rorp_eq(src_rorp, dest_rorp):
-			Log("%s: %s" % (src_rorp.index,
-							Hardlink.get_indicies(src_rorp, 1)), 3)
-			Log("%s: %s" % (dest_rorp.index,
-							Hardlink.get_indicies(dest_rorp, None)), 3)
-			return None
-		if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
-			Log("Different EAs in files %s and %s" %
-				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
-			return None
-		if compare_acls and not eas_acls.acl_compare_rps(src_rorp, dest_rorp):
-			Log("Different ACLs in files %s and %s" %
-				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
-			return None
-		return 1
 
 	def rbdir_equal(src_rorp, dest_rorp):
 		"""Like hardlink_equal, but make allowances for data directories"""
@@ -263,30 +278,10 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 						Hardlink.get_indicies(dest_rorp, None)), 3)
 		return None
 
-	if equality_func: result = lazy.Iter.equal(dsiter1, dsiter2,
-											   1, equality_func)
-	elif compare_hardlinks:
-		dsiter1 = Hardlink.add_rorp_iter(dsiter1, 1)
-		dsiter2 = Hardlink.add_rorp_iter(dsiter2, None)		
-		if exclude_rbdir:
-			result = lazy.Iter.equal(dsiter1, dsiter2, 1, hardlink_equal)
-		else: result = lazy.Iter.equal(dsiter1, dsiter2, 1, rbdir_equal)
-	elif not exclude_rbdir:
-		result = lazy.Iter.equal(dsiter1, dsiter2, 1, rbdir_equal)
-	else: result = lazy.Iter.equal(dsiter1, dsiter2, 1,
-	  lambda x, y: x.equal_verbose(y, compare_ownership = compare_ownership))
-
-	for i in dsiter1: pass # make sure all files processed anyway
-	for i in dsiter2: pass
-	return result
 
 def reset_hardlink_dicts():
 	"""Clear the hardlink dictionaries"""
-	Hardlink._src_inode_indicies = {}
-	Hardlink._src_index_indicies = {}
-	Hardlink._dest_inode_indicies = {}
-	Hardlink._dest_index_indicies = {}
-	Hardlink._restore_index_path = {}
+	Hardlink._inode_index = {}
 
 def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 						compare_hardlinks = 1,
