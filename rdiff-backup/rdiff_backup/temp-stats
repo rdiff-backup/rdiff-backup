@@ -1,0 +1,241 @@
+No changes in 10000 files:
+
+Wed May 15 23:54:53 2002    profile-output
+
+         1805774 function calls (1480846 primitive calls) in 45.710 CPU seconds
+
+   Ordered by: internal time
+   List reduced from 259 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+151824/30615    5.620    0.000   18.810    0.001 lazy.py:251(__call__)
+91212/30612    4.060    0.000   17.300    0.001 lazy.py:222(process_w_subinstance)
+    31006    2.630    0.000    4.650    0.000 rpath.py:448(setdata)
+101629/20412    1.890    0.000   14.690    0.001 selection.py:96(Iterate)
+61218/20410    1.880    0.000   14.370    0.001 selection.py:122(iterate_in_dir)
+    10206    1.400    0.000   44.620    0.004 highlevel.py:245(error_checked)
+30618/10206    1.350    0.000   27.650    0.003 rorpiter.py:124(Collate2Iters)
+      486    1.280    0.003   19.690    0.041 highlevel.py:165(generate_dissimilar)
+    30748    1.270    0.000    6.640    0.000 rpath.py:408(__init__)
+    31006    1.260    0.000    1.260    0.000 rpath.py:182(tupled_lstat)
+   121209    1.140    0.000    1.140    0.000 lazy.py:214(intree)
+    20411    1.110    0.000    9.010    0.000 destructive_stepping.py:33(__init__)
+    10205    1.050    0.000    1.050    0.000 rpath.py:430(__str__)
+    30612    0.860    0.000    1.410    0.000 lazy.py:218(set_subinstance)
+    20411    0.840    0.000    2.830    0.000 destructive_stepping.py:77(set_init_perms)
+      486    0.830    0.002   26.900    0.055 highlevel.py:98(diffs)
+    30771    0.780    0.000    0.780    0.000 /usr/lib/python2.2/posixpath.py:44(join)
+    10205    0.720    0.000    3.870    0.000 increment.py:138(start_process)
+    91845    0.710    0.000    0.710    0.000 rorpiter.py:246(__getitem__)
+    20616    0.690    0.000    0.930    0.000 rpath.py:593(isowner)
+
+
+Wed May 15 23:54:53 2002    profile-output
+
+         1805774 function calls (1480846 primitive calls) in 45.710 CPU seconds
+
+   Ordered by: cumulative time
+   List reduced from 259 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.010    0.010   45.710   45.710 profile:0(Globals.Main.Main(['--no-resume', 'manyfiles/', 'out']))
+        1    0.000    0.000   45.700   45.700 main.py:188(Main)
+        1    0.000    0.000   45.700   45.700 <string>:1(?)
+        1    0.000    0.000   45.670   45.670 main.py:169(take_action)
+        1    0.000    0.000   45.670   45.670 main.py:221(Backup)
+        1    0.000    0.000   45.650   45.650 highlevel.py:50(Mirror_and_increment)
+        1    0.240    0.240   45.650   45.650 highlevel.py:239(patch_increment_and_finalize)
+    10208    0.270    0.000   44.890    0.004 highlevel.py:268(check_skip_error)
+    10206    1.400    0.000   44.620    0.004 highlevel.py:245(error_checked)
+30618/10206    1.350    0.000   27.650    0.003 rorpiter.py:124(Collate2Iters)
+      486    0.830    0.002   26.900    0.055 highlevel.py:98(diffs)
+      486    0.020    0.000   19.720    0.041 rorpiter.py:58(Signatures)
+      486    1.280    0.003   19.690    0.041 highlevel.py:165(generate_dissimilar)
+151824/30615    5.620    0.000   18.810    0.001 lazy.py:251(__call__)
+91212/30612    4.060    0.000   17.300    0.001 lazy.py:222(process_w_subinstance)
+    20412    0.520    0.000   14.900    0.001 lazy.py:166(yielda)
+101629/20412    1.890    0.000   14.690    0.001 selection.py:96(Iterate)
+61218/20410    1.880    0.000   14.370    0.001 selection.py:122(iterate_in_dir)
+    41229    0.660    0.000   11.180    0.000 robust.py:194(check_common_error)
+    20409    0.310    0.000    9.810    0.000 selection.py:130(<lambda>)
+
+----------------------------------------------------------------------------
+
+Writing 10000 new small files
+
+Thu May 16 00:05:36 2002    profile-output
+
+         2452569 function calls (2249461 primitive calls) in 75.680 CPU seconds
+
+   Ordered by: internal time
+   List reduced from 236 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    71752    4.580    0.000    4.580    0.000 rpath.py:182(tupled_lstat)
+    71752    4.170    0.000    9.860    0.000 rpath.py:448(setdata)
+101216/20410    3.550    0.000   11.070    0.001 lazy.py:251(__call__)
+60808/20408    2.690    0.000    9.980    0.000 lazy.py:222(process_w_subinstance)
+    10206    2.460    0.000   74.630    0.007 highlevel.py:217(error_checked)
+    20012    2.080    0.000    2.820    0.000 rpath.py:674(open)
+    40819    2.050    0.000   13.440    0.000 destructive_stepping.py:33(__init__)
+    10228    2.050    0.000    5.030    0.000 rpath.py:625(normalize)
+    10000    1.980    0.000    8.060    0.001 rpath.py:684(write_from_fileobj)
+    51086    1.970    0.000    9.210    0.000 rpath.py:408(__init__)
+   143692    1.640    0.000    1.640    0.000 connection.py:40(__getattr__)
+    10206    1.610    0.000    8.920    0.001 highlevel.py:165(generate_dissimilar)
+30618/10206    1.550    0.000   29.540    0.003 rorpiter.py:124(Collate2Iters)
+    10205    1.520    0.000    1.520    0.000 rpath.py:227(__str__)
+    20410    1.450    0.000    1.710    0.000 rpath.py:525(setmtime)
+    10226    1.380    0.000    1.670    0.000 rpath.py:163(rename)
+    20000    1.380    0.000    1.380    0.000 rpath.py:772(read)
+    10206    1.350    0.000    3.490    0.000 rpath.py:109(copy_attribs)
+    40819    1.290    0.000    3.100    0.000 destructive_stepping.py:77(set_init_perms)
+50817/10208    1.250    0.000    7.890    0.001 selection.py:96(Iterate)
+
+
+Thu May 16 00:05:36 2002    profile-output
+
+         2452569 function calls (2249461 primitive calls) in 75.680 CPU seconds
+
+   Ordered by: cumulative time
+   List reduced from 236 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000   75.680   75.680 profile:0(Globals.Main.Main(['manyfiles/', 'out']))
+         1    0.000    0.000   75.680   75.680 <string>:1(?)
+        1    0.000    0.000   75.680   75.680 main.py:188(Main)
+        1    0.000    0.000   75.670   75.670 main.py:221(Backup)
+        1    0.000    0.000   75.670   75.670 main.py:169(take_action)
+        1    0.000    0.000   75.650   75.650 highlevel.py:27(Mirror)
+        1    0.450    0.450   75.650   75.650 highlevel.py:210(patch_and_finalize)
+    10206    0.190    0.000   74.820    0.007 highlevel.py:268(check_skip_error)
+    10206    2.460    0.000   74.630    0.007 highlevel.py:217(error_checked)
+30618/10206    1.550    0.000   29.540    0.003 rorpiter.py:124(Collate2Iters)
+    10206    1.060    0.000   29.020    0.003 highlevel.py:98(diffs)
+    10216    0.270    0.000   28.800    0.003 robust.py:54(execute)
+    10205    1.140    0.000   22.760    0.002 robust.py:148(init)
+    40819    2.050    0.000   13.440    0.000 destructive_stepping.py:33(__init__)
+101216/20410    3.550    0.000   11.070    0.001 lazy.py:251(__call__)
+60808/20408    2.690    0.000    9.980    0.000 lazy.py:222(process_w_subinstance)
+    10206    0.570    0.000    9.860    0.001 rorpiter.py:58(Signatures)
+    71752    4.170    0.000    9.860    0.000 rpath.py:448(setdata)
+    10226    0.540    0.000    9.770    0.001 robust.py:240(new)
+    51086    1.970    0.000    9.210    0.000 rpath.py:408(__init__)
+
+----------------------------------------------------------------------------
+Nothing changed, source side:
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+50608/10205    1.970    0.000    5.420    0.001 lazy.py:251(__call__)
+  10208/1    1.260    0.000   17.740   17.740 iterfile.py:166(addtobuffer)
+30404/10204    1.240    0.000    5.010    0.000 lazy.py:222(process_w_subinstance)
+        1    1.180    1.180   17.740   17.740 highlevel.py:98(diffs)
+    10221    1.050    0.000    1.930    0.000 rpath.py:448(setdata)
+50814/10206    0.880    0.000    7.610    0.001 selection.py:96(Iterate)
+30609/10205    0.780    0.000    7.420    0.001 selection.py:122(iterate_in_dir)
+    10205    0.600    0.000    0.600    0.000 iterfile.py:197(_l2s)
+    10204    0.600    0.000    0.700    0.000 lazy.py:218(set_subinstance)
+    10215    0.550    0.000    2.760    0.000 rpath.py:408(__init__)
+    10206    0.470    0.000    4.900    0.000 destructive_stepping.py:33(__init__)
+    10206    0.430    0.000    1.570    0.000 destructive_stepping.py:77(set_init_perms)
+    10411    0.430    0.000    0.610    0.000 rpath.py:593(isowner)
+    10206    0.390    0.000    0.390    0.000 lazy.py:177(yieldb)
+    10206    0.380    0.000   10.860    0.001 rorpiter.py:124(Collate2Iters)
+    10208    0.370    0.000    0.370    0.000 rpath.py:182(tupled_lstat)
+    20614    0.360    0.000    6.010    0.000 robust.py:194(check_common_error)
+    40403    0.330    0.000    0.330    0.000 lazy.py:214(intree)
+    10205    0.320    0.000    0.980    0.000 rpath.py:581(readable)
+    10205    0.320    0.000    0.790    0.000 destructive_stepping.py:206(end_process)
+
+
+Thu May 16 00:21:24 2002    profile-output
+
+         646330 function calls (503964 primitive calls) in 17.820 CPU seconds
+
+   Ordered by: cumulative time
+   List reduced from 213 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000   17.820   17.820 <string>:1(?)
+        1    0.000    0.000   17.820   17.820 profile:0(Globals.Main.Main(['--remote-schema', '%s --server', 'manyfiles/', './rdiff-backup::out']))
+        1    0.000    0.000   17.820   17.820 main.py:188(Main)
+        1    0.000    0.000   17.770   17.770 main.py:221(Backup)
+        1    0.000    0.000   17.770   17.770 main.py:169(take_action)
+    47/46    0.000    0.000   17.750    0.386 connection.py:425(__call__)
+        1    0.000    0.000   17.750   17.750 highlevel.py:50(Mirror_and_increment)
+    47/46    0.000    0.000   17.750    0.386 connection.py:352(reval)
+     22/1    0.000    0.000   17.740   17.740 connection.py:448(readfromid)
+  10208/1    1.260    0.000   17.740   17.740 iterfile.py:166(addtobuffer)
+     22/1    0.140    0.006   17.740   17.740 iterfile.py:153(read)
+     22/1    0.030    0.001   17.740   17.740 connection.py:326(answer_request)
+    47/46    0.000    0.000   17.740    0.386 connection.py:307(get_response)
+  10207/1    0.130    0.000   17.740   17.740 rorpiter.py:23(ToRaw)
+        1    1.180    1.180   17.740   17.740 highlevel.py:98(diffs)
+    10206    0.380    0.000   10.860    0.001 rorpiter.py:124(Collate2Iters)
+        1    0.000    0.000   10.050   10.050 connection.py:480(read)
+        1    0.000    0.000   10.050   10.050 iterfile.py:221(read)
+        1    0.000    0.000   10.050   10.050 rorpiter.py:31(FromRaw)
+        1    0.000    0.000   10.050   10.050 iterfile.py:23(_get)
+
+----------------------------------------------------------------------------
+Nothing changed, destination side:
+
+Thu May 16 00:27:58 2002    profile-output
+
+         2769004 function calls (2586001 primitive calls) in 113.720 CPU seconds
+
+   Ordered by: internal time
+   List reduced from 325 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+80820/60409   12.080    0.000   26.640    0.000 iterfile.py:221(read)
+    92424    9.240    0.000    9.240    0.000 rpath.py:182(tupled_lstat)
+    92426    6.060    0.000   16.750    0.000 rpath.py:448(setdata)
+    10243    5.360    0.001   10.890    0.001 rpath.py:625(normalize)
+40411/30205    4.010    0.000   31.240    0.001 iterfile.py:23(_get)
+101216/20410    3.810    0.000   73.120    0.004 lazy.py:251(__call__)
+60808/20408    3.300    0.000   72.140    0.004 lazy.py:222(process_w_subinstance)
+    61337    2.770    0.000   15.330    0.000 rpath.py:408(__init__)
+    40409    2.630    0.000    2.630    0.000 iterfile.py:16(_s2l)
+    10000    2.220    0.000   13.140    0.001 rpath.py:684(write_from_fileobj)
+    10206    2.200    0.000  112.620    0.011 highlevel.py:245(error_checked)
+    20411    1.940    0.000    2.260    0.000 rpath.py:525(setmtime)
+   154184    1.910    0.000    1.910    0.000 connection.py:40(__getattr__)
+    10204    1.890    0.000   57.280    0.006 increment.py:211(init_non_dir)
+    10207    1.820    0.000    4.090    0.000 rpath.py:568(touch)
+    30615    1.730    0.000   13.490    0.000 destructive_stepping.py:33(__init__)
+    71585    1.690    0.000    1.690    0.000 /usr/lib/python2.2/posixpath.py:44(join)
+    10233    1.440    0.000    1.730    0.000 rpath.py:163(rename)
+    10204    1.400    0.000    1.400    0.000 rpath.py:227(__str__)
+    10206    1.330    0.000    3.900    0.000 rpath.py:109(copy_attribs)
+
+
+Thu May 16 00:27:58 2002    profile-output
+
+         2769004 function calls (2586001 primitive calls) in 113.720 CPU seconds
+
+   Ordered by: cumulative time
+   List reduced from 325 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000  113.720  113.720 <string>:1(?)
+        1    0.000    0.000  113.720  113.720 profile:0(Globals.Main.Main(['--remote-schema', '%s --server', './rdiff-backup::manyfiles/', 'out']))
+        1    0.000    0.000  113.720  113.720 main.py:188(Main)
+        1    0.000    0.000  113.690  113.690 main.py:169(take_action)
+        1    0.000    0.000  113.690  113.690 main.py:221(Backup)
+        1    0.010    0.010  113.660  113.660 highlevel.py:50(Mirror_and_increment)
+        1    0.300    0.300  113.650  113.650 highlevel.py:239(patch_increment_and_finalize)
+    10208    0.300    0.000  112.940    0.011 highlevel.py:268(check_skip_error)
+    10206    2.200    0.000  112.620    0.011 highlevel.py:245(error_checked)
+101216/20410    3.810    0.000   73.120    0.004 lazy.py:251(__call__)
+60808/20408    3.300    0.000   72.140    0.004 lazy.py:222(process_w_subinstance)
+    10205    0.780    0.000   61.080    0.006 increment.py:138(start_process)
+    10204    1.890    0.000   57.280    0.006 increment.py:211(init_non_dir)
+    10220    0.520    0.000   45.290    0.004 robust.py:54(execute)
+    10218    0.420    0.000   34.170    0.003 robust.py:76(init)
+    10204    1.090    0.000   33.700    0.003 robust.py:148(init)
+40411/30205    4.010    0.000   31.240    0.001 iterfile.py:23(_get)
+20412/10206    0.800    0.000   30.020    0.003 rorpiter.py:124(Collate2Iters)
+20411/10205    1.300    0.000   29.480    0.003 rorpiter.py:31(FromRaw)
+30411/20205    0.890    0.000   27.950    0.001 iterfile.py:54(next)
+
