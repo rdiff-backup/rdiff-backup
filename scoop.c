@@ -78,7 +78,7 @@
  */
 static void rs_scoop_input(rs_job_t *job, size_t len)
 {
-    rs_stream_t *stream = job->stream;
+    rs_buffers_t *stream = job->stream;
     size_t tocopy;
 
     assert(len > job->scoop_avail);
@@ -129,7 +129,7 @@ static void rs_scoop_input(rs_job_t *job, size_t len)
  */
 void rs_scoop_advance(rs_job_t *job, size_t len)
 {
-    rs_stream_t *stream = job->stream;
+    rs_buffers_t *stream = job->stream;
     if (job->scoop_avail) {
         /* reading from the scoop buffer */
          rs_trace("advance over %d bytes from scoop", len); 
@@ -159,7 +159,7 @@ void rs_scoop_advance(rs_job_t *job, size_t len)
  */
 rs_result rs_scoop_readahead(rs_job_t *job, size_t len, void **ptr)
 {
-    rs_stream_t *stream = job->stream;
+    rs_buffers_t *stream = job->stream;
     rs_job_check(job);
     
     if (job->scoop_avail >= len) {
@@ -240,7 +240,7 @@ rs_result rs_scoop_read(rs_job_t *job, size_t len, void **ptr)
  */
 rs_result rs_scoop_read_rest(rs_job_t *job, size_t *len, void **ptr)
 {
-    rs_stream_t *stream = job->stream;
+    rs_buffers_t *stream = job->stream;
     
     *len = job->scoop_avail + stream->avail_in;
 

@@ -9,9 +9,17 @@ Changes in 0.9.1:
 
  * Add file(1) magic for rdiff.
 
- * It's no longer necessary to call rs_stream_init on a stream before
+ * It's no longer necessary to call rs_buffers_init on a stream before
    starting to use it: all the internal data is kept in the job, not
    in the stream.
+
+ * Rename rs_stream_t to rs_buffers_t, a more obvious name.  Pass the
+   buffers to every rs_job_iter() call, rather than setting it at
+   startup.  Similarly for all the _begin() functions.
+
+ * rs_job_new also takes the initial state function.
+
+ * Return RS_PARAM_ERROR when library is misused.
 
 Changes in 0.9.0:
 

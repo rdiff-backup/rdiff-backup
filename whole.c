@@ -65,26 +65,26 @@
 rs_result
 rs_whole_run(rs_job_t *job, FILE *in_file, FILE *out_file)
 {
-    rs_stream_t     *stream = job->stream;
+    rs_buffers_t    buf;
     rs_result       result, iores;
     rs_filebuf_t    *in_fb = NULL, *out_fb = NULL;
 
-    rs_bzero(stream, sizeof *stream);
+    rs_bzero(&buf, sizeof buf);
 
     if (in_file)
-        in_fb = rs_filebuf_new(in_file, stream, rs_inbuflen);
+        in_fb = rs_filebuf_new(in_file, &buf, rs_inbuflen);
 
     if (out_file)
-        out_fb = rs_filebuf_new(out_file, stream, rs_outbuflen);
+        out_fb = rs_filebuf_new(out_file, &buf, rs_outbuflen);
 
     do {
-        if (!stream->eof_in && in_fb) {
+        if (!buf.eof_in && in_fb) {
             iores = rs_infilebuf_fill(in_fb);
             if (iores != RS_DONE)
                 return iores;
         }
 
-        result = rs_job_iter(job);
+        result = rs_job_iter(job, &buf);
         if (result != RS_DONE  &&  result != RS_BLOCKED)
             return result;
 
@@ -115,10 +115,9 @@ rs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
             size_t strong_len)
 {
     rs_job_t        *job;
-    rs_stream_t     stream;
     rs_result       r;
 
-    job = rs_sig_begin(&stream, new_block_len, strong_len);
+    job = rs_sig_begin(new_block_len, strong_len);
     r = rs_whole_run(job, old_file, sig_file);
     rs_job_free(job);
 
@@ -136,11 +135,9 @@ rs_result
 rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset)
 {
     rs_job_t            *job;
-    rs_stream_t         stream;
     rs_result           r;
 
-    rs_bzero(&stream, sizeof stream);
-    job = rs_loadsig_begin(&stream, sumset);
+    job = rs_loadsig_begin(sumset);
     r = rs_whole_run(job, sig_file, NULL);
     rs_job_free(job);
 
@@ -154,11 +151,9 @@ rs_delta_file(rs_signature_t *sig, FILE *new_file, FILE *delta_file,
               rs_stats_t *stats)
 {
     rs_job_t            *job;
-    rs_stream_t         stream;
     rs_result           r;
 
-    rs_bzero(&stream, sizeof stream);
-    job = rs_delta_begin(&stream, sig);
+    job = rs_delta_begin(sig);
 
     r = rs_whole_run(job, new_file, delta_file);
 
@@ -176,11 +171,9 @@ rs_result rs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file,
                         rs_stats_t *stats)
 {
     rs_job_t            *job;
-    rs_stream_t         stream;
     rs_result           r;
 
-    rs_bzero(&stream, sizeof stream);
-    job = rs_patch_begin(&stream, rs_file_copy_cb, basis_file);
+    job = rs_patch_begin(rs_file_copy_cb, basis_file);
 
     r = rs_whole_run(job, delta_file, new_file);
     

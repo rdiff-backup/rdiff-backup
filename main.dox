@@ -75,7 +75,7 @@ for data.
 
 The programming interface to librsync is similar to that of zlib and
 bzlib.  Arbitrary-length input and output buffers are passed to the
-library by the application, through an instance of ::rs_stream_t.  The
+library by the application, through an instance of ::rs_buffers_t.  The
 library proceeds as far as it can, and returns an ::rs_result value
 indicating whether it needs more data or space.
 

@@ -28,10 +28,11 @@
                                */
 
 
-/*! \file rsync.h
+/** \file rsync.h
  *
  * \brief Main public interface to librsync.
  * \author Martin Pool <mbp@samba.org>
+ * \version librsync-0.9.1
  *
  * $Id$
  *
@@ -99,7 +100,7 @@ int             rs_supports_trace(void);
 
 
 
-/*!
+/**
  * Convert FROM_LEN bytes at FROM_BUF into a hex representation in
  * TO_BUF, which must be twice as long plus one byte for the null
  * terminator.
@@ -144,7 +145,7 @@ typedef enum {
     RS_UNIMPLEMENTED =  105,    /**< Author is lazy. */
     RS_CORRUPT =        106,    /**< Unbelievable value in stream. */
     RS_INTERNAL_ERROR = 107,    /**< Probably a library bug. */
-    RS_INVALID =        108,    /**< Bad value passed in to library,
+    RS_PARAM_ERROR =    108,    /**< Bad value passed in to library,
                                  * probably an application bug. */
 } rs_result;
 
@@ -221,12 +222,12 @@ void rs_sumset_dump(rs_signature_t const *);
  *  - some of both
  *
  * There is some internal state in impl.  Streams are initialized by
- * rs_stream_init, and then used to create a job by rs_sig_begin or
+ * rs_buffers_init, and then used to create a job by rs_sig_begin or
  * similar functions.
  *
- * \sa rs_stream_t
+ * \sa rs_buffers_t
  */
-struct rs_stream_s {
+struct rs_buffers_s {
     char *next_in;		/**< Next input byte */
     size_t avail_in;            /**< Number of bytes available at next_in */
     int eof_in;                 /**< True if there is no more data
@@ -240,9 +241,9 @@ struct rs_stream_s {
  * Stream through which the calling application feeds data to and from the
  * library.
  *
- * \sa struct rs_stream_s
+ * \sa struct rs_buffers_s
  */
-typedef struct rs_stream_s rs_stream_t;
+typedef struct rs_buffers_s rs_buffers_t;
 
 /** Default length of strong signatures, in bytes.  The MD4 checksum
  * is truncated to this size. */
@@ -260,26 +261,33 @@ typedef struct rs_stream_s rs_stream_t;
  * over by rs_job_iter(). */
 typedef struct rs_job rs_job_t;
 
-rs_job_t       *rs_accum_begin(rs_stream_t *);
+/**
+ * Bitmask values that may be passed to the options parameter of
+ * rs_work().
+ */
+typedef enum rs_work_options {
+    RS_END = 0x01,              /**< End of input file; please finish
+                                 * up. */
+} rs_work_options;
 
-rs_result       rs_job_iter(rs_job_t *);
+
+rs_result       rs_job_iter(rs_job_t *, rs_buffers_t *);
 rs_result       rs_job_free(rs_job_t *);
 
 int             rs_accum_value(rs_job_t *, char *sum, size_t sum_len);
 
-rs_job_t *rs_sig_begin(rs_stream_t *stream,
-                       size_t new_block_len, size_t strong_sum_len);
+rs_job_t *rs_sig_begin(size_t new_block_len, size_t strong_sum_len);
 
-rs_job_t       *rs_delta_begin(rs_stream_t *stream, rs_signature_t *);
+rs_job_t *rs_delta_begin(rs_signature_t *);
 
-rs_job_t       *rs_loadsig_begin(rs_stream_t *, rs_signature_t **);
+rs_job_t *rs_loadsig_begin(rs_signature_t **);
 
 /**
  * \brief Callback used to retrieve parts of the basis file. */
 typedef rs_result rs_copy_cb(void *opaque, size_t *len, void **result);
 
 
-rs_job_t *rs_patch_begin(rs_stream_t *, rs_copy_cb *, void *copy_arg);
+rs_job_t *rs_patch_begin(rs_copy_cb *, void *copy_arg);
 
 
 rs_result rs_build_hash_table(rs_signature_t* sums);
@@ -287,7 +295,7 @@ rs_result rs_build_hash_table(rs_signature_t* sums);
 
 
 #ifndef RSYNC_NO_STDIO_INTERFACE
-/*!
+/**
  * Buffer sizes for file IO.
  *
  * You probably only need to change these in testing.

@@ -105,7 +105,7 @@ static rs_result rs_sig_s_generate(rs_job_t *job)
         
     /* unless we're near eof, in which case we'll accept
          * whatever's in there */
-    if ((result == RS_BLOCKED && job->stream->eof_in)) {
+    if ((result == RS_BLOCKED && rs_job_input_is_ending(job))) {
         result = rs_scoop_read_rest(job, &len, &block);
     } else if (result == RS_INPUT_ENDED) {
         return RS_DONE;
@@ -124,19 +124,15 @@ static rs_result rs_sig_s_generate(rs_job_t *job)
  *
  * \sa rs_sig_file()
  */
-rs_job_t * rs_sig_begin(rs_stream_t *stream,
-                        size_t new_block_len, size_t strong_sum_len)
+rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len)
 {
     rs_job_t *job;
 
-    job = rs_job_new(stream, "signature");
-
+    job = rs_job_new("signature", rs_sig_s_header);
     job->block_len = new_block_len;
 
     assert(strong_sum_len > 0 && strong_sum_len <= RS_MD4_LENGTH);
     job->strong_sum_len = strong_sum_len;
-
-    job->statefn = rs_sig_s_header;
 
     return job;
 }

@@ -56,20 +56,15 @@
 static const int rs_job_tag = 20010225;
 
 
-rs_job_t * rs_job_new(rs_stream_t *stream, char const *job_name)
+rs_job_t * rs_job_new(char const *job_name, rs_result (*statefn)(rs_job_t *))
 {
     rs_job_t *job;
 
     job = rs_alloc_struct(rs_job_t);
 
-    if (!stream) {
-        rs_fatal("trying to create new job with null stream");
-        return NULL;
-    }
-    
-    job->stream = stream;
     job->job_name = job_name;
     job->dogtag = rs_job_tag;
+    job->statefn = statefn;
 
     job->stats.op = job_name;
 
@@ -133,11 +128,18 @@ static rs_result rs_job_complete(rs_job_t *job, rs_result result)
  * input buffer.  The final block checksum will run across whatever's
  * in there, without trying to accumulate anything else.
  */
-rs_result rs_job_iter(rs_job_t *job)
+rs_result rs_job_iter(rs_job_t *job, rs_buffers_t *buffers)
 {
     rs_result result;
 
     rs_job_check(job);
+
+    if (!buffers) {
+        rs_error("NULL buffer passed to rs_job_iter");
+        return RS_PARAM_ERROR;
+    }
+    job->stream = buffers;
+    
     while (1) {
         result = rs_tube_catchup(job);
         if (result == RS_BLOCKED)
@@ -160,6 +162,10 @@ rs_result rs_job_iter(rs_job_t *job)
                 return rs_job_complete(job, result);
         }
     }
+
+    /* TODO: Before returning, check that we actually made some
+     * progress.  If not, and we're not returning an error, this is a
+     * bug. */
 }
 
 
@@ -170,4 +176,11 @@ const rs_stats_t *
 rs_job_statistics(rs_job_t *job)
 {
     return &job->stats;
+}
+
+
+int
+rs_job_input_is_ending(rs_job_t *job)
+{
+    return job->stream->eof_in;
 }

@@ -1,7 +1,7 @@
                                                   -*- indented-text -*-
 $Id$
 
- * Don't use the rs_stream_t structure.
+ * Don't use the rs_buffers_t structure.
 
    There's something confusing about the existence of this structure.
    In part it may eb the name.  I think people expect that it will be

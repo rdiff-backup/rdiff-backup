@@ -59,14 +59,14 @@ int rs_inbuflen = 16000, rs_outbuflen = 16000;
 
 struct rs_filebuf {
         FILE *f;
-        rs_stream_t     *stream;
+        rs_buffers_t     *stream;
         char            *buf;
         size_t          buf_len;
 };
 
 
 
-rs_filebuf_t *rs_filebuf_new(FILE *f, rs_stream_t *stream, size_t buf_len) 
+rs_filebuf_t *rs_filebuf_new(FILE *f, rs_buffers_t *stream, size_t buf_len) 
 {
         rs_filebuf_t *pf = rs_alloc_struct(rs_filebuf_t);
 
@@ -93,7 +93,7 @@ void rs_filebuf_free(rs_filebuf_t *fb)
  */
 rs_result rs_infilebuf_fill(rs_filebuf_t *fb)
 {
-        rs_stream_t * const     stream = fb->stream;
+        rs_buffers_t * const     stream = fb->stream;
         FILE                    *f = fb->f;
         int                     len;
         
@@ -141,7 +141,7 @@ rs_result rs_infilebuf_fill(rs_filebuf_t *fb)
 rs_result rs_outfilebuf_drain(rs_filebuf_t *fb)
 {
         int present;
-        rs_stream_t * const stream = fb->stream;
+        rs_buffers_t * const stream = fb->stream;
         FILE *f = fb->f;
 
         /* This is only allowed if either the stream has no output buffer

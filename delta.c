@@ -80,7 +80,7 @@ static rs_result rs_delta_s_end(rs_job_t *job)
  */
 static rs_result rs_delta_s_fake(rs_job_t *job)
 {
-    rs_stream_t * const stream = job->stream;
+    rs_buffers_t * const stream = job->stream;
     size_t avail = stream->avail_in;
 
     if (avail) {
@@ -89,7 +89,7 @@ static rs_result rs_delta_s_fake(rs_job_t *job)
         rs_blow_copy(job, avail);
         return RS_RUNNING;
     } else {
-        if (stream->eof_in) {
+        if (rs_job_input_is_ending(job)) {
             job->statefn = rs_delta_s_end;
             return RS_RUNNING;
         } else {                
@@ -113,16 +113,14 @@ static rs_result rs_delta_s_header(rs_job_t *job)
 
 
 /**
- * Prepare to compute a delta on a stream.
+ * Prepare to compute a streaming delta.
  */
-rs_job_t *rs_delta_begin(rs_stream_t *stream, rs_signature_t *sig)
+rs_job_t *rs_delta_begin(rs_signature_t *sig)
 {
     rs_job_t *job;
 
-    job = rs_job_new(stream, "delta");
-    
+    job = rs_job_new("delta", rs_delta_s_header);
     job->signature = sig;
-    job->statefn = rs_delta_s_header;
 	
     return job;
 }

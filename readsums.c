@@ -194,12 +194,11 @@ static rs_result rs_loadsig_s_magic(rs_job_t *job)
  * \note After loading the signatures, you must call
  * rs_build_hash_table() before you can use them.
  */
-rs_job_t *rs_loadsig_begin(rs_stream_t *stream, rs_signature_t **signature)
+rs_job_t *rs_loadsig_begin(rs_signature_t **signature)
 {
     rs_job_t *job;
 
-    job = rs_job_new(stream, "loadsig");
-    job->statefn = rs_loadsig_s_magic;
+    job = rs_job_new("loadsig", rs_loadsig_s_magic);
     *signature = job->signature = rs_alloc_struct(rs_signature_t);
     job->signature->count = 0;
         

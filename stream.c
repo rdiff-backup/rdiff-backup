@@ -108,7 +108,7 @@ static const int RS_STREAM_DOGTAG = 2001125;
  * rs_blow_copy to cause the copy to happen gradually as space
  * becomes available.
  */
-int rs_stream_copy(rs_stream_t *stream, int max_len)
+int rs_buffers_copy(rs_buffers_t *stream, int max_len)
 {
         int len = max_len;
     
@@ -146,7 +146,7 @@ int rs_stream_copy(rs_stream_t *stream, int max_len)
  * because it has either consumed all the input or has filled the
  * output buffer.  This function checks that simple postcondition.
  */
-void rs_stream_check_exit(rs_stream_t const *stream)
+void rs_buffers_check_exit(rs_buffers_t const *stream)
 {
     assert(stream->avail_in == 0  ||  stream->avail_out == 0);
 }

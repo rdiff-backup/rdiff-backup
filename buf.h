@@ -22,7 +22,7 @@
 
 typedef struct rs_filebuf rs_filebuf_t;
 
-rs_filebuf_t *rs_filebuf_new(FILE *f, rs_stream_t *stream, size_t buf_len);
+rs_filebuf_t *rs_filebuf_new(FILE *f, rs_buffers_t *stream, size_t buf_len);
 
 void rs_filebuf_free(rs_filebuf_t *fb);
 

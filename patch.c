@@ -205,13 +205,10 @@ static rs_result rs_patch_s_header(rs_job_t *job)
  *
  * \sa rs_patch_file()
  */
-rs_job_t *rs_patch_begin(rs_stream_t *stream, rs_copy_cb *copy_cb,
-                         void *copy_arg)
+rs_job_t *
+rs_patch_begin(rs_copy_cb *copy_cb, void *copy_arg)
 {
-    rs_job_t *job = rs_job_new(stream, "patch");
-
-    job->statefn = rs_patch_s_header;
-    job->stream = stream;
+    rs_job_t *job = rs_job_new("patch", rs_patch_s_header);
         
     job->copy_cb = copy_cb;
     job->copy_arg = copy_arg;

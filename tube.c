@@ -73,7 +73,7 @@
 
 static void rs_tube_catchup_literal(rs_job_t *job)
 {
-    rs_stream_t *stream = job->stream;
+    rs_buffers_t *stream = job->stream;
     int len, remain;
 
     len = job->lit_len;
@@ -110,12 +110,12 @@ static void rs_tube_catchup_literal(rs_job_t *job)
 static void rs_tube_catchup_copy(rs_job_t *job)
 {
     int copied;
-    rs_stream_t *stream = job->stream;
+    rs_buffers_t *stream = job->stream;
 
     assert(job->lit_len == 0);
     assert(job->copy_len > 0);
 
-    copied = rs_stream_copy(stream, job->copy_len);
+    copied = rs_buffers_copy(stream, job->copy_len);
 
     job->copy_len -= copied;
 
