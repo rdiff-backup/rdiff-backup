@@ -24,16 +24,5 @@ class RemoteMirrorTest(unittest.TestCase):
 		MirrorTest(1, 1, ['testfiles/increment1', 'testfiles/increment2',
 						  'testfiles/increment3', 'testfiles/increment4'])
 
-	def testMirrorWithCheckpointing(self):
-		"""Like testMirror but this time checkpoint"""
-		MirrorTest(None, None, ["testfiles/increment1"], 1)
-
-	def testMirrorWithCheckpointing2(self):
-		"""Larger data set"""
-		MirrorTest(1, None, ['testfiles/increment1', 'testfiles/increment2',
-							 'testfiles/increment3', 'testfiles/increment4'],
-				   1)
-
-
 
 if __name__ == "__main__": unittest.main()

@@ -198,23 +198,23 @@ class Final(PathSetter):
 		self.set_connections(None, None, "test2/tmp", "../../")
 		self.runtest()
 
-	def testMirroringLocal(self):
-		"""Run mirroring only everything remote"""
-		self.delete_tmpdirs()
-		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(10000, "-m",
-								"testfiles/various_file_types",
-								"testfiles/output")
-		assert CompareRecursive(Local.vftrp, Local.rpout, exclude_rbdir = None)
+#	def testMirroringLocal(self):
+#		"""Run mirroring only everything remote"""
+#		self.delete_tmpdirs()
+#		self.set_connections(None, None, None, None)
+#		self.exec_rb_extra_args(10000, "-m",
+#								"testfiles/various_file_types",
+#								"testfiles/output")
+#		assert CompareRecursive(Local.vftrp, Local.rpout, exclude_rbdir = None)
 
-	def testMirroringRemote(self):
-		"""Run mirroring only everything remote"""
-		self.delete_tmpdirs()
-		self.set_connections("test1/", "../", "test2/tmp/", "../../")
-		self.exec_rb_extra_args(10000, "-m",
-								"testfiles/various_file_types",
-								"testfiles/output")
-		assert CompareRecursive(Local.vftrp, Local.rpout, exclude_rbdir = None)
+#	def testMirroringRemote(self):
+#		"""Run mirroring only everything remote"""
+#		self.delete_tmpdirs()
+#		self.set_connections("test1/", "../", "test2/tmp/", "../../")
+#		self.exec_rb_extra_args(10000, "-m",
+#								"testfiles/various_file_types",
+#								"testfiles/output")
+#		assert CompareRecursive(Local.vftrp, Local.rpout, exclude_rbdir = None)
 
 	def testProcRemote(self):
 		"""Test mirroring proc"""

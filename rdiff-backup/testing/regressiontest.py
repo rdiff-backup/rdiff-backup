@@ -292,23 +292,6 @@ class MirrorTest(PathSetter):
 		self.setPathnames('test1', '../', 'test2/tmp', '../../')
 		self.run_partial_test()
 
-	def testNopermsLocal(self):
-		"Test mirroring a directory that has no permissions"
-		self.setPathnames(None, None, None, None)
-		Time.setcurtime()
-		SaveState.init_filenames()
-		self.Mirror(self.noperms, self.noperms_out, None)
-		# Can't compare because we don't have the permissions to do it right
-		#assert CompareRecursive(Local.noperms, Local.noperms_out)
-
-	def testNopermsRemote(self):
-		"No permissions mirroring (remote)"
-		self.setPathnames('test1', '../', 'test2/tmp', '../../')
-		Time.setcurtime()
-		SaveState.init_filenames()
-		self.Mirror(self.noperms, self.noperms_out, None)
-		#assert CompareRecursive(Local.noperms, Local.noperms_out)
-
 	def testPermSkipLocal(self):
 		"""Test to see if rdiff-backup will skip unreadable files"""
 		self.setPathnames(None, None, None, None)
@@ -418,13 +401,11 @@ class MirrorTest(PathSetter):
 		self.Mirror(self.inc2rp, self.rpout)
 		assert CompareRecursive(Local.inc2rp, Local.rpout)
 
-	def Mirror(self, rpin, rpout, write_increments = 1):
+	def Mirror(self, rpin, rpout):
 		"""Like HighLevel.Mirror, but run misc_setup first"""
 		Main.misc_setup([rpin, rpout])
 		Main.backup_init_select(rpin, rpout)
-		if write_increments:
-			HighLevel.Mirror(rpin, rpout,
-							 rpout.append_path("rdiff-backup-data/increments"))
-		else: HighLevel.Mirror(rpin, rpout)
+		HighLevel.Mirror(rpin, rpout,
+						 rpout.append_path("rdiff-backup-data/increments"))
 
 if __name__ == "__main__": unittest.main()
