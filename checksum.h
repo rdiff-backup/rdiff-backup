@@ -1,5 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
+ * libhsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
@@ -22,4 +23,4 @@
 uint32_t hs_calc_weak_sum(void const *buf1, int len);
 
 void hs_calc_strong_sum(void const *buf, size_t buf_len,
-                         uint8_t *sum, size_t sum_len);
+                        uint8_t *sum, size_t sum_len);

@@ -72,8 +72,8 @@
 #include "util.h"
 
 
-/*
- * Try to accept from the input buffer to get LEN bytes in the scoop. 
+/**
+ * Try to accept a from the input buffer to get LEN bytes in the scoop.
  */
 static void hs_scoop_input(hs_stream_t *stream, size_t len)
 {
@@ -202,19 +202,22 @@ hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
 
 
 
-/*
+/**
  * Read LEN bytes if possible, and remove them from the input scoop.
  * If there's not enough data yet, return HS_BLOCKED.
+ *
+ * \return HS_DONE if all the data was available, HS_BLOCKED if it's
+ * not there.
  */
 hs_result hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr)
 {
-        hs_result result;
+    hs_result result;
 
-        result = hs_scoop_readahead(stream, len, ptr);
-        if (result == HS_DONE)
-                hs_scoop_advance(stream, len);
+    result = hs_scoop_readahead(stream, len, ptr);
+    if (result == HS_DONE)
+        hs_scoop_advance(stream, len);
 
-        return result;
+    return result;
 }
 
 

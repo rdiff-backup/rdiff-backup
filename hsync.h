@@ -265,3 +265,5 @@ typedef hs_result hs_copy_cb(void *opaque, size_t *len, void **result);
 
 hs_job_t *hs_patch_begin(hs_stream_t *, hs_copy_cb *, void *copy_arg);
 
+
+hs_result hs_build_hash_table(hs_signature_t* sums);

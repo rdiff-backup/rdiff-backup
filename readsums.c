@@ -74,12 +74,12 @@ static hs_result hs_loadsig_add_sum(hs_job_t *job, uint32_t weak,
     sig->count++;
     new_size = sig->count * sizeof(hs_block_sig_t);
 
-    sig->block_sums = realloc(sig->block_sums, new_size);
+    sig->block_sigs = realloc(sig->block_sigs, new_size);
     
-    if (sig->block_sums == NULL) {
+    if (sig->block_sigs == NULL) {
         return HS_MEM_ERROR;
     }
-    asignature = &(sig->block_sums[sig->count - 1]);
+    asignature = &(sig->block_sigs[sig->count - 1]);
 
     asignature->weak_sum = weak;
     asignature->i = sig->count;
@@ -153,6 +153,9 @@ static hs_result hs_loadsig_s_magic(hs_job_t *job)
  *
  * Once there, it can be used to generate a delta to a newer version of
  * the file.
+ *
+ * After loading the signatures, you must call hs_build_hash_table()
+ * before you can use them.
  */
 hs_job_t *hs_loadsig_begin(hs_stream_t *stream, hs_signature_t **sumset)
 {
@@ -189,7 +192,7 @@ hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
         if (hs_read_blocksize(sigread_fn, sigread_priv, &block_len) < 0)
                 return NULL;
 
-        sumbuf->block_sums = NULL;
+        sumbuf->block_sigs = NULL;
         /* XXX: It's perhaps a bit inefficient to realloc each time. We could
            prealloc, but for now we'll give realloc the benefit of the doubt. */
 
@@ -205,13 +208,13 @@ hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
                 }
                 assert(ret == 4);
 
-                sumbuf->block_sums = realloc(sumbuf->block_sums, (n + 1) * sizeof(hs_block_sig_t));
-                if (sumbuf->block_sums == NULL) {
+                sumbuf->block_sigs = realloc(sumbuf->block_sigs, (n + 1) * sizeof(hs_block_sig_t));
+                if (sumbuf->block_sigs == NULL) {
                         errno = ENOMEM;
                         ret = -1;
                         break;
                 }
-                asignature = &(sumbuf->block_sums[n]);
+                asignature = &(sumbuf->block_sigs[n]);
 
                 asignature->weak_sum = checksum1;
                 asignature->i = ++n;

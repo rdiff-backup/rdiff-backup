@@ -1,5 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
@@ -22,6 +23,7 @@
 
 int
 hs_search_for_block(hs_weak_sum_t weak_sum,
-		     byte_t const *inbuf, size_t block_len,
-		     hs_signature_t const *sums, hs_stats_t * stats,
-		     off_t * match_where);
+                    uint8_t const *inbuf, size_t block_len,
+                    hs_signature_t const *sums, hs_stats_t * stats,
+                    off_t * match_where);
+

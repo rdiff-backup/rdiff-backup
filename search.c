@@ -1,5 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
@@ -33,9 +34,26 @@
  * we can just check that pointer.
  */
 
-#include "includes.h"
+#include <config.h>
+
+#include <assert.h>
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
+#include <sys/types.h>
+#include <limits.h>
+#include <inttypes.h>
+#include <stdlib.h>
+
+#include "hsync.h"
+#include "trace.h"
+#include "util.h"
+#include "sumset.h"
 #include "search.h"
-#include "sum_p.h"
+#include "checksum.h"
+
 
 #define TABLESIZE (1<<16)
 #define NULL_TAG (-1)
@@ -44,25 +62,26 @@
 #define gettag2(s1,s2) (((s1) + (s2)) & 0xFFFF)
 #define gettag(sum) gettag2((sum)&0xFFFF,(sum)>>16)
 
+
 static int
-hs_compare_targets(struct target const *t1, struct target const *t2)
+hs_compare_targets(hs_target_t const *t1, hs_target_t const *t2)
 {
     return ((int) t1->t - (int) t2->t);
 }
 
 
-int
+hs_result
 hs_build_hash_table(hs_signature_t * sums)
 {
     int                     i;
 
     sums->tag_table = calloc(TABLESIZE, sizeof sums->tag_table[0]);
     if (sums->count > 0) {
-	sums->targets = calloc(sums->count, sizeof(struct target));
+	sums->targets = calloc(sums->count, sizeof(hs_target_t));
 
 	for (i = 0; i < sums->count; i++) {
 	    sums->targets[i].i = i;
-	    sums->targets[i].t = gettag(sums->block_sums[i].weak_sum);
+	    sums->targets[i].t = gettag(sums->block_sigs[i].weak_sum);
 	}
 
 	/* FIXME: Perhaps if this operating system has comparison_fn_t
@@ -96,29 +115,29 @@ hs_build_hash_table(hs_signature_t * sums)
  */
 int
 hs_search_for_block(hs_weak_sum_t weak_sum,
-		     byte_t const *inbuf, size_t block_len,
-		     hs_signature_t const *sums, hs_stats_t * stats,
+		     uint8_t const *inbuf, size_t block_len,
+		     hs_signature_t const *sig, hs_stats_t * stats,
 		     off_t * match_where)
 {
     int                     hash_tag = gettag(weak_sum);
-    int                     j = sums->tag_table[hash_tag];
-    byte_t                  strong_sum[DEFAULT_SUM_LENGTH];
+    int                     j = sig->tag_table[hash_tag];
+    hs_strong_sum_t         strong_sum;
     int                     got_strong = 0;
 
     if (j == NULL_TAG) {
 	return 0;
     }
 
-    for (; j < sums->count && sums->targets[j].t == hash_tag; j++) {
-	int                     i = sums->targets[j].i;
+    for (; j < sig->count && sig->targets[j].t == hash_tag; j++) {
+	int                     i = sig->targets[j].i;
 	int                     token;
 
-	if (weak_sum != sums->block_sums[i].weak_sum)
+	if (weak_sum != sig->block_sigs[i].weak_sum)
 	    continue;
 
 	/* also make sure the two blocks are the same length */
 	/* l = MIN(s->n,len-offset); */
-	/* if (l != s->block_sums[i].len) continue;                    */
+	/* if (l != s->block_sigs[i].len) continue;                    */
 
 	/* if (!done_csum2) { */
 	/* map = (schar *)map_ptr(buf,offset,l); */
@@ -126,26 +145,26 @@ hs_search_for_block(hs_weak_sum_t weak_sum,
 	/* done_csum2 = 1; */
 	/* } */
 
-	token = sums->block_sums[i].i;
+	token = sig->block_sigs[i].i;
 
 	hs_trace("found weak match for %08x in token %d", weak_sum, token);
 
 	if (!got_strong) {
 	    hs_calc_strong_sum(inbuf, block_len, strong_sum,
-				DEFAULT_SUM_LENGTH);
+                               sig->strong_sum_len);
 	    got_strong = 1;
 	}
 
 	/* FIXME: Use correct dynamic sum length! */
-	if (memcmp(strong_sum, sums->block_sums[i].strong_sum,
-		   DEFAULT_SUM_LENGTH) == 0) {
-	    /* XXX: This is a remnant of rsync: token number 1 is the * block 
-	     * at offset 0.  It would be good to clear this * up. */
-	    *match_where = (token - 1) * sums->block_len;
+	if (memcmp(strong_sum, sig->block_sigs[i].strong_sum,
+                   sig->strong_sum_len) == 0) {
+	    /* XXX: This is a remnant of rsync: token number 1 is the
+	     * block at offset 0.  It would be good to clear this
+	     * up. */
+	    *match_where = (token - 1) * sig->block_len;
 	    return 1;
 	} else {
-	    hs_trace("this was a false positive, the strong sums "
-		      "don't match");
+	    hs_trace("this was a false positive, the strong sig doesn't match");
 	    stats->false_matches++;
 	}
     }
