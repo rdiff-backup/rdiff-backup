@@ -53,9 +53,12 @@ extern char const rs_licence_string[];
  * offsets.
  *
  * Perhaps this might have to be configured to be 'long long', 'long',
- * or something else depending on the platform.
+ * or something else depending on the platform.  On WIN32, many config.h's
+ * define LONG_LONG as "__int64".
  */
-#if SIZEOF_LONG_LONG
+#ifdef LONG_LONG
+typedef LONG_LONG    rs_long_t;
+#elif SIZEOF_LONG_LONG
 typedef signed long long    rs_long_t;
 #else
 typedef long rs_long_t;
