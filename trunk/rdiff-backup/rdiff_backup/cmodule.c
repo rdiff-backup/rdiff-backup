@@ -19,6 +19,20 @@
 #include <Python.h>
 #include <errno.h>
 
+/* choose the appropriate stat and fstat functions and return structs */
+/* This code taken from Python's posixmodule.c */
+#undef STAT
+#if defined(MS_WIN64) || defined(MS_WIN32)
+#	define STAT _stati64
+#	define FSTAT _fstati64
+#	define STRUCT_STAT struct _stati64
+#else
+#	define STAT stat
+#	define FSTAT fstat
+#	define STRUCT_STAT struct stat
+#endif
+
+
 static PyObject *UnknownFileTypeError;
 static PyObject *c_make_file_dict(PyObject *self, PyObject *args);
 static PyObject *long2str(PyObject *self, PyObject *args);
@@ -33,11 +47,21 @@ static PyObject *c_make_file_dict(self, args)
 {
   PyObject *size, *inode, *mtime, *atime, *devloc, *return_val;
   char *filename, filetype[5];
-  struct stat sbuf;
+  STRUCT_STAT sbuf;
   long int mode, perms;
+  int res;
 
   if (!PyArg_ParseTuple(args, "s", &filename)) return NULL;
-  if (lstat(filename, &sbuf) != 0) {
+
+  Py_BEGIN_ALLOW_THREADS
+#if HAVE_LARGEFILE_SUPPORT
+  res = lstat64(filename, &sbuf);
+#else
+  res = lstat(filename, &sbuf);
+#endif
+  Py_END_ALLOW_THREADS
+
+  if (res != 0) {
 	if (errno == ENOENT || errno == ENOTDIR)
 	  return Py_BuildValue("{s:s}", "type", NULL);
 	else {
