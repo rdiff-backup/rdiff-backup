@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- the library for network deltas
  * $Id$
@@ -72,7 +72,8 @@ hs_result hs_job_free(hs_job_t *job)
  */
 hs_result hs_job_iter(hs_job_t *job, int ending)
 {
-        enum hs_result result;
+
+        hs_result result;
 
         if (ending)
                 job->near_end = 1;

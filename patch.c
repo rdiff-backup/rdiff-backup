@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- the library for network deltas
  * $Id$
@@ -28,14 +28,6 @@
 
 #include <config.h>
 
-/*
- * TODO: As output is produced, accumulate the MD4 checksum of the
- * output.  Then if we find a CHECKSUM command we can check it's
- * contents against the output.
- *
- * TODO: Implement COPY commands.
- */
-
 
 #include <assert.h>
 #include <stdlib.h>
@@ -56,23 +48,22 @@
 const int HS_PATCH_TAG = 201210;
 
 
-/* Local prototypes for state functions. */
-static enum hs_result hs_patch_s_complete(hs_job_t *);
-static enum hs_result hs_patch_s_cmdbyte(hs_job_t *);
-static enum hs_result hs_patch_s_params(hs_job_t *);
-static enum hs_result hs_patch_s_run(hs_job_t *);
-static enum hs_result hs_patch_s_literal(hs_job_t *);
+static hs_result hs_patch_s_complete(hs_job_t *);
+static hs_result hs_patch_s_cmdbyte(hs_job_t *);
+static hs_result hs_patch_s_params(hs_job_t *);
+static hs_result hs_patch_s_run(hs_job_t *);
+static hs_result hs_patch_s_literal(hs_job_t *);
 
 
 
-/*
- * Called when we're trying to read the first byte of a command.  Once
- * we've taken that in, we can know how much data to read to get the
+/**
+ * State of trying to read the first byte of a command.  Once we've
+ * taken that in, we can know how much data to read to get the
  * arguments.
  */
-static enum hs_result hs_patch_s_cmdbyte(hs_job_t *job)
+static hs_result hs_patch_s_cmdbyte(hs_job_t *job)
 {
-        enum hs_result result;
+        hs_result result;
         
         if ((result = hs_suck_n8(job->stream, &job->op)) != HS_OK)
                 return result;
@@ -92,13 +83,13 @@ static enum hs_result hs_patch_s_cmdbyte(hs_job_t *job)
 }
 
 
-/*
+/**
  * Called after reading a command byte to pull in its parameters and
  * then setup to execute the command.
  */
-static enum hs_result hs_patch_s_params(hs_job_t *job)
+static hs_result hs_patch_s_params(hs_job_t *job)
 {
-        enum hs_result result;
+        hs_result result;
         int len = job->cmd->len_1 + job->cmd->len_2;
         void *p;
 
@@ -126,10 +117,10 @@ static enum hs_result hs_patch_s_params(hs_job_t *job)
 
 
 
-/*
+/**
  * Called when we've read in the whole command and we need to execute it.
  */
-static enum hs_result hs_patch_s_run(hs_job_t *job)
+static hs_result hs_patch_s_run(hs_job_t *job)
 {
         hs_trace("running command 0x%x, kind %d", job->op, job->cmd->kind);
 
@@ -148,10 +139,10 @@ static enum hs_result hs_patch_s_run(hs_job_t *job)
 }
 
 
-/*
+/**
  * Called when trying to copy through literal data.
  */
-static enum hs_result hs_patch_s_literal(hs_job_t *job)
+static hs_result hs_patch_s_literal(hs_job_t *job)
 {
         int len;
         if (job->cmd->len_1)
@@ -168,19 +159,19 @@ static enum hs_result hs_patch_s_literal(hs_job_t *job)
 }
 
 
-/*
+/**
  * Called after encountering EOF on the patch.
  */
-static enum hs_result hs_patch_s_complete(hs_job_t *UNUSED(job))
+static hs_result hs_patch_s_complete(hs_job_t *UNUSED(job))
 {
         hs_fatal("the patch has already finished");
 }
 
 
-/*
+/**
  * Called while we're trying to read the header of the patch.
  */
-static enum hs_result hs_patch_s_header(hs_job_t *job)
+static hs_result hs_patch_s_header(hs_job_t *job)
 {
         int v;
         int result;
@@ -200,11 +191,30 @@ static enum hs_result hs_patch_s_header(hs_job_t *job)
 
 
 
-/*
- * Begin the job of applying a patch.  This gives you back a JOB
- * object, which can be cranked by calling hs_patch_iter and updating
- * the stream pointers.  When finished, call hs_patch_finish to
- * dispose of it.
+/**
+ * \brief Apply a \ref gloss_delta to a \ref gloss_basis to recreate
+ * the new file.
+ *
+ * This gives you back a ::hs_job_t object, which can be cranked by
+ * calling hs_job_iter() and updating the stream pointers.  When
+ * finished, call hs_job_finish() to dispose of it.
+ *
+ * \param stream Contains pointers to input and output buffers, to be
+ * adjusted by caller on each iteration.
+ *
+ * \param copy_cb Callback used to retrieve content from the basis
+ * file.
+ *
+ * \param copy_arg Opaque environment pointer passed through to the
+ * callback.
+ *
+ * \todo As output is produced, accumulate the MD4 checksum of the
+ * output.  Then if we find a CHECKSUM command we can check it's
+ * contents against the output.
+ *
+ * \todo Implement COPY commands.
+ *
+ * \sa hs_patch_file()
  */
 hs_job_t *hs_patch_begin(hs_stream_t *stream, hs_copy_cb *copy_cb,
                          void *copy_arg)
@@ -221,4 +231,3 @@ hs_job_t *hs_patch_begin(hs_stream_t *stream, hs_copy_cb *copy_cb,
 
         return job;
 }
-

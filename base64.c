@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 

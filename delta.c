@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- library for network deltas
  * $Id$
@@ -45,6 +45,10 @@
 #include "job.h"
 
 
+/**
+ * \brief State function that does a fake delta containing only
+ * literal data to recreate the input.
+ */
 static hs_result hs_delta_s_fake(hs_job_t *job)
 {
         hs_stream_t * const stream = job->stream;
@@ -60,6 +64,9 @@ static hs_result hs_delta_s_fake(hs_job_t *job)
 }
 
 
+/**
+ * State function for writing out the header of the encoding job.
+ */
 static hs_result hs_delta_s_header(hs_job_t *job)
 {
 	hs_emit_delta_header(job->stream);

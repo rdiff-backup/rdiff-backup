@@ -1,9 +1,9 @@
-/*				       	-*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1999 by Andrew Tridgell <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -24,9 +24,9 @@
 void hs_squirt_n32(hs_stream_t *stream, int d);
 void hs_squirt_n8(hs_stream_t *stream, int d);
 
-enum hs_result hs_suck_n32(hs_stream_t *stream, int *v);
-enum hs_result hs_suck_n8(hs_stream_t *stream, int *v);
-enum hs_result hs_suck_netint(hs_stream_t *stream, int len, int *v);
+hs_result hs_suck_n32(hs_stream_t *stream, int *v);
+hs_result hs_suck_n8(hs_stream_t *stream, int *v);
+hs_result hs_suck_netint(hs_stream_t *stream, int len, int *v);
 
 int hs_fits_in_n8(size_t val);
 int hs_fits_in_n16(size_t val);

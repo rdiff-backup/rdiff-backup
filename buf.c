@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- the library for network deltas
  * $Id$
@@ -160,7 +160,7 @@ hs_result hs_outfilebuf_drain(hs_filebuf_t *fb)
 }
 
 
-/*
+/**
  * Default copy implementation that retrieves a part of a stdio file.
  */
 hs_result hs_file_copy_cb(void *arg, size_t *len, void **buf)

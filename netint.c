@@ -1,4 +1,4 @@
-/*=				       	-*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- library for network deltas
  * $Id$
@@ -97,7 +97,7 @@ hs_result hs_suck_n32(hs_stream_t *stream, int *v)
 }
 
 
-enum hs_result hs_suck_n8(hs_stream_t *stream, int *v)
+hs_result hs_suck_n8(hs_stream_t *stream, int *v)
 {
         void *p;
         int result;
@@ -112,7 +112,7 @@ enum hs_result hs_suck_n8(hs_stream_t *stream, int *v)
 
 
 
-enum hs_result hs_suck_netint(hs_stream_t *stream, int len, int *v)
+hs_result hs_suck_netint(hs_stream_t *stream, int len, int *v)
 {
         switch (len) {
         case 1:

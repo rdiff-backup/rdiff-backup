@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- library for network deltas
  * $Id$
@@ -67,6 +67,6 @@ int hs_tube_is_idle(hs_stream_t const *);
 void hs_check_tube(hs_stream_t *);
 
 void hs_scoop_advance(hs_stream_t *stream, size_t len);
-enum hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr);
-enum hs_result hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr);
-enum hs_result hs_scoop_read_rest(hs_stream_t *stream, size_t *len, void **ptr);
+hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr);
+hs_result hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr);
+hs_result hs_scoop_read_rest(hs_stream_t *stream, size_t *len, void **ptr);

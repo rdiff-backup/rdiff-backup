@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- the library for network deltas
  * $Id$
@@ -25,7 +25,7 @@ struct hs_job {
 	hs_stream_t *stream;
 
         /** Callback for each processing step. */
-        enum hs_result (*statefn)(hs_job_t *);
+        hs_result (*statefn)(hs_job_t *);
 
         /* Generic storage fields. */
         size_t          block_len;

@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- the library for network deltas
  * $Id$
@@ -25,8 +25,8 @@
 #include "hsync.h"
 
 
-/* TODO: Translate from enum hs_result to human-readable messages. */
-char const *hs_strerror(enum hs_result r)
+/* TODO: Translate from hs_result to human-readable messages. */
+char const *hs_strerror(hs_result r)
 {
         switch (r) {
         case HS_OK:

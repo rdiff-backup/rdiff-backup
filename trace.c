@@ -1,4 +1,4 @@
-/*				       	-*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- library for network deltas
  *
@@ -55,14 +55,15 @@ static int hs_trace_level = HS_LOG_INFO;
 
 static void hs_log_va(int level, char const *fn, char const *fmt, va_list va);
 
-/** Called by the application to set the destination of trace information.
+/**
+ * \brief Set the destination of trace information.
  *
  * The callback scheme allows for use within applications that may
  * have their own particular ways of reporting errors: log files for a
  * web server, perhaps, and an error dialog for a browser.
  *
- * \todo Perhaps don't depend on syslog, but instead just have yes/no
- * tracing.  Do we really need such fine-grained control?
+ * \todo Do we really need such fine-grained control, or just yes/no
+ * tracing?
  */
 void
 hs_trace_to(hs_trace_fn_t * new_impl)
@@ -72,10 +73,10 @@ hs_trace_to(hs_trace_fn_t * new_impl)
 
 
 /** 
- * Set the least import message severity that will be output.
+ * Set the least important message severity that will be output.
  */
 void
-hs_trace_set_level(enum hs_loglevel level)
+hs_trace_set_level(hs_loglevel level)
 {
     hs_trace_level = level;
 }

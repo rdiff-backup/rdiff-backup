@@ -4,7 +4,8 @@ sites=front.linuxcare.com.au:/var/www/projects/rproxy \
 
 upload-doxy: latex/refman.ps.gz
 	for i in $(sites); do \
-	rsync --delete -avz html/ latex/refman.ps.gz ./rproxy-small-logo.png $$i/doxygen/libhsync; \
+	rsync --delete -avz html/ latex/refman.pdf latex/refman.ps.gz \
+		./rproxy-small-logo.png $$i/doxygen/libhsync; \
 	done
 
 latex/refman.ps.gz:

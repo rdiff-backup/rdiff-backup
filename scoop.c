@@ -157,7 +157,7 @@ void hs_scoop_advance(hs_stream_t *stream, size_t len)
  * lets you do readahead.  If you want to keep any of the data, you
  * should also call hs_scoop_advance to skip over it.
  */
-enum hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
+hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
 {
         hs_simpl_t *impl = stream->impl;
         
@@ -206,9 +206,9 @@ enum hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
  * Read LEN bytes if possible, and remove them from the input scoop.
  * If there's not enough data yet, return HS_BLOCKED.
  */
-enum hs_result hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr)
+hs_result hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr)
 {
-        enum hs_result result;
+        hs_result result;
 
         result = hs_scoop_readahead(stream, len, ptr);
         if (result == HS_OK)
@@ -223,7 +223,7 @@ enum hs_result hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr)
  * Read whatever remains in the input stream, assuming that it runs up
  * to the end of the file.  Set LEN appropriately.
  */
-enum hs_result hs_scoop_read_rest(hs_stream_t *stream, size_t *len, void **ptr)
+hs_result hs_scoop_read_rest(hs_stream_t *stream, size_t *len, void **ptr)
 {
         hs_simpl_t *impl = stream->impl;
 
