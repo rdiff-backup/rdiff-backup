@@ -1,0 +1,128 @@
+#!/usr/bin/env python
+
+import os, re, shutil, time
+
+SourceDir = "src"
+DistDir = "dist"
+
+# Various details about the files must also be specified by the rpm
+# spec template.
+spec_template = "dist/rdiff-backup.spec"
+redhat_spec_template = "dist/rdiff-backup.rh7x.spec"
+
+def GetVersion():
+	"""Return version string by reading in ./rdiff-backup"""
+	fp = open("rdiff-backup", "r")
+	match = re.search("Version (.*?) ", fp.read())
+	fp.close()
+	return match.group(1)
+
+def CopyMan(destination, version):
+	"""Create updated man page at the specified location"""
+	fp = open(destination, "w")
+	date = time.strftime("%B %Y", time.localtime(time.time()))
+	version = "Version "+version
+	firstline = ('.TH RDIFF-BACKUP 1 "%s" "%s" "User Manuals"\n' %
+				 (date, version))
+	fp.write(firstline)
+	infp = open("rdiff-backup.1", "r")
+	infp.readline()
+	fp.write(infp.read())
+	fp.close()
+	infp.close()
+
+def MakeFAQ():
+	"""Create FAQ.html and FAQ.wml files from FAQ-body.html"""
+	faqbody_fp = open("FAQ-body.html", "r")
+	faqbody_string = faqbody_fp.read()
+	faqbody_fp.close()
+
+	wml_fp = open("FAQ.wml", "w")
+	wml_fp.write(
+"""#include 'template.wml' curpage=faq title="rdiff-backup: FAQ"
+
+<divert body>
+<p><h2>FAQ:</h2>
+
+""")
+	wml_fp.write(faqbody_string)
+	wml_fp.write("\n</divert>\n")
+	wml_fp.close()
+
+	html_fp = open("FAQ.html", "w")
+	html_fp.write(
+"""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+  <head>
+    <title>rdiff-backup FAQ</title>
+  </head>
+
+  <body>
+  <h1>rdiff-backup FAQ</h1>
+""")
+	html_fp.write(faqbody_string)
+	html_fp.write("\n</body></html>")
+	html_fp.close()
+
+def MakeTar(version):
+	"""Create rdiff-backup tar file"""
+	tardir = "rdiff-backup-%s" % version
+	tarfile = "rdiff-backup-%s.tar.gz" % version
+	try:
+		os.lstat(tardir)
+		os.system("rm -rf " + tardir)
+	except OSError: pass
+	os.mkdir(tardir)
+	for filename in ["rdiff-backup", "CHANGELOG", "COPYING",
+					 "README", "FAQ.html", SourceDir + "/cmodule.c",
+					 DistDir + "/setup.py"]:
+		assert not os.system("cp %s %s" % (filename, tardir)), filename
+
+	os.mkdir(tardir+"/rdiff_backup")
+	for filename in ["connection.py",	"destructive_stepping.py",
+					 "FilenameMapping.py", "Globals.py", "Hardlink.py",
+					 "highlevel.py", "increment.py", "__init__.py",
+					 "iterfile.py", "lazy.py", "log.py", "Main.py",
+					 "manage.py", "MiscStats.py", "Rdiff.py", "restore.py",
+					 "rlist.py", "robust.py", "rorpiter.py", "rpath.py",
+					 "selection.py", "SetConnections.py", "static.py",
+					 "statistics.py", "Time.py"]:
+		assert not os.system("cp %s/%s %s/rdiff_backup" %
+							 (SourceDir, filename, tardir)), filename
+	os.chmod(os.path.join(tardir, "setup.py"), 0755)
+	os.chmod(os.path.join(tardir, "rdiff-backup"), 0755)
+	CopyMan(os.path.join(tardir, "rdiff-backup.1"), version)
+	os.system("tar -cvzf %s %s" % (tarfile, tardir))
+	shutil.rmtree(tardir)
+	return tarfile
+
+def MakeSpecFile(version):
+	"""Create spec file using spec template"""
+	def helper(spec_template, specfile):
+		"""Added now that there are special redhat rpms"""
+		outfp = open(specfile, "w")
+		outfp.write("Version: %s\n" % version)
+		infp = open(spec_template, "r")
+		outfp.write(infp.read())
+		infp.close()
+		outfp.close()
+
+	specfile = "rdiff-backup-%s-1.spec" % version
+	redhat_specfile = "rdiff-backup-%s-1.rh7x.spec" % version
+	helper(spec_template, specfile)
+	helper(redhat_spec_template, redhat_specfile)
+	return (specfile, redhat_specfile)
+
+def Main():
+	version = GetVersion()
+	print "Making FAQ"
+	MakeFAQ()
+	print "Processing version " + version
+	tarfile = MakeTar(version)
+	print "Made tar file " + tarfile
+	specfiles = MakeSpecFile(version)
+	print "Made specfiles %s and %s" % specfiles
+
+if __name__ == "__main__": Main()
+
