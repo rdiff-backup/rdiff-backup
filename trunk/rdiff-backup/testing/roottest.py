@@ -136,7 +136,7 @@ class MirrorTest(PathSetter):
 		self.refresh(self.rootfiles, self.rootfiles_out,
 				Local.rootfiles, Local.rootfiles_out) # add uid/gid info
 		HighLevel.Mirror(self.rootfiles, self.rootfiles_out)
-		assert RPath.cmp_recursive(Local.rootfiles, Local.rootfiles_out)
+		assert CompareRecursive(Local.rootfiles, Local.rootfiles_out)
 		Globals.change_ownership = None
 		self.refresh(self.rootfiles, self.rootfiles_out,
 				Local.rootfiles, Local.rootfiles_out) # remove that info
@@ -151,7 +151,7 @@ class MirrorTest(PathSetter):
 		self.refresh(self.rootfiles, self.rootfiles_out,
 				Local.rootfiles, Local.rootfiles_out) # add uid/gid info
 		HighLevel.Mirror(self.rootfiles, self.rootfiles_out)
-		assert RPath.cmp_recursive(Local.rootfiles, Local.rootfiles_out)
+		assert CompareRecursive(Local.rootfiles, Local.rootfiles_out)
 		for coon in Globals.connections:
 			conn.Globals.set('change_ownership', None)
 		self.refresh(self.rootfiles, self.rootfiles_out,

@@ -62,25 +62,25 @@ class RORPIterTest(unittest.TestCase):
 			RORPIter.PatchIter(self.output, RORPIter.FromFile(diff_file))
 
 		turninto(self.inc1rp)
-		assert self.compare_rps(self.output, self.inc1rp)
+		RPath.copy_attribs(self.inc1rp, self.output) # Update time
+		assert self.compare_no_times(self.inc1rp, self.output)
 		turninto(self.inc2rp)
-		assert self.compare_rps(self.output, self.inc2rp)
+		RPath.copy_attribs(self.inc2rp, self.output)
+		assert self.compare_no_times(self.inc2rp, self.output)
 
-	def compare_rps(self, rp1, rp2):
-		"""True if rp1 and rp2 are equal in some sense"""
-		def RawIter(rp):
-			"""Get raw iterator of file stats based an rp1"""
-			return RORPIter.ToRaw(Iter.map(lambda rp2: rp2.getRORPath(),
-										   RORPIter.IterateRPaths(rp)))
-		ri1 = RawIter(rp1)
-		ri2 = RawIter(rp2)
-		try:
-			rorp1 = ri1.next()
-			rorp2 = ri2.next()
-			assert rorp1 == rorp2, "%s %s" % (rorp1, rorp2)
-		except StopIteration: pass
-		return 1
-	#	return Iter.equal(RawIter(rp1), RawIter(rp2))
+	def compare_no_times(self, src_rp, dest_rp):
+		"""Compare but disregard directories attributes"""
+		dsiter1, dsiter2 = map(DestructiveStepping.Iterate_with_Finalizer,
+							   [src_rp, dest_rp], [1, None])
+
+		def equal(src_rorp, dest_rorp):
+			return ((src_rorp.isdir() and dest_rorp.isdir()) or
+					src_rorp == dest_rorp)
+
+		result = Iter.equal(dsiter1, dsiter2, 1, equal)
+		for i in dsiter1: pass # make sure all files processed anyway
+		for i in dsiter2: pass
+		return result
 
 
 class IndexedTupleTest(unittest.TestCase):

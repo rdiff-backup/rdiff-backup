@@ -1,12 +1,30 @@
 #!/usr/bin/env python
 
-import sys
-execfile("commontest.py")
-rbexec("setconnections.py")
+import sys, os
 
-def Test_SetConnGlobals(conn, name, val):
-	"""Used in unittesting - set one of specified connection's Global vars"""
-	conn.Globals.set(name, val)
+__doc__ = """
 
-Log.setverbosity(9)
+This starts an rdiff-backup server using the existing source files.
+If not run from the source directory, the only argument should be 
+the directory the source files are in.
+"""
+
+def print_usage():
+	print "Usage: server.py  [path to source files]", __doc__
+
+if len(sys.argv) > 2:
+	print_usage()
+	sys.exit(1)
+
+try:
+	if len(sys.argv) == 2:
+		olddir = os.getcwd()
+		os.chdir(sys.argv[1])
+	execfile("setconnections.py")
+	if len(sys.argv) == 2: os.chdir(olddir)
+except (OSError, IOError):
+	print_usage()
+	raise
+
+#Log.setverbosity(9)
 PipeConnection(sys.stdin, sys.stdout).Server()

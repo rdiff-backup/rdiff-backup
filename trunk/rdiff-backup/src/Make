@@ -21,11 +21,10 @@ def mystrip(filename):
 
 
 files = ["globals.py", "static.py", "lazy.py", "log.py", "ttime.py",
-		 "iterfile.py", "rlist.py", "rdiff.py", "connection.py",
-		 "rpath.py", "robust.py", "rorpiter.py",
+		 "iterfile.py", "rdiff.py", "connection.py", "rpath.py",
+		 "hardlink.py", "robust.py", "rorpiter.py",
 		 "destructive_stepping.py", "increment.py", "restore.py",
-		 "manage.py", "filelist.py", "highlevel.py",
-		 "setconnections.py", "main.py"]
+		 "manage.py", "highlevel.py", "setconnections.py", "main.py"]
 
 os.system("cp header.py rdiff-backup")
 

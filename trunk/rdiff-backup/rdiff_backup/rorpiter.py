@@ -61,7 +61,9 @@ class RORPIter:
 			if rp.isplaceholder(): yield rp
 			else:
 				rorp = rp.getRORPath()
-				if rp.isreg(): rorp.setfile(Rdiff.get_signature(rp))
+				if rp.isreg():
+					if rp.isflaglinked(): rorp.flaglinked()
+					else: rorp.setfile(Rdiff.get_signature(rp))
 				yield rorp
 
 	def GetSignatureIter(base_rp):
@@ -172,7 +174,12 @@ class RORPIter:
 
 	def diffonce(sig_rorp, new_rp):
 		"""Return one diff rorp, based from signature rorp and orig rp"""
-		if sig_rorp and sig_rorp.isreg() and new_rp and new_rp.isreg():
+		if sig_rorp and Globals.preserve_hardlinks and sig_rorp.isflaglinked():
+			if new_rp: diff_rorp = new_rp.getRORPath()
+			else: diff_rorp = RORPath(sig_rorp.index)
+			diff_rorp.flaglinked()
+			return diff_rorp
+		elif sig_rorp and sig_rorp.isreg() and new_rp and new_rp.isreg():
 			diff_rorp = new_rp.getRORPath()
 			diff_rorp.setfile(Rdiff.get_delta_sigfileobj(sig_rorp.open("rb"),
 														 new_rp))
@@ -201,7 +208,12 @@ class RORPIter:
 		if not diff_rorp.lstat():
 			return RobustAction(lambda: None, basisrp.delete, lambda e: None)
 
-		if basisrp and basisrp.isreg() and diff_rorp.isreg():
+		if Globals.preserve_hardlinks and diff_rorp.isflaglinked():
+			if not basisrp: basisrp = base_rp.new_index(diff_rorp.index)
+			return RobustAction(lambda: None,
+								lambda: Hardlink.link_rp(diff_rorp, basisrp),
+								lambda e: None)
+		elif basisrp and basisrp.isreg() and diff_rorp.isreg():
 			assert diff_rorp.get_attached_filetype() == 'diff'
 			return Rdiff.patch_with_attribs_action(basisrp, diff_rorp)
 		else: # Diff contains whole file, just copy it over

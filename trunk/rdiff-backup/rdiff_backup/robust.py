@@ -1,5 +1,5 @@
 import tempfile
-execfile("rpath.py")
+execfile("hardlink.py")
 
 #######################################################################
 #
@@ -258,6 +258,16 @@ class TempFile(RPath):
 				rp_dest.chmod(self.getperms())
 				self.chmod(0700)
 		RPathStatic.rename(self, rp_dest)
+
+		# Sometimes this just seems to fail silently, as in one
+		# hardlinked twin is moved over the other.  So check to make
+		# sure below.
+		self.setdata()
+		if self.lstat():
+			rp_dest.delete()
+			RPathStatic.rename(self, rp_dest)
+			self.setdata()
+			if self.lstat(): raise OSError("Cannot rename tmp file correctly")
 		TempFileManager.remove_listing(self)
 
 	def delete(self):
@@ -283,7 +293,8 @@ class SaveState:
 			return Globals.backup_writer.SaveState.init_filenames(incrementing)
 
 		assert Globals.local_connection is Globals.rbdir.conn, \
-			   Globals.rbdir.conn
+			   (Globals.rbdir.conn, Globals.backup_writer)
+
 		if incrementing: cls._last_file_sym = Globals.rbdir.append(
 			"last-file-incremented.%s.snapshot" % Time.curtimestr)
 		else: cls._last_file_sym = Globals.rbdir.append(
@@ -362,6 +373,7 @@ class SaveState:
 	def checkpoint_remove(cls):
 		"""Remove all checkpointing data after successful operation"""
 		for rp in Resume.get_relevant_rps(): rp.delete()
+		if Globals.preserve_hardlinks: Hardlink.remove_all_checkpoints()
 
 MakeClass(SaveState)
 
@@ -506,6 +518,11 @@ class Resume:
 				Log("Resuming aborted backup dated %s" %
 					Time.timetopretty(si.time), 2)
 				Time.setcurtime(si.time)
+				if Globals.preserve_hardlinks:
+					if (not si.last_definitive or not
+						Hardlink.retrieve_checkpoint(Globals.rbdir, si.time)):
+						Log("Hardlink information not successfully "
+							"recovered.", 2)
 				return si
 			else:
 				Log("Last backup dated %s was aborted, but we aren't "

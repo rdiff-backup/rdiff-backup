@@ -10,6 +10,10 @@ class Globals:
 	# The current version of rdiff-backup
 	version = "0.6.0"
 	
+	# If this is set, use this value in seconds as the current time
+	# instead of reading it from the clock.
+	current_time = None
+
 	# This determines how many bytes to read at a time when copying
 	blocksize = 32768
 
@@ -120,6 +124,13 @@ class Globals:
 	# make filenames that don't contain colons, which aren't allowed
 	# under MS windows NT.
 	time_separator = ":"
+
+	# If true, then hardlinks will be preserved to mirror and recorded
+	# in the increments directory.  There is also a difference here
+	# between None and 0.  When restoring, None or 1 means to preserve
+	# hardlinks iff can find a hardlink dictionary.  0 means ignore
+	# hardlink information regardless.
+	preserve_hardlinks = 1
 
 	def get(cls, name):
 		"""Return the value of something in this class"""

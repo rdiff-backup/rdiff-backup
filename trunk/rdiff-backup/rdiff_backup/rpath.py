@@ -179,23 +179,6 @@ class RPathStatic:
 		try: return tuple(os.lstat(filename))
 		except os.error: return None
 
-	def cmp_recursive(rp1, rp2):
-		"""True if rp1 and rp2 are at the base of same directories
-
-		Includes only attributes, no file data.  This function may not
-		be used in rdiff-backup but it comes in handy in the unit
-		tests.
-
-		"""
-		rp1.setdata()
-		rp2.setdata()
-		dsiter1, dsiter2 = map(DestructiveStepping.Iterate_with_Finalizer,
-							   [rp1, rp2], [1, None])
-		result = Iter.equal(dsiter1, dsiter2, 1)
-		for i in dsiter1: pass # make sure all files processed anyway
-		for i in dsiter2: pass
-		return result
-
 MakeStatic(RPathStatic)
 
 
@@ -215,15 +198,20 @@ class RORPath(RPathStatic):
 		self.file = None
 
 	def __eq__(self, other):
-		"""Signal two files equivalent"""
-		if not Globals.change_ownership or self.issym() and other.issym():
-			# Don't take file ownership into account when comparing
-			data1, data2 = self.data.copy(), other.data.copy()
-			for d in (data1, data2):
-				for key in ('uid', 'gid'):
-					if d.has_key(key): del d[key]
-			return self.index == other.index and data1 == data2
-		else: return self.index == other.index and self.data == other.data
+		"""True iff the two rorpaths are equivalent"""
+		if self.index != other.index: return None
+
+		for key in self.data.keys(): # compare dicts key by key
+			if ((key == 'uid' or key == 'gid') and
+				(not Globals.change_ownership or self.issym())):
+				# Don't compare gid/uid for symlinks or if not change_ownership
+				pass
+			elif key == 'devloc' or key == 'inode' or key == 'nlink': pass
+			elif (not other.data.has_key(key) or
+				  self.data[key] != other.data[key]): return None
+		return 1
+
+	def __ne__(self, other): return not self.__eq__(other)
 
 	def __str__(self):
 		"""Pretty print file statistics"""
@@ -324,6 +312,18 @@ class RORPath(RPathStatic):
 		"""Return modification time in seconds"""
 		return self.data['mtime']
 	
+	def getinode(self):
+		"""Return inode number of file"""
+		return self.data['inode']
+
+	def getdevloc(self):
+		"""Device number file resides on"""
+		return self.data['devloc']
+
+	def getnumlinks(self):
+		"""Number of places inode is linked to"""
+		return self.data['nlink']
+
 	def readlink(self):
 		"""Wrapper around os.readlink()"""
 		return self.data['linkname']
@@ -351,6 +351,19 @@ class RORPath(RPathStatic):
 	def set_attached_filetype(self, type):
 		"""Set the type of the attached file"""
 		self.data['filetype'] = type
+
+	def isflaglinked(self):
+		"""True if rorp is a signature/diff for a hardlink file
+
+		This indicates that a file's data need not be transferred
+		because it is hardlinked on the remote side.
+
+		"""
+		return self.data.has_key('linked')
+
+	def flaglinked(self):
+		"""Signal that rorp is a signature/diff for a hardlink file"""
+		self.data['linked'] = 1
 
 	def open(self, mode):
 		"""Return file type object if any was given using self.setfile"""
@@ -447,6 +460,9 @@ class RPath(RORPath):
 		data['perms'] = stat.S_IMODE(mode)
 		data['uid'] = statblock[stat.ST_UID]
 		data['gid'] = statblock[stat.ST_GID]
+		data['inode'] = statblock[stat.ST_INO]
+		data['devloc'] = statblock[stat.ST_DEV]
+		data['nlink'] = statblock[stat.ST_NLINK]
 
 		if not (type == 'sym' or type == 'dev'):
 			# mtimes on symlinks and dev files don't work consistently
@@ -521,6 +537,11 @@ class RPath(RORPath):
 		self.conn.os.symlink(linktext, self.path)
 		self.setdata()
 		assert self.issym()
+
+	def hardlink(self, linkpath):
+		"""Make self into a hardlink joined to linkpath"""
+		self.conn.os.link(linkpath, self.path)
+		self.setdata()
 
 	def mkfifo(self):
 		"""Make a fifo at self.path"""
