@@ -712,8 +712,12 @@ handled correctly on systems with non-standard mknod syntax.
 .PP
 When an rdiff-backup session fails (for instance if a remote
 connection is lost), rdiff-backup tries to save the session so it can
-be resumed later.  Apparently, depending on how the rdiff-backup
-session fails, later sessions cannot be resumed properly.
+be resumed later.  Apparently sometimes, depending on how the
+rdiff-backup session fails, later sessions cannot be resumed properly.
+.PP
+Files whose names are close to the maximum length (e.g. 235 chars if
+the maximum is 255) may be skipped because the filenames of related
+increment files would be too long.
 
 .SH AUTHOR
 Ben Escoto <bescoto@stanford.edu>
