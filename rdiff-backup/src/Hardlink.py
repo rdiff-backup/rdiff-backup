@@ -91,7 +91,7 @@ def rorp_eq(src_rorp, dest_rorp):
 	indicies.
 
 	"""
-	assert src_rorp.index == dest_rorp.index
+	if not src_rorp.index == dest_rorp.index: return None
 	if (not src_rorp.isreg() or not dest_rorp.isreg() or
 		src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1):
 		return 1 # Hard links don't apply
