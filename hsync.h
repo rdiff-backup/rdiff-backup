@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "gnu" -*-  */
+/* -*- mode: c; c-file-style: "k&r" -*-  */
 
 /* libhsync
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -22,47 +22,45 @@
 /* ========================================
 
    Callback function prototypes */
-typedef int (*rs_read_fn_t)(void *readprivate, char *buf, size_t len);
+typedef int (*rs_read_fn_t) (void *readprivate, char *buf, size_t len);
 
-typedef int (*rs_readofs_fn_t)(void *readprivate, char *buf,
-			       size_t len, off_t offset);
+typedef int (*rs_readofs_fn_t) (void *readprivate, char *buf,
+				size_t len, off_t offset);
 
-typedef int (*rs_write_fn_t)(void *writeprivate, char const *buf,
-			     size_t len);
+typedef int (*rs_write_fn_t) (void *writeprivate, char const *buf,
+			      size_t len);
 
-extern char const * hs_log_domain;
-
+extern char const *hs_log_domain;
 
+
 /* ========================================
 
    Decode */
 
 typedef struct hs_stats {
-  int lit_cmds, lit_bytes;
-  int copy_cmds, copy_bytes;
-  int sig_cmds, sig_bytes;
+    int lit_cmds, lit_bytes;
+    int copy_cmds, copy_bytes;
+    int sig_cmds, sig_bytes;
 } hs_stats_t;
 
 ssize_t
-hs_decode (rs_readofs_fn_t oldread_fn, void *oldread_priv,
-	   rs_write_fn_t write_fn, void *write_priv,
-	   rs_read_fn_t ltread_fn, void *ltread_priv,
-	   rs_write_fn_t newsig_fn, void *newsig_priv,
-	   hs_stats_t * stats);
-
-
+hs_decode(rs_readofs_fn_t oldread_fn, void *oldread_priv,
+	  rs_write_fn_t write_fn, void *write_priv,
+	  rs_read_fn_t ltread_fn, void *ltread_priv,
+	  rs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats);
 
+
+
 
 /* ========================================
 
    Encode */
 
 
-ssize_t
-hs_encode (rs_read_fn_t read_fn, void *readprivate,
-	   rs_write_fn_t write_fn, void *write_priv,
-	   rs_read_fn_t sigread_fn, void *sigreadprivate,
-	   hs_stats_t *stats);
+ssize_t hs_encode(rs_read_fn_t read_fn, void *readprivate,
+	  rs_write_fn_t write_fn, void *write_priv,
+	  rs_read_fn_t sigread_fn, void *sigreadprivate,
+	  int new_block_len, hs_stats_t * stats);
 
 /* ========================================
 
@@ -76,21 +74,19 @@ struct file_buf;
 /* This is the preferred name for new code: */
 typedef struct file_buf hs_filebuf_t;
 
-ssize_t hs_filebuf_read (void *private, char *buf, size_t len);
-ssize_t hs_filebuf_zread (void *private, char *buf, size_t len);
-ssize_t hs_filebuf_write (void *private, char const *buf, size_t len);
-ssize_t hs_filebuf_zwrite (void *private, char const *buf, size_t len);
-ssize_t hs_filebuf_read_ofs (void *private, char *buf, size_t len,
-				   off_t ofs);
+ssize_t hs_filebuf_read(void *private, char *buf, size_t len);
+ssize_t hs_filebuf_zread(void *private, char *buf, size_t len);
+ssize_t hs_filebuf_write(void *private, char const *buf, size_t len);
+ssize_t hs_filebuf_zwrite(void *private, char const *buf, size_t len);
+ssize_t hs_filebuf_read_ofs(void *private, char *buf, size_t len,
+			    off_t ofs);
 
-hs_filebuf_t *
-hs_filebuf_open (char const *filename, char const *mode);
+hs_filebuf_t *hs_filebuf_open(char const *filename, char const *mode);
 
-hs_filebuf_t *
-hs_filebuf_from_file (FILE * fp);
-
-
+hs_filebuf_t *hs_filebuf_from_file(FILE * fp);
 
+
+
 /* ========================================
 
    Memory buffers
@@ -98,12 +94,28 @@ hs_filebuf_from_file (FILE * fp);
 
 typedef struct hs_membuf hs_membuf_t;
 
-off_t hs_membuf_tell (void *private);
+off_t hs_membuf_tell(void *private);
 ssize_t hs_membuf_write(void *private, char const *buf, size_t len);
 ssize_t hs_membuf_read(void *private, char *buf, size_t len);
-ssize_t hs_membuf_read_ofs (void *private, char *buf, size_t len, off_t ofs);
+ssize_t hs_membuf_read_ofs(void *private, char *buf, size_t len,
+			   off_t ofs);
 ssize_t hs_choose_block_size(ssize_t file_len);
+hs_membuf_t *hs_membuf_new(void);
+void hs_membuf_free(hs_membuf_t *);
+void hs_membuf_truncate(hs_membuf_t * mb);
+size_t hs_membuf_getbuf(hs_membuf_t const *mb, char const **buf);
+hs_membuf_t *hs_membuf_on_buffer(char *buf, int len);
 
-hs_membuf_t *hs_membuf_new (void);
 
-void hs_membuf_truncate (hs_membuf_t *mb);
+typedef struct hs_ptrbuf hs_ptrbuf_t;
+
+off_t hs_ptrbuf_tell(void *private);
+ssize_t hs_ptrbuf_write(void *private, char const *buf, size_t len);
+ssize_t hs_ptrbuf_read(void *private, char *buf, size_t len);
+ssize_t hs_ptrbuf_read_ofs(void *private, char *buf, size_t len,
+			   off_t ofs);
+ssize_t hs_choose_block_size(ssize_t file_len);
+hs_ptrbuf_t *hs_ptrbuf_on_buffer(char *buf, int len);
+void hs_ptrbuf_truncate(hs_ptrbuf_t * mb);
+size_t hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, char const **buf);
+hs_ptrbuf_t *hs_ptrbuf_on_buffer(char *buf, int len);

@@ -1,0 +1,139 @@
+/* -*- mode: c; c-file-style: "k&r" -*-  */
+
+/* ptrbuf.c -- Abstract IO to static buffers.
+
+   Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*/
+
+#include "includes.h"
+#include "hsync.h"
+#include "private.h"
+#include "compress.h"
+
+static const int ptrbuf_tag = 12341234;
+
+
+/* Allow the caller read-only access to our buffer. */
+size_t hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, char const **buf)
+{
+    assert(mb->dogtag == ptrbuf_tag);
+    *buf = mb->buf;
+    return mb->length;
+}
+
+
+hs_ptrbuf_t *hs_ptrbuf_on_buffer(char *buf, int len)
+{
+    hs_ptrbuf_t *mb;
+
+    assert(len > 0);
+    assert(buf);
+
+    mb = calloc(1, sizeof(hs_ptrbuf_t));
+    assert(mb);
+    mb->dogtag = ptrbuf_tag;
+    mb->length = len;
+    mb->buf = buf;
+    return mb;
+}
+
+
+
+off_t hs_ptrbuf_tell(void *private)
+{
+    hs_ptrbuf_t *mb = (hs_ptrbuf_t *) private;
+    assert(mb->dogtag == ptrbuf_tag);
+    return ((hs_ptrbuf_t *) private)->ofs;
+}
+
+
+void hs_ptrbuf_truncate(hs_ptrbuf_t * mb)
+{
+    assert(mb->dogtag == ptrbuf_tag);
+    mb->ofs = 0;
+}
+
+
+ssize_t hs_ptrbuf_write(void *private, char const *buf, size_t len)
+{
+    hs_ptrbuf_t *mb = (hs_ptrbuf_t *) private;
+    assert(mb->dogtag == ptrbuf_tag);
+
+#if DEBUG
+    printf("sig_writebuf(len=%d)\n", len);
+#endif
+
+    if (mb->length < mb->ofs + len) {
+	 return -1;
+    }
+
+    memcpy(mb->buf + mb->ofs, buf, len);
+    mb->ofs += len;
+    return len;
+}
+
+
+ssize_t hs_ptrbuf_read_ofs(void *private, char *buf, size_t len, off_t ofs)
+{
+    hs_ptrbuf_t *mb = (hs_ptrbuf_t *) private;
+
+    assert(mb->dogtag == ptrbuf_tag);
+    assert(ofs >= 0);
+
+    if (ofs >= 0  &&  ofs < (off_t) mb->length) {
+	mb->ofs = ofs;
+	return hs_ptrbuf_read(private, buf, len);
+    } else {
+	_hs_fatal("illegal seek to %ld in a %ld byte ptrbuf",
+		  (long) ofs, (long) mb->length);
+	errno = EINVAL;
+	return -1;
+    }
+}
+
+
+ssize_t hs_ptrbuf_read(void *private, char *buf, size_t len)
+{
+    hs_ptrbuf_t *mb = (hs_ptrbuf_t *) private;
+    size_t remain = mb->length - mb->ofs;
+
+#if DEBUG
+    printf("sig_readbuf(len=%d)\n", len);
+#endif
+
+    assert(mb->dogtag == ptrbuf_tag);
+
+    if (len > remain)
+	 len = remain;
+    
+    memcpy(buf, mb->buf + mb->ofs, len);
+    mb->ofs += len;
+    return len;
+}
+
+
+
+ssize_t hs_ptrbuf_zwrite(void *private, char const *buf, size_t len)
+{
+    size_t ret;
+    hs_ptrbuf_t *mb = (hs_ptrbuf_t *) private;
+
+    assert(mb->dogtag == ptrbuf_tag);
+    ret = comp_write(hs_ptrbuf_write, private, buf, len);
+
+    return ret;
+}

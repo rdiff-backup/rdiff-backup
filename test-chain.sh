@@ -1,4 +1,4 @@
-#! /bin/sh -pex
+#! /bin/sh -pe
 
 # Regression test suite for libhsync.
 
@@ -22,6 +22,7 @@ out=out.tmp
 oldsig=empty-sig
 old=/dev/null
 
+set -x
 for new in $files
 do
     hsencode $new $diff $oldsig

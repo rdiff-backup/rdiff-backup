@@ -28,67 +28,57 @@
 
 
 int
-_hs_fill_inbuf (inbuf_t * inbuf, rs_read_fn_t read_fn, void *readprivate)
+_hs_fill_inbuf(inbuf_t * inbuf, rs_read_fn_t read_fn, void *readprivate)
 {
-  int ret;
+    int ret;
 
-  assert (inbuf->amount < inbuf->len && 0 <= inbuf->amount);
-  ret = read_fn (readprivate,
-		 inbuf->buf + inbuf->amount, inbuf->len - inbuf->amount);
-  if (ret < 0)
-    {
-      _hs_error ( __FILE__ ": error reading into input buffer");
-      return ret;
-    }
-  else if (ret == 0)
-    {
-      _hs_trace ("reached end of input file");
-    }
-  else
-    {
-      _hs_trace ("read %d bytes into input buffer"
+    assert(inbuf->amount < inbuf->len && 0 <= inbuf->amount);
+    ret = read_fn(readprivate,
+		  inbuf->buf + inbuf->amount, inbuf->len - inbuf->amount);
+    if (ret < 0) {
+	_hs_fatal(__FILE__ ": error reading into input buffer");
+	return ret;
+    } else if (ret == 0) {
+	_hs_trace("reached end of input file");
+    } else {
+	_hs_trace("read %d bytes into input buffer"
 		  " at position %d", ret, inbuf->abspos);
     }
-  inbuf->amount += ret;
-  return ret;
+    inbuf->amount += ret;
+    return ret;
 }
 
 
 
-int
-_hs_alloc_inbuf (inbuf_t * inbuf, int block_len)
+int _hs_alloc_inbuf(inbuf_t * inbuf, int block_len)
 {
-  bzero (inbuf, sizeof *inbuf);
-  /* must be at least two blocks; shouldn't be too small. */
-  inbuf->len = MAX (block_len * 2, 8192);
-  inbuf->buf = malloc (inbuf->len);
-  inbuf->amount = 0;
-  inbuf->abspos = 0;
+    bzero(inbuf, sizeof *inbuf);
+    /* must be at least two blocks; shouldn't be too small. */
+    inbuf->len = MAX(block_len * 2, 8192);
+    inbuf->buf = malloc(inbuf->len);
+    inbuf->amount = 0;
+    inbuf->abspos = 0;
 
-  return 0;
+    return 0;
 }
 
 
-int
-_hs_slide_inbuf (inbuf_t *inbuf)
+int _hs_slide_inbuf(inbuf_t * inbuf)
 {
-  /* Copy the remaining data into the front of
-     the buffer */
-  if (inbuf->cursor != 0)
-    {
-      if (inbuf->amount != inbuf->cursor)
-	{
-	  memcpy (inbuf->buf,
-		  inbuf->buf + inbuf->cursor, inbuf->amount - inbuf->cursor);
-	  _hs_trace (": slide %d bytes down to the start of the buffer",
-		     inbuf->amount - inbuf->cursor);
+    /* Copy the remaining data into the front of
+       the buffer */
+    if (inbuf->cursor != 0) {
+	if (inbuf->amount != inbuf->cursor) {
+	    memcpy(inbuf->buf,
+		   inbuf->buf + inbuf->cursor,
+		   inbuf->amount - inbuf->cursor);
+	    _hs_trace(": slide %d bytes down to the start of the buffer",
+		      inbuf->amount - inbuf->cursor);
 	}
-      
-      inbuf->amount -= inbuf->cursor;
-      inbuf->abspos += inbuf->cursor;
+
+	inbuf->amount -= inbuf->cursor;
+	inbuf->abspos += inbuf->cursor;
     }
-  
-  return 0;
+
+    return 0;
 }
-
-

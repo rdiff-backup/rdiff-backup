@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "gnu" -*-  */
+/* -*- mode: c; c-file-style: "k&r" -*-  */
 
 /* emit -- emit encoded commands to the client
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -27,96 +27,125 @@
 #include "private.h"
 
 
-static int
-_hs_fits_in_byte (uint32_t val)
+static int _hs_fits_in_byte(uint32_t val)
 {
-  return val <= UINT8_MAX;
+    return val <= UINT8_MAX;
 }
 
 
-static int
-_hs_fits_in_short (uint32_t val)
+static int _hs_fits_in_short(uint32_t val)
 {
-  return val <= UINT16_MAX;
+    return val <= UINT16_MAX;
 }
 
 
-static int
-_hs_fits_inline (uint32_t val)
+static int _hs_fits_in_int(uint64_t val)
 {
-  return val > 1 && val < (op_literal_last - op_literal_1);
+    return val <= UINT32_MAX;
 }
 
 
-int
-_hs_emit_eof (rs_write_fn_t write_fn, void *write_priv)
+static int _hs_fits_inline(uint32_t val)
 {
-  return _hs_write_netbyte (write_fn, write_priv, op_eof);
+    return val > 1 && val < (op_literal_last - op_literal_1);
+}
+
+
+static int _hs_int_len(uint32_t val)
+{
+    if (_hs_fits_in_byte(val))
+	return 1;
+    else if (_hs_fits_in_short(val))
+	return 2;
+    else if (_hs_fits_in_int(val))
+	return 4;
+    else
+	assert(0 && "can't handle files this long yet");
+}
+
+
+int _hs_emit_eof(rs_write_fn_t write_fn, void *write_priv)
+{
+    return _hs_write_netbyte(write_fn, write_priv, op_eof);
 }
 
 
 /* Emit the command header for literal data.  This will do either literal
    or signature depending on BASE. */
 int
-_hs_emit_chunk_cmd (rs_write_fn_t write_fn,
-		    void *write_priv,
-		    uint32_t size,
-		    int base)
+_hs_emit_chunk_cmd(rs_write_fn_t write_fn,
+		   void *write_priv, uint32_t size, int base)
 {
-  assert (base == op_literal_1  ||  base == op_signature_1);
-  
-  if (_hs_fits_inline (size))
-    {
-      return _hs_write_netbyte (write_fn, write_priv,
-				base + size - 1);
+    int type, cmd;
+
+    assert(base == op_literal_1 || base == op_signature_1);
+
+    if (_hs_fits_inline(size)) {
+	return _hs_write_netbyte(write_fn, write_priv, base + size - 1);
     }
-  else if (_hs_fits_in_byte (size))
-    {
-      if (_hs_write_netbyte (write_fn, write_priv,
-			     op_literal_byte - op_literal_1 + base) < 0)
+
+    type = _hs_int_len(size);
+    cmd = base + op_literal_byte - op_literal_1;
+    if (type == 1) {
+	 ;
+    } else if (type == 2) {
+	cmd += 1;
+    } else if (type == 4) {
+	cmd += 2;
+    } else {
+	assert(0);
+    }
+
+    if (_hs_write_netbyte(write_fn, write_priv, cmd) < 0)
 	return -1;
-      return _hs_write_netbyte (write_fn, write_priv, (uint8_t) size);
-    }
-  else if (_hs_fits_in_short (size))
-    {
-      if (_hs_write_netbyte (write_fn, write_priv,
-			     op_literal_short - op_literal_1 + base) < 0)
-	return -1;
-      return _hs_write_netshort (write_fn, write_priv, (uint16_t) size);
-    }
-  else
-    {
-      if (_hs_write_netlong (write_fn, write_priv,
-			     op_literal_int - op_literal_1 + base) < 0)
-	return -1;
-      return _hs_write_netlong (write_fn, write_priv, size);
-    }
+
+    return _hs_write_netvar(write_fn, write_priv, size, type);
 }
 
 
 int
-_hs_emit_copy (rs_write_fn_t write_fn, void *write_priv,
-	       uint32_t offset, uint32_t length,
-	       hs_stats_t *stats)
+_hs_emit_copy(rs_write_fn_t write_fn, void *write_priv,
+	      uint32_t offset, uint32_t length, hs_stats_t * stats)
 {
-  int ret;
+    int ret;
+    int len_type, off_type;
+    int cmd;
 
-  stats->copy_cmds++;
-  stats->copy_bytes += length;
-  
-  _hs_trace ("Writing COPY(%d, %d)", offset, length);
+    stats->copy_cmds++;
+    stats->copy_bytes += length;
 
-  /* TODO: All the other encoding options */
-  ret = _hs_write_netbyte (write_fn, write_priv, op_copy_int_int);
-  return_val_if_fail (ret > 0, -1);
+    _hs_trace("Writing COPY(%d, %d)", offset, length);
+    len_type = _hs_int_len(length);
+    off_type = _hs_int_len(offset);
 
-  ret = _hs_write_netlong (write_fn, write_priv, offset);
-  return_val_if_fail (ret > 0, -1);
+    /* Make sure this formula lines up with the values in hsyncproto.h */
 
-  ret = _hs_write_netlong (write_fn, write_priv, length);
-  return_val_if_fail (ret > 0, -1);
-  
-  return 1;
+    if (off_type == 2) {
+	cmd = op_copy_short_byte;
+    } else if (off_type == 4) {
+	cmd = op_copy_int_byte;
+    } else {
+	assert(0 && "offset length unimplemented");
+    }
+
+    if (len_type == 1) {
+	cmd += 0;
+    } else if (len_type == 2) {
+	cmd += 1;
+    } else if (len_type == 4) {
+	cmd += 2;
+    } else {
+	assert(0 && "unimplemented");
+    }
+
+    ret = _hs_write_netbyte(write_fn, write_priv, cmd);
+    return_val_if_fail(ret > 0, -1);
+
+    ret = _hs_write_netvar(write_fn, write_priv, offset, off_type);
+    return_val_if_fail(ret > 0, -1);
+
+    ret = _hs_write_netvar(write_fn, write_priv, length, len_type);
+    return_val_if_fail(ret > 0, -1);
+
+    return 1;
 }
-
-

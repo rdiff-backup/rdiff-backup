@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "gnu" -*-  */
+/* -*- mode: c; c-file-style: "k&r" -*-  */
 
 /* litbuf -- buffer of data waiting to go out as signature or literal
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -27,12 +27,11 @@
 
 
 /* Queue byte VALUE into the literal-data buffer. */
-int
-_hs_append_literal (hs_membuf_t * litbuf, char value)
+int _hs_append_literal(hs_membuf_t * litbuf, char value)
 {
-  hs_membuf_write (litbuf, &value, sizeof value);
+    hs_membuf_write(litbuf, &value, sizeof value);
 
-  return 0;
+    return 0;
 }
 
 
@@ -42,47 +41,45 @@ _hs_append_literal (hs_membuf_t * litbuf, char value)
    op_signature_1 depending on which it is; STATS is updated
    appropriately. */
 ssize_t
-_hs_flush_literal_buf (hs_membuf_t * litbuf,
-		       rs_write_fn_t write_fn, void *write_priv,
-		       hs_stats_t *stats,
-		       int code_base)
+_hs_flush_literal_buf(hs_membuf_t * litbuf,
+		      rs_write_fn_t write_fn, void *write_priv,
+		      hs_stats_t * stats, int code_base)
 {
-  int ret;
-  off_t amount;
+    int ret;
+    off_t amount;
 
-  amount = hs_membuf_tell (litbuf);
-  assert (amount >= 0);
+    amount = hs_membuf_tell(litbuf);
+    assert(amount >= 0);
+    assert(code_base == op_literal_1 || code_base == op_signature_1);
 
-  if (amount == 0)
-    {
-      _hs_trace ("Literal data buffer is empty");
-      return 0;
+
+    _hs_trace("flush %d bytes of %s data",
+	      (int) amount,
+	      code_base == op_literal_1 ? "literal" : "signature");
+
+    if (amount == 0) {
+	_hs_trace("Literal data buffer is empty");
+	return 0;
     }
 
-  if (_hs_emit_chunk_cmd(write_fn, write_priv, amount, code_base) < 0)
-    return -1;
-  
-  ret = _hs_copy_ofs (0, amount,
-		      hs_membuf_read_ofs, litbuf,
-		      write_fn, write_priv);
-  return_val_if_fail (ret > 0, -1);
+    if (_hs_emit_chunk_cmd(write_fn, write_priv, amount, code_base) < 0)
+	return -1;
 
-  if (code_base == op_literal_1)
-    {
-      stats->lit_cmds++;
-      stats->lit_bytes += amount;
-    }
-  else
-    {
-      assert (code_base == op_signature_1);
-      stats->sig_cmds++;
-      stats->sig_bytes += amount;
-    }
-  
-  /* Reset the literal buffer */
-  hs_membuf_truncate (litbuf);
+    ret = _hs_copy_ofs(0, amount,
+		       hs_membuf_read_ofs, litbuf, write_fn, write_priv);
+    return_val_if_fail(ret > 0, -1);
 
-  return 0;
+    if (code_base == op_literal_1) {
+	stats->lit_cmds++;
+	stats->lit_bytes += amount;
+    } else {
+	assert(code_base == op_signature_1);
+	stats->sig_cmds++;
+	stats->sig_bytes += amount;
+    }
+
+    /* Reset the literal buffer */
+    hs_membuf_truncate(litbuf);
+
+    return 0;
 }
-
-

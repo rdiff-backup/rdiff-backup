@@ -6,6 +6,8 @@
 # We expect the automake-generated Makefile to pass in $srcdir, but if we're
 # run from the commandline we may not have it.
 
+echo -n `basename $0`': '
+
 if [ "$srcdir" = "" ]
 then
     srcdir=`dirname $0`
@@ -24,7 +26,7 @@ do
     sig=$id-sig
     expect=$id-out
     
-    hsencode $new $out $sig
+    hsencode $new $out $sig 32
     cmp $out $expect
 done
 

@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "gnu" -*-  */
+/* -*- mode: c; c-file-style: "k&r" -*-  */
 
 /* hsyncproto -- Protocol special numbers
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -20,8 +20,8 @@
 */
 
 
-#define HS_LT_MAGIC		0x67640001          /* "gd\000\001" */
-#define HS_SIG_MAGIC		0x67642001	    /* "gd \001" */
+#define HS_LT_MAGIC		0x67640001	/* "gd\000\001" */
+#define HS_SIG_MAGIC		0x67642001	/* "gd \001" */
 
 
 /* ========================================
@@ -35,24 +35,25 @@
 enum {
     op_eof = 0,
 
-    op_literal_1 = 1,
-    op_literal_last = 120,
-    op_literal_byte = 121,
-    op_literal_short = 122,
-    op_literal_int = 123,
+    op_literal_1 = 0x01,
+    op_literal_last = 0x78,
+    op_literal_byte = 0x79,
+    op_literal_short = 0x7a,
+    op_literal_int = 0x7b,
 
-    op_signature_1 = 124,
-    op_signature_last = 243,
-    op_signature_byte = 244,
-    op_signature_short = 245,
-    op_signature_int = 246,
+    op_signature_1 = 0x7c,
+    op_signature_last = 0xf3,
+    op_signature_byte = 0xf4,
+    op_signature_short = 0xf5,
+    op_signature_int = 0xf6,
 
-    /* 247, 248, 249 are reserved */
-
-    op_copy_short_byte = 250,
-    op_copy_short_short,
-    op_copy_short_int,
-    op_copy_int_byte,
-    op_copy_int_short,
-    op_copy_int_int
+    op_copy_short_byte = 0xf7,
+    op_copy_short_short = 0xf8,
+    op_copy_short_int = 0xf9,
+    op_copy_int_byte = 0xfa,
+    op_copy_int_short = 0xfb,
+    op_copy_int_int = 0xfc,
+    op_copy_llong_byte = 0xfd,
+    op_copy_llong_short = 0xfe,
+    op_copy_llong_int = 0xff
 };

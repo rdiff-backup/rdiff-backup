@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "gnu" -*-  */
+/* -*- mode: c; c-file-style: "k&r" -*-  */
 
 /* hsencode.c -- Generate combined encoded form
    
@@ -23,60 +23,64 @@
 #include "hsync.h"
 #include "private.h"
 
-static void
-usage (char *progname)
+static void usage(char *progname)
 {
-  fprintf(stderr, "Usage: %s NEWFILE [LT_FILE [SIG_FILE]]\n"
-	  "\n"
-	  "Compute differences between NEWFILE and the signature SIG_FILE\n"
-	  "(default stdin), and write a literal/token/signature description \n"
-	  "of them to LT_FILE (default stdout).\n", progname);
-  exit (1);
+    fprintf(stderr, "Usage: %s NEWFILE [LT_FILE [SIG_FILE [NEW_BLOCK_LEN]]]\n"
+	    "\n"
+	    "Compute differences between NEWFILE and the signature SIG_FILE\n"
+	    "(default stdin), and write a literal/token/signature description \n"
+	    "of them to LT_FILE (default stdout).\n", progname);
+    exit(1);
 }
 
 
-int
-main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-  int ret;
-  hs_filebuf_t *ltfb = 0, *sigfb = 0, *newfb = 0;
-  hs_stats_t stats;
+    int ret;
+    hs_filebuf_t *ltfb = 0, *sigfb = 0, *newfb = 0;
+    hs_stats_t stats;
+    int new_block_len = 256;
 
-  switch (argc)
-    {
+    switch (argc) {
+    case 5:
+	 new_block_len = atoi(argv[4]);
+	 if (new_block_len <= 0) {
+	      fprintf(stderr, "unreasonable new_block_len\n");
+	      return 2;
+	 }
+	 /* fall through */
     case 4:			/* LT_FILE */
-      sigfb = hs_filebuf_open (argv[3], "rb");
-      if (!sigfb)
-	return 1;
-      /* Drop through */
+	sigfb = hs_filebuf_open(argv[3], "rb");
+	if (!sigfb)
+	    return 1;
+	/* Drop through */
     case 3:
-      if (!(ltfb = hs_filebuf_open (argv[2], "wb")))
-	return 1;
+	if (!(ltfb = hs_filebuf_open(argv[2], "wb")))
+	    return 1;
     case 2:
-      if (!(newfb = hs_filebuf_open (argv[1], "rb")))
-	return 1;
-      break;
+	if (!(newfb = hs_filebuf_open(argv[1], "rb")))
+	    return 1;
+	break;
     case 1:
     default:
-      usage (argv[0]);
-      return 1;
+	usage(argv[0]);
+	return 1;
     }
 
-  if (!ltfb)
-    ltfb = hs_filebuf_from_file (stdout);
-  if (!sigfb)
-    sigfb = hs_filebuf_from_file (stdin);
+    if (!ltfb)
+	ltfb = hs_filebuf_from_file(stdout);
+    if (!sigfb)
+	sigfb = hs_filebuf_from_file(stdin);
 
-  ret = hs_encode(hs_filebuf_read, newfb,
-		  hs_filebuf_write, ltfb,
-		  hs_filebuf_read, sigfb,
-		  &stats);
-  
-  if (ret < 0)
-    {
-      _hs_error ("Failed to encode: %s\n", strerror (errno));
-      exit (1);
+    ret = hs_encode(hs_filebuf_read, newfb,
+		    hs_filebuf_write, ltfb,
+		    hs_filebuf_read, sigfb,
+		    new_block_len, &stats);
+
+    if (ret < 0) {
+	_hs_fatal("Failed to encode: %s\n", strerror(errno));
+	exit(1);
     }
 
-  return 0;
+    return 0;
 }

@@ -2,8 +2,8 @@
 #define _MDFOUR_H
 
 struct mdfour {
-	uint32_t A, B, C, D;
-	uint32_t totalN;
+    uint32_t A, B, C, D;
+    uint32_t totalN;
 };
 
 void mdfour(unsigned char *out, unsigned char const *in, int n);

@@ -22,7 +22,7 @@
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
-#endif 
+#endif
 
 #include <assert.h>
 #include <errno.h>

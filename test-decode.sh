@@ -6,6 +6,8 @@
 # We expect the automake-generated Makefile to pass in $srcdir, but if we're
 # run from the commandline we may not have it.
 
+echo -n `basename $0`': '
+
 if [ "$srcdir" = "" ]
 then
     srcdir=`dirname $0`

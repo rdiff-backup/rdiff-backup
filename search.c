@@ -33,39 +33,35 @@
 #define gettag2(s1,s2) (((s1) + (s2)) & 0xFFFF)
 #define gettag(sum) gettag2((sum)&0xFFFF,(sum)>>16)
 
-static int
-compare_targets (struct target *t1, struct target *t2)
+static int compare_targets(struct target *t1, struct target *t2)
 {
-  return ((int) t1->t - (int) t2->t);
+    return ((int) t1->t - (int) t2->t);
 }
 
 
-int
-_hs_build_hash_table (struct sum_struct *sums)
+int _hs_build_hash_table(struct sum_struct *sums)
 {
-  int i;
+    int i;
 
-  sums->tag_table = calloc (TABLESIZE, sizeof (int));
-  sums->targets = calloc (sums->count, sizeof (struct target));
+    sums->tag_table = calloc(TABLESIZE, sizeof(int));
+    sums->targets = calloc(sums->count, sizeof(struct target));
 
-  for (i = 0; i < sums->count; i++)
-    {
-      sums->targets[i].i = i;
-      sums->targets[i].t = gettag (sums->sums[i].sum1);
+    for (i = 0; i < sums->count; i++) {
+	sums->targets[i].i = i;
+	sums->targets[i].t = gettag(sums->sums[i].sum1);
     }
 
-  qsort (sums->targets, sums->count,
-	 sizeof (sums->targets[0]), (int (*)()) compare_targets);
+    qsort(sums->targets, sums->count,
+	  sizeof(sums->targets[0]), (int (*)()) compare_targets);
 
-  for (i = 0; i < TABLESIZE; i++)
-    sums->tag_table[i] = NULL_TAG;
+    for (i = 0; i < TABLESIZE; i++)
+	sums->tag_table[i] = NULL_TAG;
 
-  for (i = sums->count - 1; i >= 0; i--)
-    {
-      sums->tag_table[sums->targets[i].t] = i;
+    for (i = sums->count - 1; i >= 0; i--) {
+	sums->tag_table[sums->targets[i].t] = i;
     }
 
-  return 0;
+    return 0;
 }
 
 
@@ -78,29 +74,27 @@ _hs_build_hash_table (struct sum_struct *sums)
    strong checksum for the current block, and see if it will match
    anything. */
 int
-_hs_find_in_hash (rollsum_t *rollsum,
-		  char const *inbuf, int block_len,
-		  struct sum_struct const *sums)
+_hs_find_in_hash(rollsum_t * rollsum,
+		 char const *inbuf, int block_len,
+		 struct sum_struct const *sums)
 {
-  int tag = gettag (rollsum->weak_sum);
-  int j = sums->tag_table[tag];
-  char strong_sum[SUM_LENGTH];
+    int tag = gettag(rollsum->weak_sum);
+    int j = sums->tag_table[tag];
+    char strong_sum[SUM_LENGTH];
 
-  if (j == NULL_TAG)
-    {
-      return -1;
+    if (j == NULL_TAG) {
+	return -1;
     }
 
-  _hs_calc_strong_sum(inbuf, block_len, strong_sum);
+    _hs_calc_strong_sum(inbuf, block_len, strong_sum);
 
-  for (; j < sums->count && sums->targets[j].t == tag; j++)
-    {
-      int i = sums->targets[j].i;
+    for (; j < sums->count && sums->targets[j].t == tag; j++) {
+	int i = sums->targets[j].i;
 
-      if (rollsum->weak_sum != sums->sums[i].sum1)
-	continue;
+	if (rollsum->weak_sum != sums->sums[i].sum1)
+	    continue;
 
-      /* also make sure the two blocks are the same length */
+	/* also make sure the two blocks are the same length */
 /*      l = MIN(s->n,len-offset); */
 /*      if (l != s->sums[i].len) continue;			 */
 
@@ -110,11 +104,10 @@ _hs_find_in_hash (rollsum_t *rollsum,
 /*        done_csum2 = 1; */
 /*      } */
 
-      if (memcmp (strong_sum, sums->sums[i].sum2, SUM_LENGTH) == 0)
-	{
-	  return sums->sums[i].i;
+	if (memcmp(strong_sum, sums->sums[i].sum2, SUM_LENGTH) == 0) {
+	    return sums->sums[i].i;
 	}
     }
 
-  return -1;
+    return -1;
 }
