@@ -16,3 +16,4 @@ hsencode
 libtool
 stamp-h
 stamp-h.in
+libhsync-*.tar.gz

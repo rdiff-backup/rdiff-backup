@@ -1,4 +1,4 @@
-#! /bin/sh -pex
+#! /bin/sh -pe
 
 # Regression test encoding and decoding by playing a suite of prerecorded
 # differences

@@ -22,7 +22,6 @@ out=out.tmp
 oldsig=empty-sig
 old=/dev/null
 
-set -x
 for new in $files
 do
     hsencode $new $diff $oldsig

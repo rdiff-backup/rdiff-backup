@@ -161,9 +161,8 @@ _hs_output_block_hash(rs_write_fn_t write_fn, void *write_priv,
 		      rollsum_t * rollsum)
 {
     char strong_sum[SUM_LENGTH];
-    int pos = inbuf->abspos + inbuf->cursor;
 
-    _hs_trace("called, abspos=%d", pos);
+    _hs_trace("called, abspos=%d", inbuf->abspos + inbuf->cursor);
 
     _hs_write_netint(write_fn, write_priv, rollsum->weak_sum);
     _hs_calc_strong_sum(inbuf->buf + inbuf->cursor, new_block_len,

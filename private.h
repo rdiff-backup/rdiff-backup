@@ -19,8 +19,13 @@
    USA
 */
 
+#ifdef DO_HS_TRACE
 #define _hs_trace(s, str...) fprintf (stderr, \
   "        " __FUNCTION__ ": " s "\n" , ##str)
+#else /* !DO_HS_TRACE */
+#define _hs_trace(s, str...)
+#endif /* !DO_HS_TRACE */
+
 
 #define return_val_if_fail(expr, val) if (!(expr))	\
   { fprintf(stderr, "%s(%d): %s: assertion failed\n",	\
