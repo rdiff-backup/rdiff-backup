@@ -44,16 +44,17 @@ def parse_cmdlineoptions(arglist):
 		  "checkpoint-interval=", "current-time=", "exclude=",
 		  "exclude-device-files", "exclude-filelist=",
 		  "exclude-filelist-stdin", "exclude-mirror=",
-		  "exclude-regexp=", "force", "include=",
-		  "include-filelist=", "include-filelist-stdin",
+		  "exclude-other-filesystems", "exclude-regexp=", "force",
+		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-regexp=", "list-increments", "mirror-only",
-		  "no-compression", "no-compression-regexp=",
-		  "no-hard-links", "no-resume", "null-separator",
-		  "parsable-output", "print-statistics", "quoting-char=",
-		  "remote-cmd=", "remote-schema=", "remove-older-than=",
-		  "restore-as-of=", "resume", "resume-window=", "server",
-		  "ssh-no-compression", "terminal-verbosity=",
-		  "test-server", "verbosity", "version", "windows-mode",
+		  "no-compression", "no-compression-regexp=", "no-hard-links",
+		  "no-resume", "null-separator", "parsable-output",
+		  "print-statistics", "quoting-char=", "remote-cmd=",
+		  "remote-schema=", "remove-older-than=", "restore-as-of=",
+		  "restrict=", "restrict-read-only=", "restrict-update-only=",
+		  "resume", "resume-window=", "server", "sleep-ratio=",
+		  "ssh-no-compression", "terminal-verbosity=", "test-server",
+		  "verbosity", "version", "windows-mode",
 		  "windows-time-format"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: %s" % str(e))
@@ -80,6 +81,8 @@ def parse_cmdlineoptions(arglist):
 			select_files.append(sys.stdin)
 		elif opt == "--exclude-mirror":
 			select_mirror_opts.append(("--exclude", arg))
+		elif opt == "--exclude-other-filesystems":
+			select_opts.append((opt, arg))
 		elif opt == "--exclude-regexp": select_opts.append((opt, arg))
 		elif opt == "--force": force = 1
 		elif opt == "--include": select_opts.append((opt, arg))
@@ -99,23 +102,34 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 		elif opt == '--no-resume': Globals.resume = 0
 		elif opt == "--null-separator": Globals.set("null_separator", 1)
-		elif opt == "-r" or opt == "--restore-as-of":
-			restore_timestr, action = arg, "restore-as-of"
 		elif opt == "--parsable-output": Globals.set('parsable_output', 1)
 		elif opt == "--print-statistics":
 			Globals.set('print_statistics', 1)
 		elif opt == "--quoting-char":
 			Globals.set('quoting_char', arg)
 			Globals.set('quoting_enabled', 1)
+		elif opt == "-r" or opt == "--restore-as-of":
+			restore_timestr, action = arg, "restore-as-of"
 		elif opt == "--remote-cmd": remote_cmd = arg
 		elif opt == "--remote-schema": remote_schema = arg
 		elif opt == "--remove-older-than":
 			remove_older_than_string = arg
 			action = "remove-older-than"
+		elif opt == "--restrict": Globals.restrict_path = arg
+		elif opt == "--restrict-read-only":
+			Globals.security_level = "read-only"
+			Globals.restrict_path = arg
+		elif opt == "--restrict-update-only":
+			Globals.security_level = "update-only"
+			Globals.restrict_path = arg
 		elif opt == '--resume': Globals.resume = 1
 		elif opt == '--resume-window':
 			Globals.set_integer('resume_window', arg)
-		elif opt == "-s" or opt == "--server": action = "server"
+		elif opt == "-s" or opt == "--server":
+			action = "server"
+			Globals.server = 1
+		elif opt == "--sleep-ratio":
+			Globals.set_float("sleep_ratio", arg, 0, 1, inclusive=0)
 		elif opt == "--ssh-no-compression":
 			Globals.set('ssh_compression', None)
 		elif opt == "--terminal-verbosity": Log.setterm_verbosity(arg)
@@ -176,7 +190,6 @@ def misc_setup(rps):
 	os.umask(077)
 	Time.setcurtime(Globals.current_time)
 	FilenameMapping.set_init_quote_vals()
-	Globals.set("isclient", 1)
 	SetConnections.UpdateGlobal("client_conn", Globals.local_connection)
 
 	# This is because I originally didn't think compiled regexps
@@ -209,7 +222,9 @@ def Main(arglist):
 	"""Start everything up!"""
 	parse_cmdlineoptions(arglist)
 	set_action()
-	rps = SetConnections.InitRPs(args, remote_schema, remote_cmd)
+	cmdpairs = SetConnections.get_cmd_pairs(args, remote_schema, remote_cmd)
+	Security.initialize(action, cmdpairs)
+	rps = map(SetConnections.cmdpair2rp, cmdpairs)
 	misc_setup(rps)
 	take_action(rps)
 	cleanup()
@@ -222,6 +237,7 @@ def Mirror(src_rp, dest_rp):
 	# Since no "rdiff-backup-data" dir, use root of destination.
 	SetConnections.UpdateGlobal('rbdir', dest_rp)
 	SetConnections.BackupInitConnections(src_rp.conn, dest_rp.conn)
+	backup_init_select(src_rp, dest_rp)
 	HighLevel.Mirror(src_rp, dest_rp)
 
 def mirror_check_paths(rpin, rpout):
@@ -245,7 +261,7 @@ def Backup(rpin, rpout):
 		Time.setprevtime(prevtime)
 		HighLevel.Mirror_and_increment(rpin, rpout, incdir, RSI)
 	else: HighLevel.Mirror(rpin, rpout, incdir, RSI)
-	backup_touch_curmirror(rpin, rpout)
+	rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
 
 def backup_init_select(rpin, rpout):
 	"""Create Select objects on source and dest connections"""
@@ -307,6 +323,7 @@ may need to use the --exclude option.""" % (rpout.path, rpin.path), 2)
 
 def backup_get_mirrorrps():
 	"""Return list of current_mirror rps"""
+	datadir = Globals.rbdir
 	if not datadir.isdir(): return []
 	mirrorrps = [datadir.append(fn) for fn in datadir.listdir()
 				 if fn.startswith("current_mirror.")]
@@ -324,19 +341,20 @@ went wrong during your last backup?  Using """ + mirrorrps[-1].path, 2)
 	timestr = mirrorrps[-1].getinctime()
 	return Time.stringtotime(timestr)
 
-def backup_touch_curmirror(rpin, rpout):
+def backup_touch_curmirror_local(rpin, rpout):
 	"""Make a file like current_mirror.time.data to record time
 
-	Also updates rpout so mod times don't get messed up.
+	Also updates rpout so mod times don't get messed up.  This should
+	be run on the destination connection.
 
 	"""
+	datadir = Globals.rbdir
 	map(RPath.delete, backup_get_mirrorrps())
 	mirrorrp = datadir.append("current_mirror.%s.%s" % (Time.curtimestr,
 														"data"))
 	Log("Touching mirror marker %s" % mirrorrp.path, 6)
 	mirrorrp.touch()
 	RPath.copy_attribs(rpin, rpout)
-
 
 def restore(src_rp, dest_rp = None):
 	"""Main restoring function
@@ -474,23 +492,24 @@ def RemoveOlderThan(rootrp):
 					   (datadir.path,))
 
 	try: time = Time.genstrtotime(remove_older_than_string)
-	except TimeError, exc: Log.FatalError(str(exc))
+	except Time.TimeException, exc: Log.FatalError(str(exc))
 	timep = Time.timetopretty(time)
 	Log("Deleting increment(s) before %s" % timep, 4)
 
-	itimes = [Time.stringtopretty(inc.getinctime())
-			  for inc in Restore.get_inclist(datadir.append("increments"))
-			  if Time.stringtotime(inc.getinctime()) < time]
-
-	if not itimes:
+	times_in_secs = map(lambda inc: Time.stringtotime(inc.getinctime()),
+						Restore.get_inclist(datadir.append("increments")))
+	times_in_secs = filter(lambda t: t < time, times_in_secs)
+	if not times_in_secs:
 		Log.FatalError("No increments older than %s found" % timep)
-	inc_pretty_time = "\n".join(itimes)
-	if len(itimes) > 1 and not force:
+
+	times_in_secs.sort()
+	inc_pretty_time = "\n".join(map(Time.timetopretty, times_in_secs))
+	if len(times_in_secs) > 1 and not force:
 		Log.FatalError("Found %d relevant increments, dated:\n%s"
 			"\nIf you want to delete multiple increments in this way, "
-			"use the --force." % (len(itimes), inc_pretty_time))
+			"use the --force." % (len(times_in_secs), inc_pretty_time))
 
 	Log("Deleting increment%sat times:\n%s" %
-		(len(itimes) == 1 and " " or "s ", inc_pretty_time), 3)
+		(len(times_in_secs) == 1 and " " or "s ", inc_pretty_time), 3)
 	Manage.delete_earlier_than(datadir, time)
 

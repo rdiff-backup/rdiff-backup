@@ -85,9 +85,6 @@ isbackup_writer = None
 # Connection of the backup writer
 backup_writer = None
 
-# True if this process is the client invoked by the user
-isclient = None
-
 # Connection of the client
 client_conn = None
 
@@ -171,6 +168,22 @@ select_source, select_mirror = None, None
 # object.  Access is provided to increment error counts.
 ITRB = None
 
+# Percentage of time to spend sleeping.  None means never sleep.
+sleep_ratio = None
+
+# security_level has 4 values and controls which requests from remote
+# systems will be honored.  "all" means anything goes. "read-only"
+# means that the requests must not write to disk.  "update-only" means
+# that requests shouldn't destructively update the disk (but normal
+# incremental updates are OK).  "minimal" means only listen to a few
+# basic requests.
+security_level = "all"
+
+# If this is set, it indicates that the remote connection should only
+# deal with paths inside of restrict_path.
+restrict_path = None
+
+
 def get(name):
 	"""Return the value of something in this module"""
 	return globals()[name]
@@ -198,6 +211,32 @@ def set_integer(name, val):
 		Log.FatalError("Variable %s must be set to an integer -\n"
 					   "received %s instead." % (name, val))
 	set(name, intval)
+
+def set_float(name, val, min = None, max = None, inclusive = 1):
+	"""Like set, but make sure val is float within given bounds"""
+	def error():
+		s = "Variable %s must be set to a float" % (name,)
+		if min is not None and max is not None:
+			s += " between %s and %s " % (min, max)
+			if inclusive: s += "inclusive"
+			else: s += "not inclusive"
+		elif min is not None or max is not None:
+			if inclusive: inclusive_string = "or equal to "
+			else: inclusive_string = ""
+			if min is not None:
+				s += " greater than %s%s" % (inclusive_string, min)
+			else: s+= " less than %s%s" % (inclusive_string, max)
+		Log.FatalError(s)
+
+	try: f = float(val)
+	except ValueError: error()
+	if min is not None:
+		if inclusive and f < min: error()
+		elif not inclusive and f <= min: error()
+	if max is not None:
+		if inclusive and f > max: error()
+		elif not inclusive and f >= max: error()
+	set(name, f)
 
 def get_dict_val(name, key):
 	"""Return val from dictionary in this class"""

@@ -48,11 +48,9 @@ class LocalConnection(Connection):
 		elif isinstance(__builtins__, dict): return __builtins__[name]
 		else: return __builtins__.__dict__[name]
 
-	def __setattr__(self, name, value):
-		globals()[name] = value
+	def __setattr__(self, name, value): globals()[name] = value
 
-	def __delattr__(self, name):
-		del globals()[name]
+	def __delattr__(self, name): del globals()[name]
 
 	def __str__(self): return "LocalConnection"
 
@@ -329,7 +327,9 @@ class PipeConnection(LowLevelPipeConnection):
 			arg_req_num, arg = self._get()
 			assert arg_req_num == req_num
 			argument_list.append(arg)
-		try: result = apply(eval(request.function_string), argument_list)
+		try:
+			Security.vet_request(request, argument_list)
+			result = apply(eval(request.function_string), argument_list)
 		except: result = self.extract_exception()
 		self._put(result, req_num)
 		self.unused_request_numbers[req_num] = None
@@ -407,14 +407,31 @@ class RedirectedConnection(Connection):
 		self.routing_number = routing_number
 		self.routing_conn = Globals.connection_dict[routing_number]
 
+	def reval(self, function_string, *args):
+		"""Evalution function_string on args on remote connection"""
+		return self.routing_conn.reval("RedirectedRun", self.conn_number,
+									   function_string, *args)
+
 	def __str__(self):
 		return "RedirectedConnection %d,%d" % (self.conn_number,
 											   self.routing_number)
 
 	def __getattr__(self, name):
-		return EmulateCallable(self.routing_conn,
-		   "Globals.get_dict_val('connection_dict', %d).%s"
-							   % (self.conn_number, name))
+		return EmulateCallableRedirected(self.conn_number, self.routing_conn,
+										 name)
+
+def RedirectedRun(conn_number, func, *args):
+	"""Run func with args on connection with conn number conn_number
+
+	This function is meant to redirect requests from one connection to
+	another, so conn_number must not be the local connection (and also
+	for security reasons since this function is always made
+	available).
+
+	"""
+	conn = Globals.connection_dict[conn_number]
+	assert conn is not Globals.local_connection, conn
+	return conn.reval(func, *args)
 
 
 class EmulateCallable:
@@ -427,6 +444,18 @@ class EmulateCallable:
 	def __getattr__(self, attr_name):
 		return EmulateCallable(self.connection,
 							   "%s.%s" % (self.name, attr_name))
+
+class EmulateCallableRedirected:
+	"""Used by RedirectedConnection in calls like conn.os.chmod(foo)"""
+	def __init__(self, conn_number, routing_conn, name):
+		self.conn_number, self.routing_conn = conn_number, routing_conn
+		self.name = name
+	def __call__(self, *args):
+		return apply(self.routing_conn.reval,
+					 ("RedirectedRun", self.conn_number, self.name) + args)
+	def __getattr__(self, attr_name):
+		return EmulateCallableRedirected(self.conn_number, self.routing_conn,
+										 "%s.%s" % (self.name, attr_name))
 
 
 class VirtualFile:
@@ -499,7 +528,7 @@ class VirtualFile:
 
 # everything has to be available here for remote connection's use, but
 # put at bottom to reduce circularities.
-import Globals, Time, Rdiff, Hardlink, FilenameMapping, C
+import Globals, Time, Rdiff, Hardlink, FilenameMapping, C, Security, Main
 from static import *
 from lazy import *
 from log import *

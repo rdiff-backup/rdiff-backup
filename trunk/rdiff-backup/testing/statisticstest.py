@@ -57,6 +57,7 @@ ChangedSourceSize 8 (8 bytes)
 ChangedMirrorSize 9 (9 bytes)
 IncrementFiles 15
 IncrementFileSize 10 (10 bytes)
+TotalDestinationSizeChange 7 (7 bytes)
 """, "'%s'" % stats_string
 
 	def test_line_string(self):

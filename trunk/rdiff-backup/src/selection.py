@@ -256,6 +256,8 @@ class Select:
 					self.add_selection_func(self.filelist_get_sf(
 						filelists[filelists_index], 0, arg))
 					filelists_index += 1
+				elif opt == "--exclude-other-filesystems":
+					self.add_selection_func(self.other_filesystems_get_sf(0))
 				elif opt == "--exclude-regexp":
 					self.add_selection_func(self.regexp_get_sf(arg, 0))
 				elif opt == "--include":
@@ -415,6 +417,17 @@ probably isn't what you meant.""" %
 			elif index < dsrp.index: return (None, 1)
 			else: return (None, None) # dsrp greater, not initial sequence
 		else: assert 0, "Include is %s, should be 0 or 1" % (include,)
+
+	def other_filesystems_get_sf(self, include):
+		"""Return selection function matching files on other filesystems"""
+		assert include == 0 or include == 1
+		root_devloc = self.dsrpath.getdevloc()
+		def sel_func(dsrp):
+			if dsrp.getdevloc() == root_devloc: return None
+			else: return include
+		sel_func.exclude = not include
+		sel_func.name = "Match other filesystems"
+		return sel_func
 
 	def regexp_get_sf(self, regexp_string, include):
 		"""Return selection function given by regexp_string"""

@@ -25,17 +25,18 @@ _genstr_date_regexp1 = re.compile("^(?P<year>[0-9]{4})[-/]"
 _genstr_date_regexp2 = re.compile("^(?P<month>[0-9]{1,2})[-/]"
 					   "(?P<day>[0-9]{1,2})[-/](?P<year>[0-9]{4})$")
 curtime = curtimestr = None
+been_awake_since = None # stores last time sleep() was run
 
 def setcurtime(curtime = None):
 	"""Sets the current time in curtime and curtimestr on all systems"""
 	t = curtime or time.time()
 	for conn in Globals.connections:
-		conn.Time.setcurtime_local(t, timetostring(t))
+		conn.Time.setcurtime_local(t)
 
-def setcurtime_local(timeinseconds, timestr):
+def setcurtime_local(timeinseconds):
 	"""Only set the current time locally"""
 	global curtime, curtimestr
-	curtime, curtimestr = timeinseconds, timestr
+	curtime, curtimestr = timeinseconds, timetostring(timeinseconds)
 
 def setprevtime(timeinseconds):
 	"""Sets the previous inc time in prevtime and prevtimestr"""
@@ -168,6 +169,25 @@ def cmp(time1, time2):
 	elif time1 == time2: return 0
 	else: return 1
 
+
+def sleep(sleep_ratio):
+	"""Sleep for period to maintain given sleep_ratio
+
+	On my system sleeping for periods less than 1/20th of a second
+	doesn't seem to work very accurately, so accumulate at least that
+	much time before sleeping.
+
+	"""
+	global been_awake_since
+	if been_awake_since is None: # first running
+		been_awake_since = time.time()
+	else:
+		elapsed_time = time.time() - been_awake_since
+		sleep_time = elapsed_time * (sleep_ratio/(1-sleep_ratio))
+		if sleep_time >= 0.05:
+			time.sleep(sleep_time)
+			been_awake_since = time.time()
+
 def genstrtotime(timestr, curtime = None):
 	"""Convert a generic time string to a time in seconds"""
 	if curtime is None: curtime = globals()['curtime']
@@ -203,5 +223,3 @@ the day).""" % timestr)
 	t = stringtotime(timestr)
 	if t: return t
 	else: error()
-
-
