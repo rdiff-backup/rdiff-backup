@@ -1,6 +1,9 @@
                                                   -*- indented-text -*-
 $Id$
 
+ * Tool to generate standalone signatures.  But don't conflict with
+   xdelta here.
+
  * Meta-programming
 
    * Plot lengths of each function
