@@ -1,8 +1,6 @@
+Test restores from non-increment files
+
 write test case for --calculate-statistics
-
-Fix for Python 2.3
-
-Change for librsync 0.9.6 when it comes out
 
 Use ctime to check whether files have been changed.  See message:
 http://mail.gnu.org/archive/html/rdiff-backup-users/2003-06/msg00050.html
