@@ -4,7 +4,7 @@ Write some better selection test cases to test new Iterate_fast func.
 
 Considering rewriting Selection Iterate(_fast) code again.
 
-Fix up headers on source code files, update README.
+Fix remaining memory leaks in cmodule.c
 
 
 ---------[ Long term ]---------------------------------------
