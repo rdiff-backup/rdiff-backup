@@ -11,7 +11,7 @@ if you aren't me, check out the 'user' global variable.
 
 Globals.set('change_source_perms', None)
 Globals.counter = 0
-verbosity = 3
+verbosity = 6
 log.Log.setverbosity(verbosity)
 user = 'ben' # Non-root user to su to
 assert os.getuid() == 0, "Run this test as root!"
@@ -46,6 +46,11 @@ class HalfRoot(unittest.TestCase):
 		rp1_2 = rp1.append('to be deleted')
 		rp1_2.write_string('aosetuhaosetnuhontu')
 		rp1_2.chmod(0)
+		rp1_3 = rp1.append('unreadable_dir')
+		rp1_3.mkdir()
+		rp1_3_1 = rp1_3.append('file inside')
+		rp1_3_1.write_string('blah')
+		rp1_3.chmod(0)
 
 		rp2 = rpath.RPath(Globals.local_connection, "testfiles/root_half2")
 		if rp2.lstat(): Myrm(rp2.path)
@@ -53,6 +58,9 @@ class HalfRoot(unittest.TestCase):
 		rp2_1 = rp2.append('foo')
 		rp2_1.write_string('goodbye')
 		rp2_1.chmod(0)
+		rp2_3 = rp2.append('unreadable_dir')
+		rp2_3.mkdir()
+		rp2_3.chmod(0)
 		return rp1, rp2
 
 	def test_backup(self):
