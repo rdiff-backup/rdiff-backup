@@ -93,6 +93,19 @@ testfiles/select/3/3/2""")
 		assert sf(self.makeext("3/3")) == 1
 		assert sf(self.makeext("3/3/3")) == None
 
+	def testFilelistWhitespaceInclude(self):
+		"""Test included filelist, with some whitespace"""
+		fp = StringIO.StringIO("""
++ testfiles/select/1  
+- testfiles/select/2  
+testfiles/select/3\t""")
+		sf = self.Select.filelist_get_sf(fp, 1, "test")
+		assert sf(self.root) == 1
+		assert sf(self.makeext("1  ")) == 1
+		assert sf(self.makeext("2  ")) == 0
+		assert sf(self.makeext("3\t")) == 1
+		assert sf(self.makeext("4")) == None
+
 	def testFilelistIncludeNullSep(self):
 		"""Test included filelist but with null_separator set"""
 		fp = StringIO.StringIO("""\0testfiles/select/1/2\0testfiles/select/1\0testfiles/select/1/2/3\0testfiles/select/3/3/2\0testfiles/select/hello\nthere\0""")
@@ -107,7 +120,7 @@ testfiles/select/3/3/2""")
 		assert sf(self.makeext("3/3")) == 1
 		assert sf(self.makeext("3/3/3")) == None
 		assert sf(self.makeext("hello\nthere")) == 1
-		Globals.null_separator = 1
+		Globals.null_separator = 0
 
 	def testFilelistExclude(self):
 		"""Test included filelist"""
@@ -196,6 +209,37 @@ testfiles/select/1/1
 		self.assertRaises(FilePrefixError, self.Select.glob_get_sf,
 						  "ignorecase:tesfiles/sect/foo/bar", 1)
 						  
+	def testDev(self):
+		"""Test device and special file selection"""
+		dir = self.root.append("filetypes")
+		fifo = dir.append("fifo")
+		assert fifo.isfifo(), fifo
+		sym = dir.append("symlink")
+		assert sym.issym(), sym
+		reg = dir.append("regular_file")
+		assert reg.isreg(), reg
+		sock = dir.append("replace_with_socket")
+		if not sock.issock():
+			assert sock.isreg(), sock
+			sock.delete()
+			sock.mksock()
+			assert sock.issock()
+		dev = dir.append("ttyS1")
+		assert dev.isdev(), dev
+		
+		sf = self.Select.devfiles_get_sf(0)
+		assert sf(dir) == None
+		assert sf(dev) == 0
+		assert sf(sock) == None
+
+		sf2 = self.Select.special_get_sf(0)
+		assert sf2(dir) == None
+		assert sf2(reg) == None
+		assert sf2(dev) == 0
+		assert sf2(sock) == 0
+		assert sf2(fifo) == 0
+		assert sf2(sym) == 0
+
 	def testRoot(self):
 		"""testRoot - / may be a counterexample to several of these.."""
 		root = DSRPath(1, Globals.local_connection, "/")
@@ -235,7 +279,7 @@ testfiles/select/1/1
 			   "Assumption: /boot is on a different filesystem"
 
 class ParseArgsTest(unittest.TestCase):
-	"""Test argument parsing"""
+	"""Test argument parsing as well as filelist globbing"""
 	root = None
 	def ParseTest(self, tuplelist, indicies, filelists = []):
 		"""No error if running select on tuple goes over indicies"""
@@ -243,10 +287,19 @@ class ParseArgsTest(unittest.TestCase):
 			self.root = DSRPath(1, Globals.local_connection,
 								"testfiles/select")
 		self.Select = Select(self.root)
-		self.Select.ParseArgs(tuplelist, filelists)
+		self.Select.ParseArgs(tuplelist, self.remake_filelists(filelists))
 		self.Select.set_iter()
 		assert Iter.equal(Iter.map(lambda dsrp: dsrp.index, self.Select),
 						  iter(indicies), verbose = 1)
+
+	def remake_filelists(self, filelist):
+		"""Turn strings in filelist into fileobjs"""
+		new_filelists = []
+		for f in filelist:
+			if type(f) is types.StringType:
+				new_filelists.append(StringIO.StringIO(f))
+			else: new_filelists.append(f)
+		return new_filelists
 
 	def testParse(self):
 		"""Test just one include, all exclude"""
@@ -263,6 +316,18 @@ class ParseArgsTest(unittest.TestCase):
 							   ("--exclude", "**")],
 					   [(), ('1',), ('1', '1'), ('1', '1', '2'),
 						('1', '1', '3')])
+
+	def test_globbing_filelist(self):
+		"""Filelist glob test similar to above testParse2"""
+		self.ParseTest([("--include-globbing-filelist", "file")],
+					   [(), ('1',), ('1', '1'), ('1', '1', '2'),
+						('1', '1', '3')],
+					   ["""
+- testfiles/select/1/1/1
+testfiles/select/1/1
+- testfiles/select/1
+- **
+"""])
 
 	def testGlob(self):
 		"""Test globbing expression"""
@@ -293,6 +358,41 @@ class ParseArgsTest(unittest.TestCase):
 						('3', '3'),
 						('3', '3', '2')])
 
+	def test_globbing_filelist2(self):
+		"""Filelist glob test similar to above testGlob"""
+		self.ParseTest([("--exclude-globbing-filelist", "asoeuth")],
+					   [(), ('1',), ('1', '1'),
+						('1', '1', '1'), ('1', '1', '2'),
+						('1', '2'), ('1', '2', '1'), ('1', '2', '2')],
+					   ["""
+**[3-5]
++ testfiles/select/1
+**
+"""])
+		self.ParseTest([("--include-globbing-filelist", "file")],
+					   [(), ('1',), ('1', '1'),
+						('1', '1', '2'),
+						('1', '2'),
+						('1', '2', '1'), ('1', '2', '2'), ('1', '2', '3'),
+						('1', '3'),
+						('1', '3', '2'),
+						('2',), ('2', '1'),
+						('2', '1', '1'), ('2', '1', '2'), ('2', '1', '3'),
+						('2', '2'),
+						('2', '2', '1'), ('2', '2', '2'), ('2', '2', '3'),
+						('2', '3'),
+						('2', '3', '1'), ('2', '3', '2'), ('2', '3', '3'),
+						('3',), ('3', '1'),
+						('3', '1', '2'),
+						('3', '2'),
+						('3', '2', '1'), ('3', '2', '2'), ('3', '2', '3'),
+						('3', '3'),
+						('3', '3', '2')],
+					   ["""
+testfiles/select**/2
+- **
+"""])
+					   
 	def testGlob2(self):
 		"""Test more globbing functions"""
 		self.ParseTest([("--include", "testfiles/select/*foo*/p*"),
