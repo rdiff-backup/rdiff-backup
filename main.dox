@@ -8,10 +8,10 @@ $Id$
 \section intro Introduction
 
 libhsync is a library for calculating and applying network deltas,
-with an interface designed to ease embedded into diverse applications.
-\em libhsync is being developed as part of the \b rproxy
-<http://rproxy.samba.org/> and \b rsync <http://rsync.samba.org/>
-projects.
+with an interface designed to ease integration into diverse
+network applications.  \em libhsync is being developed as part of the \b
+rproxy <http://rproxy.samba.org/> and \b rsync
+<http://rsync.samba.org/> projects.
 
 libhsync encapsulates the core algorithms of the rsync protocol, which
 help with efficient calculation of the differences between two files.
