@@ -43,14 +43,27 @@ class Inc:
 		
 	def makesnapshot_action(mirror, incpref):
 		"""Copy mirror to incfile, since new is quite different"""
-		snapshotrp = Inc.get_inc_ext(incpref, "snapshot")
-		return Robust.copy_with_attribs_action(mirror, snapshotrp)
+		if (mirror.isreg() and Globals.compression and
+			not Globals.no_compression_regexp.match(mirror.path)):
+			snapshotrp = Inc.get_inc_ext(incpref, "snapshot.gz")
+			return Robust.copy_with_attribs_action(mirror, snapshotrp, 1)
+		else:
+			snapshotrp = Inc.get_inc_ext(incpref, "snapshot")
+			return Robust.copy_with_attribs_action(mirror, snapshotrp, None)
 
 	def makediff_action(new, mirror, incpref):
 		"""Make incfile which is a diff new -> mirror"""
-		diff = Inc.get_inc_ext(incpref, "diff")
-		return Robust.chain([Rdiff.write_delta_action(new, mirror, diff),
-							 Robust.copy_attribs_action(mirror, diff)])
+		if (Globals.compression and
+			not Globals.no_compression_regexp.match(mirror.path)):
+			diff = Inc.get_inc_ext(incpref, "diff.gz")
+			return Robust.chain([Rdiff.write_delta_action(new, mirror,
+														  diff, 1),
+								 Robust.copy_attribs_action(mirror, diff)])
+		else: 
+			diff = Inc.get_inc_ext(incpref, "diff")
+			return Robust.chain([Rdiff.write_delta_action(new, mirror,
+														  diff, None),
+								 Robust.copy_attribs_action(mirror, diff)])
 
 	def makedir_action(mirrordir, incpref):
 		"""Make file indicating directory mirrordir has changed"""

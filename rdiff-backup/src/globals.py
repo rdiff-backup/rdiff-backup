@@ -8,7 +8,7 @@ import re, os
 class Globals:
 
 	# The current version of rdiff-backup
-	version = "0.7.0"
+	version = "0.7.1"
 	
 	# If this is set, use this value in seconds as the current time
 	# instead of reading it from the clock.
@@ -132,6 +132,18 @@ class Globals:
 	# hardlink information regardless.
 	preserve_hardlinks = 1
 
+	# If this is false, then rdiff-backup will not compress any
+	# increments.  Default is to compress based on regexp below.
+	compression = 1
+
+	# Increments based on files whose names match this
+	# case-insensitive regular expression won't be compressed (applies
+	# to .snapshots and .diffs).  The second below is the compiled
+	# version of the first.
+	no_compression_regexp_string = ".*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|" \
+								   "mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
+	no_compression_regexp = None
+
 	def get(cls, name):
 		"""Return the value of something in this class"""
 		return cls.__dict__[name]
@@ -181,3 +193,15 @@ class Globals:
 		if mirror: Globals.exclude_mirror_regexps.append(compiled)
 		else: Globals.exclude_regexps.append(compiled)
 	add_regexp_local = classmethod(add_regexp_local)
+
+	def postset_regexp(cls, name, re_string, flags = None):
+		"""Compile re_string on all existing connections, set to name"""
+		for conn in Globals.connections:
+			conn.Globals.postset_regexp_local(name, re_string, flags)
+	postset_regexp = classmethod(postset_regexp)
+
+	def postset_regexp_local(cls, name, re_string, flags):
+		"""Set name to compiled re_string locally"""
+		if flags: cls.__dict__[name] = re.compile(re_string, flags)
+		else: cls.__dict__[name] = re.compile(re_string)
+	postset_regexp_local = classmethod(postset_regexp_local)

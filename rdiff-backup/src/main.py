@@ -27,7 +27,8 @@ class Main:
 			  "include-from-stdin", "terminal-verbosity=",
 			  "exclude-device-files", "resume", "no-resume",
 			  "resume-window=", "windows-time-format",
-			  "checkpoint-interval=", "no-hard-links", "current-time="])
+			  "checkpoint-interval=", "no-hard-links", "current-time=",
+			  "no-compression", "no-compression-regexp="])
 		except getopt.error:
 			self.commandline_error("Error parsing commandline options")
 
@@ -45,11 +46,14 @@ class Main:
 			elif opt == "--exclude-mirror":
 				self.exclude_mirror_regstrs.append(arg)
 			elif opt == "--force": self.force = 1
-			elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 			elif opt == "--include-from-stdin": Globals.include_from_stdin = 1
 			elif opt == "-l" or opt == "--list-increments":
 				self.action = "list-increments"
 			elif opt == "-m" or opt == "--mirror-only": self.action = "mirror"
+			elif opt == "--no-compression": Globals.set("compression", None)
+			elif opt == "--no-compression-regexp":
+				Globals.set("no_compression_regexp_string", arg)
+			elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 			elif opt == '--no-resume': Globals.resume = 0
 			elif opt == "--remote-cmd": self.remote_cmd = arg
 			elif opt == "--remote-schema": self.remote_schema = arg
@@ -103,7 +107,7 @@ class Main:
 		sys.exit(1)
 
 	def misc_setup(self, rps):
-		"""Set default change ownership flag, umask, excludes"""
+		"""Set default change ownership flag, umask, regular expressions"""
 		if ((len(rps) == 2 and rps[1].conn.os.getuid() == 0) or
 			(len(rps) < 2 and os.getuid() == 0)):
 			# Allow change_ownership if destination connection is root
@@ -116,6 +120,8 @@ class Main:
 			Globals.add_regexp(regex_string, None)
 		for regex_string in self.exclude_mirror_regstrs:
 			Globals.add_regexp(regex_string, 1)
+		Globals.postset_regexp('no_compression_regexp',
+							   Globals.no_compression_regexp_string, re.I)
 
 	def take_action(self, rps):
 		"""Do whatever self.action says"""
@@ -250,7 +256,7 @@ may need to use the --exclude option.""" % (rpout.path, rpin.path), 2)
 """Warning: duplicate current_mirror files found.  Perhaps something
 went wrong during your last backup?  Using """ + mirrorrps[-1].path, 2)
 
-		timestr = self.datadir.append(mirrorrps[-1].path).getinctime()
+		timestr = mirrorrps[-1].getinctime()
 		return Time.stringtotime(timestr)
 	
 	def backup_touch_curmirror(self, rpin, rpout):
