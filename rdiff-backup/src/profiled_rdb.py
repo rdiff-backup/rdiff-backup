@@ -13,8 +13,7 @@ import profile, pstats
 profile.run("Globals.Main.Main(%s)" % repr(sys.argv[1:]), "profile-output")
 p = pstats.Stats("profile-output")
 p.sort_stats('time')
-p.print_stats(20)
-p.sort_stats('cumulative')
-p.print_stats(20)
+p.print_stats(40)
+#p.print_callers(20)
 
 

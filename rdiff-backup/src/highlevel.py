@@ -105,7 +105,7 @@ class HLSourceStruct:
 					if dest_sig.isplaceholder(): yield dest_sig
 					else:
 						diff = Robust.check_common_error(
-							error_handler, RORPIter.diffonce, dest_sig, dsrp)
+							error_handler, RORPIter.diffonce, [dest_sig, dsrp])
 						if diff: yield diff
 				if dsrp: finalizer(dsrp.index, dsrp)
 			finalizer.Finish()
@@ -237,10 +237,10 @@ class HLDestinationStruct:
 			Log("Error: %s processing file %s" % (exc, filename), 2)
 		
 		for indexed_tuple in collated:
-			Log("Processing %s" % str(indexed_tuple), 7)
+			Log(lambda: "Processing %s" % str(indexed_tuple), 7)
 			diff_rorp, dsrp = indexed_tuple
 			dsrp = Robust.check_common_error(error_handler, patch,
-											 diff_rorp, dsrp)
+											 [diff_rorp, dsrp])
 			finalizer(dsrp.index, dsrp)
 		finalizer.Finish()
 
@@ -253,7 +253,7 @@ class HLDestinationStruct:
 
 		try:
 			for indexed_tuple in collated:
-				Log("Processing %s" % str(indexed_tuple), 7)
+				Log(lambda: "Processing %s" % str(indexed_tuple), 7)
 				diff_rorp, dsrp = indexed_tuple
 				if not dsrp: dsrp = cls.get_dsrp(dest_rpath, diff_rorp.index)
 				if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
@@ -279,7 +279,7 @@ class HLDestinationStruct:
 
 		try:
 			for indexed_tuple in collated:
-				Log("Processing %s" % str(indexed_tuple), 7)
+				Log(lambda: "Processing %s" % str(indexed_tuple), 7)
 				diff_rorp, dsrp = indexed_tuple
 				index = indexed_tuple.index
 				if not dsrp: dsrp = cls.get_dsrp(dest_rpath, index)

@@ -234,7 +234,7 @@ class Robust:
 			tf.setdata()
 		return Robust.make_tf_robustaction(init, tf, rp)
 
-	def check_common_error(error_handler, function, *args):
+	def check_common_error(error_handler, function, args = []):
 		"""Apply function to args, if error, run error_handler on exception
 
 		This only catches certain exceptions which seems innocent

@@ -163,7 +163,7 @@ class RPathStatic:
 	def rename(rp_source, rp_dest):
 		"""Rename rp_source to rp_dest"""
 		assert rp_source.conn is rp_dest.conn
-		Log("Renaming %s to %s" % (rp_source.path, rp_dest.path), 7)
+		Log(lambda: "Renaming %s to %s" % (rp_source.path, rp_dest.path), 7)
 		rp_source.conn.os.rename(rp_source.path, rp_dest.path)
 		rp_dest.data = rp_source.data
 		rp_source.data = {'type': None}
@@ -422,7 +422,7 @@ class RPath(RORPath):
 		self.conn = connection
 		self.index = index
 		self.base = base
-		self.path = apply(os.path.join, (base,) + self.index)
+		if base is not None: self.path = "/".join((base,) + index)
 		self.file = None
 		if data or base is None: self.data = data
 		else: self.setdata()
@@ -445,7 +445,7 @@ class RPath(RORPath):
 		"""Reproduce RPath from __getstate__ output"""
 		self.conn = Globals.local_connection
 		self.index, self.base, self.data = rpath_state
-		self.path = apply(os.path.join, (self.base,) + self.index)
+		self.path = "/".join((self.base,) + self.index)
 
 	def setdata(self):
 		"""Create the data dictionary"""
@@ -456,8 +456,7 @@ class RPath(RORPath):
 		data = {}
 		mode = statblock[stat.ST_MODE]
 
-		if stat.S_ISREG(mode):
-			type = 'reg'
+		if stat.S_ISREG(mode): type = 'reg'
 		elif stat.S_ISDIR(mode): type = 'dir'
 		elif stat.S_ISCHR(mode):
 			type = 'dev'
@@ -509,7 +508,7 @@ class RPath(RORPath):
 	def quote_path(self):
 		"""Set path from quoted version of index"""
 		quoted_list = [FilenameMapping.quote(path) for path in self.index]
-		self.path = apply(os.path.join, [self.base] + quoted_list)
+		self.path = "/".join([self.base] + quoted_list)
 		self.setdata()
 
 	def chmod(self, permissions):
@@ -526,7 +525,7 @@ class RPath(RORPath):
 
 	def setmtime(self, modtime):
 		"""Set only modtime (access time to present)"""
-		Log("Setting time of %s to %d" % (self.path, modtime), 7)
+		Log(lambda: "Setting time of %s to %d" % (self.path, modtime), 7)
 		self.conn.os.utime(self.path, (time.time(), modtime))
 		self.data['mtime'] = modtime
 
@@ -594,7 +593,7 @@ class RPath(RORPath):
 		
 	def isowner(self):
 		"""Return true if current process is owner of rp or root"""
-		uid = self.conn.Globals.get('process_uid')
+		uid = self.conn.os.getuid()
 		return uid == 0 or uid == self.data['uid']
 
 	def isgroup(self):
@@ -666,8 +665,7 @@ class RPath(RORPath):
 	def append_path(self, ext, new_index = ()):
 		"""Like append, but add ext to path instead of to index"""
 		assert not self.index # doesn't make sense if index isn't ()
-		return self.__class__(self.conn, os.path.join(self.base, ext),
-							  new_index)
+		return self.__class__(self.conn, "/".join((self.base, ext)), new_index)
 
 	def new_index(self, index):
 		"""Return similar RPath but with new index"""

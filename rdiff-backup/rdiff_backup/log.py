@@ -81,7 +81,21 @@ class Logger:
 								   message)
 
 	def __call__(self, message, verbosity):
-		"""Log message that has verbosity importance"""
+		"""Log message that has verbosity importance
+
+		message can be a string, which is logged as-is, or a function,
+		which is then called and should return the string to be
+		logged.  We do it this way in case producing the string would
+		take a significant amount of CPU.
+		
+		"""
+		if verbosity > self.verbosity and verbosity > self.term_verbosity:
+			return
+
+		if not type(message) is types.StringType:
+			assert type(message) is types.FunctionType
+			message = message()
+
 		if verbosity <= self.verbosity: self.log_to_file(message)
 		if verbosity <= self.term_verbosity:
 			self.log_to_term(message, verbosity)

@@ -196,9 +196,9 @@ class IterTreeReducer:
 	iterator nature of the connection between hosts and the temporal
 	order in which the files are processed.
 
-	There are four stub functions below: start_process, end_process,
-	branch_process, and check_for_errors.  A class that subclasses
-	this one will probably fill in these functions to do more.
+	There are three stub functions below: start_process, end_process,
+	and branch_process.  A class that subclasses this one will
+	probably fill in these functions to do more.
 
 	It is important that this class be pickable, so keep that in mind
 	when subclassing (this is used to resume failed sessions).
@@ -207,26 +207,49 @@ class IterTreeReducer:
 	def __init__(self, *args):
 		"""ITR initializer"""
 		self.init_args = args
-		self.index = None
-		self.subinstance = None
+		self.base_index = self.index = None
+		self.subinstances = [self]
 		self.finished = None
-		self.caught_exception, self.start_successful = None, None
+		self.caught_exception = None
 
-	def intree(self, index):
-		"""Return true if index is still in current tree"""
-		return self.base_index == index[:len(self.base_index)]
+	def finish_subinstances(self, index):
+		"""Run Finish() on all subinstances index has passed
 
-	def set_subinstance(self):
-		"""Return subinstance of same type as self"""
-		self.subinstance = self.__class__(*self.init_args)
+		When we pass out of a subinstance's tree, delete it and
+		process it with the parent.  The innermost subinstances will
+		be the last in the list.  Return None if we are out of the
+		entire tree, and 1 otherwise.
 
-	def process_w_subinstance(self, args):
-		"""Give object to subinstance, if necessary update branch_val"""
-		if not self.subinstance: self.set_subinstance()
-		if not self.subinstance(*args):
-			self.branch_process(self.subinstance)
-			self.set_subinstance()
-			assert self.subinstance(*args)
+		"""
+		subinstances = self.subinstances
+		while 1:
+			to_be_finished = subinstances[-1]
+			base_index = to_be_finished.base_index
+			if base_index != index[:len(base_index)]:
+				# out of the tree, finish with to_be_finished
+				to_be_finished.call_end_proc()
+				del subinstances[-1]
+				if not subinstances: return None
+				subinstances[-1].branch_process(to_be_finished)
+			else: return 1
+
+	def call_end_proc(self):
+		"""Runs the end_process on self, checking for errors"""
+		if self.finished: self.caught_exception = 1
+		if self.caught_exception: self.log_pref_error(self.base_index)
+		Robust.check_common_error(self.on_error, self.end_process)
+		self.finished = 1
+
+	def add_subinstance(self):
+		"""Return subinstance of same type as self, add to subinstances"""
+		subinst = self.__class__(*self.init_args)
+		self.subinstances.append(subinst)
+		return subinst
+
+	def process_w_subinstance(self, index, subinst, args):
+		"""Run start_process on latest subinstance"""
+		Robust.check_common_error(self.on_error, subinst.start_process, args)
+		subinst.base_index = index
 
 	def start_process(self, *args):
 		"""Do some initial processing (stub)"""
@@ -238,31 +261,20 @@ class IterTreeReducer:
 
 	def branch_process(self, subinstance):
 		"""Process a branch right after it is finished (stub)"""
+		assert subinstance.finished
 		pass
 
-	def check_for_errors(self, function, *args):
-		"""start/end_process is called by this function
-
-		Usually it will distinguish between two types of errors.  Some
-		are serious and will be reraised, others are caught and simply
-		invalidate the current instance by setting
-		self.caught_exception.
-
-		"""
-		try: return apply(function, args)
-		except: raise
+	def on_error(self, exc, *args):
+		"""This will be run on any exception in start/end-process"""
+		pass
 
 	def Finish(self):
 		"""Call at end of sequence to tie everything up"""
-		if not self.start_successful or self.finished:
-			self.caught_exception = 1
-		if self.caught_exception: self.log_prev_error(self.index)
-		else:
-			if self.subinstance:
-				self.subinstance.Finish()
-				self.branch_process(self.subinstance)
-			self.check_for_errors(self.end_process)
-			self.finished = 1
+		while 1:
+			to_be_finished = self.subinstances.pop()
+			to_be_finished.call_end_proc()
+			if not self.subinstances: break
+			self.subinstances[-1].branch_process(to_be_finished)
 
 	def log_prev_error(self, index):
 		"""Call function if no pending exception"""
@@ -280,24 +292,22 @@ class IterTreeReducer:
 
 		"""
 		index = args[0]
-		assert type(index) is types.TupleType, type(index)
-
-		if self.index is None:
-			self.check_for_errors(self.start_process, *args)
-			self.start_successful = 1
-			self.index = self.base_index = index
+		if self.base_index is None:
+			self.process_w_subinstance(index, self, args)
+			self.index = index
 			return 1
 
 		if index <= self.index:
 			Log("Warning: oldindex %s >= newindex %s" % (self.index, index), 2)
 			return 1
 
-		if not self.intree(index):
-			self.Finish()
-			return None
-
+		if self.finish_subinstances(index) is None:
+			return None # We are no longer in the main tree
 		if self.caught_exception: self.log_prev_error(index)
-		else: self.process_w_subinstance(args)
+		else:
+			subinst = self.add_subinstance()
+			self.process_w_subinstance(index, subinst, args)
+
 		self.index = index
 		return 1
 
@@ -313,7 +323,4 @@ class ErrorITR(IterTreeReducer):
 		else: filename = "."
 		Log("Error '%s' processing %s" % (exc, filename), 2)
 
-	def check_for_errors(self, function, *args):
-		"""Catch some non-fatal errors"""
-		return Robust.check_common_error(self.on_error, function, *args)
 
