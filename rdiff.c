@@ -1,4 +1,4 @@
-/*=                    -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- the library for network deltas
  * $Id$
@@ -26,7 +26,7 @@
 			       *	      -- Harold Bloom		    */
 
 /*
- * rsum.c -- Command line tool to generate rsync signatures for a file.
+ * rdiff.c -- Command-line network-delta tool.
  */
 
 #include <config.h>
@@ -42,60 +42,90 @@
 #include "fileutil.h"
 #include "util.h"
 #include "trace.h"
+#include "isprefix.h"
 
 
 #define PROGRAM "rdiff"
 
+static size_t block_len = HS_DEFAULT_BLOCK_LEN;
+static size_t strong_len = HS_DEFAULT_STRONG_LEN;
 
-/* Overwrite existing files. */
-int force = 0;
+
+/*
+ * This little declaration is dedicated to Stephen Kapp and Reaper
+ * Technologies, who by all appearances redistributed a modified but
+ * unacknowledged version of GNU Keyring in violation of the licence
+ * and all laws of politeness and good taste.
+ */
+
+static char const *version_str =
+"rdiff (%s)\n"
+"Copyright (C) 1997-2001 by Martin Pool, Andrew Tridgell and others.\n"
+"http://rproxy.samba.org/\n"
+"\n"
+"libhsync comes with NO WARRANTY, to the extent permitted by law.\n"
+"You may redistribute copies of libhsync under the terms of the GNU\n"
+"Lesser General Public License.  For more information about these\n"
+"matters, see the files named COPYING.\n";
 
 
 const struct poptOption opts[] = {
-        { "verbose", 'v', POPT_ARG_NONE, 0, 'v',
-          "trace internal processing", NULL },
-        { "version", 'V', POPT_ARG_NONE, 0, 'V',
-          "show program version", NULL },
-        { "licence",  0 , POPT_ARG_NONE, 0, 'L',
-          "show copying conditions", NULL },
-        { "input-size", 'I', POPT_ARG_INT, &hs_inbuflen, 0,
-          "input buffer size", "bytes" },
-        { "output-size", 'O', POPT_ARG_INT, &hs_outbuflen, 0,
-          "output buffer size", "bytes" },
-        POPT_AUTOHELP
-        { NULL, '\0', 0, 0, 0, 0, 0 }
+    { "verbose",     'v', POPT_ARG_NONE, 0,             'v' },
+    { "version",     'V', POPT_ARG_NONE, 0,             'V' },
+    { "input-size",  'I', POPT_ARG_INT,  &hs_inbuflen },
+    { "output-size", 'O', POPT_ARG_INT,  &hs_outbuflen },
+    { "help",        '?', POPT_ARG_NONE, 0,             'h' },
+    { "block-size",  'b', POPT_ARG_INT,  &block_len },
+    { "sum-size",    's', POPT_ARG_INT,  &strong_len },
+
+    { 0 }
 };
 
 
-static void usage(poptContext optCon, int exitcode,
-                  const char *error, const char *addl)
+static void rdiff_usage(const char *error)
 {
-        poptPrintUsage(optCon, stderr, 0);
-        if (error)
-                fprintf(stderr, "%s: %s\n", error, addl);
-        exit(exitcode);
+    fprintf(stderr, "%s: %s\n"
+            "Try `%s --help' for more information.\n",
+            PROGRAM, error, PROGRAM);
 }
 
 
-int main(int argc, char *argv[])
+static void bad_option(poptContext opcon, int error)
 {
-    int             c;
-    poptContext     cont;
-    FILE            *patch_file, *sig_file, *new_file;
-    hs_result       result;
-    const char      *patch_name, *sig_name, *new_name;
-    hs_sumset_t     *sumset;
+    fprintf(stderr, "%s: %s: %s\n",
+            PROGRAM, poptStrerror(error), poptBadOption(opcon, 0));
+    exit(1);
+}
 
-    cont = poptGetContext(PROGRAM, argc, (const char **) argv, opts, 0);
-    poptSetOtherOptionHelp(cont, "SIGNATURE NEW PATCH");
 
-    while ((c = poptGetNextOpt(cont)) > 0) {
+static void help(void) {
+    printf("Usage: rdiff [OPTIONS] signature [BASIS [SIGNATURE]]\n"
+           "             [OPTIONS] delta SIGNATURE [NEWFILE [DELTA]]\n"
+           "             [OPTIONS] patch BASIS [DELTA [NEWFILE]]\n"
+           "\n"
+           "Options:\n"
+           "  -v, --verbose             trace internal processing\n"
+           "  -b, --block-size=BYTES    signature block size\n"
+           "  -s, --sum-size=BYTES      set signature strength\n"
+           "  -I, --input-size=BYTES    input buffer size\n"
+           "  -O, --output-size=BYTES   output buffer size\n"
+           "  -V, --version             show program version\n"
+           "  -?, --help                Show this help message\n"
+           );
+}
+
+
+static void rdiff_options(poptContext opcon)
+{
+    int c;
+    
+    while ((c = poptGetNextOpt(opcon)) != -1) {
         switch (c) {
-        case 'V':
-            printf("%s (%s)\n", PROGRAM, hs_libhsync_version);
+        case 'h':
+            help();
             exit(0);
-        case 'L':
-            puts(hs_licence_string);
+        case 'V':
+            printf(version_str, hs_libhsync_version);
             exit(0);
         case 'v':
             if (!hs_supports_trace()) {
@@ -103,26 +133,75 @@ int main(int argc, char *argv[])
             }
             hs_trace_set_level(HS_LOG_DEBUG);
             break;
+        default:
+            bad_option(opcon, c);
         }
     }
+}
 
-    sig_name = poptGetArg(cont);
-    new_name = poptGetArg(cont);
-    patch_name = poptGetArg(cont);
 
-    if (!new_name || !sig_name || !patch_name) {
-        usage(cont, 1, PROGRAM,
-              "must specify new, signature and patch filenames");
-    }
+/**
+ * Generate signature from remaining command line arguments.
+ */
+static hs_exit_value rdiff_sig(poptContext opcon)
+{
+    FILE            *basis_file, *sig_file;
+    hs_result       result;
+    const char      *basis_name, *sig_name;
+    
+    basis_name = poptGetArg(opcon);
+    sig_name = poptGetArg(opcon);
 
-    poptFreeContext(cont);                     
+    basis_file = hs_file_open(basis_name, "rb");
+    sig_file = hs_file_open(sig_name, "wb");
+
+    result = hs_sig_file(basis_file, sig_file, block_len, strong_len);
+    
+    return HS_EXIT_OK;
+}
+
+
+static hs_exit_value rdiff_delta(poptContext opcon)
+{
+#if 0
 
     sig_file = hs_file_open(sig_name, O_RDONLY);
 
-    result = hs_file_readsums(sig_file, &sumset);
+    result = hs_readsig_file(sig_file, &sumset);
         
     if (result != HS_OK)
         hs_error("readsums failed: %s", hs_strerror(result));
+#endif
+
+    return HS_EXIT_OK;
+}
+
+
+static hs_exit_value rdiff_action(poptContext opcon)
+{
+    const char      *action;
+
+    action = poptGetArg(opcon);
+    if (!action) 
+        ;
+    else if (isprefix(action, "signature")) 
+        return rdiff_sig(opcon);
+    else if (isprefix(action, "delta")) 
+        return rdiff_delta(opcon);
+    
+    rdiff_usage("You must specify an action: `signature', `delta', or `patch'.");
+    return HS_EXIT_SYNTAX;
+}
+
+
+int main(const int argc, const char *argv[])
+{
+    poptContext     opcon;
+    hs_result       result;
+
+    opcon = poptGetContext(PROGRAM, argc, argv, opts, 0);
+    rdiff_options(opcon);
+    result = rdiff_action(opcon);
     
     return result;
 }
