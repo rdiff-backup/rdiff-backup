@@ -10,4 +10,6 @@ get started:
   $ ./configure [OPTIONS]
   $ make all check
 
+Read http://sourceforge.net/cvs/?group_id=2318 for more tips.
+
 $Id$
