@@ -1,3 +1,10 @@
+New in v0.10.1 (2002/09/16)
+---------------------------
+
+rdiff-backup should now correctly handle files larger than 2GB.
+Thanks to Russ Allbery for telling me how to do this.
+
+
 New in v0.10.0 (2002/09/10)
 ---------------------------
 
