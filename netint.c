@@ -159,8 +159,8 @@ rs_suck_byte(rs_job_t *job, unsigned char *v)
 rs_result
 rs_suck_n4(rs_job_t *job, int *v)
 {
-    rs_result result;
-    off_t       d;
+    rs_result       result;
+    rs_long_t       d;
 
     result = rs_suck_netint(job, &d, 4);
     *v = d;
@@ -168,7 +168,7 @@ rs_suck_n4(rs_job_t *job, int *v)
 }        
 
 
-int rs_int_len(off_t val)
+int rs_int_len(rs_long_t val)
 {
     if (!(val & ~0xffL))
         return 1;
