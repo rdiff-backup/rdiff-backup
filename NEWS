@@ -9,6 +9,13 @@ Changes in 0.9.3:
    blocking mode.  rs_whole_run now builds on top of this.  The
    filebuf interface has changed a little to accomodate it.
 
+ * Big speed improvements in MD4 routines and generation of weak
+   checksums.
+
+ * Generating and loading signatures now generates statistics.
+
+ * More test cases.
+
 Changes in 0.9.2:
 
  * Improve delta algorithm so that deltas are actually
