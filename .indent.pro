@@ -1,1 +1,1 @@
--kr -bad -bap -fca -fc1 -di16 -psl -l78 -ncdb
+-kr -bad -bap -fca -di16 -psl -l78 -ncdb

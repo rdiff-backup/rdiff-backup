@@ -1,17 +1,24 @@
-/* -*- mode: c; c-file-style: "bsd" -*- */
-/* $Id$ */
-/* dec.c -- Decode & extract signature from a gdiff-plus stream * *
-   Copyright (C) 2000 by Martin Pool. * * This program is free software; you 
-   can redistribute it and/or modify it * under the terms of the GNU General
-   Public License as published by the Free * Software Foundation; either
-   version 2 of the License, or (at your option) * any later version. * *
-   This program is distributed in the hope that it will be useful, but *
-   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-   * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-   * for more details. * * You should have received a copy of the GNU General 
-   Public License along * with this program; if not, write to the Free
-   Software Foundation, Inc., 59 * Temple Place, Suite 330, Boston, MA
-   02111-1307 USA */
+/*				       	-*- c-file-style: "bsd" -*-
+ *
+ * $Id$
+ * 
+ * Copyright (C) 2000 by Martin Pool
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+
 
 
 /****************************************
@@ -98,7 +105,7 @@ _hs_check_gd_header(hs_read_fn_t ltread_fn, void *ltread_priv)
 
 static int
 _hs_check_filesum(hs_read_fn_t ltread_fn, void *ltread_priv,
-		  int length, hs_mdfour_t * newsum)
+		   int length, hs_mdfour_t * newsum)
 {
     char           *buf;
     int             ret;
@@ -121,12 +128,12 @@ _hs_check_filesum(hs_read_fn_t ltread_fn, void *ltread_priv,
 }
 
 static int
-_hs_dec_copy(uint32_t offset, uint32_t length, hs_map_t * old_map,
+_hs_dec_copy(uint32_t offset, uint32_t length, hs_map_t *old_map,
 	     hs_write_fn_t write_fn, void *write_priv, hs_mdfour_t * newsum)
 {
     int             ret;
-    char const     *buf;
-    int             at_eof;
+    char const	    *buf;
+    int		    at_eof;
     int             mapped_len;
 
     if (length > INT32_MAX) {
@@ -174,8 +181,8 @@ hs_decode(int oldread_fd,
     uint32_t        length, offset;
     int             kind;
     hs_mdfour_t     newsum;
-    hs_map_t       *old_map;
-    char            stats_str[256];
+    hs_map_t	   *old_map;
+    char		stats_str[256];
 
     _hs_trace("**** begin");
     hs_bzero(stats, sizeof *stats);
@@ -189,9 +196,9 @@ hs_decode(int oldread_fd,
 
     hs_mdfour_begin(&newsum);
 
-    /* TODO: Rewrite this to use map_ptr on the littok stream.  This * is not 
-       such a priority as the encoding algorithm, but it would * still be
-       nice and would improve efficiency, I think. */
+    /* TODO: Rewrite this to use map_ptr on the littok stream.  This
+     * is not such a priority as the encoding algorithm, but it would
+     * still be nice and would improve efficiency, I think. */
 
     while (1) {
 	ret = _hs_inhale_command(ltread_fn, ltread_priv, &kind, &length,
@@ -219,7 +226,7 @@ hs_decode(int oldread_fd,
 			   newsig_fn, newsig_priv, NULL);
 	    if (ret < 0)
 		goto out;
-	    stats->sig_cmds++;
+ 	    stats->sig_cmds++;
 	    stats->sig_bytes += length;
 	} else if (kind == op_kind_copy) {
 	    _hs_trace("COPY(offset=%d, len=%d)", offset, length);
@@ -245,8 +252,8 @@ hs_decode(int oldread_fd,
 	hs_format_stats(stats, stats_str, sizeof stats_str);
 	_hs_trace("completed: %s", stats_str);
     }
-
-  out:
+    
+ out:
     _hs_unmap_file(old_map);
 
     return 1;
