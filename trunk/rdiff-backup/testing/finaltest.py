@@ -1,3 +1,4 @@
+from __future__ import generators
 import unittest, os, re, sys, time
 from commontest import *
 from rdiff_backup import Globals, log, rpath, robust, FilenameMapping
@@ -333,6 +334,8 @@ class FinalMisc(PathSetter):
 		self.set_connections(None, None, None, None)
 		self.exec_rb_extra_args(None, '--list-changed-since 10000',
 								'testfiles/restoretest3')
+		self.exec_rb_extra_args(None, '--list-changed-since 2B',
+								'testfiles/restoretest3')
 
 	def testListChangeSinceRemote(self):
 		"""Test --list-changed-since mode remotely.  Uses restoretest3"""
@@ -363,6 +366,42 @@ class FinalMisc(PathSetter):
 		self.set_connections('test1', '../', None, None)
 		self.exec_rb_extra_args(None, "--list-increment-sizes",
 								"testfiles/restoretest3")
+
+	def get_all_increments(self, rp):
+		"""Iterate all increments at or below given directory"""
+		assert rp.isdir()
+		dirlist = rp.listdir()
+		dirlist.sort()
+		for filename in dirlist:
+			subrp = rp.append(filename)
+			if subrp.isincfile(): yield subrp
+			elif subrp.isdir():
+				for subsubrp in self.get_all_increments(subrp):
+					yield subsubrp
+
+	def testRemoveOlderThan(self):
+		"""Test --remove-older-than.  Uses restoretest3"""
+		Myrm("testfiles/output")
+		assert not os.system("cp -a testfiles/restoretest3 testfiles/output")
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, "--remove-older-than 20000",
+								"testfiles/output")
+		rbdir = rpath.RPath(Globals.local_connection,
+							"testfiles/output/rdiff-backup-data")
+		for inc in self.get_all_increments(rbdir):
+			assert inc.getinctime() >= 20000
+
+	def testRemoveOlderThan2(self):
+		"""Test --remove-older-than, but '1B'.  Uses restoretest3"""
+		Myrm("testfiles/output")
+		assert not os.system("cp -a testfiles/restoretest3 testfiles/output")
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, "--remove-older-than 1B --force",
+								"testfiles/output")
+		rbdir = rpath.RPath(Globals.local_connection,
+							"testfiles/output/rdiff-backup-data")
+		for inc in self.get_all_increments(rbdir):
+			assert inc.getinctime() >= 30000
 
 
 class FinalSelection(PathSetter):

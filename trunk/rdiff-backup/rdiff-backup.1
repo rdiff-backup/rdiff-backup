@@ -536,6 +536,10 @@ A date format of the form YYYY/MM/DD, YYYY-MM-DD, MM/DD/YYYY, or
 MM/DD/YYYY, which indicates midnight on the day in question, relative
 to the current timezone settings.  For instance, "2002/3/5",
 "03-05-2002", and "2002-3-05" all mean March 5th, 2002.
+.IP 6.
+A backup session specification which is a non-negative integer
+followed by 'B'.  For instance, '0B' specifies the time of the current
+mirror, and '3B' specifies the time of the 3rd newest increment.
 
 .SH REMOTE OPERATION
 In order to access remote files, rdiff-backup opens up a pipe to a

@@ -19,7 +19,7 @@
 
 """Provide time related exceptions and functions"""
 
-import time, types, re
+import time, types, re, sys
 import Globals
 
 
@@ -28,6 +28,7 @@ class TimeException(Exception): pass
 _interval_conv_dict = {"s": 1, "m": 60, "h": 3600, "D": 86400,
 					   "W": 7*86400, "M": 30*86400, "Y": 365*86400}
 _integer_regexp = re.compile("^[0-9]+$")
+_session_regexp = re.compile("^[0-9]+B$")
 _interval_regexp = re.compile("^([0-9]+)([smhDWMY])")
 _genstr_date_regexp1 = re.compile("^(?P<year>[0-9]{4})[-/]"
 					   "(?P<month>[0-9]{1,2})[-/](?P<day>[0-9]{1,2})$")
@@ -174,8 +175,27 @@ def cmp(time1, time2):
 	elif time1 == time2: return 0
 	else: return 1
 
-def genstrtotime(timestr, curtime = None):
-	"""Convert a generic time string to a time in seconds"""
+def time_from_session(session_num, rp = None):
+	"""Return time in seconds of given backup
+
+	The current mirror is session_num 0, the next oldest increment has
+	number 1, etc.  Requires that the Globals.rbdir directory be set.
+
+	"""
+	session_times = Globals.rbdir.conn.restore.MirrorStruct \
+					.get_increment_times()
+	session_times.sort()
+	if len(session_times) < session_num:
+		return session_times[0] # Use oldest if two few backups
+	return session_times[-session_num-1]
+	
+def genstrtotime(timestr, curtime = None, rp = None):
+	"""Convert a generic time string to a time in seconds
+
+	rp is used when the time is of the form "4B" or similar.  Then the
+	times of the increments of that particular file are used.
+
+	"""
 	if curtime is None: curtime = globals()['curtime']
 	if timestr == "now": return curtime
 
@@ -196,6 +216,10 @@ the day).""" % timestr)
 	t = stringtotime(timestr) or stringtotime(timestr+gettzd())
 	if t: return t
 
+	# Test for time given as number of backups, like 3B
+	if _session_regexp.search(timestr):
+		return time_from_session(int(timestr[:-1]), rp)
+
 	try: # test for an interval, like "2 days ago"
 		return curtime - intstringtoseconds(timestr)
 	except TimeException: pass
@@ -209,3 +233,4 @@ the day).""" % timestr)
 	t = stringtotime(timestr)
 	if t: return t
 	else: error()
+

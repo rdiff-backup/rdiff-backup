@@ -51,6 +51,26 @@ class RestoreFileComparer:
 		for t in self.time_rp_dict.keys(): self.compare_at_time(t)
 
 
+class RestoreTimeTest(unittest.TestCase):
+	def test_time_from_session(self):
+		"""Test getting time from session number (as in Time.time_from_session)
+
+		Test here instead of in timetest because it depends on an
+		rdiff-backup-data directory already being laid out.
+
+		"""
+		restore._mirror_time = None # Reset
+		Globals.rbdir = rpath.RPath(lc,
+									"testfiles/restoretest3/rdiff-backup-data")
+		assert Time.genstrtotime("0B") == Time.time_from_session(0)
+		assert Time.genstrtotime("2B") == Time.time_from_session(2)
+		assert Time.genstrtotime("23B") == Time.time_from_session(23)
+
+		assert Time.time_from_session(0) == 40000, Time.time_from_session(0)
+		assert Time.time_from_session(2) == 20000, Time.time_from_session(2)
+		assert Time.time_from_session(5) == 10000, Time.time_from_session(5)
+
+
 class RestoreTest(unittest.TestCase):
 	"""Test Restore class"""
 	def get_rfcs(self):

@@ -413,11 +413,11 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 	restore_set_fs_globals(dest_rp)
 	src_rp = restore_init_quoting(src_rp)
 	restore_check_backup_dir(restore_root, src_rp, restore_as_of)
+	inc_rpath = Globals.rbdir.append_path('increments', restore_index)
 	if restore_as_of:
-		try: time = Time.genstrtotime(restore_timestr)
+		try: time = Time.genstrtotime(restore_timestr, rp = inc_rpath)
 		except Time.TimeException, exc: Log.FatalError(str(exc))
 	else: time = src_rp.getinctime()
-	inc_rpath = Globals.rbdir.append_path('increments', restore_index)
 	restore_set_select(restore_root, dest_rp)
 	restore_start_log(src_rp, dest_rp, time)
 	restore.Restore(restore_root.new_index(restore_index),
@@ -632,9 +632,9 @@ def rot_check_dir(rootrp):
 
 def ListChangedSince(rp):
 	"""List all the files under rp that have changed since restoretime"""
+	assert restore_set_root(rp)
 	try: rest_time = Time.genstrtotime(restore_timestr)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
-	assert restore_set_root(rp)
 	restore_check_backup_dir(restore_root)
 	mirror_rp = restore_root.new_index(restore_index)
 	inc_rp = mirror_rp.append_path("increments", restore_index)
@@ -643,9 +643,9 @@ def ListChangedSince(rp):
 
 def ListAtTime(rp):
 	"""List files in archive under rp that are present at restoretime"""
+	assert restore_set_root(rp)
 	try: rest_time = Time.genstrtotime(restore_timestr)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
-	assert restore_set_root(rp)
 	restore_check_backup_dir(restore_root)
 	mirror_rp = restore_root.new_index(restore_index)
 	inc_rp = mirror_rp.append_path("increments", restore_index)

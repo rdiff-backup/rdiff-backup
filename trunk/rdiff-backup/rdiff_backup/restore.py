@@ -125,15 +125,19 @@ class MirrorStruct:
 		older one here.
 
 		"""
-		global _rest_time
-		base_incs = get_inclist(Globals.rbdir.append("increments"))
-		if not base_incs: return _mirror_time
-		inctimes = [inc.getinctime() for inc in base_incs]
-		inctimes.append(_mirror_time)
+		inctimes = cls.get_increment_times()
 		older_times = filter(lambda time: time <= restore_to_time, inctimes)
 		if older_times: return max(older_times)
 		else: # restore time older than oldest increment, just return that
 			return min(inctimes)
+
+	def get_increment_times(cls, rp = None):
+		"""Return list of times of backups, including current mirror"""
+		if not _mirror_time: return_list = [cls.get_mirror_time()]
+		else: return_list = [_mirror_time]
+		if not rp or not rp.index: rp = Globals.rbdir.append("increments")
+		for inc in get_inclist(rp): return_list.append(inc.getinctime())
+		return return_list
 
 	def initialize_rf_cache(cls, mirror_base, inc_base):
 		"""Set cls.rf_cache to CachedRF object"""

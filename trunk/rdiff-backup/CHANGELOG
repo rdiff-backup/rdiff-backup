@@ -20,6 +20,10 @@ forthcoming attr/facl utilities.
 Fixed problems with --restrict options that would cause proper
 sessions to fail.  Thanks to Randall Nortman for error report.
 
+Added new time specification by backup number.  So now you can
+'--remove-older-than 2B' or '--list-at-time 0B'.  Original suggestion
+by Alan Bailward.
+
 
 New in v0.13.1 (2003/08/08)
 ---------------------------
