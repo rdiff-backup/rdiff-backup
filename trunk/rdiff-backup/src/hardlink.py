@@ -157,8 +157,8 @@ class Hardlink:
 		"""Return RPath of linkdata, or None if cannot find"""
 		for rp in map(data_rpath.append, data_rpath.listdir()):
 			if (rp.isincfile() and rp.getincbase_str() == prefix and
-				rp.getinctype() == 'snapshot' and
-				Time.stringtotime(rp.getinctime()) == time):
+				(rp.getinctype() == 'snapshot' or rp.getinctype() == 'data')
+				and Time.stringtotime(rp.getinctime()) == time):
 				return rp
 		return None
 
@@ -176,9 +176,9 @@ class Hardlink:
 		if not cls._src_index_indicies: return
 		Log("Writing hard link data", 6)
 		if Globals.compression:
-			rp = Globals.rbdir.append("hardlink_data.%s.snapshot.gz" %
+			rp = Globals.rbdir.append("hardlink_data.%s.data.gz" %
 									  Time.curtimestr)
-		else: rp = Globals.rbdir.append("hardlink_data.%s.snapshot" %
+		else: rp = Globals.rbdir.append("hardlink_data.%s.data" %
 										Time.curtimestr)
 		cls.write_linkdict(rp, cls._src_index_indicies, Globals.compression)
 
@@ -200,13 +200,13 @@ class Hardlink:
 		"""
 		Log("Writing intermediate hard link data to disk", 2)
 		src_inode_rp = data_rpath.append("hardlink_source_inode_checkpoint."
-										 "%s.snapshot" % Time.curtimestr)
+										 "%s.data" % Time.curtimestr)
 		src_index_rp = data_rpath.append("hardlink_source_index_checkpoint."
-										 "%s.snapshot" % Time.curtimestr)
+										 "%s.data" % Time.curtimestr)
 		dest_inode_rp = data_rpath.append("hardlink_dest_inode_checkpoint."
-										  "%s.snapshot" % Time.curtimestr)
+										  "%s.data" % Time.curtimestr)
 		dest_index_rp = data_rpath.append("hardlink_dest_index_checkpoint."
-										  "%s.snapshot" % Time.curtimestr)
+										  "%s.data" % Time.curtimestr)
 		for (rp, dict) in ((src_inode_rp, cls._src_inode_indicies),
 						   (src_index_rp, cls._src_index_indicies),
 						   (dest_inode_rp, cls._dest_inode_indicies),
@@ -247,7 +247,7 @@ class Hardlink:
 					   "hardlink_dest_index_checkpoint"]
 		for rp in map(Globals.rbdir.append, Globals.rbdir.listdir()):
 			if (rp.isincfile() and rp.getincbase_str() in prefix_list and
-				rp.getinctype() == 'snapshot'):
+				(rp.getinctype() == 'snapshot' or rp.getinctype() == 'data')):
 				rp.delete()
 
 MakeClass(Hardlink)

@@ -306,14 +306,14 @@ went wrong during your last backup?  Using """ + mirrorrps[-1].path, 2)
 		return Time.stringtotime(timestr)
 	
 	def backup_touch_curmirror(self, rpin, rpout):
-		"""Make a file like current_mirror.time.snapshot to record time
+		"""Make a file like current_mirror.time.data to record time
 
 		Also updates rpout so mod times don't get messed up.
 
 		"""
 		map(RPath.delete, self.backup_get_mirrorrps())
 		mirrorrp = self.datadir.append("current_mirror.%s.%s" %
-										  (Time.curtimestr, "snapshot"))
+										  (Time.curtimestr, "data"))
 		Log("Touching mirror marker %s" % mirrorrp.path, 6)
 		mirrorrp.touch()
 		RPath.copy_attribs(rpin, rpout)

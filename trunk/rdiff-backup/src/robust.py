@@ -297,13 +297,13 @@ class SaveState:
 			   (Globals.rbdir.conn, Globals.backup_writer)
 
 		if incrementing: cls._last_file_sym = Globals.rbdir.append(
-			"last-file-incremented.%s.snapshot" % Time.curtimestr)
+			"last-file-incremented.%s.data" % Time.curtimestr)
 		else: cls._last_file_sym = Globals.rbdir.append(
-			"last-file-mirrored.%s.snapshot" % Time.curtimestr)
+			"last-file-mirrored.%s.data" % Time.curtimestr)
 		cls._checkpoint_rp = Globals.rbdir.append(
-			"checkpoint-data.%s.snapshot" % Time.curtimestr)
+			"checkpoint-data.%s.data" % Time.curtimestr)
 		cls._last_file_definitive_rp = Globals.rbdir.append(
-			"last-file-definitive.%s.snapshot" % Time.curtimestr)
+			"last-file-definitive.%s.data" % Time.curtimestr)
 
 	def touch_last_file(cls):
 		"""Touch last file marker, indicating backup has begun"""
