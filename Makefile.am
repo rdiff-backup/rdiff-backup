@@ -57,6 +57,10 @@ libhsync_la_SOURCES = \
 	version.c				\
 	whole.c whole.h
 
+# See libversions.txt and the libtool manual for an explanation of the
+# library versioning
+libhsync_la_LDFLAGS = -version-info 1:0:0
+
 # TODO: If we ever care enough, build a second library containing only
 # the code necessary to be a client, and not stuff for encoding.  At
 # the moment it doesn't seem worth the additional compilation time to
