@@ -14,6 +14,7 @@ class Main:
 		self.remote_cmd, self.remote_schema = None, None
 		self.force = None
 		self.select_opts, self.select_mirror_opts = [], []
+		self.select_files = []
 
 	def parse_cmdlineoptions(self):
 		"""Parse argument list and set global preferences"""
@@ -37,8 +38,8 @@ class Main:
 			  "restore-as-of=", "resume", "resume-window=", "server",
 			  "terminal-verbosity=", "test-server", "verbosity",
 			  "version", "windows-mode", "windows-time-format"])
-		except getopt.error:
-			self.commandline_error("Error parsing commandline options")
+		except getopt.error, e:
+			self.commandline_error("Bad commandline options: %s" % str(e))
 
 		for opt, arg in optlist:
 			if opt == "-b" or opt == "--backup-mode": self.action = "backup"
@@ -55,20 +56,24 @@ class Main:
 			elif opt == "--exclude-device-files":
 				self.select_opts.append((opt, arg))
 			elif opt == "--exclude-filelist":
-				self.select_opts.append((opt, (arg, sel_fl(arg))))
+				self.select_opts.append((opt, arg))
+				self.select_files.append(sel_fl(arg))
 			elif opt == "--exclude-filelist-stdin":
 				self.select_opts.append(("--exclude-filelist",
-										 ("standard input", sys.stdin)))
+										 "standard input"))
+				self.select_files.append(sys.stdin)
 			elif opt == "--exclude-mirror":
 				self.select_mirror_opts.append(("--exclude", arg))
 			elif opt == "--exclude-regexp": self.select_opts.append((opt, arg))
 			elif opt == "--force": self.force = 1
 			elif opt == "--include": self.select_opts.append((opt, arg))
 			elif opt == "--include-filelist":
-				self.select_opts.append((opt, (arg, sel_fl(arg))))
+				self.select_opts.append((opt, arg))
+				self.select_files.append(sel_fl(arg))
 			elif opt == "--include-filelist-stdin":
 				self.select_opts.append(("--include-filelist",
-										 ("standard input", sys.stdin)))
+										 "standard input"))
+				self.select_files.append(sys.stdin)
 			elif opt == "--include-regexp":
 				self.select_opts.append((opt, arg))
 			elif opt == "-l" or opt == "--list-increments":
@@ -227,7 +232,8 @@ rdiff-backup with the --force option if you want to mirror anyway.""" %
 
 	def backup_init_select(self, rpin, rpout):
 		"""Create Select objects on source and dest connections"""
-		rpin.conn.Globals.set_select(DSRPath(1, rpin), self.select_opts)
+		rpin.conn.Globals.set_select(DSRPath(1, rpin), self.select_opts,
+									 None, *self.select_files)
 		rpout.conn.Globals.set_select(DSRPath(None, rpout),
 									  self.select_mirror_opts, 1)
 
@@ -378,8 +384,9 @@ Try restoring from an increment file (the filenames look like
 		the restore operation isn't.
 
 		"""
-		Globals.set_select(DSRPath(1, rpin), self.select_mirror_opts) 
-		Globals.set_select(DSRPath(None, rpout), self.select_opts)
+		Globals.set_select(DSRPath(1, rpin), self.select_mirror_opts, None)
+		Globals.set_select(DSRPath(None, rpout), self.select_opts, None,
+						   *self.select_files)
 
 	def restore_get_root(self, rpin):
 		"""Return (mirror root, index) and set the data dir
