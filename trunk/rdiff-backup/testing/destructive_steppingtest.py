@@ -3,7 +3,7 @@ import unittest
 execfile("commontest.py")
 rbexec("selection.py")
 
-
+Log.setverbosity(4)
 
 class DSTest(unittest.TestCase):
 	def setUp(self):
@@ -15,11 +15,11 @@ class DSTest(unittest.TestCase):
 	def testDSIter(self):
 		"""Testing destructive stepping iterator from baserp"""
 		for i in range(2):
-			sel = Select(self.noperms, 1)
-			sel.set_iter()
+			sel = Select(DSRPath(1, self.noperms)).set_iter()
 			ds_iter = sel.iterate_with_finalizer()
 			noperms = ds_iter.next()
-			assert noperms.isdir() and noperms.getperms() == 0
+			assert noperms.isdir() and noperms.getperms() == 0, \
+				   (noperms.isdir(), noperms.getperms())
 
 			bar = ds_iter.next()
 			assert bar.isreg() and bar.getperms() == 0, \

@@ -97,11 +97,15 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir,
 	_get_main().misc_setup([rpin, rpout])
 	_get_main().backup_init_select(rpin, rpout)
 	if not rpout.lstat(): rpout.mkdir()
-	if checkpointing: # rdiff-backup-data must exist to checkpoint
+	if checkpointing: # use rdiff-backup-data dir to checkpoint
 		data_dir = rpout.append("rdiff-backup-data")
 		if not data_dir.lstat(): data_dir.mkdir()
 		SetConnections.UpdateGlobal('rbdir', data_dir)
-	HighLevel.Mirror(rpin, rpout, checkpointing)
+	else: # just use root directory to hold checkpoints
+		SetConnections.UpdateGlobal('rbdir', rpout)
+	SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
+	SaveState.init_filenames(None)
+	HighLevel.Mirror(rpin, rpout, checkpointing, None, write_finaldata = None)
 	_get_main().cleanup()
 
 def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
@@ -167,7 +171,8 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 
 	Log("Comparing %s and %s, hardlinks %s" % (src_rp.path, dest_rp.path,
 											   compare_hardlinks), 3)
-	src_select, dest_select = Select(src_rp, 1), Select(dest_rp, None)
+	src_select = Select(DSRPath(1, src_rp))
+	dest_select = Select(DSRPath(None, dest_rp))
 	src_select.parse_rbdir_exclude()
 	dest_select.parse_rbdir_exclude()
 	src_select.set_iter()
@@ -200,11 +205,13 @@ def reset_hardlink_dicts():
 	Hardlink._src_index_indicies = {}
 	Hardlink._dest_inode_indicies = {}
 	Hardlink._dest_index_indicies = {}
+	Hardlink._restore_index_path = {}
 
 def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 						compare_hardlinks = 1,
 						dest_dirname = "testfiles/output",
-						restore_dirname = "testfiles/rest_out"):
+						restore_dirname = "testfiles/rest_out",
+						compare_backups = 1):
 	"""Test backing up/restoring of a series of directories
 
 	The dirnames correspond to a single directory at different times.
@@ -227,7 +234,8 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 		InternalBackup(source_local, dest_local, dirname, dest_dirname, time)
 		time += 10000
 		_reset_connections(src_rp, dest_rp)
-		assert CompareRecursive(src_rp, dest_rp, compare_hardlinks)
+		if compare_backups:
+			assert CompareRecursive(src_rp, dest_rp, compare_hardlinks)
 
 	time = 10000
 	for dirname in list_of_dirnames[:-1]:
@@ -237,6 +245,11 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 						restore_dirname, time)
 		src_rp = RPath(Globals.local_connection, dirname)
 		assert CompareRecursive(src_rp, restore_rp)
+
+		# Restore should default back to newest time older than it
+		# with a backup then.
+		if time == 20000: time = 21000
+
 		time += 10000
 
 def MirrorTest(source_local, dest_local, list_of_dirnames,

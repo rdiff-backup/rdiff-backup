@@ -32,6 +32,7 @@ class Local:
 
 	vft_in = get_local_rp('vft_out')
 	vft_out = get_local_rp('increment2/various_file_types')
+	vft2_in = get_local_rp('vft2_out')
 
 	timbar_in = get_local_rp('increment1/timbar.pyc')
 	timbar_out = get_local_rp('../timbar.pyc') # in cur directory
@@ -53,9 +54,10 @@ class PathSetter(unittest.TestCase):
 		if dest_pre: self.dest_prefix = "%s::%s" % (dest_pre, dest_back)
 		else: self.dest_prefix = './'
 
-	def exec_rb(self, *args):
+	def exec_rb(self, time, *args):
 		"""Run rdiff-backup on given arguments"""
 		arglist = []
+		if time: arglist.append("--current-time %s" % str(time))
 		arglist.append(self.src_prefix + args[0])
 		if len(args) > 1:
 			arglist.append(self.dest_prefix + args[1])
@@ -65,32 +67,45 @@ class PathSetter(unittest.TestCase):
 		print "executing " + cmdstr
 		assert not os.system(cmdstr)
 
+	def exec_rb_restore(self, time, *args):
+		"""Restore using rdiff-backup's new syntax and given time"""
+		arglist = []
+		arglist.append("--restore-as-of %s" % str(time))
+		arglist.append(self.src_prefix + args[0])
+		if len(args) > 1:
+			arglist.append(self.dest_prefix + args[1])
+			assert len(args) == 2
+
+		cmdstr = self.rb_schema + " ".join(arglist)
+		print "Restoring via cmdline: " + cmdstr
+		assert not os.system(cmdstr)
+
 	def delete_tmpdirs(self):
 		"""Remove any temp directories created by previous tests"""
 		assert not os.system(MiscDir + '/myrm testfiles/output* '
 							 'testfiles/restoretarget* testfiles/vft_out '
-							 'timbar.pyc')
+							 'timbar.pyc testfiles/vft2_out')
 
 	def runtest(self):
 		self.delete_tmpdirs()
 
 		# Backing up increment1
-		self.exec_rb('testfiles/increment1', 'testfiles/output')
+		self.exec_rb(10000, 'testfiles/increment1', 'testfiles/output')
 		assert CompareRecursive(Local.inc1rp, Local.rpout)
 		time.sleep(1)
 
 		# Backing up increment2
-		self.exec_rb('testfiles/increment2', 'testfiles/output')
+		self.exec_rb(20000, 'testfiles/increment2', 'testfiles/output')
 		assert CompareRecursive(Local.inc2rp, Local.rpout)
 		time.sleep(1)
 
 		# Backing up increment3
-		self.exec_rb('testfiles/increment3', 'testfiles/output')
+		self.exec_rb(30000, 'testfiles/increment3', 'testfiles/output')
 		assert CompareRecursive(Local.inc3rp, Local.rpout)
 		time.sleep(1)
 
 		# Backing up increment4
-		self.exec_rb('testfiles/increment4', 'testfiles/output')
+		self.exec_rb(40000, 'testfiles/increment4', 'testfiles/output')
 		assert CompareRecursive(Local.inc4rp, Local.rpout)
 
 		# Getting restore rps
@@ -99,29 +114,34 @@ class PathSetter(unittest.TestCase):
 		assert len(inc_paths) == 3
 
 		# Restoring increment1
-		self.exec_rb(inc_paths[0], 'testfiles/restoretarget1')
+		self.exec_rb(None, inc_paths[0], 'testfiles/restoretarget1')
 		assert CompareRecursive(Local.inc1rp, Local.rpout1)
 
 		# Restoring increment2
-		self.exec_rb(inc_paths[1], 'testfiles/restoretarget2')
+		self.exec_rb(None, inc_paths[1], 'testfiles/restoretarget2')
 		assert CompareRecursive(Local.inc2rp, Local.rpout2)
 
 		# Restoring increment3
-		self.exec_rb(inc_paths[2], 'testfiles/restoretarget3')
+		self.exec_rb(None, inc_paths[2], 'testfiles/restoretarget3')
 		assert CompareRecursive(Local.inc3rp, Local.rpout3)
 
 		# Test restoration of a few random files
 		vft_paths = self.getinc_paths("various_file_types.",
 					     "testfiles/output/rdiff-backup-data/increments")
-		self.exec_rb(vft_paths[1], 'testfiles/vft_out')
+		self.exec_rb(None, vft_paths[1], 'testfiles/vft_out')
 		self.refresh(Local.vft_in, Local.vft_out)
 		assert CompareRecursive(Local.vft_in, Local.vft_out)
 
 		timbar_paths = self.getinc_paths("timbar.pyc.",
 						 "testfiles/output/rdiff-backup-data/increments")
-		self.exec_rb(timbar_paths[0])
+		self.exec_rb(None, timbar_paths[0])
 		self.refresh(Local.timbar_in, Local.timbar_out)
 		assert RPath.cmp_with_attribs(Local.timbar_in, Local.timbar_out)
+
+		self.exec_rb_restore(25000, 'testfiles/output/various_file_types',
+							 'testfiles/vft2_out')
+		self.refresh(Local.vft2_in, Local.vft_out)
+		assert CompareRecursive(Local.vft2_in, Local.vft_out)
 
 		# Make sure too many increment files not created
 		assert len(self.getinc_paths("nochange.",
@@ -222,13 +242,15 @@ class FinalCorrupt(PathSetter):
 		self.delete_tmpdirs()
 		assert not os.system("cp -a testfiles/corruptbackup testfiles/output")
 		self.set_connections(None, None, None, None)
-		self.exec_rb('testfiles/corruptbackup_source', 'testfiles/output')
+		self.exec_rb(None, 'testfiles/corruptbackup_source',
+					 'testfiles/output')
 
 	def testBackupOverlayRemote(self):
 		"""Like above but destination is remote"""
 		self.delete_tmpdirs()
 		assert not os.system("cp -a testfiles/corruptbackup testfiles/output")
 		self.set_connections(None, None, "test1/", '../')
-		self.exec_rb('testfiles/corruptbackup_source', 'testfiles/output')
+		self.exec_rb(None, 'testfiles/corruptbackup_source',
+					 'testfiles/output')
 		
 if __name__ == "__main__": unittest.main()

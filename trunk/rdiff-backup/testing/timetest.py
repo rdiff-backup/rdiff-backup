@@ -90,5 +90,14 @@ class TimeTest(unittest.TestCase):
 		assert g2t('2001-05-12') == t
 		assert g2t('2001/05/12') == t
 		assert g2t('5/12/2001') == t
+		assert g2t('123456') == 123456
+
+	def testGenericStringErrors(self):
+		"""Test genstrtotime on some bad strings"""
+		g2t = Time.genstrtotime
+		self.assertRaises(TimeException, g2t, "hello")
+		self.assertRaises(TimeException, g2t, "")
+		self.assertRaises(TimeException, g2t, "3q")
+
 
 if __name__ == '__main__': unittest.main()

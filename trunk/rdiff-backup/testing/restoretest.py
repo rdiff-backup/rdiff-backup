@@ -11,8 +11,15 @@ class RestoreTest(unittest.TestCase):
 	"""Test Restore class"""
 	prefix = "testfiles/restoretest/"
 	def maketesttuples(self, basename):
-		"""Make testing tuples from available files starting with prefix"""
+		"""Make testing tuples from available files starting with prefix
+
+		tuples is a sorted (oldest to newest) list of pairs (rp1, rp2)
+		where rp1 is an increment file and rp2 is the same but without
+		the final extension.  incs is a list of all increment files.
+
+		"""
 		dirlist =  os.listdir(self.prefix)
+		dirlist.sort()
 		baselist = filter(lambda f: f.startswith(basename), dirlist)
 		rps = map(lambda f: RPath(lc, self.prefix+f), baselist)
 		incs = filter(lambda rp: rp.isincfile(), rps)
@@ -31,8 +38,12 @@ class RestoreTest(unittest.TestCase):
 			print "Processing file " + pair[0].path
 			if rptarget.lstat(): rptarget.delete()
 			rest_time = Time.stringtotime(pair[0].getinctime())
-			sorted_incs = Restore.sortincseq(rest_time, incs)
-			Restore.RestoreFile(rest_time, rpbase, (), sorted_incs, rptarget)
+			rid = RestoreIncrementData((), rpbase, incs)
+			rid.sortincseq(rest_time, 10000000000) # pick some really late time
+			rcd = RestoreCombinedData(rid, rpbase, rptarget)
+			rcd.RestoreFile()
+			#sorted_incs = Restore.sortincseq(rest_time, incs)
+			#Restore.RestoreFile(rest_time, rpbase, (), sorted_incs, rptarget)
 			rptarget.setdata()
 			if not rptarget.lstat(): assert not pair[1].lstat()
 			elif not pair[1].lstat(): assert not rptarget.lstat()
@@ -53,17 +64,27 @@ class RestoreTest(unittest.TestCase):
 
 		"""
 		for basename in ['ocaml', 'mf']:
-			tuples, incs = self.maketesttuples(basename)
-			completed_dict = {}
-			for i in range(len(tuples)):
-				pair = tuples[i]
-				rest_time = Time.stringtotime(pair[0].getinctime())
-				sorted_incs = Restore.sortincseq(rest_time, incs)
-				key = sorted_incs[-1].path
-				assert not completed_dict.has_key(key)
-				completed_dict[key] = 1
-			for inc in incs: assert completed_dict[inc.path] == 1
+			tuples, unused = self.maketesttuples(basename)
+			incs = [tuple[0] for tuple in tuples]
 
+			# Now we need a time newer than any inc
+			mirror_time = Time.stringtotime(incs[-1].getinctime()) + 10000
+
+			for inc, incbase in tuples:
+				assert inc.isincfile()
+				inctime = Time.stringtotime(inc.getinctime())
+				rid1 = RestoreIncrementData(basename, incbase, incs)
+				rid2 = RestoreIncrementData(basename, incbase, incs)
+				rid1.sortincseq(inctime, mirror_time)
+				rid2.sortincseq(inctime + 5, mirror_time)
+				assert rid1.inc_list, rid1.inc_list
+				# Five seconds later shouldn't make a difference
+				assert rid1.inc_list == rid2.inc_list, (rid1.inc_list,
+														rid2.inc_list)
+				# oldest increment should be exactly inctime
+				ridtime = Time.stringtotime(rid1.inc_list[-1].getinctime())
+				assert ridtime == inctime, (ridtime, inctime)
+				
 
 	def testRestorefiles(self):
 		"""Testing restoration of files one at a time"""
