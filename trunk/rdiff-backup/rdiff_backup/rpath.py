@@ -803,11 +803,12 @@ class RPathFileHook:
 		self.closing_thunk()
 		return result
 
+
 # Import these late to avoid circular dependencies
+import FilenameMapping
 from lazy import *
 from selection import *
 from destructive_stepping import *
-
 
 class RpathDeleter(ITRBranch):
 	"""Delete a directory.  Called by RPath.delete()"""

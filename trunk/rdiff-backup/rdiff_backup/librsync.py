@@ -110,7 +110,6 @@ class SigFile(LikeFile):
 		try: self.maker = _librsync.new_sigmaker()
 		except _librsync.librsyncError, e: raise librsyncError(str(e))
 
-
 class DeltaFile(LikeFile):
 	"""File-like object which incrementally generates a librsync delta"""
 	def __init__(self, signature, new_file):
@@ -146,4 +145,42 @@ class PatchedFile(LikeFile):
 			raise TypeError("basis_file must be a (true) file")
 		try: self.maker = _librsync.new_patchmaker(basis_file)
 		except _librsync.librsyncError, e: raise librsyncError(str(e))		
+
+
+class SigGenerator:
+	"""Calculate signature.
+
+	Input and output is same as SigFile, but the interface is like md5
+	module, not filelike object
+
+	"""
+	def __init__(self):
+		"""Return new signature instance"""
+		try: self.sig_maker = _librsync.new_sigmaker()
+		except _librsync.librsyncError, e: raise librsyncError(str(e))
+		self.gotsig = None
+		self.buffer = ""
+		self.sig_string = ""
+
+	def update(self, buf):
+		"""Add buf to data that signature will be calculated over"""
+		if self.gotsig:
+			raise librsyncError("SigGenerator already provided signature")
+		self.buffer += buf
+		while len(self.buffer) >= blocksize:
+			if self.process_buffer():
+				raise librsyncError("Premature EOF received from sig_maker")
+
+	def process_buffer(self):
+		"""Run self.buffer through sig_maker, add to self.sig_string"""
+		try: eof, len_buf_read, cycle_out = self.sig_maker.cycle(self.buffer)
+		except _librsync.librsyncError, e: raise librsyncError(str(e))
+		self.buffer = self.buffer[len_buf_read:]
+		self.sig_string += cycle_out
+		return eof
+
+	def getsig(self):
+		"""Return signature over given data"""
+		while not self.process_buffer(): pass # keep running until eof
+		return self.sig_string
 
