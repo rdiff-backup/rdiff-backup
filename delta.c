@@ -44,6 +44,14 @@
 #include "util.h"
 #include "sumset.h"
 #include "job.h"
+#include "trace.h"
+
+
+static hs_result hs_delta_s_end(hs_job_t *job)
+{
+    hs_emit_end_cmd(job->stream);
+    return HS_DONE;
+}
 
 
 /**
@@ -52,16 +60,22 @@
  */
 static hs_result hs_delta_s_fake(hs_job_t *job)
 {
-        hs_stream_t * const stream = job->stream;
-        size_t avail = stream->avail_in;
-        
-	hs_emit_literal_cmd(stream, avail);
-	hs_blow_copy(stream, avail);
+    hs_stream_t * const stream = job->stream;
+    size_t avail = stream->avail_in;
 
-	if (hs_stream_is_empty(stream))
-		return HS_DONE;
-	else
-		return HS_BLOCKED;
+    if (avail) {
+        hs_trace("emit fake delta for %d available bytes", avail);
+        hs_emit_literal_cmd(stream, avail);
+        hs_blow_copy(stream, avail);
+        return HS_RUNNING;
+    } else {
+        if (stream->eof_in) {
+            job->statefn = hs_delta_s_end;
+            return HS_RUNNING;
+        } else {                
+            return HS_BLOCKED;
+        }
+    }
 }
 
 
@@ -70,26 +84,27 @@ static hs_result hs_delta_s_fake(hs_job_t *job)
  */
 static hs_result hs_delta_s_header(hs_job_t *job)
 {
-	hs_emit_delta_header(job->stream);
+    hs_emit_delta_header(job->stream);
 
-        job->statefn = hs_delta_s_fake;
+    job->statefn = hs_delta_s_fake;
 
-        return HS_DONE;
+    return HS_RUNNING;
 }
 
 
 /**
  * Prepare to compute a delta on a stream.
  */
-hs_job_t *hs_delta_begin(hs_stream_t *stream)
+hs_job_t *hs_delta_begin(hs_stream_t *stream, hs_signature_t *sig)
 {
-	hs_job_t *job;
+    hs_job_t *job;
 
-	job = hs_job_new(stream, "delta");
-
-        job->statefn = hs_delta_s_header;
+    job = hs_job_new(stream, "delta");
+    
+    job->signature = sig;
+    job->statefn = hs_delta_s_header;
 	
-	return job;
+    return job;
 }
 
 
