@@ -21,6 +21,7 @@
  */
 
 #include "mdfour.h"
+#include "rollsum.h"
 
 struct rs_job {
     int                 dogtag;
@@ -49,13 +50,11 @@ struct rs_job {
     /** Command byte currently being processed, if any. */
     unsigned char       op;
 
-    /** If in the middle of reading a signature (rs_loadsig_s_weak()),
-     * or generating a delta, this contains the weak signature. */
+    /** The weak signature digest used by readsums.c */
     rs_weak_sum_t       weak_sig;
-
-    /** If generating a delta, this is true if we have a valid weak signature and
-     * can roll it forward. */
-    int                 have_weak_sig;
+    
+    /** The rollsum weak signature accumulator used by delta.c */
+    Rollsum             weak_sum;
 
     /** Lengths of expected parameters. */
     rs_long_t           param1, param2;
@@ -66,13 +65,16 @@ struct rs_job {
     /** Encoding statistics. */
     rs_stats_t          stats;
 
-    /** Buffer of data left over in the scoop.  Allocation is
-     * scoop_buf..scoop_alloc, and scoop_next[0..scoop_avail]
-     * contains valid data. */
-    char       *scoop_buf;
-    char       *scoop_next;
-    size_t      scoop_alloc;
-    size_t      scoop_avail;
+    /** 
+     * Buffer of data in the scoop.  Allocation is
+     *  scoop_buf[0..scoop_alloc], and scoop_next[0..scoop_avail] contains
+     *  data yet to be processed. scoop_next[scoop_pos..scoop_avail] is the
+     *  data yet to be scanned.  */
+    char       *scoop_buf;             /* the allocation pointer */
+    char       *scoop_next;            /* the data pointer */
+    size_t      scoop_alloc;           /* the allocation size */
+    size_t      scoop_avail;           /* the data size */
+    size_t      scoop_pos;             /* the scan position */
         
     /** If USED is >0, then buf contains that much write data to
      * be sent out. */

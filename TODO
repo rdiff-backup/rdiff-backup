@@ -1,6 +1,26 @@
                                                   -*- indented-text -*-
 $Id$
 
+ * Optimisations and code cleanups;
+ 
+   scoop.c: Scoop needs major refactor. Perhaps the API needs
+   tweaking?
+
+   rsync.h: documentation refers to rs_work(), which has been replaced
+   by rs_job_iter. Vestigial rs_work_options enum typedef should be
+   removed. rs_buffers_s and rs_buffers_t should be one typedef? Just
+   how useful is rs_job_drive anyway? Not implemented, rs_accum_value
+   Not implemented rs_mdfour_file
+
+   patch.c: rs_patch_s_copying() does alloc, copy free, when it could
+   just copy directly into rs_buffer_t buffer. This _does_ mean the
+   callback can't allocate it's own data, though this can be done by
+   checking if the callback changed the pointer.
+
+   mdfour.c: This code has a different API to the RSA code in libmd
+   and is coupled with librsync in unhealthy ways (trace?). Recommend
+   changing to RSA API. 
+    
  * Change popt library to proper automake conditional recursive
    SUBDIR instead of an EXTRA_LIBRARIES in a seperate dir (or just
    remove it from the distribution and make the library a dependency).
@@ -16,9 +36,6 @@ $Id$
    
    Make snprintf.c into two proper replacement functions for snprintf
    and vsnprintf instead of using conditional compilation.
-
- * Most urgent: do rolling checksums rather than from-scratch if
-   possible.
 
  * Don't use the rs_buffers_t structure.
 
