@@ -22,7 +22,7 @@ after another backup that failed for a different reason.  May backport
 this fix to 0.6.0 later.
 
 May have fixed a problem also noticed by Matthew Farrellee which can
-cause rdiff-backup to exit when a directory changes into into a
+cause rdiff-backup to exit when a directory changes into a
 non-directory file while rdiff-backup is processing the directory.
 (May also apply to 0.6.0).
 
