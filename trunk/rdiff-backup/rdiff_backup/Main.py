@@ -627,7 +627,7 @@ def ListAtTime(rp):
 
 def CheckDest(dest_rp):
 	"""Check the destination directory, """
-	if Globals.quoting_enabled:
+	if Globals.chars_to_quote:
 		dest_rp = FilenameMapping.get_quotedrpath(dest_rp)
 	if Globals.rbdir is None:
 		SetConnections.UpdateGlobal('rbdir',

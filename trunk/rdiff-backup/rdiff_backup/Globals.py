@@ -133,10 +133,6 @@ changed_settings = []
 # The RPath or QuotedRPath of the rdiff-backup-data directory.
 rbdir = None
 
-# quoting_enabled is true if we should quote certain characters in
-# filenames on the source side (see FilenameMapping for more
-# info).
-
 # chars_to_quote is a string whose characters should be quoted.  It
 # should be true if certain characters in filenames on the source side
 # should be escaped (see FilenameMapping for more info).
