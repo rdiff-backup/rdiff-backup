@@ -52,7 +52,7 @@
 
 rs_trace_fn_t  *rs_trace_impl = rs_trace_stderr;
 
-static int rs_trace_level = RS_LOG_INFO;
+int rs_trace_level = RS_LOG_INFO;
 
 #ifdef HAVE_PROGRAM_INVOCATION_NAME
 #  define MY_NAME program_invocation_short_name
@@ -61,6 +61,10 @@ static int rs_trace_level = RS_LOG_INFO;
 #endif
 
 static void rs_log_va(int level, char const *fn, char const *fmt, va_list va);
+
+#if SIZEOF_SIZE_T > SIZEOF_LONG
+#  warning size_t is larger than a long integer, values in trace messages may be wrong
+#endif
 
 
 /**
@@ -202,3 +206,5 @@ rs_supports_trace(void)
     return 0;
 #endif				/* !DO_RS_TRACE */
 }
+
+

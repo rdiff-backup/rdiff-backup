@@ -98,3 +98,20 @@ enum {
     RS_LOG_NONAME        = 8,   /**< \b Don't show function name in
                                    message. */
 };
+
+
+
+/**
+ * \macro rs_trace_enabled()
+ *
+ * Call this before putting too much effort into generating trace
+ * messages.
+ */
+
+extern int rs_trace_level;
+
+#ifdef DO_RS_TRACE
+#  define rs_trace_enabled() ((rs_trace_level & RS_LOG_PRIMASK) >= RS_LOG_DEBUG)
+#else
+#  define rs_trace_enabled() 0
+#endif
