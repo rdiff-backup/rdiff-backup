@@ -19,6 +19,10 @@
    USA
 */
 
+
+extern char const * const hs_libhsync_version;
+
+
 /* ========================================
 
    Callback function prototypes */

@@ -23,15 +23,24 @@
 #include "hsync.h"
 #include "private.h"
 
-int _hs_enable_trace;
+char const * const hs_libhsync_version = PACKAGE " " VERSION;
+
 _hs_trace_fn *_hs_trace_impl = _hs_trace_to_stderr;
+
+
+void
+hs_trace_to(_hs_trace_fn *new_impl)
+{
+     _hs_trace_impl = new_impl;
+}
+
 
 void
 _hs_trace(char const *fmt, ...)
 {
      va_list va;
      
-     if (_hs_enable_trace  &&  _hs_trace_impl) {
+     if (_hs_trace_impl) {
 	  va_start(va, fmt);
 	  _hs_trace_impl(fmt, va);
 	  va_end(va);
