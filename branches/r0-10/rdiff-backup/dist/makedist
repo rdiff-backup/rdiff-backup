@@ -2,7 +2,7 @@
 
 import os, re, shutil, time, sys
 
-SourceDir = "src"
+SourceDir = "rdiff_backup"
 DistDir = "dist"
 
 # Various details about the files must also be specified by the rpm
