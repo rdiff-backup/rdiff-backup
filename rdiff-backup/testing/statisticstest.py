@@ -184,7 +184,7 @@ class IncStatTest(unittest.TestCase):
 		assert len(incs) == 2
 		s2 = statistics.StatsObj().read_stats_from_rp(incs[0])
 		assert s2.SourceFiles == 7
-		assert 700000 <= s2.SourceFileSize < 750000
+		assert 700000 <= s2.SourceFileSize < 750000, s2.SourceFileSize
 		self.stats_check_initial(s2)
 
 		root_stats = statistics.StatsObj().read_stats_from_rp(incs[1])
