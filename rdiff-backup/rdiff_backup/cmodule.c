@@ -45,7 +45,7 @@ static PyObject *c_make_file_dict(self, args)
 	 PyObject *self;
 	 PyObject *args;
 {
-  PyObject *size, *inode, *mtime, *atime, *ctime, *devloc, *return_val;
+  PyObject *size, *inode, *mtime, *atime, *devloc, *return_val;
   char *filename, filetype[5];
   STRUCT_STAT sbuf;
   long int mode, perms;
@@ -82,11 +82,9 @@ static PyObject *c_make_file_dict(self, args)
 #if SIZEOF_TIME_T > SIZEOF_LONG
   mtime = PyLong_FromLongLong((LONG_LONG)sbuf.st_mtime);
   atime = PyLong_FromLongLong((LONG_LONG)sbuf.st_atime);
-  ctime = PyLong_FromLongLong((LONG_LONG)sbuf.st_ctime);
 #else
   mtime = PyInt_FromLong((long)sbuf.st_mtime);
   atime = PyInt_FromLong((long)sbuf.st_atime);
-  ctime = PyInt_FromLong((long)sbuf.st_ctime);
 #endif
 
   /* Build return dictionary from stat struct */
@@ -96,7 +94,7 @@ static PyObject *c_make_file_dict(self, args)
 	else if S_ISDIR(mode) strcpy(filetype, "dir");
 	else if S_ISSOCK(mode) strcpy(filetype, "sock");
 	else strcpy(filetype, "fifo");
-	return_val =  Py_BuildValue("{s:s,s:O,s:l,s:l,s:l,s:O,s:O,s:l,s:O,s:O,s:O}",
+	return_val =  Py_BuildValue("{s:s,s:O,s:l,s:l,s:l,s:O,s:O,s:l,s:O,s:O}",
 								"type", filetype,
 								"size", size,
 								"perms", perms,
@@ -106,8 +104,7 @@ static PyObject *c_make_file_dict(self, args)
 								"devloc", devloc,
 								"nlink", (long)sbuf.st_nlink,
 								"mtime", mtime,
-								"atime", atime,
-								"ctime", ctime);
+								"atime", atime);
   } else if S_ISLNK(mode) {
 	/* Symbolic links */
 	char linkname[1024];
@@ -163,7 +160,6 @@ static PyObject *c_make_file_dict(self, args)
   Py_DECREF(devloc);
   Py_DECREF(mtime);
   Py_DECREF(atime);
-  Py_DECREF(ctime);
   return return_val;
 }
 
