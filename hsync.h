@@ -262,7 +262,7 @@ hs_job_t *hs_sig_begin(hs_stream_t *stream,
 
 hs_job_t       *hs_delta_begin(hs_stream_t *stream);
 
-hs_job_t       *hs_readsum_begin(hs_stream_t *stream, hs_sumset_t **);
+hs_job_t       *hs_loadsig_begin(hs_stream_t *, hs_sumset_t **);
 
 /**
  * \brief Callback used to retrieve parts of the basis file. */

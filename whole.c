@@ -138,14 +138,14 @@ hs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
  * \sa hs_readsig_begin()
  */
 hs_result
-hs_readsig_file(FILE *sig_file, hs_sumset_t **sumset)
+hs_loadsig_file(FILE *sig_file, hs_sumset_t **sumset)
 {
         hs_job_t        *job;
         hs_stream_t     stream;
 
         hs_stream_init(&stream);
 
-        job = hs_readsum_begin(&stream, sumset);
+        job = hs_loadsig_begin(&stream, sumset);
         return hs_whole_run(job, sig_file, NULL);
 }
 

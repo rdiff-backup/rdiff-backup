@@ -85,7 +85,7 @@ function to create a ::hs_job_t object, passing in any necessary
 initialization parameters.  The various jobs available are:
 
  - hs_sig_begin(): Calculate the signature of a file.
- - hs_readsig_begin(): Load a signature into memory.
+ - hs_loadsig_begin(): Load a signature into memory.
  - hs_delta_begin(): Calculate the delta between a signature and a new
    file.
  - hs_patch_begin(): Apply a delta to a basis to recreate the new
@@ -103,7 +103,7 @@ initialization parameters.  The various jobs available are:
   to hs_whole_run(), which will feed it to and from two FILEs as
   necessary until end of file is reached or the operation completes.
 
-\subsection api_trace Debugging Trace
+\subsection api_trace Debugging trace and error logging
 
 libhsync can output trace or log messages as it proceeds.  These
 follow a fairly standard priority-based filtering system

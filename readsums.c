@@ -22,10 +22,9 @@
  */
 
 
-/**
- * $Id$
+/*
+ * readsums.c -- Load signatures from a file into an ::hs_sumset_t.
  */
-
 
 #include <config.h>
 
@@ -49,7 +48,7 @@
 #include "util.h"
 
 
-static hs_result hs_readsum_s_header(hs_job_t *job)
+static hs_result hs_loadsig_s_header(hs_job_t *job)
 {
     int                 magic;
     hs_result           result;
@@ -61,7 +60,7 @@ static hs_result hs_readsum_s_header(hs_job_t *job)
         hs_error("wrong magic number %#10x for signature", magic);
         return HS_BAD_MAGIC;
     } else {
-        hs_trace("got magic %#10x", magic);
+        hs_trace("got signature magic %#10x", magic);
     }
 
     /* TODO: Get block size; store in sumset. */
@@ -73,17 +72,21 @@ static hs_result hs_readsum_s_header(hs_job_t *job)
 
 
 /**
- * Load a signature into memory.
+ * \brief Read a signature from a file into an ::hs_sumset_t structure
+ * in memory.
+ *
+ * Once there, it can be used to generate a delta to a newer version of
+ * the file.
  *
  * \todo Perhaps call this `readsig' or `loadsig' instead?
  */
-hs_job_t *hs_readsum_begin(hs_stream_t *stream, hs_sumset_t **sumset)
+hs_job_t *hs_loadsig_begin(hs_stream_t *stream, hs_sumset_t **sumset)
 {
     hs_job_t *job;
 
     job = hs_job_new(stream);
     job->sumset = *sumset = hs_alloc_struct(hs_sumset_t);
-    job->statefn = hs_readsum_s_header;
+    job->statefn = hs_loadsig_s_header;
         
     return job;
 }

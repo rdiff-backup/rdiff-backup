@@ -47,7 +47,7 @@ void hs_mdfour_file(FILE *in_file, char *result);
 
 hs_result hs_sig_file(FILE *old_file, FILE *sig_file, size_t, size_t); 
 
-hs_result hs_readsig_file(FILE *sig_file, hs_sumset_t **sumset);
+hs_result hs_loadsig_file(FILE *sig_file, hs_sumset_t **sumset);
 
 hs_result hs_file_copy_cb(void *arg, size_t *len, void **buf);
 
