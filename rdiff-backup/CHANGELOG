@@ -12,6 +12,9 @@ If there is data missing from the destination dir (for instance if a
 user mistakenly deletes it), only warn when restoring, instead of
 exiting with error.
 
+Fixed problems with --restrict options that would cause proper
+sessions to fail.  Thanks to Randall Nortman for error report.
+
 
 New in v0.12.3 (2003/08/08)
 ---------------------------
