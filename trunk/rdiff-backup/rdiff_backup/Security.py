@@ -131,7 +131,9 @@ def set_allowed_requests(sec_level):
 			 "Time.setcurtime_local",
 			 "rpath.gzip_open_local_read",
 			 "rpath.open_local_read",
-			 "Hardlink.initialize_dictionaries"])
+			 "Hardlink.initialize_dictionaries",
+			 "user_group.uid2uname",
+			 "user_group.gid2gname"])
 		if sec_level == "read-only":
 			allowed_requests.extend(
 				["fs_abilities.get_fsabilities_readonly",
@@ -166,7 +168,9 @@ def set_allowed_requests(sec_level):
 			 "Globals.postset_regexp_local",
 			 "Globals.set_select",
 			 "backup.SourceStruct.set_session_info",
-			 "backup.DestinationStruct.set_session_info"])
+			 "backup.DestinationStruct.set_session_info",
+			 "user_group.init_user_mapping",
+			 "user_group.init_group_mapping"])
 
 def vet_request(request, arglist):
 	"""Examine request for security violations"""

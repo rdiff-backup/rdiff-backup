@@ -1,3 +1,10 @@
+New in v0.13.3 (??????????)
+---------------------------
+
+Fixed some of the --restrict options which would cause spurious
+violation errors.
+
+
 New in v0.13.2 (2003/09/16)
 ---------------------------
 
