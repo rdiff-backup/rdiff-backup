@@ -542,7 +542,7 @@ as data loss may result.\n""" % (self.mirror_rp.get_indexpath(),), 2)
 				inc_list = []
 			else: inc_rp, inc_list = inc_pair
 			if not mirror_rp:
-				mirror_rp = self.mirror_rp.new_index(inc_rp.index)
+				mirror_rp = self.mirror_rp.new_index_empty(inc_rp.index)
 			yield self.__class__(mirror_rp, inc_rp, inc_list)
 
 	def yield_mirrorrps(self, mirrorrp):

@@ -4,6 +4,12 @@ New in v0.13.6 (2005/??/??)
 Added fix for listing/restoring certain bad archives made when there
 was a timezone bug.  (Thanks to Stephen Isard)
 
+************** Serious bug fix ******************
+If a directory in the source directory was replaced by certain
+symlinks, then if later backups failed they could cause files in the
+directory that the symlink pointed to to be deleted!  Much thanks to
+Alistair Popple for pointing this bug out and providing a test case.
+
 
 New in v0.13.5 (2005/03/28)
 ---------------------------
