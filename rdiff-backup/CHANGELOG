@@ -1,8 +1,17 @@
-New in v0.7.6 (2002/??/??)
+New in v0.7.6 (2002/05/31)
 --------------------------
 
 Improved statistics support, and added --print-statistics and
---calculate-average switches.
+--calculate-average switches.  See the directory_statistics and
+session_statistics files in the rdiff-backup-data directory.
+
+Major improvements to error correction and resuming.
+
+Now signals SIGQUIT, SIGHUP, and SIGTERM are caught to exit more
+gracefully.
+
+Fixed crankyness when --exclude-filelist is the last exclude option
+and it is given an empty file (thanks to Bryce C for report).
 
 
 New in v0.7.5 (2002/05/21)
