@@ -198,7 +198,9 @@ _hs_map_do_read(hs_map_t *map,
 
    The buffer is only valid until the next call to _hs_map_ptr on this
    map, or until _hs_unmap_file.  You certainly MUST NOT free the
-   buffer. */
+   buffer.
+
+   Iff an error occurs, returns NULL. */
 /*@null@*/ const char *
 _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
 {
