@@ -1,7 +1,5 @@
 See if regressing takes too much memory (large directories).
 
-Alan Bailward's suggestion to add removing older than 4 sessions.
-
 write test case for --calculate-statistics
 
 Use ctime to check whether files have been changed.  See message:
