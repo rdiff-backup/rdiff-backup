@@ -255,7 +255,7 @@ class Robust:
  		except (EnvironmentError, SkipFileException, DSRPPermError,
 				RPathException, Rdiff.RdiffException,
 				librsync.librsyncError, C.UnknownFileTypeError), exc:
-			TracebackArchive.add()
+			TracebackArchive.add([function] + args)
 			if (not isinstance(exc, EnvironmentError) or
 				(errno.errorcode[exc[0]] in
 				 ['EPERM', 'ENOENT', 'EACCES', 'EBUSY', 'EEXIST',
@@ -300,9 +300,14 @@ class SignalException(Exception):
 class TracebackArchive:
 	"""Save last 10 caught exceptions, so they can be printed if fatal"""
 	_traceback_strings = []
-	def add(cls):
-		"""Add most recent exception to archived list"""
-		cls._traceback_strings.append(Log.exception_to_string())
+	def add(cls, extra_args = []):
+		"""Add most recent exception to archived list
+
+		If extra_args are present, convert to strings and add them as
+		extra information to same traceback archive.
+
+		"""
+		cls._traceback_strings.append(Log.exception_to_string(extra_args))
 		if len(cls._traceback_strings) > 10:
 			cls._traceback_strings = cls._traceback_strings[:10]
 
