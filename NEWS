@@ -9,6 +9,8 @@ Changes in 0.9.1:
 
  * Add file(1) magic for rdiff.
 
+ * Add more to the manual pages.
+
  * It's no longer necessary to call rs_buffers_init on a stream before
    starting to use it: all the internal data is kept in the job, not
    in the stream.
@@ -30,6 +32,8 @@ Changes in 0.9.0:
  * New magic number `rs6'
 
  * Change to using popt for command line parsing.
+
+ * Use Doxygen for API documentation.
 
 Changes in 0.5.7:
 

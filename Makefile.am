@@ -53,7 +53,6 @@ librsync_la_SOURCES = \
 	scoop.c					\
 	search.c search.h			\
 	stats.c					\
-	includes.h \
 	stream.c stream.h			\
 	sumset.c sumset.h \
 	trace.c trace.h				\
