@@ -79,7 +79,8 @@ librsync_la_LDFLAGS = -version-info 1:1:0
 
 TESTS_ENVIRONMENT = $(SH) $(srcdir)/driver.sh
 
-test_scripts = isprefix.test delta.test mksum.test triple.test changes.test
+test_scripts = mutate.test \
+	isprefix.test delta.test mksum.test triple.test changes.test
 
 # These are extra documents to be included in the source tarball.
 extra_docs = README.CVS libversions.txt
@@ -94,6 +95,7 @@ noinst_SCRIPTS = \
 	$(test_scripts) \
 	driver.sh \
 	mkprototab.pl \
+	mutate.pl \
 	$(try_scripts)
 
 test_data = changes.input			\

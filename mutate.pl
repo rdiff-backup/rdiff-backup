@@ -25,30 +25,36 @@
 
 use strict;
 
-srand pop @ARGV;
+srand shift @ARGV;
+my $n_muts = 1 + int rand shift @ARGV;
 
 undef $/;                       # slurp whole file
 my $corpus = <STDIN>;
 
-my $in_len = length($corpus);
+printf STDERR "%d mutations\n", $n_muts;
 
-my $from_off = int rand $in_len;
-my $from_len = int rand $in_len;
-my $to_off = int rand $in_len;
-my $to_len = int rand $in_len;
+while ($n_muts-- > 0) {
+  my $in_len = length($corpus);
 
-if (rand(2) > 1.0) {
-  printf STDERR "copy and overwrite";
-  substr($corpus, $to_off, $to_len) = substr($corpus, $from_off, $from_len);
-} elsif (rand(2) > 1.0) {
-  print STDERR "copy and insert";
-  substr($corpus, $to_off, 0) = substr($corpus, $from_off, $from_len);
-} else {
-  print STDERR "delete";
-  substr($corpus, $to_off, $to_len) = '';
+  my $from_off = int rand $in_len;
+  my $from_len = int rand $in_len;
+  my $to_off = int rand $in_len;
+  my $to_len = int rand $in_len;
+
+  my $op = rand 3;
+  if ($op < 1.0) {
+    printf STDERR "copy and overwrite";
+    substr($corpus, $to_off, $to_len) = substr($corpus, $from_off, $from_len);
+  } elsif ($op < 2.0) {
+    print STDERR "copy and insert";
+    substr($corpus, $to_off, 0) = substr($corpus, $from_off, $from_len);
+  } else {
+    print STDERR "delete";
+    substr($corpus, $to_off, $to_len) = '';
+  }
+
+  printf STDERR " (%d, %d) -> (%d, %d)\n", $from_off, $from_len, $to_off, $to_len;
 }
-
-printf STDERR " (%d, %d) -> (%d, %d)\n", $from_off, $from_len, $to_off, $to_len;
 
 print $corpus;
 
