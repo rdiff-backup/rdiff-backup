@@ -13,6 +13,9 @@ Changes in 0.9.7 (release pending)
  * #879763: Fixed mdfour to work on little-endian machines which don't
    like unaligned word access.  This should make librsync work on
    pa-risc, and it makes it slightly faster on ia64.
+
+ * #1022764: Fix corrupted encoding of some COPY commands in large
+   files.
  
 Changes in 0.9.6
 
