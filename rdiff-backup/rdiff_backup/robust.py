@@ -575,7 +575,10 @@ class Resume:
 			mirror = None
 			last_index = cls.sym_to_index(increment_sym)
 			if checkpoint_rp:
-				ITR, finalizer = cls.unpickle_checkpoint(checkpoint_rp)
+				result = cls.unpickle_checkpoint(checkpoint_rp)
+				sys.stderr.write("#############" + str(result) + "\n")
+				#ITR, finalizer = cls.unpickle_checkpoint(checkpoint_rp)
+				ITR, finalizer = result
 		elif mirror_sym:
 			mirror = 1
 			last_index = cls.sym_to_index(mirror_sym)
@@ -609,6 +612,7 @@ class Resume:
 		try: result = cPickle.loads(data)
 		except cPickle.UnpicklingError:
 			raise ResumeException("Bad pickle at %s" % (checkpoint_rp.path,))
+		return result
 
 	def ResumeCheck(cls):
 		"""Return relevant ResumeSessionInfo if there's one we should resume

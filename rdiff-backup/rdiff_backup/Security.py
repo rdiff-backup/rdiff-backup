@@ -108,6 +108,7 @@ def set_allowed_requests(sec_level):
 		allowed_requests.extend(["C.make_file_dict",
 								 "os.getuid",
 								 "os.listdir",
+								 "Time.setcurtime_local",
 								 "Resume.ResumeCheck",
 								 "HLSourceStruct.split_initial_dsiter",
 								 "HLSourceStruct.get_diffs_and_finalize"])
@@ -127,7 +128,6 @@ def set_allowed_requests(sec_level):
 		allowed_requests.extend(["SetConnections.init_connection_remote",
 								 "Log.setverbosity",
 								 "Log.setterm_verbosity",
-								 "Time.setcurtime_local",
 								 "Time.setprevtime_local",
 								 "FilenameMapping.set_init_quote_vals_local",
 								 "Globals.postset_regexp_local",

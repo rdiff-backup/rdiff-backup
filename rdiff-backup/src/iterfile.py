@@ -190,11 +190,19 @@ class FileWrappingIter:
 
 	def addfromfile(self):
 		"""Read a chunk from the current file and return it"""
-		buf = self.currently_in_file.read(Globals.blocksize)
+		# Check file read for errors, buf = "" if find one
+		buf = Robust.check_common_error(self.read_error_handler,
+										self.currently_in_file.read,
+										[Globals.blocksize])
 		if not buf:
 			assert not self.currently_in_file.close()
 			self.currently_in_file = None
 		return C.long2str(long(len(buf))) + buf
+
+	def read_error_handler(self, exc, blocksize):
+		"""Log error when reading from file"""
+		Log("Error '%s' reading from fileobj, truncating" % (str(exc),), 2)
+		return ""
 
 	def _l2s_old(self, l):
 		"""Convert long int to string of 7 characters"""
@@ -237,3 +245,4 @@ class BufferedRead:
 	def close(self): return self.file.close()
 
 from log import *
+from robust import *
