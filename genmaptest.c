@@ -131,7 +131,7 @@ gen_mapover(int ntests, char const *buf, size_t size,
     for (i = 0; i < ntests; i++) {
 	off = rand() % size;
 	remain = size - off;
-	len = rand() % size;
+	len = rand() % size + 1;
 	emit(buf, size, off, len, expect, cmds);
     }
 }
@@ -147,7 +147,7 @@ gen_forward(int ntests, char const *buf, size_t size,
 
     i = 0; off = 0;
     while ((size_t) off < size  &&  i < ntests) {
-	len = rand() % 8192;
+	len = rand() % 8192 + 1;
 	emit(buf, size, off, len, expect, cmds);
 
 	off += rand() % len;
