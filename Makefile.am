@@ -13,13 +13,13 @@ libhsync_la_SOURCES = dec.c enc.c \
 	checksum.c copyq.c \
 	compress.c compress.h inbuf.c \
 	inhale.c trace.c \
-	hex.c
+	hex.c stats.c
 
 libhsyncdecode_la_SOURCES = dec.c \
 	private.h netio.c includes.h \
 	compress.c compress.h \
 	filebuf.c membuf.c ptrbuf.c \
-	inhale.c trace.c hex.c
+	inhale.c trace.c hex.c stats.c
 
 noinst_SCRIPTS = test-decode.sh test-encode.sh test-chain.sh test-cmds.sh \
 	make-cmds.py test-thrice.sh

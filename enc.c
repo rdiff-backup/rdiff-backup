@@ -348,6 +348,7 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
      int at_eof;
      int got_old;		/* true if there is an old signature */
      int need_bytes;		/* how much readahead do we need? */
+     char *stats_str;
      
      _hs_trace("**** beginning %s", __FUNCTION__);
 
@@ -495,13 +496,10 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
      if (ret < 0)
 	  goto out;
 
-     _hs_trace("completed"
-	       ": literal[%d cmds, %d bytes], "
-	       "signature[%d cmds, %d bytes], "
-	       "copy[%d cmds, %d bytes]",
-	       stats->lit_cmds, stats->lit_bytes,
-	       stats->sig_cmds, stats->sig_bytes,
-	       stats->copy_cmds, stats->copy_bytes);
+     stats_str = hs_format_stats(stats);
+     _hs_trace("completed: %s", stats_str);
+     free(stats_str);
+    
      ret = 1;
 
  out:

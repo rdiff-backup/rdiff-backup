@@ -108,6 +108,7 @@ hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
     uint8_t type;
     uint32_t length, offset;
     int kind;
+    char *stats_str;
 
     _hs_trace("**** begin %s", __FUNCTION__);
     bzero(stats, sizeof *stats);
@@ -155,12 +156,9 @@ hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
 	return ret;
     }
 
-    _hs_trace("completed"
-	      ": literal[%d cmds, %d bytes], "
-	      "signature[%d cmds, %d bytes], "
-	      "copy[%d cmds, %d bytes]",
-	      stats->lit_cmds, stats->lit_bytes,
-	      stats->sig_cmds, stats->sig_bytes,
-	      stats->copy_cmds, stats->copy_bytes);
+    stats_str = hs_format_stats(stats);
+    _hs_trace("completed: %s", stats_str);
+    free(stats_str);
+    
     return 1;
 }

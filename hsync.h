@@ -148,3 +148,6 @@ void hs_mdfour_result(struct hs_mdfour *md, unsigned char *out);
 
 void
 hs_hexify_buf(char *to_buf, unsigned char const *from_buf, int from_len);
+
+
+char * hs_format_stats(hs_stats_t const * stats);
