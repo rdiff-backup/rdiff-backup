@@ -32,7 +32,7 @@ install-exec-local:
 		$(DESTDIR)$(libdir)/libhsyncdecode.so*
 
 libhsync_a_SOURCES = \
-	vtr.c vtr.h \
+	alw.c alw.h \
 	dec.c \
 	emit.c emit.h \
 	private.h \
@@ -139,6 +139,7 @@ include_HEADERS = hsync.h
 LDADD = libhsync.a $(LIBOBJS)
 
 libhsync_tools = hsdecode hsmdfour hsmksum hsmapread hsnad \
+		 hsalw \
 		libhsyncinfo hsdumpsums
 
 # Eventually we might want to install some of these into system
@@ -175,6 +176,8 @@ hsmksum_SOURCES = hsmksum.c
 hsmdfour_SOURCES = hsmdfour.c
 
 hsdecode_SOURCES = hsdecode.c
+
+hsalw_SOURCES = hsalw.c
 
 hsemit_SOURCES = hsemit.c
 

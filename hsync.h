@@ -104,6 +104,16 @@ hs_decode(int oldread_fd,
           hs_read_fn_t ltread_fn, void *ltread_priv,
 	  hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats);
 
+
+/**********************************************************************
+ * Nonblocking mapped decode
+ **********************************************************************/
+ssize_t
+hs_alw_decode(int oldread_fd, int ltread_fd, 
+              hs_write_fn_t write_fn, void *write_priv,
+              hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats);
+
+
 /* ========================================
 
    File buffers */

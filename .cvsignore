@@ -19,6 +19,7 @@ config.sub
 configure
 configure.scan
 genmaptest
+hsalw
 hsdecode
 hsdumpsums
 hsemit
@@ -39,6 +40,7 @@ ltconfig
 ltmain.sh
 missing
 mkinstalldirs
+prototab.c
 sockcli
 sockrun
 socksvr
@@ -47,4 +49,3 @@ stamp-h.in
 test-*.d
 tmp-*
 trylog
-prototab.c
