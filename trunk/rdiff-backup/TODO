@@ -21,6 +21,10 @@ Make argument shortcut for cstream
 
 Make --calculate-averages work with directory_statistics file.
 
+Write configuration file, to make sure settings like --quoting-char,
+--windows-time-format, etc., don't change between sessions,
+backup/restoring, etc.
+
 ---------[ Long term ]---------------------------------------
 
 Think about adding Gaudet's idea for keeping track of renamed files.
