@@ -7,6 +7,17 @@ violation errors.
 --list-changed-since and --list-at-time now work remotely.
 Thanks to Morten Werner Olsen for bug report.
 
+Fixed logic bug that could make restoring extremely slow and waste
+memory.  Thanks for Jacques Botha for report.
+
+Fixed bug restoring some directories when mirror_metadata file was
+missing (as when made by 0.10.x version).
+
+Regressing and restoring as non-root user now works on directories
+that contain unreadable files and directories as long as they are
+owned by that user.  Bug report by Arkadiusz Miskiewicz.  Hopefully
+this is the last of the unreadable file bugs...
+
 
 New in v0.13.2 (2003/09/16)
 ---------------------------

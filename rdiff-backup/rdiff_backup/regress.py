@@ -112,14 +112,29 @@ def remove_rbdir_increments():
 		old_current_mirror.delete()
 
 def iterate_raw_rfs(mirror_rp, inc_rp):
-	"""Iterate all RegressFile objects in mirror/inc directory"""
+	"""Iterate all RegressFile objects in mirror/inc directory
+
+	Also changes permissions of unreadable files to allow access and
+	then changes them back later.
+
+	"""
 	root_rf = RegressFile(mirror_rp, inc_rp, restore.get_inclist(inc_rp))
 	def helper(rf):
+		mirror_rp = rf.mirror_rp
+		if (Globals.process_uid != 0 and
+			((mirror_rp.isreg() and not mirror_rp.readable()) or
+			 (mirror_rp.isdir() and not mirror_rp.hasfullperms()))):
+			unreadable, old_perms = 1, mirror_rp.getperms()
+			if mirror_rp.isreg(): mirror_rp.chmod(0400 | old_perms)
+			else: mirror_rp.chmod(0700 | old_perms)
+		else: unreadable = 0
 		yield rf
+		if unreadable and mirror_rp.isreg(): mirror_rp.chmod(old_perms)
 		if rf.mirror_rp.isdir() or rf.inc_rp.isdir():
 			for sub_rf in rf.yield_sub_rfs():
 				for sub_sub_rf in helper(sub_rf):
 					yield sub_sub_rf
+		if unreadable and mirror_rp.isdir(): mirror_rp.chmod(old_perms)
 	return helper(root_rf)
 
 def yield_metadata():

@@ -11,7 +11,7 @@ if you aren't me, check out the 'user' global variable.
 
 Globals.set('change_source_perms', None)
 Globals.counter = 0
-verbosity = 6
+verbosity = 5
 log.Log.setverbosity(verbosity)
 user = 'ben' # Non-root user to su to
 userid = 500 # id of user above
@@ -95,6 +95,13 @@ class HalfRoot(unittest.TestCase):
 		rp1_3.mkdir()
 		rp1_3_1 = rp1_3.append('file_inside')
 		rp1_3_1.write_string('blah')
+		rp1_3_1.chmod(0)
+		rp1_3_2 = rp1_3.append('subdir_inside')
+		rp1_3_2.mkdir()
+		rp1_3_2_1 = rp1_3_2.append('foo')
+		rp1_3_2_1.write_string('saotnhu')
+		rp1_3_2_1.chmod(0)
+		rp1_3_2.chmod(0)
 		rp1_3.chmod(0)
 
 		rp2 = rpath.RPath(Globals.local_connection, "testfiles/root_half2")
@@ -105,8 +112,17 @@ class HalfRoot(unittest.TestCase):
 		rp2_1.chmod(0)
 		rp2_3 = rp2.append('unreadable_dir')
 		rp2_3.mkdir()
-		rp2_3_2 = rp2_3.append('file2')
-		rp2_3_2.touch()
+		rp2_3_1 = rp2_3.append('file_inside')
+		rp2_3_1.write_string('new string')
+		rp2_3_1.chmod(0)
+		rp2_3_2 = rp2_3.append('subdir_inside')
+		rp2_3_2.mkdir()
+		rp2_3_2_1 = rp2_3_2.append('foo')
+		rp2_3_2_1.write_string('asoetn;oet')
+		rp2_3_2_1.chmod(0)
+		rp2_3_2.chmod(0)
+		rp2_3_3 = rp2_3.append('file2')
+		rp2_3_3.touch()
 		rp2_3.chmod(0)
 		return rp1, rp2
 
@@ -135,23 +151,27 @@ class HalfRoot(unittest.TestCase):
 
 		rout_rp = rpath.RPath(Globals.local_connection,
 							  "testfiles/restore_out")
+		restore_schema = ("rdiff-backup -v" + str(verbosity) +
+						  " -r %s --remote-schema '%%s' '%s'::%s %s")
 		Myrm(rout_rp.path)
-		cmd3 = cmd_schema % (10000,
-							 "-r 10000 %s/unreadable_dir" % (outrp.path,),
-							 remote_schema,  rout_rp.path)
+		cmd3 = restore_schema % (10000, remote_schema, outrp.path,
+								 rout_rp.path)
 		print "Executing restore: ", cmd3
 		assert not os.system(cmd3)
-		rout_rp.setdata()
-		assert rout_rp.getperms() == 0, rout_rp.getperms()
+		rout_perms = rout_rp.append('unreadable_dir').getperms()
+		outrp_perms = outrp.append('unreadable_dir').getperms()
+		assert rout_perms == 0, rout_perms
+		assert outrp_perms == 0, outrp_perms
 
 		Myrm(rout_rp.path)
-		cmd4 = cmd_schema % (10000,
-							 "-r now %s/unreadable_dir" % (outrp.path,),
-							 remote_schema,  rout_rp.path)
+		cmd4 = restore_schema % ("now", remote_schema, outrp.path,
+								 rout_rp.path)
 		print "Executing restore: ", cmd4
 		assert not os.system(cmd4)
-		rout_rp.setdata()
-		assert rout_rp.getperms() == 0, rout_rp.getperms()
+		rout_perms = rout_rp.append('unreadable_dir').getperms()
+		outrp_perms = outrp.append('unreadable_dir').getperms()
+		assert rout_perms == 0, rout_perms
+		assert outrp_perms == 0, outrp_perms
 
 
 class NonRoot(unittest.TestCase):
