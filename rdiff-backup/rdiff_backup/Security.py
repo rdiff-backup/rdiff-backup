@@ -117,35 +117,45 @@ def set_allowed_requests(sec_level):
 						"Log.log_to_file",
 						"SetConnections.add_redirected_conn",
 						"RedirectedRun",
-						"sys.stdout.write"]
+						"sys.stdout.write",
+						"robust.install_signal_handlers"]
 	if sec_level == "minimal": pass
 	elif sec_level == "read-only" or sec_level == "update-only":
 		allowed_requests.extend(
 			["C.make_file_dict",
+			 "rpath.ea_get",
+			 "rpath.acl_get",
 			 "log.Log.log_to_file",
 			 "os.getuid",
 			 "os.listdir",
 			 "Time.setcurtime_local",
-			 "robust.Resume.ResumeCheck",
-			 "backup.SourceStruct.split_initial_dsiter",
-			 "backup.SourceStruct.get_diffs_and_finalize",
 			 "rpath.gzip_open_local_read",
-			 "rpath.open_local_read"])
-		if sec_level == "update-only":
+			 "rpath.open_local_read",
+			 "Hardlink.initialize_dictionaries"])
+		if sec_level == "read-only":
 			allowed_requests.extend(
-				["Log.open_logfile_local", "Log.close_logfile_local",
-				 "Log.close_logfile_allconn", "Log.log_to_file",
-				 "log.Log.log_to_file",
-				 "robust.SaveState.init_filenames",
-				 "robust.SaveState.touch_last_file",
-				 "backup.DestinationStruct.get_sigs",
-				 "backup.DestinationStruct.patch_w_datadir_writes",
-				 "backup.DestinationStruct.patch_and_finalize",
-				 "backup.DestinationStruct.patch_increment_and_finalize",
+				["fs_abilities.get_fsabilities_readonly",
+				 "fs_abilities.get_fsabilities_restoresource",
+				 "restore.MirrorStruct.set_mirror_and_rest_times",
+				 "restore.MirrorStruct.initialize_rf_cache",
+				 "restore.MirrorStruct.get_diffs",
+				 "backup.SourceStruct.get_source_select",
+				 "backup.SourceStruct.set_source_select",
+				 "backup.SourceStruct.get_diffs"])
+		elif sec_level == "update-only":
+			allowed_requests.extend(
+				["log.Log.open_logfile_local", "log.Log.close_logfile_local",
+				 "log.ErrorLog.open", "log.ErrorLog.isopen",
+				 "log.ErrorLog.close",
+				 "backup.DestinationStruct.set_rorp_cache",
+				 "backup.DestinationStruct.get_sigs",				 
+				 "backup.DestinationStruct.patch_and_increment",
 				 "Main.backup_touch_curmirror_local",
+				 "Main.backup_remove_curmirror_local",
 				 "Globals.ITRB.increment_stat",
 				 "statistics.record_error",
-				 "log.ErrorLog.write_if_open"])
+				 "log.ErrorLog.write_if_open",
+				 "fs_abilities.get_fsabilities_readwrite"])
 	if Globals.server:
 		allowed_requests.extend(
 			["SetConnections.init_connection_remote",

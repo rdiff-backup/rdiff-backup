@@ -272,6 +272,12 @@ class Final(PathSetter):
 		# Back up increment3
 		self.exec_rb(30000, 'testfiles/win-increment3', 'testfiles/output')
 
+		# Now check to make sure no ":" in output directory
+		popen_fp = os.popen("find testfiles/output -name '*:*' | wc")
+		wc_output = popen_fp.read()
+		popen_fp.close()
+		assert wc_output.split() == ["0", "0", "0"], wc_output
+
 		# Start restore of increment 2
 		Globals.chars_to_quote = '^a-z0-9_ -.'
 		inc_paths = self.getinc_paths("increments.",
@@ -288,12 +294,6 @@ class Final(PathSetter):
 		assert CompareRecursive(Local.wininc3, Local.rpout3,
 								compare_hardlinks = 0)
 		self.rb_schema = old_schema
-
-		# Now check to make sure no ":" in output directory
-		popen_fp = os.popen("find testfiles/output -name '*:*' | wc")
-		wc_output = popen_fp.read()
-		popen_fp.close()
-		assert wc_output.split() == ["0", "0", "0"], wc_output
 
 	def testLegacy(self):
 		"""Test restoring directory with no mirror_metadata file"""
