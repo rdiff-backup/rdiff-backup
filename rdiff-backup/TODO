@@ -8,10 +8,13 @@ resume.
 Make rdiff-backup not runnable from starting directory to avoid
 confusion.
 
+Add man page to RPM distribution!!
 
 ---------[ Long term ]---------------------------------------
 
 Think about adding Gaudet's idea for keeping track of renamed files.
 
+Look into different inode generation techniques (see treescan, Dean
+Gaudet's other post).
 
 
