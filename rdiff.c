@@ -84,9 +84,18 @@ const struct poptOption opts[] = {
 
 static void rdiff_usage(const char *error)
 {
-    fprintf(stderr, "%s: %s\n"
+    fprintf(stderr, "%s\n"
             "Try `%s --help' for more information.\n",
-            PROGRAM, error, PROGRAM);
+            error, PROGRAM);
+}
+
+
+static void rdiff_no_more_args(poptContext opcon)
+{
+    if (poptGetArg(opcon)) {
+        rdiff_usage("rdiff: too many arguments");
+        exit(HS_SYNTAX_ERROR);
+    }
 }
 
 
@@ -113,6 +122,7 @@ static void help(void) {
            "  -?, --help                Show this help message\n"
            );
 }
+
 
 
 static void rdiff_options(poptContext opcon)
@@ -146,14 +156,12 @@ static void rdiff_options(poptContext opcon)
 static hs_result rdiff_sig(poptContext opcon)
 {
     FILE            *basis_file, *sig_file;
-    const char      *basis_name, *sig_name;
     
-    basis_name = poptGetArg(opcon);
-    sig_name = poptGetArg(opcon);
+    basis_file = hs_file_open(poptGetArg(opcon), "rb");
+    sig_file = hs_file_open(poptGetArg(opcon), "wb");
 
-    basis_file = hs_file_open(basis_name, "rb");
-    sig_file = hs_file_open(sig_name, "wb");
-
+    rdiff_no_more_args(opcon);
+    
     return hs_sig_file(basis_file, sig_file, block_len, strong_len);
 }
 
@@ -163,16 +171,19 @@ static hs_result rdiff_delta(poptContext opcon)
     FILE            *sig_file, *new_file, *delta_file;
     char const      *sig_name;
     hs_result       result;
-    hs_signature_t     *sumset;
+    hs_signature_t  *sumset;
 
     if (!(sig_name = poptGetArg(opcon))) {
-        rdiff_usage("delta: must specify the signature filename");
+        rdiff_usage("Usage for delta: "
+                    "rdiff [OPTIONS] delta SIGNATURE [NEWFILE [DELTA]]");
         return HS_SYNTAX_ERROR;
     }
 
     sig_file = hs_file_open(sig_name, "rb");
     new_file = hs_file_open(poptGetArg(opcon), "rb");
     delta_file = hs_file_open(poptGetArg(opcon), "wb");
+
+    rdiff_no_more_args(opcon);
 
     result = hs_loadsig_file(sig_file, &sumset);
     if (result != HS_DONE)
@@ -183,6 +194,30 @@ static hs_result rdiff_delta(poptContext opcon)
 
     return result = hs_delta_file(sumset, new_file, delta_file);
 }
+
+
+
+static hs_result rdiff_patch(poptContext opcon)
+{
+    /*  patch BASIS [DELTA [NEWFILE]] */
+    FILE               *basis_file, *delta_file, *new_file;
+    char const         *basis_name;
+
+    if (!(basis_name = poptGetArg(opcon))) {
+        rdiff_usage("Usage for patch: "
+                    "rdiff [OPTIONS] patch BASIS [DELTA [NEW]]");
+        return HS_SYNTAX_ERROR;
+    }
+
+    basis_file = hs_file_open(basis_name, "rb");
+    delta_file = hs_file_open(poptGetArg(opcon), "rb");
+    new_file =   hs_file_open(poptGetArg(opcon), "wb");
+
+    rdiff_no_more_args(opcon);
+
+    return hs_patch_file(basis_file, delta_file, new_file);
+}
+
 
 
 static hs_result rdiff_action(poptContext opcon)
@@ -196,8 +231,10 @@ static hs_result rdiff_action(poptContext opcon)
         return rdiff_sig(opcon);
     else if (isprefix(action, "delta")) 
         return rdiff_delta(opcon);
+    else if (isprefix(action, "patch"))
+        return rdiff_patch(opcon);
     
-    rdiff_usage("You must specify an action: `signature', `delta', or `patch'.");
+    rdiff_usage("rdiff: You must specify an action: `signature', `delta', or `patch'.");
     return HS_SYNTAX_ERROR;
 }
 
