@@ -20,3 +20,7 @@
  */
 
 
+void
+_hs_mksum_of_block(char const *p, ssize_t len,
+		   hs_write_fn_t write_fn, void *write_priv,
+		   size_t strong_sum_len);

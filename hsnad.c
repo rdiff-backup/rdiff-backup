@@ -24,9 +24,9 @@
 static void usage(char const *progname)
 {
     fprintf(stderr,
-	    "Usage: %s [OPTIONS]\n"
+	    "Usage: %s OLDSIG [OPTIONS]\n"
 	    "\n"
-            "Computes a per-block signature of stdin and "
+            "Computes difference/signature of stdin and "
             "writes it to stdout."
             "\n"
             "Options:\n"
@@ -63,9 +63,12 @@ static void process_args(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    hs_mksum_job_t      *job;
-    hs_filebuf_t        *out;
-    hs_result_t		 result;
+    hs_encode_job_t    *job;
+    hs_filebuf_t       *out;
+    hs_result_t		result;
+    hs_stats_t		stats;
+    hs_filebuf_t       *sig_fb;
+    hs_sum_set_t       *sum_set = NULL;
 
     process_args(argc, argv);
 
@@ -75,10 +78,16 @@ int main(int argc, char **argv)
 	return 1;
     }
 
-    job = hs_mksum_begin(STDIN_FILENO, hs_filebuf_write, out, 1024,
-			 16);
+    if (optind < argc) {
+	sig_fb = hs_filebuf_open(argv[optind], O_RDONLY);
+	sum_set = _hs_read_sum_set(hs_filebuf_read, sig_fb);
+    }
+
+    job = hs_encode_begin(STDIN_FILENO, hs_filebuf_write, out,
+			  sum_set, &stats,
+			  1024);
     do {
-	result = hs_mksum_iter(job);
+	result = hs_encode_iter(job);
     } while (result == HS_AGAIN);
 
     return result == HS_DONE ? 0 : 2;

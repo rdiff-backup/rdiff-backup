@@ -20,3 +20,10 @@
    USA
 */
 
+
+int
+_hs_send_literal(hs_write_fn_t write_fn,
+		 void *write_priv,
+		 int kind,
+		 char const *buf,
+		 size_t amount);

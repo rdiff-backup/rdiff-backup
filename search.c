@@ -80,12 +80,12 @@ _hs_build_hash_table(hs_sum_set_t *sums)
    strong checksum for the current block, and see if it will match
    anything. */
 int
-_hs_find_in_hash(rollsum_t * rollsum,
+_hs_find_in_hash(uint32_t weak_sum,
 		 char const *inbuf, int block_len,
 		 hs_sum_set_t const *sums,
 		 hs_stats_t *stats)
 {
-     int tag = gettag(rollsum->weak_sum);
+     int tag = gettag(weak_sum);
      int j = sums->tag_table[tag];
      char strong_sum[DEFAULT_SUM_LENGTH];
      int got_strong = 0;
@@ -98,7 +98,7 @@ _hs_find_in_hash(rollsum_t * rollsum,
 	  int i = sums->targets[j].i;
 	  int token;
 
-	  if (rollsum->weak_sum != sums->sums[i].sum1)
+	  if (weak_sum != sums->sums[i].sum1)
 	       continue;
 
 	  /* also make sure the two blocks are the same length */
@@ -114,7 +114,7 @@ _hs_find_in_hash(rollsum_t * rollsum,
 	  token = sums->sums[i].i;
 	  
 	  _hs_trace("found weak match for %#010x in token %d",
-		    rollsum->weak_sum, token);
+		    weak_sum, token);
 
 	  if (!got_strong) {
 	       _hs_calc_strong_sum(inbuf, block_len, strong_sum,

@@ -53,3 +53,7 @@
 #include "util.h"
 #include "hose.h"
 #include "mapptr.h"
+#include "rollsum.h"
+#include "search.h"
+#include "sumset.h"
+#include "mksum.h"

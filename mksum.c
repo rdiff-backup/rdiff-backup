@@ -56,11 +56,7 @@ hs_mksum_begin(int in_fd,
 {
     hs_mksum_job_t	 *job;
 
-    job = malloc(sizeof *job);
-    if (!job) {
-	_hs_fatal("can't allocate space for hs_gd02_job");
-    }
-    hs_bzero(job, sizeof *job);
+    job = _hs_alloc_struct(hs_mksum_job_t);
 
     job->in_fd = in_fd;
     job->write_fn = write_fn;
@@ -94,7 +90,7 @@ _hs_mksum_finish(hs_mksum_job_t *job)
 /*
  * Generate and write out the checksums of a block.
  */
-static void
+void
 _hs_mksum_of_block(char const *p, ssize_t len,
 		   hs_write_fn_t write_fn, void *write_priv,
 		   size_t strong_sum_len)
@@ -125,7 +121,7 @@ _hs_mksum_of_block(char const *p, ssize_t len,
  * HS_AGAIN, HS_DONE or HS_FAILED.  Unless it returns HS_AGAIN, then
  * the job is closed on return.
  */
-hs_result_t hs_mksum(hs_mksum_job_t *job)
+hs_result_t hs_mksum_iter(hs_mksum_job_t *job)
 {
     int			ret;
     char const	       *p;

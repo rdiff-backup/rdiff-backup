@@ -45,10 +45,8 @@ hs_hose_file(int fd)
 {
     hs_hose_t		*hose;
 
-    if (!(hose = (hs_map_t *) malloc(sizeof *hose))) {
-	_hs_fatal("can't allocate new hs_hose_t");
-    }
-
+    hose = _hs_alloc_struct(hs_hose_t);
+    
     hose->tag = hs_hose_tag;
     hose->fd = fd;
 

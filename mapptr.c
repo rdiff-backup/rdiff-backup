@@ -99,10 +99,7 @@ _hs_map_file(int fd)
 {
     hs_map_t       *map;
 
-    map = (hs_map_t *) malloc(sizeof(*map));
-    if (!map) {
-	_hs_fatal("map_file couldn't allocate memory for hs_map_t");
-    }
+    map = _hs_alloc_struct(hs_map_t);
 
     map->tag = HS_MAP_TAG;
     map->fd = fd;
@@ -227,6 +224,7 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     if (offset >= map->p_offset &&
 	offset + *len <= map->p_offset + map->p_len) {
 /*   	_hs_trace("region is already in the buffer"); */
+	*len = map->p_len - (offset - map->p_offset);
 	return (map->p + (offset - map->p_offset));
     }
 

@@ -1,25 +1,24 @@
-/* -*- mode: c; c-file-style: "bsd" -*-  */
-/* $Id$ */
-/* emit -- emit encoded commands to the client
-   
-   Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
-   Copyright (C) 1999 by Andrew Tridgell
+/*				       	-*- c-file-style: "bsd" -*-
+ *
+ * $Id$
+ * 
+ * Copyright (C) 2000 by Martin Pool
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-   
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-   
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-   USA
-*/
 
 #include "includes.h"
 
@@ -135,6 +134,33 @@ _hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv, size_t size)
 	  return -1;
 
      return _hs_write_netvar(write_fn, write_priv, size, type);
+}
+
+
+int
+_hs_send_literal(hs_write_fn_t write_fn,
+		 void *write_priv,
+		 int kind,
+		 char const *buf,
+		 size_t amount)
+{
+    int ret;
+    
+    _hs_trace("flush %d bytes of %s data",
+	      (int) amount,
+	      kind == op_kind_literal ? "literal" : "signature");
+
+    if (kind == op_kind_literal) {
+	if (_hs_emit_literal_cmd(write_fn, write_priv, amount) < 0)
+	    return -1;
+    } else {
+	if (_hs_emit_signature_cmd(write_fn, write_priv, amount) < 0)
+	    return -1;
+    }
+
+    ret = hs_must_write(write_fn, write_priv, buf, amount);
+    return_val_if_fail(ret == (int) amount, -1);
+    return amount;
 }
 
 

@@ -90,7 +90,7 @@ hs_decode(int oldread_fd,
    Encode */
 
 
-ssize_t hs_encode(hs_read_fn_t read_fn, void *readprivate,
+ssize_t hs_encode_old(hs_read_fn_t read_fn, void *readprivate,
 		  hs_write_fn_t write_fn, void *write_priv,
 		  hs_read_fn_t sigread_fn, void *sigreadprivate,
 		  int new_block_len, hs_stats_t * stats);
@@ -186,5 +186,21 @@ hs_mksum_begin(int in_fd,
 	       hs_write_fn_t write_fn, void *write_priv,
 	       size_t new_block_len, size_t strong_sum_len);
 
-hs_result_t hs_mksum(hs_mksum_job_t *job);
+hs_result_t hs_mksum_iter(hs_mksum_job_t *job);
 
+
+
+
+
+
+typedef struct hs_encode_job hs_encode_job_t;
+typedef struct hs_sum_set hs_sum_set_t;
+
+
+hs_encode_job_t *
+hs_encode_begin(int in_fd, hs_write_fn_t write_fn, void *write_priv,
+		hs_sum_set_t *sums,
+		hs_stats_t *stats,
+		size_t new_block_len);
+
+hs_result_t hs_encode_iter(hs_encode_job_t *);

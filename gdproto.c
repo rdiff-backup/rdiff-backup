@@ -112,27 +112,3 @@ _hs_newsig_header(int new_block_len,
 }
 
 
-
-/* Read and remember all the signatures from last time. */
-int
-_hs_read_sums(hs_encode_job_t *job,
-	      hs_read_fn_t sigread_fn, void *sigread_priv)
-{
-    int ret;
-    int block_len;
-    
-    ret = _hs_check_sig_version(sigread_fn, sigread_priv);
-    job->got_old = (ret > 0);
-    if (!job->got_old)
-	return 0;
-
-    if (_hs_read_blocksize(sigread_fn, sigread_priv, &block_len) < 0)
-	return job->got_old = 0;
-
-    job->sums = _hs_read_sum_set(sigread_fn, sigread_priv, block_len);
-    if (!job->sums) 
-	return job->got_old = 0;
-
-    return 1;
-}
-

@@ -101,6 +101,11 @@ void _hs_trace0(char const *fmt, ...)
 #endif	/* !__GNUC__ && !__LCLINT__ */
 
 
+void * _hs_alloc_struct0(size_t size, char const *name);
+
+#define _hs_alloc_struct(type)				\
+        ((type *) _hs_alloc_struct0(sizeof(type), #type))
+
 
 #include "netio.h"
 
@@ -206,7 +211,7 @@ struct target {
 /* This structure describes all the sums generated for an instance of
    a file.  It incorporates some redundancy to make it easier to
    search. */
-typedef struct hs_sum_set {
+struct hs_sum_set {
     hs_off_t        flength;	/* total file length */
     int             count;	/* how many chunks */
     int             remainder;	/* flength % block_length */
@@ -214,7 +219,7 @@ typedef struct hs_sum_set {
     struct sum_buf *sums;	/* points to info for each chunk */
     int            *tag_table;
     struct target  *targets;
-} hs_sum_set_t;
+};
 
 
 /* All blocks are the same length in the current algorithm except for the
@@ -225,16 +230,7 @@ typedef struct sum_buf {
     char            strong_sum[MD4_LENGTH];	/* checksum  */
 } sum_buf_t;
 
-/* ROLLSUM_T contains the checksums that roll through the new version of the
-   file as we see it.  We use this for two different things: searching for
-   matches in the old version of the file, and also generating new-signature
-   information to send down to the client.  */
-typedef struct rollsum {
-    int             havesum;	/* false if we've skipped & need to
-				   recalculate */
-    uint32_t        weak_sum, s1, s2;	/* weak checksum */
-} rollsum_t;
-
+typedef struct hs_rollsum hs_rollsum_t;
 
 #include "checksum.h"
 
@@ -294,43 +290,10 @@ int             _hs_inhale_command(hs_read_fn_t read_fn, void *read_priv,
 int _hs_check_sig_version(hs_read_fn_t, void *);
 
 
-/* This structure holds all the state of the encoding operation.  Yes,
-   it's a bit ugly to stick random variables in here like this, but we
-   can't keep them on the stack, because we want to be able to suspend
-   and resume the encoding operation to allow operation in a
-   nonforking server.  */
-typedef struct hs_encode_job {
-    hs_sum_set_t *sums;
-
-    hs_off_t sum_cursor;	/* we're about to sum the block here */
-    hs_off_t search_cursor;	/* we're looking for a match or
-                                   literal here */
-#if 0
-    ssize_t file_len;	/* total file length -- only know
-                                   after seeing eof */
-#endif
-    rollsum_t *rollsum;
-    _hs_inbuf_t *inbuf;
-    rollsum_t new_roll;
-    int block_len, short_block;
-    hs_membuf_t *sig_tmpbuf, *lit_tmpbuf;
-    _hs_copyq_t copyq;
-    int token;
-    int at_eof;			/* true if approaching end of the new
-                                   file */
-    int got_old;		/* true if there is an old signature */
-    int need_bytes;		/* how much readahead do we need? */
-    char *stats_str;
-    hs_mdfour_t filesum;
-    char filesum_result[MD4_LENGTH], filesum_hex[MD4_LENGTH * 2 + 2];
-} hs_encode_job_t;
-
-
 /* =======================================
 
    gd01 protocol.
 */
-int _hs_read_sums(hs_encode_job_t *, hs_read_fn_t, void *);
 
 int
 _hs_read_blocksize(hs_read_fn_t sigread_fn, void *sigreadprivate,

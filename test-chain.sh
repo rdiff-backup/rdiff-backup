@@ -12,9 +12,9 @@ source ${srcdir:-.}/testfns.sh $0 $@
 
 diff=$tmpdir/diff.tmp
 files=`echo $srcdir/*.c|head -20`
-newsig=$tmpdir/newsig.tmp
 out=$tmpdir/out.tmp
-oldsig=empty-sig
+sig=$tmpdir/sig.tmp
+newsig=$tmpdir/newsig.tmp
 old=/dev/null
 
 fromsig=$tmpdir/fromsig.tmp
@@ -23,18 +23,18 @@ ltfile=$tmpdir/lt.tmp
 
 for from in $files
 do
-    run_test hsencode $from $ltfile /dev/null
-#      hsdecode $from 
+    run_test hsnad /dev/null <$from >$ltfile
+    run_test hsdecode /dev/null $sig $out $ltfile
 
-#      for new in $files
-#      do
-#          echo -n '.'
-#          hsencode $new $diff $oldsig
-#          hsdecode $old $newsig $out $diff 
+    run_test cmp $out $from
+
+    for new in $files
+    do
+        run_test hsnad $sig <$new >$diff
+        run_test hsdecode $old $newsig $out $diff 
     
-#          cmp $out $new
-#      done
-    
+        run_test cmp $out $new
+    done
 done
     
     

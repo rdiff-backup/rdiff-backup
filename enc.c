@@ -113,69 +113,15 @@
 
 #include "includes.h"
 
-/* Define this to check all weak checksums the slow way.  As a
-   debuggging assertion, calculate the weak checksum *in full* at
-   every byte, and make sure it is the same.  This will be really
-   slow, but it will catch problems with rolling. */
-#define HS_PAINFUL_HONESTY
-
-
-static int
-_hs_update_sums(_hs_inbuf_t * inbuf, int full_block,
-		int short_block, rollsum_t * rollsum)
-{
-     if (!rollsum->havesum) {
-	  rollsum->weak_sum = _hs_calc_weak_sum(inbuf->buf + inbuf->cursor,
-						short_block);
-	  _hs_trace("recalculate checksum: weak=%#x", rollsum->weak_sum);
-	  rollsum->s1 = rollsum->weak_sum & 0xFFFF;
-	  rollsum->s2 = rollsum->weak_sum >> 16;
-     } else {
-	  /* Add into the checksum the value of the byte one block
-             hence.  However, if that byte doesn't exist because we're
-             approaching the end of the file, don't add it. */
-	  if (short_block == full_block) {
-	       int pos = inbuf->cursor + short_block - 1;
-	       assert(pos >= 0);
-	       rollsum->s1 += (inbuf->buf[pos] + CHAR_OFFSET);
-	       rollsum->s2 += rollsum->s1;
-	  } else {
-#if 0
-	       _hs_trace("no byte to roll in at abspos=%d",
-			 inbuf->abspos + inbuf->cursor);
-#endif /* 0 */
-	  }
-
-	  rollsum->weak_sum = (rollsum->s1 & 0xffff) | (rollsum->s2 << 16);
-     }
-
-     rollsum->havesum = 1;
-
-     return 0;
-}
-
-
-/* One byte rolls off the checksum. */
-static int
-_hs_trim_sums(_hs_inbuf_t * inbuf, rollsum_t * rollsum,
-	      int short_block)
-{
-     rollsum->s1 -= inbuf->buf[inbuf->cursor] + CHAR_OFFSET;
-     rollsum->s2 -= short_block * (inbuf->buf[inbuf->cursor] + CHAR_OFFSET);
-
-     return 0;
-}
-
-
 static int
 _hs_output_block_hash(hs_write_fn_t write_fn, void *write_priv,
 		      _hs_inbuf_t * inbuf, int short_block,
-		      rollsum_t * rollsum)
+		      uint32_t weak_sum)
 {
      char strong_sum[MD4_LENGTH];
      char strong_hex[MD4_LENGTH * 2 + 2];
 
-     _hs_write_netint(write_fn, write_priv, rollsum->weak_sum);
+     _hs_write_netint(write_fn, write_priv, weak_sum);
      _hs_calc_strong_sum(inbuf->buf + inbuf->cursor, short_block,
 			 strong_sum, DEFAULT_SUM_LENGTH);
      hs_hexify_buf(strong_hex, strong_sum, DEFAULT_SUM_LENGTH);
@@ -184,7 +130,7 @@ _hs_output_block_hash(hs_write_fn_t write_fn, void *write_priv,
 
      _hs_trace("output block hash at abspos=%-10d weak=%#010x strong=%s",
 	       inbuf->abspos + inbuf->cursor,
-	       rollsum->weak_sum, strong_hex);
+	       weak_sum, strong_hex);
 
      return 0;
 }
@@ -227,16 +173,16 @@ _hs_painful_check(uint32_t weak_sum, _hs_inbuf_t *inbuf,
 
 
 ssize_t
-hs_encode(hs_read_fn_t read_fn, void *readprivate,
+hs_encode_old(hs_read_fn_t read_fn, void *readprivate,
 	  hs_write_fn_t write_fn, void *write_priv,
 	  hs_read_fn_t sigread_fn, void *sigreadprivate,
 	  UNUSED(int new_block_len), hs_stats_t * stats)
 {
      hs_sum_set_t *sums = 0;
      int ret;
-     rollsum_t real_rollsum, *const rollsum = &real_rollsum;
+     hs_rollsum_t	rollsum;
+     hs_rollsum_t	new_roll;
      _hs_inbuf_t *inbuf;
-     rollsum_t new_roll;
      int block_len, short_block;
      hs_membuf_t *sig_tmpbuf, *lit_tmpbuf;
      _hs_copyq_t copyq;
@@ -257,27 +203,17 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
      hs_mdfour_begin(&filesum);
 
      got_old = 1;
-     ret = _hs_check_sig_version(sigread_fn, sigreadprivate);
-     if (ret <= 0)
-	  got_old = 0;
-
-     if (got_old) {
-	  if (_hs_read_blocksize(sigread_fn, sigreadprivate, &block_len) < 0)
-	       got_old = 0;
+     sums = _hs_read_sum_set(sigread_fn, sigreadprivate);
+     if (!sums) {
+	 got_old = 0;
+	 
+	 /* XXX: For simplicity, this is hardwired at the moment. */
+	 block_len = 1024;
+     } else {
+	 block_len = sums->block_len;
      }
 
-     /* XXX: For simplicity, this is hardwired at the moment. */
-     block_len = 1024;
-    
-     return_val_if_fail(block_len > 0, -1);
-
-     if (got_old) {
-	 /* Put the char * sigbuffer into our structures */
-	 sums = _hs_read_sum_set(sigread_fn, sigreadprivate,
-				    block_len);
-	 if (!sums)
-	     got_old = 0;
-     }
+     assert(block_len > 0);
 
      if ((ret = _hs_littok_header(write_fn, write_priv)) < 0)
 	  goto out;
@@ -292,7 +228,7 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 	  goto out;
 
      /* Now do our funky checksum checking */
-     rollsum->havesum = 0;
+     _hs_roll_reset(&rollsum);
      do {
 	  /* TODO: Try to read from the input in such a size that if
 	     all of the blocks in the buffer match, we won't need to
@@ -314,20 +250,23 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 	  
 	  while (inbuf->cursor + need_bytes <= inbuf->amount) {
 	       short_block = MIN(block_len, inbuf->amount - inbuf->cursor);
-	       _hs_update_sums(inbuf, block_len, short_block, rollsum);
-	       _hs_update_sums(inbuf, block_len, short_block, &new_roll);
+	       _hs_update_sums(inbuf->buf + inbuf->cursor, block_len, short_block, &rollsum);
+	       _hs_update_sums(inbuf->buf + inbuf->cursor,
+			       block_len, short_block, &new_roll);
 
 #ifdef HS_PAINFUL_HONESTY
-	       _hs_painful_check(rollsum->weak_sum, inbuf, short_block);
+	       _hs_painful_check(rollsum.weak_sum, inbuf, short_block);
 #endif /* HS_PAINFUL_HONESTY */
 	    
 	       if (_hs_signature_ready(inbuf, block_len)) {
 		    _hs_output_block_hash(hs_membuf_write, sig_tmpbuf,
-					  inbuf, short_block, &new_roll);
+					  inbuf, short_block,
+					  new_roll.weak_sum);
 	       }
 
 	       if (got_old) {
-		    token = _hs_find_in_hash(rollsum, inbuf->buf + inbuf->cursor,
+		    token = _hs_find_in_hash(rollsum.weak_sum,
+					     inbuf->buf + inbuf->cursor,
 					     short_block, sums, stats);
 	       }
 	       else
@@ -369,7 +308,8 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 			 goto out;
 		    hs_mdfour_update(&filesum, inbuf->buf + inbuf->cursor, short_block);
 		    inbuf->cursor += short_block;
-		    rollsum->havesum = new_roll.havesum = 0;
+		    _hs_roll_reset(&rollsum);
+		    _hs_roll_reset(&new_roll);
 	       } else {
 		    if (got_old)
 			 _hs_copyq_push(write_fn, write_priv, &copyq, stats);
@@ -377,8 +317,10 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 		    /* Append this character to the outbuf */
 		    ret = _hs_append_literal(lit_tmpbuf,
 					     inbuf->buf[inbuf->cursor]);
-		    _hs_trim_sums(inbuf, rollsum, short_block);
-		    _hs_trim_sums(inbuf, &new_roll, short_block);
+		    _hs_trim_sums(inbuf->buf + inbuf->cursor,
+				  &rollsum, short_block);
+		    _hs_trim_sums(inbuf->buf + inbuf->cursor,
+				  &new_roll, short_block);
 		    hs_mdfour_update(&filesum, inbuf->buf + inbuf->cursor, 1);
 		    inbuf->cursor++;
 	       }
@@ -392,7 +334,8 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
         last short block. */
      if (!_hs_signature_ready(inbuf, block_len)) {
 	  _hs_output_block_hash(hs_membuf_write, sig_tmpbuf,
-				inbuf, short_block, &new_roll);
+				inbuf, short_block,
+				new_roll.weak_sum);
      }
 #endif
 

@@ -1,25 +1,24 @@
-/* -*- mode: c; c-file-style: "bsd" -*- */
-/*--------------------------------------------------------------------
-   $Id$
-  
-   nat.c -- Generate combined signature/difference stream.
-   
-   Copyright (C) 2000 by Martin Pool
-   
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-   
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-   
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+/*				       	-*- c-file-style: "bsd" -*-
+ *
+ * $Id$
+ * 
+ * Copyright (C) 2000 by Martin Pool
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+
 
 #include "includes.h"
 
@@ -81,258 +80,308 @@
 
 
 
-
-/* The new and sexy GD01 sign+encode algorithm!  Thanks, Luke!
-   Thanks, Tridge!
-  
-   READ_FN|READ_PRIV is connected to the upstream socket, which
-   supplies the new version of the file.  WRITE_FN|WRITE_PRIV is
-   connected to the client, who wants to read a gd01 stream of
-   reconstruction and new-signature operations.
-   SIGREAD_FN|SIGREAD_PRIV supplies the old signature, which we can
-   use to search for matching blocks.
-  
-   STATS will be filled up with performance statistics about the
-   encoding process. */
-ssize_t
-hs_gd01_encode(hs_read_fn_t read_fn, void *readprivate,
-	       hs_write_fn_t write_fn, void *write_priv,
-	       hs_read_fn_t sigread_fn, void *sigreadprivate,
-	       UNUSED(int new_block_len), hs_stats_t * stats)
-{
-     _hs_trace("**** begin");
-
-     bzero(stats, sizeof *stats);
-     bzero(&copyq, sizeof copyq);
-     bzero(&new_roll, sizeof new_roll);
-
-     hs_mdfour_begin(&filesum);
-
-     /* XXX: For simplicity, this is hardwired at the moment. */
-     block_len = 1024;
-    
-     return_val_if_fail(block_len > 0, -1);
-
-     if ((ret = _hs_littok_header(write_fn, write_priv)) < 0)
-	  goto out;
-
-     /* Allocate a buffer to hold literal output */
-     sig_tmpbuf = hs_membuf_new();
-     lit_tmpbuf = hs_membuf_new();
-     inbuf = _hs_new_inbuf();
-
-     ret = _hs_newsig_header(block_len, hs_membuf_write, sig_tmpbuf);
-     if (ret < 0)
-	  goto out;
-
-     /* Now do our funky checksum checking */
-     rollsum->havesum = 0;
-     do {
-	  /* TODO: Try to read from the input in such a size that if
-	     all of the blocks in the buffer match, we won't need to
-	     shuffle any data.  This isn't urgent, and in the general
-	     case we can't avoid shuffling, since the matches may be
-	     offset and so not align nicely with the buffer length. */
-	  ret = _hs_fill_inbuf(inbuf, read_fn, readprivate);
-	  at_eof = (ret == 0);
-	  inbuf->cursor = 0;
-
-	  /* If we've reached EOF then we keep processing right up to
-	     the end, whether we have a block of readahead or not.
-	     Otherwise, we stop when we need more readahead to process
-	     a full block.  */
-	  if (at_eof)
-	       need_bytes = 1;
-	  else
-	       need_bytes = block_len;
-	  
-	  while (inbuf->cursor + need_bytes <= inbuf->amount) {
-	       short_block = MIN(block_len, inbuf->amount - inbuf->cursor);
-	       _hs_update_sums(inbuf, block_len, short_block, rollsum);
-	       _hs_update_sums(inbuf, block_len, short_block, &new_roll);
-
-#ifdef HS_PAINFUL_HONESTY
-	       _hs_painful_check(rollsum->weak_sum, inbuf, short_block);
-#endif /* HS_PAINFUL_HONESTY */
-	    
-	       if (_hs_signature_ready(inbuf, block_len)) {
-		    _hs_output_block_hash(hs_membuf_write, sig_tmpbuf,
-					  inbuf, short_block, &new_roll);
-	       }
-
-	       if (got_old) {
-		    token = _hs_find_in_hash(rollsum, inbuf->buf + inbuf->cursor,
-					     short_block, sums, stats);
-	       }
-	       else
-		    token = 0;
-
-	       if (token > 0) {
-		    /* if we're at eof, then we should only be able to
-		       match the last token, because it's the only
-		       short one.  we don't store the token lengths;
-		       they're implied by the checksum.  the reverse
-		       isn't true: the last token might be a full
-		       block, so we are allowed to match it
-		       anytime. */
-		    if (at_eof) {
-			 assert(token == sums->count);
-		    }
-		    
-		    _hs_trace("found token %d in stream at abspos=%-8d"
-			      " length=%-6d", token,
-			      inbuf->abspos+inbuf->cursor,
-			      short_block);
-
-		    if (_hs_push_literal_buf(lit_tmpbuf, write_fn, write_priv, stats,
-					      op_kind_literal) < 0)
-			 return -1;
-
-		    /* tokens are ones-based, blocks are zeros-based,
-		       so we subtract 1. */
-		    ret = _hs_queue_copy(write_fn, write_priv,
-					 &copyq, (token-1) * block_len,
-					 short_block, stats);
-
-		    /* FIXME: It's no good to skip over the block like
-                       this, because we might have to update and
-                       output sums from the middle of it. */
-		    /* FIXME: Does this update our absolute position
-                       in the right way? */
-		    if (ret < 0)
-			 goto out;
-		    hs_mdfour_update(&filesum, inbuf->buf + inbuf->cursor, short_block);
-		    inbuf->cursor += short_block;
-		    rollsum->havesum = new_roll.havesum = 0;
-	       } else {
-		    if (got_old)
-			 _hs_copyq_push(write_fn, write_priv, &copyq, stats);
-		 
-		    /* Append this character to the outbuf */
-		    ret = _hs_append_literal(lit_tmpbuf,
-					     inbuf->buf[inbuf->cursor]);
-		    _hs_trim_sums(inbuf, rollsum, short_block);
-		    _hs_trim_sums(inbuf, &new_roll, short_block);
-		    hs_mdfour_update(&filesum, inbuf->buf + inbuf->cursor, 1);
-		    inbuf->cursor++;
-	       }
-	  }
-
-	  _hs_slide_inbuf(inbuf);
-     } while (!at_eof);
+const int hs_encode_job_magic = 23452345;
 
 #if 0
-     /* If we didn't just send a block hash, then send it now for the
-        last short block. */
-     if (!_hs_signature_ready(inbuf, block_len)) {
-	  _hs_output_block_hash(hs_membuf_write, sig_tmpbuf,
-				inbuf, short_block, &new_roll);
-     }
+/* This structure holds all the state of the encoding operation.  Yes,
+   it's a bit ugly to stick random variables in here like this, but we
+   can't keep them on the stack, because we want to be able to suspend
+   and resume the encoding operation to allow operation in a
+   nonforking server.  */
+typedef struct hs_encode_job {
+    hs_sum_set_t *sums;
+
+    hs_off_t sum_cursor;	/* we're about to sum the block here */
+    hs_off_t search_cursor;	/* we're looking for a match or
+                                   literal here */
+#if 0
+    ssize_t file_len;	/* total file length -- only know
+                                   after seeing eof */
+#endif
+    rollsum_t *rollsum;
+    _hs_inbuf_t *inbuf;
+    rollsum_t new_roll;
+    int block_len, short_block;
+    hs_membuf_t *sig_tmpbuf, *lit_tmpbuf;
+    _hs_copyq_t copyq;
+    int token;
+    int at_eof;			/* true if approaching end of the new
+                                   file */
+    int got_old;		/* true if there is an old signature */
+    int need_bytes;		/* how much readahead do we need? */
+    char *stats_str;
+    hs_mdfour_t filesum;
+    char filesum_result[MD4_LENGTH], filesum_hex[MD4_LENGTH * 2 + 2];
+} hs_encode_job_t;
+
+
 #endif
 
-     /* Flush any literal or copy data remaining.  Only one or the
-	other should happen. */
 
-     ret = _hs_copyq_push(write_fn, write_priv, &copyq, stats);
-     if (ret < 0)
-	  goto out;
+struct hs_encode_job {
+    int			tag;
 
-     ret = _hs_push_literal_buf(lit_tmpbuf, write_fn, write_priv,
-				 stats, op_kind_literal);
-     if (ret < 0)
-	  goto out;
+    int			in_fd;
+    hs_map_t	       *in_map;
 
-     ret = _hs_push_literal_buf(sig_tmpbuf, write_fn, write_priv,
-				 stats, op_kind_signature);
-     if (ret < 0)
-	  goto out;
+    /* On the next iteration, we'll try to generate the checksum for a
+     * block at this location. */
+    hs_sum_set_t       *sums;
+    hs_stats_t	       *stats;
 
-     hs_mdfour_result(&filesum, filesum_result);
-     hs_hexify_buf(filesum_hex, filesum_result, MD4_LENGTH);
-     _hs_trace("filesum is %s", filesum_hex);
+    /* We'll read more checksum data from this point. */
+    hs_off_t		check_cursor;
+    hs_mdfour_t		filesum;
+    size_t		filesum_block;
 
-     ret = _hs_emit_filesum(write_fn, write_priv,
-			    filesum_result, MD4_LENGTH);
-     if (ret < 0)
-	  goto out;
+    /* Things for the new checksum. */
+    hs_off_t		sum_cursor;
+    size_t		new_block_len;
+    size_t		new_strong_len;
 
-     /* Terminate the stream with a null */
-     ret = _hs_emit_eof(write_fn, write_priv, stats);
-     if (ret < 0)
-	  goto out;
+    /* This points to the rolling sums used for searching. */
+    hs_off_t		search_cursor;
+    hs_rollsum_t       *rollsum;
 
-     stats_str = hs_format_stats(stats);
-     _hs_trace("completed: %s", stats_str);
-     free(stats_str);
+    int			seen_eof;
+
+    hs_membuf_t	       *sig_tmpbuf;
+    hs_membuf_t	       *lit_tmpbuf;
+    _hs_copyq_t	        copyq;
+
+    hs_write_fn_t       write_fn;
+    void	       *write_priv;
+
+    size_t		input_block;
+};
+
+
+static void
+_hs_nad_filesum_begin(hs_encode_job_t *job)
+{
+    hs_mdfour_begin(&job->filesum);
+    job->check_cursor = 0;
+    job->filesum_block = 32 << 10;
+}
+
+
+static void
+_hs_nad_sum_begin(hs_encode_job_t *job)
+{
+    job->sig_tmpbuf = hs_membuf_new();
+    job->new_strong_len = DEFAULT_SUM_LENGTH;
+
+    if (_hs_newsig_header(job->new_block_len,
+			  hs_membuf_write,
+			  job->sig_tmpbuf)
+	< 0) {
+	_hs_fatal("couldn't write newsig header!");
+    }
+}
+
+
+hs_encode_job_t *
+hs_encode_begin(int in_fd, hs_write_fn_t write_fn, void *write_priv,
+		hs_sum_set_t *sums,
+		hs_stats_t *stats,
+		size_t new_block_len)
+{
+    hs_encode_job_t *job;
+    int ret;
+
+    job = _hs_alloc_struct(hs_encode_job_t);
+
+    job->in_fd = in_fd;
+    job->in_map = _hs_map_file(in_fd);
+
+    job->write_priv = write_priv;
+    job->write_fn = write_fn;
+
+    job->input_block = 16<<10;
+				    
+    job->sums = sums;
+    job->stats = stats;
+    job->new_block_len = new_block_len;
+    hs_bzero(stats, sizeof *stats);
+
+    job->rollsum = _hs_alloc_struct(hs_rollsum_t);
+
+    _hs_trace("**** begin");
+
+    hs_bzero(&job->copyq, sizeof job->copyq);
+
+    _hs_nad_filesum_begin(job);
+
+    /* Allocate a buffer to hold literal output */
+    job->lit_tmpbuf = hs_membuf_new();
+
+    if ((ret = _hs_littok_header(write_fn, write_priv)) < 0)
+	_hs_fatal("couldn't write littok header!");
+
+    _hs_nad_sum_begin(job);
+
+    return job;
+}
+
+
+/* Work out where we have to map to achieve something useful, and
+ * return a pointer thereto.  Set MAP_LEN to the amount of available
+ * data. */
+static char const *
+_hs_nad_map(hs_encode_job_t *job,
+	       hs_off_t *map_off,
+	       size_t *map_len)
+{
+    char const	       *p;
+    hs_off_t		start;
+
+    /* once we've seen eof, we should never try to map any more
+     * data. */
+    assert(!job->seen_eof);
+
+    /* Find the range we have to map that won't skip data that hasn't
+     * been processed, but that allows us to accomplish something. */
+    start = job->check_cursor;
+    if (start > job->search_cursor)
+	start = job->search_cursor;
+    if (start > job->sum_cursor)
+	start = job->sum_cursor;
     
-     ret = 1;
+    *map_off = start;
+    *map_len = job->input_block;
 
- out:
-     if (sig_tmpbuf)
-	  hs_membuf_free(sig_tmpbuf);
-     if (lit_tmpbuf)
-	  hs_membuf_free(lit_tmpbuf);
-     if (sums)
-	  _hs_free_sum_struct(sums);
-     if (inbuf->buf)
-	  free(inbuf->buf);
+    p = _hs_map_ptr(job->in_map, *map_off, map_len, &job->seen_eof);
 
-     return ret;
+    return p;
 }
 
 
-/* We're finished encoding when we've seen the end of file, and both
-   the SEARCH and SUM cursors have run up to meet it. */
-static int
-_hs_enc_complete(hs_encode_job_t *job)
+static void
+_hs_nad_search_iter(hs_encode_job_t *job,
+		       char const *p,
+		       ssize_t avail)
 {
-    if (!at_eof)
-	return 0;		/* nowhere near it! */
-    if (job->sum_cursor < job->file_len)
-	return 0;
-    if (job->search_cursor < job->file_len)
-	return 0;
+    if (avail <= 0)
+	return;
     
-    return 1;
+    /* Actual searching is stubbed out for the moment; we just
+     * generate literal commands. */
+    _hs_send_literal(job->write_fn, job->write_priv, op_kind_literal,
+		     p, avail);
+    job->search_cursor += avail;
 }
 
 
-/* Adjust the mapptr so that it covers some useful data, given the
-   current positions of the search and sum cursors.
-
-   What's useful?  Well, we certainly don't want to skip over data we
-   have not yet considered both for output and for summing, so we need
-   to cover at least the earliest of the two cursors.  Also, we need
-   to be able to process at least one block of at least one operation,
-   so we need to calculate the end of those blocks and set the map
-   length to at cover them.  */
-int
-hs_enc_cover_me(hs_encode_job_t *job)
+/* Write out checksums for whatever part of this file we can manage.  */
+static void
+_hs_nad_sum_iter(hs_encode_job_t *job,
+		    char const *p,
+		    ssize_t avail)
 {
-    hs_off_t first_cursor, last_end;
-    hs_ssize_t len;
+    while (avail >= (ssize_t) job->new_block_len ||
+	   (job->seen_eof  && avail > 0)) {
+	size_t	l;
 
-    first_cursor = MIN(job->sum_cursor, job->search_cursor);
-    last_end = MAX(job->sum_cursor + job->block_len,
-		   job->search_cursor + job->sums->block_len);
+	if (job->seen_eof)
+	    l = avail;
+	else
+	    l = job->new_block_len;
 
-    len = last_end - first_cursor;    
+	_hs_trace("do checksum @%ld+%ld", (long) job->sum_cursor,
+		  (long) l);
+	_hs_mksum_of_block(p, l, 
+			   hs_membuf_write, job->sig_tmpbuf, 
+			   job->new_strong_len);
+
+	_hs_push_literal_buf(job->sig_tmpbuf,
+			     job->write_fn, job->write_priv,
+			     job->stats, op_kind_signature);
+
+	p += l;
+	job->sum_cursor += l;
+	avail -= l;
+    }
 }
 
 
-/* The guts of the encode+sign algorithm, leading out the hassles of
-   dealing with signatures and headers.
-
-   Eventually when we're stateless, the caller will be able to return
-   to this function repeatedly until encoding is complete.  That's not
-   done yet, though. */
-ssize_t
-hs_gd01_enc_body(hs_encode_job_t *job,
-		 hs_stats_t *stats)
+static void
+_hs_nad_filesum_flush(hs_encode_job_t *job)
 {
-    do {
-	hs_enc_cover_me(job);
-    } while (!_hs_enc_complete(job));
+    char	       result[MD4_LENGTH];
+#ifdef DO_HS_TRACE
+    char	       sum_hex[MD4_LENGTH * 2 + 2];
+#endif
 
-    return ret;
+    hs_mdfour_result(&job->filesum, result);
+
+#ifdef DO_HS_TRACE
+    // At the end, emit the whole thing
+    hs_hexify_buf(sum_hex, (char const *)result, MD4_LENGTH);
+    _hs_trace("got filesum %s", sum_hex);
+#endif
+
+    _hs_emit_filesum(job->write_fn, job->write_priv,
+		     result, MD4_LENGTH);
+}
+
+
+static void
+_hs_nad_filesum_iter(hs_encode_job_t *job,
+			char const *p,
+			ssize_t avail)
+{
+    while (avail >= (ssize_t) job->filesum_block
+	   || (job->seen_eof && avail > 0)) {
+	size_t	l;
+
+	if (job->seen_eof)
+	    l = avail;
+	else
+	    l = job->filesum_block;
+	
+	_hs_trace("add in @%ld+%ld",
+		  (long) job->check_cursor, (long) l);
+	hs_mdfour_update(&job->filesum, p, l);
+	_hs_nad_filesum_flush(job);
+
+	p += l;
+	avail -= l;
+	job->check_cursor += l;
+    }
+}
+
+
+
+hs_result_t
+hs_encode_iter(hs_encode_job_t *job)
+{
+    size_t		map_len;
+    char const		*p;
+    hs_off_t		map_off;
+     
+    /* Map some data.  We advance the map to the earliest point in the
+     * datastream that anybody needs to see. */
+    p = _hs_nad_map(job, &map_off, &map_len);
+
+    /* We have essentially three coroutines to run here.  We know
+     * their cursor position, so we can give each of them a pointer
+     * and length for their data. */
+    _hs_nad_search_iter(job,
+			   p + job->search_cursor - map_off,
+			   map_len - job->search_cursor + map_off);
+    _hs_nad_sum_iter(job,
+			p + job->sum_cursor - map_off,
+			map_len - job->sum_cursor + map_off);
+    _hs_nad_filesum_iter(job, p + job->check_cursor - map_off,
+			    map_len - job->check_cursor + map_off);
+
+    /* There is no need to flush: these functions all do output as
+     * soon as they can. */
+
+    if (job->seen_eof) {
+	_hs_emit_eof(job->write_fn, job->write_priv, job->stats);
+	return HS_DONE;
+    } else {
+	return HS_AGAIN;
+    }
 }

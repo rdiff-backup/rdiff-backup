@@ -19,9 +19,10 @@ libhsync_la_SOURCES = dec.c enc.c \
 	hex.c stats.c \
 	mapptr.c mapptr.h \
 	fileutil.c \
-	gdproto.c readsums.c \
+	gdproto.c \
 	util.c util.h \
-	mksum.c sumset.c
+	mksum.c sumset.c \
+	rollsum.c nad.c
 
 # compress.c compress.h 
 
@@ -32,10 +33,9 @@ libhsyncdecode_la_SOURCES = dec.c \
 	inhale.c trace.c hex.c stats.c  \
 	mdfour.c fileutil.c \
 	mapptr.c mapptr.h \
-	readsums.c \
 	util.c util.h
 
-noinst_SCRIPTS = test-decode.sh test-encode.sh \
+noinst_SCRIPTS = \
 	test-chain.sh test-cmds.sh \
 	make-cmds.py test-thrice.sh test-seq.sh test-meta.sh \
 	test-cat.sh \
@@ -85,12 +85,15 @@ EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 
 include_HEADERS = hsync.h hsyncproto.h
 
-bin_PROGRAMS = hsdecode hsencode hsmdfour hsmksum hsmapread
+bin_PROGRAMS = hsdecode hsencode hsmdfour hsmksum hsmapread hsnad
 check_PROGRAMS = hsemit hsinhale hsfilebufcat
 
 test-cmds/cmds: make-cmds.py
 	mkdir -p test-cmds
 	$(PYTHON) $(srcdir)/make-cmds.py > $@
+
+hsnad_SOURCES = hsnad.c
+hsnad_LDADD = libhsync.la
 
 hsmksum_SOURCES = hsmksum.c
 hsmksum_LDADD = libhsync.la
@@ -121,11 +124,12 @@ hsmapread_LDADD = libhsyncdecode.la
 # ``When the program is being tested, it is too late to make design
 # changes.''
 
-TESTS = test-mappipe.sh \
-	test-mapeof.sh test-mapover.sh \
+TESTS = test-chain.sh \
 	test-md4sizes.sh test-cat.sh \
 	test-mapread.sh \
-	test-cmds.sh test-decode.sh test-encode.sh \
+	test-cmds.sh \
 	test-thrice.sh test-seq.sh
+	test-mappipe.sh \
+	test-mapeof.sh test-mapover.sh 
 
 

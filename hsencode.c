@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
      if (!sigfb)
 	  sigfb = hs_filebuf_from_fd(STDIN_FILENO);
 
-     ret = hs_encode(hs_filebuf_read, newfb,
+     ret = hs_encode_old(hs_filebuf_read, newfb,
 		     hs_filebuf_write, ltfb,
 		     hs_filebuf_read, sigfb,
 		     new_block_len, &stats);

@@ -42,7 +42,6 @@ _hs_push_literal_buf(hs_membuf_t * litbuf,
 		     hs_stats_t * stats,
 		     int kind)
 {
-     int ret;
      hs_off_t amount;
 
      amount = hs_membuf_tell(litbuf);
@@ -55,20 +54,8 @@ _hs_push_literal_buf(hs_membuf_t * litbuf,
 
      assert(kind == op_kind_literal || kind == op_kind_signature);
 
-     _hs_trace("flush %d bytes of %s data",
-	       (int) amount,
-	       kind == op_kind_literal ? "literal" : "signature");
-
-     if (kind == op_kind_literal) {
-	  if (_hs_emit_literal_cmd(write_fn, write_priv, amount) < 0)
-	       return -1;
-     } else {
-	  if (_hs_emit_signature_cmd(write_fn, write_priv, amount) < 0)
-	       return -1;
-     }
-
-     ret = hs_must_write(write_fn, write_priv, litbuf->buf, amount);
-     return_val_if_fail(ret == amount, -1);
+     if (_hs_send_literal(write_fn, write_priv, kind, litbuf->buf, amount) < 0)
+	 return -1;
 
      if (kind == op_kind_literal) {
 	  stats->lit_cmds++;
