@@ -42,8 +42,8 @@ rs_free_sumset(rs_signature_t * psums)
         if (psums->block_sigs)
                 free(psums->block_sigs);
 
-        assert(psums->tag_table);
-        free(psums->tag_table);
+        if (psums->tag_table)
+		free(psums->tag_table);
 
         if (psums->targets)
                 free(psums->targets);
