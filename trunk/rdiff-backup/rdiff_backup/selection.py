@@ -262,7 +262,8 @@ class Select:
 				elif opt == "--include-regexp":
 					self.add_selection_func(self.regexp_get_sf(arg, 1))
 				else: assert 0, "Bad selection option %s" % opt
-		except IOError: pass#SelectError, e: self.parse_catch_error(e)
+		except IOError: pass
+		except SelectError, e: self.parse_catch_error(e)
 		assert filelists_index == len(filelists)
 
 		self.parse_last_excludes()
@@ -273,9 +274,9 @@ class Select:
 		if isinstance(exc, FilePrefixError):
 			log.Log.FatalError(
 """Fatal Error: The file specification
-'    %s'
+    '%s'
 cannot match any files in the base directory
-'    %s'
+    '%s'
 Useful file specifications begin with the base directory or some
 pattern (such as '**') which matches the base directory.""" %
 			(exc, self.prefix))
