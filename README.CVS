@@ -37,6 +37,16 @@ For more details, see the web site.
 
 You can pass all the ./configure options to autogen, including --help.
 
+
+>> Debugging
+
+If you are using GNU libc, you might like to use
+
+  MALLOC_CHECK_=2 ./rdiff
+
+to detect some allocation bugs.
+
+
 >> Sending patches
 
 If you make a change to the source and would like to contribute it
