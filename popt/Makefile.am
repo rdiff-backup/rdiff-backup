@@ -1,3 +1,5 @@
+MAINTAINERCLEANFILES    = Makefile.in
+
 EXTRA_LIBRARIES = libpopt.a
 
 libpopt_a_SOURCES = findme.c findme.h popt.c popt.h poptconfig.c \

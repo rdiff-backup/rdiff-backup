@@ -17,6 +17,8 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+MAINTAINERCLEANFILES = Makefile.in
+
 man_MANS = rdiff.1 librsync.3
 EXTRA_DIST = $(man_MANS)
 

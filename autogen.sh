@@ -35,7 +35,7 @@ FILE=rsync.h
 DIE=0
 
 cache="$srcdir/autom4te.cache"
-test -f "$cache" && {
+test -d "$cache" && {
         echo "Deleting $cache"
         rm -Rf "$cache"
 }
@@ -88,6 +88,7 @@ esac
 
 set -x
 aclocal $ACLOCAL_FLAGS
+libtoolize --force
 autoheader
 automake -a --foreign $am_opt
 autoconf

@@ -1,8 +1,15 @@
-librsync is the next generation of librsync, and provides flexible
-checksum-based differencing.  The main application at the moment in
-rproxy, but the library should eventually be generally useful.
+README for librsync
+-------------------
 
-  http://linuxcare.com.au/rproxy/
+librsync implements the rolling-checksum algorithm of remote file
+synchronization that was popularized by the rsync utility and is used in
+rproxy. This algorithm transfers the differences between 2 files without
+needing both files on the same system.
+
+It was originaly developed as part of rproxy, but is now used by other
+applications and has its own project on sourceforge.
+
+  http://librsync.sourceforge.net/
 
 This library was previously known as libhsync up to version 0.9.0.
 
@@ -10,7 +17,7 @@ To use anonymous CVS, see the file README.CVS in this directory.
 
 >> Requirements
 
-To build librsync:
+To build librsync you will need:
 
   * A C compiler and appropriate headers and libraries
 
@@ -22,6 +29,13 @@ To build librsync:
 
     A cut-down version of popt1.5 is included and will be used
     automatically if there is no popt library on your build host.
+
+>> Compiling
+
+To build and test librsync from the extracted distribution do;
+
+  $ ./configure
+  $ make all check
 
 >> Note for RedHat 7.0
 
@@ -36,27 +50,27 @@ using the 'kgcc' version of the compiler:
 
 >> Library Versions
 
-librsync uses the GNU libtool library versioning system, so the
-filename does not correspond to the librsync release.  To show the
-library release and version, use the librsyncinfo tool.
+librsync uses the GNU libtool library versioning system, so the filename
+does not correspond to the librsync release.  To show the library release
+and version, use the librsyncinfo tool. See libversions.txt for more
+information.
 
 >> Platforms
 
-librsync/rproxy is known to run on:
+librsync is known to run on:
 
-GNU Linux Debian 2.2 x86
+GNU Linux Debian 3.0 x86
 
 SUNWspro: (use -v for more warnings)
 
-mips-sgi-irix6.5: works, but you must use GNU Make rather than the
-default SGI Make.  I used gcc.
+mips-sgi-irix6.5: works, but you must use GNU Make rather than the default
+SGI Make.  I used gcc.
 
 >> API Documentation
 
-librsync contains markup for automatic API documentation generation
-using the Doxygen tool:
+librsync contains markup for automatic API documentation generation using
+the Doxygen tool:
 
   http://www.doxygen.org/
 
 $Id$
-

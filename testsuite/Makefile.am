@@ -17,6 +17,8 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+MAINTAINERCLEANFILES = Makefile.in
+
 check_PROGRAMS = isprefix.driver
 
 INCLUDES = -I $(srcdir)/..
@@ -44,3 +46,5 @@ test_data = \
 	triple.input triple.input/copying.in triple.input/half.in \
 	triple.input/hello.in triple.input/zero.in signature.input/01.in \
 	signature.input/01.sig dot
+
+EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)

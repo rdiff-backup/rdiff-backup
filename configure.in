@@ -9,11 +9,13 @@ AC_REVISION($Id$)
 
 AC_PREREQ(2.53)
 AC_INIT(trace.c)
+AM_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE(librsync, 0.9.6)
 
-# ac2.50 complains about this next line being redundant.  I'm not
-# sure: perhaps it's still required for earlier versions?
-AC_CANONICAL_HOST
+# GNU library versioning: This is NOT the librsync release number.
+# See libversions.txt and the libtool manual for an explanation of the
+# library versioning
+librsync_libversion=1:2:0
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -21,10 +23,8 @@ AC_PROG_CPP
 AC_ISC_POSIX
 AC_PROG_INSTALL
 
-AM_CONFIG_HEADER(config.h)
-
-AM_DISABLE_SHARED
-AM_PROG_LIBTOOL
+AC_DISABLE_SHARED
+AC_PROG_LIBTOOL
 
 # Set up to get as many features as we can manage
 AC_DEFINE(_GNU_SOURCE)
@@ -121,14 +121,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS(config.h unistd.h alloca.h libintl.h mcheck.h)
 AC_CHECK_HEADERS(zlib.h bzlib.h stdint.h fcntl.h inttypes.h sys/file.h)
 
-# GNU library versioning: This is NOT the librsync release number.
-# Rather, it is a CURRENT:REVISION:AGE tuple describing binary
-# compatibility to libtool.  It is only updated on major public
-# releases where there is the possibility of binaries hanging around.
-
-librsync_libversion=2:0:0
 AC_DEFINE_UNQUOTED(RS_LIBVERSION, "$librsync_libversion")
-
 AC_DEFINE_UNQUOTED(RS_CANONICAL_HOST, "$host")
 
 AC_SUBST(librsync_libversion)
