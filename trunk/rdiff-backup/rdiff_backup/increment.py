@@ -145,8 +145,6 @@ class IncrementITRB(StatsITRB):
 	4.  Directory -> Normal file:  Wait until the end, so we can
 	    process all the files in the directory.	
 
-	Remember this object needs to be pickable.
-	
 	"""
 	# Iff true, mirror file was a directory
 	mirror_isdirectory = None
@@ -299,7 +297,14 @@ class MirrorITRB(StatsITRB):
 	def start_process(self, index, diff_rorp, mirror_dsrp):
 		"""Initialize statistics and do actual writing to mirror"""
 		self.start_stats(mirror_dsrp)
-		if diff_rorp and not diff_rorp.isplaceholder():
+		if (diff_rorp and diff_rorp.isdir() or
+			not diff_rorp and mirror_dsrp.isdir()):
+			# mirror_dsrp will end up as directory, update attribs later
+			if not diff_rorp: diff_rorp = mirror_dsrp.get_rorpath()
+			if not mirror_dsrp.isdir():
+				mirror_dsrp.delete()
+				mirror_dsrp.mkdir()
+		elif diff_rorp and not diff_rorp.isplaceholder():
 			RORPIter.patchonce_action(None, mirror_dsrp, diff_rorp).execute()
 
 		self.incpref = self.inc_rpath.new_index(index)
@@ -309,6 +314,7 @@ class MirrorITRB(StatsITRB):
 		"""Update statistics when leaving"""
 		self.end_stats(self.diff_rorp, self.mirror_dsrp)
 		if self.mirror_dsrp.isdir():
+			RPathStatic.copy_attribs(self.diff_rorp, self.mirror_dsrp)
 			MiscStats.write_dir_stats_line(self, self.mirror_dsrp.index)
 
 	def can_fast_process(self, index, diff_rorp, mirror_dsrp):

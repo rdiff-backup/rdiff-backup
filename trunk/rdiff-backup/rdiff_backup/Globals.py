@@ -55,10 +55,6 @@ change_ownership = None
 # permissions).
 change_mirror_perms = (process_uid != 0)
 
-# If true, temporarily change permissions of unreadable files in
-# the source directory to make sure we can read all files.
-change_source_perms = None
-
 # If true, try to reset the atimes of the source partition.
 preserve_atime = None
 
@@ -103,23 +99,8 @@ client_conn = None
 # list.
 changed_settings = []
 
-# rdiff-backup will try to checkpoint its state every
-# checkpoint_interval seconds.  Then when resuming, at most this
-# amount of time is lost.
-checkpoint_interval = 20
-
 # The RPath of the rdiff-backup-data directory.
 rbdir = None
-
-# Indicates if a resume or a lack of resume is forced.  This
-# should be None for the default.  0 means don't resume, and 1
-# means resume.
-resume = None
-
-# If there has been an aborted backup fewer than this many seconds
-# ago, attempt to resume it where it left off instead of starting
-# a new one.
-resume_window = 7200
 
 # This string is used when recognizing and creating time strings.
 # If the time_separator is ":", then W3 datetime strings like
@@ -265,7 +246,7 @@ def postset_regexp_local(name, re_string, flags):
 	if flags: globals()[name] = re.compile(re_string, flags)
 	else: globals()[name] = re.compile(re_string)
 
-def set_select(dsrpath, tuplelist, quote_mode, *filelists):
+def set_select(source, rpath, tuplelist, quote_mode, *filelists):
 	"""Initialize select object using tuplelist
 
 	Note that each list in filelists must each be passed as
@@ -275,12 +256,10 @@ def set_select(dsrpath, tuplelist, quote_mode, *filelists):
 
 	"""
 	global select_source, select_mirror
-	if dsrpath.source:
-		select_source = Select(dsrpath, quote_mode)
-		select_source.ParseArgs(tuplelist, filelists)
-	else:
-		select_mirror = Select(dsrpath, quote_mode)
-		select_mirror.ParseArgs(tuplelist, filelists)
+	sel = Select(rpath, quote_mode)
+	sel.ParseArgs(tuplelist, filelists)
+	if source: select_source = sel
+	else: select_mirror = sel
 
 
 from rpath import * # kludge to avoid circularity - not needed in this module

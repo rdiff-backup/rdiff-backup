@@ -7,6 +7,11 @@ Fixed bug with the --{include|exclude}-globbing-filelist options
 Added --list-changed-since option to list the files changed since the
 given date.
 
+Removed --mirror-only and --change-source-perms options.
+
+Removed all "resume" related functionality, like
+--checkpoint-interval.
+
 
 New in v0.11.0 (2002/10/05)
 ---------------------------

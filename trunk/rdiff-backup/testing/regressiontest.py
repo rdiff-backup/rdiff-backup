@@ -14,7 +14,7 @@ testfiles
 
 Globals.set('change_source_perms', 1)
 Globals.counter = 0
-Log.setverbosity(3)
+Log.setverbosity(7)
 
 class Local:
 	"""This is just a place to put increments relative to the local

@@ -41,7 +41,6 @@ class Restore:
 		same index as mirror.
 
 		"""
-		if not isinstance(mirror, DSRPath): mirror = DSRPath(1, mirror)
 		if not isinstance(target, DSRPath): target = DSRPath(None, target)
 
 		mirror_time = Restore.get_mirror_time()
@@ -129,18 +128,16 @@ class Restore:
 		"foo/bar".
 
 		"""
-		assert isinstance(mirror, DSRPath) and isinstance(target, DSRPath)
+		assert isinstance(target, DSRPath)
 		assert mirror.index == rid.index
 
-		mirror_finalizer = IterTreeReducer(DestructiveSteppingFinalizer, ())
 		target_finalizer = IterTreeReducer(DestructiveSteppingFinalizer, ())
 		for rcd in Restore.yield_rcds(rid.index, mirror, rid,
 									  target, time, mirror_time):
 			rcd.RestoreFile()
-			if rcd.mirror: mirror_finalizer(rcd.index, rcd.mirror)
+			#if rcd.mirror: mirror_finalizer(rcd.index, rcd.mirror)
 			target_finalizer(rcd.target.index, rcd.target)
 		target_finalizer.Finish()
-		mirror_finalizer.Finish()
 
 	def yield_rcds(index, mirrorrp, rid, target, rest_time, mirror_time):
 		"""Iterate RestoreCombinedData objects starting with given args

@@ -547,7 +547,6 @@ from connection import *
 from rpath import *
 from robust import *
 from rorpiter import *
-from destructive_stepping import *
 from selection import *
 from statistics import *
 from increment import *

@@ -173,8 +173,7 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 
 	Log("Comparing %s and %s, hardlinks %s" % (src_rp.path, dest_rp.path,
 											   compare_hardlinks), 3)
-	src_select = Select(DSRPath(1, src_rp))
-	dest_select = Select(DSRPath(None, dest_rp))
+	src_select, dest_select = Select(src_rp), Select(dest_rp)
 
 	if ignore_tmp_files:
 		# Ignoring temp files can be useful when we want to check the
@@ -201,13 +200,10 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 		dest_select.add_selection_func(dest_select.glob_get_tuple_sf(
 			('rdiff-backup-data',), 0))
 
-	src_select.set_iter()
-	dest_select.set_iter()
-	dsiter1, dsiter2 = src_select.iterate_with_finalizer(), \
-					   dest_select.iterate_with_finalizer()
+	dsiter1, dsiter2 = src_select.set_iter(), dest_select.set_iter()
 
 	def hardlink_equal(src_rorp, dest_rorp):
-		if src_rorp != dest_rorp: return None
+		if not src_rorp.equal_verbose(dest_rorp): return None
 		if Hardlink.rorp_eq(src_rorp, dest_rorp): return 1
 		Log("%s: %s" % (src_rorp.index, Hardlink.get_indicies(src_rorp, 1)), 3)
 		Log("%s: %s" % (dest_rorp.index,
@@ -229,7 +225,7 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 				if dest_rorp.index[-1].endswith('.missing'): return 1
 		if compare_hardlinks:
 			if Hardlink.rorp_eq(src_rorp, dest_rorp): return 1
-		elif src_rorp == dest_rorp: return 1
+		elif src_rorp.equal_verbose(dest_rorp): return 1
 		Log("%s: %s" % (src_rorp.index, Hardlink.get_indicies(src_rorp, 1)), 3)
 		Log("%s: %s" % (dest_rorp.index,
 						Hardlink.get_indicies(dest_rorp, None)), 3)

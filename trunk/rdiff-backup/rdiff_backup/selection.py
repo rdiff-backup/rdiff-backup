@@ -28,7 +28,6 @@ from __future__ import generators
 import re
 from log import *
 from robust import *
-from destructive_stepping import *
 import FilenameMapping
 
 
@@ -46,7 +45,7 @@ class GlobbingError(SelectError):
 
 
 class Select:
-	"""Iterate appropriate DSRPaths in given directory
+	"""Iterate appropriate RPaths in given directory
 
 	This class acts as an iterator on account of its next() method.
 	Basically, it just goes through all the files in a directory in
@@ -66,7 +65,7 @@ class Select:
 	file in the directory gets included, so does the directory.
 
 	As mentioned above, each test takes the form of a selection
-	function.  The selection function takes a dsrp, and returns:
+	function.  The selection function takes an rpath, and returns:
 
 	None - means the test has nothing to say about the related file
 	0 - the file is excluded by the test
@@ -82,18 +81,18 @@ class Select:
 	# This re should not match normal filenames, but usually just globs
 	glob_re = re.compile("(.*[*?[]|ignorecase\\:)", re.I | re.S)
 
-	def __init__(self, dsrpath, quoted_filenames = None):
-		"""DSRPIterator initializer.  dsrp is the root directory
+	def __init__(self, rpath, quoted_filenames = None):
+		"""Select initializer.  rpath is the root directory
 
 		When files have quoted characters in them, quoted_filenames
 		should be true.  Then RPath's index will be the unquoted
 		version.
 
 		"""
-		assert isinstance(dsrpath, DSRPath)
+		assert isinstance(rpath, RPath)
 		self.selection_functions = []
-		self.dsrpath = dsrpath
-		self.prefix = self.dsrpath.path
+		self.rpath = rpath
+		self.prefix = self.rpath.path
 		self.quoting_on = Globals.quoting_enabled and quoted_filenames
 
 	def set_iter(self, starting_index = None, iterate_parents = None,
@@ -103,19 +102,19 @@ class Select:
 		Will iterate indicies greater than starting_index.  If
 		iterate_parents is true, will also include parents of
 		starting_index in iteration.  Selection function sel_func is
-		called on each dsrp and is usually self.Select.  Returns self
+		called on each rpath and is usually self.Select.  Returns self
 		just for convenience.
 
 		"""
 		if not sel_func: sel_func = self.Select
-		self.dsrpath.setdata() # this may have changed since Select init
+		self.rpath.setdata() # this may have changed since Select init
 		if starting_index is not None:
 			self.starting_index = starting_index
-			self.iter = self.iterate_starting_from(self.dsrpath,
+			self.iter = self.iterate_starting_from(self.rpath,
 						            self.iterate_starting_from, sel_func)
 		elif self.quoting_on:
-			self.iter = self.Iterate(self.dsrpath, self.Iterate, sel_func)
-		else: self.iter = self.Iterate_fast(self.dsrpath, sel_func)
+			self.iter = self.Iterate(self.rpath, self.Iterate, sel_func)
+		else: self.iter = self.Iterate_fast(self.rpath, sel_func)
 
 		# only iterate parents if we are not starting from beginning
 		self.iterate_parents = starting_index is not None and iterate_parents
@@ -123,7 +122,7 @@ class Select:
 		self.__iter__ = lambda: self
 		return self
 
-	def Iterate_fast(self, dsrpath, sel_func):
+	def Iterate_fast(self, rpath, sel_func):
 		"""Like Iterate, but don't recur, saving time
 
 		Only handles standard case (quoting off, starting from
@@ -131,116 +130,115 @@ class Select:
 
 		"""
 		def error_handler(exc, filename):
-			Log("Error initializing file %s/%s" % (dsrpath.path, filename), 2)
+			Log("Error initializing file %s/%s" % (rpath.path, filename), 2)
 			return None
 
-		def diryield(dsrpath):
-			"""Generate relevant files in directory dsrpath
+		def diryield(rpath):
+			"""Generate relevant files in directory rpath
 
-			Returns (dsrp, num) where num == 0 means dsrp should be
-			generated normally, num == 1 means the dsrp is a directory
+			Returns (rpath, num) where num == 0 means rpath should be
+			generated normally, num == 1 means the rpath is a directory
 			and should be included iff something inside is included.
 
 			"""
-			for filename in Robust.listrp(dsrpath):
-				new_dsrp = Robust.check_common_error(error_handler,
-										dsrpath.append, (filename,))
-				if new_dsrp:
-					s = sel_func(new_dsrp)
-					if s == 1: yield (new_dsrp, 0)
-					elif s == 2 and new_dsrp.isdir(): yield (new_dsrp, 1)
+			for filename in Robust.listrp(rpath):
+				new_rpath = Robust.check_common_error(error_handler,
+										rpath.append, (filename,))
+				if new_rpath:
+					s = sel_func(new_rpath)
+					if s == 1: yield (new_rpath, 0)
+					elif s == 2 and new_rpath.isdir(): yield (new_rpath, 1)
 
-		yield dsrpath
-		diryield_stack = [diryield(dsrpath)]
-		delayed_dsrp_stack = []
+		yield rpath
+		diryield_stack = [diryield(rpath)]
+		delayed_rp_stack = []
 
 		while diryield_stack:
-			try: dsrp, val = diryield_stack[-1].next()
+			try: rpath, val = diryield_stack[-1].next()
 			except StopIteration:
 				diryield_stack.pop()
-				if delayed_dsrp_stack: delayed_dsrp_stack.pop()
+				if delayed_rp_stack: delayed_rp_stack.pop()
 				continue
 			if val == 0:
-				if delayed_dsrp_stack:
-					for delayed_dsrp in delayed_dsrp_stack: yield delayed_dsrp
-					del delayed_dsrp_stack[:]
-				yield dsrp
-				if dsrp.isdir(): diryield_stack.append(diryield(dsrp))
+				if delayed_rp_stack:
+					for delayed_rp in delayed_rp_stack: yield delayed_rp
+					del delayed_rp_stack[:]
+				yield rpath
+				if rpath.isdir(): diryield_stack.append(diryield(rpath))
 			elif val == 1:
-				delayed_dsrp_stack.append(dsrp)
-				diryield_stack.append(diryield(dsrp))
+				delayed_rp_stack.append(rpath)
+				diryield_stack.append(diryield(rpath))
 
-	def Iterate(self, dsrpath, rec_func, sel_func):
-		"""Return iterator yielding dsrps in dsrpath
+	def Iterate(self, rpath, rec_func, sel_func):
+		"""Return iterator yielding rpaths in rpath
 
 		rec_func is usually the same as this function and is what
 		Iterate uses to find files in subdirectories.  It is used in
 		iterate_starting_from.
 
-		sel_func is the selection function to use on the dsrps.  It is
-		usually self.Select.
+		sel_func is the selection function to use on the rpaths.  It
+		is usually self.Select.
 
 		"""
-		s = sel_func(dsrpath)
+		s = sel_func(rpath)
 		if s == 0: return
 		elif s == 1: # File is included
-			yield dsrpath
-			if dsrpath.isdir():
-				for dsrp in self.iterate_in_dir(dsrpath, rec_func, sel_func):
-					yield dsrp
+			yield rpath
+			if rpath.isdir():
+				for rp in self.iterate_in_dir(rpath, rec_func, sel_func):
+					yield rp
 		elif s == 2:
-			if dsrpath.isdir(): # Directory is merely scanned
-				iid = self.iterate_in_dir(dsrpath, rec_func, sel_func)
+			if rpath.isdir(): # Directory is merely scanned
+				iid = self.iterate_in_dir(rpath, rec_func, sel_func)
 				try: first = iid.next()
-				except StopIteration: return # no files inside; skip dsrp
-				yield dsrpath
+				except StopIteration: return # no files inside; skip rp
+				yield rpath
 				yield first
-				for dsrp in iid: yield dsrp
+				for rp in iid: yield rp
 		else: assert 0, "Invalid selection result %s" % (str(s),)
 
-	def iterate_in_dir(self, dsrpath, rec_func, sel_func):
-		"""Iterate the dsrps in directory dsrpath."""
+	def iterate_in_dir(self, rpath, rec_func, sel_func):
+		"""Iterate the rpaths in directory rpath."""
 		def error_handler(exc, filename):
-			Log("Error initializing file %s/%s" % (dsrpath.path, filename), 2)
+			Log("Error initializing file %s/%s" % (rpath.path, filename), 2)
 			return None
 
 		if self.quoting_on:
-			for subdir in FilenameMapping.get_quoted_dir_children(dsrpath):
-				for dsrp in rec_func(subdir, rec_func, sel_func):
-					yield dsrp
+			for subdir in FilenameMapping.get_quoted_dir_children(rpath):
+				for rp in rec_func(subdir, rec_func, sel_func):
+					yield rp
 		else:
-			for filename in Robust.listrp(dsrpath):
-				new_dsrp = Robust.check_common_error(
-					error_handler, dsrpath.append, [filename])
-				if new_dsrp:
-					for dsrp in rec_func(new_dsrp, rec_func, sel_func):
-						yield dsrp
+			for filename in Robust.listrp(rpath):
+				new_rp = Robust.check_common_error(
+					error_handler, rpath.append, [filename])
+				if new_rp:
+					for rp in rec_func(new_rp, rec_func, sel_func):
+						yield rp
 
-	def iterate_starting_from(self, dsrpath, rec_func, sel_func):
+	def iterate_starting_from(self, rpath, rec_func, sel_func):
 		"""Like Iterate, but only yield indicies > self.starting_index"""
-		if dsrpath.index > self.starting_index: # past starting_index
-			for dsrp in self.Iterate(dsrpath, self.Iterate, sel_func):
-				yield dsrp
-		elif (dsrpath.index == self.starting_index[:len(dsrpath.index)]
-			  and dsrpath.isdir()):
+		if rpath.index > self.starting_index: # past starting_index
+			for rp in self.Iterate(rpath, self.Iterate, sel_func):
+				yield rp
+		elif (rpath.index == self.starting_index[:len(rpath.index)]
+			  and rpath.isdir()):
 			# May encounter starting index on this branch
-			if self.iterate_parents: yield dsrpath
-			for dsrp in self.iterate_in_dir(dsrpath,
-											self.iterate_starting_from,
-											sel_func): yield dsrp
+			if self.iterate_parents: yield rpath
+			for rp in self.iterate_in_dir(rpath, self.iterate_starting_from,
+										  sel_func): yield rp
 
-	def iterate_with_finalizer(self):
-		"""Like Iterate, but missing some options, and add finalizer"""
-		finalize = IterTreeReducer(DestructiveSteppingFinalizer, ())
-		for dsrp in self:
-			yield dsrp
-			finalize(dsrp.index, dsrp)
-		finalize.Finish()
+#	def iterate_with_finalizer(self):
+#		"""Like Iterate, but missing some options, and add finalizer"""
+#		finalize = IterTreeReducer(DestructiveSteppingFinalizer, ())
+#		for rp in self:
+#			yield rp
+#			finalize(rp.index, rp))
+#		finalize.Finish()
 
-	def Select(self, dsrp):
+	def Select(self, rp):
 		"""Run through the selection functions and return dominant val 0/1/2"""
 		for sf in self.selection_functions:
-			result = sf(dsrp)
+			result = sf(rp)
 			if result is not None: return result
 		return 1
 
@@ -353,11 +351,11 @@ probably isn't what you meant.""" %
 		tuple_list.sort()
 		i = [0] # We have to put index in list because of stupid scoping rules
 
-		def selection_function(dsrp):
+		def selection_function(rp):
 			while 1:
 				if i[0] >= len(tuple_list): return None
 				include, move_on = \
-						 self.filelist_pair_match(dsrp, tuple_list[i[0]])
+						 self.filelist_pair_match(rp, tuple_list[i[0]])
 				if move_on:
 					i[0] += 1
 					if include is None: continue # later line may match
@@ -415,12 +413,12 @@ probably isn't what you meant.""" %
 		index = tuple(filter(lambda x: x, line.split("/"))) # remove empties
 		return (index, include)
 
-	def filelist_pair_match(self, dsrp, pair):
-		"""Matches a filelist tuple against a dsrp
+	def filelist_pair_match(self, rp, pair):
+		"""Matches a filelist tuple against a rpath
 
 		Returns a pair (include, move_on).  include is None if the
 		tuple doesn't match either way, and 0/1 if the tuple excludes
-		or includes the dsrp.
+		or includes the rpath.
 
 		move_on is true if the tuple cannot match a later index, and
 		so we should move on to the next tuple in the index.
@@ -428,16 +426,16 @@ probably isn't what you meant.""" %
 		"""
 		index, include = pair
 		if include == 1:
-			if index < dsrp.index: return (None, 1)
-			if index == dsrp.index: return (1, 1)
-			elif index[:len(dsrp.index)] == dsrp.index:
+			if index < rp.index: return (None, 1)
+			if index == rp.index: return (1, 1)
+			elif index[:len(rp.index)] == rp.index:
 				return (1, None) # /foo/bar implicitly includes /foo
-			else: return (None, None) # dsrp greater, not initial sequence
+			else: return (None, None) # rp greater, not initial sequence
 		elif include == 0:
-			if dsrp.index[:len(index)] == index:
+			if rp.index[:len(index)] == index:
 				return (0, None) # /foo implicitly excludes /foo/bar
-			elif index < dsrp.index: return (None, 1)
-			else: return (None, None) # dsrp greater, not initial sequence
+			elif index < rp.index: return (None, 1)
+			else: return (None, None) # rp greater, not initial sequence
 		else: assert 0, "Include is %s, should be 0 or 1" % (include,)
 
 	def filelist_globbing_get_sfs(self, filelist_fp, inc_default, list_name):
@@ -460,9 +458,9 @@ probably isn't what you meant.""" %
 	def other_filesystems_get_sf(self, include):
 		"""Return selection function matching files on other filesystems"""
 		assert include == 0 or include == 1
-		root_devloc = self.dsrpath.getdevloc()
-		def sel_func(dsrp):
-			if dsrp.getdevloc() == root_devloc: return None
+		root_devloc = self.rpath.getdevloc()
+		def sel_func(rp):
+			if rp.getdevloc() == root_devloc: return None
 			else: return include
 		sel_func.exclude = not include
 		sel_func.name = "Match other filesystems"
@@ -476,8 +474,8 @@ probably isn't what you meant.""" %
 			Log("Error compiling regular expression %s" % regexp_string, 1)
 			raise
 		
-		def sel_func(dsrp):
-			if regexp.search(dsrp.path): return include
+		def sel_func(rp):
+			if regexp.search(rp.path): return include
 			else: return None
 
 		sel_func.exclude = not include
@@ -489,8 +487,8 @@ probably isn't what you meant.""" %
 		if self.selection_functions:
 			Log("Warning: exclude-device-files is not the first "
 				"selector.\nThis may not be what you intended", 3)
-		def sel_func(dsrp):
-			if dsrp.isdev(): return include
+		def sel_func(rp):
+			if rp.isdev(): return include
 			else: return None
 		sel_func.exclude = not include
 		sel_func.name = (include and "include" or "exclude") + " device files"
@@ -501,8 +499,8 @@ probably isn't what you meant.""" %
 		if self.selection_functions:
 			Log("Warning: exclude-special-files is not the first "
 				"selector.\nThis may not be what you intended", 3)
-		def sel_func(dsrp):
-			if dsrp.issym() or dsrp.issock() or dsrp.isfifo() or dsrp.isdev():
+		def sel_func(rp):
+			if rp.issym() or rp.issock() or rp.isfifo() or rp.isdev():
 				return include
 			else: return None
 		sel_func.exclude = not include
@@ -512,7 +510,7 @@ probably isn't what you meant.""" %
 	def glob_get_sf(self, glob_str, include):
 		"""Return selection function given by glob string"""
 		assert include == 0 or include == 1
-		if glob_str == "**": sel_func = lambda dsrp: include
+		if glob_str == "**": sel_func = lambda rp: include
 		elif not self.glob_re.match(glob_str): # normal file
 			sel_func = self.glob_get_filename_sf(glob_str, include)
 		else: sel_func = self.glob_get_normal_sf(glob_str, include)
@@ -539,14 +537,14 @@ probably isn't what you meant.""" %
 
 	def glob_get_tuple_sf(self, tuple, include):
 		"""Return selection function based on tuple"""
-		def include_sel_func(dsrp):
-			if (dsrp.index == tuple[:len(dsrp.index)] or
-				dsrp.index[:len(tuple)] == tuple):
+		def include_sel_func(rp):
+			if (rp.index == tuple[:len(rp.index)] or
+				rp.index[:len(tuple)] == tuple):
 				return 1 # /foo/bar implicitly matches /foo, vice-versa
 			else: return None
 
-		def exclude_sel_func(dsrp):
-			if dsrp.index[:len(tuple)] == tuple:
+		def exclude_sel_func(rp):
+			if rp.index[:len(tuple)] == tuple:
 				return 0 # /foo excludes /foo/bar, not vice-versa
 			else: return None
 
@@ -585,17 +583,17 @@ probably isn't what you meant.""" %
 		scan_comp_re = re_comp("^(%s)$" %
 							   "|".join(self.glob_get_prefix_res(glob_str)))
 
-		def include_sel_func(dsrp):
-			if glob_comp_re.match(dsrp.path): return 1
-			elif scan_comp_re.match(dsrp.path): return 2
+		def include_sel_func(rp):
+			if glob_comp_re.match(rp.path): return 1
+			elif scan_comp_re.match(rp.path): return 2
 			else: return None
 
-		def exclude_sel_func(dsrp):
-			if glob_comp_re.match(dsrp.path): return 0
+		def exclude_sel_func(rp):
+			if glob_comp_re.match(rp.path): return 0
 			else: return None
 
 		# Check to make sure prefix is ok
-		if not include_sel_func(self.dsrpath): raise FilePrefixError(glob_str)
+		if not include_sel_func(self.rpath): raise FilePrefixError(glob_str)
 		
 		if include: return include_sel_func
 		else: return exclude_sel_func
