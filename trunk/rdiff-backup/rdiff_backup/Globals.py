@@ -53,6 +53,9 @@ process_gid = os.getgid()
 # If true, when copying attributes, also change target's uid/gid
 change_ownership = None
 
+# If true, when copying attributes, also change target's permission.
+change_permission = 1
+
 # If true, change the permissions of unwriteable mirror files
 # (such as directories) so that they can be written, and then
 # change them back.  This defaults to 1 just in case the process
