@@ -299,6 +299,13 @@ class FileCopying(RPathTest):
 		assert not RPath.cmp(self.sl, self.fifo)
 		assert not RPath.cmp(self.dir, self.sl)
 
+	def testDirSizeComp(self):
+		"""Make sure directories can be equal,
+		even if they are of different sizes"""
+		smalldir = RPath(Globals.local_connection, "testfiles/dircomptest/1")
+		bigdir = RPath(Globals.local_connection, "testfiles/dircomptest/2")
+		assert smalldir == bigdir
+
 	def testCopy(self):
 		"""Test copy of various files"""
 		for rp in [self.sl, self.rf, self.fifo, self.dir]:
