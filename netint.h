@@ -26,3 +26,4 @@ void _hs_squirt_n8(hs_stream_t *stream, int d);
 
 enum hs_result _hs_suck_n32(hs_stream_t *stream, int *v);
 enum hs_result _hs_suck_n8(hs_stream_t *stream, int *v);
+enum hs_result _hs_suck_netint(hs_stream_t *stream, int len, int *v);

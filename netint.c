@@ -109,3 +109,17 @@ enum hs_result _hs_suck_n8(hs_stream_t *stream, int *v)
 
         return result;
 }
+
+
+
+enum hs_result _hs_suck_netint(hs_stream_t *stream, int len, int *v)
+{
+        switch (len) {
+        case 1:
+                return _hs_suck_n8(stream, v);
+        case 4:
+                return _hs_suck_n32(stream, v);
+        default:
+                _hs_fatal("kaboom! len=%d", len);
+        }
+}
