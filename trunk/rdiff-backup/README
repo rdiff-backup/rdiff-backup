@@ -2,21 +2,20 @@ INSTALLATION:
 
 Thank you for trying rdiff-backup.  To install, run:
 
-	./setup.py install
+	python setup.py install
 
 The default prefix is /usr, so files are put in /usr/bin,
 /usr/share/man/, etc.  An alternate prefix can be specified using the
 --prefix=<prefix> option.  For example:
 
-	./setup.py install --prefix=/usr/local
+	python setup.py install --prefix=/usr/local
 
 
 REQUIREMENTS:
 
-Remember that you must have Python 2.2 or later and librsync installed
-(this means that "python" and "rdiff" should be in your path).  To
-download, see http://www.python.org and
-http://sourceforge.net/projects/rproxy/ respectively.
+Remember that you must have Python 2.2 or later and librsync 0.9.5.1
+or later installed.  To download, see http://www.python.org and
+http://sourceforge.net/projects/librsync/ respectively.
 
 For remote operation, rdiff-backup should be in installed and in the
 PATH on remote system(s) (see man page for more information).
