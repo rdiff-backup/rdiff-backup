@@ -247,29 +247,38 @@ class Robust:
 	def check_common_error(error_handler, function, args = []):
 		"""Apply function to args, if error, run error_handler on exception
 
-		This only catches certain exceptions which seems innocent
-		enough.
+		This uses the catch_error predicate below to only catch
+		certain exceptions which seems innocent enough.
 
 		"""
 		try: return function(*args)
- 		except (EnvironmentError, SkipFileException, DSRPPermError,
-				RPathException, Rdiff.RdiffException,
-				librsync.librsyncError, C.UnknownFileTypeError), exc:
-			TracebackArchive.add([function] + args)
-			if (not isinstance(exc, EnvironmentError) or
-				(errno.errorcode[exc[0]] in
-				 ['EPERM', 'ENOENT', 'EACCES', 'EBUSY', 'EEXIST',
-				  'ENOTDIR', 'ENAMETOOLONG', 'EINTR', 'ENOTEMPTY',
-				  'EIO', 'ETXTBSY', 'ESRCH', 'EINVAL'])):
+		except Exception, exc:
+			TracebackArchive.add([function] + list(args))
+			if Robust.catch_error(exc):
 				Log.exception()
 				conn = Globals.backup_writer
 				if conn is not None: # increment error count
 					ITRB_exists = conn.Globals.is_not_None('ITRB')
 					if ITRB_exists: conn.Globals.ITRB.increment_stat('Errors')
 				if error_handler: return error_handler(exc, *args)
-			else:
-				Log.exception(1, 2)
-				raise
+				else: return
+			Log.exception(1, 2)
+			raise
+
+	def catch_error(exc):
+		"""Return true if exception exc should be caught"""
+		for exception_class in (SkipFileException, DSRPPermError,
+								RPathException, Rdiff.RdiffException,
+								librsync.librsyncError,
+								C.UnknownFileTypeError):
+			if isinstance(exc, exception_class): return 1
+		if (isinstance(exc, EnvironmentError) and
+			errno.errorcode[exc[0]] in ('EPERM', 'ENOENT', 'EACCES', 'EBUSY',
+										'EEXIST', 'ENOTDIR', 'ENAMETOOLONG',
+										'EINTR', 'ENOTEMPTY', 'EIO', 'ETXTBSY',
+										'ESRCH', 'EINVAL')):
+			return 1
+		return 0
 
 	def listrp(rp):
 		"""Like rp.listdir() but return [] if error, and sort results"""
@@ -314,7 +323,7 @@ class TracebackArchive:
 	def log(cls):
 		"""Print all exception information to log file"""
 		if cls._traceback_strings:
-			Log("------------ Old traceback info -----------\n%s"
+			Log("------------ Old traceback info -----------\n%s\n"
 				"-------------------------------------------" %
 				("\n".join(cls._traceback_strings),), 3)
 
@@ -678,3 +687,4 @@ from log import *
 from destructive_stepping import *
 import Time, Rdiff, librsync
 from highlevel import *
+
