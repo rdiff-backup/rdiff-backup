@@ -294,7 +294,7 @@ SOURCE=..\prototab.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\rsync.h
+SOURCE=..\librsync.h
 # End Source File
 # Begin Source File
 

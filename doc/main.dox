@@ -52,7 +52,7 @@ makes this functionality available to users and scripting languages.
 
 \section api Programming interface
 
-The public interface to librsync (rsync.h) has functions in several
+The public interface to librsync (librsync.h) has functions in several
 main areas:
 
    - \ref api_streaming
