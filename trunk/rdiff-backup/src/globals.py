@@ -123,8 +123,8 @@ class Globals:
 	# case-insensitive regular expression won't be compressed (applies
 	# to .snapshots and .diffs).  The second below will be the
 	# compiled version of the first.
-	no_compression_regexp_string = ".*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|" \
-							"jpg|gif|png|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
+	no_compression_regexp_string = "(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|" \
+							"jpg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
 	no_compression_regexp = None
 
 	# On the reader and writer connections, the following will be
@@ -183,9 +183,9 @@ class Globals:
 	def set_select(cls, source, dsrpath, tuplelist):
 		"""Initialize select object using tuplelist"""
 		if source:
-			cls.select_source = Select(dsrpath)
+			cls.select_source = Select(dsrpath, 1)
 			cls.select_source.ParseArgs(tuplelist)
 		else:
-			cls.select_mirror = Select(dsrpath)
+			cls.select_mirror = Select(dsrpath, None)
 			cls.select_mirror.ParseArgs(tuplelist)
 	set_select = classmethod(set_select)

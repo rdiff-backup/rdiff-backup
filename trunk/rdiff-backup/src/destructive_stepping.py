@@ -187,6 +187,7 @@ class DestructiveStepping:
 		destination file.
 
 		"""
+		return None # this code is for the test suites only, use Select instead
 		if Globals.exclude_device_files and dsrp.isdev(): return 1
 		
 		if source: exclude_regexps = Globals.exclude_regexps

@@ -125,7 +125,7 @@ class Main:
 		sys.exit(1)
 
 	def misc_setup(self, rps):
-		"""Set default change ownership flag, umask, regular expressions"""
+		"""Set default change ownership flag, umask, Select objects"""
 		if ((len(rps) == 2 and rps[1].conn.os.getuid() == 0) or
 			(len(rps) < 2 and os.getuid() == 0)):
 			# Allow change_ownership if destination connection is root
@@ -139,7 +139,7 @@ class Main:
 			rps[1].conn.Globals.set_select(None, rps[1],
 										   self.select_mirror_opts)
 		Globals.postset_regexp('no_compression_regexp',
-							   Globals.no_compression_regexp_string, re.I)
+							   Globals.no_compression_regexp_string)
 
 	def take_action(self, rps):
 		"""Do whatever self.action says"""
@@ -248,8 +248,8 @@ rdiff-backup with the --force option.""" % rpout.path)
 				(rpin.path == "." and rpout.path[0] != '/' and
 				 rpout.path[:2] != '..')):
 				# Just a few heuristics, we don't have to get every case
-				if not DestructiveStepping.isexcluded(rpout, 1):
-					Log(
+				if Globals.backup_reader.Globals.select_source \
+				   .Select(rpout): Log(
 """Warning: The destination directory '%s' may be contained in the
 source directory '%s'.  This could cause an infinite regress.  You
 may need to use the --exclude option.""" % (rpout.path, rpin.path), 2)

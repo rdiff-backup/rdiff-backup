@@ -10,8 +10,16 @@ import re
 # documentation on what this code does can be found on the man page.
 #
 
-class FilePrefixError(Exception):
+class SelectError(Exception):
+	"""Some error dealing with the Select class"""
+	pass
+
+class FilePrefixError(SelectError):
 	"""Signals that a specified file doesn't start with correct prefix"""
+	pass
+
+class GlobbingError(SelectError):
+	"""Something has gone wrong when parsing a glob string"""
 	pass
 
 
@@ -50,60 +58,97 @@ class Select:
 
 	"""
 	# This re should not match normal filenames, but usually just globs
-	glob_re = re.compile(".*[\*\?\[]")
+	glob_re = re.compile("(.*[*?[]|ignorecase\\:)", re.I | re.S)
 
-	def __init__(self, dsrpath):
-		"""DSRPIterator initializer"""
+	def __init__(self, rpath, source):
+		"""DSRPIterator initializer.
+
+		rpath is the root dir.  Source is true if rpath is the root of
+		the source directory, and false for the mirror directory
+
+		"""
+		assert isinstance(rpath, RPath)
 		self.selection_functions = []
-		self.dsrpath = dsrpath
-		self.prefix = dsrpath.path
+		self.source = source
+		if isinstance(rpath, DSRPath): self.dsrpath = rpath
+		else: self.dsrpath = DSRPath(rpath.conn, rpath.base,
+									 rpath.index, rpath.data)
+		self.prefix = self.dsrpath.path
 	
-	def set_iter(self, starting_index = None):
-		"""Initialize more variables.  dsrpath should be the root dir"""
+	def set_iter(self, starting_index = None, sel_func = None):
+		"""Initialize more variables, get ready to iterate
+
+		Will iterate indicies greater than starting_index.  Selection
+		function sel_func is called on each dsrp and is usually
+		self.Select.  Returns self just for convenience.
+
+		"""
+		if not sel_func: sel_func = self.Select
+		self.dsrpath.setdata() # this may have changed since Select init
 		if starting_index is not None:
+			self.starting_index = starting_index
 			self.iter = self.iterate_starting_from(self.dsrpath,
-							   starting_index, self.iterate_starting_from)
-		else: self.iter = self.Iterate(self.dsrpath, self.Iterate)
+						            self.iterate_starting_from, sel_func)
+		else: self.iter = self.Iterate(self.dsrpath, self.Iterate, sel_func)
 		self.next = self.iter.next
 		self.__iter__ = lambda: self
+		return self
 
-	def Iterate(self, dsrpath, rec_func):
+	def Iterate(self, dsrpath, rec_func, sel_func):
 		"""Return iterator yielding dsrps in dsrpath
 
 		rec_func is usually the same as this function and is what
 		Iterate uses to find files in subdirectories.  It is used in
 		iterate_starting_from.
 
+		sel_func is the selection function to use on the dsrps.  It is
+		usually self.Select.
+
 		"""
-		s = self.Select(dsrpath)
+		s = sel_func(dsrpath)
+		if not s or DestructiveStepping.initialize(dsrpath, self.source):
+			return
 		if s == 1: # File is included
 			yield dsrpath
 			if dsrpath.isdir():
-				for dsrp in self.iterate_in_dir(dsrpath, rec_func): yield dsrp
+				for dsrp in self.iterate_in_dir(dsrpath, rec_func, sel_func):
+					yield dsrp
 		elif s == 2 and dsrpath.isdir(): # Directory is merely scanned
-			iid = self.iterate_in_dir(dsrpath, rec_func)
+			iid = self.iterate_in_dir(dsrpath, rec_func, sel_func)
 			try: first = iid.next()
 			except StopIteration: return # no files inside; skip dsrp
 			yield dsrpath
 			yield first
 			for dsrp in iid: yield dsrp
 
-	def iterate_in_dir(self, dsrpath, rec_func):
+	def iterate_in_dir(self, dsrpath, rec_func, sel_func):
 		"""Iterate the dsrps in directory dsrpath."""
 		dir_listing = dsrpath.listdir()
 		dir_listing.sort()
 		for filename in dir_listing:
-			for dsrp in rec_func(dsrpath.append(filename)): yield dsrp
+			for dsrp in rec_func(dsrpath.append(filename), rec_func, sel_func):
+				yield dsrp
 
-	def iterate_starting_from(self, dsrpath):
+	def iterate_starting_from(self, dsrpath, rec_func, sel_func):
 		"""Like Iterate, but only yield indicies > self.starting_index"""
+		if DestructiveStepping.initialize(dsrpath, self.source): return
 		if dsrpath.index > self.starting_index: # past starting_index
-			for dsrp in self.Iterate(dsrpath, self.iterate): yield dsrp
+			for dsrp in self.Iterate(dsrpath, self.Iterate, sel_func):
+				yield dsrp
 		elif dsrpath.index == self.starting_index[:len(dsrpath.index)]:
 			# May encounter starting index on this branch
-			for dsrp in self.Iterate(dsrpath, self.iterate_starting_from):
-				yield dsrp
-			
+			for dsrp in self.iterate_in_dir(dsrpath,
+											self.iterate_starting_from,
+											sel_func): yield dsrp
+
+	def iterate_with_finalizer(self):
+		"""Like Iterate, but missing some options, and add finalizer"""
+		finalize = DestructiveStepping.Finalizer()
+		for dsrp in self:
+			yield dsrp
+			finalize(dsrp)
+		finalize.getresult()
+
 	def Select(self, dsrp):
 		"""Run through the selection functions and return dominant value"""
 		for sf in self.selection_functions:
@@ -123,28 +168,67 @@ class Select:
 		information is sent over the link.
 
 		"""
-		for opt, arg in argtuples:
-			if opt == "--exclude":
-				self.add_selection_func(self.glob_get_sf(arg, 0))
-			elif opt == "--exclude-device-files":
-				self.add_selection_func(self.devfiles_get_sf())
-			elif opt == "--exclude-filelist":
-				self.add_selection_func(self.filelist_get_sf(arg[1],
-															 0, arg[0]))
-			elif opt == "--exclude-regexp":
-				self.add_selection_func(self.regexp_get_sf(arg, 0))
-			elif opt == "--include":
-				self.add_selection_func(self.glob_get_sf(arg, 1))
-			elif opt == "--include-filelist":
-				self.add_selection_func(self.filelist_get_sf(arg[1],
-															 1, arg[0]))
-			elif opt == "--include-regexp":
-				self.add_selection_func(self.regexp_get_sf(arg, 1))
-			else: assert 0, "Bad option %s" % opt
+		try:
+			for opt, arg in argtuples:
+				if opt == "--exclude":
+					self.add_selection_func(self.glob_get_sf(arg, 0))
+				elif opt == "--exclude-device-files":
+					self.add_selection_func(self.devfiles_get_sf())
+				elif opt == "--exclude-filelist":
+					self.add_selection_func(self.filelist_get_sf(arg[1],
+																 0, arg[0]))
+				elif opt == "--exclude-regexp":
+					self.add_selection_func(self.regexp_get_sf(arg, 0))
+				elif opt == "--include":
+					self.add_selection_func(self.glob_get_sf(arg, 1))
+				elif opt == "--include-filelist":
+					self.add_selection_func(self.filelist_get_sf(arg[1],
+																 1, arg[0]))
+				elif opt == "--include-regexp":
+					self.add_selection_func(self.regexp_get_sf(arg, 1))
+				else: assert 0, "Bad option %s" % opt
+		except SelectError, e: self.parse_catch_error(e)
 
-		# Exclude rdiff-backup-data directory
+		self.parse_last_excludes()
+		self.parse_rbdir_exclude()
+		self.parse_proc_exclude()
+
+	def parse_catch_error(self, exc):
+		"""Deal with selection error exc"""
+		if isinstance(exc, FilePrefixError):
+			Log.FatalError(
+"""Fatal Error: The file specification
+    %s
+cannot match any files in the base directory
+    %s
+Useful file specifications begin with the base directory or some
+pattern (such as '**') which matches the base directory.""" %
+			(exc, self.prefix))
+		elif isinstance(e, GlobbingError):
+			Log.FatalError("Fatal Error while processing expression\n"
+						   "%s" % exc)
+		else: raise
+
+	def parse_rbdir_exclude(self):
+		"""Add exclusion of rdiff-backup-data dir to front of list"""
 		self.add_selection_func(
 			self.glob_get_tuple_sf(("rdiff-backup-data",), 0), 1)
+
+	def parse_proc_exclude(self):
+		"""Exclude the /proc directory if starting from /"""
+		if self.prefix == "/":
+			self.add_selection_func(self.glob_get_tuple_sf(("proc",), 0), 1)
+
+	def parse_last_excludes(self):
+		"""Exit with error if last selection function isn't an exclude"""
+		if self.select_functions and not self.selection_functions[-1].exclude:
+			Log.FatalError(
+"""Last selection expression:
+    %s
+only specifies that files be included.  Because the default is to
+include all files, the expression is redundant.  Exiting because this
+probably isn't what you meant.""" %
+			(self.selection_functions[-1].name, self.prefix))
 
 	def add_selection_func(self, sel_func, add_to_start = None):
 		"""Add another selection function at the end or beginning"""
@@ -259,8 +343,7 @@ class Select:
 			raise
 		
 		def sel_func(dsrp):
-			match = regexp.match(dsrp.path)
-			if match and match.end(0) == len(dsrp.path): return include
+			if regexp.search(dsrp.path): return include
 			else: return None
 
 		sel_func.exclude = not include
@@ -284,8 +367,8 @@ class Select:
 		assert include == 0 or include == 1
 		if glob_str == "**": sel_func = lambda dsrp: include
 		elif not self.glob_re.match(glob_str): # normal file
-			return self.glob_get_filename_sf(glob_str, include)
-		else: pass ####XXXXXXXXXXXXX
+			sel_func = self.glob_get_filename_sf(glob_str, include)
+		else: sel_func = self.glob_get_normal_sf(glob_str, include)
 
 		sel_func.exclude = not include
 		sel_func.name = "Command-line glob: %s" % glob_str
@@ -296,20 +379,18 @@ class Select:
 
 		Some of the parsing is better explained in
 		filelist_parse_line.  The reason this is split from normal
-		globbing is so we can check the prefix and give proper
-		warning.
+		globbing is things are a lot less complicated if no special
+		globbing characters are used.
 
 		"""
 		if not filename.startswith(self.prefix):
-			Log("Warning: file specification %s does not start with\n"
-				"prefix %s, ignoring" % (filename, self.prefix), 2)
-			return lambda x: None # dummy selection function
+			raise FilePrefixError(filename)
 		index = tuple(filter(lambda x: x,
 							 filename[len(self.prefix):].split("/")))
 		return self.glob_get_tuple_sf(index, include)
 
 	def glob_get_tuple_sf(self, tuple, include):
-		"""Add selection function based on tuple"""
+		"""Return selection function based on tuple"""
 		def include_sel_func(dsrp):
 			if (dsrp.index == tuple[:len(dsrp.index)] or
 				dsrp.index[:len(tuple)] == tuple):
@@ -326,4 +407,95 @@ class Select:
 		sel_func.exclude = not include
 		sel_func.name = "Tuple select %s" % (tuple,)
 		return sel_func
+
+	def glob_get_normal_sf(self, glob_str, include):
+		"""Return selection function based on glob_str
+
+		The basic idea is to turn glob_str into a regular expression,
+		and just use the normal regular expression.  There is a
+		complication because the selection function should return '2'
+		(scan) for directories which may contain a file which matches
+		the glob_str.  So we break up the glob string into parts, and
+		any file which matches an initial sequence of glob parts gets
+		scanned.
+
+		Thanks to Donovan Baarda who provided some code which did some
+		things similar to this.
+
+		"""
+		if glob_str.lower().startswith("ignorecase:"):
+			re_comp = lambda r: re.compile(r, re.I | re.S)
+			glob_str = glob_str[len("ignorecase:"):]
+		else: re_comp = lambda r: re.compile(r, re.S)
+
+		# matches what glob matches and any files in directory
+		glob_comp_re = re_comp("^%s($|/)" % self.glob_to_re(glob_str))
+
+		if glob_str.find("**") != -1:
+			glob_str = glob_str[:glob_str.find("**")+2] # truncate after **
+
+		scan_comp_re = re_comp("^(%s)$" %
+							   "|".join(self.glob_get_prefix_res(glob_str)))
+
+		def include_sel_func(dsrp):
+			if glob_comp_re.match(dsrp.path): return 1
+			elif scan_comp_re.match(dsrp.path): return 2
+			else: return None
+
+		def exclude_sel_func(dsrp):
+			if glob_comp_re.match(dsrp.path): return 0
+			else: return None
+
+		# Check to make sure prefix is ok
+		if not include_sel_func(self.dsrpath): raise FilePrefixError(glob_str)
+		
+		if include: return include_sel_func
+		else: return exclude_sel_func
+
+	def glob_get_prefix_res(self, glob_str):
+		"""Return list of regexps equivalent to prefixes of glob_str"""
+		glob_parts = glob_str.split("/")
+		if "" in glob_parts[1:-1]: # "" OK if comes first or last, as in /foo/
+			raise GlobbingError("Consecutive '/'s found in globbing string "
+								+ glob_str)
+
+		prefixes = map(lambda i: "/".join(glob_parts[:i+1]),
+					   range(len(glob_parts)))
+		# we must make exception for root "/", only dir to end in slash
+		if prefixes[0] == "": prefixes[0] = "/"
+		return map(self.glob_to_re, prefixes)
+
+	def glob_to_re(self, pat):
+		"""Returned regular expression equivalent to shell glob pat
+
+		Currently only the ?, *, [], and ** expressions are supported.
+		Ranges like [a-z] are also currently unsupported.  There is no
+		way to quote these special characters.
+
+		This function taken with minor modifications from efnmatch.py
+		by Donovan Baarda.
+
+		"""
+		i, n, res = 0, len(pat), ''
+		while i < n:
+			c, s = pat[i], pat[i:i+2]
+			i = i+1
+			if s == '**':
+				res = res + '.*'
+				i = i + 1
+			elif c == '*': res = res + '[^/]*'
+			elif c == '?': res = res + '[^/]'
+			elif c == '[':
+				j = i
+				if j < n and pat[j] in '!^': j = j+1
+				if j < n and pat[j] == ']': j = j+1
+				while j < n and pat[j] != ']': j = j+1
+				if j >= n: res = res + '\\[' # interpret the [ literally
+				else: # Deal with inside of [..]
+					stuff = pat[i:j].replace('\\','\\\\')
+					i = j+1
+					if stuff[0] in '!^': stuff = '^' + stuff[1:]
+					res = res + '[' + stuff + ']'
+			else: res = res + re.escape(c)
+		return res
 
