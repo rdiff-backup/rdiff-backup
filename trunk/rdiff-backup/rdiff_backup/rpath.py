@@ -954,11 +954,15 @@ class RPath(RORPath):
 		This can be useful for directories.
 
 		"""
-		if not fp:
-			fp = self.open("rb")
-			os.fsync(fp.fileno())
-			assert not fp.close()
+		if not fp: self.conn.rpath.RPath.fsync_local(self)
 		else: os.fsync(fp.fileno())
+
+	def fsync_local(self):
+		"""fsync current file, run locally"""
+		assert self.conn is Globals.local_connection
+		fd = os.open(self.path, os.O_RDONLY)
+		os.fsync(fd)
+		os.close(fd)
 
 	def fsync_with_dir(self, fp = None):
 		"""fsync self and directory self is under"""

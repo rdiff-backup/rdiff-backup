@@ -1,3 +1,5 @@
+write test case for --calculate-statistics
+
 Fix for Python 2.3
 
 Change for librsync 0.9.6 when it comes out
