@@ -1,3 +1,10 @@
+New in v0.13.2 (??????????)
+---------------------------
+
+Specified socket type as SOCK_STREAM.  (Error reported by Erik
+Forsberg.)
+
+
 New in v0.13.1 (2003/08/08)
 ---------------------------
 
