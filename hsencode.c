@@ -1,6 +1,7 @@
-/* -*- mode: c; c-file-style: "java" -*-  */
-
-/* hsencode.c -- Generate combined encoded form
+/* -*- mode: c; c-file-style: "stroustrup" -*-
+ * $Id$
+ *
+ * hsencode.c -- Command-line tool to generate combined encoded form 
    
    Copyright (C) 2000 by Martin Pool.
 
@@ -95,6 +96,10 @@ int main(int argc, char *argv[])
 	  _hs_fatal("Failed to encode: %s\n", strerror(errno));
 	  exit(1);
      }
+
+     hs_filebuf_close(ltfb);
+     hs_filebuf_close(sigfb);
+     hs_filebuf_close(newfb);
 
      return 0;
 }
