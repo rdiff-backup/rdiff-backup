@@ -14,7 +14,7 @@ else:
 
 base = "rdiff-backup-%s" % (Version,)
 tarfile = base + ".tar.gz"
-rpmbase = base + "-0.fdr.3" # Fedora suffix, with release number 1
+rpmbase = base + "-0.fdr.4" # Fedora suffix, with release number 4
 i386_rpm = rpmbase + ".i386.rpm"
 source_rpm = rpmbase + ".src.rpm"
 
