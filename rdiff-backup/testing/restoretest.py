@@ -1,7 +1,8 @@
 import unittest
 
 execfile("commontest.py")
-rbexec("restore.py")
+rbexec("main.py")
+Log.setverbosity(7)
 
 
 lc = Globals.local_connection
@@ -26,12 +27,15 @@ class RestoreTest(unittest.TestCase):
 		rpbase = RPath(lc, self.prefix + basename)
 		rptarget = RPath(lc, "testfiles/outfile")
 
-		if rptarget.lstat(): rptarget.delete()
 		for pair in tuples:
 			print "Processing file " + pair[0].path
+			if rptarget.lstat(): rptarget.delete()
 			rest_time = Time.stringtotime(pair[0].getinctime())
-			Restore.RestoreFile(rest_time, rpbase, (), incs, rptarget)
+			sorted_incs = Restore.sortincseq(rest_time, incs)
+			Restore.RestoreFile(rest_time, rpbase, (), sorted_incs, rptarget)
+			rptarget.setdata()
 			if not rptarget.lstat(): assert not pair[1].lstat()
+			elif not pair[1].lstat(): assert not rptarget.lstat()
 			else:
 				assert RPath.cmp(rptarget, pair[1]), \
 					   "%s %s" % (rptarget.path, pair[1].path)
@@ -39,9 +43,56 @@ class RestoreTest(unittest.TestCase):
 					   "%s %s" % (rptarget.path, pair[1].path)
 				rptarget.delete()
 
+	def testsortincseq(self):
+		"""Test the Restore.sortincseq function
+
+		This test just makes sure that it comes up with the right
+		number of increments for each base name - given a list of
+		increments, we should eventually get sorted sequences that
+		end in each one (each one will be the last increment once).
+
+		"""
+		for basename in ['ocaml', 'mf']:
+			tuples, incs = self.maketesttuples(basename)
+			completed_dict = {}
+			for i in range(len(tuples)):
+				pair = tuples[i]
+				rest_time = Time.stringtotime(pair[0].getinctime())
+				sorted_incs = Restore.sortincseq(rest_time, incs)
+				key = sorted_incs[-1].path
+				assert not completed_dict.has_key(key)
+				completed_dict[key] = 1
+			for inc in incs: assert completed_dict[inc.path] == 1
+
+
 	def testRestorefiles(self):
 		"""Testing restoration of files one at a time"""
 		map(self.restoreonefiletest, ["ocaml", "mf"])
-		
+
+	def testRestoreDir(self):
+		"""Test restoring from a real backup set"""
+		Myrm("testfiles/output")
+		InternalRestore(1, 1, "testfiles/restoretest3",
+						"testfiles/output", 20000)
+
+		src_rp = RPath(Globals.local_connection, "testfiles/increment2")
+		restore_rp = RPath(Globals.local_connection, "testfiles/output")
+		assert CompareRecursive(src_rp, restore_rp)
+
+	def testRestoreCorrupt(self):
+		"""Test restoring a partially corrupt archive
+
+		The problem here is that a directory is missing from what is
+		to be restored, but because the previous backup was aborted in
+		the middle, some of the files in that directory weren't marked
+		as .missing.
+
+		"""
+		Myrm("testfiles/output")
+		InternalRestore(1, 1, "testfiles/restoretest4", "testfiles/output",
+						10000)
+		assert os.lstat("testfiles/output")
+		self.assertRaises(OSError, os.lstat, "testfiles/output/tmp")
+		self.assertRaises(OSError, os.lstat, "testfiles/output/rdiff-backup")
 
 if __name__ == "__main__": unittest.main()

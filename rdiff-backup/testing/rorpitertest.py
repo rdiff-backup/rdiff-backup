@@ -70,17 +70,11 @@ class RORPIterTest(unittest.TestCase):
 
 	def compare_no_times(self, src_rp, dest_rp):
 		"""Compare but disregard directories attributes"""
-		dsiter1, dsiter2 = map(DestructiveStepping.Iterate_with_Finalizer,
-							   [src_rp, dest_rp], [1, None])
-
 		def equal(src_rorp, dest_rorp):
 			return ((src_rorp.isdir() and dest_rorp.isdir()) or
 					src_rorp == dest_rorp)
 
-		result = Iter.equal(dsiter1, dsiter2, 1, equal)
-		for i in dsiter1: pass # make sure all files processed anyway
-		for i in dsiter2: pass
-		return result
+		return CompareRecursive(src_rp, dest_rp, None, equal)
 
 
 class IndexedTupleTest(unittest.TestCase):

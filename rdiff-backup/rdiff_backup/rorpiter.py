@@ -1,6 +1,6 @@
 execfile("robust.py")
 from __future__ import generators
-import tempfile
+import tempfile, UserList
 
 #######################################################################
 #
@@ -224,7 +224,7 @@ MakeStatic(RORPIter)
 
 
 
-class IndexedTuple:
+class IndexedTuple(UserList.UserList):
 	"""Like a tuple, but has .index
 
 	This is used by CollateIterator above, and can be passed to the
@@ -238,9 +238,15 @@ class IndexedTuple:
 	def __len__(self): return len(self.data)
 
 	def __getitem__(self, key):
-		"""This only works for numerical keys (faster that way)"""
+		"""This only works for numerical keys (easier this way)"""
 		return self.data[key]
 
+	def __lt__(self, other): return self.__cmp__(other) == -1
+	def __le__(self, other): return self.__cmp__(other) != 1
+	def __ne__(self, other): return not self.__eq__(other)
+	def __gt__(self, other): return self.__cmp__(other) == 1
+	def __ge__(self, other): return self.__cmp__(other) != -1
+	
 	def __cmp__(self, other):
 		assert isinstance(other, IndexedTuple)
 		if self.index < other.index: return -1
@@ -255,6 +261,4 @@ class IndexedTuple:
 		else: return None
 
 	def __str__(self):
-		assert len(self.data) == 2
-		return "(%s, %s).%s" % (str(self.data[0]), str(self.data[1]),
-								str(self.index))
+		return  "(%s).%s" % (", ".join(map(str, self.data)), self.index)

@@ -150,7 +150,7 @@ class Select:
 		finalize.getresult()
 
 	def Select(self, dsrp):
-		"""Run through the selection functions and return dominant value"""
+		"""Run through the selection functions and return dominant val 0/1/2"""
 		for sf in self.selection_functions:
 			result = sf(dsrp)
 			if result is not None: return result
@@ -186,7 +186,7 @@ class Select:
 																 1, arg[0]))
 				elif opt == "--include-regexp":
 					self.add_selection_func(self.regexp_get_sf(arg, 1))
-				else: assert 0, "Bad option %s" % opt
+				else: assert 0, "Bad selection option %s" % opt
 		except SelectError, e: self.parse_catch_error(e)
 
 		self.parse_last_excludes()
@@ -254,8 +254,8 @@ probably isn't what you meant.""" %
 		i = [0] # We have to put index in list because of stupid scoping rules
 
 		def selection_function(dsrp):
-			if i[0] > len(tuple_list): return inc_default
 			while 1:
+				if i[0] >= len(tuple_list): return None
 				include, move_on = \
 						 self.filelist_pair_match(dsrp, tuple_list[i[0]])
 				if move_on:
@@ -313,9 +313,9 @@ probably isn't what you meant.""" %
 	def filelist_pair_match(self, dsrp, pair):
 		"""Matches a filelist tuple against a dsrp
 
-		Returns a pair (include, move_on, definitive).  include is
-		None if the tuple doesn't match either way, and 0/1 if the
-		tuple excludes or includes the dsrp.
+		Returns a pair (include, move_on).  include is None if the
+		tuple doesn't match either way, and 0/1 if the tuple excludes
+		or includes the dsrp.
 
 		move_on is true if the tuple cannot match a later index, and
 		so we should move on to the next tuple in the index.

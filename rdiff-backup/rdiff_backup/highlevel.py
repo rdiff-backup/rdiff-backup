@@ -73,6 +73,9 @@ class HighLevel:
 		if not isinstance(target_base, DSRPath):
 			target_base = DSRPath(target_base.conn, target_base.base,
 								  target_base.index, target_base.data)
+		if not isinstance(mirror_base, DSRPath):
+			mirror_base = DSRPath(mirror_base.conn, mirror_base.base,
+								  mirror_base.index, mirror_base.data)
 		Restore.RestoreRecursive(rest_time, mirror_base, rel_index,
 								 baseinc_tup, target_base)
 
@@ -272,9 +275,9 @@ class HLDestinationStruct:
 				try: dsrp = cls.check_skip_error(error_checked, dsrp)
 				except StopIteration: break
 				SaveState.checkpoint_inc_backup(ITR, finalizer, dsrp)
+			cls.check_skip_error(ITR.getresult, dsrp)
+			cls.check_skip_error(finalizer.getresult, dsrp)
 		except: cls.handle_last_error(dsrp, finalizer, ITR)
-		ITR.getresult()
-		finalizer.getresult()
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
 		SaveState.checkpoint_remove()
 
@@ -288,6 +291,7 @@ class HLDestinationStruct:
 				 (exp[0] in [2,  # Means that a file is missing
 							 5,  # Reported by docv (see list)
 							 13, # Permission denied IOError
+							 20, # Means a directory changed to non-dir
 							 26] # Requested by Campbell (see list) -
                                  # happens on some NT systems
 				 ))):

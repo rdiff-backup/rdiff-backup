@@ -53,7 +53,8 @@ class Main:
 			elif opt == "--exclude-filelist":
 				self.select_opts.append((opt, (arg, sel_fl(arg))))
 			elif opt == "--exclude-filelist-stdin":
-				self.select_opts.append((opt, ("standard input", sys.stdin)))
+				self.select_opts.append(("--exclude-filelist",
+										 ("standard input", sys.stdin)))
 			elif opt == "--exclude-mirror":
 				self.select_mirror_opts.append(("--exclude", arg))
 			elif opt == "--exclude-regexp": self.select_opts.append((opt, arg))
@@ -62,7 +63,8 @@ class Main:
 			elif opt == "--include-filelist":
 				self.select_opts.append((opt, (arg, sel_fl(arg))))
 			elif opt == "--include-filelist-stdin":
-				self.select_opts.append((opt, ("standard input", sys.stdin)))
+				self.select_opts.append(("--include-filelist",
+										 ("standard input", sys.stdin)))
 			elif opt == "--include-regexp":
 				self.select_opts.append((opt, arg))
 			elif opt == "-l" or opt == "--list-increments":
@@ -125,7 +127,7 @@ class Main:
 		sys.exit(1)
 
 	def misc_setup(self, rps):
-		"""Set default change ownership flag, umask, Select objects"""
+		"""Set default change ownership flag, umask, relay regexps"""
 		if ((len(rps) == 2 and rps[1].conn.os.getuid() == 0) or
 			(len(rps) < 2 and os.getuid() == 0)):
 			# Allow change_ownership if destination connection is root
@@ -134,10 +136,9 @@ class Main:
 			for rp in rps: rp.setdata() # Update with userinfo
 
 		os.umask(077)
-		rps[0].conn.Globals.set_select(1, rps[0], self.select_opts)
-		if len(rps) == 2:
-			rps[1].conn.Globals.set_select(None, rps[1],
-										   self.select_mirror_opts)
+
+		# This is because I originally didn't think compiled regexps
+		# could be pickled, and so must be compiled on remote side.
 		Globals.postset_regexp('no_compression_regexp',
 							   Globals.no_compression_regexp_string)
 
@@ -190,9 +191,10 @@ rdiff-backup with the --force option if you want to mirror anyway.""" %
 	def Backup(self, rpin, rpout):
 		"""Backup, possibly incrementally, src_path to dest_path."""
 		SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
+		self.backup_init_select(rpin, rpout)
 		self.backup_init_dirs(rpin, rpout)
 		Time.setcurtime(Globals.current_time)
-		RSI = Resume.ResumeCheck()
+		RSI = Globals.backup_writer.Resume.ResumeCheck()
 		if self.prevtime:
 			Time.setprevtime(self.prevtime)
 			SaveState.init_filenames(1)
@@ -201,6 +203,11 @@ rdiff-backup with the --force option if you want to mirror anyway.""" %
 			SaveState.init_filenames(None)
 			HighLevel.Mirror(rpin, rpout, 1, RSI)
 		self.backup_touch_curmirror(rpin, rpout)
+
+	def backup_init_select(self, rpin, rpout):
+		"""Create Select objects on source and dest connections"""
+		rpin.conn.Globals.set_select(1, rpin, self.select_opts)
+		rpout.conn.Globals.set_select(None, rpout, self.select_mirror_opts)
 
 	def backup_init_dirs(self, rpin, rpout):
 		"""Make sure rpin and rpout are valid, init data dir and logging"""
@@ -223,8 +230,11 @@ rdiff-backup with the --force option if you want to mirror anyway.""" %
 													 "increments"))
 		self.prevtime = self.backup_get_mirrortime()
 
-		if rpout.lstat() and not self.datadir.lstat() and not self.force:
-			Log.FatalError(
+		if rpout.lstat():
+			if rpout.isdir() and not rpout.listdir(): # rpout is empty dir
+				rpout.chmod(0700) # just make sure permissions aren't too lax
+			elif not self.datadir.lstat() and not self.force:
+				Log.FatalError(
 """Destination directory %s exists, but does not look like a
 rdiff-backup directory.  Running rdiff-backup like this could mess up
 what is currently in it.  If you want to overwrite it, run
@@ -292,6 +302,7 @@ went wrong during your last backup?  Using """ + mirrorrps[-1].path, 2)
 		"""Main restoring function - take src_path to dest_path"""
 		Log("Starting Restore", 5)
 		rpin, rpout = self.restore_check_paths(src_rp, dest_rp)
+		self.restore_init_select(rpin, rpout)
 		inc_tup = self.restore_get_inctup(rpin)
 		mirror_base, mirror_rel_index = self.restore_get_mirror(rpin)
 		rtime = Time.stringtotime(rpin.getinctime())
@@ -314,6 +325,17 @@ Try restoring from an increment file (the filenames look like
 			Log.FatalError("Restore target %s already exists.  "
 						   "Will not overwrite." % rpout.path)
 		return rpin, rpout
+
+	def restore_init_select(self, rpin, rpout):
+		"""Initialize Select
+
+		Unlike the backup selections, here they are on the local
+		connection, because the backup operation is pipelined in a way
+		the restore operation isn't.
+
+		"""
+		Globals.set_select(1, rpin, self.select_mirror_opts) 
+		Globals.set_select(None, rpout, self.select_opts)
 
 	def restore_get_inctup(self, rpin):
 		"""Return increment tuple (incrp, list of incs)"""

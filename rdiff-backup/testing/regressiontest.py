@@ -192,21 +192,26 @@ class IncrementTest2(PathSetter):
 		"""After setting connections, etc., run actual test using this"""
 		Time.setcurtime()
 		SaveState.init_filenames(1)
+
+		_get_main().backup_init_select(Local.inc1rp, Local.rpout)
 		HighLevel.Mirror(self.inc1rp, self.rpout)
 		assert CompareRecursive(Local.inc1rp, Local.rpout)
 
 		Time.setcurtime()
 		Time.setprevtime(999500000)
+		_get_main().backup_init_select(self.inc2rp, self.rpout)
 		HighLevel.Mirror_and_increment(self.inc2rp, self.rpout, self.rpout_inc)
 		assert CompareRecursive(Local.inc2rp, Local.rpout)
 
 		Time.setcurtime()
 		Time.setprevtime(999510000)
+		_get_main().backup_init_select(self.inc3rp, self.rpout)
 		HighLevel.Mirror_and_increment(self.inc3rp, self.rpout, self.rpout_inc)
 		assert CompareRecursive(Local.inc3rp, Local.rpout)
 
 		Time.setcurtime()
 		Time.setprevtime(999520000)
+		_get_main().backup_init_select(self.inc4rp, self.rpout)
 		HighLevel.Mirror_and_increment(self.inc4rp, self.rpout, self.rpout_inc)
 		assert CompareRecursive(Local.inc4rp, Local.rpout)
 		
@@ -415,6 +420,7 @@ class MirrorTest(PathSetter):
 	def Mirror(self, rpin, rpout, checkpoint = 1):
 		"""Like HighLevel.Mirror, but run misc_setup first"""
 		_get_main().misc_setup([rpin, rpout])
+		_get_main().backup_init_select(rpin, rpout)
 		HighLevel.Mirror(rpin, rpout, checkpoint)
 
 if __name__ == "__main__": unittest.main()
