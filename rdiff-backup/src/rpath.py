@@ -471,11 +471,10 @@ class RPath(RORPath):
 
 	def _getdevnums(self):
 		"""Return tuple for special file (major, minor)"""
-		assert self.conn is Globals.local_connection
 		if Globals.exclude_device_files:
 			# No point in finding numbers because it will be excluded anyway
 			return ()
-		s = os.lstat(self.path).st_rdev
+		s = self.conn.reval("lambda path: os.lstat(path).st_rdev", self.path)
 		return (s >> 8, s & 0xff)
 
 	def chmod(self, permissions):
