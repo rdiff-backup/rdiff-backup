@@ -15,6 +15,10 @@ Fix for restoring certain directories when not run as root.
 Now when determining group permissions check supplementary groups as
 well as main group.  (Bug report by Ryan Castle.)
 
+Fixed bug which could cause crash when backing up 3 or more hard
+linked files and the first gets deleted during processing.  (Thanks to
+Dean Gaudet for bug report.)
+
 
 New in v0.13.4 (2004/01/31)
 ---------------------------
