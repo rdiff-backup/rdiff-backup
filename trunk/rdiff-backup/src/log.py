@@ -145,11 +145,14 @@ class Logger:
 		Main.cleanup()
 		sys.exit(1)
 
-	def exception_to_string(self):
-		"""Return string version of current exception"""
+	def exception_to_string(self, arglist = []):
+		"""Return string version of current exception plus what's in arglist"""
 		type, value, tb = sys.exc_info()
-		return ("Exception '%s' raised of class '%s':\n%s" %
-				(value, type, "".join(traceback.format_tb(tb))))
+		s = ("Exception '%s' raised of class '%s':\n%s" %
+			 (value, type, "".join(traceback.format_tb(tb))))
+		if arglist:
+			s += "__Arguments:\n" + "\n".join(map(str, arglist))
+		return s
 
 	def exception(self, only_terminal = 0, verbosity = 5):
 		"""Log an exception and traceback
