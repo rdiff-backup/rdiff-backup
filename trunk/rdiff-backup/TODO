@@ -1,10 +1,10 @@
 Make restores tolerant of missing files
 
-Look into hard linking on windows
-
 Added --include/--exclude options for restoring
 
 ---------[ Medium term ]---------------------------------------
+
+Look into security.py code, do some sort of security audit.
 
 Don't require increments.<date>.dir files to be setuid/setgid, or
 don't even have the backup files. (Andrew Bressen)
