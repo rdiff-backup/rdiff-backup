@@ -14,7 +14,7 @@ cmds=$tmpdir/cmds
 expect=$tmpdir/expect
 port=$tmpdir/port
 
-run_test cat $srcdir/libhsync.a >$from
+run_test cat $builddir/libhsync.a >$from
 
 # NB: Can't use the `forward' pattern with map_copy because it
 # discards buffered data and can't step backwards even to the previous
