@@ -57,12 +57,17 @@ static hs_result hs_sig_s_generate(hs_job_t *);
  */
 static hs_result hs_sig_s_header(hs_job_t *job)
 {
-        hs_squirt_n32(job->stream, HS_SIG_MAGIC);
-        job->statefn = hs_sig_s_generate;
+    hs_squirt_n32(job->stream, HS_SIG_MAGIC);
+    hs_trace("sent header magic %#x", HS_SIG_MAGIC);
+    
+    hs_squirt_n32(job->stream, job->block_len);
+    hs_trace("sent block length %d", job->block_len);
 
-        hs_trace("send header magic %#x", HS_SIG_MAGIC);
-
-        return HS_RUNNING;
+    hs_squirt_n32(job->stream, job->strong_sum_len);
+    hs_trace("sent strong sum length length %d", job->strong_sum_len);
+    
+    job->statefn = hs_sig_s_generate;
+    return HS_RUNNING;
 }
 
 
@@ -124,18 +129,18 @@ static hs_result hs_sig_s_generate(hs_job_t *job)
 hs_job_t * hs_sig_begin(hs_stream_t *stream,
                         size_t new_block_len, size_t strong_sum_len)
 {
-        hs_job_t *job;
+    hs_job_t *job;
 
-        job = hs_job_new(stream);
+    job = hs_job_new(stream);
 
-        job->block_len = new_block_len;
+    job->block_len = new_block_len;
 
-        assert(strong_sum_len > 0 && strong_sum_len <= HS_MD4_LENGTH);
-        job->strong_sum_len = strong_sum_len;
+    assert(strong_sum_len > 0 && strong_sum_len <= HS_MD4_LENGTH);
+    job->strong_sum_len = strong_sum_len;
 
-        job->statefn = hs_sig_s_header;
+    job->statefn = hs_sig_s_header;
 
-        return job;
+    return job;
 }
 
 
