@@ -3,7 +3,7 @@
 Version: $version
 Summary: Convenient and transparent local/remote incremental mirror/backup
 Name: rdiff-backup
-Release: 1
+Release: 2
 URL: http://www.stanford.edu/~bescoto/rdiff-backup/
 Source: %{name}-%{version}.tar.gz
 Copyright: GPL
