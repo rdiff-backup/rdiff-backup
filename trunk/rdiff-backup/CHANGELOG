@@ -1,4 +1,4 @@
-New in v0.11.0 (2002/09/30)
+New in v0.11.0 (2002/10/05)
 ---------------------------
 
 If get a socket error from trying to create a socket whose name is too
@@ -9,8 +9,8 @@ Added --exclude-special-files switch, which excludes fifos, symlinks,
 sockets, and device files.
 
 --windows-mode is now short for --windows-time-format --chars-to-quote
-A-Z: --exclude-special-files.  Thanks to Paul-Erik Törrönen for some
-helpful windows info.
+A-Z: --no-hard-links --exclude-special-files.  Thanks to Paul-Erik
+Törrönen for some helpful windows info.
 
 Multiple --include and --exclude statements can now be given in a
 single file.  See the documentation on
@@ -34,6 +34,9 @@ was specified with a trailing backslash.
 
 Added a bit more logging so it should be apparent which file was being
 processed when an error occurs (thanks to Gerd Knops for suggestion).
+
+Fixed bug when using --chars-to-quote and directory deleted that has
+quoted characters in it.
 
 
 New in v0.10.1 (2002/09/16)

@@ -356,10 +356,11 @@ Print the current version and exit
 .TP
 .B --windows-mode
 This option is short for "--chars to quote A-Z: --windows-time-format
---exclude-special-files" and is appropriate when backing a normal unix
-file system to one that doesn't allow colons in filenames and is not
-case sensitive.  --windows-mode should not be necessary when backing
-up one windows file system to another, although --windows-time-format
+--no-hard-links --exclude-special-files" and is appropriate when
+backing a normal unix file system to one that doesn't allow colons in
+filenames, is not case sensitive, and cannot store special files or
+hard links.  --windows-mode should not be necessary when backing up
+one windows file system to another, although --windows-time-format
 would still be required.
 .TP
 .B --windows-time-format
