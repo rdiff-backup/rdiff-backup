@@ -20,12 +20,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#define DEFAULT_SUM_LENGTH 8
-
-/* We should make this something other than zero to improve the checksum
-   algorithm: tridge suggests a prime number. */
-#define CHAR_OFFSET 31
-
 typedef uint32_t hs_weak_sum_t;
 typedef unsigned char hs_strong_sum_t[HS_MD4_LENGTH];
 
