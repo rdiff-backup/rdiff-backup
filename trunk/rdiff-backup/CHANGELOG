@@ -1,7 +1,7 @@
-New in v0.7.5 (2002/06/01)
+New in v0.7.5 (2002/05/21)
 --------------------------
 
-Fixed particularly bad resuming bug.
+Fixed resuming bug.
 
 After a bit of empirical testing, increased Globals.conn_bufsize and
 enabled ssh compression by default (and also added
@@ -13,6 +13,13 @@ Fixed bug noticed by Dean Gaudet in processing of
 remote.
 
 Fixed --include error reporting bug reported by Ben Edwards.
+
+Small change so 'door' files and other unknown file types will be
+ignored.
+
+Fixed bug noticed by Dean Gaudet where, unless the
+--change-source-perms option is specified, rdiff-backup wouldn't even
+attempt to open files lacking ownership permissions.
 
 
 New in v0.7.4 (2002/05/11)

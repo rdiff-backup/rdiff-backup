@@ -49,7 +49,9 @@ Force backup mode even if first argument appears to be an increment file.
 If this option is set, rdiff-backup will try to change the mode of any
 unreadable files or unreadable/unexecutable directories in the source
 directory so it can back them up.  It will then restore their original
-permissions and mtimes afterwards.
+permissions and mtimes afterwards.  This option should generally not
+be used if rdiff-backup has root access to the source directory, as
+root can access files regardless of their permissions.
 .TP
 .BI "--chars-to-quote " chars
 If this option is set, any characters in
