@@ -1,7 +1,7 @@
 import unittest, types, tempfile, os, sys
 from commontest import *
 from rdiff_backup.connection import *
-from rdiff_backup import Globals, rpath
+from rdiff_backup import Globals, rpath, FilenameMapping
 
 class LocalConnectionTest(unittest.TestCase):
 	"""Test the dummy connection"""
@@ -143,6 +143,15 @@ class PipeConnectionTest(unittest.TestCase):
 						 "testfiles/various_file_types/regular_file")
 		assert self.conn.reval("lambda rp: rp.data", rp) == rp.data
 		assert self.conn.reval("lambda rp: rp.conn is Globals.local_connection", rp)
+
+	def testQuotedRPaths(self):
+		"""Test transmission of quoted rpaths"""
+		qrp = FilenameMapping.QuotedRPath(self.conn,
+						   "testfiles/various_file_types/regular_file")
+		assert self.conn.reval("lambda qrp: qrp.data", qrp) == qrp.data
+		assert qrp.isreg(), qrp
+		qrp_class_str = self.conn.reval("lambda qrp: str(qrp.__class__)", qrp)
+		assert qrp_class_str.find("QuotedRPath") > -1, qrp_class_str
 
 	def testExceptions(self):
 		"""Test exceptional results"""
