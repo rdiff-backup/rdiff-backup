@@ -91,7 +91,7 @@ PATH=$builddir:$srcdir:$PATH
 export PATH
 
 testdir=$srcdir/$test_name
-tmpdir=$builddir/tmp-$test_name
+tmpdir=$builddir/`echo $test_name | sed -e s/^test-/tmp-/`
 [ -d $tmpdir ] || mkdir $tmpdir || exit 2
 
 test_skipped () {
