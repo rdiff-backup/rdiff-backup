@@ -1,8 +1,9 @@
                                                   -*- indented-text -*-
 $Id$
 
- * Changed popt library to proper automake conditional recursive
-   SUBDIR instead of an EXTRA_LIBRARIES in a seperate dir.
+ * Change popt library to proper automake conditional recursive
+   SUBDIR instead of an EXTRA_LIBRARIES in a seperate dir (or just
+   remove it from the distribution and make the library a dependency).
    
  * Create library for autoconf replacement functions
  
