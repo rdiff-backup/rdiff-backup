@@ -197,7 +197,8 @@ class Select:
 
 		if self.quoting_on:
 			for subdir in FilenameMapping.get_quoted_dir_children(dsrpath):
-				for dsrp in rec_func(subdir, rec_func, sel_func): yield dsrp
+				for dsrp in rec_func(subdir, rec_func, sel_func):
+					yield dsrp
 		else:
 			for filename in Robust.listrp(dsrpath):
 				new_dsrp = Robust.check_common_error(
