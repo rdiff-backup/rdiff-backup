@@ -9,7 +9,10 @@ sys.argv.append("build")
 setup(name="CModule",
 	  version="0.9.0",
 	  description="rdiff-backup's C component",
-	  ext_modules=[Extension("C", ["cmodule.c"]),
+	  ext_modules=[Extension("C", ["cmodule.c"],
+							 define_macros=[("_LARGEFILE_SOURCE", 1),
+											("_FILE_OFFSET_BITS", 64),
+											("_LARGE_FILES", 1)]),
 				   Extension("_librsync",
 							 ["_librsyncmodule.c"],
 							 libraries=["rsync"])])
