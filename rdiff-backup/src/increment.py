@@ -79,28 +79,28 @@ class Inc:
 			RPath.copy_attribs(mirrordir, dirsign)
 		return RobustAction(lambda: None, final, dirsign.delete)
 
+	def get_inc(rp, time, typestr):
+		"""Return increment like rp but with time and typestr suffixes"""
+		addtostr = lambda s: "%s.%s.%s" % (s, Time.timetostring(time), typestr)
+		if rp.index:
+			incrp = rp.__class__(rp.conn, rp.base, rp.index[:-1] +
+								 (addtostr(rp.index[-1]),))
+		else: incrp = rp.__class__(rp.conn, addtostr(rp.base), rp.index)
+		if Globals.quoting_enabled: incrp.quote_path()
+		return incrp
+
 	def get_inc_ext(rp, typestr):
-		"""Return RPath/DSRPath like rp but with inc/time extension
+		"""Return increment with specified type and correct time
 
 		If the file exists, then probably a previous backup has been
 		aborted.  We then keep asking FindTime to get a time later
 		than the one that already has an inc file.
 
 		"""
-		def get_newinc(timestr):
-			"""Get new increment rp with given time suffix"""
-			addtostr = lambda s: "%s.%s.%s" % (s, timestr, typestr)
-			if rp.index:
-				incrp = rp.__class__(rp.conn, rp.base, rp.index[:-1] +
-									 (addtostr(rp.index[-1]),))
-			else: incrp = rp.__class__(rp.conn, addtostr(rp.base), rp.index)
-			if Globals.quoting_enabled: incrp.quote_path()
-			return incrp
-			
 		inctime = 0
 		while 1:
 			inctime = Resume.FindTime(rp.index, inctime)
-			incrp = get_newinc(Time.timetostring(inctime))
+			incrp = Inc.get_inc(rp, inctime, typestr)
 			if not incrp.lstat(): break
 		Inc._inc_file = incrp
 		return incrp
@@ -109,7 +109,7 @@ MakeStatic(Inc)
 
 
 class IncrementITR(StatsITR):
-	"""Patch and increment iterator of increment triples
+	"""Patch and increment mirror directory
 
 	This has to be an ITR because directories that have files in them
 	changed are flagged with an increment marker.  There are four
@@ -208,7 +208,10 @@ class IncrementITR(StatsITR):
 
 	def end_process(self):
 		"""Do final work when leaving a tree (directory)"""
-		diff_rorp, dsrp, incpref = self.diff_rorp, self.dsrp, self.incpref
+		try: diff_rorp, dsrp, incpref = self.diff_rorp, self.dsrp, self.incpref
+		except AttributeError: # This weren't set because of some error
+			return
+
 		if self.mirror_isdirectory:
 			if not diff_rorp and not self.changed: return
 
@@ -224,8 +227,9 @@ class IncrementITR(StatsITR):
 
 		self.end_stats(diff_rorp, dsrp, Inc._inc_file)
 		if self.incpref.isdir() and (self.mirror_isdirectory or dsrp.isdir()):
-			self.write_stats_to_rp(Inc.get_inc_ext(
-				self.incpref.append("directory_statistics"), "data"))
+			self.write_stats_to_rp(Inc.get_inc(
+				self.incpref.append("directory_statistics"),
+				Time.curtime, "data"))
 
 	def branch_process(self, subinstance):
 		"""Update statistics, and the has_changed flag if change in branch"""
@@ -233,3 +237,37 @@ class IncrementITR(StatsITR):
 		self.add_file_stats(subinstance)
 
 
+class MirrorITR(StatsITR):
+	"""Like IncrementITR, but only patch mirror directory, don't increment"""
+	def __init__(self, inc_rpath):
+		"""Set inc_rpath, an rpath of the base of the inc tree"""
+		self.inc_rpath = inc_rpath
+		StatsITR.__init__(self, inc_rpath)
+
+	def start_process(self, index, diff_rorp, mirror_dsrp):
+		"""Initialize statistics, do actual writing to mirror"""
+		self.start_stats(mirror_dsrp)
+		if diff_rorp and not diff_rorp.isplaceholder():
+			RORPIter.patchonce_action(None, mirror_dsrp, diff_rorp).execute()
+
+		self.incpref = self.inc_rpath.new_index(index)
+		if mirror_dsrp.isdir() and not self.incpref.lstat():
+			self.incpref.mkdir() # holds the statistics files
+
+		self.diff_rorp, self.mirror_dsrp = diff_rorp, mirror_dsrp
+
+	def end_process(self):
+		"""Update statistics when leaving"""
+		try: diff_rorp, mirror_dsrp = self.diff_rorp, self.mirror_dsrp
+		except AttributeError: # Some error above prevented these being set
+			return
+		
+		self.end_stats(self.diff_rorp, self.mirror_dsrp)
+		if self.incpref.isdir():
+			self.write_stats_to_rp(Inc.get_inc(
+				self.incpref.append("directory_statistics"),
+				Time.curtime, "data"))
+
+	def branch_process(self, subinstance):
+		"""Update statistics with subdirectory results"""
+		self.add_file_stats(subinstance)

@@ -38,21 +38,21 @@ class StatsObj:
 		"""Return string printing out statistics"""
 		timelist = []
 		if self.StartTime is not None:
-			timelist.append("StartTime %s (%s)" %
+			timelist.append("StartTime %s (%s)\n" %
 						(self.StartTime, Time.timetopretty(self.StartTime)))
 		if self.EndTime is not None:
-			timelist.append("EndTime %s (%s)" %
+			timelist.append("EndTime %s (%s)\n" %
 							(self.EndTime, Time.timetopretty(self.EndTime)))
 		if self.StartTime is not None and self.EndTime is not None:
 			if self.ElapsedTime is None:
 				self.ElapsedTime = self.EndTime - self.StartTime
-			timelist.append("ElapsedTime %s (%s)" %
+			timelist.append("ElapsedTime %s (%s)\n" %
 				   (self.ElapsedTime, Time.inttopretty(self.ElapsedTime)))
 
-		filelist = ["%s %s" % (attr, self.get_stat(attr))
+		filelist = ["%s %s\n" % (attr, self.get_stat(attr))
 					for attr in self.stat_file_attrs
 					if self.get_stat(attr) is not None]
-		return "\n".join(timelist + filelist)
+		return "".join(timelist + filelist)
 
 	def init_stats_from_string(self, s):
 		"""Initialize attributes from string, return self for convenience"""
@@ -157,7 +157,7 @@ class StatsITR(IterTreeReducer, StatsObj):
 				self.DeletedFiles += 1
 				self.DeletedFileSize += self.mirror_base_size
 				self.IncrementFileSize += inc_rp and inc_rp.getsize() or 0
-			else: assert None # One of before and after should exist
+
 
 	def add_file_stats(self, subinstance):
 		"""Add all file statistics from subinstance to current totals"""

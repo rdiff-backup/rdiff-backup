@@ -82,7 +82,7 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 	_get_main().cleanup()
 
 def InternalMirror(source_local, dest_local, src_dir, dest_dir,
-				   checkpointing = None):
+				   write_data = None):
 	"""Mirror src to dest internally, like InternalBackup"""
 	remote_schema = '%s'
 
@@ -97,15 +97,18 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir,
 	_get_main().misc_setup([rpin, rpout])
 	_get_main().backup_init_select(rpin, rpout)
 	if not rpout.lstat(): rpout.mkdir()
-	if checkpointing: # use rdiff-backup-data dir to checkpoint
+	if write_data: # use rdiff-backup-data dir to checkpoint
 		data_dir = rpout.append("rdiff-backup-data")
 		if not data_dir.lstat(): data_dir.mkdir()
 		SetConnections.UpdateGlobal('rbdir', data_dir)
 	else: # just use root directory to hold checkpoints
 		SetConnections.UpdateGlobal('rbdir', rpout)
 	SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
-	SaveState.init_filenames(None)
-	HighLevel.Mirror(rpin, rpout, checkpointing, None, write_finaldata = None)
+
+	if write_data:
+		SaveState.init_filenames()
+		HighLevel.Mirror(rpin, rpout, Globals.rbdir.append("increments"))
+	else: HighLevel.Mirror(rpin, rpout)
 	_get_main().cleanup()
 
 def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):

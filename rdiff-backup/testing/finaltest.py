@@ -150,7 +150,7 @@ class PathSetter(unittest.TestCase):
 		assert len(self.getinc_paths("nochange.",
 			  "testfiles/output/rdiff-backup-data/increments")) == 0
 		assert len(self.getinc_paths("",
-			"testfiles/output/rdiff-backup-data/increments/nochange")) == 0
+			"testfiles/output/rdiff-backup-data/increments/nochange")) == 1
 
 	def getinc_paths(self, basename, directory):
 		"""Return increment.______.dir paths"""
