@@ -26,6 +26,15 @@
                                */
 
 
+/*
+ * TODO: As output is produced, accumulate the MD4 checksum of the
+ * output.  Then if we find a CHECKSUM command we can check it's
+ * contents against the output.
+ *
+ * TODO: Implement COPY commands.
+ */
+
+
 #include "config.h"
 
 #include <assert.h>
@@ -63,6 +72,9 @@ struct hs_patch_job {
          * of expected parameters. */
         int op, param1, param2;
         hs_prototab_ent_t const *cmd;
+
+	/* MD4 checksum of all output data to date. */
+	hs_mdfour_t	output_md4;
 };
 
 
@@ -133,7 +145,8 @@ static enum hs_result _hs_patch_s_params(hs_patch_job_t *job)
         assert(result == HS_OK);
 
         if (job->cmd->len_2) {
-                result = _hs_suck_netint(job->stream, job->cmd->len_2, &job->param2);
+                result = _hs_suck_netint(job->stream, job->cmd->len_2, 
+					 &job->param2);
                 assert(result == HS_OK);
         }
 
@@ -235,6 +248,8 @@ hs_patch_job_t *hs_patch_begin(hs_stream_t *stream, hs_copy_cb *copy_cb,
         
         job->copy_cb = copy_cb;
         job->copy_arg = copy_arg;
+
+	hs_mdfour_begin(&job->output_md4);
 
         return job;
 }
