@@ -38,8 +38,8 @@ char const hs_libhsync_version[] =
 /*!
  * \hideinitializer
  * \brief Contains English-language licence and non-warranty text for the library.
- * 
- * \remark
+ */
+/*
  * This little declaration is dedicated to Stephen Kapp and Reaper
  * Technologies, who by all appearances redistributed a modified but
  * unacknowledged version of GNU Keyring in violation of the licence
