@@ -1,12 +1,109 @@
                                                   -*- indented-text -*- 
 $Id$
 
+ * Non-blocking IO
+
+   * Rewrite decoder to use mapptr for input.
+
+   * Somehow do nonblocking output.  Presumably we want a different
+     callback to say when we're ready to do output, but also to
+     refrain from input when there's no more space.
+
+   * Also, this should interoperate smoothly with zlib.
+
+ * Delete rubbish modules from CVS
+
+ * Encoding implementation
+
+   * Join up copy commands through the copyq if this is not done yet.
+
+   * Join up signature commands
+
+ * Encoding algorithm
+
+   * Self-referential copy commands
+
+     Suppose we have a file with repeating blocks.  The gdiff format
+     allows for COPY commands to extend into the *output* file so that
+     they can easily point this out.  By doing this, they get
+     compression as well as differencing.
+
+     It'd be pretty simple to implement this, I think: as we produce
+     output, we'd also generate checksums (using the search block
+     size), and add them to the sum set.  Then matches will fall out
+     automatically, although we might have to specially allow for
+     short blocks.
+
+     However, I don't see many files which have repeated 1kB chunks,
+     so I don't know if it would be worthwhile.
+
+   * Extended files
+
+     Suppose the new file just has data added to the end.  At the
+     moment, we'll match everything but the last block of the old
+     file.  It won't match, because at the moment the search block
+     size is only reduced at the end of the *new* file.  This is a
+     little inefficient, because ideally we'd know to look for the
+     last block using the shortened length.
+
+     This is a little hard to implement, though perhaps not
+     impossible.  The current rolling search algorithm can only look
+     for one block size at any time.  Can we do better?  Can we look
+     for all block lengths that could match anything?
+
+     Remember also that at the moment we don't send the block length
+     in the signature; it's implied by the length of the new block
+     that it matches.  This is kind of cute, and importantly helps
+     reduce the length of the signature.
+
+   * State-machine searching
+
+     Building a state machine from a regular expression is a brilliant
+     idea.  (I think `The Practice of Programming' walks through the
+     construction of this at a fairly simple level.)
+
+     In particular, we can search for any of a large number of
+     alternatives in a very efficient way, with much less effort than
+     it would take to search for each the hard way.  Remember also the
+     string-searching algorithms and how much time they can take.
+
+     I wonder if we can use similar principles here rather than the
+     current simple rolling-sum mechanism?  Could it let us match
+     variable-length signatures?
+
+   * Cross-file matches
+
+     If the downstream server had many similar URLs, it might be nice
+     if it could draw on all of them as a basis.  At the moment
+     there's no way to express this, and I think the work of sending
+     up signatures for all of them may be too hard.
+
+     Better just to make sure we choose the best basis if there is
+     none present.  Perhaps this needs to weigh several factors.
+
+     One factor might be that larger files are better because they're
+     more likely to have a match.  I'm not sure if that's very strong,
+     because they'll just bloat the request.  Another is that more
+     recent files might be more useful.
+
+ * Support gzip compression of the difference stream.  Does this
+   belong here, or should it be in the client and libhsync just have
+   an interface that lets it cleanly plug in?
+
  * Licensing
 
    * Will the GNU Lesser GPL work?  Specifically, will it be a problem
      in distributing this with Mozilla or Apache?  
 
  * Checksums
+
+   * Do we really need to require that signatures arrive after the
+     data they describe?  Does it make sense in HTTP to resume an
+     interrupted transfer?
+
+     I hope we can do this.  If we can't, however, then we should
+     relax this constraint and allow signatures to arrive before the
+     data they describe.  (Really?  Do we care?)
 
    * Allow variable-length checksums in the signature; the signature
      will have to describe the length of the sums and we must compare
@@ -16,9 +113,11 @@ $Id$
 
    * Test files >2GB, >4GB.  Presumably these must be done in streams
      so that the disk requirements to run the test suite are not too
-     ridiculous. 
+     ridiculous.  I wonder if it will take too long to run these
+     tests?  Probably, but perhaps we can afford to run just one
+     carefully-chosen test.
 
- * Web site in Latte
+ * Web site in Latte?
 
  * Use slprintf not strnprintf, etc.
 
@@ -96,5 +195,5 @@ $Id$
    * Tux only knows what portability assumptions we've made.
 
    * In particular, running this on a risc box would be interesting.
-     Endianness?
-
+     Endianness?  We now have us4.samba.org which is a big SGI MIPS
+     machine, and so it will do pretty well as a test.
