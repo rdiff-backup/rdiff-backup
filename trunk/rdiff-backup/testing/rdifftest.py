@@ -1,7 +1,7 @@
 import unittest, random
 
 execfile("commontest.py")
-rbexec("destructive_stepping.py")
+rbexec("selection.py")
 
 
 Log.setverbosity(6)

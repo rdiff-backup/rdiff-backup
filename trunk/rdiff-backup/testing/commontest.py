@@ -73,8 +73,7 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 				   % (SourceDir, dest_dir)
 
 	rpin, rpout = SetConnections.InitRPs([src_dir, dest_dir], remote_schema)
-	Globals.postset_regexp('no_compression_regexp',
-						   Globals.no_compression_regexp_string, re.I)
+	_get_main().misc_setup([rpin, rpout])
 	_get_main().Backup(rpin, rpout)
 	_get_main().cleanup()
 
@@ -91,11 +90,11 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir,
 				   % (SourceDir, dest_dir)
 
 	rpin, rpout = SetConnections.InitRPs([src_dir, dest_dir], remote_schema)
+	_get_main().misc_setup([rpin, rpout])
 	if not rpout.lstat(): rpout.mkdir()
 	if checkpointing: # rdiff-backup-data must exist to checkpoint
 		data_dir = rpout.append("rdiff-backup-data")
 		if not data_dir.lstat(): data_dir.mkdir()
-		Globals.add_regexp(data_dir.path, 1)
 		SetConnections.UpdateGlobal('rbdir', data_dir)
 	HighLevel.Mirror(rpin, rpout, checkpointing)
 	_get_main().cleanup()
@@ -140,10 +139,7 @@ def _reset_connections(src_rp, dest_rp):
 	#Globals.connections = [Globals.local_connection]
 	#Globals.connection_dict = {0: Globals.local_connection}
 	SetConnections.UpdateGlobal('rbdir', None)
-	SetConnections.UpdateGlobal('exclude_regexps', [])
-	SetConnections.UpdateGlobal('exclude_mirror_regexps', [])
-	Globals.add_regexp(dest_rp.append("rdiff-backup-data").path, 1)
-	Globals.add_regexp(src_rp.append("rdiff-backup-data").path, None)
+	_get_main().misc_setup([src_rp, dest_rp])
 
 def _get_main():
 	"""Set Globals.Main if it doesn't exist, and return"""
@@ -166,8 +162,13 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1):
 
 	Log("Comparing %s and %s, hardlinks %s" % (src_rp.path, dest_rp.path,
 											   compare_hardlinks), 3)
-	dsiter1, dsiter2 = map(DestructiveStepping.Iterate_with_Finalizer,
-						   [src_rp, dest_rp], [1, None])
+	src_select, dest_select = Select(src_rp, 1), Select(dest_rp, None)
+	src_select.parse_rbdir_exclude()
+	dest_select.parse_rbdir_exclude()
+	src_select.set_iter()
+	dest_select.set_iter()
+	dsiter1, dsiter2 = src_select.iterate_with_finalizer(), \
+					   dest_select.iterate_with_finalizer()
 
 	def hardlink_equal(src_rorp, dest_rorp):
 		if src_rorp != dest_rorp: return None

@@ -66,12 +66,6 @@ class PathSetter(unittest.TestCase):
 		self.rbdir.mkdir()
 		SetConnections.UpdateGlobal('rbdir', self.rbdir)
 
-		# Better safe than sorry - cover all possibilities
-		Globals.add_regexp("testfiles/output/rdiff-backup-data", 1)
-		Globals.add_regexp("./testfiles/output/rdiff-backup-data", 1)
-		Globals.add_regexp("../testfiles/output/rdiff-backup-data", 1)
-		Globals.add_regexp("../../testfiles/output/rdiff-backup-data", 1)
-		
 	def setPathnames(self, src_path, src_return, dest_path, dest_return):
 		"""Start servers which will run in src_path and dest_path respectively
 
@@ -97,6 +91,7 @@ class PathSetter(unittest.TestCase):
 		os.system(MiscDir+"/myrm testfiles/output* testfiles/restoretarget* "
 				  "testfiles/noperms_output testfiles/root_output "
 				  "testfiles/unreadable_out")
+
 		self.inc1rp = self.get_src_rp("testfiles/increment1")
 		self.inc2rp = self.get_src_rp('testfiles/increment2')
 		self.inc3rp = self.get_src_rp('testfiles/increment3')
@@ -296,7 +291,7 @@ class MirrorTest(PathSetter):
 		self.setPathnames(None, None, None, None)
 		Time.setcurtime()
 		SaveState.init_filenames(None)
-		HighLevel.Mirror(self.noperms, self.noperms_out, None)
+		self.Mirror(self.noperms, self.noperms_out, None)
 		# Can't compare because we don't have the permissions to do it right
 		#assert CompareRecursive(Local.noperms, Local.noperms_out)
 
@@ -305,7 +300,7 @@ class MirrorTest(PathSetter):
 		self.setPathnames('test1', '../', 'test2/tmp', '../../')
 		Time.setcurtime()
 		SaveState.init_filenames(None)
-		HighLevel.Mirror(self.noperms, self.noperms_out, checkpoint=None)
+		self.Mirror(self.noperms, self.noperms_out, checkpoint=None)
 		#assert CompareRecursive(Local.noperms, Local.noperms_out)
 
 	def testPermSkipLocal(self):
@@ -314,9 +309,9 @@ class MirrorTest(PathSetter):
 		Globals.change_source_perms = None
 		Time.setcurtime()
 		SaveState.init_filenames(None)
-		HighLevel.Mirror(self.one_unreadable, self.one_unreadable_out, checkpoint=None)
+		self.Mirror(self.one_unreadable, self.one_unreadable_out, checkpoint=None)
 		Globals.change_source_perms = 1
-		HighLevel.Mirror(self.one_unreadable, self.one_unreadable_out)
+		self.Mirror(self.one_unreadable, self.one_unreadable_out)
 		# Could add test, but for now just make sure it doesn't exit
 
 	def testPermSkipRemote(self):
@@ -325,9 +320,9 @@ class MirrorTest(PathSetter):
 		Globals.change_source_perms = None
 		Time.setcurtime()
 		SaveState.init_filenames(None)
-		HighLevel.Mirror(self.one_unreadable, self.one_unreadable_out)
+		self.Mirror(self.one_unreadable, self.one_unreadable_out)
 		Globals.change_source_perms = 1
-		HighLevel.Mirror(self.one_unreadable, self.one_unreadable_out)
+		self.Mirror(self.one_unreadable, self.one_unreadable_out)
 		# Could add test, but for now just make sure it doesn't exit
 
 	def refresh(self, *rps):
@@ -365,11 +360,11 @@ class MirrorTest(PathSetter):
 		Globals.change_ownership = Globals.change_source_perms = None
 		self.refresh(self.rootfiles2, self.rootfiles_out2,
 				Local.rootfiles2, Local.rootfiles_out2) # add uid/gid info
-		HighLevel.Mirror(self.rootfiles2, self.rootfiles_out2)
+		self.Mirror(self.rootfiles2, self.rootfiles_out2)
 		assert CompareRecursive(Local.rootfiles2, Local.rootfiles_out2)
 		self.refresh(self.rootfiles2, self.rootfiles_out2,
 				Local.rootfiles2, Local.rootfiles_out2) # remove that info
-		HighLevel.Mirror(self.rootfiles21, self.rootfiles_out2)
+		self.Mirror(self.rootfiles21, self.rootfiles_out2)
 		assert CompareRecursive(Local.rootfiles21, Local.rootfiles_out2)
 		self.refresh(self.rootfiles21, self.rootfiles_out2,
 				Local.rootfiles21, Local.rootfiles_out2) # remove that info
@@ -396,12 +391,12 @@ class MirrorTest(PathSetter):
 		Time.setcurtime()
 		SaveState.init_filenames(None)
 		assert self.rbdir.lstat()
-		HighLevel.Mirror(self.inc1rp, self.rpout)
+		self.Mirror(self.inc1rp, self.rpout)
 		assert CompareRecursive(Local.inc1rp, Local.rpout)
 
 		self.deleteoutput()
 
-		HighLevel.Mirror(self.inc2rp, self.rpout)
+		self.Mirror(self.inc2rp, self.rpout)
 		assert CompareRecursive(Local.inc2rp, Local.rpout)
 
 	def run_partial_test(self):
@@ -410,11 +405,16 @@ class MirrorTest(PathSetter):
 
 		Time.setcurtime()
 		SaveState.init_filenames(None)		
-		HighLevel.Mirror(self.inc1rp, self.rpout)
+		self.Mirror(self.inc1rp, self.rpout)
 		#RPath.copy_attribs(self.inc1rp, self.rpout)
 		assert CompareRecursive(Local.inc1rp, Local.rpout)
 
-		HighLevel.Mirror(self.inc2rp, self.rpout)
+		self.Mirror(self.inc2rp, self.rpout)
 		assert CompareRecursive(Local.inc2rp, Local.rpout)
+
+	def Mirror(self, rpin, rpout, checkpoint = 1):
+		"""Like HighLevel.Mirror, but run misc_setup first"""
+		_get_main().misc_setup([rpin, rpout])
+		HighLevel.Mirror(rpin, rpout, checkpoint)
 
 if __name__ == "__main__": unittest.main()
