@@ -86,21 +86,21 @@ _hs_copy(const uint32_t length,
 
 static int _hs_check_gd_header(hs_read_fn_t ltread_fn, void *ltread_priv)
 {
-    int ret;
-    uint32_t remote_magic, expect;
+     int ret;
+     uint32_t remote_magic, expect;
 
-    expect = HS_LT_MAGIC;
+     expect = HS_LT_MAGIC;
 
-    ret = _hs_read_netint(ltread_fn, ltread_priv, &remote_magic);
-    return_val_if_fail(ret == 4, -1);
-    if (remote_magic != expect) {
-	_hs_fatal("version mismatch: %#010x != %#010x",
-		  remote_magic, expect);
-	errno = EBADMSG;
-	return -1;
-    }
-    _hs_trace("got version %#010x", remote_magic);
-    return 0;
+     ret = _hs_read_netint(ltread_fn, ltread_priv, &remote_magic);
+     return_val_if_fail(ret == 4, -1);
+     if (remote_magic != expect) {
+	  _hs_fatal("version mismatch: %#010x != %#010x",
+		    remote_magic, expect);
+	  errno = EBADMSG;
+	  return -1;
+     }
+     _hs_trace("got version %#010x", remote_magic);
+     return 0;
 }
 
 
@@ -133,44 +133,44 @@ _hs_copy_ofs(uint32_t offset, uint32_t length,
 	     hs_write_fn_t write_fn, void *write_priv,
 	     hs_mdfour_t *newsum)
 {
-    int ret;
-    char *buf;
+     int ret;
+     char *buf;
 
-    if (length > INT32_MAX) {
-	_hs_fatal("length %u is too big", length);
-	return -1;
-    }
+     if (length > INT32_MAX) {
+	  _hs_fatal("length %u is too big", length);
+	  return -1;
+     }
 
-    buf = malloc(length);
+     buf = malloc(length);
 
-    ret = readofs_fn(readofs_priv, buf, length, offset);
-    if (ret < 0) {
-	 _hs_error("error in read callback: off=%d, len=%d",
-		   offset, length);
-	goto fail;
-    } else if (ret != (int) length) {
-	 _hs_error("short read: off=%d, len=%d, result=%d",
-		   offset, length, ret);
-	 errno = ENODATA;
-	 goto fail;
-    }
+     ret = readofs_fn(readofs_priv, buf, length, offset);
+     if (ret < 0) {
+	  _hs_error("error in read callback: off=%d, len=%d",
+		    offset, length);
+	  goto fail;
+     } else if (ret != (int) length) {
+	  _hs_error("short read: off=%d, len=%d, result=%d",
+		    offset, length, ret);
+	  errno = ENODATA;
+	  goto fail;
+     }
 
-    if (newsum)
-	 hs_mdfour_update(newsum, buf, ret);
+     if (newsum)
+	  hs_mdfour_update(newsum, buf, ret);
 
-    ret = _hs_write_loop(write_fn, write_priv, buf, ret);
-    if (ret != (int) length) {
-	 _hs_error("error in write callback: off=%d, len=%d",
-		   offset, length);
-	 goto fail;
-    }
+     ret = _hs_write_loop(write_fn, write_priv, buf, ret);
+     if (ret != (int) length) {
+	  _hs_error("error in write callback: off=%d, len=%d",
+		    offset, length);
+	  goto fail;
+     }
 
-    free(buf);
-    return length;
+     free(buf);
+     return length;
 
-  fail:
-    free(buf);
-    return -1;
+ fail:
+     free(buf);
+     return -1;
 }
 
 
@@ -180,70 +180,70 @@ hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
 	  hs_read_fn_t ltread_fn, void *ltread_priv,
 	  hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats)
 {
-    int ret;
-    uint8_t type;
-    uint32_t length, offset;
-    int kind;
-    char *stats_str;
-    hs_mdfour_t newsum;
+     int ret;
+     uint8_t type;
+     uint32_t length, offset;
+     int kind;
+     char *stats_str;
+     hs_mdfour_t newsum;
 
-    _hs_trace("**** begin %s", __FUNCTION__);
-    bzero(stats, sizeof *stats);
-    if (_hs_check_gd_header(ltread_fn, ltread_priv) < 0)
-	return -1;
+     _hs_trace("**** begin %s", __FUNCTION__);
+     bzero(stats, sizeof *stats);
+     if (_hs_check_gd_header(ltread_fn, ltread_priv) < 0)
+	  return -1;
 
-    hs_mdfour_begin(&newsum);
+     hs_mdfour_begin(&newsum);
 
-    while (1) {
-	 ret = _hs_inhale_command(ltread_fn, ltread_priv, &kind, &length, &offset);
-	 if (ret < 0) {
-	      _hs_error("error while trying to read command byte");
-	      return -1;
-	 }
+     while (1) {
+	  ret = _hs_inhale_command(ltread_fn, ltread_priv, &kind, &length, &offset);
+	  if (ret < 0) {
+	       _hs_error("error while trying to read command byte");
+	       return -1;
+	  }
 
-	 if (kind == op_kind_eof) {
-	      _hs_trace("op_eof");
-	      break;		/* We're done! Cool bananas */
-	 } else if (kind == op_kind_literal) {
-	      _hs_trace("LITERAL(len=%d)", length);
-	      ret = _hs_copy(length, ltread_fn, ltread_priv, write_fn,
-			     write_priv, &newsum);
-	      return_val_if_fail(ret >= 0, -1);
-	      stats->lit_cmds++;
-	      stats->lit_bytes += length;
-	 } else if (kind == op_kind_signature) {
-	      _hs_trace("SIGNATURE(len=%d)", length);
-	      ret = _hs_copy(length,
-			     ltread_fn, ltread_priv,
-			     newsig_fn, newsig_priv,
-			     NULL);
-	      return_val_if_fail(ret >= 0, -1);
-	      stats->sig_cmds++;
-	      stats->sig_bytes += length;
-	} else if (kind == op_kind_copy) {
-	     _hs_trace("COPY(offset=%d, len=%d)", offset, length);
-	     ret = _hs_copy_ofs(offset, length,
-				oldread_fn, oldread_priv,
-				write_fn, write_priv,
-				&newsum);
-	     return_val_if_fail(ret >= 0, -1);
-	     stats->copy_cmds++;
-	     stats->copy_bytes += length;
-	} else if (kind == op_kind_checksum) {
-	     _hs_trace("CHECKSUM(len=%d)", length);
-	     ret = _hs_check_checksum(ltread_fn, ltread_priv, length, &newsum);
-	} else {
-	    _hs_fatal("unexpected op kind %d!", type);
-	}
-    }
+	  if (kind == op_kind_eof) {
+	       _hs_trace("op_eof");
+	       break;		/* We're done! Cool bananas */
+	  } else if (kind == op_kind_literal) {
+	       _hs_trace("LITERAL(len=%d)", length);
+	       ret = _hs_copy(length, ltread_fn, ltread_priv, write_fn,
+			      write_priv, &newsum);
+	       return_val_if_fail(ret >= 0, -1);
+	       stats->lit_cmds++;
+	       stats->lit_bytes += length;
+	  } else if (kind == op_kind_signature) {
+	       _hs_trace("SIGNATURE(len=%d)", length);
+	       ret = _hs_copy(length,
+			      ltread_fn, ltread_priv,
+			      newsig_fn, newsig_priv,
+			      NULL);
+	       return_val_if_fail(ret >= 0, -1);
+	       stats->sig_cmds++;
+	       stats->sig_bytes += length;
+	  } else if (kind == op_kind_copy) {
+	       _hs_trace("COPY(offset=%d, len=%d)", offset, length);
+	       ret = _hs_copy_ofs(offset, length,
+				  oldread_fn, oldread_priv,
+				  write_fn, write_priv,
+				  &newsum);
+	       return_val_if_fail(ret >= 0, -1);
+	       stats->copy_cmds++;
+	       stats->copy_bytes += length;
+	  } else if (kind == op_kind_checksum) {
+	       _hs_trace("CHECKSUM(len=%d)", length);
+	       ret = _hs_check_checksum(ltread_fn, ltread_priv, length, &newsum);
+	  } else {
+	       _hs_fatal("unexpected op kind %d!", type);
+	  }
+     }
 
-    if (ret < 0) {
-	return ret;
-    }
+     if (ret < 0) {
+	  return ret;
+     }
 
-    stats_str = hs_format_stats(stats);
-    _hs_trace("completed: %s", stats_str);
-    free(stats_str);
+     stats_str = hs_format_stats(stats);
+     _hs_trace("completed: %s", stats_str);
+     free(stats_str);
     
-    return 1;
+     return 1;
 }
