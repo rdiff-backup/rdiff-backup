@@ -20,6 +20,22 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+
+                              /*
+                               | Welcome to Arco AM/PM Mini-Market. We
+                               | would like to advise our customers
+                               | that any individual who offers to
+                               | pump gas, wash windows or solicit
+                               | products is not employed by or
+                               | associated with this facility.  We
+                               | discourage any contact with these
+                               | individuals and ask that you report
+                               | any problems to uniformed personal
+                               | inside. Thankyou for shopping at
+                               | Arco, and have a nice day.
+                               */
+
+
 #include <stdio.h>
 
 #include "hsync.h"
@@ -47,6 +63,8 @@ char const *hs_strerror(hs_result r)
         return "out of memory";
     case HS_IO_ERROR:
         return "IO error";
+    case HS_SYNTAX_ERROR:
+        return "command line syntax error";
     default:
         return "unknown error";
     }
