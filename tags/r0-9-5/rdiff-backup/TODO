@@ -1,0 +1,10 @@
+Write some better selection test cases to test new Iterate_fast func.
+
+---------[ Long term ]---------------------------------------
+
+Think about adding Gaudet's idea for keeping track of renamed files.
+
+Look into different inode generation techniques (see treescan, Dean
+Gaudet's other post).
+
+
