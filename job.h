@@ -35,7 +35,9 @@ struct rs_job {
     /** Final result of processing job.  Used by rs_job_s_failed(). */
     rs_result final_result;
 
-    /* Generic storage fields. */
+    /* XXX: These next two are redundant with their equivalents in the
+     * signature field.  Perhaps we should get rid of them, but
+     * they're also used in the mksum operation. */
     int                 block_len;
     int                 strong_sum_len;
     

@@ -75,6 +75,49 @@ static rs_result rs_delta_s_end(rs_job_t *job)
 
 
 /**
+ * \brief Get a block of data if possible, and see if it matches.
+ */
+static rs_result
+rs_delta_s_scan(rs_job_t *job)
+{
+    rs_result      result;
+    void           *inptr;
+    size_t         this_len, remain;
+
+    rs_job_check(job);
+    
+    this_len = job->block_len;
+    if (rs_job_input_is_ending(job)) {
+        remain = rs_scoop_total_avail(job);
+        if (remain == 0) {
+            /* no more delta to do */
+            job->statefn = rs_delta_s_end;
+            return RS_BLOCKED;
+        } else if (remain < this_len) {
+            this_len = remain;
+        }
+    }
+    
+    /* common case of not being near the end, and therefore trying
+     * to read a whole block. */
+    result = rs_scoop_readahead(job, this_len, &inptr);
+    if (result != RS_DONE)
+        return result;
+
+    /* TODO: Instead of this, calculate the checksum, rolling if
+     * possible.  Then look it up in the hashtable.  If we match, emit
+     * that and advance over the scooed data.  Otherwise, emit a
+     * literal byte and keep searching while there's input data. */
+
+    rs_trace("emit lazy literal for %d bytes", this_len);
+    rs_emit_literal_cmd(job, this_len);
+    rs_blow_copy(job, this_len);
+
+    return RS_RUNNING;
+}
+
+
+/**
  * \brief State function that does a fake delta containing only
  * literal data to recreate the input.
  */
@@ -106,7 +149,17 @@ static rs_result rs_delta_s_header(rs_job_t *job)
 {
     rs_emit_delta_header(job);
 
-    job->statefn = rs_delta_s_fake;
+    if (job->block_len) {
+        if (!job->signature) {
+            rs_error("no signature is loaded into the job");
+            return RS_PARAM_ERROR;
+        }
+        job->statefn = rs_delta_s_scan;
+    } else {
+        rs_trace("block length is zero for this delta; "
+                 "therefore using lazy deltas");
+        job->statefn = rs_delta_s_fake;
+    }
 
     return RS_RUNNING;
 }
@@ -121,6 +174,8 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
 
     job = rs_job_new("delta", rs_delta_s_header);
     job->signature = sig;
+    job->block_len = sig->block_len;
+    job->strong_sum_len = sig->strong_sum_len;
 	
     return job;
 }
