@@ -27,6 +27,9 @@ struct hs_job {
         /** Callback for each processing step. */
         hs_result (*statefn)(hs_job_t *);
 
+    /** Final result of processing job.  Used by hs_job_s_failed(). */
+    hs_result final_result;
+
         /* Generic storage fields. */
         size_t          block_len;
         size_t          strong_sum_len;
@@ -52,3 +55,5 @@ struct hs_job {
 hs_job_t * hs_job_new(hs_stream_t *stream);
 
 hs_result hs_job_s_complete(hs_job_t *);
+
+hs_result hs_job_fail(hs_job_t *job, hs_result result);

@@ -106,9 +106,24 @@ hs_result hs_job_iter(hs_job_t *job, int ending)
 
 hs_result hs_job_s_complete(hs_job_t *UNUSED(job))
 {
-        hs_trace("job has finished");
-
-        return HS_DONE;
+    hs_trace("job has finished");
+    
+    return HS_DONE;
 }
 
 
+static hs_result hs_job_s_failed(hs_job_t *job)
+{
+    hs_trace("job has failed: %s", hs_strerror(job->final_result));
+
+    return job->final_result;
+}
+
+
+hs_result hs_job_fail(hs_job_t *job, hs_result result)
+{
+    job->final_result = result;
+    job->statefn = hs_job_s_failed;
+    
+    return result;
+}

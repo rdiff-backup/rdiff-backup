@@ -58,6 +58,11 @@ static hs_result hs_loadsig_s_stronglen(hs_job_t *job)
         return result;
     job->strong_sum_len = l;
     hs_trace("got strong_sum len %d", job->strong_sum_len);
+    
+    if (l < 0  ||  l > HS_MD4_LENGTH) {
+        hs_error("strong sum length %d is implausible", l);
+        return hs_job_fail(HS_CORRUPT);
+    }
 
     job->statefn = hs_job_s_complete;
     
@@ -77,7 +82,7 @@ static hs_result hs_loadsig_s_blocklen(hs_job_t *job)
 
     if (job->block_len < 1) {
         hs_error("block length of %d is bogus", job->block_len);
-        return HS_CORRUPT;
+        return hs_job_fail(HS_CORRUPT);
     }
 
     job->statefn = hs_loadsig_s_stronglen;
