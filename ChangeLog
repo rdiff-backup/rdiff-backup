@@ -1,5 +1,18 @@
 2002-01-26  Ben Elliston  <bje@redhat.com>
 
+	* README.autoconf: Remove.
+	* changes.test: Move to testsuite subdirectory.
+	* delta.test: Ditto.
+	* isprefix.test: Ditto.
+	* mdfour.test: Ditto.
+	* mksum.test: Ditto.
+	* mutate.test: Ditto.
+	* signature.test: Ditto.
+	* sources.test: Ditto.
+	* triple.test: Ditto.
+	
+2002-01-26  Ben Elliston  <bje@redhat.com>
+
 	* doc/Makefile.am: New file.
 	* Doxyfile: Move from here ..
 	* doc/Doxyfile.in: .. to here (with added substitutions).
