@@ -420,6 +420,9 @@ class CacheCollatedPostProcess:
 	def close(self):
 		"""Process the remaining elements in the cache"""
 		while self.cache_indicies: self.shorten_cache()
+		while self.dir_perms_list:
+			dir_rp, perms = self.dir_perms_list.pop()
+			dir_rp.chmod(perms)
 		metadata.MetadataFile.close_file()
 		if Globals.read_eas: eas_acls.ExtendedAttributesFile.close_file()
 		if Globals.read_acls: eas_acls.AccessControlListFile.close_file()
