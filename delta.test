@@ -29,6 +29,6 @@ do
         cmd="rdiff -I$inbuf patch /dev/null $delta $new"
         run_test $cmd
         expect=$testdir/`basename $delta .delta`.expect
-        diff -u $expect $new || fail_test "$cmd"
+        diff $expect $new || fail_test "$cmd"
     done
 done
