@@ -8,7 +8,7 @@ AC_INIT(trace.c)
 
 my_version=0.9.3pre
 my_package=librsync
-my_url=http://linuxcare.com.au/rproxy/
+my_url=http://rproxy.samba.org/
 echo "Configuring $my_package $my_version   ($my_url)"
 AM_INIT_AUTOMAKE($my_package, $my_version)
 
@@ -66,6 +66,12 @@ AC_EGREP_HEADER(sin_len, sys/socket.h,
 	[ AC_DEFINE(HAVE_SOCK_SIN_LEN)
           AC_MSG_RESULT(yes) ],
         [ AC_MSG_RESULT(no) ])
+
+AC_MSG_CHECKING(for intmax_t in stdint.h)
+AC_EGREP_HEADER(intmax_t, stdint.h,
+        [ AC_MSG_RESULT(yes) ],
+        [ AC_DEFINE(intmax_t, long)
+          AC_MSG_RESULT(no) ])
 
 dnl Checks for libraries
 
@@ -129,7 +135,7 @@ AC_CHECK_SIZEOF(off_t)
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(config.h unistd.h alloca.h libintl.h mcheck.h)
-AC_CHECK_HEADERS(zlib.h bzlib.h)
+AC_CHECK_HEADERS(zlib.h bzlib.h stdint.h)
 
 # GNU library versioning: This is NOT the librsync release number.
 # Rather, it is a CURRENT:REVISION:AGE tuple describing binary
