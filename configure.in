@@ -6,7 +6,7 @@ AC_REVISION($Id$)
 
 AC_INIT(trace.c)
 
-my_version=0.9.2pre
+my_version=0.9.2
 my_package=librsync
 my_url=http://linuxcare.com.au/rproxy/
 echo "Configuring $my_package $my_version   ($my_url)"

@@ -98,11 +98,29 @@ noinst_SCRIPTS = \
 	mkprototab.pl \
 	$(try_scripts)
 
-test_data = delta.input/01.delta delta.input/01.expect \
-delta.input/02.delta delta.input/02.expect delta.input/03.delta \
-delta.input/03.expect mdfour.input/01.data mdfour.input/01.expect \
-mksum.input/COPYING.sig triple.input/copying.in triple.input/half.in \
-triple.input/hello.in triple.input/zero.in
+test_data = changes.input			\
+changes.input/01.in				\
+changes.input/02.in				\
+changes.input/03.in				\
+changes.input/04.in				\
+delta.input					\
+delta.input/01.delta				\
+delta.input/01.expect				\
+delta.input/02.delta				\
+delta.input/02.expect				\
+delta.input/03.delta				\
+delta.input/03.expect				\
+mdfour.input					\
+mdfour.input/01.expect				\
+mdfour.input/01.data				\
+mksum.input					\
+mksum.input/COPYING.sig				\
+triple.input					\
+triple.input/copying.in				\
+triple.input/half.in				\
+triple.input/hello.in				\
+triple.input/zero.in
+
 
 # TODO: Delete the test-*.d directories when cleaning up.
 CLEANFILES = tmp-test-*.d/* tmp-try-*.d/*
