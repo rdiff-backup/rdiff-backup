@@ -67,5 +67,28 @@ class TimeTest(unittest.TestCase):
 		assert i2s("400m") == 400*60
 		assert i2s("1Y") == 365*86400
 		assert i2s("30h") == 30*60*60
+		assert i2s("3W") == 3*7*86400
+
+	def testIntervalsComposite(self):
+		"""Like above, but allow composite intervals"""
+		i2s = Time.intstringtoseconds
+		assert i2s("7D2h") == 7*86400 + 2*3600
+		assert i2s("2Y3s") == 2*365*86400 + 3
+		assert i2s("1M2W4D2h5m20s") == (30*86400 + 2*7*86400 + 4*86400 +
+										2*3600 + 5*60 + 20)
+
+	def testGenericString(self):
+		"""Test genstrtotime, conversion of arbitrary string to time"""
+		g2t = Time.genstrtotime
+		assert g2t('now', 1000) == 1000
+		assert g2t('2h3s', 10000) == 10000 - 2*3600 - 3
+		assert g2t('2001-09-01T21:49:04Z') == \
+			   Time.stringtotime('2001-09-01T21:49:04Z')
+		assert g2t('2002-04-26T04:22:01') == \
+			   Time.stringtotime('2002-04-26T04:22:01' + Time.gettzd())
+		t = Time.stringtotime('2001-05-12T00:00:00' + Time.gettzd())
+		assert g2t('2001-05-12') == t
+		assert g2t('2001/05/12') == t
+		assert g2t('5/12/2001') == t
 
 if __name__ == '__main__': unittest.main()
