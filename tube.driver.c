@@ -37,9 +37,7 @@
 #include <unistd.h>
 
 #include "hsync.h"
-#include "private.h"
 #include "stream.h"
-#include "tube.h"
 #include "file.h"
 #include "streamfile.h"
 

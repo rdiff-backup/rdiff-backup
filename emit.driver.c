@@ -32,11 +32,9 @@
 #include <stdio.h>
 
 #include "hsync.h"
-#include "tube.h"
 #include "emit.h"
 #include "stream.h"
 #include "fileutil.h"
-#include "nozzle.h"
 #include "trace.h"
 
 static int
