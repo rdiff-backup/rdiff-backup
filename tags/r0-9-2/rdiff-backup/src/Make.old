@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+
+"""Read component files of rdiff-backup, and glue them together after
+removing unnecessary bits."""
+
+import os
+
+def mystrip(filename):
+	"""Open filename, read input, strip appropriately, and return contents"""
+	fp = open(filename, "r")
+	lines = fp.readlines()
+	fp.close()
+
+	i = 0
+	while(lines[i][:60] !=
+		  "############################################################"):
+		i = i+1
+		
+	return "".join(lines[i:]).strip() + "\n\n\n"
+
+
+
+files = ["globals.py", "static.py", "lazy.py", "log.py", "ttime.py",
+		 "iterfile.py", "rdiff.py", "connection.py", "rpath.py",
+		 "hardlink.py", "robust.py", "rorpiter.py",
+		 "destructive_stepping.py", "selection.py",
+		 "filename_mapping.py", "statistics.py", "increment.py",
+		 "restore.py", "manage.py", "highlevel.py",
+		 "setconnections.py", "main.py"]
+
+os.system("cp header.py rdiff-backup")
+
+outfp = open("rdiff-backup", "a")
+for file in files:
+	outfp.write(mystrip(file))
+outfp.close()
+
+os.system("chmod 755 rdiff-backup")

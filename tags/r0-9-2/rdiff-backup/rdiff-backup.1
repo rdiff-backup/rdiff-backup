@@ -1,0 +1,759 @@
+.TH RDIFF-BACKUP 1 "AUGUST 2001" "Version 0.2.1" "User Manuals" \" -*- nroff -*-
+.SH NAME
+rdiff-backup \- local/remote mirror and incremental backup
+.SH SYNOPSIS
+.B rdiff-backup
+.BI [ options ]
+.BI [[[ user@ ] host1.foo ]:: source_directory ]
+.BI [[[ user@ ] host2.foo ]:: destination_directory ]
+
+.B rdiff-backup
+.B {{ -l | --list-increments }
+.BI "| --remove-older-than " time_interval }
+.BI [[[ user@ ] host2.foo ]:: destination_directory ]
+
+.B rdiff-backup --calculate-average
+.I statfile1 statfile2 ...
+
+.SH DESCRIPTION
+.B rdiff-backup
+is a script, written in
+.BR python (1)
+that backs up one directory to another.  The target directory ends up
+a copy of the source directory, but extra reverse diffs are stored in
+the target directory, so you can still recover files lost some time
+ago.  The idea is to combine the best features of a mirror and an
+incremental backup.  rdiff-backup also preserves symlinks, special
+files, hardlinks, permissions, uid/gid ownership (if it is running as
+root), and modification times.
+
+.B rdiff-backup
+can also operate
+in a bandwidth efficient manner over a pipe, like
+.BR rsync (1).
+Thus you can use ssh and rdiff-backup to securely back a hard drive up
+to a remote location, and only the differences will be transmitted.
+Using the default settings, rdiff-backup requires that the remote
+system accept ssh connections, and that
+.B rdiff-backup
+is installed in the user's PATH on the remote system.  For information
+on other options, see the section on
+.B REMOTE OPERATION.
+
+
+.SH OPTIONS
+.TP
+.B -b, --backup-mode
+Force backup mode even if first argument appears to be an increment file.
+.TP
+.B --calculate-average
+Enter calculate average mode.  The arguments should be a number of
+statistics files.  rdiff-backup will print the average of the listed
+statistics files and exit.
+.TP
+.B --change-source-perms
+If this option is set, rdiff-backup will try to change the mode of any
+unreadable files or unreadable/unexecutable directories in the source
+directory so it can back them up.  It will then restore their original
+permissions and mtimes afterwards.  This option should generally not
+be used if rdiff-backup has root access to the source directory, as
+root can access files regardless of their permissions.
+.TP
+.BI "--chars-to-quote " chars
+If this option is set, any characters in
+.I chars
+present in filenames on the source side will be quoted on the
+destination side, so that they do not appear in filenames on the
+remote side.  See
+.B --quoting-char
+and
+.BR --windows-mode .
+.TP
+.BI "--checkpoint-interval " seconds
+This option controls every how many seconds rdiff-backup checkpoints
+its current status.  The default is 20.
+.TP
+.BI "--current-time " seconds
+This option is useful mainly for testing.  If set, rdiff-backup will
+it for the current time instead of consulting the clock.  The argument
+is the number of seconds since the epoch.
+.TP
+.BI "--exclude " shell_pattern
+Exclude the file or files matched by
+.IR shell_pattern .
+If a directory is matched, then files under that directory will also
+be matched.  See the
+.B FILE SELECTION
+section for more information.
+.TP
+.B "--exclude-device-files"
+Exclude all device files.  This can be useful for security/permissions
+reasons or if rdiff-backup is not handling device files correctly.
+.TP
+.BI "--exclude-filelist " filename
+Excludes the files listed in 
+.I filename
+See the
+.B FILE SELECTION
+section for more information.
+.TP
+.B --exclude-filelist-stdin
+Like
+.B --exclude-filelist,
+but the list of files will be read from standard input.  See the
+.B FILE SELECTION
+section for more information.
+.TP
+.BI "--exclude-mirror " regexp
+Exclude files in the mirror area matching regexp.  This argument can
+be used multiple times.  The rdiff-backup-data directory is
+automatically excluded, so this option rarely needs to be used.
+.TP
+.BI "--exclude-regexp " regexp
+Exclude files matching the given regexp.  Unlike the
+.B --exclude
+option, this option does not match files in a directory it matches.
+See the
+.B FILE SELECTION
+section for more information.
+.TP
+.B --force
+Authorize overwriting of a destination directory.  rdiff-backup will
+generally tell you if it needs this.
+.TP
+.BI "--include " shell_pattern
+Similar to
+.B --exclude
+but include matched files instead.  Unlike
+.BR --exclude ,
+this option will also match parent directories of matched files
+(although not necessarily their contents).  See the
+.B FILE SELECTION
+section for more information.
+.TP
+.BI "--include-filelist " filename
+Like
+.BR --exclude-filelist ,
+but include the listed files instead.  See the
+.B FILE SELECTION
+section for more information.
+.TP
+.B --include-filelist-stdin
+Like
+.BR --include-filelist ,
+but read the list of included files from standard input.
+.TP
+.BI "--include-regexp " regexp
+Include files matching the regular expression
+.IR regexp .
+Only files explicitly matched by
+.I regexp
+will be included by this option.  See the
+.B FILE SELECTION
+section for more information.
+.TP
+.B "-l, --list-increments"
+List the number and date of partial incremental backups contained in
+the specified destination directory.  This option is incompatible with
+backing up or restoring and must be run in a separate instance of
+rdiff-backup.
+.TP
+.B "-m, --mirror-only"
+Do not create an rdiff-backup-data directory or make any increments.
+In this mode rdiff-backup is similar to rsync (but usually
+slower).
+.TP
+.B --no-compression
+Disable the default gzip compression of most of the .snapshot and .diff
+increment files stored in the rdiff-backup-data directory.  A backup
+volume can contain compressed and uncompressed increments, so using
+this option inconsistently is fine.
+.TP
+.B "--no-compression-regexp " regexp
+Do not compress increments based on files whose filenames match regexp.
+The default is
+"(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|jpg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
+.TP
+.BI --no-hard-links
+Don't preserve hard links from source to mirror directories.
+Otherwise, no increment files will themselves be hard linked, but a
+hard link database will be written so that hard links from any dataset
+will be recreated if originally present.  If many hard linked files
+are present, this option can drastically decrease memory usage.
+.TP
+.B --no-resume
+Do not resume last aborted backup even if it falls within the resume
+window.
+.TP
+.B --null-separator
+Use nulls (\\0) instead of newlines (\\n) as line separators, which
+may help when dealing with filenames containing newlines.  This
+affects the expected format of the files specified by the
+--{include|exclude}-filelist[-stdin] switches as well as the format of
+the directory_statistics file.
+.TP
+.BI "-r, --restore-as-of " restore_time
+Restore the specified directory as it was as of
+.IR restore_time .
+See the
+.B TIME FORMATS
+section for more information on the format of
+.IR restore_time ,
+and see the
+.B RESTORING
+section for more information on restoring.
+.TP
+.B --parsable-output
+If set, rdiff-backup's output will be tailored for easy parsing by
+computers, instead of clarity for humans.  Currently this only applies
+when listing increments using the
+.B -l
+or
+.B --list-increments
+switches.
+.TP
+.B --print-statistics
+If set, summary statistics will be printed after a successful backup
+If not set, this information will still be available from the
+session_statistics.<time>.data file.
+.TP
+.BI "--quoting-char " char
+Use the specified character for quoting characters specified to be
+escaped by the
+.B --chars-to-quote
+option.  The default is the semicolon ";".  See also
+.BR --windows-mode .
+.TP
+.BI "--remote-cmd " command
+This command has been depreciated as of version 0.4.1.  Use
+--remote-schema instead.
+.TP
+.BI "--remote-schema " schema
+Specify an alternate method of connecting to a remote computer.  This
+is necessary to get rdiff-backup not to use ssh for remote backups, or
+if, for instance, rdiff-backup is not in the PATH on the remote side.
+See the
+.B REMOTE OPERATION
+section for more information.
+.TP
+.BI "--remove-older-than " time_interval
+Remove the incremental backup information in the destination directory
+that has been around longer than time_interval.  The time interval is
+an integer followed by the character s, m, h, D, W, M, or Y,
+indicating seconds, minutes, hours, days, weeks, months, or years
+respectively, or a number of these concatenated.  For example, 32m
+means 32 minutes, and 3W2D10h7s means 3 weeks, 2 days, 10 hours, and 7
+seconds.  In this context, a month means 30 days, a year is 365 days,
+and a day is always 86400 seconds.
+
+Note that this option is incompatible with backing up or restoring and
+must be run in a separate instance of rdiff-backup.  Remember also
+that snapshots of deleted files are covered by this operation, so if
+you deleted a file and backed up two weeks ago, and then run
+--remove-older-than 10D today, no trace of that file will remain.
+.TP
+.B --resume
+Resume the last aborted backup.  If no aborted backups are found, exit
+with error.
+.TP
+.BI "--resume-window " seconds
+Resume the last aborted backup if it started less than the specified
+number of seconds ago.  Otherwise start a new backup.  The default is
+7200 (2 hours).
+.TP
+.B --server
+Enter server mode (not to be invoked directly, but instead used by
+another rdiff-backup process on a remote computer).
+.TP
+.B --ssh-no-compression
+When running ssh, do not use the -C option to enable compression.
+.B --ssh-no-compression
+is ignored if you specify a new schema using
+.B --remote-schema.
+.TP
+.BI "--terminal-verbosity " [0-9]
+Select which messages will be displayed to the terminal.  If missing
+the level defaults to the verbosity level.
+.TP
+.B --test-server
+Test for the presence of a compatible rdiff-backup server as specified
+in the following host::filename argument(s).  The filename section
+will be ignored.
+.TP
+.BI -v [0-9] ", --verbosity " [0-9]
+Specify verbosity level (0 is totally silent, 3 is the default, and 9
+is noisiest).  This determines how much is written to the log file.
+.TP
+.B "-V, --version"
+Print the current version and exit
+.TP
+.B --windows-mode
+This option is short for "--chars to quote : --windows-time-format"
+and is appropriate when backing up to a filesystem that doesn't allow
+colons in filenames.
+.TP
+.B --windows-time-format
+If this option is present, use underscores instead of colons in
+increment files, so 2001-07-15T04:09:38-07:00 becomes
+2001-07-15T04_09_38-07_00.  This option may be useful under MS windows
+NT, which prohibits colons in filenames.
+
+.SH EXAMPLES
+Simplest case---backup directory foo to directory bar, with increments
+in bar/rdiff-backup-data:
+.PP
+.RS
+rdiff-backup foo bar
+.PP
+.RE
+This is exactly the same as previous example because trailing slashes
+are ignored:
+.PP
+.RS
+rdiff-backup foo/ bar/
+.PP
+.RE
+Back files up from /home/bob to /mnt/backup, leaving increments in /mnt/backup/rdiff-backup-data.  Do not back up directory /home/bob/tmp or any files in it.
+.PP
+.RS
+rdiff-backup --exclude /home/bob/tmp /home/bob /mnt/backup
+.PP
+.RE
+The file selection options can be combined in various ways.  The
+following command backs up the whole file system to /usr/local/backup.
+However, the entire /usr directory is skipped, with the exception of
+/usr/local, which is included, except for /usr/local/backup, which is
+excluded to prevent a circularity:
+.PP
+.RS
+rdiff-backup --exclude /usr/local/backup --include /usr/local --exclude /usr / /usr/local/backup
+.PP
+.RE
+You can also use regular expressions in the --exclude statements.
+This will skip any files whose full pathnames contain the word
+"cache", or any files whose name is "tmp", "temp", "TMP", "tEmP", etc.
+.PP
+.RS
+rdiff-backup --exclude-regexp cache --exclude-regexp '(?i)/te?mp$' /home/bob /mnt/backup
+.PP
+.RE
+After the previous command was completed, this command will list the
+backups present on the destination disk:
+.PP
+.RS
+rdiff-backup --list-increments /mnt/backup
+.PP
+.RE
+If space is running out on the /mnt/backup directory, older
+incremental backups can be erased.  The following command erases
+backup information older than a week:
+.PP
+.RS
+rdiff-backup --remove-older-than 7D /mnt/backup
+.PP
+.RE
+The following reads the file
+important-data.2001-07-15T04:09:38-07:00.dir and restores the
+resulting directory important-data as it was on Februrary 14, 2001,
+calling the new directory "temp".  Note that rdiff-backup goes into
+restore mode because it recognizes the suffix of the file.  The -v9
+means keep lots of logging information.
+.PP
+.RS
+rdiff-backup -v9 important-data.2001-07-15T04:09:38-07:00.dir temp
+.PP
+.RE
+This command causes rdiff-backup to backup the directory
+/some/local-dir to the directory /whatever/remote-dir on the machine
+hostname.net.  It uses ssh to open the necessary pipe to the remote
+copy of rdiff-backup.  Here the username on the local machine and on
+hostname.net are the same.
+.PP
+.RS
+rdiff-backup /some/local-dir hostname.net::/whatever/remote-dir
+.PP
+.RE
+This command logs into hostname.net as smith and restores the remote
+increment old-file on a remote computer to the current directory on
+the local computer:
+.PP
+.RS
+rdiff-backup smith@hostname.net::/foo/rdiff-backup-data/increments/bar/old-file.2001-11-09T12:43:53-04:00.diff
+.PP
+.RE
+Backup foo on one remote machine to bar on another.  This will
+probably be slower than running rdiff-backup from either machine.
+.PP
+.RS
+rdiff-backup smith@host1::foo jones@host2::bar
+.PP
+.RE
+Test to see if the specified ssh command really opens up a working
+rdiff-backup server on the remote side.
+.RS
+rdiff-backup --test-server hostname.net::/this/is/ignored
+
+.SH RESTORING
+There are two ways to tell rdiff-backup to restore a file or
+directory.  Firstly, you can run rdiff-backup on a mirror file and use
+the
+.B -r
+or
+.B --restore-as-of
+options.  Secondly, you can run it on an increment file.
+.PP
+For example, suppose in the past you have run:
+.PP
+.RS
+rdiff-backup /usr /usr.backup
+.PP
+.RE
+to back up the /usr directory into the /usr.backup directory, and now
+want a copy of the /usr/local directory the way it was 3 days ago
+placed at /usr/local.old.
+.PP
+One way to do this is to run:
+.PP
+.RS
+rdiff-backup -r 3D /usr.backup/local /usr/local.old
+.PP
+.RE
+where above the "3D" means 3 days (for other ways to specify the time,
+see the
+.B TIME FORMATS
+section).  The /usr.backup/local directory was selected, because that
+is the directory containing the current version of /usr/local.
+.PP
+The second way to do this would be to find the corresponding increment
+file.  It would be in the /backup/rdiff-backup-data/increments/usr
+directory, and its name would be something like
+"local.2002-11-09T12:43:53-04:00.dir" where the time indicates it is
+from 3 days ago.  Note that the increment files all end in ".diff",
+".snapshot", ".dir", or ".missing", where ".missing" just means that
+the file didn't exist at that time (finally, some of these may be
+gzip-compressed, and have an extra ".gz" to indicate this).  Then
+running:
+.PP
+.RS
+rdiff-backup /backup/rdiff-backup-data/increments/usr/local.<time>.dir /usr/local.old
+.PP
+.RE
+would also restore the file as desired.
+
+.SH TIME FORMATS
+rdiff-backup uses time strings in two places.  Firstly, all of the
+increment files rdiff-backup creates will have the time in their
+filenames in the w3 datetime format as described in a w3 note at
+http://www.w3.org/TR/NOTE-datetime.  Basically they look like
+"2001-07-15T04:09:38-07:00", which means what it looks like.  The
+"-07:00" section means the time zone is 7 hours behind UTC.
+.PP
+Secondly, the
+.BI -r , " --restore-as-of" ", and " --remove-older-than
+options take a time string, which can be given in any of several
+formats:
+.IP 1.
+the string "now" (refers to the current time)
+.IP 2.
+a sequences of digits, like "123456890" (indicating the time in
+seconds after the epoch)
+.IP 3.
+A string like "2002-01-25T07:00:00+02:00" in datetime format 
+.IP 4.
+An interval, which is a number followed by one of the characters s, m,
+h, D, W, M, or Y (indicating seconds, minutes, hourse, days, weeks,
+months, or years respectively), or a series of such pairs.  In this
+case the string refers to the time that preceded the current time by
+the length of the interval.  For instance, "1h78m" indicates the time
+that was one hour and 78 minutes ago.  The calendar here is
+unsophisticated: a month is always 30 days, a year is always 365 days,
+and a day is always 86400 seconds.
+.IP 5.
+A date format of the form YYYY/MM/DD, YYYY-MM-DD, MM/DD/YYYY, or
+MM/DD/YYYY, which indicates midnight on the day in question, relative
+to the current timezone settings.  For instance, "2002/3/5",
+"03-05-2002", and "2002-3-05" all mean March 5th, 2002.
+
+.SH REMOTE OPERATION
+In order to access remote files, rdiff-backup opens up a pipe to a
+copy of rdiff-backup running on the remote machine.  Thus rdiff-backup
+must be installed on both ends.  To open this pipe, rdiff-backup first
+splits the filename into host_info::pathname.  It then substitutes
+host_info into the remote schema, and runs the resulting command,
+reading its input and output.
+.PP
+The default remote schema is 'ssh %s rdiff-backup --server' meaning if
+the host_info is user@host.net, then rdiff-backup runs 'ssh
+user@host.net rdiff-backup --server'.  The '%s' keyword is substituted
+with the host_info.  Using --remote-schema, rdiff-backup can invoke an
+arbitrary command in order to open up a remote pipe.  For instance,
+.RS
+rdiff-backup --remote-schema 'cd /usr; %s' foo 'rdiff-backup
+--server'::bar
+.RE
+is basically equivalent to (but slower than)
+.RS
+rdiff-backup foo /usr/bar
+.RE
+.PP
+Concerning quoting, if for some reason you need to put two consecutive
+colons in the host_info section of a host_info::pathname argument, or
+in the pathname of a local file, you can quote one of them by
+prepending a backslash.  So in 'a\\::b::c', host_info is 'a::b' and
+the pathname is 'c'.  Similarly, if you want to refer to a local file
+whose filename contains two consecutive colons, like 'strange::file',
+you'll have to quote one of the colons as in 'strange\\::file'.
+Because the backslash is a quote character in these circumstances, it
+too must be quoted to get a literal backslash, so 'foo\\::\\\\bar'
+evaluates to 'foo::\\bar'.  To make things more complicated, because
+the backslash is also a common shell quoting character, you may need
+to type in '\\\\\\\\' at the shell prompt to get a literal backslash
+(if it makes you feel better, I had to type in 8 backslashes to get
+that in this man page...).  And finally, to include a literal % in the
+string specified by --remote-schema, quote it with another %, as in
+%%.
+
+.SH FILE SELECTION
+.B rdiff-backup
+supports file selection options similar to (but different from)
+.BR rsync (1).
+The system may appear complicated, but it is supposed to be flexible
+and easy-to-use.
+
+When rdiff-backup is run, it searches through the given source
+directory and backs up all the files specified by the file selection
+system.  The file selection system comprises a number of file
+selection conditions, which are set using one of the following command
+line options:
+.BR --exclude ,
+.BR --exclude-device-files ,
+.BR --exclude-filelist ,
+.BR --exclude-filelist-stdin ,
+.BR --exclude-regexp ,
+.BR --include ,
+.BR --include-filelist ,
+.BR --include-filelist-stdin ,
+and
+.BR --include-regexp .
+Each file selection condition either matches or doesn't match a given
+file.  A given file is excluded by the file selection system exactly
+when the first matching file selection condition specifies that the
+file be excluded; otherwise the file is included.
+
+For instance,
+.PP
+.RS
+rdiff-backup --include /usr --exclude /usr /usr /backup
+.PP
+.RE
+is exactly the same as
+.PP
+.RS
+rdiff-backup /usr /backup
+.PP
+.RE
+because the include and exclude directives match exactly the same
+files, and the
+.B --include
+comes first, giving it precedence.  Similarly,
+.PP
+.RS
+rdiff-backup --include /usr/local/bin --exclude /usr/local /usr /backup
+.PP
+.RE
+would backup the /usr/local/bin directory (and its contents), but not
+/usr/local/doc.
+
+The
+.B include
+and
+.B exclude
+options accept
+.IR "extended shell globbing patterns" .
+These patterns can contain the special patterns
+.BR * ,
+.BR ** ,
+.BR ? ,
+and
+.BR [...] .
+As in a normal shell,
+.B *
+can be expanded to any string of characters not containing "/",
+.B ?
+expands to any character except "/", and
+.B [...]
+expands to a single character of those characters specified (ranges
+are acceptable).  The new special pattern,
+.BR ** ,
+expands to any string of characters whether or not it contains "/".
+Furthermore, if the pattern starts with "ignorecase:" (case
+insensitive), then this prefix will be removed and any character in
+the string can be replaced with an upper- or lowercase version of
+itself.
+
+The
+.BI "--exclude " pattern
+option matches a file iff:
+.TP
+.B 1.
+.I pattern
+can be expanded into the file's filename, or
+.TP
+.B 2.
+the file is inside a directory matched by the option.
+.PP
+.RE
+Conversely,
+.BI "--include " pattern
+matches a file iff:
+.TP
+.B 1.
+.I pattern
+can be expanded into the file's filename,
+.TP
+.B 2.
+the file is inside a directory matched by the option, or
+.TP
+.B 3.
+the file is a directory which contains a file matched by the option.
+.PP
+.RE
+For example,
+.PP
+.RS
+.B --exclude
+/usr/local
+.PP
+.RE
+matches /usr/local, /usr/local/lib, and /usr/local/lib/netscape.  It
+is the same as --exclude /usr/local --exclude /usr/local/**.
+.PP
+.RS
+.B --include
+/usr/local
+.PP
+.RE
+specifies that /usr, /usr/local, /usr/local/lib, and
+/usr/local/lib/netscape (but not /usr/doc) all be backed up.  Thus you
+don't have to worry about including parent directories to make sure
+that included subdirectories have somewhere to go.  Finally,
+.PP
+.RS
+.B --include
+ignorecase:/usr/[a-z0-9]foo/*/**.py
+.PP
+.RE
+would match a file like /usR/5fOO/hello/there/world.py.  If it did
+match anything, it would also match /usr.  If there is no existing
+file that the given pattern can be expanded into, the option will not
+match /usr.
+
+The
+.BR --include-filelist ,
+.BR --exclude-filelist ,
+.BR --include-filelist-stdin ,
+and
+.B --exclude-filelist-stdin
+options also introduce file selection conditions.  They direct
+rdiff-backup to read in a file, each line of which is a file
+specification, and to include or exclude the matching files.  Lines
+are separated by newlines or nulls, depending on whether the
+--null-separator switch was given.  Each line in a filelist is
+interpreted similarly to the way
+.I extended shell patterns
+are, with a few exceptions:
+.TP
+.B 1.
+Globbing patterns like
+.BR * ,
+.BR ** ,
+.BR ? ,
+and
+.B [...]
+are not expanded.
+.TP
+.B 2.
+Include patterns do not match files in a directory that is included.
+So /usr/local in an include file will not match /usr/local/doc.
+.TP
+.B 3.
+Lines starting with "+ " are interpreted as include directives, even
+if found in a filelist referenced by
+.BR --exclude-filelist .
+Similarly, lines starting with "- " exclude files even if they are
+found within an include filelist.
+
+.RE
+For example, if file "list.txt" contains the lines:
+
+.RS
+/usr/local
+.RE
+.RS
+- /usr/local/doc
+.RE
+.RS
+/usr/local/bin
+.RE
+.RS
++ /var
+.RE
+.RS
+- /var
+
+.RE
+then "--include-filelist list.txt" would include /usr, /usr/local, and
+/usr/local/bin.  It would exclude /usr/local/doc,
+/usr/local/doc/python, etc.  It neither excludes nor includes
+/usr/local/man, leaving the fate of this directory to the next
+specification condition.  Finally, it is undefined what happens with
+/var.  A single file list should not contain conflicting file
+specifications.
+
+Finally, the
+.B --include-regexp
+and
+.B --exclude-regexp
+allow files to be included and excluded if their filenames match a
+python regular expression.  Regular expression syntax is too
+complicated to explain here, but is covered in Python's library
+reference.  Unlike the
+.B --include
+and
+.B --exclude
+options, the regular expression options don't match files containing
+or contained in matched files.  So for instance
+.PP
+.RS
+--include '[0-9]{7}(?!foo)'
+.PP
+.RE
+matches any files whose full pathnames contain 7 consecutive digits
+which aren't followed by 'foo'.  However, it wouldn't match /home even
+if /home/ben/1234567 existed.
+
+.SH BUGS
+rdiff-backup uses the shell command
+.BR mknod (1)
+to backup device files (e.g. /dev/ttyS0), so device files won't be
+handled correctly on systems with non-standard mknod syntax.
+.PP
+Files whose names are close to the maximum length (e.g. 235 chars if
+the maximum is 255) may be skipped because the filenames of related
+increment files would be too long.
+
+.SH AUTHOR
+Ben Escoto <bescoto@stanford.edu>
+.PP
+Feel free to ask me questions or send me bug reports, but also check
+out the mailing list mentioned below.
+
+.SH SEE ALSO
+.BR python (1),
+.BR rdiff (1),
+.BR rsync (1),
+.BR ssh (1).
+The main rdiff-backup web page is at
+.IR http://www.stanford.edu/~bescoto/rdiff-backup .
+There also a mailing list described at
+.IR http://keywest.Stanford.EDU/mailman/listinfo/rdiff-backup .

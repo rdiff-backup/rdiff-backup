@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+
+import os, sys, re
+
+SourceDir = "src"
+
+if len(sys.argv) == 2:
+	version = sys.argv[1]
+	specfile = "rdiff-backup-%s-1.spec" % version
+	print "Using specfile %s" % specfile
+else:
+	print "Syntax:  %s version_number" % sys.argv[0]
+	sys.exit(1)
+
+base = ".".join(specfile.split(".")[:-1])
+srcrpm = base+".src.rpm"
+i386rpm = base+".i386.rpm"
+source_rpm = base+".src.rpm"
+tarfile = "-".join(base.split("-")[:-1]) + ".tar.gz"
+
+assert not os.system("install -o root -g root -m 644 %s "
+					 "/usr/src/redhat/SOURCES" % (tarfile,))
+assert not os.system("rpm -ba --sign -vv --target i386 " + specfile)
+assert not os.system("install -o ben -g ben -m 644 "
+					 "/usr/src/redhat/RPMS/i386/%s ." % i386rpm)
+assert not os.system("install -o ben -g ben -m 644 "
+					 "/usr/src/redhat/SRPMS/%s ." % source_rpm)
