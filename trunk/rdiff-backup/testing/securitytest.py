@@ -86,9 +86,10 @@ class SecurityTest(unittest.TestCase):
 								 'testfiles/output', 1,
 								 '--restrict testfiles/output',
 								 current_time = 10000)
+		# Note the backslash below -- test for bug in path normalization
 		self.secure_rdiff_backup('testfiles/various_file_types',
 								 'testfiles/output', 1,
-								 '--restrict testfiles/output')
+								 '--restrict testfiles/output/')
 
 		Myrm("testfiles/restore_out")
 		self.secure_rdiff_backup('testfiles/output',
