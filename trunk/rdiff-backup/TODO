@@ -3,6 +3,8 @@ Security audit
 --read-only and --write-only /usr/foo switches to tighten security up some.
 
 
+Think about adding Gaudet's idea for keeping track of renamed files.
+
 
 
 Don't produce stack trace which looks like crash/include file name in
@@ -12,6 +14,9 @@ Add to above Dean Gaudet's suggestion: make errors look prettier (like tar).
 
 Examine and fix recovery problems.
 
-Think about adding Gaudet's idea for keeping track of renamed files.
-
 If don't recover hardlink support and hardlink support on, don't resume.
+
+Fix Finish bug so error finishing in subdirectory won't mess up
+finishing parent directory.
+
+
