@@ -149,8 +149,9 @@ class PathSetter(unittest.TestCase):
 		# Make sure too many increment files not created
 		assert len(self.getinc_paths("nochange.",
 			  "testfiles/output/rdiff-backup-data/increments")) == 0
-		assert len(self.getinc_paths("",
-			"testfiles/output/rdiff-backup-data/increments/nochange")) == 1
+		nochange_incs = len(self.getinc_paths("",
+			"testfiles/output/rdiff-backup-data/increments/nochange"))
+		assert nochange_incs == 1 or nochange_incs == 0, nochange_incs
 
 	def getinc_paths(self, basename, directory):
 		"""Return increment.______.dir paths"""

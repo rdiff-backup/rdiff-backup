@@ -8,7 +8,7 @@ class RemoteMirrorTest(unittest.TestCase):
 	"""Test mirroring"""
 	def setUp(self):
 		"""Start server"""
-		Log.setverbosity(7)
+		Log.setverbosity(5)
 		Globals.change_source_perms = 1
 		SetConnections.UpdateGlobal('checkpoint_interval', 3)
 
