@@ -200,12 +200,7 @@ typedef struct rs_stats {
  * \sa rs_mdfour(), rs_mdfour_begin(), rs_mdfour_update(),
  * rs_mdfour_result()
  */
-typedef struct rs_mdfour {
-    int                 A, B, C, D;
-    int                 totalN;
-    int                 tail_len;
-    unsigned char       tail[64];
-} rs_mdfour_t;
+typedef struct rs_mdfour rs_mdfour_t;
 
 #define RS_MD4_LENGTH 16
 
