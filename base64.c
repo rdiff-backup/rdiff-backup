@@ -1,5 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
