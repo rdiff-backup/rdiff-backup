@@ -128,3 +128,22 @@ isprefix_driver_LDADD = $(LIBOBJS)
 .PHONY: check_programs
 check_programs: $(check_PROGRAMS)
 
+
+
+# Doxygen API documentation
+
+sites=front.linuxcare.com.au:/var/www/projects/rproxy \
+	rproxy.sourceforge.net:/home/groups/rproxy/htdocs \
+	rproxy.samba.org:/space/httpd/rproxy/htdocs
+
+.PHONY: do-doxy upload-doxy
+
+html/index.html latex/refman.pdf latex/refman.ps.gz do-doxy:
+	doxygen
+	(cd latex && make refman.ps refman.pdf && gzip -9vf refman.ps)
+
+upload-doxy: html/index.html latex/refman.pdf latex/refman.ps.gz
+	for i in $(sites); do \
+	rsync --delete -avz html/ latex/refman.pdf latex/refman.ps.gz \
+		./rproxy-small-logo.png $$i/doxygen/libhsync; \
+	done
