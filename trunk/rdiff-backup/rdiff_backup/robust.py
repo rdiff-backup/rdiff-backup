@@ -307,7 +307,7 @@ class SaveState:
 
 	def touch_last_file(cls):
 		"""Touch last file marker, indicating backup has begun"""
-		cls._last_file_sym.touch()
+		if not cls._last_file_sym.lstat(): cls._last_file_sym.touch()
 
 	def touch_last_file_definitive(cls):
 		"""Create last-file-definitive marker

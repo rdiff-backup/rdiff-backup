@@ -1,5 +1,5 @@
 execfile("log.py")
-import time, types
+import time, types, re
 
 #######################################################################
 #
@@ -10,8 +10,13 @@ class TimeException(Exception): pass
 
 class Time:
 	"""Functions which act on the time"""
-	_interval_conv_dict = {"s": 1, "m": 60, "h": 3600,
-						   "D": 86400, "M": 30*86400, "Y": 365*86400}
+	_interval_conv_dict = {"s": 1, "m": 60, "h": 3600, "D": 86400,
+						   "W": 7*86400, "M": 30*86400, "Y": 365*86400}
+	_interval_regexp = re.compile("^([0-9]+)([smhDWMY])")
+	_genstr_date_regexp1 = re.compile("^(?P<year>[0-9]{4})[-/]"
+						   "(?P<month>[0-9]{1,2})[-/](?P<day>[0-9]{1,2})$")
+	_genstr_date_regexp2 = re.compile("^(?P<month>[0-9]{1,2})[-/]"
+						   "(?P<day>[0-9]{1,2})[-/](?P<year>[0-9]{4})$")
 
 	def setcurtime(cls, curtime = None):
 		"""Sets the current time in curtime and curtimestr on all systems"""
@@ -77,14 +82,25 @@ class Time:
 		return cls.timetopretty(cls.stringtotime(timestring))
 
 	def intstringtoseconds(cls, interval_string):
-		"""Convert a string expressing an interval to seconds"""
+		"""Convert a string expressing an interval (e.g. "4D2s") to seconds"""
 		def error():
-			raise TimeException('Bad interval string "%s"' % interval_string)
+			raise TimeException("""Bad interval string "%s"
+
+Intervals are specified like 2Y (2 years) or 2h30m (2.5 hours).  The
+allowed special characters are s, m, h, D, W, M, and Y.  See the man
+page for more information.
+""" % interval_string)
 		if len(interval_string) < 2: error()
-		try: num, ext = int(interval_string[:-1]), interval_string[-1]
-		except ValueError: error()
-		if not ext in cls._interval_conv_dict or num < 0: error()
-		return num*cls._interval_conv_dict[ext]
+		
+		total = 0
+		while interval_string:
+			match = cls._interval_regexp.match(interval_string)
+			if not match: error()
+			num, ext = int(match.group(1)), match.group(2)
+			if not ext in cls._interval_conv_dict or num < 0: error()
+			total += num*cls._interval_conv_dict[ext]
+			interval_string = interval_string[match.end(0):]
+		return total
 
 	def gettzd(cls):
 		"""Return w3's timezone identification string.
@@ -125,5 +141,40 @@ class Time:
 		if time1 < time2: return -1
 		elif time1 == time2: return 0
 		else: return 1
+
+	def genstrtotime(cls, timestr, curtime = None):
+		"""Convert a generic time string to a time in seconds"""
+		if curtime is None: curtime = cls.curtime
+		if timestr == "now": return curtime
+
+		def error():
+			raise TimeException("""Bad time string "%s"
+
+The acceptible time strings are intervals (like "3D64s"), w3-datetime
+strings, like "2002-04-26T04:22:01-07:00" (strings like
+"2002-04-26T04:22:01" are also acceptable - rdiff-backup will use the
+current time zone), or ordinary dates like 2/4/1997 or 2001-04-23
+(various combinations are acceptable, but the month always precedes
+the day).
+""" % timestr)
+
+		# Test for w3-datetime format, possibly missing tzd
+		t = cls.stringtotime(timestr) or cls.stringtotime(timestr+cls.gettzd())
+		if t: return t
+
+		try: # test for an interval, like "2 days ago"
+			return curtime - cls.intstringtoseconds(timestr)
+		except TimeException: pass
+
+		# Now check for dates like 2001/3/23
+		match = cls._genstr_date_regexp1.search(timestr) or \
+				cls._genstr_date_regexp2.search(timestr)
+		if not match: error()
+		timestr = "%s-%02d-%02dT00:00:00%s" % \
+				  (match.group('year'), int(match.group('month')),
+				   int(match.group('day')), cls.gettzd())
+		t = cls.stringtotime(timestr)
+		if t: return t
+		else: error()
 
 MakeClass(Time)
