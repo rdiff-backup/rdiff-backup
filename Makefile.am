@@ -45,7 +45,8 @@ libhsync_la_SOURCES =				\
 	mksum.c					\
 	trace.c trace.h				\
 	version.c				\
-	protocol.h
+	protocol.h				\
+	msg.c
 
 # TODO: If we ever care enough, build a second library containing only
 # the code necessary to be a client, and not stuff for encoding.  At

@@ -128,7 +128,7 @@ void            hs_mdfour_result(hs_mdfour_t * md, unsigned char *out);
 char *hs_format_stats(hs_stats_t const *, char *, size_t);
 int hs_log_stats(hs_stats_t const *stats);
 
-
+char const *hs_strerror(enum hs_result r);
 
 /***********************************************************************
  * All encoding routines follow a calling protocol similar to that of

@@ -111,7 +111,8 @@ int hs_patch_files(FILE *basis_file, FILE *delta_file,
 		_hs_drain_to_file(&stream, out_buf, hs_outbuflen, out_file);
 	} while (result == HS_BLOCKED);
 
-        _hs_trace("file patch concluded with result %d", result);
+        _hs_trace("file patch concluded with result %d: %s", result,
+                  hs_strerror(result));
 
 	free(delta_buf);
 	free(out_buf);
