@@ -1,3 +1,4 @@
+.ctypes
 *.driver
 *.la
 *.lo
