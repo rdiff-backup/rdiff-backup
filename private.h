@@ -45,7 +45,7 @@
 #elif __LCLINT__
 #  define UNUSED(x) /*@unused@*/ x
 #else				/* !__GNUC__ && !__LCLINT__ */
-#  define UNUSED(x)
+#  define UNUSED(x) x
 #endif				/* !__GNUC__ && !__LCLINT__ */
 
 
@@ -82,7 +82,7 @@ void            _hs_check_blocksize(int block_len);
    null, then no memory has been allocated yet. */
 struct hs_membuf {
     int             dogtag;
-    char           *buf;
+    byte_t         *buf;
     hs_off_t        ofs;
     ssize_t         length;
     size_t          alloc;
@@ -93,7 +93,7 @@ struct hs_membuf {
    is currently at OFS. */
 struct hs_ptrbuf {
     int             dogtag;
-    char           *buf;
+    byte_t         *buf;
     hs_off_t        ofs;
     size_t          length;
 };
@@ -121,7 +121,7 @@ struct hs_ptrbuf {
 struct _hs_inbuf {
     int             tag;
     int             len;
-    char           *buf;
+    byte_t           *buf;
     int             amount;
     int             cursor;
     int             abspos;
@@ -162,7 +162,7 @@ struct hs_sumset {
     int             count;	/* how many chunks */
     int             remainder;	/* flength % block_length */
     int             block_len;	/* block_length */
-    struct sum_buf *sums;	/* points to info for each chunk */
+    struct hs_sum_buf *sums;	/* points to info for each chunk */
     int            *tag_table;
     struct target  *targets;
 };
@@ -170,11 +170,12 @@ struct hs_sumset {
 
 /* All blocks are the same length in the current algorithm except for the
    last block which may be short. */
-typedef struct sum_buf {
+typedef struct hs_sum_buf {
     int             i;		/* index of this chunk */
     uint32_t        sum1;	/* simple checksum */
-    char            strong_sum[MD4_LENGTH];	/* checksum  */
-} sum_buf_t;
+    byte_t          strong_sum[MD4_LENGTH];	/* checksum  */
+} hs_sum_buf_t;
+
 
 typedef struct hs_rollsum hs_rollsum_t;
 
@@ -197,38 +198,7 @@ int             _hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
 			       _hs_copyq_t * copyq, hs_stats_t * stats);
 
 
-/* ========================================
-
-   emit/inhale commands */
-
-struct hs_op_kind_name {
-    char           *name;
-    int             code;
-};
-
-extern struct hs_op_kind_name const _hs_op_kind_names[];
-
-int             _hs_emit_signature_cmd(hs_write_fn_t write_fn,
-				       void *write_priv, size_t size);
-
-int             _hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
-				 char const *buf, size_t size);
-
-int             _hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv,
-				     size_t size);
-
-int             _hs_emit_checksum_cmd(hs_write_fn_t, void *, uint32_t size);
-
-int             _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
-			      off_t offset, size_t length,
-
-			      hs_stats_t * stats);
-
-
-int             _hs_emit_eof(hs_write_fn_t write_fn, void *write_priv,
-			     hs_stats_t * stats);
-
-int             _hs_append_literal(hs_membuf_t * litbuf, char value);
+int             _hs_append_literal(hs_membuf_t * litbuf, byte_t value);
 
 
 int             _hs_inhale_command(hs_read_fn_t read_fn, void *read_priv,

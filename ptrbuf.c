@@ -28,7 +28,7 @@ static const int ptrbuf_tag = 384384;
 
 /* Allow the caller read-only access to our buffer. */
 size_t
-hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, char const **buf)
+hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, byte_t const **buf)
 {
     assert(mb->dogtag == ptrbuf_tag);
     *buf = mb->buf;
@@ -37,7 +37,7 @@ hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, char const **buf)
 
 
 hs_ptrbuf_t    *
-hs_ptrbuf_on_buffer(char *buf, int len)
+hs_ptrbuf_on_buffer(byte_t *buf, int len)
 {
     hs_ptrbuf_t    *mb;
 
@@ -73,7 +73,7 @@ hs_ptrbuf_truncate(hs_ptrbuf_t * mb)
 
 
 ssize_t
-hs_ptrbuf_write(void *private, char const *buf, size_t len)
+hs_ptrbuf_write(void *private, byte_t const *buf, size_t len)
 {
     hs_ptrbuf_t    *mb = (hs_ptrbuf_t *) private;
 
@@ -94,7 +94,7 @@ hs_ptrbuf_write(void *private, char const *buf, size_t len)
 
 
 ssize_t
-hs_ptrbuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
+hs_ptrbuf_read_ofs(void *private, byte_t *buf, size_t len, hs_off_t ofs)
 {
     hs_ptrbuf_t    *mb = (hs_ptrbuf_t *) private;
 
@@ -114,7 +114,7 @@ hs_ptrbuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
 
 
 ssize_t
-hs_ptrbuf_read(void *private, char *buf, size_t len)
+hs_ptrbuf_read(void *private, byte_t *buf, size_t len)
 {
     hs_ptrbuf_t    *mb = (hs_ptrbuf_t *) private;
     size_t          remain = mb->length - mb->ofs;

@@ -22,6 +22,10 @@
 
 /* TODO: A function like perror that includes strerror output. */
 
+void _hs_fatal0(char const *s, ...);
+void _hs_error0(char const *s, ...);
+void _hs_trace0(char const *s, ...);
+
 
 #ifdef __GNUC__
 
@@ -63,15 +67,12 @@ extern char const *program_invocation_short_name;
 
 #else /************************* ! __GNUC__ */
 
-#  define _hs_fatal(s, str...) do { fprintf (stderr,    \
-    "libhsync: " s "\n" , ##str); abort(); } while(0)
-
-#  define _hs_error(s, str...) do { fprintf (stderr,    \
-    "libhsync: " s "\n" , ##str); } while(0)
+#  define _hs_fatal _hs_fatal0
+#  define _hs_error _hs_error0
 
 #  ifdef DO_HS_TRACE
-#    define _hs_trace _hs_log0
-void            _hs_log0(char const *, ...);
+#    define _hs_trace _hs_trace0
+void            _hs_log0(int, char const *, ...);
 #  endif			/* DO_HS_TRACE */
 #endif				/* ! __GNUC__ */
 

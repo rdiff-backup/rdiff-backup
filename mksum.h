@@ -12,7 +12,6 @@
    02139, USA. */
 
 
-void
-                _hs_mksum_of_block(char const *p, ssize_t len,
-				   hs_write_fn_t write_fn, void *write_priv,
-				   size_t strong_sum_len);
+void _hs_mksum_of_block(byte_t const *p, ssize_t len,
+			hs_write_fn_t write_fn, void *write_priv,
+			size_t strong_sum_len);

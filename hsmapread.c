@@ -75,8 +75,9 @@ read_chunks(int fd,
 	    hs_map_t * map, int argc, char **argv,
 	    int use_select, int keep_trying)
 {
-    char const     *p;
-    int             off, len;
+    byte_t const   *p;
+    int             off;
+    size_t          len;
     int             want_len;
     int             written;
     int             saw_eof;

@@ -53,7 +53,7 @@ _hs_copy(const uint32_t length,
 	 hs_write_fn_t write_fn, void *write_priv, hs_mdfour_t * newsum)
 {
     ssize_t         ret;
-    char           *buf;
+    byte_t  *buf;
 
     buf = malloc(length);
     if (!buf)
@@ -107,9 +107,9 @@ static int
 _hs_check_filesum(hs_read_fn_t ltread_fn, void *ltread_priv,
 		   int length, hs_mdfour_t * newsum)
 {
-    char           *buf;
+    byte_t           *buf;
     int             ret;
-    char            actual_result[MD4_LENGTH];
+    byte_t            actual_result[MD4_LENGTH];
 
     assert(length == MD4_LENGTH);
     buf = malloc(length);
@@ -132,9 +132,9 @@ _hs_dec_copy(uint32_t offset, uint32_t length, hs_map_t *old_map,
 	     hs_write_fn_t write_fn, void *write_priv, hs_mdfour_t * newsum)
 {
     int             ret;
-    char const	    *buf;
+    byte_t const	    *buf;
     int		    at_eof;
-    int             mapped_len;
+    size_t          mapped_len;
 
     if (length > INT32_MAX) {
 	_hs_fatal("length %u is too big", length);

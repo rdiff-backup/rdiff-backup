@@ -106,7 +106,7 @@ hs_filebuf_close(hs_filebuf_t * fbuf)
 
 
 /* May return short */
-ssize_t hs_filebuf_read(void *private, char *buf, size_t len)
+ssize_t hs_filebuf_read(void *private, byte_t *buf, size_t len)
 {
     struct file_buf *fbuf = (struct file_buf *) private;
     ssize_t         n;
@@ -128,7 +128,7 @@ ssize_t hs_filebuf_read(void *private, char *buf, size_t len)
 }
 
 
-ssize_t hs_filebuf_write(void *private, char const *buf, size_t len)
+ssize_t hs_filebuf_write(void *private, byte_t const *buf, size_t len)
 {
     struct file_buf *fbuf = (struct file_buf *) private;
     size_t          n;

@@ -52,6 +52,15 @@ hs_trace_set_level(int level)
 }
 
 
+void
+_hs_log_va(int level, char const *fmt, va_list va)
+{
+    if (_hs_trace_impl && level <= _hs_trace_level) 
+	_hs_trace_impl(level, fmt, va);
+}
+
+
+
 /* This function is called by a macro that prepends the calling function
  * name, etc.  */
 void
@@ -59,11 +68,9 @@ _hs_log0(int level, char const *fmt, ...)
 {
     va_list         va;
 
-    if (_hs_trace_impl && level <= _hs_trace_level) {
-	va_start(va, fmt);
-	_hs_trace_impl(level, fmt, va);
-	va_end(va);
-    }
+    va_start(va, fmt);
+    _hs_log_va(level, fmt, va);
+    va_end(va);
 }
 
 
@@ -81,6 +88,45 @@ hs_trace_to_stderr(int UNUSED(level), char const *fmt, va_list va)
 
     /* NOTE NO TRAILING NUL */
     write(STDERR_FILENO, buf, n);
+}
+
+
+/* This is called directly if the machine doesn't allow varargs
+ * macros. */
+void
+_hs_fatal0(char const *s, ...) 
+{
+    va_list	va;
+
+    va_start(va, s);
+    _hs_log_va(LOG_CRIT, s, va);
+    va_end(va);
+}
+
+
+/* This is called directly if the machine doesn't allow varargs
+ * macros. */
+void
+_hs_error0(char const *s, ...) 
+{
+    va_list	va;
+
+    va_start(va, s);
+    _hs_log_va(LOG_ERR, s, va);
+    va_end(va);
+}
+
+
+/* This is called directly if the machine doesn't allow varargs
+ * macros. */
+void
+_hs_trace0(char const *s, ...) 
+{
+    va_list	va;
+
+    va_start(va, s);
+    _hs_log_va(LOG_DEBUG, s, va);
+    va_end(va);
 }
 
 

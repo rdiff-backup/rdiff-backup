@@ -113,7 +113,7 @@ const int hs_encode_job_magic = 23452345;
 
 
 struct hs_encode_job {
-    int			tag;
+    int			dogtag;
 
     int			in_fd;
     hs_map_t	       *in_map;
@@ -226,12 +226,12 @@ hs_encode_begin(int in_fd, hs_write_fn_t write_fn, void *write_priv,
 /* Work out where we have to map to achieve something useful, and
  * return a pointer thereto.  Set MAP_LEN to the amount of available
  * data. */
-static char const *
+static byte_t const *
 _hs_nad_map(hs_encode_job_t *job,
-	       hs_off_t *map_off,
-	       size_t *map_len)
+	    hs_off_t *map_off,
+	    size_t *map_len)
 {
-    char const	       *p;
+    byte_t const	       *p;
     hs_off_t		start, end, end2;
 
     /* once we've seen eof, we should never try to map any more
@@ -264,8 +264,8 @@ _hs_nad_map(hs_encode_job_t *job,
 
 static void
 _hs_nad_search_iter(hs_encode_job_t *job,
-		    char const *p,
-		       ssize_t avail)
+		    byte_t const *p,
+		    ssize_t avail)
 {
     if (avail <= 0)
 	return;
@@ -291,7 +291,7 @@ _hs_nad_search_iter(hs_encode_job_t *job,
 
 static void
 _hs_nad_sum_iter(hs_encode_job_t *job,
-		 char const *p,
+		 byte_t const *p,
 		 ssize_t avail)
 {
     while (avail >= (ssize_t) job->new_block_len ||
@@ -324,7 +324,7 @@ _hs_nad_sum_iter(hs_encode_job_t *job,
 static void
 _hs_nad_filesum_flush(hs_encode_job_t *job)
 {
-    char	       result[MD4_LENGTH];
+    byte_t	       result[MD4_LENGTH];
 #ifdef DO_HS_TRACE
     char	       sum_hex[MD4_LENGTH * 2 + 2];
 #endif
@@ -332,8 +332,8 @@ _hs_nad_filesum_flush(hs_encode_job_t *job)
     hs_mdfour_result(&job->filesum, result);
 
 #ifdef DO_HS_TRACE
-    // At the end, emit the whole thing
-    hs_hexify_buf(sum_hex, (char const *)result, MD4_LENGTH);
+    /* At the end, emit the whole thing */
+    hs_hexify_buf(sum_hex, result, MD4_LENGTH);
     _hs_trace("got filesum %s", sum_hex);
 #endif
 
@@ -371,7 +371,7 @@ hs_result_t
 hs_encode_iter(hs_encode_job_t *job)
 {
     size_t		map_len;
-    char const		*p;
+    byte_t const	*p;
     hs_off_t		map_off;
      
     /* Map some data.  We advance the map to the earliest point in the

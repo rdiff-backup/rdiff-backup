@@ -109,7 +109,7 @@ static int
 _hs_output_block_hash(hs_write_fn_t write_fn, void *write_priv,
 		      _hs_inbuf_t * inbuf, int short_block, uint32_t weak_sum)
 {
-    char            strong_sum[MD4_LENGTH];
+    byte_t            strong_sum[MD4_LENGTH];
     char            strong_hex[MD4_LENGTH * 2 + 2];
 
     _hs_write_netint(write_fn, write_priv, weak_sum);
@@ -178,9 +178,8 @@ hs_encode_old(hs_read_fn_t read_fn, void *readprivate,
     int             got_old;	/* true if there is an old signature */
     int             need_bytes;	/* how much readahead do we need? */
     hs_mdfour_t     filesum;
-    char            filesum_result[MD4_LENGTH],
-
-	filesum_hex[MD4_LENGTH * 2 + 2];
+    byte_t          filesum_result[MD4_LENGTH];
+    char            filesum_hex[MD4_LENGTH * 2 + 2];
     char            stats_str[256];
 
     _hs_trace("**** begin");

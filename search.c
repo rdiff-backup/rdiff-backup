@@ -78,19 +78,19 @@ _hs_build_hash_table(hs_sumset_t * sums)
    for the current block, and see if it will match anything. */
 int
 _hs_find_in_hash(uint32_t weak_sum,
-		 char const *inbuf, int block_len,
+		 byte_t const *inbuf, size_t block_len,
 		 hs_sumset_t const *sums, hs_stats_t * stats)
 {
-    int             tag = gettag(weak_sum);
-    int             j = sums->tag_table[tag];
-    char            strong_sum[DEFAULT_SUM_LENGTH];
+    int             hash_tag = gettag(weak_sum);
+    int             j = sums->tag_table[hash_tag];
+    byte_t          strong_sum[DEFAULT_SUM_LENGTH];
     int             got_strong = 0;
 
     if (j == NULL_TAG) {
 	return -1;
     }
 
-    for (; j < sums->count && sums->targets[j].t == tag; j++) {
+    for (; j < sums->count && sums->targets[j].t == hash_tag; j++) {
 	int             i = sums->targets[j].i;
 	int             token;
 

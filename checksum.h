@@ -26,7 +26,7 @@
 
 int             _hs_build_hash_table(hs_sumset_t *sums);
 
-uint32_t        _hs_calc_weak_sum(char const *buf1, int len);
+uint32_t        _hs_calc_weak_sum(byte_t const *buf1, int len);
 
-uint32_t        _hs_calc_strong_sum(char const *buf, size_t buf_len,
-				    char *sum, size_t sum_len);
+uint32_t        _hs_calc_strong_sum(byte_t const *buf, size_t buf_len,
+				    byte_t *sum, size_t sum_len);

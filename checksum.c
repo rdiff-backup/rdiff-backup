@@ -30,11 +30,11 @@ int checksum_seed = 0;
   a simple 32 bit checksum that can be updated from either end
   (inspired by Mark Adler's Adler-32 checksum)
   */
-uint32_t _hs_calc_weak_sum(char const *buf1, int len)
+uint32_t _hs_calc_weak_sum(byte_t const *buf1, int len)
 {
      int i;
      uint32_t s1, s2;
-     int8_t *buf = (uint8_t *) buf1;	/* this is signed */
+     int8_t *buf = (int8_t *) buf1;	/* this is signed */
 
      s1 = s2 = 0;
      for (i = 0; i < (len - 4); i += 4) {
@@ -63,15 +63,15 @@ uint32_t _hs_calc_weak_sum(char const *buf1, int len)
    Since we can't retry a web transaction I'm not sure if it's very
    useful in rproxy. */
 uint32_t
-_hs_calc_strong_sum(char const *buf, size_t len,
-		    char *sum, size_t sum_len)
+_hs_calc_strong_sum(byte_t const *buf, size_t len,
+		    byte_t *sum, size_t sum_len)
 {
      hs_mdfour_t m;
-     char tsum[MD4_LENGTH];
+     byte_t tsum[MD4_LENGTH];
 
      hs_mdfour_begin(&m);
-     hs_mdfour_update(&m, (char *) buf, len);
-     hs_mdfour_result(&m, (char *) tsum);
+     hs_mdfour_update(&m, buf, len);
+     hs_mdfour_result(&m, tsum);
 
      memcpy(sum, tsum, sum_len);
 

@@ -34,12 +34,15 @@ typedef struct stat hs_statbuf_t;
 #endif				/* !HAVE_OFF64_T */
 
 
+typedef uint8_t byte_t;
+
+
 /***********************************************************************
  * Callback function prototypes
  */
-typedef int     (*hs_read_fn_t) (void *readprivate, char *buf, size_t len);
+typedef int     (*hs_read_fn_t) (void *readprivate, byte_t *buf, size_t len);
 
-typedef int     (*hs_write_fn_t) (void *writeprivate, char const *buf,
+typedef int     (*hs_write_fn_t) (void *writeprivate, byte_t const *buf,
 
 				  size_t len);
 
@@ -110,10 +113,10 @@ struct file_buf;
 /* This is the preferred name for new code: */
 typedef struct file_buf hs_filebuf_t;
 
-ssize_t         hs_filebuf_read(void *private, char *buf, size_t len);
-ssize_t         hs_filebuf_zread(void *private, char *buf, size_t len);
-ssize_t         hs_filebuf_write(void *private, char const *buf, size_t len);
-ssize_t         hs_filebuf_zwrite(void *private, char const *buf, size_t len);
+ssize_t         hs_filebuf_read(void *private, byte_t *buf, size_t len);
+ssize_t         hs_filebuf_zread(void *private, byte_t *buf, size_t len);
+ssize_t         hs_filebuf_write(void *private, byte_t const *buf, size_t len);
+ssize_t         hs_filebuf_zwrite(void *private, byte_t const *buf, size_t len);
 
 hs_filebuf_t   *hs_filebuf_open(char const *filename, int mode);
 void            hs_filebuf_close(hs_filebuf_t * fbuf);
@@ -130,27 +133,27 @@ hs_filebuf_t   *hs_filebuf_from_file(FILE * fp);
 typedef struct hs_membuf hs_membuf_t;
 
 hs_off_t        hs_membuf_tell(void *private);
-ssize_t         hs_membuf_write(void *private, char const *buf, size_t len);
-ssize_t         hs_membuf_read(void *private, char *buf, size_t len);
+ssize_t         hs_membuf_write(void *private, byte_t const *buf, size_t len);
+ssize_t         hs_membuf_read(void *private, byte_t *buf, size_t len);
 ssize_t         hs_choose_block_size(ssize_t file_len);
 hs_membuf_t    *hs_membuf_new(void);
 void            hs_membuf_free(hs_membuf_t *);
 void            hs_membuf_truncate(hs_membuf_t * mb);
-size_t          hs_membuf_getbuf(hs_membuf_t const *mb, char const **buf);
-hs_membuf_t    *hs_membuf_on_buffer(char *buf, int len);
-ssize_t hs_membuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs);
+size_t          hs_membuf_getbuf(hs_membuf_t const *mb, byte_t const **buf);
+hs_membuf_t    *hs_membuf_on_buffer(byte_t *buf, int len);
+ssize_t hs_membuf_read_ofs(void *private, byte_t *buf, size_t len, hs_off_t ofs);
 
 typedef struct hs_ptrbuf hs_ptrbuf_t;
 
 hs_off_t        hs_ptrbuf_tell(void *private);
-ssize_t         hs_ptrbuf_write(void *private, char const *buf, size_t len);
-ssize_t         hs_ptrbuf_read(void *private, char *buf, size_t len);
+ssize_t         hs_ptrbuf_write(void *private, byte_t const *buf, size_t len);
+ssize_t         hs_ptrbuf_read(void *private, byte_t *buf, size_t len);
 ssize_t         hs_choose_block_size(ssize_t file_len);
-hs_ptrbuf_t    *hs_ptrbuf_on_buffer(char *buf, int len);
+hs_ptrbuf_t    *hs_ptrbuf_on_buffer(byte_t *buf, int len);
 void            hs_ptrbuf_truncate(hs_ptrbuf_t * mb);
-size_t          hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, char const **buf);
-hs_ptrbuf_t    *hs_ptrbuf_on_buffer(char *buf, int len);
-ssize_t hs_ptrbuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs);
+size_t          hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, byte_t const **buf);
+hs_ptrbuf_t    *hs_ptrbuf_on_buffer(byte_t *buf, int len);
+ssize_t hs_ptrbuf_read_ofs(void *private, byte_t *buf, size_t len, hs_off_t ofs);
 
 /* ============================================================
 
@@ -160,21 +163,18 @@ typedef struct hs_mdfour {
     uint32_t        A, B, C, D;
     uint32_t        totalN;
     int             tail_len;
-    char            tail[64];
+    byte_t            tail[64];
 } hs_mdfour_t;
 
-void            hs_mdfour(unsigned char *out, unsigned char const *in, int n);
+void            hs_mdfour(byte_t *out, byte_t const *in, int n);
 void            hs_mdfour_begin( /* @out@ */ hs_mdfour_t * md);
-void            hs_mdfour_update(hs_mdfour_t * md, unsigned char const *in,
-
+void            hs_mdfour_update(hs_mdfour_t * md, byte_t const *in,
 				 int n);
 void            hs_mdfour_result(hs_mdfour_t * md, /* @out@ */
+				 byte_t *out);
 
-				 unsigned char *out);
 
-
-void
-                hs_hexify_buf(char *to_buf, unsigned char const *from_buf, int from_len);
+void     hs_hexify_buf(char *to_buf, byte_t const *from_buf, int from_len);
 
 
 char           *hs_format_stats(hs_stats_t const *, char *, size_t);

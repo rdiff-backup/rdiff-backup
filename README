@@ -29,4 +29,10 @@ libhsync uses the GNU libtool library versioning system, so the
 filename does not correspond to the libhsync release.  To show the
 library release and version, use the libhsyncinfo tool.
 
+>> Platform notes
+
+SUNWspro:
+
+	Use -v for more warnings.
+
 $Id$

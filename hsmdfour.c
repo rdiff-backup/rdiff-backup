@@ -26,9 +26,10 @@ main(int argc, char *argv[])
 {
     hs_mdfour_t     sum;
     hs_filebuf_t   *infb;
-    char            result[MD4_LENGTH], result_str[MD4_LENGTH * 2];
+    byte_t          result[MD4_LENGTH];
+    char            result_str[MD4_LENGTH * 2];
     int             buf_len = 1000;
-    char           *buf;
+    byte_t         *buf;
     char           *tail_ptr;
     int             len;
     int             c;

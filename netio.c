@@ -23,7 +23,7 @@
    functions are allowed to wimp out and return short if they * want. * *
    XXX: In the future this function may be deprecated in favour of * mapptr. */
 int
-_hs_read_loop(hs_read_fn_t read_fn, void *read_priv, char *buf, size_t len)
+_hs_read_loop(hs_read_fn_t read_fn, void *read_priv, byte_t *buf, size_t len)
 {
     size_t          count = 0;
     int             ret;
@@ -48,7 +48,7 @@ _hs_read_loop(hs_read_fn_t read_fn, void *read_priv, char *buf, size_t len)
 /* Either read LEN bytes and return LEN, or zero for EOF, or fail *
    completely. */
 int
-_hs_must_read(hs_read_fn_t read_fn, void *read_priv, char *buf, ssize_t len)
+_hs_must_read(hs_read_fn_t read_fn, void *read_priv, byte_t *buf, ssize_t len)
 {
     ssize_t         count = 0;
     int             ret;
@@ -85,7 +85,7 @@ _hs_must_read(hs_read_fn_t read_fn, void *read_priv, char *buf, ssize_t len)
  */
 size_t
 _hs_write_loop(hs_write_fn_t write_fn, void *write_priv,
-	       char const *buf, size_t len)
+	       byte_t const *buf, size_t len)
 {
     size_t          count = 0;
     int             ret;
@@ -168,7 +168,7 @@ _hs_read_netshort(hs_read_fn_t read_fn, void *read_priv, uint16_t * result)
     uint16_t        buf;
     int             ret;
 
-    ret = _hs_must_read(read_fn, read_priv, (char *) &buf, sizeof buf);
+    ret = _hs_must_read(read_fn, read_priv, (byte_t *) &buf, sizeof buf);
     *result = ntohs(buf);
 
     return ret;
@@ -181,7 +181,7 @@ _hs_read_netint(hs_read_fn_t read_fn, void *read_priv, uint32_t * result)
     uint32_t        buf;
     int             ret;
 
-    ret = _hs_must_read(read_fn, read_priv, (char *) &buf, sizeof buf);
+    ret = _hs_must_read(read_fn, read_priv, (byte_t *) &buf, sizeof buf);
     *result = ntohl(buf);
 
     return ret;
@@ -195,7 +195,7 @@ _hs_read_netbyte(hs_read_fn_t read_fn, void *read_priv, uint8_t * result)
     int             ret;
     const int       len = sizeof buf;
 
-    ret = _hs_must_read(read_fn, read_priv, (char *) &buf, len);
+    ret = _hs_must_read(read_fn, read_priv, (byte_t *) &buf, len);
     *result = buf;
 
     return len;

@@ -30,7 +30,7 @@ main(int argc, char *argv[])
 {
     hs_filebuf_t   *infb;
     int             buf_len = 1000;
-    char           *buf;
+    byte_t         *buf;
     char           *tail_ptr;
     int             len;
     int             c;

@@ -1,15 +1,25 @@
-/* -*- c-file-style: "bsd" -*- * * $Id: mksum.c,v 1.2 2000/05/22 08:53:41 mbp 
-   Exp $ * * Copyright (C) 2000 by Martin Pool * * This program is free
-   software; you can redistribute it and/or modify * it under the terms of
-   the GNU General Public License as published by * the Free Software
-   Foundation; either version 2 of the License, or * (at your option) any
-   later version. * * This program is distributed in the hope that it will
-   be useful, * but WITHOUT ANY WARRANTY; without even the implied warranty
-   of * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the * GNU
-   General Public License for more details. * * You should have received a
-   copy of the GNU General Public License * along with this program; if not,
-   write to the Free Software * Foundation, Inc., 675 Mass Ave, Cambridge, MA 
-   02139, USA. */
+/*				       	-*- c-file-style: "bsd" -*-
+ * rproxy -- dynamic caching and delta update in HTTP
+ * $Id$
+ * 
+ * Copyright (C) 1999, 2000 by Martin Pool
+ * Copyright (C) 1999 by Andrew Tridgell
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+
 
 /* 
  * Generate a checksum set, using the newstyle nonblocking
@@ -21,7 +31,7 @@
 const int       hs_mksum_job_magic = 123123;
 
 struct hs_mksum_job {
-    int             tag;
+    int             dogtag;
     hs_map_t       *in_map;
     int             in_fd;
     hs_write_fn_t   write_fn;
@@ -52,7 +62,7 @@ hs_mksum_begin(int in_fd,
     job->write_fn = write_fn;
     job->write_priv = write_priv;
     job->block_len = new_block_len;
-    job->tag = hs_mksum_job_magic;
+    job->dogtag = hs_mksum_job_magic;
 
     assert(strong_sum_len > 0 && strong_sum_len <= MD4_LENGTH);
     job->strong_sum_len = strong_sum_len;
@@ -68,7 +78,7 @@ hs_mksum_begin(int in_fd,
 static void
 _hs_mksum_finish(hs_mksum_job_t * job)
 {
-    assert(job->tag == hs_mksum_job_magic);
+    assert(job->dogtag == hs_mksum_job_magic);
     _hs_unmap_file(job->in_map);
     /* We don't close or flush the files because they belong to the * caller. 
      */
@@ -81,12 +91,12 @@ _hs_mksum_finish(hs_mksum_job_t * job)
  * Generate and write out the checksums of a block.
  */
 void
-_hs_mksum_of_block(char const *p, ssize_t len,
+_hs_mksum_of_block(byte_t const *p, ssize_t len,
 		   hs_write_fn_t write_fn, void *write_priv,
 		   size_t strong_sum_len)
 {
     uint32_t        weak_sum;
-    char            strong_sum[MD4_LENGTH];
+    byte_t            strong_sum[MD4_LENGTH];
 
 #ifdef DO_HS_TRACE
     char            strong_hex[MD4_LENGTH * 2 + 2];
@@ -115,11 +125,11 @@ hs_result_t
 hs_mksum_iter(hs_mksum_job_t * job)
 {
     int             ret;
-    char const     *p;
-    ssize_t         map_len;
+    byte_t const     *p;
+    size_t         map_len;
     int             saw_eof;
 
-    assert(job->tag = hs_mksum_job_magic);
+    assert(job->dogtag = hs_mksum_job_magic);
 
     if (!job->sent_header) {
 	ret = _hs_newsig_header(job->block_len,

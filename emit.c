@@ -90,7 +90,7 @@ _hs_emit_checksum_cmd(hs_write_fn_t write_fn, void *write_priv, size_t size)
 
 int
 _hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
-		 char const *buf, size_t size)
+		 byte_t const *buf, size_t size)
 {
      int ret;
 
@@ -142,7 +142,7 @@ int
 _hs_send_literal(hs_write_fn_t write_fn,
 		 void *write_priv,
 		 int kind,
-		 char const *buf,
+		 byte_t const *buf,
 		 size_t amount)
 {
     int ret;

@@ -51,7 +51,7 @@ hs_membuf_free(hs_membuf_t * mb)
 
 /* Allow the caller read-only access to our buffer. */
 size_t
-hs_membuf_getbuf(hs_membuf_t const *mb, char const **buf)
+hs_membuf_getbuf(hs_membuf_t const *mb, byte_t const **buf)
 {
     assert(mb->dogtag == membuf_tag);
     *buf = mb->buf;
@@ -60,7 +60,7 @@ hs_membuf_getbuf(hs_membuf_t const *mb, char const **buf)
 
 
 hs_membuf_t    *
-hs_membuf_on_buffer(char *buf, int len)
+hs_membuf_on_buffer(byte_t *buf, int len)
 {
     hs_membuf_t    *mb;
 
@@ -95,14 +95,14 @@ hs_membuf_truncate(hs_membuf_t * mb)
 }
 
 
-ssize_t hs_membuf_write(void *private, char const *buf, size_t len)
+ssize_t hs_membuf_write(void *private, byte_t const *buf, size_t len)
 {
     hs_membuf_t    *mb = (hs_membuf_t *) private;
 
     assert(mb->dogtag == membuf_tag);
 
     if (mb->alloc < mb->ofs + len) {
-	char           *newbuf;
+	byte_t           *newbuf;
 
 	mb->alloc = MAX(mb->alloc * 2, mb->ofs + len);
 	newbuf = realloc(mb->buf, mb->alloc);
@@ -117,7 +117,7 @@ ssize_t hs_membuf_write(void *private, char const *buf, size_t len)
 }
 
 
-ssize_t hs_membuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
+ssize_t hs_membuf_read_ofs(void *private, byte_t *buf, size_t len, hs_off_t ofs)
 {
     hs_membuf_t    *mb = (hs_membuf_t *) private;
 
@@ -136,7 +136,7 @@ ssize_t hs_membuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
 }
 
 
-ssize_t hs_membuf_read(void *private, char *buf, size_t len)
+ssize_t hs_membuf_read(void *private, byte_t *buf, size_t len)
 {
     hs_membuf_t    *mb = (hs_membuf_t *) private;
     size_t          remain = mb->length - mb->ofs;

@@ -126,8 +126,8 @@ static int const HS_MAP_TAG = 189900;
    in P.
  */
 struct hs_map {
-    int             tag;
-    /*@null@*/ char *p;
+    int             godtag;
+    /*@null@*/ byte_t *p;
     int             fd;
     ssize_t         p_size, p_len;
     hs_off_t        p_offset, p_fd_offset;
@@ -146,7 +146,7 @@ _hs_map_file(int fd)
 
     map = _hs_alloc_struct(hs_map_t);
 
-    map->tag = HS_MAP_TAG;
+    map->godtag = HS_MAP_TAG;
     map->fd = fd;
     map->p = NULL;
     map->p_size = 0;
@@ -180,12 +180,12 @@ _hs_map_do_read(hs_map_t *map,
     ssize_t total_read = 0;     /* total amount read in */
     ssize_t nread;
     ssize_t buf_remain = max_size; /* buffer space left */
-    char *p = map->p + read_offset;
+    byte_t *p = map->p + read_offset;
 
     assert(max_size > 0);
     assert(min_size >= 0);
     assert(read_offset >= 0);
-    assert(map->tag == HS_MAP_TAG);
+    assert(map->godtag == HS_MAP_TAG);
     
     do {
         nread = read(map->fd, p, (size_t) buf_remain);
@@ -242,8 +242,8 @@ _hs_map_do_read(hs_map_t *map,
    buffer.
 
    Iff an error occurs, returns NULL. */
-/*@null@*/ const char *
-_hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
+/*@null@*/ const byte_t *
+_hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
 {
     /* window_{start,size} define the part of the file that will in
        the future be covered by the map buffer, if we have our way.
@@ -258,7 +258,7 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     hs_off_t read_offset;
     ssize_t total_read, avail;
 
-    assert(map->tag == HS_MAP_TAG);
+    assert(map->godtag == HS_MAP_TAG);
     assert(len != NULL);        /* check pointers */
     assert(reached_eof != NULL);
     assert(offset >= 0);
@@ -300,11 +300,11 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     if (!map->p) {
         assert(map->p_size == 0);
         _hs_trace("allocate initial %ld byte window", (long) window_size);
-        map->p = (char *) malloc((size_t) window_size);
+        map->p = (byte_t *) malloc((size_t) window_size);
         map->p_size = window_size;
     } else if (window_size > map->p_size) {
         _hs_trace("grow buffer to hold %ld byte window", (long) window_size);
-        map->p = (char *) realloc(map->p, (size_t) window_size);
+        map->p = (byte_t *) realloc(map->p, (size_t) window_size);
         map->p_size = window_size;
     }
 
@@ -395,7 +395,7 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
 void
 _hs_unmap_file(hs_map_t * map)
 {
-    assert(map->tag == HS_MAP_TAG);
+    assert(map->godtag == HS_MAP_TAG);
     if (map->p) {
         free(map->p);
         map->p = NULL;

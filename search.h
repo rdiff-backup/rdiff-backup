@@ -12,5 +12,5 @@
    02139, USA. */
 
 int             _hs_find_in_hash(uint32_t weak_sum,
-				 char const *inbuf, int block_len,
+				 byte_t const *inbuf, size_t block_len,
 				 hs_sumset_t const *sigs, hs_stats_t *);

@@ -29,7 +29,7 @@
 
 /* Queue byte VALUE into the literal-data buffer. */
 int
-_hs_append_literal(hs_membuf_t * litbuf, char value)
+_hs_append_literal(hs_membuf_t * litbuf, byte_t value)
 {
     hs_membuf_write(litbuf, &value, sizeof value);	/* LEAK HERE! */
 
@@ -46,7 +46,7 @@ _hs_push_literal_buf(hs_membuf_t * litbuf,
 		     hs_write_fn_t write_fn, void *write_priv,
 		     hs_stats_t * stats, int kind)
 {
-    hs_off_t        amount;
+    size_t        amount;
 
     amount = hs_membuf_tell(litbuf);
     assert(amount >= 0);

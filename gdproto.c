@@ -1,21 +1,25 @@
-/* -*- mode: c; c-file-style: "bsd" -*- */
-/* ------------------------------------------------------------------- * $Id: 
-   gdproto.c,v 1.3 2000/05/22 08:53:41 mbp Exp $ * * gdproto.c -- The
-   on-the-wire gd01 protocol. * Copyright (C) 1999-2000 by Martin Pool.
+/*				       	-*- c-file-style: "bsd" -*-
+ * rproxy -- dynamic caching and delta update in HTTP
+ * $Id$
+ * 
+ * Copyright (C) 1999, 2000 by Martin Pool
+ * Copyright (C) 1999 by Andrew Tridgell
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the Free 
-   Software Foundation; either version 2 of the License, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-   for more details.
-
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, write to the Free Software Foundation, Inc., 59 
-   Temple Place, Suite 330, Boston, MA 02111-1307 USA */
 
 #include "includes.h"
 
@@ -24,8 +28,10 @@ _hs_read_blocksize(hs_read_fn_t sigread_fn, void *sigreadprivate,
 		   int *block_len)
 {
     int             ret;
+    uint32_t		len;
 
-    ret = _hs_read_netint(sigread_fn, sigreadprivate, block_len);
+    ret = _hs_read_netint(sigread_fn, sigreadprivate, &len);
+    *block_len = len;
     if (ret < 0) {
 	_hs_error("couldn't read block length from signature");
 	return -1;

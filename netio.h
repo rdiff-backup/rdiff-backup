@@ -3,14 +3,14 @@
    Net IO functions */
 
 int             _hs_read_loop(hs_read_fn_t, void *readprivate,
-			      char *buf, size_t len);
+			      byte_t *buf, size_t len);
 
 size_t          _hs_write_loop(hs_write_fn_t, void *writeprivate,
-			       char const *buf, size_t len);
+			       byte_t const *buf, size_t len);
 
 int             hs_must_write(hs_write_fn_t write_fn, void *write_priv,
 			      void const *buf, int len);
-int            _hs_must_read(hs_read_fn_t, void *, char *, ssize_t);
+int            _hs_must_read(hs_read_fn_t, void *, byte_t *, ssize_t);
 
 int             _hs_read_netint(hs_read_fn_t read_fn, void *read_priv,
 				/* @out@ */ uint32_t * result);

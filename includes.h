@@ -26,7 +26,11 @@
 
 #include <assert.h>
 #include <errno.h>
+
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>

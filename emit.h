@@ -19,8 +19,39 @@
    Temple Place, Suite 330, Boston, MA 02111-1307 USA */
 
 
-int
-                _hs_send_literal(hs_write_fn_t write_fn,
-				 void *write_priv,
+int _hs_send_literal(hs_write_fn_t write_fn,
+		     void *write_priv,
+		     int kind, byte_t const *buf, 
+		     size_t amount);
 
-				 int kind, char const *buf, size_t amount);
+/* ========================================
+
+   emit/inhale commands */
+
+struct hs_op_kind_name {
+    char           *name;
+    int             code;
+};
+
+extern struct hs_op_kind_name const _hs_op_kind_names[];
+
+int             _hs_emit_signature_cmd(hs_write_fn_t write_fn,
+				       void *write_priv, size_t size);
+
+int             _hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
+				 byte_t const *buf, size_t size);
+
+int             _hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv,
+				     size_t size);
+
+int             _hs_emit_checksum_cmd(hs_write_fn_t, void *, uint32_t size);
+
+int             _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
+			      off_t offset, size_t length,
+
+			      hs_stats_t * stats);
+
+
+int             _hs_emit_eof(hs_write_fn_t write_fn, void *write_priv,
+			     hs_stats_t * stats);
+
