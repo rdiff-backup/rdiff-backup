@@ -52,7 +52,8 @@
  */
 
 /*
- * Manage libhsync streams of IO.
+ * Manage libhsync streams of IO.  See scoop.c and tube.c for related
+ * code for input and output respectively.
  *
  * libhsync never does IO or memory allocation, but relies on the
  * caller.  This is very nice for integration, but means that we have
