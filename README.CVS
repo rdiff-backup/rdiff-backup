@@ -1,0 +1,11 @@
+If you're building from CVS, you'll need to execute these commands to
+get started:
+
+  $ cvs -d:pserver:anonymous@cvs.rproxy.sourceforge.net:/cvsroot/rproxy login 
+  [ press Enter ]
+  $ cvs -z3 -d:pserver:anonymous@cvs.rproxy.sourceforge.net:/cvsroot/rproxy \
+    co libhsync
+  $ 
+
+
+$Id$
