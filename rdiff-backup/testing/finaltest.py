@@ -206,6 +206,12 @@ class Final(PathSetter):
 								"testfiles/output")
 		assert CompareRecursive(Local.vftrp, Local.rpout, exclude_rbdir = None)
 
+	def testProcRemote(self):
+		"""Test mirroring proc"""
+		self.set_connections(None, None, "test2/tmp/", "../../")
+		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
+
+
 class FinalSelection(PathSetter):
 	"""Test selection options"""
 	def testSelLocal(self):
