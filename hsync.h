@@ -1,7 +1,6 @@
 /*=				       	-*- c-file-style: "linux" -*-
  *
  * libhsync -- library for network deltas
- * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * 
@@ -28,44 +27,39 @@
                                */
 
 
-/**
- * \mainpage The libhsync delta-encoding library
- * \author Martin Pool <mbp@samba.org>
- * \version 0.7
- *
- * \section intro Introduction
- *
- * This is an library for rsync-encoding, designed to be easily
- * embedded into diverse applications.  \em libhsync is being
- * developed as part of the \b rproxy <http://rproxy.samba.org/>
- * and \b rsync <http://rsync.samba.org/> projects.
- *
- * \section overview Overview
- *
- * Why not start with hs_mksum_begin() and ::hs_job_t?
- */
-
-
 /*! \file hsync.h
  *
  * \brief Main public interface to libhsync.
+ * \author Martin Pool <mbp@samba.org>
+ * \version $Id$
  *
  * This file contains interfaces that do not depend on stdio.  For
- * them, see hsyncfile.h.
+ * them, see hsyncfile.h.  For a general introduction, see \ref intro.
  */
 
 extern char const hs_libhsync_version[];
 extern char const hs_licence_string[];
 
 
-/***********************************************************************
- * Public trace functions.
+/**
+ * \typedef void    hs_trace_fn_t(int level, char const *msg);
+ * \brief Callback to write out log messages.
+ * \param level a syslog level.
+ * \param msg message to be logged.
  */
-/* LEVEL is a syslog level. */
-typedef void    hs_trace_fn_t(int level, char const *);
+typedef void    hs_trace_fn_t(int level, char const *msg);
+
 void            hs_trace_set_level(int level);
+
+/** Set trace callback. */
 void            hs_trace_to(hs_trace_fn_t *);
+
+/** Default trace callback that writes to stderr.  Implements
+ * ::hs_trace_fn_t. */
 void            hs_trace_stderr(int level, char const *msg);
+
+/** Check whether the library was compiled with debugging trace
+ * suport. */
 int             hs_supports_trace(void);
 
 
@@ -77,19 +71,17 @@ int             hs_supports_trace(void);
  */
 void     hs_hexify(char *to_buf, void const *from_buf, int from_len);
 
-/*
- * Decode a base64 buffer in place.  Return the number of binary
+/**
+ * Decode a base64 buffer in place.  \return the number of binary
  * bytes.
  */
 size_t hs_unbase64(char *s);
 
 
-/*
+/**
  * Encode a buffer as base64.
  */
 void hs_base64(unsigned char const *buf, int n, char *out);
-
-
 
 
 /**
@@ -113,10 +105,6 @@ enum hs_result {
  */
 typedef enum hs_result hs_result;
 
-/***********************************************************************
- * Statistics about an encode/decode operation
- ***********************************************************************/
-
 typedef struct hs_stats {
     char const     *op;
     char const     *algorithm;
@@ -126,10 +114,6 @@ typedef struct hs_stats {
     int             false_matches;
 } hs_stats_t;
 
-
-/***********************************************************************
- * MD4 hash
- ***********************************************************************/
 
 /** \typedef struct hs_mdfour hs_mdfour_t
  *
@@ -167,37 +151,42 @@ void hs_free_sumset(hs_sumset_t *);
 void hs_sumset_dump(hs_sumset_t const *);
 
 
-/***********************************************************************
- * All encoding routines follow a calling protocol similar to that of
- * zlib: the caller passes the address and length of input and output
- * buffers, plus an opaque state object.  Each routine processes as
- * much data as possible, and returns when the input buffer is empty
- * or the output buffer is full.
+/**
+ * Stream through which the calling application feeds data to and from the
+ * library.
+ *
+ * On each call to hs_job_iter, the caller can make available
+ *
+ *  - avail_in bytes of input data at next_in
+ *  - avail_out bytes of output space at next_out
+ *  - some of both
+ *
+ * There is some internal state in impl.  Streams are initialized by
+ * hs_stream_init, and then used to create a job by hs_mksum_begin or
+ * similar functions.
  */
-
-
-typedef struct hs_stream_s {
-        int dogtag;			/* to identify mutilated corpse */
+struct hs_stream_s {
+        int dogtag;		/**< To identify mutilated corpse */
     
-        char *next_in;		/* next input byte */
-        unsigned int avail_in;	/* number of bytes available at next_in */
+        char *next_in;		/**< Next input byte */
+        unsigned int avail_in;	/**< Number of bytes available at next_in */
 
-        char *next_out;		/* next output byte should be put there */
-        unsigned int avail_out;	/* remaining free space at next_out */
+        char *next_out;		/**< Next output byte should be put there */
+        unsigned int avail_out;	/**< Remaining free space at next_out */
 
-        struct hs_simpl *impl;
-} hs_stream_t;
+        struct hs_simpl *impl; /**< \internal */
+};
+
+typedef struct hs_stream_s hs_stream_t;
 
 void hs_stream_init(hs_stream_t *);
 
 
-
-
-/***********************************************************************
- * Low-level delta interface.  
- ***********************************************************************/
-
+/** Default length of strong signatures, in bytes.  The MD4 checksum
+ * is truncated to this size. */
 #define HS_DEFAULT_STRONG_LEN 8
+
+/** Default block length, if not determined by any other factors. */
 #define HS_DEFAULT_BLOCK_LEN 2048
 
 
@@ -223,8 +212,12 @@ hs_job_t       *hs_delta_begin(hs_stream_t *stream);
 
 hs_job_t       *hs_readsum_begin(hs_stream_t *stream, hs_sumset_t **);
 
-/* Callback used to retrieve parts of the basis file. */
+/**
+ * \typedef hs_result (hs_copy_cb)(void *opaque, size_t *len, void **result);
+ *
+ * Callback used to retrieve parts of the basis file. */
 typedef hs_result (hs_copy_cb)(void *opaque, size_t *len, void **result);
+
 
 hs_job_t       *hs_patch_begin(hs_stream_t *, hs_copy_cb *, void *copy_arg);
 
