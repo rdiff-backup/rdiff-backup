@@ -1,4 +1,4 @@
-import os, cPickle, sys, unittest
+import os, cPickle, sys, unittest, time
 from commontest import *
 from rdiff_backup.rpath import *
 from rdiff_backup import rpath
@@ -89,6 +89,37 @@ class CheckPerms(RPathTest):
 		"""What happens when file absent"""
 		self.assertRaises(Exception,
 						  RPath(self.lc, self.prefix, ("aoeunto",)).getperms)
+
+
+class CheckTimes(RPathTest):
+	"""Check to see if times are reported and set accurately"""
+	def testSet(self):
+		"""Check to see if times set properly"""
+		rp = RPath(self.lc, self.prefix, ("timetest.foo",))
+		rp.touch()
+		rp.settime(10000, 20000)
+		rp.setdata()
+		assert rp.getatime() == 10000
+		assert rp.getmtime() == 20000
+		rp.delete()
+
+	def testCtime(self):
+		"""Check to see if ctime read, compared"""
+		rp = RPath(self.lc, self.prefix, ("ctimetest.1",))
+		rp2 = RPath(self.lc, self.prefix, ("ctimetest.2",))
+		rp.touch()
+		rp.chmod(0700)
+		copy_with_attribs(rp, rp2)
+		assert cmp_attribs(rp, rp2)
+
+		time.sleep(1)
+		rp2.chmod(0755)
+		rp2.chmod(0700)
+		rp2.setdata()
+		assert rp2.getctime() > rp.getctime()
+		assert not cmp_attribs(rp, rp2)
+		rp.delete()
+		rp2.delete()
 
 
 class CheckDir(RPathTest):
@@ -386,9 +417,10 @@ class FileAttributes(FileCopying):
 		if t.lstat(): t.delete()
 		for rp in [self.noperms, self.nowrite, self.rf, self.exec1,
 				   self.exec2, self.hl1, self.dir]:
-			t.touch()
+			copy(rp, t)
 			rpath.copy_attribs(rp, t)
-			assert rpath.cmp_attribs(t, rp), \
+			#assert rpath.cmp_attribs(t, rp), \
+			assert t.equal_loose(rp), \
 				   "Attributes for file %s not copied successfully" % rp.path
 			t.delete()
 
