@@ -396,10 +396,22 @@ serious recurring problem.</p>
 though it probably won't solve the underlying problem:  In the
 destination's rdiff-backup-data directory, there should be two
 "current_mirror" files, for instance
-current_mirror.2003-09-08T04:22:01-07:00.data and
-current_mirror.2003-09-07T16:43:00-07:00.data.  Just delete the one
-with the earlier date.  The next time rdiff-backup runs it won't try
-regressing the destination.
+<pre>current_mirror.2003-09-07T16:43:00-07:00.data
+current_mirror.2003-09-08T04:22:01-07:00.data</pre>
+
+Delete the one with the earlier date.  Also move the mirror_metadata
+file with the later date out of the way, because it probably didn't
+get written correctly because that session was aborted:
+
+<pre>mv mirror_metadata.2003-09-08T04:22:01-07:00.snapshot.gz \
+   aborted-metadata.2003-09-08T04:22:01-07:00.snapshot.gz</pre>
+
+The next time rdiff-backup runs it won't try regressing the
+destination.  Metadata will be read from the file system, which may
+result in some extra files being backed up, but there shouldn't be any
+data loss.</p>
+
+
 </li>
 
 </ol>
