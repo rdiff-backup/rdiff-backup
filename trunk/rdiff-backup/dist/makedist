@@ -83,18 +83,20 @@ def MakeTar():
 	except OSError: pass
 	os.mkdir(tardir)
 	for filename in ["CHANGELOG", "COPYING", "README", "FAQ.html",
-					 SourceDir + "/cmodule.c", DistDir + "/setup.py"]:
+					 SourceDir + "/cmodule.c",
+					 SourceDir + "/_librsyncmodule.c",
+					 DistDir + "/setup.py"]:
 		assert not os.system("cp %s %s" % (filename, tardir)), filename
 
 	os.mkdir(tardir+"/rdiff_backup")
 	for filename in ["connection.py",	"destructive_stepping.py",
 					 "FilenameMapping.py", "Hardlink.py",
 					 "highlevel.py", "increment.py", "__init__.py",
-					 "iterfile.py", "lazy.py", "log.py", "Main.py",
-					 "manage.py", "MiscStats.py", "Rdiff.py",
-					 "restore.py", "rlist.py", "robust.py",
-					 "rorpiter.py", "rpath.py", "selection.py",
-					 "SetConnections.py", "static.py",
+					 "iterfile.py", "lazy.py", "librsync.py",
+					 "log.py", "Main.py", "manage.py", "MiscStats.py",
+					 "Rdiff.py", "restore.py", "rlist.py",
+					 "robust.py", "rorpiter.py", "rpath.py",
+					 "selection.py", "SetConnections.py", "static.py",
 					 "statistics.py", "Time.py"]:
 		assert not os.system("cp %s/%s %s/rdiff_backup" %
 							 (SourceDir, filename, tardir)), filename
@@ -102,6 +104,7 @@ def MakeTar():
 	VersionedCopy("%s/Globals.py" % (SourceDir,),
 				  "%s/rdiff_backup/Globals.py" % (tardir,))
 	VersionedCopy("rdiff-backup", "%s/rdiff-backup" % (tardir,))
+	VersionedCopy(DistDir + "/setup.py", "%s/setup.py" % (tardir,))
 
 	os.chmod(os.path.join(tardir, "setup.py"), 0755)
 	os.chmod(os.path.join(tardir, "rdiff-backup"), 0755)
