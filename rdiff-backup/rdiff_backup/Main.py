@@ -294,6 +294,8 @@ option.""" % rpout.path)
 		except os.error:
 			Log.FatalError("Unable to create directory %s" % rpout.path)
 	if not datadir.lstat(): datadir.mkdir()
+	inc_base = datadir.append_path("increments")
+	if not inc_base.lstat(): inc_base.mkdir()
 	if Log.verbosity > 0:
 		Log.open_logfile(datadir.append("backup.log"))
 	ErrorLog.open(Time.curtimestr, compress = Globals.compression)
