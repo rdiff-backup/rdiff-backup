@@ -23,6 +23,7 @@ configure.scan
 dstream
 dtube
 genmaptest
+gmon.out
 hsalw
 hsdecode
 hsdumpsums
