@@ -1,17 +1,26 @@
+# Copyright 2002 Ben Escoto
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
+# 02139, USA; either version 2 of the License, or (at your option) any
+# later version; incorporated herein by reference.
+
+"""Iterate exactly the requested files in a directory
+
+Parses includes and excludes to yield correct files.  More
+documentation on what this code does can be found on the man page.
+
+"""
+
 from __future__ import generators
 import re
 from log import *
 from robust import *
 from destructive_stepping import *
 
-
-#######################################################################
-#
-# selection - Provides the iterator-like DSRPIterator class
-#
-# Parses includes and excludes to yield correct files.  More
-# documentation on what this code does can be found on the man page.
-#
 
 class SelectError(Exception):
 	"""Some error dealing with the Select class"""

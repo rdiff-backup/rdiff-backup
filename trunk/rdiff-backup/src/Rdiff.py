@@ -1,11 +1,22 @@
+# Copyright 2002 Ben Escoto
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
+# 02139, USA; either version 2 of the License, or (at your option) any
+# later version; incorporated herein by reference.
+
+"""Invoke rdiff utility to make signatures, deltas, or patch
+
+All these operations should be done in a relatively safe manner using
+RobustAction and the like.
+
+"""
+
 import os, popen2
 
-#######################################################################
-#
-# rdiff - Invoke rdiff utility to make signatures, deltas, or patch
-#
-# 	All these operations should be done in a relatively safe manner
-# 	using RobustAction and the like.
 
 class RdiffException(Exception): pass
 

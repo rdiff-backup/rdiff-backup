@@ -1,18 +1,27 @@
+# Copyright 2002 Ben Escoto
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
+# 02139, USA; either version 2 of the License, or (at your option) any
+# later version; incorporated herein by reference.
+
+"""Coordinate corresponding files with different names
+
+For instance, some source filenames may contain characters not allowed
+on the mirror end.  Also, if a source filename is very long (say 240
+characters), the extra characters added to related increments may put
+them over the usual 255 character limit.
+
+"""
+
 import re
 from log import *
 import Globals
 
-#######################################################################
-#
-# filename_mapping - used to coordinate related filenames
-#
-# For instance, some source filenames may contain characters not
-# allowed on the mirror end.  Also, if a source filename is very long
-# (say 240 characters), the extra characters added to related
-# increments may put them over the usual 255 character limit.
-#
 
-"""Contains class methods which coordinate related filenames"""
 max_filename_length = 255
 
 # If true, enable character quoting, and set characters making

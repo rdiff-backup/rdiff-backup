@@ -1,18 +1,20 @@
-#######################################################################
+# Copyright 2002 Ben Escoto
 #
-# setconnections - Parse initial arguments and establish connections
+# This file is part of rdiff-backup.
 #
+# rdiff-backup is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
+# 02139, USA; either version 2 of the License, or (at your option) any
+# later version; incorporated herein by reference.
 
 """Parse args and setup connections
 
-The methods in this class are used once by Main to parse file
-descriptions like bescoto@folly.stanford.edu:/usr/bin/ls and to
-set up the related connections.
+The functions in this module are used once by Main to parse file
+descriptions like bescoto@folly.stanford.edu:/usr/bin/ls and to set up
+the related connections.
 
 """
-
-class SetConnectionsException(Exception): pass
-
 
 # This is the schema that determines how rdiff-backup will open a
 # pipe to the remote system.  If the file is given as A::B, %s will
@@ -23,6 +25,8 @@ __cmd_schema_no_compress = 'ssh %s rdiff-backup --server'
 # This is a list of remote commands used to start the connections.
 # The first is None because it is the local connection.
 __conn_remote_cmds = [None]
+
+class SetConnectionsException(Exception): pass
 
 def InitRPs(arglist, remote_schema = None, remote_cmd = None):
 	"""Map the given file descriptions into rpaths and return list"""

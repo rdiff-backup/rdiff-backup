@@ -1,3 +1,15 @@
+# Copyright 2002 Ben Escoto
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
+# 02139, USA; either version 2 of the License, or (at your option) any
+# later version; incorporated herein by reference.
+
+"""High level functions for mirroring, mirror & inc, etc."""
+
 from __future__ import generators
 from static import *
 from log import *
@@ -8,10 +20,6 @@ from destructive_stepping import *
 from rorpiter import *
 import Globals, Hardlink, MiscStats
 
-#######################################################################
-#
-# highlevel - High level functions for mirroring, mirror & inc, etc.
-#
 
 class SkipFileException(Exception):
 	"""Signal that the current file should be skipped but then continue

@@ -1,3 +1,15 @@
+# Copyright 2002 Ben Escoto
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
+# 02139, USA; either version 2 of the License, or (at your option) any
+# later version; incorporated herein by reference.
+
+"""Operations on Iterators of Read Only Remote Paths"""
+
 from __future__ import generators
 import tempfile, UserList, types
 from static import *
@@ -7,10 +19,6 @@ from robust import *
 from iterfile import *
 import Globals, Rdiff, Hardlink
 
-#######################################################################
-#
-# rorpiter - Operations on Iterators of Read Only Remote Paths
-#
 
 class RORPIterException(Exception): pass
 
