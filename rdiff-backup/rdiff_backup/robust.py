@@ -347,7 +347,7 @@ class SaveState:
 
 		cls._last_checkpoint_time = time.time()
 		Log("Writing checkpoint time %s" % cls._last_checkpoint_time, 7)
-		state_string = cPickle.dumps((ITR.getstate(), finalizer.getstate()))
+		state_string = cPickle.dumps((ITR, finalizer))
 		Robust.chain([Robust.destructive_write_action(cls._checkpoint_rp,
 													  state_string),
 					  cls.record_last_file_action(last_file_rorp)]).execute()
@@ -361,7 +361,7 @@ class SaveState:
 
 		cls._last_checkpoint_time = time.time()
 		Log("Writing checkpoint time %s" % cls._last_checkpoint_time, 7)
-		state_string = cPickle.dumps(finalizer.getstate())
+		state_string = cPickle.dumps(finalizer)
 		Robust.chain([Robust.destructive_write_action(cls._checkpoint_rp,
 													  state_string),
 					  cls.record_last_file_action(last_file_rorp)]).execute()
@@ -539,19 +539,19 @@ MakeClass(Resume)
 class ResumeSessionInfo:
 	"""Hold information about a previously aborted session"""
 	def __init__(self, mirror, time, last_index,
-				 last_definitive, finalizer_state = None, ITR_state = None):
+				 last_definitive, finalizer = None, ITR = None):
 		"""Class initializer
 
 		time - starting time in seconds of backup
 		mirror - true if backup was a mirror, false if increment
 		last_index - Last confirmed index processed by backup, or None
 		last_definitive - True is we know last_index is really last
-		finalizer_state - finalizer reducer state if available
-		ITR_state - For increment, ITM reducer state (assume mirror if NA)
+		finalizer - the dsrp finalizer if available
+		ITR_state - For increment, ITM reducer (assume mirror if NA)
 
 		"""
 		self.time = time
 		self.mirror = mirror
 		self.last_index = last_index
 		self.last_definitive = last_definitive
-		self.ITR_state, self.finalizer_state, = ITR_state, finalizer_state
+		self.ITR, self.finalizer, = ITR_state, finalizer_state
