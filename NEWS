@@ -16,6 +16,9 @@ Changes in 0.9.3:
 
  * More test cases.
 
+ * I suspect there may be a bug in rolling checksums, but it probably
+   only causes inefficiency and not corruption.
+
 Changes in 0.9.2:
 
  * Improve delta algorithm so that deltas are actually
