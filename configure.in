@@ -87,7 +87,7 @@ if test x"$with_included_popt" = x"yes"
 then
     AC_MSG_RESULT("$srcdir/popt")
     BUILD_POPT='popt/libpopt.a'
-    CFLAGS="$CFLAGS -I $srcdir/popt"
+    CFLAGS="$CFLAGS -I$srcdir/popt"
 else
     AC_MSG_RESULT(no)
 fi
