@@ -54,6 +54,7 @@ class DSRPath(RPath):
 			assert isinstance(conn_or_rp, RPath)
 			RPath.__init__(self, conn_or_rp.conn,
 						   conn_or_rp.base, conn_or_rp.index)
+			self.path = conn_or_rp.path # conn_or_rp may be quoted
 		else: RPath.__init__(self, conn_or_rp, base, index)
 
 		if source != "bypass":

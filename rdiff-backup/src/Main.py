@@ -150,6 +150,7 @@ def parse_cmdlineoptions(arglist):
 			Globals.set('time_separator', "_")
 			Globals.set('chars_to_quote', "A-Z:")
 			Globals.set('quoting_enabled', 1)
+			Globals.set('preserve_hardlinks', 0)
 			select_opts.append(("--exclude-special-files", None))
 		elif opt == '--windows-time-format':
 			Globals.set('time_separator', "_")
