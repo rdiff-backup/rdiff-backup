@@ -1,6 +1,7 @@
-/*=				       	-*- c-file-style: "linux" -*-
+/*=                    -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- library for network deltas
+ * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * 
@@ -34,12 +35,40 @@
  *
  * $Id$
  *
- * This file contains interfaces that do not depend on stdio.  For
- * them, see hsyncfile.h.  For a general introduction, see \ref intro.
+ * See \ref intro for an introduction to use of this library.
  */
 
 extern char const hs_libhsync_version[];
 extern char const hs_licence_string[];
+
+
+/**
+ * \brief Log severity levels.
+ *
+ * These are the same as syslog, at least in glibc.
+ *
+ * \sa hs_trace_set_level()
+ */
+typedef enum {
+    HS_LOG_EMERG	 = 0,	/**< System is unusable */
+    HS_LOG_ALERT	 = 1,	/**< Action must be taken immediately */
+    HS_LOG_CRIT	 = 2,           /**< Critical conditions */
+    HS_LOG_ERR	 = 3,           /**< Error conditions */
+    HS_LOG_WARNING	 = 4,	/**< Warning conditions */
+    HS_LOG_NOTICE	 = 5,	/**< Normal but significant condition */
+    HS_LOG_INFO	 = 6,           /**< Informational */
+    HS_LOG_DEBUG	 = 7	/**< Debug-level messages */
+} hs_loglevel;
+
+
+/**
+ * Exit values from the rdiff tool.
+ */
+typedef enum {
+    HS_EXIT_OK = 0,             /**< No problem. */
+    HS_EXIT_SYNTAX = 1,         /**< Syntax or usage error. */
+    HS_EXIT_FILEIO = 2,         /**< File IO error. */
+} hs_exit_value;
 
 
 /**
@@ -50,7 +79,7 @@ extern char const hs_licence_string[];
  */
 typedef void    hs_trace_fn_t(int level, char const *msg);
 
-void            hs_trace_set_level(enum hs_loglevel level);
+void            hs_trace_set_level(hs_loglevel level);
 
 /** Set trace callback. */
 void            hs_trace_to(hs_trace_fn_t *);
@@ -87,10 +116,8 @@ void hs_base64(unsigned char const *buf, int n, char *out);
 
 /**
  * \brief Return codes from nonblocking hsync operations.
- *
- * \sa hs_result
  */
-enum hs_result {
+typedef enum {
         HS_OK =			0,	/**< Completed successfully. */
         HS_BLOCKED =		1, 	/**< Blocked waiting for more data. */
         HS_RUN_OK  =            2,      /**< Not yet finished or
@@ -101,15 +128,7 @@ enum hs_result {
         HS_MEM_ERROR =		(-2),   /**< Out of memory */
         HS_SHORT_STREAM	=	(-3),	/**< Unexpected eof */
         HS_BAD_MAGIC =          (-4)    /**< Illegal value on stream */
-};
-
-/**
- * \brief Return codes from nonblocking hsync operations.
- *
- * \sa enum hs_result
- */
-typedef enum hs_result hs_result;
-
+} hs_result;
 
 /**
  * Return an English description of a ::hs_result value.
@@ -164,23 +183,6 @@ char *hs_format_stats(hs_stats_t const *, char *, size_t);
 int hs_log_stats(hs_stats_t const *stats);
 
 
-/** Log levels (same as syslog)
- *
-* \sa hs_trace_set_level()
- */
-enum hs_loglevel {
-	HS_LOG_EMERG	 = 0,	/**< System is unusable */
-	HS_LOG_ALERT	 = 1,	/**< Action must be taken immediately */
-	HS_LOG_CRIT	 = 2,	/**< Critical conditions */
-	HS_LOG_ERR		 = 3,	/**< Error conditions */
-	HS_LOG_WARNING	 = 4,	/**< Warning conditions */
-	HS_LOG_NOTICE	 = 5,	/**< Normal but significant condition */
-	HS_LOG_INFO	 = 6,	/**< Informational */
-	HS_LOG_DEBUG	 = 7	/**< Debug-level messages */
-};
-
-
-
 typedef struct hs_sumset hs_sumset_t;
 
 void hs_free_sumset(hs_sumset_t *);
@@ -198,7 +200,7 @@ void hs_sumset_dump(hs_sumset_t const *);
  *  - some of both
  *
  * There is some internal state in impl.  Streams are initialized by
- * hs_stream_init, and then used to create a job by hs_mksum_begin or
+ * hs_stream_init, and then used to create a job by hs_sig_begin or
  * similar functions.
  *
  * \sa hs_stream_t
@@ -238,7 +240,7 @@ void hs_stream_init(hs_stream_t *);
  *
  * \brief Job of work to be done.
  *
- * Created by functions such as hs_mksum_begin(), and then iterated
+ * Created by functions such as hs_sig_begin(), and then iterated
  * over by hs_job_iter(). */
 typedef struct hs_job hs_job_t;
 
@@ -249,19 +251,17 @@ hs_result       hs_job_free(hs_job_t *);
 
 int             hs_accum_value(hs_job_t *, char *sum, size_t sum_len);
 
-hs_job_t       *hs_mksum_begin(hs_stream_t *stream,
-                               size_t new_block_len, size_t strong_sum_len);
+hs_job_t *hs_sig_begin(hs_stream_t *stream,
+                       size_t new_block_len, size_t strong_sum_len);
 
 hs_job_t       *hs_delta_begin(hs_stream_t *stream);
 
 hs_job_t       *hs_readsum_begin(hs_stream_t *stream, hs_sumset_t **);
 
 /**
- * \typedef hs_result (hs_copy_cb)(void *opaque, size_t *len, void **result);
- *
- * Callback used to retrieve parts of the basis file. */
-typedef hs_result (hs_copy_cb)(void *opaque, size_t *len, void **result);
+ * \brief Callback used to retrieve parts of the basis file. */
+typedef hs_result hs_copy_cb(void *opaque, size_t *len, void **result);
 
 
-hs_job_t       *hs_patch_begin(hs_stream_t *, hs_copy_cb *, void *copy_arg);
+hs_job_t *hs_patch_begin(hs_stream_t *, hs_copy_cb *, void *copy_arg);
 
