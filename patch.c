@@ -49,6 +49,7 @@ static rs_result rs_patch_s_cmdbyte(rs_job_t *);
 static rs_result rs_patch_s_params(rs_job_t *);
 static rs_result rs_patch_s_run(rs_job_t *);
 static rs_result rs_patch_s_literal(rs_job_t *);
+static rs_result rs_patch_s_copy(rs_job_t *);
 
 
 
@@ -72,8 +73,10 @@ static rs_result rs_patch_s_cmdbyte(rs_job_t *job)
 
     if (job->cmd->len_1)
         job->statefn = rs_patch_s_params;
-    else
+    else {
+        job->param1 = job->cmd->immediate;
         job->statefn = rs_patch_s_run;
+    }
 
     return RS_RUNNING;
 }
@@ -117,19 +120,25 @@ static rs_result rs_patch_s_params(rs_job_t *job)
  */
 static rs_result rs_patch_s_run(rs_job_t *job)
 {
-        rs_trace("running command 0x%x, kind %d", job->op, job->cmd->kind);
+    rs_trace("running command 0x%x, kind %d", job->op, job->cmd->kind);
 
-        switch (job->cmd->kind) {
-        case RS_KIND_LITERAL:
-                job->statefn = rs_patch_s_literal;
-                return RS_RUNNING;
-        case RS_KIND_END:
-                return RS_DONE;
-                /* so we exit here; trying to continue causes an error */
-        default:
-                rs_error("bogus command 0x%02x", job->op);
-                return RS_BAD_MAGIC;
-        }
+    switch (job->cmd->kind) {
+    case RS_KIND_LITERAL:
+        job->statefn = rs_patch_s_literal;
+        return RS_RUNNING;
+        
+    case RS_KIND_END:
+        return RS_DONE;
+        /* so we exit here; trying to continue causes an error */
+
+    case RS_KIND_COPY:
+        job->statefn = rs_patch_s_copy;
+        return RS_RUNNING;
+
+    default:
+        rs_error("bogus command 0x%02x", job->op);
+        return RS_CORRUPT;
+    }
 }
 
 
@@ -138,18 +147,31 @@ static rs_result rs_patch_s_run(rs_job_t *job)
  */
 static rs_result rs_patch_s_literal(rs_job_t *job)
 {
-    int len;
-    if (job->cmd->len_1)
-        len = job->param1;
-    else
-        len = job->cmd->immediate;
-        
-    rs_trace("copying %d bytes of literal data", len);
+    rs_long_t   len = job->param1;
+    
+    rs_trace("LITERAL(len=%ld)", (long) len);
 
     job->stats.lit_cmds++;
     job->stats.lit_bytes += len;
 
     rs_tube_copy(job, len);
+
+    job->statefn = rs_patch_s_cmdbyte;
+    return RS_RUNNING;
+}
+
+
+
+static rs_result rs_patch_s_copy(rs_job_t *job)
+{
+    rs_long_t  where, len;
+
+    where = job->param1;
+    len = job->param2;
+        
+    rs_trace("COPY(where=%ld, len=%ld)", (long) where, (long) len);
+
+    /*    rs_tube_copy(job, len); */
 
     job->statefn = rs_patch_s_cmdbyte;
     return RS_RUNNING;
