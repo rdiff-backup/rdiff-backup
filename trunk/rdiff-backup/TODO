@@ -1,6 +1,11 @@
+Update FAQ on cstream
+
 Write some better selection test cases to test new Iterate_fast func.
 
 ---------[ Medium term ]---------------------------------------
+
+Interpret a list of filenames in globbing form
+(--include-globbing-filelist maybe).
 
 Add --dry-run option (target for v1.1.x)
 
