@@ -240,7 +240,7 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     assert(*len > 0);
     *reached_eof = 0;
 
-    _hs_trace("map=<%p>, off=%ld, len=%ld",
+    _hs_trace("off=%ld, len=%ld",
 	      map, (long) offset, (long) *len);
 
     /* in most cases the region will already be available */
