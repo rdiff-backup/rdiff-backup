@@ -295,8 +295,8 @@ class SaveState:
 
 	def touch_last_file(cls):
 		"""Touch last file marker, indicating backup has begun"""
-		cls._last_file_sym.touch()
-
+		if not cls._last_file_sym.lstat(): cls._last_file_sym.touch()
+		
 	def touch_last_file_definitive(cls):
 		"""Create last-file-definitive marker
 
@@ -403,6 +403,7 @@ class Resume:
 
 	def SetSessionInfo(cls):
 		"""Read data directory and initialize _session_info"""
+		assert Globals.isbackup_writer
 		silist = []
 		rp_quad_dict = cls.group_rps_by_time(cls.get_relevant_rps())
 		times = rp_quad_dict.keys()

@@ -270,8 +270,10 @@ class HLDestinationStruct:
 				 (exp[0] in [2,  # Means that a file is missing
 							 5,  # Reported by docv (see list)
 							 13, # Permission denied IOError
-							 26] # Requested by Campbell (see list) -
+							 20, # Means a directory changed to non-dir
+							 26, # Requested by Campbell (see list) -
                                  # happens on some NT systems
+							 36] # filename too long
 				 ))):
 				Log("Skipping file", 2)
 				return None
