@@ -68,6 +68,10 @@ AC_EGREP_HEADER(sin_len, sys/socket.h,
         [ AC_MSG_RESULT(no) ])
 
 dnl Checks for libraries
+
+AC_CHECK_LIB(z, deflate)
+AC_CHECK_LIB(bz2, BZ2_bzCompress)
+
 if test x"$with_included_popt" != x"yes"
 then
     AC_CHECK_LIB(popt, poptGetContext, , [with_included_popt=yes])
@@ -125,6 +129,7 @@ AC_CHECK_SIZEOF(off_t)
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(config.h unistd.h alloca.h libintl.h mcheck.h)
+AC_CHECK_HEADERS(zlib.h bzlib.h)
 
 # GNU library versioning: This is NOT the librsync release number.
 # Rather, it is a CURRENT:REVISION:AGE tuple describing binary
