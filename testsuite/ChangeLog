@@ -1,5 +1,8 @@
 2002-01-26  Ben Elliston  <bje@redhat.com>
 
+	* mksum.input/COPYING.sig: Move here from top-level directory.
+	* COPYING: Likewise, copy from top-level.
+
 	* Makefile.am: New file.
 	* changes.test: Move here from top-level directory.
 	* delta.test: Ditto.
