@@ -5,6 +5,9 @@ Dean Gaudet's patch fixes "--restrict /" option.
 
 Added Maximilian Mehnert's fix for too many open files bug.
 
+Added fix for listing/restoring certain bad archives made when there
+was a timezone bug.  (Thanks to Stephen Isard)
+
 
 New in v0.12.7 (2004/05/31)
 ---------------------------
