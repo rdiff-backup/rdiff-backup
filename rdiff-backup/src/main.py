@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-execfile("highlevel.py")
+execfile("setconnections.py")
 import getopt, sys, re
 
 #######################################################################
@@ -27,7 +27,7 @@ class Main:
 			  "include-from-stdin", "terminal-verbosity=",
 			  "exclude-device-files", "resume", "no-resume",
 			  "resume-window=", "windows-time-format",
-			  "checkpoint-interval="])
+			  "checkpoint-interval=", "hard-links", "current-time="])
 		except getopt.error:
 			self.commandline_error("Error parsing commandline options")
 
@@ -37,12 +37,15 @@ class Main:
 				Globals.set('change_source_perms', 1)
 			elif opt == "--checkpoint-interval":
 				Globals.set_integer('checkpoint_interval', arg)
+			elif opt == "--current-time":
+				Globals.set_integer('current_time', arg)
 			elif opt == "--exclude": self.exclude_regstrs.append(arg)
 			elif opt == "--exclude-device-files":
 				Globals.set('exclude_device_files', 1)
 			elif opt == "--exclude-mirror":
 				self.exclude_mirror_regstrs.append(arg)
 			elif opt == "--force": self.force = 1
+			elif opt == "--hard-links": Globals.set('preserve_hardlinks', 1)
 			elif opt == "--include-from-stdin": Globals.include_from_stdin = 1
 			elif opt == "-l" or opt == "--list-increments":
 				self.action = "list-increments"
@@ -167,7 +170,7 @@ rdiff-backup with the --force option if you want to mirror anyway.""" %
 		"""Backup, possibly incrementally, src_path to dest_path."""
 		SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
 		self.backup_init_dirs(rpin, rpout)
-		Time.setcurtime()
+		Time.setcurtime(Globals.current_time)
 		RSI = Resume.ResumeCheck()
 		if self.prevtime:
 			Time.setprevtime(self.prevtime)
@@ -213,6 +216,7 @@ rdiff-backup with the --force option.""" % rpout.path)
 		if not self.datadir.lstat(): self.datadir.mkdir()
 		Globals.add_regexp(self.datadir.path, 1)
 		Globals.add_regexp(rpin.append("rdiff-backup-data").path, None)
+
 		if Log.verbosity > 0:
 			Log.open_logfile(self.datadir.append("backup.log"))
 		self.backup_warn_if_infinite_regress(rpin, rpout)
@@ -271,10 +275,10 @@ went wrong during your last backup?  Using """ + mirrorrps[-1].path, 2)
 		Log("Starting Restore", 5)
 		rpin, rpout = self.restore_check_paths(src_rp, dest_rp)
 		inc_tup = self.restore_get_inctup(rpin)
-		mirror_base = self.restore_get_mirror(rpin)
+		mirror_base, mirror_rel_index = self.restore_get_mirror(rpin)
 		rtime = Time.stringtotime(rpin.getinctime())
 		Log.open_logfile(self.datadir.append("restore.log"))
-		HighLevel.Restore(rtime, mirror_base, inc_tup, rpout)
+		HighLevel.Restore(rtime, mirror_base, mirror_rel_index, inc_tup, rpout)
 
 	def restore_check_paths(self, rpin, rpout):
 		"""Check paths and return pair of corresponding rps"""
@@ -306,13 +310,16 @@ Try restoring from an increment file (the filenames look like
 		return IndexedTuple((), (incbase, inclist))
 
 	def restore_get_mirror(self, rpin):
-		"""Return mirror file and set the data dir
+		"""Return (mirror file, relative index) and set the data dir
 
 		The idea here is to keep backing up on the path until we find
 		something named "rdiff-backup-data".  Then use that as a
 		reference to calculate the oldfile.  This could fail if the
 		increment file is pointed to in a funny way, using symlinks or
 		somesuch.
+
+		The mirror file will have index (), so also return the index
+		relative to the rootrp.
 
 		"""
 		pathcomps = os.path.join(rpin.conn.os.getcwd(),
@@ -323,7 +330,7 @@ Try restoring from an increment file (the filenames look like
 				break
 		else: Log.FatalError("Unable to find rdiff-backup-data dir")
 
-		self.datadir = datadirrp
+		Globals.rbdir = self.datadir = datadirrp
 		Globals.add_regexp(self.datadir.path, 1)
 		rootrp = RPath(rpin.conn, "/".join(pathcomps[:i]))
 		if not rootrp.lstat():
@@ -332,14 +339,12 @@ Try restoring from an increment file (the filenames look like
 		else: Log("Using root mirror %s" % rootrp.path, 6)
 
 		from_datadir = pathcomps[i+1:]
-		if len(from_datadir) == 1: result = rootrp
-		elif len(from_datadir) > 1:
-			result = RPath(rootrp.conn, apply(os.path.join,
-									      [rootrp.path] + from_datadir[1:]))
-		else: raise RestoreError("Problem finding mirror file")
-
-		Log("Using mirror file %s" % result.path, 6)
-		return result
+		if not from_datadir: raise RestoreError("Problem finding mirror file")
+		rel_index = tuple(from_datadir[1:])
+		mirrorrp = RPath(rootrp.conn,
+						 apply(os.path.join, (rootrp.path,) + rel_index))
+		Log("Using mirror file %s" % mirrorrp.path, 6)
+		return (mirrorrp, rel_index)
 
 
 	def ListIncrements(self, rootrp):
@@ -396,6 +401,6 @@ Try finding the increments first using --list-increments.""")
 
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and not globals().has_key('__no_execute__'):
 	Globals.Main = Main()
 	Globals.Main.Main()

@@ -141,11 +141,14 @@ class Inc:
 
 			"""
 			if diff_rorp:
-				if dsrp.isreg() and diff_rorp.isreg():
+				if diff_rorp.isreg() and (dsrp.isreg() or
+										  diff_rorp.isflaglinked()):
 					tf = TempFileManager.new(dsrp)
 					def init_thunk():
-						Rdiff.patch_with_attribs_action(dsrp, diff_rorp,
-														tf).execute()
+						if diff_rorp.isflaglinked():
+							Hardlink.link_rp(diff_rorp, tf, dsrp)
+						else: Rdiff.patch_with_attribs_action(dsrp, diff_rorp,
+															  tf).execute()
 						Inc.Increment_action(tf, dsrp, incpref).execute()
 					Robust.make_tf_robustaction(init_thunk, (tf,),
 												(dsrp,)).execute()

@@ -10,11 +10,12 @@ import tempfile
 class RestoreError(Exception): pass
 
 class Restore:
-	def RestoreFile(rest_time, rpbase, inclist, rptarget):
+	def RestoreFile(rest_time, rpbase, mirror_rel_index, inclist, rptarget):
 		"""Non-recursive restore function
 
 		rest_time is the time in seconds to restore to,
 		rpbase is the base name of the file being restored,
+		mirror_rel_index is the same as in RestoreRecursive,
 		inclist is a list of rpaths containing all the relevant increments,
 		and rptarget is the rpath that will be written with the restored file.
 
@@ -25,6 +26,12 @@ class Restore:
 		Log("Restoring %s with increments %s to %s" %
 			(rpbase and rpbase.path,
 			 Restore.inclist2str(inclist), rptarget.path), 5)
+
+		if (Globals.preserve_hardlinks and
+			Hardlink.restore_link(mirror_rel_index, rptarget)):
+			RPath.copy_attribs(inclist and inclist[-1] or rpbase, rptarget)
+			return
+
 		if not inclist or inclist[0].getinctype() == "diff":
 			assert rpbase and rpbase.lstat(), \
 				   "No base to go with incs %s" % Restore.inclist2str(inclist)
@@ -73,14 +80,23 @@ class Restore:
 		else: raise RestoreError("Unknown inctype %s" % inctype)
 		RPath.copy_attribs(inc, target)
 
-	def RestoreRecursive(rest_time, mirror_base, baseinc_tup, target_base):
+	def RestoreRecursive(rest_time, mirror_base, mirror_rel_index,
+						 baseinc_tup, target_base):
 		"""Recursive restore function.
 
 		rest_time is the time in seconds to restore to;
+
 		mirror_base is an rpath of the mirror directory corresponding
 		to the one to be restored;
+
+		mirror_rel_index is the index of the mirror_base relative to
+		the root of the mirror directory.  (The mirror_base itself
+		always has index (), as its index must match that of
+		target_base.)
+
 		baseinc_tup is the inc tuple (incdir, list of incs) to be
 		restored;
+
 		and target_base in the dsrp of the target directory.
 
 		"""
@@ -99,7 +115,8 @@ class Restore:
 				inclist = inc_tup[1]
 				target = target_base.new_index(inc_tup.index)
 			DestructiveStepping.initialize(target, None)
-			Restore.RestoreFile(rest_time, mirror, inclist, target)
+			Restore.RestoreFile(rest_time, mirror, mirror_rel_index,
+								inclist, target)
 			target_finalizer(target)
 			if mirror: mirror_finalizer(mirror)
 		target_finalizer.getresult()

@@ -73,22 +73,22 @@ class PathSetter(unittest.TestCase):
 
 		# Backing up increment1
 		self.exec_rb('testfiles/increment1', 'testfiles/output')
-		assert RPathStatic.cmp_recursive(Local.inc1rp, Local.rpout)
+		assert CompareRecursive(Local.inc1rp, Local.rpout)
 		time.sleep(1)
 
 		# Backing up increment2
 		self.exec_rb('testfiles/increment2', 'testfiles/output')
-		assert RPathStatic.cmp_recursive(Local.inc2rp, Local.rpout)
+		assert CompareRecursive(Local.inc2rp, Local.rpout)
 		time.sleep(1)
 
 		# Backing up increment3
 		self.exec_rb('testfiles/increment3', 'testfiles/output')
-		assert RPathStatic.cmp_recursive(Local.inc3rp, Local.rpout)
+		assert CompareRecursive(Local.inc3rp, Local.rpout)
 		time.sleep(1)
 
 		# Backing up increment4
 		self.exec_rb('testfiles/increment4', 'testfiles/output')
-		assert RPathStatic.cmp_recursive(Local.inc4rp, Local.rpout)
+		assert CompareRecursive(Local.inc4rp, Local.rpout)
 
 		# Getting restore rps
 		inc_paths = self.getinc_paths("increments.",
@@ -97,22 +97,22 @@ class PathSetter(unittest.TestCase):
 
 		# Restoring increment1
 		self.exec_rb(inc_paths[0], 'testfiles/restoretarget1')
-		assert RPathStatic.cmp_recursive(Local.inc1rp, Local.rpout1)
+		assert CompareRecursive(Local.inc1rp, Local.rpout1)
 
 		# Restoring increment2
 		self.exec_rb(inc_paths[1], 'testfiles/restoretarget2')
-		assert RPathStatic.cmp_recursive(Local.inc2rp, Local.rpout2)
+		assert CompareRecursive(Local.inc2rp, Local.rpout2)
 
 		# Restoring increment3
 		self.exec_rb(inc_paths[2], 'testfiles/restoretarget3')
-		assert RPathStatic.cmp_recursive(Local.inc3rp, Local.rpout3)
+		assert CompareRecursive(Local.inc3rp, Local.rpout3)
 
 		# Test restoration of a few random files
 		vft_paths = self.getinc_paths("various_file_types.",
 					     "testfiles/output/rdiff-backup-data/increments")
 		self.exec_rb(vft_paths[1], 'testfiles/vft_out')
 		self.refresh(Local.vft_in, Local.vft_out)
-		assert RPathStatic.cmp_recursive(Local.vft_in, Local.vft_out)
+		assert CompareRecursive(Local.vft_in, Local.vft_out)
 
 		timbar_paths = self.getinc_paths("timbar.pyc.",
 						 "testfiles/output/rdiff-backup-data/increments")

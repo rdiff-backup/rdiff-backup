@@ -1,4 +1,4 @@
-execfile("rlist.py")
+execfile("iterfile.py")
 import os, popen2
 
 #######################################################################

@@ -51,6 +51,11 @@ permissions and mtimes afterwards.
 This option controls every how many seconds rdiff-backup checkpoints
 its current status.  The default is 20.
 .TP
+.BI "--current-time " seconds
+This option is useful mainly for testing.  If set, rdiff-backup will
+it for the current time instead of consulting the clock.  The argument
+is the number of seconds since the epoch.
+.TP
 .BI "--exclude " regexp
 Exclude files matching regexp.  This argument can be used multiple times.
 .TP
@@ -66,6 +71,13 @@ automatically excluded.
 .B --force
 Authorize overwriting of a destination directory.  rdiff-backup will
 generally tell you if it needs this.
+.TP
+.BI --hard-links
+Preserve hard links from source to mirror directories.  No increment
+files will themselves be hard linked, but a hard link database will be
+written so that hard links from any dataset will be recreated if
+originally present.  If many hard linked files are present, this
+option can drastically increase memory usage.
 .TP
 .B "-l, --list-increments"
 List the number and date of partial incremental backups contained in
