@@ -20,8 +20,7 @@ libhsync_la_SOURCES = dec.c enc.c \
 	mapptr.c mapptr.h \
 	fileutil.c \
 	gdproto.c readsums.c \
-	util.c util.h \
-	gd02sum.c
+	util.c util.h
 
 # compress.c compress.h 
 
