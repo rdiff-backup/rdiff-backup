@@ -14,9 +14,10 @@ else:
 
 base = "rdiff-backup-%s" % (version,)
 tarfile = base + ".tar.gz"
-rpmbase = base + "-0.fdr.1" # Fedora suffix, with release number 1
+rpmbase = base + "-0.fdr.2" # Fedora suffix, with release number 2
 i386_rpm = rpmbase + ".i386.rpm"
 source_rpm = rpmbase + ".src.rpm"
+
 
 # These assume the rpm root directory $HOME/rpm.  The
 # nonstandard location allows for building by non-root user.

@@ -1,10 +1,4 @@
-Use ctime to check whether files have been changed.  See message:
-http://mail.gnu.org/archive/html/rdiff-backup-users/2003-06/msg00050.html
-by Andrew Bressen.
 
-Profile 0.13.0
-
-Do more large file timing tests?
 
 ---------[ Medium term ]---------------------------------------
 

@@ -1,45 +1,23 @@
 /* ----------------------------------------------------------------------- *
  *   
- *   Copyright 2002 2003 Ben Escoto
+ *   Copyright 2002 Ben Escoto
  *
  *   This file is part of rdiff-backup.
  *
  *   rdiff-backup is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License as
- *   published by the Free Software Foundation; either version 2 of
- *   the License, or (at your option) any later version.
- *
- *   rdiff-backup is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *   General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with rdiff-backup; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- *   02111-1307 USA
+ *   published by the Free Software Foundation, Inc., 675 Mass Ave,
+ *   Cambridge MA 02139, USA; either version 2 of the License, or (at
+ *   your option) any later version; incorporated herein by reference.
  *
  * ----------------------------------------------------------------------- */
+
 
 #include <Python.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
-
-/* Some of the following code to define major/minor taken from code by
- * Jörg Schilling's star archiver.
- */
-#if !defined(major) && (defined(sgi) || defined(__sgi) || defined(__SVR4)) && !defined(__CYGWIN32__)
-#include <sys/mkdev.h>
-#endif
-
-#ifndef major
-#	define major(dev)		(((dev) >> 8) & 0xFF)
-#	define minor(dev)		((dev) & 0xFF)
-#	define makedev(majo, mino)	(((majo) << 8) | (mino))
-#endif
-/* End major/minor section */
 
 /* choose the appropriate stat and fstat functions and return structs */
 /* This code taken from Python's posixmodule.c */
@@ -70,7 +48,7 @@ static PyObject *c_make_file_dict(self, args)
 	 PyObject *self;
 	 PyObject *args;
 {
-  PyObject *size, *inode, *mtime, *atime, *ctime, *devloc, *return_val;
+  PyObject *size, *inode, *mtime, *atime, *devloc, *return_val;
   char *filename, filetype[5];
   STRUCT_STAT sbuf;
   long int mode, perms;
@@ -107,11 +85,9 @@ static PyObject *c_make_file_dict(self, args)
 #if SIZEOF_TIME_T > SIZEOF_LONG
   mtime = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_mtime);
   atime = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_atime);
-  ctime = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_ctime);
 #else
   mtime = PyInt_FromLong((long)sbuf.st_mtime);
   atime = PyInt_FromLong((long)sbuf.st_atime);
-  ctime = PyInt_FromLong((long)sbuf.st_ctime);
 #endif
 
   /* Build return dictionary from stat struct */
@@ -121,7 +97,7 @@ static PyObject *c_make_file_dict(self, args)
 	else if S_ISDIR(mode) strcpy(filetype, "dir");
 	else if S_ISSOCK(mode) strcpy(filetype, "sock");
 	else strcpy(filetype, "fifo");
-	return_val =  Py_BuildValue("{s:s,s:O,s:l,s:l,s:l,s:O,s:O,s:l,s:O,s:O,s:O}",
+	return_val =  Py_BuildValue("{s:s,s:O,s:l,s:l,s:l,s:O,s:O,s:l,s:O,s:O}",
 								"type", filetype,
 								"size", size,
 								"perms", perms,
@@ -131,8 +107,7 @@ static PyObject *c_make_file_dict(self, args)
 								"devloc", devloc,
 								"nlink", (long)sbuf.st_nlink,
 								"mtime", mtime,
-								"atime", atime,
-								"ctime", ctime);
+								"atime", atime);
   } else if S_ISLNK(mode) {
 	/* Symbolic links */
 	char linkname[1024];
@@ -161,7 +136,7 @@ static PyObject *c_make_file_dict(self, args)
 	PyObject *major_num = PyLong_FromLongLong(major(devnums));
 #else
 	long int devnums = (long)sbuf.st_dev;
-	PyObject *major_num = PyInt_FromLong(major(devnums));
+	PyObject *major_num = PyInt_FromLong(devnums >> 8);
 #endif
 	int minor_num = (int)(minor(devnums));
 	if S_ISCHR(mode) strcpy(devtype, "c");
@@ -188,7 +163,6 @@ static PyObject *c_make_file_dict(self, args)
   Py_DECREF(devloc);
   Py_DECREF(mtime);
   Py_DECREF(atime);
-  Py_DECREF(ctime);
   return return_val;
 }
 
