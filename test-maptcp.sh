@@ -20,9 +20,11 @@ run_test cat $builddir/libhsync.a >$from
 # discards buffered data and can't step backwards even to the previous
 # region.
 
+for seed in `seq 10`
+do
 for strategy in decoder stepping ones 
 do
-    run_test genmaptest $strategy 1000 $cmds $expect $from
+    run_test genmaptest $strategy 1000 $cmds $expect $from $seed
 
     for ioargs in '-c' '' '-k' '-n -k -s'
     do
@@ -33,7 +35,7 @@ done
 
 for strategy in forward 
 do
-    run_test genmaptest $strategy 1000 $cmds $expect $from
+    run_test genmaptest $strategy 1000 $cmds $expect $from $seed
 
     for ioargs in '' '-k' '-n -k -s'
     do
@@ -41,6 +43,7 @@ do
 	run_test cmp $expect $new
     done
 done
+done #seed
 
 # the output files are pretty huge, so if we completed successfully
 # delete them.  if we failed they're left behind so that you can find

@@ -10,13 +10,16 @@ new=$tmpdir/new.tmp
 cmds=$tmpdir/cmds
 expect=$tmpdir/expect
 
-run_test genmaptest mapover 1000 $cmds $expect $from
+for seed in `seq 10`
+do
+run_test genmaptest mapover 1000 $cmds $expect $from $seed
 
-for ioargs in '' '-k' '-n -s'
+for ioargs in '' '-k' '-n -s -k'
 do
     run_test hsmapread $debug `cat $cmds` <$from >$new
     run_test cmp $expect $new
 done
+done # seed
 
 # the output files are pretty huge, so if we completed successfully
 # delete them.  if we failed they're left behind so that you can find

@@ -44,7 +44,7 @@
 
 
 static char const *usage =
-"Usage: genmaptest SERIES NUMTESTS CMDS EXPECT INPUT\n";
+"Usage: genmaptest SERIES NUMTESTS CMDS EXPECT INPUT SEED\n";
 
 
 /*
@@ -209,17 +209,17 @@ gen_decoder(int ntests, char const *buf, size_t size,
         
         if (ntests-- <= 0)
             return;
-        l = rand() % 14;
+        l = rand() % 14 + 1;
         emit(buf, size, pos, l, expect, cmds);
         pos += l;
         
         if (ntests-- <= 0)
             return;
-        l = rand() % 50000;
+        l = rand() % 50000 + 1;
         emit(buf, size, pos, l, expect, cmds);
         pos += l;
 
-        if (pos > size)
+        if (pos > (off_t) size)
             return;
     }
 }
@@ -233,7 +233,7 @@ static void
 gen_stepping(int ntests, char const *buf, size_t size,
              FILE *expect, FILE *cmds)
 {
-    int                 i;
+    size_t              i;
     size_t              c;
 
     i = 0;
@@ -244,7 +244,8 @@ gen_stepping(int ntests, char const *buf, size_t size,
     }
 
     /* finally read any remaining data */
-    emit(buf, size, i, size-i, expect, cmds);
+    if (size > i)
+        emit(buf, size, i, size-i, expect, cmds);
 }
 
 
@@ -274,7 +275,7 @@ main(int argc, char **argv) {
     int                 numtests;
     int                 i;
 
-    if (argc != 6) {
+    if (argc != 7) {
         fputs(usage, stderr);
         return 1;
     }
@@ -284,6 +285,8 @@ main(int argc, char **argv) {
 
     series = argv[1];
     numtests = atoi(argv[2]);
+
+    srand(atoi(argv[6]));
 
     for (i = 0; all_tests[i].name; i++) {
         if (!strcmp(series, all_tests[i].name)) {
