@@ -1,0 +1,109 @@
+.\"
+.\" libhsync -- dynamic caching and delta update in HTTP
+.\" $Id$
+.\" 
+.\" Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+.\" 
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU Lesser General Public License
+.\" as published by the Free Software Foundation; either version 2.1 of
+.\" the License, or (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+.\" Lesser General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU Lesser General Public
+.\" License along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.TH libhsync 3 "$Date$" "Martin Pool"
+.SH NAME
+libhsync \- library for delta compression of streams
+.SH SYNOPSYS
+.nf 
+.B #include <stdlib.h>
+.B #include <hsync.h>
+.sp
+.BI "extern char const *const hs_libhsync_version;"
+.BI "extern char const *const hs_libhsync_libversion;"
+.fi
+.SH DESCRIPTION
+The \fBlibhsync\fP library implements delta-compression of streams and
+files.  The algorithm is similar to that used in the \fBrsync(1)\fP and
+\fBxdelta(2)\fP programs, but specialized for transfer of
+arbitrary-length streams.  
+.PP
+The canonical use of \fBlibhsync\fP is in the \fBrproxy(8)\fP
+reference implementation of the \fIhsync\fP proposed extension to
+HTTP.  It may be useful to other programs which wish to do
+delta-compression in HTTP, or within their own protocol.  There are
+HTTP-specific utility functions within \fBlibhsync\fP, but they need
+not be used.
+.PP
+All \fBlibhsync\fP external symbols begin with the prefix ``hs_''.
+Symbols beginning with ``_hs_'' are reserved for internal use.
+.PP
+The \fBhs_libhsync_version\fP variable contains a decimal
+representation of the current version of the library.  This may be
+used in the version information of programs which depend on the
+library.
+.PP
+The \fBhs_libhsync_libversion\fP contains the \fIlibtool\fP
+shared-library versioning information for this library.
+.PP
+The library contains extensive debugging trace code, which can pass
+its output to a callback function supplied by the containing program.
+To improve performance, the trace code may be disabled at compile
+time.  See \fBhs_trace_to(2)\fP and related functions for more
+information. 
+.PP
+A number of tools such as \fBhsmdfour(2)\fP provide command-line and
+scriptable access to hsync functions.
+.SH "LIST OF FUNCTIONS"
+.TP
+.B Function
+.B Description
+
+.TP
+.B hs_hexify
+Convert binary data into an ASCII string representation
+
+.TP
+.B hs_supports_trace
+Check whether trace code is available
+
+.TP 
+.B hs_trace_set_level
+Set filtering on trace messages
+
+.TP 
+.B hs_trace_to
+Set trace destination callback
+
+.TP
+.B hs_trace_stderr
+Default trace callback that writes to stderr
+
+.SH "SEE ALSO"
+.BR hs_hexify "(2), " hs_base64 "(2), " hs_unbase64 "(2), " 
+.BR hs_supports_trace "(2), " hs_trace_set_level "(2), "
+.BR hs_trace_to "(2), " hs_trace_stderr "(2), "
+.PP
+.BR hsmdfour "(1), " libhsyncinfo "(1)"
+.PP
+\fIhttp://rproxy.sourceforge.net/\fP or \fIhttp://linuxcare.com.au/rproxy/\fP.
+.PP
+\fIdraft-pool-hsync\fP
+.SH BUGS
+The hsync protocol is still evolving.  There may be bugs in the
+implementation.  The interface may change in the future, but it is
+becoming more stable.
+.PP
+Many routines will abort in case of error rather than returning an
+error code to the caller.  Patches to fix this are welcome, but at the
+current state of development aborting seems as useful as trusting to
+possibly-incomplete checking in the client.
+.SH "AUTHOR"
+Martin Pool <mbp@humbug.org.au>

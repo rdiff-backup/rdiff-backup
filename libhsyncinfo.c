@@ -1,5 +1,5 @@
 /*				       	-*- c-file-style: "bsd" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -19,12 +19,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "includes.h"
-
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/file.h>
 #include <string.h>
+
+#include <hsync.h>
 
 static void
 show_help(void)

@@ -1,0 +1,28 @@
+#! /bin/sh -pe
+
+# libhsync test case.
+# Copyright (C) 2000 by Martin Pool
+
+# Test the map_ptr input routines, by extracting chunks of a file
+# using a known-good Python implementation, and also by passing the
+# same parameters to the hsmapread driver.
+
+# $Id$
+
+from=$srcdir/COPYING
+new=$tmpdir/new.tmp
+
+for inbuf in $bufsizes
+do
+    for outbuf in $bufsizes
+    do
+	run_test dstream $inbuf $outbuf >$new <$from
+	run_test cmp $from $new
+    done
+done 
+
+# the output files are pretty huge, so if we completed successfully
+# delete them.  if we failed they're left behind so that you can find
+# the cause of death.
+
+run_test rm $new

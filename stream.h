@@ -1,9 +1,8 @@
-/*=				       	-*- c-file-style: "bsd" -*-
+/*=                                     -*- c-file-style: "bsd" -*-
  * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com>
- * Copyright (C) 1999 by Andrew Tridgell <tridge@linuxcare.com>
+ * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -21,15 +20,7 @@
  */
 
 
-void * _hs_alloc(size_t size, char const *name);
-void *_hs_alloc_struct0(size_t size, char const *name);
+/* Prototypes for internal stream functions. */
 
-void _hs_bzero(void *buf, size_t size);
-
-
-/*
- * Allocate and zero-fill an instance of TYPE.
- */
-#define _hs_alloc_struct(type)				\
-        ((type *) _hs_alloc_struct0(sizeof(type), #type))
-
+int _hs_stream_copy(hs_stream_t *stream, int len);
+void _hs_stream_check(hs_stream_t *stream);

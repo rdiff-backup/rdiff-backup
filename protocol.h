@@ -41,8 +41,8 @@
 
 
 
-#define HS_LT_MAGIC             0x67640001      /* "gd\000\001" */
-#define HS_SIG_MAGIC            0x67642001      /* "gd \001" */
+#define HS_LT_MAGIC             0x67640036      /* "gd\000\001" */
+#define HS_SIG_MAGIC            0x67640136      /* "gd\0016" */
 
 
 /* 

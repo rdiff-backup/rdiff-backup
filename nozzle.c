@@ -1,5 +1,5 @@
-/*				       	-*- c-file-style: "bsd" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+/*=                                     -*- c-file-style: "bsd" -*-
+ * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -9,117 +9,158 @@
  * as published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
  * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 
-/*
- * nadnozzle: Smart, nonblocking output from nad encoding.
- *
- * The nozzle is based commands from the nad encoder.  At the moment,
- * there are five commands: COPY, LITERAL, SIGNATURE, CHECKSUM and EOF.
- * As data passes out through the nozzle, these commands can be
- * reordered or combined to produce a smaller encoding.  However, this
- * optimization only happens over a fixed-size window, and is subject
- * to certain identity constraints.
- *
- * Because the length of a command is sent at the start, we can't
- * modify commands we've already started to transmit.  Everything
- * else, however, can be mangled at will.
- *
- * `Identity constraints' just means that we want to make sure the
- * instructions we send produce the same effect as the instructions
- * passed in to us.  Therefore: COPY and LITERAL commands must be sent
- * in the same relative order they are generated.  Consecutive COPY
- * commands that refer to abutting regions of the old file may be
- * combined into a single larger command.  Consecutive LITERAL,
- * CHECKSUM and SIGNATURE commands may always be joined up.  CHECKSUM
- * commands give the checksum of the whole file to date, and so may
- * not be reordered relative to COPY and LITERAL commands.  SIGNATURE
- * commands are almost independent, but must not arrive before the
- * data they describe, although they may be delayed indefinitely.
- *
- * Therefore the only command that can be reordered is SIGNATURE which
- * may be pushed back relative to the others, although many of them
- * can be coalesced.  And in fact SIGNATURE commands will already be
- * grouped together, because the map-region code in nad encoding does
- * first search, then signature.  Therefore at the moment this code
- * does not worry too much about reordering.
- * 
- * We don't want to queue up data forever.  On each call, if we *can*
- * do output, then we should start sending whatever's next in the queue.
- *
- * To suit squid's callback mechanism, we shouldn't ever try to write
- * when we've been asked to read, or vice versa.  The encoding
- * algorithm should only write stuff into the nozzle, and then it can
- * be taken out when we next do output.
- *
- * At a certain point, we should just decide that the output queue is
- * full and that we don't want to read any more input until something
- * is written out.  Squid has the very good design that this is a
- * separate decision before trying to read, because to slow down the
- * sender we have to leave the data in the socket receive buffer in
- * the OS.  Perhaps this implies a function on the nozzle to say
- * whether it can accept any more data.
- *
- * So, there will be a public method which asks the nozzle to drain
- * itself to a particular output file.  Also, we can enquire whether
- * it's empty, full, or half-full.  The encoder has private methods
- * that enqueue particular commands.
- *
- * Literal data is not copied into the nozzle.  Rather, it's kept in
- * the input map and there's a cursor in the hs_nad_job_t which helps
- * nad retain any data that it needs to copy out.
- *
- * Does the nozzle need to actually keep a queue of things?  I kind of
- * think it does: if we have lots of input available then we will want
- * to be able to send as much output as possible next time we try.
- *
- * So the model has to be some kind of list of commands waiting to go
- * out.  As commands are appended we see if the previous command is of
- * the same type, and if so we try to coalesce them.
- *
- * When it's time to do output, we walk through the list and send each
- * command one at a time.  Commands are pulled off the queue into a
- * special slot as they're sent: we need to make sure nobody will try
- * to coalesce with them, and also if the write does not complete
- * we'll need to know how far through the command we are.  Of course
- * the write might block when we have not even begun to send out the
- * command bytes, let alone the command content.
- *
- * How do we know when the nozzle is full?  Does it matter?  Yes, I
- * think so, otherwise we might use up too much space on the server.
- * I think we should keep track of how many bytes of command body data
- * are present in the queue.  Once this gets above a certain maximum
- * we should say we're full.  The encoder ought to stop submitting
- * data after this, and the method should be publicly callable to tell
- * if input can be deferred.
- *
- * Also we need to return a special value when output is complete.  It
- * may take some time to drain the nozzle after EOF is submitted.
- */
+                                        /*
+                                         | No two people ever read the
+                                         | same book.
+                                         */
+
 
 /*
- * XXX: What will we do about sending out literals?  At the moment we
- * have the nice situation that they're sent directly from the mapptr
- * that is used for input, so they're not unnecessarily copied.  If we
- * decouple output from input like this it might be harder to keep
- * this situation: so should we block input until we're ready to
- * release it?  Perhaps it's an acceptable loss to copy them just
- * once.
+ * Wrap a stream onto file descriptors.
  *
- * TODO: As a test case, build this thing into a filter that reads
- * commands from stdin and writes them to stdout.  In combination with
- * hsinhale and hsemit we can then test that the effect of the
- * commands is not altered.  Can we also build a program that checks
- * whether the command streams are identical, or will we just do that
- * by inspection or constructing the expected results?  I guess this
- * will be tested pretty well by the general-purpose test cases.
+ * The wrapper object contains small memory buffers that accumulate
+ * data before it is written out.  At the moment the size is fixed.
+ * You must create separate objects for input and output.
  */
+
+#include "includes.h"
+
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdio.h>
+
+#include "trace.h"
+#include "util.h"
+
+
+struct hs_iobuf {
+    int    fd;
+    byte_t *buf;
+    size_t buf_len;
+    hs_stream_t *stream;
+};
+
+
+hs_nozzle_t *
+hs_nozzle_new(int fd, hs_stream_t *stream, int buf_len, char mode)
+{
+    /* allocate a new iobuf object */
+    hs_nozzle_t *iot = _hs_alloc_struct(hs_nozzle_t);
+
+    assert(buf_len > 0);
+
+    iot->fd = fd;
+    iot->buf_len = buf_len;
+    iot->buf = _hs_alloc(iot->buf_len, "iobuf buffer");
+    iot->stream = stream;
+
+    if (mode == 'r') {
+        assert(!stream->next_in);
+        stream->next_in = iot->buf;
+        stream->avail_in = 0;
+    } else {
+        assert(mode == 'w');
+        assert(!stream->next_out);
+        stream->next_out = iot->buf;
+        stream->avail_out = iot->buf_len;
+    }
+
+    return iot;
+}
+
+
+void
+hs_nozzle_delete(hs_nozzle_t *iot)
+{
+    free(iot->buf);
+    free(iot);
+}
+
+
+/*
+ * Move existing data, if any, to the start of the buffer.  Read in
+ * more data to fill the buffer up.
+ *
+ * Returns amount of data now available; this goes to 0 at eof.
+ */
+int
+hs_nozzle_in(hs_nozzle_t *iot)
+{
+    hs_stream_t * const stream = iot->stream;
+    int to_read, got;
+    
+    assert(stream->avail_in <= iot->buf_len);
+    assert(stream->next_in >= iot->buf
+           && stream->next_in <= iot->buf + iot->buf_len);
+    
+    if (stream->avail_in > 0) {
+        memmove(iot->buf, stream->next_in, stream->avail_in);
+    }
+
+    to_read = iot->buf_len - stream->avail_in;
+    assert(to_read >= 0);
+    assert((size_t) to_read <= iot->buf_len);
+    if (to_read == 0)
+        return stream->avail_in;
+
+    got = read(iot->fd, iot->buf + stream->avail_in, to_read);
+    if (got < 0) {
+        _hs_fatal("error reading: %s", strerror(errno));
+    }
+
+    /* FIXME: If we see EOF, then don't keep trying to read. */
+    
+    stream->next_in = iot->buf;
+    return stream->avail_in += got;
+}
+
+
+
+/*
+ * Write out available output data.  Move remaining data to the start
+ * of the buffer.  Returns the amount of data returning to be written,
+ * so when this reaches zero there is no more data (at the moment).
+ */
+int
+hs_nozzle_out(hs_nozzle_t *iot)
+{
+    hs_stream_t * const stream = iot->stream;
+    int remains = 0, done, buffered;
+
+    assert(stream->avail_out <= iot->buf_len);
+    assert(stream->next_out >= iot->buf
+           && stream->next_out <= iot->buf + iot->buf_len);
+
+    buffered = iot->buf_len - stream->avail_out;
+    
+    if (buffered) {
+        done = write(iot->fd, iot->buf, buffered);
+        if (done < 0) {
+            _hs_fatal("error writing: %s", strerror(errno));
+        }
+
+        /* retain data */
+        remains = buffered - done;
+
+        if (remains)
+            memmove(iot->buf, iot->buf + done, remains);
+    }
+
+    stream->next_out = iot->buf + remains;
+    stream->avail_out = iot->buf_len - remains;
+    return remains;
+}
+
+

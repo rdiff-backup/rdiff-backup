@@ -20,12 +20,19 @@
  */
 
 
+                                /* 
+                                 | On heroin, I have all the answers.
+                                 */
+
+
+#include <stdarg.h>
 
 #include "includes.h"
-
+#include "util.h"
+#include "trace.h"
 
 void
-hs_bzero(void *buf, size_t size)
+_hs_bzero(void *buf, size_t size)
 {
     memset(buf, 0, size);
 }
@@ -39,6 +46,20 @@ _hs_alloc_struct0(size_t size, char const *name)
     if (!(p = malloc(size))) {
         _hs_fatal("couldn't allocate instance of %s", name);
     }
-    hs_bzero(p, size);
+    _hs_bzero(p, size);
+    return p;
+}
+
+
+
+void *
+_hs_alloc(size_t size, char const *name)
+{
+    void           *p;
+
+    if (!(p = malloc(size))) {
+        _hs_fatal("couldn't allocate instance of %s", name);
+    }
+
     return p;
 }

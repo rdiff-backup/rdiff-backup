@@ -22,16 +22,13 @@
 #include "includes.h"
 
 void
-hs_hexify_buf(char *to_buf, unsigned char const *from_buf, int from_len)
+hs_hexify(char *to_buf, unsigned char const *from_buf, int from_len)
 {
     static const char hex_chars[] = "0123456789abcdef";
 
     while (from_len-- > 0) {
 	*(to_buf++) = hex_chars[((*from_buf) >> 4) & 0xf];
 	*(to_buf++) = hex_chars[(*from_buf) & 0xf];
-        if (!(from_len % 4)  &&  from_len) {
-            *(to_buf++) = '_';
-        }
 	from_buf++;
     }
 

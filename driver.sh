@@ -49,7 +49,7 @@ fi
 
 test_script=$1
 shift
-test_name=`basename $test_script .sh`
+test_name=`basename $test_script`
 
 # TODO: Add more pair instructions here
 delta_instr="
@@ -70,9 +70,9 @@ delta_instr="
 10,1:8,4:6,8:4,10:2,12
 0,10000:0,10000:0,10000
 "
+bufsizes='1 2 3 7 15 30 100 1000 4096 10000 200000'
 
 # Process command-line options
-trace=:
 stats=
 debug=
 time=
@@ -86,7 +86,7 @@ do
 	stats=-S
 	;;
     -x)
-	trace='set -x'
+	VERBOSE=1
 	;;
     -t)
 	time='time'
@@ -108,8 +108,8 @@ builddir=`pwd`
 PATH=$builddir:$srcdir:$PATH
 export PATH
 
-testdir=$srcdir/$test_name
-tmpdir=$builddir/`echo $test_name | sed -e s/^test-/tmp-/`
+testdir=$srcdir/$test_name.input
+tmpdir=$builddir/$test_name.tmp
 [ -d $tmpdir ] || mkdir $tmpdir || exit 2
 
 test_skipped () {
@@ -117,6 +117,11 @@ test_skipped () {
 }
 
 run_test () {
+    if [ -n "${VERBOSE:-}" ] 
+    then
+	echo "    $*" >&2
+    fi
+
     if $* 
     then
 	:
@@ -142,7 +147,6 @@ make_input () {
 
 echo "$test_name"
 
-$trace
 . $test_script $*
 
 rm -f $tmpdir/*

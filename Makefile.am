@@ -22,7 +22,7 @@
 			      # ``When the program is being tested, it
 			      # is too late to make design changes.''
 
-lib_LIBRARIES = libhsync.a
+lib_LTLIBRARIES = libhsync.la
 
 # As of 0.5.6, when we install we try to clobber any existing shared
 # libraries.  Shared libraries are not supported any more, so we want
@@ -31,38 +31,17 @@ install-exec-local:
 	rm -f $(DESTDIR)$(libdir)/libhsync.so* \
 		$(DESTDIR)$(libdir)/libhsyncdecode.so*
 
-libhsync_a_SOURCES = \
-	alw.c alw.h \
-	dec.c \
-	emit.c emit.h \
-	private.h \
-	netio.c netio.h \
-	includes.h \
-	mdfour.c \
-	filebuf.c membuf.c ptrbuf.c \
-	checksum.c checksum.h \
-	sum_p.h \
-	copyq.c \
-	inhale.c inhale.h \
-	trace.c trace.h \
-	hex.c stats.c \
-	mapptr.c mapptr.h mapcopy.c map_p.h \
-	fileutil.c fileutil.h \
-	gdproto.c \
-	util.c util.h \
-	mksum.c mksum.h \
-	sumset.c sumset.h \
-	rollsum.c rollsum.h \
-	nad.c nad_p.h nadsrch.c nadout.c \
-	search.c search.h \
-	nozzle.c \
-	command.h \
-	protocol.h \
-	prototab.c prototab.h \
-	oldinhale.c \
-	litbuf.c \
-	varint.c varint.h \
-	snprintf.h
+libhsync_la_SOURCES =				\
+	tube.c tube.h				\
+	file.c file.h				\
+	hsync.h					\
+	private.h				\
+	hex.c base64.c mdfour.c			\
+	stream.c stream.h			\
+	util.c util.h				\
+	nozzle.c				\
+	mksum.c					\
+	trace.c trace.h			
 
 # TODO: If we ever care enough, build a second library containing only
 # the code necessary to be a client, and not stuff for encoding.  At
@@ -81,21 +60,9 @@ libhsync_a_SOURCES = \
 # plain Bourne shell.
 
 TESTS_ENVIRONMENT = bash $(srcdir)/driver.sh
-test_scripts = \
-	test-maptcp.sh \
-	test-tricky.sh \
-	test-chain.sh \
-	test-md4sizes.sh \
-	test-mapread.sh \
-	test-cmds.sh \
-	test-thrice.sh \
-	test-mappipe.sh \
-	test-mapeof.sh \
-	test-mapover.sh \
-	test-nadsum.sh \
-	test-pairs.sh \
-	test-exact.sh \
-	test-double.sh
+test_scripts = mdfour.test stream.test tube.test
+
+man_MANS = man/libhsync.3 man/hsmdfour.1
 
 # These are extra documents to be included in the source tarball.
 extra_docs = README.CVS
@@ -113,15 +80,7 @@ noinst_SCRIPTS = \
 	mkprototab.sh \
 	$(try_scripts)
 
-test_data= \
-	test-cmds.in \
-in-tricky/in-01					\
-in-tricky/in-02					\
-in-tricky/in-03					\
-in-tricky/in-04					\
-in-tricky/in-05					\
-in-tricky/in-06					\
-in-tricky/in-07
+test_data= 
 
 # TODO: Delete the test-*.d directories when cleaning up.  Yeah!
 CLEANFILES = tmp-test-*.d/* tmp-try-*.d/*
@@ -130,57 +89,24 @@ CLEANFILES = tmp-test-*.d/* tmp-try-*.d/*
 prototab.c: $(srcdir)/mkprototab.sh
 	sh $(srcdir)/mkprototab.sh >prototab.c
 
-EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) $(extra_docs) 
+EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) $(extra_docs) $(man_MANS)
 
 include_HEADERS = hsync.h
 
 # This is the default for any programs that don't specify a
 # preference.
-LDADD = libhsync.a $(LIBOBJS)
-
-libhsync_tools = hsdecode hsmdfour hsmksum hsmapread hsnad \
-		 hsalw \
-		libhsyncinfo hsdumpsums
+LDADD = libhsync.la $(LIBOBJS)
 
 # Eventually we might want to install some of these into system
 # directories, but they're pretty obscure and it's hard to imagine any
 # end users wanting to run them.  So for the time being they are not
 # installed.
 
+libhsync_tools = libhsyncinfo hsmdfour hsmksum
+
 noinst_PROGRAMS = $(libhsync_tools)
-check_PROGRAMS = hsemit hsinhale genmaptest \
-	socksvr sockcli sockrun trylog
+check_PROGRAMS = stream.driver tube.driver
 
 .PHONY: check_programs
 check_programs: $(check_PROGRAMS)
 
-trylog_SOURCES = trylog.c 
-
-sockrun_SOURCES = sockrun.c trace.c util.c fileutil.c
-sockrun_LDADD = @net_libs@
-
-socksvr_SOURCES = socksvr.c trace.c util.c
-socksvr_LDADD = @net_libs@
-
-sockcli_SOURCES = sockcli.c trace.c util.c fileutil.c
-sockcli_LDADD = @net_libs@
-
-genmaptest_LDADD =
-
-libhsyncinfo_SOURCES = libhsyncinfo.c
-
-hsnad_SOURCES = hsnad.c
-
-hsmksum_SOURCES = hsmksum.c
-
-hsmdfour_SOURCES = hsmdfour.c
-
-hsdecode_SOURCES = hsdecode.c
-
-hsalw_SOURCES = hsalw.c
-
-hsemit_SOURCES = hsemit.c
-
-hsinhale_SOURCES = hsinhale.c
-
-hsmapread_SOURCES = hsmapread.c

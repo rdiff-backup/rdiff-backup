@@ -1,9 +1,8 @@
 /*				       	-*- c-file-style: "bsd" -*-
- * libhsync -- dynamic caching and delta update in HTTP
+ *
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
- * Copyright (C) 1999 by Andrew Tridgell
+ * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,4 +18,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+
+typedef struct hs_tube {
+    int		dogtag;
+    char        buf[4096];
+    int         used;
+} hs_tube_t;
+
+
+void _hs_tube_drain(hs_stream_t *stream);
+void _hs_tube_blow(hs_stream_t *stream, byte_t const *buf, size_t len);
+int _hs_tube_empty(hs_stream_t const *stream);
+void _hs_check_tube(hs_stream_t *stream);
+
 

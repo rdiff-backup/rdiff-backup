@@ -1,5 +1,5 @@
 /*				       	-*- c-file-style: "bsd" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>

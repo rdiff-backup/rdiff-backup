@@ -1,5 +1,5 @@
 /*=				       	-*- c-file-style: "bsd" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
@@ -26,7 +26,9 @@
 #include <stdio.h>
 #include <sys/file.h>
 #include <string.h>
+#include <syslog.h>
 
+#include "trace.h"
 
 static void
 usage(char const *progname)
@@ -71,22 +73,9 @@ process_args(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
-    hs_mksum_job_t *job;
-    hs_filebuf_t   *out;
-    hs_result_t     result;
-
     process_args(argc, argv);
 
-    out = hs_filebuf_from_fd(STDOUT_FILENO);
-    if (!out) {
-	_hs_fatal("couldn't create a filebuf on stdout");
-	return 1;
-    }
+    hs_mksum_files(STDIN_FILENO, STDOUT_FILENO, 1024, 16, 16);
 
-    job = hs_mksum_begin(STDIN_FILENO, hs_filebuf_write, out, 1024, 16);
-    do {
-	result = hs_mksum_iter(job);
-    } while (result == HS_AGAIN);
-
-    return result == HS_DONE ? 0 : 2;
+    return 0;
 }

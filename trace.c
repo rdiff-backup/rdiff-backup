@@ -32,12 +32,17 @@
 #include <stdio.h>
 #include <sys/file.h>
 #include <string.h>
+#include <syslog.h>
+#include <errno.h>
+
+#include "private.h"
+#include "trace.h"
 
 char const * const hs_libhsync_version = PACKAGE " " VERSION;
 char const * const hs_libhsync_libversion = HS_LIBVERSION;
 int const hs_libhsync_file_offset_bits = SIZEOF_OFF_T * 8;
 
-hs_trace_fn_t  *_hs_trace_impl = hs_trace_to_stderr;
+hs_trace_fn_t  *_hs_trace_impl = hs_trace_stderr;
 
 static int _hs_trace_level = LOG_INFO;
 
@@ -95,7 +100,7 @@ _hs_log0(int level, char const *fn, char const *fmt, ...)
 
 
 void
-hs_trace_to_stderr(int UNUSED(level), char const *msg)
+hs_trace_stderr(int UNUSED(level), char const *msg)
 {
     /* NOTE NO TRAILING NUL */
     write(STDERR_FILENO, msg, strlen(msg));

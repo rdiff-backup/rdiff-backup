@@ -1,0 +1,46 @@
+.\"
+.\" libhsync -- dynamic caching and delta update in HTTP
+.\" $Id$
+.\" 
+.\" Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+.\" 
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU Lesser General Public License
+.\" as published by the Free Software Foundation; either version 2.1 of
+.\" the License, or (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+.\" Lesser General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU Lesser General Public
+.\" License along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.TH hsmdfour 1 "$Date$" 
+.SH NAME
+hsmdfour \- generate MD4 checksum
+.SH SYNOPSYS
+.nf 
+.B hsmdfour [-b \fIlength\fP ] 
+.fi
+.SH DESCRIPTION
+\fBhsmdfour\fP generates the MD4 checksum of the file on standard
+input.  The hexidecimal form of the checksum is written to stdout.
+.PP
+This program exists for testing the MD4 algorithm in
+\fBlibhsync(2)\fP.
+.SH OPTIONS
+.TP
+.B \-b
+Read input in blocks of the specified size.
+.SH "SEE ALSO"
+.BR libhsync "(2), " libhsyncinfo "(1)"
+.SH BUGS
+There are cryptographic problems with MD4, and so it is no longer
+recommended for new applications.  It is used in \fBhsync\fP because
+it is not security-critical and the performance is better than MD5 or
+SHA-1.
+.SH "AUTHOR"
+Martin Pool <mbp@humbug.org.au>

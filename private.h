@@ -1,5 +1,5 @@
 /*				       	-*- c-file-style: "bsd" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -46,101 +46,11 @@
 #endif				/* !__GNUC__ && !__LCLINT__ */
 
 
-void           *_hs_alloc_struct0(size_t size, char const *name);
-
-#define _hs_alloc_struct(type)				\
-        ((type *) _hs_alloc_struct0(sizeof(type), #type))
-
-
-#include "netio.h"
-
-/* ========================================
-
-   Literal output buffer.
-
-   Data queued for output is now held in a MEMBUF IO pipe, and copied from
-   there into the real output stream when necessary.  */
-ssize_t
-_hs_push_literal_buf(hs_membuf_t * litbuf,
-		     hs_write_fn_t write_fn, void *write_priv,
-		     hs_stats_t * stats, int kind);
-
-
-void            _hs_check_blocksize(int block_len);
-
-
-/* ========================================
-
-   Memory buffers */
-
-
-/* An HS_MEMBUF grows dynamically.  BUF points to an array of ALLOC bytes, of 
-   which LENGTH contain data.  The cursor is at position OFS.  If BUF is
-   null, then no memory has been allocated yet. */
-struct hs_membuf {
-    int             dogtag;
-    byte_t         *buf;
-    off_t        ofs;
-    ssize_t         length;
-    size_t          alloc;
-};
-
-/* hs_ptrbuf_t: Memory is provided by the caller, and they retain
-   responsibility for it.  BUF points to an array of LENGTH bytes. The cursor 
-   is currently at OFS. */
-struct hs_ptrbuf {
-    int             dogtag;
-    byte_t         *buf;
-    off_t        ofs;
-    size_t          length;
-};
-
-/* ========================================
-
-   _hs_inbuf_t: a buffer of new data waiting to be digested.
-
- */
-
-/* 
-   Buffer of new data waiting to be digested and encoded.  This is like a
-   map_ptr, but more suitable for reading from a socket, where we can't seek, 
-   and therefore can't skip forwards or rewind. Therefore we must be prepared 
-   to give up any amount of memory rather than seek.
-
-   The inbuf covers a particular part of the file with an in-memory buffer.
-   The file is addressed by absolute position,
-
-   inbuf[0..inbufamount-1] is valid, inbufamount <= inbuflen, cursor <=
-   inbufamount is the next one to be processed.
-
-   0 <= abspos is the absolute position in the input file of the start of the 
-   buffer.  We need this to generate new signatures at the right positions. */
-struct _hs_inbuf {
-    int             tag;
-    int             len;
-    byte_t           *buf;
-    int             amount;
-    int             cursor;
-    int             abspos;
-};
-
-typedef struct _hs_inbuf _hs_inbuf_t;
-
-int             _hs_fill_inbuf(_hs_inbuf_t *, hs_read_fn_t read_fn,
-
-			       void *readprivate);
-
-_hs_inbuf_t    *_hs_new_inbuf(void);
-void            _hs_free_inbuf(_hs_inbuf_t *);
-int             _hs_slide_inbuf(_hs_inbuf_t *);
-
-
 
 /***********************************************************************
  * Checksums
  ***********************************************************************/
 
-#define MD4_LENGTH 16
 #define DEFAULT_SUM_LENGTH 8
 
 /* We should make this something other than zero to improve the checksum
@@ -148,52 +58,8 @@ int             _hs_slide_inbuf(_hs_inbuf_t *);
 #define CHAR_OFFSET 31
 
 typedef uint32_t hs_weak_sum_t;
-typedef byte_t   hs_strong_sum_t[MD4_LENGTH];
+typedef byte_t   hs_strong_sum_t[HS_MD4_LENGTH];
 
 typedef struct hs_rollsum hs_rollsum_t;
 
-#include "checksum.h"
-
-
-/* ========================================
-
-   queue of outgoing copy commands */
-
-typedef struct _hs_copyq {
-    off_t           start;
-    size_t          len;
-} _hs_copyq_t;
-
-int             _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
-			       _hs_copyq_t * copyq, off_t start, size_t len,
-			       hs_stats_t * stats);
-int             _hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
-			       _hs_copyq_t * copyq, hs_stats_t * stats);
-
-
-int             _hs_append_literal(hs_membuf_t * litbuf, byte_t value);
-
-
-int             _hs_check_sig_version(hs_read_fn_t, void *);
-
-
-/* =======================================
-
-   gd01 protocol. */
-
-int
-                _hs_read_blocksize(hs_read_fn_t sigread_fn, void *sigreadprivate,
-
-				   int *block_len);
-
-int
-                _hs_littok_header(hs_write_fn_t write_fn, void *write_priv);
-
-int
-                _hs_newsig_header(int new_block_len,
-
-				  hs_write_fn_t write_fn, void *writeprivate);
-
-
-#include "fileutil.h"
 

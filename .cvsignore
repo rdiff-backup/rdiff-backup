@@ -18,6 +18,8 @@ config.status
 config.sub
 configure
 configure.scan
+dstream
+dtube
 genmaptest
 hsalw
 hsdecode
@@ -49,3 +51,4 @@ stamp-h.in
 test-*.d
 tmp-*
 trylog
+*.driver
