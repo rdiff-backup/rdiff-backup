@@ -225,7 +225,7 @@ def init_user_group_mapping(destination_conn):
 		rp = rpath.RPath(Globals.local_connection, filename)
 		try: return rp.get_data()
 		except OSError, e:
-			log.FatalError("Error '%s' reading mapping file '%s'" %
+			Log.FatalError("Error '%s' reading mapping file '%s'" %
 						   (str(e), filename))
 	user_mapping_string = get_string_from_file(user_mapping_filename)
 	destination_conn.user_group.init_user_mapping(user_mapping_string)
