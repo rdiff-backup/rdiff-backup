@@ -8,8 +8,12 @@ Added --list-increment-sizes option from the development branch.
 Previously this option was in the man page but was omitted in the code
 (thanks to Michael Schwendt for report).
 
-Restoring/regressing should now take less memory, especially on large
-directories.  CPU usage may slightly increase, however.
+Regressing and restoring should now take less memory when processing
+large directories (noticed by Luke Mewburn and others).
+
+When regressing, remove mirror_metadata and similar increments first.
+This will hopefully help regressing a backup that failed because disk
+was full (reported by Erik Forsberg).
 
 
 New in v0.12.5 (2003/09/27)
