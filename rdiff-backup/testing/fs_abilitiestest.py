@@ -11,14 +11,16 @@ class FSAbilitiesTest(unittest.TestCase):
 	the expected values below.
 
 	"""
-	# Describes standard linux file system with acls/eas
+	# Describes standard linux file system without acls/eas
 	dir_to_test = "testfiles"
-	eas = acls = 1
+	eas = acls = 0
 	chars_to_quote = ""
 	ownership = (os.getuid() == 0)
 	hardlinks = fsync_dirs = 1
 	dir_inc_perms = 1
 	resource_forks = 0
+
+
 
 	# Describes MS-Windows style file system
 	#dir_to_test = "/mnt/fat"
