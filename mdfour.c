@@ -37,11 +37,9 @@
 #include "rsync.h"
 #include "trace.h"
 #include "types.h"
+#include "mdfour.h"
 
 
-static void (*rs_mdfour_block)(rs_mdfour_t *md, void const *p) = NULL;
-
-     
 #define F(X,Y,Z) (((X)&(Y)) | ((~(X))&(Z)))
 #define G(X,Y,Z) (((X)&(Y)) | ((X)&(Z)) | ((Y)&(Z)))
 #define H(X,Y,Z) ((X)^(Y)^(Z))
@@ -143,6 +141,7 @@ rs_mdfour64(rs_mdfour_t * m, const void *p)
 }
 
 
+#ifdef WORDS_BIGENDIAN
 /* These next two routines are necessary because MD4 is specified in
  * terms of little-endian int32s, but we have a byte buffer.  On
  * little-endian platforms, I think we can just use the buffer pointer
@@ -161,67 +160,65 @@ copy64( /* @out@ */ uint32_t * M, unsigned char const *in)
         in += 4;
     }
 }
+#endif
 
 static void
 copy4( /* @out@ */ unsigned char *out, uint32_t const x)
 {
-    out[0] = x & 0xFF;
-    out[1] = (x >> 8) & 0xFF;
-    out[2] = (x >> 16) & 0xFF;
-    out[3] = (x >> 24) & 0xFF;
+    out[0] = x;
+    out[1] = x >> 8;
+    out[2] = x >> 16;
+    out[3] = x >> 24;
 }
 
+#if HAVE_UINT64
+/* We need this if there is a uint64 */
+static void
+copy8( /* @out@ */ unsigned char *out, uint64_t const x)
+{
+    out[0] = x;
+    out[1] = x >> 8;
+    out[2] = x >> 16;
+    out[3] = x >> 24;
+    out[4] = x >> 32;
+    out[5] = x >> 40;
+    out[6] = x >> 48;
+    out[7] = x >> 56;
+}
+#endif
 
 
+#ifdef WORDS_BIGENDIAN
 /**
  * Accumulate a block, making appropriate conversions for bigendian
  * machines.
  */
 static void
-rs_mdfour_block_slow(rs_mdfour_t *md, void const *p)
+rs_mdfour_block(rs_mdfour_t *md, void const *p)
 {
     uint32_t        M[16];
 
     copy64(M, p);
     rs_mdfour64(md, M);
 }
-
-
-static void
-rs_mdfour_choose_packer(void)
-{
-    const uint32_t foo = 0x01020304;
-    const char *p = (const char *)&foo;
-    
-    if (sizeof(uint32_t) != 4)
-        rs_fatal("internal error: uint32_t is not really 32 bits!");
-    if (sizeof(foo) != 4)
-        rs_fatal("internal error: something wierd about char arrays");
-
-    if (*p == 0x1) {
-        rs_trace("big-endian machine");
-        rs_mdfour_block = rs_mdfour_block_slow;
-    } else if (*p == 0x4) {
-        rs_trace("little-endian machine");
-        rs_mdfour_block = rs_mdfour64;
-    } else {
-        rs_fatal("world is broken - can't determine endianness from %#x", *p);
-    }
-}
+#else 
+#define rs_mdfour_block(md,p) rs_mdfour64(md,p)
+#endif
 
 
 void
 rs_mdfour_begin(rs_mdfour_t * md)
 {
-    if (!rs_mdfour_block)
-        rs_mdfour_choose_packer();
-
     memset(md, 0, sizeof(*md));
     md->A = 0x67452301;
     md->B = 0xefcdab89;
     md->C = 0x98badcfe;
     md->D = 0x10325476;
+#if HAVE_UINT64
     md->totalN = 0;
+#else 
+    md->totalN_hi = md->totalN_lo = 0;
+#endif
 }
 
 
@@ -235,11 +232,25 @@ static void
 rs_mdfour_tail(rs_mdfour_t * m, unsigned char const *in, int n)
 {
     unsigned char   buf[128];
-    uint32_t        b;
+#if HAVE_UINT64
+    uint64_t        b;
+#else 
+    uint32_t        b_hi, b_lo;
+#endif
 
+#if HAVE_UINT64
     m->totalN += n;
+#else 
+    if ((m->totalN_lo += n) < n) 
+        m->totalN_hi++; 
+#endif
 
-    b = m->totalN * 8;
+#if HAVE_UINT64
+    b = m->totalN << 3;
+#else 
+    b_lo = m->totalN_lo << 3;
+    b_hi = ((m->totalN_hi << 3) | (m->totalN_lo >> 29)); 
+#endif
 
     memset(buf, 0, 128);
     if (n)
@@ -247,10 +258,20 @@ rs_mdfour_tail(rs_mdfour_t * m, unsigned char const *in, int n)
     buf[n] = 0x80;
 
     if (n <= 55) {
-        copy4(buf + 56, b);
+#if HAVE_UINT64
+        copy8(buf + 56, b);
+#else 
+        copy4(buf + 56, b_lo);
+        copy4(buf + 60, b_hi);
+#endif
         rs_mdfour_block(m, buf);
     } else {
-        copy4(buf + 120, b);
+#if HAVE_UINT64
+        copy8(buf + 120, b);
+#else 
+        copy4(buf + 120, b_lo);
+        copy4(buf + 124, b_hi);
+#endif
         rs_mdfour_block(m, buf);
         rs_mdfour_block(m, buf + 64);
     }
@@ -287,14 +308,24 @@ rs_mdfour_update(rs_mdfour_t * md, void const *in_void, size_t n)
 
         rs_mdfour_block(md, md->tail);
         md->tail_len = 0;
+#if HAVE_UINT64
         md->totalN += 64;
+#else 
+    if ((md->totalN_lo += 64) < 64) 
+        md->totalN_hi++; 
+#endif
     }
 
     while (n >= 64) {
         rs_mdfour_block(md, in);
         in += 64;
         n -= 64;
+#if HAVE_UINT64
         md->totalN += 64;
+#else 
+    if ((md->totalN_lo += 64) < 64) 
+        md->totalN_hi++; 
+#endif
     }
 
     if (n) {
