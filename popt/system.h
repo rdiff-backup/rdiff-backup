@@ -19,6 +19,13 @@
 #include <unistd.h>
 #endif
 
+#ifdef _WIN32
+#include <io.h>
+#include <malloc.h>
+#define getuid() 0
+#define geteuid() 0
+#endif
+
 #ifdef __NeXT
 /* access macros are not declared in non posix mode in unistd.h -
  don't try to use posix on NeXTstep 3.3 ! */
@@ -40,6 +47,10 @@ char *alloca ();
 # endif
 #elif defined(__GNUC__) && defined(__STRICT_ANSI__)
 #define alloca __builtin_alloca
+#endif
+
+#ifndef X_OK
+#define X_OK 1
 #endif
 
 /*@only@*/ char * xstrdup (const char *str);
