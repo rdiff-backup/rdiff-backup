@@ -1,23 +1,46 @@
 /* ----------------------------------------------------------------------- *
  *   
- *   Copyright 2002 Ben Escoto
+ *   Copyright 2002 2003 Ben Escoto
  *
  *   This file is part of rdiff-backup.
  *
  *   rdiff-backup is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License as
- *   published by the Free Software Foundation, Inc., 675 Mass Ave,
- *   Cambridge MA 02139, USA; either version 2 of the License, or (at
- *   your option) any later version; incorporated herein by reference.
+ *   published by the Free Software Foundation; either version 2 of
+ *   the License, or (at your option) any later version.
+ *
+ *   rdiff-backup is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *   General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with rdiff-backup; if not, write to the Free Software
+ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ *   02111-1307 USA
  *
  * ----------------------------------------------------------------------- */
-
 
 #include <Python.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
+
+
+/* Some of the following code to define major/minor taken from code by
+ * Jörg Schilling's star archiver.
+ */
+#if !defined(major) && (defined(sgi) || defined(__sgi) || defined(__SVR4)) && !defined(__CYGWIN32__)
+#include <sys/mkdev.h>
+#endif
+
+#ifndef major
+#	define major(dev)		(((dev) >> 8) & 0xFF)
+#	define minor(dev)		((dev) & 0xFF)
+#	define makedev(majo, mino)	(((majo) << 8) | (mino))
+#endif
+/* End major/minor section */
 
 /* choose the appropriate stat and fstat functions and return structs */
 /* This code taken from Python's posixmodule.c */
