@@ -525,6 +525,20 @@ that in this man page...).  And finally, to include a literal % in the
 string specified by --remote-schema, quote it with another %, as in
 %%.
 
+Although ssh itself may be secure, using rdiff-backup in the default
+way presents some security risks.  For instance if the server is run
+as root, then an attacker who compromised the client could then use
+rdiff-backup to overwrite arbitary server files by "backing up" over
+them.  Such a setup can be made more secure by using the sshd
+configuration option
+.B command="rdiff-backup --server"
+possibly along with the
+.B --restrict*
+options to rdiff-backup.  For more information, see the web page, the
+wiki, and the entries for the
+.B --restrict*
+options on this man page.
+
 .SH FILE SELECTION
 .B rdiff-backup
 supports file selection options similar to (but different from)
