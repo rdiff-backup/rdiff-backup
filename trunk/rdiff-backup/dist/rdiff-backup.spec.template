@@ -3,15 +3,15 @@
 Version: $version
 Summary: Convenient and transparent local/remote incremental mirror/backup
 Name: rdiff-backup
-Release: 0.fdr.1
+Release: 0.fdr.3
 Epoch: 0
 URL: http://rdiff-backup.stanford.edu/
-Source: http://rdiff-backup.stanford.edu/%{name}-%{version}.tar.gz
+Source: http://rdiff-backup.stanford.edu/OLD/%{version}/%{name}-%{version}.tar.gz
 License: GPL
 Group: Applications/Archiving
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires: librsync >= 0.9.5.1, %{PYTHON_NAME} >= 2.2
-BuildPrereq: %{PYTHON_NAME}-devel >= 2.2, librsync-devel >= 0.9.5.1
+Requires: librsync >= 0.9.6, %{PYTHON_NAME} >= 2.2
+BuildPrereq: %{PYTHON_NAME}-devel >= 2.2, librsync-devel >= 0.9.6
 
 %description
 rdiff-backup is a script, written in Python, that backs up one
@@ -45,6 +45,9 @@ differences from the previous backup will be transmitted.
 %doc CHANGELOG COPYING FAQ.html README
 
 %changelog
+* Thu Aug 8 2003 Ben Escoto <bescoto@stanford.edu>
+- Set librsync >= 0.9.6, because rsync.h renamed to librsync.h
+
 * Sun Jul 20 2003 Ben Escoto <bescoto@stanford.edu>
 - Minor changes to comply with Fedora standards.
 

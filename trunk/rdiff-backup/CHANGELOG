@@ -1,8 +1,6 @@
 New in v0.13.1 (2003/08/??)
 ---------------------------
 
-Patch by Arkadiusz Patyk fixes building with Python 2.3c1.
-
 Restore of archives made by 0.10.x and earlier fixed, although hard
 link information is not restored unless it is current in the mirror.
 (Bug reported by Jeff Lessem.)
@@ -16,8 +14,13 @@ Patch by Jeffrey Marshall fixes socket/fifo recognition on Mac OS X
 Patch by Jeffrey Marshall fixes --calculate-average mode, which seems
 to have broken recently.
 
-rdiff-backup should now work with python 2.3.  Thanks to Arkadiusz
-Miskiewicz for bug reports.
+rdiff-backup should now work and build with python 2.3.  Thanks to
+Arkadiusz Miskiewicz and Arkadiusz Patyk for bug reports and a patch.
+
+rdiff-backup now builds and requires librsync 0.9.6.  This version
+should be much better than the old one and everyone should probably
+upgrade.  Much thanks to Donovan Baarda for all the work that went
+into this release.
 
 
 New in v0.13.0 (2003/07/22)
