@@ -56,8 +56,9 @@ def parse_cmdlineoptions(arglist):
 		  "include-globbing-filelist=", "include-regexp=",
 		  "list-at-time=", "list-changed-since=", "list-increments",
 		  "list-increment-sizes", "no-compare-inode",
-		  "no-compression", "no-compression-regexp=",
-		  "no-file-statistics", "no-hard-links", "null-separator",
+		  "no-change-dir-inc-perms", "no-compression",
+		  "no-compression-regexp=", "no-file-statistics",
+		  "no-hard-links", "null-separator",
 		  "override-chars-to-quote=", "parsable-output",
 		  "print-statistics", "remote-cmd=", "remote-schema=",
 		  "remove-older-than=", "restore-as-of=", "restrict=",
@@ -106,6 +107,8 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "-l" or opt == "--list-increments":
 			action = "list-increments"
 		elif opt == '--list-increment-sizes': action = 'list-increment-sizes'
+		elif opt == '--no-change-dir-inc-perms':
+			Globals.set('change_dir_inc_perms', 0)
 		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
@@ -617,6 +620,8 @@ def ListAtTime(rp):
 
 def CheckDest(dest_rp):
 	"""Check the destination directory, """
+	if Globals.quoting_enabled:
+		dest_rp = FilenameMapping.get_quotedrpath(dest_rp)
 	if Globals.rbdir is None:
 		SetConnections.UpdateGlobal('rbdir',
 									dest_rp.append_path("rdiff-backup-data"))
