@@ -1,3 +1,14 @@
+Changes in 0.5.2:
+
+ * Use mapptr for input. 
+
+ * Implement a new structure for encoding in nad.c.  It doesn't 
+   encode at the moment, but it's much more maintainable.
+
+ * More regression cases.
+
+ * Clean up build process.
+
 Changes in 0.5.0:
 
  * Rewrite hs_inbuf and hs_encode to make them simpler and more
