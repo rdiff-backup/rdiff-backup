@@ -34,7 +34,9 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
