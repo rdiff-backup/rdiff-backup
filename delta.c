@@ -170,6 +170,9 @@ rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
      * the start of the available input data.  If we're approaching
      * the end and can't get a match, then we just block and get more
      * later. */
+
+    /* FIXME: Perhaps we should be working in signed chars for the
+     * rolling sum? */
     
     if (job->stream->eof_in)
         end_pos = avail_len - 1;
