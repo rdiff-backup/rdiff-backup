@@ -67,9 +67,9 @@ static rs_result rs_patch_s_cmdbyte(rs_job_t *job)
 
     job->cmd = &rs_prototab[job->op];
         
-    rs_trace("got command byte 0x%02x (%s), len_1=%ld", job->op,
+    rs_trace("got command byte 0x%02x (%s), len_1=%f", job->op,
              rs_op_kind_name(job->cmd->kind),
-             (long) job->cmd->len_1);
+             (double) job->cmd->len_1);
 
     if (job->cmd->len_1)
         job->statefn = rs_patch_s_params;
@@ -149,7 +149,7 @@ static rs_result rs_patch_s_literal(rs_job_t *job)
 {
     rs_long_t   len = job->param1;
     
-    rs_trace("LITERAL(len=%ld)", (long) len);
+    rs_trace("LITERAL(len=%f)", (double) len);
 
     job->stats.lit_cmds++;
     job->stats.lit_bytes    += len;
@@ -171,15 +171,15 @@ static rs_result rs_patch_s_copy(rs_job_t *job)
     where = job->param1;
     len = job->param2;
         
-    rs_trace("COPY(where=%ld, len=%ld)", (long) where, (long) len);
+    rs_trace("COPY(where=%f, len=%f)", (double) where, (double) len);
 
     if (len < 0) {
-        rs_log(RS_LOG_ERR, "invalid length=%ld on COPY command", (long) len);
+        rs_log(RS_LOG_ERR, "invalid length=%f on COPY command", (double) len);
         return RS_CORRUPT;
     }
 
     if (where < 0) {
-        rs_log(RS_LOG_ERR, "invalid where=%ld on COPY command", (long) where);
+        rs_log(RS_LOG_ERR, "invalid where=%f on COPY command", (double) where);
         return RS_CORRUPT;
     }
 
@@ -218,8 +218,8 @@ static rs_result rs_patch_s_copying(rs_job_t *job)
     if (!len)
         return RS_BLOCKED;
 
-    rs_trace("copy %ld bytes from basis at offset %ld",
-             (long) len, (long) job->basis_pos);
+    rs_trace("copy %f bytes from basis at offset %f",
+             (double) len, (double) job->basis_pos);
 
     ptr = buf = rs_alloc(len, "basis buffer");
     
@@ -229,7 +229,7 @@ static rs_result rs_patch_s_copying(rs_job_t *job)
     else
         rs_trace("copy callback returned %s", rs_strerror(result));
     
-    rs_trace("got %ld bytes back from basis callback", (long) len);
+    rs_trace("got %f bytes back from basis callback", (double) len);
 
     memcpy(buffs->next_out, ptr, len);
 

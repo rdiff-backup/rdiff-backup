@@ -106,8 +106,8 @@ rs_emit_copy_cmd(rs_job_t *job, rs_long_t where, rs_long_t len)
 
     cmd = RS_OP_COPY_N4_N4;
 
-    rs_trace("emit COPY_N4_N4(where=%ld, len=%ld), cmd_byte=%#x",
-             (long) where, (long) len, cmd);
+    rs_trace("emit COPY_N4_N4(where=%f, len=%f), cmd_byte=%#x",
+             (double) where, (double) len, cmd);
     rs_squirt_byte(job, cmd);
     rs_squirt_netint(job, where, 4);
     rs_squirt_netint(job, len, 4);

@@ -80,26 +80,26 @@ rs_format_stats(rs_stats_t const * stats,
 
     if (stats->lit_cmds) {
         len += snprintf(buf+len, size-len,
-                        "literal[%d cmds, %ld bytes, %ld cmdbytes] ",
+                        "literal[%d cmds, %f bytes, %f cmdbytes] ",
                         stats->lit_cmds,
-                        (long) stats->lit_bytes,
-                        (long) stats->lit_cmdbytes);
+                        (double) stats->lit_bytes,
+                        (double) stats->lit_cmdbytes);
     }
 
     if (stats->sig_cmds) {
         len += snprintf(buf+len, size-len,
-                        "signature[%ld cmds, %ld bytes] ",
-                        (long) stats->sig_cmds,
-                        (long) stats->sig_bytes);
+                        "signature[%f cmds, %f bytes] ",
+                        (double) stats->sig_cmds,
+                        (double) stats->sig_bytes);
     }
 
     if (stats->copy_cmds || stats->false_matches) {
         len += snprintf(buf+len, size-len, 
-                        "copy[%ld cmds, %ld bytes, %ld false, %ld cmdbytes]",
-                        (long) stats->copy_cmds,
-                        (long) stats->copy_bytes,
-                        (long) stats->false_matches,
-                        (long) stats->copy_cmdbytes);
+                        "copy[%f cmds, %f bytes, %f false, %f cmdbytes]",
+                        (double) stats->copy_cmds,
+                        (double) stats->copy_bytes,
+                        (double) stats->false_matches,
+                        (double) stats->copy_cmdbytes);
     }
         
     return buf;

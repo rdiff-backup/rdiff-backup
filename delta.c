@@ -176,12 +176,12 @@ rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
         if (rs_search_for_block(weak_sum, inptr + search_pos, this_len,
                                 job->signature, &job->stats, &match_where)) {
             /* So, we got a match.  cool.  now, if there was literal data
-             * ahead of that, we need to flush it first.  otherwise, we
+ of that, we need to flush it first.  otherwise, we
              * can emit the copy command. */
             /* TODO: Perhaps instead store this in the job, and set a new
              * statefn. */
-            rs_trace("matched %ld bytes at %ld!",
-                     (long) this_len, (long) match_where);
+            rs_trace("matched %f bytes at %f!",
+                     (double) this_len, (double) match_where);
             job->basis_pos = match_where;
             job->basis_len = this_len;
             job->statefn = rs_delta_s_deferred_copy;
@@ -232,7 +232,7 @@ static rs_result rs_delta_s_fake(rs_job_t *job)
     size_t avail = stream->avail_in;
 
     if (avail) {
-        rs_trace("emit fake delta for %ld available bytes", (long) avail);
+        rs_trace("emit fake delta for %f available bytes", (double) avail);
         rs_emit_literal_cmd(job, avail);
         rs_tube_copy(job, avail);
         return RS_RUNNING;

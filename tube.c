@@ -137,9 +137,9 @@ rs_tube_copy_from_scoop(rs_job_t *job)
 
     job->copy_len -= this_len;
 
-    rs_trace("caught up on %ld copied bytes from scoop, %ld remain there, "
-             "%ld remain to be copied", 
-             (long) this_len, (long) job->scoop_avail, (long) job->copy_len);
+    rs_trace("caught up on %f copied bytes from scoop, %f remain there, "
+             "%f remain to be copied", 
+             (double) this_len, (double) job->scoop_avail, (double) job->copy_len);
 }
 
 
@@ -170,8 +170,8 @@ static void rs_tube_catchup_copy(rs_job_t *job)
 
         job->copy_len -= this_copy;
 
-        rs_trace("copied %ld bytes from input buffer, %ld remain to be copied",
-                 (long) this_copy, (long) job->copy_len);
+        rs_trace("copied %f bytes from input buffer, %f remain to be copied",
+                 (double) this_copy, (double) job->copy_len);
     }
 }
 
@@ -255,8 +255,8 @@ rs_tube_write(rs_job_t *job, const void *buf, size_t len)
     assert(job->copy_len == 0);
 
     if (len > sizeof(job->write_buf) - job->write_len) {
-        rs_fatal("tube popped when trying to write %ld bytes!",
-                 (long) len);
+        rs_fatal("tube popped when trying to write %f bytes!",
+                 (double) len);
     }
 
     memcpy(job->write_buf + job->write_len, buf, len);

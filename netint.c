@@ -179,7 +179,7 @@ int rs_int_len(off_t val)
     else if (!(val & ~0xffffffffffffffffL))
         return 8;
     else {
-        rs_fatal("can't encode integer %lld yet", (long long int) val);
+        rs_fatal("can't encode integer %f yet", (double) val);
     }
 }
 
