@@ -92,8 +92,8 @@ static void hs_scoop_input(hs_stream_t *stream, size_t len)
         if (impl->scoop_buf)
             free(impl->scoop_buf);
         impl->scoop_buf = impl->scoop_next = newbuf;
-        hs_trace("resized scoop buffer to %d bytes from %d",
-                 newsize, impl->scoop_alloc);
+        hs_trace("resized scoop buffer to %ld bytes from %ld",
+                 (long) newsize, (long) impl->scoop_alloc);
         impl->scoop_alloc = newsize;
     } else {
         /* this buffer size is fine, but move the existing
@@ -110,7 +110,7 @@ static void hs_scoop_input(hs_stream_t *stream, size_t len)
     assert(tocopy + impl->scoop_avail <= impl->scoop_alloc);
 
     memcpy(impl->scoop_next + impl->scoop_avail, stream->next_in, tocopy);
-    hs_trace("accepted %d bytes from input to scoop", tocopy);
+    hs_trace("accepted %ld bytes from input to scoop", (long) tocopy);
     impl->scoop_avail += tocopy;
     stream->next_in += tocopy;
     stream->avail_in -= tocopy;
@@ -165,7 +165,7 @@ hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
     if (impl->scoop_avail >= len) {
         /* We have enough data queued to satisfy the request,
          * so go straight from the scoop buffer. */
-        hs_trace("got %d bytes direct from scoop", len);
+        hs_trace("got %ld bytes direct from scoop", (long) len);
         *ptr = impl->scoop_next;
         return HS_DONE;
     } else if (impl->scoop_avail) {
@@ -175,26 +175,26 @@ hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
         hs_scoop_input(stream, len);
 
         if (impl->scoop_avail < len) {
-            hs_trace("still have only %d bytes in scoop",
-                     impl->scoop_avail);
+            hs_trace("still have only %ld bytes in scoop",
+                     (long) impl->scoop_avail);
             return HS_BLOCKED;
         } else {
-            hs_trace("scoop now has %d bytes, this is enough",
-                     impl->scoop_avail);
+            hs_trace("scoop now has %ld bytes, this is enough",
+                     (long) impl->scoop_avail);
             *ptr = impl->scoop_next;
             return HS_DONE;
         }
     } else if (stream->avail_in >= len) {
         /* There's enough data in the stream's input */
-        hs_trace("got %d bytes direct from input", len);
+        hs_trace("got %ld bytes direct from input", (long) len);
         *ptr = stream->next_in;
         return HS_DONE;
     } else if (stream->avail_in > 0) {
         /* Nothing was queued before, but we don't have enough
          * data to satisfy the request.  So queue what little
          * we have, and try again next time. */
-        hs_trace("couldn't satisfy request for %d, scooping %d bytes",
-                 len, impl->scoop_avail);
+        hs_trace("couldn't satisfy request for %ld, scooping %ld bytes",
+                 (long) len, (long) impl->scoop_avail);
         hs_scoop_input(stream, len);
         return HS_BLOCKED;
     } else if (stream->eof_in) {

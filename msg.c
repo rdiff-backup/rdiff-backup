@@ -35,8 +35,9 @@
                                | Arco, and have a nice day.
                                */
 
+#include <config.h>
 
-#include <stdio.h>
+#include <stdlib.h>
 
 #include "hsync.h"
 

@@ -84,7 +84,7 @@ static hs_result hs_delta_s_fake(hs_job_t *job)
     size_t avail = stream->avail_in;
 
     if (avail) {
-        hs_trace("emit fake delta for %d available bytes", avail);
+        hs_trace("emit fake delta for %ld available bytes", (long) avail);
         hs_emit_literal_cmd(job, avail);
         hs_blow_copy(stream, avail);
         return HS_RUNNING;

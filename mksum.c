@@ -61,7 +61,7 @@ static hs_result hs_sig_s_header(hs_job_t *job)
     hs_squirt_n4(job->stream, job->block_len);
     hs_squirt_n4(job->stream, job->strong_sum_len);
     hs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)",
-             HS_SIG_MAGIC, job->block_len, job->strong_sum_len);
+             HS_SIG_MAGIC, (int) job->block_len, (int) job->strong_sum_len);
     
     job->statefn = hs_sig_s_generate;
     return HS_RUNNING;
@@ -95,9 +95,9 @@ hs_sig_do_block(hs_job_t *job, const void *block, size_t len)
  */
 static hs_result hs_sig_s_generate(hs_job_t *job)
 {
-    hs_result result;
-    int len;
-    void *block;
+    hs_result           result;
+    size_t              len;
+    void                *block;
         
     /* must get a whole block, otherwise try again */
     len = job->block_len;

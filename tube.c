@@ -186,8 +186,8 @@ hs_blow_literal(hs_stream_t *stream, const void *buf, size_t len)
         assert(tube->copy_len == 0);
 
         if (len > sizeof(tube->lit_buf) - tube->lit_len) {
-                hs_fatal("tube popped when trying to blow %d literal bytes!",
-                          len);
+                hs_fatal("tube popped when trying to blow %ld literal bytes!",
+                         (long) len);
         }
 
         memcpy(tube->lit_buf + tube->lit_len, buf, len);

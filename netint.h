@@ -22,10 +22,10 @@
  */
 
 hs_result hs_squirt_byte(hs_stream_t *stream, unsigned char d);
-hs_result hs_squirt_netint(hs_stream_t *stream, off_t d, int len);
+hs_result hs_squirt_netint(hs_stream_t *stream, hs_long_t d, int len);
 hs_result hs_squirt_n4(hs_stream_t *stream, int val);
 
-hs_result hs_suck_netint(hs_stream_t *stream, off_t *v, int len);
+hs_result hs_suck_netint(hs_stream_t *stream, hs_long_t *v, int len);
 hs_result hs_suck_byte(hs_stream_t *stream, unsigned char *);
 hs_result hs_suck_n4(hs_stream_t *stream, int *);
 

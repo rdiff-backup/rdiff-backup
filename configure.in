@@ -6,7 +6,7 @@ AC_REVISION($Id$)
 
 AC_INIT(trace.c)
 
-my_version=0.9.1dev
+my_version=0.9.1dev2
 my_package=libhsync
 my_url=http://linuxcare.com.au/rproxy/
 echo "Configuring $my_package $my_version   ($my_url)"
@@ -100,8 +100,8 @@ fi
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(unsigned long)
-AC_CHECK_SIZEOF(unsigned long long)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(off_t)
 
 dnl Checks for header files.
 AC_HEADER_STDC
@@ -126,4 +126,4 @@ AC_SUBST(net_libs)
 AC_SUBST(LIBOBJS)
 AC_SUBST(LIBTOOL_DEPS)
 
-AC_OUTPUT([Makefile man/Makefile])
+AC_OUTPUT([Makefile])

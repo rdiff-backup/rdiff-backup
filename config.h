@@ -43,17 +43,17 @@
 /* The number of bytes in a long.  */
 #define SIZEOF_LONG 4
 
+/* The number of bytes in a long long.  */
+#define SIZEOF_LONG_LONG 8
+
+/* The number of bytes in a off_t.  */
+#define SIZEOF_OFF_T 8
+
 /* The number of bytes in a short.  */
 #define SIZEOF_SHORT 2
 
 /* The number of bytes in a unsigned char.  */
 #define SIZEOF_UNSIGNED_CHAR 1
-
-/* The number of bytes in a unsigned long.  */
-#define SIZEOF_UNSIGNED_LONG 4
-
-/* The number of bytes in a unsigned long long.  */
-#define SIZEOF_UNSIGNED_LONG_LONG 8
 
 /* Define if you have the snprintf function.  */
 #define HAVE_SNPRINTF 1
@@ -68,5 +68,5 @@
 #define PACKAGE "libhsync"
 
 /* Version number of package */
-#define VERSION "0.9.1dev"
+#define VERSION "0.9.1dev2"
 

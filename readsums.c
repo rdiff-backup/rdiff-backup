@@ -30,6 +30,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "hsync.h"
 #include "sumset.h"
@@ -135,7 +136,7 @@ static hs_result hs_loadsig_s_stronglen(hs_job_t *job)
     job->signature->strong_sum_len = job->strong_sum_len;
     
     hs_trace("allocated sigset_t (strong_sum_len=%d, block_len=%d)",
-             job->strong_sum_len, job->block_len);
+             (int) job->strong_sum_len, (int) job->block_len);
 
     job->statefn = hs_loadsig_s_weak;
     
@@ -153,7 +154,7 @@ static hs_result hs_loadsig_s_blocklen(hs_job_t *job)
     job->block_len = l;
 
     if (job->block_len < 1) {
-        hs_error("block length of %d is bogus", job->block_len);
+        hs_error("block length of %d is bogus", (int) job->block_len);
         return HS_CORRUPT;
     }
 

@@ -36,8 +36,8 @@ struct hs_job {
     hs_result final_result;
 
     /* Generic storage fields. */
-    size_t          block_len;
-    size_t          strong_sum_len;
+    int                 block_len;
+    int                 strong_sum_len;
     
     hs_copy_cb      *copy_cb;
     void            *copy_arg;

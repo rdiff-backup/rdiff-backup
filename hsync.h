@@ -49,7 +49,11 @@ extern char const hs_licence_string[];
  * Perhaps this might have to be configured to be 'long long', 'long',
  * or something else depending on the platform.
  */
-typedef long long       hs_long_t;
+#if SIZEOF_LONG_LONG
+typedef signed long long    hs_long_t;
+#else
+typedef long hs_long_t;
+#endif
 
 
 /**
@@ -224,12 +228,12 @@ struct hs_stream_s {
     int dogtag;                 /**< To identify mutilated corpse */
     
     char *next_in;		/**< Next input byte */
-    unsigned int avail_in;	/**< Number of bytes available at next_in */
+    size_t avail_in;            /**< Number of bytes available at next_in */
     int eof_in;                 /**< True if there is no more data
                                  * after this.  */
 
     char *next_out;		/**< Next output byte should be put there */
-    unsigned int avail_out;	/**< Remaining free space at next_out */
+    size_t avail_out;           /**< Remaining free space at next_out */
 
     struct hs_simpl *impl; /**< \internal */
 };

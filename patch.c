@@ -66,9 +66,9 @@ static hs_result hs_patch_s_cmdbyte(hs_job_t *job)
 
     job->cmd = &hs_prototab[job->op];
         
-    hs_trace("got command byte 0x%02x (%s), len_1=%d", job->op,
+    hs_trace("got command byte 0x%02x (%s), len_1=%ld", job->op,
              hs_op_kind_name(job->cmd->kind),
-             job->cmd->len_1);
+             (long) job->cmd->len_1);
 
     if (job->cmd->len_1)
         job->statefn = hs_patch_s_params;
