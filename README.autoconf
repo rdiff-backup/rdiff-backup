@@ -1,0 +1,8 @@
+Autoconf is a shambles, but a useful shambles.  Here's a partial
+summary of how the files interact:
+
+  ./acinclude.m4 is used by the aclocal program (part of automake) to
+  build aclocal.m4
+
+  ./aclocal.m4 is read by autoconf when generating ./configure
+
