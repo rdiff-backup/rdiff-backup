@@ -66,10 +66,10 @@ char const *rs_strerror(rs_result r)
     case RS_IO_ERROR:
         return "IO error";
     case RS_SYNTAX_ERROR:
-        return "command line syntax error";
+        return "bad command line syntax";
     case RS_INTERNAL_ERROR:
         return "library internal error";
     default:
-        return "unknown error";
+        return "unexplained problem";
     }
 }
