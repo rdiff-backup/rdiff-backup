@@ -25,11 +25,6 @@ import Globals, Time, Rdiff, Hardlink, rorpiter, selection, rpath, \
 	   log, static, robust, metadata, statistics, TempFile
 
 
-# This should be set to selection.Select objects over the source and
-# mirror directories respectively.
-_select_source = None
-_select_mirror = None
-
 # This will be set to the time of the current mirror
 _mirror_time = None
 # This will be set to the exact time to restore to (not restore_to_time)
@@ -251,9 +246,16 @@ static.MakeClass(MirrorStruct)
 
 class TargetStruct:
 	"""Hold functions to be run on the target side when restoring"""
-	def get_initial_iter(cls, target):
+	_select = None
+	def set_target_select(cls, target, select_opts, *filelists):
 		"""Return a selection object iterating the rorpaths in target"""
-		return selection.Select(target).set_iter()
+		cls._select = selection.Select(target)
+		cls._select.ParseArgs(select_opts, filelists)
+		cls._select.set_iter()
+
+	def get_initial_iter(cls, target):
+		"""Return selector previously set with set_initial_iter"""
+		return cls._select or selection.Select(target).set_iter()
 
 	def patch(cls, target, diff_iter):
 		"""Patch target with the diffs from the mirror side
