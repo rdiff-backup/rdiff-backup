@@ -1,10 +1,9 @@
 """commontest - Some functions and constants common to several test cases"""
 import os, sys
-sys.path.insert(0, "../src")
-from rpath import *
-from destructive_stepping import *
-from highlevel import *
-import Globals, Hardlink, SetConnections, Main
+from rdiff_backup.rpath import *
+from rdiff_backup.destructive_stepping import *
+from rdiff_backup.highlevel import *
+from rdiff_backup import Globals, Hardlink, SetConnections, Main
 
 SourceDir = "../src"
 AbsCurdir = os.getcwd() # Absolute path name of current directory
