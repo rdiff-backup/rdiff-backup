@@ -1,4 +1,5 @@
-dnl Process this file with autoconf to produce a configure script. -*- shell-script -*-
+# -*- shell-script -*-
+dnl Process this file with autoconf to produce a configure script. 
 
 AC_REVISION($Id$)
 AC_INIT(dec.c)
@@ -19,8 +20,13 @@ AC_CHECK_PROG(PYTHON, python, python)
 dnl Checks for libraries.
 dnl AC_CHECK_LIB(z, deflate)
 
+AC_CHECK_LIB(nsl, gethostent, [ net_libs="$net_libs -lnsl" ])
+AC_CHECK_LIB(socket, connect, [ net_libs="$net_libs -lsocket" ])
+AC_CHECK_LIB(inet, connect, [ net_libs="$net_libs -linet" ])
+AC_CHECK_FUNCS(connect)
+
 dnl Check for declarations
-AC_MSG_CHECKING('for sockaddr.sin_len')
+AC_MSG_CHECKING(for sockaddr.sin_len)
 AC_EGREP_HEADER(sin_len, sys/socket.h, 
 	[ AC_DEFINE(HAVE_SOCK_SIN_LEN)
           AC_MSG_RESULT(yes) ],
@@ -57,5 +63,6 @@ AC_SUBST(OBJ_SAVE)
 AC_SUBST(OBJ_RESTORE)
 AC_SUBST(CC_SHOBJ_FLAG)
 AC_SUBST(CCMALLOC_LIB)
+AC_SUBST(net_libs)
 
 AC_OUTPUT(./Makefile)

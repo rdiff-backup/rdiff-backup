@@ -10,7 +10,9 @@ lib_LTLIBRARIES = libhsync.la
 # libtool.
 libhsync_la_LDFLAGS = -version-info @libhsync_libversion@
 
-libhsync_la_SOURCES = dec.c enc.c \
+libhsync_la_SOURCES = \
+	enc.c \
+	dec.c \
 	emit.c emit.h \
 	litbuf.c \
 	private.h \
@@ -123,13 +125,13 @@ check_PROGRAMS = hsemit hsinhale hsfilebufcat genmaptest \
 	socksvr sockcli sockrun
 
 sockrun_SOURCES = sockrun.c trace.c util.c fileutil.c
-sockrun_LDADD =
+sockrun_LDADD = @net_libs@
 
 socksvr_SOURCES = socksvr.c trace.c util.c
-socksvr_LDADD =
+socksvr_LDADD = @net_libs@
 
 sockcli_SOURCES = sockcli.c trace.c util.c fileutil.c
-sockcli_LDADD =
+sockcli_LDADD = @net_libs@
 
 genmaptest_LDADD =
 
