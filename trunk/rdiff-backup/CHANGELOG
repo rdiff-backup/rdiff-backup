@@ -1,6 +1,16 @@
 New in v0.13.4 (??????????)
 ---------------------------
 
+Checked in patch by John Goerzen to support Mac OS X Finder
+information.  As John says:
+> Specifically, it adds storage of:
+> 
+>  * 4-byte creator
+>  * 4-byte type
+>  * integer flags
+>  * dual integer location
+Much thanks to John for adding this useful feature all by himself!
+
 Regressing and restoring should now take less memory when processing
 large directories (noticed by Luke Mewburn and others).
 

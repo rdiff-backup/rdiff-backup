@@ -62,6 +62,31 @@ class ParsingError(Exception):
 	"""This is raised when bad or unparsable data is received"""
 	pass
 
+def carbonfile2string(cfile):
+	"""Convert CarbonFile data to a string suitable for storing."""
+	retvalparts = []
+	retvalparts.append('creator:%s' % binascii.hexlify(cfile['creator']))
+	retvalparts.append('type:%s' % binascii.hexlify(cfile['type']))
+	retvalparts.append('location:%d,%d' % cfile['location'])
+	retvalparts.append('flags:%d' % cfile['flags'])
+	return '|'.join(retvalparts)
+
+def string2carbonfile(data):
+	"""Re-constitute CarbonFile data from a string stored by 
+	carbonfile2string."""
+	retval = {}
+	for component in data.split('|'):
+		key, value = component.split(':')
+		if key == 'creator':
+			retval['creator'] = binascii.unhexlify(value)
+		elif key == 'type':
+			retval['type'] = binascii.unhexlify(value)
+		elif key == 'location':
+			a, b = value.split(',')
+			retval['location'] = (int(a), int(b))
+		elif key == 'flags':
+			retval['flags'] = int(value)
+	return retval
 
 def RORP2Record(rorpath):
 	"""From RORPath, return text record of file's metadata"""
@@ -79,6 +104,12 @@ def RORP2Record(rorpath):
 			if not rorpath.get_resource_fork(): rf = "None"
 			else: rf = binascii.hexlify(rorpath.get_resource_fork())
 			str_list.append("  ResourceFork %s\n" % (rf,))
+                
+		# If there is Carbon data, save it.
+		if rorpath.has_carbonfile():
+			if not rorpath.get_carbonfile(): cfile = "None"
+			else: cfile = carbonfile2string(rorpath.get_carbonfile())
+			str_list.append("  CarbonFile %s\n" % (cfile,))
 
 		# If file is hardlinked, add that information
 		if Globals.preserve_hardlinks:
@@ -132,6 +163,9 @@ def Record2RORP(record_string):
 		elif field == "ResourceFork":
 			if data == "None": data_dict['resourcefork'] = ""
 			else: data_dict['resourcefork'] = binascii.unhexlify(data)
+		elif field == "CarbonFile":
+			if data == "None": data_dict['carbonfile'] = None
+			else: data_dict['carbonfile'] = string2carbonfile(data)
 		elif field == "NumHardLinks": data_dict['nlink'] = int(data)
 		elif field == "Inode": data_dict['inode'] = long(data)
 		elif field == "DeviceLoc": data_dict['devloc'] = long(data)

@@ -385,6 +385,8 @@ def backup_set_fs_globals(rpin, rpout):
 	update_triple(src_fsa.resource_forks, dest_fsa.resource_forks,
 				  ('resource_forks_active', 'resource_forks_write',
 				   'resource_forks_conn'))
+	update_triple(src_fsa.carbonfile, dest_fsa.carbonfile,
+				  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
 	if Globals.never_drop_acls and not Globals.acls_active:
 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
 					   "disabled on destination filesystem")
@@ -489,6 +491,8 @@ def restore_set_fs_globals(target):
 	update_triple(mirror_fsa.resource_forks, target_fsa.resource_forks,
 				  ('resource_forks_active', 'resource_forks_write',
 				   'resource_forks_conn'))
+	update_triple(mirror_fsa.carbonfile, target_fsa.carbonfile,
+				  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
 	if Globals.never_drop_acls and not Globals.acls_active:
 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
 					   "disabled on destination filesystem")

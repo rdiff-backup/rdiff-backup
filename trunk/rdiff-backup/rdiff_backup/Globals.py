@@ -85,6 +85,11 @@ resource_forks_active = None
 resource_forks_write = None
 resource_forks_conn = None
 
+# Like the above, but applies to MacOS Carbon Finder creator/type info.
+carbonfile_active = None
+carbonfile_write = None
+carbonfile_conn = None
+
 # This will be set as soon as the LocalConnection class loads
 local_connection = None
 
