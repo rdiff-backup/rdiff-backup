@@ -19,7 +19,7 @@
 
 """Provide time related exceptions and functions"""
 
-import time, types, re, sys
+import time, types, re, sys, calendar
 import Globals
 
 
@@ -35,7 +35,6 @@ _genstr_date_regexp1 = re.compile("^(?P<year>[0-9]{4})[-/]"
 _genstr_date_regexp2 = re.compile("^(?P<month>[0-9]{1,2})[-/]"
 					   "(?P<day>[0-9]{1,2})[-/](?P<year>[0-9]{4})$")
 curtime = curtimestr = None
-dst_in_effect = time.daylight and time.localtime()[8]
 
 def setcurtime(curtime = None):
 	"""Sets the current time in curtime and curtimestr on all systems"""
@@ -64,7 +63,7 @@ def setprevtime_local(timeinseconds, timestr):
 def timetostring(timeinseconds):
 	"""Return w3 datetime compliant listing of timeinseconds"""
 	s = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(timeinseconds))
-	return s + gettzd()
+	return s + gettzd(timeinseconds)
 
 def stringtotime(timestring):
 	"""Return time in seconds from w3 timestring
@@ -83,9 +82,8 @@ def stringtotime(timestring):
 		assert 0 <= hour <= 23
 		assert 0 <= minute <= 59
 		assert 0 <= second <= 61  # leap seconds
-		timetuple = (year, month, day, hour, minute, second, -1, -1, -1)
-		if dst_in_effect: utc_in_secs = time.mktime(timetuple) - time.altzone
-		else: utc_in_secs = time.mktime(timetuple) - time.timezone
+		timetuple = (year, month, day, hour, minute, second, -1, -1, 0)
+		utc_in_secs = calendar.timegm(timetuple)
 
 		return long(utc_in_secs) + tzdtoseconds(timestring[19:])
 	except (TypeError, ValueError, AssertionError): return None
@@ -137,13 +135,17 @@ page for more information.
 		interval_string = interval_string[match.end(0):]
 	return total
 
-def gettzd():
+def gettzd(timeinseconds = None):
 	"""Return w3's timezone identification string.
 
-	Expresed as [+/-]hh:mm.  For instance, PST is -08:00.  Zone is
-	coincides with what localtime(), etc., use.
+	Expresed as [+/-]hh:mm.  For instance, PDT is -07:00 during
+	dayling savings and -08:00 otherwise.  Zone is coincides with what
+	localtime(), etc., use.  If no argument given, use the current
+	time.
 
 	"""
+	if timeinseconds is None: timeinseconds = time.time()
+	dst_in_effect = time.daylight and time.localtime(timeinseconds)[8]
 	if dst_in_effect: offset = -time.altzone/60
 	else: offset = -time.timezone/60
 	if offset > 0: prefix = "+"
