@@ -30,8 +30,7 @@ files), where files is the number of files attached (usually 1 or
 
 from __future__ import generators
 import os, tempfile, UserList, types
-import librsync, Globals, Rdiff, Hardlink, robust, log, static, \
-	   rpath, iterfile
+import Globals, rpath, iterfile
 
 
 class RORPIterException(Exception): pass
@@ -50,13 +49,22 @@ def FromRaw(raw_iter):
 		rorp = rpath.RORPath(index, data)
 		if num_files:
 			assert num_files == 1, "Only one file accepted right now"
-			rorp.setfile(getnext(raw_iter))
+			rorp.setfile(get_next_file(raw_iter))
 		yield rorp
 
-def getnext(iter):
+class ErrorFile:
+	"""Used by get_next_file below, file-like that just raises error"""
+	def __init__(self, exc):
+		"""Initialize new ErrorFile.  exc is the exception to raise on read"""
+		self.exc = exc
+	def read(self, l=-1): raise self.exc
+	def close(self): return None
+
+def get_next_file(iter):
 	"""Return the next element of an iterator, raising error if none"""
 	try: next = iter.next()
 	except StopIteration: raise RORPIterException("Unexpected end to iter")
+	if isinstance(next, Exception): return ErrorFile(next)
 	return next
 
 def ToFile(rorp_iter):
@@ -258,7 +266,7 @@ class IterTreeReducer:
 			base_index = to_be_finished.base_index
 			if base_index != index[:len(base_index)]:
 				# out of the tree, finish with to_be_finished
-				to_be_finished.call_end_proc()
+				to_be_finished.end_process()
 				del branches[-1]
 				if not branches: return None
 				branches[-1].branch_process(to_be_finished)
@@ -271,18 +279,12 @@ class IterTreeReducer:
 		self.branches.append(branch)
 		return branch
 
-	def process_w_branch(self, branch, args):
-		"""Run start_process on latest branch"""
-		robust.check_common_error(branch.on_error,
-								  branch.start_process, args)
-		if not branch.caught_exception: branch.start_successful = 1
-
 	def Finish(self):
 		"""Call at end of sequence to tie everything up"""
 		if self.index is None or self.root_fast_processed: return
 		while 1:
 			to_be_finished = self.branches.pop()
-			to_be_finished.call_end_proc()
+			to_be_finished.end_process()
 			if not self.branches: break
 			self.branches[-1].branch_process(to_be_finished)
 
@@ -303,26 +305,19 @@ class IterTreeReducer:
 			if self.root_branch.can_fast_process(*args):
 				self.root_branch.fast_process(*args)
 				self.root_fast_processed = 1
-			else: self.process_w_branch(self.root_branch, args)
+			else: self.root_branch.start_process(*args)
 			self.index = index
 			return 1
-
-		if index <= self.index:
-			log.Log("Warning: oldindex %s >= newindex %s" %
-					(self.index, index), 2)
-			return 1
+		assert index > self.index, "Index out of order"
 
 		if self.finish_branches(index) is None:
 			return None # We are no longer in the main tree
 		last_branch = self.branches[-1]
-		if last_branch.start_successful:
-			if last_branch.can_fast_process(*args):
-				robust.check_common_error(last_branch.on_error,
-										  last_branch.fast_process, args)
-			else:
-				branch = self.add_branch(index)
-				self.process_w_branch(branch, args)
-		else: last_branch.log_prev_error(index)
+		if last_branch.can_fast_process(*args):
+			last_branch.fast_process(*args)
+		else:
+			branch = self.add_branch(index)
+			branch.start_process(*args)
 
 		self.index = index
 		return 1
@@ -338,17 +333,6 @@ class ITRBranch:
 
 	"""
 	base_index = index = None
-	finished = None
-	caught_exception = start_successful = None
-
-	def call_end_proc(self):
-		"""Runs the end_process on self, checking for errors"""
-		if self.finished or not self.start_successful:
-			self.caught_exception = 1
-		if self.caught_exception: self.log_prev_error(self.base_index)
-		else: robust.check_common_error(self.on_error, self.end_process)
-		self.finished = 1
-
 	def start_process(self, *args):
 		"""Do some initial processing (stub)"""
 		pass
@@ -359,7 +343,6 @@ class ITRBranch:
 
 	def branch_process(self, branch):
 		"""Process a branch right after it is finished (stub)"""
-		assert branch.finished
 		pass
 
 	def can_fast_process(self, *args):
@@ -369,20 +352,6 @@ class ITRBranch:
 	def fast_process(self, *args):
 		"""Process args without new child branch (stub)"""
 		pass
-
-	def on_error(self, exc, *args):
-		"""This is run on any exception in start/end-process"""
-		self.caught_exception = 1
-		if args and args[0] and isinstance(args[0], tuple):
-			filename = os.path.join(*args[0])
-		elif self.index: filename = os.path.join(*self.index)
-		else: filename = "."
-		log.Log("Error '%s' processing %s" % (exc, filename), 2)
-
-	def log_prev_error(self, index):
-		"""Call function if no pending exception"""
-		log.Log("Skipping %s because of previous error" % \
-				(index and os.path.join(*index) or '()',), 2)
 
 
 class CacheIndexable:
@@ -423,5 +392,6 @@ class CacheIndexable:
 		"""Return element with index index from cache"""
 		try: return self.cache_dict[index]
 		except KeyError:
-			assert index > self.cache_indicies[0], index
+			assert index >= self.cache_indicies[0], \
+				   repr((index, self.cache_indicies[0]))
 			return None

@@ -40,10 +40,15 @@ class UnwrapFile:
 	def _get(self):
 		"""Return pair (type, data) next in line on the file
 
-		type is a single character which is either "o" for object, "f"
-		for file, "c" for a continution of a file, or None if no more
-		data can be read.  Data is either the file's data, if type is
-		"c" or "f", or the actual object if the type is "o".
+		type is a single character which is either
+		"o" for object,
+		"f" for file,
+		"c" for a continution of a file,
+		"e" for an exception, or
+		None if no more data can be read.
+
+		Data is either the file's data, if type is "c" or "f", or the
+		actual object if the type is "o" or "e".
 
 		"""
 		header = self.file.read(8)
@@ -52,7 +57,7 @@ class UnwrapFile:
 			assert None, "Header %s is only %d bytes" % (header, len(header))
 		type, length = header[0], C.str2long(header[1:])
 		buf = self.file.read(length)
-		if type == "o": return type, cPickle.loads(buf)
+		if type == "o" or type == "e": return type, cPickle.loads(buf)
 		else: return type, buf
 
 
@@ -74,7 +79,7 @@ class IterWrappingFile(UnwrapFile):
 			self.currently_in_file.close() # no error checking by this point
 		type, data = self._get()
 		if not type: raise StopIteration
-		if type == "o": return data
+		if type == "o" or type == "e": return data
 		elif type == "f":
 			file = IterVirtualFile(self, data)
 			if data: self.currently_in_file = file
@@ -125,6 +130,9 @@ class IterVirtualFile(UnwrapFile):
 		"""Read a chunk from the file and add it to the buffer"""
 		assert self.iwf.currently_in_file
 		type, data = self._get()
+		if type == "e":
+			self.iwf.currently_in_file = None
+			raise data
 		assert type == "c", "Type is %s instead of c" % type
 		if data:
 			self.buffer += data
@@ -179,39 +187,44 @@ class FileWrappingIter:
 		otherwise return true.
 
 		"""
-		array_buf = self.array_buf
-		if self.currently_in_file:
-			array_buf.fromstring("c")
-			array_buf.fromstring(self.addfromfile())
+		if self.currently_in_file: self.addfromfile("c")
 		else:
 			try: currentobj = self.iter.next()
 			except StopIteration: return None
 			if hasattr(currentobj, "read") and hasattr(currentobj, "close"):
 				self.currently_in_file = currentobj
-				array_buf.fromstring("f")
-				array_buf.fromstring(self.addfromfile())
+				self.addfromfile("f")
 			else:
 				pickle = cPickle.dumps(currentobj, 1)
-				array_buf.fromstring("o")
-				array_buf.fromstring(C.long2str(long(len(pickle))))
-				array_buf.fromstring(pickle)
+				self.array_buf.fromstring("o")
+				self.array_buf.fromstring(C.long2str(long(len(pickle))))
+				self.array_buf.fromstring(pickle)
 		return 1
 
-	def addfromfile(self):
-		"""Read a chunk from the current file and return it"""
-		# Check file read for errors, buf = "" if find one
+	def addfromfile(self, prefix_letter):
+		"""Read a chunk from the current file and add to array_buf
+
+		prefix_letter and the length will be prepended to the file
+		data.  If there is an exception while reading the file, the
+		exception will be added to array_buf instead.
+
+		"""
 		buf = robust.check_common_error(self.read_error_handler,
 										self.currently_in_file.read,
 										[Globals.blocksize])
-		if not buf:
+		if buf == "" or buf is None:
 			assert not self.currently_in_file.close()
-			self.currently_in_file = None
-		return C.long2str(long(len(buf))) + buf
+			self.currently_in_file = None			
+			if buf is None: # error occurred above, encode exception
+				prefix_letter = "e"
+				buf = cPickle.dumps(self.last_exception, 1)
+		total = "".join((prefix_letter, C.long2str(long(len(buf))), buf))
+		self.array_buf.fromstring(total)
 
 	def read_error_handler(self, exc, blocksize):
 		"""Log error when reading from file"""
-		log.Log("Error '%s' reading from fileobj, truncating" % (str(exc),), 2)
-		return ""
+		self.last_exception = exc
+		return None
 
 	def _l2s_old(self, l):
 		"""Convert long int to string of 7 characters"""
