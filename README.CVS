@@ -27,14 +27,10 @@ it will go into `libhsync'.
 >> Building
 
   $ cd YOUR_DIRECTORY
-  $ automake
-  $ autoconf
-
-These two commands should complete quickly and silently.
-
-  $ ./configure [OPTIONS]
+  $ ./autogen.sh [OPTIONS]
   $ make all check
 
+You can pass all the ./configure options to autogen, including --help.
 
 >> Sending patches
 
