@@ -272,6 +272,7 @@ def Backup(rpin, rpout):
 	init_user_group_mapping(rpout.conn)
 	backup_final_init(rpout)
 	backup_set_select(rpin)
+	backup_warn_if_infinite_regress(rpin, rpout)
 	if prevtime:
 		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
 		Time.setprevtime(prevtime)
@@ -311,7 +312,6 @@ def backup_check_dirs(rpin, rpout):
 		Log.FatalError("Source directory %s does not exist" % rpin.path)
 	elif not rpin.isdir():
 		Log.FatalError("Source %s is not a directory" % rpin.path)
-	backup_warn_if_infinite_regress(rpin, rpout)
 	Globals.rbdir = rpout.append_path("rdiff-backup-data")
 
 def backup_set_rbdir(rpin, rpout):
@@ -337,14 +337,16 @@ option.""" % rpout.path)
 
 def backup_warn_if_infinite_regress(rpin, rpout):
 	"""Warn user if destination area contained in source area"""
-	if rpout.conn is rpin.conn: # it's meaningful to compare paths
-		if ((len(rpout.path) > len(rpin.path)+1 and
-			 rpout.path[:len(rpin.path)] == rpin.path and
-			 rpout.path[len(rpin.path)] == '/') or
-			(rpin.path == "." and rpout.path[0] != '/' and
-			 rpout.path[:2] != '..')):
-			# Just a few heuristics, we don't have to get every case
-			if Globals.backup_reader.Globals.select_source.Select(rpout): Log(
+	# Just a few heuristics, we don't have to get every case
+	if rpout.conn is not rpin.conn: return
+	if len(rpout.path) <= len(rpin.path)+1: return
+	if rpout.path[:len(rpin.path)+1] != rpin.path + '/': return
+
+	relative_rpout_comps = tuple(rpout.path[len(rpin.path)+1:].split('/'))
+	relative_rpout = rpin.new_index(relative_rpout_comps)
+	if not Globals.select_mirror.Select(relative_rpout): return
+
+	Log(
 """Warning: The destination directory '%s' may be contained in the
 source directory '%s'.  This could cause an infinite regress.  You
 may need to use the --exclude option.""" % (rpout.path, rpin.path), 2)
