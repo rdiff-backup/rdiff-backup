@@ -14,6 +14,9 @@ syntax".  What's happening?</a></li>
 
 <li><a href="#solaris">Does rdiff-backup work under Solaris?</a></li>
 
+<li><a href="#speed">How fast is rdiff-backup?  Can it be run on large
+data sets?</a></li>
+
 </ol>
 
 <h3>Questions and Answers</h3>
@@ -201,5 +204,26 @@ it seems that /dev/zero is used internally by libthread on Solaris
 at least I think I've now got round it).
 </pre>
 </li>
+
+<P>
+<a name="speed">
+<li><strong>How fast is rdiff-backup?  Can it be run on large
+data sets?</strong>
+
+<P>rdiff-backup can be limited by the CPU, disk IO, or available
+bandwidth, and the length of a session can be affected by the amount
+of data, how much the data changed, and how many files are present.
+That said, in the typical case the number/size of changed files is
+relatively small compared to that of unchanged files, and rdiff-backup
+is often either CPU or bandwidth bound, and takes time proportional to
+the total number of files.  Initial mirrorings will usually be
+bandwidth or disk bound, and will take much longer than subsequent
+updates.
+
+<P>To give two arbitrary data points, when I back up my personal HD
+locally (about 9GB, 600000 files, maybe 50 MB turnover, 1.1Ghz athlon)
+rdiff-backup takes about 35 minutes and is usually CPU bound.  Another
+user reports an rdiff-backup session takes about 3 hours (80GB, ~1mil
+files, 2GB turnover) to back up remotely Tru64 -> linux.
 
 </ol>
