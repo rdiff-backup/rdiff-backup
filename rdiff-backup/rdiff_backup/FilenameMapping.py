@@ -68,7 +68,7 @@ def init_quoting_regexps():
 	global chars_to_quote_regexp, unquoting_regexp
 	try:
 		chars_to_quote_regexp = \
-				 re.compile("[%s%s]" % (chars_to_quote, quoting_char), re.S)
+				 re.compile("[%s]|%s" % (chars_to_quote, quoting_char), re.S)
 		unquoting_regexp = re.compile("%s[0-9]{3}" % quoting_char, re.S)
 	except re.error:
 		log.Log.FatalError("Error '%s' when processing char quote list %s" %
