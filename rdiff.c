@@ -65,7 +65,7 @@ static int show_stats = 0;
  */
 
 static char const *version_str =
-"rdiff (%s)\n"
+"rdiff (%s) [%s]\n"
 "Copyright (C) 1997-2001 by Martin Pool, Andrew Tridgell and others.\n"
 "http://rproxy.samba.org/\n"
 "\n"
@@ -145,7 +145,7 @@ static void rdiff_options(poptContext opcon)
             help();
             exit(HS_DONE);
         case 'V':
-            printf(version_str, hs_libhsync_version);
+            printf(version_str, hs_libhsync_version, HS_CANONICAL_HOST);
             exit(HS_DONE);
         case 'v':
             if (!hs_supports_trace()) {
