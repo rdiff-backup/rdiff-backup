@@ -458,15 +458,24 @@ see the
 section).  The /usr.backup/local directory was selected, because that
 is the directory containing the current version of /usr/local.
 .PP
-The second way to do this would be to find the corresponding increment
-file.  It would be in the /backup/rdiff-backup-data/increments/usr
-directory, and its name would be something like
-"local.2002-11-09T12:43:53-04:00.dir" where the time indicates it is
-from 3 days ago.  Note that the increment files all end in ".diff",
-".snapshot", ".dir", or ".missing", where ".missing" just means that
-the file didn't exist at that time (finally, some of these may be
-gzip-compressed, and have an extra ".gz" to indicate this).  Then
-running:
+Note that the option to
+.B --restore-as-of
+always specifies an exact time.  (So "3D" refers to the instant 36
+hours before the present.)  If there was no backup made at that time,
+rdiff-backup restores the state recorded for the previous backup.  For
+instance, in the above case, if "3D" is used, and there are only
+backups from 2 days and 4 days ago, /usr/local as it was 4 days ago
+will be restored.
+.PP
+The second way to restore files involves finding the corresponding
+increment file.  It would be in the
+/backup/rdiff-backup-data/increments/usr directory, and its name would
+be something like "local.2002-11-09T12:43:53-04:00.dir" where the time
+indicates it is from 3 days ago.  Note that the increment files all
+end in ".diff", ".snapshot", ".dir", or ".missing", where ".missing"
+just means that the file didn't exist at that time (finally, some of
+these may be gzip-compressed, and have an extra ".gz" to indicate
+this).  Then running:
 .PP
 .RS
 rdiff-backup /backup/rdiff-backup-data/increments/usr/local.<time>.dir /usr/local.old
