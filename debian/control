@@ -1,0 +1,21 @@
+Source: rdiff-backup
+Section: utils
+Priority: optional
+Maintainer: John Goerzen <jgoerzen@complete.org>
+Build-Depends-Indep: debhelper (>> 3.0.0)
+Standards-Version: 3.5.2
+
+Package: rdiff-backup
+Architecture: all
+Depends: python2.2, rdiff
+Description: Backup program to use deltas for history
+ rdiff-backup is a script that backs up one directory to another. The target
+ directory ends up a copy of the source directory, but extra reverse diffs
+ are stored in a special subdirectory of that target directory, so you can
+ still recover files lost some time ago. The idea is to combine the best
+ features of a mirror and an incremental backup. rdiff-backup also preserves
+ subdirectories, symlinks, special files, permissions, uid/gid ownership (if
+ it is running as root), and modification times. Finally, rdiff-backup can
+ operate in a bandwidth efficient manner over a pipe, like rsync. Thus you
+ can use rdiff-backup and ssh to securely back a hard drive up to a remote
+ location, and only the differences will be transmitted. 

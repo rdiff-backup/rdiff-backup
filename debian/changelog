@@ -1,0 +1,31 @@
+rdiff-backup (0.6.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- John Goerzen <jgoerzen@complete.org>  Tue, 19 Mar 2002 09:46:20 -0500
+
+rdiff-backup (0.5.3-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- John Goerzen <jgoerzen@complete.org>  Tue,  5 Mar 2002 09:48:05 -0500
+
+rdiff-backup (0.5.0-2) unstable; urgency=low
+
+  * Applied a patch from the upstream author to correct remote
+    backups in some situations.
+
+ -- John Goerzen <jgoerzen@complete.org>  Thu, 21 Feb 2002 08:46:52 -0500
+
+rdiff-backup (0.5.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- John Goerzen <jgoerzen@complete.org>  Mon, 18 Feb 2002 10:53:30 -0500
+
+rdiff-backup (0.4.4-1) unstable; urgency=low
+
+  * Initial Release, lintian clean.  Closes: #133442.
+
+ -- John Goerzen <jgoerzen@complete.org>  Mon, 11 Feb 2002 14:15:42 -0500
+
