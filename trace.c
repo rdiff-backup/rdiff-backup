@@ -102,15 +102,17 @@ rs_trace_set_level(rs_loglevel level)
 
 
 static void
-rs_log_va(int level, char const *fn, char const *fmt, va_list va)
+rs_log_va(int flags, char const *fn, char const *fmt, va_list va)
 {
-    if (rs_trace_impl && (level & RS_LOG_PRIMASK) <= rs_trace_level) {
+    int level = flags & RS_LOG_PRIMASK;
+    
+    if (rs_trace_impl && level <= rs_trace_level) {
         char            buf[1000];
         char            full_buf[1000];
 
         vsnprintf(buf, sizeof buf - 1, fmt, va);
 
-        if (level & RS_LOG_NONAME) { 
+        if (flags & RS_LOG_NONAME) { 
             snprintf(full_buf, sizeof full_buf - 1,
                      "%s: %s%s\n",
                      MY_NAME, rs_severities[level], buf);
@@ -120,7 +122,7 @@ rs_log_va(int level, char const *fn, char const *fmt, va_list va)
                      MY_NAME, rs_severities[level], fn, buf);
         } 
 
-	rs_trace_impl(level & RS_LOG_PRIMASK, full_buf);
+	rs_trace_impl(level, full_buf);
     }
 }
 

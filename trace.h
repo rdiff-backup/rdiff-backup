@@ -63,7 +63,7 @@ void rs_log0(int level, char const *fn, char const *fmt, ...)
  */
 
 #define rs_log(l, s, str...) do {              \
-     rs_log0(l, __FUNCTION__, (s) , ##str);    \
+     rs_log0((l), __FUNCTION__, (s) , ##str);    \
      } while (0)
 
 
