@@ -146,7 +146,9 @@ void rs_scoop_advance(rs_job_t *job, size_t len)
 
 
 
-/*
+/**
+ * \brief Read from scoop without advancing.
+ *
  * Ask for LEN bytes of input from the stream.  If that much data is
  * available, then return a pointer to it in PTR, advance the stream
  * input pointer over the data, and return RS_DONE.  If there's not
@@ -155,7 +157,7 @@ void rs_scoop_advance(rs_job_t *job, size_t len)
  *
  * The data is not actually removed from the input, so this function
  * lets you do readahead.  If you want to keep any of the data, you
- * should also call rs_scoop_advance to skip over it.
+ * should also call rs_scoop_advance() to skip over it.
  */
 rs_result rs_scoop_readahead(rs_job_t *job, size_t len, void **ptr)
 {
@@ -187,7 +189,7 @@ rs_result rs_scoop_readahead(rs_job_t *job, size_t len, void **ptr)
     } else if (stream->avail_in >= len) {
         /* There's enough data in the stream's input */
         *ptr = stream->next_in;
-        rs_trace("got %ld bytes direct from input at %p", (long) len, *ptr);
+        rs_trace("got %ld bytes direct from input @%p", (long) len, *ptr);
         return RS_DONE;
     } else if (stream->avail_in > 0) {
         /* Nothing was queued before, but we don't have enough
@@ -245,4 +247,15 @@ rs_result rs_scoop_read_rest(rs_job_t *job, size_t *len, void **ptr)
     *len = job->scoop_avail + stream->avail_in;
 
     return rs_scoop_read(job, *len, ptr);
+}
+
+
+
+/**
+ * Return the total number of bytes available including the scoop and input
+ * buffer.
+ */
+size_t rs_scoop_total_avail(rs_job_t *job)
+{
+    return job->scoop_avail + job->stream->avail_in;
 }
