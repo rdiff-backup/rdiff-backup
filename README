@@ -16,7 +16,6 @@ To build libhsync:
   * cc 
   * Make
   * libc-dev
-  * zlib-dev
 
 To run the regression suite (strongly recommended):
 
