@@ -40,7 +40,7 @@ hs_ptrbuf_t *hs_ptrbuf_on_buffer(char *buf, int len)
 {
     hs_ptrbuf_t *mb;
 
-    assert(len > 0);
+    assert(len >= 0);
     assert(buf);
 
     mb = calloc(1, sizeof(hs_ptrbuf_t));
