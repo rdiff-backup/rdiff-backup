@@ -42,6 +42,10 @@ def parse_cmdlineoptions(arglist):
 		try: return open(filename, "r")
 		except IOError: Log.FatalError("Error opening file %s" % filename)
 
+	def normalize_path(path):
+		"""Used below to normalize the security paths before setting"""
+		return rpath.RPath(Globals.local_connection, path).normalize().path
+
 	try: optlist, args = getopt.getopt(arglist, "blr:sv:V",
 		 ["backup-mode", "calculate-average", "chars-to-quote=",
 		  "check-destination-dir", "current-time=", "exclude=",
@@ -128,13 +132,13 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--remove-older-than":
 			remove_older_than_string = arg
 			action = "remove-older-than"
-		elif opt == "--restrict": Globals.restrict_path = arg
+		elif opt == "--restrict": Globals.restrict_path = normalize_path(arg)
 		elif opt == "--restrict-read-only":
 			Globals.security_level = "read-only"
-			Globals.restrict_path = arg
+			Globals.restrict_path = normalize_path(arg)
 		elif opt == "--restrict-update-only":
 			Globals.security_level = "update-only"
-			Globals.restrict_path = arg
+			Globals.restrict_path = normalize_path(arg)
 		elif opt == "-s" or opt == "--server":
 			action = "server"
 			Globals.server = 1
