@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(dec.c)
-AM_INIT_AUTOMAKE(libhsync, 0.3.0)
+AM_INIT_AUTOMAKE(libhsync, 0.3.1pre)
 AM_CONFIG_HEADER(config.h)
 
 AC_LIBTOOL_DLOPEN
@@ -23,6 +23,10 @@ AC_ARG_ENABLE(ccmalloc,
 	[ CCMALLOC_LIB="-lccmalloc -ldl" ],
 	[ CCMALLOC_LIB="" ])
 
+AC_ARG_ENABLE(trace,
+        [  --enable-trace          turn on library tracing],
+	[ trace_flags="-DDO_HS_TRACE" ])
+
 dnl Checks for header files.
 AC_HEADER_STDC
 
@@ -30,5 +34,6 @@ AC_SUBST(OBJ_SAVE)
 AC_SUBST(OBJ_RESTORE)
 AC_SUBST(CC_SHOBJ_FLAG)
 AC_SUBST(CCMALLOC_LIB)
+AC_SUBST(trace_flags)
 
 AC_OUTPUT(./Makefile)

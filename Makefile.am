@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-CFLAGS += -W -Wall -g
+CFLAGS += -W -Wall -g @trace_flags@
 
 lib_LTLIBRARIES = libhsync.la libhsyncdecode.la
 
