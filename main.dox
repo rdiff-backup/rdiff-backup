@@ -91,6 +91,8 @@ stream.  The ::rs_result_t values returned may indicate
 
 These can be converted to a human-readable string by rs_strerror().
 
+\subsection api_buffers Buffers
+
 \subsection api_delta Generating and applying deltas
 
 All encoding operations are performed by using a <tt>*_begin</tt>

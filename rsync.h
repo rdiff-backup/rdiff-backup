@@ -221,11 +221,42 @@ void rs_sumset_dump(rs_signature_t const *);
  *  - avail_out bytes of output space at next_out
  *  - some of both
  *
- * There is some internal state in impl.  Streams are initialized by
- * rs_buffers_init, and then used to create a job by rs_sig_begin or
- * similar functions.
+ * Buffers must be allocated and passed in by the caller.  This
+ * routine never allocates, reallocates or frees buffers.
+ *
+ * Pay attention to the meaning of the returned pointer and length
+ * values.  They do \b not indicate the location and amount of
+ * returned data.  Rather, if \p *out_ptr was originally set to \p
+ * out_buf, then the output data begins at \p out_buf, and has length
+ * \p *out_ptr - \p out_buf.
+ *
+ * Note also that if \p *avail_in is nonzero on return, then not all of
+ * the input data has been consumed.  The caller should either provide
+ * more output buffer space and call rs_work() again passing the same
+ * \p next_in and \p avail_in, or put the remaining input data into some
+ * persistent buffer and call rs_work() with it again when there is
+ * more output space.
+ *
+ * \param next_in References a pointer which on entry should point to
+ * the start of the data to be encoded.  Updated to point to the byte
+ * after the last one consumed.
+ *
+ * \param avail_in References the length of available input.  Updated to
+ * be the number of unused data bytes, which will be zero if all the
+ * input was consumed.  May be zero if there is no new input, but the
+ * caller just wants to drain output.
+ *
+ * \param next_out References a pointer which on entry points to the
+ * start of the output buffer.  Updated to point to the byte after the
+ * last one filled.
+ *
+ * \param avail_out References the size of available output buffer.
+ * Updated to the size of unused output buffer.
+ *
+ * \return The ::rs_result that caused iteration to stop.
  *
  * \sa rs_buffers_t
+ * \sa api_buffers
  */
 struct rs_buffers_s {
     char *next_in;		/**< Next input byte */
@@ -242,6 +273,7 @@ struct rs_buffers_s {
  * library.
  *
  * \sa struct rs_buffers_s
+ * \sa api_buffers
  */
 typedef struct rs_buffers_s rs_buffers_t;
 
