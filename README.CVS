@@ -5,7 +5,9 @@ get started:
   [ press Enter ]
   $ cvs -z3 -d:pserver:anonymous@cvs.rproxy.sourceforge.net:/cvsroot/rproxy \
     co libhsync
-  $ 
-
+  $ automake
+  $ autoconf
+  $ ./configure [OPTIONS]
+  $ make all check
 
 $Id$
