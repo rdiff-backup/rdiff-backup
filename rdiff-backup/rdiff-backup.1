@@ -114,6 +114,15 @@ but the list of files will be read from standard input.  See the
 .B FILE SELECTION
 section for more information.
 .TP
+.BR "--exclude-globbing-filelist " filename
+Like
+.B --exclude-filelist
+but each line of the filelist will be interpreted according to the
+same rules as
+.B --include
+and
+.B --exclude.
+.TP
 .BI "--exclude-mirror " regexp
 Exclude files in the mirror area matching regexp.  This argument can
 be used multiple times.  The rdiff-backup-data directory is
@@ -130,6 +139,10 @@ option, this option does not match files in a directory it matches.
 See the
 .B FILE SELECTION
 section for more information.
+.TP
+.B --exclude-device-files
+Exclude all device files, fifos, sockets, and symlinks.  This option
+is implied by --windows-mode.
 .TP
 .B --force
 Authorize the updating or overwriting of a destination path.
@@ -156,6 +169,14 @@ section for more information.
 Like
 .BR --include-filelist ,
 but read the list of included files from standard input.
+.BI "--include-globbing-filelist " filename
+Like
+.B --include-filelist
+but each line of the filelist will be interpreted according to the
+same rules as
+.B --include
+and
+.B --exclude.
 .TP
 .BI "--include-regexp " regexp
 Include files matching the regular expression
@@ -334,15 +355,18 @@ is noisiest).  This determines how much is written to the log file.
 Print the current version and exit
 .TP
 .B --windows-mode
-This option is short for "--chars to quote : --windows-time-format"
-and is appropriate when backing up to a filesystem that doesn't allow
-colons in filenames.
+This option is short for "--chars to quote A-Z: --windows-time-format
+--exclude-special-files" and is appropriate when backing a normal unix
+file system to one that doesn't allow colons in filenames and is not
+case sensitive.  --windows-mode should not be necessary when backing
+up one windows file system to another, although --windows-time-format
+would still be required.
 .TP
 .B --windows-time-format
 If this option is present, use underscores instead of colons in
 increment files, so 2001-07-15T04:09:38-07:00 becomes
-2001-07-15T04_09_38-07_00.  This option may be useful under MS windows
-NT, which prohibits colons in filenames.
+2001-07-15T04_09_38-07_00.  This option may be useful under various
+Microsoft file systems, which prohibit colons in filenames.
 
 .SH EXAMPLES
 Simplest case---backup directory foo to directory bar, with increments
@@ -586,13 +610,11 @@ directory and backs up all the files specified by the file selection
 system.  The file selection system comprises a number of file
 selection conditions, which are set using one of the following command
 line options:
-.BR --exclude ,
-.BR --exclude-device-files ,
-.BR --exclude-filelist ,
-.BR --exclude-filelist-stdin ,
-.BR --exclude-regexp ,
+.BR --exclude , --exclude-device-files , --exclude-filelist ,
+.BR --exclude-globbing-filelist ,
+.BR --exclude-filelist-stdin , --exclude-regexp , --exclude-special-files ,
 .BR --include ,
-.BR --include-filelist ,
+.BR --include-filelist , --include-globbing-filelist ,
 .BR --include-filelist-stdin ,
 and
 .BR --include-regexp .
@@ -626,9 +648,11 @@ would backup the /usr/local/bin directory (and its contents), but not
 /usr/local/doc.
 
 The
-.B include
+.BR include ,
+.BR exclude ,
+.BR include-globbing-filelist ,
 and
-.B exclude
+.B exclude-globbing-filelist
 options accept
 .IR "extended shell globbing patterns" .
 These patterns can contain the special patterns
@@ -749,7 +773,7 @@ Similarly, lines starting with "- " exclude files even if they are
 found within an include filelist.
 
 .RE
-For example, if file "list.txt" contains the lines:
+For example, if the file "list.txt" contains the lines:
 
 .RS
 /usr/local
@@ -774,6 +798,34 @@ then "--include-filelist list.txt" would include /usr, /usr/local, and
 specification condition.  Finally, it is undefined what happens with
 /var.  A single file list should not contain conflicting file
 specifications.
+
+The
+.B --include-globbing-filelist
+and
+.B --exclude-globbing-filelist
+options also specify filelists, but each line in the filelist will be
+interpreted as a globbing pattern the way
+.B --include
+and
+.B --exclude
+options are interpreted (although "+ " and "- " prefixing is still
+allowed).  For instance, if the file "globbing-list.txt" contains the
+lines:
+
+.RE
+.RS
+dir/foo
+.RE
+.RS
++ dir/bar
+.RE
+.RS
+- **
+
+.RE
+Then "--include-globbing-filelist globbing-list.txt" would be exactly
+the same as specifying "--include dir/foo --include dir/bar --exclude **"
+on the command line.
 
 Finally, the
 .B --include-regexp
