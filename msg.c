@@ -31,10 +31,14 @@ char const *hs_strerror(enum hs_result r)
         switch (r) {
         case HS_OK:
                 return "OK";
+        case HS_RUN_OK:
+                return "still running";
         case HS_BAD_MAGIC:
                 return "bad magic or stream corrupt";
         case HS_BLOCKED:
                 return "blocked waiting for input";
+        case HS_SHORT_STREAM:
+                return "unexpected end of file";
         default:
                 return "unknown error";
         }
