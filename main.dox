@@ -1,0 +1,99 @@
+/**
+\mainpage The libhsync delta-encoding library
+\author Martin Pool <mbp@samba.org>
+\version $Id$
+
+\section intro Introduction
+
+This is an library for rsync-encoding, designed to be easily
+embedded into diverse applications.  \em libhsync is being
+developed as part of the \b rproxy <http://rproxy.samba.org/>
+and \b rsync <http://rsync.samba.org/> projects.
+
+libhsync encapsulates the core algorithms of the rsync
+protocol, which help with efficient calculation of the
+differences between two files.  The rsync algorithm is different
+from most differencing algorithms in that it does not require
+the presence of the two files to calculate the delta.  Instead,
+it requires a set of checksums of each block of one file, which
+together form a signature for that file.  Blocks at any in the
+other file which have the same checksum are likely to be
+identical, and whatever remains is the difference.
+
+The library does not deal with file metadata or structure, such as
+filenames, permissions, or directories. To this library, a file is
+just a stream of bytes.  Higher-level tools, such as rsync
+<http://rsync.samba.org> can deal with such issues in a way
+appropriate to their users.
+
+The library supports three basic operations:
+
+   -# Generating the signature S of a file A .
+   -# Calculating a delta D from S and a new file B.
+   -# Applying D to A to reconstruct B.
+
+The library also provides the \ref rdiff command-line tool.
+
+\section overview Overview
+
+Why not start with hs_mksum_begin() and ::hs_job_t?
+
+\section Programming Interface
+
+The main public interface to libhsync is through the hsync.h header
+file.
+
+The programming interface to libhsync is similar to that of zlib and
+bzlib.
+
+All public symbols in the library have the prefix
+``<tt>hs_</tt>''. Symbols for internal use only have the prefix
+``<tt>_hs_</tt>''.
+
+<p>The library contains three basic types of functions:
+low-level delta routines, higher-level wrappers, and utility
+routines.  There is also a single executable, <tt>rdiff</tt>,
+which makes the library functions accessible from scripts or the
+command line.
+
+<p>The main routines are all streaming: they gradually
+accumulate data or produce output as the file is processed.</p>
+
+<p>The current library code always uses an encoding format
+documented in the <it>hsync Protocol Definition</it> document.
+Other formats may be supported in the future.</p>
+
+\subsection Generate Signature
+
+Functions that generate signatures read from the file whose signature
+will be taken.  Signature data is written out to another stream as it
+is produced.</p>
+
+\subsection Read Signature
+
+Reads from a signature stream and produces an in-memory
+signature structure.</p>
+
+\subsection Low-level interface
+
+Low level functions compress data in memory, between caller-specified
+input and output buffers.  They do no IO and have minimum dependencies
+on the C library.  This is useful for applications that already have
+your own IO framework, which is the case for Apache, Squid, etc.
+Because data is taken as required by the application, they can
+interoperate with non-blocking IO and encryption libraries, amongst
+other things.
+
+All encoding routines follow a calling protocol similar to that of
+zlib: the caller passes the address and length of input and output
+buffers, plus an opaque state object.  Each routine processes as
+much data as possible, and returns when the input buffer is empty
+or the output buffer is full.
+
+\section High-level Interface
+
+The high-level interface works similarly to the C library's stdio
+routines, and builds upon them.  It is simpler to use, and appropriate
+for applications that do not need to filter or throttle their IO.
+
+*/
