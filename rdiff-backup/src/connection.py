@@ -22,7 +22,7 @@ class Connection:
 
 	"""
 	def __repr__(self): return self.__str__()
-
+	def __str__(self): return "Simple Connection" # override later
 
 class LocalConnection(Connection):
 	"""Local connection
