@@ -30,7 +30,10 @@ typedef int (*hs_readofs_fn_t) (void *readprivate, char *buf,
 typedef int (*hs_write_fn_t) (void *writeprivate, char const *buf,
 			      size_t len);
 
-extern char const *hs_log_domain;
+
+typedef void _hs_trace_fn(char const *fmt, va_list);
+void _hs_trace_to_stderr(char const *fmt, va_list va);
+_hs_trace_fn *_hs_trace_impl;
 
 
 /* ========================================

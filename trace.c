@@ -24,3 +24,23 @@
 #include "private.h"
 
 int _hs_enable_trace;
+_hs_trace_fn *_hs_trace_impl = _hs_trace_to_stderr;
+
+void
+_hs_trace(char const *fmt, ...)
+{
+     va_list va;
+     
+     if (_hs_enable_trace  &&  _hs_trace_impl) {
+	  va_start(va, fmt);
+	  _hs_trace_impl(fmt, va);
+	  va_end(va);
+     }
+}
+
+
+void
+_hs_trace_to_stderr(char const *fmt, va_list va)
+{
+     vfprintf(stderr, fmt, va);
+}

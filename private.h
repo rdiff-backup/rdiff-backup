@@ -19,13 +19,15 @@
    USA
 */
 
-extern int _hs_enable_trace;
 
 #ifdef DO_HS_TRACE
-#define _hs_trace(s, str...) do	{				\
-       if (_hs_enable_trace) { fprintf (stderr,			\
-           "        " __FUNCTION__ ": " s "\n" , ##str); }	\
-       } while (0)
+
+void _hs_trace(char const *fmt, ...)
+#ifdef __GNUC__
+    __attribute__ ((format(printf, 1, 2)))
+#endif
+;
+
 #else /* !DO_HS_TRACE */
 #define _hs_trace(s, str...)
 #endif /* !DO_HS_TRACE */

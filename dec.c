@@ -46,7 +46,6 @@
 #define MAXLITDATA	64*1024*1024
 #define DEFLITBUFSIZE	1024
 
-char const *hs_log_domain = "libhsync";
 
 static int
 _hs_copy(const uint32_t length,
