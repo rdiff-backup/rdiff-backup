@@ -1,3 +1,13 @@
+Fix bug with -m/--mirror-only switch and write test case
+
+Write some better selection test cases to test new Iterate_fast func.
+
+Considering rewriting Selection Iterate(_fast) code again.
+
+Fix up headers on source code files, update README.
+
+
+---------[ Long term ]---------------------------------------
 Security audit
 
 --read-only and --write-only /usr/foo switches to tighten security up some.
