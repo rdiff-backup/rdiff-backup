@@ -761,6 +761,7 @@ class RPath(RORPath):
 
 	def hardlink(self, linkpath):
 		"""Make self into a hardlink joined to linkpath"""
+		log.Log("Hard linking %s to %s" % (self.path, linkpath), 6)
 		self.conn.os.link(linkpath, self.path)
 		self.setdata()
 

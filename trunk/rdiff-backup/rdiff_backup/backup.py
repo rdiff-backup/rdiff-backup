@@ -180,10 +180,10 @@ class DestinationStruct:
 
 	def get_one_sig(cls, dest_base_rpath, index, src_rorp, dest_rorp):
 		"""Return a signature given source and destination rorps"""
-		if (Globals.preserve_hardlinks and
-			Hardlink.islinked(src_rorp or dest_rorp)):
+		if (Globals.preserve_hardlinks and src_rorp and
+			Hardlink.islinked(src_rorp)):
 			dest_sig = rpath.RORPath(index)
-			dest_sig.flaglinked(Hardlink.get_link_index(dest_sig))
+			dest_sig.flaglinked(Hardlink.get_link_index(src_rorp))
 		elif dest_rorp:
 			dest_sig = dest_rorp.getRORPath()
 			if dest_rorp.isreg():
@@ -312,8 +312,8 @@ class CacheCollatedPostProcess:
 		will be backed up correctly.
 
 		"""
-		if source_rorp: Hardlink.add_rorp(source_rorp, source = 1)
-		if dest_rorp: Hardlink.add_rorp(dest_rorp, source = 0)
+		if Globals.preserve_hardlinks and source_rorp:
+			Hardlink.add_rorp(source_rorp, dest_rorp)
 		if (dest_rorp and dest_rorp.isdir() and Globals.process_uid != 0
 			and dest_rorp.getperms() % 01000 < 0700):
 			self.unreadable_dir_init(source_rorp, dest_rorp)
@@ -355,6 +355,9 @@ class CacheCollatedPostProcess:
 		always false for un-changed files).
 
 		"""
+		if Globals.preserve_hardlinks and source_rorp:
+			Hardlink.del_rorp(source_rorp)
+
 		if not changed or success:
 			if source_rorp: self.statfileobj.add_source_file(source_rorp)
 			if dest_rorp: self.statfileobj.add_dest_file(dest_rorp)
