@@ -33,11 +33,11 @@
 
 #define _hs_fatal(s, str...) do { fprintf (stderr,	\
   "libhsync: " __FUNCTION__ ": "			\
-  s , ##str); abort(); } while(0)
+  s "\n" , ##str); abort(); } while(0)
 
 #define _hs_error(s, str...) {				\
      fprintf(stderr,					\
-	     "libhsync: " __FUNCTION__ ": " s , ##str);	\
+	     "libhsync: " __FUNCTION__ ": " s "\n" , ##str);	\
      } while (0)
 
 
