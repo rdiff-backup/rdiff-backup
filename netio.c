@@ -78,7 +78,8 @@ _hs_write_loop(hs_write_fn_t write_fn, void *write_priv,
 int
 _hs_copy_ofs(uint32_t offset, uint32_t length,
 	     hs_readofs_fn_t readofs_fn, void *readofs_priv,
-	     hs_write_fn_t write_fn, void *write_priv)
+	     hs_write_fn_t write_fn, void *write_priv,
+	     hs_mdfour_t *newsum)
 {
     int ret;
     char *buf;
@@ -95,12 +96,15 @@ _hs_copy_ofs(uint32_t offset, uint32_t length,
 	 _hs_error("error in read callback: off=%d, len=%d",
 		   offset, length);
 	goto fail;
-    } else if (ret >= 0 && ret < (int) length) {
+    } else if (ret != (int) length) {
 	 _hs_error("short read: off=%d, len=%d, result=%d",
 		   offset, length, ret);
 	 errno = ENODATA;
 	 goto fail;
     }
+
+    if (newsum)
+	 hs_mdfour_update(newsum, buf, ret);
 
     ret = _hs_write_loop(write_fn, write_priv, buf, ret);
     if (ret != (int) length) {

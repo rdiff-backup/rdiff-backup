@@ -72,7 +72,9 @@ _hs_push_literal_buf(hs_membuf_t * litbuf,
      }
      
      ret = _hs_copy_ofs(0, amount,
-			hs_membuf_read_ofs, litbuf, write_fn, write_priv);
+			hs_membuf_read_ofs, litbuf,
+			write_fn, write_priv,
+			NULL);
     return_val_if_fail(ret > 0, -1);
 
     if (kind == op_kind_literal) {

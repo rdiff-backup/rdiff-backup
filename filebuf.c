@@ -28,6 +28,8 @@
 #include "private.h"
 #include "compress.h"
 
+#undef HS_ALWAYS_READ_SHORT
+
 const int filebuf_tag = 24031976;
 
 struct file_buf {
@@ -115,6 +117,10 @@ hs_filebuf_read(void *private, char *buf, size_t len)
      assert(fbuf->dogtag == filebuf_tag);
      assert(fbuf->fd != -1);
 
+#ifdef HS_ALWAYS_READ_SHORT
+     len = MIN(len, 100);
+#endif
+
      n = read(fbuf->fd, buf, len);
 
      return n;
@@ -128,6 +134,9 @@ hs_filebuf_write(void *private, char const *buf, size_t len)
      size_t n;
 
      assert(fbuf->dogtag == filebuf_tag);
+#ifdef HS_ALWAYS_READ_SHORT
+     len = MIN(len, 100);
+#endif
      n = write(fbuf->fd, buf, len);
      if (fbuf->fd_cache != -1  &&  n > 0) {
 	  write(fbuf->fd_cache, buf, n);
@@ -145,12 +154,16 @@ hs_filebuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
 
      assert(fbuf->dogtag == filebuf_tag);
      if (lseek(fbuf->fd, ofs, SEEK_SET) == -1) {
-	  fprintf(stderr, "hs_filebuf_read_ofs: "
-		  "seek to %ld failed: %s\n", (long) ofs, strerror(errno));
+	  _hs_fatal("hs_filebuf_read_ofs: "
+		    "seek to %ld failed: %s", (long) ofs, strerror(errno));
 	  return -1;
      }
 
      n = read(fbuf->fd, buf, len);
+     if (n != len) {
+	  _hs_trace("** short read in " __FUNCTION__ ", result=%d",
+		    n);
+     }
 
      return n;
 }

@@ -1,6 +1,7 @@
 #! /usr/bin/python
 
-# Generate a dangerous command stream for testing libhsync
+# Generate a dangerous command stream for testing libhsync.
+# $Id$
 
 # Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
 
@@ -20,10 +21,12 @@
 # USA 
 
 # This should catch every boundary case
-vals = [1, 2, 3, 10, 20, 100, 200, 250, 251, 252, 253,
-        254, 255, 256, 257, 258, 259, 260, 261, 300,
-        1000, 2000, 1<<16 - 1, 1<<16, 1<<16 + 1,
-        1<<18, 1<<20, 1<<22, int(1<<31L - 1)]
+byte_vals = [1, 2, 3, 10, 20, 100, 200, 250, 251, 252, 253,
+        254, 255]
+short_vals = byte_vals + [256, 257, 258, 259, 260, 261, 300,
+        1000, 2000, 1<<16 - 1]
+vals = short_vals + \
+       [1<<16, 1<<16 + 1, 1<<18, 1<<20, 1<<22, int(1<<31L - 1)]
 
 for i in vals:
     print 'LITERAL', i
@@ -34,6 +37,9 @@ for i in vals:
 for offset in [0] + vals:
     for length in vals:
         print 'COPY', offset, length
+
+for i in short_vals:
+    print 'CHECKSUM', i
 
 print 'EOF'
         

@@ -1,0 +1,34 @@
+-*- indented-text -*- 
+
+ * Try to make libhsync more generally useful
+
+   * Tease apart the different algorithms inside the library so that
+     they can be independently re-used.
+
+   * Use more specific names than `encode' and `decode'.  I like
+     `apply' as a description of what the client does. 
+
+   * Don't imply any particular encoding format.  I don't think we
+     need callbacks; it's enough that all the users can write their
+     own implementations of the loops.
+
+   * This ought to make it simpler to get push-structured interfaces. 
+
+ * More thorough testing
+
+   * mdfour
+
+     * keep some example files and check that they give the expected
+       results. 
+
+     * try using different input chunk sizes
+
+   * abstract i/o
+
+     * rewrite cat to use our routines, and make sure it passes the
+       file through correctly however we call it.  Different
+       strategies are possible: using the loop functions or not, using
+       mapptrs, etc.
+
+
+LocalWords: mdfour LocalWords mapptrs

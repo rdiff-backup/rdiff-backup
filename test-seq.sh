@@ -1,4 +1,4 @@
-#! /bin/sh -pex
+#! /bin/sh -pe
 
 # Regression test suite for libhsync.
 
@@ -8,39 +8,22 @@
 # with an empty signature, we generate the difference from one
 # file to another.
 
-if [ "$srcdir" = "" ]
-then
-    srcdir=`dirname $0`
-fi
-srcdir=`cd $srcdir; pwd`
-
-PATH=$srcdir:$PATH
-testdir=$srcdir/test-seq
-[ -d $testdir ] || mkdir $testdir
-cd $testdir
+source testfns.sh $0
 
 files=`echo in-??`
 
-echo -n `basename $0` ' '
-
 for old in $files
 do
-    echo -n '-'
-    hsencode $old lt.tmp /dev/null
-    hsdecode /dev/null sig.tmp old-out.tmp lt.tmp
-    cmp $old old-out.tmp
+    run_test hsencode $old lt.tmp /dev/null
+    run_test hsdecode /dev/null sig.tmp old-out.tmp lt.tmp
+    run_test cmp $old old-out.tmp
     for new in $files
     do 
 	if [ $old != $new ] 
 	then
-	    echo -n '.'
-	    hsencode $new lt.tmp sig.tmp
-	    hsdecode $old /dev/null new-out.tmp lt.tmp
-	    cmp $new new-out.tmp
+	    run_test hsencode $new lt.tmp sig.tmp
+	    run_test hsdecode $old /dev/null new-out.tmp lt.tmp
+	    run_test cmp $new new-out.tmp
 	fi
     done
 done
-
-echo 
-
-

@@ -1,5 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r" -*-  */
-
+/* -*- mode: c; c-file-style: "k&r"; c-basic-offset: 4 -*-  */
 /* libhsync
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
 
@@ -20,7 +19,7 @@
 */
 
 
-extern char const * const hs_libhsync_version;
+extern char const *const hs_libhsync_version;
 
 #if HAVE_OFF64_T
 #define hs_off_t off64_t
@@ -53,10 +52,10 @@ void _hs_trace_to_stderr(char const *fmt, va_list va);
    Decode */
 
 typedef struct hs_stats {
-     int lit_cmds, lit_bytes;
-     int copy_cmds, copy_bytes;
-     int sig_cmds, sig_bytes;
-     int false_matches;
+	int lit_cmds, lit_bytes;
+	int copy_cmds, copy_bytes;
+	int sig_cmds, sig_bytes;
+	int false_matches;
 } hs_stats_t;
 
 ssize_t
@@ -74,9 +73,9 @@ hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
 
 
 ssize_t hs_encode(hs_read_fn_t read_fn, void *readprivate,
-	  hs_write_fn_t write_fn, void *write_priv,
-	  hs_read_fn_t sigread_fn, void *sigreadprivate,
-	  int new_block_len, hs_stats_t * stats);
+		  hs_write_fn_t write_fn, void *write_priv,
+		  hs_read_fn_t sigread_fn, void *sigreadprivate,
+		  int new_block_len, hs_stats_t * stats);
 
 /* ========================================
 
@@ -98,13 +97,13 @@ ssize_t hs_filebuf_read_ofs(void *private, char *buf, size_t len,
 			    hs_off_t ofs);
 
 hs_filebuf_t *hs_filebuf_open(char const *filename, int mode);
-void hs_filebuf_close(hs_filebuf_t *fbuf);
-void hs_filebuf_add_cache(hs_filebuf_t *fb, int);
+void hs_filebuf_close(hs_filebuf_t * fbuf);
+void hs_filebuf_add_cache(hs_filebuf_t * fb, int);
 
 hs_filebuf_t *hs_filebuf_from_fd(int);
-hs_filebuf_t * hs_filebuf_from_file(FILE *fp);
-
+hs_filebuf_t *hs_filebuf_from_file(FILE * fp);
 
+
 /* ========================================
 
    File map pointers
@@ -112,12 +111,12 @@ hs_filebuf_t * hs_filebuf_from_file(FILE *fp);
 
 struct hs_map_struct {
 	char *p;
-	int fd,p_size,p_len;
+	int fd, p_size, p_len;
 	hs_off_t file_size, p_offset, p_fd_offset;
 };
-
-
 
+
+
 /* ========================================
 
    Memory buffers
@@ -158,17 +157,19 @@ hs_ptrbuf_t *hs_ptrbuf_on_buffer(char *buf, int len);
 */
 
 typedef struct hs_mdfour {
-    uint32_t A, B, C, D;
-    uint32_t totalN;
+	uint32_t A, B, C, D;
+	uint32_t totalN;
+	int tail_len;
+	char tail[64];
 } hs_mdfour_t;
 
 void hs_mdfour(unsigned char *out, unsigned char const *in, int n);
-void hs_mdfour_begin(hs_mdfour_t *md);
-void hs_mdfour_update(hs_mdfour_t *md, unsigned char const *in, int n);
-void hs_mdfour_result(hs_mdfour_t *md, unsigned char *out);
+void hs_mdfour_begin(hs_mdfour_t * md);
+void hs_mdfour_update(hs_mdfour_t * md, unsigned char const *in, int n);
+void hs_mdfour_result(hs_mdfour_t * md, unsigned char *out);
 
 void
 hs_hexify_buf(char *to_buf, unsigned char const *from_buf, int from_len);
 
 
-char * hs_format_stats(hs_stats_t const * stats);
+char *hs_format_stats(hs_stats_t const *stats);

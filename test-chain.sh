@@ -2,18 +2,13 @@
 
 # Regression test suite for libhsync.
 
+# Copyright (C) 2000 by Martin Pool
+
 # OK, this is how we test feeding hsync it's own filth.  Starting
 # with an empty signature, we generate the difference from one
 # file to another.
 
-if [ "$srcdir" = "" ]
-then
-    srcdir=`dirname $0`
-fi
-srcdir=`cd $srcdir; pwd`
-
-PATH=$srcdir:$PATH
-cd $srcdir/test-chain
+source testfns.sh $0 $@
 
 diff=diff.tmp
 files=`echo $srcdir/*.c|head -20`
@@ -25,12 +20,9 @@ old=/dev/null
 fromsig=fromsig.tmp
 fromlt=fromlt.tmp
 
-echo -n `basename $0` ' '
-
 for from in $files
 do
-    echo from $from
-    hsencode $from $ltfile /dev/null
+    run_test hsencode $from $ltfile /dev/null
 #      hsdecode $from 
 
 #      for new in $files

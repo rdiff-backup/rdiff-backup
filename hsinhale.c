@@ -37,23 +37,33 @@
 static void
 print_cmd(int kind, uint32_t len, uint32_t off)
 {
+     char const *kind_str;
+     
      switch (kind) {
      case op_kind_eof:
 	  printf("EOF\n");
-	  break;
+	  return;
      case op_kind_copy:
 	  printf("COPY %d %d\n", off, len);
-	  break;
+	  return;
+     }
+
+     switch (kind) {
      case op_kind_signature:
+	  kind_str = "SIGNATURE";
+	  break;
      case op_kind_literal:
-	  printf("%s %d\n",
-		 kind == op_kind_signature ? "SIGNATURE" : "LITERAL",
-		 len);
+	  kind_str = "LITERAL";
+	  break;
+     case op_kind_checksum:
+	  kind_str = "CHECKSUM";
 	  break;
      default:
 	  fprintf(stderr, "bugger!  unexpected opcode kind\n");
 	  abort();
      }
+
+     printf("%s %d\n", kind_str, len);
 }
      
 

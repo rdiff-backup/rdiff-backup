@@ -1,5 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r" -*-  */
-
+/* -*- mode: c; c-file-style: "k&r"; c-basic-offset: 4 -*-  */
 /* private.h -- Private headers for libhsync
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
 
@@ -106,7 +105,8 @@ int _hs_write_netvar(hs_write_fn_t write_fn, void *write_priv,
 
 int _hs_copy_ofs(uint32_t offset, uint32_t length,
 		 hs_readofs_fn_t readofs_fn, void *readofs_priv,
-		 hs_write_fn_t write_fn, void *write_priv);
+		 hs_write_fn_t write_fn, void *write_priv,
+		 hs_mdfour_t *);
 
 /* ========================================
 
@@ -283,6 +283,7 @@ int _hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
 int _hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv,
 		       uint32_t size);
 
+int _hs_emit_checksum_cmd(hs_write_fn_t, void *, uint32_t size);
 
 int _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
 		  uint32_t offset, uint32_t length, hs_stats_t * stats);

@@ -66,8 +66,7 @@ int _hs_emit_eof(hs_write_fn_t write_fn, void *write_priv,
 
 
 int
-_hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
-		 char const *buf, uint32_t size)
+_hs_emit_checksum_cmd(hs_write_fn_t write_fn, void *write_priv, uint32_t size)
 {
      int ret;
      
@@ -78,6 +77,21 @@ _hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
 
      ret = _hs_write_netshort(write_fn, write_priv, size);
      if (ret != 2)
+	  return -1;
+
+     return 3;
+}
+
+
+
+int
+_hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
+		 char const *buf, uint32_t size)
+{
+     int ret;
+
+     ret = _hs_emit_checksum_cmd(write_fn, write_priv, size);
+     if (ret <= 0)
 	  return -1;
 
      ret = _hs_write_loop(write_fn, write_priv, buf, size);

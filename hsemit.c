@@ -74,6 +74,13 @@ main(int argc UNUSED, char **argv UNUSED)
 	       ret = _hs_emit_signature_cmd(hs_filebuf_write, outfb, len);
 	       if (ret < 0)
 		    return 1;
+	  } else if (!strcmp(cmd, "CHECKSUM")) {
+	       if (scanf("%d", &len) != 1)
+		    return 1;
+
+	       ret = _hs_emit_checksum_cmd(hs_filebuf_write, outfb, len);
+	       if (ret < 0)
+		    return 1;
 	  } else {
 	       fprintf(stderr, "can't understand command `%s'\n",
 		       cmd);

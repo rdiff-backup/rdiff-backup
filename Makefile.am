@@ -1,4 +1,5 @@
 ## Process this file with automake to produce Makefile.in
+## Copyright (C) 2000 by Martin Pool
 
 CFLAGS += -W -Wall -g @DEFS@
 
@@ -21,10 +22,13 @@ libhsyncdecode_la_SOURCES = dec.c \
 	private.h netio.c includes.h \
 	compress.c compress.h \
 	filebuf.c membuf.c ptrbuf.c \
-	inhale.c trace.c hex.c stats.c
+	inhale.c trace.c hex.c stats.c  \
+	mdfour.c
 
-noinst_SCRIPTS = test-decode.sh test-encode.sh test-chain.sh test-cmds.sh \
-	make-cmds.py test-thrice.sh test-seq.sh
+noinst_SCRIPTS = test-decode.sh test-encode.sh \
+	test-chain.sh test-cmds.sh \
+	make-cmds.py test-thrice.sh test-seq.sh test-meta.sh \
+	testfns.sh
 
 test_data=test-chain/empty-sig  \
 test-decode/01-diff \
@@ -65,13 +69,16 @@ EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 
 include_HEADERS = hsync.h hsyncproto.h
 
-bin_PROGRAMS = hsdecode hsencode 
+bin_PROGRAMS = hsdecode hsencode hsmdfour
 check_PROGRAMS = hsemit hsinhale
 
 check_DATA = test-cmds/cmds.txt
 
 test-cmds/cmds.txt: make-cmds.py
 	$(PYTHON) ./make-cmds.py > $@
+
+hsmdfour_SOURCES = hsmdfour.c mdfour.c filebuf.c hex.c trace.c
+# hsmdfour_LDADD = libhsyncdecode.la
 
 hsdecode_SOURCES = hsdecode.c
 hsdecode_LDADD = libhsyncdecode.la

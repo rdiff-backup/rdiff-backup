@@ -9,20 +9,6 @@
 
 # `What I tell you three times is true'
 
-if [ "$srcdir" = "" ]
-then
-    srcdir=`dirname $0`
-fi
-srcdir=`cd $srcdir; pwd`
-
-PATH=$srcdir:$PATH
-
-testdir=$srcdir/test-thrice
-[ -d $testdir ] || mkdir $testdir
-cd $testdir
-
-echo -n `basename $0` ' '
-
 data=../INSTALL
 
 rm -f *.tmp

@@ -6,18 +6,12 @@
 # We expect the automake-generated Makefile to pass in $srcdir, but if we're
 # run from the commandline we may not have it.
 
-if [ "$srcdir" = "" ]
-then
-    srcdir=`dirname $0`
-fi
-
-PATH=`cd $srcdir; pwd`:$PATH
-cd $srcdir/test-cmds
+source testfns.sh $0 $@
 
 out=out.tmp
 cmds=cmds.txt
 tmp=bin.tmp
 
-hsemit < $cmds > $tmp
-hsinhale > $out < $tmp
-diff -b -q $out $cmds
+run_test hsemit < $cmds > $tmp
+run_test hsinhale > $out < $tmp
+run_test diff -b -q $out $cmds
