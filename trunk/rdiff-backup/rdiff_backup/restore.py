@@ -20,7 +20,7 @@
 """Read increment files and restore to original"""
 
 from __future__ import generators
-import tempfile, os
+import tempfile, os, cStringIO
 import Globals, Time, Rdiff, Hardlink, rorpiter, selection, rpath, \
 	   log, static, robust, metadata, statistics, TempFile
 
@@ -381,8 +381,16 @@ class RestoreFile:
 
 	def get_restore_fp(self):
 		"""Return file object of restored data"""
-		assert self.relevant_incs[-1].isreg(), \
-			   (mirror_rp.index, self.relevant_incs[-1].lstat())
+		if not self.relevant_incs[-1].isreg():
+			log.Log("""Warning: Could not restore file %s!
+
+A regular file was indicated by the metadata, but could not be
+constructed from existing increments because last increment had type
+%s.  Instead of the actual file's data, an empty length file will be
+created.  This error is probably caused by data loss in the
+rdiff-backup destination directory, or a bug in rdiff-backup""" %
+					(self.mirror_rp.path, self.relevant_incs[-1].lstat()), 2)
+			return cStringIO.StringIO('')
 		current_fp = self.get_first_fp()
 		for inc_diff in self.relevant_incs[1:]:
 			log.Log("Applying patch %s" % (inc_diff.get_indexpath(),), 7)
