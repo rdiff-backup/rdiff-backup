@@ -1,25 +1,27 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
+/* -*- mode: c; c-file-style: "bsd" -*- */
+/* $Id$ */
+/* dec.c -- Decode & extract signature from a gdiff-plus stream
+ * 
+ * Copyright (C) 2000 by Martin Pool.
+ * 
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free 
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 59 
+ * Temple Place, Suite 330, Boston, MA 02111-1307 USA */
 
-/* gddec.c -- Decode & extract signature from a gdiff-plus stream
 
-   Copyright (C) 2000 by Martin Pool.
+/****************************************
 
-   This program is free software; you can redistribute it and/or
-   modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
-   
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-   
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA */
-
-
-/* Here's a diagram of the decoding process:
+   Here's a diagram of the decoding process:
 
        	       	       	   /---- OLDBODY <--- BODYCACHE
 			  v		       ^
@@ -126,52 +128,51 @@ _hs_check_checksum(hs_read_fn_t ltread_fn, void *ltread_priv,
     return 1;
 }
 
-int
-_hs_dec_copy(uint32_t offset, uint32_t length,
-	     hs_readofs_fn_t readofs_fn, void *readofs_priv,
+static int
+_hs_dec_copy(uint32_t offset, uint32_t length, hs_map_t *old_map,
 	     hs_write_fn_t write_fn, void *write_priv, hs_mdfour_t * newsum)
 {
     int             ret;
-    char           *buf;
+    char const	    *buf;
+    int		    at_eof;
+    int             mapped_len;
 
     if (length > INT32_MAX) {
 	_hs_fatal("length %u is too big", length);
 	return -1;
     }
 
-    buf = malloc(length);
+    mapped_len = length;
+    buf = _hs_map_ptr(old_map, offset, &mapped_len, &at_eof);
 
-    ret = readofs_fn(readofs_priv, buf, length, offset);
-    if (ret < 0) {
+    if (buf == 0) {
 	_hs_error("error in read callback: off=%d, len=%d", offset, length);
 	goto fail;
-    } else if (ret != (int) length) {
+    } else if (mapped_len != (int) length) {
 	_hs_error("short read: off=%d, len=%d, result=%d",
-		  offset, length, ret);
+		  offset, length, mapped_len);
 	errno = ENODATA;
 	goto fail;
     }
 
     if (newsum)
-	hs_mdfour_update(newsum, buf, ret);
+	hs_mdfour_update(newsum, buf, length);
 
-    ret = _hs_write_loop(write_fn, write_priv, buf, ret);
+    ret = _hs_write_loop(write_fn, write_priv, buf, length);
     if (ret != (int) length) {
 	_hs_error("error in write callback: off=%d, len=%d", offset, length);
 	goto fail;
     }
 
-    free(buf);
     return length;
 
   fail:
-    free(buf);
     return -1;
 }
 
 
 ssize_t
-hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
+hs_decode(int oldread_fd,
 	  hs_write_fn_t write_fn, void *write_priv,
 	  hs_read_fn_t ltread_fn, void *ltread_priv,
 	  hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats)
@@ -182,21 +183,23 @@ hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
     int             kind;
     char           *stats_str;
     hs_mdfour_t     newsum;
+    hs_map_t	   *old_map;
 
     _hs_trace("**** begin %s", __FUNCTION__);
     bzero(stats, sizeof *stats);
     if (_hs_check_gd_header(ltread_fn, ltread_priv) < 0)
 	return -1;
 
+    old_map = _hs_map_file(oldread_fd);
+
     hs_mdfour_begin(&newsum);
 
     while (1) {
-	ret =
-	    _hs_inhale_command(ltread_fn, ltread_priv, &kind, &length,
-			       &offset);
+	ret = _hs_inhale_command(ltread_fn, ltread_priv, &kind, &length,
+				 &offset);
 	if (ret < 0) {
 	    _hs_error("error while trying to read command byte");
-	    return -1;
+	    goto out;
 	}
 
 	if (kind == op_kind_eof) {
@@ -206,7 +209,8 @@ hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
 	    _hs_trace("LITERAL(len=%d)", length);
 	    ret = _hs_copy(length, ltread_fn, ltread_priv, write_fn,
 			   write_priv, &newsum);
-	    return_val_if_fail(ret >= 0, -1);
+	    if (ret < 0)
+		goto out;
 	    stats->lit_cmds++;
 	    stats->lit_bytes += length;
 	} else if (kind == op_kind_signature) {
@@ -214,32 +218,38 @@ hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
 	    ret = _hs_copy(length,
 			   ltread_fn, ltread_priv,
 			   newsig_fn, newsig_priv, NULL);
-	    return_val_if_fail(ret >= 0, -1);
-	    stats->sig_cmds++;
+	    if (ret < 0)
+		goto out;
+ 	    stats->sig_cmds++;
 	    stats->sig_bytes += length;
 	} else if (kind == op_kind_copy) {
 	    _hs_trace("COPY(offset=%d, len=%d)", offset, length);
-	    ret = _hs_dec_copy(offset, length,
-			       oldread_fn, oldread_priv,
+	    ret = _hs_dec_copy(offset, length, old_map,
 			       write_fn, write_priv, &newsum);
-	    return_val_if_fail(ret >= 0, -1);
+	    if (ret < 0)
+		goto out;
 	    stats->copy_cmds++;
 	    stats->copy_bytes += length;
 	} else if (kind == op_kind_checksum) {
 	    _hs_trace("CHECKSUM(len=%d)", length);
 	    ret = _hs_check_checksum(ltread_fn, ltread_priv, length, &newsum);
+	    if (ret < 0)
+		goto out;
 	} else {
 	    _hs_fatal("unexpected op kind %d!", type);
+	    ret = -1;
+	    goto out;
 	}
     }
 
-    if (ret < 0) {
-	return ret;
+    if (ret >= 0) {
+	stats_str = hs_format_stats(stats);
+	_hs_trace("completed: %s", stats_str);
+	free(stats_str);
     }
-
-    stats_str = hs_format_stats(stats);
-    _hs_trace("completed: %s", stats_str);
-    free(stats_str);
+    
+ out:
+    _hs_unmap_file(old_map);
 
     return 1;
 }

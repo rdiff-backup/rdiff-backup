@@ -128,11 +128,11 @@ main(int argc, char **argv)
      if ((ret = open_source(argv[1], &infd, &file_len)) != 0)
 	 return ret;
 
-     map = hs_map_file(infd, file_len);
+     map = _hs_map_file(infd);
 
      ret = read_chunks(map, argc-2, argv+2); /* skip argv[0:1] */
      
-     hs_unmap_file(map);
+     _hs_unmap_file(map);
      close(infd);
 
      return ret;

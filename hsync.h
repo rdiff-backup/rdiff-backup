@@ -59,7 +59,7 @@ typedef struct hs_stats {
 } hs_stats_t;
 
 ssize_t
-hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
+hs_decode(int oldread_fd,
 	  hs_write_fn_t write_fn, void *write_priv,
 	  hs_read_fn_t ltread_fn, void *ltread_priv,
 	  hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats);

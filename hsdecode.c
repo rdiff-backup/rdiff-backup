@@ -39,9 +39,10 @@ static void usage(char *progname)
 int main(int argc, char *argv[])
 {
      int ret;
-     hs_filebuf_t *oldfb, *outfb = 0, *ltfb = 0, *newsigfb;
+     hs_filebuf_t *outfb = 0, *ltfb = 0, *newsigfb;
      hs_stats_t stats;
      int c;
+     int old_fd;
 
      hs_trace_to(NULL);
 
@@ -73,9 +74,9 @@ int main(int argc, char *argv[])
 				     O_WRONLY | O_TRUNC | O_CREAT);
 	  if (!newsigfb)
 	       return 1;
-	  oldfb = hs_filebuf_open(argv[optind], O_RDONLY);
-	  if (!oldfb)
-	       return 1;
+	  old_fd = hs_file_open(argv[optind], O_RDONLY);
+	  if (old_fd == -1)
+	      return 1;
 	  break;
      default:
 	  usage(argv[0]);
@@ -87,7 +88,7 @@ int main(int argc, char *argv[])
      if (!outfb)
 	  outfb = hs_filebuf_from_fd(STDOUT_FILENO);
 
-     ret = hs_decode(hs_filebuf_read_ofs, oldfb,
+     ret = hs_decode(old_fd,
 		     hs_filebuf_write, outfb,
 		     hs_filebuf_read, ltfb,
 		     hs_filebuf_write, newsigfb, &stats);
@@ -101,7 +102,6 @@ int main(int argc, char *argv[])
      hs_filebuf_close(ltfb);
      hs_filebuf_close(outfb);
      hs_filebuf_close(newsigfb);
-     hs_filebuf_close(oldfb);
 
      return 0;
 }

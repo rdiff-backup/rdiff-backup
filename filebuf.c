@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-
+/* -*- mode: c; c-file-style: "bsd" -*-
  * $Id$
  *
  * librsync/filebuf.c -- Abstract read to and from FILE* buffers.
@@ -79,14 +79,11 @@ hs_filebuf_open(char const *filename, int mode)
 {
      int fd;
 
-     fd = open(filename, mode, 0666);
-     if (fd == -1) {
-	  _hs_fatal("error opening %s for mode %#x: %s", filename, mode,
-		    strerror(errno));
-	  return NULL;
-     }
-
-     return hs_filebuf_from_fd(fd);
+     fd = hs_file_open(filename, mode);
+     if (fd == -1)
+	 return NULL;
+     else
+	 return hs_filebuf_from_fd(fd);
 }
 
 

@@ -71,7 +71,7 @@ struct hs_map {
      int tag;
      char *p;
      int fd, p_size, p_len;
-     hs_off_t file_size, p_offset, p_fd_offset;
+     hs_off_t p_offset, p_fd_offset;
 };
 
 
@@ -83,7 +83,7 @@ struct hs_map {
  * things will happen if that's not true and we later have to seek.
  **/
 hs_map_t *
-hs_map_file(int fd,hs_off_t len)
+_hs_map_file(int fd)
 {
      hs_map_t *map;
      map = (hs_map_t *)malloc(sizeof(*map));
@@ -94,7 +94,6 @@ hs_map_file(int fd,hs_off_t len)
 
      map->tag = HS_MAP_TAG;
      map->fd = fd;
-     map->file_size = len;
      map->p = NULL;
      map->p_size = 0;
      map->p_offset = 0;
@@ -131,11 +130,6 @@ _hs_map_ptr(hs_map_t *map, hs_off_t offset, int *len, int *reached_eof)
 	 return NULL;
      }
 
-     /* can't go beyond the end of file */
-     if (*len > (map->file_size - offset)) {
-	  *len = map->file_size - offset;
-     }
-
      /* in most cases the region will already be available */
      if (offset >= map->p_offset && 
 	 offset+*len <= map->p_offset+map->p_len) {
@@ -152,9 +146,7 @@ _hs_map_ptr(hs_map_t *map, hs_off_t offset, int *len, int *reached_eof)
 	  window_start = 0;
      }
      window_size = MAX_MAP_SIZE;
-     if (window_start + window_size > map->file_size) {
-	  window_size = map->file_size - window_start;
-     }
+
      if (offset + *len > window_start + window_size) {
 	  window_size = (offset+*len) - window_start;
      }
@@ -207,6 +199,7 @@ _hs_map_ptr(hs_map_t *map, hs_off_t offset, int *len, int *reached_eof)
 	 if (nread < 0) {
 	     _hs_error("read error in %s: %s", __FUNCTION__,
 		       strerror(errno));
+	     /* Should we return null here? */
 	     break;
 	 }
 
@@ -259,7 +252,7 @@ _hs_map_ptr(hs_map_t *map, hs_off_t offset, int *len, int *reached_eof)
  * Release a file mapping.  This does not close the underlying fd.
  **/
 void
-hs_unmap_file(hs_map_t *map)
+_hs_unmap_file(hs_map_t *map)
 {
      assert(map->tag == HS_MAP_TAG);
      if (map->p) {
