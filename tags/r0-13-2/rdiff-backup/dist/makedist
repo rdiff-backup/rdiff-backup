@@ -1,0 +1,176 @@
+#!/usr/bin/env python
+
+import os, re, shutil, time, sys, getopt
+
+SourceDir = "rdiff_backup"
+DistDir = "dist"
+
+# Various details about the files must also be specified by the rpm
+# spec template.
+spec_template = "dist/rdiff-backup.spec.template"
+# The Fedora distribution has its own spec template
+fedora_spec_template = "dist/rdiff-backup.spec.template-fedora"
+
+def CopyMan(destination, version):
+	"""Create updated man page at the specified location"""
+	fp = open(destination, "w")
+	date = time.strftime("%B %Y", time.localtime(time.time()))
+	version = "Version "+version
+	firstline = ('.TH RDIFF-BACKUP 1 "%s" "%s" "User Manuals"\n' %
+				 (date, version))
+	fp.write(firstline)
+	infp = open("rdiff-backup.1", "r")
+	infp.readline()
+	fp.write(infp.read())
+	fp.close()
+	infp.close()
+
+def MakeHTML(input_prefix, title):
+	"""Create html and wml versions from given html body
+
+	Input expected in <input_prefix>-body.html, and output will be put
+	in <input_prefix>.wml and <input_prefix>.html.
+
+	"""
+	body_fp = open("%s-body.html" % (input_prefix,), "r")
+	body_string = body_fp.read()
+	body_fp.close()
+
+	wml_fp = open("%s.wml" % (input_prefix,), "w")
+	wml_fp.write(
+"""#include 'template.wml' home=. curpage=none title="%s"
+
+<divert body>
+<p><h2>%s</h2>
+
+""" % (title, title))
+	wml_fp.write(body_string)
+	wml_fp.write("\n</divert>\n")
+	wml_fp.close()
+
+	html_fp = open("%s.html" % (input_prefix,), "w")
+	html_fp.write(
+"""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+  <head>
+    <title>%s</title>
+  </head>
+
+  <body>
+  <h1>%s</h1>
+""" % (title, title))
+	html_fp.write(body_string)
+	html_fp.write("\n</body></html>")
+	html_fp.close()
+
+def VersionedCopy(source, dest, munge_date = 0):
+	"""Copy source to dest, substituting $version with version
+
+	If munge_date is true, also replace $date with string like "August
+	8, 2003".
+
+	"""
+	fin = open(source, "rb")
+	inbuf = fin.read()
+	assert not fin.close()
+
+	outbuf = re.sub("\$version", Version, inbuf, 1)
+	if outbuf == inbuf: assert 0, "No $version string replaced"
+	assert not re.search("\$version", outbuf), \
+		   "Two $version strings found in the same file %s" % (source,)
+
+	if munge_date:
+		inbuf = outbuf
+		outbuf = re.sub("\$date", time.strftime("%B %d, %Y"), inbuf, 1)
+		if outbuf == inbuf: assert 0, "No $date string replaced"
+		assert not re.search("\$date", outbuf), "Two $date strings found"
+
+	fout = open(dest, "wb")
+	fout.write(outbuf)
+	assert not fout.close()
+
+def MakeTar():
+	"""Create rdiff-backup tar file"""
+	tardir = "rdiff-backup-%s" % Version
+	tarfile = "rdiff-backup-%s.tar.gz" % Version
+	try:
+		os.lstat(tardir)
+		os.system("rm -rf " + tardir)
+	except OSError: pass
+	os.mkdir(tardir)
+	for filename in ["CHANGELOG", "COPYING", "README",
+					 "FAQ.html", "examples.html",
+					 SourceDir + "/cmodule.c",
+					 SourceDir + "/_librsyncmodule.c",
+					 DistDir + "/setup.py"]:
+		assert not os.system("cp %s %s" % (filename, tardir)), filename
+
+	os.mkdir(tardir+"/rdiff_backup")
+	for filename in ["eas_acls.py", "backup.py", "connection.py",
+					 "FilenameMapping.py", "fs_abilities.py",
+					 "Hardlink.py", "increment.py", "__init__.py",
+					 "iterfile.py", "lazy.py", "librsync.py",
+					 "log.py", "Main.py", "manage.py", "metadata.py",
+					 "Rdiff.py", "regress.py", "restore.py",
+					 "robust.py", "rorpiter.py", "rpath.py",
+					 "Security.py", "selection.py",
+					 "SetConnections.py", "static.py",
+					 "statistics.py", "TempFile.py", "Time.py",
+					 "user_group.py"]:
+		assert not os.system("cp %s/%s %s/rdiff_backup" %
+							 (SourceDir, filename, tardir)), filename
+
+	VersionedCopy("%s/Globals.py" % (SourceDir,),
+				  "%s/rdiff_backup/Globals.py" % (tardir,))
+	VersionedCopy("rdiff-backup", "%s/rdiff-backup" % (tardir,), 1)
+	VersionedCopy(DistDir + "/setup.py", "%s/setup.py" % (tardir,))
+
+	os.chmod(os.path.join(tardir, "setup.py"), 0755)
+	os.chmod(os.path.join(tardir, "rdiff-backup"), 0644)
+	CopyMan(os.path.join(tardir, "rdiff-backup.1"), Version)
+	os.system("tar -cvzf %s %s" % (tarfile, tardir))
+	shutil.rmtree(tardir)
+	return tarfile
+
+def MakeSpecFile():
+	"""Create spec file using spec template"""
+	specfile, fedora_specfile= "rdiff-backup.spec", "rdiff-backup.spec-fedora"
+	VersionedCopy(spec_template, specfile)
+	VersionedCopy(fedora_spec_template, fedora_specfile)
+	return specfile, fedora_specfile
+
+def parse_cmdline(arglist):
+	"""Returns action"""
+	global Version
+	def error():
+		print "Syntax: makedist [--html-only] [version_number]"
+		sys.exit(1)		
+
+	optlist, args = getopt.getopt(arglist, "", ["html-only"])
+	if len(args) != 1: error()
+	else: Version = args[0]
+
+	for opt, arg in optlist:
+		if opt == "--html-only": return "HTML"
+		else: assert 0, "Bad argument"
+	return "All"
+
+def Main():
+	action = parse_cmdline(sys.argv[1:])
+	print "Making HTML"
+	MakeHTML("FAQ", "rdiff-backup FAQ")
+	MakeHTML("examples", "rdiff-backup examples")
+
+	if action != "HTML":
+		assert action == "All"
+		print "Processing version " + Version
+		tarfile = MakeTar()
+		print "Made tar file " + tarfile
+		specfiles = MakeSpecFile()
+		print "Made specfiles ", specfiles
+
+
+if __name__ == "__main__" and not globals().has_key('__no_execute__'):
+	Main()
+

@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+#
+# Builds two rpms, one for generic release, and the other for the
+# Fedora project.
+
+import os, sys
+
+rpmroot = os.path.join(os.environ['HOME'], 'rpm')
+
+if len(sys.argv) == 2:
+	Version = sys.argv[1]
+	specfile = "rdiff-backup.spec"
+	fedora_specfile = "rdiff-backup.spec-fedora"
+	print "Using specfiles %s, %s" % (specfile, fedora_specfile)
+else:
+	print "Syntax:  %s version_number" % sys.argv[0]
+	sys.exit(1)
+
+base = "rdiff-backup-%s" % (Version,)
+tarfile = base + ".tar.gz"
+rpmbase = base + "-1"
+i386_rpm = rpmbase + ".i386.rpm"
+source_rpm = rpmbase + ".src.rpm"
+
+fedora_rpmbase = base + "-0.fdr.1"
+fedora_i386_rpm = fedora_rpmbase + ".i386.rpm"
+fedora_source_rpm = fedora_rpmbase + ".src.rpm"
+
+# These assume the rpm root directory $HOME/rpm.  The
+# nonstandard location allows for building by non-root user.
+assert not os.system("cp %s %s/SOURCES" % (tarfile, rpmroot))
+assert not os.system("rpmbuild -ba -v --sign " + specfile)
+assert not os.system("mv %s/RPMS/i386/%s ." % (rpmroot, i386_rpm))
+assert not os.system("mv %s/SRPMS/%s ." % (rpmroot, source_rpm))
+
+assert not os.system("rpmbuild -ba -v --sign " + fedora_specfile)
+assert not os.system("mv %s/RPMS/i386/%s ." % (rpmroot, fedora_i386_rpm))
+assert not os.system("mv %s/SRPMS/%s ." % (rpmroot, fedora_source_rpm))
