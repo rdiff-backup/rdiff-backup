@@ -102,8 +102,12 @@ reasons or if rdiff-backup is not handling device files correctly.
 .TP
 .BI "--exclude-filelist " filename
 Excludes the files listed in 
+.IR filename .
+If
 .I filename
-See the
+is handwritten you probably want
+.B --include-globbing-filelist
+instead.  See the
 .B FILE SELECTION
 section for more information.
 .TP
@@ -155,7 +159,11 @@ section for more information.
 .BI "--include-filelist " filename
 Like
 .BR --exclude-filelist ,
-but include the listed files instead.  See the
+but include the listed files instead.  If
+.I filename
+is handwritten you probably want
+.B --exclude-globbing-filelist
+instead.  See the
 .B FILE SELECTION
 section for more information.
 .TP
