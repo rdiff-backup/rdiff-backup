@@ -134,7 +134,7 @@ AC_CHECK_SIZEOF(size_t, 4)
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(config.h unistd.h alloca.h libintl.h mcheck.h)
-AC_CHECK_HEADERS(zlib.h bzlib.h stdint.h)
+AC_CHECK_HEADERS(zlib.h bzlib.h stdint.h fcntl.h inttypes.h sys/file.h)
 
 # GNU library versioning: This is NOT the librsync release number.
 # Rather, it is a CURRENT:REVISION:AGE tuple describing binary
