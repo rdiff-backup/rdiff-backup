@@ -32,8 +32,8 @@ typedef int (*hs_write_fn_t) (void *writeprivate, char const *buf,
 
 
 typedef void _hs_trace_fn(char const *fmt, va_list);
+void hs_trace_to(_hs_trace_fn *);
 void _hs_trace_to_stderr(char const *fmt, va_list va);
-_hs_trace_fn *_hs_trace_impl;
 
 
 /* ========================================
