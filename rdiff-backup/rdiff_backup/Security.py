@@ -133,6 +133,7 @@ def set_allowed_requests(sec_level):
 			allowed_requests.extend(
 				["restore.MirrorStruct.set_mirror_and_rest_times",
 				 "restore.MirrorStruct.initialize_rf_cache",
+				 "restore.MirrorStruct.close_rf_cache",
 				 "restore.MirrorStruct.get_diffs",
 				 "backup.SourceStruct.set_source_select",
 				 "backup.SourceStruct.get_source_select",

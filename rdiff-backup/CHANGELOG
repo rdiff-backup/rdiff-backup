@@ -13,6 +13,11 @@ memory.  Thanks for Jacques Botha for report.
 Fixed bug restoring some directories when mirror_metadata file was
 missing (as when made by 0.10.x version).
 
+Regressing and restoring as non-root user now works on directories
+that contain unreadable files and directories as long as they are
+owned by that user.  Bug report by Arkadiusz Miskiewicz.  Hopefully
+this is the last of the unreadable file bugs...
+
 
 New in v0.12.4 (2003/09/13)
 ---------------------------
