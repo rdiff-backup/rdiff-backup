@@ -224,9 +224,12 @@ testfiles/select/1/1
 
 class ParseArgsTest(unittest.TestCase):
 	"""Test argument parsing"""
+	root = None
 	def ParseTest(self, tuplelist, indicies, filelists = []):
 		"""No error if running select on tuple goes over indicies"""
-		self.root = DSRPath(1, Globals.local_connection, "testfiles/select")
+		if not self.root:
+			self.root = DSRPath(1, Globals.local_connection,
+								"testfiles/select")
 		self.Select = Select(self.root)
 		self.Select.ParseArgs(tuplelist, filelists)
 		self.Select.set_iter()
@@ -277,6 +280,32 @@ class ParseArgsTest(unittest.TestCase):
 						('3', '2', '1'), ('3', '2', '2'), ('3', '2', '3'),
 						('3', '3'),
 						('3', '3', '2')])
+
+	def testGlob2(self):
+		"""Test more globbing functions"""
+		self.ParseTest([("--include", "testfiles/select/*foo*/p*"),
+						("--exclude", "**")],
+					   [(), ('efools',), ('efools', 'ping'),
+						('foobar',), ('foobar', 'pong')])
+		self.ParseTest([("--exclude", "testfiles/select/1/1/*"),
+						("--exclude", "testfiles/select/1/2/**"),
+						("--exclude", "testfiles/select/1/3**"),
+						("--include", "testfiles/select/1"),
+						("--exclude", "**")],
+					   [(), ('1',), ('1', '1'), ('1', '2')])
+
+	def testAlternateRoot(self):
+		"""Test select with different root"""
+		self.root = DSRPath(1, Globals.local_connection,
+							"testfiles/select/1")
+		self.ParseTest([("--exclude", "testfiles/select/1/[23]")],
+					   [(), ('1',), ('1', '1'), ('1', '2'), ('1', '3')])
+
+		self.root = DSRPath(1, Globals.local_connection, "/")
+		self.ParseTest([("--exclude", "/home/*"),
+						("--include", "/home"),
+						("--exclude", "/")],
+					   [(), ("home",)])
 
 	def testParseStartingFrom(self):
 		"""Test parse, this time starting from inside"""

@@ -371,7 +371,16 @@ class FileAttributes(FileCopying):
 		self.assertRaises(RPathException, RPath.copy_attribs,
 						  self.nothing, self.nowrite)
 
-
+class CheckPath(unittest.TestCase):
+	"""Check to make sure paths generated properly"""
+	def testpath(self):
+		"""Test root paths"""
+		root = RPath(Globals.local_connection, "/")
+		assert root.path == "/", root.path
+		bin = root.append("bin")
+		assert bin.path == "/bin", bin.path
+		bin2 = RPath(Globals.local_connection, "/bin")
+		assert bin.path == "/bin", bin2.path
 
 if __name__ == "__main__":
 	unittest.main()
