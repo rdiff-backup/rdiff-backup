@@ -1,3 +1,15 @@
+New in v0.12.3 (2003/08/??)
+---------------------------
+
+Patch by Jeffrey Marshall fixes socket/fifo recognition on Mac OS X
+(which apparently has buggy macros).
+
+Patch by Jeffrey Marshall fixes --calculate-average mode, which seems
+to have broken recently.
+
+rdiff-backup should now work with python 2.3.
+
+
 New in v0.12.2 (2003/07/24)
 ---------------------------
 
