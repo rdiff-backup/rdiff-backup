@@ -176,6 +176,10 @@ restrict_path = None
 # the man page under --no-compare-inode for more information.
 compare_inode = 1
 
+# If set, directories can be fsync'd just like normal files, to
+# guarantee that any changes have been committed to disk.
+fsync_directories = 1
+
 
 def get(name):
 	"""Return the value of something in this module"""

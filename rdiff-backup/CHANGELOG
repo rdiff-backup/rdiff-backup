@@ -6,8 +6,8 @@ Kempe for report.)
 
 Added --list-at-time option at request of Farkas Levente.
 
-Don't change ownership if --windows-mode option is given.  (Bug report
-by Keith Edmunds.)
+Various fixes for backing up onto windows directories.  Thanks to
+Keith Edmunds for bug reports and testing.
 
 
 New in v0.11.4 (2003/03/15)

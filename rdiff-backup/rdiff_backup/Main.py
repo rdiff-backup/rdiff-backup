@@ -149,6 +149,7 @@ def parse_cmdlineoptions(arglist):
 			Globals.set('quoting_enabled', 1)
 			Globals.set('preserve_hardlinks', 0)
 			Globals.set('change_ownership', 0)
+			Globals.set('fsync_directories', 0)
 		else: Log.FatalError("Unknown option %s" % opt)
 
 def isincfilename(path):
