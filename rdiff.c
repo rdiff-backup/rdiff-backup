@@ -20,26 +20,22 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-                              /* .. after a year and a day, mourning is
+			      /* .. after a year and a day, mourning is
 			       * dangerous to the survivor and troublesome
 			       * to the dead.
-			       *              -- Harold Bloom               */
+			       *	      -- Harold Bloom		    */
 
 #include "config.h"
 
 #include <assert.h>
-
 #include <sys/types.h>
-#include <limits.h>
-#include <inttypes.h>
 #include <stdlib.h>
-
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/file.h>
 #include <string.h>
 #include <syslog.h>
-
+#include <errno.h>
 #include <getopt.h>
 
 #include "hsync.h"
@@ -47,6 +43,7 @@
 #include "isprefix.h"
 #include "fileutil.h"
 #include "util.h"
+#include "hsyncfile.h"
 
 
 int block_len = 2048;
@@ -57,20 +54,23 @@ int output_mode = O_WRONLY|O_CREAT|O_TRUNC|O_EXCL;
 
 /*
  * TODO: Refuse to write binary data to terminals unless --forced.
+ *
+ * TODO: Perhaps change to using popt rather than getopt?  Do this if
+ * we ever add arguments requiring more tricky parsing.
  */
 
 #define PROGRAM "rdiff"
 
 
 const struct option longopts[] = {
-    { "help", no_argument, 0, 'h' },
-    { "version", no_argument, 0, 'V' },
-    { "licence", no_argument, 0, 'L' },
-    { "verbose", no_argument, 0, 'v' },
-    { "force", no_argument, 0, 'f' },
-    { "input-buffer", required_argument, 0, 'I' },
-    { "output-buffer", required_argument, 0, 'O' },
-    { NULL, 0, 0, 0 }
+        { "help", no_argument, 0, 'h' },
+        { "version", no_argument, 0, 'V' },
+        { "licence", no_argument, 0, 'L' },
+        { "verbose", no_argument, 0, 'v' },
+        { "force", no_argument, 0, 'f' },
+        { "input-buffer", required_argument, 0, 'I' },
+        { "output-buffer", required_argument, 0, 'O' },
+        { NULL, 0, 0, 0 }
 };
 
 
@@ -134,108 +134,6 @@ static void process_args(int argc, char **argv)
 }
 
 
-static int
-do_signature(int argc, char **argv)
-{
-    FILE *old_file, *sig_file;
-    
-    if (argc != 3) {
-	_hs_error("Signature operation needs two filenames");
-	return 1;
-    }
-    
-/*     old_file = _hs_file_open(argv[1], O_RDONLY); */
-/*     sig_file = _hs_file_open(argv[2], output_mode); */
-
-/*     hs_mksum_files(old_file, sig_file, block_len); */
-    
-    return 0;
-}
-
-
-static int
-do_delta(int argc, char **argv)
-{
-    FILE *new_file, *sig_file, *delta_file;
-    
-    if (argc != 4) {
-	_hs_error("Delta operation needs three filenames: "
-		  "SIGNATURE NEWFILE DELTA");
-	return 1;
-    }
-    
-/*     sig_file = _hs_file_open(argv[1], O_RDONLY); */
-/*     new_file = _hs_file_open(argv[2], O_RDONLY); */
-/*     delta_file = _hs_file_open(argv[3], output_mode); */
-
-/*     hs_delta_files(new_file, delta_file); */
-
-/*     fclose(delta_file); */
-    
-    return 0;
-}
-
-
-static int
-do_sum(int argc, char **argv)
-{
-    unsigned char          result[HS_MD4_LENGTH];
-    char            result_str[HS_MD4_LENGTH * 3];
-    FILE *in_file;
-
-    if (argc != 2) {
-	_hs_error("Sum operation needs one filename");
-	return 1;
-    }
-    
-    in_file = _hs_file_open(argv[1], O_RDONLY);
-    
-/*     hs_mdfour_file(in_file, result); */
-/*     hs_hexify(result_str, result, HS_MD4_LENGTH); */
-
-/*     printf("%s\n", result_str); */
-
-    return 0;
-}
-
-
-
-static int do_patch(int argc, char *argv[])
-{
-        FILE *old_file, *delta_file, *new_file;
-        char *outbuf;
-        HSFILE *patch;
-        enum hs_result result;
-        size_t len;
-
-        if (argc != 4) {
-                _hs_error("Patch operation needs three filenames: "
-                          "OLDFILE DELTA NEWFILE");
-                return 1;
-        }
-
-        old_file = _hs_file_open(argv[1], O_RDONLY);
-        delta_file = _hs_file_open(argv[2], O_RDONLY);
-        new_file = _hs_file_open(argv[3], output_mode);
-
-        outbuf = malloc(hs_outbuflen);
-        assert(outbuf);
-        patch = hs_patch_open(old_file, delta_file);
-
-        do {
-                len = hs_outbuflen;
-                result = hs_patch_read(patch, outbuf, &len);
-                fwrite(outbuf, len, 1, new_file);
-        } while (result == HS_BLOCKED);
-
-        if (result != HS_OK)
-                _hs_error("patch failed: %s", hs_strerror(result));
-    
-        return 0;
-}
-
-
-
 int
 main(int argc, char **argv)
 {
@@ -247,13 +145,13 @@ main(int argc, char **argv)
     if (argc <= 0) {
 	;
     } else if (strisprefix(argv[0], "signature")) {
-	return do_signature(argc, argv);
+	return hs_rdiff_signature(argc, argv);
     } else if (strisprefix(argv[0], "delta")) {
-	return do_delta(argc, argv);
+	return hs_rdiff_delta(argc, argv);
      } else if (strisprefix(argv[0], "patch")) {
- 	return do_patch(argc, argv);
+ 	return hs_rdiff_patch(argc, argv);
     } else if (strisprefix(argv[0], "sum")) {
-	return do_sum(argc, argv);
+	return hs_rdiff_sum(argc, argv);
     }
     
     _hs_error("You must specify one of the signature, delta, "
