@@ -45,6 +45,7 @@ you have no opinion, just omit the `-d YOUR_DIRECTORY' and it will go into
 
   $ cd YOUR_DIRECTORY
   $ ./autogen.sh [OPTIONS]
+  $ ./configure
   $ make all check
 
 You can pass all the ./configure options to autogen, including --help.
