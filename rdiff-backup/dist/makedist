@@ -32,7 +32,7 @@ def MakeFAQ():
 
 	wml_fp = open("FAQ.wml", "w")
 	wml_fp.write(
-"""#include 'template.wml' curpage=faq title="rdiff-backup: FAQ"
+"""#include 'template.wml' home=. curpage=faq title="rdiff-backup: FAQ"
 
 <divert body>
 <p><h2>FAQ:</h2>
