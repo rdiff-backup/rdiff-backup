@@ -6,7 +6,7 @@ AC_INIT([librsync],[0.9.6])
 AC_REVISION([$Revision$])
 AC_COPYRIGHT([Copyright (C) 1999, 2000, 2001, 2002 by Martin Pool <mbp@samba.org>])
 AC_CONFIG_SRCDIR([trace.c])
-AC_CONFIG_HEADER([config.h])
+AM_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE
 
 # GNU library versioning: This is NOT the librsync release number.
