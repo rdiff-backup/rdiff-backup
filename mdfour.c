@@ -154,11 +154,12 @@ rs_mdfour64(rs_mdfour_t * m, const void *p)
 static void
 copy64( /* @out@ */ uint32_t * M, unsigned char const *in)
 {
-    int             i;
+    int i=16;
 
-    for (i = 0; i < 16; i++)
-        M[i] = (in[i * 4 + 3] << 24) | (in[i * 4 + 2] << 16) |
-            (in[i * 4 + 1] << 8) | (in[i * 4 + 0] << 0);
+    while (i--) {
+        *M++ = (in[3] << 24) | (in[2] << 16) | (in[1] << 8) | in[0];
+        in += 4;
+    }
 }
 
 static void
@@ -189,22 +190,22 @@ rs_mdfour_block_slow(rs_mdfour_t *md, void const *p)
 static void
 rs_mdfour_choose_packer(void)
 {
-    static const char foo[] = { 0xde, 0xad, 0xbe, 0xef};
-    const uint32_t *p = (const uint32_t *) foo;
+    const uint32_t foo = 0x01020304;
+    char *p = (char *)&foo;
     
     if (sizeof(uint32_t) != 4)
         rs_fatal("internal error: uint32_t is not really 32 bits!");
     if (sizeof(foo) != 4)
         rs_fatal("internal error: something wierd about char arrays");
 
-    if (*p == 0xdeadbeef) {
+    if (*p == 0x1) {
         rs_trace("big-endian machine");
         rs_mdfour_block = rs_mdfour_block_slow;
-    } else if (*p == 0xefbeadde) {
+    } else if (*p == 0x4) {
         rs_trace("little-endian machine");
         rs_mdfour_block = rs_mdfour64;
     } else {
-        rs_fatal("can't determine endianness from %#x", *p);
+        rs_fatal("world is broken - can't determine endianness from %#x", *p);
     }
 }
 
