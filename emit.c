@@ -27,6 +27,15 @@
                                * sleep on the beach anymore.
                                */
 
+/*
+ * TODO: Pluggable encoding formats:
+ *
+ *  - gdiff-style
+ *  - rsync 24
+ *  - ed (text)
+ *  - Delta HTTP
+ */
+
 
 #include <config.h>
 
