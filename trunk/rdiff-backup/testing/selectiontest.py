@@ -203,11 +203,11 @@ testfiles/select/1/1
 
 class ParseArgsTest(unittest.TestCase):
 	"""Test argument parsing"""
-	def ParseTest(self, tuplelist, indicies):
+	def ParseTest(self, tuplelist, indicies, filelists = []):
 		"""No error if running select on tuple goes over indicies"""
 		self.root = DSRPath(1, Globals.local_connection, "testfiles/select")
 		self.Select = Select(self.root)
-		self.Select.ParseArgs(tuplelist)
+		self.Select.ParseArgs(tuplelist, filelists)
 		self.Select.set_iter()
 		assert Iter.equal(Iter.map(lambda dsrp: dsrp.index, self.Select),
 						  iter(indicies), verbose = 1)
@@ -262,7 +262,7 @@ class ParseArgsTest(unittest.TestCase):
 		self.root = DSRPath(1, Globals.local_connection, "testfiles/select")
 		self.Select = Select(self.root)
 		self.Select.ParseArgs([("--include", "testfiles/select/1/1"),
-							   ("--exclude", "**")])
+							   ("--exclude", "**")], [])
 		self.Select.set_iter(('1', '1'))
 		assert Iter.equal(Iter.map(lambda dsrp: dsrp.index, self.Select),
 						  iter([("1", '1', '1'),
