@@ -28,12 +28,12 @@ rdiff-backup \- local/remote mirror and incremental backup
 is a script, written in
 .BR python (1)
 that backs up one directory to another.  The target directory ends up
-a exact copy (mirror) of the source directory, but extra reverse
-diffs are stored in the target directory, so you can still recover
-files lost some time ago.  The idea is to combine the best features of
-a mirror and an incremental backup.  rdiff-backup also preserves
-symlinks, special files, hardlinks, permissions, uid/gid ownership (if
-it is running as root), and modification times.
+a copy (mirror) of the source directory, but extra reverse diffs are
+stored in a special subdirectory of that target directory, so you can
+still recover files lost some time ago.  The idea is to combine the
+best features of a mirror and an incremental backup.  rdiff-backup
+also preserves symlinks, special files, hardlinks, permissions,
+uid/gid ownership (if it is running as root), and modification times.
 
 .B rdiff-backup
 can also operate
