@@ -575,10 +575,7 @@ class Resume:
 			mirror = None
 			last_index = cls.sym_to_index(increment_sym)
 			if checkpoint_rp:
-				result = cls.unpickle_checkpoint(checkpoint_rp)
-				sys.stderr.write("#############" + str(result) + "\n")
-				#ITR, finalizer = cls.unpickle_checkpoint(checkpoint_rp)
-				ITR, finalizer = result
+				ITR, finalizer = cls.unpickle_checkpoint(checkpoint_rp)
 		elif mirror_sym:
 			mirror = 1
 			last_index = cls.sym_to_index(mirror_sym)

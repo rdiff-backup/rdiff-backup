@@ -234,18 +234,18 @@ class IterTreeReducer:
 				branches[-1].branch_process(to_be_finished)
 			else: return 1
 
-	def add_branch(self):
+	def add_branch(self, index):
 		"""Return branch of type self.branch_class, add to branch list"""
 		branch = self.branch_class(*self.branch_args)
+		branch.base_index = index
 		self.branches.append(branch)
 		return branch
 
-	def process_w_branch(self, index, branch, args):
+	def process_w_branch(self, branch, args):
 		"""Run start_process on latest branch"""
 		Robust.check_common_error(branch.on_error,
 								  branch.start_process, args)
 		if not branch.caught_exception: branch.start_successful = 1
-		branch.base_index = index
 
 	def Finish(self):
 		"""Call at end of sequence to tie everything up"""
@@ -268,7 +268,8 @@ class IterTreeReducer:
 		"""
 		index = args[0]
 		if self.index is None:
-			self.process_w_branch(index, self.root_branch, args)
+			self.root_branch.base_index = index
+			self.process_w_branch(self.root_branch, args)
 			self.index = index
 			return 1
 
@@ -283,8 +284,8 @@ class IterTreeReducer:
 			if last_branch.can_fast_process(*args):
 				last_branch.fast_process(*args)
 			else:
-				branch = self.add_branch()
-				self.process_w_branch(index, branch, args)
+				branch = self.add_branch(index)
+				self.process_w_branch(branch, args)
 		else: last_branch.log_prev_error(index)
 
 		self.index = index
