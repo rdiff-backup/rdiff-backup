@@ -82,6 +82,22 @@ class Time:
 		"""Return pretty version of time given w3 time string"""
 		return cls.timetopretty(cls.stringtotime(timestring))
 
+	def inttopretty(cls, seconds):
+		"""Convert num of seconds to readable string like "2 hours"."""
+		partlist = []
+		hours, seconds = divmod(seconds, 3600)
+		if hours > 1: partlist.append("%d hours" % hours)
+		elif hours == 1: partlist.append("1 hour")
+
+		minutes, seconds = divmod(seconds, 60)
+		if minutes > 1: partlist.append("%d minutes" % minutes)
+		elif minutes == 1: partlist.append("1 minute")
+
+		if seconds == 1: partlist.append("1 second")
+		elif not partlist or seconds > 1:
+			partlist.append("%s seconds" % seconds)
+		return " ".join(partlist)
+
 	def intstringtoseconds(cls, interval_string):
 		"""Convert a string expressing an interval (e.g. "4D2s") to seconds"""
 		def error():
