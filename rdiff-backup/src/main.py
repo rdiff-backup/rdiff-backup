@@ -168,7 +168,7 @@ rdiff-backup with the --force option if you want to mirror anyway.""" %
 		SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
 		self.backup_init_dirs(rpin, rpout)
 		Time.setcurtime()
-		RSI = Resume.ResumeCheck()
+		RSI = Globals.backup_writer.Resume.ResumeCheck()
 		if self.prevtime:
 			Time.setprevtime(self.prevtime)
 			SaveState.init_filenames(1)
