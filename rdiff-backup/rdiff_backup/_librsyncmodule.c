@@ -70,7 +70,7 @@ static PyObject *
 _librsync_sigmaker_cycle(_librsync_SigMakerObject *self, PyObject *args)
 {
   char *inbuf, outbuf[RS_JOB_BLOCKSIZE];
-  long inbuf_length;
+  int inbuf_length;
   rs_buffers_t buf;
   rs_result result;
 
@@ -91,7 +91,7 @@ _librsync_sigmaker_cycle(_librsync_SigMakerObject *self, PyObject *args)
   }
 
   return Py_BuildValue("(ils#)", (result == RS_DONE),
-					   inbuf_length - (long)buf.avail_in,
+					   (long)inbuf_length - (long)buf.avail_in,
 					   outbuf, RS_JOB_BLOCKSIZE - (long)buf.avail_out);
 }
 
@@ -168,7 +168,7 @@ _librsync_new_deltamaker(PyObject* self, PyObject* args)
 {
   _librsync_DeltaMakerObject* dm;
   char *sig_string, outbuf[RS_JOB_BLOCKSIZE];
-  long sig_length;
+  int sig_length;
   rs_job_t *sig_loader;
   rs_signature_t *sig_ptr;
   rs_buffers_t buf;
@@ -224,7 +224,7 @@ static PyObject *
 _librsync_deltamaker_cycle(_librsync_DeltaMakerObject *self, PyObject *args)
 {
   char *inbuf, outbuf[RS_JOB_BLOCKSIZE];
-  long inbuf_length;
+  int inbuf_length;
   rs_buffers_t buf;
   rs_result result;
 
@@ -244,7 +244,7 @@ _librsync_deltamaker_cycle(_librsync_DeltaMakerObject *self, PyObject *args)
   }
 
   return Py_BuildValue("(ils#)", (result == RS_DONE),
-					   inbuf_length - (long)buf.avail_in,
+					   (long)inbuf_length - (long)buf.avail_in,
 					   outbuf, RS_JOB_BLOCKSIZE - (long)buf.avail_out);
 }
 
@@ -360,7 +360,7 @@ static PyObject *
 _librsync_patchmaker_cycle(_librsync_PatchMakerObject *self, PyObject *args)
 {
   char *inbuf, outbuf[RS_JOB_BLOCKSIZE];
-  long inbuf_length;
+  int inbuf_length;
   rs_buffers_t buf;
   rs_result result;
 
@@ -380,7 +380,7 @@ _librsync_patchmaker_cycle(_librsync_PatchMakerObject *self, PyObject *args)
   }
 
   return Py_BuildValue("(ils#)", (result == RS_DONE),
-					   inbuf_length - (long)buf.avail_in,
+					   (long)inbuf_length - (long)buf.avail_in,
 					   outbuf, RS_JOB_BLOCKSIZE - (long)buf.avail_out);
 }
 
