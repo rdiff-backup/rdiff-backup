@@ -1,6 +1,32 @@
                                                   -*- indented-text -*-
 $Id$
 
+ * Start using a GNU-style ChangeLog to track contributions and
+   protect our change history across different vc systems.
+
+ * Change to using SCons?  Much easier to build shared libraries than
+   Make, and possibly easier to build on Windows.
+
+ * Documentation
+   
+     Would be nice...
+
+     Most importantly, some kind of manpage for rdiff, since it's
+     closest to being an end-user tool.  After that, some API
+     documentation.
+
+     Can either persist in doing the API documentation through
+     Doxygen, though I don't think it's very well suited to C
+     libraries.  Perhaps it's better to just write a manpage as a
+     regular document, describing the functions in the most sensible
+     order.
+
+     At the moment, reStructuredText looks like a good bet for an
+     input format.
+
+ * Version numbering: perhaps keep release numbers in sync with
+   (Unix) library versions.
+
  * Optimisations and code cleanups;
  
    scoop.c: Scoop needs major refactor. Perhaps the API needs
@@ -40,7 +66,7 @@ $Id$
  * Don't use the rs_buffers_t structure.
 
    There's something confusing about the existence of this structure.
-   In part it may eb the name.  I think people expect that it will be
+   In part it may be the name.  I think people expect that it will be
    something that behaves like a FILE* or C++ stream, and it really
    does not.  Also, the structure does not behave as an object: it's
    really just a shorthand for passing values in to the encoding
@@ -193,13 +219,24 @@ $Id$
 
  * Testing
 
-   * test broken pipes
+   * Just more testing in general.
+
+   * Perhaps merge in Comfychair into a subdirectory and use that
+     rather than the shell-based scripts.
+
+   * Test broken pipes and that IO errors are handled properly.
 
    * Test files >2GB, >4GB.  Presumably these must be done in streams
      so that the disk requirements to run the test suite are not too
      ridiculous.  I wonder if it will take too long to run these
      tests?  Probably, but perhaps we can afford to run just one
      carefully-chosen test.
+
+ * Security audit
+
+   * If this code was to read differences or sums from random machines
+     on the network, then it's a security boundary.  Make sure that
+     corrupt input data can't make the program crash or misbehave.
 
  * Use slprintf not strnprintf, etc.
 
@@ -227,6 +264,4 @@ $Id$
 
    * We'd know how much signature data we expect to read, rather than
      requiring it to be terminated by the caller.
-
- * Selective trace of particular areas of the library.
 
