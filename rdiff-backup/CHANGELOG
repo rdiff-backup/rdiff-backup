@@ -1,3 +1,10 @@
+New in v0.7.6 (2002/??/??)
+--------------------------
+
+Improved statistics support, and added --print-statistics and
+--calculate-average switches.
+
+
 New in v0.7.5 (2002/05/21)
 --------------------------
 

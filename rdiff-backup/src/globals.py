@@ -8,7 +8,7 @@ import re, os
 class Globals:
 
 	# The current version of rdiff-backup
-	version = "0.7.5"
+	version = "0.7.5.1"
 	
 	# If this is set, use this value in seconds as the current time
 	# instead of reading it from the clock.
@@ -79,6 +79,12 @@ class Globals:
 	# Connection of the backup writer
 	backup_writer = None
 
+	# True if this process is the client invoked by the user
+	isclient = None
+
+	# Connection of the client
+	client_conn = None
+
 	# This list is used by the set function below.  When a new
 	# connection is created with init_connection, its Globals class
 	# will match this one for all the variables mentioned in this
@@ -143,6 +149,9 @@ class Globals:
 
 	# Determines whether or not ssh will be run with the -C switch
 	ssh_compression = 1
+
+	# If true, print statistics after successful backup
+	print_statistics = None
 
 	# On the reader and writer connections, the following will be
 	# replaced by the source and mirror Select objects respectively.

@@ -12,6 +12,9 @@ rdiff-backup \- local/remote mirror and incremental backup
 .BI "| --remove-older-than " time_interval }
 .BI [[[ user@ ] host2.foo ]:: destination_directory ]
 
+.B rdiff-backup --calculate-average
+.I statfile1 statfile2 ...
+
 .SH DESCRIPTION
 .B rdiff-backup
 is a script, written in
@@ -44,6 +47,11 @@ on other options, see the section on
 .TP
 .B -b, --backup-mode
 Force backup mode even if first argument appears to be an increment file.
+.TP
+.B --calculate-average
+Enter calculate average mode.  The arguments should be a number of
+statistics files.  rdiff-backup will print the average of the listed
+statistics files and exit.
 .TP
 .B --change-source-perms
 If this option is set, rdiff-backup will try to change the mode of any
@@ -198,6 +206,11 @@ when listing increments using the
 or
 .B --list-increments
 switches.
+.TP
+.B --print-statistics
+If set, summary statistics will be printed after a successful backup
+If not set, this information will still be available from the
+session_statistics.<time>.data file.
 .TP
 .BI "--quoting-char " char
 Use the specified character for quoting characters specified to be

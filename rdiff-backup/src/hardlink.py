@@ -151,6 +151,7 @@ class Hardlink:
 			fp = tf.open("wb", compress)
 			cPickle.dump(dict, fp)
 			assert not fp.close()
+			tf.setdata()
 		Robust.make_tf_robustaction(init, (tf,), (rpath,)).execute()
 
 	def get_linkrp(cls, data_rpath, time, prefix):
@@ -173,14 +174,17 @@ class Hardlink:
 
 	def final_writedata(cls):
 		"""Write final checkpoint data to rbdir after successful backup"""
-		if not cls._src_index_indicies: return
+		if not cls._src_index_indicies: # no hardlinks, so writing unnecessary
+			cls.final_inc = None
+			return
 		Log("Writing hard link data", 6)
 		if Globals.compression:
-			rp = Globals.rbdir.append("hardlink_data.%s.data.gz" %
-									  Time.curtimestr)
-		else: rp = Globals.rbdir.append("hardlink_data.%s.data" %
-										Time.curtimestr)
-		cls.write_linkdict(rp, cls._src_index_indicies, Globals.compression)
+			cls.final_inc = Globals.rbdir.append("hardlink_data.%s.data.gz" %
+												 Time.curtimestr)
+		else: cls.final_inc = Globals.rbdir.append("hardlink_data.%s.data" %
+												   Time.curtimestr)
+		cls.write_linkdict(cls.final_inc,
+						   cls._src_index_indicies, Globals.compression)
 
 	def retrieve_final(cls, time):
 		"""Set source index dictionary from hardlink_data file if avail"""
