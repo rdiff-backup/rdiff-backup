@@ -2,20 +2,20 @@
  *
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool
- * Copyright (C) 1998 by Andrew Tridgell 
+ * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 1998 by Andrew Tridgell <tridge@samba.org>
  * 
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
@@ -45,18 +45,16 @@
  * back when more data is available. 
  */
 
-/* TODO: Test this through a unix-domain or TCP localhost socket and
- * see what happens.
- * 
+/*
  * TODO: Optionally debug this by simulating short reads.
  *
  * TODO: Make the default buffer smaller and make sure we test what
  * happens when it grows.
  *
  * TODO: Add an option to say we will never seek backwards, and so old
- * data can be discarded immediately.  In fact, this is being
- * implemented now as walker, a new function which will use the same
- * algorithm.
+ * data can be discarded immediately.  There are some notes towards
+ * this in walker.c, but it seems better just to implement them as a
+ * different method on mapptr rather than from scratch.
  *
  * TODO: Is it really worth the trouble of handling files that grow?
  * In other words, if we've seen EOF once then is it better just to
@@ -73,6 +71,9 @@
  * depending on whether we're reading from a socket or from a file, or
  * on whether we expect random or sequential access, or on how useful
  * random access is expected to be.
+ *
+ * TODO: What about a function that turns around the flow of control
+ * and calls a callback for all the available data?  Silly?
  */
 
 /* The Unix98 pread(2) function is pretty interesting: it reads data
@@ -91,6 +92,28 @@
  *
  * On the other hand perhaps having less code is more important than
  * all the code being optimal. */
+
+/*
+ * walker -- an alternative input method for mapptr.  This one is
+ * optimized for reading from a socket, or something similar, where we
+ * never seek forward (skip) or backward (reverse).
+ *
+ * This code uses the same data structure as mapptr, but manipulates
+ * it according to a different algorithm.  You could switch between
+ * them, though there doesn't seem much point.  As with mapptr,
+ * map_walker is called with the desired offset and length of the data
+ * to map.  It may indicate to the caller that more or less data is
+ * available, and it also indicates whether end of file was observed.
+ *
+ * The goals are:
+ * 
+ *  - make as much input data as possible available to the caller
+ *    program.
+ *
+ *  - allocate no more memory for the input buffer than is necessary.
+ *
+ *  - avoid copying data.
+ */
 
 
 /*----------------------------------------------------------------------
@@ -114,16 +137,17 @@
 
 #include "map_p.h"
 
+/* These values are intentionally small at the moment.  It would be
+ * more efficient to make them larger, but these are more likely to
+ * tease bugs out into the open. */
 #define CHUNK_SIZE (1024)
-#define IO_BUFFER_SIZE (4092)
 
 /* We'll read data in windows of this size, unless otherwise indicated. */
 #ifdef HS_BIG_WINDOW
-static ssize_t const DEFAULT_WINDOW_SIZE = (ssize_t) (256 * 1024);
+static ssize_t const DEFAULT_WINDOW_SIZE = ((ssize_t) (256 * 1024));
 #else
-static ssize_t const DEFAULT_WINDOW_SIZE = (ssize_t) (16 * 1024);
+static ssize_t const DEFAULT_WINDOW_SIZE = ((ssize_t) (16 * 1024));
 #endif
-
 
 
 /*
@@ -135,7 +159,7 @@ static ssize_t const DEFAULT_WINDOW_SIZE = (ssize_t) (16 * 1024);
  * seek.
  */
 hs_map_t *
-_hs_map_file(int fd)
+hs_map_file(int fd)
 {
     hs_map_t       *map;
 
@@ -331,13 +355,13 @@ _hs_map_ensure_allocated(hs_map_t *map, size_t window_size)
  * If the file is nonblocking, then any data available will be
  * returned, and LEN will change to reflect this.
  * 
- * The buffer is only valid until the next call to _hs_map_ptr on this map, or
+ * The buffer is only valid until the next call to hs_map_ptr on this map, or
  * until _hs_unmap_file.  You certainly MUST NOT free the buffer.
  * 
  * Iff an error occurs, returns NULL.
  */
 void const *
-_hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
+hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
 {
     /* window_{start,size} define the part of the file that will in
        the future be covered by the map buffer, if we have our way.

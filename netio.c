@@ -1,28 +1,41 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*=				       	-*- c-file-style: "bsd" -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool
- * Copyright (C) 1999 by Andrew Tridgell
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+/*
+     XXX
+      XXX      ``Pick a window, Jimmy: you're leaving''
+       XXX     MANY FUNCTIONS FROM THIS FILE ARE GOING AWAY
+        XXX    
+         XXX   direct network IO is deprecated in favour of mapptr etc
+          XXX
+           XXX
+            XXX
+  */
+
 #include "includes.h"
 
 #ifndef __LCLINT__
+/* On Linux/glibc this file contains constructs that confuse
+ * lclint. */
 #  include <netinet/in.h>		/* ntohs, etc */
 #endif /* __LCLINT__ */
 

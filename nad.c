@@ -2,19 +2,19 @@
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool
+ * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
  * 
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
@@ -169,7 +169,7 @@ hs_encode_begin(int in_fd, hs_write_fn_t write_fn, void *write_priv,
     job = _hs_alloc_struct(hs_encode_job_t);
 
     job->in_fd = in_fd;
-    job->in_map = _hs_map_file(in_fd);
+    job->in_map = hs_map_file(in_fd);
 
     job->write_priv = write_priv;
     job->write_fn = write_fn;
@@ -248,33 +248,11 @@ _hs_nad_map(hs_encode_job_t *job)
     job->map_off = start;
     job->map_len = end - start;
 
-    job->map_p = _hs_map_ptr(job->in_map, job->map_off, &job->map_len,
+    job->map_p = hs_map_ptr(job->in_map, job->map_off, &job->map_len,
                              &job->seen_eof);
 
     return job->map_p;
 }
-
-
-
-#if 0
-#ifdef HS_PAINFUL_HONESTY
-static void
-_hs_painful_check(uint32_t weak_sum, _hs_inbuf_t * inbuf, int short_block)
-{
-    uint32_t        checked_weak;
-
-    checked_weak = _hs_calc_weak_sum(inbuf->buf + inbuf->cursor, short_block);
-    if (weak_sum != checked_weak) {
-	_hs_fatal("internal error: "
-		  "at absolute position %-10d: "
-		  "weak sum by rolling algorithm is %#010x, but "
-		  "calculated from scratch it is %#010x",
-		  inbuf->abspos + inbuf->cursor, weak_sum, checked_weak);
-	abort();
-    }
-}
-#endif				/* HS_PAINFUL_HONESTY */
-#endif /* 0 */
 
 
 /*

@@ -2,19 +2,19 @@
  *
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool
+ * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
  * 
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
@@ -144,7 +144,7 @@ _hs_dec_copy(uint32_t offset, uint32_t length, hs_map_t *old_map,
     }
 
     mapped_len = length;
-    buf = _hs_map_ptr(old_map, offset, &mapped_len, &at_eof);
+    buf = hs_map_ptr(old_map, offset, &mapped_len, &at_eof);
 
     if (buf == 0) {
         _hs_error("error in read callback: off=%d, len=%d", offset, length);
@@ -193,7 +193,7 @@ hs_decode(int oldread_fd,
     stats->op = "decode";
     stats->algorithm = "decode";
 
-    old_map = _hs_map_file(oldread_fd);
+    old_map = hs_map_file(oldread_fd);
 
     hs_mdfour_begin(&newsum);
 

@@ -1,31 +1,31 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*=                                     -*- c-file-style: "bsd" -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
  * Copyright (C) 1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
+/* 
  * This file contains code for searching the sumset for matching
  * values.
  */
 
-/*
+/* 
  * TODO: The common case is that the next block in both streams
  * match. Can we make that a bit faster at all?  We'd need to perhaps
  * add a link forward between blocks in the sum_struct corresponding
@@ -54,11 +54,10 @@ _hs_compare_targets(struct target const *t1, struct target const *t2)
 int
 _hs_build_hash_table(hs_sumset_t * sums)
 {
-    int             i;
+    int                     i;
 
     sums->tag_table = calloc(TABLESIZE, sizeof sums->tag_table[0]);
-    if (sums->count > 0)
-    {
+    if (sums->count > 0) {
 	sums->targets = calloc(sums->count, sizeof(struct target));
 
 	for (i = 0; i < sums->count; i++) {
@@ -66,7 +65,9 @@ _hs_build_hash_table(hs_sumset_t * sums)
 	    sums->targets[i].t = gettag(sums->block_sums[i].weak_sum);
 	}
 
-        /* FIXME: if have comparison_fn_t */
+	/* FIXME: Perhaps if this operating system has comparison_fn_t
+         * like GNU, then use it in the cast.  But really does anyone
+         * care?  */
 	qsort(sums->targets, sums->count,
 	      sizeof(sums->targets[0]),
               (int (*)(const void *, const void *)) _hs_compare_targets);
@@ -84,7 +85,7 @@ _hs_build_hash_table(hs_sumset_t * sums)
 
 
 
-/*
+/* 
  * See if there is a match for the specified block INBUF..BLOCK_LEN in
  * the checksum set, using precalculated WEAK_SUM.
  *
@@ -135,13 +136,11 @@ _hs_search_for_block(hs_weak_sum_t weak_sum,
 	    got_strong = 1;
 	}
 
-        /* FIXME: Use correct dynamic sum length! */
+	/* FIXME: Use correct dynamic sum length! */
 	if (memcmp(strong_sum, sums->block_sums[i].strong_sum,
-                   DEFAULT_SUM_LENGTH) == 0)
-        {
-            /* XXX: This is a remnant of rsync: token number 1 is the
-             * block at offset 0.  It would be good to clear this
-             * up. */
+		   DEFAULT_SUM_LENGTH) == 0) {
+	    /* XXX: This is a remnant of rsync: token number 1 is the * block 
+	     * at offset 0.  It would be good to clear this * up. */
 	    *match_where = (token - 1) * sums->block_len;
 	    return 1;
 	} else {
