@@ -98,6 +98,27 @@ def ListAtTime(mirror_rp, inc_rp, time):
 	old_iter = MirrorStruct.get_mirror_rorp_iter(_rest_time, 1)
 	for rorp in old_iter: yield rorp
 	
+def Compare(src_iter, mirror_rp, inc_rp, compare_time):
+	"""Compares metadata in src_rp dir with metadata in mirror_rp at time"""
+	MirrorStruct.set_mirror_and_rest_times(compare_time)
+	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
+
+	mir_iter = MirrorStruct.get_mirror_rorp_iter(compare_time, 1)
+	collated = rorpiter.Collate2Iters(src_iter, mir_iter)
+	changed_files_found = 0
+	for src_rorp, mir_rorp in collated:
+		if src_rorp == mir_rorp: continue
+		changed_files_found = 1
+		if not mir_rorp: change = "new"
+		elif not src_rorp: change = "deleted"
+		else: change = "changed"
+		path_desc = (src_rorp and src_rorp.get_indexpath() or
+					 mir_rorp.get_indexpath())
+		Log("%-7s %s" % (change, path_desc), 3)
+	if not changed_file_found:
+		Log("No changes found.  Directory matches archive data.", 3)
+	MirrorStruct.close_rf_cache()
+
 
 class MirrorStruct:
 	"""Hold functions to be run on the mirror side"""
