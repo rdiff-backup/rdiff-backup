@@ -1,0 +1,8 @@
+librsync now comes with an RPM .spec file contributed by Peter Braam
+and Shirish Hemant Phatak that will allow you to build an RPM package.
+
+To do this, simply execute the command:
+
+  rpm -ta librsync-0.9.3.tar.gz
+
+$Id$
