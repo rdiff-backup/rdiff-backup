@@ -115,7 +115,9 @@ LDADD = libhsync.la $(LIBOBJS)
 # end users wanting to run them.  So for the time being they are not
 # installed.
 
-bin_PROGRAMS = rsum rdiff
+bin_PROGRAMS = rdiff
+
+rdiff_SOURCES = rdiff.c isprefix.c isprefix.h
 
 check_PROGRAMS = isprefix.driver
 
