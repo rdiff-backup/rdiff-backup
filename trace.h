@@ -3,7 +3,7 @@
  * librsync -- generate and apply network deltas
  * $Id$
  * 
- * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000, 2001, 2004 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -35,6 +35,31 @@
  *
  * fatal terminates the whole process
  */
+
+
+
+/* There is no portable way in C99 to printf 64-bit types.  Many
+ * platforms do have a format which will do it, but it's not
+ * standardized.  Therefore these macros.
+ *
+ * Not all platforms using gnu C necessarily have a corresponding
+ * printf, but it's probably a good starting point.  Most unix systems
+ * seem to use %ll.
+ */
+#if SIZEOF_LONG == 8
+#  define PRINTF_CAST_U64(x) ((unsigned long) (x))
+#  define PRINTF_FORMAT_U64 "%lu"
+#elif defined(__GNUC__)
+#  define PRINTF_CAST_U64(x) ((unsigned long long) (x))
+#  define PRINTF_FORMAT_U64 "%llu"
+#else
+   /* This conversion works everywhere, but it's probably pretty slow.
+    *
+    * Note that 'f' takes a double vararg, not a float. */
+#  define PRINTF_CAST_U64(x) ((double) (x))
+#  define PRINTF_FORMAT_U64 "%.0f"
+#endif
+
 
 #if defined(HAVE_VARARG_MACROS) && defined(__GNUC__)
 /*

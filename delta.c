@@ -333,8 +333,9 @@ inline rs_result rs_appendflush(rs_job_t *job)
 {
     /* if last is a match, emit it and reset last by resetting basis_len */
     if (job->basis_len) {
-        rs_trace("matched %.0f bytes at %.0f!",
-                 (double) job->basis_len, (double) job->basis_pos);
+        rs_trace("matched " PRINTF_FORMAT_U64 " bytes at " PRINTF_FORMAT_U64 "!",
+                 PRINTF_CAST_U64(job->basis_len),
+                 PRINTF_CAST_U64(job->basis_pos));
         rs_emit_copy_cmd(job, job->basis_pos, job->basis_len);
         job->basis_len=0;
         return rs_processmatch(job);
@@ -399,7 +400,8 @@ static rs_result rs_delta_s_slack(rs_job_t *job)
     size_t avail = stream->avail_in;
 
     if (avail) {
-        rs_trace("emit slack delta for %.0f available bytes", (double) avail);
+        rs_trace("emit slack delta for " PRINTF_FORMAT_U64
+                 " available bytes", PRINTF_CAST_U64(avail));
         rs_emit_literal_cmd(job, avail);
         rs_tube_copy(job, avail);
         return RS_RUNNING;

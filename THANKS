@@ -91,6 +91,7 @@ Contributors for 0.9.7 (release pending)
  * Martin Pool <mbp@users.sourceforge.net>
    - sf project admin
    - documentation updates.
+   - bug fixes
 
  * John Goerzen <jgoerzen@complete.org>
    - Debian package maintainence

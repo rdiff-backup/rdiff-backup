@@ -148,9 +148,9 @@ rs_result rs_job_iter(rs_job_t *job, rs_buffers_t *buffers)
         if ((orig_in == buffers->avail_in)  &&  (orig_out == buffers->avail_out)
             && orig_in && orig_out) {
             rs_log(RS_LOG_ERR, "internal error: job made no progress "
-                   "[orig_in=%.0f, orig_out=%.0f, final_in=%.0f, final_out=%.0f]",
-                   (double) orig_in, (double) orig_out, (double) buffers->avail_in,
-                   (double) buffers->avail_out);
+                   "[orig_in=" PRINTF_FORMAT_U64 ", orig_out=" PRINTF_FORMAT_U64 ", final_in=" PRINTF_FORMAT_U64 ", final_out=" PRINTF_FORMAT_U64 "]",
+                   PRINTF_CAST_U64(orig_in), PRINTF_CAST_U64(orig_out), PRINTF_CAST_U64(buffers->avail_in),
+                   PRINTF_CAST_U64(buffers->avail_out));
             return RS_INTERNAL_ERROR;
         }
 

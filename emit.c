@@ -130,8 +130,9 @@ rs_emit_copy_cmd(rs_job_t *job, rs_long_t where, rs_long_t len)
                  len_bytes);
     }       
 
-    rs_trace("emit COPY_N%d_N%d(where=%.0f, len=%.0f), cmd_byte=%#x",
-             where_bytes, len_bytes, (double) where, (double) len, cmd);
+    rs_trace("emit COPY_N%d_N%d(where=" PRINTF_FORMAT_U64
+             ", len=" PRINTF_FORMAT_U64 "), cmd_byte=%#x",
+             where_bytes, len_bytes, PRINTF_CAST_U64(where), PRINTF_CAST_U64(len), cmd);
     rs_squirt_byte(job, cmd);
     rs_squirt_netint(job, where, where_bytes);
     rs_squirt_netint(job, len, len_bytes);

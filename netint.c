@@ -179,6 +179,6 @@ int rs_int_len(rs_long_t val)
     else if (!(val & ~(rs_long_t)0xffffffffffffffff))
         return 8;
     else {
-        rs_fatal("can't encode integer %.0f yet", (double) val);
+        rs_fatal("can't encode integer " PRINTF_FORMAT_U64 " yet", PRINTF_CAST_U64(val));
     }
 }

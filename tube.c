@@ -170,8 +170,8 @@ static void rs_tube_catchup_copy(rs_job_t *job)
 
         job->copy_len -= this_copy;
 
-        rs_trace("copied %.0f bytes from input buffer, %.0f remain to be copied",
-                 (double) this_copy, (double) job->copy_len);
+        rs_trace("copied " PRINTF_FORMAT_U64 " bytes from input buffer, " PRINTF_FORMAT_U64 " remain to be copied",
+                 PRINTF_CAST_U64(this_copy), PRINTF_CAST_U64(job->copy_len));
     }
 }
 
