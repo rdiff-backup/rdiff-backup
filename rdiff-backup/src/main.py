@@ -174,6 +174,8 @@ class Main:
 		Globals.postset_regexp('no_compression_regexp',
 							   Globals.no_compression_regexp_string)
 
+		for conn in Globals.connections: Robust.install_signal_handlers()
+
 	def take_action(self, rps):
 		"""Do whatever self.action says"""
 		if self.action == "server":

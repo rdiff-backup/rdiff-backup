@@ -207,13 +207,18 @@ class HLDestinationStruct:
 		else:
 			iitr = IncrementITR(inc_rpath)
 			iitr.override_changed()
+			Globals.ITR = iitr
+			iitr.Errors = 0
 			return iitr
 
 	def get_MirrorITR(cls, inc_rpath):
 		"""Return MirrorITR, starting from state if available"""
 		if cls._session_info and cls._session_info.ITR:
 			return cls._session_info.ITR
-		else: return MirrorITR(inc_rpath)
+		ITR = MirrorITR(inc_rpath)
+		Globals.ITR = ITR
+		ITR.Errors = 0
+		return ITR
 
 	def patch_and_finalize(cls, dest_rpath, diffs):
 		"""Apply diffs and finalize"""
@@ -244,7 +249,7 @@ class HLDestinationStruct:
 		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
 		finalizer, ITR = cls.get_finalizer(), cls.get_MirrorITR(inc_rpath)
 		Stats.open_dir_stats_file()
-		dsrp = None
+		dsrp, finished_dsrp = None, None
 
 		try:
 			for indexed_tuple in collated:
@@ -255,9 +260,10 @@ class HLDestinationStruct:
 				ITR(dsrp.index, diff_rorp, dsrp)
 				finalizer(dsrp.index, dsrp)
 				SaveState.checkpoint(ITR, finalizer, dsrp)
+				finished_dsrp = dsrp
 			ITR.Finish()
 			finalizer.Finish()
-		except: cls.handle_last_error(dsrp, finalizer, ITR)
+		except: cls.handle_last_error(finished_dsrp, finalizer, ITR)
 
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
 		Stats.close_dir_stats_file()
@@ -269,7 +275,7 @@ class HLDestinationStruct:
 		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
 		finalizer, ITR = cls.get_finalizer(), cls.get_ITR(inc_rpath)
 		Stats.open_dir_stats_file()
-		dsrp = None
+		dsrp, finished_dsrp = None, None
 
 		try:
 			for indexed_tuple in collated:
@@ -281,9 +287,10 @@ class HLDestinationStruct:
 				ITR(index, diff_rorp, dsrp)
 				finalizer(index, dsrp)
 				SaveState.checkpoint(ITR, finalizer, dsrp)
+				finished_dsrp = dsrp
 			ITR.Finish()
 			finalizer.Finish()
-		except: cls.handle_last_error(dsrp, finalizer, ITR)
+		except: cls.handle_last_error(finished_dsrp, finalizer, ITR)
 
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
 		Stats.close_dir_stats_file()
