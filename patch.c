@@ -39,6 +39,7 @@
 #include "netint.h"
 #include "command.h"
 #include "prototab.h"
+#include "stream.h"
 
 
 const int HS_PATCH_TAG = 201210;
@@ -53,13 +54,23 @@ enum hs_patch_state {
 struct hs_patch_job {
         int          dogtag;
 	hs_stream_t *stream;
-        int         (*statefn)(hs_patch_job_t *);
+        enum hs_result (*statefn)(hs_patch_job_t *);
+
+        /* Command byte currently being processed, if any, and lengths
+         * of expected parameters. */
+        int op, len1, len2;
+        int param1, param2;
+
+        enum hs_op_kind kind;
 };
 
 
 
 /* Local prototypes for state functions. */
-static int _hs_patch_s_complete(hs_patch_job_t *UNUSED(job));
+static enum hs_result _hs_patch_s_complete(hs_patch_job_t *);
+static enum hs_result _hs_patch_s_cmdbyte(hs_patch_job_t *);
+static enum hs_result _hs_patch_s_params(hs_patch_job_t *);
+static enum hs_result _hs_patch_s_run(hs_patch_job_t *);
 
 
 
@@ -76,26 +87,74 @@ static void _hs_patch_check(const hs_patch_job_t *job)
  * we've taken that in, we can know how much data to read to get the
  * arguments.
  */
-static int _hs_patch_s_cmd(hs_patch_job_t *job)
+static enum hs_result _hs_patch_s_cmdbyte(hs_patch_job_t *job)
 {
-        int op;
         enum hs_result result;
-        enum hs_op_kind kind;
-
-        if ((result = _hs_suck_n8(job->stream, &op)) != HS_OK)
+        
+        if ((result = _hs_suck_n8(job->stream, &job->op)) != HS_OK)
                 return result;
 
-        assert(op >= 0 && op <= 0xff);
-        kind = _hs_prototab[op].kind;
-        _hs_trace("got command byte 0x%02x (%s)", op, _hs_op_kind_name(kind));
+        assert(job->op >= 0 && job->op <= 0xff);
+        job->kind = _hs_prototab[job->op].kind;
+        job->len1 = _hs_prototab[job->op].len_1;
+        job->len2 = _hs_prototab[job->op].len_2;
+        
+        _hs_trace("got command byte 0x%02x (%s)", job->op,
+                  _hs_op_kind_name(job->kind));
 
-        switch (kind) {
+        if (job->len1)
+                job->statefn = _hs_patch_s_params;
+        else
+                job->statefn = _hs_patch_s_run;
+
+        return HS_OK;
+}
+
+
+/*
+ * Called after reading a command byte to pull in its parameters and
+ * then setup to execute the command.
+ */
+static enum hs_result _hs_patch_s_params(hs_patch_job_t *job)
+{
+        enum hs_result result;
+        int len = job->len1 + job->len2;
+        void *p;
+
+        assert(len);
+
+        result = _hs_scoop_readahead(job->stream, len, &p);
+        if (result != HS_OK)
+                return result;
+
+        /* we now must have LEN bytes buffered */
+        result = _hs_suck_netint(job->stream, job->len1, &job->param1);
+        /* shouldn't fail, since we already checked */
+        assert(result == HS_OK);
+
+        if (job->len2) {
+                result = _hs_suck_netint(job->stream, job->len2, &job->param2);
+                assert(result == HS_OK);
+        }
+
+        job->statefn = _hs_patch_s_run;
+
+        return HS_OK;
+}
+
+
+
+/*
+ * Called when we've read in the whole command and we need to execute it.
+ */
+static enum hs_result _hs_patch_s_run(hs_patch_job_t *job)
+{
+        switch (job->kind) {
         case HS_KIND_EOF:
                 job->statefn = _hs_patch_s_complete;
                 return HS_OK;
-                break;
         default:
-                _hs_error("bogus command byte 0x%02x", op);
+                _hs_error("bogus command 0x%02x", job->op);
                 return HS_BAD_MAGIC;
         }
 }
@@ -105,7 +164,7 @@ static int _hs_patch_s_cmd(hs_patch_job_t *job)
 /*
  * Called after encountering EOF on the patch.
  */
-static int _hs_patch_s_complete(hs_patch_job_t *UNUSED(job))
+static enum hs_result _hs_patch_s_complete(hs_patch_job_t *UNUSED(job))
 {
         return HS_OK;
 }
@@ -114,7 +173,7 @@ static int _hs_patch_s_complete(hs_patch_job_t *UNUSED(job))
 /*
  * Called while we're trying to read the header of the patch.
  */
-static int _hs_patch_s_header(hs_patch_job_t *job)
+static enum hs_result _hs_patch_s_header(hs_patch_job_t *job)
 {
         int v;
         int result;
@@ -127,7 +186,7 @@ static int _hs_patch_s_header(hs_patch_job_t *job)
 
         _hs_trace("got patch magic %#10x", v);
 
-        job->statefn = _hs_patch_s_cmd;
+        job->statefn = _hs_patch_s_cmdbyte;
 
         return HS_RUN_OK;
 }
