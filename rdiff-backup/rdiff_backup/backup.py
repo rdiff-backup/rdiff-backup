@@ -135,7 +135,7 @@ class DestinationStruct:
 		if use_metadata:
 			rorp_iter = eas_acls.GetCombinedMetadataIter(
 				Globals.rbdir, Time.prevtime,
-				acls = Globals.read_acls, eas = Globals.read_eas)
+				acls = Globals.acls_active, eas = Globals.eas_active)
 			if rorp_iter: return rorp_iter
 		return get_iter_from_fs()
 
@@ -268,8 +268,8 @@ class CacheCollatedPostProcess:
 		self.statfileobj = statistics.init_statfileobj()
 		if Globals.file_statistics: statistics.FileStats.init()
 		metadata.MetadataFile.open_file()
-		if Globals.read_eas: eas_acls.ExtendedAttributesFile.open_file()
-		if Globals.read_acls: eas_acls.AccessControlListFile.open_file()
+		if Globals.eas_active: eas_acls.ExtendedAttributesFile.open_file()
+		if Globals.acls_active: eas_acls.AccessControlListFile.open_file()
 
 		# the following should map indicies to lists
 		# [source_rorp, dest_rorp, changed_flag, success_flag, increment]
@@ -368,10 +368,10 @@ class CacheCollatedPostProcess:
 		else: metadata_rorp = None
 		if metadata_rorp and metadata_rorp.lstat():
 			metadata.MetadataFile.write_object(metadata_rorp)
-			if Globals.read_eas and not metadata_rorp.get_ea().empty():
+			if Globals.eas_active and not metadata_rorp.get_ea().empty():
 				eas_acls.ExtendedAttributesFile.write_object(
 					metadata_rorp.get_ea())
-			if Globals.read_acls and not metadata_rorp.get_acl().is_basic():
+			if Globals.acls_active and not metadata_rorp.get_acl().is_basic():
 				eas_acls.AccessControlListFile.write_object(
 					metadata_rorp.get_acl())
 		if Globals.file_statistics:
@@ -427,8 +427,8 @@ class CacheCollatedPostProcess:
 			dir_rp, perms = self.dir_perms_list.pop()
 			dir_rp.chmod(perms)
 		metadata.MetadataFile.close_file()
-		if Globals.read_eas: eas_acls.ExtendedAttributesFile.close_file()
-		if Globals.read_acls: eas_acls.AccessControlListFile.close_file()
+		if Globals.eas_active: eas_acls.ExtendedAttributesFile.close_file()
+		if Globals.acls_active: eas_acls.AccessControlListFile.close_file()
 		if Globals.print_statistics: statistics.print_active_stats()
 		if Globals.file_statistics: statistics.FileStats.close()
 		statistics.write_active_statfileobj()

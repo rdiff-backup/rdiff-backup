@@ -75,7 +75,7 @@ def cmd_schemas2rps(schema_list, remote_schema):
 			   SetConnections.get_cmd_pairs(schema_list, remote_schema))
 
 def InternalBackup(source_local, dest_local, src_dir, dest_dir,
-				   current_time = None):
+				   current_time = None, eas = None, acls = None):
 	"""Backup src to dest internally
 
 	This is like rdiff_backup but instead of running a separate
@@ -96,6 +96,10 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 				   % (SourceDir, dest_dir)
 
 	rpin, rpout = cmd_schemas2rps([src_dir, dest_dir], remote_schema)
+	for attr in ('eas_active', 'eas_write', 'eas_conn'):
+		SetConnections.UpdateGlobal(attr, eas)
+	for attr in ('acls_active', 'acls_write', 'acls_conn'):
+		SetConnections.UpdateGlobal(attr, acls)
 	Main.misc_setup([rpin, rpout])
 	Main.Backup(rpin, rpout)
 	Main.cleanup()
@@ -118,7 +122,8 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir):
 	# Restore old attributes
 	rpath.copy_attribs(src_root, dest_root)
 
-def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
+def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time,
+					eas = None, acls = None):
 	"""Restore mirror_dir to dest_dir at given time
 
 	This will automatically find the increments.XXX.dir representing
@@ -138,6 +143,10 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 				   % (SourceDir, dest_dir)
 
 	mirror_rp, dest_rp = cmd_schemas2rps([mirror_dir, dest_dir], remote_schema)
+	for attr in ('eas_active', 'eas_write', 'eas_conn'):
+		SetConnections.UpdateGlobal(attr, eas)
+	for attr in ('acls_active', 'acls_write', 'acls_conn'):
+		SetConnections.UpdateGlobal(attr, acls)
 	Main.misc_setup([mirror_rp, dest_rp])
 	inc = get_increment_rp(mirror_rp, time)
 	if inc: Main.Restore(get_increment_rp(mirror_rp, time), dest_rp)
@@ -299,10 +308,6 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 
 	"""
 	Globals.set('preserve_hardlinks', compare_hardlinks)
-	Globals.set('write_eas', compare_eas)
-	Globals.set('read_eas', compare_eas)
-	Globals.set('write_acls', compare_acls)
-	Globals.set('read_acls', compare_acls)
 	time = 10000
 	dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
 	restore_rp = rpath.RPath(Globals.local_connection, restore_dirname)
@@ -313,7 +318,8 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 		reset_hardlink_dicts()
 		_reset_connections(src_rp, dest_rp)
 
-		InternalBackup(source_local, dest_local, dirname, dest_dirname, time)
+		InternalBackup(source_local, dest_local, dirname, dest_dirname, time,
+					   eas = compare_eas, acls = compare_acls)
 		time += 10000
 		_reset_connections(src_rp, dest_rp)
 		if compare_backups:
@@ -326,7 +332,8 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 		reset_hardlink_dicts()
 		Myrm(restore_dirname)
 		InternalRestore(dest_local, source_local, dest_dirname,
-						restore_dirname, time)
+						restore_dirname, time,
+						eas = compare_eas, acls = compare_acls)
 		src_rp = rpath.RPath(Globals.local_connection, dirname)
 		assert CompareRecursive(src_rp, restore_rp,
 								compare_eas = compare_eas,

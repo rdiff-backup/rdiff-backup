@@ -1,13 +1,14 @@
 import unittest, os, time, cStringIO, posix1e, pwd, grp
 from commontest import *
 from rdiff_backup.eas_acls import *
-from rdiff_backup import Globals, rpath, Time, user_group
+from rdiff_backup import Globals, rpath, Time, user_group, log
 
 user_group.init_user_mapping()
 user_group.init_group_mapping()
 tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
 restore_dir = rpath.RPath(Globals.local_connection,
 						  "testfiles/restore_out")
+log.Log.setverbosity(7)
 
 class EATest(unittest.TestCase):
 	"""Test extended attributes"""

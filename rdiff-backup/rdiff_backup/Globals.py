@@ -63,28 +63,27 @@ change_mirror_perms = (process_uid != 0)
 # If true, try to reset the atimes of the source partition.
 preserve_atime = None
 
-# If true, save the extended attributes when backing up.
-read_eas = None
+# The following three attributes represent whether extended attributes
+# are supported.  If eas_active is true, then the current session
+# supports them.  If eas_write is true, then the extended attributes
+# should also be written to the destination side.  Finally, eas_conn
+# is relative to the current connection, and should be true iff that
+# particular connection supports extended attributes.
+eas_active = None
+eas_write = None
+eas_conn = None
 
-# If true, preserve the extended attributes on the mirror directory
-# when backing up, or write them to the restore directory.  This
-# requires read_eas.
-write_eas = None
+# The following settings are like the extended attribute settings, but
+# apply to access control lists instead.
+acls_active = None
+acls_write = None
+acls_conn = None
 
-# If true, save access control lists when backup up.
-read_acls = None
-
-# If true, write access control list information to the destination
-# when backing up or restoring.  Requires read_acls.
-write_acls = None
-
-# If true, look for and save resource fork information when backing
-# up.
-read_resource_forks = None
-
-# If true, write resource fork information to destination when backing
-# up or restoring.  Requires read_resource_forks.
-write_resource_forks = None
+# Like above two setting groups, but applies to support of Mac OS X
+# style resource forks.
+resource_forks_active = None
+resource_forks_write = None
+resource_forks_conn = None
 
 # This will be set as soon as the LocalConnection class loads
 local_connection = None
@@ -229,6 +228,10 @@ def set(name, val):
 
 	"""
 	changed_settings.append(name)
+	globals()[name] = val
+
+def set_local(name, val):
+	"""Like set above, but only set current connection"""
 	globals()[name] = val
 
 def set_integer(name, val):

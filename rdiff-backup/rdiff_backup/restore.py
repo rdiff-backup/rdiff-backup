@@ -177,7 +177,7 @@ class MirrorStruct:
 
 		rorp_iter = eas_acls.GetCombinedMetadataIter(
 			Globals.rbdir, rest_time, restrict_index = cls.mirror_base.index,
-			acls = Globals.write_acls, eas = Globals.write_eas)
+			acls = Globals.acls_active, eas = Globals.eas_active)
 		if not rorp_iter:
 			if require_metadata:
 				log.Log.FatalError("Mirror metadata not found")

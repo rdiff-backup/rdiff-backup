@@ -153,12 +153,12 @@ def copy_attribs(rpin, rpout):
 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
 	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
 	if rpin.issym(): return # symlinks have no valid attributes
-	if Globals.write_resource_forks and rpin.isreg():
+	if Globals.resource_forks_write and rpin.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
-	if Globals.write_eas: rpout.write_ea(rpin.get_ea())
+	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
 	rpout.chmod(rpin.getperms())
-	if Globals.write_acls: rpout.write_acl(rpin.get_acl())
+	if Globals.acls_write: rpout.write_acl(rpin.get_acl())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
 
 def copy_attribs_inc(rpin, rpout):
@@ -172,14 +172,14 @@ def copy_attribs_inc(rpin, rpout):
 	log.Log("Copying inc attrs from %s to %s" % (rpin.index, rpout.path), 7)
 	check_for_files(rpin, rpout)
 	if rpin.issym(): return # symlinks have no valid attributes
-	if Globals.write_resource_forks and rpin.isreg() and rpout.isreg():
+	if Globals.resource_forks_write and rpin.isreg() and rpout.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
-	if Globals.write_eas: rpout.write_ea(rpin.get_ea())
+	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if rpin.isdir() and not rpout.isdir():
 		rpout.chmod(rpin.getperms() & 0777)
 	else: rpout.chmod(rpin.getperms())
-	if Globals.write_acls: rpout.write_acl(rpin.get_acl(), map_names = 0)
+	if Globals.acls_write: rpout.write_acl(rpin.get_acl(), map_names = 0)
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
 
 def cmp_attribs(rp1, rp2):
@@ -292,9 +292,9 @@ class RORPath:
 			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
-			elif key == 'ea' and not Globals.read_eas: pass
-			elif key == 'acl' and not Globals.read_acls: pass
-			elif key == 'resourcefork' and not Globals.read_resource_forks:
+			elif key == 'ea' and not Globals.eas_active: pass
+			elif key == 'acl' and not Globals.acls_active: pass
+			elif key == 'resourcefork' and not Globals.resource_forks_active:
 				pass
 			elif (key == 'inode' and
 				  (not self.isreg() or self.getnumlinks() == 1 or
@@ -324,9 +324,9 @@ class RORPath:
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'inode': pass
-			elif key == 'ea' and not Globals.write_eas: pass
-			elif key == 'acl' and not Globals.write_acls: pass
-			elif key == 'resourcefork' and not Globals.write_resource_forks:
+			elif key == 'ea' and not Globals.eas_write: pass
+			elif key == 'acl' and not Globals.acls_write: pass
+			elif key == 'resourcefork' and not Globals.resource_forks_write:
 				pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return 0
@@ -653,13 +653,7 @@ class RPath(RORPath):
 	def setdata(self):
 		"""Set data dictionary using C extension"""
 		self.data = self.conn.C.make_file_dict(self.path)
-		if not self.lstat(): return
-		self.data['uname'] = self.conn.user_group.uid2uname(self.data['uid'])
-		self.data['gname'] = self.conn.user_group.gid2gname(self.data['gid'])
-		if Globals.read_eas: self.data['ea'] = self.conn.rpath.ea_get(self)
-		if Globals.read_acls: self.data['acl'] = self.conn.rpath.acl_get(self)
-		if Globals.read_resource_forks and self.isreg():
-			self.get_resource_fork()
+		if self.lstat(): self.conn.rpath.setdata_local(self)
 
 	def make_file_dict_old(self):
 		"""Create the data dictionary"""
@@ -1097,9 +1091,23 @@ class RPathFileHook:
 		return result
 
 
+def setdata_local(rpath):
+	"""Set eas/acls, uid/gid, resource fork in data dictionary
+
+	This is a global function because it must be called locally, since
+	these features may exist or not depending on the connection.
+
+	"""
+	assert rpath.conn is Globals.local_connection
+	rpath.data['uname'] = user_group.uid2uname(rpath.data['uid'])
+	rpath.data['gname'] = user_group.gid2gname(rpath.data['gid'])
+	if Globals.eas_conn: rpath.data['ea'] = ea_get(rpath)
+	if Globals.acls_conn: rpath.data['acl'] = acl_get(rpath)
+	if Globals.resource_forks_conn and rpath.isreg():
+		rpath.get_resource_fork()
+
+
 # These two are overwritten by the eas_acls.py module.  We can't
-# import that module directory because of circular dependency
-# problems.
+# import that module directly because of circular dependency problems.
 def acl_get(rp): assert 0
 def ea_get(rp): assert 0
-
