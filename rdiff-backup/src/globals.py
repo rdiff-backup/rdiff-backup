@@ -8,7 +8,7 @@ import re, os
 class Globals:
 
 	# The current version of rdiff-backup
-	version = "0.6.0"
+	version = "0.6.1"
 	
 	# This determines how many bytes to read at a time when copying
 	blocksize = 32768
