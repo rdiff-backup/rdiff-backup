@@ -1,4 +1,4 @@
-import unittest, os
+import unittest, os, time
 from commontest import *
 from rdiff_backup import Globals, rpath, fs_abilities
 
@@ -11,7 +11,7 @@ class FSAbilitiesTest(unittest.TestCase):
 	the expected values below.
 
 	"""
-	# Describes standard linux file system
+	# Describes standard linux file system with acls/eas
 	dir_to_test = "testfiles"
 	eas = acls = 1
 	chars_to_quote = ""
@@ -36,7 +36,13 @@ class FSAbilitiesTest(unittest.TestCase):
 	def testReadWrite(self):
 		"""Test basic querying read/write"""
 		base_dir = rpath.RPath(Globals.local_connection, self.dir_to_test)
-		fsa = fs_abilities.FSAbilities().init_readwrite(base_dir)
+		new_dir = base_dir.append("fs_abilitiestest")
+		if new_dir.lstat(): Myrm(new_dir.path)
+		new_dir.setdata()
+		new_dir.mkdir()
+		t = time.time()
+		fsa = fs_abilities.FSAbilities().init_readwrite(new_dir)
+		print "Time elapsed = ", time.time() - t
 		assert fsa.read_only == 0, fsa.read_only
 		assert fsa.eas == self.eas, fsa.eas
 		assert fsa.acls == self.acls, fsa.acls
@@ -45,6 +51,14 @@ class FSAbilitiesTest(unittest.TestCase):
 		assert fsa.hardlinks == self.hardlinks, fsa.hardlinks
 		assert fsa.fsync_dirs == self.fsync_dirs, fsa.fsync_dirs
 
+		ctq_rp = new_dir.append("chars_to_quote")
+		assert ctq_rp.lstat()
+		fp = ctq_rp.open('rb')
+		chars_to_quote = fp.read()
+		assert not fp.close()
+		assert chars_to_quote == self.chars_to_quote, chars_to_quote
+
+		new_dir.delete()
 
 if __name__ == "__main__": unittest.main()
 
