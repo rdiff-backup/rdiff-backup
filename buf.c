@@ -21,8 +21,8 @@
  */
 
                               /*
-                               * Pick a window, Jimmy, you're leaving.
-                               *   -- Martin Schwenke, regularly
+                               | Pick a window, Jimmy, you're leaving.
+                               |   -- Martin Schwenke, regularly
                                */
 
 
@@ -61,23 +61,21 @@ int rs_inbuflen = 16000, rs_outbuflen = 16000;
 
 struct rs_filebuf {
         FILE *f;
-        rs_buffers_t     *stream;
         char            *buf;
         size_t          buf_len;
 };
 
 
 
-rs_filebuf_t *rs_filebuf_new(FILE *f, rs_buffers_t *stream, size_t buf_len) 
+rs_filebuf_t *rs_filebuf_new(FILE *f, size_t buf_len) 
 {
-        rs_filebuf_t *pf = rs_alloc_struct(rs_filebuf_t);
+    rs_filebuf_t *pf = rs_alloc_struct(rs_filebuf_t);
 
-        pf->buf = rs_alloc(buf_len, "file buffer");
-        pf->buf_len = buf_len;
-        pf->f = f;
-        pf->stream = stream;
+    pf->buf = rs_alloc(buf_len, "file buffer");
+    pf->buf_len = buf_len;
+    pf->f = f;
 
-        return pf;
+    return pf;
 }
 
 
@@ -93,92 +91,97 @@ void rs_filebuf_free(rs_filebuf_t *fb)
  * BUF, and let the stream use that.  On return, SEEN_EOF is true if
  * the end of file has passed into the stream.
  */
-rs_result rs_infilebuf_fill(rs_filebuf_t *fb)
+rs_result rs_infilebuf_fill(rs_job_t *job, rs_buffers_t *buf,
+                            void *opaque)
 {
-        rs_buffers_t * const     stream = fb->stream;
-        FILE                    *f = fb->f;
-        int                     len;
+    int                     len;
+    rs_filebuf_t            *fb = (rs_filebuf_t *) opaque;
+    FILE                    *f = fb->f;
         
-        /* This is only allowed if either the stream has no input buffer
-         * yet, or that buffer could possibly be BUF. */
-        if (stream->next_in != NULL) {
-                assert(stream->avail_in <= fb->buf_len);
-                assert(stream->next_in >= fb->buf);
-                assert(stream->next_in <= fb->buf + fb->buf_len);
-        } else {
-                assert(stream->avail_in == 0);
-        }
+    /* This is only allowed if either the buf has no input buffer
+     * yet, or that buffer could possibly be BUF. */
+    if (buf->next_in != NULL) {
+        assert(buf->avail_in <= fb->buf_len);
+        assert(buf->next_in >= fb->buf);
+        assert(buf->next_in <= fb->buf + fb->buf_len);
+    } else {
+        assert(buf->avail_in == 0);
+    }
 
-        if (stream->eof_in)
-            return RS_DONE;
-
-        if (stream->avail_in)
-            /* Still some data remaining.  Perhaps we should read
-               anyhow? */
-            return RS_DONE;
-        
-        len = fread(fb->buf, 1, fb->buf_len, f);
-        if (len <= 0) {
-            if (feof(f)) {
-                rs_trace("seen end of file on input");
-                stream->eof_in = 1;
-            } else if (ferror(f)) {
-                rs_error("error filling stream from file: %s",
-                         strerror(errno));
-                return RS_IO_ERROR;
-            }
-        }
-        stream->avail_in = len;
-        stream->next_in = fb->buf;
-
+    if (buf->eof_in || (buf->eof_in = feof(f))) {
+        rs_trace("seen end of file on input");
+        buf->eof_in = 1;
         return RS_DONE;
+    }
+
+    if (buf->avail_in)
+        /* Still some data remaining.  Perhaps we should read
+           anyhow? */
+        return RS_DONE;
+        
+    len = fread(fb->buf, 1, fb->buf_len, f);
+    if (len < 0) {
+        if (ferror(f)) {
+            rs_error("error filling buf from file: %s",
+                     strerror(errno));
+            return RS_IO_ERROR;
+        } else {
+            rs_error("no error bit, but got %d return when trying to read",
+                     len);
+            return RS_IO_ERROR;
+        }
+    }
+    buf->avail_in = len;
+    buf->next_in = fb->buf;
+
+    return RS_DONE;
 }
 
 
 /*
- * The stream is already using BUF for an output buffer, and probably
+ * The buf is already using BUF for an output buffer, and probably
  * contains some buffered output now.  Write this out to F, and reset
  * the buffer cursor.
  */
-rs_result rs_outfilebuf_drain(rs_filebuf_t *fb)
+rs_result rs_outfilebuf_drain(rs_job_t *job, rs_buffers_t *buf, void *opaque)
 {
-        int present;
-        rs_buffers_t * const stream = fb->stream;
-        FILE *f = fb->f;
+    int present;
+    rs_filebuf_t *fb = (rs_filebuf_t *) opaque;
+    FILE *f = fb->f;
 
-        /* This is only allowed if either the stream has no output buffer
-         * yet, or that buffer could possibly be BUF. */
-        if (stream->next_out == NULL) {
-                assert(stream->avail_out == 0);
+    /* This is only allowed if either the buf has no output buffer
+     * yet, or that buffer could possibly be BUF. */
+    if (buf->next_out == NULL) {
+        assert(buf->avail_out == 0);
                 
-                stream->next_out = fb->buf;
-                stream->avail_out = fb->buf_len;
+        buf->next_out = fb->buf;
+        buf->avail_out = fb->buf_len;
                 
-                return RS_DONE;
-        }
-        
-        assert(stream->avail_out <= fb->buf_len);
-        assert(stream->next_out >= fb->buf);
-        assert(stream->next_out <= fb->buf + fb->buf_len);
-
-        present = stream->next_out - fb->buf;
-        if (present > 0) {
-                int result;
-                
-                assert(present > 0);
-
-                result = fwrite(fb->buf, 1, present, f);
-                if (present != result) {
-                        rs_error("error draining stream to file: %s",
-                                  strerror(errno));
-                        return RS_IO_ERROR;
-                }
-
-                stream->next_out = fb->buf;
-                stream->avail_out = fb->buf_len;
-        }
-        
         return RS_DONE;
+    }
+        
+    assert(buf->avail_out <= fb->buf_len);
+    assert(buf->next_out >= fb->buf);
+    assert(buf->next_out <= fb->buf + fb->buf_len);
+
+    present = buf->next_out - fb->buf;
+    if (present > 0) {
+        int result;
+                
+        assert(present > 0);
+
+        result = fwrite(fb->buf, 1, present, f);
+        if (present != result) {
+            rs_error("error draining buf to file: %s",
+                     strerror(errno));
+            return RS_IO_ERROR;
+        }
+
+        buf->next_out = fb->buf;
+        buf->avail_out = fb->buf_len;
+    }
+        
+    return RS_DONE;
 }
 
 

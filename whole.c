@@ -66,34 +66,24 @@ rs_result
 rs_whole_run(rs_job_t *job, FILE *in_file, FILE *out_file)
 {
     rs_buffers_t    buf;
-    rs_result       result, iores;
+    rs_result       result;
     rs_filebuf_t    *in_fb = NULL, *out_fb = NULL;
 
-    rs_bzero(&buf, sizeof buf);
-
     if (in_file)
-        in_fb = rs_filebuf_new(in_file, &buf, rs_inbuflen);
+        in_fb = rs_filebuf_new(in_file, rs_inbuflen);
 
     if (out_file)
-        out_fb = rs_filebuf_new(out_file, &buf, rs_outbuflen);
+        out_fb = rs_filebuf_new(out_file, rs_outbuflen);
 
-    do {
-        if (!buf.eof_in && in_fb) {
-            iores = rs_infilebuf_fill(in_fb);
-            if (iores != RS_DONE)
-                return iores;
-        }
+    result = rs_job_drive(job, &buf,
+                          in_fb ? rs_infilebuf_fill : NULL, in_fb,
+                          out_fb ? rs_outfilebuf_drain : NULL, out_fb);
 
-        result = rs_job_iter(job, &buf);
-        if (result != RS_DONE  &&  result != RS_BLOCKED)
-            return result;
+    if (in_fb)
+        rs_filebuf_free(in_fb);
 
-        if (out_fb) {
-            iores = rs_outfilebuf_drain(out_fb);
-            if (iores != RS_DONE)
-                return iores;
-        }
-    } while (result != RS_DONE);
+    if (out_fb)
+        rs_filebuf_free(out_fb);
 
     return result;
 }

@@ -22,10 +22,10 @@
 
 typedef struct rs_filebuf rs_filebuf_t;
 
-rs_filebuf_t *rs_filebuf_new(FILE *f, rs_buffers_t *stream, size_t buf_len);
+rs_filebuf_t *rs_filebuf_new(FILE *f, size_t buf_len);
 
 void rs_filebuf_free(rs_filebuf_t *fb);
 
-rs_result rs_infilebuf_fill(rs_filebuf_t *fb);
+rs_result rs_infilebuf_fill(rs_job_t *, rs_buffers_t *buf, void *fb);
 
-rs_result rs_outfilebuf_drain(rs_filebuf_t *);
+rs_result rs_outfilebuf_drain(rs_job_t *, rs_buffers_t *, void *fb);

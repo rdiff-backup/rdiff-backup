@@ -211,3 +211,40 @@ rs_job_input_is_ending(rs_job_t *job)
 {
     return job->stream->eof_in;
 }
+
+
+
+/**
+ * Actively process a job, by making callbacks to fill and empty the
+ * buffers until the job is done.
+ */
+rs_result
+rs_job_drive(rs_job_t *job, rs_buffers_t *buf,
+             rs_driven_cb in_cb, void *in_opaque,
+             rs_driven_cb out_cb, void *out_opaque)
+{
+    rs_result       result, iores;
+
+    rs_bzero(buf, sizeof *buf);
+
+    do {
+        if (!buf->eof_in && in_cb) {
+            iores = in_cb(job, buf, in_opaque);
+            if (iores != RS_DONE)
+                return iores;
+        }
+
+        result = rs_job_iter(job, buf);
+        if (result != RS_DONE  &&  result != RS_BLOCKED)
+            return result;
+
+        if (out_cb) {
+            iores = (out_cb)(job, buf, out_opaque);
+            if (iores != RS_DONE)
+                return iores;
+        }
+    } while (result != RS_DONE);
+
+    return result;
+}
+
