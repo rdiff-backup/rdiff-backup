@@ -78,12 +78,18 @@ static void _hs_tube_catchup_literal(hs_stream_t *stream)
         if ((size_t) len > stream->avail_out)
                 len = stream->avail_out;
 
+        if (!stream->avail_out) {
+                _hs_trace("no output space available");
+                return;
+        }
+
         memcpy(stream->next_out, tube->lit_buf, len);
         stream->next_out += len;
         stream->avail_out -= len;
 
         remain = tube->lit_len - len;
-        _hs_trace("transmitted %d literal bytes from tube, %d remain", len, remain);
+        _hs_trace("transmitted %d literal bytes from tube, %d remain",
+                  len, remain);
 
         if (remain > 0) {
                 /* Still something left in the tube... */
