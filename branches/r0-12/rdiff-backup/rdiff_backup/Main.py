@@ -291,8 +291,7 @@ def backup_init_dirs(rpin, rpout):
 
 	if rpout.lstat():
 		if rpout.isdir() and not rpout.listdir(): # rpout is empty dir
-			if Globals.change_permissions:
-				rpout.chmod(0700) # just make sure permissions aren't too lax
+			rpout.chmod(0700) # just make sure permissions aren't too lax
 		elif not datadir.lstat() and not force: Log.FatalError(
 """Destination directory
 
