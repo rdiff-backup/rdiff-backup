@@ -2,8 +2,10 @@
 
 import os, re, shutil, time
 
-filelist = ["rdiff-backup", "CHANGELOG", "COPYING", "README", "FAQ.html"]
 SourceDir = "src"
+filelist = [SourceDir + "/rdiff-backup", "CHANGELOG",
+			"COPYING", "README", "FAQ.html"]
+
 
 # Various details about the files must also be specified by the rpm
 # spec template.
@@ -12,7 +14,7 @@ spec_template = "dist/rdiff-backup.spec"
 
 def GetVersion():
 	"""Return version string by reading in ./rdiff-backup"""
-	fp = open(SourceDir + "rdiff-backup", "r")
+	fp = open(SourceDir + "/rdiff-backup", "r")
 	match = re.search("Version (.*?) ", fp.read())
 	fp.close()
 	return match.group(1)
@@ -35,8 +37,12 @@ def MakeTar(version):
 	"""Create rdiff-backup tar file"""
 	tardir = "rdiff-backup-%s" % version
 	tarfile = "rdiff-backup-%s.tar.gz" % version
+	try:
+		os.lstat(tardir)
+		os.system("rm -rf " + tardir)
+	except OSError: pass
 	os.mkdir(tardir)
-	for file in filelist: shutil.copyfile(file, os.path.join(tardir, file))
+	for file in filelist: os.system("cp -a %s %s" % (file, tardir))
 	os.chmod(os.path.join(tardir, "rdiff-backup"), 0755)
 	CopyMan(os.path.join(tardir, "rdiff-backup.1"), version)
 	os.system("tar -cvzf %s %s" % (tarfile, tardir))
@@ -55,7 +61,10 @@ def MakeSpecFile(version):
 	return specfile
 
 def Main():
+	cwd = os.getcwd()
+	os.chdir(SourceDir)
 	assert not os.system("./Make")
+	os.chdir(cwd)
 	version = GetVersion()
 	print "Processing version " + version
 	tarfile = MakeTar(version)

@@ -2,9 +2,11 @@
 
 import os, sys, re
 
+SourceDir = "src"
+
 def GetVersion():
 	"""Return version string by reading in ./rdiff-backup"""
-	fp = open("rdiff-backup", "r")
+	fp = open(SourceDir + "/rdiff-backup", "r")
 	match = re.search("Version (.*?) ", fp.read())
 	fp.close()
 	return match.group(1)
