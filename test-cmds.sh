@@ -15,4 +15,4 @@ tmp=$tmpdir/bin.tmp
 
 run_test hsemit < $cmds > $tmp
 run_test hsinhale > $out < $tmp
-run_test diff -b -q $out $cmds
+run_test cmp $out $cmds

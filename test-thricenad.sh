@@ -10,7 +10,7 @@
 
 # `What I tell you three times is true'
 
-files=`find /usr -type f|head -100`
+files=`make_manyfiles`
 
 for data in $files
 do

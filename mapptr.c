@@ -1,4 +1,4 @@
- /*                                      -*- c-file-style: "bsd" -*-
+/*                                      -*- c-file-style: "bsd" -*-
  *
  * $Id$
  * 

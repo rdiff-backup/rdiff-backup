@@ -14,7 +14,7 @@ new=$tmpdir/new.tmp
 cmds=$tmpdir/cmds
 expect=$tmpdir/expect
 
-run_test cat $srcdir/*.{c,h,sh} >$from
+run_test make_input >$from
 
 run_test genmaptest forward 5000 $cmds $expect $from
 

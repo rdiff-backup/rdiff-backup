@@ -2,7 +2,7 @@
  *
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool
+ * Copyright (C) 1999, 2000 by Martin Pool
  * Copyright (C) Andrew Tridgell 1996
  * Copyright (C) Paul Mackerras 1996
  * 

@@ -13,7 +13,7 @@ cmds=$tmpdir/cmds
 expect=$tmpdir/expect
 port=$tmpdir/port
 
-run_test cat $srcdir/*.{c,h,sh} >$from
+run_test make_input >$from
 
 run_test genmaptest forward 2000 $cmds $expect $from
 
