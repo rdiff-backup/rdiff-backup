@@ -261,7 +261,7 @@ void rs_sumset_dump(rs_signature_t const *);
  * \return The ::rs_result that caused iteration to stop.
  *
  * \sa rs_buffers_t
- * \sa api_buffers
+ * \sa \ref api_buffers
  */
 struct rs_buffers_s {
     char *next_in;		/**< Next input byte */
@@ -278,7 +278,7 @@ struct rs_buffers_s {
  * library.
  *
  * \sa struct rs_buffers_s
- * \sa api_buffers
+ * \sa \ref api_buffers
  */
 typedef struct rs_buffers_s rs_buffers_t;
 
