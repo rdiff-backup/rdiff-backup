@@ -155,6 +155,8 @@ def copy_attribs(rpin, rpout):
 	if rpin.issym(): return # symlinks have no valid attributes
 	if Globals.resource_forks_write and rpin.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
+	if Globals.carbonfile_write and rpin.isreg():
+		rpout.write_carbonfile(rpin.get_carbonfile())
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
 	rpout.chmod(rpin.getperms())
@@ -174,6 +176,8 @@ def copy_attribs_inc(rpin, rpout):
 	if rpin.issym(): return # symlinks have no valid attributes
 	if Globals.resource_forks_write and rpin.isreg() and rpout.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
+	if Globals.carbonfile_write and rpin.isreg() and rpout.isreg():
+		rpout.write_carbonfile(rpin.get_carbonfile())
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if rpin.isdir() and not rpout.isdir():
@@ -294,6 +298,7 @@ class RORPath:
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'ea' and not Globals.eas_active: pass
 			elif key == 'acl' and not Globals.acls_active: pass
+			elif key == 'carbonfile' and not Globals.carbonfile_active: pass
 			elif key == 'resourcefork' and not Globals.resource_forks_active:
 				pass
 			elif key == 'uname' or key == 'gname':
@@ -333,6 +338,7 @@ class RORPath:
 			elif key == 'inode': pass
 			elif key == 'ea' and not Globals.eas_write: pass
 			elif key == 'acl' and not Globals.acls_write: pass
+			elif key == 'carbonfile' and not Globals.carbonfile_write: pass
 			elif key == 'resourcefork' and not Globals.resource_forks_write:
 				pass
 			elif (not other.data.has_key(key) or
@@ -588,6 +594,18 @@ class RORPath:
 	def get_ea(self):
 		"""Return extended attributes object"""
 		return self.data['ea']
+
+	def has_carbonfile(self):
+		"""True if rpath has a carbonfile parameter"""
+		return self.data.has_key('carbonfile')
+
+	def get_carbonfile(self):
+		"""Returns the carbonfile data"""
+		return self.data['carbonfile']
+
+	def set_carbonfile(self, cfile):
+		"""Record carbonfile data in dictionary.  Does not write."""
+		self.data['carbonfile'] = cfile
 
 	def has_resource_fork(self):
 		"""True if rpath has a resourcefork parameter"""
@@ -1059,6 +1077,41 @@ class RPath(RORPath):
 		ea.write_to_rp(self)
 		self.data['ea'] = ea
 
+	def get_carbonfile(self):
+		"""Return resource fork data, loading from filesystem if
+		necessary."""
+		from Carbon.File import FSSpec
+		import MacOS
+		try: return self.data['cfile']
+		except KeyError: pass
+
+		try:
+			fsobj = FSSpec(self.path)
+			finderinfo = fsobj.FSpGetFInfo()
+			cfile = {'creator': finderinfo.Creator,
+					 'type': finderinfo.Type,
+					 'location': finderinfo.Location,
+					 'flags': finderinfo.Flags}
+			self.data['carbonfile'] = cfile
+			return cfile
+		except MacOS.Error:
+			self.data['carbonfile'] = None 
+			return self.data['carbonfile']
+
+	def write_carbonfile(self, cfile):
+		"""Write new carbon data to self."""
+		log.Log("Writing carbon data to %s" % (self.index,), 7)
+		from Carbon.File import FSSpec
+		import MacOS
+		fsobj = FSSpec(self.path)
+		finderinfo = fsobj.FSpGetFInfo()
+		finderinfo.Creator = cfile['creator']
+		finderinfo.Type = cfile['type']
+		finderinfo.Location = cfile['location']
+		finderinfo.Flags = cfile['flags']
+		fsobj.FSpSetFInfo(finderinfo)
+		self.set_carbonfile(cfile)
+
 	def get_resource_fork(self):
 		"""Return resource fork data, setting if necessary"""
 		assert self.isreg()
@@ -1112,7 +1165,7 @@ def setdata_local(rpath):
 	if Globals.acls_conn: rpath.data['acl'] = acl_get(rpath)
 	if Globals.resource_forks_conn and rpath.isreg():
 		rpath.get_resource_fork()
-
+	if Globals.carbonfile_conn and rpath.isreg(): rpath.get_carbonfile()
 
 # These two are overwritten by the eas_acls.py module.  We can't
 # import that module directly because of circular dependency problems.

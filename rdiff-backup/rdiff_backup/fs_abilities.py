@@ -40,6 +40,7 @@ class FSAbilities:
 	fsync_dirs = None # True if directories can be fsync'd
 	dir_inc_perms = None # True if regular files can have full permissions
 	resource_forks = None # True if regular_file/rsrc holds resource fork
+	carbonfile = None # True if Mac Carbon file data is supported. 
 	name = None # Short string, not used for any technical purpose
 	read_only = None # True if capabilities were determined non-destructively
 
@@ -92,7 +93,8 @@ class FSAbilities:
 		add_boolean_list([('Access control lists', self.acls),
 						  ('Extended attributes', self.eas),
 						  ('Mac OS X style resource forks',
-						   self.resource_forks)])
+						   self.resource_forks),
+						  ('Mac OS X Finder information', self.carbonfile)])
 		s.append(s[0])
 		return '\n'.join(s)
 
@@ -112,6 +114,7 @@ class FSAbilities:
 		self.set_eas(rp, 0)
 		self.set_acls(rp)
 		self.set_resource_fork_readonly(rp)
+		self.set_carbonfile()
 		return self
 
 	def init_readwrite(self, rbdir, use_ctq_file = 1,
@@ -145,6 +148,7 @@ class FSAbilities:
 		self.set_acls(subdir)
 		self.set_dir_inc_perms(subdir)
 		self.set_resource_fork_readwrite(subdir)
+		self.set_carbonfile()
 		if override_chars_to_quote is None: self.set_chars_to_quote(subdir)
 		else: self.chars_to_quote = override_chars_to_quote
 		if use_ctq_file: self.compare_chars_to_quote(rbdir)
@@ -325,6 +329,23 @@ rdiff-backup-data/chars_to_quote.
 		if test_rp.getperms() == 07777: self.dir_inc_perms = 1
 		else: self.dir_inc_perms = 0
 		test_rp.delete()
+
+	def set_carbonfile(self):
+		"""Test for support of the Mac Carbon library.  This library
+		can be used to obtain Finder info (creator/type)."""
+		try:
+			import Carbon.File
+			import MacOS
+		except:
+			self.carbonfile = 0
+			return
+
+		try: x = Carbon.File.FSSpec('.')
+		except:
+			self.carbonfile = 0
+			return
+
+		self.carbonfile = 1
 
 	def set_resource_fork_readwrite(self, dir_rp):
 		"""Test for resource forks by writing to regular_file/rsrc"""
