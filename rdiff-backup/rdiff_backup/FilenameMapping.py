@@ -27,9 +27,7 @@ them over the usual 255 character limit.
 """
 
 import re
-from log import *
-from robust import *
-import Globals
+import Globals, log
 
 max_filename_length = 255
 
@@ -55,8 +53,8 @@ def set_init_quote_vals_local():
 	global chars_to_quote, quoting_char
 	chars_to_quote = Globals.chars_to_quote
 	if len(Globals.quoting_char) != 1:
-		Log.FatalError("Expected single character for quoting char,"
-					   "got '%s' instead" % (Globals.quoting_char,))
+		log.Log.FatalError("Expected single character for quoting char,"
+						   "got '%s' instead" % (Globals.quoting_char,))
 	quoting_char = Globals.quoting_char
 	init_quoting_regexps()
 
@@ -68,8 +66,8 @@ def init_quoting_regexps():
 				 re.compile("[%s%s]" % (chars_to_quote, quoting_char), re.S)
 		unquoting_regexp = re.compile("%s[0-9]{3}" % quoting_char, re.S)
 	except re.error:
-		Log.FatalError("Error '%s' when processing char quote list %s" %
-					   (re.error, chars_to_quote))
+		log.Log.FatalError("Error '%s' when processing char quote list %s" %
+						   (re.error, chars_to_quote))
 
 def quote(path):
 	"""Return quoted version of given path
@@ -94,19 +92,5 @@ def unquote_single(match):
 	"""Unquote a single quoted character"""
 	assert len(match.group()) == 4
 	return chr(int(match.group()[1:]))
-
-def get_quoted_dir_children(rpath):
-	"""For rpath directory, return list of quoted children in dir"""
-	if not rpath.isdir(): return []
-	dir_pairs = [(unquote(filename), filename)
-				 for filename in Robust.listrp(rpath)]
-	dir_pairs.sort() # sort by real index, not quoted part
-	child_list = []
-	for unquoted, filename in dir_pairs:
-		childrp = rpath.append(unquoted)
-		childrp.quote_path()
-		child_list.append(childrp)
-	return child_list
-
 
 

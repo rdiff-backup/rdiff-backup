@@ -1,6 +1,6 @@
 import unittest
 from commontest import *
-from rdiff_backup.C import *
+from rdiff_backup import C
 from rdiff_backup.rpath import *
 
 class CTest(unittest.TestCase):

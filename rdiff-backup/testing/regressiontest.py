@@ -1,8 +1,6 @@
 import unittest, os
 from commontest import *
-from rdiff_backup.log import *
-from rdiff_backup.rpath import *
-from rdiff_backup import Globals, SetConnections
+from rdiff_backup import Globals, SetConnections, log, rpath
 
 
 """Regression tests
@@ -14,13 +12,13 @@ testfiles
 
 Globals.set('change_source_perms', 1)
 Globals.counter = 0
-Log.setverbosity(7)
+log.Log.setverbosity(7)
 
 class Local:
 	"""This is just a place to put increments relative to the local
 	connection"""
 	def get_local_rp(extension):
-		return RPath(Globals.local_connection, "testfiles/" + extension)
+		return rpath.RPath(Globals.local_connection, "testfiles/" + extension)
 
 	inc1rp = get_local_rp('increment1')
 	inc2rp = get_local_rp('increment2')
@@ -55,10 +53,10 @@ class PathSetter(unittest.TestCase):
 		else: return ('./', Globals.local_connection)
 
 	def get_src_rp(self, path):
-		return RPath(self.src_conn, self.src_prefix + path)
+		return rpath.RPath(self.src_conn, self.src_prefix + path)
 
 	def get_dest_rp(self, path):
-		return RPath(self.dest_conn, self.dest_prefix + path)
+		return rpath.RPath(self.dest_conn, self.dest_prefix + path)
 
 	def set_rbdir(self, rpout):
 		"""Create rdiff-backup-data dir if not already, tell everyone"""
@@ -89,9 +87,10 @@ class PathSetter(unittest.TestCase):
 						  self.get_prefix_and_conn(dest_path, dest_return)
 		SetConnections.BackupInitConnections(self.src_conn, self.dest_conn)
 
-		os.system(MiscDir+"/myrm testfiles/output* testfiles/restoretarget* "
-				  "testfiles/noperms_output testfiles/root_output "
-				  "testfiles/unreadable_out")
+		assert not os.system("rm -rf testfiles/output* "
+							 "testfiles/restoretarget* "
+							 "testfiles/noperms_output testfiles/root_output "
+							 "testfiles/unreadable_out")
 
 		self.inc1rp = self.get_src_rp("testfiles/increment1")
 		self.inc2rp = self.get_src_rp('testfiles/increment2')
@@ -157,7 +156,7 @@ class IncrementTest1(unittest.TestCase):
 class IncrementTest2(PathSetter):
 	def OldtestRecoveryLocal(self):
 		"""Test to see if rdiff-backup can continue with bad increment"""
-		os.system(MiscDir+'/myrm testfiles/recovery_out_backup')
+		assert not os.system("rm -rf testfiles/recovery_out_backup")
 		self.setPathnames(None, None, None, None)
 		Time.setprevtime(1006136450)
 		Time.setcurtime()
@@ -174,7 +173,7 @@ class IncrementTest2(PathSetter):
 
 	def OldtestRecoveryRemote(self):
 		"""Test Recovery with both connections remote"""
-		os.system(MiscDir+'/myrm testfiles/recovery_out_backup')
+		assert not os.system('rm -rf testfiles/recovery_out_backup')
 		self.setPathnames('test1', '../', 'test2/tmp', '../../')
 		Time.setprevtime(1006136450)
 		Time.setcurtime()
@@ -360,7 +359,7 @@ class MirrorTest(PathSetter):
 		Globals.change_source_perms = 1
 		
 	def deleteoutput(self):
-		os.system(MiscDir+"/myrm testfiles/output*")
+		assert not os.system("rm -rf testfiles/output*")
 		self.rbdir = self.rpout.append('rdiff-backup-data')
 		self.rpout.mkdir()
 		self.rbdir.mkdir()
@@ -395,7 +394,7 @@ class MirrorTest(PathSetter):
 		Time.setcurtime()
 		SaveState.init_filenames()
 		self.Mirror(self.inc1rp, self.rpout)
-		#RPath.copy_attribs(self.inc1rp, self.rpout)
+		#rpath.RPath.copy_attribs(self.inc1rp, self.rpout)
 		assert CompareRecursive(Local.inc1rp, Local.rpout)
 
 		self.Mirror(self.inc2rp, self.rpout)

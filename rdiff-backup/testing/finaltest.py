@@ -1,13 +1,11 @@
-import unittest, os, re, sys
+import unittest, os, re, sys, time
 from commontest import *
-from rdiff_backup.log import *
-from rdiff_backup.rpath import *
-from rdiff_backup import Globals
+from rdiff_backup import Globals, log, rpath
 
 """Regression tests"""
 
 Globals.exclude_mirror_regexps = [re.compile(".*/rdiff-backup-data")]
-Log.setverbosity(7)
+log.Log.setverbosity(7)
 
 lc = Globals.local_connection
 
@@ -15,7 +13,7 @@ class Local:
 	"""This is just a place to put increments relative to the local
 	connection"""
 	def get_local_rp(extension):
-		return RPath(Globals.local_connection, "testfiles/" + extension)
+		return rpath.RPath(Globals.local_connection, "testfiles/" + extension)
 
 	vftrp = get_local_rp('various_file_types')
 	inc1rp = get_local_rp('increment1')
@@ -154,7 +152,7 @@ class PathSetter(unittest.TestCase):
 						 "testfiles/output/rdiff-backup-data/increments")
 		self.exec_rb(None, timbar_paths[0])
 		self.refresh(Local.timbar_in, Local.timbar_out)
-		assert RPath.cmp_with_attribs(Local.timbar_in, Local.timbar_out)
+		assert rpath.cmp_with_attribs(Local.timbar_in, Local.timbar_out)
 
 		self.exec_rb_restore(25000, 'testfiles/output/various_file_types',
 							 'testfiles/vft2_out')
@@ -173,8 +171,8 @@ class PathSetter(unittest.TestCase):
 		incfiles = filter(lambda s: s.startswith(basename),
 						  os.listdir(directory))
 		incfiles.sort()
-		incrps = map(lambda f: RPath(lc, directory+"/"+f), incfiles)
-		return map(lambda x: x.path, filter(RPath.isincfile, incrps))
+		incrps = map(lambda f: rpath.RPath(lc, directory+"/"+f), incfiles)
+		return map(lambda x: x.path, filter(rpath.RPath.isincfile, incrps))
 
 
 class Final(PathSetter):
@@ -287,7 +285,7 @@ testfiles/increment2/changed_dir""")
 						  "testfiles/output/changed_dir/foo")
 
 		# Test selective restoring
-		mirror_rp = RPath(Globals.local_connection, "testfiles/output")
+		mirror_rp = rpath.RPath(Globals.local_connection, "testfiles/output")
 		restore_filename = get_increment_rp(mirror_rp, 10000).path
 		assert not os.system(self.rb_schema +
 		   "--include testfiles/restoretarget1/various_file_types/"
@@ -321,8 +319,8 @@ testfiles/increment2/changed_dir""")
 
 		# Make an exclude list
 		os.mkdir("testfiles/vft_out")
-		excluderp = RPath(Globals.local_connection,
-						  "testfiles/vft_out/exclude")
+		excluderp = rpath.RPath(Globals.local_connection,
+								"testfiles/vft_out/exclude")
 		fp = excluderp.open("w")
 		fp.write("""
 ../testfiles/various_file_types/regular_file
@@ -331,8 +329,8 @@ testfiles/increment2/changed_dir""")
 		assert not fp.close()
 
 		# Make an include list
-		includerp = RPath(Globals.local_connection,
-						  "testfiles/vft_out/include")
+		includerp = rpath.RPath(Globals.local_connection,
+								"testfiles/vft_out/include")
 		fp = includerp.open("w")
 		fp.write("""
 ../testfiles/various_file_types/executable

@@ -1,6 +1,7 @@
 import unittest, os, cStringIO, time
 from rdiff_backup.metadata import *
-from rdiff_backup import rpath, Globals, selection, destructive_stepping
+from rdiff_backup import rpath, connection, Globals, selection, \
+	 destructive_stepping
 
 tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
 
@@ -61,9 +62,8 @@ class MetadataTest(unittest.TestCase):
 		if temprp.lstat(): return temprp
 
 		self.make_temp()
-		root = rpath.RPath(Globals.local_connection, "testfiles/bigdir")
-		dsrp_root = destructive_stepping.DSRPath(1, root)
-		rpath_iter = selection.Select(dsrp_root).set_iter()
+		rootrp = rpath.RPath(Globals.local_connection, "testfiles/bigdir")
+		rpath_iter = selection.Select(rootrp).set_iter()
 
 		start_time = time.time()
 		OpenMetadata(temprp)

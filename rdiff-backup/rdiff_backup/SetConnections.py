@@ -25,6 +25,10 @@ the related connections.
 
 """
 
+import os
+from log import Log
+import Globals, FilenameMapping, connection, rpath
+
 # This is the schema that determines how rdiff-backup will open a
 # pipe to the remote system.  If the file is given as A::B, %s will
 # be substituted with A in the schema.
@@ -68,7 +72,7 @@ def cmdpair2rp(cmd_pair):
 	cmd, filename = cmd_pair
 	if cmd: conn = init_connection(cmd)
 	else: conn = Globals.local_connection
-	return RPath(conn, filename).normalize()
+	return rpath.RPath(conn, filename).normalize()
 
 def desc2cmd_pairs(desc_pair):
 	"""Return pair (remote_cmd, filename) from desc_pair"""
@@ -127,7 +131,7 @@ def init_connection(remote_cmd):
 	Log("Executing " + remote_cmd, 4)
 	stdin, stdout = os.popen2(remote_cmd)
 	conn_number = len(Globals.connections)
-	conn = PipeConnection(stdout, stdin, conn_number)
+	conn = connection.PipeConnection(stdout, stdin, conn_number)
 
 	check_connection_version(conn, remote_cmd)
 	Log("Registering connection %d" % conn_number, 7)
@@ -138,7 +142,7 @@ def init_connection(remote_cmd):
 def check_connection_version(conn, remote_cmd):
 	"""Log warning if connection has different version"""
 	try: remote_version = conn.Globals.get('version')
-	except ConnectionReadError, exception:
+	except connection.ConnectionReadError, exception:
 		Log.FatalError("""%s
 
 Couldn't start up the remote connection by executing
@@ -184,7 +188,7 @@ def init_connection_remote(conn_number):
 def add_redirected_conn(conn_number):
 	"""Run on server side - tell about redirected connection"""
 	Globals.connection_dict[conn_number] = \
-		   RedirectedConnection(conn_number)
+		   connection.RedirectedConnection(conn_number)
 
 def UpdateGlobal(setting_name, val):
 	"""Update value of global variable across all connections"""
@@ -229,10 +233,4 @@ def test_connection(conn_number):
 Local version: %s
 Remote version: %s""" % (Globals.version, version)
 	else: print "Server OK"
-
-
-from log import *
-from rpath import *
-from connection import *
-import Globals, FilenameMapping
 

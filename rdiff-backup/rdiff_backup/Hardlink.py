@@ -32,7 +32,7 @@ side.  The source side should only transmit inode information.
 
 from __future__ import generators
 import cPickle
-
+import Globals, Time, TempFile, rpath, log, robust
 
 # In all of these lists of indicies are the values.  The keys in
 # _inode_ ones are (inode, devloc) pairs.
@@ -138,8 +138,8 @@ def restore_link(index, rpath):
 	for linked_index in _src_index_indicies[index]:
 		if linked_index in _restore_index_path:
 			srcpath = _restore_index_path[linked_index]
-			Log("Restoring %s by hard linking to %s" %
-				(rpath.path, srcpath), 6)
+			log.Log("Restoring %s by hard linking to %s" %
+					(rpath.path, srcpath), 6)
 			rpath.hardlink(srcpath)
 			return 1
 	_restore_index_path[index] = rpath.path
@@ -148,8 +148,8 @@ def restore_link(index, rpath):
 def link_rp(src_rorp, dest_rpath, dest_root = None):
 	"""Make dest_rpath into a link analogous to that of src_rorp"""
 	if not dest_root: dest_root = dest_rpath # use base of dest_rpath
-	dest_link_rpath = RPath(dest_root.conn, dest_root.base,
-							get_indicies(src_rorp, 1)[0])
+	dest_link_rpath = rpath.RPath(dest_root.conn, dest_root.base,
+								  get_indicies(src_rorp, 1)[0])
 	dest_rpath.hardlink(dest_link_rpath.path)
 
 def write_linkdict(rpath, dict, compress = None):
@@ -161,13 +161,13 @@ def write_linkdict(rpath, dict, compress = None):
 	"""
 	assert (Globals.isbackup_writer and
 			rpath.conn is Globals.local_connection)
-	tf = TempFileManager.new(rpath)
+	tf = TempFile.new(rpath)
 	def init():
 		fp = tf.open("wb", compress)
 		cPickle.dump(dict, fp)
 		assert not fp.close()
 		tf.setdata()
-	Robust.make_tf_robustaction(init, (tf,), (rpath,)).execute()
+	robust.make_tf_robustaction(init, (tf,), (rpath,)).execute()
 
 def get_linkrp(data_rpath, time, prefix):
 	"""Return RPath of linkdata, or None if cannot find"""
@@ -191,7 +191,7 @@ def final_writedata():
 	"""Write final checkpoint data to rbdir after successful backup"""
 	global final_inc
 	if _src_index_indicies:
-		Log("Writing hard link data", 6)
+		log.Log("Writing hard link data", 6)
 		if Globals.compression:
 			final_inc = Globals.rbdir.append("hardlink_data.%s.data.gz" %
 											 Time.curtimestr)
@@ -218,7 +218,7 @@ def final_checkpoint(data_rpath):
 	after every 20 seconds or whatever, but just at the end.
 
 	"""
-	Log("Writing intermediate hard link data to disk", 2)
+	log.Log("Writing intermediate hard link data to disk", 2)
 	src_inode_rp = data_rpath.append("hardlink_source_inode_checkpoint."
 									 "%s.data" % Time.curtimestr)
 	src_index_rp = data_rpath.append("hardlink_source_index_checkpoint."
@@ -251,7 +251,7 @@ def retrieve_checkpoint(data_rpath, time):
 		dest_index = get_linkdata(data_rpath, time,
 								  "hardlink_dest_index_checkpoint")
 	except cPickle.UnpicklingError:
-		Log("Unpickling Error", 2)
+		log.Log("Unpickling Error", 2)
 		return None
 	if (src_inode is None or src_index is None or
 		dest_inode is None or dest_index is None): return None
@@ -271,7 +271,3 @@ def remove_all_checkpoints():
 			rp.delete()
 
 
-from log import *
-from robust import *
-from rpath import *
-import Globals, Time

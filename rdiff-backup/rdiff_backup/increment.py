@@ -17,119 +17,119 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 
-"""Provides Inc and *ITR classes, which relate to writing increment files"""
+"""Provides functions and *ITR classes, for writing increment files"""
 
 import traceback
-from static import *
-from statistics import *
-from lazy import *
+from log import Log
+import Globals, Time, MiscStats, rorpiter, TempFile, robust, \
+	   statistics, rpath, static, lazy, Rdiff, Hardlink
 
-class Inc:
-	"""Class containing increment functions"""
-	def Increment_action(new, mirror, incpref):
-		"""Main file incrementing function, returns RobustAction
 
-		new is the file on the active partition,
-		mirror is the mirrored file from the last backup,
-		incpref is the prefix of the increment file.
+def Increment_action(new, mirror, incpref):
+	"""Main file incrementing function, returns robust.Action
 
-		This function basically moves the information about the mirror
-		file to incpref.
+	new is the file on the active partition,
+	mirror is the mirrored file from the last backup,
+	incpref is the prefix of the increment file.
 
-		The returned RobustAction when executed should return the name
-		of the incfile, or None if none was created.
+	This function basically moves the information about the mirror
+	file to incpref.
 
-		"""
-		if not (new and new.lstat() or mirror.lstat()):
-			return Robust.null_action # Files deleted in meantime, do nothing
+	The returned robust.Action when executed should return the name
+	of the incfile, or None if none was created.
 
-		Log("Incrementing mirror file " + mirror.path, 5)
-		if ((new and new.isdir()) or mirror.isdir()) and not incpref.isdir():
-			incpref.mkdir()
+	"""
+	if not (new and new.lstat() or mirror.lstat()):
+		return robust.null_action # Files deleted in meantime, do nothing
 
-		if not mirror.lstat(): return Inc.makemissing_action(incpref)
-		elif mirror.isdir(): return Inc.makedir_action(mirror, incpref)
-		elif new.isreg() and mirror.isreg():
-			return Inc.makediff_action(new, mirror, incpref)
-		else: return Inc.makesnapshot_action(mirror, incpref)
+	Log("Incrementing mirror file " + mirror.path, 5)
+	if ((new and new.isdir()) or mirror.isdir()) and not incpref.isdir():
+		incpref.mkdir()
 
-	def Increment(new, mirror, incpref):
-		return Inc.Increment_action(new, mirror, incpref).execute()
+	if not mirror.lstat(): return makemissing_action(incpref)
+	elif mirror.isdir(): return makedir_action(mirror, incpref)
+	elif new.isreg() and mirror.isreg():
+		return makediff_action(new, mirror, incpref)
+	else: return makesnapshot_action(mirror, incpref)
 
-	def makemissing_action(incpref):
-		"""Signify that mirror file was missing"""
-		def final(init_val):
-			incrp = Inc.get_inc_ext(incpref, "missing")
-			incrp.touch()
-			return incrp
-		return RobustAction(None, final, None)
-		
-	def makesnapshot_action(mirror, incpref):
-		"""Copy mirror to incfile, since new is quite different"""
-		if (mirror.isreg() and Globals.compression and
-			not Globals.no_compression_regexp.match(mirror.path)):
-			snapshotrp = Inc.get_inc_ext(incpref, "snapshot.gz")
-			return Robust.copy_with_attribs_action(mirror, snapshotrp, 1)
+def Increment(new, mirror, incpref):
+	return Increment_action(new, mirror, incpref).execute()
+
+def makemissing_action(incpref):
+	"""Signify that mirror file was missing"""
+	def final(init_val):
+		incrp = get_inc_ext(incpref, "missing")
+		incrp.touch()
+		return incrp
+	return robust.Action(None, final, None)
+
+def makesnapshot_action(mirror, incpref):
+	"""Copy mirror to incfile, since new is quite different"""
+	if (mirror.isreg() and Globals.compression and
+		not Globals.no_compression_regexp.match(mirror.path)):
+		snapshotrp = get_inc_ext(incpref, "snapshot.gz")
+		return robust.copy_with_attribs_action(mirror, snapshotrp, 1)
+	else:
+		snapshotrp = get_inc_ext(incpref, "snapshot")
+		return robust.copy_with_attribs_action(mirror, snapshotrp, None)
+
+def makediff_action(new, mirror, incpref):
+	"""Make incfile which is a diff new -> mirror"""
+	if (Globals.compression and
+		not Globals.no_compression_regexp.match(mirror.path)):
+		diff = get_inc_ext(incpref, "diff.gz")
+		compress = 1
+	else: 
+		diff = get_inc_ext(incpref, "diff")
+		compress = None
+
+	diff_tf = TempFile.new(diff)
+	def init():
+		Rdiff.write_delta(new, mirror, diff_tf, compress)
+		rpath.copy_attribs(mirror, diff_tf)
+		return diff
+	return robust.make_tf_robustaction(init, diff_tf, diff)
+
+def makedir_action(mirrordir, incpref):
+	"""Make file indicating directory mirrordir has changed"""
+	dirsign = get_inc_ext(incpref, "dir")
+	tf = TempFile.new(dirsign)
+	def init():
+		tf.touch()
+		rpath.copy_attribs(mirrordir, tf)
+		return dirsign
+	return robust.make_tf_robustaction(init, tf, dirsign)
+
+def get_inc(rp, time, typestr):
+	"""Return increment like rp but with time and typestr suffixes"""
+	addtostr = lambda s: "%s.%s.%s" % (s, Time.timetostring(time), typestr)
+	if rp.index:
+		incrp = rp.__class__(rp.conn, rp.base, rp.index[:-1] +
+							 (addtostr(rp.index[-1]),))
+	else: incrp = rp.__class__(rp.conn, addtostr(rp.base), rp.index)
+	if Globals.quoting_enabled: incrp.quote_path()
+	return incrp
+
+def get_inc_ext(rp, typestr):
+	"""Return increment with specified type and correct time
+
+	If the file exists, then probably a previous backup has been
+	aborted.  We then keep asking FindTime to get a time later
+	than the one that already has an inc file.
+
+	"""
+	inctime = 0
+	while 1:
+		#inctime = robust.Resume.FindTime(rp.index, inctime)
+		inctime = Time.prevtime
+		incrp = get_inc(rp, inctime, typestr)
+		if not incrp.lstat(): break
 		else:
-			snapshotrp = Inc.get_inc_ext(incpref, "snapshot")
-			return Robust.copy_with_attribs_action(mirror, snapshotrp, None)
-
-	def makediff_action(new, mirror, incpref):
-		"""Make incfile which is a diff new -> mirror"""
-		if (Globals.compression and
-			not Globals.no_compression_regexp.match(mirror.path)):
-			diff = Inc.get_inc_ext(incpref, "diff.gz")
-			compress = 1
-		else: 
-			diff = Inc.get_inc_ext(incpref, "diff")
-			compress = None
-			
-		diff_tf = TempFileManager.new(diff)
-		def init():
-			Rdiff.write_delta(new, mirror, diff_tf, compress)
-			RPath.copy_attribs(mirror, diff_tf)
-			return diff
-		return Robust.make_tf_robustaction(init, diff_tf, diff)
-
-	def makedir_action(mirrordir, incpref):
-		"""Make file indicating directory mirrordir has changed"""
-		dirsign = Inc.get_inc_ext(incpref, "dir")
-		tf = TempFileManager.new(dirsign)
-		def init():
-			tf.touch()
-			RPath.copy_attribs(mirrordir, tf)
-			return dirsign
-		return Robust.make_tf_robustaction(init, tf, dirsign)
-
-	def get_inc(rp, time, typestr):
-		"""Return increment like rp but with time and typestr suffixes"""
-		addtostr = lambda s: "%s.%s.%s" % (s, Time.timetostring(time), typestr)
-		if rp.index:
-			incrp = rp.__class__(rp.conn, rp.base, rp.index[:-1] +
-								 (addtostr(rp.index[-1]),))
-		else: incrp = rp.__class__(rp.conn, addtostr(rp.base), rp.index)
-		if Globals.quoting_enabled: incrp.quote_path()
-		return incrp
-
-	def get_inc_ext(rp, typestr):
-		"""Return increment with specified type and correct time
-
-		If the file exists, then probably a previous backup has been
-		aborted.  We then keep asking FindTime to get a time later
-		than the one that already has an inc file.
-
-		"""
-		inctime = 0
-		while 1:
-			inctime = Resume.FindTime(rp.index, inctime)
-			incrp = Inc.get_inc(rp, inctime, typestr)
-			if not incrp.lstat(): break
-		return incrp
-
-MakeStatic(Inc)
+			assert 0, "Inc file already present"
+	return incrp
 
 
-class IncrementITRB(StatsITRB):
+class IncrementITRB(statistics.ITRB):
 	"""Patch and increment mirror directory
 
 	This has to be an ITR because directories that have files in them
@@ -159,7 +159,7 @@ class IncrementITRB(StatsITRB):
 	def __init__(self, inc_rpath):
 		"""Set inc_rpath, an rpath of the base of the tree"""
 		self.inc_rpath = inc_rpath
-		StatsITRB.__init__(self)
+		statistics.ITRB.__init__(self)
 
 	def start_process(self, index, diff_rorp, dsrp):
 		"""Initial processing of file
@@ -209,12 +209,12 @@ class IncrementITRB(StatsITRB):
 		"""
 		if not (incpref.lstat() and incpref.isdir()): incpref.mkdir()
 		if diff_rorp and diff_rorp.isreg() and diff_rorp.file:
-			tf = TempFileManager.new(dsrp)
+			tf = TempFile.new(dsrp)
 			def init():
-				RPathStatic.copy_with_attribs(diff_rorp, tf)
+				rpath.copy_with_attribs(diff_rorp, tf)
 				tf.set_attached_filetype(diff_rorp.get_attached_filetype())
 			def error(exc, ran_init, init_val): tf.delete()
-			RobustAction(init, None, error).execute()
+			robust.Action(init, None, error).execute()
 			self.directory_replacement = tf
 
 	def init_non_dir(self, dsrp, diff_rorp, incpref):
@@ -223,16 +223,16 @@ class IncrementITRB(StatsITRB):
 		if diff_rorp.isreg() and (dsrp.isreg() or diff_rorp.isflaglinked()):
 			# Write updated mirror to temp file so we can compute
 			# reverse diff locally
-			mirror_tf = TempFileManager.new(dsrp)
-			old_dsrp_tf = TempFileManager.new(dsrp)
+			mirror_tf = TempFile.new(dsrp)
+			old_dsrp_tf = TempFile.new(dsrp)
 			def init_thunk():
 				if diff_rorp.isflaglinked():
 					Hardlink.link_rp(diff_rorp, mirror_tf, dsrp)
 				else: Rdiff.patch_with_attribs_action(dsrp, diff_rorp,
 													  mirror_tf).execute()
-				self.incrp = Inc.Increment_action(mirror_tf, dsrp,
+				self.incrp = Increment_action(mirror_tf, dsrp,
 												  incpref).execute()
-				if dsrp.lstat(): RPathStatic.rename(dsrp, old_dsrp_tf)
+				if dsrp.lstat(): rpath.rename(dsrp, old_dsrp_tf)
 				mirror_tf.rename(dsrp)
 
 			def final(init_val): old_dsrp_tf.delete()
@@ -243,10 +243,10 @@ class IncrementITRB(StatsITRB):
 					if self.incrp: self.incrp.delete()
 					mirror_tf.delete()
 
-			RobustAction(init_thunk, final, error).execute()
-		else: self.incrp = Robust.chain(
-			Inc.Increment_action(diff_rorp, dsrp, incpref),
-			RORPIter.patchonce_action(None, dsrp, diff_rorp)).execute()[0]
+			robust.Action(init_thunk, final, error).execute()
+		else: self.incrp = robust.chain(
+			Increment_action(diff_rorp, dsrp, incpref),
+			rorpiter.patchonce_action(None, dsrp, diff_rorp)).execute()[0]
 
 		self.changed = 1
 
@@ -257,14 +257,14 @@ class IncrementITRB(StatsITRB):
 			or self.directory_replacement):
 			if self.directory_replacement:
 				tf = self.directory_replacement
-				self.incrp = Robust.chain(
-					Inc.Increment_action(tf, dsrp, incpref),
-					RORPIter.patchonce_action(None, dsrp, tf)).execute()[0]
+				self.incrp = robust.chain(
+					Increment_action(tf, dsrp, incpref),
+					rorpiter.patchonce_action(None, dsrp, tf)).execute()[0]
 				tf.delete()
 			else:
-				self.incrp = Inc.Increment(diff_rorp, dsrp, incpref)
+				self.incrp = Increment(diff_rorp, dsrp, incpref)
 				if diff_rorp:
-					RORPIter.patchonce_action(None, dsrp, diff_rorp).execute()
+					rorpiter.patchonce_action(None, dsrp, diff_rorp).execute()
 
 		self.end_stats(diff_rorp, dsrp, self.incrp)
 		if self.mirror_isdirectory or dsrp.isdir():
@@ -276,7 +276,7 @@ class IncrementITRB(StatsITRB):
 
 	def fast_process(self, index, diff_rorp, dsrp):
 		"""Just update statistics"""
-		StatsITRB.fast_process(self, dsrp)
+		statistics.ITRB.fast_process(self, dsrp)
 
 	def branch_process(self, branch):
 		"""Update statistics, and the has_changed flag if change in branch"""
@@ -285,14 +285,14 @@ class IncrementITRB(StatsITRB):
 		self.add_file_stats(branch)
 
 
-class MirrorITRB(StatsITRB):
+class MirrorITRB(statistics.ITRB):
 	"""Like IncrementITR, but only patch mirror directory, don't increment"""
 	# This is always None since no increments will be created
 	incrp = None
 	def __init__(self, inc_rpath):
 		"""Set inc_rpath, an rpath of the base of the inc tree"""
 		self.inc_rpath = inc_rpath
-		StatsITRB.__init__(self)
+		statistics.ITRB.__init__(self)
 
 	def start_process(self, index, diff_rorp, mirror_dsrp):
 		"""Initialize statistics and do actual writing to mirror"""
@@ -305,7 +305,7 @@ class MirrorITRB(StatsITRB):
 				mirror_dsrp.delete()
 				mirror_dsrp.mkdir()
 		elif diff_rorp and not diff_rorp.isplaceholder():
-			RORPIter.patchonce_action(None, mirror_dsrp, diff_rorp).execute()
+			rorpiter.patchonce_action(None, mirror_dsrp, diff_rorp).execute()
 
 		self.incpref = self.inc_rpath.new_index(index)
 		self.diff_rorp, self.mirror_dsrp = diff_rorp, mirror_dsrp
@@ -314,7 +314,7 @@ class MirrorITRB(StatsITRB):
 		"""Update statistics when leaving"""
 		self.end_stats(self.diff_rorp, self.mirror_dsrp)
 		if self.mirror_dsrp.isdir():
-			RPathStatic.copy_attribs(self.diff_rorp, self.mirror_dsrp)
+			rpath.copy_attribs(self.diff_rorp, self.mirror_dsrp)
 			MiscStats.write_dir_stats_line(self, self.mirror_dsrp.index)
 
 	def can_fast_process(self, index, diff_rorp, mirror_dsrp):
@@ -323,7 +323,7 @@ class MirrorITRB(StatsITRB):
 
 	def fast_process(self, index, diff_rorp, mirror_dsrp):
 		"""Just update statistics"""
-		StatsITRB.fast_process(self, mirror_dsrp)
+		statistics.ITRB.fast_process(self, mirror_dsrp)
 
 	def branch_process(self, branch):
 		"""Update statistics with subdirectory results"""
@@ -331,9 +331,4 @@ class MirrorITRB(StatsITRB):
 		self.add_file_stats(branch)
 
 
-from log import *
-from rpath import *
-from robust import *
-from rorpiter import *
-import Globals, Time, MiscStats
 

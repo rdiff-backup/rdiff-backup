@@ -1,4 +1,4 @@
-import unittest, time
+import unittest, time, types
 from commontest import *
 from rdiff_backup import Globals, Time
 

@@ -20,16 +20,10 @@
 """Start (and end) here - read arguments, set global settings, etc."""
 
 from __future__ import generators
-import getopt, sys, re
-from log import *
-from lazy import *
-from connection import *
-from rpath import *
-from robust import *
-from restore import *
-from highlevel import *
-from manage import *
-import Globals, Time, SetConnections
+import getopt, sys, re, os
+from log import Log
+import Globals, Time, SetConnections, selection, robust, rpath, \
+	   manage, highlevel, connection, restore, FilenameMapping, Security
 
 
 action = None
@@ -164,7 +158,7 @@ def set_action():
 		if l == 0: commandline_error("No arguments given")
 		elif l == 1: action = "restore"
 		elif l == 2:
-			if RPath(Globals.local_connection, args[0]).isincfile():
+			if rpath.RPath(Globals.local_connection, args[0]).isincfile():
 				action = "restore"
 			else: action = "backup"
 		else: commandline_error("Too many arguments given")
@@ -207,13 +201,14 @@ def misc_setup(rps):
 	Globals.postset_regexp('no_compression_regexp',
 						   Globals.no_compression_regexp_string)
 
-	for conn in Globals.connections: Robust.install_signal_handlers()
+	for conn in Globals.connections: robust.install_signal_handlers()
 
 def take_action(rps):
 	"""Do whatever action says"""
-	if action == "server": PipeConnection(sys.stdin, sys.stdout).Server()
+	if action == "server":
+		connection.PipeConnection(sys.stdin, sys.stdout).Server()
 	elif action == "backup": Backup(rps[0], rps[1])
-	elif action == "restore": restore(*rps)
+	elif action == "restore": Restore(*rps)
 	elif action == "restore-as-of": RestoreAsOf(rps[0], rps[1])
 	elif action == "test-server": SetConnections.TestConnections()
 	elif action == "list-changed-since": ListChangedSince(rps[0])
@@ -247,14 +242,16 @@ def Backup(rpin, rpout):
 	backup_init_dirs(rpin, rpout)
 	if prevtime:
 		Time.setprevtime(prevtime)
-		HighLevel.Mirror_and_increment(rpin, rpout, incdir)
-	else: HighLevel.Mirror(rpin, rpout, incdir)
+		highlevel.HighLevel.Mirror_and_increment(rpin, rpout, incdir)
+	else: highlevel.HighLevel.Mirror(rpin, rpout, incdir)
 	rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
 
 def backup_init_select(rpin, rpout):
 	"""Create Select objects on source and dest connections"""
-	rpin.conn.Globals.set_select(1, rpin, select_opts, None, *select_files)
-	rpout.conn.Globals.set_select(0, rpout, select_mirror_opts, 1)
+	rpin.conn.Globals.set_select(1, selection.Select,
+								 rpin, select_opts, None, *select_files)
+	rpout.conn.Globals.set_select(0, selection.Select,
+								  rpout, select_mirror_opts, 1)
 
 def backup_init_dirs(rpin, rpout):
 	"""Make sure rpin and rpout are valid, init data dir and logging"""
@@ -273,7 +270,7 @@ def backup_init_dirs(rpin, rpout):
 
 	datadir = rpout.append("rdiff-backup-data")
 	SetConnections.UpdateGlobal('rbdir', datadir)
-	incdir = RPath(rpout.conn, os.path.join(datadir.path, "increments"))
+	incdir = rpath.RPath(rpout.conn, os.path.join(datadir.path, "increments"))
 	prevtime = backup_get_mirrortime()
 
 	if rpout.lstat():
@@ -336,14 +333,14 @@ def backup_touch_curmirror_local(rpin, rpout):
 
 	"""
 	datadir = Globals.rbdir
-	map(RPath.delete, backup_get_mirrorrps())
+	map(rpath.RPath.delete, backup_get_mirrorrps())
 	mirrorrp = datadir.append("current_mirror.%s.%s" % (Time.curtimestr,
 														"data"))
 	Log("Touching mirror marker %s" % mirrorrp.path, 6)
 	mirrorrp.touch()
-	RPath.copy_attribs(rpin, rpout)
+	rpath.copy_attribs(rpin, rpout)
 
-def restore(src_rp, dest_rp = None):
+def Restore(src_rp, dest_rp = None):
 	"""Main restoring function
 
 	Here src_rp should be an increment file, and if dest_rp is
@@ -373,7 +370,7 @@ def restore_common(rpin, target, time):
 	inc_rpath = datadir.append_path('increments', index)
 	restore_init_select(mirror_root, target)
 	restore_start_log(rpin, target, time)
-	Restore.Restore(inc_rpath, mirror, target, time)
+	restore.Restore(inc_rpath, mirror, target, time)
 	Log("Restore ended", 4)
 
 def restore_start_log(rpin, target, time):
@@ -398,8 +395,8 @@ def restore_check_paths(rpin, rpout, restoreasof = None):
 Try restoring from an increment file (the filenames look like
 "foobar.2001-09-01T04:49:04-07:00.diff").""" % rpin.path)
 
-	if not rpout: rpout = RPath(Globals.local_connection,
-								rpin.getincbase_str())
+	if not rpout: rpout = rpath.RPath(Globals.local_connection,
+									  rpin.getincbase_str())
 	if rpout.lstat():
 		Log.FatalError("Restore target %s already exists, "
 					   "and will not be overwritten." % rpout.path)
@@ -413,8 +410,9 @@ def restore_init_select(rpin, rpout):
 	the restore operation isn't.
 
 	"""
-	Globals.set_select(1, rpin, select_mirror_opts, None)
-	Globals.set_select(0, rpout, select_opts, None, *select_files)
+	Globals.set_select(1, selection.Select, rpin, select_mirror_opts, None)
+	Globals.set_select(0, selection.Select,
+					   rpout, select_opts, None, *select_files)
 
 def restore_get_root(rpin):
 	"""Return (mirror root, index) and set the data dir
@@ -438,7 +436,7 @@ def restore_get_root(rpin):
 
 	i = len(pathcomps)
 	while i >= 2:
-		parent_dir = RPath(rpin.conn, "/".join(pathcomps[:i]))
+		parent_dir = rpath.RPath(rpin.conn, "/".join(pathcomps[:i]))
 		if (parent_dir.isdir() and
 			"rdiff-backup-data" in parent_dir.listdir()): break
 		i = i-1
@@ -467,11 +465,11 @@ def ListIncrements(rp):
 					mirror_root.append_path("rdiff-backup-data")
 	mirrorrp = mirror_root.new_index(index)
 	inc_rpath = datadir.append_path('increments', index)
-	incs = Restore.get_inclist(inc_rpath)
-	mirror_time = Restore.get_mirror_time()
+	incs = restore.get_inclist(inc_rpath)
+	mirror_time = restore.get_mirror_time()
 	if Globals.parsable_output:
-		print Manage.describe_incs_parsable(incs, mirror_time, mirrorrp)
-	else: print Manage.describe_incs_human(incs, mirror_time, mirrorrp)
+		print manage.describe_incs_parsable(incs, mirror_time, mirrorrp)
+	else: print manage.describe_incs_human(incs, mirror_time, mirrorrp)
 
 
 def CalculateAverage(rps):
@@ -495,7 +493,7 @@ def RemoveOlderThan(rootrp):
 	Log("Deleting increment(s) before %s" % timep, 4)
 
 	times_in_secs = map(lambda inc: Time.stringtotime(inc.getinctime()),
-						Restore.get_inclist(datadir.append("increments")))
+						restore.get_inclist(datadir.append("increments")))
 	times_in_secs = filter(lambda t: t < time, times_in_secs)
 	if not times_in_secs:
 		Log.FatalError("No increments older than %s found" % timep)
@@ -510,7 +508,7 @@ def RemoveOlderThan(rootrp):
 	if len(times_in_secs) == 1:
 		Log("Deleting increment at time:\n" + inc_pretty_time, 3)
 	else: Log("Deleting increments at times:\n" + inc_pretty_time, 3)
-	Manage.delete_earlier_than(datadir, time)
+	manage.delete_earlier_than(datadir, time)
 
 
 def ListChangedSince(rp):
@@ -519,12 +517,12 @@ def ListChangedSince(rp):
 	except Time.TimeException, exc: Log.FatalError(str(exc))
 	mirror_root, index = restore_get_root(rp)
 	Globals.rbdir = datadir = mirror_root.append_path("rdiff-backup-data")
-	mirror_time = Restore.get_mirror_time()
+	mirror_time = restore.get_mirror_time()
 
 	def get_rids_recursive(rid):
 		"""Yield all the rids under rid that have inc newer than rest_time"""
 		yield rid
-		for sub_rid in Restore.yield_rids(rid, rest_time, mirror_time):
+		for sub_rid in restore.yield_rids(rid, rest_time, mirror_time):
 			for sub_sub_rid in get_rids_recursive(sub_rid): yield sub_sub_rid
 
 	def determineChangeType(incList):
@@ -538,8 +536,8 @@ def ListChangedSince(rp):
 		else: return "Unknown!"
 
 	inc_rpath = datadir.append_path('increments', index)
-	inc_list = Restore.get_inclist(inc_rpath)
-	root_rid = RestoreIncrementData(index, inc_rpath, inc_list)
+	inc_list = restore.get_inclist(inc_rpath)
+	root_rid = restore.RestoreIncrementData(index, inc_rpath, inc_list)
 	for rid in get_rids_recursive(root_rid):
 		if rid.inc_list:
 			if not rid.index: path = "."

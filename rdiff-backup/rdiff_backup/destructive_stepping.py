@@ -1,3 +1,4 @@
+
 # Copyright 2002 Ben Escoto
 #
 # This file is part of rdiff-backup.
@@ -21,14 +22,14 @@
 
 from __future__ import generators
 import types
-from rpath import *
-from lazy import *
+import Globals, rpath, log
+
 
 class DSRPPermError(Exception):
 	"""Exception used when a DSRPath can't get sufficient permissions"""
 	pass
 
-class DSRPath(RPath):
+class DSRPath(rpath.RPath):
 	"""Destructive Stepping RPath
 
 	Sometimes when we traverse the directory tree, even when we just
@@ -59,11 +60,11 @@ class DSRPath(RPath):
 
 		"""
 		if base == 0:
-			assert isinstance(conn_or_rp, RPath)
-			RPath.__init__(self, conn_or_rp.conn,
-						   conn_or_rp.base, conn_or_rp.index)
+			assert isinstance(conn_or_rp, rpath.RPath)
+			rpath.RPath.__init__(self, conn_or_rp.conn,
+								 conn_or_rp.base, conn_or_rp.index)
 			self.path = conn_or_rp.path # conn_or_rp may be quoted
-		else: RPath.__init__(self, conn_or_rp, base, index)
+		else: rpath.RPath.__init__(self, conn_or_rp, base, index)
 
 		if source != "bypass":
 			# "bypass" val is used when unpackaging over connection
@@ -107,8 +108,8 @@ class DSRPath(RPath):
 				if not self.hasfullperms(): self.chmod_bypass(0700)
 
 	def warn(self, err):
-		Log("Received error '%s' when dealing with file %s, skipping..."
-			% (err, self.path), 1)
+		log.Log("Received error '%s' when dealing with file %s, skipping..."
+				% (err, self.path), 1)
 		raise DSRPPermError(self.path)
 
 	def __getstate__(self):
@@ -136,7 +137,7 @@ class DSRPath(RPath):
 	def chmod(self, permissions):
 		"""Change permissions, delaying if self.perms_delayed is set"""
 		if self.delay_perms: self.newperms = self.data['perms'] = permissions
-		else: RPath.chmod(self, permissions)
+		else: rpath.RPath.chmod(self, permissions)
 
 	def getperms(self):
 		"""Return dsrp's intended permissions"""
@@ -148,7 +149,7 @@ class DSRPath(RPath):
 		"""Change permissions without updating the data dictionary"""
 		self.delay_perms = 1
 		if self.newperms is None: self.newperms = self.getperms()
-		Log("DSRP: Perm bypass %s to %o" % (self.path, permissions), 8)
+		log.Log("DSRP: Perm bypass %s to %o" % (self.path, permissions), 8)
 		self.conn.os.chmod(self.path, permissions)
 
 	def settime(self, accesstime, modtime):
@@ -157,12 +158,12 @@ class DSRPath(RPath):
 		if self.delay_mtime: self.newmtime = self.data['mtime'] = modtime
 
 		if not self.delay_atime or not self.delay_mtime:
-			RPath.settime(self, accesstime, modtime)
+			rpath.RPath.settime(self, accesstime, modtime)
 		
 	def setmtime(self, modtime):
 		"""Change mtime, delaying if self.times_delayed is set"""
 		if self.delay_mtime: self.newmtime = self.data['mtime'] = modtime
-		else: RPath.setmtime(self, modtime)
+		else: rpath.RPath.setmtime(self, modtime)
 
 	def getmtime(self):
 		"""Return dsrp's intended modification time"""
@@ -181,18 +182,18 @@ class DSRPath(RPath):
 		if not self.lstat(): return # File has been deleted in meantime
 
 		if self.delay_perms and self.newperms is not None:
-			Log("Finalizing permissions of dsrp %s to %s" %
-				(self.path, self.newperms), 8)
-			RPath.chmod(self, self.newperms)
+			log.Log("Finalizing permissions of dsrp %s to %s" %
+					(self.path, self.newperms), 8)
+			rpath.RPath.chmod(self, self.newperms)
 
 		do_atime = self.delay_atime and self.newatime is not None
 		do_mtime = self.delay_mtime and self.newmtime is not None
 		if do_atime and do_mtime:
-			RPath.settime(self, self.newatime, self.newmtime)
+			rpath.RPath.settime(self, self.newatime, self.newmtime)
 		elif do_atime and not do_mtime:
-			RPath.settime(self, self.newatime, self.getmtime())
+			rpath.RPath.settime(self, self.newatime, self.getmtime())
 		elif not do_atime and do_mtime:
-			RPath.setmtime(self, self.newmtime)
+			rpath.RPath.setmtime(self, self.newmtime)
 
 	def newpath(self, newpath, index = ()):
 		"""Return similar DSRPath but with new path"""
@@ -208,29 +209,4 @@ class DSRPath(RPath):
 		return self.__class__(self.source, self.conn, self.base, index)
 
 
-class DestructiveSteppingFinalizer(ITRBranch):
-		"""Finalizer that can work on an iterator of dsrpaths
 
-		The reason we have to use an IterTreeReducer is that some files
-		should be updated immediately, but for directories we sometimes
-		need to update all the files in the directory before finally
-		coming back to it.
-
-		"""
-		dsrpath = None
-		def start_process(self, index, dsrpath):
-			self.dsrpath = dsrpath
-
-		def end_process(self):
-			if self.dsrpath: self.dsrpath.write_changes()
-
-		def can_fast_process(self, index, dsrpath):
-			return not self.dsrpath.isdir()
-
-		def fast_process(self, index, dsrpath):
-			if self.dsrpath: self.dsrpath.write_changes()
-
-
-from log import *
-from robust import *
-import Globals

@@ -20,8 +20,7 @@
 """Functions to make sure remote requests are kosher"""
 
 import sys, tempfile
-import Globals, Main
-from rpath import *
+import Globals, Main, rpath
 
 class Violation(Exception):
 	"""Exception that indicates an improper request has been received"""
@@ -76,8 +75,8 @@ def set_security_level(action, cmdpairs):
 			rdir = tempfile.gettempdir()
 		elif islocal(cp1):
 			sec_level = "read-only"
-			rdir = Main.restore_get_root(RPath(Globals.local_connection,
-											   getpath(cp1)))[0].path
+			rdir = Main.restore_get_root(rpath.RPath(Globals.local_connection,
+													 getpath(cp1)))[0].path
 		else:
 			assert islocal(cp2)
 			sec_level = "all"
@@ -101,8 +100,8 @@ def set_security_level(action, cmdpairs):
 	else: assert 0, "Unknown action %s" % action
 
 	Globals.security_level = sec_level
-	Globals.restrict_path = RPath(Globals.local_connection,
-								  rdir).normalize().path
+	Globals.restrict_path = rpath.RPath(Globals.local_connection,
+										rdir).normalize().path
 
 def set_allowed_requests(sec_level):
 	"""Set the allowed requests list using the security level"""
@@ -111,44 +110,46 @@ def set_allowed_requests(sec_level):
 	allowed_requests = ["VirtualFile.readfromid", "VirtualFile.closebyid",
 						"Globals.get", "Globals.is_not_None",
 						"Globals.get_dict_val",
-						"Log.open_logfile_allconn",
-						"Log.close_logfile_allconn",
+						"log.Log.open_logfile_allconn",
+						"log.Log.close_logfile_allconn",
 						"SetConnections.add_redirected_conn",
 						"RedirectedRun",
 						"sys.stdout.write"]
 	if sec_level == "minimal": pass
 	elif sec_level == "read-only" or sec_level == "update-only":
-		allowed_requests.extend(["C.make_file_dict",
-								 "os.getuid",
-								 "os.listdir",
-								 "Time.setcurtime_local",
-								 "Resume.ResumeCheck",
-								 "HLSourceStruct.split_initial_dsiter",
-								 "HLSourceStruct.get_diffs_and_finalize",
-								 "RPathStatic.gzip_open_local_read",
-								 "RPathStatic.open_local_read"])
+		allowed_requests.extend(
+			["C.make_file_dict",
+			 "os.getuid",
+			 "os.listdir",
+			 "Time.setcurtime_local",
+			 "robust.Resume.ResumeCheck",
+			 "highlevel.HLSourceStruct.split_initial_dsiter",
+			 "highlevel.HLSourceStruct.get_diffs_and_finalize",
+			 "rpath.gzip_open_local_read",
+			 "rpath.open_local_read"])
 		if sec_level == "update-only":
-			allowed_requests. \
-				extend(["Log.open_logfile_local", "Log.close_logfile_local",
-						"Log.close_logfile_allconn", "Log.log_to_file",
-						"SaveState.init_filenames",
-						"SaveState.touch_last_file",
-						"HLDestinationStruct.get_sigs",
-						"HLDestinationStruct.patch_w_datadir_writes",
-						"HLDestinationStruct.patch_and_finalize",
-						"HLDestinationStruct.patch_increment_and_finalize",
-						"Main.backup_touch_curmirror_local",
-						"Globals.ITRB.increment_stat"])
+			allowed_requests.extend(
+				["Log.open_logfile_local", "Log.close_logfile_local",
+				 "Log.close_logfile_allconn", "Log.log_to_file",
+				 "robust.SaveState.init_filenames",
+				 "robust.SaveState.touch_last_file",
+				 "highlevel.HLDestinationStruct.get_sigs",
+				 "highlevel.HLDestinationStruct.patch_w_datadir_writes",
+				 "highlevel.HLDestinationStruct.patch_and_finalize",
+				 "highlevel.HLDestinationStruct.patch_increment_and_finalize",
+				 "Main.backup_touch_curmirror_local",
+				 "Globals.ITRB.increment_stat"])
 	if Globals.server:
-		allowed_requests.extend(["SetConnections.init_connection_remote",
-								 "Log.setverbosity",
-								 "Log.setterm_verbosity",
-								 "Time.setprevtime_local",
-								 "FilenameMapping.set_init_quote_vals_local",
-								 "Globals.postset_regexp_local",
-								 "Globals.set_select",
-								 "HLSourceStruct.set_session_info",
-								 "HLDestinationStruct.set_session_info"])
+		allowed_requests.extend(
+			["SetConnections.init_connection_remote",
+			 "Log.setverbosity",
+			 "Log.setterm_verbosity",
+			 "Time.setprevtime_local",
+			 "FilenameMapping.set_init_quote_vals_local",
+			 "Globals.postset_regexp_local",
+			 "Globals.set_select",
+			 "highlevel.HLSourceStruct.set_session_info",
+			 "highlevel.HLDestinationStruct.set_session_info"])
 
 def vet_request(request, arglist):
 	"""Examine request for security violations"""
@@ -156,7 +157,7 @@ def vet_request(request, arglist):
 	security_level = Globals.security_level
 	if Globals.restrict_path:
 		for arg in arglist:
-			if isinstance(arg, RPath): vet_rpath(arg)
+			if isinstance(arg, rpath.RPath): vet_rpath(arg)
 	if security_level == "all": return
 	if request.function_string in allowed_requests: return
 	if request.function_string == "Globals.set":

@@ -246,7 +246,7 @@ def postset_regexp_local(name, re_string, flags):
 	if flags: globals()[name] = re.compile(re_string, flags)
 	else: globals()[name] = re.compile(re_string)
 
-def set_select(source, rpath, tuplelist, quote_mode, *filelists):
+def set_select(source, Sel_Obj, rpath, tuplelist, quote_mode, *filelists):
 	"""Initialize select object using tuplelist
 
 	Note that each list in filelists must each be passed as
@@ -256,12 +256,8 @@ def set_select(source, rpath, tuplelist, quote_mode, *filelists):
 
 	"""
 	global select_source, select_mirror
-	sel = Select(rpath, quote_mode)
+	sel = Sel_Obj(rpath, quote_mode)
 	sel.ParseArgs(tuplelist, filelists)
 	if source: select_source = sel
 	else: select_mirror = sel
 
-
-from rpath import * # kludge to avoid circularity - not needed in this module
-from log import * # another kludge
-from selection import *

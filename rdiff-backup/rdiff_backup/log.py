@@ -20,6 +20,7 @@
 """Manage logging, displaying and recording messages with required verbosity"""
 
 import time, sys, traceback, types
+import Globals
 
 
 class LoggerError(Exception): pass
@@ -151,6 +152,7 @@ class Logger:
 
 	def FatalError(self, message):
 		self("Fatal Error: " + message, 1)
+		import Main
 		Main.cleanup()
 		sys.exit(1)
 
@@ -180,4 +182,4 @@ class Logger:
 		logging_func(self.exception_to_string(), verbosity)
 
 Log = Logger()
-import Globals, Main
+

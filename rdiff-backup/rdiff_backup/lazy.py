@@ -21,7 +21,8 @@
 
 from __future__ import generators
 import os, stat, types
-from static import *
+import static
+
 
 class Iter:
 	"""Hold static methods for the manipulation of lazy iterators"""
@@ -163,7 +164,7 @@ class Iter:
 
 		return tuple(map(make_iterator, range(num_of_forks)))
 
-MakeStatic(Iter)
+static.MakeStatic(Iter)
 
 
 class IterMultiplex2:
@@ -200,166 +201,3 @@ class IterMultiplex2:
 			else: elem = buf.pop(0) # a is in front, subtract an element
 			self.a_leading_by -= 1
 			yield elem
-
-
-class IterTreeReducer:
-	"""Tree style reducer object for iterator
-
-	The indicies of a RORPIter form a tree type structure.  This class
-	can be used on each element of an iter in sequence and the result
-	will be as if the corresponding tree was reduced.  This tries to
-	bridge the gap between the tree nature of directories, and the
-	iterator nature of the connection between hosts and the temporal
-	order in which the files are processed.
-
-	"""
-	def __init__(self, branch_class, branch_args):
-		"""ITR initializer"""
-		self.branch_class = branch_class
-		self.branch_args = branch_args
-		self.index = None
-		self.root_branch = branch_class(*branch_args)
-		self.branches = [self.root_branch]
-
-	def finish_branches(self, index):
-		"""Run Finish() on all branches index has passed
-
-		When we pass out of a branch, delete it and process it with
-		the parent.  The innermost branches will be the last in the
-		list.  Return None if we are out of the entire tree, and 1
-		otherwise.
-
-		"""
-		branches = self.branches
-		while 1:
-			to_be_finished = branches[-1]
-			base_index = to_be_finished.base_index
-			if base_index != index[:len(base_index)]:
-				# out of the tree, finish with to_be_finished
-				to_be_finished.call_end_proc()
-				del branches[-1]
-				if not branches: return None
-				branches[-1].branch_process(to_be_finished)
-			else: return 1
-
-	def add_branch(self, index):
-		"""Return branch of type self.branch_class, add to branch list"""
-		branch = self.branch_class(*self.branch_args)
-		branch.base_index = index
-		self.branches.append(branch)
-		return branch
-
-	def process_w_branch(self, branch, args):
-		"""Run start_process on latest branch"""
-		Robust.check_common_error(branch.on_error,
-								  branch.start_process, args)
-		if not branch.caught_exception: branch.start_successful = 1
-
-	def Finish(self):
-		"""Call at end of sequence to tie everything up"""
-		while 1:
-			to_be_finished = self.branches.pop()
-			to_be_finished.call_end_proc()
-			if not self.branches: break
-			self.branches[-1].branch_process(to_be_finished)
-
-	def __call__(self, *args):
-		"""Process args, where args[0] is current position in iterator
-
-		Returns true if args successfully processed, false if index is
-		not in the current tree and thus the final result is
-		available.
-
-		Also note below we set self.index after doing the necessary
-		start processing, in case there is a crash in the middle.
-
-		"""
-		index = args[0]
-		if self.index is None:
-			self.root_branch.base_index = index
-			self.process_w_branch(self.root_branch, args)
-			self.index = index
-			return 1
-
-		if index <= self.index:
-			Log("Warning: oldindex %s >= newindex %s" % (self.index, index), 2)
-			return 1
-
-		if self.finish_branches(index) is None:
-			return None # We are no longer in the main tree
-		last_branch = self.branches[-1]
-		if last_branch.start_successful:
-			if last_branch.can_fast_process(*args):
-				last_branch.fast_process(*args)
-			else:
-				branch = self.add_branch(index)
-				self.process_w_branch(branch, args)
-		else: last_branch.log_prev_error(index)
-
-		self.index = index
-		return 1
-
-
-class ITRBranch:
-	"""Helper class for IterTreeReducer below
-
-	There are five stub functions below: start_process, end_process,
-	branch_process, can_fast_process, and fast_process.  A class that
-	subclasses this one will probably fill in these functions to do
-	more.
-
-	It is important that this class be pickable, so keep that in mind
-	when subclassing (this is used to resume failed sessions).
-
-	"""
-	base_index = index = None
-	finished = None
-	caught_exception = start_successful = None
-
-	def call_end_proc(self):
-		"""Runs the end_process on self, checking for errors"""
-		if self.finished or not self.start_successful:
-			self.caught_exception = 1
-		if self.caught_exception: self.log_prev_error(self.base_index)
-		else: Robust.check_common_error(self.on_error, self.end_process)
-		self.finished = 1
-
-	def start_process(self, *args):
-		"""Do some initial processing (stub)"""
-		pass
-
-	def end_process(self):
-		"""Do any final processing before leaving branch (stub)"""
-		pass
-
-	def branch_process(self, branch):
-		"""Process a branch right after it is finished (stub)"""
-		assert branch.finished
-		pass
-
-	def can_fast_process(self, *args):
-		"""True if object can be processed without new branch (stub)"""
-		return None
-
-	def fast_process(self, *args):
-		"""Process args without new child branch (stub)"""
-		pass
-
-	def on_error(self, exc, *args):
-		"""This is run on any exception in start/end-process"""
-		self.caught_exception = 1
-		if args and args[0] and isinstance(args[0], tuple):
-			filename = os.path.join(*args[0])
-		elif self.index: filename = os.path.join(*self.index)
-		else: filename = "."
-		Log("Error '%s' processing %s" % (exc, filename), 2)
-
-	def log_prev_error(self, index):
-		"""Call function if no pending exception"""
-		Log("Skipping %s because of previous error" %
-			(os.path.join(*index),), 2)
-
-
-# Put at bottom to prevent (viciously) circular module dependencies
-from robust import *
-from log import *
