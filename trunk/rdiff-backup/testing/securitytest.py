@@ -17,7 +17,7 @@ class SecurityTest(unittest.TestCase):
 
 	def test_vet_request_ro(self):
 		"""Test vetting of ConnectionRequests on read-only server"""
-		remote_cmd = "rdiff-backup --server --restrict-read-only foo"
+		remote_cmd = "../rdiff-backup --server --restrict-read-only foo"
 		conn = SetConnections.init_connection(remote_cmd)
 		assert type(conn.os.getuid()) is type(5)
 		try: conn.os.remove("/tmp/foobar")
@@ -27,7 +27,7 @@ class SecurityTest(unittest.TestCase):
 
 	def test_vet_request_minimal(self):
 		"""Test vetting of ConnectionRequests on minimal server"""
-		remote_cmd = "rdiff-backup --server --restrict-update-only foo"
+		remote_cmd = "../rdiff-backup --server --restrict-update-only foo"
 		conn = SetConnections.init_connection(remote_cmd)
 		assert type(conn.os.getuid()) is type(5)
 		try: conn.os.remove("/tmp/foobar")
@@ -37,7 +37,7 @@ class SecurityTest(unittest.TestCase):
 
 	def test_vet_rpath(self):
 		"""Test to make sure rpaths not in restricted path will be rejected"""
-		remote_cmd = "rdiff-backup --server --restrict-update-only foo"
+		remote_cmd = "../rdiff-backup --server --restrict-update-only foo"
 		conn = SetConnections.init_connection(remote_cmd)
 
 		for rp in [RPath(Globals.local_connection, "blahblah"),
