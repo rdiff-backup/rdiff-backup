@@ -75,10 +75,10 @@ def VersionedCopy(source, dest, munge_date = 0):
 	inbuf = fin.read()
 	assert not fin.close()
 
-	outbuf = re.sub("\$version", Version, inbuf, 1)
+	outbuf = re.sub("\$version", Version, inbuf)
 	if outbuf == inbuf: assert 0, "No $version string replaced"
 	assert not re.search("\$version", outbuf), \
-		   "Two $version strings found in the same file %s" % (source,)
+		   "Some $version strings not repleased in %s" % (source,)
 
 	if munge_date:
 		inbuf = outbuf

@@ -35,7 +35,7 @@ if sys.argv[1:]:
 	    else: os.remove(filename)
 	    os.symlink('OLD/%s/%s' % (version, filename), filename)
 	RunCommand("rm latest latest.src.rpm latest.tar.gz", ignore_error = 1)
-	RunCommand("ln -s rdiff-backup-%s-*src.rpm latest.src.rpm" % (version,))
+	RunCommand("ln -s rdiff-backup-%s-1.src.rpm latest.src.rpm" % (version,))
 	os.symlink("rdiff-backup-%s.tar.gz" % (version,), 'latest.tar.gz')
 	os.symlink('OLD/%s' % (version,), 'latest')
 RunCommand("./Make")
