@@ -593,13 +593,9 @@ class RPath(RORPath):
 		self.setdata()
 		if not self.lstat(): return # must have been deleted in meantime
 		elif self.isdir():
-			def helper(dsrp, base_init_output, branch_reduction):
-				if dsrp.isdir(): dsrp.rmdir()
-				else: dsrp.delete()
-			itm = IterTreeReducer(lambda x: None, lambda x,y: None, None,
-								  helper)
-			for dsrp in Select(self, None).set_iter(): itm(dsrp)
-			itm.getresult()
+			itm = RpathDeleter()
+			for dsrp in Select(self, None).set_iter(): itm(dsrp.index, dsrp)
+			itm.Finish()
 		else: self.conn.os.unlink(self.path)
 		self.setdata()
 
@@ -752,3 +748,15 @@ class RPathFileHook:
 		result = self.file.close()
 		self.closing_thunk()
 		return result
+
+
+class RpathDeleter(IterTreeReducer):
+	"""Delete a directory.  Called by RPath.delete()"""
+	def start_process(self, index, dsrp):
+		self.dsrp = dsrp
+
+	def end_process(self):
+		if self.dsrp.isdir(): self.dsrp.rmdir()
+		else: self.dsrp.delete()
+
+		

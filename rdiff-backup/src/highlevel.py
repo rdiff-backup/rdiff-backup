@@ -109,19 +109,19 @@ class HLSourceStruct:
 
 		"""
 		collated = RORPIter.CollateIterators(cls.initial_dsiter2, sigiter)
-		finalizer = DestructiveStepping.Finalizer()
+		finalizer = DestructiveSteppingFinalizer()
 		def diffs():
 			for dsrp, dest_sig in collated:
 				try:
 					if dest_sig:
 						if dest_sig.isplaceholder(): yield dest_sig
 						else: yield RORPIter.diffonce(dest_sig, dsrp)
-					if dsrp: finalizer(dsrp)
+					if dsrp: finalizer(dsrp.index, dsrp)
 				except (IOError, OSError, RdiffException):
 					Log.exception()
 					Log("Error processing %s, skipping" %
 						str(dest_sig.index), 2)
-			finalizer.getresult()
+			finalizer.Finish()
 		return diffs()
 
 MakeClass(HLSourceStruct)
@@ -209,13 +209,15 @@ class HLDestinationStruct:
 
 	def get_finalizer(cls):
 		"""Return finalizer, starting from session info if necessary"""
-		init_state = cls._session_info and cls._session_info.finalizer_state
-		return DestructiveStepping.Finalizer(init_state)
+		old_finalizer = cls._session_info and cls._session_info.finalizer
+		if old_finalizer: return old_finalizer
+		else: return DestructiveSteppingFinalizer()
 
 	def get_ITR(cls, inc_rpath):
 		"""Return ITR, starting from state if necessary"""
-		init_state = cls._session_info and cls._session_info.ITR_state
-		return Inc.make_patch_increment_ITR(inc_rpath, init_state)
+		if cls._session_info and cls._session_info.ITR:
+			return cls._session_info.ITR
+		else: return IncrementITR(inc_rpath)
 
 	def patch_and_finalize(cls, dest_rpath, diffs, checkpoint = 1):
 		"""Apply diffs and finalize"""
@@ -233,7 +235,7 @@ class HLDestinationStruct:
 				DestructiveStepping.initialize(dsrp, None)
 			if diff_rorp and not diff_rorp.isplaceholder():
 				RORPIter.patchonce_action(None, dsrp, diff_rorp).execute()
-			finalizer(dsrp)
+			finalizer(dsrp.index, dsrp)
 			return dsrp
 
 		try:
@@ -242,7 +244,7 @@ class HLDestinationStruct:
 				except StopIteration: break
 				if checkpoint: SaveState.checkpoint_mirror(finalizer, dsrp)
 		except: cls.handle_last_error(dsrp, finalizer)
-		finalizer.getresult()
+		finalizer.Finish()
 		if Globals.preserve_hardlinks and Globals.rbdir:
 			Hardlink.final_writedata()
 		if checkpoint: SaveState.checkpoint_remove()
@@ -258,16 +260,13 @@ class HLDestinationStruct:
 			indexed_tuple = collated.next()
 			Log("Processing %s" % str(indexed_tuple), 7)
 			diff_rorp, dsrp = indexed_tuple
+			index = indexed_tuple.index
 			if not dsrp:
-				dsrp = cls.get_dsrp(dest_rpath, indexed_tuple.index)
+				dsrp = cls.get_dsrp(dest_rpath, index)
 				DestructiveStepping.initialize(dsrp, None)
-				indexed_tuple = IndexedTuple(indexed_tuple.index,
-											 (diff_rorp, dsrp))
-			if diff_rorp and diff_rorp.isplaceholder():
-				indexed_tuple = IndexedTuple(indexed_tuple.index,
-											 (None, dsrp))
-			ITR(indexed_tuple)
-			finalizer(dsrp)
+			if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
+			ITR(index, diff_rorp, dsrp)
+			finalizer(index, dsrp)
 			return dsrp
 
 		try:
@@ -275,8 +274,8 @@ class HLDestinationStruct:
 				try: dsrp = cls.check_skip_error(error_checked, dsrp)
 				except StopIteration: break
 				SaveState.checkpoint_inc_backup(ITR, finalizer, dsrp)
-			cls.check_skip_error(ITR.getresult, dsrp)
-			cls.check_skip_error(finalizer.getresult, dsrp)
+			cls.check_skip_error(ITR.Finish, dsrp)
+			cls.check_skip_error(finalizer.Finish, dsrp)
 		except: cls.handle_last_error(dsrp, finalizer, ITR)
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
 		SaveState.checkpoint_remove()
