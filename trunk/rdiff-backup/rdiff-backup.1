@@ -9,7 +9,8 @@ rdiff-backup \- local/remote mirror and incremental backup
 
 .B rdiff-backup
 .B {{ -l | --list-increments }
-.BI "| --remove-older-than " time_interval }
+.BI "| --remove-older-than " time_interval
+.BI "| --list-changed-since " time }
 .BI [[[ user@ ] host2.foo ]:: destination_directory ]
 
 .B rdiff-backup --calculate-average
@@ -186,6 +187,12 @@ Only files explicitly matched by
 will be included by this option.  See the
 .B FILE SELECTION
 section for more information.
+.TP
+.BI "--list-changed-since " time
+List the files that have changed since the given time.  See
+.B TIME FORMATS
+for the format of
+.IR time .
 .TP
 .B "-l, --list-increments"
 List the number and date of partial incremental backups contained in
