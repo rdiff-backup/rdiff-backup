@@ -4,7 +4,8 @@ import sys, os
 
 def RunCommand(cmd, ignore_error = 0):
 	print cmd
-	assert not os.system(cmd)
+	if ignore_error: os.system(cmd)
+	else: assert not os.system(cmd)
 
 webprefix = "/home/ben/misc/html/mirror/rdiff-backup/"
 
@@ -22,15 +23,18 @@ RunCommand("cp FAQ.wml CHANGELOG %s" % webprefix)
 
 
 if sys.argv[1:]:
-	RunCommand("mkdir OLD/%s" % (version,), ignore_error = 1)
+	RunCommand("mkdir %s/OLD/%s" % (webprefix, version), ignore_error = 1)
 	RunCommand("cp rdiff-backup-%s.tar.gz rdiff-backup-%s*rpm %s/OLD/%s" %
 			   (version, version, webprefix, version))
 os.chdir(webprefix)
 print "cd ", webprefix
 if sys.argv[1:]:
 	for filename in os.listdir('OLD/' + version):
-		os.symlink('OLD/%s/%s' % (version, filename), filename)
-	RunCommand("rm latest latest.rpm latest.tar.gz")
+	    try: os.lstat(filename)
+	    except OSError: pass
+	    else: os.remove(filename)
+	    os.symlink('OLD/%s/%s' % (version, filename), filename)
+	RunCommand("rm latest latest.src.rpm latest.tar.gz", ignore_error = 1)
 	RunCommand("ln -s rdiff-backup-%s-*src.rpm latest.src.rpm" % (version,))
 	os.symlink("rdiff-backup-%s.tar.gz" % (version,), 'latest.tar.gz')
 	os.symlink('OLD/%s' % (version,), 'latest')
