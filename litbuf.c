@@ -52,15 +52,14 @@ _hs_flush_literal_buf(hs_membuf_t * litbuf,
     assert(amount >= 0);
     assert(code_base == op_literal_1 || code_base == op_signature_1);
 
+    if (amount == 0) {
+	 /* buffer is empty */
+	return 0;
+    }
 
     _hs_trace("flush %d bytes of %s data",
 	      (int) amount,
 	      code_base == op_literal_1 ? "literal" : "signature");
-
-    if (amount == 0) {
-	_hs_trace("Literal data buffer is empty");
-	return 0;
-    }
 
     if (_hs_emit_chunk_cmd(write_fn, write_priv, amount, code_base) < 0)
 	return -1;
