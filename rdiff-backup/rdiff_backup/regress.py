@@ -65,10 +65,13 @@ def Regress(mirror_rp):
 	assert mirror_rp.conn is inc_rpath.conn is Globals.local_connection
 	set_regress_time()
 	set_restore_times()
+	former_current_mirror_rp = remove_rbdir_increments()
 	ITR = rorpiter.IterTreeReducer(RegressITRB, [])
 	for rf in iterate_meta_rfs(mirror_rp, inc_rpath): ITR(rf.index, rf)
 	ITR.Finish()
-	remove_rbdir_increments()
+	if former_current_mirror_rp:
+		C.sync() # Sync first, since we are marking dest dir as good now
+		former_current_mirror_rp.delete()
 
 def set_regress_time():
 	"""Set global regress_time to previous sucessful backup
@@ -98,18 +101,23 @@ def set_restore_times():
 	restore._rest_time = regress_time
 
 def remove_rbdir_increments():
-	"""Delete the increments in the rdiff-backup-data directory"""
-	old_current_mirror = None
+	"""Delete the increments in the rdiff-backup-data directory
+
+	Returns the former current mirror rp so we can delete it later.
+	All of the other rp's should be deleted before the actual regress,
+	to clear up disk space the rest of the procedure may need.
+
+	"""
+	former_current_mirror = None
 	for filename in Globals.rbdir.listdir():
 		rp = Globals.rbdir.append(filename)
 		if rp.isincfile() and rp.getinctime() == unsuccessful_backup_time:
-			if rp.getincbase_str() == "current_mirror": old_current_mirror = rp
+			if rp.getincbase_str() == "current_mirror":
+				former_current_mirror = rp
 			else:
 				log.Log("Removing rdiff-backup-data increment " + rp.path, 5)
 				rp.delete()
-	if old_current_mirror:
-		C.sync() # Sync first, since we are marking dest dir as good now
-		old_current_mirror.delete()
+	return former_current_mirror
 
 def iterate_raw_rfs(mirror_rp, inc_rp):
 	"""Iterate all RegressFile objects in mirror/inc directory

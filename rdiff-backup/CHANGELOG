@@ -2,7 +2,11 @@ New in v0.13.4 (??????????)
 ---------------------------
 
 Regressing and restoring should now take less memory when processing
-large directories.
+large directories (noticed by Luke Mewburn and others).
+
+When regressing, remove mirror_metadata and similar increments first.
+This will hopefully help regressing a backup that failed because disk
+was full (reported by Erik Forsberg).
 
 
 New in v0.13.3 (2003/10/14)
