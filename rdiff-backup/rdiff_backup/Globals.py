@@ -49,7 +49,7 @@ server = None
 # vary depending on the connection.
 process_uid = os.getuid()
 process_gid = os.getgid()
-process_groups = os.getgroups()
+process_groups = [process_gid] + os.getgroups()
 
 # If true, when copying attributes, also change target's uid/gid
 change_ownership = None
