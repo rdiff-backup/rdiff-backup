@@ -129,7 +129,7 @@ hs_result hs_suck_netint(hs_stream_t *stream, int len, int *v)
     case 4:
         return hs_suck_n32(stream, v);
     default:
-        hs_fatal("kaboom! len=%d", len);
+        hs_fatal("kaboom! can't read a %d-bit integer", len);
     }
 }
 

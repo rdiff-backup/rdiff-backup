@@ -67,9 +67,9 @@ hs_emit_delta_header(hs_stream_t *stream)
 void
 hs_emit_literal_cmd(hs_stream_t *stream, int len)
 {
-    int cmd = HS_OP_LITERAL_N32;
+    int cmd = HS_OP_LITERAL_N4;
     
-    hs_trace("emit LITERAL_N32(len=%d), cmd_byte=%#x", len, cmd);
+    hs_trace("emit LITERAL_N4(len=%d), cmd_byte=%#x", len, cmd);
     hs_squirt_n8(stream, cmd);
     hs_squirt_n32(stream, len);
 }

@@ -104,7 +104,7 @@ enum {
 
 emit_cmd('END');
 
-my @int_lens = (8, 16, 32, 64);
+my @int_lens = (1, 2, 4, 8);
 
 my ($i, $j);
 
