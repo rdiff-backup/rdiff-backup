@@ -158,8 +158,8 @@ typedef struct hs_mdfour {
 
 void            hs_mdfour(byte_t *out, byte_t const *in, int n);
 void            hs_mdfour_begin( /* @out@ */ hs_mdfour_t * md);
-void            hs_mdfour_update(hs_mdfour_t * md, byte_t const *in,
-				 int n);
+void            hs_mdfour_update(hs_mdfour_t * md, void const *,
+				 size_t n);
 void            hs_mdfour_result(hs_mdfour_t * md, /* @out@ */
 				 byte_t *out);
 
@@ -167,8 +167,8 @@ void            hs_mdfour_result(hs_mdfour_t * md, /* @out@ */
 void     hs_hexify_buf(char *to_buf, byte_t const *from_buf, int from_len);
 
 
-char           *hs_format_stats(hs_stats_t const *, char *, size_t);
-int hs_write_stats(hs_stats_t const *stats, int out_fd);
+char *hs_format_stats(hs_stats_t const *, char *, size_t);
+int hs_log_stats(hs_stats_t const *stats);
 
 
 /***********************************************************************
@@ -185,12 +185,14 @@ hs_result_t     hs_mksum_iter(hs_mksum_job_t * job);
 
 
 
-/* ======================================== * * Sumsets */
+/***********************************************************************
+ * Sumsets
+ ***********************************************************************/
 typedef struct hs_sumset hs_sumset_t;
 
 hs_sumset_t    *hs_read_sumset(hs_read_fn_t, void *);
 void            hs_free_sumset(hs_sumset_t * psums);
-
+void hs_sumset_dump(hs_sumset_t const *sums);
 
 
 

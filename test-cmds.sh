@@ -10,7 +10,7 @@
 # run from the commandline we may not have it.
 
 out=$tmpdir/out.tmp
-cmds=$testdir/cmds
+cmds=$srcdir/test-cmds.in
 tmp=$tmpdir/bin.tmp
 
 run_test hsemit < $cmds > $tmp

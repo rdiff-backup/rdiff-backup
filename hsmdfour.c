@@ -33,7 +33,7 @@ main(int argc, char *argv[])
     hs_mdfour_t     sum;
     hs_filebuf_t   *infb;
     byte_t          result[MD4_LENGTH];
-    char            result_str[MD4_LENGTH * 2];
+    char            result_str[MD4_LENGTH * 3];
     int             buf_len = 1000;
     byte_t         *buf;
     char           *tail_ptr;
@@ -77,7 +77,7 @@ main(int argc, char *argv[])
     hs_mdfour_result(&sum, result);
     hs_hexify_buf(result_str, result, MD4_LENGTH);
 
-    write(STDOUT_FILENO, result_str, sizeof result_str);
+    write(STDOUT_FILENO, result_str, strlen(result_str));
     write(STDOUT_FILENO, "\n", 1);
 
     return 0;

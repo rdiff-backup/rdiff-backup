@@ -146,6 +146,8 @@ _hs_send_literal(hs_write_fn_t write_fn,
 		 size_t amount)
 {
     int ret;
+
+    assert(amount > 0);
     
     _hs_trace("flush %d bytes of %s data",
 	      (int) amount,
@@ -200,7 +202,8 @@ _hs_emit_signature_cmd(hs_write_fn_t write_fn, void *write_priv,
 
 int
 _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
-	      hs_off_t offset, size_t length, hs_stats_t * stats)
+	      hs_off_t offset, size_t length,
+              hs_stats_t * stats)
 {
     int ret;
     int len_type, off_type;

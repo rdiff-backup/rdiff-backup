@@ -1,5 +1,5 @@
 /*				       	-*- c-file-style: "bsd" -*-
- *
+ * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool
@@ -19,51 +19,39 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
 #include "includes.h"
+#include "sum_p.h"
 
-#include <unistd.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/file.h>
-#include <string.h>
 
 
 int
-hs_log_stats(hs_stats_t const *stats)
+main(int argc, char **argv)
 {
-    char buf[1000];
+    int c;
+    hs_filebuf_t       *sig_fb;
+    hs_sumset_t        *sums;
 
-    hs_format_stats(stats, buf, sizeof buf - 1);
-    _hs_log(LOG_INFO, "%s", buf);
+    hs_trace_set_level(LOG_INFO);
+    while ((c = getopt(argc, argv, "D")) != -1) {
+        switch (c) {
+        case '?':
+        case ':':
+            return 1;
+        case 'D':
+            hs_trace_set_level(LOG_DEBUG);
+            break;
+        }
+    }
+
+    sig_fb = hs_filebuf_from_fd(STDIN_FILENO);
+    sums = hs_read_sumset(hs_filebuf_read, sig_fb);
+
+    hs_sumset_dump(sums);
+
+    hs_free_sumset(sums);
+
     return 0;
-}
-
-
-/*
- * Return a newly-allocated string containing a human-readable form of
- * the transfer statistics.
- */
-char *
-hs_format_stats(hs_stats_t const * stats,
-		char *buf, size_t size)
-{
-    char const *op = stats->op;
-    char const *alg = stats->algorithm;
-
-    if (!op)
-        op = "noop";
-    if (!alg)
-        alg = "none";
-    
-    snprintf(buf, size,
-	     "%s/%s literal[%d cmds, %d bytes], "
-	     "signature[%d cmds, %d bytes], "
-	     "copy[%d cmds, %d bytes, %d false]",
-	     op, alg,
-	     stats->lit_cmds, stats->lit_bytes,
-	     stats->sig_cmds, stats->sig_bytes,
-	     stats->copy_cmds, stats->copy_bytes,
-	     stats->false_matches);
-
-    return buf;
 }

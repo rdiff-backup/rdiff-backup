@@ -20,6 +20,7 @@ configure
 configure.scan
 genmaptest
 hsdecode
+hsdumpsums
 hsemit
 hsemit
 hsencode

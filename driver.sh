@@ -20,6 +20,9 @@
 # perhaps generate random pairs of related files.  Perhaps do this
 # using genmaptest.
 
+# Don't ever allow undefined shell variables to default
+set -u
+
 if [ $# -lt 1 ]
 then
     echo 'runtest: must have at least one parameter, the test script'
@@ -30,21 +33,54 @@ test_script=$1
 shift
 test_name=`basename $test_script .sh`
 
+# TODO: Add more pair instructions here
+delta_instr="
+0,1024
+0,2048
+1024,1024:0,1024
+0,1025
+0,1
+0,10
+0,1000
+0,2000
+0,10000
+0,100000
+1,10
+1,10000
+0,2000:2000,2000:4000,100000
+1,10000:0,1:10000,1000000
+10,1:8,4:6,8:4,10:2,12
+0,10000:0,10000:0,10000
+"
+
 # Process command-line options
 trace=:
+stats=
+debug=
+time=
 for o in "$@"
 do
     case "$o" in 
     -D)
 	debug=-D
 	;;
+    -S)
+	stats=-S
+	;;
     -x)
 	trace='set -x'
+	;;
+    -t)
+	time='time'
+	;;
+    *)
+	echo "unrecognized driver option $o" >&2
+	exit 1
 	;;
     esac
 done
 
-if [ "$srcdir" = "" ]
+if [ "${srcdir:-}" = "" ]
 then
     srcdir=`dirname $0`
 fi
@@ -75,21 +111,16 @@ run_test () {
 # more than this many on any one test gets boring
 ntests=300
 countdown () {
-    if [ $ntests -lt 0 ] 
-    then
-	echo truncated 1>&2
-        exit 0
-    fi
-    ntests=`expr $ntests - 1`
+    ntests=`expr $ntests - 1` || exit 0
 }
 
 make_input () {
-    cat $srcdir/*.h $srcdir/*.sh $srcdir/*.c
+    cat $srcdir/COPYING
 }
 
-make_manyfiles() {
-    find $srcdir $builddir -type f |head -1000
-}
+#  make_manyfiles() {
+#      find $srcdir $builddir -type f |head -1000
+#  }
 
 echo "$test_name"
 

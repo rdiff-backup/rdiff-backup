@@ -43,8 +43,6 @@ int main(int argc, char *argv[])
      int c;
      int			show_stats = 0;
 
-     
-
      while ((c = getopt(argc, argv, "DS")) != -1) {
 	 switch (c) {
 	 case '?':

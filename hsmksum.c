@@ -52,6 +52,7 @@ process_args(int argc, char **argv)
 	switch (c) {
 	case '?':
 	case ':':
+            usage(argv[0]);
 	    exit(1);
 	case 'h':
 	    usage(argv[0]);

@@ -9,21 +9,6 @@
 # various hsmapread instructions.  It then checks transforming between
 # the new and old files, and back again.
 
-# TODO: Add more pair instructions here
-pairinstr="
-0,1
-0,10
-0,1000
-0,10000
-0,100000
-1,10
-1,10000
-0,2000:2000,2000:4000,100000
-1,10000:0,1:10000,1000000
-10,1:8,4:6,8:4,10:2,12
-0,10000:0,10000:0,10000
-"
-
 old=$srcdir/COPYING
 lt=$tmpdir/lt.tmp
 oldsig=$tmpdir/oldsig.tmp
@@ -32,10 +17,10 @@ newout=$tmpdir/out.tmp
 chksig=$tmpdir/chksig.tmp
 chkout=$tmpdir/chkout.tmp
 
-run_test hsnad /dev/null <$old >$lt
-run_test hsdecode /dev/null $oldsig /dev/null $lt
+run_test hsnad $debug /dev/null <$old >$lt
+run_test hsdecode $debug /dev/null $oldsig /dev/null $lt
     
-for instr in $pairinstr
+for instr in $delta_instr
 do
     new="$tmpdir/new$instr.tmp"
 

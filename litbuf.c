@@ -37,10 +37,13 @@ _hs_append_literal(hs_membuf_t * litbuf, byte_t value)
 }
 
 
-/* Write out accumulated data.  We've built up some literal or signature data 
-   waiting to go out in LITBUF, and we're ready to write it to WRITE_FN.
-   CODE_BASE is either op_literal_1 or op_signature_1 depending on which it
-   is; STATS is updated appropriately. */
+/*
+ * Write out accumulated data.  We've built up some literal or
+ * signature data waiting to go out in LITBUF, and we're ready to
+ * write it to WRITE_FN. CODE_BASE is either op_literal_1 or
+ * op_signature_1 depending on which it is; STATS is updated
+ * appropriately.
+ */
 ssize_t
 _hs_push_literal_buf(hs_membuf_t * litbuf,
 		     hs_write_fn_t write_fn, void *write_priv,

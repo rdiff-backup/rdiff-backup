@@ -1,21 +1,24 @@
-/* -*- mode: c; c-file-style: "bsd"; c-basic-offset: 4 -*-  */
-/* 
-   mdfour code from Samba Copyright (C) 2000 by Martin Pool Copyright (C)
-   1997-1998 by Andrew Tridgell
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the Free 
-   Software Foundation; either version 2 of the License, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-   for more details.
-
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, write to the Free Software Foundation, Inc.,
-   675 Mass Ave, Cambridge, MA 02139, USA. */
+/*				       	-*- c-file-style: "bsd" -*-
+ * rproxy -- dynamic caching and delta update in HTTP
+ * $Id$
+ * 
+ * Copyright (C) 2000 by Martin Pool
+ * Copyright (C) 1997-1999 by Andrew Tridgell
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 /* NOTE: This code makes no attempt to be fast!
 
@@ -196,11 +199,14 @@ hs_mdfour_tail(hs_mdfour_t * m, unsigned char const *in, int n)
     }
 }
 
+
+
 void
-hs_mdfour_update(hs_mdfour_t * md, unsigned char const *in, int n)
+hs_mdfour_update(hs_mdfour_t * md, void const *in_void, size_t n)
 {
     uint32_t        M[16];
-    int             n2 = 64 - md->tail_len;
+    size_t          n2 = 64 - md->tail_len;
+    byte_t const        *in = (byte_t const *) in_void;
 
     if (n == 0)
 	return;

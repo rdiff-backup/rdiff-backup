@@ -37,12 +37,12 @@
 
 /* libhsync headers. */
 #include "hsync.h"
+#include "trace.h"
 #include "hsyncproto.h"
 #include "private.h"
 #include "emit.h"
 #include "util.h"
 #include "mapptr.h"
 #include "rollsum.h"
-#include "search.h"
 #include "sumset.h"
 #include "mksum.h"

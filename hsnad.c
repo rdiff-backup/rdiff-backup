@@ -20,6 +20,14 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+/*
+ * TODO: Is anyone interested in having a way to write out the
+ * signatures as they're generated?  We'd have to make hsnad also
+ * generate an in-memory sumset, I imagine... or perhaps if we had
+ * pluggable output callbacks, then we could put a tee into the
+ * signature output routine.
+ */
+
 #include "includes.h"
 
 
@@ -47,7 +55,7 @@ usage(char const *progname)
 
 
 static void
-process_args(int argc, char **argv)
+process_opts(int argc, char **argv)
 {
     int             c;
 
@@ -55,17 +63,21 @@ process_args(int argc, char **argv)
 	switch (c) {
 	case '?':
 	case ':':
+	    usage(argv[0]);
 	    exit(1);
+
 	case 'h':
 	    usage(argv[0]);
 	    exit(0);
-	case 'D':
+
+        case 'D':
 	    if (!hs_supports_trace()) {
 		_hs_error("library does not support trace");
 	    }
 	    hs_trace_set_level(LOG_DEBUG);
 	    break;
-	case 'S':
+
+        case 'S':
 	    show_stats = 1;
 	    break;
 	}
@@ -83,7 +95,7 @@ main(int argc, char **argv)
     hs_filebuf_t   *sig_fb;
     hs_sumset_t    *sums = NULL;
 
-    process_args(argc, argv);
+    process_opts(argc, argv);
 
     out = hs_filebuf_from_fd(STDOUT_FILENO);
     if (!out) {
@@ -106,7 +118,7 @@ main(int argc, char **argv)
 	hs_free_sumset(sums);
 
     if (show_stats)
-	hs_write_stats(&stats, STDIN_FILENO);
+	hs_log_stats(&stats);
 
     return result == HS_DONE ? 0 : 2;
 }

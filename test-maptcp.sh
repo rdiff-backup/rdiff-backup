@@ -22,7 +22,7 @@ do
 
     for ioargs in '' '-k' '-n -k -s'
     do
-	run_test sockrun -- hsmapread $test_opts $ioargs `cat $cmds` <$from >$new
+	run_test sockrun -- hsmapread $debug $ioargs `cat $cmds` <$from >$new
 	run_test cmp $expect $new
     done
 done

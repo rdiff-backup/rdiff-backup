@@ -210,10 +210,10 @@ _hs_map_do_read(hs_map_t *map,
         map->p_fd_offset += nread;
     } while (total_read < min_size);
 
-    _hs_trace("wanted %ld to %ld bytes, read %ld bytes at %ld%s",
+    _hs_trace("wanted %ld to %ld bytes, read %ld bytes, fd now at %ld%s",
               (long) min_size, (long) max_size, (long) total_read,
               (long) map->p_fd_offset,
-              *reached_eof ? ", now at eof" : "");
+              *reached_eof ? " which is eof" : "");
 
     return total_read;
 }
@@ -349,7 +349,7 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
     assert(*len > 0);
     *reached_eof = 0;
 
-    _hs_trace("off=%ld, len=%ld", (long) offset, (long) *len);
+    _hs_trace("asked for off=%ld, len=%ld", (long) offset, (long) *len);
 
     out_off = (offset - map->p_offset);
     
@@ -381,7 +381,15 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
 
     map->p_offset = window_start;
 
-    assert(read_max_size > 0);
+    /* Work out the minimum number of bytes we must read to cover the
+     * requested region. */
+    read_min_size = *len + (offset - map->p_offset) - read_offset;
+
+    if (read_min_size <= 0) {
+        _hs_trace("no need to read after moving data; p_offset=%ld",
+                  (long) map->p_offset);
+        return map->p + (offset - map->p_offset);
+    }
 
     if (map->p_fd_offset != read_start) {
         if (lseek(map->fd, read_start, SEEK_SET) != read_start) {
@@ -393,16 +401,11 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
         _hs_trace("seek to %ld", (long) read_start);
     }
 
-    /* Work out the minimum number of bytes we must read to cover the
-     * requested region. */
-    read_min_size = *len + (offset - map->p_offset) - read_offset;
-    assert(read_min_size >= 0);
-
     /* read_min_size may be >*len when offset > map->p_offset, i.e. we
-       have to read in some data before the stuff the caller wants to
-       see.  We read it anyhow to avoid seeking (in the case of a
-       pipe) or because they might want to go back and see it later
-       (in a file). */
+     * have to read in some data before the stuff the caller wants to
+     * see.  We read it anyhow to avoid seeking (in the case of a
+     * pipe) or because they might want to go back and see it later
+     * (in a file). */
 
     if (read_min_size > read_max_size) {
         _hs_fatal("we really screwed up: minimum size is %ld, but remaining "

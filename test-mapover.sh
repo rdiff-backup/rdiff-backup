@@ -14,7 +14,7 @@ run_test genmaptest mapover 1000 $cmds $expect $from
 
 for ioargs in '' '-k' '-n -s'
 do
-    run_test hsmapread $test_opts `cat $cmds` <$from >$new
+    run_test hsmapread $debug `cat $cmds` <$from >$new
     run_test cmp $expect $new
 done
 

@@ -23,10 +23,12 @@
 /* sumset -- Manipulate and do IO on sets of checksums. */
 
 #include "includes.h"
+#include "sum_p.h"
 
-/* Read and remember all the signatures from last time.  Return null * if
-   there are no signatures. */
-
+/*
+ * Read and remember all the signatures from last time.  Return null *
+ * if there are no signatures.
+ */
 hs_sumset_t    *
 hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
 {
@@ -50,7 +52,7 @@ hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
 
     sumbuf->block_len = block_len;
 
-    sumbuf->sums = NULL;
+    sumbuf->block_sums = NULL;
     /* XXX: It's perhaps a bit inefficient to realloc each time. We could
        prealloc, but for now we'll give realloc the benefit of the doubt. */
 
@@ -66,15 +68,15 @@ hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
 	}
 	assert(ret == 4);
 
-	sumbuf->sums = realloc(sumbuf->sums, (n + 1) * sizeof(hs_sum_buf_t));
-	if (sumbuf->sums == NULL) {
+	sumbuf->block_sums = realloc(sumbuf->block_sums, (n + 1) * sizeof(hs_sum_buf_t));
+	if (sumbuf->block_sums == NULL) {
 	    errno = ENOMEM;
 	    ret = -1;
 	    break;
 	}
-	asignature = &(sumbuf->sums[n]);
+	asignature = &(sumbuf->block_sums[n]);
 
-	asignature->sum1 = checksum1;
+	asignature->weak_sum = checksum1;
 	asignature->i = ++n;
 
 	/* read in the long sum */
@@ -110,8 +112,8 @@ hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
 void
 hs_free_sumset(hs_sumset_t * psums)
 {
-    if (psums->sums)
-	free(psums->sums);
+    if (psums->block_sums)
+	free(psums->block_sums);
 
     assert(psums->tag_table);
     free(psums->tag_table);
@@ -122,3 +124,30 @@ hs_free_sumset(hs_sumset_t * psums)
     hs_bzero(psums, sizeof *psums);
     free(psums);
 }
+
+
+
+void
+hs_sumset_dump(hs_sumset_t const *sums)
+{
+    int i;
+    char        strong_hex[MD4_LENGTH * 3];
+    
+    _hs_log(LOG_INFO, 
+            "sumset info: block_len=%d, file length=%lu, "
+            "number of chunks=%d, remainder=%d",
+            sums->block_len,
+            (unsigned long) sums->flength, sums->count,
+            sums->remainder);
+
+    for (i = 0; i < sums->count; i++) {
+        hs_hexify_buf(strong_hex, sums->block_sums[i].strong_sum,
+                      DEFAULT_SUM_LENGTH);
+        _hs_log(LOG_INFO,
+                "sum %6d: weak=%08x, strong=%s",
+                i, sums->block_sums[i].weak_sum, strong_hex);
+    }
+}
+
+
+

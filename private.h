@@ -20,9 +20,6 @@
  */
 
 
-
-#include "trace.h"
-
 /* ========================================
 
    Nice macros */
@@ -137,9 +134,11 @@ _hs_inbuf_t    *_hs_new_inbuf(void);
 void            _hs_free_inbuf(_hs_inbuf_t *);
 int             _hs_slide_inbuf(_hs_inbuf_t *);
 
-/* ========================================
 
-   Checksums */
+
+/***********************************************************************
+ * Checksums
+ ***********************************************************************/
 
 #define MD4_LENGTH 16
 #define DEFAULT_SUM_LENGTH 8
@@ -148,34 +147,8 @@ int             _hs_slide_inbuf(_hs_inbuf_t *);
    algorithm: tridge suggests a prime number. */
 #define CHAR_OFFSET 31
 
-typedef unsigned short tag;
-
-struct target {
-    tag             t;
-    int             i;
-};
-
-/* This structure describes all the sums generated for an instance of a file. 
-   It incorporates some redundancy to make it easier to search. */
-struct hs_sumset {
-    hs_off_t        flength;	/* total file length */
-    int             count;	/* how many chunks */
-    int             remainder;	/* flength % block_length */
-    int             block_len;	/* block_length */
-    struct hs_sum_buf *sums;	/* points to info for each chunk */
-    int            *tag_table;
-    struct target  *targets;
-};
-
-
-/* All blocks are the same length in the current algorithm except for the
-   last block which may be short. */
-typedef struct hs_sum_buf {
-    int             i;		/* index of this chunk */
-    uint32_t        sum1;	/* simple checksum */
-    byte_t          strong_sum[MD4_LENGTH];	/* checksum  */
-} hs_sum_buf_t;
-
+typedef uint32_t hs_weak_sum_t;
+typedef byte_t   hs_strong_sum_t[MD4_LENGTH];
 
 typedef struct hs_rollsum hs_rollsum_t;
 

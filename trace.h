@@ -50,20 +50,19 @@ void _hs_log0(int level, char const *fn, char const *fmt, ...)
  */
 
 #define _hs_log(l, s, str...) do {              \
-     _hs_log0(l, __FUNCTION__, (s),         \
-                , ##str);                       \
+     _hs_log0(l, __FUNCTION__, (s) , ##str);    \
      } while (0)
 
 
-#define _hs_error(s, str...) do {               \
-     _hs_log0(LOG_ERR,  __FUNCTION__, (s) , ##str);                       \
+#define _hs_error(s, str...) do {                       \
+     _hs_log0(LOG_ERR,  __FUNCTION__, (s) , ##str);     \
      } while (0)
 
 
-#define _hs_fatal(s, str...) do {                                       \
-     _hs_log0(LOG_CRIT,  __FUNCTION__,                                  \
-	      (s) , ##str);                                               \
-     abort();                                                           \
+#define _hs_fatal(s, str...) do {               \
+     _hs_log0(LOG_CRIT,  __FUNCTION__,          \
+	      (s) , ##str);                     \
+     abort();                                   \
      } while (0)
 
 

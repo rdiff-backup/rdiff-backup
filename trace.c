@@ -39,7 +39,7 @@ int const hs_libhsync_file_offset_bits = SIZEOF_OFF_T * 8;
 
 hs_trace_fn_t  *_hs_trace_impl = hs_trace_to_stderr;
 
-static int _hs_trace_level = LOG_NOTICE;
+static int _hs_trace_level = LOG_INFO;
 
 
 /* Called by the application to set the destination of trace * information. */

@@ -8,26 +8,31 @@
 # Generate and test differences based on compinations of source files.
 
 diff=$tmpdir/diff.tmp
-files=`find ${srcdir:-.} -type f |head -40`
 newsig=$tmpdir/newsig.tmp
+old=$tmpdir/old.tmp
+new=$tmpdir/new.tmp
 out=$tmpdir/out.tmp
-origsig=$tmpdir/origsig.tmp
-old=/dev/null
-
+oldsig=$tmpdir/oldsig.tmp
 fromsig=$tmpdir/fromsig.tmp
 fromlt=$tmpdir/fromlt.tmp
 ltfile=$tmpdir/lt.tmp
 
-for from in $files
-do
-    run_test hsnad /dev/null <$from >$ltfile
-    run_test hsdecode /dev/null $origsig /dev/null $ltfile 
+basis=$srcdir/COPYING
 
-    for new in $files
+for instr1 in $delta_instr
+do
+    run_test hsmapread $debug $instr1 <$basis >$old
+
+    run_test hsnad $debug /dev/null <$old >$ltfile
+    run_test hsdecode $debug /dev/null $oldsig /dev/null $ltfile 
+
+    for instr2 in $delta_instr
     do
 	countdown
-	run_test hsnad $origsig <$new >$diff 
-        run_test hsdecode $old $newsig $out $diff 
+	run_test hsmapread $debug $instr1 <$basis >$new
+
+	run_test hsnad $debug $oldsig <$new >$diff 
+        run_test hsdecode $debug $old $newsig $out $diff 
    
         run_test cmp $out $new
    done

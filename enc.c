@@ -1,98 +1,101 @@
-/* -*- mode: c; c-file-style: "bsd" -*- * $Id: enc.c,v 1.27 2000/06/01
-   03:30:38 mbp Exp $ * * enc.c -- combined encode and sign
-
-   Copyright (C) 1999-2000 by Martin Pool. Copyright (C) 1999-2000 by Peter
-   Barker. Copyright (C) 1999 by Andrew Tridgell
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the Free 
-   Software Foundation; either version 2 of the License, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-   for more details.
-
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, write to the Free Software Foundation, Inc., 59 
-   Temple Place, Suite 330, Boston, MA 02111-1307 USA */
+/*				       	-*- c-file-style: "bsd" -*-
+ * rproxy -- dynamic caching and delta update in HTTP
+ * $Id$
+ * 
+ * Copyright (C) 1999, 2000 by Martin Pool
+ * Copyright (C) 1999 by Andrew Tridgell
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 /* 
-   This file has an implementation of combined encoding & signing. The result 
-   is a single token stream which contains the changes relative to the old
-   signature and also the new signature.
-
-   If we recognize a block whose signature we know at that point, then we
-   skip the read cursor over the whole block and write out its token.
-
-   If we don't, then we just emit a single byte and will try again at the
-   next position.
-
-   We make sure that there is more than a block of readahead data available
-   in inbuf, unless we're approaching the end of the file.
-
-   If we're approaching the end of the file and there is less than block_size 
-   left, then we can still send a short block.  The checksum in this case is
-   taken just over the remaining part of the file.
-
-   When we first start processing a stream, we have to kickstart the weak
-   checksum by summing the whole first block through _hs_calc_weak_sum. After 
-   this, though, we can just let the checksum accumulate by adding the byte
-   at the end of the block and letting older bytes fall off the end.  We
-   will need to calculate a whole-block checksum again after outputting a
-   token, because we've skipped over the block whose state we held.
-
-   For simplicity, we use the same block size for both the old and new
-   checksums.
-
-   We can also encode & checksum without an old signature returned from the
-   client.  We revert to this mode if anything goes wrong with the clients
-   signature, so this basically makes us fail-safe: if they scrambled or
-   damaged their signature then they ought to just get a copy of the new
-   data.
-
-   As we read input from upstream, we have to send it into the encoding
-   process and also use it to generate a new signature.  We never worry about 
-   caching the information because if we're encoding we expect to encode
-   again in the future, and the encoder never needs the old value.
-
+ * This file has an implementation of combined encoding & signing. The result 
+ * is a single token stream which contains the changes relative to the old
+ * signature and also the new signature.
+ * 
+ * If we recognize a block whose signature we know at that point, then we
+ * skip the read cursor over the whole block and write out its token.
+ * 
+ * If we don't, then we just emit a single byte and will try again at the
+ * next position.
+ * 
+ * We make sure that there is more than a block of readahead data available
+ * in inbuf, unless we're approaching the end of the file.
+ * 
+ * If we're approaching the end of the file and there is less than block_size 
+ * left, then we can still send a short block.  The checksum in this case is
+ * taken just over the remaining part of the file.
+ * 
+ * When we first start processing a stream, we have to kickstart the weak
+ * checksum by summing the whole first block through _hs_calc_weak_sum. After 
+ * this, though, we can just let the checksum accumulate by adding the byte
+ * at the end of the block and letting older bytes fall off the end.  We will 
+ * need to calculate a whole-block checksum again after outputting a token,
+ * because we've skipped over the block whose state we held.
+ * 
+ * For simplicity, we use the same block size for both the old and new
+ * checksums.
+ * 
+ * We can also encode & checksum without an old signature returned from the
+ * client.  We revert to this mode if anything goes wrong with the clients
+ * signature, so this basically makes us fail-safe: if they scrambled or
+ * damaged their signature then they ought to just get a copy of the new
+ * data.
+ * 
+ * As we read input from upstream, we have to send it into the encoding
+ * process and also use it to generate a new signature.  We never worry about 
+ * caching the information because if we're encoding we expect to encode
+ * again in the future, and the encoder never needs the old value.
+ * 
  */
 
 
 /* FIXME: Check that we use signed/unsigned integers properly.
-
-   TODO: Add another command, which contains the checksum for the *whole new
-   file* so far.  Then we can compare it at both ends and *tell if we fucked
-   up.
-
-   (TODO: Cope without an old signature, in which case we generate a
-   signature and chunk everything, but can't match blocks.  I think this is
-   done now. ?)
-
-   FIXME: Something seems to be wrong with the trailing chunk; it doesn't
-   match.
-
-   TODO: Have something like an MTU: after we've processed this much input,
-   we flush commands whether it's necessary or not.  This will help with
-   liveness downstream: there's no point leaving the downstream network idle
-   for too long.  Another name for this is `early emit'.
-
-   tridge reckons a good size is 32kb, and that the algorithm should be: if
-   either the literal or the copy queues represent 32kb of input, then push
-   them out.  32kb is chosen because it is typical of the size of TCP buffers 
-   in many systems.
-
-   Also, we have to keep the literal data in memory until we push it out, and 
-   so we have to flush before we use up too much memory doing that.
-
-   TODO: If it should happen that the old and new block sizes are the same,
-   then we only need to keep track of one rolling checksum, which is more
-   efficient.  Should we force this to always be the case?  Probably not.
-
-   TODO: If we're encoding and realize we can't continue, then have a
-   fallback mode in which everything is sent as literal data.  In fact, we
-   can just map buffers straight through in that case. */
+ * 
+ * TODO: Add another command, which contains the checksum for the *whole new
+ * file* so far.  Then we can compare it at both ends and *tell if we fucked
+ * up.
+ * 
+ * (TODO: Cope without an old signature, in which case we generate a
+ * signature and chunk everything, but can't match blocks.  I think this is
+ * done now. ?)
+ * 
+ * FIXME: Something seems to be wrong with the trailing chunk; it doesn't
+ * match.
+ * 
+ * TODO: Have something like an MTU: after we've processed this much input,
+ * we flush commands whether it's necessary or not.  This will help with
+ * liveness downstream: there's no point leaving the downstream network idle
+ * for too long.  Another name for this is `early emit'.
+ * 
+ * tridge reckons a good size is 32kb, and that the algorithm should be: if
+ * either the literal or the copy queues represent 32kb of input, then push
+ * them out.  32kb is chosen because it is typical of the size of TCP buffers 
+ * in many systems.
+ * 
+ * Also, we have to keep the literal data in memory until we push it out, and 
+ * so we have to flush before we use up too much memory doing that.
+ * 
+ * TODO: If it should happen that the old and new block sizes are the same,
+ * then we only need to keep track of one rolling checksum, which is more
+ * efficient.  Should we force this to always be the case?  Probably not.
+ * 
+ * TODO: If we're encoding and realize we can't continue, then have a
+ * fallback mode in which everything is sent as literal data.  In
+ * fact, we can just map buffers straight through in that case.
+ */
 
 /* 
  * TODO: Maybe flush signature or literal data in here
@@ -262,11 +265,12 @@ hs_encode_old(hs_read_fn_t read_fn, void *readprivate,
 		token = 0;
 
 	    if (token > 0) {
-		/* if we're at eof, then we should only be able to match the
-		   last token, because it's the only short one.  we don't
-		   store the token lengths; they're implied by the checksum.
-		   the reverse isn't true: the last token might be a full
-		   block, so we are allowed to match it anytime. */
+		/* If we're at eof, then we should only be able to
+                 * match the last token, because it's the only short
+                 * one.  we don't store the token lengths; they're
+                 * implied by the checksum. the reverse isn't true:
+                 * the last token might be a full block, so we are
+                 * allowed to match it anytime. */
 		if (at_eof) {
 		    assert(token == sums->count);
 		}

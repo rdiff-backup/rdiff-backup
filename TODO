@@ -6,9 +6,17 @@ $Id$
    * Will the GNU Lesser GPL work?  Specifically, will it be a problem
      in distributing this with Mozilla or Apache?  
 
+ * Checksums
+
+   * Allow variable-length checksums in the signature; the signature
+     will have to describe the length of the sums and we must compare
+     them taking this into account.
+
  * Testing
 
-   * Test files >2GB, >4GB
+   * Test files >2GB, >4GB.  Presumably these must be done in streams
+     so that the disk requirements to run the test suite are not too
+     ridiculous. 
 
  * Web site in Latte
 
@@ -55,6 +63,10 @@ $Id$
    * This ought to make it simpler to get push-structured interfaces. 
 
  * More thorough testing
+
+   * Check the encoded file checksum against the real mdfour sum of
+     the file?  The code's pretty simple, so hopefully this is not a
+     problem. 
 
    * mdfour
 

@@ -21,11 +21,37 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+/*
+ * nadlit.c -- nad-encoding literal output buffer.  This buffers up
+ * information in between matches.  We don't copy it; we just keep a
+ * pointer to the earliest match.  Whenever we discover a copy
+ * command, or move, then we flush it all out.
+ *
+ * This 
+ * TODO: Integrate the literal buffer with the nad scan buffer, so
+ * that we don't have to copy the data.  Instead keep a pointer to the
+ * start and end of the literal region, and when we move somewhere
+ * else or finish this iteration, then flush it out as a literal
+ * instruction.  This should also keep good liveness, because we will
+ * flush before going back to look for more input, and it'll keep the
+ * windows about the same size which is fine.
+ *
+ * This can end up looking a lot like the copyq: it just needs an
+ * offset and length, and as long as they're all consecutive they're
+ * fine.  If it's ever asked to flush or realizes on its own that it
+ * should, then it sends the literal data out of the buffer.  Great.
+ */ 
+
 
 #include "includes.h"
 
-/* If possible, append this copy command to the end of the previous
- * one.  If not, flush the existing command and begin a new one.  */
+#include "nad_p.h"
+
+#if 0
+/*
+ * If possible, append this copy command to the end of the previous
+ * one.  If not, flush the existing command and begin a new one.
+ */
 int
 _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
 	       _hs_copyq_t * copyq,
@@ -73,3 +99,4 @@ _hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
 
     return ret;
 }
+#endif

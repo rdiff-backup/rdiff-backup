@@ -3,8 +3,8 @@
  * $Id$
  * 
  * Copyright (C) 1999, 2000 by Martin Pool
- * Copyright (C) Andrew Tridgell 1996
- * Copyright (C) Paul Mackerras 1996
+ * Copyright (C) 1996 by Andrew Tridgell
+ * Copyright (C) 1996 by Paul Mackerras
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,9 +27,9 @@
 int checksum_seed = 0;
 
 /*
-  a simple 32 bit checksum that can be updated from either end
-  (inspired by Mark Adler's Adler-32 checksum)
-  */
+ * A simple 32 bit checksum that can be updated from either end
+ * (inspired by Mark Adler's Adler-32 checksum)
+ */
 uint32_t _hs_calc_weak_sum(byte_t const *buf1, int len)
 {
      int i;
@@ -51,20 +51,24 @@ uint32_t _hs_calc_weak_sum(byte_t const *buf1, int len)
 }
 
 
-/* Calculate and store into SUM a strong MD4 checksum of the file
-   blocks seen so far. 
-
-   The checksum is perturbed by a seed value.  This is used when
-   retrying a failed transmission: we've discovered that the hashes
-   collided at some point, so we're going to try again with different
-   hashes to see if we can get it right.  (Check tridge's thesis for
-   details and to see if that's correct.)
-
-   Since we can't retry a web transaction I'm not sure if it's very
-   useful in rproxy. */
+/*
+ * Calculate and store into SUM a strong MD4 checksum of the file
+ * blocks seen so far.
+ *
+ * The checksum is perturbed by a seed value.  This is used when
+ * retrying a failed transmission: we've discovered that the hashes
+ * collided at some point, so we're going to try again with different
+ * hashes to see if we can get it right.  (Check tridge's thesis for
+ * details and to see if that's correct.)
+ *
+ * Since we can't retry a web transaction I'm not sure if it's very
+ * useful in rproxy.
+ */
 uint32_t
-_hs_calc_strong_sum(byte_t const *buf, size_t len,
-		    byte_t *sum, size_t sum_len)
+_hs_calc_strong_sum(byte_t const *buf,
+                    size_t len,
+		    byte_t *sum,
+                    size_t sum_len)
 {
      hs_mdfour_t m;
      byte_t tsum[MD4_LENGTH];

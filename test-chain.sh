@@ -14,7 +14,6 @@ files=`echo $srcdir/*.c|head -20`
 out=$tmpdir/out.tmp
 sig=$tmpdir/sig.tmp
 newsig=$tmpdir/newsig.tmp
-old=/dev/null
 
 fromsig=$tmpdir/fromsig.tmp
 fromlt=$tmpdir/fromlt.tmp
@@ -22,16 +21,17 @@ ltfile=$tmpdir/lt.tmp
 
 for from in $files
 do
-    run_test hsnad /dev/null <$from >$ltfile
-    run_test hsdecode /dev/null $sig $out $ltfile
+    countdown
+    run_test hsnad $debug $stats /dev/null <$from >$ltfile
+    run_test hsdecode $debug $stats /dev/null $sig $out $ltfile
 
     run_test cmp $out $from
 
     for new in $files
     do
 	countdown
-        run_test hsnad $sig <$new >$diff
-        run_test hsdecode $old $newsig $out $diff 
+        run_test hsnad $debug $stats $sig <$new >$diff
+        run_test hsdecode $debug $stats $from $newsig $out $diff 
     
         run_test cmp $out $new
     done

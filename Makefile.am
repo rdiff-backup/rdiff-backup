@@ -15,9 +15,9 @@ libhsync_la_SOURCES = \
 	netio.c netio.h \
 	includes.h \
 	mdfour.c \
-	search.c search.h \
 	filebuf.c membuf.c ptrbuf.c \
 	checksum.c checksum.h \
+	sum_p.h \
 	copyq.c \
 	inbuf.c \
 	inhale.c \
@@ -30,7 +30,14 @@ libhsync_la_SOURCES = \
 	mksum.c mksum.h \
 	sumset.c sumset.h \
 	rollsum.c rollsum.h \
-	nad.c
+	nad.c nad_p.h nadsrch.c nadout.c \
+	search.c
+
+# TODO: If we ever care enough, build a second library containing only
+# the code necessary to be a client, and not stuff for encoding.  At
+# the moment it doesn't seem worth the additional compilation time to
+# do both, and I don't know if anyone will care if they're just shared
+# libraries anyhow.
 
 # NB: tests should exit with code 77 if they can't be run but haven't failed.
 
@@ -42,19 +49,22 @@ test_scripts := \
 	test-maptcp.sh \
 	test-tricky.sh \
 	test-chain.sh \
-	test-seqnad.sh \
 	test-md4sizes.sh \
 	test-cat.sh \
 	test-mapread.sh \
 	test-cmds.sh \
 	test-thrice.sh \
-	test-usebackups.sh \
-	test-seq.sh \
 	test-mappipe.sh \
 	test-mapeof.sh \
 	test-mapover.sh \
 	test-nadsum.sh \
-	test-pairs.sh
+	test-pairs.sh \
+	test-exact.sh \
+	test-double.sh
+
+# These ones are not tests, but are useful in watching the code run
+# through.
+try_scripts := 
 
 # Thus spake the master programmer:
 #
@@ -66,14 +76,10 @@ TESTS = $(test_scripts)
 noinst_SCRIPTS = \
 	$(test_scripts) \
 	driver.sh \
-	test-meta.sh
+	test-meta.sh \
+	$(try_scripts)
 
 test_data=test-chain/empty-sig			\
-test-seq/in-01					\
-test-seq/in-04					\
-test-seq/in-07					\
-test-seq/in-08					\
-test-cmds/cmds					\
 in-tricky/in-01					\
 in-tricky/in-02					\
 in-tricky/in-03					\
@@ -82,9 +88,8 @@ in-tricky/in-05					\
 in-tricky/in-06					\
 in-tricky/in-07
 
-
 # TODO: Delete the test-*.d directories when cleaning up.  Yeah!
-CLEANFILES = test-*.d/*
+CLEANFILES = tmp-test-*.d/* tmp-try-*.d/*
 
 EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) 
 
@@ -96,8 +101,12 @@ LDADD = libhsync.la
 
 bin_PROGRAMS = hsdecode hsmdfour hsmksum hsmapread hsnad \
 		libhsyncinfo
+noinst_PROGRAMS = hsdumpsums
 check_PROGRAMS = hsemit hsinhale hsfilebufcat genmaptest \
 	socksvr sockcli sockrun trylog
+
+.PHONY: check_programs
+check_programs: $(check_PROGRAMS)
 
 trylog_SOURCES = trylog.c 
 
