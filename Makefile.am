@@ -165,16 +165,22 @@ converted_men = man_librsync_3.html man_librsync_3.ps \
 	man_rdiff_1.html man_rdiff_1.ps
 
 man_%_1.ps: %.1
-	groff -man -Tps $< >$@
+	groff -mandoc -Tps $< >$@
 
 man_%_3.ps: %.3
-	groff -man -Tps $< >$@
-
-man_%_3.html: %.3
-	groff -man -Thtml $< >$@
+	groff -mandoc -Tps $< >$@
 
 man_%_1.html: %.1
-	groff -man -Thtml $< >$@
+	groff -mandoc -Thtml $< >$@
+
+man_%_3.html: %.3
+	groff -mandoc -Thtml $< >$@
+
+man_%_1.txt: %.1
+	groff -mandoc -Tlatin1 $< >$@
+
+man_%_3.txt: %.3
+	groff -mandoc -Tlatin1 $< >$@
 
 upload-men: $(converted_men)
 	for i in $(sites); do \
