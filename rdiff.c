@@ -157,23 +157,33 @@ static hs_exit_value rdiff_sig(poptContext opcon)
 
     result = hs_sig_file(basis_file, sig_file, block_len, strong_len);
     
-    return HS_EXIT_OK;
+    return hs_result_to_exit(result);    
 }
 
 
 static hs_exit_value rdiff_delta(poptContext opcon)
 {
-#if 0
+    FILE            *sig_file, *new_file, *delta_file;
+    char const      *sig_name;
+    hs_result       result;
+    hs_sumset_t     *sumset;
 
-    sig_file = hs_file_open(sig_name, O_RDONLY);
+    if (!(sig_name = poptGetArg(opcon))) {
+        rdiff_usage("delta: must specify the signature filename");
+        return HS_EXIT_SYNTAX;
+    }
+
+    sig_file = hs_file_open(sig_name, "rb");
+    new_file = hs_file_open(poptGetArg(opcon), "rb");
+    delta_file = hs_file_open(poptGetArg(opcon), "wb");
 
     result = hs_readsig_file(sig_file, &sumset);
-        
-    if (result != HS_OK)
-        hs_error("readsums failed: %s", hs_strerror(result));
-#endif
+    if (result != HS_OK) 
+        return hs_result_to_exit(result);
 
-    return HS_EXIT_OK;
+    result = hs_delta_file(sumset, new_file, delta_file);
+
+    return hs_result_to_exit(result);
 }
 
 

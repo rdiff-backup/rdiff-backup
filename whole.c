@@ -1,7 +1,7 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- the library for network deltas
- * 
+ * $Id$
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
@@ -147,4 +147,14 @@ hs_readsig_file(FILE *sig_file, hs_sumset_t **sumset)
 
         job = hs_readsum_begin(&stream, sumset);
         return hs_whole_run(job, sig_file, NULL);
+}
+
+
+
+hs_result
+hs_delta_file(hs_sumset_t *sumset, FILE *new_file, FILE *delta_file)
+{
+    hs_error("not implemented at the moment");
+
+    return HS_UNIMPLEMENTED;
 }
