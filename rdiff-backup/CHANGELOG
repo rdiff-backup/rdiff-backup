@@ -1,3 +1,10 @@
+New in v0.11.1 (2002/12/??)
+---------------------------
+
+Fixed bug with the --{include|exclude}-globbing-filelist options
+(reported by Claus Herwig).
+
+
 New in v0.11.0 (2002/10/05)
 ---------------------------
 

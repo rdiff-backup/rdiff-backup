@@ -25,6 +25,9 @@ session statistics and directory statistics files?</a></li>
 <li><a href="#bwlimit">Is there some way to limit rdiff-backup's
 bandwidth usage, as in rsync's --bwlimit option?</a></li>
 
+<li><a href="#leak">How much memory should rdiff-backup use?  Is there a
+memory leak?</a></li>
+
 </ol>
 
 <h3>Questions and Answers</h3>
@@ -375,7 +378,21 @@ rdiff-backup to exceed it for significant periods.</li>
 Another option is to limit bandwidth at a lower (and perhaps more
 appropriate) level.  Adam Lazur mentions <a
 href="http://lartc.org/wondershaper/">The Wonder Shaper</a>.
+</li>
 
+<a name="leak">
+<li><strong>How much memory should rdiff-backup use?  Is there a
+memory leak?</strong>
+
+<p>The amount of memory rdiff-backup uses should not depend much on
+the size of directories being processed.  Keeping track of hard links
+may use up memory, so if you have, say, hundreds of thousands of files
+hard linked together, rdiff-backup may need tens of MB.
+
+<p>If rdiff-backup seems to be leaking memory, it is probably because
+it is using an early version of librsync.  <strong>librsync 0.9.5
+leaks lots of memory.</strong> Version 0.9.5.1 should not leak and is
+available from the rdiff-backup homepage.
 </li>
 
 </ol>
