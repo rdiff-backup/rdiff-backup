@@ -41,6 +41,9 @@
  * we'd like to use them as arguments to indicate stdin/stdout, but it
  * turns them into options.  I sent a patch to the popt maintainers;
  * hopefully it will be fixed in the future.
+ *
+ * TODO: Add an option for delta to check whether the files are
+ * identical.
  */
 
 #include <config.h>
