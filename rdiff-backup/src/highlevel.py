@@ -268,19 +268,16 @@ class HLDestinationStruct:
 	def check_skip_error(cls, thunk, dsrp):
 		"""Run thunk, catch certain errors skip files"""
 		try: return thunk()
-		except (IOError, OSError, SkipFileException, DSRPPermError,
+		except (EnvironmentError, SkipFileException, DSRPPermError,
 				RPathException), exp:
 			Log.exception()
-			if (not isinstance(exp, IOError) or
-				(isinstance(exp, IOError) and
-				 (exp[0] in [2,  # Means that a file is missing
-							 5,  # Reported by docv (see list)
-							 13, # Permission denied IOError
-							 20, # Means a directory changed to non-dir
-							 26, # Requested by Campbell (see list) -
-                                 # happens on some NT systems
-							 36] # filename too long
-				 ))):
+			if (not isinstance(exc, EnvironmentError) or
+				(errno.errorcode[exp[0]] in
+				 ['EPERM', 'ENOENT', 'EACCES', 'EBUSY', 'EEXIST',
+				  'ENOTDIR', 'ENAMETOOLONG', 'EINTR', 'ENOTEMPTY',
+				  'EIO', # reported by docv
+				  'ETXTBSY' # reported by Campbell on some NT system
+				  ])):
 				Log("Skipping file because of error after %s" %
 					(dsrp and dsrp.index,), 2)
 				return None

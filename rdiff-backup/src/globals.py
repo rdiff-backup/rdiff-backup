@@ -35,8 +35,10 @@ class Globals:
 
 	# If true, change the permissions of unwriteable mirror files
 	# (such as directories) so that they can be written, and then
-	# change them back.
-	change_mirror_perms = 1
+	# change them back.  This defaults to 1 just in case the process
+	# is not running as root (root doesn't need to change
+	# permissions).
+	change_mirror_perms = (process_uid != 0)
 
 	# If true, temporarily change permissions of unreadable files in
 	# the source directory to make sure we can read all files.

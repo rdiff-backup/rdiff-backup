@@ -14,6 +14,6 @@
 # bugs or have any suggestions.
 
 from __future__ import nested_scopes, generators
-import os, stat, time, sys, getopt, re, cPickle, types, shutil, sha, marshal, traceback, popen2, tempfile, gzip, UserList
+import os, stat, time, sys, getopt, re, cPickle, types, shutil, sha, marshal, traceback, popen2, tempfile, gzip, UserList, errno
 
 
