@@ -71,9 +71,9 @@ void
 rs_emit_literal_cmd(rs_job_t *job, int len)
 {
     int cmd;
-    int bytes;
+    int param_len;
 
-    switch (bytes = rs_int_len(len)) {
+    switch (param_len = rs_int_len(len)) {
     case 1:
         cmd = RS_OP_LITERAL_N1;
         break;
@@ -87,12 +87,13 @@ rs_emit_literal_cmd(rs_job_t *job, int len)
         rs_fatal("What?");
     }
     
-    rs_trace("emit LITERAL_N%d(len=%d), cmd_byte=%#x", bytes, len, cmd);
+    rs_trace("emit LITERAL_N%d(len=%d), cmd_byte=%#x", param_len, len, cmd);
     rs_squirt_byte(job, cmd);
-    rs_squirt_netint(job, len, bytes);
+    rs_squirt_netint(job, len, param_len);
 
     job->stats.lit_cmds++;
     job->stats.lit_bytes += len;
+    job->stats.lit_cmdbytes += 1 + param_len;
 }
 
 
