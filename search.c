@@ -135,16 +135,6 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
 	if (weak_sum != sig->block_sigs[i].weak_sum)
 	    continue;
 
-	/* also make sure the two blocks are the same length */
-	/* l = MIN(s->n,len-offset); */
-	/* if (l != s->block_sigs[i].len) continue;                    */
-
-	/* if (!done_csum2) { */
-	/* map = (schar *)map_ptr(buf,offset,l); */
-	/* get_checksum2((char *)map,l,sum2); */
-	/* done_csum2 = 1; */
-	/* } */
-
 	token = sig->block_sigs[i].i;
 
 	rs_trace("found weak match for %08x in token %d", weak_sum, token);
