@@ -75,7 +75,7 @@ struct rs_job {
         
     /** If USED is >0, then buf contains that much write data to
      * be sent out. */
-    char        write_buf[16];
+    char        write_buf[20];
     int         write_len;
 
     /** If \p copy_len is >0, then that much data should be copied
