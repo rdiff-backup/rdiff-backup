@@ -63,7 +63,13 @@ class RORPIter:
 				rorp = rp.getRORPath()
 				if rp.isreg():
 					if rp.isflaglinked(): rorp.flaglinked()
-					else: rorp.setfile(Rdiff.get_signature(rp))
+					else:
+						fp = Robust.check_common_error(
+							lambda: Rdiff.get_signature(rp))
+						if fp: rorp.setfile(fp)
+						else:
+							Log("Error generating signature for %s" % rp.path)
+							continue
 				yield rorp
 
 	def GetSignatureIter(base_rp):

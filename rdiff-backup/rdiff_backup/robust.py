@@ -191,6 +191,39 @@ class Robust:
 			tf.setdata()
 		return Robust.make_tf_robustaction(init, (tf,), (rp,))
 
+	def check_common_error(init_thunk, error_thunk = lambda exc: None):
+		"""Execute init_thunk, if error, run error_thunk on exception
+
+		This only catches certain exceptions which seems innocent
+		enough.
+
+		"""
+		try: return init_thunk()
+ 		except (IOError, OSError, SkipFileException, DSRPPermError,
+				RPathException), exc:
+			Log.exception()
+			if (not isinstance(exc, IOError) or
+				(isinstance(exc, IOError) and
+				 (exp[0] in [2,  # Means that a file is missing
+							 5,  # Reported by docv (see list)
+							 13, # Permission denied IOError
+							 20, # Means a directory changed to non-dir
+							 26, # Requested by Campbell (see list) -
+                                 # happens on some NT systems
+							 36] # filename too long
+				 ))):
+				return error_thunk(exc)
+			else: raise
+
+	def listrp(rp):
+		"""Like rp.listdir() but return [] if error, and sort results"""
+		def error_thunk(exc):
+			Log("Error listing directory %s" % rp.path, 2)
+			return []
+		dir_listing = Robust.check_common_error(rp.listdir, error_thunk)
+		dir_listing.sort()
+		return dir_listing
+
 MakeStatic(Robust)
 
 
@@ -554,4 +587,4 @@ class ResumeSessionInfo:
 		self.mirror = mirror
 		self.last_index = last_index
 		self.last_definitive = last_definitive
-		self.ITR, self.finalizer, = ITR_state, finalizer_state
+		self.ITR, self.finalizer, = ITR, finalizer

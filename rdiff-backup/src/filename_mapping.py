@@ -80,7 +80,7 @@ class FilenameMapping:
 		"""For rpath directory, return list of quoted children in dir"""
 		if not rpath.isdir(): return []
 		dir_pairs = [(cls.unquote(filename), filename)
-					 for filename in rpath.listdir()]
+					 for filename in Robust.listrp(rpath)]
 		dir_pairs.sort() # sort by real index, not quoted part
 		child_list = []
 		for unquoted, filename in dir_pairs:

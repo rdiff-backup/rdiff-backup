@@ -125,11 +125,14 @@ class Select:
 			for subdir in FilenameMapping.get_quoted_dir_children(dsrpath):
 				for dsrp in rec_func(subdir, rec_func, sel_func): yield dsrp
 		else:
-			dir_listing = dsrpath.listdir()
-			dir_listing.sort()
-			for filename in dir_listing:
-				for dsrp in rec_func(dsrpath.append(filename),
-									 rec_func, sel_func): yield dsrp
+			for filename in Robust.listrp(dsrpath):
+				new_dsrp = Robust.check_common_error(
+					lambda: dsrpath.append(filename))
+				if not new_dsrp:
+					Log("Error initializing file %s" % dsrpath.path, 2)
+				else:
+					for dsrp in rec_func(new_dsrp, rec_func, sel_func):
+						yield dsrp
 
 	def iterate_starting_from(self, dsrpath, rec_func, sel_func):
 		"""Like Iterate, but only yield indicies > self.starting_index"""

@@ -204,7 +204,11 @@ class DestructiveSteppingFinalizer(IterTreeReducer):
 			self.dsrpath = dsrpath
 
 		def end_process(self):
-			if self.dsrpath: self.dsrpath.write_changes()
+			if self.dsrpath:
+				Robust.check_common_error(self.dsrpath.write_changes,
+					lambda exc: Log("Error %s finalizing file %s" %
+									(str(exc), dsrp.path)))
+
 
 
 
