@@ -1,3 +1,10 @@
+New in v0.13.5 (2004/??/??)
+---------------------------
+
+Added error-correcting fsync suggestion by Antoine Perdaens.
+rdiff-backup may work better with NFS now.
+
+
 New in v0.13.4 (2004/01/31)
 ---------------------------
 
