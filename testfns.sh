@@ -26,7 +26,7 @@ builddir=`pwd`
 PATH=$builddir:$srcdir:$PATH
 
 testdir=$srcdir/$test_name
-tmpdir=/tmp/$test_name
+tmpdir=$builddir/$test_name.d
 [ -d $tmpdir ] || mkdir $tmpdir
 
 function run_test {
