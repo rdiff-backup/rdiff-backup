@@ -17,7 +17,7 @@ class StatsObj:
 					   'ChangedFiles',
 					   'ChangedSourceSize', 'ChangedMirrorSize',
 					   'IncrementFileSize')
-	stat_time_attrs = ('StartTime', 'EndTime')
+	stat_time_attrs = ('StartTime', 'EndTime', 'ElapsedTime')
 	stat_attrs = stat_time_attrs + stat_file_attrs
 
 	# Set all stats to None, indicating info not available
@@ -36,10 +36,23 @@ class StatsObj:
 
 	def get_stats_string(self):
 		"""Return string printing out statistics"""
-		slist = ["%s %s" % (attr, self.get_stat(attr))
-				 for attr in self.stat_attrs
-				 if self.get_stat(attr) is not None]
-		return "\n".join(slist)
+		timelist = []
+		if self.StartTime is not None:
+			timelist.append("StartTime %s (%s)" %
+						(self.StartTime, Time.timetopretty(self.StartTime)))
+		if self.EndTime is not None:
+			timelist.append("EndTime %s (%s)" %
+							(self.EndTime, Time.timetopretty(self.EndTime)))
+		if self.StartTime is not None and self.EndTime is not None:
+			if self.ElapsedTime is None:
+				self.ElapsedTime = self.EndTime - self.StartTime
+			timelist.append("ElapsedTime %s (%s)" %
+				   (self.ElapsedTime, Time.inttopretty(self.ElapsedTime)))
+
+		filelist = ["%s %s" % (attr, self.get_stat(attr))
+					for attr in self.stat_file_attrs
+					if self.get_stat(attr) is not None]
+		return "\n".join(timelist + filelist)
 
 	def init_stats_from_string(self, s):
 		"""Initialize attributes from string, return self for convenience"""
@@ -77,6 +90,26 @@ class StatsObj:
 		for attr in self.stat_file_attrs:
 			if self.get_stat(attr) != s.get_stat(attr): return None
 		return 1
+
+	def set_to_average(self, statobj_list):
+		"""Set self's attributes to average of those in statobj_list"""
+		for attr in self.stat_attrs: self.set_stat(attr, 0)
+		for statobj in statobj_list:
+			for attr in self.stat_attrs:
+				if statobj.get_stat(attr) is None: self.set_stat(attr, None)
+				elif self.get_stat(attr) is not None:
+					self.set_stat(attr, statobj.get_stat(attr) +
+								  self.get_stat(attr))
+
+		# Don't compute average starting/stopping time		
+		self.StartTime = None
+		self.EndTime = None
+
+		for attr in self.stat_attrs:
+			if self.get_stat(attr) is not None:
+				self.set_stat(attr,
+							  self.get_stat(attr)/float(len(statobj_list)))
+		return self
 
 
 class StatsITR(IterTreeReducer, StatsObj):
