@@ -662,7 +662,9 @@ def ListChangedSince(rp):
 	restore_check_backup_dir(restore_root)
 	mirror_rp = restore_root.new_index(restore_index)
 	inc_rp = mirror_rp.append_path("increments", restore_index)
-	restore.ListChangedSince(mirror_rp, inc_rp, rest_time)
+	for rorp in rp.conn.restore.ListChangedSince(mirror_rp, inc_rp, rest_time):
+		# This is a hack, see restore.ListChangedSince for rational
+		print rorp.index[0]
 
 
 def ListAtTime(rp):
@@ -673,7 +675,9 @@ def ListAtTime(rp):
 	restore_check_backup_dir(restore_root)
 	mirror_rp = restore_root.new_index(restore_index)
 	inc_rp = mirror_rp.append_path("increments", restore_index)
-	restore.ListAtTime(mirror_rp, inc_rp, rest_time)
+	for rorp in rp.conn.restore.ListAtTime(mirror_rp, inc_rp, rest_time):
+		# Hack for remote operation, see restore.ListChangedSince for rational
+		print rorp.index[0]
 	
 
 def CheckDest(dest_rp):

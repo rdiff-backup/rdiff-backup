@@ -4,6 +4,9 @@ New in v0.13.3 (??????????)
 Fixed some of the --restrict options which would cause spurious
 violation errors.
 
+--list-changed-since and --list-at-time now work remotely.
+Thanks to Morten Werner Olsen for bug report.
+
 
 New in v0.13.2 (2003/09/16)
 ---------------------------
