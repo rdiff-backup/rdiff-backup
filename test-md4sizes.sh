@@ -1,11 +1,10 @@
 #! /bin/sh -pe
 
 # Copyright (C) 2000 by Martin Pool
+# $Id$
 
 # Test running the mdfour algorithm with different buffer sizes.  We
 # should get the same result in every case.
-
-source ${srcdir:-.}/testfns.sh $0 $@
 
 files=`echo $srcdir/INSTALL`
 

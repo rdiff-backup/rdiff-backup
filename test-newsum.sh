@@ -3,8 +3,7 @@
 # Regression test suite for libhsync.
 
 # Copyright (C) 2000 by Martin Pool
-
-source ${srcdir:-.}/testfns.sh $0 $@
+# $Id$
 
 diff=$tmpdir/diff.tmp
 files=`echo $srcdir/*.c|head -20`

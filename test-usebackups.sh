@@ -3,11 +3,10 @@
 # Regression test suite for libhsync.
 
 # Copyright (C) 2000 by Martin Pool
+# $Id$
 
 # Use any emacs backup files we can find lying around as test 
 # cases.
-
-source ${srcdir:-.}/testfns.sh $0 $@
 
 diff=$tmpdir/diff.tmp
 out=$tmpdir/out.tmp

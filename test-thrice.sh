@@ -3,13 +3,12 @@
 # Regression test suite for libhsync.
 
 # Copyright (C) 2000 by Martin Pool
+# $Id$
 
 # This one makes sure that the signature calculated for a file is
 # independant of the old file we're comparing it to.
 
 # `What I tell you three times is true'
-
-source ${srcdir:-.}/testfns.sh $0 $@
 
 data=$testdir/01-data
 

@@ -7,8 +7,6 @@
 
 # Try some files specifically created to trip the library up.
 
-source ${srcdir:-.}/testfns.sh $0 $@
-
 files=`ls $srcdir/in-tricky/in-*`
 
 diff=$tmpdir/diff.tmp

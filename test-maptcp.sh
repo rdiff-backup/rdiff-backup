@@ -28,7 +28,7 @@ run_test genmaptest forward 2000 $cmds $expect $from
 
 for ioargs in '' '-k' '-n -s'
 do
-    run_test sockrun -D -- hsmapread $test_opts $ioargs - `cat $cmds` <$from >$new
+    run_test sockrun -- hsmapread $test_opts $ioargs - `cat $cmds` <$from >$new
     run_test cmp $expect $new
 done
 

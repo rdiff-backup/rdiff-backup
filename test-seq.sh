@@ -3,12 +3,11 @@
 # Regression test suite for libhsync.
 
 # Copyright (C) 2000 by Martin Pool.
+# $Id$
 
 # OK, this is how we test feeding hsync it's own filth.  Starting
 # with an empty signature, we generate the difference from one
 # file to another.
-
-source ${srcdir:-.}/testfns.sh $0
 
 files=`echo $testdir/in-??`
 lt=$tmpdir/lt.tmp

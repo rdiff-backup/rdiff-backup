@@ -3,11 +3,10 @@
 # Regression test suite for libhsync.
 
 # Copyright (C) 2000 by Martin Pool
+# $Id$
 
 # Check that the sum generated is independant of whether we're
 # generating from scratch or as a delta.
-
-source ${srcdir:-.}/testfns.sh $0 $@
 
 diff=$tmpdir/diff.tmp
 files=`find ${srcdir:-.} -type f |head -40`
