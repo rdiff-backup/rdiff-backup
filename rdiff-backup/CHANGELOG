@@ -36,6 +36,10 @@ Kaltenecker for bug report.
 Fixed error when --restrict path given with trailing backslash.  Bug
 report by Åke Brännström.
 
+Fixed many functions like --list-increments, --remove-older-than,
+etc. which previously didn't work with filename quoting.  Thanks to
+Vinod Kurup for detailed bug report.
+
 
 New in v0.13.3 (2003/10/14)
 ---------------------------
