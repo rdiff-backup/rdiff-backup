@@ -1,13 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-  <head>
-    <title>rdiff-backup FAQ</title>
-  </head>
-
-  <body>
-    <h1>rdiff-backup FAQ</h1>
-
-<h2>Table of contents</h2>
+<h3>Table of contents</h3>
 
 <ol><li><a href="#__future__">When I try to run rdiff-backup it says
 "ImportError: No module named __future__" or "SyntaxError: invalid
@@ -21,11 +12,11 @@ syntax".  What's happening?</a></li>
 
 <li><a href="#redhat">How do I install the RPMs on Redhat linux system?</a></li>
 
-<li><a href="#solaris">Under Solaris, rdiff-backup keeps failing with the error message "open(/dev/zero): Too many open files".</a></li>
+<li><a href="#solaris">Does rdiff-backup work under Solaris?</a></li>
 
 </ol>
 
-<h2>FAQ</h2>
+<h3>Questions and Answers</h3>
 
 <ol>
 
@@ -176,11 +167,11 @@ it is usually easier to use source RPMs for this.
 
 <P>
 <a name="solaris">
-<li><strong>Under Solaris, rdiff-backup keeps failing with
-the error message "open(/dev/zero): Too many open files".</strong>
+<li><strong>Does rdiff-backup work under Solaris?</strong>
 
-<P>Kevin Spicer reported this problem and then posted the following
-update:
+<P>There may be a problem with rdiff-backup and Solaris' libthread.
+Adding "ulimit -n unlimited" may fix the problem though.  Here is a
+post by Kevin Spicer on the subject:
 
 <pre>
 Subject: RE: Crash report....still not^H^H^H working
@@ -208,16 +199,7 @@ machine.  As for the /dev/zero thing I've done a bit of Googleing and
 it seems that /dev/zero is used internally by libthread on Solaris
 (which doesn't really explain why its opening more than 64 files - but
 at least I think I've now got round it).
-
 </pre>
 </li>
 
 </ol>
-    <hr>
-    <a href="http://www.stanford.edu/~bescoto">Ben Escoto</a> <address><a href="mailto:bescoto@stanford.edu">&lt;bescoto@stanford.edu&gt;</a></address>
-<!-- Created: Fri Sep  7 15:34:45 PDT 2001 -->
-<!-- hhmts start -->
-Last modified: Sat May 11 19:26:17 PDT 2002
-<!-- hhmts end -->
-  </body>
-</html>
