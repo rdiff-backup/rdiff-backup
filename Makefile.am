@@ -3,8 +3,6 @@
 
 ## $Id$
 
-# TODO: Delete the test-*.d directories when cleaning up.  Yeah! 
-
 CFLAGS += -W -Wall -g @DEFS@
 
 lib_LTLIBRARIES = libhsync.la libhsyncdecode.la
@@ -69,6 +67,8 @@ test-seq/in-08 \
 test-cmds/cmds \
 test-thrice/01-data
 
+# TODO: Delete the test-*.d directories when cleaning up.  Yeah! 
+CLEANFILES = test-*.d/*
 
 EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 
