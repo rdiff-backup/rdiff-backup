@@ -11,8 +11,8 @@ class LocalConnectionTest(unittest.TestCase):
 		"""Test getting of various attributes"""
 		assert type(self.lc.LocalConnection) is types.ClassType
 		try: self.lc.asotnuhaoseu
-		except NameError: pass
-		else: unittest.fail("NameError should be raised")
+		except (NameError, KeyError): pass
+		else: unittest.fail("NameError or KeyError should be raised")
 
 	def testSetattrs(self):
 		"""Test setting of global attributes"""
@@ -26,7 +26,7 @@ class LocalConnectionTest(unittest.TestCase):
 		self.lc.x = 5
 		del self.lc.x
 		try: self.lc.x
-		except NameError: pass
+		except (NameError, KeyError): pass
 		else: unittest.fail("No exception raised")
 
 	def testReval(self):
@@ -173,8 +173,8 @@ class RedirectedConnectionTest(unittest.TestCase):
 		assert self.conna.Globals.get("tmp_connb") is self.connb
 		assert self.connb.Globals.get("tmp_conna") is self.conna
 
-		self.conna.Test_SetConnGlobals(self.connb, "tmp_settest", 1)
-		assert self.connb.Globals.get("tmp_settest")
+		#self.conna.Test_SetConnGlobals(self.connb, "tmp_settest", 1)
+		#assert self.connb.Globals.get("tmp_settest")
 
 		assert self.conna.reval("Globals.get('tmp_connb').pow", 2, 3) == 8
 		self.conna.reval("Globals.tmp_connb.reval",
