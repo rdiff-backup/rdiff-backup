@@ -56,7 +56,6 @@ static rs_result rs_loadsig_add_sum(rs_job_t *job, rs_strong_sum_t *strong)
     size_t              new_size;
     rs_signature_t      *sig = job->signature;
     rs_block_sig_t      *asignature;
-    char                hexbuf[RS_MD4_LENGTH * 2 + 2];
 
     sig->count++;
     new_size = sig->count * sizeof(rs_block_sig_t);
@@ -72,10 +71,16 @@ static rs_result rs_loadsig_add_sum(rs_job_t *job, rs_strong_sum_t *strong)
     asignature->i = sig->count;
 
     memcpy(asignature->strong_sum, strong, sig->strong_sum_len);
-    rs_hexify(hexbuf, strong, sig->strong_sum_len);
 
-    rs_trace("read in checksum: weak=%#x, strong=%s", asignature->weak_sum,
-             hexbuf);
+    if (rs_trace_enabled()) {
+        char                hexbuf[RS_MD4_LENGTH * 2 + 2];
+        rs_hexify(hexbuf, strong, sig->strong_sum_len);
+
+        rs_trace("read in checksum: weak=%#x, strong=%s", asignature->weak_sum,
+                 hexbuf);
+    }
+
+    job->stats.sig_blocks++;
 
     return RS_RUNNING;
 }
@@ -160,6 +165,8 @@ static rs_result rs_loadsig_s_blocklen(rs_job_t *job)
     }
 
     job->statefn = rs_loadsig_s_stronglen;
+    job->stats.block_len = job->block_len;
+        
     return RS_RUNNING;
 }
 
