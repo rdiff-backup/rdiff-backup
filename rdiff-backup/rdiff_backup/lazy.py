@@ -22,7 +22,6 @@
 from __future__ import generators
 import os, stat, types
 from static import *
-import psyco
 
 class Iter:
 	"""Hold static methods for the manipulation of lazy iterators"""
@@ -299,8 +298,6 @@ class IterTreeReducer:
 
 		self.index = index
 		return 1
-
-psyco.bind(IterTreeReducer)
 
 
 class ITRBranch:
