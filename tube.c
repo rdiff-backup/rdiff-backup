@@ -109,6 +109,42 @@ static void rs_tube_catchup_literal(rs_job_t *job)
 
 
 /**
+ * Execute a copy command, taking data from the scoop.
+ *
+ * \sa rs_tube_catchup_copy()
+ */
+static void
+rs_tube_copy_from_scoop(rs_job_t *job)
+{
+    size_t       this_len;
+    rs_buffers_t *stream = job->stream;
+
+    this_len = job->copy_len;
+    if (this_len > job->scoop_avail) {
+        this_len = job->scoop_avail;
+    }
+    if (this_len > stream->avail_out) {
+        this_len = stream->avail_out;
+    }
+
+    memcpy(stream->next_out, job->scoop_next, this_len);
+
+    stream->next_out += this_len;
+    stream->avail_out -= this_len;
+        
+    job->scoop_avail -= this_len;
+    job->scoop_next += this_len;
+
+    job->copy_len -= this_len;
+
+    rs_trace("catch up on %d copied bytes from scoop, %d remain there, "
+             "%d remain to be copied", 
+             this_len, job->scoop_avail, job->copy_len);
+}
+
+
+
+/**
  * Catch up on an outstanding copy command.
  *
  * Takes data from the scoop, and the input (in that order), and
@@ -117,44 +153,25 @@ static void rs_tube_catchup_literal(rs_job_t *job)
  */
 static void rs_tube_catchup_copy(rs_job_t *job)
 {
-    int copied;
     rs_buffers_t *stream = job->stream;
-    size_t  len;
 
     assert(job->lit_len == 0);
     assert(job->copy_len > 0);
 
-    if (job->scoop_avail) {
-        len = job->copy_len;
-        if (len > job->scoop_avail) {
-            len = job->scoop_avail;
-        }
-        if (len > stream->avail_out) {
-            len = stream->avail_out;
-        }
-
-        memcpy(stream->next_out, job->scoop_next, len);
-
-        stream->next_out += len;
-        stream->avail_out -= len;
-        
-        job->scoop_avail -= len;
-        job->scoop_next += len;
-
-        job->copy_len -= len;
-
-        rs_trace("catch up on %d copied bytes from scoop, %d remain there, "
-                 "%d remain to be copied", 
-                 len, job->scoop_avail, job->copy_len);
+    if (job->scoop_avail  && job->copy_len) {
+        /* there's still some data in the scoop, so we should use that. */
+        rs_tube_copy_from_scoop(job);
     }
     
     if (job->copy_len) {
-        copied = rs_buffers_copy(stream, job->copy_len);
+        size_t  this_copy;
 
-        job->copy_len -= copied;
+        this_copy = rs_buffers_copy(stream, job->copy_len);
+
+        job->copy_len -= this_copy;
 
         rs_trace("transmitted %d copy bytes from tube, %d remain to be copied",
-                 copied, job->copy_len);
+                 this_copy, job->copy_len);
     }
 }
 
