@@ -129,7 +129,8 @@ class Select:
 				new_dsrp = Robust.check_common_error(
 					lambda: dsrpath.append(filename))
 				if not new_dsrp:
-					Log("Error initializing file %s" % dsrpath.path, 2)
+					Log("Error initializing file %s/%s" %
+						(dsrpath.path, filename), 2)
 				else:
 					for dsrp in rec_func(new_dsrp, rec_func, sel_func):
 						yield dsrp
@@ -237,7 +238,7 @@ pattern (such as '**') which matches the base directory.""" %
 only specifies that files be included.  Because the default is to
 include all files, the expression is redundant.  Exiting because this
 probably isn't what you meant.""" %
-			(self.selection_functions[-1].name, self.prefix))
+			(self.selection_functions[-1].name,))
 
 	def add_selection_func(self, sel_func, add_to_start = None):
 		"""Add another selection function at the end or beginning"""
@@ -380,7 +381,8 @@ probably isn't what you meant.""" %
 		else: sel_func = self.glob_get_normal_sf(glob_str, include)
 
 		sel_func.exclude = not include
-		sel_func.name = "Command-line glob: %s" % glob_str
+		sel_func.name = "Command-line %s glob: %s" % \
+						(include and "include" or "exclude", glob_str)
 		return sel_func
 
 	def glob_get_filename_sf(self, filename, include):

@@ -268,7 +268,8 @@ class HLDestinationStruct:
 	def check_skip_error(cls, thunk, dsrp):
 		"""Run thunk, catch certain errors skip files"""
 		try: return thunk()
-		except (IOError, OSError, SkipFileException, DSRPPermError), exp:
+		except (IOError, OSError, SkipFileException, DSRPPermError,
+				RPathException), exp:
 			Log.exception()
 			if (not isinstance(exp, IOError) or
 				(isinstance(exp, IOError) and

@@ -580,7 +580,7 @@ class ResumeSessionInfo:
 		last_index - Last confirmed index processed by backup, or None
 		last_definitive - True is we know last_index is really last
 		finalizer - the dsrp finalizer if available
-		ITR_state - For increment, ITM reducer (assume mirror if NA)
+		ITR - For increment, ITM reducer (assume mirror if NA)
 
 		"""
 		self.time = time
