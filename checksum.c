@@ -123,7 +123,7 @@ _hs_make_sum_struct(struct sum_struct **signatures,
 	asignature->i = ++index;
 
 	/* read in the long sum */
-	ret = sigread_fn(sigreadprivate, asignature->sum2, SUM_LENGTH);
+	ret = sigread_fn(sigreadprivate, asignature->strong_sum, SUM_LENGTH);
 	if (ret < 0)
 	    break;
 

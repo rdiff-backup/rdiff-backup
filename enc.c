@@ -184,23 +184,6 @@ _hs_trim_sums(_hs_inbuf_t * inbuf, rollsum_t * rollsum,
 }
 
 
-static int
-_hs_find_match(int short_block, rollsum_t * rollsum, _hs_inbuf_t * inbuf,
-	       struct sum_struct *sums)
-{
-     int token;
-     token = _hs_find_in_hash(rollsum, inbuf->buf + inbuf->cursor,
-			      short_block, sums);
-
-     if (token > 0) {
-	  _hs_trace("found token %d in stream at abspos=%-8d"
-		    " length=%-6d", token,
-		    inbuf->abspos+inbuf->cursor,
-		    short_block);
-     }
-     return token;
-}
-
 
 static int
 _hs_output_block_hash(hs_write_fn_t write_fn, void *write_priv,
@@ -426,12 +409,19 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 					  inbuf, short_block, &new_roll);
 	       }
 
-	       if (got_old)
-		    token = _hs_find_match(short_block, rollsum, inbuf, sums);
+	       if (got_old) {
+		    token = _hs_find_in_hash(rollsum, inbuf->buf + inbuf->cursor,
+					     short_block, sums, stats);
+	       }
 	       else
 		    token = 0;
 
 	       if (token > 0) {
+		    _hs_trace("found token %d in stream at abspos=%-8d"
+			      " length=%-6d", token,
+			      inbuf->abspos+inbuf->cursor,
+			      short_block);
+
 		    if (_hs_push_literal_buf(lit_tmpbuf, write_fn, write_priv, stats,
 					      op_kind_literal) < 0)
 			 return -1;

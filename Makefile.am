@@ -22,7 +22,7 @@ libhsyncdecode_la_SOURCES = dec.c \
 	inhale.c trace.c hex.c stats.c
 
 noinst_SCRIPTS = test-decode.sh test-encode.sh test-chain.sh test-cmds.sh \
-	make-cmds.py test-thrice.sh
+	make-cmds.py test-thrice.sh test-seq.sh
 
 test_data=test-chain/empty-sig  \
 test-decode/01-diff \
@@ -49,7 +49,15 @@ test-decode/README \
 test-encode/01-diff \
 test-encode/01-new \
 test-encode/01-out \
-test-encode/01-sig
+test-encode/01-sig \
+test-seq/in-01 \
+test-seq/in-02 \
+test-seq/in-03 \
+test-seq/in-04 \
+test-seq/in-06 \
+test-seq/in-07 \
+test-seq/in-08
+
 
 EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 
@@ -81,6 +89,6 @@ hsinhale_LDADD = libhsyncdecode.la
 # changes.''
 
 TESTS = test-cmds.sh test-decode.sh test-encode.sh test-chain.sh \
-	test-thrice.sh
+	test-thrice.sh test-seq.sh
 
 

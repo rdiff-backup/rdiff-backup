@@ -207,7 +207,7 @@ typedef struct sum_buf {
     int len;			/* length of chunk of file */
     int i;			/* index of this chunk */
     uint32_t sum1;		/* simple checksum */
-    char sum2[SUM_LENGTH];	/* checksum  */
+    char strong_sum[SUM_LENGTH];	/* checksum  */
 } sum_buf_t;
 
 /* ROLLSUM_T contains the checksums that roll through the new version
@@ -231,7 +231,8 @@ uint32_t _hs_calc_strong_sum(char const *buf, int len, char *sum);
 
 int _hs_find_in_hash(rollsum_t * rollsum,
 		     char const *inbuf, int block_len,
-		     struct sum_struct const *sigs);
+		     struct sum_struct const *sigs,
+		     hs_stats_t *);
 
 int _hs_build_hash_table(struct sum_struct *sums);
 

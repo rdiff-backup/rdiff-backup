@@ -38,7 +38,7 @@
 
 static int compare_targets(struct target *t1, struct target *t2)
 {
-    return ((int) t1->t - (int) t2->t);
+     return ((int) t1->t - (int) t2->t);
 }
 
 
@@ -60,13 +60,13 @@ int _hs_build_hash_table(struct sum_struct *sums)
      }
      
      for (i = 0; i < TABLESIZE; i++)
-	sums->tag_table[i] = NULL_TAG;
+	  sums->tag_table[i] = NULL_TAG;
 
-    for (i = sums->count - 1; i >= 0; i--) {
-	sums->tag_table[sums->targets[i].t] = i;
-    }
+     for (i = sums->count - 1; i >= 0; i--) {
+	  sums->tag_table[sums->targets[i].t] = i;
+     }
 
-    return 0;
+     return 0;
 }
 
 
@@ -81,25 +81,26 @@ int _hs_build_hash_table(struct sum_struct *sums)
 int
 _hs_find_in_hash(rollsum_t * rollsum,
 		 char const *inbuf, int block_len,
-		 struct sum_struct const *sums)
+		 struct sum_struct const *sums,
+		 hs_stats_t *stats)
 {
-    int tag = gettag(rollsum->weak_sum);
-    int j = sums->tag_table[tag];
-    char strong_sum[SUM_LENGTH];
+     int tag = gettag(rollsum->weak_sum);
+     int j = sums->tag_table[tag];
+     char strong_sum[SUM_LENGTH];
+     int got_strong = 0;
 
-    if (j == NULL_TAG) {
-	return -1;
-    }
+     if (j == NULL_TAG) {
+	  return -1;
+     }
 
-    _hs_calc_strong_sum(inbuf, block_len, strong_sum);
+     for (; j < sums->count && sums->targets[j].t == tag; j++) {
+	  int i = sums->targets[j].i;
+	  int token;
 
-    for (; j < sums->count && sums->targets[j].t == tag; j++) {
-	int i = sums->targets[j].i;
+	  if (rollsum->weak_sum != sums->sums[i].sum1)
+	       continue;
 
-	if (rollsum->weak_sum != sums->sums[i].sum1)
-	    continue;
-
-	/* also make sure the two blocks are the same length */
+	  /* also make sure the two blocks are the same length */
 /*      l = MIN(s->n,len-offset); */
 /*      if (l != s->sums[i].len) continue;			 */
 
@@ -109,10 +110,24 @@ _hs_find_in_hash(rollsum_t * rollsum,
 /*        done_csum2 = 1; */
 /*      } */
 
-	if (memcmp(strong_sum, sums->sums[i].sum2, SUM_LENGTH) == 0) {
-	    return sums->sums[i].i;
-	}
-    }
+	  token = sums->sums[i].i;
+	  
+	  _hs_trace("found weak match for %#010x in token %d",
+		    rollsum->weak_sum, token);
 
-    return -1;
+	  if (!got_strong) {
+	       _hs_calc_strong_sum(inbuf, block_len, strong_sum);
+	       got_strong = 1;
+	  }
+
+	  if (memcmp(strong_sum, sums->sums[i].strong_sum, SUM_LENGTH) == 0) {
+	       return token;
+	  } else {
+	       _hs_trace("this was a false positive, the strong sums "
+			 "don't match");
+	       stats->false_matches++;
+	  }
+     }
+
+     return -1;
 }
