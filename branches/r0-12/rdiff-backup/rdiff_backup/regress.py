@@ -27,9 +27,9 @@ metadata file (which we assume is intact) and delete the extra
 increments.  For regular files we examine the mirror file and use the
 increment file to get the old data if the mirror file is out of date.
 
-Currently this does recover hard links.  This make make the regressed
-directory take up more disk space, but hard links can still be
-recovered.
+Currently this does not recover hard links.  This may make the
+regressed directory take up more disk space, but hard links can still
+be recovered.
 
 """
 

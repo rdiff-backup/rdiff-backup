@@ -79,7 +79,13 @@ def makediff(new, mirror, incpref):
 	if compress: diff = get_inc(incpref, "diff.gz")
 	else:  diff = get_inc(incpref, "diff")
 
-	Rdiff.write_delta(new, mirror, diff, compress)
+	if Globals.process_uid != 0 and not new.readable():
+		# Check for unreadable files
+		old_new_perms = new.getperms()
+		new.chmod(0400 | old_new_perms)
+		Rdiff.write_delta(new, mirror, diff, compress)
+		new.chmod(old_new_perms)
+	else: Rdiff.write_delta(new, mirror, diff, compress)
 	rpath.copy_attribs(mirror, diff)
 	return diff
 
