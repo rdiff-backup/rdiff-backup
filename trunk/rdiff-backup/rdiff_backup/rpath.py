@@ -153,12 +153,12 @@ def copy_attribs(rpin, rpout, acls = 1):
 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
 	check_for_files(rpin, rpout)
 	if rpin.issym(): return # symlinks have no valid attributes
+	if Globals.write_resource_forks and rpin.isreg() and rpout.isreg():
+		rpout.write_resource_fork(rpin.get_resource_fork())
 	if Globals.write_eas: rpout.write_ea(rpin.get_ea())
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if Globals.change_permissions: rpout.chmod(rpin.getperms())
 	if Globals.write_acls and acls: rpout.write_acl(rpin.get_acl())
-	if Globals.write_resource_forks and rpin.isreg() and rpout.isreg():
-		rpout.write_resource_fork(rpin.get_resource_fork())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
 
 def cmp_attribs(rp1, rp2):
