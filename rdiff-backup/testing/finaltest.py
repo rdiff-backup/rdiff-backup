@@ -35,7 +35,7 @@ class Local:
 	vft2_in = get_local_rp('vft2_out')
 
 	timbar_in = get_local_rp('increment1/timbar.pyc')
-	timbar_out = get_local_rp('timbar.pyc') # in cur directory
+	timbar_out = get_local_rp('../timbar.pyc') # in cur directory
 
 	wininc2 = get_local_rp('win-increment2')
 	wininc3 = get_local_rp('win-increment3')
@@ -105,7 +105,7 @@ class PathSetter(unittest.TestCase):
 		"""Remove any temp directories created by previous tests"""
 		assert not os.system(MiscDir + '/myrm testfiles/output* '
 							 'testfiles/restoretarget* testfiles/vft_out '
-							 'testfiles/timbar.pyc testfiles/vft2_out')
+							 'timbar.pyc testfiles/vft2_out')
 
 	def runtest(self):
 		self.delete_tmpdirs()
@@ -155,7 +155,7 @@ class PathSetter(unittest.TestCase):
 
 		timbar_paths = self.getinc_paths("timbar.pyc.",
 						 "testfiles/output/rdiff-backup-data/increments")
-		self.exec_rb(None, timbar_paths[0], 'testfiles/timbar.pyc')
+		self.exec_rb(None, timbar_paths[0])
 		self.refresh(Local.timbar_in, Local.timbar_out)
 		assert Local.timbar_in.equal_loose(Local.timbar_out)
 
@@ -242,7 +242,7 @@ class Final(PathSetter):
 		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
 
 	def testWindowsMode(self):
-		"""Test backup with quoting enabled
+		"""Test backup with the --windows-mode option
 
 		We need to delete from the increment? directories long file
 		names, because quoting adds too many extra letters.
@@ -260,96 +260,35 @@ class Final(PathSetter):
 			delete_long(Local.wininc3)
 
 		old_schema = self.rb_schema
-		self.rb_schema = old_schema+" --override-chars-to-quote '^a-z0-9_ -.' "
+		self.rb_schema = old_schema + " --windows-mode "
 		self.set_connections(None, None, None, None)
 
 		self.delete_tmpdirs()
+		
 		# Back up increment2, this contains a file with colons
 		self.exec_rb(20000, 'testfiles/win-increment2', 'testfiles/output')
-		self.rb_schema = old_schema # Quoting setting should now be saved
 		time.sleep(1)
 
 		# Back up increment3
 		self.exec_rb(30000, 'testfiles/win-increment3', 'testfiles/output')
 
-		# Start restore of increment 2
-		Globals.chars_to_quote = '^a-z0-9_ -.'
+		# Start restore
+		self.rb_schema = old_schema + ' --windows-restore '
+		Globals.time_separator = "_"
 		inc_paths = self.getinc_paths("increments.",
 									  "testfiles/output/rdiff-backup-data", 1)
-		Globals.chars_to_quote = None
+		Globals.time_separator = ":"
 		assert len(inc_paths) == 1, inc_paths
+		# Restore increment2
 		self.exec_rb(None, inc_paths[0], 'testfiles/restoretarget2')
 		assert CompareRecursive(Local.wininc2, Local.rpout2,
 								compare_hardlinks = 0)
-
-		# Restore increment 3 again, using different syntax
-		self.rb_schema = old_schema + '-r 30000 '
-		self.exec_rb(None, 'testfiles/output', 'testfiles/restoretarget3')
-		assert CompareRecursive(Local.wininc3, Local.rpout3,
-								compare_hardlinks = 0)
-		self.rb_schema = old_schema
 
 		# Now check to make sure no ":" in output directory
 		popen_fp = os.popen("find testfiles/output -name '*:*' | wc")
 		wc_output = popen_fp.read()
 		popen_fp.close()
 		assert wc_output.split() == ["0", "0", "0"], wc_output
-
-
-class FinalMisc(PathSetter):
-	"""Test miscellaneous operations like list-increments, etc.
-
-	Many of these just run and make sure there were no errors; they
-	don't verify the output.
-
-	"""
-	def testListIncrementsLocal(self):
-		"""Test --list-increments switch.  Assumes restoretest3 valid rd dir"""
-		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(None, "--list-increments",
-								"testfiles/restoretest3")
-
-	def testListIncrementsRemote(self):
-		"""Test --list-increments mode remotely.  Uses restoretest3"""
-		self.set_connections('test1', '../', None, None)
-		self.exec_rb_extra_args(None, "--list-increments",
-								"testfiles/restoretest3")
-
-	def testListChangeSinceLocal(self):
-		"""Test --list-changed-since mode locally.  Uses restoretest3"""
-		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(None, '--list-changed-since 10000',
-								'testfiles/restoretest3')
-
-	def testListChangeSinceRemote(self):
-		"""Test --list-changed-since mode remotely.  Uses restoretest3"""
-		self.set_connections('test1', '../', None, None)
-		self.exec_rb_extra_args(None, '--list-changed-since 10000',
-								'testfiles/restoretest3')
-
-	def testListAtTimeLocal(self):
-		"""Test --list-at-time mode locally.  Uses restoretest3"""
-		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(None, '--list-at-time 20000',
-								'testfiles/restoretest3')
-		
-	def testListAtTimeRemote(self):
-		"""Test --list-at-time mode locally.  Uses restoretest3"""
-		self.set_connections('test1', '../', None, None)
-		self.exec_rb_extra_args(None, '--list-at-time 20000',
-								'testfiles/restoretest3')
-
-	def testListIncrementSizesLocal(self):
-		"""Test --list-increment-sizes switch.  Uses restoretest3"""
-		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(None, "--list-increment-sizes",
-								"testfiles/restoretest3")
-
-	def testListIncrementsRemote(self):
-		"""Test --list-increment-sizes mode remotely.  Uses restoretest3"""
-		self.set_connections('test1', '../', None, None)
-		self.exec_rb_extra_args(None, "--list-increment-sizes",
-								"testfiles/restoretest3")
 
 
 class FinalSelection(PathSetter):
