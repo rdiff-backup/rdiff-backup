@@ -313,6 +313,7 @@ class PipeConnection(LowLevelPipeConnection):
 			try: req_num, object = self._get()
 			except ConnectionQuit:
 				self._put("quitting", self.get_new_req_num())
+				self._close()
 				return
 			if req_num == desired_req_num: return object
 			else:
