@@ -481,6 +481,10 @@ class SaveState:
 MakeClass(SaveState)
 
 
+class ResumeException(Exception):
+	"""Indicates some error has been encountered while trying to resume"""
+	pass
+
 class Resume:
 	"""Check for old aborted backups and resume if necessary"""
 	_session_info_list = None # List of ResumeSessionInfo's, sorted by time
@@ -525,7 +529,9 @@ class Resume:
 		times = rp_quad_dict.keys()
 		times.sort()
 		for time in times:
-			silist.append(cls.quad_to_si(time, rp_quad_dict[time]))
+			try: silist.append(cls.quad_to_si(time, rp_quad_dict[time]))
+			except ResumeException:
+				Log("Bad resume information found, skipping", 2)
 		cls._session_info_list = silist
 
 	def get_relevant_rps(cls):
@@ -562,7 +568,8 @@ class Resume:
 	def quad_to_si(cls, time, quad):
 		"""Take time, quadlist, return associated ResumeSessionInfo"""
 		increment_sym, mirror_sym, checkpoint_rp, last_definitive = quad
-		assert not (increment_sym and mirror_sym) # both shouldn't exist
+		if increment_sym and mirror_sym:
+			raise ResumeException("both mirror and inc sym shouldn't exist")
 		ITR, finalizer = None, None
 		if increment_sym:
 			mirror = None
@@ -574,6 +581,7 @@ class Resume:
 			last_index = cls.sym_to_index(mirror_sym)
 			if checkpoint_rp:
 				finalizer = cls.unpickle_checkpoint(checkpoint_rp)
+		else: raise ResumeException("Missing increment or mirror sym")
 		return ResumeSessionInfo(mirror, time, last_index, last_definitive,
 								 finalizer, ITR)
 
@@ -598,7 +606,9 @@ class Resume:
 		fp = checkpoint_rp.open("rb")
 		data = fp.read()
 		fp.close()
-		return cPickle.loads(data)
+		try: result = cPickle.loads(data)
+		except cPickle.UnpicklingError:
+			raise ResumeException("Bad pickle at %s" % (checkpoint_rp.path,))
 
 	def ResumeCheck(cls):
 		"""Return relevant ResumeSessionInfo if there's one we should resume
