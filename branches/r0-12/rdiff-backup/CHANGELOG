@@ -1,4 +1,4 @@
-New in v0.12.5 (??????????)
+New in v0.12.5 (2003/09/27)
 ---------------------------
 
 Fixed bug in --test-server when using --restrict security options
@@ -9,6 +9,9 @@ Thanks to Morten Werner Olsen for bug report.
 
 Fixed logic bug that could make restoring extremely slow and waste
 memory.  Thanks for Jacques Botha for report.
+
+Fixed bug restoring some directories when mirror_metadata file was
+missing (as when made by 0.10.x version).
 
 
 New in v0.12.4 (2003/09/13)
