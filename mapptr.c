@@ -240,16 +240,14 @@ _hs_map_from_cache(hs_map_t * map, hs_off_t offset, size_t *len)
     }
     
     out_off = offset - map->p_offset;
-    
-    if (out_off > 0) {
-        if (out_off + *len <= map->p_len) {
-            /* Starts after the beginning of the window and fits in
-             * the window. */
-            *len = map->p_len - out_off;
-            _hs_trace("found %ld byte match in cache", (long) *len);
-            return map->p + out_off;
-        }            
-    }
+
+    if (out_off + *len <= map->p_len) {
+	/* Starts after the beginning of the window and fits in the
+	 * window. */
+	*len = map->p_len - out_off;
+	_hs_trace("found %ld byte match in cache", (long) *len);
+	return map->p + out_off;
+    }            
 
     return NULL;
 }
