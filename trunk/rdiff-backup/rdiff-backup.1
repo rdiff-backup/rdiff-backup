@@ -51,6 +51,16 @@ unreadable files or unreadable/unexecutable directories in the source
 directory so it can back them up.  It will then restore their original
 permissions and mtimes afterwards.
 .TP
+.BI "--chars-to-quote " chars
+If this option is set, any characters in
+.I chars
+present in filenames on the source side will be quoted on the
+destination side, so that they do not appear in filenames on the
+remote side.  See
+.B --quoting-char
+and
+.BR --windows-mode .
+.TP
 .BI "--checkpoint-interval " seconds
 This option controls every how many seconds rdiff-backup checkpoints
 its current status.  The default is 20.
@@ -167,6 +177,33 @@ are present, this option can drastically decrease memory usage.
 Do not resume last aborted backup even if it falls within the resume
 window.
 .TP
+.BI "-r, --restore-as-of " restore_time
+Restore the specified directory as it was as of
+.IR restore_time .
+See the
+.B TIME FORMATS
+section for more information on the format of
+.IR restore_time ,
+and see the
+.B RESTORING
+section for more information on restoring.
+.TP
+.B --parsable-output
+If set, rdiff-backup's output will be tailored for easy parsing by
+computers, instead of clarity for humans.  Currently this only applies
+when listing increments using the
+.B -l
+or
+.B --list-increments
+switches.
+.TP
+.BI "--quoting-char " char
+Use the specified character for quoting characters specified to be
+escaped by the
+.B --chars-to-quote
+option.  The default is the semicolon ";".  See also
+.BR --windows-mode .
+.TP
 .BI "--remote-cmd " command
 This command has been depreciated as of version 0.4.1.  Use
 --remote-schema instead.
@@ -223,6 +260,11 @@ is noisiest).  This determines how much is written to the log file.
 .TP
 .B "-V, --version"
 Print the current version and exit
+.TP
+.B --windows-mode
+This option is short for "--chars to quote : --windows-time-format"
+and is appropriate when backing up to a filesystem that doesn't allow
+colons in filenames.
 .TP
 .B --windows-time-format
 If this option is present, use underscores instead of colons in
@@ -324,6 +366,87 @@ Test to see if the specified ssh command really opens up a working
 rdiff-backup server on the remote side.
 .RS
 rdiff-backup --test-server hostname.net::/this/is/ignored
+
+.SH RESTORING
+There are two ways to tell rdiff-backup to restore a file or
+directory.  Firstly, you can run rdiff-backup on a mirror file and use
+the
+.B -r
+or
+.B --restore-as-of
+options.  Secondly, you can run it on an increment file.
+.PP
+For example, suppose in the past you have run:
+.PP
+.RS
+rdiff-backup /usr /usr.backup
+.PP
+.RE
+to back up the /usr directory into the /usr.backup directory, and now
+want a copy of the /usr/local directory the way it was 3 days ago
+placed at /usr/local.old.
+.PP
+One way to do this is to run:
+.PP
+.RS
+rdiff-backup -r 3D /usr.backup/local /usr/local.old
+.PP
+.RE
+where above the "3D" means 3 days (for other ways to specify the time,
+see the
+.B TIME FORMATS
+section).  The /usr.backup/local directory was selected, because that
+is the directory containing the current version of /usr/local.
+.PP
+The second way to do this would be to find the corresponding increment
+file.  It would be in the /backup/rdiff-backup-data/increments/usr
+directory, and its name would be something like
+"local.2002-11-09T12:43:53-04:00.dir" where the time indicates it is
+from 3 days ago.  Note that the increment files all end in ".diff",
+".snapshot", ".dir", or ".missing", where ".missing" just means that
+the file didn't exist at that time (finally, some of these may be
+gzip-compressed, and have an extra ".gz" to indicate this).  Then
+running:
+.PP
+.RS
+rdiff-backup /backup/rdiff-backup-data/increments/usr/local.<time>.dir /usr/local.old
+.PP
+.RE
+would also restore the file as desired.
+
+.SH TIME FORMATS
+rdiff-backup uses time strings in two places.  Firstly, all of the
+increment files rdiff-backup creates will have the time in their
+filenames in the w3 datetime format as described in a w3 note at
+http://www.w3.org/TR/NOTE-datetime.  Basically they look like
+"2001-07-15T04:09:38-07:00", which means what it looks like.  The
+"-07:00" section means the time zone is 7 hours behind UTC.
+.PP
+Secondly, the
+.BI -r , " --restore-as-of" ", and " --remove-older-than
+options take a time string, which can be given in any of several
+formats:
+.IP 1.
+the string "now" (refers to the current time)
+.IP 2.
+a sequences of digits, like "123456890" (indicating the time in
+seconds after the epoch)
+.IP 3.
+A string like "2002-01-25T07:00:00+02:00" in datetime format 
+.IP 4.
+An interval, which is a number followed by one of the characters s, m,
+h, D, W, M, or Y (indicating seconds, minutes, hourse, days, weeks,
+months, or years respectively), or a series of such pairs.  In this
+case the string refers to the time that preceded the current time by
+the length of the interval.  For instance, "1h78m" indicates the time
+that was one hour and 78 minutes ago.  The calendar here is
+unsophisticated: a month is always 30 days, a year is always 365 days,
+and a day is always 86400 seconds.
+.IP 5.
+A date format of the form YYYY/MM/DD, YYYY-MM-DD, MM/DD/YYYY, or
+MM/DD/YYYY, which indicates midnight on the day in question, relative
+to the current timezone settings.  For instance, "2002/3/5",
+"03-05-2002", and "2002-3-05" all mean March 5th, 2002.
 
 .SH REMOTE OPERATION
 In order to access remote files, rdiff-backup opens up a pipe to a
@@ -586,6 +709,11 @@ rdiff-backup uses the shell command
 .BR mknod (1)
 to backup device files (e.g. /dev/ttyS0), so device files won't be
 handled correctly on systems with non-standard mknod syntax.
+.PP
+When an rdiff-backup session fails (for instance if a remote
+connection is lost), rdiff-backup tries to save the session so it can
+be resumed later.  Apparently, depending on how the rdiff-backup
+session fails, later sessions cannot be resumed properly.
 
 .SH AUTHOR
 Ben Escoto <bescoto@stanford.edu>
