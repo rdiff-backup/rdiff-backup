@@ -16,6 +16,9 @@ Changes in 0.9.7 (release pending)
 
  * #1022764: Fix corrupted encoding of some COPY commands in large
    files.
+
+ * Fix printf formats for size_t: both the format and the argument
+   should be cast to long.
  
 Changes in 0.9.6
 
