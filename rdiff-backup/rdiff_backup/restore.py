@@ -1,4 +1,4 @@
-# Copyright 2002, 2003 Ben Escoto
+# Copyright 2002 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -22,7 +22,7 @@
 from __future__ import generators
 import tempfile, os, cStringIO
 import Globals, Time, Rdiff, Hardlink, rorpiter, selection, rpath, \
-	   log, static, robust, metadata, statistics, TempFile, eas_acls
+	   log, static, robust, metadata, statistics, TempFile
 
 
 # This should be set to selection.Select objects over the source and
@@ -125,19 +125,15 @@ class MirrorStruct:
 		older one here.
 
 		"""
-		inctimes = cls.get_increment_times()
+		global _rest_time
+		base_incs = get_inclist(Globals.rbdir.append("increments"))
+		if not base_incs: return _mirror_time
+		inctimes = [inc.getinctime() for inc in base_incs]
+		inctimes.append(_mirror_time)
 		older_times = filter(lambda time: time <= restore_to_time, inctimes)
 		if older_times: return max(older_times)
 		else: # restore time older than oldest increment, just return that
 			return min(inctimes)
-
-	def get_increment_times(cls, rp = None):
-		"""Return list of times of backups, including current mirror"""
-		if not _mirror_time: return_list = [cls.get_mirror_time()]
-		else: return_list = [_mirror_time]
-		if not rp or not rp.index: rp = Globals.rbdir.append("increments")
-		for inc in get_inclist(rp): return_list.append(inc.getinctime())
-		return return_list
 
 	def initialize_rf_cache(cls, mirror_base, inc_base):
 		"""Set cls.rf_cache to CachedRF object"""
@@ -158,13 +154,11 @@ class MirrorStruct:
 
 		"""
 		if rest_time is None: rest_time = _rest_time
-
-		rorp_iter = eas_acls.GetCombinedMetadataIter(
-			Globals.rbdir, rest_time, restrict_index = cls.mirror_base.index,
-			acls = Globals.write_acls, eas = Globals.write_eas)
-		if not rorp_iter:
-			if require_metadata:
-				log.Log.FatalError("Mirror metadata not found")
+		metadata_iter = metadata.GetMetadata_at_time(Globals.rbdir,
+				 rest_time, restrict_index = cls.mirror_base.index)
+		if metadata_iter: rorp_iter = metadata_iter
+		elif require_metadata: log.Log.FatalError("Mirror metadata not found")
+		else:
 			log.Log("Warning: Mirror metadata not found, "
 					"reading from directory", 2)
 			rorp_iter = cls.get_rorp_iter_from_rf(cls.root_rf)

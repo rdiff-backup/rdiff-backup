@@ -11,7 +11,7 @@ if you aren't me, check out the 'user' global variable.
 
 Globals.set('change_source_perms', None)
 Globals.counter = 0
-verbosity = 6
+verbosity = 3
 log.Log.setverbosity(verbosity)
 user = 'ben' # Non-root user to su to
 assert os.getuid() == 0, "Run this test as root!"

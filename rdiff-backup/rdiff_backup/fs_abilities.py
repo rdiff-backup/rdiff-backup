@@ -1,4 +1,4 @@
-# Copyright 2003 Ben Escoto
+# Copyright 2002 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -27,8 +27,8 @@ FSAbilities object describing it.
 
 """
 
-import errno, os
-import Globals, log, TempFile, selection
+import errno
+import Globals, log, TempFile
 
 class FSAbilities:
 	"""Store capabilities of given file system"""
@@ -38,66 +38,10 @@ class FSAbilities:
 	eas = None # True if extended attributes supported
 	hardlinks = None # True if hard linking supported
 	fsync_dirs = None # True if directories can be fsync'd
-	dir_inc_perms = None # True if regular files can have full permissions
-	resource_forks = None # True if regular_file/rsrc holds resource fork
-	name = None # Short string, not used for any technical purpose
 	read_only = None # True if capabilities were determined non-destructively
 
-	def __init__(self, name = None):
-		"""FSAbilities initializer.  name is only used in logging"""
-		self.name = name
-
-	def __str__(self):
-		"""Return pretty printable version of self"""
-		assert self.read_only == 0 or self.read_only == 1, self.read_only
-		s = ['-' * 65]
-
-		def addline(desc, val_text):
-			"""Add description line to s"""
-			s.append('  %s%s%s' % (desc, ' ' * (45-len(desc)), val_text))
-
-		def add_boolean_list(pair_list):
-			"""Add lines from list of (desc, boolean) pairs"""
-			for desc, boolean in pair_list:
-				if boolean: val_text = 'On'
-				elif boolean is None: val_text = 'N/A'
-				else:
-					assert boolean == 0
-					val_text = 'Off'
-				addline(desc, val_text)			
-
-		def get_title_line():
-			"""Add the first line, mostly for decoration"""
-			read_string = self.read_only and "read only" or "read/write"
-			if self.name:
-				return ('Detected abilities for %s (%s) file system:' %
-						(self.name, read_string))
-			else: return ('Detected abilities for %s file system' %
-						  (read_string,))
-
-		def add_ctq_line():
-			"""Get line describing chars to quote"""
-			ctq_str = (self.chars_to_quote is None and 'N/A'
-					   or repr(self.chars_to_quote))
-			addline('Characters needing quoting', ctq_str)
-
-		s.append(get_title_line())
-		if not self.read_only:
-			add_ctq_line()
-			add_boolean_list([('Ownership changing', self.ownership),
-							  ('Hard linking', self.hardlinks),
-							  ('fsync() directories', self.fsync_dirs),
-							  ('Directory inc permissions',
-							   self.dir_inc_perms)])
-		add_boolean_list([('Access control lists', self.acls),
-						  ('Extended attributes', self.eas),
-						  ('Mac OS X style resource forks',
-						   self.resource_forks)])
-		s.append(s[0])
-		return '\n'.join(s)
-
 	def init_readonly(self, rp):
-		"""Set variables using fs tested at RPath rp.  Run locally.
+		"""Set variables using fs tested at RPath rp
 
 		This method does not write to the file system at all, and
 		should be run on the file system when the file system will
@@ -106,17 +50,13 @@ class FSAbilities:
 		Only self.acls and self.eas are set.
 
 		"""
-		assert rp.conn is Globals.local_connection
-		self.root_rp = rp
 		self.read_only = 1
 		self.set_eas(rp, 0)
 		self.set_acls(rp)
-		self.set_resource_fork_readonly(rp)
 		return self
 
-	def init_readwrite(self, rbdir, use_ctq_file = 1,
-					   override_chars_to_quote = None):
-		"""Set variables using fs tested at rp_base.  Run locally.
+	def init_readwrite(self, rbdir, use_ctq_file = 1):
+		"""Set variables using fs tested at rp_base
 
 		This method creates a temp directory in rp_base and writes to
 		it in order to test various features.  Use on a file system
@@ -129,11 +69,7 @@ class FSAbilities:
 		file in directory.
 
 		"""
-		assert rbdir.conn is Globals.local_connection
-		if not rbdir.isdir():
-			assert not rbdir.lstat(), (rbdir.path, rbdir.lstat())
-			rbdir.mkdir()
-		self.root_rp = rbdir
+		assert rbdir.isdir()
 		self.read_only = 0
 
 		subdir = TempFile.new_in_dir(rbdir)
@@ -143,10 +79,7 @@ class FSAbilities:
 		self.set_fsync_dirs(subdir)
 		self.set_eas(subdir, 1)
 		self.set_acls(subdir)
-		self.set_dir_inc_perms(subdir)
-		self.set_resource_fork_readwrite(subdir)
-		if override_chars_to_quote is None: self.set_chars_to_quote(subdir)
-		else: self.chars_to_quote = override_chars_to_quote
+		self.set_chars_to_quote(subdir)
 		if use_ctq_file: self.compare_chars_to_quote(rbdir)
 		subdir.delete()
 		return self
@@ -162,14 +95,19 @@ class FSAbilities:
 			fp.write(self.chars_to_quote)
 			assert not fp.close()
 
+		def get_old_chars():
+			fp = ctq_rp.open("rb")
+			old_chars = fp.read()
+			assert not fp.close()
+			return old_chars
+
 		if not ctq_rp.lstat(): write_new_chars()
 		else:
-			old_chars = ctq_rp.get_data()
+			old_chars = get_old_chars()
 			if old_chars != self.chars_to_quote:
 				if self.chars_to_quote == "":
 					log.Log("Warning: File system no longer needs quoting, "
 							"but will retain for backwards compatibility.", 2)
-					self.chars_to_quote = old_chars
 				else: log.FatalError("""New quoting requirements
 
 This may be caused when you copy an rdiff-backup directory from a
@@ -189,7 +127,7 @@ rdiff-backup-data/chars_to_quote.
 		except (IOError, OSError), exc:
 			if exc[0] == errno.EPERM:
 				log.Log("Warning: ownership cannot be changed on filesystem "
-						"at %s" % (self.root_rp.path,), 3)
+						"at device %s" % (testdir.getdevloc(),), 2)
 				self.ownership = 0
 			else: raise
 		else: self.ownership = 1
@@ -205,19 +143,19 @@ rdiff-backup-data/chars_to_quote.
 			assert hl_source.getinode() == hl_dest.getinode()
 		except (IOError, OSError), exc:
 			if exc[0] in (errno.EOPNOTSUPP, errno.EPERM):
-				log.Log("Warning: hard linking not supported by filesystem "
-						"at %s" % (self.root_rp.path,), 3)
+				log.Log("Warning: hard linking not supported by filesystem %s"
+						% (testdir.getdevloc(),), 2)
 				self.hardlinks = 0
 			else: raise
 		else: self.hardlinks = 1
 
 	def set_fsync_dirs(self, testdir):
 		"""Set self.fsync_dirs if directories can be fsync'd"""
-		assert testdir.conn is Globals.local_connection
 		try: testdir.fsync()
 		except (IOError, OSError), exc:
-			log.Log("Directories on file system at %s are not fsyncable.\n"
-					"Assuming it's unnecessary." % (testdir.path,), 4)
+			log.Log("Warning: Directories on file system at %s are not "
+					"fsyncable.\nAssuming it's unnecessary." %
+					(testdir.getdevloc(),), 2)
 			self.fsync_dirs = 0
 		else: self.fsync_dirs = 1
 
@@ -251,7 +189,7 @@ rdiff-backup-data/chars_to_quote.
 
 		def sanity_check():
 			"""Make sure basic filenames writable"""
-			for filename in ['5-_ a.']:
+			for filename in ['5-_ a']:
 				rp = subdir.append(filename)
 				rp.touch()
 				assert rp.lstat()
@@ -260,10 +198,10 @@ rdiff-backup-data/chars_to_quote.
 		sanity_check()
 		if is_case_sensitive():
 			if supports_unusual_chars(): self.chars_to_quote = ""
-			else: self.chars_to_quote = "^A-Za-z0-9_ -."
+			else: self.chars_to_quote = "^A-Za-z0-9_ -"
 		else:
 			if supports_unusual_chars(): self.chars_to_quote = "A-Z;"
-			else: self.chars_to_quote = "^a-z0-9_ -."
+			else: self.chars_to_quote = "^a-z0-9_ -"
 
 	def set_acls(self, rp):
 		"""Set self.acls based on rp.  Does not write.  Needs to be local"""
@@ -271,29 +209,33 @@ rdiff-backup-data/chars_to_quote.
 		assert rp.lstat()
 		try: import posix1e
 		except ImportError:
-			log.Log("Unable to import module posix1e from pylibacl "
-					"package.\nACLs not supported on filesystem at %s" %
-					(rp.path,), 4)
+			log.Log("Warning: Unable to import module posix1e from pylibacl "
+					"package.\nACLs not supported on device %s" %
+					(rp.getdevloc(),), 2)
 			self.acls = 0
 			return
 
 		try: posix1e.ACL(file=rp.path)
 		except IOError, exc:
 			if exc[0] == errno.EOPNOTSUPP:
-				log.Log("ACLs appear not to be supported by "
-						"filesystem at %s" % (rp.path,), 4)
+				log.Log("Warning: ACLs appear not to be supported by "
+						"filesystem on device %s" % (rp.getdevloc(),), 2)
 				self.acls = 0
 			else: raise
 		else: self.acls = 1
 		
 	def set_eas(self, rp, write):
-		"""Set extended attributes from rp. Tests writing if write is true."""
+		"""Set extended attributes from rp.  Run locally.
+
+		Tests writing if write is true.
+
+		"""
 		assert Globals.local_connection is rp.conn
 		assert rp.lstat()
 		try: import xattr
 		except ImportError:
-			log.Log("Unable to import module xattr.  EAs not "
-					"supported on filesystem at %s" % (rp.path,), 4)
+			log.Log("Warning: Unable to import module xattr.  ACLs not "
+					"supported on device %s" % (rp.getdevloc(),), 2)
 			self.eas = 0
 			return
 
@@ -304,86 +246,9 @@ rdiff-backup-data/chars_to_quote.
 				assert xattr.getxattr(rp.path, "user.test") == "test val"
 		except IOError, exc:
 			if exc[0] == errno.EOPNOTSUPP:
-				log.Log("Extended attributes not supported by "
-						"filesystem at %s" % (rp.path,), 4)
+				log.Log("Warning: Extended attributes not supported by "
+						"filesystem on device %s" % (rp.getdevloc(),), 2)
 				self.eas = 0
 			else: raise
 		else: self.eas = 1
 
-	def set_dir_inc_perms(self, rp):
-		"""See if increments can have full permissions like a directory"""
-		test_rp = rp.append('dir_inc_check')
-		test_rp.touch()
-		try: test_rp.chmod(07777)
-		except OSError:
-			test_rp.delete()
-			self.dir_inc_perms = 0
-			return
-		test_rp.setdata()
-		assert test_rp.isreg()
-		if test_rp.getperms() == 07777: self.dir_inc_perms = 1
-		else: self.dir_inc_perms = 0
-		test_rp.delete()
-
-	def set_resource_fork_readwrite(self, dir_rp):
-		"""Test for resource forks by writing to regular_file/rsrc"""
-		assert dir_rp.conn is Globals.local_connection
-		reg_rp = dir_rp.append('regfile')
-		reg_rp.touch()
-
-		s = 'test string---this should end up in resource fork'
-		try:
-			fp_write = open(os.path.join(reg_rp.path, 'rsrc'), 'wb')
-			fp_write.write(s)
-			assert not fp_write.close()
-
-			fp_read = open(os.path.join(reg_rp.path, 'rsrc'), 'rb')
-			s_back = fp_read.read()
-			assert not fp_read.close()
-		except (OSError, IOError), e: self.resource_forks = 0
-		else: self.resource_forks = (s_back == s)
-		reg_rp.delete()
-
-	def set_resource_fork_readonly(self, dir_rp):
-		"""Test for resource fork support by testing an regular file
-
-		Launches search for regular file in given directory.  If no
-		regular file is found, resource_fork support will be turned
-		off by default.
-
-		"""
-		for rp in selection.Select(dir_rp).set_iter():
-			if rp.isreg():
-				try:
-					rfork = rp.append('rsrc')
-					fp = rfork.open('rb')
-					fp.read()
-					assert not fp.close()
-				except (OSError, IOError), e:
-					self.resource_forks = 0
-					return
-				self.resource_forks = 1
-				return
-		self.resource_forks = 0
-
-
-def get_fsabilities_readonly(desc_string, rp):
-	"""Return an FSAbilities object with given description_string
-
-	Will be initialized read_only with given RPath rp.
-
-	"""
-	return FSAbilities(desc_string).init_readonly(rp)
-
-def get_fsabilities_readwrite(desc_string, rb, use_ctq_file = 1, ctq = None):
-	"""Like above but initialize read/write and pass other arguments"""
-	return FSAbilities(desc_string).init_readwrite(
-		rb, use_ctq_file = use_ctq_file, override_chars_to_quote = ctq)
-
-def get_fsabilities_restoresource(rp):
-	"""Used when restoring, get abilities of source directory"""
-	fsa = FSAbilities('source').init_readonly(rp)
-	ctq_rp = rp.append("chars_to_quote")
-	if ctq_rp.lstat(): fsa.chars_to_quote = ctq_rp.get_data()
-	else: fsa.chars_to_quote = ""
-	return fsa

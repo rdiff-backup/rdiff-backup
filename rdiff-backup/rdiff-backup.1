@@ -11,8 +11,7 @@ rdiff-backup \- local/remote mirror and incremental backup
 .B {{ -l | --list-increments }
 .BI "| --remove-older-than " time_interval
 .BI "| --list-at-time " time
-.BI "| --list-changed-since " time
-.B "| --list-increment-sizes "}
+.BI "| --list-changed-since " time }
 .BI [[[ user@ ] host2.foo ]:: destination_directory ]
 
 .B rdiff-backup --calculate-average
@@ -61,13 +60,22 @@ out the examples.html file included in the rdiff-backup distribution.
 .SH OPTIONS
 .TP
 .B -b, --backup-mode
-Force backup mode even if first argument appears to be an increment or
-mirror file.
+Force backup mode even if first argument appears to be an increment file.
 .TP
 .B --calculate-average
 Enter calculate average mode.  The arguments should be a number of
 statistics files.  rdiff-backup will print the average of the listed
 statistics files and exit.
+.TP
+.BI "--chars-to-quote " chars
+If this option is set, any characters in
+.I chars
+present in filenames on the source side will be quoted on the
+destination side, so that they do not appear in filenames on the
+remote side.  See
+.B --quoting-char
+and
+.BR --windows-mode .
 .TP
 .B --check-destination-dir
 If an rdiff-backup session fails, running rdiff-backup with this
@@ -128,7 +136,8 @@ See the
 section for more information.
 .TP
 .B --exclude-special-files
-Exclude all device files, fifos, sockets, and symlinks.
+Exclude all device files, fifos, sockets, and symlinks.  This option
+is implied by --windows-mode.
 .TP
 .B --force
 Authorize the updating or overwriting of a destination path.
@@ -200,10 +209,11 @@ subdirectory will be listed.
 .TP
 .B --no-change-dir-inc-perms
 Do not change the permissions of the directory increments to match the
-directories they represent.
+directories they represent.  This option may be required on file
+systems where regular files cannot have their sticky bit set.
 .TP
 .B --no-compare-inode
-This relatively esoteric option prevents rdiff-backup from flagging a
+This relative esoteric option prevents rdiff-backup from flagging a
 file as changed when its inode changes.  This option may be useful if
 you are backing up two different directories to the same rdiff-backup
 destination directory.  The downside is that hard link information may
@@ -256,6 +266,13 @@ session statistics file.  See the
 .B STATISTICS
 section for more information.
 .TP
+.BI "--quoting-char " char
+Use the specified character for quoting characters specified to be
+escaped by the
+.B --chars-to-quote
+option.  The default is the semicolon ";".  See also
+.BR --windows-mode .
+.TP
 .BI "-r, --restore-as-of " restore_time
 Restore the specified directory as it was as of
 .IR restore_time .
@@ -266,6 +283,10 @@ section for more information on the format of
 and see the
 .B RESTORING
 section for more information on restoring.
+.TP
+.BI "--remote-cmd " command
+This command has been depreciated as of version 0.4.1.  Use
+--remote-schema instead.
 .TP
 .BI "--remote-schema " schema
 Specify an alternate method of connecting to a remote computer.  This
@@ -344,6 +365,20 @@ is noisiest).  This determines how much is written to the log file.
 .TP
 .B "-V, --version"
 Print the current version and exit
+.TP
+.B --windows-mode
+This option quotes characters not allowable on windows, and does not
+try to preserve ownership, hardlinks, or permissions on the
+destination side.  It is appropriate when backing up a normal unix
+file system to a windows one such as VFS, or a file system with
+similar limitations.  Because metadata is stored in a separate regular
+file, this option does not prevent all data from being restored.
+.TP
+.B --windows-restore
+This option turns on windows quoting, but does not disable
+permissions, hard linking, or ownership.  Use this when restoring from
+an rdiff-backup directory on a windows file system to a unix file
+system.
 
 .SH RESTORING
 There are two ways to tell rdiff-backup to restore a file or
@@ -440,10 +475,6 @@ A date format of the form YYYY/MM/DD, YYYY-MM-DD, MM/DD/YYYY, or
 MM/DD/YYYY, which indicates midnight on the day in question, relative
 to the current timezone settings.  For instance, "2002/3/5",
 "03-05-2002", and "2002-3-05" all mean March 5th, 2002.
-.IP 6.
-A backup session specification which is a non-negative integer
-followed by 'B'.  For instance, '0B' specifies the time of the current
-mirror, and '3B' specifies the time of the 3rd newest increment.
 
 .SH REMOTE OPERATION
 In order to access remote files, rdiff-backup opens up a pipe to a

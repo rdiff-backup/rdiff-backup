@@ -76,9 +76,8 @@ def set_security_level(action, cmdpairs):
 			rdir = tempfile.gettempdir()
 		elif islocal(cp1):
 			sec_level = "read-only"
-			Main.restore_set_root(rpath.RPath(Globals.local_connection,
-											  getpath(cp1)))
-			rdir = Main.restore_root.path
+			rdir = Main.restore_get_root(rpath.RPath(Globals.local_connection,
+													 getpath(cp1)))[0].path
 		else:
 			assert islocal(cp2)
 			sec_level = "all"
@@ -94,9 +93,9 @@ def set_security_level(action, cmdpairs):
 			assert islocal(cp2)
 			sec_level = "all"
 			rdir = getpath(cp2)
-	elif action in ["test-server", "list-increments", 'list-increment-sizes',
-					 "list-at-time", "list-changed-since",
-					 "calculate-average", "remove-older-than"]:
+	elif (action == "test-server" or action == "list-increments" or
+		  action == "list-at-time" or action == "list-changed-since"
+		  or action == "calculate-average" or action == "remove-older-than"):
 		sec_level = "minimal"
 		rdir = tempfile.gettempdir()
 	else: assert 0, "Unknown action %s" % action
@@ -118,35 +117,33 @@ def set_allowed_requests(sec_level):
 						"SetConnections.add_redirected_conn",
 						"RedirectedRun",
 						"sys.stdout.write",
-						"robust.install_signal_handlers"]
+						"robust.install_signal_handlers",
+						"Hardlink.initialize_dictionaries"]
 	if sec_level == "minimal": pass
 	elif sec_level == "read-only" or sec_level == "update-only":
 		allowed_requests.extend(
 			["C.make_file_dict",
-			 "rpath.ea_get",
-			 "rpath.acl_get",
 			 "log.Log.log_to_file",
 			 "os.getuid",
 			 "os.listdir",
 			 "Time.setcurtime_local",
 			 "rpath.gzip_open_local_read",
-			 "rpath.open_local_read",
-			 "Hardlink.initialize_dictionaries"])
+			 "rpath.open_local_read"])
 		if sec_level == "read-only":
 			allowed_requests.extend(
-				["fs_abilities.get_fsabilities_readonly",
-				 "fs_abilities.get_fsabilities_restoresource",
-				 "restore.MirrorStruct.set_mirror_and_rest_times",
+				["restore.MirrorStruct.set_mirror_and_rest_times",
 				 "restore.MirrorStruct.initialize_rf_cache",
 				 "restore.MirrorStruct.get_diffs",
-				 "backup.SourceStruct.get_source_select",
 				 "backup.SourceStruct.set_source_select",
+				 "backup.SourceStruct.get_source_select",
 				 "backup.SourceStruct.get_diffs"])
-		elif sec_level == "update-only":
+		if sec_level == "update-only":
 			allowed_requests.extend(
 				["log.Log.open_logfile_local", "log.Log.close_logfile_local",
 				 "log.ErrorLog.open", "log.ErrorLog.isopen",
 				 "log.ErrorLog.close",
+				 "robust.SaveState.init_filenames",
+				 "robust.SaveState.touch_last_file",
 				 "backup.DestinationStruct.set_rorp_cache",
 				 "backup.DestinationStruct.get_sigs",				 
 				 "backup.DestinationStruct.patch_and_increment",
@@ -154,8 +151,7 @@ def set_allowed_requests(sec_level):
 				 "Main.backup_remove_curmirror_local",
 				 "Globals.ITRB.increment_stat",
 				 "statistics.record_error",
-				 "log.ErrorLog.write_if_open",
-				 "fs_abilities.get_fsabilities_readwrite"])
+				 "log.ErrorLog.write_if_open"])
 	if Globals.server:
 		allowed_requests.extend(
 			["SetConnections.init_connection_remote",

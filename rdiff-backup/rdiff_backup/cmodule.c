@@ -1,46 +1,23 @@
 /* ----------------------------------------------------------------------- *
  *   
- *   Copyright 2002 2003 Ben Escoto
+ *   Copyright 2002 Ben Escoto
  *
  *   This file is part of rdiff-backup.
  *
  *   rdiff-backup is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License as
- *   published by the Free Software Foundation; either version 2 of
- *   the License, or (at your option) any later version.
- *
- *   rdiff-backup is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *   General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with rdiff-backup; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- *   02111-1307 USA
+ *   published by the Free Software Foundation, Inc., 675 Mass Ave,
+ *   Cambridge MA 02139, USA; either version 2 of the License, or (at
+ *   your option) any later version; incorporated herein by reference.
  *
  * ----------------------------------------------------------------------- */
+
 
 #include <Python.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
-
-
-/* Some of the following code to define major/minor taken from code by
- * Jörg Schilling's star archiver.
- */
-#if !defined(major) && (defined(sgi) || defined(__sgi) || defined(__SVR4)) && !defined(__CYGWIN32__)
-#include <sys/mkdev.h>
-#endif
-
-#ifndef major
-#	define major(dev)		(((dev) >> 8) & 0xFF)
-#	define minor(dev)		((dev) & 0xFF)
-#	define makedev(majo, mino)	(((majo) << 8) | (mino))
-#endif
-/* End major/minor section */
 
 /* choose the appropriate stat and fstat functions and return structs */
 /* This code taken from Python's posixmodule.c */
@@ -81,7 +58,7 @@ static PyObject *c_make_file_dict(self, args)
 	 PyObject *self;
 	 PyObject *args;
 {
-  PyObject *size, *inode, *mtime, *atime, *ctime, *devloc, *return_val;
+  PyObject *size, *inode, *mtime, *atime, *devloc, *return_val;
   char *filename, filetype[5];
   STRUCT_STAT sbuf;
   long int mode, perms;
@@ -118,11 +95,9 @@ static PyObject *c_make_file_dict(self, args)
 #if SIZEOF_TIME_T > SIZEOF_LONG
   mtime = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_mtime);
   atime = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_atime);
-  ctime = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_ctime);
 #else
   mtime = PyInt_FromLong((long)sbuf.st_mtime);
   atime = PyInt_FromLong((long)sbuf.st_atime);
-  ctime = PyInt_FromLong((long)sbuf.st_ctime);
 #endif
 
   /* Build return dictionary from stat struct */
@@ -132,7 +107,7 @@ static PyObject *c_make_file_dict(self, args)
 	else if S_ISDIR(mode) strcpy(filetype, "dir");
 	else if S_ISSOCK(mode) strcpy(filetype, "sock");
 	else strcpy(filetype, "fifo");
-	return_val =  Py_BuildValue("{s:s,s:O,s:l,s:l,s:l,s:O,s:O,s:l,s:O,s:O,s:O}",
+	return_val =  Py_BuildValue("{s:s,s:O,s:l,s:l,s:l,s:O,s:O,s:l,s:O,s:O}",
 								"type", filetype,
 								"size", size,
 								"perms", perms,
@@ -142,8 +117,7 @@ static PyObject *c_make_file_dict(self, args)
 								"devloc", devloc,
 								"nlink", (long)sbuf.st_nlink,
 								"mtime", mtime,
-								"atime", atime,
-								"ctime", ctime);
+								"atime", atime);
   } else if S_ISLNK(mode) {
 	/* Symbolic links */
 	char linkname[1024];
@@ -172,7 +146,7 @@ static PyObject *c_make_file_dict(self, args)
 	PyObject *major_num = PyLong_FromLongLong(major(devnums));
 #else
 	long int devnums = (long)sbuf.st_dev;
-	PyObject *major_num = PyInt_FromLong(major(devnums));
+	PyObject *major_num = PyInt_FromLong(devnums >> 8);
 #endif
 	int minor_num = (int)(minor(devnums));
 	if S_ISCHR(mode) strcpy(devtype, "c");
@@ -199,9 +173,9 @@ static PyObject *c_make_file_dict(self, args)
   Py_DECREF(devloc);
   Py_DECREF(mtime);
   Py_DECREF(atime);
-  Py_DECREF(ctime);
   return return_val;
 }
+
 
 /* Convert python long into 7 byte string */
 static PyObject *long2str(self, args)
@@ -247,140 +221,12 @@ static PyObject *str2long(self, args)
 }
 
 
-/* --------------------------------------------------------------------- *
- * This section is still GPL'd, but was copied from the libmisc
- * section of getfacl by Andreas Gruenbacher
- * <a.gruenbacher@computer.org>.  I'm just copying the code to
- * preserve quoting compatibility between (get|set)f(acl|attr) and
- * rdiff-backup.  Taken on 8/24/2003.
- * --------------------------------------------------------------------- */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-
-int high_water_alloc(void **buf, size_t *bufsize, size_t newsize)
-{
-#define CHUNK_SIZE	256
-	/*
-	 * Goal here is to avoid unnecessary memory allocations by
-	 * using static buffers which only grow when necessary.
-	 * Size is increased in fixed size chunks (CHUNK_SIZE).
-	 */
-	if (*bufsize < newsize) {
-		void *newbuf;
-
-		newsize = (newsize + CHUNK_SIZE-1) & ~(CHUNK_SIZE-1);
-		newbuf = realloc(*buf, newsize);
-		if (!newbuf)
-			return 1;
-		
-		*buf = newbuf;
-		*bufsize = newsize;
-	}
-	return 0;
-}
-
-const char *quote(const char *str)
-{
-	static char *quoted_str = NULL;
-	static size_t quoted_str_len = 0;
-	const unsigned char *s;
-	char *q;
-	size_t nonpr, total_len;
-
-	if (!str)
-		return str;
-
-	for (nonpr = 0, s = (unsigned char *)str, total_len = 0;
-		 *s != '\0'; s++, total_len++) {
-	  if (!isprint(*s) || isspace(*s) || *s == '\\' || *s == '=')
-		nonpr++;
-	}
-	if (nonpr == 0)
-		return str;
-
-	if (high_water_alloc((void **)&quoted_str, &quoted_str_len,
-			     nonpr * 3 + total_len + 1))
-		return NULL;
-	for (s = (unsigned char *)str, q = quoted_str; *s != '\0'; s++) {
-		if (!isprint(*s) || isspace(*s) || *s == '\\' || *s == '=') {
-			*q++ = '\\';
-			*q++ = '0' + ((*s >> 6)    );
-			*q++ = '0' + ((*s >> 3) & 7);
-			*q++ = '0' + ((*s     ) & 7);
-		} else
-			*q++ = *s;
-	}
-	*q++ = '\0';
-
-	return quoted_str;
-}
-
-char *unquote(char *str)
-{
-	unsigned char *s, *t;
-
-	if (!str)
-		return str;
-
-	for (s = (unsigned char *)str; *s != '\0'; s++)
-		if (*s == '\\')
-			break;
-	if (*s == '\0')
-		return str;
-
-#define isoctal(c) \
-	((c) >= '0' && (c) <= '7')
-
-	t = s;
-	do {
-		if (*s == '\\' &&
-		    isoctal(*(s+1)) && isoctal(*(s+2)) && isoctal(*(s+3))) {
-			*t++ = ((*(s+1) - '0') << 6) +
-			       ((*(s+2) - '0') << 3) +
-			       ((*(s+3) - '0')     );
-			s += 3;
-		} else
-			*t++ = *s;
-	} while (*s++ != '\0');
-
-	return str;
-}
-
-/* ------------- End Gruenbach section --------------------------------- */
-
-/* Translate quote above into python */
-static PyObject *acl_quote(PyObject *self, PyObject *args)
-{
-  char *s;
-
-  if (!PyArg_ParseTuple(args, "s", &s)) return NULL;
-  return Py_BuildValue("s", quote(s));
-}
-
-/* Translate unquote above into python */
-static PyObject *acl_unquote(PyObject *self, PyObject *args)
-{
-  char *s;
-
-  if (!PyArg_ParseTuple(args, "s", &s)) return NULL;
-  return Py_BuildValue("s", unquote(s));
-}
-
-
-/* ------------- Python export lists -------------------------------- */
-
 static PyMethodDef CMethods[] = {
   {"make_file_dict", c_make_file_dict, METH_VARARGS,
    "Make dictionary from file stat"},
   {"long2str", long2str, METH_VARARGS, "Convert python long to 7 byte string"},
   {"str2long", str2long, METH_VARARGS, "Convert 7 byte string to python long"},
   {"sync", my_sync, METH_VARARGS, "sync buffers to disk"},
-  {"acl_quote", acl_quote, METH_VARARGS,
-   "Quote string, escaping non-printables"},
-  {"acl_unquote", acl_unquote, METH_VARARGS,
-   "Unquote string, producing original input to quote"},
   {NULL, NULL, 0, NULL}
 };
 
@@ -394,3 +240,4 @@ void initC(void)
 											NULL, NULL);
   PyDict_SetItemString(d, "UnknownFileTypeError", UnknownFileTypeError);
 }
+
