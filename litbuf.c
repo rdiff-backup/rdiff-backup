@@ -42,7 +42,7 @@ int _hs_append_literal(hs_membuf_t * litbuf, char value)
    appropriately. */
 ssize_t
 _hs_flush_literal_buf(hs_membuf_t * litbuf,
-		      rs_write_fn_t write_fn, void *write_priv,
+		      hs_write_fn_t write_fn, void *write_priv,
 		      hs_stats_t * stats,
 		      int kind)
 {

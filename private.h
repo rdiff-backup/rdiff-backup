@@ -70,36 +70,36 @@
 
    Net IO functions */
 
-int _hs_do_read(rs_read_fn_t, void *readprivate, char *buf, size_t len);
+int _hs_do_read(hs_read_fn_t, void *readprivate, char *buf, size_t len);
 
-int _hs_do_write(rs_write_fn_t, void *writeprivate, char const *buf,
+int _hs_do_write(hs_write_fn_t, void *writeprivate, char const *buf,
 		 int len);
 
-int _hs_read_netint(rs_read_fn_t read_fn, void *read_priv,
+int _hs_read_netint(hs_read_fn_t read_fn, void *read_priv,
 		    uint32_t * result);
 
-int _hs_read_netshort(rs_read_fn_t read_fn, void *read_priv,
+int _hs_read_netshort(hs_read_fn_t read_fn, void *read_priv,
 		      uint16_t * result);
 
 
-int _hs_read_netbyte(rs_read_fn_t read_fn, void *read_priv,
+int _hs_read_netbyte(hs_read_fn_t read_fn, void *read_priv,
 		     uint8_t * result);
 
-int _hs_write_netint(rs_write_fn_t write_fn, void *write_priv,
+int _hs_write_netint(hs_write_fn_t write_fn, void *write_priv,
 		     uint32_t out);
 
-int _hs_write_netshort(rs_write_fn_t write_fn, void *write_priv,
+int _hs_write_netshort(hs_write_fn_t write_fn, void *write_priv,
 		       uint16_t out);
 
-int _hs_write_netbyte(rs_write_fn_t write_fn, void *write_priv,
+int _hs_write_netbyte(hs_write_fn_t write_fn, void *write_priv,
 		      uint8_t out);
 
-int _hs_write_netvar(rs_write_fn_t write_fn, void *write_priv,
+int _hs_write_netvar(hs_write_fn_t write_fn, void *write_priv,
 		     uint32_t value, int type);
 
 int _hs_copy_ofs(uint32_t offset, uint32_t length,
-		 rs_readofs_fn_t readofs_fn, void *readofs_priv,
-		 rs_write_fn_t write_fn, void *write_priv);
+		 hs_readofs_fn_t readofs_fn, void *readofs_priv,
+		 hs_write_fn_t write_fn, void *write_priv);
 
 /* ========================================
 
@@ -109,7 +109,7 @@ int _hs_copy_ofs(uint32_t offset, uint32_t length,
    from there into the real output stream when necessary.  */
 ssize_t
 _hs_flush_literal_buf(hs_membuf_t * litbuf,
-		      rs_write_fn_t write_fn, void *write_priv,
+		      hs_write_fn_t write_fn, void *write_priv,
 		      hs_stats_t * stats,
 		      int kind);
 
@@ -157,7 +157,7 @@ typedef struct inbuf {
     int abspos;
 } inbuf_t;
 
-int _hs_fill_inbuf(inbuf_t * inbuf, rs_read_fn_t read_fn,
+int _hs_fill_inbuf(inbuf_t * inbuf, hs_read_fn_t read_fn,
 		   void *readprivate);
 
 int _hs_alloc_inbuf(inbuf_t * inbuf, int block_len);
@@ -229,7 +229,7 @@ int _hs_build_hash_table(struct sum_struct *sums);
 
 int
 _hs_make_sum_struct(struct sum_struct **signatures,
-		    rs_read_fn_t sigread_fn, void *sigreadprivate,
+		    hs_read_fn_t sigread_fn, void *sigreadprivate,
 		    int block_len);
 
 void _hs_free_sum_struct(struct sum_struct **psums);
@@ -244,9 +244,33 @@ typedef struct _hs_copyq {
      size_t start, len;
 } _hs_copyq_t;
 
-int _hs_queue_copy(rs_write_fn_t write_fn, void *write_priv,
+int _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
 		    _hs_copyq_t *copyq, size_t start, size_t len,
 		    hs_stats_t *stats);
-int _hs_copyq_flush(rs_write_fn_t write_fn, void *write_priv,
+int _hs_copyq_flush(hs_write_fn_t write_fn, void *write_priv,
 		    _hs_copyq_t *copyq,
 		    hs_stats_t *stats);
+
+
+/* ========================================
+
+   emit/inhale commands
+*/
+
+int _hs_emit_chunk_cmd(hs_write_fn_t write_fn, void *write_priv,
+		       uint32_t size, int kind);
+
+
+int _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
+		  uint32_t offset, uint32_t length, hs_stats_t * stats);
+
+
+int _hs_emit_eof(hs_write_fn_t write_fn, void *write_priv,
+		 hs_stats_t *stats);
+
+int _hs_append_literal(hs_membuf_t * litbuf, char value);
+
+
+int
+_hs_inhale_command(hs_read_fn_t read_fn, void * read_priv,
+		   int *kind, uint32_t *len, uint32_t *off);

@@ -24,7 +24,7 @@
 #include "includes.h"
 #include "hsync.h"
 #include "hsyncproto.h"
-#include "emit.h"
+#include "private.h"
 
 
 #ifdef __GNUC__

@@ -11,12 +11,14 @@ libhsync_la_SOURCES = dec.c enc.c \
 	mdfour.c search.c \
 	filebuf.c membuf.c ptrbuf.c \
 	checksum.c copyq.c \
-	compress.c compress.h inbuf.c 
+	compress.c compress.h inbuf.c \
+	inhale.c
 
 libhsyncdecode_la_SOURCES = dec.c \
 	private.h netio.c includes.h \
 	compress.c compress.h \
-	filebuf.c membuf.c ptrbuf.c
+	filebuf.c membuf.c ptrbuf.c \
+	inhale.c
 
 noinst_SCRIPTS = test-decode.sh test-encode.sh test-chain.sh
 

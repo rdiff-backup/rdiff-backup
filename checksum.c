@@ -86,7 +86,7 @@ uint32_t _hs_calc_strong_sum(char const *buf, int len, char *sum)
    long (SUM_LENGTH) strong checksums. */
 int
 _hs_make_sum_struct(struct sum_struct **signatures,
-		    rs_read_fn_t sigread_fn, void *sigreadprivate,
+		    hs_read_fn_t sigread_fn, void *sigreadprivate,
 		    int block_len)
 {
     struct sum_buf *asignature;

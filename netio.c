@@ -29,7 +29,7 @@
    functions are allowed to wimp out and return short if they
    want. */
 int
-_hs_do_read(rs_read_fn_t read_fn, void *readprivate, char *buf, size_t len)
+_hs_do_read(hs_read_fn_t read_fn, void *readprivate, char *buf, size_t len)
 {
     size_t count = 0;
     int ret;
@@ -50,7 +50,7 @@ _hs_do_read(rs_read_fn_t read_fn, void *readprivate, char *buf, size_t len)
 }
 
 int
-_hs_do_write(rs_write_fn_t write_fn,
+_hs_do_write(hs_write_fn_t write_fn,
 	     void *writeprivate, char const *buf, int len)
 {
     int count = 0;
@@ -78,8 +78,8 @@ _hs_do_write(rs_write_fn_t write_fn,
 
 int
 _hs_copy_ofs(uint32_t offset, uint32_t length,
-	     rs_readofs_fn_t readofs_fn, void *readofs_priv,
-	     rs_write_fn_t write_fn, void *write_priv)
+	     hs_readofs_fn_t readofs_fn, void *readofs_priv,
+	     hs_write_fn_t write_fn, void *write_priv)
 {
     int ret;
     char *buf;
@@ -121,7 +121,7 @@ _hs_copy_ofs(uint32_t offset, uint32_t length,
 
 
 int
-_hs_write_netint(rs_write_fn_t write_fn, void *write_priv, uint32_t out)
+_hs_write_netint(hs_write_fn_t write_fn, void *write_priv, uint32_t out)
 {
     out = htonl(out);
     return write_fn(write_priv, (void *) &out, sizeof out) == sizeof out
@@ -130,7 +130,7 @@ _hs_write_netint(rs_write_fn_t write_fn, void *write_priv, uint32_t out)
 
 
 int
-_hs_write_netshort(rs_write_fn_t write_fn, void *write_priv, uint16_t out)
+_hs_write_netshort(hs_write_fn_t write_fn, void *write_priv, uint16_t out)
 {
     out = htons(out);
     return write_fn(write_priv, (void *) &out, sizeof out) == sizeof out
@@ -139,7 +139,7 @@ _hs_write_netshort(rs_write_fn_t write_fn, void *write_priv, uint16_t out)
 
 
 int
-_hs_write_netbyte(rs_write_fn_t write_fn, void *write_priv, uint8_t out)
+_hs_write_netbyte(hs_write_fn_t write_fn, void *write_priv, uint8_t out)
 {
     return write_fn(write_priv, (void *) &out, sizeof out) == sizeof out
 	? sizeof out : -1;
@@ -147,7 +147,7 @@ _hs_write_netbyte(rs_write_fn_t write_fn, void *write_priv, uint8_t out)
 
 
 int
-_hs_read_netshort(rs_read_fn_t read_fn, void *read_priv, uint16_t * result)
+_hs_read_netshort(hs_read_fn_t read_fn, void *read_priv, uint16_t * result)
 {
     uint16_t buf;
     int ret;
@@ -160,7 +160,7 @@ _hs_read_netshort(rs_read_fn_t read_fn, void *read_priv, uint16_t * result)
 
 
 int
-_hs_read_netint(rs_read_fn_t read_fn, void *read_priv, uint32_t * result)
+_hs_read_netint(hs_read_fn_t read_fn, void *read_priv, uint32_t * result)
 {
     uint32_t buf;
     int ret;
@@ -174,7 +174,7 @@ _hs_read_netint(rs_read_fn_t read_fn, void *read_priv, uint32_t * result)
 
 
 int
-_hs_read_netbyte(rs_read_fn_t read_fn, void *read_priv, uint8_t * result)
+_hs_read_netbyte(hs_read_fn_t read_fn, void *read_priv, uint8_t * result)
 {
     uint8_t buf;
     int ret;
@@ -194,7 +194,7 @@ _hs_read_netbyte(rs_read_fn_t read_fn, void *read_priv, uint8_t * result)
 
 
 
-int _hs_write_netvar(rs_write_fn_t write_fn, void *write_priv,
+int _hs_write_netvar(hs_write_fn_t write_fn, void *write_priv,
 		     uint32_t value, int type)
 {
     if (type == 1)

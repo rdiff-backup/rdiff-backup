@@ -41,7 +41,7 @@
    taken just over the remaining part of the file.
    
    When we first start processing a stream, we have to kickstart the weak
-   checksum by summing the whole first block through _rs_calc_weak_sum.
+   checksum by summing the whole first block through _hs_calc_weak_sum.
    After this, though, we can just let the checksum accumulate by adding the
    byte at the end of the block and letting older bytes fall off the end.  We 
    will need to calculate a whole-block checksum again after outputting a
@@ -92,7 +92,7 @@
 
 static int
 _hs_newsig_header(int new_block_len,
-		  rs_write_fn_t write_fn, void *writeprivate)
+		  hs_write_fn_t write_fn, void *writeprivate)
 {
      int ret;
      ret = _hs_write_netint(write_fn, writeprivate, HS_SIG_MAGIC);
@@ -161,7 +161,7 @@ _hs_find_match(int this_block_size, rollsum_t * rollsum, inbuf_t * inbuf,
 
 
 static int
-_hs_output_block_hash(rs_write_fn_t write_fn, void *write_priv,
+_hs_output_block_hash(hs_write_fn_t write_fn, void *write_priv,
 		      inbuf_t * inbuf, int shortened_block_len,
 		      rollsum_t * rollsum)
 {
@@ -193,19 +193,19 @@ _hs_signature_ready(inbuf_t * inbuf, int new_block_len)
 
 
 static int
-_hs_check_sig_version(rs_read_fn_t sigread_fn, void *sigreadprivate)
+_hs_check_sig_version(hs_read_fn_t sigread_fn, void *sigreadprivate)
 {
-     uint32_t rs_remote_version;
+     uint32_t hs_remote_version;
      const uint32_t expect = HS_SIG_MAGIC;
      int ret;
 
-     ret = _hs_read_netint(sigread_fn, sigreadprivate, &rs_remote_version);
+     ret = _hs_read_netint(sigread_fn, sigreadprivate, &hs_remote_version);
      if (ret != 4)
 	  return ret;
 
-     if (rs_remote_version != expect) {
+     if (hs_remote_version != expect) {
 	  _hs_fatal("this librsync understands version %#08x."
-		    " We don't take %#08x.", expect, rs_remote_version);
+		    " We don't take %#08x.", expect, hs_remote_version);
 	  errno = EBADMSG;
 	  return -1;
      }
@@ -215,7 +215,7 @@ _hs_check_sig_version(rs_read_fn_t sigread_fn, void *sigreadprivate)
 
 
 static int
-_hs_read_blocksize(rs_read_fn_t sigread_fn, void *sigreadprivate,
+_hs_read_blocksize(hs_read_fn_t sigread_fn, void *sigreadprivate,
 		   int *block_len)
 {
      int ret;
@@ -236,7 +236,7 @@ _hs_read_blocksize(rs_read_fn_t sigread_fn, void *sigreadprivate,
 
 
 
-static int _hs_littok_header(rs_write_fn_t write_fn, void *write_priv)
+static int _hs_littok_header(hs_write_fn_t write_fn, void *write_priv)
 {
      int ret;
 
@@ -256,9 +256,9 @@ static int _hs_littok_header(rs_write_fn_t write_fn, void *write_priv)
 
 
 ssize_t
-hs_encode(rs_read_fn_t read_fn, void *readprivate,
-	  rs_write_fn_t write_fn, void *write_priv,
-	  rs_read_fn_t sigread_fn, void *sigreadprivate,
+hs_encode(hs_read_fn_t read_fn, void *readprivate,
+	  hs_write_fn_t write_fn, void *write_priv,
+	  hs_read_fn_t sigread_fn, void *sigreadprivate,
 	  int new_block_len UNUSED, hs_stats_t * stats)
 {
      struct sum_struct *sums = 0;

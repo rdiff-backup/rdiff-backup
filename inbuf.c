@@ -28,7 +28,7 @@
 
 
 int
-_hs_fill_inbuf(inbuf_t * inbuf, rs_read_fn_t read_fn, void *readprivate)
+_hs_fill_inbuf(inbuf_t * inbuf, hs_read_fn_t read_fn, void *readprivate)
 {
     int ret;
 

@@ -63,7 +63,7 @@ static int _hs_int_len(uint32_t val)
 }
 
 
-int _hs_emit_eof(rs_write_fn_t write_fn, void *write_priv,
+int _hs_emit_eof(hs_write_fn_t write_fn, void *write_priv,
 		 hs_stats_t *stats UNUSED)
 {
     return _hs_write_netbyte(write_fn, write_priv, op_eof);
@@ -73,9 +73,9 @@ int _hs_emit_eof(rs_write_fn_t write_fn, void *write_priv,
 /* Emit the command header for literal data.  This will do either literal
    or signature depending on BASE. */
 int
-_hs_emit_chunk_cmd(rs_write_fn_t write_fn,
+_hs_emit_chunk_cmd(hs_write_fn_t write_fn,
 		   void *write_priv, uint32_t size,
-		   enum hs_op_kind kind)
+		   int kind)
 {
      int type, cmd, base;
 
@@ -110,7 +110,7 @@ _hs_emit_chunk_cmd(rs_write_fn_t write_fn,
 
 
 int
-_hs_emit_copy(rs_write_fn_t write_fn, void *write_priv,
+_hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
 	      uint32_t offset, uint32_t length, hs_stats_t * stats)
 {
     int ret;

@@ -20,19 +20,3 @@
    USA
 */
 
-enum hs_op_kind;
-
-int _hs_emit_chunk_cmd(rs_write_fn_t write_fn, void *write_priv,
-		       uint32_t size, 
-		       enum hs_op_kind kind);
-
-
-int _hs_emit_copy(rs_write_fn_t write_fn, void *write_priv,
-		  uint32_t offset, uint32_t length, hs_stats_t * stats);
-
-
-int _hs_emit_eof(rs_write_fn_t write_fn, void *write_priv,
-		 hs_stats_t *stats);
-
-int _hs_append_literal(hs_membuf_t * litbuf, char value);
-

@@ -22,12 +22,12 @@
 /* ========================================
 
    Callback function prototypes */
-typedef int (*rs_read_fn_t) (void *readprivate, char *buf, size_t len);
+typedef int (*hs_read_fn_t) (void *readprivate, char *buf, size_t len);
 
-typedef int (*rs_readofs_fn_t) (void *readprivate, char *buf,
+typedef int (*hs_readofs_fn_t) (void *readprivate, char *buf,
 				size_t len, off_t offset);
 
-typedef int (*rs_write_fn_t) (void *writeprivate, char const *buf,
+typedef int (*hs_write_fn_t) (void *writeprivate, char const *buf,
 			      size_t len);
 
 extern char const *hs_log_domain;
@@ -44,10 +44,10 @@ typedef struct hs_stats {
 } hs_stats_t;
 
 ssize_t
-hs_decode(rs_readofs_fn_t oldread_fn, void *oldread_priv,
-	  rs_write_fn_t write_fn, void *write_priv,
-	  rs_read_fn_t ltread_fn, void *ltread_priv,
-	  rs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats);
+hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
+	  hs_write_fn_t write_fn, void *write_priv,
+	  hs_read_fn_t ltread_fn, void *ltread_priv,
+	  hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats);
 
 
 
@@ -57,9 +57,9 @@ hs_decode(rs_readofs_fn_t oldread_fn, void *oldread_priv,
    Encode */
 
 
-ssize_t hs_encode(rs_read_fn_t read_fn, void *readprivate,
-	  rs_write_fn_t write_fn, void *write_priv,
-	  rs_read_fn_t sigread_fn, void *sigreadprivate,
+ssize_t hs_encode(hs_read_fn_t read_fn, void *readprivate,
+	  hs_write_fn_t write_fn, void *write_priv,
+	  hs_read_fn_t sigread_fn, void *sigreadprivate,
 	  int new_block_len, hs_stats_t * stats);
 
 /* ========================================

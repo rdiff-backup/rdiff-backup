@@ -30,7 +30,7 @@
 
 /* If possible, append this copy command to the end of the previous
    one.  If not, flush the existing command and begin a new one.  */
-int _hs_queue_copy(rs_write_fn_t write_fn, void *write_priv,
+int _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
 		    _hs_copyq_t *copyq, size_t start, size_t len,
 		    hs_stats_t *stats)
 {
@@ -55,7 +55,7 @@ int _hs_queue_copy(rs_write_fn_t write_fn, void *write_priv,
 }
 
 
-int _hs_copyq_flush(rs_write_fn_t write_fn, void *write_priv,
+int _hs_copyq_flush(hs_write_fn_t write_fn, void *write_priv,
 		    _hs_copyq_t *copyq, hs_stats_t *stats)
 {
      int ret;
