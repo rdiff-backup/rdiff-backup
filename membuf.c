@@ -1,6 +1,6 @@
-/* -*- mode: c; c-file-style: "java" -*-  */
+/* -*- mode: c; c-file-style: "stroustrup" -*-  */
 
-/* librsync-membuf.h -- Abstract IO to memory buffers.
+/* membuf.c -- Abstract IO to memory buffers.
 
    Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
 
@@ -19,16 +19,22 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/* An HS_MEMBUF_T is a dynamically-allocated memory buffer.  It
+   automatically grows using realloc as required. */
+
 #include "includes.h"
 #include "hsync.h"
 #include "private.h"
 #include "compress.h"
 
+static const char *_rcsid UNUSED = "$Id$";
+
 static const int membuf_tag = 12341234;
 
-hs_membuf_t *hs_membuf_new(void)
+hs_membuf_t    *
+hs_membuf_new(void)
 {
-    hs_membuf_t *mb;
+    hs_membuf_t    *mb;
 
     mb = calloc(1, sizeof(hs_membuf_t));
     mb->dogtag = membuf_tag;
@@ -38,11 +44,14 @@ hs_membuf_t *hs_membuf_new(void)
 }
 
 
-void hs_membuf_free(hs_membuf_t *mb)
+void
+hs_membuf_free(hs_membuf_t * mb)
 {
-     assert(mb->dogtag = membuf_tag);
-     mb->dogtag = 0;
-     free(mb);
+    assert(mb->dogtag = membuf_tag);
+    if (mb->buf)
+	free(mb->buf);
+    bzero(mb, sizeof *mb);
+    free(mb);
 }
 
 
@@ -55,9 +64,10 @@ size_t hs_membuf_getbuf(hs_membuf_t const *mb, char const **buf)
 }
 
 
-hs_membuf_t *hs_membuf_on_buffer(char *buf, int len)
+hs_membuf_t    *
+hs_membuf_on_buffer(char *buf, int len)
 {
-    hs_membuf_t *mb;
+    hs_membuf_t    *mb;
 
     assert(len > 0);
     assert(buf);
@@ -73,39 +83,38 @@ hs_membuf_t *hs_membuf_on_buffer(char *buf, int len)
 
 
 
-hs_off_t hs_membuf_tell(void *private)
+hs_off_t
+hs_membuf_tell(void *private)
 {
-    hs_membuf_t *mb = (hs_membuf_t *) private;
+    hs_membuf_t    *mb = (hs_membuf_t *) private;
+
     assert(mb->dogtag == membuf_tag);
     return ((hs_membuf_t *) private)->ofs;
 }
 
 
-void hs_membuf_truncate(hs_membuf_t * mb)
+void
+hs_membuf_truncate(hs_membuf_t * mb)
 {
     assert(mb->dogtag == membuf_tag);
     mb->ofs = 0;
 }
 
 
-ssize_t hs_membuf_write(void *private, char const *buf, size_t len)
+ssize_t
+hs_membuf_write(void *private, char const *buf, size_t len)
 {
-    hs_membuf_t *mb = (hs_membuf_t *) private;
+    hs_membuf_t    *mb = (hs_membuf_t *) private;
+
     assert(mb->dogtag == membuf_tag);
 
-#if DEBUG
-    printf("sig_writebuf(len=%d)\n", len);
-#endif
-
-    if (mb->length != -1) {
-	size_t remain = mb->length - mb->ofs;
-	if (len > remain)
-	    len = remain;
-    } else if (mb->alloc < mb->ofs + len) {
+    if (mb->alloc < mb->ofs + len) {
+	char *newbuf;
 	mb->alloc = MAX(mb->alloc * 2, mb->ofs + len);
-	mb->buf = realloc(mb->buf, mb->alloc);
-	if (!mb->buf)
+	newbuf = realloc(mb->buf, mb->alloc);
+	if (!newbuf) 
 	    return -1;
+	mb->buf = newbuf;
     }
 
     memcpy(mb->buf + mb->ofs, buf, len);
@@ -114,15 +123,15 @@ ssize_t hs_membuf_write(void *private, char const *buf, size_t len)
 }
 
 
-ssize_t hs_membuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
+ssize_t
+hs_membuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
 {
-    hs_membuf_t *mb = (hs_membuf_t *) private;
+    hs_membuf_t    *mb = (hs_membuf_t *) private;
 
     assert(mb->dogtag == membuf_tag);
     assert(ofs >= 0);
 
-    if ((mb->length != -1 && ofs < mb->length)
-	|| ((unsigned) ofs < mb->alloc)) {
+    if ((unsigned) ofs < mb->alloc) {
 	mb->ofs = ofs;
 	return hs_membuf_read(private, buf, len);
     } else {
@@ -134,23 +143,18 @@ ssize_t hs_membuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
 }
 
 
-ssize_t hs_membuf_read(void *private, char *buf, size_t len)
+ssize_t
+hs_membuf_read(void *private, char *buf, size_t len)
 {
-    hs_membuf_t *mb = (hs_membuf_t *) private;
-
-#if DEBUG
-    printf("sig_readbuf(len=%d)\n", len);
-#endif
+    hs_membuf_t    *mb = (hs_membuf_t *) private;
+    size_t          remain = mb->length - mb->ofs;
 
     assert(mb->dogtag == membuf_tag);
-    if (mb->length != -1) {
-	size_t remain = mb->length - mb->ofs;
-	if (len > remain)
-	    len = remain;
-    }
+
+    if (len > remain)		/* near EOF */
+	len = remain;
 
     memcpy(buf, mb->buf + mb->ofs, len);
     mb->ofs += len;
     return len;
 }
-

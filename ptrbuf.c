@@ -1,8 +1,6 @@
-/* -*- mode: c; c-file-style: "java" -*-  */
-
-/* ptrbuf.c -- Abstract IO to static buffers.
-
-   Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
+/* -*- mode: c; c-file-style: "stroustrup" -*-  */
+/*
+  Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,8 +22,14 @@
 #include "private.h"
 #include "compress.h"
 
+static const char *_rcsid UNUSED = "$Id$";
+
 static const int ptrbuf_tag = 384384;
 
+/* An HS_PTRBUF_T is an abstract-io interface to a fixed in-memory
+   buffer.  The caller must arrange the buffer (perhaps it's a string
+   cohstant, or perhaps they malloc it), and supply the base and
+   length.  Trying to write past the end will fail. */
 
 /* Allow the caller read-only access to our buffer. */
 size_t hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, char const **buf)

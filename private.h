@@ -1,4 +1,5 @@
-/* -*- mode: c; c-file-style: "java"; c-basic-offset: 4 -*-  */
+/* -*- mode: c; c-file-style: "stroustrup" -*-  */
+/* $Id$ */
 /* private.h -- Private headers for libhsync
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
 
@@ -17,6 +18,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
    USA
 */
+
+
 
 
 #ifdef DO_HS_TRACE
@@ -135,9 +138,9 @@ void _hs_check_blocksize(int block_len);
 */
 
 
-/* You can either set BUF and LENGTH, or you can leave length as -1
-   and let the buffer be reallocated on demand. */
-
+/* An HS_MEMBUF grows dynamically.  BUF points to an array of ALLOC
+   bytes, of which LENGTH contain data.  The cursor is at position
+   OFS.  If BUF is null, then no memory has been allocated yet. */
 struct hs_membuf {
     int dogtag;
     char *buf;
@@ -146,6 +149,9 @@ struct hs_membuf {
     size_t alloc;
 };
 
+/* hs_ptrbuf_t: Memory is provided by the caller, and they retain
+   responsibility for it.  BUF points to an array of LENGTH bytes.
+   The cursor is currently at OFS. */
 struct hs_ptrbuf {
     int dogtag;
     char *buf;
