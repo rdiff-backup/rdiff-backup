@@ -35,7 +35,7 @@ FILE=rsync.h
 DIE=0
 
 cache="$srcdir/config.cache"
-[ -f "$cache" ] && {
+test -f "$cache" && {
         echo "Deleting $cache"
         rm "$cache"
 }

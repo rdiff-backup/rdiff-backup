@@ -1,4 +1,4 @@
-#! /bin/sh -pe
+#! /bin/sh -pe 
 
 # Regression test driver for librsync.
 
@@ -38,10 +38,7 @@
 # perhaps generate random pairs of related files.  Perhaps do this
 # using genmaptest.
 
-# Don't ever allow undefined shell variables to default
-set -u
-
-if [ $# -lt 1 ]
+if test "$#" -lt 1
 then
     echo 'runtest: must have at least one parameter, the test script'
     exit 1
@@ -101,7 +98,7 @@ do
     esac
 done
 
-if [ "${srcdir:-}" = "" ]
+if test -z "$srcdir" 
 then
     srcdir=`dirname $0`
 fi
@@ -113,7 +110,10 @@ export PATH
 
 testdir=$srcdir/$test_base.input
 tmpdir=$builddir/$test_base.tmp
-[ -d $tmpdir ] || mkdir $tmpdir || exit 2
+if test ! -d $tmpdir
+then
+    mkdir $tmpdir || exit 2
+fi
 
 test_skipped () {
     echo $test_name: skipped; exit 77
@@ -127,15 +127,17 @@ fail_test () {
 }
 
 check_compare() {
-    if ! cmp "$1" "$2"
+    if cmp "$1" "$2"
     then
+        :
+    else
         echo "$test_name: comparison failed from command: $3" >&2
         exit 2
     fi
 }
 
 run_test () {
-    if [ -n "${VERBOSE:-}" ] 
+    if test -n "$VERBOSE" 
     then
 	echo "    $@" >&2
     else
@@ -168,12 +170,12 @@ make_input () {
 }
 
 show_progress () {
-    echo -n .
+    cat $srcdir/dot
 }
 
-echo -n "$test_name: "
+echo "$test_name: " | tr -d '/\n/'
 
-. $test_script $*
+. $test_script "$@"
 
 echo OK
 
