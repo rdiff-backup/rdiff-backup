@@ -1,11 +1,7 @@
 Write some better selection test cases to test new Iterate_fast func.
 
-If not resuming, don't crash on badly written checkpoint_data.
-
 Fix crash that can occur when exception is found in the middle of a
 file (duplicate by backing up /proc remotely).  (John Goerzen)
-
-Copy sockets (Mickey Everts)
 
 
 ---------[ Long term ]---------------------------------------

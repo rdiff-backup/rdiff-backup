@@ -6,6 +6,12 @@ Man page now correctly included in rpm.
 rdiff-backup script does not have exec permissions until it is
 installed (thanks Jason Piterak).
 
+Sockets are now replicated.  Why not?  (Suggestion by Mickey Everts)
+
+Bad resuming information (because, say, it is left over from a
+previous version) should no longer cause exit, except when --resume is
+specified.
+
 
 New in v0.9.3 (2002/07/15)
 --------------------------
