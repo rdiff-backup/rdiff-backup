@@ -21,6 +21,13 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+
+/*
+ * TODO: These structures are not terribly useful.  Perhaps we need a
+ * splay tree or something that will let us smoothly grow as data is
+ * read in.
+ */
+
 typedef struct rs_rollsum rs_rollsum_t;
 
 
