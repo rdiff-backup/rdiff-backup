@@ -4,28 +4,28 @@
  * $Id$
  *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
                               /*
-                               * Is it possible that software is not
-                               * like anything else, that it is meant
-                               * to be discarded: that the whole point
-                               * is to always see it as a soap bubble?
-                               *        -- Alan Perlis
+                               | Is it possible that software is not
+                               | like anything else, that it is meant
+                               | to be discarded: that the whole point
+                               | is to always see it as a soap bubble?
+                               |        -- Alan Perlis
                                */
 
 
@@ -53,8 +53,8 @@
 
 /**
  * Run a job continuously, with input to/from the two specified files.
- * The job should already be set up, and it is freed when the function
- * returns.
+ * The job should already be set up, and must be free by the caller
+ * after return.
  *
  * Buffers of ::hs_inbuflen and ::hs_outbuflen are allocated for
  * temporary storage.
@@ -78,7 +78,7 @@ hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
         out_fb = hs_filebuf_new(out_file, stream, hs_outbuflen);
 
     do {
-        if (in_fb) {
+        if (!stream->eof_in && in_fb) {
             iores = hs_infilebuf_fill(in_fb);
             if (iores != HS_DONE)
                 return iores;
@@ -95,10 +95,6 @@ hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
         }
     } while (result != HS_DONE);
 
-    /* FIXME: At the moment we leak if there's an IO error.  That's no
-     * good. */
-    hs_job_free(job);
-                
     return result;
 }
 
@@ -109,7 +105,7 @@ hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
  * another.
  *
  * \param new_block_len block size for signature generation, in bytes
- * 
+ *
  * \param strong_len truncated length of strong checksums, in bytes
  *
  * \sa hs_sig_begin()
@@ -142,21 +138,52 @@ hs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
 hs_result
 hs_loadsig_file(FILE *sig_file, hs_signature_t **sumset)
 {
-        hs_job_t        *job;
-        hs_stream_t     stream;
+    hs_job_t            *job;
+    hs_stream_t         stream;
+    hs_result           r;
 
-        hs_stream_init(&stream);
+    hs_stream_init(&stream);
 
-        job = hs_loadsig_begin(&stream, sumset);
-        return hs_whole_run(job, sig_file, NULL);
+    job = hs_loadsig_begin(&stream, sumset);
+    r = hs_whole_run(job, sig_file, NULL);
+    hs_job_free(job);
+
+    return r;
 }
 
 
 
 hs_result
-hs_delta_file(hs_signature_t *sumset, FILE *new_file, FILE *delta_file)
+hs_delta_file(hs_signature_t *sig, FILE *new_file, FILE *delta_file)
 {
-    hs_error("not implemented at the moment");
+    hs_job_t            *job;
+    hs_stream_t         stream;
+    hs_result           r;
 
-    return HS_UNIMPLEMENTED;
+    hs_stream_init(&stream);
+    job = hs_delta_begin(&stream, sig);
+
+    r = hs_whole_run(job, new_file, delta_file);
+
+    hs_job_free(job);
+
+    return r;
+}
+
+
+
+hs_result hs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file)
+{
+    hs_job_t            *job;
+    hs_stream_t         stream;
+    hs_result           r;
+
+    hs_stream_init(&stream);
+    job = hs_patch_begin(&stream, hs_file_copy_cb, basis_file);
+
+    r = hs_whole_run(job, delta_file, new_file);
+
+    hs_job_free(job);
+
+    return r;
 }
