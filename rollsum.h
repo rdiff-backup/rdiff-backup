@@ -28,7 +28,7 @@
 struct hs_rollsum {
     int             havesum;	/* false if we've skipped & need to
 				   recalculate */
-    uint32_t        weak_sum, s1, s2;	/* weak checksum */
+    int        weak_sum, s1, s2;	/* weak checksum */
 };
 
 /* Define this to check all weak checksums the slow way.  As a debuggging

@@ -43,6 +43,16 @@ extern char const hs_licence_string[];
 
 
 /**
+ * \brief A long integer type that can handle the largest file
+ * offsets.
+ *
+ * Perhaps this might have to be configured to be 'long long', 'long',
+ * or something else depending on the platform.
+ */
+typedef long long       hs_long_t;
+
+
+/**
  * \brief Log severity levels.
  *
  * These are the same as syslog, at least in glibc.
@@ -129,6 +139,7 @@ typedef enum {
                                    library version. */
     HS_UNIMPLEMENTED =  105,    /**< Author is lazy. */
     HS_CORRUPT =        106,    /**< Unbelievable value in stream. */
+    HS_INTERNAL_ERROR = 107,    /**< Probably a library bug. */
 } hs_result;
 
 
@@ -172,6 +183,10 @@ typedef struct hs_mdfour {
 } hs_mdfour_t;
 
 #define HS_MD4_LENGTH 16
+
+typedef unsigned int hs_weak_sum_t;
+typedef unsigned char hs_strong_sum_t[HS_MD4_LENGTH];
+
 void            hs_mdfour(unsigned char *out, void const *in, int n); 
 void            hs_mdfour_begin(/* @out@ */ hs_mdfour_t * md);
 void            hs_mdfour_update(hs_mdfour_t * md, void const *,

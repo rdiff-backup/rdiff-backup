@@ -34,7 +34,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <stdint.h>
 
 #include "hsync.h"
 #include "stream.h"
@@ -59,9 +58,7 @@ static hs_result hs_sig_s_generate(hs_job_t *);
 static hs_result hs_sig_s_header(hs_job_t *job)
 {
     hs_squirt_n4(job->stream, HS_SIG_MAGIC);
-    
     hs_squirt_n4(job->stream, job->block_len);
-
     hs_squirt_n4(job->stream, job->strong_sum_len);
     hs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)",
              HS_SIG_MAGIC, job->block_len, job->strong_sum_len);
@@ -74,22 +71,22 @@ static hs_result hs_sig_s_header(hs_job_t *job)
 static hs_result
 hs_sig_do_block(hs_job_t *job, const void *block, size_t len)
 {
-        uint32_t weak_sum;
-        uint8_t strong_sum[HS_MD4_LENGTH];
-        char strong_sum_hex[HS_MD4_LENGTH * 2 + 1];
+    unsigned int        weak_sum;
+    hs_strong_sum_t     strong_sum;
+    char strong_sum_hex[HS_MD4_LENGTH * 2 + 1];
 
-        weak_sum = hs_calc_weak_sum(block, len);
+    weak_sum = hs_calc_weak_sum(block, len);
 
-        hs_calc_strong_sum(block, len, strong_sum, job->strong_sum_len);
-        hs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
+    hs_calc_strong_sum(block, len, &strong_sum);
+    hs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
 
-        hs_squirt_n4(job->stream, weak_sum);
-        hs_blow_literal(job->stream, strong_sum, job->strong_sum_len);
+    hs_squirt_n4(job->stream, weak_sum);
+    hs_blow_literal(job->stream, strong_sum, job->strong_sum_len);
 
-        hs_trace("sent weak sum 0x%08x and strong sum %s", weak_sum,
-                  strong_sum_hex);
+    hs_trace("sent weak sum 0x%08x and strong sum %s", weak_sum,
+             strong_sum_hex);
 
-        return HS_RUNNING;
+    return HS_RUNNING;
 }
 
 

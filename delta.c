@@ -27,6 +27,12 @@
                                  */
 
 
+/*
+ * delta.c -- Generate in streaming mode an rsync delta given a set of
+ * signatures, and a new file.
+ *
+ */
+
 
 #include <config.h>
 

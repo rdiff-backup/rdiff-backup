@@ -27,7 +27,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 
 #include "hsync.h"
 #include "checksum.h"
@@ -46,11 +45,11 @@ int checksum_seed = 0;
  * A simple 32 bit checksum that can be updated from either end
  * (inspired by Mark Adler's Adler-32 checksum)
  */
-uint32_t hs_calc_weak_sum(void const *p, int len)
+unsigned int hs_calc_weak_sum(void const *p, int len)
 {
         int i;
-        uint32_t s1, s2;
-        int8_t const *buf = (int8_t const *) p;	/* this is signed */
+        unsigned        s1, s2;
+        unsigned char const    *buf = (unsigned char const *) p;
 
         s1 = s2 = 0;
         for (i = 0; i < (len - 4); i += 4) {
@@ -80,19 +79,13 @@ uint32_t hs_calc_weak_sum(void const *p, int len)
  * Since we can't retry a web transaction I'm not sure if it's very
  * useful in rproxy.
  */
-void hs_calc_strong_sum(void const *buf,
-                         size_t len,
-                         uint8_t *sum,
-                         size_t sum_len)
+void hs_calc_strong_sum(void const *buf, size_t len, hs_strong_sum_t *sum)
 {
-        hs_mdfour_t m;
-        uint8_t tsum[HS_MD4_LENGTH];
+    hs_mdfour_t m;
 
-        hs_mdfour_begin(&m);
-        hs_mdfour_update(&m, buf, len);
-        hs_mdfour_result(&m, tsum);
-
-        memcpy(sum, tsum, sum_len);
+    hs_mdfour_begin(&m);
+    hs_mdfour_update(&m, buf, len);
+    hs_mdfour_result(&m, (unsigned char *) sum);
 }
 
 

@@ -21,13 +21,14 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-typedef uint32_t hs_weak_sum_t;
-typedef unsigned char hs_strong_sum_t[HS_MD4_LENGTH];
-
 typedef struct hs_rollsum hs_rollsum_t;
 
+
+/**
+ * \brief Description of the match described by a signature.
+ */
 typedef struct hs_target {
-    uint16_t        t;
+    unsigned short  t;
     int             i;
 } hs_target_t;
 

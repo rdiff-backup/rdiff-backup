@@ -33,7 +33,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 
 #include "hsync.h"
 
@@ -62,12 +61,12 @@
  * \todo Apparently rsync 2.4 now has a fast MD4 routine.  So we
  * should copy that into here.  */
 static void
-hs_mdfour64(hs_mdfour_t * m, uint32_t * M)
+hs_mdfour64(hs_mdfour_t * m, unsigned int * M)
 {
     int             j;
-    uint32_t        AA, BB, CC, DD;
-    uint32_t        X[16];
-    uint32_t        A, B, C, D;
+    unsigned int        AA, BB, CC, DD;
+    unsigned int        X[16];
+    unsigned int        A, B, C, D;
 
     for (j = 0; j < 16; j++)
 	X[j] = M[j];
@@ -154,7 +153,7 @@ hs_mdfour64(hs_mdfour_t * m, uint32_t * M)
 }
 
 static void
-copy64( /* @out@ */ uint32_t * M, unsigned char const *in)
+copy64( /* @out@ */ unsigned int * M, unsigned char const *in)
 {
     int             i;
 
@@ -164,7 +163,7 @@ copy64( /* @out@ */ uint32_t * M, unsigned char const *in)
 }
 
 static void
-copy4( /* @out@ */ unsigned char *out, uint32_t const x)
+copy4( /* @out@ */ unsigned char *out, unsigned int const x)
 {
     out[0] = x & 0xFF;
     out[1] = (x >> 8) & 0xFF;
@@ -190,8 +189,8 @@ static void
 hs_mdfour_tail(hs_mdfour_t * m, unsigned char const *in, int n)
 {
     unsigned char   buf[128];
-    uint32_t        M[16];
-    uint32_t        b;
+    unsigned int        M[16];
+    unsigned int        b;
 
     m->totalN += n;
 
@@ -220,7 +219,7 @@ hs_mdfour_tail(hs_mdfour_t * m, unsigned char const *in, int n)
 void
 hs_mdfour_update(hs_mdfour_t * md, void const *in_void, size_t n)
 {
-    uint32_t        M[16];
+    unsigned int        M[16];
     size_t          n2 = 64 - md->tail_len;
     unsigned char const        *in = (unsigned char const *) in_void;
 

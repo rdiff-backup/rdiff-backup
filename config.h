@@ -37,20 +37,29 @@
 /* Canonical GNU hostname */
 #define HS_CANONICAL_HOST "i686-pc-linux-gnu"
 
+/* The number of bytes in a int.  */
+#define SIZEOF_INT 4
+
+/* The number of bytes in a long.  */
+#define SIZEOF_LONG 4
+
+/* The number of bytes in a short.  */
+#define SIZEOF_SHORT 2
+
 /* The number of bytes in a unsigned char.  */
 #define SIZEOF_UNSIGNED_CHAR 1
+
+/* The number of bytes in a unsigned long.  */
+#define SIZEOF_UNSIGNED_LONG 4
+
+/* The number of bytes in a unsigned long long.  */
+#define SIZEOF_UNSIGNED_LONG_LONG 8
 
 /* Define if you have the snprintf function.  */
 #define HAVE_SNPRINTF 1
 
 /* Define if you have the vsnprintf function.  */
 #define HAVE_VSNPRINTF 1
-
-/* Define if you have the <stdint.h> header file.  */
-#define HAVE_STDINT_H 1
-
-/* Define if you have the <sys/endian.h> header file.  */
-/* #undef HAVE_SYS_ENDIAN_H */
 
 /* Define if you have the popt library (-lpopt).  */
 #define HAVE_LIBPOPT 1

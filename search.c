@@ -3,7 +3,7 @@
  * libhsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -35,16 +35,7 @@
  */
 
 #include <config.h>
-
 #include <assert.h>
-
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-
-#include <sys/types.h>
-#include <limits.h>
-#include <inttypes.h>
 #include <stdlib.h>
 
 #include "hsync.h"
@@ -121,9 +112,9 @@ hs_build_hash_table(hs_signature_t * sums)
  */
 int
 hs_search_for_block(hs_weak_sum_t weak_sum,
-		     uint8_t const *inbuf, size_t block_len,
-		     hs_signature_t const *sig, hs_stats_t * stats,
-		     off_t * match_where)
+                    char const *inbuf, size_t block_len,
+                    hs_signature_t const *sig, hs_stats_t * stats,
+                    off_t * match_where)
 {
     int                     hash_tag = gettag(weak_sum);
     int                     j = sig->tag_table[hash_tag];
@@ -156,8 +147,7 @@ hs_search_for_block(hs_weak_sum_t weak_sum,
 	hs_trace("found weak match for %08x in token %d", weak_sum, token);
 
 	if (!got_strong) {
-	    hs_calc_strong_sum(inbuf, block_len, strong_sum,
-                               sig->strong_sum_len);
+	    hs_calc_strong_sum(inbuf, block_len, &strong_sum);
 	    got_strong = 1;
 	}
 

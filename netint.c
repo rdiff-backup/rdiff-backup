@@ -34,6 +34,10 @@
  * All the `suck' routines return a result code.  The most common
  * values are HS_DONE if they have enough data, or HS_BLOCKED if there
  * is not enough input to proceed.
+ *
+ * All the netint operations are done in a fairly simpleminded way,
+ * since we don't want to rely on stdint types that may not be
+ * available on some platforms.
  */
 
 /*
@@ -46,22 +50,9 @@
 #include <config.h>
 
 #include <assert.h>
-
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-
 #include <sys/types.h>
-#include <limits.h>
-#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#ifndef __LCLINT__
-/* On Linux/glibc this file contains constructs that confuse
- * lclint. */
-#  include <netinet/in.h>		/* ntohs, etc */
-#endif /* __LCLINT__ */
 
 #include <string.h>
 
@@ -70,139 +61,124 @@
 #include "trace.h"
 #include "stream.h"
 
+#define HS_MAX_INT_BYTES 8
 
-void hs_squirt_n4(hs_stream_t *stream, int d)
+
+/**
+ * \brief Write a single byte to a stream output.
+ */
+hs_result
+hs_squirt_byte(hs_stream_t *stream, unsigned char d)
 {
-    uint32_t nd = htonl(d);
-        
-    hs_blow_literal(stream, &nd, sizeof nd);
+    hs_blow_literal(stream, &d, 1);
+    return HS_DONE;
 }
 
 
-
-void
-hs_squirt_n2(hs_stream_t *stream, int d)
+/**
+ * \brief Write a variable-length integer to a stream.
+ *
+ * \param stream Stream of data.
+ *
+ * \param d Datum to write out.
+ *
+ * \param len Length of integer, in bytes.
+ */
+hs_result
+hs_squirt_netint(hs_stream_t *stream, off_t d, int len)
 {
-    uint16_t nd = htons(d);
+    unsigned char       buf[HS_MAX_INT_BYTES];
+    int                 i, j;
 
-    hs_blow_literal(stream, &nd, sizeof nd);
-}
-
-
-void
-hs_squirt_n1(hs_stream_t *stream, int d)
-{
-    uint8_t nd = d;
-
-    hs_blow_literal(stream, &nd, sizeof nd);
-}
-
-
-void
-hs_squirt_netint(hs_stream_t *stream, int d, int len)
-{
-    switch (len) {
-    case 1:
-        hs_squirt_n1(stream, d);
-        break;
-    case 2:
-        hs_squirt_n2(stream, d);
-        break;
-    case 4:
-        hs_squirt_n4(stream, d);
-        break;
+    if (len <= 0 || len > HS_MAX_INT_BYTES) {
+        hs_error("Illegal integer length %d", len);
+        return HS_INTERNAL_ERROR;
     }
-}
 
-
-hs_result hs_suck_n4(hs_stream_t *stream, int *v)
-{
-    void *p;
-    int result;
-
-    if ((result = hs_scoop_read(stream, sizeof (uint32_t), &p)) != HS_DONE)
-        return result;
-
-    *v = ntohl(* (uint32_t const *) p);
-
-    return result;
-}
-
-
-hs_result hs_suck_n1(hs_stream_t *stream, int *v)
-{
-    void *p;
-    int result;
-
-    if ((result = hs_scoop_read(stream, sizeof (uint8_t), &p)) != HS_DONE)
-        return result;
-
-    *v = * (uint8_t const *) p;
-
-    return result;
-}
-
-
-hs_result hs_suck_n2(hs_stream_t *stream, int *v)
-{
-    void *p;
-    int result;
-
-    if ((result = hs_scoop_read(stream, (size_t) 2, &p)) != HS_DONE)
-        return result;
-
-    *v = ntohs(*(uint16_t const *) p);
-
-    return result;
-}
-
-
-
-hs_result hs_suck_netint(hs_stream_t *stream, int len, int *v)
-{
-    switch (len) {
-    case 1:
-        return hs_suck_n1(stream, v);
-    case 2:
-        return hs_suck_n2(stream, v);
-    case 4:
-        return hs_suck_n4(stream, v);
-    default:
-        hs_fatal("kaboom! can't read a %d-bit integer", len);
+    /* Fill the output buffer with a bigendian representation of the
+     * number. */
+    for (i = 0, j = len-1; i < len; i++, j--) {
+        buf[j] = d;             /* truncated */
+        d >>= 8;
     }
+
+    hs_blow_literal(stream, buf, len);
+
+    return HS_DONE;
 }
 
 
 
-
-int hs_fits_in_n1(size_t val)
+hs_result
+hs_squirt_n4(hs_stream_t *stream, int val)
 {
-    return val <= UINT8_MAX;
+    return hs_squirt_netint(stream, val, 4);
 }
 
 
-int hs_fits_in_n2(size_t val)
+
+hs_result
+hs_suck_netint(hs_stream_t *stream, off_t *v, int len)
 {
-    return val <= UINT16_MAX;
+    unsigned char       *buf;
+    int                 i;
+    hs_result           result;
+
+    if (len <= 0 || len > HS_MAX_INT_BYTES) {
+        hs_error("Illegal integer length %d", len);
+        return HS_INTERNAL_ERROR;
+    }
+
+    if ((result = hs_scoop_read(stream, len, (void **) &buf)) != HS_DONE)
+        return result;
+
+    *v = 0;
+
+    for (i = 0; i < len; i++) {
+        *v = *v<<8 | buf[i];
+    }
+
+    return HS_DONE;
 }
 
 
-int hs_fits_in_n4(size_t val)
+hs_result
+hs_suck_byte(hs_stream_t *stream, unsigned char *v)
 {
-    return val <= UINT32_MAX;
+    void *inb;
+    hs_result result;
+    
+    if ((result = hs_scoop_read(stream, 1, &inb)) == HS_DONE)
+        *v = *((unsigned char *) inb);
+
+    return result;
 }
+
+
+hs_result
+hs_suck_n4(hs_stream_t *stream, int *v)
+{
+    hs_result result;
+    off_t       d;
+
+    result = hs_suck_netint(stream, &d, 4);
+    *v = d;
+    return result;
+}        
 
 
 int hs_int_len(off_t val)
 {
-    if (hs_fits_in_n1(val))
+    if (!(val & ~0xffL))
         return 1;
-    else if (hs_fits_in_n2(val))
+    else if (!(val & ~0xffffL))
         return 2;
-    else if (hs_fits_in_n4(val))
+    else if (!(val & ~0xffffffffL))
         return 4;
+    else if (!(val & ~0xffffffffffffffffL))
+        return 8;
     else {
-        hs_fatal("can't handle integer this long yet");
+        hs_fatal("can't encode integer %lld yet", (long long int) val);
     }
 }
 

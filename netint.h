@@ -21,15 +21,13 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-void hs_squirt_n4(hs_stream_t *stream, int d);
-void hs_squirt_n2(hs_stream_t *, int d);
-void hs_squirt_n1(hs_stream_t *stream, int d);
-void hs_squirt_netint(hs_stream_t *stream, int d, int len);
+hs_result hs_squirt_byte(hs_stream_t *stream, unsigned char d);
+hs_result hs_squirt_netint(hs_stream_t *stream, off_t d, int len);
+hs_result hs_squirt_n4(hs_stream_t *stream, int val);
 
-hs_result hs_suck_n4(hs_stream_t *stream, int *v);
-hs_result hs_suck_n2(hs_stream_t *stream, int *v);
-hs_result hs_suck_n1(hs_stream_t *stream, int *v);
-hs_result hs_suck_netint(hs_stream_t *stream, int len, int *v);
+hs_result hs_suck_netint(hs_stream_t *stream, off_t *v, int len);
+hs_result hs_suck_byte(hs_stream_t *stream, unsigned char *);
+hs_result hs_suck_n4(hs_stream_t *stream, int *);
 
 int hs_fits_in_n1(size_t val);
 int hs_fits_in_n2(size_t val);

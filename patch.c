@@ -31,7 +31,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 
 #include "hsync.h"
 #include "util.h"
@@ -62,10 +61,9 @@ static hs_result hs_patch_s_cmdbyte(hs_job_t *job)
 {
     hs_result result;
         
-    if ((result = hs_suck_n1(job->stream, &job->op)) != HS_DONE)
+    if ((result = hs_suck_byte(job->stream, &job->op)) != HS_DONE)
         return result;
 
-    assert(job->op >= 0 && job->op <= 0xff);
     job->cmd = &hs_prototab[job->op];
         
     hs_trace("got command byte 0x%02x (%s), len_1=%d", job->op,
@@ -87,30 +85,29 @@ static hs_result hs_patch_s_cmdbyte(hs_job_t *job)
  */
 static hs_result hs_patch_s_params(hs_job_t *job)
 {
-        hs_result result;
-        int len = job->cmd->len_1 + job->cmd->len_2;
-        void *p;
+    hs_result result;
+    int len = job->cmd->len_1 + job->cmd->len_2;
+    void *p;
 
-        assert(len);
+    assert(len);
 
-        result = hs_scoop_readahead(job->stream, len, &p);
-        if (result != HS_DONE)
-                return result;
+    result = hs_scoop_readahead(job->stream, len, &p);
+    if (result != HS_DONE)
+        return result;
 
-        /* we now must have LEN bytes buffered */
-        result = hs_suck_netint(job->stream, job->cmd->len_1, &job->param1);
-        /* shouldn't fail, since we already checked */
+    /* we now must have LEN bytes buffered */
+    result = hs_suck_netint(job->stream, &job->param1, job->cmd->len_1);
+    /* shouldn't fail, since we already checked */
+    assert(result == HS_DONE);
+
+    if (job->cmd->len_2) {
+        result = hs_suck_netint(job->stream, &job->param2, job->cmd->len_2);
         assert(result == HS_DONE);
+    }
 
-        if (job->cmd->len_2) {
-                result = hs_suck_netint(job->stream, job->cmd->len_2, 
-                                        &job->param2);
-                assert(result == HS_DONE);
-        }
+    job->statefn = hs_patch_s_run;
 
-        job->statefn = hs_patch_s_run;
-
-        return HS_RUNNING;
+    return HS_RUNNING;
 }
 
 

@@ -43,7 +43,6 @@
 
 #include <stdlib.h>
 #include <assert.h>
-#include <stdint.h>
 
 #include "hsync.h"
 #include "stream.h"

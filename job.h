@@ -47,14 +47,14 @@ struct hs_job {
     hs_signature_t      *signature;
     
     /** Command byte currently being processed, if any. */
-    int op;
+    unsigned char       op;
 
     /** If in the middle of reading a signature (hs_loadsig_s_weak()),
      * this contains the weak signature. */
     hs_weak_sum_t       weak_sig;
 
     /** Lengths of expected parameters. */
-    int param1, param2;
+    hs_long_t           param1, param2;
     
     struct hs_prototab_ent const *cmd;
     hs_mdfour_t      output_md4;

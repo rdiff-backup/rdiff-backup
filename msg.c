@@ -65,6 +65,8 @@ char const *hs_strerror(hs_result r)
         return "IO error";
     case HS_SYNTAX_ERROR:
         return "command line syntax error";
+    case HS_INTERNAL_ERROR:
+        return "library internal error";
     default:
         return "unknown error";
     }

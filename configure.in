@@ -91,21 +91,19 @@ else
     AC_MSG_ERROR("--enable-trace must be set to yes or no")
 fi
 
-# TODO: Check for stdint.h.  If it's missing, try to find definitions
-# of critical integer types through other means.  On Linux, we might
-# find it in the kernel headers.  In general, perhaps we have to test
-# the sizes of various things and find something suitable.  That said,
-# this code probably overuses specific-sizes integers, and we might be
-# better off just using generics that are large enough.
-AC_CHECK_HEADERS(stdint.h)
 AC_CHECK_SIZEOF([unsigned char], 1)
 if test "$ac_cv_sizeof_unsigned_char" -ne 1
 then
     AC_MSG_WARN(unsigned char seems to be $ac_cv_sizeof_unsigned_char bytes.  Expect trouble.)
 fi
 
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(unsigned long)
+AC_CHECK_SIZEOF(unsigned long long)
+
 dnl Checks for header files.
-AC_CHECK_HEADERS(sys/endian.h)
 AC_HEADER_STDC
 AC_CHECK_HEADER(popt.h,,AC_MSG_ERROR("libpopt and popt.h is required to build libhsync"))
 

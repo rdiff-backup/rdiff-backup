@@ -32,10 +32,6 @@
 
 #include <assert.h>
 
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-
 #include <sys/types.h>
 #include <limits.h>
 #include <inttypes.h>
@@ -87,7 +83,7 @@ hs_emit_literal_cmd(hs_job_t *job, int len)
     }
     
     hs_trace("emit LITERAL_N%d(len=%d), cmd_byte=%#x", bytes, len, cmd);
-    hs_squirt_n1(job->stream, cmd);
+    hs_squirt_byte(job->stream, cmd);
     hs_squirt_netint(job->stream, len, bytes);
 
     job->stats.lit_cmds++;
@@ -102,5 +98,5 @@ hs_emit_end_cmd(hs_job_t *job)
     int cmd = HS_OP_END;
     
     hs_trace("emit END, cmd_byte=%#x", cmd);
-    hs_squirt_n1(job->stream, cmd);
+    hs_squirt_byte(job->stream, cmd);
 }
