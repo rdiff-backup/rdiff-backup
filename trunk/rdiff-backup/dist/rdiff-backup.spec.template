@@ -1,7 +1,7 @@
 %define PYTHON_NAME %((rpm -q --quiet python2 && echo python2) || echo python)
 %define PYTHON_SEP %(rpm -q --quiet python2 && echo -)
-%define PYTHON_VERSION %(%{PYTHON_NAME} -c 'import sys; sys.stdout.write(".".join(map(str,sys.version_info[:2])))')
-%define NEXT_PYTHON_VERSION %(%{PYTHON_NAME} -c 'import sys; sys.stdout.write(str(sys.version_info[0])); sys.stdout.write("."); sys.stdout.write(str(sys.version_info[1]+1))')
+%define PYTHON_VERSION %(python -c 'import sys; print sys.version[:3],')
+%define NEXT_PYTHON_VERSION %(python -c 'import sys; print "%d.%d" % (sys.version_info[0], sys.version_info[1]+1),')
 
 Version: $version
 Summary: Convenient and transparent local/remote incremental mirror/backup

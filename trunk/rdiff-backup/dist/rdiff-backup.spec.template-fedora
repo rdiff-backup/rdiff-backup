@@ -1,5 +1,5 @@
-%define PYTHON_VERSION %(python -c 'import sys; sys.stdout.write(".".join(map(str,sys.version_info[:2])))')
-%define NEXT_PYTHON_VERSION %(python -c 'import sys; sys.stdout.write(str(sys.version_info[0])); sys.stdout.write("."); sys.stdout.write(str(sys.version_info[1]+1))')
+%define PYTHON_VERSION %(python -c 'import sys; print sys.version[:3],')
+%define NEXT_PYTHON_VERSION %(python -c 'import sys; print "%d.%d" % (sys.version_info[0], sys.version_info[1]+1),')
 
 Version: $version
 Summary: Convenient and transparent local/remote incremental mirror/backup
@@ -11,8 +11,8 @@ Source: http://rdiff-backup.stanford.edu/OLD/$version/rdiff-backup-$version.tar.
 License: GPL
 Group: Applications/Archiving
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires: python >= %{PYTHON_VERSION}, python < %{NEXT_PYTHON_VERSION}
-BuildRequires: python-devel >= 0:2.2, librsync-devel
+Requires: python >= 0:%{PYTHON_VERSION}, python < 0:%{NEXT_PYTHON_VERSION}
+BuildRequires: python-devel >= 0:2.2, librsync-devel >= 0:0.9.6
 
 %description
 rdiff-backup is a script, written in Python, that backs up one
@@ -34,6 +34,8 @@ python setup.py build
 
 %install
 python setup.py install --root $RPM_BUILD_ROOT
+# Produce .pyo files for %ghost directive later
+python -Oc 'from compileall import *; compile_dir("'$RPM_BUILD_ROOT/%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup'")'
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -42,10 +44,17 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_bindir}/rdiff-backup
 %{_mandir}/man1/rdiff-backup*
-%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup
-%doc CHANGELOG COPYING FAQ.html examples.html README
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.py
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyc
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.so
+%ghost %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyo
+%doc CHANGELOG COPYING FAQ.html README
 
 %changelog
+* Sun Oct 05 2003 Ben Escoto <bescoto@stanford.edu> - 0:0.12.5-0.fdr.1
+- Added epochs to python versions, more concise %%defines, %%ghost files
+
 * Thu Aug 16 2003 Ben Escoto <bescoto@stanford.edu> - 0:0.12.3-0.fdr.4
 - Implemented various suggestions of Fedora QA
 
