@@ -7,7 +7,7 @@ Work on WindowsTest code - avoid returning failure because symlinks,
 etc., are skipped.
 
 Look at error code, make sure filename is always mentioned (see Knops
-email).
+email, Dean Gaudet's reminders).
 
 Add --list-files-changed-between or similar option, to list files that
 have changed between two times
