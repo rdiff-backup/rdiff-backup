@@ -6,6 +6,9 @@ deleted from the target dir.  The old behavior was technically
 intended and documented but not very convenient.  Thanks to Oliver
 Kaltenecker for bug report.
 
+Fixed error when --restrict path given with trailing backslash.  Bug
+report by Åke Brännström.
+
 
 New in v0.12.6 (2003/11/02)
 ---------------------------
