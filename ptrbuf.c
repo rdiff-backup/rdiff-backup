@@ -24,7 +24,7 @@
 #include "private.h"
 #include "compress.h"
 
-static const int ptrbuf_tag = 12341234;
+static const int ptrbuf_tag = 384384;
 
 
 /* Allow the caller read-only access to our buffer. */

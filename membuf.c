@@ -19,9 +19,6 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-/* TODO: Add hs_membuf_free function. */
-
-
 #include "includes.h"
 #include "hsync.h"
 #include "private.h"

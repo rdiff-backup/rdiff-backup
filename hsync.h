@@ -82,6 +82,7 @@ ssize_t hs_filebuf_read_ofs(void *private, char *buf, size_t len,
 			    off_t ofs);
 
 hs_filebuf_t *hs_filebuf_open(char const *filename, char const *mode);
+void hs_filebuf_close(hs_filebuf_t *fbuf);
 
 hs_filebuf_t *hs_filebuf_from_file(FILE * fp);
 

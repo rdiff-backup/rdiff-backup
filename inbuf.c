@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "gnu" -*-  */
+/* -*- mode: c; c-file-style: "k&r" -*-  */
 
 /* libhsync
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>

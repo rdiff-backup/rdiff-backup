@@ -75,6 +75,16 @@ hs_filebuf_t *hs_filebuf_open(char const *filename, char const *mode)
 
 
 
+void hs_filebuf_close(hs_filebuf_t *fbuf)
+{
+    assert(fbuf->dogtag == filebuf_tag);
+
+    fclose(fbuf->f);
+    fbuf->f = NULL;
+}
+
+
+
 ssize_t hs_filebuf_read(void *private, char *buf, size_t len)
 {
     struct file_buf *fbuf = (struct file_buf *) private;

@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "gnu" -*-  */
+/* -*- mode: c; c-file-style: "k&r" -*-  */
 
 /* hash -- manage hashtables of checksums and blocks
 
@@ -20,7 +20,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA */
 
 /* TODO: The common case is that the next block in both streams match.
-   Can we make that a bit faster at all? */
+   Can we make that a bit faster at all?  We'd need to perhaps add a
+   link forward between blocks in the sum_struct corresponding to the
+   order they're found in the input; then before doing a search we can
+   just check that pointer. */
 
 #include "includes.h"
 #include "hsync.h"
