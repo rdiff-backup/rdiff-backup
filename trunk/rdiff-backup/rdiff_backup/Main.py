@@ -145,7 +145,7 @@ def parse_cmdlineoptions(arglist):
 			sys.exit(0)
 		elif opt == "-v" or opt == "--verbosity": Log.setverbosity(arg)
 		elif opt == "--windows-mode":
-			Globals.set('chars_to_quote', "A-Z:")
+			Globals.set('chars_to_quote', "A-Z:\\/*?\"<>|")
 			Globals.set('quoting_enabled', 1)
 			Globals.set('preserve_hardlinks', 0)
 			Globals.set('change_ownership', 0)

@@ -926,7 +926,7 @@ class RPath(RORPath):
 			self.delete()
 			os.fsync(fp.fileno())
 		assert not fp.close()
-		self.get_parent_rp().fsync()
+		if Globals.fsync_directories: self.get_parent_rp().fsync()
 
 	def get_data(self):
 		"""Open file as a regular file, read data, close, return data"""
