@@ -1,23 +1,30 @@
 /*				       	-*- c-file-style: "bsd" -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
- * 
+ *
  * Copyright (C) 2000 by Martin Pool
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+
+                                     /*
+                                      | Finality is death.
+                                      | Perfection is finality.
+                                      | Nothing is perfect.
+                                      | There are lumps in it.
+                                      */
 
 #include "includes.h"
 
@@ -77,7 +84,7 @@ hs_trace_to_stderr(int UNUSED(level), char const *fmt, va_list va)
 }
 
 
-/* 
+/*
  * Return true if the library contains trace code; otherwise false.
  * If this returns false, then trying to turn trace on will achieve
  * nothing.

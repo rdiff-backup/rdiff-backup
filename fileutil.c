@@ -40,7 +40,7 @@ int
 _hs_file_copy_all(int from_fd, int to_fd)
 {
     ssize_t len, total_len = 0, wlen, off;
-    char buf[4096];
+    char buf[32768];
 
     do {
         len = read(from_fd, buf, sizeof buf);

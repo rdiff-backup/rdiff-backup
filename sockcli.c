@@ -22,6 +22,11 @@
 /*
  * TODO: If we get an `unreachable' message, assume that perhaps they
  * have firewalling rules and explain it.
+ *
+ * This will not do for a general remote login program, but it's good
+ * enough for use in test scripts.  Specifically, it doesn't discover
+ * disconnection until an operation fails -- it could use poll to do
+ * this earlier.
  */
 
 #include "includes.h"
@@ -33,12 +38,13 @@ show_usage()
 {
     printf("Usage: sockcli PORT ...\n"
            "Connect to a local TCP port and copy data in and out\n"
+           "  -N    don't Nagle me; send packets immediately\n"
            "  -D    turn on trace, if enabled in library\n");
 }
 
 
 static int
-open_socket(int *psock, int port)
+open_socket(int *psock, int port, int no_nagle)
 {
     struct sockaddr_in addr;
     int             sock;
@@ -57,6 +63,12 @@ open_socket(int *psock, int port)
     addr.sin_port = htons(port);
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(0x7f000001);
+
+    if (setsockopt(sock, SOL_TCP, TCP_NODELAY, &no_nagle,
+                   sizeof no_nagle) < 0) {
+        _hs_error("error setting TCP_NODELAY=%d: %s",
+                  no_nagle, strerror(errno));
+    }
 
     if (connect(sock, (struct sockaddr *) &addr, sizeof addr) < 0) {
         _hs_error("connect socket to localhost:%d failed: %s",
@@ -84,6 +96,7 @@ child_main(int sock)
     _hs_trace("child finished");        
     return ret;
 }
+
 
 static int
 fork_reader(int sock)
@@ -144,9 +157,10 @@ main(int argc, char **argv)
     int                 port;
     int                 c;
     int                 pid;
+    int                 no_nagle = 0;
 
     /* may turn it on later */
-    while ((c = getopt(argc, argv, "D")) != -1) {
+    while ((c = getopt(argc, argv, "DN")) != -1) {
 	switch (c) {
 	case '?':
 	case ':':
@@ -157,6 +171,9 @@ main(int argc, char **argv)
 	    }
 	    hs_trace_set_level(LOG_DEBUG);
 	    break;
+        case 'N':
+            no_nagle = 1;
+            break;
         default:
             abort();
 	}
@@ -173,7 +190,7 @@ main(int argc, char **argv)
         return 1;
     }
 
-    if (open_socket(&sock, port) < 0) {
+    if (open_socket(&sock, port, no_nagle) < 0) {
         return 1;
     }
 

@@ -37,6 +37,7 @@ libhsync_la_SOURCES = dec.c enc.c \
 # NB: tests should exit with code 77 if they can't be run but haven't failed.
 TESTS_ENVIRONMENT = time $(SHELL)
 test_scripts := \
+	test-maptcp.sh \
 	test-tricky.sh \
 	test-chain.sh \
 	test-seqnad.sh \
@@ -119,7 +120,10 @@ LDADD = libhsync.la
 bin_PROGRAMS = hsdecode hsencode hsmdfour hsmksum hsmapread hsnad \
 		libhsyncinfo
 check_PROGRAMS = hsemit hsinhale hsfilebufcat genmaptest \
-	socksvr sockcli
+	socksvr sockcli sockrun
+
+sockrun_SOURCES = sockrun.c trace.c util.c fileutil.c
+sockrun_LDADD =
 
 socksvr_SOURCES = socksvr.c trace.c util.c
 socksvr_LDADD =
@@ -148,4 +152,6 @@ hsemit_SOURCES = hsemit.c
 
 hsinhale_SOURCES = hsinhale.c
 
-hsmapread_SOURCES = hsmapread.c 
+hsmapread_SOURCES = hsmapread.c filebuf.c util.c trace.c fileutil.c \
+	mapptr.c
+hsmapread_LDADD =
