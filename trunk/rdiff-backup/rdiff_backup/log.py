@@ -139,6 +139,5 @@ class Logger:
 		logging_func("Exception %s raised of class %s" %
 					 (exc_info[1], exc_info[0]), verbosity)
 		logging_func("".join(traceback.format_tb(exc_info[2])), verbosity+1)
-		
 
 Log = Logger()

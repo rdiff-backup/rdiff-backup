@@ -240,6 +240,7 @@ class HLDestinationStruct:
 		"""Apply diffs and finalize, with checkpointing and statistics"""
 		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
 		finalizer, ITR = cls.get_finalizer(), cls.get_MirrorITR(inc_rpath)
+		Stats.open_dir_stats_file()
 		dsrp = None
 
 		def error_checked():
@@ -262,13 +263,15 @@ class HLDestinationStruct:
 			cls.check_skip_error(finalizer.Finish, dsrp)
 		except: cls.handle_last_error(dsrp, finalizer, ITR)
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
-		cls.write_statistics(ITR)
+		Stats.close_dir_stats_file()
+		Stats.write_session_statistics(ITR)
 		SaveState.checkpoint_remove()
 
 	def patch_increment_and_finalize(cls, dest_rpath, diffs, inc_rpath):
 		"""Apply diffs, write increment if necessary, and finalize"""
 		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
 		finalizer, ITR = cls.get_finalizer(), cls.get_ITR(inc_rpath)
+		Stats.open_dir_stats_file()
 		dsrp = None
 
 		def error_checked():
@@ -292,7 +295,8 @@ class HLDestinationStruct:
 			cls.check_skip_error(finalizer.Finish, dsrp)
 		except: cls.handle_last_error(dsrp, finalizer, ITR)
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
-		cls.write_statistics(ITR)
+		Stats.close_dir_stats_file()
+		Stats.write_session_statistics(ITR)
 		SaveState.checkpoint_remove()
 
 	def check_skip_error(cls, thunk, dsrp):
@@ -322,20 +326,5 @@ class HLDestinationStruct:
 		if Globals.preserve_hardlinks: Hardlink.final_checkpoint(Globals.rbdir)
 		SaveState.touch_last_file_definitive()
 		raise
-
-	def write_statistics(cls, ITR):
-		"""Write session statistics to file, log"""
-		stat_inc = Inc.get_inc(Globals.rbdir.append("session_statistics"),
-							   Time.curtime, "data")
-		ITR.StartTime = Time.curtime
-		ITR.EndTime = time.time()
-		if Globals.preserve_hardlinks and Hardlink.final_inc:
-			# include hardlink data in size of increments
-			ITR.IncrementFileSize += Hardlink.final_inc.getsize()
-		ITR.write_stats_to_rp(stat_inc)
-		if Globals.print_statistics:
-			message = ITR.get_stats_logstring("Session statistics")
-			Log.log_to_file(message)
-			Globals.client_conn.sys.stdout.write(message)
 
 MakeClass(HLDestinationStruct)

@@ -146,7 +146,8 @@ class Main:
 					   self.action == "remove-older-than"):
 			self.commandline_error("Only use one argument, "
 								   "the root of the backup directory")
-		if l > 2: self.commandline_error("Too many arguments given")
+		if l > 2 and self.action != "calculate-average":
+			self.commandline_error("Too many arguments given")
 
 	def commandline_error(self, message):
 		sys.stderr.write("Error: %s\n" % message)
