@@ -6,15 +6,15 @@ def RunCommand(cmd):
 	print cmd
 	os.system(cmd)
 
-if not sys.argv[1:]:
-	print 'Call with version number, as in "./makeweb 0.3.1"'
-	sys.exit(1)
-
-version = sys.argv[1]
 webprefix = "/home/ben/misc/html/mirror/rdiff-backup/"
 
+if not sys.argv[1:]:
+	print 'Call with version number, as in "./makeweb 0.3.1"'
+	print "to move new rpms and tarballs.  Now just remaking FAQ and man page."
+else:
+	version = sys.argv[1]
+	RunCommand("cp *%s* %s" % (version, webprefix))
 
-RunCommand("cp *%s* %s" % (version, webprefix))
 RunCommand("rman -f html -r '' rdiff-backup.1 > %srdiff-backup.1.html"
 		   % webprefix)
 RunCommand("cp FAQ.wml CHANGELOG %s" % webprefix)
@@ -22,7 +22,8 @@ RunCommand("cp FAQ.wml CHANGELOG %s" % webprefix)
 
 os.chdir(webprefix)
 print "cd ", webprefix
-RunCommand("rm latest latest.rpm latest.tar.gz")
-RunCommand("ln -s *%s*rpm latest.rpm" % (version,))
-RunCommand("ln -s *%s*tar.gz latest.tar.gz" % (version,))
+if sys.argv[1:]:
+	RunCommand("rm latest latest.rpm latest.tar.gz")
+	RunCommand("ln -s *%s*rpm latest.rpm" % (version,))
+	RunCommand("ln -s *%s*tar.gz latest.tar.gz" % (version,))
 RunCommand("./Make")
