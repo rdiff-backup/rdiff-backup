@@ -136,12 +136,12 @@ void rs_scoop_advance(rs_job_t *job, size_t len)
      * at them all at the same time. */
     if (job->scoop_avail) {
         /* reading from the scoop buffer */
-         rs_trace("advance over %d bytes from scoop", len); 
+         rs_trace("advance over %ld bytes from scoop", (long) len); 
         assert(len <= job->scoop_avail);
         job->scoop_avail -= len;
         job->scoop_next += len;
     } else {
-         rs_trace("advance over %d bytes from input buffer", len); 
+         rs_trace("advance over %ld bytes from input buffer", (long) len); 
         assert(len <= stream->avail_in);
         stream->avail_in -= len;
         stream->next_in += len;

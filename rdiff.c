@@ -181,14 +181,14 @@ static void rdiff_show_version(void)
     printf("rdiff (%s) [%s]\n"
            "Copyright (C) 1997-2001 by Martin Pool, Andrew Tridgell and others.\n"
            "http://rproxy.samba.org/\n"
-           "Capabilities: %d bit files%s%s%s\n"
+           "Capabilities: %ld bit files%s%s%s\n"
            "\n"
            "librsync comes with NO WARRANTY, to the extent permitted by law.\n"
            "You may redistribute copies of librsync under the terms of the GNU\n"
            "Lesser General Public License.  For more information about these\n"
            "matters, see the files named COPYING.\n",
            rs_librsync_version, RS_CANONICAL_HOST,
-           8 * sizeof(rs_long_t), zlib, bzlib, trace);
+           (long) (8 * sizeof(rs_long_t)), zlib, bzlib, trace);
 }
 
 

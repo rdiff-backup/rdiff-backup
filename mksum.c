@@ -131,7 +131,7 @@ rs_sig_s_generate(rs_job_t *job)
         return result;
     }
 
-    rs_trace("got %d byte block", len);
+    rs_trace("got %ld byte block", (long) len);
 
     return rs_sig_do_block(job, block, len);
 }

@@ -340,7 +340,7 @@ inline rs_result rs_appendflush(rs_job_t *job)
         return rs_processmatch(job);
     /* else if last is a miss, emit and process it*/
     } else if (job->scoop_pos) {
-        rs_trace("got %d bytes of literal data", job->scoop_pos);
+        rs_trace("got %ld bytes of literal data", (long) job->scoop_pos);
         rs_emit_literal_cmd(job, job->scoop_pos);
         return rs_processmiss(job);
     }
