@@ -292,8 +292,9 @@ class HLDestinationStruct:
 							 5,  # Reported by docv (see list)
 							 13, # Permission denied IOError
 							 20, # Means a directory changed to non-dir
-							 26] # Requested by Campbell (see list) -
+							 26, # Requested by Campbell (see list) -
                                  # happens on some NT systems
+							 36] # filename too long
 				 ))):
 				Log("Skipping file because of error after %s" %
 					(dsrp and dsrp.index,), 2)
