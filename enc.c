@@ -172,15 +172,15 @@ _hs_output_block_hash(hs_write_fn_t write_fn, void *write_priv,
 		      _hs_inbuf_t * inbuf, int short_block,
 		      rollsum_t * rollsum)
 {
-     char strong_sum[SUM_LENGTH];
-     char strong_hex[SUM_LENGTH * 3];
+     char strong_sum[MD4_LENGTH];
+     char strong_hex[MD4_LENGTH * 2 + 2];
 
      _hs_write_netint(write_fn, write_priv, rollsum->weak_sum);
      _hs_calc_strong_sum(inbuf->buf + inbuf->cursor, short_block,
-			 strong_sum);
-     hs_hexify_buf(strong_hex, strong_sum, SUM_LENGTH);
+			 strong_sum, DEFAULT_SUM_LENGTH);
+     hs_hexify_buf(strong_hex, strong_sum, DEFAULT_SUM_LENGTH);
 
-     _hs_write_loop(write_fn, write_priv, strong_sum, SUM_LENGTH);
+     _hs_write_loop(write_fn, write_priv, strong_sum, DEFAULT_SUM_LENGTH);
 
      _hs_trace("output block hash at abspos=%-10d weak=%#010x strong=%s",
 	       inbuf->abspos + inbuf->cursor,

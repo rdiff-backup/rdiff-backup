@@ -56,10 +56,6 @@
 
 #include "includes.h"
 
-#ifndef DO_HS_TRACE
-#define DO_HS_TRACE
-#endif
-
 #define CHUNK_SIZE (32*1024)
 #define IO_BUFFER_SIZE (4092)
 
@@ -88,7 +84,7 @@ struct hs_map {
     int             tag;
     /*@null@*/ char *p;
     int             fd;
-    ssize_t p_size, p_len;
+    ssize_t	    p_size, p_len;
     hs_off_t        p_offset, p_fd_offset;
 };
 
@@ -235,11 +231,11 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     }
 
 
-    /* nope, we are going to have to do a read. Work out our desired window */
     if (offset > (hs_off_t) (2 * CHUNK_SIZE)) {
-	/* XXX: Is this useful?  If we're out of the first two blocks,
-           then it tries to keep the start of the window block aligned
-           in the file.  But why? */
+	/* On some systems, it's much faster to do reads aligned with
+	 * filesystem blocks.  This isn't the case on Linux, which has
+	 * a pretty efficient filesystem and kernel/app interface, but
+	 * we don't lose a lot by checking this. */
 	window_start = offset - 2 * CHUNK_SIZE;
 	
 	/* Include only higher-order bits; assumes power of 2 */

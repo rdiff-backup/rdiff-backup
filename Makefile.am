@@ -20,7 +20,8 @@ libhsync_la_SOURCES = dec.c enc.c \
 	mapptr.c mapptr.h \
 	fileutil.c \
 	gdproto.c readsums.c \
-	util.c util.h
+	util.c util.h \
+	mksum.c sumset.c
 
 # compress.c compress.h 
 
@@ -84,12 +85,15 @@ EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 
 include_HEADERS = hsync.h hsyncproto.h
 
-bin_PROGRAMS = hsdecode hsencode hsmdfour
-check_PROGRAMS = hsemit hsinhale hsfilebufcat hsmapread
+bin_PROGRAMS = hsdecode hsencode hsmdfour hsmksum hsmapread
+check_PROGRAMS = hsemit hsinhale hsfilebufcat
 
 test-cmds/cmds: make-cmds.py
 	mkdir -p test-cmds
 	$(PYTHON) $(srcdir)/make-cmds.py > $@
+
+hsmksum_SOURCES = hsmksum.c
+hsmksum_LDADD = libhsync.la
 
 hsmdfour_SOURCES = hsmdfour.c 
 hsmdfour_LDADD = libhsyncdecode.la

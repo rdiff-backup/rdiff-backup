@@ -190,7 +190,7 @@ int             _hs_slide_inbuf(_hs_inbuf_t *);
    Checksums */
 
 #define MD4_LENGTH 16
-#define SUM_LENGTH 8
+#define DEFAULT_SUM_LENGTH 8
 
 /* We should make this something other than zero to improve the checksum
    algorithm: tridge suggests a prime number. */
@@ -222,7 +222,7 @@ typedef struct hs_sum_set {
 typedef struct sum_buf {
     int             i;		/* index of this chunk */
     uint32_t        sum1;	/* simple checksum */
-    char            strong_sum[SUM_LENGTH];	/* checksum  */
+    char            strong_sum[MD4_LENGTH];	/* checksum  */
 } sum_buf_t;
 
 /* ROLLSUM_T contains the checksums that roll through the new version of the
@@ -234,9 +234,6 @@ typedef struct rollsum {
 				   recalculate */
     uint32_t        weak_sum, s1, s2;	/* weak checksum */
 } rollsum_t;
-
-uint32_t        _hs_calc_weak_sum(char const *buf1, int len);
-uint32_t        _hs_calc_strong_sum(char const *buf, int len, char *sum);
 
 
 #include "checksum.h"
@@ -296,8 +293,6 @@ int             _hs_inhale_command(hs_read_fn_t read_fn, void *read_priv,
 
 int _hs_check_sig_version(hs_read_fn_t, void *);
 
-
-#include "mapptr.h"
 
 /* This structure holds all the state of the encoding operation.  Yes,
    it's a bit ugly to stick random variables in here like this, but we

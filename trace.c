@@ -1,23 +1,24 @@
-/* -*- mode: c; c-file-style: "bsd" -*-  */
-/* $Id$ */
-/* libhsync/trace.c -- Control debug trace, etc
-   
-   Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+/*				       	-*- c-file-style: "bsd" -*-
+ *
+ * $Id$
+ * 
+ * Copyright (C) 2000 by Martin Pool
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-   
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-   
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-   USA */
 
 #include "includes.h"
 
@@ -26,6 +27,8 @@ char const * const hs_libhsync_version = PACKAGE " " VERSION;
 hs_trace_fn_t *_hs_trace_impl = hs_trace_to_stderr;
 
 
+/* Called by the application to set the destination of trace
+ * information. */
 void
 hs_trace_to(hs_trace_fn_t *new_impl)
 {
@@ -33,6 +36,8 @@ hs_trace_to(hs_trace_fn_t *new_impl)
 }
 
 
+/* This function is called by a macro that switches it depending on
+ * the compile-time setting, etc.  */
 void
 _hs_trace0(char const *fmt, ...)
 {
@@ -60,4 +65,19 @@ hs_trace_to_stderr(char const *fmt, va_list va)
 
     /* NOTE NO TRAILING NUL */
     write(STDERR_FILENO, buf, n);
+}
+
+
+/*
+ * Return true if the library contains trace code; otherwise false.
+ * If this returns false, then trying to turn trace on will achieve
+ * nothing.
+ */
+int hs_supports_trace(void)
+{
+#ifdef DO_HS_TRACE
+    return 1;
+#else
+    return 0;
+#endif /* !DO_HS_TRACE */
 }

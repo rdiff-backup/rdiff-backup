@@ -3,6 +3,7 @@
 *.tmp
 .deps
 .libs
+ID
 Makefile
 Makefile.in
 config.cache
@@ -19,6 +20,7 @@ hsfilebufcat
 hsinhale
 hsmapread
 hsmdfour
+hsmksum
 libhsync-*.tar.gz
 libhsync-*.tar.gz.asc
 libtool

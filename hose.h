@@ -19,3 +19,11 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+
+typedef struct hs_hose hs_hose_t;
+
+hs_hose_t hs_hose_file(int fd);
+
+void hs_hose_close(hs_hose_t *hose);
+
+hs_result_t hs_hose_out(hs_hose_t *hose, char const *buf, size_t len);

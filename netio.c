@@ -22,8 +22,11 @@
 #include "includes.h"
 
 /* This will only return a short read if we reach eof.  The underlying
-   functions are allowed to wimp out and return short if they
-   want. */
+ * functions are allowed to wimp out and return short if they
+ * want.
+ *
+ * XXX: In the future this function may be deprecated in favour of
+ * mapptr. */
 int
 _hs_read_loop(hs_read_fn_t read_fn, void *read_priv,
 	      char *buf, size_t len)
@@ -49,7 +52,7 @@ _hs_read_loop(hs_read_fn_t read_fn, void *read_priv,
 
 
 /* Either read LEN bytes and return LEN, or zero for EOF, or fail
-   completely. */
+ * completely. */
 int
 _hs_must_read(hs_read_fn_t read_fn, void *read_priv,
 	      char *buf, ssize_t len)
@@ -82,6 +85,11 @@ _hs_must_read(hs_read_fn_t read_fn, void *read_priv,
 }
 
 
+/*
+ * Insist on writing out a block of data, retrying if necessary.
+ *
+ * XXX: This may be deprecated in favour of hs_hose.
+ */
 size_t
 _hs_write_loop(hs_write_fn_t write_fn, void *write_priv,
 	       char const *buf, size_t len)

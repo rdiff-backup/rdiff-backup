@@ -87,7 +87,7 @@ _hs_find_in_hash(rollsum_t * rollsum,
 {
      int tag = gettag(rollsum->weak_sum);
      int j = sums->tag_table[tag];
-     char strong_sum[SUM_LENGTH];
+     char strong_sum[DEFAULT_SUM_LENGTH];
      int got_strong = 0;
 
      if (j == NULL_TAG) {
@@ -117,11 +117,13 @@ _hs_find_in_hash(rollsum_t * rollsum,
 		    rollsum->weak_sum, token);
 
 	  if (!got_strong) {
-	       _hs_calc_strong_sum(inbuf, block_len, strong_sum);
+	       _hs_calc_strong_sum(inbuf, block_len, strong_sum,
+				   DEFAULT_SUM_LENGTH);
 	       got_strong = 1;
 	  }
 
-	  if (memcmp(strong_sum, sums->sums[i].strong_sum, SUM_LENGTH) == 0) {
+	  if (memcmp(strong_sum, sums->sums[i].strong_sum,
+		     DEFAULT_SUM_LENGTH) == 0) {
 	       return token;
 	  } else {
 	       _hs_trace("this was a false positive, the strong sums "

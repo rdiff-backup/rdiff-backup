@@ -1,22 +1,23 @@
-/* -*- mode: c; c-file-style: "bsd"; c-basic-offset: 4 -*-  */
-/* libhsync
-   Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-   
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-   
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-   USA
-*/
+/*				       	-*- c-file-style: "bsd" -*-
+ *
+ * $Id$
+ * 
+ * Copyright (C) 2000 by Martin Pool
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 
 extern char const *const hs_libhsync_version;
@@ -42,7 +43,27 @@ typedef int (*hs_write_fn_t) (void *writeprivate, char const *buf,
 typedef void hs_trace_fn_t(char const *fmt, va_list);
 void hs_trace_to(hs_trace_fn_t *);
 void hs_trace_to_stderr(char const *fmt, va_list va);
+
+int hs_supports_trace(void);
 
+
+/* ========================================
+ *
+ * Return codes from incremental functions.  On each call, we can
+ * return
+ *
+ *   HS_DONE   if we have finished completely
+ *
+ *   HS_AGAIN  if we want to be called again when convenient
+ *
+ *   HS_FAILED if an error occurred.
+ */
+typedef enum {
+    HS_DONE,
+    HS_AGAIN,
+    HS_FAILED
+} hs_result_t;
+   
 
 /* ========================================
 
@@ -151,4 +172,19 @@ hs_hexify_buf(char *to_buf, unsigned char const *from_buf, int from_len);
 
 
 char *hs_format_stats(hs_stats_t const *stats);
+
+
+/* ========================================
+ *
+ * New nonblocking interfaces.
+ */
+typedef struct hs_mksum_job hs_mksum_job_t;
+
+
+hs_mksum_job_t *
+hs_mksum_begin(int in_fd,
+	       hs_write_fn_t write_fn, void *write_priv,
+	       size_t new_block_len, size_t strong_sum_len);
+
+hs_result_t hs_mksum(hs_mksum_job_t *job);
 

@@ -51,3 +51,5 @@
 #include "private.h"
 #include "emit.h"
 #include "util.h"
+#include "hose.h"
+#include "mapptr.h"

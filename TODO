@@ -1,5 +1,7 @@
 -*- indented-text -*- 
 
+ * Selective trace
+
  * Try to make libhsync more generally useful
 
    * Tease apart the different algorithms inside the library so that

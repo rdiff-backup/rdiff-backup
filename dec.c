@@ -144,7 +144,7 @@ _hs_dec_copy(uint32_t offset, uint32_t length, hs_map_t *old_map,
     if (buf == 0) {
 	_hs_error("error in read callback: off=%d, len=%d", offset, length);
 	goto fail;
-    } else if (mapped_len != (int) length) {
+    } else if (mapped_len < (int) length) {
 	_hs_error("short read: off=%d, len=%d, result=%d",
 		  offset, length, mapped_len);
 	errno = ENODATA;
