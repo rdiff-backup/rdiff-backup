@@ -6,9 +6,13 @@ If don't recover hardlink support and hardlink support on, don't
 resume.
 
 Make rdiff-backup not runnable from starting directory to avoid
-confusion.
+confusion. (Jason Piterak)
 
-Add man page to RPM distribution!!
+Fix crash that can occur when exception is found in the middle of a
+file (duplicate by backing up /proc remotely).  (John Goerzen)
+
+Copy sockets (Mickey Everts)
+
 
 ---------[ Long term ]---------------------------------------
 
