@@ -30,10 +30,8 @@ SUBDIRS = popt
 lib_LTLIBRARIES = librsync.la
 
 librsync_la_SOURCES = \
-	stats.c \
-	readsums.c \
-	search.c search.h \
 	base64.c				\
+	buf.c					\
 	buf.c buf.h				\
 	checksum.c checksum.h			\
 	command.c command.h			\
@@ -50,7 +48,11 @@ librsync_la_SOURCES = \
 	patch.c					\
 	protocol.h				\
 	prototab.c prototab.h			\
+	readsums.c				\
+	rsync.h					\
 	scoop.c					\
+	search.c search.h			\
+	stats.c					\
 	includes.h \
 	stream.c stream.h			\
 	sumset.c sumset.h \
@@ -155,7 +157,8 @@ html/index.html latex/refman.pdf latex/refman.ps.gz do-doxy:
 
 upload-doxy: html/index.html latex/refman.pdf latex/refman.ps.gz
 	for i in $(sites); do \
-	rsync --delete -avz html/ latex/refman.pdf latex/refman.ps.gz \
+	rsync -avz --delete --exclude '*~' \
+		html/ latex/refman.pdf latex/refman.ps.gz \
 		./rproxy-small-logo.png $$i/doxygen/librsync; \
 	done
 
