@@ -52,15 +52,15 @@ def parse_cmdlineoptions(arglist):
 		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=", "include-regexp=",
 		  "list-at-time=", "list-changed-since=", "list-increments",
-		  "no-compare-inode", "no-compression",
-		  "no-compression-regexp=", "no-file-statistics",
-		  "no-hard-links", "null-separator", "parsable-output",
-		  "print-statistics", "quoting-char=", "remote-cmd=",
-		  "remote-schema=", "remove-older-than=", "restore-as-of=",
-		  "restrict=", "restrict-read-only=", "restrict-update-only=",
-		  "server", "ssh-no-compression", "terminal-verbosity=",
-		  "test-server", "verbosity=", "version", "windows-mode",
-		  "windows-restore"])
+		  "no-change-dir-inc-perms", "no-compare-inode",
+		  "no-compression", "no-compression-regexp=",
+		  "no-file-statistics", "no-hard-links", "null-separator",
+		  "parsable-output", "print-statistics", "quoting-char=",
+		  "remote-cmd=", "remote-schema=", "remove-older-than=",
+		  "restore-as-of=", "restrict=", "restrict-read-only=",
+		  "restrict-update-only=", "server", "ssh-no-compression",
+		  "terminal-verbosity=", "test-server", "verbosity=",
+		  "version", "windows-mode", "windows-restore"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: %s" % str(e))
 
@@ -105,6 +105,8 @@ def parse_cmdlineoptions(arglist):
 			restore_timestr, action = arg, "list-changed-since"
 		elif opt == "-l" or opt == "--list-increments":
 			action = "list-increments"
+		elif opt == "--no-change-dir-inc-perms":
+			Globals.set("change_dir_inc_perms", 0)
 		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
@@ -583,6 +585,8 @@ def ListAtTime(rp):
 
 def CheckDest(dest_rp):
 	"""Check the destination directory, """
+	if Globals.quoting_enabled:
+		dest_rp = FilenameMapping.get_quotedrpath(dest_rp)
 	if Globals.rbdir is None:
 		SetConnections.UpdateGlobal('rbdir',
 									dest_rp.append_path("rdiff-backup-data"))

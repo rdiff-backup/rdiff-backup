@@ -201,6 +201,11 @@ Do not create an rdiff-backup-data directory or make any increments.
 In this mode rdiff-backup is similar to rsync (but usually
 slower).
 .TP
+.B --no-change-dir-inc-perms
+Do not change the permissions of the directory increments to match the
+directories they represent.  This option may be required on file
+systems where regular files cannot have their sticky bit set.
+.TP
 .B --no-compare-inode
 This relative esoteric option prevents rdiff-backup from flagging a
 file as changed when its inode changes.  This option may be useful if
