@@ -1,6 +1,7 @@
 /* -*- mode: c; c-file-style: "stroustrup" -*- */
-/*
-  hsmapread -- test harness for hs_map_ptr
+/* $Id$
+   
+   hsmapread -- test harness for hs_map_ptr
   
    Copyright (C) 2000 by Martin Pool
    
@@ -28,8 +29,6 @@
 #include "includes.h"
 #include "hsync.h"
 #include "private.h"
-
-static const char *_rcsid UNUSED = "$Id$";
 
 static void
 usage(void)

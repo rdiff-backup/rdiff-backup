@@ -36,11 +36,13 @@ _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
 {
     int             ret;
 
+    assert(start >= 0);
+
     if (copyq->len == 0) {
 	copyq->start = start;
 	copyq->len = len;
 	return 0;
-    } else if (copyq->start + copyq->len == start) {
+    } else if (copyq->start + copyq->len == (size_t) start) {
 	copyq->len += len;
 	return 0;
     } else {

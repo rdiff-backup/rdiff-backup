@@ -28,28 +28,28 @@
 #include "emit.h"
 
 static int
-_hs_fits_in_byte(long val)
+_hs_fits_in_byte(size_t val)
 {
     return val <= UINT8_MAX;
 }
 
 
 static int
-_hs_fits_in_short(long val)
+_hs_fits_in_short(size_t val)
 {
     return val <= UINT16_MAX;
 }
 
 
 static int
-_hs_fits_in_int(long val)
+_hs_fits_in_int(size_t val)
 {
     return val <= UINT32_MAX;
 }
 
 
 static int
-_hs_int_len(long val)
+_hs_int_len(hs_off_t val)
 {
     if (_hs_fits_in_byte(val))
 	return 1;
@@ -186,7 +186,7 @@ _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
     stats->copy_cmds++;
     stats->copy_bytes += length;
 
-    _hs_trace("Writing COPY(off=%d, len=%d)", offset, length);
+    _hs_trace("Writing COPY(off=%ld, len=%ld)", (long) offset, (long) length);
     len_type = _hs_int_len(length);
     off_type = _hs_int_len(offset);
 
@@ -202,8 +202,7 @@ _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
     } else if (off_type == 4) {
 	cmd = op_copy_int_byte;
     } else {
-	 fprintf(stderr, "can't pack offset %d!", offset);
-	 abort();
+	_hs_fatal("can't pack offset %ld!", offset);
     }
 
     if (len_type == 1) {

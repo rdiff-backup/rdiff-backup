@@ -1,6 +1,7 @@
 /* -*- mode: c; c-file-style: "stroustrup" -*-  */
-/*
-  Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
+/* $Id$
+   
+   Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,8 +22,6 @@
 #include "hsync.h"
 #include "private.h"
 #include "compress.h"
-
-static const char *_rcsid UNUSED = "$Id$";
 
 static const int ptrbuf_tag = 384384;
 

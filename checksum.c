@@ -1,7 +1,7 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-
- * $Id$
- * 
- * checksum.c -- calculate and search table of checksums
+/* -*- mode: c; c-file-style: "bsd" -*-
+   $Id$
+  
+   checksum.c -- calculate and search table of checksums
    
    Copyright (C) 2000 by Martin Pool
    Copyright (C) Andrew Tridgell 1996
@@ -82,27 +82,28 @@ _hs_calc_strong_sum(char const *buf, int len, char *sum)
 
 
 
-/* Read all signatures into a newly-allocated sum_struct.
+/* Read all signatures into a newly-allocated sum_struct, and index
+   and hash them appropriately.
 
    The signature stream contains pair of short (4-byte) weak checksums, and
    long (SUM_LENGTH) strong checksums. */
-struct sum_struct *
-_hs_make_sum_struct(hs_read_fn_t sigread_fn, void *sigreadprivate,
-		    int block_len)
+hs_sum_set_t *
+_hs_read_sum_set(hs_read_fn_t sigread_fn, void *sigreadprivate,
+			 int block_len)
 {
      struct sum_buf *asignature;
      int index = 0;
      int ret = 0;
      int checksum1;
-     struct sum_struct *sumbuf;
+     hs_sum_set_t *sumbuf;
 
-     sumbuf = calloc(1, sizeof(struct sum_struct));
+     sumbuf = calloc(1, sizeof(hs_sum_set_t));
      if (!sumbuf) {
 	  errno = ENOMEM;
 	  _hs_error("no memory to allocate sum_struct");
 	  return NULL;
      }
-     sumbuf->n = block_len;
+     sumbuf->block_len = block_len;
 
      sumbuf->sums = NULL;
      /* XXX: It's perhaps a bit inefficient to realloc each time.
@@ -159,7 +160,7 @@ _hs_make_sum_struct(hs_read_fn_t sigread_fn, void *sigreadprivate,
 
 
 void
-_hs_free_sum_struct(struct sum_struct *psums)
+_hs_free_sum_struct(hs_sum_set_t *psums)
 {
     if (psums->sums)
 	free(psums->sums);

@@ -20,4 +20,4 @@ run_test cmp $expect $new
 # delete them.  if we failed they're left behind so that you can find
 # the cause of death.
 
-run_test rm $expect $cmds $new
+run_test rm $expect $new

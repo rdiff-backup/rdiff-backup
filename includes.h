@@ -36,9 +36,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/file.h>
-/*@-skipposixheaders@*/
+#ifndef __LCLINT__
 #include <netinet/in.h>		/* ntohs, etc */
-/*@+skipposixheaders@*/
+#endif /* __LCLINT__ */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>

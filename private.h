@@ -26,11 +26,23 @@
 #ifdef DO_HS_TRACE
 
 void
-_hs_trace(char const *fmt, ...)
+_hs_trace0(char const *fmt, ...)
 #ifdef __GNUC__
     __attribute__ ((format(printf, 1, 2)))
 #endif
     ;
+
+#  ifdef __GNUC__
+void _hs_trace0(char const *fmt, ...)
+    __attribute__ ((format(printf, 1, 2)));
+#    define _hs_trace(fmt, arg...)			\
+    do { _hs_trace0(__FUNCTION__ ": " fmt, ##arg);	\
+    } while (0)
+#  else
+
+#    define _hs_trace _hs_trace0
+    void _hs_trace0(char const *, ...);
+#  endif /* ! __GNUC__ */
 
 #else				/* !DO_HS_TRACE */
 #define _hs_trace(s, str...)
@@ -97,7 +109,7 @@ _hs_trace(char const *fmt, ...)
 int             _hs_read_loop(hs_read_fn_t, void *readprivate,
 			      char *buf, size_t len);
 
-int             _hs_write_loop(hs_write_fn_t, void *writeprivate,
+size_t             _hs_write_loop(hs_write_fn_t, void *writeprivate,
 			       char const *buf, size_t len);
 
 int             hs_must_write(hs_write_fn_t write_fn, void *write_priv,

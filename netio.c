@@ -85,11 +85,11 @@ _hs_must_read(hs_read_fn_t read_fn, void *read_priv,
 }
 
 
-int
+size_t
 _hs_write_loop(hs_write_fn_t write_fn, void *write_priv,
-	       char const *buf, int len)
+	       char const *buf, size_t len)
 {
-     int count = 0;
+    size_t count = 0;
      int ret;
      int iter = 0;
 

@@ -1,5 +1,5 @@
 /* -*- mode: c; c-file-style: "stroustrup" -*-  */
-
+/* $Id$ */
 /* membuf.c -- Abstract IO to memory buffers.
 
    Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
@@ -26,8 +26,6 @@
 #include "hsync.h"
 #include "private.h"
 #include "compress.h"
-
-static const char *_rcsid UNUSED = "$Id$";
 
 static const int membuf_tag = 12341234;
 

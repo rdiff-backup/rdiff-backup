@@ -30,7 +30,14 @@
    that cannot normally support seek or mmap. Specifically, the caller
    must never attempt to move backwards or to skip forwards without
    reading.  Both of these are implicitly true for libhsync when
-   interacting with a socket. */
+   interacting with a socket.
+
+   It's not an error to try to map past the end of a file.  If you do
+   this, the map will run up to the end of the file, and a flag will
+   be returned to indicate that EOF was observed.  This will be
+   checked each time you try to map past the end, so something good
+   will happen if the file grows underneath you. */
+
 
 /* TODO: When reading from a socket, it might happen that we've read
    enough data to satisfy the current mapping request, though not
@@ -46,8 +53,12 @@
 
    TODO: Optionally debug this by simulating short reads. */
 
-
 #include "includes.h"
+
+#ifndef DO_HS_TRACE
+#define DO_HS_TRACE
+#endif
+
 #include "hsync.h"
 #include "private.h"
 
@@ -116,8 +127,8 @@ _hs_map_file(int fd)
    if appropriate. */
 static ssize_t
 _hs_map_do_read(hs_map_t *map,
-		hs_off_t read_offset,
-		ssize_t read_size,
+		hs_off_t const read_offset,
+		ssize_t const read_size,
 		int *reached_eof)
 {
     ssize_t total_read = 0;
@@ -146,6 +157,10 @@ _hs_map_do_read(hs_map_t *map,
 	    break;
 	}
     } while (total_read < read_size);
+
+    _hs_trace("wanted %d bytes, read %d bytes%s",
+	      read_size, total_read,
+	      *reached_eof ? ", now at eof" : "");
 
     return total_read;
 }
@@ -184,8 +199,11 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     assert(reached_eof != NULL);
     *reached_eof = 0;
 
+    _hs_trace("called: map=%p, off=%ld, len=%ld",
+	      map, (long) offset, (long) *len);
+
     /* TODO: Perhaps we should allow this, but why? */
-    if (*len == 0) {
+    if (*len <= 0) {
 	errno = EINVAL;
 	return NULL;
     }
@@ -193,6 +211,7 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     /* in most cases the region will already be available */
     if (offset >= map->p_offset &&
 	offset + *len <= map->p_offset + map->p_len) {
+	_hs_trace("region is already in the buffer");
 	return (map->p + (offset - map->p_offset));
     }
 

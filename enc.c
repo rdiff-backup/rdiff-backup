@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*- 
+/* -*- mode: c; c-file-style: "bsd" -*- 
  * $Id$
  *
  * enc.c -- combined encode and sign
@@ -125,23 +125,6 @@
 
 
 static int
-_hs_newsig_header(int new_block_len,
-		  hs_write_fn_t write_fn, void *writeprivate)
-{
-     int ret;
-     ret = _hs_write_netint(write_fn, writeprivate, HS_SIG_MAGIC);
-     if (ret < 0)
-	  return -1;
-
-     ret = _hs_write_netint(write_fn, writeprivate, new_block_len);
-     if (ret < 0)
-	  return -1;
-
-     return 0;
-}
-
-
-static int
 _hs_update_sums(_hs_inbuf_t * inbuf, int full_block,
 		int short_block, rollsum_t * rollsum)
 {
@@ -162,7 +145,7 @@ _hs_update_sums(_hs_inbuf_t * inbuf, int full_block,
 	       rollsum->s2 += rollsum->s1;
 	  } else {
 #if 0
-	       _hs_trace(__FUNCTION__ ": no byte to roll in at abspos=%d",
+	       _hs_trace("no byte to roll in at abspos=%d",
 			 inbuf->abspos + inbuf->cursor);
 #endif /* 0 */
 	  }
@@ -186,7 +169,6 @@ _hs_trim_sums(_hs_inbuf_t * inbuf, rollsum_t * rollsum,
 
      return 0;
 }
-
 
 
 static int
@@ -224,75 +206,6 @@ _hs_signature_ready(_hs_inbuf_t * inbuf, int new_block_len)
 }
 
 
-static int
-_hs_check_sig_version(hs_read_fn_t sigread_fn, void *sigreadprivate)
-{
-     uint32_t hs_remote_version;
-     const uint32_t expect = HS_SIG_MAGIC;
-     int ret;
-
-     ret = _hs_read_netint(sigread_fn, sigreadprivate, &hs_remote_version);
-     if (ret == 0) {
-	  _hs_trace("eof on old signature stream before reading version; "
-		    "there is no old signature");
-	  return 0;
-     } else if (ret < 0) {
-	  _hs_fatal("error reading signature version");
-	  return -1;
-     } else if (ret != 4) {
-	  _hs_fatal("bad-sized read while trying to get signature version");
-	  return -1;
-     }
-
-     if (hs_remote_version != expect) {
-	  _hs_fatal("this librsync understands version %#010x."
-		    " We don't take %#010x.", expect, hs_remote_version);
-	  errno = EBADMSG;
-	  return -1;
-     }
-
-     return 1;
-}
-
-
-static int
-_hs_read_blocksize(hs_read_fn_t sigread_fn, void *sigreadprivate,
-		   int *block_len)
-{
-     int ret;
-
-     ret = _hs_read_netint(sigread_fn, sigreadprivate, block_len);
-     if (ret < 0) {
-	  _hs_error("couldn't read block length from signature");
-	  return -1;
-     } else if (ret != 4) {
-	  _hs_error("short read while trying to get block length");
-	  return -1;
-     }
-
-     _hs_trace("The block length is %d", *block_len);
-
-     return 0;
-}
-
-
-
-static int _hs_littok_header(hs_write_fn_t write_fn, void *write_priv)
-{
-     int ret;
-
-     /*
-      * Write the protocol version the token stream follows to the token
-      * stream 
-      */
-     ret = _hs_write_netint(write_fn, write_priv, HS_LT_MAGIC);
-     if (ret < 0) {
-	  _hs_fatal("error writing version to littok stream");
-	  return -1;
-     }
-
-     return 0;
-}
 
 
 #ifdef HS_PAINFUL_HONESTY
@@ -321,9 +234,9 @@ ssize_t
 hs_encode(hs_read_fn_t read_fn, void *readprivate,
 	  hs_write_fn_t write_fn, void *write_priv,
 	  hs_read_fn_t sigread_fn, void *sigreadprivate,
-	  int new_block_len UNUSED, hs_stats_t * stats)
+	  UNUSED(int new_block_len), hs_stats_t * stats)
 {
-     struct sum_struct *sums = 0;
+     hs_sum_set_t *sums = 0;
      int ret;
      rollsum_t real_rollsum, *const rollsum = &real_rollsum;
      _hs_inbuf_t *inbuf;
@@ -339,7 +252,7 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
      hs_mdfour_t filesum;
      char filesum_result[MD4_LENGTH], filesum_hex[MD4_LENGTH * 2 + 2];
      
-     _hs_trace("**** beginning %s", __FUNCTION__);
+     _hs_trace("**** begin");
 
      bzero(stats, sizeof *stats);
      bzero(&copyq, sizeof copyq);
@@ -364,7 +277,7 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 
      if (got_old) {
 	 /* Put the char * sigbuffer into our structures */
-	 sums = _hs_make_sum_struct(sigread_fn, sigreadprivate,
+	 sums = _hs_read_sum_set(sigread_fn, sigreadprivate,
 				    block_len);
 	 if (!sums)
 	     got_old = 0;
