@@ -24,6 +24,15 @@
 #include "hsyncproto.h"
 #include "private.h"
 
+/* For debugging porpoises, here are some human-readable forms. */
+struct hs_op_kind_name const _hs_op_kind_names[] = {
+     { "EOF", op_kind_eof },
+     { "COPY", op_kind_copy },
+     { "LITERAL", op_kind_literal },
+     { "SIGNATURE", op_kind_signature }
+};
+
+
 static int _hs_is_gd_eof(uint8_t cmd)
 {
     return cmd == 0;

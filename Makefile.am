@@ -53,7 +53,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 
 include_HEADERS = hsync.h hsyncproto.h
 
-bin_PROGRAMS = hsdecode hsencode hsemit
+bin_PROGRAMS = hsdecode hsencode 
+noinst_PROGRAMS = hsemit hsinhale
 
 hsdecode_SOURCES = hsdecode.c
 hsdecode_LDADD = libhsyncdecode.la
@@ -63,6 +64,9 @@ hsencode_LDADD = libhsync.la
 
 hsemit_SOURCES = hsemit.c
 hsemit_LDADD = libhsync.la
+
+hsinhale_SOURCES = hsinhale.c
+hsinhale_LDADD = libhsyncdecode.la
 
 # Thus spake the master programmer:
 # 

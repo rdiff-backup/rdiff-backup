@@ -215,7 +215,6 @@ uint32_t _hs_calc_weak_sum(char const *buf1, int len);
 uint32_t _hs_calc_strong_sum(char const *buf, int len, char *sum);
 
 
-
 /* ========================================
 
    Things to do with searching through the hashtable of blocks from
@@ -256,6 +255,13 @@ int _hs_copyq_flush(hs_write_fn_t write_fn, void *write_priv,
 
    emit/inhale commands
 */
+
+struct hs_op_kind_name {
+     char *name;
+     int code;
+};
+
+extern struct hs_op_kind_name const _hs_op_kind_names[];
 
 int _hs_emit_chunk_cmd(hs_write_fn_t write_fn, void *write_priv,
 		       uint32_t size, int kind);
