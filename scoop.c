@@ -200,7 +200,7 @@ hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
     } else if (stream->eof_in) {
         /* Nothing is queued before, and nothing is in the input
          * buffer at the moment. */
-        hs_trace("reached EOF on input stream");
+        hs_trace("reached end of input stream");
         return HS_INPUT_ENDED;
     } else {
         /* Nothing queued at the moment. */
