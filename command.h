@@ -53,6 +53,6 @@ typedef struct hs_op_kind_name {
         enum hs_op_kind const    kind;
 } hs_op_kind_name_t;
 
-char const * _hs_op_kind_name(enum hs_op_kind);
+char const * hs_op_kind_name(enum hs_op_kind);
 
 

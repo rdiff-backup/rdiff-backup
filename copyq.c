@@ -27,8 +27,8 @@
 /* If possible, append this copy command to the end of the previous
  * one.  If not, flush the existing command and begin a new one.  */
 int
-_hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
-               _hs_copyq_t * copyq,
+hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
+               hs_copyq_t * copyq,
                off_t start, size_t len, hs_stats_t * stats)
 {
     int             ret;
@@ -45,7 +45,7 @@ _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
     } else {
         /* Of course, COPY commands don't *have* to follow each other.  If we
            get two non-contiguous ones, then we flush and start again. */
-        ret = _hs_copyq_push(write_fn, write_priv, copyq, stats);
+        ret = hs_copyq_push(write_fn, write_priv, copyq, stats);
         copyq->start = start;
         copyq->len = len;
         return ret;
@@ -58,8 +58,8 @@ _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
  * them out.
  */
 int
-_hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
-               _hs_copyq_t * copyq, hs_stats_t * stats)
+hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
+               hs_copyq_t * copyq, hs_stats_t * stats)
 {
     int             ret;
 
@@ -67,7 +67,7 @@ _hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
         return 0;
     assert(copyq->len > 0);
 
-    ret = _hs_emit_copy(write_fn, write_priv,
+    ret = hs_emit_copy(write_fn, write_priv,
                         copyq->start, copyq->len, stats);
     copyq->len = 0;
 

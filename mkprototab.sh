@@ -67,6 +67,8 @@ emit_cmd() {
 
 emit_cmd EOF 0 0 0
 
+# FIXME: seq(1) may not be available on BSD systems.
+
 for i in `seq 1 120`
 do
     emit_cmd LITERAL $i 0 0

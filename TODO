@@ -177,7 +177,8 @@ $Id$
        sufficient.
 
      * SCO and similar things on 32-bit platforms may be more
-       difficult.
+       difficult.  Some SCO systems have no 64-bit types at all, so
+       there we will have to do without.
 
      * On larger Unix platforms we hope that large file support will
        be the default.

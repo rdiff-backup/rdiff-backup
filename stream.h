@@ -3,7 +3,7 @@
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -19,6 +19,12 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+
+                /* Two wars in a lifetime bear hard on the little places.
+                 * In winter when storms come rushing out of the dark,
+                 * And the bay boils like a cauldron of sharks,
+                 * The old remember the trenches at Paschendale
+                 * And sons who died on the Burma Railway. */
 
 
 /*
@@ -46,21 +52,21 @@ typedef struct hs_simpl {
 
 
 
-int _hs_stream_is_empty(hs_stream_t *stream);
-int _hs_stream_copy(hs_stream_t *stream, int len);
-void _hs_stream_check(hs_stream_t *stream);
-void _hs_stream_check_exit(hs_stream_t const *stream);
+int hs_stream_is_empty(hs_stream_t *stream);
+int hs_stream_copy(hs_stream_t *stream, int len);
+void hs_stream_check(hs_stream_t *stream);
+void hs_stream_check_exit(hs_stream_t const *stream);
 
 
-int _hs_tube_catchup(hs_stream_t *);
-void _hs_blow_literal(hs_stream_t *, void const *buf, size_t len);
+int hs_tube_catchup(hs_stream_t *);
+void hs_blow_literal(hs_stream_t *, void const *buf, size_t len);
 
-void _hs_blow_copy(hs_stream_t *, int len);
+void hs_blow_copy(hs_stream_t *, int len);
 
-int _hs_tube_is_idle(hs_stream_t const *);
-void _hs_check_tube(hs_stream_t *);
+int hs_tube_is_idle(hs_stream_t const *);
+void hs_check_tube(hs_stream_t *);
 
-void _hs_scoop_advance(hs_stream_t *stream, size_t len);
-enum hs_result _hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr);
-enum hs_result _hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr);
-enum hs_result _hs_scoop_read_rest(hs_stream_t *stream, size_t *len, void **ptr);
+void hs_scoop_advance(hs_stream_t *stream, size_t len);
+enum hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr);
+enum hs_result hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr);
+enum hs_result hs_scoop_read_rest(hs_stream_t *stream, size_t *len, void **ptr);

@@ -1,8 +1,11 @@
-# -*- shell-script -*-
 dnl Process this file with autoconf to produce a configure script. 
-
 AC_REVISION($Id$)
+# -*- shell-script -*-
+
+# Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
+
 AC_INIT(trace.c)
+
 my_version=0.6.0dev
 my_package=libhsync
 my_url=http://linuxcare.com.au/rproxy/
@@ -14,10 +17,8 @@ AM_PROG_LIBTOOL
 
 AM_CONFIG_HEADER(config.h)
 
-dnl Set up to get as many features as we can manage
-dnl trying to do large file support is not so simple
-dnl we will turn it off for the moment
-dnl AC_DEFINE(_FILE_OFFSET_BITS, 64)
+# Set up to get as many features as we can manage
+AC_DEFINE(_FILE_OFFSET_BITS, 64)
 AC_DEFINE(_GNU_SOURCE)
 
 AC_CANONICAL_HOST
@@ -28,6 +29,11 @@ AC_ISC_POSIX
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_RANLIB
+
+AC_TYPE_SIZE_T
+AC_TYPE_OFF_T
+
+AC_C_CONST
 
 # See if the compiler has the nice GNU feature of 
 # putting argv[0] into a global
@@ -93,8 +99,6 @@ if test "$ac_cv_sizeof_unsigned_char" -ne 1
 then
     AC_MSG_WARN(unsigned char seems to be $ac_cv_sizeof_unsigned_char bytes.  Expect trouble.)
 fi
-
-AC_CHECK_SIZEOF(off_t, 4)
 
 dnl Checks for header files.
 AC_CHECK_HEADERS(sys/endian.h)

@@ -36,7 +36,7 @@
  * is not enough input to proceed.
  */
 
-#include "config.h"
+#include <config.h>
 
 #include <assert.h>
 
@@ -64,31 +64,31 @@
 #include "stream.h"
 
 
-void _hs_squirt_n32(hs_stream_t *stream, int d)
+void hs_squirt_n32(hs_stream_t *stream, int d)
 {
         uint32_t nd = htonl(d);
         
-        _hs_blow_literal(stream, &nd, sizeof nd);
+        hs_blow_literal(stream, &nd, sizeof nd);
 }
 
 
 
 void
-_hs_squirt_n8(hs_stream_t *stream, int d)
+hs_squirt_n8(hs_stream_t *stream, int d)
 {
     uint8_t nd = d;
 
-    _hs_blow_literal(stream, &nd, sizeof nd);
+    hs_blow_literal(stream, &nd, sizeof nd);
 }
 
 
 
-enum hs_result _hs_suck_n32(hs_stream_t *stream, int *v)
+enum hs_result hs_suck_n32(hs_stream_t *stream, int *v)
 {
         void *p;
         int result;
 
-        if ((result = _hs_scoop_read(stream, sizeof (uint32_t), &p)))
+        if ((result = hs_scoop_read(stream, sizeof (uint32_t), &p)))
                 return result;
 
         *v = ntohl(* (uint32_t const *) p);
@@ -97,12 +97,12 @@ enum hs_result _hs_suck_n32(hs_stream_t *stream, int *v)
 }
 
 
-enum hs_result _hs_suck_n8(hs_stream_t *stream, int *v)
+enum hs_result hs_suck_n8(hs_stream_t *stream, int *v)
 {
         void *p;
         int result;
 
-        if ((result = _hs_scoop_read(stream, sizeof (uint8_t), &p)))
+        if ((result = hs_scoop_read(stream, sizeof (uint8_t), &p)))
                 return result;
 
         *v = * (uint8_t const *) p;
@@ -112,49 +112,49 @@ enum hs_result _hs_suck_n8(hs_stream_t *stream, int *v)
 
 
 
-enum hs_result _hs_suck_netint(hs_stream_t *stream, int len, int *v)
+enum hs_result hs_suck_netint(hs_stream_t *stream, int len, int *v)
 {
         switch (len) {
         case 1:
-                return _hs_suck_n8(stream, v);
+                return hs_suck_n8(stream, v);
         case 4:
-                return _hs_suck_n32(stream, v);
+                return hs_suck_n32(stream, v);
         default:
-                _hs_fatal("kaboom! len=%d", len);
+                hs_fatal("kaboom! len=%d", len);
         }
 }
 
 
 
 
-int _hs_fits_in_n8(size_t val)
+int hs_fits_in_n8(size_t val)
 {
         return val <= UINT8_MAX;
 }
 
 
-int _hs_fits_in_n16(size_t val)
+int hs_fits_in_n16(size_t val)
 {
         return val <= UINT16_MAX;
 }
 
 
-int _hs_fits_in_n32(size_t val)
+int hs_fits_in_n32(size_t val)
 {
         return val <= UINT32_MAX;
 }
 
 
-int _hs_int_len(off_t val)
+int hs_int_len(off_t val)
 {
-        if (_hs_fits_in_n8(val))
+        if (hs_fits_in_n8(val))
                 return 1;
-        else if (_hs_fits_in_n16(val))
+        else if (hs_fits_in_n16(val))
                 return 2;
-        else if (_hs_fits_in_n32(val))
+        else if (hs_fits_in_n32(val))
                 return 4;
         else {
-                _hs_fatal("can't handle integer this long yet");
+                hs_fatal("can't handle integer this long yet");
         }
 }
 

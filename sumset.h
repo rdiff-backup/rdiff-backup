@@ -1,8 +1,9 @@
 /*=				       	-*- c-file-style: "linux" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
  * Copyright (C) 1999 by Andrew Tridgell <tridge@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
@@ -26,14 +27,10 @@ typedef unsigned char hs_strong_sum_t[HS_MD4_LENGTH];
 typedef struct hs_rollsum hs_rollsum_t;
 
 
-struct hs_target {
+typedef struct hs_target {
     short           t;
     int             i;
-};
-
-
-/* TODO: Include length of strong checksums in case it varies between
- * files. */
+} hs_target_t;
 
 typedef struct hs_sum_buf hs_sum_buf_t;
 
@@ -43,13 +40,14 @@ typedef struct hs_sum_buf hs_sum_buf_t;
  * search.
  */
 struct hs_sumset {
-    off_t        flength;	/* total file length */
-    int             count;	/* how many chunks */
-    int             remainder;	/* flength % block_length */
-    int             block_len;	/* block_length */
-    hs_sum_buf_t   *block_sums; /* points to info for each chunk */
-    int            *tag_table;
-    struct target  *targets;
+        off_t           flength;	/* total file length */
+        int             count;          /* how many chunks */
+        int             remainder;	/* flength % block_length */
+        int             block_len;	/* block_length */
+        int             strong_sum_len;
+        hs_sum_buf_t   *block_sums;     /* points to info for each chunk */
+        int            *tag_table;
+        hs_target_t    *targets;
 };
 
 

@@ -22,20 +22,20 @@
  */
 
 
-void * _hs_alloc(size_t size, char const *name);
-void *_hs_alloc_struct0(size_t size, char const *name);
+void * hs_alloc(size_t size, char const *name);
+void *hs_alloc_struct0(size_t size, char const *name);
 
-void _hs_bzero(void *buf, size_t size);
+void hs_bzero(void *buf, size_t size);
 
 
 /*
  * Allocate and zero-fill an instance of TYPE.
  */
-#define _hs_alloc_struct(type)				\
-        ((type *) _hs_alloc_struct0(sizeof(type), #type))
+#define hs_alloc_struct(type)				\
+        ((type *) hs_alloc_struct0(sizeof(type), #type))
 
 
-void _hs_readintarg(char const *opt, char const *arg, int *out);
+void hs_readintarg(char const *opt, char const *arg, int *out);
 
 
 

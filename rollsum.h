@@ -38,10 +38,10 @@ struct hs_rollsum {
 #define HS_PAINFUL_HONESTY
 
 
-int _hs_trim_sums(byte_t const *p, hs_rollsum_t * rollsum,
+int hs_trim_sums(byte_t const *p, hs_rollsum_t * rollsum,
                   size_t short_block);
 
-int _hs_stretch_sums(byte_t const *p, size_t full_block,
+int hs_stretch_sums(byte_t const *p, size_t full_block,
                      size_t short_block, hs_rollsum_t * rollsum);
 
-void _hs_roll_reset(hs_rollsum_t * rollsum);
+void hs_roll_reset(hs_rollsum_t * rollsum);

@@ -2,7 +2,7 @@
  *
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
  * Copyright (C) 1996 by Andrew Tridgell
  * Copyright (C) 1996 by Paul Mackerras
  * 
@@ -21,7 +21,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "config.h"
+#include <config.h>
 
 #include <assert.h>
 #include <stdlib.h>
@@ -45,7 +45,7 @@ int checksum_seed = 0;
  * A simple 32 bit checksum that can be updated from either end
  * (inspired by Mark Adler's Adler-32 checksum)
  */
-uint32_t _hs_calc_weak_sum(void const *p, int len)
+uint32_t hs_calc_weak_sum(void const *p, int len)
 {
         int i;
         uint32_t s1, s2;
@@ -79,7 +79,7 @@ uint32_t _hs_calc_weak_sum(void const *p, int len)
  * Since we can't retry a web transaction I'm not sure if it's very
  * useful in rproxy.
  */
-void _hs_calc_strong_sum(void const *buf,
+void hs_calc_strong_sum(void const *buf,
                          size_t len,
                          uint8_t *sum,
                          size_t sum_len)
@@ -93,3 +93,6 @@ void _hs_calc_strong_sum(void const *buf,
 
         memcpy(sum, tsum, sum_len);
 }
+
+
+

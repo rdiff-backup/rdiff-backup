@@ -3,7 +3,7 @@
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,28 +20,20 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+                              /*
+                               * You should never wear your best
+                               * trousers when you go out to fight for
+                               * freedom and liberty.
+                               *        -- Henrik Ibsen
+                               */
+
 
 /*
  * hsync.h: public interface to libhsync.  
  */
 
-extern char const *const hs_libhsync_version;
-extern int const hs_libhsync_file_offset_bits;
-
-
-void hs_show_version(FILE *out, char const *program);
-void hs_show_licence(FILE *out);
-
-/*
- * For the moment, we always work in the C library's off_t.  
- *
- * Supporting large files on 32-bit Linux is *NOT* just a matter of
- * setting these: people will typically need a different libc and
- * possibly an LFS-supported kernel too.  :-(
- *
- * Anyhow, will anyone really have single HTTP requests >=2GB?
- */
-
+extern char const hs_libhsync_version[];
+extern char const hs_licence_string[];
 
 
 /***********************************************************************
@@ -79,15 +71,15 @@ void hs_base64(unsigned char const *buf, int n, char *out);
 
 
 /* Return codes */
-enum hs_result {
+typedef enum hs_result {
         HS_OK =			0,	/* completed successfully */
         HS_BLOCKED =		1, 	/* OK, but more remains to be done */
-        HS_RUN_OK  =            2,      /* not finished or blocked */
+        HS_RUN_OK  =            2,      /* not yet finished or blocked */
         HS_IO_ERROR =		(-1),   /* error in file or network IO */
         HS_MEM_ERROR =		(-2),   /* out of memory */
         HS_SHORT_STREAM	=	(-3),	/* unexpected eof */
         HS_BAD_MAGIC =          (-4)    /* illegal value on stream */
-};
+} hs_result;
 
 
 /***********************************************************************
@@ -127,7 +119,15 @@ void            hs_mdfour_result(hs_mdfour_t * md, unsigned char *out);
 char *hs_format_stats(hs_stats_t const *, char *, size_t);
 int hs_log_stats(hs_stats_t const *stats);
 
-char const *hs_strerror(enum hs_result r);
+char const *hs_strerror(hs_result r);
+
+
+
+typedef struct hs_sumset hs_sumset_t;
+
+void hs_free_sumset(hs_sumset_t *);
+void hs_sumset_dump(hs_sumset_t const *);
+
 
 /***********************************************************************
  * All encoding routines follow a calling protocol similar to that of
@@ -163,25 +163,22 @@ void hs_stream_init(hs_stream_t *);
 #define HS_DEFAULT_BLOCK_LEN 2048
 
 
-typedef struct hs_mksum_job hs_mksum_job_t;
-hs_mksum_job_t *hs_mksum_begin(hs_stream_t *stream,
+typedef struct hs_job hs_job_t;
+
+hs_job_t       *hs_accum_begin(hs_stream_t *);
+
+hs_result       hs_job_iter(hs_job_t *, int ending);
+hs_result       hs_job_free(hs_job_t *);
+
+int             hs_accum_value(hs_job_t *, char *sum, size_t sum_len);
+
+hs_job_t       *hs_mksum_begin(hs_stream_t *stream,
                                size_t new_block_len, size_t strong_sum_len);
-int             hs_mksum_iter(hs_mksum_job_t * job, int ending);
-int             hs_mksum_finish(hs_mksum_job_t * job);
 
-typedef struct hs_delta_job hs_delta_job_t;
-hs_delta_job_t *hs_delta_begin(hs_stream_t *stream);
-int             hs_delta_iter(hs_delta_job_t *, int ending);
-int             hs_delta_finish(hs_delta_job_t *);
-
+hs_job_t       *hs_delta_begin(hs_stream_t *stream);
 
 /* Callback used to retrieve parts of the basis file. */
-typedef enum hs_result (hs_copy_cb)(void *opaque, size_t *len, void **result);
+typedef hs_result (hs_copy_cb)(void *opaque, size_t *len, void **result);
 
-typedef struct hs_patch_job hs_patch_job_t;
-hs_patch_job_t *hs_patch_begin(hs_stream_t *stream, hs_copy_cb *, void *copy_arg);
-int             hs_patch_iter(hs_patch_job_t *);
-int             hs_patch_finish(hs_patch_job_t *);
-
-
+hs_job_t       *hs_patch_begin(hs_stream_t *, hs_copy_cb *, void *copy_arg);
 

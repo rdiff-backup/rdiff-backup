@@ -21,7 +21,7 @@
  */
 
 
-#include "config.h"
+#include <config.h>
 
 #include <assert.h>
 #include <stdlib.h>
@@ -31,7 +31,7 @@
 #include "command.h"
 
 /* For debugging purposes, here are some human-readable forms. */
-struct hs_op_kind_name const _hs_op_kind_names[] = {
+struct hs_op_kind_name const hs_op_kind_names[] = {
     {"EOF",       HS_KIND_EOF },
     {"COPY",      HS_KIND_COPY },
     {"LITERAL",   HS_KIND_LITERAL },
@@ -45,11 +45,11 @@ struct hs_op_kind_name const _hs_op_kind_names[] = {
 /*
  * Return a human-readable name for KIND.
  */
-char const * _hs_op_kind_name(enum hs_op_kind kind)
+char const * hs_op_kind_name(enum hs_op_kind kind)
 {
         const struct hs_op_kind_name *k;
 
-        for (k = _hs_op_kind_names; k->kind; k++) {
+        for (k = hs_op_kind_names; k->kind; k++) {
                 if (k->kind == kind) {
                         return k->name;
                 }

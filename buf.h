@@ -1,9 +1,9 @@
-/*=				       	-*- c-file-style: "linux" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+/*=                                     -*- c-file-style: "linux" -*-
+ *
+ * libhsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
- * Copyright (C) 1999 by Andrew Tridgell <tridge@linuxcare.com.au>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -20,7 +20,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+typedef struct hs_filebuf hs_filebuf_t;
 
-void hs_mksum_of_block(byte_t const *p, ssize_t len,
-			hs_write_fn_t write_fn, void *write_priv,
-			size_t strong_sum_len);
+hs_filebuf_t *hs_filebuf_new(FILE *f, hs_stream_t *stream, size_t buf_len);
+
+void hs_filebuf_free(hs_filebuf_t *fb);
+
+hs_result hs_infilebuf_fill(hs_filebuf_t *fb);
+
+hs_result hs_outfilebuf_drain(hs_filebuf_t *);

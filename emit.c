@@ -28,7 +28,7 @@
                                */
 
 
-#include "config.h"
+#include <config.h>
 
 #include <assert.h>
 
@@ -55,19 +55,19 @@
  * Write the magic for the start of a delta.
  */
 void
-_hs_emit_delta_header(hs_stream_t *stream)
+hs_emit_delta_header(hs_stream_t *stream)
 {
-    _hs_trace("emit DELTA");
-    _hs_squirt_n32(stream, HS_DELTA_MAGIC);
+    hs_trace("emit DELTA");
+    hs_squirt_n32(stream, HS_DELTA_MAGIC);
 }
 
 
 
 /* Write a LITERAL command. */
 void
-_hs_emit_literal_cmd(hs_stream_t *stream, int len)
+hs_emit_literal_cmd(hs_stream_t *stream, int len)
 {
-    _hs_trace("emit LITERAL(%d)", len);
-    _hs_squirt_n8(stream, HS_OP_LITERAL_N32);
-    _hs_squirt_n32(stream, len);
+    hs_trace("emit LITERAL(%d)", len);
+    hs_squirt_n8(stream, HS_OP_LITERAL_N32);
+    hs_squirt_n32(stream, len);
 }

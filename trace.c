@@ -3,7 +3,7 @@
  * libhsync -- library for network deltas
  * $Id$
  *
- * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,7 +27,7 @@
                                       | There are lumps in it.
                                       */
 
-#include "config.h"
+#include <config.h>
 
 #include <unistd.h>
 #include <stdio.h>
@@ -45,11 +45,9 @@
 #include "trace.h"
 
 
-int const hs_libhsync_file_offset_bits = SIZEOF_OFF_T * 8;
+hs_trace_fn_t  *hs_trace_impl = hs_trace_stderr;
 
-hs_trace_fn_t  *_hs_trace_impl = hs_trace_stderr;
-
-static int _hs_trace_level = LOG_INFO;
+static int hs_trace_level = LOG_INFO;
 
 #ifdef HAVE_PROGRAM_INVOCATION_NAME
 #  define MY_NAME program_invocation_short_name
@@ -57,13 +55,13 @@ static int _hs_trace_level = LOG_INFO;
 #  define MY_NAME "libhsync"
 #endif
 
-static void _hs_log_va(int level, char const *fn, char const *fmt, va_list va);
+static void hs_log_va(int level, char const *fn, char const *fmt, va_list va);
 
 /* Called by the application to set the destination of trace * information. */
 void
 hs_trace_to(hs_trace_fn_t * new_impl)
 {
-    _hs_trace_impl = new_impl;
+    hs_trace_impl = new_impl;
 }
 
 
@@ -71,14 +69,14 @@ hs_trace_to(hs_trace_fn_t * new_impl)
 void
 hs_trace_set_level(int level)
 {
-    _hs_trace_level = level;
+    hs_trace_level = level;
 }
 
 
 static void
-_hs_log_va(int level, char const *fn, char const *fmt, va_list va)
+hs_log_va(int level, char const *fn, char const *fmt, va_list va)
 {
-    if (_hs_trace_impl && level <= _hs_trace_level) {
+    if (hs_trace_impl && level <= hs_trace_level) {
         char            buf[1000];
         char            full_buf[1000];
 
@@ -87,7 +85,7 @@ _hs_log_va(int level, char const *fn, char const *fmt, va_list va)
         snprintf(full_buf, sizeof full_buf - 1,
                  "%s: %s: %s\n", MY_NAME, fn, buf);
 
-	_hs_trace_impl(level, full_buf);
+	hs_trace_impl(level, full_buf);
     }
 }
 
@@ -96,12 +94,12 @@ _hs_log_va(int level, char const *fn, char const *fmt, va_list va)
 /* This function is called by a macro that prepends the calling function
  * name, etc.  */
 void
-_hs_log0(int level, char const *fn, char const *fmt, ...)
+hs_log0(int level, char const *fn, char const *fmt, ...)
 {
     va_list         va;
 
     va_start(va, fmt);
-    _hs_log_va(level, fn, fmt, va);
+    hs_log_va(level, fn, fmt, va);
     va_end(va);
 }
 
@@ -117,12 +115,12 @@ hs_trace_stderr(int UNUSED(level), char const *msg)
 /* This is called directly if the machine doesn't allow varargs
  * macros. */
 void
-_hs_fatal0(char const *s, ...) 
+hs_fatal0(char const *s, ...) 
 {
     va_list	va;
 
     va_start(va, s);
-    _hs_log_va(LOG_CRIT, PACKAGE, s, va);
+    hs_log_va(LOG_CRIT, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -130,12 +128,12 @@ _hs_fatal0(char const *s, ...)
 /* This is called directly if the machine doesn't allow varargs
  * macros. */
 void
-_hs_error0(char const *s, ...) 
+hs_error0(char const *s, ...) 
 {
     va_list	va;
 
     va_start(va, s);
-    _hs_log_va(LOG_ERR, PACKAGE, s, va);
+    hs_log_va(LOG_ERR, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -143,12 +141,12 @@ _hs_error0(char const *s, ...)
 /* This is called directly if the machine doesn't allow varargs
  * macros. */
 void
-_hs_trace0(char const *s, ...) 
+hs_trace0(char const *s, ...) 
 {
     va_list	va;
 
     va_start(va, s);
-    _hs_log_va(LOG_DEBUG, PACKAGE, s, va);
+    hs_log_va(LOG_DEBUG, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -161,9 +159,9 @@ _hs_trace0(char const *s, ...)
 int
 hs_supports_trace(void)
 {
-#ifdef DO_HS_TRACE
+#ifdef DOHS_TRACE
     return 1;
 #else
     return 0;
-#endif				/* !DO_HS_TRACE */
+#endif				/* !DOHS_TRACE */
 }

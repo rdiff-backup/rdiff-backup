@@ -1,8 +1,9 @@
 /*				       	-*- c-file-style: "linux" -*-
- * libhsync -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
  * Copyright (C) 1997-1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -21,14 +22,17 @@
  */
 
 /* NOTE: This code makes no attempt to be fast!
+ *
+ * It assumes that a int is at least 32 bits long
+ *
+ * TODO: Recode to be fast, and to use system integer types.  Perhaps
+ * if we can find an mdfour implementation already on the system
+ * (e.g. in OpenSSL) then we should use it instead of our own?
+ *
+ * TODO: Apparently rsync 2.4 now has a fast MD4 routine.  So we
+ * should copy that into here.  */
 
-   It assumes that a int is at least 32 bits long
-
-   TODO: Recode to be fast, and to use system integer types.  Perhaps if we
-   can find an mdfour implementation already on the system (e.g. in OpenSSL)
-   then we should use it instead of our own? */
-
-#include "config.h"
+#include <config.h>
 
 
 #include <stdlib.h>

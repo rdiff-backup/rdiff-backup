@@ -45,14 +45,14 @@
 #define gettag(sum) gettag2((sum)&0xFFFF,(sum)>>16)
 
 static int
-_hs_compare_targets(struct target const *t1, struct target const *t2)
+hs_compare_targets(struct target const *t1, struct target const *t2)
 {
     return ((int) t1->t - (int) t2->t);
 }
 
 
 int
-_hs_build_hash_table(hs_sumset_t * sums)
+hs_build_hash_table(hs_sumset_t * sums)
 {
     int                     i;
 
@@ -70,7 +70,7 @@ _hs_build_hash_table(hs_sumset_t * sums)
          * care?  */
 	qsort(sums->targets, sums->count,
 	      sizeof(sums->targets[0]),
-              (int (*)(const void *, const void *)) _hs_compare_targets);
+              (int (*)(const void *, const void *)) hs_compare_targets);
     }
 
     for (i = 0; i < TABLESIZE; i++)
@@ -95,7 +95,7 @@ _hs_build_hash_table(hs_sumset_t * sums)
  * anything.
  */
 int
-_hs_search_for_block(hs_weak_sum_t weak_sum,
+hs_search_for_block(hs_weak_sum_t weak_sum,
 		     byte_t const *inbuf, size_t block_len,
 		     hs_sumset_t const *sums, hs_stats_t * stats,
 		     off_t * match_where)
@@ -128,10 +128,10 @@ _hs_search_for_block(hs_weak_sum_t weak_sum,
 
 	token = sums->block_sums[i].i;
 
-	_hs_trace("found weak match for %08x in token %d", weak_sum, token);
+	hs_trace("found weak match for %08x in token %d", weak_sum, token);
 
 	if (!got_strong) {
-	    _hs_calc_strong_sum(inbuf, block_len, strong_sum,
+	    hs_calc_strong_sum(inbuf, block_len, strong_sum,
 				DEFAULT_SUM_LENGTH);
 	    got_strong = 1;
 	}
@@ -144,7 +144,7 @@ _hs_search_for_block(hs_weak_sum_t weak_sum,
 	    *match_where = (token - 1) * sums->block_len;
 	    return 1;
 	} else {
-	    _hs_trace("this was a false positive, the strong sums "
+	    hs_trace("this was a false positive, the strong sums "
 		      "don't match");
 	    stats->false_matches++;
 	}

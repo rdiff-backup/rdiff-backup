@@ -20,7 +20,7 @@
 #undef _LARGEFILE_SOURCE
 #undef _LARGEFILE64_SOURCE
 
-/* How many bits in an off_t? */
+/* How many bits would you like to have in an off_t? */
 #undef _FILE_OFFSET_BITS
 
 /* Define to include GNU C library extensions. */

@@ -3,7 +3,7 @@
  * libhsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -20,6 +20,15 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+                              /*
+                               * Is it possible that software is not
+                               * like anything else, that it is meant
+                               * to be discarded: that the whole point
+                               * is to always see it as a soap bubble?
+                               *        -- Alan Perlis
+                               */
+
+
 
 /*
  * whole.c -- This module contains routines for processing whole files
@@ -28,162 +37,72 @@
  * they are.
  */
 
-#include "config.h"
+#include <config.h>
 
 #include <assert.h>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <sys/file.h>
 #include <string.h>
-#include <syslog.h>
+
 #include <errno.h>
 
 #include "trace.h"
 #include "fileutil.h"
 #include "hsync.h"
 #include "hsyncfile.h"
+#include "job.h"
+#include "buf.h"
+#include "whole.h"
 
-/* This should probably be a parameter to all functions instead, but
- * I'm not sure I want to keep it. */
-extern int output_mode;
-
-enum hs_result
-hs_rdiff_delta(int argc, char **argv)
+/*
+ * Run a job continuously, with input to/from the two specified files.
+ * The job should already be set up.
+ */
+hs_result
+hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
 {
-    FILE *new_file, *sig_file, *delta_file;
-    
-    if (argc != 4) {
-	_hs_error("Delta operation needs three filenames: "
-		  "SIGNATURE NEWFILE DELTA");
-	return 1;
-    }
-    
-    _hs_fatal("no longer implemented");
-}
+        hs_stream_t     *stream = job->stream;
+        hs_result       result, iores;
+        hs_filebuf_t    *in_fb, *out_fb;
+        int             ending = 0;
 
-
-enum hs_result hs_rdiff_md4(int argc, char **argv)
-{
-	unsigned char          result[HS_MD4_LENGTH];
-	char            result_str[HS_MD4_LENGTH * 3];
-	FILE *in_file;
-	char *inbuf = malloc(hs_inbuflen);
-	int len;
-	hs_mdfour_t md4;
-
-	if (argc != 2) {
-		_hs_error("MD4 operation needs one filename");
-		return 1;
-	}
-    
-	in_file = _hs_file_open(argv[1], O_RDONLY);
-	assert(inbuf);
-
-	hs_mdfour_begin(&md4);
-	while (!feof(in_file)) {
-		len = fread(inbuf, hs_inbuflen, 1, in_file);
-		if (len < 0) {
-			_hs_fatal("%s: %s", argv[1], strerror(errno));
-			return 1;
-		}
-		hs_mdfour_update(&md4, inbuf, len);
-	}
-
-	hs_mdfour_result(&md4, result);
-	hs_hexify(result_str, result, HS_MD4_LENGTH);
-
-	printf("%s\n", result_str);
-
-	return 0;
-}
-
-
-
-enum hs_result hs_rdiff_patch(int argc, char *argv[])
-{
-        FILE *old_file, *delta_file, *new_file;
-        char *outbuf;
-        HSFILE *patch;
-        enum hs_result result;
-        size_t len;
-
-        if (argc != 4) {
-                _hs_error("Patch operation needs three filenames: "
-                          "OLDFILE DELTA NEWFILE");
-                return 1;
-        }
-
-        old_file = _hs_file_open(argv[1], O_RDONLY);
-        delta_file = _hs_file_open(argv[2], O_RDONLY);
-        new_file = _hs_file_open(argv[3], output_mode);
-
-        outbuf = malloc(hs_outbuflen);
-        assert(outbuf);
-        patch = hs_patch_open(old_file, delta_file);
+        in_fb = hs_filebuf_new(in_file, stream, hs_inbuflen);
+        out_fb = hs_filebuf_new(out_file, stream, hs_outbuflen);
 
         do {
-                len = hs_outbuflen;
-                result = hs_patch_read(patch, outbuf, &len);
-                fwrite(outbuf, len, 1, new_file);
-        } while (result == HS_BLOCKED);
+                iores = hs_infilebuf_fill(in_fb);
+                if (iores != HS_OK)
+                        return iores;
 
-        if (result != HS_OK)
-                goto failed;
-
-        return 0;
-
- failed:
-        _hs_error("patch failed: %s", hs_strerror(result));
-    
-        return 1;
+                result = hs_job_iter(job, ending);
+                if (result != HS_OK  &&  result != HS_BLOCKED)
+                        return result;
+                                
+                iores = hs_outfilebuf_drain(out_fb);
+                if (iores != HS_OK)
+                        return iores;
+        } while (result != HS_OK);
+                
+        return result;
 }
 
 
-
-
-enum hs_result hs_rdiff_signature(int argc, char *argv[])
+hs_result
+hs_whole_signature(FILE *old_file, FILE *sig_file, size_t new_block_len,
+                   size_t strong_len)
 {
-        FILE *old_file, *sig_file;
-        char *inbuf;
-        HSFILE *mksum;
-        int len;
-        enum hs_result result;
-    
-        if (argc != 3) {
-                _hs_error("Signature operation needs two filenames");
-                return 1;
-        }
-    
-        old_file = _hs_file_open(argv[1], O_RDONLY);
-        sig_file = _hs_file_open(argv[2], output_mode);
+        hs_result       result;
+        hs_job_t        *job;
+        hs_stream_t     stream;
 
-        inbuf = malloc(hs_inbuflen);
-        mksum = hs_mksum_open(sig_file, HS_DEFAULT_BLOCK_LEN,
-                              HS_DEFAULT_STRONG_LEN);
+        hs_stream_init(&stream);
+        job = hs_mksum_begin(&stream, new_block_len, strong_len);
 
-        do {
-                len = fread(inbuf, 1, hs_inbuflen, old_file);
-                if (len < 0) {
-                        _hs_error("%s: %s", argv[1], strerror(errno));
-                        return 1;
-                } 
+        result = hs_whole_run(job, old_file, sig_file);
 
-                _hs_trace("got %d bytes from input file", len);
-                result = hs_mksum_write(mksum, inbuf, len);
-                if (result != HS_BLOCKED && result != HS_OK)
-                        goto failed;
-        } while (!feof(old_file));
+        hs_job_free(job);
 
-        result = hs_mksum_close(mksum);
-        if (result != HS_OK)
-                goto failed;
-
-        return 0;
-
- failed:
-        _hs_error("signature failed: %s", hs_strerror(result));
-    
-        return 1;
+        return result;
 }

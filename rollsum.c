@@ -27,22 +27,22 @@
 
 
 void
-_hs_roll_reset(hs_rollsum_t * rollsum)
+hs_roll_reset(hs_rollsum_t * rollsum)
 {
     hs_bzero(rollsum, sizeof *rollsum);
 }
 
 
 int
-_hs_stretch_sums(byte_t const *bytep, size_t full_block,
+hs_stretch_sums(byte_t const *bytep, size_t full_block,
 		size_t short_block, hs_rollsum_t * rollsum)
 {
     /* Checksum calculations are signed */
     int8_t const     *p = (int8_t const *) bytep;
     
     if (!rollsum->havesum) {
-	rollsum->weak_sum = _hs_calc_weak_sum(p, short_block);
-	_hs_trace("recalculate checksum: weak=%#x", rollsum->weak_sum);
+	rollsum->weak_sum = hs_calc_weak_sum(p, short_block);
+	hs_trace("recalculate checksum: weak=%#x", rollsum->weak_sum);
 	rollsum->s1 = rollsum->weak_sum & 0xFFFF;
 	rollsum->s2 = rollsum->weak_sum >> 16;
     } else {
@@ -68,7 +68,7 @@ _hs_stretch_sums(byte_t const *bytep, size_t full_block,
 
 /* One byte rolls off the checksum. */
 int
-_hs_trim_sums(byte_t const *bytep, hs_rollsum_t * rollsum, size_t short_block)
+hs_trim_sums(byte_t const *bytep, hs_rollsum_t * rollsum, size_t short_block)
 {
     /* Checksum calculations are signed */
     int8_t const     *p = (int8_t const *) bytep;

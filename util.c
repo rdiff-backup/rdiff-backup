@@ -25,7 +25,7 @@
                                  */
 
 
-#include "config.h"
+#include <config.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,33 +34,33 @@
 #include "trace.h"
 
 void
-_hs_bzero(void *buf, size_t size)
+hs_bzero(void *buf, size_t size)
 {
     memset(buf, 0, size);
 }
 
 
 void *
-_hs_alloc_struct0(size_t size, char const *name)
+hs_alloc_struct0(size_t size, char const *name)
 {
     void           *p;
 
     if (!(p = malloc(size))) {
-        _hs_fatal("couldn't allocate instance of %s", name);
+        hs_fatal("couldn't allocate instance of %s", name);
     }
-    _hs_bzero(p, size);
+    hs_bzero(p, size);
     return p;
 }
 
 
 
 void *
-_hs_alloc(size_t size, char const *name)
+hs_alloc(size_t size, char const *name)
 {
     void           *p;
 
     if (!(p = malloc(size))) {
-        _hs_fatal("couldn't allocate instance of %s", name);
+        hs_fatal("couldn't allocate instance of %s", name);
     }
 
     return p;
@@ -69,7 +69,7 @@ _hs_alloc(size_t size, char const *name)
 
 
 void
-_hs_readintarg(char const *opt, char const *arg, int *out)
+hs_readintarg(char const *opt, char const *arg, int *out)
 {
     char *o;
 

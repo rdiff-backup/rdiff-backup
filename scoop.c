@@ -59,7 +59,7 @@
                                |   -- Shihad, `The General Electric'.
                                */
 
-#include "config.h"
+#include <config.h>
 
 #include <assert.h>
 #include <stdlib.h>
@@ -75,7 +75,7 @@
 /*
  * Try to accept from the input buffer to get LEN bytes in the scoop. 
  */
-static void _hs_scoop_input(hs_stream_t *stream, size_t len)
+static void hs_scoop_input(hs_stream_t *stream, size_t len)
 {
         hs_simpl_t *impl = stream->impl;
         size_t tocopy;
@@ -86,14 +86,14 @@ static void _hs_scoop_input(hs_stream_t *stream, size_t len)
                 /* need to allocate a new buffer, too */
                 char *newbuf;
                 int newsize = 2 * len;
-                newbuf = _hs_alloc(newsize, "scoop buffer");
+                newbuf = hs_alloc(newsize, "scoop buffer");
                 if (impl->scoop_avail)
                         memcpy(newbuf, impl->scoop_next, impl->scoop_avail);
                 if (impl->scoop_buf)
                         free(impl->scoop_buf);
                 impl->scoop_buf = impl->scoop_next = newbuf;
                 impl->scoop_alloc = newsize;
-                _hs_trace("resized scoop buffer to %d bytes",
+                hs_trace("resized scoop buffer to %d bytes",
                           impl->scoop_alloc);
         } else {
                 /* this buffer size is fine, but move the existing
@@ -110,7 +110,7 @@ static void _hs_scoop_input(hs_stream_t *stream, size_t len)
         assert(tocopy + impl->scoop_avail <= impl->scoop_alloc);
 
         memcpy(impl->scoop_next + impl->scoop_avail, stream->next_in, tocopy);
-        _hs_trace("accepted %d bytes from input to scoop", tocopy);
+        hs_trace("accepted %d bytes from input to scoop", tocopy);
         impl->scoop_avail += tocopy;
         stream->next_in += tocopy;
         stream->avail_in -= tocopy;
@@ -126,18 +126,18 @@ static void _hs_scoop_input(hs_stream_t *stream, size_t len)
  * after examining that block, we might decide to advance over all of
  * it (if there is a match), or just one byte (if not).
  */
-void _hs_scoop_advance(hs_stream_t *stream, size_t len)
+void hs_scoop_advance(hs_stream_t *stream, size_t len)
 {
         hs_simpl_t *impl = stream->impl;
         
         if (impl->scoop_avail) {
                 /* reading from the scoop buffer */
-                _hs_trace("advance over %d bytes from scoop", len);
+                hs_trace("advance over %d bytes from scoop", len);
                 assert(len <= impl->scoop_avail);
                 impl->scoop_avail -= len;
                 impl->scoop_next += len;
         } else {
-                _hs_trace("advance over %d bytes from input buffer", len);
+                hs_trace("advance over %d bytes from input buffer", len);
                 assert(len <= stream->avail_in);
                 stream->avail_in -= len;
                 stream->next_in += len;
@@ -155,47 +155,47 @@ void _hs_scoop_advance(hs_stream_t *stream, size_t len)
  *
  * The data is not actually removed from the input, so this function
  * lets you do readahead.  If you want to keep any of the data, you
- * should also call _hs_scoop_advance to skip over it.
+ * should also call hs_scoop_advance to skip over it.
  */
-enum hs_result _hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
+enum hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
 {
         hs_simpl_t *impl = stream->impl;
         
-        _hs_stream_check(stream);
+        hs_stream_check(stream);
         if (impl->scoop_avail >= len) {
                 /* We have enough data queued to satisfy the request,
                  * so go straight from the scoop buffer. */
-                _hs_trace("got %d bytes direct from scoop", len);
+                hs_trace("got %d bytes direct from scoop", len);
                 *ptr = impl->scoop_next;
                 return HS_OK;
         } else if (impl->scoop_avail) {
                 /* We have some data in the scoop, but not enough to
                  * satisfy the request. */
-                _hs_trace("data is present in the scoop and must be used");
-                _hs_scoop_input(stream, len);
+                hs_trace("data is present in the scoop and must be used");
+                hs_scoop_input(stream, len);
 
                 if (impl->scoop_avail < len) {
-                        _hs_trace("still only have %d bytes in scoop, not enough",
+                        hs_trace("still only have %d bytes in scoop, not enough",
                                   impl->scoop_avail);
                         return HS_BLOCKED;
                 } else {
-                        _hs_trace("scoop now has %d bytes, this is enough",
+                        hs_trace("scoop now has %d bytes, this is enough",
                                   impl->scoop_avail);
                         *ptr = impl->scoop_next;
                         return HS_OK;
                 }
         } else if (stream->avail_in >= len) {
                 /* There's enough data in the stream's input */
-                _hs_trace("got %d bytes direct from input", len);
+                hs_trace("got %d bytes direct from input", len);
                 *ptr = stream->next_in;
                 return HS_OK;
         } else {
                 /* Nothing was queued before, but we don't have enough
                  * data to satisfy the request.  So queue what little
                  * we have, and try again next time. */
-                _hs_trace("not enough data to satisfy request, scooping %d bytes",
+                hs_trace("not enough data to satisfy request, scooping %d bytes",
                           impl->scoop_avail);
-                _hs_scoop_input(stream, len);
+                hs_scoop_input(stream, len);
                 return HS_BLOCKED;
         }
 }
@@ -206,13 +206,13 @@ enum hs_result _hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
  * Read LEN bytes if possible, and remove them from the input scoop.
  * If there's not enough data yet, return HS_BLOCKED.
  */
-enum hs_result _hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr)
+enum hs_result hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr)
 {
         enum hs_result result;
 
-        result = _hs_scoop_readahead(stream, len, ptr);
+        result = hs_scoop_readahead(stream, len, ptr);
         if (result == HS_OK)
-                _hs_scoop_advance(stream, len);
+                hs_scoop_advance(stream, len);
 
         return result;
 }
@@ -223,11 +223,11 @@ enum hs_result _hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr)
  * Read whatever remains in the input stream, assuming that it runs up
  * to the end of the file.  Set LEN appropriately.
  */
-enum hs_result _hs_scoop_read_rest(hs_stream_t *stream, size_t *len, void **ptr)
+enum hs_result hs_scoop_read_rest(hs_stream_t *stream, size_t *len, void **ptr)
 {
         hs_simpl_t *impl = stream->impl;
 
         *len = impl->scoop_avail + stream->avail_in;
 
-        return _hs_scoop_read(stream, *len, ptr);
+        return hs_scoop_read(stream, *len, ptr);
 }

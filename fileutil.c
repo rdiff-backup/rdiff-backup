@@ -21,7 +21,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "config.h"
+#include <config.h>
 
 #ifdef HAVE_STDINT_H
 #  include <stdint.h>
@@ -42,13 +42,13 @@
 
 
 void
-_hs_file_close(int fd)
+hs_file_close(int fd)
 {
     if (fd == -1)
-        _hs_error("warning: close called with fd of -1");
+        hs_error("warning: close called with fd of -1");
     
     if (close(fd) == -1) {
-        _hs_error("error closing fd %d: %s",
+        hs_error("error closing fd %d: %s",
                   fd, strerror(errno));
     }
 }
@@ -58,7 +58,7 @@ _hs_file_close(int fd)
  * Open a file, with special handling for `-' on input and output.
  */
 FILE *
-_hs_file_open(char const *filename, int mode)
+hs_file_open(char const *filename, int mode)
 {
     int             fd;
     FILE           *f;
@@ -80,7 +80,7 @@ _hs_file_open(char const *filename, int mode)
 
     fd = open(filename, mode, 0666);
     if (fd == -1) {
-	_hs_error("Error opening \"%s\" for %s: %s", filename,
+	hs_error("Error opening \"%s\" for %s: %s", filename,
 		  (mode & O_WRONLY) ? "write" : "read",
 		  strerror(errno));
 	exit(1);
@@ -88,7 +88,7 @@ _hs_file_open(char const *filename, int mode)
 
     f = fdopen(fd, is_write ? "w" : "r");
     if (!f) {
-	_hs_error("Error opening stream on fd%d: %s", fd,
+	hs_error("Error opening stream on fd%d: %s", fd,
 		  strerror(errno));
 	exit(1);
     }

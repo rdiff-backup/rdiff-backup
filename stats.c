@@ -34,7 +34,7 @@ hs_log_stats(hs_stats_t const *stats)
     char buf[1000];
 
     hs_format_stats(stats, buf, sizeof buf - 1);
-    _hs_log(LOG_INFO, "%s", buf);
+    hs_log(LOG_INFO, "%s", buf);
     return 0;
 }
 

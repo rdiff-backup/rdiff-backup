@@ -36,21 +36,21 @@
  * fatal terminates the whole process
  */
 
-void _hs_fatal0(char const *s, ...);
-void _hs_error0(char const *s, ...);
-void _hs_trace0(char const *s, ...);
+void hs_fatal0(char const *s, ...);
+void hs_error0(char const *s, ...);
+void hs_trace0(char const *s, ...);
 
 #ifdef __GNUC__
 
-void _hs_log0(int level, char const *fn, char const *fmt, ...)
+void hs_log0(int level, char const *fn, char const *fmt, ...)
     __attribute__ ((format(printf, 3, 4)));
 
 #ifdef DO_HS_TRACE
-#  define _hs_trace(fmt, arg...)                                \
-    do { _hs_log0(LOG_DEBUG, __FUNCTION__, fmt , ##arg);  \
+#  define hs_trace(fmt, arg...)                                \
+    do { hs_log0(LOG_DEBUG, __FUNCTION__, fmt , ##arg);  \
     } while (0)
 #else
-#  define _hs_trace(s, str...)
+#  define hs_trace(s, str...)
 #endif	/* !DO_HS_TRACE */
 
 /*
@@ -62,18 +62,18 @@ void _hs_log0(int level, char const *fn, char const *fmt, ...)
  * whatever it's called.
  */
 
-#define _hs_log(l, s, str...) do {              \
-     _hs_log0(l, __FUNCTION__, (s) , ##str);    \
+#define hs_log(l, s, str...) do {              \
+     hs_log0(l, __FUNCTION__, (s) , ##str);    \
      } while (0)
 
 
-#define _hs_error(s, str...) do {                       \
-     _hs_log0(LOG_ERR,  __FUNCTION__, (s) , ##str);     \
+#define hs_error(s, str...) do {                       \
+     hs_log0(LOG_ERR,  __FUNCTION__, (s) , ##str);     \
      } while (0)
 
 
-#define _hs_fatal(s, str...) do {               \
-     _hs_log0(LOG_CRIT,  __FUNCTION__,          \
+#define hs_fatal(s, str...) do {               \
+     hs_log0(LOG_CRIT,  __FUNCTION__,          \
 	      (s) , ##str);                     \
      abort();                                   \
      } while (0)
@@ -81,12 +81,12 @@ void _hs_log0(int level, char const *fn, char const *fmt, ...)
 
 #else /************************* ! __GNUC__ */
 
-#  define _hs_fatal _hs_fatal0
-#  define _hs_error _hs_error0
+#  define hs_fatal hs_fatal0
+#  define hs_error hs_error0
 
 #  ifdef DO_HS_TRACE
-#    define _hs_trace _hs_trace0
-void            _hs_log0(int, char const *, ...);
+#    define hs_trace hs_trace0
+void            hs_log0(int, char const *, ...);
 #  endif			/* DO_HS_TRACE */
 #endif				/* ! __GNUC__ */
 

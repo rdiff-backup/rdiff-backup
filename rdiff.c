@@ -3,7 +3,7 @@
  * rdiff -- generate and apply rsync signatures and deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,7 +25,7 @@
 			       * to the dead.
 			       *	      -- Harold Bloom		    */
 
-#include "config.h"
+#include <config.h>
 
 #include <assert.h>
 #include <sys/types.h>
@@ -79,7 +79,7 @@ static void show_usage(void)
     printf("Usage: %s [OPTIONS] signature OLDFILE SIGNATURE\n"
            "   or: %s [OPTIONS] delta SIGNATURE NEWFILE DELTA\n"
            "   or: %s [OPTIONS] patch OLDFILE DELTA NEWFILE\n"
-           "   or: %s [OPTIONS] md4 INPUT\n"
+           "   or: %s [OPTIONS] sum INPUT\n"
            "\n"
            "Compute rsync checksums or deltas, or apply a delta.\n"
            "\n"
@@ -112,20 +112,20 @@ static void process_args(int argc, char **argv)
 	    show_usage();
 	    exit(0);
 	case 'I':
-	    _hs_readintarg(argv[optind], optarg, &hs_inbuflen);
+	    hs_readintarg(argv[optind], optarg, &hs_inbuflen);
 	    break;
 	case 'O':
-	    _hs_readintarg(argv[optind], optarg, &hs_outbuflen);
+	    hs_readintarg(argv[optind], optarg, &hs_outbuflen);
 	    break;
 	case 'V':
-	    hs_show_version(stdout, PROGRAM);
-	    exit(0);
+                printf("%s (%s)\n", PROGRAM, hs_libhsync_version);
+                exit(0);
         case 'L':
-                hs_show_licence(stdout);
+                puts(hs_licence_string);
                 exit(0);
 	case 'v':
 	    if (!hs_supports_trace()) {
-		_hs_error("library does not support trace");
+		hs_error("library does not support trace");
 	    }
 	    hs_trace_set_level(LOG_DEBUG);
 	    break;
@@ -137,25 +137,157 @@ static void process_args(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
-    process_args(argc, argv);
+        process_args(argc, argv);
 
-    argc -= optind;
-    argv += optind;
+        argc -= optind;
+        argv += optind;
     
-    if (argc <= 0) {
-	;
-    } else if (strisprefix(argv[0], "signature")) {
-	return hs_rdiff_signature(argc, argv);
-    } else if (strisprefix(argv[0], "delta")) {
-	return hs_rdiff_delta(argc, argv);
-     } else if (strisprefix(argv[0], "patch")) {
- 	return hs_rdiff_patch(argc, argv);
-    } else if (strisprefix(argv[0], "md4")) {
-	return hs_rdiff_md4(argc, argv);
+        if (argc <= 0) {
+                ;
+        } else if (strisprefix(argv[0], "signature")) {
+                return hs_rdiff_signature(argc, argv);
+        } else if (strisprefix(argv[0], "delta")) {
+                return hs_rdiff_delta(argc, argv);
+        } else if (strisprefix(argv[0], "patch")) {
+                return hs_rdiff_patch(argc, argv);
+        } else if (strisprefix(argv[0], "sum")) {
+                return hs_rdiff_sum(argc, argv);
+        }
+    
+        hs_error("You must specify one of the signature, delta, "
+                 "patch or sum operations"
+                 ", or try --help.");
+        return 1;
+}
+
+
+
+/* This should probably be a parameter to all functions instead, but
+ * I'm not sure I want to keep it. */
+extern int output_mode;
+
+enum hs_result hs_rdiff_sum(int argc, char **argv)
+{
+#if 0
+    unsigned char          result[HS_MD4_LENGTH];
+    char            result_str[HS_MD4_LENGTH * 3];
+    FILE *in_file;
+
+    if (argc != 2) {
+	hs_error("Sum operation needs one filename");
+	return 1;
     }
     
-    _hs_error("You must specify one of the signature, delta, "
-	      "patch or sum operations"
-	      ", or try --help.");
-    return 1;
+    in_file = hs_file_open(argv[1], O_RDONLY);
+    
+    hs_mdfour_file(in_file, result);
+    hs_hexify(result_str, result, HS_MD4_LENGTH);
+
+    printf("%s\n", result_str);
+
+    return 0;
+#else
+    hs_fatal("not implemented at the moment, back soon");
+#endif
+}
+
+
+
+hs_result
+hs_rdiff_delta(int argc, char **argv)
+{
+#if 0
+        FILE *new_file, *sig_file, *delta_file;
+        hs_job_t *job;
+        hs_stream_t             *stream;
+        char *inbuf, *outbuf;
+        hs_result result;
+    
+        if (argc != 4) {
+                hs_error("Delta operation needs three filenames: "
+                          "SIGNATURE NEWFILE DELTA");
+                return 1;
+        }
+
+        sig_file = hs_file_open(argv[1], O_RDONLY);
+        new_file = hs_file_open(argv[2], O_RDONLY);
+        delta_file = hs_file_open(argv[3], output_mode);
+
+        job = hs_delta_begin(stream);
+
+        /* TODO: read signatures; then close signature file. */
+        return result;
+#else
+    hs_fatal("not implemented at the moment, back soon");
+#endif
+}
+
+
+
+enum hs_result
+hs_rdiff_patch(int argc, char *argv[])
+{
+#if 0
+        FILE *old_file, *delta_file, *new_file;
+        char *outbuf;
+        HSFILE *patch;
+        enum hs_result result;
+        size_t len;
+
+        if (argc != 4) {
+                hs_error("Patch operation needs three filenames: "
+                          "OLDFILE DELTA NEWFILE");
+                return 1;
+        }
+
+        old_file = hs_file_open(argv[1], O_RDONLY);
+        delta_file = hs_file_open(argv[2], O_RDONLY);
+        new_file = hs_file_open(argv[3], output_mode);
+
+        outbuf = malloc(hs_outbuflen);
+        assert(outbuf);
+        patch = hs_patch_open(old_file, delta_file);
+
+        do {
+                len = hs_outbuflen;
+                result = hs_patch_read(patch, outbuf, &len);
+                fwrite(outbuf, len, 1, new_file);
+        } while (result == HS_BLOCKED);
+
+        if (result != HS_OK)
+                goto failed;
+
+        return 0;
+
+ failed:
+        hs_error("patch failed: %s", hs_strerror(result));
+    
+        return 1;
+#else
+    hs_fatal("not implemented at the moment, back soon");
+#endif
+}
+
+
+
+
+hs_result hs_rdiff_signature(int argc, char *argv[])
+{
+        FILE *old_file, *sig_file;
+        hs_result result;
+    
+        if (argc != 3) {
+                hs_error("Signature operation needs two filenames");
+                return 1;
+        }
+    
+        old_file = hs_file_open(argv[1], O_RDONLY);
+        sig_file = hs_file_open(argv[2], output_mode);
+
+        result = hs_whole_signature(old_file, sig_file);
+        
+        if (result != HS_OK)
+                hs_error("signature failed: %s", hs_strerror(result));
+    
+        return result;
 }

@@ -3,7 +3,7 @@
  * libhsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 2001 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -20,8 +20,5 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-enum hs_result _hs_fill_from_file(hs_stream_t *stream,
-                                  char *buf, size_t buf_len, FILE *f);
 
-enum hs_result _hs_drain_to_file(hs_stream_t *stream,
-                                 char *buf, size_t buf_len, FILE *f);
+hs_result hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file);

@@ -34,6 +34,12 @@ FILE=hsync.h
 
 DIE=0
 
+cache="$srcdir/config.cache"
+[ -f "$cache" ] && {
+        echo "Deleting $cache"
+        rm "$cache"
+}
+
 (autoconf --version) < /dev/null > /dev/null 2>&1 || {
 	echo
 	echo "You must have autoconf installed to compile $PROJECT."

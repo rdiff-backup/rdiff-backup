@@ -3,7 +3,7 @@
  * libhsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 2001 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -20,4 +20,30 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+
+/* Generic 'job' state machine. */
+
+struct hs_job {
+	hs_stream_t *stream;
+
+        /* Callback for each processing step. */
+        enum hs_result (*statefn)(hs_job_t *);
+
+        /* Generic storage fields. */
+        size_t          block_len;
+        size_t          strong_sum_len;
+        int             near_end;
+
+        hs_copy_cb      *copy_cb;
+        void            *copy_arg;
+
+        /* Command byte currently being processed, if any, and lengths
+         * of expected parameters. */
+        int op, param1, param2;
+        struct hs_prototab_ent const *cmd;
+        hs_mdfour_t      output_md4;
+};
+
+
+hs_job_t * hs_job_new(hs_stream_t *stream);
 
