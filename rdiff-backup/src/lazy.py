@@ -260,7 +260,7 @@ class IterTreeReducer:
 
 		"""
 		index = args[0]
-		assert type(index) is types.TupleType
+		assert type(index) is types.TupleType, type(index)
 
 		if self.index is None:
 			self.start_process(*args)

@@ -60,21 +60,20 @@ class Select:
 	# This re should not match normal filenames, but usually just globs
 	glob_re = re.compile("(.*[*?[]|ignorecase\\:)", re.I | re.S)
 
-	def __init__(self, rpath, source):
-		"""DSRPIterator initializer.
+	def __init__(self, dsrpath, quoted_filenames = None):
+		"""DSRPIterator initializer.  dsrp is the root directory
 
-		rpath is the root dir.  Source is true if rpath is the root of
-		the source directory, and false for the mirror directory
+		When files have quoted characters in them, quoted_filenames
+		should be true.  Then RPath's index will be the unquoted
+		version.
 
 		"""
-		assert isinstance(rpath, RPath)
+		assert isinstance(dsrpath, DSRPath)
 		self.selection_functions = []
-		self.source = source
-		if isinstance(rpath, DSRPath): self.dsrpath = rpath
-		else: self.dsrpath = DSRPath(rpath.conn, rpath.base,
-									 rpath.index, rpath.data)
+		self.dsrpath = dsrpath
 		self.prefix = self.dsrpath.path
-	
+		self.quoting_on = Globals.quoting_enabled and quoted_filenames
+
 	def set_iter(self, starting_index = None, sel_func = None):
 		"""Initialize more variables, get ready to iterate
 
@@ -106,7 +105,7 @@ class Select:
 
 		"""
 		s = sel_func(dsrpath)
-		if s === 0: return
+		if s == 0: return
 		elif s == 1: # File is included
 			yield dsrpath
 			if dsrpath.isdir():
@@ -122,11 +121,15 @@ class Select:
 
 	def iterate_in_dir(self, dsrpath, rec_func, sel_func):
 		"""Iterate the dsrps in directory dsrpath."""
-		dir_listing = dsrpath.listdir()
-		dir_listing.sort()
-		for filename in dir_listing:
-			for dsrp in rec_func(dsrpath.append(filename), rec_func, sel_func):
-				yield dsrp
+		if self.quoting_on:
+			for subdir in FilenameMapping.get_quoted_dir_children(dsrpath):
+				for dsrp in rec_func(subdir, rec_func, sel_func): yield dsrp
+		else:
+			dir_listing = dsrpath.listdir()
+			dir_listing.sort()
+			for filename in dir_listing:
+				for dsrp in rec_func(dsrpath.append(filename),
+									 rec_func, sel_func): yield dsrp
 
 	def iterate_starting_from(self, dsrpath, rec_func, sel_func):
 		"""Like Iterate, but only yield indicies > self.starting_index"""

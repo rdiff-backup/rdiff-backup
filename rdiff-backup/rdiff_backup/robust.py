@@ -252,7 +252,7 @@ class TempFile(RPath):
 		if self.isdir() and not rp_dest.isdir():
 			# Cannot move a directory directly over another file
 			rp_dest.delete()
-			if (isinstance(rp_dest, DSRPath) and rp_dest.perms_delayed
+			if (isinstance(rp_dest, DSRPath) and rp_dest.delay_perms
 				and not self.hasfullperms()):
 				# If we are moving to a delayed perm directory, delay
 				# permission change on destination.
@@ -531,7 +531,7 @@ class Resume:
 				Log("Last backup dated %s was aborted, but we aren't "
 					"resuming it." % Time.timetopretty(si.time), 2)
 				return None
-		assert 0
+		assert None
 
 MakeClass(Resume)
 
