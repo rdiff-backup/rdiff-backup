@@ -361,12 +361,18 @@ is noisiest).  This determines how much is written to the log file.
 Print the current version and exit
 .TP
 .B --windows-mode
-This option is short for "--chars to quote A-Z: --windows-time-format
---no-hard-links --exclude-special-files" and is appropriate when
-backing a normal unix file system to one that doesn't allow colons in
-filenames, is not case sensitive, and cannot store special files or
-hard links.  If this switch is used for backing up, it must also be
-used when restoring, listing increments, etc.
+This option quotes characters not allowable on windows, and does not
+try to preserve ownership, hardlinks, or permissions on the
+destination side.  It is appropriate when backing up a normal unix
+file system to a windows one such as VFS, or a file system with
+similar limitations.  Because metadata is stored in a separate regular
+file, this option does not prevent all data from being restored.
+.TP
+.B --windows-restore
+This option turns on windows quoting, but does not disable
+permissions, hard linking, or ownership.  Use this when restoring from
+an rdiff-backup directory on a windows file system to a unix file
+system.
 
 .SH EXAMPLES
 Simplest case---backup directory foo to directory bar, with increments

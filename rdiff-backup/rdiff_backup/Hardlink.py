@@ -169,8 +169,7 @@ def restore_link(index, rpath):
 def link_rp(diff_rorp, dest_rpath, dest_root = None):
 	"""Make dest_rpath into a link using link flag in diff_rorp"""
 	if not dest_root: dest_root = dest_rpath # use base of dest_rpath
-	dest_link_rpath = rpath.RPath(dest_root.conn, dest_root.base,
-								  diff_rorp.get_link_flag())
+	dest_link_rpath = dest_root.new_index(diff_rorp.get_link_flag())
 	dest_rpath.hardlink(dest_link_rpath.path)
 
 

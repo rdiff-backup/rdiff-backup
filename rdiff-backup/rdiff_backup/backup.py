@@ -283,8 +283,12 @@ class CacheCollatedPostProcess:
 		"""Remove one element from cache, possibly adding it to metadata"""
 		first_index = self.cache_indicies[0]
 		del self.cache_indicies[0]
-		old_source_rorp, old_dest_rorp, changed_flag, success_flag, inc = \
-						 self.cache_dict[first_index]
+		try: (old_source_rorp, old_dest_rorp, changed_flag,
+			  success_flag, inc) = self.cache_dict[first_index]
+		except KeyError: # probably caused by error in file system (dup)
+			log.Log("Warning index %s missing from CCPP cache" %
+					(first_index,),2)
+			return
 		del self.cache_dict[first_index]
 		self.post_process(old_source_rorp, old_dest_rorp,
 						  changed_flag, success_flag, inc)

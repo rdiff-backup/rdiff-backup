@@ -30,7 +30,7 @@ files), where files is the number of files attached (usually 1 or
 
 from __future__ import generators
 import os, tempfile, UserList, types
-import Globals, rpath, iterfile
+import Globals, rpath, iterfile, log
 
 
 def CollateIterators(*rorp_iters):
@@ -266,16 +266,20 @@ class IterTreeReducer:
 			else: self.root_branch.start_process(*args)
 			self.index = index
 			return 1
-		assert index > self.index, "Index out of order"
-
-		if self.finish_branches(index) is None:
-			return None # We are no longer in the main tree
-		last_branch = self.branches[-1]
-		if last_branch.can_fast_process(*args):
-			last_branch.fast_process(*args)
-		else:
-			branch = self.add_branch(index)
-			branch.start_process(*args)
+		if index == self.index:
+			log.Log("Warning, repeated index %s, bad filesystem?"
+					% (index,), 2)
+		elif index < self.index:
+			assert 0, "Bad index order: %s >= %s" % (self.index, index)
+		else: # normal case
+			if self.finish_branches(index) is None:
+				return None # We are no longer in the main tree
+			last_branch = self.branches[-1]
+			if last_branch.can_fast_process(*args):
+				last_branch.fast_process(*args)
+			else:
+				branch = self.add_branch(index)
+				branch.start_process(*args)
 
 		self.index = index
 		return 1
