@@ -188,6 +188,13 @@ int             hs_patch_finish(hs_patch_job_t *);
  */
 
 
+/*
+ * Buffer sizes for file IO.  You probably only need to change these
+ * in testing.
+ */
+extern int hs_inbuflen, hs_outbuflen;
+
+
 /* stdio-like file type */
 typedef void HSFILE;
 
@@ -197,13 +204,13 @@ typedef void HSFILE;
  */
 HSFILE *hs_patch_open(FILE *basis, FILE *delta);
 
-/*
- * Read from a HSFILE.
- */
 enum hs_result hs_patch_read(HSFILE *, void *buf, size_t *len);
 
 enum hs_result hs_patch_close(HSFILE *);
 
-extern int hs_inbuflen, hs_outbuflen;
 
-
+/*
+ * Calculate the MD4 sum of IN_FILE into RESULT.  RESULT is binary,
+ * not hex.
+ */
+void hs_mdfour_file(FILE *in_file, char *result);
