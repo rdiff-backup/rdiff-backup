@@ -17,6 +17,12 @@ syntax".  What's happening?</a></li>
 <li><a href="#speed">How fast is rdiff-backup?  Can it be run on large
 data sets?</a></li>
 
+<li><a href="#statistics">What do the various fields mean in the
+session statistics and directory statistics files?</a></li>
+
+<li><a href="#bwlimit">Is there some way to limit rdiff-backup's
+bandwidth usage, as in rsync's --bwlimit option?</a></li>
+
 </ol>
 
 <h3>Questions and Answers</h3>
@@ -223,5 +229,117 @@ locally (about 9GB, 600000 files, maybe 50 MB turnover, 1.1Ghz athlon)
 rdiff-backup takes about 35 minutes and is usually CPU bound.  Another
 user reports an rdiff-backup session takes about 3 hours (80GB, ~1mil
 files, 2GB turnover) to back up remotely Tru64 -> linux.
+</li>
+
+<p>
+<a name="statistics">
+<li><strong>What do the various fields mean in the
+session statistics and directory statistics files?</strong>
+
+<P>Let's examine an example session statistics file:
+
+<pre>
+StartTime 1028200920.44 (Thu Aug  1 04:22:00 2002)
+EndTime 1028203082.77 (Thu Aug  1 04:58:02 2002)
+ElapsedTime 2162.33 (36 minutes 2.33 seconds)
+SourceFiles 494619
+SourceFileSize 8535991560 (7.95 GB)
+MirrorFiles 493797
+MirrorFileSize 8521756994 (7.94 GB)
+NewFiles 1053
+NewFileSize 23601632 (22.5 MB)
+DeletedFiles 231
+DeletedFileSize 10346238 (9.87 MB)
+ChangedFiles 572
+ChangedSourceSize 86207321 (82.2 MB)
+ChangedMirrorSize 85228149 (81.3 MB)
+IncrementFiles 1857
+IncrementFileSize 13799799 (13.2 MB)
+TotalDestinationSizeChange 28034365 (26.7 MB)
+Errors 0
+</pre>
+
+<P>StartTime and EndTime are measured in seconds since the epoch.
+ElapsedTime is just EndTime - StartTime, the length of the
+rdiff-backup session.
+
+<P>SourceFiles are the number of files found in the source directory,
+and SourceFileSize is the total size of those files.  MirrorFiles are
+the number of files found in the mirror directory (not including the
+rdiff-backup-data directory) and MirrorFileSize is the total size of
+those files.  All sizes are in bytes.  If the source directory hasn't
+changed since the last backup, MirrorFiles == SourceFiles and
+SourceFileSize == MirrorFileSize.
+
+<P>NewFiles and NewFileSize are the total number and size of the files
+found in the source directory but not in the mirror directory.  They
+are new as of the last backup.
+
+<P>DeletedFiles and DeletedFileSize are the total number and size of
+the files found in the mirror directory but not the source directory.
+They have been deleted since the last backup.
+
+<P>ChangedFiles are the number of files that exist both on the mirror
+and on the source directories and have changed since the previous
+backup.  ChangedSourceSize is their total size on the source
+directory, and ChangedMirrorSize is their total size on the mirror
+directory.
+
+<P>IncrementFiles is the number of increment files written to the
+rdiff-backup-data directory, and IncrementFileSize is their total
+size.  Generally one increment file will be written for every new,
+deleted, and changed file.
+
+<P>TotalDestinationSizeChange is the number of bytes the destination
+directory as a whole (mirror portion and rdiff-backup-data directory)
+has grown during the given rdiff-backup session.  This is usually
+close to IncrementFileSize + NewFileSize - DeletedFileSize +
+ChangedSourceSize - ChangedMirrorSize, but it also includes the space
+taken up by the hardlink_data file to record hard links.
+</li>
+
+<a name="bwlimit">
+<li><strong>Is there some way to limit rdiff-backup's
+bandwidth usage, as in rsync's --bwlimit option?</strong>
+
+<P>There is no internal rdiff-backup option to do this.  However, the
+--sleep-ratio option can limit overall resource usage, including
+bandwidth.  Also, external utilities such as <a href="http://www.cons.org/cracauer/cstream.html">cstream</a> can be
+used to monitor bandwidth explicitly.  trevor@tecnopolis.ca writes:
+
+<pre>
+rdiff-backup --remote-schema
+  'cstream -v 1 -t 10000 | ssh %s '\''rdiff-backup --server'\'' | cstream -t 20000'
+  'netbak@foo.bar.com::/mnt/backup' localbakdir
+
+(must run from a bsh-type shell, not a csh type)
+
+That would apply a limit in both directions [10000 bytes/sec outgoing,
+20000 bytes/sec incoming].  I don't think you'd ever really want to do
+this though as really you just want to limit it in one direction.
+Also, note how I only -v 1 in one direction.  You probably don't want
+to output stats for both directions as it will confuse whatever script
+you have parsing the output.  I guess it wouldn't hurt for manual runs
+however.
+</pre>
+
+To only limit bandwidth in one directory, simply remove one of the
+cstream commands.  Two cstream caveats may be worth mentioning:
+
+<ol> <li>Because cstream is limiting the uncompressed data heading
+into or out of ssh, if ssh compression is turned on, cstream may be
+overly restrictive.</li>
+
+<li>cstream may be "bursty", limiting average bandwidth but allowing
+rdiff-backup to exceed it for significant periods.</li>
+</ol>
+
+<p>
+Another option is to limit bandwidth at a lower (and perhaps more
+appropriate) level.  Adam Lazur mentions <a
+href="http://lartc.org/wondershaper/">The Wonder Shaper</a>.
+
+</li>
 
 </ol>
+

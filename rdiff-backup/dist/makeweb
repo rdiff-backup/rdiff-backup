@@ -11,6 +11,7 @@ webprefix = "/home/ben/misc/html/mirror/rdiff-backup/"
 if not sys.argv[1:]:
 	print 'Call with version number, as in "./makeweb 0.3.1"'
 	print "to move new rpms and tarballs.  Now just remaking FAQ and man page."
+	print
 else:
 	version = sys.argv[1]
 	RunCommand("cp *%s* %s" % (version, webprefix))
