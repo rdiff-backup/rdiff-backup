@@ -20,7 +20,7 @@
 """Functions to make sure remote requests are kosher"""
 
 import sys, tempfile
-import Globals, Main, rpath
+import Globals, Main, rpath, log
 
 class Violation(Exception):
 	"""Exception that indicates an improper request has been received"""
@@ -125,6 +125,7 @@ def set_allowed_requests(sec_level):
 			["C.make_file_dict",
 			 "rpath.ea_get",
 			 "rpath.acl_get",
+			 "rpath.setdata_local",
 			 "log.Log.log_to_file",
 			 "os.getuid",
 			 "os.listdir",
@@ -182,7 +183,7 @@ def vet_request(request, arglist):
 			if isinstance(arg, rpath.RPath): vet_rpath(arg)
 	if security_level == "all": return
 	if request.function_string in allowed_requests: return
-	if request.function_string == "Globals.set":
+	if request.function_string in ("Globals.set", "Globals.set_local"):
 		if Globals.server and arglist[0] not in disallowed_server_globals:
 			return
 	raise Violation("\nWarning Security Violation!\n"
@@ -204,7 +205,3 @@ def vet_rpath(rpath):
 							"Request to handle path %s\n"
 							"which doesn't appear to be within "
 							"restrict path %s.\n" % (normalized, restrict))
-
-			 
-		   
-			

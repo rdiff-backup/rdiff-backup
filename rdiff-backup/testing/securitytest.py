@@ -12,7 +12,7 @@ class SecurityTest(unittest.TestCase):
 		problem.
 
 		"""
-		assert isinstance(exc, Security.Violation)
+		assert isinstance(exc, Security.Violation), exc
 		#assert str(exc).find("Security") >= 0, "%s\n%s" % (exc, repr(exc))
 
 	def test_vet_request_ro(self):
@@ -45,15 +45,15 @@ class SecurityTest(unittest.TestCase):
 			conn.Globals.set("TEST_var", rp)
 			assert conn.Globals.get("TEST_var").path == rp.path
 
-		for rp in [RPath(conn, "foobar"),
-				   RPath(conn, "/usr/local"),
-				   RPath(conn, "foo/../bar")]:
-			try: conn.Globals.set("TEST_var", rp)
+		for path in ["foobar", "/usr/local", "foo/../bar"]:
+			try:
+				rp = rpath.RPath(conn, path)
+				conn.Globals.set("TEST_var", rp)
 			except Exception, e:
 				self.assert_exc_sec(e)
 				continue
 			assert 0, "No violation raised by rp %s" % (rp,)
-
+			
 		SetConnections.CloseConnections()
 
 	def secure_rdiff_backup(self, in_dir, out_dir, in_local, restrict_args,
