@@ -19,10 +19,6 @@ import Globals, Time
 class ManageException(Exception): pass
 
 class Manage:
-	def get_incobjs(datadir):
-		"""Return Increments objects given the rdiff-backup data directory"""
-		return map(IncObj, Manage.find_incrps_with_base(datadir, "increments"))
-
 	def get_file_type(rp):
 		"""Returns one of "regular", "directory", "missing", or "special"."""
 		if not rp.lstat(): return "missing"
