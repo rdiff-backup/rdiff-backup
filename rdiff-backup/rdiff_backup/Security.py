@@ -76,7 +76,7 @@ def set_security_level(action, cmdpairs):
 			rdir = tempfile.gettempdir()
 		elif islocal(cp1):
 			sec_level = "read-only"
-			Main.restore_get_root(rpath.RPath(Globals.local_connection,
+			Main.restore_set_root(rpath.RPath(Globals.local_connection,
 											  getpath(cp1)))
 			rdir = Main.restore_root.path
 		else:
@@ -94,9 +94,9 @@ def set_security_level(action, cmdpairs):
 			assert islocal(cp2)
 			sec_level = "all"
 			rdir = getpath(cp2)
-	elif (action == "test-server" or action == "list-increments" or
-		  action == "list-at-time" or action == "list-changed-since"
-		  or action == "calculate-average" or action == "remove-older-than"):
+	elif action in ["test-server", "list-increments", 'list-increment-sizes',
+					 "list-at-time", "list-changed-since",
+					 "calculate-average", "remove-older-than"]:
 		sec_level = "minimal"
 		rdir = tempfile.gettempdir()
 	else: assert 0, "Unknown action %s" % action

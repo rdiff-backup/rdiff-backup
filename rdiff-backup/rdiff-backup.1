@@ -11,7 +11,8 @@ rdiff-backup \- local/remote mirror and incremental backup
 .B {{ -l | --list-increments }
 .BI "| --remove-older-than " time_interval
 .BI "| --list-at-time " time
-.BI "| --list-changed-since " time }
+.BI "| --list-changed-since " time
+.B "| --list-increment-sizes "}
 .BI [[[ user@ ] host2.foo ]:: destination_directory ]
 
 .B rdiff-backup --calculate-average
@@ -185,6 +186,13 @@ that directory.
 List the number and date of partial incremental backups contained in
 the specified destination directory.  No backup or restore will take
 place if this option is given.
+.TP
+.B --list-increment-sizes
+List the total size of all the increment and mirror files by time.
+This may be helpful in deciding how many increments to keep, and when
+to --remove-older-than.  Specifying a subdirectory is allowable; then
+only the sizes of the mirror and increments pertaining to that
+subdirectory will be listed.
 .TP
 .B "-m, --mirror-only"
 Do not create an rdiff-backup-data directory or make any increments.
