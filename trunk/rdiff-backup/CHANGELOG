@@ -8,6 +8,14 @@ Fixed another bug reported by Phillip Eby, where restores would fail
 if rdiff-backup had only been run once and no increments were
 available.
 
+A few man page additions regarding restoring, statistics, and
+--test-server (thanks to Gregor Zattler, Christopher Schanzle, and
+Tobias Polzin for suggestions).
+
+Fixed comparison bug where rdiff-backup would unnecessarily report a
+directory as changed when its source size differed from its mirror
+size.  Thanks to Tim Allen for report.
+
 
 New in v0.9.5 (2002/08/09)
 --------------------------

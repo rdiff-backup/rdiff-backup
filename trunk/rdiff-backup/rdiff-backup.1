@@ -15,17 +15,22 @@ rdiff-backup \- local/remote mirror and incremental backup
 .B rdiff-backup --calculate-average
 .I statfile1 statfile2 ...
 
+.B rdiff-backup --test-server
+.BI [ user1 ] @host1.net1 :: path
+.BI [[ user2 ] @host2.net2 :: path ]
+.I ...
+
 .SH DESCRIPTION
 .B rdiff-backup
 is a script, written in
 .BR python (1)
 that backs up one directory to another.  The target directory ends up
-a copy of the source directory, but extra reverse diffs are stored in
-the target directory, so you can still recover files lost some time
-ago.  The idea is to combine the best features of a mirror and an
-incremental backup.  rdiff-backup also preserves symlinks, special
-files, hardlinks, permissions, uid/gid ownership (if it is running as
-root), and modification times.
+a exacty copy (mirror) of the source directory, but extra reverse
+diffs are stored in the target directory, so you can still recover
+files lost some time ago.  The idea is to combine the best features of
+a mirror and an incremental backup.  rdiff-backup also preserves
+symlinks, special files, hardlinks, permissions, uid/gid ownership (if
+it is running as root), and modification times.
 
 .B rdiff-backup
 can also operate
@@ -40,6 +45,11 @@ is installed in the user's PATH on the remote system.  For information
 on other options, see the section on
 .B REMOTE OPERATION.
 
+Note that you
+.B should not write to the mirror directory
+except with rdiff-backup.  Many of the increments are stored as
+reverse diffs, so if you delete or modify a file, you may lose the
+ability to restore previous versions of that file.
 
 .SH OPTIONS
 .TP
@@ -122,8 +132,8 @@ See the
 section for more information.
 .TP
 .B --force
-Authorize overwriting of a destination directory.  rdiff-backup will
-generally tell you if it needs this.
+Authorize the updating or overwriting of a destination path.
+rdiff-backup will generally tell you if it needs this.
 .TP
 .BI "--include " shell_pattern
 Similar to
@@ -194,7 +204,7 @@ Use nulls (\\0) instead of newlines (\\n) as line separators, which
 may help when dealing with filenames containing newlines.  This
 affects the expected format of the files specified by the
 --{include|exclude}-filelist[-stdin] switches as well as the format of
-the directory_statistics file.
+the directory statistics file.
 .TP
 .B --parsable-output
 If set, rdiff-backup's output will be tailored for easy parsing by
@@ -208,7 +218,9 @@ switches.
 .B --print-statistics
 If set, summary statistics will be printed after a successful backup
 If not set, this information will still be available from the
-session_statistics.<time>.data file.
+session statistics file.  See the
+.B STATISTICS
+section for more information.
 .TP
 .BI "--quoting-char " char
 Use the specified character for quoting characters specified to be
@@ -425,7 +437,7 @@ rdiff-backup smith@host1::foo jones@host2::bar
 Test to see if the specified ssh command really opens up a working
 rdiff-backup server on the remote side.
 .RS
-rdiff-backup --test-server hostname.net::/this/is/ignored
+rdiff-backup --test-server hostname.net::/ignored
 
 .SH RESTORING
 There are two ways to tell rdiff-backup to restore a file or
@@ -460,7 +472,7 @@ is the directory containing the current version of /usr/local.
 .PP
 Note that the option to
 .B --restore-as-of
-always specifies an exact time.  (So "3D" refers to the instant 36
+always specifies an exact time.  (So "3D" refers to the instant 72
 hours before the present.)  If there was no backup made at that time,
 rdiff-backup restores the state recorded for the previous backup.  For
 instance, in the above case, if "3D" is used, and there are only
@@ -482,6 +494,12 @@ rdiff-backup /backup/rdiff-backup-data/increments/usr/local.<time>.dir /usr/loca
 .PP
 .RE
 would also restore the file as desired.
+.PP
+If you are not sure exactly which version of a file you need, it is
+probably easiest to either restore from the increments files as
+described immediately above, or to see which increments are available
+with -l/--list-increments, and then specify exact times into
+-r/--restore-as-of.
 
 .SH TIME FORMATS
 rdiff-backup uses time strings in two places.  Firstly, all of the
@@ -778,6 +796,36 @@ or contained in matched files.  So for instance
 matches any files whose full pathnames contain 7 consecutive digits
 which aren't followed by 'foo'.  However, it wouldn't match /home even
 if /home/ben/1234567 existed.
+
+.SH STATISTICS
+
+Every session rdiff-backup saves various statistics into two files,
+the session statistics file at
+rdiff-backup-data/session_statistics.<time>.data and the directory
+statistics file at rdiff-backup-data/directory_statistics.<time>.data.
+They are both text files and contain similar information: how many
+files changed, how many were deleted, the total size of increment
+files created, etc.  However, the session statistics file is intended
+to be very readable and only describes the session as a whole.  The
+directory statistics file is more compact (and slightly less readable)
+but describes every directory backed up.  It also may be compressed to
+save space.
+
+Statistics related options include
+.B --print-statistics
+and
+.BR --null-separator .
+
+Also, rdiff-backup will save various messages to the log file, which
+is rdiff-backup-data/backup.log for backup sessions and
+rdiff-backup-data/restore.log for restore sessions.  Generally what is
+written to this file will coincide with the messages diplayed to
+stdout or stderr, although this can be changed with the
+.B --terminal-verbosity
+option.
+
+The log file is not compressed and can become quite large if
+rdiff-backup is run with high verbosity.
 
 .SH BUGS
 rdiff-backup uses the shell command
