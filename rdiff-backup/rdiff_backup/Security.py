@@ -187,6 +187,7 @@ def vet_rpath(rpath):
 	"""Require rpath not to step outside retricted directory"""
 	if Globals.restrict_path and rpath.conn is Globals.local_connection:
 		normalized, restrict = rpath.normalize().path, Globals.restrict_path
+		if restrict == "/": return
 		components = normalized.split("/")
 		# 3 cases for restricted dir /usr/foo:  /var, /usr/foobar, /usr/foo/..
 		if (not normalized.startswith(restrict) or
