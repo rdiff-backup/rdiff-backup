@@ -1,3 +1,7 @@
+Fix Daniel Drucker's two restore problems:  Restoring causes spurious
+security violation, and restore doesn't recognize quoted
+current_mirror file.
+
 Check support/bug reports on Savannah occasionally.
 
 Have regress go backwards to avoid using too much disk space at wrong
