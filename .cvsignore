@@ -22,3 +22,4 @@ libhsync-*.tar.gz.asc
 libtool
 stamp-h
 stamp-h.in
+hsfilebufcat

@@ -70,7 +70,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 include_HEADERS = hsync.h hsyncproto.h
 
 bin_PROGRAMS = hsdecode hsencode hsmdfour
-check_PROGRAMS = hsemit hsinhale
+check_PROGRAMS = hsemit hsinhale hsfilebufcat
 
 check_DATA = test-cmds/cmds.txt
 
@@ -79,6 +79,8 @@ test-cmds/cmds.txt: make-cmds.py
 
 hsmdfour_SOURCES = hsmdfour.c mdfour.c filebuf.c hex.c trace.c
 # hsmdfour_LDADD = libhsyncdecode.la
+
+hsfilebufcat_SOURCES = hsfilebufcat.c filebuf.c trace.c
 
 hsdecode_SOURCES = hsdecode.c
 hsdecode_LDADD = libhsyncdecode.la
