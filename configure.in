@@ -3,7 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 
 AC_REVISION($Id$)
 AC_INIT(dec.c)
-my_version=0.5.7dev1
+my_version=0.5.7dev2
 my_package=libhsync
 my_url=http://linuxcare.com.au/rproxy/
 echo "Configuring $my_package $my_version   ($my_url)"
@@ -121,5 +121,6 @@ AC_SUBST(OBJ_RESTORE)
 AC_SUBST(CC_SHOBJ_FLAG)
 AC_SUBST(CCMALLOC_LIB)
 AC_SUBST(net_libs)
+AC_SUBST(LIBOBJS)
 
 AC_OUTPUT([./Makefile])
