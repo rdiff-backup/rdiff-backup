@@ -9,7 +9,13 @@ Kaltenecker for bug report.
 Fixed error when --restrict path given with trailing backslash.  Bug
 report by Åke Brännström.
 
-Backported regress fix from 0.13.x.  But noticed by Alan Horn.
+Backported regress fix from 0.13.x.  Bug noticed by Alan Horn.
+
+Added error-correcting fsync suggestion by Antoine Perdaens.
+rdiff-backup may work better with NFS now.
+
+Fix for regress warning code:  rdiff-backup should warn you if you are
+trying to back up a directory into itself.
 
 
 New in v0.12.6 (2003/11/02)
