@@ -7,8 +7,9 @@ AC_REVISION($Id$)
                     # Linux is the gateway drug for freedom.
                     #                -- Don Marti
 
+AC_PREREQ(2.53)
 AC_INIT(trace.c)
-AM_INIT_AUTOMAKE(0.9.5, librsync)
+AM_INIT_AUTOMAKE(librsync, 0.9.6)
 
 # ac2.50 complains about this next line being redundant.  I'm not
 # sure: perhaps it's still required for earlier versions?
@@ -136,8 +137,11 @@ AC_SUBST(OBJ_RESTORE)
 AC_SUBST(CC_SHOBJ_FLAG)
 AC_SUBST(CCMALLOC_LIB)
 AC_SUBST(net_libs)
-AC_SUBST(LIBOBJS)
 AC_SUBST(LIBTOOL_DEPS)
 AC_SUBST(BUILD_POPT)
 
-AC_OUTPUT([Makefile doc/Makefile doc/Doxyfile])
+AC_OUTPUT([Makefile 
+           doc/Makefile 
+           doc/Doxyfile 
+           popt/Makefile 
+           testsuite/Makefile])

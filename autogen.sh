@@ -34,10 +34,10 @@ FILE=rsync.h
 
 DIE=0
 
-cache="$srcdir/config.cache"
+cache="$srcdir/autom4te.cache"
 test -f "$cache" && {
         echo "Deleting $cache"
-        rm "$cache"
+        rm -Rf "$cache"
 }
 
 (autoconf --version) < /dev/null > /dev/null 2>&1 || {
@@ -81,7 +81,7 @@ esac
 set -x
 aclocal $ACLOCAL_FLAGS
 autoheader
-automake -a $am_opt
+automake -a --foreign $am_opt
 autoconf
 set +x
 cd $ORIGDIR

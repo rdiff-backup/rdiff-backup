@@ -21,7 +21,7 @@ check_PROGRAMS = isprefix.driver
 
 INCLUDES = -I $(srcdir)/..
 isprefix_driver_SOURCES = isprefix.driver.c
-isprefix_driver_LDADD = $(LIBOBJS) ../isprefix.o
+isprefix_driver_LDADD = ../isprefix.o # XXX: should link replaced functions
 
 # NB: tests should exit with code 77 if they can't be run but haven't
 # failed.  Generally these tests should be ordered so that more basic
