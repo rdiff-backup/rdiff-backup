@@ -1,6 +1,13 @@
 Changes in 0.9.1:
 
- * Rename the library to `librsync'
+ * Rename the library to `librsync'.
+
+ * Portability fixes.
+
+ * Include the popt library, and use it to build rdiff if the library
+   is not present on the host.
+
+ * Add file(1) magic for rdiff.
 
 Changes in 0.9.0:
 

@@ -31,6 +31,9 @@
  * TODO: Add a -z option to gzip/gunzip patches.  This would be
  * somewhat useful, but more importantly a good test of the streaming
  * API.  Also add -I for bzip2.
+ *
+ * If built with debug support and we have mcheck, then turn it on.
+ * (Optionally?)
  */
 
 #include <config.h>

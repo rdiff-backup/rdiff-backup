@@ -31,6 +31,10 @@
  * streams.  As the stream consumes input and produces output, it is
  * refilled from appropriate input and output FILEs.  A dynamically
  * allocated buffer of configurable size is used as an intermediary.
+ *
+ * TODO: Perhaps be more efficient by filling the buffer on every call
+ * even if not yet completely empty.  Check that it's really our
+ * buffer, and shuffle remaining data down to the front.
  */
 
 
