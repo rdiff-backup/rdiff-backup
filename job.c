@@ -115,6 +115,8 @@ static rs_result rs_job_complete(rs_job_t *job, rs_result result)
     }
 
     if (result == RS_DONE && !rs_tube_is_idle(job))
+        /* Processing is finished, but there is still some data
+         * waiting to get into the output buffer. */
         return RS_BLOCKED;
     else
         return result;
