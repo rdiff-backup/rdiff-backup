@@ -40,7 +40,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <getopt.h>
 #include <fcntl.h>
 #include <popt.h>
 
