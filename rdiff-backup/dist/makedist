@@ -7,7 +7,7 @@ DistDir = "dist"
 
 # Various details about the files must also be specified by the rpm
 # spec template.
-spec_template = "dist/rdiff-backup.spec"
+spec_template = "dist/rdiff-backup.spec.template"
 #redhat_spec_template = "dist/rdiff-backup.rh7x.spec"
 
 def CopyMan(destination, version):
@@ -115,7 +115,8 @@ def MakeTar():
 
 def MakeSpecFile():
 	"""Create spec file using spec template"""
-	specfile = "rdiff-backup-%s-2.spec" % Version
+	#specfile = "rdiff-backup-%s-2.spec" % Version
+	specfile = "rdiff-backup.spec" # Fedora standard name
 	VersionedCopy(spec_template, specfile)
 	return specfile
 

@@ -1,16 +1,22 @@
 import unittest, random
 from commontest import *
-from rdiff_backup import librsync
+from rdiff_backup import librsync, log
 
-def MakeRandomFile(path):
-	"""Writes a random file of length between 10000 and 100000"""
-	fp = open(path, "w")
-	randseq = []
-	for i in xrange(random.randrange(5000, 30000)):
-		randseq.append(chr(random.randrange(256)))
-	fp.write("".join(randseq))
+def MakeRandomFile(path, length = None):
+	"""Writes a random file of given length, or random len if unspecified"""
+	if not length: length = random.randrange(5000, 100000)
+	fp = open(path, "wb")
+	fp_random = open('/dev/urandom', 'rb')
+
+	# Old slow way, may still be of use on systems without /dev/urandom
+	#randseq = []
+	#for i in xrange(random.randrange(5000, 30000)):
+	#	randseq.append(chr(random.randrange(256)))
+	#fp.write("".join(randseq))
+	fp.write(fp_random.read(length))
+
 	fp.close()
-
+	fp_random.close()
 
 class LibrsyncTest(unittest.TestCase):
 	"""Test various librsync wrapper functions"""
@@ -20,23 +26,33 @@ class LibrsyncTest(unittest.TestCase):
 	sig = RPath(Globals.local_connection, "testfiles/signature")
 	sig2 = RPath(Globals.local_connection, "testfiles/signature2")
 	delta = RPath(Globals.local_connection, "testfiles/delta")
-	def testSigFile(self):
-		"""Make sure SigFile generates same data as rdiff"""
-		for i in range(5):
-			MakeRandomFile(self.basis.path)
-			self.sig.delete()
-			assert not os.system("rdiff signature %s %s" %
-								 (self.basis.path, self.sig.path))
+	def sig_file_test_helper(self, blocksize, iterations, file_len = None):
+		"""Compare SigFile output to rdiff output at given blocksize"""
+		for i in range(iterations):
+			MakeRandomFile(self.basis.path, file_len)
+			if self.sig.lstat(): self.sig.delete()
+			assert not os.system("rdiff -b %s signature %s %s" %
+								 (blocksize, self.basis.path, self.sig.path))
 			fp = self.sig.open("rb")
 			rdiff_sig = fp.read()
 			fp.close()
 
-			sf = librsync.SigFile(self.basis.open("rb"))
+			sf = librsync.SigFile(self.basis.open("rb"), blocksize)
 			librsync_sig = sf.read()
 			sf.close()
 
 			assert rdiff_sig == librsync_sig, \
 				   (len(rdiff_sig), len(librsync_sig))
+		
+	def testSigFile(self):
+		"""Make sure SigFile generates same data as rdiff, blocksize 512"""
+		self.sig_file_test_helper(512, 5)
+
+	def testSigFile2(self):
+		"""Test SigFile like above, but try various blocksize"""
+		self.sig_file_test_helper(2048, 1, 60000)
+		self.sig_file_test_helper(7168, 1, 6000)
+		self.sig_file_test_helper(204800, 1, 40*1024*1024)
 
 	def testSigGenerator(self):
 		"""Test SigGenerator, make sure it's same as SigFile"""

@@ -2,7 +2,7 @@ import unittest, random
 from commontest import *
 from rdiff_backup import Globals, Rdiff, selection, log, rpath
 
-Log.setverbosity(6)
+Log.setverbosity(7)
 
 def MakeRandomFile(path):
 	"""Writes a random file of length between 10000 and 100000"""
@@ -28,7 +28,7 @@ class RdiffTest(unittest.TestCase):
 		sig = rpath.RPath(self.lc,
 						  "testfiles/various_file_types/regular_file.sig")
 		sigfp = sig.open("r")
-		rfsig = Rdiff.get_signature(RPath(self.lc, "testfiles/various_file_types/regular_file"))
+		rfsig = Rdiff.get_signature(RPath(self.lc, "testfiles/various_file_types/regular_file"), 2048)
 		assert rpath.cmpfileobj(sigfp, rfsig)
 		sigfp.close()
 		rfsig.close()
