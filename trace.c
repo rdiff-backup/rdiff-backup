@@ -105,7 +105,7 @@ hs_log_va(int level, char const *fn, char const *fmt, va_list va)
         vsnprintf(buf, sizeof buf - 1, fmt, va);
 
         snprintf(full_buf, sizeof full_buf - 1,
-                 "%s: %s%s: %s\n",
+                 "%s: %s(%s) %s\n",
                  MY_NAME, hs_severities[level], fn, buf);
 
 	hs_trace_impl(level, full_buf);
