@@ -157,7 +157,7 @@ class Select:
 			if result is not None: return result
 		return 1
 
-	def ParseArgs(self, argtuples):
+	def ParseArgs(self, argtuples, filelists):
 		"""Create selection functions based on list of tuples
 
 		The tuples have the form (option string, additional argument)
@@ -169,6 +169,7 @@ class Select:
 		information is sent over the link.
 
 		"""
+		filelists_index = 0
 		try:
 			for opt, arg in argtuples:
 				if opt == "--exclude":
@@ -176,19 +177,22 @@ class Select:
 				elif opt == "--exclude-device-files":
 					self.add_selection_func(self.devfiles_get_sf())
 				elif opt == "--exclude-filelist":
-					self.add_selection_func(self.filelist_get_sf(arg[1],
-																 0, arg[0]))
+					self.add_selection_func(self.filelist_get_sf(
+						filelists[filelists_index], 0, arg))
+					filelists_index += 1
 				elif opt == "--exclude-regexp":
 					self.add_selection_func(self.regexp_get_sf(arg, 0))
 				elif opt == "--include":
 					self.add_selection_func(self.glob_get_sf(arg, 1))
 				elif opt == "--include-filelist":
-					self.add_selection_func(self.filelist_get_sf(arg[1],
-																 1, arg[0]))
+					self.add_selection_func(self.filelist_get_sf(
+						filelists[filelists_index], 1, arg))
+					filelists_index += 1
 				elif opt == "--include-regexp":
 					self.add_selection_func(self.regexp_get_sf(arg, 1))
 				else: assert 0, "Bad selection option %s" % opt
 		except SelectError, e: self.parse_catch_error(e)
+		assert filelists_index == len(filelists)
 
 		self.parse_last_excludes()
 		self.parse_rbdir_exclude()

@@ -1,3 +1,4 @@
+from __future__ import generators
 execfile("rdiff.py")
 import types, os, tempfile, cPickle, shutil, traceback
 
@@ -487,3 +488,10 @@ class VirtualFile:
 
 	def close(self):
 		return self.connection.VirtualFile.closebyid(self.id)
+
+	def __iter__(self):
+		"""Iterates lines in file, like normal iter(file) behavior"""
+		while 1:
+			line = self.readline()
+			if not line: break
+			yield line

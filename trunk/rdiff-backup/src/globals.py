@@ -192,12 +192,19 @@ class Globals:
 		else: cls.__dict__[name] = re.compile(re_string)
 	postset_regexp_local = classmethod(postset_regexp_local)
 
-	def set_select(cls, dsrpath, tuplelist, quote_mode = None):
-		"""Initialize select object using tuplelist"""
+	def set_select(cls, dsrpath, tuplelist, quote_mode, *filelists):
+		"""Initialize select object using tuplelist
+
+		Note that each list in filelists must each be passed as
+		separate arguments, so each is recognized as a file by the
+		connection.  Otherwise we will get an error because a list
+		containing files can't be pickled.
+
+		"""
 		if dsrpath.source:
 			cls.select_source = Select(dsrpath, quote_mode)
-			cls.select_source.ParseArgs(tuplelist)
+			cls.select_source.ParseArgs(tuplelist, filelists)
 		else:
 			cls.select_mirror = Select(dsrpath, quote_mode)
-			cls.select_mirror.ParseArgs(tuplelist)
+			cls.select_mirror.ParseArgs(tuplelist, filelists)
 	set_select = classmethod(set_select)
