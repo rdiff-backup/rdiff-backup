@@ -1,10 +1,29 @@
                                                   -*- indented-text -*-
 $Id$
 
- * file(1) magic to recognize signatures/deltas
+ * Don't use the rs_stream_t structure.
 
- * Tool to generate standalone signatures.  But don't conflict with
-   xdelta here.
+   There's something confusing about the existence of this structure.
+   In part it may eb the name.  I think people expect that it will be
+   something that behaves like a FILE* or C++ stream, and it really
+   does not.  Also, the structure does not behave as an object: it's
+   really just a shorthand for passing values in to the encoding
+   routines, and so does not have a lot of identity of its own.
+
+   An alternative might be
+
+     result = rs_job_iter(job,
+                          in_buf, &in_len, in_is_ending,
+                          out_buf, &out_len);
+
+   where we update the length parameters on return to show how much we
+   really consumed.
+
+   One technicality here will be to restructure the code so that the
+   input buffers are passed down to the scoop/tube functions that need
+   them, which are relatively deeply embedded.  I guess we could just
+   stick them into the job structure, which is becoming a kind of
+   catch-all "environment" for poor C programmers.
 
  * Meta-programming
 
