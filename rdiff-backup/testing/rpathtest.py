@@ -438,9 +438,9 @@ class FileAttributes(FileCopying):
 
 	def testCopyRaise(self):
 		"""Should raise exception for non-existent files"""
-		self.assertRaises(RPathException, rpath.copy_attribs,
+		self.assertRaises(AssertionError, rpath.copy_attribs,
 						  self.hl1, self.nothing)
-		self.assertRaises(RPathException, rpath.copy_attribs,
+		self.assertRaises(AssertionError, rpath.copy_attribs,
 						  self.nothing, self.nowrite)
 
 class CheckPath(unittest.TestCase):
