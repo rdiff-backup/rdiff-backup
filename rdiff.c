@@ -34,6 +34,8 @@
  *
  * If built with debug support and we have mcheck, then turn it on.
  * (Optionally?)
+ *
+ * TODO: -h for help.  Suggest this on option error.
  */
 
 #include <config.h>

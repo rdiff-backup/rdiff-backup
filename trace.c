@@ -27,6 +27,13 @@
                                       | There are lumps in it.
                                       */
 
+
+
+/*
+ * TODO: Have a bit set in the log level that says not to include the
+ * function name.
+ */
+
 #include <config.h>
 
 #include <unistd.h>
