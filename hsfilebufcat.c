@@ -32,12 +32,16 @@ int main(int argc, char *argv[])
      char *tail_ptr;
      int len;
      int c;
+     int filebuf_loop;
 
-     while ((c = getopt(argc, argv, "b:")) != -1) {
+     while ((c = getopt(argc, argv, "lb:")) != -1) {
 	  switch (c) {
 	  case '?':
 	  case ':':
 	       return 1;
+	  case 'l':
+	       filebuf_loop = 1;
+	       break;
 	  case 'b':
 	       buf_len = strtol(optarg, &tail_ptr, 10);
 	       if (*tail_ptr  ||  buf_len < 1) {
@@ -55,7 +59,12 @@ int main(int argc, char *argv[])
      assert(infb);
 
      while (1) {
-	  len = hs_filebuf_read(infb, buf, buf_len);
+	  if (filebuf_loop) {
+	       len = _hs_read_loop(hs_filebuf_read, infb, buf, buf_len);
+	  } else {
+	       len = hs_filebuf_read(infb, buf, buf_len);
+	  }
+	  
 	  if (len < 0) {
 	       perror("error in read");
 	       return 1;

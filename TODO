@@ -30,5 +30,12 @@
        strategies are possible: using the loop functions or not, using
        mapptrs, etc.
 
+   * test within the proxy
+
+     * We need dynamically generated reproducible content that varies
+       in an interesting way.  cvsweb sounds ideal: we'll mirror the
+       output of cvsweb through a proxy and then not through a proxy,
+       and see how we go.
+
 
 LocalWords: mdfour LocalWords mapptrs

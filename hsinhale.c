@@ -1,5 +1,4 @@
 /* -*- mode: c; c-file-style: "k&r" -*-  */
-
 /* hsemit -- Convert a text stream of commands into hsync encoding.
    The output doesn't include literal data, since the point is just to
    test that command emit/inhale works well.
@@ -25,13 +24,6 @@
 #include "hsync.h"
 #include "hsyncproto.h"
 #include "private.h"
-
-
-#ifdef __GNUC__
-#define UNUSED __attribute__((unused))
-#else
-#define UNUSED
-#endif				/* ! __GNUC__ */
 
 
 static void
@@ -65,15 +57,41 @@ print_cmd(int kind, uint32_t len, uint32_t off)
 
      printf("%s %d\n", kind_str, len);
 }
+
+
+static int
+parse_args(int argc, char **argv)
+{
+     int c;
+
+     hs_trace_to(NULL);
+
+     while ((c = getopt(argc, argv, "D")) != -1) {
+	  switch (c) {
+	  case '?':
+	  case ':':
+	       return 1;
+	  case 'D':
+	       hs_trace_to(hs_trace_to_stderr);
+	       break;
+	  }
+     }
+
+     return 0;     
+}
      
 
+
 int
-main(int argc UNUSED, char **argv UNUSED)
+main(int argc, char **argv)
 {
      int ret, kind;
      uint32_t off, len;
      hs_filebuf_t * infb;
 
+     if ((ret = parse_args(argc, argv)) != 0)
+	  return ret;
+     
      setvbuf(stdout, NULL, _IONBF, 0);
      
      infb = hs_filebuf_from_fd(STDIN_FILENO);

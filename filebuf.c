@@ -28,7 +28,7 @@
 #include "private.h"
 #include "compress.h"
 
-#undef HS_ALWAYS_READ_SHORT
+#define HS_ALWAYS_READ_SHORT
 
 const int filebuf_tag = 24031976;
 

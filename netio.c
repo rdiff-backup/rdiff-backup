@@ -75,51 +75,6 @@ _hs_write_loop(hs_write_fn_t write_fn, void *write_priv,
 }
 
 
-int
-_hs_copy_ofs(uint32_t offset, uint32_t length,
-	     hs_readofs_fn_t readofs_fn, void *readofs_priv,
-	     hs_write_fn_t write_fn, void *write_priv,
-	     hs_mdfour_t *newsum)
-{
-    int ret;
-    char *buf;
-
-    if (length > INT32_MAX) {
-	_hs_fatal("length %u is too big", length);
-	return -1;
-    }
-
-    buf = malloc(length);
-
-    ret = readofs_fn(readofs_priv, buf, length, offset);
-    if (ret < 0) {
-	 _hs_error("error in read callback: off=%d, len=%d",
-		   offset, length);
-	goto fail;
-    } else if (ret != (int) length) {
-	 _hs_error("short read: off=%d, len=%d, result=%d",
-		   offset, length, ret);
-	 errno = ENODATA;
-	 goto fail;
-    }
-
-    if (newsum)
-	 hs_mdfour_update(newsum, buf, ret);
-
-    ret = _hs_write_loop(write_fn, write_priv, buf, ret);
-    if (ret != (int) length) {
-	 _hs_error("error in write callback: off=%d, len=%d",
-		   offset, length);
-	 goto fail;
-    }
-
-    free(buf);
-    return length;
-
-  fail:
-    free(buf);
-    return -1;
-}
 
 
 

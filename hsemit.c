@@ -27,20 +27,39 @@
 #include "private.h"
 
 
-#ifdef __GNUC__
-#define UNUSED __attribute__((unused))
-#else
-#define UNUSED
-#endif				/* ! __GNUC__ */
+static int
+parse_args(int argc, char **argv)
+{
+     int c;
+
+     hs_trace_to(NULL);
+
+     while ((c = getopt(argc, argv, "D")) != -1) {
+	  switch (c) {
+	  case '?':
+	  case ':':
+	       return 1;
+	  case 'D':
+	       hs_trace_to(hs_trace_to_stderr);
+	       break;
+	  }
+     }
+
+     return 0;     
+}
+     
 
 
 int
-main(int argc UNUSED, char **argv UNUSED)
+main(int argc, char **argv)
 {
      int ret, off, len;
      char cmd[20];
      hs_filebuf_t * outfb;
      hs_stats_t stats;
+
+     if ((ret = parse_args(argc, argv)) != 0)
+	  return ret;
 
      outfb = hs_filebuf_from_fd(STDOUT_FILENO);
      

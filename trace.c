@@ -25,11 +25,11 @@
 
 char const * const hs_libhsync_version = PACKAGE " " VERSION;
 
-_hs_trace_fn *_hs_trace_impl = _hs_trace_to_stderr;
+hs_trace_fn_t *_hs_trace_impl = hs_trace_to_stderr;
 
 
 void
-hs_trace_to(_hs_trace_fn *new_impl)
+hs_trace_to(hs_trace_fn_t *new_impl)
 {
      _hs_trace_impl = new_impl;
 }
@@ -50,7 +50,7 @@ _hs_trace(char const *fmt, ...)
 #endif /* DO_HS_TRACE */
 
 void
-_hs_trace_to_stderr(char const *fmt, va_list va)
+hs_trace_to_stderr(char const *fmt, va_list va)
 {
      vfprintf(stderr, fmt, va);
      fputc('\n', stderr);

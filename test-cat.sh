@@ -14,8 +14,11 @@ for from in $files
 do
     for size in $sizes
     do
-	run_test hsfilebufcat -b $size <$from >new.tmp
-	run_test cmp $from new.tmp
+	for opt in "" "-l"
+	do
+	    run_test hsfilebufcat $opt -b $size <$from >new.tmp
+	    run_test cmp $from new.tmp
+	done
     done
 done
     

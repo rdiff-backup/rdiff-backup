@@ -9,20 +9,22 @@
 
 # `What I tell you three times is true'
 
+source testfns.sh $0 $@
+
 data=../INSTALL
 
 rm -f *.tmp
 
-hsencode $data lt.tmp /dev/null
-hsdecode $data sig01.tmp new01.tmp lt.tmp
-cmp $data new01.tmp
+run_test hsencode $data lt.tmp /dev/null
+run_test hsdecode $data sig01.tmp new01.tmp lt.tmp
+run_test cmp $data new01.tmp
 
-hsencode $data lt.tmp sig01.tmp 
-hsdecode $data sig02.tmp new02.tmp lt.tmp
-cmp sig01.tmp sig02.tmp
-cmp $data new02.tmp
+run_test hsencode $data lt.tmp sig01.tmp 
+run_test hsdecode $data sig02.tmp new02.tmp lt.tmp
+run_test cmp sig01.tmp sig02.tmp
+run_test cmp $data new02.tmp
 
-hsencode $data lt.tmp sig02.tmp
-hsdecode $data sig03.tmp new03.tmp lt.tmp
-cmp sig02.tmp sig03.tmp
-cmp $data new03.tmp
+run_test hsencode $data lt.tmp sig02.tmp
+run_test hsdecode $data sig03.tmp new03.tmp lt.tmp
+run_test cmp sig02.tmp sig03.tmp
+run_test cmp $data new03.tmp

@@ -28,7 +28,8 @@ libhsyncdecode_la_SOURCES = dec.c \
 noinst_SCRIPTS = test-decode.sh test-encode.sh \
 	test-chain.sh test-cmds.sh \
 	make-cmds.py test-thrice.sh test-seq.sh test-meta.sh \
-	test-md4sizes testfns.sh
+	test-cat.sh \
+	test-md4sizes testfns.sh 
 
 test_data=test-chain/empty-sig  \
 test-decode/01-diff \
@@ -80,7 +81,7 @@ test-cmds/cmds.txt: make-cmds.py
 hsmdfour_SOURCES = hsmdfour.c mdfour.c filebuf.c hex.c trace.c
 # hsmdfour_LDADD = libhsyncdecode.la
 
-hsfilebufcat_SOURCES = hsfilebufcat.c filebuf.c trace.c
+hsfilebufcat_SOURCES = hsfilebufcat.c filebuf.c trace.c netio.c
 
 hsdecode_SOURCES = hsdecode.c
 hsdecode_LDADD = libhsyncdecode.la
@@ -99,7 +100,7 @@ hsinhale_LDADD = libhsyncdecode.la
 # ``When the program is being tested, it is too late to make design
 # changes.''
 
-TESTS = test-mdfour.sh \
+TESTS = test-md4sizes.sh test-cat.sh \
 	test-cmds.sh test-decode.sh test-encode.sh \
 	test-thrice.sh test-seq.sh
 
