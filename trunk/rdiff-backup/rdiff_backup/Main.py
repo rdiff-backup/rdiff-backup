@@ -633,7 +633,7 @@ def restore_set_root(rpin):
 
 def ListIncrements(rp):
 	"""Print out a summary of the increments and their times"""
-	require_root_set(rp)
+	rp = require_root_set(rp)
 	restore_check_backup_dir(restore_root)
 	mirror_rp = restore_root.new_index(restore_index)
 	inc_rpath = Globals.rbdir.append_path('increments', restore_index)
@@ -644,16 +644,59 @@ def ListIncrements(rp):
 	else: print manage.describe_incs_human(incs, mirror_time, mirror_rp)
 
 def require_root_set(rp):
-	"""Like restore_set_root, but abort with error if directory not set"""
+	"""Make sure rp is or is in a valid rdiff-backup dest directory.
+
+	Also initializes fs_abilities and quoting and return quoted rp if
+	necessary.
+
+	"""
 	if not restore_set_root(rp):
 		Log.FatalError(("Bad directory %s.\n" % (rp.path,)) +
 		  "It doesn't appear to be an rdiff-backup destination dir")
+	single_set_fs_globals(Globals.rbdir)
+	if Globals.chars_to_quote: return restore_init_quoting(rp)
+	else: return rp
+	
+def single_set_fs_globals(rbdir):
+	"""Use fs_abilities to set globals that depend on filesystem.
+
+	This is appropriate for listing increments, or any other operation
+	that depends only on the one file system.
+
+	"""
+	def update_triple(fsa_support, attr_triple):
+		"""Update global settings based on fsa result"""
+		active_attr, write_attr, conn_attr = attr_triple
+		if Globals.get(active_attr) == 0: return # don't override 0
+		for attr in attr_triple: SetConnections.UpdateGlobal(attr, None)
+		if not fsa_support: return
+		SetConnections.UpdateGlobal(active_attr, 1)
+		SetConnections.UpdateGlobal(write_attr, 1)
+		rbdir.conn.Globals.set_local(conn_attr, 1)
+
+	fsa = rbdir.conn.fs_abilities.get_fsabilities_readwrite('archive', rbdir)
+	Log(str(fsa), 3)
+
+	update_triple(fsa.eas, ('eas_active', 'eas_write', 'eas_conn'))
+	update_triple(fsa.acls, ('acls_active', 'acls_write', 'acls_conn'))
+	update_triple(fsa.resource_forks,
+				  ('resource_forks_active', 'resource_forks_write',
+				   'resource_forks_conn'))
+	update_triple(fsa.carbonfile,
+				  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
+
+	SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks)
+	SetConnections.UpdateGlobal('fsync_directories', fsa.fsync_dirs)
+	SetConnections.UpdateGlobal('change_ownership', fsa.ownership)
+	SetConnections.UpdateGlobal('chars_to_quote', fsa.chars_to_quote)
+	if Globals.chars_to_quote:
+		for conn in Globals.connections:
+			conn.FilenameMapping.set_init_quote_vals()
 
 
 def ListIncrementSizes(rp):
 	"""Print out a summary of the increments """
-	require_root_set(rp)
-	restore_check_backup_dir(restore_root)
+	rp = require_root_set(rp)
 	print manage.ListIncrementSizes(restore_root, restore_index)
 
 
@@ -668,7 +711,8 @@ def CalculateAverage(rps):
 
 def RemoveOlderThan(rootrp):
 	"""Remove all increment files older than a certain time"""
-	rot_check_dir(rootrp)
+	rootrp = require_root_set(rootrp)
+	rot_require_rbdir_base(rootrp)
 	try: time = Time.genstrtotime(remove_older_than_string)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
 	timep = Time.timetopretty(time)
@@ -693,22 +737,19 @@ def RemoveOlderThan(rootrp):
 	else: Log("Deleting increments at times:\n" + inc_pretty_time, 3)
 	manage.delete_earlier_than(Globals.rbdir, time)
 
-def rot_check_dir(rootrp):
-	"""Check destination dir before RemoveOlderThan"""
-	SetConnections.UpdateGlobal('rbdir',
-								rootrp.append_path("rdiff-backup-data"))
-	if not Globals.rbdir.isdir():
-		Log.FatalError("Unable to open rdiff-backup-data dir %s" %
-					   (Globals.rbdir.path,))
-	checkdest_if_necessary(rootrp)
+def rot_require_rbdir_base(rootrp):
+	"""Make sure pointing to base of rdiff-backup dir"""
+	if restore_index != ():
+		Log.FatalError("Increments for directory %s cannot be removed separately.\n"
+					   "Instead run on entire directory %s." %
+					   (rootrp.path, restore_root.path))
 
 
 def ListChangedSince(rp):
 	"""List all the files under rp that have changed since restoretime"""
-	require_root_set(rp)
+	rp = require_root_set(rp)
 	try: rest_time = Time.genstrtotime(restore_timestr)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
-	restore_check_backup_dir(restore_root)
 	mirror_rp = restore_root.new_index(restore_index)
 	inc_rp = mirror_rp.append_path("increments", restore_index)
 	for rorp in rp.conn.restore.ListChangedSince(mirror_rp, inc_rp, rest_time):
@@ -718,10 +759,9 @@ def ListChangedSince(rp):
 
 def ListAtTime(rp):
 	"""List files in archive under rp that are present at restoretime"""
-	require_root_set(rp)
+	rp = require_root_set(rp)
 	try: rest_time = Time.genstrtotime(restore_timestr)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
-	restore_check_backup_dir(restore_root)
 	mirror_rp = restore_root.new_index(restore_index)
 	inc_rp = mirror_rp.append_path("increments", restore_index)
 	for rorp in rp.conn.restore.ListAtTime(mirror_rp, inc_rp, rest_time):
@@ -739,11 +779,10 @@ def Compare(src_rp, dest_rp, compare_time = None):
 
 	"""
 	global return_val
-	require_root_set(dest_rp)
+	dest_rp = require_root_set(dest_rp)
 	if not compare_time:
 		try: compare_time = Time.genstrtotime(restore_timestr)
 		except Time.TimeException, exc: Log.FatalError(str(exc))
-	restore_check_backup_dir(restore_root)
 
 	mirror_rp = restore_root.new_index(restore_index)
 	inc_rp = mirror_rp.append_path("increments", restore_index)

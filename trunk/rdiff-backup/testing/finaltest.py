@@ -419,6 +419,14 @@ class FinalMisc(PathSetter):
 		for inc in self.get_all_increments(rbdir):
 			assert inc.getinctime() >= 30000
 
+	def testRemoveOlderThanQuoting(self):
+		"""Test --remove-older-than when dest directory is quoted"""
+		Myrm("testfiles/output")
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, "--override-chars-to-quote '^a-z0-9_ -.'",
+								"testfiles/increment1", "testfiles/output")
+		self.exec_rb_extra_args(None, "--remove-older-than now", "testfiles/output")
+
 	def testCompare(self):
 		"""Test --compare and --compare-older-than modes"""
 		Myrm("testfiles/output")
