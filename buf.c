@@ -185,19 +185,25 @@ rs_result rs_outfilebuf_drain(rs_filebuf_t *fb)
 /**
  * Default copy implementation that retrieves a part of a stdio file.
  */
-rs_result rs_file_copy_cb(void *arg, size_t *len, void **buf)
+rs_result rs_file_copy_cb(void *arg, off_t pos, size_t *len, void **buf)
 {
-        int got;
+    int        got;
+    FILE       *f = (FILE *) arg;
 
-        got = fread(*buf, 1, *len, (FILE *) arg);
-        if (got == -1) {
-                rs_error(strerror(errno));
-                return RS_IO_ERROR;
-        } else if (got == 0) {
-                rs_error("unexpected eof");
-                return RS_INPUT_ENDED;
-        } else {
-                *len = got;
-                return RS_DONE;
-        }
+    if (fseek(f, pos, SEEK_SET)) {
+        rs_log(RS_LOG_ERR, "seek failed: %s", strerror(errno));
+        return RS_IO_ERROR;
+    }
+
+    got = fread(*buf, 1, *len, f);
+    if (got == -1) {
+        rs_error(strerror(errno));
+        return RS_IO_ERROR;
+    } else if (got == 0) {
+        rs_error("unexpected eof on fd%d", fileno(f));
+        return RS_INPUT_ENDED;
+    } else {
+        *len = got;
+        return RS_DONE;
+    }
 }
