@@ -1,4 +1,4 @@
-# Copyright 2002, 2003, 2004 Ben Escoto
+# Copyright 2002 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -36,7 +36,7 @@ are dealing with are local or remote.
 """
 
 import os, stat, re, sys, shutil, gzip, socket, time
-import Globals, Time, static, log, user_group
+import Globals, Time, static, log
 
 
 class SkipFileException(Exception):
@@ -151,39 +151,10 @@ def copy_attribs(rpin, rpout):
 
 	"""
 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
-	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
-	if rpin.issym(): return # symlinks have no valid attributes
-	if Globals.resource_forks_write and rpin.isreg():
-		rpout.write_resource_fork(rpin.get_resource_fork())
-	if Globals.carbonfile_write and rpin.isreg():
-		rpout.write_carbonfile(rpin.get_carbonfile())
-	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
-	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
-	rpout.chmod(rpin.getperms())
-	if Globals.acls_write: rpout.write_acl(rpin.get_acl())
-	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
-
-def copy_attribs_inc(rpin, rpout):
-	"""Change file attributes of rpout to match rpin
-
-	Like above, but used to give increments the same attributes as the
-	originals.  Therefore, don't copy all directory acl and
-	permissions.
-
-	"""
-	log.Log("Copying inc attrs from %s to %s" % (rpin.index, rpout.path), 7)
 	check_for_files(rpin, rpout)
 	if rpin.issym(): return # symlinks have no valid attributes
-	if Globals.resource_forks_write and rpin.isreg() and rpout.isreg():
-		rpout.write_resource_fork(rpin.get_resource_fork())
-	if Globals.carbonfile_write and rpin.isreg() and rpout.isreg():
-		rpout.write_carbonfile(rpin.get_carbonfile())
-	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
-	if rpin.isdir() and not rpout.isdir():
-		rpout.chmod(rpin.getperms() & 0777)
-	else: rpout.chmod(rpin.getperms())
-	if Globals.acls_write: rpout.write_acl(rpin.get_acl(), map_names = 0)
+	rpout.chmod(rpin.getperms())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
 
 def cmp_attribs(rp1, rp2):
@@ -197,8 +168,6 @@ def cmp_attribs(rp1, rp2):
 	if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
 		result = None
 	elif rp1.getperms() != rp2.getperms(): result = None
-	# Don't compare ctime for now, add later
-	#elif rp1.getctime() != rp2.getctime(): result = None
 	elif rp1.issym() and rp2.issym(): # Don't check times for some types
 		result = 1
 	elif rp1.isblkdev() and rp2.isblkdev(): result = 1
@@ -290,31 +259,17 @@ class RORPath:
 		if self.index != other.index: return None
 
 		for key in self.data.keys(): # compare dicts key by key
-			if self.issym() and key in ('uid', 'gid', 'uname', 'gname'):
+			if (key == 'uid' or key == 'gid') and self.issym():
 				pass # Don't compare gid/uid for symlinks
 			elif key == 'atime' and not Globals.preserve_atime: pass
-			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
-			elif key == 'ea' and not Globals.eas_active: pass
-			elif key == 'acl' and not Globals.acls_active: pass
-			elif key == 'carbonfile' and not Globals.carbonfile_active: pass
-			elif key == 'resourcefork' and not Globals.resource_forks_active:
-				pass
-			elif key == 'uname' or key == 'gname':
-				# here for legacy reasons - 0.12.x didn't store u/gnames
-				other_name = other.data.get(key, None)
-				if (other_name and other_name != "None" and
-					other_name != self.data[key]): return None
 			elif (key == 'inode' and
 				  (not self.isreg() or self.getnumlinks() == 1 or
 				   not Globals.compare_inode or
-				   not Globals.preserve_hardlinks)):
-				pass
-			else:
-				try: other_val = other.data[key]
-				except KeyError: return None
-				if self.data[key] != other_val: return None
+				   not Globals.preserve_hardlinks)): pass
+			elif (not other.data.has_key(key) or
+				  self.data[key] != other.data[key]): return None
 		return 1
 
 	def equal_loose(self, other):
@@ -327,70 +282,48 @@ class RORPath:
 
 		"""
 		for key in self.data.keys(): # compare dicts key by key
-			if key in ('uid', 'gid', 'uname', 'gname'): pass
+			if ((key == 'uid' or key == 'gid') and
+				(self.issym() or not Globals.change_ownership)):
+				# Don't compare gid/uid for symlinks, and only root
+				# can change ownership
+				pass
 			elif (key == 'type' and self.isspecial() and
 				  other.isreg() and other.getsize() == 0):
 				pass # Special files may be replaced with empty regular files
 			elif key == 'atime' and not Globals.preserve_atime: pass
-			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'inode': pass
-			elif key == 'ea' and not Globals.eas_write: pass
-			elif key == 'acl' and not Globals.acls_write: pass
-			elif key == 'carbonfile' and not Globals.carbonfile_write: pass
-			elif key == 'resourcefork' and not Globals.resource_forks_write:
-				pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return 0
-
-		if self.lstat() and not self.issym() and Globals.change_ownership:
-			# Now compare ownership.  Symlinks don't have ownership
-			if user_group.map_rpath(self) != other.getuidgid(): return 0
-
 		return 1
 
 	def equal_verbose(self, other, check_index = 1,
-					  compare_inodes = 0, compare_ownership = 0,
-					  compare_acls = 0, compare_eas = 0, verbosity = 2):
+					  compare_inodes = 0, compare_ownership = 0):
 		"""Like __eq__, but log more information.  Useful when testing"""
 		if check_index and self.index != other.index:
-			log.Log("Index %s != index %s" % (self.index, other.index),
-					verbosity)
+			log.Log("Index %s != index %s" % (self.index, other.index), 2)
 			return None
 
 		for key in self.data.keys(): # compare dicts key by key
-			if (key in ('uid', 'gid', 'uname', 'gname') and
+			if ((key == 'uid' or key == 'gid') and
 				(self.issym() or not compare_ownership)):
 				# Don't compare gid/uid for symlinks, or if told not to
 				pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
-			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'inode' and (not self.isreg() or not compare_inodes):
 				pass
-			elif key == 'ea' and not compare_eas: pass
-			elif key == 'acl' and not compare_acls: pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]):
 				if not other.data.has_key(key):
-					log.Log("Second is missing key %s" % (key,), verbosity)
+					log.Log("Second is missing key %s" % (key,), 2)
 				else: log.Log("Value of %s differs: %s vs %s" %
-							  (key, self.data[key], other.data[key]),
-							  verbosity)
+							  (key, self.data[key], other.data[key]), 2)
 				return None
 		return 1
 
-	def equal_verbose_auto(self, other, verbosity = 2):
-		"""Like equal_verbose, but set parameters like __eq__ does"""
-		compare_inodes = ((self.getnumlinks() != 1) and
-						  Globals.compare_inode and Globals.preserve_hardlinks)
-		return self.equal_verbose(other,
-								  compare_inodes = compare_inodes,
-								  compare_eas = Globals.eas_active,
-								  compare_acls = Globals.acls_active)
-							 
 	def __ne__(self, other): return not self.__eq__(other)
 
 	def __str__(self):
@@ -472,16 +405,6 @@ class RORPath:
 		"""Return permission block of file"""
 		return self.data['perms']
 
-	def getuname(self):
-		"""Return username that owns the file"""
-		try: return self.data['uname']
-		except KeyError: return None
-
-	def getgname(self):
-		"""Return groupname that owns the file"""
-		try: return self.data['gname']
-		except KeyError: return None
-
 	def hassize(self):
 		"""True if rpath has a size parameter"""
 		return self.data.has_key('size')
@@ -501,10 +424,6 @@ class RORPath:
 	def getmtime(self):
 		"""Return modification time in seconds"""
 		return self.data['mtime']
-
-	def getctime(self):
-		"""Return change time in seconds"""
-		return self.data['ctime']
 	
 	def getinode(self):
 		"""Return inode number of file"""
@@ -590,46 +509,6 @@ class RORPath:
 															   self.index)
 			self.file_already_open = None
 
-	def set_acl(self, acl):
-		"""Record access control list in dictionary.  Does not write"""
-		self.data['acl'] = acl
-
-	def get_acl(self):
-		"""Return access control list object from dictionary"""
-		return self.data['acl']
-
-	def set_ea(self, ea):
-		"""Record extended attributes in dictionary.  Does not write"""
-		self.data['ea'] = ea
-
-	def get_ea(self):
-		"""Return extended attributes object"""
-		return self.data['ea']
-
-	def has_carbonfile(self):
-		"""True if rpath has a carbonfile parameter"""
-		return self.data.has_key('carbonfile')
-
-	def get_carbonfile(self):
-		"""Returns the carbonfile data"""
-		return self.data['carbonfile']
-
-	def set_carbonfile(self, cfile):
-		"""Record carbonfile data in dictionary.  Does not write."""
-		self.data['carbonfile'] = cfile
-
-	def has_resource_fork(self):
-		"""True if rpath has a resourcefork parameter"""
-		return self.data.has_key('resourcefork')
-
-	def get_resource_fork(self):
-		"""Return the resource fork in binary data"""
-		return self.data['resourcefork']
-
-	def set_resource_fork(self, rfork):
-		"""Record resource fork in dictionary.  Does not write"""
-		self.data['resourcefork'] = rfork
-
 
 class RPath(RORPath):
 	"""Remote Path class - wrapper around a possibly non-local pathname
@@ -664,7 +543,7 @@ class RPath(RORPath):
 			else: self.path = "/".join((base,) + index)
 		self.file = None
 		if data or base is None: self.data = data
-		else: self.setdata()
+		else: self.data = self.conn.C.make_file_dict(self.path)
 
 	def __str__(self):
 		return "Path: %s\nIndex: %s\nData: %s" % (self.path, self.index,
@@ -689,7 +568,6 @@ class RPath(RORPath):
 	def setdata(self):
 		"""Set data dictionary using C extension"""
 		self.data = self.conn.C.make_file_dict(self.path)
-		if self.lstat(): self.conn.rpath.setdata_local(self)
 
 	def make_file_dict_old(self):
 		"""Create the data dictionary"""
@@ -726,7 +604,6 @@ class RPath(RORPath):
 			# mtimes on symlinks and dev files don't work consistently
 			data['mtime'] = long(statblock[stat.ST_MTIME])
 			data['atime'] = long(statblock[stat.ST_ATIME])
-			data['ctime'] = long(statblock[stat.ST_CTIME])
 		return data
 
 	def check_consistency(self):
@@ -793,7 +670,6 @@ class RPath(RORPath):
 
 	def hardlink(self, linkpath):
 		"""Make self into a hardlink joined to linkpath"""
-		log.Log("Hard linking %s to %s" % (self.path, linkpath), 6)
 		self.conn.os.link(linkpath, self.path)
 		self.setdata()
 
@@ -840,8 +716,8 @@ class RPath(RORPath):
 		return uid == 0 or uid == self.data['uid']
 
 	def isgroup(self):
-		"""Return true if process has group of rp"""
-		return self.data['gid'] in self.conn.Globals.get('process_groups')
+		"""Return true if current process is in group of rp"""
+		return self.conn.Globals.get('process_gid') == self.data['gid']
 
 	def delete(self):
 		"""Delete file at self.path.  Recursively deletes directories."""
@@ -1064,89 +940,6 @@ class RPath(RORPath):
 		assert not fp.close()
 		return s
 
-	def get_acl(self):
-		"""Return access control list object, setting if necessary"""
-		try: acl = self.data['acl']
-		except KeyError: acl = self.data['acl'] = acl_get(self)
-		return acl
-
-	def write_acl(self, acl, map_names = 1):
-		"""Change access control list of rp
-
-		If map_names is true, map the ids in acl by user/group names.
-
-		"""
-		acl.write_to_rp(self, map_names)
-		self.data['acl'] = acl
-
-	def get_ea(self):
-		"""Return extended attributes object, setting if necessary"""
-		try: ea = self.data['ea']
-		except KeyError: ea = self.data['ea'] = ea_get(self)
-		return ea
-
-	def write_ea(self, ea):
-		"""Change extended attributes of rp"""
-		ea.write_to_rp(self)
-		self.data['ea'] = ea
-
-	def get_carbonfile(self):
-		"""Return resource fork data, loading from filesystem if
-		necessary."""
-		from Carbon.File import FSSpec
-		import MacOS
-		try: return self.data['cfile']
-		except KeyError: pass
-
-		try:
-			fsobj = FSSpec(self.path)
-			finderinfo = fsobj.FSpGetFInfo()
-			cfile = {'creator': finderinfo.Creator,
-					 'type': finderinfo.Type,
-					 'location': finderinfo.Location,
-					 'flags': finderinfo.Flags}
-			self.data['carbonfile'] = cfile
-			return cfile
-		except MacOS.Error:
-			self.data['carbonfile'] = None 
-			return self.data['carbonfile']
-
-	def write_carbonfile(self, cfile):
-		"""Write new carbon data to self."""
-		log.Log("Writing carbon data to %s" % (self.index,), 7)
-		from Carbon.File import FSSpec
-		import MacOS
-		fsobj = FSSpec(self.path)
-		finderinfo = fsobj.FSpGetFInfo()
-		finderinfo.Creator = cfile['creator']
-		finderinfo.Type = cfile['type']
-		finderinfo.Location = cfile['location']
-		finderinfo.Flags = cfile['flags']
-		fsobj.FSpSetFInfo(finderinfo)
-		self.set_carbonfile(cfile)
-
-	def get_resource_fork(self):
-		"""Return resource fork data, setting if necessary"""
-		assert self.isreg()
-		try: rfork = self.data['resourcefork']
-		except KeyError:
-			try:
-				rfork_fp = self.conn.open(os.path.join(self.path, 'rsrc'),
-										  'rb')
-				rfork = rfork_fp.read()
-				assert not rfork_fp.close()
-			except (IOError, OSError), e: rfork = ''
-			self.data['resourcefork'] = rfork
-		return rfork
-
-	def write_resource_fork(self, rfork_data):
-		"""Write new resource fork to self"""
-		log.Log("Writing resource fork to %s" % (self.index,), 7)
-		fp = self.conn.open(os.path.join(self.path, 'rsrc'), 'wb')
-		fp.write(rfork_data)
-		assert not fp.close()
-		self.set_resource_fork(rfork_data)
-
 
 class RPathFileHook:
 	"""Look like a file, but add closing hook"""
@@ -1163,24 +956,3 @@ class RPathFileHook:
 		self.closing_thunk()
 		return result
 
-
-def setdata_local(rpath):
-	"""Set eas/acls, uid/gid, resource fork in data dictionary
-
-	This is a global function because it must be called locally, since
-	these features may exist or not depending on the connection.
-
-	"""
-	assert rpath.conn is Globals.local_connection
-	rpath.data['uname'] = user_group.uid2uname(rpath.data['uid'])
-	rpath.data['gname'] = user_group.gid2gname(rpath.data['gid'])
-	if Globals.eas_conn: rpath.data['ea'] = ea_get(rpath)
-	if Globals.acls_conn: rpath.data['acl'] = acl_get(rpath)
-	if Globals.resource_forks_conn and rpath.isreg():
-		rpath.get_resource_fork()
-	if Globals.carbonfile_conn and rpath.isreg(): rpath.get_carbonfile()
-
-# These two are overwritten by the eas_acls.py module.  We can't
-# import that module directly because of circular dependency problems.
-def acl_get(rp): assert 0
-def ea_get(rp): assert 0

@@ -1,54 +1,5 @@
-New in v0.13.5 (2004/??/??)
+New in v0.12.7 (2004/05/31)
 ---------------------------
-
-Added error-correcting fsync suggestion by Antoine Perdaens.
-rdiff-backup may work better with NFS now.
-
-Fix by Dean Gaudet for --calculate-average mode (it broke somewhere in
-0.13.x).
-
-Fix for regress warning code:  rdiff-backup should warn you if you are
-trying to back up a directory into itself.
-
-Fix for restoring certain directories when not run as root.
-
-Now when determining group permissions check supplementary groups as
-well as main group.  (Bug report by Ryan Castle.)
-
-Fixed bug which could cause crash when backing up 3 or more hard
-linked files and the first gets deleted during processing.  (Thanks to
-Dean Gaudet for bug report.)
-
-
-New in v0.13.4 (2004/01/31)
----------------------------
-
-Checked in patch by John Goerzen to support Mac OS X Finder
-information.  As John says:
-> Specifically, it adds storage of:
-> 
->  * 4-byte creator
->  * 4-byte type
->  * integer flags
->  * dual integer location
-Much thanks to John for adding this useful feature all by himself!
-
-Added --compare and --compare-at-time switches for comparing a
-directory with the backup information saved about it.  Thanks to Erik
-Forsberg, who noticed that this feature was missing.
-
-Regressing and restoring should now take less memory when processing
-large directories (noticed by Luke Mewburn and others).
-
-When regressing, remove mirror_metadata and similar increments first.
-This will hopefully help regressing a backup that failed because disk
-was full (reported by Erik Forsberg).
-
-Fixed remote quoting errors found by Daniel Drucker.
-
-Fixed handling of (lack of) daylight savings time.  Earlier bug would
-cause some files to be marked an hour later.  Thanks to Troels Arvin
-and Farkas Levente for bug report.
 
 Altered file selection when restoring so excluded files will not be
 deleted from the target dir.  The old behavior was technically
@@ -58,16 +9,49 @@ Kaltenecker for bug report.
 Fixed error when --restrict path given with trailing backslash.  Bug
 report by Åke Brännström.
 
-Fixed many functions like --list-increments, --remove-older-than,
-etc. which previously didn't work with filename quoting.  Thanks to
-Vinod Kurup for detailed bug report.
+Backported regress fix from 0.13.x.  Bug noticed by Alan Horn.
+
+Added error-correcting fsync suggestion by Antoine Perdaens.
+rdiff-backup may work better with NFS now.
+
+Fix for regress warning code:  rdiff-backup should warn you if you are
+trying to back up a directory into itself.
+
+Fix for restoring certain directories when not run as root.
 
 
-New in v0.13.3 (2003/10/14)
+New in v0.12.6 (2003/11/02)
 ---------------------------
 
-Fixed some of the --restrict options which would cause spurious
-violation errors.
+Yet another unreadable file non-root regress bug fix.  Sorry about
+that.
+
+Added --list-increment-sizes option from the development branch.
+Previously this option was in the man page but was omitted in the code
+(thanks to Michael Schwendt for report).
+
+Regressing and restoring should now take less memory when processing
+large directories (noticed by Luke Mewburn and others).
+
+When regressing, remove mirror_metadata and similar increments first.
+This will hopefully help regressing a backup that failed because disk
+was full (reported by Erik Forsberg).
+
+Fixed rather important quoting problem: quoting directives like
+--windows-mode were simply ignored when rdiff-backup was running
+remotely!  I'm surprised no one noticed this.  Are none of you using
+--windows-mode or similar?
+
+Fixed handling of (lack of) daylight savings time.  Earlier bug would
+cause some files to be marked an hour later.  Thanks to Troels Arvin
+and Farkas Levente for bug report.
+
+
+New in v0.12.5 (2003/09/27)
+---------------------------
+
+Fixed bug in --test-server when using --restrict security options
+(test would fail improperly).  Thanks to Maik Schreiber for report.
 
 --list-changed-since and --list-at-time now work remotely.
 Thanks to Morten Werner Olsen for bug report.
@@ -83,21 +67,9 @@ that contain unreadable files and directories as long as they are
 owned by that user.  Bug report by Arkadiusz Miskiewicz.  Hopefully
 this is the last of the unreadable file bugs...
 
-Rewrote hard link tracking system.  New way should use less memory.
 
-Fixed bug causing rdiff-backup to crash when backing up from system
-supporting EAs/ACLs to one that didn't.
-
-
-New in v0.13.2 (2003/09/16)
+New in v0.12.4 (2003/09/13)
 ---------------------------
-
-Change ownership policy and added --user-mapping-file and
---group-mapping-file switches.  See man page for more information.
-
-Added option --never-drop-acls to cause fatal error instead of
-dropping any acls or acl entries.  Thanks to Greg Freemyer for
-suggestion.
 
 Specified socket type as SOCK_STREAM.  (Error reported by Erik
 Forsberg.)
@@ -111,28 +83,35 @@ If there is data missing from the destination dir (for instance if a
 user mistakenly deletes it), only warn when restoring, instead of
 exiting with error.
 
-Fixed bug in EA/ACL restoring, noticed by Greg Freemyer.
-
-Updated quoting of filenames and extended attributes names to match
-forthcoming attr/facl utilities.  Strange characters should now be
-properly escaped.
-
 Fixed problems with --restrict options that would cause proper
 sessions to fail.  Thanks to Randall Nortman for error report.
-
-Added new time specification by backup number.  So now you can
-'--remove-older-than 2B' or '--list-at-time 0B'.  Original suggestion
-by Alan Bailward.
 
 File examples.html added to distribution; examples section removed
 from man page.
 
-Removed option --no-change-dir-inc-perms.  Instead when copying
-permissions to directory increments, mask with 0777.
 
-
-New in v0.13.1 (2003/08/08)
+New in v0.12.3 (2003/08/08)
 ---------------------------
+
+Patch by Jeffrey Marshall fixes socket/fifo recognition on Mac OS X
+(which apparently has buggy macros).
+
+Patch by Jeffrey Marshall fixes --calculate-average mode, which seems
+to have broken recently.
+
+rdiff-backup should now work with python 2.3.  Thanks to Arkadiusz
+Miskiewicz for bug reports.
+
+rdiff-backup now builds with and requires librsync 0.9.6.  This
+version should be much better than the old one and everyone should
+probably upgrade.  Much thanks to Donovan Baarda for all the work that
+went into this release.
+
+
+New in v0.12.2 (2003/07/24)
+---------------------------
+
+Patch by Arkadiusz Patyk fixes building with Python 2.3c1.
 
 Restore of archives made by 0.10.x and earlier fixed, although hard
 link information is not restored unless it is current in the mirror.
@@ -141,67 +120,16 @@ link information is not restored unless it is current in the mirror.
 Fixed problem with door files locally when repository is remote.
 (Reported by Robert Weber.)
 
-Patch by Jeffrey Marshall fixes socket/fifo recognition on Mac OS X
-(which apparently has buggy macros).
 
-Patch by Jeffrey Marshall fixes --calculate-average mode, which seems
-to have broken recently.
-
-rdiff-backup should now work and build with python 2.3.  Thanks to
-Arkadiusz Miskiewicz and Arkadiusz Patyk for bug reports and a patch.
-
-rdiff-backup now builds and requires librsync 0.9.6.  This version
-should be much better than the old one and everyone should probably
-upgrade.  Much thanks to Donovan Baarda for all the work that went
-into this release.
-
-
-New in v0.13.0 (2003/07/22)
+New in v0.12.1 (2003/07/22)
 ---------------------------
 
-To prevent the buildup of confusing and error-prone options, the
-capabilities of the source and destination file systems are now
-autodetected.  Detected features include allowed characters, extended
-attributes, access control lists, hard links, ownership, and directory
-fsyncing.  Options such as --windows-mode, --chars-to-quote,
---quoting-char, and --windows-restore-mode have been removed.
+Added --no-change-dir-inc-perms switch, to avoid some weird errors on
+FreeBSD, and possibly on Solaris.  Thanks to Troels Arvin for
+report.
 
-Now rdiff-backup supports user extended attributes (EAs).  To take
-advantage of this you will need the python module pyxattr and a file
-system that supports EAs.  Thanks to Greg Freemyer for valuable
-discussion.
-
-Support for access control lists (ACLs) was also added.  An ACL
-capable file system and the python package pylibacl (which exports the
-posix1e module) are required.  Thanks to Greg Freemyer for valuable
-discussion.
-
-Thanks to patches by Daniel Hazelbaker, rdiff-backup now reads and
-writes Mac OS X style resource forks!
-
-****** Warning ****** The above features are new to this development
-release, and it is difficult to test all the possibly combinations of
-source and destination file systems.  They should not be considered
-stable.  However, help would be appreciated testing these new
-features.
-
-****** Warning #2 ****** rdiff-backup records ACL and EA information
-in files designed to be compatible with the utilities "getfacl" and
-"getfattr".  However, there is a possible security hole in both these
-formats (see
-http://acl.bestbits.at/pipermail/acl-devel/2003-June/001498.html).
-rdiff-backup's format will be fixed when getf{attr|acl}'s is.
-
-Added --list-increment-sizes switch, which tells you how much space
-the various backup files take up.  (Suggested by Andrew Bressen)
-
-Although it should be detected automatically, can avoid copying
-permissions to directory increments with --no-change-dir-inc-perms.
-(Problem on FreeBSD when backing up sticky directories reported by
-Troels Arvin.)
-
-Fixed bug with --check-destination and --windows-mode reported by
-Tucker Sylvestro.
+Fixed bug when regressing destination directory made with
+--windows-mode.  Reported by Tucker Sylvestro.
 
 The librsync blocksize is now chosen based on filesize.  This should
 make operations on large files faster (in some cases, orders of

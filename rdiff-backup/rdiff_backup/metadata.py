@@ -55,38 +55,13 @@ field names and values.
 """
 
 from __future__ import generators
-import re, gzip, os, binascii
-import log, Globals, rpath, Time, robust, increment, static
+import re, gzip, os
+import log, Globals, rpath, Time, robust, increment
 
 class ParsingError(Exception):
 	"""This is raised when bad or unparsable data is received"""
 	pass
 
-def carbonfile2string(cfile):
-	"""Convert CarbonFile data to a string suitable for storing."""
-	retvalparts = []
-	retvalparts.append('creator:%s' % binascii.hexlify(cfile['creator']))
-	retvalparts.append('type:%s' % binascii.hexlify(cfile['type']))
-	retvalparts.append('location:%d,%d' % cfile['location'])
-	retvalparts.append('flags:%d' % cfile['flags'])
-	return '|'.join(retvalparts)
-
-def string2carbonfile(data):
-	"""Re-constitute CarbonFile data from a string stored by 
-	carbonfile2string."""
-	retval = {}
-	for component in data.split('|'):
-		key, value = component.split(':')
-		if key == 'creator':
-			retval['creator'] = binascii.unhexlify(value)
-		elif key == 'type':
-			retval['type'] = binascii.unhexlify(value)
-		elif key == 'location':
-			a, b = value.split(',')
-			retval['location'] = (int(a), int(b))
-		elif key == 'flags':
-			retval['flags'] = int(value)
-	return retval
 
 def RORP2Record(rorpath):
 	"""From RORPath, return text record of file's metadata"""
@@ -99,18 +74,6 @@ def RORP2Record(rorpath):
 	if type == "reg":
 		str_list.append("  Size %s\n" % rorpath.getsize())
 
-		# If there is a resource fork, save it.
-		if rorpath.has_resource_fork():
-			if not rorpath.get_resource_fork(): rf = "None"
-			else: rf = binascii.hexlify(rorpath.get_resource_fork())
-			str_list.append("  ResourceFork %s\n" % (rf,))
-                
-		# If there is Carbon data, save it.
-		if rorpath.has_carbonfile():
-			if not rorpath.get_carbonfile(): cfile = "None"
-			else: cfile = carbonfile2string(rorpath.get_carbonfile())
-			str_list.append("  CarbonFile %s\n" % (cfile,))
-
 		# If file is hardlinked, add that information
 		if Globals.preserve_hardlinks:
 			numlinks = rorpath.getnumlinks()
@@ -118,7 +81,6 @@ def RORP2Record(rorpath):
 				str_list.append("  NumHardLinks %s\n" % numlinks)
 				str_list.append("  Inode %s\n" % rorpath.getinode())
 				str_list.append("  DeviceLoc %s\n" % rorpath.getdevloc())
-
 	elif type == "None": return "".join(str_list)
 	elif type == "dir" or type == "sock" or type == "fifo": pass
 	elif type == "sym":
@@ -138,9 +100,7 @@ def RORP2Record(rorpath):
 	# Add user, group, and permission information
 	uid, gid = rorpath.getuidgid()
 	str_list.append("  Uid %s\n" % uid)
-	str_list.append("  Uname %s\n" % rorpath.getuname() or ":")
 	str_list.append("  Gid %s\n" % gid)
-	str_list.append("  Gname %s\n" % rorpath.getgname() or ":")
 	str_list.append("  Permissions %s\n" % rorpath.getperms())
 	return "".join(str_list)
 
@@ -155,17 +115,13 @@ def Record2RORP(record_string):
 	"""
 	data_dict = {}
 	for field, data in line_parsing_regexp.findall(record_string):
-		if field == "File": index = quoted_filename_to_index(data)
+		if field == "File":
+			if data == ".": index = ()
+			else: index = tuple(unquote_path(data).split("/"))
 		elif field == "Type":
 			if data == "None": data_dict['type'] = None
 			else: data_dict['type'] = data
 		elif field == "Size": data_dict['size'] = long(data)
-		elif field == "ResourceFork":
-			if data == "None": data_dict['resourcefork'] = ""
-			else: data_dict['resourcefork'] = binascii.unhexlify(data)
-		elif field == "CarbonFile":
-			if data == "None": data_dict['carbonfile'] = None
-			else: data_dict['carbonfile'] = string2carbonfile(data)
 		elif field == "NumHardLinks": data_dict['nlink'] = int(data)
 		elif field == "Inode": data_dict['inode'] = long(data)
 		elif field == "DeviceLoc": data_dict['devloc'] = long(data)
@@ -176,12 +132,6 @@ def Record2RORP(record_string):
 		elif field == "ModTime": data_dict['mtime'] = long(data)
 		elif field == "Uid": data_dict['uid'] = int(data)
 		elif field == "Gid": data_dict['gid'] = int(data)
-		elif field == "Uname":
-			if data == ":": data_dict['uname'] = None
-			else: data_dict['uname'] = data
-		elif field == "Gname":
-			if data == ':': data_dict['gname'] = None
-			else: data_dict['gname'] = data
 		elif field == "Permissions": data_dict['perms'] = int(data)
 		else: raise ParsingError("Unknown field in line '%s %s'" %
 								 (field, data))
@@ -215,34 +165,25 @@ def unquote_path(quoted_string):
 		return two_chars
 	return re.sub("\\\\n|\\\\\\\\", replacement_func, quoted_string)
 
-def quoted_filename_to_index(quoted_filename):
-	"""Return tuple index given quoted filename"""
-	if quoted_filename == '.': return ()
-	else: return tuple(unquote_path(quoted_filename).split('/'))
 
-class FlatExtractor:
-	"""Controls iterating objects from flat file"""
+def write_rorp_iter_to_file(rorp_iter, file):
+	"""Given iterator of RORPs, write records to (pre-opened) file object"""
+	for rorp in rorp_iter: file.write(RORP2Record(rorp))
 
-	# Set this in subclass.  record_boundary_regexp should match
-	# beginning of next record.  The first group should start at the
-	# beginning of the record.  The second group should contain the
-	# (possibly quoted) filename.
-	record_boundary_regexp = None
-
-	# Set in subclass to function that converts text record to object
-	record_to_object = None
-
+class rorp_extractor:
+	"""Controls iterating rorps from metadata file"""
 	def __init__(self, fileobj):
 		self.fileobj = fileobj # holds file object we are reading from
 		self.buf = "" # holds the next part of the file
+		self.record_boundary_regexp = re.compile("\\nFile")
 		self.at_end = 0 # True if we are at the end of the file
 		self.blocksize = 32 * 1024
 
 	def get_next_pos(self):
-		"""Return position of next record in buffer, or end pos if none"""
+		"""Return position of next record in buffer"""
 		while 1:
-			m = self.record_boundary_regexp.search(self.buf, 1)
-			if m: return m.start(1)
+			m = self.record_boundary_regexp.search(self.buf)
+			if m: return m.start(0)+1 # the +1 skips the newline
 			else: # add next block to the buffer, loop again
 				newbuf = self.fileobj.read(self.blocksize)
 				if not newbuf:
@@ -251,13 +192,12 @@ class FlatExtractor:
 				else: self.buf += newbuf
 
 	def iterate(self):
-		"""Return iterator that yields all objects with records"""
+		"""Return iterator over all records"""
 		while 1:
 			next_pos = self.get_next_pos()
-			try: yield self.record_to_object(self.buf[:next_pos])
+			try: yield Record2RORP(self.buf[:next_pos])
 			except ParsingError, e:
-				if self.at_end: break # Ignore whitespace/bad records at end
-				log.Log("Error parsing flat file: %s" % (e,), 2)
+				log.Log("Error parsing metadata file: %s" % (e,), 2)
 			if self.at_end: break
 			self.buf = self.buf[next_pos:]
 		assert not self.close()
@@ -270,151 +210,113 @@ class FlatExtractor:
 
 		"""
 		assert not self.buf or self.buf.endswith("\n")
+		if not index: indexpath = "."
+		else: indexpath = "/".join(index)
+		# Must double all backslashes, because they will be
+		# reinterpreted.  For instance, to search for index \n
+		# (newline), it will be \\n (backslash n) in the file, so the
+		# regular expression is "File \\\\n\\n" (File two backslash n
+		# backslash n)
+		double_quote = re.sub("\\\\", "\\\\\\\\", indexpath)
+		begin_re = re.compile("(^|\\n)(File %s\\n)" % (double_quote,))
 		while 1:
+			m = begin_re.search(self.buf)
+			if m:
+				self.buf = self.buf[m.start(2):]
+				return
 			self.buf = self.fileobj.read(self.blocksize)
 			self.buf += self.fileobj.readline()
 			if not self.buf:
 				self.at_end = 1
 				return
-			while 1:
-				m = self.record_boundary_regexp.search(self.buf)
-				if not m: break
-				cur_index = self.filename_to_index(m.group(2))
-				if cur_index >= index:
-					self.buf = self.buf[m.start(1):]
-					return
-				else: self.buf = self.buf[m.end(1):]
 
 	def iterate_starting_with(self, index):
-		"""Iterate objects whose index starts with given index"""
+		"""Iterate records whose index starts with given index"""
 		self.skip_to_index(index)
 		if self.at_end: return
 		while 1:
 			next_pos = self.get_next_pos()
-			try: obj = self.record_to_object(self.buf[:next_pos])
+			try: rorp = Record2RORP(self.buf[:next_pos])
 			except ParsingError, e:
 				log.Log("Error parsing metadata file: %s" % (e,), 2)
 			else:
-				if obj.index[:len(index)] != index: break
-				yield obj
+				if rorp.index[:len(index)] != index: break
+				yield rorp
 			if self.at_end: break
 			self.buf = self.buf[next_pos:]
 		assert not self.close()
-
-	def filename_to_index(self, filename):
-		"""Translate filename, possibly quoted, into an index tuple
-
-		The filename is the first group matched by
-		regexp_boundary_regexp.
-
-		"""
-		assert 0 # subclass
 
 	def close(self):
 		"""Return value of closing associated file"""
 		return self.fileobj.close()
 
-class RorpExtractor(FlatExtractor):
-	"""Iterate rorps from metadata file"""
-	record_boundary_regexp = re.compile("(?:\\n|^)(File (.*?))\\n")
-	record_to_object = staticmethod(Record2RORP)
-	filename_to_index = staticmethod(quoted_filename_to_index)
 
+metadata_rp = None
+metadata_fileobj = None
+metadata_record_buffer = [] # Use this because gzip writes are slow
+def OpenMetadata(rp = None, compress = 1):
+	"""Open the Metadata file for writing, return metadata fileobj"""
+	global metadata_rp, metadata_fileobj
+	assert not metadata_fileobj, "Metadata file already open"
+	if rp: metadata_rp = rp
+	else:
+		if compress: typestr = 'snapshot.gz'
+		else: typestr = 'snapshot'
+		metadata_rp = Globals.rbdir.append("mirror_metadata.%s.%s" %
+										   (Time.curtimestr, typestr))
+	metadata_fileobj = metadata_rp.open("wb", compress = compress)
 
-class FlatFile:
-	"""Manage a flat (probably text) file containing info on various files
+def WriteMetadata(rorp):
+	"""Write metadata of rorp to file"""
+	global metadata_fileobj, metadata_record_buffer
+	metadata_record_buffer.append(RORP2Record(rorp))
+	if len(metadata_record_buffer) >= 100: write_metadata_buffer()
 
-	This is used for metadata information, and possibly EAs and ACLs.
-	The main read interface is as an iterator.  The storage format is
-	a flat, probably compressed file, so random access is not
-	recommended.
+def write_metadata_buffer():
+	global metadata_record_buffer
+	metadata_fileobj.write("".join(metadata_record_buffer))
+	metadata_record_buffer = []
+
+def CloseMetadata():
+	"""Close the metadata file"""
+	global metadata_rp, metadata_fileobj
+	assert metadata_fileobj, "Metadata file not open"
+	if metadata_record_buffer: write_metadata_buffer()
+	try: fileno = metadata_fileobj.fileno() # will not work if GzipFile
+	except AttributeError: fileno = metadata_fileobj.fileobj.fileno()
+	os.fsync(fileno)
+	result = metadata_fileobj.close()
+	metadata_fileobj = None
+	metadata_rp.setdata()
+	return result
+
+def GetMetadata(rp, restrict_index = None, compressed = None):
+	"""Return iterator of metadata from given metadata file rp"""
+	if compressed is None:
+		if rp.isincfile():
+			compressed = rp.inc_compressed
+			assert rp.inc_type == "data" or rp.inc_type == "snapshot"
+		else: compressed = rp.get_indexpath().endswith(".gz")
+
+	fileobj = rp.open("rb", compress = compressed)
+	if restrict_index is None: return rorp_extractor(fileobj).iterate()
+	else: return rorp_extractor(fileobj).iterate_starting_with(restrict_index)
+
+def GetMetadata_at_time(rbdir, time, restrict_index = None, rblist = None):
+	"""Scan through rbdir, finding metadata file at given time, iterate
+
+	If rdlist is given, use that instead of listing rddir.  Time here
+	is exact, we don't take the next one older or anything.  Returns
+	None if no matching metadata found.
 
 	"""
-	_prefix = None # Set this to real prefix when subclassing
-	_rp, _fileobj = None, None
-	# Buffering may be useful because gzip writes are slow
-	_buffering_on = 1
-	_record_buffer, _max_buffer_size = None, 100
-	_extractor = FlatExtractor # Set to class that iterates objects
+	if rblist is None: rblist = map(lambda x: rbdir.append(x),
+									robust.listrp(rbdir))
+	for rp in rblist:
+		if (rp.isincfile() and
+			(rp.getinctype() == "data" or rp.getinctype() == "snapshot") and
+			rp.getincbase_str() == "mirror_metadata"):
+			if rp.getinctime() == time: return GetMetadata(rp, restrict_index)
+	return None
 
-	def open_file(cls, rp = None, compress = 1):
-		"""Open file for writing.  Use cls._rp if rp not given."""
-		assert not cls._fileobj, "Flatfile already open"
-		cls._record_buffer = []
-		if rp: cls._rp = rp
-		else:
-			if compress: typestr = 'snapshot.gz'
-			else: typestr = 'snapshot'
-			cls._rp = Globals.rbdir.append(
-				"%s.%s.%s" % (cls._prefix, Time.curtimestr, typestr))
-		cls._fileobj = cls._rp.open("wb", compress = compress)
-
-	def write_object(cls, object):
-		"""Convert one object to record and write to file"""
-		record = cls._object_to_record(object)
-		if cls._buffering_on:
-			cls._record_buffer.append(record)
-			if len(cls._record_buffer) >= cls._max_buffer_size:
-				cls._fileobj.write("".join(cls._record_buffer))
-				cls._record_buffer = []
-		else: cls._fileobj.write(record)
-
-	def close_file(cls):
-		"""Close file, for when any writing is done"""
-		assert cls._fileobj, "File already closed"
-		if cls._buffering_on and cls._record_buffer: 
-			cls._fileobj.write("".join(cls._record_buffer))
-			cls._record_buffer = []
-		try: fileno = cls._fileobj.fileno() # will not work if GzipFile
-		except AttributeError: fileno = cls._fileobj.fileobj.fileno()
-		os.fsync(fileno)
-		result = cls._fileobj.close()
-		cls._fileobj = None
-		cls._rp.setdata()
-		return result
-
-	def get_objects(cls, restrict_index = None, compressed = None):
-		"""Return iterator of objects records from file rp"""
-		assert cls._rp, "Must have rp set before get_objects can be used"
-		if compressed is None:
-			if cls._rp.isincfile():
-				compressed = cls._rp.inc_compressed
-				assert (cls._rp.inc_type == 'data' or
-						cls._rp.inc_type == 'snapshot'), cls._rp.inc_type
-			else: compressed = cls._rp.get_indexpath().endswith('.gz')
-
-		fileobj = cls._rp.open('rb', compress = compressed)
-		if not restrict_index: return cls._extractor(fileobj).iterate()
-		else:
-			re = cls._extractor(fileobj)
-			return re.iterate_starting_with(restrict_index)
-		
-	def get_objects_at_time(cls, rbdir, time, restrict_index = None,
-							rblist = None):
-		"""Scan through rbdir, finding data at given time, iterate
-
-		If rblist is givenr, use that instead of listing rbdir.  Time
-		here is exact, we don't take the next one older or anything.
-		Returns None if no file matching prefix is found.
-
-		"""
-		if rblist is None:
-			rblist = map(lambda x: rbdir.append(x), robust.listrp(rbdir))
-
-		for rp in rblist:
-			if (rp.isincfile() and
-				(rp.getinctype() == "data" or rp.getinctype() == "snapshot")
-				and rp.getincbase_str() == cls._prefix):
-				if rp.getinctime() == time:
-					cls._rp = rp
-					return cls.get_objects(restrict_index)
-		return None
-
-static.MakeClass(FlatFile)
-
-class MetadataFile(FlatFile):
-	"""Store/retrieve metadata from mirror_metadata as rorps"""
-	_prefix = "mirror_metadata"
-	_extractor = RorpExtractor
-	_object_to_record = staticmethod(RORP2Record)
 

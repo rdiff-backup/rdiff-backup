@@ -20,7 +20,7 @@
 """Functions to make sure remote requests are kosher"""
 
 import sys, tempfile
-import Globals, Main, rpath, log
+import Globals, Main, rpath
 
 class Violation(Exception):
 	"""Exception that indicates an improper request has been received"""
@@ -76,10 +76,8 @@ def set_security_level(action, cmdpairs):
 			rdir = tempfile.gettempdir()
 		elif islocal(cp1):
 			sec_level = "read-only"
-			Main.restore_set_root(rpath.RPath(Globals.local_connection,
-											  getpath(cp1)))
-			if Main.restore_root: rdir = Main.restore_root.path
-			else: log.Log.FatalError("Invalid restore directory")
+			rdir = Main.restore_get_root(rpath.RPath(Globals.local_connection,
+													 getpath(cp1)))[0].path
 		else:
 			assert islocal(cp2)
 			sec_level = "all"
@@ -95,9 +93,10 @@ def set_security_level(action, cmdpairs):
 			assert islocal(cp2)
 			sec_level = "all"
 			rdir = getpath(cp2)
-	elif action in ["test-server", "list-increments", 'list-increment-sizes',
-					 "list-at-time", "list-changed-since",
-					 "calculate-average", "remove-older-than", "compare"]:
+	elif (action == "test-server" or action == "list-increments" or
+		  action == "list-increment-sizes" or action == "list-at-time"
+		  or action == "list-changed-since" or action == "calculate-average"
+		  or action == "remove-older-than"):
 		sec_level = "minimal"
 		rdir = tempfile.gettempdir()
 	else: assert 0, "Unknown action %s" % action
@@ -113,46 +112,41 @@ def set_allowed_requests(sec_level):
 	allowed_requests = ["VirtualFile.readfromid", "VirtualFile.closebyid",
 						"Globals.get", "Globals.is_not_None",
 						"Globals.get_dict_val",
+						"FilenameMapping.set_init_quote_vals_local",
 						"log.Log.open_logfile_allconn",
 						"log.Log.close_logfile_allconn",
 						"Log.log_to_file",
-						"FilenameMapping.set_init_quote_vals_local",
 						"SetConnections.add_redirected_conn",
 						"RedirectedRun",
 						"sys.stdout.write",
-						"robust.install_signal_handlers"]
+						"robust.install_signal_handlers",
+						"Hardlink.initialize_dictionaries"]
 	if sec_level == "minimal": pass
 	elif sec_level == "read-only" or sec_level == "update-only":
 		allowed_requests.extend(
 			["C.make_file_dict",
-			 "rpath.ea_get",
-			 "rpath.acl_get",
-			 "rpath.setdata_local",
 			 "log.Log.log_to_file",
 			 "os.getuid",
 			 "os.listdir",
 			 "Time.setcurtime_local",
 			 "rpath.gzip_open_local_read",
-			 "rpath.open_local_read",
-			 "Hardlink.initialize_dictionaries",
-			 "user_group.uid2uname",
-			 "user_group.gid2gname"])
+			 "rpath.open_local_read"])
 		if sec_level == "read-only":
 			allowed_requests.extend(
-				["fs_abilities.get_fsabilities_readonly",
-				 "fs_abilities.get_fsabilities_restoresource",
-				 "restore.MirrorStruct.set_mirror_and_rest_times",
+				["restore.MirrorStruct.set_mirror_and_rest_times",
 				 "restore.MirrorStruct.initialize_rf_cache",
 				 "restore.MirrorStruct.close_rf_cache",
 				 "restore.MirrorStruct.get_diffs",
-				 "backup.SourceStruct.get_source_select",
 				 "backup.SourceStruct.set_source_select",
+				 "backup.SourceStruct.get_source_select",
 				 "backup.SourceStruct.get_diffs"])
-		elif sec_level == "update-only":
+		if sec_level == "update-only":
 			allowed_requests.extend(
 				["log.Log.open_logfile_local", "log.Log.close_logfile_local",
 				 "log.ErrorLog.open", "log.ErrorLog.isopen",
 				 "log.ErrorLog.close",
+				 "robust.SaveState.init_filenames",
+				 "robust.SaveState.touch_last_file",
 				 "backup.DestinationStruct.set_rorp_cache",
 				 "backup.DestinationStruct.get_sigs",				 
 				 "backup.DestinationStruct.patch_and_increment",
@@ -160,8 +154,7 @@ def set_allowed_requests(sec_level):
 				 "Main.backup_remove_curmirror_local",
 				 "Globals.ITRB.increment_stat",
 				 "statistics.record_error",
-				 "log.ErrorLog.write_if_open",
-				 "fs_abilities.get_fsabilities_readwrite"])
+				 "log.ErrorLog.write_if_open"])
 	if Globals.server:
 		allowed_requests.extend(
 			["SetConnections.init_connection_remote",
@@ -171,9 +164,7 @@ def set_allowed_requests(sec_level):
 			 "Globals.postset_regexp_local",
 			 "Globals.set_select",
 			 "backup.SourceStruct.set_session_info",
-			 "backup.DestinationStruct.set_session_info",
-			 "user_group.init_user_mapping",
-			 "user_group.init_group_mapping"])
+			 "backup.DestinationStruct.set_session_info"])
 
 def vet_request(request, arglist):
 	"""Examine request for security violations"""
@@ -184,7 +175,7 @@ def vet_request(request, arglist):
 			if isinstance(arg, rpath.RPath): vet_rpath(arg)
 	if security_level == "all": return
 	if request.function_string in allowed_requests: return
-	if request.function_string in ("Globals.set", "Globals.set_local"):
+	if request.function_string == "Globals.set":
 		if Globals.server and arglist[0] not in disallowed_server_globals:
 			return
 	raise Violation("\nWarning Security Violation!\n"
@@ -206,3 +197,7 @@ def vet_rpath(rpath):
 							"Request to handle path %s\n"
 							"which doesn't appear to be within "
 							"restrict path %s.\n" % (normalized, restrict))
+
+			 
+		   
+			

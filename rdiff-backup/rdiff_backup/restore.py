@@ -1,4 +1,4 @@
-# Copyright 2002, 2003, 2004 Ben Escoto
+# Copyright 2002 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -22,7 +22,7 @@
 from __future__ import generators
 import tempfile, os, cStringIO
 import Globals, Time, Rdiff, Hardlink, rorpiter, selection, rpath, \
-	   log, static, robust, metadata, statistics, TempFile, eas_acls
+	   log, static, robust, metadata, statistics, TempFile
 
 
 # This will be set to the time of the current mirror
@@ -86,11 +86,7 @@ def ListChangedSince(mirror_rp, inc_rp, restore_to_time):
 	MirrorStruct.close_rf_cache()
 
 def ListAtTime(mirror_rp, inc_rp, time):
-	"""List the files in archive at the given time
-
-	Output is a RORP Iterator with info in index.  See ListChangedSince.
-
-	"""
+	"""List the files in archive at the given time"""
 	assert mirror_rp.conn is Globals.local_connection, "Run locally only"
 	MirrorStruct.set_mirror_and_rest_times(time)
 	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
@@ -98,31 +94,6 @@ def ListAtTime(mirror_rp, inc_rp, time):
 	old_iter = MirrorStruct.get_mirror_rorp_iter(_rest_time, 1)
 	for rorp in old_iter: yield rorp
 	
-def Compare(src_iter, mirror_rp, inc_rp, compare_time):
-	"""Compares metadata in src_rp dir with metadata in mirror_rp at time"""
-	MirrorStruct.set_mirror_and_rest_times(compare_time)
-	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
-
-	mir_iter = MirrorStruct.get_mirror_rorp_iter(compare_time, 1)
-	collated = rorpiter.Collate2Iters(src_iter, mir_iter)
-	changed_files_found = 0
-	for src_rorp, mir_rorp in collated: 
-		if not mir_rorp: change = "new"
-		elif not src_rorp: change = "deleted"
-		elif src_rorp == mir_rorp: continue
-		else: change = "changed"
-		changed_files_found = 1
-		path_desc = (src_rorp and src_rorp.get_indexpath() or
-					 mir_rorp.get_indexpath())
-		log.Log("%-7s %s" % (change, path_desc), 2)
-		if change == "changed": # Log more description of difference
-			assert not src_rorp.equal_verbose_auto(mir_rorp, 3)
-
-	if not changed_files_found:
-		log.Log("No changes found.  Directory matches archive data.", 2)
-	MirrorStruct.close_rf_cache()
-	return changed_files_found
-
 
 class MirrorStruct:
 	"""Hold functions to be run on the mirror side"""
@@ -157,19 +128,15 @@ class MirrorStruct:
 		older one here.
 
 		"""
-		inctimes = cls.get_increment_times()
+		global _rest_time
+		base_incs = get_inclist(Globals.rbdir.append("increments"))
+		if not base_incs: return _mirror_time
+		inctimes = [inc.getinctime() for inc in base_incs]
+		inctimes.append(_mirror_time)
 		older_times = filter(lambda time: time <= restore_to_time, inctimes)
 		if older_times: return max(older_times)
 		else: # restore time older than oldest increment, just return that
 			return min(inctimes)
-
-	def get_increment_times(cls, rp = None):
-		"""Return list of times of backups, including current mirror"""
-		if not _mirror_time: return_list = [cls.get_mirror_time()]
-		else: return_list = [_mirror_time]
-		if not rp or not rp.index: rp = Globals.rbdir.append("increments")
-		for inc in get_inclist(rp): return_list.append(inc.getinctime())
-		return return_list
 
 	def initialize_rf_cache(cls, mirror_base, inc_base):
 		"""Set cls.rf_cache to CachedRF object"""
@@ -194,13 +161,11 @@ class MirrorStruct:
 
 		"""
 		if rest_time is None: rest_time = _rest_time
-
-		rorp_iter = eas_acls.GetCombinedMetadataIter(
-			Globals.rbdir, rest_time, restrict_index = cls.mirror_base.index,
-			acls = Globals.acls_active, eas = Globals.eas_active)
-		if not rorp_iter:
-			if require_metadata:
-				log.Log.FatalError("Mirror metadata not found")
+		metadata_iter = metadata.GetMetadata_at_time(Globals.rbdir,
+				 rest_time, restrict_index = cls.mirror_base.index)
+		if metadata_iter: rorp_iter = metadata_iter
+		elif require_metadata: log.Log.FatalError("Mirror metadata not found")
+		else:
 			log.Log("Warning: Mirror metadata not found, "
 					"reading from directory", 2)
 			rorp_iter = cls.get_rorp_iter_from_rf(cls.root_rf)
@@ -255,17 +220,15 @@ class MirrorStruct:
 	def get_diffs_from_collated(cls, collated):
 		"""Get diff iterator from collated"""
 		for mir_rorp, target_rorp in collated:
-			if Globals.preserve_hardlinks and mir_rorp:
-				Hardlink.add_rorp(mir_rorp, target_rorp)
+			if Globals.preserve_hardlinks:
+				if mir_rorp: Hardlink.add_rorp(mir_rorp, source = 1)
+				if target_rorp: Hardlink.add_rorp(target_rorp, source = 0)
+
 			if (not target_rorp or not mir_rorp or
 				not mir_rorp == target_rorp or
 				(Globals.preserve_hardlinks and not
 				 Hardlink.rorp_eq(mir_rorp, target_rorp))):
-				diff = cls.get_diff(mir_rorp, target_rorp)
-			else: diff = None
-			if Globals.preserve_hardlinks and mir_rorp:
-				Hardlink.del_rorp(mir_rorp)
-			if diff: yield diff
+				yield cls.get_diff(mir_rorp, target_rorp)
 
 	def get_diff(cls, mir_rorp, target_rorp):
 		"""Get a diff for mir_rorp at time"""

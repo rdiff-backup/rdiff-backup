@@ -36,7 +36,7 @@ class Local:
 	vft2_in = get_local_rp('vft2_out')
 
 	timbar_in = get_local_rp('increment1/timbar.pyc')
-	timbar_out = get_local_rp('timbar.pyc') # in cur directory
+	timbar_out = get_local_rp('../timbar.pyc') # in cur directory
 
 	wininc2 = get_local_rp('win-increment2')
 	wininc3 = get_local_rp('win-increment3')
@@ -64,18 +64,20 @@ class PathSetter(unittest.TestCase):
 
 	def exec_rb(self, time, *args):
 		"""Run rdiff-backup on given arguments"""
-		self.exec_rb_extra_args(time, '', *args)
+		arglist = []
+		if time: arglist.extend(["--current-time", str(time)])
+		arglist.append(self.src_prefix + args[0])
+		if len(args) > 1:
+			arglist.append(self.dest_prefix + args[1])
+			assert len(args) == 2
+
+		argstring = ' '.join(map(lambda s: "'%s'" % (s,), arglist))
+		cmdstr = self.rb_schema + argstring
+		print "executing " + cmdstr
+		assert not os.system(cmdstr)
 
 	def exec_rb_extra_args(self, time, extra_args, *args):
-		self.exec_rb_extra_args_retval(time, extra_args, 0, *args)
-
-	def exec_rb_extra_args_retval(self, time, extra_args, ret_val, *args):
-		"""Like exec_rb_extra_args, but require return val to be ret_val
-
-		Because of some problems I have with os.system, return val is
-		only accurate to 0 or non-zero.
-
-		"""
+		"""Run rdiff-backup on given arguments"""
 		arglist = []
 		if time: arglist.extend(["--current-time",  str(time)])
 		arglist.append(self.src_prefix + args[0])
@@ -83,13 +85,9 @@ class PathSetter(unittest.TestCase):
 			arglist.append(self.dest_prefix + args[1])
 			assert len(args) == 2
 
-		arg_string = ' '.join(map(lambda s: "'%s'" % (s,), arglist))
-		cmdstr = "%s %s %s" % (self.rb_schema, extra_args, arg_string)
+		cmdstr = "%s %s %s" % (self.rb_schema, extra_args, ' '.join(arglist))
 		print "executing " + cmdstr
-		actual_val = os.system(cmdstr)
-		assert ((actual_val == 0 and ret_val == 0) or
-				(actual_val > 0 and ret_val > 0)), \
-				"Bad return val %s" % (actual_val,)
+		assert not os.system(cmdstr)
 
 	def exec_rb_restore(self, time, *args):
 		"""Restore using rdiff-backup's new syntax and given time"""
@@ -122,7 +120,7 @@ class PathSetter(unittest.TestCase):
 		"""Remove any temp directories created by previous tests"""
 		assert not os.system(MiscDir + '/myrm testfiles/output* '
 							 'testfiles/restoretarget* testfiles/vft_out '
-							 'testfiles/timbar.pyc testfiles/vft2_out')
+							 'timbar.pyc testfiles/vft2_out')
 
 	def runtest(self):
 		self.delete_tmpdirs()
@@ -172,7 +170,7 @@ class PathSetter(unittest.TestCase):
 
 		timbar_paths = self.getinc_paths("timbar.pyc.",
 						 "testfiles/output/rdiff-backup-data/increments")
-		self.exec_rb(None, timbar_paths[0], 'testfiles/timbar.pyc')
+		self.exec_rb(None, timbar_paths[0])
 		self.refresh(Local.timbar_in, Local.timbar_out)
 		assert Local.timbar_in.equal_loose(Local.timbar_out)
 
@@ -259,7 +257,7 @@ class Final(PathSetter):
 		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
 
 	def testWindowsMode(self):
-		"""Test backup with quoting enabled
+		"""Test backup with the --windows-mode option
 
 		We need to delete from the increment? directories long file
 		names, because quoting adds too many extra letters.
@@ -277,40 +275,35 @@ class Final(PathSetter):
 			delete_long(Local.wininc3)
 
 		old_schema = self.rb_schema
-		self.rb_schema = old_schema+" --override-chars-to-quote '^a-z0-9_ -.' "
+		self.rb_schema = old_schema + " --windows-mode "
 		self.set_connections(None, None, None, None)
 
 		self.delete_tmpdirs()
+		
 		# Back up increment2, this contains a file with colons
 		self.exec_rb(20000, 'testfiles/win-increment2', 'testfiles/output')
-		self.rb_schema = old_schema # Quoting setting should now be saved
 		time.sleep(1)
 
 		# Back up increment3
 		self.exec_rb(30000, 'testfiles/win-increment3', 'testfiles/output')
+
+		# Start restore
+		self.rb_schema = old_schema + ' --windows-restore '
+		Globals.time_separator = "_"
+		inc_paths = self.getinc_paths("increments.",
+									  "testfiles/output/rdiff-backup-data", 1)
+		Globals.time_separator = ":"
+		assert len(inc_paths) == 1, inc_paths
+		# Restore increment2
+		self.exec_rb(None, inc_paths[0], 'testfiles/restoretarget2')
+		assert CompareRecursive(Local.wininc2, Local.rpout2,
+								compare_hardlinks = 0)
 
 		# Now check to make sure no ":" in output directory
 		popen_fp = os.popen("find testfiles/output -name '*:*' | wc")
 		wc_output = popen_fp.read()
 		popen_fp.close()
 		assert wc_output.split() == ["0", "0", "0"], wc_output
-
-		# Start restore of increment 2
-		Globals.chars_to_quote = '^a-z0-9_ -.'
-		inc_paths = self.getinc_paths("increments.",
-									  "testfiles/output/rdiff-backup-data", 1)
-		Globals.chars_to_quote = None
-		assert len(inc_paths) == 1, inc_paths
-		self.exec_rb(None, inc_paths[0], 'testfiles/restoretarget2')
-		assert CompareRecursive(Local.wininc2, Local.rpout2,
-								compare_hardlinks = 0)
-
-		# Restore increment 3 again, using different syntax
-		self.rb_schema = old_schema + '-r 30000 '
-		self.exec_rb(None, 'testfiles/output', 'testfiles/restoretarget3')
-		assert CompareRecursive(Local.wininc3, Local.rpout3,
-								compare_hardlinks = 0)
-		self.rb_schema = old_schema
 
 	def testLegacy(self):
 		"""Test restoring directory with no mirror_metadata file"""
@@ -324,124 +317,6 @@ class Final(PathSetter):
 								'testfiles/restoretarget1')
 		assert CompareRecursive(Local.vftrp, Local.rpout1,
 								compare_hardlinks = 0)
-
-
-class FinalMisc(PathSetter):
-	"""Test miscellaneous operations like list-increments, etc.
-
-	Many of these just run and make sure there were no errors; they
-	don't verify the output.
-
-	"""
-	def testListIncrementsLocal(self):
-		"""Test --list-increments switch.  Assumes restoretest3 valid rd dir"""
-		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(None, "--list-increments",
-								"testfiles/restoretest3")
-
-	def testListIncrementsRemote(self):
-		"""Test --list-increments mode remotely.  Uses restoretest3"""
-		self.set_connections('test1', '../', None, None)
-		self.exec_rb_extra_args(None, "--list-increments",
-								"testfiles/restoretest3")
-
-	def testListChangeSinceLocal(self):
-		"""Test --list-changed-since mode locally.  Uses restoretest3"""
-		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(None, '--list-changed-since 10000',
-								'testfiles/restoretest3')
-		self.exec_rb_extra_args(None, '--list-changed-since 2B',
-								'testfiles/restoretest3')
-
-	def testListChangeSinceRemote(self):
-		"""Test --list-changed-since mode remotely.  Uses restoretest3"""
-		self.set_connections('test1', '../', None, None)
-		self.exec_rb_extra_args(None, '--list-changed-since 10000',
-								'testfiles/restoretest3')
-
-	def testListAtTimeLocal(self):
-		"""Test --list-at-time mode locally.  Uses restoretest3"""
-		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(None, '--list-at-time 20000',
-								'testfiles/restoretest3')
-		
-	def testListAtTimeRemote(self):
-		"""Test --list-at-time mode locally.  Uses restoretest3"""
-		self.set_connections('test1', '../', None, None)
-		self.exec_rb_extra_args(None, '--list-at-time 20000',
-								'testfiles/restoretest3')
-
-	def testListIncrementSizesLocal(self):
-		"""Test --list-increment-sizes switch.  Uses restoretest3"""
-		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(None, "--list-increment-sizes",
-								"testfiles/restoretest3")
-
-	def testListIncrementsRemote(self):
-		"""Test --list-increment-sizes mode remotely.  Uses restoretest3"""
-		self.set_connections('test1', '../', None, None)
-		self.exec_rb_extra_args(None, "--list-increment-sizes",
-								"testfiles/restoretest3")
-
-	def get_all_increments(self, rp):
-		"""Iterate all increments at or below given directory"""
-		assert rp.isdir()
-		dirlist = rp.listdir()
-		dirlist.sort()
-		for filename in dirlist:
-			subrp = rp.append(filename)
-			if subrp.isincfile(): yield subrp
-			elif subrp.isdir():
-				for subsubrp in self.get_all_increments(subrp):
-					yield subsubrp
-
-	def testRemoveOlderThan(self):
-		"""Test --remove-older-than.  Uses restoretest3"""
-		Myrm("testfiles/output")
-		assert not os.system("cp -a testfiles/restoretest3 testfiles/output")
-		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(None, "--remove-older-than 20000",
-								"testfiles/output")
-		rbdir = rpath.RPath(Globals.local_connection,
-							"testfiles/output/rdiff-backup-data")
-		for inc in self.get_all_increments(rbdir):
-			assert inc.getinctime() >= 20000
-
-	def testRemoveOlderThan2(self):
-		"""Test --remove-older-than, but '1B'.  Uses restoretest3"""
-		Myrm("testfiles/output")
-		assert not os.system("cp -a testfiles/restoretest3 testfiles/output")
-		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(None, "--remove-older-than 1B --force",
-								"testfiles/output")
-		rbdir = rpath.RPath(Globals.local_connection,
-							"testfiles/output/rdiff-backup-data")
-		for inc in self.get_all_increments(rbdir):
-			assert inc.getinctime() >= 30000
-
-	def testRemoveOlderThanQuoting(self):
-		"""Test --remove-older-than when dest directory is quoted"""
-		Myrm("testfiles/output")
-		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(None, "--override-chars-to-quote '^a-z0-9_ -.'",
-								"testfiles/increment1", "testfiles/output")
-		self.exec_rb_extra_args(None, "--remove-older-than now", "testfiles/output")
-
-	def testCompare(self):
-		"""Test --compare and --compare-older-than modes"""
-		Myrm("testfiles/output")
-		self.set_connections(None, None, None, None)
-		self.exec_rb(10000, 'testfiles/increment1', 'testfiles/output')
-		self.exec_rb(20000, 'testfiles/increment2', 'testfiles/output')
-
-		self.exec_rb_extra_args_retval(20000, '--compare', 0,
-					 'testfiles/increment2', 'testfiles/output')
-		self.exec_rb_extra_args_retval(20000, '--compare', 1,
-					 'testfiles/increment1', 'testfiles/output')
-		self.exec_rb_extra_args_retval(20000, '--compare-at-time 10000', 1,
-					 'testfiles/increment2', 'testfiles/output')
-		self.exec_rb_extra_args_retval(20000, '--compare-at-time 10000', 0,
-					 'testfiles/increment1', 'testfiles/output')
 
 
 class FinalSelection(PathSetter):
@@ -599,6 +474,7 @@ class FinalCorrupt(PathSetter):
 	def make_dir(self):
 		self.delete_tmpdirs()
 		rp1 = rpath.RPath(Globals.local_connection, 'testfiles/final_deleted1')
+		print rp1
 		if rp1.lstat(): Myrm(rp1.path)
 		rp1.mkdir()
 		rp1_1 = rp1.append('regfile')
@@ -637,6 +513,88 @@ class FinalCorrupt(PathSetter):
 
 		self.exec_rb_restore(10000, 'testfiles/output',
 							 'testfiles/restoretarget1')
+
+
+class FinalMisc(PathSetter):
+	"""Test miscellaneous operations like list-increments, etc.
+
+	Many of these just run and make sure there were no errors; they
+	don't verify the output.
+
+	"""
+	def testListIncrementsLocal(self):
+		"""Test --list-increments switch.  Assumes restoretest3 valid rd dir"""
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, "--list-increments",
+								"testfiles/restoretest3")
+
+	def testListIncrementsRemote(self):
+		"""Test --list-increments mode remotely.  Uses restoretest3"""
+		self.set_connections('test1', '../', None, None)
+		self.exec_rb_extra_args(None, "--list-increments",
+								"testfiles/restoretest3")
+
+	def testListChangeSinceLocal(self):
+		"""Test --list-changed-since mode locally.  Uses restoretest3"""
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, '--list-changed-since 10000',
+								'testfiles/restoretest3')
+		self.exec_rb_extra_args(None, '--list-changed-since 2D',
+								'testfiles/restoretest3')
+
+	def testListChangeSinceRemote(self):
+		"""Test --list-changed-since mode remotely.  Uses restoretest3"""
+		self.set_connections('test1', '../', None, None)
+		self.exec_rb_extra_args(None, '--list-changed-since 10000',
+								'testfiles/restoretest3')
+
+	def testListAtTimeLocal(self):
+		"""Test --list-at-time mode locally.  Uses restoretest3"""
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, '--list-at-time 20000',
+								'testfiles/restoretest3')
+		
+	def testListAtTimeRemote(self):
+		"""Test --list-at-time mode locally.  Uses restoretest3"""
+		self.set_connections('test1', '../', None, None)
+		self.exec_rb_extra_args(None, '--list-at-time 20000',
+								'testfiles/restoretest3')
+
+	def testListIncrementSizesLocal(self):
+		"""Test --list-increment-sizes switch.  Uses restoretest3"""
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, "--list-increment-sizes",
+								"testfiles/restoretest3")
+
+	def testListIncrementsRemote(self):
+		"""Test --list-increment-sizes mode remotely.  Uses restoretest3"""
+		self.set_connections('test1', '../', None, None)
+		self.exec_rb_extra_args(None, "--list-increment-sizes",
+								"testfiles/restoretest3")
+
+	def get_all_increments(self, rp):
+		"""Iterate all increments at or below given directory"""
+		assert rp.isdir()
+		dirlist = rp.listdir()
+		dirlist.sort()
+		for filename in dirlist:
+			subrp = rp.append(filename)
+			if subrp.isincfile(): yield subrp
+			elif subrp.isdir():
+				for subsubrp in self.get_all_increments(subrp):
+					yield subsubrp
+
+	def testRemoveOlderThan(self):
+		"""Test --remove-older-than.  Uses restoretest3"""
+		Myrm("testfiles/output")
+		assert not os.system("cp -a testfiles/restoretest3 testfiles/output")
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, "--remove-older-than 20000",
+								"testfiles/output")
+		rbdir = rpath.RPath(Globals.local_connection,
+							"testfiles/output/rdiff-backup-data")
+		for inc in self.get_all_increments(rbdir):
+			assert inc.getinctime() >= 20000
 
 		
 if __name__ == "__main__": unittest.main()

@@ -86,14 +86,14 @@ def makediff(new, mirror, incpref):
 		Rdiff.write_delta(new, mirror, diff, compress)
 		new.chmod(old_new_perms)
 	else: Rdiff.write_delta(new, mirror, diff, compress)
-	rpath.copy_attribs_inc(mirror, diff)
+	rpath.copy_attribs(mirror, diff)
 	return diff
 
 def makedir(mirrordir, incpref):
 	"""Make file indicating directory mirrordir has changed"""
 	dirsign = get_inc(incpref, "dir")
 	dirsign.touch()
-	rpath.copy_attribs_inc(mirrordir, dirsign)
+	if Globals.change_dir_inc_perms: rpath.copy_attribs(mirrordir, dirsign)	
 	return dirsign
 
 def get_inc(rp, typestr, time = None):

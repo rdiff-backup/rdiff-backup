@@ -200,5 +200,3 @@ def ListIncrementSizes(mirror_root, index):
 		 triple_to_line(triples[0]) + '   (current mirror)']
 	for triple in triples[1:]: l.append(triple_to_line(triple))
 	return '\n'.join(l)
-
-		
