@@ -485,10 +485,10 @@ splits the filename into host_info::pathname.  It then substitutes
 host_info into the remote schema, and runs the resulting command,
 reading its input and output.
 .PP
-The default remote schema is 'ssh %s rdiff-backup --server' meaning if
-the host_info is user@host.net, then rdiff-backup runs 'ssh
-user@host.net rdiff-backup --server'.  The '%s' keyword is substituted
-with the host_info.  Using --remote-schema, rdiff-backup can invoke an
+The default remote schema is 'ssh -C %s rdiff-backup --server' where
+host_info is substituted for '%s'.  So if the host_info is
+user@host.net, then rdiff-backup runs 'ssh user@host.net rdiff-backup
+--server'.  Using --remote-schema, rdiff-backup can invoke an
 arbitrary command in order to open up a remote pipe.  For instance,
 .RS
 rdiff-backup --remote-schema 'cd /usr; %s' foo 'rdiff-backup
