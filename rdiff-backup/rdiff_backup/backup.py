@@ -50,7 +50,7 @@ def Mirror_and_increment(src_rpath, dest_rpath, inc_rpath):
 
 class SourceStruct:
 	"""Hold info used on source side when backing up"""
-	source_select = None # will be set to source Select iterator
+	_source_select = None # will be set to source Select iterator
 	def set_source_select(cls, rpath, tuplelist, *filelists):
 		"""Initialize select object using tuplelist
 
@@ -59,7 +59,7 @@ class SourceStruct:
 		connection.  Otherwise we will get an error because a list
 		containing files can't be pickled.
 
-		Also, cls.source_select needs to be cached so get_diffs below
+		Also, cls._source_select needs to be cached so get_diffs below
 		can retrieve the necessary rps.
 
 		"""
@@ -67,15 +67,15 @@ class SourceStruct:
 		sel.ParseArgs(tuplelist, filelists)
 		sel.set_iter()
 		cache_size = Globals.pipeline_max_length * 3 # to and from+leeway
-		cls.source_select = rorpiter.CacheIndexable(sel, cache_size)
+		cls._source_select = rorpiter.CacheIndexable(sel, cache_size)
 
 	def get_source_select(cls):
 		"""Return source select iterator, set by set_source_select"""
-		return cls.source_select
+		return cls._source_select
 
 	def get_diffs(cls, dest_sigiter):
 		"""Return diffs of any files with signature in dest_sigiter"""
-		source_rps = cls.source_select
+		source_rps = cls._source_select
 		error_handler = robust.get_error_handler("ListError")
 		def attach_snapshot(diff_rorp, src_rp):
 			"""Attach file of snapshot to diff_rorp, w/ error checking"""

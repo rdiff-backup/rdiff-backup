@@ -24,7 +24,7 @@ import getopt, sys, re, os
 from log import Log, LoggerError, ErrorLog
 import Globals, Time, SetConnections, selection, robust, rpath, \
 	   manage, backup, connection, restore, FilenameMapping, \
-	   Security, Hardlink, regress, C, fs_abilities
+	   Security, Hardlink, regress, C, fs_abilities, statistics
 
 
 action = None
@@ -560,8 +560,9 @@ def ListIncrementSizes(rp):
 
 def CalculateAverage(rps):
 	"""Print out the average of the given statistics files"""
-	statobjs = map(lambda rp: StatsObj().read_stats_from_rp(rp), rps)
-	average_stats = StatsObj().set_to_average(statobjs)
+	statobjs = map(lambda rp: statistics.StatsObj().read_stats_from_rp(rp),
+				   rps)
+	average_stats = statistics.StatsObj().set_to_average(statobjs)
 	print average_stats.get_stats_logstring(
 		"Average of %d stat files" % len(rps))
 
