@@ -39,6 +39,7 @@ char *
 hs_format_stats(hs_stats_t const * stats,
 		char *buf, size_t size)
 {
+    /* FIXME: Cope if things are null; some printfs won't. */
     snprintf(buf, size,
 	     "%s/%s literal[%d cmds, %d bytes], "
 	     "signature[%d cmds, %d bytes], "

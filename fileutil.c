@@ -62,5 +62,7 @@ _hs_file_copy_all(int from_fd, int to_fd)
         }            
     } while (len > 0);
 
+    _hs_trace("reached eof");
+
     return total_len;
 }

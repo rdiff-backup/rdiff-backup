@@ -103,7 +103,10 @@
    */
 
 /*
- * TODO: Check all return codes when writing. */
+ * TODO: Check all return codes when writing.
+ *
+ * TODO: Statistics are not generated for literals.
+ */
 
 
 const int hs_encode_job_magic = 23452345;

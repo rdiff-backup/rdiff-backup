@@ -1,5 +1,7 @@
 -*- indented-text -*- 
 
+ * Use slprintf not strnprintf, etc.
+
  * Perhaps make extracted signatures still be wrapped in commands.
    Why?
 
