@@ -41,15 +41,16 @@ static PyObject*
 _librsync_new_sigmaker(PyObject* self, PyObject* args)
 {
   _librsync_SigMakerObject* sm;
+  long blocklen;
   
-  if (!PyArg_ParseTuple(args,":new_sigmaker"))
+  if (!PyArg_ParseTuple(args, "l:new_sigmaker", &blocklen))
 	return NULL;
 
   sm = PyObject_New(_librsync_SigMakerObject, &_librsync_SigMakerType);
   if (sm == NULL) return NULL;
   sm->x_attr = NULL;
 
-  sm->sig_job = rs_sig_begin((size_t)RS_DEFAULT_BLOCK_LEN,
+  sm->sig_job = rs_sig_begin((size_t)blocklen,
 							 (size_t)RS_DEFAULT_STRONG_LEN);
   return (PyObject*)sm;
 }
