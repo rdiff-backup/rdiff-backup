@@ -1,4 +1,9 @@
-Update FAQ on cstream
+add --exclude-special-files to exclude fifos, symlinks, sockets, and
+device files.
+
+Change Windows mode to quote A-Z also.  (--windows-mode could be short
+for "--exclude-special-files --chars-to-quote A-Z: --quoting-char ;
+--windows-time-format").
 
 Write some better selection test cases to test new Iterate_fast func.
 
