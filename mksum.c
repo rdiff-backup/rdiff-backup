@@ -1,4 +1,4 @@
-/*				       	-*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- library for network deltas
  * $Id$
@@ -47,25 +47,27 @@
 
 
 /* Possible state functions for signature generation. */
-static enum hs_result hs_mksum_s_header(hs_job_t *);
-static enum hs_result hs_mksum_s_generate(hs_job_t *);
+static hs_result hs_sig_s_header(hs_job_t *);
+static hs_result hs_sig_s_generate(hs_job_t *);
 
 
                                            
-/*!
+/**
  * State of trying to send the signature header.
  */
-static enum hs_result hs_mksum_s_header(hs_job_t *job)
+static hs_result hs_sig_s_header(hs_job_t *job)
 {
         hs_squirt_n32(job->stream, HS_SIG_MAGIC);
-        job->statefn = hs_mksum_s_generate;
+        job->statefn = hs_sig_s_generate;
+
+        hs_trace("send header magic %#x", HS_SIG_MAGIC);
 
         return HS_RUN_OK;
 }
 
 
-static enum hs_result
-hs_mksum_do_block(hs_job_t *job, const void *block, size_t len)
+static hs_result
+hs_sig_do_block(hs_job_t *job, const void *block, size_t len)
 {
         uint32_t weak_sum;
         uint8_t strong_sum[HS_MD4_LENGTH];
@@ -89,9 +91,9 @@ hs_mksum_do_block(hs_job_t *job, const void *block, size_t len)
 /*
  * State of reading a block and trying to generate its sum.
  */
-static enum hs_result hs_mksum_s_generate(hs_job_t *job)
+static hs_result hs_sig_s_generate(hs_job_t *job)
 {
-        enum hs_result result;
+        hs_result result;
         int len;
         void *block;
         
@@ -111,13 +113,16 @@ static enum hs_result hs_mksum_s_generate(hs_job_t *job)
 
         hs_trace("got %d byte block", len);
 
-        return hs_mksum_do_block(job, block, len);
+        return hs_sig_do_block(job, block, len);
 }
 
 
-/*! \brief Set up a new encoding job. */
-hs_job_t * hs_mksum_begin(hs_stream_t *stream,
-                                size_t new_block_len, size_t strong_sum_len)
+/** \brief Set up a new encoding job.
+ *
+ * \sa hs_sig_file()
+ */
+hs_job_t * hs_sig_begin(hs_stream_t *stream,
+                        size_t new_block_len, size_t strong_sum_len)
 {
         hs_job_t *job;
 
@@ -128,7 +133,7 @@ hs_job_t * hs_mksum_begin(hs_stream_t *stream,
         assert(strong_sum_len > 0 && strong_sum_len <= HS_MD4_LENGTH);
         job->strong_sum_len = strong_sum_len;
 
-        job->statefn = hs_mksum_s_header;
+        job->statefn = hs_sig_s_header;
 
         return job;
 }
