@@ -109,11 +109,8 @@ hs_filebuf_t *hs_filebuf_from_file(FILE * fp);
    File map pointers
 */
 
-struct hs_map_struct {
-	char *p;
-	int fd, p_size, p_len;
-	hs_off_t file_size, p_offset, p_fd_offset;
-};
+struct hs_map;
+typedef struct hs_map hs_map_t;
 
 
 

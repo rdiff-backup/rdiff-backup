@@ -304,5 +304,12 @@ int _hs_inhale_command(hs_read_fn_t read_fn, void * read_priv,
 
    map_ptr IO
 */
-struct hs_map_struct *_hs_map_file(int fd, hs_off_t len);
-char * _hs_map_ptr(struct hs_map_struct *map, hs_off_t offset, int len);
+struct hs_map {
+     int tag;
+     char *p;
+     int fd, p_size, p_len;
+     hs_off_t file_size, p_offset, p_fd_offset;
+};
+hs_map_t *hs_map_file(int fd, hs_off_t len);
+char const * hs_map_ptr(hs_map_t *map, hs_off_t offset, int len);
+void hs_unmap_file(hs_map_t *map);

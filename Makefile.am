@@ -18,7 +18,7 @@ libhsync_la_SOURCES = dec.c enc.c \
 	checksum.c copyq.c \
 	inbuf.c \
 	inhale.c trace.c \
-	hex.c stats.c fileio.c 
+	hex.c stats.c mapptr.c 
 
 # compress.c compress.h 
 
@@ -33,7 +33,8 @@ noinst_SCRIPTS = test-decode.sh test-encode.sh \
 	test-chain.sh test-cmds.sh \
 	make-cmds.py test-thrice.sh test-seq.sh test-meta.sh \
 	test-cat.sh \
-	test-md4sizes.sh testfns.sh 
+	test-md4sizes.sh testfns.sh \
+	test-mapread.sh gen-maptest.py
 
 test_data=test-chain/empty-sig  \
 test-decode/01-diff \
@@ -74,7 +75,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 include_HEADERS = hsync.h hsyncproto.h
 
 bin_PROGRAMS = hsdecode hsencode hsmdfour
-check_PROGRAMS = hsemit hsinhale hsfilebufcat
+check_PROGRAMS = hsemit hsinhale hsfilebufcat hsmapread
 
 test-cmds/cmds: make-cmds.py
 	mkdir -p test-cmds
@@ -97,12 +98,15 @@ hsemit_LDADD = libhsync.la
 hsinhale_SOURCES = hsinhale.c
 hsinhale_LDADD = libhsyncdecode.la
 
+hsmapread_SOURCES = hsmapread.c mapptr.c filebuf.c trace.c netio.c
+
 # Thus spake the master programmer:
 # 
 # ``When the program is being tested, it is too late to make design
 # changes.''
 
 TESTS = test-md4sizes.sh test-cat.sh \
+	test-mapread.sh \
 	test-cmds.sh test-decode.sh test-encode.sh \
 	test-thrice.sh test-seq.sh
 

@@ -15,11 +15,13 @@ hsdecode
 hsemit
 hsemit
 hsencode
+hsfilebufcat
 hsinhale
+hsmapread
 hsmdfour
 libhsync-*.tar.gz
 libhsync-*.tar.gz.asc
 libtool
 stamp-h
 stamp-h.in
-hsfilebufcat
+test-*.d
