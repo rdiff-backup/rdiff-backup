@@ -99,8 +99,8 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 # Test if the preprocessor understands vararg macros
 AC_MSG_CHECKING([for vararg macro support])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-  [#define func(a, b...) do { } while (0)],
-  [func("a", "b", "c")])],
+  [#define func(a, b...) do {} while (0)],
+  [func("a", "b", "c");func("a")])],
   [ AC_DEFINE(HAVE_VARARG_MACROS, , [Define if your cpp has vararg macros])
     AC_MSG_RESULT(yes) ],
   [ AC_MSG_RESULT(no) ])

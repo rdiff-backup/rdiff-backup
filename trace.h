@@ -54,7 +54,7 @@ void rs_log0(int level, char const *fn, char const *fmt, ...)
     do { rs_log0(RS_LOG_DEBUG, __FUNCTION__, fmt , ##arg);  \
     } while (0)
 #else
-#  define rs_trace(s, str...)
+#  define rs_trace(fmt, arg...)
 #endif	/* !DO_RS_TRACE */
 
 #define rs_log(l, s, str...) do {              \

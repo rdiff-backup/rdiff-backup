@@ -73,12 +73,6 @@
 #include "util.h"
 
 
-#if 0
-#  undef rs_trace
-#  define rs_trace(s...)
-#endif
-
-
 /**
  * Try to accept a from the input buffer to get LEN bytes in the scoop.
  */
