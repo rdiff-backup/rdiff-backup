@@ -31,7 +31,8 @@ libhsync_la_SOURCES = \
 	sumset.c sumset.h \
 	rollsum.c rollsum.h \
 	nad.c nad_p.h nadsrch.c nadout.c \
-	search.c search.h
+	search.c search.h \
+	nozzle.c
 
 # TODO: If we ever care enough, build a second library containing only
 # the code necessary to be a client, and not stuff for encoding.  At
@@ -107,9 +108,15 @@ include_HEADERS = hsync.h hsyncproto.h
 # preference.
 LDADD = libhsync.la
 
-bin_PROGRAMS = hsdecode hsmdfour hsmksum hsmapread hsnad \
-		libhsyncinfo
-noinst_PROGRAMS = hsdumpsums
+libhsync_tools = hsdecode hsmdfour hsmksum hsmapread hsnad \
+		libhsyncinfo hsdumpsums
+
+# Eventually we might want to install some of these into system
+# directories, but they're pretty obscure and it's hard to imagine any
+# end users wanting to run them.  So for the time being they are not
+# installed.
+
+noinst_PROGRAMS = $(libhsync_tools)
 check_PROGRAMS = hsemit hsinhale hsfilebufcat genmaptest \
 	socksvr sockcli sockrun trylog
 

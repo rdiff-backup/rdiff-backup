@@ -1,4 +1,7 @@
 Changes in 0.5.6:
+ 
+ * Don't install debugging tools into /usr/local/bin; leave them in
+   the source directory.
 
  * Fix libhsync to build on (sgi-mips, IRIX64, gcc, GNU Make)
 
