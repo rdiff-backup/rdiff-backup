@@ -85,7 +85,8 @@ def set_security_level(action, cmdpairs):
 			sec_level = "all"
 			rdir = getpath(cp2)
 	elif (action == "test-server" or action == "list-increments" or
-		  action == "calculate-average" or action == "remove-older-than"):
+		  action == "list-changed-since" or action ==
+		  "calculate-average" or action == "remove-older-than"):
 		sec_level = "minimal"
 		rdir = tempfile.gettempdir()
 	else: assert 0, "Unknown action %s" % action

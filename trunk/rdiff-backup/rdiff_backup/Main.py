@@ -10,6 +10,7 @@
 
 """Start (and end) here - read arguments, set global settings, etc."""
 
+from __future__ import generators
 import getopt, sys, re
 from log import *
 from lazy import *
@@ -48,13 +49,13 @@ def parse_cmdlineoptions(arglist):
 		  "exclude-regexp=", "exclude-special-files", "force",
 		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=", "include-regexp=",
-		  "list-increments", "mirror-only", "no-compression",
-		  "no-compression-regexp=", "no-hard-links", "no-resume",
-		  "null-separator", "parsable-output", "print-statistics",
-		  "quoting-char=", "remote-cmd=", "remote-schema=",
-		  "remove-older-than=", "restore-as-of=", "restrict=",
-		  "restrict-read-only=", "restrict-update-only=", "resume",
-		  "resume-window=", "server", "sleep-ratio=",
+		  "list-changed-since=", "list-increments", "mirror-only",
+		  "no-compression", "no-compression-regexp=", "no-hard-links",
+		  "no-resume", "null-separator", "parsable-output",
+		  "print-statistics", "quoting-char=", "remote-cmd=",
+		  "remote-schema=", "remove-older-than=", "restore-as-of=",
+		  "restrict=", "restrict-read-only=", "restrict-update-only=",
+		  "resume", "resume-window=", "server", "sleep-ratio=",
 		  "ssh-no-compression", "terminal-verbosity=", "test-server",
 		  "verbosity=", "version", "windows-mode",
 		  "windows-time-format"])
@@ -101,6 +102,8 @@ def parse_cmdlineoptions(arglist):
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))
 		elif opt == "--include-regexp": select_opts.append((opt, arg))
+		elif opt == "--list-changed-since":
+			restore_timestr, action = arg, "list-changed-since"
 		elif opt == "-l" or opt == "--list-increments":
 			action = "list-increments"
 		elif opt == "-m" or opt == "--mirror-only": action = "mirror"
@@ -177,7 +180,8 @@ def set_action():
 				  action == "restore-as-of"):
 		commandline_error("Two arguments are required (source, destination).")
 	if l == 2 and (action == "list-increments" or
-				   action == "remove-older-than"):
+				   action == "remove-older-than" or
+				   action == "list-changed-since"):
 		commandline_error("Only use one argument, "
 						  "the root of the backup directory")
 	if l > 2 and action != "calculate-average":
@@ -217,6 +221,7 @@ def take_action(rps):
 	elif action == "restore-as-of": RestoreAsOf(rps[0], rps[1])
 	elif action == "mirror": Mirror(rps[0], rps[1])
 	elif action == "test-server": SetConnections.TestConnections()
+	elif action == "list-changed-since": ListChangedSince(rps[0])
 	elif action == "list-increments": ListIncrements(rps[0])
 	elif action == "remove-older-than": RemoveOlderThan(rps[0])
 	elif action == "calculate-average": CalculateAverage(rps)
@@ -534,4 +539,26 @@ def RemoveOlderThan(rootrp):
 		Log("Deleting increment at time:\n" + inc_pretty_time, 3)
 	else: Log("Deleting increments at times:\n" + inc_pretty_time, 3)
 	Manage.delete_earlier_than(datadir, time)
+
+
+def ListChangedSince(rp):
+	"""List all the files under rp that have changed since restoretime"""
+	try: rest_time = Time.genstrtotime(restore_timestr)
+	except Time.TimeException, exc: Log.FatalError(str(exc))
+	mirror_root, index = restore_get_root(rp)
+	Globals.rbdir = datadir = mirror_root.append_path("rdiff-backup-data")
+	mirror_time = Restore.get_mirror_time()
+
+	def get_rids_recursive(rid):
+		"""Yield all the rids under rid that have inc newer than rest_time"""
+		yield rid
+		for sub_rid in Restore.yield_rids(rid, rest_time, mirror_time):
+			for sub_sub_rid in get_rids_recursive(sub_rid): yield sub_sub_rid
+
+	inc_rpath = datadir.append_path('increments', index)
+	inc_list = Restore.get_inclist(inc_rpath)
+	root_rid = RestoreIncrementData(index, inc_rpath, inc_list)
+	for rid in get_rids_recursive(root_rid):
+		if rid.inc_list: print "/".join(rid.index)
+
 

@@ -15,7 +15,6 @@ from static import *
 from statistics import *
 from lazy import *
 
-
 class Inc:
 	"""Class containing increment functions"""
 	def Increment_action(new, mirror, incpref):
@@ -322,3 +321,4 @@ from rpath import *
 from robust import *
 from rorpiter import *
 import Globals, Time, MiscStats
+

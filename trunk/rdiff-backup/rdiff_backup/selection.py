@@ -283,7 +283,7 @@ class Select:
 				elif opt == "--include-regexp":
 					self.add_selection_func(self.regexp_get_sf(arg, 1))
 				else: assert 0, "Bad selection option %s" % opt
-		except SelectError, e: self.parse_catch_error(e)
+		except IOError: pass#SelectError, e: self.parse_catch_error(e)
 		assert filelists_index == len(filelists)
 
 		self.parse_last_excludes()

@@ -40,7 +40,6 @@ able to narrow down the possibilities.
 import tempfile, errno, signal, cPickle, C
 from static import *
 
-
 class RobustAction:
 	"""Represents a file operation to be accomplished later"""
 	def __init__(self, init_thunk, final_func, error_handler):
