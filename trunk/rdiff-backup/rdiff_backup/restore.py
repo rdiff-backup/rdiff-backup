@@ -296,7 +296,9 @@ class RestoreFile:
 
 	"""
 	def __init__(self, mirror_rp, inc_rp, inc_list):
-		assert mirror_rp.index == inc_rp.index, (mirror_rp, inc_rp)
+		assert mirror_rp.index == inc_rp.index, \
+			   ("mirror and inc indicies don't match: %s %s" %
+				(mirror_rp.get_indexpath(), inc_rp.get_indexpath()))
 		self.index = mirror_rp.index
 		self.mirror_rp = mirror_rp
 		self.inc_rp, self.inc_list = inc_rp, inc_list

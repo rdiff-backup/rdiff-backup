@@ -1,9 +1,14 @@
+---------[ Short term (next version) ]-------------------------
+
+Fix --print-statistics
+
+
+---------[ Medium term ]---------------------------------------
+
 Look at Kent Borg's suggestion for restore options and digests.
 
 Add --list-files-changed-between or similar option, to list files that
 have changed between two times
-
----------[ Medium term ]---------------------------------------
 
 Add ACL support
 

@@ -1,3 +1,13 @@
+New in v0.11.3 (2003/04/01)
+---------------------------
+
+Brought some old parts of the man page up-to-date (thanks to Olivier
+Mueller).
+
+Fixed bug if unrecoverable error on second backup to a directory (also
+repored Olivier Mueller).
+
+
 New in v0.11.2 (2003/03/01)
 ---------------------------
 
