@@ -26,7 +26,7 @@
 
 #include "includes.h"
 #include "command.h"
-
+#include "emit.h"
 
 /* Queue byte VALUE into the literal-data buffer. */
 int
