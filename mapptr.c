@@ -39,17 +39,12 @@
    will happen if the file grows underneath you. */
 
 
-/* TODO: When reading from a socket, it might happen that we've read
-   enough data to satisfy the current mapping request, though not
-   enough to completely full the buffers.  That's OK, though: the best
-   thing to do in that case would be to return the current data, and
-   trust that more network packets will arrive in their own good time.
-   This means that in map_ptr we have to know the minimum satisfactory
-   amount of input.
+/* TODO: If it turns out that we read more data than the user really
+   wants, then it would be nice to offer them the chance to use more
+   of it.  Is this really useful, or would it be better just to let
+   them call us back later?
 
-   TODO: Conversely: if it turns out that we read more data than the
-   user really wants, then it would be nice to offer them the chance
-   to use more of it.
+   TODO: Test this through a unix-domain socket and see what happens.
 
    TODO: Optionally debug this by simulating short reads. */
 
