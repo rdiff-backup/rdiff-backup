@@ -256,8 +256,8 @@ def Backup(rpin, rpout):
 	backup_set_rbdir(rpin, rpout)
 	backup_set_fs_globals(rpin, rpout)
 	if Globals.chars_to_quote: rpout = backup_quoted_rpaths(rpout)
-	backup_final_init(rpout)
 	init_user_group_mapping(rpout.conn)
+	backup_final_init(rpout)
 	backup_set_select(rpin)
 	if prevtime:
 		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
@@ -429,6 +429,7 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 	if not restore_root_set: assert restore_set_root(src_rp)
 	restore_check_paths(src_rp, dest_rp, restore_as_of)
 	restore_set_fs_globals(dest_rp)
+	init_user_group_mapping(dest_rp.conn)
 	src_rp = restore_init_quoting(src_rp)
 	restore_check_backup_dir(restore_root, src_rp, restore_as_of)
 	inc_rpath = Globals.rbdir.append_path('increments', restore_index)
@@ -436,7 +437,6 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 		try: time = Time.genstrtotime(restore_timestr, rp = inc_rpath)
 		except Time.TimeException, exc: Log.FatalError(str(exc))
 	else: time = src_rp.getinctime()
-	init_user_group_mapping(dest_rp.conn)
 	restore_set_select(restore_root, dest_rp)
 	restore_start_log(src_rp, dest_rp, time)
 	restore.Restore(restore_root.new_index(restore_index),
@@ -698,8 +698,9 @@ def CheckDest(dest_rp):
 def checkdest_need_check(dest_rp):
 	"""Return None if no dest dir found, 1 if dest dir needs check, 0 o/w"""
 	if not dest_rp.isdir() or not Globals.rbdir.isdir(): return None
-	if Globals.rbdir.listdir() == ['chars_to_quote']:
-		# This may happen the first backup just after we test for quoting
+	for filename in Globals.rbdir.listdir():
+		if filename not in ['chars_to_quote', 'backup.log']: break
+	else: # This may happen the first backup just after we test for quoting
 		return None
 	curmirroot = Globals.rbdir.append("current_mirror")
 	curmir_incs = restore.get_inclist(curmirroot)
