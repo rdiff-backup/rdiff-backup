@@ -102,6 +102,8 @@ void hs_filebuf_close(hs_filebuf_t *fbuf);
 void hs_filebuf_add_cache(hs_filebuf_t *fb, int);
 
 hs_filebuf_t *hs_filebuf_from_fd(int);
+hs_filebuf_t * hs_filebuf_from_file(FILE *fp);
+
 
 /* ========================================
 

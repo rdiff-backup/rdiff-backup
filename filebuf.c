@@ -36,7 +36,17 @@ struct file_buf {
      int fd, fd_cache;
 };
 
-hs_filebuf_t *hs_filebuf_from_fd(int fd)
+
+/* This is deprecated because we'd rather not use FILE* */
+hs_filebuf_t *
+hs_filebuf_from_file(FILE *fp)
+{
+     return hs_filebuf_from_fd(fileno(fp));
+}
+
+
+hs_filebuf_t *
+hs_filebuf_from_fd(int fd)
 {
      hs_filebuf_t *fb;
 
