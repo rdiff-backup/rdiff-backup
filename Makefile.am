@@ -36,7 +36,6 @@ librsync_la_SOURCES = \
 	emit.c emit.h				\
 	fileutil.c fileutil.h			\
 	hex.c					\
-	includes.h				\
 	job.c job.h				\
 	mdfour.c				\
 	mksum.c					\
