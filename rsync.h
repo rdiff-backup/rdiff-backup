@@ -64,14 +64,14 @@ typedef long rs_long_t;
  * \sa rs_trace_set_level()
  */
 typedef enum {
-    HS_LOG_EMERG         = 0,   /**< System is unusable */
-    HS_LOG_ALERT         = 1,   /**< Action must be taken immediately */
-    HS_LOG_CRIT          = 2,   /**< Critical conditions */
-    HS_LOG_ERR           = 3,   /**< Error conditions */
-    HS_LOG_WARNING       = 4,   /**< Warning conditions */
-    HS_LOG_NOTICE        = 5,   /**< Normal but significant condition */
-    HS_LOG_INFO          = 6,   /**< Informational */
-    HS_LOG_DEBUG         = 7    /**< Debug-level messages */
+    RS_LOG_EMERG         = 0,   /**< System is unusable */
+    RS_LOG_ALERT         = 1,   /**< Action must be taken immediately */
+    RS_LOG_CRIT          = 2,   /**< Critical conditions */
+    RS_LOG_ERR           = 3,   /**< Error conditions */
+    RS_LOG_WARNING       = 4,   /**< Warning conditions */
+    RS_LOG_NOTICE        = 5,   /**< Normal but significant condition */
+    RS_LOG_INFO          = 6,   /**< Informational */
+    RS_LOG_DEBUG         = 7    /**< Debug-level messages */
 } rs_loglevel;
 
 
@@ -123,27 +123,29 @@ void rs_base64(unsigned char const *buf, int n, char *out);
  * \brief Return codes from nonblocking rsync operations.
  */
 typedef enum {
-    HS_DONE =		0,	/**< Completed successfully. */
-    HS_BLOCKED =	1, 	/**< Blocked waiting for more data. */
-    HS_RUNNING  =       2,      /**< Not yet finished or blocked.
+    RS_DONE =		0,	/**< Completed successfully. */
+    RS_BLOCKED =	1, 	/**< Blocked waiting for more data. */
+    RS_RUNNING  =       2,      /**< Not yet finished or blocked.
                                  * This value should never be returned
                                  * to the caller.  */
     
-    HS_TEST_SKIPPED =   77,     /**< Test neither passed or failed. */
+    RS_TEST_SKIPPED =   77,     /**< Test neither passed or failed. */
     
-    HS_IO_ERROR =	100,    /**< Error in file or network IO. */
-    HS_SYNTAX_ERROR =   101,    /**< Command line syntax error. */
-    HS_MEM_ERROR =	102,    /**< Out of memory. */
-    HS_INPUT_ENDED =	103,	/**< End of input file, possibly
+    RS_IO_ERROR =	100,    /**< Error in file or network IO. */
+    RS_SYNTAX_ERROR =   101,    /**< Command line syntax error. */
+    RS_MEM_ERROR =	102,    /**< Out of memory. */
+    RS_INPUT_ENDED =	103,	/**< End of input file, possibly
                                    unexpected. */
-    HS_BAD_MAGIC =      104,    /**< Bad magic number at start of
+    RS_BAD_MAGIC =      104,    /**< Bad magic number at start of
                                    stream.  Probably not a librsync
                                    file, or possibly the wrong kind of
                                    file or from an incompatible
                                    library version. */
-    HS_UNIMPLEMENTED =  105,    /**< Author is lazy. */
-    HS_CORRUPT =        106,    /**< Unbelievable value in stream. */
-    HS_INTERNAL_ERROR = 107,    /**< Probably a library bug. */
+    RS_UNIMPLEMENTED =  105,    /**< Author is lazy. */
+    RS_CORRUPT =        106,    /**< Unbelievable value in stream. */
+    RS_INTERNAL_ERROR = 107,    /**< Probably a library bug. */
+    RS_INVALID =        108,    /**< Bad value passed in to library,
+                                 * probably an application bug. */
 } rs_result;
 
 
@@ -186,10 +188,10 @@ typedef struct rs_mdfour {
     unsigned char       tail[64];
 } rs_mdfour_t;
 
-#define HS_MD4_LENGTH 16
+#define RS_MD4_LENGTH 16
 
 typedef unsigned int rs_weak_sum_t;
-typedef unsigned char rs_strong_sum_t[HS_MD4_LENGTH];
+typedef unsigned char rs_strong_sum_t[RS_MD4_LENGTH];
 
 void            rs_mdfour(unsigned char *out, void const *in, int n); 
 void            rs_mdfour_begin(/* @out@ */ rs_mdfour_t * md);
@@ -225,8 +227,6 @@ void rs_sumset_dump(rs_signature_t const *);
  * \sa rs_stream_t
  */
 struct rs_stream_s {
-    int dogtag;                 /**< To identify mutilated corpse */
-    
     char *next_in;		/**< Next input byte */
     size_t avail_in;            /**< Number of bytes available at next_in */
     int eof_in;                 /**< True if there is no more data
@@ -234,8 +234,6 @@ struct rs_stream_s {
 
     char *next_out;		/**< Next output byte should be put there */
     size_t avail_out;           /**< Remaining free space at next_out */
-
-    struct rs_simpl *impl; /**< \internal */
 };
 
 /**
@@ -246,15 +244,12 @@ struct rs_stream_s {
  */
 typedef struct rs_stream_s rs_stream_t;
 
-void rs_stream_init(rs_stream_t *);
-
-
 /** Default length of strong signatures, in bytes.  The MD4 checksum
  * is truncated to this size. */
-#define HS_DEFAULT_STRONG_LEN 8
+#define RS_DEFAULT_STRONG_LEN 8
 
 /** Default block length, if not determined by any other factors. */
-#define HS_DEFAULT_BLOCK_LEN 2048
+#define RS_DEFAULT_BLOCK_LEN 2048
 
 
 /** \typedef struct rs_job rs_job_t

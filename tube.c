@@ -3,7 +3,7 @@
  * librsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -60,99 +60,98 @@
 #include "rsync.h"
 #include "trace.h"
 #include "util.h"
+#include "job.h"
 #include "stream.h"
 
 
-const int HS_TUBE_TAG = 892138;
+static const int RS_TUBE_TAG = 892138;
 
 
-static void rs_tube_catchup_literal(rs_stream_t *stream)
+static void rs_tube_catchup_literal(rs_job_t *job)
 {
-        int len, remain;
-        rs_simpl_t *tube = stream->impl;
+    rs_stream_t *stream = job->stream;
+    int len, remain;
 
-        len = tube->lit_len;
-        assert(len > 0);
+    len = job->lit_len;
+    assert(len > 0);
 
-        assert(len > 0);
-        if ((size_t) len > stream->avail_out)
-                len = stream->avail_out;
+    assert(len > 0);
+    if ((size_t) len > stream->avail_out)
+        len = stream->avail_out;
 
-        if (!stream->avail_out) {
-                rs_trace("no output space available");
-                return;
-        }
+    if (!stream->avail_out) {
+        rs_trace("no output space available");
+        return;
+    }
 
-        memcpy(stream->next_out, tube->lit_buf, len);
-        stream->next_out += len;
-        stream->avail_out -= len;
+    memcpy(stream->next_out, job->lit_buf, len);
+    stream->next_out += len;
+    stream->avail_out -= len;
 
-        remain = tube->lit_len - len;
-        rs_trace("transmitted %d literal bytes from tube, %d remain",
-                  len, remain);
+    remain = job->lit_len - len;
+    rs_trace("transmitted %d literal bytes from tube, %d remain",
+             len, remain);
 
-        if (remain > 0) {
-                /* Still something left in the tube... */
-                memmove(tube->lit_buf, tube->lit_buf + len, remain);
-        } else {
-                assert(remain == 0);
-        }
+    if (remain > 0) {
+        /* Still something left in the tube... */
+        memmove(job->lit_buf, job->lit_buf + len, remain);
+    } else {
+        assert(remain == 0);
+    }
 
-        tube->lit_len = remain;
+    job->lit_len = remain;
 }
 
 
-static void rs_tube_catchup_copy(rs_stream_t *stream)
+static void rs_tube_catchup_copy(rs_job_t *job)
 {
-        int copied;
-        rs_simpl_t *tube = stream->impl;
+    int copied;
+    rs_stream_t *stream = job->stream;
 
-        assert(tube->lit_len == 0);
-        assert(tube->copy_len > 0);
+    assert(job->lit_len == 0);
+    assert(job->copy_len > 0);
 
-        copied = rs_stream_copy(stream, tube->copy_len);
+    copied = rs_stream_copy(stream, job->copy_len);
 
-        tube->copy_len -= copied;
+    job->copy_len -= copied;
 
-        rs_trace("transmitted %d copy bytes from tube, %d remain",
-                  copied, tube->copy_len);
+    rs_trace("transmitted %d copy bytes from tube, %d remain",
+             copied, job->copy_len);
 }
 
 
 /*
  * Put whatever will fit from the tube into the output of the stream.
- * Return HS_DONE if the tube is now empty and ready to accept another
- * command, HS_BLOCKED if there is still stuff waiting to go out.
+ * Return RS_DONE if the tube is now empty and ready to accept another
+ * command, RS_BLOCKED if there is still stuff waiting to go out.
  */
-int rs_tube_catchup(rs_stream_t *stream)
+int rs_tube_catchup(rs_job_t *job)
 {
-        rs_simpl_t *tube = stream->impl;
-        if (tube->lit_len)
-                rs_tube_catchup_literal(stream);
+    if (job->lit_len)
+        rs_tube_catchup_literal(job);
 
-        if (tube->lit_len) {
-                /* there is still literal data queued, so we can't send
-                 * anything else. */
-                return HS_BLOCKED;
-        }
+    if (job->lit_len) {
+        /* there is still literal data queued, so we can't send
+         * anything else. */
+        return RS_BLOCKED;
+    }
 
-        if (tube->copy_len)
-                rs_tube_catchup_copy(stream);
+    if (job->copy_len)
+        rs_tube_catchup_copy(job);
     
-        if (tube->copy_len)
-                return HS_BLOCKED;
+    if (job->copy_len)
+        return RS_BLOCKED;
 
-        return HS_DONE;
+    return RS_DONE;
 }
 
 
 /* Check whether there is data in the tube waiting to go out.  So if true
  * this basically means that the previous command has finished doing all its
  * output. */
-int rs_tube_is_idle(rs_stream_t const *stream)
+int rs_tube_is_idle(rs_job_t const *job)
 {
-        rs_simpl_t *tube = stream->impl;
-        return tube->lit_len == 0 && tube->copy_len == 0;
+    return job->lit_len == 0 && job->copy_len == 0;
 }
 
 
@@ -161,12 +160,11 @@ int rs_tube_is_idle(rs_stream_t const *stream)
  * output of the stream.  We can only accept this request if there is
  * no copy command already pending.
  */
-void rs_blow_copy(rs_stream_t *stream, int len)
+void rs_blow_copy(rs_job_t *job, int len)
 {
-        rs_simpl_t *tube = stream->impl;
-        assert(tube->copy_len == 0);
+    assert(job->copy_len == 0);
 
-        tube->copy_len = len;
+    job->copy_len = len;
 }
 
 
@@ -180,16 +178,15 @@ void rs_blow_copy(rs_stream_t *stream, int len)
  * tube, because the literal data comes out first.
  */
 void
-rs_blow_literal(rs_stream_t *stream, const void *buf, size_t len)
+rs_blow_literal(rs_job_t *job, const void *buf, size_t len)
 {
-        rs_simpl_t *tube = stream->impl;
-        assert(tube->copy_len == 0);
+    assert(job->copy_len == 0);
 
-        if (len > sizeof(tube->lit_buf) - tube->lit_len) {
-                rs_fatal("tube popped when trying to blow %ld literal bytes!",
-                         (long) len);
-        }
+    if (len > sizeof(job->lit_buf) - job->lit_len) {
+        rs_fatal("tube popped when trying to blow %ld literal bytes!",
+                 (long) len);
+    }
 
-        memcpy(tube->lit_buf + tube->lit_len, buf, len);
-        tube->lit_len += len;
+    memcpy(job->lit_buf + job->lit_len, buf, len);
+    job->lit_len += len;
 }

@@ -47,27 +47,27 @@
 char const *rs_strerror(rs_result r)
 {
     switch (r) {
-    case HS_DONE:
+    case RS_DONE:
         return "OK";
-    case HS_RUNNING:
+    case RS_RUNNING:
         return "still running";
-    case HS_BAD_MAGIC:
+    case RS_BAD_MAGIC:
         return "bad magic number at start of stream";
-    case HS_BLOCKED:
+    case RS_BLOCKED:
         return "blocked waiting for input or output buffers";
-    case HS_INPUT_ENDED:
+    case RS_INPUT_ENDED:
         return "unexpected end of input";
-    case HS_CORRUPT:
+    case RS_CORRUPT:
         return "stream corrupt";
-    case HS_UNIMPLEMENTED:
+    case RS_UNIMPLEMENTED:
         return "unimplemented case";
-    case HS_MEM_ERROR:
+    case RS_MEM_ERROR:
         return "out of memory";
-    case HS_IO_ERROR:
+    case RS_IO_ERROR:
         return "IO error";
-    case HS_SYNTAX_ERROR:
+    case RS_SYNTAX_ERROR:
         return "command line syntax error";
-    case HS_INTERNAL_ERROR:
+    case RS_INTERNAL_ERROR:
         return "library internal error";
     default:
         return "unknown error";

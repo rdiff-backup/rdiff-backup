@@ -56,7 +56,7 @@ static rs_result rs_loadsig_add_sum(rs_job_t *job, rs_strong_sum_t *strong)
     size_t              new_size;
     rs_signature_t      *sig = job->signature;
     rs_block_sig_t      *asignature;
-    char                hexbuf[HS_MD4_LENGTH * 2 + 2];
+    char                hexbuf[RS_MD4_LENGTH * 2 + 2];
 
     sig->count++;
     new_size = sig->count * sizeof(rs_block_sig_t);
@@ -64,7 +64,7 @@ static rs_result rs_loadsig_add_sum(rs_job_t *job, rs_strong_sum_t *strong)
     sig->block_sigs = realloc(sig->block_sigs, new_size);
     
     if (sig->block_sigs == NULL) {
-        return HS_MEM_ERROR;
+        return RS_MEM_ERROR;
     }
     asignature = &(sig->block_sigs[sig->count - 1]);
 
@@ -77,7 +77,7 @@ static rs_result rs_loadsig_add_sum(rs_job_t *job, rs_strong_sum_t *strong)
     rs_trace("read in checksum: weak=%#x, strong=%s", asignature->weak_sum,
              hexbuf);
 
-    return HS_RUNNING;
+    return RS_RUNNING;
 }
 
 
@@ -86,11 +86,11 @@ static rs_result rs_loadsig_s_weak(rs_job_t *job)
     int                 l;
     rs_result           result;
 
-    result = rs_suck_n4(job->stream, &l);
-    if (result == HS_DONE)
+    result = rs_suck_n4(job, &l);
+    if (result == RS_DONE)
         ;
-    else if (result == HS_INPUT_ENDED) /* ending here is OK */
-        return HS_DONE;
+    else if (result == RS_INPUT_ENDED) /* ending here is OK */
+        return RS_DONE;
     else
         return result;
 
@@ -98,7 +98,7 @@ static rs_result rs_loadsig_s_weak(rs_job_t *job)
 
     job->statefn = rs_loadsig_s_strong;
 
-    return HS_RUNNING;
+    return RS_RUNNING;
 }
 
 
@@ -108,9 +108,9 @@ static rs_result rs_loadsig_s_strong(rs_job_t *job)
     rs_result           result;
     rs_strong_sum_t     *strongsum;
 
-    result = rs_scoop_read(job->stream, job->signature->strong_sum_len,
+    result = rs_scoop_read(job, job->signature->strong_sum_len,
                            (void **) &strongsum);
-    if (result != HS_DONE) return result;
+    if (result != RS_DONE) return result;
 
     job->statefn = rs_loadsig_s_weak;
 
@@ -124,13 +124,13 @@ static rs_result rs_loadsig_s_stronglen(rs_job_t *job)
     int                 l;
     rs_result           result;
 
-    if ((result = rs_suck_n4(job->stream, &l)) != HS_DONE)
+    if ((result = rs_suck_n4(job, &l)) != RS_DONE)
         return result;
     job->strong_sum_len = l;
     
-    if (l < 0  ||  l > HS_MD4_LENGTH) {
+    if (l < 0  ||  l > RS_MD4_LENGTH) {
         rs_error("strong sum length %d is implausible", l);
-        return HS_CORRUPT;
+        return RS_CORRUPT;
     }
 
     job->signature->block_len = job->block_len;
@@ -141,7 +141,7 @@ static rs_result rs_loadsig_s_stronglen(rs_job_t *job)
 
     job->statefn = rs_loadsig_s_weak;
     
-    return HS_RUNNING;
+    return RS_RUNNING;
 }
 
 
@@ -150,17 +150,17 @@ static rs_result rs_loadsig_s_blocklen(rs_job_t *job)
     int                 l;
     rs_result           result;
 
-    if ((result = rs_suck_n4(job->stream, &l)) != HS_DONE)
+    if ((result = rs_suck_n4(job, &l)) != RS_DONE)
         return result;
     job->block_len = l;
 
     if (job->block_len < 1) {
         rs_error("block length of %d is bogus", (int) job->block_len);
-        return HS_CORRUPT;
+        return RS_CORRUPT;
     }
 
     job->statefn = rs_loadsig_s_stronglen;
-    return HS_RUNNING;
+    return RS_RUNNING;
 }
 
 
@@ -169,18 +169,18 @@ static rs_result rs_loadsig_s_magic(rs_job_t *job)
     int                 l;
     rs_result           result;
 
-    if ((result = rs_suck_n4(job->stream, &l)) != HS_DONE) {
+    if ((result = rs_suck_n4(job, &l)) != RS_DONE) {
         return result;
-    } else if (l != HS_SIG_MAGIC) {
+    } else if (l != RS_SIG_MAGIC) {
         rs_error("wrong magic number %#10x for signature", l);
-        return HS_BAD_MAGIC;
+        return RS_BAD_MAGIC;
     } else {
         rs_trace("got signature magic %#10x", l);
     }
 
     job->statefn = rs_loadsig_s_blocklen;
 
-    return HS_RUNNING;
+    return RS_RUNNING;
 }
 
 

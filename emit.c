@@ -52,7 +52,7 @@ void
 rs_emit_delta_header(rs_job_t *job)
 {
     rs_trace("emit DELTA magic");
-    rs_squirt_n4(job->stream, HS_DELTA_MAGIC);
+    rs_squirt_n4(job, RS_DELTA_MAGIC);
 }
 
 
@@ -66,21 +66,21 @@ rs_emit_literal_cmd(rs_job_t *job, int len)
 
     switch (bytes = rs_int_len(len)) {
     case 1:
-        cmd = HS_OP_LITERAL_N1;
+        cmd = RS_OP_LITERAL_N1;
         break;
     case 2:
-        cmd = HS_OP_LITERAL_N2;
+        cmd = RS_OP_LITERAL_N2;
         break;
     case 4:
-        cmd = HS_OP_LITERAL_N4;
+        cmd = RS_OP_LITERAL_N4;
         break;
     default:
         rs_fatal("What?");
     }
     
     rs_trace("emit LITERAL_N%d(len=%d), cmd_byte=%#x", bytes, len, cmd);
-    rs_squirt_byte(job->stream, cmd);
-    rs_squirt_netint(job->stream, len, bytes);
+    rs_squirt_byte(job, cmd);
+    rs_squirt_netint(job, len, bytes);
 
     job->stats.lit_cmds++;
     job->stats.lit_bytes += len;
@@ -91,8 +91,8 @@ rs_emit_literal_cmd(rs_job_t *job, int len)
 void
 rs_emit_end_cmd(rs_job_t *job)
 {
-    int cmd = HS_OP_END;
+    int cmd = RS_OP_END;
     
     rs_trace("emit END, cmd_byte=%#x", cmd);
-    rs_squirt_byte(job->stream, cmd);
+    rs_squirt_byte(job, cmd);
 }

@@ -45,7 +45,7 @@
 
 rs_trace_fn_t  *rs_trace_impl = rs_trace_stderr;
 
-static int rs_trace_level = HS_LOG_INFO;
+static int rs_trace_level = RS_LOG_INFO;
 
 #ifdef HAVE_PROGRAM_INVOCATION_NAME
 #  define MY_NAME program_invocation_short_name
@@ -142,7 +142,7 @@ rs_fatal0(char const *s, ...)
     va_list	va;
 
     va_start(va, s);
-    rs_log_va(HS_LOG_CRIT, PACKAGE, s, va);
+    rs_log_va(RS_LOG_CRIT, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -155,7 +155,7 @@ rs_error0(char const *s, ...)
     va_list	va;
 
     va_start(va, s);
-    rs_log_va(HS_LOG_ERR, PACKAGE, s, va);
+    rs_log_va(RS_LOG_ERR, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -168,7 +168,7 @@ rs_trace0(char const *s, ...)
     va_list	va;
 
     va_start(va, s);
-    rs_log_va(HS_LOG_DEBUG, PACKAGE, s, va);
+    rs_log_va(RS_LOG_DEBUG, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -181,9 +181,9 @@ rs_trace0(char const *s, ...)
 int
 rs_supports_trace(void)
 {
-#ifdef DO_HS_TRACE
+#ifdef DO_RS_TRACE
     return 1;
 #else
     return 0;
-#endif				/* !DO_HS_TRACE */
+#endif				/* !DO_RS_TRACE */
 }

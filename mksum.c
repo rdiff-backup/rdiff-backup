@@ -57,14 +57,14 @@ static rs_result rs_sig_s_generate(rs_job_t *);
  */
 static rs_result rs_sig_s_header(rs_job_t *job)
 {
-    rs_squirt_n4(job->stream, HS_SIG_MAGIC);
-    rs_squirt_n4(job->stream, job->block_len);
-    rs_squirt_n4(job->stream, job->strong_sum_len);
+    rs_squirt_n4(job, RS_SIG_MAGIC);
+    rs_squirt_n4(job, job->block_len);
+    rs_squirt_n4(job, job->strong_sum_len);
     rs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)",
-             HS_SIG_MAGIC, (int) job->block_len, (int) job->strong_sum_len);
+             RS_SIG_MAGIC, (int) job->block_len, (int) job->strong_sum_len);
     
     job->statefn = rs_sig_s_generate;
-    return HS_RUNNING;
+    return RS_RUNNING;
 }
 
 
@@ -73,20 +73,20 @@ rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
 {
     unsigned int        weak_sum;
     rs_strong_sum_t     strong_sum;
-    char strong_sum_hex[HS_MD4_LENGTH * 2 + 1];
+    char strong_sum_hex[RS_MD4_LENGTH * 2 + 1];
 
     weak_sum = rs_calc_weak_sum(block, len);
 
     rs_calc_strong_sum(block, len, &strong_sum);
     rs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
 
-    rs_squirt_n4(job->stream, weak_sum);
-    rs_blow_literal(job->stream, strong_sum, job->strong_sum_len);
+    rs_squirt_n4(job, weak_sum);
+    rs_blow_literal(job, strong_sum, job->strong_sum_len);
 
     rs_trace("sent weak sum 0x%08x and strong sum %s", weak_sum,
              strong_sum_hex);
 
-    return HS_RUNNING;
+    return RS_RUNNING;
 }
 
 
@@ -101,15 +101,15 @@ static rs_result rs_sig_s_generate(rs_job_t *job)
         
     /* must get a whole block, otherwise try again */
     len = job->block_len;
-    result = rs_scoop_read(job->stream, len, &block);
+    result = rs_scoop_read(job, len, &block);
         
     /* unless we're near eof, in which case we'll accept
          * whatever's in there */
-    if ((result == HS_BLOCKED && job->stream->eof_in)) {
-        result = rs_scoop_read_rest(job->stream, &len, &block);
-    } else if (result == HS_INPUT_ENDED) {
-        return HS_DONE;
-    } else if (result != HS_DONE) {
+    if ((result == RS_BLOCKED && job->stream->eof_in)) {
+        result = rs_scoop_read_rest(job, &len, &block);
+    } else if (result == RS_INPUT_ENDED) {
+        return RS_DONE;
+    } else if (result != RS_DONE) {
         rs_trace("generate stopped: %s", rs_strerror(result));
         return result;
     }
@@ -133,7 +133,7 @@ rs_job_t * rs_sig_begin(rs_stream_t *stream,
 
     job->block_len = new_block_len;
 
-    assert(strong_sum_len > 0 && strong_sum_len <= HS_MD4_LENGTH);
+    assert(strong_sum_len > 0 && strong_sum_len <= RS_MD4_LENGTH);
     job->strong_sum_len = strong_sum_len;
 
     job->statefn = rs_sig_s_header;

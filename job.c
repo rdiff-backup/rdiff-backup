@@ -62,7 +62,11 @@ rs_job_t * rs_job_new(rs_stream_t *stream, char const *job_name)
 
     job = rs_alloc_struct(rs_job_t);
 
-    rs_stream_check(stream);
+    if (!stream) {
+        rs_fatal("trying to create new job with null stream");
+        return NULL;
+    }
+    
     job->stream = stream;
     job->job_name = job_name;
     job->dogtag = rs_job_tag;
@@ -86,7 +90,7 @@ rs_result rs_job_free(rs_job_t *job)
     rs_bzero(job, sizeof *job);
     free(job);
 
-    return HS_DONE;
+    return RS_DONE;
 }
 
 
@@ -104,14 +108,14 @@ static rs_result rs_job_complete(rs_job_t *job, rs_result result)
     job->statefn = rs_job_s_complete;
     job->final_result = result;
 
-    if (result != HS_DONE) {
+    if (result != RS_DONE) {
         rs_error("%s job failed: %s", job->job_name, rs_strerror(result));
     } else {
         rs_trace("%s job complete", job->job_name);
     }
 
-    if (result == HS_DONE && !rs_tube_is_idle(job->stream))
-        return HS_BLOCKED;
+    if (result == RS_DONE && !rs_tube_is_idle(job))
+        return RS_BLOCKED;
     else
         return result;
 }
@@ -119,7 +123,7 @@ static rs_result rs_job_complete(rs_job_t *job, rs_result result)
 
 /** 
  * \brief Run a ::rs_job_t state machine until it blocks
- * (::HS_BLOCKED), returns an error, or completes (::HS_COMPLETE).
+ * (::RS_BLOCKED), returns an error, or completes (::RS_COMPLETE).
  *
  * \return The ::rs_result that caused iteration to stop.
  *
@@ -133,22 +137,22 @@ rs_result rs_job_iter(rs_job_t *job)
 
     rs_job_check(job);
     while (1) {
-        result = rs_tube_catchup(job->stream);
-        if (result == HS_BLOCKED)
+        result = rs_tube_catchup(job);
+        if (result == RS_BLOCKED)
             return result;
-        else if (result != HS_DONE)
+        else if (result != RS_DONE)
             return rs_job_complete(job, result);
 
         if (job->statefn == rs_job_s_complete) {
-            if (rs_tube_is_idle(job->stream))
-                return HS_DONE;
+            if (rs_tube_is_idle(job))
+                return RS_DONE;
             else
-                return HS_BLOCKED;
+                return RS_BLOCKED;
         } else {
             result = job->statefn(job);
-            if (result == HS_RUNNING)
+            if (result == RS_RUNNING)
                 continue;
-            else if (result == HS_BLOCKED)
+            else if (result == RS_BLOCKED)
                 return result;
             else
                 return rs_job_complete(job, result);

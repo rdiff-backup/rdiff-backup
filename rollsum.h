@@ -35,7 +35,7 @@ struct rs_rollsum {
    assertion, calculate the weak checksum *in full* at every byte, and make
    sure it is the same.  This will be really slow, but it will catch problems 
    with rolling. */
-#define HS_PAINFUL_HONESTY
+#define RS_PAINFUL_HONESTY
 
 
 int rs_trim_sums(byte_t const *p, rs_rollsum_t * rollsum,

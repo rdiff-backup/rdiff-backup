@@ -49,16 +49,16 @@ sub emit_cmd {
   }
   
   if ($len2) {
-    $op = sprintf "HS_OP_%s_N%d_N%d", $kind, $len1, $len2;
+    $op = sprintf "RS_OP_%s_N%d_N%d", $kind, $len1, $len2;
   } elsif ($len1) {
-    $op = sprintf "HS_OP_%s_N%d", $kind, $len1;
+    $op = sprintf "RS_OP_%s_N%d", $kind, $len1;
   } elsif ($lit_val) {
-    $op = sprintf "HS_OP_%s_%d", $kind, $lit_val;
+    $op = sprintf "RS_OP_%s_%d", $kind, $lit_val;
   } else {
-    $op = sprintf "HS_OP_%s", $kind;
+    $op = sprintf "RS_OP_%s", $kind;
   }
   
-  printf TABLE "    {HS_KIND_%-10s, %3d, %d, %d } ", @_;
+  printf TABLE "    {RS_KIND_%-10s, %3d, %d, %d } ", @_;
   printf TABLE "     /* %20s = %#4x */", $op, $cmd_byte;
   printf HEADER "   %20s = %#4x", $op, $cmd_byte;
   $cmd_byte++;

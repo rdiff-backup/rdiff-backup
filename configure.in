@@ -101,7 +101,7 @@ AC_MSG_CHECKING("whether to include trace code")
 if test "$enable_trace" = "yes" -o -z "$enable_trace"
 then
     AC_MSG_RESULT(yes)
-    AC_DEFINE(DO_HS_TRACE)
+    AC_DEFINE(DO_RS_TRACE)
 elif test "$enable_trace" = "no"
 then
     AC_MSG_RESULT(no)
@@ -132,9 +132,9 @@ AC_CHECK_HEADERS(config.h unistd.h alloca.h libintl.h mcheck.h)
 # releases where there is the possibility of binaries hanging around.
 
 librsync_libversion=2:0:0
-AC_DEFINE_UNQUOTED(HS_LIBVERSION, "$librsync_libversion")
+AC_DEFINE_UNQUOTED(RS_LIBVERSION, "$librsync_libversion")
 
-AC_DEFINE_UNQUOTED(HS_CANONICAL_HOST, "$host")
+AC_DEFINE_UNQUOTED(RS_CANONICAL_HOST, "$host")
 
 AC_SUBST(librsync_libversion)
 AC_SUBST(OBJ_SAVE)

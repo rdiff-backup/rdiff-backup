@@ -32,12 +32,12 @@
 
 /* For debugging purposes, here are some human-readable forms. */
 struct rs_op_kind_name const rs_op_kind_names[] = {
-    {"END",       HS_KIND_END },
-    {"COPY",      HS_KIND_COPY },
-    {"LITERAL",   HS_KIND_LITERAL },
-    {"SIGNATURE", HS_KIND_SIGNATURE },
-    {"CHECKSUM",  HS_KIND_CHECKSUM },
-    {"INVALID",   HS_KIND_INVALID },
+    {"END",       RS_KIND_END },
+    {"COPY",      RS_KIND_COPY },
+    {"LITERAL",   RS_KIND_LITERAL },
+    {"SIGNATURE", RS_KIND_SIGNATURE },
+    {"CHECKSUM",  RS_KIND_CHECKSUM },
+    {"INVALID",   RS_KIND_INVALID },
     {NULL,        0 }
 };
 

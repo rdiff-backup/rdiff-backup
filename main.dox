@@ -55,7 +55,7 @@ main areas:
    - \ref api_utility
 
 All external symbols have the prefix ``<tt>rs_</tt>'', or
-``<tt>HS_</tt>'' in the case of preprocessor symbols.
+``<tt>RS_</tt>'' in the case of preprocessor symbols.
 
 \subsection api_streaming Data streaming
 
@@ -77,8 +77,8 @@ After creation of a job, repeated calls to rs_job_iter() in between
 filling and emptying the buffers keeps data flowing through the
 stream.  The ::rs_result_t values returned may indicate
 
- - ::HS_DONE:  processing is complete
- - ::HS_BLOCKED: processing has blocked pending more data
+ - ::RS_DONE:  processing is complete
+ - ::RS_BLOCKED: processing has blocked pending more data
  - one of various possible errors in processing
 
 These can be converted to a human-readable string by rs_strerror().

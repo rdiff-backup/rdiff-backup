@@ -70,7 +70,7 @@
 static rs_result rs_delta_s_end(rs_job_t *job)
 {
     rs_emit_end_cmd(job);
-    return HS_DONE;
+    return RS_DONE;
 }
 
 
@@ -86,14 +86,14 @@ static rs_result rs_delta_s_fake(rs_job_t *job)
     if (avail) {
         rs_trace("emit fake delta for %ld available bytes", (long) avail);
         rs_emit_literal_cmd(job, avail);
-        rs_blow_copy(stream, avail);
-        return HS_RUNNING;
+        rs_blow_copy(job, avail);
+        return RS_RUNNING;
     } else {
         if (stream->eof_in) {
             job->statefn = rs_delta_s_end;
-            return HS_RUNNING;
+            return RS_RUNNING;
         } else {                
-            return HS_BLOCKED;
+            return RS_BLOCKED;
         }
     }
 }
@@ -108,7 +108,7 @@ static rs_result rs_delta_s_header(rs_job_t *job)
 
     job->statefn = rs_delta_s_fake;
 
-    return HS_RUNNING;
+    return RS_RUNNING;
 }
 
 

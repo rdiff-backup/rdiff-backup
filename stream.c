@@ -42,7 +42,7 @@
  * arbitrary amounts of input or output and get it without having to
  * keep track of partial completion.  So there are functions which
  * either complete, or queue whatever was not sent and return
- * HS_BLOCKED.
+ * RS_BLOCKED.
  *
  * The output buffer is a little more clever than simply a data
  * buffer.  Instead it knows that we can send either literal data, or
@@ -96,33 +96,7 @@
 #include "util.h"
 #include "trace.h"
 
-static const int HS_STREAM_DOGTAG = 2001125;
-
-
-void rs_stream_init(rs_stream_t *stream)
-{
-        rs_simpl_t *impl;
-        
-        assert(stream);
-        rs_bzero(stream, sizeof *stream);
-        stream->dogtag = HS_STREAM_DOGTAG;
-
-        impl = stream->impl = rs_alloc_struct(rs_simpl_t);
-
-        /* because scoop_alloc == 0, the scoop buffer will be
-         * allocated when required. */
-}
-
-
-/*
- * Make sure everything is basically OK with STREAM.
- */
-void
-rs_stream_check(rs_stream_t *stream)
-{
-        assert(stream);
-        assert(stream->dogtag == HS_STREAM_DOGTAG);
-}
+static const int RS_STREAM_DOGTAG = 2001125;
 
 
 /*
@@ -138,7 +112,6 @@ int rs_stream_copy(rs_stream_t *stream, int max_len)
 {
         int len = max_len;
     
-        rs_stream_check(stream);
         assert(len > 0);
 
         if ((unsigned) len > stream->avail_in) {
@@ -168,31 +141,12 @@ int rs_stream_copy(rs_stream_t *stream, int max_len)
 }
 
 
-/*
- * Check whether the stream is empty.  This means that there is no
- * more data in either the internal or external buffers.  If you know
- * that you don't have any more data to send in, then this basically
- * means you're done.
- */
-int
-rs_stream_is_empty(rs_stream_t *stream)
-{
-        int ret = stream->avail_in == 0  &&  rs_tube_is_idle(stream);
-
-        if (ret)
-                rs_trace("stream now has no input and no tube output");
-    
-        return ret;
-}
-
-
-
-/*
+/**
  * Whenever a stream processing function exits, it should have done so
  * because it has either consumed all the input or has filled the
  * output buffer.  This function checks that simple postcondition.
  */
 void rs_stream_check_exit(rs_stream_t const *stream)
 {
-        assert(stream->avail_in == 0  ||  stream->avail_out == 0);
+    assert(stream->avail_in == 0  ||  stream->avail_out == 0);
 }

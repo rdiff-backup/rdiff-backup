@@ -32,7 +32,7 @@
  * Network-byte-order output to the tube.
  *
  * All the `suck' routines return a result code.  The most common
- * values are HS_DONE if they have enough data, or HS_BLOCKED if there
+ * values are RS_DONE if they have enough data, or RS_BLOCKED if there
  * is not enough input to proceed.
  *
  * All the netint operations are done in a fairly simpleminded way,
@@ -53,46 +53,47 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
-
 #include <string.h>
 
 #include "rsync.h"
+
+#include "job.h"
 #include "netint.h"
 #include "trace.h"
 #include "stream.h"
 
-#define HS_MAX_INT_BYTES 8
+#define RS_MAX_INT_BYTES 8
 
 
 /**
  * \brief Write a single byte to a stream output.
  */
 rs_result
-rs_squirt_byte(rs_stream_t *stream, unsigned char d)
+rs_squirt_byte(rs_job_t *job, unsigned char d)
 {
-    rs_blow_literal(stream, &d, 1);
-    return HS_DONE;
+    rs_blow_literal(job, &d, 1);
+    return RS_DONE;
 }
 
 
 /**
  * \brief Write a variable-length integer to a stream.
  *
- * \param stream Stream of data.
+ * \param job Job of data.
  *
  * \param d Datum to write out.
  *
  * \param len Length of integer, in bytes.
  */
 rs_result
-rs_squirt_netint(rs_stream_t *stream, rs_long_t d, int len)
+rs_squirt_netint(rs_job_t *job, rs_long_t d, int len)
 {
-    unsigned char       buf[HS_MAX_INT_BYTES];
+    unsigned char       buf[RS_MAX_INT_BYTES];
     int                 i, j;
 
-    if (len <= 0 || len > HS_MAX_INT_BYTES) {
+    if (len <= 0 || len > RS_MAX_INT_BYTES) {
         rs_error("Illegal integer length %d", len);
-        return HS_INTERNAL_ERROR;
+        return RS_INTERNAL_ERROR;
     }
 
     /* Fill the output buffer with a bigendian representation of the
@@ -102,34 +103,34 @@ rs_squirt_netint(rs_stream_t *stream, rs_long_t d, int len)
         d >>= 8;
     }
 
-    rs_blow_literal(stream, buf, len);
+    rs_blow_literal(job, buf, len);
 
-    return HS_DONE;
+    return RS_DONE;
 }
 
 
 
 rs_result
-rs_squirt_n4(rs_stream_t *stream, int val)
+rs_squirt_n4(rs_job_t *job, int val)
 {
-    return rs_squirt_netint(stream, val, 4);
+    return rs_squirt_netint(job, val, 4);
 }
 
 
 
 rs_result
-rs_suck_netint(rs_stream_t *stream, rs_long_t *v, int len)
+rs_suck_netint(rs_job_t *job, rs_long_t *v, int len)
 {
     unsigned char       *buf;
     int                 i;
     rs_result           result;
 
-    if (len <= 0 || len > HS_MAX_INT_BYTES) {
+    if (len <= 0 || len > RS_MAX_INT_BYTES) {
         rs_error("Illegal integer length %d", len);
-        return HS_INTERNAL_ERROR;
+        return RS_INTERNAL_ERROR;
     }
 
-    if ((result = rs_scoop_read(stream, len, (void **) &buf)) != HS_DONE)
+    if ((result = rs_scoop_read(job, len, (void **) &buf)) != RS_DONE)
         return result;
 
     *v = 0;
@@ -138,17 +139,17 @@ rs_suck_netint(rs_stream_t *stream, rs_long_t *v, int len)
         *v = *v<<8 | buf[i];
     }
 
-    return HS_DONE;
+    return RS_DONE;
 }
 
 
 rs_result
-rs_suck_byte(rs_stream_t *stream, unsigned char *v)
+rs_suck_byte(rs_job_t *job, unsigned char *v)
 {
     void *inb;
     rs_result result;
     
-    if ((result = rs_scoop_read(stream, 1, &inb)) == HS_DONE)
+    if ((result = rs_scoop_read(job, 1, &inb)) == RS_DONE)
         *v = *((unsigned char *) inb);
 
     return result;
@@ -156,12 +157,12 @@ rs_suck_byte(rs_stream_t *stream, unsigned char *v)
 
 
 rs_result
-rs_suck_n4(rs_stream_t *stream, int *v)
+rs_suck_n4(rs_job_t *job, int *v)
 {
     rs_result result;
     off_t       d;
 
-    result = rs_suck_netint(stream, &d, 4);
+    result = rs_suck_netint(job, &d, 4);
     *v = d;
     return result;
 }        

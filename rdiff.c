@@ -52,8 +52,8 @@
 
 #define PROGRAM "rdiff"
 
-static size_t block_len = HS_DEFAULT_BLOCK_LEN;
-static size_t strong_len = HS_DEFAULT_STRONG_LEN;
+static size_t block_len = RS_DEFAULT_BLOCK_LEN;
+static size_t strong_len = RS_DEFAULT_STRONG_LEN;
 
 static int show_stats = 0;
 
@@ -86,7 +86,7 @@ static void rdiff_no_more_args(poptContext opcon)
 {
     if (poptGetArg(opcon)) {
         rdiff_usage("rdiff: too many arguments");
-        exit(HS_SYNTAX_ERROR);
+        exit(RS_SYNTAX_ERROR);
     }
 }
 
@@ -95,7 +95,7 @@ static void bad_option(poptContext opcon, int error)
 {
     fprintf(stderr, "%s: %s: %s\n",
             PROGRAM, poptStrerror(error), poptBadOption(opcon, 0));
-    exit(HS_SYNTAX_ERROR);
+    exit(RS_SYNTAX_ERROR);
 }
 
 
@@ -137,7 +137,7 @@ static void rdiff_show_version(void)
            "You may redistribute copies of librsync under the terms of the GNU\n"
            "Lesser General Public License.  For more information about these\n"
            "matters, see the files named COPYING.\n",
-           rs_librsync_version, HS_CANONICAL_HOST,
+           rs_librsync_version, RS_CANONICAL_HOST,
            8 * sizeof(rs_long_t));
 }
 
@@ -151,15 +151,15 @@ static void rdiff_options(poptContext opcon)
         switch (c) {
         case 'h':
             help();
-            exit(HS_DONE);
+            exit(RS_DONE);
         case 'V':
             rdiff_show_version();
-            exit(HS_DONE);
+            exit(RS_DONE);
         case 'v':
             if (!rs_supports_trace()) {
                 rs_error("library does not support trace");
             }
-            rs_trace_set_level(HS_LOG_DEBUG);
+            rs_trace_set_level(RS_LOG_DEBUG);
             break;
         default:
             bad_option(opcon, c);
@@ -195,7 +195,7 @@ static rs_result rdiff_delta(poptContext opcon)
     if (!(sig_name = poptGetArg(opcon))) {
         rdiff_usage("Usage for delta: "
                     "rdiff [OPTIONS] delta SIGNATURE [NEWFILE [DELTA]]");
-        return HS_SYNTAX_ERROR;
+        return RS_SYNTAX_ERROR;
     }
 
     sig_file = rs_file_open(sig_name, "rb");
@@ -205,10 +205,10 @@ static rs_result rdiff_delta(poptContext opcon)
     rdiff_no_more_args(opcon);
 
     result = rs_loadsig_file(sig_file, &sumset);
-    if (result != HS_DONE)
+    if (result != RS_DONE)
         return result;
 
-    if ((result = rs_build_hash_table(sumset)) != HS_DONE)
+    if ((result = rs_build_hash_table(sumset)) != RS_DONE)
         return result;
 
     result = rs_delta_file(sumset, new_file, delta_file, &stats);
@@ -232,7 +232,7 @@ static rs_result rdiff_patch(poptContext opcon)
     if (!(basis_name = poptGetArg(opcon))) {
         rdiff_usage("Usage for patch: "
                     "rdiff [OPTIONS] patch BASIS [DELTA [NEW]]");
-        return HS_SYNTAX_ERROR;
+        return RS_SYNTAX_ERROR;
     }
 
     basis_file = rs_file_open(basis_name, "rb");
@@ -266,7 +266,7 @@ static rs_result rdiff_action(poptContext opcon)
         return rdiff_patch(opcon);
     
     rdiff_usage("rdiff: You must specify an action: `signature', `delta', or `patch'.");
-    return HS_SYNTAX_ERROR;
+    return RS_SYNTAX_ERROR;
 }
 
 
@@ -279,7 +279,7 @@ int main(const int argc, const char *argv[])
     rdiff_options(opcon);
     result = rdiff_action(opcon);
 
-    if (result != HS_DONE)
+    if (result != RS_DONE)
         rs_error("failed: %s", rs_strerror(result));
 
     return result;

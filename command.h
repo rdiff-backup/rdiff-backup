@@ -35,16 +35,16 @@
  * possible representations.
  */
 enum rs_op_kind {
-    HS_KIND_END = 1000,
-    HS_KIND_LITERAL,
-    HS_KIND_SIGNATURE,
-    HS_KIND_COPY,
-    HS_KIND_CHECKSUM,
-    HS_KIND_RESERVED,           /* for future expansion */
+    RS_KIND_END = 1000,
+    RS_KIND_LITERAL,
+    RS_KIND_SIGNATURE,
+    RS_KIND_COPY,
+    RS_KIND_CHECKSUM,
+    RS_KIND_RESERVED,           /* for future expansion */
 
     /* This one should never occur in file streams.  It's an
      * internal marker for invalid commands. */
-    HS_KIND_INVALID
+    RS_KIND_INVALID
 };
 
 

@@ -39,13 +39,15 @@
 #include <string.h>
 #include <errno.h>
 
+#include <rsync.h>
+
 #include "trace.h"
 #include "fileutil.h"
-#include "rsync.h"
 #include "sumset.h"
 #include "job.h"
 #include "buf.h"
 #include "whole.h"
+#include "util.h"
 
 /**
  * Run a job continuously, with input to/from the two specified files.
@@ -58,7 +60,7 @@
  * \param in_file Source of input bytes, or NULL if the input buffer
  * should not be filled.
  *
- * \return HS_DONE if the job completed, or otherwise an error result.
+ * \return RS_DONE if the job completed, or otherwise an error result.
  */
 rs_result
 rs_whole_run(rs_job_t *job, FILE *in_file, FILE *out_file)
@@ -66,6 +68,8 @@ rs_whole_run(rs_job_t *job, FILE *in_file, FILE *out_file)
     rs_stream_t     *stream = job->stream;
     rs_result       result, iores;
     rs_filebuf_t    *in_fb = NULL, *out_fb = NULL;
+
+    rs_bzero(stream, sizeof *stream);
 
     if (in_file)
         in_fb = rs_filebuf_new(in_file, stream, rs_inbuflen);
@@ -76,20 +80,20 @@ rs_whole_run(rs_job_t *job, FILE *in_file, FILE *out_file)
     do {
         if (!stream->eof_in && in_fb) {
             iores = rs_infilebuf_fill(in_fb);
-            if (iores != HS_DONE)
+            if (iores != RS_DONE)
                 return iores;
         }
 
         result = rs_job_iter(job);
-        if (result != HS_DONE  &&  result != HS_BLOCKED)
+        if (result != RS_DONE  &&  result != RS_BLOCKED)
             return result;
 
         if (out_fb) {
             iores = rs_outfilebuf_drain(out_fb);
-            if (iores != HS_DONE)
+            if (iores != RS_DONE)
                 return iores;
         }
-    } while (result != HS_DONE);
+    } while (result != RS_DONE);
 
     return result;
 }
@@ -114,11 +118,8 @@ rs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
     rs_stream_t     stream;
     rs_result       r;
 
-    rs_stream_init(&stream);
     job = rs_sig_begin(&stream, new_block_len, strong_len);
-
     r = rs_whole_run(job, old_file, sig_file);
-
     rs_job_free(job);
 
     return r;
@@ -138,8 +139,7 @@ rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset)
     rs_stream_t         stream;
     rs_result           r;
 
-    rs_stream_init(&stream);
-
+    rs_bzero(&stream, sizeof stream);
     job = rs_loadsig_begin(&stream, sumset);
     r = rs_whole_run(job, sig_file, NULL);
     rs_job_free(job);
@@ -150,13 +150,14 @@ rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset)
 
 
 rs_result
-rs_delta_file(rs_signature_t *sig, FILE *new_file, FILE *delta_file, rs_stats_t *stats)
+rs_delta_file(rs_signature_t *sig, FILE *new_file, FILE *delta_file,
+              rs_stats_t *stats)
 {
     rs_job_t            *job;
     rs_stream_t         stream;
     rs_result           r;
 
-    rs_stream_init(&stream);
+    rs_bzero(&stream, sizeof stream);
     job = rs_delta_begin(&stream, sig);
 
     r = rs_whole_run(job, new_file, delta_file);
@@ -171,13 +172,14 @@ rs_delta_file(rs_signature_t *sig, FILE *new_file, FILE *delta_file, rs_stats_t 
 
 
 
-rs_result rs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file, rs_stats_t *stats)
+rs_result rs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file,
+                        rs_stats_t *stats)
 {
     rs_job_t            *job;
     rs_stream_t         stream;
     rs_result           r;
 
-    rs_stream_init(&stream);
+    rs_bzero(&stream, sizeof stream);
     job = rs_patch_begin(&stream, rs_file_copy_cb, basis_file);
 
     r = rs_whole_run(job, delta_file, new_file);

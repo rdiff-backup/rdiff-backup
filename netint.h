@@ -21,12 +21,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-rs_result rs_squirt_byte(rs_stream_t *stream, unsigned char d);
-rs_result rs_squirt_netint(rs_stream_t *stream, rs_long_t d, int len);
-rs_result rs_squirt_n4(rs_stream_t *stream, int val);
+rs_result rs_squirt_byte(rs_job_t *, unsigned char d);
+rs_result rs_squirt_netint(rs_job_t *, rs_long_t d, int len);
+rs_result rs_squirt_n4(rs_job_t *, int val);
 
-rs_result rs_suck_netint(rs_stream_t *stream, rs_long_t *v, int len);
-rs_result rs_suck_byte(rs_stream_t *stream, unsigned char *);
-rs_result rs_suck_n4(rs_stream_t *stream, int *);
+rs_result rs_suck_netint(rs_job_t *, rs_long_t *v, int len);
+rs_result rs_suck_byte(rs_job_t *, unsigned char *);
+rs_result rs_suck_n4(rs_job_t *, int *);
 
 int rs_int_len(rs_long_t val);

@@ -48,7 +48,7 @@ rs_log_stats(rs_stats_t const *stats)
     char buf[1000];
 
     rs_format_stats(stats, buf, sizeof buf - 1);
-    rs_log(HS_LOG_INFO, "%s", buf);
+    rs_log(RS_LOG_INFO, "%s", buf);
     return 0;
 }
 

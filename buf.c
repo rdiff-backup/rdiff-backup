@@ -108,12 +108,12 @@ rs_result rs_infilebuf_fill(rs_filebuf_t *fb)
         }
 
         if (stream->eof_in)
-            return HS_DONE;
+            return RS_DONE;
 
         if (stream->avail_in)
             /* Still some data remaining.  Perhaps we should read
                anyhow? */
-            return HS_DONE;
+            return RS_DONE;
         
         len = fread(fb->buf, 1, fb->buf_len, f);
         if (len <= 0) {
@@ -123,13 +123,13 @@ rs_result rs_infilebuf_fill(rs_filebuf_t *fb)
             } else if (ferror(f)) {
                 rs_error("error filling stream from file: %s",
                          strerror(errno));
-                return HS_IO_ERROR;
+                return RS_IO_ERROR;
             }
         }
         stream->avail_in = len;
         stream->next_in = fb->buf;
 
-        return HS_DONE;
+        return RS_DONE;
 }
 
 
@@ -152,7 +152,7 @@ rs_result rs_outfilebuf_drain(rs_filebuf_t *fb)
                 stream->next_out = fb->buf;
                 stream->avail_out = fb->buf_len;
                 
-                return HS_DONE;
+                return RS_DONE;
         }
         
         assert(stream->avail_out <= fb->buf_len);
@@ -169,14 +169,14 @@ rs_result rs_outfilebuf_drain(rs_filebuf_t *fb)
                 if (present != result) {
                         rs_error("error draining stream to file: %s",
                                   strerror(errno));
-                        return HS_IO_ERROR;
+                        return RS_IO_ERROR;
                 }
 
                 stream->next_out = fb->buf;
                 stream->avail_out = fb->buf_len;
         }
         
-        return HS_DONE;
+        return RS_DONE;
 }
 
 
@@ -190,12 +190,12 @@ rs_result rs_file_copy_cb(void *arg, size_t *len, void **buf)
         got = fread(*buf, 1, *len, (FILE *) arg);
         if (got == -1) {
                 rs_error(strerror(errno));
-                return HS_IO_ERROR;
+                return RS_IO_ERROR;
         } else if (got == 0) {
                 rs_error("unexpected eof");
-                return HS_INPUT_ENDED;
+                return RS_INPUT_ENDED;
         } else {
                 *len = got;
-                return HS_DONE;
+                return RS_DONE;
         }
 }

@@ -45,13 +45,13 @@ void rs_trace0(char const *s, ...);
 void rs_log0(int level, char const *fn, char const *fmt, ...)
     __attribute__ ((format(printf, 3, 4)));
 
-#ifdef DO_HS_TRACE
+#ifdef DO_RS_TRACE
 #  define rs_trace(fmt, arg...)                            \
-    do { rs_log0(HS_LOG_DEBUG, __FUNCTION__, fmt , ##arg);  \
+    do { rs_log0(RS_LOG_DEBUG, __FUNCTION__, fmt , ##arg);  \
     } while (0)
 #else
 #  define rs_trace(s, str...)
-#endif	/* !DO_HS_TRACE */
+#endif	/* !DO_RS_TRACE */
 
 /*
  * TODO: Don't assume this is a gcc thing; rather test in autoconf for
@@ -68,12 +68,12 @@ void rs_log0(int level, char const *fn, char const *fmt, ...)
 
 
 #define rs_error(s, str...) do {                       \
-     rs_log0(HS_LOG_ERR,  __FUNCTION__, (s) , ##str);     \
+     rs_log0(RS_LOG_ERR,  __FUNCTION__, (s) , ##str);     \
      } while (0)
 
 
 #define rs_fatal(s, str...) do {               \
-     rs_log0(HS_LOG_CRIT,  __FUNCTION__,          \
+     rs_log0(RS_LOG_CRIT,  __FUNCTION__,          \
 	      (s) , ##str);                     \
      abort();                                   \
      } while (0)
@@ -84,10 +84,10 @@ void rs_log0(int level, char const *fn, char const *fmt, ...)
 #  define rs_fatal rs_fatal0
 #  define rs_error rs_error0
 
-#  ifdef DO_HS_TRACE
+#  ifdef DO_RS_TRACE
 #    define rs_trace rs_trace0
 void            rs_log0(int, char const *, ...);
-#  endif			/* DO_HS_TRACE */
+#  endif			/* DO_RS_TRACE */
 #endif				/* ! __GNUC__ */
 
 

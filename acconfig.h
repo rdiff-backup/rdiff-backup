@@ -1,10 +1,10 @@
 /* acconfig.h -- hand-written definitions to eventually go into config.h */
 
 /* Define this to enable trace code */
-#undef DO_HS_TRACE
+#undef DO_RS_TRACE
 
 /* Version of the libtool interface. */
-#define HS_LIBVERSION "unknown"
+#define RS_LIBVERSION "unknown"
 
 /* Define this if your sockaddr structure contains sin_len */
 #undef HAVE_SOCK_SIN_LEN
@@ -46,6 +46,6 @@
 #undef HAVE_PROGRAM_INVOCATION_NAME
 
 /* Canonical GNU hostname */
-#define HS_CANONICAL_HOST "unknown"
+#define RS_CANONICAL_HOST "unknown"
 
 /* end of acconfig.h */

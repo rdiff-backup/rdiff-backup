@@ -41,5 +41,5 @@
 
 
 
-#define HS_DELTA_MAGIC          0x72730236      /* r s \2 6 */
-#define HS_SIG_MAGIC            0x72730136      /* r s \1 6 */
+#define RS_DELTA_MAGIC          0x72730236      /* r s \2 6 */
+#define RS_SIG_MAGIC            0x72730136      /* r s \1 6 */

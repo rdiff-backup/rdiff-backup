@@ -61,9 +61,9 @@ void
 rs_sumset_dump(rs_signature_t const *sums)
 {
         int i;
-        char        strong_hex[HS_MD4_LENGTH * 3];
+        char        strong_hex[RS_MD4_LENGTH * 3];
     
-        rs_log(HS_LOG_INFO, 
+        rs_log(RS_LOG_INFO, 
                 "sumset info: block_len=%d, file length=%lu, "
                 "number of chunks=%d, remainder=%d",
                 sums->block_len,
@@ -73,7 +73,7 @@ rs_sumset_dump(rs_signature_t const *sums)
         for (i = 0; i < sums->count; i++) {
                 rs_hexify(strong_hex, sums->block_sigs[i].strong_sum,
                           sums->strong_sum_len);
-                rs_log(HS_LOG_INFO,
+                rs_log(RS_LOG_INFO,
                         "sum %6d: weak=%08x, strong=%s",
                         i, sums->block_sigs[i].weak_sum, strong_hex);
         }

@@ -61,6 +61,23 @@ struct rs_job {
 
     /** Encoding statistics. */
     rs_stats_t          stats;
+
+    /** Buffer of data left over in the scoop.  Allocation is
+     * scoop_buf..scoop_alloc, and scoop_next[0..scoop_avail]
+     * contains valid data. */
+    char       *scoop_buf;
+    char       *scoop_next;
+    size_t      scoop_alloc;
+    size_t      scoop_avail;
+        
+    /** If USED is >0, then buf contains that much literal data to
+     * be sent out. */
+    char        lit_buf[16];
+    int         lit_len;
+
+    /** If COPY_LEN is >0, then that much data should be copied
+     * through from the input. */
+    int         copy_len;
 };
 
 

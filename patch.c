@@ -61,7 +61,7 @@ static rs_result rs_patch_s_cmdbyte(rs_job_t *job)
 {
     rs_result result;
         
-    if ((result = rs_suck_byte(job->stream, &job->op)) != HS_DONE)
+    if ((result = rs_suck_byte(job, &job->op)) != RS_DONE)
         return result;
 
     job->cmd = &rs_prototab[job->op];
@@ -75,7 +75,7 @@ static rs_result rs_patch_s_cmdbyte(rs_job_t *job)
     else
         job->statefn = rs_patch_s_run;
 
-    return HS_RUNNING;
+    return RS_RUNNING;
 }
 
 
@@ -91,23 +91,23 @@ static rs_result rs_patch_s_params(rs_job_t *job)
 
     assert(len);
 
-    result = rs_scoop_readahead(job->stream, len, &p);
-    if (result != HS_DONE)
+    result = rs_scoop_readahead(job, len, &p);
+    if (result != RS_DONE)
         return result;
 
     /* we now must have LEN bytes buffered */
-    result = rs_suck_netint(job->stream, &job->param1, job->cmd->len_1);
+    result = rs_suck_netint(job, &job->param1, job->cmd->len_1);
     /* shouldn't fail, since we already checked */
-    assert(result == HS_DONE);
+    assert(result == RS_DONE);
 
     if (job->cmd->len_2) {
-        result = rs_suck_netint(job->stream, &job->param2, job->cmd->len_2);
-        assert(result == HS_DONE);
+        result = rs_suck_netint(job, &job->param2, job->cmd->len_2);
+        assert(result == RS_DONE);
     }
 
     job->statefn = rs_patch_s_run;
 
-    return HS_RUNNING;
+    return RS_RUNNING;
 }
 
 
@@ -120,15 +120,15 @@ static rs_result rs_patch_s_run(rs_job_t *job)
         rs_trace("running command 0x%x, kind %d", job->op, job->cmd->kind);
 
         switch (job->cmd->kind) {
-        case HS_KIND_LITERAL:
+        case RS_KIND_LITERAL:
                 job->statefn = rs_patch_s_literal;
-                return HS_RUNNING;
-        case HS_KIND_END:
-                return HS_DONE;
+                return RS_RUNNING;
+        case RS_KIND_END:
+                return RS_DONE;
                 /* so we exit here; trying to continue causes an error */
         default:
                 rs_error("bogus command 0x%02x", job->op);
-                return HS_BAD_MAGIC;
+                return RS_BAD_MAGIC;
         }
 }
 
@@ -149,10 +149,10 @@ static rs_result rs_patch_s_literal(rs_job_t *job)
     job->stats.lit_cmds++;
     job->stats.lit_bytes += len;
 
-    rs_blow_copy(job->stream, len);
+    rs_blow_copy(job, len);
 
     job->statefn = rs_patch_s_cmdbyte;
-    return HS_RUNNING;
+    return RS_RUNNING;
 }
 
 
@@ -165,17 +165,17 @@ static rs_result rs_patch_s_header(rs_job_t *job)
         int result;
 
         
-        if ((result =rs_suck_n4(job->stream, &v)) != HS_DONE)
+        if ((result =rs_suck_n4(job, &v)) != RS_DONE)
                 return result;
 
-        if (v != HS_DELTA_MAGIC)
-                return HS_BAD_MAGIC;
+        if (v != RS_DELTA_MAGIC)
+                return RS_BAD_MAGIC;
 
         rs_trace("got patch magic %#10x", v);
 
         job->statefn = rs_patch_s_cmdbyte;
 
-        return HS_RUNNING;
+        return RS_RUNNING;
 }
 
 

@@ -63,7 +63,7 @@ rs_file_open(char const *filename, char const *mode)
 	rs_error("Error opening \"%s\" for %s: %s", filename,
 		  is_write ? "write" : "read",
 		  strerror(errno));
-	exit(HS_IO_ERROR);
+	exit(RS_IO_ERROR);
     }
     
     return f;
