@@ -25,7 +25,7 @@ input=$srcdir/COPYING
 
 for inbuf in $bufsizes
 do
-    cmd="rdiff -v -I$inbuf signature $input $sig" 
+    cmd="rdiff -I$inbuf signature $input $sig" 
     run_test $cmd
     check_compare $sig $expect "$cmd"
 done
