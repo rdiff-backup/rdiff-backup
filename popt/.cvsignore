@@ -1,5 +1,7 @@
+.deps
 ID
 Makefile
+Makefile.in
 config.cache
 config.h
 config.log

@@ -6,7 +6,7 @@ AC_REVISION($Id$)
 
 AC_INIT(trace.c)
 
-my_version=0.9.1dev2
+my_version=0.9.1dev3
 my_package=libhsync
 my_url=http://linuxcare.com.au/rproxy/
 echo "Configuring $my_package $my_version   ($my_url)"
@@ -52,17 +52,37 @@ AC_TRY_COMPILE([#include <errno.h>],
 # supply a snprintf if the system doesn't have one
 AC_REPLACE_FUNCS(snprintf)
 AC_CHECK_FUNCS(vsnprintf)
+AC_CHECK_FUNCS(strerror mtrace)
+AC_CHECK_FUNC(setreuid, [], [
+    AC_CHECK_LIB(ucb, setreuid, [if echo $LIBS | grep -- -lucb >/dev/null ;then :; else LIBS="$LIBS -lc -lucb" USEUCB=y;fi])
+])
+
+AC_ARG_WITH(included-popt,
+        [  --with-included-popt    use bundled popt library, not from system])
 
 dnl Check for declarations
 AC_MSG_CHECKING(for sockaddr.sin_len)
+AC_CHECK_HEADERS(config.h unistd.h alloca.h libintl.h mcheck.h)
 AC_EGREP_HEADER(sin_len, sys/socket.h, 
 	[ AC_DEFINE(HAVE_SOCK_SIN_LEN)
           AC_MSG_RESULT(yes) ],
         [ AC_MSG_RESULT(no) ])
 
 dnl Checks for libraries
-AC_CHECK_LIB(popt, poptGetContext,,
-        AC_MSG_WARN([libpopt is required to build libhsync tools]))
+if test x"$with_included_popt" != x"yes"
+then
+    AC_CHECK_LIB(popt, poptGetContext, , [with_included_popt=yes])
+fi
+
+AC_MSG_CHECKING("whether to use included libpopt")
+if test x"$with_included_popt" = x"yes"
+then
+    AC_MSG_RESULT("$srcdir/popt")
+    BUILD_POPT='popt/libpopt.a'
+    CFLAGS="$CFLAGS -I $srcdir/popt"
+else
+    AC_MSG_RESULT(no)
+fi
 
 dnl Check configuration options
 if test "$GCC" = "yes" 
@@ -105,7 +125,6 @@ AC_CHECK_SIZEOF(off_t)
 
 dnl Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADER(popt.h,,AC_MSG_ERROR("libpopt and popt.h is required to build libhsync"))
 
 # GNU library versioning: This is NOT the libhsync release number.
 # Rather, it is a CURRENT:REVISION:AGE tuple describing binary
@@ -125,5 +144,6 @@ AC_SUBST(CCMALLOC_LIB)
 AC_SUBST(net_libs)
 AC_SUBST(LIBOBJS)
 AC_SUBST(LIBTOOL_DEPS)
+AC_SUBST(BUILD_POPT)
 
-AC_OUTPUT([Makefile])
+AC_OUTPUT([Makefile popt/Makefile man/Makefile])

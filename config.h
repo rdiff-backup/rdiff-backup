@@ -55,18 +55,39 @@
 /* The number of bytes in a unsigned char.  */
 #define SIZEOF_UNSIGNED_CHAR 1
 
+/* Define if you have the mtrace function.  */
+#define HAVE_MTRACE 1
+
 /* Define if you have the snprintf function.  */
 #define HAVE_SNPRINTF 1
+
+/* Define if you have the strerror function.  */
+#define HAVE_STRERROR 1
 
 /* Define if you have the vsnprintf function.  */
 #define HAVE_VSNPRINTF 1
 
+/* Define if you have the <alloca.h> header file.  */
+#define HAVE_ALLOCA_H 1
+
+/* Define if you have the <config.h> header file.  */
+/* #undef HAVE_CONFIG_H */
+
+/* Define if you have the <libintl.h> header file.  */
+#define HAVE_LIBINTL_H 1
+
+/* Define if you have the <mcheck.h> header file.  */
+#define HAVE_MCHECK_H 1
+
+/* Define if you have the <unistd.h> header file.  */
+#define HAVE_UNISTD_H 1
+
 /* Define if you have the popt library (-lpopt).  */
-#define HAVE_LIBPOPT 1
+/* #undef HAVE_LIBPOPT */
 
 /* Name of package */
 #define PACKAGE "libhsync"
 
 /* Version number of package */
-#define VERSION "0.9.1dev2"
+#define VERSION "0.9.1dev3"
 

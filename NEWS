@@ -10,6 +10,8 @@ Changes in 0.9.0:
 
  * New magic number `rs6'
 
+ * Change to using popt for command line parsing.
+
 Changes in 0.5.7:
 
  * Changes stats string format.

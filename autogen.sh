@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# Copyright (C) 2000 by Martin Pool
+# Copyright (C) 2000, 2001 by Martin Pool
 # $Id$
 
 # This program is free software; you can redistribute it and/or
@@ -86,7 +86,7 @@ esac
 set -x
 aclocal $ACLOCAL_FLAGS
 autoheader
-automake -a $am_opt
+automake -a $am_opt Makefile man/Makefile popt/Makefile
 autoconf
 set +x
 cd $ORIGDIR

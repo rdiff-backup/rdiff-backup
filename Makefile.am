@@ -23,6 +23,9 @@
 			      # ``When the program is being tested, it
 			      # is too late to make design changes.''
 
+# TODO: Include popt-1.5 as for rsync.
+
+SUBDIRS = man popt
 
 lib_LTLIBRARIES = libhsync.la
 
@@ -111,9 +114,7 @@ CLEANFILES = tmp-test-*.d/* tmp-try-*.d/*
 prototab.c prototab.h: $(srcdir)/mkprototab.pl
 	perl $(srcdir)/mkprototab.pl prototab.c prototab.h
 
-man_MANS = 
-
-EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) $(extra_docs) $(man_MANS)
+EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) $(extra_docs) 
 
 include_HEADERS = hsync.h hsyncfile.h
 
@@ -129,6 +130,7 @@ LDADD = libhsync.la $(LIBOBJS)
 bin_PROGRAMS = rdiff
 
 rdiff_SOURCES = rdiff.c isprefix.c isprefix.h
+rdiff_LDADD = @BUILD_POPT@
 
 check_PROGRAMS = isprefix.driver
 
@@ -138,8 +140,6 @@ isprefix_driver_LDADD = $(LIBOBJS)
 
 .PHONY: check_programs
 check_programs: $(check_PROGRAMS)
-
-
 
 # Doxygen API documentation
 
