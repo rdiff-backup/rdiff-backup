@@ -156,11 +156,15 @@ def check_action():
 						   'list-changed-since', 'check-destination-dir'],
 					   2: ['backup', 'restore', 'restore-as-of']}
 	l = len(args)
-	if not action: assert l == 2, args # cannot tell backup or restore yet
-	elif action == 'calculate-average':
-		if l == 0: commandline_error("No arguments given")
+	if l == 0 and action not in arg_action_dict[l]:
+		commandline_error("No arguments given")
+	elif not action:
+		if l == 2: pass # Will determine restore or backup later
+		else:
+			commandline_error("Switches missing or wrong number of arguments")
+	elif action == 'test-server': pass # test-server takes any number of args
 	elif l > 2 or action not in arg_action_dict[l]:
-		commandline_error("Wrong number of arguments given.  See man page.")
+		commandline_error("Wrong number of arguments given.")
 
 def final_set_action(rps):
 	"""If no action set, decide between backup and restore at this point"""
