@@ -84,16 +84,24 @@ All encoding operations are performed by using a <tt>*_begin</tt>
 function to create a ::hs_job_t object, passing in any necessary
 initialization parameters.  The various jobs available are:
 
- - hs_signature_begin(): Calculate the signature of a file.
- - hs_readsum_begin(): Load a signature into memory.
+ - hs_sig_begin(): Calculate the signature of a file.
+ - hs_readsig_begin(): Load a signature into memory.
  - hs_delta_begin(): Calculate the delta between a signature and a new
+   file.
+ - hs_patch_begin(): Apply a delta to a basis to recreate the new
    file.
 
 \subsection api_whole Processing whole files
 
-Some applications do not require fine-grained control over IO, but
-rather just want to process a whole file with a single call.  libhsync
-provides `whole-file' functions (in whole.c) to do exactly that.
+  Some applications do not require fine-grained control over IO, but
+  rather just want to process a whole file with a single call.
+  libhsync provides `whole-file' functionality to do exactly that.
+
+  Processing of a whole file begins with creation of a ::hs_job_t
+  object for the appropriate operation, just as if the application was
+  going to do buffering itself.  After creation, the job may be passed
+  to hs_whole_run(), which will feed it to and from two FILEs as
+  necessary until end of file is reached or the operation completes.
 
 \subsection api_trace Debugging Trace
 
