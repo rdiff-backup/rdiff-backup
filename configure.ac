@@ -86,14 +86,22 @@ AC_CHECK_FUNC(setreuid, [],
 AC_REPLACE_FUNCS(snprintf)
 AC_CHECK_FUNCS(vsnprintf)
 
-# See if the compiler has the nice GNU feature of 
-# putting argv[0] into a global
+# Test if the compiler has the GNU feature of putting argv[0] into a global
 AC_MSG_CHECKING([for program_invocation_short_name])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
   [[#include <errno.h>]],
   [[strlen(program_invocation_short_name)]])],
   [ AC_DEFINE(HAVE_PROGRAM_INVOCATION_NAME,,
       [GNU extension of saving argv[0] to program_invocation_short_name])
+    AC_MSG_RESULT(yes) ],
+  [ AC_MSG_RESULT(no) ])
+
+# Test if the preprocessor understands vararg macros
+AC_MSG_CHECKING([for vararg macro support])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+  [#define func(a, b...) do { } while (0)],
+  [func("a", "b", "c")])],
+  [ AC_DEFINE(HAVE_VARARG_MACROS, , [Define if your cpp has vararg macros])
     AC_MSG_RESULT(yes) ],
   [ AC_MSG_RESULT(no) ])
 

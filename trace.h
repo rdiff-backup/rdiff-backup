@@ -36,13 +36,15 @@
  * fatal terminates the whole process
  */
 
-void rs_fatal0(char const *s, ...);
-void rs_error0(char const *s, ...);
-void rs_trace0(char const *s, ...);
-
-void rs_log0_nofn(int level, char const *fmt, ...);
-
-#if defined(__GNUC__) && !defined(__APPLE__)
+#if defined(HAVE_VARARG_MACROS) && defined(__GNUC__)
+/*
+ * TODO: Don't assume this is a gcc thing; rather test in autoconf for
+ * support for __FUNCTION__.  One simple way might just be to try compiling 
+ * the definition of one of these functions!
+ *
+ * TODO: Also look for the C9X predefined identifier `_function', or
+ * whatever it's called.
+ */
 
 void rs_log0(int level, char const *fn, char const *fmt, ...)
     __attribute__ ((format(printf, 3, 4)));
@@ -54,15 +56,6 @@ void rs_log0(int level, char const *fn, char const *fmt, ...)
 #else
 #  define rs_trace(s, str...)
 #endif	/* !DO_RS_TRACE */
-
-/*
- * TODO: Don't assume this is a gcc thing; rather test in autoconf for
- * support for __FUNCTION__ and varargs macros.  One simple way might
- * just be to try compiling the definition of one of these functions!
- *
- * TODO: Also look for the C9X predefined identifier `_function', or
- * whatever it's called.
- */
 
 #define rs_log(l, s, str...) do {              \
      rs_log0((l), __FUNCTION__, (s) , ##str);  \
@@ -82,19 +75,17 @@ void rs_log0(int level, char const *fn, char const *fmt, ...)
 
 
 #else /************************* ! __GNUC__ */
-
+#  define rs_trace rs_trace0
 #  define rs_fatal rs_fatal0
 #  define rs_error rs_error0
 #  define rs_log   rs_log0_nofn
-
-#  ifdef DO_RS_TRACE
-#    define rs_trace rs_trace0
-#  endif			/* DO_RS_TRACE */
 #endif				/* ! __GNUC__ */
 
-
+void rs_trace0(char const *s, ...);
+void rs_fatal0(char const *s, ...);
+void rs_error0(char const *s, ...);
 void rs_log0(int level, char const *fn, char const *fmt, ...);
-
+void rs_log0_nofn(int level, char const *fmt, ...);
 
 enum {
     RS_LOG_PRIMASK       = 7,   /**< Mask to extract priority
@@ -103,7 +94,6 @@ enum {
     RS_LOG_NONAME        = 8    /**< \b Don't show function name in
                                    message. */
 };
-
 
 
 /**
