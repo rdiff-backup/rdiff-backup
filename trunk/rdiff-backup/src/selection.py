@@ -117,13 +117,15 @@ class Select:
 			if dsrpath.isdir():
 				for dsrp in self.iterate_in_dir(dsrpath, rec_func, sel_func):
 					yield dsrp
-		elif s == 2 and dsrpath.isdir(): # Directory is merely scanned
-			iid = self.iterate_in_dir(dsrpath, rec_func, sel_func)
-			try: first = iid.next()
-			except StopIteration: return # no files inside; skip dsrp
-			yield dsrpath
-			yield first
-			for dsrp in iid: yield dsrp
+		elif s == 2:
+			if dsrpath.isdir(): # Directory is merely scanned
+				iid = self.iterate_in_dir(dsrpath, rec_func, sel_func)
+				try: first = iid.next()
+				except StopIteration: return # no files inside; skip dsrp
+				yield dsrpath
+				yield first
+				for dsrp in iid: yield dsrp
+		else: assert 0, "Invalid selection result %s" % (str(s),)
 
 	def iterate_in_dir(self, dsrpath, rec_func, sel_func):
 		"""Iterate the dsrps in directory dsrpath."""
@@ -137,7 +139,7 @@ class Select:
 		else:
 			for filename in Robust.listrp(dsrpath):
 				new_dsrp = Robust.check_common_error(
-					error_handler, dsrpath.append, filename)
+					error_handler, dsrpath.append, [filename])
 				if new_dsrp:
 					for dsrp in rec_func(new_dsrp, rec_func, sel_func):
 						yield dsrp

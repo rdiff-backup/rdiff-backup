@@ -32,21 +32,19 @@ class StatsObj:
 					   ('ChangedSourceSize', 1), ('ChangedMirrorSize', 1),
 					   ('IncrementFiles', None), ('IncrementFileSize', 1))
 
-	# Set all stats to None, indicating info not available
-	for attr in stat_attrs: locals()[attr] = None
-
 	# This is used in get_byte_summary_string below
 	byte_abbrev_list = ((1024*1024*1024*1024, "TB"),
 						(1024*1024*1024, "GB"),
 						(1024*1024, "MB"),
 						(1024, "KB"))
 
+	def __init__(self):
+		"""Set attributes to None"""
+		for attr in self.stat_attrs: self.__dict__[attr] = None
+
 	def get_stat(self, attribute):
 		"""Get a statistic"""
-		try: return self.__dict__[attribute]
-		except KeyError:
-			# this may be a hack, but seems no good way to get attrs in python
-			return eval("self.%s" % attribute)
+		return self.__dict__[attribute]
 
 	def set_stat(self, attr, value):
 		"""Set attribute to given value"""
@@ -54,7 +52,7 @@ class StatsObj:
 
 	def increment_stat(self, attr):
 		"""Add 1 to value of attribute"""
-		self.__dict__[attr] = self.get_stat(attr) + 1
+		self.__dict__[attr] += 1
 
 	def get_stats_line(self, index, use_repr = 1):
 		"""Return one line abbreviated version of full stats string"""
@@ -217,8 +215,12 @@ class StatsITR(IterTreeReducer, StatsObj):
 	This is subclassed by the mirroring and incrementing ITRs.
 
 	"""
-	# zero out file statistics
-	for attr in StatsObj.stat_file_attrs: locals()[attr] = 0
+	def __init__(self, *args):
+		"""StatsITR initializer - zero out statistics"""
+		attr_dict = self.__dict__
+		for attr in StatsObj.stat_file_attrs: attr_dict[attr] = 0
+		self.ElapsedTime = self.Filename = None
+		IterTreeReducer.__init__(self, *args)
 
 	def start_stats(self, mirror_dsrp):
 		"""Record status of mirror dsrp
@@ -272,8 +274,7 @@ class StatsITR(IterTreeReducer, StatsObj):
 	def add_file_stats(self, subinstance):
 		"""Add all file statistics from subinstance to current totals"""
 		for attr in self.stat_file_attrs:
-			self.set_stat(attr,
-						  self.get_stat(attr) + subinstance.get_stat(attr))
+			self.__dict__[attr] += subinstance.__dict__[attr]
 
 
 class Stats:

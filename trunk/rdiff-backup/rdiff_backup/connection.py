@@ -40,11 +40,7 @@ class LocalConnection(Connection):
 	def __getattr__(self, name):
 		try: return globals()[name]
 		except KeyError:
-			builtins = globals()["__builtins__"]
-			try:
-				if type(builtins) is types.ModuleType:
-					return builtins.__dict__[name]
-				else: return builtins[name]
+			try: return __builtins__.__dict__[name]
 			except KeyError: raise NameError, name
 
 	def __setattr__(self, name, value):

@@ -69,7 +69,7 @@ class RORPIter:
 					if rp.isflaglinked(): rorp.flaglinked()
 					else:
 						fp = Robust.check_common_error(
-							error_handler, Rdiff.get_signature, rp)
+							error_handler, Rdiff.get_signature, (rp,))
 						if fp: rorp.setfile(fp)
 						else: continue
 				yield rorp
