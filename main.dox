@@ -10,6 +10,14 @@ This document is also available in printable form:
   - http://rproxy.samba.org/doxygen/librsync/refman.ps.gz
   - http://rproxy.samba.org/doxygen/librsync/refman.pdf
 
+More information about librsync can be found on the rproxy web site:
+
+  - http://rproxy.samba.org/
+
+librsync can be downloaded from http://rproxy.samba.org/download.html,
+and used, modified and redistributed under the terms of the GNU Lesser
+General Public License (version 2.1 or later).
+
 \section intro Introduction
 
 librsync is a library for calculating and applying network deltas,
