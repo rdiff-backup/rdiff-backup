@@ -197,7 +197,7 @@ rs_result rs_outfilebuf_drain(rs_job_t *job, rs_buffers_t *buf, void *opaque)
 /**
  * Default copy implementation that retrieves a part of a stdio file.
  */
-rs_result rs_file_copy_cb(void *arg, off_t pos, size_t *len, void **buf)
+rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf)
 {
     int        got;
     FILE       *f = (FILE *) arg;

@@ -351,7 +351,7 @@ rs_job_t *rs_loadsig_begin(rs_signature_t **);
  * updated to point to a buffer allocated by the callback if it
  * prefers.
  */
-typedef rs_result rs_copy_cb(void *opaque, off_t pos,
+typedef rs_result rs_copy_cb(void *opaque, rs_long_t pos,
                              size_t *len, void **buf);
 
 
@@ -385,7 +385,7 @@ rs_result rs_sig_file(FILE *old_file, FILE *sig_file,
 
 rs_result rs_loadsig_file(FILE *, rs_signature_t **, rs_stats_t *);
 
-rs_result rs_file_copy_cb(void *arg, off_t pos, size_t *len, void **buf);
+rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf);
 
 rs_result rs_delta_file(rs_signature_t *, FILE *new_file, FILE *delta_file, rs_stats_t *);
 

@@ -36,7 +36,7 @@
 int
 rs_queue_copy(rs_write_fn_t write_fn, void *write_priv,
                rs_copyq_t * copyq,
-               off_t start, size_t len, rs_stats_t * stats)
+               rs_long_t start, size_t len, rs_stats_t * stats)
 {
     int             ret;
 
