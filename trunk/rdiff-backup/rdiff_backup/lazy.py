@@ -204,13 +204,6 @@ class IterTreeReducer:
 	iterator nature of the connection between hosts and the temporal
 	order in which the files are processed.
 
-	There are three stub functions below: start_process, end_process,
-	and branch_process.  A class that subclasses this one will
-	probably fill in these functions to do more.
-
-	It is important that this class be pickable, so keep that in mind
-	when subclassing (this is used to resume failed sessions).
-
 	"""
 	def __init__(self, branch_class, branch_args):
 		"""ITR initializer"""
@@ -299,7 +292,17 @@ class IterTreeReducer:
 
 
 class ITRBranch:
-	"""Helper class for IterTreeReducer below"""
+	"""Helper class for IterTreeReducer below
+
+	There are five stub functions below: start_process, end_process,
+	branch_process, can_fast_process, and fast_process.  A class that
+	subclasses this one will probably fill in these functions to do
+	more.
+
+	It is important that this class be pickable, so keep that in mind
+	when subclassing (this is used to resume failed sessions).
+
+	"""
 	base_index = index = None
 	finished = None
 	caught_exception = start_successful = None
