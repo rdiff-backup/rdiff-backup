@@ -8,7 +8,7 @@ Copyright: GPL
 Group: Applications/Archiving
 BuildRoot: %{_tmppath}/%{name}-root
 requires: librsync >= 0.9.5.1, python2 >= 2.2
-BuildPrereq: python2-devel >= 2.2
+BuildPrereq: python2-devel >= 2.2, librsync-devel >= 0.9.5.1
 
 %description
 rdiff-backup is a script, written in Python, that backs up one
