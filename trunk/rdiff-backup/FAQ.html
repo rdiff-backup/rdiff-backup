@@ -16,6 +16,8 @@ syntax".  What's happening?</a></li>
 <li><a href="#verbosity">What do the different verbosity levels mean?</a></li>
 
 <li><a href="#windows">Does rdiff-backup run under Windows?</a></li>
+
+<li><a href="#remove_dir">My backup set contains some files that I just realized I don't want/need backed up.  How do I remove them from the backup volume to save space?</li>
 </ol>
 
 <h2>FAQ</h2>
@@ -106,17 +108,47 @@ some header files in the Makefile:
 </pre>
 
 Then, whenever you use rdiff-backup (or at least if you are backing up
-to or restoring from a Windows system), use the <strong>--windows-time-format</strong>
-switch, which will tell rdiff-backup not to put a colon (":") in a
-filename (this option was added after Jason posted his message).
+to or restoring from a Windows system), use the
+<strong>--windows-time-format</strong> switch, which will tell
+rdiff-backup not to put a colon (":") in a filename (this option was
+added after Jason posted his message).  Finally, as Michael Muegel
+points out, you have to exclude all files from the source directory
+which have colons in them, so add something like the --exclude ".*:.*"
+option.  In the near future some quoting facility may be added to deal
+with these issues.
+</li>
+
+<P>
+<a name="remove_dir">
+<li><strong>My backup set contains some files that I just realized I
+don't want/need backed up.  How do I remove them from the backup
+volume to save space?</strong>
+
+<P>Let's take an example.  Suppose you ran
+<pre>rdiff-backup /usr /backup</pre>
+and now realize that you don't want /usr/local backed up on /backup.
+Next time you back up, you run
+<pre>rdiff-backup --exclude /usr/local /usr /backup</pre>
+so that /usr/local is no longer copied to /backup/usr/local.
+
+However, old information about /usr/local is still present in
+/backup/rdiff-backup-data/increments/usr/local.  You could wait for
+this information to expire and then run rdiff-backup with the
+--remove-older-than option, or you could remove the increments
+manually by typing:
+<pre>rm -rf /backup/rdiff-backup-data/increments/usr/local
+rm /backup/rdiff-backup-data/increments/usr/local.*.dir</pre>
+
+</li>
+
+
 
 </ol>
-
     <hr>
     <a href="http://www.stanford.edu/~bescoto">Ben Escoto</a> <address><a href="mailto:bescoto@stanford.edu">&lt;bescoto@stanford.edu&gt;</a></address>
 <!-- Created: Fri Sep  7 15:34:45 PDT 2001 -->
 <!-- hhmts start -->
-Last modified: Sat Mar 16 13:22:34 PST 2002
+Last modified: Sun Mar 24 13:10:18 PST 2002
 <!-- hhmts end -->
   </body>
 </html>

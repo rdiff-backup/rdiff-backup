@@ -87,6 +87,16 @@ Do not create an rdiff-backup-data directory or make any increments.
 In this mode rdiff-backup is similar to rsync (but usually
 slower).
 .TP
+.B --no-compression
+Disable the default gzip compression of most of the .snapshot and .diff
+increment files stored in the rdiff-backup-data directory.  A backup
+volume can contain compressed and uncompressed increments, so using
+this option inconsistently is fine.
+.TP
+.B "--no-compression-regexp " regexp
+Do not compress increments based on files whose filenames match regexp on a case-insensitive basis.  The default is
+".*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
+.TP
 .BI --no-hard-links
 Don't preserve hard links from source to mirror directories.
 Otherwise, no increment files will themselves be hard linked, but a

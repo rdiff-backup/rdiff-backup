@@ -1,3 +1,15 @@
+New in v0.7.1 (2002/03/25)
+--------------------------
+
+Now by default .snapshot and .diff increments are compressed with
+python's internal gzip.  The new increments format is backwards
+compatible, but only rdiff-backup >0.7.1 will be able to restore if
+any gzipped increments are present.
+
+Added --no-compression and --no-compression-regexp to control which
+files are compressed.
+
+
 New in v0.7.0 (2002/03/21)
 --------------------------
 
