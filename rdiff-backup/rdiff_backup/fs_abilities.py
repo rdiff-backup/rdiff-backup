@@ -207,7 +207,7 @@ rdiff-backup-data/chars_to_quote.
 		try:
 			hl_dest.hardlink(hl_source.path)
 			if hl_source.getinode() != hl_dest.getinode():
-				raise IOError(errno.EOPNOTSUP, "Hard links don't compare")
+				raise IOError(errno.EOPNOTSUPP, "Hard links don't compare")
 		except (IOError, OSError), exc:
 			if exc[0] in (errno.EOPNOTSUPP, errno.EPERM):
 				log.Log("Warning: hard linking not supported by filesystem "
