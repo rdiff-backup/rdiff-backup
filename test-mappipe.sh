@@ -3,9 +3,9 @@
 # libhsync test case.
 # Copyright (C) 2000 by Martin Pool
 
-# Test the inbuf input routines, by extracting chunks of a file
-# using a known-good Python implementation, and also by passing the
-# same parameters to the hsmapread driver.
+# Test the inbuf input routines, by extracting chunks of a file using
+# a known-good simple implementation, and also by passing the same
+# parameters to the hsmapread driver.
 
 # $Id$
 
