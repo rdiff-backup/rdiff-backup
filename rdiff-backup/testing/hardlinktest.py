@@ -3,7 +3,7 @@ execfile("commontest.py")
 rbexec("main.py")
 
 
-Log.setverbosity(6)
+Log.setverbosity(7)
 
 class HardlinkTest(unittest.TestCase):
 	"""Test cases for Hard links"""
@@ -73,7 +73,7 @@ class HardlinkTest(unittest.TestCase):
 		"""See if the partial inode dictionary is correct"""
 		Globals.preserve_hardlinks = 1
 		reset_hardlink_dicts()
-		for dsrp in DestructiveStepping.Iterate_from(self.hardlink_dir3, 1):
+		for dsrp in Select(self.hardlink_dir3, 1).set_iter():
 			Hardlink.add_rorp(dsrp, 1)
 		
 		assert len(Hardlink._src_inode_indicies.keys()) == 3, \
@@ -90,7 +90,7 @@ class HardlinkTest(unittest.TestCase):
 		"""Same as testBuildingDict but test destination building"""
 		Globals.preserve_hardlinks = 1
 		reset_hardlink_dicts()
-		for dsrp in DestructiveStepping.Iterate_from(self.hardlink_dir3, None):
+		for dsrp in Select(self.hardlink_dir3, None).set_iter():
 			Hardlink.add_rorp(dsrp, None)
 		
 		assert len(Hardlink._dest_inode_indicies.keys()) == 3, \
@@ -106,7 +106,7 @@ class HardlinkTest(unittest.TestCase):
 	def testCompletedDict(self):
 		"""See if the hardlink dictionaries are built correctly"""
 		reset_hardlink_dicts()
-		for dsrp in DestructiveStepping.Iterate_from(self.hardlink_dir1, 1):
+		for dsrp in Select(self.hardlink_dir1, 1).set_iter():
 			Hardlink.add_rorp(dsrp, 1)
 		assert Hardlink._src_inode_indicies == {}, \
 			   Hardlink._src_inode_indicies
@@ -119,7 +119,7 @@ class HardlinkTest(unittest.TestCase):
 		assert Hardlink._src_index_indicies == dict
 
 		reset_hardlink_dicts()
-		for dsrp in DestructiveStepping.Iterate_from(self.hardlink_dir2, 1):
+		for dsrp in Select(self.hardlink_dir2, 1).set_iter():
 			Hardlink.add_rorp(dsrp, 1)
 		assert Hardlink._src_inode_indicies == {}, \
 			   Hardlink._src_inode_indicies

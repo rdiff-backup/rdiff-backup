@@ -10,7 +10,7 @@ class MatchingTest(unittest.TestCase):
 
 	def setUp(self):
 		self.root = DSRPath(Globals.local_connection, "testfiles/select")
-		self.Select = Select(self.root)
+		self.Select = Select(self.root, 1)
 
 	def testRegexp(self):
 		"""Test regular expression selection func"""
@@ -21,13 +21,13 @@ class MatchingTest(unittest.TestCase):
 
 		sf2 = self.Select.regexp_get_sf("hello", 0)
 		assert sf2(self.makedsrp("hello")) == 0
-		assert sf2(self.makedsrp("hello_there")) == None
+		assert sf2(self.makedsrp("foohello_there")) == 0
+		assert sf2(self.makedsrp("foo")) == None
 
 	def testTupleInclude(self):
 		"""Test include selection function made from a regular filename"""
-		sf1 = self.Select.glob_get_sf("foo", 1) # should warn
-		assert sf1(13) == None
-		assert sf1("foo") == None
+		self.assertRaises(FilePrefixError,
+						  self.Select.glob_get_filename_sf, "foo", 1)
 
 		sf2 = self.Select.glob_get_sf("testfiles/select/usr/local/bin/", 1)
 		assert sf2(self.makeext("usr")) == 1
@@ -39,9 +39,8 @@ class MatchingTest(unittest.TestCase):
 
 	def testTupleExclude(self):
 		"""Test exclude selection function made from a regular filename"""
-		sf1 = self.Select.glob_get_sf("foo", 0) # should warn
-		assert sf1(13) == None
-		assert sf1("foo") == None
+		self.assertRaises(FilePrefixError,
+						  self.Select.glob_get_filename_sf, "foo", 0)
 
 		sf2 = self.Select.glob_get_sf("testfiles/select/usr/local/bin/", 0)
 		assert sf2(self.makeext("usr")) == None
@@ -58,10 +57,10 @@ class MatchingTest(unittest.TestCase):
 		assert sf1(self.makeext("")) == 1
 
 		sf2 = self.Select.glob_get_sf("**.py", 1)
-		assert sf1(self.makeext("foo")) == 2
-		assert sf1(self.makeext("usr/local/bin")) == 2
-		assert sf1(self.makeext("what/ever.py")) == 1
-		assert sf1(self.makeext("what/ever.py/foo")) == 1
+		assert sf2(self.makeext("foo")) == 2
+		assert sf2(self.makeext("usr/local/bin")) == 2
+		assert sf2(self.makeext("what/ever.py")) == 1
+		assert sf2(self.makeext("what/ever.py/foo")) == 1
 
 	def testGlobStarExclude(self):
 		"""Test a few glob excludes, including **"""
@@ -69,10 +68,10 @@ class MatchingTest(unittest.TestCase):
 		assert sf1(self.makeext("/usr/local/bin")) == 0
 
 		sf2 = self.Select.glob_get_sf("**.py", 0)
-		assert sf1(self.makeext("foo")) == None
-		assert sf1(self.makeext("usr/local/bin")) == None
-		assert sf1(self.makeext("what/ever.py")) == 0
-		assert sf1(self.makeext("what/ever.py/foo")) == 0
+		assert sf2(self.makeext("foo")) == None, sf2(self.makeext("foo"))
+		assert sf2(self.makeext("usr/local/bin")) == None
+		assert sf2(self.makeext("what/ever.py")) == 0
+		assert sf2(self.makeext("what/ever.py/foo")) == 0
 
 	def testFilelistInclude(self):
 		"""Test included filelist"""
@@ -143,19 +142,73 @@ testfiles/select/1/1
 		assert sf(self.makeext("2")) == None
 		assert sf(self.makeext("3")) == 0
 
+	def testGlobRE(self):
+		"""testGlobRE - test translation of shell pattern to regular exp"""
+		assert self.Select.glob_to_re("hello") == "hello"
+		assert self.Select.glob_to_re(".e?ll**o") == "\\.e[^/]ll.*o"
+		r = self.Select.glob_to_re("[abc]el[^de][!fg]h")
+		assert r == "[abc]el[^de][^fg]h", r
+		r = self.Select.glob_to_re("/usr/*/bin/")
+		assert r == "\\/usr\\/[^/]*\\/bin\\/", r
+		assert self.Select.glob_to_re("[a.b/c]") == "[a.b/c]"
+		r = self.Select.glob_to_re("[a*b-c]e[!]]")
+		assert r == "[a*b-c]e[^]]", r
+
+	def testGlobSFException(self):
+		"""testGlobSFException - see if globbing errors returned"""
+		self.assertRaises(GlobbingError, self.Select.glob_get_normal_sf,
+						  "testfiles/select/hello//there", 1)
+		self.assertRaises(FilePrefixError,
+						  self.Select.glob_get_sf, "testfiles/whatever", 1)
+		self.assertRaises(FilePrefixError,
+						  self.Select.glob_get_sf, "testfiles/?hello", 0)
+		assert self.Select.glob_get_normal_sf("**", 1)
+
+	def testIgnoreCase(self):
+		"""testIgnoreCase - try a few expressions with ignorecase:"""
+		sf = self.Select.glob_get_sf("ignorecase:testfiles/SeLect/foo/bar", 1)
+		assert sf(self.makeext("FOO/BAR")) == 1
+		assert sf(self.makeext("foo/bar")) == 1
+		assert sf(self.makeext("fOo/BaR")) == 1
+		self.assertRaises(FilePrefixError, self.Select.glob_get_sf,
+						  "ignorecase:tesfiles/sect/foo/bar", 1)
+						  
+	def testRoot(self):
+		"""testRoot - / may be a counterexample to several of these.."""
+		root = DSRPath(Globals.local_connection, "/")
+		select = Select(root, 1)
+
+		assert select.glob_get_sf("/", 1)(root) == 1
+		assert select.glob_get_sf("/foo", 1)(root) == 1
+		assert select.glob_get_sf("/foo/bar", 1)(root) == 1
+		assert select.glob_get_sf("/", 0)(root) == 0
+		assert select.glob_get_sf("/foo", 0)(root) == None
+
+		assert select.glob_get_sf("**.py", 1)(root) == 2
+		assert select.glob_get_sf("**", 1)(root) == 1
+		assert select.glob_get_sf("ignorecase:/", 1)(root) == 1
+		assert select.glob_get_sf("**.py", 0)(root) == None
+		assert select.glob_get_sf("**", 0)(root) == 0
+		assert select.glob_get_sf("/foo/*", 0)(root) == None
+
+		select.filelist_get_sf(StringIO.StringIO("/"), 1, "test")(root) == 1
+		select.filelist_get_sf(StringIO.StringIO("/foo/bar"), 1,
+							   "test")(root) == 1
+		select.filelist_get_sf(StringIO.StringIO("/"), 0, "test")(root) == 0
+		select.filelist_get_sf(StringIO.StringIO("/foo/bar"), 0,
+							   "test")(root) == None
+
 
 class ParseArgsTest(unittest.TestCase):
 	"""Test argument parsing"""
 	def ParseTest(self, tuplelist, indicies):
 		"""No error if running select on tuple goes over indicies"""
 		self.root = DSRPath(Globals.local_connection, "testfiles/select")
-		self.Select = Select(self.root)
+		self.Select = Select(self.root, 1)
 		self.Select.ParseArgs(tuplelist)
 		self.Select.set_iter()
-		print self.Select.next # just make sure it exists
-		for i in self.Select: print i
 		assert Iter.equal(Iter.map(lambda dsrp: dsrp.index, self.Select),
-						  iter(indicies))
+						  iter(indicies), verbose = 1)
 
 	def testParse(self):
 		"""Test just one include, all exclude"""
@@ -173,5 +226,47 @@ class ParseArgsTest(unittest.TestCase):
 					   [(), ('1',), ('1', '1'), ('1', '1', '2'),
 						('1', '1', '3')])
 
-		
+	def testGlob(self):
+		"""Test globbing expression"""
+		self.ParseTest([("--exclude", "**[3-5]"),
+						("--include", "testfiles/select/1"),
+						("--exclude", "**")],
+					   [(), ('1',), ('1', '1'),
+						('1', '1', '1'), ('1', '1', '2'),
+						('1', '2'), ('1', '2', '1'), ('1', '2', '2')])
+		self.ParseTest([("--include", "testfiles/select**/2"),
+						("--exclude", "**")],
+					   [(), ('1',), ('1', '1'),
+						('1', '1', '2'),
+						('1', '2'),
+						('1', '2', '1'), ('1', '2', '2'), ('1', '2', '3'),
+						('1', '3'),
+						('1', '3', '2'),
+						('2',), ('2', '1'),
+						('2', '1', '1'), ('2', '1', '2'), ('2', '1', '3'),
+						('2', '2'),
+						('2', '2', '1'), ('2', '2', '2'), ('2', '2', '3'),
+						('2', '3'),
+						('2', '3', '1'), ('2', '3', '2'), ('2', '3', '3'),
+						('3',), ('3', '1'),
+						('3', '1', '2'),
+						('3', '2'),
+						('3', '2', '1'), ('3', '2', '2'), ('3', '2', '3'),
+						('3', '3'),
+						('3', '3', '2')])
+
+	def testParseStartingFrom(self):
+		"""Test parse, this time starting from inside"""
+		self.root = DSRPath(Globals.local_connection, "testfiles/select")
+		self.Select = Select(self.root, 1)
+		self.Select.ParseArgs([("--include", "testfiles/select/1/1"),
+							   ("--exclude", "**")])
+		self.Select.set_iter(('1', '1'))
+		assert Iter.equal(Iter.map(lambda dsrp: dsrp.index, self.Select),
+						  iter([("1", '1', '1'),
+								('1', '1', '2'),
+								('1', '1', '3')]),
+						  verbose = 1)
+
+
 if __name__ == "__main__": unittest.main()
