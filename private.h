@@ -102,42 +102,7 @@ void _hs_trace0(char const *fmt, ...)
 
 
 
-/* ========================================
-
-   Net IO functions */
-
-int             _hs_read_loop(hs_read_fn_t, void *readprivate,
-			      char *buf, size_t len);
-
-size_t             _hs_write_loop(hs_write_fn_t, void *writeprivate,
-			       char const *buf, size_t len);
-
-int             hs_must_write(hs_write_fn_t write_fn, void *write_priv,
-			      void const *buf, int len);
-\
-int             _hs_must_read(hs_read_fn_t, void *, char *, ssize_t);
-
-int             _hs_read_netint(hs_read_fn_t read_fn, void *read_priv,
-				uint32_t * result);
-
-int             _hs_read_netshort(hs_read_fn_t read_fn, void *read_priv,
-				  uint16_t * result);
-
-
-int             _hs_read_netbyte(hs_read_fn_t read_fn, void *read_priv,
-				 uint8_t * result);
-
-int             _hs_write_netint(hs_write_fn_t write_fn, void *write_priv,
-				 uint32_t out);
-
-int             _hs_write_netshort(hs_write_fn_t write_fn, void *write_priv,
-				   uint16_t out);
-
-int             _hs_write_netbyte(hs_write_fn_t write_fn, void *write_priv,
-				  uint8_t out);
-
-int             _hs_write_netvar(hs_write_fn_t write_fn, void *write_priv,
-				 uint32_t value, int type);
+#include "netio.h"
 
 /* ========================================
 
@@ -274,19 +239,7 @@ uint32_t        _hs_calc_weak_sum(char const *buf1, int len);
 uint32_t        _hs_calc_strong_sum(char const *buf, int len, char *sum);
 
 
-/* ========================================
-
-   Things to do with searching through the hashtable of blocks from
-   downstream.  */
-
-int             _hs_find_in_hash(rollsum_t * rollsum,
-				 char const *inbuf, int block_len,
-				 hs_sum_set_t const *sigs, hs_stats_t *);
-
-int             _hs_build_hash_table(hs_sum_set_t *sums);
-
-hs_sum_set_t *_hs_read_sum_set(hs_read_fn_t, void *, int block_len);
-void            _hs_free_sum_struct(hs_sum_set_t *);
+#include "checksum.h"
 
 
 /* ========================================
@@ -404,3 +357,5 @@ _hs_littok_header(hs_write_fn_t write_fn, void *write_priv);
 int
 _hs_newsig_header(int new_block_len,
 		  hs_write_fn_t write_fn, void *writeprivate);
+
+
