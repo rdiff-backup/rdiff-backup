@@ -33,48 +33,6 @@ import os, tempfile, UserList, types
 import Globals, rpath, iterfile
 
 
-class RORPIterException(Exception): pass
-
-def ToRaw(rorp_iter):
-	"""Convert a rorp iterator to raw form"""
-	for rorp in rorp_iter:
-		if rorp.file:
-			yield (rorp.index, rorp.data, 1)
-			yield rorp.file
-		else: yield (rorp.index, rorp.data, 0)
-
-def FromRaw(raw_iter):
-	"""Convert raw rorp iter back to standard form"""
-	for index, data, num_files in raw_iter:
-		rorp = rpath.RORPath(index, data)
-		if num_files:
-			assert num_files == 1, "Only one file accepted right now"
-			rorp.setfile(get_next_file(raw_iter))
-		yield rorp
-
-class ErrorFile:
-	"""Used by get_next_file below, file-like that just raises error"""
-	def __init__(self, exc):
-		"""Initialize new ErrorFile.  exc is the exception to raise on read"""
-		self.exc = exc
-	def read(self, l=-1): raise self.exc
-	def close(self): return None
-
-def get_next_file(iter):
-	"""Return the next element of an iterator, raising error if none"""
-	try: next = iter.next()
-	except StopIteration: raise RORPIterException("Unexpected end to iter")
-	if isinstance(next, Exception): return ErrorFile(next)
-	return next
-
-def ToFile(rorp_iter):
-	"""Return file version of iterator"""
-	return iterfile.FileWrappingIter(ToRaw(rorp_iter))
-
-def FromFile(fileobj):
-	"""Recover rorp iterator from file interface"""
-	return FromRaw(iterfile.IterWrappingFile(fileobj))
-
 def CollateIterators(*rorp_iters):
 	"""Collate RORPath iterators by index
 

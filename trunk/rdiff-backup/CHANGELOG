@@ -1,4 +1,4 @@
-New in v0.11.3 (2003/04/01)
+New in v0.11.3 (2003/03/04)
 ---------------------------
 
 Fixed a number of bugs reported by Olivier Mueller:
@@ -13,6 +13,8 @@ Fixed a number of bugs reported by Olivier Mueller:
 	--print-statistics option works again (before it would silently
 	ignored).
 
+	Fixed cache pipeline overflow bug.  This error could appear on
+	large remote backups when many files have not changed.
 
 
 New in v0.11.2 (2003/03/01)
