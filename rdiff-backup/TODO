@@ -1,18 +1,17 @@
 Security audit
 
+--read-only and --write-only /usr/foo switches to tighten security up some.
+
+
+
+
 Don't produce stack trace which looks like crash/include file name in
 logging stats
 
 Add to above Dean Gaudet's suggestion: make errors look prettier (like tar).
 
-Examine certain network settings like Globals.conn_bufsize and whether
-or not ssh is used with compression, and find good defaults or add
-easy to use switches.
-
 Examine and fix recovery problems.
-
-Add options to pass to ssh (e.g. compression, maybe arbitrary options).
 
 Think about adding Gaudet's idea for keeping track of renamed files.
 
---read-only and --write-only /usr/foo switches to tighten security up some.
+If don't recover hardlink support and hardlink support on, don't resume.
