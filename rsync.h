@@ -320,8 +320,18 @@ rs_job_t *rs_delta_begin(rs_signature_t *);
 rs_job_t *rs_loadsig_begin(rs_signature_t **);
 
 /**
- * \brief Callback used to retrieve parts of the basis file. */
-typedef rs_result rs_copy_cb(void *opaque, size_t *len, void **result);
+ * \brief Callback used to retrieve parts of the basis file.
+ *
+ * \param pos Position where copying should begin.
+ *
+ * \param len On input, the amount of data that should be retrieved.
+ * Updated to show how much is actually available.
+ *
+ * \param buf On input, a buffer of at least \p *len bytes.  May be
+ * updated to point to a buffer allocated by the callback if it
+ * prefers.
+ */
+typedef rs_result rs_copy_cb(void *opaque, rs_long_t pos, size_t *len, void **buf);
 
 
 rs_job_t *rs_patch_begin(rs_copy_cb *, void *copy_arg);
@@ -352,7 +362,7 @@ rs_result rs_sig_file(FILE *old_file, FILE *sig_file, size_t, size_t);
 
 rs_result rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset);
 
-rs_result rs_file_copy_cb(void *arg, size_t *len, void **buf);
+rs_result rs_file_copy_cb(void *arg, rs_long_t, size_t *len, void **buf);
 
 rs_result rs_delta_file(rs_signature_t *, FILE *new_file, FILE *delta_file, rs_stats_t *);
 
