@@ -184,15 +184,26 @@ class DestinationStruct:
 		elif dest_rorp:
 			dest_sig = dest_rorp.getRORPath()
 			if dest_rorp.isreg():
-				dest_rp = dest_base_rpath.new_index(index)
-				if not dest_rp.isreg():
-					log.ErrorLog.write_if_open("UpdateError", dest_rp,
-						"File changed from regular file before signature")
-					return None
-				dest_sig.setfile(Rdiff.get_signature(dest_rp))
+				sig_fp = cls.get_one_sig_fp(dest_base_rpath.new_index(index))
+				if sig_fp is None: return None
+				dest_sig.setfile(sig_fp)
 		else: dest_sig = rpath.RORPath(index)
 		return dest_sig			
 
+	def get_one_sig_fp(cls, dest_rp):
+		"""Return a signature fp of given index, corresponding to reg file"""
+		if not dest_rp.isreg():
+			log.ErrorLog.write_if_open("UpdateError", dest_rp,
+				"File changed from regular file before signature")
+			return None
+		if Globals.process_uid != 0 and not dest_rp.readable():
+			# This branch can happen with root source and non-root
+			# destination.  Permissions are changed permanently, which
+			# should propogate to the diffs
+			assert dest_rp.isowner(), 'no ownership of %s' % (dest_rp.path,)
+			dest_rp.chmod(0400 | dest_rp.getperms())
+		return Rdiff.get_signature(dest_rp)
+				
 	def patch(cls, dest_rpath, source_diffiter, start_index = ()):
 		"""Patch dest_rpath with an rorpiter of diffs"""
 		ITR = rorpiter.IterTreeReducer(PatchITRB, [dest_rpath, cls.CCPP])

@@ -423,8 +423,10 @@ def restore_set_fs_globals(target):
 
 	target_fsa = fs_abilities.FSAbilities('destination').init_readwrite(
 		target, 0)
+	Log(str(target_fsa), 3)
 	mirror_fsa = fs_abilities.FSAbilities('source').init_readwrite(
 		Globals.rbdir)
+	Log(str(mirror_fsa), 3)
 
 	update_bool_global('read_acls', target_fsa.acls)
 	update_bool_global('write_acls', target_fsa.acls)

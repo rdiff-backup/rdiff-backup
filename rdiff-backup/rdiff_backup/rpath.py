@@ -885,6 +885,14 @@ class RPath(RORPath):
 			raise RPathException("Error closing file")
 		self.setdata()
 
+	def write_string(self, s, compress = None):
+		"""Write string s into rpath"""
+		assert not self.lstat(), "File %s already exists" % (self.path,)
+		outfp = self.open("wb", compress = compress)
+		outfp.write(s)
+		assert not outfp.close()
+		self.setdata()
+
 	def isincfile(self):
 		"""Return true if path looks like an increment file
 
