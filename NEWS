@@ -2,6 +2,14 @@ Changes in 0.9.7 (release pending)
 
  * Yet more large file support fixes.
  
+ * C++ support for easy #include <librsync.h> in C++.
+ 
+ * Removed Debian files from dist tarball.
+ 
+ * Changed rdiff to an installed program on "make install".
+ 
+ * Refactored delta calculation code to be cleaner and faster.
+ 
 Changes in 0.9.6
 
  * Large file support fixes.
