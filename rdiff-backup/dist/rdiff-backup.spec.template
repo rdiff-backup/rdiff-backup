@@ -1,5 +1,7 @@
-%define PYTHON_VERSION %(python -c 'import sys; sys.stdout.write(".".join(map(str,sys.version_info[:2])))')
-%define NEXT_PYTHON_VERSION %(python -c 'import sys; sys.stdout.write(str(sys.version_info[0])); sys.stdout.write("."); sys.stdout.write(str(sys.version_info[1]+1))')
+%define PYTHON_NAME %((rpm -q --quiet python2 && echo python2) || echo python)
+%define PYTHON_SEP %(rpm -q --quiet python2 && echo -)
+%define PYTHON_VERSION %(%{PYTHON_NAME} -c 'import sys; sys.stdout.write(".".join(map(str,sys.version_info[:2])))')
+%define NEXT_PYTHON_VERSION %(%{PYTHON_NAME} -c 'import sys; sys.stdout.write(str(sys.version_info[0])); sys.stdout.write("."); sys.stdout.write(str(sys.version_info[1]+1))')
 
 Version: $version
 Summary: Convenient and transparent local/remote incremental mirror/backup
@@ -7,12 +9,12 @@ Name: rdiff-backup
 Release: 1
 Epoch: 0
 URL: http://rdiff-backup.stanford.edu/
-Source: http://rdiff-backup.stanford.edu/OLD/%{version}/%{name}-%{version}.tar.gz
+Source: http://rdiff-backup.stanford.edu/OLD/$version/rdiff-backup-$version.tar.gz
 License: GPL
 Group: Applications/Archiving
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires: python >= %{PYTHON_VERSION}, python < %{NEXT_PYTHON_VERSION}
-BuildPrereq: python-devel >= 2.2, librsync-devel >= 0.9.6
+Requires: %{PYTHON_NAME} >= %{PYTHON_VERSION}, %{PYTHON_NAME} < %{NEXT_PYTHON_VERSION}
+BuildPrereq: %{PYTHON_NAME}-devel >= 2.2, librsync-devel >= 0.9.6
 
 %description
 rdiff-backup is a script, written in Python, that backs up one
@@ -30,10 +32,12 @@ differences from the previous backup will be transmitted.
 %setup -q
 
 %build
-python setup.py build
+%{PYTHON_NAME} setup.py build
 
 %install
-python setup.py install --root $RPM_BUILD_ROOT
+%{PYTHON_NAME} setup.py install --root $RPM_BUILD_ROOT
+# Produce .pyo files for %ghost directive later
+%{PYTHON_NAME} -Oc 'from compileall import *; compile_dir("'$RPM_BUILD_ROOT/%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup'")'
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -42,10 +46,18 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_bindir}/rdiff-backup
 %{_mandir}/man1/rdiff-backup*
-%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup
+%dir %{_libdir}/%{PYTHON_NAME}%{PYTHON_SEP}%{PYTHON_VERSION}/site-packages/rdiff_backup
+%{_libdir}/%{PYTHON_NAME}%{PYTHON_SEP}%{PYTHON_VERSION}/site-packages/rdiff_backup/*.py
+%{_libdir}/%{PYTHON_NAME}%{PYTHON_SEP}%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyc
+%{_libdir}/%{PYTHON_NAME}%{PYTHON_SEP}%{PYTHON_VERSION}/site-packages/rdiff_backup/*.so
+%ghost %{_libdir}/%{PYTHON_NAME}%{PYTHON_SEP}%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyo
 %doc CHANGELOG COPYING FAQ.html examples.html README
 
 %changelog
+* Sat Dec 15 2003 Ben Escoto <bescoto@stanford.edu> - 0.12.6-2
+- Readded python2/python code; turns out not everyone calls it python
+- A number of changes from Fedora rpm.
+
 * Thu Sep 11 2003 Ben Escoto <bescoto@stanford.edu> - 0.12.4-1
 - Removed code that selected between python2 and python; I think
   everyone calls it python now.

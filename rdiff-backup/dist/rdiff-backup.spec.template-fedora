@@ -7,7 +7,7 @@ Name: rdiff-backup
 Release: 0.fdr.1
 Epoch: 0
 URL: http://rdiff-backup.stanford.edu/
-Source: http://rdiff-backup.stanford.edu/OLD/%{version}/%{name}-%{version}.tar.gz
+Source: http://rdiff-backup.stanford.edu/OLD/$version/rdiff-backup-$version.tar.gz
 License: GPL
 Group: Applications/Archiving
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
