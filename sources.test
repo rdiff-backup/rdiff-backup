@@ -24,7 +24,7 @@ for buf in $bufsizes
 do
     for old in $srcdir/*.[ch]
     do
-        for new in $old*~
+        for new in $old $old*~
         do
             [ ! -r $new -o ! -r $old ] && continue
             echo $old $new
