@@ -271,9 +271,33 @@ class RORPath(RPathStatic):
 				pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'devloc' or key == 'inode' or key == 'nlink': pass
-			elif key == 'size' and self.isdir(): pass
+			elif key == 'size' and not self.isreg():
+				pass # size only matters for regular files
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return None
+		return 1
+
+	def equal_verbose(self, other):
+		"""Like __eq__, but log more information.  Useful when testing"""
+		if self.index != other.index:
+			Log("Index %s != index %s" % (self.index, other.index), 2)
+			return None
+
+		for key in self.data.keys(): # compare dicts key by key
+			if ((key == 'uid' or key == 'gid') and
+				(not Globals.change_ownership or self.issym())):
+				# Don't compare gid/uid for symlinks or if not change_ownership
+				pass
+			elif key == 'atime' and not Globals.preserve_atime: pass
+			elif key == 'devloc' or key == 'inode' or key == 'nlink': pass
+			elif key == 'size' and not self.isreg(): pass
+			elif (not other.data.has_key(key) or
+				  self.data[key] != other.data[key]):
+				if not other.data.has_key(key):
+					Log("Second is missing key %s" % (key,), 2)
+				else: Log("Value of %s differs: %s vs %s" %
+						  (key, self.data[key], other.data[key]), 2)
+				return None
 		return 1
 
 	def __ne__(self, other): return not self.__eq__(other)

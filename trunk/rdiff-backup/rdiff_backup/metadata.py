@@ -54,7 +54,9 @@ field names and values.
 
 """
 
-import re, log, Globals, rpath
+from __future__ import generators
+import re, gzip
+from rdiff_backup import log, Globals, rpath, Time
 
 class ParsingError(Exception):
 	"""This is raised when bad or unparsable data is received"""
@@ -169,3 +171,139 @@ def unquote_path(quoted_string):
 		log.Log("Warning, unknown quoted sequence %s found" % two_chars, 2)
 		return two_chars
 	return re.sub("\\\\n|\\\\\\\\", replacement_func, quoted_string)
+
+
+def write_rorp_iter_to_file(rorp_iter, file):
+	"""Given iterator of RORPs, write records to (pre-opened) file object"""
+	for rorp in rorp_iter: file.write(RORP2Record(rorp))
+
+class rorp_extractor:
+	"""Controls iterating rorps from metadata file"""
+	def __init__(self, fileobj):
+		self.fileobj = fileobj # holds file object we are reading from
+		self.buf = "" # holds the next part of the file
+		self.record_boundary_regexp = re.compile("\\nFile")
+		self.at_end = 0 # True if we are at the end of the file
+		self.blocksize = 32 * 1024
+
+	def get_next_pos(self):
+		"""Return position of next record in buffer"""
+		while 1:
+			m = self.record_boundary_regexp.search(self.buf)
+			if m: return m.start(0)+1 # the +1 skips the newline
+			else: # add next block to the buffer, loop again
+				newbuf = self.fileobj.read(self.blocksize)
+				if not newbuf:
+					self.at_end = 1
+					return len(self.buf)
+				else: self.buf += newbuf
+
+	def iterate(self):
+		"""Return iterator over all records"""
+		while 1:
+			next_pos = self.get_next_pos()
+			try: yield Record2RORP(self.buf[:next_pos])
+			except ParsingError, e:
+				log.Log("Error parsing metadata file: %s" % (e,), 2)
+			if self.at_end: break
+			self.buf = self.buf[next_pos:]
+
+	def skip_to_index(self, index):
+		"""Scan through the file, set buffer to beginning of index record
+
+		Here we make sure that the buffer always ends in a newline, so
+		we will not be splitting lines in half.
+
+		"""
+		assert not self.buf or self.buf.endswith("\n")
+		if not index: indexpath = "."
+		else: indexpath = "/".join(index)
+		# Must double all backslashes, because they will be
+		# reinterpreted.  For instance, to search for index \n
+		# (newline), it will be \\n (backslash n) in the file, so the
+		# regular expression is "File \\\\n\\n" (File two backslash n
+		# backslash n)
+		double_quote = re.sub("\\\\", "\\\\\\\\", indexpath)
+		begin_re = re.compile("(^|\\n)(File %s\\n)" % (double_quote,))
+		while 1:
+			m = begin_re.search(self.buf)
+			if m:
+				self.buf = self.buf[m.start(2):]
+				return
+			self.buf = self.fileobj.read(self.blocksize)
+			self.buf += self.fileobj.readline()
+			if not self.buf:
+				self.at_end = 1
+				return
+
+	def iterate_starting_with(self, index):
+		"""Iterate records whose index starts with given index"""
+		self.skip_to_index(index)
+		if self.at_end: return
+		while 1:
+			next_pos = self.get_next_pos()
+			try: rorp = Record2RORP(self.buf[:next_pos])
+			except ParsingError, e:
+				log.Log("Error parsing metadata file: %s" % (e,), 2)
+			else:
+				if rorp.index[:len(index)] != index: break
+				yield rorp
+			if self.at_end: break
+			self.buf = self.buf[next_pos:]
+
+	def close(self):
+		"""Return value of closing associated file"""
+		return self.fileobj.close()
+
+
+metadata_rp = None
+metadata_fileobj = None
+def OpenMetadata(rp = None, compress = 1):
+	"""Open the Metadata file for writing"""
+	global metadata_filename, metadata_fileobj
+	assert not metadata_fileobj, "Metadata file already open"
+	if rp: metadata_rp = rp
+	else: metadata_rp = Globals.rbdir.append("mirror_metadata.%s.data.gz" %
+											 (Time.curtimestr,))
+	metadata_fileobj = metadata_rp.open("wb", compress = compress)
+
+def WriteMetadata(rorp):
+	"""Write metadata of rorp to file"""
+	global metadata_fileobj
+	metadata_fileobj.write(RORP2Record(rorp))
+
+def CloseMetadata():
+	"""Close the metadata file"""
+	global metadata_fileobj
+	result = metadata_fileobj.close()
+	metadata_fileobj = None
+	metadata_rp.setdata()
+	return result
+
+def GetMetadata(rp = None, restrict_index = None, compressed = None):
+	"""Return iterator of metadata from given metadata file rp"""
+	if compressed is None:
+		if rp.isincfile():
+			compressed = rp.inc_compressed
+			assert rp.inc_type == "data", rp.inc_type
+		else: compressed = rp.get_indexpath().endswith(".gz")
+
+	fileobj = rp.open("rb", compress = compressed)
+	if restrict_index is None: return rorp_extractor(fileobj).iterate()
+	else: return rorp_extractor(fileobj).iterate_starting_with(restrict_index)
+
+def GetMetadata_at_time(rpdir, time, restrict_index = None, rplist = None):
+	"""Scan through rpdir, finding metadata file at given time, iterate
+
+	If rplist is given, use that instead of listing rpdir.  Time here
+	is exact, we don't take the next one older or anything.  Returns
+	None if no matching metadata found.
+
+	"""
+	if rplist is None: rplist = map(lambda x: rpdir.append(x), rpdir.listdir())
+	for rp in rplist:
+		if (rp.isincfile() and rp.getinctype() == "data" and
+			rp.getincbase_str() == "mirror_metadata"):
+			if Time.stringtotime(rp.getinctime()) == time:
+				return GetMetadata(rp, restrict_index)
+	return None
