@@ -152,6 +152,8 @@ $Id$
 
  * Testing
 
+   * test broken pipes
+
    * Test files >2GB, >4GB.  Presumably these must be done in streams
      so that the disk requirements to run the test suite are not too
      ridiculous.  I wonder if it will take too long to run these

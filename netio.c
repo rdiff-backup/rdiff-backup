@@ -40,6 +40,8 @@
 #  include <netinet/in.h>		/* ntohs, etc */
 #endif /* __LCLINT__ */
 
+#include <string.h>
+
 
 /*
  * This will only return a short read if we reach eof.  The underlying
@@ -156,11 +158,9 @@ hs_must_write(hs_write_fn_t write_fn, void *write_priv,
 		  "we wanted to send %d bytes, but wrote %d", len, ret);
 	return -1;
     } else {
-        _hs_fatal("impossible!");
+        _hs_fatal("error writing out buffer, aborting: %s", strerror(errno));
     }
 }
-
-
 
 
 int
