@@ -38,8 +38,9 @@ class StatsObjTest(unittest.TestCase):
 		self.set_obj(s)
 		stats_string = s.get_stats_string()
 		assert stats_string == \
-"""StartTime 11
-EndTime 12
+"""StartTime 11 (Wed Dec 31 16:00:11 1969)
+EndTime 12 (Wed Dec 31 16:00:12 1969)
+ElapsedTime 1 (1 second)
 SourceFiles 1
 SourceFileSize 2
 NewFiles 3
@@ -79,6 +80,32 @@ IncrementFileSize 10""", "'%s'" % stats_string
 		assert not s2.stats_equal(s)
 		s2.read_stats_from_rp(rp)
 		assert s2.stats_equal(s)
+
+	def testAverage(self):
+		"""Test making an average statsobj"""
+		s1 = StatsObj()
+		s1.StartTime = 5
+		s1.EndTime = 10
+		s1.ElapsedTime = 5
+		s1.ChangedFiles = 2
+		s1.SourceFiles = 100
+		s1.NewFileSize = 4
+
+		s2 = StatsObj()
+		s2.StartTime = 25
+		s2.EndTime = 35
+		s2.ElapsedTime = 10
+		s2.ChangedFiles = 1
+		s2.SourceFiles = 50
+		s2.DeletedFiles = 0
+
+		s3 = StatsObj().set_to_average([s1, s2])
+		assert s3.StartTime is s3.EndTime is None
+		assert s3.ElapsedTime == 7.5
+		assert s3.DeletedFiles is s3.NewFileSize is None, (s3.DeletedFiles,
+														   s3.NewFileSize)
+		assert s3.ChangedFiles == 1.5
+		assert s3.SourceFiles == 75
 
 
 if __name__ == "__main__": unittest.main()
