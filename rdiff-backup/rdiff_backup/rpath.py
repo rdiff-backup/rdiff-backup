@@ -1,4 +1,4 @@
-# Copyright 2002, 2003 Ben Escoto
+# Copyright 2002, 2003, 2004 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -352,10 +352,11 @@ class RORPath:
 
 	def equal_verbose(self, other, check_index = 1,
 					  compare_inodes = 0, compare_ownership = 0,
-					  compare_acls = 0, compare_eas = 0):
+					  compare_acls = 0, compare_eas = 0, verbosity = 2):
 		"""Like __eq__, but log more information.  Useful when testing"""
 		if check_index and self.index != other.index:
-			log.Log("Index %s != index %s" % (self.index, other.index), 2)
+			log.Log("Index %s != index %s" % (self.index, other.index),
+					verbosity)
 			return None
 
 		for key in self.data.keys(): # compare dicts key by key
@@ -374,12 +375,22 @@ class RORPath:
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]):
 				if not other.data.has_key(key):
-					log.Log("Second is missing key %s" % (key,), 2)
+					log.Log("Second is missing key %s" % (key,), verbosity)
 				else: log.Log("Value of %s differs: %s vs %s" %
-							  (key, self.data[key], other.data[key]), 2)
+							  (key, self.data[key], other.data[key]),
+							  verbosity)
 				return None
 		return 1
 
+	def equal_verbose_auto(self, other, verbosity = 2):
+		"""Like equal_verbose, but set parameters like __eq__ does"""
+		compare_inodes = ((self.getnumlinks() != 1) and
+						  Globals.compare_inode and Globals.preserve_hardlinks)
+		return self.equal_verbose(other,
+								  compare_inodes = compare_inodes,
+								  compare_eas = Globals.eas_active,
+								  compare_acls = Globals.acls_active)
+							 
 	def __ne__(self, other): return not self.__eq__(other)
 
 	def __str__(self):

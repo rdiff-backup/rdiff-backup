@@ -1,4 +1,4 @@
-# Copyright 2002, 2003 Ben Escoto
+# Copyright 2002, 2003, 2004 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -106,18 +106,22 @@ def Compare(src_iter, mirror_rp, inc_rp, compare_time):
 	mir_iter = MirrorStruct.get_mirror_rorp_iter(compare_time, 1)
 	collated = rorpiter.Collate2Iters(src_iter, mir_iter)
 	changed_files_found = 0
-	for src_rorp, mir_rorp in collated:
-		if src_rorp == mir_rorp: continue
-		changed_files_found = 1
+	for src_rorp, mir_rorp in collated: 
 		if not mir_rorp: change = "new"
 		elif not src_rorp: change = "deleted"
+		elif src_rorp == mir_rorp: continue
 		else: change = "changed"
+		changed_files_found = 1
 		path_desc = (src_rorp and src_rorp.get_indexpath() or
 					 mir_rorp.get_indexpath())
-		Log("%-7s %s" % (change, path_desc), 3)
-	if not changed_file_found:
-		Log("No changes found.  Directory matches archive data.", 3)
+		log.Log("%-7s %s" % (change, path_desc), 2)
+		if change == "changed": # Log more description of difference
+			assert not src_rorp.equal_verbose_auto(mir_rorp, 3)
+
+	if not changed_files_found:
+		log.Log("No changes found.  Directory matches archive data.", 2)
 	MirrorStruct.close_rf_cache()
+	return changed_files_found
 
 
 class MirrorStruct:

@@ -11,6 +11,10 @@ information.  As John says:
 >  * dual integer location
 Much thanks to John for adding this useful feature all by himself!
 
+Added --compare and --compare-at-time switches for comparing a
+directory with the backup information saved about it.  Thanks to Erik
+Forsberg, who noticed that this feature was missing.
+
 Regressing and restoring should now take less memory when processing
 large directories (noticed by Luke Mewburn and others).
 

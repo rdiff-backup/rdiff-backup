@@ -64,20 +64,18 @@ class PathSetter(unittest.TestCase):
 
 	def exec_rb(self, time, *args):
 		"""Run rdiff-backup on given arguments"""
-		arglist = []
-		if time: arglist.extend(["--current-time", str(time)])
-		arglist.append(self.src_prefix + args[0])
-		if len(args) > 1:
-			arglist.append(self.dest_prefix + args[1])
-			assert len(args) == 2
-
-		argstring = ' '.join(map(lambda s: "'%s'" % (s,), arglist))
-		cmdstr = self.rb_schema + argstring
-		print "executing " + cmdstr
-		assert not os.system(cmdstr)
+		self.exec_rb_extra_args(time, '', *args)
 
 	def exec_rb_extra_args(self, time, extra_args, *args):
-		"""Run rdiff-backup on given arguments"""
+		self.exec_rb_extra_args_retval(time, extra_args, 0, *args)
+
+	def exec_rb_extra_args_retval(self, time, extra_args, ret_val, *args):
+		"""Like exec_rb_extra_args, but require return val to be ret_val
+
+		Because of some problems I have with os.system, return val is
+		only accurate to 0 or non-zero.
+
+		"""
 		arglist = []
 		if time: arglist.extend(["--current-time",  str(time)])
 		arglist.append(self.src_prefix + args[0])
@@ -85,9 +83,13 @@ class PathSetter(unittest.TestCase):
 			arglist.append(self.dest_prefix + args[1])
 			assert len(args) == 2
 
-		cmdstr = "%s %s %s" % (self.rb_schema, extra_args, ' '.join(arglist))
+		arg_string = ' '.join(map(lambda s: "'%s'" % (s,), arglist))
+		cmdstr = "%s %s %s" % (self.rb_schema, extra_args, arg_string)
 		print "executing " + cmdstr
-		assert not os.system(cmdstr)
+		actual_val = os.system(cmdstr)
+		assert ((actual_val == 0 and ret_val == 0) or
+				(actual_val > 0 and ret_val > 0)), \
+				"Bad return val %s" % (actual_val,)
 
 	def exec_rb_restore(self, time, *args):
 		"""Restore using rdiff-backup's new syntax and given time"""
@@ -416,6 +418,22 @@ class FinalMisc(PathSetter):
 							"testfiles/output/rdiff-backup-data")
 		for inc in self.get_all_increments(rbdir):
 			assert inc.getinctime() >= 30000
+
+	def testCompare(self):
+		"""Test --compare and --compare-older-than modes"""
+		Myrm("testfiles/output")
+		self.set_connections(None, None, None, None)
+		self.exec_rb(10000, 'testfiles/increment1', 'testfiles/output')
+		self.exec_rb(20000, 'testfiles/increment2', 'testfiles/output')
+
+		self.exec_rb_extra_args_retval(20000, '--compare', 0,
+					 'testfiles/increment2', 'testfiles/output')
+		self.exec_rb_extra_args_retval(20000, '--compare', 1,
+					 'testfiles/increment1', 'testfiles/output')
+		self.exec_rb_extra_args_retval(20000, '--compare-at-time 10000', 1,
+					 'testfiles/increment2', 'testfiles/output')
+		self.exec_rb_extra_args_retval(20000, '--compare-at-time 10000', 0,
+					 'testfiles/increment1', 'testfiles/output')
 
 
 class FinalSelection(PathSetter):
