@@ -126,14 +126,3 @@ ssize_t hs_ptrbuf_read(void *private, char *buf, size_t len)
 }
 
 
-
-ssize_t hs_ptrbuf_zwrite(void *private, char const *buf, size_t len)
-{
-    size_t ret;
-    hs_ptrbuf_t *mb = (hs_ptrbuf_t *) private;
-
-    assert(mb->dogtag == ptrbuf_tag);
-    ret = comp_write(hs_ptrbuf_write, private, buf, len);
-
-    return ret;
-}
