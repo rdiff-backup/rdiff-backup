@@ -239,6 +239,14 @@ testfiles/select/1/1
 		assert sf2(fifo) == 0
 		assert sf2(sym) == 0
 
+		sf3 = self.Select.symlinks_get_sf(0)
+		assert sf3(dir) == None
+		assert sf3(reg) == None
+		assert sf3(dev) == None
+		assert sf3(sock) == None
+		assert sf3(fifo) == None
+		assert sf3(sym) == 0
+
 	def testRoot(self):
 		"""testRoot - / may be a counterexample to several of these.."""
 		root = rpath.RPath(Globals.local_connection, "/")
