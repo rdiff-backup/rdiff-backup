@@ -908,7 +908,7 @@ class RPath(RORPath):
 	def fsync_with_dir(self, fp = None):
 		"""fsync self and directory self is under"""
 		self.fsync(fp)
-		self.get_parent_rp().fsync()
+		if Globals.fsync_directories: self.get_parent_rp().fsync()
 
 	def sync_delete(self):
 		"""Delete self with sync to guarantee completion

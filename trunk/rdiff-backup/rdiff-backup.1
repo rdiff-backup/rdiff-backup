@@ -888,10 +888,11 @@ Files whose names are close to the maximum length (e.g. 235 chars if
 the maximum is 255) may be skipped because the filenames of related
 increment files would be too long.
 .PP
-The gzip library in some versions of python have trouble producing
-files over 2GB in length.  This bug will prevent rdiff-backup from
-producing large compressed increments (snapshots or diffs).  A
-workaround is to disable compression for large uncompressable files.
+The gzip library in versions 2.2 and earlier of python have trouble
+producing files over 2GB in length.  This bug will prevent
+rdiff-backup from producing large compressed increments (snapshots or
+diffs).  A workaround is to disable compression for large
+uncompressable files.
 
 .SH AUTHOR
 Ben Escoto <bescoto@stanford.edu>
