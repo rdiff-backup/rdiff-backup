@@ -49,8 +49,12 @@ struct rs_job {
     unsigned char       op;
 
     /** If in the middle of reading a signature (rs_loadsig_s_weak()),
-     * this contains the weak signature. */
+     * or generating a delta, this contains the weak signature. */
     rs_weak_sum_t       weak_sig;
+
+    /** If generating a delta, this is true if we have a valid weak signature and
+     * can roll it forward. */
+    int                 have_weak_sig;
 
     /** Lengths of expected parameters. */
     rs_long_t           param1, param2;
