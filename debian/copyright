@@ -1,10 +1,29 @@
-This package was debianized by John Goerzen <jgoerzen@complete.org> on
+This package was first debianized by John Goerzen <jgoerzen@complete.org> on
 Mon, 11 Feb 2002 14:15:42 -0500.
 
-It was downloaded from http://www.stanford.edu/~bescoto/rdiff-backup/
+It was downloaded from <http://www.nongnu.org/rdiff-backup/>
 
-Upstream Author(s): Ben Escoto <bescoto@stanford.edu>
+Upstream Author: Ben Escoto <bescoto@stanford.edu>
 
-Copyright:
+Copyright: Ben Escoto <bescoto@stanford.edu>
 
-GNU General Public License, version 2 at /usr/share/common-licenses/GPL-2.
+License:
+
+	Copyright (C) 2001-2003  Ben Escoto <bescoto@stanford.edu>
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+On Debian GNU/Linux systems, the text of the GPL can be found in
+/usr/share/common-licenses/GPL.

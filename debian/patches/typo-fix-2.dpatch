@@ -1,0 +1,39 @@
+#!/bin/sh -e
+## typo-fix-2.dpatch by Alec Berryman <alec@thened.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Fixes error message thrown when a previous backup failed
+## DP: Reported by Marc Haber <mh@zugschlus.de> as bug #256266
+
+if [ $# -lt 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+
+[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
+patch_opts="${patch_opts:--f --no-backup-if-mismatch} ${2:+-d $2}"
+
+case "$1" in
+       -patch) patch $patch_opts -p0 < $0;;
+       -unpatch) patch $patch_opts -p0 -R < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+@DPATCH@
+--- rdiff_backup/Main.py	2004-08-31 12:40:58.000000000 -0400
++++ rdiff_backup/Main.py.new	2004-08-31 12:40:21.000000000 -0400
+@@ -577,8 +577,8 @@
+ 					   % (Globals.rbdir.path,))
+ 	elif result == 1: Log.FatalError(
+ 		"Previous backup to %s seems to have failed.\nRerun rdiff-backup "
+-		"rdiff-with --check-destination-dir option to revert directory "
+-		"to state before unsuccessful session." % (mirror_root.path,))
++		"with the --check-destination-dir option to revert directory to "
++		"state before unsuccessful session." % (mirror_root.path,))
+ 
+ def restore_set_root(rpin):
+ 	"""Set data dir, restore_root and index, or return None if fail

@@ -1,0 +1,43 @@
+#!/bin/sh -e
+## typo-patch.dpatch by Thomas Jarosch <thomas.jarosch@intra2net.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Fixes typo in error message
+## DP: http://lists.gnu.org/archive/html/rdiff-backup-users/2004-07/msg00065.html
+
+if [ $# -lt 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+
+[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
+patch_opts="${patch_opts:--f --no-backup-if-mismatch} ${2:+-d $2}"
+
+case "$1" in
+       -patch) patch $patch_opts -p1 < $0;;
+       -unpatch) patch $patch_opts -p1 -R < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+@DPATCH@
+--- rdiff-backup-0.13.4/rdiff_backup/Main.py	2004-02-01 05:31:34.000000000 +0100
++++ rdiff-backup.patched/rdiff_backup/Main.py	2004-07-31 14:29:24.000000000 +0200
+@@ -823,12 +823,12 @@
+ The rdiff-backup data directory
+ %s
+ exists, but we cannot find a valid current_mirror marker.  You can
+-avoid this message by removing the rdiff_backup_data directory;
++avoid this message by removing the rdiff-backup-data directory;
+ however any data in it will be lost.
+ 
+ Probably this error was caused because the first rdiff-backup session
+ into a new directory failed.  If this is the case it is safe to delete
+-the rdiff_backup_data directory because there is no important
++the rdiff-backup-data directory because there is no important
+ information in it.
+ 
+ """ % (Globals.rbdir.path,))

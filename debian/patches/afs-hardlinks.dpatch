@@ -1,0 +1,42 @@
+#!/bin/sh -e
+## afs-hardlinks.dpatch by Alec Berryman <alec@thened.net>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Fixes AFS hard link handling by testing if able to hard link across
+## DP: directories.
+
+if [ $# -lt 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+
+[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
+patch_opts="${patch_opts:--f --no-backup-if-mismatch} ${2:+-d $2}"
+
+case "$1" in
+       -patch) patch $patch_opts -p0 < $0;;
+       -unpatch) patch $patch_opts -p0 -R < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+@DPATCH@
+--- rdiff_backup/fs_abilities.py.orig	2004-08-30 23:46:15.000000000 -0400
++++ rdiff_backup/fs_abilities.py	2004-08-30 23:49:02.000000000 -0400
+@@ -200,9 +200,11 @@
+ 		tmp_rp.delete()
+ 
+ 	def set_hardlinks(self, testdir):
+-		"""Set self.hardlinks to true iff hard linked files can be made"""
++		"""Set self.hardlinks to true if hard linked files can be made"""
+ 		hl_source = testdir.append("hardlinked_file1")
+-		hl_dest = testdir.append("hardlinked_file2")
++		hl_dir = testdir.append("hl")
++		hl_dir.mkdir()
++		hl_dest = hl_dir.append("hardlinked_file2")
+ 		hl_source.touch()
+ 		try:
+ 			hl_dest.hardlink(hl_source.path)

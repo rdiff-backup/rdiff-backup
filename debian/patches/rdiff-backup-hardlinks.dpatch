@@ -1,0 +1,96 @@
+#!/bin/sh -e
+## rdiff-backup-hardlinks.dpatch by David Vasilevsky <djvasi@gmail.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Fixes hardlink issues
+## DP: http://lists.gnu.org/archive/html/rdiff-backup-users/2004-06/msg00083.html
+
+if [ $# -lt 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+
+[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
+patch_opts="${patch_opts:--f --no-backup-if-mismatch} ${2:+-d $2}"
+
+case "$1" in
+       -patch) patch $patch_opts -p0 < $0;;
+       -unpatch) patch $patch_opts -p0 -R < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+@DPATCH@
+--- rdiff_backup/Globals.py	Sat Jan 31 23:31:34 2004
++++ rdiff_backup/Globals.py	Fri Jun 18 19:13:45 2004
+@@ -157,6 +157,10 @@
+ # hardlink information regardless.
+ preserve_hardlinks = 1
+ 
++# If true, then never enable preserve_hardlinks, regardless of whether
++# a filesystem support hard-links.
++no_hard_links = 0
++
+ # If this is false, then rdiff-backup will not compress any
+ # increments.  Default is to compress based on regexp below.
+ compression = 1
+--- rdiff_backup/Main.py	Sat Jan 31 23:31:34 2004
++++ rdiff_backup/Main.py	Fri Jun 18 19:13:21 2004
+@@ -127,7 +127,7 @@
+ 			Globals.set("no_compression_regexp_string", arg)
+ 		elif opt == "--no-eas": Globals.set("eas_active", 0)
+ 		elif opt == "--no-file-statistics": Globals.set('file_statistics', 0)
+-		elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
++		elif opt == "--no-hard-links": Globals.set('no_hard_links', 1)
+ 		elif opt == "--null-separator": Globals.set("null_separator", 1)
+ 		elif opt == "--override-chars-to-quote":
+ 			Globals.set('chars_to_quote', arg)
+@@ -402,7 +402,8 @@
+ 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
+ 					   "disabled on destination filesystem")
+ 
+-	SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks)
++	SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks and
++		not Globals.no_hard_links)
+ 	SetConnections.UpdateGlobal('fsync_directories', dest_fsa.fsync_dirs)
+ 	SetConnections.UpdateGlobal('change_ownership', dest_fsa.ownership)
+ 	SetConnections.UpdateGlobal('chars_to_quote', dest_fsa.chars_to_quote)
+@@ -508,7 +509,8 @@
+ 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
+ 					   "disabled on destination filesystem")
+ 
+-	SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
++	SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks and
++		not Globals.no_hard_links)
+ 	SetConnections.UpdateGlobal('change_ownership', target_fsa.ownership)
+ 
+ 	if Globals.chars_to_quote is None: # otherwise already overridden
+@@ -685,7 +687,8 @@
+ 	update_triple(fsa.carbonfile,
+ 				  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
+ 
+-	SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks)
++	SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks and
++		not Globals.no_hard_links)
+ 	SetConnections.UpdateGlobal('fsync_directories', fsa.fsync_dirs)
+ 	SetConnections.UpdateGlobal('change_ownership', fsa.ownership)
+ 	SetConnections.UpdateGlobal('chars_to_quote', fsa.chars_to_quote)
+--- rdiff_backup/rpath.py	Sat Jan 31 23:31:34 2004
++++ rdiff_backup/rpath.py	Fri Jun 18 19:35:05 2004
+@@ -153,9 +153,11 @@
+ 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
+ 	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
+ 	if rpin.issym(): return # symlinks have no valid attributes
+-	if Globals.resource_forks_write and rpin.isreg():
++	if (Globals.resource_forks_write and rpin.isreg() and
++			not rpin.isflaglinked()):
+ 		rpout.write_resource_fork(rpin.get_resource_fork())
+-	if Globals.carbonfile_write and rpin.isreg():
++	if (Globals.carbonfile_write and rpin.isreg() and
++			not rpin.isflaglinked()):
+ 		rpout.write_carbonfile(rpin.get_carbonfile())
+ 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
+ 	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))

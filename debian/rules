@@ -1,52 +1,44 @@
 #!/usr/bin/make -f
 # Sample debian/rules that uses debhelper.
-# GNU copyright 1997 to 1999 by Joey Hess.
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-# This is the debhelper compatability version to use.
-export DH_COMPAT=3
+include /usr/share/dpatch/dpatch.make
 
-configure: configure-stamp
-configure-stamp:
-	dh_testdir
-	# Add here commands to configure the package.
-	
-
-	touch configure-stamp
+CFLAGS = -Wall -g
 
 build: build-stamp
 
-build-stamp: configure-stamp 
+build-stamp: patch
 	dh_testdir
 
 	# Add here commands to compile the package.
-	#$(MAKE)
-	#/usr/bin/docbook-to-man debian/rdiff-backup.sgml > rdiff-backup.1
+	python2.3 setup.py build
 
 	touch build-stamp
 
-clean:
+clean: unpatch
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp configure-stamp
+	rm -f build-stamp
 
 	# Add here commands to clean up after the build process.
-	-$(MAKE) clean
+	python2.3 setup.py clean
+	rm -rf build
 
-	dh_clean
+	dh_clean 
 
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k
+	dh_clean -k 
 	dh_installdirs
 
 	# Add here commands to install the package into debian/rdiff-backup.
-	#$(MAKE) install DESTDIR=$(CURDIR)/debian/rdiff-backup
-	cp rdiff-backup debian/rdiff-backup/usr/bin
-	cp rdiff-backup.1 debian/rdiff-backup/usr/share/man/man1
+	python2.3 setup.py install --prefix $(CURDIR)/debian/rdiff-backup/usr
+	install -m 644 $(CURDIR)/rdiff-backup.1 $(CURDIR)/debian/rdiff-backup/usr/share/man/man1
+	-rm -rf $(CURDIR)/debian/rdiff-backup/usr/share/doc/rdiff-backup-*
 
 
 # Build architecture-independent files here.
@@ -57,31 +49,20 @@ binary-indep: build install
 binary-arch: build install
 	dh_testdir
 	dh_testroot
-#	dh_installdebconf	
-	dh_installdocs
-	dh_installexamples
-	dh_installmenu
-#	dh_installlogrotate
-#	dh_installemacsen
-#	dh_installpam
-#	dh_installmime
-#	dh_installinit
-	dh_installcron
-	dh_installman
-	dh_installinfo
-#	dh_undocumented
 	dh_installchangelogs CHANGELOG
+	dh_installdocs
+	dh_install
+	dh_installman
 	dh_link
 	dh_strip
 	dh_compress
 	dh_fixperms
-#	dh_makeshlibs
+	dh_python
 	dh_installdeb
-#	dh_perl
 	dh_shlibdeps
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
 
 binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install configure
+.PHONY: build clean binary-indep binary-arch binary install

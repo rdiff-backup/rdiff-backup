@@ -1,0 +1,295 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+  <head>
+    <title>rdiff-backup examples</title>
+  </head>
+
+  <body>
+  <h1>rdiff-backup examples</h1>
+<h3>Sections</h3>
+
+<ul>
+<li><a href="#backup">Backing up</a></li>
+<li><a href="#restore">Restoring</a></li>
+<li><a href="#delete_older">Deleting older files</a></li>
+<li><a href="#exclude">File selection with include/exclude options</a></li>
+<li><a href="#query">Getting information about the backup directory</a></li>
+<li><a href="#misc">Miscellaneous other commands</a></li>
+</ul>
+
+<a name="backup"><h3>Backing up</h3></a>
+<ul>
+
+<li><p>Simplest case---backup local directory <code>foo</code> to local
+directory <code>bar</code>.  <code>bar</code> will end up a copy of
+<code>foo</code>, except it will contain the directory
+foo/rdiff-backup-data, which will allow rdiff-backup to restore
+previous states.
+
+<blockquote><code>rdiff-backup foo bar</code></blockquote></p> </li>
+
+<li> <p>Simple remote case---backup directory <code>/some/local-dir</code>
+to the directory <code>/whatever/remote-dir</code> on the machine
+hostname.net.  It uses ssh to open the necessary pipe to the remote
+copy of rdiff-backup.  Just like the above except one directory is on
+a remove computer.
+
+<blockquote><code>rdiff-backup /some/local-dir hostname.net::/whatever/remote-dir</code></blockquote></p> </li>
+
+<li> <p>This time the source directory is remote and the destination
+is local.  Also, we have specified the username on the remote host (by
+default ssh will attempt to log you in with the same username you have
+on the local host).
+
+<blockquote><code>rdiff-backup user@hostname.net::/remote-dir local-dir</code></blockquote> </p> </li>
+
+<li> <p>It is even possible for both the source and destination
+directories to be on other machines.  Below we have also added the
+<code>-v5</code> switch for greater verbosity (verbosity settings go
+from 0 to 9, with 3 as the default), and the
+<code>--print-statistics</code> switch so some statistics will be
+displayed at the end (even without this switch, the statistics will
+still be saved in the <code>rdiff-backup-data</code> directory).
+
+<blockquote><code>rdiff-backup -v5 --print-statistics user1@host1::/source-dir user2@host2::/dest-dir</code></blockquote> </p> </li>
+</ul>
+
+
+<a name="restore"><h3>Restoring</h3></a>
+<ul>
+
+<li><p>Suppose earlier we have run <code>rdiff-backup foo bar</code>,
+with both foo and bar local.  We accidentally deleted
+<code>foo/dir</code> and now want to restore it from <code>bar/dir</code>.
+
+<blockquote><code>cp -a bar/dir foo/dir</code></blockquote>
+
+That's right, since rdiff-backup makes a mirror, we can retrieve files
+using standard commands like <code>cp</code>.</p>
+</li>
+
+<li><p>For the rest of the examples in the section, we will assume
+that the user has backed up with the command <code>rdiff-backup
+local-dir host.net::/remote-dir</code>.  Of course, in all these
+examples it would be equally possible to have the source being remote
+and the backup directory local.</p>
+
+<p>In this case we can't use <code>cp</code> to copying
+<code>host.net::remote-dir/file</code> to <code>local-dir/file</code>
+because they are on different machines.  We can get rdiff-backup to
+restore the current version of that file using either of these::
+
+<blockquote><code>rdiff-backup --restore-as-of now
+host.net::/remote-dir/file local-dir/file<br/>rdiff-backup -r now
+host.net::/remote-dir/file local-dir/file</code></blockquote>
+
+The <code>--restore-as-of</code> (or <code>-r</code> for short) switch
+tells rdiff-backup to restore instead of back up, and the
+<code>now</code> option indicates the current time.</p>
+</li>
+
+<li><p>But the main advantage of rdiff-backup is that it keeps version
+history.  This command restores
+<code>host.net::/remote-dir/file</code> as it was 10 days ago into a
+new location <code>/tmp/file</code>.
+
+<blockquote><code>rdiff-backup -r 10D host.net::/remote-dir/file /tmp/file</code></blockquote>
+
+Other acceptable time strings include <code>5m4s</code> (5 minutes and
+4 seconds) and <code>2002-03-05</code> (March 5th, 2002).  For more
+information, see the TIME FORMATS section of the manual page.</p> </li>
+
+<li> <p>Finally, we can use rdiff-backup to restore directory from an
+increment file.  Increment files are stored in
+<code>host.net::/remote-dir/rdiff-backup-data/increments</code> and
+hold the previous versions of changed files.  If you specify one
+directly:
+
+<blockquote><code>rdiff-backup
+host.net::/remote-dir/rdiff-backup-data/increments/file.2003-03-05T12:21:41-07:00.diff.gz local-dir/file</code></blockquote>
+
+rdiff-backup will tell from the filename that it is an rdiff-backup
+increment file and thus enter restore mode.  Above the restored version is written to <code>local-dir/file</code>.</p></li>
+</ul>
+
+
+<a name="delete_older"><h3>Deleting older files</h3></a>
+
+<p>Although rdiff-backup tries to save space by only storing file
+differences, eventually space may run out in the destination
+directory.  rdiff-backup's <code>--remove-older-than</code> mode can
+be used to delete older increments.</p>
+
+<p>This section assumes that rdiff-backup has been used in the past to
+back up to <code>host.net::/remote-dir</code>, but all commands would
+work locally too, if the hostname were ommitted.</p>
+
+<ul> <li> <p> This commands deletes all information concerning file
+versions which have not been current for 2 weeks:
+
+<blockquote><code>rdiff-backup --remove-older-than 2W host.net::/remote-dir</code></blockquote>
+
+Note that an existing file which hasn't changed for a year will still
+be preserved.  But a file which was deleted 15 days ago cannot be
+restored after this command is run.</p></li>
+
+<li> <p> As when restoring, there are a variety of ways to specify the
+time.  The <code>20B</code> below tells rdiff-backup to only preserve
+information from the last 20 rdiff-backup sessions.  (<code>nnB</code>
+syntax is only available in versions after 0.13.1.)
+
+<blockquote><code>rdiff-backup --remove-older-than 20B host.net::/remote-dir</code></blockquote></p></li>
+</ul>
+
+
+<a name="exclude"><h3>File selection with include/exclude options</h3></a>
+
+<p>Sometimes you don't want to back up all files.  The various
+<code>--include</code> and <code>--exclude</code> options can be used
+to select exactly which files to back up.  See the man page for a list
+of all the options and their definitions.</p>
+
+<ul><li><p>In this example we exclude <code>/mnt/backup</code> to
+avoid an infinite loop.
+
+<blockquote><code>rdiff-backup --exclude /mnt/backup /
+/mnt/backup</code></blockquote>
+
+(Actually rdiff-backup can automatically detect simple loops like the
+one above.)  This is just an example, in reality it would be important
+to exclude <code>/proc</code> as well.</p></li>
+
+<li><p>This example is more realistic.  We have excluded
+<code>/proc</code>, <code>/tmp</code>, and <code>/mnt</code>.
+<code>/proc</code> in particular should never be backed up.  Also, the
+source directory happens to be remote.
+
+<blockquote><code>rdiff-backup --exclude /tmp --exclude /mnt
+--exclude /proc user@host.net::/ /backup/host.net</code></blockquote></p></li>
+
+<li><p>Multiple include and exclude options take precedence in the
+order they are given.  The following command would back up
+<code>/usr/local/bin</code> but not <code>/usr/bin</code>.
+
+<blockquote><code>rdiff-backup --include /usr/local --exclude /usr / host.net::/backup</code></blockquote></p></li>
+
+<li><p>rdiff-backup uses rsync-like wildcards, where <code>**</code>
+matches any path and <code>*</code> matches any path without a
+<code>/</code> in it.  Thus this command:
+
+<blockquote><code>rdiff-backup --include /usr/local --include /var --exclude '**' / /backup</code></blockquote>
+
+backs up only the <code>/usr/local</code> and <code>/var</code>
+directories.  The single quotes <code>''</code> are not part of
+rdiff-backup and are only used because many shells will expand
+<code>**</code>.</p></li>
+
+<li><p>Here is a more complicated example:
+
+<blockquote><code>rdiff-backup --include '**txt' --exclude /usr/local/games --include /usr/local --exclude /usr --exclude /backup --exclude /proc / /backup</code></blockquote>
+
+The above command will back up any file ending in <code>txt</code>,
+even <code>/usr/local/games/pong/scores.txt</code> because that
+include has highest precedence.  The contents of the directory
+<code>/usr/local/bin</code> will get backed up, but not
+<code>/usr/share</code> or <code>/usr/local/games/pong</code>.</p></li>
+
+<li>rdiff-backup can also accept a list of files to be backed up.  If
+the file <code>include-list</code> contains these two lines:
+
+<blockquote><pre>
+/var
+/usr/bin/gzip
+</pre></blockquote>
+
+Then this command:
+
+<blockquote><code>rdiff-backup --include-filelist include-list --exclude '**' / /backup</code></blockquote>
+
+would only back up the files <code>/var</code>, <code>/usr</code>,
+<code>/usr/bin</code>, and <code>/usr/bin/gzip</code>, but not
+<code>/var/log</code> or <code>/usr/bin/gunzip</code>.  Note that this
+differs from the <code>--include</code> option, since <code>--include
+/var</code> would also match <code>/var/log</code>.</p></li>
+
+<li><p>The same file list can both include and exclude files.  If we
+create a file called <code>include-list</code> that contains these
+lines:
+
+<blockquote><pre>**txt
+- /usr/local/games
+/usr/local
+- /usr
+- /backup
+- /proc</pre></blockquote>
+
+Then the following command will do exactly the same thing as the
+complicated example two above.
+
+<blockquote><pre>rdiff-backup --include-globbing-filelist include-list / /backup</pre></blockquote>
+
+Above we have used <code>--include-globbing-filelist</code> instead of
+<code>--include-filelist</code> so that the lines would be interpreted
+as if they were specified on the command line.  Otherwise, for
+instance, <code>**txt</code> would be considered the name of a file,
+not a globbing string.</p></li>
+</ul>
+
+
+<a name="query"><h3>Getting information about the backup directory</h3></a>
+
+The following examples assume that you have run <code>rdiff-backup
+in-dir out-dir</code> in the past.
+
+<ul><li><p>This command finds all new or old files which contain the
+string <code>frobniz</code>.
+
+<blockquote><code>find out-dir -name '*frobniz*'</code></blockquote>
+
+rdiff-backup doesn't obscure the names of files at all, so often using
+traditional tools work well.</p></li>
+
+<li><p>Either of these equivalent commands lists the times of the
+available versions of the file <code>out-dir/file</code>.  It may be
+useful if you need to restore an older version of
+<code>in-dir/file</code> but aren't sure which one.
+
+<blockquote><code>rdiff-backup --list-increments
+out-dir/file<br/>rdiff-backup -l
+out-dir/file</code></blockquote></p></li>
+
+<li><p>The following command lists all the files under
+<code>out-dir/subdir</code> which has changed in the last 5 days.
+
+<blockquote><code>rdiff-backup --list-changed-since 5D out-dir/subdir</code></blockquote></p></li>
+
+<li><p>This command lists all the files that were present in
+<code>out-dir/subdir</code> 5 days ago.  This includes files that have
+not changed recently as well as those that have been deleted in the
+last 5 days.
+
+<blockquote><code>rdiff-backup --list-at-time 5D
+out-dir/subdir</code></blockquote></p></li>
+
+<li>rdiff-backup writes one statistics file per session to the
+<code>out-dir/rdiff-backup-data</code> directory.  An average of the
+files can be displayed using the <code>--calculate-average</code>
+option and specifying the statistics files to use.
+
+<blockquote><code>rdiff-backup --calculate-average out-dir/rdiff-backup-data/session_statistics*</code></blockquote></p></li>
+</ul>
+
+
+<a name="misc"><h3>Miscellaneous other commands</h3></a>
+
+<ul> <li><p> If you are having problems connecting to a remote host, the
+<code>--test-server</code> command may be useful.  This command simply
+verifies that there is a working rdiff-backup server on the remote
+side.
+
+<blockquote><code>rdiff-backup --test-server hostname.net::/ignored</code></blockquote> </p></li>
+
+</ul>
+
+</body></html>

@@ -1,0 +1,58 @@
+#!/bin/sh -e
+## backup_warn_if_infinite_regress.dpatch by Ben Escoto <bescoto@stanford.edu>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Fixes case where the destination directory is a subdirectory of the directory to be backed up
+
+if [ $# -lt 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+
+[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
+patch_opts="${patch_opts:--f --no-backup-if-mismatch} ${2:+-d $2}"
+
+case "$1" in
+       -patch) patch $patch_opts -p2 < $0;;
+       -unpatch) patch $patch_opts -p2 -R < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+@DPATCH@
+--- rdiff-backup/rdiff-backup/rdiff_backup/Main.py	2004/01/31 21:34:17	1.38.2.10
++++ rdiff-backup/rdiff-backup/rdiff_backup/Main.py	2004/05/16 17:15:34	1.38.2.11
+@@ -324,14 +324,12 @@
+ 
+ def backup_warn_if_infinite_regress(rpin, rpout):
+ 	"""Warn user if destination area contained in source area"""
+-	if rpout.conn is rpin.conn: # it's meaningful to compare paths
+-		if ((len(rpout.path) > len(rpin.path)+1 and
+-			 rpout.path[:len(rpin.path)] == rpin.path and
+-			 rpout.path[len(rpin.path)] == '/') or
+-			(rpin.path == "." and rpout.path[0] != '/' and
+-			 rpout.path[:2] != '..')):
+-			# Just a few heuristics, we don't have to get every case
+-			if Globals.backup_reader.Globals.select_source.Select(rpout): Log(
++	# Just a few heuristics, we don't have to get every case
++	if rpout.conn is not rpin.conn: return
++	if len(rpout.path) <= len(rpin.path)+1: return
++	if rpout.path[:len(rpin.path)+1] != rpin.path + '/': return
++
++	Log(
+ """Warning: The destination directory '%s' may be contained in the
+ source directory '%s'.  This could cause an infinite regress.  You
+ may need to use the --exclude option.""" % (rpout.path, rpin.path), 2)
+--- rdiff-backup/rdiff-backup/rdiff_backup/backup.py	2003/09/13 23:57:33	1.16.2.4
++++ rdiff-backup/rdiff-backup/rdiff_backup/backup.py	2004/05/16 17:15:35	1.16.2.5
+@@ -67,6 +67,7 @@
+ 		sel.set_iter()
+ 		cache_size = Globals.pipeline_max_length * 3 # to and from+leeway
+ 		cls._source_select = rorpiter.CacheIndexable(sel, cache_size)
++		Globals.set('select_mirror', sel)
+ 
+ 	def get_source_select(cls):
+ 		"""Return source select iterator, set by set_source_select"""

@@ -1,0 +1,36 @@
+#!/bin/sh -e
+## restrict-read-only.dpatch by Dean Gaudet <dean@arctic.org>.
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Bring behavior of flag '--restrict-read-only' in line with
+## DP: documented behavior.
+
+if [ $# -lt 1 ]; then
+    echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+    exit 1
+fi
+
+[ -f debian/patches/00patch-opts ] && . debian/patches/00patch-opts
+patch_opts="${patch_opts:--f --no-backup-if-mismatch} ${2:+-d $2}"
+
+case "$1" in
+       -patch) patch $patch_opts -p0 < $0;;
+       -unpatch) patch $patch_opts -p0 -R < $0;;
+        *)
+                echo >&2 "`basename $0`: script expects -patch|-unpatch as argument"
+                exit 1;;
+esac
+
+exit 0
+
+@DPATCH@
+--- rdiff_backup/Security.py	2004-10-24 11:10:38.000000000 -0400
++++ rdiff_backup/Security.py.new	2004-10-24 11:11:56.000000000 -0400
+@@ -195,6 +195,7 @@
+ 	"""Require rpath not to step outside retricted directory"""
+ 	if Globals.restrict_path and rpath.conn is Globals.local_connection:
+ 		normalized, restrict = rpath.normalize().path, Globals.restrict_path
++		if restrict == "/": return
+ 		components = normalized.split("/")
+ 		# 3 cases for restricted dir /usr/foo:  /var, /usr/foobar, /usr/foo/..
+ 		if (not normalized.startswith(restrict) or
