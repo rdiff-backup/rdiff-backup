@@ -289,28 +289,43 @@ class CachedRF:
 		return "\n".join((s1, s2, s3))
 
 	def get_rf(self, index):
-		"""Return RestoreFile of given index"""
+		"""Return RestoreFile of given index, or None"""
 		while 1:
-			if not self.rf_list: self.add_rfs(index)
+			if not self.rf_list:
+				if not self.add_rfs(index): return None
 			rf = self.rf_list.pop(0)
 			if rf.index < index: continue
 			elif rf.index == index: return rf
 			self.rf_list.insert(0, rf)
-			self.add_rfs(index)
+			if not self.add_rfs(index): return None
 
 	def get_fp(self, index):
 		"""Return the file object (for reading) of given index"""
+		rf = self.get_rf(index)
+		if not rf:
+			log.Log("""Error: Unable to retrieve data for file %s!
+The cause is probably data loss from the destination directory.""" %
+					(index and "/".join(index) or '.',), 2)
+			return cStringIO.StringIO('')
 		return self.get_rf(index).get_restore_fp()
 
 	def add_rfs(self, index):
-		"""Given index, add the rfs in that same directory"""
+		"""Given index, add the rfs in that same directory
+
+		Returns false if no rfs are available, which usually indicates
+		an error.
+
+		"""
 		if not index: return self.root_rf
 		parent_index = index[:-1]
 		temp_rf = RestoreFile(self.root_rf.mirror_rp.new_index(parent_index),
 							  self.root_rf.inc_rp.new_index(parent_index), [])
 		new_rfs = list(temp_rf.yield_sub_rfs())
-		assert new_rfs, "No RFs added for index %s" % index
+		if not new_rfs:
+			log.Log("Warning: No RFs added for index %s" % (index,), 2)
+			return 0
 		self.rf_list[0:0] = new_rfs
+		return 1
 
 
 class RestoreFile:
@@ -434,7 +449,13 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
 
 	def yield_sub_rfs(self):
 		"""Return RestoreFiles under current RestoreFile (which is dir)"""
-		assert self.mirror_rp.isdir() or self.inc_rp.isdir()
+		if not self.mirror_rp.isdir() and not self.inc_rp.isdir():
+			log.Log("""Warning: directory %s seems to be missing from backup!
+
+This is probably due to files being deleted manually from the
+rdiff-backup destination directory.  In general you shouldn't do this,
+as data loss may result.\n""" % (self.mirror_rp.get_indexpath(),), 2)
+			return
 		if self.mirror_rp.isdir():
 			mirror_iter = self.yield_mirrorrps(self.mirror_rp)
 		else: mirror_iter = iter([])

@@ -471,5 +471,50 @@ testfiles/increment2/changed_dir""")
 		self.assertRaises(OSError, os.lstat,
 						  'testfiles/restoretarget1/executable2')
 
+
+class FinalCorrupt(PathSetter):
+	"""Test messing with things a bit and making sure they still work"""
+	def make_dir(self):
+		self.delete_tmpdirs()
+		rp1 = rpath.RPath(Globals.local_connection, 'testfiles/final_deleted1')
+		if rp1.lstat(): Myrm(rp1.path)
+		rp1.mkdir()
+		rp1_1 = rp1.append('regfile')
+		rp1_1.touch()
+		rp1_2 = rp1.append('dir')
+		rp1_2.mkdir()
+		rp1_2_1 = rp1_2.append('regfile2')
+		rp1_2_1.write_string('foo')
+
+		rp2 = rpath.RPath(Globals.local_connection, 'testfiles/final_deleted2')
+		if rp2.lstat(): Myrm(rp2.path)
+		os.system('cp -a %s %s' % (rp1.path, rp2.path))
+		rp2_2_1 = rp2.append('dir').append('regfile2')
+		assert rp2_2_1.lstat()
+		rp2_2_1.delete()
+		rp2_2_1.touch()
+		return rp1, rp1_2, rp2
+
+	def test_dest_delete(self):
+		"""Test deleting a directory from the destination dir
+
+		Obviously that directory can no longer be restored, but the
+		rest of the files should be OK.  Just runs locally for now.
+
+		"""
+		in_dir1, in_subdir, in_dir2 = self.make_dir()
+		self.set_connections(None, None, None, None)
+		self.exec_rb(10000, in_dir1.path, 'testfiles/output')
+
+		out_subdir = rpath.RPath(Globals.local_connection,
+								 'testfiles/output/%s' %
+								 (in_subdir.index[-1],))
+		log.Log("Deleting %s" % (out_subdir.path,), 3)
+		out_subdir.delete()
+		self.exec_rb(20000, in_dir2.path, 'testfiles/output')
+
+		self.exec_rb_restore(10000, 'testfiles/output',
+							 'testfiles/restoretarget1')
+
 		
 if __name__ == "__main__": unittest.main()
