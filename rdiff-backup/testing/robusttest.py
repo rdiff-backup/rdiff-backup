@@ -72,11 +72,11 @@ class SaveStateTest(unittest.TestCase):
 		Time.setcurtime()
 		SetConnections.BackupInitConnections(Globals.local_connection,
 											 Globals.local_connection)
-		SaveState.init_filenames(None)
+		SaveState.init_filenames()
 		SaveState.record_last_file_action(last_rorp).execute()
 
 		sym_rp = RPath(Globals.local_connection,
-					   "testfiles/robust/last-file-mirrored.%s.data" %
+					   "testfiles/robust/last-file-incremented.%s.data" %
 					   Time.curtimestr)
 		assert sym_rp.issym()
 		assert sym_rp.readlink() == "increments/usr/local/bin/ls"

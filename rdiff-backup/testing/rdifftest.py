@@ -48,8 +48,8 @@ class RdiffTest(unittest.TestCase):
 			assert self.basis.lstat() and self.new.lstat()
 			self.signature.write_from_fileobj(Rdiff.get_signature(self.basis))
 			assert self.signature.lstat()
-			self.delta.write_from_fileobj(Rdiff.get_delta(self.signature,
-														  self.new))
+			self.delta.write_from_fileobj(Rdiff.get_delta_sigrp(self.signature,
+																self.new))
 			assert self.delta.lstat()
 			Rdiff.patch_action(self.basis, self.delta, self.output).execute()
 			assert RPath.cmp(self.new, self.output)
@@ -68,8 +68,8 @@ class RdiffTest(unittest.TestCase):
 		assert self.basis.lstat() and self.new.lstat()
 		self.signature.write_from_fileobj(Rdiff.get_signature(self.basis))
 		assert self.signature.lstat()
-		self.delta.write_from_fileobj(Rdiff.get_delta(self.signature,
-													  self.new))
+		self.delta.write_from_fileobj(Rdiff.get_delta_sigrp(self.signature,
+															self.new))
 		assert self.delta.lstat()
 		os.system("gzip " + self.delta.path)
 		os.system("mv %s %s" % (self.delta.path + ".gz", self.delta.path))
@@ -125,8 +125,8 @@ class RdiffTest(unittest.TestCase):
 		assert self.basis.lstat() and self.new.lstat()
 		self.signature.write_from_fileobj(Rdiff.get_signature(self.basis))
 		assert self.signature.lstat()
-		self.delta.write_from_fileobj(Rdiff.get_delta(self.signature,
-													  self.new))
+		self.delta.write_from_fileobj(Rdiff.get_delta_sigrp(self.signature,
+															self.new))
 		assert self.delta.lstat()
 		Rdiff.patch_action(self.basis, self.delta).execute()
 		assert RPath.cmp(self.basis, self.new)
