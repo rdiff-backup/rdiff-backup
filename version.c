@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
@@ -27,35 +27,7 @@
 #include "hsync.h"
 
 
-/*! Library version string. */
-char const hs_libhsync_version[] =
-    (PACKAGE " " VERSION " [" __DATE__ " " __TIME__ "]");
+/** \brief Library version string. */
+char const hs_libhsync_version[] = (PACKAGE " " VERSION);
 
 
-/*!
- * \hideinitializer
- * \brief Contains English-language licence and non-warranty text for the library.
- */
-/*
- * This little declaration is dedicated to Stephen Kapp and Reaper
- * Technologies, who by all appearances redistributed a modified but
- * unacknowledged version of GNU Keyring in violation of the licence
- * and all laws of politeness and good taste.
- */
-char const hs_licence_string[] = 
-"http://rproxy.samba.org/\n"
-"Copyright (C) 1997-2001 by Martin Pool, Andrew Tridgell and others.\n"
-"\n"
-"This program is free software; you can redistribute it and/or\n"
-"modify it under the terms of the GNU Lesser General Public License\n"
-"as published by the Free Software Foundation; either version 2.1 of\n"
-"the License, or (at your option) any later version.\n"
-"\n"
-"This program is distributed in the hope that it will be useful, but\n"
-"WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n"
-"Lesser General Public License for more details.\n"
-"\n"
-"You should have received a copy of the GNU Lesser General Public\n"
-"License along with this program; if not, write to the Free Software\n"
-"Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.\n";
