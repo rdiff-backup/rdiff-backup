@@ -31,7 +31,8 @@
  *
  * \brief Main public interface to libhsync.
  * \author Martin Pool <mbp@samba.org>
- * \version $Id$
+ *
+ * $Id$
  *
  * This file contains interfaces that do not depend on stdio.  For
  * them, see hsyncfile.h.  For a general introduction, see \ref intro.
@@ -42,20 +43,26 @@ extern char const hs_licence_string[];
 
 
 /**
- * \typedef void    hs_trace_fn_t(int level, char const *msg);
+ * \typedef hs_trace_fn_t
  * \brief Callback to write out log messages.
  * \param level a syslog level.
  * \param msg message to be logged.
  */
 typedef void    hs_trace_fn_t(int level, char const *msg);
 
+/** 
+ * Set filters on message output.
+ *
+ * \todo Perhaps don't depend on syslog, but instead just have yes/no
+ * tracing.  Do we really need such fine-grained control?
+ */
 void            hs_trace_set_level(int level);
 
 /** Set trace callback. */
 void            hs_trace_to(hs_trace_fn_t *);
 
 /** Default trace callback that writes to stderr.  Implements
- * ::hs_trace_fn_t. */
+ * ::hs_trace_fn_t, and may be passed to hs_trace_to(). */
 void            hs_trace_stderr(int level, char const *msg);
 
 /** Check whether the library was compiled with debugging trace
