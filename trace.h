@@ -40,10 +40,12 @@ void rs_fatal0(char const *s, ...);
 void rs_error0(char const *s, ...);
 void rs_trace0(char const *s, ...);
 
-#ifdef __GNUC__
-
 void rs_log0(int level, char const *fn, char const *fmt, ...)
     __attribute__ ((format(printf, 3, 4)));
+
+void rs_log0_nofn(int level, char const *fmt, ...);
+
+#ifdef __GNUC__
 
 #ifdef DO_RS_TRACE
 #  define rs_trace(fmt, arg...)                            \
@@ -63,19 +65,19 @@ void rs_log0(int level, char const *fn, char const *fmt, ...)
  */
 
 #define rs_log(l, s, str...) do {              \
-     rs_log0((l), __FUNCTION__, (s) , ##str);    \
+     rs_log0((l), __FUNCTION__, (s) , ##str);  \
      } while (0)
 
 
 #define rs_error(s, str...) do {                       \
-     rs_log0(RS_LOG_ERR,  __FUNCTION__, (s) , ##str);     \
+     rs_log0(RS_LOG_ERR,  __FUNCTION__, (s) , ##str);  \
      } while (0)
 
 
 #define rs_fatal(s, str...) do {               \
-     rs_log0(RS_LOG_CRIT,  __FUNCTION__,          \
-	      (s) , ##str);                     \
-     abort();                                   \
+     rs_log0(RS_LOG_CRIT,  __FUNCTION__,       \
+	      (s) , ##str);                    \
+     abort();                                  \
      } while (0)
 
 
@@ -83,10 +85,10 @@ void rs_log0(int level, char const *fn, char const *fmt, ...)
 
 #  define rs_fatal rs_fatal0
 #  define rs_error rs_error0
+#  define rs_log   rs_log0_nofn
 
 #  ifdef DO_RS_TRACE
 #    define rs_trace rs_trace0
-void            rs_log0(int, char const *, ...);
 #  endif			/* DO_RS_TRACE */
 #endif				/* ! __GNUC__ */
 
@@ -95,7 +97,7 @@ enum {
     RS_LOG_PRIMASK       = 7,   /**< Mask to extract priority
                                    part. \internal */
 
-    RS_LOG_NONAME        = 8,   /**< \b Don't show function name in
+    RS_LOG_NONAME        = 8    /**< \b Don't show function name in
                                    message. */
 };
 

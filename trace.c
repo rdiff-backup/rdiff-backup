@@ -132,6 +132,21 @@ rs_log_va(int flags, char const *fn, char const *fmt, va_list va)
 
 
 
+/**
+ * Called by a macro, used on platforms where we can't determine the
+ * calling function name.
+ */
+void
+rs_log0_nofn(int level, char const *fmt, ...)
+{
+    va_list         va;
+
+    va_start(va, fmt);
+    rs_log_va(level, PACKAGE, fmt, va);
+    va_end(va);
+}
+
+
 /* Called by a macro that prepends the calling function name,
  * etc.  */
 void
