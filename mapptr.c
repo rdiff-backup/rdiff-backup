@@ -21,10 +21,23 @@
 
 /* Originally from rsync */
 
-/*
- * TODO: We need to make sure that this works cleanly only sockets and
- * similar things.  In that case, we don't know the `length' of the
- * file, and we can never seek.  I think this code will do that.  */
+/* MAP POINTERS
+ *
+ * This provides functionality somewhat similar to mmap() but using
+ * read(). It gives sliding window access to a file.
+ *
+ * With certain constraints, this is suitable for use on sockets and
+ * similar things that cannot normally support seek or mmap.
+ * Specifically, the caller must never attempt to move backwards or to
+ * skip forwards without reading.  Both of these are implicitly true
+ * for libhsync when interacting with a socket. */
+
+/* TODO: Get rid of the dependance on knowing the length of the file
+ * ahead of time; instead work it out when we encounter EOF.  Also,
+ * report back when we've seen EOF -- the libhsync/nad algorithm needs
+ * to know this because it behaves differently when near the end.
+ * Also, we need to report back the number of bytes that we actually
+ * managed to map. */
 
 #include "includes.h"
 #include "hsync.h"
@@ -38,6 +51,22 @@
 int const HS_MAP_TAG = 189900;
 
 
+/*
+ * HS_MAP structure:
+ *
+ * TAG is a dogtag, and always equal to HS_MAP_TAG if the structure is
+ * valid.  FD is of course the file descriptor we're using for input.
+ *
+ * P points to the start of the allocated data buffer.  P_SIZE is the
+ * amount of allocated buffer at P, not all of which necessarily
+ * contains valid file data.
+ *
+ * P_FD_OFFSET is the current absolute position of the file cursor.
+ * We use this to avoid doing seeks if we're already in the right
+ * position.  P_OFFSET is the absolute position in the file covered by
+ * P[0].  P_LEN is the number of bytes after that point that are valid
+ * in P.
+ */
 struct hs_map {
      int tag;
      char *p;
@@ -46,10 +75,13 @@ struct hs_map {
 };
 
 
-/* this provides functionality somewhat similar to mmap() but using
-   read(). It gives sliding window access to a file. mmap() is not
-   used because of the possibility of another program (such as a
-   mailer) truncating the file thus giving us a SIGBUS */
+/**
+ * Set up a new file mapping.
+ *
+ * The file cursor is assumed to be at position 0 when this is called.
+ * For nonseekable files this is arbitrary; for seekable files bad
+ * things will happen if that's not true and we later have to seek.
+ **/
 hs_map_t *
 hs_map_file(int fd,hs_off_t len)
 {
@@ -73,37 +105,46 @@ hs_map_file(int fd,hs_off_t len)
 }
 
 
-
-/* slide the read window in the file */
+/**
+ * Return a pointer to a mapped region of a file, of at least LEN
+ * bytes.  You can read from (but not write to) this region just as if
+ * it were mmap'd.
+ *
+ * If the file reaches EOF, then the region mapped may be less than is
+ * requested.  In this case, LEN will be reduced, and REACHED_EOF will
+ * be set.
+ **/
 char const *
-hs_map_ptr(hs_map_t *map, hs_off_t offset, int len)
+_hs_map_ptr(hs_map_t *map, hs_off_t offset, int *len, int *reached_eof)
 {
      int nread;
      hs_off_t window_start, read_start;
      int window_size, read_size, read_offset;
-     int total_read;
+     int total_read, avail;
 
      assert(map->tag == HS_MAP_TAG);
+     *reached_eof = 0;
 
      /* TODO: Perhaps we should allow this, but why? */
-     if (len == 0) {
+     if (*len == 0) {
 	 errno = EINVAL;
 	 return NULL;
      }
 
      /* can't go beyond the end of file */
-     if (len > (map->file_size - offset)) {
-	  len = map->file_size - offset;
+     if (*len > (map->file_size - offset)) {
+	  *len = map->file_size - offset;
      }
 
      /* in most cases the region will already be available */
      if (offset >= map->p_offset && 
-	 offset+len <= map->p_offset+map->p_len) {
+	 offset+*len <= map->p_offset+map->p_len) {
 	  return (map->p + (offset - map->p_offset));
      }
 
 
-     /* nope, we are going to have to do a read. Work out our desired window */
+     /* nope, we are going to have to do a read. Work out our desired
+        window */
      if (offset > 2*CHUNK_SIZE) {
 	  window_start = offset - 2*CHUNK_SIZE;
 	  window_start &= ~((hs_off_t)(CHUNK_SIZE-1)); /* assumes power of 2 */
@@ -114,8 +155,8 @@ hs_map_ptr(hs_map_t *map, hs_off_t offset, int len)
      if (window_start + window_size > map->file_size) {
 	  window_size = map->file_size - window_start;
      }
-     if (offset + len > window_start + window_size) {
-	  window_size = (offset+len) - window_start;
+     if (offset + *len > window_start + window_size) {
+	  window_size = (offset+*len) - window_start;
      }
 
      /* make sure we have allocated enough memory for the window */
@@ -133,60 +174,90 @@ hs_map_ptr(hs_map_t *map, hs_off_t offset, int len)
      if (window_start >= map->p_offset &&
 	 window_start < map->p_offset + map->p_len &&
 	 window_start + window_size >= map->p_offset + map->p_len) {
-	  read_start = map->p_offset + map->p_len;
-	  read_offset = read_start - window_start;
-	  read_size = window_size - read_offset;
-	  memmove(map->p, map->p + (map->p_len - read_offset), read_offset);
+	 read_start = map->p_offset + map->p_len;
+	 read_offset = read_start - window_start;
+	 read_size = window_size - read_offset;
+	 memmove(map->p, map->p + (map->p_len - read_offset), read_offset);
      } else {
-	  read_start = window_start;
-	  read_size = window_size;
-	  read_offset = 0;
+	 read_start = window_start;
+	 read_size = window_size;
+	 read_offset = 0;
      }
 
      if (read_size <= 0) {
-	  _hs_trace("Warning: unexpected read size of %d in map_ptr\n",
-		    read_size);
-     } else {
-	  if (map->p_fd_offset != read_start) {
-	       if (lseek(map->fd,read_start,SEEK_SET) != read_start) {
-		    _hs_trace("lseek failed in map_ptr\n");
-		    abort();
-	       }
-	       map->p_fd_offset = read_start;
-	  }
-
-	  total_read = 0;
-	  do {
-	      nread = read(map->fd, map->p + read_offset, read_size - total_read);
-	      
-	      if (nread < 0) {
-		   _hs_error("read error in %s: %s", __FUNCTION__,
-			     strerror(errno));
-		   break;
-	      }
-
-	      total_read += nread;
-	      read_offset += nread;
-
-	      if (nread == 0) {
-		  /* early EOF in file. */
-		  /* the best we can do is zero the buffer - the file
-		     has changed mid transfer! */
-		  memset(map->p+read_offset, 0, read_size - total_read);
-		  break;
-	      }
-	  } while (total_read < read_size);
-
-	  map->p_fd_offset += total_read;
+	 _hs_trace("Warning: unexpected read size of %d in map_ptr\n",
+		   read_size);
+	 return NULL;
+     }
+     
+     if (map->p_fd_offset != read_start) {
+	 if (lseek(map->fd,read_start,SEEK_SET) != read_start) {
+	     _hs_trace("lseek failed in map_ptr\n");
+	     abort();
+	 }
+	 map->p_fd_offset = read_start;
      }
 
+     total_read = 0;
+     do {
+	 nread = read(map->fd,
+		      map->p + read_offset + total_read,
+		      read_size - total_read);
+	      
+	 if (nread < 0) {
+	     _hs_error("read error in %s: %s", __FUNCTION__,
+		       strerror(errno));
+	     break;
+	 }
+
+	 total_read += nread;
+
+	 if (nread == 0) {
+	     /* According to the GNU libc manual:
+	      *
+	      *   A value of zero indicates end-of-file (except if the
+	      *   value of the SIZE argument is also zero).  This is
+	      *   not considered an error.  If you keep calling `read'
+	      *   while at end-of-file, it will keep returning zero
+	      *   and doing nothing else.
+	      */
+	     *reached_eof = 1;
+	     break;
+	 }
+     } while (total_read < read_size);
+
+     map->p_fd_offset += total_read;
+
      map->p_offset = window_start;
-     map->p_len = window_size;
+
+     /* If we didn't map all the data we wanted because we ran into
+      * EOF, then adjust everything so that the map doesn't hang out
+      * over the end of the file.  */
+
+     /* Amount of data now valid: the stuff at the start of the buffer
+      * from last time, plus the data now read in. */
+     map->p_len = read_offset + total_read;
+
+     if (total_read == read_size) {
+	 /* This was the formula before we worried about EOF, so
+	  * assert that it's still the same. */
+	 assert(map->p_len == window_size);
+     }
+
+     /* Available data after the requested offset: we have p_len bytes
+      * altogether, but the client is interested in the ones starting
+      * at &p[offset - map->p_offset] */
+     avail = map->p_len - (offset - map->p_offset);
+     if (avail < *len)
+	 *len = avail;
   
      return map->p + (offset - map->p_offset); 
 }
 
 
+/**
+ * Release a file mapping.  This does not close the underlying fd.
+ **/
 void
 hs_unmap_file(hs_map_t *map)
 {

@@ -47,6 +47,7 @@ read_chunks(hs_map_t *map, int argc, char **argv)
      char const *p;
      int off, len;
      int written;
+     int saw_eof;
      
      for (; argc > 0; argc--, argv++) {
 /*  	  fprintf(stderr, "chunk %s\n", *argv); */
@@ -56,7 +57,7 @@ read_chunks(hs_map_t *map, int argc, char **argv)
 	       return 1;
 	  }
 
-	  p = hs_map_ptr(map, (hs_off_t) off, len);
+	  p = _hs_map_ptr(map, (hs_off_t) off, &len, &saw_eof);
 	  if (!p) {
 	       _hs_error("hs_map_ptr failed: %s\n", strerror(errno));
 	       return 2;

@@ -333,5 +333,5 @@ int _hs_inhale_command(hs_read_fn_t read_fn, void * read_priv,
 typedef struct hs_map hs_map_t;
 
 hs_map_t *hs_map_file(int fd, hs_off_t len);
-char const * hs_map_ptr(hs_map_t *map, hs_off_t offset, int len);
+char const * _hs_map_ptr(hs_map_t *, hs_off_t, int *len, int *reached_eof);
 void hs_unmap_file(hs_map_t *map);

@@ -33,7 +33,8 @@ noinst_SCRIPTS = test-decode.sh test-encode.sh \
 	test-cat.sh \
 	test-md4sizes.sh testfns.sh \
 	test-mapread.sh gen-maptest.py \
-	test-mappipe.sh gen-inbuftest.py
+	test-mappipe.sh gen-inbuftest.py \
+	test-mapeof.sh
 
 test_data=test-chain/empty-sig  \
 test-decode/01-diff \
@@ -107,6 +108,7 @@ hsmapread_SOURCES = hsmapread.c mapptr.c filebuf.c trace.c netio.c
 # changes.''
 
 TESTS = test-mappipe.sh \
+	test-mapeof.sh \
 	test-md4sizes.sh test-cat.sh \
 	test-mapread.sh \
 	test-cmds.sh test-decode.sh test-encode.sh \
