@@ -27,6 +27,10 @@
 
 /*
  * rdiff.c -- Command-line network-delta tool.
+ *
+ * TODO: Add a -z option to gzip/gunzip patches.  This would be
+ * somewhat useful, but more importantly a good test of the streaming
+ * API.  Also add -I for bzip2.
  */
 
 #include <config.h>
