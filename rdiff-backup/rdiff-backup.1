@@ -306,11 +306,12 @@ rdiff-backup cannot remove-older-than and back up or restore in a
 single session.  If you want to, for instance, backup a directory and
 remove old files in it, you must run rdiff-backup twice.
 
-Note that snapshots of deleted files are covered by this operation, so
-if you deleted a file and backed up two weeks ago, and then run
---remove-older-than 10D today, no trace of that file will remain.
-Finally, file selection options such as --include and --exclude don't
-affect --remove-older-than.
+Note that snapshots of deleted files are covered by this operation.
+Thus if you deleted a file two weeks ago, backed up immediately
+afterwards, and then ran rdiff-backup with --remove-older-than 10D
+today, no trace of that file would remain.  Finally, file selection
+options such as --include and --exclude don't affect
+--remove-older-than.
 .TP
 .BI "--restrict " path
 Require that all file access be inside the given path.  This switch,

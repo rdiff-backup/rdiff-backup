@@ -157,7 +157,7 @@ def copy_attribs(rpin, rpout):
 	check_for_files(rpin, rpout)
 	if rpin.issym(): return # symlinks have no valid attributes
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
-	rpout.chmod(rpin.getperms())
+	if Globals.change_permission: rpout.chmod(rpin.getperms())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
 
 def cmp_attribs(rp1, rp2):

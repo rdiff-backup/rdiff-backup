@@ -1,6 +1,10 @@
 Make restores tolerant of missing files
 
+Look into hard linking on windows
+
 ---------[ Medium term ]---------------------------------------
+
+Examine default settings with --windows-mode
 
 Look at Kent Borg's suggestion for restore options and digests.
 
