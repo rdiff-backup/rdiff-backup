@@ -1,3 +1,10 @@
+New in v0.13.6 (2005/??/??)
+---------------------------
+
+Added fix for listing/restoring certain bad archives made when there
+was a timezone bug.  (Thanks to Stephen Isard)
+
+
 New in v0.13.5 (2005/03/28)
 ---------------------------
 
