@@ -295,6 +295,8 @@ must be run in a separate instance of rdiff-backup.  Remember also
 that snapshots of deleted files are covered by this operation, so if
 you deleted a file and backed up two weeks ago, and then run
 --remove-older-than 10D today, no trace of that file will remain.
+Finally, file selection options such as --include and --exclude don't
+affect --remove-older-than.
 .TP
 .BI "--restrict " path
 Require that all file access be inside the given path.  This switch,
