@@ -56,6 +56,16 @@ class SecurityTest(unittest.TestCase):
 			
 		SetConnections.CloseConnections()
 
+	def test_vet_rpath_root(self):
+		"""Test vetting when restricted to root"""
+		remote_cmd = "../rdiff-backup --server --restrict-update-only /"
+		conn = SetConnections.init_connection(remote_cmd)
+		for rp in [RPath(Globals.local_connection, "blahblah"),
+				   RPath(conn, "foo/bar")]:
+			conn.Globals.set("TEST_var", rp)
+			assert conn.Globals.get("TEST_var").path == rp.path
+		SetConnections.CloseConnections()
+
 	def secure_rdiff_backup(self, in_dir, out_dir, in_local, restrict_args,
 							extra_args = "", success = 1, current_time = None):
 		"""Run rdiff-backup locally, with given restrict settings"""

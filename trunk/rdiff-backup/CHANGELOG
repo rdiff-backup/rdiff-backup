@@ -24,7 +24,9 @@ Fixed user/group restoring error noticed by Fran Firman.
 Checked in Robert Shaw's --chars-to-quote patch
 
 Treated hard link permission problem on Mac OS X by applying
-suggestion by David Vasilevsky.
+suggestion by David Vasilevsky
+
+Dean Gaudet's patch fixes "--restrict /" option.
 
 
 New in v0.13.4 (2004/01/31)
