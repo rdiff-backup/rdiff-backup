@@ -124,6 +124,21 @@ class HalfRoot(unittest.TestCase):
 		rp2_3_3 = rp2_3.append('file2')
 		rp2_3_3.touch()
 		rp2_3.chmod(0)
+		# The rp_2_4 below test for a perm error, also tested in
+		# regressiontest.py testConfig1
+		rp2_4 = rp2.append('test2')
+		rp2_4.mkdir()
+		rp2_4_1 = rp2_4.append('1-dir')
+		rp2_4_1.mkdir()
+		reg2_4_1_1 = rp2_4_1.append('reg')
+		reg2_4_1_1.touch()
+		reg2_4_1_1.chmod(0)
+		rp2_4_1.chmod(0)
+		reg2_4_2 = rp2_4.append('2-reg')
+		reg2_4_2.touch()
+		reg2_4_2.chmod(0)
+		rp2_4.chmod(0)
+
 		return rp1, rp2
 
 	def cause_regress(self, rp):
