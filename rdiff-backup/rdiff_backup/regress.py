@@ -249,8 +249,7 @@ class RegressITRB(rorpiter.ITRBranch):
 			if not rf.mirror_rp.isdir():
 				if rf.mirror_rp.lstat(): rf.mirror_rp.delete()
 				rf.mirror_rp.mkdir()
-			if Globals.change_permissions and not rf.mirror_rp.hasfullperms():
-				rf.mirror_rp.chmod(0700)
+			if not rf.mirror_rp.hasfullperms(): rf.mirror_rp.chmod(0700)
 		self.rf = rf
 
 	def end_process(self):

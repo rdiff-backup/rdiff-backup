@@ -157,7 +157,7 @@ def copy_attribs(rpin, rpout, acls = 1):
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if Globals.write_eas: rpout.write_ea(rpin.get_ea())
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
-	if Globals.change_permissions: rpout.chmod(rpin.getperms())
+	rpout.chmod(rpin.getperms())
 	if Globals.write_acls and acls: rpout.write_acl(rpin.get_acl())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
 
@@ -267,7 +267,6 @@ class RORPath:
 		for key in self.data.keys(): # compare dicts key by key
 			if (key == 'uid' or key == 'gid') and self.issym():
 				pass # Don't compare gid/uid for symlinks
-			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
@@ -306,7 +305,6 @@ class RORPath:
 			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
-			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'inode': pass
 			elif key == 'ea' and not Globals.write_eas: pass
 			elif key == 'acl' and not Globals.write_acls: pass
@@ -329,7 +327,6 @@ class RORPath:
 				(self.issym() or not compare_ownership)):
 				# Don't compare gid/uid for symlinks, or if told not to
 				pass
-			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
