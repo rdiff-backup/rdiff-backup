@@ -58,6 +58,9 @@ hs_filebuf_from_fd(int fd)
 {
     hs_filebuf_t   *fb;
 
+    if (fd == -1)
+        _hs_fatal("called with fd of -1");
+
     fb = calloc(1, sizeof(hs_filebuf_t));
     assert(fb);
 

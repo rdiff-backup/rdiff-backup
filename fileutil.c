@@ -29,6 +29,19 @@
 #include <string.h>
 
 
+void
+hs_file_close(int fd)
+{
+    if (fd == -1)
+        _hs_error("warning: close called with fd of -1");
+    
+    if (close(fd) == -1) {
+        _hs_error("error closing fd %d: %s",
+                  fd, strerror(errno));
+    }
+}
+
+
 int
 _hs_file_open(char const *filename, int mode)
 {
