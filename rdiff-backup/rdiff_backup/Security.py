@@ -78,7 +78,8 @@ def set_security_level(action, cmdpairs):
 			sec_level = "read-only"
 			Main.restore_set_root(rpath.RPath(Globals.local_connection,
 											  getpath(cp1)))
-			rdir = Main.restore_root.path
+			if Main.restore_root: rdir = Main.restore_root.path
+			else: log.Log.FatalError("Invalid restore directory")
 		else:
 			assert islocal(cp2)
 			sec_level = "all"
