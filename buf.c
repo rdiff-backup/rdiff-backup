@@ -83,6 +83,7 @@ hs_result hs_infilebuf_fill(hs_filebuf_t *fb)
 {
         hs_stream_t * const     stream = fb->stream;
         FILE                    *f = fb->f;
+        int                     len;
         
         /* This is only allowed if either the stream has no input buffer
          * yet, or that buffer could possibly be BUF. */
@@ -93,21 +94,28 @@ hs_result hs_infilebuf_fill(hs_filebuf_t *fb)
         } else {
                 assert(stream->avail_in == 0);
         }
-        
-        if (stream->avail_in == 0 && !feof(fb->f)) {
-                int len = fread(fb->buf, 1, fb->buf_len, f);
-                if (len < 0) {
-                        hs_error("error filling stream from file: %s",
-                                  strerror(errno));
-                        return HS_IO_ERROR;
-                }
-                stream->avail_in = len;
-                stream->next_in = fb->buf;
-        }
 
-        if ((stream->eof_in = feof(f))) {
-            hs_trace("seen end of file on input");
+        if (stream->eof_in)
+            return HS_DONE;
+
+        if (stream->avail_in)
+            /* Still some data remaining.  Perhaps we should read
+               anyhow? */
+            return HS_DONE;
+        
+        len = fread(fb->buf, 1, fb->buf_len, f);
+        if (len <= 0) {
+            if (feof(f)) {
+                hs_trace("seen end of file on input");
+                stream->eof_in = 1;
+            } else if (ferror(f)) {
+                hs_error("error filling stream from file: %s",
+                         strerror(errno));
+                return HS_IO_ERROR;
+            }
         }
+        stream->avail_in = len;
+        stream->next_in = fb->buf;
 
         return HS_DONE;
 }
