@@ -1,0 +1,5 @@
+libtool versions for libhsync
+
+RELEASE  CURRENT  REVISION  AGE   COMMENTS
+0.5.6    0        0         0     direct-IO api
+0.9.0    1        0         0     zlib-style state machine
