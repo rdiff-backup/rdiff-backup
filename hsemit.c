@@ -1,4 +1,4 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*=				       	-*- c-file-style: "bsd" -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
@@ -6,7 +6,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <sys/file.h>
 #include <string.h>
+
+#include "emit.h"
 
 static int
 parse_args(int argc, char **argv)

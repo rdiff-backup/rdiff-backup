@@ -1,19 +1,19 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*=                                     -*- c-file-style: "bsd" -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
- * 
+ *
  * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -33,175 +33,187 @@
  */
 
 #include "includes.h"
+#include "command.h"
+#include "protocol.h"
+#include "prototab.h"
+#include "inhale.h"
+
+#ifndef __LCLINT__
+/* On Linux/glibc this file contains constructs that confuse lclint. */
+#  include <netinet/in.h>		/* ntohs, etc */
+#endif /* __LCLINT__ */
+
 
 /* For debugging porpoises, here are some human-readable forms. */
 struct hs_op_kind_name const _hs_op_kind_names[] = {
-    {"EOF", op_kind_eof},
-    {"COPY", op_kind_copy},
-    {"LITERAL", op_kind_literal},
-    {"SIGNATURE", op_kind_signature}
+    {"EOF",       op_kind_eof },
+    {"COPY",      op_kind_copy },
+    {"LITERAL",   op_kind_literal },
+    {"SIGNATURE", op_kind_signature },
+    {"CHECKSUM",  op_kind_checksum },
+    {"INVALID",   op_kind_invalid },
+    {NULL,        0 }
 };
 
 
-static int
-_hs_is_gd_eof(uint8_t cmd)
+/*
+ * Return a human-readable name for KIND.
+ */
+char const *
+_hs_op_kind_name(hs_op_kind_t kind)
 {
-    return cmd == 0;
+    const struct hs_op_kind_name *k;
+
+    for (k = _hs_op_kind_names; k->kind; k++) {
+        if (k->kind == kind) {
+            return k->name;
+        }
+    }
+
+    return NULL;
 }
 
 
 static int
-_hs_is_gd_copy(uint8_t type, uint32_t * offset, uint32_t * length,
-	       hs_read_fn_t read_fn, void *read_priv)
+_hs_read_varint(byte_t const *p, int len)
 {
-    uint8_t         tmp8;
-    uint16_t        tmp16;
-    uint32_t        tmp32;
-
-    if (type < op_copy_short_byte || type > op_copy_int_int)
-	return 0;		/* nope */
-
-    /* read the first parameter, being the offset */
-    if (type == op_copy_short_byte
-	|| type == op_copy_short_short || type == op_copy_short_int) {
-	if (_hs_read_netshort(read_fn, read_priv, &tmp16) != sizeof tmp16)
-	    return -1;
-	*offset = tmp16;
-    } else {
-	/* must be an int */
-	if (_hs_read_netint(read_fn, read_priv, &tmp32) != sizeof tmp32)
-	    return -1;
-	*offset = tmp32;
+    switch (len) {
+    case 1:
+        return *p;
+    case 2:
+        return ntohs(* (uint16_t const *) p);
+    case 4:
+        return ntohl(* (uint32_t const *) p);
+    default:
+        _hs_fatal("don't know how to read integer of length %d", len);
+        return 0;               /* UNREACHABLE */
     }
-
-    /* read the second, being the length. */
-    if (type == op_copy_short_byte || type == op_copy_int_byte) {
-	if (_hs_read_netbyte(read_fn, read_priv, &tmp8) != sizeof tmp8)
-	    return -1;
-	*length = tmp8;
-    } else if (type == op_copy_short_short || type == op_copy_int_short) {
-	if (_hs_read_netshort(read_fn, read_priv, &tmp16) != sizeof tmp16)
-	    return -1;
-	*length = tmp16;
-    } else {
-	if (_hs_read_netint(read_fn, read_priv, &tmp32) != sizeof tmp32)
-	    return -1;
-	*length = tmp32;
-    }
-
-    return 1;
 }
 
 
-static int
-_hs_is_gd_literal(uint8_t cmd,
-		  uint32_t * length, hs_read_fn_t read_fn, void *read_priv)
+/*
+ * Extract parameters from a command starting in memory at P,
+ * and with format described by ENT.
+ */
+static void
+_hs_parse_command(byte_t const *p,
+                  hs_prototab_ent_t const *ent,
+                  int *param1, int *param2)
 {
-    int             ret = 0;
+    p++;                        /* skip command byte */
 
-    if (cmd == op_literal_int) {
-	ret = _hs_read_netint(read_fn, read_priv, length);
-    } else if (cmd == op_literal_short) {
-	uint16_t        tmp;
+    *param1 = _hs_read_varint(p, ent->len_1);
+    p += ent->len_1;
 
-	ret = _hs_read_netshort(read_fn, read_priv, &tmp);
-	*length = tmp;
-    } else if (cmd == op_literal_byte) {
-	uint8_t         tmp;
-
-	ret = _hs_read_netbyte(read_fn, read_priv, &tmp);
-	*length = tmp;
-    } else if (cmd >= op_literal_1 && cmd < op_literal_byte) {
-	*length = cmd - op_literal_1 + 1;
-	ret = 1;
+    if (ent->len_2) {
+        *param2 = _hs_read_varint(p, ent->len_2);
     }
-
-    return ret;
 }
 
 
-
-static int
-_hs_is_gd_signature(uint8_t cmd,
-		    uint32_t * length, hs_read_fn_t read_fn, void *read_priv)
+/*
+ * Try to map LEN bytes.  If we succeed, *P points to the data and
+ * LEN is the amount mapped.
+ *
+ * If there is not enough data yet, or if we hit EOF, or if something
+ * breaks, then return HS_FAILED or HS_AGAIN
+ */
+static hs_result_t
+_hs_inhale_map_cmd(hs_map_t *map, off_t input_pos, byte_t const **p,
+                   size_t *len)
 {
-    int             ret = 0;
+    size_t require_len;
+    int reached_eof;
 
-    if (cmd == op_signature_int) {
-	ret = _hs_read_netint(read_fn, read_priv, length);
-    } else if (cmd == op_signature_short) {
-	uint16_t        tmp;
+    require_len = *len;
+    *p = hs_map_ptr(map, input_pos, len, &reached_eof);
 
-	ret = _hs_read_netshort(read_fn, read_priv, &tmp);
-	*length = tmp;
-    } else if (cmd == op_signature_byte) {
-	uint8_t         tmp;
-
-	ret = _hs_read_netbyte(read_fn, read_priv, &tmp);
-	*length = tmp;
-    } else if (cmd >= op_signature_1 && cmd < op_signature_byte) {
-	*length = cmd - op_signature_1 + 1;
-	ret = 1;
+    if (!*p) {
+        _hs_error("couldn't map command byte");
+        return HS_FAILED;
+    } else if (*len < require_len && reached_eof) {
+        /* This is a warning condition, because we shouldn't just run
+         * off the end of the file; instead we should get an EOF
+         * command and stop smoothly. */
+        _hs_error("reached eof when trying to read command byte");
+        return HS_FAILED;
+    } else if (*len < require_len) {
+        /* Perhaps we just couldn't get enough data this time? */
+        _hs_trace("only mapped %d bytes towards a command header, require %d",
+                  *len, require_len);
+        return HS_AGAIN;
     }
 
-    return ret;
+    return HS_DONE;
 }
 
 
-static int
-_hs_is_op_checksum(uint8_t cmd,
-		   uint32_t * length, hs_read_fn_t read_fn, void *read_priv)
+/*
+ * Read a command from MAP, containing a token sequence.  The input
+ * cursor is currently at *INPUT_POS, which is updated to reflect the
+ * amount of data read.
+ *
+ * KIND identifies the kind of command, and if applicable LEN and OFF
+ * describe the parameters to the command.
+ *
+ * If the input routine indicates that it would block, then we return
+ * without updating the file cursor.  Then when we come back later, we
+ * can try and map at the same position.  We know that that data will
+ * still be available, so we can re-read the whole command.
+ * Rescanning it is slightly redundant, but easier than worrying about
+ * finding a place to explicitly store the state.
+ *
+ * We first try to map at least one byte, being the command byte.
+ * This tells us how many bytes will be required for the command and
+ * its parameters, so if necessary we then try to map that many bytes.
+ * Then we have the whole command and can interpret it.
+ *
+ * Returns HS_DONE, HS_AGAIN or HS_FAILED.
+ */
+hs_result_t
+_hs_inhale_command_map(hs_map_t *map, off_t *input_pos,
+                       hs_op_kind_t *kind,
+                       int *param1, int *param2)
 {
-    int             ret = 0;
+    const byte_t *cmd;
+    hs_result_t result;
+    const hs_prototab_ent_t *ent;
+    size_t len;
 
-    if (cmd == op_checksum_short) {
-	uint16_t        tmp;
+    /* First, map at least one byte to find the command type. */
+    len = 1;
+    result = _hs_inhale_map_cmd(map, *input_pos, &cmd, &len);
+    if (result != HS_DONE)
+        return result;
 
-	ret = _hs_read_netshort(read_fn, read_priv, &tmp);
-	*length = tmp;
+    /* Now find out what this command means */
+    ent = &_hs_prototab[*cmd];
+    *kind = ent->kind;
+
+    _hs_trace("inhaled initial byte %#04x, kind=%s, total length will be %d",
+              *cmd, _hs_op_kind_name(*kind), ent->total_size);
+
+    if (ent->total_size == 1) {
+        /* this is an immediate-parameter command byte: really easy */
+        *param1 = ent->immediate;
+        *input_pos += 1;
+        return HS_DONE;
     }
-    return ret;
+
+    if (len < ent->total_size) {
+        /* read in enough input data to cover all the parameters */
+        len = ent->total_size;
+        result = _hs_inhale_map_cmd(map, *input_pos, &cmd, &len);
+        if (result != HS_DONE)
+            return result;
+    }
+
+    /* otherwise, we have to make sure we map the whole command header
+     * now that we know the length */
+    _hs_parse_command(cmd, ent, param1, param2);
+    *input_pos += ent->total_size;
+
+    /* Now we know we have at least one command byte */
+    return HS_DONE;
 }
 
-
-/* 
-   Returns: -1 on error, 0 on hard eof, or +1 for a command.  The command is
-   in KIND, and LEN and OFF are set if appropriate. */
-int
-_hs_inhale_command(hs_read_fn_t read_fn, void *read_priv,
-		   int *kind, uint32_t * len, uint32_t * off)
-{
-    int             ret;
-    uint8_t         type;
-
-    ret = _hs_read_loop(read_fn, read_priv, &type, 1);
-    if (ret > 1) {
-	_hs_error("long read while trying to get a one-byte command!");
-	return -1;
-    } else if (ret < 0) {
-	_hs_error("error while trying to read command byte");
-	return -1;
-    } else if (ret == 0) {
-	_hs_error("unexpected end of file while reading a command byte; "
-		  "assuming that this was meant to be the end of the file");
-	*kind = op_kind_eof;
-	return 0;
-    }
-
-    if (_hs_is_gd_eof(type) > 0) {
-	*kind = op_kind_eof;
-    } else if (_hs_is_gd_literal(type, len, read_fn, read_priv) > 0) {
-	*kind = op_kind_literal;
-    } else if (_hs_is_gd_signature(type, len, read_fn, read_priv) > 0) {
-	*kind = op_kind_signature;
-    } else if (_hs_is_gd_copy(type, off, len, read_fn, read_priv) > 0) {
-	*kind = op_kind_copy;
-    } else if (_hs_is_op_checksum(type, len, read_fn, read_priv) > 0) {
-	*kind = op_kind_checksum;
-    } else {
-	_hs_fatal("unexpected command %#x!", type);
-	return -1;
-    }
-
-    return 1;
-}

@@ -7,7 +7,7 @@
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation; either version 2 of
+ * as published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -97,7 +97,7 @@ _hs_nad_search_iter(hs_encode_job_t *job)
 {
     size_t              this_len; /* length of this match */
     hs_weak_sum_t       this_weak;
-    hs_off_t            match_where; /* location of match in old file */
+    off_t            match_where; /* location of match in old file */
     byte_t const       *base = job->map_p - job->map_off;
 
     if (job->search_cursor >= job->map_len + job->map_off)

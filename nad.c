@@ -6,7 +6,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
@@ -18,6 +18,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+
+                                        /*
+                                         | Hearts and thoughts they
+                                         | fade, fade away.
+                                         */
 
 
 /*=
@@ -128,6 +133,8 @@ const int hs_encode_job_magic = 23452345;
 #include "includes.h"
 #include "nad_p.h"
 #include "sum_p.h"
+#include "command.h"
+#include "emit.h"
 
 
 static void
@@ -219,7 +226,7 @@ hs_encode_begin(int in_fd, hs_write_fn_t write_fn, void *write_priv,
 static byte_t const *
 _hs_nad_map(hs_encode_job_t *job)
 {
-    hs_off_t            start, end, end2;
+    off_t            start, end, end2;
 
     /* once we've seen eof, we should never try to map any more
      * data. */

@@ -1,5 +1,41 @@
-                                                  -*- indented-text -*- 
+                                                  -*- indented-text -*-
 $Id$
+
+ * Meta-programming
+
+   * Plot lengths of each function
+
+   * Some kind of statistics on delta each day
+
+   * Do counting from a separately checked-out copy
+
+ * Encoding format
+
+   * Include a version in the signature and difference fields
+
+   * Remember to update them if we ever ship a buggy version (nah!) so
+     that other parties can know not to trust the encoded data.
+
+ * slprintf
+
+   If we don't have it in the OS, then link it into the library.  I
+   think we probably should *not* mangle it's name, but perhaps we
+   should.
+
+ * abstract encoding
+
+   In fact, we can vary on several different variables:
+
+     * what signature format are we using
+
+     * what command protocol are we using
+
+     * what search algorithm are we using?
+
+     * what implementation version are we?
+
+   Some are more likely to change than others.  We need a chart
+   showing which source files depend on which variable.
 
  * Error handling
 
@@ -97,7 +133,7 @@ $Id$
  * Licensing
 
    * Will the GNU Lesser GPL work?  Specifically, will it be a problem
-     in distributing this with Mozilla or Apache?  
+     in distributing this with Mozilla or Apache?
 
  * Checksums
 
@@ -157,24 +193,24 @@ $Id$
      they can be independently re-used.
 
    * Use more specific names than `encode' and `decode'.  I like
-     `apply' as a description of what the client does. 
+     `apply' as a description of what the client does.
 
    * Don't imply any particular encoding format.  I don't think we
      need callbacks; it's enough that all the users can write their
      own implementations of the loops.
 
-   * This ought to make it simpler to get push-structured interfaces. 
+   * This ought to make it simpler to get push-structured interfaces.
 
  * More thorough testing
 
    * Check the encoded file checksum against the real mdfour sum of
      the file?  The code's pretty simple, so hopefully this is not a
-     problem. 
+     problem.
 
    * mdfour
 
      * keep some example files and check that they give the expected
-       results. 
+       results.
 
      * try using different input chunk sizes
 

@@ -7,6 +7,13 @@ Changes in 0.5.6:
 
  * Include README.CVS in tarball
 
+ * Back out of using libtool and shared libraries, as it is
+   unnecessary at this stage, complicates installation and slows down
+   compilation. 
+
+ * Use mapptr when reading data to decode, so that decoding should
+   have less latency and be more reliable.
+
 Changes in 0.5.5:
 
  * Put genuine search encoding back into the nad algorithm, and

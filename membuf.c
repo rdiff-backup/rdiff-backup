@@ -81,7 +81,7 @@ hs_membuf_on_buffer(byte_t *buf, int len)
 
 
 
-hs_off_t hs_membuf_tell(void *private)
+off_t hs_membuf_tell(void *private)
 {
     hs_membuf_t    *mb = (hs_membuf_t *) private;
 
@@ -120,7 +120,7 @@ ssize_t hs_membuf_write(void *private, byte_t const *buf, size_t len)
 }
 
 
-ssize_t hs_membuf_read_ofs(void *private, byte_t *buf, size_t len, hs_off_t ofs)
+ssize_t hs_membuf_read_ofs(void *private, byte_t *buf, size_t len, off_t ofs)
 {
     hs_membuf_t    *mb = (hs_membuf_t *) private;
 

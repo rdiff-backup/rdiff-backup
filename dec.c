@@ -1,19 +1,19 @@
-/*                                      -*- c-file-style: "bsd" -*-
+/*=                                     -*- c-file-style: "bsd" -*-
  *
  * $Id$
- * 
+ *
  * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -44,9 +44,18 @@
  * cache so that we can send it up in the next request.
  */
 
+/*
+ * TODO: Rewrite this to use a mapptr buffer for input from the network.
+ *
+ * When we're decoding and reading a literal if we get a short read
+ * then pass it through anyhow.
+ */
+
 
 #include "includes.h"
-
+#include "command.h"
+#include "inhale.h"
+#include "protocol.h"
 
 static int
 _hs_copy(const uint32_t length,
@@ -253,7 +262,7 @@ hs_decode(int oldread_fd,
         hs_format_stats(stats, stats_str, sizeof stats_str);
         _hs_trace("completed: %s", stats_str);
     }
-    
+
  out:
     _hs_unmap_file(old_map);
 

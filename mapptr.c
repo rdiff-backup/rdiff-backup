@@ -7,7 +7,7 @@
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation; either version 2 of
+ * as published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
@@ -19,6 +19,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+
+                              /*
+                               | It's evolution, baby!
+                               */
 
 /* Originally from rsync.  Thanks, tridge! */
 
@@ -196,7 +200,7 @@ hs_map_file(int fd)
  */
 static ssize_t
 _hs_map_do_read(hs_map_t *map,
-                hs_off_t const read_offset,
+                off_t const read_offset,
                 ssize_t const max_size, ssize_t const min_size,
                 int *reached_eof)
 {
@@ -262,7 +266,7 @@ _hs_map_do_read(hs_map_t *map,
  * do some IO.
  */
 void *
-_hs_map_from_cache(hs_map_t * map, hs_off_t offset, size_t *len)
+_hs_map_from_cache(hs_map_t * map, off_t offset, size_t *len)
 {
     size_t		out_off; /* offset in window to return */
 
@@ -293,10 +297,10 @@ _hs_map_from_cache(hs_map_t * map, hs_off_t offset, size_t *len)
  * Work out where to put the window to cover the requested region.
  */
 static void
-_hs_map_calc_window(hs_off_t offset, size_t *len,
-                    hs_off_t *window_start, size_t *window_size)
+_hs_map_calc_window(off_t offset, size_t *len,
+                    off_t *window_start, size_t *window_size)
 {
-    if (offset > (hs_off_t) (2 * CHUNK_SIZE)) {
+    if (offset > (off_t) (2 * CHUNK_SIZE)) {
         /* On some systems, it's much faster to do reads aligned with
          * filesystem blocks.  This isn't the case on Linux, which has
          * a pretty efficient filesystem and kernel/app interface, but
@@ -304,7 +308,7 @@ _hs_map_calc_window(hs_off_t offset, size_t *len,
         *window_start = offset - 2 * CHUNK_SIZE;
         
         /* Include only higher-order bits; assumes power of 2 */
-        *window_start &= ~((hs_off_t) (CHUNK_SIZE - 1)); 
+        *window_start &= ~((off_t) (CHUNK_SIZE - 1)); 
     } else {
         *window_start = 0;
     }
@@ -361,7 +365,7 @@ _hs_map_ensure_allocated(hs_map_t *map, size_t window_size)
  * Iff an error occurs, returns NULL.
  */
 void const *
-hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
+hs_map_ptr(hs_map_t * map, off_t offset, size_t *len, int *reached_eof)
 {
     /* window_{start,size} define the part of the file that will in
        the future be covered by the map buffer, if we have our way.
@@ -369,11 +373,11 @@ hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
        read_{start,size} describes the region of the file that we want
        to read; we'll put it into the buffer starting at
        &p[read_offset]. */
-    hs_off_t            window_start, read_start;
+    off_t            window_start, read_start;
     size_t              window_size;
     ssize_t read_max_size;      /* space remaining */
     ssize_t read_min_size;      /* needed to fill this request */
-    hs_off_t read_offset;
+    off_t read_offset;
     ssize_t total_read, avail;
     ssize_t		out_off; /* offset in window to return */
     void                *p;

@@ -7,7 +7,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
@@ -35,7 +35,7 @@ struct hs_encode_job {
     hs_map_t           *in_map;
     byte_t const       *map_p;
     size_t              map_len;
-    hs_off_t            map_off;
+    off_t            map_off;
 
     /* On the next iteration, we'll try to generate the checksum for a
      * block at this location. */
@@ -48,12 +48,12 @@ struct hs_encode_job {
     size_t              filesum_cursor;
 
     /* Things for the new checksum. */
-    hs_off_t            sum_cursor;
+    off_t            sum_cursor;
     size_t              new_block_len;
     size_t              new_strong_len;
 
     /* This points to the rolling sums used for searching. */
-    hs_off_t            search_cursor;
+    off_t            search_cursor;
     size_t              search_block_len;
     hs_rollsum_t       *rollsum;
 
@@ -62,7 +62,7 @@ struct hs_encode_job {
      * SEARCH_CURSOR (excl) needs to be sent out.  If they're the
      * same, there is no literal data at the moment.  This must also
      * be flushed before we allow it to move out of the window. */
-    hs_off_t            literal_cursor;
+    off_t            literal_cursor;
 
     int                 seen_eof;
 
@@ -76,6 +76,6 @@ struct hs_encode_job {
 
 void _hs_nad_search_iter(hs_encode_job_t *);
 
-void _hs_nad_got_copy(hs_encode_job_t *job, hs_off_t off, size_t len);
+void _hs_nad_got_copy(hs_encode_job_t *job, off_t off, size_t len);
 
 void _hs_nad_flush_literal(hs_encode_job_t *);

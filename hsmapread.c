@@ -6,7 +6,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
@@ -103,7 +103,7 @@ select_for_read(int fd)
 
 
 static int
-copy_one_chunk(int fd, hs_map_t * map, hs_off_t off, size_t want_len, int options)
+copy_one_chunk(int fd, hs_map_t * map, off_t off, size_t want_len, int options)
 {
     byte_t const   *p;
     size_t          len;
@@ -115,10 +115,10 @@ copy_one_chunk(int fd, hs_map_t * map, hs_off_t off, size_t want_len, int option
     len = want_len;
 #ifdef USE_WALKER
     if (options & walker)
-	p = _hs_map_walk(map, (hs_off_t) off, &len, &saw_eof);
+	p = _hs_map_walk(map, (off_t) off, &len, &saw_eof);
     else
 #endif
-	p = hs_map_ptr(map, (hs_off_t) off, &len, &saw_eof);
+	p = hs_map_ptr(map, (off_t) off, &len, &saw_eof);
 
     assert((long) len >= 0);
 

@@ -11,11 +11,10 @@ AM_INIT_AUTOMAKE($my_package, $my_version)
 AM_CONFIG_HEADER(config.h)
 
 dnl Set up to get as many features as we can manage
-AC_DEFINE(_FILE_OFFSET_BITS, 64)
+dnl trying to do large file support is not so simple
+dnl we will turn it off for the moment
+dnl AC_DEFINE(_FILE_OFFSET_BITS, 64)
 AC_DEFINE(_GNU_SOURCE)
-
-AC_LIBTOOL_DLOPEN
-AM_PROG_LIBTOOL
 
 AC_CANONICAL_HOST
 
@@ -24,6 +23,16 @@ AC_PROG_CC
 AC_ISC_POSIX
 AC_PROG_CPP
 AC_PROG_INSTALL
+AC_PROG_RANLIB
+
+# See if the compiler has the nice GNU feature of 
+# putting argv[0] into a global
+AC_MSG_CHECKING([for program_invocation_short_name])
+AC_TRY_COMPILE([#include <errno.h>], 
+    [strlen(program_invocation_short_name)],
+    [ AC_DEFINE(HAVE_PROGRAM_INVOCATION_NAME)
+      AC_MSG_RESULT(yes) ],
+    [ AC_MSG_RESULT(no) ])
 
 dnl # We don't use Python at the moment
 dnl AC_CHECK_PROG(PYTHON, python, python)
@@ -93,9 +102,9 @@ AC_CHECK_SIZEOF(off_t, 4)
 dnl Checks for header files.
 AC_HEADER_STDC
 
-# GNU libtool library versioning: This is NOT the libhsync release
-# number.  Rather, it is a CURRENT:REVISION:AGE tuple describing
-# binary compatibility to libtool.  It is only updated on major public
+# GNU library versioning: This is NOT the libhsync release number.
+# Rather, it is a CURRENT:REVISION:AGE tuple describing binary
+# compatibility to libtool.  It is only updated on major public
 # releases where there is the possibility of binaries hanging around.
 
 libhsync_libversion=1:0:0
@@ -109,4 +118,3 @@ AC_SUBST(CCMALLOC_LIB)
 AC_SUBST(net_libs)
 
 AC_OUTPUT([./Makefile])
-# [chmod +x driver.sh]

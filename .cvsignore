@@ -47,3 +47,4 @@ stamp-h.in
 test-*.d
 tmp-*
 trylog
+prototab.c

@@ -5,6 +5,20 @@
 # Copyright (C) 2000 by Martin Pool
 # $Id$
 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation; either version 2.1 of
+# the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
 # This script doesn't do anything except general setup.  It should be
 # passed the name of the actual script file as the first parameter.  
 
@@ -12,7 +26,11 @@
 # passed through.  For example in most cases -D will turn on debugging
 # trace.
 
-# NB: tests should exit with code 77 if they can't be run but haven't failed.
+# NB: Tests should exit with code 77 if they can't be run but haven't
+# failed.
+
+# NB: We can't rely on having the executable bit set on this script or
+# any other, because CVS doesn't always update them properly.
 
 # TODO: Rather than using source files, write some programs that
 # generate random data of defined lengths.  However, it should not be

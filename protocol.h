@@ -1,4 +1,4 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*=                                     -*- c-file-style: "bsd" -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
@@ -22,34 +22,27 @@
 
 
 /* 
-   TODO: Have a way to copy from the old signature into the new one. This
-   will be useful for the case where the files are in fact identical, which
-   will be significantly common. */
+ * TODO: Have a way to copy from the old signature into the new
+ * one. This will be useful for the case where the files are in fact
+ * identical, which will be significantly common.
+ */
 
 
-			  /* "The IETF already has more than enough RFCs that 
-			     codify the obvious, make stupidity illegal,
-			     support truth, justice, and the IETF way, and
-			     generally demonstrate the author is a brilliant
-			     and valuable Contributor to The Standards
-			     Process." -- Vernon Schryver */
+                          /*
+                           | "The IETF already has more than enough
+                           | RFCs that codify the obvious, make
+                           | stupidity illegal, support truth,
+                           | justice, and the IETF way, and generally
+                           | demonstrate the author is a brilliant and
+                           | valuable Contributor to The Standards
+                           | Process."
+                           |     -- Vernon Schryver
+                           */
 
 
 
-#define HS_LT_MAGIC		0x67640001	/* "gd\000\001" */
-#define HS_SIG_MAGIC		0x67642001	/* "gd \001" */
-
-
-/* ========================================
-
-   Kinds of opcodes. */
-enum hs_op_kind {
-    op_kind_eof = 1000,
-    op_kind_literal,
-    op_kind_signature,
-    op_kind_copy,
-    op_kind_checksum
-};
+#define HS_LT_MAGIC             0x67640001      /* "gd\000\001" */
+#define HS_SIG_MAGIC            0x67642001      /* "gd \001" */
 
 
 /* 
@@ -94,3 +87,10 @@ enum {
     op_copy_llong_short = 0xfe,
     op_copy_llong_int = 0xff
 };
+
+
+
+/*
+ * Declarations for a table describing how to encode and decode these
+ * commands.  The actual table is in prototab.c.
+ */

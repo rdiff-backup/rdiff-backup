@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "bsd" -*-
+/*=				       	-*- c-file-style: "bsd" -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
@@ -21,3 +21,11 @@
  */
 
 
+
+hs_result_t
+_hs_inhale_command_map(hs_map_t *map, off_t *input_pos,
+                       hs_op_kind_t *kind, int *, int *);
+
+int
+_hs_inhale_command(hs_read_fn_t read_fn, void *read_priv,
+		   int *kind, uint32_t * len, uint32_t * off);

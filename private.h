@@ -6,7 +6,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
@@ -80,7 +80,7 @@ void            _hs_check_blocksize(int block_len);
 struct hs_membuf {
     int             dogtag;
     byte_t         *buf;
-    hs_off_t        ofs;
+    off_t        ofs;
     ssize_t         length;
     size_t          alloc;
 };
@@ -91,7 +91,7 @@ struct hs_membuf {
 struct hs_ptrbuf {
     int             dogtag;
     byte_t         *buf;
-    hs_off_t        ofs;
+    off_t        ofs;
     size_t          length;
 };
 
@@ -173,9 +173,6 @@ int             _hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
 
 int             _hs_append_literal(hs_membuf_t * litbuf, byte_t value);
 
-
-int             _hs_inhale_command(hs_read_fn_t read_fn, void *read_priv,
-				   int *kind, uint32_t * len, uint32_t * off);
 
 int             _hs_check_sig_version(hs_read_fn_t, void *);
 

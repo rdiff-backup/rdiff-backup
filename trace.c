@@ -6,7 +6,7 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -41,6 +41,11 @@ hs_trace_fn_t  *_hs_trace_impl = hs_trace_to_stderr;
 
 static int _hs_trace_level = LOG_INFO;
 
+#ifdef HAVE_PROGRAM_INVOCATION_NAME
+#  define MY_NAME program_invocation_short_name
+#else
+#  define MY_NAME "libhsync"
+#endif
 
 /* Called by the application to set the destination of trace * information. */
 void
@@ -72,26 +77,16 @@ _hs_log_va(int level, char const *fn, char const *fmt, va_list va)
 	vsprintf(buf, fmt, va);
 #endif
 
-#ifdef __GNUC__
 #ifdef HAVE_SNPRINTF
         snprintf(full_buf, sizeof full_buf - 1,
-                  "%s: %s: %s\n",
-                  program_invocation_short_name,
-                  fn,
-                  buf);
+                 "%s: %s: %s\n", MY_NAME,
+                 fn,
+                 buf);
 #else
-	/* TODO: test explicitly for program_invocation_short_name */
-	sprintf(full_buf, "%s: %s: %s\n",
-		"(libhsync)", 
+	sprintf(full_buf, "%s: %s: %s\n", MY_NAME,
 		fn,
 		buf);
 #endif /* HAVE_SPRINTF */
-#else
-        snprintf(full_buf, sizeof full_buf - 1,
-                  "%s: %s\n",
-                  PACKAGE, 
-                  buf);
-#endif
 
 	_hs_trace_impl(level, full_buf);
     }

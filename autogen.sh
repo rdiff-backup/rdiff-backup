@@ -3,6 +3,21 @@
 # Copyright (C) 2000 by Martin Pool
 # $Id$
 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation; either version 2.1 of
+# the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+
 # This script generates everything necessary to build libhsync from
 # CVS.  It is based on the file of the same name in glib.  It is not
 # needed for distributed versions, because all the necessary files are
@@ -36,14 +51,6 @@ DIE=0
 	DIE=1
 }
 
-(libtool --version) </dev/null >/dev/null 2>&1 || {
-	echo
-	echo "You must have \`libtool' installed to compile $PROJECT."
-	echo "Download the appropriate package for your distribution,"
-	echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/"
-	DIE=1
-}
-
 if test "$DIE" -eq 1; then
 	exit 1
 fi
@@ -62,7 +69,6 @@ case $CC in
 *xlc | *xlc\ * | *lcc | *lcc\ *) am_opt=--include-deps;;
 esac
 
-libtoolize --force 
 aclocal $ACLOCAL_FLAGS
 autoheader
 automake -a $am_opt

@@ -1,19 +1,19 @@
 /*=				       	-*- c-file-style: "bsd" -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
- * 
+ *
  * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -47,7 +47,9 @@
 /*
  * TODO: Let the input and output parts proceed more slowly, or with
  * randomly limited lengths, so that it's more likely fragmentation
- * will be seen in the middle.
+ * will be seen in the middle.  In particular, let people set a
+ * maximum size for data copied in and out, and also a time in ms to
+ * sleep between reads and writes.
  *
  * TODO: Should we display an error message on broken pipes, or not?
  * If we do, then a program which terminates without reading all of
@@ -115,9 +117,9 @@ open_client_socket(int *psock, int port)
     }
 
     hs_bzero((char *) &addr, sizeof addr);
-#ifdef HAVE_SOCK_SIN_LEN 
+#ifdef HAVE_SOCK_SIN_LEN
     addr.sin_len = sizeof(addr);
-#endif 
+#endif
     addr.sin_port = htons(port);
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(0x7f000001);
@@ -161,9 +163,9 @@ bind_any_socket(int *psock, int *pport)
 
     /* Get an address.  Any address is fine. */
     hs_bzero((char *) &addr, sizeof addr);
-#ifdef HAVE_SOCK_SIN_LEN 
+#ifdef HAVE_SOCK_SIN_LEN
     addr.sin_len = sizeof(addr);
-#endif 
+#endif
     addr.sin_port = 0;
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -238,7 +240,7 @@ in_main(void)
 
     ret = _hs_file_copy_all(STDIN_FILENO, in_sock);
     close(in_sock);
-    
+
     return 0;
 }
 
@@ -284,7 +286,7 @@ cmd_main(void)
     if (open_client_socket(&cmd_out_sock, out_port) < 0) {
         return 1;
     }
-    
+
     _hs_trace("command process waiting for connection");
     if ((cmd_in_sock = accept(in_svr_sock, NULL, 0)) < 0) {
         _hs_error("can't accept connection to command: %s",
@@ -292,7 +294,7 @@ cmd_main(void)
         return 1;
     }
     close(in_svr_sock);
-    
+
     if (dup2(cmd_out_sock, STDOUT_FILENO) < 0) {
         _hs_error("can't redirect command output to socket: %s",
                   strerror(errno));
@@ -319,7 +321,7 @@ start_command(void)
 {
     if (bind_any_socket(&in_svr_sock, &in_port) < 0)
         return -1;
-    
+
     if (fork_run(&cmd_pid, cmd_main) < 0)
         return -1;
 
@@ -358,7 +360,7 @@ reap_child(int pid)
     }
 }
 
-    
+
 
 int
 main(int argc, char **argv)

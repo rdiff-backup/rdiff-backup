@@ -42,4 +42,7 @@
  * the end of the result.) */
 #undef HAVE_STPCPY
 
+/* GNU extension of saving argv[0] to program_invocation_short_name */
+#undef HAVE_PROGRAM_INVOCATION_NAME
+
 /* end of acconfig.h */

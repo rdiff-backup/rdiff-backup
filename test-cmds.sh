@@ -16,3 +16,6 @@ tmp=$tmpdir/bin.tmp
 run_test hsemit < $cmds > $tmp
 run_test hsinhale > $out < $tmp
 run_test cmp $out $cmds
+
+run_test sockrun -- hsinhale $debug <$tmp >$out
+run_test cmp $out $cmds

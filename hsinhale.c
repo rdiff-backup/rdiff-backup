@@ -1,4 +1,4 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*=				       	-*- c-file-style: "bsd" -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
@@ -6,7 +6,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
@@ -19,17 +19,18 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "includes.h"
-
 
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/file.h>
 #include <string.h>
 
+#include "includes.h"
+#include "command.h"
+#include "inhale.h"
 
 static void
-print_cmd(int kind, uint32_t len, uint32_t off)
+print_cmd(int kind, uint32_t param1, uint32_t param2)
 {
     char const     *kind_str;
 
@@ -38,7 +39,7 @@ print_cmd(int kind, uint32_t len, uint32_t off)
 	printf("EOF\n");
 	return;
     case op_kind_copy:
-	printf("COPY %d %d\n", off, len);
+	printf("COPY %d %d\n", param1, param2);
 	return;
     }
 
@@ -57,7 +58,7 @@ print_cmd(int kind, uint32_t len, uint32_t off)
 	abort();
     }
 
-    printf("%s %d\n", kind_str, len);
+    printf("%s %d\n", kind_str, param1);
 }
 
 
@@ -87,26 +88,29 @@ parse_args(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
-    int             ret, kind;
-    uint32_t        off, len;
-    hs_filebuf_t   *infb;
+    hs_op_kind_t    kind;
+    int             param2, param1;
+    hs_map_t       *map;
+    off_t           pos;
+    hs_result_t     result;
+    int             rc;
 
-    if ((ret = parse_args(argc, argv)) != 0)
-	return ret;
+    if ((rc = parse_args(argc, argv)) != 0)
+	return rc;
 
     setvbuf(stdout, NULL, _IONBF, 0);
 
-    infb = hs_filebuf_from_fd(STDIN_FILENO);
-
+    map = hs_map_file(STDIN_FILENO);
+    pos = 0;
     do {
-	ret = _hs_inhale_command(hs_filebuf_read, infb, &kind, &len, &off);
+	result = _hs_inhale_command_map(map, &pos, &kind, &param1, &param2);
 
-	if (ret < 0)
+        if (result == HS_FAILED)
 	    return 1;
-	else if (ret == 0)
-	    return 1;
+        else if (result == HS_AGAIN)
+            continue;
 
-	print_cmd(kind, len, off);
+	print_cmd(kind, param1, param2);
     } while (kind != op_kind_eof);
 
     return 0;

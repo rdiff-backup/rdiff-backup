@@ -6,7 +6,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
@@ -28,10 +28,10 @@ typedef struct hs_map   hs_map_t;
 
 hs_map_t               *hs_map_file(int fd);
 
-void const             *hs_map_ptr(hs_map_t *, hs_off_t,
+void const             *hs_map_ptr(hs_map_t *, off_t,
                                     size_t * len, int *reached_eof);
 
-void const             *_hs_map_walk(hs_map_t *, hs_off_t, size_t *,
+void const             *_hs_map_walk(hs_map_t *, off_t, size_t *,
                                      int *reached_eof);
 
 void                    _hs_unmap_file(hs_map_t *);

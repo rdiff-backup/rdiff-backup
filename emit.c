@@ -1,26 +1,31 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*=				       	-*- c-file-style: "bsd" -*-
  *
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
  * 
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
  * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 
 #include "includes.h"
+
+#include "command.h"
+#include "protocol.h"
+#include "emit.h"
+
 
 static int
 _hs_fits_in_byte(size_t val)
@@ -44,7 +49,7 @@ _hs_fits_in_int(size_t val)
 
 
 static int
-_hs_int_len(hs_off_t val)
+_hs_int_len(off_t val)
 {
     if (_hs_fits_in_byte(val))
 	return 1;
@@ -202,7 +207,7 @@ _hs_emit_signature_cmd(hs_write_fn_t write_fn, void *write_priv,
 
 int
 _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
-	      hs_off_t offset, size_t length,
+	      off_t offset, size_t length,
               hs_stats_t * stats)
 {
     int ret;
@@ -221,7 +226,7 @@ _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
     if (off_type == 1)
 	 off_type = 2;
 
-    /* Make sure this formula lines up with the values in hsyncproto.h */
+    /* Make sure this formula lines up with the values in protocol.h */
 
     if (off_type == 2) {
 	cmd = op_copy_short_byte;

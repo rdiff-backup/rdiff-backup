@@ -6,7 +6,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
@@ -20,18 +20,26 @@
  */
 
 
+/*
+ * hsync.h: public interface to libhsync.  This shouldn't contain
+ * anything that's not potentially part of the public interface.
+ */
 
 extern char const *const hs_libhsync_version;
 extern char const *const hs_libhsync_libversion;
 extern int const hs_libhsync_file_offset_bits;
 
-/* For the moment, we always work in the C library's off_t.  On GNU,
- * we try to make this 64-bit if possible by defining
- * _LARGEFILE_SOURCE.  In the future it may be necessary on some
- * platforms to make hs_off_t something other than off_t to handle big
- * files. */
 
-typedef off_t   hs_off_t;
+/*
+ * For the moment, we always work in the C library's off_t.  
+ *
+ * Supporting large files on 32-bit Linux is *NOT* just a matter of
+ * setting these: people will typically need a different libc too :-(.
+ * Anyhow, will anyone really have single HTTP requests >4GB?
+ */
+
+/* typedef off_t   hs_off_t; */
+
 typedef struct stat hs_statbuf_t;
 
 
@@ -58,11 +66,12 @@ void            hs_trace_to_stderr(int level, char const *msg);
 int             hs_supports_trace(void);
 
 
-/***********************************************************************
+/*======================================================================
  * Return codes from incremental functions.  On each call, we can
- * return HS_DONE if we have finished completely HS_AGAIN if we want
- * to be called again when convenient HS_FAILED if an error
- * occurred. */
+ * return HS_DONE if we have finished completely, HS_AGAIN if we want
+ * to be called again when convenient (typically when more input data
+ * is available), HS_FAILED if an error occurred.
+ * *======================================================================*/
 typedef enum {
     HS_DONE,
     HS_AGAIN,
@@ -122,7 +131,7 @@ hs_filebuf_t   *hs_filebuf_from_fd(int);
 
 typedef struct hs_membuf hs_membuf_t;
 
-hs_off_t        hs_membuf_tell(void *private);
+off_t        hs_membuf_tell(void *private);
 ssize_t         hs_membuf_write(void *private, byte_t const *buf, size_t len);
 ssize_t         hs_membuf_read(void *private, byte_t *buf, size_t len);
 ssize_t         hs_choose_block_size(ssize_t file_len);
@@ -131,11 +140,11 @@ void            hs_membuf_free(hs_membuf_t *);
 void            hs_membuf_truncate(hs_membuf_t * mb);
 size_t          hs_membuf_getbuf(hs_membuf_t const *mb, byte_t const **buf);
 hs_membuf_t    *hs_membuf_on_buffer(byte_t *buf, int len);
-ssize_t hs_membuf_read_ofs(void *private, byte_t *buf, size_t len, hs_off_t ofs);
+ssize_t hs_membuf_read_ofs(void *private, byte_t *buf, size_t len, off_t ofs);
 
 typedef struct hs_ptrbuf hs_ptrbuf_t;
 
-hs_off_t        hs_ptrbuf_tell(void *private);
+off_t        hs_ptrbuf_tell(void *private);
 ssize_t         hs_ptrbuf_write(void *private, byte_t const *buf, size_t len);
 ssize_t         hs_ptrbuf_read(void *private, byte_t *buf, size_t len);
 ssize_t         hs_choose_block_size(ssize_t file_len);
@@ -143,7 +152,7 @@ hs_ptrbuf_t    *hs_ptrbuf_on_buffer(byte_t *buf, int len);
 void            hs_ptrbuf_truncate(hs_ptrbuf_t * mb);
 size_t          hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, byte_t const **buf);
 hs_ptrbuf_t    *hs_ptrbuf_on_buffer(byte_t *buf, int len);
-ssize_t hs_ptrbuf_read_ofs(void *private, byte_t *buf, size_t len, hs_off_t ofs);
+ssize_t hs_ptrbuf_read_ofs(void *private, byte_t *buf, size_t len, off_t ofs);
 
 /* ============================================================
 

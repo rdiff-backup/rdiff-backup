@@ -6,7 +6,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful,
@@ -19,19 +19,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+
+/*
+ * emit.h -- How to emit commands to the client
+ */
+
+
 int _hs_send_literal(hs_write_fn_t write_fn,
 		     void *write_priv,
 		     int kind, byte_t const *buf, 
 		     size_t amount);
-
-/* ========================================
-
-   emit/inhale commands */
-
-struct hs_op_kind_name {
-    char const     *name;
-    int const       code;
-};
 
 extern struct hs_op_kind_name const _hs_op_kind_names[];
 
