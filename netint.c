@@ -85,43 +85,43 @@ hs_squirt_n8(hs_stream_t *stream, int d)
 
 hs_result hs_suck_n32(hs_stream_t *stream, int *v)
 {
-        void *p;
-        int result;
+    void *p;
+    int result;
 
-        if ((result = hs_scoop_read(stream, sizeof (uint32_t), &p)))
-                return result;
-
-        *v = ntohl(* (uint32_t const *) p);
-
+    if ((result = hs_scoop_read(stream, sizeof (uint32_t), &p)) != HS_DONE)
         return result;
+
+    *v = ntohl(* (uint32_t const *) p);
+
+    return result;
 }
 
 
 hs_result hs_suck_n8(hs_stream_t *stream, int *v)
 {
-        void *p;
-        int result;
+    void *p;
+    int result;
 
-        if ((result = hs_scoop_read(stream, sizeof (uint8_t), &p)))
-                return result;
-
-        *v = * (uint8_t const *) p;
-
+    if ((result = hs_scoop_read(stream, sizeof (uint8_t), &p)) != HS_DONE)
         return result;
+
+    *v = * (uint8_t const *) p;
+
+    return result;
 }
 
 
 
 hs_result hs_suck_netint(hs_stream_t *stream, int len, int *v)
 {
-        switch (len) {
-        case 1:
-                return hs_suck_n8(stream, v);
-        case 4:
-                return hs_suck_n32(stream, v);
-        default:
-                hs_fatal("kaboom! len=%d", len);
-        }
+    switch (len) {
+    case 1:
+        return hs_suck_n8(stream, v);
+    case 4:
+        return hs_suck_n32(stream, v);
+    default:
+        hs_fatal("kaboom! len=%d", len);
+    }
 }
 
 
@@ -129,32 +129,32 @@ hs_result hs_suck_netint(hs_stream_t *stream, int len, int *v)
 
 int hs_fits_in_n8(size_t val)
 {
-        return val <= UINT8_MAX;
+    return val <= UINT8_MAX;
 }
 
 
 int hs_fits_in_n16(size_t val)
 {
-        return val <= UINT16_MAX;
+    return val <= UINT16_MAX;
 }
 
 
 int hs_fits_in_n32(size_t val)
 {
-        return val <= UINT32_MAX;
+    return val <= UINT32_MAX;
 }
 
 
 int hs_int_len(off_t val)
 {
-        if (hs_fits_in_n8(val))
-                return 1;
-        else if (hs_fits_in_n16(val))
-                return 2;
-        else if (hs_fits_in_n32(val))
-                return 4;
-        else {
-                hs_fatal("can't handle integer this long yet");
-        }
+    if (hs_fits_in_n8(val))
+        return 1;
+    else if (hs_fits_in_n16(val))
+        return 2;
+    else if (hs_fits_in_n32(val))
+        return 4;
+    else {
+        hs_fatal("can't handle integer this long yet");
+    }
 }
 
