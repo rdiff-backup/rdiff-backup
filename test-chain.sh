@@ -22,11 +22,17 @@ out=out.tmp
 oldsig=empty-sig
 old=/dev/null
 
+echo -n `basename $0` ' '
+
 for new in $files
 do
+    echo -n '.'
     hsencode $new $diff $oldsig
     hsdecode $old $newsig $out $diff 
 
     cmp $out $new
 done
+
+echo 
+
 
