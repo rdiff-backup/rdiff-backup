@@ -76,7 +76,6 @@ bufsizes='4096 1 2 3 7 15 100 10000 200000'
 stats=
 debug=
 time=
-relative=1
 for o in "$@"
 do
     case "$o" in 
@@ -92,9 +91,6 @@ do
     -t)
 	time='time'
 	;;
-    -r)
-	relative=0
-	;;
     *)
 	echo "unrecognized driver option \"$o\"" >&2
 	exit 1
@@ -106,15 +102,9 @@ if test -z "$srcdir"
 then
     srcdir=`dirname $0`
 fi
-if test -z "$relative"
-then
-    srcdir=`cd $srcdir; pwd`
-    builddir=`pwd`
-else
-    cd $srcdir
-    srcdir=.
-    builddir=.
-fi
+srcdir=`cd $srcdir; pwd`
+builddir=`pwd`
+
 PATH=$builddir:$srcdir:$PATH
 export PATH
 

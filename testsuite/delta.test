@@ -21,19 +21,15 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 new=$tmpdir/delta.tmp
-null=$tmpdir/null
-: > $null
 
 for delta in $testdir/*.delta
 do
     for inbuf in $bufsizes
     do
-        cmd="../rdiff -I$inbuf patch $null $delta $new"
+        cmd="../rdiff -I$inbuf patch /dev/null $delta $new"
         run_test $cmd
         expect=$testdir/`basename $delta .delta`.expect
         diff $expect $new || fail_test "$cmd"
         countdown
     done
 done
-
-rm $null
