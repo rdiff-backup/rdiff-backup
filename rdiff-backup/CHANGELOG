@@ -24,6 +24,9 @@ Added new time specification by backup number.  So now you can
 '--remove-older-than 2B' or '--list-at-time 0B'.  Original suggestion
 by Alan Bailward.
 
+File examples.html added to distribution; examples section removed
+from man page.
+
 
 New in v0.13.1 (2003/08/08)
 ---------------------------

@@ -33,7 +33,7 @@ stored in a special subdirectory of that target directory, so you can
 still recover files lost some time ago.  The idea is to combine the
 best features of a mirror and an incremental backup.  rdiff-backup
 also preserves symlinks, special files, hardlinks, permissions,
-uid/gid ownership (if it is running as root), and modification times.
+uid/gid ownership, and modification times.
 
 .B rdiff-backup
 can also operate
@@ -53,6 +53,10 @@ Note that you
 except with rdiff-backup.  Many of the increments are stored as
 reverse diffs, so if you delete or modify a file, you may lose the
 ability to restore previous versions of that file.
+
+Finally, this man page is intended more as a precise description of
+the behavior and syntax of rdiff-backup.  New users may want to check
+out the examples.html file included in the rdiff-backup distribution.
 
 .SH OPTIONS
 .TP
@@ -193,11 +197,6 @@ This may be helpful in deciding how many increments to keep, and when
 to --remove-older-than.  Specifying a subdirectory is allowable; then
 only the sizes of the mirror and increments pertaining to that
 subdirectory will be listed.
-.TP
-.B "-m, --mirror-only"
-Do not create an rdiff-backup-data directory or make any increments.
-In this mode rdiff-backup is similar to rsync (but usually
-slower).
 .TP
 .B --no-change-dir-inc-perms
 Do not change the permissions of the directory increments to match the
@@ -345,101 +344,6 @@ is noisiest).  This determines how much is written to the log file.
 .TP
 .B "-V, --version"
 Print the current version and exit
-
-.SH EXAMPLES
-Simplest case---backup directory foo to directory bar, with increments
-in bar/rdiff-backup-data:
-.PP
-.RS
-rdiff-backup foo bar
-.PP
-.RE
-This is exactly the same as previous example because trailing slashes
-are ignored:
-.PP
-.RS
-rdiff-backup foo/ bar/
-.PP
-.RE
-Back files up from /home/bob to /mnt/backup, leaving increments in /mnt/backup/rdiff-backup-data.  Do not back up directory /home/bob/tmp or any files in it.
-.PP
-.RS
-rdiff-backup --exclude /home/bob/tmp /home/bob /mnt/backup
-.PP
-.RE
-The file selection options can be combined in various ways.  The
-following command backs up the whole file system to /usr/local/backup.
-However, the entire /usr directory is skipped, with the exception of
-/usr/local, which is included, except for /usr/local/backup, which is
-excluded to prevent a circularity:
-.PP
-.RS
-rdiff-backup --exclude /usr/local/backup --include /usr/local --exclude /usr / /usr/local/backup
-.PP
-.RE
-You can also use regular expressions in the --exclude statements.
-This will skip any files whose full pathnames contain the word
-"cache", or any files whose name is "tmp", "temp", "TMP", "tEmP", etc.
-.PP
-.RS
-rdiff-backup --exclude-regexp cache --exclude-regexp '(?i)/te?mp$' /home/bob /mnt/backup
-.PP
-.RE
-After the previous command was completed, this command will list the
-backups present on the destination disk:
-.PP
-.RS
-rdiff-backup --list-increments /mnt/backup
-.PP
-.RE
-If space is running out on the /mnt/backup directory, older
-incremental backups can be erased.  The following command erases
-backup information older than a week:
-.PP
-.RS
-rdiff-backup --remove-older-than 7D /mnt/backup
-.PP
-.RE
-The following reads the file
-important-data.2001-07-15T04:09:38-07:00.dir and restores the
-resulting directory important-data as it was on Februrary 14, 2001,
-calling the new directory "temp".  Note that rdiff-backup goes into
-restore mode because it recognizes the suffix of the file.  The -v9
-means keep lots of logging information.
-.PP
-.RS
-rdiff-backup -v9 important-data.2001-07-15T04:09:38-07:00.dir temp
-.PP
-.RE
-This command causes rdiff-backup to backup the directory
-/some/local-dir to the directory /whatever/remote-dir on the machine
-hostname.net.  It uses ssh to open the necessary pipe to the remote
-copy of rdiff-backup.  Here the username on the local machine and on
-hostname.net are the same.
-.PP
-.RS
-rdiff-backup /some/local-dir hostname.net::/whatever/remote-dir
-.PP
-.RE
-This command logs into hostname.net as smith and restores the remote
-increment old-file on a remote computer to the current directory on
-the local computer:
-.PP
-.RS
-rdiff-backup smith@hostname.net::/foo/rdiff-backup-data/increments/bar/old-file.2001-11-09T12:43:53-04:00.diff
-.PP
-.RE
-Backup foo on one remote machine to bar on another.  This will
-probably be slower than running rdiff-backup from either machine.
-.PP
-.RS
-rdiff-backup smith@host1::foo jones@host2::bar
-.PP
-.RE
-Test to see if the specified ssh command really opens up a working
-rdiff-backup server on the remote side.
-.RS
-rdiff-backup --test-server hostname.net::/ignored
 
 .SH RESTORING
 There are two ways to tell rdiff-backup to restore a file or
