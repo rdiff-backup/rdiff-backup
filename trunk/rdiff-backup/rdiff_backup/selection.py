@@ -118,7 +118,7 @@ class Select:
 			for filename in self.listdir(rpath):
 				new_rpath = robust.check_common_error(error_handler,
 										rpath.append, (filename,))
-				if new_rpath:
+				if new_rpath and new_rpath.lstat():
 					s = sel_func(new_rpath)
 					if s == 1: yield (new_rpath, 0)
 					elif s == 2 and new_rpath.isdir(): yield (new_rpath, 1)
