@@ -16,14 +16,14 @@ class Main:
 		self.select_opts, self.select_mirror_opts = [], []
 		self.select_files = []
 
-	def parse_cmdlineoptions(self):
+	def parse_cmdlineoptions(self, arglist):
 		"""Parse argument list and set global preferences"""
 		def sel_fl(filename):
 			"""Helper function for including/excluding filelists below"""
 			try: return open(filename, "r")
 			except IOError: Log.FatalError("Error opening file %s" % filename)
 
-		try: optlist, self.args = getopt.getopt(sys.argv[1:], "blmr:sv:V",
+		try: optlist, self.args = getopt.getopt(arglist, "blmr:sv:V",
 			 ["backup-mode", "change-source-perms",
 			  "chars-to-quote=", "checkpoint-interval=",
 			  "current-time=", "exclude=", "exclude-device-files",
@@ -185,9 +185,9 @@ class Main:
 		Log.close_logfile()
 		if not Globals.server: SetConnections.CloseConnections()
 
-	def Main(self):
+	def Main(self, arglist):
 		"""Start everything up!"""
-		self.parse_cmdlineoptions()
+		self.parse_cmdlineoptions(arglist)
 		self.set_action()
 		rps = SetConnections.InitRPs(self.args,
 									 self.remote_schema, self.remote_cmd)
@@ -477,7 +477,6 @@ Try restoring from an increment file (the filenames look like
 		Manage.delete_earlier_than(datadir, time)
 		
 
-
+Globals.Main = Main()
 if __name__ == "__main__" and not globals().has_key('__no_execute__'):
-	Globals.Main = Main()
-	Globals.Main.Main()
+	Globals.Main.Main(sys.argv[1:])

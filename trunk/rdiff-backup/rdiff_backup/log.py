@@ -121,8 +121,8 @@ class Logger:
 		Globals.Main.cleanup()
 		sys.exit(1)
 
-	def exception(self, only_terminal = 0):
-		"""Log an exception and traceback at verbosity 2
+	def exception(self, only_terminal = 0, verbosity = 4):
+		"""Log an exception and traceback
 
 		If only_terminal is None, log normally.  If it is 1, then only
 		log to disk if log file is local (self.log_file_open = 1).  If
@@ -137,8 +137,8 @@ class Logger:
 
 		exc_info = sys.exc_info()
 		logging_func("Exception %s raised of class %s" %
-					 (exc_info[1], exc_info[0]), 3)
-		logging_func("".join(traceback.format_tb(exc_info[2])), 3)
+					 (exc_info[1], exc_info[0]), verbosity)
+		logging_func("".join(traceback.format_tb(exc_info[2])), verbosity+1)
 		
 
 Log = Logger()

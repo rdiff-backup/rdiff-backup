@@ -97,15 +97,15 @@ class HLSourceStruct:
 		finalizer = DestructiveSteppingFinalizer()
 		def diffs():
 			for dsrp, dest_sig in collated:
-				try:
-					if dest_sig:
-						if dest_sig.isplaceholder(): yield dest_sig
-						else: yield RORPIter.diffonce(dest_sig, dsrp)
-					if dsrp: finalizer(dsrp.index, dsrp)
-				except (IOError, OSError, RdiffException):
-					Log.exception()
-					Log("Error processing %s, skipping" %
-						str(dest_sig.index), 2)
+				if dest_sig:
+					if dest_sig.isplaceholder(): yield dest_sig
+					else:
+						try: yield RORPIter.diffonce(dest_sig, dsrp)
+						except (IOError, OSError, RdiffException):
+							Log.exception()
+							Log("Error producing a diff of %s" %
+								dsrp and dsrp.path)
+				if dsrp: finalizer(dsrp.index, dsrp)
 			finalizer.Finish()
 		return diffs()
 
