@@ -450,11 +450,13 @@ class RORPath:
 
 	def getuname(self):
 		"""Return username that owns the file"""
-		return self.data['uname']
+		try: return self.data['uname']
+		except KeyError: return None
 
 	def getgname(self):
 		"""Return groupname that owns the file"""
-		return self.data['gname']
+		try: return self.data['gname']
+		except KeyError: return None
 
 	def hassize(self):
 		"""True if rpath has a size parameter"""

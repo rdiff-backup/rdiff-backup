@@ -1,4 +1,7 @@
-Fix support of case when source has EAs, dest doesn't.
+Figure out why files getting unnecessarily incremented when upgrading
+from 0.12.x.
+
+Fix support of case when source has EAs or ACLs, dest doesn't.
 
 Consider adding --datadir option (Jean-Sébastien GOETSCHY)
 
