@@ -50,14 +50,14 @@ extern char const hs_licence_string[];
  * \sa hs_trace_set_level()
  */
 typedef enum {
-    HS_LOG_EMERG	 = 0,	/**< System is unusable */
-    HS_LOG_ALERT	 = 1,	/**< Action must be taken immediately */
-    HS_LOG_CRIT	 = 2,           /**< Critical conditions */
-    HS_LOG_ERR	 = 3,           /**< Error conditions */
-    HS_LOG_WARNING	 = 4,	/**< Warning conditions */
-    HS_LOG_NOTICE	 = 5,	/**< Normal but significant condition */
-    HS_LOG_INFO	 = 6,           /**< Informational */
-    HS_LOG_DEBUG	 = 7	/**< Debug-level messages */
+    HS_LOG_EMERG         = 0,   /**< System is unusable */
+    HS_LOG_ALERT         = 1,   /**< Action must be taken immediately */
+    HS_LOG_CRIT          = 2,   /**< Critical conditions */
+    HS_LOG_ERR           = 3,   /**< Error conditions */
+    HS_LOG_WARNING       = 4,   /**< Warning conditions */
+    HS_LOG_NOTICE        = 5,   /**< Normal but significant condition */
+    HS_LOG_INFO          = 6,   /**< Informational */
+    HS_LOG_DEBUG         = 7    /**< Debug-level messages */
 } hs_loglevel;
 
 
@@ -68,7 +68,9 @@ typedef enum {
     HS_EXIT_OK = 0,             /**< No problem. */
     HS_EXIT_SYNTAX = 1,         /**< Syntax or usage error. */
     HS_EXIT_FILEIO = 2,         /**< File IO error. */
+    HS_EXIT_INTERNAL = 3,       /**< Internal or miscellaneous error. */
 } hs_exit_value;
+
 
 
 /**
@@ -125,10 +127,14 @@ typedef enum {
                                          * never be returned to the
                                          * caller.  */
         HS_IO_ERROR =		(-1),   /**< Error in file or network IO */
-        HS_MEM_ERROR =		(-2),   /**< Out of memory */
-        HS_SHORT_STREAM	=	(-3),	/**< Unexpected eof */
-        HS_BAD_MAGIC =          (-4)    /**< Illegal value on stream */
+        HS_MEM_ERROR =		(-2),   /**< Out of memory. */
+        HS_SHORT_STREAM	=	(-3),	/**< Unexpected end of input file. */
+        HS_BAD_MAGIC =          (-4),   /**< Illegal value on stream. */
+        HS_UNIMPLEMENTED =      (-5),   /**< Author is lazy. */
 } hs_result;
+
+hs_exit_value hs_result_to_exit(hs_result r);
+
 
 /**
  * Return an English description of a ::hs_result value.
