@@ -1,11 +1,7 @@
-Fix Daniel Drucker's two restore problems:  Restoring causes spurious
-security violation, and restore doesn't recognize quoted
-current_mirror file.
+Change --exclude options with restore so excluded directories aren't
+deleted.  (Oliver Kaltenecker)
 
 Check support/bug reports on Savannah occasionally.
-
-Have regress go backwards to avoid using too much disk space at wrong
-time.  Provide --temp-dir or similar option also.
 
 Consider adding --datadir option (Jean-Sébastien GOETSCHY)
 
