@@ -13,22 +13,29 @@ class Main:
 		self.action = None
 		self.remote_cmd, self.remote_schema = None, None
 		self.force = None
-		self.exclude_regstrs = ["/proc"]
-		self.exclude_mirror_regstrs = []
+		self.select_opts, self.select_mirror_opts = [], []
 
 	def parse_cmdlineoptions(self):
 		"""Parse argument list and set global preferences"""
-		try: optlist, self.args = getopt.getopt(sys.argv[1:], "blmv:Vs",
-			 ["backup-mode", "version", "verbosity=", "exclude=",
-			  "exclude-mirror=", "server", "test-server",
-			  "remote-cmd=", "mirror-only", "force",
-			  "change-source-perms", "list-increments",
-			  "remove-older-than=", "remote-schema=",
-			  "include-from-stdin", "terminal-verbosity=",
-			  "exclude-device-files", "resume", "no-resume",
-			  "resume-window=", "windows-time-format",
-			  "checkpoint-interval=", "no-hard-links", "current-time=",
-			  "no-compression", "no-compression-regexp="])
+		def sel_fl(filename):
+			"""Helper function for including/excluding filelists below"""
+			try: return open(filename, "r")
+			except IOError: Log.FatalError("Error opening file %s" % filename)
+
+		try: optlist, self.args = getopt.getopt(sys.argv[1:], "blmsv:V",
+			 ["backup-mode", "change-source-perms",
+			  "checkpoint-interval=", "current-time=", "exclude=",
+			  "exclude-device-files", "exclude-filelist=",
+			  "exclude-filelist-stdin", "exclude-mirror=",
+			  "exclude-regexp=", "force", "include=",
+			  "include-filelist=", "include-filelist-stdin",
+			  "include-regexp=", "list-increments", "mirror-only",
+			  "no-compression", "no-compression-regexp=",  
+			  "no-hard-links", "no-resume", "remote-cmd=",
+			  "remote-schema=", "remove-older-than=", "resume",
+			  "resume-window=", "server", "terminal-verbosity=",
+			  "test-server", "verbosity", "version",
+			  "windows-time-format"])
 		except getopt.error:
 			self.commandline_error("Error parsing commandline options")
 
@@ -40,13 +47,24 @@ class Main:
 				Globals.set_integer('checkpoint_interval', arg)
 			elif opt == "--current-time":
 				Globals.set_integer('current_time', arg)
-			elif opt == "--exclude": self.exclude_regstrs.append(arg)
+			elif opt == "--exclude": self.select_opts.append((opt, arg))
 			elif opt == "--exclude-device-files":
-				Globals.set('exclude_device_files', 1)
+				self.select_opts.append((opt, arg))
+			elif opt == "--exclude-filelist":
+				self.select_opts.append((opt, (arg, sel_fl(arg))))
+			elif opt == "--exclude-filelist-stdin":
+				self.select_opts.append((opt, ("standard input", sys.stdin)))
 			elif opt == "--exclude-mirror":
-				self.exclude_mirror_regstrs.append(arg)
+				self.select_mirror_opts.append(("--exclude", arg))
+			elif opt == "--exclude-regexp": self.select_opts.append((opt, arg))
 			elif opt == "--force": self.force = 1
-			elif opt == "--include-from-stdin": Globals.include_from_stdin = 1
+			elif opt == "--include": self.select_opts.append((opt, arg))
+			elif opt == "--include-filelist":
+				self.select_opts.append((opt, (arg, sel_fl(arg))))
+			elif opt == "--include-filelist-stdin":
+				self.select_opts.append((opt, ("standard input", sys.stdin)))
+			elif opt == "--include-regexp":
+				self.select_opts.append((opt, arg))
 			elif opt == "-l" or opt == "--list-increments":
 				self.action = "list-increments"
 			elif opt == "-m" or opt == "--mirror-only": self.action = "mirror"
@@ -116,10 +134,10 @@ class Main:
 			for rp in rps: rp.setdata() # Update with userinfo
 
 		os.umask(077)
-		for regex_string in self.exclude_regstrs:
-			Globals.add_regexp(regex_string, None)
-		for regex_string in self.exclude_mirror_regstrs:
-			Globals.add_regexp(regex_string, 1)
+		rps[0].conn.Globals.set_select(1, rps[0], self.select_opts)
+		if len(rps) == 2:
+			rps[1].conn.Globals.set_select(None, rps[1],
+										   self.select_mirror_opts)
 		Globals.postset_regexp('no_compression_regexp',
 							   Globals.no_compression_regexp_string, re.I)
 
@@ -217,9 +235,6 @@ rdiff-backup with the --force option.""" % rpout.path)
 			except os.error:
 				Log.FatalError("Unable to create directory %s" % rpout.path)
 		if not self.datadir.lstat(): self.datadir.mkdir()
-		Globals.add_regexp(self.datadir.path, 1)
-		Globals.add_regexp(rpin.append("rdiff-backup-data").path, None)
-
 		if Log.verbosity > 0:
 			Log.open_logfile(self.datadir.append("backup.log"))
 		self.backup_warn_if_infinite_regress(rpin, rpout)
@@ -334,7 +349,6 @@ Try restoring from an increment file (the filenames look like
 		else: Log.FatalError("Unable to find rdiff-backup-data dir")
 
 		Globals.rbdir = self.datadir = datadirrp
-		Globals.add_regexp(self.datadir.path, 1)
 		rootrp = RPath(rpin.conn, "/".join(pathcomps[:i]))
 		if not rootrp.lstat():
 			Log.FatalError("Root of mirror area %s does not exist" %
