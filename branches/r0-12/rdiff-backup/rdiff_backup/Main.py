@@ -419,7 +419,8 @@ def restore_set_select(mirror_rp, target):
 def restore_start_log(rpin, target, time):
 	"""Open restore log file, log initial message"""
 	try: Log.open_logfile(datadir.append("restore.log"))
-	except LoggerError, e: Log("Warning, " + str(e), 2)
+	except (LoggerError, Security.Violation), e:
+		Log("Warning - Unable to open " + str(e), 2)
 
 	# Log following message at file verbosity 3, but term verbosity 4
 	log_message = ("Starting restore of %s to %s as it was as of %s." %
@@ -475,11 +476,15 @@ def restore_get_root(rpin):
 	global datadir
 	if rpin.isincfile(): relpath = rpin.getincbase().path
 	else: relpath = rpin.path
-	pathcomps = os.path.join(rpin.conn.os.getcwd(), relpath).split("/")
-	assert len(pathcomps) >= 2 # path should be relative to /
+	if rpin.conn is not Globals.local_connection:
+		# For security checking consistency, don't get absolute path
+		pathcomps = relpath.split('/')
+	else: pathcomps = os.path.join(os.getcwd(), relpath).split("/")
+	if not pathcomps[0]: min_len_pathcomps = 2 # treat abs paths differently
+	else: min_len_pathcomps = 1
 
 	i = len(pathcomps)
-	while i >= 2:
+	while i >= min_len_pathcomps:
 		parent_dir = rpath.RPath(rpin.conn, "/".join(pathcomps[:i]))
 		if (parent_dir.isdir() and
 			"rdiff-backup-data" in parent_dir.listdir()): break
@@ -613,6 +618,12 @@ The rdiff-backup data directory
 exists, but we cannot find a valid current_mirror marker.  You can
 avoid this message by removing this directory; however any data in it
 will be lost.
+
+Probably this error was caused because the first rdiff-backup session
+into a new directory failed.  If this is the case it is safe to delete
+the rdiff_backup_data directory because there is no important
+information in it.
+
 """ % (Globals.rbdir.path,))
 	elif len(curmir_incs) == 1: return 0
 	else:
