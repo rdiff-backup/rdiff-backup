@@ -283,23 +283,25 @@ int high_water_alloc(void **buf, size_t *bufsize, size_t newsize)
 
 const char *quote(const char *str)
 {
-	static char *quoted_str;
-	static size_t quoted_str_len;
+	static char *quoted_str = NULL;
+	static size_t quoted_str_len = 0;
 	const unsigned char *s;
 	char *q;
-	size_t nonpr;
+	size_t nonpr, total_len;
 
 	if (!str)
 		return str;
 
-	for (nonpr = 0, s = (unsigned char *)str; *s != '\0'; s++)
-		if (!isprint(*s) || isspace(*s) || *s == '\\' || *s == '=')
-			nonpr++;
+	for (nonpr = 0, s = (unsigned char *)str, total_len = 0;
+		 *s != '\0'; s++, total_len++) {
+	  if (!isprint(*s) || isspace(*s) || *s == '\\' || *s == '=')
+		nonpr++;
+	}
 	if (nonpr == 0)
 		return str;
 
 	if (high_water_alloc((void **)&quoted_str, &quoted_str_len,
-			     nonpr * 3 + 1))
+			     nonpr * 3 + total_len + 1))
 		return NULL;
 	for (s = (unsigned char *)str, q = quoted_str; *s != '\0'; s++) {
 		if (!isprint(*s) || isspace(*s) || *s == '\\' || *s == '=') {
