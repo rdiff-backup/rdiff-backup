@@ -42,6 +42,12 @@
 
 #include "rsync.h"
 
+/*
+ * TODO: (Suggestion by tridge) Add a function which outputs a
+ * complete text description of a job, including only the fields
+ * relevant to the current encoding function.
+ */
+
 
 /** \brief Translate from rs_result to human-readable messages. */
 char const *rs_strerror(rs_result r)
@@ -51,10 +57,10 @@ char const *rs_strerror(rs_result r)
         return "OK";
     case RS_RUNNING:
         return "still running";
-    case RS_BAD_MAGIC:
-        return "bad magic number at start of stream";
     case RS_BLOCKED:
         return "blocked waiting for input or output buffers";
+    case RS_BAD_MAGIC:
+        return "bad magic number at start of stream";
     case RS_INPUT_ENDED:
         return "unexpected end of input";
     case RS_CORRUPT:
@@ -69,6 +75,7 @@ char const *rs_strerror(rs_result r)
         return "bad command line syntax";
     case RS_INTERNAL_ERROR:
         return "library internal error";
+
     default:
         return "unexplained problem";
     }
