@@ -37,7 +37,7 @@ class RdiffTest(unittest.TestCase):
 	def testRdiffDeltaPatch(self):
 		"""Test making deltas and patching files"""
 		rplist = [self.basis, self.new, self.delta,
-					self.signature, self.output]
+				  self.signature, self.output]
 		for rp in rplist:
 			if rp.lstat(): rp.delete()
 			
@@ -55,6 +55,31 @@ class RdiffTest(unittest.TestCase):
 			assert RPath.cmp(self.new, self.output)
 			map(RPath.delete, rplist)
 
+	def testRdiffDeltaPatchGzip(self):
+		"""Same as above by try gzipping patches"""
+		rplist = [self.basis, self.new, self.delta,
+				  self.signature, self.output]
+		for rp in rplist:
+			if rp.lstat(): rp.delete()
+			
+		MakeRandomFile(self.basis.path)
+		MakeRandomFile(self.new.path)
+		map(RPath.setdata, [self.basis, self.new])
+		assert self.basis.lstat() and self.new.lstat()
+		self.signature.write_from_fileobj(Rdiff.get_signature(self.basis))
+		assert self.signature.lstat()
+		self.delta.write_from_fileobj(Rdiff.get_delta(self.signature,
+													  self.new))
+		assert self.delta.lstat()
+		os.system("gzip " + self.delta.path)
+		os.system("mv %s %s" % (self.delta.path + ".gz", self.delta.path))
+		self.delta.setdata()
+
+		Rdiff.patch_action(self.basis, self.delta, self.output,
+						   delta_compressed = 1).execute()
+		assert RPath.cmp(self.new, self.output)
+		map(RPath.delete, rplist)
+
 	def testWriteDelta(self):
 		"""Test write delta feature of rdiff"""
 		rplist = [self.basis, self.new, self.delta, self.output]
@@ -65,6 +90,25 @@ class RdiffTest(unittest.TestCase):
 
 		Rdiff.write_delta(self.basis, self.new, self.delta)
 		assert self.delta.lstat()
+		Rdiff.patch_action(self.basis, self.delta, self.output).execute()
+		assert RPath.cmp(self.new, self.output)
+		map(RPath.delete, rplist)		
+
+	def testWriteDeltaGzip(self):
+		"""Same as above but delta is written gzipped"""
+		rplist = [self.basis, self.new, self.delta, self.output]
+		MakeRandomFile(self.basis.path)
+		MakeRandomFile(self.new.path)
+		map(RPath.setdata, [self.basis, self.new])
+		assert self.basis.lstat() and self.new.lstat()
+		delta_gz = RPath(self.delta.conn, self.delta.path + ".gz")
+		if delta_gz.lstat(): delta_gz.delete()
+
+		Rdiff.write_delta(self.basis, self.new, delta_gz, 1)
+		assert delta_gz.lstat()
+		os.system("gunzip " + delta_gz.path)
+		delta_gz.setdata()
+		self.delta.setdata()
 		Rdiff.patch_action(self.basis, self.delta, self.output).execute()
 		assert RPath.cmp(self.new, self.output)
 		map(RPath.delete, rplist)		
