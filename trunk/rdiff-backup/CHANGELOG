@@ -1,5 +1,14 @@
-New in v0.7.2 (2002/04/20)
+New in v0.7.2 (2002/04/11)
 --------------------------
+
+Added new selection options --exclude-filelist,
+--exclude-filelist-stdin, --exclude-regexp, --include-filelist,
+--include-filelist-stdin, --include-regexp.
+
+*** WARNING *** the --include and --exclude options have changed.  The
+new --include-regexp and --exclude-regexp are close to, but still
+different from the old --include and --exclude options.  See the man
+page for details.
 
 Friendlier error reporting when remote connection doesn't start.
 
