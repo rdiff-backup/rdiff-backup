@@ -1,7 +1,6 @@
 If you're building from CVS, things are slightly more complicated than
 usual.  I hope these instructions will tell you all you need to know.
-Please mail <mbp@users.sourceforge.net> if they are unclear or
-incorrect.
+Please mail <mbp@samba.org> if they are unclear or incorrect.
 
 
 >> Requirements
@@ -14,10 +13,10 @@ compiler, make and so on.  On Debian, you can simply say
 
 >> Downloading
 
-  $ cvs -d:pserver:anonymous@cvs.rproxy.sourceforge.net:/cvsroot/rproxy login 
-  [ press Enter ]
-  $ cvs -z3 -d:pserver:anonymous@cvs.rproxy.sourceforge.net:/cvsroot/rproxy \
-    -d YOUR_DIRECTORY co libhsync
+  $ cvs -d:pserver:cvs@pserver.samba.org:/cvsroot login 
+  [ enter "cvs" ]
+  $ cvs -z3 -d:pserver:cvs@pserver.samba.org:/cvsroot \
+    -d YOUR_DIRECTORY co rproxy/libhsync
 
 You can choose the name of the directory that will hold the source
 here.  If you have no opinion, just omit the `-d YOUR_DIRECTORY' and
