@@ -71,9 +71,6 @@
 #include "stream.h"
 
 
-static const int RS_TUBE_TAG = 892138;
-
-
 static void rs_tube_catchup_literal(rs_job_t *job)
 {
     rs_stream_t *stream = job->stream;
