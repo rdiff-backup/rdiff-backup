@@ -279,12 +279,12 @@ went wrong during your last backup?  Using """ + mirrorrps[-1].path, 2)
 	def restore_check_paths(self, rpin, rpout):
 		"""Check paths and return pair of corresponding rps"""
 		if not rpin.lstat():
-			Log.FatalError("Increment file %s does not exist" % src_path)
+			Log.FatalError("Increment file %s does not exist" % rpin.path)
 		if not rpin.isincfile():
 			Log.FatalError("""File %s does not look like an increment file.
 
 Try restoring from an increment file (the filenames look like
-"foobar.2001-09-01T04:49:04-07:00.diff").""")
+"foobar.2001-09-01T04:49:04-07:00.diff").""" % rpin.path)
 
 		if not rpout: rpout = RPath(Globals.local_connection,
 									rpin.getincbase_str())
