@@ -20,6 +20,10 @@ Fixed rather important quoting problem: quoting directives like
 remotely!  I'm surprised no one noticed this.  Are none of you using
 --windows-mode or similar?
 
+Fixed handling of (lack of) daylight savings time.  Earlier bug would
+cause some files to be marked an hour later.  Thanks to Troels Arvin
+and Farkas Levente for bug report.
+
 
 New in v0.12.5 (2003/09/27)
 ---------------------------
