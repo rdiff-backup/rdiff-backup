@@ -403,3 +403,42 @@ class ITRBranch:
 				(index and os.path.join(*index) or '()',), 2)
 
 
+class CacheIndexable:
+	"""Cache last few indexed elements in iterator
+
+	This class should be initialized with an iterator yielding
+	.index'd objects.  It looks like it is just the same iterator as
+	the one that initialized it.  Luckily, it does more, caching the
+	last few elements iterated, which can be retrieved using the
+	.get() method.
+
+	If the index is not in the cache, return None.
+
+	"""
+	def __init__(self, indexed_iter, cache_size = None):
+		"""Make new CacheIndexable.  Cache_size is max cache length"""
+		self.cache_size = cache_size
+		self.iter = indexed_iter
+		self.cache_dict = {}
+		self.cache_indicies = []
+
+	def next(self):
+		"""Return next elem, add to cache.  StopIteration passed upwards"""
+		next_elem = self.iter.next()
+		next_index = next_elem.index
+		self.cache_dict[next_index] = next_elem
+		self.cache_indicies.append(next_index)
+
+		if len(self.cache_indicies) > self.cache_size: 
+			del self.cache_dict[self.cache_indicies[0]]
+			del self.cache_indicies[0]
+
+		return next_elem
+
+	def __iter__(self): return self
+
+	def get(self, index):
+		"""Return element with index index from cache"""
+		try: return self.cache_dict[index]
+		except KeyError: return None
+

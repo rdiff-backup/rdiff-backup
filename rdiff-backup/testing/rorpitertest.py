@@ -254,6 +254,41 @@ class TreeReducerTest(unittest.TestCase):
 		assert itm2c.root_branch.total == 12, itm2c.root_branch.total
 
 
+class CacheIndexableTest(unittest.TestCase):
+	def get_iter(self):
+		"""Return iterator yielding indexed objects, add to dict d"""
+		for i in range(100):
+			it = rorpiter.IndexedTuple((i,), range(i))
+			self.d[(i,)] = it
+			yield it
+
+	def testCaching(self):
+		"""Test basic properties of CacheIndexable object"""
+		self.d = {}
+		
+		ci = rorpiter.CacheIndexable(self.get_iter(), 3)
+		val0 = ci.next()
+		val1 = ci.next()
+		val2 = ci.next()
+		
+		assert ci.get((1,)) == self.d[(1,)]
+		assert ci.get((3,)) is None
+
+		val3 = ci.next()
+		val4 = ci.next()
+		val5 = ci.next()
+
+		assert ci.get((3,)) == self.d[(3,)]
+		assert ci.get((4,)) == self.d[(4,)]
+		assert ci.get((1,)) is None
+
+	def testEqual(self):
+		"""Make sure CI doesn't alter properties of underlying iter"""
+		self.d = {}
+		l1 = list(self.get_iter())
+		l2 = list(rorpiter.CacheIndexable(iter(l1), 10))
+		assert l1 == l2, (l1, l2)
+							   
 
 if __name__ == "__main__": unittest.main()
 

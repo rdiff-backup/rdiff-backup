@@ -31,7 +31,7 @@ def Mirror(src_rpath, dest_rpath):
 	DestS.init_statistics()
 	source_rpiter = SourceS.get_source_select()
 	dest_sigiter = DestS.process_source_get_sigs(dest_rpath, source_rpiter, 0)
-	source_diffiter = SourceS.get_diffs(src_rpath, dest_sigiter)
+	source_diffiter = SourceS.get_diffs(dest_sigiter)
 	DestS.patch(dest_rpath, source_diffiter)
 	DestS.write_statistics()
 
@@ -43,7 +43,7 @@ def Mirror_and_increment(src_rpath, dest_rpath, inc_rpath):
 	DestS.init_statistics()
 	source_rpiter = SourceS.get_source_select()
 	dest_sigiter = DestS.process_source_get_sigs(dest_rpath, source_rpiter, 1)
-	source_diffiter = SourceS.get_diffs(src_rpath, dest_sigiter)
+	source_diffiter = SourceS.get_diffs(dest_sigiter)
 	DestS.patch_and_increment(dest_rpath, source_diffiter, inc_rpath)
 	DestS.write_statistics()
 
@@ -59,19 +59,26 @@ class SourceStruct:
 		connection.  Otherwise we will get an error because a list
 		containing files can't be pickled.
 
+		Also, cls.source_select needs to be cached so get_diffs below
+		can retrieve the necessary rps.
+
 		"""
 		sel = selection.Select(rpath)
 		sel.ParseArgs(tuplelist, filelists)
-		cls.source_select = sel.set_iter()
+		sel.set_iter()
+		cache_size = Globals.pipeline_max_length * 2 # 2 because to and from
+		cls.source_select = rorpiter.CacheIndexable(sel, cache_size)
 
 	def get_source_select(cls):
 		"""Return source select iterator, set by set_source_select"""
 		return cls.source_select
 
-	def get_diffs(cls, baserp, dest_sigiter):
+	def get_diffs(cls, dest_sigiter):
 		"""Return diffs of any files with signature in dest_sigiter"""
+		source_rps = cls.source_select
 		def get_one_diff(dest_sig):
-			src_rp = baserp.new_index(dest_sig.index)
+			src_rp = (source_rps.get(dest_sig.index) or
+					  rpath.RORPath(dest_sig.index))
 			diff_rorp = src_rp.getRORPath()
 			if dest_sig.isflaglinked():
 				diff_rorp.flaglinked(dest_sig.get_link_flag())

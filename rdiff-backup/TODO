@@ -16,11 +16,11 @@ have changed between two times
 
 ---------[ Medium term ]---------------------------------------
 
+Add ACL support
+
 Add --dry-run option (target for v1.1.x)
 
 Add # of increments option to --remove-older-than
-
-Restore only changed files
 
 Make argument shortcut for cstream
 
