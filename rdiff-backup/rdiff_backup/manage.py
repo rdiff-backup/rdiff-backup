@@ -21,7 +21,7 @@
 
 from __future__ import generators
 from log import Log
-import Globals, Time, static, manage, statistics, restore, selection
+import Globals, Time, static, statistics, restore, selection
 
 
 class ManageException(Exception): pass
