@@ -7,8 +7,6 @@ $Id$
 
    * Some kind of statistics on delta each day
 
-   * Do counting from a separately checked-out copy
-
  * Encoding format
 
    * Include a version in the signature and difference fields
