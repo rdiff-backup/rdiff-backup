@@ -1,4 +1,4 @@
-New in v0.11.2 (2003/02/07)
+New in v0.11.2 (2003/03/01)
 ---------------------------
 
 Fixed seg fault bug reported by a couple sparc/openbsd users.  Thanks
@@ -35,12 +35,20 @@ time to write):
 	rdiff-backup makes no attempt to recover or clean up after
 	unrecoverable errors.
 
+	However, it now uses fsync() to increment the destination
+	directory in a reversable way.  If there is an error, the next
+	backup will regress the destination directory into its state
+	before the aborted backup.
+
+	The above process can be done without a backup with the
+	--check-destination-dir option.
+
 Improved error logging.  Instead of the old haphazard reporting
 method, which sometimes didn't indicate the file an error occurred on,
 now all recoverable errors are reported in a standard format and also
 written to the error_log.<time>.data file in the rdiff-backup-data
-directory.
-
+directory.  Thanks to Dean Gaudet and others for repeatedly bugging me
+about this.
 
 
 New in v0.11.1 (2002/12/31)

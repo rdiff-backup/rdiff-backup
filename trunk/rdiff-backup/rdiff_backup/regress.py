@@ -34,7 +34,7 @@ recovered.
 """
 
 from __future__ import generators
-import Globals, restore, log, rorpiter, journal, TempFile, metadata, rpath
+import Globals, restore, log, rorpiter, TempFile, metadata, rpath, C, Time
 
 # regress_time should be set to the time we want to regress back to
 # (usually the time of the last successful backup)
@@ -42,10 +42,6 @@ regress_time = None
 
 # This should be set to the latest unsuccessful backup time
 unsuccessful_backup_time = None
-
-# This is set by certain tests and allows overriding of global time
-# variables.
-time_override_mode = None
 
 
 class RegressException(Exception):
@@ -71,6 +67,7 @@ def Regress(mirror_rp):
 	ITR = rorpiter.IterTreeReducer(RegressITRB, [])
 	for rf in iterate_meta_rfs(mirror_rp, inc_rpath): ITR(rf.index, rf)
 	ITR.Finish()
+	remove_rbdir_increments()
 
 def set_regress_time():
 	"""Set global regress_time to previous sucessful backup
@@ -80,18 +77,14 @@ def set_regress_time():
 
 	"""
 	global regress_time, unsuccessful_backup_time
-	if time_override_mode:
-		assert regress_time and unsuccessful_backup_time
-		return
-
 	curmir_incs = restore.get_inclist(Globals.rbdir.append("current_mirror"))
 	assert len(curmir_incs) == 2, \
 		   "Found %s current_mirror flags, expected 2" % len(curmir_incs)
 	inctimes = [inc.getinctime() for inc in curmir_incs]
 	inctimes.sort()
 	regress_time = inctimes[0]
-	unsucessful_backup_time =  inctimes[-1]
-	log.Log("Regressing to " + Time.timetopretty(regress_time), 5)
+	unsuccessful_backup_time = inctimes[-1]
+	log.Log("Regressing to " + Time.timetopretty(regress_time), 4)
 
 def set_restore_times():
 	"""Set _rest_time and _mirror_time in the restore module
@@ -102,6 +95,20 @@ def set_restore_times():
 	"""
 	restore._mirror_time = unsuccessful_backup_time
 	restore._rest_time = regress_time
+
+def remove_rbdir_increments():
+	"""Delete the increments in the rdiff-backup-data directory"""
+	old_current_mirror = None
+	for filename in Globals.rbdir.listdir():
+		rp = Globals.rbdir.append(filename)
+		if rp.isincfile() and rp.getinctime() == unsuccessful_backup_time:
+			if rp.getincbase_str() == "current_mirror": old_current_mirror = rp
+			else:
+				log.Log("Removing rdiff-backup-data increment " + rp.path, 5)
+				rp.delete()
+	if old_current_mirror:
+		C.sync() # Sync first, since we are marking dest dir as good now
+		old_current_mirror.delete()
 
 def iterate_raw_rfs(mirror_rp, inc_rp):
 	"""Iterate all RegressFile objects in mirror/inc directory"""
@@ -132,6 +139,11 @@ def iterate_meta_rfs(mirror_rp, inc_rp):
 	raw_rfs = iterate_raw_rfs(mirror_rp, inc_rp)
 	collated = rorpiter.Collate2Iters(raw_rfs, yield_metadata())
 	for raw_rf, metadata_rorp in collated:
+		if not raw_rf:
+			log.Log("Warning, metadata file has entry for %s,\n"
+					"but there are no associated files." %
+					(metadata_rorp.get_indexpath(),), 2)
+			continue
 		raw_rf.set_metadata_rorp(metadata_rorp)
 		yield raw_rf
 
@@ -146,11 +158,8 @@ class RegressFile(restore.RestoreFile):
 	"""
 	def __init__(self, mirror_rp, inc_rp, inc_list):
 		restore.RestoreFile.__init__(self, mirror_rp, inc_rp, inc_list)
-		assert len(self.relevant_incs) <= 2, "Too many incs"
-		if len(self.relevant_incs) == 2:
-			self.regress_inc = self.relevant_incs[-1]
-		else: self.regress_inc = None
-
+		self.set_regress_inc()
+		
 	def set_metadata_rorp(self, metadata_rorp):
 		"""Set self.metadata_rorp, creating empty if given None"""
 		if metadata_rorp: self.metadata_rorp = metadata_rorp
@@ -161,6 +170,13 @@ class RegressFile(restore.RestoreFile):
 		return ((self.metadata_rorp and self.metadata_rorp.isdir()) or
 				(self.mirror_rp and self.mirror_rp.isdir()))
 
+	def set_regress_inc(self):
+		"""Set self.regress_inc to increment to be removed (or None)"""
+		newer_incs = self.get_newer_incs()
+		assert len(newer_incs) <= 1, "Too many recent increments"
+		if newer_incs: self.regress_inc = newer_incs[0] # first is mirror_rp
+		else: self.regress_inc = None
+
 
 class RegressITRB(rorpiter.ITRBranch):
 	"""Turn back state of dest directory (use with IterTreeReducer)
@@ -168,7 +184,7 @@ class RegressITRB(rorpiter.ITRBranch):
 	The arguments to the ITR will be RegressFiles.  There are two main
 	assumptions this procedure makes (besides those mentioned above):
 
-	1.  The mirror_rp and the metadata_rorp cmp_attribs correctly iff
+	1.  The mirror_rp and the metadata_rorp equal_loose correctly iff
 	    they contain the same data.  If this is the case, then the inc
 	    file is unnecessary and we can delete it.
 
@@ -189,13 +205,16 @@ class RegressITRB(rorpiter.ITRBranch):
 
 	def fast_process(self, index, rf):
 		"""Process when nothing is a directory"""
-		if (not rf.metadata_rorp.lstat() or not rf.mirror_rp.lstat() or
-			not rpath.cmp_attribs(rf.metadata_rorp, rf.mirror_rp)):
+		if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
+			log.Log("Regressing file %s" %
+					(rf.metadata_rorp.get_indexpath()), 5)
 			if rf.metadata_rorp.isreg(): self.restore_orig_regfile(rf)
 			else:
 				if rf.mirror_rp.lstat(): rf.mirror_rp.delete()
 				rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
-		if rf.regress_inc: rf.regress_inc.delete()
+		if rf.regress_inc:
+			log.Log("Deleting increment " + rf.regress_inc.path, 5)
+			rf.regress_inc.delete()
 
 	def restore_orig_regfile(self, rf):
 		"""Restore original regular file
@@ -233,29 +252,21 @@ class RegressITRB(rorpiter.ITRBranch):
 		rf = self.rf
 		if rf.metadata_rorp.isdir():
 			if rf.mirror_rp.isdir():
-				if not rpath.cmp_attribs(rf.metadata_rorp, rf.mirror_rp):
+				rf.mirror_rp.setdata()
+				if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
+					log.Log("Regressing attributes of " + rf.mirror_rp.path, 5)
 					rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
 			else:
 				rf.mirror_rp.delete()
+				log.Log("Regressing file " + rf.mirror_rp.path, 5)
 				rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
 		else: # replacing a dir with some other kind of file
 			assert rf.mirror_rp.isdir()
+			log.Log("Replacing directory " + rf.mirror_rp.path, 5)
 			if rf.metadata_rorp.isreg(): self.restore_orig_regfile(rf)
 			else:
 				rf.mirror_rp.delete()
 				rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
-		if rf.regress_inc: rf.regress_inc.delete()
-
-	def on_error(self, exc, *args):
-		"""This is run on any exception, raises RegressException
-
-		RegressException should be fatal.  We don't want to tolerate
-		the kinds of errors we would when backing up.
-
-		"""
-		if args and args[0] and isinstance(args[0], tuple):
-			filename = "/".join(args[0])
-		elif self.index: filename = "/".join(*self.index)
-		else: filename = "."
-		log.Log("Error '%s' processing %s" % (exc, filename), 2)
-		raise RegressException("Error during Regress")
+		if rf.regress_inc:
+			log.Log("Deleting increment " + rf.regress_inc.path, 5)
+			rf.regress_inc.delete()

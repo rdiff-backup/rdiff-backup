@@ -57,8 +57,9 @@ def set_security_level(action, cmdpairs):
 	if Globals.server: return
 	cp1 = cmdpairs[0]
 	if len(cmdpairs) > 1: cp2 = cmdpairs[1]
+	else: cp2 = cp1
 
-	if action == "backup":
+	if action == "backup" or action == "check-destination-dir":
 		if bothlocal(cp1, cp2) or bothremote(cp1, cp2):
 			sec_level = "minimal"
 			rdir = tempfile.gettempdir()
@@ -140,7 +141,9 @@ def set_allowed_requests(sec_level):
 				 "backup.DestinationStruct.patch_and_finalize",
 				 "backup.DestinationStruct.patch_increment_and_finalize",
 				 "Main.backup_touch_curmirror_local",
-				 "Globals.ITRB.increment_stat"])
+				 "Globals.ITRB.increment_stat",
+				 "statistics.record_error",
+				 "log.ErrorLog.write_if_open"])
 	if Globals.server:
 		allowed_requests.extend(
 			["SetConnections.init_connection_remote",

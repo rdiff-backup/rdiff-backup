@@ -154,7 +154,7 @@ class PathSetter(unittest.TestCase):
 						 "testfiles/output/rdiff-backup-data/increments")
 		self.exec_rb(None, timbar_paths[0])
 		self.refresh(Local.timbar_in, Local.timbar_out)
-		assert rpath.cmp_with_attribs(Local.timbar_in, Local.timbar_out)
+		assert Local.timbar_in.equal_loose(Local.timbar_out)
 
 		self.exec_rb_restore(25000, 'testfiles/output/various_file_types',
 							 'testfiles/vft2_out')
@@ -207,14 +207,30 @@ class Final(PathSetter):
 	def testProcLocal(self):
 		"""Test initial backup of /proc locally"""
 		Myrm("testfiles/procoutput")
+		procout = rpath.RPath(Globals.local_connection, 'testfiles/procoutput')
 		self.set_connections(None, None, None, None)
-		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
+		self.exec_rb(10000, '../../../../../../proc', procout.path)
+		time.sleep(1)
+		self.exec_rb(20000, '../../../../../../proc', procout.path)
+		time.sleep(1)
+		self.exec_rb(30000, Local.inc1rp.path, procout.path)
+		assert CompareRecursive(Local.inc1rp, procout)
+		time.sleep(1)
+		self.exec_rb(40000, '../../../../../../proc', procout.path)
 
 	def testProcRemote(self):
 		"""Test mirroring proc remote"""
 		Myrm("testfiles/procoutput")
+		procout = rpath.RPath(Globals.local_connection, 'testfiles/procoutput')
 		self.set_connections(None, None, "test2/tmp/", "../../")
-		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
+		self.exec_rb(10000, '../../../../../../proc', procout.path)
+		time.sleep(1)
+		self.exec_rb(20000, '../../../../../../proc', procout.path)
+		time.sleep(1)
+		self.exec_rb(30000, Local.inc1rp.path, procout.path)
+		assert CompareRecursive(Local.inc1rp, procout)
+		time.sleep(1)
+		self.exec_rb(40000, '../../../../../../proc', procout.path)
 
 	def testProcRemote2(self):
 		"""Test mirroring proc, this time when proc is remote, dest local"""

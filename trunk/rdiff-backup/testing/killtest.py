@@ -1,7 +1,7 @@
 import unittest, os, signal, sys, random, time
 from commontest import *
 from rdiff_backup.log import *
-from rdiff_backup import Globals, Main
+from rdiff_backup import Globals, Main, restore
 
 """Test consistency by killing rdiff-backup as it is backing up"""
 
@@ -44,17 +44,8 @@ class ProcessFuncs(unittest.TestCase):
 							 'testfiles/restoretarget* testfiles/vft_out '
 							 'timbar.pyc testfiles/vft2_out')
 
-	def is_aborted_backup(self):
-		"""True if there are signs of aborted backup in output/"""
-		try: dirlist = os.listdir("testfiles/output/rdiff-backup-data")
-		except OSError:
-			raise TimingError("No data dir found, give process more time")
-		dirlist = filter(lambda f: f.startswith("last-file-incremented"),
-						 dirlist)
-		return len(dirlist) != 0
-
 	def exec_rb(self, time, wait, *args):
-		"""Run rdiff-backup return pid"""
+		"""Run rdiff-backup return pid.  Wait until done if wait is true"""
 		arglist = ['python', '../rdiff-backup', '-v3']
 		if time:
 			arglist.append("--current-time")
@@ -65,19 +56,19 @@ class ProcessFuncs(unittest.TestCase):
 		if wait: return os.spawnvp(os.P_WAIT, 'python', arglist)
 		else: return os.spawnvp(os.P_NOWAIT, 'python', arglist)
 
-	def exec_and_kill(self, mintime, maxtime, backup_time, resume, arg1, arg2):
+	def exec_and_kill(self, min_max_pair, backup_time, arg1, arg2):
 		"""Run rdiff-backup, then kill and run again
 
 		Kill after a time between mintime and maxtime.  First process
 		should not terminate before maxtime.
 
 		"""
+		mintime, maxtime = min_max_pair
 		pid = self.exec_rb(backup_time, None, arg1, arg2)
 		time.sleep(random.uniform(mintime, maxtime))
 		if os.waitpid(pid, os.WNOHANG)[0] != 0:
-			raise TimingError("Timing Error on %s, %s:\n"
-							  "Process already quit - try lowering max time"
-							  % (arg1, arg2))
+			# Timing problem, process already terminated (max time too big?)
+			return -1
 		os.kill(pid, self.killsignal)
 		while 1:
 			pid, exitstatus = os.waitpid(pid, os.WNOHANG)
@@ -85,14 +76,7 @@ class ProcessFuncs(unittest.TestCase):
 				assert exitstatus != 0
 				break
 			time.sleep(0.2)
-		if not self.is_aborted_backup():
-			raise TimingError("Timing Error on %s, %s:\n"
-							  "Process already finished or didn't "
-							  "get a chance to start" % (arg1, arg2))
 		print "---------------------- killed"
-		os.system("ls -l %s/rdiff-backup-data" % arg1)
-		if resume: self.exec_rb(backup_time + 5, 1, '--resume', arg1, arg2)
-		else: self.exec_rb(backup_time + 5000, 1, '--no-resume', arg1, arg2)
 
 	def create_killtest_dirs(self):
 		"""Create testfiles/killtest? directories
@@ -105,8 +89,8 @@ class ProcessFuncs(unittest.TestCase):
 		def copy_thrice(input, output):
 			"""Copy input directory to output directory three times"""
 			assert not os.system("cp -a %s %s" % (input, output))
-			assert not os.system("cp -a %s %s/killtest1" % (input, output))
-			assert not os.system("cp -a %s %s/killtest2" % (input, output))
+			assert not os.system("cp -a %s %s/killtesta" % (input, output))
+			assert not os.system("cp -a %s %s/killtestb" % (input, output))
 
 		if (Local.kt1rp.lstat() and Local.kt2rp.lstat() and
 			Local.kt3rp.lstat() and Local.kt4rp.lstat()): return
@@ -115,39 +99,6 @@ class ProcessFuncs(unittest.TestCase):
 		for i in [1, 2, 3, 4]:
 			copy_thrice("testfiles/increment%d" % i,
 						"testfiles/killtest%d" % i)
-
-	def verify_back_dirs(self):
-		"""Make sure testfiles/output/back? dirs exist"""
-		if (Local.back1.lstat() and Local.back2.lstat() and
-			Local.back3.lstat() and Local.back4.lstat() and
-			Local.back5.lstat()): return
-
-		os.system(MiscDir + "/myrm testfiles/backup[1-5]")
-
-		self.exec_rb(10000, 1, 'testfiles/killtest3', 'testfiles/backup1')
-		Local.back1.setdata()
-
-		self.exec_rb(10000, 1, 'testfiles/killtest3', 'testfiles/backup2')
-		self.exec_rb(20000, 1, 'testfiles/killtest1', 'testfiles/backup2')
-		Local.back2.setdata()
-		
-		self.exec_rb(10000, 1, 'testfiles/killtest3', 'testfiles/backup3')
-		self.exec_rb(20000, 1, 'testfiles/killtest1', 'testfiles/backup3')
-		self.exec_rb(30000, 1, 'testfiles/killtest2', 'testfiles/backup3')
-		Local.back3.setdata()
-		
-		self.exec_rb(10000, 1, 'testfiles/killtest3', 'testfiles/backup4')
-		self.exec_rb(20000, 1, 'testfiles/killtest1', 'testfiles/backup4')
-		self.exec_rb(30000, 1, 'testfiles/killtest2', 'testfiles/backup4')
-		self.exec_rb(40000, 1, 'testfiles/killtest3', 'testfiles/backup4')
-		Local.back4.setdata()
-
-		self.exec_rb(10000, 1, 'testfiles/killtest3', 'testfiles/backup5')
-		self.exec_rb(20000, 1, 'testfiles/killtest1', 'testfiles/backup5')
-		self.exec_rb(30000, 1, 'testfiles/killtest2', 'testfiles/backup5')
-		self.exec_rb(40000, 1, 'testfiles/killtest3', 'testfiles/backup5')
-		self.exec_rb(50000, 1, 'testfiles/killtest4', 'testfiles/backup5')
-		Local.back5.setdata()
 
 	def runtest_sequence(self, total_tests,
 						 exclude_rbdir, ignore_tmp, compare_links,
@@ -169,125 +120,137 @@ class ProcessFuncs(unittest.TestCase):
 			  (timing_problems, failures,
 			   total_tests - timing_problems - failures)		
 
+class KillTest(ProcessFuncs):
+	"""Test rdiff-backup by killing it, recovering, and then comparing"""
+	killsignal = signal.SIGTERM
 
-class Resume(ProcessFuncs):
-	"""Test for graceful recovery after resumed backup"""
+	# The following are lower and upper bounds on the amount of time
+	# rdiff-backup is expected to run.  They are used to determine how
+	# long to wait before killing the rdiff-backup process
+	time_pairs = [(0.0, 3.7), (0.0, 5.7), (0.0, 3.0), (0.0, 5.0), (0.0, 5.0)]
+
 	def setUp(self):
-		"""Create killtest? and backup? directories"""
-		self.create_killtest_dirs()
-		self.verify_back_dirs()
+		"""Create killtest? and backup? directories if necessary"""
+		Local.kt1rp.setdata()
+		Local.kt2rp.setdata()
+		Local.kt3rp.setdata()		
+		Local.kt4rp.setdata()
+		if (not Local.kt1rp.lstat() or not Local.kt2rp.lstat() or
+			not Local.kt3rp.lstat() or not Local.kt4rp.lstat()):
+			self.create_killtest_dirs()
 
-	def runtest(self, exclude_rbdir, ignore_tmp_files, compare_links):
-		"""Run the actual test, returning 1 if passed and 0 otherwise"""
+	def testTiming(self):
+		"""Run each rdiff-backup sequence 10 times, printing average time"""
+		time_list = [[], [], [], [], []] # List of time lists
+		iterations = 10
+
+		def run_once(current_time, input_rp, index):
+			start_time = time.time()
+			self.exec_rb(current_time, 1, input_rp.path, Local.rpout.path)
+			time_list[index].append(time.time() - start_time)
+
+		for i in range(iterations):
+			self.delete_tmpdirs()
+			run_once(10000, Local.kt3rp, 0)
+			run_once(20000, Local.kt1rp, 1)
+			run_once(30000, Local.kt3rp, 2)
+			run_once(40000, Local.kt3rp, 3)
+			run_once(50000, Local.kt3rp, 4)			
+
+		for i in range(len(time_list)):
+			print "%s -> %s" % (i, " ".join(map(str, time_list[i])))
+
+	def mark_incomplete(self, curtime, rp):
+		"""Check the date of current mirror
+
+		Return 1 if there are two current_mirror incs and last one has
+		time curtime.  Return 0 if only one with time curtime, and
+		then add a current_mirror marker.  Return -1 if only one and
+		time is not curtime.
+
+		"""
+		rbdir = rp.append_path("rdiff-backup-data")
+		inclist = restore.get_inclist(rbdir.append("current_mirror"))
+		assert 1 <= len(inclist) <= 2, str(map(lambda x: x.path, inclist))
+
+		inc_date_pairs = map(lambda inc: (inc.getinctime(), inc), inclist)
+		inc_date_pairs.sort()
+		assert inc_date_pairs[-1][0] == curtime, \
+			   (inc_date_pairs[-1][0], curtime)
+		if len(inclist) == 2: return 1
+
+		if inc_date_pairs[-1][0] == curtime:
+			result = 0
+			marker_time = curtime - 10000
+		else:
+			assert inc_date_pairs[-1][0] == curtime - 10000
+			marker_time = curtime
+			result = -1
+
+		cur_mirror_rp = rbdir.append("current_mirror.%s.data" %
+									 (Time.timetostring(marker_time),))
+		assert not cur_mirror_rp.lstat()
+		cur_mirror_rp.touch()
+		return result
+
+	def testTerm(self):
+		"""Run rdiff-backup, termining and regressing each time
+
+		Because rdiff-backup must be killed, the timing should be
+		updated
+
+		"""
+		count, killed_too_soon, killed_too_late = 5, [0]*4, [0]*4
 		self.delete_tmpdirs()
-		
-		# Backing up killtest3
-
-		# Start with killtest3 because it is big and the first case
+		# Back up killtest3 first because it is big and the first case
 		# is kind of special (there's no incrementing, so different
 		# code)
-		self.exec_and_kill(0.7, 4.0, 10000, 1,
-						   'testfiles/killtest3', 'testfiles/output')
-		if not CompareRecursive(Local.back1, Local.rpout, compare_links,
-								None, exclude_rbdir, ignore_tmp_files):
-			return 0
+		self.exec_rb(10000, 1, Local.kt3rp.path, Local.rpout.path)
+		assert CompareRecursive(Local.kt3rp, Local.rpout)
 
-		# Backing up killtest1
-		self.exec_and_kill(0.8, 5.0, 20000, 1,
-						   'testfiles/killtest1', 'testfiles/output')
-		if not CompareRecursive(Local.back2, Local.rpout, compare_links,
-								None, exclude_rbdir, ignore_tmp_files):
-			return 0
+		def cycle_once(min_max_time_pair, curtime, input_rp, old_rp):
+			"""Backup input_rp, kill, regress, and then compare"""
+			time.sleep(1)
+			self.exec_and_kill(min_max_time_pair, curtime,
+							   input_rp.path, Local.rpout.path)
+			result = self.mark_incomplete(curtime, Local.rpout)
+			assert not self.exec_rb(None, 1, '--check-destination-dir',
+			   						Local.rpout.path)
+			assert CompareRecursive(old_rp, Local.rpout, compare_hardlinks = 0)
+			return result
 
-		# Backing up killtest2
-		self.exec_and_kill(0.7, 0.8, 30000, 1,
-						   'testfiles/killtest2', 'testfiles/output')
-		if not CompareRecursive(Local.back3, Local.rpout, compare_links,
-								None, exclude_rbdir, ignore_tmp_files):
-			return 0
+		# Keep backing kt1rp, and then regressing to kt3rp.  Then go to kt1rp
+		for i in range(count):
+			result = cycle_once(self.time_pairs[1], 20000,
+								Local.kt1rp, Local.kt3rp)
+			if result == 0: killed_too_late[0] += 1
+			elif result == -1: killed_too_soon[0] += 1
+		self.exec_rb(20000, 1, Local.kt1rp.path, Local.rpout.path)
 
-		# Backing up killtest3
-		self.exec_and_kill(0.7, 4.0, 40000, 1,
-						   'testfiles/killtest3', 'testfiles/output')
-		if not CompareRecursive(Local.back4, Local.rpout, compare_links,
-								None, exclude_rbdir, ignore_tmp_files):
-			return 0
+		# Now keep regressing from kt2rp, only staying there at the end
+		for i in range(count):
+			result = cycle_once(self.time_pairs[2], 30000,
+								Local.kt2rp, Local.kt1rp)
+			if result == 0: killed_too_late[1] += 1
+			elif result == -1: killed_too_soon[1] += 1
+		self.exec_rb(30000, 1, Local.kt2rp.path, Local.rpout.path)
 
-		# Backing up killtest4
-		self.exec_and_kill(1.0, 8.0, 50000, 1,
-						   'testfiles/killtest4', 'testfiles/output')
-		if not CompareRecursive(Local.back5, Local.rpout, compare_links,
-								None, exclude_rbdir, ignore_tmp_files):
-			return 0
-		return 1
+		# Now keep regressing from kt2rp, only staying there at the end
+		for i in range(count):
+			result = cycle_once(self.time_pairs[3], 40000,
+								Local.kt3rp, Local.kt2rp)
+			if result == 0: killed_too_late[2] += 1
+			elif result == -1: killed_too_soon[2] += 1
+		self.exec_rb(40000, 1, Local.kt3rp.path, Local.rpout.path)
 
-	def testTERM(self, total_tests = 3):
-		"""Test sending local processes a TERM signal"""
-		self.killsignal = signal.SIGTERM
-		self.runtest_sequence(total_tests, None, None, 1)
+		# Now keep regressing from kt2rp, only staying there at the end
+		for i in range(count):
+			result = cycle_once(self.time_pairs[4], 50000,
+								Local.kt4rp, Local.kt3rp)
+			if result == 0: killed_too_late[3] += 1
+			elif result == -1: killed_too_soon[3] += 1
 
-	def testKILL(self, total_tests = 10):
-		"""Send local backup process a KILL signal"""
-		self.killsignal = signal.SIGKILL
-		self.runtest_sequence(total_tests, None, 1, None)
-
-
-class NoResume(ProcessFuncs):
-	"""Test for consistent backup after abort and then no resume"""
-	def runtest(self, exclude_rbdir, ignore_tmp_files, compare_links):
-		self.delete_tmpdirs()
-
-		# Back up each killtest to output
-		self.exec_and_kill(0.7, 1.5, 10000, 1,
-						   'testfiles/killtest3', 'testfiles/output')
-		self.exec_and_kill(0.6, 0.6, 20000, 1,
-						   'testfiles/killtest1', 'testfiles/output')
-		self.exec_and_kill(0.7, 1.0, 30000, 1,
-						   'testfiles/killtest2', 'testfiles/output')
-		self.exec_and_kill(0.7, 2.0, 40000, 1,
-						   'testfiles/killtest3', 'testfiles/output')
-		self.exec_and_kill(1.0, 5.0, 50000, 1,
-						   'testfiles/killtest4', 'testfiles/output')
-
-		# Now restore each and compare
-		InternalRestore(1, 1, "testfiles/output", "testfiles/restoretarget1",
-						15000)
-		if not CompareRecursive(Local.kt3rp, Local.rpout1, compare_links,
-								None, exclude_rbdir, ignore_tmp_files):
-			return 0
-		
-		InternalRestore(1, 1, "testfiles/output", "testfiles/restoretarget2",
-						25000)
-		if not CompareRecursive(Local.kt1rp, Local.rpout2, compare_links,
-								None, exclude_rbdir, ignore_tmp_files):
-			return 0
-
-		InternalRestore(1, 1, "testfiles/output", "testfiles/restoretarget3",
-						35000)
-		if not CompareRecursive(Local.kt2rp, Local.rpout3, compare_links,
-								None, exclude_rbdir, ignore_tmp_files):
-			return 0
-		InternalRestore(1, 1, "testfiles/output", "testfiles/restoretarget4",
-						45000)
-		
-		if not CompareRecursive(Local.kt3rp, Local.rpout4, compare_links,
-								None, exclude_rbdir, ignore_tmp_files):
-			return 0
-		InternalRestore(1, 1, "testfiles/output", "testfiles/restoretarget5",
-						55000)
-
-		if not CompareRecursive(Local.kt4rp, Local.rpout5, compare_links,
-								None, exclude_rbdir, ignore_tmp_files):
-			return 0
-		return 1
-
-	def testTERM(self, total_tests = 5):
-		self.killsignal = signal.SIGTERM
-		self.runtest_sequence(total_tests, 1, None, 1)
-
-	def testKILL(self, total_tests = 5):
-		self.killsignal = signal.SIGKILL
-		self.runtest_sequence(total_tests, 1, 1, None)
-
+		print "Killed too soon out of %s: %s" % (count, killed_too_soon)
+		print "Killed too late out of %s: %s" % (count, killed_too_late)
 
 if __name__ == "__main__": unittest.main()

@@ -24,6 +24,7 @@ target = rpath.RPath(lc, "testfiles/output/out")
 out2 = rpath.RPath(lc, "testfiles/output/out2")
 out_gz = rpath.RPath(lc, "testfiles/output/out.gz")
 
+Time.setcurtime(1000000000)
 Time.setprevtime(999424113)
 prevtimestr = "2001-09-02T02:48:33-07:00"
 t_pref = "testfiles/output/out.2001-09-02T02:48:33-07:00"
