@@ -31,7 +31,7 @@ class DSRPath(RPath):
 	newmtime - holds the new mtime
 
 	"""
-	def __init__(self, source, *args):
+	def __init__(self, source, conn_or_rp, base = 0, index = ()):
 		"""Initialize DSRP
 
 		Source should be true iff the DSRPath is taken from the
@@ -42,10 +42,11 @@ class DSRPath(RPath):
 		otherwise use the same arguments as the RPath initializer.
 
 		"""
-		if len(args) == 1 and isinstance(args[0], RPath):
-			rp = args[0]
-			RPath.__init__(self, rp.conn, rp.base, rp.index)
-		else: RPath.__init__(self, *args)
+		if base == 0:
+			assert isinstance(conn_or_rp, RPath)
+			RPath.__init__(self, conn_or_rp.conn,
+						   conn_or_rp.base, conn_or_rp.index)
+		else: RPath.__init__(self, conn_or_rp, base, index)
 
 		if source != "bypass":
 			# "bypass" val is used when unpackaging over connection

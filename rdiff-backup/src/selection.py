@@ -94,13 +94,61 @@ class Select:
 			self.starting_index = starting_index
 			self.iter = self.iterate_starting_from(self.dsrpath,
 						            self.iterate_starting_from, sel_func)
-		else: self.iter = self.Iterate(self.dsrpath, self.Iterate, sel_func)
+		elif self.quoting_on:
+			self.iter = self.Iterate(self.dsrpath, self.Iterate, sel_func)
+		else: self.iter = self.Iterate_fast(self.dsrpath, sel_func)
 
 		# only iterate parents if we are not starting from beginning
 		self.iterate_parents = starting_index is not None and iterate_parents
 		self.next = self.iter.next
 		self.__iter__ = lambda: self
 		return self
+
+	def Iterate_fast(self, dsrpath, sel_func):
+		"""Like Iterate, but don't recur, saving time
+
+		This is a bit harder to read than Iterate/iterate_in_dir, but
+		it should be faster because it only recurs to half as much
+		depth.  It doesn't handle the quoting case.
+
+		"""
+		def error_handler(exc, filename):
+			Log("Error initializing file %s/%s" % (dsrpath.path, filename), 2)
+			return None
+
+		def diryield(dsrpath):
+			s = sel_func(dsrpath)
+			if s == 0: return
+			elif s == 1:
+				yield dsrpath
+				for filename in Robust.listrp(dsrpath):
+					new_dsrp = Robust.check_common_error(error_handler,
+											  dsrpath.append, [filename])
+					if new_dsrp:
+						if new_dsrp.isdir():
+							for dsrp in diryield(new_dsrp): yield dsrp
+						elif sel_func(new_dsrp) == 1: yield new_dsrp
+			elif s == 2:
+				yielded_something = None
+				for filename in Robust.listrp(dsrpath):
+					new_dsrp = Robust.check_common_error(error_handler,
+											  dsrpath.append, [filename])
+					if new_dsrp:
+						if new_dsrp.isdir():
+							for dsrp in diryield(new_dsrp):
+								if not yielded_something:
+									yielded_something = 1
+									yield dsrpath
+								yield dsrp
+						elif sel_func(new_dsrp) == 1:
+							if not yielded_something:
+								yielded_something = 1
+								yield dsrpath
+							yield new_dsrp
+
+		if dsrpath.isdir():
+			for dsrp in diryield(dsrpath): yield dsrp
+		elif sel_func(dsrpath) == 1: yield dsrpath
 
 	def Iterate(self, dsrpath, rec_func, sel_func):
 		"""Return iterator yielding dsrps in dsrpath

@@ -1,5 +1,5 @@
-import cPickle
-import Globals
+import cPickle, array
+import Globals, C
 
 #######################################################################
 #
@@ -13,7 +13,7 @@ class UnwrapFile:
 	def __init__(self, file):
 		self.file = file
 
-	def _s2l(self, s):
+	def _s2l_old(self, s):
 		"""Convert string to long int"""
 		assert len(s) == 7
 		l = 0L
@@ -31,8 +31,9 @@ class UnwrapFile:
 		"""
 		header = self.file.read(8)
 		if not header: return None, None
-		assert len(header) == 8, "Header is only %d bytes" % len(header)
-		type, length = header[0], self._s2l(header[1:])
+		if len(header) != 8:
+			assert None, "Header %s is only %d bytes" % (header, len(header))
+		type, length = header[0], C.str2long(header[1:])
 		buf = self.file.read(length)
 		if type == "o": return type, cPickle.loads(buf)
 		else: return type, buf
@@ -82,29 +83,20 @@ class IterVirtualFile(UnwrapFile):
 		"""
 		UnwrapFile.__init__(self, iwf.file)
 		self.iwf = iwf
-		self.bufferlist = [initial_data]
-		self.bufferlen = len(initial_data)
+		self.buffer = initial_data
 		self.closed = None
 
-	def check_consistency(self):
-		l = len("".join(self.bufferlist))
-		assert l == self.bufferlen, \
-			   "Length of IVF bufferlist doesn't match (%s, %s)" % \
-			   (l, self.bufferlen)
-
 	def read(self, length):
+		"""Read length bytes from the file, updating buffers as necessary"""
 		assert not self.closed
 		if self.iwf.currently_in_file:
-			while length >= self.bufferlen:
+			while length >= len(self.buffer):
 				if not self.addtobuffer(): break
 
-		real_len = min(length, self.bufferlen)
-		combined_buffer = "".join(self.bufferlist)
-		assert len(combined_buffer) == self.bufferlen, \
-			   (len(combined_buffer), self.bufferlen)
-		self.bufferlist = [combined_buffer[real_len:]]
-		self.bufferlen = self.bufferlen - real_len
-		return combined_buffer[:real_len]
+		real_len = min(length, len(self.buffer))
+		return_val = self.buffer[:real_len]
+		self.buffer = self.buffer[real_len:]
+		return return_val
 			
 	def addtobuffer(self):
 		"""Read a chunk from the file and add it to the buffer"""
@@ -112,8 +104,7 @@ class IterVirtualFile(UnwrapFile):
 		type, data = self._get()
 		assert type == "c", "Type is %s instead of c" % type
 		if data:
-			self.bufferlen = self.bufferlen + len(data)
-			self.bufferlist.append(data)
+			self.buffer += data
 			return 1
 		else:
 			self.iwf.currently_in_file = None
@@ -123,8 +114,7 @@ class IterVirtualFile(UnwrapFile):
 		"""Currently just reads whats left and discards it"""
 		while self.iwf.currently_in_file:
 			self.addtobuffer()
-			self.bufferlist = []
-			self.bufferlen = 0
+			self.buffer = ""
 		self.closed = 1
 
 
@@ -145,45 +135,43 @@ class FileWrappingIter:
 	def __init__(self, iter):
 		"""Initialize with iter"""
 		self.iter = iter
-		self.bufferlist = []
-		self.bufferlen = 0L
+		self.array_buf = array.array('c')
 		self.currently_in_file = None
 		self.closed = None
 
 	def read(self, length):
 		"""Return next length bytes in file"""
 		assert not self.closed
-		while self.bufferlen < length:
+		while len(self.array_buf) < length:
 			if not self.addtobuffer(): break
 
-		combined_buffer = "".join(self.bufferlist)
-		assert len(combined_buffer) == self.bufferlen
-		real_len = min(self.bufferlen, length)
-		self.bufferlen = self.bufferlen - real_len
-		self.bufferlist = [combined_buffer[real_len:]]
-		return combined_buffer[:real_len]
+		result = self.array_buf[:length].tostring()
+		del self.array_buf[:length]
+		return result
 
 	def addtobuffer(self):
-		"""Updates self.bufferlist and self.bufferlen, adding on a chunk
+		"""Updates self.buffer, adding a chunk from the iterator.
 
 		Returns None if we have reached the end of the iterator,
 		otherwise return true.
 
 		"""
+		array_buf = self.array_buf
 		if self.currently_in_file:
-			buf = "c" + self.addfromfile()
+			array_buf.fromstring("c")
+			array_buf.fromstring(self.addfromfile())
 		else:
 			try: currentobj = self.iter.next()
 			except StopIteration: return None
 			if hasattr(currentobj, "read") and hasattr(currentobj, "close"):
 				self.currently_in_file = currentobj
-				buf = "f" + self.addfromfile()
+				array_buf.fromstring("f")
+				array_buf.fromstring(self.addfromfile())
 			else:
 				pickle = cPickle.dumps(currentobj, 1)
-				buf = "o" + self._l2s(len(pickle)) + pickle
-				
-		self.bufferlist.append(buf)
-		self.bufferlen = self.bufferlen + len(buf)
+				array_buf.fromstring("o")
+				array_buf.fromstring(C.long2str(long(len(pickle))))
+				array_buf.fromstring(pickle)
 		return 1
 
 	def addfromfile(self):
@@ -192,9 +180,9 @@ class FileWrappingIter:
 		if not buf:
 			assert not self.currently_in_file.close()
 			self.currently_in_file = None
-		return self._l2s(len(buf)) + buf
+		return C.long2str(long(len(buf))) + buf
 
-	def _l2s(self, l):
+	def _l2s_old(self, l):
 		"""Convert long int to string of 7 characters"""
 		s = ""
 		for i in range(7):
@@ -210,26 +198,28 @@ class BufferedRead:
 	"""Buffer the .read() calls to the given file
 
 	This is used to lessen overhead and latency when a file is sent
-	over a connection.
+	over a connection.  Profiling said that arrays were faster than
+	strings here.
 
 	"""
 	def __init__(self, file):
 		self.file = file
-		self.buffer = ""
+		self.array_buf = array.array('c')
 		self.bufsize = Globals.conn_bufsize
 
 	def read(self, l = -1):
+		array_buf = self.array_buf
 		if l < 0: # Read as much as possible
-			result = self.buffer + self.file.read()
-			self.buffer = ""
+			result = array_buf.tostring() + self.file.read()
+			del array_buf[:]
 			return result
 
-		if len(self.buffer) < l: # Try to make buffer as long as l
-			self.buffer += self.file.read(max(self.bufsize,
-											  l - len(self.buffer)))
-		actual_size = min(l, len(self.buffer))
-		result = self.buffer[:actual_size]
-		self.buffer = self.buffer[actual_size:]
+		if len(array_buf) < l: # Try to make buffer at least as long as l
+			array_buf.fromstring(self.file.read(max(self.bufsize, l)))
+		result = array_buf[:l].tostring()
+		del array_buf[:l]
 		return result
 
 	def close(self): return self.file.close()
+
+from log import *

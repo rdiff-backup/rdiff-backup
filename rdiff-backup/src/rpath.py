@@ -217,6 +217,7 @@ class RORPath(RPathStatic):
 				(not Globals.change_ownership or self.issym())):
 				# Don't compare gid/uid for symlinks or if not change_ownership
 				pass
+			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'devloc' or key == 'inode' or key == 'nlink': pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return None
@@ -425,7 +426,7 @@ class RPath(RORPath):
 		if base is not None: self.path = "/".join((base,) + index)
 		self.file = None
 		if data or base is None: self.data = data
-		else: self.setdata()
+		else: self.data = self.conn.C.make_file_dict(self.path)
 
 	def __str__(self):
 		return "Path: %s\nIndex: %s\nData: %s" % (self.path, self.index,
@@ -448,6 +449,10 @@ class RPath(RORPath):
 		self.path = "/".join((self.base,) + self.index)
 
 	def setdata(self):
+		"""Set data dictionary using C extension"""
+		self.data = self.conn.C.make_file_dict(self.path)
+
+	def setdata_old(self):
 		"""Create the data dictionary"""
 		statblock = self.conn.RPathStatic.tupled_lstat(self.path)
 		if statblock is None:
