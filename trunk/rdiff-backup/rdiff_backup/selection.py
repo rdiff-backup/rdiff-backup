@@ -144,7 +144,7 @@ class Select:
 				delayed_rp_stack.append(rpath)
 				diryield_stack.append(diryield(rpath))
 
-	def Iterate(self, rpath, rec_func, sel_func):
+	def Iterate(self, rp, rec_func, sel_func):
 		"""Return iterator yielding rpaths in rpath
 
 		rec_func is usually the same as this function and is what
@@ -155,21 +155,21 @@ class Select:
 		is usually self.Select.
 
 		"""
-		s = sel_func(rpath)
+		s = sel_func(rp)
 		if s == 0: return
 		elif s == 1: # File is included
-			yield rpath
-			if rpath.isdir():
-				for rp in self.iterate_in_dir(rpath, rec_func, sel_func):
-					yield rp
+			yield rp
+			if rp.isdir():
+				for rp2 in self.iterate_in_dir(rp, rec_func, sel_func):
+					yield rp2
 		elif s == 2:
-			if rpath.isdir(): # Directory is merely scanned
-				iid = self.iterate_in_dir(rpath, rec_func, sel_func)
+			if rp.isdir(): # Directory is merely scanned
+				iid = self.iterate_in_dir(rp, rec_func, sel_func)
 				try: first = iid.next()
 				except StopIteration: return # no files inside; skip rp
-				yield rpath
+				yield rp
 				yield first
-				for rp in iid: yield rp
+				for rp2 in iid: yield rp2
 		else: assert 0, "Invalid selection result %s" % (str(s),)
 
 	def listdir(self, dir_rp):

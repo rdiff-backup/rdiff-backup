@@ -323,29 +323,28 @@ def backup_get_mirrortime():
 
 def backup_set_fs_globals(rpin, rpout):
 	"""Use fs_abilities to set the globals that depend on filesystem"""
+	def update_bool_global(attr, bool):
+		"""If bool is not None, update Globals.attr accordingly"""
+		if Globals.get(attr) is not None:
+			SetConnections.UpdateGlobal(attr, bool)
+
 	src_fsa = fs_abilities.FSAbilities('source').init_readonly(rpin)
 	Log(str(src_fsa), 3)
-	if Globals.read_acls is None:
-		SetConnections.UpdateGlobal('read_acls', src_fsa.acls)
-	if src_fsa.eas: rpin.get_ea()
-	if Globals.read_eas is None:
-		SetConnections.UpdateGlobal('read_eas', src_fsa.eas)
-
+	update_bool_global('read_acls', src_fsa.acls)
+	update_bool_global('read_eas', src_fsa.eas)
+	update_bool_global('read_resource_forks', src_fsa.resource_forks)
+	
 	dest_fsa = fs_abilities.FSAbilities('destination').init_readwrite(
 		Globals.rbdir, override_chars_to_quote = Globals.chars_to_quote)
 	Log(str(dest_fsa), 3)
 	SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks)
 	SetConnections.UpdateGlobal('fsync_directories', dest_fsa.fsync_dirs)
-	if Globals.write_acls is None:
-		SetConnections.UpdateGlobal('write_acls',
-									Globals.read_acls and dest_fsa.acls)
-	if Globals.write_eas is None:
-		SetConnections.UpdateGlobal('write_eas',
-									Globals.read_eas and dest_fsa.eas)
 	SetConnections.UpdateGlobal('change_ownership', dest_fsa.ownership)
-	if Globals.change_dir_inc_perms is None:
-		SetConnections.UpdateGlobal('change_dir_inc_perms',
-									dest_fsa.dir_inc_perms)
+	update_bool_global('write_acls', Globals.read_acls and dest_fsa.acls)
+	update_bool_global('write_eas', Globals.read_eas and dest_fsa.eas)
+	update_bool_global('write_resource_forks',
+					   Globals.read_resource_forks and dest_fsa.resource_forks)
+	update_bool_global('change_dir_inc_perms', dest_fsa.dir_inc_perms)
 	SetConnections.UpdateGlobal('chars_to_quote', dest_fsa.chars_to_quote)
 	if Globals.chars_to_quote:
 		for conn in Globals.connections:
@@ -417,20 +416,22 @@ def restore_init_quoting(src_rp):
 
 def restore_set_fs_globals(target):
 	"""Use fs_abilities to set the globals that depend on filesystem"""
-	target_fsa = fs_abilities.FSAbilities().init_readwrite(target, 0)
-	if Globals.read_acls is None:
-		SetConnections.UpdateGlobal('read_acls', target_fsa.acls)
-	if Globals.write_acls is None:
-		SetConnections.UpdateGlobal('write_acls', target_fsa.acls)
-	if Globals.read_eas is None:
-		SetConnections.UpdateGlobal('read_eas', target_fsa.eas)
-	if Globals.write_eas is None:
-		SetConnections.UpdateGlobal('write_eas', target_fsa.eas)
-	if Globals.read_eas: target.get_ea()
+	def update_bool_global(attr, bool):
+		"""If bool is not None, update Globals.attr accordingly"""
+		if Globals.get(attr) is not None:
+			SetConnections.UpdateGlobal(attr, bool)
+
+	target_fsa = fs_abilities.FSAbilities('destination').init_readwrite(
+		target, 0)
+	update_bool_global('read_acls', target_fsa.acls)
+	update_bool_global('write_acls', target_fsa.acls)
+	update_bool_global('read_eas', target_fsa.eas)
+	update_bool_global('write_eas', target_fsa.eas)
 	SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
 	SetConnections.UpdateGlobal('change_ownership', target_fsa.ownership)
 
-	mirror_fsa = fs_abilities.FSAbilities().init_readwrite(Globals.rbdir)
+	mirror_fsa = fs_abilities.FSAbilities('source').init_readwrite(
+		Globals.rbdir)
 	if Globals.chars_to_quote is None: # otherwise already overridden
 		if mirror_fsa.chars_to_quote:
 			SetConnections.UpdateGlobal('chars_to_quote',

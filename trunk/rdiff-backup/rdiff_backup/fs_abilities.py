@@ -28,7 +28,7 @@ FSAbilities object describing it.
 """
 
 import errno
-import Globals, log, TempFile
+import Globals, log, TempFile, selection
 
 class FSAbilities:
 	"""Store capabilities of given file system"""
@@ -38,9 +38,10 @@ class FSAbilities:
 	eas = None # True if extended attributes supported
 	hardlinks = None # True if hard linking supported
 	fsync_dirs = None # True if directories can be fsync'd
-	read_only = None # True if capabilities were determined non-destructively
 	dir_inc_perms = None # True if regular files can have full permissions
+	resource_forks = None # True if regular_file/rsrc holds resource fork
 	name = None # Short string, not used for any technical purpose
+	read_only = None # True if capabilities were determined non-destructively
 
 	def __init__(self, name = None):
 		"""FSAbilities initializer.  name is only used in logging"""
@@ -48,31 +49,50 @@ class FSAbilities:
 
 	def __str__(self):
 		"""Return pretty printable version of self"""
-		s = ['-' * 60]
+		assert self.read_only == 0 or self.read_only == 1, self.read_only
+		s = ['-' * 65]
+
 		def addline(desc, val_text):
 			"""Add description line to s"""
 			s.append('  %s%s%s' % (desc, ' ' * (45-len(desc)), val_text))
 
-		if self.name:
-			s.append('Detected abilities for %s file system:' % (self.name,))
-		else: s.append('Detected abilities for file system')
+		def add_boolean_list(pair_list):
+			"""Add lines from list of (desc, boolean) pairs"""
+			for desc, boolean in pair_list:
+				if boolean: val_text = 'On'
+				elif boolean is None: val_text = 'N/A'
+				else:
+					assert boolean == 0
+					val_text = 'Off'
+				addline(desc, val_text)			
 
-		ctq_str = (self.chars_to_quote is None and 'N/A'
-				   or repr(self.chars_to_quote))
-		addline('Characters needing quoting', ctq_str)
+		def get_title_line():
+			"""Add the first line, mostly for decoration"""
+			read_string = self.read_only and "read only" or "read/write"
+			if self.name:
+				return ('Detected abilities for %s (%s) file system:' %
+						(self.name, read_string))
+			else: return ('Detected abilities for %s file system' %
+						  (read_string,))
 
-		for desc, val in [('Ownership changing', self.ownership),
-						  ('Access control lists', self.acls),
+		def add_ctq_line():
+			"""Get line describing chars to quote"""
+			ctq_str = (self.chars_to_quote is None and 'N/A'
+					   or repr(self.chars_to_quote))
+			addline('Characters needing quoting', ctq_str)
+
+		s.append(get_title_line())
+		if not self.read_only:
+			add_ctq_line()
+			add_boolean_list([('Ownership changing', self.ownership),
+							  ('Hard linking', self.hardlinks),
+							  ('fsync() directories', self.fsync_dirs),
+							  ('Directory inc permissions',
+							   self.dir_inc_perms)])
+		add_boolean_list([('Access control lists', self.acls),
 						  ('Extended attributes', self.eas),
-						  ('Hard linking', self.hardlinks),
-						  ('fsync() directories', self.fsync_dirs),
-						  ('Directory inc permissions', self.dir_inc_perms)]:
-			if val: val_text = 'On'
-			elif val is None: val_text = 'N/A'
-			else:
-				assert val == 0
-				val_text = 'Off'
-			addline(desc, val_text)
+						  ('Mac OS X style resource forks',
+						   self.resource_forks)])
 		s.append(s[0])
 		return '\n'.join(s)
 
@@ -90,6 +110,7 @@ class FSAbilities:
 		self.read_only = 1
 		self.set_eas(rp, 0)
 		self.set_acls(rp)
+		self.set_resource_fork_readonly(rp)
 		return self
 
 	def init_readwrite(self, rbdir, use_ctq_file = 1,
@@ -121,6 +142,7 @@ class FSAbilities:
 		self.set_eas(subdir, 1)
 		self.set_acls(subdir)
 		self.set_dir_inc_perms(subdir)
+		self.set_resource_fork_readwrite(subdir)
 		if override_chars_to_quote is None: self.set_chars_to_quote(subdir)
 		else: self.chars_to_quote = override_chars_to_quote
 		if use_ctq_file: self.compare_chars_to_quote(rbdir)
@@ -257,6 +279,49 @@ rdiff-backup-data/chars_to_quote.
 		if test_rp.getperms() == 07777: self.dir_inc_perms = 1
 		else: self.dir_inc_perms = 0
 		test_rp.delete()
+
+	def set_resource_fork_readwrite(self, dir_rp):
+		"""Test for resource forks by writing to regular_file/rsrc"""
+		reg_rp = dir_rp.append('regfile')
+		reg_rp.touch()
+		rfork = reg_rp.append('rsrc')
+		assert not rfork.lstat()
+
+		s = 'test string---this should end up in resource fork'
+		try:
+			fp_write = rfork.open('wb')
+			fp_write.write(s)
+			assert not fp_write.close()
+
+			fp_read = rfork.open('rb')
+			s_back = fp_read.read()
+			assert not fp.read.close()
+		except (OSError, IOError), e: self.resource_forks = 0
+		else: self.resource_forks = (s_back == s)
+		reg_rp.delete()
+
+	def set_resource_fork_readonly(self, dir_rp):
+		"""Test for resource fork support by testing an regular file
+
+		Launches search for regular file in given directory.  If no
+		regular file is found, resource_fork support will be turned
+		off by default.
+
+		"""
+		for rp in selection.Select(dir_rp).set_iter():
+			if rp.isreg():
+				try:
+					rfork = rp.append('rsrc')
+					fp = rfork.open('rb')
+					fp.read()
+					assert not fp.close()
+				except (OSError, IOError), e:
+					self.resource_forks = 0
+					return
+				self.resource_forks = 1
+				return
+		self.resource_forks = 0
+
 
 def test_eas_local(rp, write):
 	"""Test ea support.  Must be called locally.  Usedy by set_eas above."""
