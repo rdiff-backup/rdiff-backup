@@ -8,7 +8,8 @@ DistDir = "dist"
 # Various details about the files must also be specified by the rpm
 # spec template.
 spec_template = "dist/rdiff-backup.spec.template"
-#redhat_spec_template = "dist/rdiff-backup.rh7x.spec"
+# The Fedora distribution has its own spec template
+fedora_spec_template = "dist/rdiff-backup.spec.template-fedora"
 
 def CopyMan(destination, version):
 	"""Create updated man page at the specified location"""
@@ -121,10 +122,10 @@ def MakeTar():
 
 def MakeSpecFile():
 	"""Create spec file using spec template"""
-	#specfile = "rdiff-backup-%s-2.spec" % Version
-	specfile = "rdiff-backup.spec" # Fedora standard name
+	specfile, fedora_specfile= "rdiff-backup.spec", "rdiff-backup.spec-fedora"
 	VersionedCopy(spec_template, specfile)
-	return specfile
+	VersionedCopy(fedora_spec_template, fedora_specfile)
+	return specfile, fedora_specfile
 
 def parse_cmdline(arglist):
 	"""Returns action"""
@@ -153,8 +154,8 @@ def Main():
 		print "Processing version " + Version
 		tarfile = MakeTar()
 		print "Made tar file " + tarfile
-		specfile = MakeSpecFile()
-		print "Made specfile ", specfile
+		specfiles = MakeSpecFile()
+		print "Made specfiles ", specfiles
 
 
 if __name__ == "__main__" and not globals().has_key('__no_execute__'):
