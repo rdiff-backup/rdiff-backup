@@ -60,8 +60,7 @@ main(int argc UNUSED, char **argv UNUSED)
 	       ret = _hs_emit_eof(hs_filebuf_write, outfb, &stats);
 	       if (ret < 0)
 		    return 1;
-	  } if (!strcmp(cmd, "LITERAL") ||
-		!strcmp(cmd, "SIGNATURE")) {
+	  } else if (!strcmp(cmd, "LITERAL") || !strcmp(cmd, "SIGNATURE")) {
 	       if (scanf("%d", &len) != 1)
 		    return 1;
 	       

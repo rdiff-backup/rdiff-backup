@@ -19,9 +19,13 @@
    USA
 */
 
+extern int _hs_enable_trace;
+
 #ifdef DO_HS_TRACE
-#define _hs_trace(s, str...) fprintf (stderr, \
-  "        " __FUNCTION__ ": " s "\n" , ##str)
+#define _hs_trace(s, str...) do	{				\
+       if (_hs_enable_trace) { fprintf (stderr,			\
+           "        " __FUNCTION__ ": " s "\n" , ##str); }	\
+       } while (0)
 #else /* !DO_HS_TRACE */
 #define _hs_trace(s, str...)
 #endif /* !DO_HS_TRACE */

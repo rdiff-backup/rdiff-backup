@@ -66,6 +66,7 @@ static int _hs_int_len(uint32_t val)
 int _hs_emit_eof(hs_write_fn_t write_fn, void *write_priv,
 		 hs_stats_t *stats UNUSED)
 {
+    _hs_trace("Writing EOF");
     return _hs_write_netbyte(write_fn, write_priv, op_eof);
 }
 
@@ -81,10 +82,13 @@ _hs_emit_chunk_cmd(hs_write_fn_t write_fn,
 
      assert(kind == op_kind_literal || kind == op_kind_signature);
 
-     if (kind == op_kind_literal)
+     if (kind == op_kind_literal) {
+	  _hs_trace("Writing LITERAL(len=%d)", size);
 	  base = op_literal_1;
-     else
+     } else {
+	  _hs_trace("Writing SIGNATURE(len=%d)", size);
 	  base = op_signature_1;
+     }
 
      if (_hs_fits_inline(size)) {
 	  return _hs_write_netbyte(write_fn, write_priv, base + size - 1);
@@ -136,7 +140,7 @@ _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
     } else if (off_type == 4) {
 	cmd = op_copy_int_byte;
     } else {
-	 fprintf(stderr, "can't pack offset %d!\n", offset);
+	 fprintf(stderr, "can't pack offset %d!", offset);
 	 abort();
     }
 
@@ -147,7 +151,9 @@ _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
     } else if (len_type == 4) {
 	cmd += 2;
     } else {
-	assert(0 && "unimplemented");
+	 _hs_fatal("can't pack length %ld as a %d byte number",
+		   (long) length, len_type);
+	 return -1;
     }
 
     ret = _hs_write_netbyte(write_fn, write_priv, cmd);

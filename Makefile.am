@@ -12,15 +12,15 @@ libhsync_la_SOURCES = dec.c enc.c \
 	filebuf.c membuf.c ptrbuf.c \
 	checksum.c copyq.c \
 	compress.c compress.h inbuf.c \
-	inhale.c
+	inhale.c trace.c
 
 libhsyncdecode_la_SOURCES = dec.c \
 	private.h netio.c includes.h \
 	compress.c compress.h \
 	filebuf.c membuf.c ptrbuf.c \
-	inhale.c
+	inhale.c trace.c
 
-noinst_SCRIPTS = test-decode.sh test-encode.sh test-chain.sh
+noinst_SCRIPTS = test-decode.sh test-encode.sh test-chain.sh test-cmds.sh
 
 test_data=test-chain/empty-sig  \
 test-decode/01-diff \
@@ -54,7 +54,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 include_HEADERS = hsync.h hsyncproto.h
 
 bin_PROGRAMS = hsdecode hsencode 
-noinst_PROGRAMS = hsemit hsinhale
+check_PROGRAMS = hsemit hsinhale
+
+check_DATA = test-cmds/cmds.txt
+
+test-cmds/cmds.txt: make-cmds.py
+	$(PYTHON) ./make-cmds.py > $@
 
 hsdecode_SOURCES = hsdecode.c
 hsdecode_LDADD = libhsyncdecode.la
@@ -73,6 +78,6 @@ hsinhale_LDADD = libhsyncdecode.la
 # ``When the program is being tested, it is too late to make design
 # changes.''
 
-TESTS = test-decode.sh test-encode.sh test-chain.sh
+TESTS = test-cmds.sh test-decode.sh test-encode.sh test-chain.sh
 
 

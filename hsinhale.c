@@ -66,13 +66,17 @@ main(int argc UNUSED, char **argv UNUSED)
 
      infb = hs_filebuf_from_file(stdin);
      
-     while (1) {
+     do {
 	  ret = _hs_inhale_command(hs_filebuf_read, infb,
 				   &kind, &len, &off);
 
 	  if (ret < 0)
 	       return 1;
+	  else if (ret == 0)
+	       return 1;
 
 	  print_cmd(kind, len, off);
-     }
+     } while (kind != op_kind_eof);
+
+     return 0;
 }

@@ -136,6 +136,9 @@ _hs_is_gd_signature(uint8_t cmd,
 
 
 
+/*
+  Returns: -1 on error, 0 on hard eof, or +1 for a command.  The
+  command is in KIND, and LEN and OFF are set if appropriate. */
 int
 _hs_inhale_command(hs_read_fn_t read_fn, void * read_priv,
 		   int *kind, uint32_t *len, uint32_t *off)
@@ -151,10 +154,10 @@ _hs_inhale_command(hs_read_fn_t read_fn, void * read_priv,
 	  _hs_error("error while trying to read command byte");
 	  return -1;
      } else if (ret == 0) {
-	  _hs_error("unexpected end of file; "
-		    "assuming that this was meant to be the end");
+	  _hs_error("unexpected end of file while reading a command byte; "
+		    "assuming that this was meant to be the end of the file");
 	  *kind = op_kind_eof;
-	  return 1;
+	  return 0;
      }
 
      if (_hs_is_gd_eof(type) > 0) {
