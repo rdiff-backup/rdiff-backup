@@ -82,6 +82,7 @@ class RdiffTest(unittest.TestCase):
 
 	def testWriteDelta(self):
 		"""Test write delta feature of rdiff"""
+		self.delta.delete()
 		rplist = [self.basis, self.new, self.delta, self.output]
 		MakeRandomFile(self.basis.path)
 		MakeRandomFile(self.new.path)
