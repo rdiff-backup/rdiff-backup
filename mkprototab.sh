@@ -3,7 +3,7 @@
 # libhsync -- the library for network deltas
 # $Id$
 # 
-# Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+# Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
@@ -48,7 +48,7 @@ cat <<EOF
  * and length of the whole command.  The implied value is only used
  * if the first parameter length is zero. */
 
-const struct hs_prototab_ent _hs_prototab[] = {
+const struct hs_prototab_ent hs_prototab[] = {
 EOF
 
 not_first=
@@ -65,7 +65,7 @@ emit_cmd() {
     value=`expr $value + 1 `
 }
 
-emit_cmd EOF 0 0 0
+emit_cmd END 0 0 0
 
 # FIXME: seq(1) may not be available on BSD systems.
 
