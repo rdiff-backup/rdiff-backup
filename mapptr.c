@@ -104,6 +104,8 @@
  * but not all of the buffer is necessarily valid.  The window is the
  * section of the buffer that contains valid data. */
 
+/* TODO: Run this whole algorithm past tridge. */
+
 #include "includes.h"
 
 #include <unistd.h>
@@ -124,17 +126,23 @@ static ssize_t const DEFAULT_WINDOW_SIZE = (ssize_t) (16 * 1024);
 
 
 
-/* Set up a new file mapping.
-  
-   The file cursor is assumed to be at position 0 when this is called.
-   For nonseekable files this is arbitrary; for seekable files bad
-   things will happen if that's not true and we later have to seek. */
+/*
+ * Set up a new file mapping.
+ * 
+ * The file cursor is assumed to be at position 0 when this is
+ * called. For nonseekable files this is arbitrary; for seekable files
+ * bad things will happen if that's not true and we later have to
+ * seek.
+ */
 hs_map_t *
 _hs_map_file(int fd)
 {
     hs_map_t       *map;
 
     map = _hs_alloc_struct(hs_map_t);
+
+    /* TODO: Perhaps use fcntl(fd, F_GETFL, 0) to check whether the
+     * file has O_NONBLOCK set, and remember that for later? */
 
     map->godtag = HS_MAP_TAG;
     map->fd = fd;
@@ -208,6 +216,10 @@ _hs_map_do_read(hs_map_t *map,
         p += nread;
         buf_remain -= nread;
         map->p_fd_offset += nread;
+
+        /* TODO: If we know we're in nonblocking mode, then perhaps we
+         * should keep reading data until we either run out of space
+         * or we know we're about to block. */
     } while (total_read < min_size);
 
     _hs_trace("wanted %ld to %ld bytes, read %ld bytes, fd now at %ld%s",

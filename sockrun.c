@@ -46,13 +46,23 @@
 
 /*
  * TODO: Let the input and output parts proceed more slowly, or with
- * randomly limited lengths, so that it's more likely fragmentation will be
- * seen in the middle.
+ * randomly limited lengths, so that it's more likely fragmentation
+ * will be seen in the middle.
  *
  * TODO: Should we display an error message on broken pipes, or not?
  * If we do, then a program which terminates without reading all of
  * its input will cause an error -- but this is perhaps good behaviour
  * anyhow.
+ *
+ * TODO: Another version of this which takes *two* commands and runs
+ * them with a socket joining stdout of the first to stdin of the
+ * second.  This might be good for testing encoding and decoding
+ * working together.  The syntax is probably something like this:
+ *
+ *   sockrun2 hsnad \| hsdecode
+ *
+ * Perhaps we want to just support that as a generalization within
+ * this single sockrun program?
  */
 
 
