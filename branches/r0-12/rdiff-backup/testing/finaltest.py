@@ -290,6 +290,19 @@ class Final(PathSetter):
 		popen_fp.close()
 		assert wc_output.split() == ["0", "0", "0"], wc_output
 
+	def testLegacy(self):
+		"""Test restoring directory with no mirror_metadata file"""
+		self.delete_tmpdirs()
+		self.set_connections(None, None, None, None)
+		self.exec_rb(10000, 'testfiles/various_file_types',
+					 'testfiles/output')
+		self.exec_rb(20000, 'testfiles/empty', 'testfiles/output')
+		assert not os.system(MiscDir + '/myrm testfiles/output/rdiff-backup-data/mirror_metadata*')
+		self.exec_rb_extra_args(None, '-r0', 'testfiles/output',
+								'testfiles/restoretarget1')
+		assert CompareRecursive(Local.vftrp, Local.rpout1,
+								compare_hardlinks = 0)
+
 
 class FinalSelection(PathSetter):
 	"""Test selection options"""
