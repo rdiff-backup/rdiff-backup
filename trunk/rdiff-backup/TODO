@@ -9,6 +9,9 @@ etc., are skipped.
 Look at error code, make sure filename is always mentioned (see Knops
 email).
 
+Add --list-files-changed-between or similar option, to list files that
+have changed between two times
+
 ---------[ Medium term ]---------------------------------------
 
 Add --dry-run option (target for v1.1.x)
