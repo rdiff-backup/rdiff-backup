@@ -54,7 +54,7 @@ def parse_cmdlineoptions(arglist):
 		  "restrict=", "restrict-read-only=", "restrict-update-only=",
 		  "resume", "resume-window=", "server", "sleep-ratio=",
 		  "ssh-no-compression", "terminal-verbosity=", "test-server",
-		  "verbosity", "version", "windows-mode",
+		  "verbosity=", "version", "windows-mode",
 		  "windows-time-format"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: %s" % str(e))

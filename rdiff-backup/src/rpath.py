@@ -775,7 +775,7 @@ class RPath(RORPath):
 		"""Make a special file with specified type, and major/minor nums"""
 		cmdlist = ['mknod', self.path, type, str(major), str(minor)]
 		if self.conn.os.spawnvp(os.P_WAIT, 'mknod', cmdlist) != 0:
-			RPathException("Error running %s" % cmdlist)
+			raise RPathException("Error running %s" % cmdlist)
 		if type == 'c': datatype = 'chr'
 		elif type == 'b': datatype = 'blk'
 		else: raise RPathException
@@ -818,4 +818,6 @@ class RpathDeleter(ITRBranch):
 		if self.dsrp.isdir(): self.dsrp.rmdir()
 		else: self.dsrp.delete()
 
-		
+	def can_fast_process(self, index, dsrp): return not dsrp.isdir()
+	def fast_process(self, index, dsrp): dsrp.delete()
+	
