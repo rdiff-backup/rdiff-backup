@@ -1,7 +1,26 @@
 ## Process this file with automake to produce Makefile.in
 
-# Copyright (C) 2000 by Martin Pool
+# Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
 # $Id$
+
+			      # Thus spake the master programmer:
+			      # 
+			      # ``When the program is being tested, it
+			      # is too late to make design changes.''
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation; either version 2.1 of
+# the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 lib_LTLIBRARIES = libhsync.la
 
@@ -19,7 +38,6 @@ libhsync_la_SOURCES = \
 	checksum.c checksum.h \
 	sum_p.h \
 	copyq.c \
-	inbuf.c \
 	inhale.c \
 	trace.c trace.h \
 	hex.c stats.c \
@@ -40,7 +58,8 @@ libhsync_la_SOURCES = \
 # do both, and I don't know if anyone will care if they're just shared
 # libraries anyhow.
 
-# NB: tests should exit with code 77 if they can't be run but haven't failed.
+# NB: tests should exit with code 77 if they can't be run but haven't
+# failed.
 
 # Generally these tests should be ordered so that more basic tests
 # are run first.
@@ -73,11 +92,6 @@ extra_docs = README.CVS
 # These ones are not tests, but are useful in watching the code run
 # through.
 try_scripts = 
-
-# Thus spake the master programmer:
-#
-# ``When the program is being tested, it is too late to make design
-# changes.''
 
 TESTS = $(test_scripts)
 
