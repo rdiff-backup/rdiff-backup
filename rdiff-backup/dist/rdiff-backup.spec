@@ -7,7 +7,7 @@ Source: %{name}-%{version}.tar.gz
 Copyright: GPL
 Group: Applications/Archiving
 BuildRoot: %{_tmppath}/%{name}-root
-requires: librsync, python2 >= 2.2
+requires: librsync >= 0.9.5.1, python2 >= 2.2
 BuildPrereq: python2-devel >= 2.2
 
 %description

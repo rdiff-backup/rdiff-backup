@@ -4,24 +4,12 @@ import os, sys, re
 
 SourceDir = "src"
 
-def GetVersion():
-	"""Return version string by reading in ./rdiff-backup"""
-	fp = open("rdiff-backup", "r")
-	match = re.search("Version (.*?) ", fp.read())
-	fp.close()
-	return match.group(1)
-
-
-if len(sys.argv) == 1:
-	version = GetVersion()
+if len(sys.argv) == 2:
+	version = sys.argv[1]
 	specfile = "rdiff-backup-%s-1.spec" % version
 	print "Using specfile %s" % specfile
-elif len(sys.argv) == 2:
-	specfile = sys.argv[1]
-	print "Using specfile %s" % specfile
 else:
-	print ("%s takes zero or one argument, the name of the rpm spec "
-		   "file" % sys.argv[0])
+	print "Syntax:  %s version_number" % sys.argv[0]
 	sys.exit(1)
 
 base = ".".join(specfile.split(".")[:-1])
