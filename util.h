@@ -35,10 +35,6 @@ void hs_bzero(void *buf, size_t size);
         ((type *) hs_alloc_struct0(sizeof(type), #type))
 
 
-void hs_readintarg(char const *opt, char const *arg, int *out);
-
-
-
 
 #undef	MAX
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))

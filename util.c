@@ -1,8 +1,9 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- the library for network deltas
  * $Id$
  *
- * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -66,19 +67,3 @@ hs_alloc(size_t size, char const *name)
 
     return p;
 }
-
-
-
-void
-hs_readintarg(char const *opt, char const *arg, int *out)
-{
-    char *o;
-
-    *out = strtoul(arg, &o, 10);
-    if (*o != '\0') {
-	fprintf(stderr, "%s must have a positive integer argument\n",
-		opt);
-	exit(1);
-    }
-}
-    
