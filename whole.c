@@ -70,7 +70,6 @@ hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
     hs_stream_t     *stream = job->stream;
     hs_result       result, iores;
     hs_filebuf_t    *in_fb = NULL, *out_fb = NULL;
-    int             ending = 0;
 
     if (in_file)
         in_fb = hs_filebuf_new(in_file, stream, hs_inbuflen);
@@ -80,12 +79,12 @@ hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
 
     do {
         if (in_fb) {
-            iores = hs_infilebuf_fill(in_fb, &ending);
+            iores = hs_infilebuf_fill(in_fb);
             if (iores != HS_DONE)
                 return iores;
         }
 
-        result = hs_job_iter(job, ending);
+        result = hs_job_iter(job);
         if (result != HS_DONE  &&  result != HS_BLOCKED)
             return result;
 

@@ -111,15 +111,13 @@ static hs_result hs_job_complete(hs_job_t *job, hs_result result)
  * input buffer.  The final block checksum will run across whatever's
  * in there, without trying to accumulate anything else.
  */
-hs_result hs_job_iter(hs_job_t *job, int ending)
+hs_result hs_job_iter(hs_job_t *job)
 {
-
     hs_result result;
-
-    if (ending)
-        job->near_end = 1;
-
     while (1) {
+        if (job->stream->eof_in)
+            hs_trace("input file is ending");
+
         result = hs_tube_catchup(job->stream);
         if (result == HS_BLOCKED)
             return result;

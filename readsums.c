@@ -92,7 +92,12 @@ static hs_result hs_loadsig_s_weak(hs_job_t *job)
     int                 l;
     hs_result           result;
 
-    if ((result = hs_suck_n32(job->stream, &l)) != HS_DONE)
+    result = hs_suck_n32(job->stream, &l);
+    if (result == HS_DONE)
+        ;
+    else if (result == HS_SHORT_STREAM) /* ending here is OK */
+        return HS_DONE;
+    else
         return result;
 
     job->weak_sig = l;

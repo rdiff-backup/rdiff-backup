@@ -143,13 +143,13 @@ char const *hs_strerror(hs_result r);
  * \sa hs_format_stats(), hs_log_stats()
  */
 typedef struct hs_stats {
-        char const     *op;     /**< Human-readable name of current
+    char const     *op;     /**< Human-readable name of current
                                  * operation.  For example,
                                  * "delta". */
-        char const *algorithm;  /**< Algorithm used to perform the
-                                 * operation. */
-        int lit_cmds;           /**< Number of literal commands. */
-        int lit_bytes;          /**< Number of literal bytes. */
+    char const *algorithm;  /**< Algorithm used to perform the
+                             * operation. */
+    int lit_cmds;           /**< Number of literal commands. */
+    int lit_bytes;          /**< Number of literal bytes. */
         
     int             copy_cmds, copy_bytes;
     int             sig_cmds, sig_bytes;
@@ -206,15 +206,17 @@ void hs_sumset_dump(hs_signature_t const *);
  * \sa hs_stream_t
  */
 struct hs_stream_s {
-        int dogtag;		/**< To identify mutilated corpse */
+    int dogtag;                 /**< To identify mutilated corpse */
     
-        char *next_in;		/**< Next input byte */
-        unsigned int avail_in;	/**< Number of bytes available at next_in */
+    char *next_in;		/**< Next input byte */
+    unsigned int avail_in;	/**< Number of bytes available at next_in */
+    int eof_in;                 /**< True if there is no more data
+                                 * after this.  */
 
-        char *next_out;		/**< Next output byte should be put there */
-        unsigned int avail_out;	/**< Remaining free space at next_out */
+    char *next_out;		/**< Next output byte should be put there */
+    unsigned int avail_out;	/**< Remaining free space at next_out */
 
-        struct hs_simpl *impl; /**< \internal */
+    struct hs_simpl *impl; /**< \internal */
 };
 
 /**
@@ -246,7 +248,7 @@ typedef struct hs_job hs_job_t;
 
 hs_job_t       *hs_accum_begin(hs_stream_t *);
 
-hs_result       hs_job_iter(hs_job_t *, int ending);
+hs_result       hs_job_iter(hs_job_t *);
 hs_result       hs_job_free(hs_job_t *);
 
 int             hs_accum_value(hs_job_t *, char *sum, size_t sum_len);
