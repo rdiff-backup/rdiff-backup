@@ -275,7 +275,7 @@ _hs_map_from_cache(hs_map_t * map, off_t offset, size_t *len)
         /* Requested region starts before the window. */
         return NULL;
     }
-    if (offset > map->p_offset + map->p_len) {
+    if (offset > (off_t) (map->p_offset + map->p_len)) {
         /* Requested region starts after the window. */
         return NULL;
     }
@@ -406,7 +406,7 @@ hs_map_ptr(hs_map_t * map, off_t offset, size_t *len, int *reached_eof)
     /* now try to avoid re-reading any bytes by reusing any bytes from the
      * previous buffer. */
     if (window_start >= map->p_offset &&
-        window_start < map->p_offset + map->p_len &&
+        window_start < (off_t) (map->p_offset + map->p_len) &&
         window_start + window_size >= map->p_offset + map->p_len) {
         read_start = map->p_offset + map->p_len;
         read_offset = read_start - window_start;
@@ -434,8 +434,8 @@ hs_map_ptr(hs_map_t * map, off_t offset, size_t *len, int *reached_eof)
 
     if (map->p_fd_offset != read_start) {
         if (lseek(map->fd, read_start, SEEK_SET) != read_start) {
-            _hs_error("lseek to %ld failed in map_ptr\n",
-                      (long) read_start);
+            _hs_error("lseek to %ld failed in map_ptr: %s",
+                      (long) read_start, strerror(errno));
             abort();
         }
         map->p_fd_offset = read_start;
