@@ -1,6 +1,9 @@
 New in v0.13.6 (2005/??/??)
 ---------------------------
 
+Fixed timezone bug.  Hopefully this is the last one.  (Thanks to
+Randall Nortman for bug report.)
+
 Added fix for listing/restoring certain bad archives made when there
 was a timezone bug.  (Thanks to Stephen Isard)
 
