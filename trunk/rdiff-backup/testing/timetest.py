@@ -77,6 +77,14 @@ class TimeTest(unittest.TestCase):
 		assert i2s("1M2W4D2h5m20s") == (30*86400 + 2*7*86400 + 4*86400 +
 										2*3600 + 5*60 + 20)
 
+	def testPrettyIntervals(self):
+		"""Test printable interval conversion"""
+		assert Time.inttopretty(3600) == "1 hour"
+		assert Time.inttopretty(7220) == "2 hours 20 seconds"
+		assert Time.inttopretty(0) == "0 seconds"
+		assert Time.inttopretty(353) == "5 minutes 53 seconds"
+		assert Time.inttopretty(3661) == "1 hour 1 minute 1 second"
+
 	def testGenericString(self):
 		"""Test genstrtotime, conversion of arbitrary string to time"""
 		g2t = Time.genstrtotime
