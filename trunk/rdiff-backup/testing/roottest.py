@@ -8,7 +8,7 @@ This is mainly a copy of regressiontest.py, but contains the two tests
 that are meant to be run as root.
 """
 
-Globals.set('change_source_perms', 1)
+Globals.set('change_source_perms', None)
 Globals.counter = 0
 Log.setverbosity(4)
 
