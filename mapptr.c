@@ -1,24 +1,24 @@
-/* -*- mode: c; c-file-style: "bsd" -*- */
-/*--------------------------------------------------------------------
-   $Id$
-   
-   Copyright (C) 2000 by Martin Pool
-   Copyright (C) 1998 by Andrew Tridgell 
-   
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-   
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-   
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-*/
+/*				       	-*- c-file-style: "bsd" -*-
+ *
+ * $Id$
+ * 
+ * Copyright (C) 2000 by Martin Pool
+ * Copyright (C) 1998 by Andrew Tridgell 
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 /* Originally from rsync.  Thanks, tridge! */
 
@@ -46,16 +46,9 @@
    available. */
 
 
-/* TODO: If it turns out that we read more data than the user really
-   wants, then it would be nice to offer them the chance to use more
-   of it.  Is this really useful, or would it be better just to let
-   them call us back later?
-
-   TODO: Test this through a unix-domain socket and see what happens.
-
-   TODO: Support O_NONBLOCK.
-
-   TODO: Optionally debug this by simulating short reads. */
+/* TODO: Test this through a unix-domain socket and see what happens.
+ * 
+ * TODO: Optionally debug this by simulating short reads. */
 
 /* The Unix98 pread(2) function is pretty interesting: it reads data
    at a given offset, but without moving the file offset and in only a
@@ -347,8 +340,7 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
      * altogether, but the client is interested in the ones starting * at
      * &p[offset - map->p_offset] */
     avail = map->p_len - (offset - map->p_offset);
-    if (avail < *len)
-	*len = avail;
+    *len = avail;
 
     return map->p + (offset - map->p_offset);
 }

@@ -1,27 +1,24 @@
-/* -*- mode: c; c-file-style: "bsd" -*- */
-/* -------------------------------------------------------------------
+/*				       	-*- c-file-style: "bsd" -*-
+ *
+ * $Id$
+ * 
+ * Copyright (C) 2000 by Martin Pool
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
-   $Id$
-
-   hsmapread -- test harness for hs_map_ptr
-
-   Copyright (C) 2000 by Martin Pool
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the Free 
-   Software Foundation; either version 2 of the License, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-   for more details.
-
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, write to the Free Software Foundation, Inc.,
-   675 Mass Ave, Cambridge, MA 02139, USA.
-
-   ------------------------------------------------------------------- */
 
 
 /* The intention is that this program will completely exercise the hs_map_ptr 
@@ -40,6 +37,7 @@ usage(void)
 	   "  -k             keep trying to map whole blocks\n"
 	   "  -n             read in nonblocking mode\n"
 	   "  -s             use select(2)\n"
+	   "  -D             turn on trace, if enabled in library\n"
 	   "\n"
 	   "Note that -n without -s will busy-wait.\n"
 	);
@@ -115,6 +113,13 @@ read_chunks(int fd,
 	    goto try_read;
 	}
 
+	/* mapread may have opportunistically given us more bytes than
+	 * we wanted.  In this case, it would be really bad to write
+	 * them out, because they're not expected.  It's harmless to
+	 * ignore them. */
+	if (len > want_len)
+	    len = want_len;
+	
 	written = write(STDOUT_FILENO, p, len);
 	if (written < 0) {
 	    _hs_error("error writing out chunk: %s\n", strerror(errno));
@@ -160,7 +165,8 @@ chew_options(int argc, char **argv, int *nonblocking,
 {
     int             c;
 
-    while ((c = getopt(argc, argv, "kns")) != -1) {
+    hs_trace_to(NULL);		/* may turn it on later */
+    while ((c = getopt(argc, argv, "knsD")) != -1) {
 	switch (c) {
 	case '?':
 	case ':':
@@ -173,6 +179,12 @@ chew_options(int argc, char **argv, int *nonblocking,
 	    break;
 	case 's':
 	    *use_select = 1;
+	    break;
+	case 'D':
+	    if (!hs_supports_trace()) {
+		_hs_error("library does not support trace");
+	    }
+	    hs_trace_to(hs_trace_to_stderr);
 	    break;
 	}
     }
