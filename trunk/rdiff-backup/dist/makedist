@@ -107,7 +107,7 @@ def MakeTar():
 	VersionedCopy(DistDir + "/setup.py", "%s/setup.py" % (tardir,))
 
 	os.chmod(os.path.join(tardir, "setup.py"), 0755)
-	os.chmod(os.path.join(tardir, "rdiff-backup"), 0755)
+	os.chmod(os.path.join(tardir, "rdiff-backup"), 0644)
 	CopyMan(os.path.join(tardir, "rdiff-backup.1"), Version)
 	os.system("tar -cvzf %s %s" % (tarfile, tardir))
 	shutil.rmtree(tardir)

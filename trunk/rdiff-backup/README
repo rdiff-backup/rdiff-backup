@@ -4,6 +4,10 @@ Thank you for trying rdiff-backup.  To install, run:
 
 	python setup.py install
 
+The build process can be also be run separately:
+
+	python setup.py build
+
 The default prefix is /usr, so files are put in /usr/bin,
 /usr/share/man/, etc.  An alternate prefix can be specified using the
 --prefix=<prefix> option.  For example:
@@ -14,8 +18,10 @@ The default prefix is /usr, so files are put in /usr/bin,
 REQUIREMENTS:
 
 Remember that you must have Python 2.2 or later and librsync 0.9.5.1
-or later installed.  To download, see http://www.python.org and
-http://sourceforge.net/projects/librsync/ respectively.
+or later installed.  For Python, see http://www.python.org.  The
+rdiff-backup homepage at http://rdiff-backup.stanford.edu/ should have
+a recent version of librsync; otherwise see the librsync homepage at
+http://sourceforge.net/projects/librsync/.
 
 For remote operation, rdiff-backup should be in installed and in the
 PATH on remote system(s) (see man page for more information).
