@@ -189,7 +189,7 @@ hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
         hs_trace("got %d bytes direct from input", len);
         *ptr = stream->next_in;
         return HS_DONE;
-    } else if (impl->scoop_avail > 0) {
+    } else if (stream->avail_in > 0) {
         /* Nothing was queued before, but we don't have enough
          * data to satisfy the request.  So queue what little
          * we have, and try again next time. */
