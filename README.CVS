@@ -22,6 +22,8 @@ You can choose the name of the directory that will hold the source
 here.  If you have no opinion, just omit the `-d YOUR_DIRECTORY' and
 it will go into `libhsync'.
 
+For more details, see the web site.
+
 
 >> Building
 
