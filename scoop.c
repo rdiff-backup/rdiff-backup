@@ -132,12 +132,12 @@ void hs_scoop_advance(hs_stream_t *stream, size_t len)
         
     if (impl->scoop_avail) {
         /* reading from the scoop buffer */
-        hs_trace("advance over %d bytes from scoop", len);
+/*         hs_trace("advance over %d bytes from scoop", len); */
         assert(len <= impl->scoop_avail);
         impl->scoop_avail -= len;
         impl->scoop_next += len;
     } else {
-        hs_trace("advance over %d bytes from input buffer", len);
+/*         hs_trace("advance over %d bytes from input buffer", len); */
         assert(len <= stream->avail_in);
         stream->avail_in -= len;
         stream->next_in += len;
@@ -189,13 +189,22 @@ hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
         hs_trace("got %d bytes direct from input", len);
         *ptr = stream->next_in;
         return HS_DONE;
-    } else {
+    } else if (impl->scoop_avail > 0) {
         /* Nothing was queued before, but we don't have enough
          * data to satisfy the request.  So queue what little
          * we have, and try again next time. */
         hs_trace("couldn't satisfy request for %d, scooping %d bytes",
                  len, impl->scoop_avail);
         hs_scoop_input(stream, len);
+        return HS_BLOCKED;
+    } else if (stream->eof_in) {
+        /* Nothing is queued before, and nothing is in the input
+         * buffer at the moment. */
+        hs_trace("reached EOF on input stream");
+        return HS_INPUT_ENDED;
+    } else {
+        /* Nothing queued at the moment. */
+        hs_trace("blocked with no data in scoop or input buffer");
         return HS_BLOCKED;
     }
 }
