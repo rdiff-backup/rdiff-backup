@@ -27,7 +27,7 @@
 
 static char last_byte;
 static int last_sparse;
-extern int sparse_files;
+int sparse_files;
 
 #define SPARSE_WRITE_SIZE (1024)
 #define WRITE_SIZE (32*1024)
