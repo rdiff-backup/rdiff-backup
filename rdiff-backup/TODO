@@ -1,23 +1,17 @@
-Fix bug with -m/--mirror-only switch and write test case
-
 Write some better selection test cases to test new Iterate_fast func.
 
-Considering rewriting Selection Iterate(_fast) code again.
+If not resuming, don't crash on badly written checkpoint_data.
 
-Fix remaining memory leaks in cmodule.c
+If don't recover hardlink support and hardlink support on, don't
+resume.
+
+Make rdiff-backup not runnable from starting directory to avoid
+confusion.
 
 
 ---------[ Long term ]---------------------------------------
-Security audit
-
---read-only and --write-only /usr/foo switches to tighten security up some.
-
 
 Think about adding Gaudet's idea for keeping track of renamed files.
-
-
-
-If don't recover hardlink support and hardlink support on, don't resume.
 
 
 
