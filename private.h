@@ -114,7 +114,7 @@ int _hs_copy_ofs(uint32_t offset, uint32_t length,
    Data queued for output is now held in a MEMBUF IO pipe, and copied
    from there into the real output stream when necessary.  */
 ssize_t
-_hs_flush_literal_buf(hs_membuf_t * litbuf,
+_hs_push_literal_buf(hs_membuf_t * litbuf,
 		      hs_write_fn_t write_fn, void *write_priv,
 		      hs_stats_t * stats,
 		      int kind);
@@ -161,14 +161,14 @@ typedef struct inbuf {
     int amount;
     int cursor;
     int abspos;
-} inbuf_t;
+} _hs_inbuf_t;
 
-int _hs_fill_inbuf(inbuf_t * inbuf, hs_read_fn_t read_fn,
+int _hs_fill_inbuf(_hs_inbuf_t * inbuf, hs_read_fn_t read_fn,
 		   void *readprivate);
 
-int _hs_alloc_inbuf(inbuf_t * inbuf, int block_len);
+int _hs_alloc_inbuf(_hs_inbuf_t * inbuf, int block_len);
 
-int _hs_slide_inbuf(inbuf_t * inbuf);
+int _hs_slide_inbuf(_hs_inbuf_t * inbuf);
 
 /* ========================================
 
@@ -177,7 +177,10 @@ int _hs_slide_inbuf(inbuf_t * inbuf);
 
 #define MD4_LENGTH 16
 #define SUM_LENGTH 8
-#define CHAR_OFFSET 0
+
+/* We should make this something other than zero to improve the
+   checksum algorithm: tridge suggests a prime number. */
+#define CHAR_OFFSET 31
 
 typedef unsigned short tag;
 
@@ -252,7 +255,7 @@ typedef struct _hs_copyq {
 int _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
 		    _hs_copyq_t *copyq, size_t start, size_t len,
 		    hs_stats_t *stats);
-int _hs_copyq_flush(hs_write_fn_t write_fn, void *write_priv,
+int _hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
 		    _hs_copyq_t *copyq,
 		    hs_stats_t *stats);
 

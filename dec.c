@@ -87,12 +87,12 @@ static int _hs_check_gd_header(hs_read_fn_t ltread_fn, void *ltread_priv)
     ret = _hs_read_netint(ltread_fn, ltread_priv, &remote_magic);
     return_val_if_fail(ret == 4, -1);
     if (remote_magic != expect) {
-	_hs_fatal("version mismatch: %#08x != %#08x",
+	_hs_fatal("version mismatch: %#010x != %#010x",
 		  remote_magic, expect);
 	errno = EBADMSG;
 	return -1;
     }
-    _hs_trace("got version %#08x", remote_magic);
+    _hs_trace("got version %#010x", remote_magic);
     return 0;
 }
 

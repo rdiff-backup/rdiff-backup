@@ -1,9 +1,7 @@
-/* -*- mode: c; c-file-style: "bsd" -*-  */
-
-/* includes.h -- Get system header files via autoconf
+/* -*- mode: c; c-file-style: "k&r" -*- */
+/* 
+   Copyright (C) 2000 by Martin Pool
    
-   Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
-
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2 of the License, or
@@ -16,21 +14,25 @@
    
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-   USA
+   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include "includes.h"
+#include "hsync.h"
+#include "hsyncproto.h"
+#include "private.h"
+#include "emit.h"
 
-#include <assert.h>
-#include <errno.h>
-#include <stdint.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <zlib.h>
+void
+hs_hexify_buf(char *to_buf, unsigned char const *from_buf, int from_len)
+{
+     static const char hex_chars[] = "0123456789abcdef";
+     
+     while (from_len-- > 0) {
+	  *(to_buf++) = hex_chars[((*from_buf) >> 4) & 0xf];
+	  *(to_buf++) = hex_chars[(*from_buf) & 0xf];
+	  from_buf++;
+     }
 
-#include <netinet/in.h>		/* ntohs, etc */
+     *to_buf = 0;
+}

@@ -72,7 +72,31 @@
    this is done now.
 
    FIXME: Something seems to be wrong with the trailing chunk; it
-   doesn't match.  */
+   doesn't match.
+
+   TODO: Have something like an MTU: after we've processed this much
+   input, we flush commands whether it's necessary or not.  This will
+   help with liveness downstream: there's no point leaving the
+   downstream network idle for too long.  Another name for this is
+   `early emit'.
+
+   tridge reckons a good size is 32kb, and that the algorithm should
+   be: if either the literal or the copy queues represent 32kb of
+   input, then push them out.  32kb is chosen because it is typical of
+   the size of TCP buffers in many systems.
+
+   Also, we have to keep the literal data in memory until we push it
+   out, and so we have to flush before we use up too much memory doing
+   that.
+
+   TODO: If it should happen that the old and new block sizes are the
+   same, then we only need to keep track of one rolling checksum,
+   which is more efficient.  Should we force this to always be the
+   case?  Probably not.
+
+   TODO: If we're encoding and realize we can't continue, then have a
+   fallback mode in which everything is sent as literal data.  In
+   fact, we can just map buffers straight through in that case. */
 
 /*
  * TODO: Maybe flush signature or literal data in here
@@ -88,6 +112,12 @@
 #include "hsyncproto.h"
 #include "private.h"
 #include "emit.h"
+
+/* Define this to check all weak checksums the slow way.  As a
+   debuggging assertion, calculate the weak checksum *in full* at
+   every byte, and make sure it is the same.  This will be really
+   slow, but it will catch problems with rolling. */
+#define HS_PAINFUL_HONESTY
 
 
 static int
@@ -108,53 +138,65 @@ _hs_newsig_header(int new_block_len,
 
 
 static int
-_hs_update_sums(inbuf_t * inbuf, int this_block_len, rollsum_t * rollsum)
+_hs_update_sums(_hs_inbuf_t * inbuf, int full_block,
+		int short_block, rollsum_t * rollsum)
 {
      if (!rollsum->havesum) {
-	  rollsum->weak_sum =
-	       _hs_calc_weak_sum(inbuf->buf + inbuf->cursor, this_block_len);
+	  rollsum->weak_sum = _hs_calc_weak_sum(inbuf->buf + inbuf->cursor,
+						short_block);
 	  _hs_trace("recalculate checksum: weak=%#x", rollsum->weak_sum);
-	  rollsum->havesum = 1;
 	  rollsum->s1 = rollsum->weak_sum & 0xFFFF;
 	  rollsum->s2 = rollsum->weak_sum >> 16;
      } else {
-	  /*
-	   * Add the value for this character.  The previous byte is
-	   * already subtracted (below) */
-	  int pos = inbuf->cursor + this_block_len - 1;
-	  assert(pos >= 0);
-	  if (pos <= inbuf->amount) {
+	  /* Add into the checksum the value of the byte one block
+             hence.  However, if that byte doesn't exist because we're
+             approaching the end of the file, don't add it. */
+	  if (short_block == full_block) {
+	       int pos = inbuf->cursor + short_block - 1;
+	       assert(pos >= 0);
 	       rollsum->s1 += (inbuf->buf[pos] + CHAR_OFFSET);
 	       rollsum->s2 += rollsum->s1;
-	       rollsum->weak_sum = rollsum->s1 + (rollsum->s2 << 16);
+	  } else {
+#if 0
+	       _hs_trace(__FUNCTION__ ": no byte to roll in at abspos=%d",
+			 inbuf->abspos + inbuf->cursor);
+#endif /* 0 */
 	  }
+
+	  rollsum->weak_sum = (rollsum->s1 & 0xffff) | (rollsum->s2 << 16);
      }
 
+     rollsum->havesum = 1;
+
      return 0;
 }
 
 
+/* One byte rolls off the checksum. */
 static int
-_hs_roll_sums(inbuf_t * inbuf, rollsum_t * rollsum, int block_len)
+_hs_trim_sums(_hs_inbuf_t * inbuf, rollsum_t * rollsum,
+	      int full_block, int short_block)
 {
      rollsum->s1 -= inbuf->buf[inbuf->cursor] + CHAR_OFFSET;
-     rollsum->s2 -= block_len * (inbuf->buf[inbuf->cursor] + CHAR_OFFSET);
+     rollsum->s2 -= short_block * (inbuf->buf[inbuf->cursor] + CHAR_OFFSET);
 
      return 0;
 }
 
 
 static int
-_hs_find_match(int this_block_size, rollsum_t * rollsum, inbuf_t * inbuf,
+_hs_find_match(int short_block, rollsum_t * rollsum, _hs_inbuf_t * inbuf,
 	       struct sum_struct *sums)
 {
      int token;
      token = _hs_find_in_hash(rollsum, inbuf->buf + inbuf->cursor,
-			      this_block_size, sums);
+			      short_block, sums);
 
      if (token > 0) {
-	  _hs_trace("found token %d in stream at offset %d"
-		    " length %d", token, inbuf->cursor, this_block_size);
+	  _hs_trace("found token %d in stream at abspos=%-8d"
+		    " length=%-6d", token,
+		    inbuf->abspos+inbuf->cursor,
+		    short_block);
      }
      return token;
 }
@@ -162,26 +204,29 @@ _hs_find_match(int this_block_size, rollsum_t * rollsum, inbuf_t * inbuf,
 
 static int
 _hs_output_block_hash(hs_write_fn_t write_fn, void *write_priv,
-		      inbuf_t * inbuf, int shortened_block_len,
+		      _hs_inbuf_t * inbuf, int short_block,
 		      rollsum_t * rollsum)
 {
      char strong_sum[SUM_LENGTH];
+     char strong_hex[SUM_LENGTH * 3];
 
      _hs_write_netint(write_fn, write_priv, rollsum->weak_sum);
-     _hs_calc_strong_sum(inbuf->buf + inbuf->cursor, shortened_block_len,
+     _hs_calc_strong_sum(inbuf->buf + inbuf->cursor, short_block,
 			 strong_sum);
+     hs_hexify_buf(strong_hex, strong_sum, SUM_LENGTH);
 
      write_fn(write_priv, strong_sum, SUM_LENGTH);
 
-     _hs_trace("called, abspos=%d weak=%#x", inbuf->abspos + inbuf->cursor,
-	       rollsum->weak_sum);
+     _hs_trace("output block hash at abspos=%-10d weak=%#010x strong=%s",
+	       inbuf->abspos + inbuf->cursor,
+	       rollsum->weak_sum, strong_hex);
 
      return 0;
 }
 
 
 static int
-_hs_signature_ready(inbuf_t * inbuf, int new_block_len)
+_hs_signature_ready(_hs_inbuf_t * inbuf, int new_block_len)
 {
      int abs_cursor = (inbuf->abspos + inbuf->cursor);
 
@@ -200,17 +245,26 @@ _hs_check_sig_version(hs_read_fn_t sigread_fn, void *sigreadprivate)
      int ret;
 
      ret = _hs_read_netint(sigread_fn, sigreadprivate, &hs_remote_version);
-     if (ret != 4)
-	  return ret;
+     if (ret == 0) {
+	  _hs_trace("eof on old signature stream before reading version; "
+		    "there is no old signature");
+	  return 0;
+     } else if (ret < 0) {
+	  _hs_fatal("error reading signature version");
+	  return -1;
+     } else if (ret != 4) {
+	  _hs_fatal("bad-sized read while trying to get signature version");
+	  return -1;
+     }
 
      if (hs_remote_version != expect) {
-	  _hs_fatal("this librsync understands version %#08x."
-		    " We don't take %#08x.", expect, hs_remote_version);
+	  _hs_fatal("this librsync understands version %#010x."
+		    " We don't take %#010x.", expect, hs_remote_version);
 	  errno = EBADMSG;
 	  return -1;
      }
 
-     return ret;
+     return 1;
 }
 
 
@@ -254,6 +308,27 @@ static int _hs_littok_header(hs_write_fn_t write_fn, void *write_priv)
 }
 
 
+#ifdef HS_PAINFUL_HONESTY
+static void
+_hs_painful_check(uint32_t weak_sum, _hs_inbuf_t *inbuf,
+		  int short_block)
+{
+     uint32_t checked_weak;
+     checked_weak = _hs_calc_weak_sum(inbuf->buf + inbuf->cursor,
+				      short_block);
+     if (weak_sum != checked_weak) {
+	  _hs_fatal("internal error: "
+		    "at absolute position %-10d: "
+		    "weak sum by rolling algorithm is %#010x, but "
+		    "calculated from scratch it is %#010x",
+		    inbuf->abspos + inbuf->cursor,
+		    weak_sum, checked_weak);
+	  abort();
+     }
+}
+#endif /* HS_PAINFUL_HONESTY */
+
+
 
 ssize_t
 hs_encode(hs_read_fn_t read_fn, void *readprivate,
@@ -264,26 +339,25 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
      struct sum_struct *sums = 0;
      int ret;
      rollsum_t real_rollsum, *const rollsum = &real_rollsum;
-     inbuf_t real_inbuf, *const inbuf = &real_inbuf;
+     _hs_inbuf_t real_inbuf, *const inbuf = &real_inbuf;
      rollsum_t new_roll;
-     int block_len, shortened_block_len;
+     int block_len, short_block;
      hs_membuf_t *sig_tmpbuf, *lit_tmpbuf;
      _hs_copyq_t copyq;
      int token;
      int at_eof;
      int got_old;		/* true if there is an old signature */
-
+     int need_bytes;		/* how much readahead do we need? */
+     
      _hs_trace("**** beginning %s", __FUNCTION__);
 
      bzero(stats, sizeof *stats);
      bzero(&copyq, sizeof copyq);
      bzero(&new_roll, sizeof new_roll);
 
-     rollsum->havesum = 0;
-
      got_old = 1;
      ret = _hs_check_sig_version(sigread_fn, sigreadprivate);
-     if (ret < 0)
+     if (ret <= 0)
 	  got_old = 0;
 
      if (got_old) {
@@ -291,8 +365,8 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 	       got_old = 0;
      }
 
-     if (!block_len)
-	  block_len = 512;
+     /* XXX: For simplicity, this is hardwired at the moment. */
+     block_len = 1024;
     
      return_val_if_fail(block_len > 0, -1);
 
@@ -319,57 +393,70 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
      /* Now do our funky checksum checking */
      rollsum->havesum = 0;
      do {
+	  /* TODO: Try to read from the input in such a size that if
+	     all of the blocks in the buffer match, we won't need to
+	     shuffle any data.  This isn't urgent, and in the general
+	     case we can't avoid shuffling, since the matches may be
+	     offset and so not align nicely with the buffer length. */
 	  ret = _hs_fill_inbuf(inbuf, read_fn, readprivate);
 	  at_eof = (ret == 0);
 	  inbuf->cursor = 0;
 
-	  /*
-	   * If we've reached EOF then we keep processing right up to the end.
-	   * Otherwise, we stop when we need more readahead to process a full
-	   * block. 
-	   */
-	  while (at_eof
-		 ? inbuf->cursor < inbuf->amount
-		 : inbuf->cursor + block_len <= inbuf->amount) {
-	       shortened_block_len = MIN(block_len, inbuf->amount - inbuf->cursor);
-	       _hs_update_sums(inbuf, shortened_block_len, rollsum);
-	       _hs_update_sums(inbuf, shortened_block_len, &new_roll);
+	  /* If we've reached EOF then we keep processing right up to
+	     the end, whether we have a block of readahead or not.
+	     Otherwise, we stop when we need more readahead to process
+	     a full block.  */
+	  if (at_eof)
+	       need_bytes = 1;
+	  else
+	       need_bytes = block_len;
+	  
+	  while (inbuf->cursor + need_bytes <= inbuf->amount) {
+	       short_block = MIN(block_len, inbuf->amount - inbuf->cursor);
+	       _hs_update_sums(inbuf, block_len, short_block, rollsum);
+	       _hs_update_sums(inbuf, block_len, short_block, &new_roll);
+
+#ifdef HS_PAINFUL_HONESTY
+	       _hs_painful_check(rollsum->weak_sum, inbuf, short_block);
+#endif /* HS_PAINFUL_HONESTY */
+	    
 	       if (_hs_signature_ready(inbuf, block_len)) {
 		    _hs_output_block_hash(hs_membuf_write, sig_tmpbuf,
-					  inbuf, shortened_block_len, &new_roll);
+					  inbuf, short_block, &new_roll);
 	       }
 
 	       if (got_old)
-		    token = _hs_find_match(shortened_block_len, rollsum, inbuf, sums);
+		    token = _hs_find_match(short_block, rollsum, inbuf, sums);
 	       else
 		    token = 0;
-	    
+
 	       if (token > 0) {
-		    if (_hs_flush_literal_buf(lit_tmpbuf, write_fn, write_priv, stats,
+		    if (_hs_push_literal_buf(lit_tmpbuf, write_fn, write_priv, stats,
 					      op_kind_literal) < 0)
 			 return -1;
 
-		    /* TODO: Rather than actually sending a copy command,
-		       queue it up in the hope that we'll also match on
-		       succeeding blocks and can send one larger copy
-		       command.  This is just an optimization.  */
-
-		    /* Write the token */
 		    ret = _hs_queue_copy(write_fn, write_priv,
 					 &copyq, (token-1) * block_len,
-					 shortened_block_len, stats);
+					 short_block, stats);
+
+		    /* FIXME: It's no good to skip over the block like
+                       this, because we might have to update and
+                       output sums from the middle of it. */
+		    /* FIXME: Does this update our absolute position
+                       in the right way? */
 		    if (ret < 0)
 			 goto out;
-		    inbuf->cursor += shortened_block_len;
+		    inbuf->cursor += short_block;
 		    rollsum->havesum = new_roll.havesum = 0;
 	       } else {
-		    _hs_copyq_flush(write_fn, write_priv, &copyq, stats);
+		    if (got_old)
+			 _hs_copyq_push(write_fn, write_priv, &copyq, stats);
 		 
 		    /* Append this character to the outbuf */
 		    ret = _hs_append_literal(lit_tmpbuf,
 					     inbuf->buf[inbuf->cursor]);
-		    _hs_roll_sums(inbuf, rollsum, shortened_block_len);
-		    _hs_roll_sums(inbuf, &new_roll, shortened_block_len);
+		    _hs_trim_sums(inbuf, rollsum, block_len, short_block);
+		    _hs_trim_sums(inbuf, &new_roll, block_len, short_block);
 		    inbuf->cursor++;
 	       }
 	  }
@@ -377,26 +464,28 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 	  _hs_slide_inbuf(inbuf);
      } while (!at_eof);
 
+#if 0
      /* If we didn't just send a block hash, then send it now for the
         last short block. */
      if (!_hs_signature_ready(inbuf, block_len)) {
 	  _hs_output_block_hash(hs_membuf_write, sig_tmpbuf,
-				inbuf, shortened_block_len, &new_roll);
+				inbuf, short_block, &new_roll);
      }
+#endif
 
      /* Flush any literal or copy data remaining.  Only one or the
 	other should happen. */
 
-     ret = _hs_copyq_flush(write_fn, write_priv, &copyq, stats);
+     ret = _hs_copyq_push(write_fn, write_priv, &copyq, stats);
      if (ret < 0)
 	  goto out;
 
-     ret = _hs_flush_literal_buf(lit_tmpbuf, write_fn, write_priv,
+     ret = _hs_push_literal_buf(lit_tmpbuf, write_fn, write_priv,
 				 stats, op_kind_literal);
      if (ret < 0)
 	  goto out;
 
-     ret = _hs_flush_literal_buf(sig_tmpbuf, write_fn, write_priv,
+     ret = _hs_push_literal_buf(sig_tmpbuf, write_fn, write_priv,
 				 stats, op_kind_signature);
      if (ret < 0)
 	  goto out;

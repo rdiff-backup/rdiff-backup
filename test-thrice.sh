@@ -20,7 +20,7 @@ cd $srcdir/test-thrice
 
 echo -n `basename $0` ' '
 
-data=../enc.c
+data=../INSTALL
 
 rm -f *.tmp
 

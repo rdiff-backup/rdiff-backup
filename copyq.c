@@ -47,7 +47,7 @@ int _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
 	  /* Of course, COPY commands don't *have* to follow each
 	     other.  If we get two non-contiguous ones, then we flush
 	     and start again. */
-	  ret = _hs_copyq_flush(write_fn, write_priv, copyq, stats);
+	  ret = _hs_copyq_push(write_fn, write_priv, copyq, stats);
 	  copyq->start = start;
 	  copyq->len = len;
 	  return ret;
@@ -55,7 +55,7 @@ int _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
 }
 
 
-int _hs_copyq_flush(hs_write_fn_t write_fn, void *write_priv,
+int _hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
 		    _hs_copyq_t *copyq, hs_stats_t *stats)
 {
      int ret;

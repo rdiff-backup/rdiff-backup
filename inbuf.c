@@ -28,7 +28,7 @@
 
 
 int
-_hs_fill_inbuf(inbuf_t * inbuf, hs_read_fn_t read_fn, void *readprivate)
+_hs_fill_inbuf(_hs_inbuf_t * inbuf, hs_read_fn_t read_fn, void *readprivate)
 {
     int ret;
 
@@ -41,13 +41,13 @@ _hs_fill_inbuf(inbuf_t * inbuf, hs_read_fn_t read_fn, void *readprivate)
     ret = read_fn(readprivate,
 		  inbuf->buf + inbuf->amount, inbuf->len - inbuf->amount);
     if (ret < 0) {
-	_hs_fatal(__FILE__ ": error reading into input buffer");
+	_hs_fatal(__FILE__ "error reading into input buffer");
 	return ret;
     } else if (ret == 0) {
 	_hs_trace("reached end of input file");
     } else {
 	_hs_trace("read %d bytes into input buffer"
-		  " at position %d", ret, inbuf->abspos);
+		  " at abspos=%-10d", ret, inbuf->abspos);
     }
     inbuf->amount += ret;
     return ret;
@@ -55,7 +55,7 @@ _hs_fill_inbuf(inbuf_t * inbuf, hs_read_fn_t read_fn, void *readprivate)
 
 
 
-int _hs_alloc_inbuf(inbuf_t * inbuf, int block_len)
+int _hs_alloc_inbuf(_hs_inbuf_t * inbuf, int block_len)
 {
     bzero(inbuf, sizeof *inbuf);
     /* must be at least two blocks; shouldn't be too small. */
@@ -68,7 +68,7 @@ int _hs_alloc_inbuf(inbuf_t * inbuf, int block_len)
 }
 
 
-int _hs_slide_inbuf(inbuf_t * inbuf)
+int _hs_slide_inbuf(_hs_inbuf_t * inbuf)
 {
     /* Copy the remaining data into the front of
        the buffer */
@@ -83,6 +83,7 @@ int _hs_slide_inbuf(inbuf_t * inbuf)
 
 	inbuf->amount -= inbuf->cursor;
 	inbuf->abspos += inbuf->cursor;
+	inbuf->cursor = 0;
     }
 
     return 0;

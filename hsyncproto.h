@@ -19,6 +19,12 @@
    USA
 */
 
+/*
+  TODO: Have a way to copy from the old signature into the new one.
+  This will be useful for the case where the files are in fact
+  identical, which will be significantly common.  
+*/
+
 
 #define HS_LT_MAGIC		0x67640001	/* "gd\000\001" */
 #define HS_SIG_MAGIC		0x67642001	/* "gd \001" */

@@ -52,4 +52,5 @@ void
 _hs_trace_to_stderr(char const *fmt, va_list va)
 {
      vfprintf(stderr, fmt, va);
+     fputc('\n', stderr);
 }

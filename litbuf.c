@@ -41,7 +41,7 @@ int _hs_append_literal(hs_membuf_t * litbuf, char value)
    op_signature_1 depending on which it is; STATS is updated
    appropriately. */
 ssize_t
-_hs_flush_literal_buf(hs_membuf_t * litbuf,
+_hs_push_literal_buf(hs_membuf_t * litbuf,
 		      hs_write_fn_t write_fn, void *write_priv,
 		      hs_stats_t * stats,
 		      int kind)

@@ -45,9 +45,10 @@ void _hs_trace_to_stderr(char const *fmt, va_list va);
    Decode */
 
 typedef struct hs_stats {
-    int lit_cmds, lit_bytes;
-    int copy_cmds, copy_bytes;
-    int sig_cmds, sig_bytes;
+     int lit_cmds, lit_bytes;
+     int copy_cmds, copy_bytes;
+     int sig_cmds, sig_bytes;
+     int false_matches;
 } hs_stats_t;
 
 ssize_t
@@ -144,3 +145,6 @@ void hs_mdfour(unsigned char *out, unsigned char const *in, int n);
 void hs_mdfour_begin(struct hs_mdfour *md);
 void hs_mdfour_update(struct hs_mdfour *md, unsigned char const *in, int n);
 void hs_mdfour_result(struct hs_mdfour *md, unsigned char *out);
+
+void
+hs_hexify_buf(char *to_buf, unsigned char const *from_buf, int from_len);

@@ -16,22 +16,30 @@ PATH=$srcdir:$PATH
 cd $srcdir/test-chain
 
 diff=diff.tmp
-files=$srcdir/*.c*
+files=`echo $srcdir/*.c*`
 newsig=newsig.tmp
 out=out.tmp
 oldsig=empty-sig
 old=/dev/null
 
+fromsig=fromsig.tmp
+
 echo -n `basename $0` ' '
 
-for new in $files
+for from in $files
 do
-    echo -n '.'
-    hsencode $new $diff $oldsig
-    hsdecode $old $newsig $out $diff 
-
-    cmp $out $new
+    echo from $from
+    hsencode $from $fromsig /dev/null
 done
+
+#  for new in $files
+#  do
+#      echo -n '.'
+#      hsencode $new $diff $oldsig
+#      hsdecode $old $newsig $out $diff 
+
+#      cmp $out $new
+#  done
 
 echo 
 
