@@ -66,6 +66,7 @@
 #include "job.h"
 #include "trace.h"
 #include "checksum.h"
+#include "search.h"
 
 
 static rs_result rs_delta_scan_short(rs_job_t *, rs_long_t avail_len, void *);
@@ -166,19 +167,23 @@ rs_delta_scan_short(rs_job_t *job, rs_long_t avail_len, void *inptr)
 static rs_result
 rs_delta_scan_full(rs_job_t *job, rs_long_t avail_len, void *inptr)
 {
-    rs_strong_sum_t      strong_sum;
     rs_weak_sum_t        weak_sum;
-    char                 strong_sum_hex[RS_MD4_LENGTH * 2 + 1];
-
+    rs_long_t            match_where;
+    
     weak_sum = rs_calc_weak_sum(inptr, job->block_len);
-    rs_calc_strong_sum(inptr, job->block_len, &strong_sum);
-    rs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
 
-    rs_trace("got weak %#10x and strong sum %s",
-             weak_sum, strong_sum_hex);
+    rs_trace("got weak %#10x", weak_sum);
 
-    rs_emit_literal_cmd(job, job->block_len);
-    rs_tube_copy(job, job->block_len);
+    if (rs_search_for_block(weak_sum, inptr, job->block_len,
+                            job->signature, &job->stats,
+                            &match_where)) {
+        rs_trace("matched %ld!", (long) match_where);
+        rs_emit_copy_cmd(job, match_where, job->block_len);
+        rs_scoop_advance(job, job->block_len);
+    } else {
+        rs_emit_literal_cmd(job, job->block_len);
+        rs_tube_copy(job, job->block_len);
+    }
 
     return RS_RUNNING;
 }
