@@ -7,6 +7,7 @@ import types, os, tempfile, cPickle, shutil, traceback
 #
 
 class ConnectionError(Exception): pass
+class ConnectionReadError(ConnectionError): pass
 
 class ConnectionQuit(Exception): pass
 
@@ -210,8 +211,9 @@ class LowLevelPipeConnection(Connection):
 	def _get(self):
 		"""Read an object from the pipe and return (req_num, value)"""
 		header_string = self.inpipe.read(9)
-		assert len(header_string) == 9, \
-			   "Error reading from pipe (problem probably originated remotely)"
+		if not len(header_string) == 9:
+			raise ConnectionReadError("Truncated header string (problem "
+									  "probably originated remotely)")
 		try:
 			format_string, req_num, length = (header_string[0],
 											  ord(header_string[1]),
