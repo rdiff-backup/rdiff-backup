@@ -53,6 +53,12 @@ def FromRaw(raw_iter):
 			rorp.setfile(getnext(raw_iter))
 		yield rorp
 
+def getnext(iter):
+	"""Return the next element of an iterator, raising error if none"""
+	try: next = iter.next()
+	except StopIteration: raise RORPIterException("Unexpected end to iter")
+	return next
+
 def ToFile(rorp_iter):
 	"""Return file version of iterator"""
 	return iterfile.FileWrappingIter(ToRaw(rorp_iter))
@@ -143,90 +149,23 @@ def Collate2Iters(riter1, riter2):
 			yield (None, relem2)
 			relem2 = None
 
-def getnext(iter):
-	"""Return the next element of an iterator, raising error if none"""
-	try: next = iter.next()
-	except StopIteration: raise RORPIterException("Unexpected end to iter")
-	return next
-
-def get_dissimilar_indicies(src_init_iter, dest_init_iter):
+def get_dissimilar_indicies(src_init_iter, dest_init_iter, statfileobj = None):
 	"""Get dissimilar indicies given two rorpiters
 
 	Returns an iterator which enumerates the indicies of the rorps
-	which are different on the source and destination ends.
+	which are different on the source and destination ends.  If
+	statfileobj is given, call add_changed on each pair of different
+	indicies.
 
 	"""
 	collated = Collate2Iters(src_init_iter, dest_init_iter)
 	for src_rorp, dest_rorp in collated:
-		if not src_rorp: yield dest_rorp.index
-		elif not dest_rorp: yield src_rorp.index
-		elif not src_rorp == dest_rorp: yield dest_rorp.index
-		elif (Globals.preserve_hardlinks and not
-			  Hardlink.rorp_eq(src_rorp, dest_rorp)): yield dest_rorp.index
-
-def GetDiffIter(sig_iter, new_iter):
-	"""Return delta iterator from sig_iter to new_iter
-
-	The accompanying file for each will be a delta as produced by
-	rdiff, unless the destination file does not exist, in which
-	case it will be the file in its entirety.
-
-	sig_iter may be composed of rorps, but new_iter should have
-	full RPaths.
-
-	"""
-	collated_iter = CollateIterators(sig_iter, new_iter)
-	for rorp, rp in collated_iter: yield diffonce(rorp, rp)
-
-def diffonce(sig_rorp, new_rp):
-	"""Return one diff rorp, based from signature rorp and orig rp"""
-	if sig_rorp and Globals.preserve_hardlinks and sig_rorp.isflaglinked():
-		if new_rp: diff_rorp = new_rp.getRORPath()
-		else: diff_rorp = rpath.RORPath(sig_rorp.index)
-		diff_rorp.flaglinked()
-		return diff_rorp
-	elif sig_rorp and sig_rorp.isreg() and new_rp and new_rp.isreg():
-		diff_rorp = new_rp.getRORPath()
-		#fp = sig_rorp.open("rb")
-		#print "---------------------", fp
-		#tmp_sig_rp = RPath(Globals.local_connection, "/tmp/sig")
-		#tmp_sig_rp.delete()
-		#tmp_sig_rp.write_from_fileobj(fp)
-		#diff_rorp.setfile(Rdiff.get_delta_sigfileobj(tmp_sig_rp.open("rb"),
-		#											 new_rp))
-		diff_rorp.setfile(Rdiff.get_delta_sigfileobj(sig_rorp.open("rb"),
-													 new_rp))
-		diff_rorp.set_attached_filetype('diff')
-		return diff_rorp
-	else:
-		# Just send over originial if diff isn't appropriate
-		if sig_rorp: sig_rorp.close_if_necessary()
-		if not new_rp: return rpath.RORPath(sig_rorp.index)
-		elif new_rp.isreg():
-			diff_rorp = new_rp.getRORPath(1)
-			diff_rorp.set_attached_filetype('snapshot')
-			return diff_rorp
-		else: return new_rp.getRORPath()
-
-def patchonce_action(base_rp, basisrp, diff_rorp):
-	"""Return action patching basisrp using diff_rorp"""
-	assert diff_rorp, "Missing diff index %s" % basisrp.index
-	if not diff_rorp.lstat():
-		return robust.Action(None, lambda init_val: basisrp.delete(), None)
-
-	if Globals.preserve_hardlinks and diff_rorp.isflaglinked():
-		if not basisrp: basisrp = base_rp.new_index(diff_rorp.index)
-		tf = TempFile.new(basisrp)
-		def init(): Hardlink.link_rp(diff_rorp, tf, basisrp)
-		return robust.make_tf_robustaction(init, tf, basisrp)
-	elif basisrp and basisrp.isreg() and diff_rorp.isreg():
-		if diff_rorp.get_attached_filetype() != 'diff':
-			raise rpath.RPathException("File %s appears to have changed during"
-							" processing, skipping" % (basisrp.path,))
-		return Rdiff.patch_with_attribs_action(basisrp, diff_rorp)
-	else: # Diff contains whole file, just copy it over
-		if not basisrp: basisrp = base_rp.new_index(diff_rorp.index)
-		return robust.copy_with_attribs_action(diff_rorp, basisrp)
+		if (src_rorp and dest_rorp and src_rorp == dest_rorp and
+			(not Globals.preserve_hardlinks or
+			 Hardlink.rorp_eq(src_rorp, dest_rorp))): continue
+		if statfileobj: statfileobj.add_changed(src_rorp, dest_rorp)
+		if not dest_rorp: yield src_rorp.index
+		else: yield dest_rorp.index
 
 
 class IndexedTuple(UserList.UserList):
@@ -277,12 +216,15 @@ def FillInIter(rpiter, rootrp):
 	(2,5).  This is used when we need to process directories before or
 	after processing a file in that directory.
 
+	If start_index is given, start with start_index instead of ().
+	The indicies of rest of the rorps should also start with
+	start_index.
+
 	"""
 	# Handle first element as special case
 	first_rp = rpiter.next() # StopIteration gets passed upwards
 	cur_index = first_rp.index
-	for i in range(len(cur_index)):
-		yield rootrp.new_index(cur_index[:i])
+	for i in range(len(cur_index)): yield rootrp.new_index(cur_index[:i])
 	yield first_rp
 	del first_rp
 	old_index = cur_index
@@ -294,7 +236,6 @@ def FillInIter(rpiter, rootrp):
 			for i in range(1, len(cur_index)): # i==0 case already handled
 				if cur_index[:i] != old_index[:i]:
 					filler_rp = rootrp.new_index(cur_index[:i])
-					assert filler_rp.isdir(), "This shouldn't be possible"
 					yield filler_rp
 		yield rp
 		old_index = cur_index
@@ -318,6 +259,7 @@ class IterTreeReducer:
 		self.index = None
 		self.root_branch = branch_class(*branch_args)
 		self.branches = [self.root_branch]
+		self.root_fast_processed = None
 
 	def finish_branches(self, index):
 		"""Run Finish() on all branches index has passed
@@ -355,6 +297,7 @@ class IterTreeReducer:
 
 	def Finish(self):
 		"""Call at end of sequence to tie everything up"""
+		if self.index is None or self.root_fast_processed: return
 		while 1:
 			to_be_finished = self.branches.pop()
 			to_be_finished.call_end_proc()
@@ -375,7 +318,10 @@ class IterTreeReducer:
 		index = args[0]
 		if self.index is None:
 			self.root_branch.base_index = index
-			self.process_w_branch(self.root_branch, args)
+			if self.root_branch.can_fast_process(*args):
+				self.root_branch.fast_process(*args)
+				self.root_fast_processed = 1
+			else: self.process_w_branch(self.root_branch, args)
 			self.index = index
 			return 1
 
@@ -389,7 +335,8 @@ class IterTreeReducer:
 		last_branch = self.branches[-1]
 		if last_branch.start_successful:
 			if last_branch.can_fast_process(*args):
-				last_branch.fast_process(*args)
+				robust.check_common_error(last_branch.on_error,
+										  last_branch.fast_process, args)
 			else:
 				branch = self.add_branch(index)
 				self.process_w_branch(branch, args)
@@ -452,7 +399,7 @@ class ITRBranch:
 
 	def log_prev_error(self, index):
 		"""Call function if no pending exception"""
-		log.Log("Skipping %s because of previous error" %
-			(os.path.join(*index),), 2)
+		log.Log("Skipping %s because of previous error" % \
+				(index and os.path.join(*index) or '()',), 2)
 
 

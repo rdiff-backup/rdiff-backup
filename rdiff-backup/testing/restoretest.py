@@ -1,120 +1,163 @@
 import unittest
 from commontest import *
-from rdiff_backup import log, restore, Globals, rpath
+from rdiff_backup import log, restore, Globals, rpath, TempFile
 
 Log.setverbosity(3)
-
-
 lc = Globals.local_connection
+tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
+restore_base_rp = rpath.RPath(Globals.local_connection,
+							  "testfiles/restoretest")
+restore_base_filenames = restore_base_rp.listdir()
+mirror_time = 1041109438 # just some late time
+
+class RestoreFileComparer:
+	"""Holds a file to be restored and tests against it
+
+	Each object has a restore file and a dictionary of times ->
+	rpaths.  When the restore file is restored to one of the given
+	times, the resulting file should be the same as the related rpath.
+
+	"""
+	def __init__(self, rf):
+		self.rf = rf
+		self.time_rp_dict = {}
+
+	def add_rpath(self, rp, t):
+		"""Add rp, which represents what rf should be at given time t"""
+		assert not self.time_rp_dict.has_key(t)
+		self.time_rp_dict[t] = rp
+
+	def compare_at_time(self, t):
+		"""Restore file, make sure it is the same at time t"""
+		log.Log("Checking result at time %s" % (t,), 7)
+		tf = TempFile.new(tempdir.append("foo"))
+		restore._mirror_time = mirror_time
+		restore._rest_time = t
+		self.rf.set_relevant_incs()
+		out_rorpath = self.rf.get_attribs().getRORPath()
+		correct_result = self.time_rp_dict[t]
+
+		if out_rorpath.isreg():
+			out_rorpath.setfile(self.rf.get_restore_fp())
+		rpath.copy_with_attribs(out_rorpath, tf)
+		assert tf.equal_verbose(correct_result, check_index = 0), \
+			   "%s, %s" % (tf, correct_result)
+		if tf.isreg():
+			assert rpath.cmpfileobj(tf.open("rb"), correct_result.open("rb"))
+		if tf.lstat(): tf.delete()
+
+	def compare_all(self):
+		"""Check restore results for all available times"""
+		for t in self.time_rp_dict.keys(): self.compare_at_time(t)
+
 
 class RestoreTest(unittest.TestCase):
 	"""Test Restore class"""
-	prefix = "testfiles/restoretest/"
-	def maketesttuples(self, basename):
-		"""Make testing tuples from available files starting with prefix
+	def get_rfcs(self):
+		"""Return available RestoreFileCompararer objects"""
+		base_rf = restore.RestoreFile(restore_base_rp, restore_base_rp, [])
+		rfs = base_rf.yield_sub_rfs()
+		rfcs = []
+		for rf in rfs:
+			if rf.mirror_rp.dirsplit()[1] in ["dir"]:
+				log.Log("skipping 'dir'", 5)
+				continue
 
-		tuples is a sorted (oldest to newest) list of pairs (rp1, rp2)
-		where rp1 is an increment file and rp2 is the same but without
-		the final extension.  incs is a list of all increment files.
+			rfc = RestoreFileComparer(rf)
+			for inc in rf.inc_list:
+				test_time = inc.getinctime()
+				rfc.add_rpath(self.get_correct(rf.mirror_rp, test_time),
+							  test_time)
+			rfc.add_rpath(rf.mirror_rp, mirror_time)
+			rfcs.append(rfc)
+		return rfcs
 
-		"""
-		dirlist =  os.listdir(self.prefix)
-		dirlist.sort()
-		baselist = filter(lambda f: f.startswith(basename), dirlist)
-		rps = map(lambda f: rpath.RPath(lc, self.prefix+f), baselist)
-		incs = filter(lambda rp: rp.isincfile(), rps)
-		tuples = map(lambda rp: (rp, rpath.RPath(lc, "%s.%s" %
-												 (rp.getincbase().path,
-												  rp.getinctime()))),
-					 incs)
-		return tuples, incs
+	def get_correct(self, mirror_rp, test_time):
+		"""Return correct version with base mirror_rp at time test_time"""
+		assert -1 < test_time < 2000000000, test_time
+		dirname, basename = mirror_rp.dirsplit()
+		for filename in restore_base_filenames:
+			comps = filename.split(".")
+			base = ".".join(comps[:-1])
+			t = Time.stringtotime(comps[-1])
+			if t == test_time and basename == base:
+				return restore_base_rp.append(filename)
+		# Correct rp must be empty
+		return restore_base_rp.append("%s.%s" %
+							 (basename, Time.timetostring(test_time)))
 
-	def restoreonefiletest(self, basename):
-		tuples, incs = self.maketesttuples(basename)
-		rpbase = rpath.RPath(lc, self.prefix + basename)
-		rptarget = rpath.RPath(lc, "testfiles/outfile")
-		Hardlink.initialize_dictionaries()
+	def testRestoreSingle(self):
+		"""Test restoring files one at at a time"""
+		MakeOutputDir()
+		for rfc in self.get_rfcs():
+			if rfc.rf.inc_rp.isincfile(): continue
+			log.Log("Comparing %s" % (rfc.rf.inc_rp.path,), 5)
+			rfc.compare_all()
+		
+	def testBothLocal(self):
+		"""Test directory restore everything local"""
+		self.restore_dir_test(1,1)
 
-		for pair in tuples:
-			print "Processing file " + pair[0].path
-			if rptarget.lstat(): rptarget.delete()
-			rest_time = Time.stringtotime(pair[0].getinctime())
-			rid = restore.RestoreIncrementData((), rpbase, incs)
-			rid.sortincseq(rest_time, 10000000000) # pick some really late time
-			rcd = restore.RestoreCombinedData(rid, rpbase, rptarget)
-			rcd.RestoreFile()
-			#sorted_incs = Restore.sortincseq(rest_time, incs)
-			#Restore.RestoreFile(rest_time, rpbase, (), sorted_incs, rptarget)
-			rptarget.setdata()
-			if not rptarget.lstat(): assert not pair[1].lstat()
-			elif not pair[1].lstat(): assert not rptarget.lstat()
-			else:
-				assert rpath.cmp(rptarget, pair[1]), \
-					   "%s %s" % (rptarget.path, pair[1].path)
-				assert rpath.cmp_attribs(rptarget, pair[1]), \
-					   "%s %s" % (rptarget.path, pair[1].path)
-				rptarget.delete()
+	def testMirrorRemote(self):
+		"""Test directory restore mirror is remote"""
+		self.restore_dir_test(0, 1)
 
-	def testsortincseq(self):
-		"""Test the Restore.sortincseq function
+	def testDestRemote(self):
+		"""Test directory restore destination is remote"""
+		self.restore_dir_test(1, 0)
 
-		This test just makes sure that it comes up with the right
-		number of increments for each base name - given a list of
-		increments, we should eventually get sorted sequences that
-		end in each one (each one will be the last increment once).
+	def testBothRemote(self):
+		"""Test directory restore everything is remote"""
+		self.restore_dir_test(0, 0)
 
-		"""
-		for basename in ['ocaml', 'mf']:
-			tuples, unused = self.maketesttuples(basename)
-			incs = [tuple[0] for tuple in tuples]
+	def restore_dir_test(self, mirror_local, dest_local):
+		"""Run whole dir tests
 
-			# Now we need a time newer than any inc
-			mirror_time = Time.stringtotime(incs[-1].getinctime()) + 10000
-
-			for inc, incbase in tuples:
-				assert inc.isincfile()
-				inctime = Time.stringtotime(inc.getinctime())
-				rid1 = restore.RestoreIncrementData(basename, incbase, incs)
-				rid1.sortincseq(inctime, mirror_time)
-				assert rid1.inc_list, rid1.inc_list
-				# oldest increment should be exactly inctime
-				ridtime = Time.stringtotime(rid1.inc_list[-1].getinctime())
-				assert ridtime == inctime, (ridtime, inctime)
-				
-
-	def testRestorefiles(self):
-		"""Testing restoration of files one at a time"""
-		map(self.restoreonefiletest, ["ocaml", "mf"])
-
-	def testRestoreDir(self):
-		"""Test restoring from a real backup set
-
-		Run makerestoretest3 if this doesn't work.
+		If any of the above tests don't work, try rerunning
+		makerestoretest3.
 
 		"""
 		Myrm("testfiles/output")
-		InternalRestore(1, 1, "testfiles/restoretest3",
-						"testfiles/output", 20000)
+		target_rp = rpath.RPath(Globals.local_connection, "testfiles/output")
+		mirror_rp = rpath.RPath(Globals.local_connection,
+								"testfiles/restoretest3")
+		inc1_rp = rpath.RPath(Globals.local_connection,
+							  "testfiles/increment1")
+		inc2_rp = rpath.RPath(Globals.local_connection,
+							  "testfiles/increment2")
+		inc3_rp = rpath.RPath(Globals.local_connection,
+							  "testfiles/increment3")
+		inc4_rp = rpath.RPath(Globals.local_connection,
+							  "testfiles/increment4")
 
-		src_rp = rpath.RPath(Globals.local_connection, "testfiles/increment2")
-		restore_rp = rpath.RPath(Globals.local_connection, "testfiles/output")
-		assert CompareRecursive(src_rp, restore_rp)
+		InternalRestore(mirror_local, dest_local, "testfiles/restoretest3",
+						"testfiles/output", 45000)
+		assert CompareRecursive(inc4_rp, target_rp)
+		InternalRestore(mirror_local, dest_local, "testfiles/restoretest3",
+						"testfiles/output", 35000)
+		assert CompareRecursive(inc3_rp, target_rp, compare_hardlinks = 0)
+		InternalRestore(mirror_local, dest_local, "testfiles/restoretest3",
+						"testfiles/output", 25000)
+		assert CompareRecursive(inc2_rp, target_rp, compare_hardlinks = 0)
+		InternalRestore(mirror_local, dest_local, "testfiles/restoretest3",
+						"testfiles/output", 5000)
+		assert CompareRecursive(inc1_rp, target_rp, compare_hardlinks = 0)
 
-	def testRestoreCorrupt(self):
-		"""Test restoring a partially corrupt archive
-
-		The problem here is that a directory is missing from what is
-		to be restored, but because the previous backup was aborted in
-		the middle, some of the files in that directory weren't marked
-		as .missing.
-
-		"""
-		Myrm("testfiles/output")
-		InternalRestore(1, 1, "testfiles/restoretest4", "testfiles/output",
-						10000)
-		assert os.lstat("testfiles/output")
-		self.assertRaises(OSError, os.lstat, "testfiles/output/tmp")
-		self.assertRaises(OSError, os.lstat, "testfiles/output/rdiff-backup")
+#	def testRestoreCorrupt(self):
+#		"""Test restoring a partially corrupt archive
+#
+#		The problem here is that a directory is missing from what is
+#		to be restored, but because the previous backup was aborted in
+#		the middle, some of the files in that directory weren't marked
+#		as .missing.
+#
+#		"""
+#		Myrm("testfiles/output")
+#		InternalRestore(1, 1, "testfiles/restoretest4", "testfiles/output",
+#						10000)
+#		assert os.lstat("testfiles/output")
+#		self.assertRaises(OSError, os.lstat, "testfiles/output/tmp")
+#		self.assertRaises(OSError, os.lstat, "testfiles/output/rdiff-backup")
 
 	def testRestoreNoincs(self):
 		"""Test restoring a directory with no increments, just mirror"""

@@ -40,7 +40,7 @@ def setcurtime(curtime = None):
 	"""Sets the current time in curtime and curtimestr on all systems"""
 	t = curtime or time.time()
 	for conn in Globals.connections:
-		conn.Time.setcurtime_local(t)
+		conn.Time.setcurtime_local(long(t))
 
 def setcurtime_local(timeinseconds):
 	"""Only set the current time locally"""

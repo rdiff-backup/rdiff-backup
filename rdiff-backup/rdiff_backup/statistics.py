@@ -19,8 +19,8 @@
 
 """Generate and process aggregated backup information"""
 
-import re, os
-import Globals, TempFile, robust, Time, rorpiter
+import re, os, time
+import Globals, TempFile, robust, Time, rorpiter, increment
 
 class StatsException(Exception): pass
 
@@ -72,6 +72,10 @@ class StatsObj:
 	def increment_stat(self, attr):
 		"""Add 1 to value of attribute"""
 		self.__dict__[attr] += 1
+
+	def add_to_stat(self, attr, value):
+		"""Add value to given attribute"""
+		self.__dict__[attr] += value
 
 	def get_total_dest_size_change(self):
 		"""Return total destination size change
@@ -215,12 +219,9 @@ class StatsObj:
 
 	def write_stats_to_rp(self, rp):
 		"""Write statistics string to given rpath"""
-		tf = TempFile.new(rp)
-		def init_thunk():
-			fp = tf.open("w")
-			fp.write(self.get_stats_string())
-			fp.close()
-		robust.make_tf_robustaction(init_thunk, (tf,), (rp,)).execute()
+		fp = rp.open("wb")
+		fp.write(self.get_stats_string())
+		assert not fp.close()
 
 	def read_stats_from_rp(self, rp):
 		"""Set statistics from rpath, return self for convenience"""
@@ -263,81 +264,81 @@ class StatsObj:
 		return s
 
 
-class ITRB(rorpiter.ITRBranch, StatsObj):
-	"""Keep track of per directory statistics
+class StatFileObj(StatsObj):
+	"""Build on StatsObj, add functions for processing files"""
+	def __init__(self, start_time = None):
+		"""StatFileObj initializer - zero out file attributes"""
+		StatsObj.__init__(self)
+		for attr in self.stat_file_attrs: self.set_stat(attr, 0)
+		if start_time is None: start_time = Time.curtime
+		self.StartTime = start_time
+		self.Errors = 0
 
-	This is subclassed by the mirroring and incrementing ITRs.
-
-	"""
-	def __init__(self):
-		"""StatsITR initializer - zero out statistics"""
-		attr_dict = self.__dict__
-		for attr in StatsObj.stat_file_attrs: attr_dict[attr] = 0
-		self.ElapsedTime = self.Filename = None
-
-	def start_stats(self, mirror_dsrp):
-		"""Record status of mirror dsrp
-
-		This is called before the mirror is processed so we remember
-		the old state.
-
-		"""
-		if mirror_dsrp.lstat():
-			self.mirror_base_exists = 1
-			self.mirror_base_size = self.stats_getsize(mirror_dsrp)
-		else: self.mirror_base_exists = None
-
-	def stats_getsize(self, rp):
-		"""Return size of rp, with error checking"""
-		try: return rp.getsize()
-		except KeyError: return 0
-
-	def end_stats(self, diff_rorp, mirror_dsrp, inc_rp = None):
-		"""Set various statistics after mirror processed"""
-		if mirror_dsrp.lstat():
-			source_size = self.stats_getsize(mirror_dsrp)
-			self.SourceFiles += 1
-			self.SourceFileSize += source_size
-			if self.mirror_base_exists:
-				self.MirrorFiles += 1
-				self.MirrorFileSize += self.mirror_base_size
-				if diff_rorp: # otherwise no change
-					self.ChangedFiles += 1
-					self.ChangedSourceSize += source_size
-					self.ChangedMirrorSize += self.mirror_base_size
-					self.stats_incr_incfiles(inc_rp)
-			else: # new file was created
-				self.NewFiles += 1
-				self.NewFileSize += source_size
-				self.stats_incr_incfiles(inc_rp)
-		else:
-			if self.mirror_base_exists: # file was deleted from mirror
-				self.MirrorFiles += 1
-				self.MirrorFileSize += self.mirror_base_size
-				self.DeletedFiles += 1
-				self.DeletedFileSize += self.mirror_base_size
-				self.stats_incr_incfiles(inc_rp)
-
-	def fast_process(self, mirror_rorp):
-		"""Use when there is no change from source to mirror"""
-		source_size = self.stats_getsize(mirror_rorp)
+	def add_source_file(self, src_rorp):
+		"""Add stats of source file"""
 		self.SourceFiles += 1
+		if src_rorp.isreg(): self.SourceFileSize += src_rorp.getsize()
+
+	def add_dest_file(self, dest_rorp):
+		"""Add stats of destination size"""
 		self.MirrorFiles += 1
-		self.SourceFileSize += source_size
-		self.MirrorFileSize += source_size
+		if dest_rorp.isreg(): self.MirrorFileSize += dest_rorp.getsize()
 
-	def stats_incr_incfiles(self, inc_rp):
-		"""Increment IncrementFile statistics"""
-		if inc_rp:
-			self.IncrementFiles += 1
-			self.IncrementFileSize += self.stats_getsize(inc_rp)
+	def add_changed(self, src_rorp, dest_rorp):
+		"""Update stats when src_rorp changes to dest_rorp"""
+		if src_rorp and src_rorp.lstat() and dest_rorp and dest_rorp.lstat():
+			self.ChangedFiles += 1
+			if src_rorp.isreg(): self.ChangedSourceSize += src_rorp.getsize()
+			if dest_rorp.isreg(): self.ChangedMirrorSize += dest_rorp.getsize()
+		elif src_rorp and src_rorp.lstat():
+			self.NewFiles += 1
+			if src_rorp.isreg(): self.NewFileSize += src_rorp.getsize()
+		elif dest_rorp and dest_rorp.lstat():
+			self.DeletedFiles += 1
+			if dest_rorp.isreg(): self.DeletedFileSize += dest_rorp.getsize()
 
-	def add_file_stats(self, branch):
-		"""Add all file statistics from branch to current totals"""
-		for attr in self.stat_file_attrs:
-			self.__dict__[attr] += branch.__dict__[attr]
+	def add_increment(self, inc_rorp):
+		"""Update stats with increment rorp"""
+		self.IncrementFiles += 1
+		if inc_rorp.isreg(): self.IncrementFileSize += inc_rorp.getsize()
+		
+	def add_error(self):
+		"""Increment error stat by 1"""
+		self.Errors += 1
+
+	def finish(self, end_time = None):
+		"""Record end time and set other stats"""
+		if end_time is None: end_time = time.time()
+		self.EndTime = end_time
 
 
+_active_statfileobj = None
+def init_statfileobj():
+	"""Return new stat file object, record as active stat object"""
+	global _active_statfileobj
+	assert not _active_statfileobj, _active_statfileobj
+	_active_statfileobj = StatFileObj()
+	return _active_statfileobj
 
+def get_active_statfileobj():
+	"""Return active stat file object if it exists"""
+	if _active_statfileobj: return _active_statfileobj
+	else: return None
 
+def record_error():
+	"""Record error on active statfileobj, if there is one"""
+	if _active_statfileobj: _active_statfileobj.add_error()
 
+def process_increment(inc_rorp):
+	"""Add statistics of increment rp incrp if there is active statfile"""
+	if _active_statfileobj: _active_statfileobj.add_increment(inc_rorp)
+
+def write_active_statfileobj():
+	"""Write active StatFileObj object to session statistics file"""
+	global _active_statfileobj
+	assert _active_statfileobj
+	rp_base = Globals.rbdir.append("session_statistics")
+	session_stats_rp = increment.get_inc_ext(rp_base, 'data', Time.curtime)
+	_active_statfileobj.finish()
+	_active_statfileobj.write_stats_to_rp(session_stats_rp)
+	_active_statfileobj = None

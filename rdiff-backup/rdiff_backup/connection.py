@@ -96,7 +96,6 @@ class LowLevelPipeConnection(Connection):
 	b - string
 	q - quit signal
 	t - TempFile
-	d - DSRPath
 	R - RPath
 	r - RORPath only
 	c - PipeConnection object
@@ -124,8 +123,6 @@ class LowLevelPipeConnection(Connection):
 		elif isinstance(obj, connection.Connection):self._putconn(obj, req_num)
 		elif isinstance(obj, TempFile.TempFile):
 			self._puttempfile(obj, req_num)
-		elif isinstance(obj, destructive_stepping.DSRPath):
-			self._putdsrpath(obj, req_num)
 		elif isinstance(obj, rpath.RPath): self._putrpath(obj, req_num)
 		elif isinstance(obj, rpath.RORPath): self._putrorpath(obj, req_num)
 		elif ((hasattr(obj, "read") or hasattr(obj, "write"))
@@ -156,11 +153,6 @@ class LowLevelPipeConnection(Connection):
 		tf_repr = (tempfile.conn.conn_number, tempfile.base,
 				   tempfile.index, tempfile.data)
 		self._write("t", cPickle.dumps(tf_repr, 1), req_num)
-
-	def _putdsrpath(self, dsrpath, req_num):
-		"""Put DSRPath into pipe.  See _putrpath"""
-		dsrpath_repr = (dsrpath.conn.conn_number, dsrpath.getstatedict())
-		self._write("d", cPickle.dumps(dsrpath_repr, 1), req_num)
 
 	def _putrpath(self, rpath, req_num):
 		"""Put an rpath into the pipe
@@ -246,7 +238,6 @@ class LowLevelPipeConnection(Connection):
 		elif format_string == "t": result = self._gettempfile(data)
 		elif format_string == "r": result = self._getrorpath(data)
 		elif format_string == "R": result = self._getrpath(data)
-		elif format_string == "d": result = self._getdsrpath(data)
 		else:
 			assert format_string == "c", header_string
 			result = Globals.connection_dict[int(data)]
@@ -269,16 +260,6 @@ class LowLevelPipeConnection(Connection):
 		conn_number, base, index, data = cPickle.loads(raw_rpath_buf)
 		return rpath.RPath(Globals.connection_dict[conn_number],
 						   base, index, data)
-
-	def _getdsrpath(self, raw_dsrpath_buf):
-		"""Return DSRPath object indicated by buf"""
-		conn_number, state_dict = cPickle.loads(raw_dsrpath_buf)
-		empty_dsrp = destructive_stepping.DSRPath("bypass",
-								  Globals.local_connection, None)
-		empty_dsrp.__setstate__(state_dict)
-		empty_dsrp.conn = Globals.connection_dict[conn_number]
-		empty_dsrp.file = None
-		return empty_dsrp
 
 	def _close(self):
 		"""Close the pipes associated with the connection"""
@@ -544,8 +525,8 @@ class VirtualFile:
 # put at bottom to reduce circularities.
 import Globals, Time, Rdiff, Hardlink, FilenameMapping, C, Security, \
 	   Main, rorpiter, selection, increment, statistics, manage, lazy, \
-	   iterfile, rpath, robust, restore, manage, highlevel, connection, \
-	   TempFile, destructive_stepping, SetConnections
+	   iterfile, rpath, robust, restore, manage, backup, connection, \
+	   TempFile, SetConnections, librsync
 from log import Log
 
 Globals.local_connection = LocalConnection()

@@ -94,29 +94,20 @@ class Select:
 		self.prefix = self.rpath.path
 		self.quoting_on = Globals.quoting_enabled and quoted_filenames
 
-	def set_iter(self, starting_index = None, iterate_parents = None,
-				 sel_func = None):
+	def set_iter(self, iterate_parents = None, sel_func = None):
 		"""Initialize more variables, get ready to iterate
 
-		Will iterate indicies greater than starting_index.  If
-		iterate_parents is true, will also include parents of
-		starting_index in iteration.  Selection function sel_func is
-		called on each rpath and is usually self.Select.  Returns self
-		just for convenience.
+		Selection function sel_func is called on each rpath and is
+		usually self.Select.  Returns self just for convenience.
 
 		"""
 		if not sel_func: sel_func = self.Select
 		self.rpath.setdata() # this may have changed since Select init
-		if starting_index is not None:
-			self.starting_index = starting_index
-			self.iter = self.iterate_starting_from(self.rpath,
-						            self.iterate_starting_from, sel_func)
-		elif self.quoting_on:
+		if self.quoting_on:
 			self.iter = self.Iterate(self.rpath, self.Iterate, sel_func)
 		else: self.iter = self.Iterate_fast(self.rpath, sel_func)
 
 		# only iterate parents if we are not starting from beginning
-		self.iterate_parents = starting_index is not None and iterate_parents
 		self.next = self.iter.next
 		self.__iter__ = lambda: self
 		return self
@@ -149,6 +140,7 @@ class Select:
 					elif s == 2 and new_rpath.isdir(): yield (new_rpath, 1)
 
 		yield rpath
+		if not rpath.isdir(): return
 		diryield_stack = [diryield(rpath)]
 		delayed_rp_stack = []
 
@@ -213,26 +205,6 @@ class Select:
 				if new_rp:
 					for rp in rec_func(new_rp, rec_func, sel_func):
 						yield rp
-
-	def iterate_starting_from(self, rpath, rec_func, sel_func):
-		"""Like Iterate, but only yield indicies > self.starting_index"""
-		if rpath.index > self.starting_index: # past starting_index
-			for rp in self.Iterate(rpath, self.Iterate, sel_func):
-				yield rp
-		elif (rpath.index == self.starting_index[:len(rpath.index)]
-			  and rpath.isdir()):
-			# May encounter starting index on this branch
-			if self.iterate_parents: yield rpath
-			for rp in self.iterate_in_dir(rpath, self.iterate_starting_from,
-										  sel_func): yield rp
-
-#	def iterate_with_finalizer(self):
-#		"""Like Iterate, but missing some options, and add finalizer"""
-#		finalize = IterTreeReducer(DestructiveSteppingFinalizer, ())
-#		for rp in self:
-#			yield rp
-#			finalize(rp.index, rp))
-#		finalize.Finish()
 
 	def Select(self, rp):
 		"""Run through the selection functions and return dominant val 0/1/2"""

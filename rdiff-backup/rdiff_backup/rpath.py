@@ -35,7 +35,7 @@ are dealing with are local or remote.
 
 """
 
-import os, stat, re, sys, shutil, gzip, socket, time, shutil
+import os, stat, re, sys, shutil, gzip, socket, time
 import Globals, FilenameMapping, Time, static, log
 
 
@@ -81,7 +81,7 @@ def move(rpin, rpout):
 		copy(rpin, rpout)
 		rpin.delete()
 
-def copy(rpin, rpout):
+def copy(rpin, rpout, compress = 0):
 	"""Copy RPath rpin to rpout.  Works for symlinks, dirs, etc."""
 	log.Log("Regular copying %s to %s" % (rpin.index, rpout.path), 6)
 	if not rpin.lstat():
@@ -93,7 +93,7 @@ def copy(rpin, rpout):
 			rpout.delete()   # easier to write that compare
 		else: return
 
-	if rpin.isreg(): copy_reg_file(rpin, rpout)
+	if rpin.isreg(): copy_reg_file(rpin, rpout, compress)
 	elif rpin.isdir(): rpout.mkdir()
 	elif rpin.issym(): rpout.symlink(rpin.readlink())
 	elif rpin.ischardev():
@@ -106,15 +106,16 @@ def copy(rpin, rpout):
 	elif rpin.issock(): rpout.mksock()
 	else: raise RPathException("File %s has unknown type" % rpin.path)
 
-def copy_reg_file(rpin, rpout):
+def copy_reg_file(rpin, rpout, compress = 0):
 	"""Copy regular file rpin to rpout, possibly avoiding connection"""
 	try:
-		if rpout.conn is rpin.conn:
-			rpout.conn.shutil.copyfile(rpin.path, rpout.path)
+		if (rpout.conn is rpin.conn and
+			rpout.conn is not Globals.local_connection):
+			rpout.conn.rpath.copy_reg_file(rpin.path, rpout.path, compress)
 			rpout.setdata()
 			return
 	except AttributeError: pass
-	rpout.write_from_fileobj(rpin.open("rb"))
+	rpout.write_from_fileobj(rpin.open("rb"), compress = compress)
 
 def cmp(rpin, rpout):
 	"""True if rpin has the same data as rpout
@@ -179,9 +180,9 @@ def cmp_attribs(rp1, rp2):
 			(rp1.path, rp2.path, result), 7)
 	return result
 
-def copy_with_attribs(rpin, rpout):
+def copy_with_attribs(rpin, rpout, compress = 0):
 	"""Copy file and then copy over attributes"""
-	copy(rpin, rpout)
+	copy(rpin, rpout, compress)
 	if rpin.lstat(): copy_attribs(rpin, rpout)
 
 def quick_cmp_with_attribs(rp1, rp2):
@@ -278,9 +279,9 @@ class RORPath:
 				  self.data[key] != other.data[key]): return None
 		return 1
 
-	def equal_verbose(self, other):
+	def equal_verbose(self, other, check_index = 1):
 		"""Like __eq__, but log more information.  Useful when testing"""
-		if self.index != other.index:
+		if check_index and self.index != other.index:
 			log.Log("Index %s != index %s" % (self.index, other.index), 2)
 			return None
 
@@ -372,6 +373,10 @@ class RORPath:
 		"""Return permission block of file"""
 		return self.data['perms']
 
+	def hassize(self):
+		"""True if rpath has a size parameter"""
+		return self.data.has_key('size')
+
 	def getsize(self):
 		"""Return length of file in bytes"""
 		return self.data['size']
@@ -398,7 +403,8 @@ class RORPath:
 
 	def getnumlinks(self):
 		"""Number of places inode is linked to"""
-		return self.data['nlink']
+		try: return self.data['nlink']
+		except KeyError: return 1
 
 	def readlink(self):
 		"""Wrapper around os.readlink()"""
@@ -446,9 +452,13 @@ class RORPath:
 		"""
 		return self.data.has_key('linked')
 
-	def flaglinked(self):
+	def get_link_flag(self):
+		"""Return previous index that a file is hard linked to"""
+		return self.data['linked']
+
+	def flaglinked(self, index):
 		"""Signal that rorp is a signature/diff for a hardlink file"""
-		self.data['linked'] = 1
+		self.data['linked'] = index
 
 	def open(self, mode):
 		"""Return file type object if any was given using self.setfile"""
@@ -742,7 +752,6 @@ class RPath(RORPath):
 
 	def append_path(self, ext, new_index = ()):
 		"""Like append, but add ext to path instead of to index"""
-		assert not self.index # doesn't make sense if index isn't ()
 		return self.__class__(self.conn, "/".join((self.base, ext)), new_index)
 
 	def new_index(self, index):
@@ -822,8 +831,8 @@ class RPath(RORPath):
 		return self.inc_type
 
 	def getinctime(self):
-		"""Return timestring of an increment file"""
-		return self.inc_timestr
+		"""Return time in seconds of an increment file"""
+		return Time.stringtotime(self.inc_timestr)
 	
 	def getincbase(self):
 		"""Return the base filename of an increment file in rp form"""
@@ -862,22 +871,4 @@ class RPathFileHook:
 		self.closing_thunk()
 		return result
 
-
-# Import these late to avoid circular dependencies
-#import FilenameMapping
-#from lazy import *
-#from selection import *
-#from highlevel import *
-
-#class RpathDeleter(ITRBranch):
-#	"""Delete a directory.  Called by RPath.delete()"""
-#	def start_process(self, index, rp):
-#		self.rp = rp
-#
-#	def end_process(self):
-#		if self.rp.isdir(): self.rp.rmdir()
-#		else: self.rp.delete()
-#
-#	def can_fast_process(self, index, rp): return not rp.isdir()
-#	def fast_process(self, index, rp): rp.delete()
 	

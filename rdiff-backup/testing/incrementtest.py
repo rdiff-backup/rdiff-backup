@@ -1,7 +1,6 @@
 import unittest, os, re, time
 from commontest import *
-from rdiff_backup import log, rpath, restore, increment, Time, \
-	 Rdiff, statistics
+from rdiff_backup import log, rpath, increment, Time, Rdiff, statistics
 
 lc = Globals.local_connection
 Globals.change_source_perms = 1
@@ -21,14 +20,14 @@ dir = getrp(".")
 sym = getrp("symbolic_link")
 nothing = getrp("nothing")
 
-target = rpath.RPath(lc, "testfiles/out")
-out2 = rpath.RPath(lc, "testfiles/out2")
-out_gz = rpath.RPath(lc, "testfiles/out.gz")
+target = rpath.RPath(lc, "testfiles/output/out")
+out2 = rpath.RPath(lc, "testfiles/output/out2")
+out_gz = rpath.RPath(lc, "testfiles/output/out.gz")
 
 Time.setprevtime(999424113)
 prevtimestr = "2001-09-02T02:48:33-07:00"
-t_pref = "testfiles/out.2001-09-02T02:48:33-07:00"
-t_diff = "testfiles/out.2001-09-02T02:48:33-07:00.diff"
+t_pref = "testfiles/output/out.2001-09-02T02:48:33-07:00"
+t_diff = "testfiles/output/out.2001-09-02T02:48:33-07:00.diff"
 
 Globals.no_compression_regexp = \
 			 re.compile(Globals.no_compression_regexp_string, re.I)
@@ -37,11 +36,12 @@ class inctest(unittest.TestCase):
 	"""Test the incrementRP function"""
 	def setUp(self):
 		Globals.set('isbackup_writer',1)
+		MakeOutputDir()
 
 	def check_time(self, rp):
 		"""Make sure that rp is an inc file, and time is Time.prevtime"""
 		assert rp.isincfile(), rp
-		t = Time.stringtotime(rp.getinctime())
+		t = rp.getinctime()
 		assert t == Time.prevtime, (t, Time.prevtime)
 
 	def testreg(self):
@@ -114,7 +114,7 @@ class inctest(unittest.TestCase):
 		rp = increment.Increment(rf, rf2, target)
 		self.check_time(rp)
 		assert rpath.cmp_attribs(rp, rf2)
-		Rdiff.patch_action(rf, rp, out2).execute()
+		Rdiff.patch_local(rf, rp, out2)
 		assert rpath.cmp(rf2, out2)
 		rp.delete()
 		out2.delete()
@@ -125,7 +125,7 @@ class inctest(unittest.TestCase):
 		rp = increment.Increment(rf, rf2, target)
 		self.check_time(rp)
 		assert rpath.cmp_attribs(rp, rf2)
-		Rdiff.patch_action(rf, rp, out2, delta_compressed = 1).execute()
+		Rdiff.patch_local(rf, rp, out2, delta_compressed = 1)
 		assert rpath.cmp(rf2, out2)
 		rp.delete()
 		out2.delete()
@@ -139,86 +139,10 @@ class inctest(unittest.TestCase):
 		rp = increment.Increment(rf, out_gz, target)
 		self.check_time(rp)
 		assert rpath.cmp_attribs(rp, out_gz)
-		Rdiff.patch_action(rf, rp, out2).execute()
+		Rdiff.patch_local(rf, rp, out2)
 		assert rpath.cmp(out_gz, out2)
 		rp.delete()
 		out2.delete()
 		out_gz.delete()
-
-class inctest2(unittest.TestCase):
-	"""Like inctest but contains more elaborate tests"""
-	def stats_check_initial(self, s):
-		"""Make sure stats object s compatible with initial mirroring
-
-		A lot of the off by one stuff is because the root directory
-		exists in the below examples.
-
-		"""
-		assert s.MirrorFiles == 1 or s.MirrorFiles == 0
-		assert s.MirrorFileSize < 20000
-		assert s.NewFiles <= s.SourceFiles <= s.NewFiles + 1
-		assert s.NewFileSize <= s.SourceFileSize <= s.NewFileSize + 20000
-		assert s.ChangedFiles == 1 or s.ChangedFiles == 0
-		assert s.ChangedSourceSize < 20000
-		assert s.ChangedMirrorSize < 20000
-		assert s.DeletedFiles == s.DeletedFileSize == 0
-		assert s.IncrementFileSize == 0
-
-	def testStatistics(self):
-		"""Test the writing of statistics
-
-		The file sizes are approximate because the size of directories
-		could change with different file systems...
-
-		"""
-		Globals.compression = 1
-		Myrm("testfiles/output")
-		InternalBackup(1, 1, "testfiles/stattest1", "testfiles/output")
-		InternalBackup(1, 1, "testfiles/stattest2", "testfiles/output",
-					   time.time()+1)
-
-		rbdir = rpath.RPath(Globals.local_connection,
-							"testfiles/output/rdiff-backup-data")
-
-		#incs = Restore.get_inclist(rbdir.append("subdir").
-		#						   append("directory_statistics"))
-		#assert len(incs) == 2
-		#s1 = StatsObj().read_stats_from_rp(incs[0]) # initial mirror stats
-		#assert s1.SourceFiles == 2
-		#assert 400000 < s1.SourceFileSize < 420000
-		#self.stats_check_initial(s1)
-
-		#subdir_stats = StatsObj().read_stats_from_rp(incs[1]) # increment stats
-		#assert subdir_stats.SourceFiles == 2
-		#assert 400000 < subdir_stats.SourceFileSize < 420000
-		#assert subdir_stats.MirrorFiles == 2
-		#assert 400000 < subdir_stats.MirrorFileSize < 420000
-		#assert subdir_stats.NewFiles == subdir_stats.NewFileSize == 0
-		#assert subdir_stats.DeletedFiles == subdir_stats.DeletedFileSize == 0
-		#assert subdir_stats.ChangedFiles == 2
-		#assert 400000 < subdir_stats.ChangedSourceSize < 420000
-		#assert 400000 < subdir_stats.ChangedMirrorSize < 420000
-		#assert 10 < subdir_stats.IncrementFileSize < 20000
-
-		incs = restore.get_inclist(rbdir.append("session_statistics"))
-		assert len(incs) == 2
-		s2 = statistics.StatsObj().read_stats_from_rp(incs[0])
-		assert s2.SourceFiles == 7
-		assert 700000 < s2.SourceFileSize < 750000
-		self.stats_check_initial(s2)
-
-		root_stats = statistics.StatsObj().read_stats_from_rp(incs[1])
-		assert root_stats.SourceFiles == 7, root_stats.SourceFiles
-		assert 550000 < root_stats.SourceFileSize < 570000
-		assert root_stats.MirrorFiles == 7
-		assert 700000 < root_stats.MirrorFileSize < 750000
-		assert root_stats.NewFiles == 1
-		assert root_stats.NewFileSize == 0
-		assert root_stats.DeletedFiles == 1
-		assert root_stats.DeletedFileSize == 200000
-		assert 3 <= root_stats.ChangedFiles <= 4, root_stats.ChangedFiles
-		assert 450000 < root_stats.ChangedSourceSize < 470000
-		assert 400000 < root_stats.ChangedMirrorSize < 420000
-		assert 10 < root_stats.IncrementFileSize < 30000
 
 if __name__ == '__main__': unittest.main()
