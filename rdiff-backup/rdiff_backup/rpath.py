@@ -281,10 +281,10 @@ class RORPath:
 	def equal_loose(self, other):
 		"""True iff the two rorpaths are kinda equivalent
 
-		Sometimes because of missing permissions, a file cannot be
+		Sometimes because permissions cannot be set, a file cannot be
 		replicated exactly on the remote side.  This function tells
 		you whether the two files are close enough.  self must be the
-		file with more information.
+		original rpath.
 
 		"""
 		for key in self.data.keys(): # compare dicts key by key
