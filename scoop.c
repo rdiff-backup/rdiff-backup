@@ -53,11 +53,11 @@
  */
 
 
-                              /*
-                               | To walk on water you've gotta sink 
-                               | in the ice.
-                               |   -- Shihad, `The General Electric'.
-                               */
+/*
+  | To walk on water you've gotta sink 
+  | in the ice.
+  |   -- Shihad, `The General Electric'.
+*/
 
 #include <config.h>
 
@@ -77,43 +77,43 @@
  */
 static void hs_scoop_input(hs_stream_t *stream, size_t len)
 {
-        hs_simpl_t *impl = stream->impl;
-        size_t tocopy;
+    hs_simpl_t *impl = stream->impl;
+    size_t tocopy;
 
-        assert(len > impl->scoop_avail);
+    assert(len > impl->scoop_avail);
 
-        if (impl->scoop_alloc < len) {
-                /* need to allocate a new buffer, too */
-                char *newbuf;
-                int newsize = 2 * len;
-                newbuf = hs_alloc(newsize, "scoop buffer");
-                if (impl->scoop_avail)
-                        memcpy(newbuf, impl->scoop_next, impl->scoop_avail);
-                if (impl->scoop_buf)
-                        free(impl->scoop_buf);
-                impl->scoop_buf = impl->scoop_next = newbuf;
-                hs_trace("resized scoop buffer to %d bytes from %d",
-                         newsize, impl->scoop_alloc);
-                impl->scoop_alloc = newsize;
-        } else {
-                /* this buffer size is fine, but move the existing
-                 * data down to the front. */
-                memmove(impl->scoop_buf, impl->scoop_next, impl->scoop_avail);
-                impl->scoop_next = impl->scoop_buf;
-        }
+    if (impl->scoop_alloc < len) {
+        /* need to allocate a new buffer, too */
+        char *newbuf;
+        int newsize = 2 * len;
+        newbuf = hs_alloc(newsize, "scoop buffer");
+        if (impl->scoop_avail)
+            memcpy(newbuf, impl->scoop_next, impl->scoop_avail);
+        if (impl->scoop_buf)
+            free(impl->scoop_buf);
+        impl->scoop_buf = impl->scoop_next = newbuf;
+        hs_trace("resized scoop buffer to %d bytes from %d",
+                 newsize, impl->scoop_alloc);
+        impl->scoop_alloc = newsize;
+    } else {
+        /* this buffer size is fine, but move the existing
+         * data down to the front. */
+        memmove(impl->scoop_buf, impl->scoop_next, impl->scoop_avail);
+        impl->scoop_next = impl->scoop_buf;
+    }
 
-        /* take as much input as is available, to give up to LEN bytes
-         * in the scoop. */
-        tocopy = len - impl->scoop_avail;
-        if (tocopy > stream->avail_in)
-                tocopy = stream->avail_in;
-        assert(tocopy + impl->scoop_avail <= impl->scoop_alloc);
+    /* take as much input as is available, to give up to LEN bytes
+     * in the scoop. */
+    tocopy = len - impl->scoop_avail;
+    if (tocopy > stream->avail_in)
+        tocopy = stream->avail_in;
+    assert(tocopy + impl->scoop_avail <= impl->scoop_alloc);
 
-        memcpy(impl->scoop_next + impl->scoop_avail, stream->next_in, tocopy);
-        hs_trace("accepted %d bytes from input to scoop", tocopy);
-        impl->scoop_avail += tocopy;
-        stream->next_in += tocopy;
-        stream->avail_in -= tocopy;
+    memcpy(impl->scoop_next + impl->scoop_avail, stream->next_in, tocopy);
+    hs_trace("accepted %d bytes from input to scoop", tocopy);
+    impl->scoop_avail += tocopy;
+    stream->next_in += tocopy;
+    stream->avail_in -= tocopy;
 }
 
 
@@ -128,20 +128,20 @@ static void hs_scoop_input(hs_stream_t *stream, size_t len)
  */
 void hs_scoop_advance(hs_stream_t *stream, size_t len)
 {
-        hs_simpl_t *impl = stream->impl;
+    hs_simpl_t *impl = stream->impl;
         
-        if (impl->scoop_avail) {
-                /* reading from the scoop buffer */
-                hs_trace("advance over %d bytes from scoop", len);
-                assert(len <= impl->scoop_avail);
-                impl->scoop_avail -= len;
-                impl->scoop_next += len;
-        } else {
-                hs_trace("advance over %d bytes from input buffer", len);
-                assert(len <= stream->avail_in);
-                stream->avail_in -= len;
-                stream->next_in += len;
-        }
+    if (impl->scoop_avail) {
+        /* reading from the scoop buffer */
+        hs_trace("advance over %d bytes from scoop", len);
+        assert(len <= impl->scoop_avail);
+        impl->scoop_avail -= len;
+        impl->scoop_next += len;
+    } else {
+        hs_trace("advance over %d bytes from input buffer", len);
+        assert(len <= stream->avail_in);
+        stream->avail_in -= len;
+        stream->next_in += len;
+    }
 }
 
 
@@ -159,45 +159,45 @@ void hs_scoop_advance(hs_stream_t *stream, size_t len)
  */
 hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
 {
-        hs_simpl_t *impl = stream->impl;
+    hs_simpl_t *impl = stream->impl;
         
-        hs_stream_check(stream);
-        if (impl->scoop_avail >= len) {
-                /* We have enough data queued to satisfy the request,
-                 * so go straight from the scoop buffer. */
-                hs_trace("got %d bytes direct from scoop", len);
-                *ptr = impl->scoop_next;
-                return HS_DONE;
-        } else if (impl->scoop_avail) {
-                /* We have some data in the scoop, but not enough to
-                 * satisfy the request. */
-                hs_trace("data is present in the scoop and must be used");
-                hs_scoop_input(stream, len);
+    hs_stream_check(stream);
+    if (impl->scoop_avail >= len) {
+        /* We have enough data queued to satisfy the request,
+         * so go straight from the scoop buffer. */
+        hs_trace("got %d bytes direct from scoop", len);
+        *ptr = impl->scoop_next;
+        return HS_DONE;
+    } else if (impl->scoop_avail) {
+        /* We have some data in the scoop, but not enough to
+         * satisfy the request. */
+        hs_trace("data is present in the scoop and must be used");
+        hs_scoop_input(stream, len);
 
-                if (impl->scoop_avail < len) {
-                        hs_trace("still have only %d bytes in scoop",
-                                  impl->scoop_avail);
-                        return HS_BLOCKED;
-                } else {
-                        hs_trace("scoop now has %d bytes, this is enough",
-                                  impl->scoop_avail);
-                        *ptr = impl->scoop_next;
-                        return HS_DONE;
-                }
-        } else if (stream->avail_in >= len) {
-                /* There's enough data in the stream's input */
-                hs_trace("got %d bytes direct from input", len);
-                *ptr = stream->next_in;
-                return HS_DONE;
+        if (impl->scoop_avail < len) {
+            hs_trace("still have only %d bytes in scoop",
+                     impl->scoop_avail);
+            return HS_BLOCKED;
         } else {
-                /* Nothing was queued before, but we don't have enough
-                 * data to satisfy the request.  So queue what little
-                 * we have, and try again next time. */
-                hs_trace("couldn't satisfy request for %d, scooping %d bytes",
-                          len, impl->scoop_avail);
-                hs_scoop_input(stream, len);
-                return HS_BLOCKED;
+            hs_trace("scoop now has %d bytes, this is enough",
+                     impl->scoop_avail);
+            *ptr = impl->scoop_next;
+            return HS_DONE;
         }
+    } else if (stream->avail_in >= len) {
+        /* There's enough data in the stream's input */
+        hs_trace("got %d bytes direct from input", len);
+        *ptr = stream->next_in;
+        return HS_DONE;
+    } else {
+        /* Nothing was queued before, but we don't have enough
+         * data to satisfy the request.  So queue what little
+         * we have, and try again next time. */
+        hs_trace("couldn't satisfy request for %d, scooping %d bytes",
+                 len, impl->scoop_avail);
+        hs_scoop_input(stream, len);
+        return HS_BLOCKED;
+    }
 }
 
 
@@ -231,9 +231,9 @@ hs_result hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr)
  */
 hs_result hs_scoop_read_rest(hs_stream_t *stream, size_t *len, void **ptr)
 {
-        hs_simpl_t *impl = stream->impl;
+    hs_simpl_t *impl = stream->impl;
 
-        *len = impl->scoop_avail + stream->avail_in;
+    *len = impl->scoop_avail + stream->avail_in;
 
-        return hs_scoop_read(stream, *len, ptr);
+    return hs_scoop_read(stream, *len, ptr);
 }
