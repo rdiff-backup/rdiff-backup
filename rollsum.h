@@ -3,8 +3,8 @@
  * rollsum -- the librsync rolling checksum
  * $Id$
  * 
- * Author: Donovan Baarda <abo@minkirri.apana.org.au>, based on work,
- * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2003 by Donovan Baarda <abo@minkirri.apana.org.au> 
+ * based on work, Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
