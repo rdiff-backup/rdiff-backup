@@ -308,11 +308,15 @@ class CachedRF:
 		while 1:
 			if not self.rf_list:
 				if not self.add_rfs(index): return None
-			rf = self.rf_list.pop(0)
-			if rf.index < index: continue
-			elif rf.index == index: return rf
-			self.rf_list.insert(0, rf)
-			if not self.add_rfs(index): return None
+			rf = self.rf_list[0]
+			if rf.index == index: return rf
+			elif rf.index > index:
+				# Try to add earlier indicies.  But if first is
+				# already from same directory, or we can't find any
+				# from that directory, then we know it can't be added.
+				if (index[:-1] == rf.index[:-1] or not
+					self.add_rfs(index)): return None
+			else: del self.rf_list[0]
 
 	def get_fp(self, index):
 		"""Return the file object (for reading) of given index"""
