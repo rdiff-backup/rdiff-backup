@@ -377,7 +377,7 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 	"""
 	if not restore_root_set: assert restore_set_root(src_rp)
 	restore_check_paths(src_rp, dest_rp, restore_as_of)
-	restore_set_fs_globals(Globals.rbdir)
+	restore_set_fs_globals(dest_rp)
 	src_rp = restore_init_quoting(src_rp)
 	restore_check_backup_dir(restore_root, src_rp, restore_as_of)
 	if restore_as_of:
@@ -412,7 +412,7 @@ def restore_set_fs_globals(target):
 	SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
 	SetConnections.UpdateGlobal('change_ownership', target_fsa.ownership)
 
-	mirror_fsa = fs_abilities.FSAbilities().init_readwrite(Globals.rbdir)
+	mirror_fsa = fs_abilities.FSAbilities().init_readonly(Globals.rbdir)
 	if Globals.chars_to_quote is None: # otherwise already overridden
 		if mirror_fsa.chars_to_quote:
 			SetConnections.UpdateGlobal('chars_to_quote',

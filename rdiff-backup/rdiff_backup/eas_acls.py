@@ -43,7 +43,6 @@ class ExtendedAttributes:
 		"""Equal if all attributes and index are equal"""
 		assert isinstance(ea, ExtendedAttributes)
 		return ea.index == self.index and ea.attr_dict == self.attr_dict
-
 	def __ne__(self, ea): return not self.__eq__(ea)
 
 	def get_indexpath(self): return self.index and '/'.join(self.index) or '.'
@@ -89,7 +88,7 @@ class ExtendedAttributes:
 		"""Return true if no extended attributes are set"""
 		return not self.attr_dict
 
-def compare_rps(rp1, rp2):
+def ea_compare_rps(rp1, rp2):
 	"""Return true if rp1 and rp2 have same extended attributes"""
 	ea1 = ExtendedAttributes(rp1.index)
 	ea1.read_from_rp(rp1)
@@ -183,3 +182,46 @@ class ExtendedAttributesFile(metadata.FlatFile):
 		return join_eas(basic_iter, ea_iter)
 
 static.MakeClass(ExtendedAttributesFile)
+
+
+class AccessControlList:
+	"""Hold a file's access control list information"""
+	def __init__(self, index, text_acl = None):
+		"""Initialize object with index and possibly text_acl"""
+		self.index = index
+		# self.ACL is a posix1e ACL object
+		if text_acl is None: self.ACL = None
+		else: self.ACL = posix1e.ACL(text_acl)
+
+	def __eq__(self, acl):
+		"""Compare self and other access control list"""
+		return self.index == acl.index and str(self.ACL) == str(acl.ACL)
+	def __ne__(self, acl): return not self.__eq__(acl)
+	
+	def get_indexpath(self): return self.index and '/'.join(self.index) or '.'
+
+
+def get_acl_from_rp(rp):
+	"""Return text acl from an rpath, or None if not supported"""
+	try: acl = rp.conn.posix1e.ACL(file=rp.path)
+	except IOError, exc:
+		if exc[0] == errno.EOPNOTSUPP: return None
+		raise
+	return str(acl)
+
+def acl_compare_rps(rp1, rp2):
+	"""Return true if rp1 and rp2 have same acls"""
+	return get_acl_from_rp(rp1) == get_acl_from_rp(rp2)
+
+
+def ACL2Record(acl):
+	"""Convert an AccessControlList object into a text record"""
+	return "# file: %s\n%s" % (acl.get_indexpath(), str(acl.ACL))
+
+def Record2EA(acl):
+	"""Convert text record to an AccessControlList object"""
+	XXXX
+
+
+
+
