@@ -22,7 +22,7 @@
 
 
                               /*
-                               * This is Tranquility Base.
+                               | This is Tranquility Base.
                                */
 
 
@@ -255,21 +255,25 @@ static rs_result rs_patch_s_copying(rs_job_t *job)
  */
 static rs_result rs_patch_s_header(rs_job_t *job)
 {
-        int       v;
-        rs_result result;
+    int       v;
+    rs_result result;
 
         
-        if ((result = rs_suck_n4(job, &v)) != RS_DONE)
-                return result;
+    if ((result = rs_suck_n4(job, &v)) != RS_DONE)
+        return result;
 
-        if (v != RS_DELTA_MAGIC)
-                return RS_BAD_MAGIC;
+    if (v != RS_DELTA_MAGIC) {
+        rs_log(RS_LOG_ERR,
+               "got magic number %#x rather than expected value %#x",
+               v, RS_DELTA_MAGIC);
+        return RS_BAD_MAGIC;
+    } else
+        rs_trace("got patch magic %#x", v);
 
-        rs_trace("got patch magic %#10x", v);
 
-        job->statefn = rs_patch_s_cmdbyte;
+    job->statefn = rs_patch_s_cmdbyte;
 
-        return RS_RUNNING;
+    return RS_RUNNING;
 }
 
 
