@@ -46,8 +46,15 @@
  * at most one of each. */
 
 
-/* TODO: As an optimization, write it directly to the stream if
- * possible.  But for simplicity don't do that yet.  */
+/*
+ * TODO: As an optimization, write it directly to the stream if
+ * possible.  But for simplicity don't do that yet.
+ *
+ * TODO: I think our current copy code will lock up if the application
+ * only ever calls us with either input or output buffers, and not
+ * both.  So I guess in that case we might need to copy into some
+ * temporary buffer space, and then back out again later.
+ */
 
 
 #include <config.h>
