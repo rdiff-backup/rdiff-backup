@@ -736,6 +736,14 @@ class RPath(RORPath):
 		comps = normed.path.split("/")
 		return "/".join(comps[:-1]), comps[-1]
 
+	def get_parent_rp(self):
+		"""Return new RPath of directory self is in"""
+		if self.index:
+			return self.__class__(self.conn, self.base, self.index[:-1])
+		dirname = self.dirsplit()[0]
+		if dirname: return self.__class__(self.conn, dirname)
+		else: return self.__class__(self.conn, "/")
+
 	def newpath(self, newpath, index = ()):
 		"""Return new RPath with the same connection but different path"""
 		return self.__class__(self.conn, newpath, index)
@@ -850,6 +858,26 @@ class RPath(RORPath):
 		elif type == 'b': datatype = 'blk'
 		else: raise RPathException
 		self.setdata()
+
+	def fsync(self, fp = None):
+		"""fsync the current file or directory
+
+		If fp is none, get the file description by opening the file.
+		This can be useful for directories.
+
+		"""
+		if not fp:
+			fp = self.open("rb")
+			os.fsync(fp.fileno())
+			assert not fp.close()
+		else: os.fsync(fp.fileno())
+
+	def get_data(self):
+		"""Open file as a regular file, read data, close, return data"""
+		fp = self.open("rb")
+		s = fp.read()
+		assert not fp.close()
+		return s
 
 
 class RPathFileHook:
