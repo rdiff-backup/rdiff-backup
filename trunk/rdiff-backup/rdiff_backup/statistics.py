@@ -286,7 +286,8 @@ class Stats:
 			"directory_statistics"), Time.curtime, suffix)
 
 		if cls._dir_stats_rp.lstat():
-			Log("Warning, statistics file %s already exists, appending", 2)
+			Log("Warning, statistics file %s already exists, appending" %
+				cls._dir_stats_rp.path, 2)
 			cls._dir_stats_fp = cls._dir_stats_rp.open("ab",
 													   Globals.compression)
 		else: cls._dir_stats_fp = \

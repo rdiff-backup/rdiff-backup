@@ -57,6 +57,10 @@ class RORPIter:
 
 	def Signatures(rp_iter):
 		"""Yield signatures of rpaths in given rp_iter"""
+		def error_handler(exc, rp):
+			Log("Error generating signature for %s" % rp.path)
+			return None
+
 		for rp in rp_iter:
 			if rp.isplaceholder(): yield rp
 			else:
@@ -65,11 +69,9 @@ class RORPIter:
 					if rp.isflaglinked(): rorp.flaglinked()
 					else:
 						fp = Robust.check_common_error(
-							lambda: Rdiff.get_signature(rp))
+							error_handler, Rdiff.get_signature, rp)
 						if fp: rorp.setfile(fp)
-						else:
-							Log("Error generating signature for %s" % rp.path)
-							continue
+						else: continue
 				yield rorp
 
 	def GetSignatureIter(base_rp):

@@ -94,15 +94,18 @@ class HLSourceStruct:
 		"""
 		collated = RORPIter.CollateIterators(cls.initial_dsiter2, sigiter)
 		finalizer = DestructiveSteppingFinalizer()
+		def error_handler(exc, dest_sig, dsrp):
+			Log("Error %s producing a diff of %s" %
+				(exc, dsrp and dsrp.path), 2)
+			return None
+			
 		def diffs():
 			for dsrp, dest_sig in collated:
 				if dest_sig:
 					if dest_sig.isplaceholder(): yield dest_sig
 					else:
 						diff = Robust.check_common_error(
-							lambda: RORPIter.diffonce(dest_sig, dsrp),
-							lambda exc: Log("Error %s producing a diff of %s" %
-											(str(exc), dsrp and dsrp.path), 2))
+							error_handler, RORPIter.diffonce, dest_sig, dsrp)
 						if diff: yield diff
 				if dsrp: finalizer(dsrp.index, dsrp)
 			finalizer.Finish()
@@ -216,24 +219,24 @@ class HLDestinationStruct:
 		"""Apply diffs and finalize"""
 		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
 		finalizer = cls.get_finalizer()
-		dsrp = None
-		
-		def error_checked():
-			"""Inner writing loop, check this for errors"""
-			indexed_tuple = collated.next()
-			Log("Processing %s" % str(indexed_tuple), 7)
-			diff_rorp, dsrp = indexed_tuple
+		diff_rorp, dsrp = None, None
+
+		def patch(diff_rorp, dsrp):
 			if not dsrp: dsrp = cls.get_dsrp(dest_rpath, diff_rorp.index)
 			if diff_rorp and not diff_rorp.isplaceholder():
 				RORPIter.patchonce_action(None, dsrp, diff_rorp).execute()
-			finalizer(dsrp.index, dsrp)
 			return dsrp
 
-		try:
-			while 1:
-				try: dsrp = cls.check_skip_error(error_checked, dsrp)
-				except StopIteration: break
-		except: Log.exception(1)
+		def error_handler(exc, diff_rorp, dsrp):
+			filename = dsrp and dsrp.path or os.path.join(*diff_rorp.index)
+			Log("Error: %s processing file %s" % (exc, filename), 2)
+		
+		for indexed_tuple in collated:
+			Log("Processing %s" % str(indexed_tuple), 7)
+			diff_rorp, dsrp = indexed_tuple
+			dsrp = Robust.check_common_error(error_handler, patch,
+											 diff_rorp, dsrp)
+			finalizer(dsrp.index, dsrp)
 		finalizer.Finish()
 
 	def patch_w_datadir_writes(cls, dest_rpath, diffs, inc_rpath):
@@ -243,25 +246,19 @@ class HLDestinationStruct:
 		Stats.open_dir_stats_file()
 		dsrp = None
 
-		def error_checked():
-			"""Inner writing loop, check this for errors"""
-			indexed_tuple = collated.next()
-			Log("Processing %s" % str(indexed_tuple), 7)
-			diff_rorp, dsrp = indexed_tuple
-			if not dsrp: dsrp = cls.get_dsrp(dest_rpath, diff_rorp.index)
-			if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
-			ITR(dsrp.index, diff_rorp, dsrp)
-			finalizer(dsrp.index, dsrp)
-			return dsrp
-
 		try:
-			while 1:
-				try: dsrp = cls.check_skip_error(error_checked, dsrp)
-				except StopIteration: break
+			for indexed_tuple in collated:
+				Log("Processing %s" % str(indexed_tuple), 7)
+				diff_rorp, dsrp = indexed_tuple
+				if not dsrp: dsrp = cls.get_dsrp(dest_rpath, diff_rorp.index)
+				if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
+				ITR(dsrp.index, diff_rorp, dsrp)
+				finalizer(dsrp.index, dsrp)
 				SaveState.checkpoint(ITR, finalizer, dsrp)
-			cls.check_skip_error(ITR.Finish, dsrp)
-			cls.check_skip_error(finalizer.Finish, dsrp)
+			ITR.Finish()
+			finalizer.Finish()
 		except: cls.handle_last_error(dsrp, finalizer, ITR)
+
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
 		Stats.close_dir_stats_file()
 		Stats.write_session_statistics(ITR)
@@ -274,54 +271,29 @@ class HLDestinationStruct:
 		Stats.open_dir_stats_file()
 		dsrp = None
 
-		def error_checked():
-			"""Inner writing loop, catch variety of errors from this"""
-			indexed_tuple = collated.next()
-			Log("Processing %s" % str(indexed_tuple), 7)
-			diff_rorp, dsrp = indexed_tuple
-			index = indexed_tuple.index
-			if not dsrp: dsrp = cls.get_dsrp(dest_rpath, index)
-			if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
-			ITR(index, diff_rorp, dsrp)
-			finalizer(index, dsrp)
-			return dsrp
-
 		try:
-			while 1:
-				try: dsrp = cls.check_skip_error(error_checked, dsrp)
-				except StopIteration: break
+			for indexed_tuple in collated:
+				Log("Processing %s" % str(indexed_tuple), 7)
+				diff_rorp, dsrp = indexed_tuple
+				index = indexed_tuple.index
+				if not dsrp: dsrp = cls.get_dsrp(dest_rpath, index)
+				if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
+				ITR(index, diff_rorp, dsrp)
+				finalizer(index, dsrp)
 				SaveState.checkpoint(ITR, finalizer, dsrp)
-			cls.check_skip_error(ITR.Finish, dsrp)
-			cls.check_skip_error(finalizer.Finish, dsrp)
+			ITR.Finish()
+			finalizer.Finish()
 		except: cls.handle_last_error(dsrp, finalizer, ITR)
+
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
 		Stats.close_dir_stats_file()
 		Stats.write_session_statistics(ITR)
 		SaveState.checkpoint_remove()
 
-	def check_skip_error(cls, thunk, dsrp):
-		"""Run thunk, catch certain errors skip files"""
-		try: return thunk()
-		except (EnvironmentError, SkipFileException, DSRPPermError,
-				RPathException), exc:
-			if (not isinstance(exc, EnvironmentError) or
-				(errno.errorcode[exc[0]] in
-				 ['EPERM', 'ENOENT', 'EACCES', 'EBUSY', 'EEXIST',
-				  'ENOTDIR', 'ENAMETOOLONG', 'EINTR', 'ENOTEMPTY',
-				  'EIO', # reported by docv
-				  'ETXTBSY' # reported by Campbell on some NT system
-				  ])):
-				Log.exception()
-				Log("Skipping file because of error after %s" %
-					(dsrp and dsrp.index,), 2)
-				return None
-			else:
-				Log.exception(1,2)
-				raise
-
 	def handle_last_error(cls, dsrp, finalizer, ITR):
 		"""If catch fatal error, try to checkpoint before exiting"""
-		Log.exception(1)
+		Log.exception(1, 2)
+		TracebackArchive.log()
 		SaveState.checkpoint(ITR, finalizer, dsrp, 1)
 		if Globals.preserve_hardlinks: Hardlink.final_checkpoint(Globals.rbdir)
 		SaveState.touch_last_file_definitive()

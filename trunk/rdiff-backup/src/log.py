@@ -1,4 +1,4 @@
-import time, sys
+import time, sys, traceback
 execfile("lazy.py")
 
 #######################################################################
@@ -121,7 +121,13 @@ class Logger:
 		Globals.Main.cleanup()
 		sys.exit(1)
 
-	def exception(self, only_terminal = 0, verbosity = 4):
+	def exception_to_string(self):
+		"""Return string version of current exception"""
+		type, value, tb = sys.exc_info()
+		return ("Exception '%s' raised of class '%s':\n%s" %
+				(value, type, "".join(traceback.format_tb(tb))))
+
+	def exception(self, only_terminal = 0, verbosity = 5):
 		"""Log an exception and traceback
 
 		If only_terminal is None, log normally.  If it is 1, then only
@@ -135,9 +141,6 @@ class Logger:
 			logging_func = self.__call__
 		else: logging_func = self.log_to_term
 
-		exc_info = sys.exc_info()
-		logging_func("Exception %s raised of class %s" %
-					 (exc_info[1], exc_info[0]), verbosity)
-		logging_func("".join(traceback.format_tb(exc_info[2])), verbosity+1)
+		logging_func(self.exception_to_string(), verbosity)
 
 Log = Logger()

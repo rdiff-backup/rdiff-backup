@@ -91,10 +91,10 @@ class Select:
 			self.starting_index = starting_index
 			self.iter = self.iterate_starting_from(self.dsrpath,
 						            self.iterate_starting_from, sel_func)
-		else:
-			assert not iterate_parents
-			self.iter = self.Iterate(self.dsrpath, self.Iterate, sel_func)
-		self.iterate_parents = iterate_parents
+		else: self.iter = self.Iterate(self.dsrpath, self.Iterate, sel_func)
+
+		# only iterate parents if we are not starting from beginning
+		self.iterate_parents = starting_index is not None and iterate_parents
 		self.next = self.iter.next
 		self.__iter__ = lambda: self
 		return self
@@ -127,17 +127,18 @@ class Select:
 
 	def iterate_in_dir(self, dsrpath, rec_func, sel_func):
 		"""Iterate the dsrps in directory dsrpath."""
+		def error_handler(exc, filename):
+			Log("Error initializing file %s/%s" % (dsrpath.path, filename), 2)
+			return None
+
 		if self.quoting_on:
 			for subdir in FilenameMapping.get_quoted_dir_children(dsrpath):
 				for dsrp in rec_func(subdir, rec_func, sel_func): yield dsrp
 		else:
 			for filename in Robust.listrp(dsrpath):
 				new_dsrp = Robust.check_common_error(
-					lambda: dsrpath.append(filename))
-				if not new_dsrp:
-					Log("Error initializing file %s/%s" %
-						(dsrpath.path, filename), 2)
-				else:
+					error_handler, dsrpath.append, filename)
+				if new_dsrp:
 					for dsrp in rec_func(new_dsrp, rec_func, sel_func):
 						yield dsrp
 
@@ -208,7 +209,6 @@ class Select:
 
 		self.parse_last_excludes()
 		self.parse_rbdir_exclude()
-		self.parse_proc_exclude()
 
 	def parse_catch_error(self, exc):
 		"""Deal with selection error exc"""
@@ -230,11 +230,6 @@ pattern (such as '**') which matches the base directory.""" %
 		"""Add exclusion of rdiff-backup-data dir to front of list"""
 		self.add_selection_func(
 			self.glob_get_tuple_sf(("rdiff-backup-data",), 0), 1)
-
-	def parse_proc_exclude(self):
-		"""Exclude the /proc directory if starting from /"""
-		if self.prefix == "/":
-			self.add_selection_func(self.glob_get_tuple_sf(("proc",), 0), 1)
 
 	def parse_last_excludes(self):
 		"""Exit with error if last selection function isn't an exclude"""

@@ -1,3 +1,4 @@
+import traceback
 execfile("statistics.py")
 
 #######################################################################
@@ -121,7 +122,7 @@ class Inc:
 MakeStatic(Inc)
 
 
-class IncrementITR(StatsITR):
+class IncrementITR(ErrorITR, StatsITR):
 	"""Patch and increment mirror directory
 
 	This has to be an ITR because directories that have files in them
@@ -236,13 +237,8 @@ class IncrementITR(StatsITR):
 
 	def end_process(self):
 		"""Do final work when leaving a tree (directory)"""
-		try: diff_rorp, dsrp, incpref = self.diff_rorp, self.dsrp, self.incpref
-		except AttributeError: # This weren't set because of some error
-			return
-
-		if self.mirror_isdirectory:
-			if not diff_rorp and not self.changed: return
-
+		diff_rorp, dsrp, incpref = self.diff_rorp, self.dsrp, self.incpref
+		if self.mirror_isdirectory and (diff_rorp or self.changed):
 			if self.directory_replacement:
 				tf = self.directory_replacement
 				self.incrp = Robust.chain(
@@ -264,7 +260,7 @@ class IncrementITR(StatsITR):
 		self.add_file_stats(subinstance)
 
 
-class MirrorITR(StatsITR):
+class MirrorITR(ErrorITR, StatsITR):
 	"""Like IncrementITR, but only patch mirror directory, don't increment"""
 	# This is always None since no increments will be created
 	incrp = None
@@ -284,13 +280,9 @@ class MirrorITR(StatsITR):
 
 	def end_process(self):
 		"""Update statistics when leaving"""
-		try: diff_rorp, mirror_dsrp = self.diff_rorp, self.mirror_dsrp
-		except AttributeError: # Some error above prevented these being set
-			return
-		
-		self.end_stats(diff_rorp, mirror_dsrp)
-		if mirror_dsrp.isdir():
-			Stats.write_dir_stats_line(self, mirror_dsrp.index)
+		self.end_stats(self.diff_rorp, self.mirror_dsrp)
+		if self.mirror_dsrp.isdir():
+			Stats.write_dir_stats_line(self, self.mirror_dsrp.index)
 
 	def branch_process(self, subinstance):
 		"""Update statistics with subdirectory results"""

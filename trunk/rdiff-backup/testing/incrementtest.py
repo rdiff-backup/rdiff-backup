@@ -6,7 +6,7 @@ rbexec("main.py")
 
 lc = Globals.local_connection
 Globals.change_source_perms = 1
-Log.setverbosity(5)
+Log.setverbosity(3)
 
 def getrp(ending):
 	return RPath(lc, "testfiles/various_file_types/" + ending)

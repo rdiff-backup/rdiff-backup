@@ -68,6 +68,7 @@ class RobustAction:
 			return self.final_func(init_val)
 		except Exception, exc: # Catch all errors
 			Log.exception()
+			TracebackArchive.add()
 			if ran_init_thunk: self.error_handler(exc, 1, init_val)
 			else: self.error_handler(exc, None, None)
 			raise exc
@@ -233,39 +234,57 @@ class Robust:
 			tf.setdata()
 		return Robust.make_tf_robustaction(init, tf, rp)
 
-	def check_common_error(init_thunk, error_thunk = lambda exc: None):
-		"""Execute init_thunk, if error, run error_thunk on exception
+	def check_common_error(error_handler, function, *args):
+		"""Apply function to args, if error, run error_handler on exception
 
 		This only catches certain exceptions which seems innocent
 		enough.
 
 		"""
-		try: return init_thunk()
+		try: return function(*args)
  		except (EnvironmentError, SkipFileException, DSRPPermError,
 				RPathException, RdiffException), exc:
+			TracebackArchive.add()
 			if (not isinstance(exc, EnvironmentError) or
 				(errno.errorcode[exc[0]] in
 				 ['EPERM', 'ENOENT', 'EACCES', 'EBUSY', 'EEXIST',
 				  'ENOTDIR', 'ENAMETOOLONG', 'EINTR', 'ENOTEMPTY',
-				  'EIO', # reported by docv
-				  'ETXTBSY' # reported by Campbell on some NT system
-				  ])):
+				  'EIO', 'ETXTBSY', 'ESRCH', 'EINVAL'])):
 				Log.exception()
-				return error_thunk(exc)
+				if error_handler: return error_handler(exc, *args)
 			else:
 				Log.exception(1, 2)
 				raise
 
 	def listrp(rp):
 		"""Like rp.listdir() but return [] if error, and sort results"""
-		def error_thunk(exc):
+		def error_handler(exc):
 			Log("Error listing directory %s" % rp.path, 2)
 			return []
-		dir_listing = Robust.check_common_error(rp.listdir, error_thunk)
+		dir_listing = Robust.check_common_error(error_handler, rp.listdir)
 		dir_listing.sort()
 		return dir_listing
 
 MakeStatic(Robust)
+
+
+class TracebackArchive:
+	"""Save last 10 caught exceptions, so they can be printed if fatal"""
+	_traceback_strings = []
+	def add(cls):
+		"""Add most recent exception to archived list"""
+		cls._traceback_strings.append(Log.exception_to_string())
+		if len(cls._traceback_strings) > 10:
+			cls._traceback_strings = cls._traceback_strings[:10]
+
+	def log(cls):
+		"""Print all exception information to log file"""
+		if cls._traceback_strings:
+			Log("------------ Old traceback info -----------\n%s"
+				"-------------------------------------------" %
+				("\n".join(cls._traceback_strings),), 3)
+
+MakeClass(TracebackArchive)
 
 
 class TempFileManager:

@@ -196,9 +196,9 @@ class IterTreeReducer:
 	iterator nature of the connection between hosts and the temporal
 	order in which the files are processed.
 
-	There are three stub functions below: start_process, end_process,
-	and branch_process.  A class that subclasses this one should fill
-	in these functions with real values.
+	There are four stub functions below: start_process, end_process,
+	branch_process, and check_for_errors.  A class that subclasses
+	this one will probably fill in these functions to do more.
 
 	It is important that this class be pickable, so keep that in mind
 	when subclassing (this is used to resume failed sessions).
@@ -210,6 +210,7 @@ class IterTreeReducer:
 		self.index = None
 		self.subinstance = None
 		self.finished = None
+		self.caught_exception, self.start_successful = None, None
 
 	def intree(self, index):
 		"""Return true if index is still in current tree"""
@@ -239,14 +240,33 @@ class IterTreeReducer:
 		"""Process a branch right after it is finished (stub)"""
 		pass
 
+	def check_for_errors(self, function, *args):
+		"""start/end_process is called by this function
+
+		Usually it will distinguish between two types of errors.  Some
+		are serious and will be reraised, others are caught and simply
+		invalidate the current instance by setting
+		self.caught_exception.
+
+		"""
+		try: return apply(function, args)
+		except: raise
+
 	def Finish(self):
 		"""Call at end of sequence to tie everything up"""
-		assert not self.finished, (self.base_index, self.index)
-		if self.subinstance:
-			self.subinstance.Finish()
-			self.branch_process(self.subinstance)
-		self.end_process()
-		self.finished = 1
+		if not self.start_successful or self.finished:
+			self.caught_exception = 1
+		if self.caught_exception: self.log_prev_error(self.index)
+		else:
+			if self.subinstance:
+				self.subinstance.Finish()
+				self.branch_process(self.subinstance)
+			self.check_for_errors(self.end_process)
+			self.finished = 1
+
+	def log_prev_error(self, index):
+		"""Call function if no pending exception"""
+		Log("Skipping %s because of previous error" % os.path.join(*index), 2)
 
 	def __call__(self, *args):
 		"""Process args, where args[0] is current position in iterator
@@ -263,18 +283,37 @@ class IterTreeReducer:
 		assert type(index) is types.TupleType, type(index)
 
 		if self.index is None:
-			self.start_process(*args)
+			self.check_for_errors(self.start_process, *args)
+			self.start_successful = 1
 			self.index = self.base_index = index
 			return 1
 
 		if index <= self.index:
 			Log("Warning: oldindex %s >= newindex %s" % (self.index, index), 2)
+			return 1
 
 		if not self.intree(index):
 			self.Finish()
 			return None
-		else:
-			self.process_w_subinstance(args)
-			self.index = index
-			return 1
+
+		if self.caught_exception: self.log_prev_error(index)
+		else: self.process_w_subinstance(args)
+		self.index = index
+		return 1
+
+
+class ErrorITR(IterTreeReducer):
+	"""Adds some error handling to above ITR, if ITR processes files"""
+	def on_error(self, exc, *args):
+		"""This is run on any exception in start/end-process"""
+		self.caught_exception = 1
+		if args and isinstance(args[0], tuple):
+			filename = os.path.join(*args[0])
+		elif self.index: filename = os.path.join(*self.index)
+		else: filename = "."
+		Log("Error '%s' processing %s" % (exc, filename), 2)
+
+	def check_for_errors(self, function, *args):
+		"""Catch some non-fatal errors"""
+		return Robust.check_common_error(self.on_error, function, *args)
 
