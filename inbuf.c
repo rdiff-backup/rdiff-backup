@@ -32,7 +32,12 @@ _hs_fill_inbuf(inbuf_t * inbuf, rs_read_fn_t read_fn, void *readprivate)
 {
     int ret;
 
-    assert(inbuf->amount < inbuf->len && 0 <= inbuf->amount);
+    if (inbuf->amount > inbuf->len) {
+	 abort();
+    } else if (inbuf->amount < 0) {
+	 abort();
+    }
+    
     ret = read_fn(readprivate,
 		  inbuf->buf + inbuf->amount, inbuf->len - inbuf->amount);
     if (ret < 0) {
