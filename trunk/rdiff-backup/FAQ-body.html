@@ -149,7 +149,7 @@ these instructions build it fine with all tests running OK
 	aclocal
 	autoconf
 	automake --foreign --add-missing
-	CFLAGS=-no-cpp-precomp ./configure
+	env CFLAGS=-no-cpp-precomp ./configure
 	make
 	make install
 </pre>
