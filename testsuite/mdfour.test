@@ -1,0 +1,24 @@
+#! /bin/sh -pe
+
+# librsync test case.
+# Copyright (C) 2000 by Martin Pool
+
+# Test the map_ptr input routines, by extracting chunks of a file
+# using a known-good Python implementation, and also by passing the
+# same parameters to the hsmapread driver.
+
+# $Id$
+
+from=$srcdir/COPYING
+new=$tmpdir/sig.tmp
+
+for file in $testdir/*.data
+do
+    for b in $bufsizes
+    do
+	run_test ../rdiff -I$b sum $file >$new
+	expect=$testdir/`basename $file .data`.expect
+	run_test cmp "$new" "$expect"
+        show_progress
+    done
+done 
