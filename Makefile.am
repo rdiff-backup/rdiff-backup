@@ -136,7 +136,7 @@ include_HEADERS = hsync.h
 
 # This is the default for any programs that don't specify a
 # preference.
-LDADD = libhsync.a
+LDADD = libhsync.a $(LIBOBJS)
 
 libhsync_tools = hsdecode hsmdfour hsmksum hsmapread hsnad \
 		libhsyncinfo hsdumpsums
