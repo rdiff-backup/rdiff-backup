@@ -425,6 +425,17 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 		    token = 0;
 
 	       if (token > 0) {
+		    /* if we're at eof, then we should only be able to
+		       match the last token, because it's the only
+		       short one.  we don't store the token lengths;
+		       they're implied by the checksum.  the reverse
+		       isn't true: the last token might be a full
+		       block, so we are allowed to match it
+		       anytime. */
+		    if (at_eof) {
+			 assert(token == sums->count);
+		    }
+		    
 		    _hs_trace("found token %d in stream at abspos=%-8d"
 			      " length=%-6d", token,
 			      inbuf->abspos+inbuf->cursor,
@@ -434,6 +445,8 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 					      op_kind_literal) < 0)
 			 return -1;
 
+		    /* tokens are ones-based, blocks are zeros-based,
+		       so we subtract 1. */
 		    ret = _hs_queue_copy(write_fn, write_priv,
 					 &copyq, (token-1) * block_len,
 					 short_block, stats);
