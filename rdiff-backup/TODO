@@ -1,8 +1,3 @@
----------[ Short term (next version) ]-------------------------
-
-Fix --print-statistics
-
-
 ---------[ Medium term ]---------------------------------------
 
 Look at Kent Borg's suggestion for restore options and digests.

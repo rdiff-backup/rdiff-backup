@@ -144,7 +144,8 @@ class LowLevelPipeConnection(Connection):
 
 	def _putiter(self, iterator, req_num):
 		"""Put an iterator through the pipe"""
-		self._write("i", str(VirtualFile.new(rorpiter.ToFile(iterator))),
+		self._write("i",
+					str(VirtualFile.new(iterfile.RORPIterToFile(iterator))),
 					req_num)
 
 	def _putrpath(self, rpath, req_num):
@@ -226,8 +227,7 @@ class LowLevelPipeConnection(Connection):
 		elif format_string == "b": result = data
 		elif format_string == "f": result = VirtualFile(self, int(data))
 		elif format_string == "i":
-			result = rorpiter.FromFile(iterfile.BufferedRead(
-				VirtualFile(self, int(data))))
+			result = iterfile.FileToRORPIter(VirtualFile(self, int(data)))
 		elif format_string == "r": result = self._getrorpath(data)
 		elif format_string == "R": result = self._getrpath(data)
 		else:
@@ -456,7 +456,8 @@ class VirtualFile:
 	getbyid = classmethod(getbyid)
 
 	def readfromid(cls, id, length):
-		return cls.vfiles[id].read(length)
+		if length is None: return cls.vfiles[id].read()
+		else: return cls.vfiles[id].read(length)
 	readfromid = classmethod(readfromid)
 
 	def readlinefromid(cls, id):
@@ -487,7 +488,7 @@ class VirtualFile:
 		self.connection = connection
 		self.id = id
 
-	def read(self, length = -1):
+	def read(self, length = None):
 		return self.connection.VirtualFile.readfromid(self.id, length)
 
 	def readline(self):

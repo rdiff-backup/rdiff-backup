@@ -601,5 +601,6 @@ def checkdest_if_necessary(dest_rp):
 	"""
 	need_check = checkdest_need_check(dest_rp)
 	if need_check == 1:
-		Log("Previous backup seems to have failed, checking now.", 2)
+		Log("Previous backup seems to have failed, regressing "
+			"destination now.", 2)
 		dest_rp.conn.regress.Regress(dest_rp)

@@ -40,7 +40,7 @@ conn_bufsize = 98304
 # This is used in rorpiter.CacheIndexable.  The number represents the
 # number of rpaths which may be stuck in buffers when moving over a
 # remote connection.
-pipeline_max_length = int(conn_bufsize / 150)*2
+pipeline_max_length = 500
 
 # True if script is running as a server
 server = None

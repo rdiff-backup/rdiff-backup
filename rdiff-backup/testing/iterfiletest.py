@@ -52,15 +52,98 @@ class testIterFile(unittest.TestCase):
 		assert new_iter.next() == "foo"
 		self.assertRaises(StopIteration, new_iter.next)
 
+
+class testRORPIters(unittest.TestCase):
+	"""Test sending rorpiter back and forth"""
+	def setUp(self):
+		"""Make testfiles/output directory and a few files"""
+		Myrm("testfiles/output")
+		self.outputrp = rpath.RPath(Globals.local_connection,
+									"testfiles/output")
+		self.regfile1 = self.outputrp.append("reg1")
+		self.regfile2 = self.outputrp.append("reg2")
+		self.regfile3 = self.outputrp.append("reg3")
+
+		self.outputrp.mkdir()
+
+		fp = self.regfile1.open("wb")
+		fp.write("hello")
+		fp.close()
+		self.regfile1.setfile(self.regfile1.open("rb"))
+
+		self.regfile2.touch()
+		self.regfile2.setfile(self.regfile2.open("rb"))
+
+		fp = self.regfile3.open("wb")
+		fp.write("goodbye")
+		fp.close()
+		self.regfile3.setfile(self.regfile3.open("rb"))
 		
-class testBufferedRead(unittest.TestCase):
-	def testBuffering(self):
-		"""Test buffering a StringIO"""
-		fp = StringIO.StringIO("12345678"*10000)
-		bfp = BufferedRead(fp)
-		assert bfp.read(5) == "12345"
-		assert bfp.read(4) == "6781"
-		assert len(bfp.read(75000)) == 75000
+		self.regfile1.setdata()
+		self.regfile2.setdata()
+		self.regfile3.setdata()
+		
+	def print_RORPIterFile(self, rpiter_file):
+		"""Print the given rorpiter file"""
+		while 1:
+			buf = rpiter_file.read()
+			sys.stdout.write(buf)
+			if buf[0] == "z": break
+
+	def testBasic(self):
+		"""Test basic conversion"""
+		l = [self.outputrp, self.regfile1, self.regfile2, self.regfile3]
+		i_out = FileToRORPIter(RORPIterToFile(iter(l)))
+
+		out1 = i_out.next()
+		assert out1 == self.outputrp
+
+		out2 = i_out.next()
+		assert out2 == self.regfile1
+		fp = out2.open("rb")
+		assert fp.read() == "hello"
+		assert not fp.close()
+
+		out3 = i_out.next()
+		assert out3 == self.regfile2
+		fp = out3.open("rb")
+		assert fp.read() == ""
+		assert not fp.close()
+
+		i_out.next()
+		self.assertRaises(StopIteration, i_out.next)
+
+	def testFlush(self):
+		"""Test flushing property of RORPIterToFile"""
+		l = [self.outputrp, RORPIterFlush, self.outputrp]
+		filelike = RORPIterToFile(iter(l))
+		new_filelike = StringIO.StringIO((filelike.read() + "z" +
+										  C.long2str(0L)))
+
+		i_out = FileToRORPIter(new_filelike)
+		assert i_out.next() == self.outputrp
+		self.assertRaises(StopIteration, i_out.next)
+
+		i_out2 = FileToRORPIter(filelike)
+		assert i_out2.next() == self.outputrp
+		self.assertRaises(StopIteration, i_out2.next)
+
+	def testFlushRepeat(self):
+		"""Test flushing like above, but have Flush obj emerge from iter"""
+		l = [self.outputrp, RORPIterFlushRepeat, self.outputrp]
+		filelike = RORPIterToFile(iter(l))
+		new_filelike = StringIO.StringIO((filelike.read() + "z" +
+										  C.long2str(0L)))
+
+		i_out = FileToRORPIter(new_filelike)
+		assert i_out.next() == self.outputrp
+		assert i_out.next() is RORPIterFlushRepeat
+		self.assertRaises(StopIteration, i_out.next)
+
+		i_out2 = FileToRORPIter(filelike)
+		assert i_out2.next() == self.outputrp
+		self.assertRaises(StopIteration, i_out2.next)
+
 
 
 if __name__ == "__main__": unittest.main()
