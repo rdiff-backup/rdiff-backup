@@ -55,9 +55,9 @@ def parse_cmdlineoptions(arglist):
 		  "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=", "include-regexp=",
 		  "list-at-time=", "list-changed-since=", "list-increments",
-		  "no-compare-inode", "no-compression",
-		  "no-compression-regexp=", "no-file-statistics",
-		  "no-hard-links", "null-separator",
+		  "list-increment-sizes", "no-compare-inode",
+		  "no-compression", "no-compression-regexp=",
+		  "no-file-statistics", "no-hard-links", "null-separator",
 		  "override-chars-to-quote=", "parsable-output",
 		  "print-statistics", "remote-cmd=", "remote-schema=",
 		  "remove-older-than=", "restore-as-of=", "restrict=",
@@ -105,6 +105,7 @@ def parse_cmdlineoptions(arglist):
 			restore_timestr, action = arg, "list-changed-since"
 		elif opt == "-l" or opt == "--list-increments":
 			action = "list-increments"
+		elif opt == '--list-increment-sizes': action = 'list-increment-sizes'
 		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
@@ -147,9 +148,9 @@ def check_action():
 	"""Check to make sure action is compatible with args"""
 	global action
 	arg_action_dict = {0: ['server'],
-					   1: ['list-increments', 'remove-older-than',
-						   'list-at-time', 'list-changed-since',
-						   'check-destination-dir'],
+					   1: ['list-increments', 'list-increment-sizes',
+						   'remove-older-than', 'list-at-time',
+						   'list-changed-since', 'check-destination-dir'],
 					   2: ['backup', 'restore', 'restore-as-of']}
 	l = len(args)
 	if not action: assert l == 2, args # cannot tell backup or restore yet
@@ -163,7 +164,7 @@ def final_set_action(rps):
 	global action
 	if action: return
 	assert len(rps) == 2, rps
-	if restore_get_root(rps[0]): action = "restore"
+	if restore_set_root(rps[0]): action = "restore"
 	else: action = "backup"
 
 def commandline_error(message):
@@ -194,6 +195,7 @@ def take_action(rps):
 	elif action == "list-at-time": ListAtTime(rps[0])
 	elif action == "list-changed-since": ListChangedSince(rps[0])
 	elif action == "list-increments": ListIncrements(rps[0])
+	elif action == 'list-increment-sizes': ListIncrementSizes(rps[0])
 	elif action == "remove-older-than": RemoveOlderThan(rps[0])
 	elif action == "calculate-average": CalculateAverage(rps)
 	elif action == "check-destination-dir": CheckDest(rps[0])
@@ -373,7 +375,7 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 	mirror file), dest_rp should be the target rp to be written.
 
 	"""
-	if not restore_root_set: assert restore_get_root(src_rp)
+	if not restore_root_set: assert restore_set_root(src_rp)
 	restore_check_paths(src_rp, dest_rp, restore_as_of)
 	restore_set_fs_globals(Globals.rbdir)
 	src_rp = restore_init_quoting(src_rp)
@@ -449,7 +451,7 @@ def restore_check_paths(rpin, rpout, restoreasof = None):
 		Log.FatalError("Restore target %s already exists, "
 					   "specify --force to overwrite." % rpout.path)
 
-def restore_check_backup_dir(mirror_root, src_rp, restore_as_of):
+def restore_check_backup_dir(mirror_root, src_rp = None, restore_as_of = 1):
 	"""Make sure backup dir root rpin is in consistent state"""
 	if not restore_as_of and not src_rp.isincfile():
 		Log.FatalError("""File %s does not look like an increment file.
@@ -466,7 +468,7 @@ Try restoring from an increment file (the filenames look like
 		"rdiff-with --check-destination-dir option to revert directory "
 		"to state before unsuccessful session." % (mirror_root.path,))
 
-def restore_get_root(rpin):
+def restore_set_root(rpin):
 	"""Set data dir, restore_root and index, or return None if fail
 
 	The idea here is to keep backing up on the path until we find
@@ -480,7 +482,7 @@ def restore_get_root(rpin):
 	funny way, using symlinks or somesuch.
 
 	"""
-	global restore_root, restore_index
+	global restore_root, restore_index, restore_root_set
 	if rpin.isincfile(): relpath = rpin.getincbase().path
 	else: relpath = rpin.path
 	pathcomps = os.path.join(rpin.conn.os.getcwd(), relpath).split("/")
@@ -510,20 +512,28 @@ def restore_get_root(rpin):
 				(len(from_datadir) == 2 and
 				 from_datadir[1].startswith('increments'))), from_datadir
 		restore_index = from_datadir[2:]
+	restore_root_set = 1
 	return 1
 
 
 def ListIncrements(rp):
 	"""Print out a summary of the increments and their times"""
-	mirror_root, index = restore_get_root(rp)
-	restore_check_backup_dir(mirror_root)
-	mirror_rp = mirror_root.new_index(index)
-	inc_rpath = Globals.rbdir.append_path('increments', index)
+	assert restore_set_root(rp)
+	restore_check_backup_dir(restore_root)
+	mirror_rp = restore_root.new_index(restore_index)
+	inc_rpath = Globals.rbdir.append_path('increments', restore_index)
 	incs = restore.get_inclist(inc_rpath)
 	mirror_time = restore.MirrorStruct.get_mirror_time()
 	if Globals.parsable_output:
 		print manage.describe_incs_parsable(incs, mirror_time, mirror_rp)
 	else: print manage.describe_incs_human(incs, mirror_time, mirror_rp)
+
+
+def ListIncrementSizes(rp):
+	"""Print out a summary of the increments """
+	assert restore_set_root(rp)
+	restore_check_backup_dir(restore_root)
+	print manage.ListIncrementSizes(restore_root, restore_index)
 
 
 def CalculateAverage(rps):
@@ -575,10 +585,10 @@ def ListChangedSince(rp):
 	"""List all the files under rp that have changed since restoretime"""
 	try: rest_time = Time.genstrtotime(restore_timestr)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
-	mirror_root, index = restore_get_root(rp)
-	restore_check_backup_dir(mirror_root)
-	mirror_rp = mirror_root.new_index(index)
-	inc_rp = mirror_rp.append_path("increments", index)
+	assert restore_set_root(rp)
+	restore_check_backup_dir(restore_root)
+	mirror_rp = restore_root.new_index(restore_index)
+	inc_rp = mirror_rp.append_path("increments", restore_index)
 	restore.ListChangedSince(mirror_rp, inc_rp, rest_time)
 
 
@@ -586,10 +596,10 @@ def ListAtTime(rp):
 	"""List files in archive under rp that are present at restoretime"""
 	try: rest_time = Time.genstrtotime(restore_timestr)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
-	mirror_root, index = restore_get_root(rp)
-	restore_check_backup_dir(mirror_root)
-	mirror_rp = mirror_root.new_index(index)
-	inc_rp = mirror_rp.append_path("increments", index)
+	assert restore_set_root(rp)
+	restore_check_backup_dir(restore_root)
+	mirror_rp = restore_root.new_index(restore_index)
+	inc_rp = mirror_rp.append_path("increments", restore_index)
 	restore.ListAtTime(mirror_rp, inc_rp, rest_time)
 	
 

@@ -21,7 +21,7 @@
 
 from __future__ import generators
 from log import Log
-import Globals, Time, static, manage
+import Globals, Time, static, manage, statistics, restore, selection
 
 
 class ManageException(Exception): pass
@@ -128,3 +128,77 @@ class IncObj:
 		s = ["Increment file %s" % self.incrp.path,
 			 "Date: %s" % self.pretty_time()]
 		return "\n".join(s)
+
+
+def ListIncrementSizes(mirror_root, index):
+	"""Return string summarizing the size of all the increments"""
+	stat_obj = statistics.StatsObj() # used for byte summary string
+	def get_total(rp_iter):
+		"""Return the total size of everything in rp_iter"""
+		total = 0
+		for rp in rp_iter: total += rp.getsize()
+		return total
+
+	def get_time_dict(inc_iter):
+		"""Return dictionary pairing times to total size of incs"""
+		time_dict = {}
+		for inc in inc_iter:
+			if not inc.isincfile(): continue
+			t = inc.getinctime()
+			if not time_dict.has_key(t): time_dict[t] = 0
+			time_dict[t] += inc.getsize()
+		return time_dict
+
+	def get_mirror_select():
+		"""Return iterator of mirror rpaths"""
+		mirror_base = mirror_root.new_index(index)
+		mirror_select = selection.Select(mirror_base)
+		if not index: # must exclude rdiff-backup-directory
+			mirror_select.parse_rbdir_exclude()
+		return mirror_select.set_iter()
+
+	def get_inc_select():
+		"""Return iterator of increment rpaths"""
+		inc_base = Globals.rbdir.append_path('increments', index)
+		for base_inc in restore.get_inclist(inc_base): yield base_inc
+		if inc_base.isdir():
+			inc_select = selection.Select(inc_base).set_iter()
+			for inc in inc_select: yield inc
+
+	def get_summary_triples(mirror_total, time_dict):
+		"""Return list of triples (time, size, cumulative size)"""
+		triples = []
+
+		cur_mir_base = Globals.rbdir.append('current_mirror')
+		mirror_time = restore.get_inclist(cur_mir_base)[0].getinctime()
+		triples.append((mirror_time, mirror_total, mirror_total))
+
+		inc_times = time_dict.keys()
+		inc_times.sort()
+		inc_times.reverse()
+		cumulative_size = mirror_total
+		for inc_time in inc_times:
+			size = time_dict[inc_time]
+			cumulative_size += size
+			triples.append((inc_time, size, cumulative_size))
+		return triples
+
+	def triple_to_line(triple):
+		"""Convert triple to display string"""
+		time, size, cum_size = triple
+		return "%24s   %13s   %15s" % \
+			   (Time.timetopretty(time),
+				stat_obj.get_byte_summary_string(size),
+				stat_obj.get_byte_summary_string(cum_size))
+
+	mirror_total = get_total(get_mirror_select())
+	time_dict = get_time_dict(get_inc_select())
+	triples = get_summary_triples(mirror_total, time_dict)
+
+	l = ['%12s %9s  %15s   %20s' % ('Time', '', 'Size', 'Cumulative size'),
+		 '-' * 77,
+		 triple_to_line(triples[0]) + '   (current mirror)']
+	for triple in triples[1:]: l.append(triple_to_line(triple))
+	return '\n'.join(l)
+
+		

@@ -1,3 +1,21 @@
+New in v0.13.0 (2003/07/02)
+---------------------------
+
+To prevent the buildup of confusing and error-prone options, the
+capabilities of the source and destination file systems are now
+autodetected.  Detected features include allowed characters, extended
+attributes, access control lists, hard links, ownership, and directory
+fsyncing.  Options such as --windows-mode, --chars-to-quote,
+--quoting-char, and --windows-restore-mode have been removed.
+
+Now rdiff-backup supports extended attributes.  To take advantage of
+this you will need the python module pyxattr and a file system that
+supports EAs.  Thanks to Greg Freemyer for discussion.
+
+Added --list-increment-sizes switch, which tells you how much space
+the various backup files take up.  (Suggested by Andrew Bressen)
+
+
 New in v0.12.0 (2003/06/26)
 ---------------------------
 

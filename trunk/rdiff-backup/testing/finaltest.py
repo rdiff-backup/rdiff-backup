@@ -296,6 +296,62 @@ class Final(PathSetter):
 		assert wc_output.split() == ["0", "0", "0"], wc_output
 
 
+class FinalMisc(PathSetter):
+	"""Test miscellaneous operations like list-increments, etc.
+
+	Many of these just run and make sure there were no errors; they
+	don't verify the output.
+
+	"""
+	def testListIncrementsLocal(self):
+		"""Test --list-increments switch.  Assumes restoretest3 valid rd dir"""
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, "--list-increments",
+								"testfiles/restoretest3")
+
+	def testListIncrementsRemote(self):
+		"""Test --list-increments mode remotely.  Uses restoretest3"""
+		self.set_connections('test1', '../', None, None)
+		self.exec_rb_extra_args(None, "--list-increments",
+								"testfiles/restoretest3")
+
+	def testListChangeSinceLocal(self):
+		"""Test --list-changed-since mode locally.  Uses restoretest3"""
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, '--list-changed-since 10000',
+								'testfiles/restoretest3')
+
+	def testListChangeSinceRemote(self):
+		"""Test --list-changed-since mode remotely.  Uses restoretest3"""
+		self.set_connections('test1', '../', None, None)
+		self.exec_rb_extra_args(None, '--list-changed-since 10000',
+								'testfiles/restoretest3')
+
+	def testListAtTimeLocal(self):
+		"""Test --list-at-time mode locally.  Uses restoretest3"""
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, '--list-at-time 20000',
+								'testfiles/restoretest3')
+		
+	def testListAtTimeRemote(self):
+		"""Test --list-at-time mode locally.  Uses restoretest3"""
+		self.set_connections('test1', '../', None, None)
+		self.exec_rb_extra_args(None, '--list-at-time 20000',
+								'testfiles/restoretest3')
+
+	def testListIncrementSizesLocal(self):
+		"""Test --list-increment-sizes switch.  Uses restoretest3"""
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, "--list-increment-sizes",
+								"testfiles/restoretest3")
+
+	def testListIncrementsRemote(self):
+		"""Test --list-increment-sizes mode remotely.  Uses restoretest3"""
+		self.set_connections('test1', '../', None, None)
+		self.exec_rb_extra_args(None, "--list-increment-sizes",
+								"testfiles/restoretest3")
+
+
 class FinalSelection(PathSetter):
 	"""Test selection options"""
 	def run(self, cmd):
