@@ -103,18 +103,28 @@ rs_emit_copy_cmd(rs_job_t *job, rs_long_t where, rs_long_t len)
 {
     int            cmd;
     rs_stats_t     *stats = &job->stats;
+    int where_bytes = rs_int_len(where);
+    int len_bytes   = rs_int_len(len);
+    int bytes       = 10 * where_bytes + len_bytes;
 
-    cmd = RS_OP_COPY_N4_N4;
+    switch (10 * where_bytes + len_bytes) {
+        case 88 :   cmd = RS_OP_COPY_N8_N8; break;
+        case 84 :   cmd = RS_OP_COPY_N8_N4; break;
+        case 48 :   cmd = RS_OP_COPY_N4_N8; break;
+        default :   cmd = RS_OP_COPY_N4_N4; 
+                    where_bytes = 4; 
+                    len_bytes   = 4;
+    }
 
-    rs_trace("emit COPY_N4_N4(where=%.0f, len=%.0f), cmd_byte=%#x",
-             (double) where, (double) len, cmd);
+    rs_trace("emit COPY_N%d_N%d(where=%.0f, len=%.0f), cmd_byte=%#x",
+             where_bytes, len_bytes, (double) where, (double) len, cmd);
     rs_squirt_byte(job, cmd);
-    rs_squirt_netint(job, where, 4);
-    rs_squirt_netint(job, len, 4);
+    rs_squirt_netint(job, where, where_bytes);
+    rs_squirt_netint(job, len, len_bytes);
 
     stats->copy_cmds++;
     stats->copy_bytes += len;
-    stats->copy_cmdbytes += 1 + 4 + 4;
+    stats->copy_cmdbytes += 1 + where_bytes + len_bytes;
 
     /* TODO: All the stats */
 }

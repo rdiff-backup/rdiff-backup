@@ -87,8 +87,9 @@ int rs_roll_paranoia = 0;
 
 
 static rs_result rs_delta_scan(rs_job_t *, rs_long_t avail_len, void *);
+static rs_result rs_delta_match(rs_job_t *, rs_long_t avail_len, void *);
 
-static rs_result rs_delta_s_deferred_copy(rs_job_t *job);
+static rs_result rs_delta_s_deferred_advance(rs_job_t *job);
 
 
 
@@ -120,10 +121,9 @@ rs_delta_s_scan(rs_job_t *job)
     is_ending = job->stream->eof_in;
 
     /* Now, we have avail_len bytes, and we need to scan through them
-     * looking for a match.  We'll always end up emitting exactly one
-     * command, either a literal or a copy, and after discovering that
-     * we will skip over the appropriate number of bytes. */
-    if (avail_len == 0) {
+     * looking for a match.  We may end up emitting a bunch of 
+     * commands depending on how the blocks match with the signature */
+    if ((avail_len == 0) && (job->basis_len == 0)) {
         if (is_ending) {
             /* no more delta to do */
             job->statefn = rs_delta_s_end;
@@ -143,9 +143,11 @@ rs_delta_s_scan(rs_job_t *job)
     if (result != RS_DONE)
         return result;
     
-    return rs_delta_scan(job, avail_len, inptr);
+    if (!job->basis_len)
+        return rs_delta_scan(job, avail_len, inptr);
+    else
+        return rs_delta_match(job, avail_len, inptr);
 }
-
 
 
 /**
@@ -153,8 +155,8 @@ rs_delta_s_scan(rs_job_t *job)
  *
  * If nonmatching data is found, then a LITERAL command will be put in
  * the tube immediately.  If matching data is found, then its position
- * will be saved in the job, and the job state set up to write out a
- * COPY command after handling the literal.
+ * will be saved in the job, and the job state set up to to perform
+ * RLL encoding after handling the literal.
  */
 static rs_result
 rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
@@ -164,6 +166,12 @@ rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
     unsigned char        *inptr = (unsigned char *) p;
     uint32_t             s1 = job->weak_sig & 0xFFFF;
     uint32_t             s2 = job->weak_sig >> 16;
+
+    if (job->basis_len) {
+        rs_log(RS_LOG_ERR, "somehow got nonzero basis_len");
+        return RS_INTERNAL_ERROR;
+    }
+
     
     /* So, we have avail_len bytes of data, and we want to look
      * through it for a match at some point.  It's OK if it's not at
@@ -182,10 +190,17 @@ rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
     for (search_pos = 0; search_pos <= end_pos; search_pos++) {
         size_t this_len = job->block_len;
             
+        /* Did we inherit the signature from rs_delta_match?*/
+        if (job->have_weak_sig < 0) {
+            job->have_weak_sig = 1;
+            /* We already know that this block won't match!*/
+            continue;
+        }
+
         if (search_pos + this_len > avail_len) {
             this_len = avail_len - search_pos;
             rs_trace("block reduced to %d", this_len);
-        } else if (job->have_weak_sig) {
+        } else if (job->have_weak_sig > 0) {
             unsigned char a = inptr[search_pos + this_len - 1];
             /* roll in the newly added byte, if any */
             s1 += a + RS_CHAR_OFFSET;
@@ -214,20 +229,20 @@ rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
                                 job->signature, &job->stats, &match_where)) {
             /* So, we got a match.  Cool.  However, there may be
              * leading unmatched data that we need to flush.  Thus we
-             * set our statefn to be rs_delta_s_deferred_copy so that
-             * we can write out the command later. */
+             * set our statefn to be rs_delta_s_deferred_advance so that
+             * we can skip bytes and write out the copy command later. */
 
             rs_trace("matched %.0f bytes at %.0f!",
                      (double) this_len, (double) match_where);
             job->basis_pos = match_where;
             job->basis_len = this_len;
-            job->statefn = rs_delta_s_deferred_copy;
+            job->statefn = rs_delta_s_deferred_advance;
             job->have_weak_sig = 0;
             break;
         } else {
             /* advance by one; roll out the byte we just moved over. */
             unsigned char a = inptr[search_pos];
-            unsigned char shift = a + RS_CHAR_OFFSET;
+            unsigned shift = a + RS_CHAR_OFFSET;
 
             s1 -= shift;
             s2 -= this_len * shift;
@@ -252,24 +267,114 @@ rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
         rs_emit_literal_cmd(job, search_pos);
         rs_tube_copy(job, search_pos);
     }
-    
+
     return RS_RUNNING;
 }
 
-
-
-static rs_result rs_delta_s_deferred_copy(rs_job_t *job)
+/**
+ * advance the scoop pointer to skip a matched block.
+ *
+ * We can't do this greedily within rs_delta_scan since rs_tube_copy is lazy.
+ * Instead we use this intermediate state to advance the scoop.
+ */
+static rs_result
+rs_delta_s_deferred_advance(rs_job_t *job)
 {
     if (!job->basis_len) {
         rs_log(RS_LOG_ERR, "somehow got zero basis_len");
         return RS_INTERNAL_ERROR;
     }
-    
-    rs_emit_copy_cmd(job, job->basis_pos, job->basis_len);
-    rs_scoop_advance(job, job->basis_len);
 
-    job->statefn = rs_delta_s_scan;
-    
+    rs_scoop_advance(job,job->basis_len);
+    job->statefn=rs_delta_s_scan;
+
+    return RS_RUNNING;
+}
+
+/**
+ * Do RLL coding of output.
+ *
+ * When a matched block is found we are in this state. We try to accumulate
+ * adjacent blocks for RLL encoding of the output. If a non-adjacent block is
+ * matched, we emit a copy command for the accumulated blocks and start a
+ * new RLL sequence. If a block can't be matched we need to rescan.
+ */
+static rs_result
+rs_delta_match(rs_job_t *job, rs_long_t avail_len, void *p)
+{
+    rs_long_t            match_where;
+    int                  search_pos;
+    unsigned char        *inptr = (unsigned char *) p;
+    int                  ending= job->stream->eof_in;
+
+    if (!job->basis_len) {
+        rs_log(RS_LOG_ERR, "somehow got zero basis_len");
+        return RS_INTERNAL_ERROR;
+    }
+
+    /* So, we have avail_len bytes of data, and we previously matched 
+     * one or more blocks. We now look for adjacent matches to roll into the
+     * the current match. If we hit a block that has no match, we need to
+     * go back rs_delta_scan and rescan. */
+
+    for (search_pos = 0; search_pos <= avail_len; search_pos+=job->block_len) {
+        size_t this_len = job->block_len;
+            
+        if (search_pos + this_len > avail_len) {
+            /* We only allow short blocks at the end of stream*/
+            if (!ending) {
+                rs_trace("waiting for more input");
+                return RS_BLOCKED;
+            }
+            this_len = avail_len - search_pos;
+            rs_trace("block reduced to %d", this_len);
+        } 
+
+        rs_trace("calculate weak sum from scratch");
+        job->weak_sig = rs_calc_weak_sum(inptr + search_pos, this_len);
+        job->have_weak_sig = -1;
+
+        if (rs_search_for_block(job->weak_sig, inptr + search_pos, this_len,
+                                job->signature, &job->stats, &match_where)) {
+            /* So, we got a match.  Cool. Now try to roll it into the previous
+             * match. If we can't we start a new rll sequence. */
+            rs_trace("matched %.0f bytes at %.0f!",
+                     (double) this_len, (double) match_where);
+            /* At this point we have matched this block so skip it*/
+            /* We do this now since we might return in the IF block*/
+            rs_scoop_advance(job,this_len);
+
+            if (match_where == (job->basis_pos + job->basis_len)) {
+                job->basis_len += this_len;
+                rs_trace("adjacent match: accumulated %.0f bytes at %.0f",
+                          (double)job->basis_len,(double)job->basis_pos);
+            } else {
+                rs_trace("new match, flushing %.0f bytes at %.0f",
+                     (double)job->basis_pos,(double)job->basis_len);
+                rs_emit_copy_cmd(job, job->basis_pos, job->basis_len);
+                job->basis_pos = match_where;
+                job->basis_len = this_len;
+                /* Give the tube a chance to catchup */
+                return RS_RUNNING;
+            }
+        } else {
+            /* Copy blocks that we acummulated, there should be at least one */
+            rs_trace("no match, copying %.0f bytes at %.0f",
+                     (double)job->basis_len,(double)job->basis_pos);
+            rs_emit_copy_cmd(job, job->basis_pos, job->basis_len);
+
+            /* Unmatched data...we need to rescan*/
+            job->basis_len=0;
+            return RS_RUNNING;
+        }
+    }
+
+    if (ending) {
+        /* The job ended with a matching block..we must copy everything*/
+        rs_emit_copy_cmd(job, job->basis_pos, job->basis_len);
+        job->basis_len=0;
+    }
+
     return RS_RUNNING;
 }
 
@@ -344,7 +449,7 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
                job->strong_sum_len);
         return NULL;
     }
-	
+
     return job;
 }
 
