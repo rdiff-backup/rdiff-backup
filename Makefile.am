@@ -52,9 +52,10 @@ librsync_la_SOURCES = \
 	search.c search.h			\
 	stats.c					\
 	stream.c stream.h			\
-	sumset.c sumset.h \
+	sumset.c sumset.h 			\
 	trace.c trace.h				\
 	tube.c					\
+	types.h					\
 	util.c util.h				\
 	version.c				\
 	whole.c whole.h
