@@ -29,9 +29,9 @@
 /* Queue byte VALUE into the literal-data buffer. */
 int _hs_append_literal(hs_membuf_t * litbuf, char value)
 {
-    hs_membuf_write(litbuf, &value, sizeof value);
+     hs_membuf_write(litbuf, &value, sizeof value);
 
-    return 0;
+     return 0;
 }
 
 
@@ -42,26 +42,26 @@ int _hs_append_literal(hs_membuf_t * litbuf, char value)
    appropriately. */
 ssize_t
 _hs_push_literal_buf(hs_membuf_t * litbuf,
-		      hs_write_fn_t write_fn, void *write_priv,
-		      hs_stats_t * stats,
-		      int kind)
+		     hs_write_fn_t write_fn, void *write_priv,
+		     hs_stats_t * stats,
+		     int kind)
 {
-    int ret;
-    hs_off_t amount;
+     int ret;
+     hs_off_t amount;
 
-    amount = hs_membuf_tell(litbuf);
-    assert(amount >= 0);
+     amount = hs_membuf_tell(litbuf);
+     assert(amount >= 0);
 
-    if (amount == 0) {
-	 /* buffer is empty */
-	return 0;
-    }
+     if (amount == 0) {
+	  /* buffer is empty */
+	  return 0;
+     }
 
      assert(kind == op_kind_literal || kind == op_kind_signature);
 
      _hs_trace("flush %d bytes of %s data",
-	      (int) amount,
-	      kind == op_kind_literal ? "literal" : "signature");
+	       (int) amount,
+	       kind == op_kind_literal ? "literal" : "signature");
 
      if (kind == op_kind_literal) {
 	  if (_hs_emit_literal_cmd(write_fn, write_priv, amount) < 0)
@@ -70,24 +70,21 @@ _hs_push_literal_buf(hs_membuf_t * litbuf,
 	  if (_hs_emit_signature_cmd(write_fn, write_priv, amount) < 0)
 	       return -1;
      }
-     
-     ret = _hs_copy_ofs(0, amount,
-			hs_membuf_read_ofs, litbuf,
-			write_fn, write_priv,
-			NULL);
-    return_val_if_fail(ret > 0, -1);
 
-    if (kind == op_kind_literal) {
-	stats->lit_cmds++;
-	stats->lit_bytes += amount;
-    } else {
-	assert(kind == op_kind_signature);
-	stats->sig_cmds++;
-	stats->sig_bytes += amount;
-    }
+     ret = hs_must_write(write_fn, write_priv, litbuf->buf, amount);
+     return_val_if_fail(ret == amount, -1);
 
-    /* Reset the literal buffer */
-    hs_membuf_truncate(litbuf);
+     if (kind == op_kind_literal) {
+	  stats->lit_cmds++;
+	  stats->lit_bytes += amount;
+     } else {
+	  assert(kind == op_kind_signature);
+	  stats->sig_cmds++;
+	  stats->sig_bytes += amount;
+     }
 
-    return 0;
+     /* Reset the literal buffer */
+     hs_membuf_truncate(litbuf);
+
+     return 0;
 }
