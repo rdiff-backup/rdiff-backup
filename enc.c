@@ -240,9 +240,9 @@ hs_encode_old(hs_read_fn_t read_fn, void *readprivate,
 
 	while (inbuf->cursor + need_bytes <= inbuf->amount) {
 	    short_block = MIN(block_len, inbuf->amount - inbuf->cursor);
-	    _hs_update_sums(inbuf->buf + inbuf->cursor, block_len,
+	    _hs_stretch_sums(inbuf->buf + inbuf->cursor, block_len,
 			    short_block, &rollsum);
-	    _hs_update_sums(inbuf->buf + inbuf->cursor, block_len,
+	    _hs_stretch_sums(inbuf->buf + inbuf->cursor, block_len,
 			    short_block, &new_roll);
 
 #ifdef HS_PAINFUL_HONESTY

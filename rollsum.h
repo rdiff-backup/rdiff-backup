@@ -41,7 +41,7 @@ struct hs_rollsum {
 int _hs_trim_sums(byte_t const *p, hs_rollsum_t * rollsum,
                   size_t short_block);
 
-int _hs_update_sums(byte_t const *p, size_t full_block,
-                    size_t short_block, hs_rollsum_t * rollsum);
+int _hs_stretch_sums(byte_t const *p, size_t full_block,
+                     size_t short_block, hs_rollsum_t * rollsum);
 
 void _hs_roll_reset(hs_rollsum_t * rollsum);
