@@ -35,20 +35,6 @@ void rs_bzero(void *buf, size_t size);
         ((type *) rs_alloc_struct0(sizeof(type), #type))
 
 
-
-#undef	MAX
-#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
-
-#undef	MIN
-#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
-
-#undef	ABS
-#define ABS(a)	   (((a) < 0) ? -(a) : (a))
-
-#undef	CLAMP
-#define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
-
-
 #ifdef __GNUC__
 #  define UNUSED(x) x __attribute__((unused))
 #elif __LCLINT__
