@@ -44,6 +44,13 @@
 #  include <netinet/in.h>		/* ntohs, etc */
 #endif /* __LCLINT__ */
 
+#include "varint.h"
+
+#ifdef HAVE_SYS_ENDIAN_H
+#  include <sys/endian.h>
+#endif
+
+
 
 /* For debugging porpoises, here are some human-readable forms. */
 struct hs_op_kind_name const _hs_op_kind_names[] = {
@@ -72,23 +79,6 @@ _hs_op_kind_name(hs_op_kind_t kind)
     }
 
     return NULL;
-}
-
-
-int
-_hs_read_varint(byte_t const *p, int len)
-{
-    switch (len) {
-    case 1:
-        return *p;
-    case 2:
-        return ntohs(* (uint16_t const *) p);
-    case 4:
-        return ntohl(* (uint32_t const *) p);
-    default:
-        _hs_fatal("don't know how to read integer of length %d", len);
-        return 0;               /* UNREACHABLE */
-    }
 }
 
 

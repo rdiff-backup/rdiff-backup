@@ -55,6 +55,7 @@
 #include "includes.h"
 #include "command.h"
 #include "mapptr.h"
+#include "varint.h"
 #include "inhale.h"
 #include "protocol.h"
 #include "vtr.h"

@@ -60,7 +60,9 @@ libhsync_a_SOURCES = \
 	protocol.h \
 	prototab.c prototab.h \
 	oldinhale.c \
-	litbuf.c 
+	litbuf.c \
+	varint.c varint.h \
+	snprintf.h
 
 # TODO: If we ever care enough, build a second library containing only
 # the code necessary to be a client, and not stuff for encoding.  At

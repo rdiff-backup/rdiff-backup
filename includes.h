@@ -47,3 +47,6 @@
 #include "rollsum.h"
 #include "sumset.h"
 #include "mksum.h"
+
+
+#include "snprintf.h"

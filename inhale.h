@@ -22,8 +22,6 @@
 
 
 
-int
-_hs_read_varint(byte_t const *p, int len);
 
     hs_result_t
 _hs_inhale_command_map(hs_map_t *map, off_t *input_pos,
