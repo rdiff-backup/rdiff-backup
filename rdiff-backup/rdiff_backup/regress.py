@@ -124,7 +124,8 @@ def iterate_raw_rfs(mirror_rp, inc_rp):
 
 def yield_metadata():
 	"""Iterate rorps from metadata file, if any are available"""
-	metadata_iter = metadata.GetMetadata_at_time(Globals.rbdir, regress_time)
+	metadata_iter = metadata.MetadataFile.get_objects_at_time(Globals.rbdir,
+															  regress_time)
 	if metadata_iter: return metadata_iter
 	log.Log.FatalError("No metadata for time %s found, cannot regress"
 					   % Time.timetopretty(regress_time))

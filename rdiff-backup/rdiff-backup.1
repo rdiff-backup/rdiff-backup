@@ -56,22 +56,13 @@ ability to restore previous versions of that file.
 .SH OPTIONS
 .TP
 .B -b, --backup-mode
-Force backup mode even if first argument appears to be an increment file.
+Force backup mode even if first argument appears to be an increment or
+mirror file.
 .TP
 .B --calculate-average
 Enter calculate average mode.  The arguments should be a number of
 statistics files.  rdiff-backup will print the average of the listed
 statistics files and exit.
-.TP
-.BI "--chars-to-quote " chars
-If this option is set, any characters in
-.I chars
-present in filenames on the source side will be quoted on the
-destination side, so that they do not appear in filenames on the
-remote side.  See
-.B --quoting-char
-and
-.BR --windows-mode .
 .TP
 .B --check-destination-dir
 If an rdiff-backup session fails, running rdiff-backup with this
@@ -132,8 +123,7 @@ See the
 section for more information.
 .TP
 .B --exclude-special-files
-Exclude all device files, fifos, sockets, and symlinks.  This option
-is implied by --windows-mode.
+Exclude all device files, fifos, sockets, and symlinks.
 .TP
 .B --force
 Authorize the updating or overwriting of a destination path.
@@ -202,7 +192,7 @@ In this mode rdiff-backup is similar to rsync (but usually
 slower).
 .TP
 .B --no-compare-inode
-This relative esoteric option prevents rdiff-backup from flagging a
+This relatively esoteric option prevents rdiff-backup from flagging a
 file as changed when its inode changes.  This option may be useful if
 you are backing up two different directories to the same rdiff-backup
 destination directory.  The downside is that hard link information may
@@ -255,13 +245,6 @@ session statistics file.  See the
 .B STATISTICS
 section for more information.
 .TP
-.BI "--quoting-char " char
-Use the specified character for quoting characters specified to be
-escaped by the
-.B --chars-to-quote
-option.  The default is the semicolon ";".  See also
-.BR --windows-mode .
-.TP
 .BI "-r, --restore-as-of " restore_time
 Restore the specified directory as it was as of
 .IR restore_time .
@@ -272,10 +255,6 @@ section for more information on the format of
 and see the
 .B RESTORING
 section for more information on restoring.
-.TP
-.BI "--remote-cmd " command
-This command has been depreciated as of version 0.4.1.  Use
---remote-schema instead.
 .TP
 .BI "--remote-schema " schema
 Specify an alternate method of connecting to a remote computer.  This
@@ -354,20 +333,6 @@ is noisiest).  This determines how much is written to the log file.
 .TP
 .B "-V, --version"
 Print the current version and exit
-.TP
-.B --windows-mode
-This option quotes characters not allowable on windows, and does not
-try to preserve ownership, hardlinks, or permissions on the
-destination side.  It is appropriate when backing up a normal unix
-file system to a windows one such as VFS, or a file system with
-similar limitations.  Because metadata is stored in a separate regular
-file, this option does not prevent all data from being restored.
-.TP
-.B --windows-restore
-This option turns on windows quoting, but does not disable
-permissions, hard linking, or ownership.  Use this when restoring from
-an rdiff-backup directory on a windows file system to a unix file
-system.
 
 .SH EXAMPLES
 Simplest case---backup directory foo to directory bar, with increments

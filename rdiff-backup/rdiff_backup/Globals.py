@@ -66,6 +66,14 @@ change_mirror_perms = (process_uid != 0)
 # If true, try to reset the atimes of the source partition.
 preserve_atime = None
 
+# If true, save the extended attributes when backing up.
+read_eas = None
+
+# If true, preserve the extended attributes on the mirror directory
+# when backing up, or write them to the restore directory.  This
+# implies read_eas.
+write_eas = None
+
 # This will be set as soon as the LocalConnection class loads
 local_connection = None
 
@@ -112,10 +120,12 @@ rbdir = None
 
 # quoting_enabled is true if we should quote certain characters in
 # filenames on the source side (see FilenameMapping for more
-# info).  chars_to_quote is a string whose characters should be
-# quoted, and quoting_char is the character to quote with.
-quoting_enabled = None
-chars_to_quote = "A-Z:"
+# info).
+
+# chars_to_quote is a string whose characters should be quoted.  It
+# should be true if certain characters in filenames on the source side
+# should be escaped (see FilenameMapping for more info).
+chars_to_quote = None
 quoting_char = ';'
 
 # If true, emit output intended to be easily readable by a

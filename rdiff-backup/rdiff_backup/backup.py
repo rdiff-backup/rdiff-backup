@@ -1,4 +1,4 @@
-# Copyright 2002 Ben Escoto
+# Copyright 2002, 2003 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -22,7 +22,8 @@
 from __future__ import generators
 import errno
 import Globals, metadata, rorpiter, TempFile, Hardlink, robust, increment, \
-	   rpath, static, log, selection, Time, Rdiff, statistics, iterfile
+	   rpath, static, log, selection, Time, Rdiff, statistics, iterfile, \
+	   eas_acls
 
 def Mirror(src_rpath, dest_rpath):
 	"""Turn dest_rpath into a copy of src_rpath"""
@@ -122,16 +123,27 @@ class DestinationStruct:
 		destination except rdiff-backup-data directory.
 
 		"""
-		if use_metadata:
-			metadata_iter = metadata.GetMetadata_at_time(Globals.rbdir,
-														 Time.prevtime)
+		def get_basic_iter():
+			"""Returns iterator of basic metadata"""
+			metadata_iter = metadata.MetadataFile.get_objects_at_time(
+				Globals.rbdir, Time.prevtime)
 			if metadata_iter: return metadata_iter
 			log.Log("Warning: Metadata file not found.\n"
 					"Metadata will be read from filesystem.", 2)
 
-		sel = selection.Select(rpath)
-		sel.parse_rbdir_exclude()
-		return sel.set_iter()
+		def get_iter_from_fs():
+			"""Get the combined iterator from the filesystem"""
+			sel = selection.Select(rpath)
+			sel.parse_rbdir_exclude()
+			return sel.set_iter()
+
+		if use_metadata:
+			if Globals.read_eas:
+				rorp_iter = eas_acls.ExtendedAttributesFile.\
+					  get_combined_iter_at_time(Globals.rbdir, Time.prevtime)
+			else: rorp_iter = get_basic_iter()
+			if rorp_iter: return rorp_iter
+		return get_iter_from_fs()
 
 	def set_rorp_cache(cls, baserp, source_iter, for_increment):
 		"""Initialize cls.CCPP, the destination rorp cache
@@ -243,7 +255,8 @@ class CacheCollatedPostProcess:
 		self.cache_size = cache_size
 		self.statfileobj = statistics.init_statfileobj()
 		if Globals.file_statistics: statistics.FileStats.init()
-		metadata.OpenMetadata()
+		metadata.MetadataFile.open_file()
+		if Globals.read_eas: eas_acls.ExtendedAttributesFile.open_file()
 
 		# the following should map indicies to lists
 		# [source_rorp, dest_rorp, changed_flag, success_flag, increment]
@@ -317,7 +330,10 @@ class CacheCollatedPostProcess:
 			metadata_rorp = source_rorp
 		else: metadata_rorp = None
 		if metadata_rorp and metadata_rorp.lstat():
-			metadata.WriteMetadata(metadata_rorp)
+			metadata.MetadataFile.write_object(metadata_rorp)
+			if Globals.read_eas and not metadata_rorp.get_ea().empty():
+				eas_acls.ExtendedAttributesFile.write_object(
+					metadata_rorp.get_ea())
 		if Globals.file_statistics:
 			statistics.FileStats.update(source_rorp, dest_rorp, changed, inc)
 
@@ -359,7 +375,8 @@ class CacheCollatedPostProcess:
 	def close(self):
 		"""Process the remaining elements in the cache"""
 		while self.cache_indicies: self.shorten_cache()
-		metadata.CloseMetadata()
+		metadata.MetadataFile.close_file()
+		if Globals.read_eas: eas_acls.ExtendedAttributesFile.close_file()
 		if Globals.print_statistics: statistics.print_active_stats()
 		if Globals.file_statistics: statistics.FileStats.close()
 		statistics.write_active_statfileobj()

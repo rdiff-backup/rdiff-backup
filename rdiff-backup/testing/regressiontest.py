@@ -12,7 +12,7 @@ testfiles
 
 Globals.set('change_source_perms', 1)
 Globals.counter = 0
-log.Log.setverbosity(3)
+log.Log.setverbosity(7)
 
 def get_local_rp(extension):
 	return rpath.RPath(Globals.local_connection, "testfiles/" + extension)
@@ -172,16 +172,12 @@ class IncrementTest1(unittest.TestCase):
 		hl2.hardlink(hl1.path)
 		
 		Myrm(Local.rpout.path)
-		old_settings = (Globals.quoting_enabled, Globals.chars_to_quote,
-						Globals.quoting_char)
-		Globals.quoting_enabled = 1
+		old_chars = Globals.chars_to_quote
 		Globals.chars_to_quote = 'A-Z'
-		Globals.quoting_char = ';'
 		InternalBackup(1, 1, hldir.path, Local.rpout.path, current_time = 1)
 		InternalBackup(1, 1, "testfiles/empty", Local.rpout.path,
 					   current_time = 10000)
-		(Globals.quoting_enabled, Globals.chars_to_quote,
-		 Globals.quoting_char) = old_settings
+		Globals.chars_to_quote = old_chars
 
 	def test_long_socket(self):
 		"""Test backing up a directory with long sockets in them
@@ -389,8 +385,10 @@ class MirrorTest(PathSetter):
 		Main.force = 1
 		assert not rpout.append("rdiff-backup-data").lstat()
 		Main.misc_setup([rpin, rpout])
+		Main.backup_check_dirs(rpin, rpout)
+		Main.backup_set_fs_globals(rpin, rpout)
+		Main.backup_set_rbdir(rpin, rpout)
 		Main.backup_set_select(rpin)
-		Main.backup_init_dirs(rpin, rpout)
 		backup.Mirror(rpin, rpout)
 		log.ErrorLog.close()
 		log.Log.close_logfile()

@@ -1,4 +1,4 @@
-# Copyright 2002 Ben Escoto
+# Copyright 2002, 2003 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -156,6 +156,7 @@ def copy_attribs(rpin, rpout):
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if Globals.change_permissions: rpout.chmod(rpin.getperms())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
+	if Globals.write_eas: rpout.write_ea(rpin.get_ea())
 
 def cmp_attribs(rp1, rp2):
 	"""True if rp1 has the same file attributes as rp2
@@ -301,7 +302,8 @@ class RORPath:
 		return 1
 
 	def equal_verbose(self, other, check_index = 1,
-					  compare_inodes = 0, compare_ownership = 0):
+					  compare_inodes = 0, compare_ownership = 0,
+					  compare_eas = 0):
 		"""Like __eq__, but log more information.  Useful when testing"""
 		if check_index and self.index != other.index:
 			log.Log("Index %s != index %s" % (self.index, other.index), 2)
@@ -318,6 +320,7 @@ class RORPath:
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'inode' and (not self.isreg() or not compare_inodes):
 				pass
+			elif key == 'ea' and not compare_eas: pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]):
 				if not other.data.has_key(key):
@@ -512,6 +515,14 @@ class RORPath:
 															   self.index)
 			self.file_already_open = None
 
+	def set_ea(self, ea):
+		"""Record extended attributes in dictionary.  Does not write"""
+		self.data['ea'] = ea
+
+	def get_ea(self):
+		"""Return extended attributes object"""
+		return self.data['ea']
+
 
 class RPath(RORPath):
 	"""Remote Path class - wrapper around a possibly non-local pathname
@@ -546,7 +557,7 @@ class RPath(RORPath):
 			else: self.path = "/".join((base,) + index)
 		self.file = None
 		if data or base is None: self.data = data
-		else: self.data = self.conn.C.make_file_dict(self.path)
+		else: self.setdata()
 
 	def __str__(self):
 		return "Path: %s\nIndex: %s\nData: %s" % (self.path, self.index,
@@ -571,6 +582,7 @@ class RPath(RORPath):
 	def setdata(self):
 		"""Set data dictionary using C extension"""
 		self.data = self.conn.C.make_file_dict(self.path)
+		if Globals.read_eas and self.lstat(): self.get_ea()
 
 	def make_file_dict_old(self):
 		"""Create the data dictionary"""
@@ -727,7 +739,7 @@ class RPath(RORPath):
 		log.Log("Deleting %s" % self.path, 7)
 		if self.isdir():
 			try: self.rmdir()
-			except os.error: shutil.rmtree(self.path)
+			except os.error: self.conn.shutil.rmtree(self.path)
 		else: self.conn.os.unlink(self.path)
 		self.setdata()
 
@@ -929,6 +941,24 @@ class RPath(RORPath):
 		assert not fp.close()
 		return s
 
+	def get_ea(self):
+		"""Return extended attributes object, setting if necessary"""
+		try: ea = self.data['ea']
+		except KeyError:
+			ea = eas_acls.ExtendedAttributes(self.index)
+			if not self.issym():
+				# Don't read from symlinks because they will be
+				# followed.  Update this when llistxattr,
+				# etc. available
+				ea.read_from_rp(self)
+			self.data['ea'] = ea
+		return ea
+
+	def write_ea(self, ea):
+		"""Change extended attributes of rp"""
+		ea.write_to_rp(self)
+		self.data['ea'] = ea
+
 
 class RPathFileHook:
 	"""Look like a file, but add closing hook"""
@@ -945,3 +975,4 @@ class RPathFileHook:
 		self.closing_thunk()
 		return result
 
+import eas_acls # Put at end to avoid regress

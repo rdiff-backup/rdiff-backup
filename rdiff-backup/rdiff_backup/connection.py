@@ -22,6 +22,11 @@
 from __future__ import generators
 import types, os, tempfile, cPickle, shutil, traceback, pickle, \
 	   socket, sys, gzip
+# The following EA and ACL modules may be used if available
+try: import xattr
+except ImportError: pass
+try: import posix1e
+except ImportError: pass
 
 
 class ConnectionError(Exception): pass
@@ -513,7 +518,7 @@ class VirtualFile:
 import Globals, Time, Rdiff, Hardlink, FilenameMapping, C, Security, \
 	   Main, rorpiter, selection, increment, statistics, manage, lazy, \
 	   iterfile, rpath, robust, restore, manage, backup, connection, \
-	   TempFile, SetConnections, librsync, log, regress
+	   TempFile, SetConnections, librsync, log, regress, fs_abilities
 
 Globals.local_connection = LocalConnection()
 Globals.connections.append(Globals.local_connection)

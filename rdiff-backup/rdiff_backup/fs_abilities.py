@@ -1,4 +1,4 @@
-# Copyright 2002 Ben Escoto
+# Copyright 2003 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -50,12 +50,14 @@ class FSAbilities:
 		Only self.acls and self.eas are set.
 
 		"""
+		self.root_rp = rp
 		self.read_only = 1
 		self.set_eas(rp, 0)
 		self.set_acls(rp)
 		return self
 
-	def init_readwrite(self, rbdir, use_ctq_file = 1):
+	def init_readwrite(self, rbdir, use_ctq_file = 1,
+					   override_chars_to_quote = None):
 		"""Set variables using fs tested at rp_base
 
 		This method creates a temp directory in rp_base and writes to
@@ -69,17 +71,21 @@ class FSAbilities:
 		file in directory.
 
 		"""
-		assert rbdir.isdir()
+		if not rbdir.isdir():
+			assert not rbdir.lstat(), (rbdir.path, rbdir.lstat())
+			rbdir.mkdir()
+		self.root_rp = rbdir
 		self.read_only = 0
 
-		subdir = TempFile.new_in_dir(rbdir)
+		subdir = rbdir.conn.TempFile.new_in_dir(rbdir)
 		subdir.mkdir()
 		self.set_ownership(subdir)
 		self.set_hardlinks(subdir)
 		self.set_fsync_dirs(subdir)
 		self.set_eas(subdir, 1)
 		self.set_acls(subdir)
-		self.set_chars_to_quote(subdir)
+		if override_chars_to_quote is None: self.set_chars_to_quote(subdir)
+		else: self.chars_to_quote = override_chars_to_quote
 		if use_ctq_file: self.compare_chars_to_quote(rbdir)
 		subdir.delete()
 		return self
@@ -95,19 +101,14 @@ class FSAbilities:
 			fp.write(self.chars_to_quote)
 			assert not fp.close()
 
-		def get_old_chars():
-			fp = ctq_rp.open("rb")
-			old_chars = fp.read()
-			assert not fp.close()
-			return old_chars
-
 		if not ctq_rp.lstat(): write_new_chars()
 		else:
-			old_chars = get_old_chars()
+			old_chars = ctq_rp.get_data()
 			if old_chars != self.chars_to_quote:
 				if self.chars_to_quote == "":
 					log.Log("Warning: File system no longer needs quoting, "
 							"but will retain for backwards compatibility.", 2)
+					self.chars_to_quote = old_chars
 				else: log.FatalError("""New quoting requirements
 
 This may be caused when you copy an rdiff-backup directory from a
@@ -127,7 +128,7 @@ rdiff-backup-data/chars_to_quote.
 		except (IOError, OSError), exc:
 			if exc[0] == errno.EPERM:
 				log.Log("Warning: ownership cannot be changed on filesystem "
-						"at device %s" % (testdir.getdevloc(),), 2)
+						"at %s" % (self.root_rp.path,), 2)
 				self.ownership = 0
 			else: raise
 		else: self.ownership = 1
@@ -143,21 +144,15 @@ rdiff-backup-data/chars_to_quote.
 			assert hl_source.getinode() == hl_dest.getinode()
 		except (IOError, OSError), exc:
 			if exc[0] in (errno.EOPNOTSUPP, errno.EPERM):
-				log.Log("Warning: hard linking not supported by filesystem %s"
-						% (testdir.getdevloc(),), 2)
+				log.Log("Warning: hard linking not supported by filesystem "
+						"at %s" % (self.root_rp.path,), 2)
 				self.hardlinks = 0
 			else: raise
 		else: self.hardlinks = 1
 
 	def set_fsync_dirs(self, testdir):
 		"""Set self.fsync_dirs if directories can be fsync'd"""
-		try: testdir.fsync()
-		except (IOError, OSError), exc:
-			log.Log("Warning: Directories on file system at %s are not "
-					"fsyncable.\nAssuming it's unnecessary." %
-					(testdir.getdevloc(),), 2)
-			self.fsync_dirs = 0
-		else: self.fsync_dirs = 1
+		self.fsync_dirs = testdir.conn.fs_abilities.test_fsync_local(testdir)
 
 	def set_chars_to_quote(self, subdir):
 		"""Set self.chars_to_quote by trying to write various paths"""
@@ -189,7 +184,7 @@ rdiff-backup-data/chars_to_quote.
 
 		def sanity_check():
 			"""Make sure basic filenames writable"""
-			for filename in ['5-_ a']:
+			for filename in ['5-_ a.']:
 				rp = subdir.append(filename)
 				rp.touch()
 				assert rp.lstat()
@@ -198,57 +193,70 @@ rdiff-backup-data/chars_to_quote.
 		sanity_check()
 		if is_case_sensitive():
 			if supports_unusual_chars(): self.chars_to_quote = ""
-			else: self.chars_to_quote = "^A-Za-z0-9_ -"
+			else: self.chars_to_quote = "^A-Za-z0-9_ -."
 		else:
 			if supports_unusual_chars(): self.chars_to_quote = "A-Z;"
-			else: self.chars_to_quote = "^a-z0-9_ -"
+			else: self.chars_to_quote = "^a-z0-9_ -."
 
 	def set_acls(self, rp):
 		"""Set self.acls based on rp.  Does not write.  Needs to be local"""
-		assert Globals.local_connection is rp.conn
-		assert rp.lstat()
-		try: import posix1e
-		except ImportError:
-			log.Log("Warning: Unable to import module posix1e from pylibacl "
-					"package.\nACLs not supported on device %s" %
-					(rp.getdevloc(),), 2)
-			self.acls = 0
-			return
-
-		try: posix1e.ACL(file=rp.path)
-		except IOError, exc:
-			if exc[0] == errno.EOPNOTSUPP:
-				log.Log("Warning: ACLs appear not to be supported by "
-						"filesystem on device %s" % (rp.getdevloc(),), 2)
-				self.acls = 0
-			else: raise
-		else: self.acls = 1
+		self.acls = rp.conn.fs_abilities.test_acls_local(rp)
 		
 	def set_eas(self, rp, write):
-		"""Set extended attributes from rp.  Run locally.
+		"""Set extended attributes from rp. Tests writing if write is true."""
+		self.eas = rp.conn.fs_abilities.test_eas_local(rp, write)
 
-		Tests writing if write is true.
 
-		"""
-		assert Globals.local_connection is rp.conn
-		assert rp.lstat()
-		try: import xattr
-		except ImportError:
-			log.Log("Warning: Unable to import module xattr.  ACLs not "
-					"supported on device %s" % (rp.getdevloc(),), 2)
-			self.eas = 0
-			return
+def test_eas_local(rp, write):
+	"""Test ea support.  Must be called locally.  Usedy by set_eas above."""
+	assert Globals.local_connection is rp.conn
+	assert rp.lstat()
+	try: import xattr
+	except ImportError:
+		log.Log("Warning: Unable to import module xattr.  ACLs not "
+				"supported on filesystem at %s" % (rp.path,), 2)
+		return 0
 
-		try:
-			xattr.listxattr(rp.path)
-			if write:
-				xattr.setxattr(rp.path, "user.test", "test val")
-				assert xattr.getxattr(rp.path, "user.test") == "test val"
-		except IOError, exc:
-			if exc[0] == errno.EOPNOTSUPP:
-				log.Log("Warning: Extended attributes not supported by "
-						"filesystem on device %s" % (rp.getdevloc(),), 2)
-				self.eas = 0
-			else: raise
-		else: self.eas = 1
+	try:
+		xattr.listxattr(rp.path)
+		if write:
+			xattr.setxattr(rp.path, "user.test", "test val")
+			assert xattr.getxattr(rp.path, "user.test") == "test val"
+	except IOError, exc:
+		if exc[0] == errno.EOPNOTSUPP:
+			log.Log("Warning: Extended attributes not supported by "
+					"filesystem at %s" % (rp.path,), 2)
+			return 0
+		else: raise
+	else: return 1
+
+def test_acls_local(rp):
+	"""Test acl support.  Call locally.  Does not write."""
+	assert Globals.local_connection is rp.conn
+	assert rp.lstat()
+	try: import posix1e
+	except ImportError:
+		log.Log("Warning: Unable to import module posix1e from pylibacl "
+				"package.\nACLs not supported on filesystem at %s" %
+				(rp.path,), 2)
+		return 0
+
+	try: posix1e.ACL(file=rp.path)
+	except IOError, exc:
+		if exc[0] == errno.EOPNOTSUPP:
+			log.Log("Warning: ACLs appear not to be supported by "
+					"filesystem at %s" % (rp.path,), 2)
+			return 0
+		else: raise
+	else: return 1
+
+def test_fsync_local(rp):
+	"""Test fsyncing directories locally"""
+	assert rp.conn is Globals.local_connection
+	try: rp.fsync()
+	except (IOError, OSError), exc:
+		log.Log("Warning: Directories on file system at %s are not "
+				"fsyncable.\nAssuming it's unnecessary." % (rp.path,), 2)
+		return 0
+	else: return 1
 
