@@ -186,7 +186,7 @@ hs_decode(int oldread_fd,
     hs_map_t	   *old_map;
 
     _hs_trace("**** begin");
-    bzero(stats, sizeof *stats);
+    hs_bzero(stats, sizeof *stats);
     if (_hs_check_gd_header(ltread_fn, ltread_priv) < 0)
 	return -1;
 

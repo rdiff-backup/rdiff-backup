@@ -254,9 +254,9 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
      
      _hs_trace("**** begin");
 
-     bzero(stats, sizeof *stats);
-     bzero(&copyq, sizeof copyq);
-     bzero(&new_roll, sizeof new_roll);
+     hs_bzero(stats, sizeof *stats);
+     hs_bzero(&copyq, sizeof copyq);
+     hs_bzero(&new_roll, sizeof new_roll);
 
      hs_mdfour_begin(&filesum);
 

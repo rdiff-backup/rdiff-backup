@@ -17,7 +17,8 @@ libhsync_la_SOURCES = dec.c enc.c \
 	inbuf.c \
 	inhale.c trace.c \
 	hex.c stats.c mapptr.c fileutil.c \
-	gdproto.c readsums.c
+	gdproto.c readsums.c \
+	util.c util.h
 
 # compress.c compress.h 
 
@@ -27,7 +28,8 @@ libhsyncdecode_la_SOURCES = dec.c \
 	filebuf.c membuf.c ptrbuf.c \
 	inhale.c trace.c hex.c stats.c  \
 	mdfour.c fileutil.c mapptr.c \
-	readsums.c
+	readsums.c \
+	util.c util.h
 
 noinst_SCRIPTS = test-decode.sh test-encode.sh \
 	test-chain.sh test-cmds.sh \

@@ -100,7 +100,7 @@ hs_filebuf_close(hs_filebuf_t *fbuf)
 	  fbuf->fd_cache = -1;
      }
 
-     bzero(fbuf, sizeof *fbuf);
+     hs_bzero(fbuf, sizeof *fbuf);
      free(fbuf);
 }
 

@@ -128,7 +128,6 @@ void hs_ptrbuf_truncate(hs_ptrbuf_t * mb);
 size_t hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, char const **buf);
 hs_ptrbuf_t *hs_ptrbuf_on_buffer(char *buf, int len);
 
-
 /* ============================================================
 
    MD4 hash
@@ -142,12 +141,14 @@ typedef struct hs_mdfour {
 } hs_mdfour_t;
 
 void hs_mdfour(unsigned char *out, unsigned char const *in, int n);
-void hs_mdfour_begin(hs_mdfour_t * md);
+void hs_mdfour_begin(/*@out@*/ hs_mdfour_t * md);
 void hs_mdfour_update(hs_mdfour_t * md, unsigned char const *in, int n);
-void hs_mdfour_result(hs_mdfour_t * md, unsigned char *out);
+void hs_mdfour_result(hs_mdfour_t * md, /*@out@*/ unsigned char *out);
+
 
 void
 hs_hexify_buf(char *to_buf, unsigned char const *from_buf, int from_len);
 
 
 char *hs_format_stats(hs_stats_t const *stats);
+

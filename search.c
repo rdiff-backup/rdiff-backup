@@ -49,7 +49,7 @@ _hs_build_hash_table(hs_sum_set_t *sums)
 {
      int i;
 
-     sums->tag_table = calloc(TABLESIZE, sizeof(int));
+     sums->tag_table = calloc(TABLESIZE, sizeof sums->tag_table[0]);
      if (sums->count > 0) {
 	  sums->targets = calloc(sums->count, sizeof(struct target));
 

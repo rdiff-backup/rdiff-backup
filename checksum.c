@@ -87,9 +87,9 @@ _hs_calc_strong_sum(char const *buf, int len, char *sum)
 
    The signature stream contains pair of short (4-byte) weak checksums, and
    long (SUM_LENGTH) strong checksums. */
-hs_sum_set_t *
+/*@null@*/ hs_sum_set_t *
 _hs_read_sum_set(hs_read_fn_t sigread_fn, void *sigreadprivate,
-			 int block_len)
+		 int block_len)
 {
      struct sum_buf *asignature;
      int index = 0;
@@ -97,12 +97,13 @@ _hs_read_sum_set(hs_read_fn_t sigread_fn, void *sigreadprivate,
      int checksum1;
      hs_sum_set_t *sumbuf;
 
-     sumbuf = calloc(1, sizeof(hs_sum_set_t));
+     sumbuf = malloc(sizeof *sumbuf);
      if (!sumbuf) {
 	  errno = ENOMEM;
 	  _hs_error("no memory to allocate sum_struct");
 	  return NULL;
      }
+     hs_bzero(sumbuf, sizeof *sumbuf);
      sumbuf->block_len = block_len;
 
      sumbuf->sums = NULL;
@@ -117,7 +118,7 @@ _hs_read_sum_set(hs_read_fn_t sigread_fn, void *sigreadprivate,
 	       break;
 	  if (ret < 0) {
 	       _hs_error("IO error while reading in signatures");
-	       return NULL;	/* THIS LEAKS! */
+	       goto fail;
 	  }
 	  assert(ret == 4);
 	 
@@ -143,7 +144,7 @@ _hs_read_sum_set(hs_read_fn_t sigread_fn, void *sigreadprivate,
      }
      if (ret < 0) {
 	 _hs_error("error reading checksums");
-	 return NULL;
+	 goto fail;
      }
 
      sumbuf->count = index;
@@ -151,11 +152,15 @@ _hs_read_sum_set(hs_read_fn_t sigread_fn, void *sigreadprivate,
 
      if (_hs_build_hash_table(sumbuf) < 0) {
 	 _hs_error("error building checksum hashtable");
-	 return NULL;		/* XXX: THIS LEAKS (but is unreachable
-                                   at present) */
+	 goto fail;
      }
 
      return sumbuf;
+
+ fail:
+     if (sumbuf)
+	 free(sumbuf);
+     return NULL;	 
 }
 
 
@@ -171,6 +176,6 @@ _hs_free_sum_struct(hs_sum_set_t *psums)
     if (psums->targets)
 	free(psums->targets);
     
-    bzero(psums, sizeof *psums);
+    hs_bzero(psums, sizeof *psums);
     free(psums);
 }

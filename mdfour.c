@@ -141,7 +141,8 @@ static void hs_mdfour64(hs_mdfour_t * m, uint32 * M)
      m->D = D;
 }
 
-static void copy64(uint32 * M, unsigned char const *in)
+static void
+copy64(/*@out@*/ uint32 * M, unsigned char const *in)
 {
      int i;
 
@@ -150,7 +151,8 @@ static void copy64(uint32 * M, unsigned char const *in)
 	       (in[i * 4 + 1] << 8) | (in[i * 4 + 0] << 0);
 }
 
-static void copy4(unsigned char *out, uint32 x)
+static void
+copy4(/*@out@*/ unsigned char *out, uint32 const x)
 {
      out[0] = x & 0xFF;
      out[1] = (x >> 8) & 0xFF;
@@ -234,7 +236,8 @@ void hs_mdfour_update(hs_mdfour_t * md, unsigned char const *in, int n)
 }
 
 
-void hs_mdfour_result(hs_mdfour_t * md, unsigned char *out)
+void
+hs_mdfour_result(hs_mdfour_t * md, /*@out@*/ unsigned char *out)
 {
      hs_mdfour_tail(md, md->tail, md->tail_len);
 

@@ -48,7 +48,7 @@ hs_membuf_free(hs_membuf_t * mb)
     assert(mb->dogtag = membuf_tag);
     if (mb->buf)
 	free(mb->buf);
-    bzero(mb, sizeof *mb);
+    hs_bzero(mb, sizeof *mb);
     free(mb);
 }
 

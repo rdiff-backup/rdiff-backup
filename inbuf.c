@@ -60,7 +60,7 @@ _hs_free_inbuf(_hs_inbuf_t *inbuf)
     assert(inbuf->tag == _hs_inbuf_dogtag);
     if (inbuf->buf)
 	free(inbuf->buf);
-    bzero(inbuf, sizeof *inbuf);
+    hs_bzero(inbuf, sizeof *inbuf);
     free(inbuf);
 }
 
