@@ -1,0 +1,167 @@
+<h2>Examples</h2>
+
+<h3>Sections:</h3>
+
+<ul>
+<li><a href="#backup">Backing up</a></li>
+<li><a href="#restore">Restoring</a></li>
+<li><a href="#delete_older">Deleting older files</a></li>
+<li><a href="#exclude">File selection with include/exclude options</a></li>
+
+</ul>
+
+<a name="backup"><h3>Backing up</h3></a>
+<ul>
+
+<li><p>Simplest case---backup local directory <code>foo</code> to local
+directory <code>bar</code>.  <code>bar</code> will end up a copy of
+<code>foo</code>, except it will contain the directory
+foo/rdiff-backup-data, which will allow rdiff-backup to restore
+previous states.</p>
+
+<blockquote><code>rdiff-backup foo bar</code></blockquote>
+</li>
+
+<li> <p>Simple remote case---backup directory <code>/some/local-dir</code>
+to the directory <code>/whatever/remote-dir</code> on the machine
+hostname.net.  It uses ssh to open the necessary pipe to the remote
+copy of rdiff-backup.  Just like the above except one directory is on
+a remove computer.</p>
+
+<blockquote><code>rdiff-backup /some/local-dir hostname.net::/whatever/remote-dir</code></blockquote>
+</li>
+
+<li> <p>This time the source directory is remote and the destination
+is local.  Also, we have specified the username on the remote host (by
+default ssh will attempt to log you in with the same username you have
+on the local host).</p>
+
+<blockquote><code>rdiff-backup user@hostname.net::/remote-dir local-dir</code></blockquote>
+</li>
+
+<li> <p>It is even possible for both the source and destination
+directories to be on other machines.  Below we have also added the
+<code>-v5</code> switch for greater verbosity (verbosity settings go from
+0 to 9, with 3 as the default).</p>
+
+<blockquote><code>rdiff-backup -v5 user1@host1::/source-dir user2@host2::/dest-dir</code></blockquote> </li>
+
+</ul>
+
+
+<a name="restore"><h3>Restoring</h3></a>
+<ul>
+
+<li><p>Suppose earlier we have run <code>rdiff-backup foo bar</code>,
+with both foo and bar local.  We accidentally deleted
+<code>foo/dir</code> and now want to restore it from <code>bar/dir</code>.
+
+<blockquote><code>cp -a bar/dir foo/dir</code></blockquote>
+
+That's right, since rdiff-backup makes a mirror, we can retrieve files
+using standard commands like <code>cp</code>.</p>
+</li>
+
+<li><p>For the rest of the examples in the section, we will assume
+that the user has backed up with the command <code>rdiff-backup
+local-dir host.net::/remote-dir</code>.  Of course, in all these
+examples it would be equally possible to have the source being remote
+and the backup directory local.</p>
+
+<p>In this case we can't use <code>cp</code> to copying
+<code>host.net::remote-dir/file</code> to <code>local-dir/file</code>
+because they are on different machines.  We can get rdiff-backup to
+restore the current version of that file like this:
+
+<blockquote><code>rdiff-backup -r now host.net::/remote-dir/file local-dir/file</code></blockquote>
+
+The <code>-r</code> switch tells rdiff-backup to restore instead of
+back up, and the <code>now</code> option indicates the current time.</p>
+</li>
+
+<li><p>But the main advantage of rdiff-backup is that it keeps version
+history.  This command restores
+<code>host.net::/remote-dir/file</code> as it was 10 days ago into a
+new location <code>/tmp/file</code>.
+
+<blockquote><code>rdiff-backup -r 10D host.net::/remote-dir/file /tmp/file</code></blockquote>
+
+Other acceptable time strings include <code>5m4s</code> (5 minutes and
+4 seconds) and <code>2002-03-05</code> (March 5th, 2002).  For more
+information, see the TIME FORMATS section of the manual page.</p> </li>
+
+<li> <p>Finally, we can use rdiff-backup to restore directory from an
+increment file.  Increment files are stored in
+<code>host.net::/remote-dir/rdiff-backup-data/increments</code> and
+hold the previous versions of changed files.  If you specify one
+directly:
+
+<blockquote><code>
+
+, rdiff-backup will tell from the filename that it is an
+rdiff-backup file and not 
+
+Foo</p></li>
+
+</ul>
+
+
+
+<p><em></em></p></li>
+
+<li>
+<P>Back files up from /home/bob to /mnt/backup, leaving increments in
+/mnt/backup/rdiff-backup-data.  Do not back up directory /home/bob/tmp or
+any files in it.</P>
+
+<p><em>rdiff-backup --exclude /home/bob/tmp /home/bob /mnt/backup</em></p></li>
+
+<li>
+<p>The file selection options can be combined in various ways.  The following
+command backs up the whole file system to /usr/local/backup. However, the
+entire /usr directory is skipped, with the exception of /usr/local, which
+is included, except for /usr/local/backup, which is excluded to prevent
+a circularity:</P>
+
+<p><em>rdiff-backup --exclude /usr/local/backup --include /usr/local
+--exclude /usr / /usr/local/backup</em></p></li>
+
+<li>
+<P>Suppose /mnt/backup is an rdiff-backup destination directory, and
+space is running out there.  The following command erases backup
+information older than a week: <P>
+
+<p><em>rdiff-backup --remove-older-than 7D /mnt/backup</em></p></li>
+
+<li>
+<P>
+The following reads the file important-data.2001-07-15T04:09:38-07:00.dir and
+restores the resulting directory important-data as it was on Februrary 14,
+2001, calling the new directory "temp".  Note that rdiff-backup goes into
+restore mode because it recognizes the suffix of the file.  The -v9 means
+keep lots of logging information. <P>
+
+<P><em>rdiff-backup -v9 important-data.2001-07-15T04:09:38-07:00.dir
+temp</em></p></li>
+
+<li>
+<p>Suppose you backed up to the directory /backup on the host
+remote.host.net, where your username is user.  The following command
+restores all of that data as it was 3 days ago to the directory
+output.</p>
+
+<p><em>rdiff-backup -r 3D user@remote.host.net::/backup output</em></p></li>
+
+<li>
+<P>Backup foo on one remote machine to bar on another.  This will
+probably be slower than running rdiff-backup from either machine. <P>
+
+<P><em>rdiff-backup smith@host1::foo jones@host2::bar</em></p>
+
+<li>
+<p> Test to see if the specified ssh command really opens up a working
+rdiff-backup server on the remote side.</P>
+
+
+<p><em>rdiff-backup --test-server hostname.net::/ignored</em></p></li>
+</ul>
