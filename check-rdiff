@@ -2,8 +2,16 @@
 # Creates a pair of semi-random files and check if rdiff
 # correctlys updates the first to the second.
 
-$size=5*1024*1024*1024;
-$runlen=2000;
+# script is "./g"
+
+$size = 5 << 30;
+$blocklen = 6000;
+
+use Getopt::Long;
+GetOptions("size=i" => \$size,
+           "blocklen=i" => \$blocklen);
+
+$runlen = $blocklen / 3;
 
 sub makefile { # Make a moderately random $size-byte file
     ($fname,$size)=@_;
@@ -26,9 +34,9 @@ sub run {
 srand(0);
 makefile('old',$size);
 makefile('new',$size);
-run("rdiff signature -b 6000 old old.sig");
-run("rdiff delta -s old.sig new delta");
-run("rdiff patch -s old delta new2");
+run("time rdiff signature -b $blocklen old old.sig");
+run("time rdiff delta -s old.sig new delta");
+run("time rdiff patch -s old delta new2");
 print "Comparing MD5 hashes...\n";
 $sum1 = `md5sum < new`; die 'Failed 1' unless $?==0; print $sum1;
 $sum2 = `md5sum < new2`; die 'Failed 2' unless $?==0; print $sum2;
