@@ -9,4 +9,23 @@ For more information:
 
   http://linuxcare.com.au/rproxy/
 
+>> Requirements
+
+To build libhsync:
+
+  * cc 
+  * Make
+  * libc-dev
+  * zlib-dev
+
+To run the regression suite (strongly recommended):
+
+  * Python 1.5
+
+To build from CVS, or to develop the library:
+
+  * automake
+  * autoconf
+  * libtool
+
 $Id$
