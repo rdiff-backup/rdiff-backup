@@ -35,7 +35,7 @@ open(TABLE, ">$ARGV[0]") or die "Can't open table $ARGV[0]: $!";
 open(HEADER, ">$ARGV[1]") or die "Can't open header $ARGV[1]: $!";
 
 
-our $cmd_byte = 0;
+my $cmd_byte = 0;
 
 
 sub emit_cmd {
