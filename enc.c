@@ -157,7 +157,7 @@ _hs_output_block_hash(rs_write_fn_t write_fn, void *write_priv,
 {
      char strong_sum[SUM_LENGTH];
 
-     _hs_trace("called, abspos=%d", inbuf->abspos + inbuf->cursor);
+//     _hs_trace("called, abspos=%d", inbuf->abspos + inbuf->cursor);
 
      _hs_write_netint(write_fn, write_priv, rollsum->weak_sum);
      _hs_calc_strong_sum(inbuf->buf + inbuf->cursor, new_block_len,
@@ -345,8 +345,11 @@ hs_encode(rs_read_fn_t read_fn, void *readprivate,
 		       command.  This is just an optimization.  */
 
 		    /* Write the token */
-		    _hs_queue_copy(&copyq,(token-1) * block_len, shortened_block_len);
-		 
+		    ret = _hs_queue_copy(write_fn, write_priv,
+					 &copyq, (token-1) * block_len,
+					 shortened_block_len, stats);
+		    if (ret < 0)
+			 goto out;
 		    inbuf->cursor += shortened_block_len;
 		    rollsum->havesum = 0;
 	       } else {
