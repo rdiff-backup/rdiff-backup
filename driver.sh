@@ -162,7 +162,12 @@ triple_test () {
 # more than this many on any one test gets boring
 ntests=300
 countdown () {
-    ntests=`expr $ntests - 1` || exit 0
+    if ntests=`expr $ntests - 1`
+    then
+        :
+    else
+        exit 0
+    fi
 }
 
 make_input () {
