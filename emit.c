@@ -114,18 +114,19 @@ _hs_emit_copy(rs_write_fn_t write_fn, void *write_priv,
     stats->copy_cmds++;
     stats->copy_bytes += length;
 
-    _hs_trace("Writing COPY(%d, %d)", offset, length);
+    _hs_trace("Writing COPY(off=%d, len=%d)", offset, length);
     len_type = _hs_int_len(length);
     off_type = _hs_int_len(offset);
 
     /* Make sure this formula lines up with the values in hsyncproto.h */
 
-    if (off_type == 2) {
+    if (off_type == 2 || off_type == 1) {
 	cmd = op_copy_short_byte;
     } else if (off_type == 4) {
 	cmd = op_copy_int_byte;
     } else {
-	assert(0 && "offset length unimplemented");
+	 fprintf(stderr, "can't pack offset %d!\n", offset);
+	 abort();
     }
 
     if (len_type == 1) {
