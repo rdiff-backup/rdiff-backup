@@ -1036,6 +1036,7 @@ class RPath(RORPath):
 		fp = self.conn.open(os.path.join(self.path, 'rsrc'), 'wb')
 		fp.write(rfork_data)
 		assert not fp.close()
+		self.set_resource_fork(rfork_data)
 
 
 class RPathFileHook:

@@ -27,7 +27,7 @@ FSAbilities object describing it.
 
 """
 
-import errno
+import errno, os
 import Globals, log, TempFile, selection
 
 class FSAbilities:
@@ -284,18 +284,17 @@ rdiff-backup-data/chars_to_quote.
 		"""Test for resource forks by writing to regular_file/rsrc"""
 		reg_rp = dir_rp.append('regfile')
 		reg_rp.touch()
-		rfork = reg_rp.append('rsrc')
-		assert not rfork.lstat()
 
 		s = 'test string---this should end up in resource fork'
 		try:
-			fp_write = rfork.open('wb')
+			fp_write = reg_rp.conn.open(os.path.join(reg_rp.path, 'rsrc'),
+										'wb')
 			fp_write.write(s)
 			assert not fp_write.close()
 
-			fp_read = rfork.open('rb')
+			fp_read = reg_rp.conn.open(os.path.join(reg_rp.path, 'rsrc'), 'rb')
 			s_back = fp_read.read()
-			assert not fp.read.close()
+			assert not fp_read.close()
 		except (OSError, IOError), e: self.resource_forks = 0
 		else: self.resource_forks = (s_back == s)
 		reg_rp.delete()
