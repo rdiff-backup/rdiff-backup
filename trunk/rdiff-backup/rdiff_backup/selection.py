@@ -26,9 +26,8 @@ documentation on what this code does can be found on the man page.
 
 from __future__ import generators
 import re
-from log import *
-from robust import *
-import FilenameMapping
+from log import Log
+import FilenameMapping, robust, rpath, Globals
 
 
 class SelectError(Exception):
@@ -81,7 +80,7 @@ class Select:
 	# This re should not match normal filenames, but usually just globs
 	glob_re = re.compile("(.*[*?[]|ignorecase\\:)", re.I | re.S)
 
-	def __init__(self, rpath, quoted_filenames = None):
+	def __init__(self, rootrp, quoted_filenames = None):
 		"""Select initializer.  rpath is the root directory
 
 		When files have quoted characters in them, quoted_filenames
@@ -89,9 +88,9 @@ class Select:
 		version.
 
 		"""
-		assert isinstance(rpath, RPath)
+		assert isinstance(rootrp, rpath.RPath)
 		self.selection_functions = []
-		self.rpath = rpath
+		self.rpath = rootrp
 		self.prefix = self.rpath.path
 		self.quoting_on = Globals.quoting_enabled and quoted_filenames
 
@@ -141,8 +140,8 @@ class Select:
 			and should be included iff something inside is included.
 
 			"""
-			for filename in Robust.listrp(rpath):
-				new_rpath = Robust.check_common_error(error_handler,
+			for filename in robust.listrp(rpath):
+				new_rpath = robust.check_common_error(error_handler,
 										rpath.append, (filename,))
 				if new_rpath:
 					s = sel_func(new_rpath)
@@ -204,12 +203,12 @@ class Select:
 			return None
 
 		if self.quoting_on:
-			for subdir in FilenameMapping.get_quoted_dir_children(rpath):
+			for subdir in get_quoted_dir_children(rpath):
 				for rp in rec_func(subdir, rec_func, sel_func):
 					yield rp
 		else:
-			for filename in Robust.listrp(rpath):
-				new_rp = Robust.check_common_error(
+			for filename in robust.listrp(rpath):
+				new_rp = robust.check_common_error(
 					error_handler, rpath.append, [filename])
 				if new_rp:
 					for rp in rec_func(new_rp, rec_func, sel_func):
@@ -644,5 +643,24 @@ probably isn't what you meant.""" %
 					res = res + '[' + stuff + ']'
 			else: res = res + re.escape(c)
 		return res
+
+
+def get_quoted_dir_children(rpath):
+	"""For rpath directory, return list of quoted children in dir
+
+	This used to be in FilenameMapping, but was moved because it
+	depends on the robust.listrp routine.
+
+	"""
+	if not rpath.isdir(): return []
+	dir_pairs = [(FilenameMapping.unquote(filename), filename)
+				 for filename in robust.listrp(rpath)]
+	dir_pairs.sort() # sort by real index, not quoted part
+	child_list = []
+	for unquoted, filename in dir_pairs:
+		childrp = rpath.append(unquoted)
+		childrp.quote_path()
+		child_list.append(childrp)
+	return child_list
 
 

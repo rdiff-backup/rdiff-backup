@@ -20,7 +20,7 @@
 """Convert an iterator to a file object and vice-versa"""
 
 import cPickle, array
-import Globals, C
+import Globals, C, robust, log
 
 
 class IterFileException(Exception): pass
@@ -200,7 +200,7 @@ class FileWrappingIter:
 	def addfromfile(self):
 		"""Read a chunk from the current file and return it"""
 		# Check file read for errors, buf = "" if find one
-		buf = Robust.check_common_error(self.read_error_handler,
+		buf = robust.check_common_error(self.read_error_handler,
 										self.currently_in_file.read,
 										[Globals.blocksize])
 		if not buf:
@@ -210,7 +210,7 @@ class FileWrappingIter:
 
 	def read_error_handler(self, exc, blocksize):
 		"""Log error when reading from file"""
-		Log("Error '%s' reading from fileobj, truncating" % (str(exc),), 2)
+		log.Log("Error '%s' reading from fileobj, truncating" % (str(exc),), 2)
 		return ""
 
 	def _l2s_old(self, l):
@@ -253,5 +253,4 @@ class BufferedRead:
 
 	def close(self): return self.file.close()
 
-from log import *
-from robust import *
+

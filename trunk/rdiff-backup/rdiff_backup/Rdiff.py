@@ -25,9 +25,9 @@ RobustAction and the like.
 """
 
 import os, librsync
+from log import Log
+import robust, TempFile, Globals
 
-
-class RdiffException(Exception): pass
 
 def get_signature(rp):
 	"""Take signature of rpin file and return in file object"""
@@ -52,9 +52,9 @@ def write_delta_action(basis, new, delta, compress = None):
 	before written to delta.
 
 	"""
-	delta_tf = TempFileManager.new(delta)
+	delta_tf = TempFile.new(delta)
 	def init(): write_delta(basis, new, delta_tf, compress)
-	return Robust.make_tf_robustaction(init, delta_tf, delta)
+	return robust.make_tf_robustaction(init, delta_tf, delta)
 
 def write_delta(basis, new, delta, compress = None):
 	"""Write rdiff delta which brings basis to new"""
@@ -74,12 +74,12 @@ def patch_action(rp_basis, rp_delta, rp_out = None, out_tf = None,
 
 	"""
 	if not rp_out: rp_out = rp_basis
-	if not out_tf: out_tf = TempFileManager.new(rp_out)
+	if not out_tf: out_tf = TempFile.new(rp_out)
 	def init():
 		rp_basis.conn.Rdiff.patch_local(rp_basis, rp_delta,
 										out_tf, delta_compressed)
 		out_tf.setdata()
-	return Robust.make_tf_robustaction(init, out_tf, rp_out)
+	return robust.make_tf_robustaction(init, out_tf, rp_out)
 
 def patch_local(rp_basis, rp_delta, outrp, delta_compressed = None):
 	"""Patch routine that must be run on rp_basis.conn
@@ -99,20 +99,20 @@ def patch_local(rp_basis, rp_delta, outrp, delta_compressed = None):
 def patch_with_attribs_action(rp_basis, rp_delta, rp_out = None):
 	"""Like patch_action, but also transfers attributs from rp_delta"""
 	if not rp_out: rp_out = rp_basis
-	tf = TempFileManager.new(rp_out)
-	return Robust.chain_nested(patch_action(rp_basis, rp_delta, rp_out, tf),
-							   Robust.copy_attribs_action(rp_delta, tf))
+	tf = TempFile.new(rp_out)
+	return robust.chain_nested(patch_action(rp_basis, rp_delta, rp_out, tf),
+							   robust.copy_attribs_action(rp_delta, tf))
 
 def copy_action(rpin, rpout):
 	"""Use rdiff to copy rpin to rpout, conserving bandwidth"""
 	if not rpin.isreg() or not rpout.isreg() or rpin.conn is rpout.conn:
 		# rdiff not applicable, fallback to regular copying
-		return Robust.copy_action(rpin, rpout)
+		return robust.copy_action(rpin, rpout)
 
 	Log("Rdiff copying %s to %s" % (rpin.path, rpout.path), 6)		
-	out_tf = TempFileManager.new(rpout)
+	out_tf = TempFile.new(rpout)
 	def init(): rpout.conn.Rdiff.copy_local(rpin, rpout, out_tf)
-	return Robust.make_tf_robustaction(init, out_tf, rpout)
+	return robust.make_tf_robustaction(init, out_tf, rpout)
 
 def copy_local(rpin, rpout, rpnew):
 	"""Write rpnew == rpin using rpout as basis.  rpout and rpnew local"""
@@ -122,6 +122,4 @@ def copy_local(rpin, rpout, rpnew):
 	rpnew.write_from_fileobj(librsync.PatchedFile(rpout.open("rb"), deltafile))
 	
 
-from log import *
-from robust import *
 

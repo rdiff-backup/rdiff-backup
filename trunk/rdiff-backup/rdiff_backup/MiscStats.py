@@ -19,8 +19,8 @@
 
 """Misc statistics methods, pertaining to dir and session stat files"""
 
-from statistics import *
-
+import time
+import Globals, Hardlink, increment, log, statistics, Time
 
 # This is the RPath of the directory statistics file, and the
 # associated open file.  It will hold a line of statistics for
@@ -34,7 +34,7 @@ _dir_stats_header = """# rdiff-backup directory statistics file
 #
 # Each line is in the following format:
 # RelativeDirName %s
-""" % " ".join(StatsObj.stat_file_attrs)
+""" % " ".join(statistics.StatsObj.stat_file_attrs)
 
 def open_dir_stats_file():
 	"""Open directory statistics file, write header"""
@@ -43,12 +43,12 @@ def open_dir_stats_file():
 
 	if Globals.compression: suffix = "data.gz"
 	else: suffix = "data"
-	_dir_stats_rp = Inc.get_inc(Globals.rbdir.append("directory_statistics"),
-								Time.curtime, suffix)
+	_dir_stats_rp = increment.get_inc(
+		Globals.rbdir.append("directory_statistics"), Time.curtime, suffix)
 
 	if _dir_stats_rp.lstat():
-		Log("Warning, statistics file %s already exists, appending" %
-			_dir_stats_rp.path, 2)
+		log.Log("Warning, statistics file %s already exists, appending" %
+				_dir_stats_rp.path, 2)
 		_dir_stats_fp = _dir_stats_rp.open("ab", Globals.compression)
 	else: _dir_stats_fp = _dir_stats_rp.open("wb", Globals.compression)
 	_dir_stats_fp.write(_dir_stats_header)
@@ -68,8 +68,8 @@ def close_dir_stats_file():
 
 def write_session_statistics(statobj):
 	"""Write session statistics into file, log"""
-	stat_inc = Inc.get_inc(Globals.rbdir.append("session_statistics"),
-						   Time.curtime, "data")
+	stat_inc = increment.get_inc(
+		Globals.rbdir.append("session_statistics"), Time.curtime, "data")
 	statobj.StartTime = Time.curtime
 	statobj.EndTime = time.time()
 
@@ -85,9 +85,8 @@ def write_session_statistics(statobj):
 	statobj.write_stats_to_rp(stat_inc)
 	if Globals.print_statistics:
 		message = statobj.get_stats_logstring("Session statistics")
-		Log.log_to_file(message)
+		log.Log.log_to_file(message)
 		Globals.client_conn.sys.stdout.write(message)
 
 
-from increment import *
-import Hardlink
+

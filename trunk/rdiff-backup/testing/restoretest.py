@@ -1,8 +1,6 @@
 import unittest
 from commontest import *
-from rdiff_backup.log import *
-from rdiff_backup.restore import *
-from rdiff_backup import Globals
+from rdiff_backup import log, restore, Globals, rpath
 
 Log.setverbosity(3)
 
@@ -23,26 +21,26 @@ class RestoreTest(unittest.TestCase):
 		dirlist =  os.listdir(self.prefix)
 		dirlist.sort()
 		baselist = filter(lambda f: f.startswith(basename), dirlist)
-		rps = map(lambda f: RPath(lc, self.prefix+f), baselist)
+		rps = map(lambda f: rpath.RPath(lc, self.prefix+f), baselist)
 		incs = filter(lambda rp: rp.isincfile(), rps)
-		tuples = map(lambda rp: (rp, RPath(lc, "%s.%s" %
-										   (rp.getincbase().path,
-											rp.getinctime()))),
+		tuples = map(lambda rp: (rp, rpath.RPath(lc, "%s.%s" %
+												 (rp.getincbase().path,
+												  rp.getinctime()))),
 					 incs)
 		return tuples, incs
 
 	def restoreonefiletest(self, basename):
 		tuples, incs = self.maketesttuples(basename)
-		rpbase = RPath(lc, self.prefix + basename)
-		rptarget = RPath(lc, "testfiles/outfile")
+		rpbase = rpath.RPath(lc, self.prefix + basename)
+		rptarget = rpath.RPath(lc, "testfiles/outfile")
 
 		for pair in tuples:
 			print "Processing file " + pair[0].path
 			if rptarget.lstat(): rptarget.delete()
 			rest_time = Time.stringtotime(pair[0].getinctime())
-			rid = RestoreIncrementData((), rpbase, incs)
+			rid = restore.RestoreIncrementData((), rpbase, incs)
 			rid.sortincseq(rest_time, 10000000000) # pick some really late time
-			rcd = RestoreCombinedData(rid, rpbase, rptarget)
+			rcd = restore.RestoreCombinedData(rid, rpbase, rptarget)
 			rcd.RestoreFile()
 			#sorted_incs = Restore.sortincseq(rest_time, incs)
 			#Restore.RestoreFile(rest_time, rpbase, (), sorted_incs, rptarget)
@@ -50,9 +48,9 @@ class RestoreTest(unittest.TestCase):
 			if not rptarget.lstat(): assert not pair[1].lstat()
 			elif not pair[1].lstat(): assert not rptarget.lstat()
 			else:
-				assert RPath.cmp(rptarget, pair[1]), \
+				assert rpath.cmp(rptarget, pair[1]), \
 					   "%s %s" % (rptarget.path, pair[1].path)
-				assert RPath.cmp_attribs(rptarget, pair[1]), \
+				assert rpath.cmp_attribs(rptarget, pair[1]), \
 					   "%s %s" % (rptarget.path, pair[1].path)
 				rptarget.delete()
 
@@ -75,7 +73,7 @@ class RestoreTest(unittest.TestCase):
 			for inc, incbase in tuples:
 				assert inc.isincfile()
 				inctime = Time.stringtotime(inc.getinctime())
-				rid1 = RestoreIncrementData(basename, incbase, incs)
+				rid1 = restore.RestoreIncrementData(basename, incbase, incs)
 				rid1.sortincseq(inctime, mirror_time)
 				assert rid1.inc_list, rid1.inc_list
 				# oldest increment should be exactly inctime
@@ -97,8 +95,8 @@ class RestoreTest(unittest.TestCase):
 		InternalRestore(1, 1, "testfiles/restoretest3",
 						"testfiles/output", 20000)
 
-		src_rp = RPath(Globals.local_connection, "testfiles/increment2")
-		restore_rp = RPath(Globals.local_connection, "testfiles/output")
+		src_rp = rpath.RPath(Globals.local_connection, "testfiles/increment2")
+		restore_rp = rpath.RPath(Globals.local_connection, "testfiles/output")
 		assert CompareRecursive(src_rp, restore_rp)
 
 	def testRestoreCorrupt(self):

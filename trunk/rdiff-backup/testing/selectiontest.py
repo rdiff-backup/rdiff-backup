@@ -1,18 +1,17 @@
 from __future__ import generators
-import re, StringIO, unittest
+import re, StringIO, unittest, types
 from commontest import *
 from rdiff_backup.selection import *
-from rdiff_backup.destructive_stepping import *
-from rdiff_backup import Globals
+from rdiff_backup import Globals, rpath, lazy
 
 
 class MatchingTest(unittest.TestCase):
 	"""Test matching of file names against various selection functions"""
-	def makedsrp(self, path): return DSRPath(1, Globals.local_connection, path)
+	def makerp(self, path): return rpath.RPath(Globals.local_connection, path)
 	def makeext(self, path): return self.root.new_index(tuple(path.split("/")))
 
 	def setUp(self):
-		self.root = DSRPath(1, Globals.local_connection, "testfiles/select")
+		self.root = rpath.RPath(Globals.local_connection, "testfiles/select")
 		self.Select = Select(self.root)
 
 	def testRegexp(self):
@@ -23,9 +22,9 @@ class MatchingTest(unittest.TestCase):
 		assert sf1(self.root.append("1.doc")) == None
 
 		sf2 = self.Select.regexp_get_sf("hello", 0)
-		assert sf2(self.makedsrp("hello")) == 0
-		assert sf2(self.makedsrp("foohello_there")) == 0
-		assert sf2(self.makedsrp("foo")) == None
+		assert sf2(self.makerp("hello")) == 0
+		assert sf2(self.makerp("foohello_there")) == 0
+		assert sf2(self.makerp("foo")) == None
 
 	def testTupleInclude(self):
 		"""Test include selection function made from a regular filename"""
@@ -242,7 +241,7 @@ testfiles/select/1/1
 
 	def testRoot(self):
 		"""testRoot - / may be a counterexample to several of these.."""
-		root = DSRPath(1, Globals.local_connection, "/")
+		root = rpath.RPath(Globals.local_connection, "/")
 		select = Select(root)
 
 		assert select.glob_get_sf("/", 1)(root) == 1
@@ -267,7 +266,7 @@ testfiles/select/1/1
 
 	def testOtherFilesystems(self):
 		"""Test to see if --exclude-other-filesystems works correctly"""
-		root = DSRPath(1, Globals.local_connection, "/")
+		root = rpath.RPath(Globals.local_connection, "/")
 		select = Select(root)
 		sf = select.other_filesystems_get_sf(0)
 		assert sf(root) is None
@@ -284,13 +283,13 @@ class ParseArgsTest(unittest.TestCase):
 	def ParseTest(self, tuplelist, indicies, filelists = []):
 		"""No error if running select on tuple goes over indicies"""
 		if not self.root:
-			self.root = DSRPath(1, Globals.local_connection,
-								"testfiles/select")
+			self.root = RPath(Globals.local_connection, "testfiles/select")
 		self.Select = Select(self.root)
 		self.Select.ParseArgs(tuplelist, self.remake_filelists(filelists))
 		self.Select.set_iter()
-		assert Iter.equal(Iter.map(lambda dsrp: dsrp.index, self.Select),
-						  iter(indicies), verbose = 1)
+		assert lazy.Iter.equal(lazy.Iter.map(lambda dsrp: dsrp.index,
+											 self.Select),
+							   iter(indicies), verbose = 1)
 
 	def remake_filelists(self, filelist):
 		"""Turn strings in filelist into fileobjs"""
@@ -408,12 +407,11 @@ testfiles/select**/2
 
 	def testAlternateRoot(self):
 		"""Test select with different root"""
-		self.root = DSRPath(1, Globals.local_connection,
-							"testfiles/select/1")
+		self.root = rpath.RPath(Globals.local_connection, "testfiles/select/1")
 		self.ParseTest([("--exclude", "testfiles/select/1/[23]")],
 					   [(), ('1',), ('1', '1'), ('1', '2'), ('1', '3')])
 
-		self.root = DSRPath(1, Globals.local_connection, "/")
+		self.root = rpath.RPath(Globals.local_connection, "/")
 		self.ParseTest([("--exclude", "/home/*"),
 						("--include", "/home"),
 						("--exclude", "/")],
@@ -421,12 +419,13 @@ testfiles/select**/2
 
 	def testParseStartingFrom(self):
 		"""Test parse, this time starting from inside"""
-		self.root = DSRPath(1, Globals.local_connection, "testfiles/select")
+		self.root = rpath.RPath(Globals.local_connection, "testfiles/select")
 		self.Select = Select(self.root)
 		self.Select.ParseArgs([("--include", "testfiles/select/1/1"),
 							   ("--exclude", "**")], [])
 		self.Select.set_iter(('1', '1'))
-		assert Iter.equal(Iter.map(lambda dsrp: dsrp.index, self.Select),
+		assert lazy.Iter.equal(lazy.Iter.map(lambda dsrp: dsrp.index,
+											 self.Select),
 						  iter([("1", '1', '1'),
 								('1', '1', '2'),
 								('1', '1', '3')]),

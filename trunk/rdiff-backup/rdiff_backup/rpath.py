@@ -35,217 +35,215 @@ are dealing with are local or remote.
 
 """
 
-import os, stat, re, sys, shutil, gzip, socket
-from static import *
+import os, stat, re, sys, shutil, gzip, socket, time, shutil
+import Globals, FilenameMapping, Time, static, log
 
+
+class SkipFileException(Exception):
+	"""Signal that the current file should be skipped but then continue
+
+	This exception will often be raised when there is problem reading
+	an individual file, but it makes sense for the rest of the backup
+	to keep going.
+
+	"""
+	pass
 
 class RPathException(Exception): pass
 
-class RPathStatic:
-	"""Contains static methods for use with RPaths"""
-	def copyfileobj(inputfp, outputfp):
-		"""Copies file inputfp to outputfp in blocksize intervals"""
-		blocksize = Globals.blocksize
-		while 1:
-			inbuf = inputfp.read(blocksize)
-			if not inbuf: break
-			outputfp.write(inbuf)
+def copyfileobj(inputfp, outputfp):
+	"""Copies file inputfp to outputfp in blocksize intervals"""
+	blocksize = Globals.blocksize
+	while 1:
+		inbuf = inputfp.read(blocksize)
+		if not inbuf: break
+		outputfp.write(inbuf)
 
-	def cmpfileobj(fp1, fp2):
-		"""True if file objects fp1 and fp2 contain same data"""
-		blocksize = Globals.blocksize
-		while 1:
-			buf1 = fp1.read(blocksize)
-			buf2 = fp2.read(blocksize)
-			if buf1 != buf2: return None
-			elif not buf1: return 1
+def cmpfileobj(fp1, fp2):
+	"""True if file objects fp1 and fp2 contain same data"""
+	blocksize = Globals.blocksize
+	while 1:
+		buf1 = fp1.read(blocksize)
+		buf2 = fp2.read(blocksize)
+		if buf1 != buf2: return None
+		elif not buf1: return 1
 
-	def check_for_files(*rps):
-		"""Make sure that all the rps exist, raise error if not"""
-		for rp in rps:
-			if not rp.lstat():
-				raise RPathException("File %s does not exist" % rp.path)
+def check_for_files(*rps):
+	"""Make sure that all the rps exist, raise error if not"""
+	for rp in rps:
+		if not rp.lstat():
+			raise RPathException("File %s does not exist" % rp.path)
 
-	def move(rpin, rpout):
-		"""Move rpin to rpout, renaming if possible"""
-		try: RPath.rename(rpin, rpout)
-		except os.error:
-			RPath.copy(rpin, rpout)
-			rpin.delete()
+def move(rpin, rpout):
+	"""Move rpin to rpout, renaming if possible"""
+	try: rename(rpin, rpout)
+	except os.error:
+		copy(rpin, rpout)
+		rpin.delete()
 
-	def copy(rpin, rpout):
-		"""Copy RPath rpin to rpout.  Works for symlinks, dirs, etc."""
-		Log("Regular copying %s to %s" % (rpin.index, rpout.path), 6)
-		if not rpin.lstat():
-			raise RPathException, ("File %s does not exist" % rpin.index)
+def copy(rpin, rpout):
+	"""Copy RPath rpin to rpout.  Works for symlinks, dirs, etc."""
+	log.Log("Regular copying %s to %s" % (rpin.index, rpout.path), 6)
+	if not rpin.lstat():
+		raise RPathException, ("File %s does not exist" % rpin.index)
 
-		if rpout.lstat():
-			if rpin.isreg() or not RPath.cmp(rpin, rpout):
-				rpout.delete()   # easier to write that compare
-			else: return
-			
-		if rpin.isreg(): RPath.copy_reg_file(rpin, rpout)
-		elif rpin.isdir(): rpout.mkdir()
-		elif rpin.issym(): rpout.symlink(rpin.readlink())
-		elif rpin.ischardev():
-			major, minor = rpin.getdevnums()
-			rpout.makedev("c", major, minor)
-		elif rpin.isblkdev():
-			major, minor = rpin.getdevnums()
-			rpout.makedev("b", major, minor)
-		elif rpin.isfifo(): rpout.mkfifo()
-		elif rpin.issock(): rpout.mksock()
-		else: raise RPathException("File %s has unknown type" % rpin.path)
+	if rpout.lstat():
+		if rpin.isreg() or not cmp(rpin, rpout):
+			rpout.delete()   # easier to write that compare
+		else: return
 
-	def copy_reg_file(rpin, rpout):
-		"""Copy regular file rpin to rpout, possibly avoiding connection"""
-		try:
-			if rpout.conn is rpin.conn:
-				rpout.conn.shutil.copyfile(rpin.path, rpout.path)
-				rpout.setdata()
-				return
-		except AttributeError: pass
-		rpout.write_from_fileobj(rpin.open("rb"))
+	if rpin.isreg(): copy_reg_file(rpin, rpout)
+	elif rpin.isdir(): rpout.mkdir()
+	elif rpin.issym(): rpout.symlink(rpin.readlink())
+	elif rpin.ischardev():
+		major, minor = rpin.getdevnums()
+		rpout.makedev("c", major, minor)
+	elif rpin.isblkdev():
+		major, minor = rpin.getdevnums()
+		rpout.makedev("b", major, minor)
+	elif rpin.isfifo(): rpout.mkfifo()
+	elif rpin.issock(): rpout.mksock()
+	else: raise RPathException("File %s has unknown type" % rpin.path)
 
-	def cmp(rpin, rpout):
-		"""True if rpin has the same data as rpout
+def copy_reg_file(rpin, rpout):
+	"""Copy regular file rpin to rpout, possibly avoiding connection"""
+	try:
+		if rpout.conn is rpin.conn:
+			rpout.conn.shutil.copyfile(rpin.path, rpout.path)
+			rpout.setdata()
+			return
+	except AttributeError: pass
+	rpout.write_from_fileobj(rpin.open("rb"))
 
-		cmp does not compare file ownership, permissions, or times, or
-		examine the contents of a directory.
+def cmp(rpin, rpout):
+	"""True if rpin has the same data as rpout
 
-		"""
-		RPath.check_for_files(rpin, rpout)
-		if rpin.isreg():
-			if not rpout.isreg(): return None
-			fp1, fp2 = rpin.open("rb"), rpout.open("rb")
-			result = RPathStatic.cmpfileobj(fp1, fp2)
-			if fp1.close() or fp2.close():
-				raise RPathException("Error closing file")
-			return result
-		elif rpin.isdir(): return rpout.isdir()
-		elif rpin.issym():
-			return rpout.issym() and (rpin.readlink() == rpout.readlink())
-		elif rpin.ischardev():
-			return rpout.ischardev() and \
-				   (rpin.getdevnums() == rpout.getdevnums())
-		elif rpin.isblkdev():
-			return rpout.isblkdev() and \
-				   (rpin.getdevnums() == rpout.getdevnums())
-		elif rpin.isfifo(): return rpout.isfifo()
-		elif rpin.issock(): return rpout.issock()
-		else: raise RPathException("File %s has unknown type" % rpin.path)
+	cmp does not compare file ownership, permissions, or times, or
+	examine the contents of a directory.
 
-	def copy_attribs(rpin, rpout):
-		"""Change file attributes of rpout to match rpin
-
-		Only changes the chmoddable bits, uid/gid ownership, and
-		timestamps, so both must already exist.
-
-		"""
-		Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
-		RPath.check_for_files(rpin, rpout)
-		if rpin.issym(): return # symlinks have no valid attributes
-		if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
-		rpout.chmod(rpin.getperms())
-		if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
-
-	def cmp_attribs(rp1, rp2):
-		"""True if rp1 has the same file attributes as rp2
-
-		Does not compare file access times.  If not changing
-		ownership, do not check user/group id.
-
-		"""
-		RPath.check_for_files(rp1, rp2)
-		if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
-			result = None
-		elif rp1.getperms() != rp2.getperms(): result = None
-		elif rp1.issym() and rp2.issym(): # Don't check times for some types
-			result = 1
-		elif rp1.isblkdev() and rp2.isblkdev(): result = 1
-		elif rp1.ischardev() and rp2.ischardev(): result = 1
-		else: result = (rp1.getmtime() == rp2.getmtime())
-		Log("Compare attribs %s and %s: %s" % (rp1.path, rp2.path, result), 7)
+	"""
+	check_for_files(rpin, rpout)
+	if rpin.isreg():
+		if not rpout.isreg(): return None
+		fp1, fp2 = rpin.open("rb"), rpout.open("rb")
+		result = cmpfileobj(fp1, fp2)
+		if fp1.close() or fp2.close():
+			raise RPathException("Error closing file")
 		return result
+	elif rpin.isdir(): return rpout.isdir()
+	elif rpin.issym():
+		return rpout.issym() and (rpin.readlink() == rpout.readlink())
+	elif rpin.ischardev():
+		return rpout.ischardev() and \
+			   (rpin.getdevnums() == rpout.getdevnums())
+	elif rpin.isblkdev():
+		return rpout.isblkdev() and \
+			   (rpin.getdevnums() == rpout.getdevnums())
+	elif rpin.isfifo(): return rpout.isfifo()
+	elif rpin.issock(): return rpout.issock()
+	else: raise RPathException("File %s has unknown type" % rpin.path)
 
-	def copy_with_attribs(rpin, rpout):
-		"""Copy file and then copy over attributes"""
-		RPath.copy(rpin, rpout)
-		RPath.copy_attribs(rpin, rpout)
+def copy_attribs(rpin, rpout):
+	"""Change file attributes of rpout to match rpin
 
-	def quick_cmp_with_attribs(rp1, rp2):
-		"""Quicker version of cmp_with_attribs
+	Only changes the chmoddable bits, uid/gid ownership, and
+	timestamps, so both must already exist.
 
-		Instead of reading all of each file, assume that regular files
-		are the same if the attributes compare.
+	"""
+	log.Log("Copying attributes from %s to %s" %
+			(rpin.index, rpout.path), 7)
+	check_for_files(rpin, rpout)
+	if rpin.issym(): return # symlinks have no valid attributes
+	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
+	rpout.chmod(rpin.getperms())
+	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
 
-		"""
-		if not RPath.cmp_attribs(rp1, rp2): return None
-		if rp1.isreg() and rp2.isreg() and (rp1.getlen() == rp2.getlen()):
-			return 1
-		return RPath.cmp(rp1, rp2)
+def cmp_attribs(rp1, rp2):
+	"""True if rp1 has the same file attributes as rp2
 
-	def cmp_with_attribs(rp1, rp2):
-		"""Combine cmp and cmp_attribs"""
-		return RPath.cmp_attribs(rp1, rp2) and RPath.cmp(rp1, rp2)
+	Does not compare file access times.  If not changing
+	ownership, do not check user/group id.
 
-	def rename(rp_source, rp_dest):
-		"""Rename rp_source to rp_dest"""
-		assert rp_source.conn is rp_dest.conn
-		Log(lambda: "Renaming %s to %s" % (rp_source.path, rp_dest.path), 7)
-		rp_source.conn.os.rename(rp_source.path, rp_dest.path)
-		rp_dest.data = rp_source.data
-		rp_source.data = {'type': None}
+	"""
+	check_for_files(rp1, rp2)
+	if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
+		result = None
+	elif rp1.getperms() != rp2.getperms(): result = None
+	elif rp1.issym() and rp2.issym(): # Don't check times for some types
+		result = 1
+	elif rp1.isblkdev() and rp2.isblkdev(): result = 1
+	elif rp1.ischardev() and rp2.ischardev(): result = 1
+	else: result = (rp1.getmtime() == rp2.getmtime())
+	log.Log("Compare attribs of %s and %s: %s" %
+			(rp1.path, rp2.path, result), 7)
+	return result
 
-		# If we are moving to a DSRPath, assume that the current times
-		# are the intended ones.  We need to save them now in case
-		# they are changed later.
-		if isinstance(rp_dest, DSRPath):
-			if rp_dest.delay_mtime:
-				if 'mtime' in rp_dest.data:
-					rp_dest.setmtime(rp_dest.data['mtime'])
-			if rp_dest.delay_atime:
-				if 'atime' in rp_dest.data:
-					rp_dest.setatime(rp_dest.data['atime'])
+def copy_with_attribs(rpin, rpout):
+	"""Copy file and then copy over attributes"""
+	copy(rpin, rpout)
+	copy_attribs(rpin, rpout)
 
-	def tupled_lstat(filename):
-		"""Like os.lstat, but return only a tuple, or None if os.error
+def quick_cmp_with_attribs(rp1, rp2):
+	"""Quicker version of cmp_with_attribs
 
-		Later versions of os.lstat return a special lstat object,
-		which can confuse the pickler and cause errors in remote
-		operations.  This has been fixed in Python 2.2.1.
+	Instead of reading all of each file, assume that regular files
+	are the same if the attributes compare.
 
-		"""
-		try: return tuple(os.lstat(filename))
-		except os.error: return None
+	"""
+	if not cmp_attribs(rp1, rp2): return None
+	if rp1.isreg() and rp2.isreg() and (rp1.getlen() == rp2.getlen()):
+		return 1
+	return cmp(rp1, rp2)
 
-	def make_socket_local(rpath):
-		"""Make a local socket at the given path
+def cmp_with_attribs(rp1, rp2):
+	"""Combine cmp and cmp_attribs"""
+	return cmp_attribs(rp1, rp2) and cmp(rp1, rp2)
 
-		This takes an rpath so that it will be checked by Security.
-		(Miscellaneous strings will not be.)
+def rename(rp_source, rp_dest):
+	"""Rename rp_source to rp_dest"""
+	assert rp_source.conn is rp_dest.conn
+	log.Log(lambda: "Renaming %s to %s" %
+			(rp_source.path, rp_dest.path), 7)
+	rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+	rp_dest.data = rp_source.data
+	rp_source.data = {'type': None}
 
-		"""
-		assert rpath.conn is Globals.local_connection
-		s = socket.socket(socket.AF_UNIX)
-		try: s.bind(rpath.path)
-		except socket.error, exc:
-			raise SkipFileException("Socket error: " + str(exc))
+def tupled_lstat(filename):
+	"""Like os.lstat, but return only a tuple, or None if os.error
 
-	def gzip_open_local_read(rpath):
-		"""Return open GzipFile.  See security note directly above"""
-		assert rpath.conn is Globals.local_connection
-		return gzip.GzipFile(rpath.path, "rb")
+	Later versions of os.lstat return a special lstat object,
+	which can confuse the pickler and cause errors in remote
+	operations.  This has been fixed in Python 2.2.1.
 
-	def open_local_read(rpath):
-		"""Return open file (provided for security reasons)"""
-		assert rpath.conn is Globals.local_connection
-		return open(rpath.path, "rb")
+	"""
+	try: return tuple(os.lstat(filename))
+	except os.error: return None
 
-MakeStatic(RPathStatic)
+def make_socket_local(rpath):
+	"""Make a local socket at the given path
+
+	This takes an rpath so that it will be checked by Security.
+	(Miscellaneous strings will not be.)
+
+	"""
+	assert rpath.conn is Globals.local_connection
+	s = socket.socket(socket.AF_UNIX)
+	try: s.bind(rpath.path)
+	except socket.error, exc:
+		raise SkipFileException("Socket error: " + str(exc))
+
+def gzip_open_local_read(rpath):
+	"""Return open GzipFile.  See security note directly above"""
+	assert rpath.conn is Globals.local_connection
+	return gzip.GzipFile(rpath.path, "rb")
+
+def open_local_read(rpath):
+	"""Return open file (provided for security reasons)"""
+	assert rpath.conn is Globals.local_connection
+	return open(rpath.path, "rb")
 
 
-class RORPath(RPathStatic):
+class RORPath:
 	"""Read Only RPath - carry information about a path
 
 	These contain information about a file, and possible the file's
@@ -280,7 +278,7 @@ class RORPath(RPathStatic):
 	def equal_verbose(self, other):
 		"""Like __eq__, but log more information.  Useful when testing"""
 		if self.index != other.index:
-			Log("Index %s != index %s" % (self.index, other.index), 2)
+			log.Log("Index %s != index %s" % (self.index, other.index), 2)
 			return None
 
 		for key in self.data.keys(): # compare dicts key by key
@@ -289,16 +287,16 @@ class RORPath(RPathStatic):
 				# Don't compare gid/uid for symlinks or if not change_ownership
 				pass
 			elif key == 'mtime':
-				Log("%s differs only in mtime, skipping" % (self.path,), 2)
+				log.Log("%s differs only in mtime, skipping" % (self.path,), 2)
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'devloc' or key == 'inode' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]):
 				if not other.data.has_key(key):
-					Log("Second is missing key %s" % (key,), 2)
-				else: Log("Value of %s differs: %s vs %s" %
-						  (key, self.data[key], other.data[key]), 2)
+					log.Log("Second is missing key %s" % (key,), 2)
+				else: log.Log("Value of %s differs: %s vs %s" %
+							  (key, self.data[key], other.data[key]), 2)
 				return None
 		return 1
 
@@ -548,7 +546,7 @@ class RPath(RORPath):
 
 	def make_file_dict_old(self):
 		"""Create the data dictionary"""
-		statblock = self.conn.RPathStatic.tupled_lstat(self.path)
+		statblock = self.conn.rpath.tupled_lstat(self.path)
 		if statblock is None:
 			return {'type':None}
 		data = {}
@@ -614,14 +612,14 @@ class RPath(RORPath):
 
 	def settime(self, accesstime, modtime):
 		"""Change file modification times"""
-		Log("Setting time of %s to %d" % (self.path, modtime), 7)
+		log.Log("Setting time of %s to %d" % (self.path, modtime), 7)
 		self.conn.os.utime(self.path, (accesstime, modtime))
 		self.data['atime'] = accesstime
 		self.data['mtime'] = modtime
 
 	def setmtime(self, modtime):
 		"""Set only modtime (access time to present)"""
-		Log(lambda: "Setting time of %s to %d" % (self.path, modtime), 7)
+		log.Log(lambda: "Setting time of %s to %d" % (self.path, modtime), 7)
 		self.conn.os.utime(self.path, (time.time(), modtime))
 		self.data['mtime'] = modtime
 
@@ -632,12 +630,12 @@ class RPath(RORPath):
 		self.data['gid'] = gid
 
 	def mkdir(self):
-		Log("Making directory " + self.path, 6)
+		log.Log("Making directory " + self.path, 6)
 		self.conn.os.mkdir(self.path)
 		self.setdata()
 
 	def rmdir(self):
-		Log("Removing directory " + self.path, 6)
+		log.Log("Removing directory " + self.path, 6)
 		self.conn.os.rmdir(self.path)
 		self.data = {'type': None}
 
@@ -664,13 +662,13 @@ class RPath(RORPath):
 
 	def mksock(self):
 		"""Make a socket at self.path"""
-		self.conn.RPathStatic.make_socket_local(self)
+		self.conn.rpath.make_socket_local(self)
 		self.setdata()
 		assert self.issock()
 
 	def touch(self):
 		"""Make sure file at self.path exists"""
-		Log("Touching " + self.path, 7)
+		log.Log("Touching " + self.path, 7)
 		self.conn.open(self.path, "w").close()
 		self.setdata()
 		assert self.isreg()
@@ -704,15 +702,14 @@ class RPath(RORPath):
 
 	def delete(self):
 		"""Delete file at self.path.  Recursively deletes directories."""
-		Log("Deleting %s" % self.path, 7)
+		log.Log("Deleting %s" % self.path, 7)
 		self.setdata()
 		if not self.lstat():
-			Log("Warning: %s does not exist---deleted in meantime?"
+			log.Log("Warning: %s does not exist---deleted in meantime?"
 				% (self.path,), 2)
 		elif self.isdir():
-			itm = IterTreeReducer(RpathDeleter, [])
-			for rp in Select(self).set_iter(): itm(rp.index, rp)
-			itm.Finish()
+			try: self.rmdir()
+			except os.error: shutil.rmtree(self.path)
 		else: self.conn.os.unlink(self.path)
 		self.setdata()
 
@@ -784,11 +781,11 @@ class RPath(RORPath):
 
 		if compress:
 			if mode == "r" or mode == "rb":
-				return self.conn.RPathStatic.gzip_open_local_read(self)
+				return self.conn.rpath.gzip_open_local_read(self)
 			else: return self.conn.gzip.GzipFile(self.path, mode)
 		else:
 			if mode == "r" or mode == "rb":
-				return self.conn.RPathStatic.open_local_read(self)
+				return self.conn.rpath.open_local_read(self)
 			else: return self.conn.open(self.path, mode)
 
 	def write_from_fileobj(self, fp, compress = None):
@@ -798,10 +795,10 @@ class RPath(RORPath):
 		written to self.
 
 		"""
-		Log("Writing file object to " + self.path, 7)
+		log.Log("Writing file object to " + self.path, 7)
 		assert not self.lstat(), "File %s already exists" % self.path
 		outfp = self.open("wb", compress = compress)
-		RPath.copyfileobj(fp, outfp)
+		copyfileobj(fp, outfp)
 		if fp.close() or outfp.close():
 			raise RPathException("Error closing file")
 		self.setdata()
@@ -890,20 +887,20 @@ class RPathFileHook:
 
 
 # Import these late to avoid circular dependencies
-import FilenameMapping
-from lazy import *
-from selection import *
-from highlevel import *
+#import FilenameMapping
+#from lazy import *
+#from selection import *
+#from highlevel import *
 
-class RpathDeleter(ITRBranch):
-	"""Delete a directory.  Called by RPath.delete()"""
-	def start_process(self, index, rp):
-		self.rp = rp
-
-	def end_process(self):
-		if self.rp.isdir(): self.rp.rmdir()
-		else: self.rp.delete()
-
-	def can_fast_process(self, index, rp): return not rp.isdir()
-	def fast_process(self, index, rp): rp.delete()
+#class RpathDeleter(ITRBranch):
+#	"""Delete a directory.  Called by RPath.delete()"""
+#	def start_process(self, index, rp):
+#		self.rp = rp
+#
+#	def end_process(self):
+#		if self.rp.isdir(): self.rp.rmdir()
+#		else: self.rp.delete()
+#
+#	def can_fast_process(self, index, rp): return not rp.isdir()
+#	def fast_process(self, index, rp): rp.delete()
 	

@@ -19,9 +19,8 @@
 
 """Generate and process aggregated backup information"""
 
-from lazy import *
-import re
-
+import re, os
+import Globals, TempFile, robust, Time, rorpiter
 
 class StatsException(Exception): pass
 
@@ -216,12 +215,12 @@ class StatsObj:
 
 	def write_stats_to_rp(self, rp):
 		"""Write statistics string to given rpath"""
-		tf = TempFileManager.new(rp)
+		tf = TempFile.new(rp)
 		def init_thunk():
 			fp = tf.open("w")
 			fp.write(self.get_stats_string())
 			fp.close()
-		Robust.make_tf_robustaction(init_thunk, (tf,), (rp,)).execute()
+		robust.make_tf_robustaction(init_thunk, (tf,), (rp,)).execute()
 
 	def read_stats_from_rp(self, rp):
 		"""Set statistics from rpath, return self for convenience"""
@@ -264,7 +263,7 @@ class StatsObj:
 		return s
 
 
-class StatsITRB(ITRBranch, StatsObj):
+class ITRB(rorpiter.ITRBranch, StatsObj):
 	"""Keep track of per directory statistics
 
 	This is subclassed by the mirroring and incrementing ITRs.
@@ -339,7 +338,6 @@ class StatsITRB(ITRBranch, StatsObj):
 			self.__dict__[attr] += branch.__dict__[attr]
 
 
-from log import *
-from increment import *
-from robust import *
-import Globals
+
+
+

@@ -1,6 +1,5 @@
 from __future__ import generators
-from manage import *
-from rpath import *
+import rpath, manage
 
 #######################################################################
 #

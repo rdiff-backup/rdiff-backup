@@ -1,6 +1,6 @@
 import unittest
 from commontest import *
-from rdiff_backup.statistics import *
+from rdiff_backup import statistics, rpath
 
 class StatsObjTest(unittest.TestCase):
 	"""Test StatsObj class"""
@@ -24,17 +24,17 @@ class StatsObjTest(unittest.TestCase):
 
 	def test_get_stats(self):
 		"""Test reading and writing stat objects"""
-		s = StatsObj()
+		s = statistics.StatsObj()
 		assert s.get_stat('SourceFiles') is None
 		self.set_obj(s)
 		assert s.get_stat('SourceFiles') == 1
 
-		s1 = StatsITRB()
+		s1 = statistics.ITRB()
 		assert s1.get_stat('SourceFiles') == 0
 
 	def test_get_stats_string(self):
 		"""Test conversion of stat object into string"""
-		s = StatsObj()
+		s = statistics.StatsObj()
 		stats_string = s.get_stats_string()
 		assert stats_string == "", stats_string
 
@@ -62,7 +62,7 @@ TotalDestinationSizeChange 7 (7 bytes)
 
 	def test_line_string(self):
 		"""Test conversion to a single line"""
-		s = StatsObj()
+		s = statistics.StatsObj()
 		self.set_obj(s)
 		statline = s.get_stats_line(("sample", "index", "w", "new\nline"))
 		assert statline == "sample/index/w/new\\nline 1 2 13 14 " \
@@ -77,7 +77,7 @@ TotalDestinationSizeChange 7 (7 bytes)
 
 	def test_byte_summary(self):
 		"""Test conversion of bytes to strings like 7.23MB"""
-		s = StatsObj()
+		s = statistics.StatsObj()
 		f = s.get_byte_summary_string
 		assert f(1) == "1 byte"
 		assert f(234.34) == "234 bytes"
@@ -89,36 +89,36 @@ TotalDestinationSizeChange 7 (7 bytes)
 
 	def test_init_stats(self):
 		"""Test setting stat object from string"""
-		s = StatsObj()
+		s = statistics.StatsObj()
 		s.set_stats_from_string("NewFiles 3 hello there")
 		for attr in s.stat_attrs:
 			if attr == 'NewFiles': assert s.get_stat(attr) == 3
 			else: assert s.get_stat(attr) is None, (attr, s.__dict__[attr])
 
-		s1 = StatsObj()
+		s1 = statistics.StatsObj()
 		self.set_obj(s1)
 		assert not s1.stats_equal(s)
 
-		s2 = StatsObj()
+		s2 = statistics.StatsObj()
 		s2.set_stats_from_string(s1.get_stats_string())
 		assert s1.stats_equal(s2)
 
 	def test_write_rp(self):
 		"""Test reading and writing of statistics object"""
-		rp = RPath(Globals.local_connection, "testfiles/statstest")
+		rp = rpath.RPath(Globals.local_connection, "testfiles/statstest")
 		if rp.lstat(): rp.delete()
-		s = StatsObj()
+		s = statistics.StatsObj()
 		self.set_obj(s)
 		s.write_stats_to_rp(rp)
 
-		s2 = StatsObj()
+		s2 = statistics.StatsObj()
 		assert not s2.stats_equal(s)
 		s2.read_stats_from_rp(rp)
 		assert s2.stats_equal(s)
 
 	def testAverage(self):
 		"""Test making an average statsobj"""
-		s1 = StatsObj()
+		s1 = statistics.StatsObj()
 		s1.StartTime = 5
 		s1.EndTime = 10
 		s1.ElapsedTime = 5
@@ -126,7 +126,7 @@ TotalDestinationSizeChange 7 (7 bytes)
 		s1.SourceFiles = 100
 		s1.NewFileSize = 4
 
-		s2 = StatsObj()
+		s2 = statistics.StatsObj()
 		s2.StartTime = 25
 		s2.EndTime = 35
 		s2.ElapsedTime = 10
@@ -134,7 +134,7 @@ TotalDestinationSizeChange 7 (7 bytes)
 		s2.SourceFiles = 50
 		s2.DeletedFiles = 0
 
-		s3 = StatsObj().set_to_average([s1, s2])
+		s3 = statistics.StatsObj().set_to_average([s1, s2])
 		assert s3.StartTime is s3.EndTime is None
 		assert s3.ElapsedTime == 7.5
 		assert s3.DeletedFiles is s3.NewFileSize is None, (s3.DeletedFiles,

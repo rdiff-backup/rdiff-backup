@@ -20,17 +20,8 @@
 """High level functions for mirroring, mirror & inc, etc."""
 
 from __future__ import generators
-from static import *
-
-class SkipFileException(Exception):
-	"""Signal that the current file should be skipped but then continue
-
-	This exception will often be raised when there is problem reading
-	an individual file, but it makes sense for the rest of the backup
-	to keep going.
-
-	"""
-	pass
+import Globals, MiscStats, metadata, rorpiter, TempFile, \
+	   Hardlink, robust, increment, rpath, lazy, static, log
 
 
 class HighLevel:
@@ -48,8 +39,8 @@ class HighLevel:
 		Otherwise only mirror and don't create any extra files.
 
 		"""
-		SourceS = src_rpath.conn.HLSourceStruct
-		DestS = dest_rpath.conn.HLDestinationStruct
+		SourceS = src_rpath.conn.highlevel.HLSourceStruct
+		DestS = dest_rpath.conn.highlevel.HLDestinationStruct
 
 		src_init_dsiter = SourceS.split_initial_dsiter()
 		dest_sigiter = DestS.get_sigs(dest_rpath, src_init_dsiter)
@@ -61,8 +52,8 @@ class HighLevel:
 	def Mirror_and_increment(src_rpath, dest_rpath, inc_rpath,
 							 session_info = None):
 		"""Mirror + put increments in tree based at inc_rpath"""
-		SourceS = src_rpath.conn.HLSourceStruct
-		DestS = dest_rpath.conn.HLDestinationStruct
+		SourceS = src_rpath.conn.highlevel.HLSourceStruct
+		DestS = dest_rpath.conn.highlevel.HLDestinationStruct
 
 		src_init_dsiter = SourceS.split_initial_dsiter()
 		dest_sigiter = DestS.get_sigs(dest_rpath, src_init_dsiter)
@@ -72,7 +63,7 @@ class HighLevel:
 		dest_rpath.setdata()
 		inc_rpath.setdata()
 
-MakeStatic(HighLevel)
+static.MakeStatic(HighLevel)
 
 
 class HLSourceStruct:
@@ -80,7 +71,7 @@ class HLSourceStruct:
 	def split_initial_dsiter(cls):
 		"""Set iterators of all dsrps from rpath, returning one"""
 		dsiter = Globals.select_source.set_iter()
-		initial_dsiter1, cls.initial_dsiter2 = Iter.multiplex(dsiter, 2)
+		initial_dsiter1, cls.initial_dsiter2 = lazy.Iter.multiplex(dsiter, 2)
 		return initial_dsiter1
 
 	def get_diffs_and_finalize(cls, sigiter):
@@ -90,10 +81,10 @@ class HLSourceStruct:
 		dissimilar files.
 
 		"""
-		collated = RORPIter.CollateIterators(cls.initial_dsiter2, sigiter)
+		collated = rorpiter.CollateIterators(cls.initial_dsiter2, sigiter)
 		def error_handler(exc, dest_sig, rp):
-			Log("Error %s producing a diff of %s" %
-				(exc, rp and rp.path), 2)
+			log.Log("Error %s producing a diff of %s" %
+					(exc, rp and rp.path), 2)
 			return None
 			
 		def diffs():
@@ -101,12 +92,12 @@ class HLSourceStruct:
 				if dest_sig:
 					if dest_sig.isplaceholder(): yield dest_sig
 					else:
-						diff = Robust.check_common_error(
-							error_handler, RORPIter.diffonce, [dest_sig, rp])
+						diff = robust.check_common_error(
+							error_handler, rorpiter.diffonce, [dest_sig, rp])
 						if diff: yield diff
 		return diffs()
 
-MakeClass(HLSourceStruct)
+static.MakeClass(HLSourceStruct)
 
 
 class HLDestinationStruct:
@@ -115,7 +106,7 @@ class HLDestinationStruct:
 	def split_initial_dsiter(cls):
 		"""Set initial_dsiters (iteration of all rps from rpath)"""
 		result, cls.initial_dsiter2 = \
-				Iter.multiplex(Globals.select_mirror.set_iter(), 2)
+				lazy.Iter.multiplex(Globals.select_mirror.set_iter(), 2)
 		return result
 
 	def get_dissimilar(cls, baserp, src_init_iter, dest_init_iter):
@@ -134,14 +125,14 @@ class HLDestinationStruct:
 		will depend on the Globals.conn_bufsize value.
 
 		"""
-		collated = RORPIter.CollateIterators(src_init_iter, dest_init_iter)
+		collated = rorpiter.CollateIterators(src_init_iter, dest_init_iter)
 		def compare(src_rorp, dest_dsrp):
 			"""Return dest_dsrp if they are different, None if the same"""
 			if not dest_dsrp:
 				dest_dsrp = cls.get_dsrp(baserp, src_rorp.index)
 				if dest_dsrp.lstat():
-					Log("Warning: Found unexpected destination file %s, "
-						"not processing it." % dest_dsrp.path, 2)
+					log.Log("Warning: Found unexpected destination file %s, "
+							"not processing it." % dest_dsrp.path, 2)
 					return None
 			elif (src_rorp and src_rorp == dest_dsrp and
 				  (not Globals.preserve_hardlinks or
@@ -162,7 +153,7 @@ class HLDestinationStruct:
 					counter = 0
 					yield dsrp
 				elif counter == 20:
-					placeholder = RORPath(src_rorp.index)
+					placeholder = rpath.RORPath(src_rorp.index)
 					placeholder.make_placeholder()
 					counter = 0
 					yield placeholder
@@ -185,11 +176,11 @@ class HLDestinationStruct:
 			metadata.CloseMetadata()
 		dup = duplicate_with_write(src_init_iter)
 		dissimilars = cls.get_dissimilar(baserp, dup, dest_iters1)
-		return RORPIter.Signatures(dissimilars)
+		return rorpiter.Signatures(dissimilars)
 
 	def get_dsrp(cls, dest_rpath, index):
 		"""Return initialized rpath based on dest_rpath with given index"""
-		rp = RPath(dest_rpath.conn, dest_rpath.base, index)
+		rp = rpath.RPath(dest_rpath.conn, dest_rpath.base, index)
 		if Globals.quoting_enabled: rp.quote_path()
 		return rp
 
@@ -197,14 +188,16 @@ class HLDestinationStruct:
 		"""Return finalizer, starting from session info if necessary"""
 		old_finalizer = cls._session_info and cls._session_info.finalizer
 		if old_finalizer: return old_finalizer
-		else: return IterTreeReducer(DestructiveSteppingFinalizer, [])
+		else: return rorpiter.IterTreeReducer(
+			rorpiter.DestructiveSteppingFinalizer, [])
 
 	def get_ITR(cls, inc_rpath):
 		"""Return ITR, starting from state if necessary"""
 		if cls._session_info and cls._session_info.ITR:
 			return cls._session_info.ITR
 		else:
-			iitr = IterTreeReducer(IncrementITRB, [inc_rpath])
+			iitr = rorpiter.IterTreeReducer(increment.IncrementITRB,
+											[inc_rpath])
 			iitr.root_branch.override_changed()
 			Globals.ITRB = iitr.root_branch
 			iitr.root_branch.Errors = 0
@@ -214,38 +207,38 @@ class HLDestinationStruct:
 		"""Return MirrorITR, starting from state if available"""
 		if cls._session_info and cls._session_info.ITR:
 			return cls._session_info.ITR
-		ITR = IterTreeReducer(MirrorITRB, [inc_rpath])
+		ITR = rorpiter.IterTreeReducer(increment.MirrorITRB, [inc_rpath])
 		Globals.ITRB = ITR.root_branch
 		ITR.root_branch.Errors = 0
 		return ITR
 
 	def patch_and_finalize(cls, dest_rpath, diffs):
 		"""Apply diffs and finalize"""
-		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
+		collated = rorpiter.CollateIterators(diffs, cls.initial_dsiter2)
 		#finalizer = cls.get_finalizer()
 		diff_rorp, rp = None, None
 
 		def patch(diff_rorp, dsrp):
 			if not dsrp: dsrp = cls.get_dsrp(dest_rpath, diff_rorp.index)
 			if diff_rorp and not diff_rorp.isplaceholder():
-				RORPIter.patchonce_action(None, dsrp, diff_rorp).execute()
+				rorpiter.patchonce_action(None, dsrp, diff_rorp).execute()
 			return dsrp
 
 		def error_handler(exc, diff_rorp, dsrp):
 			filename = dsrp and dsrp.path or os.path.join(*diff_rorp.index)
-			Log("Error: %s processing file %s" % (exc, filename), 2)
+			log.Log("Error: %s processing file %s" % (exc, filename), 2)
 		
 		for indexed_tuple in collated:
-			Log(lambda: "Processing %s" % str(indexed_tuple), 7)
+			log.Log(lambda: "Processing %s" % str(indexed_tuple), 7)
 			diff_rorp, dsrp = indexed_tuple
-			dsrp = Robust.check_common_error(error_handler, patch,
+			dsrp = robust.check_common_error(error_handler, patch,
 											 [diff_rorp, dsrp])
 			#finalizer(dsrp.index, dsrp)
 		#finalizer.Finish()
 
 	def patch_w_datadir_writes(cls, dest_rpath, diffs, inc_rpath):
 		"""Apply diffs and finalize, with checkpointing and statistics"""
-		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
+		collated = rorpiter.CollateIterators(diffs, cls.initial_dsiter2)
 		#finalizer, ITR = cls.get_finalizer(), cls.get_MirrorITR(inc_rpath)
 		finalizer, ITR = None, cls.get_MirrorITR(inc_rpath)
 		MiscStats.open_dir_stats_file()
@@ -253,7 +246,7 @@ class HLDestinationStruct:
 
 		try:
 			for indexed_tuple in collated:
-				Log(lambda: "Processing %s" % str(indexed_tuple), 7)
+				log.Log(lambda: "Processing %s" % str(indexed_tuple), 7)
 				diff_rorp, dsrp = indexed_tuple
 				if not dsrp: dsrp = cls.get_dsrp(dest_rpath, diff_rorp.index)
 				if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
@@ -270,7 +263,7 @@ class HLDestinationStruct:
 
 	def patch_increment_and_finalize(cls, dest_rpath, diffs, inc_rpath):
 		"""Apply diffs, write increment if necessary, and finalize"""
-		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
+		collated = rorpiter.CollateIterators(diffs, cls.initial_dsiter2)
 		#finalizer, ITR = cls.get_finalizer(), cls.get_ITR(inc_rpath)
 		finalizer, ITR = None, cls.get_ITR(inc_rpath)
 		MiscStats.open_dir_stats_file()
@@ -278,7 +271,7 @@ class HLDestinationStruct:
 
 		try:
 			for indexed_tuple in collated:
-				Log(lambda: "Processing %s" % str(indexed_tuple), 7)
+				log.Log(lambda: "Processing %s" % str(indexed_tuple), 7)
 				diff_rorp, dsrp = indexed_tuple
 				index = indexed_tuple.index
 				if not dsrp: dsrp = cls.get_dsrp(dest_rpath, index)
@@ -296,18 +289,12 @@ class HLDestinationStruct:
 
 	def handle_last_error(cls, dsrp, finalizer, ITR):
 		"""If catch fatal error, try to checkpoint before exiting"""
-		Log.exception(1, 2)
-		TracebackArchive.log()
+		log.Log.exception(1, 2)
+		robust.TracebackArchive.log()
 		#SaveState.checkpoint(ITR, finalizer, dsrp, 1)
 		#if Globals.preserve_hardlinks: Hardlink.final_checkpoint(Globals.rbdir)
 		#SaveState.touch_last_file_definitive()
 		raise
 
-MakeClass(HLDestinationStruct)
+static.MakeClass(HLDestinationStruct)
 
-from log import *
-from rpath import *
-from robust import *
-from increment import *
-from rorpiter import *
-import Globals, Hardlink, MiscStats, metadata

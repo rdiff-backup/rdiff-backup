@@ -1,15 +1,14 @@
-import unittest, os
+import unittest, os, re, time
 from commontest import *
-from rdiff_backup.log import *
-from rdiff_backup.rpath import *
-from rdiff_backup.restore import *
+from rdiff_backup import log, rpath, restore, increment, Time, \
+	 Rdiff, statistics
 
 lc = Globals.local_connection
 Globals.change_source_perms = 1
 Log.setverbosity(3)
 
 def getrp(ending):
-	return RPath(lc, "testfiles/various_file_types/" + ending)
+	return rpath.RPath(lc, "testfiles/various_file_types/" + ending)
 
 rf = getrp("regular_file")
 rf2 = getrp("two_hardlinked_files1")
@@ -22,11 +21,11 @@ dir = getrp(".")
 sym = getrp("symbolic_link")
 nothing = getrp("nothing")
 
-target = RPath(lc, "testfiles/out")
-out2 = RPath(lc, "testfiles/out2")
-out_gz = RPath(lc, "testfiles/out.gz")
+target = rpath.RPath(lc, "testfiles/out")
+out2 = rpath.RPath(lc, "testfiles/out2")
+out_gz = rpath.RPath(lc, "testfiles/out.gz")
 
-Time.setprevtime(999424113.24931)
+Time.setprevtime(999424113)
 prevtimestr = "2001-09-02T02:48:33-07:00"
 t_pref = "testfiles/out.2001-09-02T02:48:33-07:00"
 t_diff = "testfiles/out.2001-09-02T02:48:33-07:00.diff"
@@ -39,78 +38,72 @@ class inctest(unittest.TestCase):
 	def setUp(self):
 		Globals.set('isbackup_writer',1)
 
+	def check_time(self, rp):
+		"""Make sure that rp is an inc file, and time is Time.prevtime"""
+		assert rp.isincfile(), rp
+		t = Time.stringtotime(rp.getinctime())
+		assert t == Time.prevtime, (t, Time.prevtime)
+
 	def testreg(self):
 		"""Test increment of regular files"""
 		Globals.compression = None
 		target.setdata()
 		if target.lstat(): target.delete()
-		rpd = RPath(lc, t_diff)
+		rpd = rpath.RPath(lc, t_diff)
 		if rpd.lstat(): rpd.delete()
 
-		Inc.Increment(rf, exec1, target)
-		rpd.setdata()
-		assert rpd.isreg(), rpd
-		assert RPath.cmp_attribs(rpd, exec1)
-		rpd.delete()
+		diffrp = increment.Increment(rf, exec1, target)
+		assert diffrp.isreg(), diffrp
+		assert rpath.cmp_attribs(diffrp, exec1)
+		self.check_time(diffrp)
+		assert diffrp.getinctype() == 'diff', diffrp.getinctype()
+		diffrp.delete()
 
 	def testmissing(self):
 		"""Test creation of missing files"""
-		Inc.Increment(rf, nothing, target)
-		rp = RPath(lc, t_pref + ".missing")
-		assert rp.lstat()
-		rp.delete()
+		missing_rp = increment.Increment(rf, nothing, target)
+		self.check_time(missing_rp)
+		assert missing_rp.getinctype() == 'missing'
+		missing_rp.delete()
 
 	def testsnapshot(self):
 		"""Test making of a snapshot"""
 		Globals.compression = None
-		rp = RPath(lc, t_pref + ".snapshot")
-		if rp.lstat(): rp.delete()
-		Inc.Increment(rf, sym, target)
-		rp.setdata()
-		assert rp.lstat()
-		assert RPath.cmp_attribs(rp, sym)
-		assert RPath.cmp(rp, sym)
-		rp.delete()
+		snap_rp = increment.Increment(rf, sym, target)
+		self.check_time(snap_rp)
+		assert rpath.cmp_attribs(snap_rp, sym)
+		assert rpath.cmp(snap_rp, sym)
+		snap_rp.delete()
 
-		rp = RPath(lc, t_pref + ".snapshot")
-		if rp.lstat(): rp.delete()
-		Inc.Increment(sym, rf, target)
-		rp.setdata()
-		assert rp.lstat()
-		assert RPath.cmp_attribs(rp, rf)
-		assert RPath.cmp(rp, rf)
-		rp.delete()
+		snap_rp2 = increment.Increment(sym, rf, target)
+		self.check_time(snap_rp2)
+		assert rpath.cmp_attribs(snap_rp2, rf)
+		assert rpath.cmp(snap_rp2, rf)
+		snap_rp2.delete()
 
 	def testGzipsnapshot(self):
 		"""Test making a compressed snapshot"""
 		Globals.compression = 1
-		rp = RPath(lc, t_pref + ".snapshot")
-		if rp.lstat(): rp.delete()
-		Inc.Increment(rf, sym, target)
-		rp.setdata()
-		assert rp.lstat()
-		assert RPath.cmp_attribs(rp, sym)
-		assert RPath.cmp(rp, sym)
+		rp = increment.Increment(rf, sym, target)
+		self.check_time(rp)
+		assert rpath.cmp_attribs(rp, sym)
+		assert rpath.cmp(rp, sym)
 		rp.delete()
 		
-		rp = RPath(lc, t_pref + ".snapshot.gz")
-		if rp.lstat(): rp.delete()
-		Inc.Increment(sym, rf, target)
-		rp.setdata()
-
-		assert rp.lstat()
-		assert RPath.cmp_attribs(rp, rf)
-		assert RPath.cmpfileobj(rp.open("rb", 1), rf.open("rb"))
+		rp = increment.Increment(sym, rf, target)
+		self.check_time(rp)
+		assert rpath.cmp_attribs(rp, rf)
+		assert rpath.cmpfileobj(rp.open("rb", 1), rf.open("rb"))
+		assert rp.isinccompressed()
 		rp.delete()
 
 	def testdir(self):
 		"""Test increment on dir"""
-		Inc.Increment(sym, dir, target)
-		rp = RPath(lc, t_pref + ".dir")
-		rp2 = RPath(lc, t_pref)
+		rp = increment.Increment(sym, dir, target)
+		self.check_time(rp)
 		assert rp.lstat()
 		assert target.isdir()
-		assert RPath.cmp_attribs(dir, rp)
+		assert rpath.cmp_attribs(dir, rp)
 		assert rp.isreg()
 		rp.delete()
 		target.delete()
@@ -118,46 +111,36 @@ class inctest(unittest.TestCase):
 	def testDiff(self):
 		"""Test making diffs"""
 		Globals.compression = None
-		rp = RPath(lc, t_pref + '.diff')
-		if rp.lstat(): rp.delete()
-		Inc.Increment(rf, rf2, target)
-		rp.setdata()
-		assert rp.lstat()
-		assert RPath.cmp_attribs(rp, rf2)
+		rp = increment.Increment(rf, rf2, target)
+		self.check_time(rp)
+		assert rpath.cmp_attribs(rp, rf2)
 		Rdiff.patch_action(rf, rp, out2).execute()
-		assert RPath.cmp(rf2, out2)
+		assert rpath.cmp(rf2, out2)
 		rp.delete()
 		out2.delete()
 
 	def testGzipDiff(self):
 		"""Test making gzipped diffs"""
 		Globals.compression = 1
-		rp = RPath(lc, t_pref + '.diff.gz')
-		if rp.lstat(): rp.delete()
-		Inc.Increment(rf, rf2, target)
-		rp.setdata()
-		assert rp.lstat()
-		assert RPath.cmp_attribs(rp, rf2)
+		rp = increment.Increment(rf, rf2, target)
+		self.check_time(rp)
+		assert rpath.cmp_attribs(rp, rf2)
 		Rdiff.patch_action(rf, rp, out2, delta_compressed = 1).execute()
-		assert RPath.cmp(rf2, out2)
+		assert rpath.cmp(rf2, out2)
 		rp.delete()
 		out2.delete()
 
 	def testGzipRegexp(self):
 		"""Here a .gz file shouldn't be compressed"""
 		Globals.compression = 1
-		RPath.copy(rf, out_gz)
+		rpath.copy(rf, out_gz)
 		assert out_gz.lstat()
 
-		rp = RPath(lc, t_pref + '.diff')
-		if rp.lstat(): rp.delete()
-
-		Inc.Increment(rf, out_gz, target)
-		rp.setdata()
-		assert rp.lstat()
-		assert RPath.cmp_attribs(rp, out_gz)
+		rp = increment.Increment(rf, out_gz, target)
+		self.check_time(rp)
+		assert rpath.cmp_attribs(rp, out_gz)
 		Rdiff.patch_action(rf, rp, out2).execute()
-		assert RPath.cmp(out_gz, out2)
+		assert rpath.cmp(out_gz, out2)
 		rp.delete()
 		out2.delete()
 		out_gz.delete()
@@ -194,8 +177,8 @@ class inctest2(unittest.TestCase):
 		InternalBackup(1, 1, "testfiles/stattest2", "testfiles/output",
 					   time.time()+1)
 
-		rbdir = RPath(Globals.local_connection,
-					  "testfiles/output/rdiff-backup-data")
+		rbdir = rpath.RPath(Globals.local_connection,
+							"testfiles/output/rdiff-backup-data")
 
 		#incs = Restore.get_inclist(rbdir.append("subdir").
 		#						   append("directory_statistics"))
@@ -217,14 +200,14 @@ class inctest2(unittest.TestCase):
 		#assert 400000 < subdir_stats.ChangedMirrorSize < 420000
 		#assert 10 < subdir_stats.IncrementFileSize < 20000
 
-		incs = Restore.get_inclist(rbdir.append("session_statistics"))
+		incs = restore.get_inclist(rbdir.append("session_statistics"))
 		assert len(incs) == 2
-		s2 = StatsObj().read_stats_from_rp(incs[0])
+		s2 = statistics.StatsObj().read_stats_from_rp(incs[0])
 		assert s2.SourceFiles == 7
 		assert 700000 < s2.SourceFileSize < 750000
 		self.stats_check_initial(s2)
 
-		root_stats = StatsObj().read_stats_from_rp(incs[1])
+		root_stats = statistics.StatsObj().read_stats_from_rp(incs[1])
 		assert root_stats.SourceFiles == 7, root_stats.SourceFiles
 		assert 550000 < root_stats.SourceFileSize < 570000
 		assert root_stats.MirrorFiles == 7

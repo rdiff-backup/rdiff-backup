@@ -20,7 +20,7 @@
 """Support code for remote execution and data transfer"""
 
 from __future__ import generators
-import types, os, tempfile, cPickle, shutil, traceback, pickle, socket
+import types, os, tempfile, cPickle, shutil, traceback, pickle, socket, sys
 
 
 class ConnectionError(Exception): pass
@@ -121,11 +121,13 @@ class LowLevelPipeConnection(Connection):
 		"""Put an object into the pipe (will send raw if string)"""
 		Log.conn("sending", obj, req_num)
 		if type(obj) is types.StringType: self._putbuf(obj, req_num)
-		elif isinstance(obj, Connection): self._putconn(obj, req_num)
-		elif isinstance(obj, TempFile): self._puttempfile(obj, req_num)
-		elif isinstance(obj, DSRPath): self._putdsrpath(obj, req_num)
-		elif isinstance(obj, RPath): self._putrpath(obj, req_num)
-		elif isinstance(obj, RORPath): self._putrorpath(obj, req_num)
+		elif isinstance(obj, connection.Connection):self._putconn(obj, req_num)
+		elif isinstance(obj, TempFile.TempFile):
+			self._puttempfile(obj, req_num)
+		elif isinstance(obj, destructive_stepping.DSRPath):
+			self._putdsrpath(obj, req_num)
+		elif isinstance(obj, rpath.RPath): self._putrpath(obj, req_num)
+		elif isinstance(obj, rpath.RORPath): self._putrorpath(obj, req_num)
 		elif ((hasattr(obj, "read") or hasattr(obj, "write"))
 			  and hasattr(obj, "close")): self._putfile(obj, req_num)
 		elif hasattr(obj, "next"): self._putiter(obj, req_num)
@@ -146,7 +148,7 @@ class LowLevelPipeConnection(Connection):
 
 	def _putiter(self, iterator, req_num):
 		"""Put an iterator through the pipe"""
-		self._write("i", str(VirtualFile.new(RORPIter.ToFile(iterator))),
+		self._write("i", str(VirtualFile.new(rorpiter.ToFile(iterator))),
 					req_num)
 
 	def _puttempfile(self, tempfile, req_num):
@@ -239,8 +241,8 @@ class LowLevelPipeConnection(Connection):
 		elif format_string == "b": result = data
 		elif format_string == "f": result = VirtualFile(self, int(data))
 		elif format_string == "i":
-			result = RORPIter.FromFile(BufferedRead(VirtualFile(self,
-																int(data))))
+			result = rorpiter.FromFile(iterfile.BufferedRead(
+				VirtualFile(self, int(data))))
 		elif format_string == "t": result = self._gettempfile(data)
 		elif format_string == "r": result = self._getrorpath(data)
 		elif format_string == "R": result = self._getrpath(data)
@@ -254,23 +256,25 @@ class LowLevelPipeConnection(Connection):
 	def _getrorpath(self, raw_rorpath_buf):
 		"""Reconstruct RORPath object from raw data"""
 		index, data = cPickle.loads(raw_rorpath_buf)
-		return RORPath(index, data)
+		return rpath.RORPath(index, data)
 
 	def _gettempfile(self, raw_tf_buf):
 		"""Return TempFile object indicated by raw_tf_buf"""
 		conn_number, base, index, data = cPickle.loads(raw_tf_buf)
-		return TempFile(Globals.connection_dict[conn_number],
-						base, index, data)
+		return TempFile.TempFile(Globals.connection_dict[conn_number],
+								 base, index, data)
 
 	def _getrpath(self, raw_rpath_buf):
 		"""Return RPath object indicated by raw_rpath_buf"""
 		conn_number, base, index, data = cPickle.loads(raw_rpath_buf)
-		return RPath(Globals.connection_dict[conn_number], base, index, data)
+		return rpath.RPath(Globals.connection_dict[conn_number],
+						   base, index, data)
 
 	def _getdsrpath(self, raw_dsrpath_buf):
 		"""Return DSRPath object indicated by buf"""
 		conn_number, state_dict = cPickle.loads(raw_dsrpath_buf)
-		empty_dsrp = DSRPath("bypass", Globals.local_connection, None)
+		empty_dsrp = destructive_stepping.DSRPath("bypass",
+								  Globals.local_connection, None)
 		empty_dsrp.__setstate__(state_dict)
 		empty_dsrp.conn = Globals.connection_dict[conn_number]
 		empty_dsrp.file = None
@@ -538,22 +542,11 @@ class VirtualFile:
 
 # everything has to be available here for remote connection's use, but
 # put at bottom to reduce circularities.
-import Globals, Time, Rdiff, Hardlink, FilenameMapping, C, Security, Main
-from static import *
-from lazy import *
-from log import *
-from iterfile import *
-from connection import *
-from rpath import *
-from robust import *
-from rorpiter import *
-from selection import *
-from statistics import *
-from increment import *
-from restore import *
-from manage import *
-from highlevel import *
-
+import Globals, Time, Rdiff, Hardlink, FilenameMapping, C, Security, \
+	   Main, rorpiter, selection, increment, statistics, manage, lazy, \
+	   iterfile, rpath, robust, restore, manage, highlevel, connection, \
+	   TempFile, destructive_stepping, SetConnections
+from log import Log
 
 Globals.local_connection = LocalConnection()
 Globals.connections.append(Globals.local_connection)

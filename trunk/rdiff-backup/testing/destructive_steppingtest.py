@@ -1,23 +1,22 @@
 from __future__ import generators
 import unittest
 from commontest import *
-from rdiff_backup.rpath import *
-from rdiff_backup.selection import *
-from rdiff_backup import Globals
+from rdiff_backup import rpath, selection, Globals, destructive_stepping
 
 Log.setverbosity(4)
 
 class DSTest(unittest.TestCase):
 	def setUp(self):
 		self.lc = Globals.local_connection
-		self.noperms = RPath(self.lc, "testfiles/noperms")
+		self.noperms = rpath.RPath(self.lc, "testfiles/noperms")
 		Globals.change_source_perms = 1
-		self.iteration_dir = RPath(self.lc, "testfiles/iteration-test")
+		self.iteration_dir = rpath.RPath(self.lc, "testfiles/iteration-test")
 
 	def testDSIter(self):
 		"""Testing destructive stepping iterator from baserp"""
 		for i in range(2):
-			sel = Select(DSRPath(1, self.noperms)).set_iter()
+			sel = selection.Select(destructive_stepping.
+								        DSRPath(1, self.noperms)).set_iter()
 			ds_iter = sel.iterate_with_finalizer()
 			noperms = ds_iter.next()
 			assert noperms.isdir() and noperms.getperms() == 0, \
