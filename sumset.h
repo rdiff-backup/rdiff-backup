@@ -39,7 +39,7 @@ typedef struct hs_sum_buf hs_sum_buf_t;
  * a file.  It incorporates some redundancy to make it easier to
  * search.
  */
-struct hs_sumset {
+struct hs_signature {
         off_t           flength;	/* total file length */
         int             count;          /* how many chunks */
         int             remainder;	/* flength % block_length */

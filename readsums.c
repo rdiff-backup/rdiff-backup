@@ -23,7 +23,7 @@
 
 
 /*
- * readsums.c -- Load signatures from a file into an ::hs_sumset_t.
+ * readsums.c -- Load signatures from a file into an ::hs_signature_t.
  */
 
 #include <config.h>
@@ -49,6 +49,18 @@
 
 
 
+static hs_result hs_loadsig_alloc(hs_job_t *job)
+{
+    job->sumset = hs_alloc_struct(hs_signature_t);
+    job->signature->block_len = job->block_len;
+    
+    hs_trace("allocated sigset_t (strong_sum_len=%d, block_len=%d)",
+             job->strong_sum_len, job->block_len);
+
+    return HS_DONE;
+}
+
+
 static hs_result hs_loadsig_s_stronglen(hs_job_t *job)
 {
     int                 l;
@@ -57,11 +69,10 @@ static hs_result hs_loadsig_s_stronglen(hs_job_t *job)
     if ((result = hs_suck_n32(job->stream, &l)) != HS_DONE)
         return result;
     job->strong_sum_len = l;
-    hs_trace("got strong_sum len %d", job->strong_sum_len);
     
     if (l < 0  ||  l > HS_MD4_LENGTH) {
         hs_error("strong sum length %d is implausible", l);
-        return hs_job_fail(HS_CORRUPT);
+        return hs_job_fail(job, HS_CORRUPT);
     }
 
     job->statefn = hs_job_s_complete;
@@ -78,11 +89,10 @@ static hs_result hs_loadsig_s_blocklen(hs_job_t *job)
     if ((result = hs_suck_n32(job->stream, &l)) != HS_DONE)
         return result;
     job->block_len = l;
-    hs_trace("got block length %d", job->block_len);
 
     if (job->block_len < 1) {
         hs_error("block length of %d is bogus", job->block_len);
-        return hs_job_fail(HS_CORRUPT);
+        return hs_job_fail(job, HS_CORRUPT);
     }
 
     job->statefn = hs_loadsig_s_stronglen;
@@ -111,18 +121,18 @@ static hs_result hs_loadsig_s_header(hs_job_t *job)
 
 
 /**
- * \brief Read a signature from a file into an ::hs_sumset_t structure
+ * \brief Read a signature from a file into an ::hs_signature_t structure
  * in memory.
  *
  * Once there, it can be used to generate a delta to a newer version of
  * the file.
  */
-hs_job_t *hs_loadsig_begin(hs_stream_t *stream, hs_sumset_t **sumset)
+hs_job_t *hs_loadsig_begin(hs_stream_t *stream, hs_signature_t **sumset)
 {
     hs_job_t *job;
 
     job = hs_job_new(stream);
-    job->sumset = *sumset = hs_alloc_struct(hs_sumset_t);
+    job->sumset = *sumset = hs_alloc_struct(hs_signature_t);
     job->statefn = hs_loadsig_s_header;
         
     return job;
@@ -134,7 +144,7 @@ hs_job_t *hs_loadsig_begin(hs_stream_t *stream, hs_sumset_t **sumset)
  * readsums.c -- Read a signature file into a memory structure.  A
  * nonblocking state machine to be run through the job architecture.
  */
-hs_sumset_t *
+hs_signature_t *
 hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
 {
         int             ret = 0;
@@ -142,7 +152,7 @@ hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
         hs_sum_buf_t   *asignature;
         int             n = 0;
         int             checksum1;
-        hs_sumset_t    *sumbuf;
+        hs_signature_t    *sumbuf;
         uint32_t	    tmp32;
 
 
@@ -152,10 +162,6 @@ hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
 
         if (hs_read_blocksize(sigread_fn, sigread_priv, &block_len) < 0)
                 return NULL;
-
-        sumbuf = hs_alloc_struct(hs_sumset_t);
-
-        sumbuf->block_len = block_len;
 
         sumbuf->block_sums = NULL;
         /* XXX: It's perhaps a bit inefficient to realloc each time. We could

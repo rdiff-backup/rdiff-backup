@@ -183,10 +183,10 @@ char *hs_format_stats(hs_stats_t const *, char *, size_t);
 int hs_log_stats(hs_stats_t const *stats);
 
 
-typedef struct hs_sumset hs_sumset_t;
+typedef struct hs_signature hs_signature_t;
 
-void hs_free_sumset(hs_sumset_t *);
-void hs_sumset_dump(hs_sumset_t const *);
+void hs_free_sumset(hs_signature_t *);
+void hs_sumset_dump(hs_signature_t const *);
 
 
 /**
@@ -256,7 +256,7 @@ hs_job_t *hs_sig_begin(hs_stream_t *stream,
 
 hs_job_t       *hs_delta_begin(hs_stream_t *stream);
 
-hs_job_t       *hs_loadsig_begin(hs_stream_t *, hs_sumset_t **);
+hs_job_t       *hs_loadsig_begin(hs_stream_t *, hs_signature_t **);
 
 /**
  * \brief Callback used to retrieve parts of the basis file. */

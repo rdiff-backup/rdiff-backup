@@ -38,9 +38,9 @@ struct hs_job {
         hs_copy_cb      *copy_cb;
         void            *copy_arg;
 
-        /** Signature that's either being read in, or used for
-         * generating a delta. */
-        hs_sumset_t     *sumset;
+    /** Signature that's either being read in, or used for
+     * generating a delta. */
+    hs_signature_t     *signature;
 
         /** Command byte currently being processed, if any. */
         int op;
