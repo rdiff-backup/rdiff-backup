@@ -57,6 +57,7 @@ main areas:
 
    - \ref api_streaming
    - \ref api_delta
+   - \ref api_buffers
    - \ref api_whole
    - \ref api_trace
    - \ref api_stats
@@ -91,8 +92,6 @@ stream.  The ::rs_result_t values returned may indicate
 
 These can be converted to a human-readable string by rs_strerror().
 
-\subsection api_buffers Buffers
-
 \subsection api_delta Generating and applying deltas
 
 All encoding operations are performed by using a <tt>*_begin</tt>
@@ -105,6 +104,25 @@ initialization parameters.  The various jobs available are:
    file.
  - rs_patch_begin(): Apply a delta to a basis to recreate the new
    file.
+
+\subsection api_buffers Buffers
+
+After creating a job, input and output buffers are passed to
+rs_job_iter() in an ::rs_buffers_t structure.
+
+On input, the buffers structure must contain the address and length of
+the input and output buffers.  The library updates these values to
+indicate the amount of \b remaining buffer.  So, on return, \c
+avail_out is not the amount of output data produced, but rather the
+amount of output buffer space unfilled.  This means that the values on
+return are consistent with the values on entry, but not necessarily
+what you would expect.
+
+A similar system is used by \p libz and \p libbz2.
+
+\warning The input may not be completely consumed by the iteration if
+there is not enough output space.  The application must retain unused
+input data, and pass it in again when it is ready for more output.
 
 \subsection api_whole Processing whole files
 
