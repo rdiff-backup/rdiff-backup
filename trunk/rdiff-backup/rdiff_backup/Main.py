@@ -325,7 +325,7 @@ def backup_set_fs_globals(rpin, rpout):
 	"""Use fs_abilities to set the globals that depend on filesystem"""
 	def update_bool_global(attr, bool):
 		"""If bool is not None, update Globals.attr accordingly"""
-		if Globals.get(attr) is not None:
+		if Globals.get(attr) is None:
 			SetConnections.UpdateGlobal(attr, bool)
 
 	src_fsa = fs_abilities.FSAbilities('source').init_readonly(rpin)
@@ -418,8 +418,7 @@ def restore_set_fs_globals(target):
 	"""Use fs_abilities to set the globals that depend on filesystem"""
 	def update_bool_global(attr, bool):
 		"""If bool is not None, update Globals.attr accordingly"""
-		if Globals.get(attr) is not None:
-			SetConnections.UpdateGlobal(attr, bool)
+		if Globals.get(attr) is None: SetConnections.UpdateGlobal(attr, bool)
 
 	target_fsa = fs_abilities.FSAbilities('destination').init_readwrite(
 		target, 0)
