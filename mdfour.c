@@ -242,18 +242,26 @@ rs_mdfour_block(rs_mdfour_t *md, void const *p)
     rs_mdfour64(md,p);
 }
 
-#  else
+#  else /* !WORDS_BIGENDIAN && !__i386__ */
 
 /* We are little-endian, but not on i386 and therefore may not be able
- * to do unaligned access safely/quickly.  So copy the input block to
- * an aligned buffer first. */
+ * to do unaligned access safely/quickly.
+ *
+ * So if the input is not already aligned correctly, copy it to an
+ * aligned buffer first.  */
 inline static void
 rs_mdfour_block(rs_mdfour_t *md, void const *p)
 {
-    uint32_t        M[16];
+    unsigned long ptrval = (unsigned long) p;
 
-    memcpy(M, p, 16 * sizeof(uint32_t));
-    rs_mdfour64(md, M);
+    if (ptrval & 3) {
+        uint32_t        M[16];
+        
+        memcpy(M, p, 16 * sizeof(uint32_t));
+        rs_mdfour64(md, M);
+    } else {
+        rs_mdfour64(md, (const uint32_t *) p);
+    }
 }
 
 #  endif /* ! __i386__ */
