@@ -1,3 +1,31 @@
+2002-01-26  Ben Elliston  <bje@redhat.com>
+
+	* doc/Makefile.am: New file.
+	* Doxyfile: Move from here ..
+	* doc/Doxyfile.in: .. to here (with added substitutions).
+	* codeheader.c: Move from here ..
+	* doc/codeheader.c: .. to here.
+	* codeheader.man: Move from here ..
+	* doc/codeheader.man: .. to here.
+	* codeheader.sh: Move from here ..
+	* doc/codeheader.sh: .. to here.
+	* doyxgen.css: Move from here ..
+	* doc/doxygen.css: .. to here.
+	* extra.dox: Move from here ..
+	* doc/extra.dox: .. to here.
+	* header.html: Move from here ..
+	* doc/header.html: .. to here.
+	* librsync.3: Move from here ..
+	* doc/librsync.3: .. to here.
+	* main.dox: Move from here ..
+	* doc/main.dox: .. to here.
+	* rdiff.1: Move from here ..
+	* doc/rdiff.1: .. to here.
+	* rdiff.dox: Move from here ..
+	* doc/rdiff.dox: .. to here.
+	* rproxy-small-logo.png: Move from here ..
+	* doc/rproxy-small-logo.png: .. to here.
+
 2002-01-25  Ben Elliston  <bje@redhat.com>
 
 	* autogen.sh: Don't implicitly run configure.

@@ -4,7 +4,7 @@
 #---------------------------------------------------------------------------
 PROJECT_NAME           = librsync
 PROJECT_NUMBER         = 
-OUTPUT_DIRECTORY       = 
+OUTPUT_DIRECTORY       = .
 OUTPUT_LANGUAGE        = English
 EXTRACT_ALL            = NO
 EXTRACT_PRIVATE        = NO
@@ -48,7 +48,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = .
+INPUT                  = @top_srcdir@
 FILE_PATTERNS          = *.c \
                          *.h \
                          *.dox
@@ -71,9 +71,9 @@ IGNORE_PREFIX          =
 #---------------------------------------------------------------------------
 GENERATE_HTML          = YES
 HTML_OUTPUT            = html
-HTML_HEADER            = header.html
-HTML_FOOTER            = footer.html
-HTML_STYLESHEET        = doxygen.css
+HTML_HEADER            = @srcdir@/header.html
+HTML_FOOTER            = @srcdir@/footer.html
+HTML_STYLESHEET        = @srcdir@/doxygen.css
 HTML_ALIGN_MEMBERS     = YES
 GENERATE_HTMLHELP      = NO
 DISABLE_INDEX          = NO
