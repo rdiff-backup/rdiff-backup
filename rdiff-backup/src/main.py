@@ -124,8 +124,16 @@ class Main:
 		elif self.action == "test-server":
 			SetConnections.TestConnections()
 		elif self.action == "list-increments":
-			self.ListIncrements(rps[0])
+			if len(rps) > 1:
+				Log.FatalError("The --list-increments option should be used "
+							   "with only one argument,\n"
+							   "the mirror directory to process")
+				self.ListIncrements(rps[0])
 		elif self.action == "remove-older-than":
+			if len(rps) > 1:
+				Log.FatalError("The --remove-older-than option should be used "
+							   "with only one directory argument,\n"
+							   "the location of the mirror directory.")
 			self.RemoveOlderThan(rps[0])
 		else: raise AssertionError("Unknown action " + self.action)
 
