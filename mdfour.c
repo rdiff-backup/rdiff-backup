@@ -23,54 +23,53 @@
 
 /* MD4 message digest algorithm.
  *
- * NOTE: This code makes no attempt to be fast!
+ * TODO: Perhaps use the MD4 routine from OpenSSL if it's installed.
+ * It's probably not worth the trouble.
  *
- * It assumes that a int is at least 32 bits long
- */
+ * This was originally written by Andrew Tridgell for use in Samba. */
 
 #include <config.h>
-
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
 #include "rsync.h"
+#include "trace.h"
+#include "types.h"
 
 
+static void (*rs_mdfour_block)(rs_mdfour_t *md, void const *p) = NULL;
 
-
+     
 #define F(X,Y,Z) (((X)&(Y)) | ((~(X))&(Z)))
 #define G(X,Y,Z) (((X)&(Y)) | ((X)&(Z)) | ((Y)&(Z)))
 #define H(X,Y,Z) ((X)^(Y)^(Z))
-#ifdef LARGE_INT32
-#define lshift(x,s) ((((x)<<(s))&0xFFFFFFFF) | (((x)>>(32-(s)))&0xFFFFFFFF))
-#else
 #define lshift(x,s) (((x)<<(s)) | ((x)>>(32-(s))))
-#endif
 
 #define ROUND1(a,b,c,d,k,s) a = lshift(a + F(b,c,d) + X[k], s)
 #define ROUND2(a,b,c,d,k,s) a = lshift(a + G(b,c,d) + X[k] + 0x5A827999,s)
 #define ROUND3(a,b,c,d,k,s) a = lshift(a + H(b,c,d) + X[k] + 0x6ED9EBA1,s)
 
-/** Update an MD4 accumulator from a 64-byte chunk.
+/**
+ * Update an MD4 accumulator from a 64-byte chunk.
+ *
+ * This cannot be used for the last chunk of the file, which must be
+ * padded and contain the file length.  rs_mdfour_tail() is used for
+ * that.
  *
  * \todo Recode to be fast, and to use system integer types.  Perhaps
  * if we can find an mdfour implementation already on the system
  * (e.g. in OpenSSL) then we should use it instead of our own?
  *
- * \todo Apparently rsync 2.4 now has a fast MD4 routine.  So we
- * should copy that into here.  */
+ * \param X A series of integer, read little-endian from the file.
+ */
 static void
-rs_mdfour64(rs_mdfour_t * m, unsigned int * M)
+rs_mdfour64(rs_mdfour_t * m, const void *p)
 {
-    int             j;
-    unsigned int        AA, BB, CC, DD;
-    unsigned int        X[16];
-    unsigned int        A, B, C, D;
-
-    for (j = 0; j < 16; j++)
-	X[j] = M[j];
+    uint32_t        AA, BB, CC, DD;
+    uint32_t        A, B, C, D;
+    const uint32_t *X = (const uint32_t *) p;
 
     A = m->A;
     B = m->B;
@@ -137,34 +136,33 @@ rs_mdfour64(rs_mdfour_t * m, unsigned int * M)
     C += CC;
     D += DD;
 
-#ifdef LARGE_INT32
-    A &= 0xFFFFFFFF;
-    B &= 0xFFFFFFFF;
-    C &= 0xFFFFFFFF;
-    D &= 0xFFFFFFFF;
-#endif
-
-    for (j = 0; j < 16; j++)
-	X[j] = 0;
-
     m->A = A;
     m->B = B;
     m->C = C;
     m->D = D;
 }
 
+
+/* These next two routines are necessary because MD4 is specified in
+ * terms of little-endian int32s, but we have a byte buffer.  On
+ * little-endian platforms, I think we can just use the buffer pointer
+ * directly.
+ *
+ * There are some nice endianness routines in glib, including
+ * assembler variants.  If we ever depended on glib, then it could be
+ * good to use them instead. */
 static void
-copy64( /* @out@ */ unsigned int * M, unsigned char const *in)
+copy64( /* @out@ */ uint32_t * M, unsigned char const *in)
 {
     int             i;
 
     for (i = 0; i < 16; i++)
-	M[i] = (in[i * 4 + 3] << 24) | (in[i * 4 + 2] << 16) |
-	    (in[i * 4 + 1] << 8) | (in[i * 4 + 0] << 0);
+        M[i] = (in[i * 4 + 3] << 24) | (in[i * 4 + 2] << 16) |
+            (in[i * 4 + 1] << 8) | (in[i * 4 + 0] << 0);
 }
 
 static void
-copy4( /* @out@ */ unsigned char *out, unsigned int const x)
+copy4( /* @out@ */ unsigned char *out, uint32_t const x)
 {
     out[0] = x & 0xFF;
     out[1] = (x >> 8) & 0xFF;
@@ -174,9 +172,49 @@ copy4( /* @out@ */ unsigned char *out, unsigned int const x)
 
 
 
+/**
+ * Accumulate a block, making appropriate conversions for bigendian
+ * machines.
+ */
+static void
+rs_mdfour_block_slow(rs_mdfour_t *md, void const *p)
+{
+    uint32_t        M[16];
+
+    copy64(M, p);
+    rs_mdfour64(md, M);
+}
+
+
+static void
+rs_mdfour_choose_packer(void)
+{
+    static const char foo[] = { 0xde, 0xad, 0xbe, 0xef};
+    const uint32_t *p = (const uint32_t *) foo;
+    
+    if (sizeof(uint32_t) != 4)
+        rs_fatal("internal error: uint32_t is not really 32 bits!");
+    if (sizeof(foo) != 4)
+        rs_fatal("internal error: something wierd about char arrays");
+
+    if (*p == 0xdeadbeef) {
+        rs_trace("big-endian machine");
+        rs_mdfour_block = rs_mdfour_block_slow;
+    } else if (*p == 0xefbeadde) {
+        rs_trace("little-endian machine");
+        rs_mdfour_block = rs_mdfour64;
+    } else {
+        rs_fatal("can't determine endianness from %#x", *p);
+    }
+}
+
+
 void
 rs_mdfour_begin(rs_mdfour_t * md)
 {
+    if (!rs_mdfour_block)
+        rs_mdfour_choose_packer();
+
     memset(md, 0, sizeof(*md));
     md->A = 0x67452301;
     md->B = 0xefcdab89;
@@ -186,12 +224,17 @@ rs_mdfour_begin(rs_mdfour_t * md)
 }
 
 
+/**
+ * Handle special behaviour for processing the last block of a file
+ * when calculating its MD4 checksum.
+ *
+ * This must be called exactly once per file.
+ */
 static void
 rs_mdfour_tail(rs_mdfour_t * m, unsigned char const *in, int n)
 {
     unsigned char   buf[128];
-    unsigned int        M[16];
-    unsigned int        b;
+    uint32_t        b;
 
     m->totalN += n;
 
@@ -199,60 +242,63 @@ rs_mdfour_tail(rs_mdfour_t * m, unsigned char const *in, int n)
 
     memset(buf, 0, 128);
     if (n)
-	memcpy(buf, in, n);
+        memcpy(buf, in, n);
     buf[n] = 0x80;
 
     if (n <= 55) {
-	copy4(buf + 56, b);
-	copy64(M, buf);
-	rs_mdfour64(m, M);
+        copy4(buf + 56, b);
+        rs_mdfour_block(m, buf);
     } else {
-	copy4(buf + 120, b);
-	copy64(M, buf);
-	rs_mdfour64(m, M);
-	copy64(M, buf + 64);
-	rs_mdfour64(m, M);
+        copy4(buf + 120, b);
+        rs_mdfour_block(m, buf);
+        rs_mdfour_block(m, buf + 64);
     }
 }
 
 
-
+/**
+ * Feed some data into the MD4 accumulator.
+ *
+ * \param n Number of bytes fed in.
+ */
 void
 rs_mdfour_update(rs_mdfour_t * md, void const *in_void, size_t n)
 {
-    unsigned int        M[16];
-    size_t          n2 = 64 - md->tail_len;
     unsigned char const        *in = (unsigned char const *) in_void;
 
     if (n == 0)
-	return;
+        return;
 
-    if (n2 > n)
-	n2 = n;
-    memcpy(&md->tail[md->tail_len], in, n2);
-    md->tail_len += n2;
-    in += n2;
-    n -= n2;
+    if (md->tail_len) {
+        size_t                     tail_gap = 64 - md->tail_len;
 
-    if (md->tail_len != 64)
-	return;
+        /* If there's any leftover data in the tail buffer, then first
+         * we have to make it up to a whole block and process it. */
+        if (tail_gap > n)
+            tail_gap = n;
+        memcpy(&md->tail[md->tail_len], in, tail_gap);
+        md->tail_len += tail_gap;
+        in += tail_gap;
+        n -= tail_gap;
 
-    copy64(M, md->tail);
-    rs_mdfour64(md, M);
-    md->tail_len = 0;
-    md->totalN += 64;
+        if (md->tail_len != 64)
+            return;
+
+        rs_mdfour_block(md, md->tail);
+        md->tail_len = 0;
+        md->totalN += 64;
+    }
 
     while (n >= 64) {
-	copy64(M, in);
-	rs_mdfour64(md, M);
-	in += 64;
-	n -= 64;
-	md->totalN += 64;
+        rs_mdfour_block(md, in);
+        in += 64;
+        n -= 64;
+        md->totalN += 64;
     }
 
     if (n) {
-	memcpy(md->tail, in, n);
-	md->tail_len = n;
+        memcpy(md->tail, in, n);
+        md->tail_len = n;
     }
 }
 
@@ -270,7 +316,7 @@ rs_mdfour_result(rs_mdfour_t * md, unsigned char *out)
 
 
 void
-rs_mdfour(unsigned char *out, void const *in, int n)
+rs_mdfour(unsigned char *out, void const *in, size_t n)
 {
     rs_mdfour_t     md;
 
