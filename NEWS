@@ -1,6 +1,8 @@
 Changes in 0.9.6
 
- * Large file support fix.
+ * [v]snprintf or _[v]snprintf replacement function fix.
+
+ * Large file support "fseeko" fix.
 
  * Changed installed include file from rsync.h to librsync.h.
 
