@@ -24,7 +24,7 @@
 
 #include <stdio.h>
 
-#include "rsync.h"
+#include "librsync.h"
 
 
 /** \brief Library version string. */

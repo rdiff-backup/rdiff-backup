@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "rsync.h"
+#include "librsync.h"
 #include "command.h"
 
 /* For debugging purposes, here are some human-readable forms. */

@@ -33,7 +33,7 @@
 #endif
 #include <string.h>
 
-#include "rsync.h"
+#include "librsync.h"
 #include "trace.h"
 
 /*

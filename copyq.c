@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "rsync.h"
+#include "librsync.h"
 
 #include "emit.h"
 

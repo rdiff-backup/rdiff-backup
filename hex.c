@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "rsync.h"
+#include "librsync.h"
 
 
 void

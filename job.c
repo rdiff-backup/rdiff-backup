@@ -45,7 +45,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "rsync.h"
+#include "librsync.h"
 #include "stream.h"
 #include "util.h"
 #include "sumset.h"

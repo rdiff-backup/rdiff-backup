@@ -40,7 +40,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "rsync.h"
+#include "librsync.h"
 
 /*
  * TODO: (Suggestion by tridge) Add a function which outputs a

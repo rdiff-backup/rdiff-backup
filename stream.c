@@ -91,7 +91,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "rsync.h"
+#include "librsync.h"
 #include "stream.h"
 #include "util.h"
 #include "trace.h"

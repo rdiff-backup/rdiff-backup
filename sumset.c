@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "rsync.h"
+#include "librsync.h"
 #include "sumset.h"
 #include "util.h"
 #include "trace.h"

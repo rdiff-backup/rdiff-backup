@@ -42,7 +42,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "rsync.h"
+#include "librsync.h"
 #include "trace.h"
 #include "types.h"
 #include "mdfour.h"

@@ -49,7 +49,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "rsync.h"
+#include "librsync.h"
 #include "trace.h"
 #include "buf.h"
 #include "util.h"
