@@ -4,7 +4,7 @@ Version:  	0.9.4
 Release:  	1
 Copyright:	LGPL
 Group:    	System Environment/Libraries
-Source:  	http://ftp1.sourceforge.net/rproxy/librsync-0.9.4pre.tar.gz
+Source:  	http://ftp1.sourceforge.net/rproxy/librsync-0.9.4.tar.gz
 URL:       	http://www.sf.net/projects/rproxy
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
 
