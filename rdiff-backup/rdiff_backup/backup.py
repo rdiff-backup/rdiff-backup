@@ -408,7 +408,10 @@ class PatchITRB(rorpiter.ITRBranch):
 		if diff_rorp.isflaglinked():
 			Hardlink.link_rp(diff_rorp, new, self.basis_root_rp)
 		elif diff_rorp.get_attached_filetype() == 'snapshot':
-			if diff_rorp.isspecial(): self.write_special(diff_rorp, new)
+			if diff_rorp.isspecial():
+				self.write_special(diff_rorp, new)
+				rpath.copy_attribs(diff_rorp, new)
+				return 1
 			elif robust.check_common_error(self.error_handler, rpath.copy,
 										   (diff_rorp, new)) == 0: return 0
 		else:
