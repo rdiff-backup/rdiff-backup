@@ -1,4 +1,4 @@
-#! /bin/sh -pex
+#! /bin/sh -pe
 
 # Copyright (C) 2000 by Martin Pool
 
