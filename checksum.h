@@ -19,14 +19,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/***********************************************************************
- * Checksums
- ***********************************************************************/
+uint32_t _hs_calc_weak_sum(void const *buf1, int len);
 
-
-int             _hs_build_hash_table(hs_sumset_t *sums);
-
-uint32_t        _hs_calc_weak_sum(byte_t const *buf1, int len);
-
-uint32_t        _hs_calc_strong_sum(byte_t const *buf, size_t buf_len,
-				    byte_t *sum, size_t sum_len);
+void _hs_calc_strong_sum(void const *buf, size_t buf_len,
+                         uint8_t *sum, size_t sum_len);
