@@ -21,7 +21,7 @@
 
 sig=$tmpdir/sig.tmp
 expect=$testdir/COPYING.sig
-input=$srcdir/COPYING
+input=$srcdir/../COPYING
 
 for inbuf in $bufsizes
 do

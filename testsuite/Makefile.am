@@ -37,14 +37,16 @@ TESTS = \
 
 noinst_SCRIPTS = driver.sh mutate.pl $(TESTS)
 
-test_data = \
-	changes.input changes.input/01.in changes.input/02.in changes.input/03.in \
-	changes.input/04.in delta.input	delta.input/01.delta delta.input/01.expect \
-	delta.input/02.delta delta.input/02.expect delta.input/03.delta	\
-	delta.input/03.expect mdfour.input mdfour.input/01.expect \
-	mdfour.input/01.data mksum.input mksum.input/COPYING.sig \
-	triple.input triple.input/copying.in triple.input/half.in \
-	triple.input/hello.in triple.input/zero.in signature.input/01.in \
-	signature.input/01.sig dot
+test_data = dot \
+	changes.input/01.in changes.input/02.in \
+	changes.input/03.in changes.input/04.in \
+	delta.input/01.delta delta.input/01.expect \
+	delta.input/02.delta delta.input/02.expect \
+	delta.input/03.delta delta.input/03.expect \
+	mdfour.input/01.expect mdfour.input/01.data \
+	mksum.input/COPYING.sig \
+	triple.input/copying.in triple.input/half.in \
+	triple.input/hello.in triple.input/zero.in \
+	signature.input/01.in signature.input/01.sig
 
 EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)

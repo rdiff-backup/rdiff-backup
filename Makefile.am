@@ -51,8 +51,14 @@ librsync_la_LDFLAGS = -version-info @librsync_libversion@
 # do both, and I don't know if anyone will care if they're just shared
 # libraries anyhow.
 
-EXTRA_DIST = $(noinst_SCRIPTS) \
-	librsync.spec README.CVS libversions.txt ChangeLog
+EXTRA_DIST = autogen.sh configure.msc $(noinst_SCRIPTS) rdiff.magic \
+	librsync.spec README.CVS README.RPM libversions.txt ChangeLog \
+	debian/changelog  debian/README.debian  debian/init.d.ex \
+	debian/control    debian/crontab.ex     debian/manpage.1.ex \
+	debian/copyright  debian/diversions.ex  debian/menu.ex \
+	debian/dirs       debian/inetd.conf.ex  debian/watch.ex \
+	debian/rules      debian/info.ex        debian/librsync1.files \
+	PCbuild/rdiff.dsp PCbuild/PCbuild.dsw   PCbuild/config.h
 
 # This is the default for any programs that don't specify a
 # preference.
