@@ -95,23 +95,122 @@ class Inc:
 			incrp = get_newinc(Time.timetostring(inctime))
 			if not incrp.lstat(): return incrp
 
-	def make_patch_increment_ITR(inc_rpath, initial_state = None):
-		"""Return IterTreeReducer that patches and increments
+MakeStatic(Inc)
 
-		This has to be an ITR because directories that have files in
-		them changed are flagged with an increment marker.  There are
-		four possibilities as to the order:
 
-		1.  Normal file -> Normal file:  right away
-		2.  Directory -> Directory:  wait until files in the directory
-		    are processed, as we won't know whether to add a marker
-		    until the end.
-		3.  Normal file -> Directory:  right away, so later files will
-		    have a directory to go into.
-		4.  Directory -> Normal file:  Wait until the end, so we can
-		    process all the files in the directory.
+class IncrementITR(IterTreeReducer):
+	"""Patch and increment iterator of increment triples
+
+	This has to be an ITR because directories that have files in them
+	changed are flagged with an increment marker.  There are four
+	possibilities as to the order:
+
+	1.  Normal file -> Normal file:  right away
+	2.  Directory -> Directory:  wait until files in the directory
+	    are processed, as we won't know whether to add a marker
+		until the end.
+	3.  Normal file -> Directory:  right away, so later files will
+	    have a directory to go into.
+	4.  Directory -> Normal file:  Wait until the end, so we can
+	    process all the files in the directory.	
+
+	Remember this object needs to be pickable.
+	
+	"""
+	directory, directory_replacement = None, None
+	changed = None
+
+	def __init__(self, inc_rpath):
+		"""Set inc_rpath, an rpath of the base of the tree"""
+		self.inc_rpath = inc_rpath
+		IterTreeReducer.__init__(inc_rpath)
+
+	def start_process(self, index, diff_rorp, dsrp):
+		"""Initial processing of file
+
+		diff_rorp is the RORPath of the diff from the remote side, and
+		dsrp is the local file to be incremented
 
 		"""
+		incpref = self.inc_rpath.new_index(index)
+		if dsrp.isdir():
+			self.init_dir(dsrp, diff_rorp, incpref)
+			self.setvals(diff_rorp, dsrp, incpref)
+		else: self.init_non_dir(dsrp, diff_rorp, incpref)
+
+	def setvals(self, diff_rorp, dsrp, incpref):
+		"""Record given values in state dict since in directory
+
+		We don't do these earlier in case of a problem inside the
+		init_* functions.  Index isn't given because it is done by the
+		superclass.
+
+		"""
+		self.directory = 1
+		self.diff_rorp = diff_rorp
+		self.dsrp = dsrp
+		self.incpref = incpref
+
+	def init_dir(self, dsrp, diff_rorp, incpref):
+		"""Process a directory (initial pass)
+
+		If the directory is changing into a normal file, we need to
+		save the normal file data in a temp file, and then create the
+		real file once we are done with everything inside the
+		directory.
+
+		"""
+		if not (incpref.lstat() and incpref.isdir()): incpref.mkdir()
+		if diff_rorp and diff_rorp.isreg() and diff_rorp.file:
+			tf = TempFileManager(dsrp)
+			RPathStatic.copy_with_attribs(diff_rorp, tf)
+			tf.set_attached_filetype(diff_rorp.get_attached_filetype())
+			self.directory_replacement = tf
+
+	def init_non_dir(self, dsrp, diff_rorp, incpref):
+		"""Process a non directory file (initial pass)"""
+		if not diff_rorp: return # no diff, so no change necessary
+		if diff_rorp.isreg and (dsrp.isreg() or diff_rorp.isflaglinked()):
+			tf = TempFileManager.new(dsrp)
+			def init_thunk():
+				if diff_rorp.isflaglinked():
+					Hardlink.link_rp(diff_rorp, tf, dsrp)
+				else: Rdiff.patch_with_attribs_action(dsrp, diff_rorp,
+													  tf).execute()
+				Inc.Increment_action(tf, dsrp, incpref).execute()
+			Robust.make_tf_robustaction(init_thunk, (tf,), (dsrp,)).execute()
+		else:
+			Robust.chain([Inc.Increment_action(diff_rorp, dsrp, incref),
+						  RORPIter.patchonce_action(none, dsrp, diff_rorp)]
+						 ).execute()
+		self.changed = 1
+
+	def end_process(self):
+		"""Do final work when leaving a tree (directory)"""
+		if not self.directory: return
+		diff_rorp, dsrp, incpref = self.diff_rorp, self.dsrp, self.incpref
+		if not diff_rorp and not self.changed: return
+
+		if self.directory_replacement:
+			tf = self.directory_replacement
+			Inc.Increment(tf, dsrp, incpref)
+			RORPIter.patchonce_action(None, dsrp, tf).execute()
+			tf.delete()
+		else:
+			Inc.Increment(diff_rorp, dsrp, incpref)
+			if diff_rorp:
+				RORPIter.patchonce_action(None, dsrp, diff_rorp).execute()
+
+	def branch_process(self, subinstance):
+		"""Update the has_changed flag if change in branch"""
+		if subinstance.changed: self.changed = 1	
+
+
+
+
+
+	def make_patch_increment_ITR(inc_rpath, initial_state = None):
+		"""Return IterTreeReducer that patches and increments"""
 		def base_init(indexed_tuple):
 			"""Patch if appropriate, return (a,b) tuple
 
@@ -193,4 +292,4 @@ class Inc:
 		return IterTreeReducer(base_init, lambda x,y: x or y, None,
 							   base_final, initial_state)
 
-MakeStatic(Inc)
+
