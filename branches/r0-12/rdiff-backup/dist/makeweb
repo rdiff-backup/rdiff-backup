@@ -2,9 +2,9 @@
 
 import sys, os
 
-def RunCommand(cmd):
+def RunCommand(cmd, ignore_error = 0):
 	print cmd
-	os.system(cmd)
+	assert not os.system(cmd)
 
 webprefix = "/home/ben/misc/html/mirror/rdiff-backup/"
 
@@ -21,10 +21,17 @@ RunCommand("rman -f html -r '' rdiff-backup.1 > %srdiff-backup.1.html"
 RunCommand("cp FAQ.wml CHANGELOG %s" % webprefix)
 
 
+if sys.argv[1:]:
+	RunCommand("mkdir OLD/%s" % (version,), ignore_error = 1)
+	RunCommand("cp rdiff-backup-%s.tar.gz rdiff-backup-%s*rpm %s/OLD/%s" %
+			   (version, version, webprefix, version))
 os.chdir(webprefix)
 print "cd ", webprefix
 if sys.argv[1:]:
+	for filename in os.listdir('OLD/' + version):
+		os.symlink('OLD/%s/%s' % (version, filename), filename)
 	RunCommand("rm latest latest.rpm latest.tar.gz")
-	RunCommand("ln -s *%s*rpm latest.rpm" % (version,))
-	RunCommand("ln -s *%s*tar.gz latest.tar.gz" % (version,))
+	RunCommand("ln -s rdiff-backup-%s-*src.rpm latest.src.rpm" % (version,))
+	os.symlink("rdiff-backup-%s.tar.gz" % (version,), 'latest.tar.gz')
+	os.symlink('OLD/%s' % (version,), 'latest')
 RunCommand("./Make")
