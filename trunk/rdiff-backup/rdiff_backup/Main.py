@@ -111,12 +111,12 @@ def parse_cmdlineoptions(arglist):
 			action = "list-increments"
 		elif opt == '--list-increment-sizes': action = 'list-increment-sizes'
 		elif opt == "--never-drop-acls": Globals.set("never_drop_acls", 1)
-		elif opt == "--no-acls": Globals.set("read_acls", 0)
+		elif opt == "--no-acls": Globals.set("acls_active", 0)
 		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
 			Globals.set("no_compression_regexp_string", arg)
-		elif opt == "--no-eas": Globals.set("read_eas", 0)
+		elif opt == "--no-eas": Globals.set("eas_active", 0)
 		elif opt == "--no-file-statistics": Globals.set('file_statistics', 0)
 		elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 		elif opt == "--null-separator": Globals.set("null_separator", 1)
@@ -358,31 +358,38 @@ def backup_final_init(rpout):
 
 def backup_set_fs_globals(rpin, rpout):
 	"""Use fs_abilities to set the globals that depend on filesystem"""
-	def update_bool_global(attr, bool):
-		"""If bool is not None, update Globals.attr accordingly"""
-		if Globals.get(attr) is None:
-			SetConnections.UpdateGlobal(attr, bool)
+	def update_triple(src_support, dest_support, attr_triple):
+		"""Update global settings for feature based on fsa results"""
+		active_attr, write_attr, conn_attr = attr_triple
+		if Globals.get(active_attr) == 0: return # don't override 0
+		for attr in attr_triple: SetConnections.UpdateGlobal(attr, None)
+		if not src_support: return # if source doesn't support, nothing
+		SetConnections.UpdateGlobal(active_attr, 1)
+		rpin.conn.Globals.set_local(conn_attr, 1)
+		if dest_support:
+			SetConnections.UpdateGlobal(write_attr, 1)
+			rpout.conn.Globals.set_local(conn_attr, 1)
 
 	src_fsa = rpin.conn.fs_abilities.get_fsabilities_readonly('source', rpin)
 	Log(str(src_fsa), 3)
 	dest_fsa = rpout.conn.fs_abilities.get_fsabilities_readwrite(
 		'destination', Globals.rbdir, 1, Globals.chars_to_quote)
 	Log(str(dest_fsa), 3)
-	if Globals.never_drop_acls and not dest_fsa.acls:
+
+	update_triple(src_fsa.eas, dest_fsa.eas,
+				  ('eas_active', 'eas_write', 'eas_conn'))
+	update_triple(src_fsa.acls, dest_fsa.acls,
+				  ('acls_active', 'acls_write', 'acls_conn'))
+	update_triple(src_fsa.resource_forks, dest_fsa.resource_forks,
+				  ('resource_forks_active', 'resource_forks_write',
+				   'resource_forks_conn'))
+	if Globals.never_drop_acls and not Globals.acls_active:
 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
 					   "disabled on destination filesystem")
-
-	if Globals.read_acls != 0: update_bool_global('read_acls', src_fsa.acls)
-	if Globals.read_eas != 0: update_bool_global('read_eas', src_fsa.eas)
-	update_bool_global('read_resource_forks', src_fsa.resource_forks)
 
 	SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks)
 	SetConnections.UpdateGlobal('fsync_directories', dest_fsa.fsync_dirs)
 	SetConnections.UpdateGlobal('change_ownership', dest_fsa.ownership)
-	update_bool_global('write_acls', Globals.read_acls and dest_fsa.acls)
-	update_bool_global('write_eas', Globals.read_eas and dest_fsa.eas)
-	update_bool_global('write_resource_forks',
-					   Globals.read_resource_forks and dest_fsa.resource_forks)
 	SetConnections.UpdateGlobal('chars_to_quote', dest_fsa.chars_to_quote)
 	if Globals.chars_to_quote:
 		for conn in Globals.connections:
@@ -455,9 +462,16 @@ def restore_init_quoting(src_rp):
 
 def restore_set_fs_globals(target):
 	"""Use fs_abilities to set the globals that depend on filesystem"""
-	def update_bool_global(attr, bool):
-		"""If bool is not None, update Globals.attr accordingly"""
-		if Globals.get(attr) is None: SetConnections.UpdateGlobal(attr, bool)
+	def update_triple(src_support, dest_support, attr_triple):
+		"""Update global settings for feature based on fsa results"""
+		active_attr, write_attr, conn_attr = attr_triple
+		if Globals.get(active_attr) == 0: return # don't override 0
+		for attr in attr_triple: SetConnections.UpdateGlobal(attr, None)
+		if not dest_support: return # if dest doesn't support, do nothing
+		SetConnections.UpdateGlobal(active_attr, 1)
+		target.conn.Globals.set_local(conn_attr, 1)
+		target.conn.Globals.set_local(write_attr, 1)
+		if src_support: Globals.rbdir.conn.Globals.set_local(conn_attr, 1)
 
 	target_fsa = target.conn.fs_abilities.get_fsabilities_readwrite(
 		'destination', target, 0)
@@ -465,18 +479,18 @@ def restore_set_fs_globals(target):
 	mirror_fsa = Globals.rbdir.conn.fs_abilities.get_fsabilities_restoresource(
 		Globals.rbdir)
 	Log(str(mirror_fsa), 3)
-	if Globals.never_drop_acls and not target_fsa.acls:
+
+	update_triple(mirror_fsa.eas, target_fsa.eas,
+				  ('eas_active', 'eas_write', 'eas_conn'))
+	update_triple(mirror_fsa.acls, target_fsa.acls,
+				  ('acls_active', 'acls_write', 'acls_conn'))
+	update_triple(mirror_fsa.resource_forks, target_fsa.resource_forks,
+				  ('resource_forks_active', 'resource_forks_write',
+				   'resource_forks_conn'))
+	if Globals.never_drop_acls and not Globals.acls_active:
 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
 					   "disabled on destination filesystem")
 
-	if Globals.read_acls != 0:
-		update_bool_global('read_acls', target_fsa.acls)
-		update_bool_global('write_acls', target_fsa.acls)
-	if Globals.read_eas != 0:
-		update_bool_global('read_eas', target_fsa.eas)
-		update_bool_global('write_eas', target_fsa.eas)
-	update_bool_global('read_resource_forks', target_fsa.resource_forks)
-	update_bool_global('write_resource_forks', target_fsa.resource_forks)
 	SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
 	SetConnections.UpdateGlobal('change_ownership', target_fsa.ownership)
 

@@ -20,6 +20,9 @@ this is the last of the unreadable file bugs...
 
 Rewrote hard link tracking system.  New way should use less memory.
 
+Fixed bug causing rdiff-backup to crash when backing up from system
+supporting EAs/ACLs to one that didn't.
+
 
 New in v0.13.2 (2003/09/16)
 ---------------------------
