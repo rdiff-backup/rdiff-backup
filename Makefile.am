@@ -127,7 +127,7 @@ bin_PROGRAMS = rdiff
 
 rdiff_SOURCES = rdiff.c isprefix.c isprefix.h
 rdiff_LDADD = @BUILD_POPT@ librsync.la
-rdiff_DEPENDENCIES = @BUILD_POPT@
+rdiff_DEPENDENCIES = @BUILD_POPT@ librsync.la
 
 check_PROGRAMS = isprefix.driver
 
