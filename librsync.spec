@@ -51,7 +51,7 @@ aclocal
 autoheader
 automake Makefile popt/Makefile
 autoconf
-./configure --prefix=/usr
+./configure --prefix=/usr --mandir=/usr/share/man/
 make CFLAGS="$RPM_OPT_FLAGS"
 
 %install
