@@ -40,10 +40,7 @@ struct rs_job {
      * they're also used in the mksum operation. */
     int                 block_len;
     int                 strong_sum_len;
-    
-    rs_copy_cb      *copy_cb;
-    void            *copy_arg;
-    
+
     /** Signature that's either being read in, or used for
      * generating a delta. */
     rs_signature_t      *signature;
@@ -77,9 +74,16 @@ struct rs_job {
     char        write_buf[16];
     int         write_len;
 
-    /** If COPY_LEN is >0, then that much data should be copied
+    /** If \p copy_len is >0, then that much data should be copied
      * through from the input. */
-    int         copy_len;
+    rs_long_t   copy_len;
+
+    /** Copy from the basis position. */
+    rs_long_t       basis_pos, basis_len;
+
+    /** Callback used to copy data from the basis into the output. */
+    rs_copy_cb      *copy_cb;
+    void            *copy_arg;
 };
 
 

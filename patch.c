@@ -50,7 +50,7 @@ static rs_result rs_patch_s_params(rs_job_t *);
 static rs_result rs_patch_s_run(rs_job_t *);
 static rs_result rs_patch_s_literal(rs_job_t *);
 static rs_result rs_patch_s_copy(rs_job_t *);
-
+static rs_result rs_patch_s_copying(rs_job_t *);
 
 
 /**
@@ -171,9 +171,73 @@ static rs_result rs_patch_s_copy(rs_job_t *job)
         
     rs_trace("COPY(where=%ld, len=%ld)", (long) where, (long) len);
 
-    /*    rs_tube_copy(job, len); */
+    if (len < 0) {
+        rs_log(RS_LOG_ERR, "invalid length=%ld on COPY command", (long) len);
+        return RS_CORRUPT;
+    }
 
-    job->statefn = rs_patch_s_cmdbyte;
+    if (where < 0) {
+        rs_log(RS_LOG_ERR, "invalid where=%ld on COPY command", (long) where);
+        return RS_CORRUPT;
+    }
+
+    job->basis_pos = where;
+    job->basis_len = len;
+
+    job->statefn = rs_patch_s_copying;
+    return RS_RUNNING;
+}
+
+
+/**
+ * Called when we're executing a COPY command and waiting for all the
+ * data to be retrieved from the callback.
+ */
+static rs_result rs_patch_s_copying(rs_job_t *job)
+{
+    rs_result       result;
+    size_t          len;
+    void            *buf, *ptr;
+    rs_buffers_t    *buffs = job->stream;
+
+    len = job->basis_len;
+    
+    /* copy only as much as will fit in the output buffer, so that we
+     * don't have to block or store the input. */
+    if (len > buffs->avail_out)
+        len = buffs->avail_out;
+
+    if (!len)
+        return RS_BLOCKED;
+
+    rs_trace("copy %ld bytes from basis at offset %ld",
+             (long) len, (long) job->basis_pos);
+
+    ptr = buf = rs_alloc(len, "basis buffer");
+    
+    result = (job->copy_cb)(job->copy_arg, job->basis_pos, &len, &ptr);
+    if (result != RS_DONE)
+        return result;
+    else
+        rs_trace("copy callback returned %s", rs_strerror(result));
+    
+    rs_trace("got %ld bytes back from basis callback", (long) len);
+
+    memcpy(buffs->next_out, ptr, len);
+
+    buffs->next_out += len;
+    buffs->avail_out -= len;
+
+    job->basis_pos += len;
+    job->basis_len -= len;
+
+    free(buf);
+
+    if (!job->basis_len) {
+        /* Done! */
+        job->statefn = rs_patch_s_cmdbyte;
+    } 
+
     return RS_RUNNING;
 }
 
