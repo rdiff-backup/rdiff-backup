@@ -77,16 +77,15 @@ class DSRPath(RPath):
 	def set_init_perms(self, source):
 		"""If necessary, change permissions to ensure access"""
 		if self.isreg() and not self.readable():
-			if not source or Globals.change_source_perms and self.isowner():
+			if (source and Globals.change_source_perms or
+				not source and Globals.change_mirror_perms):
 				self.chmod_bypass(0400)
-			else: self.warn("No read permissions")
 		elif self.isdir():
-			if source and (not self.readable() or not self.executable()):
-				if Globals.change_source_perms and self.isowner():
+			if source and Globals.change_source_perms:
+				if not self.readable() or not self.executable():
 					self.chmod_bypass(0500)
-				else: self.warn("No read or exec permission")
-			elif not source and not self.hasfullperms():
-				self.chmod_bypass(0700)
+			elif not source and Globals.change_mirror_perms:
+				if not self.hasfullperms(): self.chmod_bypass(0700)
 
 	def warn(self, err):
 		Log("Received error '%s' when dealing with file %s, skipping..."
