@@ -1,11 +1,11 @@
 New in v0.8.0 (2002/06/06)
 --------------------------
 
-Fixed 'size' bug that occurred on some non-Linux systems.  Thanks to
-Robert Weber for the report.
-
 Added --null-separator argument so filenames can safely include
 newlines in an include/exclude filelist.
+
+Fixed bug that affected restoring from current mirror with the '-r
+now' option.
 
 
 New in v0.7.6 (2002/05/31)
