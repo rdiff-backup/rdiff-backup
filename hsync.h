@@ -115,18 +115,20 @@ typedef enum {
                                  * This value should never be returned
                                  * to the caller.  */
     
+    HS_TEST_SKIPPED =   77,     /**< Test neither passed or failed. */
+    
     HS_IO_ERROR =	100,    /**< Error in file or network IO. */
     HS_SYNTAX_ERROR =   101,    /**< Command line syntax error. */
     HS_MEM_ERROR =	102,    /**< Out of memory. */
     HS_INPUT_ENDED =	103,	/**< End of input file, possibly
                                    unexpected. */
-    HS_BAD_MAGIC =      104,   /**< Bad magic number at start of
+    HS_BAD_MAGIC =      104,    /**< Bad magic number at start of
                                    stream.  Probably not a libhsync
                                    file, or possibly the wrong kind of
                                    file or from an incompatible
                                    library version. */
-    HS_UNIMPLEMENTED =  105,   /**< Author is lazy. */
-    HS_CORRUPT =        106,   /**< Unbelievable value in stream. */
+    HS_UNIMPLEMENTED =  105,    /**< Author is lazy. */
+    HS_CORRUPT =        106,    /**< Unbelievable value in stream. */
 } hs_result;
 
 
@@ -257,7 +259,7 @@ int             hs_accum_value(hs_job_t *, char *sum, size_t sum_len);
 hs_job_t *hs_sig_begin(hs_stream_t *stream,
                        size_t new_block_len, size_t strong_sum_len);
 
-hs_job_t       *hs_delta_begin(hs_stream_t *stream);
+hs_job_t       *hs_delta_begin(hs_stream_t *stream, hs_signature_t *);
 
 hs_job_t       *hs_loadsig_begin(hs_stream_t *, hs_signature_t **);
 
