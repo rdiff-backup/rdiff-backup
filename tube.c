@@ -137,9 +137,9 @@ rs_tube_copy_from_scoop(rs_job_t *job)
 
     job->copy_len -= this_len;
 
-    rs_trace("caught up on %d copied bytes from scoop, %d remain there, "
-             "%d remain to be copied", 
-             this_len, job->scoop_avail, job->copy_len);
+    rs_trace("caught up on %ld copied bytes from scoop, %ld remain there, "
+             "%ld remain to be copied", 
+             (long) this_len, (long) job->scoop_avail, (long) job->copy_len);
 }
 
 

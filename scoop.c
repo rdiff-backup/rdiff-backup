@@ -193,7 +193,7 @@ rs_result rs_scoop_readahead(rs_job_t *job, size_t len, void **ptr)
     } else if (stream->avail_in >= len) {
         /* There's enough data in the stream's input */
         *ptr = stream->next_in;
-        rs_trace("got %ld bytes direct from input @%p", (long) len, *ptr);
+        rs_trace("got %ld bytes from input buffer", (long) len);
         return RS_DONE;
     } else if (stream->avail_in > 0) {
         /* Nothing was queued before, but we don't have enough
