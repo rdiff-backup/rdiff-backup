@@ -201,10 +201,6 @@ $Id$
 
  * More thorough testing
 
-   * Check the encoded file checksum against the real mdfour sum of
-     the file?  The code's pretty simple, so hopefully this is not a
-     problem.
-
    * mdfour
 
      * keep some example files and check that they give the expected

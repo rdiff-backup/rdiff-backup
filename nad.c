@@ -109,8 +109,6 @@
 /*
  * TODO: Check all return codes when writing.
  *
- * TODO: Statistics are not generated for literals.
- *
  * TODO: Send out literals through a literal buffer to make
  * transmission faster?  If we do this, then don't copy the data again
  * but just keep it mapped until we're finished with it.  Perhaps this
