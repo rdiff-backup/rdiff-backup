@@ -22,7 +22,7 @@ David Gibson <dgibson@linuxcare.com.au>
 
 The release of 0.9.6 was contributed to mostly by the following people;
 
-Wayne Davidson <wayned@users.sourceforge.net>
+Wayne Davison <wayned@users.sourceforge.net>
   - librsync sf project admin
   - sf project creation, import cvs etc
   - many cvs commits of submitted patches
