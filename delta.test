@@ -3,7 +3,7 @@
 # libhsync -- the library for network deltas
 # $Id$
 # 
-# Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
+# Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
 # Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
 # 
 # This program is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@ for delta in $testdir/*.delta
 do
     for inbuf in $bufsizes
     do
-        cmd="rdiff -f -I$inbuf patch /dev/null $delta $new"
+        cmd="rdiff -I$inbuf patch /dev/null $delta $new"
         run_test $cmd
         expect=$testdir/`basename $delta .delta`.expect
         diff -u $expect $new || fail_test "$cmd"
