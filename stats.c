@@ -79,8 +79,10 @@ rs_format_stats(rs_stats_t const * stats,
     len = snprintf(buf, size, "%s statistics: ", op);
 
     if (stats->lit_cmds) {
-        len += snprintf(buf+len, size-len, "literal[%d cmds, %d bytes] ",
-                        stats->lit_cmds, stats->lit_bytes);
+        len += snprintf(buf+len, size-len,
+                        "literal[%d cmds, %ld bytes, %ld cmdbytes] ",
+                        stats->lit_cmds, (long) stats->lit_bytes,
+                        (long) stats->lit_cmdbytes);
     }
 
     if (stats->sig_cmds) {
