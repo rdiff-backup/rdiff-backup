@@ -74,3 +74,9 @@ rs_file_open(char const *filename, char const *mode)
     
     return f;
 }
+
+int rs_file_close(FILE * f)
+{
+    if ((f == stdin) || (f == stdout)) return 0;
+    return fclose(f);
+}

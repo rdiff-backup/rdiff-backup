@@ -21,3 +21,4 @@
  */
 
 FILE * rs_file_open(char const *filename, char const * mode);
+int rs_file_close(FILE * file);

@@ -251,11 +251,11 @@ static rs_result rdiff_sig(poptContext opcon)
     rdiff_no_more_args(opcon);
     
     result = rs_sig_file(basis_file, sig_file, block_len, strong_len, &stats);
+
+    rs_file_close(sig_file);
+    rs_file_close(basis_file);
     if (result != RS_DONE)
         return result;
-
-    fclose(sig_file);
-    fclose(basis_file);
 
     if (show_stats) 
         rs_log_stats(&stats);
@@ -298,9 +298,9 @@ static rs_result rdiff_delta(poptContext opcon)
 
     rs_free_sumset(sumset);
 
-    fclose(delta_file);
-    fclose(new_file);
-    fclose(sig_file);
+    rs_file_close(delta_file);
+    rs_file_close(new_file);
+    rs_file_close(sig_file);
 
     if (show_stats) 
         rs_log_stats(&stats);
@@ -332,9 +332,9 @@ static rs_result rdiff_patch(poptContext opcon)
 
     result = rs_patch_file(basis_file, delta_file, new_file, &stats);
 
-    fclose(new_file);
-    fclose(delta_file);
-    fclose(basis_file);
+    rs_file_close(new_file);
+    rs_file_close(delta_file);
+    rs_file_close(basis_file);
 
     if (show_stats) 
         rs_log_stats(&stats);
@@ -375,5 +375,6 @@ int main(const int argc, const char *argv[])
     if (result != RS_DONE)
         rs_log(RS_LOG_ERR|RS_LOG_NONAME, "%s", rs_strerror(result));
 
+    poptFreeContext(opcon);
     return result;
 }
