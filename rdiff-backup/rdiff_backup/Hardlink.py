@@ -32,7 +32,7 @@ source side should only transmit inode information.
 
 from __future__ import generators
 import cPickle
-import Globals, Time, rpath, log, robust
+import Globals, Time, rpath, log, robust, errno
 
 # The keys in this dictionary are (inode, devloc) pairs.  The values
 # are a pair (index, remaining_links, dest_key) where index is the
@@ -113,5 +113,14 @@ def link_rp(diff_rorp, dest_rpath, dest_root = None):
 	"""Make dest_rpath into a link using link flag in diff_rorp"""
 	if not dest_root: dest_root = dest_rpath # use base of dest_rpath
 	dest_link_rpath = dest_root.new_index(diff_rorp.get_link_flag())
-	dest_rpath.hardlink(dest_link_rpath.path)
+	try: dest_rpath.hardlink(dest_link_rpath.path)
+	except EnvironmentError, exc:
+		# This can happen if the source of dest_link_rpath was deleted
+		# after it's linking info was recorded but before
+		# dest_link_rpath was written.
+		print "$$$$$$$", exc, exc[0], errno.errorcode[exc[0]]
+		if errno.errorcode[exc[0]] == 'ENOENT':
+			dest_rpath.touch() # This will cause an UpdateError later
+		else: raise Exception("EnvironmentError '%s' linking %s to %s" %
+							  (exc, dest_rpath.path, dest_link_rpath.path))
 
