@@ -13,6 +13,22 @@ setup(name="CModule",
 				   Extension("_librsync", ["_librsyncmodule.c"],
 							 libraries=["rsync"])])
 
-assert not os.system("mv build/lib.linux-i686-2.2/C.so .")
-assert not os.system("mv build/lib.linux-i686-2.2/_librsync.so .")
+def get_libraries():
+	"""Return filename of C.so and _librsync.so files"""
+	build_files = os.listdir("build")
+	lib_dirs = filter(lambda x: x.startswith("lib"), build_files)
+	assert len(lib_dirs) == 1, "No library directory or too many"
+	libdir = lib_dirs[0]
+	clib = os.path.join("build", libdir, "C.so")
+	rsynclib = os.path.join("build", libdir, "_librsync.so")
+	try:
+		os.lstat(clib)
+		os.lstat(rsynclib)
+	except os.error:
+		print "Library file missing"
+		sys.exit(1)
+	return clib, rsynclib
+	
+for filename in get_libraries():
+	assert not os.system("mv %s ." % (filename,))
 assert not os.system("rm -rf build")
