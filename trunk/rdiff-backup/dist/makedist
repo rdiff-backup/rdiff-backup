@@ -3,6 +3,7 @@
 import os, re, shutil, time
 
 SourceDir = "src"
+DistDir = "dist"
 filelist = [SourceDir + "/rdiff-backup", "CHANGELOG",
 			"COPYING", "README", "FAQ.html"]
 
@@ -14,10 +15,26 @@ redhat_spec_template = "dist/rdiff-backup.rh7x.spec"
 
 def GetVersion():
 	"""Return version string by reading in ./rdiff-backup"""
-	fp = open(SourceDir + "/rdiff-backup", "r")
+	fp = open("rdiff-backup", "r")
 	match = re.search("Version (.*?) ", fp.read())
 	fp.close()
 	return match.group(1)
+
+def CopyModule():
+	"""Copy all the relevant module source files to rdiff_backup"""
+	moddir = DistDir+"/rdiff_backup"
+	os.system("rm -rf %s" % moddir)
+	os.mkdir(moddir)
+
+	for filename in ["cmodule.c", "connection.py",	"destructive_stepping.py",
+					 "FilenameMapping.py", "Globals.py", "Hardlink.py",
+					 "highlevel.py", "increment.py", "__init__.py",
+					 "iterfile.py", "lazy.py", "log.py", "Main.py",
+					 "manage.py", "MiscStats.py", "Rdiff.py", "restore.py",
+					 "rlist.py", "robust.py", "rorpiter.py", "rpath.py",
+					 "seleciton.py", "SetConnections.py", "static.py",
+					 "statistics.py", "Time.py"]:
+		assert not os.system("cp %s/%s %s" % (SourceDir, filename, moddir))
 
 def CopyMan(destination, version):
 	"""Create updated man page at the specified location"""
@@ -101,10 +118,6 @@ def MakeSpecFile(version):
 	return (specfile, redhat_specfile)
 
 def Main():
-	cwd = os.getcwd()
-	os.chdir(SourceDir)
-	assert not os.system("./Make")
-	os.chdir(cwd)
 	version = GetVersion()
 	print "Making FAQ"
 	MakeFAQ()
