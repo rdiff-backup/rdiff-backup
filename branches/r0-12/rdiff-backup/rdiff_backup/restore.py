@@ -90,18 +90,13 @@ def ListChangedSince(mirror_rp, inc_rp, restore_to_time):
 
 
 def ListAtTime(mirror_rp, inc_rp, time):
-	"""List the files in archive at the given time
-
-	Output is a RORP Iterator with info in index.  See ListChangedSince.
-
-	"""
+	"""List the files in archive at the given time"""
 	assert mirror_rp.conn is Globals.local_connection, "Run locally only"
 	MirrorStruct.set_mirror_and_rest_times(time)
 	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
 
 	old_iter = MirrorStruct.get_mirror_rorp_iter(_rest_time, 1)
-	for rorp in old_iter:
-		yield rpath.RORPath((rorp.get_indexpath(),))
+	for rorp in old_iter: yield rorp
 	
 
 class MirrorStruct:

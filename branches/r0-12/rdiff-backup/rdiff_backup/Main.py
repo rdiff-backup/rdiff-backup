@@ -588,8 +588,7 @@ def ListAtTime(rp):
 	mirror_rp = mirror_root.new_index(index)
 	inc_rp = mirror_rp.append_path("increments", index)
 	for rorp in rp.conn.restore.ListAtTime(mirror_rp, inc_rp, rest_time):
-		# This is a hack, see restore.ListChangeSince for rational
-		print rorp.index[0]
+		print rorp.get_indexpath()
 	
 
 def CheckDest(dest_rp):
