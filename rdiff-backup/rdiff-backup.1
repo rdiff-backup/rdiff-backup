@@ -60,21 +60,79 @@ This option is useful mainly for testing.  If set, rdiff-backup will
 it for the current time instead of consulting the clock.  The argument
 is the number of seconds since the epoch.
 .TP
-.BI "--exclude " regexp
-Exclude files matching regexp.  This argument can be used multiple times.
+.BI "--exclude " shell_pattern
+Exclude the file or files matched by
+.IR shell_pattern .
+If a directory is matched, then files under that directory will also
+be matched.  See the
+.B FILE SELECTION
+section for more information.
 .TP
 .B "--exclude-device-files"
 Exclude all device files.  This can be useful for security/permissions
 reasons or if rdiff-backup is not handling device files correctly.
 .TP
+.BI "--exclude-filelist " filename
+Excludes the files listed in 
+.I filename
+See the
+.B FILE SELECTION
+section for more information.
+.TP
+.B --exclude-filelist-stdin
+Like
+.B --exclude-filelist,
+but the list of files will be read from standard input.  See the
+.B FILE SELECTION
+section for more information.
+.TP
 .BI "--exclude-mirror " regexp
 Exclude files in the mirror area matching regexp.  This argument can
 be used multiple times.  The rdiff-backup-data directory is
-automatically excluded.
+automatically excluded, so this option rarely needs to be used.
+.TP
+.BI "--exclude-regexp " regexp
+Exclude files matching the given regexp.  Unlike the
+.B --exclude
+option, this option does not match files in a directory it matches.
+See the
+.B FILE SELECTION
+section for more information.
 .TP
 .B --force
 Authorize overwriting of a destination directory.  rdiff-backup will
 generally tell you if it needs this.
+.TP
+.BI "--include " shell_pattern
+Similar to
+.B --exclude
+but include matched files instead.  Unlike
+.BR --exclude ,
+this option will also match parent directories of matched files
+(although not necessarily their contents).  See the
+.B FILE SELECTION
+section for more information.
+.TP
+.BI "--include-filelist " filename
+Like
+.BR --exclude-filelist ,
+but include the listed files instead.  See the
+.B FILE SELECTION
+section for more information.
+.TP
+.B --include-filelist-stdin
+Like
+.BR --include-filelist ,
+but read the list of included files from standard input.
+.TP
+.BI "--include-regexp" regexp
+Include files matching the regular expression
+.IR regexp .
+Only files explicitly matched by
+.I regexp
+will be included by this option.  See the
+.B FILE SELECTION
+section for more information.
 .TP
 .B "-l, --list-increments"
 List the number and date of partial incremental backups contained in
@@ -94,8 +152,9 @@ volume can contain compressed and uncompressed increments, so using
 this option inconsistently is fine.
 .TP
 .B "--no-compression-regexp " regexp
-Do not compress increments based on files whose filenames match regexp on a case-insensitive basis.  The default is
-".*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|jpg|gif|png|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
+Do not compress increments based on files whose filenames match regexp.
+The default is
+"(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|jpg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
 .TP
 .BI --no-hard-links
 Don't preserve hard links from source to mirror directories.
@@ -189,12 +248,22 @@ Back files up from /home/bob to /mnt/backup, leaving increments in /mnt/backup/r
 rdiff-backup --exclude /home/bob/tmp /home/bob /mnt/backup
 .PP
 .RE
-You can also use regular expressions in the --exclude statements.
-This will skip any files whose full pathnames contain the word
-"cache", or any files whose name is "tmp" or "temp".
+The file selection options can be combined in various ways.  The
+following command backs up the whole file system to /usr/local/backup.
+However, the entire /usr directory is skipped, with the exception of
+/usr/local, which is included, except for /usr/local/backup, which is
+excluded to prevent a circularity:
 .PP
 .RS
-rdiff-backup --exclude '.*cache.*' --exclude '.*/te?mp' /home/bob /mnt/backup
+rdiff-backup --exclude /usr/local/backup --include /usr/local --exclude /usr / /usr/local/backup
+.PP
+.RE
+You can also use regular expressions in the --exclude statements.
+This will skip any files whose full pathnames contain the word
+"cache", or any files whose name is "tmp", "temp", "TMP", "tEmP", etc.
+.PP
+.RS
+rdiff-backup --exclude-regexp cache --exclude-regexp '(?i)/te?mp$' /home/bob /mnt/backup
 .PP
 .RE
 After the previous command was completed, this command will list the
@@ -291,6 +360,223 @@ to type in '\\\\\\\\' at the shell prompt to get a literal backslash
 that in this man page...).  And finally, to include a literal % in the
 string specified by --remote-schema, quote it with another %, as in
 %%.
+
+.SH FILE SELECTION
+.B rdiff-backup
+supports file selection options similar to (but different from)
+.BR rsync (1).
+The system may appear complicated, but it is supposed to be flexible
+and easy-to-use.
+
+When rdiff-backup is run, it searches through the given source
+directory and backs up all the files specified by the file selection
+system.  The file selection system comprises a number of file
+selection conditions, which are set using one of the following command
+line options:
+.BR --exclude ,
+.BR --exclude-device-files ,
+.BR --exclude-filelist ,
+.BR --exclude-filelist-stdin ,
+.BR --exclude-regexp ,
+.BR --include ,
+.BR --include-filelist ,
+.BR --include-filelist-stdin ,
+and
+.BR --include-regexp .
+Each file selection condition either matches or doesn't match a given
+file.  A given file is excluded by the file selection system exactly
+when the first matching file selection condition specifies that the
+file be excluded; otherwise the file is included.
+
+For instance,
+.PP
+.RS
+rdiff-backup --include /usr --exclude /usr /usr /backup
+.PP
+.RE
+is exactly the same as
+.PP
+.RS
+rdiff-backup /usr /backup
+.PP
+.RE
+because the include and exclude directives match exactly the same
+files, and the
+.B --include
+comes first, giving it precedence.  Similarly,
+.PP
+.RS
+rdiff-backup --include /usr/local/bin --exclude /usr/local /usr /backup
+.PP
+.RE
+would backup the /usr/local/bin directory (and its contents), but not
+/usr/local/doc.
+
+The
+.B include
+and
+.B exclude
+options accept
+.IR "extended shell globbing patterns" .
+These patterns can contain the special patterns
+.BR * ,
+.BR ** ,
+.BR ? ,
+and
+.BR [...] .
+As in a normal shell,
+.B *
+can be expanded to any string of characters not containing "/",
+.B ?
+expands to any character except "/", and
+.B [...]
+expands to a single character of those characters specified (ranges
+are acceptable).  The new special pattern,
+.BR ** ,
+expands to any string of characters whether or not it contains "/".
+Furthermore, if the pattern starts with "ignorecase:" (case
+insensitive), then this prefix will be removed and any character in
+the string can be replaced with an upper- or lowercase version of
+itself.
+
+The
+.BI "--exclude " pattern
+option matches a file iff:
+.TP
+.B 1.
+.I pattern
+can be expanded into the file's filename, or
+.TP
+.B 2.
+the file is inside a directory matched by the option.
+.PP
+.RE
+Conversely,
+.BI "--include " pattern
+matches a file iff:
+.TP
+.B 1.
+.I pattern
+can be expanded into the file's filename,
+.TP
+.B 2.
+the file is inside a directory matched by the option, or
+.TP
+.B 3.
+the file is a directory which contains a file matched by the option.
+.PP
+.RE
+For example,
+.PP
+.RS
+.B --exclude
+/usr/local
+.PP
+.RE
+matches /usr/local, /usr/local/lib, and /usr/local/lib/netscape.  It
+is the same as --exclude /usr/local --exclude /usr/local/**.
+.PP
+.RS
+.B --include
+/usr/local
+.PP
+.RE
+specifies that /usr, /usr/local, /usr/local/lib, and
+/usr/local/lib/netscape (but not /usr/doc) all be backed up.  Thus you
+don't have to worry about including parent directories to make sure
+that included subdirectories have somewhere to go.  Finally,
+.PP
+.RS
+.B --include
+ignorecase:/usr/[a-z0-9]foo/*/**.py
+.PP
+.RE
+would match a file like /usR/5fOO/hello/there/world.py.  If it did
+match anything, it would also match /usr.  If there is no existing
+file that the given pattern can be expanded into, the option will not
+match /usr.
+
+The
+.BR --include-filelist ,
+.BR --exclude-filelist ,
+.BR --include-filelist-stdin ,
+and
+.B --exclude-filelist-stdin
+options also introduce file selection conditions.  They direct
+rdiff-backup to read in a file, each line of which is a file
+specification, and to include or exclude the matching files.  The
+lines in a filelist are interpreted similarly to the way
+.I extended shell patterns
+are, with a few exceptions:
+.TP
+.B 1.
+Globbing patterns like
+.BR * ,
+.BR ** ,
+.BR ? ,
+and
+.B [...]
+are not expanded.
+.TP
+.B 2.
+Include patterns do not match files in a directory that is included.
+So /usr/local in an include file will not match /usr/local/doc.
+.TP
+.B 3.
+Lines starting with "+ " are interpreted as include directives, even
+if found in a filelist referenced by
+.BR --exclude-filelist .
+Similarly, lines starting with "- " exclude files even if they are
+found within an include filelist.
+
+.RE
+For example, if file "list.txt" contains the lines:
+
+.RS
+/usr/local
+.RE
+.RS
+- /usr/local/doc
+.RE
+.RS
+/usr/local/bin
+.RE
+.RS
++ /var
+.RE
+.RS
+- /var
+
+.RE
+then "--include-filelist list.txt" would include /usr, /usr/local, and
+/usr/local/bin.  It would exclude /usr/local/doc,
+/usr/local/doc/python, etc.  It neither excludes nor includes
+/usr/local/man, leaving the fate of this directory to the next
+specification condition.  Finally, it is undefined what happens with
+/var.  A single file list should not contain conflicting file
+specifications.
+
+Finally, the
+.B --include-regexp
+and
+.B --exclude-regexp
+allow files to be included and excluded if their filenames match a
+python regular expression.  Regular expression syntax is too
+complicated to explain here, but is covered in Python's library
+reference.  Unlike the
+.B --include
+and
+.B --exclude
+options, the regular expression options don't match files containing
+or contained in matched files.  So for instance
+.PP
+.RS
+--include '[0-9]{7}(?!foo)'
+.PP
+.RE
+matches any files whose full pathnames contain 7 consecutive digits
+which aren't followed by 'foo'.  However, it wouldn't match /home even
+if /home/ben/1234567 existed.
 
 .SH BUGS
 rdiff-backup uses the shell command
