@@ -3,7 +3,7 @@
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
@@ -22,35 +22,35 @@
  */
 
 
-/* ===================================================================
+/*
  * command.h -- Types of commands present in the encoding stream.
  *
  * The vague idea is that eventually this file will be more abstract
- * than protocol.h.
- * =================================================================== */
+ * than protocol.h, but it's not clear that will ever be required.
+ */
 
 
-/*
+/**
  * Classes of operation that can be present.  Each may have several different
  * possible representations.
  */
 enum hs_op_kind {
-        HS_KIND_EOF = 1000,
-        HS_KIND_LITERAL,
-        HS_KIND_SIGNATURE,
-        HS_KIND_COPY,
-        HS_KIND_CHECKSUM,
-        HS_KIND_RESERVED,           /* for future expansion */
+    HS_KIND_END = 1000,
+    HS_KIND_LITERAL,
+    HS_KIND_SIGNATURE,
+    HS_KIND_COPY,
+    HS_KIND_CHECKSUM,
+    HS_KIND_RESERVED,           /* for future expansion */
 
-        /* This one should never occur in file streams.  It's an
-         * internal marker for invalid commands. */
-        HS_KIND_INVALID
+    /* This one should never occur in file streams.  It's an
+     * internal marker for invalid commands. */
+    HS_KIND_INVALID
 };
 
 
 typedef struct hs_op_kind_name {
     char const           *name;
-        enum hs_op_kind const    kind;
+    enum hs_op_kind const    kind;
 } hs_op_kind_name_t;
 
 char const * hs_op_kind_name(enum hs_op_kind);

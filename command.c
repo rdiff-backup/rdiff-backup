@@ -32,7 +32,7 @@
 
 /* For debugging purposes, here are some human-readable forms. */
 struct hs_op_kind_name const hs_op_kind_names[] = {
-    {"EOF",       HS_KIND_EOF },
+    {"END",       HS_KIND_END },
     {"COPY",      HS_KIND_COPY },
     {"LITERAL",   HS_KIND_LITERAL },
     {"SIGNATURE", HS_KIND_SIGNATURE },
