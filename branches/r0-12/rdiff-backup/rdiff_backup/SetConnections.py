@@ -25,7 +25,7 @@ the related connections.
 
 """
 
-import os
+import os, sys
 from log import Log
 import Globals, FilenameMapping, connection, rpath
 
@@ -226,9 +226,9 @@ def test_connection(conn_number):
 	print "Testing server started by: ", __conn_remote_cmds[conn_number]
 	conn = Globals.connections[conn_number]
 	try:
-		assert conn.pow(2,3) == 8
-		assert conn.os.path.join("a", "b") == "a/b"
-		version = conn.reval("lambda: Globals.version")
+		assert conn.Globals.get('current_time') is None
+		assert type(conn.os.getuid()) is int
+		version = conn.Globals.get('version')
 	except:
 		sys.stderr.write("Server tests failed\n")
 		raise
