@@ -32,7 +32,7 @@ source side should only transmit inode information.
 
 from __future__ import generators
 import cPickle
-import Globals, Time, TempFile, rpath, log, robust
+import Globals, Time, rpath, log, robust
 
 # In all of these lists of indicies are the values.  The keys in
 # _inode_ ones are (inode, devloc) pairs.

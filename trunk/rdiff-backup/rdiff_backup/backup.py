@@ -213,7 +213,7 @@ class PatchITRB(rorpiter.ITRBranch):
 		rp = self.get_rp_from_root(index)
 		tf = TempFile.new(rp)
 		self.patch_to_temp(rp, diff_rorp, tf)
-		tf.rename(rp)
+		rpath.rename(tf, rp)
 
 	def patch_to_temp(self, basis_rp, diff_rorp, new):
 		"""Patch basis_rp, writing output in new, which doesn't exist yet"""
@@ -260,7 +260,7 @@ class PatchITRB(rorpiter.ITRBranch):
 		else:
 			assert self.dir_replacement
 			self.base_rp.rmdir()
-			self.dir_replacement.rename(self.base_rp)
+			rpath.rename(self.dir_replacement, self.base_rp)
 
 
 class IncrementITRB(PatchITRB):
@@ -286,7 +286,7 @@ class IncrementITRB(PatchITRB):
 		tf = TempFile.new(rp)
 		self.patch_to_temp(rp, diff_rorp, tf)
 		increment.Increment(tf, rp, self.get_incrp(index))
-		tf.rename(rp)
+		rpath.rename(tf, rp)
 
 	def start_process(self, index, diff_rorp):
 		"""Start processing directory"""

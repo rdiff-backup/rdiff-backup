@@ -31,7 +31,7 @@ files), where files is the number of files attached (usually 1 or
 from __future__ import generators
 import os, tempfile, UserList, types
 import librsync, Globals, Rdiff, Hardlink, robust, log, static, \
-	   rpath, iterfile, TempFile
+	   rpath, iterfile
 
 
 class RORPIterException(Exception): pass

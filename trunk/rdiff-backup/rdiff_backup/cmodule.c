@@ -36,6 +36,7 @@ static PyObject *UnknownFileTypeError;
 static PyObject *c_make_file_dict(PyObject *self, PyObject *args);
 static PyObject *long2str(PyObject *self, PyObject *args);
 static PyObject *str2long(PyObject *self, PyObject *args);
+static PyObject *my_sync(PyObject *self);
 
 
 /* Turn a stat structure into a python dictionary.  The preprocessor
@@ -179,6 +180,15 @@ static PyObject *long2str(self, args)
 }
 
 
+/* Run sync() and return None */
+static PyObject *my_sync(self)
+	 PyObject *self;
+{
+  sync();
+  return Py_BuildValue("");
+}
+
+
 /* Reverse of above; convert 7 byte string into python long */
 static PyObject *str2long(self, args)
 	 PyObject *self;
@@ -201,6 +211,7 @@ static PyMethodDef CMethods[] = {
    "Make dictionary from file stat"},
   {"long2str", long2str, METH_VARARGS, "Convert python long to 7 byte string"},
   {"str2long", str2long, METH_VARARGS, "Convert 7 byte string to python long"},
+  {"sync", my_sync, METH_VARARGS, "sync buffers to disk"},
   {NULL, NULL, 0, NULL}
 };
 

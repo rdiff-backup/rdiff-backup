@@ -17,56 +17,37 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 
-"""Manage temp files"""
+"""Manage temp files
+
+Earlier this had routines for keeping track of existing tempfiles.
+Now we just use normal rpaths instead of the TempFile class.
+
+"""
 
 import os
 import Globals, rpath
-
-# This is a connection-specific list of temp files, to be cleaned
-# up before rdiff-backup exits.
-_tempfiles = []
 
 # To make collisions less likely, this gets put in the file name
 # and incremented whenever a new file is requested.
 _tfindex = 0
 
-def new(rp_base, same_dir = 1):
-	"""Return new tempfile that isn't in use.
+def new(rp_base):
+	"""Return new tempfile that isn't in use in same dir as rp_base"""
+	return new_in_dir(rp_base.get_parent_rp())
 
-	If same_dir, tempfile will be in same directory as rp_base.
-	Otherwise, use tempfile module to get filename.
+def new_in_dir(dir_rp):
+	"""Return new temp rpath in directory dir_rp"""
+	global _tfindex
+	assert dir_rp.conn is Globals.local_connection
+	while 1:
+		if _tfindex > 100000000:
+			Log("Warning: Resetting tempfile index", 2)
+			_tfindex = 0
+		tf = dir_rp.append('rdiff-backup.tmp.%d' % _tfindex)
+		_tfindex = _tfindex+1
+		if not tf.lstat(): return tf
 
-	"""
-	conn = rp_base.conn
-	if conn is not Globals.local_connection:
-		return conn.TempFile.new(rp_base, same_dir)
 
-	def find_unused(conn, dir):
-		"""Find an unused tempfile with connection conn in directory dir"""
-		global _tfindex, tempfiles
-		while 1:
-			if _tfindex > 100000000:
-				Log("Resetting index", 2)
-				_tfindex = 0
-			tf = TempFile(conn, os.path.join(dir,
-								   "rdiff-backup.tmp.%d" % _tfindex))
-			_tfindex = _tfindex+1
-			if not tf.lstat(): return tf
-
-	if same_dir: tf = find_unused(conn, rp_base.dirsplit()[0])
-	else: tf = TempFile(conn, tempfile.mktemp())
-	_tempfiles.append(tf)
-	return tf
-
-def remove_listing(tempfile):
-	"""Remove listing of tempfile"""
-	if Globals.local_connection is not tempfile.conn:
-		tempfile.conn.TempFile.remove_listing(tempfile)
-	elif tempfile in _tempfiles: _tempfiles.remove(tempfile)
-
-def delete_all():
-	"""Delete all remaining tempfiles"""
-	for tf in _tempfiles[:]: tf.delete()
 
 
 class TempFile(rpath.RPath):
