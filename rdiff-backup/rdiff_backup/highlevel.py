@@ -76,7 +76,7 @@ class HLSourceStruct:
 	def iterate_from(cls):
 		"""Supply more aruments to DestructiveStepping.Iterate_from"""
 		if cls._session_info is None: Globals.select_source.set_iter()
-		else: Globals.select_source.set_iter(cls._session_info.last_index)
+		else: Globals.select_source.set_iter(cls._session_info.last_index, 1)
 		return Globals.select_source
 
 	def split_initial_dsiter(cls):
