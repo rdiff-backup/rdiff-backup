@@ -22,6 +22,10 @@
  */
 
 
+/**
+ * $Id$
+ */
+
 
 #include <config.h>
 
@@ -68,9 +72,10 @@ static hs_result hs_readsum_s_header(hs_job_t *job)
 }
 
 
-/*
- * Read in nonblocking mode the input of STREAM, and interpret it into
- * a signature set stored in SUMSET.
+/**
+ * Load a signature into memory.
+ *
+ * \todo Perhaps call this `readsig' or `loadsig' instead?
  */
 hs_job_t *hs_readsum_begin(hs_stream_t *stream, hs_sumset_t **sumset)
 {

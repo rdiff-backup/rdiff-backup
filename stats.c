@@ -34,14 +34,23 @@ hs_log_stats(hs_stats_t const *stats)
     char buf[1000];
 
     hs_format_stats(stats, buf, sizeof buf - 1);
-    hs_log(LOG_INFO, "%s", buf);
+    hs_log(HS_LOG_INFO, "%s", buf);
     return 0;
 }
 
 
-/*
- * Return a newly-allocated string containing a human-readable form of
- * the transfer statistics.
+
+/**
+ * \brief Return a human-readable representation of statistics.
+ *
+ * The string is truncated if it does not fit.  100 characters should
+ * be sufficient space.
+ *
+ * \param stats Statistics from an encoding or decoding operation.
+ *
+ * \param buf Buffer to receive result.
+ * \param size Size of buffer.
+ * \return buf
  */
 char *
 hs_format_stats(hs_stats_t const * stats,

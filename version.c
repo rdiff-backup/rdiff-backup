@@ -27,9 +27,6 @@
 #include "hsync.h"
 
 
-/*! \file version.c */
-
-
 /*! Library version string. */
 char const hs_libhsync_version[] =
     (PACKAGE " " VERSION " [" __DATE__ " " __TIME__ "]");

@@ -33,13 +33,16 @@
 #include <limits.h>
 #include <inttypes.h>
 #include <stdlib.h>
-#include <syslog.h>
 
 #include "hsync.h"
 #include "sumset.h"
 #include "util.h"
 #include "trace.h"
 
+
+/**
+ * Deep deallocation of checksums.
+ */
 void
 hs_free_sumset(hs_sumset_t * psums)
 {
@@ -58,13 +61,16 @@ hs_free_sumset(hs_sumset_t * psums)
 
 
 
+/**
+ * Dump signatures to the log.
+ */
 void
 hs_sumset_dump(hs_sumset_t const *sums)
 {
         int i;
         char        strong_hex[HS_MD4_LENGTH * 3];
     
-        hs_log(LOG_INFO, 
+        hs_log(HS_LOG_INFO, 
                 "sumset info: block_len=%d, file length=%lu, "
                 "number of chunks=%d, remainder=%d",
                 sums->block_len,
@@ -74,7 +80,7 @@ hs_sumset_dump(hs_sumset_t const *sums)
         for (i = 0; i < sums->count; i++) {
                 hs_hexify(strong_hex, sums->block_sums[i].strong_sum,
                           sums->strong_sum_len);
-                hs_log(LOG_INFO,
+                hs_log(HS_LOG_INFO,
                         "sum %6d: weak=%08x, strong=%s",
                         i, sums->block_sums[i].weak_sum, strong_hex);
         }

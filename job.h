@@ -21,15 +21,10 @@
  */
 
 
-/*! \file job.h
- *
- * \brief Generic 'job' state machine.
- */
-
 struct hs_job {
 	hs_stream_t *stream;
 
-        /* Callback for each processing step. */
+        /** Callback for each processing step. */
         enum hs_result (*statefn)(hs_job_t *);
 
         /* Generic storage fields. */
@@ -40,13 +35,15 @@ struct hs_job {
         hs_copy_cb      *copy_cb;
         void            *copy_arg;
 
-        /* Signature that's either being read in, or used for
+        /** Signature that's either being read in, or used for
          * generating a delta. */
         hs_sumset_t     *sumset;
 
-        /* Command byte currently being processed, if any, and lengths
-         * of expected parameters. */
-        int op, param1, param2;
+        /** Command byte currently being processed, if any. */
+        int op;
+        /** Lengths of expected parameters. */
+        int param1, param2;
+        
         struct hs_prototab_ent const *cmd;
         hs_mdfour_t      output_md4;
 };

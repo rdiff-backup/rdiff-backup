@@ -30,7 +30,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <getopt.h>
-#include <syslog.h>
 #include <fcntl.h>
 #include <popt.h>
 
@@ -102,7 +101,7 @@ int main(int argc, char *argv[])
                         if (!hs_supports_trace()) {
                                 hs_error("library does not support trace");
                         }
-                        hs_trace_set_level(LOG_DEBUG);
+                        hs_trace_set_level(HS_LOG_DEBUG);
                         break;
                 }
         }

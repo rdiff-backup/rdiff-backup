@@ -21,20 +21,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/** \file mdfour.c
- *
- * \brief MD4 message digest algorithm.
+/* MD4 message digest algorithm.
  *
  * NOTE: This code makes no attempt to be fast!
  *
  * It assumes that a int is at least 32 bits long
- *
- * \todo Recode to be fast, and to use system integer types.  Perhaps
- * if we can find an mdfour implementation already on the system
- * (e.g. in OpenSSL) then we should use it instead of our own?
- *
- * \todo Apparently rsync 2.4 now has a fast MD4 routine.  So we
- * should copy that into here.  */
+ */
 
 #include <config.h>
 
@@ -61,7 +53,14 @@
 #define ROUND2(a,b,c,d,k,s) a = lshift(a + G(b,c,d) + X[k] + 0x5A827999,s)
 #define ROUND3(a,b,c,d,k,s) a = lshift(a + H(b,c,d) + X[k] + 0x6ED9EBA1,s)
 
-/* this applies md4 to 64 byte chunks */
+/** Update an MD4 accumulator from a 64-byte chunk.
+ *
+ * \todo Recode to be fast, and to use system integer types.  Perhaps
+ * if we can find an mdfour implementation already on the system
+ * (e.g. in OpenSSL) then we should use it instead of our own?
+ *
+ * \todo Apparently rsync 2.4 now has a fast MD4 routine.  So we
+ * should copy that into here.  */
 static void
 hs_mdfour64(hs_mdfour_t * m, uint32_t * M)
 {

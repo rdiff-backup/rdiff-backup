@@ -28,12 +28,6 @@
                                */
 
 
-/** \file job.c
- *
- * \brief Generic state-machine "job" mechanism.
- */
-
-
 #include <config.h>
 
 #include <stdlib.h>
@@ -69,10 +63,10 @@ hs_result hs_job_free(hs_job_t *job)
 
 
 
-/* 
+/** 
  * Nonblocking iteration interface for making up a file sum.
  *
- * ENDING should be true if there is no more data after what's in the
+ * \param ending True if there is no more data after what's in the
  * input buffer.  The final block checksum will run across whatever's
  * in there, without trying to accumulate anything else.
  */

@@ -50,13 +50,7 @@ extern char const hs_licence_string[];
  */
 typedef void    hs_trace_fn_t(int level, char const *msg);
 
-/** 
- * Set filters on message output.
- *
- * \todo Perhaps don't depend on syslog, but instead just have yes/no
- * tracing.  Do we really need such fine-grained control?
- */
-void            hs_trace_set_level(int level);
+void            hs_trace_set_level(enum hs_loglevel level);
 
 /** Set trace callback. */
 void            hs_trace_to(hs_trace_fn_t *);
@@ -97,25 +91,47 @@ void hs_base64(unsigned char const *buf, int n, char *out);
  * \sa hs_result
  */
 enum hs_result {
-        HS_OK =			0,	/**< completed successfully */
-        HS_BLOCKED =		1, 	/**< OK, but more remains to be done */
-        HS_RUN_OK  =            2,      /**< not yet finished or blocked */
-        HS_IO_ERROR =		(-1),   /**< error in file or network IO */
-        HS_MEM_ERROR =		(-2),   /**< out of memory */
-        HS_SHORT_STREAM	=	(-3),	/**< unexpected eof */
-        HS_BAD_MAGIC =          (-4)    /**< illegal value on stream */
+        HS_OK =			0,	/**< Completed successfully. */
+        HS_BLOCKED =		1, 	/**< Blocked waiting for more data. */
+        HS_RUN_OK  =            2,      /**< Not yet finished or
+                                         * blocked.  This value should
+                                         * never be returned to the
+                                         * caller.  */
+        HS_IO_ERROR =		(-1),   /**< Error in file or network IO */
+        HS_MEM_ERROR =		(-2),   /**< Out of memory */
+        HS_SHORT_STREAM	=	(-3),	/**< Unexpected eof */
+        HS_BAD_MAGIC =          (-4)    /**< Illegal value on stream */
 };
 
-/** \brief Return codes from nonblocking hsync operations.
+/**
+ * \brief Return codes from nonblocking hsync operations.
  *
  * \sa enum hs_result
  */
 typedef enum hs_result hs_result;
 
+
+/**
+ * Return an English description of a ::hs_result value.
+ */
+char const *hs_strerror(hs_result r);
+
+
+/**
+ * \brief Performance statistics from a libhsync encoding or decoding
+ * operation.
+ *
+ * \sa hs_format_stats(), hs_log_stats()
+ */
 typedef struct hs_stats {
-    char const     *op;
-    char const     *algorithm;
-    int             lit_cmds, lit_bytes;
+        char const     *op;     /**< Human-readable name of current
+                                 * operation.  For example,
+                                 * "delta". */
+        char const *algorithm;  /**< Algorithm used to perform the
+                                 * operation. */
+        int lit_cmds;           /**< Number of literal commands. */
+        int lit_bytes;          /**< Number of literal bytes. */
+        
     int             copy_cmds, copy_bytes;
     int             sig_cmds, sig_bytes;
     int             false_matches;
@@ -126,7 +142,7 @@ typedef struct hs_stats {
  *
  * \brief MD4 message-digest accumulator.
  *
- * \sa mdfour.c: hs_mdfour(), hs_mdfour_begin(), hs_mdfour_update(),
+ * \sa hs_mdfour(), hs_mdfour_begin(), hs_mdfour_update(),
  * hs_mdfour_result()
  */
 typedef struct hs_mdfour {
@@ -141,14 +157,27 @@ void            hs_mdfour(unsigned char *out, void const *in, int n);
 void            hs_mdfour_begin(/* @out@ */ hs_mdfour_t * md);
 void            hs_mdfour_update(hs_mdfour_t * md, void const *,
 				 size_t n);
-void            hs_mdfour_result(hs_mdfour_t * md, unsigned char *out);
-
-
+void hs_mdfour_result(hs_mdfour_t * md, unsigned char *out);
 
 char *hs_format_stats(hs_stats_t const *, char *, size_t);
+
 int hs_log_stats(hs_stats_t const *stats);
 
-char const *hs_strerror(hs_result r);
+
+/** Log levels (same as syslog)
+ *
+* \sa hs_trace_set_level()
+ */
+enum hs_loglevel {
+	HS_LOG_EMERG	 = 0,	/**< System is unusable */
+	HS_LOG_ALERT	 = 1,	/**< Action must be taken immediately */
+	HS_LOG_CRIT	 = 2,	/**< Critical conditions */
+	HS_LOG_ERR		 = 3,	/**< Error conditions */
+	HS_LOG_WARNING	 = 4,	/**< Warning conditions */
+	HS_LOG_NOTICE	 = 5,	/**< Normal but significant condition */
+	HS_LOG_INFO	 = 6,	/**< Informational */
+	HS_LOG_DEBUG	 = 7	/**< Debug-level messages */
+};
 
 
 
@@ -171,6 +200,8 @@ void hs_sumset_dump(hs_sumset_t const *);
  * There is some internal state in impl.  Streams are initialized by
  * hs_stream_init, and then used to create a job by hs_mksum_begin or
  * similar functions.
+ *
+ * \sa hs_stream_t
  */
 struct hs_stream_s {
         int dogtag;		/**< To identify mutilated corpse */
@@ -184,6 +215,12 @@ struct hs_stream_s {
         struct hs_simpl *impl; /**< \internal */
 };
 
+/**
+ * Stream through which the calling application feeds data to and from the
+ * library.
+ *
+ * \sa struct hs_stream_s
+ */
 typedef struct hs_stream_s hs_stream_t;
 
 void hs_stream_init(hs_stream_t *);

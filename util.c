@@ -31,6 +31,7 @@
 #include <stdio.h>
 
 #include "util.h"
+#include "hsync.h"
 #include "trace.h"
 
 void

@@ -1,7 +1,6 @@
 /*=                                     -*- c-file-style: "linux" -*-
  *
  * libhsync -- the library for network deltas
- * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * 
@@ -30,13 +29,6 @@
 
 
 
-/*
- * whole.c -- This module contains routines for processing whole files
- * at a time.  These are normally called from rdiff, but if for some
- * reason you should want that functionality in your application here
- * they are.
- */
-
 #include <config.h>
 
 #include <assert.h>
@@ -56,7 +48,7 @@
 #include "buf.h"
 #include "whole.h"
 
-/*
+/**
  * Run a job continuously, with input to/from the two specified files.
  * The job should already be set up, and it is freed before the
  * function returns.
@@ -99,10 +91,13 @@ hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
 
 
 
-/*
- * Generate the signature of OLD_FILE, and write it to SIG_FILE.  The
- * generated signature will be for blocks of NEW_BLOCK_LEN bytes, and
- * the strong sum is truncated to STRONG_LEN.
+/**
+ * Generate the signature of a basis file, and write it out to
+ * another.
+ *
+ * \param new_block_len block size for signature generation, in bytes
+ * 
+ * \param strong_len truncated length of strong checksums, in bytes
  */
 hs_result
 hs_whole_signature(FILE *old_file, FILE *sig_file, size_t new_block_len,
@@ -120,9 +115,9 @@ hs_whole_signature(FILE *old_file, FILE *sig_file, size_t new_block_len,
 }
 
 
-/*
- * Load signatures from SIG_FILE into memory.  Return a pointer to the
- * newly allocated structure in SUMSET.
+/**
+ * Load signatures from a signature file into memory.  Return a
+ * pointer to the newly allocated structure in SUMSET.
  */
 hs_result
 hs_file_readsums(FILE *sig_file, hs_sumset_t **sumset)

@@ -1,7 +1,6 @@
 /*				       	-*- c-file-style: "linux" -*-
  *
  * libhsync -- library for network deltas
- * $Id$
  *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  *
@@ -33,7 +32,6 @@
 #include <stdio.h>
 #include <sys/file.h>
 #include <string.h>
-#include <syslog.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -47,7 +45,7 @@
 
 hs_trace_fn_t  *hs_trace_impl = hs_trace_stderr;
 
-static int hs_trace_level = LOG_INFO;
+static int hs_trace_level = HS_LOG_INFO;
 
 #ifdef HAVE_PROGRAM_INVOCATION_NAME
 #  define MY_NAME program_invocation_short_name
@@ -57,7 +55,15 @@ static int hs_trace_level = LOG_INFO;
 
 static void hs_log_va(int level, char const *fn, char const *fmt, va_list va);
 
-/* Called by the application to set the destination of trace * information. */
+/** Called by the application to set the destination of trace information.
+ *
+ * The callback scheme allows for use within applications that may
+ * have their own particular ways of reporting errors: log files for a
+ * web server, perhaps, and an error dialog for a browser.
+ *
+ * \todo Perhaps don't depend on syslog, but instead just have yes/no
+ * tracing.  Do we really need such fine-grained control?
+ */
 void
 hs_trace_to(hs_trace_fn_t * new_impl)
 {
@@ -65,9 +71,11 @@ hs_trace_to(hs_trace_fn_t * new_impl)
 }
 
 
-/* Set the least import message severity that will be output. */
+/** 
+ * Set the least import message severity that will be output.
+ */
 void
-hs_trace_set_level(int level)
+hs_trace_set_level(enum hs_loglevel level)
 {
     hs_trace_level = level;
 }
@@ -91,8 +99,8 @@ hs_log_va(int level, char const *fn, char const *fmt, va_list va)
 
 
 
-/* This function is called by a macro that prepends the calling function
- * name, etc.  */
+/* Called by a macro that prepends the calling function name,
+ * etc.  */
 void
 hs_log0(int level, char const *fn, char const *fmt, ...)
 {
@@ -120,7 +128,7 @@ hs_fatal0(char const *s, ...)
     va_list	va;
 
     va_start(va, s);
-    hs_log_va(LOG_CRIT, PACKAGE, s, va);
+    hs_log_va(HS_LOG_CRIT, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -133,7 +141,7 @@ hs_error0(char const *s, ...)
     va_list	va;
 
     va_start(va, s);
-    hs_log_va(LOG_ERR, PACKAGE, s, va);
+    hs_log_va(HS_LOG_ERR, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -146,12 +154,12 @@ hs_trace0(char const *s, ...)
     va_list	va;
 
     va_start(va, s);
-    hs_log_va(LOG_DEBUG, PACKAGE, s, va);
+    hs_log_va(HS_LOG_DEBUG, PACKAGE, s, va);
     va_end(va);
 }
 
 
-/*
+/**
  * Return true if the library contains trace code; otherwise false.
  * If this returns false, then trying to turn trace on will achieve
  * nothing.

@@ -28,19 +28,6 @@
 
 
 
-/*
- * Generate a delta from a set of signatures and a new file.
- */
-
-/*
- * Eventually, the delta algorithm has to maintain one block of
- * readahead or readbehind to check the strong checksum.
- *
- * On each entry to the iterator, we first need to try to flush any
- * outstanding output from either the tube or a copy instruction.
- */
-
-
 #include <config.h>
 
 #include <assert.h>
@@ -83,7 +70,7 @@ static hs_result hs_delta_s_header(hs_job_t *job)
 }
 
 
-/*
+/**
  * Prepare to compute a delta on a stream.
  */
 hs_job_t *hs_delta_begin(hs_stream_t *stream)

@@ -1,3 +1,4 @@
+-*- text -*-
 /**
 \mainpage The libhsync delta-encoding library
 \author Martin Pool <mbp@samba.org>
@@ -6,19 +7,19 @@ $Id$
 
 \section intro Introduction
 
-This is an library for rsync-encoding, designed to be easily
-embedded into diverse applications.  \em libhsync is being
-developed as part of the \b rproxy <http://rproxy.samba.org/>
-and \b rsync <http://rsync.samba.org/> projects.
+libhsync is a library for calculating and applying network deltas,
+with an interface designed to ease embedded into diverse applications.
+\em libhsync is being developed as part of the \b rproxy
+<http://rproxy.samba.org/> and \b rsync <http://rsync.samba.org/>
+projects.
 
-libhsync encapsulates the core algorithms of the rsync
-protocol, which help with efficient calculation of the
-differences between two files.  The rsync algorithm is different
-from most differencing algorithms in that it does not require
-the presence of the two files to calculate the delta.  Instead,
-it requires a set of checksums of each block of one file, which
-together form a signature for that file.  Blocks at any in the
-other file which have the same checksum are likely to be
+libhsync encapsulates the core algorithms of the rsync protocol, which
+help with efficient calculation of the differences between two files.
+The rsync algorithm is different from most differencing algorithms
+because it does not require the presence of the two files to calculate
+the delta.  Instead, it requires a set of checksums of each block of
+one file, which together form a signature for that file.  Blocks at
+any in the other file which have the same checksum are likely to be
 identical, and whatever remains is the difference.
 
 The library does not deal with file metadata or structure, such as
@@ -33,69 +34,66 @@ The library supports three basic operations:
    -# Calculating a delta D from S and a new file B.
    -# Applying D to A to reconstruct B.
 
-The library also provides the \ref rdiff command-line tool.
+The library also provides the \ref rdiff command-line tool, which
+makes this functionality available to users and scripting languages.
 
-\section overview Overview
+\section api Programming interface
 
-Why not start with hs_mksum_begin() and ::hs_job_t?
+The public interface to libhsync (hsync.h) has functions in several
+main areas:
 
-\section api Programming Interface
+   - \ref api_streaming
+   - \ref api_delta
+   - \ref api_whole
+   - \ref api_trace
+   - \ref api_stats
+   - \ref api_utility
 
-The main public interface to libhsync is through the hsync.h header
-file.
+All external symbols have the prefix ``<tt>hs_</tt>'', or
+``<tt>HS_</tt>'' in the case of preprocessor symbols.
+
+\subsection api_streaming Data streaming
+
+A key design requirement for libhsync is that it should handle data as
+and when the hosting application requires it.  libhsync can be used
+inside applications that do non-blocking IO or filtering of network
+streams, because it never does IO directly, or needs to block waiting
+for data.
 
 The programming interface to libhsync is similar to that of zlib and
-bzlib.
+bzlib.  Arbitrary-length input and output buffers are passed to the
+library by the application, through an instance of ::hs_stream_t.  The
+library proceeds as far as it can, and returns an ::hs_result value
+indicating whether it needs more data or space.
 
-All public symbols in the library have the prefix
-``<tt>hs_</tt>''. Symbols for internal use only have the prefix
-``<tt>_hs_</tt>''.
+All the state needed by the library to resume processing when more
+data is available is kept in a small opaque ::hs_job_t structure.
+After creation of a job, repeated calls to hs_job_iter() in between
+filling and emptying the buffers keeps data flowing through the
+stream.  The ::hs_result_t values returned may indicate
 
-<p>The library contains three basic types of functions:
-low-level delta routines, higher-level wrappers, and utility
-routines.  There is also a single executable, <tt>rdiff</tt>,
-which makes the library functions accessible from scripts or the
-command line.
+ - ::HS_OK:  processing is complete
+ - ::HS_BLOCKED: processing has blocked pending more data
+ - one of various possible errors in processing
 
-<p>The main routines are all streaming: they gradually
-accumulate data or produce output as the file is processed.</p>
+These can be converted to a human-readable string by hs_strerror().
 
-<p>The current library code always uses an encoding format
-documented in the <it>hsync Protocol Definition</it> document.
-Other formats may be supported in the future.</p>
+\subsection api_delta Generating and applying deltas
 
-\subsection mksum Generate Signature
+All encoding operations are performed by using a <tt>*_begin</tt>
+function to create a ::hs_job_t object, passing in any necessary
+initialization parameters.  The various jobs available are:
 
-Functions that generate signatures read from the file whose signature
-will be taken.  Signature data is written out to another stream as it
-is produced.
+ - hs_signature_begin(): Calculate the signature of a file.
+ - hs_readsum_begin(): Load a signature into memory.
+ - hs_delta_begin(): Calculate the delta between a signature and a new
+   file.
 
-\subsection readsig Read Signature
+\subsection api_whole Processing whole files
 
-Reads from a signature stream and produces an in-memory
-signature structure.
-
-\subsection lowlevel Low-level interface
-
-Low level functions compress data in memory, between caller-specified
-input and output buffers.  They do no IO and have minimum dependencies
-on the C library.  This is useful for applications that already have
-your own IO framework, which is the case for Apache, Squid, etc.
-Because data is taken as required by the application, they can
-interoperate with non-blocking IO and encryption libraries, amongst
-other things.
-
-All encoding routines follow a calling protocol similar to that of
-zlib: the caller passes the address and length of input and output
-buffers, plus an opaque state object.  Each routine processes as
-much data as possible, and returns when the input buffer is empty
-or the output buffer is full.
-
-\section highlevel High-level Interface
-
-The high-level interface works similarly to the C library's stdio
-routines, and builds upon them.  It is simpler to use, and appropriate
-for applications that do not need to filter or throttle their IO.
+Some applications do not require fine-grained control over IO, but
+rather just want to process a whole file with a single call.  libhsync
+provides `whole-file' functions (in whole.c) to do exactly that.
 
 \subsection api_trace Debugging Trace
 
@@ -104,5 +102,22 @@ follow a fairly standard priority-based filtering system
 (hs_trace_set_level()), using the same severity levels as UNIX syslog.
 Messages by default are sent to stderr, but may be passed to an
 application-provided callback (hs_trace_to(), hs_trace_fn_t()).
+
+\subsection api_stats Encoding statistics
+
+  Encoding and decoding routines accumulate compression performance
+  statistics in a ::hs_stats_t structure as they run.  These may be
+  converted to human-readable form or written to the log file using
+  hs_format_stats() or hs_log_stats() respectively.
+
+\subsection api_utility Utility functions
+
+Some additional functions are used internally and also exposed in the
+API:
+
+ - encoding/decoding binary data: hs_base64(), hs_unbase64(),
+   hs_hexify().
+ - MD4 message digests: hs_mdfour(), hs_mdfour_begin(),
+   hs_mdfour_update(), hs_mdfour_result().
 
 */
