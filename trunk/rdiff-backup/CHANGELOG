@@ -21,6 +21,8 @@ Dean Gaudet for bug report.)
 
 Fixed user/group restoring error noticed by Fran Firman.
 
+Checked in Robert Shaw's --chars-to-quote patch
+
 
 New in v0.13.4 (2004/01/31)
 ---------------------------

@@ -502,7 +502,7 @@ def restore_set_fs_globals(target):
 		if src_support: Globals.rbdir.conn.Globals.set_local(conn_attr, 1)
 
 	target_fsa = target.conn.fs_abilities.get_fsabilities_readwrite(
-		'destination', target, 0)
+		'destination', target, 0, Globals.chars_to_quote)
 	Log(str(target_fsa), 3)
 	mirror_fsa = Globals.rbdir.conn.fs_abilities.get_fsabilities_restoresource(
 		Globals.rbdir)
@@ -687,7 +687,8 @@ def single_set_fs_globals(rbdir):
 		SetConnections.UpdateGlobal(write_attr, 1)
 		rbdir.conn.Globals.set_local(conn_attr, 1)
 
-	fsa = rbdir.conn.fs_abilities.get_fsabilities_readwrite('archive', rbdir)
+	fsa = rbdir.conn.fs_abilities.get_fsabilities_readwrite('archive',
+								   rbdir, 1, Globals.chars_to_quote)
 	Log(str(fsa), 3)
 
 	update_triple(fsa.eas, ('eas_active', 'eas_write', 'eas_conn'))
