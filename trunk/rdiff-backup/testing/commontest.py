@@ -88,35 +88,30 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 	Main.Backup(rpin, rpout)
 	Main.cleanup()
 
-def InternalMirror(source_local, dest_local, src_dir, dest_dir,
-				   write_data = None):
-	"""Mirror src to dest internally, like InternalBackup"""
-	remote_schema = '%s'
+def InternalMirror(source_local, dest_local, src_dir, dest_dir):
+	"""Mirror src to dest internally
 
-	if not source_local:
-		src_dir = "cd test1; python ../server.py ../%s::../%s" % \
-				  (SourceDir, src_dir)
-	if not dest_local:
-		dest_dir = "cd test2/tmp; python ../../server.py ../../%s::../../%s" \
-				   % (SourceDir, dest_dir)
+	like InternalBackup, but only mirror.  Do this through
+	InternalBackup, but then delete rdiff-backup-data directory.
 
-	rpin, rpout = cmd_schemas2rps([src_dir, dest_dir], remote_schema)
-	Main.misc_setup([rpin, rpout])
-	Main.backup_init_select(rpin, rpout)
-	if not rpout.lstat(): rpout.mkdir()
-	if write_data: # use rdiff-backup-data dir to checkpoint
-		data_dir = rpout.append("rdiff-backup-data")
-		if not data_dir.lstat(): data_dir.mkdir()
-		SetConnections.UpdateGlobal('rbdir', data_dir)
-	else: # just use root directory to hold checkpoints
-		SetConnections.UpdateGlobal('rbdir', rpout)
-	SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
+	"""
+	# Save attributes of root to restore later
+	src_root = RPath(Globals.local_connection, src_dir)
+	dest_root = RPath(Globals.local_connection, dest_dir)
+	dest_rbdir = dest_root.append("rdiff-backup-data")
+	dest_incdir = dest_rbdir.append("increments")
 
-	if write_data:
-		SaveState.init_filenames()
-		HighLevel.Mirror(rpin, rpout, Globals.rbdir.append("increments"))
-	else: HighLevel.Mirror(rpin, rpout)
-	Main.cleanup()
+	# We need to create these directories or else failure because
+	# --force option not given.
+	if not dest_root.lstat(): dest_root.mkdir()
+	if not dest_rbdir.lstat(): dest_rbdir.mkdir()
+	if not dest_incdir.lstat(): dest_incdir.mkdir()
+	
+	InternalBackup(source_local, dest_local, src_dir, dest_dir)
+	dest_root.setdata()
+	dest_rbdir.delete()
+	# Restore old attributes
+	RPathStatic.copy_attribs(src_root, dest_root)
 
 def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 	"""Restore mirror_dir to dest_dir at given time

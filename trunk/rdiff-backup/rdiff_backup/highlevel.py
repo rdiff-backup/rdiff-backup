@@ -40,7 +40,7 @@ class HighLevel:
 	accompanying diagram.
 
 	"""
-	def Mirror(src_rpath, dest_rpath, inc_rpath = None, session_info = None):
+	def Mirror(src_rpath, dest_rpath, inc_rpath):
 		"""Turn dest_rpath into a copy of src_rpath
 
 		If inc_rpath is true, then this is the initial mirroring of an
@@ -51,14 +51,10 @@ class HighLevel:
 		SourceS = src_rpath.conn.HLSourceStruct
 		DestS = dest_rpath.conn.HLDestinationStruct
 
-		SourceS.set_session_info(session_info)
-		DestS.set_session_info(session_info)
 		src_init_dsiter = SourceS.split_initial_dsiter()
 		dest_sigiter = DestS.get_sigs(dest_rpath, src_init_dsiter)
 		diffiter = SourceS.get_diffs_and_finalize(dest_sigiter)
-		if inc_rpath:
-			DestS.patch_w_datadir_writes(dest_rpath, diffiter, inc_rpath)
-		else: DestS.patch_and_finalize(dest_rpath, diffiter)
+		DestS.patch_w_datadir_writes(dest_rpath, diffiter, inc_rpath)
 
 		dest_rpath.setdata()
 
@@ -68,9 +64,6 @@ class HighLevel:
 		SourceS = src_rpath.conn.HLSourceStruct
 		DestS = dest_rpath.conn.HLDestinationStruct
 
-		SourceS.set_session_info(session_info)
-		DestS.set_session_info(session_info)
-		if not session_info: dest_rpath.conn.SaveState.touch_last_file()
 		src_init_dsiter = SourceS.split_initial_dsiter()
 		dest_sigiter = DestS.get_sigs(dest_rpath, src_init_dsiter)
 		diffiter = SourceS.get_diffs_and_finalize(dest_sigiter)
@@ -84,19 +77,9 @@ MakeStatic(HighLevel)
 
 class HLSourceStruct:
 	"""Hold info used by HL on the source side"""
-	_session_info = None # set to si if resuming
-	def set_session_info(cls, session_info):
-		cls._session_info = session_info
-
-	def iterate_from(cls):
-		"""Supply more aruments to DestructiveStepping.Iterate_from"""
-		if cls._session_info is None: Globals.select_source.set_iter()
-		else: Globals.select_source.set_iter(cls._session_info.last_index, 1)
-		return Globals.select_source
-
 	def split_initial_dsiter(cls):
 		"""Set iterators of all dsrps from rpath, returning one"""
-		dsiter = cls.iterate_from()
+		dsiter = Globals.select_source.set_iter()
 		initial_dsiter1, cls.initial_dsiter2 = Iter.multiplex(dsiter, 2)
 		return initial_dsiter1
 
@@ -133,18 +116,10 @@ MakeClass(HLSourceStruct)
 class HLDestinationStruct:
 	"""Hold info used by HL on the destination side"""
 	_session_info = None # set to si if resuming
-	def set_session_info(cls, session_info):
-		cls._session_info = session_info
-
-	def iterate_from(cls):
-		"""Return selection iterator to iterate all the mirror files"""
-		if cls._session_info is None: Globals.select_mirror.set_iter()
-		else: Globals.select_mirror.set_iter(cls._session_info.last_index)
-		return Globals.select_mirror
-
 	def split_initial_dsiter(cls):
 		"""Set initial_dsiters (iteration of all dsrps from rpath)"""
-		result, cls.initial_dsiter2 = Iter.multiplex(cls.iterate_from(), 2)
+		result, cls.initial_dsiter2 = \
+				Iter.multiplex(Globals.select_mirror.set_iter(), 2)
 		return result
 
 	def get_dissimilar(cls, baserp, src_init_iter, dest_init_iter):
@@ -287,7 +262,6 @@ class HLDestinationStruct:
 				if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
 				ITR(dsrp.index, diff_rorp, dsrp)
 				finalizer(dsrp.index, dsrp)
-				SaveState.checkpoint(ITR, finalizer, dsrp)
 				finished_dsrp = dsrp
 			ITR.Finish()
 			finalizer.Finish()
@@ -296,7 +270,6 @@ class HLDestinationStruct:
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
 		MiscStats.close_dir_stats_file()
 		MiscStats.write_session_statistics(ITR.root_branch)
-		SaveState.checkpoint_remove()
 
 	def patch_increment_and_finalize(cls, dest_rpath, diffs, inc_rpath):
 		"""Apply diffs, write increment if necessary, and finalize"""
@@ -314,7 +287,6 @@ class HLDestinationStruct:
 				if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
 				ITR(index, diff_rorp, dsrp)
 				finalizer(index, dsrp)
-				SaveState.checkpoint(ITR, finalizer, dsrp)
 				finished_dsrp = dsrp
 			ITR.Finish()
 			finalizer.Finish()
@@ -323,15 +295,14 @@ class HLDestinationStruct:
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
 		MiscStats.close_dir_stats_file()
 		MiscStats.write_session_statistics(ITR.root_branch)
-		SaveState.checkpoint_remove()
 
 	def handle_last_error(cls, dsrp, finalizer, ITR):
 		"""If catch fatal error, try to checkpoint before exiting"""
 		Log.exception(1, 2)
 		TracebackArchive.log()
-		SaveState.checkpoint(ITR, finalizer, dsrp, 1)
-		if Globals.preserve_hardlinks: Hardlink.final_checkpoint(Globals.rbdir)
-		SaveState.touch_last_file_definitive()
+		#SaveState.checkpoint(ITR, finalizer, dsrp, 1)
+		#if Globals.preserve_hardlinks: Hardlink.final_checkpoint(Globals.rbdir)
+		#SaveState.touch_last_file_definitive()
 		raise
 
 MakeClass(HLDestinationStruct)

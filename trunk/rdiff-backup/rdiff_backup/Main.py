@@ -48,23 +48,22 @@ def parse_cmdlineoptions(arglist):
 		try: return open(filename, "r")
 		except IOError: Log.FatalError("Error opening file %s" % filename)
 
-	try: optlist, args = getopt.getopt(arglist, "blmr:sv:V",
-		 ["backup-mode", "calculate-average",
-		  "change-source-perms", "chars-to-quote=",
-		  "checkpoint-interval=", "current-time=", "exclude=",
-		  "exclude-device-files", "exclude-filelist=",
+	try: optlist, args = getopt.getopt(arglist, "blr:sv:V",
+		 ["backup-mode", "calculate-average", "change-source-perms",
+		  "chars-to-quote=", "checkpoint-interval=", "current-time=",
+		  "exclude=", "exclude-device-files", "exclude-filelist=",
 		  "exclude-filelist-stdin", "exclude-globbing-filelist=",
 		  "exclude-mirror=", "exclude-other-filesystems",
 		  "exclude-regexp=", "exclude-special-files", "force",
 		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=", "include-regexp=",
-		  "list-changed-since=", "list-increments", "mirror-only",
-		  "no-compression", "no-compression-regexp=", "no-hard-links",
-		  "no-resume", "null-separator", "parsable-output",
-		  "print-statistics", "quoting-char=", "remote-cmd=",
-		  "remote-schema=", "remove-older-than=", "restore-as-of=",
-		  "restrict=", "restrict-read-only=", "restrict-update-only=",
-		  "resume", "resume-window=", "server", "sleep-ratio=",
+		  "list-changed-since=", "list-increments", "no-compression",
+		  "no-compression-regexp=", "no-hard-links", "no-resume",
+		  "null-separator", "parsable-output", "print-statistics",
+		  "quoting-char=", "remote-cmd=", "remote-schema=",
+		  "remove-older-than=", "restore-as-of=", "restrict=",
+		  "restrict-read-only=", "restrict-update-only=", "resume",
+		  "resume-window=", "server", "sleep-ratio=",
 		  "ssh-no-compression", "terminal-verbosity=", "test-server",
 		  "verbosity=", "version", "windows-mode",
 		  "windows-time-format"])
@@ -115,7 +114,6 @@ def parse_cmdlineoptions(arglist):
 			restore_timestr, action = arg, "list-changed-since"
 		elif opt == "-l" or opt == "--list-increments":
 			action = "list-increments"
-		elif opt == "-m" or opt == "--mirror-only": action = "mirror"
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
 			Globals.set("no_compression_regexp_string", arg)
@@ -185,8 +183,7 @@ def set_action():
 		commandline_error("No arguments given")
 	if l > 0 and action == "server":
 		commandline_error("Too many arguments given")
-	if l < 2 and (action == "backup" or action == "mirror" or
-				  action == "restore-as-of"):
+	if l < 2 and (action == "backup" or action == "restore-as-of"):
 		commandline_error("Two arguments are required (source, destination).")
 	if l == 2 and (action == "list-increments" or
 				   action == "remove-older-than" or
@@ -228,7 +225,6 @@ def take_action(rps):
 	elif action == "backup": Backup(rps[0], rps[1])
 	elif action == "restore": restore(*rps)
 	elif action == "restore-as-of": RestoreAsOf(rps[0], rps[1])
-	elif action == "mirror": Mirror(rps[0], rps[1])
 	elif action == "test-server": SetConnections.TestConnections()
 	elif action == "list-changed-since": ListChangedSince(rps[0])
 	elif action == "list-increments": ListIncrements(rps[0])
@@ -254,37 +250,15 @@ def Main(arglist):
 	cleanup()
 
 
-def Mirror(src_rp, dest_rp):
-	"""Turn dest_path into a copy of src_path"""
-	Log("Mirroring %s to %s" % (src_rp.path, dest_rp.path), 5)
-	mirror_check_paths(src_rp, dest_rp)
-	# Since no "rdiff-backup-data" dir, use root of destination.
-	SetConnections.UpdateGlobal('rbdir', dest_rp)
-	SetConnections.BackupInitConnections(src_rp.conn, dest_rp.conn)
-	backup_init_select(src_rp, dest_rp)
-	HighLevel.Mirror(src_rp, dest_rp)
-
-def mirror_check_paths(rpin, rpout):
-	"""Check paths and return rpin, rpout"""
-	if not rpin.lstat():
-		Log.FatalError("Source directory %s does not exist" % rpin.path)
-	if rpout.lstat() and not force: Log.FatalError(
-"""Destination %s exists so continuing could mess it up.  Run
-rdiff-backup with the --force option if you want to mirror anyway.""" %
-		rpout.path)
-
-
 def Backup(rpin, rpout):
 	"""Backup, possibly incrementally, src_path to dest_path."""
 	SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
 	backup_init_select(rpin, rpout)
 	backup_init_dirs(rpin, rpout)
-	RSI = Globals.backup_writer.Resume.ResumeCheck()
-	SaveState.init_filenames()
 	if prevtime:
 		Time.setprevtime(prevtime)
-		HighLevel.Mirror_and_increment(rpin, rpout, incdir, RSI)
-	else: HighLevel.Mirror(rpin, rpout, incdir, RSI)
+		HighLevel.Mirror_and_increment(rpin, rpout, incdir)
+	else: HighLevel.Mirror(rpin, rpout, incdir)
 	rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
 
 def backup_init_select(rpin, rpout):
