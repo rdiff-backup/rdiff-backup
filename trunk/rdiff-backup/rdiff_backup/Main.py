@@ -1,4 +1,4 @@
-# Copyright 2002, 2003 Ben Escoto
+# Copyright 2002, 2003, 2004 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -36,6 +36,7 @@ user_mapping_filename, group_mapping_filename = None, None
 # These are global because they are set while we are trying to figure
 # whether to restore or to backup
 restore_root, restore_index, restore_root_set = None, None, 0
+return_val = None # Set to cause exit code to be specified value
 
 def parse_cmdlineoptions(arglist):
 	"""Parse argument list and set global preferences"""
@@ -188,7 +189,7 @@ def final_set_action(rps):
 def commandline_error(message):
 	sys.stderr.write("Error: %s\n" % message)
 	sys.stderr.write("See the rdiff-backup manual page for instructions\n")
-	sys.exit(1)
+	sys.exit(2)
 
 def misc_setup(rps):
 	"""Set default change ownership flag, umask, relay regexps"""
@@ -253,6 +254,7 @@ def Main(arglist):
 	misc_setup(rps)
 	take_action(rps)
 	cleanup()
+	if return_val is not None: sys.exit(return_val)
 
 
 def Backup(rpin, rpout):
@@ -732,17 +734,18 @@ def Compare(src_rp, dest_rp, compare_time = None):
 	Session time is read from restore_timestr if compare_time is None.
 
 	"""
+	global return_val
 	require_root_set(dest_rp)
 	if not compare_time:
-		try: compare_time = Time.getstrtotime(restore_timestr)
+		try: compare_time = Time.genstrtotime(restore_timestr)
 		except Time.TimeException, exc: Log.FatalError(str(exc))
 	restore_check_backup_dir(restore_root)
 
 	mirror_rp = restore_root.new_index(restore_index)
 	inc_rp = mirror_rp.append_path("increments", restore_index)
 	backup_set_select(src_rp) # Sets source rorp iterator
-	restore.Compare(src_rp.conn.backup.SourceStruct.get_source_select(),
-					src_iter, mirror_rp, inc_rp, compare_time)
+	src_iter = src_rp.conn.backup.SourceStruct.get_source_select()
+	return_val = restore.Compare(src_iter, mirror_rp, inc_rp, compare_time)
 
 
 def CheckDest(dest_rp):
