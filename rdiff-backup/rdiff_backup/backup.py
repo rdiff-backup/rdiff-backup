@@ -166,9 +166,11 @@ class DestinationStruct:
 					yield iterfile.RORPIterFlushRepeat
 			else:
 				index = src_rorp and src_rorp.index or dest_rorp.index
-				cls.CCPP.flag_changed(index)
-				yield cls.get_one_sig(dest_base_rpath, index,
+				sig = cls.get_one_sig(dest_base_rpath, index,
 									  src_rorp, dest_rorp)
+				if sig:
+					cls.CCPP.flag_changed(index)
+					yield sig
 
 	def get_one_sig(cls, dest_base_rpath, index, src_rorp, dest_rorp):
 		"""Return a signature given source and destination rorps"""
@@ -180,9 +182,11 @@ class DestinationStruct:
 			dest_sig = dest_rorp.getRORPath()
 			if dest_rorp.isreg():
 				dest_rp = dest_base_rpath.new_index(index)
-				if dest_rp.isreg(): # otherwise file has changed type from reg
-					dest_sig.setfile(Rdiff.get_signature(dest_rp))
-				else: dest_sig = dest_rp.getRORPath()
+				if not dest_rp.isreg():
+					log.ErrorLog.write_if_open("UpdateError", dest_rp,
+						"File changed from regular file before signature")
+					return None
+				dest_sig.setfile(Rdiff.get_signature(dest_rp))
 		else: dest_sig = rpath.RORPath(index)
 		return dest_sig			
 

@@ -127,7 +127,7 @@ class KillTest(ProcessFuncs):
 	# The following are lower and upper bounds on the amount of time
 	# rdiff-backup is expected to run.  They are used to determine how
 	# long to wait before killing the rdiff-backup process
-	time_pairs = [(0.0, 3.7), (0.0, 5.7), (0.0, 3.0), (0.0, 5.0), (0.0, 5.0)]
+	time_pairs = [(0.0, 3.7), (0.0, 3.7), (0.0, 3.0), (0.0, 5.0), (0.0, 5.0)]
 
 	def setUp(self):
 		"""Create killtest? and backup? directories if necessary"""
@@ -175,9 +175,10 @@ class KillTest(ProcessFuncs):
 
 		inc_date_pairs = map(lambda inc: (inc.getinctime(), inc), inclist)
 		inc_date_pairs.sort()
-		assert inc_date_pairs[-1][0] == curtime, \
-			   (inc_date_pairs[-1][0], curtime)
-		if len(inclist) == 2: return 1
+		if len(inclist) == 2:
+			assert inc_date_pairs[-1][0] == curtime, \
+				   (inc_date_pairs[-1][0], curtime)
+			return 1
 
 		if inc_date_pairs[-1][0] == curtime:
 			result = 0
@@ -235,7 +236,7 @@ class KillTest(ProcessFuncs):
 			elif result == -1: killed_too_soon[1] += 1
 		self.exec_rb(30000, 1, Local.kt2rp.path, Local.rpout.path)
 
-		# Now keep regressing from kt2rp, only staying there at the end
+		# Now keep regressing from kt3rp, only staying there at the end
 		for i in range(count):
 			result = cycle_once(self.time_pairs[3], 40000,
 								Local.kt3rp, Local.kt2rp)
@@ -243,7 +244,7 @@ class KillTest(ProcessFuncs):
 			elif result == -1: killed_too_soon[2] += 1
 		self.exec_rb(40000, 1, Local.kt3rp.path, Local.rpout.path)
 
-		# Now keep regressing from kt2rp, only staying there at the end
+		# Now keep regressing from kt4rp, only staying there at the end
 		for i in range(count):
 			result = cycle_once(self.time_pairs[4], 50000,
 								Local.kt4rp, Local.kt3rp)

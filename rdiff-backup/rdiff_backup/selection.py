@@ -26,7 +26,7 @@ documentation on what this code does can be found on the man page.
 
 from __future__ import generators
 import re
-import FilenameMapping, robust, rpath, Globals, log
+import FilenameMapping, robust, rpath, Globals, log, rorpiter
 
 
 class SelectError(Exception):
@@ -194,6 +194,18 @@ class Select:
 			if new_rp:
 				for rp in rec_func(new_rp, rec_func, sel_func):
 					yield rp
+
+	def FilterIter(self, rorp_iter):
+		"""Filter rorp_iter using Select below, removing excluded rorps"""
+		def getrpiter(rorp_iter):
+			"""Return rp iter by adding indicies of rorp_iter to self.rpath"""
+			for rorp in rorp_iter:
+				yield rpath.RPath(self.rpath.conn, self.rpath.base,
+								  rorp.index, rorp.data)
+
+		ITR = rorpiter.IterTreeReducer(FilterIterITRB, [self])
+		for rp in rp_iter: ITR(rp.index, rp)
+		ITR.Finish()
 
 	def Select(self, rp):
 		"""Run through the selection functions and return dominant val 0/1/2"""
@@ -604,6 +616,88 @@ probably isn't what you meant.""" %
 					res = res + '[' + stuff + ']'
 			else: res = res + re.escape(c)
 		return res
+
+
+class FilterIter:
+	"""Filter rorp_iter using a Select object, removing excluded rorps"""
+	def __init__(self, select, rorp_iter):
+		"""Constructor
+
+		Input is the Select object to use and the iter of rorps to be
+		filtered.  The rorps will be converted to rps using the Select
+		base.
+
+		"""
+		self.rorp_iter = rorp_iter
+		self.base_rp = select.rpath
+		self.stored_rorps = []
+		self.ITR = rorpiter.IterTreeReducer(FilterIterITRB,
+											[select.Select, self.stored_rorps])
+		self.itr_finished = 0
+
+	def __iter__(self): return self
+
+	def next(self):
+		"""Return next object, or StopIteration"""
+		while not self.stored_rorps:
+			try: next_rorp = self.rorp_iter.next()
+			except StopIteration:
+				if self.itr_finished: raise
+				else:
+					self.ITR.Finish()
+					self.itr_finished = 1
+			else:
+				next_rp = rpath.RPath(self.base_rp.conn, self.base_rp.base,
+									  next_rorp.index, next_rorp.data)
+				self.ITR(next_rorp.index, next_rp, next_rorp)
+		return self.stored_rorps.pop(0)
+
+class FilterIterITRB(rorpiter.ITRBranch):
+	"""ITRBranch used in above FilterIter class
+
+	The reason this is necessary is because for directories sometimes
+	we don't know whether a rorp is excluded until we see what is in
+	the directory.
+
+	"""
+	def __init__(self, select, rorp_cache):
+		"""Initialize FilterIterITRB.  Called by IterTreeReducer.
+
+		select should be the relevant Select object used to test the
+		rps.  rorp_cache is the list rps should be appended to if they
+		aren't excluded.
+
+		"""
+		self.select, self.rorp_cache = select, rorp_cache
+		self.branch_excluded = None
+		self.base_queue = None # holds branch base while examining contents
+
+	def can_fast_process(self, index, next_rp, next_rorp):
+		return not next_rp.isdir()
+
+	def fast_process(self, index, next_rp, next_rorp):
+		"""For ordinary files, just append if select is positive"""
+		if self.branch_excluded: return
+		s = self.select(next_rp)
+		if s == 1:
+			if self.base_queue:
+				self.rorp_cache.append(self.base_queue)
+				self.base_queue = None
+			self.rorp_cache.append(next_rorp)
+		else: assert s == 0, "Unexpected select value %s" % (s,)
+
+	def start_process(self, index, next_rp, next_rorp):
+		s = self.select(next_rp)
+		if s == 0: self.branch_excluded = 1
+		elif s == 1: self.rorp_cache.append(next_rorp)
+		else:
+			assert s == 2, s
+			self.base_queue = next_rorp
+
+
+
+
+
 
 
 

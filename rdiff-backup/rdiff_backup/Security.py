@@ -148,8 +148,8 @@ def set_allowed_requests(sec_level):
 	if Globals.server:
 		allowed_requests.extend(
 			["SetConnections.init_connection_remote",
-			 "Log.setverbosity",
-			 "Log.setterm_verbosity",
+			 "log.Log.setverbosity",
+			 "log.Log.setterm_verbosity",
 			 "Time.setprevtime_local",
 			 "FilenameMapping.set_init_quote_vals_local",
 			 "Globals.postset_regexp_local",

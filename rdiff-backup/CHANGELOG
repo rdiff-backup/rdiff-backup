@@ -1,3 +1,19 @@
+New in v0.12.0 (2003/06/26)
+---------------------------
+
+Fixed (?) bug that caused crash when file changes type from regular
+file in middle of download (reported by Ty! Boyack).
+
+Failure to construct regular file in regression/restoration only
+causes warning, not fatal error.
+
+Removed --exclude-mirror option.  (Probably no one uses this, and it
+adds clutter.)
+
+--include and --exclude options should work now with restores, with
+some speed penalty.
+
+
 New in v0.11.5 (2003/06/20)
 ---------------------------
 
