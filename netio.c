@@ -31,22 +31,22 @@ int
 _hs_read_loop(hs_read_fn_t read_fn, void *read_priv,
 	      char *buf, size_t len)
 {
-    size_t count = 0;
-    int ret;
+     size_t count = 0;
+     int ret;
 
-    if (!len)
-	return len;
+     if (len == 0)
+	  return 0;
 
-    while (count < len) {
-	ret = read_fn(read_priv, buf + count, len - count);
-	if (ret == 0)
-	    return count;
-	if (ret == -1)
-	    return ret;
-	count += ret;
-    }
+     while (count < len) {
+	  ret = read_fn(read_priv, buf + count, len - count);
+	  if (ret == 0)
+	       return count;
+	  if (ret == -1)
+	       return ret;
+	  count += ret;
+     }
 
-    return count;
+     return count;
 }
 
 
@@ -57,23 +57,31 @@ int
 _hs_must_read(hs_read_fn_t read_fn, void *read_priv,
 	      char *buf, ssize_t len)
 {
-     ssize_t ret;
-     ret = _hs_read_loop(read_fn, read_priv, buf, len);
-     if (ret == len) {
-	  return ret;
-     } else if (ret == 0) {
-	  return ret;
-     } else if (ret < 0) {
-	  return -1;
-     } else if (ret < len) {
-	  _hs_error("short read where one is not allowed: got %d bytes, "
-		    "wanted %d", ret, len);
-	  return -1;
-     } else { /* (ret > len) */
-	  _hs_error("too much data returned from read: got %d bytes, "
-		    "wanted just %d", ret, len);
-	  return -1;
+     ssize_t count = 0;
+     int ret;
+
+     if (len == 0)
+	  return 0;
+
+     while (count < len) {
+	  ret = read_fn(read_priv, buf + count, len - count);
+	  if (ret == 0) {
+	       /* it's OK to get an EOF at the start, but not in the
+                  middle of the object. */
+	       if (count == 0)
+		    return 0;
+	       else {
+		    _hs_error("unexpected eof");
+		    return ret;
+	       }
+	  }
+	  if (ret < 0)
+	       return ret;
+	  count += ret;
      }
+
+     assert(count == len);
+     return count;
 }
 
 
@@ -81,26 +89,26 @@ int
 _hs_write_loop(hs_write_fn_t write_fn, void *write_priv,
 	       char const *buf, int len)
 {
-    int count = 0;
-    int ret;
-    int iter = 0;
+     int count = 0;
+     int ret;
+     int iter = 0;
 
-    if (!len)
-	return len;
+     if (!len)
+	  return len;
 
-    while (count < len) {
-	ret = write_fn(write_priv, buf + count, len - count);
-	count += ret;
-	if (ret == -1)
-	    return ret;
-	if (ret == 0 && ++iter > 100) {
-	     if (!errno)
-		  errno = EIO;
-	     return -1;
-	}
-    }
+     while (count < len) {
+	  ret = write_fn(write_priv, buf + count, len - count);
+	  count += ret;
+	  if (ret == -1)
+	       return ret;
+	  if (ret == 0 && ++iter > 100) {
+	       if (!errno)
+		    errno = EIO;
+	       return -1;
+	  }
+     }
 
-    return count;
+     return count;
 }
 
 
@@ -160,40 +168,40 @@ _hs_write_netbyte(hs_write_fn_t write_fn, void *write_priv, uint8_t out)
 int
 _hs_read_netshort(hs_read_fn_t read_fn, void *read_priv, uint16_t * result)
 {
-    uint16_t buf;
-    int ret;
+     uint16_t buf;
+     int ret;
 
-    ret = _hs_must_read(read_fn, read_priv, (char *) &buf, sizeof buf);
-    *result = ntohs(buf);
+     ret = _hs_must_read(read_fn, read_priv, (char *) &buf, sizeof buf);
+     *result = ntohs(buf);
 
-    return ret;
+     return ret;
 }
 
 
 int
 _hs_read_netint(hs_read_fn_t read_fn, void *read_priv, uint32_t * result)
 {
-    uint32_t buf;
-    int ret;
+     uint32_t buf;
+     int ret;
 
-    ret = _hs_must_read(read_fn, read_priv, (char *) &buf, sizeof buf);
-    *result = ntohl(buf);
+     ret = _hs_must_read(read_fn, read_priv, (char *) &buf, sizeof buf);
+     *result = ntohl(buf);
 
-    return ret;
+     return ret;
 }
 
 
 int
 _hs_read_netbyte(hs_read_fn_t read_fn, void *read_priv, uint8_t * result)
 {
-    uint8_t buf;
-    int ret;
-    const int len = sizeof buf;
+     uint8_t buf;
+     int ret;
+     const int len = sizeof buf;
 
-    ret = _hs_must_read(read_fn, read_priv, (char *) &buf, len);
-    *result = buf;
+     ret = _hs_must_read(read_fn, read_priv, (char *) &buf, len);
+     *result = buf;
 
-    return len;
+     return len;
 }
 
 
@@ -201,12 +209,12 @@ _hs_read_netbyte(hs_read_fn_t read_fn, void *read_priv, uint8_t * result)
 int _hs_write_netvar(hs_write_fn_t write_fn, void *write_priv,
 		     uint32_t value, int type)
 {
-    if (type == 1)
-	return _hs_write_netbyte(write_fn, write_priv, value);
-    else if (type == 2)
-	return _hs_write_netshort(write_fn, write_priv, value);
-    else if (type == 4)
-	return _hs_write_netint(write_fn, write_priv, value);
-    else
-	assert(0);
+     if (type == 1)
+	  return _hs_write_netbyte(write_fn, write_priv, value);
+     else if (type == 2)
+	  return _hs_write_netshort(write_fn, write_priv, value);
+     else if (type == 4)
+	  return _hs_write_netint(write_fn, write_priv, value);
+     else
+	  assert(0);
 }
