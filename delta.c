@@ -185,6 +185,13 @@ rs_delta_scan_full(rs_job_t *job, rs_long_t avail_len, void *p)
 
     /* TODO: If we don't match immediately, just queue up *one*
      * literal and then keep going. */
+
+    /* TODO: Also do this for short blocks if we can.  That affects
+     * when we give up, and also the current block length has to
+     * reduce as we get near the end. */
+
+    /* TODO: Don't recalculate from scratch, but rather roll forwards
+     * if possible. */
     for (search_pos = 0; search_pos <= avail_len - job->block_len; search_pos++) {
         weak_sum = rs_calc_weak_sum(inptr + search_pos, job->block_len);
         if (rs_search_for_block(weak_sum, inptr + search_pos, job->block_len,
@@ -203,6 +210,11 @@ rs_delta_scan_full(rs_job_t *job, rs_long_t avail_len, void *p)
     }
 
     if (search_pos) {
+        /* FIXME: At the moment, if you call with very short buffers,
+         * then you will get a series of very short LITERAL commands.
+         * Perhaps this is what you deserve, or perhaps we should try
+         * to get more readahead and avoid that. */
+
         /* There's some literal data at the start of this window which
          * we know is not in any block. */
         rs_trace("got %d bytes of literal data", search_pos);
