@@ -147,7 +147,7 @@ typedef enum {
     RS_UNIMPLEMENTED =  105,    /**< Author is lazy. */
     RS_CORRUPT =        106,    /**< Unbelievable value in stream. */
     RS_INTERNAL_ERROR = 107,    /**< Probably a library bug. */
-    RS_PARAM_ERROR =    108,    /**< Bad value passed in to library,
+    RS_PARAM_ERROR =    108     /**< Bad value passed in to library,
                                  * probably an application bug. */
 } rs_result;
 
@@ -310,7 +310,7 @@ typedef struct rs_job rs_job_t;
  * rs_work().
  */
 typedef enum rs_work_options {
-    RS_END = 0x01,              /**< End of input file; please finish
+    RS_END = 0x01               /**< End of input file; please finish
                                  * up. */
 } rs_work_options;
 
