@@ -71,8 +71,8 @@ def cmpfileobj(fp1, fp2):
 def check_for_files(*rps):
 	"""Make sure that all the rps exist, raise error if not"""
 	for rp in rps:
-		if not rp.lstat(): raise RPathException("File %s does not exist"
-												% rp.get_indexpath())
+		if not rp.lstat():
+			raise RPathException("File %s does not exist" % rp.get_indexpath())
 
 def move(rpin, rpout):
 	"""Move rpin to rpout, renaming if possible"""
@@ -136,11 +136,9 @@ def cmp(rpin, rpout):
 	elif rpin.issym():
 		return rpout.issym() and (rpin.readlink() == rpout.readlink())
 	elif rpin.ischardev():
-		return rpout.ischardev() and \
-			   (rpin.getdevnums() == rpout.getdevnums())
+		return rpout.ischardev() and (rpin.getdevnums() == rpout.getdevnums())
 	elif rpin.isblkdev():
-		return rpout.isblkdev() and \
-			   (rpin.getdevnums() == rpout.getdevnums())
+		return rpout.isblkdev() and (rpin.getdevnums() == rpout.getdevnums())
 	elif rpin.isfifo(): return rpout.isfifo()
 	elif rpin.issock(): return rpout.issock()
 	else: raise RPathException("File %s has unknown type" % rpin.path)
@@ -152,8 +150,7 @@ def copy_attribs(rpin, rpout):
 	timestamps, so both must already exist.
 
 	"""
-	log.Log("Copying attributes from %s to %s" %
-			(rpin.index, rpout.path), 7)
+	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
 	check_for_files(rpin, rpout)
 	if rpin.issym(): return # symlinks have no valid attributes
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
@@ -188,8 +185,7 @@ def copy_with_attribs(rpin, rpout, compress = 0):
 def rename(rp_source, rp_dest):
 	"""Rename rp_source to rp_dest"""
 	assert rp_source.conn is rp_dest.conn
-	log.Log(lambda: "Renaming %s to %s" %
-			(rp_source.path, rp_dest.path), 7)
+	log.Log(lambda: "Renaming %s to %s" % (rp_source.path, rp_dest.path), 7)
 	if not rp_source.lstat(): rp_dest.delete()
 	else:
 		if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode():
@@ -264,8 +260,7 @@ class RORPath:
 
 		for key in self.data.keys(): # compare dicts key by key
 			if (key == 'uid' or key == 'gid') and self.issym():
-				# Don't compare gid/uid for symlinks
-				pass
+				pass # Don't compare gid/uid for symlinks
 			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'devloc' or key == 'nlink': pass
@@ -295,8 +290,7 @@ class RORPath:
 				pass
 			elif (key == 'type' and self.isspecial() and
 				  other.isreg() and other.getsize() == 0):
-				# Special files may be replaced with 0 len regular files
-				pass
+				pass # Special files may be replaced with empty regular files
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
