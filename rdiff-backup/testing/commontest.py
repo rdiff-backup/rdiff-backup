@@ -168,7 +168,7 @@ def _reset_connections(src_rp, dest_rp):
 def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 					 equality_func = None, exclude_rbdir = 1,
 					 ignore_tmp_files = None, compare_ownership = 0,
-					 compare_eas = 0):
+					 compare_eas = 0, compare_acls = 0):
 	"""Compare src_rp and dest_rp, which can be directories
 
 	This only compares file attributes, not the actual data.  This
@@ -180,8 +180,9 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 	src_rp.setdata()
 	dest_rp.setdata()
 
-	Log("Comparing %s and %s, hardlinks %s, eas %s" %
-		(src_rp.path, dest_rp.path, compare_hardlinks, compare_eas), 3)
+	Log("Comparing %s and %s, hardlinks %s, eas %s, acls %s" %
+		(src_rp.path, dest_rp.path, compare_hardlinks,
+		 compare_eas, compare_acls), 3)
 	src_select = selection.Select(src_rp)
 	dest_select = selection.Select(dest_rp)
 
@@ -226,6 +227,10 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 			Log("Different EAs in files %s and %s" %
 				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
 			return None
+		if compare_acls and not eas_acls.acl_compare_rps(src_rorp, dest_rorp):
+			Log("Different ACLs in files %s and %s" %
+				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
+			return None
 		return 1
 
 	def rbdir_equal(src_rorp, dest_rorp):
@@ -244,6 +249,10 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 		if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
 			Log("Different EAs in files %s and %s" %
 				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()))
+			return None
+		if compare_acls and not eas_acls.acl_compare_rps(src_rorp, dest_rorp):
+			Log("Different ACLs in files %s and %s" %
+				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
 			return None
 		if compare_hardlinks:
 			if Hardlink.rorp_eq(src_rorp, dest_rorp): return 1
@@ -285,7 +294,8 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 						dest_dirname = "testfiles/output",
 						restore_dirname = "testfiles/rest_out",
 						compare_backups = 1,
-						compare_eas = 0):
+						compare_eas = 0,
+						compare_acls = 0):
 	"""Test backing up/restoring of a series of directories
 
 	The dirnames correspond to a single directory at different times.
@@ -297,6 +307,8 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 	Globals.set('preserve_hardlinks', compare_hardlinks)
 	Globals.set('write_eas', compare_eas)
 	Globals.set('read_eas', compare_eas)
+	Globals.set('write_acls', compare_acls)
+	Globals.set('read_acls', compare_acls)
 	time = 10000
 	dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
 	restore_rp = rpath.RPath(Globals.local_connection, restore_dirname)
@@ -312,7 +324,8 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 		_reset_connections(src_rp, dest_rp)
 		if compare_backups:
 			assert CompareRecursive(src_rp, dest_rp, compare_hardlinks,
-									compare_eas = compare_eas)
+									compare_eas = compare_eas,
+									compare_acls = compare_acls)
 
 	time = 10000
 	for dirname in list_of_dirnames[:-1]:
@@ -321,7 +334,9 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 		InternalRestore(dest_local, source_local, dest_dirname,
 						restore_dirname, time)
 		src_rp = rpath.RPath(Globals.local_connection, dirname)
-		assert CompareRecursive(src_rp, restore_rp, compare_eas = compare_eas)
+		assert CompareRecursive(src_rp, restore_rp,
+								compare_eas = compare_eas,
+								compare_acls = compare_acls)
 
 		# Restore should default back to newest time older than it
 		# with a backup then.

@@ -123,14 +123,6 @@ class DestinationStruct:
 		destination except rdiff-backup-data directory.
 
 		"""
-		def get_basic_iter():
-			"""Returns iterator of basic metadata"""
-			metadata_iter = metadata.MetadataFile.get_objects_at_time(
-				Globals.rbdir, Time.prevtime)
-			if metadata_iter: return metadata_iter
-			log.Log("Warning: Metadata file not found.\n"
-					"Metadata will be read from filesystem.", 2)
-
 		def get_iter_from_fs():
 			"""Get the combined iterator from the filesystem"""
 			sel = selection.Select(rpath)
@@ -138,10 +130,9 @@ class DestinationStruct:
 			return sel.set_iter()
 
 		if use_metadata:
-			if Globals.read_eas:
-				rorp_iter = eas_acls.ExtendedAttributesFile.\
-					  get_combined_iter_at_time(Globals.rbdir, Time.prevtime)
-			else: rorp_iter = get_basic_iter()
+			rorp_iter = eas_acls.GetCombinedMetadataIter(
+				Globals.rbdir, Time.prevtime,
+				acls = Globals.read_acls, eas = Globals.read_eas)
 			if rorp_iter: return rorp_iter
 		return get_iter_from_fs()
 
@@ -257,6 +248,7 @@ class CacheCollatedPostProcess:
 		if Globals.file_statistics: statistics.FileStats.init()
 		metadata.MetadataFile.open_file()
 		if Globals.read_eas: eas_acls.ExtendedAttributesFile.open_file()
+		if Globals.read_acls: eas_acls.AccessControlListFile.open_file()
 
 		# the following should map indicies to lists
 		# [source_rorp, dest_rorp, changed_flag, success_flag, increment]
@@ -334,6 +326,9 @@ class CacheCollatedPostProcess:
 			if Globals.read_eas and not metadata_rorp.get_ea().empty():
 				eas_acls.ExtendedAttributesFile.write_object(
 					metadata_rorp.get_ea())
+			if Globals.read_acls and not metadata_rorp.get_acl().is_basic():
+				eas_acls.AccessControlListFile.write_object(
+					metadata_rorp.get_acl())
 		if Globals.file_statistics:
 			statistics.FileStats.update(source_rorp, dest_rorp, changed, inc)
 
@@ -377,6 +372,7 @@ class CacheCollatedPostProcess:
 		while self.cache_indicies: self.shorten_cache()
 		metadata.MetadataFile.close_file()
 		if Globals.read_eas: eas_acls.ExtendedAttributesFile.close_file()
+		if Globals.read_acls: eas_acls.AccessControlListFile.close_file()
 		if Globals.print_statistics: statistics.print_active_stats()
 		if Globals.file_statistics: statistics.FileStats.close()
 		statistics.write_active_statfileobj()

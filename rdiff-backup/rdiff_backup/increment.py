@@ -87,7 +87,9 @@ def makedir(mirrordir, incpref):
 	"""Make file indicating directory mirrordir has changed"""
 	dirsign = get_inc(incpref, "dir")
 	dirsign.touch()
-	rpath.copy_attribs(mirrordir, dirsign)
+	# Below, don't copy acls because directories can have more of them
+	# than ordinary files (they have default acls also).
+	rpath.copy_attribs(mirrordir, dirsign, acls = 0)
 	return dirsign
 
 def get_inc(rp, typestr, time = None):

@@ -74,6 +74,13 @@ read_eas = None
 # implies read_eas.
 write_eas = None
 
+# If true, save access control lists when backup up.
+read_acls = None
+
+# If true, write access control list information to the destination
+# when backing up or restoring.  Implies read_acls.
+write_acls = None
+
 # This will be set as soon as the LocalConnection class loads
 local_connection = None
 

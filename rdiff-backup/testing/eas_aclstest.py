@@ -62,7 +62,12 @@ class EATest(unittest.TestCase):
 			assert 0, "We shouldn't have gotten this far"
 
 	def make_backup_dirs(self):
-		"""Create testfiles/ea_test[12] directories"""
+		"""Create testfiles/ea_test[12] directories
+
+		Goal is to set range of extended attributes, to give good test
+		to extended attribute code.
+
+		"""
 		if self.ea_testdir1.lstat(): self.ea_testdir1.delete()
 		if self.ea_testdir2.lstat(): self.ea_testdir2.delete()
 		self.ea_testdir1.mkdir()
@@ -131,5 +136,209 @@ class EATest(unittest.TestCase):
 		dirlist = ['testfiles/ea_test1', 'testfiles/ea_test2',
 				   'testfiles/empty', 'testfiles/ea_test1']
 		BackupRestoreSeries(None, None, dirlist, compare_eas = 1)
+
+
+
+class ACLTest(unittest.TestCase):
+	"""Test access control lists"""
+	sample_acl = AccessControlList((),"""user::rwx
+user:root:rwx
+group::r-x
+group:root:r-x
+mask::r-x
+other::---""")
+	dir_acl = AccessControlList((), """user::rwx
+user:root:rwx
+group::r-x
+group:root:r-x
+mask::r-x
+other::---""",
+								"""user::rwx
+user:root:---
+group::r-x
+mask::r-x
+other::---""")
+	acl1 = AccessControlList(('1',), """user::r--
+user:ben:---
+group::---
+group:root:---
+mask::---
+other::---""")
+	acl2 = AccessControlList(('2',), """user::rwx
+group::r-x
+group:ben:rwx
+mask::---
+other::---""")
+	acl3 = AccessControlList(('3',), """user::rwx
+user:root:---
+group::r-x
+mask::---
+other::---""")
+	empty_acl = AccessControlList((), "user::rwx\ngroup::---\nother::---")
+	acl_testdir1 = rpath.RPath(Globals.local_connection, 'testfiles/acl_test1')
+	acl_testdir2 = rpath.RPath(Globals.local_connection, 'testfiles/acl_test2')
+	def make_temp(self):
+		"""Make temp directory testfile/output"""
+		if tempdir.lstat(): tempdir.delete()
+		tempdir.mkdir()
+
+	def testBasic(self):
+		"""Test basic writing and reading of ACLs"""
+		self.make_temp()
+		new_acl = AccessControlList(())
+		tempdir.chmod(0700)
+		new_acl.read_from_rp(tempdir)
+		assert new_acl.is_basic(), new_acl.acl_text
+		assert not new_acl == self.sample_acl
+		assert new_acl != self.sample_acl
+		assert new_acl == self.empty_acl, \
+			   (new_acl.acl_text, self.empty_acl.acl_text)
+
+		self.sample_acl.write_to_rp(tempdir)
+		new_acl.read_from_rp(tempdir)
+		assert new_acl.acl_text == self.sample_acl.acl_text, \
+			   (new_acl.acl_text, self.sample_acl.acl_text)
+		assert new_acl == self.sample_acl
+		
+	def testBasicDir(self):
+		"""Test reading and writing of ACL w/ defaults to directory"""
+		self.make_temp()
+		new_acl = AccessControlList(())
+		new_acl.read_from_rp(tempdir)
+		assert new_acl.is_basic()
+		assert new_acl != self.dir_acl
+
+		self.dir_acl.write_to_rp(tempdir)
+		new_acl.read_from_rp(tempdir)
+		assert not new_acl.is_basic()
+		if not new_acl == self.dir_acl:
+			assert new_acl.eq_verbose(self.dir_acl)
+			assert 0, "Shouldn't be here---eq != eq_verbose?"
+
+	def testRecord(self):
+		"""Test writing a record and reading it back"""
+		record = ACL2Record(self.sample_acl)
+		new_acl = Record2ACL(record)
+		assert new_acl == self.sample_acl
+
+		record2 = ACL2Record(self.dir_acl)
+		new_acl2 = Record2ACL(record2)
+		if not new_acl2 == self.dir_acl:
+			assert new_acl2.eq_verbose(self.dir_acl)
+			assert 0
+
+	def make_backup_dirs(self):
+		"""Create testfiles/acl_test[12] directories"""
+		if self.acl_testdir1.lstat(): self.acl_testdir1.delete()
+		if self.acl_testdir2.lstat(): self.acl_testdir2.delete()
+		self.acl_testdir1.mkdir()
+		rp1_1 = self.acl_testdir1.append('1')
+		rp1_2 = self.acl_testdir1.append('2')
+		rp1_3 = self.acl_testdir1.append('3')
+		map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3])
+		self.dir_acl.write_to_rp(self.acl_testdir1)
+		self.acl1.write_to_rp(rp1_1)
+		self.acl2.write_to_rp(rp1_2)
+		self.acl3.write_to_rp(rp1_3)
+
+		self.acl_testdir2.mkdir()
+		rp2_1, rp2_2, rp2_3 = map(self.acl_testdir2.append, ('1', '2', '3'))
+		map(rpath.RPath.touch, (rp2_1, rp2_2, rp2_3))
+		self.sample_acl.write_to_rp(self.acl_testdir2)
+		self.acl3.write_to_rp(rp2_1)
+		self.acl1.write_to_rp(rp2_2)
+		self.acl2.write_to_rp(rp2_3)
+		
+	def testIterate(self):
+		"""Test writing several records and then reading them back"""
+		self.make_backup_dirs()
+		rp1 = self.acl_testdir1.append('1')
+		rp2 = self.acl_testdir1.append('2')
+		rp3 = self.acl_testdir1.append('3')
+
+		# Now write records corresponding to above rps into file
+		Globals.rbdir = tempdir
+		Time.setcurtime(10000)
+		AccessControlListFile.open_file()
+		for rp in [self.acl_testdir1, rp1, rp2, rp3]:
+			acl = AccessControlList(rp.index)
+			acl.read_from_rp(rp)
+			AccessControlListFile.write_object(acl)
+		AccessControlListFile.close_file()
+
+		# Read back records and compare
+		acl_iter = AccessControlListFile.get_objects_at_time(tempdir, 10000)
+		assert acl_iter, "No acl file found"
+		dir_acl_reread = acl_iter.next()
+		assert dir_acl_reread == self.dir_acl
+		acl1_reread = acl_iter.next()
+		assert acl1_reread == self.acl1
+		acl2_reread = acl_iter.next()
+		assert acl2_reread == self.acl2
+		acl3_reread = acl_iter.next()
+		assert acl3_reread == self.acl3
+		try: extra = acl_iter.next()
+		except StopIteration: pass
+		else: assert 0, "Got unexpected object: " + repr(extra)
+
+	def testSeriesLocal(self):
+		"""Test backing up and restoring directories with ACLs locally"""
+		self.make_backup_dirs()
+		dirlist = ['testfiles/acl_test1', 'testfiles/empty',
+				   'testfiles/acl_test2', 'testfiles/acl_test1']
+		BackupRestoreSeries(1, 1, dirlist, compare_acls = 1)
+
+	def testSeriesRemote(self):
+		"""Test backing up, restoring directories with EA remotely"""
+		self.make_backup_dirs()
+		dirlist = ['testfiles/acl_test1', 'testfiles/acl_test2',
+				   'testfiles/empty', 'testfiles/acl_test1']
+		BackupRestoreSeries(None, None, dirlist, compare_acls = 1)
+
+
+class CombinedTest(unittest.TestCase):
+	"""Test backing up and restoring directories with both EAs and ACLs"""
+	combo_testdir1 = rpath.RPath(Globals.local_connection,
+								 'testfiles/ea_acl_test1')
+	combo_testdir2 = rpath.RPath(Globals.local_connection,
+								 'testfiles/ea_acl_test2')
+	def make_backup_dirs(self):
+		"""Create testfiles/ea_acl_test[12] directories"""
+		if self.combo_testdir1.lstat(): self.combo_testdir1.delete()
+		if self.combo_testdir2.lstat(): self.combo_testdir2.delete()
+		self.combo_testdir1.mkdir()
+		rp1_1, rp1_2, rp1_3 = map(self.combo_testdir1.append, ('1', '2', '3'))
+		map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3])
+		ACLTest.dir_acl.write_to_rp(self.combo_testdir1)
+		EATest.sample_ea.write_to_rp(self.combo_testdir1)
+		ACLTest.acl1.write_to_rp(rp1_1)
+		EATest.ea2.write_to_rp(rp1_2)
+		ACLTest.acl3.write_to_rp(rp1_3)
+		EATest.ea3.write_to_rp(rp1_3)
+
+		self.combo_testdir2.mkdir()
+		rp2_1, rp2_2, rp2_3 = map(self.combo_testdir2.append, ('1', '2', '3'))
+		map(rpath.RPath.touch, [rp2_1, rp2_2, rp2_3])
+		ACLTest.sample_acl.write_to_rp(self.combo_testdir2)
+		EATest.ea1.write_to_rp(rp2_1)
+		EATest.ea3.write_to_rp(rp2_2)
+		ACLTest.acl2.write_to_rp(rp2_2)
+
+	def testSeriesLocal(self):
+		"""Test backing up and restoring EAs/ACLs locally"""
+		self.make_backup_dirs()
+		dirlist = ['testfiles/ea_acl_test1', 'testfiles/ea_acl_test2',
+				   'testfiles/empty', 'testfiles/ea_acl_test1']
+		BackupRestoreSeries(1, 1, dirlist,
+							compare_eas = 1, compare_acls = 1)
+
+	def testSeriesRemote(self):
+		"""Test backing up and restoring EAs/ACLs locally"""
+		self.make_backup_dirs()
+		dirlist = ['testfiles/ea_acl_test1', 'testfiles/empty',
+				   'testfiles/ea_acl_test2', 'testfiles/ea_acl_test1']
+		BackupRestoreSeries(None, None, dirlist,
+							compare_eas = 1, compare_acls = 1)
+
 
 if __name__ == "__main__": unittest.main()

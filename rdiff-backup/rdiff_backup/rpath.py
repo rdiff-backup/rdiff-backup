@@ -143,7 +143,7 @@ def cmp(rpin, rpout):
 	elif rpin.issock(): return rpout.issock()
 	else: raise RPathException("File %s has unknown type" % rpin.path)
 
-def copy_attribs(rpin, rpout):
+def copy_attribs(rpin, rpout, acls = 1):
 	"""Change file attributes of rpout to match rpin
 
 	Only changes the chmoddable bits, uid/gid ownership, and
@@ -153,10 +153,11 @@ def copy_attribs(rpin, rpout):
 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
 	check_for_files(rpin, rpout)
 	if rpin.issym(): return # symlinks have no valid attributes
+	if Globals.write_eas: rpout.write_ea(rpin.get_ea())
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if Globals.change_permissions: rpout.chmod(rpin.getperms())
+	if Globals.write_acls and acls: rpout.write_acl(rpin.get_acl())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
-	if Globals.write_eas: rpout.write_ea(rpin.get_ea())
 
 def cmp_attribs(rp1, rp2):
 	"""True if rp1 has the same file attributes as rp2
@@ -268,6 +269,8 @@ class RORPath:
 			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
+			elif key == 'ea' and not Globals.read_eas: pass
+			elif key == 'acl' and not Globals.read_acls: pass
 			elif (key == 'inode' and
 				  (not self.isreg() or self.getnumlinks() == 1 or
 				   not Globals.compare_inode or
@@ -300,13 +303,17 @@ class RORPath:
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'inode': pass
+			elif (key == 'ea' and
+				  not (Globals.read_eas and Globals.write_eas)): pass
+			elif (key == 'acl' and
+				  not (Globals.read_acls and Globals.write_acls)): pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return 0
 		return 1
 
 	def equal_verbose(self, other, check_index = 1,
 					  compare_inodes = 0, compare_ownership = 0,
-					  compare_eas = 0):
+					  compare_acls = 0, compare_eas = 0):
 		"""Like __eq__, but log more information.  Useful when testing"""
 		if check_index and self.index != other.index:
 			log.Log("Index %s != index %s" % (self.index, other.index), 2)
@@ -325,6 +332,7 @@ class RORPath:
 			elif key == 'inode' and (not self.isreg() or not compare_inodes):
 				pass
 			elif key == 'ea' and not compare_eas: pass
+			elif key == 'acl' and not compare_acls: pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]):
 				if not other.data.has_key(key):
@@ -523,6 +531,14 @@ class RORPath:
 															   self.index)
 			self.file_already_open = None
 
+	def set_acl(self, acl):
+		"""Record access control list in dictionary.  Does not write"""
+		self.data['acl'] = acl
+
+	def get_acl(self):
+		"""Return access control list object from dictionary"""
+		return self.data['acl']
+
 	def set_ea(self, ea):
 		"""Record extended attributes in dictionary.  Does not write"""
 		self.data['ea'] = ea
@@ -591,6 +607,7 @@ class RPath(RORPath):
 		"""Set data dictionary using C extension"""
 		self.data = self.conn.C.make_file_dict(self.path)
 		if Globals.read_eas and self.lstat(): self.get_ea()
+		if Globals.read_acls and self.lstat(): self.get_acl()
 
 	def make_file_dict_old(self):
 		"""Create the data dictionary"""
@@ -948,6 +965,20 @@ class RPath(RORPath):
 		s = fp.read()
 		assert not fp.close()
 		return s
+
+	def get_acl(self):
+		"""Return access control list object, setting if necessary"""
+		try: acl = self.data['acl']
+		except KeyError:
+			acl = eas_acls.AccessControlList(self.index)
+			if not self.issym(): acl.read_from_rp(self)
+			self.data['acl'] = acl
+		return acl
+
+	def write_acl(self, acl):
+		"""Change access control list of rp"""
+		acl.write_to_rp(self)
+		self.data['acl'] = acl
 
 	def get_ea(self):
 		"""Return extended attributes object, setting if necessary"""

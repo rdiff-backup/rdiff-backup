@@ -518,7 +518,8 @@ class VirtualFile:
 import Globals, Time, Rdiff, Hardlink, FilenameMapping, C, Security, \
 	   Main, rorpiter, selection, increment, statistics, manage, lazy, \
 	   iterfile, rpath, robust, restore, manage, backup, connection, \
-	   TempFile, SetConnections, librsync, log, regress, fs_abilities
+	   TempFile, SetConnections, librsync, log, regress, fs_abilities, \
+	   eas_acls
 
 Globals.local_connection = LocalConnection()
 Globals.connections.append(Globals.local_connection)

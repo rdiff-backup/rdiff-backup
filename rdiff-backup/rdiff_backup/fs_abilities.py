@@ -39,6 +39,40 @@ class FSAbilities:
 	hardlinks = None # True if hard linking supported
 	fsync_dirs = None # True if directories can be fsync'd
 	read_only = None # True if capabilities were determined non-destructively
+	name = None # 
+
+	def __init__(self, name = None):
+		"""FSAbilities initializer.  name is only used in logging"""
+		self.name = name
+
+	def __str__(self):
+		"""Return pretty printable version of self"""
+		s = ['-' * 60]
+		def addline(desc, val_text):
+			"""Add description line to s"""
+			s.append('  %s%s%s' % (desc, ' ' * (45-len(desc)), val_text))
+
+		if self.name:
+			s.append('Detected abilities for %s file system:' % (self.name,))
+		else: s.append('Detected abilities for file system')
+
+		ctq_str = (self.chars_to_quote is None and 'N/A'
+				   or repr(self.chars_to_quote))
+		addline('Characters needing quoting', ctq_str)
+
+		for desc, val in [('Ownership changing', self.ownership),
+						  ('Access Control Lists', self.acls),
+						  ('Extended Attributes', self.eas),
+						  ('Hard linking', self.hardlinks),
+						  ('fsync() directories', self.fsync_dirs)]:
+			if val: val_text = 'On'
+			elif val is None: val_text = 'N/A'
+			else:
+				assert val == 0
+				val_text = 'Off'
+			addline(desc, val_text)
+		s.append(s[0])
+		return '\n'.join(s)
 
 	def init_readonly(self, rp):
 		"""Set variables using fs tested at RPath rp
@@ -128,7 +162,7 @@ rdiff-backup-data/chars_to_quote.
 		except (IOError, OSError), exc:
 			if exc[0] == errno.EPERM:
 				log.Log("Warning: ownership cannot be changed on filesystem "
-						"at %s" % (self.root_rp.path,), 2)
+						"at %s" % (self.root_rp.path,), 3)
 				self.ownership = 0
 			else: raise
 		else: self.ownership = 1
@@ -145,7 +179,7 @@ rdiff-backup-data/chars_to_quote.
 		except (IOError, OSError), exc:
 			if exc[0] in (errno.EOPNOTSUPP, errno.EPERM):
 				log.Log("Warning: hard linking not supported by filesystem "
-						"at %s" % (self.root_rp.path,), 2)
+						"at %s" % (self.root_rp.path,), 3)
 				self.hardlinks = 0
 			else: raise
 		else: self.hardlinks = 1
@@ -213,8 +247,8 @@ def test_eas_local(rp, write):
 	assert rp.lstat()
 	try: import xattr
 	except ImportError:
-		log.Log("Warning: Unable to import module xattr.  ACLs not "
-				"supported on filesystem at %s" % (rp.path,), 2)
+		log.Log("Unable to import module xattr.  EAs not "
+				"supported on filesystem at %s" % (rp.path,), 4)
 		return 0
 
 	try:
@@ -224,8 +258,8 @@ def test_eas_local(rp, write):
 			assert xattr.getxattr(rp.path, "user.test") == "test val"
 	except IOError, exc:
 		if exc[0] == errno.EOPNOTSUPP:
-			log.Log("Warning: Extended attributes not supported by "
-					"filesystem at %s" % (rp.path,), 2)
+			log.Log("Extended attributes not supported by "
+					"filesystem at %s" % (rp.path,), 4)
 			return 0
 		else: raise
 	else: return 1
@@ -236,16 +270,16 @@ def test_acls_local(rp):
 	assert rp.lstat()
 	try: import posix1e
 	except ImportError:
-		log.Log("Warning: Unable to import module posix1e from pylibacl "
+		log.Log("Unable to import module posix1e from pylibacl "
 				"package.\nACLs not supported on filesystem at %s" %
-				(rp.path,), 2)
+				(rp.path,), 4)
 		return 0
 
 	try: posix1e.ACL(file=rp.path)
 	except IOError, exc:
 		if exc[0] == errno.EOPNOTSUPP:
-			log.Log("Warning: ACLs appear not to be supported by "
-					"filesystem at %s" % (rp.path,), 2)
+			log.Log("ACLs appear not to be supported by "
+					"filesystem at %s" % (rp.path,), 4)
 			return 0
 		else: raise
 	else: return 1
@@ -255,8 +289,8 @@ def test_fsync_local(rp):
 	assert rp.conn is Globals.local_connection
 	try: rp.fsync()
 	except (IOError, OSError), exc:
-		log.Log("Warning: Directories on file system at %s are not "
-				"fsyncable.\nAssuming it's unnecessary." % (rp.path,), 2)
+		log.Log("Directories on file system at %s are not "
+				"fsyncable.\nAssuming it's unnecessary." % (rp.path,), 4)
 		return 0
 	else: return 1
 

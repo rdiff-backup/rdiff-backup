@@ -28,6 +28,8 @@ access_control_lists.<time>.snapshot.
 
 from __future__ import generators
 import base64, errno, re
+try: import posix1e
+except ImportError: pass
 import static, Globals, metadata, connection, rorpiter, log
 
 
@@ -54,6 +56,9 @@ class ExtendedAttributes:
 			if exc[0] == errno.EOPNOTSUPP: return # if not sup, consider empty
 			raise
 		for attr in attr_list:
+			if not attr.startswith('user.'):
+				# Only preserve user extended attributes
+				continue
 			try: self.attr_dict[attr] = rp.conn.xattr.getxattr(rp.path, attr)
 			except IOError, exc:
 				# File probably modified while reading, just continue
@@ -160,68 +165,231 @@ class ExtendedAttributesFile(metadata.FlatFile):
 	_extractor = EAExtractor
 	_object_to_record = staticmethod(EA2Record)
 
-	def get_combined_iter_at_time(cls, rbdir, rest_time,
-								  restrict_index = None):
-		"""Return an iter of rorps with extended attributes added"""
-		def join_eas(basic_iter, ea_iter):
-			"""Join basic_iter with ea iter"""
-			collated = rorpiter.CollateIterators(basic_iter, ea_iter)
+	def join(cls, rorp_iter, rbdir, time, restrict_index):
+		"""Add extended attribute information to existing rorp_iter"""
+		def helper(rorp_iter, ea_iter):
+			"""Add EA information in ea_iter to rorp_iter"""
+			collated = rorpiter.CollateIterators(rorp_iter, ea_iter)
 			for rorp, ea in collated:
 				assert rorp, (rorp, (ea.index, ea.attr_dict), rest_time)
 				if not ea: ea = ExtendedAttributes(rorp.index)
 				rorp.set_ea(ea)
 				yield rorp
-
-		basic_iter = metadata.MetadataFile.get_objects_at_time(
-			Globals.rbdir, rest_time, restrict_index)
-		if not basic_iter: return None
-		ea_iter = cls.get_objects_at_time(rbdir, rest_time, restrict_index)
-		if not ea_iter:
-			log.Log("Warning: Extended attributes file not found", 2)
-			ea_iter = iter([])
-		return join_eas(basic_iter, ea_iter)
+			
+		ea_iter = cls.get_objects_at_time(rbdir, time, restrict_index)
+		if ea_iter: return helper(rorp_iter, ea_iter)
+		else:
+			log.Log("Warning: Extended attributes file not found",2)
+			return rorp_iter
 
 static.MakeClass(ExtendedAttributesFile)
 
 
 class AccessControlList:
-	"""Hold a file's access control list information"""
-	def __init__(self, index, text_acl = None):
-		"""Initialize object with index and possibly text_acl"""
+	"""Hold a file's access control list information
+
+	Since ACL objects cannot be picked, store everything as text, in
+	self.acl_text and self.def_acl_text.
+
+	"""
+	def __init__(self, index, acl_text = None, def_acl_text = None):
+		"""Initialize object with index and possibly acl_text"""
 		self.index = index
-		# self.ACL is a posix1e ACL object
-		if text_acl is None: self.ACL = None
-		else: self.ACL = posix1e.ACL(text_acl)
+		if acl_text: # Check validity of ACL, reorder if necessary
+			ACL = posix1e.ACL(text=acl_text)
+			assert ACL.valid(), "Bad ACL: "+acl_text
+			self.acl_text = str(ACL)
+		else: self.acl_text = None
+
+		if def_acl_text:
+			def_ACL = posix1e.ACL(text=def_acl_text)
+			assert def_ACL.valid(), "Bad default ACL: "+def_acl_text
+			self.def_acl_text = str(def_ACL)
+		else: self.def_acl_text = None
+
+	def __str__(self):
+		"""Return human-readable string"""
+		return ("acl_text: %s\ndef_acl_text: %s" %
+				(self.acl_text, self.def_acl_text))
 
 	def __eq__(self, acl):
-		"""Compare self and other access control list"""
-		return self.index == acl.index and str(self.ACL) == str(acl.ACL)
+		"""Compare self and other access control list
+
+		Basic acl permissions are considered equal to an empty acl
+		object.
+
+		"""
+		assert isinstance(acl, self.__class__)
+		if self.index != acl.index: return 0
+		if self.is_basic(): return acl.is_basic()
+		if acl.is_basic(): return self.is_basic()
+		if self.acl_text != acl.acl_text: return 0
+		if not self.def_acl_text and not acl.def_acl_text: return 1
+		return self.def_acl_text == acl.def_acl_text
 	def __ne__(self, acl): return not self.__eq__(acl)
 	
+	def eq_verbose(self, acl):
+		"""Returns same as __eq__ but print explanation if not equal"""
+		if self.index != acl.index:
+			print "index %s not equal to index %s" % (self.index, acl.index)
+			return 0
+		if self.acl_text != acl.acl_text:
+			print "ACL texts not equal:"
+			print self.acl_text
+			print acl.acl_text
+			return 0
+		if (self.def_acl_text != acl.def_acl_text and
+			(self.def_acl_text or acl.def_acl_text)):
+			print "Unequal default acl texts:"
+			print self.def_acl_text
+			print acl.def_acl_text
+			return 0
+		return 1
+
 	def get_indexpath(self): return self.index and '/'.join(self.index) or '.'
 
+	def is_basic(self):
+		"""True if acl can be reduced to standard unix permissions
 
-def get_acl_from_rp(rp):
-	"""Return text acl from an rpath, or None if not supported"""
-	try: acl = rp.conn.posix1e.ACL(file=rp.path)
+		Assume that if they are only three entries, they correspond to
+		user, group, and other, and thus don't use any special ACL
+		features.
+
+		"""
+		if not self.acl_text and not self.def_acl_text: return 1
+		lines = self.acl_text.strip().split('\n')
+		assert len(lines) >= 3, lines
+		return len(lines) == 3 and not self.def_acl_text
+
+	def read_from_rp(self, rp):
+		"""Set self.ACL from an rpath, or None if not supported"""
+		self.acl_text, self.def_acl_text = \
+					   rp.conn.eas_acls.get_acl_text_from_rp(rp)
+
+	def write_to_rp(self, rp):
+		"""Write current access control list to RPath rp"""
+		rp.conn.eas_acls.set_rp_acl(rp, self.acl_text, self.def_acl_text)
+
+def set_rp_acl(rp, acl_text = None, def_acl_text = None):
+	"""Set given rp with ACL that acl_text defines.  rp should be local"""
+	assert rp.conn is Globals.local_connection
+	if acl_text:
+		acl = posix1e.ACL(text=acl_text)
+		assert acl.valid()
+	else: acl = posix1e.ACL()
+	acl.applyto(rp.path)
+	if rp.isdir():
+		if def_acl_text:
+			def_acl = posix1e.ACL(text=def_acl_text)
+			assert def_acl.valid()
+		else: def_acl = posix1e.ACL()
+		def_acl.applyto(rp.path, posix1e.ACL_TYPE_DEFAULT)
+
+def get_acl_text_from_rp(rp):
+	"""Returns (acl_text, def_acl_text) from an rpath.  Call locally"""
+	assert rp.conn is Globals.local_connection
+	try: acl_text = str(posix1e.ACL(file=rp.path))
 	except IOError, exc:
-		if exc[0] == errno.EOPNOTSUPP: return None
-		raise
-	return str(acl)
+		if exc[0] == errno.EOPNOTSUPP: acl_text = None
+		else: raise
+	if rp.isdir():
+		try: def_acl_text = str(posix1e.ACL(filedef=rp.path))
+		except IOError, exc:
+			if exc[0] == errno.EOPNOTSUPP: def_acl_text = None
+			else: raise
+	else: def_acl_text = None
+	return (acl_text, def_acl_text)
 
 def acl_compare_rps(rp1, rp2):
-	"""Return true if rp1 and rp2 have same acls"""
-	return get_acl_from_rp(rp1) == get_acl_from_rp(rp2)
+	"""Return true if rp1 and rp2 have same acl information"""
+	acl1 = AccessControlList(rp1.index)
+	acl1.read_from_rp(rp1)
+	acl2 = AccessControlList(rp2.index)
+	acl2.read_from_rp(rp2)
+	return acl1 == acl2
 
 
 def ACL2Record(acl):
 	"""Convert an AccessControlList object into a text record"""
-	return "# file: %s\n%s" % (acl.get_indexpath(), str(acl.ACL))
+	start = "# file: %s\n%s" % (acl.get_indexpath(), acl.acl_text)
+	if not acl.def_acl_text: return start
+	default_lines = acl.def_acl_text.strip().split('\n')
+	default_text = '\ndefault:'.join(default_lines)
+	return "%sdefault:%s\n" % (start, default_text)
 
-def Record2EA(acl):
+def Record2ACL(record):
 	"""Convert text record to an AccessControlList object"""
-	XXXX
+	lines = record.split('\n')
+	first_line = lines.pop(0)
+	if not first_line.startswith('# file: '):
+		raise metadata.ParsingError("Bad record beginning: "+ first_line)
+	filename = first_line[8:]
+	if filename == '.': index = ()
+	else: index = tuple(filename.split('/'))
+
+	normal_entries = []; default_entries = []
+	for line in lines:
+		if line.startswith('default:'): default_entries.append(line[8:])
+		else: normal_entries.append(line)
+	return AccessControlList(index, acl_text='\n'.join(normal_entries),
+							 def_acl_text='\n'.join(default_entries))
+	
+
+class ACLExtractor(EAExtractor):
+	"""Iterate AccessControlList objects from the ACL information file
+
+	Except for the record_to_object method, we can reuse everything in
+	the EAExtractor class because the file formats are so similar.
+
+	"""
+	record_to_object = staticmethod(Record2ACL)
+
+class AccessControlListFile(metadata.FlatFile):
+	"""Store/retrieve ACLs from extended attributes file"""
+	_prefix = 'access_control_lists'
+	_extractor = ACLExtractor
+	_object_to_record = staticmethod(ACL2Record)
+
+	def join(cls, rorp_iter, rbdir, time, restrict_index):
+		"""Add access control list information to existing rorp_iter"""
+		def helper(rorp_iter, acl_iter):
+			"""Add ACL information in acl_iter to rorp_iter"""
+			collated = rorpiter.CollateIterators(rorp_iter, acl_iter)
+			for rorp, acl in collated:
+				assert rorp, "Missing rorp for index %s" % (acl.index,)
+				if not acl: acl = AccessControlList(rorp.index)
+				rorp.set_acl(acl)
+				yield rorp
+
+		acl_iter = cls.get_objects_at_time(rbdir, time, restrict_index)
+		if acl_iter: return helper(rorp_iter, acl_iter)
+		else:
+			log.Log("Warning: Access Control List file not found", 2)
+			return rorp_iter
+
+static.MakeClass(AccessControlListFile)
 
 
+def GetCombinedMetadataIter(rbdir, time, restrict_index = None,
+							acls = None, eas = None):
+	"""Return iterator of rorps from metadata and related files
 
+	None will be returned if the metadata file is absent.  If acls or
+	eas is true, access control list or extended attribute information
+	will be added.
+
+	"""
+	metadata_iter = metadata.MetadataFile.get_objects_at_time(
+		rbdir, time, restrict_index)
+	if not metadata_iter:
+		log.Log("Warning, metadata file not found.\n"
+				"Metadata will be read from filesystem.", 2)
+		return None
+	if eas:
+		metadata_iter = ExtendedAttributesFile.join(
+			metadata_iter, rbdir, time, restrict_index)
+	if acls:
+		metadata_iter = AccessControlListFile.join(
+			metadata_iter, rbdir, time, restrict_index)
+	return metadata_iter
 
