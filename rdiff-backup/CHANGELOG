@@ -6,6 +6,9 @@ Kempe for report.)
 
 Added --list-at-time option at request of Farkas Levente.
 
+Don't change ownership if --windows-mode option is given.  (Bug report
+by Keith Edmunds.)
+
 
 New in v0.11.4 (2003/03/15)
 ---------------------------
