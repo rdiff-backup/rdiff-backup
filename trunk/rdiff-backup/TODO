@@ -1,4 +1,6 @@
-Test restores from non-increment files
+See if regressing takes too much memory (large directories).
+
+Alan Bailward's suggestion to add removing older than 4 sessions.
 
 write test case for --calculate-statistics
 
@@ -11,8 +13,6 @@ Profile 0.13.0
 Look at EAs when unames change.
 
 Examine regress handling of acls/eas/resource forks.
-
-Fix EA/ACL format (waiting on Gruenbacher)
 
 Look into that strange regress error July 22nd on
 prog/old/rdiff-backup/testing/testfiles/long...
