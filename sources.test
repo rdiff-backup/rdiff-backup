@@ -19,12 +19,17 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+block_len=200
 for buf in $bufsizes
 do
-    old=$testdir/01.in
-    for new in $testdir/*.in
+    for old in $srcdir/*.[ch]
     do
-        triple_test $buf $old $new 
-        triple_test $buf $new $old
+        for new in $old*~
+        do
+            [ ! -r $new -o ! -r $old ] && continue
+            echo $old $new
+            triple_test $buf $old $new 
+            triple_test $buf $new $old
+        done
     done
 done

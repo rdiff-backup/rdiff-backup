@@ -52,6 +52,8 @@ shift
 test_name=`basename $test_script`
 test_base=`basename $test_script .test`
 
+block_len=2048
+
 # TODO: Add more pair instructions here
 delta_instr="
 0,1024
@@ -71,7 +73,7 @@ delta_instr="
 10,1:8,4:6,8:4,10:2,12
 0,10000:0,10000:0,10000
 "
-bufsizes='1 2 3 7 15 100 600 4096 10000 200000'
+bufsizes='4096 1 2 3 7 15 100 10000 200000'
 
 # Process command-line options
 stats=
@@ -141,6 +143,17 @@ run_test () {
     fi
 
     "$@" || fail_test "$?" "$@" 
+}
+
+triple_test () {
+    buf="$1"
+    old="$2"
+    new="$3"
+    
+    run_test rdiff $debug -I$buf -O$buf signature --block-size=$block_len $old $tmpdir/sig
+    run_test rdiff $debug -I$buf -O$buf delta $tmpdir/sig $new $tmpdir/delta
+    run_test rdiff $debug -I$buf -O$buf patch $old $tmpdir/delta $tmpdir/new
+    check_compare $new $tmpdir/new "triple -I$buf -O$buf $old $new"
 }
 
 # more than this many on any one test gets boring
