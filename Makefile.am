@@ -29,7 +29,6 @@ lib_LTLIBRARIES = librsync.la
 
 librsync_la_SOURCES = \
 	base64.c				\
-	buf.c					\
 	buf.c buf.h				\
 	checksum.c checksum.h			\
 	command.c command.h			\
@@ -210,7 +209,7 @@ upload-men: $(converted_men)
 
 upload-news: NEWS
 	for i in $(sites); do \
-		rsync -avz --delete $(srcdir)/NEWS $$i; \
+		rsync -avz --delete $(srcdir)/NEWS $$i/librsync-NEWS; \
 	done
 
 # Cater to people who prefer the name 'make test'
