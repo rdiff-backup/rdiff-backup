@@ -235,6 +235,11 @@ def test_connection(conn_number):
 	if not version == Globals.version:
 		print """Server may work, but there is a version mismatch:
 Local version: %s
-Remote version: %s""" % (Globals.version, version)
-	else: print "Server OK"
+Remote version: %s
 
+In general, an attempt is made to guarantee compatibility only between
+different minor versions of the same stable series.  For instance, you
+should expect 0.12.4 and 0.12.7 to be compatible, but not 0.12.7
+and 0.13.3, nor 0.13.2 and 0.13.4.
+""" % (Globals.version, version)
+	else: print "Server OK"
