@@ -124,8 +124,11 @@ AC_ARG_ENABLE(ccmalloc,
   [ LIBS="$LIBS -lccmalloc -ldl" ])
 
 AC_ARG_ENABLE(trace,
-  AC_HELP_STRING([--enable-trace],[turn on library tracing]),
-  [AC_DEFINE(DO_RS_TRACE,,[Define this to enable trace code])])
+  AC_HELP_STRING([--disable-trace],[turn off library tracing]),
+  [enable_trace=$enableval],[enable_trace=yes])
+if test "$enable_trace" = "yes"; then
+  AC_DEFINE(DO_RS_TRACE,,[Define this to enable trace code])
+fi
 
 AC_DEFINE_UNQUOTED(RS_LIBVERSION, "$librsync_libversion",[Version of the libtool interface.])
 AC_DEFINE_UNQUOTED(RS_CANONICAL_HOST, "$host",[Canonical GNU hostname])
