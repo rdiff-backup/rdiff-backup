@@ -20,6 +20,16 @@ import os, stat, re, sys, shutil, gzip, socket
 from static import *
 
 
+class SkipFileException(Exception):
+	"""Signal that the current file should be skipped but then continue
+
+	This exception will often be raised when there is problem reading
+	an individual file, but it makes sense for the rest of the backup
+	to keep going.
+
+	"""
+	pass
+
 class RPathException(Exception): pass
 
 class RPathStatic:
@@ -209,7 +219,9 @@ class RPathStatic:
 		"""
 		assert rpath.conn is Globals.local_connection
 		s = socket.socket(socket.AF_UNIX)
-		s.bind(rpath.path)
+		try: s.bind(rpath.path)
+		except socket.error, exc:
+			raise SkipFileException("Socket error: " + str(exc))
 
 	def gzip_open_local_read(rpath):
 		"""Return open GzipFile.  See security note directly above"""

@@ -39,7 +39,7 @@ able to narrow down the possibilities.
 
 import tempfile, errno, signal, cPickle, C
 from static import *
-
+from rpath import *
 
 class RobustAction:
 	"""Represents a file operation to be accomplished later"""
