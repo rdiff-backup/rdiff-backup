@@ -1,5 +1,5 @@
 from __future__ import generators
-import unittest
+import unittest, pickle
 
 execfile("commontest.py")
 rbexec("lazy.py")
@@ -219,108 +219,90 @@ class MultiplexTest(Iterators):
 		assert Iter.equal(i2, self.one_to_100())
 
 
-class index:
-	"""This is just used below to test the iter tree reducer"""
-	def __init__(self, index):
-		self.index = index
+class ITRadder(IterTreeReducer):
+	def start_process(self, index):
+		self.total = 0
 
+	def end_process(self):
+		if self.base_index:
+			summand = self.base_index[-1]
+			#print "Adding ", summand
+			self.total += summand
+
+	def branch_process(self, subinstance):
+		#print "Adding subinstance ", subinstance.total
+		self.total += subinstance.total
+
+class ITRadder2(IterTreeReducer):
+	def start_process(self, index):
+		self.total = 0
+
+	def end_process(self):
+		#print "Adding ", self.base_index
+		self.total += reduce(lambda x,y: x+y, self.base_index, 0)
+
+	def branch_process(self, subinstance):
+		#print "Adding branch ", subinstance.total
+		self.total += subinstance.total
 
 class TreeReducerTest(unittest.TestCase):
 	def setUp(self):
-		self.i1 = iter(map(index, [(), (1,), (2,), (3,)]))
-		self.i2 = iter(map(index, [(0,), (0,1), (0,1,0), (0,1,1),
-								   (0,2), (0,2,1), (0,3)]))
+		self.i1 = [(), (1,), (2,), (3,)]
+		self.i2 = [(0,), (0,1), (0,1,0), (0,1,1), (0,2), (0,2,1), (0,3)]
 
-		self.i1a = iter(map(index, [(), (1,)]))
-		self.i1b = iter(map(index, [(2,), (3,)]))
-		self.i2a = iter(map(index, [(0,), (0,1), (0,1,0)]))
-		self.i2b = iter(map(index, [(0,1,1), (0,2)]))
-		self.i2c = iter(map(index, [(0,2,1), (0,3)]))
-
-	# The four following are used to make an ITR later
-	def number_of_index(self, index_obj):
-		if not index_obj.index: return 0
-		else: return index_obj.index[-1]
-
-	def sum_index(self, index_obj):
-		return reduce(lambda x,y: x+y, index_obj.index, 0)
-
-	def add2(self, x, y):
-		#print "adding %d and %d" % (x,y)
-		return x+y
-
-	def add3(self, x,y,z):
-		#print "ignoring %s, adding %d and %d" % (x,y,z)
-		return y+z
+		self.i1a = [(), (1,)]
+		self.i1b = [(2,), (3,)]
+		self.i2a = [(0,), (0,1), (0,1,0)]
+		self.i2b = [(0,1,1), (0,2)]
+		self.i2c = [(0,2,1), (0,3)]
 
 	def testTreeReducer(self):
 		"""testing IterTreeReducer"""
-		itm = IterTreeReducer(self.number_of_index, self.add2, 0, self.add3)
-		for elem in self.i1:
-			val = itm(elem)
+		itm = ITRadder()
+		for index in self.i1:
+			val = itm(index)
 			assert val, elem.index
-		itm.calculate_final_val()
-		assert itm.getresult() == 6, itm.getresult()
+		itm.Finish()
+		assert itm.total == 6, itm.total
 
-		itm2 = IterTreeReducer(self.sum_index, self.add2, 0, self.add3)
-		for elem in self.i2:
-			val = itm2(elem)
-			if elem.index == (): assert not val
+		itm2 = ITRadder2()
+		for index in self.i2:
+			val = itm2(index)
+			if index == (): assert not val
 			else: assert val
-		assert itm2.getresult() == 12, itm2.getresult()
+		itm2.Finish()
+		assert itm2.total == 12, itm2.total
 
 	def testTreeReducerState(self):
 		"""Test saving and recreation of an IterTreeReducer"""
-		itm1a = IterTreeReducer(self.number_of_index, self.add2, 0, self.add3)
-		for elem in self.i1a:
-			val = itm1a(elem)
-			assert val, elem.index
-		itm1b = IterTreeReducer(self.number_of_index, self.add2, 0, self.add3,
-								itm1a.getstate())
-		for elem in self.i1b:
-			val = itm1b(elem)
-			assert val, elem.index
-		itm1b.calculate_final_val()
-		assert itm1b.getresult() == 6, itm1b.getresult()
+		itm1a = ITRadder()
+		for index in self.i1a:
+			val = itm1a(index)
+			assert val, index
+		itm1b = pickle.loads(pickle.dumps(itm1a))
+		for index in self.i1b:
+			val = itm1b(index)
+			assert val, index
+		itm1b.Finish()
+		assert itm1b.total == 6, itm1b.total
 
-		itm2a = IterTreeReducer(self.sum_index, self.add2, 0, self.add3)
-		for elem in self.i2a:
-			val = itm2a(elem)
-			if elem.index == (): assert not val
+		itm2a = ITRadder2()
+		for index in self.i2a:
+			val = itm2a(index)
+			if index == (): assert not val
 			else: assert val
-		itm2b = IterTreeReducer(self.sum_index, self.add2, 0, self.add3,
-								itm2a.getstate())
-		for elem in self.i2b:
-			val = itm2b(elem)
-			if elem.index == (): assert not val
+		itm2b = pickle.loads(pickle.dumps(itm2a))
+		for index in self.i2b:
+			val = itm2b(index)
+			if index == (): assert not val
 			else: assert val
-		itm2c = IterTreeReducer(self.sum_index, self.add2, 0, self.add3,
-								itm2b.getstate())
-		for elem in self.i2c:
-			val = itm2c(elem)
-			if elem.index == (): assert not val
+		itm2c = pickle.loads(pickle.dumps(itm2b))
+		for index in self.i2c:
+			val = itm2c(index)
+			if index == (): assert not val
 			else: assert val
-		assert itm2c.getresult() == 12, itm2c.getresult()
-
-	def testTreeReducer2(self):
-		"""Another test of the tree reducer"""
-		assert Iter.len(self.i1) == 4
-
-		hit_021_02 = [None, None]
-		def helper(indexobj, elem_init, branch_result):
-			if indexobj.index == (0,2):
-				assert hit_021_02[0]
-				hit_021_02[1] = 1
-			elif indexobj.index == (0,2,1):
-				assert not hit_021_02[1]
-				hit_021_02[0] = 1
-			return None
-		itm = IterTreeReducer(lambda x: None, lambda x,y: None, None, helper)
-
-		for elem in self.i2: itm(elem)
-		itm.getresult()
-		assert hit_021_02 == [1,1]
-		
+		itm2c.Finish()
+		assert itm2c.total == 12, itm2c.total
 
 
 if __name__ == "__main__": unittest.main()

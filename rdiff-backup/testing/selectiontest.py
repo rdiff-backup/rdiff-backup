@@ -5,12 +5,12 @@ rbexec("highlevel.py")
 
 class MatchingTest(unittest.TestCase):
 	"""Test matching of file names against various selection functions"""
-	def makedsrp(self, path): return DSRPath(Globals.local_connection, path)
+	def makedsrp(self, path): return DSRPath(1, Globals.local_connection, path)
 	def makeext(self, path): return self.root.new_index(tuple(path.split("/")))
 
 	def setUp(self):
-		self.root = DSRPath(Globals.local_connection, "testfiles/select")
-		self.Select = Select(self.root, 1)
+		self.root = DSRPath(1, Globals.local_connection, "testfiles/select")
+		self.Select = Select(self.root)
 
 	def testRegexp(self):
 		"""Test regular expression selection func"""
@@ -177,8 +177,8 @@ testfiles/select/1/1
 						  
 	def testRoot(self):
 		"""testRoot - / may be a counterexample to several of these.."""
-		root = DSRPath(Globals.local_connection, "/")
-		select = Select(root, 1)
+		root = DSRPath(1, Globals.local_connection, "/")
+		select = Select(root)
 
 		assert select.glob_get_sf("/", 1)(root) == 1
 		assert select.glob_get_sf("/foo", 1)(root) == 1
@@ -205,8 +205,8 @@ class ParseArgsTest(unittest.TestCase):
 	"""Test argument parsing"""
 	def ParseTest(self, tuplelist, indicies):
 		"""No error if running select on tuple goes over indicies"""
-		self.root = DSRPath(Globals.local_connection, "testfiles/select")
-		self.Select = Select(self.root, 1)
+		self.root = DSRPath(1, Globals.local_connection, "testfiles/select")
+		self.Select = Select(self.root)
 		self.Select.ParseArgs(tuplelist)
 		self.Select.set_iter()
 		assert Iter.equal(Iter.map(lambda dsrp: dsrp.index, self.Select),
@@ -259,8 +259,8 @@ class ParseArgsTest(unittest.TestCase):
 
 	def testParseStartingFrom(self):
 		"""Test parse, this time starting from inside"""
-		self.root = DSRPath(Globals.local_connection, "testfiles/select")
-		self.Select = Select(self.root, 1)
+		self.root = DSRPath(1, Globals.local_connection, "testfiles/select")
+		self.Select = Select(self.root)
 		self.Select.ParseArgs([("--include", "testfiles/select/1/1"),
 							   ("--exclude", "**")])
 		self.Select.set_iter(('1', '1'))
