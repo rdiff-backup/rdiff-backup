@@ -1,4 +1,14 @@
+                                                            -*- text -*-
+
+Andrew Tridgell and Paulus Mackerras started this whole mess.  Luke
+Leighton was a tremendous help in sorting out the combined
+encoding/signature algorithm.
+
+Neale Barker was the first known user outside of CLUG/OzLabs, and
+helped keep me honest.
+
 Andrew Tridgell <tridge@linuxcare.com>
 Paulus Mackerras <paulus@linuxcare.com>
 Peter Barker <pbarker@samba.org>
 Neale Banks <neale@lowendale.com.au>
+Luke Kenneth Casson Leighton <lkcl@samba.org>
