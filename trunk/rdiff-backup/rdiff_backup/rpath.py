@@ -296,9 +296,11 @@ class RORPath:
 			elif key == 'acl' and not Globals.acls_active: pass
 			elif key == 'resourcefork' and not Globals.resource_forks_active:
 				pass
-			elif ((key == 'uname' or key == 'gname') and
-				  not other.data.has_key(key)):
-				pass # legacy reasons - 0.12.x didn't store u/gnames
+			elif key == 'uname' or key == 'gname':
+				# here for legacy reasons - 0.12.x didn't store u/gnames
+				other_name = other.data.get(key, None)
+				if (other_name and other_name != "None" and
+					other_name != self.data[key]): return None
 			elif (key == 'inode' and
 				  (not self.isreg() or self.getnumlinks() == 1 or
 				   not Globals.compare_inode or
@@ -307,7 +309,7 @@ class RORPath:
 			else:
 				try: other_val = other.data[key]
 				except KeyError: return None
-				if self.data[key] != other.data[key]: return None
+				if self.data[key] != other_val: return None
 		return 1
 
 	def equal_loose(self, other):
