@@ -6,23 +6,23 @@ rpmroot = "/home/ben/rpm"
 
 if len(sys.argv) == 2:
 	version = sys.argv[1]
-	specfile = "rdiff-backup-%s-2.spec" % version
+	specfile = "rdiff-backup.spec"
 	print "Using specfile %s" % specfile
 else:
 	print "Syntax:  %s version_number" % sys.argv[0]
 	sys.exit(1)
 
-base = ".".join(specfile.split(".")[:-1])
-srcrpm = base+".src.rpm"
-i386rpm = base+".i386.rpm"
-source_rpm = base+".src.rpm"
-tarfile = "-".join(base.split("-")[:-1]) + ".tar.gz"
+base = "rdiff-backup-%s" % (version,)
+tarfile = base + ".tar.gz"
+rpmbase = base + "-0.fdr.1" # Fedora suffix, with release number 1
+i386_rpm = rpmbase + ".i386.rpm"
+source_rpm = rpmbase + ".src.rpm"
 
 # These assume the rpm root directory $HOME/rpm.  The
 # nonstandard location allows for building by non-root user.
 assert not os.system("cp %s %s/SOURCES" % (tarfile, rpmroot))
 #assert not os.system("rpm -ba --sign -vv --target i386 " + specfile)
 assert not os.system("rpmbuild -ba -v --sign " + specfile)
-assert not os.system("mv %s/RPMS/i386/%s ." % (rpmroot, i386rpm))
+assert not os.system("mv %s/RPMS/i386/%s ." % (rpmroot, i386_rpm))
 assert not os.system("mv %s/SRPMS/%s ." % (rpmroot, source_rpm))
 
