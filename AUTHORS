@@ -3,5 +3,3 @@ Martin Pool -- reimplementation as hsync
 Andrew Tridgell -- prototype, rsync algorithm
 
 Paul Mackerras -- rsync algorithm, thoughts on hsync encoding
-
-Peter Barker

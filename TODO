@@ -39,5 +39,10 @@
 
    * run regression suite from CVS every night
 
-
-LocalWords: mdfour LocalWords mapptrs
+ * Portability
+
+   * Tux only knows what portability assumptions we've made.
+
+   * In particular, running this on a risc box would be interesting.
+     Endianness?
+

@@ -1,6 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 ## Copyright (C) 2000 by Martin Pool
 
+## $Id$
+
+# TODO: Delete the test-*.d directories when cleaning up.  Yeah! 
+
 CFLAGS += -W -Wall -g @DEFS@
 
 lib_LTLIBRARIES = libhsync.la libhsyncdecode.la
