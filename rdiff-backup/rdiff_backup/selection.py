@@ -143,11 +143,11 @@ class Select:
 
 	def iterate_with_finalizer(self):
 		"""Like Iterate, but missing some options, and add finalizer"""
-		finalize = DestructiveStepping.Finalizer()
+		finalize = DestructiveSteppingFinalizer()
 		for dsrp in self:
 			yield dsrp
-			finalize(dsrp)
-		finalize.getresult()
+			finalize(dsrp.index, dsrp)
+		finalize.Finish()
 
 	def Select(self, dsrp):
 		"""Run through the selection functions and return dominant val 0/1/2"""
