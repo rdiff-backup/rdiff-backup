@@ -69,10 +69,12 @@ case $CC in
 *xlc | *xlc\ * | *lcc | *lcc\ *) am_opt=--include-deps;;
 esac
 
+set -x
 aclocal $ACLOCAL_FLAGS
 autoheader
 automake -a $am_opt
 autoconf
+set +x
 cd $ORIGDIR
 
 $srcdir/configure --enable-maintainer-mode "$@"
