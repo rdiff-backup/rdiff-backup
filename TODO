@@ -27,6 +27,33 @@ $Id$
  * Version numbering: perhaps keep release numbers in sync with
    (Unix) library versions.
 
+ * Fix up consecutive matches
+
+   We often have several consecutive matches, and we can combine them
+   into a single COPY command.  So far so good.
+
+   In some inputs, there might be several identical blocks.
+
+   When we're matching, we want to prefer to match a block that comes
+   just after the previous match, so that they'll join up nicely into
+   a single larger match.  rsync does this; librsync doesn't at the
+   moment.  It does cause a measurable problem.
+
+   In fact, we could introduce an additional optimization over rsync.
+   Suppose that the block A occurs twice, once followed by B and once
+   by C.  When we first match it, we'll probably make an arbitrary
+   choice of which one to use.  But if we next observe C, then it
+   might be better to have given the offset of the A that precedes C,
+   so that they can be joined into a single copy operation.
+
+   This might be a bit complex.  You can imagine in fact needing an
+   arbitrarily deep lookback.
+
+   As a simpler optimization, we might just try to prefer matching
+   blocks in the same order that they occur in the input.
+   
+   But for now we ought to at least check for consecutive blocks.
+   
  * Optimisations and code cleanups;
  
    scoop.c: Scoop needs major refactor. Perhaps the API needs
@@ -119,10 +146,6 @@ $Id$
 
    * What happens if the user terminates the request?
 
- * Do HTTP CONNECT
-
-   * This might be a nice place to use select!
-
  * Encoding implementation
 
    * Join up signature commands
@@ -198,10 +221,19 @@ $Id$
    belong here, or should it be in the client and librsync just have
    an interface that lets it cleanly plug in?
 
+   I think if we're going to just do plain gzip, rather than
+   rsync-gzip, then it might as well be external.
+
+ * rsync-gzip: preload with the omitted text so as to get better
+   compression.  Abo thinks this gets significantly better
+   compression.  On the other hand we have to important and maintain
+   our own zlib fork, at least until we can persuade the upstream to
+   take the necessary patch.  Can that be done?
+
  * Licensing
 
-   * Will the GNU Lesser GPL work?  Specifically, will it be a problem
-     in distributing this with Mozilla or Apache?
+   Will the GNU Lesser GPL work?  Specifically, will it be a problem
+   in distributing this with Mozilla or Apache?
 
  * Checksums
 
