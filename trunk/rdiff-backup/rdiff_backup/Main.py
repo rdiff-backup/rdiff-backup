@@ -363,7 +363,7 @@ def backup_remove_curmirror_local():
 	else: older_inc = curmir_incs[1]
 
 	C.sync() # Make sure everything is written before curmirror is removed
-	older_inc.sync_delete()
+	older_inc.delete()
 
 
 def Restore(src_rp, dest_rp = None):
