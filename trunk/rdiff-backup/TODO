@@ -4,6 +4,8 @@ Added --include/--exclude options for restoring
 
 ---------[ Medium term ]---------------------------------------
 
+Look into sparse file support (requested by Stelios K. Kyriacou)
+
 Look into security.py code, do some sort of security audit.
 
 Don't require increments.<date>.dir files to be setuid/setgid, or
