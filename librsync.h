@@ -45,6 +45,10 @@
 #include <sys/types.h>
 #include <librsync-config.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern char const rs_librsync_version[];
 extern char const rs_licence_string[];
 
@@ -373,5 +377,9 @@ rs_result rs_delta_file(rs_signature_t *, FILE *new_file, FILE *delta_file, rs_s
 
 rs_result rs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file, rs_stats_t *);
 #endif /* ! RSYNC_NO_STDIO_INTERFACE */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ! _RSYNC_H */
