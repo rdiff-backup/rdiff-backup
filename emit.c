@@ -3,7 +3,7 @@
  * librsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000, 2001, 2004 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -97,23 +97,44 @@ rs_emit_literal_cmd(rs_job_t *job, int len)
 }
 
 
-/** Write a COPY command. */
+/** Write a COPY command for given offset and length.
+ *
+ * There is a choice of variable-length encodings, depending on the
+ * size of representation for the parameters. */
 void
 rs_emit_copy_cmd(rs_job_t *job, rs_long_t where, rs_long_t len)
 {
     int            cmd;
     rs_stats_t     *stats = &job->stats;
-    int where_bytes = rs_int_len(where);
-    int len_bytes   = rs_int_len(len);
+    const int where_bytes = rs_int_len(where);
+    const int len_bytes   = rs_int_len(len);
 
-    switch (10 * where_bytes + len_bytes) {
-        case 88 :   cmd = RS_OP_COPY_N8_N8; break;
-        case 84 :   cmd = RS_OP_COPY_N8_N4; break;
-        case 48 :   cmd = RS_OP_COPY_N4_N8; break;
-        default :   cmd = RS_OP_COPY_N4_N4; 
-                    where_bytes = 4; 
-                    len_bytes   = 4;
+    /* Commands ascend (1,1), (1,2), ... (8, 8) */
+    if (where_bytes == 8) 
+        cmd = RS_OP_COPY_N8_N1;
+    else if (where_bytes == 4)
+        cmd = RS_OP_COPY_N4_N1;
+    else if (where_bytes == 2)
+        cmd = RS_OP_COPY_N2_N1;
+    else if (where_bytes == 1)
+        cmd = RS_OP_COPY_N1_N1;
+    else {
+        rs_fatal("can't encode copy command with where_bytes=%d",
+                 where_bytes);
     }
+
+    if (len_bytes == 1)
+        ;
+    else if (len_bytes == 2)
+        cmd += 1;
+    else if (len_bytes == 4)
+        cmd += 2;
+    else if (len_bytes == 8)
+        cmd += 3;
+    else {
+        rs_fatal("can't encode copy command with len_bytes=%d",
+                 len_bytes);
+    }       
 
     rs_trace("emit COPY_N%d_N%d(where=%.0f, len=%.0f), cmd_byte=%#x",
              where_bytes, len_bytes, (double) where, (double) len, cmd);
