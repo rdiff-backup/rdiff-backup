@@ -443,6 +443,7 @@ class RPath(RORPath):
 
 	def __setstate__(self, rpath_state):
 		"""Reproduce RPath from __getstate__ output"""
+		self.conn = Globals.local_connection
 		self.index, self.base, self.data = rpath_state
 
 	def setdata(self):

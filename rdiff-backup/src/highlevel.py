@@ -270,7 +270,6 @@ class HLDestinationStruct:
 		try: return thunk()
 		except (EnvironmentError, SkipFileException, DSRPPermError,
 				RPathException), exc:
-			Log.exception()
 			if (not isinstance(exc, EnvironmentError) or
 				(errno.errorcode[exc[0]] in
 				 ['EPERM', 'ENOENT', 'EACCES', 'EBUSY', 'EEXIST',
@@ -278,10 +277,13 @@ class HLDestinationStruct:
 				  'EIO', # reported by docv
 				  'ETXTBSY' # reported by Campbell on some NT system
 				  ])):
+				Log.exception()
 				Log("Skipping file because of error after %s" %
 					(dsrp and dsrp.index,), 2)
 				return None
-			else: raise
+			else:
+				Log.exception(1,2)
+				raise
 
 	def handle_last_error(cls, dsrp, finalizer, ITR = None):
 		"""If catch fatal error, try to checkpoint before exiting"""
