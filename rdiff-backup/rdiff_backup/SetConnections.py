@@ -197,11 +197,6 @@ def BackupInitConnections(reading_conn, writing_conn):
 	writing_conn.Globals.set("isbackup_writer", 1)
 	UpdateGlobal("backup_reader", reading_conn)
 	UpdateGlobal("backup_writer", writing_conn)
-	if (Globals.change_source_perms and
-		reading_conn.Globals.get("process_uid") == 0):
-		Log("Warning: --change_source_perms should usually not be used when\n"
-			"the reading connection is running as root, because root can\n"
-			"read all files regardless of their permissions.", 2)
 
 def CloseConnections():
 	"""Close all connections.  Run by client"""

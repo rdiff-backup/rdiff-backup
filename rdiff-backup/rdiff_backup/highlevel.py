@@ -87,27 +87,23 @@ class HLSourceStruct:
 		"""Return diffs and finalize any dsrp changes remaining
 
 		Return a rorpiterator with files included of signatures of
-		dissimilar files.  This is the last operation run on the local
-		filestream, so finalize dsrp writes.
+		dissimilar files.
 
 		"""
 		collated = RORPIter.CollateIterators(cls.initial_dsiter2, sigiter)
-		finalizer = IterTreeReducer(DestructiveSteppingFinalizer, [])
-		def error_handler(exc, dest_sig, dsrp):
+		def error_handler(exc, dest_sig, rp):
 			Log("Error %s producing a diff of %s" %
-				(exc, dsrp and dsrp.path), 2)
+				(exc, rp and rp.path), 2)
 			return None
 			
 		def diffs():
-			for dsrp, dest_sig in collated:
+			for rp, dest_sig in collated:
 				if dest_sig:
 					if dest_sig.isplaceholder(): yield dest_sig
 					else:
 						diff = Robust.check_common_error(
-							error_handler, RORPIter.diffonce, [dest_sig, dsrp])
+							error_handler, RORPIter.diffonce, [dest_sig, rp])
 						if diff: yield diff
-				if dsrp: finalizer(dsrp.index, dsrp)
-			finalizer.Finish()
 		return diffs()
 
 MakeClass(HLSourceStruct)
@@ -117,7 +113,7 @@ class HLDestinationStruct:
 	"""Hold info used by HL on the destination side"""
 	_session_info = None # set to si if resuming
 	def split_initial_dsiter(cls):
-		"""Set initial_dsiters (iteration of all dsrps from rpath)"""
+		"""Set initial_dsiters (iteration of all rps from rpath)"""
 		result, cls.initial_dsiter2 = \
 				Iter.multiplex(Globals.select_mirror.set_iter(), 2)
 		return result
@@ -192,10 +188,10 @@ class HLDestinationStruct:
 		return RORPIter.Signatures(dissimilars)
 
 	def get_dsrp(cls, dest_rpath, index):
-		"""Return initialized dsrp based on dest_rpath with given index"""
-		dsrp = DSRPath(None, dest_rpath.conn, dest_rpath.base, index)
-		if Globals.quoting_enabled: dsrp.quote_path()
-		return dsrp
+		"""Return initialized rpath based on dest_rpath with given index"""
+		rp = RPath(dest_rpath.conn, dest_rpath.base, index)
+		if Globals.quoting_enabled: rp.quote_path()
+		return rp
 
 	def get_finalizer(cls):
 		"""Return finalizer, starting from session info if necessary"""
@@ -226,8 +222,8 @@ class HLDestinationStruct:
 	def patch_and_finalize(cls, dest_rpath, diffs):
 		"""Apply diffs and finalize"""
 		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
-		finalizer = cls.get_finalizer()
-		diff_rorp, dsrp = None, None
+		#finalizer = cls.get_finalizer()
+		diff_rorp, rp = None, None
 
 		def patch(diff_rorp, dsrp):
 			if not dsrp: dsrp = cls.get_dsrp(dest_rpath, diff_rorp.index)
@@ -244,13 +240,14 @@ class HLDestinationStruct:
 			diff_rorp, dsrp = indexed_tuple
 			dsrp = Robust.check_common_error(error_handler, patch,
 											 [diff_rorp, dsrp])
-			finalizer(dsrp.index, dsrp)
-		finalizer.Finish()
+			#finalizer(dsrp.index, dsrp)
+		#finalizer.Finish()
 
 	def patch_w_datadir_writes(cls, dest_rpath, diffs, inc_rpath):
 		"""Apply diffs and finalize, with checkpointing and statistics"""
 		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
-		finalizer, ITR = cls.get_finalizer(), cls.get_MirrorITR(inc_rpath)
+		#finalizer, ITR = cls.get_finalizer(), cls.get_MirrorITR(inc_rpath)
+		finalizer, ITR = None, cls.get_MirrorITR(inc_rpath)
 		MiscStats.open_dir_stats_file()
 		dsrp, finished_dsrp = None, None
 
@@ -261,10 +258,10 @@ class HLDestinationStruct:
 				if not dsrp: dsrp = cls.get_dsrp(dest_rpath, diff_rorp.index)
 				if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
 				ITR(dsrp.index, diff_rorp, dsrp)
-				finalizer(dsrp.index, dsrp)
+				#finalizer(dsrp.index, dsrp)
 				finished_dsrp = dsrp
 			ITR.Finish()
-			finalizer.Finish()
+			#finalizer.Finish()
 		except: cls.handle_last_error(finished_dsrp, finalizer, ITR)
 
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
@@ -274,7 +271,8 @@ class HLDestinationStruct:
 	def patch_increment_and_finalize(cls, dest_rpath, diffs, inc_rpath):
 		"""Apply diffs, write increment if necessary, and finalize"""
 		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
-		finalizer, ITR = cls.get_finalizer(), cls.get_ITR(inc_rpath)
+		#finalizer, ITR = cls.get_finalizer(), cls.get_ITR(inc_rpath)
+		finalizer, ITR = None, cls.get_ITR(inc_rpath)
 		MiscStats.open_dir_stats_file()
 		dsrp, finished_dsrp = None, None
 
@@ -286,10 +284,10 @@ class HLDestinationStruct:
 				if not dsrp: dsrp = cls.get_dsrp(dest_rpath, index)
 				if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
 				ITR(index, diff_rorp, dsrp)
-				finalizer(index, dsrp)
+				#finalizer(index, dsrp)
 				finished_dsrp = dsrp
 			ITR.Finish()
-			finalizer.Finish()
+			#finalizer.Finish()
 		except: cls.handle_last_error(finished_dsrp, finalizer, ITR)
 
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
@@ -311,6 +309,5 @@ from log import *
 from rpath import *
 from robust import *
 from increment import *
-from destructive_stepping import *
 from rorpiter import *
 import Globals, Hardlink, MiscStats, metadata

@@ -25,7 +25,6 @@ from log import *
 from lazy import *
 from connection import *
 from rpath import *
-from destructive_stepping import *
 from robust import *
 from restore import *
 from highlevel import *
@@ -49,21 +48,20 @@ def parse_cmdlineoptions(arglist):
 		except IOError: Log.FatalError("Error opening file %s" % filename)
 
 	try: optlist, args = getopt.getopt(arglist, "blr:sv:V",
-		 ["backup-mode", "calculate-average", "change-source-perms",
-		  "chars-to-quote=", "checkpoint-interval=", "current-time=",
-		  "exclude=", "exclude-device-files", "exclude-filelist=",
-		  "exclude-filelist-stdin", "exclude-globbing-filelist=",
-		  "exclude-mirror=", "exclude-other-filesystems",
-		  "exclude-regexp=", "exclude-special-files", "force",
-		  "include=", "include-filelist=", "include-filelist-stdin",
+		 ["backup-mode", "calculate-average", "chars-to-quote=",
+		  "current-time=", "exclude=", "exclude-device-files",
+		  "exclude-filelist=", "exclude-filelist-stdin",
+		  "exclude-globbing-filelist=", "exclude-mirror=",
+		  "exclude-other-filesystems", "exclude-regexp=",
+		  "exclude-special-files", "force", "include=",
+		  "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=", "include-regexp=",
 		  "list-changed-since=", "list-increments", "no-compression",
-		  "no-compression-regexp=", "no-hard-links", "no-resume",
-		  "null-separator", "parsable-output", "print-statistics",
-		  "quoting-char=", "remote-cmd=", "remote-schema=",
-		  "remove-older-than=", "restore-as-of=", "restrict=",
-		  "restrict-read-only=", "restrict-update-only=", "resume",
-		  "resume-window=", "server", "sleep-ratio=",
+		  "no-compression-regexp=", "no-hard-links", "null-separator",
+		  "parsable-output", "print-statistics", "quoting-char=",
+		  "remote-cmd=", "remote-schema=", "remove-older-than=",
+		  "restore-as-of=", "restrict=", "restrict-read-only=",
+		  "restrict-update-only=", "server", "sleep-ratio=",
 		  "ssh-no-compression", "terminal-verbosity=", "test-server",
 		  "verbosity=", "version", "windows-mode",
 		  "windows-time-format"])
@@ -73,13 +71,9 @@ def parse_cmdlineoptions(arglist):
 	for opt, arg in optlist:
 		if opt == "-b" or opt == "--backup-mode": action = "backup"
 		elif opt == "--calculate-average": action = "calculate-average"
-		elif opt == "--change-source-perms":
-			Globals.set('change_source_perms', 1)
 		elif opt == "--chars-to-quote":
 			Globals.set('chars_to_quote', arg)
 			Globals.set('quoting_enabled', 1)
-		elif opt == "--checkpoint-interval":
-			Globals.set_integer('checkpoint_interval', arg)
 		elif opt == "--current-time":
 			Globals.set_integer('current_time', arg)
 		elif opt == "--exclude": select_opts.append((opt, arg))
@@ -118,7 +112,6 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--no-compression-regexp":
 			Globals.set("no_compression_regexp_string", arg)
 		elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
-		elif opt == '--no-resume': Globals.resume = 0
 		elif opt == "--null-separator": Globals.set("null_separator", 1)
 		elif opt == "--parsable-output": Globals.set('parsable_output', 1)
 		elif opt == "--print-statistics":
@@ -140,9 +133,6 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--restrict-update-only":
 			Globals.security_level = "update-only"
 			Globals.restrict_path = arg
-		elif opt == '--resume': Globals.resume = 1
-		elif opt == '--resume-window':
-			Globals.set_integer('resume_window', arg)
 		elif opt == "-s" or opt == "--server":
 			action = "server"
 			Globals.server = 1
@@ -263,9 +253,8 @@ def Backup(rpin, rpout):
 
 def backup_init_select(rpin, rpout):
 	"""Create Select objects on source and dest connections"""
-	rpin.conn.Globals.set_select(DSRPath(1, rpin), select_opts,
-								 None, *select_files)
-	rpout.conn.Globals.set_select(DSRPath(None, rpout), select_mirror_opts, 1)
+	rpin.conn.Globals.set_select(1, rpin, select_opts, None, *select_files)
+	rpout.conn.Globals.set_select(0, rpout, select_mirror_opts, 1)
 
 def backup_init_dirs(rpin, rpout):
 	"""Make sure rpin and rpout are valid, init data dir and logging"""
@@ -424,8 +413,8 @@ def restore_init_select(rpin, rpout):
 	the restore operation isn't.
 
 	"""
-	Globals.set_select(DSRPath(1, rpin), select_mirror_opts, None)
-	Globals.set_select(DSRPath(None, rpout), select_opts, None, *select_files)
+	Globals.set_select(1, rpin, select_mirror_opts, None)
+	Globals.set_select(0, rpout, select_opts, None, *select_files)
 
 def restore_get_root(rpin):
 	"""Return (mirror root, index) and set the data dir

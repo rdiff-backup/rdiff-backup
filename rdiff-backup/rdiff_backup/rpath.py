@@ -288,6 +288,8 @@ class RORPath(RPathStatic):
 				(not Globals.change_ownership or self.issym())):
 				# Don't compare gid/uid for symlinks or if not change_ownership
 				pass
+			elif key == 'mtime':
+				Log("%s differs only in mtime, skipping" % (self.path,), 2)
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'devloc' or key == 'inode' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
@@ -318,6 +320,10 @@ class RORPath(RPathStatic):
 	def __setstate__(self, rorp_state):
 		"""Reproduce RORPath from __getstate__ output"""
 		self.index, self.data = rorp_state
+
+	def get_rorpath(self):
+		"""Return new rorpath based on self"""
+		return RORPath(self.index, self.data.copy())
 
 	def make_placeholder(self):
 		"""Make rorp into a placeholder
@@ -697,19 +703,15 @@ class RPath(RORPath):
 		return self.conn.Globals.get('process_gid') == self.data['gid']
 
 	def delete(self):
-		"""Delete file at self.path
-
-		The destructive stepping allows this function to delete
-		directories even if they have files and we lack permissions.
-
-		"""
+		"""Delete file at self.path.  Recursively deletes directories."""
 		Log("Deleting %s" % self.path, 7)
 		self.setdata()
-		if not self.lstat(): return # must have been deleted in meantime
+		if not self.lstat():
+			Log("Warning: %s does not exist---deleted in meantime?"
+				% (self.path,), 2)
 		elif self.isdir():
 			itm = IterTreeReducer(RpathDeleter, [])
-			for dsrp in Select(DSRPath(None, self)).set_iter():
-				itm(dsrp.index, dsrp)
+			for rp in Select(self).set_iter(): itm(rp.index, rp)
 			itm.Finish()
 		else: self.conn.os.unlink(self.path)
 		self.setdata()
@@ -891,18 +893,17 @@ class RPathFileHook:
 import FilenameMapping
 from lazy import *
 from selection import *
-from destructive_stepping import *
 from highlevel import *
 
 class RpathDeleter(ITRBranch):
 	"""Delete a directory.  Called by RPath.delete()"""
-	def start_process(self, index, dsrp):
-		self.dsrp = dsrp
+	def start_process(self, index, rp):
+		self.rp = rp
 
 	def end_process(self):
-		if self.dsrp.isdir(): self.dsrp.rmdir()
-		else: self.dsrp.delete()
+		if self.rp.isdir(): self.rp.rmdir()
+		else: self.rp.delete()
 
-	def can_fast_process(self, index, dsrp): return not dsrp.isdir()
-	def fast_process(self, index, dsrp): dsrp.delete()
+	def can_fast_process(self, index, rp): return not rp.isdir()
+	def fast_process(self, index, rp): rp.delete()
 	
