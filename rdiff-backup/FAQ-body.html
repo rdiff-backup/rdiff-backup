@@ -115,21 +115,13 @@ some header files in the Makefile:
 
 </pre>
 
-Then, whenever you use rdiff-backup to back up from a unix system to
-Windows, use the <strong>--windows-mode</strong> switch.  This
-compensates for some windows file systems' inability to store hard
-links, symlinks, device files, sockets, fifos, case sensitive
-filenames, and filenames with colons (":") in them.  (Note: device
-files, symlinks, fifos, and sockets will simply be skipped, and hard
-link information will not be recorded.)
-
-<p>If you are backing up one windows system to another, full
---windows-mode is not necessary, but you'll still need
-<strong>--windows-time-format</strong>, which stops rdiff-backup from
-trying to make increment files with colons in them.  Whichever
---windows* option you use, remember to use the same one when restoring
-or listing that backup directory.
-</li>
+Then, whenever you use rdiff-backup to back up or restore from a unix
+system to Windows, use the <strong>--windows-mode</strong> switch.
+This compensates for some windows file systems' inability to store
+hard links, symlinks, device files, sockets, fifos, case sensitive
+filenames, and filenames with colons (":") in them.  No information
+will be lost however, because rdiff-backup stores metadata in a
+separate file.
 
 <P>
 <a name="OSX">
