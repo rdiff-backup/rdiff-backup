@@ -32,6 +32,8 @@
 #	define STRUCT_STAT struct stat
 #endif
 
+extern int lstat(const char *, struct stat *);
+
 static PyObject *UnknownFileTypeError;
 static PyObject *c_make_file_dict(PyObject *self, PyObject *args);
 static PyObject *long2str(PyObject *self, PyObject *args);
@@ -46,7 +48,7 @@ static PyObject *c_make_file_dict(self, args)
 {
   PyObject *size, *inode, *mtime, *atime, *devloc, *return_val;
   char *filename, filetype[5];
-  STRUCT_STAT sbuf;
+  struct stat sbuf;
   long int mode, perms;
   int res;
 
