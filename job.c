@@ -55,6 +55,8 @@
 
 static const int rs_job_tag = 20010225;
 
+static rs_result rs_job_work(rs_job_t *job, rs_buffers_t *buffers);
+
 
 rs_job_t * rs_job_new(char const *job_name, rs_result (*statefn)(rs_job_t *))
 {
@@ -129,6 +131,28 @@ static rs_result rs_job_complete(rs_job_t *job, rs_result result)
  * in there, without trying to accumulate anything else.
  */
 rs_result rs_job_iter(rs_job_t *job, rs_buffers_t *buffers)
+{
+    rs_result       result;
+    rs_long_t       orig_in, orig_out;
+
+    orig_in  = buffers->avail_in;
+    orig_out = buffers->avail_out;
+
+    result = rs_job_work(job, buffers);
+
+    if (result == RS_BLOCKED  ||  result == RS_DONE) 
+        if (orig_in == buffers->avail_in && orig_out == buffers->avail_out
+            && orig_in && orig_out) {
+            rs_log(RS_LOG_ERR, "internal error: job made no progress");
+            return RS_INTERNAL_ERROR;
+        }
+
+    return result;
+}
+
+
+static rs_result
+rs_job_work(rs_job_t *job, rs_buffers_t *buffers)
 {
     rs_result result;
 
