@@ -178,9 +178,10 @@ static hs_result rdiff_delta(poptContext opcon)
     if (result != HS_DONE)
         return result;
 
-    result = hs_delta_file(sumset, new_file, delta_file);
+    if ((result = hs_build_hash_table(sumset)) != HS_DONE)
+        return result;
 
-    return result;
+    return result = hs_delta_file(sumset, new_file, delta_file);
 }
 
 
@@ -209,6 +210,9 @@ int main(const int argc, const char *argv[])
     opcon = poptGetContext(PROGRAM, argc, argv, opts, 0);
     rdiff_options(opcon);
     result = rdiff_action(opcon);
+
+    if (result != HS_DONE)
+        hs_error("failed: %s", hs_strerror(result));
     
     return result;
 }
