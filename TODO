@@ -1,11 +1,44 @@
--*- indented-text -*- 
+                                                  -*- indented-text -*- 
+$Id$
+
+ * Licensing
+
+   * Will the GNU Lesser GPL work?  Specifically, will it be a problem
+     in distributing this with Mozilla or Apache?  
+
+ * Testing
+
+   * Test files >2GB, >4GB
+
+ * Web site in Latte
 
  * Use slprintf not strnprintf, etc.
 
- * Perhaps make extracted signatures still be wrapped in commands.
-   Why?
+ * Long files
 
- * Selective trace
+   * How do we handle the large signatures required to support large
+     files?  In particular, how do we choose an appropriate block size
+     when the length is unknown?  Perhaps we should allow a way for
+     the signature to scale up as it grows.
+
+   * What do we need to do to compile in support for this?
+
+     * On GNU, defining _LARGEFILE_SOURCE as we now do should be
+       sufficient.
+
+     * SCO and similar things on 32-bit platforms may be more
+       difficult.
+
+     * On larger Unix platforms we hope that large file support will
+       be the default.
+
+ * Perhaps make extracted signatures still be wrapped in commands.
+   What would this lead to?
+
+   * We'd know how much signature data we expect to read, rather than
+     requiring it to be terminated by the caller.
+
+ * Selective trace of particular areas of the library.
 
  * Try to make libhsync more generally useful
 

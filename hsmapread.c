@@ -1,4 +1,4 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*                                      -*- c-file-style: "bsd" -*-
  *
  * $Id$
  * 
@@ -19,6 +19,13 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+                                        /*
+                                         | `Try to look guileless'
+                                         */
+
+
+/* hsmapread -- extract sections of files, as a test case for
+ * mapptr. */
 
 
 /* The intention is that this program will completely exercise the hs_map_ptr 
@@ -27,20 +34,43 @@
 
 #include "includes.h"
 
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/file.h>
+#include <string.h>
+
+/* The `walker' algorithm is not released yet. */
+#undef USE_WALKER
+
+enum mapread_options
+{
+    keep_trying = 1,
+    nonblocking = 2,
+    use_select = 4,
+    walker = 8
+};
+
 static void
 usage(void)
 {
-    printf("Usage: hsmapread [OPTIONS] FILENAME OFFSET,SIZE ...\n"
-	   "Reads sections from a file or socket and writes to standard output.\n"
-	   "A filename of `-' means standard input.\n"
-	   "\n"
-	   "  -k             keep trying to map whole blocks\n"
-	   "  -n             read in nonblocking mode\n"
-	   "  -s             use select(2)\n"
-	   "  -D             turn on trace, if enabled in library\n"
-	   "\n"
-	   "Note that -n without -s will busy-wait.\n"
-	);
+    printf("Usage: hsmapread [OPTIONS] OFFSET,SIZE ...\n"
+           "Reads sections from a file or socket on standard input\n"
+           "and writes to standard output.\n"
+           "\n"
+           "  -k             keep trying to map whole blocks\n"
+           "  -n             read in nonblocking mode\n"
+           "  -s             use select(2)\n"
+#ifdef USE_WALKER
+           "  -w             use walker algorithm\n"
+#endif
+           "  -D             turn on trace, if enabled in library\n"
+           "\n"
+           "Note that -n without -s will busy-wait.\n"
+           "Ranges may be given either as a series of parameters, or separated\n"
+           "by colons.\n"
+           "For example: 0,5:5,5:10,100000\n"
+        );
 }
 
 
@@ -52,15 +82,17 @@ select_for_read(int fd)
     fd_set          read_set;
     int             ret;
 
+    _hs_trace("select fd%d for read...", fd);
+    
     FD_ZERO(&read_set);
     FD_SET(fd, &read_set);
 
     do {
-	ret = select(1, &read_set, NULL, NULL, NULL);
-	if (ret < 0) {
-	    _hs_error("error in select: %s", strerror(errno));
-	    return -1;
-	}
+        ret = select(1, &read_set, NULL, NULL, NULL);
+        if (ret < 0) {
+            _hs_error("error in select: %s", strerror(errno));
+            return -1;
+        }
     } while (ret == 0  ||  (ret == -1  &&  errno == EINTR));
 
     assert(ret == 1);
@@ -69,125 +101,158 @@ select_for_read(int fd)
 }
 
 
-/* argv, argc refer to the offset, size counts */
 static int
-read_chunks(int fd,
-	    hs_map_t * map, int argc, char **argv,
-	    int use_select, int keep_trying)
+copy_one_chunk(int fd, hs_map_t * map, hs_off_t off, size_t want_len, int options)
 {
     byte_t const   *p;
-    int             off;
     size_t          len;
-    int             want_len;
     int             written;
     int             saw_eof;
+    size_t          out_pos = 0;
+
+  try_read:
+    len = want_len;
+#ifdef USE_WALKER
+    if (options & walker)
+	p = _hs_map_walk(map, (hs_off_t) off, &len, &saw_eof);
+    else
+#endif
+	p = _hs_map_ptr(map, (hs_off_t) off, &len, &saw_eof);
+
+    assert((long) len >= 0);
+
+    if (!p) {
+	_hs_error("hs_map_ptr failed!\n");
+	return 2;
+    }
+    _hs_trace("got back %ld bytes, wanted %ld, "
+	      "at eof=%s",
+	      (long) len, (long) want_len, saw_eof ? "true" : "false");
+
+    if (len < want_len && (options & keep_trying) && !saw_eof) {
+	_hs_trace("keep trying");
+	if (options & use_select) {
+	    if (select_for_read(fd) < 0)
+		return 2;
+	}
+
+	goto try_read;
+    }
+
+    /* mapread may have opportunistically given us more bytes than * we
+     * wanted.  In this case, it would be really bad to write * them out,
+     * because they're not expected.  It's harmless to * ignore them. */
+    if (len > want_len)
+	len = want_len;
+
+    _hs_trace("write %ld bytes at output position %ld",
+	      (long) len, (long) out_pos);
+    written = write(STDOUT_FILENO, p, len);
+    if (written < 0) {
+	_hs_error("error writing out chunk: %s\n", strerror(errno));
+	return 3;
+    }
+
+    out_pos += len;
+    if ((size_t) written != len) {
+	_hs_error("expected to write %d bytes, actually wrote %d\n",
+		  len, written);
+	return 4;
+    }
+
+    return 0;
+}
+
+
+/*
+ * Copy the chunks specified by the command strings in ARGV from MAP
+ * onto the file FD, obeying OPTIONS.
+ */
+static int
+read_chunks(int fd, hs_map_t * map, int argc, char **argv, int options)
+{
+    int                     off;
+    size_t                  want_len;
+    int                     rc;
+    char                   *o;
 
     for (; argc > 0; argc--, argv++) {
-	/* fprintf(stderr, "chunk %s\n", *argv); */
-
-	if (sscanf(*argv, "%d,%d", &off, &want_len) != 2) {
-	    _hs_error("error interpreting argument `%s'\n", *argv);
-	    return 1;
-	}
-
-
-    try_read:
-	len = want_len;
-	p = _hs_map_ptr(map, (hs_off_t) off, &len, &saw_eof);
-	if (!p) {
-	    _hs_error("hs_map_ptr failed: %s\n", strerror(errno));
-	    return 2;
-	}
-	_hs_trace("got back %ld bytes, wanted %ld, keep_trying=%s, "
-		  "at eof=%s",
-		  (long) len,
-		  (long) want_len,
-		  keep_trying ? "true" : "false",
-		  saw_eof ? "true" : "false");
-	
-	if (len < want_len && keep_trying && !saw_eof) {
-	    if (use_select) {
-		if (select_for_read(fd) < 0)
-		    return 2;
-	    }
-	
-	    goto try_read;
-	}
-
-	/* mapread may have opportunistically given us more bytes than
-	 * we wanted.  In this case, it would be really bad to write
-	 * them out, because they're not expected.  It's harmless to
-	 * ignore them. */
-	if (len > want_len)
-	    len = want_len;
-	
-	written = write(STDOUT_FILENO, p, len);
-	if (written < 0) {
-	    _hs_error("error writing out chunk: %s\n", strerror(errno));
-	    return 3;
-	}
-
-	if (written != len) {
-	    _hs_error("expected to write %d bytes, actually wrote %d\n",
-		      len, written);
-	    return 4;
-	}
+	o = *argv;
+	do {
+	    off = strtoul(o, &o, 10);
+	    if (*o != ',')
+		goto failed;
+	    want_len = strtoul(o + 1, &o, 10);
+	    if (!(*o == '\0' || *o == ':'))
+		goto failed;
+	    if ((rc = copy_one_chunk(fd, map, off, want_len, options)))
+		return rc;
+	} while (*o++ == ':');
     }
 
     return 0;
+
+  failed:
+    _hs_error("argument `%s' doesn't look like an OFFSET,LENGTH "
+	      "tuple\n", *argv);
+    return 1;
 }
 
 
+/*
+ * If the user specified they wanted nonblocking input, then set that
+ * flag on stdin.
+ */
 static int
-open_source(char const *filename, int *fd, int nonblocking)
+set_nonblock_flag(int desc, int options)
 {
-    int             flags = O_RDONLY;
-
-    if (nonblocking)
-	flags |= O_NONBLOCK;
-
-    if (strcmp(filename, "-")) {
-	*fd = open(filename, flags);
-	if (*fd < 0) {
-	    _hs_fatal("can't open %s: %s", filename, strerror(errno));
-	    return 1;
-	}
-    } else {
-	*fd = STDIN_FILENO;
-    }
-
-    return 0;
+    int oldflags = fcntl (desc, F_GETFL, 0);
+    /* If reading the flags failed, return error indication now. */
+    if (oldflags == -1)
+        return -1;
+    /* Set just the flag we want to set. */
+    if (options & nonblocking)
+        oldflags |= O_NONBLOCK;
+    else
+        oldflags &= ~O_NONBLOCK;
+    /* Store modified flag word in the descriptor. */
+    return fcntl (desc, F_SETFL, oldflags);
 }
 
 
 static int
-chew_options(int argc, char **argv, int *nonblocking,
-	     int *use_select, int *keep_trying)
+chew_options(int argc, char **argv, int *options) 
 {
     int             c;
 
-    		/* may turn it on later */
-    while ((c = getopt(argc, argv, "knsD")) != -1) {
-	switch (c) {
-	case '?':
-	case ':':
-	    return -1;
-	case 'k':
-	    *keep_trying = 1;
-	    break;
-	case 'n':
-	    *nonblocking = 1;
-	    break;
-	case 's':
-	    *use_select = 1;
-	    break;
-	case 'D':
-	    if (!hs_supports_trace()) {
-		_hs_error("library does not support trace");
-	    }
-	    hs_trace_set_level(LOG_DEBUG);
-	    break;
-	}
+    while ((c = getopt(argc, argv, "knswD")) != -1)
+    {
+        switch (c)
+        {
+        case '?':
+        case ':':
+            return -1;
+        case 'k':
+            *options |= keep_trying;
+            break;
+        case 'n':
+            *options |= nonblocking;
+            break;
+        case 's':
+            *options |= use_select;
+            break;
+#ifdef USE_WALKER
+        case 'w':
+            *options |= walker;
+            break;
+#endif
+        case 'D':
+            if (!hs_supports_trace()) {
+                _hs_error("library does not support trace");
+            }
+            hs_trace_set_level(LOG_DEBUG);
+            break;
+        }
     }
 
     return optind;
@@ -199,31 +264,27 @@ main(int argc, char **argv)
 {
     hs_map_t       *map;
     int             ret;
-    int             infd;
+    int             infd = STDIN_FILENO;
     int             ind;
-    int             nonblocking = 0;
-    int             use_select = 0;
-    int             keep_trying = 0;
+    int             options = 0;
 
-    ind = chew_options(argc, argv, &nonblocking, &use_select, &keep_trying);
+    ind = chew_options(argc, argv, &options);
     if (ind < 0)
-	return 1;
+        return 1;
     argc -= ind;
-    argv += ind;		/* skip options */
+    argv += ind;                /* skip options */
 
-    if (argc < 2) {
-	usage();
-	return 0;
+    if (argc < 1) {
+        usage();
+        return 0;
     }
 
-    if ((ret = open_source(argv[0], &infd, nonblocking)) != 0)
-	return ret;
-    argc--;
-    argv++;			/* skip filename */
+    if ((ret = set_nonblock_flag(infd, options)) != 0)
+        return ret;
 
     map = _hs_map_file(infd);
 
-    ret = read_chunks(infd, map, argc, argv, use_select, keep_trying);
+    ret = read_chunks(infd, map, argc, argv, options);
 
     _hs_unmap_file(map);
     close(infd);

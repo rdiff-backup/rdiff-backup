@@ -29,7 +29,20 @@ fi
 test_script=$1
 shift
 test_name=`basename $test_script .sh`
-test_opts="$*"
+
+# Process command-line options
+trace=:
+for o in "$@"
+do
+    case "$o" in 
+    -D)
+	debug=-D
+	;;
+    -x)
+	trace='set -x'
+	;;
+    esac
+done
 
 if [ "$srcdir" = "" ]
 then
@@ -42,7 +55,7 @@ PATH=$builddir:$srcdir:$PATH
 export PATH
 
 testdir=$srcdir/$test_name
-tmpdir=$builddir/$test_name.d
+tmpdir=$builddir/tmp-$test_name
 [ -d $tmpdir ] || mkdir $tmpdir || exit 2
 
 test_skipped () {
@@ -75,12 +88,16 @@ make_input () {
 }
 
 make_manyfiles() {
-    find $srcdir $builddir -type f
+    find $srcdir $builddir -type f |head -1000
 }
 
 echo "$test_name"
 
+$trace
 . $test_script $*
+
+rm -f $tmpdir/*
+rmdir $tmpdir
 
 # If nothing failed, then
 exit 0

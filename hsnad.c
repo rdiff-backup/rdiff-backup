@@ -22,6 +22,12 @@
 
 #include "includes.h"
 
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/file.h>
+#include <string.h>
+
 int             show_stats = 0;
 
 static void
@@ -100,7 +106,7 @@ main(int argc, char **argv)
 	hs_free_sumset(sums);
 
     if (show_stats)
-	hs_print_stats(stderr, &stats);
+	hs_write_stats(&stats, STDIN_FILENO);
 
     return result == HS_DONE ? 0 : 2;
 }

@@ -22,6 +22,12 @@
 
 #include "includes.h"
 
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/file.h>
+#include <string.h>
+
+
 int
 _hs_file_open(char const *filename, int mode)
 {

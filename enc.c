@@ -169,7 +169,7 @@ hs_encode_old(hs_read_fn_t read_fn, void *readprivate,
     int             ret;
     hs_rollsum_t    rollsum;
     hs_rollsum_t    new_roll;
-    _hs_inbuf_t    *inbuf;
+    _hs_inbuf_t    *inbuf = NULL;
     int             block_len, short_block;
     hs_membuf_t    *sig_tmpbuf, *lit_tmpbuf;
     _hs_copyq_t     copyq;

@@ -17,7 +17,7 @@ newout=$tmpdir/new.tmp
 
 for old in $files
 do
-    run_test hsencode $old $lt /dev/null
+    run_test hsnad /dev/null <$old >$lt
     run_test hsdecode /dev/null $sig $oldout $lt
     run_test cmp $old $oldout
     for new in $files
@@ -25,7 +25,7 @@ do
 	if [ $old != $new ] 
 	then
 	    countdown
-	    run_test hsencode $new $lt $sig
+	    run_test hsnad $sig <$new >$lt
 	    run_test hsdecode $old /dev/null $newout $lt
 	    run_test cmp $new $newout
 	fi

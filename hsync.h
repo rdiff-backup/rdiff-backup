@@ -23,18 +23,19 @@
 
 extern char const *const hs_libhsync_version;
 extern char const *const hs_libhsync_libversion;
+extern int const hs_libhsync_file_offset_bits;
 
-#if HAVE_OFF64_T
-typedef off_t   hs_off_t;
+/* For the moment, we always work in the C library's off_t.  On GNU,
+ * we try to make this 64-bit if possible by defining
+ * _LARGEFILE_SOURCE.  In the future it may be necessary on some
+ * platforms to make hs_off_t something other than off_t to handle big
+ * files. */
 
-#define struct stat64 hs_statbuf_t;
-#else				/* !HAVE_OFF64_T */
 typedef off_t   hs_off_t;
 typedef struct stat hs_statbuf_t;
-#endif				/* !HAVE_OFF64_T */
 
 
-typedef uint8_t byte_t;
+typedef unsigned char byte_t;
 
 
 /***********************************************************************
@@ -43,18 +44,17 @@ typedef uint8_t byte_t;
 typedef int     (*hs_read_fn_t) (void *readprivate, byte_t *buf, size_t len);
 
 typedef int     (*hs_write_fn_t) (void *writeprivate, byte_t const *buf,
-
-				  size_t len);
+                                  size_t len);
 
 
 /***********************************************************************
  * Public trace functions.
  */
 /* LEVEL is a syslog level. */
-typedef void    hs_trace_fn_t( int level, char const *fmt, va_list);
+typedef void    hs_trace_fn_t(int level, char const *);
 void            hs_trace_set_level(int level);
 void            hs_trace_to(hs_trace_fn_t *);
-void            hs_trace_to_stderr(int level, char const *fmt, va_list va);
+void            hs_trace_to_stderr(int level, char const *msg);
 int             hs_supports_trace(void);
 
 
@@ -70,9 +70,9 @@ typedef enum {
 } hs_result_t;
 
 
-/* ========================================
-
-   Decode */
+/***********************************************************************
+ * Statistics about an encode/decode operation
+ ***********************************************************************/
 
 typedef struct hs_stats {
     char const     *op;
@@ -83,25 +83,15 @@ typedef struct hs_stats {
     int             false_matches;
 } hs_stats_t;
 
+/***********************************************************************
+ * Blocking decode
+ ***********************************************************************/
 ssize_t
 hs_decode(int oldread_fd,
 	  hs_write_fn_t write_fn, void *write_priv,
 	  hs_read_fn_t ltread_fn, void *ltread_priv,
 	  hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats);
-
 
-
-
-/* ========================================
-
-   Encode */
-
-
-ssize_t         hs_encode_old(hs_read_fn_t read_fn, void *readprivate,
-			      hs_write_fn_t write_fn, void *write_priv,
-			      hs_read_fn_t sigread_fn, void *sigreadprivate,
-			      int new_block_len, hs_stats_t * stats);
-
 /* ========================================
 
    File buffers */
@@ -123,7 +113,7 @@ void            hs_filebuf_close(hs_filebuf_t * fbuf);
 void            hs_filebuf_add_cache(hs_filebuf_t * fb, int);
 
 hs_filebuf_t   *hs_filebuf_from_fd(int);
-hs_filebuf_t   *hs_filebuf_from_file(FILE * fp);
+/* hs_filebuf_t   *hs_filebuf_from_file(FILE * fp); */
 
 
 /* ========================================
@@ -178,10 +168,12 @@ void     hs_hexify_buf(char *to_buf, byte_t const *from_buf, int from_len);
 
 
 char           *hs_format_stats(hs_stats_t const *, char *, size_t);
-void            hs_print_stats(FILE * f, hs_stats_t const *);
+int hs_write_stats(hs_stats_t const *stats, int out_fd);
 
 
-/* ======================================== * * New nonblocking interfaces. */
+/***********************************************************************
+ * Nonblocking encoding interfaces
+ ***********************************************************************/
 typedef struct hs_mksum_job hs_mksum_job_t;
 
 

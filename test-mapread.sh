@@ -15,7 +15,7 @@ cmds=$tmpdir/cmds
 expect=$tmpdir/expect
 
 run_test genmaptest map 1000 $cmds $expect $from
-run_test hsmapread $from `cat $cmds` >$new
+run_test hsmapread $test_opts `cat $cmds` >$new <$from
 run_test cmp $expect $new
 
 # the output files are pretty huge, so if we completed successfully

@@ -5,13 +5,9 @@
 
 lib_LTLIBRARIES = libhsync.la
 
-# This is NOT the libhsync release number.  Rather, it is a
-# CURRENT:REVISION:AGE tuple describing binary compatibility to
-# libtool.
 libhsync_la_LDFLAGS = -version-info @libhsync_libversion@
 
 libhsync_la_SOURCES = \
-	enc.c \
 	dec.c \
 	emit.c emit.h \
 	litbuf.c \
@@ -27,17 +23,21 @@ libhsync_la_SOURCES = \
 	inhale.c \
 	trace.c trace.h \
 	hex.c stats.c \
-	mapptr.c mapptr.h \
+	mapptr.c mapptr.h map_p.h \
 	fileutil.c fileutil.h \
 	gdproto.c \
 	util.c util.h \
 	mksum.c mksum.h \
 	sumset.c sumset.h \
 	rollsum.c rollsum.h \
-	nad.c 
+	nad.c
 
 # NB: tests should exit with code 77 if they can't be run but haven't failed.
-TESTS_ENVIRONMENT = time $(SHELL) $(srcdir)/driver.sh
+
+# Generally these tests should be ordered so that more basic tests
+# are run first.
+
+TESTS_ENVIRONMENT = $(SHELL) $(srcdir)/driver.sh
 test_scripts := \
 	test-maptcp.sh \
 	test-tricky.sh \
@@ -54,10 +54,10 @@ test_scripts := \
 	test-mapeof.sh \
 	test-mapover.sh \
 	test-nadsum.sh \
-	test-thricenad.sh
+	test-pairs.sh
 
 # Thus spake the master programmer:
-# 
+#
 # ``When the program is being tested, it is too late to make design
 # changes.''
 
@@ -69,37 +69,11 @@ noinst_SCRIPTS = \
 	test-meta.sh
 
 test_data=test-chain/empty-sig			\
-test-decode/01-diff				\
-test-decode/01-new				\
-test-decode/01-old				\
-test-decode/01-sig				\
-test-decode/02-diff				\
-test-decode/02-new				\
-test-decode/02-old				\
-test-decode/02-sig				\
-test-decode/03-diff				\
-test-decode/03-new				\
-test-decode/03-old				\
-test-decode/03-sig				\
-test-decode/04-diff				\
-test-decode/04-new				\
-test-decode/04-old				\
-test-decode/04-sig				\
-test-decode/05-diff				\
-test-decode/05-new				\
-test-decode/05-old				\
-test-decode/05-sig				\
-test-decode/README				\
-test-encode/01-diff				\
-test-encode/01-new				\
-test-encode/01-out				\
-test-encode/01-sig				\
 test-seq/in-01					\
 test-seq/in-04					\
 test-seq/in-07					\
 test-seq/in-08					\
 test-cmds/cmds					\
-test-thrice/01-data				\
 in-tricky/in-01					\
 in-tricky/in-02					\
 in-tricky/in-03					\
@@ -109,10 +83,10 @@ in-tricky/in-06					\
 in-tricky/in-07
 
 
-# TODO: Delete the test-*.d directories when cleaning up.  Yeah! 
+# TODO: Delete the test-*.d directories when cleaning up.  Yeah!
 CLEANFILES = test-*.d/*
 
-EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
+EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) 
 
 include_HEADERS = hsync.h hsyncproto.h
 
@@ -120,10 +94,12 @@ include_HEADERS = hsync.h hsyncproto.h
 # preference.
 LDADD = libhsync.la
 
-bin_PROGRAMS = hsdecode hsencode hsmdfour hsmksum hsmapread hsnad \
+bin_PROGRAMS = hsdecode hsmdfour hsmksum hsmapread hsnad \
 		libhsyncinfo
 check_PROGRAMS = hsemit hsinhale hsfilebufcat genmaptest \
-	socksvr sockcli sockrun
+	socksvr sockcli sockrun trylog
+
+trylog_SOURCES = trylog.c 
 
 sockrun_SOURCES = sockrun.c trace.c util.c fileutil.c
 sockrun_LDADD = @net_libs@
@@ -137,7 +113,7 @@ sockcli_LDADD = @net_libs@
 genmaptest_LDADD =
 
 hsfilebufcat_SOURCES = hsfilebufcat.c trace.c util.c filebuf.c netio.c fileutil.c
-hsfilebufcat_LDADD = 
+hsfilebufcat_LDADD =
 
 libhsyncinfo_SOURCES = libhsyncinfo.c
 
@@ -145,11 +121,9 @@ hsnad_SOURCES = hsnad.c
 
 hsmksum_SOURCES = hsmksum.c
 
-hsmdfour_SOURCES = hsmdfour.c 
+hsmdfour_SOURCES = hsmdfour.c
 
 hsdecode_SOURCES = hsdecode.c
-
-hsencode_SOURCES = hsencode.c
 
 hsemit_SOURCES = hsemit.c
 

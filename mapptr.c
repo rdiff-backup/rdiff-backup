@@ -1,4 +1,4 @@
-/*                                      -*- c-file-style: "bsd" -*-
+/*=                                     -*- c-file-style: "bsd" -*-
  *
  * $Id$
  * 
@@ -22,29 +22,28 @@
 
 /* Originally from rsync.  Thanks, tridge! */
 
-/* MAP POINTERS:
-  
-   This provides functionality somewhat similar to mmap() but using
-   read(). It gives sliding window access to a file. With certain
-   constraints, this is suitable for use on sockets and similar things
-   that cannot normally support seek or mmap. Specifically, the caller
-   must never attempt to move backwards or to skip forwards without
-   reading.  Both of these are implicitly true for libhsync when
-   interacting with a socket.
-
-   It's not an error to try to map past the end of a file.  If you do
-   this, the map will run up to the end of the file, and a flag will
-   be returned to indicate that EOF was observed.  This will be
-   checked each time you try to map past the end, so something good
-   will happen if the file grows underneath you.
-
-   If the file is open with O_NONBLOCK, then the operating system may
-   choose to fail an attempt to read, saying that it would block.  In
-   this case, the map will not not fail, but it will indicate that
-   zero bytes are available.  The caller should be smart about doing a
-   select(2) on the fd and calling back when more data is
-   available. */
-
+/*
+ * MAP POINTERS:
+ * 
+ * This provides functionality somewhat similar to mmap() but using read().
+ * It gives sliding window access to a file. With certain constraints, this
+ * is suitable for use on sockets and similar things that cannot normally
+ * support seek or mmap. Specifically, the caller must never attempt to move
+ * backwards or to skip forwards without reading.  Both of these are
+ * implicitly true for libhsync when interacting with a socket.
+ * 
+ * It's not an error to try to map past the end of a file.  If you do this,
+ * the map will run up to the end of the file, and a flag will be returned to 
+ * indicate that EOF was observed.  This will be checked each time you try to 
+ * map past the end, so something good will happen if the file grows
+ * underneath you.
+ * 
+ * If the file is open with O_NONBLOCK, then the operating system may choose
+ * to fail an attempt to read, saying that it would block.  In this case, the 
+ * map will not not fail, but it will indicate that zero bytes are available. 
+ * The caller should be smart about doing a select(2) on the fd and calling
+ * back when more data is available. 
+ */
 
 /* TODO: Test this through a unix-domain or TCP localhost socket and
  * see what happens.
@@ -55,9 +54,20 @@
  * happens when it grows.
  *
  * TODO: Add an option to say we will never seek backwards, and so old
- * data can be discarded immediately.
+ * data can be discarded immediately.  In fact, this is being
+ * implemented now as walker, a new function which will use the same
+ * algorithm.
  *
  * TODO: Is it really worth the trouble of handling files that grow?
+ * In other words, if we've seen EOF once then is it better just to
+ * remember that and not try to read anymore?  Certainly at least in
+ * rproxy we should never have to deal with growing files On the other
+ * hand, I'm not sure it costs us anything: if the caller doesn't try
+ * to read past the end of the file then all requests should be
+ * satisfied from cache and we never will actually try a long read.
+ * Also, I rather think try to read at EOF will be quite quick:
+ * presumably the operating system can just compare the current
+ * position to the length.
  *
  * TODO: Perhaps support different ways for choosing the new window
  * depending on whether we're reading from a socket or from a file, or
@@ -94,44 +104,24 @@
  * but not all of the buffer is necessarily valid.  The window is the
  * section of the buffer that contains valid data. */
 
-
 #include "includes.h"
+
+#include <unistd.h>
+#include <string.h>
+#include <sys/file.h>
+
+#include "map_p.h"
 
 #define CHUNK_SIZE (1024)
 #define IO_BUFFER_SIZE (4092)
 
 /* We'll read data in windows of this size, unless otherwise indicated. */
-#if HS_BIG_WINDOW
+#ifdef HS_BIG_WINDOW
 static ssize_t const DEFAULT_WINDOW_SIZE = (ssize_t) (256 * 1024);
 #else
 static ssize_t const DEFAULT_WINDOW_SIZE = (ssize_t) (16 * 1024);
 #endif
-static int const HS_MAP_TAG = 189900;
 
-
-/* 
-   HS_MAP structure:
-  
-   TAG is a dogtag, and always equal to HS_MAP_TAG if the structure is
-   valid.  FD is of course the file descriptor we're using for input.
-  
-   P points to the start of the allocated data buffer.  P_SIZE is the
-   amount of allocated buffer at P, not all of which necessarily
-   contains valid file data.
-  
-   P_FD_OFFSET is the current absolute position of the file cursor.
-   We use this to avoid doing seeks if we're already in the right
-   position.  P_OFFSET is the absolute position in the file covered by
-   P[0].  P_LEN is the number of bytes after that point that are valid
-   in P.
- */
-struct hs_map {
-    int             godtag;
-    /*@null@*/ byte_t *p;
-    int             fd;
-    ssize_t         p_size, p_len;
-    hs_off_t        p_offset, p_fd_offset;
-};
 
 
 /* Set up a new file mapping.
@@ -158,19 +148,20 @@ _hs_map_file(int fd)
 }
 
 
-/* Read data into MAP at &p[READ_OFFSET].  Return the number of bytes
-   added to the buffer, and set REACHED_EOF if appropriate.
-
-   The amount of data is specified in an opportunistic, lazy way, with
-   the idea being that we make IO operations as large as possible
-   without blocking for any longer than is necessary when waiting for
-   data from a network.
-
-   Therefore, the function tries to read at least MIN_SIZE bytes,
-   unless it encounters an EOF or error.  It reads up to MAX_SIZE
-   bytes, and there must be that much space in the buffer.  Once
-   MIN_SIZE bytes have been received, no new IO operations will
-   start. */
+/*
+ * Read data into MAP at &p[READ_OFFSET].  Return the number of bytes added
+ * to the buffer, and set REACHED_EOF if appropriate.
+ * 
+ * The amount of data is specified in an opportunistic, lazy way, with the
+ * idea being that we make IO operations as large as possible without
+ * blocking for any longer than is necessary when waiting for data from a
+ * network.
+ * 
+ * Therefore, the function tries to read at least MIN_SIZE bytes, unless it
+ * encounters an EOF or error.  It reads up to MAX_SIZE bytes, and there must 
+ * be that much space in the buffer.  Once MIN_SIZE bytes have been received, 
+ * no new IO operations will start. 
+ */
 static ssize_t
 _hs_map_do_read(hs_map_t *map,
                 hs_off_t const read_offset,
@@ -216,33 +207,126 @@ _hs_map_do_read(hs_map_t *map,
         total_read += nread;
         p += nread;
         buf_remain -= nread;
+        map->p_fd_offset += nread;
     } while (total_read < min_size);
 
-    _hs_trace("wanted %ld to %ld bytes, read %ld bytes%s",
+    _hs_trace("wanted %ld to %ld bytes, read %ld bytes at %ld%s",
               (long) min_size, (long) max_size, (long) total_read,
+              (long) map->p_fd_offset,
               *reached_eof ? ", now at eof" : "");
 
     return total_read;
 }
 
 
-/* Return a pointer to a mapped region of a file, of at least LEN
-   bytes.  You can read from (but not write to) this region just as if
-   it were mmap'd.
-  
-   If the file reaches EOF, then the region mapped may be less than is
-   requested.  In this case, LEN will be reduced, and REACHED_EOF will
-   be set.
+/*
+ * If we can satisfy this request from data already cached in MAP,
+ * then update LEN and REACHED_EOF and return an appropriate pointer.
+ * Otherwise, return NULL in which case the caller should arrange to
+ * do some IO.
+ */
+void *
+_hs_map_from_cache(hs_map_t * map, hs_off_t offset, size_t *len)
+{
+    size_t		out_off; /* offset in window to return */
 
-   LEN may be increased if more data than you requested is
-   available.
+    if (offset < map->p_offset) {
+        /* Requested region starts before the window. */
+        return NULL;
+    }
+    if (offset > map->p_offset + map->p_len) {
+        /* Requested region starts after the window. */
+        return NULL;
+    }
+    
+    out_off = offset - map->p_offset;
+    
+    if (out_off > 0) {
+        if (out_off + *len <= map->p_len) {
+            /* Starts after the beginning of the window and fits in
+             * the window. */
+            *len = map->p_len - out_off;
+            _hs_trace("found %ld byte match in cache", (long) *len);
+            return map->p + out_off;
+        }            
+    }
 
-   The buffer is only valid until the next call to _hs_map_ptr on this
-   map, or until _hs_unmap_file.  You certainly MUST NOT free the
-   buffer.
+    return NULL;
+}
 
-   Iff an error occurs, returns NULL. */
-/*@null@*/ const byte_t *
+
+/*
+ * Work out where to put the window to cover the requested region.
+ */
+static void
+_hs_map_calc_window(hs_off_t offset, size_t *len,
+                    hs_off_t *window_start, size_t *window_size)
+{
+    if (offset > (hs_off_t) (2 * CHUNK_SIZE)) {
+        /* On some systems, it's much faster to do reads aligned with
+         * filesystem blocks.  This isn't the case on Linux, which has
+         * a pretty efficient filesystem and kernel/app interface, but
+         * we don't lose a lot by checking this. */
+        *window_start = offset - 2 * CHUNK_SIZE;
+        
+        /* Include only higher-order bits; assumes power of 2 */
+        *window_start &= ~((hs_off_t) (CHUNK_SIZE - 1)); 
+    } else {
+        *window_start = 0;
+    }
+    *window_size = DEFAULT_WINDOW_SIZE;
+
+    /* If the default window is not big enough to hold all the data, then
+     * expand it. */
+    if (offset + *len > *window_start + *window_size) {
+        *window_size = (offset + *len) - *window_start;
+    }
+}
+
+
+static void
+_hs_map_ensure_allocated(hs_map_t *map, size_t window_size)
+{
+    /* make sure we have allocated enough memory for the window */
+    if (!map->p) {
+        assert(map->p_size == 0);
+        _hs_trace("allocate initial %ld byte window", (long) window_size);
+        map->p = (byte_t *) malloc((size_t) window_size);
+        map->p_size = window_size;
+    } else if (window_size > map->p_size) {
+        _hs_trace("grow buffer to hold %ld byte window",
+                  (long) window_size);
+        map->p = (byte_t *) realloc(map->p, (size_t) window_size);
+        map->p_size = window_size;
+    }
+
+    if (!map->p) {
+        _hs_fatal("map_ptr: out of memory");
+    }
+}
+
+
+/*
+ * Return a pointer to a mapped region of a file, of at least LEN bytes.  You
+ * can read from (but not write to) this region just as if it were mmap'd.
+ * 
+ * If the file reaches EOF, then the region mapped may be less than is
+ * requested.  In this case, LEN will be reduced, and REACHED_EOF will
+ * be set.  If EOF was seen, but not in the requested region, then
+ * REACHED_EOF will not be set until you ask to map the area up to the
+ * end of the file.
+ * 
+ * LEN may be increased if more data than you requested is available.
+ *
+ * If the file is nonblocking, then any data available will be
+ * returned, and LEN will change to reflect this.
+ * 
+ * The buffer is only valid until the next call to _hs_map_ptr on this map, or
+ * until _hs_unmap_file.  You certainly MUST NOT free the buffer.
+ * 
+ * Iff an error occurs, returns NULL.
+ */
+void const *
 _hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
 {
     /* window_{start,size} define the part of the file that will in
@@ -251,12 +335,14 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
        read_{start,size} describes the region of the file that we want
        to read; we'll put it into the buffer starting at
        &p[read_offset]. */
-    hs_off_t window_start, read_start;
-    ssize_t window_size;
+    hs_off_t            window_start, read_start;
+    size_t              window_size;
     ssize_t read_max_size;      /* space remaining */
     ssize_t read_min_size;      /* needed to fill this request */
     hs_off_t read_offset;
     ssize_t total_read, avail;
+    ssize_t		out_off; /* offset in window to return */
+    void                *p;
 
     assert(map->godtag == HS_MAP_TAG);
     assert(len != NULL);        /* check pointers */
@@ -267,50 +353,16 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
 
     _hs_trace("off=%ld, len=%ld", (long) offset, (long) *len);
 
-    /* in most cases the region will already be available */
-    if (offset >= map->p_offset &&
-        offset + *len <= map->p_offset + map->p_len) {
-/*      _hs_trace("region is already in the buffer"); */
-        *len = map->p_len - (offset - map->p_offset);
-        return (map->p + (offset - map->p_offset));
-    }
+    out_off = (offset - map->p_offset);
+    
+    /* We hope that for many reads the required data will already be available
+     * in the window, so we return it directly in that case.  Also, if the EOF
+     * marker is in the requested region, we tell that to the client. */
+    if ((p = _hs_map_from_cache(map, offset, len)))
+        return p;
 
-
-    if (offset > (hs_off_t) (2 * CHUNK_SIZE)) {
-        /* On some systems, it's much faster to do reads aligned with
-         * filesystem blocks.  This isn't the case on Linux, which has
-         * a pretty efficient filesystem and kernel/app interface, but
-         * we don't lose a lot by checking this. */
-        window_start = offset - 2 * CHUNK_SIZE;
-        
-        /* Include only higher-order bits; assumes power of 2 */
-        window_start &= ~((hs_off_t) (CHUNK_SIZE - 1)); 
-    } else {
-        window_start = 0;
-    }
-    window_size = DEFAULT_WINDOW_SIZE;
-
-    /* If the default window is not big enough to hold all the data,
-       then expand it. */
-    if (offset + *len > window_start + window_size) {
-        window_size = (offset + *len) - window_start;
-    }
-
-    /* make sure we have allocated enough memory for the window */
-    if (!map->p) {
-        assert(map->p_size == 0);
-        _hs_trace("allocate initial %ld byte window", (long) window_size);
-        map->p = (byte_t *) malloc((size_t) window_size);
-        map->p_size = window_size;
-    } else if (window_size > map->p_size) {
-        _hs_trace("grow buffer to hold %ld byte window", (long) window_size);
-        map->p = (byte_t *) realloc(map->p, (size_t) window_size);
-        map->p_size = window_size;
-    }
-
-    if (!map->p) {
-        _hs_fatal("map_ptr: out of memory");
-    }
+    _hs_map_calc_window(offset, len, &window_start, &window_size);
+    _hs_map_ensure_allocated(map, window_size);
 
     /* now try to avoid re-reading any bytes by reusing any bytes from the
      * previous buffer. */
@@ -331,22 +383,20 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
 
     map->p_offset = window_start;
 
-    if (read_max_size <= 0) {
-        _hs_trace("Warning: unexpected read size of %d in map_ptr\n",
-                  read_max_size);
-        return NULL;
-    }
+    assert(read_max_size > 0);
 
     if (map->p_fd_offset != read_start) {
         if (lseek(map->fd, read_start, SEEK_SET) != read_start) {
-            _hs_trace("lseek failed in map_ptr\n");
+            _hs_error("lseek to %ld failed in map_ptr\n",
+                      (long) read_start);
             abort();
         }
         map->p_fd_offset = read_start;
+        _hs_trace("seek to %ld", (long) read_start);
     }
 
     /* Work out the minimum number of bytes we must read to cover the
-       requested region. */
+     * requested region. */
     read_min_size = *len + (offset - map->p_offset) - read_offset;
     assert(read_min_size >= 0);
 
@@ -364,12 +414,12 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
     
     total_read = _hs_map_do_read(map, read_offset, read_max_size,
                                  read_min_size, reached_eof);
-    assert(*reached_eof  ||  total_read >= read_min_size);
-    map->p_fd_offset += total_read;
 
-    /* If we didn't map all the data we wanted because we ran into * EOF,
-     * then adjust everything so that the map doesn't hang out * over the end 
-     * of the file.  */
+    /*
+     * If we didn't map all the data we wanted because we ran into EOF, then
+     * adjust everything so that the map doesn't hang out over the end of the
+     * file.
+     */
 
     /* Amount of data now valid: the stuff at the start of the buffer * from
      * last time, plus the data now read in. */
@@ -385,13 +435,17 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, size_t *len, int *reached_eof)
      * altogether, but the client is interested in the ones starting * at
      * &p[offset - map->p_offset] */
     avail = map->p_len - (offset - map->p_offset);
+    if (avail < 0)
+        avail = 0;
     *len = avail;
 
     return map->p + (offset - map->p_offset);
 }
 
 
-/* Release a file mapping.  This does not close the underlying fd. */
+/*
+ * Release a file mapping.  This does not close the underlying fd. 
+ */
 void
 _hs_unmap_file(hs_map_t * map)
 {
@@ -400,6 +454,6 @@ _hs_unmap_file(hs_map_t * map)
         free(map->p);
         map->p = NULL;
     }
-    memset(map, 0, sizeof(*map));
+    hs_bzero(map, sizeof *map);
     free(map);
 }

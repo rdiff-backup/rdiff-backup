@@ -49,7 +49,7 @@ _hs_push_literal_buf(hs_membuf_t * litbuf,
     size_t        amount;
 
     amount = hs_membuf_tell(litbuf);
-    assert(amount >= 0);
+/*      assert(amount >= 0); */
 
     if (amount == 0) {
 	/* buffer is empty */

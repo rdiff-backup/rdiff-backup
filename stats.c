@@ -22,32 +22,50 @@
 
 #include "includes.h"
 
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/file.h>
+#include <string.h>
 
-void
-hs_print_stats(FILE *f, hs_stats_t const *stats)
+/*
+ * Format stats and write them to a file.
+ */
+int
+hs_write_stats(hs_stats_t const *stats,
+               int out_fd)
 {
-    char buf[256];
-    
-    hs_format_stats(stats, buf, sizeof buf-1);
-    fprintf(f, "%.*s\n", (int) sizeof buf, buf);
+    char buf[1000];
+
+    hs_format_stats(stats, buf, sizeof buf - 1);
+    return write(out_fd, buf, strlen(buf));
 }
 
 
-/* Return a newly-allocated string containing a human-readable form of
-   the transfer statistics. */   
+/*
+ * Return a newly-allocated string containing a human-readable form of
+ * the transfer statistics.
+ */
 char *
 hs_format_stats(hs_stats_t const * stats,
 		char *buf, size_t size)
 {
-    /* FIXME: Cope if things are null; some printfs won't. */
+    char const *op = stats->op;
+    char const *alg = stats->algorithm;
+
+    if (!op)
+        op = "noop";
+    if (!alg)
+        alg = "none";
+    
     snprintf(buf, size,
 	     "%s/%s literal[%d cmds, %d bytes], "
 	     "signature[%d cmds, %d bytes], "
 	     "copy[%d cmds, %d bytes, %d false]",
-	     stats->op, stats->algorithm,
+	     op, alg,
 	     stats->lit_cmds, stats->lit_bytes,
 	     stats->sig_cmds, stats->sig_bytes,
 	     stats->copy_cmds, stats->copy_bytes,
 	     stats->false_matches);
+
     return buf;
 }

@@ -44,3 +44,5 @@ socksvr
 stamp-h
 stamp-h.in
 test-*.d
+tmp-*
+trylog

@@ -21,6 +21,12 @@
 
 #include "includes.h"
 
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/file.h>
+#include <string.h>
+
+
 /* hsfilebufcat: write stdin to stdout, using an hs_filebuf_t to do * the
    input.  */
 
@@ -34,7 +40,7 @@ main(int argc, char *argv[])
     char           *tail_ptr;
     int             len;
     int             c;
-    int             filebuf_loop;
+    int             filebuf_loop = 0;
 
     while ((c = getopt(argc, argv, "lb:")) != -1) {
 	switch (c) {

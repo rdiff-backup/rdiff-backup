@@ -32,31 +32,7 @@
 #endif
 
 #include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/file.h>
-
-#ifndef __LCLINT__
-/* This contains GCC-specific stuff that confuses lclint */
-#include <netinet/in.h>		/* ntohs, etc */
-#endif				/* __LCLINT__ */
-
-#include <netinet/tcp.h>
-
-#include <unistd.h>
-#include <signal.h>
-
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-
-/* We take just the log levels from syslog.  We don't call it. */
-#include <syslog.h>
 
 
 /* libhsync headers. */

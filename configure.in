@@ -3,8 +3,15 @@ dnl Process this file with autoconf to produce a configure script.
 
 AC_REVISION($Id$)
 AC_INIT(dec.c)
-AM_INIT_AUTOMAKE(libhsync, 0.5.4)
+my_version=0.5.4
+my_package=libhsync
+echo "Configuring $my_package $my_version"
+AM_INIT_AUTOMAKE($my_package, $my_version)
 AM_CONFIG_HEADER(config.h)
+
+dnl Set up to get as many features as we can manage
+AC_DEFINE(_FILE_OFFSET_BITS, 64)
+AC_DEFINE(_GNU_SOURCE)
 
 AC_LIBTOOL_DLOPEN
 AM_PROG_LIBTOOL
@@ -13,6 +20,7 @@ AC_CANONICAL_HOST
 
 dnl Checks for programs.
 AC_PROG_CC
+AC_ISC_POSIX
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_CHECK_PROG(PYTHON, python, python)
@@ -28,6 +36,14 @@ AC_EGREP_HEADER(sin_len, sys/socket.h,
 	[ AC_DEFINE(HAVE_SOCK_SIN_LEN)
           AC_MSG_RESULT(yes) ],
         [ AC_MSG_RESULT(no) ])
+
+dnl Check configuration options
+if test "$GCC" = "yes" 
+then 
+    # I'm fussy.
+    CFLAGS="-Wall -W -Wshadow -Wundef -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wstrict-prototypes -Wpointer-arith -Wcast-qual -Wcast-align $CFLAGS"
+fi
+# TODO: Similar conditions for other known compilers
 
 AC_ARG_ENABLE(ccmalloc,
 	[  --enable-ccmalloc       use ccmalloc debugger (default no)],
@@ -48,13 +64,29 @@ else
     AC_MSG_ERROR("--enable-trace must be set to yes or no")
 fi
 
-# TODO: Check for stdint.h.  If it's missing, try to find definitions of 
-# critical integer types through other means.
+# TODO: Check for stdint.h.  If it's missing, try to find definitions
+# of critical integer types through other means.  On Linux, we might
+# find it in the kernel headers.  In general, perhaps we have to test
+# the sizes of various things and find something suitable.  That said,
+# this code probably overuses specific-sizes integers, and we might be
+# better off just using generics that are large enough.
+AC_CHECK_HEADERS(stdint.h)
+AC_CHECK_SIZEOF([unsigned char], 1)
+if test "$ac_cv_sizeof_unsigned_char" -ne 1
+then
+    AC_MSG_WARN(unsigned char seems to be $ac_cv_sizeof_unsigned_char bytes.  Expect trouble.)
+fi
+
+AC_CHECK_SIZEOF(off_t, 4)
 
 dnl Checks for header files.
 AC_HEADER_STDC
 
-# libtool library versioning
+# GNU libtool library versioning: This is NOT the libhsync release
+# number.  Rather, it is a CURRENT:REVISION:AGE tuple describing
+# binary compatibility to libtool.  It is only updated on major public
+# releases where there is the possibility of binaries hanging around.
+
 libhsync_libversion=1:0:0
 AC_DEFINE_UNQUOTED(HS_LIBVERSION, "$libhsync_libversion")
 
@@ -65,4 +97,5 @@ AC_SUBST(CC_SHOBJ_FLAG)
 AC_SUBST(CCMALLOC_LIB)
 AC_SUBST(net_libs)
 
-AC_OUTPUT(./Makefile)
+AC_OUTPUT([./Makefile],
+    [chmod +x driver.sh])

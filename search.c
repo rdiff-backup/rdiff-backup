@@ -1,23 +1,24 @@
-/* -*- mode: c; c-file-style: "bsd" -*- * $Id: search.c,v 1.13 2000/06/01
-   03:30:38 mbp Exp $ * * search.c -- manage hashtables of checksums and
-   blocks
-
-   Copyright (C) 1999-2000 by Martin Pool. Copyright (C) 1999 by Andrew
-   Tridgell
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the Free 
-   Software Foundation; either version 2 of the License, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-   for more details.
-
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, write to the Free Software Foundation, Inc., 59 
-   Temple Place, Suite 330, Boston, MA 02111-1307 USA */
+/*				       	-*- c-file-style: "bsd" -*-
+ * rproxy -- dynamic caching and delta update in HTTP
+ * $Id$
+ * 
+ * Copyright (C) 1999, 2000 by Martin Pool
+ * Copyright (C) 1999 by Andrew Tridgell
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 /* TODO: The common case is that the next block in both streams match. Can we 
    make that a bit faster at all?  We'd need to perhaps add a link forward
@@ -34,7 +35,7 @@
 #define gettag(sum) gettag2((sum)&0xFFFF,(sum)>>16)
 
 static int
-compare_targets(struct target *t1, struct target *t2)
+_hs_compare_targets(struct target const *t1, struct target const *t2)
 {
     return ((int) t1->t - (int) t2->t);
 }
@@ -46,7 +47,8 @@ _hs_build_hash_table(hs_sumset_t * sums)
     int             i;
 
     sums->tag_table = calloc(TABLESIZE, sizeof sums->tag_table[0]);
-    if (sums->count > 0) {
+    if (sums->count > 0)
+    {
 	sums->targets = calloc(sums->count, sizeof(struct target));
 
 	for (i = 0; i < sums->count; i++) {
@@ -54,8 +56,10 @@ _hs_build_hash_table(hs_sumset_t * sums)
 	    sums->targets[i].t = gettag(sums->sums[i].sum1);
 	}
 
+        /* FIXME: if have comparison_fn_t */
 	qsort(sums->targets, sums->count,
-	      sizeof(sums->targets[0]), (int (*)()) compare_targets);
+	      sizeof(sums->targets[0]),
+              (comparison_fn_t) _hs_compare_targets);
     }
 
     for (i = 0; i < TABLESIZE; i++)

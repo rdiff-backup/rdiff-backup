@@ -1,3 +1,11 @@
+Changes in 0.5.4:
+
+ * Improved mapptr input code
+
+ * Turn on more warnings if using gcc 
+
+ * More test cases
+
 Changes in 0.5.3:
 
  * Improvements to mapptr to make it work better for network IO. 

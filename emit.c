@@ -225,7 +225,7 @@ _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
     } else if (off_type == 4) {
 	cmd = op_copy_int_byte;
     } else {
-	_hs_fatal("can't pack offset %ld!", offset);
+	_hs_fatal("can't pack offset %ld!", (long) offset);
     }
 
     if (len_type == 1) {

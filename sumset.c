@@ -20,7 +20,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
+/* sumset -- Manipulate and do IO on sets of checksums. */
 
 #include "includes.h"
 
@@ -33,7 +33,7 @@ hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
     int             ret = 0;
     int             block_len;
     hs_sum_buf_t   *asignature;
-    int             index = 0;
+    int             n = 0;
     int             checksum1;
     hs_sumset_t    *sumbuf;
     uint32_t	    tmp32;
@@ -66,22 +66,22 @@ hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
 	}
 	assert(ret == 4);
 
-	sumbuf->sums = realloc(sumbuf->sums, (index + 1) * sizeof(hs_sum_buf_t));
+	sumbuf->sums = realloc(sumbuf->sums, (n + 1) * sizeof(hs_sum_buf_t));
 	if (sumbuf->sums == NULL) {
 	    errno = ENOMEM;
 	    ret = -1;
 	    break;
 	}
-	asignature = &(sumbuf->sums[index]);
+	asignature = &(sumbuf->sums[n]);
 
 	asignature->sum1 = checksum1;
-	asignature->i = ++index;
+	asignature->i = ++n;
 
 	/* read in the long sum */
 	ret = _hs_must_read(sigread_fn, sigread_priv,
 			    asignature->strong_sum, DEFAULT_SUM_LENGTH);
 	if (ret != DEFAULT_SUM_LENGTH) {
-	    _hs_error("IO error while reading strong signature %d", index);
+	    _hs_error("IO error while reading strong signature %d", n);
 	    break;
 	}
     }
@@ -90,8 +90,8 @@ hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
 	goto fail;
     }
 
-    sumbuf->count = index;
-    _hs_trace("Read %d sigs", index);
+    sumbuf->count = n;
+    _hs_trace("Read %d sigs", n);
 
     if (_hs_build_hash_table(sumbuf) < 0) {
 	_hs_error("error building checksum hashtable");

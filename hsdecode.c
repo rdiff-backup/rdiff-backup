@@ -22,6 +22,11 @@
 
 #include "includes.h"
 
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/file.h>
+#include <string.h>
+
 int show_stats = 0;
 
 static void usage(char *progname)
@@ -103,8 +108,8 @@ int main(int argc, char *argv[])
      hs_filebuf_close(outfb);
      hs_filebuf_close(newsigfb);
 
-     if (show_stats)
-	 hs_print_stats(stderr, &stats);
+/*       if (show_stats) */
+/*  	 hs_print_stats(stderr, &stats); */
 
      return 0;
 }

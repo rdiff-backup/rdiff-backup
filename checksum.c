@@ -34,7 +34,7 @@ uint32_t _hs_calc_weak_sum(byte_t const *buf1, int len)
 {
      int i;
      uint32_t s1, s2;
-     int8_t *buf = (int8_t *) buf1;	/* this is signed */
+     int8_t const *buf = (int8_t const *) buf1;	/* this is signed */
 
      s1 = s2 = 0;
      for (i = 0; i < (len - 4); i += 4) {

@@ -3,7 +3,8 @@
 # Copyright (C) 2000 by Martin Pool
 # $Id$
 
-# Test that the test harness kind of works
+# Test that the test harness kind of works.  This is not run in the
+# normal regression suite.
 
 # We expect this one to work OK
 run_test true love

@@ -5,8 +5,7 @@
 # Copyright (C) 2000 by Martin Pool
 # $Id$
 
-# Check that the sum generated is independant of whether we're
-# generating from scratch or as a delta.
+# Generate and test differences based on compinations of source files.
 
 diff=$tmpdir/diff.tmp
 files=`find ${srcdir:-.} -type f |head -40`

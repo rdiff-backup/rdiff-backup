@@ -1,8 +1,9 @@
-/*=				       	-*- c-file-style: "bsd" -*-
+/*				       	-*- c-file-style: "bsd" -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool
+ * Copyright (C) 1999, 2000 by Martin Pool
+ * Copyright (C) 1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,19 +20,15 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "includes.h"
 
-/***********************************************************************
- * map_ptr IO 
- ***********************************************************************/
+#include <stdio.h>
 
-typedef struct hs_map hs_map_t;
+int
+main(int UNUSED(argc), char **UNUSED(argv))
+{
+    hs_trace_set_level(LOG_DEBUG);
+    _hs_trace("here's a trace message: hope you like it!");
 
-hs_map_t       *_hs_map_file(int fd);
-
-void const *_hs_map_ptr(hs_map_t *, hs_off_t,
-                          size_t * len, int *reached_eof);
-
-void const   *_hs_map_walk(hs_map_t *, hs_off_t, size_t *,
-                             int *reached_eof);
-
-void            _hs_unmap_file(hs_map_t * map);
+    return 0;
+}

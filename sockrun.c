@@ -1,4 +1,4 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*=				       	-*- c-file-style: "bsd" -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
@@ -39,14 +39,39 @@
  * program waits for them all to complete, and exits successfully only
  * if all the parts exited successfully.
  *
- * On Linux you can change the loopback MTU to fiddle with this. */
+ * On Linux you can change the loopback MTU to fiddle with this.
+ * However quite often more than one packet will slip through before
+ * the call returns.
+ */
 
-/* TODO: Let the input and output parts proceed more slowly, or with
+/*
+ * TODO: Let the input and output parts proceed more slowly, or with
  * randomly limited lengths, so that it's more likely fragmentation will be
- * seen in the middle. */
+ * seen in the middle.
+ *
+ * TODO: Should we display an error message on broken pipes, or not?
+ * If we do, then a program which terminates without reading all of
+ * its input will cause an error -- but this is perhaps good behaviour
+ * anyhow.
+ */
 
 
 #include "includes.h"
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <signal.h>
+#include <unistd.h>
+
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/socket.h>
 
 static int no_nagle = 0;
 static pid_t            in_pid, cmd_pid, out_pid;
@@ -57,7 +82,7 @@ int                     out_port, in_port;
 
 
 static void
-show_usage()
+show_usage(void)
 {
     printf("Usage: sockcli COMMAND [ARG ...]\n"
            "Connect to a local TCP port and copy data in and out\n"

@@ -2,7 +2,7 @@
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  *
- * Copyright (C) 2000 by Martin Pool
+ * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,8 +28,14 @@
 
 #include "includes.h"
 
-char const     *const hs_libhsync_version = PACKAGE " " VERSION;
-char const *const hs_libhsync_libversion = HS_LIBVERSION;
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/file.h>
+#include <string.h>
+
+char const * const hs_libhsync_version = PACKAGE " " VERSION;
+char const * const hs_libhsync_libversion = HS_LIBVERSION;
+int const hs_libhsync_file_offset_bits = SIZEOF_OFF_T * 8;
 
 hs_trace_fn_t  *_hs_trace_impl = hs_trace_to_stderr;
 
@@ -53,10 +59,29 @@ hs_trace_set_level(int level)
 
 
 void
-_hs_log_va(int level, char const *fmt, va_list va)
+_hs_log_va(int level, char const *fn, char const *fmt, va_list va)
 {
-    if (_hs_trace_impl && level <= _hs_trace_level) 
-	_hs_trace_impl(level, fmt, va);
+    if (_hs_trace_impl && level <= _hs_trace_level) {
+        char            buf[1000];
+        char            full_buf[1000];
+
+        vsnprintf(buf, sizeof buf - 1, fmt, va);
+
+#ifdef __GNUC__
+        snprintf(full_buf, sizeof full_buf - 1,
+                  "%s: %s: %s\n",
+                  program_invocation_short_name,
+                  fn,
+                  buf);
+#else
+        snprintf(full_buf, sizeof full_buf - 1,
+                  "%s: %s\n",
+                  PACKAGE, 
+                  buf);
+#endif
+
+	_hs_trace_impl(level, full_buf);
+    }
 }
 
 
@@ -64,30 +89,21 @@ _hs_log_va(int level, char const *fmt, va_list va)
 /* This function is called by a macro that prepends the calling function
  * name, etc.  */
 void
-_hs_log0(int level, char const *fmt, ...)
+_hs_log0(int level, char const *fn, char const *fmt, ...)
 {
     va_list         va;
 
     va_start(va, fmt);
-    _hs_log_va(level, fmt, va);
+    _hs_log_va(level, fn, fmt, va);
     va_end(va);
 }
 
 
 void
-hs_trace_to_stderr(int UNUSED(level), char const *fmt, va_list va)
+hs_trace_to_stderr(int UNUSED(level), char const *msg)
 {
-    char            buf[1000];
-    int             n;
-
-    n = 0;
-    buf[n++] = '\t';
-    vsnprintf(buf + n, sizeof buf - 1 - n, fmt, va);
-    n = strlen(buf);
-    buf[n++] = '\n';
-
     /* NOTE NO TRAILING NUL */
-    write(STDERR_FILENO, buf, n);
+    write(STDERR_FILENO, msg, strlen(msg));
 }
 
 
@@ -99,7 +115,7 @@ _hs_fatal0(char const *s, ...)
     va_list	va;
 
     va_start(va, s);
-    _hs_log_va(LOG_CRIT, s, va);
+    _hs_log_va(LOG_CRIT, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -112,7 +128,7 @@ _hs_error0(char const *s, ...)
     va_list	va;
 
     va_start(va, s);
-    _hs_log_va(LOG_ERR, s, va);
+    _hs_log_va(LOG_ERR, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -125,7 +141,7 @@ _hs_trace0(char const *s, ...)
     va_list	va;
 
     va_start(va, s);
-    _hs_log_va(LOG_DEBUG, s, va);
+    _hs_log_va(LOG_DEBUG, PACKAGE, s, va);
     va_end(va);
 }
 

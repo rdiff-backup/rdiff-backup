@@ -127,6 +127,7 @@ _hs_check_filesum(hs_read_fn_t ltread_fn, void *ltread_priv,
     return 1;
 }
 
+
 static int
 _hs_dec_copy(uint32_t offset, uint32_t length, hs_map_t *old_map,
 	     hs_write_fn_t write_fn, void *write_priv, hs_mdfour_t * newsum)
@@ -147,7 +148,7 @@ _hs_dec_copy(uint32_t offset, uint32_t length, hs_map_t *old_map,
     if (buf == 0) {
 	_hs_error("error in read callback: off=%d, len=%d", offset, length);
 	goto fail;
-    } else if (mapped_len < (int) length) {
+    } else if (mapped_len < (size_t) length) {
 	_hs_error("short read: off=%d, len=%d, result=%d",
 		  offset, length, mapped_len);
 	errno = ENODATA;
@@ -177,7 +178,6 @@ hs_decode(int oldread_fd,
 	  hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats)
 {
     int             ret;
-    uint8_t         type;
     uint32_t        length, offset;
     int             kind;
     hs_mdfour_t     newsum;
@@ -242,7 +242,7 @@ hs_decode(int oldread_fd,
 	    if (ret < 0)
 		goto out;
 	} else {
-	    _hs_fatal("unexpected op kind %d!", type);
+	    _hs_fatal("unexpected op kind %d!", kind);
 	    ret = -1;
 	    goto out;
 	}

@@ -20,14 +20,21 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-					/* To walk on water you've gotta sink 
-					   in the ice. -- Shihad, `The
-					   General Electric'. */
+					/*
+                                         | To walk on water you've gotta sink 
+					 | in the ice.
+                                         |   -- Shihad, `The General Electric'.
+                                         */
 
 /* XXX: This file is becoming somewhat obsolete because we're moving to
    prefer mapptrs. */
 
 #include "includes.h"
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/file.h>
+#include <string.h>
 
 const int       filebuf_tag = 24031976;
 
@@ -35,14 +42,6 @@ struct file_buf {
     int             dogtag;
     int             fd, fd_cache;
 };
-
-
-/* This is deprecated because we'd rather not use FILE* */
-hs_filebuf_t   *
-hs_filebuf_from_file(FILE * fp)
-{
-    return hs_filebuf_from_fd(fileno(fp));
-}
 
 
 hs_filebuf_t   *
@@ -89,8 +88,6 @@ hs_filebuf_open(char const *filename, int mode)
 void
 hs_filebuf_close(hs_filebuf_t * fbuf)
 {
-    int                 ret;
-    
     assert(fbuf->dogtag == filebuf_tag);
 
     if (close(fbuf->fd) < 0) {

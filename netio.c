@@ -1,27 +1,40 @@
-/* -*- mode: c; c-file-style: "bsd" -*-  */
-
-/* netio -- Network byte order IO Copyright (C) 2000 by Martin Pool
-   <mbp@humbug.org.au>
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the Free 
-   Software Foundation; either version 2 of the License, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-   for more details.
-
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, write to the Free Software Foundation, Inc., 59 
-   Temple Place, Suite 330, Boston, MA 02111-1307 USA */
+/*				       	-*- c-file-style: "bsd" -*-
+ * rproxy -- dynamic caching and delta update in HTTP
+ * $Id$
+ * 
+ * Copyright (C) 1999, 2000 by Martin Pool
+ * Copyright (C) 1999 by Andrew Tridgell
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 #include "includes.h"
 
-/* This will only return a short read if we reach eof.  The underlying *
-   functions are allowed to wimp out and return short if they * want. * *
-   XXX: In the future this function may be deprecated in favour of * mapptr. */
+#ifndef __LCLINT__
+#  include <netinet/in.h>		/* ntohs, etc */
+#endif /* __LCLINT__ */
+
+
+/*
+ * This will only return a short read if we reach eof.  The underlying
+ * functions are allowed to wimp out and return short if they
+ * want.
+ *
+ * XXX: In the future this function may be deprecated in favour of
+ * mapptr.
+ */
 int
 _hs_read_loop(hs_read_fn_t read_fn, void *read_priv, byte_t *buf, size_t len)
 {

@@ -152,7 +152,7 @@ hs_mksum_iter(hs_mksum_job_t * job)
     }
 
     /* Calculate and write out the sums, if any. */
-    while (map_len > (ssize_t) job->block_len) {
+    while (map_len > (size_t) job->block_len) {
 	_hs_trace("calc sum for @%ld+%ld", (long) job->cursor,
 		  (long) job->block_len);
 

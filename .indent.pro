@@ -1,1 +1,2 @@
--kr -bad -bap -fca -di16 -psl -l78 -ncdb
+-kr -bad -bap -fca --declaration-indentation24 -psl -l78 -ncdb -sc -fc1
+

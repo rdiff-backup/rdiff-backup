@@ -21,6 +21,11 @@
 
 #include "includes.h"
 
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/file.h>
+#include <string.h>
+
 static void
 show_help(void)
 {
@@ -29,6 +34,7 @@ show_help(void)
            "  -v    show library release\n"
            "  -l    show library libversion\n"
            "  -t    is library trace turned on?\n"
+           "  -o    length of file offsets\n"
            "  -h    show help\n");
 }
 
@@ -48,6 +54,14 @@ show_trace_setting(void)
 }
 
 
+static void
+show_offset_bits(void)
+{
+    printf("file offset type is %d bits\n",
+           hs_libhsync_file_offset_bits);
+}
+
+
 int
 main(int argc, char **argv)
 {
@@ -58,8 +72,12 @@ main(int argc, char **argv)
         return 1;
     }
 
-    while ((c = getopt(argc, argv, "vthl")) != -1) {
+    while ((c = getopt(argc, argv, "ovthl")) != -1) {
         switch (c) {
+        case 'o':
+            show_offset_bits();
+            break;
+            
         case 'v':
             show_version(hs_libhsync_version);
             break;

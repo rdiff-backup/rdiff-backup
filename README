@@ -29,7 +29,11 @@ libhsync uses the GNU libtool library versioning system, so the
 filename does not correspond to the libhsync release.  To show the
 library release and version, use the libhsyncinfo tool.
 
->> Platform notes
+>> Platforms
+
+libhsync/rproxy is known to run on:
+
+ * GNU Linux Debian 2.2 x86
 
 SUNWspro:
 

@@ -79,10 +79,6 @@ hs_ptrbuf_write(void *private, byte_t const *buf, size_t len)
 
     assert(mb->dogtag == ptrbuf_tag);
 
-#if DEBUG
-    printf("sig_writebuf(len=%d)\n", len);
-#endif
-
     if (mb->length < mb->ofs + len) {
 	return -1;
     }
@@ -118,10 +114,6 @@ hs_ptrbuf_read(void *private, byte_t *buf, size_t len)
 {
     hs_ptrbuf_t    *mb = (hs_ptrbuf_t *) private;
     size_t          remain = mb->length - mb->ofs;
-
-#if DEBUG
-    printf("sig_readbuf(len=%d)\n", len);
-#endif
 
     assert(mb->dogtag == ptrbuf_tag);
 

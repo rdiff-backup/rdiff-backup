@@ -18,7 +18,7 @@ run_test date >$from
 # a file on which we can neither seek nor determine the real size.
 for ioargs in '' '-k' '-n -s'
 do
-    cat $from | run_test hsmapread $ioargs - 0,1000 >$new
+    cat $from | run_test hsmapread $ioargs 0,1000 >$new
     run_test cmp $from $new
 done
 

@@ -29,7 +29,7 @@ run_test genmaptest forward 5000 $cmds $expect $from
 
 for ioargs in '' '-k' '-n -s'
 do
-    cat $from | run_test hsmapread $test_opts $ioargs - `cat $cmds` >$new
+    cat $from | run_test hsmapread $test_opts $ioargs `cat $cmds` >$new
     run_test cmp $expect $new
 done
 
