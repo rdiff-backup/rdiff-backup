@@ -33,8 +33,7 @@
 #endif
 
 #include "hsync.h"
-
-static struct hs_mdfour *m;
+#include "private.h"
 
 #define F(X,Y,Z) (((X)&(Y)) | ((~(X))&(Z)))
 #define G(X,Y,Z) (((X)&(Y)) | ((X)&(Z)) | ((Y)&(Z)))
@@ -50,7 +49,8 @@ static struct hs_mdfour *m;
 #define ROUND3(a,b,c,d,k,s) a = lshift(a + H(b,c,d) + X[k] + 0x6ED9EBA1,s)
 
 /* this applies md4 to 64 byte chunks */
-static void hs_mdfour64(uint32 * M)
+static void
+hs_mdfour64(hs_mdfour_t *m, uint32 * M)
 {
     int j;
     uint32 AA, BB, CC, DD;
@@ -158,7 +158,7 @@ static void copy4(unsigned char *out, uint32 x)
     out[3] = (x >> 24) & 0xFF;
 }
 
-void hs_mdfour_begin(struct hs_mdfour *md)
+void hs_mdfour_begin(hs_mdfour_t *md)
 {
     md->A = 0x67452301;
     md->B = 0xefcdab89;
@@ -168,7 +168,7 @@ void hs_mdfour_begin(struct hs_mdfour *md)
 }
 
 
-static void hs_mdfour_tail(unsigned char const *in, int n)
+static void hs_mdfour_tail(hs_mdfour_t *m, unsigned char const *in, int n)
 {
     unsigned char buf[128];
     uint32 M[16];
@@ -186,52 +186,51 @@ static void hs_mdfour_tail(unsigned char const *in, int n)
     if (n <= 55) {
 	copy4(buf + 56, b);
 	copy64(M, buf);
-	hs_mdfour64(M);
+	hs_mdfour64(m, M);
     } else {
 	copy4(buf + 120, b);
 	copy64(M, buf);
-	hs_mdfour64(M);
+	hs_mdfour64(m, M);
 	copy64(M, buf + 64);
-	hs_mdfour64(M);
+	hs_mdfour64(m, M);
     }
 }
 
-void hs_mdfour_update(struct hs_mdfour *md, unsigned char const *in, int n)
+void
+hs_mdfour_update(hs_mdfour_t *md, unsigned char const *in, int n)
 {
     uint32 M[16];
 
     if (n == 0)
-	hs_mdfour_tail(in, n);
-
-    m = md;
+	hs_mdfour_tail(md, in, n);
 
     while (n >= 64) {
 	copy64(M, in);
-	hs_mdfour64(M);
+	hs_mdfour64(md, M);
 	in += 64;
 	n -= 64;
-	m->totalN += 64;
+	md->totalN += 64;
     }
 
     if (n)
-	hs_mdfour_tail(in, n);
+	hs_mdfour_tail(md, in, n);
 }
 
 
-void hs_mdfour_result(struct hs_mdfour *md, unsigned char *out)
+void
+hs_mdfour_result(hs_mdfour_t *md, unsigned char *out)
 {
-    m = md;
-
-    copy4(out, m->A);
-    copy4(out + 4, m->B);
-    copy4(out + 8, m->C);
-    copy4(out + 12, m->D);
+    copy4(out, md->A);
+    copy4(out + 4, md->B);
+    copy4(out + 8, md->C);
+    copy4(out + 12, md->D);
 }
 
 
-void hs_mdfour(unsigned char *out, unsigned char const *in, int n)
+void
+hs_mdfour(unsigned char *out, unsigned char const *in, int n)
 {
-    struct hs_mdfour md;
+    hs_mdfour_t md;
     hs_mdfour_begin(&md);
     hs_mdfour_update(&md, in, n);
     hs_mdfour_result(&md, out);
