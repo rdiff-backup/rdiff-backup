@@ -91,3 +91,10 @@ void            rs_log0(int, char const *, ...);
 #endif				/* ! __GNUC__ */
 
 
+enum {
+    RS_LOG_PRIMASK       = 7,   /**< Mask to extract priority
+                                   part. \internal */
+
+    RS_LOG_NONAME        = 8,   /**< \b Don't show function name in
+                                   message. */
+};

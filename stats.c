@@ -48,7 +48,7 @@ rs_log_stats(rs_stats_t const *stats)
     char buf[1000];
 
     rs_format_stats(stats, buf, sizeof buf - 1);
-    rs_log(RS_LOG_INFO, "%s", buf);
+    rs_log(RS_LOG_INFO|RS_LOG_NONAME, "%s", buf);
     return 0;
 }
 
@@ -76,7 +76,7 @@ rs_format_stats(rs_stats_t const * stats,
     if (!op)
         op = "noop";
     
-    len = snprintf(buf, size, "%s ", op);
+    len = snprintf(buf, size, "%s statistics: ", op);
 
     if (stats->lit_cmds) {
         len += snprintf(buf+len, size-len, "literal[%d cmds, %d bytes] ",
