@@ -36,7 +36,7 @@ librsync_la_SOURCES = \
 	emit.c emit.h				\
 	fileutil.c fileutil.h			\
 	hex.c					\
-	rsync.h					\
+	includes.h				\
 	job.c job.h				\
 	mdfour.c				\
 	mksum.c					\
@@ -51,7 +51,7 @@ librsync_la_SOURCES = \
 	search.c search.h			\
 	stats.c					\
 	stream.c stream.h			\
-	sumset.c sumset.h 			\
+	sumset.c sumset.h			\
 	trace.c trace.h				\
 	tube.c					\
 	types.h					\
