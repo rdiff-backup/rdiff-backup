@@ -27,6 +27,17 @@
                                * sheltering.
                                */
 
+/*
+ * job.c -- Generic state-machine interface.  The point of this is
+ * that we need to be able to suspend and resume processing at any
+ * point at which the buffers may block.  We could do that using
+ * setjmp or similar tricks, but this is probably simpler.
+ *
+ * TODO: We have a few functions to do with reading a netint, stashing
+ * it somewhere, then moving into a different state.  Is it worth
+ * writing generic functions fo r that, or would it be too confusing?
+ */
+
 
 #include <config.h>
 
