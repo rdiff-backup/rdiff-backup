@@ -22,6 +22,7 @@
  */
 
 void hs_squirt_n32(hs_stream_t *stream, int d);
+void hs_squirt_n16(hs_stream_t *, int d);
 void hs_squirt_n8(hs_stream_t *stream, int d);
 
 hs_result hs_suck_n32(hs_stream_t *stream, int *v);

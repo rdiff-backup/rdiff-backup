@@ -66,11 +66,20 @@
 
 void hs_squirt_n32(hs_stream_t *stream, int d)
 {
-        uint32_t nd = htonl(d);
+    uint32_t nd = htonl(d);
         
-        hs_blow_literal(stream, &nd, sizeof nd);
+    hs_blow_literal(stream, &nd, sizeof nd);
 }
 
+
+
+void
+hs_squirt_n16(hs_stream_t *stream, int d)
+{
+    uint16_t nd = htons(d);
+
+    hs_blow_literal(stream, &nd, sizeof nd);
+}
 
 
 void
