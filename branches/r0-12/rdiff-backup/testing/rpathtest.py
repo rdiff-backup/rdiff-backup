@@ -112,8 +112,9 @@ class CheckDir(RPathTest):
 
 	def testListdir(self):
 		"""Checking dir listings"""
-		assert (RPath(self.lc, self.mainprefix, ("sampledir",)).listdir() ==
-				["1", "2", "3", "4"])
+		dirlist = RPath(self.lc, self.mainprefix, ("sampledir",)).listdir()
+		dirlist.sort()
+		assert dirlist == ["1", "2", "3", "4"], dirlist
 
 
 class CheckSyms(RPathTest):
