@@ -76,7 +76,7 @@ libhsync_la_SOURCES = \
 
 TESTS_ENVIRONMENT = bash $(srcdir)/driver.sh
 
-test_scripts = delta.test mksum.test isprefix.test
+test_scripts = isprefix.test delta.test mksum.test triple.test
 
 man_MANS = man/libhsync.3 man/rdiff.1
 
