@@ -245,6 +245,12 @@ number of seconds ago.  Otherwise start a new backup.  The default is
 Enter server mode (not to be invoked directly, but instead used by
 another rdiff-backup process on a remote computer).
 .TP
+.B --ssh-no-compression
+When running ssh, do not use the -C option to enable compression.
+.B --ssh-no-compression
+is ignored if you specify a new schema using
+.B --remote-schema.
+.TP
 .BI "--terminal-verbosity " [0-9]
 Select which messages will be displayed to the terminal.  If missing
 the level defaults to the verbosity level.

@@ -247,13 +247,13 @@ class RORPath(RPathStatic):
 		This object doesn't contain any information about the file,
 		but, when passed along, may show where the previous stages are
 		in their processing.  It is the RORPath equivalent of fiber.
+		This placeholder size, in conjunction with the placeholder
+		threshold in Highlevel .. generate_dissimilar seem to yield an
+		OK tradeoff between unnecessary placeholders and lots of
+		memory usage, but I'm not sure exactly why.
 
 		"""
-		self.data = {'placeholder':
-					 ("It is actually good for placeholders to use"
-					  "up a bit of memory, so the buffers get flushed"
-					  "more often when placeholders move through."
-					  "See the get_dissimilar docs for more info.")}
+		self.data = {'placeholder': " "*500}
 
 	def isplaceholder(self):
 		"""True if the object is a placeholder"""
