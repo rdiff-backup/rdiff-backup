@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r" -*-  */
+/* -*- mode: c; c-file-style: "java" -*-  */
 
 /* checksum.c -- calculate and search table of checksums
    

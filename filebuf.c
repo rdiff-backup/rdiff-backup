@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r" -*- */
+/* -*- mode: c; c-file-style: "java" -*- */
 /* librsync/filebuf.c -- Abstract read to and from FILE* buffers.
 
    Copyright (C) 1999, 2000 by Martin Pool.

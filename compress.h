@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r" -*- */
+/* -*- mode: c; c-file-style: "java" -*- */
 
 void comp_init(void);
 ssize_t comp_write(ssize_t(*fn) (void *, char const *, size_t),

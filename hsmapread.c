@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r" -*- */
+/* -*- mode: c; c-file-style: "java" -*- */
 /*
   hsmapread -- test harness for hs_map_ptr
   

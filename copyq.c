@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r" -*- */
+/* -*- mode: c; c-file-style: "java" -*- */
 
 /* libhsync/copyq.c -- Queue outgoing copy commands.
    

@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r" -*- */
+/* -*- mode: c; c-file-style: "java" -*- */
 /* 
    Copyright (C) 2000 by Martin Pool
    Copyright (C) 1998 by Andrew Tridgell 

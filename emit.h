@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r" -*-  */
+/* -*- mode: c; c-file-style: "java" -*-  */
 
 /* emit.h -- Things to do with processing the command stream.
    

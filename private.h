@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r"; c-basic-offset: 4 -*-  */
+/* -*- mode: c; c-file-style: "java"; c-basic-offset: 4 -*-  */
 /* private.h -- Private headers for libhsync
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
 

@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r" -*- */
+/* -*- mode: c; c-file-style: "java" -*- */
 /* librsync/compress.c -- a shim between signature.c and librsync to
    add zlib compression
 

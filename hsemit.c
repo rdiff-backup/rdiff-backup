@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r" -*-  */
+/* -*- mode: c; c-file-style: "java" -*-  */
 
 /* hsemit -- Convert a text stream of commands into hsync encoding.
    The output doesn't include literal data, since the point is just to

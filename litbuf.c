@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "k&r" -*-  */
+/* -*- mode: c; c-file-style: "java" -*-  */
 
 /* litbuf -- buffer of data waiting to go out as signature or literal
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>

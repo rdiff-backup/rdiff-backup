@@ -3,6 +3,8 @@ Changes in 0.4.1:
  * automake/autoconf now works cleanly when the build directory is
    different to the source directory.
 
+ * --enable-ccmalloc works again.
+
 Changes in 0.4.0:
 
 * A much better regression suite.
