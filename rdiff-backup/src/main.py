@@ -440,25 +440,30 @@ Try restoring from an increment file (the filenames look like
 
 	def RemoveOlderThan(self, rootrp):
 		"""Remove all increment files older than a certain time"""
-		datadir = self.li_getdatadir(rootrp,
-									 """Unable to open rdiff-backup-data dir.
+		datadir = rootrp.append("rdiff-backup-data")
+		if not datadir.lstat() or not datadir.isdir():
+			Log.FatalError("Unable to open rdiff-backup-data dir %s" %
+						   (datadir.path,))
 
-Try finding the increments first using --list-increments.""")
 		try: time = Time.genstrtotime(self.remove_older_than_string)
 		except TimeError, exp: Log.FatalError(str(exp))
 		timep = Time.timetopretty(time)
 		Log("Deleting increment(s) before %s" % timep, 4)
-		incobjs = filter(lambda x: x.time < time, Manage.get_incobjs(datadir))
-		incobjs_time = ", ".join(map(IncObj.pretty_time, incobjs))
-		if not incobjs:
-			Log.FatalError("No increments older than %s found" % timep)
-		elif len(incobjs) > 1 and not self.force:
-			Log.FatalError("Found %d relevant increments, dated %s.\n"
-				"If you want to delete multiple increments in this way, "
-				"use the --force." % (len(incobjs), incobjs_time))
 
-		Log("Deleting increment%sat %s" % (len(incobjs) == 1 and " " or "s ",
-										   incobjs_time), 3)
+		itimes = [Time.stringtopretty(inc.getinctime())
+				  for inc in Restore.get_inclist(datadir.append("increments"))
+				  if Time.stringtotime(inc.getinctime()) < time]
+		
+		if not itimes:
+			Log.FatalError("No increments older than %s found" % timep)
+		inc_pretty_time = "\n".join(itimes)
+		if len(itimes) > 1 and not self.force:
+			Log.FatalError("Found %d relevant increments, dated:\n%s"
+				"\nIf you want to delete multiple increments in this way, "
+				"use the --force." % (len(itimes), inc_pretty_time))
+			
+		Log("Deleting increment%sat times:\n%s" %
+			(len(itimes) == 1 and " " or "s ", inc_pretty_time), 3)
 		Manage.delete_earlier_than(datadir, time)
 		
 
