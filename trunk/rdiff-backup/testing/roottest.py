@@ -22,12 +22,42 @@ def Run(cmd):
 	assert not os.system(cmd)
 
 class RootTest(unittest.TestCase):
-	dirlist1 = ["testfiles/root", "testfiles/various_file_types", "testfiles/increment4"]
+	dirlist1 = ["testfiles/root", "testfiles/various_file_types",
+				"testfiles/increment4"]
 	dirlist2 = ["testfiles/increment4", "testfiles/root",
 				"testfiles/increment1"]
-	def testLocal1(self): BackupRestoreSeries(1, 1, self.dirlist1)
-	def testLocal2(self): BackupRestoreSeries(1, 1, self.dirlist2)
-	def testRemote(self): BackupRestoreSeries(None, None, self.dirlist1)
+	def testLocal1(self):
+		BackupRestoreSeries(1, 1, self.dirlist1, compare_ownership = 1)
+	def testLocal2(self):
+		BackupRestoreSeries(1, 1, self.dirlist2, compare_ownership = 1)
+	def testRemote(self):
+		BackupRestoreSeries(None, None, self.dirlist1, compare_ownership = 1)
+
+	def test_ownership(self):
+		"""Test backing up and restoring directory with different uids
+
+		This checks for a bug in 0.13.4 where uids and gids would not
+		be restored correctly.
+
+		"""
+		dirrp = rpath.RPath(Globals.local_connection, "testfiles/root_owner")
+		def make_dir():
+			re_init_dir(dirrp)
+			rp1 = dirrp.append('file1')
+			rp2 = dirrp.append('file2')
+			rp3 = dirrp.append('file3')
+			rp4 = dirrp.append('file4')
+			rp1.touch()
+			rp2.touch()
+			rp3.touch()
+			rp4.touch()
+			rp1.chown(2000, 2000)
+			rp2.chown(2001, 2001)
+			rp3.chown(2002, 2002)
+			rp4.chown(2003, 2003)
+		make_dir()
+		BackupRestoreSeries(1, 1, ['testfiles/root_owner', 'testfiles/empty'],
+							compare_ownership = 1)
 
 	def test_ownership_mapping(self):
 		"""Test --user-mapping-file and --group-mapping-file options"""
@@ -35,8 +65,7 @@ class RootTest(unittest.TestCase):
 			"""Write the directory testfiles/root_mapping"""
 			rp = rpath.RPath(Globals.local_connection,
 							 "testfiles/root_mapping")
-			if rp.lstat(): Myrm(rp.path)
-			rp.mkdir()
+			re_init_dir(rp)
 			rp1 = rp.append('1')
 			rp1.touch()
 			rp2 = rp.append('2')
@@ -83,8 +112,7 @@ class HalfRoot(unittest.TestCase):
 
 		"""
 		rp1 = rpath.RPath(Globals.local_connection, "testfiles/root_half1")
-		if rp1.lstat(): Myrm(rp1.path)
-		rp1.mkdir()
+		re_init_dir(rp1)
 		rp1_1 = rp1.append('foo')
 		rp1_1.write_string('hello')
 		rp1_1.chmod(0)
@@ -105,8 +133,7 @@ class HalfRoot(unittest.TestCase):
 		rp1_3.chmod(0)
 
 		rp2 = rpath.RPath(Globals.local_connection, "testfiles/root_half2")
-		if rp2.lstat(): Myrm(rp2.path)
-		rp2.mkdir()
+		re_init_dir(rp2)
 		rp2_1 = rp2.append('foo')
 		rp2_1.write_string('goodbye')
 		rp2_1.chmod(0)
@@ -223,8 +250,7 @@ class NonRoot(unittest.TestCase):
 	def make_root_dirs(self):
 		"""Make directory createable only by root"""
 		rp = rpath.RPath(Globals.local_connection, "testfiles/root_out1")
-		if rp.lstat(): Myrm(rp.path)
-		rp.mkdir()
+		re_init_dir(rp)
 		rp1 = rp.append("1")
 		rp1.touch()
 		rp2 = rp.append("2")
