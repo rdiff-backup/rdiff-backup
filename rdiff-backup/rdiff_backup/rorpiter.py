@@ -11,7 +11,7 @@
 """Operations on Iterators of Read Only Remote Paths"""
 
 from __future__ import generators
-import tempfile, UserList, types
+import tempfile, UserList, types, librsync
 from static import *
 from log import *
 from rpath import *
@@ -202,6 +202,13 @@ class RORPIter:
 			return diff_rorp
 		elif sig_rorp and sig_rorp.isreg() and new_rp and new_rp.isreg():
 			diff_rorp = new_rp.getRORPath()
+			#fp = sig_rorp.open("rb")
+			#print "---------------------", fp
+			#tmp_sig_rp = RPath(Globals.local_connection, "/tmp/sig")
+			#tmp_sig_rp.delete()
+			#tmp_sig_rp.write_from_fileobj(fp)
+			#diff_rorp.setfile(Rdiff.get_delta_sigfileobj(tmp_sig_rp.open("rb"),
+			#											 new_rp))
 			diff_rorp.setfile(Rdiff.get_delta_sigfileobj(sig_rorp.open("rb"),
 														 new_rp))
 			diff_rorp.set_attached_filetype('diff')
@@ -242,7 +249,6 @@ class RORPIter:
 			return Robust.copy_with_attribs_action(diff_rorp, basisrp)
 
 MakeStatic(RORPIter)
-
 
 
 class IndexedTuple(UserList.UserList):

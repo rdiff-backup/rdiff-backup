@@ -11,12 +11,15 @@
 """Generate and process aggregated backup information"""
 
 from lazy import *
+import re
 
 
 class StatsException(Exception): pass
 
 class StatsObj:
 	"""Contains various statistics, provide string conversion functions"""
+	# used when quoting files in get_stats_line
+	space_regex = re.compile(" ")
 
 	stat_file_attrs = ('SourceFiles', 'SourceFileSize',
 					   'MirrorFiles', 'MirrorFileSize',
@@ -71,8 +74,8 @@ class StatsObj:
 			filename = apply(os.path.join, index)
 			if use_repr:
 				# use repr to quote newlines in relative filename, then
-				# take of leading and trailing quote.
-				filename = repr(filename)[1:-1]
+				# take of leading and trailing quote and quote spaces.
+				filename = self.space_regex.sub("\\x20", repr(filename)[1:-1])
 		return " ".join([filename,] + file_attrs)
 
 	def set_stats_from_line(self, line):
