@@ -1,8 +1,14 @@
-Changes in 0.6.0:
+Changes in 0.9.1:
+
+ * Rename the library to `librsync'
+
+Changes in 0.9.0:
 
  * Redesign API to be more like zlib/bzlib.
 
  * Put all command-line functions into a single rdiff(1) program.
+
+ * New magic number `rs6'
 
 Changes in 0.5.7:
 
