@@ -44,17 +44,25 @@ struct file_buf {
 
 hs_filebuf_t *hs_filebuf_from_file(FILE * fp)
 {
-    hs_filebuf_t *fb;
+     hs_filebuf_t *fb;
 
-    fb = calloc(1, sizeof(hs_filebuf_t));
-    return_val_if_fail(fb, NULL);
+     fb = calloc(1, sizeof(hs_filebuf_t));
+     return_val_if_fail(fb, NULL);
+     
+     fb->dogtag = filebuf_tag;
+     fb->f = fp;
+     fb->f_cache = NULL;
+     fb->length = -1;
+     
+     return fb;
+}
 
-    fb->dogtag = filebuf_tag;
-    fb->f = fp;
-    fb->f_cache = NULL;
-    fb->length = -1;
 
-    return fb;
+void hs_filebuf_add_cache(hs_filebuf_t *fb, FILE *fp)
+{
+     assert(fb); assert(fb->dogtag == filebuf_tag);
+
+     fb->f_cache = fp;
 }
 
 
@@ -81,6 +89,11 @@ void hs_filebuf_close(hs_filebuf_t *fbuf)
 
     fclose(fbuf->f);
     fbuf->f = NULL;
+
+    if (fbuf->f_cache) {
+	 fclose(fbuf->f_cache);
+	 fbuf->f_cache = NULL;
+    }
 }
 
 
