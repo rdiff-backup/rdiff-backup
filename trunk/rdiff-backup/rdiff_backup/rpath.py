@@ -209,7 +209,9 @@ class RPathStatic:
 		"""
 		assert rpath.conn is Globals.local_connection
 		s = socket.socket(socket.AF_UNIX)
-		s.bind(rpath.path)
+		try: s.bind(rpath.path)
+		except socket.error, exc:
+			raise SkipFileException("Socket error: " + str(exc))
 
 	def gzip_open_local_read(rpath):
 		"""Return open GzipFile.  See security note directly above"""
@@ -838,6 +840,7 @@ import FilenameMapping
 from lazy import *
 from selection import *
 from destructive_stepping import *
+from highlevel import *
 
 class RpathDeleter(ITRBranch):
 	"""Delete a directory.  Called by RPath.delete()"""
