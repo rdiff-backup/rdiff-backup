@@ -161,5 +161,23 @@ upload-doxy: html/index.html latex/refman.pdf latex/refman.ps.gz
 		./rproxy-small-logo.png $$i/doxygen/librsync; \
 	done
 
-%.ps: %.[0-9]
-	man -Tps ./$< >$@
+converted_men = man_librsync_3.html man_librsync_3.ps \
+	man_rdiff_1.html man_rdiff_1.ps
+
+man_%_1.ps: %.1
+	groff -man -Tps $< >$@
+
+man_%_3.ps: %.3
+	groff -man -Tps $< >$@
+
+man_%_3.html: %.3
+	groff -man -Thtml $< >$@
+
+man_%_1.html: %.1
+	groff -man -Thtml $< >$@
+
+upload-men: $(converted_men)
+	for i in $(sites); do \
+		rsync -avz --delete $(converted_men) $(man_MANS) $$i/man; \
+	done
+
