@@ -12,6 +12,7 @@ config.log
 config.status
 configure
 configure.scan
+genmaptest
 hsdecode
 hsemit
 hsemit

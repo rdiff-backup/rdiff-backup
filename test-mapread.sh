@@ -16,7 +16,7 @@ new=$tmpdir/new.tmp
 cmds=$tmpdir/cmds
 expect=$tmpdir/expect
 
-run_test $srcdir/gen-maptest.py $cmds $expect $from
+run_test genmaptest map 1000 $cmds $expect $from
 run_test hsmapread $from `cat $cmds` >$new
 run_test cmp $expect $new
 

@@ -16,9 +16,9 @@ new=$tmpdir/new.tmp
 cmds=$tmpdir/cmds
 expect=$tmpdir/expect
 
-run_test cat $srcdir/*.{c,h,py,sh} >$from
+run_test cat $srcdir/*.{c,h,sh} >$from
 
-run_test $srcdir/gen-inbuftest.py $cmds $expect $from
+run_test genmaptest forward 5000 $cmds $expect $from
 
 # In this case we make the input be a pipe, which is a reasonable
 # imitation of a socketpair.  This makes sure that map_ptr works OK on

@@ -35,15 +35,24 @@ libhsyncdecode_la_SOURCES = dec.c \
 	mapptr.c mapptr.h \
 	util.c util.h
 
-noinst_SCRIPTS = \
-	test-chain.sh test-cmds.sh \
-	make-cmds.py test-thrice.sh test-seq.sh test-meta.sh \
+test_scripts := \
+	test-chain.sh \
+	test-seqnad.sh \
+	test-md4sizes.sh \
 	test-cat.sh \
-	test-md4sizes.sh testfns.sh \
-	test-mapread.sh gen-maptest.py \
-	test-mapover.sh gen-mapover.py \
-	test-mappipe.sh gen-inbuftest.py \
-	test-mapeof.sh 
+	test-mapread.sh \
+	test-cmds.sh \
+	test-thrice.sh 
+	test-delta.sh \
+	test-seq.sh \
+	test-mappipe.sh \
+	test-mapeof.sh \
+	test-mapover.sh \
+	test-nadsum.sh \
+	test-thricenad.sh
+
+noinst_SCRIPTS = \
+	$(test_scripts)
 
 test_data=test-chain/empty-sig  \
 test-decode/01-diff \
@@ -86,7 +95,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 include_HEADERS = hsync.h hsyncproto.h
 
 bin_PROGRAMS = hsdecode hsencode hsmdfour hsmksum hsmapread hsnad
-check_PROGRAMS = hsemit hsinhale hsfilebufcat
+check_PROGRAMS = hsemit hsinhale hsfilebufcat genmaptest
 
 test-cmds/cmds: make-cmds.py
 	mkdir -p test-cmds
@@ -124,12 +133,4 @@ hsmapread_LDADD = libhsyncdecode.la
 # ``When the program is being tested, it is too late to make design
 # changes.''
 
-TESTS = test-chain.sh \
-	test-md4sizes.sh test-cat.sh \
-	test-mapread.sh \
-	test-cmds.sh \
-	test-thrice.sh test-seq.sh
-	test-mappipe.sh \
-	test-mapeof.sh test-mapover.sh 
-
-
+TESTS = $(test_scripts)

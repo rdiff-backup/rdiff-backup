@@ -12,7 +12,7 @@ new=$tmpdir/new.tmp
 cmds=$tmpdir/cmds
 expect=$tmpdir/expect
 
-run_test $srcdir/gen-mapover.py $cmds $expect $from
+run_test genmaptest mapover 5000 $cmds $expect $from
 
 for ioargs in '' '-k' '-n -s'
 do
