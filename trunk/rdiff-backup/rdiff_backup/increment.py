@@ -111,7 +111,7 @@ def get_inc(rp, typestr, time = None):
 	else:
 		dirname, basename = rp.dirsplit()
 		incrp = rp.__class__(rp.conn, dirname, (addtostr(basename),))
-	assert not incrp.lstat()
+	assert not incrp.lstat(), incrp
 	return incrp
 
 
