@@ -20,8 +20,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "types.h"
 
-typedef struct rs_mdfour {
+struct rs_mdfour {
     int                 A, B, C, D;
 #if HAVE_UINT64
     uint64_t            totalN;
@@ -30,4 +31,4 @@ typedef struct rs_mdfour {
 #endif
     int                 tail_len;
     unsigned char       tail[64];
-} rs_mdfour_t;
+};
