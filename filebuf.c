@@ -1,23 +1,24 @@
-/* -*- mode: c; c-file-style: "bsd" -*- * $Id: filebuf.c,v 1.20 2000/05/09
-   10:44:27 mbp Exp $ * * librsync/filebuf.c -- Abstract read to and from
-   FILE* buffers.
-
-   Copyright (C) 1999, 2000 by Martin Pool. Copyright (C) 1999 by
-   tridge@samba.org.
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the Free 
-   Software Foundation; either version 2 of the License, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-   for more details.
-
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, write to the Free Software Foundation, Inc., 59 
-   Temple Place, Suite 330, Boston, MA  02111-1307  USA */
+/*				       	-*- c-file-style: "bsd" -*-
+ * rproxy -- dynamic caching and delta update in HTTP
+ * $Id$
+ * 
+ * Copyright (C) 1999, 2000 by Martin Pool
+ * Copyright (C) 1999 by Andrew Tridgell
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 					/* To walk on water you've gotta sink 
 					   in the ice. -- Shihad, `The
@@ -32,7 +33,6 @@ const int       filebuf_tag = 24031976;
 
 struct file_buf {
     int             dogtag;
-
     int             fd, fd_cache;
 };
 
@@ -89,13 +89,21 @@ hs_filebuf_open(char const *filename, int mode)
 void
 hs_filebuf_close(hs_filebuf_t * fbuf)
 {
+    int                 ret;
+    
     assert(fbuf->dogtag == filebuf_tag);
 
-    close(fbuf->fd);
+    if (close(fbuf->fd) < 0) {
+        _hs_error("error closing fd%d: %s",
+                  fbuf->fd, strerror(errno));
+    }
     fbuf->fd = -1;
 
     if (fbuf->fd_cache != -1) {
-	close(fbuf->fd_cache);
+        if (close(fbuf->fd_cache) < 0) {
+            _hs_error("error closing cache fd%d: %s",
+                      fbuf->fd_cache , strerror(errno));
+        }
 	fbuf->fd_cache = -1;
     }
 
@@ -106,7 +114,8 @@ hs_filebuf_close(hs_filebuf_t * fbuf)
 
 
 /* May return short */
-ssize_t hs_filebuf_read(void *private, byte_t *buf, size_t len)
+ssize_t
+hs_filebuf_read(void *private, byte_t *buf, size_t len)
 {
     struct file_buf *fbuf = (struct file_buf *) private;
     ssize_t         n;
@@ -128,19 +137,31 @@ ssize_t hs_filebuf_read(void *private, byte_t *buf, size_t len)
 }
 
 
-ssize_t hs_filebuf_write(void *private, byte_t const *buf, size_t len)
+ssize_t
+hs_filebuf_write(void *private, byte_t const *buf, size_t len)
 {
     struct file_buf *fbuf = (struct file_buf *) private;
-    size_t          n;
+    ssize_t          n;
+    ssize_t             cache_n;
 
     assert(fbuf->dogtag == filebuf_tag);
 #ifdef HS_ALWAYS_READ_SHORT
     len = MIN(len, 100);
 #endif
     n = write(fbuf->fd, buf, len);
-    if (fbuf->fd_cache != -1 && n > 0) {
-	write(fbuf->fd_cache, buf, n);
+    if (n < 0) {
+        _hs_error("error writing to fd%d: %s",
+                  fbuf->fd, strerror(errno));
     }
+    
+    if (fbuf->fd_cache != -1 && n > 0) {
+	cache_n = write(fbuf->fd_cache, buf, n);
+        if (cache_n < 0) {
+            _hs_error("error writing to cache fd%d: %s",
+                      fbuf->fd_cache, strerror(errno));
+        }
+    }
+
 
     return n;
 }

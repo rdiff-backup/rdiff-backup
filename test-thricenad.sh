@@ -10,6 +10,8 @@
 
 # `What I tell you three times is true'
 
+# FIXME: Some of the temporary files generated are too large.
+
 files=`make_manyfiles`
 
 for data in $files
