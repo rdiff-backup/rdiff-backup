@@ -194,6 +194,10 @@ hs_decode(int oldread_fd,
 
     hs_mdfour_begin(&newsum);
 
+    /* TODO: Rewrite this to use map_ptr on the littok stream.  This
+     * is not such a priority as the encoding algorithm, but it would
+     * still be nice and would improve efficiency, I think. */
+
     while (1) {
 	ret = _hs_inhale_command(ltread_fn, ltread_priv, &kind, &length,
 				 &offset);
