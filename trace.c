@@ -1,4 +1,4 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*				       	-*- c-file-style: "java" -*-
  *
  * libhsync -- library for network deltas
  * $Id$
@@ -56,6 +56,8 @@ static int _hs_trace_level = LOG_INFO;
 #  define MY_NAME "libhsync"
 #endif
 
+static void _hs_log_va(int level, char const *fn, char const *fmt, va_list va);
+
 /* Called by the application to set the destination of trace * information. */
 void
 hs_trace_to(hs_trace_fn_t * new_impl)
@@ -72,7 +74,7 @@ hs_trace_set_level(int level)
 }
 
 
-void
+static void
 _hs_log_va(int level, char const *fn, char const *fmt, va_list va)
 {
     if (_hs_trace_impl && level <= _hs_trace_level) {

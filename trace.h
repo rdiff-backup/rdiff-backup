@@ -39,7 +39,6 @@
 void _hs_fatal0(char const *s, ...);
 void _hs_error0(char const *s, ...);
 void _hs_trace0(char const *s, ...);
-void _hs_log_va(int level, char const *fn, char const *fmt, va_list va);
 
 #ifdef __GNUC__
 
