@@ -6,6 +6,9 @@ Patch by Arkadiusz Patyk fixes building with Python 2.3c1.
 Restore of archives made by 0.10.x and earlier fixed, although hard
 link information is not restored.  (Bug reported by Jeff Lessem.)
 
+Fixed problem with door files locally when repository is remote.
+(Reported by Robert Weber.)
+
 
 New in v0.12.1 (2003/07/22)
 ---------------------------
