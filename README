@@ -50,18 +50,17 @@ using the 'kgcc' version of the compiler:
 
 >> Note for Windows
 
-With cygwin you can build using gcc as under a normal unix system. It is
-also possible to compile under cygwin using MSVC++.  This needs autotools to
-be run again to update config.sub to support the "windows32" build option.
-You must have environment variables needed by MSCV set using the
-Vcvars32.bat script. With these variables set, you just do;
+With cygwin you can build using gcc as under a normal unix system. It
+is also possible to compile under cygwin using MSVC++. You must have
+environment variables needed by MSCV set using the Vcvars32.bat
+script. With these variables set, you just do;
   
-  $ ./autogen.sh
   $ ./configure.msc
+  $ make all check
 
-The PCbuild directory contains a project and pre-generated config.h for use
-with the MSVC++ IDE. This should be enought to compile rdiff.exe without
-requiring cygwin.
+The PCbuild directory contains a project and pre-generated config
+files for use with the MSVC++ IDE. This should be enought to compile
+rdiff.exe without requiring cygwin.
 
 >> Library Versions
 
