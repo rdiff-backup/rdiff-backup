@@ -27,7 +27,7 @@
                                */
 
 
-/** \file rsync.h
+/** \file librsync.h
  *
  * \brief Main public interface to librsync.
  * \author Martin Pool <mbp@samba.org>
