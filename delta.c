@@ -67,6 +67,10 @@
 #include "trace.h"
 
 
+static rs_result rs_delta_scan_short(rs_job_t *, rs_long_t avail_len);
+static rs_result rs_delta_scan_full(rs_job_t *, rs_long_t avail_len);
+
+
 static rs_result rs_delta_s_end(rs_job_t *job)
 {
     rs_emit_end_cmd(job);
@@ -76,31 +80,54 @@ static rs_result rs_delta_s_end(rs_job_t *job)
 
 /**
  * \brief Get a block of data if possible, and see if it matches.
+ *
+ * On each call, we try to process all of the input data available on
+ * the scoop and input buffer.
  */
 static rs_result
 rs_delta_s_scan(rs_job_t *job)
 {
-    rs_result      result;
-    void           *inptr;
-    size_t         this_len, remain;
+    size_t         this_len, avail_len;
+    int            is_ending;
 
     rs_job_check(job);
-    
+
+    avail_len = rs_scoop_total_avail(job);
     this_len = job->block_len;
-    if (rs_job_input_is_ending(job)) {
-        remain = rs_scoop_total_avail(job);
-        if (remain == 0) {
+
+    /* Now, we have avail_len bytes, and we need to scan through them
+     * looking for a match.  We'll always end up emitting exactly one
+     * command, either a literal or a copy, and after discovering that
+     * we will skip over the appropriate number of bytes. */
+
+    if ((is_ending = rs_job_input_is_ending(job))) {
+        if (avail_len == 0) {
             /* no more delta to do */
             job->statefn = rs_delta_s_end;
             return RS_BLOCKED;
-        } else if (remain < this_len) {
-            this_len = remain;
-        }
-    }
-    
+        } else
+            return rs_delta_scan_short(job, avail_len);
+    } else 
+        if (avail_len < job->block_len)
+            /* don't have enough to continue */
+            return RS_BLOCKED;
+        else
+            return rs_delta_scan_full(job, avail_len); 
+}
+
+
+/**
+ * Scan for a possibly-short block in the next \p avail_len bytes of input.
+ */
+static rs_result
+rs_delta_scan_short(rs_job_t *job, rs_long_t avail_len)
+{
+    rs_result      result;
+    void           *inptr;
+
     /* common case of not being near the end, and therefore trying
      * to read a whole block. */
-    result = rs_scoop_readahead(job, this_len, &inptr);
+    result = rs_scoop_readahead(job, avail_len, &inptr);
     if (result != RS_DONE)
         return result;
 
@@ -109,12 +136,26 @@ rs_delta_s_scan(rs_job_t *job)
      * that and advance over the scooed data.  Otherwise, emit a
      * literal byte and keep searching while there's input data. */
 
-    rs_trace("emit lazy literal for %d bytes", this_len);
-    rs_emit_literal_cmd(job, this_len);
-    rs_blow_copy(job, this_len);
+    rs_trace("emit lazy literal for %ld bytes", (long) avail_len);
+    rs_emit_literal_cmd(job, avail_len);
+    rs_tube_copy(job, avail_len);
 
     return RS_RUNNING;
 }
+
+
+
+/**
+ * Scan for a full-size block in the next \p avail_len bytes of input.
+ * 
+ * Emit exactly one LITERAL or COPY command.
+ */
+static rs_result
+rs_delta_scan_full(rs_job_t *job, rs_long_t avail_len)
+{
+    return rs_delta_scan_short(job, avail_len);
+}
+
 
 
 /**
@@ -129,7 +170,7 @@ static rs_result rs_delta_s_fake(rs_job_t *job)
     if (avail) {
         rs_trace("emit fake delta for %ld available bytes", (long) avail);
         rs_emit_literal_cmd(job, avail);
-        rs_blow_copy(job, avail);
+        rs_tube_copy(job, avail);
         return RS_RUNNING;
     } else {
         if (rs_job_input_is_ending(job)) {
