@@ -440,8 +440,8 @@ class RORPath:
 
 	def getnumlinks(self):
 		"""Number of places inode is linked to"""
-		try: return self.data['nlink']
-		except KeyError: return 1
+		if self.data.has_key('nlink'): return self.data['nlink']
+		else: return 1
 
 	def readlink(self):
 		"""Wrapper around os.readlink()"""

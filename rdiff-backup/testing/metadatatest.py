@@ -8,7 +8,7 @@ class MetadataTest(unittest.TestCase):
 	def make_temp(self):
 		"""Make temp directory testfiles/output"""
 		global tempdir
-		tempdir.delete()
+		if tempdir.lstat(): tempdir.delete()
 		tempdir.mkdir()
 
 	def testQuote(self):

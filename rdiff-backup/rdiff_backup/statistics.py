@@ -20,7 +20,7 @@
 """Generate and process aggregated backup information"""
 
 import re, os, time
-import Globals, robust, Time, rorpiter, increment, log
+import Globals, Time, increment, log, static
 
 class StatsException(Exception): pass
 
@@ -347,6 +347,69 @@ def print_active_stats():
 	"""Print statistics of active statobj to stdout and log"""
 	global _active_statfileobj
 	assert _active_statfileobj
+	_active_statfileobj.finish()
 	statmsg = _active_statfileobj.get_stats_logstring("Session statistics")
 	log.Log.log_to_file(statmsg)
 	Globals.client_conn.sys.stdout.write(statmsg)
+
+
+class FileStats:
+	"""Keep track of less detailed stats on file-by-file basis"""
+	_fileobj, _rp = None, None
+	_line_sep = None
+	def init(cls):
+		"""Open file stats object and prepare to write"""
+		assert not (cls._fileobj or cls._rp), (cls._fileobj, cls._rp)
+		rpbase = Globals.rbdir.append("file_statistics")
+		suffix = Globals.compression and 'data.gz' or 'data'
+		cls._rp = increment.get_inc(rpbase, suffix, Time.curtime)
+		assert not cls._rp.lstat()
+		cls._fileobj = cls._rp.open("wb", compress = Globals.compression)
+
+		cls._line_sep = Globals.null_separator and '\0' or '\n'
+		cls.write_docstring()
+		cls.line_buffer = []
+
+	def write_docstring(cls):
+		"""Write the first line (a documentation string) into file"""
+		cls._fileobj.write("# Format of each line in file statistics file:")
+		cls._fileobj.write(cls._line_sep)
+		cls._fileobj.write("# Filename Changed SourceSize MirrorSize "
+						   "IncrementSize" + cls._line_sep)
+
+	def update(cls, source_rorp, dest_rorp, changed, inc):
+		"""Update file stats with given information"""
+		if source_rorp: filename = source_rorp.get_indexpath()
+		else: filename = dest_rorp.get_indexpath()
+
+		size_list = map(cls.get_size, [source_rorp, dest_rorp, inc])
+		line = " ".join([filename, str(changed)] + size_list)
+		cls.line_buffer.append(line)
+		if len(cls.line_buffer) >= 100: cls.write_buffer()
+
+	def get_size(cls, rorp):
+		"""Return the size of rorp as string, or "NA" if not a regular file"""
+		if not rorp: return "NA"
+		if rorp.isreg(): return str(rorp.getsize())
+		else: return "0"
+
+	def write_buffer(cls):
+		"""Write buffer to file because buffer is full
+
+		The buffer part is necessary because the GzipFile.write()
+		method seems fairly slow.
+
+		"""
+		assert cls.line_buffer and cls._fileobj
+		cls.line_buffer.append('') # have join add _line_sep to end also
+		cls._fileobj.write(cls._line_sep.join(cls.line_buffer))
+		cls.line_buffer = []
+
+	def close(cls):
+		"""Close file stats file"""
+		assert cls._fileobj, cls._fileobj
+		if cls.line_buffer: cls.write_buffer()
+		assert not cls._fileobj.close()
+		cls._fileobj = cls._rp = None
+
+static.MakeClass(FileStats)

@@ -148,6 +148,10 @@ ssh_compression = 1
 # If true, print statistics after successful backup
 print_statistics = None
 
+# Controls whether file_statistics file is written in
+# rdiff-backup-data dir.  These can sometimes take up a lot of space.
+file_statistics = 1
+
 # On the writer connection, the following will be set to the mirror
 # Select iterator.
 select_mirror = None
