@@ -56,7 +56,7 @@ field names and values.
 
 from __future__ import generators
 import re, gzip
-from rdiff_backup import log, Globals, rpath, Time
+import log, Globals, rpath, Time
 
 class ParsingError(Exception):
 	"""This is raised when bad or unparsable data is received"""
@@ -260,11 +260,13 @@ metadata_rp = None
 metadata_fileobj = None
 def OpenMetadata(rp = None, compress = 1):
 	"""Open the Metadata file for writing"""
-	global metadata_filename, metadata_fileobj
+	global metadata_rp, metadata_fileobj
 	assert not metadata_fileobj, "Metadata file already open"
 	if rp: metadata_rp = rp
-	else: metadata_rp = Globals.rbdir.append("mirror_metadata.%s.data.gz" %
-											 (Time.curtimestr,))
+	else:
+		if compress: filename_base = "mirror_metadata.%s.data.gz"
+		else: filename_base = "mirror_metadata.%s.data"
+		metadata_rp = Globals.rbdir.append(filename_base % (Time.curtimestr,))
 	metadata_fileobj = metadata_rp.open("wb", compress = compress)
 
 def WriteMetadata(rorp):
@@ -307,3 +309,5 @@ def GetMetadata_at_time(rpdir, time, restrict_index = None, rplist = None):
 			if Time.stringtotime(rp.getinctime()) == time:
 				return GetMetadata(rp, restrict_index)
 	return None
+
+

@@ -21,14 +21,6 @@
 
 from __future__ import generators
 from static import *
-from log import *
-from rpath import *
-from robust import *
-from increment import *
-from destructive_stepping import *
-from rorpiter import *
-import Globals, Hardlink, MiscStats
-
 
 class SkipFileException(Exception):
 	"""Signal that the current file should be skipped but then continue
@@ -207,9 +199,21 @@ class HLDestinationStruct:
 		return generate_dissimilar()
 
 	def get_sigs(cls, baserp, src_init_iter):
-		"""Return signatures of all dissimilar files"""
+		"""Return signatures of all dissimilar files
+
+		Also writes all metadata to the metadata file.
+
+		"""
 		dest_iters1 = cls.split_initial_dsiter()
-		dissimilars = cls.get_dissimilar(baserp, src_init_iter, dest_iters1)
+		def duplicate_with_write(src_init_iter):
+			"""Return iterator but write metadata of what passes through"""
+			metadata.OpenMetadata()
+			for rorp in src_init_iter:
+				metadata.WriteMetadata(rorp)
+				yield rorp
+			metadata.CloseMetadata()
+		dup = duplicate_with_write(src_init_iter)
+		dissimilars = cls.get_dissimilar(baserp, dup, dest_iters1)
 		return RORPIter.Signatures(dissimilars)
 
 	def get_dsrp(cls, dest_rpath, index):
@@ -331,3 +335,11 @@ class HLDestinationStruct:
 		raise
 
 MakeClass(HLDestinationStruct)
+
+from log import *
+from rpath import *
+from robust import *
+from increment import *
+from destructive_stepping import *
+from rorpiter import *
+import Globals, Hardlink, MiscStats, metadata
