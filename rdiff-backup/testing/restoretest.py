@@ -33,6 +33,7 @@ class RestoreTest(unittest.TestCase):
 		tuples, incs = self.maketesttuples(basename)
 		rpbase = rpath.RPath(lc, self.prefix + basename)
 		rptarget = rpath.RPath(lc, "testfiles/outfile")
+		Hardlink.initialize_dictionaries()
 
 		for pair in tuples:
 			print "Processing file " + pair[0].path

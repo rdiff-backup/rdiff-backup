@@ -26,6 +26,11 @@ import Globals, Time, Rdiff, Hardlink, FilenameMapping, SetConnections, \
 	   rorpiter, selection, destructive_stepping, rpath, lazy
 
 
+# This should be set to selection.Select objects over the source and
+# mirror directories respectively.
+_select_source = None
+_select_mirror = None
+
 class RestoreError(Exception): pass
 
 def Restore(inc_rpath, mirror, target, rest_time):
@@ -151,10 +156,10 @@ def yield_rcds(index, mirrorrp, rid, target, rest_time, mirror_time):
 	the source directory.
 
 	"""
-	select_result = Globals.select_mirror.Select(target)
+	select_result = _select_mirror.Select(target)
 	if select_result == 0: return
 
-	if mirrorrp and not Globals.select_source.Select(mirrorrp):
+	if mirrorrp and not _select_source.Select(mirrorrp):
 		mirrorrp = None
 	rcd = RestoreCombinedData(rid, mirrorrp, target)
 

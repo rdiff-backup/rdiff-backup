@@ -29,8 +29,9 @@ files), where files is the number of files attached (usually 1 or
 """
 
 from __future__ import generators
-import tempfile, UserList, types, librsync, Globals, Rdiff, \
-	   Hardlink, robust, log, static, rpath, iterfile, TempFile
+import os, tempfile, UserList, types
+import librsync, Globals, Rdiff, Hardlink, robust, log, static, \
+	   rpath, iterfile, TempFile
 
 
 class RORPIterException(Exception): pass
@@ -59,39 +60,6 @@ def ToFile(rorp_iter):
 def FromFile(fileobj):
 	"""Recover rorp iterator from file interface"""
 	return FromRaw(iterfile.IterWrappingFile(fileobj))
-
-def IterateRPaths(base_rp):
-	"""Return an iterator yielding RPaths with given base rp"""
-	yield base_rp
-	if base_rp.isdir():
-		dirlisting = base_rp.listdir()
-		dirlisting.sort()
-		for filename in dirlisting:
-			for rp in IterateRPaths(base_rp.append(filename)):
-				yield rp
-
-def Signatures(rp_iter):
-	"""Yield signatures of rpaths in given rp_iter"""
-	def error_handler(exc, rp):
-		log.Log("Error generating signature for %s" % rp.path)
-		return None
-
-	for rp in rp_iter:
-		if rp.isplaceholder(): yield rp
-		else:
-			rorp = rp.getRORPath()
-			if rp.isreg():
-				if rp.isflaglinked(): rorp.flaglinked()
-				else:
-					fp = robust.check_common_error(
-						error_handler, Rdiff.get_signature, (rp,))
-					if fp: rorp.setfile(fp)
-					else: continue
-			yield rorp
-
-def GetSignatureIter(base_rp):
-	"""Return a signature iterator recurring over the base_rp"""
-	return Signatures(IterateRPaths(base_rp))
 
 def CollateIterators(*rorp_iters):
 	"""Collate RORPath iterators by index
@@ -151,28 +119,28 @@ def Collate2Iters(riter1, riter2):
 		if not relem1:
 			try: relem1 = riter1.next()
 			except StopIteration:
-				if relem2: yield IndexedTuple(index2, (None, relem2))
+				if relem2: yield (None, relem2)
 				for relem2 in riter2:
-					yield IndexedTuple(relem2.index, (None, relem2))
+					yield (None, relem2)
 				break
 			index1 = relem1.index
 		if not relem2:
 			try: relem2 = riter2.next()
 			except StopIteration:
-				if relem1: yield IndexedTuple(index1, (relem1, None))
+				if relem1: yield (relem1, None)
 				for relem1 in riter1:
-					yield IndexedTuple(relem1.index, (relem1, None))
+					yield (relem1, None)
 				break
 			index2 = relem2.index
 
 		if index1 < index2:
-			yield IndexedTuple(index1, (relem1, None))
+			yield (relem1, None)
 			relem1 = None
 		elif index1 == index2:
-			yield IndexedTuple(index1, (relem1, relem2))
+			yield (relem1, relem2)
 			relem1, relem2 = None, None
 		else: # index2 is less
-			yield IndexedTuple(index2, (None, relem2))
+			yield (None, relem2)
 			relem2 = None
 
 def getnext(iter):
@@ -180,6 +148,21 @@ def getnext(iter):
 	try: next = iter.next()
 	except StopIteration: raise RORPIterException("Unexpected end to iter")
 	return next
+
+def get_dissimilar_indicies(src_init_iter, dest_init_iter):
+	"""Get dissimilar indicies given two rorpiters
+
+	Returns an iterator which enumerates the indicies of the rorps
+	which are different on the source and destination ends.
+
+	"""
+	collated = Collate2Iters(src_init_iter, dest_init_iter)
+	for src_rorp, dest_rorp in collated:
+		if not src_rorp: yield dest_rorp.index
+		elif not dest_rorp: yield src_rorp.index
+		elif not src_rorp == dest_rorp: yield dest_rorp.index
+		elif (Globals.preserve_hardlinks and not
+			  Hardlink.rorp_eq(src_rorp, dest_rorp)): yield dest_rorp.index
 
 def GetDiffIter(sig_iter, new_iter):
 	"""Return delta iterator from sig_iter to new_iter
@@ -224,13 +207,6 @@ def diffonce(sig_rorp, new_rp):
 			diff_rorp.set_attached_filetype('snapshot')
 			return diff_rorp
 		else: return new_rp.getRORPath()
-
-def PatchIter(base_rp, diff_iter):
-	"""Patch the appropriate rps in basis_iter using diff_iter"""
-	basis_iter = IterateRPaths(base_rp)
-	collated_iter = CollateIterators(basis_iter, diff_iter)
-	for basisrp, diff_rorp in collated_iter:
-		patchonce_action(base_rp, basisrp, diff_rorp).execute()
 
 def patchonce_action(base_rp, basisrp, diff_rorp):
 	"""Return action patching basisrp using diff_rorp"""
@@ -293,91 +269,6 @@ class IndexedTuple(UserList.UserList):
 		return  "(%s).%s" % (", ".join(map(str, self.data)), self.index)
 
 
-class DirHandler:
-	"""Handle directories when entering and exiting in mirror
-
-	The problem is that we may need to write to a directory that may
-	have only read and exec permissions.  Also, when leaving a
-	directory tree, we may have modified the directory and thus
-	changed the mod and access times.  These need to be updated when
-	leaving.
-
-	"""
-	def __init__(self, rootrp):
-		"""DirHandler initializer - call with root rpath of mirror dir"""
-		self.rootrp = rootrp
-		assert rootrp.index == ()
-		self.cur_dir_index = None # Current directory we have descended into
-		self.last_index = None # last index processed
-
-		# This dictionary maps indicies to (rpath, (atime, mtime),
-		# perms) triples.  Either or both of the time pair and perms
-		# can be None, which means not to update the times or the
-		# perms when leaving.  We don't have to update the perms if we
-		# didn't have to change them in the first place.  If a
-		# directory is explicitly given, then we don't have to update
-		# anything because it will be done by the normal process.
-		self.index_dict = {}
-
-	def process_old_directories(self, new_dir_index):
-		"""Update times/permissions for directories we are leaving
-
-		Returns greatest index of the current index that has been seen
-		before (i.e. no need to process up to then as new dir).
-
-		"""
-		if self.cur_dir_index is None: return -1 # no previous directory
-
-		i = len(self.cur_dir_index)
-		while 1:
-			if new_dir_index[:i] == self.cur_dir_index[:i]:
-				return i
-			self.process_old_dir(self.cur_dir_index[:i])
-			i-=1
-
-	def process_old_dir(self, dir_index):
-		"""Process outstanding changes for given dir index"""
-		rpath, times, perms = self.index_dict[dir_index]
-		if times: apply(rpath.settime, times)
-		if perms: rpath.chmod(perms)
-
-	def init_new_dirs(self, rpath, new_dir_index, common_dir_index):
-		"""Initialize any new directories
-
-		Record the time, and change permissions if no write access.
-		Use rpath if it is given to access permissions and times.
-
-		"""
-		for i in range(common_dir_index, len(new_dir_index)):
-			process_index = new_dir_index[:i]
-			if rpath.index == process_index:
-				self.index_dict[process_index] = (None, None, None)
-			else:
-				new_rpath = self.rootrp.new_index(process_index)
-				if new_rpath.hasfullperms(): perms = None
-				else: perms = new_rpath.getperms()
-				times = (new_rpath.getatime(), new_rpath.getmtime())
-				self.index_dict[process_index] = new_rpath, times, perms
-
-	def __call__(self, rpath):
-		"""Given rpath, process containing directories"""
-		if rpath.isdir(): new_dir_index = rpath.index
-		elif not rpath.index: return # no directory contains root
-		else: new_dir_index = rpath.index[:-1]
-		
-		common_dir_index = self.process_old_directories(new_dir_index)
-		self.init_new_dirs(rpath, new_dir_index, common_dir_index)
-		self.cur_dir_index = new_dir_index
-
-	def Finish(self):
-		"""Process any remaining directories"""
-		indicies = self.index_dict.keys()
-		indicies.sort()
-		assert len(indicies) >= 1, indicies
-		indicies.reverse()
-		map(self.process_old_dir, indicies)
-
-
 def FillInIter(rpiter, rootrp):
 	"""Given ordered rpiter and rootrp, fill in missing indicies with rpaths
 
@@ -396,13 +287,15 @@ def FillInIter(rpiter, rootrp):
 	del first_rp
 	old_index = cur_index
 
-	# Now do the others (1,2,3) (1,4,5)
+	# Now do all the other elements
 	for rp in rpiter:
 		cur_index = rp.index
 		if not cur_index[:-1] == old_index[:-1]: # Handle special case quickly
 			for i in range(1, len(cur_index)): # i==0 case already handled
 				if cur_index[:i] != old_index[:i]:
-					yield rootrp.new_index(cur_index[:i])
+					filler_rp = rootrp.new_index(cur_index[:i])
+					assert filler_rp.isdir(), "This shouldn't be possible"
+					yield filler_rp
 		yield rp
 		old_index = cur_index
 
@@ -514,9 +407,6 @@ class ITRBranch:
 	subclasses this one will probably fill in these functions to do
 	more.
 
-	It is important that this class be pickable, so keep that in mind
-	when subclassing (this is used to resume failed sessions).
-
 	"""
 	base_index = index = None
 	finished = None
@@ -565,26 +455,4 @@ class ITRBranch:
 		log.Log("Skipping %s because of previous error" %
 			(os.path.join(*index),), 2)
 
-
-class DestructiveSteppingFinalizer(ITRBranch):
-		"""Finalizer that can work on an iterator of dsrpaths
-
-		The reason we have to use an IterTreeReducer is that some files
-		should be updated immediately, but for directories we sometimes
-		need to update all the files in the directory before finally
-		coming back to it.
-
-		"""
-		dsrpath = None
-		def start_process(self, index, dsrpath):
-			self.dsrpath = dsrpath
-
-		def end_process(self):
-			if self.dsrpath: self.dsrpath.write_changes()
-
-		def can_fast_process(self, index, dsrpath):
-			return not self.dsrpath.isdir()
-
-		def fast_process(self, index, dsrpath):
-			if self.dsrpath: self.dsrpath.write_changes()
 

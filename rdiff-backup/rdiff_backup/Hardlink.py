@@ -36,18 +36,88 @@ import Globals, Time, TempFile, rpath, log, robust
 
 # In all of these lists of indicies are the values.  The keys in
 # _inode_ ones are (inode, devloc) pairs.
-_src_inode_indicies = {}
-_dest_inode_indicies = {}
+_src_inode_indicies = None
+_dest_inode_indicies = None
 
 # The keys for these two are just indicies.  They share values
 # with the earlier dictionaries.
-_src_index_indicies = {}
-_dest_index_indicies = {}
+_src_index_indicies = None
+_dest_index_indicies = None
 
 # When a linked file is restored, its path is added to this dict,
 # so it can be found when later paths being restored are linked to
 # it.
-_restore_index_path = {}
+_restore_index_path = None
+
+def initialize_dictionaries():
+	"""Set all the hard link dictionaries to empty"""
+	global _src_inode_indicies, _dest_inode_indicies
+	global _src_index_indicies, _dest_index_indicies, _restore_index_path
+	_src_inode_indicies = {}
+	_dest_inode_indicies = {}
+	_src_index_indicies = {}
+	_dest_index_indicies = {}
+	_restore_index_path = {}
+
+def clear_dictionaries():
+	"""Delete all dictionaries"""
+	global _src_inode_indicies, _dest_inode_indicies
+	global _src_index_indicies, _dest_index_indicies, _restore_index_path
+	_src_inode_indicies = _dest_inode_indicies = None
+	_src_index_indicies = _dest_index_indicies = _restore_index_path = None
+
+
+# The keys of this dictionary are (inode, devloc) pairs on the source
+# side.  The values are (numlinks, index) pairs, where numlinks are
+# the number of files currently linked to this spot, and index is the
+# index of the first file so linked.
+_src_inode_index_dict = {}
+_dest_inode_index_dict = {}
+
+
+#def rorp_eq(src_rorp, dest_rorp):
+#	"""Return true if source and dest rorp are equal as far as hardlinking
+#
+#	This also processes the src_rorp, adding it if necessary to the
+#	inode dictionary.
+#
+#	"""
+#	if not src_rorp.isreg(): return 1 # only reg files can be hard linked
+#	if src_rorp.getnumlinks() == 1: return dest_rorp.getnumlinks() == 1
+#
+#	src_linked_index = process_rorp(src_rorp, _src_inode_index_dict)
+#	if dest_rorp.getnumlinks() == 1: return 0
+#	dest_linked_index = process_rorp(dest_rorp, _dest_inode_index_dict)
+#	return src_linked_index == dest_linked_index
+
+def process_rorp(rorp, inode_dict):
+	"""Add inode info and returns index src_rorp is linked to, or None"""
+	key_pair = (rorp.getinode(), rorp.getdevloc())
+	try: num, linked_index = inode_dict[key_pair]
+	except KeyError:
+		inode_dict[key_pair] = (1, src_rorp.index)
+		return None
+	inode_dict[key_pair] = (num+1, linked_index)
+
+	if num+1 == src_rorp.getnumlinks(): del _inode_index_dict[key_pair]
+	else: _inode_index_dict[key_pair] = (num+1, linked_index)
+	return linked_index
+
+def get_linked_index(src_rorp):
+	"""Return the index a src_rorp is linked to, or None
+
+	Also deletes the src_rorp's entry in the dictionary if we have
+	accumulated all the hard link references.
+
+	"""
+	key_pair = (rorp.getinode(), rorp.getdevloc())
+	try: num, linked_index = _src_inode_index_dict[key_pair]
+	except KeyError: return None
+	if num == src_rorp.getnumlinks():
+		del _src_inode_index_dict[key_pair]
+
+
+
 
 def get_inode_key(rorp):
 	"""Return rorp's key for _inode_ dictionaries"""
@@ -100,7 +170,6 @@ def rorp_eq(src_rorp, dest_rorp):
 	indicies.
 
 	"""
-	if not src_rorp.index == dest_rorp.index: return None
 	if (not src_rorp.isreg() or not dest_rorp.isreg() or
 		src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1):
 		return 1 # Hard links don't apply

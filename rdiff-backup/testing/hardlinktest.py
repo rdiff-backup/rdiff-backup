@@ -1,18 +1,21 @@
+
 import os, unittest
 from commontest import *
-from rdiff_backup.rpath import *
-from rdiff_backup import Globals, Hardlink
+from rdiff_backup import Globals, Hardlink, selection, rpath
 
 Log.setverbosity(7)
 
 class HardlinkTest(unittest.TestCase):
 	"""Test cases for Hard links"""
-	outputrp = RPath(Globals.local_connection, "testfiles/output")
-	hardlink_dir1 = RPath(Globals.local_connection, "testfiles/hardlinks/dir1")
-	hardlink_dir1copy = \
-		RPath(Globals.local_connection, "testfiles/hardlinks/dir1copy")
-	hardlink_dir2 = RPath(Globals.local_connection, "testfiles/hardlinks/dir2")
-	hardlink_dir3 = RPath(Globals.local_connection, "testfiles/hardlinks/dir3")
+	outputrp = rpath.RPath(Globals.local_connection, "testfiles/output")
+	hardlink_dir1 = rpath.RPath(Globals.local_connection,
+								"testfiles/hardlinks/dir1")
+	hardlink_dir1copy = rpath.RPath(Globals.local_connection,
+									"testfiles/hardlinks/dir1copy")
+	hardlink_dir2 = rpath.RPath(Globals.local_connection,
+								"testfiles/hardlinks/dir2")
+	hardlink_dir3 = rpath.RPath(Globals.local_connection,
+								"testfiles/hardlinks/dir3")
 
 	def reset_output(self):
 		"""Erase and recreate testfiles/output directory"""
@@ -73,7 +76,7 @@ class HardlinkTest(unittest.TestCase):
 		"""See if the partial inode dictionary is correct"""
 		Globals.preserve_hardlinks = 1
 		reset_hardlink_dicts()
-		for dsrp in Select(DSRPath(1, self.hardlink_dir3)).set_iter():
+		for dsrp in selection.Select(self.hardlink_dir3).set_iter():
 			Hardlink.add_rorp(dsrp, 1)
 		
 		assert len(Hardlink._src_inode_indicies.keys()) == 3, \
@@ -90,7 +93,7 @@ class HardlinkTest(unittest.TestCase):
 		"""Same as testBuildingDict but test destination building"""
 		Globals.preserve_hardlinks = 1
 		reset_hardlink_dicts()
-		for dsrp in Select(DSRPath(None, self.hardlink_dir3)).set_iter():
+		for dsrp in selection.Select(self.hardlink_dir3).set_iter():
 			Hardlink.add_rorp(dsrp, None)
 		
 		assert len(Hardlink._dest_inode_indicies.keys()) == 3, \
@@ -106,7 +109,7 @@ class HardlinkTest(unittest.TestCase):
 	def testCompletedDict(self):
 		"""See if the hardlink dictionaries are built correctly"""
 		reset_hardlink_dicts()
-		for dsrp in Select(DSRPath(1, self.hardlink_dir1)).set_iter():
+		for dsrp in selection.Select(self.hardlink_dir1).set_iter():
 			Hardlink.add_rorp(dsrp, 1)
 		assert Hardlink._src_inode_indicies == {}, \
 			   Hardlink._src_inode_indicies
@@ -119,7 +122,7 @@ class HardlinkTest(unittest.TestCase):
 		assert Hardlink._src_index_indicies == dict
 
 		reset_hardlink_dicts()
-		for dsrp in Select(DSRPath(1, self.hardlink_dir2)).set_iter():
+		for dsrp in selection.Select(self.hardlink_dir2).set_iter():
 			Hardlink.add_rorp(dsrp, 1)
 		assert Hardlink._src_inode_indicies == {}, \
 			   Hardlink._src_inode_indicies
