@@ -55,6 +55,31 @@ static int hs_trace_level = HS_LOG_INFO;
 
 static void hs_log_va(int level, char const *fn, char const *fmt, va_list va);
 
+
+/**
+ * Log severity strings, if any.  Must match ordering in
+ * ::hs_loglevel.
+ */
+static const char *hs_severities[] = {
+    "EMERGENCY! ", "ALERT! ", "CRITICAL! ", "ERROR: ", "Warning: ",
+    "", "", ""
+};
+
+/**
+ * \brief Return the appropriate shell exit value for an internal
+ * result code.
+ */
+hs_exit_value hs_result_to_exit(hs_result r)
+{
+    switch (r) {
+    case HS_OK:
+        return HS_EXIT_OK;
+    default:
+        return HS_EXIT_INTERNAL;
+    }
+}
+
+
 /**
  * \brief Set the destination of trace information.
  *
@@ -92,7 +117,8 @@ hs_log_va(int level, char const *fn, char const *fmt, va_list va)
         vsnprintf(buf, sizeof buf - 1, fmt, va);
 
         snprintf(full_buf, sizeof full_buf - 1,
-                 "%s: %s: %s\n", MY_NAME, fn, buf);
+                 "%s: %s%s: %s\n",
+                 MY_NAME, hs_severities[level], fn, buf);
 
 	hs_trace_impl(level, full_buf);
     }
