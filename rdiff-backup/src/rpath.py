@@ -10,9 +10,19 @@
 
 """Wrapper class around a real path like "/usr/bin/env"
 
-The RPath and associated classes make some function calls more
-convenient (e.g. RPath.getperms()) and also make working with files on
+The RPath (short for Remote Path) and associated classes make some
+function calls more convenient and also make working with files on
 remote systems transparent.
+
+For instance, suppose
+
+rp = RPath(connection_object, "/usr/bin/env")
+
+Then rp.getperms() returns the permissions of that file, and
+rp.delete() deletes that file.  Both of these will work the same even
+if "usr/bin/env" is on a different computer.  So many rdiff-backup
+functions use rpaths so they don't have to know whether the files they
+are dealing with are local or remote.
 
 """
 
