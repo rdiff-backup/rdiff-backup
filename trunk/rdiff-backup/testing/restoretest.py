@@ -2,7 +2,7 @@ import unittest
 
 execfile("commontest.py")
 rbexec("main.py")
-Log.setverbosity(7)
+Log.setverbosity(3)
 
 
 lc = Globals.local_connection
@@ -86,7 +86,11 @@ class RestoreTest(unittest.TestCase):
 		map(self.restoreonefiletest, ["ocaml", "mf"])
 
 	def testRestoreDir(self):
-		"""Test restoring from a real backup set"""
+		"""Test restoring from a real backup set
+
+		Run makerestoretest3 if this doesn't work.
+
+		"""
 		Myrm("testfiles/output")
 		InternalRestore(1, 1, "testfiles/restoretest3",
 						"testfiles/output", 20000)

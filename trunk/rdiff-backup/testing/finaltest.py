@@ -113,7 +113,7 @@ class PathSetter(unittest.TestCase):
 
 		# Getting restore rps
 		inc_paths = self.getinc_paths("increments.",
-								   "testfiles/output/rdiff-backup-data")
+									  "testfiles/output/rdiff-backup-data")
 		assert len(inc_paths) == 3
 
 		# Restoring increment1
