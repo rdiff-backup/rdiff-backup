@@ -180,6 +180,8 @@ class IncrementTest1(unittest.TestCase):
 		InternalBackup(1, 1, hldir.path, Local.rpout.path, current_time = 1)
 		InternalBackup(1, 1, "testfiles/empty", Local.rpout.path,
 					   current_time = 10000)
+		(Globals.quoting_enabled, Globals.chars_to_quote,
+		 Globals.quoting_char) = old_settings
 
 	def test_long_socket(self):
 		"""Test backing up a directory with long sockets in them
