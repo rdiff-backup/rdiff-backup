@@ -54,7 +54,7 @@ class Iter:
 				return None
 		try: i2 = iter2.next()
 		except StopIteration: return 1
-		if verbose: print "End when i2 = %s" % i2
+		if verbose: print "End when i2 = %s" % (i2,)
 		return None
 
 	def Or(iter):

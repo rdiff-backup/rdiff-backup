@@ -90,11 +90,29 @@ testfiles/select/3/3/2""")
 		assert sf(self.makeext("3/3")) == 1
 		assert sf(self.makeext("3/3/3")) == None
 
+	def testFilelistIncludeNullSep(self):
+		"""Test included filelist but with null_separator set"""
+		fp = StringIO.StringIO("""\0testfiles/select/1/2\0testfiles/select/1\0testfiles/select/1/2/3\0testfiles/select/3/3/2\0testfiles/select/hello\nthere\0""")
+		Globals.null_separator = 1
+		sf = self.Select.filelist_get_sf(fp, 1, "test")
+		assert sf(self.root) == 1
+		assert sf(self.makeext("1")) == 1
+		assert sf(self.makeext("1/1")) == None
+		assert sf(self.makeext("1/2/3")) == 1
+		assert sf(self.makeext("2/2")) == None
+		assert sf(self.makeext("3")) == 1
+		assert sf(self.makeext("3/3")) == 1
+		assert sf(self.makeext("3/3/3")) == None
+		assert sf(self.makeext("hello\nthere")) == 1
+		Globals.null_separator = 1
+
 	def testFilelistExclude(self):
 		"""Test included filelist"""
 		fp = StringIO.StringIO("""
 testfiles/select/1/2
 testfiles/select/1
+this is a badly formed line which should be ignored
+
 testfiles/select/1/2/3
 testfiles/select/3/3/2""")
 		sf = self.Select.filelist_get_sf(fp, 0, "test")

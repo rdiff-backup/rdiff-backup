@@ -56,15 +56,17 @@ class StatsObj:
 		"""Add 1 to value of attribute"""
 		self.__dict__[attr] = self.get_stat(attr) + 1
 
-	def get_stats_line(self, index):
+	def get_stats_line(self, index, use_repr = 1):
 		"""Return one line abbreviated version of full stats string"""
 		file_attrs = map(lambda attr: str(self.get_stat(attr)),
 						 self.stat_file_attrs)
 		if not index: filename = "."
 		else:
-			# use repr to quote newlines in relative filename, then
-			# take of leading and trailing quote.
-			filename = repr(apply(os.path.join, index))[1:-1]
+			filename = apply(os.path.join, index)
+			if use_repr:
+				# use repr to quote newlines in relative filename, then
+				# take of leading and trailing quote.
+				filename = repr(filename)[1:-1]
 		return " ".join([filename,] + file_attrs)
 
 	def set_stats_from_line(self, line):
@@ -227,39 +229,45 @@ class StatsITR(IterTreeReducer, StatsObj):
 		"""
 		if mirror_dsrp.lstat():
 			self.mirror_base_exists = 1
-			self.mirror_base_size = mirror_dsrp.getsize()
+			self.mirror_base_size = self.stats_getsize(mirror_dsrp)
 		else: self.mirror_base_exists = None
+
+	def stats_getsize(self, rp):
+		"""Return size of rp, with error checking"""
+		try: return rp.getsize()
+		except KeyError: return 0
 
 	def end_stats(self, diff_rorp, mirror_dsrp, inc_rp = None):
 		"""Set various statistics after mirror processed"""
 		if mirror_dsrp.lstat():
+			source_size = self.stats_getsize(mirror_dsrp)
 			self.SourceFiles += 1
-			self.SourceFileSize += mirror_dsrp.getsize()
+			self.SourceFileSize += source_size
 			if self.mirror_base_exists:
 				self.MirrorFiles += 1
 				self.MirrorFileSize += self.mirror_base_size
 				if diff_rorp: # otherwise no change
 					self.ChangedFiles += 1
-					self.ChangedSourceSize += mirror_dsrp.getsize()
+					self.ChangedSourceSize += source_size
 					self.ChangedMirrorSize += self.mirror_base_size
-					if inc_rp:
-						self.IncrementFiles += 1
-						self.IncrementFileSize += inc_rp.getsize()
+					self.stats_incr_incfiles(inc_rp)
 			else: # new file was created
 				self.NewFiles += 1
-				self.NewFileSize += mirror_dsrp.getsize()
-				if inc_rp:
-					self.IncrementFiles += 1
-					self.IncrementFileSize += inc_rp.getsize()
+				self.NewFileSize += source_size
+				self.stats_incr_incfiles(inc_rp)
 		else:
 			if self.mirror_base_exists: # file was deleted from mirror
 				self.MirrorFiles += 1
 				self.MirrorFileSize += self.mirror_base_size
 				self.DeletedFiles += 1
 				self.DeletedFileSize += self.mirror_base_size
-				if inc_rp:
-					self.IncrementFiles += 1
-					self.IncrementFileSize += inc_rp.getsize()
+				self.stats_incr_incfiles(inc_rp)
+
+	def stats_incr_incfiles(self, inc_rp):
+		"""Increment IncrementFile statistics"""
+		if inc_rp:
+			self.IncrementFiles += 1
+			self.IncrementFileSize += self.stats_getsize(inc_rp)
 
 	def add_file_stats(self, subinstance):
 		"""Add all file statistics from subinstance to current totals"""
@@ -304,7 +312,9 @@ class Stats:
 
 	def write_dir_stats_line(cls, statobj, index):
 		"""Write info from statobj about rpath to statistics file"""
-		cls._dir_stats_fp.write(statobj.get_stats_line(index) +"\n")
+		if Globals.null_separator:
+			cls._dir_stats_fp.write(statobj.get_stats_line(index, None) + "\0")
+		else: cls._dir_stats_fp.write(statobj.get_stats_line(index) + "\n")
 
 	def close_dir_stats_file(cls):
 		"""Close directory statistics file if its open"""

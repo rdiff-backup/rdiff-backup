@@ -33,9 +33,9 @@ class Main:
 			  "include-filelist=", "include-filelist-stdin",
 			  "include-regexp=", "list-increments", "mirror-only",
 			  "no-compression", "no-compression-regexp=",
-			  "no-hard-links", "no-resume", "parsable-output",
-			  "print-statistics", "quoting-char=", "remote-cmd=",
-			  "remote-schema=", "remove-older-than=",
+			  "no-hard-links", "no-resume", "null-separator",
+			  "parsable-output", "print-statistics", "quoting-char=",
+			  "remote-cmd=", "remote-schema=", "remove-older-than=",
 			  "restore-as-of=", "resume", "resume-window=", "server",
 			  "ssh-no-compression", "terminal-verbosity=",
 			  "test-server", "verbosity", "version", "windows-mode",
@@ -88,6 +88,7 @@ class Main:
 				Globals.set("no_compression_regexp_string", arg)
 			elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 			elif opt == '--no-resume': Globals.resume = 0
+			elif opt == "--null-separator": Globals.set("null_separator", 1)
 			elif opt == "-r" or opt == "--restore-as-of":
 				self.restore_timestr = arg
 				self.action = "restore-as-of"

@@ -187,6 +187,13 @@ are present, this option can drastically decrease memory usage.
 Do not resume last aborted backup even if it falls within the resume
 window.
 .TP
+.B --null-separator
+Use nulls (\\0) instead of newlines (\\n) as line separators, which
+may help when dealing with filenames containing newlines.  This
+affects the expected format of the files specified by the
+--{include|exclude}-filelist[-stdin] switches as well as the format of
+the directory_statistics file.
+.TP
 .BI "-r, --restore-as-of " restore_time
 Restore the specified directory as it was as of
 .IR restore_time .
@@ -651,8 +658,10 @@ and
 .B --exclude-filelist-stdin
 options also introduce file selection conditions.  They direct
 rdiff-backup to read in a file, each line of which is a file
-specification, and to include or exclude the matching files.  The
-lines in a filelist are interpreted similarly to the way
+specification, and to include or exclude the matching files.  Lines
+are separated by newlines or nulls, depending on whether the
+--null-separator switch was given.  Each line in a filelist is
+interpreted similarly to the way
 .I extended shell patterns
 are, with a few exceptions:
 .TP
@@ -730,11 +739,6 @@ rdiff-backup uses the shell command
 .BR mknod (1)
 to backup device files (e.g. /dev/ttyS0), so device files won't be
 handled correctly on systems with non-standard mknod syntax.
-.PP
-When an rdiff-backup session fails (for instance if a remote
-connection is lost), rdiff-backup tries to save the session so it can
-be resumed later.  Apparently sometimes, depending on how the
-rdiff-backup session fails, later sessions cannot be resumed properly.
 .PP
 Files whose names are close to the maximum length (e.g. 235 chars if
 the maximum is 255) may be skipped because the filenames of related
