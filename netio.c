@@ -59,10 +59,9 @@ _hs_must_read(hs_read_fn_t read_fn, void *read_priv,
 {
      ssize_t ret;
      ret = _hs_read_loop(read_fn, read_priv, buf, len);
-     if (ret == len)
+     if (ret == len) {
 	  return ret;
-     else if (ret == 0) {
-	  _hs_error("unexpected EOF");
+     } else if (ret == 0) {
 	  return ret;
      } else if (ret < 0) {
 	  return -1;
@@ -95,8 +94,9 @@ _hs_write_loop(hs_write_fn_t write_fn, void *write_priv,
 	if (ret == -1)
 	    return ret;
 	if (ret == 0 && ++iter > 100) {
-	    errno = EIO;
-	    return -1;
+	     if (!errno)
+		  errno = EIO;
+	     return -1;
 	}
     }
 
@@ -104,32 +104,56 @@ _hs_write_loop(hs_write_fn_t write_fn, void *write_priv,
 }
 
 
+/* Either write the whole thing, or fail. */
+int
+hs_must_write(hs_write_fn_t write_fn, void *write_priv,
+	      void const *buf, int len)
+{
+     int ret;
+     ret = _hs_write_loop(write_fn, write_priv, buf, len);
+     if (ret == len)
+	  return len;
+     else if (ret >= 0 && ret < len) {
+	  _hs_error("short write: wanted to send %d bytes, only got out %d",
+		    len, ret);
+	  return -1;
+     } else if (ret > len) {
+	  _hs_fatal("something's really crazy: "
+		    "we wanted to send %d bytes, but wrote %d",
+		    len, ret);
+	  abort();
+	  return -1;
+     } else {
+	  return -1;
+     }
+}
+
 
 
 
 int
 _hs_write_netint(hs_write_fn_t write_fn, void *write_priv, uint32_t out)
 {
-    out = htonl(out);
-    return _hs_write_loop(write_fn, write_priv, (void *) &out, sizeof out) == sizeof out
-	? sizeof out : -1;
+     uint32_t net_out = htonl(out);
+     return hs_must_write(write_fn, write_priv,
+			  &net_out, sizeof net_out);
 }
 
 
 int
 _hs_write_netshort(hs_write_fn_t write_fn, void *write_priv, uint16_t out)
 {
-    out = htons(out);
-    return _hs_write_loop(write_fn, write_priv, (void *) &out, sizeof out) == sizeof out
-	? sizeof out : -1;
+     uint16_t net_out = htons(out);     
+     return hs_must_write(write_fn, write_priv,
+			  &net_out, sizeof net_out);
 }
 
 
 int
 _hs_write_netbyte(hs_write_fn_t write_fn, void *write_priv, uint8_t out)
 {
-    return _hs_write_loop(write_fn, write_priv, (void *) &out, sizeof out) == sizeof out
-	? sizeof out : -1;
+     return hs_must_write(write_fn, write_priv,
+			  &out, sizeof out);
 }
 
 
