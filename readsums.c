@@ -46,6 +46,7 @@
 #include "netint.h"
 #include "protocol.h"
 #include "util.h"
+#include "stream.h"
 
 
 static hs_result hs_loadsig_s_weak(hs_job_t *job);
@@ -56,12 +57,12 @@ static hs_result hs_loadsig_s_strong(hs_job_t *job);
 /**
  * Add a just-read-in checksum pair to the signature block.
  */
-static hs_result hs_loadsig_add_sum(hs_job_t *job, uint32_t weak,
-                                    char const *strong)
+static hs_result hs_loadsig_add_sum(hs_job_t *job, hs_strong_sum_t *strong)
 {
     size_t              new_size;
     hs_signature_t      *sig = job->signature;
     hs_block_sig_t      *asignature;
+    char                hexbuf[HS_MD4_LENGTH * 2 + 2];
 
     sig->count++;
     new_size = sig->count * sizeof(hs_block_sig_t);
@@ -73,10 +74,14 @@ static hs_result hs_loadsig_add_sum(hs_job_t *job, uint32_t weak,
     }
     asignature = &(sig->block_sigs[sig->count - 1]);
 
-    asignature->weak_sum = weak;
+    asignature->weak_sum = job->weak_sig;
     asignature->i = sig->count;
 
     memcpy(asignature->strong_sum, strong, sig->strong_sum_len);
+    hs_hexify(hexbuf, strong, sig->strong_sum_len);
+
+    hs_trace("read in checksum: weak=%#x, strong=%s", asignature->weak_sum,
+             hexbuf);
 
     return HS_RUNNING;
 }
@@ -98,10 +103,21 @@ static hs_result hs_loadsig_s_weak(hs_job_t *job)
 }
 
 
+
 static hs_result hs_loadsig_s_strong(hs_job_t *job)
 {
-    return HS_UNIMPLEMENTED;
+    hs_result           result;
+    hs_strong_sum_t     *strongsum;
+
+    result = hs_scoop_read(job->stream, job->signature->strong_sum_len,
+                           (void **) &strongsum);
+    if (result != HS_DONE) return result;
+
+    job->statefn = hs_loadsig_s_weak;
+
+    return hs_loadsig_add_sum(job, strongsum);
 }
+
 
 
 static hs_result hs_loadsig_s_stronglen(hs_job_t *job)
@@ -120,6 +136,7 @@ static hs_result hs_loadsig_s_stronglen(hs_job_t *job)
 
     job->signature = hs_alloc_struct(hs_signature_t);
     job->signature->block_len = job->block_len;
+    job->signature->strong_sum_len = job->strong_sum_len;
     
     hs_trace("allocated sigset_t (strong_sum_len=%d, block_len=%d)",
              job->strong_sum_len, job->block_len);
