@@ -570,8 +570,8 @@ def ListChangedSince(rp):
 		last_inc_type = incList[-1].getinctype() # examine earliest change
 		if last_inc_type == 'snapshot': return "misc change"
 		elif last_inc_type == 'missing': return "new file"
-		elif last_inc_type == 'diff' or last_inc_type == 'dir':
-			return "modified"
+		elif last_inc_type == 'diff': return "modified"
+		elif last_inc_type == 'dir': return "dir change"
 		else: return "Unknown!"
 
 	inc_rpath = datadir.append_path('increments', index)
