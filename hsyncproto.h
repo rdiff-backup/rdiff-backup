@@ -1,5 +1,5 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
-
+/* -*- mode: c; c-file-style: "bsd" -*-  */
+/* $Id$ */
 /* hsyncproto -- Protocol special numbers
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
 

@@ -36,7 +36,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/file.h>
+/*@-skipposixheaders@*/
 #include <netinet/in.h>		/* ntohs, etc */
+/*@+skipposixheaders@*/
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>

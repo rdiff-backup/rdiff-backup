@@ -22,12 +22,12 @@
 extern char const *const hs_libhsync_version;
 
 #if HAVE_OFF64_T
-#define hs_off_t off64_t
-#define STRUCT_STAT struct stat64
-#else
-#define hs_off_t off_t
-#define STRUCT_STAT struct stat
-#endif
+typedef off_t hs_off_t;
+#define struct stat64 hs_statbuf_t;
+#else /* !HAVE_OFF64_T */
+typedef off_t hs_off_t;
+typedef struct stat hs_statbuf_t;
+#endif /* !HAVE_OFF64_T */
 
 
 /* ========================================
@@ -135,10 +135,10 @@ hs_ptrbuf_t *hs_ptrbuf_on_buffer(char *buf, int len);
 */
 
 typedef struct hs_mdfour {
-	uint32_t A, B, C, D;
-	uint32_t totalN;
-	int tail_len;
-	char tail[64];
+    uint32_t A, B, C, D;
+    uint32_t totalN;
+    int tail_len;
+    char tail[64];
 } hs_mdfour_t;
 
 void hs_mdfour(unsigned char *out, unsigned char const *in, int n);
