@@ -1,5 +1,5 @@
 execfile("connection.py")
-import os, stat, re, sys, shutil
+import os, stat, re, sys, shutil, gzip
 
 #######################################################################
 #
@@ -73,7 +73,7 @@ class RPathStatic:
 		try:
 			if rpout.conn is rpin.conn:
 				rpout.conn.shutil.copyfile(rpin.path, rpout.path)
-				rpout.data = {'type': rpin.data['type']}
+				rpout.setdata()
 				return
 		except AttributeError: pass
 		rpout.write_from_fileobj(rpin.open("rb"))
@@ -648,44 +648,75 @@ class RPath(RORPath):
 		"""Return similar RPath but with new index"""
 		return self.__class__(self.conn, self.base, index)
 
-	def open(self, mode):
-		"""Return open file.  Supports modes "w" and "r"."""
-		return self.conn.open(self.path, mode)
+	def open(self, mode, compress = None):
+		"""Return open file.  Supports modes "w" and "r".
 
-	def write_from_fileobj(self, fp):
-		"""Reads fp and writes to self.path.  Closes both when done"""
+		If compress is true, data written/read will be gzip
+		compressed/decompressed on the fly.
+
+		"""
+		if compress: return self.conn.gzip.GzipFile(self.path, mode)
+		else: return self.conn.open(self.path, mode)
+
+	def write_from_fileobj(self, fp, compress = None):
+		"""Reads fp and writes to self.path.  Closes both when done
+
+		If compress is true, fp will be gzip compressed before being
+		written to self.
+
+		"""
 		Log("Writing file object to " + self.path, 7)
 		assert not self.lstat(), "File %s already exists" % self.path
-		outfp = self.open("wb")
+		outfp = self.open("wb", compress = compress)
 		RPath.copyfileobj(fp, outfp)
 		if fp.close() or outfp.close():
 			raise RPathException("Error closing file")
 		self.setdata()
 
 	def isincfile(self):
-		"""Return true if path looks like an increment file"""
-		dotsplit = self.path.split(".")
-		if len(dotsplit) < 3: return None
-		timestring, ext = dotsplit[-2:]
+		"""Return true if path looks like an increment file
+
+		Also sets various inc information used by the *inc* functions.
+
+		"""
+		if self.index: dotsplit = self.index[-1].split(".")
+		else: dotsplit = self.base.split(".")
+		if dotsplit[-1] == "gz":
+			compressed = 1
+			if len(dotsplit) < 4: return None
+			timestring, ext = dotsplit[-3:-1]
+		else:
+			compressed = None
+			if len(dotsplit) < 3: return None
+			timestring, ext = dotsplit[-2:]
 		if Time.stringtotime(timestring) is None: return None
-		return (ext == "snapshot" or ext == "dir" or
-				ext == "missing" or ext == "diff")
+		if not (ext == "snapshot" or ext == "dir" or
+				ext == "missing" or ext == "diff"): return None
+		self.inc_timestr = timestring
+		self.inc_compressed = compressed
+		self.inc_type = ext
+		if compressed: self.inc_basestr = ".".join(dotsplit[:-3])
+		else: self.inc_basestr = ".".join(dotsplit[:-2])
+		return 1
+
+	def isinccompressed(self):
+		"""Return true if inc file is compressed"""
+		return self.inc_compressed
 
 	def getinctype(self):
 		"""Return type of an increment file"""
-		return self.path.split(".")[-1]
+		return self.inc_type
 
 	def getinctime(self):
 		"""Return timestring of an increment file"""
-		return self.path.split(".")[-2]
+		return self.inc_timestr
 	
 	def getincbase(self):
 		"""Return the base filename of an increment file in rp form"""
 		if self.index:
 			return self.__class__(self.conn, self.base, self.index[:-1] +
-							 ((".".join(self.index[-1].split(".")[:-2])),))
-		else: return self.__class__(self.conn,
-									".".join(self.base.split(".")[:-2]), ())
+								  (self.inc_basestr,))
+		else: return self.__class__(self.conn, self.inc_basestr)
 
 	def getincbase_str(self):
 		"""Return the base filename string of an increment file"""

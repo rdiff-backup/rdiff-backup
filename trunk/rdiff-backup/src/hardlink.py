@@ -129,7 +129,7 @@ class Hardlink:
 								cls.get_indicies(src_rorp, 1)[0])
 		dest_rpath.hardlink(dest_link_rpath.path)
 
-	def write_linkdict(cls, rpath, dict):
+	def write_linkdict(cls, rpath, dict, compress = None):
 		"""Write link data to the rbdata dir
 
 		It is stored as the a big pickled dictionary dated to match
@@ -140,7 +140,7 @@ class Hardlink:
 				rpath.conn is Globals.local_connection)
 		tf = TempFileManager.new(rpath)
 		def init():
-			fp = tf.open("wb")
+			fp = tf.open("wb", compress)
 			cPickle.dump(dict, fp)
 			assert not fp.close()
 		Robust.make_tf_robustaction(init, (tf,), (rpath,)).execute()
@@ -158,18 +158,21 @@ class Hardlink:
 		"""Return index dictionary written by write_linkdata at time"""
 		rp = cls.get_linkrp(data_rpath, time, prefix)
 		if not rp: return None
-		fp = rp.open("rb")
+		fp = rp.open("rb", rp.isinccompressed())
 		index_dict = cPickle.load(fp)
 		assert not fp.close()
 		return index_dict
 
 	def final_writedata(cls):
 		"""Write final checkpoint data to rbdir after successful backup"""
-		if cls._src_index_indicies:
-			Log("Writing hard link data", 6)
-			rp = Globals.rbdir.append("hardlink_data.%s.snapshot" %
+		if not cls._src_index_indicies: return
+		Log("Writing hard link data", 6)
+		if Globals.compression:
+			rp = Globals.rbdir.append("hardlink_data.%s.snapshot.gz" %
 									  Time.curtimestr)
-			cls.write_linkdict(rp, cls._src_index_indicies)
+		else: rp = Globals.rbdir.append("hardlink_data.%s.snapshot" %
+										Time.curtimestr)
+		cls.write_linkdict(rp, cls._src_index_indicies, Globals.compression)
 
 	def retrieve_final(cls, time):
 		"""Set source index dictionary from hardlink_data file if avail"""

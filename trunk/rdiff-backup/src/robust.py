@@ -142,13 +142,14 @@ class Robust:
 				tfl[0].rename(rpout)
 		return RobustAction(init, final, lambda e: tfl[0] and tfl[0].delete())
 
-	def copy_with_attribs_action(rorpin, rpout):
+	def copy_with_attribs_action(rorpin, rpout, compress = None):
 		"""Like copy_action but also copy attributes"""
 		tfl = [None] # Need mutable object that init and final can access
 		def init(): 
 			if not (rorpin.isdir() and rpout.isdir()): # already a dir
 				tfl[0] = TempFileManager.new(rpout)
-				if rorpin.isreg(): tfl[0].write_from_fileobj(rorpin.open("rb"))
+				if rorpin.isreg():
+					tfl[0].write_from_fileobj(rorpin.open("rb"), compress)
 				else: RPath.copy(rorpin, tfl[0])
 				if tfl[0].lstat(): # Some files, like sockets, won't be created
 					RPathStatic.copy_attribs(rorpin, tfl[0])

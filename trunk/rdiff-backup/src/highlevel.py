@@ -238,7 +238,7 @@ class HLDestinationStruct:
 
 		try:
 			while 1:
-				try: dsrp = cls.check_skip_error(error_checked)
+				try: dsrp = cls.check_skip_error(error_checked, dsrp)
 				except StopIteration: break
 				if checkpoint: SaveState.checkpoint_mirror(finalizer, dsrp)
 		except: cls.handle_last_error(dsrp, finalizer)
@@ -272,7 +272,7 @@ class HLDestinationStruct:
 
 		try:
 			while 1:
-				try: dsrp = cls.check_skip_error(error_checked)
+				try: dsrp = cls.check_skip_error(error_checked, dsrp)
 				except StopIteration: break
 				SaveState.checkpoint_inc_backup(ITR, finalizer, dsrp)
 		except: cls.handle_last_error(dsrp, finalizer, ITR)
@@ -281,7 +281,7 @@ class HLDestinationStruct:
 		if Globals.preserve_hardlinks: Hardlink.final_writedata()
 		SaveState.checkpoint_remove()
 
-	def check_skip_error(cls, thunk):
+	def check_skip_error(cls, thunk, dsrp):
 		"""Run thunk, catch certain errors skip files"""
 		try: return thunk()
 		except (IOError, OSError, SkipFileException), exp:
@@ -294,7 +294,8 @@ class HLDestinationStruct:
 							 26] # Requested by Campbell (see list) -
                                  # happens on some NT systems
 				 ))):
-				Log("Skipping file", 2)
+				Log("Skipping file because of error after %s" %
+					(dsrp and dsrp.index,), 2)
 				return None
 			else: raise
 

@@ -36,37 +36,52 @@ class Rdiff:
 		return rp_new.conn.RdiffPopen(['rdiff', 'delta',
 									   rp_signature.path, rp_new.path])
 
-	def write_delta_action(basis, new, delta):
-		"""Return action writing delta which brings basis to new"""
+	def write_delta_action(basis, new, delta, compress = None):
+		"""Return action writing delta which brings basis to new
+
+		If compress is true, the output of rdiff will be gzipped
+		before written to delta.
+
+		"""
 		sig_tf = TempFileManager.new(new, None)
 		delta_tf = TempFileManager.new(delta)
 		def init():
 			Log("Writing delta %s from %s -> %s" %
 				(basis.path, new.path, delta.path), 7)
 			sig_tf.write_from_fileobj(Rdiff.get_signature(basis))
-			delta_tf.write_from_fileobj(Rdiff.get_delta(sig_tf, new))
+			delta_tf.write_from_fileobj(Rdiff.get_delta(sig_tf, new), compress)
 			sig_tf.delete()
 		return Robust.make_tf_robustaction(init, (sig_tf, delta_tf),
 										   (None, delta))
 
-	def write_delta(basis, new, delta):
+	def write_delta(basis, new, delta, compress = None):
 		"""Write rdiff delta which brings basis to new"""
-		Rdiff.write_delta_action(basis, new, delta).execute()
+		Rdiff.write_delta_action(basis, new, delta, compress).execute()
 
-	def patch_action(rp_basis, rp_delta, rp_out = None, out_tf = None):
+	def patch_action(rp_basis, rp_delta, rp_out = None,
+					 out_tf = None, delta_compressed = None):
 		"""Return RobustAction which patches rp_basis with rp_delta
 
 		If rp_out is None, put output in rp_basis.  Will use TempFile
-		out_tf it is specified.
+		out_tf it is specified.  If delta_compressed is true, the
+		delta file will be decompressed before processing with rdiff.
 
 		"""
 		if not rp_out: rp_out = rp_basis
 		else: assert rp_out.conn is rp_basis.conn
-		if not (isinstance(rp_delta, RPath) and isinstance(rp_basis, RPath)
-				and rp_basis.conn is rp_delta.conn):
-			return Rdiff.patch_fileobj_action(rp_basis, rp_delta.open('rb'),
-											  rp_out, out_tf)
+		if (delta_compressed or
+			not (isinstance(rp_delta, RPath) and isinstance(rp_basis, RPath)
+				 and rp_basis.conn is rp_delta.conn)):
+			if delta_compressed:
+				assert isinstance(rp_delta, RPath)
+				return Rdiff.patch_fileobj_action(rp_basis,
+												  rp_delta.open('rb', 1),
+												  rp_out, out_tf)
+			else: return Rdiff.patch_fileobj_action(rp_basis,
+													rp_delta.open('rb'),
+													rp_out, out_tf)
 
+		# Files are uncompressed on same connection, run rdiff
 		if out_tf is None: out_tf = TempFileManager.new(rp_out)
 		def init():
 			Log("Patching %s using %s to %s via %s" %
@@ -79,8 +94,8 @@ class Rdiff:
 				RdiffException("Error running %s" % cmdlist)
 		return Robust.make_tf_robustaction(init, (out_tf,), (rp_out,))
 
-	def patch_fileobj_action(rp_basis, delta_fileobj,
-							 rp_out = None, out_tf = None):
+	def patch_fileobj_action(rp_basis, delta_fileobj, rp_out = None,
+							 out_tf = None, delta_compressed = None):
 		"""Like patch_action but diff is given in fileobj form
 
 		Nest a writing of a tempfile with the actual patching to

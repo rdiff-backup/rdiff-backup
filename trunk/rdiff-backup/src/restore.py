@@ -69,14 +69,19 @@ class Restore:
 		if inctype == "diff":
 			if not target.lstat():
 				raise RestoreError("Bad increment sequence at " + inc.path)
-			Rdiff.patch_action(target, inc).execute()
+			Rdiff.patch_action(target, inc,
+							   delta_compressed = inc.isinccompressed()
+							   ).execute()
 		elif inctype == "dir":
 			if not target.isdir():
 				if target.lstat():
 					raise RestoreError("File %s already exists" % target.path)
 				target.mkdir()
 		elif inctype == "missing": return
-		elif inctype == "snapshot": RPath.copy(inc, target)
+		elif inctype == "snapshot":
+			if inc.isinccompressed():
+				target.write_from_fileobj(inc.open("rb", compress = 1))
+			else: RPath.copy(inc, target)
 		else: raise RestoreError("Unknown inctype %s" % inctype)
 		RPath.copy_attribs(inc, target)
 
