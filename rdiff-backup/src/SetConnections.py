@@ -55,11 +55,11 @@ def get_cmd_pairs(arglist, remote_schema = None, remote_cmd = None):
 	return cmdpairs
 
 def cmdpair2rp(cmd_pair):
-	"""Return RPath from cmd_pair (remote_cmd, filename)"""
+	"""Return normalized RPath from cmd_pair (remote_cmd, filename)"""
 	cmd, filename = cmd_pair
 	if cmd: conn = init_connection(cmd)
 	else: conn = Globals.local_connection
-	return RPath(conn, filename)
+	return RPath(conn, filename).normalize()
 
 def desc2cmd_pairs(desc_pair):
 	"""Return pair (remote_cmd, filename) from desc_pair"""

@@ -390,13 +390,24 @@ def RestoreAsOf(rpin, target):
 
 def restore_common(rpin, target, time):
 	"""Restore operation common to Restore and RestoreAsOf"""
-	Log("Starting Restore", 5)
 	mirror_root, index = restore_get_root(rpin)
 	mirror = mirror_root.new_index(index)
 	inc_rpath = datadir.append_path('increments', index)
 	restore_init_select(mirror_root, target)
-	Log.open_logfile(datadir.append("restore.log"))
+	restore_start_log(rpin, target, time)
 	Restore.Restore(inc_rpath, mirror, target, time)
+	Log("Restore ended", 4)
+
+def restore_start_log(rpin, target, time):
+	"""Open restore log file, log initial message"""
+	try: Log.open_logfile(datadir.append("restore.log"))
+	except LoggerError, e: Log("Warning, " + str(e), 2)
+
+	# Log following message at file verbosity 3, but term verbosity 4
+	log_message = ("Starting restore of %s to %s as it was as of %s." %
+				   (rpin.path, target.path, Time.timetopretty(time)))
+	if Log.term_verbosity >= 4: Log.log_to_term(log_message, 4)
+	if Log.verbosity >= 3: Log.log_to_file(log_message)
 
 def restore_check_paths(rpin, rpout, restoreasof = None):
 	"""Check paths and return pair of corresponding rps"""

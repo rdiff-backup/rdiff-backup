@@ -37,7 +37,7 @@ class Logger:
 		try: self.term_verbosity = int(termverb_string)
 		except ValueError:
 			Log.FatalError("Terminal verbosity must be a number, received "
-						   "'%s' insteaxd." % termverb_string)
+						   "'%s' instead." % termverb_string)
 		self.termverbset = 1
 
 	def open_logfile(self, rpath):
@@ -48,9 +48,9 @@ class Logger:
 
 		"""
 		assert not self.log_file_open
+		rpath.conn.Log.open_logfile_local(rpath)
 		for conn in Globals.connections:
 			conn.Log.open_logfile_allconn(rpath.conn)
-		rpath.conn.Log.open_logfile_local(rpath)
 
 	def open_logfile_allconn(self, log_file_conn):
 		"""Run on all connections to signal log file is open"""
@@ -59,10 +59,13 @@ class Logger:
 
 	def open_logfile_local(self, rpath):
 		"""Open logfile locally - should only be run on one connection"""
-		assert self.log_file_conn is Globals.local_connection
+		assert rpath.conn is Globals.local_connection
+		try: self.logfp = rpath.open("a")
+		except (OSError, IOError), e:
+			raise LoggerError("Unable to open logfile %s: %s"
+							  % (rpath.path, e))
 		self.log_file_local = 1
 		self.logrp = rpath
-		self.logfp = rpath.open("a")
 
 	def close_logfile(self):
 		"""Close logfile and inform all connections"""
