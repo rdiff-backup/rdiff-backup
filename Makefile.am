@@ -8,21 +8,28 @@ CFLAGS += -W -Wall -g @DEFS@
 lib_LTLIBRARIES = libhsync.la
 
 libhsync_la_SOURCES = dec.c enc.c \
-	emit.h emit.c \
+	emit.c emit.h \
 	litbuf.c \
-	private.h netio.c includes.h \
-	mdfour.c search.c \
+	private.h \
+	netio.c netio.h \
+	includes.h \
+	mdfour.c \
+	search.c search.h \
 	filebuf.c membuf.c ptrbuf.c \
-	checksum.c copyq.c \
+	checksum.c checksum.h \
+	copyq.c \
 	inbuf.c \
-	inhale.c trace.c \
+	inhale.c \
+	trace.c trace.h \
 	hex.c stats.c \
 	mapptr.c mapptr.h \
 	fileutil.c \
 	gdproto.c \
 	util.c util.h \
-	mksum.c sumset.c \
-	rollsum.c nad.c
+	mksum.c mksum.h \
+	sumset.c sumset.h \
+	rollsum.c rollsum.h \
+	nad.c 
 
 # NB: tests should exit with code 77 if they can't be run but haven't failed.
 TESTS_ENVIRONMENT = $(SHELL)
@@ -44,7 +51,8 @@ test_scripts := \
 	test-thricenad.sh
 
 noinst_SCRIPTS = \
-	$(test_scripts)
+	$(test_scripts) \
+	testfns.sh
 
 test_data=test-chain/empty-sig			\
 test-decode/01-diff				\
@@ -78,13 +86,13 @@ test-seq/in-07					\
 test-seq/in-08					\
 test-cmds/cmds					\
 test-thrice/01-data				\
-in-tricky/01					\
-in-tricky/02					\
-in-tricky/03					\
-in-tricky/04					\
-in-tricky/05					\
-in-tricky/06					\
-in-tricky/07
+in-tricky/in-01					\
+in-tricky/in-02					\
+in-tricky/in-03					\
+in-tricky/in-04					\
+in-tricky/in-05					\
+in-tricky/in-06					\
+in-tricky/in-07
 
 
 # TODO: Delete the test-*.d directories when cleaning up.  Yeah! 
@@ -96,10 +104,6 @@ include_HEADERS = hsync.h hsyncproto.h
 
 bin_PROGRAMS = hsdecode hsencode hsmdfour hsmksum hsmapread hsnad
 check_PROGRAMS = hsemit hsinhale hsfilebufcat genmaptest
-
-test-cmds/cmds: make-cmds.py
-	mkdir -p test-cmds
-	$(PYTHON) $(srcdir)/make-cmds.py > $@
 
 hsnad_SOURCES = hsnad.c
 hsnad_LDADD = libhsync.la

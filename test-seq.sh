@@ -25,6 +25,7 @@ do
     do 
 	if [ $old != $new ] 
 	then
+	    countdown
 	    run_test hsencode $new $lt $sig
 	    run_test hsdecode $old /dev/null $newout $lt
 	    run_test cmp $new $newout

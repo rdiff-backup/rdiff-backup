@@ -21,8 +21,8 @@
 
 #include "includes.h"
 
-/* hsfilebufcat: write stdin to stdout, using an hs_filebuf_t to do
- * the input.  */
+/* hsfilebufcat: write stdin to stdout, using an hs_filebuf_t to do * the
+   input.  */
 
 
 int

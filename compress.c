@@ -1,23 +1,23 @@
 /* -*- mode: c; c-file-style: "bsd" -*- */
-/* librsync/compress.c -- a shim between signature.c and librsync to
-   add zlib compression
+/* librsync/compress.c -- a shim between signature.c and librsync to add zlib 
+   compression
 
-   Copyright (C) 1999, 2000 by Martin Pool
-   Copyright (C) 1999 by Andrew Tridgell
+   Copyright (C) 1999, 2000 by Martin Pool Copyright (C) 1999 by Andrew
+   Tridgell
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-   
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-   
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA */
+   This program is free software; you can redistribute it and/or modify it
+   under the terms of the GNU General Public License as published by the Free 
+   Software Foundation; either version 2 of the License, or (at your option)
+   any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
+   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+   for more details.
+
+   You should have received a copy of the GNU General Public License along
+   with this program; if not, write to the Free Software Foundation, Inc., 59 
+   Temple Place, Suite 330, Boston, MA 02111-1307 USA */
 
 #include "includes.h"
 #include "compress.h"
@@ -25,10 +25,11 @@
 /* TODO: Remove the static stuff? */
 
 static z_stream c;
-static char cbuf[1024];
-static int eof;
+static char     cbuf[1024];
+static int      eof;
 
-void comp_init(void)
+void
+comp_init(void)
 {
     memset(&c, 0, sizeof(c));
 
@@ -39,11 +40,12 @@ void comp_init(void)
 }
 
 
-ssize_t comp_write(ssize_t(*fn) (void *, char const *, size_t),
-		   void *private, char const *buf, size_t len)
+ssize_t
+comp_write(ssize_t(*fn) (void *, char const *, size_t),
+	   void *private, char const *buf, size_t len)
 {
-    size_t to_write;
-    int err;
+    size_t          to_write;
+    int             err;
 
     c.next_in = (Bytef *) buf;
     c.avail_in = len;
@@ -69,10 +71,11 @@ ssize_t comp_write(ssize_t(*fn) (void *, char const *, size_t),
 }
 
 
-void comp_flush(ssize_t(*fn) (void *, char const *, size_t), void *private)
+void
+comp_flush(ssize_t(*fn) (void *, char const *, size_t), void *private)
 {
-    int to_flush;
-    int err = Z_OK;
+    int             to_flush;
+    int             err = Z_OK;
 
 
 
@@ -91,7 +94,8 @@ void comp_flush(ssize_t(*fn) (void *, char const *, size_t), void *private)
 }
 
 
-void decomp_init(void)
+void
+decomp_init(void)
 {
     eof = 0;
     memset(&c, 0, sizeof(c));
@@ -101,8 +105,9 @@ void decomp_init(void)
     c.next_in = (Bytef *) cbuf;
 }
 
-ssize_t decomp_read(ssize_t(*fn) (void *, char *, size_t),
-		    void *private, char *buf, size_t len)
+ssize_t
+decomp_read(ssize_t(*fn) (void *, char *, size_t),
+	    void *private, char *buf, size_t len)
 {
     c.avail_out = len;
     c.next_out = (Bytef *) buf;
@@ -133,10 +138,11 @@ ssize_t decomp_read(ssize_t(*fn) (void *, char *, size_t),
     return len - c.avail_out;
 }
 
-ssize_t decomp_finish(ssize_t(*fn) (void *, char *, size_t), void *private)
+ssize_t
+decomp_finish(ssize_t(*fn) (void *, char *, size_t), void *private)
 {
-    char scrapbuf[1024];
-    int ret = 0;
+    char            scrapbuf[1024];
+    int             ret = 0;
 
     c.avail_out = 1024;
     c.next_out = (Bytef *) scrapbuf;
@@ -152,9 +158,9 @@ ssize_t decomp_finish(ssize_t(*fn) (void *, char *, size_t), void *private)
 	}
 
 	if (c.avail_in < sizeof(cbuf)) {
-	    int ret = 0;
-	    if ((ret = fn(private, (char *) c.next_in + c.avail_in, 1)) !=
-		1) {
+	    int             ret = 0;
+
+	    if ((ret = fn(private, (char *) c.next_in + c.avail_in, 1)) != 1) {
 		fprintf(stderr, "Error in inflate (%d)\n", ret);
 		abort();
 	    }

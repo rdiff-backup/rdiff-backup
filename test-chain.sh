@@ -30,6 +30,7 @@ do
 
     for new in $files
     do
+	countdown
         run_test hsnad $sig <$new >$diff
         run_test hsdecode $old $newsig $out $diff 
     

@@ -4,23 +4,22 @@
 
    Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This program is free software; you can redistribute it and/or modify it
+   under the terms of the GNU General Public License as published by the Free 
+   Software Foundation; either version 2 of the License, or (at your option)
+   any later version.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
+   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+   for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*/
+   You should have received a copy of the GNU General Public License along
+   with this program; if not, write to the Free Software Foundation, Inc., 59 
+   Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
-/* An HS_MEMBUF_T is a dynamically-allocated memory buffer.  It
-   automatically grows using realloc as required. */
+/* An HS_MEMBUF_T is a dynamically-allocated memory buffer.  It automatically 
+   grows using realloc as required. */
 
 #include "includes.h"
 
@@ -51,7 +50,8 @@ hs_membuf_free(hs_membuf_t * mb)
 
 
 /* Allow the caller read-only access to our buffer. */
-size_t hs_membuf_getbuf(hs_membuf_t const *mb, char const **buf)
+size_t
+hs_membuf_getbuf(hs_membuf_t const *mb, char const **buf)
 {
     assert(mb->dogtag == membuf_tag);
     *buf = mb->buf;
@@ -78,8 +78,7 @@ hs_membuf_on_buffer(char *buf, int len)
 
 
 
-hs_off_t
-hs_membuf_tell(void *private)
+hs_off_t hs_membuf_tell(void *private)
 {
     hs_membuf_t    *mb = (hs_membuf_t *) private;
 
@@ -96,18 +95,18 @@ hs_membuf_truncate(hs_membuf_t * mb)
 }
 
 
-ssize_t
-hs_membuf_write(void *private, char const *buf, size_t len)
+ssize_t hs_membuf_write(void *private, char const *buf, size_t len)
 {
     hs_membuf_t    *mb = (hs_membuf_t *) private;
 
     assert(mb->dogtag == membuf_tag);
 
     if (mb->alloc < mb->ofs + len) {
-	char *newbuf;
+	char           *newbuf;
+
 	mb->alloc = MAX(mb->alloc * 2, mb->ofs + len);
 	newbuf = realloc(mb->buf, mb->alloc);
-	if (!newbuf) 
+	if (!newbuf)
 	    return -1;
 	mb->buf = newbuf;
     }
@@ -118,8 +117,7 @@ hs_membuf_write(void *private, char const *buf, size_t len)
 }
 
 
-ssize_t
-hs_membuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
+ssize_t hs_membuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
 {
     hs_membuf_t    *mb = (hs_membuf_t *) private;
 
@@ -138,8 +136,7 @@ hs_membuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
 }
 
 
-ssize_t
-hs_membuf_read(void *private, char *buf, size_t len)
+ssize_t hs_membuf_read(void *private, char *buf, size_t len)
 {
     hs_membuf_t    *mb = (hs_membuf_t *) private;
     size_t          remain = mb->length - mb->ofs;

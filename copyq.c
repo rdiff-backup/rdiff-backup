@@ -27,8 +27,7 @@
 int
 _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
 	       _hs_copyq_t * copyq,
-	       off_t start, size_t len,
-	       hs_stats_t * stats)
+	       off_t start, size_t len, hs_stats_t * stats)
 {
     int             ret;
 
@@ -62,7 +61,8 @@ _hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
 	return 0;
     assert(copyq->len > 0);
 
-    ret = _hs_emit_copy(write_fn, write_priv, copyq->start, copyq->len, stats);
+    ret =
+	_hs_emit_copy(write_fn, write_priv, copyq->start, copyq->len, stats);
     copyq->len = 0;
 
     return ret;

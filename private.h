@@ -1,23 +1,15 @@
-/*				       	-*- c-file-style: "bsd" -*-
- *
- * $Id$
- * 
- * Copyright (C) 2000 by Martin Pool
- * 
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
+/* -*- c-file-style: "bsd" -*- * * $Id: private.h,v 1.39 2000/06/01 03:30:38
+   mbp Exp $ * * Copyright (C) 2000 by Martin Pool * * This program is free 
+   software; you can redistribute it and/or modify * it under the terms of
+   the GNU General Public License as published by * the Free Software
+   Foundation; either version 2 of the License, or * (at your option) any
+   later version. * * This program is distributed in the hope that it will
+   be useful, * but WITHOUT ANY WARRANTY; without even the implied warranty
+   of * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the * GNU
+   General Public License for more details. * * You should have received a
+   copy of the GNU General Public License * along with this program; if not,
+   write to the Free Software * Foundation, Inc., 675 Mass Ave, Cambridge, MA 
+   02139, USA. */
 
 
 
@@ -45,12 +37,12 @@
 #  define UNUSED(x) x __attribute__((unused))
 #elif __LCLINT__
 #  define UNUSED(x) /*@unused@*/ x
-#else /* !__GNUC__ && !__LCLINT__ */
+#else				/* !__GNUC__ && !__LCLINT__ */
 #  define UNUSED(x)
-#endif	/* !__GNUC__ && !__LCLINT__ */
+#endif				/* !__GNUC__ && !__LCLINT__ */
 
 
-void * _hs_alloc_struct0(size_t size, char const *name);
+void           *_hs_alloc_struct0(size_t size, char const *name);
 
 #define _hs_alloc_struct(type)				\
         ((type *) _hs_alloc_struct0(sizeof(type), #type))
@@ -67,7 +59,6 @@ void * _hs_alloc_struct0(size_t size, char const *name);
 ssize_t
 _hs_push_literal_buf(hs_membuf_t * litbuf,
 		     hs_write_fn_t write_fn, void *write_priv,
-
 		     hs_stats_t * stats, int kind);
 
 
@@ -157,9 +148,8 @@ struct target {
     int             i;
 };
 
-/* This structure describes all the sums generated for an instance of
-   a file.  It incorporates some redundancy to make it easier to
-   search. */
+/* This structure describes all the sums generated for an instance of a file. 
+   It incorporates some redundancy to make it easier to search. */
 struct hs_sumset {
     hs_off_t        flength;	/* total file length */
     int             count;	/* how many chunks */
@@ -189,8 +179,8 @@ typedef struct hs_rollsum hs_rollsum_t;
    queue of outgoing copy commands */
 
 typedef struct _hs_copyq {
-    off_t start;
-    size_t           len;
+    off_t           start;
+    size_t          len;
 } _hs_copyq_t;
 
 int             _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
@@ -224,6 +214,7 @@ int             _hs_emit_checksum_cmd(hs_write_fn_t, void *, uint32_t size);
 
 int             _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
 			      off_t offset, size_t length,
+
 			      hs_stats_t * stats);
 
 
@@ -236,23 +227,22 @@ int             _hs_append_literal(hs_membuf_t * litbuf, char value);
 int             _hs_inhale_command(hs_read_fn_t read_fn, void *read_priv,
 				   int *kind, uint32_t * len, uint32_t * off);
 
-int _hs_check_sig_version(hs_read_fn_t, void *);
+int             _hs_check_sig_version(hs_read_fn_t, void *);
 
 
 /* =======================================
 
-   gd01 protocol.
-*/
+   gd01 protocol. */
 
 int
-_hs_read_blocksize(hs_read_fn_t sigread_fn, void *sigreadprivate,
-		   int *block_len);
+                _hs_read_blocksize(hs_read_fn_t sigread_fn, void *sigreadprivate,
+
+				   int *block_len);
 
 int
-_hs_littok_header(hs_write_fn_t write_fn, void *write_priv);
+                _hs_littok_header(hs_write_fn_t write_fn, void *write_priv);
 
 int
-_hs_newsig_header(int new_block_len,
-		  hs_write_fn_t write_fn, void *writeprivate);
+                _hs_newsig_header(int new_block_len,
 
-
+				  hs_write_fn_t write_fn, void *writeprivate);

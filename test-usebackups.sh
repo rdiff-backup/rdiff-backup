@@ -31,6 +31,8 @@ do
     # continue if this is not readable; most likely
     # this is because the glob didn't expand to anything
     [ -f $new -a -r $new ] || continue
+
+    countdown
     
     run_test hsnad $test_opts /dev/null <$from >$ltfile
     run_test hsdecode $test_opts /dev/null $sig $out $ltfile

@@ -1,5 +1,5 @@
 /* -*- mode: c; c-file-style: "bsd" -*- */
-/*
+/* 
  * $Id$
  *
  * libhsync -- A library for rsync-style differencing.
@@ -24,16 +24,17 @@
 #include "includes.h"
 
 
-int const _hs_inbuf_dogtag = 0x6a656e;
+int const       _hs_inbuf_dogtag = 0x6a656e;
 
 
 /**
  * Allocate and return a new hs_inbuf_t structure.
  **/
-_hs_inbuf_t *
+_hs_inbuf_t    *
 _hs_new_inbuf(void)
 {
-    _hs_inbuf_t *inbuf;
+    _hs_inbuf_t    *inbuf;
+
     inbuf = calloc(1, sizeof *inbuf);
 
     /* must be at least two blocks; shouldn't be too small. */
@@ -51,7 +52,7 @@ _hs_new_inbuf(void)
  * Release all resources used by this inbuf.
  **/
 void
-_hs_free_inbuf(_hs_inbuf_t *inbuf)
+_hs_free_inbuf(_hs_inbuf_t * inbuf)
 {
     assert(inbuf->tag == _hs_inbuf_dogtag);
     if (inbuf->buf)
@@ -64,18 +65,19 @@ _hs_free_inbuf(_hs_inbuf_t *inbuf)
 int
 _hs_fill_inbuf(_hs_inbuf_t * inbuf, hs_read_fn_t read_fn, void *readprivate)
 {
-    int ret;
+    int             ret;
 
     assert(inbuf->tag == _hs_inbuf_dogtag);
 
     if (inbuf->amount > inbuf->len) {
-	 abort();
+	abort();
     } else if (inbuf->amount < 0) {
-	 abort();
+	abort();
     }
-    
+
     ret = _hs_read_loop(read_fn, readprivate,
-		  inbuf->buf + inbuf->amount, inbuf->len - inbuf->amount);
+			inbuf->buf + inbuf->amount,
+			inbuf->len - inbuf->amount);
     if (ret < 0) {
 	_hs_fatal(__FILE__ "error reading into input buffer");
 	return ret;
@@ -91,16 +93,15 @@ _hs_fill_inbuf(_hs_inbuf_t * inbuf, hs_read_fn_t read_fn, void *readprivate)
 
 
 
-int _hs_slide_inbuf(_hs_inbuf_t * inbuf)
+int
+_hs_slide_inbuf(_hs_inbuf_t * inbuf)
 {
     assert(inbuf->tag == _hs_inbuf_dogtag);
-    /* Copy the remaining data into the front of
-       the buffer */
+    /* Copy the remaining data into the front of the buffer */
     if (inbuf->cursor != 0) {
 	if (inbuf->amount != inbuf->cursor) {
 	    memcpy(inbuf->buf,
-		   inbuf->buf + inbuf->cursor,
-		   inbuf->amount - inbuf->cursor);
+		   inbuf->buf + inbuf->cursor, inbuf->amount - inbuf->cursor);
 	    _hs_trace("slide %d bytes down to the start of the buffer",
 		      inbuf->amount - inbuf->cursor);
 	}

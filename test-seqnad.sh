@@ -15,6 +15,7 @@ lt=$tmpdir/lt.tmp
 sig=$tmpdir/sig.tmp
 oldout=$tmpdir/old.tmp
 newout=$tmpdir/new.tmp
+ntests=400
 
 for old in $files
 do
@@ -25,6 +26,7 @@ do
     do 
 	if [ $old != $new ] 
 	then
+	    countdown
 	    run_test hsnad $sig <$new >$lt
 	    run_test hsdecode $old /dev/null $newout $lt
 	    run_test cmp $new $newout

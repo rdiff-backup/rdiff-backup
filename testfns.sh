@@ -48,4 +48,13 @@ function run_test {
     $* || (echo $test_name: failed: "$*" >&2; return 2)
 }
 
+# more than this many on any one test gets boring
+ntests=300
+function countdown {
+    [ $ntests -lt 0 ] && exit 0
+}
+
 echo "$test_name"
+
+
+

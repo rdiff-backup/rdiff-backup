@@ -1,60 +1,50 @@
-/*				       	-*- c-file-style: "bsd" -*-
- *
- * $Id$
- * 
- * Copyright (C) 2000 by Martin Pool
- * 
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
+/* -*- c-file-style: "bsd" -*- * * $Id: mksum.c,v 1.2 2000/05/22 08:53:41 mbp 
+   Exp $ * * Copyright (C) 2000 by Martin Pool * * This program is free
+   software; you can redistribute it and/or modify * it under the terms of
+   the GNU General Public License as published by * the Free Software
+   Foundation; either version 2 of the License, or * (at your option) any
+   later version. * * This program is distributed in the hope that it will
+   be useful, * but WITHOUT ANY WARRANTY; without even the implied warranty
+   of * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the * GNU
+   General Public License for more details. * * You should have received a
+   copy of the GNU General Public License * along with this program; if not,
+   write to the Free Software * Foundation, Inc., 675 Mass Ave, Cambridge, MA 
+   02139, USA. */
 
-/*
+/* 
  * Generate a checksum set, using the newstyle nonblocking
  * arrangement and mapptrs.
  */
 
 #include "includes.h"
 
-const int hs_mksum_job_magic = 123123;
+const int       hs_mksum_job_magic = 123123;
 
 struct hs_mksum_job {
-    int			tag;
-    hs_map_t           *in_map;
-    int			in_fd;
-    hs_write_fn_t write_fn;
-    void *write_priv;
-    size_t		block_len;
-    hs_stats_t stats;
-    int			sent_header;
+    int             tag;
+    hs_map_t       *in_map;
+    int             in_fd;
+    hs_write_fn_t   write_fn;
+    void           *write_priv;
+    size_t          block_len;
+    hs_stats_t      stats;
+    int             sent_header;
 
-    /* On next call, we will try to calculate the sum of the block
-     * starting at CURSOR. */
-    hs_off_t		cursor;
+    /* On next call, we will try to calculate the sum of the block * starting 
+       at CURSOR. */
+    hs_off_t        cursor;
 
-    size_t		strong_sum_len;
+    size_t          strong_sum_len;
 };
 
 
-/* Set up a new encoding job.
- */
+/* Set up a new encoding job. */
 hs_mksum_job_t *
 hs_mksum_begin(int in_fd,
 	       hs_write_fn_t write_fn, void *write_priv,
-	       size_t new_block_len,
-	       size_t strong_sum_len)
+	       size_t new_block_len, size_t strong_sum_len)
 {
-    hs_mksum_job_t	 *job;
+    hs_mksum_job_t *job;
 
     job = _hs_alloc_struct(hs_mksum_job_t);
 
@@ -76,18 +66,18 @@ hs_mksum_begin(int in_fd,
 
 
 static void
-_hs_mksum_finish(hs_mksum_job_t *job)
+_hs_mksum_finish(hs_mksum_job_t * job)
 {
     assert(job->tag == hs_mksum_job_magic);
     _hs_unmap_file(job->in_map);
-    /* We don't close or flush the files because they belong to the
-     * caller. */
+    /* We don't close or flush the files because they belong to the * caller. 
+     */
     hs_bzero(job, sizeof *job);
     free(job);
 }
 
 
-/*
+/* 
  * Generate and write out the checksums of a block.
  */
 void
@@ -95,15 +85,16 @@ _hs_mksum_of_block(char const *p, ssize_t len,
 		   hs_write_fn_t write_fn, void *write_priv,
 		   size_t strong_sum_len)
 {
-    uint32_t	weak_sum;
-    char strong_sum[MD4_LENGTH];
+    uint32_t        weak_sum;
+    char            strong_sum[MD4_LENGTH];
+
 #ifdef DO_HS_TRACE
-    char strong_hex[MD4_LENGTH * 2 + 2];
+    char            strong_hex[MD4_LENGTH * 2 + 2];
 #endif
 
     weak_sum = _hs_calc_weak_sum(p, len);
     _hs_calc_strong_sum(p, len, strong_sum, strong_sum_len);
-     
+
 #ifdef DO_HS_TRACE
     hs_hexify_buf(strong_hex, strong_sum, strong_sum_len);
     _hs_trace("calculated weak sum %08lx, strong sum %s",
@@ -111,25 +102,25 @@ _hs_mksum_of_block(char const *p, ssize_t len,
 #endif
 
     _hs_write_netint(write_fn, write_priv, weak_sum);
-    _hs_write_loop(write_fn, write_priv, strong_sum,
-		   strong_sum_len);
+    _hs_write_loop(write_fn, write_priv, strong_sum, strong_sum_len);
 }
 
 
-/*
+/* 
  * Nonblocking iteration interface for making up a file sum.  Returns
  * HS_AGAIN, HS_DONE or HS_FAILED.  Unless it returns HS_AGAIN, then
  * the job is closed on return.
  */
-hs_result_t hs_mksum_iter(hs_mksum_job_t *job)
+hs_result_t
+hs_mksum_iter(hs_mksum_job_t * job)
 {
-    int			ret;
-    char const	       *p;
-    ssize_t		map_len;
-    int			saw_eof;
+    int             ret;
+    char const     *p;
+    ssize_t         map_len;
+    int             saw_eof;
 
     assert(job->tag = hs_mksum_job_magic);
-    
+
     if (!job->sent_header) {
 	ret = _hs_newsig_header(job->block_len,
 				job->write_fn, job->write_priv);
@@ -149,7 +140,7 @@ hs_result_t hs_mksum_iter(hs_mksum_job_t *job)
 	_hs_mksum_finish(job);
 	return HS_FAILED;
     }
-    
+
     /* Calculate and write out the sums, if any. */
     while (map_len > (ssize_t) job->block_len) {
 	_hs_trace("calc sum for @%ld+%ld", (long) job->cursor,
@@ -158,18 +149,18 @@ hs_result_t hs_mksum_iter(hs_mksum_job_t *job)
 	_hs_mksum_of_block(p, job->block_len,
 			   job->write_fn, job->write_priv,
 			   job->strong_sum_len);
-	
+
 	p += job->block_len;
 	job->cursor += job->block_len;
 	map_len -= job->block_len;
     }
 
-    /* If we're at the end of the file, generate a signature for the
-     * last short block and go home. */
+    /* If we're at the end of the file, generate a signature for the * last
+       short block and go home. */
     if (saw_eof) {
 	_hs_trace("calc sum for @%ld+%ld", (long) job->cursor,
 		  (long) map_len);
-	
+
 	_hs_mksum_of_block(p, map_len,
 			   job->write_fn, job->write_priv,
 			   job->strong_sum_len);
@@ -178,7 +169,7 @@ hs_result_t hs_mksum_iter(hs_mksum_job_t *job)
 	return HS_DONE;
     }
 
-    /* Well, we haven't finished yet.  Return and hopefully we'll be
-     * called back. */
+    /* Well, we haven't finished yet.  Return and hopefully we'll be * called 
+       back. */
     return HS_AGAIN;
 }

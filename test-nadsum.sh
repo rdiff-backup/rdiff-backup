@@ -27,6 +27,7 @@ do
 
     for new in $files
     do
+	countdown
 	run_test hsnad $origsig <$new >$diff 
         run_test hsdecode $old $newsig $out $diff 
    

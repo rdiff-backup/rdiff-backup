@@ -1,13 +1,15 @@
-dnl Process this file with autoconf to produce a configure script.
+dnl Process this file with autoconf to produce a configure script. -*- shell-script -*-
+
 AC_REVISION($Id$)
 AC_INIT(dec.c)
-AM_INIT_AUTOMAKE(libhsync, 0.5.1)
+AM_INIT_AUTOMAKE(libhsync, 0.5.2)
 AM_CONFIG_HEADER(config.h)
 
 AC_LIBTOOL_DLOPEN
 AM_PROG_LIBTOOL
 
 # compile with optimisation and without debugging by default
+# TODO: How do we set this per fine?
 CFLAGS=${CFLAGS-"-O -Wall"}
 
 AC_CANONICAL_HOST
