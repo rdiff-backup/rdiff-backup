@@ -304,6 +304,8 @@ class FileCopying(RPathTest):
 		even if they are of different sizes"""
 		smalldir = RPath(Globals.local_connection, "testfiles/dircomptest/1")
 		bigdir = RPath(Globals.local_connection, "testfiles/dircomptest/2")
+		# Can guarantee below by adding files to bigdir
+		assert bigdir.getsize() > smalldir.getsize()
 		assert smalldir == bigdir
 
 	def testCopy(self):
