@@ -445,6 +445,7 @@ class RPath(RORPath):
 		"""Reproduce RPath from __getstate__ output"""
 		self.conn = Globals.local_connection
 		self.index, self.base, self.data = rpath_state
+		self.path = apply(os.path.join, (self.base,) + self.index)
 
 	def setdata(self):
 		"""Create the data dictionary"""
