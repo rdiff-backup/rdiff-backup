@@ -5,14 +5,14 @@ logging stats
 
 Add to above Dean Gaudet's suggestion: make errors look prettier (like tar).
 
-Add new restore option - bring directory to state it was in, say, 5
-days ago, etc.
+Examine certain network settings like Globals.conn_bufsize and whether
+or not ssh is used with compression, and find good defaults or add
+easy to use switches.
 
-Michael S. Muegel suggestion: "--char-translate source-char
-replacement-string" for use between windows/unix conversions, e.g. ':'
-to _colon_.  Also distinguish new vs changed update in lvl 5 logging.
+Examine and fix recovery problems.
 
+Add options to pass to ssh (e.g. compression, maybe arbitrary options).
 
-Bugs:
+Think about adding Gaudet's idea for keeping track of renamed files.
 
-Jamie Heilman's race condition
+--read-only and --write-only /usr/foo switches to tighten security up some.

@@ -20,6 +20,9 @@ syntax".  What's happening?</a></li>
 <li><a href="#remove_dir">My backup set contains some files that I just realized I don't want/need backed up.  How do I remove them from the backup volume to save space?</li>
 
 <li><a href="#redhat">How do I install the RPMs on Redhat linux system?</a></li>
+
+<li><a href="#solaris">Under Solaris, rdiff-backup keeps failing with the error message "open(/dev/zero): Too many open files".</a></li>
+
 </ol>
 
 <h2>FAQ</h2>
@@ -171,13 +174,50 @@ the above steps (this is what I did).  Because of all the dependencies
 it is usually easier to use source RPMs for this.
 </li>
 
+<P>
+<a name="solaris">
+<li><strong>Under Solaris, rdiff-backup keeps failing with
+the error message "open(/dev/zero): Too many open files".</strong>
+
+<P>Kevin Spicer reported this problem and then posted the following
+update:
+
+<pre>
+Subject: RE: Crash report....still not^H^H^H working
+From: "Spicer, Kevin" <Kevin.Spicer@bmrb.co.uk>
+Date: Sat, 11 May 2002 23:36:42 +0100
+To: rdiff-backup@keywest.Stanford.EDU
+
+Quick mail to follow up on this.. 
+My rdiff backup (on Solaris 2.6 if you remember) has now worked
+reliably for nearly two weeks after I added...
+
+    ulimit -n unlimited 
+
+to the start of my cron job and created a wrapper script on the remote
+machine which looked like this...
+
+    #!/bin/sh 
+    ulimit -n unlimited 
+    rdiff-backup --server 
+    exit 
+
+And changed the remote schema on the command line of rdiff-backup to
+call the wrapper script rather than rdiff-backup itself on the remote
+machine.  As for the /dev/zero thing I've done a bit of Googleing and
+it seems that /dev/zero is used internally by libthread on Solaris
+(which doesn't really explain why its opening more than 64 files - but
+at least I think I've now got round it).
+
+</pre>
+</li>
 
 </ol>
     <hr>
     <a href="http://www.stanford.edu/~bescoto">Ben Escoto</a> <address><a href="mailto:bescoto@stanford.edu">&lt;bescoto@stanford.edu&gt;</a></address>
 <!-- Created: Fri Sep  7 15:34:45 PDT 2001 -->
 <!-- hhmts start -->
-Last modified: Mon Apr 29 23:59:11 PDT 2002
+Last modified: Sat May 11 19:26:17 PDT 2002
 <!-- hhmts end -->
   </body>
 </html>
