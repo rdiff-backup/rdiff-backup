@@ -140,7 +140,9 @@ run_test () {
         show_progress
     fi
 
-    "$@" >$builddir/testout.log 2>$builddir/testerr.log || fail_test "$?" "$@" 
+    echo "$@" >>$builddir/testerr.log
+
+    "$@" >>$builddir/testout.log 2>>$builddir/testerr.log || fail_test "$?" "$@" 
 }
 
 # more than this many on any one test gets boring
