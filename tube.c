@@ -195,8 +195,15 @@ int rs_tube_catchup(rs_job_t *job)
     if (job->copy_len)
         rs_tube_catchup_copy(job);
     
-    if (job->copy_len)
+    if (job->copy_len) {
+        if (job->stream->eof_in) {
+            rs_log(RS_LOG_ERR,
+                   "reached end of file while copying literal data through buffers");
+            return RS_INPUT_ENDED;
+        }
+
         return RS_BLOCKED;
+    }
 
     return RS_DONE;
 }
