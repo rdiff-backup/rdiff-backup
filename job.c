@@ -75,7 +75,10 @@ hs_result hs_job_free(hs_job_t *job)
 
 
 /** 
- * Nonblocking iteration interface for making up a file sum.
+ * \brief Run a ::hs_job_t state machine until it blocks
+ * (::HS_BLOCKED), returns an error, or completes (::HS_COMPLETE).
+ *
+ * \return The ::hs_result that caused iteration to stop.
  *
  * \param ending True if there is no more data after what's in the
  * input buffer.  The final block checksum will run across whatever's
