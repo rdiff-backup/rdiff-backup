@@ -31,7 +31,7 @@ static void
 usage(void)
 {
     printf("Usage: hsmapread [OPTIONS] FILENAME OFFSET,SIZE ...\n"
-	   "Reads sections from a file and writes to standard output.\n"
+	   "Reads sections from a file or socket and writes to standard output.\n"
 	   "A filename of `-' means standard input.\n"
 	   "\n"
 	   "  -k             keep trying to map whole blocks\n"

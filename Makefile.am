@@ -102,8 +102,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 
 include_HEADERS = hsync.h hsyncproto.h
 
-bin_PROGRAMS = hsdecode hsencode hsmdfour hsmksum hsmapread hsnad
+bin_PROGRAMS = hsdecode hsencode hsmdfour hsmksum hsmapread hsnad \
+		libhsyncinfo
 check_PROGRAMS = hsemit hsinhale hsfilebufcat genmaptest
+
+libhsyncinfo_SOURCES = libhsyncinfo.c
+libhsyncinfo_LDADD = libhsync.la
 
 hsnad_SOURCES = hsnad.c
 hsnad_LDADD = libhsync.la

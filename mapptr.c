@@ -1,4 +1,4 @@
-/*                                      -*- c-file-style: "bsd" -*-
+ /*                                      -*- c-file-style: "bsd" -*-
  *
  * $Id$
  * 
@@ -58,7 +58,12 @@
  * data can be discarded immediately.
  *
  * TODO: Is it really worth the trouble of handling files that grow?
- * */
+ *
+ * TODO: Perhaps support different ways for choosing the new window
+ * depending on whether we're reading from a socket or from a file, or
+ * on whether we expect random or sequential access, or on how useful
+ * random access is expected to be.
+ */
 
 /* The Unix98 pread(2) function is pretty interesting: it reads data
  * at a given offset, but without moving the file offset and in only a
@@ -260,8 +265,7 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     assert(*len > 0);
     *reached_eof = 0;
 
-    _hs_trace("off=%ld, len=%ld",
-              map, (long) offset, (long) *len);
+    _hs_trace("off=%ld, len=%ld", (long) offset, (long) *len);
 
     /* in most cases the region will already be available */
     if (offset >= map->p_offset &&
