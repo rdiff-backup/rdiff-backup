@@ -275,7 +275,7 @@ probably isn't what you meant.""" %
 					if include is None: continue # later line may match
 				return include
 
-		selection_function.exclude = something_excluded
+		selection_function.exclude = something_excluded or inc_default == 0
 		selection_function.name = "Filelist: " + filelist_name
 		return selection_function
 

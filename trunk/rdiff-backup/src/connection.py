@@ -338,8 +338,10 @@ class PipeConnection(LowLevelPipeConnection):
 
 	def extract_exception(self):
 		"""Return active exception"""
-		Log("Sending back exception: \n" +
-			"".join(traceback.format_tb(sys.exc_info()[2])), 2)
+		if Log.verbosity >= 5 or Log.term_verbosity >= 5:
+			Log("Sending back exception %s of type %s: \n%s" %
+				(sys.exc_info()[1], sys.exc_info()[0],
+				 "".join(traceback.format_tb(sys.exc_info()[2]))), 5)
 		return sys.exc_info()[1]
 
 	def Server(self):

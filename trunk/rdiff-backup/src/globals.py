@@ -8,7 +8,7 @@ import re, os
 class Globals:
 
 	# The current version of rdiff-backup
-	version = "0.7.5.4"
+	version = "0.7.6"
 	
 	# If this is set, use this value in seconds as the current time
 	# instead of reading it from the clock.
@@ -157,10 +157,19 @@ class Globals:
 	# replaced by the source and mirror Select objects respectively.
 	select_source, select_mirror = None, None
 
+	# On the backup writer connection, holds the main incrementing
+	# function.  Access is provided to increment error counts.
+	ITR = None
+
 	def get(cls, name):
 		"""Return the value of something in this class"""
 		return cls.__dict__[name]
 	get = classmethod(get)
+
+	def is_not_None(cls, name):
+		"""Returns true if value is not None"""
+		return cls.__dict__[name] is not None
+	is_not_None = classmethod(is_not_None)
 
 	def set(cls, name, val):
 		"""Set the value of something in this class

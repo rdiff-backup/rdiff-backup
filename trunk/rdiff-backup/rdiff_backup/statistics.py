@@ -17,8 +17,10 @@ class StatsObj:
 					   'ChangedFiles',
 					   'ChangedSourceSize', 'ChangedMirrorSize',
 					   'IncrementFiles', 'IncrementFileSize')
+	stat_misc_attrs = ('Errors',)
 	stat_time_attrs = ('StartTime', 'EndTime', 'ElapsedTime')
-	stat_attrs = ('Filename',) + stat_time_attrs + stat_file_attrs
+	stat_attrs = (('Filename',) + stat_time_attrs +
+				  stat_misc_attrs + stat_file_attrs)
 
 	# Below, the second value in each pair is true iff the value
 	# indicates a number of bytes
@@ -49,6 +51,10 @@ class StatsObj:
 	def set_stat(self, attr, value):
 		"""Set attribute to given value"""
 		self.__dict__[attr] = value
+
+	def increment_stat(self, attr):
+		"""Add 1 to value of attribute"""
+		self.__dict__[attr] = self.get_stat(attr) + 1
 
 	def get_stats_line(self, index):
 		"""Return one line abbreviated version of full stats string"""
@@ -95,6 +101,8 @@ class StatsObj:
 				self.ElapsedTime = self.EndTime - self.StartTime
 			timelist.append("ElapsedTime %.2f (%s)\n" %
 				   (self.ElapsedTime, Time.inttopretty(self.ElapsedTime)))
+		if self.Errors is not None:
+			timelist.append("Errors %d\n" % self.Errors)
 		return "".join(timelist)
 
 	def get_filestats_string(self):

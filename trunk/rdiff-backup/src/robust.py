@@ -1,4 +1,4 @@
-import tempfile, errno
+import tempfile, errno, signal
 execfile("hardlink.py")
 
 #######################################################################
@@ -79,7 +79,7 @@ class RobustAction:
 
 
 class Robust:
-	"""Contains various file operations made safer using tempfiles"""
+	"""Contains various methods designed to make things safer"""
 	null_action = RobustAction(None, None, None)
 	def chain(*robust_action_list):
 		"""Return chain tying together a number of robust actions
@@ -122,9 +122,9 @@ class Robust:
 				final_vals.append(ra.final_func(init_val))
 			return final_vals
 		def error(exc, ran_init, init_val):
-			for ra, init_val in zip(ras_with_started_inits, init_return_vals):
+			for ra, init_val in zip(ras_with_started_inits, init_vals):
 				ra.error_handler(exc, 1, init_val)
-			for ra in ras_with_started_inits[len(init_return_vals):]:
+			for ra in ras_with_started_inits[len(init_vals):]:
 				ra.error_handler(exc, None, None)
 		return RobustAction(init, final, error)
 
@@ -251,6 +251,10 @@ class Robust:
 				  'ENOTDIR', 'ENAMETOOLONG', 'EINTR', 'ENOTEMPTY',
 				  'EIO', 'ETXTBSY', 'ESRCH', 'EINVAL'])):
 				Log.exception()
+				conn = Globals.backup_writer
+				if conn is not None: # increment error count
+					ITR_exists = conn.Globals.is_not_None('ITR')
+					if ITR_exists: conn.Globals.ITR.increment_stat('Errors')
 				if error_handler: return error_handler(exc, *args)
 			else:
 				Log.exception(1, 2)
@@ -265,7 +269,21 @@ class Robust:
 		dir_listing.sort()
 		return dir_listing
 
+	def signal_handler(signum, frame):
+		"""This is called when signal signum is caught"""
+		raise SignalException(signum)
+
+	def install_signal_handlers():
+		"""Install signal handlers on current connection"""
+		for signum in [signal.SIGQUIT, signal.SIGHUP, signal.SIGTERM]:
+			signal.signal(signum, Robust.signal_handler)
+
 MakeStatic(Robust)
+
+
+class SignalException(Exception):
+	"""SignalException(signum) means signal signum has been received"""
+	pass
 
 
 class TracebackArchive:
