@@ -54,6 +54,7 @@ EOF
 not_first=
 value=0
 emit_cmd() {
+    # usage: emit_cmd kind literalval len1 len2
     if test "$not_first"
     then 
 	printf ', \n'
