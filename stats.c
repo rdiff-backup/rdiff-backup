@@ -86,8 +86,10 @@ rs_format_stats(rs_stats_t const * stats,
     }
 
     if (stats->sig_cmds) {
-        len += snprintf(buf+len, size-len, "signature[%d cmds, %d bytes] ",
-                        stats->sig_cmds, stats->sig_bytes);
+        len += snprintf(buf+len, size-len,
+                        "signature[%ld cmds, %ld bytes] ",
+                        (long) stats->sig_cmds,
+                        (long) stats->sig_bytes);
     }
 
     if (stats->copy_cmds || stats->false_matches) {
