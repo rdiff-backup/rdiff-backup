@@ -157,7 +157,7 @@ def copy_attribs(rpin, rpout):
 	check_for_files(rpin, rpout)
 	if rpin.issym(): return # symlinks have no valid attributes
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
-	if Globals.change_permission: rpout.chmod(rpin.getperms())
+	if Globals.change_permissions: rpout.chmod(rpin.getperms())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
 
 def cmp_attribs(rp1, rp2):
@@ -266,12 +266,14 @@ class RORPath:
 			if (key == 'uid' or key == 'gid') and self.issym():
 				# Don't compare gid/uid for symlinks
 				pass
+			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
 			elif (key == 'inode' and
 				  (not self.isreg() or self.getnumlinks() == 1 or
-				   not Globals.compare_inode)): pass
+				   not Globals.compare_inode or
+				   not Globals.preserve_hardlinks)): pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return None
 		return 1
@@ -298,6 +300,7 @@ class RORPath:
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
+			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'inode': pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return 0
@@ -315,6 +318,7 @@ class RORPath:
 				(self.issym() or not compare_ownership)):
 				# Don't compare gid/uid for symlinks, or if told not to
 				pass
+			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
