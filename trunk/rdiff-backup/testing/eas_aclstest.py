@@ -1,8 +1,10 @@
 import unittest, os, time, cStringIO
 from commontest import *
 from rdiff_backup.eas_acls import *
-from rdiff_backup import Globals, rpath, Time
+from rdiff_backup import Globals, rpath, Time, user_group
 
+user_group.init_user_mapping()
+user_group.init_group_mapping()
 tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
 restore_dir = rpath.RPath(Globals.local_connection,
 						  "testfiles/restore_out")
@@ -194,40 +196,40 @@ user.empty
 
 class ACLTest(unittest.TestCase):
 	"""Test access control lists"""
-	sample_acl = AccessControlList((),"""user::rwx
+	sample_acl = AccessControlLists((),"""user::rwx
 user:root:rwx
 group::r-x
 group:root:r-x
 mask::r-x
 other::---""")
-	dir_acl = AccessControlList((), """user::rwx
+	dir_acl = AccessControlLists((), """user::rwx
 user:root:rwx
 group::r-x
 group:root:r-x
 mask::r-x
-other::---""",
-								"""user::rwx
-user:root:---
-group::r-x
-mask::r-x
-other::---""")
-	acl1 = AccessControlList(('1',), """user::r--
+other::---
+default:user::rwx
+default:user:root:---
+default:group::r-x
+default:mask::r-x
+default:other::---""")
+	acl1 = AccessControlLists(('1',), """user::r--
 user:ben:---
 group::---
 group:root:---
 mask::---
 other::---""")
-	acl2 = AccessControlList(('2',), """user::rwx
+	acl2 = AccessControlLists(('2',), """user::rwx
 group::r-x
 group:ben:rwx
 mask::---
 other::---""")
-	acl3 = AccessControlList(('3',), """user::rwx
+	acl3 = AccessControlLists(('3',), """user::rwx
 user:root:---
 group::r-x
 mask::---
 other::---""")
-	empty_acl = AccessControlList((), "user::rwx\ngroup::---\nother::---")
+	empty_acl = AccessControlLists((), "user::rwx\ngroup::---\nother::---")
 	acl_testdir1 = rpath.RPath(Globals.local_connection, 'testfiles/acl_test1')
 	acl_testdir2 = rpath.RPath(Globals.local_connection, 'testfiles/acl_test2')
 	def make_temp(self):
@@ -239,25 +241,25 @@ other::---""")
 	def testBasic(self):
 		"""Test basic writing and reading of ACLs"""
 		self.make_temp()
-		new_acl = AccessControlList(())
+		new_acl = AccessControlLists(())
 		tempdir.chmod(0700)
 		new_acl.read_from_rp(tempdir)
-		assert new_acl.is_basic(), new_acl.acl_text
+		assert new_acl.is_basic(), str(new_acl)
 		assert not new_acl == self.sample_acl
 		assert new_acl != self.sample_acl
 		assert new_acl == self.empty_acl, \
-			   (new_acl.acl_text, self.empty_acl.acl_text)
+			   (str(new_acl), str(self.empty_acl))
 
 		self.sample_acl.write_to_rp(tempdir)
 		new_acl.read_from_rp(tempdir)
-		assert new_acl.acl_text == self.sample_acl.acl_text, \
-			   (new_acl.acl_text, self.sample_acl.acl_text)
+		assert str(new_acl) == str(self.sample_acl), \
+			   (str(new_acl), str(self.sample_acl))
 		assert new_acl == self.sample_acl
 		
 	def testBasicDir(self):
 		"""Test reading and writing of ACL w/ defaults to directory"""
 		self.make_temp()
-		new_acl = AccessControlList(())
+		new_acl = AccessControlLists(())
 		new_acl.read_from_rp(tempdir)
 		assert new_acl.is_basic()
 		assert new_acl != self.dir_acl
@@ -273,7 +275,12 @@ other::---""")
 		"""Test writing a record and reading it back"""
 		record = ACL2Record(self.sample_acl)
 		new_acl = Record2ACL(record)
-		assert new_acl == self.sample_acl
+		if new_acl != self.sample_acl:
+			print "New_acl", new_acl.entry_list
+			print "sample_acl", self.sample_acl.entry_list
+			print "New_acl text", str(new_acl)
+			print "sample acl text", str(self.sample_acl)
+			assert 0
 
 		record2 = ACL2Record(self.dir_acl)
 		new_acl2 = Record2ACL(record2)
@@ -358,7 +365,7 @@ other::---
 		Time.setcurtime(10000)
 		AccessControlListFile.open_file()
 		for rp in [self.acl_testdir1, rp1, rp2, rp3]:
-			acl = AccessControlList(rp.index)
+			acl = AccessControlLists(rp.index)
 			acl.read_from_rp(rp)
 			AccessControlListFile.write_object(acl)
 		AccessControlListFile.close_file()
