@@ -101,7 +101,7 @@ _hs_nad_search_iter(hs_encode_job_t *job)
     off_t            match_where; /* location of match in old file */
     byte_t const       *base = job->map_p - job->map_off;
 
-    if (job->search_cursor >= job->map_len + job->map_off)
+    if ((off_t) job->search_cursor >= (off_t) (job->map_len + job->map_off))
         return;
 
     /* While there's enough data left to do a search: either there's a
