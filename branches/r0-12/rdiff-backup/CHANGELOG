@@ -1,4 +1,4 @@
-New in v0.12.7 (??????????)
+New in v0.12.7 (2004/??/??)
 ---------------------------
 
 Altered file selection when restoring so excluded files will not be
@@ -16,6 +16,8 @@ rdiff-backup may work better with NFS now.
 
 Fix for regress warning code:  rdiff-backup should warn you if you are
 trying to back up a directory into itself.
+
+Fix for restoring certain directories when not run as root.
 
 
 New in v0.12.6 (2003/11/02)
