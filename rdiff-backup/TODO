@@ -1,3 +1,5 @@
+Consider adding --datadir option (Jean-Sébastien GOETSCHY)
+
 See if regressing takes too much memory (large directories).
 
 write test case for --calculate-statistics
