@@ -4,9 +4,6 @@ import os, re, shutil, time
 
 SourceDir = "src"
 DistDir = "dist"
-filelist = [SourceDir + "/rdiff-backup", "CHANGELOG",
-			"COPYING", "README", "FAQ.html"]
-
 
 # Various details about the files must also be specified by the rpm
 # spec template.
@@ -19,22 +16,6 @@ def GetVersion():
 	match = re.search("Version (.*?) ", fp.read())
 	fp.close()
 	return match.group(1)
-
-def CopyModule():
-	"""Copy all the relevant module source files to rdiff_backup"""
-	moddir = DistDir+"/rdiff_backup"
-	os.system("rm -rf %s" % moddir)
-	os.mkdir(moddir)
-
-	for filename in ["cmodule.c", "connection.py",	"destructive_stepping.py",
-					 "FilenameMapping.py", "Globals.py", "Hardlink.py",
-					 "highlevel.py", "increment.py", "__init__.py",
-					 "iterfile.py", "lazy.py", "log.py", "Main.py",
-					 "manage.py", "MiscStats.py", "Rdiff.py", "restore.py",
-					 "rlist.py", "robust.py", "rorpiter.py", "rpath.py",
-					 "seleciton.py", "SetConnections.py", "static.py",
-					 "statistics.py", "Time.py"]:
-		assert not os.system("cp %s/%s %s" % (SourceDir, filename, moddir))
 
 def CopyMan(destination, version):
 	"""Create updated man page at the specified location"""
@@ -93,7 +74,23 @@ def MakeTar(version):
 		os.system("rm -rf " + tardir)
 	except OSError: pass
 	os.mkdir(tardir)
-	for file in filelist: os.system("cp -a %s %s" % (file, tardir))
+	for filename in ["rdiff-backup", "CHANGELOG", "COPYING",
+					 "README", "FAQ.html", SourceDir + "/cmodule.c",
+					 DistDir + "/setup.py"]:
+		assert not os.system("cp %s %s" % (filename, tardir)), filename
+
+	os.mkdir(tardir+"/rdiff_backup")
+	for filename in ["connection.py",	"destructive_stepping.py",
+					 "FilenameMapping.py", "Globals.py", "Hardlink.py",
+					 "highlevel.py", "increment.py", "__init__.py",
+					 "iterfile.py", "lazy.py", "log.py", "Main.py",
+					 "manage.py", "MiscStats.py", "Rdiff.py", "restore.py",
+					 "rlist.py", "robust.py", "rorpiter.py", "rpath.py",
+					 "selection.py", "SetConnections.py", "static.py",
+					 "statistics.py", "Time.py"]:
+		assert not os.system("cp %s/%s %s/rdiff_backup" %
+							 (SourceDir, filename, tardir)), filename
+	os.chmod(os.path.join(tardir, "setup.py"), 0755)
 	os.chmod(os.path.join(tardir, "rdiff-backup"), 0755)
 	CopyMan(os.path.join(tardir, "rdiff-backup.1"), version)
 	os.system("tar -cvzf %s %s" % (tarfile, tardir))
