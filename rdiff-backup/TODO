@@ -2,6 +2,9 @@ Update FAQ on cstream
 
 Write some better selection test cases to test new Iterate_fast func.
 
+Work on killtest code - avoid returning a failure when a file is
+simply skipped.
+
 ---------[ Medium term ]---------------------------------------
 
 Interpret a list of filenames in globbing form
