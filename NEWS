@@ -1,5 +1,7 @@
 Changes in 0.9.6
 
+ * Changed installed include file from rsync.h to librsync.h.
+
  * Migration to sourceforge for hosting.
 
  * Rollsum bugfix that produces much smaller deltas.
