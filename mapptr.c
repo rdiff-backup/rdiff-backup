@@ -1,4 +1,4 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*                                      -*- c-file-style: "bsd" -*-
  *
  * $Id$
  * 
@@ -124,7 +124,7 @@ struct hs_map {
     int             tag;
     /*@null@*/ char *p;
     int             fd;
-    ssize_t	    p_size, p_len;
+    ssize_t         p_size, p_len;
     hs_off_t        p_offset, p_fd_offset;
 };
 
@@ -168,11 +168,11 @@ _hs_map_file(int fd)
    start. */
 static ssize_t
 _hs_map_do_read(hs_map_t *map,
-		hs_off_t const read_offset,
-		ssize_t const max_size, ssize_t const min_size,
-		int *reached_eof)
+                hs_off_t const read_offset,
+                ssize_t const max_size, ssize_t const min_size,
+                int *reached_eof)
 {
-    ssize_t total_read = 0;	/* total amount read in */
+    ssize_t total_read = 0;     /* total amount read in */
     ssize_t nread;
     ssize_t buf_remain = max_size; /* buffer space left */
     char *p = map->p + read_offset;
@@ -183,39 +183,39 @@ _hs_map_do_read(hs_map_t *map,
     assert(map->tag == HS_MAP_TAG);
     
     do {
-	nread = read(map->fd, p, (size_t) buf_remain);
+        nread = read(map->fd, p, (size_t) buf_remain);
 
-	_hs_trace("tried to read %ld bytes, result %ld",
-		  (long) buf_remain, (long) nread);
+        _hs_trace("tried to read %ld bytes, result %ld",
+                  (long) buf_remain, (long) nread);
 
-	if (nread < 0  &&  errno == EWOULDBLOCK) {
-	    _hs_trace("input from this file would block");
-	    break; /* go now */
-	} else if (nread < 0) {
-	    _hs_error("read error in hs_mapptr: %s", strerror(errno));
-	    /* Should we return null here?  We ought to tell the
+        if (nread < 0  &&  errno == EWOULDBLOCK) {
+            _hs_trace("input from this file would block");
+            break; /* go now */
+        } else if (nread < 0) {
+            _hs_error("read error in hs_mapptr: %s", strerror(errno));
+            /* Should we return null here?  We ought to tell the
                caller about this somehow, but at the same time we
                don't want to discard the data we have already
                received. */
-	    break;
-	} else if (nread == 0) {
-	    /* GNU libc manual: A value of zero indicates end-of-file
-	     * (except if the value of the SIZE argument is also
-	     * zero).  This is not considered an error.  If you keep
-	     * *calling `read' while at end-of-file, it will keep
-	     * returning zero and doing nothing else.  */
-	    *reached_eof = 1;
-	    break;
-	}
+            break;
+        } else if (nread == 0) {
+            /* GNU libc manual: A value of zero indicates end-of-file
+             * (except if the value of the SIZE argument is also
+             * zero).  This is not considered an error.  If you keep
+             * *calling `read' while at end-of-file, it will keep
+             * returning zero and doing nothing else.  */
+            *reached_eof = 1;
+            break;
+        }
 
-	total_read += nread;
-	p += nread;
-	buf_remain -= nread;
+        total_read += nread;
+        p += nread;
+        buf_remain -= nread;
     } while (total_read < min_size);
 
     _hs_trace("wanted %ld to %ld bytes, read %ld bytes%s",
-	      (long) min_size, (long) max_size, (long) total_read,
-	      *reached_eof ? ", now at eof" : "");
+              (long) min_size, (long) max_size, (long) total_read,
+              *reached_eof ? ", now at eof" : "");
 
     return total_read;
 }
@@ -248,97 +248,97 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
        &p[read_offset]. */
     hs_off_t window_start, read_start;
     ssize_t window_size;
-    ssize_t read_max_size;	/* space remaining */
-    ssize_t read_min_size;	/* needed to fill this request */
+    ssize_t read_max_size;      /* space remaining */
+    ssize_t read_min_size;      /* needed to fill this request */
     hs_off_t read_offset;
     ssize_t total_read, avail;
 
     assert(map->tag == HS_MAP_TAG);
-    assert(len != NULL);	/* check pointers */
+    assert(len != NULL);        /* check pointers */
     assert(reached_eof != NULL);
     assert(offset >= 0);
     assert(*len > 0);
     *reached_eof = 0;
 
     _hs_trace("off=%ld, len=%ld",
-	      map, (long) offset, (long) *len);
+              map, (long) offset, (long) *len);
 
     /* in most cases the region will already be available */
     if (offset >= map->p_offset &&
-	offset + *len <= map->p_offset + map->p_len) {
-/*   	_hs_trace("region is already in the buffer"); */
-	*len = map->p_len - (offset - map->p_offset);
-	return (map->p + (offset - map->p_offset));
+        offset + *len <= map->p_offset + map->p_len) {
+/*      _hs_trace("region is already in the buffer"); */
+        *len = map->p_len - (offset - map->p_offset);
+        return (map->p + (offset - map->p_offset));
     }
 
 
     if (offset > (hs_off_t) (2 * CHUNK_SIZE)) {
-	/* On some systems, it's much faster to do reads aligned with
-	 * filesystem blocks.  This isn't the case on Linux, which has
-	 * a pretty efficient filesystem and kernel/app interface, but
-	 * we don't lose a lot by checking this. */
-	window_start = offset - 2 * CHUNK_SIZE;
-	
-	/* Include only higher-order bits; assumes power of 2 */
-	window_start &= ~((hs_off_t) (CHUNK_SIZE - 1));	
+        /* On some systems, it's much faster to do reads aligned with
+         * filesystem blocks.  This isn't the case on Linux, which has
+         * a pretty efficient filesystem and kernel/app interface, but
+         * we don't lose a lot by checking this. */
+        window_start = offset - 2 * CHUNK_SIZE;
+        
+        /* Include only higher-order bits; assumes power of 2 */
+        window_start &= ~((hs_off_t) (CHUNK_SIZE - 1)); 
     } else {
-	window_start = 0;
+        window_start = 0;
     }
     window_size = DEFAULT_WINDOW_SIZE;
 
     /* If the default window is not big enough to hold all the data,
        then expand it. */
     if (offset + *len > window_start + window_size) {
-	window_size = (offset + *len) - window_start;
+        window_size = (offset + *len) - window_start;
     }
 
     /* make sure we have allocated enough memory for the window */
     if (!map->p) {
-	assert(map->p_size == 0);
-	_hs_trace("allocate initial %ld byte window", (long) window_size);
-	map->p = (char *) malloc((size_t) window_size);
-	map->p_size = window_size;
+        assert(map->p_size == 0);
+        _hs_trace("allocate initial %ld byte window", (long) window_size);
+        map->p = (char *) malloc((size_t) window_size);
+        map->p_size = window_size;
     } else if (window_size > map->p_size) {
-	_hs_trace("grow buffer to hold %ld byte window", (long) window_size);
-	map->p = (char *) realloc(map->p, (size_t) window_size);
-	map->p_size = window_size;
+        _hs_trace("grow buffer to hold %ld byte window", (long) window_size);
+        map->p = (char *) realloc(map->p, (size_t) window_size);
+        map->p_size = window_size;
     }
 
     if (!map->p) {
-	_hs_fatal("map_ptr: out of memory");
+        _hs_fatal("map_ptr: out of memory");
     }
 
     /* now try to avoid re-reading any bytes by reusing any bytes from the
      * previous buffer. */
     if (window_start >= map->p_offset &&
-	window_start < map->p_offset + map->p_len &&
-	window_start + window_size >= map->p_offset + map->p_len) {
-	read_start = map->p_offset + map->p_len;
-	read_offset = read_start - window_start;
-	assert(read_offset >= 0);
-	read_max_size = window_size - read_offset;
-	memmove(map->p, map->p + (map->p_len - read_offset),
-		(size_t) read_offset);
+        window_start < map->p_offset + map->p_len &&
+        window_start + window_size >= map->p_offset + map->p_len) {
+        read_start = map->p_offset + map->p_len;
+        read_offset = read_start - window_start;
+        assert(read_offset >= 0);
+        read_max_size = window_size - read_offset;
+        memmove(map->p, map->p + (map->p_len - read_offset),
+                (size_t) read_offset);
     } else {
-	read_start = window_start;
-	read_max_size = window_size;
-	read_offset = 0;
+        read_start = window_start;
+        read_max_size = window_size;
+        read_offset = 0;
     }
 
     map->p_offset = window_start;
 
     if (read_max_size <= 0) {
-	_hs_trace("Warning: unexpected read size of %d in map_ptr\n",
-		  read_max_size);
-	return NULL;
+        _hs_trace("Warning: unexpected read size of %d in map_ptr\n",
+                  read_max_size);
+        return NULL;
     }
 
     if (map->p_fd_offset != read_start) {
-	if (lseek(map->fd, read_start, SEEK_SET) != read_start) {
-	    _hs_trace("lseek failed in map_ptr\n");
-	    abort();
-	}
-	map->p_fd_offset = read_start;
+        if (lseek(map->fd, read_start, SEEK_SET) != read_start) {
+            _hs_trace("lseek failed in map_ptr\n");
+            abort();
+        }
+        map->p_fd_offset = read_start;
     }
 
     /* Work out the minimum number of bytes we must read to cover the
@@ -353,13 +353,13 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
        (in a file). */
 
     if (read_min_size > read_max_size) {
-	_hs_fatal("we really screwed up: minimum size is %ld, but remaining "
-		  "buffer is just %ld",
-		  (long) read_min_size, (long) read_max_size);
+        _hs_fatal("we really screwed up: minimum size is %ld, but remaining "
+                  "buffer is just %ld",
+                  (long) read_min_size, (long) read_max_size);
     }
     
     total_read = _hs_map_do_read(map, read_offset, read_max_size,
-				 read_min_size, reached_eof);
+                                 read_min_size, reached_eof);
     assert(*reached_eof  ||  total_read >= read_min_size);
     map->p_fd_offset += total_read;
 
@@ -372,9 +372,9 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     map->p_len = read_offset + total_read;
 
     if (total_read == read_max_size) {
-	/* This was the formula before we worried about EOF, so assert
-	 * that it's still the same. */
-	assert(map->p_len == window_size);
+        /* This was the formula before we worried about EOF, so assert
+         * that it's still the same. */
+        assert(map->p_len == window_size);
     }
 
     /* Available data after the requested offset: we have p_len bytes *
@@ -393,8 +393,8 @@ _hs_unmap_file(hs_map_t * map)
 {
     assert(map->tag == HS_MAP_TAG);
     if (map->p) {
-	free(map->p);
-	map->p = NULL;
+        free(map->p);
+        map->p = NULL;
     }
     memset(map, 0, sizeof(*map));
     free(map);
