@@ -1,9 +1,11 @@
                                                   -*- indented-text -*-
 $Id$
 
- * Start using a GNU-style ChangeLog to track contributions and
-   protect our change history across different vc systems.
-
+ * Decide on and document a suitable convention for THANKS. A first
+   cut is described in HACKING and README.CVS, but it's probably
+   overkill to record every contribution by every person for every
+   release. 
+ 
  * Change to using SCons?  Much easier to build shared libraries than
    Make, and possibly easier to build on Windows.
 
@@ -23,6 +25,9 @@ $Id$
 
      At the moment, reStructuredText looks like a good bet for an
      input format.
+
+ * Change existing text documentation in README.* etc to use a single
+   consistant format... reStructuredText?
 
  * Version numbering: perhaps keep release numbers in sync with
    (Unix) library versions.

@@ -1,4 +1,6 @@
                                                             -*- text -*-
+Originators and Contributors up to 0.9.5
+---------------------------------------
 
 Andrew Tridgell and Paulus Mackerras started this whole mess.  Luke
 Leighton was a tremendous help in sorting out the combined
@@ -20,18 +22,29 @@ Tim Potter <tpot@linuxcare.com.au>
 Hugh Blemings <hugh@linuxcare.com.au>
 David Gibson <dgibson@linuxcare.com.au>
 
-The release of 0.9.6 was contributed to mostly by the following people;
 
-Wayne Davison <wayned@users.sourceforge.net>
+Contributors by release
+-----------------------
+
+The following is a list of contributors for each release. It is
+possible we have missed some contributors. If you know of anyone who
+has been omitted and deserves to be included, please send the details
+so they can be added.
+
+Contributors for 0.9.6
+
+ * Wayne Davison <wayned@users.sourceforge.net>
   - librsync sf project admin
   - sf project creation, import cvs etc
   - many cvs commits of submitted patches
   - rsync.h -> librsync.h rename
   - librsync-conf.h addition and config.h issue resolution
-Martin Pool <mbp@users.sourceforge.net>
+
+ * Martin Pool <mbp@users.sourceforge.net>
   - sf project admin 
   - sf project developers setup
-Donovan Baarda <abo@minkirri.apana.org.au>
+
+ * Donovan Baarda <abo@minkirri.apana.org.au>
   - librsync sf project admin
   - sf project tracker and lists setup
   - MSVC6 and cygwin compiling patch and updates
@@ -39,22 +52,39 @@ Donovan Baarda <abo@minkirri.apana.org.au>
   - autconf/autmake cleanups
   - large file debugging and fixes
   - build and release
-Ben Escoto <bescoto@users.sourceforge.net>
+
+ * Ben Escoto <bescoto@users.sourceforge.net>
   - librsync sf project admin
-Ben Elliston <bje@air.net.au>
+
+ * Ben Elliston <bje@air.net.au>
   - many cvs commits before migrating to sf
-Robert Weber <chipsforbrains@users.sourceforge.net>
+
+ * Robert Weber <chipsforbrains@users.sourceforge.net>
   - bigendian and >512M mdfour patch
-Skip Montanaro <montanaro@users.sourceforge.net>
+
+ * Skip Montanaro <montanaro@users.sourceforge.net>
   - librsync on MacOSX patch
-Diego Liziero <diegoliz@users.sourceforge.net>
+
+ * Diego Liziero <diegoliz@users.sourceforge.net>
   - memory leak patches
   - again rdiff cosmetic patch
-Berkan Eskikaya <berkan@users.sourceforge.net>
+
+ * Berkan Eskikaya <berkan@users.sourceforge.net>
   - Control files for librsync debian packages patch
-Mark Moraes <moraes@sbcglobal.net>
+
+ * Mark Moraes <moraes@sbcglobal.net>
   - cygwin testsuite fixes email patch
-Robert Collins <robert.collins@itdomain.com.au>
+
+ * Robert Collins <robert.collins@itdomain.com.au>
   - autoconf/automake cleanups email (old patch)
-Paul Green <lists@webleicester.co.uk>
+
+ * Paul Green <lists@webleicester.co.uk>
   - large file testing and debugging
+
+
+Contributors for 0.9.7 (release pending)
+
+ * Donovan Baarda <abo@minkirri.apana.org.au>
+   - librsync sf project admin
+
+ * XXX

@@ -2,9 +2,10 @@ CVS Instructions for librsync
 -----------------------------
 
 If you're building from CVS, things are slightly more complicated than
-usual.  I hope these instructions will tell you all you need to know. Please
-mail <librsync-devel@lists.sourceforge.net> if they are unclear or
-incorrect.
+usual.  I hope these instructions will tell you all you need to know.
+Please mail <librsync-devel@lists.sourceforge.net> if they are unclear
+or incorrect. Also read HACKING for a description of development
+conventions used by the project.
 
 The librsync project is currently hosted on sourceforge. Everything,
 including CVS, can be found at;
@@ -71,5 +72,33 @@ this:
 
 and submit to the patch tracker.
 
+
+>> Releasing
+
+Make sure you have cvs2cl installed to generate ChangeLog. Before a
+formal release, make sure that the following files have been updated
+to reflect the new version:
+
+ * AUTHORS - make sure all significant authors are included. 
+  
+ * NEWS - make sure the top "Changes in X.Y.Z" is correct. 
+  
+ * THANKS - make sure the bottom "Contributors for X.Y.Z" is correct.
+  
+ * configure.ac - make sure AC_INIT and librsync_libversion are right.
+  
+ * libversions.txt - make sure libversion is added.
+  
+ * librsync.spec - make sure version and URL are right.
+  
+ * PCBuild/config.h,librsync-config.h - update using configure.msc
+   using cygwin.
+
+Do a complete configure and distcheck to ensure everything is properly
+configured, built, and tested:
+
+  $ ./autogen.sh [OPTIONS]
+  $ ./configure
+  $ make distcheck
 
 $Id$
