@@ -23,7 +23,9 @@
 
 #include <assert.h>
 #include <sys/types.h>
+#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 

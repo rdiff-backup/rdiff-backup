@@ -25,8 +25,12 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
+#endif
 #include <string.h>
 
 #include "rsync.h"

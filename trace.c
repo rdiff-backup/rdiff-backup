@@ -35,10 +35,15 @@
  */
 
 #include <config.h>
-
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#else
+#define STDERR_FILENO 2
+#endif
 #include <stdio.h>
+#ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
+#endif
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
