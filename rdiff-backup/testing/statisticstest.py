@@ -8,6 +8,8 @@ class StatsObjTest(unittest.TestCase):
 		"""Set values of s's statistics"""
 		s.SourceFiles = 1
 		s.SourceFileSize = 2
+		s.MirrorFiles = 13
+		s.MirrorFileSize = 14
 		s.NewFiles = 3
 		s.NewFileSize = 4
 		s.DeletedFiles = 5
@@ -15,6 +17,7 @@ class StatsObjTest(unittest.TestCase):
 		s.ChangedFiles = 7
 		s.ChangedSourceSize = 8
 		s.ChangedMirrorSize = 9
+		s.IncrementFiles = 15
 		s.IncrementFileSize = 10
 		s.StartTime = 11
 		s.EndTime = 12
@@ -38,25 +41,51 @@ class StatsObjTest(unittest.TestCase):
 		self.set_obj(s)
 		stats_string = s.get_stats_string()
 		assert stats_string == \
-"""StartTime 11 (Wed Dec 31 16:00:11 1969)
-EndTime 12 (Wed Dec 31 16:00:12 1969)
-ElapsedTime 1 (1 second)
+"""StartTime 11.00 (Wed Dec 31 16:00:11 1969)
+EndTime 12.00 (Wed Dec 31 16:00:12 1969)
+ElapsedTime 1.00 (1 second)
 SourceFiles 1
-SourceFileSize 2
+SourceFileSize 2 (2 bytes)
+MirrorFiles 13
+MirrorFileSize 14 (14 bytes)
 NewFiles 3
-NewFileSize 4
+NewFileSize 4 (4 bytes)
 DeletedFiles 5
-DeletedFileSize 6
+DeletedFileSize 6 (6 bytes)
 ChangedFiles 7
-ChangedSourceSize 8
-ChangedMirrorSize 9
-IncrementFileSize 10
+ChangedSourceSize 8 (8 bytes)
+ChangedMirrorSize 9 (9 bytes)
+IncrementFiles 15
+IncrementFileSize 10 (10 bytes)
 """, "'%s'" % stats_string
+
+	def test_line_string(self):
+		"""Test conversion to a single line"""
+		s = StatsObj()
+		self.set_obj(s)
+		statline = s.get_stats_line(("sample", "index", "w", "new\nline"))
+		assert statline == "sample/index/w/new\\nline 1 2 13 14 " \
+			   "3 4 5 6 7 8 9 15 10", repr(statline)
+
+		statline = s.get_stats_line(())
+		assert statline == ". 1 2 13 14 3 4 5 6 7 8 9 15 10"
+
+	def test_byte_summary(self):
+		"""Test conversion of bytes to strings like 7.23MB"""
+		s = StatsObj()
+		f = s.get_byte_summary_string
+		assert f(1) == "1 byte"
+		assert f(234.34) == "234 bytes"
+		assert f(2048) == "2.00 KB"
+		assert f(3502243) == "3.34 MB"
+		assert f(314992230) == "300 MB"
+		assert f(36874871216) == "34.3 GB", f(36874871216)
+		assert f(3775986812573450) == "3434 TB"
 
 	def test_init_stats(self):
 		"""Test setting stat object from string"""
 		s = StatsObj()
-		s.init_stats_from_string("NewFiles 3 hello there")
+		s.set_stats_from_string("NewFiles 3 hello there")
 		for attr in s.stat_attrs:
 			if attr == 'NewFiles': assert s.get_stat(attr) == 3
 			else: assert s.get_stat(attr) is None, (attr, s.__dict__[attr])
@@ -66,7 +95,7 @@ IncrementFileSize 10
 		assert not s1.stats_equal(s)
 
 		s2 = StatsObj()
-		s2.init_stats_from_string(s1.get_stats_string())
+		s2.set_stats_from_string(s1.get_stats_string())
 		assert s1.stats_equal(s2)
 
 	def test_write_rp(self):

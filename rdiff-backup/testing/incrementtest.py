@@ -6,7 +6,7 @@ rbexec("main.py")
 
 lc = Globals.local_connection
 Globals.change_source_perms = 1
-Log.setverbosity(4)
+Log.setverbosity(5)
 
 def getrp(ending):
 	return RPath(lc, "testfiles/various_file_types/" + ending)
@@ -191,32 +191,33 @@ class inctest2(unittest.TestCase):
 		Globals.compression = 1
 		Myrm("testfiles/output")
 		InternalBackup(1, 1, "testfiles/stattest1", "testfiles/output")
-		InternalBackup(1, 1, "testfiles/stattest2", "testfiles/output")
+		InternalBackup(1, 1, "testfiles/stattest2", "testfiles/output",
+					   time.time()+1)
 
-		inc_base = RPath(Globals.local_connection,
-						 "testfiles/output/rdiff-backup-data/increments")
+		rbdir = RPath(Globals.local_connection,
+					  "testfiles/output/rdiff-backup-data")
 
-		incs = Restore.get_inclist(inc_base.append("subdir").
-								   append("directory_statistics"))
-		assert len(incs) == 2
-		s1 = StatsObj().read_stats_from_rp(incs[0]) # initial mirror stats
-		assert s1.SourceFiles == 2
-		assert 400000 < s1.SourceFileSize < 420000
-		self.stats_check_initial(s1)
+		#incs = Restore.get_inclist(rbdir.append("subdir").
+		#						   append("directory_statistics"))
+		#assert len(incs) == 2
+		#s1 = StatsObj().read_stats_from_rp(incs[0]) # initial mirror stats
+		#assert s1.SourceFiles == 2
+		#assert 400000 < s1.SourceFileSize < 420000
+		#self.stats_check_initial(s1)
 
-		subdir_stats = StatsObj().read_stats_from_rp(incs[1]) # increment stats
-		assert subdir_stats.SourceFiles == 2
-		assert 400000 < subdir_stats.SourceFileSize < 420000
-		assert subdir_stats.MirrorFiles == 2
-		assert 400000 < subdir_stats.MirrorFileSize < 420000
-		assert subdir_stats.NewFiles == subdir_stats.NewFileSize == 0
-		assert subdir_stats.DeletedFiles == subdir_stats.DeletedFileSize == 0
-		assert subdir_stats.ChangedFiles == 2
-		assert 400000 < subdir_stats.ChangedSourceSize < 420000
-		assert 400000 < subdir_stats.ChangedMirrorSize < 420000
-		assert 10 < subdir_stats.IncrementFileSize < 20000
+		#subdir_stats = StatsObj().read_stats_from_rp(incs[1]) # increment stats
+		#assert subdir_stats.SourceFiles == 2
+		#assert 400000 < subdir_stats.SourceFileSize < 420000
+		#assert subdir_stats.MirrorFiles == 2
+		#assert 400000 < subdir_stats.MirrorFileSize < 420000
+		#assert subdir_stats.NewFiles == subdir_stats.NewFileSize == 0
+		#assert subdir_stats.DeletedFiles == subdir_stats.DeletedFileSize == 0
+		#assert subdir_stats.ChangedFiles == 2
+		#assert 400000 < subdir_stats.ChangedSourceSize < 420000
+		#assert 400000 < subdir_stats.ChangedMirrorSize < 420000
+		#assert 10 < subdir_stats.IncrementFileSize < 20000
 
-		incs = Restore.get_inclist(inc_base.append("directory_statistics"))
+		incs = Restore.get_inclist(rbdir.append("session_statistics"))
 		assert len(incs) == 2
 		s2 = StatsObj().read_stats_from_rp(incs[0])
 		assert s2.SourceFiles == 7
@@ -224,7 +225,7 @@ class inctest2(unittest.TestCase):
 		self.stats_check_initial(s2)
 
 		root_stats = StatsObj().read_stats_from_rp(incs[1])
-		assert root_stats.SourceFiles == 7
+		assert root_stats.SourceFiles == 7, root_stats.SourceFiles
 		assert 550000 < root_stats.SourceFileSize < 570000
 		assert root_stats.MirrorFiles == 7
 		assert 700000 < root_stats.MirrorFileSize < 750000
@@ -235,6 +236,6 @@ class inctest2(unittest.TestCase):
 		assert 3 <= root_stats.ChangedFiles <= 4, root_stats.ChangedFiles
 		assert 450000 < root_stats.ChangedSourceSize < 470000
 		assert 400000 < root_stats.ChangedMirrorSize < 420000
-		assert 10 < subdir_stats.IncrementFileSize < 30000
+		assert 10 < root_stats.IncrementFileSize < 30000
 
 if __name__ == '__main__': unittest.main()
