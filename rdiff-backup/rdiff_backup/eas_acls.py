@@ -257,6 +257,52 @@ class AccessControlList:
 		"""Write current access control list to RPath rp"""
 		rp.conn.eas_acls.set_rp_acl(rp, self.acl_text, self.def_acl_text)
 
+	def acl_to_list(self, acl):
+		"""Return list representation of posix1e.ACL object
+
+		ACL objects cannot be pickled, so this representation keeps
+		the structure while adding that option.  Also we insert the
+		username along with the id, because that information will be
+		lost when moved to another system.
+
+		The result will be a list of tuples.  Each tuple will have the
+		form (acltype, (uid or gid, uname or gname) or None,
+		permissions as an int).
+
+		"""
+		def entry_to_tuple(entry):
+			if entry.tag_type == posix1e.ACL_USER:
+				uid = entry.qualifier
+				owner_pair = (uid, user_group.uid2uname(uid))
+			elif entry.tag_type == posix1e.ACL_GROUP:
+				gid = entry.qualifier
+				owner_pair = (gid, user_group.gid2gname(gid))
+			else: owner_pair = None
+
+			perms = (entry.permset.read << 2 | 
+					 entry.permset.write << 1 |
+					 entry.permset.execute)
+			return (entry.tag_type, owner_pair, perms)
+		return map(entry_to_tuple, acl)
+
+	def list_to_acl(self, listacl):
+		"""Return posix1e.ACL object from list representation"""
+		acl = posix1e.ACL()
+		for tag, owner_pair, perms in listacl:
+			entry = posix1e.Entry(acl)
+			entry.tag_type = tag
+			if owner_pair:
+				if tag == posix1e.ACL_USER:
+					entry.qualifier = user_group.UserMap.get_id(*owner_pair)
+				else:
+					assert tag == posix1e.ACL_GROUP
+					entry.qualifier = user_group.GroupMap.get_id(*owner_pair)
+			entry.read = perms >> 2
+			entry.write = perms >> 1 & 1
+			entry.execute = perms & 1
+		return acl
+		
+
 def set_rp_acl(rp, acl_text = None, def_acl_text = None):
 	"""Set given rp with ACL that acl_text defines.  rp should be local"""
 	assert rp.conn is Globals.local_connection
