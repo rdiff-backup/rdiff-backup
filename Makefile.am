@@ -27,26 +27,32 @@
 lib_LTLIBRARIES = libhsync.la
 
 libhsync_la_SOURCES =				\
-	patch.c 				\
-	streamfile.c streamfile.h		\
-	prototab.c prototab.h 			\
-	command.c command.h 			\
-	emit.c emit.h				\
+	base64.c				\
+	checksum.c checksum.h			\
+	command.c command.h			\
 	delta.c delta.h				\
-	netint.c netint.h			\
+	emit.c emit.h				\
+	file.c					\
 	fileutil.c fileutil.h			\
-	tube.c tube.h				\
-	file.c file.h				\
+	hex.c					\
 	hsync.h					\
-	private.h				\
-	hex.c base64.c mdfour.c			\
-	stream.c stream.h scoop.c		\
-	util.c util.h				\
+	hsyncfile.h				\
+	mdfour.c				\
 	mksum.c					\
-	trace.c trace.h				\
-	version.c				\
+	msg.c					\
+	netint.c netint.h			\
+	patch.c					\
+	private.h				\
 	protocol.h				\
-	msg.c
+	prototab.c prototab.h			\
+	scoop.c					\
+	stream.c stream.h			\
+	streamfile.c streamfile.h		\
+	trace.c trace.h				\
+	tube.c tube.h				\
+	util.c util.h				\
+	version.c				\
+	whole.c
 
 # TODO: If we ever care enough, build a second library containing only
 # the code necessary to be a client, and not stuff for encoding.  At
@@ -66,7 +72,7 @@ libhsync_la_SOURCES =				\
 
 TESTS_ENVIRONMENT = bash $(srcdir)/driver.sh
 
-test_scripts = delta.test
+test_scripts = delta.test mksum.test isprefix.test
 
 man_MANS = man/libhsync.3 man/rdiff.1
 
@@ -96,7 +102,7 @@ prototab.c: $(srcdir)/mkprototab.sh
 
 EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) $(extra_docs) $(man_MANS)
 
-include_HEADERS = hsync.h
+include_HEADERS = hsync.h hsyncfile.h
 
 # This is the default for any programs that don't specify a
 # preference.
