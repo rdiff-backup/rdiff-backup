@@ -76,4 +76,4 @@ void hs_mdfour_file(FILE *in_file, char *result);
 enum hs_result hs_rdiff_signature(int argc, char *argv[]);
 enum hs_result hs_rdiff_delta(int argc, char *argv[]);
 enum hs_result hs_rdiff_patch(int argc, char *argv[]);
-enum hs_result hs_rdiff_sum(int argc, char *argv[]);
+enum hs_result hs_rdiff_md4(int argc, char *argv[]);

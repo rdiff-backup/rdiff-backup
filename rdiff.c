@@ -79,7 +79,7 @@ static void show_usage(void)
     printf("Usage: %s [OPTIONS] signature OLDFILE SIGNATURE\n"
            "   or: %s [OPTIONS] delta SIGNATURE NEWFILE DELTA\n"
            "   or: %s [OPTIONS] patch OLDFILE DELTA NEWFILE\n"
-           "   or: %s [OPTIONS] sum INPUT\n"
+           "   or: %s [OPTIONS] md4 INPUT\n"
            "\n"
            "Compute rsync checksums or deltas, or apply a delta.\n"
            "\n"
@@ -150,8 +150,8 @@ main(int argc, char **argv)
 	return hs_rdiff_delta(argc, argv);
      } else if (strisprefix(argv[0], "patch")) {
  	return hs_rdiff_patch(argc, argv);
-    } else if (strisprefix(argv[0], "sum")) {
-	return hs_rdiff_sum(argc, argv);
+    } else if (strisprefix(argv[0], "md4")) {
+	return hs_rdiff_md4(argc, argv);
     }
     
     _hs_error("You must specify one of the signature, delta, "

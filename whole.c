@@ -64,29 +64,39 @@ hs_rdiff_delta(int argc, char **argv)
 }
 
 
-enum hs_result hs_rdiff_sum(int argc, char **argv)
+enum hs_result hs_rdiff_md4(int argc, char **argv)
 {
-#if 0
-    unsigned char          result[HS_MD4_LENGTH];
-    char            result_str[HS_MD4_LENGTH * 3];
-    FILE *in_file;
+	unsigned char          result[HS_MD4_LENGTH];
+	char            result_str[HS_MD4_LENGTH * 3];
+	FILE *in_file;
+	char *inbuf = malloc(hs_inbuflen);
+	int len;
+	hs_mdfour_t md4;
 
-    if (argc != 2) {
-	_hs_error("Sum operation needs one filename");
-	return 1;
-    }
+	if (argc != 2) {
+		_hs_error("MD4 operation needs one filename");
+		return 1;
+	}
     
-    in_file = _hs_file_open(argv[1], O_RDONLY);
-    
-    hs_mdfour_file(in_file, result);
-    hs_hexify(result_str, result, HS_MD4_LENGTH);
+	in_file = _hs_file_open(argv[1], O_RDONLY);
+	assert(inbuf);
 
-    printf("%s\n", result_str);
+	hs_mdfour_begin(&md4);
+	while (!feof(in_file)) {
+		len = fread(inbuf, hs_inbuflen, 1, in_file);
+		if (len < 0) {
+			_hs_fatal("%s: %s", argv[1], strerror(errno));
+			return 1;
+		}
+		hs_mdfour_update(&md4, inbuf, len);
+	}
 
-    return 0;
-#else
-    _hs_fatal("not implemented");
-#endif
+	hs_mdfour_result(&md4, result);
+	hs_hexify(result_str, result, HS_MD4_LENGTH);
+
+	printf("%s\n", result_str);
+
+	return 0;
 }
 
 
