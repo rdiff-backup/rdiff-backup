@@ -1,3 +1,5 @@
+Look at manual page examples.
+
 Consider adding --datadir option (Jean-Sébastien GOETSCHY)
 
 See if regressing takes too much memory (large directories).
@@ -8,7 +10,7 @@ Use ctime to check whether files have been changed.  See message:
 http://mail.gnu.org/archive/html/rdiff-backup-users/2003-06/msg00050.html
 by Andrew Bressen.
 
-Profile 0.13.0
+Profile 0.13.x
 
 Look at EAs when unames change.
 
