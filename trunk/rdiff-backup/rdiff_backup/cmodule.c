@@ -13,10 +13,10 @@
  * ----------------------------------------------------------------------- */
 
 
+#include <Python.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <Python.h>
 #include <errno.h>
 
 /* choose the appropriate stat and fstat functions and return structs */
