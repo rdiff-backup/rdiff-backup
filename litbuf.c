@@ -47,7 +47,7 @@ _hs_push_literal_buf(hs_membuf_t * litbuf,
 		      int kind)
 {
     int ret;
-    off_t amount;
+    hs_off_t amount;
 
     amount = hs_membuf_tell(litbuf);
     assert(amount >= 0);

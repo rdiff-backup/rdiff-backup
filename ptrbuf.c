@@ -53,7 +53,7 @@ hs_ptrbuf_t *hs_ptrbuf_on_buffer(char *buf, int len)
 
 
 
-off_t hs_ptrbuf_tell(void *private)
+hs_off_t hs_ptrbuf_tell(void *private)
 {
     hs_ptrbuf_t *mb = (hs_ptrbuf_t *) private;
     assert(mb->dogtag == ptrbuf_tag);
@@ -87,14 +87,14 @@ ssize_t hs_ptrbuf_write(void *private, char const *buf, size_t len)
 }
 
 
-ssize_t hs_ptrbuf_read_ofs(void *private, char *buf, size_t len, off_t ofs)
+ssize_t hs_ptrbuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
 {
     hs_ptrbuf_t *mb = (hs_ptrbuf_t *) private;
 
     assert(mb->dogtag == ptrbuf_tag);
     assert(ofs >= 0);
 
-    if (ofs >= 0  &&  ofs < (off_t) mb->length) {
+    if (ofs >= 0  &&  ofs < (hs_off_t) mb->length) {
 	mb->ofs = ofs;
 	return hs_ptrbuf_read(private, buf, len);
     } else {

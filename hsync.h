@@ -22,6 +22,14 @@
 
 extern char const * const hs_libhsync_version;
 
+#if HAVE_OFF64_T
+#define hs_off_t off64_t
+#define STRUCT_STAT struct stat64
+#else
+#define hs_off_t off_t
+#define STRUCT_STAT struct stat
+#endif
+
 
 /* ========================================
 
@@ -29,7 +37,7 @@ extern char const * const hs_libhsync_version;
 typedef int (*hs_read_fn_t) (void *readprivate, char *buf, size_t len);
 
 typedef int (*hs_readofs_fn_t) (void *readprivate, char *buf,
-				size_t len, off_t offset);
+				size_t len, hs_off_t offset);
 
 typedef int (*hs_write_fn_t) (void *writeprivate, char const *buf,
 			      size_t len);
@@ -87,7 +95,7 @@ ssize_t hs_filebuf_zread(void *private, char *buf, size_t len);
 ssize_t hs_filebuf_write(void *private, char const *buf, size_t len);
 ssize_t hs_filebuf_zwrite(void *private, char const *buf, size_t len);
 ssize_t hs_filebuf_read_ofs(void *private, char *buf, size_t len,
-			    off_t ofs);
+			    hs_off_t ofs);
 
 hs_filebuf_t *hs_filebuf_open(char const *filename, char const *mode);
 void hs_filebuf_close(hs_filebuf_t *fbuf);
@@ -95,8 +103,19 @@ void hs_filebuf_add_cache(hs_filebuf_t *fb, FILE *fp);
 
 hs_filebuf_t *hs_filebuf_from_file(FILE * fp);
 
+/* ========================================
+
+   File map pointers
+*/
+
+struct hs_map_struct {
+	char *p;
+	int fd,p_size,p_len;
+	hs_off_t file_size, p_offset, p_fd_offset;
+};
 
 
+
 /* ========================================
 
    Memory buffers
@@ -104,11 +123,11 @@ hs_filebuf_t *hs_filebuf_from_file(FILE * fp);
 
 typedef struct hs_membuf hs_membuf_t;
 
-off_t hs_membuf_tell(void *private);
+hs_off_t hs_membuf_tell(void *private);
 ssize_t hs_membuf_write(void *private, char const *buf, size_t len);
 ssize_t hs_membuf_read(void *private, char *buf, size_t len);
 ssize_t hs_membuf_read_ofs(void *private, char *buf, size_t len,
-			   off_t ofs);
+			   hs_off_t ofs);
 ssize_t hs_choose_block_size(ssize_t file_len);
 hs_membuf_t *hs_membuf_new(void);
 void hs_membuf_free(hs_membuf_t *);
@@ -119,11 +138,11 @@ hs_membuf_t *hs_membuf_on_buffer(char *buf, int len);
 
 typedef struct hs_ptrbuf hs_ptrbuf_t;
 
-off_t hs_ptrbuf_tell(void *private);
+hs_off_t hs_ptrbuf_tell(void *private);
 ssize_t hs_ptrbuf_write(void *private, char const *buf, size_t len);
 ssize_t hs_ptrbuf_read(void *private, char *buf, size_t len);
 ssize_t hs_ptrbuf_read_ofs(void *private, char *buf, size_t len,
-			   off_t ofs);
+			   hs_off_t ofs);
 ssize_t hs_choose_block_size(ssize_t file_len);
 hs_ptrbuf_t *hs_ptrbuf_on_buffer(char *buf, int len);
 void hs_ptrbuf_truncate(hs_ptrbuf_t * mb);

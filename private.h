@@ -135,7 +135,7 @@ void _hs_check_blocksize(int block_len);
 struct hs_membuf {
     int dogtag;
     char *buf;
-    off_t ofs;
+    hs_off_t ofs;
     ssize_t length;
     size_t alloc;
 };
@@ -143,7 +143,7 @@ struct hs_membuf {
 struct hs_ptrbuf {
     int dogtag;
     char *buf;
-    off_t ofs;
+    hs_off_t ofs;
     size_t length;
 };
 
@@ -190,7 +190,7 @@ struct target {
 };
 
 typedef struct sum_struct {
-    off_t flength;		/* total file length */
+    hs_off_t flength;		/* total file length */
     int count;			/* how many chunks */
     int remainder;		/* flength % block_length */
     int n;			/* block_length */
@@ -203,7 +203,7 @@ typedef struct sum_struct {
 /* All blocks are the same length in the current algorithm except for
    the last block which may be short. */
 typedef struct sum_buf {
-    off_t offset;		/* offset in file of this chunk */
+    hs_off_t offset;		/* offset in file of this chunk */
     int len;			/* length of chunk of file */
     int i;			/* index of this chunk */
     uint32_t sum1;		/* simple checksum */
@@ -290,6 +290,14 @@ int _hs_emit_eof(hs_write_fn_t write_fn, void *write_priv,
 int _hs_append_literal(hs_membuf_t * litbuf, char value);
 
 
-int
-_hs_inhale_command(hs_read_fn_t read_fn, void * read_priv,
-		   int *kind, uint32_t *len, uint32_t *off);
+int _hs_inhale_command(hs_read_fn_t read_fn, void * read_priv,
+		       int *kind, uint32_t *len, uint32_t *off);
+
+
+
+/* ========================================
+
+   map_ptr IO
+*/
+struct hs_map_struct *_hs_map_file(int fd, hs_off_t len);
+char * _hs_map_ptr(struct hs_map_struct *map, hs_off_t offset, int len);

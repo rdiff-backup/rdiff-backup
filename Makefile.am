@@ -13,7 +13,7 @@ libhsync_la_SOURCES = dec.c enc.c \
 	checksum.c copyq.c \
 	compress.c compress.h inbuf.c \
 	inhale.c trace.c \
-	hex.c stats.c
+	hex.c stats.c fileio.c 
 
 libhsyncdecode_la_SOURCES = dec.c \
 	private.h netio.c includes.h \

@@ -177,7 +177,7 @@ ssize_t hs_filebuf_zwrite(void *private, char const *buf, size_t len)
 }
 
 ssize_t
-hs_filebuf_read_ofs(void *private, char *buf, size_t len, off_t ofs)
+hs_filebuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
 {
     struct file_buf *fbuf = (struct file_buf *) private;
     size_t n;

@@ -23,7 +23,6 @@
 
 #include "includes.h"
 #include "hsync.h"
-#include "mdfour.h"
 #include "private.h"
 
 int checksum_seed = 0;

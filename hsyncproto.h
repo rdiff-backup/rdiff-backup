@@ -26,6 +26,16 @@
 */
 
 
+                          /* "The IETF already has more than enough RFCs
+                              that codify the obvious, make stupidity
+                              illegal, support truth, justice, and the
+                              IETF way, and generally demonstrate the
+                              author is a brilliant and valuable
+                              Contributor to The Standards Process."
+			                -- Vernon Schryver */
+
+
+
 #define HS_LT_MAGIC		0x67640001	/* "gd\000\001" */
 #define HS_SIG_MAGIC		0x67642001	/* "gd \001" */
 
