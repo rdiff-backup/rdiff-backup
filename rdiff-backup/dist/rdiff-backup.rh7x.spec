@@ -7,6 +7,7 @@ Copyright: GPL
 Group: Applications/Archiving
 BuildRoot: %{_tmppath}/%{name}-root
 requires: librsync, python2 >= 2.2
+Patch: rdiff-backup-rh7x.patch
 
 %description
 rdiff-backup is a script, written in Python, that backs up one
@@ -22,7 +23,7 @@ differences from the previous backup will be transmitted.
 
 %prep
 %setup
-
+%patch
 %build
 
 %install
@@ -42,6 +43,8 @@ install -m 644 rdiff-backup.1 $RPM_BUILD_ROOT/usr/share/man/man1/rdiff-backup.1
 %doc CHANGELOG COPYING README FAQ.html
 
 %changelog
+* Sat Apr 6 2002 Ben Escoto <bescoto@stanford.edu>
+- Made new version for Redhat 7.x series
 * Sun Nov 4 2001 Ben Escoto <bescoto@stanford.edu>
 - Initial RPM
 

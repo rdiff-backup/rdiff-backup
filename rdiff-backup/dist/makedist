@@ -10,7 +10,7 @@ filelist = [SourceDir + "/rdiff-backup", "CHANGELOG",
 # Various details about the files must also be specified by the rpm
 # spec template.
 spec_template = "dist/rdiff-backup.spec"
-
+redhat_spec_template = "dist/rdiff-backup.rh7x.spec"
 
 def GetVersion():
 	"""Return version string by reading in ./rdiff-backup"""
@@ -51,14 +51,20 @@ def MakeTar(version):
 
 def MakeSpecFile(version):
 	"""Create spec file using spec template"""
+	def helper(spec_template, specfile):
+		"""Added now that there are special redhat rpms"""
+		outfp = open(specfile, "w")
+		outfp.write("Version: %s\n" % version)
+		infp = open(spec_template, "r")
+		outfp.write(infp.read())
+		infp.close()
+		outfp.close()
+
 	specfile = "rdiff-backup-%s-1.spec" % version
-	outfp = open(specfile, "w")
-	outfp.write("Version: %s\n" % version)
-	infp = open(spec_template, "r")
-	outfp.write(infp.read())
-	infp.close()
-	outfp.close()
-	return specfile
+	redhat_specfile = "rdiff-backup-%s-1.rh7x.spec" % version
+	helper(spec_template, specfile)
+	helper(redhat_spec_template, redhat_specfile)
+	return (specfile, redhat_specfile)
 
 def Main():
 	cwd = os.getcwd()
@@ -69,8 +75,8 @@ def Main():
 	print "Processing version " + version
 	tarfile = MakeTar(version)
 	print "Made tar file " + tarfile
-	specfile = MakeSpecFile(version)
-	print "Made specfile " + specfile
+	specfiles = MakeSpecFile(version)
+	print "Made specfiles %s and %s" % specfiles
 
 if __name__ == "__main__": Main()
 
