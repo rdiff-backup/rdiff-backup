@@ -1,1 +1,1 @@
--type +posixlib -predboolint
+-type +posixlib -predboolint +boolint
