@@ -1,6 +1,9 @@
 from __future__ import generators
-execfile("destructive_stepping.py")
 import re
+from log import *
+from robust import *
+from destructive_stepping import *
+
 
 #######################################################################
 #
@@ -520,4 +523,5 @@ probably isn't what you meant.""" %
 					res = res + '[' + stuff + ']'
 			else: res = res + re.escape(c)
 		return res
+
 

@@ -1,8 +1,8 @@
 import unittest, random
-
-execfile("commontest.py")
-rbexec("selection.py")
-
+from commontest import *
+from log import *
+from selection import *
+import Globals, Rdiff
 
 Log.setverbosity(6)
 

@@ -1,6 +1,6 @@
 from __future__ import generators
-execfile("static.py")
 import os, stat, types
+from static import *
 
 #######################################################################
 #
@@ -323,4 +323,8 @@ class ErrorITR(IterTreeReducer):
 		else: filename = "."
 		Log("Error '%s' processing %s" % (exc, filename), 2)
 
+
+# Put at bottom to prevent (viciously) circular module dependencies
+from robust import *
+from log import *
 

@@ -1,6 +1,6 @@
 from __future__ import generators
-execfile("increment.py")
 import tempfile
+from static import *
 
 #######################################################################
 #
@@ -362,3 +362,10 @@ class RestoreCombinedData:
 			else: RPath.copy(inc, target)
 		else: raise RestoreError("Unknown inctype %s" % inctype)
 		RPath.copy_attribs(inc, target)
+
+
+from log import *
+from destructive_stepping import *
+from rpath import *
+from rorpiter import *
+import Globals, Time, Rdiff, Hardlink, FilenameMapping, SetConnections

@@ -1,6 +1,7 @@
 import unittest, os
-execfile("commontest.py")
-rbexec("main.py")
+from commontest import *
+from log import *
+import Globals
 
 """Root tests
 

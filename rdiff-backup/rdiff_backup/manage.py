@@ -1,4 +1,7 @@
-execfile("restore.py")
+from __future__ import generators
+from static import *
+from log import *
+import Globals, Time
 
 #######################################################################
 #

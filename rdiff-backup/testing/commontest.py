@@ -1,17 +1,16 @@
 """commontest - Some functions and constants common to several test cases"""
-import os
+import os, sys
+sys.path.insert(0, "../src")
+from rpath import *
+from destructive_stepping import *
+from highlevel import *
+import Globals, Hardlink, SetConnections, Main
 
 SourceDir = "../src"
 AbsCurdir = os.getcwd() # Absolute path name of current directory
 AbsTFdir = AbsCurdir+"/testfiles"
 MiscDir = "../misc"
 __no_execute__ = 1 # Keeps the actual rdiff-backup program from running
-
-def rbexec(src_file):
-	"""Changes to the source directory, execfile src_file, return"""
-	os.chdir(SourceDir)
-	execfile(src_file, globals())
-	os.chdir(AbsCurdir)
 
 def Myrm(dirstring):
 	"""Run myrm on given directory string"""
@@ -77,9 +76,9 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 				   % (SourceDir, dest_dir)
 
 	rpin, rpout = SetConnections.InitRPs([src_dir, dest_dir], remote_schema)
-	_get_main().misc_setup([rpin, rpout])
-	_get_main().Backup(rpin, rpout)
-	_get_main().cleanup()
+	Main.misc_setup([rpin, rpout])
+	Main.Backup(rpin, rpout)
+	Main.cleanup()
 
 def InternalMirror(source_local, dest_local, src_dir, dest_dir,
 				   write_data = None):
@@ -94,8 +93,8 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir,
 				   % (SourceDir, dest_dir)
 
 	rpin, rpout = SetConnections.InitRPs([src_dir, dest_dir], remote_schema)
-	_get_main().misc_setup([rpin, rpout])
-	_get_main().backup_init_select(rpin, rpout)
+	Main.misc_setup([rpin, rpout])
+	Main.backup_init_select(rpin, rpout)
 	if not rpout.lstat(): rpout.mkdir()
 	if write_data: # use rdiff-backup-data dir to checkpoint
 		data_dir = rpout.append("rdiff-backup-data")
@@ -109,7 +108,7 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir,
 		SaveState.init_filenames()
 		HighLevel.Mirror(rpin, rpout, Globals.rbdir.append("increments"))
 	else: HighLevel.Mirror(rpin, rpout)
-	_get_main().cleanup()
+	Main.cleanup()
 
 def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 	"""Restore mirror_dir to dest_dir at given time
@@ -132,12 +131,11 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 												remote_schema)
 	Time.setcurtime()
 	inc = get_increment_rp(mirror_rp, time)
-	if inc:
-		_get_main().Restore(get_increment_rp(mirror_rp, time), dest_rp)
+	if inc: Main.restore(get_increment_rp(mirror_rp, time), dest_rp)
 	else: # use alternate syntax
-		_get_main().restore_timestr = str(time)
-		_get_main().RestoreAsOf(mirror_rp, dest_rp)
-	_get_main().cleanup()
+		Main.restore_timestr = str(time)
+		Main.RestoreAsOf(mirror_rp, dest_rp)
+	Main.cleanup()
 
 def get_increment_rp(mirror_rp, time):
 	"""Return increment rp matching time in seconds"""
@@ -154,14 +152,7 @@ def _reset_connections(src_rp, dest_rp):
 	#Globals.connections = [Globals.local_connection]
 	#Globals.connection_dict = {0: Globals.local_connection}
 	SetConnections.UpdateGlobal('rbdir', None)
-	_get_main().misc_setup([src_rp, dest_rp])
-
-def _get_main():
-	"""Set Globals.Main if it doesn't exist, and return"""
-	try: return Globals.Main
-	except AttributeError:
-		Globals.Main = Main()
-		return Globals.Main
+	Main.misc_setup([src_rp, dest_rp])
 
 def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 					 equality_func = None, exclude_rbdir = 1,

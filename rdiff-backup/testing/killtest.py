@@ -1,6 +1,7 @@
 import unittest, os, signal, sys, random, time
-execfile("commontest.py")
-rbexec("main.py")
+from commontest import *
+from log import *
+import Globals, Main
 
 """Test consistency by killing rdiff-backup as it is backing up"""
 

@@ -1,6 +1,9 @@
 import unittest
-execfile("commontest.py")
-rbexec("highlevel.py")
+from commontest import *
+from log import *
+from rpath import *
+from rorpiter import *
+import Globals
 
 
 #Log.setverbosity(8)

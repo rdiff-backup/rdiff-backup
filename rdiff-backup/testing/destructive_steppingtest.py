@@ -1,7 +1,9 @@
 from __future__ import generators
 import unittest
-execfile("commontest.py")
-rbexec("selection.py")
+from commontest import *
+from rpath import *
+from selection import *
+import Globals
 
 Log.setverbosity(4)
 

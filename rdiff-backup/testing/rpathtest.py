@@ -1,7 +1,6 @@
 import os, cPickle, sys, unittest
-execfile("commontest.py")
-rbexec("highlevel.py")
-
+from commontest import *
+from rpath import *
 
 
 class RPathTest(unittest.TestCase):

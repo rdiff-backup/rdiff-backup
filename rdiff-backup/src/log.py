@@ -1,5 +1,4 @@
-import time, sys, traceback
-execfile("lazy.py")
+import time, sys, traceback, types
 
 #######################################################################
 #
@@ -132,7 +131,7 @@ class Logger:
 
 	def FatalError(self, message):
 		self("Fatal Error: " + message, 1)
-		Globals.Main.cleanup()
+		Main.cleanup()
 		sys.exit(1)
 
 	def exception_to_string(self):
@@ -158,3 +157,4 @@ class Logger:
 		logging_func(self.exception_to_string(), verbosity)
 
 Log = Logger()
+import Globals, Main

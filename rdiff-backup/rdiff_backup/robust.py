@@ -1,5 +1,5 @@
-import tempfile, errno, signal
-execfile("hardlink.py")
+import tempfile, errno, signal, cPickle
+from static import *
 
 #######################################################################
 #
@@ -243,7 +243,7 @@ class Robust:
 		"""
 		try: return function(*args)
  		except (EnvironmentError, SkipFileException, DSRPPermError,
-				RPathException, RdiffException), exc:
+				RPathException, Rdiff.RdiffException), exc:
 			TracebackArchive.add()
 			if (not isinstance(exc, EnvironmentError) or
 				(errno.errorcode[exc[0]] in
@@ -355,6 +355,8 @@ class TempFileManager:
 
 MakeClass(TempFileManager)
 
+
+from rpath import *
 
 class TempFile(RPath):
 	"""Like an RPath, but keep track of which ones are still here"""
@@ -642,3 +644,9 @@ class ResumeSessionInfo:
 		self.last_index = last_index
 		self.last_definitive = last_definitive
 		self.ITR, self.finalizer, = ITR, finalizer
+
+
+from log import *
+from destructive_stepping import *
+import Time, Rdiff
+from highlevel import *

@@ -1,6 +1,6 @@
 import unittest
-execfile("commontest.py")
-rbexec("highlevel.py")
+from commontest import *
+import Globals, Time
 
 class TimeTest(unittest.TestCase):
 	def testConversion(self):
@@ -59,7 +59,7 @@ class TimeTest(unittest.TestCase):
 		i2s = Time.intstringtoseconds
 		for s in ["32", "", "d", "231I", "MM", "s", "-2h"]:
 			try: i2s(s)
-			except TimeException: pass
+			except Time.TimeException: pass
 			else: assert 0, s
 		assert i2s("7D") == 7*86400
 		assert i2s("232s") == 232
@@ -104,9 +104,9 @@ class TimeTest(unittest.TestCase):
 	def testGenericStringErrors(self):
 		"""Test genstrtotime on some bad strings"""
 		g2t = Time.genstrtotime
-		self.assertRaises(TimeException, g2t, "hello")
-		self.assertRaises(TimeException, g2t, "")
-		self.assertRaises(TimeException, g2t, "3q")
+		self.assertRaises(Time.TimeException, g2t, "hello")
+		self.assertRaises(Time.TimeException, g2t, "")
+		self.assertRaises(Time.TimeException, g2t, "3q")
 
 
 if __name__ == '__main__': unittest.main()

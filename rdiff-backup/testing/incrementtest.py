@@ -1,8 +1,8 @@
 import unittest, os
-
-execfile("commontest.py")
-rbexec("main.py")
-
+from commontest import *
+from log import *
+from rpath import *
+from restore import *
 
 lc = Globals.local_connection
 Globals.change_source_perms = 1
