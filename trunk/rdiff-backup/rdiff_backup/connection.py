@@ -1,5 +1,5 @@
 from __future__ import generators
-import types, os, tempfile, cPickle, shutil, traceback
+import types, os, tempfile, cPickle, shutil, traceback, pickle
 
 #######################################################################
 #
@@ -119,7 +119,8 @@ class LowLevelPipeConnection(Connection):
 
 	def _putobj(self, obj, req_num):
 		"""Send a generic python obj down the outpipe"""
-		self._write("o", cPickle.dumps(obj, 1), req_num)
+		# for some reason there is an error when cPickle is used below..
+		self._write("o", pickle.dumps(obj, 1), req_num)
 
 	def _putbuf(self, buf, req_num):
 		"""Send buffer buf down the outpipe"""
@@ -181,7 +182,8 @@ class LowLevelPipeConnection(Connection):
 
 	def _write(self, headerchar, data, req_num):
 		"""Write header and then data to the pipe"""
-		self.outpipe.write(headerchar + chr(req_num) + self._l2s(len(data)))
+		self.outpipe.write(headerchar + chr(req_num) +
+						   C.long2str(long(len(data))))
 		self.outpipe.write(data)
 		self.outpipe.flush()
 
@@ -189,14 +191,14 @@ class LowLevelPipeConnection(Connection):
 		"""Read length bytes from inpipe, returning result"""
 		return self.inpipe.read(length)
 
-	def _s2l(self, s):
+	def _s2l_old(self, s):
 		"""Convert string to long int"""
 		assert len(s) == 7
 		l = 0L
 		for i in range(7): l = l*256 + ord(s[i])
 		return l
 
-	def _l2s(self, l):
+	def _l2s_old(self, l):
 		"""Convert long int to string"""
 		s = ""
 		for i in range(7):
@@ -214,7 +216,7 @@ class LowLevelPipeConnection(Connection):
 		try:
 			format_string, req_num, length = (header_string[0],
 											  ord(header_string[1]),
-											  self._s2l(header_string[2:]))
+											  C.str2long(header_string[2:]))
 		except IndexError: raise ConnectionError()
 		if format_string == "q": raise ConnectionQuit("Received quit signal")
 
@@ -490,7 +492,7 @@ class VirtualFile:
 
 # everything has to be available here for remote connection's use, but
 # put at bottom to reduce circularities.
-import Globals, Time, Rdiff, Hardlink, FilenameMapping
+import Globals, Time, Rdiff, Hardlink, FilenameMapping, C
 from static import *
 from lazy import *
 from log import *

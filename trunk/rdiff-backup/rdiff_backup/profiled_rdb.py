@@ -8,9 +8,9 @@ statistics afterwards.
 """
 
 __no_execute__ = 1
-execfile("main.py")
-import profile, pstats
-profile.run("Globals.Main.Main(%s)" % repr(sys.argv[1:]), "profile-output")
+import sys, rdiff_backup.Main, profile, pstats
+profile.run("rdiff_backup.Main.Main(%s)" % repr(sys.argv[1:]),
+			"profile-output")
 p = pstats.Stats("profile-output")
 p.sort_stats('time')
 p.print_stats(40)
