@@ -44,20 +44,22 @@ static int compare_targets(struct target *t1, struct target *t2)
 
 int _hs_build_hash_table(struct sum_struct *sums)
 {
-    int i;
+     int i;
 
-    sums->tag_table = calloc(TABLESIZE, sizeof(int));
-    sums->targets = calloc(sums->count, sizeof(struct target));
+     sums->tag_table = calloc(TABLESIZE, sizeof(int));
+     if (sums->count > 0) {
+	  sums->targets = calloc(sums->count, sizeof(struct target));
 
-    for (i = 0; i < sums->count; i++) {
-	sums->targets[i].i = i;
-	sums->targets[i].t = gettag(sums->sums[i].sum1);
-    }
+	  for (i = 0; i < sums->count; i++) {
+	       sums->targets[i].i = i;
+	       sums->targets[i].t = gettag(sums->sums[i].sum1);
+	  }
 
-    qsort(sums->targets, sums->count,
-	  sizeof(sums->targets[0]), (int (*)()) compare_targets);
-
-    for (i = 0; i < TABLESIZE; i++)
+	  qsort(sums->targets, sums->count,
+		sizeof(sums->targets[0]), (int (*)()) compare_targets);
+     }
+     
+     for (i = 0; i < TABLESIZE; i++)
 	sums->tag_table[i] = NULL_TAG;
 
     for (i = sums->count - 1; i >= 0; i--) {
