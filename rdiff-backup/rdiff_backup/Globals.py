@@ -124,6 +124,12 @@ backup_writer = None
 # Connection of the client
 client_conn = None
 
+# When backing up, issource should be true on the reader and isdest on
+# the writer.  When restoring, issource should be true on the mirror
+# and isdest should be true on the target.
+issource = None
+isdest = None
+
 # This list is used by the set function below.  When a new
 # connection is created with init_connection, its Globals class
 # will match this one for all the variables mentioned in this
