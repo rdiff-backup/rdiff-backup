@@ -1,3 +1,5 @@
+%define PYTHON_NAME %((rpm -q --quiet python2 && echo python2) || echo python)
+
 Version: $version
 Summary: Convenient and transparent local/remote incremental mirror/backup
 Name: rdiff-backup
@@ -7,8 +9,8 @@ Source: %{name}-%{version}.tar.gz
 Copyright: GPL
 Group: Applications/Archiving
 BuildRoot: %{_tmppath}/%{name}-root
-requires: librsync >= 0.9.5.1, python2 >= 2.2
-BuildPrereq: python2-devel >= 2.2, librsync-devel >= 0.9.5.1
+requires: librsync >= 0.9.5.1, %{PYTHON_NAME} >= 2.2
+BuildPrereq: %{PYTHON_NAME}-devel >= 2.2, librsync-devel >= 0.9.5.1
 
 %description
 rdiff-backup is a script, written in Python, that backs up one
@@ -23,24 +25,27 @@ securely back a hard drive up to a remote location, and only the
 differences from the previous backup will be transmitted.
 
 %prep
-%setup
+%setup -q
 
 %build
-python2 setup.py build
+%{PYTHON_NAME} setup.py build
 
 %install
-python2 setup.py install --prefix=$RPM_BUILD_ROOT/usr
+%{PYTHON_NAME} setup.py install --prefix=$RPM_BUILD_ROOT/usr
+
 %clean
+[ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
 /usr/bin/rdiff-backup
-/usr/share/doc/rdiff-backup-%{version}
 /usr/share/man/man1
 /usr/lib
-
+%doc CHANGELOG COPYING FAQ.html README
 
 %changelog
+* Sun Jan 19 2002 Troels Arvin <troels@arvin.dk>
+- Builds, no matter if Python 2.2 is called python2-2.2 or python-2.2.
+
 * Sun Nov 4 2001 Ben Escoto <bescoto@stanford.edu>
 - Initial RPM
-
