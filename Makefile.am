@@ -130,7 +130,7 @@ LDADD = libhsync.la $(LIBOBJS)
 bin_PROGRAMS = rdiff
 
 rdiff_SOURCES = rdiff.c isprefix.c isprefix.h
-rdiff_LDADD = @BUILD_POPT@
+rdiff_LDADD = @BUILD_POPT@ libhsync.la
 
 check_PROGRAMS = isprefix.driver
 
