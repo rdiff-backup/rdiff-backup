@@ -81,6 +81,23 @@ class HalfRoot(unittest.TestCase):
 		rp2_3.chmod(0)
 		return rp1, rp2
 
+	def cause_regress(self, rp):
+		"""Change some of the above to trigger regress"""
+		rp1_1 = rp.append('foo')
+		rp1_1.chmod(04)
+		rp_new = rp.append('lala')
+		rp_new.write_string('asoentuh')
+		rp_new.chmod(0)
+		assert not os.system('chown %s %s' % (user, rp_new.path))
+		rp1_3 = rp.append('unreadable_dir')
+		rp1_3.chmod(0700)
+		rp1_3_1 = rp1_3.append('file_inside')
+		rp1_3_1.chmod(01)
+		rp1_3.chmod(0)
+		
+		rbdir = rp.append('rdiff-backup-data')
+		rbdir.append('current_mirror.2000-12-31T21:33:20-07:00.data').touch()
+
 	def test_backup(self):
 		"""Test back up, simple restores"""
 		in_rp1, in_rp2 = self.make_dirs()
@@ -128,6 +145,12 @@ class HalfRoot(unittest.TestCase):
 		assert rout_perms == 0, rout_perms
 		assert outrp_perms == 0, outrp_perms
 
+		self.cause_regress(outrp)
+		cmd5 = ('su -c "rdiff-backup --check-destination-dir %s" %s' %
+				(outrp.path, user))
+		print "Executing regress: ", cmd5
+		assert not os.system(cmd5)
+		
 
 class NonRoot(unittest.TestCase):
 	"""Test backing up as non-root user
