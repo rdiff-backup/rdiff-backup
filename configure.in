@@ -3,7 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 
 AC_REVISION($Id$)
 AC_INIT(dec.c)
-AM_INIT_AUTOMAKE(libhsync, 0.5.3pre)
+AM_INIT_AUTOMAKE(libhsync, 0.5.3pre2)
 AM_CONFIG_HEADER(config.h)
 
 AC_LIBTOOL_DLOPEN
@@ -20,10 +20,7 @@ AC_CHECK_PROG(PYTHON, python, python)
 dnl Checks for libraries.
 dnl AC_CHECK_LIB(z, deflate)
 
-AC_CHECK_LIB(nsl, gethostent, [ net_libs="$net_libs -lnsl" ])
-AC_CHECK_LIB(socket, connect, [ net_libs="$net_libs -lsocket" ])
-AC_CHECK_LIB(inet, connect, [ net_libs="$net_libs -linet" ])
-AC_CHECK_FUNCS(connect)
+AC_SEARCH_LIBS(connect, [nsl socket inet], [ net_libs="$net_libs -lnsl" ])
 
 dnl Check for declarations
 AC_MSG_CHECKING(for sockaddr.sin_len)
