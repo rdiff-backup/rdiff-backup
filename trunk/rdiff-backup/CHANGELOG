@@ -6,6 +6,10 @@ to Dave Steinberg for giving me an account on his system for testing.
 
 Re-enabled --windows-mode and filename quoting.
 
+Fixed selection bug:  In 0.11.1, files which were included in one
+backup would be automatically included in the next.  Now you can
+include/exclude files session-by-session.
+
 
 New in v0.11.1 (2002/12/31)
 ---------------------------

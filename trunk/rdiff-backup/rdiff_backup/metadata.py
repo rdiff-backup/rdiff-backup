@@ -266,8 +266,8 @@ def OpenMetadata(rp = None, compress = 1):
 	assert not metadata_fileobj, "Metadata file already open"
 	if rp: metadata_rp = rp
 	else:
-		if compress: typestr = 'data.gz'
-		else: typestr = 'data'
+		if compress: typestr = 'snapshot.gz'
+		else: typestr = 'snapshot'
 		metadata_rp = Globals.rbdir.append("mirror_metadata.%s.%s" %
 										   (Time.curtimestr, typestr))
 	metadata_fileobj = metadata_rp.open("wb", compress = compress)
@@ -293,7 +293,7 @@ def GetMetadata(rp, restrict_index = None, compressed = None):
 	if compressed is None:
 		if rp.isincfile():
 			compressed = rp.inc_compressed
-			assert rp.inc_type == "data", rp.inc_type
+			assert rp.inc_type == "data" or rp.inc_type == "snapshot"
 		else: compressed = rp.get_indexpath().endswith(".gz")
 
 	fileobj = rp.open("rb", compress = compressed)
@@ -311,7 +311,8 @@ def GetMetadata_at_time(rbdir, time, restrict_index = None, rblist = None):
 	if rblist is None: rblist = map(lambda x: rbdir.append(x),
 									robust.listrp(rbdir))
 	for rp in rblist:
-		if (rp.isincfile() and rp.getinctype() == "data" and
+		if (rp.isincfile() and
+			(rp.getinctype() == "data" or rp.getinctype() == "snapshot") and
 			rp.getincbase_str() == "mirror_metadata"):
 			if rp.getinctime() == time: return GetMetadata(rp, restrict_index)
 	return None

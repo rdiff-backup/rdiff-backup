@@ -249,7 +249,7 @@ class Final(PathSetter):
 
 class FinalSelection(PathSetter):
 	"""Test selection options"""
-	def run(cmd):
+	def run(self, cmd):
 		print "Executing: ", cmd
 		assert not os.system(cmd)
 

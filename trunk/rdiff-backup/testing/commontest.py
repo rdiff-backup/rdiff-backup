@@ -157,7 +157,7 @@ def get_increment_rp(mirror_rp, time):
 	for filename in data_rp.listdir():
 		rp = data_rp.append(filename)
 		if rp.isincfile() and rp.getincbase_str() == "increments":
-			if Time.stringtotime(rp.getinctime()) == time: return rp
+			if rp.getinctime() == time: return rp
 	return None # Couldn't find appropriate increment
 
 def _reset_connections(src_rp, dest_rp):
