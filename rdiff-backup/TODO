@@ -7,8 +7,6 @@ Check support/bug reports on Savannah occasionally.
 Have regress go backwards to avoid using too much disk space at wrong
 time.  Provide --temp-dir or similar option also.
 
-See if regressing takes too much memory (large directories).
-
 Consider adding --datadir option (Jean-Sébastien GOETSCHY)
 
 write test case for --calculate-statistics
