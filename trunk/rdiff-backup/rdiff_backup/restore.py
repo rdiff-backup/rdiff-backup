@@ -79,6 +79,7 @@ class Restore:
 		"""Returns increments with given base"""
 		dirname, basename = inc_rpath.dirsplit()
 		parent_dir = RPath(inc_rpath.conn, dirname, ())
+		if not parent_dir.isdir(): return [] # inc directory not created yet
 		index = inc_rpath.index
 
 		if index:

@@ -200,10 +200,26 @@ class RPathStatic:
 		try: return tuple(os.lstat(filename))
 		except os.error: return None
 
-	def make_socket(path):
-		"""Make a local socket at the given path"""
+	def make_socket_local(rpath):
+		"""Make a local socket at the given path
+
+		This takes an rpath so that it will be checked by Security.
+		(Miscellaneous strings will not be.)
+
+		"""
+		assert rpath.conn is Globals.local_connection
 		s = socket.socket(socket.AF_UNIX)
-		s.bind(path)
+		s.bind(rpath.path)
+
+	def gzip_open_local_read(rpath):
+		"""Return open GzipFile.  See security note directly above"""
+		assert rpath.conn is Globals.local_connection
+		return gzip.GzipFile(rpath.path, "rb")
+
+	def open_local_read(rpath):
+		"""Return open file (provided for security reasons)"""
+		assert rpath.conn is Globals.local_connection
+		return open(rpath.path, "rb")
 
 MakeStatic(RPathStatic)
 
@@ -587,7 +603,7 @@ class RPath(RORPath):
 
 	def mksock(self):
 		"""Make a socket at self.path"""
-		self.conn.RPathStatic.make_socket(self.path)
+		self.conn.RPathStatic.make_socket_local(self)
 		self.setdata()
 		assert self.issock()
 
@@ -700,11 +716,23 @@ class RPath(RORPath):
 		"""Return open file.  Supports modes "w" and "r".
 
 		If compress is true, data written/read will be gzip
-		compressed/decompressed on the fly.
+		compressed/decompressed on the fly.  The extra complications
+		below are for security reasons - try to make the extent of the
+		risk apparent from the remote call.
 
 		"""
-		if compress: return self.conn.gzip.GzipFile(self.path, mode)
-		else: return self.conn.open(self.path, mode)
+		if self.conn is Globals.local_connection:
+			if compress: return gzip.GzipFile(self.path, mode)
+			else: return open(self.path, mode)
+
+		if compress:
+			if mode == "r" or mode == "rb":
+				return self.conn.RPathStatic.gzip_open_local_read(self)
+			else: return self.conn.gzip.GzipFile(self.path, mode)
+		else:
+			if mode == "r" or mode == "rb":
+				return self.conn.RPathStatic.open_local_read(self)
+			else: return self.conn.open(self.path, mode)
 
 	def write_from_fileobj(self, fp, compress = None):
 		"""Reads fp and writes to self.path.  Closes both when done

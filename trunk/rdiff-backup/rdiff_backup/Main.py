@@ -509,7 +509,8 @@ def RemoveOlderThan(rootrp):
 			"\nIf you want to delete multiple increments in this way, "
 			"use the --force." % (len(times_in_secs), inc_pretty_time))
 
-	Log("Deleting increment%sat times:\n%s" %
-		(len(times_in_secs) == 1 and " " or "s ", inc_pretty_time), 3)
+	if len(times_in_secs) == 1:
+		Log("Deleting increment at time:\n" + inc_pretty_time, 3)
+	else: Log("Deleting increments at times:\n" + inc_pretty_time, 3)
 	Manage.delete_earlier_than(datadir, time)
 

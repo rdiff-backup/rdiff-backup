@@ -10,8 +10,8 @@
 
 """Functions to make sure remote requests are kosher"""
 
-import sys
-import Globals, tempfile
+import sys, tempfile
+import Globals, Main
 from rpath import *
 
 class Violation(Exception):
@@ -67,6 +67,8 @@ def set_security_level(action, cmdpairs):
 			rdir = tempfile.gettempdir()
 		elif islocal(cp1):
 			sec_level = "read-only"
+			rdir = Main.restore_get_root(RPath(Globals.local_connection,
+											   getpath(cp1)))[0].path
 		else:
 			assert islocal(cp2)
 			sec_level = "all"
@@ -89,7 +91,8 @@ def set_security_level(action, cmdpairs):
 	else: assert 0, "Unknown action %s" % action
 
 	Globals.security_level = sec_level
-	Globals.restrict_path = rdir
+	Globals.restrict_path = RPath(Globals.local_connection,
+								  rdir).normalize().path
 
 def set_allowed_requests(sec_level):
 	"""Set the allowed requests list using the security level"""
@@ -111,7 +114,9 @@ def set_allowed_requests(sec_level):
 								 "Time.setcurtime_local",
 								 "Resume.ResumeCheck",
 								 "HLSourceStruct.split_initial_dsiter",
-								 "HLSourceStruct.get_diffs_and_finalize"])
+								 "HLSourceStruct.get_diffs_and_finalize",
+								 "RPathStatic.gzip_open_local_read",
+								 "RPathStatic.open_local_read"])
 		if sec_level == "update-only":
 			allowed_requests. \
 				extend(["Log.open_logfile_local", "Log.close_logfile_local",
