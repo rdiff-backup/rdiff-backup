@@ -55,6 +55,9 @@ struct hs_patch_job {
         int          dogtag;
 	hs_stream_t *stream;
         enum hs_result (*statefn)(hs_patch_job_t *);
+        
+        hs_copy_cb      *copy_cb;
+        void            *copy_arg;
 
         /* Command byte currently being processed, if any, and lengths
          * of expected parameters. */
@@ -221,13 +224,17 @@ static enum hs_result _hs_patch_s_header(hs_patch_job_t *job)
  * the stream pointers.  When finished, call hs_patch_finish to
  * dispose of it.
  */
-hs_patch_job_t *hs_patch_begin(hs_stream_t *stream)
+hs_patch_job_t *hs_patch_begin(hs_stream_t *stream, hs_copy_cb *copy_cb,
+                               void *copy_arg)
 {
 	hs_patch_job_t *job = _hs_alloc_struct(hs_patch_job_t);
 
         job->statefn = _hs_patch_s_header;
         job->dogtag = HS_PATCH_TAG;
         job->stream = stream;
+        
+        job->copy_cb = copy_cb;
+        job->copy_arg = copy_arg;
 
         return job;
 }
@@ -267,7 +274,7 @@ int hs_patch_iter(hs_patch_job_t *job)
  * Free memory used by applying a patch.  This doesn't finish the work.
  * It just drops it wherever it was.
  */
-int hs_patch_finish(hs_patch_job_t *job)
+enum hs_result hs_patch_finish(hs_patch_job_t *job)
 {
         _hs_patch_check(job);
         
