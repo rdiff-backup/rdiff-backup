@@ -252,20 +252,32 @@ class Select:
 				if opt == "--exclude":
 					self.add_selection_func(self.glob_get_sf(arg, 0))
 				elif opt == "--exclude-device-files":
-					self.add_selection_func(self.devfiles_get_sf())
+					self.add_selection_func(self.devfiles_get_sf(0))
 				elif opt == "--exclude-filelist":
 					self.add_selection_func(self.filelist_get_sf(
 						filelists[filelists_index], 0, arg))
+					filelists_index += 1
+				elif opt == "--exclude-globbing-filelist":
+					map(self.add_selection_func,
+						self.filelist_globbing_get_sfs(
+						           filelists[filelists_index], 0, arg))
 					filelists_index += 1
 				elif opt == "--exclude-other-filesystems":
 					self.add_selection_func(self.other_filesystems_get_sf(0))
 				elif opt == "--exclude-regexp":
 					self.add_selection_func(self.regexp_get_sf(arg, 0))
+				elif opt == "--exclude-special-files":
+					self.add_selection_func(self.special_get_sf(0))
 				elif opt == "--include":
 					self.add_selection_func(self.glob_get_sf(arg, 1))
 				elif opt == "--include-filelist":
 					self.add_selection_func(self.filelist_get_sf(
 						filelists[filelists_index], 1, arg))
+					filelists_index += 1
+				elif opt == "--include-globbing-filelist":
+					map(self.add_selection_func,
+						self.filelist_globbing_get_sfs(
+						          filelists[filelists_index], 1, arg))
 					filelists_index += 1
 				elif opt == "--include-regexp":
 					self.add_selection_func(self.regexp_get_sf(arg, 1))
@@ -281,9 +293,9 @@ class Select:
 		if isinstance(exc, FilePrefixError):
 			Log.FatalError(
 """Fatal Error: The file specification
-    %s
+'    %s'
 cannot match any files in the base directory
-    %s
+'    %s'
 Useful file specifications begin with the base directory or some
 pattern (such as '**') which matches the base directory.""" %
 			(exc, self.prefix))
@@ -381,7 +393,6 @@ probably isn't what you meant.""" %
 		prefix is the string that the index is relative to.
 
 		"""
-		line = line.strip()
 		if line[:2] == "+ ": # Check for "+ "/"- " syntax
 			include = 1
 			line = line[2:]
@@ -419,6 +430,23 @@ probably isn't what you meant.""" %
 			else: return (None, None) # dsrp greater, not initial sequence
 		else: assert 0, "Include is %s, should be 0 or 1" % (include,)
 
+	def filelist_globbing_get_sfs(self, filelist_fp, inc_default, list_name):
+		"""Return list of selection functions by reading fileobj
+
+		filelist_fp should be an open file object
+		inc_default is true iff this is an include list
+		list_name is just the name of the list, used for logging
+		See the man page on --[include/exclude]-globbing-filelist
+
+		"""
+		Log("Reading globbing filelist %s" % list_name, 4)
+		separator = Globals.null_separator and "\0" or "\n"
+		for line in filelist_fp.read().split(separator):
+			if not line: continue # skip blanks
+			if line[:2] == "+ ": yield self.glob_get_sf(line[2:], 1)
+			elif line[:2] == "- ": yield self.glob_get_sf(line[2:], 0)
+			else: yield self.glob_get_sf(line, inc_default)
+
 	def other_filesystems_get_sf(self, include):
 		"""Return selection function matching files on other filesystems"""
 		assert include == 0 or include == 1
@@ -446,16 +474,29 @@ probably isn't what you meant.""" %
 		sel_func.name = "Regular expression: %s" % regexp_string
 		return sel_func
 
-	def devfiles_get_sf(self):
-		"""Return a selection function to exclude all dev files"""
+	def devfiles_get_sf(self, include):
+		"""Return a selection function matching all dev files"""
 		if self.selection_functions:
 			Log("Warning: exclude-device-files is not the first "
 				"selector.\nThis may not be what you intended", 3)
 		def sel_func(dsrp):
-			if dsrp.isdev(): return 0
+			if dsrp.isdev(): return include
 			else: return None
-		sel_func.exclude = 1
-		sel_func.name = "Exclude device files"
+		sel_func.exclude = not include
+		sel_func.name = (include and "include" or "exclude") + " device files"
+		return sel_func
+
+	def special_get_sf(self, include):
+		"""Return sel function matching sockets, symlinks, sockets, devs"""
+		if self.selection_functions:
+			Log("Warning: exclude-special-files is not the first "
+				"selector.\nThis may not be what you intended", 3)
+		def sel_func(dsrp):
+			if dsrp.issym() or dsrp.issock() or dsrp.isfifo() or dsrp.isdev():
+				return include
+			else: return None
+		sel_func.exclude = not include
+		sel_func.name = (include and "include" or "exclude") + " special files"
 		return sel_func
 
 	def glob_get_sf(self, glob_str, include):

@@ -43,16 +43,18 @@ def parse_cmdlineoptions(arglist):
 		  "change-source-perms", "chars-to-quote=",
 		  "checkpoint-interval=", "current-time=", "exclude=",
 		  "exclude-device-files", "exclude-filelist=",
-		  "exclude-filelist-stdin", "exclude-mirror=",
-		  "exclude-other-filesystems", "exclude-regexp=", "force",
+		  "exclude-filelist-stdin", "exclude-globbing-filelist",
+		  "exclude-mirror=", "exclude-other-filesystems",
+		  "exclude-regexp=", "exclude-special-files", "force",
 		  "include=", "include-filelist=", "include-filelist-stdin",
-		  "include-regexp=", "list-increments", "mirror-only",
-		  "no-compression", "no-compression-regexp=", "no-hard-links",
-		  "no-resume", "null-separator", "parsable-output",
-		  "print-statistics", "quoting-char=", "remote-cmd=",
-		  "remote-schema=", "remove-older-than=", "restore-as-of=",
-		  "restrict=", "restrict-read-only=", "restrict-update-only=",
-		  "resume", "resume-window=", "server", "sleep-ratio=",
+		  "include-globbing-filelist", "include-regexp=",
+		  "list-increments", "mirror-only", "no-compression",
+		  "no-compression-regexp=", "no-hard-links", "no-resume",
+		  "null-separator", "parsable-output", "print-statistics",
+		  "quoting-char=", "remote-cmd=", "remote-schema=",
+		  "remove-older-than=", "restore-as-of=", "restrict=",
+		  "restrict-read-only=", "restrict-update-only=", "resume",
+		  "resume-window=", "server", "sleep-ratio=",
 		  "ssh-no-compression", "terminal-verbosity=", "test-server",
 		  "verbosity=", "version", "windows-mode",
 		  "windows-time-format"])
@@ -79,11 +81,14 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--exclude-filelist-stdin":
 			select_opts.append(("--exclude-filelist", "standard input"))
 			select_files.append(sys.stdin)
+		elif opt == "--exclude-globbing-filelist":
+			select_opts.append((opt, arg))
+			select_files.append(sel_fl(arg))
 		elif opt == "--exclude-mirror":
 			select_mirror_opts.append(("--exclude", arg))
-		elif opt == "--exclude-other-filesystems":
-			select_opts.append((opt, arg))
-		elif opt == "--exclude-regexp": select_opts.append((opt, arg))
+		elif (opt == "--exclude-other-filesystems" or
+			  opt == "--exclude-regexp" or
+			  opt == "--exclude-special-files"): select_opts.append((opt, arg))
 		elif opt == "--force": force = 1
 		elif opt == "--include": select_opts.append((opt, arg))
 		elif opt == "--include-filelist":
@@ -92,6 +97,9 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--include-filelist-stdin":
 			select_opts.append(("--include-filelist", "standard input"))
 			select_files.append(sys.stdin)
+		elif opt == "--include-globbing-filelist":
+			select_opts.append((opt, arg))
+			select_files.append(sel_fl(arg))
 		elif opt == "--include-regexp": select_opts.append((opt, arg))
 		elif opt == "-l" or opt == "--list-increments":
 			action = "list-increments"
@@ -140,8 +148,9 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "-v" or opt == "--verbosity": Log.setverbosity(arg)
 		elif opt == "--windows-mode":
 			Globals.set('time_separator', "_")
-			Globals.set('chars_to_quote', ":")
+			Globals.set('chars_to_quote', "A-Z:")
 			Globals.set('quoting_enabled', 1)
+			select_opts.append(("--exclude-special-files", None))
 		elif opt == '--windows-time-format':
 			Globals.set('time_separator', "_")
 		else: Log.FatalError("Unknown option %s" % opt)
