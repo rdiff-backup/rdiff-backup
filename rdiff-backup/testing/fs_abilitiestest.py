@@ -17,8 +17,6 @@ class FSAbilitiesTest(unittest.TestCase):
 	chars_to_quote = ""
 	ownership = (os.getuid() == 0)
 	hardlinks = fsync_dirs = 1
-	dir_inc_perms = 1
-	resource_forks = 0
 
 	# Describes MS-Windows style file system
 	#dir_to_test = "/mnt/fat"
@@ -26,18 +24,14 @@ class FSAbilitiesTest(unittest.TestCase):
 	#chars_to_quote = "^a-z0-9_ -"
 	#ownership = hardlinks = 0
 	#fsync_dirs = 1
-	#dir_inc_perms = 0
-	#resource_forks = 0
 	
 	def testReadOnly(self):
 		"""Test basic querying read only"""
 		base_dir = rpath.RPath(Globals.local_connection, self.dir_to_test)
-		fsa = fs_abilities.FSAbilities('read-only').init_readonly(base_dir)
-		print fsa
+		fsa = fs_abilities.FSAbilities().init_readonly(base_dir)
 		assert fsa.read_only == 1, fsa.read_only
 		assert fsa.eas == self.eas, fsa.eas
 		assert fsa.acls == self.acls, fsa.acls
-		assert fsa.resource_forks == self.resource_forks, fsa.resource_forks
 
 	def testReadWrite(self):
 		"""Test basic querying read/write"""
@@ -47,9 +41,8 @@ class FSAbilitiesTest(unittest.TestCase):
 		new_dir.setdata()
 		new_dir.mkdir()
 		t = time.time()
-		fsa = fs_abilities.FSAbilities('read/write').init_readwrite(new_dir)
+		fsa = fs_abilities.FSAbilities().init_readwrite(new_dir)
 		print "Time elapsed = ", time.time() - t
-		print fsa
 		assert fsa.read_only == 0, fsa.read_only
 		assert fsa.eas == self.eas, fsa.eas
 		assert fsa.acls == self.acls, fsa.acls
@@ -57,8 +50,6 @@ class FSAbilitiesTest(unittest.TestCase):
 		assert fsa.ownership == self.ownership, fsa.ownership
 		assert fsa.hardlinks == self.hardlinks, fsa.hardlinks
 		assert fsa.fsync_dirs == self.fsync_dirs, fsa.fsync_dirs
-		assert fsa.dir_inc_perms == self.dir_inc_perms, fsa.dir_inc_perms
-		assert fsa.resource_forks == self.resource_forks, fsa.resource_forks
 
 		ctq_rp = new_dir.append("chars_to_quote")
 		assert ctq_rp.lstat()

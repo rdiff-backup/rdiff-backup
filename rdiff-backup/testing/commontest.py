@@ -1,9 +1,9 @@
 """commontest - Some functions and constants common to several test cases"""
-import os, sys, code
+import os, sys
 from rdiff_backup.log import Log
 from rdiff_backup.rpath import RPath
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
-	 selection, lazy, Time, rpath, eas_acls, rorpiter
+	 selection, lazy, Time, rpath
 
 RBBin = "../rdiff-backup"
 SourceDir = "../rdiff_backup"
@@ -51,10 +51,11 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 
 	"""
 	if not source_local:
-		src_dir = ("'cd test1; ../%s --server'::../%s" % (RBBin, src_dir))
+		src_dir = ("cd test1; ../%s/rdiff-backup --server::../%s" %
+				   (SourceDir, src_dir))
 	if not dest_local:
-		dest_dir = ("'cd test2/tmp; ../../%s --server'::../../%s" %
-					(RBBin, dest_dir))
+		dest_dir = ("test2/tmp; ../../%s/rdiff-backup --server::../../%s" %
+					(SourceDir, dest_dir))
 
 	cmdargs = [RBBin, extra_options]
 	if not (source_local and dest_local): cmdargs.append("--remote-schema %s")
@@ -75,7 +76,7 @@ def cmd_schemas2rps(schema_list, remote_schema):
 			   SetConnections.get_cmd_pairs(schema_list, remote_schema))
 
 def InternalBackup(source_local, dest_local, src_dir, dest_dir,
-				   current_time = None, eas = None, acls = None):
+				   current_time = None):
 	"""Backup src to dest internally
 
 	This is like rdiff_backup but instead of running a separate
@@ -96,10 +97,6 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 				   % (SourceDir, dest_dir)
 
 	rpin, rpout = cmd_schemas2rps([src_dir, dest_dir], remote_schema)
-	for attr in ('eas_active', 'eas_write', 'eas_conn'):
-		SetConnections.UpdateGlobal(attr, eas)
-	for attr in ('acls_active', 'acls_write', 'acls_conn'):
-		SetConnections.UpdateGlobal(attr, acls)
 	Main.misc_setup([rpin, rpout])
 	Main.Backup(rpin, rpout)
 	Main.cleanup()
@@ -122,8 +119,7 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir):
 	# Restore old attributes
 	rpath.copy_attribs(src_root, dest_root)
 
-def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time,
-					eas = None, acls = None):
+def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 	"""Restore mirror_dir to dest_dir at given time
 
 	This will automatically find the increments.XXX.dir representing
@@ -132,7 +128,6 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time,
 
 	"""
 	Main.force = 1
-	Main.restore_root_set = 0
 	remote_schema = '%s'
 	#_reset_connections()
 	if not mirror_local:
@@ -143,16 +138,12 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time,
 				   % (SourceDir, dest_dir)
 
 	mirror_rp, dest_rp = cmd_schemas2rps([mirror_dir, dest_dir], remote_schema)
-	for attr in ('eas_active', 'eas_write', 'eas_conn'):
-		SetConnections.UpdateGlobal(attr, eas)
-	for attr in ('acls_active', 'acls_write', 'acls_conn'):
-		SetConnections.UpdateGlobal(attr, acls)
 	Main.misc_setup([mirror_rp, dest_rp])
 	inc = get_increment_rp(mirror_rp, time)
 	if inc: Main.Restore(get_increment_rp(mirror_rp, time), dest_rp)
 	else: # use alternate syntax
 		Main.restore_timestr = str(time)
-		Main.Restore(mirror_rp, dest_rp, restore_as_of = 1)
+		Main.RestoreAsOf(mirror_rp, dest_rp)
 	Main.cleanup()
 
 def get_increment_rp(mirror_rp, time):
@@ -175,8 +166,7 @@ def _reset_connections(src_rp, dest_rp):
 
 def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 					 equality_func = None, exclude_rbdir = 1,
-					 ignore_tmp_files = None, compare_ownership = 0,
-					 compare_eas = 0, compare_acls = 0):
+					 ignore_tmp_files = None, compare_ownership = 0):
 	"""Compare src_rp and dest_rp, which can be directories
 
 	This only compares file attributes, not the actual data.  This
@@ -184,77 +174,51 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 	specified.
 
 	"""
-	def get_selection_functions():
-		"""Return generators of files in source, dest"""
-		src_rp.setdata()
-		dest_rp.setdata()
-		src_select = selection.Select(src_rp)
-		dest_select = selection.Select(dest_rp)
+	if compare_hardlinks: reset_hardlink_dicts()
+	src_rp.setdata()
+	dest_rp.setdata()
 
-		if ignore_tmp_files:
-			# Ignoring temp files can be useful when we want to check the
-			# correctness of a backup which aborted in the middle.  In
-			# these cases it is OK to have tmp files lying around.
-			src_select.add_selection_func(src_select.regexp_get_sf(
-				".*rdiff-backup.tmp.[^/]+$", 0))
-			dest_select.add_selection_func(dest_select.regexp_get_sf(
-				".*rdiff-backup.tmp.[^/]+$", 0))
+	Log("Comparing %s and %s, hardlinks %s" % (src_rp.path, dest_rp.path,
+											   compare_hardlinks), 3)
+	src_select = selection.Select(src_rp)
+	dest_select = selection.Select(dest_rp)
 
-		if exclude_rbdir: # Exclude rdiff-backup-data directory
-			src_select.parse_rbdir_exclude()
-			dest_select.parse_rbdir_exclude()
+	if ignore_tmp_files:
+		# Ignoring temp files can be useful when we want to check the
+		# correctness of a backup which aborted in the middle.  In
+		# these cases it is OK to have tmp files lying around.
+		src_select.add_selection_func(src_select.regexp_get_sf(
+			".*rdiff-backup.tmp.[^/]+$", 0))
+		dest_select.add_selection_func(dest_select.regexp_get_sf(
+			".*rdiff-backup.tmp.[^/]+$", 0))
 
-		return src_select.set_iter(), dest_select.set_iter()
+	if exclude_rbdir:
+		src_select.parse_rbdir_exclude()
+		dest_select.parse_rbdir_exclude()
+	else:
+		# include rdiff-backup-data/increments
+		src_select.add_selection_func(src_select.glob_get_tuple_sf(
+			('rdiff-backup-data', 'increments'), 1))
+		dest_select.add_selection_func(dest_select.glob_get_tuple_sf(
+			('rdiff-backup-data', 'increments'), 1))
+		
+		# but exclude rdiff-backup-data
+		src_select.add_selection_func(src_select.glob_get_tuple_sf(
+			('rdiff-backup-data',), 0))
+		dest_select.add_selection_func(dest_select.glob_get_tuple_sf(
+			('rdiff-backup-data',), 0))
 
-	def preprocess(src_rorp, dest_rorp):
-		"""Initially process src and dest_rorp"""
-		if compare_hardlinks and src_rorp:
-			Hardlink.add_rorp(src_rorp, dest_rorp)
+	dsiter1, dsiter2 = src_select.set_iter(), dest_select.set_iter()
 
-	def postprocess(src_rorp, dest_rorp):
-		"""After comparison, process src_rorp and dest_rorp"""
-		if compare_hardlinks and src_rorp:
-			Hardlink.del_rorp(src_rorp)
-
-	def equality_func(src_rorp, dest_rorp):
-		"""Combined eq func returns true iff two files compare same"""
-		if not src_rorp:
-			Log("Source rorp missing: " + str(dest_rorp), 3)
-			return 0
-		if not dest_rorp:
-			Log("Dest rorp missing: " + str(src_rorp), 3)
-			return 0
+	def hardlink_equal(src_rorp, dest_rorp):
 		if not src_rorp.equal_verbose(dest_rorp,
 									  compare_ownership = compare_ownership):
-			return 0
-		if compare_hardlinks and not Hardlink.rorp_eq(src_rorp, dest_rorp):
-			Log("Hardlink compare failure", 3)
-			Log("%s: %s" % (src_rorp.index,
-							Hardlink.get_inode_key(src_rorp)), 3)
-			Log("%s: %s" % (dest_rorp.index,
-							Hardlink.get_inode_key(dest_rorp)), 3)
-			return 0
-		if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
-			Log("Different EAs in files %s and %s" %
-				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
-			return 0
-		if compare_acls and not eas_acls.acl_compare_rps(src_rorp, dest_rorp):
-			Log("Different ACLs in files %s and %s" %
-				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
-			return 0
-		return 1
-
-	Log("Comparing %s and %s, hardlinks %s, eas %s, acls %s" %
-		(src_rp.path, dest_rp.path, compare_hardlinks,
-		 compare_eas, compare_acls), 3)
-	if compare_hardlinks: reset_hardlink_dicts()
-	src_iter, dest_iter = get_selection_functions()
-	for src_rorp, dest_rorp in rorpiter.Collate2Iters(src_iter, dest_iter):
-		preprocess(src_rorp, dest_rorp)
-		if not equality_func(src_rorp, dest_rorp): return 0
-		postprocess(src_rorp, dest_rorp)
-	return 1
-
+			return None
+		if Hardlink.rorp_eq(src_rorp, dest_rorp): return 1
+		Log("%s: %s" % (src_rorp.index, Hardlink.get_indicies(src_rorp, 1)), 3)
+		Log("%s: %s" % (dest_rorp.index,
+						Hardlink.get_indicies(dest_rorp, None)), 3)
+		return None
 
 	def rbdir_equal(src_rorp, dest_rorp):
 		"""Like hardlink_equal, but make allowances for data directories"""
@@ -269,14 +233,6 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 				if dest_rorp.index[-1].endswith('gz'): return 1
 				# Don't compare .missing increments because they don't matter
 				if dest_rorp.index[-1].endswith('.missing'): return 1
-		if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
-			Log("Different EAs in files %s and %s" %
-				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()))
-			return None
-		if compare_acls and not eas_acls.acl_compare_rps(src_rorp, dest_rorp):
-			Log("Different ACLs in files %s and %s" %
-				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
-			return None
 		if compare_hardlinks:
 			if Hardlink.rorp_eq(src_rorp, dest_rorp): return 1
 		elif src_rorp.equal_verbose(dest_rorp,
@@ -287,18 +243,36 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 						Hardlink.get_indicies(dest_rorp, None)), 3)
 		return None
 
+	if equality_func: result = lazy.Iter.equal(dsiter1, dsiter2,
+											   1, equality_func)
+	elif compare_hardlinks:
+		dsiter1 = Hardlink.add_rorp_iter(dsiter1, 1)
+		dsiter2 = Hardlink.add_rorp_iter(dsiter2, None)		
+		if exclude_rbdir:
+			result = lazy.Iter.equal(dsiter1, dsiter2, 1, hardlink_equal)
+		else: result = lazy.Iter.equal(dsiter1, dsiter2, 1, rbdir_equal)
+	elif not exclude_rbdir:
+		result = lazy.Iter.equal(dsiter1, dsiter2, 1, rbdir_equal)
+	else: result = lazy.Iter.equal(dsiter1, dsiter2, 1,
+	  lambda x, y: x.equal_verbose(y, compare_ownership = compare_ownership))
+
+	for i in dsiter1: pass # make sure all files processed anyway
+	for i in dsiter2: pass
+	return result
 
 def reset_hardlink_dicts():
 	"""Clear the hardlink dictionaries"""
-	Hardlink._inode_index = {}
+	Hardlink._src_inode_indicies = {}
+	Hardlink._src_index_indicies = {}
+	Hardlink._dest_inode_indicies = {}
+	Hardlink._dest_index_indicies = {}
+	Hardlink._restore_index_path = {}
 
 def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 						compare_hardlinks = 1,
 						dest_dirname = "testfiles/output",
 						restore_dirname = "testfiles/rest_out",
-						compare_backups = 1,
-						compare_eas = 0,
-						compare_acls = 0):
+						compare_backups = 1):
 	"""Test backing up/restoring of a series of directories
 
 	The dirnames correspond to a single directory at different times.
@@ -318,26 +292,20 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 		reset_hardlink_dicts()
 		_reset_connections(src_rp, dest_rp)
 
-		InternalBackup(source_local, dest_local, dirname, dest_dirname, time,
-					   eas = compare_eas, acls = compare_acls)
+		InternalBackup(source_local, dest_local, dirname, dest_dirname, time)
 		time += 10000
 		_reset_connections(src_rp, dest_rp)
 		if compare_backups:
-			assert CompareRecursive(src_rp, dest_rp, compare_hardlinks,
-									compare_eas = compare_eas,
-									compare_acls = compare_acls)
+			assert CompareRecursive(src_rp, dest_rp, compare_hardlinks)
 
 	time = 10000
 	for dirname in list_of_dirnames[:-1]:
 		reset_hardlink_dicts()
 		Myrm(restore_dirname)
 		InternalRestore(dest_local, source_local, dest_dirname,
-						restore_dirname, time,
-						eas = compare_eas, acls = compare_acls)
+						restore_dirname, time)
 		src_rp = rpath.RPath(Globals.local_connection, dirname)
-		assert CompareRecursive(src_rp, restore_rp,
-								compare_eas = compare_eas,
-								compare_acls = compare_acls)
+		assert CompareRecursive(src_rp, restore_rp)
 
 		# Restore should default back to newest time older than it
 		# with a backup then.
@@ -364,9 +332,3 @@ def MirrorTest(source_local, dest_local, list_of_dirnames,
 		_reset_connections(src_rp, dest_rp)
 		assert CompareRecursive(src_rp, dest_rp, compare_hardlinks)
 	Main.force = old_force_val
-
-def raise_interpreter(use_locals = None):
-	"""Start python interpreter, with local variables if locals is true"""
-	if use_locals: local_dict = locals()
-	else: local_dict = globals()
-	code.InteractiveConsole(local_dict).interact()

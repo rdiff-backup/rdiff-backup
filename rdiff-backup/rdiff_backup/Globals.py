@@ -63,28 +63,6 @@ change_mirror_perms = (process_uid != 0)
 # If true, try to reset the atimes of the source partition.
 preserve_atime = None
 
-# The following three attributes represent whether extended attributes
-# are supported.  If eas_active is true, then the current session
-# supports them.  If eas_write is true, then the extended attributes
-# should also be written to the destination side.  Finally, eas_conn
-# is relative to the current connection, and should be true iff that
-# particular connection supports extended attributes.
-eas_active = None
-eas_write = None
-eas_conn = None
-
-# The following settings are like the extended attribute settings, but
-# apply to access control lists instead.
-acls_active = None
-acls_write = None
-acls_conn = None
-
-# Like above two setting groups, but applies to support of Mac OS X
-# style resource forks.
-resource_forks_active = None
-resource_forks_write = None
-resource_forks_conn = None
-
 # This will be set as soon as the LocalConnection class loads
 local_connection = None
 
@@ -120,12 +98,6 @@ backup_writer = None
 # Connection of the client
 client_conn = None
 
-# When backing up, issource should be true on the reader and isdest on
-# the writer.  When restoring, issource should be true on the mirror
-# and isdest should be true on the target.
-issource = None
-isdest = None
-
 # This list is used by the set function below.  When a new
 # connection is created with init_connection, its Globals class
 # will match this one for all the variables mentioned in this
@@ -135,10 +107,12 @@ changed_settings = []
 # The RPath or QuotedRPath of the rdiff-backup-data directory.
 rbdir = None
 
-# chars_to_quote is a string whose characters should be quoted.  It
-# should be true if certain characters in filenames on the source side
-# should be escaped (see FilenameMapping for more info).
-chars_to_quote = None
+# quoting_enabled is true if we should quote certain characters in
+# filenames on the source side (see FilenameMapping for more
+# info).  chars_to_quote is a string whose characters should be
+# quoted, and quoting_char is the character to quote with.
+quoting_enabled = None
+chars_to_quote = "A-Z:"
 quoting_char = ';'
 
 # If true, emit output intended to be easily readable by a
@@ -206,8 +180,10 @@ compare_inode = 1
 # guarantee that any changes have been committed to disk.
 fsync_directories = 1
 
-# If set, exit with error instead of dropping ACLs or ACL entries.
-never_drop_acls = None
+# If set, directory increments are given the same permissions as the
+# directories they represent.  Otherwise they have the default
+# permissions.
+change_dir_inc_perms = 1
 
 
 def get(name):
@@ -228,10 +204,6 @@ def set(name, val):
 
 	"""
 	changed_settings.append(name)
-	globals()[name] = val
-
-def set_local(name, val):
-	"""Like set above, but only set current connection"""
 	globals()[name] = val
 
 def set_integer(name, val):
