@@ -45,10 +45,14 @@ based on librsync.
 # The next line is only needed if there are any non-upstream patches.  In
 # this distribution there are none.
 #%patch 
-
 %build
-%configure
-make
+libtoolize --force
+aclocal
+autoheader
+automake Makefile popt/Makefile
+autoconf
+./configure --prefix=/usr
+make CFLAGS="$RPM_OPT_FLAGS"
 
 %install
 rm -rf $RPM_BUILD_ROOT
