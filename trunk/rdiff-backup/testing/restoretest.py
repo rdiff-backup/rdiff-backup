@@ -30,7 +30,7 @@ class RestoreTest(unittest.TestCase):
 		for pair in tuples:
 			print "Processing file " + pair[0].path
 			rest_time = Time.stringtotime(pair[0].getinctime())
-			Restore.RestoreFile(rest_time, rpbase, incs, rptarget)
+			Restore.RestoreFile(rest_time, rpbase, (), incs, rptarget)
 			if not rptarget.lstat(): assert not pair[1].lstat()
 			else:
 				assert RPath.cmp(rptarget, pair[1]), \

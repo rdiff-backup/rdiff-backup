@@ -9,6 +9,10 @@ If not run from the source directory, the only argument should be
 the directory the source files are in.
 """
 
+def Test_SetConnGlobals(conn, setting, value):
+	"""This is used in connectiontest.py"""
+	conn.Globals.set(setting, value)
+
 def print_usage():
 	print "Usage: server.py  [path to source files]", __doc__
 
