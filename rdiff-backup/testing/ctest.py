@@ -1,7 +1,7 @@
 import unittest
 from commontest import *
-from rdiff_backup import C
-from rdiff_backup.rpath import *
+from C import *
+from rpath import *
 
 class CTest(unittest.TestCase):
 	"""Test the C module by comparing results to python functions"""

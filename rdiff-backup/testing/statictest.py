@@ -1,6 +1,6 @@
 import unittest, types
 from commontest import *
-from rdiff_backup.static import *
+from static import *
 
 
 class D:

@@ -1,17 +1,18 @@
 from __future__ import generators
-import re, StringIO, unittest, types
+import re, StringIO, unittest
 from commontest import *
-from rdiff_backup.selection import *
-from rdiff_backup import Globals, rpath, lazy
+from selection import *
+from destructive_stepping import *
+import Globals
 
 
 class MatchingTest(unittest.TestCase):
 	"""Test matching of file names against various selection functions"""
-	def makerp(self, path): return rpath.RPath(Globals.local_connection, path)
+	def makedsrp(self, path): return DSRPath(1, Globals.local_connection, path)
 	def makeext(self, path): return self.root.new_index(tuple(path.split("/")))
 
 	def setUp(self):
-		self.root = rpath.RPath(Globals.local_connection, "testfiles/select")
+		self.root = DSRPath(1, Globals.local_connection, "testfiles/select")
 		self.Select = Select(self.root)
 
 	def testRegexp(self):
@@ -22,9 +23,9 @@ class MatchingTest(unittest.TestCase):
 		assert sf1(self.root.append("1.doc")) == None
 
 		sf2 = self.Select.regexp_get_sf("hello", 0)
-		assert sf2(self.makerp("hello")) == 0
-		assert sf2(self.makerp("foohello_there")) == 0
-		assert sf2(self.makerp("foo")) == None
+		assert sf2(self.makedsrp("hello")) == 0
+		assert sf2(self.makedsrp("foohello_there")) == 0
+		assert sf2(self.makedsrp("foo")) == None
 
 	def testTupleInclude(self):
 		"""Test include selection function made from a regular filename"""
@@ -92,19 +93,6 @@ testfiles/select/3/3/2""")
 		assert sf(self.makeext("3/3")) == 1
 		assert sf(self.makeext("3/3/3")) == None
 
-	def testFilelistWhitespaceInclude(self):
-		"""Test included filelist, with some whitespace"""
-		fp = StringIO.StringIO("""
-+ testfiles/select/1  
-- testfiles/select/2  
-testfiles/select/3\t""")
-		sf = self.Select.filelist_get_sf(fp, 1, "test")
-		assert sf(self.root) == 1
-		assert sf(self.makeext("1  ")) == 1
-		assert sf(self.makeext("2  ")) == 0
-		assert sf(self.makeext("3\t")) == 1
-		assert sf(self.makeext("4")) == None
-
 	def testFilelistIncludeNullSep(self):
 		"""Test included filelist but with null_separator set"""
 		fp = StringIO.StringIO("""\0testfiles/select/1/2\0testfiles/select/1\0testfiles/select/1/2/3\0testfiles/select/3/3/2\0testfiles/select/hello\nthere\0""")
@@ -119,7 +107,7 @@ testfiles/select/3\t""")
 		assert sf(self.makeext("3/3")) == 1
 		assert sf(self.makeext("3/3/3")) == None
 		assert sf(self.makeext("hello\nthere")) == 1
-		Globals.null_separator = 0
+		Globals.null_separator = 1
 
 	def testFilelistExclude(self):
 		"""Test included filelist"""
@@ -208,40 +196,9 @@ testfiles/select/1/1
 		self.assertRaises(FilePrefixError, self.Select.glob_get_sf,
 						  "ignorecase:tesfiles/sect/foo/bar", 1)
 						  
-	def testDev(self):
-		"""Test device and special file selection"""
-		dir = self.root.append("filetypes")
-		fifo = dir.append("fifo")
-		assert fifo.isfifo(), fifo
-		sym = dir.append("symlink")
-		assert sym.issym(), sym
-		reg = dir.append("regular_file")
-		assert reg.isreg(), reg
-		sock = dir.append("replace_with_socket")
-		if not sock.issock():
-			assert sock.isreg(), sock
-			sock.delete()
-			sock.mksock()
-			assert sock.issock()
-		dev = dir.append("ttyS1")
-		assert dev.isdev(), dev
-		
-		sf = self.Select.devfiles_get_sf(0)
-		assert sf(dir) == None
-		assert sf(dev) == 0
-		assert sf(sock) == None
-
-		sf2 = self.Select.special_get_sf(0)
-		assert sf2(dir) == None
-		assert sf2(reg) == None
-		assert sf2(dev) == 0
-		assert sf2(sock) == 0
-		assert sf2(fifo) == 0
-		assert sf2(sym) == 0
-
 	def testRoot(self):
 		"""testRoot - / may be a counterexample to several of these.."""
-		root = rpath.RPath(Globals.local_connection, "/")
+		root = DSRPath(1, Globals.local_connection, "/")
 		select = Select(root)
 
 		assert select.glob_get_sf("/", 1)(root) == 1
@@ -266,7 +223,7 @@ testfiles/select/1/1
 
 	def testOtherFilesystems(self):
 		"""Test to see if --exclude-other-filesystems works correctly"""
-		root = rpath.RPath(Globals.local_connection, "/")
+		root = DSRPath(1, Globals.local_connection, "/")
 		select = Select(root)
 		sf = select.other_filesystems_get_sf(0)
 		assert sf(root) is None
@@ -278,27 +235,18 @@ testfiles/select/1/1
 			   "Assumption: /boot is on a different filesystem"
 
 class ParseArgsTest(unittest.TestCase):
-	"""Test argument parsing as well as filelist globbing"""
+	"""Test argument parsing"""
 	root = None
 	def ParseTest(self, tuplelist, indicies, filelists = []):
 		"""No error if running select on tuple goes over indicies"""
 		if not self.root:
-			self.root = RPath(Globals.local_connection, "testfiles/select")
+			self.root = DSRPath(1, Globals.local_connection,
+								"testfiles/select")
 		self.Select = Select(self.root)
-		self.Select.ParseArgs(tuplelist, self.remake_filelists(filelists))
+		self.Select.ParseArgs(tuplelist, filelists)
 		self.Select.set_iter()
-		assert lazy.Iter.equal(lazy.Iter.map(lambda dsrp: dsrp.index,
-											 self.Select),
-							   iter(indicies), verbose = 1)
-
-	def remake_filelists(self, filelist):
-		"""Turn strings in filelist into fileobjs"""
-		new_filelists = []
-		for f in filelist:
-			if type(f) is types.StringType:
-				new_filelists.append(StringIO.StringIO(f))
-			else: new_filelists.append(f)
-		return new_filelists
+		assert Iter.equal(Iter.map(lambda dsrp: dsrp.index, self.Select),
+						  iter(indicies), verbose = 1)
 
 	def testParse(self):
 		"""Test just one include, all exclude"""
@@ -315,18 +263,6 @@ class ParseArgsTest(unittest.TestCase):
 							   ("--exclude", "**")],
 					   [(), ('1',), ('1', '1'), ('1', '1', '2'),
 						('1', '1', '3')])
-
-	def test_globbing_filelist(self):
-		"""Filelist glob test similar to above testParse2"""
-		self.ParseTest([("--include-globbing-filelist", "file")],
-					   [(), ('1',), ('1', '1'), ('1', '1', '2'),
-						('1', '1', '3')],
-					   ["""
-- testfiles/select/1/1/1
-testfiles/select/1/1
-- testfiles/select/1
-- **
-"""])
 
 	def testGlob(self):
 		"""Test globbing expression"""
@@ -357,41 +293,6 @@ testfiles/select/1/1
 						('3', '3'),
 						('3', '3', '2')])
 
-	def test_globbing_filelist2(self):
-		"""Filelist glob test similar to above testGlob"""
-		self.ParseTest([("--exclude-globbing-filelist", "asoeuth")],
-					   [(), ('1',), ('1', '1'),
-						('1', '1', '1'), ('1', '1', '2'),
-						('1', '2'), ('1', '2', '1'), ('1', '2', '2')],
-					   ["""
-**[3-5]
-+ testfiles/select/1
-**
-"""])
-		self.ParseTest([("--include-globbing-filelist", "file")],
-					   [(), ('1',), ('1', '1'),
-						('1', '1', '2'),
-						('1', '2'),
-						('1', '2', '1'), ('1', '2', '2'), ('1', '2', '3'),
-						('1', '3'),
-						('1', '3', '2'),
-						('2',), ('2', '1'),
-						('2', '1', '1'), ('2', '1', '2'), ('2', '1', '3'),
-						('2', '2'),
-						('2', '2', '1'), ('2', '2', '2'), ('2', '2', '3'),
-						('2', '3'),
-						('2', '3', '1'), ('2', '3', '2'), ('2', '3', '3'),
-						('3',), ('3', '1'),
-						('3', '1', '2'),
-						('3', '2'),
-						('3', '2', '1'), ('3', '2', '2'), ('3', '2', '3'),
-						('3', '3'),
-						('3', '3', '2')],
-					   ["""
-testfiles/select**/2
-- **
-"""])
-					   
 	def testGlob2(self):
 		"""Test more globbing functions"""
 		self.ParseTest([("--include", "testfiles/select/*foo*/p*"),
@@ -407,29 +308,29 @@ testfiles/select**/2
 
 	def testAlternateRoot(self):
 		"""Test select with different root"""
-		self.root = rpath.RPath(Globals.local_connection, "testfiles/select/1")
+		self.root = DSRPath(1, Globals.local_connection,
+							"testfiles/select/1")
 		self.ParseTest([("--exclude", "testfiles/select/1/[23]")],
 					   [(), ('1',), ('1', '1'), ('1', '2'), ('1', '3')])
 
-		self.root = rpath.RPath(Globals.local_connection, "/")
+		self.root = DSRPath(1, Globals.local_connection, "/")
 		self.ParseTest([("--exclude", "/home/*"),
 						("--include", "/home"),
 						("--exclude", "/")],
 					   [(), ("home",)])
 
-#	def testParseStartingFrom(self):
-#		"""Test parse, this time starting from inside"""
-#		self.root = rpath.RPath(Globals.local_connection, "testfiles/select")
-#		self.Select = Select(self.root)
-#		self.Select.ParseArgs([("--include", "testfiles/select/1/1"),
-#							   ("--exclude", "**")], [])
-#		self.Select.set_iter(('1', '1'))
-#		assert lazy.Iter.equal(lazy.Iter.map(lambda dsrp: dsrp.index,
-#											 self.Select),
-#						  iter([("1", '1', '1'),
-#								('1', '1', '2'),
-#								('1', '1', '3')]),
-#						  verbose = 1)
+	def testParseStartingFrom(self):
+		"""Test parse, this time starting from inside"""
+		self.root = DSRPath(1, Globals.local_connection, "testfiles/select")
+		self.Select = Select(self.root)
+		self.Select.ParseArgs([("--include", "testfiles/select/1/1"),
+							   ("--exclude", "**")], [])
+		self.Select.set_iter(('1', '1'))
+		assert Iter.equal(Iter.map(lambda dsrp: dsrp.index, self.Select),
+						  iter([("1", '1', '1'),
+								('1', '1', '2'),
+								('1', '1', '3')]),
+						  verbose = 1)
 
 
 if __name__ == "__main__": unittest.main()

@@ -1,7 +1,7 @@
 import os, cPickle, sys, unittest
 from commontest import *
-from rdiff_backup.rpath import *
-from rdiff_backup import rpath
+from rpath import *
+
 
 class RPathTest(unittest.TestCase):
 	lc = Globals.local_connection
@@ -131,33 +131,6 @@ class CheckSyms(RPathTest):
 		assert link.issym()
 		assert link.readlink() == "abcdefg"
 		link.delete()
-
-
-class CheckSockets(RPathTest):
-	"""Check reading and making sockets"""
-	def testMake(self):
-		"""Create socket, then read it"""
-		sock = RPath(self.lc, self.mainprefix, ("socket",))
-		assert not sock.lstat()
-		sock.mksock()
-		assert sock.issock()
-		sock.delete()
-
-	def testLongSock(self):
-		"""Test making a socket with a long name
-
-		On some systems, the name of a socket is restricted, and
-		cannot be as long as a regular file.  When this happens, a
-		SkipFileException should be raised.
-
-		"""
-		sock = RPath(self.lc, self.mainprefix, ("socketaoeusthaoeaoeutnhaonseuhtansoeuthasoneuthasoeutnhasonuthaoensuhtasoneuhtsanouhonetuhasoneuthsaoenaonsetuaosenuhtaoensuhaoeu",))
-		assert not sock.lstat()
-		try: sock.mksock()
-		except SkipFileException: pass
-		else: print "Warning, making long socket did not fail"
-		sock.setdata()
-		if sock.lstat(): sock.delete()
 
 
 class TouchDelete(RPathTest):
@@ -313,18 +286,18 @@ class FileCopying(RPathTest):
 
 	def testComp(self):
 		"""Test comparisons involving regular files"""
-		assert rpath.cmp(self.hl1, self.hl2)
-		assert not rpath.cmp(self.rf, self.hl1)
-		assert not rpath.cmp(self.dir, self.rf)
+		assert RPath.cmp(self.hl1, self.hl2)
+		assert not RPath.cmp(self.rf, self.hl1)
+		assert not RPath.cmp(self.dir, self.rf)
 
 	def testCompMisc(self):
 		"""Test miscellaneous comparisons"""
-		assert rpath.cmp(self.dir, RPath(self.lc, self.mainprefix, ()))
+		assert RPath.cmp(self.dir, RPath(self.lc, self.mainprefix, ()))
 		self.dest.symlink("regular_file")
-		assert rpath.cmp(self.sl, self.dest)
+		assert RPath.cmp(self.sl, self.dest)
 		self.dest.delete()
-		assert not rpath.cmp(self.sl, self.fifo)
-		assert not rpath.cmp(self.dir, self.sl)
+		assert not RPath.cmp(self.sl, self.fifo)
+		assert not RPath.cmp(self.dir, self.sl)
 
 	def testDirSizeComp(self):
 		"""Make sure directories can be equal,
@@ -338,10 +311,10 @@ class FileCopying(RPathTest):
 	def testCopy(self):
 		"""Test copy of various files"""
 		for rp in [self.sl, self.rf, self.fifo, self.dir]:
-			rpath.copy(rp, self.dest)
+			RPath.copy(rp, self.dest)
 			assert self.dest.lstat(), "%s doesn't exist" % self.dest.path
-			assert rpath.cmp(rp, self.dest)
-			assert rpath.cmp(self.dest, rp)
+			assert RPath.cmp(rp, self.dest)
+			assert RPath.cmp(self.dest, rp)
 			self.dest.delete()
 
 
@@ -361,8 +334,8 @@ class FileAttributes(FileCopying):
 		"""Test attribute comparison success"""
 		testpairs = [(self.hl1, self.hl2)]
 		for a, b in testpairs:
-			assert rpath.cmp_attribs(a, b), "Err with %s %s" % (a.path, b.path)
-			assert rpath.cmp_attribs(b, a), "Err with %s %s" % (b.path, a.path)
+			assert RPath.cmp_attribs(a, b), "Err with %s %s" % (a.path, b.path)
+			assert RPath.cmp_attribs(b, a), "Err with %s %s" % (b.path, a.path)
 
 	def testCompFail(self):
 		"""Test attribute comparison failures"""
@@ -370,16 +343,16 @@ class FileAttributes(FileCopying):
 					 (self.exec1, self.exec2),
 					 (self.rf, self.hl1)]
 		for a, b in testpairs:
-			assert not rpath.cmp_attribs(a, b), \
+			assert not RPath.cmp_attribs(a, b), \
 				   "Err with %s %s" % (a.path, b.path)
-			assert not rpath.cmp_attribs(b, a), \
+			assert not RPath.cmp_attribs(b, a), \
 				   "Err with %s %s" % (b.path, a.path)
 
 	def testCompRaise(self):
 		"""Should raise exception when file missing"""
-		self.assertRaises(RPathException, rpath.cmp_attribs,
+		self.assertRaises(RPathException, RPath.cmp_attribs,
 						  self.nothing, self.hl1)
-		self.assertRaises(RPathException, rpath.cmp_attribs,
+		self.assertRaises(RPathException, RPath.cmp_attribs,
 						  self.noperms, self.nothing)
 
 	def testCopyAttribs(self):
@@ -389,8 +362,8 @@ class FileAttributes(FileCopying):
 		for rp in [self.noperms, self.nowrite, self.rf, self.exec1,
 				   self.exec2, self.hl1, self.dir]:
 			t.touch()
-			rpath.copy_attribs(rp, t)
-			assert rpath.cmp_attribs(t, rp), \
+			RPath.copy_attribs(rp, t)
+			assert RPath.cmp_attribs(t, rp), \
 				   "Attributes for file %s not copied successfully" % rp.path
 			t.delete()
 
@@ -400,16 +373,16 @@ class FileAttributes(FileCopying):
 		if out.lstat(): out.delete()
 		for rp in [self.noperms, self.nowrite, self.rf, self.exec1,
 				   self.exec2, self.hl1, self.dir, self.sym]:
-			rpath.copy_with_attribs(rp, out)
-			assert rpath.cmp(rp, out)
-			assert rpath.cmp_attribs(rp, out)
+			RPath.copy_with_attribs(rp, out)
+			assert RPath.cmp(rp, out)
+			assert RPath.cmp_attribs(rp, out)
 			out.delete()
 
 	def testCopyRaise(self):
 		"""Should raise exception for non-existent files"""
-		self.assertRaises(RPathException, rpath.copy_attribs,
+		self.assertRaises(RPathException, RPath.copy_attribs,
 						  self.hl1, self.nothing)
-		self.assertRaises(RPathException, rpath.copy_attribs,
+		self.assertRaises(RPathException, RPath.copy_attribs,
 						  self.nothing, self.nowrite)
 
 class CheckPath(unittest.TestCase):

@@ -22,8 +22,8 @@ if len(sys.argv) > 2:
 
 try:
 	if len(sys.argv) == 2: sys.path.insert(0, sys.argv[1])
-	import rdiff_backup.Globals
-	from rdiff_backup.connection import *
+	import Globals
+	from connection import *
 except (OSError, IOError, ImportError):
 	print_usage()
 	raise

@@ -1,7 +1,7 @@
 import unittest, types, tempfile, os, sys
 from commontest import *
-from rdiff_backup.connection import *
-from rdiff_backup import Globals, rpath
+from connection import *
+import Globals
 
 class LocalConnectionTest(unittest.TestCase):
 	"""Test the dummy connection"""
@@ -104,7 +104,7 @@ class PipeConnectionTest(unittest.TestCase):
 		"""Test module emulation"""
 		assert type(self.conn.tempfile.mktemp()) is types.StringType
 		assert self.conn.os.path.join("a", "b") == "a/b"
-		rp1 = rpath.RPath(self.conn, self.regfilename)
+		rp1 = RPath(self.conn, self.regfilename)
 		assert rp1.isreg()
 
 	def testVirtualFiles(self):
@@ -112,17 +112,17 @@ class PipeConnectionTest(unittest.TestCase):
 		tempout = self.conn.open("testfiles/tempout", "w")
 		assert isinstance(tempout, VirtualFile)
 		regfilefp = open(self.regfilename, "r")
-		rpath.copyfileobj(regfilefp, tempout)
+		RPath.copyfileobj(regfilefp, tempout)
 		tempout.close()
 		regfilefp.close()
 		tempoutlocal = open("testfiles/tempout", "r")
 		regfilefp = open(self.regfilename, "r")
-		assert rpath.cmpfileobj(regfilefp, tempoutlocal)
+		assert RPath.cmpfileobj(regfilefp, tempoutlocal)
 		tempoutlocal.close()
 		regfilefp.close()
 		os.unlink("testfiles/tempout")
 
-		assert rpath.cmpfileobj(self.conn.open(self.regfilename, "r"),
+		assert RPath.cmpfileobj(self.conn.open(self.regfilename, "r"),
 								open(self.regfilename, "r"))
 
 	def testString(self):
@@ -139,8 +139,7 @@ class PipeConnectionTest(unittest.TestCase):
 
 	def testRPaths(self):
 		"""Test transmission of rpaths"""
-		rp = rpath.RPath(self.conn,
-						 "testfiles/various_file_types/regular_file")
+		rp = RPath(self.conn, "testfiles/various_file_types/regular_file")
 		assert self.conn.reval("lambda rp: rp.data", rp) == rp.data
 		assert self.conn.reval("lambda rp: rp.conn is Globals.local_connection", rp)
 
@@ -193,7 +192,7 @@ class RedirectedConnectionTest(unittest.TestCase):
 
 	def testRpaths(self):
 		"""Test moving rpaths back and forth across connections"""
-		rp = rpath.RPath(self.conna, "foo")
+		rp = RPath(self.conna, "foo")
 		self.connb.Globals.set("tmp_rpath", rp)
 		rp_returned = self.connb.Globals.get("tmp_rpath")
 		assert rp_returned.conn is rp.conn

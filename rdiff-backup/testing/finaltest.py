@@ -1,11 +1,13 @@
-import unittest, os, re, sys, time
+import unittest, os, re, sys
 from commontest import *
-from rdiff_backup import Globals, log, rpath, robust
+from log import *
+from rpath import *
+import Globals
 
 """Regression tests"""
 
 Globals.exclude_mirror_regexps = [re.compile(".*/rdiff-backup-data")]
-log.Log.setverbosity(3)
+Log.setverbosity(7)
 
 lc = Globals.local_connection
 
@@ -13,7 +15,7 @@ class Local:
 	"""This is just a place to put increments relative to the local
 	connection"""
 	def get_local_rp(extension):
-		return rpath.RPath(Globals.local_connection, "testfiles/" + extension)
+		return RPath(Globals.local_connection, "testfiles/" + extension)
 
 	vftrp = get_local_rp('various_file_types')
 	inc1rp = get_local_rp('increment1')
@@ -43,7 +45,7 @@ class PathSetter(unittest.TestCase):
 
 	def reset_schema(self):
 		self.rb_schema = SourceDir + \
-			 "/../rdiff-backup -v7 --remote-schema './chdir-wrapper2 %s' "
+			 "/../rdiff-backup -v3 --remote-schema './chdir-wrapper2 %s' "
 
 	def refresh(self, *rp_list):
 		"""Reread data for the given rps"""
@@ -152,7 +154,7 @@ class PathSetter(unittest.TestCase):
 						 "testfiles/output/rdiff-backup-data/increments")
 		self.exec_rb(None, timbar_paths[0])
 		self.refresh(Local.timbar_in, Local.timbar_out)
-		assert rpath.cmp_with_attribs(Local.timbar_in, Local.timbar_out)
+		assert RPath.cmp_with_attribs(Local.timbar_in, Local.timbar_out)
 
 		self.exec_rb_restore(25000, 'testfiles/output/various_file_types',
 							 'testfiles/vft2_out')
@@ -168,12 +170,11 @@ class PathSetter(unittest.TestCase):
 
 	def getinc_paths(self, basename, directory):
 		"""Return increment.______.dir paths"""
-		dirrp = rpath.RPath(Globals.local_connection, directory)
-		incfiles = [filename for filename in robust.listrp(dirrp)
-					if filename.startswith(basename)]
+		incfiles = filter(lambda s: s.startswith(basename),
+						  os.listdir(directory))
 		incfiles.sort()
-		incrps = map(lambda f: rpath.RPath(lc, directory+"/"+f), incfiles)
-		return map(lambda x: x.path, filter(rpath.RPath.isincfile, incrps))
+		incrps = map(lambda f: RPath(lc, directory+"/"+f), incfiles)
+		return map(lambda x: x.path, filter(RPath.isincfile, incrps))
 
 
 class Final(PathSetter):
@@ -197,15 +198,26 @@ class Final(PathSetter):
 		self.set_connections(None, None, "test2/tmp", "../../")
 		self.runtest()
 
-	def testProcLocal(self):
-		"""Test initial backup of /proc locally"""
-		Myrm("testfiles/procoutput")
+	def testMirroringLocal(self):
+		"""Run mirroring only everything remote"""
+		self.delete_tmpdirs()
 		self.set_connections(None, None, None, None)
-		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
+		self.exec_rb_extra_args(10000, "-m",
+								"testfiles/various_file_types",
+								"testfiles/output")
+		assert CompareRecursive(Local.vftrp, Local.rpout, exclude_rbdir = None)
+
+	def testMirroringRemote(self):
+		"""Run mirroring only everything remote"""
+		self.delete_tmpdirs()
+		self.set_connections("test1/", "../", "test2/tmp/", "../../")
+		self.exec_rb_extra_args(10000, "-m",
+								"testfiles/various_file_types",
+								"testfiles/output")
+		assert CompareRecursive(Local.vftrp, Local.rpout, exclude_rbdir = None)
 
 	def testProcRemote(self):
 		"""Test mirroring proc"""
-		Myrm("testfiles/procoutput")
 		self.set_connections(None, None, "test2/tmp/", "../../")
 		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
 
@@ -275,7 +287,7 @@ testfiles/increment2/changed_dir""")
 						  "testfiles/output/changed_dir/foo")
 
 		# Test selective restoring
-		mirror_rp = rpath.RPath(Globals.local_connection, "testfiles/output")
+		mirror_rp = RPath(Globals.local_connection, "testfiles/output")
 		restore_filename = get_increment_rp(mirror_rp, 10000).path
 		assert not os.system(self.rb_schema +
 		   "--include testfiles/restoretarget1/various_file_types/"
@@ -309,8 +321,8 @@ testfiles/increment2/changed_dir""")
 
 		# Make an exclude list
 		os.mkdir("testfiles/vft_out")
-		excluderp = rpath.RPath(Globals.local_connection,
-								"testfiles/vft_out/exclude")
+		excluderp = RPath(Globals.local_connection,
+						  "testfiles/vft_out/exclude")
 		fp = excluderp.open("w")
 		fp.write("""
 ../testfiles/various_file_types/regular_file
@@ -319,8 +331,8 @@ testfiles/increment2/changed_dir""")
 		assert not fp.close()
 
 		# Make an include list
-		includerp = rpath.RPath(Globals.local_connection,
-								"testfiles/vft_out/include")
+		includerp = RPath(Globals.local_connection,
+						  "testfiles/vft_out/include")
 		fp = includerp.open("w")
 		fp.write("""
 ../testfiles/various_file_types/executable
@@ -341,6 +353,45 @@ testfiles/increment2/changed_dir""")
 						  'testfiles/restoretarget1/regular_file')
 		self.assertRaises(OSError, os.lstat,
 						  'testfiles/restoretarget1/executable2')
+
+
+class FinalCorrupt(PathSetter):
+	def testBackupOverlay(self):
+		"""Test backing up onto a directory already backed up for that time
+
+		This will test to see if rdiff-backup will ignore files who
+		already have an increment where it wants to put something.
+		Just make sure rdiff-backup doesn't exit with an error.
+		
+		"""
+		self.delete_tmpdirs()
+		assert not os.system("cp -a testfiles/corruptbackup testfiles/output")
+		self.set_connections(None, None, None, None)
+		self.exec_rb(None, 'testfiles/corruptbackup_source',
+					 'testfiles/output')
+
+	def testBackupOverlayRemote(self):
+		"""Like above but destination is remote"""
+		self.delete_tmpdirs()
+		assert not os.system("cp -a testfiles/corruptbackup testfiles/output")
+		self.set_connections(None, None, "test1/", '../')
+		self.exec_rb(None, 'testfiles/corruptbackup_source',
+					 'testfiles/output')
+
+	def testCheckpointData(self):
+		"""Destination directory has bad checkpoint data, no sym"""
+		self.delete_tmpdirs()
+		assert not os.system("cp -a testfiles/corrupt_dest1 testfiles/output")
+		self.set_connections(None, None, None, None)
+		self.exec_rb(None, 'testfiles/various_file_types', 'testfiles/output')
+
+	def testCheckpointData2(self):
+		"""Destination directory has bad checkpoint data, with sym"""
+		self.delete_tmpdirs()
+		assert not os.system("cp -a testfiles/corrupt_dest2 testfiles/output")
+		self.set_connections(None, None, None, None)
+		self.exec_rb(None, 'testfiles/various_file_types', 'testfiles/output')
+		
 
 		
 if __name__ == "__main__": unittest.main()

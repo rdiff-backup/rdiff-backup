@@ -1,12 +1,12 @@
 import unittest
 from commontest import *
-from rdiff_backup import Globals, SetConnections
+import Globals, SetConnections
 
 class RemoteMirrorTest(unittest.TestCase):
 	"""Test mirroring"""
 	def setUp(self):
 		"""Start server"""
-		Log.setverbosity(3)
+		Log.setverbosity(7)
 		Globals.change_source_perms = 1
 		SetConnections.UpdateGlobal('checkpoint_interval', 3)
 
@@ -23,6 +23,17 @@ class RemoteMirrorTest(unittest.TestCase):
 		"""Local version of testMirror2"""
 		MirrorTest(1, 1, ['testfiles/increment1', 'testfiles/increment2',
 						  'testfiles/increment3', 'testfiles/increment4'])
+
+	def testMirrorWithCheckpointing(self):
+		"""Like testMirror but this time checkpoint"""
+		MirrorTest(None, None, ["testfiles/increment1"], 1)
+
+	def testMirrorWithCheckpointing2(self):
+		"""Larger data set"""
+		MirrorTest(1, None, ['testfiles/increment1', 'testfiles/increment2',
+							 'testfiles/increment3', 'testfiles/increment4'],
+				   1)
+
 
 
 if __name__ == "__main__": unittest.main()

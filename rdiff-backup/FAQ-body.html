@@ -8,9 +8,9 @@ syntax".  What's happening?</a></li>
 
 <li><a href="#windows">Does rdiff-backup run under Windows?</a></li>
 
-<li><a href="#OSX">Does rdiff-backup run under Mac OS X?</a></li>
-
 <li><a href="#remove_dir">My backup set contains some files that I just realized I don't want/need backed up.  How do I remove them from the backup volume to save space?</li>
+
+<li><a href="#redhat">How do I install the RPMs on Redhat linux system?</a></li>
 
 <li><a href="#solaris">Does rdiff-backup work under Solaris?</a></li>
 
@@ -22,9 +22,6 @@ session statistics and directory statistics files?</a></li>
 
 <li><a href="#bwlimit">Is there some way to limit rdiff-backup's
 bandwidth usage, as in rsync's --bwlimit option?</a></li>
-
-<li><a href="#leak">How much memory should rdiff-backup use?  Is there a
-memory leak?</a></li>
 
 </ol>
 
@@ -109,55 +106,20 @@ some header files in the Makefile:
       redirected to /usr/include/sys/types.h. Do this by:
 
       create a file /usr/include/inttypes.h with the contents:
-      <protect>#include &lt;sys/types.h&gt;</protect>
+      #include &lt;sys/types.h&gt;
   o Put rdiff-backup in your PATH, as you normally would.
 
 </pre>
 
-Then, whenever you use rdiff-backup to back up from a unix system to
-Windows, use the <strong>--windows-mode</strong> switch.  This
-compensates for some windows file systems' inability to store hard
-links, symlinks, device files, sockets, fifos, case sensitive
-filenames, and filenames with colons (":") in them.  (Note: device
-files, symlinks, fifos, and sockets will simply be skipped, and hard
-link information will not be recorded.)
-
-<p>If you are backing up one windows system to another, full
---windows-mode is not necessary, but you'll still need
-<strong>--windows-time-format</strong>, which stops rdiff-backup from
-trying to make increment files with colons in them.  Whichever
---windows* option you use, remember to use the same one when restoring
-or listing that backup directory.
-</li>
-
-<P>
-<a name="OSX">
-<li><strong>Does rdiff-backup run under Mac OS X?</strong>
-
-<p>
-Yes, but there may be some issues installing librsync.  See this
-message from Gerd Knops:
-
-<pre>
-From: Gerd Knops <gerti@bitart.com>
-Date: Thu, 3 Oct 2002 03:56:47 -0500 (01:56 PDT)
-
-[parts of original message deleted]
-these instructions build it fine with all tests running OK
-(librsync-0.9.5.1 on OS X 10.2.1):
-
-	aclocal
-	autoconf
-	automake --foreign --add-missing
-	CFLAGS=-no-cpp-precomp ./configure
-	make
-	make install
-</pre>
-
-Also, if you are backing up to a file system that is not case
-sensitive you may need to use "--chars-to-quote A-Z".  If you do use
---chars-to-quote, remember to use it with the same arguments when
-restoring or listing incrementes.
+Then, whenever you use rdiff-backup (or at least if you are backing up
+to or restoring from a Windows system), use the
+<strong>--windows-time-format</strong> switch, which will tell
+rdiff-backup not to put a colon (":") in a filename (this option was
+added after Jason posted his message).  Finally, as Michael Muegel
+points out, you have to exclude all files from the source directory
+which have colons in them, so add something like the --exclude ".*:.*"
+option.  In the near future some quoting facility may be added to deal
+with these issues.
 </li>
 
 <P>
@@ -181,6 +143,33 @@ manually by typing:
 <pre>rm -rf /backup/rdiff-backup-data/increments/usr/local
 rm /backup/rdiff-backup-data/increments/usr/local.*.dir</pre>
 
+</li>
+
+<P>
+<a name="redhat">
+<li><strong>How do I install the RPMs on a Redhat linux system?</strong>
+
+<P>The problem is that the default version of python for Redhat 7.x is
+1.5.x, and rdiff-backup requires python >= 2.2.  Redhat/rawhide
+provides python 2.2 RPMs, but they are packaged under the "python2"
+name.
+
+<P>So, if you are running Redhat 7.x:
+
+<ol>
+<li>Make sure the python2 >= 2.2 package is installed,
+leaving python 1.5 the way it is
+<li>Install the rdiff-backup RPM, using --nodeps if it only complains
+    about python 2.2 missing.
+<li>Edit the first line of /usr/bin/rdiff-backup so it says<pre>
+#!/usr/bin/env python2
+</pre>
+so "python2" gets run instead of "python".
+</ol>
+
+<P>You can also upgrade using a non-Redhat python 2.2 RPM and avoid
+the above steps (this is what I did).  Because of all the dependencies
+it is usually easier to use source RPMs for this.
 </li>
 
 <P>
@@ -349,21 +338,7 @@ rdiff-backup to exceed it for significant periods.</li>
 Another option is to limit bandwidth at a lower (and perhaps more
 appropriate) level.  Adam Lazur mentions <a
 href="http://lartc.org/wondershaper/">The Wonder Shaper</a>.
-</li>
 
-<a name="leak">
-<li><strong>How much memory should rdiff-backup use?  Is there a
-memory leak?</strong>
-
-<p>The amount of memory rdiff-backup uses should not depend much on
-the size of directories being processed.  Keeping track of hard links
-may use up memory, so if you have, say, hundreds of thousands of files
-hard linked together, rdiff-backup may need tens of MB.
-
-<p>If rdiff-backup seems to be leaking memory, it is probably because
-it is using an early version of librsync.  <strong>librsync 0.9.5
-leaks lots of memory.</strong> Version 0.9.5.1 should not leak and is
-available from the rdiff-backup homepage.
 </li>
 
 </ol>

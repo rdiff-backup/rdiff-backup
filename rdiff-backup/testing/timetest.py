@@ -1,12 +1,12 @@
-import unittest, time, types
+import unittest, time
 from commontest import *
-from rdiff_backup import Globals, Time
+import Globals, Time
 
 class TimeTest(unittest.TestCase):
 	def testConversion(self):
 		"""test timetostring and stringtotime"""
 		Time.setcurtime()
-		assert type(Time.curtime) is types.FloatType or types.LongType
+		assert type(Time.curtime) is types.FloatType
 		assert type(Time.curtimestr) is types.StringType
 		assert (Time.cmp(int(Time.curtime), Time.curtimestr) == 0 or
 				Time.cmp(int(Time.curtime) + 1, Time.curtimestr) == 0)

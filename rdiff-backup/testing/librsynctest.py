@@ -1,6 +1,6 @@
 import unittest, random
 from commontest import *
-from rdiff_backup import librsync
+import librsync
 
 def MakeRandomFile(path):
 	"""Writes a random file of length between 10000 and 100000"""

@@ -1,6 +1,6 @@
 import unittest
-from commontest import *
-from rdiff_backup.rlist import *
+execfile("commontest.py")
+rbexec("rlist.py")
 
 class BasicObject:
 	"""The simplest object that can be used with RList"""

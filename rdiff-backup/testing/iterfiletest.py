@@ -1,7 +1,6 @@
 import unittest, StringIO
 from commontest import *
-from rdiff_backup.iterfile import *
-from rdiff_backup import lazy
+from iterfile import *
 
 
 class testIterFile(unittest.TestCase):
@@ -12,8 +11,8 @@ class testIterFile(unittest.TestCase):
 	def testConversion(self):
 		"""Test iter to file conversion"""
 		for itm in [self.iter1maker, self.iter2maker]:
-			assert lazy.Iter.equal(itm(),
-								   IterWrappingFile(FileWrappingIter(itm())))
+			assert Iter.equal(itm(),
+							  IterWrappingFile(FileWrappingIter(itm())))
 
 class testBufferedRead(unittest.TestCase):
 	def testBuffering(self):

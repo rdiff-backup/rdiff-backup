@@ -1,20 +1,18 @@
-import os, unittest, time
+import os, unittest
 from commontest import *
-from rdiff_backup import Globals, Hardlink, selection, rpath
+from rpath import *
+import Globals, Hardlink
 
 Log.setverbosity(7)
 
 class HardlinkTest(unittest.TestCase):
 	"""Test cases for Hard links"""
-	outputrp = rpath.RPath(Globals.local_connection, "testfiles/output")
-	hardlink_dir1 = rpath.RPath(Globals.local_connection,
-								"testfiles/hardlinks/dir1")
-	hardlink_dir1copy = rpath.RPath(Globals.local_connection,
-									"testfiles/hardlinks/dir1copy")
-	hardlink_dir2 = rpath.RPath(Globals.local_connection,
-								"testfiles/hardlinks/dir2")
-	hardlink_dir3 = rpath.RPath(Globals.local_connection,
-								"testfiles/hardlinks/dir3")
+	outputrp = RPath(Globals.local_connection, "testfiles/output")
+	hardlink_dir1 = RPath(Globals.local_connection, "testfiles/hardlinks/dir1")
+	hardlink_dir1copy = \
+		RPath(Globals.local_connection, "testfiles/hardlinks/dir1copy")
+	hardlink_dir2 = RPath(Globals.local_connection, "testfiles/hardlinks/dir2")
+	hardlink_dir3 = RPath(Globals.local_connection, "testfiles/hardlinks/dir3")
 
 	def reset_output(self):
 		"""Erase and recreate testfiles/output directory"""
@@ -29,11 +27,53 @@ class HardlinkTest(unittest.TestCase):
 		assert not CompareRecursive(self.hardlink_dir1, self.hardlink_dir2,
 								compare_hardlinks = 1)
 
+	def testCheckpointing(self):
+		"""Test saving and recovering of various dictionaries"""
+		d1 = {1:1}
+		d2 = {2:2}
+		d3 = {3:3}
+		d4 = {}
+
+		Hardlink._src_inode_indicies = d1
+		Hardlink._src_index_indicies = d2
+		Hardlink._dest_inode_indicies = d3
+		Hardlink._dest_index_indicies = d4
+
+		self.reset_output()
+		Time.setcurtime(12345)
+		Globals.isbackup_writer = 1
+		Hardlink.final_checkpoint(self.outputrp)
+
+		reset_hardlink_dicts()
+		assert Hardlink.retrieve_checkpoint(self.outputrp, 12345)
+		assert Hardlink._src_inode_indicies == d1, \
+			   Hardlink._src_inode_indicies
+		assert Hardlink._src_index_indicies == d2, \
+			   Hardlink._src_index_indicies
+		assert Hardlink._dest_inode_indicies == d3, \
+			   Hardlink._dest_inode_indicies
+		assert Hardlink._dest_index_indicies == d4, \
+			   Hardlink._dest_index_indicies
+
+	def testFinalwrite(self):
+		"""Test writing of the final database"""
+		Globals.isbackup_writer = 1
+		Time.setcurtime(123456)
+		Globals.rbdir = self.outputrp
+		finald = Hardlink._src_index_indicies = {'hello':'world'}
+		
+		self.reset_output()
+		Hardlink.final_writedata()
+
+		Hardlink._src_index_indicies = None
+		assert Hardlink.retrieve_final(123456)
+		assert Hardlink._src_index_indicies == finald
+
 	def testBuildingDict(self):
 		"""See if the partial inode dictionary is correct"""
 		Globals.preserve_hardlinks = 1
 		reset_hardlink_dicts()
-		for dsrp in selection.Select(self.hardlink_dir3).set_iter():
+		for dsrp in Select(DSRPath(1, self.hardlink_dir3)).set_iter():
 			Hardlink.add_rorp(dsrp, 1)
 		
 		assert len(Hardlink._src_inode_indicies.keys()) == 3, \
@@ -50,7 +90,7 @@ class HardlinkTest(unittest.TestCase):
 		"""Same as testBuildingDict but test destination building"""
 		Globals.preserve_hardlinks = 1
 		reset_hardlink_dicts()
-		for dsrp in selection.Select(self.hardlink_dir3).set_iter():
+		for dsrp in Select(DSRPath(None, self.hardlink_dir3)).set_iter():
 			Hardlink.add_rorp(dsrp, None)
 		
 		assert len(Hardlink._dest_inode_indicies.keys()) == 3, \
@@ -66,7 +106,7 @@ class HardlinkTest(unittest.TestCase):
 	def testCompletedDict(self):
 		"""See if the hardlink dictionaries are built correctly"""
 		reset_hardlink_dicts()
-		for dsrp in selection.Select(self.hardlink_dir1).set_iter():
+		for dsrp in Select(DSRPath(1, self.hardlink_dir1)).set_iter():
 			Hardlink.add_rorp(dsrp, 1)
 		assert Hardlink._src_inode_indicies == {}, \
 			   Hardlink._src_inode_indicies
@@ -79,7 +119,7 @@ class HardlinkTest(unittest.TestCase):
 		assert Hardlink._src_index_indicies == dict
 
 		reset_hardlink_dicts()
-		for dsrp in selection.Select(self.hardlink_dir2).set_iter():
+		for dsrp in Select(DSRPath(1, self.hardlink_dir2)).set_iter():
 			Hardlink.add_rorp(dsrp, 1)
 		assert Hardlink._src_inode_indicies == {}, \
 			   Hardlink._src_inode_indicies
@@ -100,74 +140,6 @@ class HardlinkTest(unittest.TestCase):
 		BackupRestoreSeries(None, None, dirlist, compare_hardlinks=1)
 		BackupRestoreSeries(1, 1, dirlist, compare_hardlinks=1)
 
-	def testInnerRestore(self):
-		"""Restore part of a dir, see if hard links preserved"""
-		MakeOutputDir()
-		output = rpath.RPath(Globals.local_connection,
-							 "testfiles/output")
-		
-		# Now set up directories out_hardlink1 and out_hardlink2
-		hlout1 = rpath.RPath(Globals.local_connection,
-							 "testfiles/out_hardlink1")
-		if hlout1.lstat(): hlout1.delete()
-		hlout1.mkdir()
-		hlout1_sub = hlout1.append("subdir")
-		hlout1_sub.mkdir()
-		hl1_1 = hlout1_sub.append("hardlink1")
-		hl1_2 = hlout1_sub.append("hardlink2")
-		hl1_3 = hlout1_sub.append("hardlink3")
-		hl1_4 = hlout1_sub.append("hardlink4")
-		# 1 and 2 are hard linked, as are 3 and 4
-		hl1_1.touch()
-		hl1_2.hardlink(hl1_1.path)
-		hl1_3.touch()
-		hl1_4.hardlink(hl1_3.path)
-		
-		hlout2 = rpath.RPath(Globals.local_connection,
-							 "testfiles/out_hardlink2")
-		if hlout2.lstat(): hlout2.delete()
-		assert not os.system("cp -a testfiles/out_hardlink1 "
-							 "testfiles/out_hardlink2")
-		hlout2_sub = hlout2.append("subdir")
-		hl2_1 = hlout2_sub.append("hardlink1")
-		hl2_2 = hlout2_sub.append("hardlink2")
-		hl2_3 = hlout2_sub.append("hardlink3")
-		hl2_4 = hlout2_sub.append("hardlink4")
-		# Now 2 and 3 are hard linked, also 1 and 4
-		rpath.copy_with_attribs(hl1_1, hl2_1)
-		rpath.copy_with_attribs(hl1_2, hl2_2)
-		hl2_3.delete()
-		hl2_3.hardlink(hl2_2.path)
-		hl2_4.delete()
-		hl2_4.hardlink(hl2_1.path)
-		rpath.copy_attribs(hlout1_sub, hlout2_sub)
-
-		InternalBackup(1, 1, hlout1.path, output.path)
-		time.sleep(1)
-		InternalBackup(1, 1, hlout2.path, output.path)
-
-		out2 = rpath.RPath(Globals.local_connection, "testfiles/out2")
-		hlout1 = out2.append("hardlink1")
-		hlout2 = out2.append("hardlink2")
-		hlout3 = out2.append("hardlink3")
-		hlout4 = out2.append("hardlink4")
-
-		if out2.lstat(): out2.delete()
-		InternalRestore(1, 1, "testfiles/output/subdir", "testfiles/out2", 1)
-		out2.setdata()
-		for rp in [hlout1, hlout2, hlout3, hlout4]: rp.setdata()
-		assert hlout1.getinode() == hlout2.getinode()
-		assert hlout3.getinode() == hlout4.getinode()
-		assert hlout1.getinode() != hlout3.getinode()
-		
-		if out2.lstat(): out2.delete()
-		InternalRestore(1, 1, "testfiles/output/subdir", "testfiles/out2",
-						int(time.time()))
-		out2.setdata()
-		for rp in [hlout1, hlout2, hlout3, hlout4]: rp.setdata()
-		assert hlout1.getinode() == hlout4.getinode()
-		assert hlout2.getinode() == hlout3.getinode()
-		assert hlout1.getinode() != hlout2.getinode()
 
 
 if __name__ == "__main__": unittest.main()

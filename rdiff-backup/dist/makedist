@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import os, re, shutil, time, sys, getopt
+import os, re, shutil, time, sys
 
-SourceDir = "rdiff_backup"
+SourceDir = "src"
 DistDir = "dist"
 
 # Various details about the files must also be specified by the rpm
@@ -32,7 +32,7 @@ def MakeFAQ():
 
 	wml_fp = open("FAQ.wml", "w")
 	wml_fp.write(
-"""#include 'template.wml' home=. curpage=faq title="rdiff-backup: FAQ"
+"""#include 'template.wml' curpage=faq title="rdiff-backup: FAQ"
 
 <divert body>
 <p><h2>FAQ:</h2>
@@ -89,15 +89,15 @@ def MakeTar():
 		assert not os.system("cp %s %s" % (filename, tardir)), filename
 
 	os.mkdir(tardir+"/rdiff_backup")
-	for filename in ["backup.py", "connection.py",
+	for filename in ["connection.py",	"destructive_stepping.py",
 					 "FilenameMapping.py", "Hardlink.py",
-					 "increment.py", "__init__.py", "iterfile.py",
-					 "lazy.py", "librsync.py", "log.py", "Main.py",
-					 "manage.py", "metadata.py", "Rdiff.py",
-					 "restore.py", "robust.py", "rorpiter.py",
-					 "rpath.py", "Security.py", "selection.py",
-					 "SetConnections.py", "static.py",
-					 "statistics.py", "TempFile.py", "Time.py"]:
+					 "highlevel.py", "increment.py", "__init__.py",
+					 "iterfile.py", "lazy.py", "librsync.py",
+					 "log.py", "Main.py", "manage.py", "MiscStats.py",
+					 "Rdiff.py", "restore.py", "rlist.py",
+					 "robust.py", "rorpiter.py", "rpath.py", "Security.py",
+					 "selection.py", "SetConnections.py", "static.py",
+					 "statistics.py", "Time.py"]:
 		assert not os.system("cp %s/%s %s/rdiff_backup" %
 							 (SourceDir, filename, tardir)), filename
 
@@ -119,36 +119,19 @@ def MakeSpecFile():
 	VersionedCopy(spec_template, specfile)
 	return specfile
 
-def parse_cmdline(arglist):
-	"""Returns action"""
-	global Version
-	def error():
-		print "Syntax: makedist [--faq-only] [version_number]"
-		sys.exit(1)		
-
-	optlist, args = getopt.getopt(arglist, "", ["faq-only"])
-	if len(args) != 1: error()
-	else: Version = args[0]
-
-	for opt, arg in optlist:
-		if opt == "--faq-only": return "FAQ"
-		else: assert 0, "Bad argument"
-	return "All"
-
 def Main():
-	action = parse_cmdline(sys.argv[1:])
 	print "Making FAQ"
 	MakeFAQ()
-
-	if action != "FAQ":
-		assert action == "All"
-		print "Processing version " + Version
-		tarfile = MakeTar()
-		print "Made tar file " + tarfile
-		specfile = MakeSpecFile()
-		print "Made specfile ", specfile
-
+	print "Processing version " + Version
+	tarfile = MakeTar()
+	print "Made tar file " + tarfile
+	specfile = MakeSpecFile()
+	print "Made specfile ", specfile
 
 if __name__ == "__main__" and not globals().has_key('__no_execute__'):
+	if len(sys.argv) != 2:
+		print "Syntax: makedist [version_number]"
+		sys.exit(1)
+	Version = sys.argv[1]
 	Main()
 

@@ -1,11 +1,12 @@
 """commontest - Some functions and constants common to several test cases"""
 import os, sys
-from rdiff_backup.log import Log
-from rdiff_backup.rpath import RPath
-from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
-	 selection, lazy, Time, rpath
+sys.path.insert(0, "../rdiff_backup")
+from rpath import *
+from destructive_stepping import *
+from highlevel import *
+import Globals, Hardlink, SetConnections, Main
 
-SourceDir = "../src"
+SourceDir = "../rdiff_backup"
 AbsCurdir = os.getcwd() # Absolute path name of current directory
 AbsTFdir = AbsCurdir+"/testfiles"
 MiscDir = "../misc"
@@ -13,23 +14,13 @@ __no_execute__ = 1 # Keeps the actual rdiff-backup program from running
 
 def Myrm(dirstring):
 	"""Run myrm on given directory string"""
-	root_rp = rpath.RPath(Globals.local_connection, dirstring)
-	for rp in selection.Select(root_rp).set_iter():
-		if rp.isdir(): rp.chmod(0700) # otherwise may not be able to remove
-	assert not os.system("rm -rf %s" % (dirstring,))
+	assert not os.system("%s/myrm %s" % (MiscDir, dirstring))
 
 def Make():
 	"""Make sure the rdiff-backup script in the source dir is up-to-date"""
 	os.chdir(SourceDir)
 	os.system("python ./Make")
 	os.chdir(AbsCurdir)
-
-def MakeOutputDir():
-	"""Initialize the testfiles/output directory"""
-	Myrm("testfiles/output")
-	rp = rpath.RPath(Globals.local_connection, "testfiles/output")
-	rp.mkdir()
-	return rp
 
 def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 				 current_time = None, extra_options = ""):
@@ -98,30 +89,35 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 	Main.Backup(rpin, rpout)
 	Main.cleanup()
 
-def InternalMirror(source_local, dest_local, src_dir, dest_dir):
-	"""Mirror src to dest internally
+def InternalMirror(source_local, dest_local, src_dir, dest_dir,
+				   write_data = None):
+	"""Mirror src to dest internally, like InternalBackup"""
+	remote_schema = '%s'
 
-	like InternalBackup, but only mirror.  Do this through
-	InternalBackup, but then delete rdiff-backup-data directory.
+	if not source_local:
+		src_dir = "cd test1; python ../server.py ../%s::../%s" % \
+				  (SourceDir, src_dir)
+	if not dest_local:
+		dest_dir = "cd test2/tmp; python ../../server.py ../../%s::../../%s" \
+				   % (SourceDir, dest_dir)
 
-	"""
-	# Save attributes of root to restore later
-	src_root = rpath.RPath(Globals.local_connection, src_dir)
-	dest_root = rpath.RPath(Globals.local_connection, dest_dir)
-	dest_rbdir = dest_root.append("rdiff-backup-data")
-	dest_incdir = dest_rbdir.append("increments")
+	rpin, rpout = cmd_schemas2rps([src_dir, dest_dir], remote_schema)
+	Main.misc_setup([rpin, rpout])
+	Main.backup_init_select(rpin, rpout)
+	if not rpout.lstat(): rpout.mkdir()
+	if write_data: # use rdiff-backup-data dir to checkpoint
+		data_dir = rpout.append("rdiff-backup-data")
+		if not data_dir.lstat(): data_dir.mkdir()
+		SetConnections.UpdateGlobal('rbdir', data_dir)
+	else: # just use root directory to hold checkpoints
+		SetConnections.UpdateGlobal('rbdir', rpout)
+	SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
 
-	# We need to create these directories or else failure because
-	# --force option not given.
-	if not dest_root.lstat(): dest_root.mkdir()
-	if not dest_rbdir.lstat(): dest_rbdir.mkdir()
-	if not dest_incdir.lstat(): dest_incdir.mkdir()
-	
-	InternalBackup(source_local, dest_local, src_dir, dest_dir)
-	dest_root.setdata()
-	Myrm(dest_rbdir.path)
-	# Restore old attributes
-	rpath.copy_attribs(src_root, dest_root)
+	if write_data:
+		SaveState.init_filenames()
+		HighLevel.Mirror(rpin, rpout, Globals.rbdir.append("increments"))
+	else: HighLevel.Mirror(rpin, rpout)
+	Main.cleanup()
 
 def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 	"""Restore mirror_dir to dest_dir at given time
@@ -131,7 +127,6 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 	the testing directory and will be modified for remote trials.
 
 	"""
-	Main.force = 1
 	remote_schema = '%s'
 	#_reset_connections()
 	if not mirror_local:
@@ -142,9 +137,9 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 				   % (SourceDir, dest_dir)
 
 	mirror_rp, dest_rp = cmd_schemas2rps([mirror_dir, dest_dir], remote_schema)
-	Main.misc_setup([mirror_rp, dest_rp])
+	Time.setcurtime()
 	inc = get_increment_rp(mirror_rp, time)
-	if inc: Main.Restore(get_increment_rp(mirror_rp, time), dest_rp)
+	if inc: Main.restore(get_increment_rp(mirror_rp, time), dest_rp)
 	else: # use alternate syntax
 		Main.restore_timestr = str(time)
 		Main.RestoreAsOf(mirror_rp, dest_rp)
@@ -184,8 +179,8 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 
 	Log("Comparing %s and %s, hardlinks %s" % (src_rp.path, dest_rp.path,
 											   compare_hardlinks), 3)
-	src_select = selection.Select(src_rp)
-	dest_select = selection.Select(dest_rp)
+	src_select = Select(DSRPath(1, src_rp))
+	dest_select = Select(DSRPath(None, dest_rp))
 
 	if ignore_tmp_files:
 		# Ignoring temp files can be useful when we want to check the
@@ -212,10 +207,13 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 		dest_select.add_selection_func(dest_select.glob_get_tuple_sf(
 			('rdiff-backup-data',), 0))
 
-	dsiter1, dsiter2 = src_select.set_iter(), dest_select.set_iter()
+	src_select.set_iter()
+	dest_select.set_iter()
+	dsiter1, dsiter2 = src_select.iterate_with_finalizer(), \
+					   dest_select.iterate_with_finalizer()
 
 	def hardlink_equal(src_rorp, dest_rorp):
-		if not src_rorp.equal_verbose(dest_rorp): return None
+		if src_rorp != dest_rorp: return None
 		if Hardlink.rorp_eq(src_rorp, dest_rorp): return 1
 		Log("%s: %s" % (src_rorp.index, Hardlink.get_indicies(src_rorp, 1)), 3)
 		Log("%s: %s" % (dest_rorp.index,
@@ -237,23 +235,22 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 				if dest_rorp.index[-1].endswith('.missing'): return 1
 		if compare_hardlinks:
 			if Hardlink.rorp_eq(src_rorp, dest_rorp): return 1
-		elif src_rorp.equal_verbose(dest_rorp): return 1
+		elif src_rorp == dest_rorp: return 1
 		Log("%s: %s" % (src_rorp.index, Hardlink.get_indicies(src_rorp, 1)), 3)
 		Log("%s: %s" % (dest_rorp.index,
 						Hardlink.get_indicies(dest_rorp, None)), 3)
 		return None
 
-	if equality_func: result = lazy.Iter.equal(dsiter1, dsiter2,
-											   1, equality_func)
+	if equality_func: result = Iter.equal(dsiter1, dsiter2, 1, equality_func)
 	elif compare_hardlinks:
 		dsiter1 = Hardlink.add_rorp_iter(dsiter1, 1)
 		dsiter2 = Hardlink.add_rorp_iter(dsiter2, None)		
 		if exclude_rbdir:
-			result = lazy.Iter.equal(dsiter1, dsiter2, 1, hardlink_equal)
-		else: result = lazy.Iter.equal(dsiter1, dsiter2, 1, rbdir_equal)
+			result = Iter.equal(dsiter1, dsiter2, 1, hardlink_equal)
+		else: result = Iter.equal(dsiter1, dsiter2, 1, rbdir_equal)
 	elif not exclude_rbdir:
-		result = lazy.Iter.equal(dsiter1, dsiter2, 1, rbdir_equal)
-	else: result = lazy.Iter.equal(dsiter1, dsiter2, 1)
+		result = Iter.equal(dsiter1, dsiter2, 1, rbdir_equal)
+	else: result = Iter.equal(dsiter1, dsiter2, 1)
 
 	for i in dsiter1: pass # make sure all files processed anyway
 	for i in dsiter2: pass
@@ -282,12 +279,12 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 	"""
 	Globals.set('preserve_hardlinks', compare_hardlinks)
 	time = 10000
-	dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
-	restore_rp = rpath.RPath(Globals.local_connection, restore_dirname)
+	dest_rp = RPath(Globals.local_connection, dest_dirname)
+	restore_rp = RPath(Globals.local_connection, restore_dirname)
 	
-	Myrm(dest_dirname)
+	os.system(MiscDir + "/myrm " + dest_dirname)
 	for dirname in list_of_dirnames:
-		src_rp = rpath.RPath(Globals.local_connection, dirname)
+		src_rp = RPath(Globals.local_connection, dirname)
 		reset_hardlink_dicts()
 		_reset_connections(src_rp, dest_rp)
 
@@ -300,10 +297,10 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 	time = 10000
 	for dirname in list_of_dirnames[:-1]:
 		reset_hardlink_dicts()
-		Myrm(restore_dirname)
+		os.system(MiscDir + "/myrm " + restore_dirname)
 		InternalRestore(dest_local, source_local, dest_dirname,
 						restore_dirname, time)
-		src_rp = rpath.RPath(Globals.local_connection, dirname)
+		src_rp = RPath(Globals.local_connection, dirname)
 		assert CompareRecursive(src_rp, restore_rp)
 
 		# Restore should default back to newest time older than it
@@ -317,11 +314,11 @@ def MirrorTest(source_local, dest_local, list_of_dirnames,
 			   dest_dirname = "testfiles/output"):
 	"""Mirror each of list_of_dirnames, and compare after each"""
 	Globals.set('preserve_hardlinks', compare_hardlinks)
-	dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
+	dest_rp = RPath(Globals.local_connection, dest_dirname)
 
-	Myrm(dest_dirname)
+	os.system(MiscDir + "/myrm " + dest_dirname)
 	for dirname in list_of_dirnames:
-		src_rp = rpath.RPath(Globals.local_connection, dirname)
+		src_rp = RPath(Globals.local_connection, dirname)
 		reset_hardlink_dicts()
 		_reset_connections(src_rp, dest_rp)
 
