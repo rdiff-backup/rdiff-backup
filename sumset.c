@@ -46,8 +46,8 @@
 void
 hs_free_sumset(hs_signature_t * psums)
 {
-        if (psums->block_sums)
-                free(psums->block_sums);
+        if (psums->block_sigs)
+                free(psums->block_sigs);
 
         assert(psums->tag_table);
         free(psums->tag_table);
@@ -78,11 +78,11 @@ hs_sumset_dump(hs_signature_t const *sums)
                 sums->remainder);
 
         for (i = 0; i < sums->count; i++) {
-                hs_hexify(strong_hex, sums->block_sums[i].strong_sum,
+                hs_hexify(strong_hex, sums->block_sigs[i].strong_sum,
                           sums->strong_sum_len);
                 hs_log(HS_LOG_INFO,
                         "sum %6d: weak=%08x, strong=%s",
-                        i, sums->block_sums[i].weak_sum, strong_hex);
+                        i, sums->block_sigs[i].weak_sum, strong_hex);
         }
 }
 

@@ -44,7 +44,7 @@ struct hs_signature {
     int             remainder;	/* flength % block_length */
     int             block_len;	/* block_length */
     int             strong_sum_len;
-    hs_block_sig_t  *block_sums; /* points to info for each chunk */
+    hs_block_sig_t  *block_sigs; /* points to info for each chunk */
     int             *tag_table;
     hs_target_t     *targets;
 };

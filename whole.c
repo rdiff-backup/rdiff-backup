@@ -2,6 +2,7 @@
  *
  * libhsync -- the library for network deltas
  * $Id$
+ *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
@@ -37,6 +38,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 #include <errno.h>
 
@@ -44,6 +46,7 @@
 #include "fileutil.h"
 #include "hsync.h"
 #include "hsyncfile.h"
+#include "sumset.h"
 #include "job.h"
 #include "buf.h"
 #include "whole.h"

@@ -42,6 +42,7 @@
 #include "emit.h"
 #include "stream.h"
 #include "util.h"
+#include "sumset.h"
 #include "job.h"
 
 

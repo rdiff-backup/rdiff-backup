@@ -28,10 +28,10 @@
 
 #include <config.h>
 
-
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "hsync.h"
 #include "util.h"
@@ -39,6 +39,7 @@
 #include "protocol.h"
 #include "netint.h"
 #include "command.h"
+#include "sumset.h"
 #include "prototab.h"
 #include "stream.h"
 #include "job.h"

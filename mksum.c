@@ -39,6 +39,7 @@
 #include "hsync.h"
 #include "stream.h"
 #include "util.h"
+#include "sumset.h"
 #include "job.h"
 #include "protocol.h"
 #include "netint.h"
