@@ -112,7 +112,7 @@ ssize_t
 hs_filebuf_read(void *private, char *buf, size_t len)
 {
      struct file_buf *fbuf = (struct file_buf *) private;
-     size_t n;
+     ssize_t n;
 
      assert(fbuf->dogtag == filebuf_tag);
      assert(fbuf->fd != -1);
@@ -125,10 +125,8 @@ hs_filebuf_read(void *private, char *buf, size_t len)
 
      if (n < 0) {
 	  _hs_error("error reading fd%d: %s", fbuf->fd, strerror(errno));
-     } else if (n == 0) {
-	  _hs_trace("eof on fd%d during read", fbuf->fd);
      }
-
+     
      return n;
 }
 
