@@ -1,3 +1,14 @@
+New in v0.7.0 (2002/03/21)
+--------------------------
+
+Added hardlink support.  This is now the default, but can be turned
+off with --no-hardlinks.
+
+Clarified a bit of the manual.
+
+May have fixed a bug with remote handling of device files.
+
+
 New in v0.6.0 (2002/03/14)
 --------------------------
 
