@@ -1,6 +1,10 @@
 New in v0.10.2 (2003/01/19)
 ---------------------------
 
+If get a socket error from trying to create a socket whose name is too
+long, just skip file instead of exiting with error (original bug
+report by Ivo De Decker).
+
 
 
 New in v0.10.1 (2002/09/16)
