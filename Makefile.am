@@ -130,7 +130,8 @@ CLEANFILES = tmp-test-*.d/* tmp-try-*.d/*
 prototab.c prototab.h: $(srcdir)/mkprototab.pl
 	perl $(srcdir)/mkprototab.pl prototab.c prototab.h
 
-EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) $(extra_docs) $(man_MANS)
+EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) $(extra_docs) $(man_MANS) \
+	librsync.spec
 
 include_HEADERS = rsync.h
 
