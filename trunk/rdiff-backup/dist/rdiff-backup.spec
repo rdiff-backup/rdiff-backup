@@ -1,3 +1,4 @@
+Version: $version
 Summary: Convenient and transparent local/remote incremental mirror/backup
 Name: rdiff-backup
 Release: 1
@@ -25,19 +26,17 @@ differences from the previous backup will be transmitted.
 %setup
 
 %build
-./setup.py build
+python2 setup.py build
 
 %install
-./setup.py install --prefix=$RPM_BUILD_ROOT/usr
+python2 setup.py install --prefix=$RPM_BUILD_ROOT/usr
 %clean
 
 %files
 %defattr(-,root,root)
-
-%doc CHANGELOG COPYING README FAQ.html
-/usr/lib/python2.2/site-packages/rdiff_backup
 /usr/bin/rdiff-backup
-/usr/share/man/man1/rdiff-backup.1.gz
+/usr/share/doc/rdiff-backup-%{version}
+/usr/lib
 
 
 %changelog

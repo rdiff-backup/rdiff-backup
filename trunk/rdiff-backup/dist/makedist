@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, re, shutil, time
+import os, re, shutil, time, sys
 
 SourceDir = "src"
 DistDir = "dist"
@@ -8,14 +8,7 @@ DistDir = "dist"
 # Various details about the files must also be specified by the rpm
 # spec template.
 spec_template = "dist/rdiff-backup.spec"
-redhat_spec_template = "dist/rdiff-backup.rh7x.spec"
-
-def GetVersion():
-	"""Return version string by reading in ./rdiff-backup"""
-	fp = open("rdiff-backup", "r")
-	match = re.search("Version (.*?) ", fp.read())
-	fp.close()
-	return match.group(1)
+#redhat_spec_template = "dist/rdiff-backup.rh7x.spec"
 
 def CopyMan(destination, version):
 	"""Create updated man page at the specified location"""
@@ -65,64 +58,77 @@ def MakeFAQ():
 	html_fp.write("\n</body></html>")
 	html_fp.close()
 
-def MakeTar(version):
+def VersionedCopy(source, dest):
+	"""Copy source to dest, substituting $version with version"""
+	fin = open(source, "rb")
+	inbuf = fin.read()
+	assert not fin.close()
+
+	outbuf = re.sub("\$version", Version, inbuf, 1)
+	if outbuf == inbuf: assert 0, "No $version string replaced"
+	assert not re.search("\$version", outbuf), \
+		   "Two $version strings found in the same file %s" % (source,)
+
+	fout = open(dest, "wb")
+	fout.write(outbuf)
+	assert not fout.close()
+
+def MakeTar():
 	"""Create rdiff-backup tar file"""
-	tardir = "rdiff-backup-%s" % version
-	tarfile = "rdiff-backup-%s.tar.gz" % version
+	tardir = "rdiff-backup-%s" % Version
+	tarfile = "rdiff-backup-%s.tar.gz" % Version
 	try:
 		os.lstat(tardir)
 		os.system("rm -rf " + tardir)
 	except OSError: pass
 	os.mkdir(tardir)
-	for filename in ["rdiff-backup", "CHANGELOG", "COPYING",
-					 "README", "FAQ.html", SourceDir + "/cmodule.c",
-					 DistDir + "/setup.py"]:
+	for filename in ["CHANGELOG", "COPYING", "README", "FAQ.html",
+					 SourceDir + "/cmodule.c", DistDir + "/setup.py"]:
 		assert not os.system("cp %s %s" % (filename, tardir)), filename
 
 	os.mkdir(tardir+"/rdiff_backup")
 	for filename in ["connection.py",	"destructive_stepping.py",
-					 "FilenameMapping.py", "Globals.py", "Hardlink.py",
+					 "FilenameMapping.py", "Hardlink.py",
 					 "highlevel.py", "increment.py", "__init__.py",
 					 "iterfile.py", "lazy.py", "log.py", "Main.py",
-					 "manage.py", "MiscStats.py", "Rdiff.py", "restore.py",
-					 "rlist.py", "robust.py", "rorpiter.py", "rpath.py",
-					 "selection.py", "SetConnections.py", "static.py",
+					 "manage.py", "MiscStats.py", "Rdiff.py",
+					 "restore.py", "rlist.py", "robust.py",
+					 "rorpiter.py", "rpath.py", "selection.py",
+					 "SetConnections.py", "static.py",
 					 "statistics.py", "Time.py"]:
 		assert not os.system("cp %s/%s %s/rdiff_backup" %
 							 (SourceDir, filename, tardir)), filename
+
+	VersionedCopy("%s/Globals.py" % (SourceDir,),
+				  "%s/rdiff_backup/Globals.py" % (tardir,))
+	VersionedCopy("rdiff-backup", "%s/rdiff-backup" % (tardir,))
+
 	os.chmod(os.path.join(tardir, "setup.py"), 0755)
 	os.chmod(os.path.join(tardir, "rdiff-backup"), 0755)
-	CopyMan(os.path.join(tardir, "rdiff-backup.1"), version)
+	CopyMan(os.path.join(tardir, "rdiff-backup.1"), Version)
 	os.system("tar -cvzf %s %s" % (tarfile, tardir))
 	shutil.rmtree(tardir)
 	return tarfile
 
-def MakeSpecFile(version):
+def MakeSpecFile():
 	"""Create spec file using spec template"""
-	def helper(spec_template, specfile):
-		"""Added now that there are special redhat rpms"""
-		outfp = open(specfile, "w")
-		outfp.write("Version: %s\n" % version)
-		infp = open(spec_template, "r")
-		outfp.write(infp.read())
-		infp.close()
-		outfp.close()
-
-	specfile = "rdiff-backup-%s-1.spec" % version
-	redhat_specfile = "rdiff-backup-%s-1.rh7x.spec" % version
-	helper(spec_template, specfile)
-	helper(redhat_spec_template, redhat_specfile)
-	return (specfile, redhat_specfile)
+	specfile = "rdiff-backup-%s-1.spec" % Version
+	VersionedCopy(spec_template, specfile)
+	return specfile
 
 def Main():
-	version = GetVersion()
 	print "Making FAQ"
 	MakeFAQ()
-	print "Processing version " + version
-	tarfile = MakeTar(version)
+	print "Processing version " + Version
+	tarfile = MakeTar()
 	print "Made tar file " + tarfile
-	specfiles = MakeSpecFile(version)
-	print "Made specfiles %s and %s" % specfiles
+	specfile = MakeSpecFile()
+	print "Made specfile ", specfile
 
-if __name__ == "__main__": Main()
+if __name__ == "__main__" and not globals().has_key('__no_execute__'):
+	if len(sys.argv) != 2:
+		print "Syntax: makedist [version_number]"
+		sys.exit(1)
+	Version = sys.argv[1]
+	Main()
 
