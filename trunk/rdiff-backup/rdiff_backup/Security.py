@@ -101,7 +101,8 @@ def set_allowed_requests(sec_level):
 						"Log.open_logfile_allconn",
 						"Log.close_logfile_allconn",
 						"SetConnections.add_redirected_conn",
-						"RedirectedRun"]
+						"RedirectedRun",
+						"sys.stdout.write"]
 	if sec_level == "minimal": pass
 	elif sec_level == "read-only" or sec_level == "update-only":
 		allowed_requests.extend(["C.make_file_dict",
