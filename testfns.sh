@@ -28,7 +28,9 @@ then
     srcdir=`dirname $0`
 fi
 
-[ -d $srcdir/$test_name ] && cd $srcdir/$test_name
+testdir=$srcdir/$test_name
+[ -d $testdir ] || mkdir $testdir
+cd $testdir
 
 function run_test {
     $* || (echo $test_name: failed: "$*" >&2; return 2)
