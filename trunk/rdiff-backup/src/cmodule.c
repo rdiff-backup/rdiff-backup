@@ -46,7 +46,7 @@ static PyObject *c_make_file_dict(self, args)
 {
   PyObject *size, *inode, *mtime, *atime, *devloc, *return_val;
   char *filename, filetype[5];
-  struct stat sbuf;
+  STRUCT_STAT sbuf;
   long int mode, perms;
   int res;
 
