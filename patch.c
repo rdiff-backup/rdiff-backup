@@ -46,10 +46,6 @@
 
 
 
-const int HS_PATCH_TAG = 201210;
-
-
-static hs_result hs_patch_s_complete(hs_job_t *);
 static hs_result hs_patch_s_cmdbyte(hs_job_t *);
 static hs_result hs_patch_s_params(hs_job_t *);
 static hs_result hs_patch_s_run(hs_job_t *);
@@ -64,23 +60,24 @@ static hs_result hs_patch_s_literal(hs_job_t *);
  */
 static hs_result hs_patch_s_cmdbyte(hs_job_t *job)
 {
-        hs_result result;
+    hs_result result;
         
-        if ((result = hs_suck_n8(job->stream, &job->op)) != HS_DONE)
-                return result;
+    if ((result = hs_suck_n8(job->stream, &job->op)) != HS_DONE)
+        return result;
 
-        assert(job->op >= 0 && job->op <= 0xff);
-        job->cmd = &hs_prototab[job->op];
+    assert(job->op >= 0 && job->op <= 0xff);
+    job->cmd = &hs_prototab[job->op];
         
-        hs_trace("got command byte 0x%02x (%s)", job->op,
-                  hs_op_kind_name(job->cmd->kind));
+    hs_trace("got command byte 0x%02x (%s), len_1=%d", job->op,
+             hs_op_kind_name(job->cmd->kind),
+             job->cmd->len_1);
 
-        if (job->cmd->len_1)
-                job->statefn = hs_patch_s_params;
-        else
-                job->statefn = hs_patch_s_run;
+    if (job->cmd->len_1)
+        job->statefn = hs_patch_s_params;
+    else
+        job->statefn = hs_patch_s_run;
 
-        return HS_RUNNING;
+    return HS_RUNNING;
 }
 
 
@@ -129,8 +126,7 @@ static hs_result hs_patch_s_run(hs_job_t *job)
         case HS_KIND_LITERAL:
                 job->statefn = hs_patch_s_literal;
                 return HS_RUNNING;
-        case HS_KIND_EOF:
-                job->statefn = hs_patch_s_complete;
+        case HS_KIND_END:
                 return HS_DONE;
                 /* so we exit here; trying to continue causes an error */
         default:
@@ -157,15 +153,6 @@ static hs_result hs_patch_s_literal(hs_job_t *job)
 
         job->statefn = hs_patch_s_cmdbyte;
         return HS_RUNNING;
-}
-
-
-/**
- * Called after encountering EOF on the patch.
- */
-static hs_result hs_patch_s_complete(hs_job_t *UNUSED(job))
-{
-        hs_fatal("the patch has already finished");
 }
 
 
