@@ -191,7 +191,7 @@ static void
 rs_mdfour_choose_packer(void)
 {
     const uint32_t foo = 0x01020304;
-    char *p = (char *)&foo;
+    const char *p = (const char *)&foo;
     
     if (sizeof(uint32_t) != 4)
         rs_fatal("internal error: uint32_t is not really 32 bits!");
