@@ -32,24 +32,22 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <assert.h>
 
 
-char const *usage =
-"Usage: genmaptest SERIES CMDS EXPECT INPUT\n";
+static char const *usage =
+"Usage: genmaptest SERIES NUMTESTS CMDS EXPECT INPUT\n";
 
 
-int
-open_all(char **argv, char **buf, size_t *size,
+static int
+open_all(char const *cmds_name,
+	 char const *expect_name,
+	 char const *input_name,
+	 char **buf, size_t *size,
 	 FILE **expect, FILE **cmds)
 {
-    char const *cmds_name, *expect_name, *input_name;
     struct stat		 stat_buf;
     FILE		*in;
-
-    /* Open all files. */
-    cmds_name = argv[2];
-    expect_name = argv[3];
-    input_name = argv[4];
 
     if (!(in = fopen(input_name, "rb"))) {
 	perror(input_name);
@@ -85,24 +83,108 @@ open_all(char **argv, char **buf, size_t *size,
 }
 
 
+static void
+emit(char const *buf, size_t len, off_t off, size_t size,
+     FILE *expect, FILE *cmds)
+{
+    assert(off >= 0);
+    assert((size_t) off < len);
+    
+    fprintf(cmds, "%ld,%ld ", (long) off, (long) size);
+
+    /* But we truncate at the end. */
+    if (off + size > len) {
+	size = len - off;
+    }
+    
+    fwrite(buf+off, 1, size, expect);
+}
+
+
+/* Generate random maps within the file. */
+static void
+gen_map(int ntests, char const *buf, size_t size,
+	FILE *expect, FILE *cmds)
+{
+    int i;
+    off_t		off;
+    size_t		len, remain;
+
+    for (i = 0; i < ntests; i++) {
+	off = rand() % size;
+	remain = size - off;
+	len = 1 + (rand() % remain);
+	emit(buf, size, off, len, expect, cmds);
+    }				     
+}
+
+
+/* Generate random maps possibly overlapping the end of the file. */
+static void
+gen_mapover(int ntests, char const *buf, size_t size,
+	    FILE *expect, FILE *cmds)
+{
+    int i;
+    off_t		off;
+    size_t		len, remain;
+
+    for (i = 0; i < ntests; i++) {
+	off = rand() % size;
+	remain = size - off;
+	len = rand() % size;
+	emit(buf, size, off, len, expect, cmds);
+    }
+}
+
+
+static void
+gen_forward(int ntests, char const *buf, size_t size,
+	    FILE *expect, FILE *cmds)
+{
+    int i;
+    off_t		off;
+    size_t		len;
+
+    i = 0; off = 0;
+    while ((size_t) off < size  &&  i < ntests) {
+	len = rand() % 8192;
+	emit(buf, size, off, len, expect, cmds);
+
+	off += rand() % len;
+	i++;
+    }
+}
+
+
 int
 main(int argc, char **argv) {
     char const		*series;
     FILE		*expect, *cmds;
     char		*buf;
     size_t		size;
+    int			numtests;
     
-    if (argc != 5) {
+    if (argc != 6) {
 	fputs(usage, stderr);
 	return 1;
     }
 
-    if (open_all(argv, &buf, &size, &expect, &cmds))
+    if (open_all(argv[3], argv[4],argv[5], &buf, &size, &expect, &cmds))
 	return 1;
     
     series = argv[1];
+    numtests = atoi(argv[2]);
 
-    fwrite(buf, 1, size, expect);
+    if (!strcmp(series, "map")) {
+	gen_map(numtests, buf, size, expect, cmds);
+    } else if (!strcmp(series, "mapover")) {
+	gen_mapover(numtests, buf, size, expect, cmds);
+    } else if (!strcmp(series, "forward")) {
+	gen_forward(numtests, buf, size, expect, cmds);
+    } else {
+	fprintf(stderr, "unknown series %s\n", series);
+	return 1;
+    }
 
     return 0;
 }
