@@ -60,9 +60,8 @@ AC_CHECK_FUNC(setreuid, [], [
 AC_ARG_WITH(included-popt,
         [  --with-included-popt    use bundled popt library, not from system])
 
-dnl Check for declarations
+dnl Checks for declarations
 AC_MSG_CHECKING(for sockaddr.sin_len)
-AC_CHECK_HEADERS(config.h unistd.h alloca.h libintl.h mcheck.h)
 AC_EGREP_HEADER(sin_len, sys/socket.h, 
 	[ AC_DEFINE(HAVE_SOCK_SIN_LEN)
           AC_MSG_RESULT(yes) ],
@@ -125,6 +124,7 @@ AC_CHECK_SIZEOF(off_t)
 
 dnl Checks for header files.
 AC_HEADER_STDC
+AC_CHECK_HEADERS(config.h unistd.h alloca.h libintl.h mcheck.h)
 
 # GNU library versioning: This is NOT the libhsync release number.
 # Rather, it is a CURRENT:REVISION:AGE tuple describing binary
