@@ -28,8 +28,6 @@
  * read in.
  */
 
-typedef struct rs_rollsum rs_rollsum_t;
-
 
 /**
  * \brief Description of the match described by a signature.
