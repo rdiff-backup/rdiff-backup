@@ -5,12 +5,16 @@ Getting rdiff-backup to run:
 ----------------------------
 
 If you want to run a version of rdiff-backup checked out of CVS into
-your $RDB_ROOT directory, change to $RDB_ROOT/rdiff_backup and run the
-./compilec.py file.  With any luck, _librsync.so and C.so libraries
-will appear in that directory.  Then run rdiff-backup, making sure
-that all the files are in your PYTHONPATH:
+your $RDB_CVS directory, change to $RDB_CVS/rdiff_backup and run the
+./compilec.py file:
 
-PYTHONPATH=$RDB_ROOT $RDB_ROOT/rdiff-backup
+    cd $RDB_CVS/rdiff_backup; python compilec.py
+
+With any luck, _librsync.so and C.so libraries will appear in that
+directory.  Then run rdiff-backup, making sure that all the files are
+in your PYTHONPATH:
+
+    PYTHONPATH=$RDB_CVS $RDB_CVS/rdiff-backup <arguments>
 
 
 Running the unit tests:
@@ -21,16 +25,25 @@ testfiles.tar.gz tarball.  It is available at
 
 http://rdiff-backup.stanford.edu/testfiles.tar.gz
 
-and untar it as root in the testing directory.  Root is required
-because the tarball contains device files, files with various uid/gid,
-etc.  If you don't have root, it's ok, all the tests except for
-roottest.py may still work.
+To untar it, root is required because the tarball contains device
+files, files with various uid/gid, etc.  If you don't have root, it's
+ok, all the tests except for roottest.py may still work.
 
-cd testing; tar -xvzf testfiles.tar.gz
+So, three steps:
 
-Then run the various *test.py files, for instance:
+1) Make sure the the C modules are compiled as explained above:
 
-cd testing; python lazytest.py
+    cd $RDB_CVS/rdiff_backup; python compilec.py
 
-If python restoretest.py doesn't work, try running ./makerestoretest3.
+2) Untar the testfiles tarball, as root if you have it:
+
+    cd $RDB_CVS/testing; tar -xvzf testfiles.tar.gz
+
+3) In the testing directory, run each of the *test.py files as
+   desired.  For instance,
+
+    cd $RDB_CVS/testing; python rpathtest.py
+
+   If python restoretest.py doesn't work, try running
+   ./makerestoretest3
 
