@@ -1,10 +1,12 @@
-Changes in 0.9.4:
+Changes in 0.9.4: (library 1.1.0)
 
  * Fixes for rsync.h from Thorsten Schuett <thorsten.schuett@zib.de>
 
  * RLL encoding fix from Shirish Hemant Phatak <shirish@nustorage.com>
 
  * RPM spec file by Peter J. Braam <braam@clusterfs.com>
+
+ * No (intentional) changes to binary API.
 
 Changes in 0.9.3:
 

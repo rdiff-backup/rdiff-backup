@@ -1,6 +1,6 @@
 Summary:  	Rsync libraries
 Name:     	librsync
-Version:  	0.9.4pre
+Version:  	0.9.4
 Release:  	1
 Copyright:	LGPL
 Group:    	System Environment/Libraries
