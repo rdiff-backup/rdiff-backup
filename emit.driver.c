@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "bsd" -*-
+/*=                                     -*- c-file-style: "java" -*-
  *
  * libhsync -- library for network deltas
  * $Id$
@@ -110,10 +110,16 @@ int main(int argc, char *argv[])
     hs_stream_t stream;
     FILE *in_file, *out_file;
 
+    if (!strcmp(argv[1], "-v")) {
+	hs_trace_set_level(LOG_DEBUG);
+	
+	argc--; argv++;
+    }
+
     hs_stream_init(&stream);
 
     if (argc != 3) {
-	fprintf(stderr, "Usage: gendelta.driver LITERALS OUTFILE\n"
+	fprintf(stderr, "Usage: emit.driver [-v] LITERALS OUTFILE\n"
 		"Generates a binary delta from commands on stdin and\n"
 		"literal data.\n");
 	return 1;

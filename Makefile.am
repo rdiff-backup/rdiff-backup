@@ -61,7 +61,7 @@ libhsync_la_SOURCES =				\
 
 TESTS_ENVIRONMENT = bash $(srcdir)/driver.sh
 
-test_scripts = gendelta.test isprefix.test mdfour.test stream.test	\
+test_scripts = emitcmds.test isprefix.test mdfour.test stream.test	\
 	tube.test
 
 man_MANS = man/libhsync.3 man/rdiff.1
@@ -108,7 +108,7 @@ bin_PROGRAMS = rdiff
 rdiff_SOURCES = rdiff.c				\
 	isprefix.c isprefix.h
 
-check_PROGRAMS = gendelta.driver stream.driver tube.driver	\
+check_PROGRAMS = emit.driver stream.driver tube.driver	\
 	isprefix.driver
 
 isprefix_driver_SOURCES = isprefix.driver.c	\
