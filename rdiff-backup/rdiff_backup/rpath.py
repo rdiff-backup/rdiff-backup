@@ -157,6 +157,8 @@ def copy_attribs(rpin, rpout, acls = 1):
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if Globals.change_permissions: rpout.chmod(rpin.getperms())
 	if Globals.write_acls and acls: rpout.write_acl(rpin.get_acl())
+	if Globals.write_resource_forks and rpin.isreg() and rpout.isreg():
+		rpout.write_resource_fork(rpin.get_resource_fork())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
 
 def cmp_attribs(rp1, rp2):
@@ -271,6 +273,8 @@ class RORPath:
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'ea' and not Globals.read_eas: pass
 			elif key == 'acl' and not Globals.read_acls: pass
+			elif key == 'resourcefork' and not Globals.read_resource_forks:
+				pass
 			elif (key == 'inode' and
 				  (not self.isreg() or self.getnumlinks() == 1 or
 				   not Globals.compare_inode or
@@ -303,10 +307,10 @@ class RORPath:
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'inode': pass
-			elif (key == 'ea' and
-				  not (Globals.read_eas and Globals.write_eas)): pass
-			elif (key == 'acl' and
-				  not (Globals.read_acls and Globals.write_acls)): pass
+			elif key == 'ea' and not Globals.write_eas: pass
+			elif key == 'acl' and not Globals.write_acls: pass
+			elif key == 'resourcefork' and not Globals.write_resource_forks:
+				pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return 0
 		return 1
@@ -547,6 +551,18 @@ class RORPath:
 		"""Return extended attributes object"""
 		return self.data['ea']
 
+	def has_resource_fork(self):
+		"""True if rpath has a resourcefork parameter"""
+		return self.data.has_key('resourcefork')
+
+	def get_resource_fork(self):
+		"""Return the resource fork in binary data"""
+		return self.data['resourcefork']
+
+	def set_resource_fork(self, rfork):
+		"""Record resource fork in dictionary.  Does not write"""
+		self.data['resourcefork'] = rfork
+
 
 class RPath(RORPath):
 	"""Remote Path class - wrapper around a possibly non-local pathname
@@ -608,6 +624,8 @@ class RPath(RORPath):
 		self.data = self.conn.C.make_file_dict(self.path)
 		if Globals.read_eas and self.lstat(): self.get_ea()
 		if Globals.read_acls and self.lstat(): self.get_acl()
+		if Globals.read_resource_forks and self.isreg():
+			self.get_resource_fork()
 
 	def make_file_dict_old(self):
 		"""Create the data dictionary"""
@@ -997,6 +1015,21 @@ class RPath(RORPath):
 		"""Change extended attributes of rp"""
 		ea.write_to_rp(self)
 		self.data['ea'] = ea
+
+	def get_resource_fork(self):
+		"""Return resource fork data, setting if necessary"""
+		assert self.isreg()
+		try: rfork = self.data['resourcefork']
+		except KeyError:
+			rfork = self.append('rsrc').get_data()
+			self.data['resourcefork'] = rfork
+		return rfork
+
+	def write_resource_fork(self, rfork_data):
+		"""Write new resource fork to self"""
+		fp = self.append('rsrc').open('wb')
+		fp.write(rfork_data)
+		assert not fp.close()
 
 
 class RPathFileHook:

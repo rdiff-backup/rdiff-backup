@@ -55,7 +55,7 @@ field names and values.
 """
 
 from __future__ import generators
-import re, gzip, os
+import re, gzip, os, binascii
 import log, Globals, rpath, Time, robust, increment, static
 
 class ParsingError(Exception):
@@ -74,6 +74,12 @@ def RORP2Record(rorpath):
 	if type == "reg":
 		str_list.append("  Size %s\n" % rorpath.getsize())
 
+		# If there is a resource fork, save it.
+		if rorpath.has_resource_fork():
+			if not rorpath.get_resource_fork(): rf = "None"
+			else: rf = binascii.hexlify(rorpath.get_resource_fork())
+			str_list.append("  ResourceFork %s\n" % (rf,))
+
 		# If file is hardlinked, add that information
 		if Globals.preserve_hardlinks:
 			numlinks = rorpath.getnumlinks()
@@ -81,6 +87,7 @@ def RORP2Record(rorpath):
 				str_list.append("  NumHardLinks %s\n" % numlinks)
 				str_list.append("  Inode %s\n" % rorpath.getinode())
 				str_list.append("  DeviceLoc %s\n" % rorpath.getdevloc())
+
 	elif type == "None": return "".join(str_list)
 	elif type == "dir" or type == "sock" or type == "fifo": pass
 	elif type == "sym":
@@ -122,6 +129,9 @@ def Record2RORP(record_string):
 			if data == "None": data_dict['type'] = None
 			else: data_dict['type'] = data
 		elif field == "Size": data_dict['size'] = long(data)
+		elif field == "ResourceFork":
+			if data == "None": data_dict['resourcefork'] = ""
+			else: data_dict['resourcefork'] = binascii.unhexlify(data)
 		elif field == "NumHardLinks": data_dict['nlink'] = int(data)
 		elif field == "Inode": data_dict['inode'] = long(data)
 		elif field == "DeviceLoc": data_dict['devloc'] = long(data)

@@ -1,4 +1,4 @@
-New in v0.13.0 (2003/07/02)
+New in v0.13.0 (2003/07/22)
 ---------------------------
 
 To prevent the buildup of confusing and error-prone options, the
@@ -16,6 +16,9 @@ discussion on EA and ACL support.
 Support for access control lists (ACLs) was also added.  An ACL
 capable file system and the python package pylibacl (which exports the
 posix1e module) are required.
+
+Thanks to patches by Daniel Hazelbaker, rdiff-backup now reads and
+writes Mac OS X style resource forks!
 
 Added --list-increment-sizes switch, which tells you how much space
 the various backup files take up.  (Suggested by Andrew Bressen)

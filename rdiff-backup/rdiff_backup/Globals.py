@@ -71,15 +71,23 @@ read_eas = None
 
 # If true, preserve the extended attributes on the mirror directory
 # when backing up, or write them to the restore directory.  This
-# implies read_eas.
+# requires read_eas.
 write_eas = None
 
 # If true, save access control lists when backup up.
 read_acls = None
 
 # If true, write access control list information to the destination
-# when backing up or restoring.  Implies read_acls.
+# when backing up or restoring.  Requires read_acls.
 write_acls = None
+
+# If true, look for and save resource fork information when backing
+# up.
+read_resource_forks = None
+
+# If true, write resource fork information to destination when backing
+# up or restoring.  Requires read_resource_forks.
+write_resource_forks = None
 
 # This will be set as soon as the LocalConnection class loads
 local_connection = None
