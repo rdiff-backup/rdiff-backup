@@ -339,7 +339,7 @@ class ITRBranch:
 	def on_error(self, exc, *args):
 		"""This is run on any exception in start/end-process"""
 		self.caught_exception = 1
-		if args and isinstance(args[0], tuple):
+		if args and args[0] and isinstance(args[0], tuple):
 			filename = os.path.join(*args[0])
 		elif self.index: filename = os.path.join(*self.index)
 		else: filename = "."
