@@ -46,7 +46,13 @@ libtool
 ltconfig
 ltmain.sh
 man_librsync.html
+man_librsync_3.html
+man_librsync_3.ps
+man_librsync_3.txt
 man_rdiff.html
+man_rdiff_1.html
+man_rdiff_1.ps
+man_rdiff_1.txt
 missing
 mkinstalldirs
 prototab.c
