@@ -43,7 +43,7 @@ class PathSetter(unittest.TestCase):
 
 	def reset_schema(self):
 		self.rb_schema = SourceDir + \
-			 "/rdiff-backup -v5 --remote-schema './chdir-wrapper %s' "
+			 "/rdiff-backup -v3 --remote-schema './chdir-wrapper %s' "
 
 	def refresh(self, *rp_list):
 		"""Reread data for the given rps"""
