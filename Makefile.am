@@ -80,6 +80,7 @@ noinst_SCRIPTS = \
 	$(try_scripts)
 
 test_data= \
+	test-cmds.in \
 in-tricky/in-01					\
 in-tricky/in-02					\
 in-tricky/in-03					\

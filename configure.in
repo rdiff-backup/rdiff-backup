@@ -97,5 +97,5 @@ AC_SUBST(CC_SHOBJ_FLAG)
 AC_SUBST(CCMALLOC_LIB)
 AC_SUBST(net_libs)
 
-AC_OUTPUT([./Makefile],
-    [chmod +x driver.sh])
+AC_OUTPUT([./Makefile])
+# [chmod +x driver.sh]
