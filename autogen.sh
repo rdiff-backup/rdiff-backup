@@ -30,7 +30,7 @@ ORIGDIR=`pwd`
 cd $srcdir
 PROJECT=librsync
 TEST_TYPE=-f
-FILE=rsync.h
+FILE=librsync.h
 
 DIE=0
 
