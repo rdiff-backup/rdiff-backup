@@ -227,4 +227,5 @@ _hs_write_netvar(hs_write_fn_t write_fn, void *write_priv,
 	return _hs_write_netint(write_fn, write_priv, value);
     else
 	assert(0);
+    return 0;			/* as if! */
 }

@@ -31,6 +31,10 @@
 #include <stdint.h>
 #endif
 
+#include <sys/types.h>
+#include <limits.h>
+#include <inttypes.h>
+
 #include <stdarg.h>
 #include <stdlib.h>
 

@@ -36,6 +36,7 @@
 
 
 #include <unistd.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <sys/file.h>
 #include <string.h>

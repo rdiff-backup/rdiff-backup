@@ -55,6 +55,7 @@ hs_format_stats(hs_stats_t const * stats,
     if (!alg)
         alg = "none";
     
+#ifdef HAVE_SNPRINTF
     snprintf(buf, size,
 	     "%s/%s literal[%d cmds, %d bytes], "
 	     "signature[%d cmds, %d bytes], "
@@ -64,6 +65,18 @@ hs_format_stats(hs_stats_t const * stats,
 	     stats->sig_cmds, stats->sig_bytes,
 	     stats->copy_cmds, stats->copy_bytes,
 	     stats->false_matches);
+#else
+
+    sprintf(buf,
+	     "%s/%s literal[%d cmds, %d bytes], "
+	     "signature[%d cmds, %d bytes], "
+	     "copy[%d cmds, %d bytes, %d false]",
+	     op, alg,
+	     stats->lit_cmds, stats->lit_bytes,
+	     stats->sig_cmds, stats->sig_bytes,
+	     stats->copy_cmds, stats->copy_bytes,
+	     stats->false_matches);
+#endif
 
     return buf;
 }

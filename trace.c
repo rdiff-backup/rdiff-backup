@@ -65,14 +65,27 @@ _hs_log_va(int level, char const *fn, char const *fmt, va_list va)
         char            buf[1000];
         char            full_buf[1000];
 
+	/* TODO: Use our own vsnprintf if necessary.  Sigh. */
+#ifdef have_vsnprintf
         vsnprintf(buf, sizeof buf - 1, fmt, va);
+#else
+	vsprintf(buf, fmt, va);
+#endif
 
 #ifdef __GNUC__
+#ifdef HAVE_SNPRINTF
         snprintf(full_buf, sizeof full_buf - 1,
                   "%s: %s: %s\n",
                   program_invocation_short_name,
                   fn,
                   buf);
+#else
+	/* TODO: test explicitly for program_invocation_short_name */
+	sprintf(full_buf, "%s: %s: %s\n",
+		"(libhsync)", 
+		fn,
+		buf);
+#endif /* HAVE_SPRINTF */
 #else
         snprintf(full_buf, sizeof full_buf - 1,
                   "%s: %s\n",

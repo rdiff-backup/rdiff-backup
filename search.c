@@ -69,7 +69,7 @@ _hs_build_hash_table(hs_sumset_t * sums)
         /* FIXME: if have comparison_fn_t */
 	qsort(sums->targets, sums->count,
 	      sizeof(sums->targets[0]),
-              (comparison_fn_t) _hs_compare_targets);
+              (int (*)(const void *, const void *)) _hs_compare_targets);
     }
 
     for (i = 0; i < TABLESIZE; i++)

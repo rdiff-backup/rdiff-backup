@@ -76,7 +76,11 @@ bind_any_socket(int *psock, int *pport)
 {
     struct sockaddr_in addr;
     int             sock;
+#ifdef HAVE_SOCKLEN_T
     socklen_t           len;
+#else
+    size_t		len;
+#endif
 
     /* Create a socket */
     sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -125,7 +129,11 @@ static int
 accept_connection(int sock)
 {
     struct sockaddr_in     client;
+#ifdef HAVE_SOCKLEN_T
     socklen_t           len;
+#else
+    size_t len;
+#endif
     int                 newsock;
 
     len = sizeof client;

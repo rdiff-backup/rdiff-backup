@@ -146,7 +146,11 @@ bind_any_socket(int *psock, int *pport)
 {
     struct sockaddr_in addr;
     int             sock;
+#ifdef HAVE_SOCKLEN_T
     socklen_t           len;
+#else
+    size_t len;
+#endif
 
     /* Create a socket */
     sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -250,7 +254,7 @@ fork_run(pid_t *new_pid, int (*fn)(void))
     } else if (pid == 0) {
         exit(fn());
     } else {
-        _hs_trace("forked child %d", pid);
+        _hs_trace("forked child %d", (int) pid);
         *new_pid = pid;
         return pid;
     }

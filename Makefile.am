@@ -49,7 +49,7 @@ libhsync_la_SOURCES = \
 # it and use it rather than $SHELL, or we should rewrite it to work in
 # plain Bourne shell.
 
-TESTS_ENVIRONMENT = $(SHELL) $(srcdir)/driver.sh
+TESTS_ENVIRONMENT = bash $(srcdir)/driver.sh
 test_scripts = \
 	test-maptcp.sh \
 	test-tricky.sh \
