@@ -28,22 +28,35 @@
 #include "private.h"
 
 
-
-void _hs_queue_copy(_hs_copyq_t *copyq, size_t start, size_t len)
+/* If possible, append this copy command to the end of the previous
+   one.  If not, flush the existing command and begin a new one.  */
+int _hs_queue_copy(rs_write_fn_t write_fn, void *write_priv,
+		    _hs_copyq_t *copyq, size_t start, size_t len,
+		    hs_stats_t *stats)
 {
+     int ret;
+     
      if (copyq->len == 0) {
 	  copyq->start = start;
 	  copyq->len = len;
-     } else { 
-	  assert(copyq->start + copyq->len == start);
+	  return 0;
+     } else if (copyq->start + copyq->len == start) {
 	  copyq->len += len;
+	  return 0;
+     } else {
+	  /* Of course, COPY commands don't *have* to follow each
+	     other.  If we get two non-contiguous ones, then we flush
+	     and start again. */
+	  ret = _hs_copyq_flush(write_fn, write_priv, copyq, stats);
+	  copyq->start = start;
+	  copyq->len = len;
+	  return ret;
      }
 }
 
 
 int _hs_copyq_flush(rs_write_fn_t write_fn, void *write_priv,
-		     _hs_copyq_t *copyq,
-		    hs_stats_t *stats)
+		    _hs_copyq_t *copyq, hs_stats_t *stats)
 {
      int ret;
      
