@@ -18,7 +18,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-# This script generates everything necessary to build libhsync from
+# This script generates everything necessary to build librsync from
 # CVS.  It is based on the file of the same name in glib.  It is not
 # needed for distributed versions, because all the necessary files are
 # included in the tarball by autoconf.
@@ -28,9 +28,9 @@ test -z "$srcdir" && srcdir=.
 
 ORIGDIR=`pwd`
 cd $srcdir
-PROJECT=libhsync
+PROJECT=librsync
 TEST_TYPE=-f
-FILE=hsync.h
+FILE=rsync.h
 
 DIE=0
 

@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -33,37 +33,37 @@
 #include <stdio.h>
 
 #include "util.h"
-#include "hsync.h"
+#include "rsync.h"
 #include "trace.h"
 
 void
-hs_bzero(void *buf, size_t size)
+rs_bzero(void *buf, size_t size)
 {
     memset(buf, 0, size);
 }
 
 
 void *
-hs_alloc_struct0(size_t size, char const *name)
+rs_alloc_struct0(size_t size, char const *name)
 {
     void           *p;
 
     if (!(p = malloc(size))) {
-        hs_fatal("couldn't allocate instance of %s", name);
+        rs_fatal("couldn't allocate instance of %s", name);
     }
-    hs_bzero(p, size);
+    rs_bzero(p, size);
     return p;
 }
 
 
 
 void *
-hs_alloc(size_t size, char const *name)
+rs_alloc(size_t size, char const *name)
 {
     void           *p;
 
     if (!(p = malloc(size))) {
-        hs_fatal("couldn't allocate instance of %s", name);
+        rs_fatal("couldn't allocate instance of %s", name);
     }
 
     return p;

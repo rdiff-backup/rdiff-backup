@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -43,8 +43,7 @@
 #include <fcntl.h>
 #include <popt.h>
 
-#include "hsync.h"
-#include "hsyncfile.h"
+#include "rsync.h"
 #include "fileutil.h"
 #include "util.h"
 #include "trace.h"
@@ -64,8 +63,8 @@ static int show_stats = 0;
 const struct poptOption opts[] = {
     { "verbose",     'v', POPT_ARG_NONE, 0,             'v' },
     { "version",     'V', POPT_ARG_NONE, 0,             'V' },
-    { "input-size",  'I', POPT_ARG_INT,  &hs_inbuflen },
-    { "output-size", 'O', POPT_ARG_INT,  &hs_outbuflen },
+    { "input-size",  'I', POPT_ARG_INT,  &rs_inbuflen },
+    { "output-size", 'O', POPT_ARG_INT,  &rs_outbuflen },
     { "help",        '?', POPT_ARG_NONE, 0,             'h' },
     { "block-size",  'b', POPT_ARG_INT,  &block_len },
     { "sum-size",    'S', POPT_ARG_INT,  &strong_len },
@@ -134,12 +133,12 @@ static void rdiff_show_version(void)
            "http://rproxy.samba.org/\n"
            "Capabilities: %d bit files\n"
            "\n"
-           "libhsync comes with NO WARRANTY, to the extent permitted by law.\n"
-           "You may redistribute copies of libhsync under the terms of the GNU\n"
+           "librsync comes with NO WARRANTY, to the extent permitted by law.\n"
+           "You may redistribute copies of librsync under the terms of the GNU\n"
            "Lesser General Public License.  For more information about these\n"
            "matters, see the files named COPYING.\n",
-           hs_libhsync_version, HS_CANONICAL_HOST,
-           8 * sizeof(hs_long_t));
+           rs_librsync_version, HS_CANONICAL_HOST,
+           8 * sizeof(rs_long_t));
 }
 
 
@@ -157,10 +156,10 @@ static void rdiff_options(poptContext opcon)
             rdiff_show_version();
             exit(HS_DONE);
         case 'v':
-            if (!hs_supports_trace()) {
-                hs_error("library does not support trace");
+            if (!rs_supports_trace()) {
+                rs_error("library does not support trace");
             }
-            hs_trace_set_level(HS_LOG_DEBUG);
+            rs_trace_set_level(HS_LOG_DEBUG);
             break;
         default:
             bad_option(opcon, c);
@@ -172,26 +171,26 @@ static void rdiff_options(poptContext opcon)
 /**
  * Generate signature from remaining command line arguments.
  */
-static hs_result rdiff_sig(poptContext opcon)
+static rs_result rdiff_sig(poptContext opcon)
 {
     FILE            *basis_file, *sig_file;
     
-    basis_file = hs_file_open(poptGetArg(opcon), "rb");
-    sig_file = hs_file_open(poptGetArg(opcon), "wb");
+    basis_file = rs_file_open(poptGetArg(opcon), "rb");
+    sig_file = rs_file_open(poptGetArg(opcon), "wb");
 
     rdiff_no_more_args(opcon);
     
-    return hs_sig_file(basis_file, sig_file, block_len, strong_len);
+    return rs_sig_file(basis_file, sig_file, block_len, strong_len);
 }
 
 
-static hs_result rdiff_delta(poptContext opcon)
+static rs_result rdiff_delta(poptContext opcon)
 {
     FILE            *sig_file, *new_file, *delta_file;
     char const      *sig_name;
-    hs_result       result;
-    hs_signature_t  *sumset;
-    hs_stats_t      stats;
+    rs_result       result;
+    rs_signature_t  *sumset;
+    rs_stats_t      stats;
 
     if (!(sig_name = poptGetArg(opcon))) {
         rdiff_usage("Usage for delta: "
@@ -199,36 +198,36 @@ static hs_result rdiff_delta(poptContext opcon)
         return HS_SYNTAX_ERROR;
     }
 
-    sig_file = hs_file_open(sig_name, "rb");
-    new_file = hs_file_open(poptGetArg(opcon), "rb");
-    delta_file = hs_file_open(poptGetArg(opcon), "wb");
+    sig_file = rs_file_open(sig_name, "rb");
+    new_file = rs_file_open(poptGetArg(opcon), "rb");
+    delta_file = rs_file_open(poptGetArg(opcon), "wb");
 
     rdiff_no_more_args(opcon);
 
-    result = hs_loadsig_file(sig_file, &sumset);
+    result = rs_loadsig_file(sig_file, &sumset);
     if (result != HS_DONE)
         return result;
 
-    if ((result = hs_build_hash_table(sumset)) != HS_DONE)
+    if ((result = rs_build_hash_table(sumset)) != HS_DONE)
         return result;
 
-    result = hs_delta_file(sumset, new_file, delta_file, &stats);
+    result = rs_delta_file(sumset, new_file, delta_file, &stats);
 
     if (show_stats) 
-        hs_log_stats(&stats);
+        rs_log_stats(&stats);
 
     return result;
 }
 
 
 
-static hs_result rdiff_patch(poptContext opcon)
+static rs_result rdiff_patch(poptContext opcon)
 {
     /*  patch BASIS [DELTA [NEWFILE]] */
     FILE               *basis_file, *delta_file, *new_file;
     char const         *basis_name;
-    hs_stats_t          stats;
-    hs_result           result;
+    rs_stats_t          stats;
+    rs_result           result;
 
     if (!(basis_name = poptGetArg(opcon))) {
         rdiff_usage("Usage for patch: "
@@ -236,23 +235,23 @@ static hs_result rdiff_patch(poptContext opcon)
         return HS_SYNTAX_ERROR;
     }
 
-    basis_file = hs_file_open(basis_name, "rb");
-    delta_file = hs_file_open(poptGetArg(opcon), "rb");
-    new_file =   hs_file_open(poptGetArg(opcon), "wb");
+    basis_file = rs_file_open(basis_name, "rb");
+    delta_file = rs_file_open(poptGetArg(opcon), "rb");
+    new_file =   rs_file_open(poptGetArg(opcon), "wb");
 
     rdiff_no_more_args(opcon);
 
-    result = hs_patch_file(basis_file, delta_file, new_file, &stats);
+    result = rs_patch_file(basis_file, delta_file, new_file, &stats);
 
     if (show_stats) 
-        hs_log_stats(&stats);
+        rs_log_stats(&stats);
 
     return result;
 }
 
 
 
-static hs_result rdiff_action(poptContext opcon)
+static rs_result rdiff_action(poptContext opcon)
 {
     const char      *action;
 
@@ -274,14 +273,14 @@ static hs_result rdiff_action(poptContext opcon)
 int main(const int argc, const char *argv[])
 {
     poptContext     opcon;
-    hs_result       result;
+    rs_result       result;
 
     opcon = poptGetContext(PROGRAM, argc, argv, opts, 0);
     rdiff_options(opcon);
     result = rdiff_action(opcon);
 
     if (result != HS_DONE)
-        hs_error("failed: %s", hs_strerror(result));
+        rs_error("failed: %s", rs_strerror(result));
 
     return result;
 }

@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  * 
- * libhsync -- library for network deltas
+ * librsync -- library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>

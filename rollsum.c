@@ -1,8 +1,9 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ *
+ * librsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -21,28 +22,35 @@
  */
 
 
-#include "includes.h"
+#include "config.h"
+
+#include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "rsync.h"
+
 
 
 
 
 void
-hs_roll_reset(hs_rollsum_t * rollsum)
+rs_roll_reset(rs_rollsum_t * rollsum)
 {
-    hs_bzero(rollsum, sizeof *rollsum);
+    rs_bzero(rollsum, sizeof *rollsum);
 }
 
 
 int
-hs_stretch_sums(byte_t const *bytep, size_t full_block,
-		size_t short_block, hs_rollsum_t * rollsum)
+rs_stretch_sums(byte_t const *bytep, size_t full_block,
+		size_t short_block, rs_rollsum_t * rollsum)
 {
     /* Checksum calculations are signed */
     int8_t const     *p = (int8_t const *) bytep;
     
     if (!rollsum->havesum) {
-	rollsum->weak_sum = hs_calc_weak_sum(p, short_block);
-	hs_trace("recalculate checksum: weak=%#x", rollsum->weak_sum);
+	rollsum->weak_sum = rs_calc_weak_sum(p, short_block);
+	rs_trace("recalculate checksum: weak=%#x", rollsum->weak_sum);
 	rollsum->s1 = rollsum->weak_sum & 0xFFFF;
 	rollsum->s2 = rollsum->weak_sum >> 16;
     } else {
@@ -68,7 +76,7 @@ hs_stretch_sums(byte_t const *bytep, size_t full_block,
 
 /* One byte rolls off the checksum. */
 int
-hs_trim_sums(byte_t const *bytep, hs_rollsum_t * rollsum, size_t short_block)
+rs_trim_sums(byte_t const *bytep, rs_rollsum_t * rollsum, size_t short_block)
 {
     /* Checksum calculations are signed */
     int8_t const     *p = (int8_t const *) bytep;

@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
@@ -27,14 +27,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 
 /*
  * Decode a base64 string in-place - simple and slow algorithm
  * 
  * See RFC1521 for the specification of base64.
  */
-size_t hs_unbase64(char *s)
+size_t rs_unbase64(char *s)
 {
     char const *b64 =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -69,7 +69,7 @@ size_t hs_unbase64(char *s)
  * Encode a buffer as base64 - simple and slow algorithm.
  */
 void
-hs_base64(unsigned char const *buf, int n, char *out)
+rs_base64(unsigned char const *buf, int n, char *out)
 {
     char const *b64 =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

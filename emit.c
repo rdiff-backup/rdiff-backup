@@ -1,6 +1,6 @@
 /*=                    -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- dynamic caching and delta update in HTTP
+ * librsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "command.h"
 #include "protocol.h"
 #include "trace.h"
@@ -49,22 +49,22 @@
  * Write the magic for the start of a delta.
  */
 void
-hs_emit_delta_header(hs_job_t *job)
+rs_emit_delta_header(rs_job_t *job)
 {
-    hs_trace("emit DELTA magic");
-    hs_squirt_n4(job->stream, HS_DELTA_MAGIC);
+    rs_trace("emit DELTA magic");
+    rs_squirt_n4(job->stream, HS_DELTA_MAGIC);
 }
 
 
 
 /* Write a LITERAL command. */
 void
-hs_emit_literal_cmd(hs_job_t *job, int len)
+rs_emit_literal_cmd(rs_job_t *job, int len)
 {
     int cmd;
     int bytes;
 
-    switch (bytes = hs_int_len(len)) {
+    switch (bytes = rs_int_len(len)) {
     case 1:
         cmd = HS_OP_LITERAL_N1;
         break;
@@ -75,12 +75,12 @@ hs_emit_literal_cmd(hs_job_t *job, int len)
         cmd = HS_OP_LITERAL_N4;
         break;
     default:
-        hs_fatal("What?");
+        rs_fatal("What?");
     }
     
-    hs_trace("emit LITERAL_N%d(len=%d), cmd_byte=%#x", bytes, len, cmd);
-    hs_squirt_byte(job->stream, cmd);
-    hs_squirt_netint(job->stream, len, bytes);
+    rs_trace("emit LITERAL_N%d(len=%d), cmd_byte=%#x", bytes, len, cmd);
+    rs_squirt_byte(job->stream, cmd);
+    rs_squirt_netint(job->stream, len, bytes);
 
     job->stats.lit_cmds++;
     job->stats.lit_bytes += len;
@@ -89,10 +89,10 @@ hs_emit_literal_cmd(hs_job_t *job, int len)
 
 /** Write an END command. */
 void
-hs_emit_end_cmd(hs_job_t *job)
+rs_emit_end_cmd(rs_job_t *job)
 {
     int cmd = HS_OP_END;
     
-    hs_trace("emit END, cmd_byte=%#x", cmd);
-    hs_squirt_byte(job->stream, cmd);
+    rs_trace("emit END, cmd_byte=%#x", cmd);
+    rs_squirt_byte(job->stream, cmd);
 }

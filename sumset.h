@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -21,33 +21,33 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-typedef struct hs_rollsum hs_rollsum_t;
+typedef struct rs_rollsum rs_rollsum_t;
 
 
 /**
  * \brief Description of the match described by a signature.
  */
-typedef struct hs_target {
+typedef struct rs_target {
     unsigned short  t;
     int             i;
-} hs_target_t;
+} rs_target_t;
 
-typedef struct hs_block_sig hs_block_sig_t;
+typedef struct rs_block_sig rs_block_sig_t;
 
 /*
  * This structure describes all the sums generated for an instance of
  * a file.  It incorporates some redundancy to make it easier to
  * search.
  */
-struct hs_signature {
-    hs_long_t       flength;	/* total file length */
+struct rs_signature {
+    rs_long_t       flength;	/* total file length */
     int             count;      /* how many chunks */
     int             remainder;	/* flength % block_length */
     int             block_len;	/* block_length */
     int             strong_sum_len;
-    hs_block_sig_t  *block_sigs; /* points to info for each chunk */
+    rs_block_sig_t  *block_sigs; /* points to info for each chunk */
     int             *tag_table;
-    hs_target_t     *targets;
+    rs_target_t     *targets;
 };
 
 
@@ -55,8 +55,8 @@ struct hs_signature {
  * All blocks are the same length in the current algorithm except for
  * the last block which may be short.
  */
-struct hs_block_sig {
+struct rs_block_sig {
     int             i;		/* index of this chunk */
-    hs_weak_sum_t   weak_sum;	/* simple checksum */
-    hs_strong_sum_t strong_sum;	/* checksum  */
+    rs_weak_sum_t   weak_sum;	/* simple checksum */
+    rs_strong_sum_t strong_sum;	/* checksum  */
 };

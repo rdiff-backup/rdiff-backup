@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- generate and apply network deltas
+ * librsync -- generate and apply network deltas
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -36,21 +36,21 @@
  * fatal terminates the whole process
  */
 
-void hs_fatal0(char const *s, ...);
-void hs_error0(char const *s, ...);
-void hs_trace0(char const *s, ...);
+void rs_fatal0(char const *s, ...);
+void rs_error0(char const *s, ...);
+void rs_trace0(char const *s, ...);
 
 #ifdef __GNUC__
 
-void hs_log0(int level, char const *fn, char const *fmt, ...)
+void rs_log0(int level, char const *fn, char const *fmt, ...)
     __attribute__ ((format(printf, 3, 4)));
 
 #ifdef DO_HS_TRACE
-#  define hs_trace(fmt, arg...)                            \
-    do { hs_log0(HS_LOG_DEBUG, __FUNCTION__, fmt , ##arg);  \
+#  define rs_trace(fmt, arg...)                            \
+    do { rs_log0(HS_LOG_DEBUG, __FUNCTION__, fmt , ##arg);  \
     } while (0)
 #else
-#  define hs_trace(s, str...)
+#  define rs_trace(s, str...)
 #endif	/* !DO_HS_TRACE */
 
 /*
@@ -62,18 +62,18 @@ void hs_log0(int level, char const *fn, char const *fmt, ...)
  * whatever it's called.
  */
 
-#define hs_log(l, s, str...) do {              \
-     hs_log0(l, __FUNCTION__, (s) , ##str);    \
+#define rs_log(l, s, str...) do {              \
+     rs_log0(l, __FUNCTION__, (s) , ##str);    \
      } while (0)
 
 
-#define hs_error(s, str...) do {                       \
-     hs_log0(HS_LOG_ERR,  __FUNCTION__, (s) , ##str);     \
+#define rs_error(s, str...) do {                       \
+     rs_log0(HS_LOG_ERR,  __FUNCTION__, (s) , ##str);     \
      } while (0)
 
 
-#define hs_fatal(s, str...) do {               \
-     hs_log0(HS_LOG_CRIT,  __FUNCTION__,          \
+#define rs_fatal(s, str...) do {               \
+     rs_log0(HS_LOG_CRIT,  __FUNCTION__,          \
 	      (s) , ##str);                     \
      abort();                                   \
      } while (0)
@@ -81,12 +81,12 @@ void hs_log0(int level, char const *fn, char const *fmt, ...)
 
 #else /************************* ! __GNUC__ */
 
-#  define hs_fatal hs_fatal0
-#  define hs_error hs_error0
+#  define rs_fatal rs_fatal0
+#  define rs_error rs_error0
 
 #  ifdef DO_HS_TRACE
-#    define hs_trace hs_trace0
-void            hs_log0(int, char const *, ...);
+#    define rs_trace rs_trace0
+void            rs_log0(int, char const *, ...);
 #  endif			/* DO_HS_TRACE */
 #endif				/* ! __GNUC__ */
 

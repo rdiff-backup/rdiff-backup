@@ -116,7 +116,7 @@ $Id$
      recent files might be more useful.
 
  * Support gzip compression of the difference stream.  Does this
-   belong here, or should it be in the client and libhsync just have
+   belong here, or should it be in the client and librsync just have
    an interface that lets it cleanly plug in?
 
  * Licensing

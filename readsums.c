@@ -1,6 +1,6 @@
 /*=                     -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -23,16 +23,17 @@
 
 
 /*
- * readsums.c -- Load signatures from a file into an ::hs_signature_t.
+ * readsums.c -- Load signatures from a file into an ::rs_signature_t.
  */
 
 #include <config.h>
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "sumset.h"
 #include "job.h"
 #include "trace.h"
@@ -42,23 +43,23 @@
 #include "stream.h"
 
 
-static hs_result hs_loadsig_s_weak(hs_job_t *job);
-static hs_result hs_loadsig_s_strong(hs_job_t *job);
+static rs_result rs_loadsig_s_weak(rs_job_t *job);
+static rs_result rs_loadsig_s_strong(rs_job_t *job);
 
 
 
 /**
  * Add a just-read-in checksum pair to the signature block.
  */
-static hs_result hs_loadsig_add_sum(hs_job_t *job, hs_strong_sum_t *strong)
+static rs_result rs_loadsig_add_sum(rs_job_t *job, rs_strong_sum_t *strong)
 {
     size_t              new_size;
-    hs_signature_t      *sig = job->signature;
-    hs_block_sig_t      *asignature;
+    rs_signature_t      *sig = job->signature;
+    rs_block_sig_t      *asignature;
     char                hexbuf[HS_MD4_LENGTH * 2 + 2];
 
     sig->count++;
-    new_size = sig->count * sizeof(hs_block_sig_t);
+    new_size = sig->count * sizeof(rs_block_sig_t);
 
     sig->block_sigs = realloc(sig->block_sigs, new_size);
     
@@ -71,21 +72,21 @@ static hs_result hs_loadsig_add_sum(hs_job_t *job, hs_strong_sum_t *strong)
     asignature->i = sig->count;
 
     memcpy(asignature->strong_sum, strong, sig->strong_sum_len);
-    hs_hexify(hexbuf, strong, sig->strong_sum_len);
+    rs_hexify(hexbuf, strong, sig->strong_sum_len);
 
-    hs_trace("read in checksum: weak=%#x, strong=%s", asignature->weak_sum,
+    rs_trace("read in checksum: weak=%#x, strong=%s", asignature->weak_sum,
              hexbuf);
 
     return HS_RUNNING;
 }
 
 
-static hs_result hs_loadsig_s_weak(hs_job_t *job)
+static rs_result rs_loadsig_s_weak(rs_job_t *job)
 {
     int                 l;
-    hs_result           result;
+    rs_result           result;
 
-    result = hs_suck_n4(job->stream, &l);
+    result = rs_suck_n4(job->stream, &l);
     if (result == HS_DONE)
         ;
     else if (result == HS_INPUT_ENDED) /* ending here is OK */
@@ -95,111 +96,111 @@ static hs_result hs_loadsig_s_weak(hs_job_t *job)
 
     job->weak_sig = l;
 
-    job->statefn = hs_loadsig_s_strong;
+    job->statefn = rs_loadsig_s_strong;
 
     return HS_RUNNING;
 }
 
 
 
-static hs_result hs_loadsig_s_strong(hs_job_t *job)
+static rs_result rs_loadsig_s_strong(rs_job_t *job)
 {
-    hs_result           result;
-    hs_strong_sum_t     *strongsum;
+    rs_result           result;
+    rs_strong_sum_t     *strongsum;
 
-    result = hs_scoop_read(job->stream, job->signature->strong_sum_len,
+    result = rs_scoop_read(job->stream, job->signature->strong_sum_len,
                            (void **) &strongsum);
     if (result != HS_DONE) return result;
 
-    job->statefn = hs_loadsig_s_weak;
+    job->statefn = rs_loadsig_s_weak;
 
-    return hs_loadsig_add_sum(job, strongsum);
+    return rs_loadsig_add_sum(job, strongsum);
 }
 
 
 
-static hs_result hs_loadsig_s_stronglen(hs_job_t *job)
+static rs_result rs_loadsig_s_stronglen(rs_job_t *job)
 {
     int                 l;
-    hs_result           result;
+    rs_result           result;
 
-    if ((result = hs_suck_n4(job->stream, &l)) != HS_DONE)
+    if ((result = rs_suck_n4(job->stream, &l)) != HS_DONE)
         return result;
     job->strong_sum_len = l;
     
     if (l < 0  ||  l > HS_MD4_LENGTH) {
-        hs_error("strong sum length %d is implausible", l);
+        rs_error("strong sum length %d is implausible", l);
         return HS_CORRUPT;
     }
 
     job->signature->block_len = job->block_len;
     job->signature->strong_sum_len = job->strong_sum_len;
     
-    hs_trace("allocated sigset_t (strong_sum_len=%d, block_len=%d)",
+    rs_trace("allocated sigset_t (strong_sum_len=%d, block_len=%d)",
              (int) job->strong_sum_len, (int) job->block_len);
 
-    job->statefn = hs_loadsig_s_weak;
+    job->statefn = rs_loadsig_s_weak;
     
     return HS_RUNNING;
 }
 
 
-static hs_result hs_loadsig_s_blocklen(hs_job_t *job)
+static rs_result rs_loadsig_s_blocklen(rs_job_t *job)
 {
     int                 l;
-    hs_result           result;
+    rs_result           result;
 
-    if ((result = hs_suck_n4(job->stream, &l)) != HS_DONE)
+    if ((result = rs_suck_n4(job->stream, &l)) != HS_DONE)
         return result;
     job->block_len = l;
 
     if (job->block_len < 1) {
-        hs_error("block length of %d is bogus", (int) job->block_len);
+        rs_error("block length of %d is bogus", (int) job->block_len);
         return HS_CORRUPT;
     }
 
-    job->statefn = hs_loadsig_s_stronglen;
+    job->statefn = rs_loadsig_s_stronglen;
     return HS_RUNNING;
 }
 
 
-static hs_result hs_loadsig_s_magic(hs_job_t *job)
+static rs_result rs_loadsig_s_magic(rs_job_t *job)
 {
     int                 l;
-    hs_result           result;
+    rs_result           result;
 
-    if ((result = hs_suck_n4(job->stream, &l)) != HS_DONE) {
+    if ((result = rs_suck_n4(job->stream, &l)) != HS_DONE) {
         return result;
     } else if (l != HS_SIG_MAGIC) {
-        hs_error("wrong magic number %#10x for signature", l);
+        rs_error("wrong magic number %#10x for signature", l);
         return HS_BAD_MAGIC;
     } else {
-        hs_trace("got signature magic %#10x", l);
+        rs_trace("got signature magic %#10x", l);
     }
 
-    job->statefn = hs_loadsig_s_blocklen;
+    job->statefn = rs_loadsig_s_blocklen;
 
     return HS_RUNNING;
 }
 
 
 /**
- * \brief Read a signature from a file into an ::hs_signature_t structure
+ * \brief Read a signature from a file into an ::rs_signature_t structure
  * in memory.
  *
  * Once there, it can be used to generate a delta to a newer version of
  * the file.
  *
  * \note After loading the signatures, you must call
- * hs_build_hash_table() before you can use them.
+ * rs_build_hash_table() before you can use them.
  */
-hs_job_t *hs_loadsig_begin(hs_stream_t *stream, hs_signature_t **signature)
+rs_job_t *rs_loadsig_begin(rs_stream_t *stream, rs_signature_t **signature)
 {
-    hs_job_t *job;
+    rs_job_t *job;
 
-    job = hs_job_new(stream, "loadsig");
-    job->statefn = hs_loadsig_s_magic;
-    *signature = job->signature = hs_alloc_struct(hs_signature_t);
+    job = rs_job_new(stream, "loadsig");
+    job->statefn = rs_loadsig_s_magic;
+    *signature = job->signature = rs_alloc_struct(rs_signature_t);
     job->signature->count = 0;
         
     return job;

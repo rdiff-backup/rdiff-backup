@@ -38,9 +38,9 @@ hsnad
 html
 install-sh
 latex
-libhsync-*.tar.gz
-libhsync-*.tar.gz.asc
-libhsyncinfo
+librsync-*.tar.gz
+librsync-*.tar.gz.asc
+librsyncinfo
 libtool
 ltconfig
 ltmain.sh

@@ -1,6 +1,6 @@
 #! /bin/sh -pe
 
-# Regression test driver for libhsync.
+# Regression test driver for librsync.
 
 # Copyright (C) 2000, 2001 by Martin Pool
 # $Id$

@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -41,8 +41,7 @@
 
 #include "trace.h"
 #include "fileutil.h"
-#include "hsync.h"
-#include "hsyncfile.h"
+#include "rsync.h"
 #include "sumset.h"
 #include "job.h"
 #include "buf.h"
@@ -53,7 +52,7 @@
  * The job should already be set up, and must be free by the caller
  * after return.
  *
- * Buffers of ::hs_inbuflen and ::hs_outbuflen are allocated for
+ * Buffers of ::rs_inbuflen and ::rs_outbuflen are allocated for
  * temporary storage.
  *
  * \param in_file Source of input bytes, or NULL if the input buffer
@@ -61,32 +60,32 @@
  *
  * \return HS_DONE if the job completed, or otherwise an error result.
  */
-hs_result
-hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
+rs_result
+rs_whole_run(rs_job_t *job, FILE *in_file, FILE *out_file)
 {
-    hs_stream_t     *stream = job->stream;
-    hs_result       result, iores;
-    hs_filebuf_t    *in_fb = NULL, *out_fb = NULL;
+    rs_stream_t     *stream = job->stream;
+    rs_result       result, iores;
+    rs_filebuf_t    *in_fb = NULL, *out_fb = NULL;
 
     if (in_file)
-        in_fb = hs_filebuf_new(in_file, stream, hs_inbuflen);
+        in_fb = rs_filebuf_new(in_file, stream, rs_inbuflen);
 
     if (out_file)
-        out_fb = hs_filebuf_new(out_file, stream, hs_outbuflen);
+        out_fb = rs_filebuf_new(out_file, stream, rs_outbuflen);
 
     do {
         if (!stream->eof_in && in_fb) {
-            iores = hs_infilebuf_fill(in_fb);
+            iores = rs_infilebuf_fill(in_fb);
             if (iores != HS_DONE)
                 return iores;
         }
 
-        result = hs_job_iter(job);
+        result = rs_job_iter(job);
         if (result != HS_DONE  &&  result != HS_BLOCKED)
             return result;
 
         if (out_fb) {
-            iores = hs_outfilebuf_drain(out_fb);
+            iores = rs_outfilebuf_drain(out_fb);
             if (iores != HS_DONE)
                 return iores;
         }
@@ -105,22 +104,22 @@ hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
  *
  * \param strong_len truncated length of strong checksums, in bytes
  *
- * \sa hs_sig_begin()
+ * \sa rs_sig_begin()
  */
-hs_result
-hs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
+rs_result
+rs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
             size_t strong_len)
 {
-    hs_job_t        *job;
-    hs_stream_t     stream;
-    hs_result       r;
+    rs_job_t        *job;
+    rs_stream_t     stream;
+    rs_result       r;
 
-    hs_stream_init(&stream);
-    job = hs_sig_begin(&stream, new_block_len, strong_len);
+    rs_stream_init(&stream);
+    job = rs_sig_begin(&stream, new_block_len, strong_len);
 
-    r = hs_whole_run(job, old_file, sig_file);
+    r = rs_whole_run(job, old_file, sig_file);
 
-    hs_job_free(job);
+    rs_job_free(job);
 
     return r;
 }
@@ -130,63 +129,63 @@ hs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
  * Load signatures from a signature file into memory.  Return a
  * pointer to the newly allocated structure in SUMSET.
  *
- * \sa hs_readsig_begin()
+ * \sa rs_readsig_begin()
  */
-hs_result
-hs_loadsig_file(FILE *sig_file, hs_signature_t **sumset)
+rs_result
+rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset)
 {
-    hs_job_t            *job;
-    hs_stream_t         stream;
-    hs_result           r;
+    rs_job_t            *job;
+    rs_stream_t         stream;
+    rs_result           r;
 
-    hs_stream_init(&stream);
+    rs_stream_init(&stream);
 
-    job = hs_loadsig_begin(&stream, sumset);
-    r = hs_whole_run(job, sig_file, NULL);
-    hs_job_free(job);
+    job = rs_loadsig_begin(&stream, sumset);
+    r = rs_whole_run(job, sig_file, NULL);
+    rs_job_free(job);
 
     return r;
 }
 
 
 
-hs_result
-hs_delta_file(hs_signature_t *sig, FILE *new_file, FILE *delta_file, hs_stats_t *stats)
+rs_result
+rs_delta_file(rs_signature_t *sig, FILE *new_file, FILE *delta_file, rs_stats_t *stats)
 {
-    hs_job_t            *job;
-    hs_stream_t         stream;
-    hs_result           r;
+    rs_job_t            *job;
+    rs_stream_t         stream;
+    rs_result           r;
 
-    hs_stream_init(&stream);
-    job = hs_delta_begin(&stream, sig);
+    rs_stream_init(&stream);
+    job = rs_delta_begin(&stream, sig);
 
-    r = hs_whole_run(job, new_file, delta_file);
+    r = rs_whole_run(job, new_file, delta_file);
 
     if (stats)
         memcpy(stats, &job->stats, sizeof *stats);
 
-    hs_job_free(job);
+    rs_job_free(job);
 
     return r;
 }
 
 
 
-hs_result hs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file, hs_stats_t *stats)
+rs_result rs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file, rs_stats_t *stats)
 {
-    hs_job_t            *job;
-    hs_stream_t         stream;
-    hs_result           r;
+    rs_job_t            *job;
+    rs_stream_t         stream;
+    rs_result           r;
 
-    hs_stream_init(&stream);
-    job = hs_patch_begin(&stream, hs_file_copy_cb, basis_file);
+    rs_stream_init(&stream);
+    job = rs_patch_begin(&stream, rs_file_copy_cb, basis_file);
 
-    r = hs_whole_run(job, delta_file, new_file);
+    r = rs_whole_run(job, delta_file, new_file);
     
     if (stats)
         memcpy(stats, &job->stats, sizeof *stats);
 
-    hs_job_free(job);
+    rs_job_free(job);
 
     return r;
 }

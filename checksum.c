@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "checksum.h"
 
 
@@ -45,7 +45,7 @@ int checksum_seed = 0;
  * A simple 32 bit checksum that can be updated from either end
  * (inspired by Mark Adler's Adler-32 checksum)
  */
-unsigned int hs_calc_weak_sum(void const *p, int len)
+unsigned int rs_calc_weak_sum(void const *p, int len)
 {
         int i;
         unsigned        s1, s2;
@@ -79,13 +79,13 @@ unsigned int hs_calc_weak_sum(void const *p, int len)
  * Since we can't retry a web transaction I'm not sure if it's very
  * useful in rproxy.
  */
-void hs_calc_strong_sum(void const *buf, size_t len, hs_strong_sum_t *sum)
+void rs_calc_strong_sum(void const *buf, size_t len, rs_strong_sum_t *sum)
 {
-    hs_mdfour_t m;
+    rs_mdfour_t m;
 
-    hs_mdfour_begin(&m);
-    hs_mdfour_update(&m, buf, len);
-    hs_mdfour_result(&m, (unsigned char *) sum);
+    rs_mdfour_begin(&m);
+    rs_mdfour_update(&m, buf, len);
+    rs_mdfour_result(&m, (unsigned char *) sum);
 }
 
 

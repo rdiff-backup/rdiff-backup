@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "util.h"
 #include "trace.h"
 #include "protocol.h"
@@ -45,10 +45,10 @@
 
 
 
-static hs_result hs_patch_s_cmdbyte(hs_job_t *);
-static hs_result hs_patch_s_params(hs_job_t *);
-static hs_result hs_patch_s_run(hs_job_t *);
-static hs_result hs_patch_s_literal(hs_job_t *);
+static rs_result rs_patch_s_cmdbyte(rs_job_t *);
+static rs_result rs_patch_s_params(rs_job_t *);
+static rs_result rs_patch_s_run(rs_job_t *);
+static rs_result rs_patch_s_literal(rs_job_t *);
 
 
 
@@ -57,23 +57,23 @@ static hs_result hs_patch_s_literal(hs_job_t *);
  * taken that in, we can know how much data to read to get the
  * arguments.
  */
-static hs_result hs_patch_s_cmdbyte(hs_job_t *job)
+static rs_result rs_patch_s_cmdbyte(rs_job_t *job)
 {
-    hs_result result;
+    rs_result result;
         
-    if ((result = hs_suck_byte(job->stream, &job->op)) != HS_DONE)
+    if ((result = rs_suck_byte(job->stream, &job->op)) != HS_DONE)
         return result;
 
-    job->cmd = &hs_prototab[job->op];
+    job->cmd = &rs_prototab[job->op];
         
-    hs_trace("got command byte 0x%02x (%s), len_1=%ld", job->op,
-             hs_op_kind_name(job->cmd->kind),
+    rs_trace("got command byte 0x%02x (%s), len_1=%ld", job->op,
+             rs_op_kind_name(job->cmd->kind),
              (long) job->cmd->len_1);
 
     if (job->cmd->len_1)
-        job->statefn = hs_patch_s_params;
+        job->statefn = rs_patch_s_params;
     else
-        job->statefn = hs_patch_s_run;
+        job->statefn = rs_patch_s_run;
 
     return HS_RUNNING;
 }
@@ -83,29 +83,29 @@ static hs_result hs_patch_s_cmdbyte(hs_job_t *job)
  * Called after reading a command byte to pull in its parameters and
  * then setup to execute the command.
  */
-static hs_result hs_patch_s_params(hs_job_t *job)
+static rs_result rs_patch_s_params(rs_job_t *job)
 {
-    hs_result result;
+    rs_result result;
     int len = job->cmd->len_1 + job->cmd->len_2;
     void *p;
 
     assert(len);
 
-    result = hs_scoop_readahead(job->stream, len, &p);
+    result = rs_scoop_readahead(job->stream, len, &p);
     if (result != HS_DONE)
         return result;
 
     /* we now must have LEN bytes buffered */
-    result = hs_suck_netint(job->stream, &job->param1, job->cmd->len_1);
+    result = rs_suck_netint(job->stream, &job->param1, job->cmd->len_1);
     /* shouldn't fail, since we already checked */
     assert(result == HS_DONE);
 
     if (job->cmd->len_2) {
-        result = hs_suck_netint(job->stream, &job->param2, job->cmd->len_2);
+        result = rs_suck_netint(job->stream, &job->param2, job->cmd->len_2);
         assert(result == HS_DONE);
     }
 
-    job->statefn = hs_patch_s_run;
+    job->statefn = rs_patch_s_run;
 
     return HS_RUNNING;
 }
@@ -115,19 +115,19 @@ static hs_result hs_patch_s_params(hs_job_t *job)
 /**
  * Called when we've read in the whole command and we need to execute it.
  */
-static hs_result hs_patch_s_run(hs_job_t *job)
+static rs_result rs_patch_s_run(rs_job_t *job)
 {
-        hs_trace("running command 0x%x, kind %d", job->op, job->cmd->kind);
+        rs_trace("running command 0x%x, kind %d", job->op, job->cmd->kind);
 
         switch (job->cmd->kind) {
         case HS_KIND_LITERAL:
-                job->statefn = hs_patch_s_literal;
+                job->statefn = rs_patch_s_literal;
                 return HS_RUNNING;
         case HS_KIND_END:
                 return HS_DONE;
                 /* so we exit here; trying to continue causes an error */
         default:
-                hs_error("bogus command 0x%02x", job->op);
+                rs_error("bogus command 0x%02x", job->op);
                 return HS_BAD_MAGIC;
         }
 }
@@ -136,7 +136,7 @@ static hs_result hs_patch_s_run(hs_job_t *job)
 /**
  * Called when trying to copy through literal data.
  */
-static hs_result hs_patch_s_literal(hs_job_t *job)
+static rs_result rs_patch_s_literal(rs_job_t *job)
 {
     int len;
     if (job->cmd->len_1)
@@ -144,14 +144,14 @@ static hs_result hs_patch_s_literal(hs_job_t *job)
     else
         len = job->cmd->immediate;
         
-    hs_trace("copying %d bytes of literal data", len);
+    rs_trace("copying %d bytes of literal data", len);
 
     job->stats.lit_cmds++;
     job->stats.lit_bytes += len;
 
-    hs_blow_copy(job->stream, len);
+    rs_blow_copy(job->stream, len);
 
-    job->statefn = hs_patch_s_cmdbyte;
+    job->statefn = rs_patch_s_cmdbyte;
     return HS_RUNNING;
 }
 
@@ -159,21 +159,21 @@ static hs_result hs_patch_s_literal(hs_job_t *job)
 /**
  * Called while we're trying to read the header of the patch.
  */
-static hs_result hs_patch_s_header(hs_job_t *job)
+static rs_result rs_patch_s_header(rs_job_t *job)
 {
         int v;
         int result;
 
         
-        if ((result =hs_suck_n4(job->stream, &v)) != HS_DONE)
+        if ((result =rs_suck_n4(job->stream, &v)) != HS_DONE)
                 return result;
 
         if (v != HS_DELTA_MAGIC)
                 return HS_BAD_MAGIC;
 
-        hs_trace("got patch magic %#10x", v);
+        rs_trace("got patch magic %#10x", v);
 
-        job->statefn = hs_patch_s_cmdbyte;
+        job->statefn = rs_patch_s_cmdbyte;
 
         return HS_RUNNING;
 }
@@ -184,9 +184,9 @@ static hs_result hs_patch_s_header(hs_job_t *job)
  * \brief Apply a \ref gloss_delta to a \ref gloss_basis to recreate
  * the new file.
  *
- * This gives you back a ::hs_job_t object, which can be cranked by
- * calling hs_job_iter() and updating the stream pointers.  When
- * finished, call hs_job_finish() to dispose of it.
+ * This gives you back a ::rs_job_t object, which can be cranked by
+ * calling rs_job_iter() and updating the stream pointers.  When
+ * finished, call rs_job_finish() to dispose of it.
  *
  * \param stream Contains pointers to input and output buffers, to be
  * adjusted by caller on each iteration.
@@ -203,20 +203,20 @@ static hs_result hs_patch_s_header(hs_job_t *job)
  *
  * \todo Implement COPY commands.
  *
- * \sa hs_patch_file()
+ * \sa rs_patch_file()
  */
-hs_job_t *hs_patch_begin(hs_stream_t *stream, hs_copy_cb *copy_cb,
+rs_job_t *rs_patch_begin(rs_stream_t *stream, rs_copy_cb *copy_cb,
                          void *copy_arg)
 {
-    hs_job_t *job = hs_job_new(stream, "patch");
+    rs_job_t *job = rs_job_new(stream, "patch");
 
-    job->statefn = hs_patch_s_header;
+    job->statefn = rs_patch_s_header;
     job->stream = stream;
         
     job->copy_cb = copy_cb;
     job->copy_arg = copy_arg;
 
-    hs_mdfour_begin(&job->output_md4);
+    rs_mdfour_begin(&job->output_md4);
 
     return job;
 }

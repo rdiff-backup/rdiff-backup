@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
@@ -27,11 +27,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "command.h"
 
 /* For debugging purposes, here are some human-readable forms. */
-struct hs_op_kind_name const hs_op_kind_names[] = {
+struct rs_op_kind_name const rs_op_kind_names[] = {
     {"END",       HS_KIND_END },
     {"COPY",      HS_KIND_COPY },
     {"LITERAL",   HS_KIND_LITERAL },
@@ -45,11 +45,11 @@ struct hs_op_kind_name const hs_op_kind_names[] = {
 /*
  * Return a human-readable name for KIND.
  */
-char const * hs_op_kind_name(enum hs_op_kind kind)
+char const * rs_op_kind_name(enum rs_op_kind kind)
 {
-        const struct hs_op_kind_name *k;
+        const struct rs_op_kind_name *k;
 
-        for (k = hs_op_kind_names; k->kind; k++) {
+        for (k = rs_op_kind_names; k->kind; k++) {
                 if (k->kind == kind) {
                         return k->name;
                 }

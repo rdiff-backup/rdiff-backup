@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- dynamic caching and delta update in HTTP
+ * librsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -26,6 +26,6 @@
  */
 
 
-void hs_emit_delta_header(hs_job_t *);
-void hs_emit_literal_cmd(hs_job_t *, int len);
-void hs_emit_end_cmd(hs_job_t *);
+void rs_emit_delta_header(rs_job_t *);
+void rs_emit_literal_cmd(rs_job_t *, int len);
+void rs_emit_end_cmd(rs_job_t *);

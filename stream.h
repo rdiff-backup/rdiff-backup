@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- library for network deltas
+ * librsync -- library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -30,7 +30,7 @@
 /*
  * Stream private data
  */
-typedef struct hs_simpl {
+typedef struct rs_simpl {
         /* Buffer of data left over in the scoop.  Allocation is
          * scoop_buf..scoop_alloc, and scoop_next[0..scoop_avail]
          * contains valid data. */
@@ -47,26 +47,26 @@ typedef struct hs_simpl {
         /* If COPY_LEN is >0, then that much data should be copied
          * through from the input. */
         int         copy_len;
-} hs_simpl_t;
+} rs_simpl_t;
 
 
 
 
-int hs_stream_is_empty(hs_stream_t *stream);
-int hs_stream_copy(hs_stream_t *stream, int len);
-void hs_stream_check(hs_stream_t *stream);
-void hs_stream_check_exit(hs_stream_t const *stream);
+int rs_stream_is_empty(rs_stream_t *stream);
+int rs_stream_copy(rs_stream_t *stream, int len);
+void rs_stream_check(rs_stream_t *stream);
+void rs_stream_check_exit(rs_stream_t const *stream);
 
 
-int hs_tube_catchup(hs_stream_t *);
-void hs_blow_literal(hs_stream_t *, void const *buf, size_t len);
+int rs_tube_catchup(rs_stream_t *);
+void rs_blow_literal(rs_stream_t *, void const *buf, size_t len);
 
-void hs_blow_copy(hs_stream_t *, int len);
+void rs_blow_copy(rs_stream_t *, int len);
 
-int hs_tube_is_idle(hs_stream_t const *);
-void hs_check_tube(hs_stream_t *);
+int rs_tube_is_idle(rs_stream_t const *);
+void rs_check_tube(rs_stream_t *);
 
-void hs_scoop_advance(hs_stream_t *stream, size_t len);
-hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr);
-hs_result hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr);
-hs_result hs_scoop_read_rest(hs_stream_t *stream, size_t *len, void **ptr);
+void rs_scoop_advance(rs_stream_t *stream, size_t len);
+rs_result rs_scoop_readahead(rs_stream_t *stream, size_t len, void **ptr);
+rs_result rs_scoop_read(rs_stream_t *stream, size_t len, void **ptr);
+rs_result rs_scoop_read_rest(rs_stream_t *stream, size_t *len, void **ptr);

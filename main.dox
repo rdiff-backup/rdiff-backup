@@ -1,24 +1,24 @@
 -*- text -*-
 /**
-\mainpage The libhsync delta-encoding library
+\mainpage The librsync delta-encoding library
 \author Martin Pool <mbp@samba.org>
 
 $Id$
 
 This document is also available in printable form:
 
-  - http://rproxy.samba.org/doxygen/libhsync/refman.ps.gz
-  - http://rproxy.samba.org/doxygen/libhsync/refman.pdf
+  - http://rproxy.samba.org/doxygen/librsync/refman.ps.gz
+  - http://rproxy.samba.org/doxygen/librsync/refman.pdf
 
 \section intro Introduction
 
-libhsync is a library for calculating and applying network deltas,
+librsync is a library for calculating and applying network deltas,
 with an interface designed to ease integration into diverse
-network applications.  \em libhsync is being developed as part of the \b
+network applications.  \em librsync is being developed as part of the \b
 rproxy <http://rproxy.samba.org/> and \b rsync
 <http://rsync.samba.org/> projects.
 
-libhsync encapsulates the core algorithms of the rsync protocol, which
+librsync encapsulates the core algorithms of the rsync protocol, which
 help with efficient calculation of the differences between two files.
 The rsync algorithm is different from most differencing algorithms
 because it does not require the presence of the two files to calculate
@@ -44,7 +44,7 @@ makes this functionality available to users and scripting languages.
 
 \section api Programming interface
 
-The public interface to libhsync (hsync.h) has functions in several
+The public interface to librsync (rsync.h) has functions in several
 main areas:
 
    - \ref api_streaming
@@ -54,83 +54,83 @@ main areas:
    - \ref api_stats
    - \ref api_utility
 
-All external symbols have the prefix ``<tt>hs_</tt>'', or
+All external symbols have the prefix ``<tt>rs_</tt>'', or
 ``<tt>HS_</tt>'' in the case of preprocessor symbols.
 
 \subsection api_streaming Data streaming
 
-A key design requirement for libhsync is that it should handle data as
-and when the hosting application requires it.  libhsync can be used
+A key design requirement for librsync is that it should handle data as
+and when the hosting application requires it.  librsync can be used
 inside applications that do non-blocking IO or filtering of network
 streams, because it never does IO directly, or needs to block waiting
 for data.
 
-The programming interface to libhsync is similar to that of zlib and
+The programming interface to librsync is similar to that of zlib and
 bzlib.  Arbitrary-length input and output buffers are passed to the
-library by the application, through an instance of ::hs_stream_t.  The
-library proceeds as far as it can, and returns an ::hs_result value
+library by the application, through an instance of ::rs_stream_t.  The
+library proceeds as far as it can, and returns an ::rs_result value
 indicating whether it needs more data or space.
 
 All the state needed by the library to resume processing when more
-data is available is kept in a small opaque ::hs_job_t structure.
-After creation of a job, repeated calls to hs_job_iter() in between
+data is available is kept in a small opaque ::rs_job_t structure.
+After creation of a job, repeated calls to rs_job_iter() in between
 filling and emptying the buffers keeps data flowing through the
-stream.  The ::hs_result_t values returned may indicate
+stream.  The ::rs_result_t values returned may indicate
 
  - ::HS_DONE:  processing is complete
  - ::HS_BLOCKED: processing has blocked pending more data
  - one of various possible errors in processing
 
-These can be converted to a human-readable string by hs_strerror().
+These can be converted to a human-readable string by rs_strerror().
 
 \subsection api_delta Generating and applying deltas
 
 All encoding operations are performed by using a <tt>*_begin</tt>
-function to create a ::hs_job_t object, passing in any necessary
+function to create a ::rs_job_t object, passing in any necessary
 initialization parameters.  The various jobs available are:
 
- - hs_sig_begin(): Calculate the signature of a file.
- - hs_loadsig_begin(): Load a signature into memory.
- - hs_delta_begin(): Calculate the delta between a signature and a new
+ - rs_sig_begin(): Calculate the signature of a file.
+ - rs_loadsig_begin(): Load a signature into memory.
+ - rs_delta_begin(): Calculate the delta between a signature and a new
    file.
- - hs_patch_begin(): Apply a delta to a basis to recreate the new
+ - rs_patch_begin(): Apply a delta to a basis to recreate the new
    file.
 
 \subsection api_whole Processing whole files
 
   Some applications do not require fine-grained control over IO, but
   rather just want to process a whole file with a single call.
-  libhsync provides `whole-file' functionality to do exactly that.
+  librsync provides `whole-file' functionality to do exactly that.
 
-  Processing of a whole file begins with creation of a ::hs_job_t
+  Processing of a whole file begins with creation of a ::rs_job_t
   object for the appropriate operation, just as if the application was
   going to do buffering itself.  After creation, the job may be passed
-  to hs_whole_run(), which will feed it to and from two FILEs as
+  to rs_whole_run(), which will feed it to and from two FILEs as
   necessary until end of file is reached or the operation completes.
 
 \subsection api_trace Debugging trace and error logging
 
-libhsync can output trace or log messages as it proceeds.  These
+librsync can output trace or log messages as it proceeds.  These
 follow a fairly standard priority-based filtering system
-(hs_trace_set_level()), using the same severity levels as UNIX syslog.
+(rs_trace_set_level()), using the same severity levels as UNIX syslog.
 Messages by default are sent to stderr, but may be passed to an
-application-provided callback (hs_trace_to(), hs_trace_fn_t()).
+application-provided callback (rs_trace_to(), rs_trace_fn_t()).
 
 \subsection api_stats Encoding statistics
 
   Encoding and decoding routines accumulate compression performance
-  statistics in a ::hs_stats_t structure as they run.  These may be
+  statistics in a ::rs_stats_t structure as they run.  These may be
   converted to human-readable form or written to the log file using
-  hs_format_stats() or hs_log_stats() respectively.
+  rs_format_stats() or rs_log_stats() respectively.
 
 \subsection api_utility Utility functions
 
 Some additional functions are used internally and also exposed in the
 API:
 
- - encoding/decoding binary data: hs_base64(), hs_unbase64(),
-   hs_hexify().
- - MD4 message digests: hs_mdfour(), hs_mdfour_begin(),
-   hs_mdfour_update(), hs_mdfour_result().
+ - encoding/decoding binary data: rs_base64(), rs_unbase64(),
+   rs_hexify().
+ - MD4 message digests: rs_mdfour(), rs_mdfour_begin(),
+   rs_mdfour_update(), rs_mdfour_result().
 
 */

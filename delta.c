@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- library for network deltas
+ * librsync -- library for network deltas
  * $Id$
  *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -58,7 +58,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "emit.h"
 #include "stream.h"
 #include "util.h"
@@ -67,9 +67,9 @@
 #include "trace.h"
 
 
-static hs_result hs_delta_s_end(hs_job_t *job)
+static rs_result rs_delta_s_end(rs_job_t *job)
 {
-    hs_emit_end_cmd(job);
+    rs_emit_end_cmd(job);
     return HS_DONE;
 }
 
@@ -78,19 +78,19 @@ static hs_result hs_delta_s_end(hs_job_t *job)
  * \brief State function that does a fake delta containing only
  * literal data to recreate the input.
  */
-static hs_result hs_delta_s_fake(hs_job_t *job)
+static rs_result rs_delta_s_fake(rs_job_t *job)
 {
-    hs_stream_t * const stream = job->stream;
+    rs_stream_t * const stream = job->stream;
     size_t avail = stream->avail_in;
 
     if (avail) {
-        hs_trace("emit fake delta for %ld available bytes", (long) avail);
-        hs_emit_literal_cmd(job, avail);
-        hs_blow_copy(stream, avail);
+        rs_trace("emit fake delta for %ld available bytes", (long) avail);
+        rs_emit_literal_cmd(job, avail);
+        rs_blow_copy(stream, avail);
         return HS_RUNNING;
     } else {
         if (stream->eof_in) {
-            job->statefn = hs_delta_s_end;
+            job->statefn = rs_delta_s_end;
             return HS_RUNNING;
         } else {                
             return HS_BLOCKED;
@@ -102,11 +102,11 @@ static hs_result hs_delta_s_fake(hs_job_t *job)
 /**
  * State function for writing out the header of the encoding job.
  */
-static hs_result hs_delta_s_header(hs_job_t *job)
+static rs_result rs_delta_s_header(rs_job_t *job)
 {
-    hs_emit_delta_header(job);
+    rs_emit_delta_header(job);
 
-    job->statefn = hs_delta_s_fake;
+    job->statefn = rs_delta_s_fake;
 
     return HS_RUNNING;
 }
@@ -115,14 +115,14 @@ static hs_result hs_delta_s_header(hs_job_t *job)
 /**
  * Prepare to compute a delta on a stream.
  */
-hs_job_t *hs_delta_begin(hs_stream_t *stream, hs_signature_t *sig)
+rs_job_t *rs_delta_begin(rs_stream_t *stream, rs_signature_t *sig)
 {
-    hs_job_t *job;
+    rs_job_t *job;
 
-    job = hs_job_new(stream, "delta");
+    job = rs_job_new(stream, "delta");
     
     job->signature = sig;
-    job->statefn = hs_delta_s_header;
+    job->statefn = rs_delta_s_header;
 	
     return job;
 }

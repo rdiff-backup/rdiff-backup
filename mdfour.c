@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -35,7 +35,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 
 
 
@@ -62,7 +62,7 @@
  * \todo Apparently rsync 2.4 now has a fast MD4 routine.  So we
  * should copy that into here.  */
 static void
-hs_mdfour64(hs_mdfour_t * m, unsigned int * M)
+rs_mdfour64(rs_mdfour_t * m, unsigned int * M)
 {
     int             j;
     unsigned int        AA, BB, CC, DD;
@@ -175,7 +175,7 @@ copy4( /* @out@ */ unsigned char *out, unsigned int const x)
 
 
 void
-hs_mdfour_begin(hs_mdfour_t * md)
+rs_mdfour_begin(rs_mdfour_t * md)
 {
     memset(md, 0, sizeof(*md));
     md->A = 0x67452301;
@@ -187,7 +187,7 @@ hs_mdfour_begin(hs_mdfour_t * md)
 
 
 static void
-hs_mdfour_tail(hs_mdfour_t * m, unsigned char const *in, int n)
+rs_mdfour_tail(rs_mdfour_t * m, unsigned char const *in, int n)
 {
     unsigned char   buf[128];
     unsigned int        M[16];
@@ -205,20 +205,20 @@ hs_mdfour_tail(hs_mdfour_t * m, unsigned char const *in, int n)
     if (n <= 55) {
 	copy4(buf + 56, b);
 	copy64(M, buf);
-	hs_mdfour64(m, M);
+	rs_mdfour64(m, M);
     } else {
 	copy4(buf + 120, b);
 	copy64(M, buf);
-	hs_mdfour64(m, M);
+	rs_mdfour64(m, M);
 	copy64(M, buf + 64);
-	hs_mdfour64(m, M);
+	rs_mdfour64(m, M);
     }
 }
 
 
 
 void
-hs_mdfour_update(hs_mdfour_t * md, void const *in_void, size_t n)
+rs_mdfour_update(rs_mdfour_t * md, void const *in_void, size_t n)
 {
     unsigned int        M[16];
     size_t          n2 = 64 - md->tail_len;
@@ -238,13 +238,13 @@ hs_mdfour_update(hs_mdfour_t * md, void const *in_void, size_t n)
 	return;
 
     copy64(M, md->tail);
-    hs_mdfour64(md, M);
+    rs_mdfour64(md, M);
     md->tail_len = 0;
     md->totalN += 64;
 
     while (n >= 64) {
 	copy64(M, in);
-	hs_mdfour64(md, M);
+	rs_mdfour64(md, M);
 	in += 64;
 	n -= 64;
 	md->totalN += 64;
@@ -258,9 +258,9 @@ hs_mdfour_update(hs_mdfour_t * md, void const *in_void, size_t n)
 
 
 void
-hs_mdfour_result(hs_mdfour_t * md, unsigned char *out)
+rs_mdfour_result(rs_mdfour_t * md, unsigned char *out)
 {
-    hs_mdfour_tail(md, md->tail, md->tail_len);
+    rs_mdfour_tail(md, md->tail, md->tail_len);
 
     copy4(out, md->A);
     copy4(out + 4, md->B);
@@ -270,11 +270,11 @@ hs_mdfour_result(hs_mdfour_t * md, unsigned char *out)
 
 
 void
-hs_mdfour(unsigned char *out, void const *in, int n)
+rs_mdfour(unsigned char *out, void const *in, int n)
 {
-    hs_mdfour_t     md;
+    rs_mdfour_t     md;
 
-    hs_mdfour_begin(&md);
-    hs_mdfour_update(&md, in, n);
-    hs_mdfour_result(&md, out);
+    rs_mdfour_begin(&md);
+    rs_mdfour_update(&md, in, n);
+    rs_mdfour_result(&md, out);
 }

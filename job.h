@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -21,49 +21,49 @@
  */
 
 
-struct hs_job {
+struct rs_job {
     int                 dogtag;
 
     /** Human-readable job operation name. */
     const char          *job_name;
     
-    hs_stream_t *stream;
+    rs_stream_t *stream;
 
     /** Callback for each processing step. */
-    hs_result           (*statefn)(hs_job_t *);
+    rs_result           (*statefn)(rs_job_t *);
 
-    /** Final result of processing job.  Used by hs_job_s_failed(). */
-    hs_result final_result;
+    /** Final result of processing job.  Used by rs_job_s_failed(). */
+    rs_result final_result;
 
     /* Generic storage fields. */
     int                 block_len;
     int                 strong_sum_len;
     
-    hs_copy_cb      *copy_cb;
+    rs_copy_cb      *copy_cb;
     void            *copy_arg;
     
     /** Signature that's either being read in, or used for
      * generating a delta. */
-    hs_signature_t      *signature;
+    rs_signature_t      *signature;
     
     /** Command byte currently being processed, if any. */
     unsigned char       op;
 
-    /** If in the middle of reading a signature (hs_loadsig_s_weak()),
+    /** If in the middle of reading a signature (rs_loadsig_s_weak()),
      * this contains the weak signature. */
-    hs_weak_sum_t       weak_sig;
+    rs_weak_sum_t       weak_sig;
 
     /** Lengths of expected parameters. */
-    hs_long_t           param1, param2;
+    rs_long_t           param1, param2;
     
-    struct hs_prototab_ent const *cmd;
-    hs_mdfour_t      output_md4;
+    struct rs_prototab_ent const *cmd;
+    rs_mdfour_t      output_md4;
 
     /** Encoding statistics. */
-    hs_stats_t          stats;
+    rs_stats_t          stats;
 };
 
 
-hs_job_t * hs_job_new(hs_stream_t *stream, const char *);
-void hs_job_check(hs_job_t *job);
-const hs_stats_t *hs_job_statistics(hs_job_t *);
+rs_job_t * rs_job_new(rs_stream_t *stream, const char *);
+void rs_job_check(rs_job_t *job);
+const rs_stats_t *rs_job_statistics(rs_job_t *);

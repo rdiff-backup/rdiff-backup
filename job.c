@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -43,8 +43,9 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "stream.h"
 #include "util.h"
 #include "sumset.h"
@@ -52,37 +53,37 @@
 #include "trace.h"
 
 
-static const int hs_job_tag = 20010225;
+static const int rs_job_tag = 20010225;
 
 
-hs_job_t * hs_job_new(hs_stream_t *stream, char const *job_name)
+rs_job_t * rs_job_new(rs_stream_t *stream, char const *job_name)
 {
-    hs_job_t *job;
+    rs_job_t *job;
 
-    job = hs_alloc_struct(hs_job_t);
+    job = rs_alloc_struct(rs_job_t);
 
-    hs_stream_check(stream);
+    rs_stream_check(stream);
     job->stream = stream;
     job->job_name = job_name;
-    job->dogtag = hs_job_tag;
+    job->dogtag = rs_job_tag;
 
     job->stats.op = job_name;
 
-    hs_trace("start %s job", job_name);
+    rs_trace("start %s job", job_name);
 
     return job;
 }
 
 
-void hs_job_check(hs_job_t *job)
+void rs_job_check(rs_job_t *job)
 {
-    assert(job->dogtag == hs_job_tag);
+    assert(job->dogtag == rs_job_tag);
 }
 
 
-hs_result hs_job_free(hs_job_t *job)
+rs_result rs_job_free(rs_job_t *job)
 {
-    hs_bzero(job, sizeof *job);
+    rs_bzero(job, sizeof *job);
     free(job);
 
     return HS_DONE;
@@ -90,26 +91,26 @@ hs_result hs_job_free(hs_job_t *job)
 
 
 
-static hs_result hs_job_s_complete(hs_job_t *job)
+static rs_result rs_job_s_complete(rs_job_t *job)
 {
-    hs_fatal("should not be reached");
+    rs_fatal("should not be reached");
 }
 
 
-static hs_result hs_job_complete(hs_job_t *job, hs_result result)
+static rs_result rs_job_complete(rs_job_t *job, rs_result result)
 {
-    hs_job_check(job);
+    rs_job_check(job);
     
-    job->statefn = hs_job_s_complete;
+    job->statefn = rs_job_s_complete;
     job->final_result = result;
 
     if (result != HS_DONE) {
-        hs_error("%s job failed: %s", job->job_name, hs_strerror(result));
+        rs_error("%s job failed: %s", job->job_name, rs_strerror(result));
     } else {
-        hs_trace("%s job complete", job->job_name);
+        rs_trace("%s job complete", job->job_name);
     }
 
-    if (result == HS_DONE && !hs_tube_is_idle(job->stream))
+    if (result == HS_DONE && !rs_tube_is_idle(job->stream))
         return HS_BLOCKED;
     else
         return result;
@@ -117,29 +118,29 @@ static hs_result hs_job_complete(hs_job_t *job, hs_result result)
 
 
 /** 
- * \brief Run a ::hs_job_t state machine until it blocks
+ * \brief Run a ::rs_job_t state machine until it blocks
  * (::HS_BLOCKED), returns an error, or completes (::HS_COMPLETE).
  *
- * \return The ::hs_result that caused iteration to stop.
+ * \return The ::rs_result that caused iteration to stop.
  *
  * \param ending True if there is no more data after what's in the
  * input buffer.  The final block checksum will run across whatever's
  * in there, without trying to accumulate anything else.
  */
-hs_result hs_job_iter(hs_job_t *job)
+rs_result rs_job_iter(rs_job_t *job)
 {
-    hs_result result;
+    rs_result result;
 
-    hs_job_check(job);
+    rs_job_check(job);
     while (1) {
-        result = hs_tube_catchup(job->stream);
+        result = rs_tube_catchup(job->stream);
         if (result == HS_BLOCKED)
             return result;
         else if (result != HS_DONE)
-            return hs_job_complete(job, result);
+            return rs_job_complete(job, result);
 
-        if (job->statefn == hs_job_s_complete) {
-            if (hs_tube_is_idle(job->stream))
+        if (job->statefn == rs_job_s_complete) {
+            if (rs_tube_is_idle(job->stream))
                 return HS_DONE;
             else
                 return HS_BLOCKED;
@@ -150,7 +151,7 @@ hs_result hs_job_iter(hs_job_t *job)
             else if (result == HS_BLOCKED)
                 return result;
             else
-                return hs_job_complete(job, result);
+                return rs_job_complete(job, result);
         }
     }
 }
@@ -159,8 +160,8 @@ hs_result hs_job_iter(hs_job_t *job)
 /**
  * Return pointer to statistics accumulated about this job.
  */
-const hs_stats_t *
-hs_job_statistics(hs_job_t *job)
+const rs_stats_t *
+rs_job_statistics(rs_job_t *job)
 {
     return &job->stats;
 }

@@ -1,6 +1,6 @@
 #! /bin/sh -pe
 
-# libhsync test case.
+# librsync test case.
 # Copyright (C) 2000 by Martin Pool
 
 # Test the map_ptr input routines, by extracting chunks of a file

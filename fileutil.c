@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- library for network deltas
+ * librsync -- library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -32,7 +32,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "fileutil.h"
 #include "trace.h"
 
@@ -45,7 +45,7 @@
  * \param fopen-style mode string.
  */
 FILE *
-hs_file_open(char const *filename, char const *mode)
+rs_file_open(char const *filename, char const *mode)
 {
     FILE           *f;
     int		    is_write;
@@ -60,7 +60,7 @@ hs_file_open(char const *filename, char const *mode)
     }
 
     if (!(f = fopen(filename, mode))) {
-	hs_error("Error opening \"%s\" for %s: %s", filename,
+	rs_error("Error opening \"%s\" for %s: %s", filename,
 		  is_write ? "write" : "read",
 		  strerror(errno));
 	exit(HS_IO_ERROR);

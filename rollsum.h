@@ -25,7 +25,7 @@
    file as we see it.  We use this for two different things: searching for
    matches in the old version of the file, and also generating new-signature
    information to send down to the client.  */
-struct hs_rollsum {
+struct rs_rollsum {
     int             havesum;	/* false if we've skipped & need to
 				   recalculate */
     int        weak_sum, s1, s2;	/* weak checksum */
@@ -38,10 +38,10 @@ struct hs_rollsum {
 #define HS_PAINFUL_HONESTY
 
 
-int hs_trim_sums(byte_t const *p, hs_rollsum_t * rollsum,
+int rs_trim_sums(byte_t const *p, rs_rollsum_t * rollsum,
                   size_t short_block);
 
-int hs_stretch_sums(byte_t const *p, size_t full_block,
-                     size_t short_block, hs_rollsum_t * rollsum);
+int rs_stretch_sums(byte_t const *p, size_t full_block,
+                     size_t short_block, rs_rollsum_t * rollsum);
 
-void hs_roll_reset(hs_rollsum_t * rollsum);
+void rs_roll_reset(rs_rollsum_t * rollsum);

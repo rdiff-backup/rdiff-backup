@@ -29,7 +29,7 @@
 #include <sys/file.h>
 #include <string.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "trace.h"
 
 /*
@@ -43,12 +43,12 @@
  */
 
 int
-hs_log_stats(hs_stats_t const *stats)
+rs_log_stats(rs_stats_t const *stats)
 {
     char buf[1000];
 
-    hs_format_stats(stats, buf, sizeof buf - 1);
-    hs_log(HS_LOG_INFO, "%s", buf);
+    rs_format_stats(stats, buf, sizeof buf - 1);
+    rs_log(HS_LOG_INFO, "%s", buf);
     return 0;
 }
 
@@ -67,7 +67,7 @@ hs_log_stats(hs_stats_t const *stats)
  * \return buf
  */
 char *
-hs_format_stats(hs_stats_t const * stats,
+rs_format_stats(rs_stats_t const * stats,
 		char *buf, size_t size)
 {
     char const *op = stats->op;

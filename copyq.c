@@ -1,8 +1,9 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
- * rproxy -- dynamic caching and delta update in HTTP
- * $Id$
  *
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
+ * librsync -- the library for network deltas
+ * $Id$
+ * 
+ * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1999 by Andrew Tridgell
  * Copyright (C) 1999-2000 by Peter Barker.
  *
@@ -21,15 +22,21 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "includes.h"
+#include <config.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "rsync.h"
+
 #include "emit.h"
 
 /* If possible, append this copy command to the end of the previous
  * one.  If not, flush the existing command and begin a new one.  */
 int
-hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
-               hs_copyq_t * copyq,
-               off_t start, size_t len, hs_stats_t * stats)
+rs_queue_copy(rs_write_fn_t write_fn, void *write_priv,
+               rs_copyq_t * copyq,
+               off_t start, size_t len, rs_stats_t * stats)
 {
     int             ret;
 
@@ -45,7 +52,7 @@ hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
     } else {
         /* Of course, COPY commands don't *have* to follow each other.  If we
            get two non-contiguous ones, then we flush and start again. */
-        ret = hs_copyq_push(write_fn, write_priv, copyq, stats);
+        ret = rs_copyq_push(write_fn, write_priv, copyq, stats);
         copyq->start = start;
         copyq->len = len;
         return ret;
@@ -58,8 +65,8 @@ hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
  * them out.
  */
 int
-hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
-               hs_copyq_t * copyq, hs_stats_t * stats)
+rs_copyq_push(rs_write_fn_t write_fn, void *write_priv,
+               rs_copyq_t * copyq, rs_stats_t * stats)
 {
     int             ret;
 
@@ -67,7 +74,7 @@ hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
         return 0;
     assert(copyq->len > 0);
 
-    ret = hs_emit_copy(write_fn, write_priv,
+    ret = rs_emit_copy(write_fn, write_priv,
                         copyq->start, copyq->len, stats);
     copyq->len = 0;
 

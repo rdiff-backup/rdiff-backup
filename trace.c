@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- library for network deltas
+ * librsync -- library for network deltas
  * $Id$
  *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -38,29 +38,29 @@
 #include <assert.h>
 #include <stdarg.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "util.h"
 #include "trace.h"
 
 
-hs_trace_fn_t  *hs_trace_impl = hs_trace_stderr;
+rs_trace_fn_t  *rs_trace_impl = rs_trace_stderr;
 
-static int hs_trace_level = HS_LOG_INFO;
+static int rs_trace_level = HS_LOG_INFO;
 
 #ifdef HAVE_PROGRAM_INVOCATION_NAME
 #  define MY_NAME program_invocation_short_name
 #else
-#  define MY_NAME "libhsync"
+#  define MY_NAME "librsync"
 #endif
 
-static void hs_log_va(int level, char const *fn, char const *fmt, va_list va);
+static void rs_log_va(int level, char const *fn, char const *fmt, va_list va);
 
 
 /**
  * Log severity strings, if any.  Must match ordering in
- * ::hs_loglevel.
+ * ::rs_loglevel.
  */
-static const char *hs_severities[] = {
+static const char *rs_severities[] = {
     "EMERGENCY! ", "ALERT! ", "CRITICAL! ", "ERROR: ", "Warning: ",
     "", "", ""
 };
@@ -78,9 +78,9 @@ static const char *hs_severities[] = {
  * tracing?
  */
 void
-hs_trace_to(hs_trace_fn_t * new_impl)
+rs_trace_to(rs_trace_fn_t * new_impl)
 {
-    hs_trace_impl = new_impl;
+    rs_trace_impl = new_impl;
 }
 
 
@@ -88,16 +88,16 @@ hs_trace_to(hs_trace_fn_t * new_impl)
  * Set the least important message severity that will be output.
  */
 void
-hs_trace_set_level(hs_loglevel level)
+rs_trace_set_level(rs_loglevel level)
 {
-    hs_trace_level = level;
+    rs_trace_level = level;
 }
 
 
 static void
-hs_log_va(int level, char const *fn, char const *fmt, va_list va)
+rs_log_va(int level, char const *fn, char const *fmt, va_list va)
 {
-    if (hs_trace_impl && level <= hs_trace_level) {
+    if (rs_trace_impl && level <= rs_trace_level) {
         char            buf[1000];
         char            full_buf[1000];
 
@@ -105,9 +105,9 @@ hs_log_va(int level, char const *fn, char const *fmt, va_list va)
 
         snprintf(full_buf, sizeof full_buf - 1,
                  "%s: %s(%s) %s\n",
-                 MY_NAME, hs_severities[level], fn, buf);
+                 MY_NAME, rs_severities[level], fn, buf);
 
-	hs_trace_impl(level, full_buf);
+	rs_trace_impl(level, full_buf);
     }
 }
 
@@ -116,18 +116,18 @@ hs_log_va(int level, char const *fn, char const *fmt, va_list va)
 /* Called by a macro that prepends the calling function name,
  * etc.  */
 void
-hs_log0(int level, char const *fn, char const *fmt, ...)
+rs_log0(int level, char const *fn, char const *fmt, ...)
 {
     va_list         va;
 
     va_start(va, fmt);
-    hs_log_va(level, fn, fmt, va);
+    rs_log_va(level, fn, fmt, va);
     va_end(va);
 }
 
 
 void
-hs_trace_stderr(int UNUSED(level), char const *msg)
+rs_trace_stderr(int UNUSED(level), char const *msg)
 {
     /* NOTE NO TRAILING NUL */
     write(STDERR_FILENO, msg, strlen(msg));
@@ -137,12 +137,12 @@ hs_trace_stderr(int UNUSED(level), char const *msg)
 /* This is called directly if the machine doesn't allow varargs
  * macros. */
 void
-hs_fatal0(char const *s, ...) 
+rs_fatal0(char const *s, ...) 
 {
     va_list	va;
 
     va_start(va, s);
-    hs_log_va(HS_LOG_CRIT, PACKAGE, s, va);
+    rs_log_va(HS_LOG_CRIT, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -150,12 +150,12 @@ hs_fatal0(char const *s, ...)
 /* This is called directly if the machine doesn't allow varargs
  * macros. */
 void
-hs_error0(char const *s, ...) 
+rs_error0(char const *s, ...) 
 {
     va_list	va;
 
     va_start(va, s);
-    hs_log_va(HS_LOG_ERR, PACKAGE, s, va);
+    rs_log_va(HS_LOG_ERR, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -163,12 +163,12 @@ hs_error0(char const *s, ...)
 /* This is called directly if the machine doesn't allow varargs
  * macros. */
 void
-hs_trace0(char const *s, ...) 
+rs_trace0(char const *s, ...) 
 {
     va_list	va;
 
     va_start(va, s);
-    hs_log_va(HS_LOG_DEBUG, PACKAGE, s, va);
+    rs_log_va(HS_LOG_DEBUG, PACKAGE, s, va);
     va_end(va);
 }
 
@@ -179,7 +179,7 @@ hs_trace0(char const *s, ...)
  * nothing.
  */
 int
-hs_supports_trace(void)
+rs_supports_trace(void)
 {
 #ifdef DO_HS_TRACE
     return 1;

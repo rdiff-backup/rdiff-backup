@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -38,12 +38,13 @@
 #include <config.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 
 
-/** \brief Translate from hs_result to human-readable messages. */
-char const *hs_strerror(hs_result r)
+/** \brief Translate from rs_result to human-readable messages. */
+char const *rs_strerror(rs_result r)
 {
     switch (r) {
     case HS_DONE:

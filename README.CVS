@@ -16,11 +16,11 @@ compiler, make and so on.  On Debian, you can simply say
   $ cvs -d:pserver:cvs@pserver.samba.org:/cvsroot login 
   [ enter "cvs" ]
   $ cvs -z3 -d:pserver:cvs@pserver.samba.org:/cvsroot \
-    -d YOUR_DIRECTORY co rproxy/libhsync
+    -d YOUR_DIRECTORY co librsync
 
 You can choose the name of the directory that will hold the source
 here.  If you have no opinion, just omit the `-d YOUR_DIRECTORY' and
-it will go into `libhsync'.
+it will go into `librsync'.
 
 For more details, see the web site.
 
@@ -38,7 +38,7 @@ You can pass all the ./configure options to autogen, including --help.
 If you make a change to the source and would like to contribute it
 back, do this:
 
-  $ cvs diff -u -N >/tmp/my.libhsync.patch
+  $ cvs diff -u -N >/tmp/my.librsync.patch
 
 and mail it to the list.
 

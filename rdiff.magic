@@ -1,7 +1,7 @@
 # Supplementary magic data for the file(1) command to support
 # rdiff(1).  The format is described in magic(5).
 #
-# libhsync -- the library for network deltas
+# librsync -- the library for network deltas
 #
 # Copyright (C) 2001 by Martin Pool.  You may do whatever you want with
 # this file.

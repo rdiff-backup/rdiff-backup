@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- library for network deltas
+ * librsync -- library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -21,12 +21,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-hs_result hs_squirt_byte(hs_stream_t *stream, unsigned char d);
-hs_result hs_squirt_netint(hs_stream_t *stream, hs_long_t d, int len);
-hs_result hs_squirt_n4(hs_stream_t *stream, int val);
+rs_result rs_squirt_byte(rs_stream_t *stream, unsigned char d);
+rs_result rs_squirt_netint(rs_stream_t *stream, rs_long_t d, int len);
+rs_result rs_squirt_n4(rs_stream_t *stream, int val);
 
-hs_result hs_suck_netint(hs_stream_t *stream, hs_long_t *v, int len);
-hs_result hs_suck_byte(hs_stream_t *stream, unsigned char *);
-hs_result hs_suck_n4(hs_stream_t *stream, int *);
+rs_result rs_suck_netint(rs_stream_t *stream, rs_long_t *v, int len);
+rs_result rs_suck_byte(rs_stream_t *stream, unsigned char *);
+rs_result rs_suck_n4(rs_stream_t *stream, int *);
 
-int hs_int_len(hs_long_t val);
+int rs_int_len(rs_long_t val);

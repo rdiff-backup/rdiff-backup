@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -20,12 +20,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-typedef struct hs_filebuf hs_filebuf_t;
+typedef struct rs_filebuf rs_filebuf_t;
 
-hs_filebuf_t *hs_filebuf_new(FILE *f, hs_stream_t *stream, size_t buf_len);
+rs_filebuf_t *rs_filebuf_new(FILE *f, rs_stream_t *stream, size_t buf_len);
 
-void hs_filebuf_free(hs_filebuf_t *fb);
+void rs_filebuf_free(rs_filebuf_t *fb);
 
-hs_result hs_infilebuf_fill(hs_filebuf_t *fb);
+rs_result rs_infilebuf_fill(rs_filebuf_t *fb);
 
-hs_result hs_outfilebuf_drain(hs_filebuf_t *);
+rs_result rs_outfilebuf_drain(rs_filebuf_t *);

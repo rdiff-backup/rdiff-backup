@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- library for network deltas
+ * librsync -- library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -25,8 +25,9 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "sumset.h"
 #include "util.h"
 #include "trace.h"
@@ -36,7 +37,7 @@
  * Deep deallocation of checksums.
  */
 void
-hs_free_sumset(hs_signature_t * psums)
+rs_free_sumset(rs_signature_t * psums)
 {
         if (psums->block_sigs)
                 free(psums->block_sigs);
@@ -47,7 +48,7 @@ hs_free_sumset(hs_signature_t * psums)
         if (psums->targets)
                 free(psums->targets);
 
-        hs_bzero(psums, sizeof *psums);
+        rs_bzero(psums, sizeof *psums);
         free(psums);
 }
 
@@ -57,12 +58,12 @@ hs_free_sumset(hs_signature_t * psums)
  * Dump signatures to the log.
  */
 void
-hs_sumset_dump(hs_signature_t const *sums)
+rs_sumset_dump(rs_signature_t const *sums)
 {
         int i;
         char        strong_hex[HS_MD4_LENGTH * 3];
     
-        hs_log(HS_LOG_INFO, 
+        rs_log(HS_LOG_INFO, 
                 "sumset info: block_len=%d, file length=%lu, "
                 "number of chunks=%d, remainder=%d",
                 sums->block_len,
@@ -70,9 +71,9 @@ hs_sumset_dump(hs_signature_t const *sums)
                 sums->remainder);
 
         for (i = 0; i < sums->count; i++) {
-                hs_hexify(strong_hex, sums->block_sigs[i].strong_sum,
+                rs_hexify(strong_hex, sums->block_sigs[i].strong_sum,
                           sums->strong_sum_len);
-                hs_log(HS_LOG_INFO,
+                rs_log(HS_LOG_INFO,
                         "sum %6d: weak=%08x, strong=%s",
                         i, sums->block_sigs[i].weak_sum, strong_hex);
         }

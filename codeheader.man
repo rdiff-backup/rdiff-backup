@@ -1,5 +1,5 @@
 .\"
-.\" libhsync -- dynamic caching and delta update in HTTP
+.\" librsync -- dynamic caching and delta update in HTTP
 .\" $Id$
 .\" 
 .\" Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -19,7 +19,7 @@
 .\" Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 .\"
 
-.TH libhsync 2 "$Date$" 
+.TH librsync 2 "$Date$" 
 .SH NAME
 .SH SYNOPSYS
 .SH DESCRIPTION

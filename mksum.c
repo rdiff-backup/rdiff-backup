@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- library for network deltas
+ * librsync -- library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "stream.h"
 #include "util.h"
 #include "sumset.h"
@@ -47,43 +47,43 @@
 
 
 /* Possible state functions for signature generation. */
-static hs_result hs_sig_s_header(hs_job_t *);
-static hs_result hs_sig_s_generate(hs_job_t *);
+static rs_result rs_sig_s_header(rs_job_t *);
+static rs_result rs_sig_s_generate(rs_job_t *);
 
 
                                            
 /**
  * State of trying to send the signature header.
  */
-static hs_result hs_sig_s_header(hs_job_t *job)
+static rs_result rs_sig_s_header(rs_job_t *job)
 {
-    hs_squirt_n4(job->stream, HS_SIG_MAGIC);
-    hs_squirt_n4(job->stream, job->block_len);
-    hs_squirt_n4(job->stream, job->strong_sum_len);
-    hs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)",
+    rs_squirt_n4(job->stream, HS_SIG_MAGIC);
+    rs_squirt_n4(job->stream, job->block_len);
+    rs_squirt_n4(job->stream, job->strong_sum_len);
+    rs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)",
              HS_SIG_MAGIC, (int) job->block_len, (int) job->strong_sum_len);
     
-    job->statefn = hs_sig_s_generate;
+    job->statefn = rs_sig_s_generate;
     return HS_RUNNING;
 }
 
 
-static hs_result
-hs_sig_do_block(hs_job_t *job, const void *block, size_t len)
+static rs_result
+rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
 {
     unsigned int        weak_sum;
-    hs_strong_sum_t     strong_sum;
+    rs_strong_sum_t     strong_sum;
     char strong_sum_hex[HS_MD4_LENGTH * 2 + 1];
 
-    weak_sum = hs_calc_weak_sum(block, len);
+    weak_sum = rs_calc_weak_sum(block, len);
 
-    hs_calc_strong_sum(block, len, &strong_sum);
-    hs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
+    rs_calc_strong_sum(block, len, &strong_sum);
+    rs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
 
-    hs_squirt_n4(job->stream, weak_sum);
-    hs_blow_literal(job->stream, strong_sum, job->strong_sum_len);
+    rs_squirt_n4(job->stream, weak_sum);
+    rs_blow_literal(job->stream, strong_sum, job->strong_sum_len);
 
-    hs_trace("sent weak sum 0x%08x and strong sum %s", weak_sum,
+    rs_trace("sent weak sum 0x%08x and strong sum %s", weak_sum,
              strong_sum_hex);
 
     return HS_RUNNING;
@@ -93,50 +93,50 @@ hs_sig_do_block(hs_job_t *job, const void *block, size_t len)
 /*
  * State of reading a block and trying to generate its sum.
  */
-static hs_result hs_sig_s_generate(hs_job_t *job)
+static rs_result rs_sig_s_generate(rs_job_t *job)
 {
-    hs_result           result;
+    rs_result           result;
     size_t              len;
     void                *block;
         
     /* must get a whole block, otherwise try again */
     len = job->block_len;
-    result = hs_scoop_read(job->stream, len, &block);
+    result = rs_scoop_read(job->stream, len, &block);
         
     /* unless we're near eof, in which case we'll accept
          * whatever's in there */
     if ((result == HS_BLOCKED && job->stream->eof_in)) {
-        result = hs_scoop_read_rest(job->stream, &len, &block);
+        result = rs_scoop_read_rest(job->stream, &len, &block);
     } else if (result == HS_INPUT_ENDED) {
         return HS_DONE;
     } else if (result != HS_DONE) {
-        hs_trace("generate stopped: %s", hs_strerror(result));
+        rs_trace("generate stopped: %s", rs_strerror(result));
         return result;
     }
 
-    hs_trace("got %d byte block", len);
+    rs_trace("got %d byte block", len);
 
-    return hs_sig_do_block(job, block, len);
+    return rs_sig_do_block(job, block, len);
 }
 
 
 /** \brief Set up a new encoding job.
  *
- * \sa hs_sig_file()
+ * \sa rs_sig_file()
  */
-hs_job_t * hs_sig_begin(hs_stream_t *stream,
+rs_job_t * rs_sig_begin(rs_stream_t *stream,
                         size_t new_block_len, size_t strong_sum_len)
 {
-    hs_job_t *job;
+    rs_job_t *job;
 
-    job = hs_job_new(stream, "signature");
+    job = rs_job_new(stream, "signature");
 
     job->block_len = new_block_len;
 
     assert(strong_sum_len > 0 && strong_sum_len <= HS_MD4_LENGTH);
     job->strong_sum_len = strong_sum_len;
 
-    job->statefn = hs_sig_s_header;
+    job->statefn = rs_sig_s_header;
 
     return job;
 }

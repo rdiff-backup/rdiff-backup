@@ -27,11 +27,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 
 
 void
-hs_hexify(char *to_buf, void const *from, int from_len)
+rs_hexify(char *to_buf, void const *from, int from_len)
 {
     static const char hex_chars[] = "0123456789abcdef";
     char const *from_buf = (unsigned char const *) from;

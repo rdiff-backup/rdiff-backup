@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- library for network deltas
+ * librsync -- library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -22,17 +22,17 @@
  */
 
 
-void * hs_alloc(size_t size, char const *name);
-void *hs_alloc_struct0(size_t size, char const *name);
+void * rs_alloc(size_t size, char const *name);
+void *rs_alloc_struct0(size_t size, char const *name);
 
-void hs_bzero(void *buf, size_t size);
+void rs_bzero(void *buf, size_t size);
 
 
 /*
  * Allocate and zero-fill an instance of TYPE.
  */
-#define hs_alloc_struct(type)				\
-        ((type *) hs_alloc_struct0(sizeof(type), #type))
+#define rs_alloc_struct(type)				\
+        ((type *) rs_alloc_struct0(sizeof(type), #type))
 
 
 

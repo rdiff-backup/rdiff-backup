@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- library for network deltas
+ * librsync -- library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -34,7 +34,7 @@
  * Classes of operation that can be present.  Each may have several different
  * possible representations.
  */
-enum hs_op_kind {
+enum rs_op_kind {
     HS_KIND_END = 1000,
     HS_KIND_LITERAL,
     HS_KIND_SIGNATURE,
@@ -48,11 +48,11 @@ enum hs_op_kind {
 };
 
 
-typedef struct hs_op_kind_name {
+typedef struct rs_op_kind_name {
     char const           *name;
-    enum hs_op_kind const    kind;
-} hs_op_kind_name_t;
+    enum rs_op_kind const    kind;
+} rs_op_kind_name_t;
 
-char const * hs_op_kind_name(enum hs_op_kind);
+char const * rs_op_kind_name(enum rs_op_kind);
 
 

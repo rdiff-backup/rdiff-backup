@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -20,6 +20,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-hs_weak_sum_t hs_calc_weak_sum(void const *buf1, int len);
+rs_weak_sum_t rs_calc_weak_sum(void const *buf1, int len);
 
-void hs_calc_strong_sum(void const *buf, size_t buf_len, hs_strong_sum_t *);
+void rs_calc_strong_sum(void const *buf, size_t buf_len, rs_strong_sum_t *);

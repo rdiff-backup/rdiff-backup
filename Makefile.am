@@ -25,11 +25,11 @@
 
 # TODO: Include popt-1.5 as for rsync.
 
-SUBDIRS = man popt
+SUBDIRS = popt
 
-lib_LTLIBRARIES = libhsync.la
+lib_LTLIBRARIES = librsync.la
 
-libhsync_la_SOURCES = \
+librsync_la_SOURCES = \
 	stats.c \
 	readsums.c \
 	search.c search.h \
@@ -41,8 +41,7 @@ libhsync_la_SOURCES = \
 	emit.c emit.h				\
 	fileutil.c fileutil.h			\
 	hex.c					\
-	hsync.h					\
-	hsyncfile.h				\
+	rsync.h					\
 	job.c job.h				\
 	mdfour.c				\
 	mksum.c					\
@@ -61,9 +60,11 @@ libhsync_la_SOURCES = \
 	version.c				\
 	whole.c whole.h
 
+man_MANS = rdiff.1 librsync.3
+
 # See libversions.txt and the libtool manual for an explanation of the
 # library versioning
-libhsync_la_LDFLAGS = -version-info 1:0:0
+librsync_la_LDFLAGS = -version-info 1:0:0
 
 # TODO: If we ever care enough, build a second library containing only
 # the code necessary to be a client, and not stuff for encoding.  At
@@ -109,13 +110,13 @@ CLEANFILES = tmp-test-*.d/* tmp-try-*.d/*
 prototab.c prototab.h: $(srcdir)/mkprototab.pl
 	perl $(srcdir)/mkprototab.pl prototab.c prototab.h
 
-EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) $(extra_docs) 
+EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) $(extra_docs) $(man_MANS)
 
-include_HEADERS = hsync.h hsyncfile.h
+include_HEADERS = rsync.h
 
 # This is the default for any programs that don't specify a
 # preference.
-LDADD = libhsync.la $(LIBOBJS)
+LDADD = librsync.la $(LIBOBJS)
 
 # Eventually we might want to install some of these into system
 # directories, but they're pretty obscure and it's hard to imagine any
@@ -125,7 +126,8 @@ LDADD = libhsync.la $(LIBOBJS)
 bin_PROGRAMS = rdiff
 
 rdiff_SOURCES = rdiff.c isprefix.c isprefix.h
-rdiff_LDADD = @BUILD_POPT@ libhsync.la
+rdiff_LDADD = @BUILD_POPT@ librsync.la
+rdiff_DEPENDENCIES = @BUILD_POPT@
 
 check_PROGRAMS = isprefix.driver
 
@@ -154,5 +156,8 @@ html/index.html latex/refman.pdf latex/refman.ps.gz do-doxy:
 upload-doxy: html/index.html latex/refman.pdf latex/refman.ps.gz
 	for i in $(sites); do \
 	rsync --delete -avz html/ latex/refman.pdf latex/refman.ps.gz \
-		./rproxy-small-logo.png $$i/doxygen/libhsync; \
+		./rproxy-small-logo.png $$i/doxygen/librsync; \
 	done
+
+%.ps: %.[0-9]
+	man -Tps ./$< >$@

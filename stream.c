@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- dynamic caching and delta update in HTTP
+ * librsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -56,15 +56,15 @@
  */
 
 /*
- * Manage libhsync streams of IO.  See scoop.c and tube.c for related
+ * Manage librsync streams of IO.  See scoop.c and tube.c for related
  * code for input and output respectively.
  *
- * libhsync never does IO or memory allocation, but relies on the
+ * librsync never does IO or memory allocation, but relies on the
  * caller.  This is very nice for integration, but means that we have
  * to be fairly flexible as to when we can `read' or `write' stuff
  * internally.
  *
- * libhsync basically does two types of IO.  It reads network integers
+ * librsync basically does two types of IO.  It reads network integers
  * of various lengths which encode command and control information
  * such as versions and signatures.  It also does bulk data transfer.
  *
@@ -89,8 +89,9 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "stream.h"
 #include "util.h"
 #include "trace.h"
@@ -98,15 +99,15 @@
 static const int HS_STREAM_DOGTAG = 2001125;
 
 
-void hs_stream_init(hs_stream_t *stream)
+void rs_stream_init(rs_stream_t *stream)
 {
-        hs_simpl_t *impl;
+        rs_simpl_t *impl;
         
         assert(stream);
-        hs_bzero(stream, sizeof *stream);
+        rs_bzero(stream, sizeof *stream);
         stream->dogtag = HS_STREAM_DOGTAG;
 
-        impl = stream->impl = hs_alloc_struct(hs_simpl_t);
+        impl = stream->impl = rs_alloc_struct(rs_simpl_t);
 
         /* because scoop_alloc == 0, the scoop buffer will be
          * allocated when required. */
@@ -117,7 +118,7 @@ void hs_stream_init(hs_stream_t *stream)
  * Make sure everything is basically OK with STREAM.
  */
 void
-hs_stream_check(hs_stream_t *stream)
+rs_stream_check(rs_stream_t *stream)
 {
         assert(stream);
         assert(stream->dogtag == HS_STREAM_DOGTAG);
@@ -130,30 +131,30 @@ hs_stream_check(hs_stream_t *stream)
  * there is not enough space in one or the other stream.
  *
  * This always does the copy immediately.  Most functions should call
- * hs_blow_copy to cause the copy to happen gradually as space
+ * rs_blow_copy to cause the copy to happen gradually as space
  * becomes available.
  */
-int hs_stream_copy(hs_stream_t *stream, int max_len)
+int rs_stream_copy(rs_stream_t *stream, int max_len)
 {
         int len = max_len;
     
-        hs_stream_check(stream);
+        rs_stream_check(stream);
         assert(len > 0);
 
         if ((unsigned) len > stream->avail_in) {
-                hs_trace("copy limited to %d available input bytes",
+                rs_trace("copy limited to %d available input bytes",
                           stream->avail_in);
                 len = stream->avail_in;
         }
 
 
         if ((unsigned) len > stream->avail_out) {
-                hs_trace("copy limited to %d available output bytes",
+                rs_trace("copy limited to %d available output bytes",
                           stream->avail_out);
                 len = stream->avail_out;
         }
 
-        hs_trace("stream copied chunk of %d bytes", len);
+        rs_trace("stream copied chunk of %d bytes", len);
 
         memcpy(stream->next_out, stream->next_in, len);
     
@@ -174,12 +175,12 @@ int hs_stream_copy(hs_stream_t *stream, int max_len)
  * means you're done.
  */
 int
-hs_stream_is_empty(hs_stream_t *stream)
+rs_stream_is_empty(rs_stream_t *stream)
 {
-        int ret = stream->avail_in == 0  &&  hs_tube_is_idle(stream);
+        int ret = stream->avail_in == 0  &&  rs_tube_is_idle(stream);
 
         if (ret)
-                hs_trace("stream now has no input and no tube output");
+                rs_trace("stream now has no input and no tube output");
     
         return ret;
 }
@@ -191,7 +192,7 @@ hs_stream_is_empty(hs_stream_t *stream)
  * because it has either consumed all the input or has filled the
  * output buffer.  This function checks that simple postcondition.
  */
-void hs_stream_check_exit(hs_stream_t const *stream)
+void rs_stream_check_exit(rs_stream_t const *stream)
 {
         assert(stream->avail_in == 0  ||  stream->avail_out == 0);
 }

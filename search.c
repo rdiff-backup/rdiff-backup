@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -39,8 +39,9 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "trace.h"
 #include "util.h"
 #include "sumset.h"
@@ -57,14 +58,14 @@
 
 
 static int
-hs_compare_targets(hs_target_t const *t1, hs_target_t const *t2)
+rs_compare_targets(rs_target_t const *t1, rs_target_t const *t2)
 {
     return ((int) t1->t - (int) t2->t);
 }
 
 
-hs_result
-hs_build_hash_table(hs_signature_t * sums)
+rs_result
+rs_build_hash_table(rs_signature_t * sums)
 {
     int                     i;
 
@@ -73,7 +74,7 @@ hs_build_hash_table(hs_signature_t * sums)
         return HS_MEM_ERROR;
     
     if (sums->count > 0) {
-	sums->targets = calloc(sums->count, sizeof(hs_target_t));
+	sums->targets = calloc(sums->count, sizeof(rs_target_t));
         if (!sums->targets)
             return HS_MEM_ERROR;
 
@@ -87,7 +88,7 @@ hs_build_hash_table(hs_signature_t * sums)
          * care?  */
 	qsort(sums->targets, sums->count,
 	      sizeof(sums->targets[0]),
-              (int (*)(const void *, const void *)) hs_compare_targets);
+              (int (*)(const void *, const void *)) rs_compare_targets);
     }
 
     for (i = 0; i < TABLESIZE; i++)
@@ -97,7 +98,7 @@ hs_build_hash_table(hs_signature_t * sums)
 	sums->tag_table[sums->targets[i].t] = i;
     }
 
-    hs_trace("done");
+    rs_trace("done");
     return HS_DONE;
 }
 
@@ -113,14 +114,14 @@ hs_build_hash_table(hs_signature_t * sums)
  * anything.
  */
 int
-hs_search_for_block(hs_weak_sum_t weak_sum,
+rs_search_for_block(rs_weak_sum_t weak_sum,
                     char const *inbuf, size_t block_len,
-                    hs_signature_t const *sig, hs_stats_t * stats,
-                    hs_long_t * match_where)
+                    rs_signature_t const *sig, rs_stats_t * stats,
+                    rs_long_t * match_where)
 {
     int                     hash_tag = gettag(weak_sum);
     int                     j = sig->tag_table[hash_tag];
-    hs_strong_sum_t         strong_sum;
+    rs_strong_sum_t         strong_sum;
     int                     got_strong = 0;
 
     if (j == NULL_TAG) {
@@ -146,10 +147,10 @@ hs_search_for_block(hs_weak_sum_t weak_sum,
 
 	token = sig->block_sigs[i].i;
 
-	hs_trace("found weak match for %08x in token %d", weak_sum, token);
+	rs_trace("found weak match for %08x in token %d", weak_sum, token);
 
 	if (!got_strong) {
-	    hs_calc_strong_sum(inbuf, block_len, &strong_sum);
+	    rs_calc_strong_sum(inbuf, block_len, &strong_sum);
 	    got_strong = 1;
 	}
 
@@ -162,7 +163,7 @@ hs_search_for_block(hs_weak_sum_t weak_sum,
 	    *match_where = (token - 1) * sig->block_len;
 	    return 1;
 	} else {
-	    hs_trace("this was a false positive, the strong sig doesn't match");
+	    rs_trace("this was a false positive, the strong sig doesn't match");
 	    stats->false_matches++;
 	}
     }

@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- dynamic caching and delta update in HTTP
+ * librsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
@@ -57,7 +57,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 #include "trace.h"
 #include "util.h"
 #include "stream.h"
@@ -66,10 +66,10 @@
 const int HS_TUBE_TAG = 892138;
 
 
-static void hs_tube_catchup_literal(hs_stream_t *stream)
+static void rs_tube_catchup_literal(rs_stream_t *stream)
 {
         int len, remain;
-        hs_simpl_t *tube = stream->impl;
+        rs_simpl_t *tube = stream->impl;
 
         len = tube->lit_len;
         assert(len > 0);
@@ -79,7 +79,7 @@ static void hs_tube_catchup_literal(hs_stream_t *stream)
                 len = stream->avail_out;
 
         if (!stream->avail_out) {
-                hs_trace("no output space available");
+                rs_trace("no output space available");
                 return;
         }
 
@@ -88,7 +88,7 @@ static void hs_tube_catchup_literal(hs_stream_t *stream)
         stream->avail_out -= len;
 
         remain = tube->lit_len - len;
-        hs_trace("transmitted %d literal bytes from tube, %d remain",
+        rs_trace("transmitted %d literal bytes from tube, %d remain",
                   len, remain);
 
         if (remain > 0) {
@@ -102,19 +102,19 @@ static void hs_tube_catchup_literal(hs_stream_t *stream)
 }
 
 
-static void hs_tube_catchup_copy(hs_stream_t *stream)
+static void rs_tube_catchup_copy(rs_stream_t *stream)
 {
         int copied;
-        hs_simpl_t *tube = stream->impl;
+        rs_simpl_t *tube = stream->impl;
 
         assert(tube->lit_len == 0);
         assert(tube->copy_len > 0);
 
-        copied = hs_stream_copy(stream, tube->copy_len);
+        copied = rs_stream_copy(stream, tube->copy_len);
 
         tube->copy_len -= copied;
 
-        hs_trace("transmitted %d copy bytes from tube, %d remain",
+        rs_trace("transmitted %d copy bytes from tube, %d remain",
                   copied, tube->copy_len);
 }
 
@@ -124,11 +124,11 @@ static void hs_tube_catchup_copy(hs_stream_t *stream)
  * Return HS_DONE if the tube is now empty and ready to accept another
  * command, HS_BLOCKED if there is still stuff waiting to go out.
  */
-int hs_tube_catchup(hs_stream_t *stream)
+int rs_tube_catchup(rs_stream_t *stream)
 {
-        hs_simpl_t *tube = stream->impl;
+        rs_simpl_t *tube = stream->impl;
         if (tube->lit_len)
-                hs_tube_catchup_literal(stream);
+                rs_tube_catchup_literal(stream);
 
         if (tube->lit_len) {
                 /* there is still literal data queued, so we can't send
@@ -137,7 +137,7 @@ int hs_tube_catchup(hs_stream_t *stream)
         }
 
         if (tube->copy_len)
-                hs_tube_catchup_copy(stream);
+                rs_tube_catchup_copy(stream);
     
         if (tube->copy_len)
                 return HS_BLOCKED;
@@ -149,9 +149,9 @@ int hs_tube_catchup(hs_stream_t *stream)
 /* Check whether there is data in the tube waiting to go out.  So if true
  * this basically means that the previous command has finished doing all its
  * output. */
-int hs_tube_is_idle(hs_stream_t const *stream)
+int rs_tube_is_idle(rs_stream_t const *stream)
 {
-        hs_simpl_t *tube = stream->impl;
+        rs_simpl_t *tube = stream->impl;
         return tube->lit_len == 0 && tube->copy_len == 0;
 }
 
@@ -161,9 +161,9 @@ int hs_tube_is_idle(hs_stream_t const *stream)
  * output of the stream.  We can only accept this request if there is
  * no copy command already pending.
  */
-void hs_blow_copy(hs_stream_t *stream, int len)
+void rs_blow_copy(rs_stream_t *stream, int len)
 {
-        hs_simpl_t *tube = stream->impl;
+        rs_simpl_t *tube = stream->impl;
         assert(tube->copy_len == 0);
 
         tube->copy_len = len;
@@ -180,13 +180,13 @@ void hs_blow_copy(hs_stream_t *stream, int len)
  * tube, because the literal data comes out first.
  */
 void
-hs_blow_literal(hs_stream_t *stream, const void *buf, size_t len)
+rs_blow_literal(rs_stream_t *stream, const void *buf, size_t len)
 {
-        hs_simpl_t *tube = stream->impl;
+        rs_simpl_t *tube = stream->impl;
         assert(tube->copy_len == 0);
 
         if (len > sizeof(tube->lit_buf) - tube->lit_len) {
-                hs_fatal("tube popped when trying to blow %ld literal bytes!",
+                rs_fatal("tube popped when trying to blow %ld literal bytes!",
                          (long) len);
         }
 

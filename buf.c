@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- the library for network deltas
+ * librsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -27,7 +27,7 @@
 
 
 /*
- * buf.c -- Buffers that map between stdio file streams and libhsync
+ * buf.c -- Buffers that map between stdio file streams and librsync
  * streams.  As the stream consumes input and produces output, it is
  * refilled from appropriate input and output FILEs.  A dynamically
  * allocated buffer of configurable size is used as an intermediary.
@@ -46,8 +46,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "hsync.h"
-#include "hsyncfile.h"
+#include "rsync.h"
 #include "trace.h"
 #include "buf.h"
 #include "util.h"
@@ -55,23 +54,23 @@
 /**
  * File IO buffer sizes.
  */
-int hs_inbuflen = 16000, hs_outbuflen = 16000;
+int rs_inbuflen = 16000, rs_outbuflen = 16000;
 
 
-struct hs_filebuf {
+struct rs_filebuf {
         FILE *f;
-        hs_stream_t     *stream;
+        rs_stream_t     *stream;
         char            *buf;
         size_t          buf_len;
 };
 
 
 
-hs_filebuf_t *hs_filebuf_new(FILE *f, hs_stream_t *stream, size_t buf_len) 
+rs_filebuf_t *rs_filebuf_new(FILE *f, rs_stream_t *stream, size_t buf_len) 
 {
-        hs_filebuf_t *pf = hs_alloc_struct(hs_filebuf_t);
+        rs_filebuf_t *pf = rs_alloc_struct(rs_filebuf_t);
 
-        pf->buf = hs_alloc(buf_len, "file buffer");
+        pf->buf = rs_alloc(buf_len, "file buffer");
         pf->buf_len = buf_len;
         pf->f = f;
         pf->stream = stream;
@@ -80,9 +79,9 @@ hs_filebuf_t *hs_filebuf_new(FILE *f, hs_stream_t *stream, size_t buf_len)
 }
 
 
-void hs_filebuf_free(hs_filebuf_t *fb) 
+void rs_filebuf_free(rs_filebuf_t *fb) 
 {
-        hs_bzero(fb, sizeof *fb);
+        rs_bzero(fb, sizeof *fb);
         free(fb);
 }
 
@@ -92,9 +91,9 @@ void hs_filebuf_free(hs_filebuf_t *fb)
  * BUF, and let the stream use that.  On return, SEEN_EOF is true if
  * the end of file has passed into the stream.
  */
-hs_result hs_infilebuf_fill(hs_filebuf_t *fb)
+rs_result rs_infilebuf_fill(rs_filebuf_t *fb)
 {
-        hs_stream_t * const     stream = fb->stream;
+        rs_stream_t * const     stream = fb->stream;
         FILE                    *f = fb->f;
         int                     len;
         
@@ -119,10 +118,10 @@ hs_result hs_infilebuf_fill(hs_filebuf_t *fb)
         len = fread(fb->buf, 1, fb->buf_len, f);
         if (len <= 0) {
             if (feof(f)) {
-                hs_trace("seen end of file on input");
+                rs_trace("seen end of file on input");
                 stream->eof_in = 1;
             } else if (ferror(f)) {
-                hs_error("error filling stream from file: %s",
+                rs_error("error filling stream from file: %s",
                          strerror(errno));
                 return HS_IO_ERROR;
             }
@@ -139,10 +138,10 @@ hs_result hs_infilebuf_fill(hs_filebuf_t *fb)
  * contains some buffered output now.  Write this out to F, and reset
  * the buffer cursor.
  */
-hs_result hs_outfilebuf_drain(hs_filebuf_t *fb)
+rs_result rs_outfilebuf_drain(rs_filebuf_t *fb)
 {
         int present;
-        hs_stream_t * const stream = fb->stream;
+        rs_stream_t * const stream = fb->stream;
         FILE *f = fb->f;
 
         /* This is only allowed if either the stream has no output buffer
@@ -168,7 +167,7 @@ hs_result hs_outfilebuf_drain(hs_filebuf_t *fb)
 
                 result = fwrite(fb->buf, 1, present, f);
                 if (present != result) {
-                        hs_error("error draining stream to file: %s",
+                        rs_error("error draining stream to file: %s",
                                   strerror(errno));
                         return HS_IO_ERROR;
                 }
@@ -184,16 +183,16 @@ hs_result hs_outfilebuf_drain(hs_filebuf_t *fb)
 /**
  * Default copy implementation that retrieves a part of a stdio file.
  */
-hs_result hs_file_copy_cb(void *arg, size_t *len, void **buf)
+rs_result rs_file_copy_cb(void *arg, size_t *len, void **buf)
 {
         int got;
 
         got = fread(*buf, 1, *len, (FILE *) arg);
         if (got == -1) {
-                hs_error(strerror(errno));
+                rs_error(strerror(errno));
                 return HS_IO_ERROR;
         } else if (got == 0) {
-                hs_error("unexpected eof");
+                rs_error("unexpected eof");
                 return HS_INPUT_ENDED;
         } else {
                 *len = got;

@@ -83,10 +83,10 @@
 #define HAVE_UNISTD_H 1
 
 /* Define if you have the popt library (-lpopt).  */
-#define HAVE_LIBPOPT 1
+/* #undef HAVE_LIBPOPT */
 
 /* Name of package */
-#define PACKAGE "libhsync"
+#define PACKAGE "librsync"
 
 /* Version number of package */
 #define VERSION "0.9.1dev4"

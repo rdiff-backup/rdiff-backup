@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- dynamic caching and delta update in HTTP
+ * librsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -24,10 +24,10 @@
 
 #include <stdio.h>
 
-#include "hsync.h"
+#include "rsync.h"
 
 
 /** \brief Library version string. */
-char const hs_libhsync_version[] = (PACKAGE " " VERSION);
+char const rs_librsync_version[] = (PACKAGE " " VERSION);
 
 

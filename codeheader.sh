@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# libhsync -- the library for network deltas
+# librsync -- the library for network deltas
 # $Id$
 # 
 # Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>

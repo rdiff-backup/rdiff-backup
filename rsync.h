@@ -1,6 +1,6 @@
 /*=                    -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * libhsync -- library for network deltas
+ * librsync -- library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
@@ -28,9 +28,9 @@
                                */
 
 
-/*! \file hsync.h
+/*! \file rsync.h
  *
- * \brief Main public interface to libhsync.
+ * \brief Main public interface to librsync.
  * \author Martin Pool <mbp@samba.org>
  *
  * $Id$
@@ -38,8 +38,8 @@
  * See \ref intro for an introduction to use of this library.
  */
 
-extern char const hs_libhsync_version[];
-extern char const hs_licence_string[];
+extern char const rs_librsync_version[];
+extern char const rs_licence_string[];
 
 
 /**
@@ -50,9 +50,9 @@ extern char const hs_licence_string[];
  * or something else depending on the platform.
  */
 #if SIZEOF_LONG_LONG
-typedef signed long long    hs_long_t;
+typedef signed long long    rs_long_t;
 #else
-typedef long hs_long_t;
+typedef long rs_long_t;
 #endif
 
 
@@ -61,7 +61,7 @@ typedef long hs_long_t;
  *
  * These are the same as syslog, at least in glibc.
  *
- * \sa hs_trace_set_level()
+ * \sa rs_trace_set_level()
  */
 typedef enum {
     HS_LOG_EMERG         = 0,   /**< System is unusable */
@@ -72,30 +72,30 @@ typedef enum {
     HS_LOG_NOTICE        = 5,   /**< Normal but significant condition */
     HS_LOG_INFO          = 6,   /**< Informational */
     HS_LOG_DEBUG         = 7    /**< Debug-level messages */
-} hs_loglevel;
+} rs_loglevel;
 
 
 
 /**
- * \typedef hs_trace_fn_t
+ * \typedef rs_trace_fn_t
  * \brief Callback to write out log messages.
  * \param level a syslog level.
  * \param msg message to be logged.
  */
-typedef void    hs_trace_fn_t(int level, char const *msg);
+typedef void    rs_trace_fn_t(int level, char const *msg);
 
-void            hs_trace_set_level(hs_loglevel level);
+void            rs_trace_set_level(rs_loglevel level);
 
 /** Set trace callback. */
-void            hs_trace_to(hs_trace_fn_t *);
+void            rs_trace_to(rs_trace_fn_t *);
 
 /** Default trace callback that writes to stderr.  Implements
- * ::hs_trace_fn_t, and may be passed to hs_trace_to(). */
-void            hs_trace_stderr(int level, char const *msg);
+ * ::rs_trace_fn_t, and may be passed to rs_trace_to(). */
+void            rs_trace_stderr(int level, char const *msg);
 
 /** Check whether the library was compiled with debugging trace
  * suport. */
-int             hs_supports_trace(void);
+int             rs_supports_trace(void);
 
 
 
@@ -104,23 +104,23 @@ int             hs_supports_trace(void);
  * TO_BUF, which must be twice as long plus one byte for the null
  * terminator.
  */
-void     hs_hexify(char *to_buf, void const *from_buf, int from_len);
+void     rs_hexify(char *to_buf, void const *from_buf, int from_len);
 
 /**
  * Decode a base64 buffer in place.  \return the number of binary
  * bytes.
  */
-size_t hs_unbase64(char *s);
+size_t rs_unbase64(char *s);
 
 
 /**
  * Encode a buffer as base64.
  */
-void hs_base64(unsigned char const *buf, int n, char *out);
+void rs_base64(unsigned char const *buf, int n, char *out);
 
 
 /**
- * \brief Return codes from nonblocking hsync operations.
+ * \brief Return codes from nonblocking rsync operations.
  */
 typedef enum {
     HS_DONE =		0,	/**< Completed successfully. */
@@ -137,30 +137,30 @@ typedef enum {
     HS_INPUT_ENDED =	103,	/**< End of input file, possibly
                                    unexpected. */
     HS_BAD_MAGIC =      104,    /**< Bad magic number at start of
-                                   stream.  Probably not a libhsync
+                                   stream.  Probably not a librsync
                                    file, or possibly the wrong kind of
                                    file or from an incompatible
                                    library version. */
     HS_UNIMPLEMENTED =  105,    /**< Author is lazy. */
     HS_CORRUPT =        106,    /**< Unbelievable value in stream. */
     HS_INTERNAL_ERROR = 107,    /**< Probably a library bug. */
-} hs_result;
+} rs_result;
 
 
 
 /**
- * Return an English description of a ::hs_result value.
+ * Return an English description of a ::rs_result value.
  */
-char const *hs_strerror(hs_result r);
+char const *rs_strerror(rs_result r);
 
 
 /**
- * \brief Performance statistics from a libhsync encoding or decoding
+ * \brief Performance statistics from a librsync encoding or decoding
  * operation.
  *
- * \sa hs_format_stats(), hs_log_stats()
+ * \sa rs_format_stats(), rs_log_stats()
  */
-typedef struct hs_stats {
+typedef struct rs_stats {
     char const     *op;     /**< Human-readable name of current
                              * operation.  For example, "delta". */
     int lit_cmds;           /**< Number of literal commands. */
@@ -169,62 +169,62 @@ typedef struct hs_stats {
     int             copy_cmds, copy_bytes;
     int             sig_cmds, sig_bytes;
     int             false_matches;
-} hs_stats_t;
+} rs_stats_t;
 
 
-/** \typedef struct hs_mdfour hs_mdfour_t
+/** \typedef struct rs_mdfour rs_mdfour_t
  *
  * \brief MD4 message-digest accumulator.
  *
- * \sa hs_mdfour(), hs_mdfour_begin(), hs_mdfour_update(),
- * hs_mdfour_result()
+ * \sa rs_mdfour(), rs_mdfour_begin(), rs_mdfour_update(),
+ * rs_mdfour_result()
  */
-typedef struct hs_mdfour {
+typedef struct rs_mdfour {
     int                 A, B, C, D;
     int                 totalN;
     int                 tail_len;
     unsigned char       tail[64];
-} hs_mdfour_t;
+} rs_mdfour_t;
 
 #define HS_MD4_LENGTH 16
 
-typedef unsigned int hs_weak_sum_t;
-typedef unsigned char hs_strong_sum_t[HS_MD4_LENGTH];
+typedef unsigned int rs_weak_sum_t;
+typedef unsigned char rs_strong_sum_t[HS_MD4_LENGTH];
 
-void            hs_mdfour(unsigned char *out, void const *in, int n); 
-void            hs_mdfour_begin(/* @out@ */ hs_mdfour_t * md);
-void            hs_mdfour_update(hs_mdfour_t * md, void const *,
+void            rs_mdfour(unsigned char *out, void const *in, int n); 
+void            rs_mdfour_begin(/* @out@ */ rs_mdfour_t * md);
+void            rs_mdfour_update(rs_mdfour_t * md, void const *,
 				 size_t n);
-void hs_mdfour_result(hs_mdfour_t * md, unsigned char *out);
+void rs_mdfour_result(rs_mdfour_t * md, unsigned char *out);
 
-char *hs_format_stats(hs_stats_t const *, char *, size_t);
+char *rs_format_stats(rs_stats_t const *, char *, size_t);
 
-int hs_log_stats(hs_stats_t const *stats);
+int rs_log_stats(rs_stats_t const *stats);
 
 
-typedef struct hs_signature hs_signature_t;
+typedef struct rs_signature rs_signature_t;
 
-void hs_free_sumset(hs_signature_t *);
-void hs_sumset_dump(hs_signature_t const *);
+void rs_free_sumset(rs_signature_t *);
+void rs_sumset_dump(rs_signature_t const *);
 
 
 /**
  * Stream through which the calling application feeds data to and from the
  * library.
  *
- * On each call to hs_job_iter, the caller can make available
+ * On each call to rs_job_iter, the caller can make available
  *
  *  - avail_in bytes of input data at next_in
  *  - avail_out bytes of output space at next_out
  *  - some of both
  *
  * There is some internal state in impl.  Streams are initialized by
- * hs_stream_init, and then used to create a job by hs_sig_begin or
+ * rs_stream_init, and then used to create a job by rs_sig_begin or
  * similar functions.
  *
- * \sa hs_stream_t
+ * \sa rs_stream_t
  */
-struct hs_stream_s {
+struct rs_stream_s {
     int dogtag;                 /**< To identify mutilated corpse */
     
     char *next_in;		/**< Next input byte */
@@ -235,18 +235,18 @@ struct hs_stream_s {
     char *next_out;		/**< Next output byte should be put there */
     size_t avail_out;           /**< Remaining free space at next_out */
 
-    struct hs_simpl *impl; /**< \internal */
+    struct rs_simpl *impl; /**< \internal */
 };
 
 /**
  * Stream through which the calling application feeds data to and from the
  * library.
  *
- * \sa struct hs_stream_s
+ * \sa struct rs_stream_s
  */
-typedef struct hs_stream_s hs_stream_t;
+typedef struct rs_stream_s rs_stream_t;
 
-void hs_stream_init(hs_stream_t *);
+void rs_stream_init(rs_stream_t *);
 
 
 /** Default length of strong signatures, in bytes.  The MD4 checksum
@@ -257,34 +257,64 @@ void hs_stream_init(hs_stream_t *);
 #define HS_DEFAULT_BLOCK_LEN 2048
 
 
-/** \typedef struct hs_job hs_job_t
+/** \typedef struct rs_job rs_job_t
  *
  * \brief Job of work to be done.
  *
- * Created by functions such as hs_sig_begin(), and then iterated
- * over by hs_job_iter(). */
-typedef struct hs_job hs_job_t;
+ * Created by functions such as rs_sig_begin(), and then iterated
+ * over by rs_job_iter(). */
+typedef struct rs_job rs_job_t;
 
-hs_job_t       *hs_accum_begin(hs_stream_t *);
+rs_job_t       *rs_accum_begin(rs_stream_t *);
 
-hs_result       hs_job_iter(hs_job_t *);
-hs_result       hs_job_free(hs_job_t *);
+rs_result       rs_job_iter(rs_job_t *);
+rs_result       rs_job_free(rs_job_t *);
 
-int             hs_accum_value(hs_job_t *, char *sum, size_t sum_len);
+int             rs_accum_value(rs_job_t *, char *sum, size_t sum_len);
 
-hs_job_t *hs_sig_begin(hs_stream_t *stream,
+rs_job_t *rs_sig_begin(rs_stream_t *stream,
                        size_t new_block_len, size_t strong_sum_len);
 
-hs_job_t       *hs_delta_begin(hs_stream_t *stream, hs_signature_t *);
+rs_job_t       *rs_delta_begin(rs_stream_t *stream, rs_signature_t *);
 
-hs_job_t       *hs_loadsig_begin(hs_stream_t *, hs_signature_t **);
+rs_job_t       *rs_loadsig_begin(rs_stream_t *, rs_signature_t **);
 
 /**
  * \brief Callback used to retrieve parts of the basis file. */
-typedef hs_result hs_copy_cb(void *opaque, size_t *len, void **result);
+typedef rs_result rs_copy_cb(void *opaque, size_t *len, void **result);
 
 
-hs_job_t *hs_patch_begin(hs_stream_t *, hs_copy_cb *, void *copy_arg);
+rs_job_t *rs_patch_begin(rs_stream_t *, rs_copy_cb *, void *copy_arg);
 
 
-hs_result hs_build_hash_table(hs_signature_t* sums);
+rs_result rs_build_hash_table(rs_signature_t* sums);
+
+
+
+#ifndef RSYNC_NO_STDIO_INTERFACE
+/*!
+ * Buffer sizes for file IO.
+ *
+ * You probably only need to change these in testing.
+ */
+extern int rs_inbuflen, rs_outbuflen;
+
+
+/**
+ * Calculate the MD4 sum of a file.
+ *
+ * \param result Binary (not hex) MD4 of the whole contents of the
+ * file.
+ */
+void rs_mdfour_file(FILE *in_file, char *result);
+
+rs_result rs_sig_file(FILE *old_file, FILE *sig_file, size_t, size_t); 
+
+rs_result rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset);
+
+rs_result rs_file_copy_cb(void *arg, size_t *len, void **buf);
+
+rs_result rs_delta_file(rs_signature_t *, FILE *new_file, FILE *delta_file, rs_stats_t *);
+
+rs_result rs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file, rs_stats_t *);
+#endif
