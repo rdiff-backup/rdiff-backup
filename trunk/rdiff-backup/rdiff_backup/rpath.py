@@ -1021,9 +1021,12 @@ class RPath(RORPath):
 		assert self.isreg()
 		try: rfork = self.data['resourcefork']
 		except KeyError:
-			rfork_fp = self.conn.open(os.path.join(self.path, 'rsrc'), 'rb')
-			rfork = rfork_fp.read()
-			assert not rfork_fp.close()
+			try:
+				rfork_fp = self.conn.open(os.path.join(self.path, 'rsrc'),
+										  'rb')
+				rfork = rfork_fp.read()
+				assert not rfork_fp.close()
+			except (IOError, OSError), e: rfork = ''
 			self.data['resourcefork'] = rfork
 		return rfork
 

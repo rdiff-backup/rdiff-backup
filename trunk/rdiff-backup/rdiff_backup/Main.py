@@ -330,13 +330,14 @@ def backup_set_fs_globals(rpin, rpout):
 
 	src_fsa = fs_abilities.FSAbilities('source').init_readonly(rpin)
 	Log(str(src_fsa), 3)
-	update_bool_global('read_acls', src_fsa.acls)
-	update_bool_global('read_eas', src_fsa.eas)
-	update_bool_global('read_resource_forks', src_fsa.resource_forks)
-	
 	dest_fsa = fs_abilities.FSAbilities('destination').init_readwrite(
 		Globals.rbdir, override_chars_to_quote = Globals.chars_to_quote)
 	Log(str(dest_fsa), 3)
+
+	update_bool_global('read_acls', src_fsa.acls)
+	update_bool_global('read_eas', src_fsa.eas)
+	update_bool_global('read_resource_forks', src_fsa.resource_forks)
+
 	SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks)
 	SetConnections.UpdateGlobal('fsync_directories', dest_fsa.fsync_dirs)
 	SetConnections.UpdateGlobal('change_ownership', dest_fsa.ownership)
@@ -422,6 +423,9 @@ def restore_set_fs_globals(target):
 
 	target_fsa = fs_abilities.FSAbilities('destination').init_readwrite(
 		target, 0)
+	mirror_fsa = fs_abilities.FSAbilities('source').init_readwrite(
+		Globals.rbdir)
+
 	update_bool_global('read_acls', target_fsa.acls)
 	update_bool_global('write_acls', target_fsa.acls)
 	update_bool_global('read_eas', target_fsa.eas)
@@ -429,8 +433,6 @@ def restore_set_fs_globals(target):
 	SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
 	SetConnections.UpdateGlobal('change_ownership', target_fsa.ownership)
 
-	mirror_fsa = fs_abilities.FSAbilities('source').init_readwrite(
-		Globals.rbdir)
 	if Globals.chars_to_quote is None: # otherwise already overridden
 		if mirror_fsa.chars_to_quote:
 			SetConnections.UpdateGlobal('chars_to_quote',
