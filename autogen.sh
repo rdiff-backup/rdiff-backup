@@ -86,7 +86,7 @@ esac
 set -x
 aclocal $ACLOCAL_FLAGS
 autoheader
-automake -a $am_opt Makefile man/Makefile popt/Makefile
+automake -a $am_opt Makefile popt/Makefile
 autoconf
 set +x
 cd $ORIGDIR
