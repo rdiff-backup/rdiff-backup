@@ -263,8 +263,8 @@ def Backup(rpin, rpout):
 	backup_set_select(rpin)
 	backup_init_dirs(rpin, rpout)
 	if prevtime:
-		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
 		Time.setprevtime(prevtime)
+		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
 		backup.Mirror_and_increment(rpin, rpout, incdir)
 		rpout.conn.Main.backup_remove_curmirror_local()
 	else:
