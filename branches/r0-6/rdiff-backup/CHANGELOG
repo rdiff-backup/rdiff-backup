@@ -1,3 +1,19 @@
+New in v0.6.1 (2002/04/30)
+--------------------------
+
+Lowered verbosity of traceback output - now can set verbosity to 2
+(-v2) to avoid long error messages.
+
+Possibly fixed bug which prevented resuming from some failed backups.
+
+Prevent crash when a directory replaced by a non-directory file while
+that directory being processed.
+
+If a filename is too long (more than ~220 chars usually), just skip it
+instead of exiting with an error (will come up with something better
+later).
+
+
 New in v0.6.0 (2002/03/14)
 --------------------------
 
