@@ -141,7 +141,7 @@ def init_user_mapping(mapping_string = None):
 	if mapping_string: UserMap = DefinedMap(name2id_func, mapping_string)
 	else: UserMap = Map(name2id_func)
 
-def init_group_mapping(mapping_string):
+def init_group_mapping(mapping_string = None):
 	"""Initialize the group mapping dictionary with given mapping string"""
 	global GroupMap
 	name2id_func = lambda name: grp.getgrnam(name)[2]
