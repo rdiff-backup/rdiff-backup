@@ -164,6 +164,23 @@ class inctest(unittest.TestCase):
 
 class inctest2(unittest.TestCase):
 	"""Like inctest but contains more elaborate tests"""
+	def stats_check_initial(self, s):
+		"""Make sure stats object s compatible with initial mirroring
+
+		A lot of the off by one stuff is because the root directory
+		exists in the below examples.
+
+		"""
+		assert s.MirrorFiles == 1 or s.MirrorFiles == 0
+		assert s.MirrorFileSize < 20000
+		assert s.NewFiles <= s.SourceFiles <= s.NewFiles + 1
+		assert s.NewFileSize <= s.SourceFileSize <= s.NewFileSize + 20000
+		assert s.ChangedFiles == 1 or s.ChangedFiles == 0
+		assert s.ChangedSourceSize < 20000
+		assert s.ChangedMirrorSize < 20000
+		assert s.DeletedFiles == s.DeletedFileSize == 0
+		assert s.IncrementFileSize == 0
+
 	def testStatistics(self):
 		"""Test the writing of statistics
 
@@ -181,8 +198,13 @@ class inctest2(unittest.TestCase):
 
 		incs = Restore.get_inclist(inc_base.append("subdir").
 								   append("directory_statistics"))
-		assert len(incs) == 1
-		subdir_stats = StatsObj().read_stats_from_rp(incs[0])
+		assert len(incs) == 2
+		s1 = StatsObj().read_stats_from_rp(incs[0]) # initial mirror stats
+		assert s1.SourceFiles == 2
+		assert 400000 < s1.SourceFileSize < 420000
+		self.stats_check_initial(s1)
+
+		subdir_stats = StatsObj().read_stats_from_rp(incs[1]) # increment stats
 		assert subdir_stats.SourceFiles == 2
 		assert 400000 < subdir_stats.SourceFileSize < 420000
 		assert subdir_stats.MirrorFiles == 2
@@ -195,8 +217,13 @@ class inctest2(unittest.TestCase):
 		assert 10 < subdir_stats.IncrementFileSize < 20000
 
 		incs = Restore.get_inclist(inc_base.append("directory_statistics"))
-		assert len(incs) == 1
-		root_stats = StatsObj().read_stats_from_rp(incs[0])
+		assert len(incs) == 2
+		s2 = StatsObj().read_stats_from_rp(incs[0])
+		assert s2.SourceFiles == 7
+		assert 700000 < s2.SourceFileSize < 750000
+		self.stats_check_initial(s2)
+
+		root_stats = StatsObj().read_stats_from_rp(incs[1])
 		assert root_stats.SourceFiles == 7
 		assert 550000 < root_stats.SourceFileSize < 570000
 		assert root_stats.MirrorFiles == 7
@@ -208,6 +235,6 @@ class inctest2(unittest.TestCase):
 		assert 3 <= root_stats.ChangedFiles <= 4, root_stats.ChangedFiles
 		assert 450000 < root_stats.ChangedSourceSize < 470000
 		assert 400000 < root_stats.ChangedMirrorSize < 420000
-		assert 10 < subdir_stats.IncrementtFileSize < 30000
+		assert 10 < subdir_stats.IncrementFileSize < 30000
 
 if __name__ == '__main__': unittest.main()

@@ -315,23 +315,16 @@ class SaveState:
 	_last_checkpoint_time = 0 # time in seconds of last checkpoint
 	_checkpoint_rp = None # RPath of checkpoint data pickle
 	
-	def init_filenames(cls, incrementing):
-		"""Set rpaths of markers.  Assume rbdir already set.
-
-		If incrementing, then indicate increment operation, otherwise
-		indicate mirror.
-
-		"""
+	def init_filenames(cls):
+		"""Set rpaths of markers.  Assume rbdir already set."""
 		if not Globals.isbackup_writer:
-			return Globals.backup_writer.SaveState.init_filenames(incrementing)
+			return Globals.backup_writer.SaveState.init_filenames()
 
 		assert Globals.local_connection is Globals.rbdir.conn, \
 			   (Globals.rbdir.conn, Globals.backup_writer)
 
-		if incrementing: cls._last_file_sym = Globals.rbdir.append(
+		cls._last_file_sym = Globals.rbdir.append(
 			"last-file-incremented.%s.data" % Time.curtimestr)
-		else: cls._last_file_sym = Globals.rbdir.append(
-			"last-file-mirrored.%s.data" % Time.curtimestr)
 		cls._checkpoint_rp = Globals.rbdir.append(
 			"checkpoint-data.%s.data" % Time.curtimestr)
 		cls._last_file_definitive_rp = Globals.rbdir.append(
@@ -367,8 +360,7 @@ class SaveState:
 		else: return RobustAction(lambda: None, cls.touch_last_file,
 								  lambda exc: None)
 
-	def checkpoint_inc_backup(cls, ITR, finalizer, last_file_rorp,
-							  override = None):
+	def checkpoint(cls, ITR, finalizer, last_file_rorp, override = None):
 		"""Save states of tree reducer and finalizer during inc backup
 
 		If override is true, checkpoint even if one isn't due.
@@ -380,20 +372,6 @@ class SaveState:
 		cls._last_checkpoint_time = time.time()
 		Log("Writing checkpoint time %s" % cls._last_checkpoint_time, 7)
 		state_string = cPickle.dumps((ITR, finalizer))
-		Robust.chain([Robust.destructive_write_action(cls._checkpoint_rp,
-													  state_string),
-					  cls.record_last_file_action(last_file_rorp)]).execute()
-
-	def checkpoint_mirror(cls, finalizer, last_file_rorp, override = None):
-		"""For a mirror, only finalizer and last_file should be saved"""
-		if not override and not cls.checkpoint_needed(): return
-		if not cls._checkpoint_rp:
-			Log("Warning, _checkpoint_rp not set yet", 2)
-			return
-
-		cls._last_checkpoint_time = time.time()
-		Log("Writing checkpoint time %s" % cls._last_checkpoint_time, 7)
-		state_string = cPickle.dumps(finalizer)
 		Robust.chain([Robust.destructive_write_action(cls._checkpoint_rp,
 													  state_string),
 					  cls.record_last_file_action(last_file_rorp)]).execute()
@@ -522,9 +500,7 @@ class Resume:
 	def unpickle_checkpoint(cls, checkpoint_rp):
 		"""Read data from checkpoint_rp and return unpickled data
 
-		Return value is pair finalizer state for a mirror checkpoint,
-		and (patch increment ITR, finalizer state) for increment
-		checkpoint.
+		Return value is pair (patch increment ITR, finalizer state).
 
 		"""
 		fp = checkpoint_rp.open("rb")

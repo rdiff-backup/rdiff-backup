@@ -203,9 +203,7 @@ class Main:
 		# Since no "rdiff-backup-data" dir, use root of destination.
 		SetConnections.UpdateGlobal('rbdir', dest_rp)
 		SetConnections.BackupInitConnections(src_rp.conn, dest_rp.conn)
-		RSI = Globals.backup_writer.Resume.ResumeCheck()
-		SaveState.init_filenames(None)
-		HighLevel.Mirror(src_rp, dest_rp, 1, RSI, None)
+		HighLevel.Mirror(src_rp, dest_rp)
 
 	def mirror_check_paths(self, rpin, rpout):
 		"""Check paths and return rpin, rpout"""
@@ -224,13 +222,11 @@ rdiff-backup with the --force option if you want to mirror anyway.""" %
 		self.backup_init_select(rpin, rpout)
 		self.backup_init_dirs(rpin, rpout)
 		RSI = Globals.backup_writer.Resume.ResumeCheck()
+		SaveState.init_filenames()
 		if self.prevtime:
 			Time.setprevtime(self.prevtime)
-			SaveState.init_filenames(1)
 			HighLevel.Mirror_and_increment(rpin, rpout, self.incdir, RSI)
-		else:
-			SaveState.init_filenames(None)
-			HighLevel.Mirror(rpin, rpout, 1, RSI)
+		else: HighLevel.Mirror(rpin, rpout, self.incdir, RSI)
 		self.backup_touch_curmirror(rpin, rpout)
 
 	def backup_init_select(self, rpin, rpout):

@@ -24,14 +24,12 @@ class HighLevel:
 	accompanying diagram.
 
 	"""
-	def Mirror(src_rpath, dest_rpath, checkpoint = 1,
-			   session_info = None, write_finaldata = 1):
+	def Mirror(src_rpath, dest_rpath, inc_rpath = None, session_info = None):
 		"""Turn dest_rpath into a copy of src_rpath
 
-		Checkpoint true means to checkpoint periodically, otherwise
-		not.  If session_info is given, try to resume Mirroring from
-		that point.  If write_finaldata is true, save extra data files
-		like hardlink_data.  If it is false, make a complete mirror.
+		If inc_rpath is true, then this is the initial mirroring of an
+		incremental backup, so checkpoint and write to data_dir.
+		Otherwise only mirror and don't create any extra files.
 
 		"""
 		SourceS = src_rpath.conn.HLSourceStruct
@@ -42,8 +40,9 @@ class HighLevel:
 		src_init_dsiter = SourceS.split_initial_dsiter()
 		dest_sigiter = DestS.get_sigs(dest_rpath, src_init_dsiter)
 		diffiter = SourceS.get_diffs_and_finalize(dest_sigiter)
-		DestS.patch_and_finalize(dest_rpath, diffiter,
-								 checkpoint, write_finaldata)
+		if inc_rpath:
+			DestS.patch_w_datadir_writes(dest_rpath, diffiter, inc_rpath)
+		else: DestS.patch_and_finalize(dest_rpath, diffiter)
 
 		dest_rpath.setdata()
 
@@ -207,8 +206,13 @@ class HLDestinationStruct:
 			iitr.override_changed()
 			return iitr
 
-	def patch_and_finalize(cls, dest_rpath, diffs,
-						   checkpoint = 1, write_finaldata = 1):
+	def get_MirrorITR(cls, inc_rpath):
+		"""Return MirrorITR, starting from state if available"""
+		if cls._session_info and cls._session_info.ITR:
+			return cls._session_info.ITR
+		else: return MirrorITR(inc_rpath)
+
+	def patch_and_finalize(cls, dest_rpath, diffs):
 		"""Apply diffs and finalize"""
 		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
 		finalizer = cls.get_finalizer()
@@ -229,12 +233,36 @@ class HLDestinationStruct:
 			while 1:
 				try: dsrp = cls.check_skip_error(error_checked, dsrp)
 				except StopIteration: break
-				if checkpoint: SaveState.checkpoint_mirror(finalizer, dsrp)
-		except: cls.handle_last_error(dsrp, finalizer)
+		except: Log.exception(1)
 		finalizer.Finish()
-		if Globals.preserve_hardlinks and write_finaldata:
-			Hardlink.final_writedata()
-		if checkpoint: SaveState.checkpoint_remove()
+
+	def patch_w_datadir_writes(cls, dest_rpath, diffs, inc_rpath):
+		"""Apply diffs and finalize, with checkpointing and statistics"""
+		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
+		finalizer, ITR = cls.get_finalizer(), cls.get_MirrorITR(inc_rpath)
+		dsrp = None
+
+		def error_checked():
+			"""Inner writing loop, check this for errors"""
+			indexed_tuple = collated.next()
+			Log("Processing %s" % str(indexed_tuple), 7)
+			diff_rorp, dsrp = indexed_tuple
+			if not dsrp: dsrp = cls.get_dsrp(dest_rpath, diff_rorp.index)
+			if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
+			ITR(dsrp.index, diff_rorp, dsrp)
+			finalizer(dsrp.index, dsrp)
+			return dsrp
+
+		try:
+			while 1:
+				try: dsrp = cls.check_skip_error(error_checked, dsrp)
+				except StopIteration: break
+				SaveState.checkpoint(ITR, finalizer, dsrp)
+			cls.check_skip_error(ITR.Finish, dsrp)
+			cls.check_skip_error(finalizer.Finish, dsrp)
+		except: cls.handle_last_error(dsrp, finalizer, ITR)
+		if Globals.preserve_hardlinks: Hardlink.final_writedata()
+		SaveState.checkpoint_remove()
 
 	def patch_increment_and_finalize(cls, dest_rpath, diffs, inc_rpath):
 		"""Apply diffs, write increment if necessary, and finalize"""
@@ -258,7 +286,7 @@ class HLDestinationStruct:
 			while 1:
 				try: dsrp = cls.check_skip_error(error_checked, dsrp)
 				except StopIteration: break
-				SaveState.checkpoint_inc_backup(ITR, finalizer, dsrp)
+				SaveState.checkpoint(ITR, finalizer, dsrp)
 			cls.check_skip_error(ITR.Finish, dsrp)
 			cls.check_skip_error(finalizer.Finish, dsrp)
 		except: cls.handle_last_error(dsrp, finalizer, ITR)
@@ -285,11 +313,10 @@ class HLDestinationStruct:
 				Log.exception(1,2)
 				raise
 
-	def handle_last_error(cls, dsrp, finalizer, ITR = None):
+	def handle_last_error(cls, dsrp, finalizer, ITR):
 		"""If catch fatal error, try to checkpoint before exiting"""
 		Log.exception(1)
-		if ITR: SaveState.checkpoint_inc_backup(ITR, finalizer, dsrp, 1)
-		else: SaveState.checkpoint_mirror(finalizer, dsrp, 1)
+		SaveState.checkpoint(ITR, finalizer, dsrp, 1)
 		if Globals.preserve_hardlinks: Hardlink.final_checkpoint(Globals.rbdir)
 		SaveState.touch_last_file_definitive()
 		raise

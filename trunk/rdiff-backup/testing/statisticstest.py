@@ -50,7 +50,8 @@ DeletedFileSize 6
 ChangedFiles 7
 ChangedSourceSize 8
 ChangedMirrorSize 9
-IncrementFileSize 10""", "'%s'" % stats_string
+IncrementFileSize 10
+""", "'%s'" % stats_string
 
 	def test_init_stats(self):
 		"""Test setting stat object from string"""
