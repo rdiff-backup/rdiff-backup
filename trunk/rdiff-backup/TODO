@@ -2,7 +2,12 @@ Make restores tolerant of missing files
 
 Look into hard linking on windows
 
+Added --include/--exclude options for restoring
+
 ---------[ Medium term ]---------------------------------------
+
+Don't require increments.<date>.dir files to be setuid/setgid, or
+don't even have the backup files. (Andrew Bressen)
 
 Examine default settings with --windows-mode
 

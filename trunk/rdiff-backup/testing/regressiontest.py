@@ -158,6 +158,29 @@ class IncrementTest1(unittest.TestCase):
 		InternalBackup(1, 1, "testfiles/longfilenames1", Local.rpout.path, 100)
 		InternalBackup(1, 1, "testfiles/longfilenames2", Local.rpout.path, 200)
 
+	def test_quoted_hardlinks(self):
+		"""Test backing up a directory with quoted hardlinks in it"""
+		hldir = rpath.RPath(Globals.local_connection,
+							"testfiles/quoted_hardlinks")
+		if hldir.lstat():
+			Myrm(hldir.path)
+			hldir.setdata()
+		hldir.mkdir()
+		hl1 = hldir.append("HardLink1")
+		hl1.touch()
+		hl2 = hldir.append("HardLink2")
+		hl2.hardlink(hl1.path)
+		
+		Myrm(Local.rpout.path)
+		old_settings = (Globals.quoting_enabled, Globals.chars_to_quote,
+						Globals.quoting_char)
+		Globals.quoting_enabled = 1
+		Globals.chars_to_quote = 'A-Z'
+		Globals.quoting_char = ';'
+		InternalBackup(1, 1, hldir.path, Local.rpout.path, current_time = 1)
+		InternalBackup(1, 1, "testfiles/empty", Local.rpout.path,
+					   current_time = 10000)
+
 	def test_long_socket(self):
 		"""Test backing up a directory with long sockets in them
 

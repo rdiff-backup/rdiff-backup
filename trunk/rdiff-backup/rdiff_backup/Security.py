@@ -121,6 +121,7 @@ def set_allowed_requests(sec_level):
 	elif sec_level == "read-only" or sec_level == "update-only":
 		allowed_requests.extend(
 			["C.make_file_dict",
+			 "log.Log.log_to_file",
 			 "os.getuid",
 			 "os.listdir",
 			 "Time.setcurtime_local",

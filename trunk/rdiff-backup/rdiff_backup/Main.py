@@ -60,7 +60,7 @@ def parse_cmdlineoptions(arglist):
 		  "restrict=", "restrict-read-only=", "restrict-update-only=",
 		  "server", "ssh-no-compression", "terminal-verbosity=",
 		  "test-server", "verbosity=", "version", "windows-mode",
-		  "windows-time-format"])
+		  "windows-restore"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: %s" % str(e))
 
@@ -145,12 +145,15 @@ def parse_cmdlineoptions(arglist):
 			sys.exit(0)
 		elif opt == "-v" or opt == "--verbosity": Log.setverbosity(arg)
 		elif opt == "--windows-mode":
-			Globals.set('chars_to_quote', "^a-z._ -")
+			Globals.set('chars_to_quote', "^a-z0-9._ -")
 			Globals.set('quoting_enabled', 1)
 			Globals.set('preserve_hardlinks', 0)
 			Globals.set('change_ownership', 0)
 			Globals.set('change_permissions', 0)
 			Globals.set('fsync_directories', 0)
+		elif opt == '--windows-restore':
+			Globals.set('chars_to_quote', "^a-z0-9._ -")
+			Globals.set('quoting_enabled', 1)
 		else: Log.FatalError("Unknown option %s" % opt)
 
 def isincfilename(path):

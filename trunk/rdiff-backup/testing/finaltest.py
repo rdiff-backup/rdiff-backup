@@ -37,6 +37,9 @@ class Local:
 	timbar_in = get_local_rp('increment1/timbar.pyc')
 	timbar_out = get_local_rp('../timbar.pyc') # in cur directory
 
+	wininc2 = get_local_rp('win-increment2')
+	wininc3 = get_local_rp('win-increment3')
+
 class PathSetter(unittest.TestCase):
 	def setUp(self):
 		self.reset_schema()
@@ -239,7 +242,23 @@ class Final(PathSetter):
 		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
 
 	def testWindowsMode(self):
-		"""Test backup with the --windows-mode option"""
+		"""Test backup with the --windows-mode option
+
+		We need to delete from the increment? directories long file
+		names, because quoting adds too many extra letters.
+
+		"""
+		def delete_long(base_rp, length = 100):
+			"""Delete filenames longer than length given"""
+			for rp in selection.Select(base_rp).set_iter():
+				if len(rp.dirsplit()[1]) > length: rp.delete()
+
+		if not Local.wininc2.lstat() or not Local.wininc3.lstat():
+			os.system("cp -a testfiles/increment2 testfiles/win-increment2")
+			os.system("cp -a testfiles/increment3 testfiles/win-increment3")
+			delete_long(Local.wininc2)
+			delete_long(Local.wininc3)
+
 		old_schema = self.rb_schema
 		self.rb_schema = old_schema + " --windows-mode "
 		self.set_connections(None, None, None, None)
@@ -247,12 +266,14 @@ class Final(PathSetter):
 		self.delete_tmpdirs()
 		
 		# Back up increment2, this contains a file with colons
-		self.exec_rb(20000, 'testfiles/increment2', 'testfiles/output')
+		self.exec_rb(20000, 'testfiles/win-increment2', 'testfiles/output')
 		time.sleep(1)
 
 		# Back up increment3
-		self.exec_rb(30000, 'testfiles/increment3', 'testfiles/output')
+		self.exec_rb(30000, 'testfiles/win-increment3', 'testfiles/output')
 
+		# Start restore
+		self.rb_schema = old_schema + ' --windows-restore '
 		Globals.time_separator = "_"
 		inc_paths = self.getinc_paths("increments.",
 									  "testfiles/output/rdiff-backup-data", 1)
@@ -260,7 +281,7 @@ class Final(PathSetter):
 		assert len(inc_paths) == 1, inc_paths
 		# Restore increment2
 		self.exec_rb(None, inc_paths[0], 'testfiles/restoretarget2')
-		assert CompareRecursive(Local.inc2rp, Local.rpout2,
+		assert CompareRecursive(Local.wininc2, Local.rpout2,
 								compare_hardlinks = 0)
 
 		# Now check to make sure no ":" in output directory
