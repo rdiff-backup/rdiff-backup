@@ -143,11 +143,17 @@ int _hs_stream_copy(hs_stream_t *stream, int max_len)
         _hs_stream_check(stream);
         assert(len > 0);
 
-        if ((unsigned) len > stream->avail_in)
+        if ((unsigned) len > stream->avail_in) {
+                _hs_trace("copy limited to %d available input bytes",
+                          stream->avail_in);
                 len = stream->avail_in;
+        }
 
-        if ((unsigned) len > stream->avail_out)
+        if ((unsigned) len > stream->avail_out) {
+                _hs_trace("copy limited to %d available output bytes",
+                          stream->avail_out);
                 len = stream->avail_out;
+        }
 
         _hs_trace("stream copied chunk of %d bytes", len);
 
