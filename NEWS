@@ -1,3 +1,9 @@
+Changes in 0.5.7:
+
+ * Changes stats string format.
+
+ * Slightly improved test cases
+
 Changes in 0.5.6:
  
  * Don't install debugging tools into /usr/local/bin; leave them in
