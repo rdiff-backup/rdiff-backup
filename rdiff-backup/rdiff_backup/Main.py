@@ -131,6 +131,8 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--remove-older-than":
 			remove_older_than_string = arg
 			action = "remove-older-than"
+		elif opt == "--no-resource-forks":
+			Globals.set('resource_forks_active', 0)
 		elif opt == "--restrict": Globals.restrict_path = arg
 		elif opt == "--restrict-read-only":
 			Globals.security_level = "read-only"
