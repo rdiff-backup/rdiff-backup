@@ -148,6 +148,7 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 def get_increment_rp(mirror_rp, time):
 	"""Return increment rp matching time in seconds"""
 	data_rp = mirror_rp.append("rdiff-backup-data")
+	if not data_rp.isdir(): return None
 	for filename in data_rp.listdir():
 		rp = data_rp.append(filename)
 		if rp.isincfile() and rp.getincbase_str() == "increments":

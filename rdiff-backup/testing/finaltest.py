@@ -188,6 +188,16 @@ class Final(PathSetter):
 		self.set_connections("test1/", '../', 'test2/tmp/', '../../')
 		self.runtest()
 
+	def testRemoteSource(self):
+		"""Run test sequence when remote side is source"""
+		self.set_connections("test1/", "../", None, None)
+		self.runtest()
+
+	def testRemoteDest(self):
+		"""Run test sequence when remote side is destination"""
+		self.set_connections(None, None, "test2/tmp", "../../")
+		self.runtest()
+
 	def testMirroringLocal(self):
 		"""Run mirroring only everything remote"""
 		self.delete_tmpdirs()
