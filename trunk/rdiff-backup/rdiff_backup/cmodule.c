@@ -36,7 +36,7 @@ static PyObject *UnknownFileTypeError;
 static PyObject *c_make_file_dict(PyObject *self, PyObject *args);
 static PyObject *long2str(PyObject *self, PyObject *args);
 static PyObject *str2long(PyObject *self, PyObject *args);
-static PyObject *my_sync(PyObject *self);
+static PyObject *my_sync(PyObject *self, PyObject *args);
 
 
 /* Turn a stat structure into a python dictionary.  The preprocessor
@@ -181,9 +181,11 @@ static PyObject *long2str(self, args)
 
 
 /* Run sync() and return None */
-static PyObject *my_sync(self)
+static PyObject *my_sync(self, args)
 	 PyObject *self;
+	 PyObject *args;
 {
+  if (!PyArg_ParseTuple(args, "")) return NULL;
   sync();
   return Py_BuildValue("");
 }
