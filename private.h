@@ -117,6 +117,7 @@ int _hs_append_literal (hs_membuf_t * litbuf, char value);
    and let the buffer be reallocated on demand. */
 
 struct hs_membuf {
+  int dogtag;
   char *buf;
   off_t ofs;
   ssize_t length;

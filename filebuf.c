@@ -29,9 +29,12 @@
 #include "compress.h"
 
 // #define DEBUG 1
+const int filebuf_tag = 23031976;
 
 struct file_buf
 {
+  int dogtag;
+  
   FILE *f;
   FILE *f_cache;
 
@@ -47,7 +50,8 @@ hs_filebuf_from_file (FILE * fp)
 
   fb = calloc (1, sizeof (hs_filebuf_t));
   return_val_if_fail (fb, NULL);
-  
+
+  fb->dogtag = filebuf_tag;
   fb->f = fp;
   fb->f_cache = NULL;
   fb->length = -1;
@@ -55,6 +59,8 @@ hs_filebuf_from_file (FILE * fp)
   return fb;
 }
 
+
+/* TODO: Add matching close/free function. */
 
 hs_filebuf_t *
 hs_filebuf_open (char const *filename, char const *mode)
@@ -80,6 +86,8 @@ hs_filebuf_read (void *private, char *buf, size_t len)
   struct file_buf *fbuf = (struct file_buf *) private;
   size_t n;
   size_t len2;
+
+  assert (fbuf->dogtag == filebuf_tag);
 
   if (fbuf->length == 0)
     {
@@ -139,6 +147,7 @@ hs_filebuf_write (void *private, char const *buf, size_t len)
   struct file_buf *fbuf = (struct file_buf *) private;
   size_t n;
 
+  assert (fbuf->dogtag == filebuf_tag);
   n = fwrite (buf, 1, len, fbuf->f);
   if (fbuf->f_cache && n > 0)
     {
@@ -165,6 +174,7 @@ hs_filebuf_read_ofs (void *private, char *buf, size_t len, off_t ofs)
   struct file_buf *fbuf = (struct file_buf *) private;
   size_t n;
 
+  assert (fbuf->dogtag == filebuf_tag);
   assert (fbuf->f);
   if (fseek (fbuf->f, ofs, SEEK_SET))
     {

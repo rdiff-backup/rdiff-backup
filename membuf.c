@@ -19,11 +19,15 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+/* TODO: Add hs_membuf_free function. */
+
 
 #include "includes.h"
 #include "hsync.h"
 #include "private.h"
 #include "compress.h"
+
+static const int membuf_tag = 12341234;
 
 hs_membuf_t *
 hs_membuf_new (void)
@@ -31,6 +35,7 @@ hs_membuf_new (void)
   hs_membuf_t *mb;
 
   mb = calloc (1, sizeof (hs_membuf_t));
+  mb->dogtag = membuf_tag;
   mb->alloc = 0;
   mb->length = -1;
   return mb;
@@ -40,6 +45,8 @@ hs_membuf_new (void)
 off_t
 hs_membuf_tell (void *private)
 {
+  hs_membuf_t *mb = (hs_membuf_t *) private;
+  assert (mb->dogtag == membuf_tag);
   return ((hs_membuf_t *) private)->ofs;
 }
 
@@ -47,6 +54,7 @@ hs_membuf_tell (void *private)
 void
 hs_membuf_truncate (hs_membuf_t *mb)
 {
+  assert (mb->dogtag == membuf_tag);
   mb->ofs = 0;
 }
 
@@ -54,28 +62,29 @@ hs_membuf_truncate (hs_membuf_t *mb)
 ssize_t
 hs_membuf_write (void *private, char const *buf, size_t len)
 {
-  hs_membuf_t *bofs = (hs_membuf_t *) private;
+  hs_membuf_t *mb = (hs_membuf_t *) private;
+  assert (mb->dogtag == membuf_tag);
 
 #if DEBUG
   printf ("sig_writebuf(len=%d)\n", len);
 #endif
 
-  if (bofs->length != -1)
+  if (mb->length != -1)
     {
-      size_t remain = bofs->length - bofs->ofs;
+      size_t remain = mb->length - mb->ofs;
       if (len > remain)
 	len = remain;
     }
-  else if (bofs->alloc < bofs->ofs + len)
+  else if (mb->alloc < mb->ofs + len)
     {
-      bofs->alloc = MAX(bofs->alloc * 2, bofs->ofs + len);
-      bofs->buf = realloc (bofs->buf, bofs->alloc);
-      if (!bofs->buf)
+      mb->alloc = MAX(mb->alloc * 2, mb->ofs + len);
+      mb->buf = realloc (mb->buf, mb->alloc);
+      if (!mb->buf)
 	return -1;
     }
 
-  memcpy (bofs->buf + bofs->ofs, buf, len);
-  bofs->ofs += len;
+  memcpy (mb->buf + mb->ofs, buf, len);
+  mb->ofs += len;
   return len;
 }
 
@@ -85,6 +94,7 @@ hs_membuf_read_ofs (void *private, char *buf, size_t len, off_t ofs)
 {
   hs_membuf_t *mb = (hs_membuf_t *) private;
 
+  assert (mb->dogtag == membuf_tag);
   assert (ofs >= 0);
 
   if ((mb->length != -1 && ofs < mb->length)
@@ -106,21 +116,22 @@ hs_membuf_read_ofs (void *private, char *buf, size_t len, off_t ofs)
 ssize_t
 hs_membuf_read (void *private, char *buf, size_t len)
 {
-  hs_membuf_t *bofs = (hs_membuf_t *) private;
+  hs_membuf_t *mb = (hs_membuf_t *) private;
 
 #if DEBUG
   printf ("sig_readbuf(len=%d)\n", len);
 #endif
 
-  if (bofs->length != -1)
+  assert (mb->dogtag == membuf_tag);
+  if (mb->length != -1)
     {
-      size_t remain = bofs->length - bofs->ofs;
+      size_t remain = mb->length - mb->ofs;
       if (len > remain)
 	len = remain;
     }
 
-  memcpy (buf, bofs->buf + bofs->ofs, len);
-  bofs->ofs += len;
+  memcpy (buf, mb->buf + mb->ofs, len);
+  mb->ofs += len;
   return len;
 }
 
@@ -129,7 +140,9 @@ hs_membuf_read (void *private, char *buf, size_t len)
 ssize_t hs_membuf_zwrite (void *private, char const *buf, size_t len)
 {
   size_t ret;
+  hs_membuf_t *mb = (hs_membuf_t *) private;
 
+  assert (mb->dogtag == membuf_tag);
   ret = comp_write (hs_membuf_write, private, buf, len);
 
   return ret;
