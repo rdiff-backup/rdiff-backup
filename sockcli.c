@@ -64,7 +64,7 @@ open_socket(int *psock, int port, int no_nagle)
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(0x7f000001);
 
-    if (setsockopt(sock, SOL_TCP, TCP_NODELAY, &no_nagle,
+    if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &no_nagle,
                    sizeof no_nagle) < 0) {
         _hs_error("error setting TCP_NODELAY=%d: %s",
                   no_nagle, strerror(errno));

@@ -87,7 +87,7 @@ open_client_socket(int *psock, int port)
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(0x7f000001);
 
-    if (setsockopt(sock, SOL_TCP, TCP_NODELAY, &no_nagle,
+    if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &no_nagle,
                    sizeof no_nagle) < 0) {
         _hs_error("error setting TCP_NODELAY=%d: %s",
                   no_nagle, strerror(errno));
@@ -146,7 +146,7 @@ bind_any_socket(int *psock, int *pport)
     *pport = ntohs(addr.sin_port);
     *psock = sock;
 
-    if (setsockopt(sock, SOL_TCP, TCP_NODELAY, &no_nagle,
+    if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &no_nagle,
                    sizeof no_nagle) < 0) {
         _hs_error("error setting TCP_NODELAY=%d: %s",
                   no_nagle, strerror(errno));
@@ -204,7 +204,7 @@ in_main(void)
 }
 
 static int
-fork_run(int *new_pid, int (*fn)(void))
+fork_run(pid_t *new_pid, int (*fn)(void))
 {
     pid_t               pid;
 
