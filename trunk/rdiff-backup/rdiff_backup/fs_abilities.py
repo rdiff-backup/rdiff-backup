@@ -55,7 +55,7 @@ class FSAbilities:
 		self.set_acls(rp)
 		return self
 
-	def init_readwrite(self, rp_base):
+	def init_readwrite(self, rbdir, use_ctq_file = 1):
 		"""Set variables using fs tested at rp_base
 
 		This method creates a temp directory in rp_base and writes to
@@ -65,20 +65,56 @@ class FSAbilities:
 		This sets self.chars_to_quote, self.ownership, self.acls,
 		self.eas, self.hardlinks, and self.fsync_dirs.
 
+		If user_ctq_file is true, try reading the "chars_to_quote"
+		file in directory.
+
 		"""
-		assert rp_base.isdir()
+		assert rbdir.isdir()
 		self.read_only = 0
 
-		subdir = TempFile.new_in_dir(rp_base)
+		subdir = TempFile.new_in_dir(rbdir)
 		subdir.mkdir()
 		self.set_ownership(subdir)
 		self.set_hardlinks(subdir)
 		self.set_fsync_dirs(subdir)
-		self.set_chars_to_quote(subdir)
 		self.set_eas(subdir, 1)
 		self.set_acls(subdir)
+		self.set_chars_to_quote(subdir)
+		if use_ctq_file: self.compare_chars_to_quote(rbdir)
 		subdir.delete()
 		return self
+
+	def compare_chars_to_quote(self, rbdir):
+		"""Read chars_to_quote file, compare with current settings"""
+		assert self.chars_to_quote is not None
+		ctq_rp = rbdir.append("chars_to_quote")
+		def write_new_chars():
+			"""Replace old chars_to_quote file with new value"""
+			if ctq_rp.lstat(): ctq_rp.delete()
+			fp = ctq_rp.open("wb")
+			fp.write(self.chars_to_quote)
+			assert not fp.close()
+
+		def get_old_chars():
+			fp = ctq_rp.open("rb")
+			old_chars = fp.read()
+			assert not fp.close()
+			return old_chars
+
+		if not ctq_rp.lstat(): write_new_chars()
+		else:
+			old_chars = get_old_chars()
+			if old_chars != self.chars_to_quote:
+				if self.chars_to_quote == "":
+					log.Log("Warning: File system no longer needs quoting, "
+							"but will retain for backwards compatibility.", 2)
+				else: log.FatalError("""New quoting requirements
+
+This may be caused when you copy an rdiff-backup directory from a
+normal file system on to a windows one that cannot support the same
+characters.  If you want to risk it, remove the file
+rdiff-backup-data/chars_to_quote.
+""")
 
 	def set_ownership(self, testdir):
 		"""Set self.ownership to true iff testdir's ownership can be changed"""
@@ -164,7 +200,7 @@ class FSAbilities:
 			if supports_unusual_chars(): self.chars_to_quote = ""
 			else: self.chars_to_quote = "^A-Za-z0-9_ -"
 		else:
-			if supports_unusual_chars(): self.chars_to_quote = "A-Z"
+			if supports_unusual_chars(): self.chars_to_quote = "A-Z;"
 			else: self.chars_to_quote = "^a-z0-9_ -"
 
 	def set_acls(self, rp):
