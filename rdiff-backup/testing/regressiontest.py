@@ -1,8 +1,8 @@
 import unittest, os
 from commontest import *
-from log import *
-from rpath import *
-import Globals, SetConnections
+from rdiff_backup.log import *
+from rdiff_backup.rpath import *
+from rdiff_backup import Globals, SetConnections
 
 
 """Regression tests

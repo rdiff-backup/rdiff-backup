@@ -1,6 +1,6 @@
 import unittest, StringIO
-execfile("commontest.py")
-rbexec("filelist.py")
+from commontest import *
+from rdiff_backup.filelist import *
 
 
 class FilelistTest(unittest.TestCase):

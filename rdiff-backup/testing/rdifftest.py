@@ -1,8 +1,8 @@
 import unittest, random
 from commontest import *
-from log import *
-from selection import *
-import Globals, Rdiff
+from rdiff_backup.log import *
+from rdiff_backup.selection import *
+from rdiff_backup import Globals, Rdiff
 
 Log.setverbosity(6)
 

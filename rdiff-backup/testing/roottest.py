@@ -1,7 +1,7 @@
 import unittest, os
 from commontest import *
-from log import *
-import Globals
+from rdiff_backup.log import *
+from rdiff_backup import Globals
 
 """Root tests
 

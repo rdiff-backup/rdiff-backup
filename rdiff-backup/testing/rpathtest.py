@@ -1,6 +1,6 @@
 import os, cPickle, sys, unittest
 from commontest import *
-from rpath import *
+from rdiff_backup.rpath import *
 
 
 class RPathTest(unittest.TestCase):

@@ -1,9 +1,9 @@
 from __future__ import generators
 import unittest
 from commontest import *
-from rpath import *
-from selection import *
-import Globals
+from rdiff_backup.rpath import *
+from rdiff_backup.selection import *
+from rdiff_backup import Globals
 
 Log.setverbosity(4)
 

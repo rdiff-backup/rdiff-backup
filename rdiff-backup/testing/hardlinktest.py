@@ -1,7 +1,7 @@
 import os, unittest
 from commontest import *
-from rpath import *
-import Globals, Hardlink
+from rdiff_backup.rpath import *
+from rdiff_backup import Globals, Hardlink
 
 Log.setverbosity(7)
 

@@ -1,7 +1,7 @@
 import unittest, os, signal, sys, random, time
 from commontest import *
-from log import *
-import Globals, Main
+from rdiff_backup.log import *
+from rdiff_backup import Globals, Main
 
 """Test consistency by killing rdiff-backup as it is backing up"""
 

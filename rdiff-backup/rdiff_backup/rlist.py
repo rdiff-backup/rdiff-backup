@@ -1,6 +1,6 @@
 from __future__ import generators
 import marshal, sha, types
-execfile("iterfile.py")
+from rdiff_backup.iterfile import *
 
 #######################################################################
 #

@@ -1,6 +1,6 @@
 import unittest
 from commontest import *
-import Globals, SetConnections
+from rdiff_backup import Globals, SetConnections
 
 class RemoteMirrorTest(unittest.TestCase):
 	"""Test mirroring"""

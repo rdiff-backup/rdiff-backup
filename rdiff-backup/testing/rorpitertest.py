@@ -1,9 +1,9 @@
 import unittest
 from commontest import *
-from log import *
-from rpath import *
-from rorpiter import *
-import Globals
+from rdiff_backup.log import *
+from rdiff_backup.rpath import *
+from rdiff_backup.rorpiter import *
+from rdiff_backup import Globals
 
 
 #Log.setverbosity(8)

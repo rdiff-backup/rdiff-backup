@@ -1,8 +1,8 @@
 import unittest, os
 from commontest import *
-from log import *
-from rpath import *
-from restore import *
+from rdiff_backup.log import *
+from rdiff_backup.rpath import *
+from rdiff_backup.restore import *
 
 lc = Globals.local_connection
 Globals.change_source_perms = 1

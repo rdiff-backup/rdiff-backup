@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
 import sys, os
-sys.path.insert(0, "../src")
-from rpath import *
-from connection import *
-import Globals
+#sys.path.insert(0, "../src")
+from rdiff_backup.rpath import *
+from rdiff_backup.connection import *
+from rdiff_backup import Globals
 
 lc = Globals.local_connection
 

@@ -1,6 +1,6 @@
 import os, unittest
 from commontest import *
-import rdiff_backup.Security, Security
+import rdiff_backup.Security
 
 #Log.setverbosity(5)
 

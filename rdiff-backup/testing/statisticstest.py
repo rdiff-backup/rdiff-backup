@@ -1,6 +1,6 @@
 import unittest
 from commontest import *
-from statistics import *
+from rdiff_backup.statistics import *
 
 class StatsObjTest(unittest.TestCase):
 	"""Test StatsObj class"""

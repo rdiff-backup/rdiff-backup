@@ -1,6 +1,6 @@
 import unittest, StringIO
 from commontest import *
-from iterfile import *
+from rdiff_backup.iterfile import *
 
 
 class testIterFile(unittest.TestCase):

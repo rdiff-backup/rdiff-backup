@@ -1,7 +1,7 @@
 from __future__ import generators
 import unittest, pickle
 from commontest import *
-from lazy import *
+from rdiff_backup.lazy import *
 
 class Iterators(unittest.TestCase):
 	one_to_100 = lambda s: iter(range(1, 101))
