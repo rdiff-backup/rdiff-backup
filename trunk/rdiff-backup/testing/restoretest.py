@@ -117,4 +117,11 @@ class RestoreTest(unittest.TestCase):
 		self.assertRaises(OSError, os.lstat, "testfiles/output/tmp")
 		self.assertRaises(OSError, os.lstat, "testfiles/output/rdiff-backup")
 
+	def testRestoreNoincs(self):
+		"""Test restoring a directory with no increments, just mirror"""
+		Myrm("testfiles/output")
+		InternalRestore(1, 1, 'testfiles/restoretest5/regular_file', 'testfiles/output',
+						10000)
+		assert os.lstat("testfiles/output")
+
 if __name__ == "__main__": unittest.main()
