@@ -1,4 +1,6 @@
-Thank you for trying rdiff-backup.
+Thank you for trying rdiff-backup.  To install, run:
+
+	./setup.py install
 
 Remember that you must have Python 2.2 or later and librsync installed
 (this means that "python" and "rdiff" should be in your path).  To
@@ -9,8 +11,8 @@ For remote operation, rdiff-backup should be in installed and in the
 PATH on remote system(s) (see man page for more information).
 
 
-If you have the above installed, and it still doesn't work, contact
-Ben Escoto <bescoto@stanford.edu>, or post to the mailing list (see
-web page at http://www.stanford.edu/~bescoto/rdiff-backup for more
-information).
+If you have the above installed, and it still doesn't work, see the
+web page at http://rdiff-backup.stanford.edu for more
+information.
+
 
