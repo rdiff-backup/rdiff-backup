@@ -31,7 +31,7 @@ do
 
             check_compare $new $tmpdir/new "triple -I$buf -O$buf $old $new"
 
-            show_progress
+            countdown
         done
     done
 done
