@@ -63,4 +63,4 @@ void _hs_check_tube(hs_stream_t *);
 void _hs_scoop_advance(hs_stream_t *stream, size_t len);
 enum hs_result _hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr);
 enum hs_result _hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr);
-
+enum hs_result _hs_scoop_read_rest(hs_stream_t *stream, size_t *len, void **ptr);

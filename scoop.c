@@ -202,6 +202,10 @@ enum hs_result _hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
 
 
 
+/*
+ * Read LEN bytes if possible, and remove them from the input scoop.
+ * If there's not enough data yet, return HS_BLOCKED.
+ */
 enum hs_result _hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr)
 {
         enum hs_result result;
@@ -211,4 +215,19 @@ enum hs_result _hs_scoop_read(hs_stream_t *stream, size_t len, void **ptr)
                 _hs_scoop_advance(stream, len);
 
         return result;
+}
+
+
+
+/*
+ * Read whatever remains in the input stream, assuming that it runs up
+ * to the end of the file.  Set LEN appropriately.
+ */
+enum hs_result _hs_scoop_read_rest(hs_stream_t *stream, size_t *len, void **ptr)
+{
+        hs_simpl_t *impl = stream->impl;
+
+        *len = impl->scoop_avail + stream->avail_in;
+
+        return _hs_scoop_read(stream, *len, ptr);
 }
