@@ -27,7 +27,7 @@ typedef unsigned char hs_strong_sum_t[HS_MD4_LENGTH];
 typedef struct hs_rollsum hs_rollsum_t;
 
 typedef struct hs_target {
-    short           t;
+    uint16_t        t;
     int             i;
 } hs_target_t;
 
