@@ -1,11 +1,10 @@
 Summary:  	Rsync libraries
 Name:     	librsync
-Version:  	0.9.3
-Release:  	2
+Version:  	0.9.4pre
+Release:  	1
 Copyright:	LGPL
 Group:    	System Environment/Libraries
-Source:  	http://ftp1.sourceforge.net/rproxy/librsync-0.9.3.tar.gz
-Patch:          librsync-rll.patch
+Source:  	http://ftp1.sourceforge.net/rproxy/librsync-0.9.4pre.tar.gz
 URL:       	http://www.sf.net/projects/rproxy
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
 
@@ -43,7 +42,9 @@ based on librsync.
 
 %prep 
 %setup
-%patch 
+# The next line is only needed if there are any non-upstream patches.  In
+# this distribution there are none.
+#%patch 
 
 %build
 %configure
