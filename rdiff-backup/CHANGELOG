@@ -1,3 +1,10 @@
+New in v0.11.2 (2003/??/??)
+---------------------------
+
+Fixed seg fault bug reported by a couple sparc/openbsd users.  Thanks
+to Dave Steinberg for giving me an account on his system for testing.
+
+
 New in v0.11.1 (2002/12/31)
 ---------------------------
 
