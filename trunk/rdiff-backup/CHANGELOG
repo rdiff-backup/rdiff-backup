@@ -8,6 +8,8 @@ When regressing, remove mirror_metadata and similar increments first.
 This will hopefully help regressing a backup that failed because disk
 was full (reported by Erik Forsberg).
 
+Fixed remote quoting errors found by Daniel Drucker.
+
 
 New in v0.13.3 (2003/10/14)
 ---------------------------
