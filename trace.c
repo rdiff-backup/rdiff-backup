@@ -35,6 +35,7 @@ hs_trace_to(_hs_trace_fn *new_impl)
 }
 
 
+#ifdef DO_HS_TRACE
 void
 _hs_trace(char const *fmt, ...)
 {
@@ -46,7 +47,7 @@ _hs_trace(char const *fmt, ...)
 	  va_end(va);
      }
 }
-
+#endif /* DO_HS_TRACE */
 
 void
 _hs_trace_to_stderr(char const *fmt, va_list va)
