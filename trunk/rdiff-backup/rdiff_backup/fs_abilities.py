@@ -187,7 +187,7 @@ rdiff-backup-data/chars_to_quote.
 			tmp_rp.chown(uid+1, gid+1) # just choose random uid/gid
 			tmp_rp.chown(0, 0)
 		except (IOError, OSError), exc:
-			if exc[0] == errno.EPERM:
+			if exc[0] in (errno.EPERM, errno.EINVAL):
 				log.Log("Warning: ownership cannot be changed on filesystem "
 						"at %s" % (self.root_rp.path,), 3)
 				self.ownership = 0
@@ -202,7 +202,8 @@ rdiff-backup-data/chars_to_quote.
 		hl_source.touch()
 		try:
 			hl_dest.hardlink(hl_source.path)
-			assert hl_source.getinode() == hl_dest.getinode()
+			if hl_source.getinode() != hl_dest.getinode():
+				raise IOError(errno.EOPNOTSUP, "Hard links don't compare")
 		except (IOError, OSError), exc:
 			if exc[0] in (errno.EOPNOTSUPP, errno.EPERM):
 				log.Log("Warning: hard linking not supported by filesystem "
