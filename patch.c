@@ -255,11 +255,11 @@ static rs_result rs_patch_s_copying(rs_job_t *job)
  */
 static rs_result rs_patch_s_header(rs_job_t *job)
 {
-        int v;
-        int result;
+        int       v;
+        rs_result result;
 
         
-        if ((result =rs_suck_n4(job, &v)) != RS_DONE)
+        if ((result = rs_suck_n4(job, &v)) != RS_DONE)
                 return result;
 
         if (v != RS_DELTA_MAGIC)
