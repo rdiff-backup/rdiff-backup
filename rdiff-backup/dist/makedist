@@ -6,7 +6,7 @@ filelist = ["rdiff-backup", "CHANGELOG", "COPYING", "README", "FAQ.html"]
 
 # Various details about the files must also be specified by the rpm
 # spec template.
-spec_template = "rdiff-backup.spec"
+spec_template = "dist/rdiff-backup.spec"
 
 
 def GetVersion():
@@ -54,7 +54,7 @@ def MakeSpecFile(version):
 	return specfile
 
 def Main():
-	assert not os.system("./Make")
+	assert not os.system("cd src; ./Make; cp ./rdiff-backup ..")
 	version = GetVersion()
 	print "Processing version " + version
 	tarfile = MakeTar(version)
