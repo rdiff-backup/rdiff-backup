@@ -51,11 +51,10 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 
 	"""
 	if not source_local:
-		src_dir = ("cd test1; ../%s/rdiff-backup --server::../%s" %
-				   (SourceDir, src_dir))
+		src_dir = ("'cd test1; ../%s --server'::../%s" % (RBBin, src_dir))
 	if not dest_local:
-		dest_dir = ("test2/tmp; ../../%s/rdiff-backup --server::../../%s" %
-					(SourceDir, dest_dir))
+		dest_dir = ("'cd test2/tmp; ../../%s --server'::../../%s" %
+					(RBBin, dest_dir))
 
 	cmdargs = [RBBin, extra_options]
 	if not (source_local and dest_local): cmdargs.append("--remote-schema %s")

@@ -107,7 +107,9 @@ def RORP2Record(rorpath):
 	# Add user, group, and permission information
 	uid, gid = rorpath.getuidgid()
 	str_list.append("  Uid %s\n" % uid)
+	str_list.append("  Uname %s\n" % rorpath.getuname() or ":")
 	str_list.append("  Gid %s\n" % gid)
+	str_list.append("  Gname %s\n" % rorpath.getgname() or ":")
 	str_list.append("  Permissions %s\n" % rorpath.getperms())
 	return "".join(str_list)
 
@@ -140,6 +142,12 @@ def Record2RORP(record_string):
 		elif field == "ModTime": data_dict['mtime'] = long(data)
 		elif field == "Uid": data_dict['uid'] = int(data)
 		elif field == "Gid": data_dict['gid'] = int(data)
+		elif field == "Uname":
+			if data == ":": data_dict['uname'] = None
+			else: data_dict['uname'] = data
+		elif field == "Gname":
+			if data == ':': data_dict['gname'] = None
+			else: data_dict['gname'] = data
 		elif field == "Permissions": data_dict['perms'] = int(data)
 		else: raise ParsingError("Unknown field in line '%s'" % line)
 	return rpath.RORPath(index, data_dict)

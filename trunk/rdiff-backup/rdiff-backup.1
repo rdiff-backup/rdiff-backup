@@ -134,6 +134,13 @@ Exclude all device files, fifos, sockets, and symlinks.
 Authorize the updating or overwriting of a destination path.
 rdiff-backup will generally tell you if it needs this.
 .TP
+.BI "--group-mapping-file " filename
+Map group names and ids according the the group mapping file
+.IR filename .
+See the
+.B USERS AND GROUPS
+section for more information.
+.TP
 .BI "--include " shell_pattern
 Similar to
 .B --exclude
@@ -197,10 +204,6 @@ This may be helpful in deciding how many increments to keep, and when
 to --remove-older-than.  Specifying a subdirectory is allowable; then
 only the sizes of the mirror and increments pertaining to that
 subdirectory will be listed.
-.TP
-.B --no-change-dir-inc-perms
-Do not change the permissions of the directory increments to match the
-directories they represent.
 .TP
 .B --no-compare-inode
 This relatively esoteric option prevents rdiff-backup from flagging a
@@ -337,6 +340,13 @@ the level defaults to the verbosity level.
 Test for the presence of a compatible rdiff-backup server as specified
 in the following host::filename argument(s).  The filename section
 will be ignored.
+.TP
+.BI "--user-mapping-file " filename
+Map user names and ids according to the user mapping file
+.IR filename .
+See the
+.B USERS and GROUPS
+section for more information.
 .TP
 .BI -v [0-9] ", --verbosity " [0-9]
 Specify verbosity level (0 is totally silent, 3 is the default, and 9
@@ -735,8 +745,50 @@ matches any files whose full pathnames contain 7 consecutive digits
 which aren't followed by 'foo'.  However, it wouldn't match /home even
 if /home/ben/1234567 existed.
 
-.SH STATISTICS
+.SH USERS AND GROUPS
+There can be complications preserving ownership across systems.  For
+instance the username that owns a file on the source system may not
+exist on the destination.  Here is how rdiff-backup maps ownership on
+the source to the destination:
 
+.TP
+.B 1.
+Attempt to preserve the user and group names for ownership and in
+ACLs.  This may result in files having different uids and gids across
+systems.
+.TP
+.B 2.
+If this fails (e.g. because the username does not exist), preserve the
+original id, but only in cases of user and group ownership.  For ACLs,
+omit any entry that has a bad user or group name.
+.TP
+.B 3.
+However, the
+.B --user-mapping-file
+and
+.B --group-mapping-file
+options can override this behavior.  If either of these options is
+given, the policy descriped in 1 and 2 above will be followed, but
+with the mapped user and group instead of the original.
+
+.RE
+The user and group mapping files both have the same form:
+
+.RS
+old_name_or_id1:new_name_or_id1
+.RE
+.RS
+old_name_or_id2:new_name_or_id2
+.RE
+.RS
+<etc>
+.RE
+
+Each line should contain a name or id, followed by a colon ":",
+followed by another name or id.  If a name or id is not listed, they
+are treated in the default way described above.
+
+.SH STATISTICS
 Every session rdiff-backup saves various statistics into two files,
 the session statistics file at
 rdiff-backup-data/session_statistics.<time>.data and the directory
@@ -766,7 +818,6 @@ The log file is not compressed and can become quite large if
 rdiff-backup is run with high verbosity.
 
 .SH EXIT STATUS
-
 If rdiff-backup finishes successfully, the exit status will be 0.  If
 there is an error, it will be non-zero (usually 1, but don't depend on
 this specific value).  When setting up rdiff-backup to run

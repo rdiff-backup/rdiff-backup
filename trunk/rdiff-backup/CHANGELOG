@@ -1,6 +1,9 @@
 New in v0.13.2 (??????????)
 ---------------------------
 
+Change ownership policy and added --user-mapping-file and
+--group-mapping-file switches.  See man page for more information.
+
 Specified socket type as SOCK_STREAM.  (Error reported by Erik
 Forsberg.)
 
@@ -13,9 +16,11 @@ If there is data missing from the destination dir (for instance if a
 user mistakenly deletes it), only warn when restoring, instead of
 exiting with error.
 
-Fixed bug in EA/ACL restoring, noticed by Greg Freemyer.  Also updated
-quoting of filenames and extended attributes names to match
-forthcoming attr/facl utilities.
+Fixed bug in EA/ACL restoring, noticed by Greg Freemyer.
+
+Updated quoting of filenames and extended attributes names to match
+forthcoming attr/facl utilities.  Strange characters should now be
+properly escaped.
 
 Fixed problems with --restrict options that would cause proper
 sessions to fail.  Thanks to Randall Nortman for error report.
@@ -26,6 +31,9 @@ by Alan Bailward.
 
 File examples.html added to distribution; examples section removed
 from man page.
+
+Removed option --no-change-dir-inc-perms.  Instead when copying
+permissions to directory increments, mask with 0777.
 
 
 New in v0.13.1 (2003/08/08)

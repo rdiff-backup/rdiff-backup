@@ -36,7 +36,7 @@ are dealing with are local or remote.
 """
 
 import os, stat, re, sys, shutil, gzip, socket, time
-import Globals, Time, static, log
+import Globals, Time, static, log, user_group
 
 
 class SkipFileException(Exception):
@@ -143,7 +143,7 @@ def cmp(rpin, rpout):
 	elif rpin.issock(): return rpout.issock()
 	else: raise RPathException("File %s has unknown type" % rpin.path)
 
-def copy_attribs(rpin, rpout, acls = 1):
+def copy_attribs(rpin, rpout):
 	"""Change file attributes of rpout to match rpin
 
 	Only changes the chmoddable bits, uid/gid ownership, and
@@ -151,14 +151,36 @@ def copy_attribs(rpin, rpout, acls = 1):
 
 	"""
 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
+	assert rpin.lstat() == rpout.lstat() is not None, "different file types"
+	if rpin.issym(): return # symlinks have no valid attributes
+	if Globals.write_resource_forks and rpin.isreg():
+		rpout.write_resource_fork(rpin.get_resource_fork())
+	if Globals.write_eas: rpout.write_ea(rpin.get_ea())
+	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
+	rpout.chmod(rpin.getperms())
+	if Globals.write_acls: rpout.write_acl(rpin.get_acl())
+	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
+
+def copy_attribs_inc(rpin, rpout):
+	"""Change file attributes of rpout to match rpin
+
+	Like above, but used to give increments the same attributes as the
+	originals.  Therefore, don't copy all directory acl and
+	permissions.
+
+	"""
+	log.Log("Copying inc attrs from %s to %s" % (rpin.index, rpout.path), 7)
 	check_for_files(rpin, rpout)
 	if rpin.issym(): return # symlinks have no valid attributes
 	if Globals.write_resource_forks and rpin.isreg() and rpout.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if Globals.write_eas: rpout.write_ea(rpin.get_ea())
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
-	rpout.chmod(rpin.getperms())
-	if Globals.write_acls and acls: rpout.write_acl(rpin.get_acl())
+	if rpin.isdir() and not rpout.isdir():
+		rpout.chmod(rpin.getperms() & 0777)
+	else: rpout.chmod(rpin.getperms())
+	if Globals.write_acls and not (rpin.isdir() and not rpout.isdir()):
+		rpout.write_acl(rpin.get_acl())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
 
 def cmp_attribs(rp1, rp2):
@@ -265,7 +287,7 @@ class RORPath:
 		if self.index != other.index: return None
 
 		for key in self.data.keys(): # compare dicts key by key
-			if (key == 'uid' or key == 'gid') and self.issym():
+			if self.issym() and key in ('uid', 'gid', 'uname', 'gname'):
 				pass # Don't compare gid/uid for symlinks
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'ctime': pass
@@ -293,11 +315,7 @@ class RORPath:
 
 		"""
 		for key in self.data.keys(): # compare dicts key by key
-			if ((key == 'uid' or key == 'gid') and
-				(self.issym() or not Globals.change_ownership)):
-				# Don't compare gid/uid for symlinks, and only root
-				# can change ownership
-				pass
+			if key in ('uid', 'gid', 'uname', 'gname'): pass
 			elif (key == 'type' and self.isspecial() and
 				  other.isreg() and other.getsize() == 0):
 				pass # Special files may be replaced with empty regular files
@@ -312,6 +330,11 @@ class RORPath:
 				pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return 0
+
+		if self.lstat() and not self.issym() and Globals.change_ownership:
+			# Now compare ownership.  Symlinks don't have ownership
+			if user_group.map_rpath(self) != other.getuidgid(): return 0
+
 		return 1
 
 	def equal_verbose(self, other, check_index = 1,
@@ -323,7 +346,7 @@ class RORPath:
 			return None
 
 		for key in self.data.keys(): # compare dicts key by key
-			if ((key == 'uid' or key == 'gid') and
+			if (key in ('uid', 'gid', 'uname', 'gname') and
 				(self.issym() or not compare_ownership)):
 				# Don't compare gid/uid for symlinks, or if told not to
 				pass
@@ -424,6 +447,14 @@ class RORPath:
 	def getperms(self):
 		"""Return permission block of file"""
 		return self.data['perms']
+
+	def getuname(self):
+		"""Return username that owns the file"""
+		return self.data['uname']
+
+	def getgname(self):
+		"""Return groupname that owns the file"""
+		return self.data['gname']
 
 	def hassize(self):
 		"""True if rpath has a size parameter"""
@@ -620,10 +651,11 @@ class RPath(RORPath):
 	def setdata(self):
 		"""Set data dictionary using C extension"""
 		self.data = self.conn.C.make_file_dict(self.path)
-		if Globals.read_eas and self.lstat():
-			self.data['ea'] = self.conn.rpath.ea_get(self)
-		if Globals.read_acls and self.lstat():
-			self.data['acl'] = self.conn.rpath.acl_get(self)
+		if not self.lstat(): return
+		self.data['uname'] = self.conn.user_group.uid2uname(self.data['uid'])
+		self.data['gname'] = self.conn.user_group.gid2gname(self.data['gid'])
+		if Globals.read_eas: self.data['ea'] = self.conn.rpath.ea_get(self)
+		if Globals.read_acls: self.data['acl'] = self.conn.rpath.acl_get(self)
 		if Globals.read_resource_forks and self.isreg():
 			self.get_resource_fork()
 
@@ -1063,3 +1095,4 @@ class RPathFileHook:
 # problems.
 def acl_get(rp): assert 0
 def ea_get(rp): assert 0
+

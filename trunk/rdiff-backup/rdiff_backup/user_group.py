@@ -65,7 +65,6 @@ class Map:
 	"""Used for mapping names and id on source side to dest side"""
 	def __init__(self, name2id_func):
 		"""Map initializer, set dictionaries"""
-		assert Globals.isdest, "Should run on destination connection"
 		self.name2id_dict = {}
 		self.name2id_func = name2id_func
 
@@ -150,5 +149,9 @@ def init_group_mapping(mapping_string):
 	else: GroupMap = Map(name2id_func)
 
 	
-
-
+def map_rpath(rp):
+	"""Return (uid, gid) of mapped ownership of given rpath"""
+	old_uid, old_gid = rp.getuidgid()
+	new_uid = UserMap.get_id(old_uid, rp.getuname())
+	new_gid = GroupMap.get_id(old_gid, rp.getgname())
+	return (new_uid, new_gid)

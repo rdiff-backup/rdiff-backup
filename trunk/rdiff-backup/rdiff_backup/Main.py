@@ -32,6 +32,7 @@ remote_cmd, remote_schema = None, None
 force = None
 select_opts = []
 select_files = []
+user_mapping_filename, group_mapping_filename = None, None
 # These are global because they are set while we are trying to figure
 # whether to restore or to backup
 restore_root, restore_index, restore_root_set = None, None, 0
@@ -40,6 +41,7 @@ def parse_cmdlineoptions(arglist):
 	"""Parse argument list and set global preferences"""
 	global args, action, force, restore_timestr, remote_cmd, remote_schema
 	global remove_older_than_string
+	global user_mapping_filename, group_mapping_filename
 	def sel_fl(filename):
 		"""Helper function for including/excluding filelists below"""
 		try: return open(filename, "r")
@@ -51,20 +53,19 @@ def parse_cmdlineoptions(arglist):
 		  "exclude-filelist=", "exclude-filelist-stdin",
 		  "exclude-globbing-filelist=", "exclude-mirror=",
 		  "exclude-other-filesystems", "exclude-regexp=",
-		  "exclude-special-files", "force", "include=",
-		  "include-filelist=", "include-filelist-stdin",
+		  "exclude-special-files", "force", "group-mapping-file=",
+		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=", "include-regexp=",
 		  "list-at-time=", "list-changed-since=", "list-increments",
 		  "list-increment-sizes", "no-compare-inode",
-		  "no-change-dir-inc-perms", "no-compression",
-		  "no-compression-regexp=", "no-file-statistics",
-		  "no-hard-links", "null-separator",
+		  "no-compression", "no-compression-regexp=",
+		  "no-file-statistics", "no-hard-links", "null-separator",
 		  "override-chars-to-quote=", "parsable-output",
 		  "print-statistics", "remote-cmd=", "remote-schema=",
 		  "remove-older-than=", "restore-as-of=", "restrict=",
 		  "restrict-read-only=", "restrict-update-only=", "server",
 		  "ssh-no-compression", "terminal-verbosity=", "test-server",
-		  "verbosity=", "version"])
+		  "user-mapping-file=", "verbosity=", "version"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: %s" % str(e))
 
@@ -89,6 +90,7 @@ def parse_cmdlineoptions(arglist):
 			  opt == "--exclude-regexp" or
 			  opt == "--exclude-special-files"): select_opts.append((opt, arg))
 		elif opt == "--force": force = 1
+		elif opt == "--group-mapping-file": group_mapping_filename = arg
 		elif opt == "--include": select_opts.append((opt, arg))
 		elif opt == "--include-filelist":
 			select_opts.append((opt, arg))
@@ -107,8 +109,6 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "-l" or opt == "--list-increments":
 			action = "list-increments"
 		elif opt == '--list-increment-sizes': action = 'list-increment-sizes'
-		elif opt == '--no-change-dir-inc-perms':
-			Globals.set('change_dir_inc_perms', 0)
 		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
@@ -141,6 +141,7 @@ def parse_cmdlineoptions(arglist):
 			Globals.set('ssh_compression', None)
 		elif opt == "--terminal-verbosity": Log.setterm_verbosity(arg)
 		elif opt == "--test-server": action = "test-server"
+		elif opt == "--user-mapping-file": user_mapping_filename = arg
 		elif opt == "-V" or opt == "--version":
 			print "rdiff-backup " + Globals.version
 			sys.exit(0)
@@ -190,6 +191,21 @@ def misc_setup(rps):
 		conn.robust.install_signal_handlers()
 		conn.Hardlink.initialize_dictionaries()
 
+def init_user_group_mapping(destination_conn):
+	"""Initialize user and group mapping on destination connection"""
+	global user_mapping_filename, group_mapping_filename
+	def get_string_from_file(filename):
+		if not filename: return None
+		rp = rpath.RPath(Globals.local_connection, filename)
+		try: return rp.get_data()
+		except OSError, e:
+			log.FatalError("Error '%s' reading mapping file '%s'" %
+						   (str(e), filename))
+	user_mapping_string = get_string_from_file(user_mapping_filename)
+	destination_conn.user_group.init_user_mapping(user_mapping_string)
+	group_mapping_string = get_string_from_file(group_mapping_filename)
+	destination_conn.user_group.init_group_mapping(group_mapping_string)
+
 def take_action(rps):
 	"""Do whatever action says"""
 	if action == "server":
@@ -237,6 +253,7 @@ def Backup(rpin, rpout):
 	backup_set_fs_globals(rpin, rpout)
 	if Globals.chars_to_quote: rpout = backup_quoted_rpaths(rpout)
 	backup_final_init(rpout)
+	init_user_group_mapping(rpout.conn)
 	backup_set_select(rpin)
 	if prevtime:
 		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
@@ -363,7 +380,6 @@ def backup_set_fs_globals(rpin, rpout):
 	update_bool_global('write_eas', Globals.read_eas and dest_fsa.eas)
 	update_bool_global('write_resource_forks',
 					   Globals.read_resource_forks and dest_fsa.resource_forks)
-	update_bool_global('change_dir_inc_perms', dest_fsa.dir_inc_perms)
 	SetConnections.UpdateGlobal('chars_to_quote', dest_fsa.chars_to_quote)
 	if Globals.chars_to_quote:
 		for conn in Globals.connections:
@@ -417,6 +433,7 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 		try: time = Time.genstrtotime(restore_timestr, rp = inc_rpath)
 		except Time.TimeException, exc: Log.FatalError(str(exc))
 	else: time = src_rp.getinctime()
+	init_user_group_mapping(dest_rp.conn)
 	restore_set_select(restore_root, dest_rp)
 	restore_start_log(src_rp, dest_rp, time)
 	restore.Restore(restore_root.new_index(restore_index),
@@ -664,6 +681,7 @@ def CheckDest(dest_rp):
 	elif need_check == 0:
 		Log.FatalError("Destination dir %s does not need checking" %
 					   (dest_rp.path,))
+	init_user_group_mapping(dest_rp.conn)
 	dest_rp.conn.regress.Regress(dest_rp)
 
 def checkdest_need_check(dest_rp):
