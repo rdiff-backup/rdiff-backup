@@ -607,8 +607,9 @@ class Resume:
 		data = fp.read()
 		fp.close()
 		try: result = cPickle.loads(data)
-		except cPickle.UnpicklingError:
-			raise ResumeException("Bad pickle at %s" % (checkpoint_rp.path,))
+		except Exception, exc:
+			raise ResumeException("Bad pickle at %s: %s" %
+								  (checkpoint_rp.path, exc))
 		return result
 
 	def ResumeCheck(cls):
