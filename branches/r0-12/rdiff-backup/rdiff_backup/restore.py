@@ -123,20 +123,33 @@ class MirrorStruct:
 		and what was actually on the mirror side will correspond to the
 		older one.
 
-		So here we assume all rdiff-backup events were recorded in
-		"increments" increments, and if it's in-between we pick the
-		older one here.
+		So if restore_to_time is inbetween two increments, return the
+		older one.
 
 		"""
-		global _rest_time
-		base_incs = get_inclist(Globals.rbdir.append("increments"))
-		if not base_incs: return _mirror_time
-		inctimes = [inc.getinctime() for inc in base_incs]
-		inctimes.append(_mirror_time)
+		inctimes = cls.get_increment_times()
 		older_times = filter(lambda time: time <= restore_to_time, inctimes)
 		if older_times: return max(older_times)
 		else: # restore time older than oldest increment, just return that
 			return min(inctimes)
+
+	def get_increment_times(cls, rp = None):
+		"""Return list of times of backups, including current mirror
+
+		Take the total list of times from the increments.<time>.dir
+		file and the mirror_metadata file.  Sorted ascending.
+
+		"""
+		# use dictionary to remove dups
+		if not _mirror_time: d = {cls.get_mirror_time(): None}
+		else: d = {_mirror_time: None}
+		if not rp or not rp.index: rp = Globals.rbdir.append("increments")
+		for inc in get_inclist(rp): d[inc.getinctime()] = None
+		for inc in get_inclist(Globals.rbdir.append("mirror_metadata")):
+			d[inc.getinctime()] = None
+		return_list = d.keys()
+		return_list.sort()
+		return return_list
 
 	def initialize_rf_cache(cls, mirror_base, inc_base):
 		"""Set cls.rf_cache to CachedRF object"""
