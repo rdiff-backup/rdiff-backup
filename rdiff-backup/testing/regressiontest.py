@@ -17,6 +17,13 @@ log.Log.setverbosity(3)
 def get_local_rp(extension):
 	return rpath.RPath(Globals.local_connection, "testfiles/" + extension)
 
+def re_init_dir(rp):
+	"""Delete directory if present, then recreate"""
+	if rp.lstat():
+		Myrm(rp.path)
+		rp.setdata()
+	rp.mkdir()
+
 class Local:
 	"""This is just a place to put increments relative to the local
 	connection"""
@@ -162,10 +169,7 @@ class IncrementTest1(unittest.TestCase):
 		"""Test backing up a directory with quoted hardlinks in it"""
 		hldir = rpath.RPath(Globals.local_connection,
 							"testfiles/quoted_hardlinks")
-		if hldir.lstat():
-			Myrm(hldir.path)
-			hldir.setdata()
-		hldir.mkdir()
+		re_init_dir(hldir)
 		hl1 = hldir.append("HardLink1")
 		hl1.touch()
 		hl2 = hldir.append("HardLink2")
@@ -191,10 +195,7 @@ class IncrementTest1(unittest.TestCase):
 
 		"""
 		sockdir = rpath.RPath(Globals.local_connection, "testfiles/sockettest")
-		if sockdir.lstat():
-			Myrm(sockdir.path)
-			sockdir.setdata()
-		sockdir.mkdir()
+		re_init_dir(sockdir)
 		tmp_sock = sockdir.append("sock")
 		tmp_sock.mksock()
 		sock1 = sockdir.append("Long_socket_name---------------------------------------------------------------------------------------------------")
@@ -256,6 +257,29 @@ class IncrementTest1(unittest.TestCase):
 		BackupRestoreSeries(1, 1, ['testfiles/no_write_out',
 								   'testfiles/no_write_out2',
 								   'testfiles/empty'])
+
+	def testConfig1(self):
+		"""Test certain backing up/restoring directory of certain structure
+
+		Some version (0.13.4 and earlier) had a PermChanger that
+		choked when run on a structure like this.
+
+		"""
+		def make_confdir():
+			confdir = rpath.RPath(Globals.local_connection,
+								  "testfiles/conf1test")
+			re_init_dir(confdir)
+			dir1 = confdir.append('dir')
+			dir1.mkdir()
+			dir1_1 = dir1.append('1-dir')
+			dir1_1.mkdir()
+			reg1_1_1 = dir1_1.append('reg')
+			reg1_1_1.touch()
+			reg1_2 = dir1.append('2-reg')
+			reg1_2.touch()
+
+		make_confdir()
+		BackupRestoreSeries(1, 1, ['testfiles/conf1test', 'testfiles/empty'])
 
 
 class MirrorTest(PathSetter):
