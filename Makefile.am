@@ -11,7 +11,7 @@ libhsync_la_SOURCES = dec.c enc.c \
 	mdfour.c search.c \
 	filebuf.c membuf.c ptrbuf.c \
 	checksum.c copyq.c \
-	compress.c compress.h inbuf.c \
+	compress.c compress.h inbuf.c test-\
 	inhale.c trace.c
 
 libhsyncdecode_la_SOURCES = dec.c \
@@ -21,7 +21,7 @@ libhsyncdecode_la_SOURCES = dec.c \
 	inhale.c trace.c
 
 noinst_SCRIPTS = test-decode.sh test-encode.sh test-chain.sh test-cmds.sh \
-	make-cmds.py
+	make-cmds.py test-thrice.sh
 
 test_data=test-chain/empty-sig  \
 test-decode/01-diff \
@@ -79,6 +79,7 @@ hsinhale_LDADD = libhsyncdecode.la
 # ``When the program is being tested, it is too late to make design
 # changes.''
 
-TESTS = test-cmds.sh test-decode.sh test-encode.sh test-chain.sh
+TESTS = test-cmds.sh test-decode.sh test-encode.sh test-chain.sh \
+	test-thrice.sh
 
 
