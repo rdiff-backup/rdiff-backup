@@ -73,6 +73,12 @@
 #include "util.h"
 
 
+#if 0
+#  undef rs_trace
+#  define rs_trace(s...)
+#endif
+
+
 /**
  * Try to accept a from the input buffer to get LEN bytes in the scoop.
  */
@@ -93,7 +99,7 @@ void rs_scoop_input(rs_job_t *job, size_t len)
         if (job->scoop_buf)
             free(job->scoop_buf);
         job->scoop_buf = job->scoop_next = newbuf;
-        rs_trace("resized scoop buffer to %f bytes from %f",
+        rs_trace("resized scoop buffer to %.0f bytes from %.0f",
                  (double) newsize, (double) job->scoop_alloc);
         job->scoop_alloc = newsize;
     } else {
@@ -111,7 +117,7 @@ void rs_scoop_input(rs_job_t *job, size_t len)
     assert(tocopy + job->scoop_avail <= job->scoop_alloc);
 
     memcpy(job->scoop_next + job->scoop_avail, stream->next_in, tocopy);
-    rs_trace("accepted %f bytes from input to scoop", (double) tocopy);
+    rs_trace("accepted %.0f bytes from input to scoop", (double) tocopy);
     job->scoop_avail += tocopy;
     stream->next_in += tocopy;
     stream->avail_in -= tocopy;
@@ -171,7 +177,7 @@ rs_result rs_scoop_readahead(rs_job_t *job, size_t len, void **ptr)
     if (job->scoop_avail >= len) {
         /* We have enough data queued to satisfy the request,
          * so go straight from the scoop buffer. */
-        rs_trace("got %f bytes direct from scoop", (double) len);
+        rs_trace("got %.0f bytes direct from scoop", (double) len);
         *ptr = job->scoop_next;
         return RS_DONE;
     } else if (job->scoop_avail) {
@@ -181,11 +187,11 @@ rs_result rs_scoop_readahead(rs_job_t *job, size_t len, void **ptr)
         rs_scoop_input(job, len);
 
         if (job->scoop_avail < len) {
-            rs_trace("still have only %f bytes in scoop",
+            rs_trace("still have only %.0f bytes in scoop",
                      (double) job->scoop_avail);
             return RS_BLOCKED;
         } else {
-            rs_trace("scoop now has %f bytes, this is enough",
+            rs_trace("scoop now has %.0f bytes, this is enough",
                      (double) job->scoop_avail);
             *ptr = job->scoop_next;
             return RS_DONE;
@@ -193,13 +199,13 @@ rs_result rs_scoop_readahead(rs_job_t *job, size_t len, void **ptr)
     } else if (stream->avail_in >= len) {
         /* There's enough data in the stream's input */
         *ptr = stream->next_in;
-        rs_trace("got %f bytes from input buffer", (double) len);
+        rs_trace("got %.0f bytes from input buffer", (double) len);
         return RS_DONE;
     } else if (stream->avail_in > 0) {
         /* Nothing was queued before, but we don't have enough
          * data to satisfy the request.  So queue what little
          * we have, and try again next time. */
-        rs_trace("couldn't satisfy request for %f, scooping %f bytes",
+        rs_trace("couldn't satisfy request for %.0f, scooping %.0f bytes",
                  (double) len, (double) job->scoop_avail);
         rs_scoop_input(job, len);
         return RS_BLOCKED;
