@@ -472,8 +472,6 @@ class PatchITRB(rorpiter.ITRBranch):
 		"""Set basis_root_rp, the base of the tree to be incremented"""
 		self.basis_root_rp = basis_root_rp
 		assert basis_root_rp.conn is Globals.local_connection
-		self.statfileobj = (statistics.get_active_statfileobj() or
-							statistics.StatFileObj())
 		self.dir_replacement, self.dir_update = None, None
 		self.cached_rp = None
 

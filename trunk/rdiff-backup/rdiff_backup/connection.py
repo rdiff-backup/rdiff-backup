@@ -20,7 +20,8 @@
 """Support code for remote execution and data transfer"""
 
 from __future__ import generators
-import types, os, tempfile, cPickle, shutil, traceback, pickle, socket, sys
+import types, os, tempfile, cPickle, shutil, traceback, pickle, \
+	   socket, sys, gzip
 
 
 class ConnectionError(Exception): pass
@@ -39,6 +40,7 @@ class Connection:
 	"""
 	def __repr__(self): return self.__str__()
 	def __str__(self): return "Simple Connection" # override later
+	def __nonzero__(self): return 1
 
 class LocalConnection(Connection):
 	"""Local connection
@@ -117,7 +119,7 @@ class LowLevelPipeConnection(Connection):
 
 	def _put(self, obj, req_num):
 		"""Put an object into the pipe (will send raw if string)"""
-		Log.conn("sending", obj, req_num)
+		log.Log.conn("sending", obj, req_num)
 		if type(obj) is types.StringType: self._putbuf(obj, req_num)
 		elif isinstance(obj, connection.Connection):self._putconn(obj, req_num)
 		elif isinstance(obj, rpath.RPath): self._putrpath(obj, req_num)
@@ -231,7 +233,7 @@ class LowLevelPipeConnection(Connection):
 		else:
 			assert format_string == "c", header_string
 			result = Globals.connection_dict[int(data)]
-		Log.conn("received", result, req_num)
+		log.Log.conn("received", result, req_num)
 		return (req_num, result)
 
 	def _getrorpath(self, raw_rorpath_buf):
@@ -315,17 +317,17 @@ class PipeConnection(LowLevelPipeConnection):
 
 	def extract_exception(self):
 		"""Return active exception"""
-		if Log.verbosity >= 5 or Log.term_verbosity >= 5:
-			Log("Sending back exception %s of type %s: \n%s" %
-				(sys.exc_info()[1], sys.exc_info()[0],
-				 "".join(traceback.format_tb(sys.exc_info()[2]))), 5)
+		if log.Log.verbosity >= 5 or log.Log.term_verbosity >= 5:
+			log.Log("Sending back exception %s of type %s: \n%s" %
+					(sys.exc_info()[1], sys.exc_info()[0],
+					 "".join(traceback.format_tb(sys.exc_info()[2]))), 5)
 		return sys.exc_info()[1]
 
 	def Server(self):
 		"""Start server's read eval return loop"""
 		Globals.server = 1
 		Globals.connections.append(self)
-		Log("Starting server", 6)
+		log.Log("Starting server", 6)
 		self.get_response(-1)
 
 	def reval(self, function_string, *args):
@@ -510,8 +512,7 @@ class VirtualFile:
 import Globals, Time, Rdiff, Hardlink, FilenameMapping, C, Security, \
 	   Main, rorpiter, selection, increment, statistics, manage, lazy, \
 	   iterfile, rpath, robust, restore, manage, backup, connection, \
-	   TempFile, SetConnections, librsync
-from log import Log
+	   TempFile, SetConnections, librsync, log
 
 Globals.local_connection = LocalConnection()
 Globals.connections.append(Globals.local_connection)

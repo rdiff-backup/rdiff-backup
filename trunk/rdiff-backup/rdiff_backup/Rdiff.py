@@ -25,7 +25,7 @@ import Globals, log, static, TempFile, rpath
 
 def get_signature(rp):
 	"""Take signature of rpin file and return in file object"""
-	log.Log("Getting signature of %s" % rp.path, 7)
+	log.Log("Getting signature of %s" % rp.get_indexpath(), 7)
 	return librsync.SigFile(rp.open("rb"))
 
 def get_delta_sigfileobj(sig_fileobj, rp_new):

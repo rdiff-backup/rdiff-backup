@@ -1,5 +1,3 @@
-
-
 .TH RDIFF-BACKUP 1 "AUGUST 2001" "Version 0.2.1" "User Manuals" \" -*- nroff -*-
 .SH NAME
 rdiff-backup \- local/remote mirror and incremental backup
@@ -206,6 +204,14 @@ rdiff-backup.
 Do not create an rdiff-backup-data directory or make any increments.
 In this mode rdiff-backup is similar to rsync (but usually
 slower).
+.TP
+.B --no-compare-inode
+This relative esoteric option prevents rdiff-backup from flagging a
+file as changed when its inode changes.  This option may be useful if
+you are backing up two different directories to the same rdiff-backup
+destination directory.  The downside is that hard link information may
+get messed up, as the metadata file may no longer have the correct
+inode information.
 .TP
 .B --no-compression
 Disable the default gzip compression of most of the .snapshot and .diff

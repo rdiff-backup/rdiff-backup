@@ -209,6 +209,8 @@ def rename(rp_source, rp_dest):
 	if not rp_source.lstat(): rp_dest.delete()
 	else:
 		if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode():
+			assert 0, ("Rename over same inode: %s to %s" %
+					   (rp_source.path, rp_dest.path))
 			# You can't rename one hard linked file over another
 			rp_source.delete()
 		else: rp_source.conn.os.rename(rp_source.path, rp_dest.path)
@@ -266,24 +268,30 @@ class RORPath:
 		else: self.data = {'type':None} # signify empty file
 		self.file = None
 
+	def zero(self):
+		"""Set inside of self to type None"""
+		self.data = {'type': None}
+		self.file = None
+
 	def __eq__(self, other):
 		"""True iff the two rorpaths are equivalent"""
 		if self.index != other.index: return None
 
 		for key in self.data.keys(): # compare dicts key by key
-			if ((key == 'uid' or key == 'gid') and
-				(not Globals.change_ownership or self.issym())):
-				# Don't compare gid/uid for symlinks or if not change_ownership
+			if (key == 'uid' or key == 'gid') and self.issym():
+				# Don't compare gid/uid for symlinks
 				pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
-			elif key == 'devloc' or key == 'inode' or key == 'nlink': pass
-			elif key == 'size' and not self.isreg():
-				pass # size only matters for regular files
+			elif key == 'devloc' or key == 'nlink': pass
+			elif key == 'size' and not self.isreg(): pass
+			elif key == 'inode' and (not self.isreg() or
+									 not Globals.compare_inode): pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return None
 		return 1
 
-	def equal_verbose(self, other, check_index = 1):
+	def equal_verbose(self, other, check_index = 1,
+					  compare_inodes = 0, compare_ownership = 0):
 		"""Like __eq__, but log more information.  Useful when testing"""
 		if check_index and self.index != other.index:
 			log.Log("Index %s != index %s" % (self.index, other.index), 2)
@@ -291,12 +299,14 @@ class RORPath:
 
 		for key in self.data.keys(): # compare dicts key by key
 			if ((key == 'uid' or key == 'gid') and
-				(not Globals.change_ownership or self.issym())):
-				# Don't compare gid/uid for symlinks or if not change_ownership
+				(self.issym() or not compare_ownership)):
+				# Don't compare gid/uid for symlinks, or if told not to
 				pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
-			elif key == 'devloc' or key == 'inode' or key == 'nlink': pass
+			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
+			elif key == 'inode' and (not self.isreg() or not compare_inodes):
+				pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]):
 				if not other.data.has_key(key):
@@ -311,6 +321,10 @@ class RORPath:
 	def __str__(self):
 		"""Pretty print file statistics"""
 		return "Index: %s\nData: %s" % (self.index, self.data)
+
+	def summary_string(self):
+		"""Return summary string"""
+		return "%s %s" % (self.get_indexpath(), self.lstat())
 
 	def __getstate__(self):
 		"""Return picklable state
@@ -372,6 +386,12 @@ class RORPath:
 	def issock(self):
 		"""True if path is a socket"""
 		return self.data['type'] == 'sock'
+
+	def isspecial(self):
+		"""True if the file is a sock, symlink, device, or fifo"""
+		type = self.data['type']
+		return (type == 'dev' or type == 'sock' or
+				type == 'fifo' or type == 'sym')
 
 	def getperms(self):
 		"""Return permission block of file"""
@@ -662,7 +682,7 @@ class RPath(RORPath):
 		log.Log("Touching " + self.path, 7)
 		self.conn.open(self.path, "w").close()
 		self.setdata()
-		assert self.isreg()
+		assert self.isreg(), self.path
 
 	def hasfullperms(self):
 		"""Return true if current process has full permissions on the file"""

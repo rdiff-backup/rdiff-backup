@@ -40,7 +40,7 @@ conn_bufsize = 98304
 # This is used in rorpiter.CacheIndexable.  The number represents the
 # number of rpaths which may be stuck in buffers when moving over a
 # remote connection.
-pipeline_max_length = int(conn_bufsize / 150)
+pipeline_max_length = int(conn_bufsize / 150)*2
 
 # True if script is running as a server
 server = None
@@ -170,6 +170,10 @@ security_level = "all"
 # If this is set, it indicates that the remote connection should only
 # deal with paths inside of restrict_path.
 restrict_path = None
+
+# If set, a file will be marked as changed if its inode changes.  See
+# the man page under --no-compare-inode for more information.
+compare_inode = 1
 
 
 def get(name):

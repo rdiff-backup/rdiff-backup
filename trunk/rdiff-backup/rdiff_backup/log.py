@@ -20,7 +20,7 @@
 """Manage logging, displaying and recording messages with required verbosity"""
 
 import time, sys, traceback, types
-import Globals, static
+import Globals, static, re
 
 
 class LoggerError(Exception): pass
@@ -58,9 +58,9 @@ class Logger:
 
 		"""
 		assert not self.log_file_open
-		rpath.conn.Log.open_logfile_local(rpath)
+		rpath.conn.log.Log.open_logfile_local(rpath)
 		for conn in Globals.connections:
-			conn.Log.open_logfile_allconn(rpath.conn)
+			conn.log.Log.open_logfile_allconn(rpath.conn)
 
 	def open_logfile_allconn(self, log_file_conn):
 		"""Run on all connections to signal log file is open"""
@@ -81,8 +81,8 @@ class Logger:
 		"""Close logfile and inform all connections"""
 		if self.log_file_open:
 			for conn in Globals.connections:
-				conn.Log.close_logfile_allconn()
-			self.log_file_conn.Log.close_logfile_local()
+				conn.log.Log.close_logfile_allconn()
+			self.log_file_conn.log.Log.close_logfile_local()
 
 	def close_logfile_allconn(self):
 		"""Run on every connection"""
@@ -125,7 +125,7 @@ class Logger:
 		if self.log_file_open:
 			if self.log_file_local:
 				self.logfp.write(self.format(message, self.verbosity))
-			else: self.log_file_conn.Log.log_to_file(message)
+			else: self.log_file_conn.log.Log.log_to_file(message)
 
 	def log_to_term(self, message, verbosity):
 		"""Write message to stdout/stderr"""
@@ -150,8 +150,12 @@ class Logger:
 		self.log_to_term("%s %s (%d): %s" %
 						 (conn_str, direction, req_num, result_repr), 9)
 
-	def FatalError(self, message):
-		self("Fatal Error: " + message, 1)
+	def FatalError(self, message, no_fatal_message = 0):
+		"""Log a fatal error and exit"""
+		assert no_fatal_message == 0 or no_fatal_message == 1
+		if no_fatal_message: prefix_string = ""
+		else: prefix_string = "Fatal Error: "
+		self(prefix_string + message, 1)
 		import Main
 		Main.cleanup()
 		sys.exit(1)
@@ -196,22 +200,35 @@ class ErrorLog:
 	"""
 	_log_fileobj = None
 	_log_inc_rp = None
-	def open(cls, compress = 1):
+	def open(cls, time_string, compress = 1):
 		"""Open the error log, prepare for writing"""
+		if not Globals.isbackup_writer:
+			return Globals.backup_writer.log.ErrorLog.open(time_string,
+														   compress)
 		assert not cls._log_fileobj and not cls._log_inc_rp, "log already open"
+		assert Globals.isbackup_writer
 		if compress: typestr = 'data.gz'
 		else: typestr = 'data'
-		cls._log_inc_rp = Global.rbdir.append("error_log.%s.%s" %
-											  (Time.curtimestr, typestr))
-		assert not cls._log_inc_rp.lstat(), "Error file already exists"
+		cls._log_inc_rp = Globals.rbdir.append("error_log.%s.%s" %
+											   (time_string, typestr))
+		assert not cls._log_inc_rp.lstat(), ("""Error file %s already exists.
+
+This is probably caused by your attempting to run two backups simultaneously
+or within one second of each other.  Wait a second and try again.""" %
+											 (cls._log_inc_rp.path,))
 		cls._log_fileobj = cls._log_inc_rp.open("wb", compress = compress)
 
 	def isopen(cls):
 		"""True if the error log file is currently open"""
-		return cls._log_fileobj is not None
+		if Globals.isbackup_writer or not Globals.backup_writer:
+			return cls._log_fileobj is not None
+		else: return Globals.backup_writer.log.ErrorLog.isopen()
 
 	def write(cls, error_type, rp, exc):
 		"""Add line to log file indicating error exc with file rp"""
+		if not Globals.isbackup_writer:
+			return Globals.backup_writer.log.ErrorLog.write(error_type,
+															rp, exc)
 		s = cls.get_log_string(error_type, rp, exc)
 		Log(s, 2)
 		if Globals.null_separator: s += "\0"
@@ -220,15 +237,18 @@ class ErrorLog:
 			s += "\n"
 		cls._log_fileobj.write(s)
 
-	def get_indexpath(cls, rp):
+	def get_indexpath(cls, obj):
 		"""Return filename for logging.  rp is a rpath, string, or tuple"""
-		try: return rp.get_indexpath()
+		try: return obj.get_indexpath()
 		except AttributeError:
-			if type(rp) is types.TupleTypes: return "/".join(rp)
-			else: return str(rp)
+			if type(obj) is types.TupleType: return "/".join(obj)
+			else: return str(obj)
 
 	def write_if_open(cls, error_type, rp, exc):
 		"""Call cls.write(...) if error log open, only log otherwise"""
+		if not Globals.isbackup_writer:
+			return Globals.backup_writer.log.ErrorLog.write_if_open(
+				error_type, rp, exc)
 		if cls.isopen(): cls.write(error_type, rp, exc)
 		else: Log(cls.get_log_string(error_type, rp, exc), 2)
 
@@ -240,6 +260,8 @@ class ErrorLog:
 
 	def close(cls):
 		"""Close the error log file"""
+		if not Globals.isbackup_writer:
+			return Globals.backup_writer.log.ErrorLog.close()
 		assert not cls._log_fileobj.close()
 		cls._log_fileobj = cls._log_inc_rp = None
 

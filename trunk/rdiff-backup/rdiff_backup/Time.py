@@ -49,7 +49,8 @@ def setcurtime_local(timeinseconds):
 
 def setprevtime(timeinseconds):
 	"""Sets the previous inc time in prevtime and prevtimestr"""
-	assert timeinseconds > 0, timeinseconds
+	assert 0 < timeinseconds < curtime, \
+		   "Time %s is out of bounds" % (timeinseconds,)
 	timestr = timetostring(timeinseconds)
 	for conn in Globals.connections:
 		conn.Time.setprevtime_local(timeinseconds, timestr)

@@ -44,7 +44,7 @@ def open_dir_stats_file():
 	if Globals.compression: suffix = "data.gz"
 	else: suffix = "data"
 	_dir_stats_rp = increment.get_inc(
-		Globals.rbdir.append("directory_statistics"), Time.curtime, suffix)
+		Globals.rbdir.append("directory_statistics"), suffix, Time.curtime)
 
 	if _dir_stats_rp.lstat():
 		log.Log("Warning, statistics file %s already exists, appending" %
@@ -69,7 +69,7 @@ def close_dir_stats_file():
 def write_session_statistics(statobj):
 	"""Write session statistics into file, log"""
 	stat_inc = increment.get_inc(
-		Globals.rbdir.append("session_statistics"), Time.curtime, "data")
+		Globals.rbdir.append("session_statistics"), "data", Time.curtime)
 	statobj.StartTime = Time.curtime
 	statobj.EndTime = time.time()
 

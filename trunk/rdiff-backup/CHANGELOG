@@ -10,6 +10,38 @@ Fixed selection bug:  In 0.11.1, files which were included in one
 backup would be automatically included in the next.  Now you can
 include/exclude files session-by-session.
 
+Fixed ownership compare bug:  In 0.11.1, backups where the destination
+side was not root would preserve ownership information by recording it
+in the metadata file.  However, mere ownership changes would not
+trigger creation of new increments.  This has been fixed.
+
+Added the --no-inode-compare switch.  You probably don't need to use
+it though.
+
+If a special file cannot be created on the destination side, a 0
+length regular file will be written instead as a placeholder.
+(Restores should work fine because of the metadata file.)
+
+Yet another error handling strategy (hopefully this is the last one
+for a while, because this stuff isn't very exciting, and takes a long
+time to write):
+
+	All recoverable errors are classified into one of three groups:
+	ListErrors, UpdateErrors, and SpecialFileErrors.  rdiff-backup's
+	reaction to each error is more formally defined (see the error
+	policy page, currently at
+	http://rdiff-backup.stanford.edu/error_policy.html).
+
+	rdiff-backup makes no attempt to recover or clean up after
+	unrecoverable errors.
+
+Improved error logging.  Instead of the old haphazard reporting
+method, which sometimes didn't indicate the file an error occurred on,
+now all recoverable errors are reported in a standard format and also
+written to the error_log.<time>.data file in the rdiff-backup-data
+directory.
+
+
 
 New in v0.11.1 (2002/12/31)
 ---------------------------

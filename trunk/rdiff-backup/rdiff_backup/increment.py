@@ -50,7 +50,7 @@ def Increment(new, mirror, incpref):
 
 def makemissing(incpref):
 	"""Signify that mirror file was missing"""
-	incrp = get_inc_ext(incpref, "missing")
+	incrp = get_inc(incpref, "missing")
 	incrp.touch()
 	return incrp
 
@@ -62,16 +62,16 @@ def iscompressed(mirror):
 def makesnapshot(mirror, incpref):
 	"""Copy mirror to incfile, since new is quite different"""
 	compress = iscompressed(mirror)
-	if compress: snapshotrp = get_inc_ext(incpref, "snapshot.gz")
-	else: snapshotrp = get_inc_ext(incpref, "snapshot")
+	if compress: snapshotrp = get_inc(incpref, "snapshot.gz")
+	else: snapshotrp = get_inc(incpref, "snapshot")
 	rpath.copy_with_attribs(mirror, snapshotrp, compress)
 	return snapshotrp
 
 def makediff(new, mirror, incpref):
 	"""Make incfile which is a diff new -> mirror"""
 	compress = iscompressed(mirror)
-	if compress: diff = get_inc_ext(incpref, "diff.gz")
-	else:  diff = get_inc_ext(incpref, "diff")
+	if compress: diff = get_inc(incpref, "diff.gz")
+	else:  diff = get_inc(incpref, "diff")
 
 	Rdiff.write_delta(new, mirror, diff, compress)
 	rpath.copy_attribs(mirror, diff)
@@ -79,18 +79,19 @@ def makediff(new, mirror, incpref):
 
 def makedir(mirrordir, incpref):
 	"""Make file indicating directory mirrordir has changed"""
-	dirsign = get_inc_ext(incpref, "dir")
+	dirsign = get_inc(incpref, "dir")
 	dirsign.touch()
 	rpath.copy_attribs(mirrordir, dirsign)	
 	return dirsign
 
-def get_inc(rp, time, typestr):
+def get_inc(rp, typestr, time = None):
 	"""Return increment like rp but with time and typestr suffixes
 
 	To avoid any quoting, the returned rpath has empty index, and the
 	whole filename is in the base (which is not quoted).
 
 	"""
+	if time is None: time = Time.prevtime
 	addtostr = lambda s: "%s.%s.%s" % (s, Time.timetostring(time), typestr)
 	if rp.index:
 		incrp = rp.__class__(rp.conn, rp.base, rp.index[:-1] +
@@ -98,22 +99,7 @@ def get_inc(rp, time, typestr):
 	else:
 		dirname, basename = rp.dirsplit()
 		incrp = rp.__class__(rp.conn, dirname, (addtostr(basename),))
+	assert not incrp.lstat()
 	return incrp
 
-def get_inc_ext(rp, typestr, inctime = None):
-	"""Return increment with specified type and time t
-
-	If the file exists, then probably a previous backup has been
-	aborted.  We then keep asking FindTime to get a time later
-	than the one that already has an inc file.
-
-	"""
-	if inctime is None: inctime = Time.prevtime
-	while 1:
-		incrp = get_inc(rp, inctime, typestr)
-		if not incrp.lstat(): break
-		else:
-			inctime += 1
-			log.Log("Warning, increment %s already exists" % (incrp.path,), 2)
-	return incrp
 

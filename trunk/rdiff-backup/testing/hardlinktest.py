@@ -2,7 +2,7 @@ import os, unittest, time
 from commontest import *
 from rdiff_backup import Globals, Hardlink, selection, rpath
 
-Log.setverbosity(7)
+Log.setverbosity(3)
 
 class HardlinkTest(unittest.TestCase):
 	"""Test cases for Hard links"""
@@ -142,10 +142,27 @@ class HardlinkTest(unittest.TestCase):
 		hl2_4.hardlink(hl2_1.path)
 		rpath.copy_attribs(hlout1_sub, hlout2_sub)
 
+		# Now try backing up twice, making sure hard links are preserved
 		InternalBackup(1, 1, hlout1.path, output.path)
+		out_subdir = output.append("subdir")
+		assert out_subdir.append("hardlink1").getinode() == \
+			   out_subdir.append("hardlink2").getinode()
+		assert out_subdir.append("hardlink3").getinode() == \
+			   out_subdir.append("hardlink4").getinode()
+		assert out_subdir.append("hardlink1").getinode() != \
+			   out_subdir.append("hardlink3").getinode()
+
 		time.sleep(1)
 		InternalBackup(1, 1, hlout2.path, output.path)
+		out_subdir.setdata()
+		assert out_subdir.append("hardlink1").getinode() == \
+			   out_subdir.append("hardlink4").getinode()
+		assert out_subdir.append("hardlink2").getinode() == \
+			   out_subdir.append("hardlink3").getinode()
+		assert out_subdir.append("hardlink1").getinode() != \
+			   out_subdir.append("hardlink2").getinode()
 
+		# Now try restoring, still checking hard links.
 		out2 = rpath.RPath(Globals.local_connection, "testfiles/out2")
 		hlout1 = out2.append("hardlink1")
 		hlout2 = out2.append("hardlink2")
@@ -165,7 +182,8 @@ class HardlinkTest(unittest.TestCase):
 						int(time.time()))
 		out2.setdata()
 		for rp in [hlout1, hlout2, hlout3, hlout4]: rp.setdata()
-		assert hlout1.getinode() == hlout4.getinode()
+		assert hlout1.getinode() == hlout4.getinode(), \
+			   "%s %s" % (hlout1.path, hlout4.path)
 		assert hlout2.getinode() == hlout3.getinode()
 		assert hlout1.getinode() != hlout2.getinode()
 
