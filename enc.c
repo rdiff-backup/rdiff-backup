@@ -65,12 +65,14 @@
 
 
 
-/*
- * FIXME: Check that we use signed/unsigned integers properly.
- *
- * TODO: Cope without an old signature, in which case we generate a
- * signature and chunk everything, but can't match blocks.
- */
+/* FIXME: Check that we use signed/unsigned integers properly.
+  
+   TODO: Cope without an old signature, in which case we generate a
+   signature and chunk everything, but can't match blocks.  I think
+   this is done now.
+
+   FIXME: Something seems to be wrong with the trailing chunk; it
+   doesn't match.  */
 
 #include "includes.h"
 #include "hsync.h"
