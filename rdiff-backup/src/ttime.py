@@ -95,7 +95,9 @@ class Time:
 
 		if seconds == 1: partlist.append("1 second")
 		elif not partlist or seconds > 1:
-			partlist.append("%s seconds" % seconds)
+			if isinstance(seconds, int) or isinstance(seconds, long):
+				partlist.append("%s seconds" % seconds)
+			else: partlist.append("%.2f seconds" % seconds)
 		return " ".join(partlist)
 
 	def intstringtoseconds(cls, interval_string):

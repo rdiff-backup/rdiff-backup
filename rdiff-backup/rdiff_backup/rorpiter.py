@@ -212,13 +212,13 @@ class RORPIter:
 		"""Return action patching basisrp using diff_rorp"""
 		assert diff_rorp, "Missing diff index %s" % basisrp.index
 		if not diff_rorp.lstat():
-			return RobustAction(lambda: None, basisrp.delete, lambda e: None)
+			return RobustAction(None, lambda init_val: basisrp.delete(), None)
 
 		if Globals.preserve_hardlinks and diff_rorp.isflaglinked():
 			if not basisrp: basisrp = base_rp.new_index(diff_rorp.index)
-			return RobustAction(lambda: None,
-								lambda: Hardlink.link_rp(diff_rorp, basisrp),
-								lambda e: None)
+			tf = TempFileManager.new(basisrp)
+			def init(): Hardlink.link_rp(diff_rorp, tf, basisrp)
+			return Robust.make_tf_robustaction(init, tf, basisrp)
 		elif basisrp and basisrp.isreg() and diff_rorp.isreg():
 			assert diff_rorp.get_attached_filetype() == 'diff'
 			return Rdiff.patch_with_attribs_action(basisrp, diff_rorp)

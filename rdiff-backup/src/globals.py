@@ -8,7 +8,7 @@ import re, os
 class Globals:
 
 	# The current version of rdiff-backup
-	version = "0.7.5.1"
+	version = "0.7.5.3"
 	
 	# If this is set, use this value in seconds as the current time
 	# instead of reading it from the clock.

@@ -24,11 +24,11 @@ class Rdiff:
 		"""Like get_delta but signature is in a file object"""
 		sig_tf = TempFileManager.new(rp_new, None)
 		sig_tf.write_from_fileobj(sig_fileobj)
-		rdiff_popen_obj = Rdiff.get_delta(sig_tf, rp_new)
+		rdiff_popen_obj = Rdiff.get_delta_sigrp(sig_tf, rp_new)
 		rdiff_popen_obj.set_thunk(sig_tf.delete)
 		return rdiff_popen_obj
 
-	def get_delta(rp_signature, rp_new):
+	def get_delta_sigrp(rp_signature, rp_new):
 		"""Take signature rp and new rp, return delta file object"""
 		assert rp_signature.conn is rp_new.conn
 		Log("Getting delta of %s with signature %s" %
@@ -45,18 +45,18 @@ class Rdiff:
 		"""
 		sig_tf = TempFileManager.new(new, None)
 		delta_tf = TempFileManager.new(delta)
-		def init():
-			Log("Writing delta %s from %s -> %s" %
-				(basis.path, new.path, delta.path), 7)
-			sig_tf.write_from_fileobj(Rdiff.get_signature(basis))
-			delta_tf.write_from_fileobj(Rdiff.get_delta(sig_tf, new), compress)
-			sig_tf.delete()
+		def init(): Rdiff.write_delta(basis, new, delta_tf, compress, sig_tf)
 		return Robust.make_tf_robustaction(init, (sig_tf, delta_tf),
 										   (None, delta))
 
-	def write_delta(basis, new, delta, compress = None):
+	def write_delta(basis, new, delta, compress = None, sig_tf = None):
 		"""Write rdiff delta which brings basis to new"""
-		Rdiff.write_delta_action(basis, new, delta, compress).execute()
+		Log("Writing delta %s from %s -> %s" %
+			(basis.path, new.path, delta.path), 7)
+		if not sig_tf: sig_tf = TempFileManager.new(new, None)
+		sig_tf.write_from_fileobj(Rdiff.get_signature(basis))
+		delta.write_from_fileobj(Rdiff.get_delta_sigrp(sig_tf, new), compress)
+		sig_tf.delete()
 
 	def patch_action(rp_basis, rp_delta, rp_out = None,
 					 out_tf = None, delta_compressed = None):
@@ -106,18 +106,20 @@ class Rdiff:
 		if not rp_out: rp_out = rp_basis
 		delta_tf = TempFileManager.new(rp_out, None)
 		def init(): delta_tf.write_from_fileobj(delta_fileobj)
-		return Robust.chain_nested([RobustAction(init, delta_tf.delete,
-												 lambda exc: delta_tf.delete),
-									Rdiff.patch_action(rp_basis, delta_tf,
-													   rp_out, out_tf)])
+		def final(init_val): delta_tf.delete()
+		def error(exc, ran_init, init_val): delta_tf.delete()
+		write_delta_action = RobustAction(init, final, error)
+		return Robust.chain(write_delta_action,
+							Rdiff.patch_action(rp_basis, delta_tf,
+											   rp_out, out_tf))
 
 	def patch_with_attribs_action(rp_basis, rp_delta, rp_out = None):
 		"""Like patch_action, but also transfers attributs from rp_delta"""
 		if not rp_out: rp_out = rp_basis
 		tf = TempFileManager.new(rp_out)
 		return Robust.chain_nested(
-			[Rdiff.patch_action(rp_basis, rp_delta, rp_out, tf),
-			 Robust.copy_attribs_action(rp_delta, tf)])
+			Rdiff.patch_action(rp_basis, rp_delta, rp_out, tf),
+			Robust.copy_attribs_action(rp_delta, tf))
 
 	def copy_action(rpin, rpout):
 		"""Use rdiff to copy rpin to rpout, conserving bandwidth"""
