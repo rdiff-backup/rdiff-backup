@@ -9,6 +9,10 @@ Changes in 0.9.7 (release pending)
  * Changed rdiff to an installed program on "make install".
  
  * Refactored delta calculation code to be cleaner and faster.
+
+ * #879763: Fixed mdfour to work on little-endian machines which don't
+   like unaligned word access.  This should make librsync work on
+   pa-risc, and it makes it slightly faster on ia64.
  
 Changes in 0.9.6
 
