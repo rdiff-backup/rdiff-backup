@@ -26,6 +26,15 @@
  * whether such information should be included.
  */
 
+
+/*
+ * trace may be turned off.
+ *
+ * error is always on, but you can return and continue in some way
+ *
+ * fatal terminates the whole process
+ */
+
 void _hs_fatal0(char const *s, ...);
 void _hs_error0(char const *s, ...);
 void _hs_trace0(char const *s, ...);
@@ -44,9 +53,13 @@ void _hs_log0(int level, char const *fn, char const *fmt, ...)
 #  define _hs_trace(s, str...)
 #endif	/* !DO_HS_TRACE */
 
-/* TODO: Don't assume this is a gcc thing; rather test in autoconf for
+/*
+ * TODO: Don't assume this is a gcc thing; rather test in autoconf for
  * support for __FUNCTION__ and varargs macros.  One simple way might
  * just be to try compiling the definition of one of these functions!
+ *
+ * TODO: Also look for the C9X predefined identifier `_function', or
+ * whatever it's called.
  */
 
 #define _hs_log(l, s, str...) do {              \
