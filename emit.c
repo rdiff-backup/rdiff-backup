@@ -1,6 +1,7 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
-
+/* -*- mode: c; c-file-style: "bsd" -*-  */
+/* $Id$ */
 /* emit -- emit encoded commands to the client
+   
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
    Copyright (C) 1999 by Andrew Tridgell
 
@@ -26,25 +27,29 @@
 #include "private.h"
 #include "emit.h"
 
-static int _hs_fits_in_byte(uint32_t val)
+static int
+_hs_fits_in_byte(long val)
 {
     return val <= UINT8_MAX;
 }
 
 
-static int _hs_fits_in_short(uint32_t val)
+static int
+_hs_fits_in_short(long val)
 {
     return val <= UINT16_MAX;
 }
 
 
-static int _hs_fits_in_int(uint64_t val)
+static int
+_hs_fits_in_int(long val)
 {
     return val <= UINT32_MAX;
 }
 
 
-static int _hs_int_len(uint32_t val)
+static int
+_hs_int_len(long val)
 {
     if (_hs_fits_in_byte(val))
 	return 1;
@@ -52,30 +57,33 @@ static int _hs_int_len(uint32_t val)
 	return 2;
     else if (_hs_fits_in_int(val))
 	return 4;
-    else
-	assert(0 && "can't handle files this long yet");
+    else {
+	_hs_fatal("can't handle files this long yet");
+    }
 }
 
 
 int _hs_emit_eof(hs_write_fn_t write_fn, void *write_priv,
-		 hs_stats_t *stats UNUSED)
+		 UNUSED(hs_stats_t *stats))
 {
     _hs_trace("Writing EOF");
-    return _hs_write_netbyte(write_fn, write_priv, op_eof);
+    return _hs_write_netbyte(write_fn, write_priv, (uint8_t) op_eof);
 }
 
 
 int
-_hs_emit_checksum_cmd(hs_write_fn_t write_fn, void *write_priv, uint32_t size)
+_hs_emit_checksum_cmd(hs_write_fn_t write_fn, void *write_priv, size_t size)
 {
      int ret;
      
      _hs_trace("Writing CHECKSUM(len=%d)", size);
-     ret = _hs_write_netbyte(write_fn, write_priv, op_checksum_short);
+     ret = _hs_write_netbyte(write_fn, write_priv,
+			     (uint8_t) op_checksum_short);
      if (ret != 1)
 	  return -1;
 
-     ret = _hs_write_netshort(write_fn, write_priv, size);
+     assert(_hs_fits_in_short(size));
+     ret = _hs_write_netshort(write_fn, write_priv, (uint16_t) size);
      if (ret != 2)
 	  return -1;
 
@@ -86,7 +94,7 @@ _hs_emit_checksum_cmd(hs_write_fn_t write_fn, void *write_priv, uint32_t size)
 
 int
 _hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
-		 char const *buf, uint32_t size)
+		 char const *buf, size_t size)
 {
      int ret;
 
@@ -104,26 +112,27 @@ _hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
 
 /* Emit the command header for literal data. */
 int
-_hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv, uint32_t size)
+_hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv, size_t size)
 {
-     int type, cmd;
+     int type;
+     uint8_t cmd;
      
      _hs_trace("Writing LITERAL(len=%d)", size);
 
      if ((size >= 1)  &&  (size < (op_literal_last - op_literal_1))) {
-	  return _hs_write_netbyte(write_fn, write_priv,
-				   op_literal_1 + size - 1);
+	 cmd = (uint8_t) (op_literal_1 + size - 1);
+	 return _hs_write_netbyte(write_fn, write_priv, cmd);
      }
      
      type = _hs_int_len(size);
      if (type == 1) {
-	  cmd = op_literal_byte;
+	  cmd = (uint8_t) op_literal_byte;
      } else if (type == 2) {
-	  cmd = op_literal_short;
+	  cmd = (uint8_t) op_literal_short;
      } else if (type == 4) {
-	  cmd = op_literal_int;
+	 cmd = (uint8_t) op_literal_int;
      } else {
-	  assert(0);
+	 _hs_fatal("can't happen!");
      }
 
      if (_hs_write_netbyte(write_fn, write_priv, cmd) < 0)
@@ -135,26 +144,28 @@ _hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv, uint32_t size)
 
 /* Emit the command header for signature data. */
 int
-_hs_emit_signature_cmd(hs_write_fn_t write_fn, void *write_priv, uint32_t size)
+_hs_emit_signature_cmd(hs_write_fn_t write_fn, void *write_priv,
+		       size_t size)
 {
-     int type, cmd;
+     int type;
+     uint8_t cmd;
      
      _hs_trace("Writing SIGNATURE(len=%d)", size);
 
      if ((size >= 1)  &&  (size < (op_signature_last - op_signature_1))) {
-	  return _hs_write_netbyte(write_fn, write_priv,
-				   op_signature_1 + size - 1);
+	 cmd = (uint8_t) (op_signature_1 + size - 1);
+	  return _hs_write_netbyte(write_fn, write_priv, cmd);
      }
      
-     type = _hs_int_len(size);
+     type = _hs_int_len((long) size);
      if (type == 1) {
-	  cmd = op_signature_byte;
+	  cmd = (uint8_t) op_signature_byte;
      } else if (type == 2) {
-	  cmd = op_signature_short;
+	  cmd = (uint8_t) op_signature_short;
      } else if (type == 4) {
-	  cmd = op_signature_int;
+	  cmd = (uint8_t) op_signature_int;
      } else {
-	  assert(0);
+	 _hs_fatal("can't happen!");
      }
 
      if (_hs_write_netbyte(write_fn, write_priv, cmd) < 0)
@@ -204,17 +215,16 @@ _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
     } else {
 	 _hs_fatal("can't pack length %ld as a %d byte number",
 		   (long) length, len_type);
-	 return -1;
     }
 
-    ret = _hs_write_netbyte(write_fn, write_priv, cmd);
-    return_val_if_fail(ret > 0, -1);
+    ret = _hs_write_netbyte(write_fn, write_priv, (uint8_t) cmd);
+    if (ret < 0) return -1;
 
     ret = _hs_write_netvar(write_fn, write_priv, offset, off_type);
-    return_val_if_fail(ret > 0, -1);
+    if (ret < 0) return -1;
 
     ret = _hs_write_netvar(write_fn, write_priv, length, len_type);
-    return_val_if_fail(ret > 0, -1);
+    if (ret < 0) return -1;
 
     return 1;
 }

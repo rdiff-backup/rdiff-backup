@@ -81,10 +81,12 @@ _hs_trace(char const *fmt, ...)
 
 
 #ifdef __GNUC__
-#define UNUSED __attribute__((unused))
-#else
-#define UNUSED
-#endif				/* ! __GNUC__ */
+#  define UNUSED(x) x __attribute__((unused))
+#elif __LCLINT__
+#  define UNUSED(x) /*@unused@*/ x
+#else /* !__GNUC__ && !__LCLINT__ */
+#  define UNUSED(x)
+#endif	/* !__GNUC__ && !__LCLINT__ */
 
 
 
@@ -96,7 +98,7 @@ int             _hs_read_loop(hs_read_fn_t, void *readprivate,
 			      char *buf, size_t len);
 
 int             _hs_write_loop(hs_write_fn_t, void *writeprivate,
-			       char const *buf, int len);
+			       char const *buf, size_t len);
 
 int             hs_must_write(hs_write_fn_t write_fn, void *write_priv,
 			      void const *buf, int len);
@@ -303,13 +305,13 @@ struct hs_op_kind_name {
 extern struct hs_op_kind_name const _hs_op_kind_names[];
 
 int             _hs_emit_signature_cmd(hs_write_fn_t write_fn,
-				       void *write_priv, uint32_t size);
+				       void *write_priv, size_t size);
 
 int             _hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
-				 char const *buf, uint32_t size);
+				 char const *buf, size_t size);
 
 int             _hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv,
-				     uint32_t size);
+				     size_t size);
 
 int             _hs_emit_checksum_cmd(hs_write_fn_t, void *, uint32_t size);
 
