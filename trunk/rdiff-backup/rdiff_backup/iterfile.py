@@ -94,14 +94,20 @@ class IterVirtualFile(UnwrapFile):
 		self.buffer = initial_data
 		self.closed = None
 
-	def read(self, length):
+	def read(self, length = -1):
 		"""Read length bytes from the file, updating buffers as necessary"""
 		assert not self.closed
 		if self.iwf.currently_in_file:
-			while length >= len(self.buffer):
-				if not self.addtobuffer(): break
+			if length >= 0:
+				while length >= len(self.buffer):
+					if not self.addtobuffer(): break
+				real_len = min(length, len(self.buffer))
+			else:
+				while 1:
+					if not self.addtobuffer(): break
+				real_len = len(self.buffer)
+		else: real_len = min(length, len(self.buffer))
 
-		real_len = min(length, len(self.buffer))
 		return_val = self.buffer[:real_len]
 		self.buffer = self.buffer[real_len:]
 		return return_val

@@ -77,13 +77,11 @@ class Inc:
 			compress = None
 			
 		diff_tf = TempFileManager.new(diff)
-		sig_tf = TempFileManager.new(mirror, None)
 		def init():
-			Rdiff.write_delta(new, mirror, diff_tf, compress, sig_tf)
+			Rdiff.write_delta(new, mirror, diff_tf, compress)
 			RPath.copy_attribs(mirror, diff_tf)
 			return diff
-		return Robust.make_tf_robustaction(init, (diff_tf, sig_tf),
-										   (diff, None))
+		return Robust.make_tf_robustaction(init, diff_tf, diff)
 
 	def makedir_action(mirrordir, incpref):
 		"""Make file indicating directory mirrordir has changed"""

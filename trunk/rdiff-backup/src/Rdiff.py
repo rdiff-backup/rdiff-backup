@@ -15,7 +15,7 @@ RobustAction and the like.
 
 """
 
-import os, popen2
+import os, librsync
 
 
 class RdiffException(Exception): pass
@@ -23,23 +23,18 @@ class RdiffException(Exception): pass
 def get_signature(rp):
 	"""Take signature of rpin file and return in file object"""
 	Log("Getting signature of %s" % rp.path, 7)
-	return rp.conn.Rdiff.Popen(['rdiff', 'signature', rp.path])
+	return librsync.SigFile(rp.open("rb"))
 
 def get_delta_sigfileobj(sig_fileobj, rp_new):
 	"""Like get_delta but signature is in a file object"""
-	sig_tf = TempFileManager.new(rp_new, None)
-	sig_tf.write_from_fileobj(sig_fileobj)
-	rdiff_popen_obj = get_delta_sigrp(sig_tf, rp_new)
-	rdiff_popen_obj.set_thunk(sig_tf.delete)
-	return rdiff_popen_obj
+	Log("Getting delta of %s with signature stream" % (rp_new.path,), 7)
+	return librsync.DeltaFile(sig_fileobj, rp_new.open("rb"))
 
 def get_delta_sigrp(rp_signature, rp_new):
 	"""Take signature rp and new rp, return delta file object"""
-	assert rp_signature.conn is rp_new.conn
 	Log("Getting delta of %s with signature %s" %
 		(rp_new.path, rp_signature.path), 7)
-	return rp_new.conn.Rdiff.Popen(['rdiff', 'delta',
-									rp_signature.path, rp_new.path])
+	return librsync.DeltaFile(rp_signature.open("rb"), rp_new.open("rb"))
 
 def write_delta_action(basis, new, delta, compress = None):
 	"""Return action writing delta which brings basis to new
@@ -48,23 +43,20 @@ def write_delta_action(basis, new, delta, compress = None):
 	before written to delta.
 
 	"""
-	sig_tf = TempFileManager.new(new, None)
 	delta_tf = TempFileManager.new(delta)
-	def init(): write_delta(basis, new, delta_tf, compress, sig_tf)
-	return Robust.make_tf_robustaction(init, (sig_tf, delta_tf),
-									   (None, delta))
+	def init(): write_delta(basis, new, delta_tf, compress)
+	return Robust.make_tf_robustaction(init, delta_tf, delta)
 
-def write_delta(basis, new, delta, compress = None, sig_tf = None):
+def write_delta(basis, new, delta, compress = None):
 	"""Write rdiff delta which brings basis to new"""
 	Log("Writing delta %s from %s -> %s" %
 		(basis.path, new.path, delta.path), 7)
-	if not sig_tf: sig_tf = TempFileManager.new(new, None)
-	sig_tf.write_from_fileobj(get_signature(basis))
-	delta.write_from_fileobj(get_delta_sigrp(sig_tf, new), compress)
-	sig_tf.delete()
+	sigfile = librsync.SigFile(basis.open("rb"))
+	deltafile = librsync.DeltaFile(sigfile, new.open("rb"))
+	delta.write_from_fileobj(deltafile, compress)
 
-def patch_action(rp_basis, rp_delta, rp_out = None,
-				 out_tf = None, delta_compressed = None):
+def patch_action(rp_basis, rp_delta, rp_out = None, out_tf = None,
+				 delta_compressed = None):
 	"""Return RobustAction which patches rp_basis with rp_delta
 
 	If rp_out is None, put output in rp_basis.  Will use TempFile
@@ -73,47 +65,27 @@ def patch_action(rp_basis, rp_delta, rp_out = None,
 
 	"""
 	if not rp_out: rp_out = rp_basis
-	else: assert rp_out.conn is rp_basis.conn
-	if (delta_compressed or
-		not (isinstance(rp_delta, RPath) and isinstance(rp_basis, RPath)
-			 and rp_basis.conn is rp_delta.conn)):
-		if delta_compressed:
-			assert isinstance(rp_delta, RPath)
-			return patch_fileobj_action(rp_basis, rp_delta.open('rb', 1),
-										rp_out, out_tf)
-		else: return patch_fileobj_action(rp_basis, rp_delta.open('rb'),
-										  rp_out, out_tf)
-
-	# Files are uncompressed on same connection, run rdiff
-	if out_tf is None: out_tf = TempFileManager.new(rp_out)
+	if not out_tf: out_tf = TempFileManager.new(rp_out)
 	def init():
-		Log("Patching %s using %s to %s via %s" %
-			(rp_basis.path, rp_delta.path, rp_out.path, out_tf.path), 7)
-		cmdlist = ["rdiff", "patch", rp_basis.path,
-				   rp_delta.path, out_tf.path]
-		return_val = rp_basis.conn.os.spawnvp(os.P_WAIT, 'rdiff', cmdlist)
+		rp_basis.conn.Rdiff.patch_local(rp_basis, rp_delta,
+										out_tf, delta_compressed)
 		out_tf.setdata()
-		if return_val != 0 or not out_tf.lstat():
-			RdiffException("Error running %s" % cmdlist)
-	return Robust.make_tf_robustaction(init, (out_tf,), (rp_out,))
+	return Robust.make_tf_robustaction(init, out_tf, rp_out)
 
-def patch_fileobj_action(rp_basis, delta_fileobj, rp_out = None,
-						 out_tf = None, delta_compressed = None):
-	"""Like patch_action but diff is given in fileobj form
+def patch_local(rp_basis, rp_delta, outrp, delta_compressed = None):
+	"""Patch routine that must be run on rp_basis.conn
 
-	Nest a writing of a tempfile with the actual patching to
-	create a new action.  We have to nest so that the tempfile
-	will be around until the patching finishes.
+	This is because librsync may need to seek() around in rp_basis,
+	and so needs a real file.  Other rpaths can be remote.
 
 	"""
-	if not rp_out: rp_out = rp_basis
-	delta_tf = TempFileManager.new(rp_out, None)
-	def init(): delta_tf.write_from_fileobj(delta_fileobj)
-	def final(init_val): delta_tf.delete()
-	def error(exc, ran_init, init_val): delta_tf.delete()
-	write_delta_action = RobustAction(init, final, error)
-	return Robust.chain(write_delta_action, patch_action(rp_basis, delta_tf,
-														 rp_out, out_tf))
+	assert rp_basis.conn is Globals.local_connection
+	if delta_compressed: deltafile = rp_delta.open("rb", 1)
+	else: deltafile = rp_delta.open("rb")
+
+	sigfile = librsync.SigFile(rp_basis.open("rb"))
+	patchfile = librsync.PatchedFile(rp_basis.open("rb"), deltafile)
+	outrp.write_from_fileobj(patchfile)
 
 def patch_with_attribs_action(rp_basis, rp_delta, rp_out = None):
 	"""Like patch_action, but also transfers attributs from rp_delta"""
@@ -129,63 +101,17 @@ def copy_action(rpin, rpout):
 		return Robust.copy_action(rpin, rpout)
 
 	Log("Rdiff copying %s to %s" % (rpin.path, rpout.path), 6)		
-	delta_tf = TempFileManager.new(rpout, None)
-	return Robust.chain(write_delta_action(rpout, rpin, delta_tf),
-						patch_action(rpout, delta_tf),
-						RobustAction(lambda: None, delta_tf.delete,
-									 lambda exc: delta_tf.delete))
+	out_tf = TempFileManager.new(rpout)
+	def init(): rpout.conn.Rdiff.copy_local(rpin, rpout, out_tf)
+	return Robust.make_tf_robustaction(init, out_tf, rpout)
 
-
-class Popen:
-	"""Spawn process and treat stdout as file object
-
-	Instead of using popen, which evaluates arguments with the shell
-	and thus may lead to security holes (thanks to Jamie Heilman for
-	this point), use the popen2 class and discard stdin.
-
-	When closed, this object checks to make sure the process exited
-	cleanly, and executes closing_thunk.
-
-	"""
-	def __init__(self, cmdlist, closing_thunk = None):
-		"""RdiffFilehook initializer
-
-		fileobj is the file we are emulating
-		thunk is called with no parameters right after the file is closed
-
-		"""
-		assert type(cmdlist) is types.ListType
-		self.p3obj = popen2.Popen3(cmdlist)
-		self.fileobj = self.p3obj.fromchild
-		self.closing_thunk = closing_thunk
-		self.cmdlist = cmdlist
-
-	def set_thunk(self, closing_thunk):
-		"""Set closing_thunk if not already"""
-		assert not self.closing_thunk
-		self.closing_thunk = closing_thunk
-
-	def read(self, length = -1): return self.fileobj.read(length)
-
-	def close(self):
-		closeval = self.fileobj.close()
-		if self.closing_thunk: self.closing_thunk()
-		exitval = self.p3obj.poll()
-		if exitval == 0: return closeval
-		elif exitval == 256:
-			Log("Failure probably because %s couldn't be found in PATH."
-				% self.cmdlist[0], 2)
-			assert 0, "rdiff not found"
-		elif exitval == -1:
-			# There may a race condition where a process closes
-			# but doesn't provide its exitval fast enough.
-			Log("Waiting for process to close", 8)
-			time.sleep(0.2)
-			exitval = self.p3obj.poll()
-			if exitval == 0: return closeval
-		raise RdiffException("%s exited with non-zero value %d" %
-							 (self.cmdlist, exitval))
-
+def copy_local(rpin, rpout, rpnew):
+	"""Write rpnew == rpin using rpout as basis.  rpout and rpnew local"""
+	assert rpnew.conn is rpout.conn is Globals.local_connection
+	sigfile = librsync.SigFile(rpout.open("rb"))
+	deltafile = rpin.conn.librsync.DeltaFile(sigfile, rpin.open("rb"))
+	rpnew.write_from_fileobj(librsync.PatchedFile(rpout.open("rb"), deltafile))
+	
 
 from log import *
 from robust import *

@@ -254,7 +254,7 @@ class Robust:
 		try: return function(*args)
  		except (EnvironmentError, SkipFileException, DSRPPermError,
 				RPathException, Rdiff.RdiffException,
-				C.UnknownFileTypeError), exc:
+				librsync.librsyncError, C.UnknownFileTypeError), exc:
 			TracebackArchive.add()
 			if (not isinstance(exc, EnvironmentError) or
 				(errno.errorcode[exc[0]] in
@@ -659,5 +659,5 @@ class ResumeSessionInfo:
 
 from log import *
 from destructive_stepping import *
-import Time, Rdiff
+import Time, Rdiff, librsync
 from highlevel import *
