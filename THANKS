@@ -4,9 +4,10 @@ Andrew Tridgell and Paulus Mackerras started this whole mess.  Luke
 Leighton was a tremendous help in sorting out the combined
 encoding/signature algorithm.
 
-Neale Barker was the first known user outside of CLUG/OzLabs, and
-helped keep me honest.
+Neale Banks <neale@lowendale.com.au>: the first known user outside of
+OzLabs, and helped keep me honest.
 
+Paul `Rusty' Russell <rusty@linuxcare.com>
 Andrew Tridgell <tridge@linuxcare.com>
 Paulus Mackerras <paulus@linuxcare.com>
 Peter Barker <pbarker@samba.org>

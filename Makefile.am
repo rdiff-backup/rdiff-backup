@@ -44,8 +44,12 @@ libhsync_la_SOURCES = \
 # Generally these tests should be ordered so that more basic tests
 # are run first.
 
+# TODO: driver.sh requires bash.  Therefore we should either test for
+# it and use it rather than $SHELL, or we should rewrite it to work in
+# plain Bourne shell.
+
 TESTS_ENVIRONMENT = $(SHELL) $(srcdir)/driver.sh
-test_scripts := \
+test_scripts = \
 	test-maptcp.sh \
 	test-tricky.sh \
 	test-chain.sh \
@@ -62,9 +66,12 @@ test_scripts := \
 	test-exact.sh \
 	test-double.sh
 
+# These are extra documents to be included in the source tarball.
+extra_docs = README.CVS
+
 # These ones are not tests, but are useful in watching the code run
 # through.
-try_scripts := 
+try_scripts = 
 
 # Thus spake the master programmer:
 #
@@ -92,7 +99,7 @@ in-tricky/in-07
 # TODO: Delete the test-*.d directories when cleaning up.  Yeah!
 CLEANFILES = tmp-test-*.d/* tmp-try-*.d/*
 
-EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) 
+EXTRA_DIST = $(noinst_SCRIPTS) $(test_data) $(extra_docs)
 
 include_HEADERS = hsync.h hsyncproto.h
 

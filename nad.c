@@ -122,12 +122,12 @@
  */
 
 
+const int hs_encode_job_magic = 23452345;
+
+
 #include "includes.h"
 #include "nad_p.h"
 #include "sum_p.h"
-
-
-const int hs_encode_job_magic = 23452345;
 
 
 static void
@@ -289,6 +289,11 @@ _hs_nad_baseless_iter(hs_encode_job_t *job)
 }
 
 
+/*
+ * Try to match at the current search cursor position.  If we find
+ * one, then emit an appropriate copy command.  If not, emit a minimal
+ * literal command and try again next time.
+ */
 static void
 _hs_nad_sum_iter(hs_encode_job_t *job)
 {

@@ -2,12 +2,9 @@ libhsync is the next generation of librsync, and provides flexible
 checksum-based differencing.  The main application at the moment in
 rproxy, but the library should eventually be generally useful.
 
-As of 0.4, development is concentrated on building a full regression
-suite.
-
-For more information:
-
   http://linuxcare.com.au/rproxy/
+
+To use anonymous CVS, see the file README.CVS in this directory.
 
 >> Requirements
 
@@ -16,12 +13,6 @@ To build libhsync:
   * cc 
   * Make
   * libc-dev
-
-To build from CVS, or to develop the library:
-
-  * automake
-  * autoconf
-  * libtool
 
 >> Library Versions
 
@@ -33,10 +24,11 @@ library release and version, use the libhsyncinfo tool.
 
 libhsync/rproxy is known to run on:
 
- * GNU Linux Debian 2.2 x86
+GNU Linux Debian 2.2 x86
 
-SUNWspro:
+SUNWspro: (use -v for more warnings)
 
-	Use -v for more warnings.
+mips-sgi-irix6.5: works, but you must use GNU Make rather than the
+default SGI Make.  I used gcc.
 
 $Id$

@@ -1,3 +1,9 @@
+Changes in 0.5.6:
+
+ * Fix libhsync to build on (sgi-mips, IRIX64, gcc, GNU Make)
+
+ * Include README.CVS in tarball
+
 Changes in 0.5.5:
 
  * Put genuine search encoding back into the nad algorithm, and

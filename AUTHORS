@@ -1,5 +1,2 @@
-Martin Pool -- reimplementation as hsync
-
-Andrew Tridgell -- prototype, rsync algorithm
-
-Paul Mackerras -- rsync algorithm, thoughts on hsync encoding
+Martin Pool <mbp@linuxcare.com>
+Andrew Tridgell <tridge@linuxcare.com>
