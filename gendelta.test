@@ -1,0 +1,20 @@
+#! /bin/sh -pe
+
+# $Id$
+
+# libhsync test case.
+# Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+
+# Generate command streams from ASCII descriptions, and make sure that
+# they turn out as intended.
+
+lit=$srcdir/COPYING
+new=$tmpdir/delta.tmp
+
+for file in $testdir/*.cmds
+do
+    run_test gendelta.driver $lit - <$file | cat -A >$new
+    expect=$testdir/`basename $file .cmds`.expect
+    run_test diff -u $expect $new
+done
+

@@ -2,7 +2,7 @@
  * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -19,5 +19,3 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-void _hs_stream_copy_file(hs_stream_t *stream, hs_nozzle_t *in_iobuf, hs_nozzle_t *out_iobuf);

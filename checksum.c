@@ -2,7 +2,7 @@
  *
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1996 by Andrew Tridgell
  * Copyright (C) 1996 by Paul Mackerras
  * 

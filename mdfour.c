@@ -2,7 +2,7 @@
  * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1997-1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -28,7 +28,16 @@
    can find an mdfour implementation already on the system (e.g. in OpenSSL)
    then we should use it instead of our own? */
 
-#include "includes.h"
+#include "config.h"
+
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+
+#include "hsync.h"
+
+
 
 
 #define F(X,Y,Z) (((X)&(Y)) | ((~(X))&(Z)))
@@ -206,7 +215,7 @@ hs_mdfour_update(hs_mdfour_t * md, void const *in_void, size_t n)
 {
     uint32_t        M[16];
     size_t          n2 = 64 - md->tail_len;
-    byte_t const        *in = (byte_t const *) in_void;
+    unsigned char const        *in = (unsigned char const *) in_void;
 
     if (n == 0)
 	return;
@@ -242,7 +251,7 @@ hs_mdfour_update(hs_mdfour_t * md, void const *in_void, size_t n)
 
 
 void
-hs_mdfour_result(hs_mdfour_t * md, /* @out@ */ unsigned char *out)
+hs_mdfour_result(hs_mdfour_t * md, unsigned char *out)
 {
     hs_mdfour_tail(md, md->tail, md->tail_len);
 
@@ -254,7 +263,7 @@ hs_mdfour_result(hs_mdfour_t * md, /* @out@ */ unsigned char *out)
 
 
 void
-hs_mdfour(unsigned char *out, unsigned char const *in, int n)
+hs_mdfour(unsigned char *out, void const *in, int n)
 {
     hs_mdfour_t     md;
 

@@ -2,7 +2,7 @@
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -98,19 +98,3 @@ _hs_check_sig_version(hs_read_fn_t sigread_fn, void *sigreadprivate)
     return 1;
 }
 
-int
-_hs_newsig_header(int new_block_len,
-		  hs_write_fn_t write_fn, void *writeprivate)
-{
-    int             ret;
-
-    ret = _hs_write_netint(write_fn, writeprivate, HS_SIG_MAGIC);
-    if (ret < 0)
-	return -1;
-
-    ret = _hs_write_netint(write_fn, writeprivate, new_block_len);
-    if (ret < 0)
-	return -1;
-
-    return 0;
-}

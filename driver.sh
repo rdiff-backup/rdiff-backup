@@ -119,14 +119,14 @@ test_skipped () {
 run_test () {
     if [ -n "${VERBOSE:-}" ] 
     then
-	echo "    $*" >&2
+	echo "    $@" >&2
     fi
 
-    if $* 
+    if "$@"
     then
 	:
     else
-	echo $test_name: failed: "$*" >&2
+	echo $test_name: failed: "$@" >&2
 	exit 2
     fi
 }

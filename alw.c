@@ -2,7 +2,7 @@
  *
  * $Id$
  *
- * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -145,7 +145,7 @@ hs_alw_decode(int oldread_fd, int ltread_fd,
 
     while (1) {
         result = _hs_inhale_command_map(lt_map, &lt_pos, &kind,
-                                     &param1, &param2);
+					&param1, &param2);
         if (result != HS_DONE) {
             _hs_error("error while trying to read command byte");
             goto out;

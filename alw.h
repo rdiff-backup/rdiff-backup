@@ -2,7 +2,7 @@
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
  * 
  * This program is free software; you can redistribute it and/or

@@ -2,7 +2,7 @@
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,12 +19,28 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "includes.h"
+#include "config.h"
+
+#include <assert.h>
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
+#include <sys/types.h>
+#include <limits.h>
+#include <inttypes.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "hsync.h"
+
 
 void
-hs_hexify(char *to_buf, unsigned char const *from_buf, int from_len)
+hs_hexify(char *to_buf, void const *from, int from_len)
 {
     static const char hex_chars[] = "0123456789abcdef";
+    char const *from_buf = (unsigned char const *) from;
 
     while (from_len-- > 0) {
 	*(to_buf++) = hex_chars[((*from_buf) >> 4) & 0xf];

@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+# Copyright (C) 2000 by Martin Pool <mbp@samba.org>
 # $Id$
 
 # This program is free software; you can redistribute it and/or
@@ -17,21 +17,21 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+
 			      # Thus spake the master programmer:
 			      # 
 			      # ``When the program is being tested, it
 			      # is too late to make design changes.''
 
+
 lib_LTLIBRARIES = libhsync.la
 
-# As of 0.5.6, when we install we try to clobber any existing shared
-# libraries.  Shared libraries are not supported any more, so we want
-# to make sure people don't accidentally link against them.
-install-exec-local: 
-	rm -f $(DESTDIR)$(libdir)/libhsync.so* \
-		$(DESTDIR)$(libdir)/libhsyncdecode.so*
-
 libhsync_la_SOURCES =				\
+	nozzle.c nozzle.h			\
+	emit.c emit.h				\
+	delta.c delta.h				\
+	netint.c netint.h			\
+	fileutil.c fileutil.h			\
 	tube.c tube.h				\
 	file.c file.h				\
 	hsync.h					\
@@ -39,9 +39,9 @@ libhsync_la_SOURCES =				\
 	hex.c base64.c mdfour.c			\
 	stream.c stream.h			\
 	util.c util.h				\
-	nozzle.c				\
 	mksum.c					\
-	trace.c trace.h			
+	trace.c trace.h				\
+	version.c
 
 # TODO: If we ever care enough, build a second library containing only
 # the code necessary to be a client, and not stuff for encoding.  At
@@ -60,9 +60,11 @@ libhsync_la_SOURCES =				\
 # plain Bourne shell.
 
 TESTS_ENVIRONMENT = bash $(srcdir)/driver.sh
-test_scripts = mdfour.test stream.test tube.test
 
-man_MANS = man/libhsync.3 man/hsmdfour.1
+test_scripts = gendelta.test isprefix.test mdfour.test stream.test	\
+	tube.test
+
+man_MANS = man/libhsync.3 man/rdiff.1
 
 # These are extra documents to be included in the source tarball.
 extra_docs = README.CVS
@@ -76,7 +78,6 @@ TESTS = $(test_scripts)
 noinst_SCRIPTS = \
 	$(test_scripts) \
 	driver.sh \
-	test-meta.sh \
 	mkprototab.sh \
 	$(try_scripts)
 
@@ -102,10 +103,23 @@ LDADD = libhsync.la $(LIBOBJS)
 # end users wanting to run them.  So for the time being they are not
 # installed.
 
-libhsync_tools = libhsyncinfo hsmdfour hsmksum
+bin_PROGRAMS = rdiff
 
-noinst_PROGRAMS = $(libhsync_tools)
-check_PROGRAMS = stream.driver tube.driver
+rdiff_SOURCES = rdiff.c				\
+	isprefix.c isprefix.h
+
+check_PROGRAMS = gendelta.driver stream.driver tube.driver	\
+	isprefix.driver
+
+isprefix_driver_SOURCES = isprefix.driver.c	\
+	isprefix.c isprefix.h
+isprefix_driver_LDADD = $(LIBOBJS)
+
+tube_driver_SOURCES = tube.driver.c		\
+	streamcpy.c streamcpy.h
+
+stream_driver_SOURCES = stream.driver.c		\
+	streamcpy.c streamcpy.h
 
 .PHONY: check_programs
 check_programs: $(check_PROGRAMS)

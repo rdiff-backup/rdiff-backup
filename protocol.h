@@ -1,8 +1,9 @@
 /*=                                     -*- c-file-style: "bsd" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ * 
+ * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or
@@ -15,10 +16,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 /* 
@@ -41,8 +41,8 @@
 
 
 
-#define HS_LT_MAGIC             0x67640036      /* "gd\000\001" */
-#define HS_SIG_MAGIC            0x67640136      /* "gd\0016" */
+#define HS_DELTA_MAGIC          0x67640236      /* g d \2 6" */
+#define HS_SIG_MAGIC            0x67640136      /* g d \1 6" */
 
 
 /* 
@@ -65,15 +65,9 @@ enum {
 
     op_literal_1 = 0x01,
     op_literal_last = 0x78,
-    op_literal_byte = 0x79,
-    op_literal_short = 0x7a,
-    op_literal_int = 0x7b,
-
-    op_signature_1 = 0x7c,
-    op_signature_last = 0xf2,
-    op_signature_byte = 0xf3,
-    op_signature_short = 0xf4,
-    op_signature_int = 0xf5,
+    op_literal_n8 = 0x79,
+    op_literal_n16 = 0x7a,
+    op_literal_n32 = 0x7b,
 
     op_checksum_short = 0xf6,
 

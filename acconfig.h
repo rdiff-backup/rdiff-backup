@@ -45,4 +45,7 @@
 /* GNU extension of saving argv[0] to program_invocation_short_name */
 #undef HAVE_PROGRAM_INVOCATION_NAME
 
+/* Canonical GNU hostname */
+#define HS_CANONICAL_HOST "unknown"
+
 /* end of acconfig.h */

@@ -1,8 +1,9 @@
 /*=				       	-*- c-file-style: "bsd" -*-
  *
+ * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,9 +27,10 @@
  */
 
 extern char const *const hs_libhsync_version;
-extern char const *const hs_libhsync_libversion;
 extern int const hs_libhsync_file_offset_bits;
 
+
+void hs_show_version(char const *program);
 
 /*
  * For the moment, we always work in the C library's off_t.  
@@ -40,19 +42,7 @@ extern int const hs_libhsync_file_offset_bits;
  * Anyhow, will anyone really have single HTTP requests >=2GB?
  */
 
-/* XXX: This should not be public; other people might be using it. */
-typedef unsigned char byte_t;
 
-
-#if 0
-/***********************************************************************
- * Callback function prototypes
- */
-typedef int     (*hs_read_fn_t) (void *readprivate, byte_t *buf, size_t len);
-
-typedef int     (*hs_write_fn_t) (void *writeprivate, byte_t const *buf,
-                                  size_t len);
-#endif
 
 /***********************************************************************
  * Public trace functions.
@@ -71,7 +61,7 @@ int             hs_supports_trace(void);
  * TO_BUF, which must be twice as long plus one byte for the null
  * terminator.
  */
-void     hs_hexify(char *to_buf, byte_t const *from_buf, int from_len);
+void     hs_hexify(char *to_buf, void const *from_buf, int from_len);
 
 /*
  * Decode a base64 buffer in place.  Return the number of binary
@@ -94,8 +84,8 @@ void hs_base64(unsigned char const *buf, int n, char *out);
  * is available), HS_FAILED if an error occurred.
  * *======================================================================*/
 typedef enum {
-    HS_DONE,
-    HS_AGAIN,
+    HS_OK,
+    HS_COMPLETE,
     HS_FAILED
 } hs_result_t;
 
@@ -113,27 +103,6 @@ typedef struct hs_stats {
     int             false_matches;
 } hs_stats_t;
 
-#if 0
-/***********************************************************************
- * Blocking decode
- ***********************************************************************/
-ssize_t
-hs_decode(int oldread_fd,
-	  hs_write_fn_t write_fn, void *write_priv,
-          hs_read_fn_t ltread_fn, void *ltread_priv,
-	  hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats);
-
-
-/**********************************************************************
- * Nonblocking mapped decode
- **********************************************************************/
-ssize_t
-hs_alw_decode(int oldread_fd, int ltread_fd, 
-              hs_write_fn_t write_fn, void *write_priv,
-              hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats);
-
-
-#endif 
 
 /***********************************************************************
  * MD4 hash
@@ -147,12 +116,11 @@ typedef struct hs_mdfour {
 } hs_mdfour_t;
 
 #define HS_MD4_LENGTH 16
-void            hs_mdfour(byte_t *out, byte_t const *in, int n);
+void            hs_mdfour(unsigned char *out, void const *in, int n); 
 void            hs_mdfour_begin(/* @out@ */ hs_mdfour_t * md);
 void            hs_mdfour_update(hs_mdfour_t * md, void const *,
 				 size_t n);
-void            hs_mdfour_result(hs_mdfour_t * md, /* @out@ */
-				 byte_t *out);
+void            hs_mdfour_result(hs_mdfour_t * md, unsigned char *out);
 
 
 
@@ -171,13 +139,13 @@ int hs_log_stats(hs_stats_t const *stats);
 
 
 typedef struct hs_stream_s {
-    int dogtag;
+    int dogtag;			/* to identify mutilated corpse */
     
-    byte_t  *next_in;  /* next input byte */
-    unsigned int avail_in;  /* number of bytes available at next_in */
+    char *next_in;		/* next input byte */
+    unsigned int avail_in;	/* number of bytes available at next_in */
 
-    byte_t  *next_out; /* next output byte should be put there */
-    unsigned int avail_out; /* remaining free space at next_out */
+    char *next_out;		/* next output byte should be put there */
+    unsigned int avail_out;	/* remaining free space at next_out */
 
     struct hs_tube *tube;       /* small output buffer */
 } hs_stream_t;
@@ -187,62 +155,42 @@ typedef struct hs_stream_s {
 
 void hs_stream_init(hs_stream_t *);
 
+
+
+
+/***********************************************************************
+ * Low-level delta interface.  
+ ***********************************************************************/
+   
 typedef struct hs_mksum_job hs_mksum_job_t;
 
 
 hs_mksum_job_t *hs_mksum_begin(hs_stream_t *stream,
                                size_t new_block_len, size_t strong_sum_len);
-
 hs_result_t hs_mksum_iter(hs_mksum_job_t * job);
-
 void hs_mksum_finish(hs_mksum_job_t * job);
 
 
+int hs_delta_begin(hs_stream_t *stream);
+int hs_delta(hs_stream_t *stream, int ending);
+int hs_delta_finish(hs_stream_t *stream);
 
 
 
-typedef struct hs_iobuf hs_nozzle_t;
-typedef struct hs_iobuf hs_fdoutbuf_t;
-
-hs_nozzle_t * hs_nozzle_new(int fd, hs_stream_t *stream, int buf_len, char mode);
-void hs_nozzle_delete(hs_nozzle_t *iot);
-
-int hs_nozzle_in(hs_nozzle_t *iot);
-int hs_nozzle_out(hs_nozzle_t *iot);
-
-
-/*
- * Generate checksum for a file, write to another file.
- */
-void hs_mksum_files(int in_fd, int out_fd,
-                    int block_len, int inbuflen, int outbuflen);
-
-void hs_mdfour_file(int in_fd, byte_t *result, int inbuflen);
-
-#if 0
 
 /***********************************************************************
- * Sumsets
+ * High-level file-based interfaces.  Just pass in open file
+ * descriptors and all the data will be processed.
  ***********************************************************************/
-typedef struct hs_sumset hs_sumset_t;
 
-hs_sumset_t    *hs_read_sumset(hs_read_fn_t, void *);
-void            hs_free_sumset(hs_sumset_t * psums);
-void hs_sumset_dump(hs_sumset_t const *sums);
+void hs_mksum_files(FILE *old_file, FILE *sig_file, int block_len);
 
+void hs_loadsig_file(FILE *sig_file);
 
+void hs_delta_files(FILE *input, FILE *output);
 
+void hs_mdfour_file(FILE *input, char *result);
 
-typedef struct hs_encode_job hs_encode_job_t;
-
-
-hs_encode_job_t *hs_encode_begin(int in_fd, hs_write_fn_t write_fn,
-				 void *write_priv, hs_sumset_t * sums,
-				 hs_stats_t * stats, size_t new_block_len);
-
-hs_result_t     hs_encode_iter(hs_encode_job_t *);
+extern int hs_inbuflen, hs_outbuflen;
 
 
-
-
-#endif

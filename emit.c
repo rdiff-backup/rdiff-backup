@@ -1,8 +1,9 @@
 /*=				       	-*- c-file-style: "bsd" -*-
  *
+ * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -20,29 +21,51 @@
  */
 
 
-#include "includes.h"
+                              /*
+			       * They don't sleep anymore on the beach
+			       */
 
+
+#include "config.h"
+
+#include <assert.h>
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+
+#include <sys/types.h>
+#include <limits.h>
+#include <inttypes.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+#include "hsync.h"
 #include "command.h"
 #include "protocol.h"
+#include "trace.h"
 #include "emit.h"
+#include "netint.h"
 
 
+#if 0
 static int
-_hs_fits_in_byte(size_t val)
+_hs_fits_in_n8(size_t val)
 {
     return val <= UINT8_MAX;
 }
 
 
 static int
-_hs_fits_in_short(size_t val)
+_hs_fits_in_n16(size_t val)
 {
     return val <= UINT16_MAX;
 }
 
 
 static int
-_hs_fits_in_int(size_t val)
+_hs_fits_in_n32(size_t val)
 {
     return val <= UINT32_MAX;
 }
@@ -51,19 +74,41 @@ _hs_fits_in_int(size_t val)
 static int
 _hs_int_len(off_t val)
 {
-    if (_hs_fits_in_byte(val))
+    if (_hs_fits_in_n8(val))
 	return 1;
-    else if (_hs_fits_in_short(val))
+    else if (_hs_fits_in_n16(val))
 	return 2;
-    else if (_hs_fits_in_int(val))
+    else if (_hs_fits_in_n32(val))
 	return 4;
     else {
 	_hs_fatal("can't handle files this long yet");
-        return -1;
     }
+}
+#endif
+
+
+/*
+ * Write the magic for the start of a delta.
+ */
+void
+_hs_emit_delta_header(hs_stream_t *stream)
+{
+    _hs_squirt_n32(stream, HS_DELTA_MAGIC);
 }
 
 
+
+/* Write a LITERAL command. */
+void
+_hs_emit_literal_cmd(hs_stream_t *stream, int len)
+{
+    _hs_squirt_n8(stream, op_literal_n32);
+    _hs_squirt_n32(stream, len);
+}
+
+
+
+#if 0
 int _hs_emit_eof(hs_write_fn_t write_fn, void *write_priv,
 		 UNUSED(hs_stats_t *stats))
 {
@@ -258,3 +303,4 @@ _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
 
     return 1;
 }
+#endif

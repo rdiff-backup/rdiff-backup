@@ -1,8 +1,9 @@
 /*				       	-*- c-file-style: "bsd" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,30 +26,5 @@
  */
 
 
-int _hs_send_literal(hs_write_fn_t write_fn,
-		     void *write_priv,
-		     int kind, byte_t const *buf, 
-		     size_t amount);
-
-extern struct hs_op_kind_name const _hs_op_kind_names[];
-
-int             _hs_emit_signature_cmd(hs_write_fn_t write_fn,
-				       void *write_priv, size_t size);
-
-int             _hs_emit_filesum(hs_write_fn_t write_fn, void *write_priv,
-				 byte_t const *buf, size_t size);
-
-int             _hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv,
-				     size_t size);
-
-int             _hs_emit_checksum_cmd(hs_write_fn_t, void *, size_t size);
-
-int             _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
-			      off_t offset, size_t length,
-
-			      hs_stats_t * stats);
-
-
-int             _hs_emit_eof(hs_write_fn_t write_fn, void *write_priv,
-			     hs_stats_t * stats);
-
+void _hs_emit_delta_header(hs_stream_t *stream);
+void _hs_emit_literal_cmd(hs_stream_t *stream, int len);

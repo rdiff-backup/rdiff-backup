@@ -1,8 +1,9 @@
 /*				       	-*- c-file-style: "bsd" -*-
  *
+ * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,16 +20,13 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-typedef struct hs_tube {
-    int		dogtag;
-    char        buf[4096];
-    int         used;
-} hs_tube_t;
 
+void _hs_tube_init(hs_stream_t *stream);
 
-void _hs_tube_drain(hs_stream_t *stream);
-void _hs_tube_blow(hs_stream_t *stream, byte_t const *buf, size_t len);
-int _hs_tube_empty(hs_stream_t const *stream);
+int _hs_tube_catchup(hs_stream_t *stream);
+void _hs_blow_literal(hs_stream_t *stream, void const *buf, size_t len);
+
+void _hs_blow_copy(hs_stream_t *stream, int len);
+
+int _hs_tube_is_idle(hs_stream_t const *stream);
 void _hs_check_tube(hs_stream_t *stream);
-
-

@@ -11,6 +11,6 @@
 
 new=$tmpdir/out
 
-echo -n '(farewell cruel) ' | run_test dtube >$new 
+echo -n '(farewell cruel) ' | run_test tube.driver >$new 
 echo 'hello (farewell cruel) world' | run_test cmp $new
 

@@ -1,0 +1,49 @@
+.\"
+.\" libhsync -- dynamic caching and delta update in HTTP
+.\" $Id$
+.\" 
+.\" Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+.\" 
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU Lesser General Public License
+.\" as published by the Free Software Foundation; either version 2.1 of
+.\" the License, or (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+.\" Lesser General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU Lesser General Public
+.\" License along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.TH rdiff 1 "$Date$" 
+.SH NAME
+rdiff \- compute and apply signature-based file differences
+.SH SYNOPSYS
+.nf
+\fBrdiff\fP [\fIoptions\fP] \fBsignature\fP \fIold-file signature-file\fP
+.PP
+\fBrdiff\fP [\fIoptions\fP] \fBdelta\fP \fIsignature-file new-file delta-file\fP
+.PP
+\fBrdiff\fP [\fIoptions\fP] \fBpatch\fP \fIbasis-file delta-file new-file\fP
+.fi
+.SH DESCRIPTION
+In every case where a filename must be specified, \- may be used
+instead to mean either standard input or standard output as
+appropriate.
+.SH "RETURN VALUE"
+0 for successful completion, 1 for environmental problems (file not
+found, invalid options, IO error, etc), 2 for a corrupt file and 3 for
+an internal error or unhandled situation in libhsync or rdiff.
+.SH "SEE ALSO"
+.BR libhsync "(3)"
+.SH "AUTHOR"
+Martin Pool <mbp@samba.org>
+.PP
+The ideas in rdiff draw heavily on the work of Andrew Tridgell and
+Paulus Mackerras, the original developers of rsync. 
+.PP
+rproxy/rdiff development has been supported in part by Linuxcare, Inc,
+a leading provider of enterprise services for open source software.

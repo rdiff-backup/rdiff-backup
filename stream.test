@@ -16,7 +16,10 @@ for inbuf in $bufsizes
 do
     for outbuf in $bufsizes
     do
-	run_test dstream $inbuf $outbuf >$new <$from
+	run_test stream.driver $inbuf $outbuf <$from |
+	run_test cmp $from -
+
+      	run_test stream.driver $inbuf $outbuf >$new <$from
 	run_test cmp $from $new
     done
 done 

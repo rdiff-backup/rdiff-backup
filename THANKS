@@ -4,6 +4,9 @@ Andrew Tridgell and Paulus Mackerras started this whole mess.  Luke
 Leighton was a tremendous help in sorting out the combined
 encoding/signature algorithm.
 
+Thanks to Linuxcare, Inc, <http://linuxcare.com/> for their support of
+this project.
+
 Neale Banks <neale@lowendale.com.au>: the first known user outside of
 OzLabs, and helped keep me honest.
 

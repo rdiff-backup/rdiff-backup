@@ -2,7 +2,7 @@
  * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,18 +30,21 @@
                                */
 
 
-/*
- * tube: a somewhat elastic but fairly small buffer for data passing
+/* tube: a somewhat elastic but fairly small buffer for data passing
  * through a stream.
  *
  * In most cases the iter can adjust to send just as much data will
  * fit.  In some cases that would be too complicated, because it has
  * to transmit an integer or something similar.  So in that case we
  * stick whatever won't fit into a small buffer.
- */
+ *
+ * A tube can contain some literal data to go out (typically command
+ * bytes), and also an instruction to copy data from the stream's
+ * input or from some other location.  Both literal data and a copy
+ * command can be queued at the same time, but only in that order and
+ * at most one of each. */
 
-
-#include <config.h>
+#include "config.h"
 
 #include <assert.h>
 
@@ -55,14 +58,39 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "hsync.h"
 #include "tube.h"
 #include "trace.h"
+#include "util.h"
+#include "stream.h"
 
 
 const int HS_TUBE_TAG = 892138;
 
+
+typedef struct hs_tube {
+    int		dogtag;
+
+    /* If USED is >0, then buf contains that much literal data to be
+     * sent out. */
+    char        lit_buf[4096];
+    int         lit_len;
+
+    /* If COPY_LEN is >0, then that much data should be copied through
+     * from the input. */
+    int         copy_len;
+} hs_tube_t;
+
+
+
+void
+_hs_tube_init(hs_stream_t *stream)
+{
+    stream->tube = _hs_alloc_struct(hs_tube_t);
+    stream->tube->dogtag = HS_TUBE_TAG;
+}
 
 
 void
@@ -73,64 +101,118 @@ _hs_check_tube(hs_stream_t *stream)
 }
 
 
-/*
- * Put whatever will fit from the tube into the output of the stream.
- */
-void
-_hs_tube_drain(hs_stream_t *stream)
+static void
+_hs_tube_catchup_literal(hs_stream_t *stream)
 {
     hs_tube_t * const tube = stream->tube;
-    int len, remain;
+    int len, remain; 
 
-    len = tube->used;
-    if (!len)
-        return;
+    len = tube->lit_len;
+    assert(len > 0);
 
     assert(len > 0);
     if ((size_t) len > stream->avail_out)
-        len = stream->avail_out;
+	len = stream->avail_out;
 
-    memcpy(stream->next_out, tube->buf, len);
+    memcpy(stream->next_out, tube->lit_buf, len);
     stream->next_out += len;
     stream->avail_out -= len;
 
-    remain = tube->used - len;
+    remain = tube->lit_len - len;
     if (remain > 0) {
-        /* Still something left in the tube... */
-        memmove(tube->buf, tube->buf + len, remain);
+	/* Still something left in the tube... */
+	memmove(tube->lit_buf, tube->lit_buf + len, remain);
     } else {
-        assert(remain == 0);
+	assert(remain == 0);
     }
 
-    tube->used = remain;
+    tube->lit_len = remain;
+}
+
+
+static void
+_hs_tube_catchup_copy(hs_stream_t *stream)
+{
+    hs_tube_t * const tube = stream->tube;
+    
+    int copied;
+
+    assert(tube->lit_len == 0);
+    assert(tube->copy_len > 0);
+
+    copied = _hs_stream_copy(stream, tube->copy_len);
+
+    tube->copy_len -= copied;
+}
+
+
+/* Put whatever will fit from the tube into the output of the stream.
+ * Return true if the tube is now empty and ready to accept another
+ * command; else false. */
+int
+_hs_tube_catchup(hs_stream_t *stream)
+{
+    hs_tube_t * const tube = stream->tube;
+
+    if (tube->lit_len)
+	_hs_tube_catchup_literal(stream);
+
+    if (tube->lit_len) {
+	/* there is still literal data queued, so we can't send
+	 * anything else. */
+	return 0;
+    }
+
+    if (tube->copy_len)
+	_hs_tube_catchup_copy(stream);
+
+    return tube->copy_len == 0;
 }
 
 
 int
-_hs_tube_empty(hs_stream_t const *stream)
+_hs_tube_is_idle(hs_stream_t const *stream)
 {
-    return !stream->tube->used;
+    return stream->tube->lit_len == 0
+	&& stream->tube->copy_len == 0;
+}
+
+
+/* Queue up a request to copy through LEN bytes from the input to the
+ * output of STREAM.  We can only accept this request if there is no
+ * copy command already pending. */
+void
+_hs_blow_copy(hs_stream_t *stream, int len)
+{
+    hs_tube_t * const tube = stream->tube;
+
+    assert(tube->copy_len == 0);
+
+    tube->copy_len = len;
 }
 
 
 
-/*
- * Push some data into the tube for storage.  The tube's never
+/* Push some data into the tube for storage.  The tube's never
  * supposed to get very big, so this will just pop loudly if you do
  * that.
  *
+ * We can't accept literal data if there's already a copy command in
+ * the tube, because the literal data comes out first.
+ *
  * TODO: As an optimization, write it directly to the stream if
- * possible.  But for simplicity don't do that yet.
- */
+ * possible.  But for simplicity don't do that yet.  */
 void
-_hs_tube_blow(hs_stream_t *stream, byte_t const *buf, size_t len)
+_hs_blow_literal(hs_stream_t *stream, const void *buf, size_t len)
 {
     hs_tube_t * const tube = stream->tube;
 
-    if (len > sizeof(tube->buf) - tube->used) {
-        _hs_fatal("tube popped when trying to blow %d bytes!", len);
+    assert(tube->copy_len == 0);
+
+    if (len > sizeof(tube->lit_buf) - tube->lit_len) {
+        _hs_fatal("tube popped when trying to blow %d literal bytes!", len);
     }
 
-    memcpy(tube->buf + tube->used, buf, len);
-    tube->used += len;
+    memcpy(tube->lit_buf + tube->lit_len, buf, len);
+    tube->lit_len += len;
 }

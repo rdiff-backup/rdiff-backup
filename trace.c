@@ -1,8 +1,9 @@
 /*				       	-*- c-file-style: "bsd" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- library for network deltas
  * $Id$
  *
- * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,7 +27,7 @@
                                       | There are lumps in it.
                                       */
 
-#include "includes.h"
+#include "config.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -34,12 +35,15 @@
 #include <string.h>
 #include <syslog.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <stdint.h>
+
+#include "hsync.h"
 
 #include "private.h"
 #include "trace.h"
 
-char const * const hs_libhsync_version = PACKAGE " " VERSION;
-char const * const hs_libhsync_libversion = HS_LIBVERSION;
 int const hs_libhsync_file_offset_bits = SIZEOF_OFF_T * 8;
 
 hs_trace_fn_t  *_hs_trace_impl = hs_trace_stderr;

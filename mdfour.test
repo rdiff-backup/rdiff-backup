@@ -16,7 +16,7 @@ for file in $testdir/*.data
 do
     for b in $bufsizes
     do
-	run_test hsmdfour -b $b >$new <$file
+	run_test rdiff -I$b sum $file >$new
 	expect=$testdir/`basename $file .data`.expect
 	run_test cmp "$new" "$expect"
     done

@@ -1,8 +1,9 @@
 /*				       	-*- c-file-style: "bsd" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -26,8 +27,14 @@
  * arrangement and mapptrs.
  */
 
-#include "includes.h"
+#include "config.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+#include <stdint.h>
+
+#include "hsync.h"
 #include "private.h"
 #include "stream.h"
 #include "util.h"
@@ -83,11 +90,11 @@ hs_mksum_finish(hs_mksum_job_t * job)
  * the job is closed on return.
  */
 hs_result_t
-hs_mksum_iter(hs_mksum_job_t * job)
+hs_mksum_iter(hs_mksum_job_t *UNUSED(job))
 {
-    _hs_stream_copy(job->stream, 4);
+/*      _hs_stream_copy(job->stream, 4); */
 
-    return HS_AGAIN;
+    return HS_COMPLETE;
 }
 
 

@@ -1,8 +1,9 @@
 /*=                                     -*- c-file-style: "bsd" -*-
- * libhsync -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -20,7 +21,7 @@
  */
 
 
-#include <config.h>
+#include "config.h"
 
 #include <assert.h>
 
@@ -40,15 +41,9 @@
 #include "stream.h"
 #include "tube.h"
 #include "file.h"
+#include "nozzle.h"
+#include "streamcpy.h"
 
-
-static void drain(hs_nozzle_t *out_nozzle, hs_stream_t *stream)
-{
-    do {
-        _hs_tube_drain(stream);
-        hs_nozzle_out(out_nozzle);
-    } while (!_hs_tube_empty(stream));
-}
 
 
 int main(int UNUSED(argc), char UNUSED(** argv))
@@ -58,19 +53,19 @@ int main(int UNUSED(argc), char UNUSED(** argv))
 
     hs_stream_init(&stream);
 
-    out_nozzle = hs_nozzle_new(STDOUT_FILENO, &stream, 2, 'w');
-    in_nozzle = hs_nozzle_new(STDIN_FILENO, &stream, 3, 'r');
+    out_nozzle = _hs_nozzle_new(stdout, &stream, 2, "w");
+    in_nozzle = _hs_nozzle_new(stdin, &stream, 3, "r");
 
-    _hs_tube_blow(&stream, "hello ", 6);
-    drain(out_nozzle, &stream);
+    _hs_blow_literal(&stream, "hello ", 6);
+    _hs_nozzle_drain(out_nozzle, &stream);
 
     _hs_stream_copy_file(&stream, in_nozzle, out_nozzle);
 
-    _hs_tube_blow(&stream, "world\n", 6);
-    drain(out_nozzle, &stream);
+    _hs_blow_literal(&stream, "world\n", 6);
+    _hs_nozzle_drain(out_nozzle, &stream);
     
-    hs_nozzle_delete(out_nozzle);
-    hs_nozzle_delete(in_nozzle);
+    _hs_nozzle_delete(out_nozzle);
+    _hs_nozzle_delete(in_nozzle);
     
     return 0;
 }

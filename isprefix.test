@@ -1,0 +1,22 @@
+#! /bin/sh -pe
+
+# libhsync test case.
+# Copyright (C) 2000 by Martin Pool
+
+# Test the map_ptr input routines, by extracting chunks of a file
+# using a known-good Python implementation, and also by passing the
+# same parameters to the hsmapread driver.
+
+# $Id$
+
+run_test isprefix.driver foo foobar
+run_test isprefix.driver '' foobar
+run_test isprefix.driver foobar foobar
+run_test isprefix.driver f f
+run_test isprefix.driver '' ''
+run_test isprefix.driver f foobar
+
+run_test isprefix.driver ! foobar foo
+run_test isprefix.driver ! goo foo
+run_test isprefix.driver ! foo ''
+run_test isprefix.driver ! f g

@@ -1,8 +1,9 @@
 /*=                                     -*- c-file-style: "bsd" -*-
- * libhsync -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -22,5 +23,6 @@
 
 /* Prototypes for internal stream functions. */
 
+int _hs_stream_is_empty(hs_stream_t *stream);
 int _hs_stream_copy(hs_stream_t *stream, int len);
 void _hs_stream_check(hs_stream_t *stream);

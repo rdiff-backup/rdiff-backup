@@ -38,21 +38,10 @@ AC_TRY_COMPILE([#include <errno.h>],
       AC_MSG_RESULT(yes) ],
     [ AC_MSG_RESULT(no) ])
 
-dnl # We don't use Python at the moment
-dnl AC_CHECK_PROG(PYTHON, python, python)
-
-dnl Checks for libraries.
-dnl AC_CHECK_LIB(z, deflate)
-
 # On us4 SGI IRIX64, the linker reports
 # ld32: WARNING 84 : /usr/lib32/libnsl.so is not used for resolving any symbol.
 
 # HEY!  Do we need SGI cc to do 64-bit mode?  Does gcc only do 32bit?
-
-# FIXME: Ideally, we would use this library only for programs that
-# actually need networking.  This test will stick it in LIBS, which is
-# I suppose harmless
-AC_SEARCH_LIBS(connect, [nsl socket inet])
 
 # supply a snprintf if the system doesn't have one
 AC_REPLACE_FUNCS(snprintf)
@@ -118,6 +107,8 @@ AC_HEADER_STDC
 
 libhsync_libversion=2:0:0
 AC_DEFINE_UNQUOTED(HS_LIBVERSION, "$libhsync_libversion")
+
+AC_DEFINE_UNQUOTED(HS_CANONICAL_HOST, "$host")
 
 AC_SUBST(libhsync_libversion)
 AC_SUBST(OBJ_SAVE)

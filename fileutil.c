@@ -1,8 +1,9 @@
 /*				       	-*- c-file-style: "bsd" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool.
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1999 by tridge@samba.org.
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -20,17 +21,28 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "includes.h"
+#include "config.h"
 
+#ifdef HAVE_STDINT_H
+#  include <stdint.h>
+#endif
+
+#include <assert.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/file.h>
 #include <string.h>
+#include <errno.h>
+
+#include "hsync.h"
+#include "fileutil.h"
+#include "trace.h"
 
 
 void
-hs_file_close(int fd)
+_hs_file_close(int fd)
 {
     if (fd == -1)
         _hs_error("warning: close called with fd of -1");
@@ -42,47 +54,44 @@ hs_file_close(int fd)
 }
 
 
-int
-hs_file_open(char const *filename, int mode)
+/*
+ * Open a file, with special handling for `-' on input and output.
+ */
+FILE *
+_hs_file_open(char const *filename, int mode)
 {
     int             fd;
+    FILE           *f;
+    int		    is_write;
+
+    if ((mode & O_ACCMODE) == O_WRONLY) {
+	is_write = 1;
+    } else {
+	is_write = 0;
+	assert((mode & O_ACCMODE) == O_RDONLY);
+    }
+
+    if (!strcmp("-", filename)) {
+	if (is_write)
+	    return stdout;
+	else
+	    return stdin;
+    }
 
     fd = open(filename, mode, 0666);
     if (fd == -1) {
-	_hs_fatal("error opening %s for mode %#x: %s", filename, mode,
+	_hs_error("Error opening \"%s\" for %s: %s", filename,
+		  (mode & O_WRONLY) ? "write" : "read",
 		  strerror(errno));
+	exit(1);
     }
-    return fd;
-}
 
-
-int
-_hs_file_copy_all(int from_fd, int to_fd)
-{
-    ssize_t len, total_len = 0, wlen, off;
-    char buf[32768];
-
-    do {
-        len = read(from_fd, buf, sizeof buf);
-        if (len < 0) {
-            _hs_error("read: %s", strerror(errno));
-            return -1;
-        }
-        _hs_trace("read %ld bytes", (long) len);
-        total_len += len;
-        off = 0;
-        while (off < len) {
-            wlen = write(to_fd, buf + off, len - off);
-            if (wlen < 0) {
-                _hs_error("write: %s", strerror(errno));
-                return -1;
-            }
-            _hs_trace("wrote %ld bytes", (long) wlen);
-            off += wlen;
-        }            
-    } while (len > 0);
-
-    _hs_trace("reached eof");
-
-    return total_len;
+    f = fdopen(fd, is_write ? "w" : "r");
+    if (!f) {
+	_hs_error("Error opening stream on fd%d: %s", fd,
+		  strerror(errno));
+	exit(1);
+    }
+    
+    return f;
 }

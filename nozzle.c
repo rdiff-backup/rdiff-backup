@@ -1,8 +1,9 @@
 /*=                                     -*- c-file-style: "bsd" -*-
- * libhsync -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+ * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -27,65 +28,90 @@
 
 
 /*
- * Wrap a stream onto file descriptors.
+ * Wrap a stream onto stdio files.
  *
  * The wrapper object contains small memory buffers that accumulate
  * data before it is written out.  At the moment the size is fixed.
  * You must create separate objects for input and output.
  */
 
-#include "includes.h"
+#include "config.h"
 
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdarg.h>
+#include <assert.h>
+#include <stdlib.h>
 
+#include "hsync.h"
 #include "trace.h"
 #include "util.h"
+#include "nozzle.h"
+#include "tube.h"
+#include "stream.h"
+
+#define HS_NOZZLE_IN_TAG 0x87232
+#define HS_NOZZLE_OUT_TAG 0x87233
 
 
-struct hs_iobuf {
-    int    fd;
-    byte_t *buf;
-    size_t buf_len;
+struct hs_nozzle {
+    int          tag;
+    FILE        *file;
+    char	*buf;
+    size_t       buf_len;
     hs_stream_t *stream;
 };
 
 
 hs_nozzle_t *
-hs_nozzle_new(int fd, hs_stream_t *stream, int buf_len, char mode)
+_hs_nozzle_new_fd(int fd, hs_stream_t *stream, int buf_len,
+		  char const * mode)
 {
-    /* allocate a new iobuf object */
-    hs_nozzle_t *iot = _hs_alloc_struct(hs_nozzle_t);
+    return _hs_nozzle_new(fdopen(fd, mode), stream, buf_len, mode);
+}
+
+
+
+hs_nozzle_t *
+_hs_nozzle_new(FILE *file, hs_stream_t *stream, int buf_len,
+	       char const *mode)
+{
+    /* allocate a new nozzle object */
+    hs_nozzle_t *noz = _hs_alloc_struct(hs_nozzle_t);
 
     assert(buf_len > 0);
 
-    iot->fd = fd;
-    iot->buf_len = buf_len;
-    iot->buf = _hs_alloc(iot->buf_len, "iobuf buffer");
-    iot->stream = stream;
+    noz->file = file;
+    noz->buf_len = buf_len;
+    noz->buf = _hs_alloc(noz->buf_len, "nozzle buffer");
+    noz->stream = stream;
 
-    if (mode == 'r') {
+    if (*mode == 'r') {
         assert(!stream->next_in);
-        stream->next_in = iot->buf;
+        stream->next_in = noz->buf;
         stream->avail_in = 0;
+	noz->tag = HS_NOZZLE_IN_TAG;
     } else {
-        assert(mode == 'w');
+        assert(*mode == 'w');
         assert(!stream->next_out);
-        stream->next_out = iot->buf;
-        stream->avail_out = iot->buf_len;
+        stream->next_out = noz->buf;
+        stream->avail_out = noz->buf_len;
+	noz->tag = HS_NOZZLE_OUT_TAG;
     }
 
-    return iot;
+    return noz;
 }
 
 
 void
-hs_nozzle_delete(hs_nozzle_t *iot)
+_hs_nozzle_delete(hs_nozzle_t *noz)
 {
-    free(iot->buf);
-    free(iot);
+    assert(noz->tag == HS_NOZZLE_IN_TAG
+	   || noz->tag == HS_NOZZLE_OUT_TAG);
+    free(noz->buf);
+    free(noz);
 }
 
 
@@ -93,37 +119,44 @@ hs_nozzle_delete(hs_nozzle_t *iot)
  * Move existing data, if any, to the start of the buffer.  Read in
  * more data to fill the buffer up.
  *
- * Returns amount of data now available; this goes to 0 at eof.
+ * Returns false at EOF; true otherwise.
  */
 int
-hs_nozzle_in(hs_nozzle_t *iot)
+_hs_nozzle_in(hs_nozzle_t *noz)
 {
-    hs_stream_t * const stream = iot->stream;
+    hs_stream_t * const stream = noz->stream;
     int to_read, got;
     
-    assert(stream->avail_in <= iot->buf_len);
-    assert(stream->next_in >= iot->buf
-           && stream->next_in <= iot->buf + iot->buf_len);
+    assert(noz->tag == HS_NOZZLE_IN_TAG);
     
-    if (stream->avail_in > 0) {
-        memmove(iot->buf, stream->next_in, stream->avail_in);
+    if (feof(noz->file)) {
+	return 0;
     }
 
-    to_read = iot->buf_len - stream->avail_in;
+    assert(stream->avail_in <= noz->buf_len);
+    assert(stream->next_in >= noz->buf
+           && stream->next_in <= noz->buf + noz->buf_len);
+    
+    if (stream->avail_in > 0) {
+        memmove(noz->buf, stream->next_in, stream->avail_in);
+    }
+
+    to_read = noz->buf_len - stream->avail_in;
     assert(to_read >= 0);
-    assert((size_t) to_read <= iot->buf_len);
+    assert((size_t) to_read <= noz->buf_len);
     if (to_read == 0)
         return stream->avail_in;
 
-    got = read(iot->fd, iot->buf + stream->avail_in, to_read);
+    
+    got = fread(noz->buf + stream->avail_in, 1, to_read, noz->file);
     if (got < 0) {
-        _hs_fatal("error reading: %s", strerror(errno));
+	_hs_fatal("error reading: %s", strerror(errno));
     }
 
-    /* FIXME: If we see EOF, then don't keep trying to read. */
-    
-    stream->next_in = iot->buf;
-    return stream->avail_in += got;
+    stream->next_in = noz->buf;
+    stream->avail_in += got;
+
+    return 1;
 }
 
 
@@ -134,19 +167,23 @@ hs_nozzle_in(hs_nozzle_t *iot)
  * so when this reaches zero there is no more data (at the moment).
  */
 int
-hs_nozzle_out(hs_nozzle_t *iot)
+_hs_nozzle_out(hs_nozzle_t *noz)
 {
-    hs_stream_t * const stream = iot->stream;
+    hs_stream_t * const stream = noz->stream;
     int remains = 0, done, buffered;
 
-    assert(stream->avail_out <= iot->buf_len);
-    assert(stream->next_out >= iot->buf
-           && stream->next_out <= iot->buf + iot->buf_len);
+    assert(noz->tag == HS_NOZZLE_OUT_TAG);
 
-    buffered = iot->buf_len - stream->avail_out;
+    assert(stream->avail_out <= noz->buf_len);
+    assert(stream->next_out >= noz->buf
+           && stream->next_out <= noz->buf + noz->buf_len);
+
+    buffered = noz->buf_len - stream->avail_out;
     
     if (buffered) {
-        done = write(iot->fd, iot->buf, buffered);
+	_hs_trace("write %d bytes from stream to file", buffered);
+	
+        done = fwrite(noz->buf, 1, buffered, noz->file);
         if (done < 0) {
             _hs_fatal("error writing: %s", strerror(errno));
         }
@@ -155,12 +192,36 @@ hs_nozzle_out(hs_nozzle_t *iot)
         remains = buffered - done;
 
         if (remains)
-            memmove(iot->buf, iot->buf + done, remains);
+            memmove(noz->buf, noz->buf + done, remains);
     }
 
-    stream->next_out = iot->buf + remains;
-    stream->avail_out = iot->buf_len - remains;
+    stream->next_out = noz->buf + remains;
+    stream->avail_out = noz->buf_len - remains;
     return remains;
+}
+
+
+/* Continue doing output until the tube is empty */
+void
+_hs_nozzle_drain(hs_nozzle_t *out_nozzle, hs_stream_t *stream)
+{
+    do {
+        _hs_tube_catchup(stream);
+        _hs_nozzle_out(out_nozzle);
+    } while (!_hs_tube_is_idle(stream));
+}
+
+
+/* Continue doing input and output until the stream is at rest */
+void
+_hs_nozzle_siphon(hs_stream_t *stream, hs_nozzle_t *in_nozzle,
+		  hs_nozzle_t *out_nozzle)
+{
+    do {
+	_hs_nozzle_in(in_nozzle);
+        _hs_tube_catchup(stream);
+        _hs_nozzle_out(out_nozzle);
+    } while (!_hs_tube_is_idle(stream));
 }
 
 

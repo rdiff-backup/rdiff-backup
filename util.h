@@ -1,9 +1,10 @@
 /*=				       	-*- c-file-style: "bsd" -*-
- * libhsync -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com>
- * Copyright (C) 1999 by Andrew Tridgell <tridge@linuxcare.com>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -33,3 +34,5 @@ void _hs_bzero(void *buf, size_t size);
 #define _hs_alloc_struct(type)				\
         ((type *) _hs_alloc_struct0(sizeof(type), #type))
 
+
+void _hs_readintarg(char const *opt, char const *arg, int *out);
