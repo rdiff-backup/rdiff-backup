@@ -48,7 +48,7 @@ class HalfRoot(unittest.TestCase):
 		rp1_2.chmod(0)
 		rp1_3 = rp1.append('unreadable_dir')
 		rp1_3.mkdir()
-		rp1_3_1 = rp1_3.append('file inside')
+		rp1_3_1 = rp1_3.append('file_inside')
 		rp1_3_1.write_string('blah')
 		rp1_3.chmod(0)
 
@@ -60,11 +60,13 @@ class HalfRoot(unittest.TestCase):
 		rp2_1.chmod(0)
 		rp2_3 = rp2.append('unreadable_dir')
 		rp2_3.mkdir()
+		rp2_3_2 = rp2_3.append('file2')
+		rp2_3_2.touch()
 		rp2_3.chmod(0)
 		return rp1, rp2
 
 	def test_backup(self):
-		"""Right now just test backing up"""
+		"""Test back up, simple restores"""
 		in_rp1, in_rp2 = self.make_dirs()
 		outrp = rpath.RPath(Globals.local_connection, "testfiles/output")
 		if outrp.lstat(): outrp.delete()
@@ -85,6 +87,27 @@ class HalfRoot(unittest.TestCase):
 		in_rp2.setdata()
 		outrp.setdata()
 		assert CompareRecursive(in_rp2, outrp)
+
+		rout_rp = rpath.RPath(Globals.local_connection,
+							  "testfiles/restore_out")
+		Myrm(rout_rp.path)
+		cmd3 = cmd_schema % (10000,
+							 "-r 10000 %s/unreadable_dir" % (outrp.path,),
+							 remote_schema,  rout_rp.path)
+		print "Executing restore: ", cmd3
+		assert not os.system(cmd3)
+		rout_rp.setdata()
+		assert rout_rp.getperms() == 0, rout_rp.getperms()
+
+		Myrm(rout_rp.path)
+		cmd4 = cmd_schema % (10000,
+							 "-r now %s/unreadable_dir" % (outrp.path,),
+							 remote_schema,  rout_rp.path)
+		print "Executing restore: ", cmd4
+		assert not os.system(cmd4)
+		rout_rp.setdata()
+		assert rout_rp.getperms() == 0, rout_rp.getperms()
+
 
 class NonRoot(unittest.TestCase):
 	"""Test backing up as non-root user
