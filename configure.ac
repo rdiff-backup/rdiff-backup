@@ -114,7 +114,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 
 if test "$GCC" = "yes"; then # GCC
   CFLAGS="-Wall -Wshadow -Wundef -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wstrict-prototypes -Wpointer-arith -Wcast-qual -Wcast-align $CFLAGS"
-elif test "$CC" = "lc"; then # MSVC
+elif test "$CC" = "cl"; then # MSVC
   CFLAGS="-Z7 -Od -MD $CFLAGS"
 fi
 # TODO: Similar conditions for other known compilers.  For SUNWspro, use `-v'.

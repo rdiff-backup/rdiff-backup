@@ -1,2 +1,2 @@
 #!/bin/sh
-./configure CC="cl" CFLAGS="-Z7 -Od -MD" --prefix='C:/Progra~1/librsync'
+./configure CC=cl --prefix='C:/Progra~1/librsync'
