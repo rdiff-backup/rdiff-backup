@@ -94,7 +94,7 @@ static void bad_option(poptContext opcon, int error)
 {
     fprintf(stderr, "%s: %s: %s\n",
             PROGRAM, poptStrerror(error), poptBadOption(opcon, 0));
-    exit(1);
+    exit(HS_SYNTAX_ERROR);
 }
 
 
@@ -123,10 +123,10 @@ static void rdiff_options(poptContext opcon)
         switch (c) {
         case 'h':
             help();
-            exit(0);
+            exit(HS_DONE);
         case 'V':
             printf(version_str, hs_libhsync_version);
-            exit(0);
+            exit(HS_DONE);
         case 'v':
             if (!hs_supports_trace()) {
                 hs_error("library does not support trace");
@@ -143,10 +143,9 @@ static void rdiff_options(poptContext opcon)
 /**
  * Generate signature from remaining command line arguments.
  */
-static hs_exit_value rdiff_sig(poptContext opcon)
+static hs_result rdiff_sig(poptContext opcon)
 {
     FILE            *basis_file, *sig_file;
-    hs_result       result;
     const char      *basis_name, *sig_name;
     
     basis_name = poptGetArg(opcon);
@@ -155,13 +154,11 @@ static hs_exit_value rdiff_sig(poptContext opcon)
     basis_file = hs_file_open(basis_name, "rb");
     sig_file = hs_file_open(sig_name, "wb");
 
-    result = hs_sig_file(basis_file, sig_file, block_len, strong_len);
-    
-    return hs_result_to_exit(result);    
+    return hs_sig_file(basis_file, sig_file, block_len, strong_len);
 }
 
 
-static hs_exit_value rdiff_delta(poptContext opcon)
+static hs_result rdiff_delta(poptContext opcon)
 {
     FILE            *sig_file, *new_file, *delta_file;
     char const      *sig_name;
@@ -170,7 +167,7 @@ static hs_exit_value rdiff_delta(poptContext opcon)
 
     if (!(sig_name = poptGetArg(opcon))) {
         rdiff_usage("delta: must specify the signature filename");
-        return HS_EXIT_SYNTAX;
+        return HS_SYNTAX_ERROR;
     }
 
     sig_file = hs_file_open(sig_name, "rb");
@@ -178,16 +175,16 @@ static hs_exit_value rdiff_delta(poptContext opcon)
     delta_file = hs_file_open(poptGetArg(opcon), "wb");
 
     result = hs_loadsig_file(sig_file, &sumset);
-    if (result != HS_DONE) 
-        return hs_result_to_exit(result);
+    if (result != HS_DONE)
+        return result;
 
     result = hs_delta_file(sumset, new_file, delta_file);
 
-    return hs_result_to_exit(result);
+    return result;
 }
 
 
-static hs_exit_value rdiff_action(poptContext opcon)
+static hs_result rdiff_action(poptContext opcon)
 {
     const char      *action;
 
@@ -200,7 +197,7 @@ static hs_exit_value rdiff_action(poptContext opcon)
         return rdiff_delta(opcon);
     
     rdiff_usage("You must specify an action: `signature', `delta', or `patch'.");
-    return HS_EXIT_SYNTAX;
+    return HS_SYNTAX_ERROR;
 }
 
 

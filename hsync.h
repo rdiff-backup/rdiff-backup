@@ -61,17 +61,6 @@ typedef enum {
 } hs_loglevel;
 
 
-/**
- * Exit values from the rdiff tool.
- */
-typedef enum {
-    HS_EXIT_OK = 0,             /**< No problem. */
-    HS_EXIT_SYNTAX = 1,         /**< Syntax or usage error. */
-    HS_EXIT_FILEIO = 2,         /**< File IO error. */
-    HS_EXIT_INTERNAL = 3,       /**< Internal or miscellaneous error. */
-} hs_exit_value;
-
-
 
 /**
  * \typedef hs_trace_fn_t
@@ -120,20 +109,25 @@ void hs_base64(unsigned char const *buf, int n, char *out);
  * \brief Return codes from nonblocking hsync operations.
  */
 typedef enum {
-        HS_DONE =			0,	/**< Completed successfully. */
-        HS_BLOCKED =		1, 	/**< Blocked waiting for more data. */
-        HS_RUNNING  =            2,      /**< Not yet finished or
-                                         * blocked.  This value should
-                                         * never be returned to the
-                                         * caller.  */
-        HS_IO_ERROR =		(-1),   /**< Error in file or network IO */
-        HS_MEM_ERROR =		(-2),   /**< Out of memory. */
-        HS_SHORT_STREAM	=	(-3),	/**< Unexpected end of input file. */
-        HS_BAD_MAGIC =          (-4),   /**< Illegal value on stream. */
-        HS_UNIMPLEMENTED =      (-5),   /**< Author is lazy. */
+    HS_DONE =		0,	/**< Completed successfully. */
+    HS_BLOCKED =	1, 	/**< Blocked waiting for more data. */
+    HS_RUNNING  =       2,      /**< Not yet finished or blocked.
+                                 * This value should never be returned
+                                 * to the caller.  */
+    
+    HS_IO_ERROR =	100,   /**< Error in file or network IO. */
+    HS_SYNTAX_ERROR =   101,   /**< Command line syntax error. */
+    HS_MEM_ERROR =	102,   /**< Out of memory. */
+    HS_SHORT_STREAM =	103,	/**< Unexpected end of input file. */
+    HS_BAD_MAGIC =      104,   /**< Bad magic number at start of
+                                   stream.  Probably not a libhsync
+                                   file, or possibly the wrong kind of
+                                   file or from an incompatible
+                                   library version. */
+    HS_UNIMPLEMENTED =  105,   /**< Author is lazy. */
+    HS_CORRUPT =        106,   /**< Unbelievable value in stream. */
 } hs_result;
 
-hs_exit_value hs_result_to_exit(hs_result r);
 
 
 /**

@@ -26,7 +26,8 @@
 
 lib_LTLIBRARIES = libhsync.la
 
-libhsync_la_SOURCES =				\
+libhsync_la_SOURCES = \
+	readsums.c \
 	base64.c				\
 	buf.c buf.h				\
 	checksum.c checksum.h			\
@@ -45,7 +46,6 @@ libhsync_la_SOURCES =				\
 	patch.c					\
 	protocol.h				\
 	prototab.c prototab.h			\
-	readsums.c \
 	scoop.c					\
 	stream.c stream.h			\
 	sumset.c sumset.h \

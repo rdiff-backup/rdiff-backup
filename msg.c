@@ -3,7 +3,7 @@
  * libhsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -25,21 +25,29 @@
 #include "hsync.h"
 
 
-/* TODO: Translate from hs_result to human-readable messages. */
+/** \brief Translate from hs_result to human-readable messages. */
 char const *hs_strerror(hs_result r)
 {
-        switch (r) {
-        case HS_DONE:
-                return "OK";
-        case HS_RUNNING:
-                return "still running";
-        case HS_BAD_MAGIC:
-                return "bad magic or stream corrupt";
-        case HS_BLOCKED:
-                return "blocked waiting for input";
-        case HS_SHORT_STREAM:
-                return "unexpected end of file";
-        default:
-                return "unknown error";
-        }
+    switch (r) {
+    case HS_DONE:
+        return "OK";
+    case HS_RUNNING:
+        return "still running";
+    case HS_BAD_MAGIC:
+        return "bad magic number at start of stream";
+    case HS_BLOCKED:
+        return "blocked waiting for input";
+    case HS_SHORT_STREAM:
+        return "unexpected end of file";
+    case HS_CORRUPT:
+        return "stream corrupt";
+    case HS_UNIMPLEMENTED:
+        return "unimplemented case";
+    case HS_MEM_ERROR:
+        return "out of memory";
+    case HS_IO_ERROR:
+        return "IO error";
+    default:
+        return "unknown error";
+    }
 }

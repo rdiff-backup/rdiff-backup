@@ -67,7 +67,7 @@ hs_file_open(char const *filename, char const *mode)
 	hs_error("Error opening \"%s\" for %s: %s", filename,
 		  is_write ? "write" : "read",
 		  strerror(errno));
-	exit(HS_EXIT_FILEIO);
+	exit(HS_IO_ERROR);
     }
     
     return f;

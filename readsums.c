@@ -73,7 +73,12 @@ static hs_result hs_loadsig_s_blocklen(hs_job_t *job)
     if ((result = hs_suck_n32(job->stream, &l)) != HS_DONE)
         return result;
     job->block_len = l;
-    hs_trace("got strong sum %d", job->block_len);
+    hs_trace("got block length %d", job->block_len);
+
+    if (job->block_len < 1) {
+        hs_error("block length of %d is bogus", job->block_len);
+        return HS_CORRUPT;
+    }
 
     job->statefn = hs_loadsig_s_stronglen;
     return HS_RUNNING;
@@ -106,8 +111,6 @@ static hs_result hs_loadsig_s_header(hs_job_t *job)
  *
  * Once there, it can be used to generate a delta to a newer version of
  * the file.
- *
- * \todo Perhaps call this `readsig' or `loadsig' instead?
  */
 hs_job_t *hs_loadsig_begin(hs_stream_t *stream, hs_sumset_t **sumset)
 {

@@ -65,19 +65,6 @@ static const char *hs_severities[] = {
     "", "", ""
 };
 
-/**
- * \brief Return the appropriate shell exit value for an internal
- * result code.
- */
-hs_exit_value hs_result_to_exit(hs_result r)
-{
-    switch (r) {
-    case HS_DONE:
-        return HS_EXIT_OK;
-    default:
-        return HS_EXIT_INTERNAL;
-    }
-}
 
 
 /**
