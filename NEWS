@@ -1,6 +1,6 @@
 Changes in 0.4.0:
 
-* Better regression suite.
+* A much better regression suite.
 
 * CHECKSUM token includes the file's checksum up to the current
   location, to aid in self-testing.

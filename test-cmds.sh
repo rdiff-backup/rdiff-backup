@@ -9,7 +9,7 @@
 source ${srcdir:=.}/testfns.sh $0 $@
 
 out=$tmpdir/out.tmp
-cmds=$testdir/cmds.txt
+cmds=$testdir/cmds
 tmp=$tmpdir/bin.tmp
 
 run_test hsemit < $cmds > $tmp
