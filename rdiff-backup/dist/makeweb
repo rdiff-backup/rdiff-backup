@@ -17,7 +17,7 @@ webprefix = "/home/ben/misc/html/mirror/rdiff-backup/"
 RunCommand("cp *%s* %s" % (version, webprefix))
 RunCommand("rman -f html -r '' rdiff-backup.1 > %srdiff-backup.1.html"
 		   % webprefix)
-RunCommand("cp FAQ.html CHANGELOG %s" % webprefix)
+RunCommand("cp FAQ.html CHANGELOG src/rdiff-backup %s" % webprefix)
 
 
 os.chdir(webprefix)
