@@ -25,3 +25,4 @@ print "cd ", webprefix
 RunCommand("rm latest latest.rpm latest.tar.gz")
 RunCommand("ln -s *%s*rpm latest.rpm" % (version,))
 RunCommand("ln -s *%s*tar.gz latest.tar.gz" % (version,))
+RunCommand("./Make")
