@@ -146,53 +146,6 @@ class DSRPath(RPath):
 			RPath.setmtime(self, self.newmtime)
 
 
-class DestructiveStepping:
-	"""Destructive stepping"""
-	def initialize(dsrpath, source):
-		"""Change permissions of dsrpath, possibly delay writes
-
-		Abort if we need to access something and can't.  If the file
-		is on the source partition, just log warning and return true.
-		Return false if everything good to go.
-
-		"""
-		def abort():
-			Log.FatalError("Missing access to file %s - aborting." %
-						   dsrpath.path)
-
-		def try_chmod(perms):
-			"""Try to change the perms.  If fail, return error."""
-			try: dsrpath.chmod_bypass(perms)
-			except os.error, err: return err
-			return None
-
-		if dsrpath.isreg() and not dsrpath.readable():
-			if source:
-				if Globals.change_source_perms and dsrpath.isowner():
-					err = try_chmod(0400)
-					if err:
-						warn(err)
-						return 1
-				else:
-					warn("No read permissions")
-					return 1
-			elif not Globals.change_mirror_perms or try_chmod(0600): abort()
-		elif dsrpath.isdir():
-			if source and (not dsrpath.readable() or not dsrpath.executable()):
-				if Globals.change_source_perms and dsrpath.isowner():
-					err = try_chmod(0500)
-					if err:
-						warn(err)
-						return 1
-				else:
-					warn("No read or exec permissions")
-					return 1
-			elif not source and not dsrpath.hasfullperms():
-				if Globals.change_mirror_perms: try_chmod(0700)
-
-MakeStatic(DestructiveStepping)
-
-
 class DestructiveSteppingFinalizer(IterTreeReducer):
 		"""Finalizer that can work on an iterator of dsrpaths
 
