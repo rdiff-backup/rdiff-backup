@@ -73,6 +73,8 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 				   % (SourceDir, dest_dir)
 
 	rpin, rpout = SetConnections.InitRPs([src_dir, dest_dir], remote_schema)
+	Globals.postset_regexp('no_compression_regexp',
+						   Globals.no_compression_regexp_string, re.I)
 	_get_main().Backup(rpin, rpout)
 	_get_main().cleanup()
 

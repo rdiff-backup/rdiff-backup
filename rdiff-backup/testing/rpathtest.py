@@ -225,6 +225,47 @@ class FileIO(RPathTest):
 		fp_input.close()
 		rp.delete()
 
+	def testGzipWrite(self):
+		"""Test writing of gzipped files"""
+		try: os.mkdir("testfiles/output")
+		except OSError: pass
+		rp_gz = RPath(self.lc, "testfiles/output/file.gz")
+		rp = RPath(self.lc, "testfiles/output/file")
+		if rp.lstat(): rp.delete()
+		s = "Hello, world!"
+		
+		fp_out = rp_gz.open("wb", compress = 1)
+		fp_out.write(s)
+		assert not fp_out.close()
+		assert not os.system("gunzip testfiles/output/file.gz")
+		fp_in = rp.open("rb")
+		assert fp_in.read() == s
+		fp_in.close()
+
+	def testGzipRead(self):
+		"""Test reading of gzipped files"""
+		try: os.mkdir("testfiles/output")
+		except OSError: pass
+		rp_gz = RPath(self.lc, "testfiles/output/file.gz")
+		if rp_gz.lstat(): rp_gz.delete()
+		rp = RPath(self.lc, "testfiles/output/file")
+		s = "Hello, world!"
+		
+		fp_out = rp.open("wb")
+		fp_out.write(s)
+		assert not fp_out.close()
+		rp.setdata()
+		assert rp.lstat()
+
+		assert not os.system("gzip testfiles/output/file")
+		rp.setdata()
+		rp_gz.setdata()
+		assert not rp.lstat()
+		assert rp_gz.lstat()
+		fp_in = rp_gz.open("rb", compress = 1)
+		assert fp_in.read() == s
+		assert not fp_in.close()		
+
 
 class FileCopying(RPathTest):
 	"""Test file copying and comparison"""

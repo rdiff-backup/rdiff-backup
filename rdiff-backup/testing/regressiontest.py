@@ -131,6 +131,15 @@ class PathSetter(unittest.TestCase):
 class IncrementTest1(unittest.TestCase):
 	dirlist = ["testfiles/increment1", "testfiles/increment2",
 			   "testfiles/increment3", "testfiles/increment4"]
+	gzip_dirlist = ["testfiles/gzips/inc1", "testfiles/gzips/inc2"]
+
+	def testLocalGzipinc(self):
+		"""Local test small archive which exercises gzip options"""
+		BackupRestoreSeries(1, 1, self.gzip_dirlist)
+
+	def testRemoteBothGzipinc(self):
+		"""Remote test small archive which exercises gzip options"""
+		BackupRestoreSeries(None, None, self.gzip_dirlist)
 
 	def testLocalinc(self):
 		"""Test self.incrementing, and then restoring, local"""
