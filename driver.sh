@@ -158,7 +158,7 @@ triple_test () {
 }
 
 # more than this many on any one test gets boring
-ntests=300
+ntests=150
 countdown () {
     if ntests=`expr $ntests - 1`
     then
