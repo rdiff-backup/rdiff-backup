@@ -35,12 +35,22 @@
     #define PY_LONG_LONG LONG_LONG 
 #endif
 
+/* The following section is by Jeffrey A. Marshall and compensates for
+ * a bug in Mac OS X's S_ISFIFO and S_ISSOCK macros.
+ */
+#ifdef __APPLE__
+/* S_ISFIFO/S_ISSOCK macros from <sys/stat.h> on mac osx are bogus */
+#undef S_ISSOCK               /* their definition of a socket includes fifos */
+#undef S_ISFIFO               /* their definition of a fifo includes sockets */
+#define S_ISSOCK(mode)        (((mode) & S_IFMT) == S_IFSOCK)
+#define S_ISFIFO(mode)        (((mode) & S_IFMT) == S_IFIFO)
+#endif
+
 static PyObject *UnknownFileTypeError;
 static PyObject *c_make_file_dict(PyObject *self, PyObject *args);
 static PyObject *long2str(PyObject *self, PyObject *args);
 static PyObject *str2long(PyObject *self, PyObject *args);
 static PyObject *my_sync(PyObject *self, PyObject *args);
-
 
 /* Turn a stat structure into a python dictionary.  The preprocessor
    stuff taken from Python's posixmodule.c */
