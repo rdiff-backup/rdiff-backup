@@ -93,7 +93,7 @@ $Id$
 
    mdfour.c: This code has a different API to the RSA code in libmd
    and is coupled with librsync in unhealthy ways (trace?). Recommend
-   changing to RSA API. 
+   changing to RSA API.
     
  * Change popt library to proper automake conditional recursive
    SUBDIR instead of an EXTRA_LIBRARIES in a seperate dir (or just
@@ -293,7 +293,8 @@ $Id$
    * Just more testing in general.
 
    * Perhaps merge in Comfychair into a subdirectory and use that
-     rather than the shell-based scripts.
+     rather than the shell-based scripts. There is also the C based
+     "check" framework which looks nice.
 
    * Test broken pipes and that IO errors are handled properly.
 

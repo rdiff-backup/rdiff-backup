@@ -6,14 +6,18 @@ synchronization that was popularized by the rsync utility and is used in
 rproxy. This algorithm transfers the differences between 2 files without
 needing both files on the same system.
 
-It was originaly developed as part of rproxy, but is now used by other
-applications and has its own project on sourceforge.
+This library was previously known as libhsync up to version 0.9.0. It
+was originaly developed as part of rproxy, but is now used by other
+applications and has its own project on SourceForge.
+
+See the SourceForge project site for all released packages, mailing
+lists, bug tracker, patch tracker, and CVS.
 
   http://librsync.sourceforge.net/
 
-This library was previously known as libhsync up to version 0.9.0.
-
-To use anonymous CVS, see the file README.CVS in this directory.
+To use anonymous CVS, see the file README.CVS in this directory. Also
+read HACKING for a description of development conventions used by this
+project.
 
 >> Requirements
 
