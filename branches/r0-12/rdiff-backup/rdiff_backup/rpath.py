@@ -216,7 +216,7 @@ def make_socket_local(rpath):
 
 	"""
 	assert rpath.conn is Globals.local_connection
-	s = socket.socket(socket.AF_UNIX)
+	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 	try: s.bind(rpath.path)
 	except socket.error, exc:
 		raise SkipFileException("Socket error: " + str(exc))
