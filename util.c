@@ -29,5 +29,5 @@
 void 
 hs_bzero(void *buf, size_t size)
 {
-    return memset(buf, 0, size);
+    memset(buf, 0, size);
 }
