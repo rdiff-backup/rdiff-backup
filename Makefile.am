@@ -146,11 +146,7 @@ rdiff_SOURCES = rdiff.c isprefix.c isprefix.h rsync.h trace.h
 rdiff_LDADD = @BUILD_POPT@ librsync.la
 rdiff_DEPENDENCIES = @BUILD_POPT@ librsync.la
 
-mutate_SOURCES = mutate.c rsync.h trace.h
-mutate_LDADD = @BUILD_POPT@ librsync.la
-mutate_DEPENDENCIES = @BUILD_POPT@ librsync.la
-
-check_PROGRAMS = isprefix.driver mutate
+check_PROGRAMS = isprefix.driver
 
 isprefix_driver_SOURCES = isprefix.driver.c	\
 	isprefix.c isprefix.h
