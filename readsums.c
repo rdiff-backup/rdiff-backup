@@ -48,12 +48,29 @@
 #include "util.h"
 
 
+static hs_result hs_loadsig_s_blocklen(hs_job_t *job)
+{
+    int                 l;
+    hs_result           result;
+
+    if ((result = hs_suck_n32(job->stream, &l)) != HS_DONE)
+        return result;
+
+    job->block_len = l;
+    hs_trace("got block size %d", job->block_len);
+    
+    job->statefn = hs_job_s_complete;
+
+    return HS_DONE;
+}
+
+
 static hs_result hs_loadsig_s_header(hs_job_t *job)
 {
     int                 magic;
     hs_result           result;
 
-    if ((result = hs_suck_n32(job->stream, &magic)) != HS_OK)
+    if ((result = hs_suck_n32(job->stream, &magic)) != HS_DONE)
         return result;
 
     if (magic != HS_SIG_MAGIC) {
@@ -65,9 +82,9 @@ static hs_result hs_loadsig_s_header(hs_job_t *job)
 
     /* TODO: Get block size; store in sumset. */
 
-    job->statefn = hs_job_s_complete;
+    job->statefn = hs_loadsig_s_blocklen;
     
-    return HS_OK;
+    return HS_DONE;
 }
 
 
