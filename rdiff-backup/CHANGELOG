@@ -1,3 +1,10 @@
+New in v0.9.5 (2002/08/07)
+--------------------------
+
+Fixed --verbosity option (now both -v and --verbosity work).  Thanks
+to Chris Dumont for report.
+
+
 New in v0.9.4 (2002/07/24)
 --------------------------
 
