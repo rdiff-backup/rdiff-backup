@@ -37,5 +37,7 @@
        output of cvsweb through a proxy and then not through a proxy,
        and see how we go.
 
+   * run regression suite from CVS every night
+
 
 LocalWords: mdfour LocalWords mapptrs
