@@ -51,6 +51,14 @@ DIE=0
 	DIE=1
 }
 
+(libtool --version) < /dev/null > /dev/null 2>&1 || {
+	echo
+	echo "You must have libtool installed to compile $PROJECT."
+	echo "Download the appropriate package for your distribution,"
+	echo "or go to http://www.gnu.org/software/libtool/"
+	DIE=1
+}
+
 if test "$DIE" -eq 1; then
 	exit 1
 fi
