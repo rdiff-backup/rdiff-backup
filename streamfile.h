@@ -20,6 +20,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+enum hs_result _hs_fill_from_file(hs_stream_t *stream,
+                                  char *buf, size_t buf_len, FILE *f);
 
-int _hs_fill_from_file(hs_stream_t *stream, char *buf, size_t buf_len, FILE *f);
-int _hs_drain_to_file(hs_stream_t *stream, char *buf, size_t buf_len, FILE *f);
+enum hs_result _hs_drain_to_file(hs_stream_t *stream,
+                                 char *buf, size_t buf_len, FILE *f);
