@@ -93,7 +93,8 @@ static void rs_tube_catchup_literal(rs_job_t *job)
     stream->avail_out -= len;
 
     remain = job->lit_len - len;
-    rs_trace("transmitted %d literal bytes from tube, %d remain",
+    rs_trace("transmitted %d literal bytes from tube, "
+             "%d remain to be sent",
              len, remain);
 
     if (remain > 0) {
@@ -107,20 +108,54 @@ static void rs_tube_catchup_literal(rs_job_t *job)
 }
 
 
+/**
+ * Catch up on an outstanding copy command.
+ *
+ * Takes data from the scoop, and the input (in that order), and
+ * writes as much as will fit to the output, up to the limit of the
+ * outstanding copy.
+ */
 static void rs_tube_catchup_copy(rs_job_t *job)
 {
     int copied;
     rs_buffers_t *stream = job->stream;
+    size_t  len;
 
     assert(job->lit_len == 0);
     assert(job->copy_len > 0);
 
-    copied = rs_buffers_copy(stream, job->copy_len);
+    if (job->scoop_avail) {
+        len = job->copy_len;
+        if (len > job->scoop_avail) {
+            len = job->scoop_avail;
+        }
+        if (len > stream->avail_out) {
+            len = stream->avail_out;
+        }
 
-    job->copy_len -= copied;
+        memcpy(stream->next_out, job->scoop_next, len);
 
-    rs_trace("transmitted %d copy bytes from tube, %d remain",
-             copied, job->copy_len);
+        stream->next_out += len;
+        stream->avail_out -= len;
+        
+        job->scoop_avail -= len;
+        job->scoop_next += len;
+
+        job->copy_len -= len;
+
+        rs_trace("catch up on %d copied bytes from scoop, %d remain there, "
+                 "%d remain to be copied", 
+                 len, job->scoop_avail, job->copy_len);
+    }
+    
+    if (job->copy_len) {
+        copied = rs_buffers_copy(stream, job->copy_len);
+
+        job->copy_len -= copied;
+
+        rs_trace("transmitted %d copy bytes from tube, %d remain to be copied",
+                 copied, job->copy_len);
+    }
 }
 
 
@@ -159,11 +194,20 @@ int rs_tube_is_idle(rs_job_t const *job)
 }
 
 
-/*
- * Queue up a request to copy through LEN bytes from the input to the
- * output of the stream.  We can only accept this request if there is
- * no copy command already pending.
+/**
+ * Queue up a request to copy through \p len bytes from the input to
+ * the output of the stream.
+ *
+ * The data is copied from the scoop (if there is anything there) or
+ * from the input, on the next call to rs_blow_literal().
+ *
+ * We can only accept this request if there is no copy command already
+ * pending.
  */
+/* TODO: Try to do the copy immediately, and return a result.  Then,
+ * people can try to continue if possible.  Is this really required?
+ * Callers can just go out and back in again after flushing the
+ * tube. */
 void rs_blow_copy(rs_job_t *job, int len)
 {
     assert(job->copy_len == 0);
