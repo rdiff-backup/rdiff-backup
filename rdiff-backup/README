@@ -14,6 +14,11 @@ The default prefix is /usr, so files are put in /usr/bin,
 
 	python setup.py install --prefix=/usr/local
 
+A few special build arguments can be specified such as --librsync-dir,
+--lflags, and --libs, and the LIBRSYNC_DIR, LFLAGS, and LIBS
+environment variables will also be used.  Running setup.py with no
+arguments will also display some help.
+
 
 REQUIREMENTS:
 
