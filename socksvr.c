@@ -52,6 +52,7 @@ show_usage()
     printf("Usage: socksvr OPTIONS COMMAND ...\n"
            "Bind and listen on a port; invoke COMMAND on each connection\n"
            "Options:\n"
+           "  -1    serve just a single client, then exit\n"
            "  -D    turn on trace, if enabled in library\n");
 }
 
@@ -143,7 +144,7 @@ child_main(int newsock, char **argv)
 
 
 static int
-serve_client(int newsock, char **argv)
+fork_and_serve(int newsock, char **argv)
 {
     int pid;
 
@@ -192,19 +193,25 @@ main(int argc, char **argv)
     int                 port;
     int                 newsock;
     int                 c;
+    int                 single = 0;
 
     hs_trace_to(NULL);		/* may turn it on later */
-    while ((c = getopt(argc, argv, "knsD")) != -1) {
+    while ((c = getopt(argc, argv, "1D")) != -1) {
 	switch (c) {
 	case '?':
 	case ':':
 	    return -1;
+        case '1':
+            single = 1;
+            break;
     	case 'D':
 	    if (!hs_supports_trace()) {
 		_hs_error("library does not support trace");
 	    }
 	    hs_trace_to(hs_trace_to_stderr);
 	    break;
+        default:
+            abort();
 	}
     }
 
@@ -228,8 +235,15 @@ main(int argc, char **argv)
     while (1) {
         if ((newsock = accept_connection(sock)) < 0)
             return 1;
-        if ((serve_client(newsock, argv)) < 0)
-            return 1;
+        if (single) {
+            if (child_main(newsock, argv))
+                return 1;
+            else
+                return 0;
+        } else {
+            if ((fork_and_serve(newsock, argv)) < 0)
+                return 1;
+        }
     }
 
     return 0;                   /* probably unreached */

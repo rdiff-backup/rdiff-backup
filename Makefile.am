@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
-## Copyright (C) 2000 by Martin Pool
 
-## $Id$
+# Copyright (C) 2000 by Martin Pool
+# $Id$
 
 lib_LTLIBRARIES = libhsync.la
 
