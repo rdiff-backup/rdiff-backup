@@ -4,6 +4,12 @@ New in v0.13.5 (2004/??/??)
 Added error-correcting fsync suggestion by Antoine Perdaens.
 rdiff-backup may work better with NFS now.
 
+Fix by Dean Gaudet for --calculate-average mode (it broke somewhere in
+0.13.x).
+
+Fix for regress warning code:  rdiff-backup should warn you if you are
+trying to back up a directory into itself.
+
 
 New in v0.13.4 (2004/01/31)
 ---------------------------

@@ -178,7 +178,8 @@ def check_action():
 		if l == 2: pass # Will determine restore or backup later
 		else:
 			commandline_error("Switches missing or wrong number of arguments")
-	elif action == 'test-server': pass # test-server takes any number of args
+	elif action == 'test-server' or action == 'calculate-average':
+		pass # these two take any number of args
 	elif l > 2 or action not in arg_action_dict[l]:
 		commandline_error("Wrong number of arguments given.")
 
