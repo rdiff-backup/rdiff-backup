@@ -343,6 +343,9 @@ def backup_set_fs_globals(rpin, rpout):
 		SetConnections.UpdateGlobal('write_eas',
 									Globals.read_eas and dest_fsa.eas)
 	SetConnections.UpdateGlobal('change_ownership', dest_fsa.ownership)
+	if Globals.change_dir_inc_perms is None:
+		SetConnections.UpdateGlobal('change_dir_inc_perms',
+									dest_fsa.dir_inc_perms)
 	SetConnections.UpdateGlobal('chars_to_quote', dest_fsa.chars_to_quote)
 	if Globals.chars_to_quote:
 		for conn in Globals.connections:

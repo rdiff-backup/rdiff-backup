@@ -17,6 +17,7 @@ class FSAbilitiesTest(unittest.TestCase):
 	chars_to_quote = ""
 	ownership = (os.getuid() == 0)
 	hardlinks = fsync_dirs = 1
+	dir_inc_perms = 1
 
 	# Describes MS-Windows style file system
 	#dir_to_test = "/mnt/fat"
@@ -24,6 +25,7 @@ class FSAbilitiesTest(unittest.TestCase):
 	#chars_to_quote = "^a-z0-9_ -"
 	#ownership = hardlinks = 0
 	#fsync_dirs = 1
+	#dir_inc_perms = XXX
 	
 	def testReadOnly(self):
 		"""Test basic querying read only"""
@@ -52,6 +54,7 @@ class FSAbilitiesTest(unittest.TestCase):
 		assert fsa.ownership == self.ownership, fsa.ownership
 		assert fsa.hardlinks == self.hardlinks, fsa.hardlinks
 		assert fsa.fsync_dirs == self.fsync_dirs, fsa.fsync_dirs
+		assert fsa.dir_inc_perms == self.dir_inc_perms, fsa.dir_inc_perms
 
 		ctq_rp = new_dir.append("chars_to_quote")
 		assert ctq_rp.lstat()
