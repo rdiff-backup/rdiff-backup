@@ -28,4 +28,5 @@ do
     cmd="rdiff -I$inbuf signature $input $sig" 
     run_test $cmd
     check_compare $sig $expect "$cmd"
+    show_progress
 done

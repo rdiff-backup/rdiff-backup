@@ -19,5 +19,6 @@ do
 	run_test rdiff -I$b sum $file >$new
 	expect=$testdir/`basename $file .data`.expect
 	run_test cmp "$new" "$expect"
+        show_progress
     done
 done 

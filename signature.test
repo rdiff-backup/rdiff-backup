@@ -28,5 +28,6 @@ do
         expect=`echo $input | sed -e 's/.in$/.sig/'`
         run_test rdiff -I$inbuf signature "$input" "$new"
         cmp "$expect" "$new" || fail_test "signature -I$inbuf $input"
+        countdown
     done
 done

@@ -140,8 +140,6 @@ run_test () {
     if test -n "$VERBOSE" 
     then
 	echo "    $@" >&2
-    else
-        show_progress
     fi
 
     "$@" || fail_test "$?" "$@" 
@@ -164,18 +162,15 @@ ntests=300
 countdown () {
     if ntests=`expr $ntests - 1`
     then
-        :
+        cat $srcdir/dot
     else
+        echo OK
         exit 0
     fi
 }
 
 make_input () {
     cat $srcdir/COPYING
-}
-
-show_progress () {
-    cat $srcdir/dot
 }
 
 echo "$test_name: " | tr -d '/\n/'

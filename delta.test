@@ -30,5 +30,6 @@ do
         run_test $cmd
         expect=$testdir/`basename $delta .delta`.expect
         diff $expect $new || fail_test "$cmd"
+        show_progress
     done
 done

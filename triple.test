@@ -30,6 +30,8 @@ do
             run_test rdiff $debug -I$buf -O$buf patch $old $tmpdir/delta $tmpdir/new
 
             check_compare $new $tmpdir/new "triple -I$buf -O$buf $old $new"
+
+            show_progress
         done
     done
 done

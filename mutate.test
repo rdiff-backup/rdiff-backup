@@ -20,7 +20,6 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 old=$srcdir/COPYING
-i=0
 
 if which perl >/dev/null
 then
@@ -37,7 +36,7 @@ sig="$tmpdir/sig"
 delta="$tmpdir/delta"
 out="$tmpdir/out"
 
-while test $i -lt 100
+while true
 do
     perl "$srcdir/mutate.pl" $i 5 <"$old" >"$new" 2>"$tmpdir/mutate.log"
 
@@ -47,5 +46,5 @@ do
 
     check_compare "$new" "$out" "mutate $i $old $new"
 
-    i=`expr $i + 1`
+    countdown
 done
