@@ -117,6 +117,11 @@ check_PROGRAMS = hsemit hsinhale hsfilebufcat genmaptest \
 socksvr_SOURCES = socksvr.c trace.c util.c
 socksvr_LDADD =
 
+genmaptest_LDADD =
+
+hsfilebufcat_SOURCES = hsfilebufcat.c trace.c util.c filebuf.c netio.c fileutil.c
+hsfilebufcat_LDADD = 
+
 libhsyncinfo_SOURCES = libhsyncinfo.c
 
 hsnad_SOURCES = hsnad.c
@@ -124,8 +129,6 @@ hsnad_SOURCES = hsnad.c
 hsmksum_SOURCES = hsmksum.c
 
 hsmdfour_SOURCES = hsmdfour.c 
-
-hsfilebufcat_SOURCES = hsfilebufcat.c
 
 hsdecode_SOURCES = hsdecode.c
 
