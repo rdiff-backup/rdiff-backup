@@ -28,7 +28,7 @@ class StatsObj:
 					   'ChangedFiles',
 					   'ChangedSourceSize', 'ChangedMirrorSize',
 					   'IncrementFiles', 'IncrementFileSize')
-	stat_misc_attrs = ('Errors',)
+	stat_misc_attrs = ('Errors', 'TotalDestinationSizeChange')
 	stat_time_attrs = ('StartTime', 'EndTime', 'ElapsedTime')
 	stat_attrs = (('Filename',) + stat_time_attrs +
 				  stat_misc_attrs + stat_file_attrs)
@@ -65,6 +65,26 @@ class StatsObj:
 		"""Add 1 to value of attribute"""
 		self.__dict__[attr] += 1
 
+	def get_total_dest_size_change(self):
+		"""Return total destination size change
+
+		This represents the total change in the size of the
+		rdiff-backup destination directory.
+
+		"""
+		addvals = [self.NewFileSize, self.ChangedSourceSize,
+				   self.IncrementFileSize]
+		subtractvals = [self.DeletedFileSize, self.ChangedMirrorSize]
+		for val in addvals + subtractvals:
+			if val is None:
+				result = None
+				break
+		else: 
+			def addlist(l): return reduce(lambda x,y: x+y, l)
+			result = addlist(addvals) - addlist(subtractvals)
+		self.TotalDestinationSizeChange = result
+		return result
+
 	def get_stats_line(self, index, use_repr = 1):
 		"""Return one line abbreviated version of full stats string"""
 		file_attrs = map(lambda attr: str(self.get_stat(attr)),
@@ -95,7 +115,9 @@ class StatsObj:
 
 	def get_stats_string(self):
 		"""Return extended string printing out statistics"""
-		return self.get_timestats_string() + self.get_filestats_string()
+		return "%s%s%s" % (self.get_timestats_string(),
+						   self.get_filestats_string(),
+						   self.get_miscstats_string())
 
 	def get_timestats_string(self):
 		"""Return portion of statistics string dealing with time"""
@@ -112,8 +134,6 @@ class StatsObj:
 				self.ElapsedTime = self.EndTime - self.StartTime
 			timelist.append("ElapsedTime %.2f (%s)\n" %
 				   (self.ElapsedTime, Time.inttopretty(self.ElapsedTime)))
-		if self.Errors is not None:
-			timelist.append("Errors %d\n" % self.Errors)
 		return "".join(timelist)
 
 	def get_filestats_string(self):
@@ -130,8 +150,23 @@ class StatsObj:
 
 		return "".join(map(fileline, self.stat_file_pairs))
 
+	def get_miscstats_string(self):
+		"""Return portion of extended stat string about misc attributes"""
+		misc_string = ""
+		tdsc = self.get_total_dest_size_change()
+		if tdsc is not None:
+			misc_string += ("TotalDestinationSizeChange %s (%s)\n" %
+							(tdsc, self.get_byte_summary_string(tdsc)))
+		if self.Errors is not None: misc_string += "Errors %d\n" % self.Errors
+		return misc_string
+
 	def get_byte_summary_string(self, byte_count):
 		"""Turn byte count into human readable string like "7.23GB" """
+		if byte_count < 0:
+			sign = "-"
+			byte_count = -byte_count
+		else: sign = ""
+
 		for abbrev_bytes, abbrev_string in self.byte_abbrev_list:
 			if byte_count >= abbrev_bytes:
 				# Now get 3 significant figures
@@ -139,11 +174,11 @@ class StatsObj:
 				if abbrev_count >= 100: precision = 0
 				elif abbrev_count >= 10: precision = 1
 				else: precision = 2
-				return "%%.%df %s" % (precision, abbrev_string) \
+				return "%s%%.%df %s" % (sign, precision, abbrev_string) \
 					   % (abbrev_count,)
 		byte_count = round(byte_count)
-		if byte_count == 1: return "1 byte"
-		else: return "%d bytes" % (byte_count,)
+		if byte_count == 1: return sign + "1 byte"
+		else: return "%s%d bytes" % (sign, byte_count)
 
 	def get_stats_logstring(self, title):
 		"""Like get_stats_string, but add header and footer"""

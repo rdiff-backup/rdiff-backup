@@ -54,6 +54,15 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 
 	os.system(" ".join(cmdargs))	
 
+def cmd_schemas2rps(schema_list, remote_schema):
+	"""Input list of file descriptions and the remote schema, return rps
+
+	File descriptions should be strings of the form 'hostname.net::foo'
+
+	"""
+	return map(SetConnections.cmdpair2rp,
+			   SetConnections.get_cmd_pairs(schema_list, remote_schema))
+
 def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 				   current_time = None):
 	"""Backup src to dest internally
@@ -75,7 +84,7 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 		dest_dir = "cd test2/tmp; python ../../server.py ../../%s::../../%s" \
 				   % (SourceDir, dest_dir)
 
-	rpin, rpout = SetConnections.InitRPs([src_dir, dest_dir], remote_schema)
+	rpin, rpout = cmd_schemas2rps([src_dir, dest_dir], remote_schema)
 	Main.misc_setup([rpin, rpout])
 	Main.Backup(rpin, rpout)
 	Main.cleanup()
@@ -92,7 +101,7 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir,
 		dest_dir = "cd test2/tmp; python ../../server.py ../../%s::../../%s" \
 				   % (SourceDir, dest_dir)
 
-	rpin, rpout = SetConnections.InitRPs([src_dir, dest_dir], remote_schema)
+	rpin, rpout = cmd_schemas2rps([src_dir, dest_dir], remote_schema)
 	Main.misc_setup([rpin, rpout])
 	Main.backup_init_select(rpin, rpout)
 	if not rpout.lstat(): rpout.mkdir()
@@ -127,8 +136,7 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 		dest_dir = "cd test2/tmp; python ../../server.py ../../%s::../../%s" \
 				   % (SourceDir, dest_dir)
 
-	mirror_rp, dest_rp = SetConnections.InitRPs([mirror_dir, dest_dir],
-												remote_schema)
+	mirror_rp, dest_rp = cmd_schemas2rps([mirror_dir, dest_dir], remote_schema)
 	Time.setcurtime()
 	inc = get_increment_rp(mirror_rp, time)
 	if inc: Main.restore(get_increment_rp(mirror_rp, time), dest_rp)

@@ -49,7 +49,7 @@ static PyObject *c_make_file_dict(self, args)
   size = PyLong_FromLongLong((LONG_LONG)sbuf.st_size);
   inode = PyLong_FromLongLong((LONG_LONG)sbuf.st_ino);
 #else
-  size = PyInt_FromLong((long)sbuf.st_size);
+  size = PyInt_FromLong(sbuf.st_size);
   inode = PyInt_FromLong((long)sbuf.st_ino);
 #endif
   mode = (long)sbuf.st_mode;
@@ -64,7 +64,7 @@ static PyObject *c_make_file_dict(self, args)
   atime = PyLong_FromLongLong((LONG_LONG)sbuf.st_atime);
 #else
   mtime = PyInt_FromLong((long)sbuf.st_mtime);
-  atime = PyLong_FromLongLong((long)sbuf.st_atime);
+  atime = PyInt_FromLong((long)sbuf.st_atime);
 #endif
 
   /* Build return dictionary from stat struct */

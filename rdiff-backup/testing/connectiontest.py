@@ -168,13 +168,22 @@ class RedirectedConnectionTest(unittest.TestCase):
 
 	def testBasic(self):
 		"""Test basic operations with redirection"""
+		self.conna.Globals.set("tmp_val", 1)
+		self.connb.Globals.set("tmp_val", 2)
+		assert self.conna.Globals.get("tmp_val") == 1
+		assert self.connb.Globals.get("tmp_val") == 2
+
 		self.conna.Globals.set("tmp_connb", self.connb)
 		self.connb.Globals.set("tmp_conna", self.conna)
 		assert self.conna.Globals.get("tmp_connb") is self.connb
 		assert self.connb.Globals.get("tmp_conna") is self.conna
 
-		#self.conna.Test_SetConnGlobals(self.connb, "tmp_settest", 1)
-		#assert self.connb.Globals.get("tmp_settest")
+		val = self.conna.reval("Globals.get('tmp_connb').Globals.get",
+							   "tmp_val")
+		assert val == 2, val
+		val = self.connb.reval("Globals.get('tmp_conna').Globals.get",
+							   "tmp_val")
+		assert val == 1, val
 
 		assert self.conna.reval("Globals.get('tmp_connb').pow", 2, 3) == 8
 		self.conna.reval("Globals.tmp_connb.reval",

@@ -221,6 +221,18 @@ testfiles/select/1/1
 		select.filelist_get_sf(StringIO.StringIO("/foo/bar"), 0,
 							   "test")(root) == None
 
+	def testOtherFilesystems(self):
+		"""Test to see if --exclude-other-filesystems works correctly"""
+		root = DSRPath(1, Globals.local_connection, "/")
+		select = Select(root)
+		sf = select.other_filesystems_get_sf(0)
+		assert sf(root) is None
+		assert sf(RPath(Globals.local_connection, "/usr/bin")) is None, \
+			   "Assumption: /usr/bin is on the same filesystem as /"
+		assert sf(RPath(Globals.local_connection, "/proc")) == 0, \
+			   "Assumption: /proc is on a different filesystem"
+		assert sf(RPath(Globals.local_connection, "/boot")) == 0, \
+			   "Assumption: /boot is on a different filesystem"
 
 class ParseArgsTest(unittest.TestCase):
 	"""Test argument parsing"""

@@ -242,7 +242,9 @@ class RORPIter:
 			def init(): Hardlink.link_rp(diff_rorp, tf, basisrp)
 			return Robust.make_tf_robustaction(init, tf, basisrp)
 		elif basisrp and basisrp.isreg() and diff_rorp.isreg():
-			assert diff_rorp.get_attached_filetype() == 'diff'
+			if diff_rorp.get_attached_filetype() != 'diff':
+				raise RPathException("File %s appears to have changed during"
+									 " processing, skipping" % (basisrp.path,))
 			return Rdiff.patch_with_attribs_action(basisrp, diff_rorp)
 		else: # Diff contains whole file, just copy it over
 			if not basisrp: basisrp = base_rp.new_index(diff_rorp.index)

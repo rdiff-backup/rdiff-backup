@@ -17,6 +17,7 @@ class Local:
 	def get_local_rp(extension):
 		return RPath(Globals.local_connection, "testfiles/" + extension)
 
+	vftrp = get_local_rp('various_file_types')
 	inc1rp = get_local_rp('increment1')
 	inc2rp = get_local_rp('increment2')
 	inc3rp = get_local_rp('increment3')
@@ -68,6 +69,19 @@ class PathSetter(unittest.TestCase):
 			assert len(args) == 2
 
 		cmdstr = self.rb_schema + ' '.join(arglist)
+		print "executing " + cmdstr
+		assert not os.system(cmdstr)
+
+	def exec_rb_extra_args(self, time, extra_args, *args):
+		"""Run rdiff-backup on given arguments"""
+		arglist = []
+		if time: arglist.append("--current-time %s" % str(time))
+		arglist.append(self.src_prefix + args[0])
+		if len(args) > 1:
+			arglist.append(self.dest_prefix + args[1])
+			assert len(args) == 2
+
+		cmdstr = "%s %s %s" % (self.rb_schema, extra_args, ' '.join(arglist))
 		print "executing " + cmdstr
 		assert not os.system(cmdstr)
 
@@ -174,6 +188,23 @@ class Final(PathSetter):
 		self.set_connections("test1/", '../', 'test2/tmp/', '../../')
 		self.runtest()
 
+	def testMirroringLocal(self):
+		"""Run mirroring only everything remote"""
+		self.delete_tmpdirs()
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(10000, "-m",
+								"testfiles/various_file_types",
+								"testfiles/output")
+		assert CompareRecursive(Local.vftrp, Local.rpout, exclude_rbdir = None)
+
+	def testMirroringRemote(self):
+		"""Run mirroring only everything remote"""
+		self.delete_tmpdirs()
+		self.set_connections("test1/", "../", "test2/tmp/", "../../")
+		self.exec_rb_extra_args(10000, "-m",
+								"testfiles/various_file_types",
+								"testfiles/output")
+		assert CompareRecursive(Local.vftrp, Local.rpout, exclude_rbdir = None)
 
 class FinalSelection(PathSetter):
 	"""Test selection options"""

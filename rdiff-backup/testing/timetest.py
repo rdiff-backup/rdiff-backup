@@ -1,4 +1,4 @@
-import unittest
+import unittest, time
 from commontest import *
 import Globals, Time
 
@@ -107,6 +107,30 @@ class TimeTest(unittest.TestCase):
 		self.assertRaises(Time.TimeException, g2t, "hello")
 		self.assertRaises(Time.TimeException, g2t, "")
 		self.assertRaises(Time.TimeException, g2t, "3q")
+
+	def testSleeping(self):
+		"""Test sleep and sleep ratio"""
+		sleep_ratio = 0.5
+		time1 = time.time()
+		Time.sleep(0) # set initial time
+		time.sleep(1)
+		time2 = time.time()
+		Time.sleep(sleep_ratio)
+		time3 = time.time()
+		time.sleep(0.5)
+		time4 = time.time()
+		Time.sleep(sleep_ratio)
+		time5 = time.time()
+
+		sleep_ratio = 0.25
+		time.sleep(0.75)
+		time6 = time.time()
+		Time.sleep(sleep_ratio)
+		time7 = time.time()
+		
+		assert 0.9 < time3 - time2 < 1.1, time3 - time2
+		assert 0.4 < time5 - time4 < 0.6, time5 - time4
+		assert 0.2 < time7 - time6 < 0.3, time7 - time6
 
 
 if __name__ == '__main__': unittest.main()

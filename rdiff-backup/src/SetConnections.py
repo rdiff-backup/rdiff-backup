@@ -28,8 +28,13 @@ __conn_remote_cmds = [None]
 
 class SetConnectionsException(Exception): pass
 
-def InitRPs(arglist, remote_schema = None, remote_cmd = None):
-	"""Map the given file descriptions into rpaths and return list"""
+def get_cmd_pairs(arglist, remote_schema = None, remote_cmd = None):
+	"""Map the given file descriptions into command pairs
+
+	Command pairs are tuples cmdpair with length 2.  cmdpair[0] is
+	None iff it describes a local path, and cmdpair[1] is the path.
+
+	"""
 	global __cmd_schema
 	if remote_schema: __cmd_schema = remote_schema
 	elif not Globals.ssh_compression: __cmd_schema = __cmd_schema_no_compress
@@ -44,11 +49,10 @@ def InitRPs(arglist, remote_schema = None, remote_cmd = None):
 	elif remote_schema:
 		Log("Remote schema option ignored - no remote file "
 			"descriptions.", 2)
-
-	cmd_pairs = map(desc2cmd_pairs, desc_pairs)
+	cmdpairs = map(desc2cmd_pairs, desc_pairs)
 	if remote_cmd: # last file description gets remote_cmd
 		cmd_pairs[-1] = (remote_cmd, cmd_pairs[-1][1])
-	return map(cmdpair2rp, cmd_pairs)
+	return cmdpairs
 
 def cmdpair2rp(cmd_pair):
 	"""Return RPath from cmd_pair (remote_cmd, filename)"""

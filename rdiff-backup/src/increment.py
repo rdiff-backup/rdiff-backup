@@ -274,6 +274,7 @@ class IncrementITRB(StatsITRB):
 
 	def branch_process(self, branch):
 		"""Update statistics, and the has_changed flag if change in branch"""
+		if Globals.sleep_ratio is not None: Time.sleep(Globals.sleep_ratio)
 		if branch.changed: self.changed = 1	
 		self.add_file_stats(branch)
 
@@ -288,7 +289,7 @@ class MirrorITRB(StatsITRB):
 		StatsITRB.__init__(self)
 
 	def start_process(self, index, diff_rorp, mirror_dsrp):
-		"""Initialize statistics, do actual writing to mirror"""
+		"""Initialize statistics and do actual writing to mirror"""
 		self.start_stats(mirror_dsrp)
 		if diff_rorp and not diff_rorp.isplaceholder():
 			RORPIter.patchonce_action(None, mirror_dsrp, diff_rorp).execute()
@@ -312,6 +313,7 @@ class MirrorITRB(StatsITRB):
 
 	def branch_process(self, branch):
 		"""Update statistics with subdirectory results"""
+		if Globals.sleep_ratio is not None: Time.sleep(Globals.sleep_ratio)
 		self.add_file_stats(branch)
 
 
