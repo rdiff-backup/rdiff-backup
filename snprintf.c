@@ -1,3 +1,5 @@
+/* $Id$ */
+
 /*
  * Copyright Patrick Powell 1995
  * This code is based on code written by Patrick Powell (papowell@astart.com)
