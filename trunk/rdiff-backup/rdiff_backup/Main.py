@@ -57,10 +57,9 @@ def parse_cmdlineoptions(arglist):
 		  "parsable-output", "print-statistics", "quoting-char=",
 		  "remote-cmd=", "remote-schema=", "remove-older-than=",
 		  "restore-as-of=", "restrict=", "restrict-read-only=",
-		  "restrict-update-only=", "server", "sleep-ratio=",
-		  "ssh-no-compression", "terminal-verbosity=", "test-server",
-		  "verbosity=", "version", "windows-mode",
-		  "windows-time-format"])
+		  "restrict-update-only=", "server", "ssh-no-compression",
+		  "terminal-verbosity=", "test-server", "verbosity=",
+		  "version", "windows-mode", "windows-time-format"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: %s" % str(e))
 
@@ -133,8 +132,6 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "-s" or opt == "--server":
 			action = "server"
 			Globals.server = 1
-		elif opt == "--sleep-ratio":
-			Globals.set_float("sleep_ratio", arg, 0, 1, inclusive=0)
 		elif opt == "--ssh-no-compression":
 			Globals.set('ssh_compression', None)
 		elif opt == "--terminal-verbosity": Log.setterm_verbosity(arg)

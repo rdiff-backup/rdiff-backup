@@ -156,9 +156,6 @@ select_mirror = None
 # object.  Access is provided to increment error counts.
 ITRB = None
 
-# Percentage of time to spend sleeping.  None means never sleep.
-sleep_ratio = None
-
 # security_level has 4 values and controls which requests from remote
 # systems will be honored.  "all" means anything goes. "read-only"
 # means that the requests must not write to disk.  "update-only" means

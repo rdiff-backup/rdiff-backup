@@ -80,10 +80,6 @@ remote side.  See
 and
 .BR --windows-mode .
 .TP
-.BI "--checkpoint-interval " seconds
-This option controls every how many seconds rdiff-backup checkpoints
-its current status.  The default is 20.
-.TP
 .BI "--current-time " seconds
 This option is useful mainly for testing.  If set, rdiff-backup will
 it for the current time instead of consulting the clock.  The argument
@@ -230,7 +226,7 @@ metadata is written to a separate file, hard link information will not
 be lost even if the --no-hard-links option is given (however, mirror
 files will not be linked).  If many hard-linked files are present,
 this option can drastically increase memory usage.
-..TP
+.TP
 .B --null-separator
 Use nulls (\\0) instead of newlines (\\n) as line separators, which
 may help when dealing with filenames containing newlines.  This
@@ -323,10 +319,6 @@ but only allow writes as part of an incremental backup.  Requests for other type
 .IR path )
 will be rejected.
 .TP
-.B --resume
-Resume the last aborted backup.  If no aborted backups are found, exit
-with error.
-.TP
 .BI "--resume-window " seconds
 Resume the last aborted backup if it started less than the specified
 number of seconds ago.  Otherwise start a new backup.  The default is
@@ -335,13 +327,6 @@ number of seconds ago.  Otherwise start a new backup.  The default is
 .B --server
 Enter server mode (not to be invoked directly, but instead used by
 another rdiff-backup process on a remote computer).
-.TP
-.BI "--sleep-ratio " ratio
-Here ratio should be between 0 and 1 not inclusive.  When backing up
-rdiff-backup will try to spend that ratio of time just sleeping.  For
-example, if --sleep-ratio 0.33 is specified, rdiff-backup will spent
-about a third of the time asleep, just sitting there.  This can be
-helpful if rdiff-backup would normally push some resource too hard.
 .TP
 .B --ssh-no-compression
 When running ssh, do not use the -C option to enable compression.
@@ -893,6 +878,11 @@ handled correctly on systems with non-standard mknod syntax.
 Files whose names are close to the maximum length (e.g. 235 chars if
 the maximum is 255) may be skipped because the filenames of related
 increment files would be too long.
+.PP
+The gzip library in some versions of python have trouble producing
+files over 2GB in length.  This bug will prevent rdiff-backup from
+producing large compressed increments (snapshots or diffs).  A
+workaround is to disable compression for large uncompressable files.
 
 .SH AUTHOR
 Ben Escoto <bescoto@stanford.edu>
