@@ -1,6 +1,17 @@
+INSTALLATION:
+
 Thank you for trying rdiff-backup.  To install, run:
 
 	./setup.py install
+
+The default prefix is /usr, so files are put in /usr/bin,
+/usr/share/man/, etc.  An alternate prefix can be specified using the
+--prefix=<prefix> option.  For example:
+
+	./setup.py install --prefix=/usr/local
+
+
+REQUIREMENTS:
 
 Remember that you must have Python 2.2 or later and librsync installed
 (this means that "python" and "rdiff" should be in your path).  To
@@ -11,8 +22,9 @@ For remote operation, rdiff-backup should be in installed and in the
 PATH on remote system(s) (see man page for more information).
 
 
-If you have the above installed, and it still doesn't work, see the
-web page at http://rdiff-backup.stanford.edu for more
-information.
+TROUBLESHOOTING:
 
+If you have everything installed properly, and it still doesn't work,
+see the enclosed FAQ.html, the web page at
+http://rdiff-backup.stanford.edu, and/or the mailing list.
 
