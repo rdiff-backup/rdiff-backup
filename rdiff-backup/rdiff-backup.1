@@ -361,13 +361,16 @@ backing a normal unix file system to one that doesn't allow colons in
 filenames, is not case sensitive, and cannot store special files or
 hard links.  --windows-mode should not be necessary when backing up
 one windows file system to another, although --windows-time-format
-would still be required.
+would still be required.  If this switch is used for backing up, it
+must also be used when restoring, listing increments, etc.
 .TP
 .B --windows-time-format
 If this option is present, use underscores instead of colons in
 increment files, so 2001-07-15T04:09:38-07:00 becomes
 2001-07-15T04_09_38-07_00.  This option may be useful under various
-Microsoft file systems, which prohibit colons in filenames.
+Microsoft file systems, which prohibit colons in filenames.  If this
+switch is used for backing up, it must also be used when restoring,
+listing increments, etc.
 
 .SH EXAMPLES
 Simplest case---backup directory foo to directory bar, with increments
