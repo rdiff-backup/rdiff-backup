@@ -21,17 +21,6 @@ from rorpiter import *
 import Globals, Hardlink, MiscStats
 
 
-class SkipFileException(Exception):
-	"""Signal that the current file should be skipped but then continue
-
-	This exception will often be raised when there is problem reading
-	an individual file, but it makes sense for the rest of the backup
-	to keep going.
-
-	"""
-	pass
-
-
 class HighLevel:
 	"""High level static functions
 

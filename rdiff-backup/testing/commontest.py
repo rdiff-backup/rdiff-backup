@@ -1,12 +1,12 @@
 """commontest - Some functions and constants common to several test cases"""
 import os, sys
-sys.path.insert(0, "../src")
+sys.path.insert(0, "../rdiff_backup")
 from rpath import *
 from destructive_stepping import *
 from highlevel import *
 import Globals, Hardlink, SetConnections, Main
 
-SourceDir = "../src"
+SourceDir = "../rdiff_backup"
 AbsCurdir = os.getcwd() # Absolute path name of current directory
 AbsTFdir = AbsCurdir+"/testfiles"
 MiscDir = "../misc"
