@@ -31,7 +31,7 @@ libhsync_la_SOURCES = \
 	sumset.c sumset.h \
 	rollsum.c rollsum.h \
 	nad.c nad_p.h nadsrch.c nadout.c \
-	search.c
+	search.c search.h
 
 # TODO: If we ever care enough, build a second library containing only
 # the code necessary to be a client, and not stuff for encoding.  At
@@ -79,7 +79,7 @@ noinst_SCRIPTS = \
 	test-meta.sh \
 	$(try_scripts)
 
-test_data=test-chain/empty-sig			\
+test_data= \
 in-tricky/in-01					\
 in-tricky/in-02					\
 in-tricky/in-03					\
