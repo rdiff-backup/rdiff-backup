@@ -1,3 +1,4 @@
+*.driver
 *.la
 *.lo
 *.tmp
@@ -43,6 +44,8 @@ ltmain.sh
 missing
 mkinstalldirs
 prototab.c
+rdiff
+rdiff.sig
 sockcli
 sockrun
 socksvr
@@ -51,4 +54,3 @@ stamp-h.in
 test-*.d
 tmp-*
 trylog
-*.driver
