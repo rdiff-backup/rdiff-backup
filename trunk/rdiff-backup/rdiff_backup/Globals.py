@@ -150,9 +150,9 @@ ssh_compression = 1
 # If true, print statistics after successful backup
 print_statistics = None
 
-# On the reader and writer connections, the following will be
-# replaced by the source and mirror Select objects respectively.
-select_source, select_mirror = None, None
+# On the writer connection, the following will be set to the mirror
+# Select iterator.
+select_mirror = None
 
 # On the backup writer connection, holds the root incrementing branch
 # object.  Access is provided to increment error counts.
@@ -246,18 +246,4 @@ def postset_regexp_local(name, re_string, flags):
 	if flags: globals()[name] = re.compile(re_string, flags)
 	else: globals()[name] = re.compile(re_string)
 
-def set_select(source, Sel_Obj, rpath, tuplelist, quote_mode, *filelists):
-	"""Initialize select object using tuplelist
-
-	Note that each list in filelists must each be passed as
-	separate arguments, so each is recognized as a file by the
-	connection.  Otherwise we will get an error because a list
-	containing files can't be pickled.
-
-	"""
-	global select_source, select_mirror
-	sel = Sel_Obj(rpath, quote_mode)
-	sel.ParseArgs(tuplelist, filelists)
-	if source: select_source = sel
-	else: select_mirror = sel
 

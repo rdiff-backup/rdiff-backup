@@ -56,7 +56,7 @@ field names and values.
 
 from __future__ import generators
 import re, gzip
-import log, Globals, rpath, Time
+import log, Globals, rpath, Time, robust
 
 class ParsingError(Exception):
 	"""This is raised when bad or unparsable data is received"""
@@ -259,7 +259,7 @@ class rorp_extractor:
 metadata_rp = None
 metadata_fileobj = None
 def OpenMetadata(rp = None, compress = 1):
-	"""Open the Metadata file for writing"""
+	"""Open the Metadata file for writing, return metadata fileobj"""
 	global metadata_rp, metadata_fileobj
 	assert not metadata_fileobj, "Metadata file already open"
 	if rp: metadata_rp = rp
@@ -276,13 +276,13 @@ def WriteMetadata(rorp):
 
 def CloseMetadata():
 	"""Close the metadata file"""
-	global metadata_fileobj
+	global metadata_rp, metadata_fileobj
 	result = metadata_fileobj.close()
 	metadata_fileobj = None
 	metadata_rp.setdata()
 	return result
 
-def GetMetadata(rp = None, restrict_index = None, compressed = None):
+def GetMetadata(rp, restrict_index = None, compressed = None):
 	"""Return iterator of metadata from given metadata file rp"""
 	if compressed is None:
 		if rp.isincfile():
@@ -294,16 +294,17 @@ def GetMetadata(rp = None, restrict_index = None, compressed = None):
 	if restrict_index is None: return rorp_extractor(fileobj).iterate()
 	else: return rorp_extractor(fileobj).iterate_starting_with(restrict_index)
 
-def GetMetadata_at_time(rpdir, time, restrict_index = None, rplist = None):
-	"""Scan through rpdir, finding metadata file at given time, iterate
+def GetMetadata_at_time(rbdir, time, restrict_index = None, rblist = None):
+	"""Scan through rbdir, finding metadata file at given time, iterate
 
-	If rplist is given, use that instead of listing rpdir.  Time here
+	If rdlist is given, use that instead of listing rddir.  Time here
 	is exact, we don't take the next one older or anything.  Returns
 	None if no matching metadata found.
 
 	"""
-	if rplist is None: rplist = map(lambda x: rpdir.append(x), rpdir.listdir())
-	for rp in rplist:
+	if rblist is None: rblist = map(lambda x: rbdir.append(x),
+									robust.listrp(rbdir))
+	for rp in rblist:
 		if (rp.isincfile() and rp.getinctype() == "data" and
 			rp.getincbase_str() == "mirror_metadata"):
 			if Time.stringtotime(rp.getinctime()) == time:

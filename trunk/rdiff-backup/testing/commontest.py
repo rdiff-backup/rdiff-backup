@@ -131,7 +131,7 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 				   % (SourceDir, dest_dir)
 
 	mirror_rp, dest_rp = cmd_schemas2rps([mirror_dir, dest_dir], remote_schema)
-	Time.setcurtime()
+	Main.misc_setup([mirror_rp, dest_rp])
 	inc = get_increment_rp(mirror_rp, time)
 	if inc: Main.Restore(get_increment_rp(mirror_rp, time), dest_rp)
 	else: # use alternate syntax

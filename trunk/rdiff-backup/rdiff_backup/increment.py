@@ -285,10 +285,128 @@ class IncrementITRB(statistics.ITRB):
 		self.add_file_stats(branch)
 
 
+class PatchITRB(statistics.ITRB):
+	"""Patch an rpath with the given diff iters (use with IterTreeReducer)
+
+	The main complication here involves directories.  We have to
+	finish processing the directory after what's in the directory, as
+	the directory may have inappropriate permissions to alter the
+	contents or the dir's mtime could change as we change the
+	contents.
+
+	"""
+	def __init__(self, basis_root_rp):
+		"""Set basis_root_rp, the base of the tree to be incremented"""
+		self.basis_root_rp = basis_root_rp
+		assert basis_root_rp.conn is Globals.local_connection
+		#statistics.ITRB.__init__(self)
+		self.dir_replacement, self.dir_update = None, None
+		self.cached_rp = None
+
+	def get_rp_from_root(self, index):
+		"""Return RPath by adding index to self.basis_root_rp"""
+		if not self.cached_rp or self.cached_rp.index != index:
+			self.cached_rp = self.basis_root_rp.new_index(index)
+		return self.cached_rp
+
+	def can_fast_process(self, index, diff_rorp):
+		"""True if diff_rorp and mirror are not directories"""
+		rp = self.get_rp_from_root(index)
+		return not diff_rorp.isdir() and not rp.isdir()
+
+	def fast_process(self, index, diff_rorp):
+		"""Patch base_rp with diff_rorp (case where neither is directory)"""
+		rp = self.get_rp_from_root(index)
+		tf = TempFile.new(rp)
+		self.patch_to_temp(rp, diff_rorp, tf)
+		tf.rename(rp)
+
+	def patch_to_temp(self, basis_rp, diff_rorp, new):
+		"""Patch basis_rp, writing output in new, which doesn't exist yet"""
+		if diff_rorp.isflaglinked():
+			Hardlink.link_rp(diff_rorp, new, self.basis_root_rp)
+		elif diff_rorp.get_attached_filetype() == 'snapshot':
+			rpath.copy(diff_rorp, new)
+		else:
+			assert diff_rorp.get_attached_filetype() == 'diff'
+			Rdiff.patch_local(basis_rp, diff_rorp, new)
+		if new.lstat(): rpath.copy_attribs(diff_rorp, new)
+
+	def start_process(self, index, diff_rorp):
+		"""Start processing directory - record information for later"""
+		base_rp = self.base_rp = self.get_rp_from_root(index)
+		assert diff_rorp.isdir() or base_rp.isdir()
+		if diff_rorp.isdir(): self.prepare_dir(diff_rorp, base_rp)
+		else: self.set_dir_replacement(diff_rorp, base_rp)
+
+	def set_dir_replacement(self, diff_rorp, base_rp):
+		"""Set self.dir_replacement, which holds data until done with dir
+
+		This is used when base_rp is a dir, and diff_rorp is not.
+
+		"""
+		assert diff_rorp.get_attached_filetype() == 'snapshot'
+		self.dir_replacement = TempFile.new(base_rp)
+		rpath.copy_with_attribs(diff_rorp, self.dir_replacement)
+
+	def prepare_dir(self, diff_rorp, base_rp):
+		"""Prepare base_rp to turn into a directory"""
+		self.dir_update = diff_rorp.getRORPath() # make copy in case changes
+		if not base_rp.isdir():
+			if base_rp.lstat(): base_rp.delete()
+			base_rp.mkdir()
+		base_rp.chmod(0700)
+
+	def end_process(self):
+		"""Finish processing directory"""
+		if self.dir_update:
+			assert self.base_rp.isdir()
+			rpath.copy_attribs(self.dir_update, self.base_rp)
+		else:
+			assert self.dir_replacement and self.base_rp.isdir()
+			self.base_rp.rmdir()
+			self.dir_replacement.rename(self.base_rp)
+
+
+class IncrementITRB(PatchITRB):
+	"""Patch an rpath with the given diff iters and write increments
+
+	Like PatchITRB, but this time also write increments.
+
+	"""
+	def __init__(self, basis_root_rp, inc_root_rp):
+		self.inc_root_rp = inc_root_rp
+		self.cached_incrp = None
+		PatchITRB.__init__(self, basis_root_rp)
+
+	def get_incrp(self, index):
+		"""Return inc RPath by adding index to self.basis_root_rp"""
+		if not self.cached_incrp or self.cached_incrp.index != index:
+			self.cached_incrp = self.inc_root_rp.new_index(index)
+		return self.cached_incrp
+
+	def fast_process(self, index, diff_rorp):
+		"""Patch base_rp with diff_rorp and write increment (neither is dir)"""
+		rp = self.get_rp_from_root(index)
+		tf = TempFile.new(rp)
+		self.patch_to_temp(rp, diff_rorp, tf)
+		Increment(tf, rp, self.get_incrp(index))
+		tf.rename(rp)
+
+	def start_process(self, index, diff_rorp):
+		"""Start processing directory"""
+		base_rp = self.base_rp = self.get_rp_from_root(index)
+		assert diff_rorp.isdir() or base_rp.isdir()
+		if diff_rorp.isdir():
+			Increment(diff_rorp, base_rp, self.get_incrp(index))
+			self.prepare_dir(diff_rorp, base_rp)
+		else:
+			self.set_dir_replacement(diff_rorp, base_rp)
+			Increment(self.dir_replacement, base_rp, self.get_incrp(index))
+
+
 class MirrorITRB(statistics.ITRB):
 	"""Like IncrementITR, but only patch mirror directory, don't increment"""
-	# This is always None since no increments will be created
-	incrp = None
 	def __init__(self, inc_rpath):
 		"""Set inc_rpath, an rpath of the base of the inc tree"""
 		self.inc_rpath = inc_rpath
@@ -329,6 +447,4 @@ class MirrorITRB(statistics.ITRB):
 		"""Update statistics with subdirectory results"""
 		if Globals.sleep_ratio is not None: Time.sleep(Globals.sleep_ratio)
 		self.add_file_stats(branch)
-
-
 

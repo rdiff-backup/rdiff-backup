@@ -42,7 +42,7 @@ def get_delta_sigfileobj(sig_fileobj, rp_new):
 def get_delta_sigrp(rp_signature, rp_new):
 	"""Take signature rp and new rp, return delta file object"""
 	Log("Getting delta of %s with signature %s" %
-		(rp_new.path, rp_signature.path), 7)
+		(rp_new.path, rp_signature.get_indexpath()), 7)
 	return librsync.DeltaFile(rp_signature.open("rb"), rp_new.open("rb"))
 
 def write_delta_action(basis, new, delta, compress = None):

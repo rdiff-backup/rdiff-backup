@@ -23,7 +23,8 @@ from __future__ import generators
 import getopt, sys, re, os
 from log import Log
 import Globals, Time, SetConnections, selection, robust, rpath, \
-	   manage, highlevel, connection, restore, FilenameMapping, Security
+	   manage, highlevel, connection, restore, FilenameMapping, \
+	   Security, Hardlink
 
 
 action = None
@@ -108,8 +109,7 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 		elif opt == "--null-separator": Globals.set("null_separator", 1)
 		elif opt == "--parsable-output": Globals.set('parsable_output', 1)
-		elif opt == "--print-statistics":
-			Globals.set('print_statistics', 1)
+		elif opt == "--print-statistics": Globals.set('print_statistics', 1)
 		elif opt == "--quoting-char":
 			Globals.set('quoting_char', arg)
 			Globals.set('quoting_enabled', 1)
@@ -195,13 +195,11 @@ def misc_setup(rps):
 	Time.setcurtime(Globals.current_time)
 	FilenameMapping.set_init_quote_vals()
 	SetConnections.UpdateGlobal("client_conn", Globals.local_connection)
-
-	# This is because I originally didn't think compiled regexps
-	# could be pickled, and so must be compiled on remote side.
 	Globals.postset_regexp('no_compression_regexp',
 						   Globals.no_compression_regexp_string)
-
-	for conn in Globals.connections: robust.install_signal_handlers()
+	for conn in Globals.connections:
+		conn.robust.install_signal_handlers()
+		conn.Hardlink.initialize_dictionaries()
 
 def take_action(rps):
 	"""Do whatever action says"""
@@ -238,20 +236,18 @@ def Main(arglist):
 def Backup(rpin, rpout):
 	"""Backup, possibly incrementally, src_path to dest_path."""
 	SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
-	backup_init_select(rpin, rpout)
+	backup_set_select(rpin)
 	backup_init_dirs(rpin, rpout)
 	if prevtime:
 		Time.setprevtime(prevtime)
-		highlevel.HighLevel.Mirror_and_increment(rpin, rpout, incdir)
-	else: highlevel.HighLevel.Mirror(rpin, rpout, incdir)
+		highlevel.Mirror_and_increment(rpin, rpout, incdir)
+	else: highlevel.Mirror(rpin, rpout)
 	rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
 
-def backup_init_select(rpin, rpout):
-	"""Create Select objects on source and dest connections"""
-	rpin.conn.Globals.set_select(1, selection.Select,
-								 rpin, select_opts, None, *select_files)
-	rpout.conn.Globals.set_select(0, selection.Select,
-								  rpout, select_mirror_opts, 1)
+def backup_set_select(rpin):
+	"""Create Select objects on source connection"""
+	rpin.conn.highlevel.HLSourceStruct.set_source_select(rpin, select_opts,
+														 *select_files)
 
 def backup_init_dirs(rpin, rpout):
 	"""Make sure rpin and rpout are valid, init data dir and logging"""
@@ -277,10 +273,14 @@ def backup_init_dirs(rpin, rpout):
 		if rpout.isdir() and not rpout.listdir(): # rpout is empty dir
 			rpout.chmod(0700) # just make sure permissions aren't too lax
 		elif not datadir.lstat() and not force: Log.FatalError(
-"""Destination directory %s exists, but does not look like a
-rdiff-backup directory.  Running rdiff-backup like this could mess up
-what is currently in it.  If you want to update or overwrite it, run
-rdiff-backup with the --force option.""" % rpout.path)
+"""Destination directory
+
+%s
+
+exists, but does not look like a rdiff-backup directory.  Running
+rdiff-backup like this could mess up what is currently in it.  If you
+want to update or overwrite it, run rdiff-backup with the --force
+option.""" % rpout.path)
 
 	if not rpout.lstat():
 		try: rpout.mkdir()
@@ -410,9 +410,10 @@ def restore_init_select(rpin, rpout):
 	the restore operation isn't.
 
 	"""
-	Globals.set_select(1, selection.Select, rpin, select_mirror_opts, None)
-	Globals.set_select(0, selection.Select,
-					   rpout, select_opts, None, *select_files)
+	restore._select_mirror = selection.Select(rpin)
+	restore._select_mirror.ParseArgs(select_mirror_opts, [])
+	restore._select_mirror.parse_rbdir_exclude()
+	restore._select_source = selection.Select(rpout)
 
 def restore_get_root(rpin):
 	"""Return (mirror root, index) and set the data dir
@@ -540,7 +541,6 @@ def ListChangedSince(rp):
 	root_rid = restore.RestoreIncrementData(index, inc_rpath, inc_list)
 	for rid in get_rids_recursive(root_rid):
 		if rid.inc_list:
-			if not rid.index: path = "."
-			else: path = "/".join(rid.index)
-			print "%-11s: %s" % (determineChangeType(rid.inc_list), path)
+			print "%-11s: %s" % (determineChangeType(rid.inc_list),
+								 rid.get_indexpath())
 

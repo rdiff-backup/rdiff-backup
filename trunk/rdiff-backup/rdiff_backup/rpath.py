@@ -71,8 +71,8 @@ def cmpfileobj(fp1, fp2):
 def check_for_files(*rps):
 	"""Make sure that all the rps exist, raise error if not"""
 	for rp in rps:
-		if not rp.lstat():
-			raise RPathException("File %s does not exist" % rp.path)
+		if not rp.lstat(): raise RPathException("File %s does not exist"
+												% rp.get_indexpath())
 
 def move(rpin, rpout):
 	"""Move rpin to rpout, renaming if possible"""
@@ -85,7 +85,8 @@ def copy(rpin, rpout):
 	"""Copy RPath rpin to rpout.  Works for symlinks, dirs, etc."""
 	log.Log("Regular copying %s to %s" % (rpin.index, rpout.path), 6)
 	if not rpin.lstat():
-		raise RPathException, ("File %s does not exist" % rpin.index)
+		if rpout.lstat(): rpout.delete()
+		return
 
 	if rpout.lstat():
 		if rpin.isreg() or not cmp(rpin, rpout):
@@ -181,7 +182,7 @@ def cmp_attribs(rp1, rp2):
 def copy_with_attribs(rpin, rpout):
 	"""Copy file and then copy over attributes"""
 	copy(rpin, rpout)
-	copy_attribs(rpin, rpout)
+	if rpin.lstat(): copy_attribs(rpin, rpout)
 
 def quick_cmp_with_attribs(rp1, rp2):
 	"""Quicker version of cmp_with_attribs
@@ -204,9 +205,11 @@ def rename(rp_source, rp_dest):
 	assert rp_source.conn is rp_dest.conn
 	log.Log(lambda: "Renaming %s to %s" %
 			(rp_source.path, rp_dest.path), 7)
-	rp_source.conn.os.rename(rp_source.path, rp_dest.path)
-	rp_dest.data = rp_source.data
-	rp_source.data = {'type': None}
+	if not rp_source.lstat(): rp_dest.delete()
+	else:
+		rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+		rp_dest.data = rp_source.data
+		rp_source.data = {'type': None}
 
 def tupled_lstat(filename):
 	"""Like os.lstat, but return only a tuple, or None if os.error
@@ -286,8 +289,6 @@ class RORPath:
 				(not Globals.change_ownership or self.issym())):
 				# Don't compare gid/uid for symlinks or if not change_ownership
 				pass
-			elif key == 'mtime':
-				log.Log("%s differs only in mtime, skipping" % (self.path,), 2)
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'devloc' or key == 'inode' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
@@ -319,27 +320,9 @@ class RORPath:
 		"""Reproduce RORPath from __getstate__ output"""
 		self.index, self.data = rorp_state
 
-	def get_rorpath(self):
+	def getRORPath(self):
 		"""Return new rorpath based on self"""
 		return RORPath(self.index, self.data.copy())
-
-	def make_placeholder(self):
-		"""Make rorp into a placeholder
-
-		This object doesn't contain any information about the file,
-		but, when passed along, may show where the previous stages are
-		in their processing.  It is the RORPath equivalent of fiber.
-		This placeholder size, in conjunction with the placeholder
-		threshold in Highlevel .. generate_dissimilar seem to yield an
-		OK tradeoff between unnecessary placeholders and lots of
-		memory usage, but I'm not sure exactly why.
-
-		"""
-		self.data = {'placeholder': " "*500}
-
-	def isplaceholder(self):
-		"""True if the object is a placeholder"""
-		return self.data.has_key('placeholder')
 
 	def lstat(self):
 		"""Returns type of file
@@ -862,12 +845,6 @@ class RPath(RORPath):
 		elif type == 'b': datatype = 'blk'
 		else: raise RPathException
 		self.setdata()
-
-	def getRORPath(self, include_contents = None):
-		"""Return read only version of self"""
-		rorp = RORPath(self.index, self.data)
-		if include_contents: rorp.setfile(self.open("rb"))
-		return rorp
 
 
 class RPathFileHook:
