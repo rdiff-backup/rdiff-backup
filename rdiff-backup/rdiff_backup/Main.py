@@ -562,17 +562,19 @@ def ListChangedSince(rp):
 
 def CheckDest(dest_rp):
 	"""Check the destination directory, """
+	if Globals.rbdir is None:
+		SetConnections.UpdateGlobal('rbdir',
+									dest_rp.append_path("rdiff-backup-data"))
 	need_check = checkdest_need_check(dest_rp)
 	if need_check is None:
 		Log.FatalError("No destination dir found at %s" % (dest_rp.path,))
 	elif need_check == 0:
 		Log.FatalError("Destination dir %s does not need checking" %
 					   (dest_rp.path,))
-	regress.Regress(dest_rp)
+	dest_rp.conn.regress.Regress(dest_rp)
 
 def checkdest_need_check(dest_rp):
 	"""Return None if no dest dir found, 1 if dest dir needs check, 0 o/w"""
-	assert dest_rp.conn is Globals.rbdir.conn
 	if not dest_rp.isdir() or not Globals.rbdir.isdir(): return None
 	curmirroot = Globals.rbdir.append("current_mirror")
 	curmir_incs = restore.get_inclist(curmirroot)
@@ -600,4 +602,4 @@ def checkdest_if_necessary(dest_rp):
 	need_check = checkdest_need_check(dest_rp)
 	if need_check == 1:
 		Log("Previous backup seems to have failed, checking now.", 2)
-		regress.Regress(dest_rp)
+		dest_rp.conn.regress.Regress(dest_rp)

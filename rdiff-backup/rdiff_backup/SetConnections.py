@@ -151,7 +151,9 @@ Couldn't start up the remote connection by executing
 
 Remember that, under the default settings, rdiff-backup must be
 installed in the PATH on the remote system.  See the man page for more
-information.""" % (exception, remote_cmd))
+information on this.  This message may also be displayed if the remote
+version of rdiff-backup is quite different from the local version (%s)."""
+					   % (exception, remote_cmd, Globals.version))
 		
 	if remote_version != Globals.version:
 		Log("Warning: Local version %s does not match remote version %s."

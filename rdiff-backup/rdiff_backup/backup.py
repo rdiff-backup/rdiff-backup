@@ -20,6 +20,7 @@
 """High level functions for mirroring and mirror+incrementing"""
 
 from __future__ import generators
+import errno
 import Globals, metadata, rorpiter, TempFile, Hardlink, robust, increment, \
 	   rpath, static, log, selection, Time, Rdiff, statistics
 
@@ -153,7 +154,7 @@ class DestinationStruct:
 				Hardlink.islinked(src_rorp or dest_rorp)):
 				dest_sig = rpath.RORPath(index)
 				dest_sig.flaglinked(Hardlink.get_link_index(dest_sig))
-			elif dest_rorp:
+			elif dest_rorp: 
 				dest_sig = dest_rorp.getRORPath()
 				if dest_rorp.isreg():
 					dest_rp = dest_base_rpath.new_index(index)
@@ -196,10 +197,11 @@ class CacheCollatedPostProcess:
 	    receives.
 
 	2.  The metadata must match what is stored in the destination
-	    directory.  If there is an error we do not update the dest
-	    directory for that file, and the old metadata is used.  Thus
-	    we cannot write any metadata until we know the file has been
-	    procesed correctly.
+	    directory.  If there is an error, either we do not update the
+	    dest directory for that file and the old metadata is used, or
+	    the file is deleted on the other end..  Thus we cannot write
+	    any metadata until we know the file has been procesed
+	    correctly.
 
 	The class caches older source_rorps and dest_rps so the patch
 	function can retrieve them if necessary.  The patch function can
@@ -218,8 +220,9 @@ class CacheCollatedPostProcess:
 		# the following should map indicies to lists [source_rorp,
 		# dest_rorp, changed_flag, success_flag] where changed_flag
 		# should be true if the rorps are different, and success_flag
-		# should be true if dest_rorp has been successfully updated to
-		# source_rorp.  They both default to false.
+		# should be 1 if dest_rorp has been successfully updated to
+		# source_rorp, and 2 if the destination file is deleted
+		# entirely.  They both default to false (0).
 		self.cache_dict = {}
 		self.cache_indicies = []
 
@@ -268,16 +271,25 @@ class CacheCollatedPostProcess:
 		if not changed or success:
 			if source_rorp: self.statfileobj.add_source_file(source_rorp)
 			if dest_rorp: self.statfileobj.add_dest_file(dest_rorp)
-		if success:
+		if success == 0: metadata_rorp = dest_rorp
+		elif success == 1:
 			self.statfileobj.add_changed(source_rorp, dest_rorp)
 			metadata_rorp = source_rorp
-		else: metadata_rorp = dest_rorp
+		else: metadata_rorp = None
 		if metadata_rorp and metadata_rorp.lstat():
 			metadata.WriteMetadata(metadata_rorp)
+
+	def in_cache(self, index):
+		"""Return true if given index is cached"""
+		return self.cache_dict.has_key(index)
 
 	def flag_success(self, index):
 		"""Signal that the file with given index was updated successfully"""
 		self.cache_dict[index][3] = 1
+
+	def flag_deleted(self, index):
+		"""Signal that the destination file was deleted"""
+		self.cache_dict[index][3] = 2
 
 	def flag_changed(self, index):
 		"""Signal that the file with given index has changed"""
@@ -290,6 +302,10 @@ class CacheCollatedPostProcess:
 	def get_source_rorp(self, index):
 		"""Retrieve source_rorp with given index from cache"""
 		return self.cache_dict[index][0]
+
+	def get_mirror_rorp(self, index):
+		"""Retrieve mirror_rorp with given index from cache"""
+		return self.cache_dict[index][1]
 
 	def close(self):
 		"""Process the remaining elements in the cache"""
@@ -335,9 +351,12 @@ class PatchITRB(rorpiter.ITRBranch):
 		rp = self.get_rp_from_root(index)
 		tf = TempFile.new(rp)
 		if self.patch_to_temp(rp, diff_rorp, tf):
-			if tf.lstat(): rpath.rename(tf, rp)
-			elif rp.lstat(): rp.delete()
-			self.CCPP.flag_success(index)
+			if tf.lstat():
+				rpath.rename(tf, rp)
+				self.CCPP.flag_success(index)
+			elif rp.lstat():
+				rp.delete()
+				self.CCPP.flag_deleted(index)
 		else: 
 			tf.setdata()
 			if tf.lstat(): tf.delete()
@@ -355,7 +374,23 @@ class PatchITRB(rorpiter.ITRBranch):
 			if robust.check_common_error(self.error_handler,
 			   Rdiff.patch_local, (basis_rp, diff_rorp, new)) == 0: return 0
 		if new.lstat(): rpath.copy_attribs(diff_rorp, new)
-		return 1
+		return self.matches_cached_rorp(diff_rorp, new)
+
+	def matches_cached_rorp(self, diff_rorp, new_rp):
+		"""Return true if new_rp matches cached src rorp
+
+		This is a final check to make sure the temp file just written
+		matches the stats which we got earlier.  If it doesn't it
+		could confuse the regress operation.  This is only necessary
+		for regular files.
+
+		"""
+		if not new_rp.isreg(): return 1
+		cached_rorp = self.CCPP.get_source_rorp(diff_rorp.index)
+		if cached_rorp.equal_loose(new_rp): return 1
+		log.ErrorLog.write_if_open("UpdateError", diff_rorp, "Updated mirror "
+					  "temp file %s does not match source" % (new_rp.path,))
+		return 0
 
 	def write_special(self, diff_rorp, new):
 		"""Write diff_rorp (which holds special file) to new"""
@@ -370,7 +405,8 @@ class PatchITRB(rorpiter.ITRBranch):
 		base_rp = self.base_rp = self.get_rp_from_root(index)
 		assert diff_rorp.isdir() or base_rp.isdir() or not base_rp.index
 		if diff_rorp.isdir(): self.prepare_dir(diff_rorp, base_rp)
-		else: self.set_dir_replacement(diff_rorp, base_rp)
+		elif self.set_dir_replacement(diff_rorp, base_rp):
+			self.CCPP.flag_success(index)
 
 	def set_dir_replacement(self, diff_rorp, base_rp):
 		"""Set self.dir_replacement, which holds data until done with dir
@@ -380,8 +416,15 @@ class PatchITRB(rorpiter.ITRBranch):
 		"""
 		assert diff_rorp.get_attached_filetype() == 'snapshot'
 		self.dir_replacement = TempFile.new(base_rp)
-		rpath.copy_with_attribs(diff_rorp, self.dir_replacement)
+		if not self.patch_to_temp(None, diff_rorp, self.dir_replacement):
+			if self.dir_replacement.lstat(): self.dir_replacement.delete()
+			# Was an error, so now restore original directory
+			rpath.copy_with_attribs(self.CCPP.get_mirror_rorp(diff_rorp.index),
+									self.dir_replacement)
+			success = 0
+		else: success = 1
 		if base_rp.isdir(): base_rp.chmod(0700)
+		return success
 
 	def prepare_dir(self, diff_rorp, base_rp):
 		"""Prepare base_rp to turn into a directory"""
@@ -389,6 +432,10 @@ class PatchITRB(rorpiter.ITRBranch):
 		if not base_rp.isdir():
 			if base_rp.lstat(): base_rp.delete()
 			base_rp.mkdir()
+			self.CCPP.flag_success(diff_rorp.index)
+		else: # maybe no change, so query CCPP before tagging success
+			if self.CCPP.in_cache(diff_rorp.index):
+				self.CCPP.flag_success(diff_rorp.index)
 		base_rp.chmod(0700)
 
 	def end_process(self):
@@ -401,7 +448,6 @@ class PatchITRB(rorpiter.ITRBranch):
 			self.base_rp.rmdir()
 			if self.dir_replacement.lstat():
 				rpath.rename(self.dir_replacement, self.base_rp)
-		self.CCPP.flag_success(self.base_rp.index)
 
 
 class IncrementITRB(PatchITRB):
@@ -421,25 +467,48 @@ class IncrementITRB(PatchITRB):
 			self.cached_incrp = self.inc_root_rp.new_index(index)
 		return self.cached_incrp
 
+	def inc_with_checking(self, new, old, inc_rp):
+		"""Produce increment taking new to old checking for errors"""
+		try: inc = increment.Increment(new, old, inc_rp)
+		except OSError, exc:
+			if (errno.errorcode.has_key(exc[0]) and
+				errno.errorcode[exc[0]] == 'ENAMETOOLONG'):
+				self.error_handler(exc, old)
+				return None
+			else: raise
+		return inc
+
 	def fast_process(self, index, diff_rorp):
 		"""Patch base_rp with diff_rorp and write increment (neither is dir)"""
 		rp = self.get_rp_from_root(index)
 		tf = TempFile.new(rp)
-		self.patch_to_temp(rp, diff_rorp, tf)
-		increment.Increment(tf, rp, self.get_incrp(index))
-		if tf.lstat(): rpath.rename(tf, rp)
-		else: rp.delete()
-		self.CCPP.flag_success(index)
+		if self.patch_to_temp(rp, diff_rorp, tf):
+			inc = self.inc_with_checking(tf, rp, self.get_incrp(index))
+			if inc is not None:
+				if inc.isreg():
+					inc.fsync_with_dir() # Write inc before rp changed
+				if tf.lstat():
+					rpath.rename(tf, rp)
+					self.CCPP.flag_success(index)
+				elif rp.lstat():
+					rp.delete()
+					self.CCPP.flag_deleted(index)
+				return # normal return, otherwise error occurred
+		tf.setdata()
+		if tf.lstat(): tf.delete()
 
 	def start_process(self, index, diff_rorp):
 		"""Start processing directory"""
 		base_rp = self.base_rp = self.get_rp_from_root(index)
 		assert diff_rorp.isdir() or base_rp.isdir()
 		if diff_rorp.isdir():
-			increment.Increment(diff_rorp, base_rp, self.get_incrp(index))
+			inc = self.inc_with_checking(diff_rorp, base_rp,
+										 self.get_incrp(index))
+			if inc and inc.isreg():
+				inc.fsync_with_dir() # must writte inc before rp changed
 			self.prepare_dir(diff_rorp, base_rp)
-		else:
-			self.set_dir_replacement(diff_rorp, base_rp)
-			increment.Increment(self.dir_replacement, base_rp,
-								self.get_incrp(index))
+		elif (self.set_dir_replacement(diff_rorp, base_rp) and
+			  self.inc_with_checking(self.dir_replacement, base_rp,
+									 self.get_incrp(index))):
+			self.CCPP.flag_success(index)
 

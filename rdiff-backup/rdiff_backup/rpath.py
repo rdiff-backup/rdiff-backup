@@ -185,22 +185,6 @@ def copy_with_attribs(rpin, rpout, compress = 0):
 	copy(rpin, rpout, compress)
 	if rpin.lstat(): copy_attribs(rpin, rpout)
 
-def quick_cmp_with_attribs(rp1, rp2):
-	"""Quicker version of cmp_with_attribs
-
-	Instead of reading all of each file, assume that regular files
-	are the same if the attributes compare.
-
-	"""
-	if not cmp_attribs(rp1, rp2): return None
-	if rp1.isreg() and rp2.isreg() and (rp1.getlen() == rp2.getlen()):
-		return 1
-	return cmp(rp1, rp2)
-
-def cmp_with_attribs(rp1, rp2):
-	"""Combine cmp and cmp_attribs"""
-	return cmp_attribs(rp1, rp2) and cmp(rp1, rp2)
-
 def rename(rp_source, rp_dest):
 	"""Rename rp_source to rp_dest"""
 	assert rp_source.conn is rp_dest.conn
@@ -209,14 +193,13 @@ def rename(rp_source, rp_dest):
 	if not rp_source.lstat(): rp_dest.delete()
 	else:
 		if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode():
-			assert 0, ("Rename over same inode: %s to %s" %
-					   (rp_source.path, rp_dest.path))
+			log.Log("Warning: Attempt to rename over same inode: %s to %s"
+					% (rp_source.path, rp_dest.path), 2)
 			# You can't rename one hard linked file over another
 			rp_source.delete()
 		else: rp_source.conn.os.rename(rp_source.path, rp_dest.path)
 		rp_dest.data = rp_source.data
 		rp_source.data = {'type': None}
-
 
 def tupled_lstat(filename):
 	"""Like os.lstat, but return only a tuple, or None if os.error
@@ -273,6 +256,8 @@ class RORPath:
 		self.data = {'type': None}
 		self.file = None
 
+	def __nonzero__(self): return 1
+
 	def __eq__(self, other):
 		"""True iff the two rorpaths are equivalent"""
 		if self.index != other.index: return None
@@ -284,10 +269,38 @@ class RORPath:
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
-			elif key == 'inode' and (not self.isreg() or
-									 not Globals.compare_inode): pass
+			elif (key == 'inode' and
+				  (not self.isreg() or self.getnumlinks() == 1 or
+				   not Globals.compare_inode)): pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return None
+		return 1
+
+	def equal_loose(self, other):
+		"""True iff the two rorpaths are kinda equivalent
+
+		Sometimes because of missing permissions, a file cannot be
+		replicated exactly on the remote side.  This function tells
+		you whether the two files are close enough.  self must be the
+		file with more information.
+
+		"""
+		for key in self.data.keys(): # compare dicts key by key
+			if ((key == 'uid' or key == 'gid') and
+				(self.issym() or not Globals.change_ownership)):
+				# Don't compare gid/uid for symlinks, and only root
+				# can change ownership
+				pass
+			elif (key == 'type' and self.isspecial() and
+				  other.isreg() and other.getsize() == 0):
+				# Special files may be replaced with 0 len regular files
+				pass
+			elif key == 'atime' and not Globals.preserve_atime: pass
+			elif key == 'devloc' or key == 'nlink': pass
+			elif key == 'size' and not self.isreg(): pass
+			elif key == 'inode': pass
+			elif (not other.data.has_key(key) or
+				  self.data[key] != other.data[key]): return 0
 		return 1
 
 	def equal_verbose(self, other, check_index = 1,

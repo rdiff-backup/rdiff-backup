@@ -361,8 +361,8 @@ class FileAttributes(FileCopying):
 		"""Test attribute comparison success"""
 		testpairs = [(self.hl1, self.hl2)]
 		for a, b in testpairs:
-			assert rpath.cmp_attribs(a, b), "Err with %s %s" % (a.path, b.path)
-			assert rpath.cmp_attribs(b, a), "Err with %s %s" % (b.path, a.path)
+			assert a.equal_loose(b), "Err with %s %s" % (a.path, b.path)
+			assert b.equal_loose(a), "Err with %s %s" % (b.path, a.path)
 
 	def testCompFail(self):
 		"""Test attribute comparison failures"""
@@ -370,17 +370,15 @@ class FileAttributes(FileCopying):
 					 (self.exec1, self.exec2),
 					 (self.rf, self.hl1)]
 		for a, b in testpairs:
-			assert not rpath.cmp_attribs(a, b), \
-				   "Err with %s %s" % (a.path, b.path)
-			assert not rpath.cmp_attribs(b, a), \
-				   "Err with %s %s" % (b.path, a.path)
+			assert not a.equal_loose(b), "Err with %s %s" % (a.path, b.path)
+			assert not b.equal_loose(a), "Err with %s %s" % (b.path, a.path)
 
-	def testCompRaise(self):
+	def testCheckRaise(self):
 		"""Should raise exception when file missing"""
-		self.assertRaises(RPathException, rpath.cmp_attribs,
+		self.assertRaises(RPathException, rpath.check_for_files,
 						  self.nothing, self.hl1)
-		self.assertRaises(RPathException, rpath.cmp_attribs,
-						  self.noperms, self.nothing)
+		self.assertRaises(RPathException, rpath.check_for_files,
+						  self.hl1, self.nothing)
 
 	def testCopyAttribs(self):
 		"""Test copying attributes"""
@@ -402,7 +400,7 @@ class FileAttributes(FileCopying):
 				   self.exec2, self.hl1, self.dir, self.sym]:
 			rpath.copy_with_attribs(rp, out)
 			assert rpath.cmp(rp, out)
-			assert rpath.cmp_attribs(rp, out)
+			assert rp.equal_loose(out)
 			out.delete()
 
 	def testCopyRaise(self):

@@ -1,6 +1,3 @@
-
-
-
 #!/usr/bin/env python
 
 import os, re, shutil, time, sys, getopt
@@ -97,9 +94,9 @@ def MakeTar():
 					 "increment.py", "__init__.py", "iterfile.py",
 					 "lazy.py", "librsync.py", "log.py", "Main.py",
 					 "manage.py", "metadata.py", "Rdiff.py",
-					 "restore.py", "robust.py", "rorpiter.py",
-					 "rpath.py", "Security.py", "selection.py",
-					 "SetConnections.py", "static.py",
+					 "regress.py", "restore.py", "robust.py",
+					 "rorpiter.py", "rpath.py", "Security.py",
+					 "selection.py", "SetConnections.py", "static.py",
 					 "statistics.py", "TempFile.py", "Time.py"]:
 		assert not os.system("cp %s/%s %s/rdiff_backup" %
 							 (SourceDir, filename, tardir)), filename

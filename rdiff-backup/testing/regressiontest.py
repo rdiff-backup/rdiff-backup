@@ -152,6 +152,12 @@ class IncrementTest1(unittest.TestCase):
 		"""Increment/Restore when both directories are remote"""
 		BackupRestoreSeries(None, None, self.dirlist)
 
+	def test_long_filenames_local(self):
+		"""Test backing up a directory with lots of long filenames in it"""
+		Myrm(Local.rpout.path)
+		InternalBackup(1, 1, "testfiles/longfilenames1", Local.rpout.path, 100)
+		InternalBackup(1, 1, "testfiles/longfilenames2", Local.rpout.path, 200)
+
 	def testNoWrite(self):
 		"""Test backup/restore on dirs without write permissions"""
 		def write_string(rp, s = ""):

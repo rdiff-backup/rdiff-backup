@@ -369,7 +369,7 @@ class RestoreFile:
 
 	def get_restore_fp(self):
 		"""Return file object of restored data"""
-		assert self.relevant_incs[-1].isreg(), "Not a regular file"
+		assert self.relevant_incs[-1].isreg()
 		current_fp = self.get_first_fp()
 		for inc_diff in self.relevant_incs[1:]:
 			log.Log("Applying patch %s" % (inc_diff.get_indexpath(),), 7)
