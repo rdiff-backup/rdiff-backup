@@ -168,6 +168,17 @@ class RPathStatic:
 		rp_dest.data = rp_source.data
 		rp_source.data = {'type': None}
 
+		# If we are moving to a DSRPath, assume that the current times
+		# are the intended ones.  We need to save them now in case
+		# they are changed later.
+		if isinstance(rp_dest, DSRPath):
+			if rp_dest.delay_mtime:
+				if 'mtime' in rp_dest.data:
+					rp_dest.setmtime(rp_dest.data['mtime'])
+			if rp_dest.delay_atime:
+				if 'atime' in rp_dest.data:
+					rp_dest.setatime(rp_dest.data['atime'])
+
 	def tupled_lstat(filename):
 		"""Like os.lstat, but return only a tuple, or None if os.error
 
@@ -413,7 +424,7 @@ class RPath(RORPath):
 		self.base = base
 		self.path = apply(os.path.join, (base,) + self.index)
 		self.file = None
-		if data: self.data = data
+		if data or base is None: self.data = data
 		else: self.setdata()
 
 	def __str__(self):
@@ -492,6 +503,12 @@ class RPath(RORPath):
 		"""Return tuple for special file (major, minor)"""
 		s = self.conn.reval("lambda path: os.lstat(path).st_rdev", self.path)
 		return (s >> 8, s & 0xff)
+
+	def quote_path(self):
+		"""Set path from quoted version of index"""
+		quoted_list = [FilenameMapping.quote(path) for path in self.index]
+		self.path = apply(os.path.join, [self.base] + quoted_list)
+		self.setdata()
 
 	def chmod(self, permissions):
 		"""Wrapper around os.chmod"""
@@ -594,7 +611,8 @@ class RPath(RORPath):
 		if not self.lstat(): return # must have been deleted in meantime
 		elif self.isdir():
 			itm = RpathDeleter()
-			for dsrp in Select(self, None).set_iter(): itm(dsrp.index, dsrp)
+			for dsrp in Select(DSRPath(None, self)).set_iter():
+				itm(dsrp.index, dsrp)
 			itm.Finish()
 		else: self.conn.os.unlink(self.path)
 		self.setdata()
@@ -616,7 +634,7 @@ class RPath(RORPath):
 								  self.path.split("/")))
 		if self.path[0] == "/": newpath = "/" + newpath
 		elif not newpath: newpath = "."
-		return self.__class__(self.conn, newpath, ())
+		return self.newpath(newpath)
 
 	def dirsplit(self):
 		"""Returns a tuple of strings (dirname, basename)
@@ -635,9 +653,19 @@ class RPath(RORPath):
 		comps = normed.path.split("/")
 		return "/".join(comps[:-1]), comps[-1]
 
+	def newpath(self, newpath, index = ()):
+		"""Return new RPath with the same connection but different path"""
+		return self.__class__(self.conn, newpath, index)
+
 	def append(self, ext):
 		"""Return new RPath with same connection by adjoing ext"""
 		return self.__class__(self.conn, self.base, self.index + (ext,))
+
+	def append_path(self, ext, new_index = ()):
+		"""Like append, but add ext to path instead of to index"""
+		assert not self.index # doesn't make sense if index isn't ()
+		return self.__class__(self.conn, os.path.join(self.base, ext),
+							  new_index)
 
 	def new_index(self, index):
 		"""Return similar RPath but with new index"""

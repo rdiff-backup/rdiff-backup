@@ -22,20 +22,21 @@ class Main:
 			try: return open(filename, "r")
 			except IOError: Log.FatalError("Error opening file %s" % filename)
 
-		try: optlist, self.args = getopt.getopt(sys.argv[1:], "blmsv:V",
+		try: optlist, self.args = getopt.getopt(sys.argv[1:], "blmr:sv:V",
 			 ["backup-mode", "change-source-perms",
-			  "checkpoint-interval=", "current-time=", "exclude=",
-			  "exclude-device-files", "exclude-filelist=",
-			  "exclude-filelist-stdin", "exclude-mirror=",
-			  "exclude-regexp=", "force", "include=",
-			  "include-filelist=", "include-filelist-stdin",
-			  "include-regexp=", "list-increments", "mirror-only",
-			  "no-compression", "no-compression-regexp=",  
-			  "no-hard-links", "no-resume", "remote-cmd=",
-			  "remote-schema=", "remove-older-than=", "resume",
-			  "resume-window=", "server", "terminal-verbosity=",
-			  "test-server", "verbosity", "version",
-			  "windows-time-format"])
+			  "chars-to-quote=", "checkpoint-interval=",
+			  "current-time=", "exclude=", "exclude-device-files",
+			  "exclude-filelist=", "exclude-filelist-stdin",
+			  "exclude-mirror=", "exclude-regexp=", "force",
+			  "include=", "include-filelist=",
+			  "include-filelist-stdin", "include-regexp=",
+			  "list-increments", "mirror-only", "no-compression",
+			  "no-compression-regexp=", "no-hard-links", "no-resume",
+			  "parsable-output", "quoting-char=", "remote-cmd=",
+			  "remote-schema=", "remove-older-than=",
+			  "restore-as-of=", "resume", "resume-window=", "server",
+			  "terminal-verbosity=", "test-server", "verbosity",
+			  "version", "windows-mode", "windows-time-format"])
 		except getopt.error:
 			self.commandline_error("Error parsing commandline options")
 
@@ -43,6 +44,9 @@ class Main:
 			if opt == "-b" or opt == "--backup-mode": self.action = "backup"
 			elif opt == "--change-source-perms":
 				Globals.set('change_source_perms', 1)
+			elif opt == "--chars-to-quote":
+				Globals.set('chars_to_quote', arg)
+				Globals.set('quoting_enabled', 1)
 			elif opt == "--checkpoint-interval":
 				Globals.set_integer('checkpoint_interval', arg)
 			elif opt == "--current-time":
@@ -75,6 +79,13 @@ class Main:
 				Globals.set("no_compression_regexp_string", arg)
 			elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 			elif opt == '--no-resume': Globals.resume = 0
+			elif opt == "-r" or opt == "--restore-as-of":
+				self.restore_timestr = arg
+				self.action = "restore-as-of"
+			elif opt == "--parsable-output": Globals.set('parsable_output', 1)
+			elif opt == "--quoting-char":
+				Globals.set('quoting_char', arg)
+				Globals.set('quoting_enabled', 1)
 			elif opt == "--remote-cmd": self.remote_cmd = arg
 			elif opt == "--remote-schema": self.remote_schema = arg
 			elif opt == "--remove-older-than":
@@ -84,14 +95,16 @@ class Main:
 			elif opt == '--resume-window':
 				Globals.set_integer('resume_window', arg)
 			elif opt == "-s" or opt == "--server": self.action = "server"
-			elif opt == "--terminal-verbosity":
-				Log.setterm_verbosity(arg)
+			elif opt == "--terminal-verbosity": Log.setterm_verbosity(arg)
 			elif opt == "--test-server": self.action = "test-server"
 			elif opt == "-V" or opt == "--version":
 				print "rdiff-backup " + Globals.version
 				sys.exit(0)
-			elif opt == "-v" or opt == "--verbosity":
-				Log.setverbosity(arg)
+			elif opt == "-v" or opt == "--verbosity": Log.setverbosity(arg)
+			elif opt == "--windows-mode":
+				Globals.set('time_separator', "_")
+				Globals.set('chars_to_quote', ":")
+				Globals.set('quoting_enabled', 1)
 			elif opt == '--windows-time-format':
 				Globals.set('time_separator', "_")
 			else: Log.FatalError("Unknown option %s" % opt)
@@ -112,7 +125,8 @@ class Main:
 			self.commandline_error("No arguments given")
 		if l > 0 and self.action == "server":
 			self.commandline_error("Too many arguments given")
-		if l < 2 and (self.action == "backup" or self.action == "mirror"):
+		if l < 2 and (self.action == "backup" or self.action == "mirror" or
+					  self.action == "restore-as-of"):
 			self.commandline_error("Two arguments are required "
 								   "(source, destination).")
 		if l == 2 and (self.action == "list-increments" or
@@ -136,6 +150,8 @@ class Main:
 			for rp in rps: rp.setdata() # Update with userinfo
 
 		os.umask(077)
+		Time.setcurtime(Globals.current_time)
+		FilenameMapping.set_init_quote_vals()
 
 		# This is because I originally didn't think compiled regexps
 		# could be pickled, and so must be compiled on remote side.
@@ -147,7 +163,8 @@ class Main:
 		if self.action == "server":
 			PipeConnection(sys.stdin, sys.stdout).Server()
 		elif self.action == "backup": self.Backup(rps[0], rps[1])
-		elif self.action == "restore": apply(self.Restore, rps)
+		elif self.action == "restore": self.Restore(*rps)
+		elif self.action == "restore-as-of": self.RestoreAsOf(rps[0], rps[1])
 		elif self.action == "mirror": self.Mirror(rps[0], rps[1])
 		elif self.action == "test-server": SetConnections.TestConnections()
 		elif self.action == "list-increments": self.ListIncrements(rps[0])
@@ -175,7 +192,12 @@ class Main:
 		"""Turn dest_path into a copy of src_path"""
 		Log("Mirroring %s to %s" % (src_rp.path, dest_rp.path), 5)
 		self.mirror_check_paths(src_rp, dest_rp)
-		HighLevel.Mirror(src_rp, dest_rp, None) # No checkpointing - no rbdir
+		# Since no "rdiff-backup-data" dir, use root of destination.
+		SetConnections.UpdateGlobal('rbdir', dest_rp)
+		SetConnections.BackupInitConnections(src_rp.conn, dest_rp.conn)
+		RSI = Globals.backup_writer.Resume.ResumeCheck()
+		SaveState.init_filenames(None)
+		HighLevel.Mirror(src_rp, dest_rp, 1, RSI, None)
 
 	def mirror_check_paths(self, rpin, rpout):
 		"""Check paths and return rpin, rpout"""
@@ -193,7 +215,6 @@ rdiff-backup with the --force option if you want to mirror anyway.""" %
 		SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
 		self.backup_init_select(rpin, rpout)
 		self.backup_init_dirs(rpin, rpout)
-		Time.setcurtime(Globals.current_time)
 		RSI = Globals.backup_writer.Resume.ResumeCheck()
 		if self.prevtime:
 			Time.setprevtime(self.prevtime)
@@ -206,8 +227,9 @@ rdiff-backup with the --force option if you want to mirror anyway.""" %
 
 	def backup_init_select(self, rpin, rpout):
 		"""Create Select objects on source and dest connections"""
-		rpin.conn.Globals.set_select(1, rpin, self.select_opts)
-		rpout.conn.Globals.set_select(None, rpout, self.select_mirror_opts)
+		rpin.conn.Globals.set_select(DSRPath(1, rpin), self.select_opts)
+		rpout.conn.Globals.set_select(DSRPath(None, rpout),
+									  self.select_mirror_opts, 1)
 
 	def backup_init_dirs(self, rpin, rpout):
 		"""Make sure rpin and rpout are valid, init data dir and logging"""
@@ -267,9 +289,8 @@ may need to use the --exclude option.""" % (rpout.path, rpin.path), 2)
 	def backup_get_mirrorrps(self):
 		"""Return list of current_mirror rps"""
 		if not self.datadir.isdir(): return []
-		mirrorfiles = filter(lambda f: f.startswith("current_mirror."),
-							 self.datadir.listdir())
-		mirrorrps = map(lambda x: self.datadir.append(x), mirrorfiles)
+		mirrorrps = [self.datadir.append(fn) for fn in self.datadir.listdir()
+					 if fn.startswith("current_mirror.")]
 		return filter(lambda rp: rp.isincfile(), mirrorrps)
 
 	def backup_get_mirrortime(self):
@@ -299,22 +320,45 @@ went wrong during your last backup?  Using """ + mirrorrps[-1].path, 2)
 
 
 	def Restore(self, src_rp, dest_rp = None):
-		"""Main restoring function - take src_path to dest_path"""
-		Log("Starting Restore", 5)
-		rpin, rpout = self.restore_check_paths(src_rp, dest_rp)
-		self.restore_init_select(rpin, rpout)
-		inc_tup = self.restore_get_inctup(rpin)
-		mirror_base, mirror_rel_index = self.restore_get_mirror(rpin)
-		rtime = Time.stringtotime(rpin.getinctime())
-		Log.open_logfile(self.datadir.append("restore.log"))
-		HighLevel.Restore(rtime, mirror_base, mirror_rel_index, inc_tup, rpout)
+		"""Main restoring function
 
-	def restore_check_paths(self, rpin, rpout):
+		Here src_rp should be an increment file, and if dest_rp is
+		missing it defaults to the base of the increment.
+
+		"""
+		rpin, rpout = self.restore_check_paths(src_rp, dest_rp)
+		time = Time.stringtotime(rpin.getinctime())
+		self.restore_common(rpin, rpout, time)
+
+	def RestoreAsOf(self, rpin, target):
+		"""Secondary syntax for restore operation
+
+		rpin - RPath of mirror file to restore (not nec. with correct index)
+		target - RPath of place to put restored file
+
+		"""
+		self.restore_check_paths(rpin, target, 1)
+		try: time = Time.genstrtotime(self.restore_timestr)
+		except TimeError, exp: Log.FatalError(str(exp))
+		self.restore_common(rpin, target, time)
+
+	def restore_common(self, rpin, target, time):
+		"""Restore operation common to Restore and RestoreAsOf"""
+		Log("Starting Restore", 5)
+		mirror_root, index = self.restore_get_root(rpin)
+		mirror = mirror_root.new_index(index)
+		inc_rpath = self.datadir.append_path('increments', index)
+		self.restore_init_select(mirror_root, target)
+		Log.open_logfile(self.datadir.append("restore.log"))
+		Restore.Restore(inc_rpath, mirror, target, time)
+
+	def restore_check_paths(self, rpin, rpout, restoreasof = None):
 		"""Check paths and return pair of corresponding rps"""
-		if not rpin.lstat():
-			Log.FatalError("Increment file %s does not exist" % rpin.path)
-		if not rpin.isincfile():
-			Log.FatalError("""File %s does not look like an increment file.
+		if not restoreasof:
+			if not rpin.lstat():
+				Log.FatalError("Source file %s does not exist" % rpin.path)
+			elif not rpin.isincfile():
+				Log.FatalError("""File %s does not look like an increment file.
 
 Try restoring from an increment file (the filenames look like
 "foobar.2001-09-01T04:49:04-07:00.diff").""" % rpin.path)
@@ -322,8 +366,8 @@ Try restoring from an increment file (the filenames look like
 		if not rpout: rpout = RPath(Globals.local_connection,
 									rpin.getincbase_str())
 		if rpout.lstat():
-			Log.FatalError("Restore target %s already exists.  "
-						   "Will not overwrite." % rpout.path)
+			Log.FatalError("Restore target %s already exists,"
+						   "and will not be overwritten." % rpout.path)
 		return rpin, rpout
 
 	def restore_init_select(self, rpin, rpout):
@@ -334,81 +378,64 @@ Try restoring from an increment file (the filenames look like
 		the restore operation isn't.
 
 		"""
-		Globals.set_select(1, rpin, self.select_mirror_opts) 
-		Globals.set_select(None, rpout, self.select_opts)
+		Globals.set_select(DSRPath(1, rpin), self.select_mirror_opts) 
+		Globals.set_select(DSRPath(None, rpout), self.select_opts)
 
-	def restore_get_inctup(self, rpin):
-		"""Return increment tuple (incrp, list of incs)"""
-		rpin_dir = rpin.dirsplit()[0]
-		if not rpin_dir: rpin_dir = "/"
-		rpin_dir_rp = RPath(rpin.conn, rpin_dir)
-		incbase = rpin.getincbase()
-		incbasename = incbase.dirsplit()[1]
-		inclist = filter(lambda rp: rp.isincfile() and
-						 rp.getincbase_str() == incbasename,
-						 map(rpin_dir_rp.append, rpin_dir_rp.listdir()))
-		return IndexedTuple((), (incbase, inclist))
-
-	def restore_get_mirror(self, rpin):
-		"""Return (mirror file, relative index) and set the data dir
+	def restore_get_root(self, rpin):
+		"""Return (mirror root, index) and set the data dir
 
 		The idea here is to keep backing up on the path until we find
-		something named "rdiff-backup-data".  Then use that as a
-		reference to calculate the oldfile.  This could fail if the
-		increment file is pointed to in a funny way, using symlinks or
-		somesuch.
+		a directory that contains "rdiff-backup-data".  That is the
+		mirror root.  If the path from there starts
+		"rdiff-backup-data/increments*", then the index is the
+		remainder minus that.  Otherwise the index is just the path
+		minus the root.
 
-		The mirror file will have index (), so also return the index
-		relative to the rootrp.
+		All this could fail if the increment file is pointed to in a
+		funny way, using symlinks or somesuch.
 
 		"""
-		pathcomps = os.path.join(rpin.conn.os.getcwd(),
-								 rpin.getincbase().path).split("/")
-		for i in range(1, len(pathcomps)):
-			datadirrp = RPath(rpin.conn, "/".join(pathcomps[:i+1]))
-			if pathcomps[i] == "rdiff-backup-data" and datadirrp.isdir():
-				break
-		else: Log.FatalError("Unable to find rdiff-backup-data dir")
+		if rpin.isincfile(): relpath = rpin.getincbase().path
+		else: relpath = rpin.path
+		pathcomps = os.path.join(rpin.conn.os.getcwd(), relpath).split("/")
+		assert len(pathcomps) >= 2 # path should be relative to /
 
-		Globals.rbdir = self.datadir = datadirrp
-		rootrp = RPath(rpin.conn, "/".join(pathcomps[:i]))
-		if not rootrp.lstat():
-			Log.FatalError("Root of mirror area %s does not exist" %
-						   rootrp.path)
-		else: Log("Using root mirror %s" % rootrp.path, 6)
+		i = len(pathcomps)
+		while i >= 2:
+			parent_dir = RPath(rpin.conn, "/".join(pathcomps[:i]))
+			if (parent_dir.isdir() and
+				"rdiff-backup-data" in parent_dir.listdir()): break
+			i = i-1
+		else: Log.FatalError("Unable to find rdiff-backup-data directory")
 
-		from_datadir = pathcomps[i+1:]
-		if not from_datadir: raise RestoreError("Problem finding mirror file")
-		rel_index = tuple(from_datadir[1:])
-		mirrorrp = RPath(rootrp.conn,
-						 apply(os.path.join, (rootrp.path,) + rel_index))
-		Log("Using mirror file %s" % mirrorrp.path, 6)
-		return (mirrorrp, rel_index)
+		self.rootrp = rootrp = parent_dir
+		Log("Using mirror root directory %s" % rootrp.path, 6)
+
+		self.datadir = rootrp.append_path("rdiff-backup-data")
+		SetConnections.UpdateGlobal('rbdir', self.datadir)
+		if not self.datadir.isdir():
+			Log.FatalError("Unable to read rdiff-backup-data directory %s" %
+						   self.datadir.path)
+
+		from_datadir = tuple(pathcomps[i:])
+		if not from_datadir or from_datadir[0] != "rdiff-backup-data":
+			return (rootrp, from_datadir) # in mirror, not increments
+		assert from_datadir[1] == "increments"
+		return (rootrp, from_datadir[2:])
 
 
-	def ListIncrements(self, rootrp):
+	def ListIncrements(self, rp):
 		"""Print out a summary of the increments and their times"""
-		datadir = self.li_getdatadir(rootrp,
-			 """Unable to open rdiff-backup-data dir.
-
-The argument to rdiff-backup -l or rdiff-backup --list-increments
-should be the root of the target backup directory, of which
-rdiff-backup-data is a subdirectory.  So, if you ran
-
-rdiff-backup /home/foo /mnt/back/bar
-
-earlier, try:
-
-rdiff-backup -l /mnt/back/bar
-""")
-		print Manage.describe_root_incs(datadir)
-
-	def li_getdatadir(self, rootrp, errormsg):
-		"""Return data dir if can find it, otherwise use errormsg"""
-		datadir = rootrp.append("rdiff-backup-data")
-		if not datadir.lstat() or not datadir.isdir():
-			Log.FatalError(errormsg)
-		return datadir
+		mirror_root, index = self.restore_get_root(rp)
+		Globals.rbdir = datadir = \
+						mirror_root.append_path("rdiff-backup-data")
+		mirrorrp = mirror_root.new_index(index)
+		inc_rpath = datadir.append_path('increments', index)
+		incs = Restore.get_inclist(inc_rpath)
+		mirror_time = Restore.get_mirror_time()
+		if Globals.parsable_output:
+			print Manage.describe_incs_parsable(incs, mirror_time, mirrorrp)
+		else: print Manage.describe_incs_human(incs, mirror_time, mirrorrp)
 
 
 	def RemoveOlderThan(self, rootrp):
@@ -417,7 +444,8 @@ rdiff-backup -l /mnt/back/bar
 									 """Unable to open rdiff-backup-data dir.
 
 Try finding the increments first using --list-increments.""")
-		time = self.rot_get_earliest_time()
+		try: time = Time.genstrtotime(self.remove_older_than_string)
+		except TimeError, exp: Log.FatalError(str(exp))
 		timep = Time.timetopretty(time)
 		Log("Deleting increment(s) before %s" % timep, 4)
 		incobjs = filter(lambda x: x.time < time, Manage.get_incobjs(datadir))
@@ -433,11 +461,6 @@ Try finding the increments first using --list-increments.""")
 										   incobjs_time), 3)
 		Manage.delete_earlier_than(datadir, time)
 		
-	def rot_get_earliest_time(self):
-		"""Return earliest time in seconds that will not be deleted"""
-		seconds = Time.intstringtoseconds(self.remove_older_than_string)
-		return time.time() - seconds
-
 
 
 if __name__ == "__main__" and not globals().has_key('__no_execute__'):

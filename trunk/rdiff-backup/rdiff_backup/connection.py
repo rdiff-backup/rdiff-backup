@@ -92,6 +92,7 @@ class LowLevelPipeConnection(Connection):
 	b - string
 	q - quit signal
 	t - TempFile
+	d - DSRPath
 	R - RPath
 	r - RORPath only
 	c - PipeConnection object
@@ -118,6 +119,7 @@ class LowLevelPipeConnection(Connection):
 		if type(obj) is types.StringType: self._putbuf(obj, req_num)
 		elif isinstance(obj, Connection): self._putconn(obj, req_num)
 		elif isinstance(obj, TempFile): self._puttempfile(obj, req_num)
+		elif isinstance(obj, DSRPath): self._putdsrpath(obj, req_num)
 		elif isinstance(obj, RPath): self._putrpath(obj, req_num)
 		elif isinstance(obj, RORPath): self._putrorpath(obj, req_num)
 		elif ((hasattr(obj, "read") or hasattr(obj, "write"))
@@ -147,6 +149,11 @@ class LowLevelPipeConnection(Connection):
 		tf_repr = (tempfile.conn.conn_number, tempfile.base,
 				   tempfile.index, tempfile.data)
 		self._write("t", cPickle.dumps(tf_repr, 1), req_num)
+
+	def _putdsrpath(self, dsrpath, req_num):
+		"""Put DSRPath into pipe.  See _putrpath"""
+		dsrpath_repr = (dsrpath.conn.conn_number, dsrpath.getstatedict())
+		self._write("d", cPickle.dumps(dsrpath_repr, 1), req_num)
 
 	def _putrpath(self, rpath, req_num):
 		"""Put an rpath into the pipe
@@ -219,23 +226,22 @@ class LowLevelPipeConnection(Connection):
 											  ord(header_string[1]),
 											  self._s2l(header_string[2:]))
 		except IndexError: raise ConnectionError()
-		if format_string == "o": result = cPickle.loads(self._read(length))
-		elif format_string == "b": result = self._read(length)
-		elif format_string == "f":
-			result = VirtualFile(self, int(self._read(length)))
+		if format_string == "q": raise ConnectionQuit("Received quit signal")
+
+		data = self._read(length)
+		if format_string == "o": result = cPickle.loads(data)
+		elif format_string == "b": result = data
+		elif format_string == "f": result = VirtualFile(self, int(data))
 		elif format_string == "i":
-			result = RORPIter.FromFile(BufferedRead(
-				VirtualFile(self, int(self._read(length)))))
-		elif format_string == "t":
-			result = self._gettempfile(self._read(length))
-		elif format_string == "r":
-			result = self._getrorpath(self._read(length))
-		elif format_string == "R": result = self._getrpath(self._read(length))
-		elif format_string == "c":
-			result = Globals.connection_dict[int(self._read(length))]
+			result = RORPIter.FromFile(BufferedRead(VirtualFile(self,
+																int(data))))
+		elif format_string == "t": result = self._gettempfile(data)
+		elif format_string == "r": result = self._getrorpath(data)
+		elif format_string == "R": result = self._getrpath(data)
+		elif format_string == "d": result = self._getdsrpath(data)
 		else:
-			assert format_string == "q", header_string
-			raise ConnectionQuit("Received quit signal")
+			assert format_string == "c", header_string
+			result = Globals.connection_dict[int(data)]
 		Log.conn("received", result, req_num)
 		return (req_num, result)
 
@@ -254,6 +260,15 @@ class LowLevelPipeConnection(Connection):
 		"""Return RPath object indicated by raw_rpath_buf"""
 		conn_number, base, index, data = cPickle.loads(raw_rpath_buf)
 		return RPath(Globals.connection_dict[conn_number], base, index, data)
+
+	def _getdsrpath(self, raw_dsrpath_buf):
+		"""Return DSRPath object indicated by buf"""
+		conn_number, state_dict = cPickle.loads(raw_dsrpath_buf)
+		empty_dsrp = DSRPath("bypass", Globals.local_connection, None)
+		empty_dsrp.__setstate__(state_dict)
+		empty_dsrp.conn = Globals.connection_dict[conn_number]
+		empty_dsrp.file = None
+		return empty_dsrp
 
 	def _close(self):
 		"""Close the pipes associated with the connection"""

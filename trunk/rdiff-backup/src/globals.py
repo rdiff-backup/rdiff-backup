@@ -8,7 +8,7 @@ import re, os
 class Globals:
 
 	# The current version of rdiff-backup
-	version = "0.7.3"
+	version = "0.7.4"
 	
 	# If this is set, use this value in seconds as the current time
 	# instead of reading it from the clock.
@@ -108,6 +108,18 @@ class Globals:
 	# under MS windows NT.
 	time_separator = ":"
 
+	# quoting_enabled is true if we should quote certain characters in
+	# filenames on the source side (see FilenameMapping for more
+	# info).  chars_to_quote is a string whose characters should be
+	# quoted, and quoting_char is the character to quote with.
+	quoting_enabled = None
+	chars_to_quote = ""
+	quoting_char = ';'
+
+	# If true, emit output intended to be easily readable by a
+	# computer.  False means output is intended for humans.
+	parsable_output = None
+
 	# If true, then hardlinks will be preserved to mirror and recorded
 	# in the increments directory.  There is also a difference here
 	# between None and 0.  When restoring, None or 1 means to preserve
@@ -180,12 +192,12 @@ class Globals:
 		else: cls.__dict__[name] = re.compile(re_string)
 	postset_regexp_local = classmethod(postset_regexp_local)
 
-	def set_select(cls, source, dsrpath, tuplelist):
+	def set_select(cls, dsrpath, tuplelist, quote_mode = None):
 		"""Initialize select object using tuplelist"""
-		if source:
-			cls.select_source = Select(dsrpath, 1)
+		if dsrpath.source:
+			cls.select_source = Select(dsrpath, quote_mode)
 			cls.select_source.ParseArgs(tuplelist)
 		else:
-			cls.select_mirror = Select(dsrpath, None)
+			cls.select_mirror = Select(dsrpath, quote_mode)
 			cls.select_mirror.ParseArgs(tuplelist)
 	set_select = classmethod(set_select)

@@ -24,12 +24,14 @@ class HighLevel:
 	accompanying diagram.
 
 	"""
-	def Mirror(src_rpath, dest_rpath, checkpoint = 1, session_info = None):
+	def Mirror(src_rpath, dest_rpath, checkpoint = 1,
+			   session_info = None, write_finaldata = 1):
 		"""Turn dest_rpath into a copy of src_rpath
 
 		Checkpoint true means to checkpoint periodically, otherwise
 		not.  If session_info is given, try to resume Mirroring from
-		that point.
+		that point.  If write_finaldata is true, save extra data files
+		like hardlink_data.  If it is false, make a complete mirror.
 
 		"""
 		SourceS = src_rpath.conn.HLSourceStruct
@@ -40,7 +42,8 @@ class HighLevel:
 		src_init_dsiter = SourceS.split_initial_dsiter()
 		dest_sigiter = DestS.get_sigs(dest_rpath, src_init_dsiter)
 		diffiter = SourceS.get_diffs_and_finalize(dest_sigiter)
-		DestS.patch_and_finalize(dest_rpath, diffiter, checkpoint)
+		DestS.patch_and_finalize(dest_rpath, diffiter,
+								 checkpoint, write_finaldata)
 
 		dest_rpath.setdata()
 
@@ -60,24 +63,6 @@ class HighLevel:
 
 		dest_rpath.setdata()
 		inc_rpath.setdata()
-
-	def Restore(rest_time, mirror_base, rel_index, baseinc_tup, target_base):
-		"""Like Restore.RestoreRecursive but check arguments"""
-		if (Globals.preserve_hardlinks != 0 and
-			Hardlink.retrieve_final(rest_time)):
-			Log("Hard link information found, attempting to preserve "
-				"hard links.", 4)
-			SetConnections.UpdateGlobal('preserve_hardlinks', 1)
-		else: SetConnections.UpdateGlobal('preserve_hardlinks', None)
-
-		if not isinstance(target_base, DSRPath):
-			target_base = DSRPath(target_base.conn, target_base.base,
-								  target_base.index, target_base.data)
-		if not isinstance(mirror_base, DSRPath):
-			mirror_base = DSRPath(mirror_base.conn, mirror_base.base,
-								  mirror_base.index, mirror_base.data)
-		Restore.RestoreRecursive(rest_time, mirror_base, rel_index,
-								 baseinc_tup, target_base)
 
 MakeStatic(HighLevel)
 
@@ -164,7 +149,7 @@ class HLDestinationStruct:
 		def compare(src_rorp, dest_dsrp):
 			"""Return dest_dsrp if they are different, None if the same"""
 			if not dest_dsrp:
-				dest_dsrp = DSRPath(baserp.conn, baserp.base, src_rorp.index)
+				dest_dsrp = cls.get_dsrp(baserp, src_rorp.index)
 				if dest_dsrp.lstat():
 					Log("Warning: Found unexpected destination file %s, "
 						"not processing it." % dest_dsrp.path, 2)
@@ -203,8 +188,9 @@ class HLDestinationStruct:
 
 	def get_dsrp(cls, dest_rpath, index):
 		"""Return initialized dsrp based on dest_rpath with given index"""
-		return DSRPath(source = None, dest_rpath.conn,
-					   dest_rpath.base, index)
+		dsrp = DSRPath(None, dest_rpath.conn, dest_rpath.base, index)
+		if Globals.quoting_enabled: dsrp.quote_path()
+		return dsrp
 
 	def get_finalizer(cls):
 		"""Return finalizer, starting from session info if necessary"""
@@ -216,9 +202,13 @@ class HLDestinationStruct:
 		"""Return ITR, starting from state if necessary"""
 		if cls._session_info and cls._session_info.ITR:
 			return cls._session_info.ITR
-		else: return IncrementITR(inc_rpath)
+		else:
+			iitr = IncrementITR(inc_rpath)
+			iitr.override_changed()
+			return iitr
 
-	def patch_and_finalize(cls, dest_rpath, diffs, checkpoint = 1):
+	def patch_and_finalize(cls, dest_rpath, diffs,
+						   checkpoint = 1, write_finaldata = 1):
 		"""Apply diffs and finalize"""
 		collated = RORPIter.CollateIterators(diffs, cls.initial_dsiter2)
 		finalizer = cls.get_finalizer()
@@ -242,7 +232,7 @@ class HLDestinationStruct:
 				if checkpoint: SaveState.checkpoint_mirror(finalizer, dsrp)
 		except: cls.handle_last_error(dsrp, finalizer)
 		finalizer.Finish()
-		if Globals.preserve_hardlinks and Globals.rbdir:
+		if Globals.preserve_hardlinks and write_finaldata:
 			Hardlink.final_writedata()
 		if checkpoint: SaveState.checkpoint_remove()
 
@@ -300,8 +290,7 @@ class HLDestinationStruct:
 		Log.exception(1)
 		if ITR: SaveState.checkpoint_inc_backup(ITR, finalizer, dsrp, 1)
 		else: SaveState.checkpoint_mirror(finalizer, dsrp, 1)
-		if Globals.preserve_hardlinks:
-			Hardlink.final_checkpoint(Globals.rbdir)
+		if Globals.preserve_hardlinks: Hardlink.final_checkpoint(Globals.rbdir)
 		SaveState.touch_last_file_definitive()
 		raise
 

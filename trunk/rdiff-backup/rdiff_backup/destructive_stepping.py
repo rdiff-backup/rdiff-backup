@@ -1,4 +1,5 @@
 from __future__ import generators
+import types
 execfile("rorpiter.py")
 
 #######################################################################
@@ -40,13 +41,17 @@ class DSRPath(RPath):
 		otherwise use the same arguments as the RPath initializer.
 
 		"""
-		if len(args) == 2 and isinstance(args[0], RPath):
+		if len(args) == 1 and isinstance(args[0], RPath):
 			rp = args[0]
 			RPath.__init__(self, rp.conn, rp.base, rp.index)
 		else: RPath.__init__(self, *args)
 
-		self.set_delays(source)
-		self.set_init_perms(source)
+		if source != "bypass":
+			# "bypass" val is used when unpackaging over connection
+			assert source is None or source is 1
+			self.source = source
+			self.set_delays(source)
+			self.set_init_perms(source)
 
 	def set_delays(self, source):
 		"""Delay writing permissions and times where appropriate"""
@@ -59,13 +64,14 @@ class DSRPath(RPath):
 			# Now get atime right away if possible
 			if self.data.has_key('atime'): self.newatime = self.data['atime']
 			else: self.newatime = None
+		else: self.delay_atime = None
 		
 		if source:
 			self.delay_mtime = None # we'll never change mtime of source file
 		else:
 			self.delay_mtime = 1
 			# Save mtime now for a dir, because it might inadvertantly change
-			if self.isdir(): self.newmtime = self.getmtime()
+			if self.isdir(): self.newmtime = self.data['mtime']
 			else: self.newmtime = None
 
 	def set_init_perms(self, source):
@@ -75,26 +81,30 @@ class DSRPath(RPath):
 				self.chmod_bypass(0400)
 			else: self.warn("No read permissions")
 		elif self.isdir():
-			if source and (not self.readable() or self.executable()):
+			if source and (not self.readable() or not self.executable()):
 				if Globals.change_source_perms and self.isowner():
 					self.chmod_bypass(0500)
-				else: warn("No read or exec permission")
+				else: self.warn("No read or exec permission")
 			elif not source and not self.hasfullperms():
 				self.chmod_bypass(0700)
 
 	def warn(self, err):
 		Log("Received error '%s' when dealing with file %s, skipping..."
 			% (err, self.path), 1)
-		raise DSRPermError(self.path)
+		raise DSRPPermError(self.path)
 
 	def __getstate__(self):
 		"""Return picklable state.  See RPath __getstate__."""
 		assert self.conn is Globals.local_connection # Can't pickle a conn
+		return self.getstatedict()
+
+	def getstatedict(self):
+		"""Return dictionary containing the attributes we can save"""
 		pickle_dict = {}
 		for attrib in ['index', 'data', 'delay_perms', 'newperms',
 					   'delay_atime', 'newatime',
 					   'delay_mtime', 'newmtime',
-					   'path', 'base']:
+					   'path', 'base', 'source']:
 			if self.__dict__.has_key(attrib):
 				pickle_dict[attrib] = self.__dict__[attrib]
 		return pickle_dict
@@ -110,10 +120,17 @@ class DSRPath(RPath):
 		if self.delay_perms: self.newperms = self.data['perms'] = permissions
 		else: RPath.chmod(self, permissions)
 
+	def getperms(self):
+		"""Return dsrp's intended permissions"""
+		if self.delay_perms and self.newperms is not None:
+			return self.newperms
+		else: return self.data['perms']
+
 	def chmod_bypass(self, permissions):
 		"""Change permissions without updating the data dictionary"""
 		self.delay_perms = 1
 		if self.newperms is None: self.newperms = self.getperms()
+		Log("DSRP: Perm bypass %s to %o" % (self.path, permissions), 8)
 		self.conn.os.chmod(self.path, permissions)
 
 	def settime(self, accesstime, modtime):
@@ -129,11 +146,25 @@ class DSRPath(RPath):
 		if self.delay_mtime: self.newmtime = self.data['mtime'] = modtime
 		else: RPath.setmtime(self, modtime)
 
+	def getmtime(self):
+		"""Return dsrp's intended modification time"""
+		if self.delay_mtime and self.newmtime is not None:
+			return self.newmtime
+		else: return self.data['mtime']
+
+	def getatime(self):
+		"""Return dsrp's intended access time"""
+		if self.delay_atime and self.newatime is not None:
+			return self.newatime
+		else: return self.data['atime']
+
 	def write_changes(self):
 		"""Write saved up permission/time changes"""
 		if not self.lstat(): return # File has been deleted in meantime
 
 		if self.delay_perms and self.newperms is not None:
+			Log("Finalizing permissions of dsrp %s to %s" %
+				(self.path, self.newperms), 8)
 			RPath.chmod(self, self.newperms)
 
 		do_atime = self.delay_atime and self.newatime is not None
@@ -145,6 +176,19 @@ class DSRPath(RPath):
 		elif not do_atime and do_mtime:
 			RPath.setmtime(self, self.newmtime)
 
+	def newpath(self, newpath, index = ()):
+		"""Return similar DSRPath but with new path"""
+		return self.__class__(self.source, self.conn, newpath, index)
+
+	def append(self, ext):
+		"""Return similar DSRPath with new extension"""
+		return self.__class__(self.source, self.conn, self.base,
+							  self.index + (ext,))
+
+	def new_index(self, index):
+		"""Return similar DSRPath with new index"""
+		return self.__class__(self.source, self.conn, self.base, index)
+
 
 class DestructiveSteppingFinalizer(IterTreeReducer):
 		"""Finalizer that can work on an iterator of dsrpaths
@@ -155,11 +199,12 @@ class DestructiveSteppingFinalizer(IterTreeReducer):
 		coming back to it.
 
 		"""
+		dsrpath = None
 		def start_process(self, index, dsrpath):
 			self.dsrpath = dsrpath
 
 		def end_process(self):
-			self.dsrpath.write_changes()
+			if self.dsrpath: self.dsrpath.write_changes()
 
 
 

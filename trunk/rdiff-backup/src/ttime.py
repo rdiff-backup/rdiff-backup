@@ -12,6 +12,7 @@ class Time:
 	"""Functions which act on the time"""
 	_interval_conv_dict = {"s": 1, "m": 60, "h": 3600, "D": 86400,
 						   "W": 7*86400, "M": 30*86400, "Y": 365*86400}
+	_integer_regexp = re.compile("^[0-9]+$")
 	_interval_regexp = re.compile("^([0-9]+)([smhDWMY])")
 	_genstr_date_regexp1 = re.compile("^(?P<year>[0-9]{4})[-/]"
 						   "(?P<month>[0-9]{1,2})[-/](?P<day>[0-9]{1,2})$")
@@ -70,7 +71,7 @@ class Time:
 				utc_in_secs = time.mktime(timetuple) - time.altzone
 			else: utc_in_secs = time.mktime(timetuple) - time.timezone
 
-			return utc_in_secs + cls.tzdtoseconds(timestring[19:])
+			return long(utc_in_secs) + cls.tzdtoseconds(timestring[19:])
 		except (TypeError, ValueError, AssertionError): return None
 
 	def timetopretty(cls, timeinseconds):
@@ -155,8 +156,10 @@ strings, like "2002-04-26T04:22:01-07:00" (strings like
 "2002-04-26T04:22:01" are also acceptable - rdiff-backup will use the
 current time zone), or ordinary dates like 2/4/1997 or 2001-04-23
 (various combinations are acceptable, but the month always precedes
-the day).
-""" % timestr)
+the day).""" % timestr)
+
+		# Test for straight integer
+		if cls._integer_regexp.search(timestr): return int(timestr)
 
 		# Test for w3-datetime format, possibly missing tzd
 		t = cls.stringtotime(timestr) or cls.stringtotime(timestr+cls.gettzd())

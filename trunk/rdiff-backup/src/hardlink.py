@@ -28,6 +28,11 @@ class Hardlink:
 	_src_index_indicies = {}
 	_dest_index_indicies = {}
 
+	# When a linked file is restored, its path is added to this dict,
+	# so it can be found when later paths being restored are linked to
+	# it.
+	_restore_index_path = {}
+
 	def get_inode_key(cls, rorp):
 		"""Return rorp's key for _inode_ dictionaries"""
 		return (rorp.getinode(), rorp.getdevloc())
@@ -101,26 +106,29 @@ class Hardlink:
 		"""True if rorp's index is already linked to something on src side"""
 		return len(cls.get_indicies(rorp, 1)) >= 2
 
-	def restore_link(cls, mirror_rel_index, rpath):
+	def restore_link(cls, index, rpath):
 		"""Restores a linked file by linking it
 
 		When restoring, all the hardlink data is already present, and
-		we can only link to something already written.  Returns true
-		if succeeded in creating rpath, false if must restore rpath
-		normally.
+		we can only link to something already written.  In either
+		case, add to the _restore_index_path dict, so we know later
+		that the file is available for hard
+		linking.
+
+		Returns true if succeeded in creating rpath, false if must
+		restore rpath normally.
 
 		"""
-		full_index = mirror_rel_index + rpath.index
-		if not cls._src_index_indicies.has_key(full_index): return None
-		truncated_list = []
-		for index in cls._src_index_indicies[full_index]:
-			if index[:len(mirror_rel_index)] == mirror_rel_index:
-				truncated_list.append(index[len(mirror_rel_index):])
-
-		if not truncated_list or truncated_list[0] >= rpath.index: return None
-		srclink = RPath(rpath.conn, rpath.base, truncated_list[0])
-		rpath.hardlink(srclink.path)
-		return 1
+		if index not in cls._src_index_indicies: return None
+		for linked_index in cls._src_index_indicies[index]:
+			if linked_index in cls._restore_index_path:
+				srcpath = cls._restore_index_path[linked_index]
+				Log("Restoring %s by hard linking to %s" %
+					(rpath.path, srcpath), 6)
+				rpath.hardlink(srcpath)
+				return 1
+		cls._restore_index_path[index] = rpath.path
+		return None
 
 	def link_rp(cls, src_rorp, dest_rpath, dest_root = None):
 		"""Make dest_rpath into a link analogous to that of src_rorp"""
