@@ -70,6 +70,11 @@ static unsigned char PADDING[64] = {
 };
 
 
+static void
+rs_mdfour_block(rs_mdfour_t *md, void const *p);
+
+
+
 /**
  * Update an MD4 accumulator from a 64-byte chunk.
  *
@@ -216,7 +221,8 @@ copy64( /* @out@ */ uint32_t * M, unsigned char const *in)
  * Accumulate a block, making appropriate conversions for bigendian
  * machines.
  */
-void rs_mdfour_block(rs_mdfour_t *md, void const *p)
+static void
+rs_mdfour_block(rs_mdfour_t *md, void const *p)
 {
     uint32_t        M[16];
 
@@ -230,14 +236,19 @@ void rs_mdfour_block(rs_mdfour_t *md, void const *p)
 #  ifdef __i386__
 
 /* If we are on an IA-32 machine, we can process directly. */
-#define rs_mdfour_block(md,p) rs_mdfour64(md,p)
+static void
+rs_mdfour_block(rs_mdfour_t *md, void const *p)
+{
+    rs_mdfour64(md,p);
+}
 
 #  else
 
 /* We are little-endian, but not on i386 and therefore may not be able
  * to do unaligned access safely/quickly.  So copy the input block to
  * an aligned buffer first. */
-void rs_mdfour_block(rs_mdfour_t *md, void const *p)
+static void
+rs_mdfour_block(rs_mdfour_t *md, void const *p)
 {
     uint32_t        M[16];
 
