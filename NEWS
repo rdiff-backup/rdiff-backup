@@ -1,3 +1,7 @@
+Changes in 0.9.3:
+
+ * Patch to build on FreeBSD by Jos Backus <josb@cncdsl.com>
+
 Changes in 0.9.2:
 
  * Improve delta algorithm so that deltas are actually

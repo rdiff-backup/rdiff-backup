@@ -39,6 +39,8 @@
  * See \ref intro for an introduction to use of this library.
  */
 
+#include <sys/types.h>
+
 extern char const rs_librsync_version[];
 extern char const rs_licence_string[];
 
@@ -331,7 +333,8 @@ rs_job_t *rs_loadsig_begin(rs_signature_t **);
  * updated to point to a buffer allocated by the callback if it
  * prefers.
  */
-typedef rs_result rs_copy_cb(void *opaque, rs_long_t pos, size_t *len, void **buf);
+typedef rs_result rs_copy_cb(void *opaque, off_t pos,
+                             size_t *len, void **buf);
 
 
 rs_job_t *rs_patch_begin(rs_copy_cb *, void *copy_arg);
@@ -362,7 +365,7 @@ rs_result rs_sig_file(FILE *old_file, FILE *sig_file, size_t, size_t);
 
 rs_result rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset);
 
-rs_result rs_file_copy_cb(void *arg, rs_long_t, size_t *len, void **buf);
+rs_result rs_file_copy_cb(void *arg, off_t pos, size_t *len, void **buf);
 
 rs_result rs_delta_file(rs_signature_t *, FILE *new_file, FILE *delta_file, rs_stats_t *);
 
