@@ -30,5 +30,5 @@ def get_libraries():
 	return clib, rsynclib
 	
 for filename in get_libraries():
-	assert not os.system("mv %s ." % (filename,))
+	assert not os.system("mv '%s' ." % (filename,))
 assert not os.system("rm -rf build")
