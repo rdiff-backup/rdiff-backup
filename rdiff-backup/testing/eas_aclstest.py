@@ -1,9 +1,11 @@
-import unittest, os, time
+import unittest, os, time, cStringIO
 from commontest import *
 from rdiff_backup.eas_acls import *
 from rdiff_backup import Globals, rpath, Time
 
 tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
+restore_dir = rpath.RPath(Globals.local_connection,
+						  "testfiles/restore_out")
 
 class EATest(unittest.TestCase):
 	"""Test extended attributes"""
@@ -27,6 +29,7 @@ class EATest(unittest.TestCase):
 		"""Make temp directory testfiles/output"""
 		if tempdir.lstat(): tempdir.delete()
 		tempdir.mkdir()
+		if restore_dir.lstat(): restore_dir.delete()
 
 	def testBasic(self):
 		"""Test basic writing and reading of extended attributes"""
@@ -60,6 +63,41 @@ class EATest(unittest.TestCase):
 			assert self.sample_ea.index == new_ea.index, \
 				   (self.sample_ea.index, new_ea.index)
 			assert 0, "We shouldn't have gotten this far"
+
+	def testExtractor(self):
+		"""Test seeking inside a record list"""
+		record_list = """# file: 0foo
+user.multiline=0sVGhpcyBpcyBhIGZhaXJseSBsb25nIGV4dGVuZGVkIGF0dHJpYnV0ZS4KCQkJIEVuY29kaW5nIGl0IHdpbGwgcmVxdWlyZSBzZXZlcmFsIGxpbmVzIG9mCgkJCSBiYXNlNjQusbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGx
+user.third=0saGVsbG8=
+user.not_empty=0sZm9vYmFy
+user.binary=0sAAECjC89Ig==
+user.empty
+# file: 1foo/bar/baz
+user.multiline=0sVGhpcyBpcyBhIGZhaXJseSBsb25nIGV4dGVuZGVkIGF0dHJpYnV0ZS4KCQkJIEVuY29kaW5nIGl0IHdpbGwgcmVxdWlyZSBzZXZlcmFsIGxpbmVzIG9mCgkJCSBiYXNlNjQusbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGx
+user.third=0saGVsbG8=
+user.binary=0sAAECjC89Ig==
+user.empty
+# file: 2foo/\\012
+user.empty
+"""
+		extractor = EAExtractor(cStringIO.StringIO(record_list))
+		ea_iter = extractor.iterate_starting_with(())
+		first = ea_iter.next()
+		assert first.index == ('0foo',), first
+		second = ea_iter.next()
+		assert second.index == ('1foo', 'bar', 'baz'), second
+		third = ea_iter.next() # Test quoted filenames
+		assert third.index == ('2foo', '\n'), third.index
+		try: ea_iter.next()
+		except StopIteration: pass
+		else: assert 0, "Too many elements in iterator"
+
+		extractor = EAExtractor(cStringIO.StringIO(record_list))
+		ea_iter = extractor.iterate_starting_with(('1foo', 'bar'))
+		assert ea_iter.next().index == ('1foo', 'bar', 'baz')
+		try: ea_iter.next()
+		except StopIteration: pass
+		else: assert 0, "Too many elements in iterator"
 
 	def make_backup_dirs(self):
 		"""Create testfiles/ea_test[12] directories
@@ -137,6 +175,21 @@ class EATest(unittest.TestCase):
 				   'testfiles/empty', 'testfiles/ea_test1']
 		BackupRestoreSeries(None, None, dirlist, compare_eas = 1)
 
+	def test_final_local(self):
+		"""Test backing up and restoring using 'rdiff-backup' script"""
+		self.make_backup_dirs()
+		self.make_temp()
+		rdiff_backup(1, 1, self.ea_testdir1.path, tempdir.path,
+					 current_time = 10000)
+		assert CompareRecursive(self.ea_testdir1, tempdir, compare_eas = 1)
+
+		rdiff_backup(1, 1, self.ea_testdir2.path, tempdir.path,
+					 current_time = 20000)
+		assert CompareRecursive(self.ea_testdir2, tempdir, compare_eas = 1)
+
+		rdiff_backup(1, 1, tempdir.path, restore_dir.path,
+					 extra_options = '-r 10000')
+		assert CompareRecursive(self.ea_testdir1, restore_dir, compare_eas = 1)
 
 
 class ACLTest(unittest.TestCase):
@@ -181,6 +234,7 @@ other::---""")
 		"""Make temp directory testfile/output"""
 		if tempdir.lstat(): tempdir.delete()
 		tempdir.mkdir()
+		if restore_dir.lstat(): restore_dir.delete()
 
 	def testBasic(self):
 		"""Test basic writing and reading of ACLs"""
@@ -226,6 +280,49 @@ other::---""")
 		if not new_acl2 == self.dir_acl:
 			assert new_acl2.eq_verbose(self.dir_acl)
 			assert 0
+
+	def testExtractor(self):
+		"""Test seeking inside a record list"""
+		record_list = """# file: 0foo
+user::r--
+user:ben:---
+group::---
+group:root:---
+mask::---
+other::---
+# file: 1foo/bar/baz
+user::r--
+user:ben:---
+group::---
+group:root:---
+mask::---
+other::---
+# file: 2foo/\\012
+user::r--
+user:ben:---
+group::---
+group:root:---
+mask::---
+other::---
+"""
+		extractor = ACLExtractor(cStringIO.StringIO(record_list))
+		acl_iter = extractor.iterate_starting_with(())
+		first = acl_iter.next()
+		assert first.index == ('0foo',), first
+		second = acl_iter.next()
+		assert second.index == ('1foo', 'bar', 'baz'), second
+		third = acl_iter.next() # Test quoted filenames
+		assert third.index == ('2foo', '\n'), third.index
+		try: acl_iter.next()
+		except StopIteration: pass
+		else: assert 0, "Too many elements in iterator"
+
+		extractor = ACLExtractor(cStringIO.StringIO(record_list))
+		acl_iter = extractor.iterate_starting_with(('1foo', 'bar'))
+		assert acl_iter.next().index == ('1foo', 'bar', 'baz')
+		try: acl_iter.next()
+		except StopIteration: pass
+		else: assert 0, "Too many elements in iterator"
 
 	def make_backup_dirs(self):
 		"""Create testfiles/acl_test[12] directories"""
@@ -294,6 +391,29 @@ other::---""")
 		dirlist = ['testfiles/acl_test1', 'testfiles/acl_test2',
 				   'testfiles/empty', 'testfiles/acl_test1']
 		BackupRestoreSeries(None, None, dirlist, compare_acls = 1)
+
+	def test_final_local(self):
+		"""Test backing up and restoring using 'rdiff-backup' script"""
+		self.make_backup_dirs()
+		self.make_temp()
+		rdiff_backup(1, 1, self.acl_testdir1.path, tempdir.path,
+					 current_time = 10000)
+		assert CompareRecursive(self.acl_testdir1, tempdir, compare_acls = 1)
+
+		rdiff_backup(1, 1, self.acl_testdir2.path, tempdir.path,
+					 current_time = 20000)
+		assert CompareRecursive(self.acl_testdir2, tempdir, compare_acls = 1)
+
+		rdiff_backup(1, 1, tempdir.path, restore_dir.path,
+					 extra_options = '-r 10000')
+		assert CompareRecursive(self.acl_testdir1, restore_dir,
+								compare_acls = 1)
+
+		restore_dir.delete()
+		rdiff_backup(1, 1, tempdir.path, restore_dir.path,
+					 extra_options = '-r now')
+		assert CompareRecursive(self.acl_testdir2, restore_dir,
+								compare_acls = 1)
 
 
 class CombinedTest(unittest.TestCase):

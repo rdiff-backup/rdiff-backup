@@ -30,8 +30,7 @@ from __future__ import generators
 import base64, errno, re
 try: import posix1e
 except ImportError: pass
-import static, Globals, metadata, connection, rorpiter, log
-
+import static, Globals, metadata, connection, rorpiter, log, C, rpath
 
 class ExtendedAttributes:
 	"""Hold a file's extended attribute information"""
@@ -104,12 +103,12 @@ def ea_compare_rps(rp1, rp2):
 
 def EA2Record(ea):
 	"""Convert ExtendedAttributes object to text record"""
-	str_list = ['# file: %s' % ea.get_indexpath()]
+	str_list = ['# file: %s' % C.acl_quote(ea.get_indexpath())]
 	for (name, val) in ea.attr_dict.iteritems():
 		if not val: str_list.append(name)
 		else:
 			encoded_val = base64.encodestring(val).replace('\n', '')
-			str_list.append('%s=0s%s' % (name, encoded_val))
+			str_list.append('%s=0s%s' % (C.acl_quote(name), encoded_val))
 	return '\n'.join(str_list)+'\n'
 
 def Record2EA(record):
@@ -120,7 +119,7 @@ def Record2EA(record):
 		raise metadata.ParsingError("Bad record beginning: " + first[:8])
 	filename = first[8:]
 	if filename == '.': index = ()
-	else: index = tuple(filename.split('/'))
+	else: index = tuple(C.acl_unquote(filename).split('/'))
 	ea = ExtendedAttributes(index)
 
 	for line in lines:
@@ -137,27 +136,15 @@ def Record2EA(record):
 			ea.set(name, base64.decodestring(encoded_val))
 	return ea
 
-def quote_path(path):
-	"""Quote a path for use EA/ACL records.
-
-	Right now no quoting!!!  Change this to reflect the updated
-	quoting style of getfattr/setfattr when they are changed.
-
-	"""
-	return path
-
 
 class EAExtractor(metadata.FlatExtractor):
 	"""Iterate ExtendedAttributes objects from the EA information file"""
-	record_boundary_regexp = re.compile("\\n# file:")
+	record_boundary_regexp = re.compile('(?:\\n|^)(# file: (.*?))\\n')
 	record_to_object = staticmethod(Record2EA)
-	def get_index_re(self, index):
-		"""Find start of EA record with given index"""
-		if not index: indexpath = '.'
-		else: indexpath = '/'.join(index)
-		# Right now there is no quoting, due to a bug in
-		# getfacl/setfacl.  Replace later when bug fixed.
-		return re.compile('(^|\\n)(# file: %s\\n)' % indexpath)
+	def filename_to_index(self, filename):
+		"""Convert possibly quoted filename to index tuple"""
+		if filename == '.': return ()
+		else: return tuple(C.acl_unquote(filename).split('/'))
 
 class ExtendedAttributesFile(metadata.FlatFile):
 	"""Store/retrieve EAs from extended_attributes file"""
@@ -171,7 +158,7 @@ class ExtendedAttributesFile(metadata.FlatFile):
 			"""Add EA information in ea_iter to rorp_iter"""
 			collated = rorpiter.CollateIterators(rorp_iter, ea_iter)
 			for rorp, ea in collated:
-				assert rorp, (rorp, (ea.index, ea.attr_dict), rest_time)
+				assert rorp, (rorp, (ea.index, ea.attr_dict), time)
 				if not ea: ea = ExtendedAttributes(rorp.index)
 				rorp.set_ea(ea)
 				yield rorp
@@ -311,7 +298,7 @@ def acl_compare_rps(rp1, rp2):
 
 def ACL2Record(acl):
 	"""Convert an AccessControlList object into a text record"""
-	start = "# file: %s\n%s" % (acl.get_indexpath(), acl.acl_text)
+	start = "# file: %s\n%s" % (C.acl_quote(acl.get_indexpath()), acl.acl_text)
 	if not acl.def_acl_text: return start
 	default_lines = acl.def_acl_text.strip().split('\n')
 	default_text = '\ndefault:'.join(default_lines)
@@ -325,7 +312,7 @@ def Record2ACL(record):
 		raise metadata.ParsingError("Bad record beginning: "+ first_line)
 	filename = first_line[8:]
 	if filename == '.': index = ()
-	else: index = tuple(filename.split('/'))
+	else: index = tuple(C.acl_unquote(filename).split('/'))
 
 	normal_entries = []; default_entries = []
 	for line in lines:
@@ -393,3 +380,25 @@ def GetCombinedMetadataIter(rbdir, time, restrict_index = None,
 			metadata_iter, rbdir, time, restrict_index)
 	return metadata_iter
 
+
+def rpath_acl_get(rp):
+	"""Get acls of given rpath rp.
+
+	This overrides a function in the rpath module.
+
+	"""
+	acl = AccessControlList(rp.index)
+	if not rp.issym(): acl.read_from_rp(rp)
+	return acl
+rpath.acl_get = rpath_acl_get
+
+def rpath_ea_get(rp):
+	"""Get extended attributes of given rpath
+
+	This overrides a function in the rpath module.
+
+	"""
+	ea = ExtendedAttributes(rp.index)
+	if not rp.issym(): ea.read_from_rp(rp)
+	return ea
+rpath.ea_get = rpath_ea_get
