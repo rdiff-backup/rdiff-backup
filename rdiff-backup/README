@@ -14,15 +14,24 @@ The default prefix is /usr, so files are put in /usr/bin,
 
 	python setup.py install --prefix=/usr/local
 
-A few special build arguments can be specified such as --librsync-dir,
---lflags, and --libs, and the LIBRSYNC_DIR, LFLAGS, and LIBS
-environment variables will also be used.  Running setup.py with no
-arguments will also display some help.
+The setup script expects to find librsync headers and libraries in the
+default location, usually /usr/include and /usr/lib.  If you want the
+setup script to check different locations, use the --librsync-dir
+switch or the LIBRSYNC_DIR environment variable.  For instance,
+
+	python setup.py --librsync-dir=/usr/local build
+
+instructs the setup program to look in /usr/local/include and
+/usr/local/lib for the librsync files.
+
+Finally, the --lflags and --libs options, and the LFLAGS and LIBS
+environment variables are also recognized.  Running setup.py with no
+arguments will display some help.
 
 
 REQUIREMENTS:
 
-Remember that you must have Python 2.2 or later and librsync 0.9.5.1
+Remember that you must have Python 2.2 or later and librsync 0.9.6
 or later installed.  For Python, see http://www.python.org.  The
 rdiff-backup homepage at http://rdiff-backup.stanford.edu/ should have
 a recent version of librsync; otherwise see the librsync homepage at
