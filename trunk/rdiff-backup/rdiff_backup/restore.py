@@ -82,6 +82,16 @@ def ListChangedSince(mirror_rp, inc_rp, restore_to_time):
 		print "%-7s %s" % (change, path_desc)
 
 
+def ListAtTime(mirror_rp, inc_rp, time):
+	"""List the files in archive at the given time"""
+	MirrorS = mirror_rp.conn.restore.MirrorStruct
+	MirrorS.set_mirror_and_rest_times(time)
+	MirrorS.initialize_rf_cache(mirror_rp, inc_rp)
+
+	old_iter = MirrorS.get_mirror_rorp_iter(_rest_time, 1)
+	for rorp in old_iter: print rorp.get_indexpath()
+	
+
 class MirrorStruct:
 	"""Hold functions to be run on the mirror side"""
 	def set_mirror_and_rest_times(cls, restore_to_time):

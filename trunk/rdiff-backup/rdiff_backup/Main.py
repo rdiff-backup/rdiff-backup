@@ -51,7 +51,7 @@ def parse_cmdlineoptions(arglist):
 		  "exclude-regexp=", "exclude-special-files", "force",
 		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=", "include-regexp=",
-		  "list-changed-since=", "list-increments",
+		  "list-at-time=", "list-changed-since=", "list-increments",
 		  "no-compare-inode", "no-compression",
 		  "no-compression-regexp=", "no-file-statistics",
 		  "no-hard-links", "null-separator", "parsable-output",
@@ -101,6 +101,8 @@ def parse_cmdlineoptions(arglist):
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))
 		elif opt == "--include-regexp": select_opts.append((opt, arg))
+		elif opt == "--list-at-time":
+			restore_timestr, action = arg, "list-at-time"
 		elif opt == "--list-changed-since":
 			restore_timestr, action = arg, "list-changed-since"
 		elif opt == "-l" or opt == "--list-increments":
@@ -178,6 +180,7 @@ def set_action():
 		commandline_error("Two arguments are required (source, destination).")
 	if l == 2 and (action == "list-increments" or
 				   action == "remove-older-than" or
+				   action == "list-at-time" or
 				   action == "list-changed-since" or
 				   action == "check-destination-dir"):
 		commandline_error("Only use one argument, "
@@ -211,6 +214,7 @@ def take_action(rps):
 	elif action == "restore": Restore(*rps)
 	elif action == "restore-as-of": RestoreAsOf(rps[0], rps[1])
 	elif action == "test-server": SetConnections.TestConnections()
+	elif action == "list-at-time": ListAtTime(rps[0])
 	elif action == "list-changed-since": ListChangedSince(rps[0])
 	elif action == "list-increments": ListIncrements(rps[0])
 	elif action == "remove-older-than": RemoveOlderThan(rps[0])
@@ -561,6 +565,17 @@ def ListChangedSince(rp):
 	inc_rp = mirror_rp.append_path("increments", index)
 	restore.ListChangedSince(mirror_rp, inc_rp, rest_time)
 
+
+def ListAtTime(rp):
+	"""List files in archive under rp that are present at restoretime"""
+	try: rest_time = Time.genstrtotime(restore_timestr)
+	except Time.TimeException, exc: Log.FatalError(str(exc))
+	mirror_root, index = restore_get_root(rp)
+	restore_check_backup_dir(mirror_root)
+	mirror_rp = mirror_root.new_index(index)
+	inc_rp = mirror_rp.append_path("increments", index)
+	restore.ListAtTime(mirror_rp, inc_rp, rest_time)
+	
 
 def CheckDest(dest_rp):
 	"""Check the destination directory, """
