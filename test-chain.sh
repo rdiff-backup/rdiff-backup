@@ -19,6 +19,7 @@ old=/dev/null
 
 fromsig=fromsig.tmp
 fromlt=fromlt.tmp
+ltfile=lt.tmp
 
 for from in $files
 do
