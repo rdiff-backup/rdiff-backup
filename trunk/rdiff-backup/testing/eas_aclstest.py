@@ -8,7 +8,7 @@ user_group.init_group_mapping()
 tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
 restore_dir = rpath.RPath(Globals.local_connection,
 						  "testfiles/restore_out")
-log.Log.setverbosity(7)
+log.Log.setverbosity(3)
 
 class EATest(unittest.TestCase):
 	"""Test extended attributes"""

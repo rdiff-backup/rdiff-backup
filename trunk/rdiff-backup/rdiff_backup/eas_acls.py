@@ -170,10 +170,10 @@ class ExtendedAttributesFile(metadata.FlatFile):
 				yield rorp
 			
 		ea_iter = cls.get_objects_at_time(rbdir, time, restrict_index)
-		if ea_iter: return helper(rorp_iter, ea_iter)
-		else:
-			log.Log("Warning: Extended attributes file not found",2)
-			return rorp_iter
+		if not ea_iter:
+			log.Log("Warning: Extended attributes file not found", 2)
+			ea_iter = iter([])
+		return helper(rorp_iter, ea_iter)
 
 static.MakeClass(ExtendedAttributesFile)
 
@@ -501,10 +501,10 @@ class AccessControlListFile(metadata.FlatFile):
 				yield rorp
 
 		acl_iter = cls.get_objects_at_time(rbdir, time, restrict_index)
-		if acl_iter: return helper(rorp_iter, acl_iter)
-		else:
+		if not acl_iter:
 			log.Log("Warning: Access Control List file not found", 2)
-			return rorp_iter
+			acl_iter = iter([])
+		return helper(rorp_iter, acl_iter)
 
 static.MakeClass(AccessControlListFile)
 

@@ -1,6 +1,3 @@
-Figure out why files getting unnecessarily incremented when upgrading
-from 0.12.x.
-
 Consider adding --datadir option (Jean-Sébastien GOETSCHY)
 
 See if regressing takes too much memory (large directories).
