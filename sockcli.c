@@ -84,15 +84,34 @@ fork_reader(int sock)
         exit(_hs_file_copy_all(sock, STDOUT_FILENO) < 0);
     } else {
         _hs_trace("forked child %d", pid);
-        return 0;
+        return pid;
     }
 }
 
 
-static void
+static int
+reap_child(void)
+{
+    int status;
+
+    if (wait(&status) < 0) {
+        _hs_error("wait error: %s", strerror(errno));
+        return -1;
+    }
+
+    if (status) {
+        _hs_error("child exited with status %#x", status);
+        return -1;
+    }
+
+    return 0;
+}
+
+
+static int
 writer(int sock)
 {
-    _hs_file_copy_all(STDIN_FILENO, sock);
+    return _hs_file_copy_all(STDIN_FILENO, sock);
 }
 
 
@@ -102,6 +121,7 @@ main(int argc, char **argv)
     int                 sock;
     int                 port;
     int                 c;
+    int                 pid;
 
     hs_trace_to(NULL);		/* may turn it on later */
     while ((c = getopt(argc, argv, "D")) != -1) {
@@ -131,9 +151,13 @@ main(int argc, char **argv)
         return 1;
     }
 
-    fork_reader(sock);
-    writer(sock);
+    pid = fork_reader(sock);
+    if (writer(sock) < 0)
+        return 1;
 
-    return 0;                   /* probably unreached */
+    if (reap_child() < 0)
+        return 1;
+
+    return 0;
 }
 
