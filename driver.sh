@@ -2,7 +2,7 @@
 
 # Regression test driver for libhsync.
 
-# Copyright (C) 2000 by Martin Pool
+# Copyright (C) 2000, 2001 by Martin Pool
 # $Id$
 
 # This program is free software; you can redistribute it and/or
@@ -71,7 +71,7 @@ delta_instr="
 10,1:8,4:6,8:4,10:2,12
 0,10000:0,10000:0,10000
 "
-bufsizes='1 2 3 7 15 30 100 500 600 1000 4096 10000 200000'
+bufsizes='1 2 3 7 15 100 600 4096 10000 200000'
 
 # Process command-line options
 stats=
@@ -124,6 +124,14 @@ fail_test () {
     exit 2
 }
 
+check_compare() {
+    if ! cmp "$1" "$2"
+    then
+        echo "$test_name: comparison failed from command: $3" >&2
+        exit 2
+    fi
+}
+
 run_test () {
     if [ -n "${VERBOSE:-}" ] 
     then
@@ -132,7 +140,7 @@ run_test () {
         show_progress
     fi
 
-    "$@" >$builddir/testout.tmp 2>$builddir/testerr.tmp|| fail_test $? "$@" 
+    "$@" >$builddir/testout.log 2>$builddir/testerr.log || fail_test "$?" "$@" 
 }
 
 # more than this many on any one test gets boring
