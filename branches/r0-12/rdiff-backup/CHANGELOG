@@ -15,6 +15,11 @@ When regressing, remove mirror_metadata and similar increments first.
 This will hopefully help regressing a backup that failed because disk
 was full (reported by Erik Forsberg).
 
+Fixed rather important quoting problem: quoting directives like
+--windows-mode were simply ignored when rdiff-backup was running
+remotely!  I'm surprised no one noticed this.  Are none of you using
+--windows-mode or similar?
+
 
 New in v0.12.5 (2003/09/27)
 ---------------------------
