@@ -582,7 +582,7 @@ class PatchITRB(rorpiter.ITRBranch):
 		assert diff_rorp.get_attached_filetype() == 'snapshot'
 		self.dir_replacement = TempFile.new(base_rp)
 		rpath.copy_with_attribs(diff_rorp, self.dir_replacement)
-		if base_rp.isdir() and Globals.change_permissions: base_rp.chmod(0700)
+		if base_rp.isdir(): base_rp.chmod(0700)
 
 	def prepare_dir(self, diff_rorp, base_rp):
 		"""Prepare base_rp to turn into a directory"""
@@ -590,7 +590,7 @@ class PatchITRB(rorpiter.ITRBranch):
 		if not base_rp.isdir():
 			if base_rp.lstat(): base_rp.delete()
 			base_rp.mkdir()
-		if Globals.change_permissions: base_rp.chmod(0700)
+		base_rp.chmod(0700)
 
 	def end_process(self):
 		"""Finish processing directory"""
