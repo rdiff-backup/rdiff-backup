@@ -714,7 +714,8 @@ class RPath(RORPath):
 			timestring, ext = dotsplit[-2:]
 		if Time.stringtotime(timestring) is None: return None
 		if not (ext == "snapshot" or ext == "dir" or
-				ext == "missing" or ext == "diff"): return None
+				ext == "missing" or ext == "diff" or ext == "data"):
+			return None
 		self.inc_timestr = timestring
 		self.inc_compressed = compressed
 		self.inc_type = ext
