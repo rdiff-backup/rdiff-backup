@@ -33,12 +33,12 @@ def MakeStatic(cls):
 	subclasses this will be turned into static methods.
 
 	"""
-	for name in dir(cls):
+	for name in cls.__dict__:
 		if name[0] != "_":
 			cls.__dict__[name] = staticmethod(cls.__dict__[name])
 
 def MakeClass(cls):
 	"""Turn instance methods into classmethods.  Ignore _ like above"""
-	for name in dir(cls):
+	for name in cls.__dict__:
 		if name[0] != "_":
 			cls.__dict__[name] = classmethod(cls.__dict__[name])
