@@ -254,6 +254,9 @@ static rs_result rdiff_sig(poptContext opcon)
     if (result != RS_DONE)
         return result;
 
+    fclose(sig_file);
+    fclose(basis_file);
+
     if (show_stats) 
         rs_log_stats(&stats);
 
@@ -293,6 +296,12 @@ static rs_result rdiff_delta(poptContext opcon)
 
     result = rs_delta_file(sumset, new_file, delta_file, &stats);
 
+    rs_free_sumset(sumset);
+
+    fclose(delta_file);
+    fclose(new_file);
+    fclose(sig_file);
+
     if (show_stats) 
         rs_log_stats(&stats);
 
@@ -322,6 +331,10 @@ static rs_result rdiff_patch(poptContext opcon)
     rdiff_no_more_args(opcon);
 
     result = rs_patch_file(basis_file, delta_file, new_file, &stats);
+
+    fclose(new_file);
+    fclose(delta_file);
+    fclose(basis_file);
 
     if (show_stats) 
         rs_log_stats(&stats);
