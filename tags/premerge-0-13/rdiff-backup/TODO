@@ -1,0 +1,43 @@
+Change --exclude options with restore so excluded directories aren't
+deleted.  (Oliver Kaltenecker)
+
+Check support/bug reports on Savannah occasionally.
+
+Consider adding --datadir option (Jean-Sébastien GOETSCHY)
+
+write test case for --calculate-statistics
+
+Use ctime to check whether files have been changed.  See message:
+http://mail.gnu.org/archive/html/rdiff-backup-users/2003-06/msg00050.html
+by Andrew Bressen.
+
+Profile 0.13.x
+
+Examine regress handling of acls/eas/resource forks.
+
+Look into that strange regress error July 22nd on
+prog/old/rdiff-backup/testing/testfiles/long...
+
+---------[ Medium term ]---------------------------------------
+
+Look into sparse file support (requested by Stelios K. Kyriacou)
+
+Look into security.py code, do some sort of security audit.
+
+Look at Kent Borg's suggestion for restore options and digests.
+
+Add --list-files-changed-between or similar option, to list files that
+have changed between two times
+
+Add --dry-run option (target for v1.1.x)
+
+Add # of increments option to --remove-older-than
+
+---------[ Long term ]---------------------------------------
+
+Think about adding Gaudet's idea for keeping track of renamed files.
+
+Look into different inode generation techniques (see treescan, Dean
+Gaudet's other post).
+
+
