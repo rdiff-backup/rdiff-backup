@@ -134,7 +134,7 @@ class HLDestinationStruct:
 		cls._session_info = session_info
 
 	def iterate_from(cls):
-		"""Supply more arguments to DestructiveStepping.Iterate_from"""
+		"""Return selection iterator to iterate all the mirror files"""
 		if cls._session_info is None: Globals.select_mirror.set_iter()
 		else: Globals.select_mirror.set_iter(cls._session_info.last_index)
 		return Globals.select_mirror
@@ -203,9 +203,8 @@ class HLDestinationStruct:
 
 	def get_dsrp(cls, dest_rpath, index):
 		"""Return initialized dsrp based on dest_rpath with given index"""
-		dsrp = DSRPath(dest_rpath.conn, dest_rpath.base, index)
-		DestructiveStepping.initialize(dsrp, None)
-		return dsrp
+		return DSRPath(source = None, dest_rpath.conn,
+					   dest_rpath.base, index)
 
 	def get_finalizer(cls):
 		"""Return finalizer, starting from session info if necessary"""
@@ -230,9 +229,7 @@ class HLDestinationStruct:
 			indexed_tuple = collated.next()
 			Log("Processing %s" % str(indexed_tuple), 7)
 			diff_rorp, dsrp = indexed_tuple
-			if not dsrp:
-				dsrp = cls.get_dsrp(dest_rpath, diff_rorp.index)
-				DestructiveStepping.initialize(dsrp, None)
+			if not dsrp: dsrp = cls.get_dsrp(dest_rpath, diff_rorp.index)
 			if diff_rorp and not diff_rorp.isplaceholder():
 				RORPIter.patchonce_action(None, dsrp, diff_rorp).execute()
 			finalizer(dsrp.index, dsrp)
@@ -261,9 +258,7 @@ class HLDestinationStruct:
 			Log("Processing %s" % str(indexed_tuple), 7)
 			diff_rorp, dsrp = indexed_tuple
 			index = indexed_tuple.index
-			if not dsrp:
-				dsrp = cls.get_dsrp(dest_rpath, index)
-				DestructiveStepping.initialize(dsrp, None)
+			if not dsrp: dsrp = cls.get_dsrp(dest_rpath, index)
 			if diff_rorp and diff_rorp.isplaceholder(): diff_rorp = None
 			ITR(index, diff_rorp, dsrp)
 			finalizer(index, dsrp)
@@ -283,7 +278,7 @@ class HLDestinationStruct:
 	def check_skip_error(cls, thunk, dsrp):
 		"""Run thunk, catch certain errors skip files"""
 		try: return thunk()
-		except (IOError, OSError, SkipFileException), exp:
+		except (IOError, OSError, SkipFileException, DSRPPermError), exp:
 			Log.exception()
 			if (not isinstance(exp, IOError) or
 				(isinstance(exp, IOError) and

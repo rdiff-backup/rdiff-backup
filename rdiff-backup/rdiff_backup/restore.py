@@ -87,8 +87,7 @@ class Restore:
 		select_result = Globals.select_mirror.Select(target)
 		if select_result == 0: return
 
-		if mirrorrp and (not Globals.select_source.Select(mirrorrp) or
-						 DestructiveStepping.initialize(mirrorrp, None)):
+		if mirrorrp and not Globals.select_source.Select(mirrorrp):
 			mirrorrp = None
 		rcd = RestoreCombinedData(rid, mirrorrp, target)
 
