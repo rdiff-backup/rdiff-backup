@@ -92,9 +92,11 @@ rs_format_stats(rs_stats_t const * stats,
 
     if (stats->copy_cmds || stats->false_matches) {
         len += snprintf(buf+len, size-len, 
-                        "copy[%d cmds, %d bytes, %d false]",
-                        stats->copy_cmds, stats->copy_bytes,
-                        stats->false_matches);
+                        "copy[%ld cmds, %ld bytes, %ld false, %ld cmdbytes]",
+                        (long) stats->copy_cmds,
+                        (long) stats->copy_bytes,
+                        (long) stats->false_matches,
+                        (long) stats->copy_cmdbytes);
     }
         
     return buf;

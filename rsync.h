@@ -171,8 +171,8 @@ typedef struct rs_stats {
     rs_long_t       lit_cmdbytes; /**< Number of bytes used in literal
                                    * command headers. */
         
-    int             copy_cmds, copy_bytes;
-    int             sig_cmds, sig_bytes;
+    rs_long_t       copy_cmds, copy_bytes, copy_cmdbytes;
+    rs_long_t       sig_cmds, sig_bytes;
     int             false_matches;
 
     rs_long_t       in_bytes;   /**< Total bytes read from input. */
