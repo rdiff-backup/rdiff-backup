@@ -39,35 +39,56 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <limits.h>
+#include <errno.h>
+#include <string.h>
 
 #include "hsync.h"
 #include "util.h"
-#include "file.h"
 #include "stream.h"
 #include "trace.h"
 #include "streamfile.h"
 #include "sumset.h"
+#include "hsyncfile.h"
 
 
 int hs_inbuflen = 500, hs_outbuflen = 600;
 
-static const int HS_PATCH_FILE_TAG = 201214;
+static const int HS_PATCH_FILE_TAG = 201214,
+        HS_MKSUM_FILE_TAG = 201215;
 
 typedef struct hs_file {
         int tag;
-        FILE *basis_file, *in_file;
-	char *in_buf;
+        FILE *basis_file, *in_file, *out_file;
+
+        char *buf;
+        size_t buf_len;
+        
         hs_stream_t *stream;
-        hs_patch_job_t *job;
+
+        /* one of the following: */
+        hs_patch_job_t *patch_job;
+        hs_mksum_job_t *mksum_job;
 } hs_file_t;
 
 
 /*
  * Extract from a void pointer, and check the dogtag.
  */
-static hs_file_t *_hs_patch_file_check(void *p) {
+static hs_file_t *_hs_file_check(void *p, int tag) {
         hs_file_t *pf = (hs_file_t *) p;
-        assert(pf->tag == HS_PATCH_FILE_TAG);
+        assert(pf->tag == tag);
+        return pf;
+}
+
+
+static hs_file_t *_hs_file_new(size_t buf_len) {
+        hs_file_t *pf = _hs_alloc_struct(hs_file_t);
+        pf->stream = _hs_alloc_struct(hs_stream_t);
+	hs_stream_init(pf->stream);
+
+        pf->buf = _hs_alloc(buf_len, "file buffer");
+        pf->buf_len = buf_len;
+
         return pf;
 }
 
@@ -80,17 +101,29 @@ HSFILE *hs_patch_open(FILE *basis_file, FILE *delta_file)
 {
         hs_file_t *pf;
 
-        pf = _hs_alloc_struct(hs_file_t);
+        pf = _hs_file_new(hs_inbuflen);
         
         pf->tag = HS_PATCH_FILE_TAG;
         pf->basis_file = basis_file;
         pf->in_file = delta_file;
-        pf->stream = _hs_alloc_struct(hs_stream_t);
 
-        pf->in_buf = _hs_alloc(hs_inbuflen, "delta input buffer");
+	pf->patch_job = hs_patch_begin(pf->stream, hs_file_copy_cb, basis_file);
 
-	hs_stream_init(pf->stream);
-	pf->job = hs_patch_begin(pf->stream);
+        return pf;
+}
+
+
+
+/*
+ * Open a file to write out the signature of caller-supplied data.
+ */
+HSFILE *hs_mksum_open(FILE *sig_file, int block_len, int strong_sum_len)
+{
+        hs_file_t *pf = _hs_file_new(hs_outbuflen);
+
+        pf->tag = HS_MKSUM_FILE_TAG;
+        pf->out_file = sig_file;
+        pf->mksum_job = hs_mksum_begin(pf->stream, block_len, strong_sum_len);
 
         return pf;
 }
@@ -105,17 +138,17 @@ HSFILE *hs_patch_open(FILE *basis_file, FILE *delta_file)
  */
 enum hs_result hs_patch_read(HSFILE *f, void *buf, size_t *len)
 {
-        hs_file_t *pf = _hs_patch_file_check(f);
+        hs_file_t *pf = _hs_file_check(f, HS_PATCH_FILE_TAG);
         enum hs_result result;
 
         pf->stream->next_out = buf;
         pf->stream->avail_out = *len;
         
 	do {
-		_hs_fill_from_file(pf->stream, pf->in_buf, hs_inbuflen,
+		_hs_fill_from_file(pf->stream, pf->buf, pf->buf_len,
                                    pf->in_file);
 		
-		result = hs_patch_iter(pf->job);
+		result = hs_patch_iter(pf->patch_job);
                 
 		if (result == HS_BLOCKED && feof(pf->in_file) &&
                     !pf->stream->avail_in) {
@@ -128,7 +161,98 @@ enum hs_result hs_patch_read(HSFILE *f, void *buf, size_t *len)
 	} while (result == HS_BLOCKED);
 
         /* Return the amount of output actually available. */
-        *len = hs_outbuflen - pf->stream->avail_out;
+        assert(pf->stream->next_out >= (char *) buf);
+        *len = pf->stream->next_out - (char *) buf;
+        _hs_trace("returns %d bytes: %s", *len, hs_strerror(result));
 
 	return result;
+}
+
+
+
+enum hs_result hs_mksum_write(HSFILE *f, void *buf, size_t len)
+{
+        hs_file_t *pf = _hs_file_check(f, HS_MKSUM_FILE_TAG);
+        enum hs_result result, io_result;
+
+        pf->stream->next_in = buf;
+        pf->stream->avail_in = len;
+
+        do { 
+                result = hs_mksum_iter(pf->mksum_job, 0);
+                
+                io_result = _hs_drain_to_file(pf->stream, pf->buf, pf->buf_len,
+                                              pf->out_file);
+        
+                if (io_result != HS_OK)
+                        return result;
+        } while (result == HS_BLOCKED && pf->stream->avail_in > 0);
+
+        _hs_trace("returns %s(%d)", hs_strerror(result), result);
+
+        return result;
+}
+
+
+/*
+ * Close off a patch file.  If the patch has not finished, then the
+ * rest of the data is just lost.  The files used are not closed.
+ */
+enum hs_result hs_patch_close(HSFILE *f)
+{
+        hs_file_t *pf = _hs_file_check(f, HS_PATCH_FILE_TAG);
+        if (pf->buf)
+                free(pf->buf);
+        hs_patch_finish(pf->patch_job);
+        return HS_OK;
+}
+
+
+
+enum hs_result hs_mksum_close(HSFILE *f)
+{
+        hs_file_t *pf = _hs_file_check(f, HS_MKSUM_FILE_TAG);
+        enum hs_result result, io_result;
+
+        pf->stream->next_in = 0;
+        pf->stream->avail_in = 0;
+
+        /* Continue to run until all stream data has drained; then
+         * deallocate and leave. */
+        do {
+                result = hs_mksum_iter(pf->mksum_job, 1);
+                
+                io_result = _hs_drain_to_file(pf->stream, pf->buf, pf->buf_len,
+                                              pf->out_file);
+                
+                if (io_result != HS_OK)
+                        return result;
+        } while (result == HS_BLOCKED);
+        
+        if (pf->buf)
+                free(pf->buf);
+        hs_mksum_finish(pf->mksum_job);
+        return HS_OK;
+}
+
+
+
+/*
+ * Default copy implementation that retrieves a part of a stdio file.
+ */
+enum hs_result hs_file_copy_cb(void *arg, size_t *len, void **buf)
+{
+        int got;
+
+        got = fread(*buf, 1, *len, (FILE *) arg);
+        if (got == -1) {
+                _hs_error(strerror(errno));
+                return HS_IO_ERROR;
+        } else if (got == 0) {
+                _hs_error("unexpected eof");
+                return HS_SHORT_STREAM;
+        } else {
+                *len = got;
+                return HS_OK;
+        }
 }
