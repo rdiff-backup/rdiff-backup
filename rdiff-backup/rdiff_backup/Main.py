@@ -159,7 +159,7 @@ def set_action():
 			else: action = "backup"
 		else: commandline_error("Too many arguments given")
 
-	if l == 0 and action != "server" and action != "test-server":
+	if l == 0 and action != "server":
 		commandline_error("No arguments given")
 	if l > 0 and action == "server":
 		commandline_error("Too many arguments given")
@@ -295,7 +295,7 @@ def backup_init_dirs(rpin, rpout):
 		elif not datadir.lstat() and not force: Log.FatalError(
 """Destination directory %s exists, but does not look like a
 rdiff-backup directory.  Running rdiff-backup like this could mess up
-what is currently in it.  If you want to overwrite it, run
+what is currently in it.  If you want to update or overwrite it, run
 rdiff-backup with the --force option.""" % rpout.path)
 
 	if not rpout.lstat():

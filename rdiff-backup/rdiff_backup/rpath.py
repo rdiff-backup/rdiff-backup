@@ -250,6 +250,7 @@ class RORPath(RPathStatic):
 				pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'devloc' or key == 'inode' or key == 'nlink': pass
+			elif key == 'size' and self.isdir(): pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return None
 		return 1
