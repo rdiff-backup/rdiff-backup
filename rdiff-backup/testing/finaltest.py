@@ -39,8 +39,11 @@ class Local:
 
 class PathSetter(unittest.TestCase):
 	def setUp(self):
+		self.reset_schema()
+
+	def reset_schema(self):
 		self.rb_schema = SourceDir + \
-			  "/rdiff-backup -v5 --remote-schema './chdir-wrapper %s' "
+			 "/rdiff-backup -v5 --remote-schema './chdir-wrapper %s' "
 
 	def refresh(self, *rp_list):
 		"""Reread data for the given rps"""
@@ -228,6 +231,49 @@ testfiles/increment2/changed_dir""")
 						"regular_file")
 		self.assertRaises(OSError, os.lstat,
 			   "testfiles/restoretarget2/various_file_types/executable")
+
+	def testSelFilesRemote(self):
+		"""Test for bug found in 0.7.[34] - filelist where source remote"""
+		self.delete_tmpdirs()
+		self.set_connections("test1/", "../", 'test2/tmp/', '../../')
+		self.rb_schema += ("--exclude-filelist testfiles/vft_out/exclude "
+						   "--include-filelist testfiles/vft_out/include "
+						   "--exclude '**' ")
+
+		# Make an exclude list
+		os.mkdir("testfiles/vft_out")
+		excluderp = RPath(Globals.local_connection,
+						  "testfiles/vft_out/exclude")
+		fp = excluderp.open("w")
+		fp.write("""
+../testfiles/various_file_types/regular_file
+../testfiles/various_file_types/test
+""")
+		assert not fp.close()
+
+		# Make an include list
+		includerp = RPath(Globals.local_connection,
+						  "testfiles/vft_out/include")
+		fp = includerp.open("w")
+		fp.write("""
+../testfiles/various_file_types/executable
+../testfiles/various_file_types/symbolic_link
+../testfiles/various_file_types/regular_file
+../testfiles/various_file_types/test
+""")
+		assert not fp.close()
+
+		self.exec_rb(None, 'testfiles/various_file_types', 'testfiles/output')
+
+		self.reset_schema()
+		self.exec_rb_restore("now", 'testfiles/output',
+							 'testfiles/restoretarget1')
+		assert os.lstat('testfiles/restoretarget1/executable')
+		assert os.lstat('testfiles/restoretarget1/symbolic_link')
+		self.assertRaises(OSError, os.lstat,
+						  'testfiles/restoretarget1/regular_file')
+		self.assertRaises(OSError, os.lstat,
+						  'testfiles/restoretarget1/executable2')
 
 
 class FinalCorrupt(PathSetter):
