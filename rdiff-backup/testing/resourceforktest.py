@@ -64,6 +64,7 @@ class ResourceForkTest(unittest.TestCase):
 		rp1_2.touch()
 		rp1_3.symlink('foo')
 		rp1_1.write_resource_fork('This should appear in resource fork')
+		rp1_1.chmod(0400) # test for bug changing resource forks after perms
 		rp1_2.write_resource_fork('Data for the resource fork 2')
 
 
@@ -75,6 +76,7 @@ class ResourceForkTest(unittest.TestCase):
 		rp2_2.touch()
 		rp2_3.touch()
 		rp2_1.write_resource_fork('New data for resource fork 1')
+		rp2_1.chmod(0400)
 		rp2_3.write_resource_fork('New fork')
 
 	def testSeriesLocal(self):

@@ -172,7 +172,8 @@ def cmp_attribs(rp1, rp2):
 	if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
 		result = None
 	elif rp1.getperms() != rp2.getperms(): result = None
-	elif rp1.getctime() != rp2.getctime(): result = None
+	# Don't compare ctime for now, add later
+	#elif rp1.getctime() != rp2.getctime(): result = None
 	elif rp1.issym() and rp2.issym(): # Don't check times for some types
 		result = 1
 	elif rp1.isblkdev() and rp2.isblkdev(): result = 1
@@ -662,6 +663,7 @@ class RPath(RORPath):
 			# mtimes on symlinks and dev files don't work consistently
 			data['mtime'] = long(statblock[stat.ST_MTIME])
 			data['atime'] = long(statblock[stat.ST_ATIME])
+			data['ctime'] = long(statblock[stat.ST_CTIME])
 		return data
 
 	def check_consistency(self):

@@ -11,14 +11,28 @@ fsyncing.  Options such as --windows-mode, --chars-to-quote,
 Now rdiff-backup supports user extended attributes (EAs).  To take
 advantage of this you will need the python module pyxattr and a file
 system that supports EAs.  Thanks to Greg Freemyer for valuable
-discussion on EA and ACL support.
+discussion.
 
 Support for access control lists (ACLs) was also added.  An ACL
 capable file system and the python package pylibacl (which exports the
-posix1e module) are required.
+posix1e module) are required.  Thanks to Greg Freemyer for valuable
+discussion.
 
 Thanks to patches by Daniel Hazelbaker, rdiff-backup now reads and
 writes Mac OS X style resource forks!
+
+****** Warning ****** The above features are new to this development
+release, and it is difficult to test all the possibly combinations of
+source and destination file systems.  They should not be considered
+stable.  However, help would be appreciated testing these new
+features.
+
+****** Warning #2 ****** rdiff-backup records ACL and EA information
+in files designed to be compatible with the utilities "getfacl" and
+"getfattr".  However, there is a possible security hole in both these
+formats (see
+http://acl.bestbits.at/pipermail/acl-devel/2003-June/001498.html).
+rdiff-backup's format will be fixed when getf{attr|acl}'s is.
 
 Added --list-increment-sizes switch, which tells you how much space
 the various backup files take up.  (Suggested by Andrew Bressen)
@@ -30,6 +44,11 @@ Troels Arvin.)
 
 Fixed bug with --check-destination and --windows-mode reported by
 Tucker Sylvestro.
+
+The librsync blocksize is now chosen based on filesize.  This should
+make operations on large files faster (in some cases, orders of
+magnitude faster).  Thanks to Ty! Boyack for bringing this issue to my
+attention.
 
 
 New in v0.12.0 (2003/06/26)

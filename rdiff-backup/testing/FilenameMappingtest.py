@@ -5,7 +5,8 @@ from rdiff_backup import FilenameMapping
 class FilenameMappingTest(unittest.TestCase):
 	"""Test the FilenameMapping class, for quoting filenames"""
 	def setUp(self):
-		"""Just initialize quoting - assume windows mode"""
+		"""Just initialize quoting"""
+		Globals.chars_to_quote = 'A-Z'
 		FilenameMapping.set_init_quote_vals()
 
 	def testBasicQuote(self):

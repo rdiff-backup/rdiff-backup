@@ -4,6 +4,8 @@ by Andrew Bressen.
 
 Profile 0.13.0
 
+Do more large file timing tests?
+
 ---------[ Medium term ]---------------------------------------
 
 Look into sparse file support (requested by Stelios K. Kyriacou)

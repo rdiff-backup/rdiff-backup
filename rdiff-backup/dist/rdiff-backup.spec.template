@@ -3,13 +3,14 @@
 Version: $version
 Summary: Convenient and transparent local/remote incremental mirror/backup
 Name: rdiff-backup
-Release: 2
-URL: http://www.stanford.edu/~bescoto/rdiff-backup/
-Source: %{name}-%{version}.tar.gz
-Copyright: GPL
+Release: 0.fdr.1
+Epoch: 0
+URL: http://rdiff-backup.stanford.edu/
+Source: http://rdiff-backup.stanford.edu/%{name}-%{version}.tar.gz
+License: GPL
 Group: Applications/Archiving
-BuildRoot: %{_tmppath}/%{name}-root
-requires: librsync >= 0.9.5.1, %{PYTHON_NAME} >= 2.2
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Requires: librsync >= 0.9.5.1, %{PYTHON_NAME} >= 2.2
 BuildPrereq: %{PYTHON_NAME}-devel >= 2.2, librsync-devel >= 0.9.5.1
 
 %description
@@ -38,12 +39,15 @@ differences from the previous backup will be transmitted.
 
 %files
 %defattr(-,root,root)
-/usr/bin/rdiff-backup
-/usr/share/man/man1
-/usr/lib
+%{_bindir}/rdiff-backup
+%{_mandir}/man1/rdiff-backup*
+%{_libdir}/
 %doc CHANGELOG COPYING FAQ.html README
 
 %changelog
+* Sun Jul 20 2003 Ben Escoto <bescoto@stanford.edu>
+- Minor changes to comply with Fedora standards.
+
 * Sun Jan 19 2002 Troels Arvin <troels@arvin.dk>
 - Builds, no matter if Python 2.2 is called python2-2.2 or python-2.2.
 
