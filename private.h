@@ -280,11 +280,12 @@ void            _hs_free_sum_struct(hs_sum_set_t *);
    queue of outgoing copy commands */
 
 typedef struct _hs_copyq {
-    size_t          start, len;
+    off_t start;
+    size_t           len;
 } _hs_copyq_t;
 
 int             _hs_queue_copy(hs_write_fn_t write_fn, void *write_priv,
-			       _hs_copyq_t * copyq, size_t start, size_t len,
+			       _hs_copyq_t * copyq, off_t start, size_t len,
 			       hs_stats_t * stats);
 int             _hs_copyq_push(hs_write_fn_t write_fn, void *write_priv,
 			       _hs_copyq_t * copyq, hs_stats_t * stats);
@@ -313,7 +314,7 @@ int             _hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv,
 int             _hs_emit_checksum_cmd(hs_write_fn_t, void *, uint32_t size);
 
 int             _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
-			      uint32_t offset, uint32_t length,
+			      off_t offset, size_t length,
 			      hs_stats_t * stats);
 
 

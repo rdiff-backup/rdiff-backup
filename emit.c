@@ -166,7 +166,7 @@ _hs_emit_signature_cmd(hs_write_fn_t write_fn, void *write_priv, uint32_t size)
 
 int
 _hs_emit_copy(hs_write_fn_t write_fn, void *write_priv,
-	      uint32_t offset, uint32_t length, hs_stats_t * stats)
+	      hs_off_t offset, size_t length, hs_stats_t * stats)
 {
     int ret;
     int len_type, off_type;
