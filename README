@@ -35,4 +35,11 @@ SUNWspro: (use -v for more warnings)
 mips-sgi-irix6.5: works, but you must use GNU Make rather than the
 default SGI Make.  I used gcc.
 
+>> API Documentation
+
+libhsync contains markup for automatic API documentation generation
+using the Doxygen tool:
+
+  http://www.doxygen.org/
+
 $Id$

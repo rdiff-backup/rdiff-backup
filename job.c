@@ -28,8 +28,9 @@
                                */
 
 
-/*
- * Generic state-machine "job" mechanism.
+/** \file job.c
+ *
+ * \brief Generic state-machine "job" mechanism.
  */
 
 

@@ -22,8 +22,9 @@
  */
 
 
-/* 
- * mksum: Generate and write out checksums using the stream interface.
+/*! \file mksum.c
+ *
+ * \brief Generate and write out checksums using the stream interface.
  *
  * Generating checksums is pretty easy, since we can always just
  * process whatever data is available.  When a whole block has
@@ -54,7 +55,7 @@ static enum hs_result hs_mksum_s_generate(hs_job_t *);
 
 
                                            
-/*
+/*!
  * State of trying to send the signature header.
  */
 static enum hs_result hs_mksum_s_header(hs_job_t *job)
@@ -117,7 +118,7 @@ static enum hs_result hs_mksum_s_generate(hs_job_t *job)
 }
 
 
-/* Set up a new encoding job. */
+/*! \brief Set up a new encoding job. */
 hs_job_t * hs_mksum_begin(hs_stream_t *stream,
                                 size_t new_block_len, size_t strong_sum_len)
 {

@@ -21,15 +21,19 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* NOTE: This code makes no attempt to be fast!
+/** \file mdfour.c
+ *
+ * \brief MD4 message digest algorithm.
+ *
+ * NOTE: This code makes no attempt to be fast!
  *
  * It assumes that a int is at least 32 bits long
  *
- * TODO: Recode to be fast, and to use system integer types.  Perhaps
+ * \todo Recode to be fast, and to use system integer types.  Perhaps
  * if we can find an mdfour implementation already on the system
  * (e.g. in OpenSSL) then we should use it instead of our own?
  *
- * TODO: Apparently rsync 2.4 now has a fast MD4 routine.  So we
+ * \todo Apparently rsync 2.4 now has a fast MD4 routine.  So we
  * should copy that into here.  */
 
 #include <config.h>

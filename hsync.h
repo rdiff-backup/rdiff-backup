@@ -28,8 +28,25 @@
                                */
 
 
-/*
- * hsync.h: public interface to libhsync.  
+/*! \mainpage The libhsync delta-encoding library
+ *
+ * \section intro Introduction
+ *
+ * This is an library for rsync-encoding, designed to be easily embedded
+ * into diverse applications.
+ *
+ * \section overview Overview
+ *
+ * Why not start with hs_mksum_begin() and ::hs_job_t?
+ */
+
+
+/*! \file hsync.h
+ *
+ * \brief Main public interface to libhsync.
+ *
+ * This file contains interfaces that do not depend on stdio.  For
+ * them, see hsyncfile.h.
  */
 
 extern char const hs_libhsync_version[];
@@ -48,7 +65,7 @@ int             hs_supports_trace(void);
 
 
 
-/*
+/*!
  * Convert FROM_LEN bytes at FROM_BUF into a hex representation in
  * TO_BUF, which must be twice as long plus one byte for the null
  * terminator.
@@ -163,6 +180,12 @@ void hs_stream_init(hs_stream_t *);
 #define HS_DEFAULT_BLOCK_LEN 2048
 
 
+/** \typedef struct hs_job hs_job_t
+ *
+ * \brief Job of work to be done.
+ *
+ * Created by functions such as hs_mksum_begin(), and then iterated
+ * over by hs_job_iter(). */
 typedef struct hs_job hs_job_t;
 
 hs_job_t       *hs_accum_begin(hs_stream_t *);

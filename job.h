@@ -21,7 +21,10 @@
  */
 
 
-/* Generic 'job' state machine. */
+/*! \file job.h
+ *
+ * \brief Generic 'job' state machine.
+ */
 
 struct hs_job {
 	hs_stream_t *stream;
