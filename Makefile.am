@@ -77,12 +77,7 @@ libhsync_la_LDFLAGS = -version-info 1:0:0
 # Generally these tests should be ordered so that more basic tests
 # are run first.
 
-# TODO: driver.sh requires bash.  Therefore we should either test for
-# it and use it rather than $SHELL, or we should rewrite it to work in
-# plain Bourne shell.  Or perhaps we should use bash enforcing POSIX
-# compliance, so that we can detect and avoid such dependencies.
-
-TESTS_ENVIRONMENT = bash $(srcdir)/driver.sh
+TESTS_ENVIRONMENT = sh $(srcdir)/driver.sh
 
 test_scripts = isprefix.test delta.test mksum.test triple.test
 
