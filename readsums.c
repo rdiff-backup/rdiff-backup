@@ -51,7 +51,7 @@
 
 static hs_result hs_loadsig_alloc(hs_job_t *job)
 {
-    job->sumset = hs_alloc_struct(hs_signature_t);
+    job->signature = hs_alloc_struct(hs_signature_t);
     job->signature->block_len = job->block_len;
     
     hs_trace("allocated sigset_t (strong_sum_len=%d, block_len=%d)",
@@ -72,12 +72,10 @@ static hs_result hs_loadsig_s_stronglen(hs_job_t *job)
     
     if (l < 0  ||  l > HS_MD4_LENGTH) {
         hs_error("strong sum length %d is implausible", l);
-        return hs_job_fail(job, HS_CORRUPT);
+        return HS_CORRUPT;
     }
-
-    job->statefn = hs_job_s_complete;
     
-    return HS_RUNNING;
+    return hs_loadsig_alloc(job);
 }
 
 
@@ -92,7 +90,7 @@ static hs_result hs_loadsig_s_blocklen(hs_job_t *job)
 
     if (job->block_len < 1) {
         hs_error("block length of %d is bogus", job->block_len);
-        return hs_job_fail(job, HS_CORRUPT);
+        return HS_CORRUPT;
     }
 
     job->statefn = hs_loadsig_s_stronglen;
@@ -100,7 +98,7 @@ static hs_result hs_loadsig_s_blocklen(hs_job_t *job)
 }
 
 
-static hs_result hs_loadsig_s_header(hs_job_t *job)
+static hs_result hs_loadsig_s_magic(hs_job_t *job)
 {
     int                 l;
     hs_result           result;
@@ -132,8 +130,7 @@ hs_job_t *hs_loadsig_begin(hs_stream_t *stream, hs_signature_t **sumset)
     hs_job_t *job;
 
     job = hs_job_new(stream);
-    job->sumset = *sumset = hs_alloc_struct(hs_signature_t);
-    job->statefn = hs_loadsig_s_header;
+    job->statefn = hs_loadsig_s_magic;
         
     return job;
 }

@@ -110,7 +110,6 @@ static hs_result hs_sig_s_generate(hs_job_t *job)
          * whatever's in there */
         if (result == HS_BLOCKED && job->near_end) {
                 result = hs_scoop_read_rest(job->stream, &len, &block);
-                job->statefn = hs_job_s_complete;
         } else if (result != HS_DONE) {
                 hs_trace("generate stopped: %s", hs_strerror(result));
                 return result;
@@ -118,7 +117,11 @@ static hs_result hs_sig_s_generate(hs_job_t *job)
 
         hs_trace("got %d byte block", len);
 
-        return hs_sig_do_block(job, block, len);
+        result = hs_sig_do_block(job, block, len);
+        if (result == HS_RUNNING && job->near_end)
+            return HS_DONE;
+        else
+            return result;
 }
 
 

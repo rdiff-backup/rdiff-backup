@@ -74,6 +74,23 @@ hs_result hs_job_free(hs_job_t *job)
 
 
 
+static hs_result hs_job_s_complete(hs_job_t *job)
+{
+    hs_trace("job has finished, status: %s", hs_strerror(job->final_result));
+    
+    return HS_DONE;
+}
+
+
+static hs_result hs_job_complete(hs_job_t *job, hs_result result)
+{
+    job->final_result = result;
+    job->statefn = hs_job_s_complete;
+    
+    return result;
+}
+
+
 /** 
  * \brief Run a ::hs_job_t state machine until it blocks
  * (::HS_BLOCKED), returns an error, or completes (::HS_COMPLETE).
@@ -87,43 +104,28 @@ hs_result hs_job_free(hs_job_t *job)
 hs_result hs_job_iter(hs_job_t *job, int ending)
 {
 
-        hs_result result;
+    hs_result result;
 
-        if (ending)
-                job->near_end = 1;
+    if (ending)
+        job->near_end = 1;
 
-        while (1) {
-                result = hs_tube_catchup(job->stream);
-                if (result != HS_DONE)
-                        return result;
+    while (1) {
+        result = hs_tube_catchup(job->stream);
+        if (result == HS_BLOCKED)
+            return result;
+        else if (result == HS_DONE)
+            ;
+        else
+            return hs_job_complete(job, result);
+
                 
-                result = job->statefn(job);
-                if (result != HS_RUNNING)
-                        return result;
-        } 
+        result = job->statefn(job);
+        if (result == HS_RUNNING)
+            ;
+        else if (result == HS_BLOCKED)
+            return result;
+        else 
+            return hs_job_complete(job, result);
+    } 
 }
 
-
-hs_result hs_job_s_complete(hs_job_t *UNUSED(job))
-{
-    hs_trace("job has finished");
-    
-    return HS_DONE;
-}
-
-
-static hs_result hs_job_s_failed(hs_job_t *job)
-{
-    hs_trace("job has failed: %s", hs_strerror(job->final_result));
-
-    return job->final_result;
-}
-
-
-hs_result hs_job_fail(hs_job_t *job, hs_result result)
-{
-    job->final_result = result;
-    job->statefn = hs_job_s_failed;
-    
-    return result;
-}
