@@ -1,6 +1,8 @@
                                                   -*- indented-text -*-
 $Id$
 
+ * file(1) magic to recognize signatures/deltas
+
  * Tool to generate standalone signatures.  But don't conflict with
    xdelta here.
 
