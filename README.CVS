@@ -10,6 +10,9 @@ compiler, make and so on.  On Debian, you can simply say
 
   # apt-get install automake autoconf libtool
 
+To generate API documentation, you will need Doxygen and GhostView:
+
+  # apt-get install doxygen gs
 
 >> Downloading
 
