@@ -191,11 +191,9 @@ rdiff-backup-data/chars_to_quote.
 			tmp_rp.chown(uid+1, gid+1) # just choose random uid/gid
 			tmp_rp.chown(0, 0)
 		except (IOError, OSError), exc:
-			if exc[0] in (errno.EPERM, errno.EINVAL):
-				log.Log("Warning: ownership cannot be changed on filesystem "
-						"at %s" % (self.root_rp.path,), 3)
-				self.ownership = 0
-			else: raise
+			log.Log("Warning: ownership cannot be changed on filesystem "
+					"at %s" % (self.root_rp.path,), 3)
+			self.ownership = 0
 		else: self.ownership = 1
 		tmp_rp.delete()
 
@@ -209,11 +207,9 @@ rdiff-backup-data/chars_to_quote.
 			if hl_source.getinode() != hl_dest.getinode():
 				raise IOError(errno.EOPNOTSUPP, "Hard links don't compare")
 		except (IOError, OSError), exc:
-			if exc[0] in (errno.EOPNOTSUPP, errno.EPERM):
-				log.Log("Warning: hard linking not supported by filesystem "
-						"at %s" % (self.root_rp.path,), 3)
-				self.hardlinks = 0
-			else: raise
+			log.Log("Warning: hard linking not supported by filesystem "
+					"at %s" % (self.root_rp.path,), 3)
+			self.hardlinks = 0
 		else: self.hardlinks = 1
 
 	def set_fsync_dirs(self, testdir):
@@ -284,11 +280,9 @@ rdiff-backup-data/chars_to_quote.
 
 		try: posix1e.ACL(file=rp.path)
 		except IOError, exc:
-			if exc[0] == errno.EOPNOTSUPP:
-				log.Log("ACLs appear not to be supported by "
-						"filesystem at %s" % (rp.path,), 4)
-				self.acls = 0
-			else: raise
+			log.Log("ACLs appear not to be supported by "
+					"filesystem at %s" % (rp.path,), 4)
+			self.acls = 0
 		else: self.acls = 1
 		
 	def set_eas(self, rp, write):
@@ -308,11 +302,9 @@ rdiff-backup-data/chars_to_quote.
 				xattr.setxattr(rp.path, "user.test", "test val")
 				assert xattr.getxattr(rp.path, "user.test") == "test val"
 		except IOError, exc:
-			if exc[0] == errno.EOPNOTSUPP:
-				log.Log("Extended attributes not supported by "
-						"filesystem at %s" % (rp.path,), 4)
-				self.eas = 0
-			else: raise
+			log.Log("Extended attributes not supported by "
+					"filesystem at %s" % (rp.path,), 4)
+			self.eas = 0
 		else: self.eas = 1
 
 	def set_dir_inc_perms(self, rp):
