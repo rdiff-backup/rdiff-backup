@@ -10,12 +10,6 @@ execfile("statistics.py")
 
 class Inc:
 	"""Class containing increment functions"""
-	# This is a hack.  _inc_file holds the dsrp of the latest
-	# increment file created, to be used in IncrementITR for
-	# statistics purposes.  It should be given directly to the ITR
-	# object but there didn't seem to be a good way to pass it out.
-	_inc_file = None
-
 	def Increment_action(new, mirror, incpref):
 		"""Main file incrementing function, returns RobustAction
 
@@ -116,7 +110,6 @@ class Inc:
 			inctime = Resume.FindTime(rp.index, inctime)
 			incrp = Inc.get_inc(rp, inctime, typestr)
 			if not incrp.lstat(): break
-		Inc._inc_file = incrp
 		return incrp
 
 MakeStatic(Inc)
@@ -236,6 +229,7 @@ class IncrementITR(ErrorITR, StatsITR):
 				else: # restore to previous state
 					if old_dsrp_tf.lstat(): old_dsrp_tf.rename(dsrp)
 					if self.incrp: self.incrp.delete()
+					mirror_tf.delete()
 
 			RobustAction(init_thunk, final, error).execute()
 		else: self.incrp = Robust.chain(
@@ -247,7 +241,8 @@ class IncrementITR(ErrorITR, StatsITR):
 	def end_process(self):
 		"""Do final work when leaving a tree (directory)"""
 		diff_rorp, dsrp, incpref = self.diff_rorp, self.dsrp, self.incpref
-		if self.mirror_isdirectory and (diff_rorp or self.changed):
+		if (self.mirror_isdirectory and (diff_rorp or self.changed)
+			or self.directory_replacement):
 			if self.directory_replacement:
 				tf = self.directory_replacement
 				self.incrp = Robust.chain(

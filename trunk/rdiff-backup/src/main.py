@@ -356,7 +356,7 @@ went wrong during your last backup?  Using """ + mirrorrps[-1].path, 2)
 		"""
 		self.restore_check_paths(rpin, target, 1)
 		try: time = Time.genstrtotime(self.restore_timestr)
-		except TimeError, exc: Log.FatalError(str(exc))
+		except TimeException, exc: Log.FatalError(str(exc))
 		self.restore_common(rpin, target, time)
 
 	def restore_common(self, rpin, target, time):
@@ -383,7 +383,7 @@ Try restoring from an increment file (the filenames look like
 		if not rpout: rpout = RPath(Globals.local_connection,
 									rpin.getincbase_str())
 		if rpout.lstat():
-			Log.FatalError("Restore target %s already exists,"
+			Log.FatalError("Restore target %s already exists, "
 						   "and will not be overwritten." % rpout.path)
 		return rpin, rpout
 

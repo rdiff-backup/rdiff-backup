@@ -28,7 +28,7 @@ class Restore:
 		if not isinstance(target, DSRPath): target = DSRPath(None, target)
 
 		mirror_time = Restore.get_mirror_time()
-		rest_time = Restore.get_rest_time(rest_time)
+		rest_time = Restore.get_rest_time(rest_time, mirror_time)
 		inc_list = Restore.get_inclist(inc_rpath)
 		rid = RestoreIncrementData(inc_rpath.index, inc_rpath, inc_list)
 		rid.sortincseq(rest_time, mirror_time)
@@ -46,7 +46,7 @@ class Restore:
 			Log("Warning, two different dates for current mirror found", 2)
 		return Time.stringtotime(current_mirror_incs[0].getinctime())
 
-	def get_rest_time(old_rest_time):
+	def get_rest_time(old_rest_time, mirror_time):
 		"""If old_rest_time is between two increments, return older time
 
 		There is a slightly tricky reason for doing this:  The rest of
@@ -64,7 +64,8 @@ class Restore:
 		base_incs = Restore.get_inclist(Globals.rbdir.append("increments"))
 		if not base_incs: return old_rest_time
 		inctimes = [Time.stringtotime(inc.getinctime()) for inc in base_incs]
-		return max(filter(lambda time: time <= old_rest_time, inctimes))
+		return max(filter(lambda time: time <= old_rest_time,
+						  inctimes + [mirror_time]))
 
 	def get_inclist(inc_rpath):
 		"""Returns increments with given base"""
