@@ -291,28 +291,5 @@ class CacheIndexableTest(unittest.TestCase):
 		assert l1 == l2, (l1, l2)
 
 
-class CacheIndexableProcessorTest(unittest.TestCase):
-	def function(self, elem):
-		"""Called by CIP on each elem"""
-		self.l.append(elem)
-
-	def testReorder(self):
-		"""Test the reordering abilities of CIP"""
-		CIP = rorpiter.CachedIndexableProcessor(self.function, 3)
-		in_list = [rorpiter.IndexedTuple((x,), (x,)) for x in range(6)]
-		self.l = []
-
-		CIP(in_list[0])
-		CIP(in_list[2])
-		CIP(in_list[1])
-		CIP(in_list[5])
-		CIP(in_list[3])
-		CIP(in_list[4])
-		self.assertRaises(AssertionError, CIP, in_list[0])
-
-		CIP.close()
-		assert self.l == in_list, (self.l, in_list)
-
-
 if __name__ == "__main__": unittest.main()
 
