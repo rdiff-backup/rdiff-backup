@@ -40,6 +40,7 @@
  */
 
 
+#include <sys/types.h>
 #include <config.h>
 
 #include <assert.h>
@@ -81,6 +82,7 @@ rs_filebuf_t *rs_filebuf_new(FILE *f, size_t buf_len)
 
 void rs_filebuf_free(rs_filebuf_t *fb) 
 {
+	free(fb->buf);
         rs_bzero(fb, sizeof *fb);
         free(fb);
 }
