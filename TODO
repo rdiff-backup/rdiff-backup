@@ -162,8 +162,6 @@ $Id$
      tests?  Probably, but perhaps we can afford to run just one
      carefully-chosen test.
 
- * Web site in Latte?
-
  * Use slprintf not strnprintf, etc.
 
  * Long files
