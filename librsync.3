@@ -22,13 +22,14 @@
 .SH NAME
 librsync \- library for delta compression of streams
 .SH SYNOPSYS
-.B #include <stdio.h>
+ #include \fB<stdio.h>\fP
 .br
-.B #include <stdlib.h>
-.sp
-.B #include <rsync.h>
-.sp
-.B cc ... -lrsync
+ #include \fB<stdlib.h>\fP
+.br
+ #include \fB<rsync.h>\fP
+
+ cc ... \fB-lrsync\fP
+
 .SH DESCRIPTION
 The \fBlibrsync\fP library implements network delta-compression of
 streams and files.  The algorithm is similar to that used in the
