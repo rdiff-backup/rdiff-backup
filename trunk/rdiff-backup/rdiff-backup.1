@@ -524,9 +524,10 @@ and
 Each file selection condition either matches or doesn't match a given
 file.  A given file is excluded by the file selection system exactly
 when the first matching file selection condition specifies that the
-file be excluded; otherwise the file is included.  If a file is
-excluded, rdiff-backup acts as if that file does not exist in the
-source directory.
+file be excluded; otherwise the file is included.  When backing up, if
+a file is excluded, rdiff-backup acts as if that file does not exist
+in the source directory.  When restoring, an excluded file is
+considered not to exist in either the source or target directories.
 
 For instance,
 .PP
