@@ -36,9 +36,9 @@ char const *hs_strerror(hs_result r)
     case HS_BAD_MAGIC:
         return "bad magic number at start of stream";
     case HS_BLOCKED:
-        return "blocked waiting for input";
-    case HS_SHORT_STREAM:
-        return "unexpected end of file";
+        return "blocked waiting for input or output buffers";
+    case HS_INPUT_ENDED:
+        return "unexpected end of input";
     case HS_CORRUPT:
         return "stream corrupt";
     case HS_UNIMPLEMENTED:
