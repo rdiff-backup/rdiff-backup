@@ -133,6 +133,33 @@ class CheckSyms(RPathTest):
 		link.delete()
 
 
+class CheckSockets(RPathTest):
+	"""Check reading and making sockets"""
+	def testMake(self):
+		"""Create socket, then read it"""
+		sock = RPath(self.lc, self.mainprefix, ("socket",))
+		assert not sock.lstat()
+		sock.mksock()
+		assert sock.issock()
+		sock.delete()
+
+	def testLongSock(self):
+		"""Test making a socket with a long name
+
+		On some systems, the name of a socket is restricted, and
+		cannot be as long as a regular file.  When this happens, a
+		SkipFileException should be raised.
+
+		"""
+		sock = RPath(self.lc, self.mainprefix, ("socketaoeusthaoeaoeutnhaonseuhtansoeuthasoneuthasoeutnhasonuthaoensuhtasoneuhtsanouhonetuhasoneuthsaoenaonsetuaosenuhtaoensuhaoeu",))
+		assert not sock.lstat()
+		try: sock.mksock()
+		except SkipFileException: pass
+		else: print "Warning, making long socket did not fail"
+		sock.setdata()
+		if sock.lstat(): sock.delete()
+
+
 class TouchDelete(RPathTest):
 	"""Check touching and deletion of files"""
 	def testTouch(self):
