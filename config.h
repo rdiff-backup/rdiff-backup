@@ -59,5 +59,5 @@
 #define PACKAGE "libhsync"
 
 /* Version number of package */
-#define VERSION "0.9.0dev"
+#define VERSION "0.9.1dev"
 
