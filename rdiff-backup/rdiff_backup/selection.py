@@ -26,8 +26,7 @@ documentation on what this code does can be found on the man page.
 
 from __future__ import generators
 import re
-from log import Log
-import FilenameMapping, robust, rpath, Globals
+import FilenameMapping, robust, rpath, Globals, log
 
 
 class SelectError(Exception):
@@ -87,7 +86,7 @@ class Select:
 		self.rpath = rootrp
 		self.prefix = self.rpath.path
 
-	def set_iter(self, iterate_parents = None, sel_func = None):
+	def set_iter(self, sel_func = None):
 		"""Initialize more variables, get ready to iterate
 
 		Selection function sel_func is called on each rpath and is
@@ -96,17 +95,24 @@ class Select:
 		"""
 		if not sel_func: sel_func = self.Select
 		self.rpath.setdata() # this may have changed since Select init
-		self.iter = self.Iterate_fast(self.rpath, sel_func)
-
-		# only iterate parents if we are not starting from beginning
+		self.iter = self.filter_readable(self.Iterate_fast(self.rpath,
+														   sel_func))
 		self.next = self.iter.next
 		self.__iter__ = lambda: self
 		return self
 
+	def filter_readable(self, rp_iter):
+		"""Yield rps in iter except the unreadable regular files"""
+		for rp in rp_iter:
+			if not rp.isreg() or rp.readable(): yield rp
+			else: log.ErrorLog.write_if_open("ListError", rp,
+						   "Regular file lacks read permissions")
+
 	def Iterate_fast(self, rpath, sel_func):
 		"""Like Iterate, but don't recur, saving time"""
 		def error_handler(exc, filename):
-			Log("Error initializing file %s/%s" % (rpath.path, filename), 2)
+			log.ErrorLog.write_if_open("ListError",
+									   rpath.index + (filename,), exc)
 			return None
 
 		def diryield(rpath):
@@ -117,7 +123,7 @@ class Select:
 			and should be included iff something inside is included.
 
 			"""
-			for filename in robust.listrp(rpath):
+			for filename in self.listdir(rpath):
 				new_rpath = robust.check_common_error(error_handler,
 										rpath.append, (filename,))
 				if new_rpath:
@@ -174,13 +180,23 @@ class Select:
 				for rp in iid: yield rp
 		else: assert 0, "Invalid selection result %s" % (str(s),)
 
+	def listdir(self, dir_rp):
+		"""List directory rpath with error logging"""
+		def error_handler(exc):
+			log.ErrorLog.write_if_open("ListError", dir_rp, exc)
+			return []
+		dir_listing = robust.check_common_error(error_handler, dir_rp.listdir)
+		dir_listing.sort()
+		return dir_listing
+
 	def iterate_in_dir(self, rpath, rec_func, sel_func):
 		"""Iterate the rpaths in directory rpath."""
 		def error_handler(exc, filename):
-			Log("Error initializing file %s/%s" % (rpath.path, filename), 2)
+			log.ErrorLog.write_if_open("ListError",
+									   rpath.index + (filename,), exc)
 			return None
 
-		for filename in robust.listrp(rpath):
+		for filename in self.listdir(rpath):
 			new_rp = robust.check_common_error(
 				error_handler, rpath.append, [filename])
 			if new_rp:
@@ -251,7 +267,7 @@ class Select:
 	def parse_catch_error(self, exc):
 		"""Deal with selection error exc"""
 		if isinstance(exc, FilePrefixError):
-			Log.FatalError(
+			log.Log.FatalError(
 """Fatal Error: The file specification
 '    %s'
 cannot match any files in the base directory
@@ -260,8 +276,8 @@ Useful file specifications begin with the base directory or some
 pattern (such as '**') which matches the base directory.""" %
 			(exc, self.prefix))
 		elif isinstance(e, GlobbingError):
-			Log.FatalError("Fatal Error while processing expression\n"
-						   "%s" % exc)
+			log.Log.FatalError("Fatal Error while processing expression\n"
+							   "%s" % exc)
 		else: raise
 
 	def parse_rbdir_exclude(self):
@@ -273,7 +289,7 @@ pattern (such as '**') which matches the base directory.""" %
 		"""Exit with error if last selection function isn't an exclude"""
 		if (self.selection_functions and
 			not self.selection_functions[-1].exclude):
-			Log.FatalError(
+			log.Log.FatalError(
 """Last selection expression:
     %s
 only specifies that files be included.  Because the default is to
@@ -296,10 +312,10 @@ probably isn't what you meant.""" %
 		filelist_name is just a string used for logging.
 
 		"""
-		Log("Reading filelist %s" % filelist_name, 4)
+		log.Log("Reading filelist %s" % filelist_name, 4)
 		tuple_list, something_excluded = \
 					self.filelist_read(filelist_fp, inc_default, filelist_name)
-		Log("Sorting filelist %s" % filelist_name, 4)
+		log.Log("Sorting filelist %s" % filelist_name, 4)
 		tuple_list.sort()
 		i = [0] # We have to put index in list because of stupid scoping rules
 
@@ -324,11 +340,11 @@ probably isn't what you meant.""" %
 			"""Warn if prefix is incorrect"""
 			prefix_warnings[0] += 1
 			if prefix_warnings[0] < 6:
-				Log("Warning: file specification '%s' in filelist %s\n"
-					"doesn't start with correct prefix %s.  Ignoring." %
-					(exc, filelist_name, self.prefix), 2)
+				log.Log("Warning: file specification '%s' in filelist %s\n"
+						"doesn't start with correct prefix %s.  Ignoring." %
+						(exc, filelist_name, self.prefix), 2)
 				if prefix_warnings[0] == 5:
-					Log("Future prefix errors will not be logged.", 2)
+					log.Log("Future prefix errors will not be logged.", 2)
 
 		something_excluded, tuple_list = None, []
 		separator = Globals.null_separator and "\0" or "\n"
@@ -341,7 +357,7 @@ probably isn't what you meant.""" %
 			tuple_list.append(tuple)
 			if not tuple[1]: something_excluded = 1
 		if filelist_fp.close():
-			Log("Error closing filelist %s" % filelist_name, 2)
+			log.Log("Error closing filelist %s" % filelist_name, 2)
 		return (tuple_list, something_excluded)
 
 	def filelist_parse_line(self, line, include):
@@ -399,7 +415,7 @@ probably isn't what you meant.""" %
 		See the man page on --[include/exclude]-globbing-filelist
 
 		"""
-		Log("Reading globbing filelist %s" % list_name, 4)
+		log.Log("Reading globbing filelist %s" % list_name, 4)
 		separator = Globals.null_separator and "\0" or "\n"
 		for line in filelist_fp.read().split(separator):
 			if not line: continue # skip blanks
@@ -423,7 +439,7 @@ probably isn't what you meant.""" %
 		assert include == 0 or include == 1
 		try: regexp = re.compile(regexp_string)
 		except:
-			Log("Error compiling regular expression %s" % regexp_string, 1)
+			log.Log("Error compiling regular expression %s" % regexp_string, 1)
 			raise
 		
 		def sel_func(rp):
@@ -437,8 +453,8 @@ probably isn't what you meant.""" %
 	def devfiles_get_sf(self, include):
 		"""Return a selection function matching all dev files"""
 		if self.selection_functions:
-			Log("Warning: exclude-device-files is not the first "
-				"selector.\nThis may not be what you intended", 3)
+			log.Log("Warning: exclude-device-files is not the first "
+					"selector.\nThis may not be what you intended", 3)
 		def sel_func(rp):
 			if rp.isdev(): return include
 			else: return None
@@ -449,8 +465,8 @@ probably isn't what you meant.""" %
 	def special_get_sf(self, include):
 		"""Return sel function matching sockets, symlinks, sockets, devs"""
 		if self.selection_functions:
-			Log("Warning: exclude-special-files is not the first "
-				"selector.\nThis may not be what you intended", 3)
+			log.Log("Warning: exclude-special-files is not the first "
+					"selector.\nThis may not be what you intended", 3)
 		def sel_func(rp):
 			if rp.issym() or rp.issock() or rp.isfifo() or rp.isdev():
 				return include

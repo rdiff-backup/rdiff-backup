@@ -20,7 +20,7 @@
 """Manage logging, displaying and recording messages with required verbosity"""
 
 import time, sys, traceback, types
-import Globals
+import Globals, static
 
 
 class LoggerError(Exception): pass
@@ -182,4 +182,66 @@ class Logger:
 		logging_func(self.exception_to_string(), verbosity)
 
 Log = Logger()
+
+
+class ErrorLog:
+	"""Log each recoverable error in error_log file
+
+	There are three types of recoverable errors:  ListError, which
+	happens trying to list a directory or stat a file, UpdateError,
+	which happen when trying to update a changed file, and
+	SpecialFileError, which happen when a special file cannot be
+	created.  See the error policy file for more info.
+
+	"""
+	log_fileobj = None
+	log_inc_rp = None
+	def open(cls, compress = 1):
+		"""Open the error log, prepare for writing"""
+		assert not cls.log_fileobj and not cls.log_inc_rp, "log already open"
+		if compress: typestr = 'data.gz'
+		else: typestr = 'data'
+		cls.log_inc_rp = Global.rbdir.append("error_log.%s.%s" %
+											 (Time.curtimestr, typestr))
+		assert not cls.log_inc_rp.lstat(), "Error file already exists"
+		cls.log_fileobj = cls.log_inc_rp.open("wb", compress = compress)
+
+	def isopen(cls):
+		"""True if the error log file is currently open"""
+		return cls.log_fileobj is not None
+
+	def write(cls, error_type, rp, exc):
+		"""Add line to log file indicating error exc with file rp"""
+		s = cls.get_log_string(error_type, rp, exc)
+		Log(s, 2)
+		if Globals.null_separator: s += "\0"
+		else:
+			s = re.sub("\n", " ", s)
+			s += "\n"
+		cls.log_fileobj.write(s)
+
+	def get_indexpath(cls, rp):
+		"""Return filename for logging.  rp is a rpath, string, or tuple"""
+		try: return rp.get_indexpath()
+		except AttributeError:
+			if type(rp) is types.TupleTypes: return "/".join(rp)
+			else: return str(rp)
+
+	def write_if_open(cls, error_type, rp, exc):
+		"""Call cls.write(...) if error log open, only log otherwise"""
+		if cls.isopen(): cls.write(error_type, rp, exc)
+		else: Log(cls.get_log_string(error_type, rp, exc), 2)
+
+	def get_log_string(cls, error_type, rp, exc):
+		"""Return log string to put in error log"""
+		assert (error_type == "ListError" or error_type == "UpdateError" or
+				error_type == "SpecialFileError"), "Unknown type "+error_type
+		return "%s %s %s" % (error_type, cls.get_indexpath(rp), str(exc))
+
+	def close(cls):
+		"""Close the error log file"""
+		assert not cls.log_fileobj.close()
+		cls.log_fileobj = cls.log_inc_rp = None
+
+static.MakeClass(ErrorLog)
 
