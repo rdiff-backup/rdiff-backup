@@ -31,6 +31,8 @@ Dean Gaudet's patch fixes "--restrict /" option.
 Added Robert Shaw's --exclude-fifo, --include-symbolic-links,
 etc. options.
 
+Added Maximilian Mehnert's fix for too many open files bug.
+
 
 New in v0.13.4 (2004/01/31)
 ---------------------------
