@@ -55,14 +55,17 @@ def parse_cmdlineoptions(arglist):
 	try: optlist, args = getopt.getopt(arglist, "blr:sv:V",
 		 ["backup-mode", "calculate-average", "check-destination-dir",
 		  "compare", "compare-at-time=", "current-time=", "exclude=",
-		  "exclude-device-files", "exclude-filelist=",
-		  "exclude-filelist-stdin", "exclude-globbing-filelist=",
+		  "exclude-device-files", "exclude-fifos",
+		  "exclude-filelist=", "exclude-symbolic-links",
+		  "exclude-sockets", "exclude-filelist-stdin",
+		  "exclude-globbing-filelist=",
 		  "exclude-globbing-filelist-stdin", "exclude-mirror=",
 		  "exclude-other-filesystems", "exclude-regexp=",
 		  "exclude-special-files", "force", "group-mapping-file=",
 		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=",
 		  "include-globbing-filelist-stdin", "include-regexp=",
+		  "include-special-files", "include-symbolic-links",
 		  "list-at-time=", "list-changed-since=", "list-increments",
 		  "list-increment-sizes", "never-drop-acls", "no-acls",
 		  "no-compare-inode", "no-compression",
@@ -87,8 +90,15 @@ def parse_cmdlineoptions(arglist):
 			else: restore_timestr = arg
 		elif opt == "--current-time":
 			Globals.set_integer('current_time', arg)
-		elif opt == "--exclude": select_opts.append((opt, arg))
-		elif opt == "--exclude-device-files": select_opts.append((opt, arg))
+		elif (opt == "--exclude" or
+			  opt == "--exclude-device-files" or
+			  opt == "--exclude-fifos" or
+			  opt == "--exclude-other-filesystems" or
+			  opt == "--exclude-regexp" or
+			  opt == "--exclude-special-files" or
+			  opt == "--exclude-sockets" or
+			  opt == "--exclude-symbolic-links"):
+			select_opts.append((opt, arg))
 		elif opt == "--exclude-filelist":
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))
@@ -102,12 +112,12 @@ def parse_cmdlineoptions(arglist):
 			select_opts.append(("--exclude-globbing-filelist",
 								"standard input"))
 			select_files.append(sys.stdin)
-		elif (opt == "--exclude-other-filesystems" or
-			  opt == "--exclude-regexp" or
-			  opt == "--exclude-special-files"): select_opts.append((opt, arg))
 		elif opt == "--force": force = 1
 		elif opt == "--group-mapping-file": group_mapping_filename = arg
-		elif opt == "--include": select_opts.append((opt, arg))
+		elif (opt == "--include" or
+			  opt == "--include-special-files" or
+			  opt == "--include-symbolic-links"):
+			select_opts.append((opt, arg))
 		elif opt == "--include-filelist":
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))

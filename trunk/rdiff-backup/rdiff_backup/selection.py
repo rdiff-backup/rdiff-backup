@@ -233,6 +233,12 @@ class Select:
 					self.add_selection_func(self.glob_get_sf(arg, 0))
 				elif opt == "--exclude-device-files":
 					self.add_selection_func(self.devfiles_get_sf(0))
+				elif opt == "--exclude-symbolic-links":
+					self.add_selection_func(self.symlinks_get_sf(0))
+				elif opt == "--exclude-sockets":
+					self.add_selection_func(self.sockets_get_sf(0))
+				elif opt == "--exclude-fifos":
+					self.add_selection_func(self.fifos_get_sf(0))
 				elif opt == "--exclude-filelist":
 					self.add_selection_func(self.filelist_get_sf(
 						filelists[filelists_index], 0, arg))
@@ -261,6 +267,10 @@ class Select:
 					filelists_index += 1
 				elif opt == "--include-regexp":
 					self.add_selection_func(self.regexp_get_sf(arg, 1))
+				elif opt == "--include-special-files":
+					self.add_selection_func(self.special_get_sf(1))
+				elif opt == "--include-symbolic-links":
+					self.add_selection_func(self.symlinks_get_sf(1))
 				else: assert 0, "Bad selection option %s" % opt
 		except SelectError, e: self.parse_catch_error(e)
 		assert filelists_index == len(filelists)
@@ -454,23 +464,38 @@ probably isn't what you meant.""" %
 		sel_func.name = "Regular expression: %s" % regexp_string
 		return sel_func
 
+	def gen_get_sf(self, pred, include, name):
+		"""Returns a selection function that uses pred to test
+		
+		RPath is matched if pred returns true on it.  Name is a string
+		summarizing the test to the user.
+
+		"""
+		def sel_func(rp):
+			if pred(rp): return include
+			return None
+		sel_func.exclude = not include
+		sel_func.name = (include and "include " or "exclude ") + name
+		return sel_func
+
 	def devfiles_get_sf(self, include):
 		"""Return a selection function matching all dev files"""
-		if self.selection_functions:
-			log.Log("Warning: exclude-device-files is not the first "
-					"selector.\nThis may not be what you intended", 3)
-		def sel_func(rp):
-			if rp.isdev(): return include
-			else: return None
-		sel_func.exclude = not include
-		sel_func.name = (include and "include" or "exclude") + " device files"
-		return sel_func
+		return self.gen_get_sf(rpath.RORPath.isdev, include, "device files")
+
+ 	def symlinks_get_sf(self, include):
+ 		"""Return a selection function matching all symlinks"""
+		return self.gen_get_sf(rpath.RORPath.issym, include, "symbolic links")
+
+ 	def sockets_get_sf(self, include):
+ 		"""Return a selection function matching all sockets"""
+		return self.gen_get_sf(rpath.RORPath.issock, include, "socket files")
+
+ 	def fifos_get_sf(self, include):
+ 		"""Return a selection function matching all fifos"""
+		return self.gen_get_sf(rpath.RORPath.isfifo, include, "fifo files")
 
 	def special_get_sf(self, include):
 		"""Return sel function matching sockets, symlinks, sockets, devs"""
-		if self.selection_functions:
-			log.Log("Warning: exclude-special-files is not the first "
-					"selector.\nThis may not be what you intended", 3)
 		def sel_func(rp):
 			if rp.issym() or rp.issock() or rp.isfifo() or rp.isdev():
 				return include

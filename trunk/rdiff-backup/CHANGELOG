@@ -1,4 +1,4 @@
-New in v0.13.5 (2004/??/??)
+New in v0.13.5 (2005/??/??)
 ---------------------------
 
 Added error-correcting fsync suggestion by Antoine Perdaens.
@@ -27,6 +27,9 @@ Treated hard link permission problem on Mac OS X by applying
 suggestion by David Vasilevsky
 
 Dean Gaudet's patch fixes "--restrict /" option.
+
+Added Robert Shaw's --exclude-fifo, --include-symbolic-links,
+etc. options.
 
 
 New in v0.13.4 (2004/01/31)
