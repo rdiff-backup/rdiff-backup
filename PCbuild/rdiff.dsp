@@ -194,10 +194,6 @@ SOURCE=..\search.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\snprintf.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\stats.c
 # End Source File
 # Begin Source File
@@ -274,6 +270,14 @@ SOURCE=..\job.h
 # End Source File
 # Begin Source File
 
+SOURCE=".\librsync-config.h"
+# End Source File
+# Begin Source File
+
+SOURCE=..\librsync.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\netint.h
 # End Source File
 # Begin Source File
@@ -294,11 +298,11 @@ SOURCE=..\prototab.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\librsync.h
+SOURCE=..\search.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\search.h
+SOURCE=..\snprintf.h
 # End Source File
 # Begin Source File
 

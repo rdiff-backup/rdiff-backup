@@ -87,9 +87,11 @@ AC_CHECK_FUNC(setreuid, [],
     [ if echo $LIBS | grep -- -lucb >/dev/null ;then :; 
       else LIBS="$LIBS -lc -lucb"; USEUCB=y;fi])
 ])
-# supply a snprintf if the system doesn't have one
-AC_REPLACE_FUNCS(snprintf)
-AC_CHECK_FUNCS(vsnprintf)
+# supply a snprintf and vsnprintf if the system doesn't have one.
+# if missing, check MSVC _xxx varients, otherwise use snprintf.c
+# replacement.
+AC_CHECK_FUNCS(snprintf,,[AC_CHECK_FUNCS(_snprintf)])
+AC_CHECK_FUNCS(vsnprintf,,[AC_CHECK_FUNCS(_vsnprintf,,[AC_LIBOBJ(snprintf)])])
 
 # Test if the compiler has the GNU feature of putting argv[0] into a global
 AC_MSG_CHECKING([for program_invocation_short_name])

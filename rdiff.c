@@ -66,6 +66,7 @@
 #include "util.h"
 #include "trace.h"
 #include "isprefix.h"
+#include "snprintf.h"
 
 
 #define PROGRAM "rdiff"

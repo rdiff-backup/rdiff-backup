@@ -35,6 +35,7 @@
 
 #include "librsync.h"
 #include "trace.h"
+#include "snprintf.h"
 
 /*
  * TODO: Other things to show in statistics:
