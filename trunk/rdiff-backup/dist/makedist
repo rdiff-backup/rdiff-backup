@@ -95,7 +95,7 @@ def MakeTar():
 					 "iterfile.py", "lazy.py", "librsync.py",
 					 "log.py", "Main.py", "manage.py", "MiscStats.py",
 					 "Rdiff.py", "restore.py", "rlist.py",
-					 "robust.py", "rorpiter.py", "rpath.py",
+					 "robust.py", "rorpiter.py", "rpath.py", "Security.py",
 					 "selection.py", "SetConnections.py", "static.py",
 					 "statistics.py", "Time.py"]:
 		assert not os.system("cp %s/%s %s/rdiff_backup" %
