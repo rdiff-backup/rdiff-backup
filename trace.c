@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "java" -*-  */
+/* -*- mode: c; c-file-style: "stroustrup" -*-  */
 
 /* libhsync/trace.c -- Control debug trace, etc
    

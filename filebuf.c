@@ -1,6 +1,8 @@
-/* -*- mode: c; c-file-style: "java" -*- */
-/* librsync/filebuf.c -- Abstract read to and from FILE* buffers.
-
+/* -*- mode: c; c-file-style: "stroustrup" -*-
+ * $Id$
+ *
+ * librsync/filebuf.c -- Abstract read to and from FILE* buffers.
+ 
    Copyright (C) 1999, 2000 by Martin Pool.
    Copyright (C) 1999 by tridge@samba.org.
 
@@ -88,8 +90,8 @@ hs_filebuf_open(char const *filename, int mode)
 }
 
 
-
-void hs_filebuf_close(hs_filebuf_t *fbuf)
+void
+hs_filebuf_close(hs_filebuf_t *fbuf)
 {
      assert(fbuf->dogtag == filebuf_tag);
 
@@ -100,6 +102,9 @@ void hs_filebuf_close(hs_filebuf_t *fbuf)
 	  close(fbuf->fd_cache);
 	  fbuf->fd_cache = -1;
      }
+
+     bzero(fbuf, sizeof *fbuf);
+     free(fbuf);
 }
 
 

@@ -1,7 +1,7 @@
-/* -*- mode: c; c-file-style: "java" -*- */
-
-/*
-   librsync: combined encode and sign
+/* -*- mode: c; c-file-style: "stroustrup" -*- 
+ * $Id$
+ *
+ * enc.c -- combined encode and sign
    
    Copyright (C) 1999-2000 by Martin Pool.
    Copyright (C) 1999-2000 by Peter Barker.
@@ -363,11 +363,11 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
      return_val_if_fail(block_len > 0, -1);
 
      if (got_old) {
-	  /* Put the char * sigbuffer into our structures */
-	  ret = _hs_make_sum_struct(&sums, sigread_fn, sigreadprivate,
+	 /* Put the char * sigbuffer into our structures */
+	 sums = _hs_make_sum_struct(sigread_fn, sigreadprivate,
 				    block_len);
-	  if (ret < 0)
-	       got_old = 0;
+	 if (!sums)
+	     got_old = 0;
      }
 
      if ((ret = _hs_littok_header(write_fn, write_priv)) < 0)
@@ -530,7 +530,7 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
      if (lit_tmpbuf)
 	  hs_membuf_free(lit_tmpbuf);
      if (sums)
-	  _hs_free_sum_struct(&sums);
+	  _hs_free_sum_struct(sums);
      if (inbuf->buf)
 	  free(inbuf->buf);
 

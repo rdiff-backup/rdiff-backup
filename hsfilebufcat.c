@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "java" -*-  */
+/* -*- mode: c; c-file-style: "stroustrup" -*-  */
 /* hsfilebufcat.c -- Write results of reading from a filebuf
    to stdout.
    

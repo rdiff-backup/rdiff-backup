@@ -1,6 +1,8 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
-/* $Id$ */
-/* private.h -- Private headers for libhsync
+/* -*- mode: c; c-file-style: "stroustrup" -*-  
+ * $Id$
+ *
+ * private.h -- Private headers for libhsync
+ *
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
 
    This program is free software; you can redistribute it and/or modify
@@ -209,7 +211,7 @@ typedef struct sum_struct {
     struct sum_buf *sums;	/* points to info for each chunk */
     int *tag_table;
     struct target *targets;
-} sum_struct_t;
+} hs_sum_struct_t;
 
 
 /* All blocks are the same length in the current algorithm except for
@@ -246,12 +248,8 @@ int _hs_find_in_hash(rollsum_t * rollsum,
 
 int _hs_build_hash_table(struct sum_struct *sums);
 
-int
-_hs_make_sum_struct(struct sum_struct **signatures,
-		    hs_read_fn_t sigread_fn, void *sigreadprivate,
-		    int block_len);
-
-void _hs_free_sum_struct(struct sum_struct **psums);
+hs_sum_struct_t * _hs_make_sum_struct(hs_read_fn_t, void *, int block_len);
+void _hs_free_sum_struct(hs_sum_struct_t *);
 
 
 /* ========================================

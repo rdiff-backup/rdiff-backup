@@ -1,6 +1,7 @@
-/* -*- mode: c; c-file-style: "java" -*-  */
-
-/* hash -- manage hashtables of checksums and blocks
+/* -*- mode: c; c-file-style: "stroustrup" -*- 
+ * $Id$
+ *
+ * search.c -- manage hashtables of checksums and blocks
 
    Copyright (C) 1999-2000 by Martin Pool.
    Copyright (C) 1999 by Andrew Tridgell
@@ -36,13 +37,15 @@
 #define gettag2(s1,s2) (((s1) + (s2)) & 0xFFFF)
 #define gettag(sum) gettag2((sum)&0xFFFF,(sum)>>16)
 
-static int compare_targets(struct target *t1, struct target *t2)
+static int
+compare_targets(struct target *t1, struct target *t2)
 {
      return ((int) t1->t - (int) t2->t);
 }
 
 
-int _hs_build_hash_table(struct sum_struct *sums)
+int
+_hs_build_hash_table(struct sum_struct *sums)
 {
      int i;
 
@@ -81,7 +84,7 @@ int _hs_build_hash_table(struct sum_struct *sums)
 int
 _hs_find_in_hash(rollsum_t * rollsum,
 		 char const *inbuf, int block_len,
-		 struct sum_struct const *sums,
+		 hs_sum_struct_t const *sums,
 		 hs_stats_t *stats)
 {
      int tag = gettag(rollsum->weak_sum);

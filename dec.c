@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "java" -*-  */
+/* -*- mode: c; c-file-style: "stroustrup" -*-  */
 
 /* gddec.c -- Decode & extract signature from a gdiff-plus stream
 

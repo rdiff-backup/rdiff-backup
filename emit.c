@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "java" -*-  */
+/* -*- mode: c; c-file-style: "stroustrup" -*-  */
 
 /* emit -- emit encoded commands to the client
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>

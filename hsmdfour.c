@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "java"; c-basic-offset: 4 -*-  */
+/* -*- mode: c; c-file-style: "stroustrup"; c-basic-offset: 4 -*-  */
 /* hsmdfour.c -- Write out the md4sum of stdin.
    
    Copyright (C) 2000 by Martin Pool.

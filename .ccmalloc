@@ -235,7 +235,7 @@
 % `silent' to 1 (f.e. when logging to stderr)
 
 %set silent
-set silent 0
+set silent 1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % `file-info' en/disables file and line number information [1]
@@ -291,7 +291,7 @@ set silent 0
 % on separate lines. With `print-on-one-line' set 1 all are printed
 % on one line.
 
-%set print-on-one-line 0
+set print-on-one-line 1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % `additional-line' enlarges readability [1]
@@ -299,7 +299,7 @@ set silent 0
 % When printing call chains an empty line is printed between to
 % call points. Set `additional-line' to 0 to disable this feature.
 
-%set additional-line 1
+set additional-line 0
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % `statistics' enables more accurate profiling [0] 
@@ -308,7 +308,7 @@ set silent 0
 % a per call chain basis. This uses 4 additional pointers for each
 % call chain.
 
-%set statistics 0
+set statistics 0
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % set order for sorting of call chains [1] [1]

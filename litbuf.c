@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "java" -*-  */
+/* -*- mode: c; c-file-style: "stroustrup" -*-  */
 
 /* litbuf -- buffer of data waiting to go out as signature or literal
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -25,11 +25,12 @@
 #include "private.h"
 #include "emit.h"
 
+static const char *_rcsid UNUSED = "$Id$";
 
 /* Queue byte VALUE into the literal-data buffer. */
 int _hs_append_literal(hs_membuf_t * litbuf, char value)
 {
-     hs_membuf_write(litbuf, &value, sizeof value);
+     hs_membuf_write(litbuf, &value, sizeof value); /* LEAK HERE! */
 
      return 0;
 }

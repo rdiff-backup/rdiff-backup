@@ -1,6 +1,7 @@
-/* -*- mode: c; c-file-style: "java" -*-  */
-
-/* hs-decode.c -- Apply changes, extract signature stream.
+/* -*- mode: c; c-file-style: "stroustrup" -*-
+ * $Id$
+ *
+ * hsdecode.c -- Apply changes, extract signature stream.
    
    Copyright (C) 2000 by Martin Pool.
 
@@ -96,6 +97,11 @@ int main(int argc, char *argv[])
 		    argv[0], strerror(errno));
 	  exit(1);
      }
+
+     hs_filebuf_close(ltfb);
+     hs_filebuf_close(outfb);
+     hs_filebuf_close(newsigfb);
+     hs_filebuf_close(oldfb);
 
      return 0;
 }

@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "java" -*-  */
+/* -*- mode: c; c-file-style: "stroustrup" -*-  */
 
 /* hsyncproto -- Protocol special numbers
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
