@@ -12,6 +12,10 @@ If there is data missing from the destination dir (for instance if a
 user mistakenly deletes it), only warn when restoring, instead of
 exiting with error.
 
+Fixed bug in EA/ACL restoring, noticed by Greg Freemyer.  Also updated
+quoting of filenames and extended attributes names to match
+forthcoming attr/facl utilities.
+
 
 New in v0.13.1 (2003/08/08)
 ---------------------------

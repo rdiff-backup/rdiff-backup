@@ -41,5 +41,13 @@ class CTest(unittest.TestCase):
 		"""Test running C.sync"""
 		C.sync()
 
+	def test_acl_quoting(self):
+		"""Test the acl_quote and acl_unquote functions"""
+		assert C.acl_quote('foo') == 'foo', C.acl_quote('foo')
+		assert C.acl_quote('\n') == '\\012', C.acl_quote('\n')
+		assert C.acl_unquote('\\012') == '\n'
+		s = '\\\n\t\145\n\01=='
+		assert C.acl_unquote(C.acl_quote(s)) == s
+		
 
 if __name__ == "__main__": unittest.main()

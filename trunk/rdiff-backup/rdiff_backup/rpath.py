@@ -1001,10 +1001,7 @@ class RPath(RORPath):
 	def get_acl(self):
 		"""Return access control list object, setting if necessary"""
 		try: acl = self.data['acl']
-		except KeyError:
-			acl = eas_acls.AccessControlList(self.index)
-			if not self.issym(): acl.read_from_rp(self)
-			self.data['acl'] = acl
+		except KeyError: acl = self.data['acl'] = acl_get(self)
 		return acl
 
 	def write_acl(self, acl):
@@ -1015,14 +1012,7 @@ class RPath(RORPath):
 	def get_ea(self):
 		"""Return extended attributes object, setting if necessary"""
 		try: ea = self.data['ea']
-		except KeyError:
-			ea = eas_acls.ExtendedAttributes(self.index)
-			if not self.issym():
-				# Don't read from symlinks because they will be
-				# followed.  Update this when llistxattr,
-				# etc. available
-				ea.read_from_rp(self)
-			self.data['ea'] = ea
+		except KeyError: ea = self.data['ea'] = ea_get(self)
 		return ea
 
 	def write_ea(self, ea):
@@ -1068,4 +1058,9 @@ class RPathFileHook:
 		self.closing_thunk()
 		return result
 
-import eas_acls # Put at end to avoid regress
+
+# These two are overwritten by the eas_acls.py module.  We can't
+# import that module directory because of circular dependency
+# problems.
+def acl_get(rp): assert 0
+def ea_get(rp): assert 0

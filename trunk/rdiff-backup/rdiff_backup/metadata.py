@@ -122,9 +122,7 @@ def Record2RORP(record_string):
 	"""
 	data_dict = {}
 	for field, data in line_parsing_regexp.findall(record_string):
-		if field == "File":
-			if data == ".": index = ()
-			else: index = tuple(unquote_path(data).split("/"))
+		if field == "File": index = quoted_filename_to_index(data)
 		elif field == "Type":
 			if data == "None": data_dict['type'] = None
 			else: data_dict['type'] = data
@@ -174,12 +172,23 @@ def unquote_path(quoted_string):
 		return two_chars
 	return re.sub("\\\\n|\\\\\\\\", replacement_func, quoted_string)
 
+def quoted_filename_to_index(quoted_filename):
+	"""Return tuple index given quoted filename"""
+	if quoted_filename == '.': return ()
+	else: return tuple(unquote_path(quoted_filename).split('/'))
 
 class FlatExtractor:
 	"""Controls iterating objects from flat file"""
-	# The following two should be set in subclasses
-	record_boundary_regexp = None # Matches beginning of next record
-	record_to_object = None # Function that converts text record to object
+
+	# Set this in subclass.  record_boundary_regexp should match
+	# beginning of next record.  The first group should start at the
+	# beginning of the record.  The second group should contain the
+	# (possibly quoted) filename.
+	record_boundary_regexp = None
+
+	# Set in subclass to function that converts text record to object
+	record_to_object = None
+
 	def __init__(self, fileobj):
 		self.fileobj = fileobj # holds file object we are reading from
 		self.buf = "" # holds the next part of the file
@@ -187,10 +196,10 @@ class FlatExtractor:
 		self.blocksize = 32 * 1024
 
 	def get_next_pos(self):
-		"""Return position of next record in buffer"""
+		"""Return position of next record in buffer, or end pos if none"""
 		while 1:
-			m = self.record_boundary_regexp.search(self.buf)
-			if m: return m.start(0)+1 # the +1 skips the newline
+			m = self.record_boundary_regexp.search(self.buf, 1)
+			if m: return m.start(1)
 			else: # add next block to the buffer, loop again
 				newbuf = self.fileobj.read(self.blocksize)
 				if not newbuf:
@@ -218,27 +227,20 @@ class FlatExtractor:
 
 		"""
 		assert not self.buf or self.buf.endswith("\n")
-		begin_re = self.get_index_re(index)
 		while 1:
-			m = begin_re.search(self.buf)
-			if m:
-				self.buf = self.buf[m.start(2):]
-				return
 			self.buf = self.fileobj.read(self.blocksize)
 			self.buf += self.fileobj.readline()
 			if not self.buf:
 				self.at_end = 1
 				return
-
-	def get_index_re(self, index):
-		"""Return regular expression used to find index.
-
-		Override this in sub classes.  The regular expression's second
-		group needs to start at the beginning of the record that
-		contains information about the object with the given index.
-
-		"""
-		assert 0, "Just a placeholder, must override this in subclasses"
+			while 1:
+				m = self.record_boundary_regexp.search(self.buf)
+				if not m: break
+				cur_index = self.filename_to_index(m.group(2))
+				if cur_index >= index:
+					self.buf = self.buf[m.start(1):]
+					return
+				else: self.buf = self.buf[m.end(1):]
 
 	def iterate_starting_with(self, index):
 		"""Iterate objects whose index starts with given index"""
@@ -256,24 +258,24 @@ class FlatExtractor:
 			self.buf = self.buf[next_pos:]
 		assert not self.close()
 
+	def filename_to_index(self, filename):
+		"""Translate filename, possibly quoted, into an index tuple
+
+		The filename is the first group matched by
+		regexp_boundary_regexp.
+
+		"""
+		assert 0 # subclass
+
 	def close(self):
 		"""Return value of closing associated file"""
 		return self.fileobj.close()
 
 class RorpExtractor(FlatExtractor):
 	"""Iterate rorps from metadata file"""
-	record_boundary_regexp = re.compile("\\nFile")
+	record_boundary_regexp = re.compile("(?:\\n|^)(File (.*?))\\n")
 	record_to_object = staticmethod(Record2RORP)
-	def get_index_re(self, index):
-		"""Find start of rorp record with given index"""
-		indexpath = index and '/'.join(index) or '.'
-		# Must double all backslashes, because they will be
-		# reinterpreted.  For instance, to search for index \n
-		# (newline), it will be \\n (backslash n) in the file, so the
-		# regular expression is "File \\\\n\\n" (File two backslash n
-		# backslash n)
-		double_quote = re.sub("\\\\", "\\\\\\\\", indexpath)
-		return re.compile("(^|\\n)(File %s\\n)" % (double_quote,))
+	filename_to_index = staticmethod(quoted_filename_to_index)
 
 
 class FlatFile:
@@ -339,7 +341,7 @@ class FlatFile:
 			else: compressed = cls._rp.get_indexpath().endswith('.gz')
 
 		fileobj = cls._rp.open('rb', compress = compressed)
-		if restrict_index is None: return cls._extractor(fileobj).iterate()
+		if not restrict_index: return cls._extractor(fileobj).iterate()
 		else:
 			re = cls._extractor(fileobj)
 			return re.iterate_starting_with(restrict_index)
