@@ -27,7 +27,7 @@ class Main:
 			  "include-from-stdin", "terminal-verbosity=",
 			  "exclude-device-files", "resume", "no-resume",
 			  "resume-window=", "windows-time-format",
-			  "checkpoint-interval=", "hard-links", "current-time="])
+			  "checkpoint-interval=", "no-hard-links", "current-time="])
 		except getopt.error:
 			self.commandline_error("Error parsing commandline options")
 
@@ -45,7 +45,7 @@ class Main:
 			elif opt == "--exclude-mirror":
 				self.exclude_mirror_regstrs.append(arg)
 			elif opt == "--force": self.force = 1
-			elif opt == "--hard-links": Globals.set('preserve_hardlinks', 1)
+			elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 			elif opt == "--include-from-stdin": Globals.include_from_stdin = 1
 			elif opt == "-l" or opt == "--list-increments":
 				self.action = "list-increments"
@@ -124,12 +124,9 @@ class Main:
 		elif self.action == "backup": self.Backup(rps[0], rps[1])
 		elif self.action == "restore": apply(self.Restore, rps)
 		elif self.action == "mirror": self.Mirror(rps[0], rps[1])
-		elif self.action == "test-server":
-			SetConnections.TestConnections()
-		elif self.action == "list-increments":
-			self.ListIncrements(rps[0])
-		elif self.action == "remove-older-than":
-			self.RemoveOlderThan(rps[0])
+		elif self.action == "test-server": SetConnections.TestConnections()
+		elif self.action == "list-increments": self.ListIncrements(rps[0])
+		elif self.action == "remove-older-than": self.RemoveOlderThan(rps[0])
 		else: raise AssertionError("Unknown action " + self.action)
 
 	def cleanup(self):
