@@ -8,6 +8,8 @@ syntax".  What's happening?</a></li>
 
 <li><a href="#windows">Does rdiff-backup run under Windows?</a></li>
 
+<li><a href="#OSX">Does rdiff-backup run under Mac OS X?</a></li>
+
 <li><a href="#remove_dir">My backup set contains some files that I just realized I don't want/need backed up.  How do I remove them from the backup volume to save space?</li>
 
 <li><a href="#redhat">How do I install the RPMs on Redhat linux system?</a></li>
@@ -111,15 +113,46 @@ some header files in the Makefile:
 
 </pre>
 
-Then, whenever you use rdiff-backup (or at least if you are backing up
-to or restoring from a Windows system), use the
-<strong>--windows-time-format</strong> switch, which will tell
-rdiff-backup not to put a colon (":") in a filename (this option was
-added after Jason posted his message).  Finally, as Michael Muegel
-points out, you have to exclude all files from the source directory
-which have colons in them, so add something like the --exclude ".*:.*"
-option.  In the near future some quoting facility may be added to deal
-with these issues.
+Then, whenever you use rdiff-backup to back up from a unix system to
+Windows, use the <strong>--windows-mode</strong> switch.  This
+compensates for some windows file systems' inability to store hard
+links, symlinks, device files, sockets, fifos, case sensitive
+filenames, and filenames with colons (":") in them.  (Note: device
+files, symlinks, fifos, and sockets will simply be skipped, and hard
+link information will not be recorded.)
+
+<p>If you are backing up one windows system to another, full
+--windows-mode is not necessary, but you'll still need
+<strong>--windows-time-format</strong>, which stops rdiff-backup from
+trying to make increment files with colons in them.
+</li>
+
+<P>
+<a name="OSX">
+<li><strong>Does rdiff-backup run under Mac OS X?</strong>
+
+<p>
+Yes, but there may be some issues installing librsync.  See this
+message from Gerd Knops:
+
+<pre>
+From: Gerd Knops <gerti@bitart.com>
+Date: Thu, 3 Oct 2002 03:56:47 -0500 (01:56 PDT)
+
+[parts of original message deleted]
+these instructions build it fine with all tests running OK
+(librsync-0.9.5.1 on OS X 10.2.1):
+
+	aclocal
+	autoconf
+	automake --foreign --add-missing
+	CFLAGS=-no-cpp-precomp ./configure
+	make
+	make install
+</pre>
+
+Also, if you are backing up to a file system that is not case
+sensitive you may need to use "--chars-to-quote A-Z".
 </li>
 
 <P>

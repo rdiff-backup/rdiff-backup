@@ -3,6 +3,9 @@ Write some better selection test cases to test new Iterate_fast func.
 Work on killtest code - avoid returning a failure when a file is
 simply skipped.
 
+Work on WindowsTest code - avoid returning failure because symlinks,
+etc., are skipped.
+
 Look at error code, make sure filename is always mentioned (see Knops
 email).
 
