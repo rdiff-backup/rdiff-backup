@@ -1,3 +1,14 @@
+New in v0.9.6 (2002/08/30)
+--------------------------
+
+Fixed bug, probably introduced in 0.9.3, which prevented restores from
+a local source to a remote destination.  Reported by Phillip Eby.
+
+Fixed another bug reported by Phillip Eby, where restores would fail
+if rdiff-backup had only been run once and no increments were
+available.
+
+
 New in v0.9.5 (2002/08/09)
 --------------------------
 
