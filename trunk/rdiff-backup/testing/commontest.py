@@ -5,6 +5,7 @@ from rdiff_backup.rpath import RPath
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
 	 selection, lazy, Time, rpath
 
+RBBin = "../rdiff-backup"
 SourceDir = "../rdiff_backup"
 AbsCurdir = os.getcwd() # Absolute path name of current directory
 AbsTFdir = AbsCurdir+"/testfiles"
@@ -56,12 +57,14 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 		dest_dir = ("test2/tmp; ../../%s/rdiff-backup --server::../../%s" %
 					(SourceDir, dest_dir))
 
-	cmdargs = [SourceDir + "/rdiff-backup", extra_options]
+	cmdargs = [RBBin, extra_options]
 	if not (source_local and dest_local): cmdargs.append("--remote-schema %s")
 
 	if current_time: cmdargs.append("--current-time %s" % current_time)
-
-	os.system(" ".join(cmdargs))	
+	cmdargs.extend([src_dir, dest_dir])
+	cmdline = " ".join(cmdargs)
+	print "Executing: ", cmdline
+	assert not os.system(cmdline)
 
 def cmd_schemas2rps(schema_list, remote_schema):
 	"""Input list of file descriptions and the remote schema, return rps

@@ -34,7 +34,7 @@ recovered.
 """
 
 from __future__ import generators
-import Globals, restore, log, rorpiter, journal, TempFile
+import Globals, restore, log, rorpiter, journal, TempFile, metadata, rpath
 
 # regress_time should be set to the time we want to regress back to
 # (usually the time of the last successful backup)
@@ -42,6 +42,10 @@ regress_time = None
 
 # This should be set to the latest unsuccessful backup time
 unsuccessful_backup_time = None
+
+# This is set by certain tests and allows overriding of global time
+# variables.
+time_override_mode = None
 
 
 class RegressException(Exception):
@@ -64,6 +68,9 @@ def Regress(mirror_rp):
 	assert mirror_rp.conn is inc_rpath.conn is Globals.local_connection
 	set_regress_time()
 	set_restore_times()
+	ITR = rorpiter.IterTreeReducer(RegressITRB, [])
+	for rf in iterate_meta_rfs(mirror_rp, inc_rpath): ITR(rf.index, rf)
+	ITR.Finish()
 
 def set_regress_time():
 	"""Set global regress_time to previous sucessful backup
@@ -73,6 +80,10 @@ def set_regress_time():
 
 	"""
 	global regress_time, unsuccessful_backup_time
+	if time_override_mode:
+		assert regress_time and unsuccessful_backup_time
+		return
+
 	curmir_incs = restore.get_inclist(Globals.rbdir.append("current_mirror"))
 	assert len(curmir_incs) == 2, \
 		   "Found %s current_mirror flags, expected 2" % len(curmir_incs)
@@ -134,10 +145,10 @@ class RegressFile(restore.RestoreFile):
 
 	"""
 	def __init__(self, mirror_rp, inc_rp, inc_list):
-		restore.RestoreFile._init__(self, mirror_rp, inc_rp, inclist)
+		restore.RestoreFile.__init__(self, mirror_rp, inc_rp, inc_list)
 		assert len(self.relevant_incs) <= 2, "Too many incs"
 		if len(self.relevant_incs) == 2:
-			self.regress_inc = self.relevant.incs[-1]
+			self.regress_inc = self.relevant_incs[-1]
 		else: self.regress_inc = None
 
 	def set_metadata_rorp(self, metadata_rorp):
@@ -178,7 +189,8 @@ class RegressITRB(rorpiter.ITRBranch):
 
 	def fast_process(self, index, rf):
 		"""Process when nothing is a directory"""
-		if not rpath.cmp_attribs(rf.metadata_rorp, rf.mirror_rp):
+		if (not rf.metadata_rorp.lstat() or not rf.mirror_rp.lstat() or
+			not rpath.cmp_attribs(rf.metadata_rorp, rf.mirror_rp)):
 			if rf.metadata_rorp.isreg(): self.restore_orig_regfile(rf)
 			else:
 				if rf.mirror_rp.lstat(): rf.mirror_rp.delete()
@@ -242,8 +254,8 @@ class RegressITRB(rorpiter.ITRBranch):
 
 		"""
 		if args and args[0] and isinstance(args[0], tuple):
-			filename = os.path.join(*args[0])
-		elif self.index: filename = os.path.join(*self.index)
+			filename = "/".join(args[0])
+		elif self.index: filename = "/".join(*self.index)
 		else: filename = "."
 		log.Log("Error '%s' processing %s" % (exc, filename), 2)
 		raise RegressException("Error during Regress")
