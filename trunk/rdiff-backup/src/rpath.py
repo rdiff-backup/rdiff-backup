@@ -173,7 +173,7 @@ class RPathStatic:
 
 		Later versions of os.lstat return a special lstat object,
 		which can confuse the pickler and cause errors in remote
-		operations.
+		operations.  This has been fixed in Python 2.2.1.
 
 		"""
 		try: return tuple(os.lstat(filename))
