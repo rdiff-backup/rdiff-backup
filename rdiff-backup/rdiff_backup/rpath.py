@@ -644,7 +644,7 @@ class RPath(RORPath):
 	def setmtime(self, modtime):
 		"""Set only modtime (access time to present)"""
 		log.Log(lambda: "Setting time of %s to %d" % (self.path, modtime), 7)
-		self.conn.os.utime(self.path, (time.time(), modtime))
+		self.conn.os.utime(self.path, (long(time.time()), modtime))
 		self.data['mtime'] = modtime
 
 	def chown(self, uid, gid):
