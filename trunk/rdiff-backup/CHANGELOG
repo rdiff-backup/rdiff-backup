@@ -1,3 +1,13 @@
+New in v0.11.4 (2003/04/01)
+---------------------------
+
+Fixed bug incrementing sockets whose filenames were pretty long, but
+not super long.  Reported by Olivier Mueller.
+
+Added Albert Chin-A-Young's patch to add a few options to the setup.py
+install script.
+
+
 New in v0.11.3 (2003/03/04)
 ---------------------------
 
