@@ -394,6 +394,7 @@ class Resume:
 		specified.
 
 		"""
+		assert Globals.isbackup_writer
 		if Time.prevtime > later_than: return Time.prevtime # usual case
 
 		for si in cls.get_sis_covering_index(index):
@@ -416,6 +417,7 @@ class Resume:
 
 	def SetSessionInfo(cls):
 		"""Read data directory and initialize _session_info"""
+		assert Globals.isbackup_writer
 		silist = []
 		rp_quad_dict = cls.group_rps_by_time(cls.get_relevant_rps())
 		times = rp_quad_dict.keys()

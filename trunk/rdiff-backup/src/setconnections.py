@@ -177,7 +177,6 @@ information.""" % (exception, remote_cmd))
 		cls.UpdateGlobal("backup_reader", reading_conn)
 		cls.UpdateGlobal("backup_writer", writing_conn)
 
-
 	def CloseConnections(cls):
 		"""Close all connections.  Run by client"""
 		assert not Globals.server

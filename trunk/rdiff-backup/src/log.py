@@ -137,8 +137,8 @@ class Logger:
 
 		exc_info = sys.exc_info()
 		logging_func("Exception %s raised of class %s" %
-					 (exc_info[1], exc_info[0]), 2)
-		logging_func("".join(traceback.format_tb(exc_info[2])), 2)
+					 (exc_info[1], exc_info[0]), 3)
+		logging_func("".join(traceback.format_tb(exc_info[2])), 3)
 		
 
 Log = Logger()

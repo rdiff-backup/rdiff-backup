@@ -7,9 +7,12 @@ the server.  Otherwise will start the server without a chdir.
 
 """
 
-execfile("commontest.py")
-rbexec("setconnections.py")
+import os, sys
+
+#execfile("commontest.py")
+#rbexec("setconnections.py")
 
 if len(sys.argv) > 1: os.chdir(sys.argv[1])
-PipeConnection(sys.stdin, sys.stdout).Server()
+#PipeConnection(sys.stdin, sys.stdout).Server()
 
+os.system("/home/ben/prog/python/rdiff-backup/src/rdiff-backup --server")

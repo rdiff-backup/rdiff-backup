@@ -79,7 +79,7 @@ class MatchingTest(unittest.TestCase):
 testfiles/select/1/2
 testfiles/select/1
 testfiles/select/1/2/3
-testfiles/select/3/3/3""")
+testfiles/select/3/3/2""")
 		sf = self.Select.filelist_get_sf(fp, 1, "test")
 		assert sf(self.root) == 1
 		assert sf(self.makeext("1")) == 1
@@ -88,6 +88,7 @@ testfiles/select/3/3/3""")
 		assert sf(self.makeext("2/2")) == None
 		assert sf(self.makeext("3")) == 1
 		assert sf(self.makeext("3/3")) == 1
+		assert sf(self.makeext("3/3/3")) == None
 
 	def testFilelistExclude(self):
 		"""Test included filelist"""
@@ -95,7 +96,7 @@ testfiles/select/3/3/3""")
 testfiles/select/1/2
 testfiles/select/1
 testfiles/select/1/2/3
-testfiles/select/3/3/3""")
+testfiles/select/3/3/2""")
 		sf = self.Select.filelist_get_sf(fp, 0, "test")
 		assert sf(self.root) == None
 		assert sf(self.makeext("1")) == 0
@@ -103,7 +104,8 @@ testfiles/select/3/3/3""")
 		assert sf(self.makeext("1/2/3")) == 0
 		assert sf(self.makeext("2/2")) == None
 		assert sf(self.makeext("3")) == None
-		assert sf(self.makeext("3/3/3")) == 0
+		assert sf(self.makeext("3/3/2")) == 0
+		assert sf(self.makeext("3/3/3")) == None
 
 	def testFilelistInclude2(self):
 		"""testFilelistInclude2 - with modifiers"""

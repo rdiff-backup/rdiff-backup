@@ -65,11 +65,14 @@ class PathSetter(unittest.TestCase):
 		print "executing " + cmdstr
 		assert not os.system(cmdstr)
 
-	def runtest(self):
-		# Deleting previous output
+	def delete_tmpdirs(self):
+		"""Remove any temp directories created by previous tests"""
 		assert not os.system(MiscDir + '/myrm testfiles/output* '
 							 'testfiles/restoretarget* testfiles/vft_out '
 							 'timbar.pyc')
+
+	def runtest(self):
+		self.delete_tmpdirs()
 
 		# Backing up increment1
 		self.exec_rb('testfiles/increment1', 'testfiles/output')
@@ -147,4 +150,85 @@ class Final(PathSetter):
 		self.runtest()
 
 
+class FinalSelection(PathSetter):
+	"""Test selection options"""
+	def testSelLocal(self):
+		"""Quick backup testing a few selection options"""
+		self.delete_tmpdirs()
+
+		# Test --include option
+		assert not \
+			   os.system(self.rb_schema +
+						 "--current-time 10000 "
+						 "--include testfiles/increment2/various_file_types "
+						 "--exclude '**' "
+						 "testfiles/increment2 testfiles/output")
+
+		assert os.lstat("testfiles/output/various_file_types/regular_file")
+		self.assertRaises(OSError, os.lstat, "testfiles/output/test.py")
+
+		# Now try reading list of files
+		fp = os.popen(self.rb_schema +
+					  "--current-time 20000 "
+					  "--include-filelist-stdin --exclude '**' "
+					  "testfiles/increment2 testfiles/output", "w")
+		fp.write("""
+testfiles/increment2/test.py
+testfiles/increment2/changed_dir""")
+		assert not fp.close()
+
+		assert os.lstat("testfiles/output/changed_dir")
+		assert os.lstat("testfiles/output/test.py")
+		self.assertRaises(OSError, os.lstat,
+						  "testfiles/output/various_file_types")
+		self.assertRaises(OSError, os.lstat,
+						  "testfiles/output/changed_dir/foo")
+
+		# Test selective restoring
+		mirror_rp = RPath(Globals.local_connection, "testfiles/output")
+		restore_filename = get_increment_rp(mirror_rp, 10000).path
+		assert not os.system(self.rb_schema +
+		   "--include testfiles/restoretarget1/various_file_types/"
+							 "regular_file "
+		   "--exclude '**' " +
+		   restore_filename + " testfiles/restoretarget1")
+		assert os.lstat("testfiles/restoretarget1/various_file_types/"
+						"regular_file")
+		self.assertRaises(OSError, os.lstat, "testfiles/restoretarget1/tester")
+		self.assertRaises(OSError, os.lstat,
+				 "testfiles/restoretarget1/various_file_types/executable")
+
+		fp = os.popen(self.rb_schema +
+					  "--include-filelist-stdin " + restore_filename +
+					  " testfiles/restoretarget2", "w")
+		fp.write("""
+- testfiles/restoretarget2/various_file_types/executable""")
+		assert not fp.close()
+		assert os.lstat("testfiles/restoretarget2/various_file_types/"
+						"regular_file")
+		self.assertRaises(OSError, os.lstat,
+			   "testfiles/restoretarget2/various_file_types/executable")
+
+
+class FinalCorrupt(PathSetter):
+	def testBackupOverlay(self):
+		"""Test backing up onto a directory already backed up for that time
+
+		This will test to see if rdiff-backup will ignore files who
+		already have an increment where it wants to put something.
+		Just make sure rdiff-backup doesn't exit with an error.
+		
+		"""
+		self.delete_tmpdirs()
+		assert not os.system("cp -a testfiles/corruptbackup testfiles/output")
+		self.set_connections(None, None, None, None)
+		self.exec_rb('testfiles/corruptbackup_source', 'testfiles/output')
+
+	def testBackupOverlayRemote(self):
+		"""Like above but destination is remote"""
+		self.delete_tmpdirs()
+		assert not os.system("cp -a testfiles/corruptbackup testfiles/output")
+		self.set_connections(None, None, "test1/", '../')
+		self.exec_rb('testfiles/corruptbackup_source', 'testfiles/output')
+		
 if __name__ == "__main__": unittest.main()

@@ -13,6 +13,10 @@ def rbexec(src_file):
 	execfile(src_file, globals())
 	os.chdir(AbsCurdir)
 
+def Myrm(dirstring):
+	"""Run myrm on given directory string"""
+	assert not os.system("%s/myrm %s" % (MiscDir, dirstring))
+
 def Make():
 	"""Make sure the rdiff-backup script in the source dir is up-to-date"""
 	os.chdir(SourceDir)
@@ -91,6 +95,7 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir,
 
 	rpin, rpout = SetConnections.InitRPs([src_dir, dest_dir], remote_schema)
 	_get_main().misc_setup([rpin, rpout])
+	_get_main().backup_init_select(rpin, rpout)
 	if not rpout.lstat(): rpout.mkdir()
 	if checkpointing: # rdiff-backup-data must exist to checkpoint
 		data_dir = rpout.append("rdiff-backup-data")
@@ -118,20 +123,19 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 
 	mirror_rp, dest_rp = SetConnections.InitRPs([mirror_dir, dest_dir],
 												remote_schema)
-
-	def get_increment_rp(time):
-		"""Return increment rp matching time"""
-		data_rp = mirror_rp.append("rdiff-backup-data")
-		for filename in data_rp.listdir():
-			rp = data_rp.append(filename)
-			if (rp.isincfile() and rp.getincbase_str() == "increments" and
-				Time.stringtotime(rp.getinctime()) == time):
-				return rp
-		assert None, ("No increments.XXX.dir found in directory "
-					  "%s with that time" % data_rp.path)
-
-	_get_main().Restore(get_increment_rp(time), dest_rp)
+	_get_main().Restore(get_increment_rp(mirror_rp, time), dest_rp)
 	_get_main().cleanup()
+
+def get_increment_rp(mirror_rp, time):
+	"""Return increment rp matching time in seconds"""
+	data_rp = mirror_rp.append("rdiff-backup-data")
+	for filename in data_rp.listdir():
+		rp = data_rp.append(filename)
+		if (rp.isincfile() and rp.getincbase_str() == "increments" and
+			Time.stringtotime(rp.getinctime()) == time):
+			return rp
+	assert None, ("No increments.XXX.dir found in directory "
+				  "%s with that time" % data_rp.path)
 
 def _reset_connections(src_rp, dest_rp):
 	"""Reset some global connection information"""
@@ -148,7 +152,8 @@ def _get_main():
 		Globals.Main = Main()
 		return Globals.Main
 
-def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1):
+def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
+					 equality_func = None):
 	"""Compare src_rp and dest_rp, which can be directories
 
 	This only compares file attributes, not the actual data.  This
@@ -182,6 +187,7 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1):
 		dsiter1 = Hardlink.add_rorp_iter(dsiter1, 1)
 		dsiter2 = Hardlink.add_rorp_iter(dsiter2, None)
 		result = Iter.equal(dsiter1, dsiter2, 1, hardlink_equal)
+	elif equality_func: result = Iter.equal(dsiter1, dsiter2, 1, equality_func)
 	else: result = Iter.equal(dsiter1, dsiter2, 1)
 
 	for i in dsiter1: pass # make sure all files processed anyway

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # rdiff-backup -- Mirror files while keeping incremental changes
-# Version 0.7.2 released April 11, 2002
+# Version 0.7.3 released April 29, 2002
 # Copyright (C) 2001, 2002 Ben Escoto <bescoto@stanford.edu>
 #
 # This program is licensed under the GNU General Public License (GPL).
@@ -14,6 +14,6 @@
 # bugs or have any suggestions.
 
 from __future__ import nested_scopes, generators
-import os, stat, time, sys, getopt, re, cPickle, types, shutil, sha, marshal, traceback, popen2, tempfile, gzip
+import os, stat, time, sys, getopt, re, cPickle, types, shutil, sha, marshal, traceback, popen2, tempfile, gzip, UserList
 
 

@@ -37,7 +37,7 @@ Globals.no_compression_regexp = \
 class inctest(unittest.TestCase):
 	"""Test the incrementRP function"""
 	def setUp(self):
-		pass
+		Globals.set('isbackup_writer',1)
 
 	def testreg(self):
 		"""Test increment of regular files"""
