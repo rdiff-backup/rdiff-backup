@@ -840,12 +840,12 @@ def checkdest_need_check(dest_rp):
 The rdiff-backup data directory
 %s
 exists, but we cannot find a valid current_mirror marker.  You can
-avoid this message by removing the rdiff_backup_data directory;
+avoid this message by removing the rdiff-backup-data directory;
 however any data in it will be lost.
 
 Probably this error was caused because the first rdiff-backup session
 into a new directory failed.  If this is the case it is safe to delete
-the rdiff_backup_data directory because there is no important
+the rdiff-backup-data directory because there is no important
 information in it.
 
 """ % (Globals.rbdir.path,))
