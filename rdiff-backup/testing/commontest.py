@@ -127,7 +127,12 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 
 	mirror_rp, dest_rp = SetConnections.InitRPs([mirror_dir, dest_dir],
 												remote_schema)
-	_get_main().Restore(get_increment_rp(mirror_rp, time), dest_rp)
+	inc = get_increment_rp(mirror_rp, time)
+	if inc:
+		_get_main().Restore(get_increment_rp(mirror_rp, time), dest_rp)
+	else: # use alternate syntax
+		_get_main().restore_timestr = str(time)
+		_get_main().RestoreAsOf(mirror_rp, dest_rp)
 	_get_main().cleanup()
 
 def get_increment_rp(mirror_rp, time):
@@ -135,11 +140,9 @@ def get_increment_rp(mirror_rp, time):
 	data_rp = mirror_rp.append("rdiff-backup-data")
 	for filename in data_rp.listdir():
 		rp = data_rp.append(filename)
-		if (rp.isincfile() and rp.getincbase_str() == "increments" and
-			Time.stringtotime(rp.getinctime()) == time):
-			return rp
-	assert None, ("No increments.XXX.dir found in directory "
-				  "%s with that time" % data_rp.path)
+		if rp.isincfile() and rp.getincbase_str() == "increments":
+			if Time.stringtotime(rp.getinctime()) == time: return rp
+	return None # Couldn't find appropriate increment
 
 def _reset_connections(src_rp, dest_rp):
 	"""Reset some global connection information"""

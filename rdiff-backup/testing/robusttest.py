@@ -76,7 +76,7 @@ class SaveStateTest(unittest.TestCase):
 		SaveState.record_last_file_action(last_rorp).execute()
 
 		sym_rp = RPath(Globals.local_connection,
-					   "testfiles/robust/last-file-mirrored.%s.snapshot" %
+					   "testfiles/robust/last-file-mirrored.%s.data" %
 					   Time.curtimestr)
 		assert sym_rp.issym()
 		assert sym_rp.readlink() == "increments/usr/local/bin/ls"

@@ -13,7 +13,7 @@ Globals.counter = 0
 Log.setverbosity(4)
 
 class RootTest(unittest.TestCase):
-	dirlist1 = ["testfiles/root", "testfiles/noperms", "testfiles/increment4"]
+	dirlist1 = ["testfiles/root", "testfiles/various_file_types", "testfiles/increment4"]
 	dirlist2 = ["testfiles/increment4", "testfiles/root",
 				"testfiles/increment1"]
 	def testLocal1(self): BackupRestoreSeries(1, 1, self.dirlist1)

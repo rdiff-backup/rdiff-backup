@@ -213,7 +213,7 @@ class Restore:
 			"""Add filename to the inc tuple dictionary"""
 			rp = rid.inc_rpath.append(filename)
 			if Globals.quoting_enabled: rp.quote_path()
-			if rp.isincfile():
+			if rp.isincfile() and rp.getinctype() != 'data':
 				basename = rp.getincbase_str()
 				affirm_dict_indexed(basename)
 				rid_dict[basename].inc_list.append(rp)
