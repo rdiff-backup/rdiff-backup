@@ -404,6 +404,9 @@ class RPath(RORPath):
 		"bar") for "foo/bar" (no base), and ("local", "bin") for
 		"/usr/local/bin" if the base is "/usr".
 
+		For the root directory "/", the index is empty and the base is
+		"/".
+
 		"""
 		self.conn = connection
 		self.index = index
@@ -487,9 +490,6 @@ class RPath(RORPath):
 
 	def _getdevnums(self):
 		"""Return tuple for special file (major, minor)"""
-		if Globals.exclude_device_files:
-			# No point in finding numbers because it will be excluded anyway
-			return ()
 		s = self.conn.reval("lambda path: os.lstat(path).st_rdev", self.path)
 		return (s >> 8, s & 0xff)
 
@@ -596,10 +596,9 @@ class RPath(RORPath):
 			def helper(dsrp, base_init_output, branch_reduction):
 				if dsrp.isdir(): dsrp.rmdir()
 				else: dsrp.delete()
-			dsiter = DestructiveStepping.Iterate_from(self, None)
 			itm = IterTreeReducer(lambda x: None, lambda x,y: None, None,
 								  helper)
-			for dsrp in dsiter: itm(dsrp)
+			for dsrp in Select(self, None).set_iter(): itm(dsrp)
 			itm.getresult()
 		else: self.conn.os.unlink(self.path)
 		self.setdata()

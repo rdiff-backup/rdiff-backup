@@ -37,7 +37,7 @@ class HighLevel:
 
 		SourceS.set_session_info(session_info)
 		DestS.set_session_info(session_info)
-		src_init_dsiter = SourceS.split_initial_dsiter(src_rpath)
+		src_init_dsiter = SourceS.split_initial_dsiter()
 		dest_sigiter = DestS.get_sigs(dest_rpath, src_init_dsiter)
 		diffiter = SourceS.get_diffs_and_finalize(dest_sigiter)
 		DestS.patch_and_finalize(dest_rpath, diffiter, checkpoint)
@@ -53,7 +53,7 @@ class HighLevel:
 		SourceS.set_session_info(session_info)
 		DestS.set_session_info(session_info)
 		if not session_info: dest_rpath.conn.SaveState.touch_last_file()
-		src_init_dsiter = SourceS.split_initial_dsiter(src_rpath)
+		src_init_dsiter = SourceS.split_initial_dsiter()
 		dest_sigiter = DestS.get_sigs(dest_rpath, src_init_dsiter)
 		diffiter = SourceS.get_diffs_and_finalize(dest_sigiter)
 		DestS.patch_increment_and_finalize(dest_rpath, diffiter, inc_rpath)
@@ -85,16 +85,15 @@ class HLSourceStruct:
 	def set_session_info(cls, session_info):
 		cls._session_info = session_info
 
-	def iterate_from(cls, rpath):
+	def iterate_from(cls):
 		"""Supply more aruments to DestructiveStepping.Iterate_from"""
-		if cls._session_info:
-			return DestructiveStepping.Iterate_from(rpath, 1,
-									   cls._session_info.last_index)
-		else: return DestructiveStepping.Iterate_from(rpath, 1)
+		if cls._session_info is None: Globals.select_source.set_iter()
+		else: Globals.select_source.set_iter(cls._session_info.last_index)
+		return Globals.select_source
 
-	def split_initial_dsiter(cls, rpath):
+	def split_initial_dsiter(cls):
 		"""Set iterators of all dsrps from rpath, returning one"""
-		dsiter = cls.iterate_from(rpath)
+		dsiter = cls.iterate_from()
 		initial_dsiter1, cls.initial_dsiter2 = Iter.multiplex(dsiter, 2)
 		return initial_dsiter1
 
@@ -131,17 +130,15 @@ class HLDestinationStruct:
 	def set_session_info(cls, session_info):
 		cls._session_info = session_info
 
-	def iterate_from(cls, rpath):
+	def iterate_from(cls):
 		"""Supply more arguments to DestructiveStepping.Iterate_from"""
-		if cls._session_info:
-			return DestructiveStepping.Iterate_from(rpath, None,
-							       cls._session_info.last_index)
-		else: return DestructiveStepping.Iterate_from(rpath, None)
+		if cls._session_info is None: Globals.select_mirror.set_iter()
+		else: Globals.select_mirror.set_iter(cls._session_info.last_index)
+		return Globals.select_mirror
 
-	def split_initial_dsiter(cls, rpath):
+	def split_initial_dsiter(cls):
 		"""Set initial_dsiters (iteration of all dsrps from rpath)"""
-		dsiter = cls.iterate_from(rpath)
-		result, cls.initial_dsiter2 = Iter.multiplex(dsiter, 2)
+		result, cls.initial_dsiter2 = Iter.multiplex(cls.iterate_from(), 2)
 		return result
 
 	def get_dissimilar(cls, baserp, src_init_iter, dest_init_iter):
@@ -197,7 +194,7 @@ class HLDestinationStruct:
 
 	def get_sigs(cls, baserp, src_init_iter):
 		"""Return signatures of all dissimilar files"""
-		dest_iters1 = cls.split_initial_dsiter(baserp)
+		dest_iters1 = cls.split_initial_dsiter()
 		dissimilars = cls.get_dissimilar(baserp, src_init_iter, dest_iters1)
 		return RORPIter.Signatures(dissimilars)
 
