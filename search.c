@@ -76,8 +76,13 @@ hs_build_hash_table(hs_signature_t * sums)
     int                     i;
 
     sums->tag_table = calloc(TABLESIZE, sizeof sums->tag_table[0]);
+    if (!sums->tag_table)
+        return HS_MEM_ERROR;
+    
     if (sums->count > 0) {
 	sums->targets = calloc(sums->count, sizeof(hs_target_t));
+        if (!sums->targets)
+            return HS_MEM_ERROR;
 
 	for (i = 0; i < sums->count; i++) {
 	    sums->targets[i].i = i;
@@ -99,7 +104,8 @@ hs_build_hash_table(hs_signature_t * sums)
 	sums->tag_table[sums->targets[i].t] = i;
     }
 
-    return 0;
+    hs_trace("done");
+    return HS_DONE;
 }
 
 
