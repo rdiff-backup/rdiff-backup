@@ -89,7 +89,7 @@ rs_result
 rs_squirt_netint(rs_job_t *job, rs_long_t d, int len)
 {
     unsigned char       buf[RS_MAX_INT_BYTES];
-    int                 i, j;
+    int                 i;
 
     if (len <= 0 || len > RS_MAX_INT_BYTES) {
         rs_error("Illegal integer length %d", len);
@@ -98,8 +98,8 @@ rs_squirt_netint(rs_job_t *job, rs_long_t d, int len)
 
     /* Fill the output buffer with a bigendian representation of the
      * number. */
-    for (i = 0, j = len-1; i < len; i++, j--) {
-        buf[j] = d;             /* truncated */
+    for (i = len-1; i >=0; i--) {
+        buf[i] = d;             /* truncated */
         d >>= 8;
     }
 

@@ -150,7 +150,7 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
 	    /* XXX: This is a remnant of rsync: token number 1 is the
 	     * block at offset 0.  It would be good to clear this
 	     * up. */
-	    *match_where = (token - 1) * sig->block_len;
+	    *match_where = (rs_long_t)(token - 1) * sig->block_len;
 	    return 1;
 	} else {
 	    rs_trace("this was a false positive, the strong sig doesn't match");

@@ -152,6 +152,11 @@ static rs_result rs_patch_s_literal(rs_job_t *job)
     
     rs_trace("LITERAL(len=%.0f)", (double) len);
 
+    if (len < 0) {
+        rs_log(RS_LOG_ERR, "invalid length=%.0f on LITERAL command", (double) len);
+        return RS_CORRUPT;
+    }
+
     job->stats.lit_cmds++;
     job->stats.lit_bytes    += len;
     job->stats.lit_cmdbytes += 1 + job->cmd->len_1;
