@@ -3,7 +3,7 @@ New in v0.9.4 (2002/07/25)
 
 Man page now correctly included in rpm.
 
-Installation script does not have exec permissions until it is
+rdiff-backup script does not have exec permissions until it is
 installed (thanks Jason Piterak).
 
 
