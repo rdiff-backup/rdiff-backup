@@ -4,12 +4,14 @@ CFLAGS += -W -Wall -g @trace_flags@
 
 lib_LTLIBRARIES = libhsync.la libhsyncdecode.la
 
-libhsync_la_SOURCES = dec.c enc.c emit.c litbuf.c \
+libhsync_la_SOURCES = dec.c enc.c \
+	emit.h emit.c \
+	litbuf.c \
 	private.h netio.c includes.h \
 	mdfour.c search.c \
 	filebuf.c membuf.c ptrbuf.c \
 	checksum.c copyq.c \
-	compress.c compress.h inbuf.c
+	compress.c compress.h inbuf.c 
 
 libhsyncdecode_la_SOURCES = dec.c \
 	private.h netio.c includes.h \
@@ -49,13 +51,16 @@ EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
 
 include_HEADERS = hsync.h hsyncproto.h
 
-bin_PROGRAMS = hsdecode hsencode
+bin_PROGRAMS = hsdecode hsencode hsemit
 
 hsdecode_SOURCES = hsdecode.c
 hsdecode_LDADD = libhsyncdecode.la
 
 hsencode_SOURCES = hsencode.c
 hsencode_LDADD = libhsync.la
+
+hsemit_SOURCES = hsemit.c
+hsemit_LDADD = libhsync.la
 
 # Thus spake the master programmer:
 # 

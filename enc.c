@@ -87,6 +87,7 @@
 #include "hsync.h"
 #include "hsyncproto.h"
 #include "private.h"
+#include "emit.h"
 
 
 static int
@@ -258,7 +259,7 @@ ssize_t
 hs_encode(rs_read_fn_t read_fn, void *readprivate,
 	  rs_write_fn_t write_fn, void *write_priv,
 	  rs_read_fn_t sigread_fn, void *sigreadprivate,
-	  int new_block_len, hs_stats_t * stats)
+	  int new_block_len UNUSED, hs_stats_t * stats)
 {
      struct sum_struct *sums = 0;
      int ret;
@@ -345,7 +346,7 @@ hs_encode(rs_read_fn_t read_fn, void *readprivate,
 	    
 	       if (token > 0) {
 		    if (_hs_flush_literal_buf(lit_tmpbuf, write_fn, write_priv, stats,
-					      op_literal_1) < 0)
+					      op_kind_literal) < 0)
 			 return -1;
 
 		    /* TODO: Rather than actually sending a copy command,
@@ -391,17 +392,17 @@ hs_encode(rs_read_fn_t read_fn, void *readprivate,
 	  goto out;
 
      ret = _hs_flush_literal_buf(lit_tmpbuf, write_fn, write_priv,
-				 stats, op_literal_1);
+				 stats, op_kind_literal);
      if (ret < 0)
 	  goto out;
 
      ret = _hs_flush_literal_buf(sig_tmpbuf, write_fn, write_priv,
-				 stats, op_signature_1);
+				 stats, op_kind_signature);
      if (ret < 0)
 	  goto out;
 
      /* Terminate the stream with a null */
-     ret = _hs_emit_eof(write_fn, write_priv);
+     ret = _hs_emit_eof(write_fn, write_priv, stats);
      if (ret < 0)
 	  goto out;
 

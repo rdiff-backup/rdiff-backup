@@ -26,6 +26,18 @@
 
 /* ========================================
 
+   Kinds of opcodes.
+*/
+enum hs_op_kind {
+     op_kind_eof = 1000,
+     op_kind_literal,
+     op_kind_signature,
+     op_kind_copy
+};
+
+
+/* ========================================
+
    Encoding opcodes.
 
    We require 6 + 3 + 3 + 1 = 13 non-inline opcodes; we'll reserve

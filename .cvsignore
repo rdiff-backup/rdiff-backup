@@ -12,9 +12,10 @@ config.status
 configure
 configure.scan
 hsdecode
+hsemit
 hsencode
+libhsync-*.tar.gz
+libhsync-*.tar.gz.asc
 libtool
 stamp-h
 stamp-h.in
-libhsync-*.tar.gz
-libhsync-*.tar.gz.asc

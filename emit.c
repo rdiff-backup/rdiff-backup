@@ -20,12 +20,11 @@
    USA
 */
 
-
 #include "includes.h"
 #include "hsync.h"
 #include "hsyncproto.h"
 #include "private.h"
-
+#include "emit.h"
 
 static int _hs_fits_in_byte(uint32_t val)
 {
@@ -64,7 +63,8 @@ static int _hs_int_len(uint32_t val)
 }
 
 
-int _hs_emit_eof(rs_write_fn_t write_fn, void *write_priv)
+int _hs_emit_eof(rs_write_fn_t write_fn, void *write_priv,
+		 hs_stats_t *stats UNUSED)
 {
     return _hs_write_netbyte(write_fn, write_priv, op_eof);
 }
@@ -74,32 +74,38 @@ int _hs_emit_eof(rs_write_fn_t write_fn, void *write_priv)
    or signature depending on BASE. */
 int
 _hs_emit_chunk_cmd(rs_write_fn_t write_fn,
-		   void *write_priv, uint32_t size, int base)
+		   void *write_priv, uint32_t size,
+		   enum hs_op_kind kind)
 {
-    int type, cmd;
+     int type, cmd, base;
 
-    assert(base == op_literal_1 || base == op_signature_1);
+     assert(kind == op_kind_literal || kind == op_kind_signature);
 
-    if (_hs_fits_inline(size)) {
-	return _hs_write_netbyte(write_fn, write_priv, base + size - 1);
-    }
+     if (kind == op_kind_literal)
+	  base = op_literal_1;
+     else
+	  base = op_signature_1;
 
-    type = _hs_int_len(size);
-    cmd = base + op_literal_byte - op_literal_1;
-    if (type == 1) {
-	 ;
-    } else if (type == 2) {
-	cmd += 1;
-    } else if (type == 4) {
-	cmd += 2;
-    } else {
-	assert(0);
-    }
+     if (_hs_fits_inline(size)) {
+	  return _hs_write_netbyte(write_fn, write_priv, base + size - 1);
+     }
+     
+     type = _hs_int_len(size);
+     cmd = base + op_literal_byte - op_literal_1;
+     if (type == 1) {
+	  ;
+     } else if (type == 2) {
+	  cmd += 1;
+     } else if (type == 4) {
+	  cmd += 2;
+     } else {
+	  assert(0);
+     }
 
-    if (_hs_write_netbyte(write_fn, write_priv, cmd) < 0)
-	return -1;
+     if (_hs_write_netbyte(write_fn, write_priv, cmd) < 0)
+	  return -1;
 
-    return _hs_write_netvar(write_fn, write_priv, size, type);
+     return _hs_write_netvar(write_fn, write_priv, size, type);
 }
 
 

@@ -58,6 +58,13 @@
 #define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
 
+#ifdef __GNUC__
+#define UNUSED __attribute__((unused))
+#else
+#define UNUSED
+#endif				/* ! __GNUC__ */
+
+
 
 /* ========================================
 
@@ -103,28 +110,12 @@ int _hs_copy_ofs(uint32_t offset, uint32_t length,
 ssize_t
 _hs_flush_literal_buf(hs_membuf_t * litbuf,
 		      rs_write_fn_t write_fn, void *write_priv,
-		      hs_stats_t * stats, int code_base);
+		      hs_stats_t * stats,
+		      int kind);
 
 
 void _hs_check_blocksize(int block_len);
 
-
-/* ========================================
-
-   emit gd-plus commands
-*/
-
-int _hs_emit_chunk_cmd(rs_write_fn_t write_fn, void *write_priv,
-		       uint32_t size, int base);
-
-
-int _hs_emit_copy(rs_write_fn_t write_fn, void *write_priv,
-		  uint32_t offset, uint32_t length, hs_stats_t * stats);
-
-
-int _hs_emit_eof(rs_write_fn_t write_fn, void *write_priv);
-
-int _hs_append_literal(hs_membuf_t * litbuf, char value);
 
 /* ========================================
 

@@ -23,7 +23,7 @@
 #include "hsync.h"
 #include "hsyncproto.h"
 #include "private.h"
-
+#include "emit.h"
 
 
 /* Queue byte VALUE into the literal-data buffer. */
@@ -43,36 +43,38 @@ int _hs_append_literal(hs_membuf_t * litbuf, char value)
 ssize_t
 _hs_flush_literal_buf(hs_membuf_t * litbuf,
 		      rs_write_fn_t write_fn, void *write_priv,
-		      hs_stats_t * stats, int code_base)
+		      hs_stats_t * stats,
+		      int kind)
 {
     int ret;
     off_t amount;
 
     amount = hs_membuf_tell(litbuf);
     assert(amount >= 0);
-    assert(code_base == op_literal_1 || code_base == op_signature_1);
 
     if (amount == 0) {
 	 /* buffer is empty */
 	return 0;
     }
 
-    _hs_trace("flush %d bytes of %s data",
-	      (int) amount,
-	      code_base == op_literal_1 ? "literal" : "signature");
+     assert(kind == op_kind_literal || kind == op_kind_signature);
 
-    if (_hs_emit_chunk_cmd(write_fn, write_priv, amount, code_base) < 0)
+     _hs_trace("flush %d bytes of %s data",
+	      (int) amount,
+	      kind == op_kind_literal ? "literal" : "signature");
+
+    if (_hs_emit_chunk_cmd(write_fn, write_priv, amount, kind) < 0)
 	return -1;
 
     ret = _hs_copy_ofs(0, amount,
 		       hs_membuf_read_ofs, litbuf, write_fn, write_priv);
     return_val_if_fail(ret > 0, -1);
 
-    if (code_base == op_literal_1) {
+    if (kind == op_kind_literal) {
 	stats->lit_cmds++;
 	stats->lit_bytes += amount;
     } else {
-	assert(code_base == op_signature_1);
+	assert(kind == op_kind_signature);
 	stats->sig_cmds++;
 	stats->sig_bytes += amount;
     }
