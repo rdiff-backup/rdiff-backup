@@ -118,7 +118,9 @@ test_skipped () {
 }
 
 fail_test () {
-    echo $test_name: failed: "$@" >&2
+    result=$1
+    shift
+    echo "$test_name: returned $result: $@" >&2
     exit 2
 }
 
@@ -130,7 +132,7 @@ run_test () {
         show_progress
     fi
 
-    "$@" >$builddir/testout.tmp 2>$builddir/testerr.tmp|| fail_test "$@" 
+    "$@" >$builddir/testout.tmp 2>$builddir/testerr.tmp|| fail_test $? "$@" 
 }
 
 # more than this many on any one test gets boring
