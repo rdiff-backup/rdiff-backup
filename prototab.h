@@ -3,7 +3,7 @@
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -53,6 +53,6 @@ extern const hs_prototab_ent_t hs_prototab[];
  * mkprototab.sh that generates the reverse table.  However they have
  * to go into a header, not a .c file. */
 enum {
-    HS_OP_EOF = 0,
-    HS_OP_LITERAL_N32 
+    HS_OP_END =         0,
+    HS_OP_LITERAL_N32 = 0x7b
 };
