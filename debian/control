@@ -1,0 +1,20 @@
+Source: librsync
+Section: devel
+Priority: optional
+Maintainer: Martin Pool <mbp@linuxcare.com.au>
+Standards-Version: 3.2.1
+
+Package: librsync1-dev
+Architecture: any
+Depends: librsync1, libc6-dev
+Provides: librsync-dev
+Conflicts: librsync-dev
+Description: Missing
+ Missing
+
+Package: librsync1
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Missing
+ Missing
+
