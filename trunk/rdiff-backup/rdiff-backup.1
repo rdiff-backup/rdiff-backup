@@ -187,12 +187,14 @@ a directory in the archive is specified, list only the files under
 that directory.
 .TP
 .BI "--list-changed-since " time
-List the files that have changed since the given time.  See
+List the files that have changed in the destination directory since
+the given time.  See
 .B TIME FORMATS
 for the format of
 .IR time .
 If a directory in the archive is specified, list only the files under
-that directory.
+that directory.  This option does not read the source directory; it is
+used to compare the contents of two different rdiff-backup sessions.
 .TP
 .B "-l, --list-increments"
 List the number and date of partial incremental backups contained in
