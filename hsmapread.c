@@ -174,13 +174,13 @@ copy_one_chunk(int from_fd, hs_map_t * map, off_t off, size_t want_len,
  * onto the file FD, obeying OPTIONS.
  */
 static int
-read_chunks(int from_fd, hs_map_t * map, int argc, char **argv, int options)
+read_chunks(int from_fd, hs_map_t * map, int argc, char **argv, const int options)
 {
     off_t                   off;
     size_t                  want_len;
     int                     rc;
     char                   *o;
-    hs_filebuf_t           *out_fb;
+    hs_filebuf_t           *out_fb = NULL;
 
     if (options & use_map_copy) {
         out_fb = hs_filebuf_from_fd(STDOUT_FILENO);
