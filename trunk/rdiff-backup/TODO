@@ -1,9 +1,5 @@
 Write some better selection test cases to test new Iterate_fast func.
 
-Fix crash that can occur when exception is found in the middle of a
-file (duplicate by backing up /proc remotely).  (John Goerzen)
-
-
 ---------[ Long term ]---------------------------------------
 
 Think about adding Gaudet's idea for keeping track of renamed files.
