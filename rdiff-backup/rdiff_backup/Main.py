@@ -415,7 +415,8 @@ def backup_set_fs_globals(rpin, rpout):
 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
 					   "disabled on destination filesystem")
 
-	SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks)
+	if Globals.preserve_hardlinks != 0:
+		SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks)
 	SetConnections.UpdateGlobal('fsync_directories', dest_fsa.fsync_dirs)
 	SetConnections.UpdateGlobal('change_ownership', dest_fsa.ownership)
 	SetConnections.UpdateGlobal('chars_to_quote', dest_fsa.chars_to_quote)
@@ -521,7 +522,8 @@ def restore_set_fs_globals(target):
 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
 					   "disabled on destination filesystem")
 
-	SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
+	if Globals.preserve_hardlinks != 0:
+		SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
 	SetConnections.UpdateGlobal('change_ownership', target_fsa.ownership)
 
 	if Globals.chars_to_quote is None: # otherwise already overridden
@@ -699,7 +701,8 @@ def single_set_fs_globals(rbdir):
 	update_triple(fsa.carbonfile,
 				  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
 
-	SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks)
+	if Globals.preserve_hardlinks != 0:
+		SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks)
 	SetConnections.UpdateGlobal('fsync_directories', fsa.fsync_dirs)
 	SetConnections.UpdateGlobal('change_ownership', fsa.ownership)
 	SetConnections.UpdateGlobal('chars_to_quote', fsa.chars_to_quote)

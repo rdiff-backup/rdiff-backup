@@ -497,7 +497,8 @@ class PatchITRB(rorpiter.ITRBranch):
 			assert diff_rorp.get_attached_filetype() == 'diff'
 			if robust.check_common_error(self.error_handler,
 			   Rdiff.patch_local, (basis_rp, diff_rorp, new)) == 0: return 0
-		if new.lstat(): rpath.copy_attribs(diff_rorp, new)
+		if new.lstat() and not diff_rorp.isflaglinked():
+			rpath.copy_attribs(diff_rorp, new)
 		return self.matches_cached_rorp(diff_rorp, new)
 
 	def matches_cached_rorp(self, diff_rorp, new_rp):
