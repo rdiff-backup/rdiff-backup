@@ -37,6 +37,10 @@ struct hs_job {
         hs_copy_cb      *copy_cb;
         void            *copy_arg;
 
+        /* Signature that's either being read in, or used for
+         * generating a delta. */
+        hs_sumset_t     *sumset;
+
         /* Command byte currently being processed, if any, and lengths
          * of expected parameters. */
         int op, param1, param2;
@@ -47,3 +51,4 @@ struct hs_job {
 
 hs_job_t * hs_job_new(hs_stream_t *stream);
 
+hs_result hs_job_s_complete(hs_job_t *);

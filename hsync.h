@@ -177,6 +177,8 @@ hs_job_t       *hs_mksum_begin(hs_stream_t *stream,
 
 hs_job_t       *hs_delta_begin(hs_stream_t *stream);
 
+hs_job_t       *hs_readsum_begin(hs_stream_t *stream, hs_sumset_t **);
+
 /* Callback used to retrieve parts of the basis file. */
 typedef hs_result (hs_copy_cb)(void *opaque, size_t *len, void **result);
 

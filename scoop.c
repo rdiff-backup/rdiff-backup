@@ -1,9 +1,9 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*=                    -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -92,9 +92,9 @@ static void hs_scoop_input(hs_stream_t *stream, size_t len)
                 if (impl->scoop_buf)
                         free(impl->scoop_buf);
                 impl->scoop_buf = impl->scoop_next = newbuf;
+                hs_trace("resized scoop buffer to %d bytes from %d",
+                         newsize, impl->scoop_alloc);
                 impl->scoop_alloc = newsize;
-                hs_trace("resized scoop buffer to %d bytes",
-                          impl->scoop_alloc);
         } else {
                 /* this buffer size is fine, but move the existing
                  * data down to the front. */
@@ -175,7 +175,7 @@ enum hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
                 hs_scoop_input(stream, len);
 
                 if (impl->scoop_avail < len) {
-                        hs_trace("still only have %d bytes in scoop, not enough",
+                        hs_trace("still have only %d bytes in scoop",
                                   impl->scoop_avail);
                         return HS_BLOCKED;
                 } else {
@@ -193,8 +193,8 @@ enum hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
                 /* Nothing was queued before, but we don't have enough
                  * data to satisfy the request.  So queue what little
                  * we have, and try again next time. */
-                hs_trace("not enough data to satisfy request, scooping %d bytes",
-                          impl->scoop_avail);
+                hs_trace("couldn't satisfy request for %d, scooping %d bytes",
+                          len, impl->scoop_avail);
                 hs_scoop_input(stream, len);
                 return HS_BLOCKED;
         }

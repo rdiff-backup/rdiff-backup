@@ -52,6 +52,9 @@
 /* Define if you have the <sys/endian.h> header file.  */
 /* #undef HAVE_SYS_ENDIAN_H */
 
+/* Define if you have the popt library (-lpopt).  */
+#define HAVE_LIBPOPT 1
+
 /* Name of package */
 #define PACKAGE "libhsync"
 

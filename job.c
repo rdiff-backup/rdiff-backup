@@ -93,3 +93,12 @@ hs_result hs_job_iter(hs_job_t *job, int ending)
         } 
 }
 
+
+hs_result hs_job_s_complete(hs_job_t *UNUSED(job))
+{
+        hs_trace("job has finished");
+
+        return HS_OK;
+}
+
+

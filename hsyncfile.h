@@ -79,3 +79,6 @@ enum hs_result hs_rdiff_patch(int argc, char *argv[]);
 enum hs_result hs_rdiff_sum(int argc, char *argv[]);
 
 hs_result hs_whole_signature(FILE *old_file, FILE *sig_file, size_t, size_t); 
+
+
+hs_result hs_file_readsums(FILE *sig_file, hs_sumset_t **sumset);

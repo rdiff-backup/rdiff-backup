@@ -60,6 +60,10 @@ AC_EGREP_HEADER(sin_len, sys/socket.h,
           AC_MSG_RESULT(yes) ],
         [ AC_MSG_RESULT(no) ])
 
+dnl Checks for libraries
+AC_CHECK_LIB(popt, poptGetContext,,
+        AC_MSG_WARN([libpopt is required to build libhsync tools]))
+
 dnl Check configuration options
 if test "$GCC" = "yes" 
 then 
@@ -103,6 +107,7 @@ fi
 dnl Checks for header files.
 AC_CHECK_HEADERS(sys/endian.h)
 AC_HEADER_STDC
+AC_CHECK_HEADER(popt.h,,AC_MSG_ERROR("libpopt and popt.h is required to build libhsync"))
 
 # GNU library versioning: This is NOT the libhsync release number.
 # Rather, it is a CURRENT:REVISION:AGE tuple describing binary

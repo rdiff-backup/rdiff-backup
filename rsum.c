@@ -46,60 +46,58 @@
 
 /* Overwrite existing files. */
 int force = 0;
-size_t block_len, sum_len;
+size_t block_len = HS_DEFAULT_BLOCK_LEN, strong_len = HS_DEFAULT_STRONG_LEN;
 
 
 const struct poptOption opts[] = {
+        { "verbose", 'v', POPT_ARG_NONE, 0, 'v',
+          "trace internal processing", NULL },
+        { "version", 'V', POPT_ARG_NONE, 0, 'V',
+          "show program version", NULL },
+        { "licence",  0 , POPT_ARG_NONE, 0, 'L',
+          "show copying conditions", NULL },
+        { "block-size", 'b', POPT_ARG_INT, &block_len, 0,
+          "block size for generated signature", "bytes" },
+        { "sum-size", 's', POPT_ARG_INT, &strong_len, 0,
+          "strong checksum length", "bytes" },
+        { "input-size", 'I', POPT_ARG_INT, &hs_inbuflen, 0,
+          "input buffer size", "bytes" },
+        { "output-size", 'O', POPT_ARG_INT, &hs_outbuflen, 0,
+          "output buffer size", "bytes" },
         POPT_AUTOHELP
-        { "version", 'V', POPT_ARG_NONE, 0, 'V', "show program version" },
-        { NULL, '\0', 0, 0 }
+        { NULL, '\0', 0, 0, 0, 0, 0 }
 };
 
 
-
-static void show_usage(void)
+static void usage(poptContext optCon, int exitcode,
+                  const char *error, const char *addl)
 {
-    printf("Usage: %s [OPTIONS] OLDFILE SIGNATURE\n"
-           "\n"
-           "Compute rsync file signature.\n"
-           "\n"
-           "  -v, --verbose             trace internal processing\n"
-           "  -I, --input-buffer=BYTES  input buffer size\n"
-           "  -O, --output-buffer=BYTES output buffer size\n"
-           "      --help                display this help and exit\n"
-           "      --version             output version information and exit\n"
-           "      --licence             show summary copying terms and exit\n"
-           ,
-           PROGRAM);
+        poptPrintUsage(optCon, stderr, 0);
+        if (error)
+                fprintf(stderr, "%s: %s\n", error, addl);
+        exit(exitcode);
 }
 
 
-static void process_args(int argc, char **argv)
+int main(int argc, char *argv[])
 {
-        int             c, longind;
+        int             c;
+        poptContext     cont;
+        FILE            *old_file, *sig_file;
+        hs_result       result;
+        const char      *old_name, *sig_name;
 
-        while ((c = getopt_long(argc, argv, "vfI:O:", longopts, &longind)) != -1) {
+        cont = poptGetContext(PROGRAM, argc, (const char **) argv, opts, 0);
+        poptSetOtherOptionHelp(cont, "BASIS SIGNATURE");
+
+        while ((c = poptGetNextOpt(cont)) > 0) {
                 switch (c) {
-                case '?':
-                case ':':
-                        exit(1);
-                case 'h':
-                        show_usage();
-                        exit(0);
-                case 'I':
-                        hs_readintarg(argv[optind], optarg, &hs_inbuflen);
-                        break;
-                case 'O':
-                        hs_readintarg(argv[optind], optarg, &hs_outbuflen);
-                        break;
                 case 'V':
                         printf("%s (%s)\n", PROGRAM, hs_libhsync_version);
                         exit(0);
                 case 'L':
                         puts(hs_licence_string);
                         exit(0);
-                case 'b':
-                        
                 case 'v':
                         if (!hs_supports_trace()) {
                                 hs_error("library does not support trace");
@@ -108,28 +106,22 @@ static void process_args(int argc, char **argv)
                         break;
                 }
         }
-}
 
+        old_name = poptGetArg(cont);
+        sig_name = poptGetArg(cont);
 
-int main(int argc, char *argv[])
-{
-        FILE *old_file, *sig_file;
-        hs_result result;
-
-        process_args(argc, argv);
-
-        argc -= optind;
-        argv += optind;
-
-        if (argc != 3) {
-                hs_error("Signature operation needs two filenames");
-                return 1;
+        if (!old_name || !sig_name) {
+                usage(cont, 1, PROGRAM,
+                      "must specify basis and signature filenames");
         }
-    
-        old_file = hs_file_open(argv[1], O_RDONLY);
-        sig_file = hs_file_open(argv[2], O_WRONLY|O_CREAT|O_TRUNC);
 
-        result = hs_whole_signature(old_file, sig_file);
+        poptFreeContext(cont);                     
+
+        old_file = hs_file_open(old_name, O_RDONLY);
+        sig_file = hs_file_open(sig_name, O_WRONLY|O_CREAT|O_TRUNC);
+
+        result = hs_whole_signature(old_file, sig_file,
+                                    block_len, strong_len);
         
         if (result != HS_OK)
                 hs_error("signature failed: %s", hs_strerror(result));

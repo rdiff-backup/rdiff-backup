@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*=                    -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * libhsync -- the library for network deltas
  * $Id$

@@ -159,9 +159,9 @@ hs_trace0(char const *s, ...)
 int
 hs_supports_trace(void)
 {
-#ifdef DOHS_TRACE
+#ifdef DO_HS_TRACE
     return 1;
 #else
     return 0;
-#endif				/* !DOHS_TRACE */
+#endif				/* !DO_HS_TRACE */
 }

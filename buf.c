@@ -42,14 +42,14 @@
 #include "util.h"
 
 
-int hs_inbuflen = 1000, hs_outbuflen = 1000;
+int hs_inbuflen = 16000, hs_outbuflen = 16000;
 
 
 struct hs_filebuf {
         FILE *f;
-        hs_stream_t *stream;
-        char *buf;
-        size_t buf_len;
+        hs_stream_t     *stream;
+        char            *buf;
+        size_t          buf_len;
 };
 
 
@@ -75,13 +75,14 @@ void hs_filebuf_free(hs_filebuf_t *fb)
 
 
 /*
- * If the stream has no more data available, read some from F into BUF,
- * and let the stream use that.
+ * If the stream has no more data available, read some from F into
+ * BUF, and let the stream use that.  On return, SEEN_EOF is true if
+ * the end of file has passed into the stream.
  */
-hs_result hs_infilebuf_fill(hs_filebuf_t *fb)
+hs_result hs_infilebuf_fill(hs_filebuf_t *fb, int *seen_eof)
 {
-        hs_stream_t * const stream = fb->stream;
-        FILE *f = fb->f;
+        hs_stream_t * const     stream = fb->stream;
+        FILE                    *f = fb->f;
         
         /* This is only allowed if either the stream has no input buffer
          * yet, or that buffer could possibly be BUF. */
@@ -102,6 +103,10 @@ hs_result hs_infilebuf_fill(hs_filebuf_t *fb)
                 }
                 stream->avail_in = len;
                 stream->next_in = fb->buf;
+        }
+
+        if ((*seen_eof = feof(f))) {
+                hs_trace("seen end of file on input");
         }
 
         return HS_OK;

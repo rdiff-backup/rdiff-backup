@@ -45,9 +45,10 @@ libhsync_la_SOURCES =				\
 	patch.c					\
 	protocol.h				\
 	prototab.c prototab.h			\
+	readsums.c \
 	scoop.c					\
 	stream.c stream.h			\
-	sumset.c 				\
+	sumset.c sumset.h \
 	trace.c trace.h				\
 	tube.c					\
 	util.c util.h				\
@@ -114,13 +115,7 @@ LDADD = libhsync.la $(LIBOBJS)
 # end users wanting to run them.  So for the time being they are not
 # installed.
 
-# bin_PROGRAMS = rsum
-# rdiff
-
-# rsum_SOURCES = rsum.c
-
-# rdiff_SOURCES = rdiff.c				\
-#	isprefix.c isprefix.h
+bin_PROGRAMS = rsum rdiff
 
 check_PROGRAMS = isprefix.driver
 

@@ -58,7 +58,8 @@
 
 /*
  * Run a job continuously, with input to/from the two specified files.
- * The job should already be set up.
+ * The job should already be set up, and it is freed before the
+ * function returns.
  */
 hs_result
 hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
@@ -68,41 +69,69 @@ hs_whole_run(hs_job_t *job, FILE *in_file, FILE *out_file)
         hs_filebuf_t    *in_fb, *out_fb;
         int             ending = 0;
 
-        in_fb = hs_filebuf_new(in_file, stream, hs_inbuflen);
-        out_fb = hs_filebuf_new(out_file, stream, hs_outbuflen);
+        in_fb = in_file ? hs_filebuf_new(in_file, stream, hs_inbuflen) : NULL;
+        
+        out_fb = out_file ? hs_filebuf_new(out_file, stream, hs_outbuflen)
+                : NULL;
 
         do {
-                iores = hs_infilebuf_fill(in_fb);
-                if (iores != HS_OK)
-                        return iores;
+                if (in_fb) {
+                        iores = hs_infilebuf_fill(in_fb, &ending);
+                        if (iores != HS_OK)
+                                return iores;
+                }
 
                 result = hs_job_iter(job, ending);
                 if (result != HS_OK  &&  result != HS_BLOCKED)
                         return result;
-                                
-                iores = hs_outfilebuf_drain(out_fb);
-                if (iores != HS_OK)
-                        return iores;
+
+                if (out_fb) {
+                        iores = hs_outfilebuf_drain(out_fb);
+                        if (iores != HS_OK)
+                                return iores;
+                }
         } while (result != HS_OK);
+
+        hs_job_free(job);
                 
         return result;
 }
 
 
+
+/*
+ * Generate the signature of OLD_FILE, and write it to SIG_FILE.  The
+ * generated signature will be for blocks of NEW_BLOCK_LEN bytes, and
+ * the strong sum is truncated to STRONG_LEN.
+ */
 hs_result
 hs_whole_signature(FILE *old_file, FILE *sig_file, size_t new_block_len,
                    size_t strong_len)
 {
-        hs_result       result;
         hs_job_t        *job;
         hs_stream_t     stream;
 
         hs_stream_init(&stream);
         job = hs_mksum_begin(&stream, new_block_len, strong_len);
 
-        result = hs_whole_run(job, old_file, sig_file);
+        return hs_whole_run(job, old_file, sig_file);
 
         hs_job_free(job);
+}
 
-        return result;
+
+/*
+ * Load signatures from SIG_FILE into memory.  Return a pointer to the
+ * newly allocated structure in SUMSET.
+ */
+hs_result
+hs_file_readsums(FILE *sig_file, hs_sumset_t **sumset)
+{
+        hs_job_t        *job;
+        hs_stream_t     stream;
+
+        hs_stream_init(&stream);
+
+        job = hs_readsum_begin(&stream, sumset);
+        return hs_whole_run(job, sig_file, NULL);
 }

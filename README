@@ -10,9 +10,13 @@ To use anonymous CVS, see the file README.CVS in this directory.
 
 To build libhsync:
 
-  * cc 
+  * A C compiler and appropriate headers and libraries
+
   * Make
-  * libc-dev
+
+  * popt -- command line parsing library
+
+    Available from ftp://ftp.redhat.com/pub/redhat/code/popt
 
 >> Library Versions
 

@@ -26,6 +26,6 @@ hs_filebuf_t *hs_filebuf_new(FILE *f, hs_stream_t *stream, size_t buf_len);
 
 void hs_filebuf_free(hs_filebuf_t *fb);
 
-hs_result hs_infilebuf_fill(hs_filebuf_t *fb);
+hs_result hs_infilebuf_fill(hs_filebuf_t *fb, int *seen_eof);
 
 hs_result hs_outfilebuf_drain(hs_filebuf_t *);

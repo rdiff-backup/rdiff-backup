@@ -3,7 +3,7 @@
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@linuxcare.com.au>
  * Copyright (C) 1999 by Andrew Tridgell <tridge@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
@@ -83,7 +83,7 @@ hs_squirt_n8(hs_stream_t *stream, int d)
 
 
 
-enum hs_result hs_suck_n32(hs_stream_t *stream, int *v)
+hs_result hs_suck_n32(hs_stream_t *stream, int *v)
 {
         void *p;
         int result;
