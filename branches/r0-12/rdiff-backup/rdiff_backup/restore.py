@@ -513,29 +513,39 @@ as data loss may result.\n""" % (self.mirror_rp.get_indexpath(),), 2)
 
 		"""
 		if not inc_rpath.isdir(): return
-		inc_dict = {} # dictionary of basenames:IndexedTuples(index, inc_list)
-		dirlist = robust.listrp(inc_rpath)
 
-		def affirm_dict_indexed(basename):
-			"""Make sure the rid dictionary has given basename as key"""
-			if not inc_dict.has_key(basename):
-				sub_inc_rp = inc_rpath.append(basename)
-				inc_dict[basename] = rorpiter.IndexedTuple(sub_inc_rp.index,
-														   (sub_inc_rp, []))
+		def get_inc_pairs():
+			"""Return unsorted list of (basename, inc_filenames) pairs"""
+			inc_dict = {} # dictionary of basenames:inc_filenames
+			dirlist = robust.listrp(inc_rpath)
 
-		def add_to_dict(filename):
-			"""Add filename to the inc tuple dictionary"""
-			rp = inc_rpath.append(filename)
-			if rp.isincfile() and rp.getinctype() != 'data':
-				basename = rp.getincbase_str()
-				affirm_dict_indexed(basename)
-				inc_dict[basename][1].append(rp)
-			elif rp.isdir(): affirm_dict_indexed(filename)
+			def add_to_dict(filename):
+				"""Add filename to the inc tuple dictionary"""
+				rp = inc_rpath.append(filename)
+				if rp.isincfile() and rp.getinctype() != 'data':
+					basename = rp.getincbase_str()
+					inc_filename_list = inc_dict.setdefault(basename, [])
+					inc_filename_list.append(filename)
+				elif rp.isdir(): inc_dict.setdefault(filename, [])
 
-		for filename in dirlist: add_to_dict(filename)
-		keys = inc_dict.keys()
-		keys.sort()
-		for key in keys: yield inc_dict[key]
+			for filename in dirlist: add_to_dict(filename)
+			return inc_dict.items()
+
+		def inc_filenames2incrps(filenames):
+			"""Map list of filenames into increment rps"""
+			l = []
+			for filename in filenames:
+				rp = inc_rpath.append(filename)
+				assert rp.isincfile(), rp.path
+				l.append(rp)
+			return l
+
+		items = get_inc_pairs()
+		items.sort() # Sorting on basis of basename now
+		for (basename, inc_filenames) in items:
+			sub_inc_rpath = inc_rpath.append(basename)
+			yield rorpiter.IndexedTuple(sub_inc_rpath.index,
+					  (sub_inc_rpath, inc_filenames2incrps(inc_filenames)))
 
 
 class PatchITRB(rorpiter.ITRBranch):

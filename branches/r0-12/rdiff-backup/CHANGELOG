@@ -8,6 +8,9 @@ Added --list-increment-sizes option from the development branch.
 Previously this option was in the man page but was omitted in the code
 (thanks to Michael Schwendt for report).
 
+Restoring/regressing should now take less memory, especially on large
+directories.  CPU usage may slightly increase, however.
+
 
 New in v0.12.5 (2003/09/27)
 ---------------------------
