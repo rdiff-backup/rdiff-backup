@@ -129,12 +129,12 @@ static PyObject *c_make_file_dict(self, args)
 	char devtype[2];
 #if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
 	LONG_LONG devnums = (LONG_LONG)sbuf.st_rdev;
-	PyObject *major_num = PyLong_FromLongLong(devnums >> 8);
+	PyObject *major_num = PyLong_FromLongLong(major(devnums));
 #else
 	long int devnums = (long)sbuf.st_dev;
 	PyObject *major_num = PyInt_FromLong(devnums >> 8);
 #endif
-	int minor_num = (int)(devnums & 0xff);
+	int minor_num = (int)(minor(devnums));
 	if S_ISCHR(mode) strcpy(devtype, "c");
 	else strcpy(devtype, "b");
 	return_val = Py_BuildValue("{s:s,s:O,s:l,s:l,s:l,s:O,s:O,s:l,s:N}",
