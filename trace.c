@@ -36,7 +36,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <stdint.h>
 #include <stdarg.h>
 
 #include "hsync.h"

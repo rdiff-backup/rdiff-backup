@@ -33,13 +33,10 @@
 #include <config.h>
 
 #include <assert.h>
-#include <sys/types.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
-
 #include <errno.h>
 
 #include "trace.h"
