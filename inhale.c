@@ -170,7 +170,7 @@ _hs_inhale_command(hs_read_fn_t read_fn, void * read_priv,
 			       read_fn, read_priv) > 0) {
 	  *kind = op_kind_copy;
      } else {
-	  _hs_fatal("unexpected command %d!", type);
+	  _hs_fatal("unexpected command %#x!", type);
 	  return -1;
      }
 

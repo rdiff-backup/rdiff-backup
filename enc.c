@@ -66,10 +66,14 @@
 
 
 /* FIXME: Check that we use signed/unsigned integers properly.
+
+   TODO: Add another command, which contains the checksum for the
+   *whole new file* so far.  Then we can compare it at both ends and
+   *tell if we fucked up.
   
-   TODO: Cope without an old signature, in which case we generate a
+   (TODO: Cope without an old signature, in which case we generate a
    signature and chunk everything, but can't match blocks.  I think
-   this is done now.
+   this is done now. ?)
 
    FIXME: Something seems to be wrong with the trailing chunk; it
    doesn't match.
@@ -175,7 +179,7 @@ _hs_update_sums(_hs_inbuf_t * inbuf, int full_block,
 /* One byte rolls off the checksum. */
 static int
 _hs_trim_sums(_hs_inbuf_t * inbuf, rollsum_t * rollsum,
-	      int full_block, int short_block)
+	      int short_block)
 {
      rollsum->s1 -= inbuf->buf[inbuf->cursor] + CHAR_OFFSET;
      rollsum->s2 -= short_block * (inbuf->buf[inbuf->cursor] + CHAR_OFFSET);
@@ -446,8 +450,8 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
 		    /* Append this character to the outbuf */
 		    ret = _hs_append_literal(lit_tmpbuf,
 					     inbuf->buf[inbuf->cursor]);
-		    _hs_trim_sums(inbuf, rollsum, block_len, short_block);
-		    _hs_trim_sums(inbuf, &new_roll, block_len, short_block);
+		    _hs_trim_sums(inbuf, rollsum, short_block);
+		    _hs_trim_sums(inbuf, &new_roll, short_block);
 		    inbuf->cursor++;
 	       }
 	  }

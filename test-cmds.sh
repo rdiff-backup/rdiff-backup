@@ -16,6 +16,8 @@ cd $srcdir/test-cmds
 
 out=out.tmp
 cmds=cmds.txt
+tmp=bin.tmp
 
-hsemit < $cmds | hsinhale > $out
+hsemit < $cmds > $tmp
+hsinhale > $out < $tmp
 diff -b -q $out $cmds

@@ -38,7 +38,8 @@ enum hs_op_kind {
      op_kind_eof = 1000,
      op_kind_literal,
      op_kind_signature,
-     op_kind_copy
+     op_kind_copy,
+     op_kind_checksum
 };
 
 
@@ -63,10 +64,12 @@ enum {
     op_literal_int = 0x7b,
 
     op_signature_1 = 0x7c,
-    op_signature_last = 0xf3,
-    op_signature_byte = 0xf4,
-    op_signature_short = 0xf5,
-    op_signature_int = 0xf6,
+    op_signature_last = 0xf2,
+    op_signature_byte = 0xf3,
+    op_signature_short = 0xf4,
+    op_signature_int = 0xf5,
+
+    op_checksum_short = 0xf6,
 
     op_copy_short_byte = 0xf7,
     op_copy_short_short = 0xf8,

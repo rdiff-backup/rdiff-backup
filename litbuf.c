@@ -63,11 +63,16 @@ _hs_push_literal_buf(hs_membuf_t * litbuf,
 	      (int) amount,
 	      kind == op_kind_literal ? "literal" : "signature");
 
-    if (_hs_emit_chunk_cmd(write_fn, write_priv, amount, kind) < 0)
-	return -1;
-
-    ret = _hs_copy_ofs(0, amount,
-		       hs_membuf_read_ofs, litbuf, write_fn, write_priv);
+     if (kind == op_kind_literal) {
+	  if (_hs_emit_literal_cmd(write_fn, write_priv, amount) < 0)
+	       return -1;
+     } else {
+	  if (_hs_emit_signature_cmd(write_fn, write_priv, amount) < 0)
+	       return -1;
+     }
+     
+     ret = _hs_copy_ofs(0, amount,
+			hs_membuf_read_ofs, litbuf, write_fn, write_priv);
     return_val_if_fail(ret > 0, -1);
 
     if (kind == op_kind_literal) {

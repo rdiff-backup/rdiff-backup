@@ -64,6 +64,8 @@ main(int argc UNUSED, char **argv UNUSED)
      uint32_t off, len;
      hs_filebuf_t * infb;
 
+     setvbuf(stdout, NULL, _IONBF, 0);
+     
      infb = hs_filebuf_from_file(stdin);
      
      do {

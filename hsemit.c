@@ -37,7 +37,7 @@
 int
 main(int argc UNUSED, char **argv UNUSED)
 {
-     int ret, off, len, kind;
+     int ret, off, len;
      char cmd[20];
      hs_filebuf_t * outfb;
      hs_stats_t stats;
@@ -60,15 +60,18 @@ main(int argc UNUSED, char **argv UNUSED)
 	       ret = _hs_emit_eof(hs_filebuf_write, outfb, &stats);
 	       if (ret < 0)
 		    return 1;
-	  } else if (!strcmp(cmd, "LITERAL") || !strcmp(cmd, "SIGNATURE")) {
+	  } else if (!strcmp(cmd, "LITERAL")) {
 	       if (scanf("%d", &len) != 1)
 		    return 1;
 	       
-	       kind = strcmp(cmd, "LITERAL") ? op_kind_signature
-		    : op_kind_literal;
+	       ret = _hs_emit_literal_cmd(hs_filebuf_write, outfb, len);
+	       if (ret < 0)
+		    return 1;
+	  } else if (!strcmp(cmd, "SIGNATURE")) {
+	       if (scanf("%d", &len) != 1)
+		    return 1;
 	       
-	       ret = _hs_emit_chunk_cmd(hs_filebuf_write, outfb,
-					len, kind);
+	       ret = _hs_emit_signature_cmd(hs_filebuf_write, outfb, len);
 	       if (ret < 0)
 		    return 1;
 	  } else {

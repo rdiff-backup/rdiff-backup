@@ -44,12 +44,6 @@ static int _hs_fits_in_int(uint64_t val)
 }
 
 
-static int _hs_fits_inline(uint32_t val)
-{
-    return val > 1 && val < (op_literal_last - op_literal_1);
-}
-
-
 static int _hs_int_len(uint32_t val)
 {
     if (_hs_fits_in_byte(val))
@@ -71,37 +65,57 @@ int _hs_emit_eof(hs_write_fn_t write_fn, void *write_priv,
 }
 
 
-/* Emit the command header for literal data.  This will do either literal
-   or signature depending on BASE. */
+/* Emit the command header for literal data. */
 int
-_hs_emit_chunk_cmd(hs_write_fn_t write_fn,
-		   void *write_priv, uint32_t size,
-		   int kind)
+_hs_emit_literal_cmd(hs_write_fn_t write_fn, void *write_priv, uint32_t size)
 {
-     int type, cmd, base;
+     int type, cmd;
+     
+     _hs_trace("Writing LITERAL(len=%d)", size);
 
-     assert(kind == op_kind_literal || kind == op_kind_signature);
-
-     if (kind == op_kind_literal) {
-	  _hs_trace("Writing LITERAL(len=%d)", size);
-	  base = op_literal_1;
-     } else {
-	  _hs_trace("Writing SIGNATURE(len=%d)", size);
-	  base = op_signature_1;
-     }
-
-     if (_hs_fits_inline(size)) {
-	  return _hs_write_netbyte(write_fn, write_priv, base + size - 1);
+     if ((size >= 1)  &&  (size < (op_literal_last - op_literal_1))) {
+	  return _hs_write_netbyte(write_fn, write_priv,
+				   op_literal_1 + size - 1);
      }
      
      type = _hs_int_len(size);
-     cmd = base + op_literal_byte - op_literal_1;
      if (type == 1) {
-	  ;
+	  cmd = op_literal_byte;
      } else if (type == 2) {
-	  cmd += 1;
+	  cmd = op_literal_short;
      } else if (type == 4) {
-	  cmd += 2;
+	  cmd = op_literal_int;
+     } else {
+	  assert(0);
+     }
+
+     if (_hs_write_netbyte(write_fn, write_priv, cmd) < 0)
+	  return -1;
+
+     return _hs_write_netvar(write_fn, write_priv, size, type);
+}
+
+
+/* Emit the command header for signature data. */
+int
+_hs_emit_signature_cmd(hs_write_fn_t write_fn, void *write_priv, uint32_t size)
+{
+     int type, cmd;
+     
+     _hs_trace("Writing SIGNATURE(len=%d)", size);
+
+     if ((size >= 1)  &&  (size < (op_signature_last - op_signature_1))) {
+	  return _hs_write_netbyte(write_fn, write_priv,
+				   op_signature_1 + size - 1);
+     }
+     
+     type = _hs_int_len(size);
+     if (type == 1) {
+	  cmd = op_signature_byte;
+     } else if (type == 2) {
+	  cmd = op_signature_short;
+     } else if (type == 4) {
+	  cmd = op_signature_int;
      } else {
 	  assert(0);
      }
