@@ -109,6 +109,10 @@ Exclude files in the mirror area matching regexp.  This argument can
 be used multiple times.  The rdiff-backup-data directory is
 automatically excluded, so this option rarely needs to be used.
 .TP
+.B --exclude-other-filesystems
+Exclude files on file systems (identified by device number) other than
+the file system the root of the source directory is on.
+.TP
 .BI "--exclude-regexp " regexp
 Exclude files matching the given regexp.  Unlike the
 .B --exclude
@@ -192,17 +196,6 @@ affects the expected format of the files specified by the
 --{include|exclude}-filelist[-stdin] switches as well as the format of
 the directory_statistics file.
 .TP
-.BI "-r, --restore-as-of " restore_time
-Restore the specified directory as it was as of
-.IR restore_time .
-See the
-.B TIME FORMATS
-section for more information on the format of
-.IR restore_time ,
-and see the
-.B RESTORING
-section for more information on restoring.
-.TP
 .B --parsable-output
 If set, rdiff-backup's output will be tailored for easy parsing by
 computers, instead of clarity for humans.  Currently this only applies
@@ -223,6 +216,17 @@ escaped by the
 .B --chars-to-quote
 option.  The default is the semicolon ";".  See also
 .BR --windows-mode .
+.TP
+.BI "-r, --restore-as-of " restore_time
+Restore the specified directory as it was as of
+.IR restore_time .
+See the
+.B TIME FORMATS
+section for more information on the format of
+.IR restore_time ,
+and see the
+.B RESTORING
+section for more information on restoring.
 .TP
 .BI "--remote-cmd " command
 This command has been depreciated as of version 0.4.1.  Use
@@ -252,6 +256,27 @@ that snapshots of deleted files are covered by this operation, so if
 you deleted a file and backed up two weeks ago, and then run
 --remove-older-than 10D today, no trace of that file will remain.
 .TP
+.BI "--restrict " path
+Require that all file access be inside the given path.  This switch,
+and the following two, are intended to be used with the --server
+switch to provide a bit more protection when doing automated remote
+backups.  They are
+.B not intended as your only line of defense
+so please don't do something silly like allow public access to an
+rdiff-backup server run with --restrict-read-only.
+.TP
+.BI "--restrict-read-only " path
+Like
+.BR --restrict ,
+but also reject all write requests.
+.TP
+.BI "--restrict-update-only " path
+Like
+.BR --restrict ,
+but only allow writes as part of an incremental backup.  Requests for other types of writes (for instance, deleting 
+.IR path )
+will be rejected.
+.TP
 .B --resume
 Resume the last aborted backup.  If no aborted backups are found, exit
 with error.
@@ -264,6 +289,13 @@ number of seconds ago.  Otherwise start a new backup.  The default is
 .B --server
 Enter server mode (not to be invoked directly, but instead used by
 another rdiff-backup process on a remote computer).
+.TP
+.BI "--sleep-ratio " ratio
+Here ratio should be between 0 and 1 not inclusive.  When backing up
+rdiff-backup will try to spend that ratio of time just sleeping.  For
+example, if --sleep-ratio 0.33 is specified, rdiff-backup will spent
+about a third of the time asleep, just sitting there.  This can be
+helpful if rdiff-backup would normally push some resource too hard.
 .TP
 .B --ssh-no-compression
 When running ssh, do not use the -C option to enable compression.
