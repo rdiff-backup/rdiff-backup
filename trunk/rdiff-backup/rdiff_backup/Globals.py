@@ -284,4 +284,5 @@ def set_select(dsrpath, tuplelist, quote_mode, *filelists):
 
 
 from rpath import * # kludge to avoid circularity - not needed in this module
+from log import * # another kludge
 from selection import *
