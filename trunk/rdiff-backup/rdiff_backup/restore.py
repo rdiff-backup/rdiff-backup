@@ -21,9 +21,8 @@
 
 from __future__ import generators
 import tempfile, os
-from log import Log
-import Globals, Time, Rdiff, Hardlink, FilenameMapping, SetConnections, \
-	   rorpiter, selection, destructive_stepping, rpath, lazy
+import Globals, Time, Rdiff, Hardlink, FilenameMapping, rorpiter, \
+	   selection, rpath, log, backup, static, robust, metadata
 
 
 # This should be set to selection.Select objects over the source and
@@ -31,66 +30,24 @@ import Globals, Time, Rdiff, Hardlink, FilenameMapping, SetConnections, \
 _select_source = None
 _select_mirror = None
 
+# This will be set to the time of the current mirror
+_mirror_time = None
+# This will be set to the exact time to restore to (not restore_to_time)
+_rest_time = None
+
+
 class RestoreError(Exception): pass
 
-def Restore(inc_rpath, mirror, target, rest_time):
-	"""Recursively restore inc_rpath and mirror to target at rest_time
+def Restore(mirror_rp, inc_rpath, target, restore_to_time):
+	"""Recursively restore mirror and inc_rpath to target at rest_time"""
+	MirrorS = mirror_rp.conn.restore.MirrorStruct
+	TargetS = target.conn.restore.TargetStruct
 
-	Like restore_recusive below, but with a more friendly
-	interface (it converts to DSRPaths if necessary, finds the inc
-	files with the appropriate base, and makes rid).
-
-	rest_time is the time in seconds to restore to;
-
-	inc_rpath should not be the name of an increment file, but the
-	increment file shorn of its suffixes and thus should have the
-	same index as mirror.
-
-	"""
-	if not isinstance(target, destructive_stepping.DSRPath):
-		target = destructive_stepping.DSRPath(None, target)
-
-	mirror_time = get_mirror_time()
-	rest_time = get_rest_time(rest_time, mirror_time)
-	inc_list = get_inclist(inc_rpath)
-	rid = RestoreIncrementData(inc_rpath.index, inc_rpath, inc_list)
-	rid.sortincseq(rest_time, mirror_time)
-	check_hardlinks(rest_time)
-	restore_recursive(inc_rpath.index, mirror, rid, target,
-					  rest_time, mirror_time)
-
-def get_mirror_time():
-	"""Return the time (in seconds) of latest mirror"""
-	current_mirror_incs = get_inclist(Globals.rbdir.append("current_mirror"))
-	if not current_mirror_incs:
-		Log.FatalError("Could not get time of current mirror")
-	elif len(current_mirror_incs) > 1:
-		Log("Warning, two different dates for current mirror found", 2)
-	return Time.stringtotime(current_mirror_incs[0].getinctime())
-
-def get_rest_time(old_rest_time, mirror_time):
-	"""If old_rest_time is between two increments, return older time
-
-	There is a slightly tricky reason for doing this:  The rest of
-	the code just ignores increments that are older than
-	rest_time.  But sometimes we want to consider the very next
-	increment older than rest time, because rest_time will be
-	between two increments, and what was actually on the mirror
-	side will correspond to the older one.
-
-	So here we assume all rdiff-backup events were recorded in
-	"increments" increments, and if its in-between we pick the
-	older one here.
-
-	"""
-	base_incs = get_inclist(Globals.rbdir.append("increments"))
-	if not base_incs: return old_rest_time
-	inctimes = [Time.stringtotime(inc.getinctime()) for inc in base_incs]
-	inctimes.append(mirror_time)
-	older_times = filter(lambda time: time <= old_rest_time, inctimes)
-	if older_times: return max(older_times)
-	else: # restore time older than oldest increment, just return that
-		return min(inctimes)
+	MirrorS.set_mirror_and_rest_times(restore_to_time)
+	MirrorS.initialize_rf_cache(mirror_rp, inc_rpath)
+	target_iter = TargetS.get_initial_iter(target)
+	diff_iter = MirrorS.get_diffs(target_iter)
+	TargetS.patch(target, diff_iter)
 
 def get_inclist(inc_rpath):
 	"""Returns increments with given base"""
@@ -113,179 +70,271 @@ def get_inclist(inc_rpath):
 			inc_list.append(inc)
 	return inc_list
 
-def check_hardlinks(rest_time):
-	"""Check for hard links and enable hard link support if found"""
-	if (Globals.preserve_hardlinks != 0 and
-		Hardlink.retrieve_final(rest_time)):
-		Log("Hard link information found, attempting to preserve "
-			"hard links.", 5)
-		SetConnections.UpdateGlobal('preserve_hardlinks', 1)
-	else: SetConnections.UpdateGlobal('preserve_hardlinks', None)
+def ListChangedSince(mirror_rp, inc_rp, restore_to_time):
+	"""List the changed files under mirror_rp since rest time"""
+	MirrorS = mirror_rp.conn.restore.MirrorStruct
+	MirrorS.set_mirror_and_rest_times(restore_to_time)
+	MirrorS.initialize_rf_cache(mirror_rp, inc_rp)
 
-def restore_recursive(index, mirror, rid, target, time, mirror_time):
-	"""Recursive restore function.
+	cur_iter = MirrorS.get_mirror_rorp_iter(_mirror_time, 1)
+	old_iter = MirrorS.get_mirror_rorp_iter(_rest_time, 1)
+	collated = rorpiter.Collate2Iters(old_iter, cur_iter)
+	for old_rorp, cur_rorp in collated:
+		if not old_rorp: change = "new"
+		elif not cur_rorp: change = "deleted"
+		elif old_rorp == cur_rorp: continue
+		else: change = "changed"
+		path_desc = (old_rorp and old_rorp.get_indexpath() or
+					 cur_rorp.get_indexpath())
+		print "%-7s %s" % (change, path_desc)
 
-	rid is a RestoreIncrementData object whose inclist is already
-	sortedincseq'd, and target is the dsrp to restore to.
 
-	Note that target may have a different index than mirror and
-	rid, because we may be restoring a file whose index is, say
-	('foo','bar') to a target whose path does not contain
-	"foo/bar".
+class MirrorStruct:
+	"""Hold functions to be run on the mirror side"""
+	def set_mirror_and_rest_times(cls, restore_to_time):
+		"""Set global variabels _mirror_time and _rest_time on mirror conn"""
+		global _mirror_time, _rest_time
+		_mirror_time = cls.get_mirror_time()
+		_rest_time = cls.get_rest_time(restore_to_time)
+
+	def get_mirror_time(cls):
+		"""Return time (in seconds) of latest mirror"""
+		cur_mirror_incs = get_inclist(Globals.rbdir.append("current_mirror"))
+		if not cur_mirror_incs:
+			log.Log.FatalError("Could not get time of current mirror")
+		elif len(cur_mirror_incs) > 1:
+			log.Log("Warning, two different times for current mirror found", 2)
+		return cur_mirror_incs[0].getinctime()
+
+	def get_rest_time(cls, restore_to_time):
+		"""Return older time, if restore_to_time is in between two inc times
+
+		There is a slightly tricky reason for doing this: The rest of the
+		code just ignores increments that are older than restore_to_time.
+		But sometimes we want to consider the very next increment older
+		than rest time, because rest_time will be between two increments,
+		and what was actually on the mirror side will correspond to the
+		older one.
+
+		So here we assume all rdiff-backup events were recorded in
+		"increments" increments, and if it's in-between we pick the
+		older one here.
+
+		"""
+		global _rest_time
+		base_incs = get_inclist(Globals.rbdir.append("increments"))
+		if not base_incs: return _mirror_time
+		inctimes = [inc.getinctime() for inc in base_incs]
+		inctimes.append(_mirror_time)
+		older_times = filter(lambda time: time <= restore_to_time, inctimes)
+		if older_times: return max(older_times)
+		else: # restore time older than oldest increment, just return that
+			return min(inctimes)
+
+	def initialize_rf_cache(cls, mirror_base, inc_base):
+		"""Set cls.rf_cache to CachedRF object"""
+		inc_list = get_inclist(inc_base)
+		rf = RestoreFile(mirror_base, inc_base, get_inclist(inc_base))
+		cls.mirror_base, cls.inc_base = mirror_base, inc_base
+		cls.root_rf = rf
+		cls.rf_cache = CachedRF(rf)
+
+	def get_mirror_rorp_iter(cls, rest_time = None, require_metadata = None):
+		"""Return iter of mirror rps at given restore time
+
+		Usually we can use the metadata file, but if this is
+		unavailable, we may have to build it from scratch.
+
+		"""
+		if rest_time is None: rest_time = _rest_time
+		metadata_iter = metadata.GetMetadata_at_time(Globals.rbdir,
+				 rest_time, restrict_index = cls.mirror_base.index)
+		if metadata_iter: return metadata_iter
+		if require_metadata: log.Log.FatalError("Mirror metadata not found")
+		log.Log("Warning: Mirror metadata not found, "
+				"reading from directory", 2)
+		return cls.get_rorp_iter_from_rf(cls.root_rf)
+
+	def get_rorp_iter_from_rf(cls, rf):
+		"""Recursively yield mirror rorps from rf"""
+		rorp = rf.get_attribs()
+		yield rorp
+		if rorp.isdir():
+			for sub_rf in rf.yield_sub_rfs():
+				for rorp in yield_attribs(sub_rf): yield rorp
+
+	def subtract_indicies(cls, index, rorp_iter):
+		"""Subtract index from index of each rorp in rorp_iter
+
+		subtract_indicies and add_indicies are necessary because we
+		may not be restoring from the root index.
+
+		"""
+		if index == (): return rorp_iter
+		def get_iter():
+			for rorp in rorp_iter:
+				assert rorp.index[:len(index)] == index, (rorp.index, index)
+				rorp.index = rorp.index[len(index):]
+				yield rorp
+		return get_iter()
+
+	def get_diffs(cls, target_iter):
+		"""Given rorp iter of target files, return diffs
+
+		Here the target_iter doesn't contain any actual data, just
+		attribute listings.  Thus any diffs we generate will be
+		snapshots.
+
+		"""
+		mir_iter = cls.subtract_indicies(cls.mirror_base.index,
+										 cls.get_mirror_rorp_iter())
+		collated = rorpiter.Collate2Iters(mir_iter, target_iter)
+		return cls.get_diffs_from_collated(collated)
+
+	def get_diffs_from_collated(cls, collated):
+		"""Get diff iterator from collated"""
+		for mir_rorp, target_rorp in collated:
+			if Globals.preserve_hardlinks:
+				if mir_rorp: Hardlink.add_rorp(mir_rorp, source = 1)
+				if target_rorp: Hardlink.add_rorp(target_rorp, source = 0)
+
+			if (not target_rorp or not mir_rorp or
+				not mir_rorp == target_rorp or
+				(Globals.preserve_hardlinks and not
+				 Hardlink.rorp_eq(mir_rorp, target_rorp))):
+				yield cls.get_diff(mir_rorp, target_rorp)
+
+	def get_diff(cls, mir_rorp, target_rorp):
+		"""Get a diff for mir_rorp at time"""
+		if not mir_rorp: mir_rorp = rpath.RORPath(target_rorp.index)
+		elif Globals.preserve_hardlinks and Hardlink.islinked(mir_rorp):
+			mir_rorp.flaglinked(Hardlink.get_link_index(mir_rorp))
+		elif mir_rorp.isreg():
+			expanded_index = cls.mirror_base.index + mir_rorp.index
+			mir_rorp.setfile(cls.rf_cache.get_fp(expanded_index))
+		mir_rorp.set_attached_filetype('snapshot')
+		return mir_rorp
+
+static.MakeClass(MirrorStruct)
+
+
+class TargetStruct:
+	"""Hold functions to be run on the target side when restoring"""
+	def get_initial_iter(cls, target):
+		"""Return a selection object iterating the rorpaths in target"""
+		return selection.Select(target).set_iter()
+
+	def patch(cls, target, diff_iter):
+		"""Patch target with the diffs from the mirror side
+
+		This function was already written for use when backing up, so
+		just use that.
+
+		"""
+		backup.DestinationStruct.patch(target, diff_iter)
+
+static.MakeClass(TargetStruct)
+
+
+class CachedRF:
+	"""Store RestoreFile objects until they are needed
+
+	The code above would like to pretend it has random access to RFs,
+	making one for a particular index at will.  However, in general
+	this involves listing and filtering a directory, which can get
+	expensive.
+
+	Thus, when a CachedRF retrieves an RestoreFile, it creates all the
+	RFs of that directory at the same time, and doesn't have to
+	recalculate.  It assumes the indicies will be in order, so the
+	cache is deleted if a later index is requested.
 
 	"""
-	assert isinstance(target, destructive_stepping.DSRPath)
-	assert mirror.index == rid.index
+	def __init__(self, root_rf):
+		"""Initialize CachedRF, self.rf_list variable"""
+		self.root_rf = root_rf
+		self.rf_list = [] # list should filled in index order
 
-	target_finalizer = rorpiter.IterTreeReducer(
-		rorpiter.DestructiveSteppingFinalizer, ())
-	for rcd in yield_rcds(rid.index, mirror, rid, target, time, mirror_time):
-		rcd.RestoreFile()
-		#if rcd.mirror: mirror_finalizer(rcd.index, rcd.mirror)
-		target_finalizer(rcd.target.index, rcd.target)
-	target_finalizer.Finish()
+	def list_rfs_in_cache(self, index):
+		"""Used for debugging, return indicies of cache rfs for printing"""
+		s1 = "-------- Cached RF for %s -------" % (index,)
+		s2 = " ".join([str(rf.index) for rf in self.rf_list])
+		s3 = "--------------------------"
+		return "\n".join((s1, s2, s3))
 
-def yield_rcds(index, mirrorrp, rid, target, rest_time, mirror_time):
-	"""Iterate RestoreCombinedData objects starting with given args
+	def get_rf(self, index):
+		"""Return RestoreFile of given index"""
+		while 1:
+			if not self.rf_list: self.add_rfs(index)
+			rf = self.rf_list.pop(0)
+			if rf.index < index: continue
+			elif rf.index == index: return rf
+			self.rf_list.insert(0, rf)
+			self.add_rfs(index)
 
-	rid is a RestoreCombinedData object.  target is an rpath where
-	the created file should go.
+	def get_fp(self, index):
+		"""Return the file object (for reading) of given index"""
+		return self.get_rf(index).get_restore_fp()
 
-	In this case the "mirror" directory is treated as the source,
-	and we are actually copying stuff onto what Select considers
-	the source directory.
+	def add_rfs(self, index):
+		"""Given index, add the rfs in that same directory"""
+		if not index: return self.root_rf
+		parent_index = index[:-1]
+		temp_rf = RestoreFile(self.root_rf.mirror_rp.new_index(parent_index),
+							  self.root_rf.inc_rp.new_index(parent_index), [])
+		new_rfs = list(temp_rf.yield_sub_rfs())
+		assert new_rfs, "No RFs added for index %s" % index
+		self.rf_list[0:0] = new_rfs
 
-	"""
-	select_result = _select_mirror.Select(target)
-	if select_result == 0: return
+class RestoreFile:
+	"""Hold data about a single mirror file and its related increments
 
-	if mirrorrp and not _select_source.Select(mirrorrp):
-		mirrorrp = None
-	rcd = RestoreCombinedData(rid, mirrorrp, target)
-
-	if mirrorrp and mirrorrp.isdir() or \
-	   rid and rid.inc_rpath and rid.inc_rpath.isdir():
-		sub_rcds = yield_sub_rcds(index, mirrorrp, rid,
-								  target, rest_time, mirror_time)
-	else: sub_rcds = None
-
-	if select_result == 1:
-		yield rcd
-		if sub_rcds:
-			for sub_rcd in sub_rcds: yield sub_rcd
-	elif select_result == 2:
-		if sub_rcds:
-			try: first = sub_rcds.next()
-			except StopIteration: return # no tuples found inside, skip
-			yield rcd
-			yield first
-			for sub_rcd in sub_rcds: yield sub_rcd
-
-def yield_sub_rcds(index, mirrorrp, rid, target, rest_time, mirror_time):
-	"""Yield collated tuples from inside given args"""
-	if not check_dir_exists(mirrorrp, rid): return
-	mirror_iter = yield_mirrorrps(mirrorrp)
-	rid_iter = yield_rids(rid, rest_time, mirror_time)
-
-	for indexed_tup in rorpiter.CollateIterators(mirror_iter, rid_iter):
-		index = indexed_tup.index
-		new_mirrorrp, new_rid = indexed_tup
-		for rcd in yield_rcds(index, new_mirrorrp, new_rid,
-							target.append(index[-1]), rest_time, mirror_time):
-			yield rcd
-
-def check_dir_exists(mirrorrp, rid):
-	"""Return true if target should be a directory"""
-	if rid and rid.inc_list:
-		# Incs say dir if last (earliest) one is a dir increment
-		return rid.inc_list[-1].getinctype() == "dir"
-	elif mirrorrp: return mirrorrp.isdir() # if no incs, copy mirror
-	else: return None
-
-def yield_mirrorrps(mirrorrp):
-	"""Yield mirrorrps underneath given mirrorrp"""
-	if mirrorrp and mirrorrp.isdir():
-		if Globals.quoting_enabled:
-			for rp in selection.get_quoted_dir_children(mirrorrp):
-				yield rp
-		else:
-			dirlist = mirrorrp.listdir()
-			dirlist.sort()
-			for filename in dirlist: yield mirrorrp.append(filename)
-
-def yield_rids(rid, rest_time, mirror_time):
-	"""Yield RestoreIncrementData objects within given rid dir
-
-	If the rid doesn't correspond to a directory, don't yield any
-	elements.  If there are increments whose corresponding base
-	doesn't exist, the first element will be None.  All the rpaths
-	involved correspond to files in the increment directory.
+	self.relevant_incs will be set to a list of increments that matter
+	for restoring a regular file.  If the patches are to mirror_rp, it
+	will be the first element in self.relevant.incs
 
 	"""
-	if not rid or not rid.inc_rpath or not rid.inc_rpath.isdir(): return
-	rid_dict = {} # dictionary of basenames:rids
-	dirlist = rid.inc_rpath.listdir()		
-	if Globals.quoting_enabled:
-		dirlist = [FilenameMapping.unquote(fn) for fn in dirlist]
+	def __init__(self, mirror_rp, inc_rp, inc_list):
+		assert mirror_rp.index == inc_rp.index, (mirror_rp, inc_rp)
+		self.index = mirror_rp.index
+		self.mirror_rp = mirror_rp
+		self.inc_rp, self.inc_list = inc_rp, inc_list
+		self.set_relevant_incs()
 
-	def affirm_dict_indexed(basename):
-		"""Make sure the rid dictionary has given basename as key"""
-		if not rid_dict.has_key(basename):
-			rid_dict[basename] = RestoreIncrementData(
-				rid.index + (basename,), None, []) # init with empty rid
+	def relevant_incs_string(self):
+		"""Return printable string of relevant incs, used for debugging"""
+		l = ["---- Relevant incs for %s" % ("/".join(self.index),)]
+		l.extend(["%s %s %s" % (inc.getinctype(), inc.lstat(), inc.path)
+				  for inc in self.relevant_incs])
+		l.append("--------------------------------")
+		return "\n".join(l)
 
-	def add_to_dict(filename):
-		"""Add filename to the inc tuple dictionary"""
-		rp = rid.inc_rpath.append(filename)
-		if Globals.quoting_enabled: rp.quote_path()
-		if rp.isincfile() and rp.getinctype() != 'data':
-			basename = rp.getincbase_str()
-			affirm_dict_indexed(basename)
-			rid_dict[basename].inc_list.append(rp)
-		elif rp.isdir():
-			affirm_dict_indexed(filename)
-			rid_dict[filename].inc_rpath = rp
+	def set_relevant_incs(self):
+		"""Set self.relevant_incs to increments that matter for restoring
 
-	for filename in dirlist: add_to_dict(filename)
-	keys = rid_dict.keys()
-	keys.sort()
+		relevant_incs is sorted newest first.  If mirror_rp matters,
+		it will be (first) in relevant_incs.
 
-	# sortincseq now to avoid descending .missing directories later
-	for key in keys:
-		rid = rid_dict[key]
-		if rid.inc_rpath or rid.inc_list:
-			rid.sortincseq(rest_time, mirror_time)
-			yield rid
-
-
-class RestoreIncrementData:
-	"""Contains information about a specific index from the increments dir
-
-	This is just a container class, used because it would be easier to
-	work with than an IndexedTuple.
-
-	"""
-	def __init__(self, index, inc_rpath, inc_list):
-		self.index = index
-		self.inc_rpath = inc_rpath
-		self.inc_list = inc_list
-
-	def sortincseq(self, rest_time, mirror_time):
-		"""Sort self.inc_list sequence, throwing away irrelevant increments"""
-		if not self.inc_list or rest_time >= mirror_time:
-			self.inc_list = []
+		"""
+		self.mirror_rp.inc_type = 'snapshot'
+		self.mirror_rp.inc_compressed = 0
+		if not self.inc_list or _rest_time >= _mirror_time:
+			self.relevant_incs = [self.mirror_rp]
 			return
 
-		newer_incs = self.get_newer_incs(rest_time, mirror_time)
+		newer_incs = self.get_newer_incs()
 		i = 0
 		while(i < len(newer_incs)):
 			# Only diff type increments require later versions
 			if newer_incs[i].getinctype() != "diff": break
 			i = i+1
-		self.inc_list = newer_incs[:i+1]
-		self.inc_list.reverse() # return in reversed order (latest first)
+		self.relevant_incs = newer_incs[:i+1]
+		if (not self.relevant_incs or
+			self.relevant_incs[-1].getinctype() == "diff"):
+			self.relevant_incs.append(self.mirror_rp)
+		self.relevant_incs.reverse() # return in reversed order
 		
-	def get_newer_incs(self, rest_time, mirror_time):
+	def get_newer_incs(self):
 		"""Return list of newer incs sorted by time (increasing)
 
 		Also discard increments older than rest_time (rest_time we are
@@ -295,94 +344,119 @@ class RestoreIncrementData:
 		"""
 		incpairs = []
 		for inc in self.inc_list:
-			time = Time.stringtotime(inc.getinctime())
-			if time >= rest_time: incpairs.append((time, inc))
+			time = inc.getinctime()
+			if time >= _rest_time: incpairs.append((time, inc))
 		incpairs.sort()
 		return [pair[1] for pair in incpairs]
-				
 
-class RestoreCombinedData:
-	"""Combine index information from increment and mirror directories
+	def get_attribs(self):
+		"""Return RORP with restored attributes, but no data
 
-	This is similar to RestoreIncrementData but has mirror information
-	also.
-
-	"""
-	def __init__(self, rid, mirror, target):
-		"""Init - set values from one or both if they exist
-
-		mirror and target are DSRPaths of the corresponding files in
-		the mirror and target directory respectively.  rid is a
-		RestoreIncrementData as defined above
+		This should only be necessary if the metadata file is lost for
+		some reason.  Otherwise the file provides all data.  The size
+		will be wrong here, because the attribs may be taken from
+		diff.
 
 		"""
-		if rid:
-			self.index = rid.index
-			self.inc_rpath = rid.inc_rpath
-			self.inc_list = rid.inc_list
-			if mirror:
-				self.mirror = mirror
-				assert mirror.index == self.index
-			else: self.mirror = None
-		elif mirror:
-			self.index = mirror.index
-			self.mirror = mirror
-			self.inc_list = []
-			self.inc_rpath = None
-		else: assert None, "neither rid nor mirror given"
-		self.target = target
+		last_inc = self.relevant_incs[-1]
+		if last_inc.getinctype() == 'missing': return rpath.RORPath(self.index)
 
-	def RestoreFile(self):
-		"""Non-recursive restore function """
-		if not self.inc_list and not (self.mirror and self.mirror.lstat()):
-			return # no increments were applicable
-		self.log()
+		rorp = last_inc.getRORPath()
+		rorp.index = self.index
+		if last_inc.getinctype() == 'dir': rorp.data['type'] = 'dir'
+		return rorp
 
-		if self.restore_hardlink(): return
+	def get_restore_fp(self):
+		"""Return file object of restored data"""
+		assert self.relevant_incs[-1].isreg(), "Not a regular file"
+		current_fp = self.get_first_fp()
+		for inc_diff in self.relevant_incs[1:]:
+			log.Log("Applying patch %s" % (inc_diff.get_indexpath(),), 7)
+			assert inc_diff.getinctype() == 'diff'
+			delta_fp = inc_diff.open("rb", inc_diff.isinccompressed())
+			new_fp = tempfile.TemporaryFile()
+			Rdiff.write_patched_fp(current_fp, delta_fp, new_fp)
+			new_fp.seek(0)
+			current_fp = new_fp
+		return current_fp
 
-		if not self.inc_list or self.inc_list[0].getinctype() == "diff":
-			assert self.mirror and self.mirror.lstat(), \
-				   "No base to go with incs for %s" % self.target.path
-			rpath.copy_with_attribs(self.mirror, self.target)
-		for inc in self.inc_list: self.applyinc(inc, self.target)
+	def get_first_fp(self):
+		"""Return first file object from relevant inc list"""
+		first_inc = self.relevant_incs[0]
+		assert first_inc.getinctype() == 'snapshot'
+		if not first_inc.isinccompressed(): return first_inc.open("rb")
 
-	def log(self):
-		"""Log current restore action"""
-		inc_string = ','.join([inc.path for inc in self.inc_list])
-		Log("Restoring %s with increments %s to %s" %
-			(self.mirror and self.mirror.path,
-			 inc_string, self.target.path), 5)
+		# current_fp must be a real (uncompressed) file
+		current_fp = tempfile.TemporaryFile()
+		fp = first_inc.open("rb", compress = 1)
+		rpath.copyfileobj(fp, current_fp)
+		assert not fp.close()
+		current_fp.seek(0)
+		return current_fp
 
-	def restore_hardlink(self):
-		"""Hard link target and return true if hard linking appropriate"""
-		if (Globals.preserve_hardlinks and
-			Hardlink.restore_link(self.index, self.target)):
-			rpath.copy_attribs(self.inc_list and self.inc_list[-1] or
-							   self.mirror, self.target)
-			return 1
-		return None
+	def yield_sub_rfs(self):
+		"""Return RestoreFiles under current RestoreFile (which is dir)"""
+		assert self.mirror_rp.isdir() or self.inc_rp.isdir()
+		mirror_iter = self.yield_mirrorrps(self.mirror_rp)
+		inc_pair_iter = self.yield_inc_complexes(self.inc_rp)
+		collated = rorpiter.Collate2Iters(mirror_iter, inc_pair_iter)
 
-	def applyinc(self, inc, target):
-		"""Apply increment rp inc to targetrp target"""
-		Log("Applying increment %s to %s" % (inc.path, target.path), 6)
-		inctype = inc.getinctype()
-		if inctype == "diff":
-			if not target.lstat():
-				raise RestoreError("Bad increment sequence at " + inc.path)
-			Rdiff.patch_action(target, inc,
-							   delta_compressed = inc.isinccompressed()
-							   ).execute()
-		elif inctype == "dir":
-			if not target.isdir():
-				if target.lstat():
-					raise RestoreError("File %s already exists" % target.path)
-				target.mkdir()
-		elif inctype == "missing": return
-		elif inctype == "snapshot":
-			if inc.isinccompressed():
-				target.write_from_fileobj(inc.open("rb", compress = 1))
-			else: rpath.copy(inc, target)
-		else: raise RestoreError("Unknown inctype %s" % inctype)
-		rpath.copy_attribs(inc, target)
+		for mirror_rp, inc_pair in collated:
+			if not inc_pair:
+				inc_rp = self.inc_rp.new_index(mirror_rp.index)
+				if Globals.quoting_enabled: inc_rp.quote_path()
+				inc_list = []
+			else: inc_rp, inc_list = inc_pair
+			if not mirror_rp:
+				mirror_rp = self.mirror_rp.new_index(inc_rp.index)
+				if Globals.quoting_enabled: mirror_rp.quote_path()
+			yield RestoreFile(mirror_rp, inc_rp, inc_list)
 
+	def yield_mirrorrps(self, mirrorrp):
+		"""Yield mirrorrps underneath given mirrorrp"""
+		if mirrorrp and mirrorrp.isdir():
+			if Globals.quoting_enabled:
+				for rp in selection.get_quoted_dir_children(mirrorrp):
+					if rp.index != ('rdiff-backup-data',): yield rp
+			else:
+				dirlist = mirrorrp.listdir()
+				dirlist.sort()
+				for filename in dirlist:
+					rp = mirrorrp.append(filename)
+					if rp.index != ('rdiff-backup-data',): yield rp
 
+	def yield_inc_complexes(self, inc_rpath):
+		"""Yield (sub_inc_rpath, inc_list) IndexedTuples from given inc_rpath
+
+		Finds pairs under directory inc_rpath.  sub_inc_rpath will just be
+		the prefix rp, while the rps in inc_list should actually exist.
+
+		"""
+		if not inc_rpath.isdir(): return
+		inc_dict = {} # dictionary of basenames:inc_lists
+		dirlist = robust.listrp(inc_rpath)
+		if Globals.quoting_enabled:
+			dirlist = [FilenameMapping.unquote(fn) for fn in dirlist]
+
+		def affirm_dict_indexed(basename):
+			"""Make sure the rid dictionary has given basename as key"""
+			if not inc_dict.has_key(basename):
+				sub_inc_rp = inc_rpath.append(basename)
+				if Globals.quoting_enabled: sub_inc_rp.quote_path()
+				inc_dict[basename] = rorpiter.IndexedTuple(sub_inc_rp.index,
+														   (sub_inc_rp, []))
+
+		def add_to_dict(filename):
+			"""Add filename to the inc tuple dictionary"""
+			rp = inc_rpath.append(filename)
+			if Globals.quoting_enabled: rp.quote_path()
+			if rp.isincfile() and rp.getinctype() != 'data':
+				basename = rp.getincbase_str()
+				affirm_dict_indexed(basename)
+				inc_dict[basename][1].append(rp)
+			elif rp.isdir(): affirm_dict_indexed(filename)
+
+		for filename in dirlist: add_to_dict(filename)
+		keys = inc_dict.keys()
+		keys.sort()
+		for key in keys: yield inc_dict[key]

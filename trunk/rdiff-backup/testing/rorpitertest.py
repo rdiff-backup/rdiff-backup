@@ -52,25 +52,6 @@ class RORPIterTest(unittest.TestCase):
 														 iter([])))
 		
 
-	def testCombinedPatching(self):
-		"""Combined signature, patch, and diff operations"""
-		if self.output.lstat():
-			Myrm(self.output.path)
-			self.output.setdata()
-
-		def turninto(final_rp):
-			sigfile = rorpiter.ToFile(rorpiter.GetSignatureIter(self.output))
-			diff_file = rorpiter.ToFile(rorpiter.GetDiffIter(
-				rorpiter.FromFile(sigfile), rorpiter.IterateRPaths(final_rp)))
-			rorpiter.PatchIter(self.output, rorpiter.FromFile(diff_file))
-
-		turninto(self.inc1rp)
-		rpath.copy_attribs(self.inc1rp, self.output) # Update time
-		assert self.compare_no_times(self.inc1rp, self.output)
-		turninto(self.inc2rp)
-		rpath.copy_attribs(self.inc2rp, self.output)
-		assert self.compare_no_times(self.inc2rp, self.output)
-
 	def compare_no_times(self, src_rp, dest_rp):
 		"""Compare but disregard directories attributes"""
 		def equal(src_rorp, dest_rorp):

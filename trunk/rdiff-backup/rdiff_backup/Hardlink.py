@@ -21,12 +21,12 @@
 
 If the preserve_hardlinks option is selected, linked files in the
 source directory will be linked in the mirror directory.  Linked files
-are treated like any other with respect to incrementing, but a
-database of all links will be recorded at each session, so linked
-files can still be restored from the increments.
+are treated like any other with respect to incrementing, but their
+link status can be retrieved because their device location and inode #
+is written in the metadata file.
 
-All these functions are meant to be executed on the destination
-side.  The source side should only transmit inode information.
+All these functions are meant to be executed on the mirror side.  The
+source side should only transmit inode information.
 
 """
 
@@ -65,58 +65,6 @@ def clear_dictionaries():
 	global _src_index_indicies, _dest_index_indicies, _restore_index_path
 	_src_inode_indicies = _dest_inode_indicies = None
 	_src_index_indicies = _dest_index_indicies = _restore_index_path = None
-
-
-# The keys of this dictionary are (inode, devloc) pairs on the source
-# side.  The values are (numlinks, index) pairs, where numlinks are
-# the number of files currently linked to this spot, and index is the
-# index of the first file so linked.
-_src_inode_index_dict = {}
-_dest_inode_index_dict = {}
-
-
-#def rorp_eq(src_rorp, dest_rorp):
-#	"""Return true if source and dest rorp are equal as far as hardlinking
-#
-#	This also processes the src_rorp, adding it if necessary to the
-#	inode dictionary.
-#
-#	"""
-#	if not src_rorp.isreg(): return 1 # only reg files can be hard linked
-#	if src_rorp.getnumlinks() == 1: return dest_rorp.getnumlinks() == 1
-#
-#	src_linked_index = process_rorp(src_rorp, _src_inode_index_dict)
-#	if dest_rorp.getnumlinks() == 1: return 0
-#	dest_linked_index = process_rorp(dest_rorp, _dest_inode_index_dict)
-#	return src_linked_index == dest_linked_index
-
-def process_rorp(rorp, inode_dict):
-	"""Add inode info and returns index src_rorp is linked to, or None"""
-	key_pair = (rorp.getinode(), rorp.getdevloc())
-	try: num, linked_index = inode_dict[key_pair]
-	except KeyError:
-		inode_dict[key_pair] = (1, src_rorp.index)
-		return None
-	inode_dict[key_pair] = (num+1, linked_index)
-
-	if num+1 == src_rorp.getnumlinks(): del _inode_index_dict[key_pair]
-	else: _inode_index_dict[key_pair] = (num+1, linked_index)
-	return linked_index
-
-def get_linked_index(src_rorp):
-	"""Return the index a src_rorp is linked to, or None
-
-	Also deletes the src_rorp's entry in the dictionary if we have
-	accumulated all the hard link references.
-
-	"""
-	key_pair = (rorp.getinode(), rorp.getdevloc())
-	try: num, linked_index = _src_inode_index_dict[key_pair]
-	except KeyError: return None
-	if num == src_rorp.getnumlinks():
-		del _src_inode_index_dict[key_pair]
-
-
 
 
 def get_inode_key(rorp):
@@ -190,6 +138,10 @@ def islinked(rorp):
 	"""True if rorp's index is already linked to something on src side"""
 	return len(get_indicies(rorp, 1)) >= 2
 
+def get_link_index(rorp):
+	"""Return first index on target side rorp is already linked to"""
+	return get_indicies(rorp, 1)[0]
+
 def restore_link(index, rpath):
 	"""Restores a linked file by linking it
 
@@ -214,129 +166,13 @@ def restore_link(index, rpath):
 	_restore_index_path[index] = rpath.path
 	return None
 
-def link_rp(src_rorp, dest_rpath, dest_root = None):
-	"""Make dest_rpath into a link analogous to that of src_rorp"""
+def link_rp(diff_rorp, dest_rpath, dest_root = None):
+	"""Make dest_rpath into a link using link flag in diff_rorp"""
 	if not dest_root: dest_root = dest_rpath # use base of dest_rpath
 	dest_link_rpath = rpath.RPath(dest_root.conn, dest_root.base,
-								  get_indicies(src_rorp, 1)[0])
+								  diff_rorp.get_link_flag())
 	dest_rpath.hardlink(dest_link_rpath.path)
 
-def write_linkdict(rpath, dict, compress = None):
-	"""Write link data to the rbdata dir
 
-	It is stored as the a big pickled dictionary dated to match
-	the current hardlinks.
-
-	"""
-	assert (Globals.isbackup_writer and
-			rpath.conn is Globals.local_connection)
-	tf = TempFile.new(rpath)
-	def init():
-		fp = tf.open("wb", compress)
-		cPickle.dump(dict, fp)
-		assert not fp.close()
-		tf.setdata()
-	robust.make_tf_robustaction(init, (tf,), (rpath,)).execute()
-
-def get_linkrp(data_rpath, time, prefix):
-	"""Return RPath of linkdata, or None if cannot find"""
-	for rp in map(data_rpath.append, data_rpath.listdir()):
-		if (rp.isincfile() and rp.getincbase_str() == prefix and
-			(rp.getinctype() == 'snapshot' or rp.getinctype() == 'data')
-			and Time.stringtotime(rp.getinctime()) == time):
-			return rp
-	return None
-
-def get_linkdata(data_rpath, time, prefix = 'hardlink_data'):
-	"""Return index dictionary written by write_linkdata at time"""
-	rp = get_linkrp(data_rpath, time, prefix)
-	if not rp: return None
-	fp = rp.open("rb", rp.isinccompressed())
-	index_dict = cPickle.load(fp)
-	assert not fp.close()
-	return index_dict
-
-def final_writedata():
-	"""Write final checkpoint data to rbdir after successful backup"""
-	global final_inc
-	if _src_index_indicies:
-		log.Log("Writing hard link data", 6)
-		if Globals.compression:
-			final_inc = Globals.rbdir.append("hardlink_data.%s.data.gz" %
-											 Time.curtimestr)
-		else: final_inc = Globals.rbdir.append("hardlink_data.%s.data" %
-											   Time.curtimestr)
-		write_linkdict(final_inc, _src_index_indicies, Globals.compression)
-	else: # no hardlinks, so writing unnecessary
-		final_inc = None
-
-def retrieve_final(time):
-	"""Set source index dictionary from hardlink_data file if avail"""
-	global _src_index_indicies
-	hd = get_linkdata(Globals.rbdir, time)
-	if hd is None: return None
-	_src_index_indicies = hd
-	return 1
-
-def final_checkpoint(data_rpath):
-	"""Write contents of the four dictionaries to the data dir
-
-	If rdiff-backup receives a fatal error, it may still be able
-	to save the contents of the four hard link dictionaries.
-	Because these dictionaries may be big, they are not saved
-	after every 20 seconds or whatever, but just at the end.
-
-	"""
-	log.Log("Writing intermediate hard link data to disk", 2)
-	src_inode_rp = data_rpath.append("hardlink_source_inode_checkpoint."
-									 "%s.data" % Time.curtimestr)
-	src_index_rp = data_rpath.append("hardlink_source_index_checkpoint."
-									 "%s.data" % Time.curtimestr)
-	dest_inode_rp = data_rpath.append("hardlink_dest_inode_checkpoint."
-									  "%s.data" % Time.curtimestr)
-	dest_index_rp = data_rpath.append("hardlink_dest_index_checkpoint."
-									  "%s.data" % Time.curtimestr)
-	for (rp, dict) in ((src_inode_rp, _src_inode_indicies),
-					   (src_index_rp, _src_index_indicies),
-					   (dest_inode_rp, _dest_inode_indicies),
-					   (dest_index_rp, _dest_index_indicies)):
-		write_linkdict(rp, dict)
-
-def retrieve_checkpoint(data_rpath, time):
-	"""Retrieve hardlink data from final checkpoint
-
-	Return true if the retrieval worked, false otherwise.
-
-	"""
-	global _src_inode_indicies, _src_index_indicies
-	global _dest_inode_indicies, _dest_index_indicies
-	try:
-		src_inode = get_linkdata(data_rpath, time,
-								 "hardlink_source_inode_checkpoint")
-		src_index = get_linkdata(data_rpath, time,
-								 "hardlink_source_index_checkpoint")
-		dest_inode = get_linkdata(data_rpath, time,
-								  "hardlink_dest_inode_checkpoint")
-		dest_index = get_linkdata(data_rpath, time,
-								  "hardlink_dest_index_checkpoint")
-	except cPickle.UnpicklingError:
-		log.Log("Unpickling Error", 2)
-		return None
-	if (src_inode is None or src_index is None or
-		dest_inode is None or dest_index is None): return None
-	_src_inode_indicies, _src_index_indicies = src_inode, src_index
-	_dest_inode_indicies, _dest_index_indicies = dest_inode, dest_index
-	return 1
-
-def remove_all_checkpoints():
-	"""Remove all hardlink checkpoint information from directory"""
-	prefix_list = ["hardlink_source_inode_checkpoint",
-				   "hardlink_source_index_checkpoint",
-				   "hardlink_dest_inode_checkpoint",
-				   "hardlink_dest_index_checkpoint"]
-	for rp in map(Globals.rbdir.append, Globals.rbdir.listdir()):
-		if (rp.isincfile() and rp.getincbase_str() in prefix_list and
-			(rp.getinctype() == 'snapshot' or rp.getinctype() == 'data')):
-			rp.delete()
 
 

@@ -56,7 +56,7 @@ field names and values.
 
 from __future__ import generators
 import re, gzip
-import log, Globals, rpath, Time, robust
+import log, Globals, rpath, Time, robust, increment
 
 class ParsingError(Exception):
 	"""This is raised when bad or unparsable data is received"""
@@ -207,6 +207,7 @@ class rorp_extractor:
 				log.Log("Error parsing metadata file: %s" % (e,), 2)
 			if self.at_end: break
 			self.buf = self.buf[next_pos:]
+		assert not self.close()
 
 	def skip_to_index(self, index):
 		"""Scan through the file, set buffer to beginning of index record
@@ -250,6 +251,7 @@ class rorp_extractor:
 				yield rorp
 			if self.at_end: break
 			self.buf = self.buf[next_pos:]
+		assert not self.close()
 
 	def close(self):
 		"""Return value of closing associated file"""
@@ -264,9 +266,10 @@ def OpenMetadata(rp = None, compress = 1):
 	assert not metadata_fileobj, "Metadata file already open"
 	if rp: metadata_rp = rp
 	else:
-		if compress: filename_base = "mirror_metadata.%s.data.gz"
-		else: filename_base = "mirror_metadata.%s.data"
-		metadata_rp = Globals.rbdir.append(filename_base % (Time.curtimestr,))
+		if compress: typestr = 'data.gz'
+		else: typestr = 'data'
+		metadata_rp = Globals.rbdir.append("mirror_metadata.%s.%s" %
+										   (Time.curtimestr, typestr))
 	metadata_fileobj = metadata_rp.open("wb", compress = compress)
 
 def WriteMetadata(rorp):
@@ -307,8 +310,7 @@ def GetMetadata_at_time(rbdir, time, restrict_index = None, rblist = None):
 	for rp in rblist:
 		if (rp.isincfile() and rp.getinctype() == "data" and
 			rp.getincbase_str() == "mirror_metadata"):
-			if Time.stringtotime(rp.getinctime()) == time:
-				return GetMetadata(rp, restrict_index)
+			if rp.getinctime() == time: return GetMetadata(rp, restrict_index)
 	return None
 
 

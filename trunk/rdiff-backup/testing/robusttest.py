@@ -1,32 +1,11 @@
+
 import os, unittest
 from commontest import *
 from rdiff_backup import rpath, robust, TempFile, Globals
-
-
-class TestRobustAction(unittest.TestCase):
-	"""Test some robust actions"""
-	def testCopyWithAttribs(self):
-		"""Test copy with attribs action"""
-		rpin = rpath.RPath(Globals.local_connection, "./testfiles/robust/in")
-		fp = open("./testfiles/robust/in", "wb")
-		fp.write("hello there")
-		fp.close()
-		os.chmod("./testfiles/robust/in", 0604)
-		rpin.setdata()
-		assert rpin.isreg() and rpin.getperms() % 01000 == 0604
-
-		rpout = rpath.RPath(Globals.local_connection, "./testfiles/robust/out")
-		robust.copy_with_attribs_action(rpin, rpout).execute()
-		if not rpout == rpin:
-			print rpout, rpin
-			assert 0
-
-		rpout.delete()
-		rpin.delete()
 		
 
 class TempFileTest(unittest.TestCase):
-	"""Test creation and management of tempfiles"""
+	"""Test creation and management of tempfiles in TempFile module"""
 	rp_base = rpath.RPath(Globals.local_connection,
 						  "./testfiles/robust/testfile_base")
 	def testBasic(self):
@@ -61,26 +40,19 @@ class TempFileTest(unittest.TestCase):
 		assert destination.lstat()
 		destination.delete()
 
-
-class SaveStateTest(unittest.TestCase):
-	"""Test SaveState class"""
-	data_dir = rpath.RPath(Globals.local_connection, "testfiles/robust")
-	def testSymlinking(self):
-		"""Test recording last file with symlink"""
-		last_rorp = rpath.RORPath(('usr', 'local', 'bin', 'ls'))
-		Globals.rbdir = self.data_dir
-		Time.setcurtime()
-		SetConnections.BackupInitConnections(Globals.local_connection,
-											 Globals.local_connection)
-		robust.SaveState.init_filenames()
-		robust.SaveState.record_last_file_action(last_rorp).execute()
-
-		sym_rp = rpath.RPath(Globals.local_connection,
-							 "testfiles/robust/last-file-incremented.%s.data" %
-							 Time.curtimestr)
-		assert sym_rp.issym()
-		assert sym_rp.readlink() == "increments/usr/local/bin/ls"
-		sym_rp.delete()
-
+class RobustTest(unittest.TestCase):
+	"""Test robust module"""
+	def test_check_common_error(self):
+		"""Test capturing errors"""
+		def cause_catchable_error(a):
+			os.lstat("aoenuthaoeu/aosutnhcg.4fpr,38p")
+		def cause_uncatchable_error():
+			ansoethusaotneuhsaotneuhsaontehuaou
+		result = robust.check_common_error(None, cause_catchable_error, [1])
+		assert result is None, result
+		try: robust.check_common_error(None, cause_uncatchable_error)
+		except NameError: pass
+		else: assert 0, "Key error not raised"
+		
 
 if __name__ == '__main__': unittest.main()

@@ -50,7 +50,7 @@ class RdiffTest(unittest.TestCase):
 			self.delta.write_from_fileobj(Rdiff.get_delta_sigrp(self.signature,
 																self.new))
 			assert self.delta.lstat()
-			Rdiff.patch_action(self.basis, self.delta, self.output).execute()
+			Rdiff.patch_local(self.basis, self.delta, self.output)
 			assert rpath.cmp(self.new, self.output)
 			map(rpath.RPath.delete, rplist)
 
@@ -74,14 +74,14 @@ class RdiffTest(unittest.TestCase):
 		os.system("mv %s %s" % (self.delta.path + ".gz", self.delta.path))
 		self.delta.setdata()
 
-		Rdiff.patch_action(self.basis, self.delta, self.output,
-						   delta_compressed = 1).execute()
+		Rdiff.patch_local(self.basis, self.delta, self.output,
+						  delta_compressed = 1)
 		assert rpath.cmp(self.new, self.output)
 		map(rpath.RPath.delete, rplist)
 
 	def testWriteDelta(self):
 		"""Test write delta feature of rdiff"""
-		self.delta.delete()
+		if self.delta.lstat(): self.delta.delete()
 		rplist = [self.basis, self.new, self.delta, self.output]
 		MakeRandomFile(self.basis.path)
 		MakeRandomFile(self.new.path)
@@ -90,7 +90,7 @@ class RdiffTest(unittest.TestCase):
 
 		Rdiff.write_delta(self.basis, self.new, self.delta)
 		assert self.delta.lstat()
-		Rdiff.patch_action(self.basis, self.delta, self.output).execute()
+		Rdiff.patch_local(self.basis, self.delta, self.output)
 		assert rpath.cmp(self.new, self.output)
 		map(rpath.RPath.delete, rplist)		
 
@@ -109,7 +109,7 @@ class RdiffTest(unittest.TestCase):
 		os.system("gunzip " + delta_gz.path)
 		delta_gz.setdata()
 		self.delta.setdata()
-		Rdiff.patch_action(self.basis, self.delta, self.output).execute()
+		Rdiff.patch_local(self.basis, self.delta, self.output)
 		assert rpath.cmp(self.new, self.output)
 		map(rpath.RPath.delete, rplist)		
 
@@ -128,7 +128,7 @@ class RdiffTest(unittest.TestCase):
 		self.delta.write_from_fileobj(Rdiff.get_delta_sigrp(self.signature,
 															self.new))
 		assert self.delta.lstat()
-		Rdiff.patch_action(self.basis, self.delta).execute()
+		Rdiff.patch_local(self.basis, self.delta)
 		assert rpath.cmp(self.basis, self.new)
 		map(rpath.RPath.delete, rplist)
 
@@ -141,29 +141,8 @@ class RdiffTest(unittest.TestCase):
 		MakeRandomFile(self.basis.path)
 		MakeRandomFile(self.new.path)
 		map(rpath.RPath.setdata, rplist)
-		Rdiff.copy_action(self.basis, self.new).execute()
+		Rdiff.copy_local(self.basis, self.new)
 		assert rpath.cmp(self.basis, self.new)
-		map(rpath.RPath.delete, rplist)
-
-	def testPatchWithAttribs(self):
-		"""Using rdiff to copy two files with attributes"""
-		rplist = [self.basis, self.new, self.delta]
-		for rp in rplist:
-			if rp.lstat(): rp.delete()
-
-		MakeRandomFile(self.basis.path)
-		MakeRandomFile(self.new.path)
-		self.new.chmod(0401)
-		map(rpath.RPath.setdata, rplist)
-		Rdiff.write_delta(self.basis, self.new, self.delta)
-		rpath.copy_attribs(self.new, self.delta)
-		assert self.delta.getperms() == 0401
-
-		assert not self.basis == self.new
-		Rdiff.patch_with_attribs_action(self.basis, self.delta).execute()
-		if not self.basis == self.new:
-			print self.basis, self.new
-			assert 0
 		map(rpath.RPath.delete, rplist)
 
 

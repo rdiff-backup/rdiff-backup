@@ -1,6 +1,6 @@
 import unittest, os
 from commontest import *
-from rdiff_backup import Globals, SetConnections, log, rpath
+from rdiff_backup import Globals, SetConnections, log, rpath, backup
 
 
 """Regression tests
@@ -12,14 +12,14 @@ testfiles
 
 Globals.set('change_source_perms', 1)
 Globals.counter = 0
-log.Log.setverbosity(7)
+log.Log.setverbosity(3)
+
+def get_local_rp(extension):
+	return rpath.RPath(Globals.local_connection, "testfiles/" + extension)
 
 class Local:
 	"""This is just a place to put increments relative to the local
 	connection"""
-	def get_local_rp(extension):
-		return rpath.RPath(Globals.local_connection, "testfiles/" + extension)
-
 	inc1rp = get_local_rp('increment1')
 	inc2rp = get_local_rp('increment2')
 	inc3rp = get_local_rp('increment3')
@@ -152,98 +152,52 @@ class IncrementTest1(unittest.TestCase):
 		"""Increment/Restore when both directories are remote"""
 		BackupRestoreSeries(None, None, self.dirlist)
 
+	def testNoWrite(self):
+		"""Test backup/restore on dirs without write permissions"""
+		def write_string(rp, s = ""):
+			"""Write string s to file"""
+			fp = rp.open("wb")
+			fp.write(s)
+			assert not fp.close()
 
-class IncrementTest2(PathSetter):
-	def OldtestRecoveryLocal(self):
-		"""Test to see if rdiff-backup can continue with bad increment"""
-		assert not os.system("rm -rf testfiles/recovery_out_backup")
-		self.setPathnames(None, None, None, None)
-		Time.setprevtime(1006136450)
-		Time.setcurtime()
-		Globals.add_regexp('.*rdiff-backup-data', 1)
-		os.system('cp -a testfiles/recovery_out testfiles/recovery_out_backup')
-		recovery_in = self.get_src_rp('testfiles/recovery')
-		recovery_out = self.get_dest_rp('testfiles/recovery_out_backup')
-		recovery_inc = self.get_dest_rp('testfiles/recovery_out_backup/'
-										'rdiff-backup-data/increments')
-		highlevel.Mirror_and_increment(recovery_in, recovery_out, recovery_inc)
-		# Should probably check integrity of increments, but for now
-		# allow if it doesn't during the Mirror_and_increment
+		def make_subdirs():
+			"""Make testfiles/no_write_out and testfiles/no_write_out2"""
+			nw_out1 = get_local_rp("no_write_out")
+			nw_out1.mkdir()
 
-	def OldtestRecoveryRemote(self):
-		"""Test Recovery with both connections remote"""
-		assert not os.system('rm -rf testfiles/recovery_out_backup')
-		self.setPathnames('test1', '../', 'test2/tmp', '../../')
-		Time.setprevtime(1006136450)
-		Time.setcurtime()
-		Globals.add_regexp('.*rdiff-backup-data', 1)
-		os.system('cp -a testfiles/recovery_out testfiles/recovery_out_backup')
-		recovery_in = self.get_src_rp('testfiles/recovery')
-		recovery_out = self.get_dest_rp('testfiles/recovery_out_backup')
-		recovery_inc = self.get_dest_rp('testfiles/recovery_out_backup/'
-										'rdiff-backup-data/increments')
-		highlevel.Mirror_and_increment(recovery_in, recovery_out, recovery_inc)
-		# Should probably check integrity of increments, but for now
-		# allow if it doesn't during the Mirror_and_increment
+			nw_out1_1 = get_local_rp("no_write_out/1")
+			write_string(nw_out1_1)
+			nw_out1_1.chmod(0)
 
-	def runtest(self):
-		"""After setting connections, etc., run actual test using this"""
-		Time.setcurtime()
+			nw_out1_2 = get_local_rp("no_write_out/2")
+			write_string(nw_out1_2, 'e')
+			nw_out1_1.chmod(0400)
 
-		Main.backup_set_select(Local.inc1rp)
-		highlevel.Mirror(self.inc1rp, self.rpout)
-		assert CompareRecursive(Local.inc1rp, Local.rpout)
+			nw1_sub = get_local_rp("no_write_out/subdir")
+			nw1_sub.mkdir()
 
-		Time.setcurtime()
-		Time.setprevtime(999500000)
-		Main.backup_set_select(self.inc2rp)
-		highlevel.Mirror_and_increment(self.inc2rp, self.rpout, self.rpout_inc)
-		assert CompareRecursive(Local.inc2rp, Local.rpout)
+			nw_out1_sub1 = get_local_rp("no_write_out/subdir/1")
+			write_string(nw_out1_sub1, 'f')
+			nw1_sub.chmod(0500)
+			nw_out1.chmod(0500)
 
-		Time.setcurtime()
-		Time.setprevtime(999510000)
-		Main.backup_set_select(self.inc3rp)
-		highlevel.Mirror_and_increment(self.inc3rp, self.rpout, self.rpout_inc)
-		assert CompareRecursive(Local.inc3rp, Local.rpout)
+			nw_out2 = get_local_rp("no_write_out2")
+			nw_out2.mkdir()
 
-		Time.setcurtime()
-		Time.setprevtime(999520000)
-		Main.backup_set_select(self.inc4rp)
-		highlevel.Mirror_and_increment(self.inc4rp, self.rpout, self.rpout_inc)
-		assert CompareRecursive(Local.inc4rp, Local.rpout)
-		
+			nw_out2_1 = get_local_rp("no_write_out2/1")
+			write_string(nw_out2_1, 'g')
 
-		print "Restoring to self.inc4"
-		highlevel.Restore(999530000, self.rpout, self.get_inctup(),
-						  self.rpout4)
-		assert CompareRecursive(Local.inc4rp, Local.rpout4)
+			nw_out2_2 = get_local_rp("no_write_out2/2")
+			write_string(nw_out2_2, 'aeu')
+			nw_out1.chmod(0500)
 
-		print "Restoring to self.inc3"
-		highlevel.Restore(999520000, self.rpout, self.get_inctup(),
-						  self.rpout3)
-		assert CompareRecursive(Local.inc3rp, Local.rpout3)
-
-		print "Restoring to self.inc2"
-		highlevel.Restore(999510000, self.rpout, self.get_inctup(),
-						  self.rpout2)
-		assert CompareRecursive(Local.inc2rp, Local.rpout2)
-
-		print "Restoring to self.inc1"
-		highlevel.Restore(999500000, self.rpout, self.get_inctup(),
-						  self.rpout1)
-		assert CompareRecursive(Local.inc1rp, Local.rpout1)
-
-	def get_inctup(self):
-		"""Return inc tuples as expected by Restore.RestoreRecursive
-
-		Assumes output increment directory is
-		testfiles/output_inc._____.
-
-		"""
-		filenames = filter(lambda x: x.startswith("output_inc."),
-						   Local.prefix.listdir())
-		rplist = map(lambda x: Local.prefix.append(x), filenames)
-		return IndexedTuple((), (Local.prefix.append("output_inc"), rplist))
+		Myrm("testfiles/no_write_out")
+		Myrm("testfiles/no_write_out2")
+		Myrm("testfiles/output")
+		make_subdirs()
+		BackupRestoreSeries(1, 1, ['testfiles/no_write_out',
+								   'testfiles/no_write_out2',
+								   'testfiles/empty'])
 
 
 class MirrorTest(PathSetter):
@@ -317,7 +271,7 @@ class MirrorTest(PathSetter):
 		Globals.change_ownership = 1
 		self.refresh(self.rootfiles, self.rootfiles_out,
 				Local.rootfiles, Local.rootfiles_out) # add uid/gid info
-		highlevel.Mirror(self.rootfiles, self.rootfiles_out)
+		backup.Mirror(self.rootfiles, self.rootfiles_out)
 		assert CompareRecursive(Local.rootfiles, Local.rootfiles_out)
 		Globals.change_ownership = None
 		self.refresh(self.rootfiles, self.rootfiles_out,
@@ -330,29 +284,13 @@ class MirrorTest(PathSetter):
 			conn.Globals.set('change_ownership', 1)
 		self.refresh(self.rootfiles, self.rootfiles_out,
 				Local.rootfiles, Local.rootfiles_out) # add uid/gid info
-		highlevel.Mirror(self.rootfiles, self.rootfiles_out)
+		backup.Mirror(self.rootfiles, self.rootfiles_out)
 		assert CompareRecursive(Local.rootfiles, Local.rootfiles_out)
 		for coon in Globals.connections:
 			conn.Globals.set('change_ownership', None)
 		self.refresh(self.rootfiles, self.rootfiles_out,
 				Local.rootfiles, Local.rootfiles_out) # remove that info
 
-	def testRoot2Local(self):
-		"""Make sure we can backup a directory we don't own"""
-		self.setPathnames(None, None, None, None)
-		Globals.change_ownership = Globals.change_source_perms = None
-		self.refresh(self.rootfiles2, self.rootfiles_out2,
-				Local.rootfiles2, Local.rootfiles_out2) # add uid/gid info
-		self.Mirror(self.rootfiles2, self.rootfiles_out2)
-		assert CompareRecursive(Local.rootfiles2, Local.rootfiles_out2)
-		self.refresh(self.rootfiles2, self.rootfiles_out2,
-				Local.rootfiles2, Local.rootfiles_out2) # remove that info
-		self.Mirror(self.rootfiles21, self.rootfiles_out2)
-		assert CompareRecursive(Local.rootfiles21, Local.rootfiles_out2)
-		self.refresh(self.rootfiles21, self.rootfiles_out2,
-				Local.rootfiles21, Local.rootfiles_out2) # remove that info
-		Globals.change_source_perms = 1
-		
 	def deleteoutput(self):
 		assert not os.system("rm -rf testfiles/output*")
 		self.rbdir = self.rpout.append('rdiff-backup-data')
@@ -395,12 +333,12 @@ class MirrorTest(PathSetter):
 		assert CompareRecursive(Local.inc2rp, Local.rpout)
 
 	def Mirror(self, rpin, rpout):
-		"""Like highlevel.Mirror, but run misc_setup first"""
+		"""Like backup.Mirror, but setup first, cleanup later"""
 		Main.force = 1
 		Main.misc_setup([rpin, rpout])
 		Main.backup_set_select(rpin)
 		Main.backup_init_dirs(rpin, rpout)
-		highlevel.Mirror(rpin, rpout)
+		backup.Mirror(rpin, rpout)
 		Log.close_logfile()
 		Hardlink.clear_dictionaries()
 

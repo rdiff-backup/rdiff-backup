@@ -1,6 +1,6 @@
-import unittest
+import unittest, time
 from commontest import *
-from rdiff_backup import statistics, rpath
+from rdiff_backup import statistics, rpath, restore
 
 class StatsObjTest(unittest.TestCase):
 	"""Test StatsObj class"""
@@ -29,7 +29,7 @@ class StatsObjTest(unittest.TestCase):
 		self.set_obj(s)
 		assert s.get_stat('SourceFiles') == 1
 
-		s1 = statistics.ITRB()
+		s1 = statistics.StatFileObj()
 		assert s1.get_stat('SourceFiles') == 0
 
 	def test_get_stats_string(self):
@@ -40,10 +40,12 @@ class StatsObjTest(unittest.TestCase):
 
 		self.set_obj(s)
 		stats_string = s.get_stats_string()
-		assert stats_string == \
-"""StartTime 11.00 (Wed Dec 31 16:00:11 1969)
-EndTime 12.00 (Wed Dec 31 16:00:12 1969)
-ElapsedTime 1.00 (1 second)
+		ss_list = stats_string.split("\n")
+		tail = "\n".join(ss_list[2:]) # Time varies by time zone, don't check
+#"""StartTime 11.00 (Wed Dec 31 16:00:11 1969)
+#EndTime 12.00 (Wed Dec 31 16:00:12 1969)"
+		assert tail == \
+"""ElapsedTime 1.00 (1 second)
 SourceFiles 1
 SourceFileSize 2 (2 bytes)
 MirrorFiles 13
@@ -142,5 +144,82 @@ TotalDestinationSizeChange 7 (7 bytes)
 		assert s3.ChangedFiles == 1.5
 		assert s3.SourceFiles == 75
 
+
+class IncStatTest(unittest.TestCase):
+	"""Test statistics as produced by actual backup"""
+	def stats_check_initial(self, s):
+		"""Make sure stats object s compatible with initial mirroring
+
+		A lot of the off by one stuff is because the root directory
+		exists in the below examples.
+
+		"""
+		assert s.MirrorFiles == 1 or s.MirrorFiles == 0
+		assert s.MirrorFileSize < 20000
+		assert s.NewFiles <= s.SourceFiles <= s.NewFiles + 1
+		assert s.NewFileSize <= s.SourceFileSize <= s.NewFileSize + 20000
+		assert s.ChangedFiles == 1 or s.ChangedFiles == 0
+		assert s.ChangedSourceSize < 20000
+		assert s.ChangedMirrorSize < 20000
+		assert s.DeletedFiles == s.DeletedFileSize == 0
+		assert s.IncrementFileSize == 0
+
+	def testStatistics(self):
+		"""Test the writing of statistics
+
+		The file sizes are approximate because the size of directories
+		could change with different file systems...
+
+		"""
+		Globals.compression = 1
+		Myrm("testfiles/output")
+		InternalBackup(1, 1, "testfiles/stattest1", "testfiles/output")
+		InternalBackup(1, 1, "testfiles/stattest2", "testfiles/output",
+					   time.time()+1)
+
+		rbdir = rpath.RPath(Globals.local_connection,
+							"testfiles/output/rdiff-backup-data")
+
+		#incs = Restore.get_inclist(rbdir.append("subdir").
+		#						   append("directory_statistics"))
+		#assert len(incs) == 2
+		#s1 = StatsObj().read_stats_from_rp(incs[0]) # initial mirror stats
+		#assert s1.SourceFiles == 2
+		#assert 400000 < s1.SourceFileSize < 420000
+		#self.stats_check_initial(s1)
+
+		#subdir_stats = StatsObj().read_stats_from_rp(incs[1]) # increment stats
+		#assert subdir_stats.SourceFiles == 2
+		#assert 400000 < subdir_stats.SourceFileSize < 420000
+		#assert subdir_stats.MirrorFiles == 2
+		#assert 400000 < subdir_stats.MirrorFileSize < 420000
+		#assert subdir_stats.NewFiles == subdir_stats.NewFileSize == 0
+		#assert subdir_stats.DeletedFiles == subdir_stats.DeletedFileSize == 0
+		#assert subdir_stats.ChangedFiles == 2
+		#assert 400000 < subdir_stats.ChangedSourceSize < 420000
+		#assert 400000 < subdir_stats.ChangedMirrorSize < 420000
+		#assert 10 < subdir_stats.IncrementFileSize < 20000
+
+		incs = restore.get_inclist(rbdir.append("session_statistics"))
+		assert len(incs) == 2
+		s2 = statistics.StatsObj().read_stats_from_rp(incs[0])
+		assert s2.SourceFiles == 7
+		assert 700000 <= s2.SourceFileSize < 750000
+		self.stats_check_initial(s2)
+
+		root_stats = statistics.StatsObj().read_stats_from_rp(incs[1])
+		assert root_stats.SourceFiles == 7, root_stats.SourceFiles
+		assert 550000 <= root_stats.SourceFileSize < 570000
+		assert root_stats.MirrorFiles == 7
+		assert 700000 <= root_stats.MirrorFileSize < 750000
+		assert root_stats.NewFiles == 1
+		assert root_stats.NewFileSize == 0
+		assert root_stats.DeletedFiles == 1
+		assert root_stats.DeletedFileSize == 200000
+		assert 3 <= root_stats.ChangedFiles <= 4, root_stats.ChangedFiles
+		assert 450000 <= root_stats.ChangedSourceSize < 470000
+		assert 400000 <= root_stats.ChangedMirrorSize < 420000, \
+			   root_stats.ChangedMirrorSize
+		assert 10 < root_stats.IncrementFileSize < 30000
 
 if __name__ == "__main__": unittest.main()

@@ -56,7 +56,7 @@ def describe_incs_parsable(incs, mirror_time, mirrorrp):
 	50000 regular    <- last will be the current mirror
 
 	"""
-	incpairs = [(Time.stringtotime(inc.getinctime()), inc) for inc in incs]
+	incpairs = [(inc.getinctime(), inc) for inc in incs]
 	incpairs.sort()
 	result = ["%s %s" % (time, get_inc_type(inc)) for time, inc in incpairs]
 	result.append("%s %s" % (mirror_time, get_file_type(mirrorrp)))
@@ -64,7 +64,7 @@ def describe_incs_parsable(incs, mirror_time, mirrorrp):
 
 def describe_incs_human(incs, mirror_time, mirrorrp):
 	"""Return a string describing all the the root increments"""
-	incpairs = [(Time.stringtotime(inc.getinctime()), inc) for inc in incs]
+	incpairs = [(inc.getinctime(), inc) for inc in incs]
 	incpairs.sort()
 
 	result = ["Found %d increments:" % len(incpairs)]
@@ -95,8 +95,7 @@ def delete_earlier_than_local(baserp, time):
 					yield sub_rp
 
 	for rp in yield_files(baserp):
-		if ((rp.isincfile() and
-			 Time.stringtotime(rp.getinctime()) < time) or
+		if ((rp.isincfile() and rp.getinctime() < time) or
 			(rp.isdir() and not rp.listdir())):
 			Log("Deleting increment file %s" % rp.path, 5)
 			rp.delete()
@@ -114,7 +113,7 @@ class IncObj:
 		if not incrp.isincfile():
 			raise ManageException("%s is not an inc file" % incrp.path)
 		self.incrp = incrp
-		self.time = Time.stringtotime(incrp.getinctime())
+		self.time = incrp.getinctime()
 
 	def getbaserp(self):
 		"""Return rp of the incrp without extensions"""

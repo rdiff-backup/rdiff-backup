@@ -3,7 +3,7 @@ import os, sys
 from rdiff_backup.log import Log
 from rdiff_backup.rpath import RPath
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
-	 selection, highlevel, lazy, Time, rpath
+	 selection, lazy, Time, rpath
 
 SourceDir = "../src"
 AbsCurdir = os.getcwd() # Absolute path name of current directory
@@ -13,6 +13,9 @@ __no_execute__ = 1 # Keeps the actual rdiff-backup program from running
 
 def Myrm(dirstring):
 	"""Run myrm on given directory string"""
+	root_rp = rpath.RPath(Globals.local_connection, dirstring)
+	for rp in selection.Select(root_rp).set_iter():
+		if rp.isdir(): rp.chmod(0700) # otherwise may not be able to remove
 	assert not os.system("rm -rf %s" % (dirstring,))
 
 def Make():
@@ -20,6 +23,13 @@ def Make():
 	os.chdir(SourceDir)
 	os.system("python ./Make")
 	os.chdir(AbsCurdir)
+
+def MakeOutputDir():
+	"""Initialize the testfiles/output directory"""
+	Myrm("testfiles/output")
+	rp = rpath.RPath(Globals.local_connection, "testfiles/output")
+	rp.mkdir()
+	return rp
 
 def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 				 current_time = None, extra_options = ""):
@@ -121,6 +131,7 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 	the testing directory and will be modified for remote trials.
 
 	"""
+	Main.force = 1
 	remote_schema = '%s'
 	#_reset_connections()
 	if not mirror_local:

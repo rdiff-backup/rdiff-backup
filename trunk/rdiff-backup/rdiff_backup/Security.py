@@ -112,6 +112,7 @@ def set_allowed_requests(sec_level):
 						"Globals.get_dict_val",
 						"log.Log.open_logfile_allconn",
 						"log.Log.close_logfile_allconn",
+						"Log.log_to_file",
 						"SetConnections.add_redirected_conn",
 						"RedirectedRun",
 						"sys.stdout.write"]
@@ -123,20 +124,21 @@ def set_allowed_requests(sec_level):
 			 "os.listdir",
 			 "Time.setcurtime_local",
 			 "robust.Resume.ResumeCheck",
-			 "highlevel.HLSourceStruct.split_initial_dsiter",
-			 "highlevel.HLSourceStruct.get_diffs_and_finalize",
+			 "backup.SourceStruct.split_initial_dsiter",
+			 "backup.SourceStruct.get_diffs_and_finalize",
 			 "rpath.gzip_open_local_read",
 			 "rpath.open_local_read"])
 		if sec_level == "update-only":
 			allowed_requests.extend(
 				["Log.open_logfile_local", "Log.close_logfile_local",
 				 "Log.close_logfile_allconn", "Log.log_to_file",
+				 "log.Log.log_to_file",
 				 "robust.SaveState.init_filenames",
 				 "robust.SaveState.touch_last_file",
-				 "highlevel.HLDestinationStruct.get_sigs",
-				 "highlevel.HLDestinationStruct.patch_w_datadir_writes",
-				 "highlevel.HLDestinationStruct.patch_and_finalize",
-				 "highlevel.HLDestinationStruct.patch_increment_and_finalize",
+				 "backup.DestinationStruct.get_sigs",
+				 "backup.DestinationStruct.patch_w_datadir_writes",
+				 "backup.DestinationStruct.patch_and_finalize",
+				 "backup.DestinationStruct.patch_increment_and_finalize",
 				 "Main.backup_touch_curmirror_local",
 				 "Globals.ITRB.increment_stat"])
 	if Globals.server:
@@ -148,8 +150,8 @@ def set_allowed_requests(sec_level):
 			 "FilenameMapping.set_init_quote_vals_local",
 			 "Globals.postset_regexp_local",
 			 "Globals.set_select",
-			 "highlevel.HLSourceStruct.set_session_info",
-			 "highlevel.HLDestinationStruct.set_session_info"])
+			 "backup.SourceStruct.set_session_info",
+			 "backup.DestinationStruct.set_session_info"])
 
 def vet_request(request, arglist):
 	"""Examine request for security violations"""

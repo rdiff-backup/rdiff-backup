@@ -201,6 +201,7 @@ def BackupInitConnections(reading_conn, writing_conn):
 	writing_conn.Globals.set("isbackup_writer", 1)
 	UpdateGlobal("backup_reader", reading_conn)
 	UpdateGlobal("backup_writer", writing_conn)
+	if writing_conn.os.getuid() == 0: UpdateGlobal('change_ownership', 1)
 
 def CloseConnections():
 	"""Close all connections.  Run by client"""

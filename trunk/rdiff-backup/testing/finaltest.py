@@ -1,11 +1,11 @@
 import unittest, os, re, sys, time
 from commontest import *
-from rdiff_backup import Globals, log, rpath
+from rdiff_backup import Globals, log, rpath, robust
 
 """Regression tests"""
 
 Globals.exclude_mirror_regexps = [re.compile(".*/rdiff-backup-data")]
-log.Log.setverbosity(7)
+log.Log.setverbosity(3)
 
 lc = Globals.local_connection
 
@@ -43,7 +43,7 @@ class PathSetter(unittest.TestCase):
 
 	def reset_schema(self):
 		self.rb_schema = SourceDir + \
-			 "/../rdiff-backup -v3 --remote-schema './chdir-wrapper2 %s' "
+			 "/../rdiff-backup -v7 --remote-schema './chdir-wrapper2 %s' "
 
 	def refresh(self, *rp_list):
 		"""Reread data for the given rps"""
@@ -168,8 +168,9 @@ class PathSetter(unittest.TestCase):
 
 	def getinc_paths(self, basename, directory):
 		"""Return increment.______.dir paths"""
-		incfiles = filter(lambda s: s.startswith(basename),
-						  os.listdir(directory))
+		dirrp = rpath.RPath(Globals.local_connection, directory)
+		incfiles = [filename for filename in robust.listrp(dirrp)
+					if filename.startswith(basename)]
 		incfiles.sort()
 		incrps = map(lambda f: rpath.RPath(lc, directory+"/"+f), incfiles)
 		return map(lambda x: x.path, filter(rpath.RPath.isincfile, incrps))
@@ -196,26 +197,15 @@ class Final(PathSetter):
 		self.set_connections(None, None, "test2/tmp", "../../")
 		self.runtest()
 
-#	def testMirroringLocal(self):
-#		"""Run mirroring only everything remote"""
-#		self.delete_tmpdirs()
-#		self.set_connections(None, None, None, None)
-#		self.exec_rb_extra_args(10000, "-m",
-#								"testfiles/various_file_types",
-#								"testfiles/output")
-#		assert CompareRecursive(Local.vftrp, Local.rpout, exclude_rbdir = None)
-
-#	def testMirroringRemote(self):
-#		"""Run mirroring only everything remote"""
-#		self.delete_tmpdirs()
-#		self.set_connections("test1/", "../", "test2/tmp/", "../../")
-#		self.exec_rb_extra_args(10000, "-m",
-#								"testfiles/various_file_types",
-#								"testfiles/output")
-#		assert CompareRecursive(Local.vftrp, Local.rpout, exclude_rbdir = None)
+	def testProcLocal(self):
+		"""Test initial backup of /proc locally"""
+		Myrm("testfiles/procoutput")
+		self.set_connections(None, None, None, None)
+		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
 
 	def testProcRemote(self):
 		"""Test mirroring proc"""
+		Myrm("testfiles/procoutput")
 		self.set_connections(None, None, "test2/tmp/", "../../")
 		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
 
@@ -351,45 +341,6 @@ testfiles/increment2/changed_dir""")
 						  'testfiles/restoretarget1/regular_file')
 		self.assertRaises(OSError, os.lstat,
 						  'testfiles/restoretarget1/executable2')
-
-
-class FinalCorrupt(PathSetter):
-	def testBackupOverlay(self):
-		"""Test backing up onto a directory already backed up for that time
-
-		This will test to see if rdiff-backup will ignore files who
-		already have an increment where it wants to put something.
-		Just make sure rdiff-backup doesn't exit with an error.
-		
-		"""
-		self.delete_tmpdirs()
-		assert not os.system("cp -a testfiles/corruptbackup testfiles/output")
-		self.set_connections(None, None, None, None)
-		self.exec_rb(None, 'testfiles/corruptbackup_source',
-					 'testfiles/output')
-
-	def testBackupOverlayRemote(self):
-		"""Like above but destination is remote"""
-		self.delete_tmpdirs()
-		assert not os.system("cp -a testfiles/corruptbackup testfiles/output")
-		self.set_connections(None, None, "test1/", '../')
-		self.exec_rb(None, 'testfiles/corruptbackup_source',
-					 'testfiles/output')
-
-	def testCheckpointData(self):
-		"""Destination directory has bad checkpoint data, no sym"""
-		self.delete_tmpdirs()
-		assert not os.system("cp -a testfiles/corrupt_dest1 testfiles/output")
-		self.set_connections(None, None, None, None)
-		self.exec_rb(None, 'testfiles/various_file_types', 'testfiles/output')
-
-	def testCheckpointData2(self):
-		"""Destination directory has bad checkpoint data, with sym"""
-		self.delete_tmpdirs()
-		assert not os.system("cp -a testfiles/corrupt_dest2 testfiles/output")
-		self.set_connections(None, None, None, None)
-		self.exec_rb(None, 'testfiles/various_file_types', 'testfiles/output')
-		
 
 		
 if __name__ == "__main__": unittest.main()
