@@ -43,7 +43,7 @@ hs_file_close(int fd)
 
 
 int
-_hs_file_open(char const *filename, int mode)
+hs_file_open(char const *filename, int mode)
 {
     int             fd;
 

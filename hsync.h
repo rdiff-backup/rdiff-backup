@@ -226,3 +226,4 @@ extern void     hs_bzero(void *buf, size_t size);
  * File utilities
  **********************************************************************/
 void hs_file_close(int fd);
+int hs_file_open(char const *filename, int mode);
