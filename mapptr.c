@@ -145,6 +145,11 @@ _hs_map_do_read(hs_map_t *map,
     ssize_t nread;
     ssize_t buf_remain = max_size; /* buffer space left */
     char *p = map->p + read_offset;
+
+    assert(max_size > 0);
+    assert(min_size >= 0);
+    assert(read_offset >= 0);
+    assert(map->tag == HS_MAP_TAG);
     
     do {
 	nread = read(map->fd, p, (size_t) buf_remain);
@@ -211,16 +216,12 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     assert(map->tag == HS_MAP_TAG);
     assert(len != NULL);	/* check pointers */
     assert(reached_eof != NULL);
+    assert(offset >= 0);
+    assert(*len > 0);
     *reached_eof = 0;
 
-    _hs_trace("called: map=%p, off=%ld, len=%ld",
+    _hs_trace("map=<%p>, off=%ld, len=%ld",
 	      map, (long) offset, (long) *len);
-
-    /* TODO: Perhaps we should allow this, but why? */
-    if (*len <= 0) {
-	errno = EINVAL;
-	return NULL;
-    }
 
     /* in most cases the region will already be available */
     if (offset >= map->p_offset &&
@@ -271,6 +272,7 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
 	window_start + window_size >= map->p_offset + map->p_len) {
 	read_start = map->p_offset + map->p_len;
 	read_offset = read_start - window_start;
+	assert(read_offset >= 0);
 	read_max_size = window_size - read_offset;
 	memmove(map->p, map->p + (map->p_len - read_offset),
 		(size_t) read_offset);
@@ -294,9 +296,23 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
 	map->p_fd_offset = read_start;
     }
 
-    /* XXX: For the moment we require reading the whole thing; this should be
-       changed to read just as much as is required. */
-    read_min_size = read_max_size;
+    /* Work out the minimum number of bytes we must read to cover the
+       requested region. */
+    read_min_size = *len + (offset - map->p_offset) - read_offset;
+    assert(read_min_size >= 0);
+
+    /* read_min_size may be >*len when offset > map->p_offset, i.e. we
+       have to read in some data before the stuff the caller wants to
+       see.  We read it anyhow to avoid seeking (in the case of a
+       pipe) or because they might want to go back and see it later
+       (in a file). */
+
+    if (read_min_size > read_max_size) {
+	_hs_fatal("we really screwed up: minimum size is %ld, but remaining "
+		  "buffer is just %ld",
+		  (long) read_min_size, (long) read_max_size);
+    }
+    
     total_read = _hs_map_do_read(map, read_offset, read_max_size,
 				 read_min_size, reached_eof);
     assert(*reached_eof  ||  total_read >= read_min_size);
