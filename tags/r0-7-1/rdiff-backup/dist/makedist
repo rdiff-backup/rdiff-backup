@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+
+import os, re, shutil, time
+
+SourceDir = "src"
+filelist = [SourceDir + "/rdiff-backup", "CHANGELOG",
+			"COPYING", "README", "FAQ.html"]
+
+
+# Various details about the files must also be specified by the rpm
+# spec template.
+spec_template = "dist/rdiff-backup.spec"
+
+
+def GetVersion():
+	"""Return version string by reading in ./rdiff-backup"""
+	fp = open(SourceDir + "/rdiff-backup", "r")
+	match = re.search("Version (.*?) ", fp.read())
+	fp.close()
+	return match.group(1)
+
+def CopyMan(destination, version):
+	"""Create updated man page at the specified location"""
+	fp = open(destination, "w")
+	date = time.strftime("%B %Y", time.localtime(time.time()))
+	version = "Version "+version
+	firstline = ('.TH RDIFF-BACKUP 1 "%s" "%s" "User Manuals"\n' %
+				 (date, version))
+	fp.write(firstline)
+	infp = open("rdiff-backup.1", "r")
+	infp.readline()
+	fp.write(infp.read())
+	fp.close()
+	infp.close()
+
+def MakeTar(version):
+	"""Create rdiff-backup tar file"""
+	tardir = "rdiff-backup-%s" % version
+	tarfile = "rdiff-backup-%s.tar.gz" % version
+	try:
+		os.lstat(tardir)
+		os.system("rm -rf " + tardir)
+	except OSError: pass
+	os.mkdir(tardir)
+	for file in filelist: os.system("cp -a %s %s" % (file, tardir))
+	os.chmod(os.path.join(tardir, "rdiff-backup"), 0755)
+	CopyMan(os.path.join(tardir, "rdiff-backup.1"), version)
+	os.system("tar -cvzf %s %s" % (tarfile, tardir))
+	shutil.rmtree(tardir)
+	return tarfile
+
+def MakeSpecFile(version):
+	"""Create spec file using spec template"""
+	specfile = "rdiff-backup-%s-1.spec" % version
+	outfp = open(specfile, "w")
+	outfp.write("Version: %s\n" % version)
+	infp = open(spec_template, "r")
+	outfp.write(infp.read())
+	infp.close()
+	outfp.close()
+	return specfile
+
+def Main():
+	cwd = os.getcwd()
+	os.chdir(SourceDir)
+	assert not os.system("./Make")
+	os.chdir(cwd)
+	version = GetVersion()
+	print "Processing version " + version
+	tarfile = MakeTar(version)
+	print "Made tar file " + tarfile
+	specfile = MakeSpecFile(version)
+	print "Made specfile " + specfile
+
+if __name__ == "__main__": Main()
+
