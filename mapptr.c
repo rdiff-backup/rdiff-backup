@@ -85,8 +85,10 @@ hs_map_ptr(hs_map_t *map, hs_off_t offset, int len)
 
      assert(map->tag == HS_MAP_TAG);
 
+     /* TODO: Perhaps we should allow this, but why? */
      if (len == 0) {
-	  return NULL;
+	 errno = EINVAL;
+	 return NULL;
      }
 
      /* can't go beyond the end of file */

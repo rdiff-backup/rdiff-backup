@@ -9,7 +9,7 @@
 # $Id$
 
 import sys
-from random import randint
+from random import randint, expovariate
 
 ntests = 4000
 
@@ -25,7 +25,7 @@ for i in range(ntests):
     remain = filelen - off
     if remain <= 0:
         break
-    amount = randint(1, min(remain, 8000))
+    amount = min(remain, max(1, int(expovariate(1.0/2000))))
 
     cmdfile.write('%d,%d ' % (off,amount))
     datafile.write(suck[off:off+amount])
