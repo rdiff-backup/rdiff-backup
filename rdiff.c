@@ -34,8 +34,6 @@
  *
  * If built with debug support and we have mcheck, then turn it on.
  * (Optionally?)
- *
- * TODO: -h for help.  Suggest this on option error.
  */
 
 #include <config.h>
@@ -44,6 +42,14 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <popt.h>
+
+#if HAVE_LIBZ && HAVE_ZLIB_H
+#    include <zlib.h>
+#endif
+
+#if HAVE_LIBBZ2 && HAVE_BZLIB_H
+#    include <bzlib.h>
+#endif
 
 #include "rsync.h"
 #include "fileutil.h"
@@ -95,8 +101,12 @@ static void rdiff_no_more_args(poptContext opcon)
 
 static void bad_option(poptContext opcon, int error)
 {
-    fprintf(stderr, "%s: %s: %s\n",
-            PROGRAM, poptStrerror(error), poptBadOption(opcon, 0));
+    char       msgbuf[1000];
+    
+    snprintf(msgbuf, sizeof msgbuf-1, "%s: %s: %s",
+             PROGRAM, poptStrerror(error), poptBadOption(opcon, 0));
+    rdiff_usage(msgbuf);
+    
     exit(RS_SYNTAX_ERROR);
 }
 
@@ -117,6 +127,8 @@ static void help(void) {
            "IO options:\n"
            "  -I, --input-size=BYTES    Input buffer size\n"
            "  -O, --output-size=BYTES   Output buffer size\n"
+           "  -z, --gzip[=LEVEL]        gzip-compress deltas\n"
+           "  -i, --bzip2[=LEVEL]       bzip2-compress deltas\n"
            );
 }
 
@@ -129,18 +141,27 @@ static void rdiff_show_version(void)
      * unacknowledged version of GNU Keyring in violation of the licence
      * and all laws of politeness and good taste.
      */
+    char const *bzlib = "", *zlib = "";
+    
+#if HAVE_LIBZ && HAVE_ZLIB_H
+    zlib = ", gzip";
+#endif
 
+#if HAVE_LIBBZ2 && HAVE_BZLIB_H
+    bzlib = ", bzip2";
+#endif
+   
     printf("rdiff (%s) [%s]\n"
            "Copyright (C) 1997-2001 by Martin Pool, Andrew Tridgell and others.\n"
            "http://rproxy.samba.org/\n"
-           "Capabilities: %d bit files\n"
+           "Capabilities: %d bit files%s%s\n"
            "\n"
            "librsync comes with NO WARRANTY, to the extent permitted by law.\n"
            "You may redistribute copies of librsync under the terms of the GNU\n"
            "Lesser General Public License.  For more information about these\n"
            "matters, see the files named COPYING.\n",
            rs_librsync_version, RS_CANONICAL_HOST,
-           8 * sizeof(rs_long_t));
+           8 * sizeof(rs_long_t), zlib, bzlib);
 }
 
 
@@ -282,7 +303,7 @@ int main(const int argc, const char *argv[])
     result = rdiff_action(opcon);
 
     if (result != RS_DONE)
-        rs_error("failed: %s", rs_strerror(result));
+        rs_log(RS_LOG_ERR|RS_LOG_NONAME, "%s", rs_strerror(result));
 
     return result;
 }
