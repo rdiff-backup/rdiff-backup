@@ -74,11 +74,6 @@ test $TEST_TYPE $FILE || {
 	exit 1
 }
 
-if test -z "$*"; then
-	echo "I am going to run ./configure with no arguments - if you wish "
-        echo "to pass any to it, please specify them on the $0 command line."
-fi
-
 case $CC in
 *xlc | *xlc\ * | *lcc | *lcc\ *) am_opt=--include-deps;;
 esac
@@ -90,9 +85,3 @@ automake -a $am_opt Makefile popt/Makefile
 autoconf
 set +x
 cd $ORIGDIR
-
-$srcdir/configure --enable-maintainer-mode "$@"
-
-echo 
-echo "Now type 'make' to compile $PROJECT."
-echo "I suggest you also use 'make check' to see if it works."
