@@ -1,3 +1,5 @@
+Look at Kent Borg's suggestion for restore options and digests.
+
 Write some better selection test cases to test new Iterate_fast func.
 
 Work on killtest code - avoid returning a failure when a file is

@@ -20,14 +20,17 @@
 """Coordinate corresponding files with different names
 
 For instance, some source filenames may contain characters not allowed
-on the mirror end.  Also, if a source filename is very long (say 240
-characters), the extra characters added to related increments may put
-them over the usual 255 character limit.
+on the mirror end.  These files must be called something different on
+the mirror end, so we escape the offending characters with semicolons.
+
+One problem/complication is that all this escaping may put files over
+the 256 or whatever limit on the length of file names.  (We just don't
+handle that error.)
 
 """
 
 import re
-import Globals, log
+import Globals, log, rpath
 
 max_filename_length = 255
 
@@ -42,6 +45,8 @@ unquoting_regexp = None
 # Use given char to quote.  Default is set in Globals.
 quoting_char = None
 
+
+class QuotingException(Exception): pass
 
 def set_init_quote_vals():
 	"""Set quoting value from Globals on all conns"""
@@ -90,7 +95,54 @@ def unquote(path):
 
 def unquote_single(match):
 	"""Unquote a single quoted character"""
-	assert len(match.group()) == 4
-	return chr(int(match.group()[1:]))
+	if not len(match.group()) == 4:
+		raise QuotingException("Quoted group wrong size: " + match.group())
+	try: return chr(int(match.group()[1:]))
+	except ValueError:
+		raise QuotingException("Quoted out of range: " + match.group())
 
 
+class QuotedRPath(rpath.RPath):
+	"""RPath where the filename is quoted version of index
+
+	We use QuotedRPaths so we don't need to remember to quote RPaths
+	derived from this one (via append or new_index).  Note that only
+	the index is quoted, not the base.
+
+	"""
+	def __init__(self, connection, base, index = (), data = None):
+		"""Make new QuotedRPath"""
+		quoted_index = tuple(map(quote, index))
+		rpath.RPath.__init__(self, connection, base, quoted_index, data)
+		self.index = index
+
+	def listdir(self):
+		"""Return list of unquoted filenames in current directory
+
+		We want them unquoted so that the results can be sorted
+		correctly and append()ed to the currect QuotedRPath.
+
+		"""
+		return map(unquote, self.conn.os.listdir(self.path))
+
+	def __str__(self):
+		return "QuotedPath: %s\nIndex: %s\nData: %s" % \
+			   (self.path, self.index, self.data)
+
+	def isincfile(self):
+		"""Return true if path indicates increment, sets various variables"""
+		result = rpath.RPath.isincfile(self)
+		if result: self.inc_basestr = unquote(self.inc_basestr)
+		return result
+		
+def get_quotedrpath(rp, separate_basename = 0):
+	"""Return quoted version of rpath rp"""
+	assert not rp.index # Why would we starting quoting "in the middle"?
+	if separate_basename:
+		dirname, basename = rp.dirsplit()
+		return QuotedRPath(rp.conn, dirname, (unquote(basename),), rp.data)
+	else: return QuotedRPath(rp.conn, rp.base, (), rp.data)
+
+def get_quoted_sep_base(filename):
+	"""Get QuotedRPath from filename assuming last bit is quoted"""
+	return get_quotedrpath(rpath.RPath(Globals.local_connection, filename), 1)

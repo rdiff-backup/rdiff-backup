@@ -1,4 +1,3 @@
-
 # Copyright 2002 Ben Escoto
 #
 # This file is part of rdiff-backup.
@@ -142,15 +141,20 @@ def parse_cmdlineoptions(arglist):
 			sys.exit(0)
 		elif opt == "-v" or opt == "--verbosity": Log.setverbosity(arg)
 		elif opt == "--windows-mode":
-			Globals.set('time_separator', "_")
 			Globals.set('chars_to_quote', "A-Z:")
 			Globals.set('quoting_enabled', 1)
 			Globals.set('preserve_hardlinks', 0)
-			select_opts.append(("--exclude-special-files", None))
-			assert 0, "Windows mode doesn't work in this version!"
-		elif opt == '--windows-time-format':
-			Globals.set('time_separator', "_")
 		else: Log.FatalError("Unknown option %s" % opt)
+
+def isincfilename(path):
+	"""Return true if path is of a (possibly quoted) increment file"""
+	rp = rpath.RPath(Globals.local_connection, path)
+	if Globals.quoting_enabled:
+		if not FilenameMapping.quoting_char:
+			FilenameMapping.set_init_quote_vals()
+		rp = FilenameMapping.get_quotedrpath(rp, separate_basename = 1)
+	result = rp.isincfile()
+	return result
 
 def set_action():
 	"""Check arguments and try to set action"""
@@ -160,8 +164,7 @@ def set_action():
 		if l == 0: commandline_error("No arguments given")
 		elif l == 1: action = "restore"
 		elif l == 2:
-			if rpath.RPath(Globals.local_connection, args[0]).isincfile():
-				action = "restore"
+			if isincfilename(args[0]): action = "restore"
 			else: action = "backup"
 		else: commandline_error("Too many arguments given")
 
@@ -230,6 +233,8 @@ def Main(arglist):
 
 def Backup(rpin, rpout):
 	"""Backup, possibly incrementally, src_path to dest_path."""
+	if Globals.quoting_enabled:
+		rpout = FilenameMapping.get_quotedrpath(rpout)
 	SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
 	backup_set_select(rpin)
 	backup_init_dirs(rpin, rpout)
@@ -259,9 +264,9 @@ def backup_init_dirs(rpin, rpout):
 	elif not rpin.isdir():
 		Log.FatalError("Source %s is not a directory" % rpin.path)
 
-	datadir = rpout.append("rdiff-backup-data")
+	datadir = rpout.append_path("rdiff-backup-data")
 	SetConnections.UpdateGlobal('rbdir', datadir)
-	incdir = rpath.RPath(rpout.conn, os.path.join(datadir.path, "increments"))
+	incdir = datadir.append_path("increments")
 	prevtime = backup_get_mirrortime()
 
 	if rpout.lstat():
@@ -351,7 +356,7 @@ def RestoreAsOf(rpin, target):
 	target - RPath of place to put restored file
 
 	"""
-	restore_check_paths(rpin, target, 1)
+	rpin, rpout = restore_check_paths(rpin, target, 1)
 	try: time = Time.genstrtotime(restore_timestr)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
 	restore_common(rpin, target, time)
@@ -384,7 +389,9 @@ def restore_check_paths(rpin, rpout, restoreasof = None):
 	if not restoreasof:
 		if not rpin.lstat():
 			Log.FatalError("Source file %s does not exist" % rpin.path)
-		elif not rpin.isincfile():
+		if Globals.quoting_enabled:
+			rpin = FilenameMapping.get_quotedrpath(rpin, 1)
+		if not rpin.isincfile():
 			Log.FatalError("""File %s does not look like an increment file.
 
 Try restoring from an increment file (the filenames look like
@@ -438,7 +445,8 @@ def restore_get_root(rpin):
 		i = i-1
 	else: Log.FatalError("Unable to find rdiff-backup-data directory")
 
-	rootrp = parent_dir
+	if not Globals.quoting_enabled: rootrp = parent_dir
+	else: rootrp = FilenameMapping.get_quotedrpath(parent_dir)
 	Log("Using mirror root directory %s" % rootrp.path, 6)
 
 	datadir = rootrp.append_path("rdiff-backup-data")
@@ -476,7 +484,7 @@ def CalculateAverage(rps):
 
 def RemoveOlderThan(rootrp):
 	"""Remove all increment files older than a certain time"""
-	datadir = rootrp.append("rdiff-backup-data")
+	datadir = rootrp.append_path("rdiff-backup-data")
 	if not datadir.lstat() or not datadir.isdir():
 		Log.FatalError("Unable to open rdiff-backup-data dir %s" %
 					   (datadir.path,))
@@ -487,7 +495,7 @@ def RemoveOlderThan(rootrp):
 	Log("Deleting increment(s) before %s" % timep, 4)
 
 	times_in_secs = [inc.getinctime() for inc in 
-					 restore.get_inclist(datadir.append("increments"))]
+					 restore.get_inclist(datadir.append_path("increments"))]
 	times_in_secs = filter(lambda t: t < time, times_in_secs)
 	if not times_in_secs:
 		Log.FatalError("No increments older than %s found" % timep)
