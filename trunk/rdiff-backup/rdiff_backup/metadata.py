@@ -104,26 +104,20 @@ def RORP2Record(rorpath):
 	str_list.append("  Permissions %s\n" % rorpath.getperms())
 	return "".join(str_list)
 
-line_parsing_regexp = re.compile("^ *([A-Za-z0-9]+) (.+)$")
+line_parsing_regexp = re.compile("^ *([A-Za-z0-9]+) (.+)$", re.M)
 def Record2RORP(record_string):
 	"""Given record_string, return RORPath
 
 	For speed reasons, write the RORPath data dictionary directly
-	instead of calling rorpath functions.  This depends on the 
+	instead of calling rorpath functions.  Profiling has shown this to
+	be a time critical function.
 
 	"""
 	data_dict = {}
-	index_list = [None] # put in list so we can modify using parse_line
-	def process_line(line):
-		"""Process given line, and modify data_dict or index_list"""
-		if not line: return # skip empty lines
-		match = line_parsing_regexp.search(line)
-		if not match: raise ParsingError("Bad line: '%s'" % line)
-		field, data = match.group(1), match.group(2)
-
+	for field, data in line_parsing_regexp.findall(record_string):
 		if field == "File":
-			if data == ".": index_list[0] = ()
-			else: index_list[0] = tuple(unquote_path(data).split("/"))
+			if data == ".": index = ()
+			else: index = tuple(unquote_path(data).split("/"))
 		elif field == "Type":
 			if data == "None": data_dict['type'] = None
 			else: data_dict['type'] = data
@@ -140,9 +134,7 @@ def Record2RORP(record_string):
 		elif field == "Gid": data_dict['gid'] = int(data)
 		elif field == "Permissions": data_dict['perms'] = int(data)
 		else: raise ParsingError("Unknown field in line '%s'" % line)
-		
-	map(process_line, record_string.split("\n"))
-	return rpath.RORPath(index_list[0], data_dict)
+	return rpath.RORPath(index, data_dict)
 
 chars_to_quote = re.compile("\\n|\\\\")
 def quote_path(path_string):
@@ -260,6 +252,7 @@ class rorp_extractor:
 
 metadata_rp = None
 metadata_fileobj = None
+metadata_record_buffer = [] # Use this because gzip writes are slow
 def OpenMetadata(rp = None, compress = 1):
 	"""Open the Metadata file for writing, return metadata fileobj"""
 	global metadata_rp, metadata_fileobj
@@ -274,13 +267,20 @@ def OpenMetadata(rp = None, compress = 1):
 
 def WriteMetadata(rorp):
 	"""Write metadata of rorp to file"""
-	global metadata_fileobj
-	metadata_fileobj.write(RORP2Record(rorp))
+	global metadata_fileobj, metadata_record_buffer
+	metadata_record_buffer.append(RORP2Record(rorp))
+	if len(metadata_record_buffer) >= 100: write_metadata_buffer()
+
+def write_metadata_buffer():
+	global metadata_record_buffer
+	metadata_fileobj.write("".join(metadata_record_buffer))
+	metadata_record_buffer = []
 
 def CloseMetadata():
 	"""Close the metadata file"""
 	global metadata_rp, metadata_fileobj
 	assert metadata_fileobj, "Metadata file not open"
+	if metadata_record_buffer: write_metadata_buffer()
 	try: fileno = metadata_fileobj.fileno() # will not work if GzipFile
 	except AttributeError: fileno = metadata_fileobj.fileobj.fileno()
 	os.fsync(fileno)

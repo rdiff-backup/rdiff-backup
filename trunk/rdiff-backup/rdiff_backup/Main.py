@@ -53,13 +53,14 @@ def parse_cmdlineoptions(arglist):
 		  "include-globbing-filelist=", "include-regexp=",
 		  "list-changed-since=", "list-increments",
 		  "no-compare-inode", "no-compression",
-		  "no-compression-regexp=", "no-hard-links", "null-separator",
-		  "parsable-output", "print-statistics", "quoting-char=",
-		  "remote-cmd=", "remote-schema=", "remove-older-than=",
-		  "restore-as-of=", "restrict=", "restrict-read-only=",
-		  "restrict-update-only=", "server", "ssh-no-compression",
-		  "terminal-verbosity=", "test-server", "verbosity=",
-		  "version", "windows-mode", "windows-time-format"])
+		  "no-compression-regexp=", "no-file-statistics",
+		  "no-hard-links", "null-separator", "parsable-output",
+		  "print-statistics", "quoting-char=", "remote-cmd=",
+		  "remote-schema=", "remove-older-than=", "restore-as-of=",
+		  "restrict=", "restrict-read-only=", "restrict-update-only=",
+		  "server", "ssh-no-compression", "terminal-verbosity=",
+		  "test-server", "verbosity=", "version", "windows-mode",
+		  "windows-time-format"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: %s" % str(e))
 
@@ -108,6 +109,7 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
 			Globals.set("no_compression_regexp_string", arg)
+		elif opt == "--no-file-statistics": Globals.set('file_statistics', 0)
 		elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 		elif opt == "--null-separator": Globals.set("null_separator", 1)
 		elif opt == "--parsable-output": Globals.set('parsable_output', 1)

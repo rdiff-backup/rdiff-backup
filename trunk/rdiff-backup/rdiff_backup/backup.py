@@ -237,14 +237,21 @@ class CacheCollatedPostProcess:
 		self.iter = collated_iter # generates (source_rorp, dest_rorp) pairs
 		self.cache_size = cache_size
 		self.statfileobj = statistics.init_statfileobj()
+		if Globals.file_statistics: statistics.FileStats.init()
 		metadata.OpenMetadata()
 
-		# the following should map indicies to lists [source_rorp,
-		# dest_rorp, changed_flag, success_flag] where changed_flag
-		# should be true if the rorps are different, and success_flag
-		# should be 1 if dest_rorp has been successfully updated to
-		# source_rorp, and 2 if the destination file is deleted
-		# entirely.  They both default to false (0).
+		# the following should map indicies to lists
+		# [source_rorp, dest_rorp, changed_flag, success_flag, increment]
+
+		# changed_flag should be true if the rorps are different, and
+
+		# success_flag should be 1 if dest_rorp has been successfully
+		# updated to source_rorp, and 2 if the destination file is
+		# deleted entirely.  They both default to false (0).
+		
+		# increment holds the RPath of the increment file if one
+		# exists.  It is used to record file statistics.
+		
 		self.cache_dict = {}
 		self.cache_indicies = []
 
@@ -255,7 +262,7 @@ class CacheCollatedPostProcess:
 		source_rorp, dest_rorp = self.iter.next()
 		self.pre_process(source_rorp, dest_rorp)
 		index = source_rorp and source_rorp.index or dest_rorp.index
-		self.cache_dict[index] = [source_rorp, dest_rorp, 0, 0]
+		self.cache_dict[index] = [source_rorp, dest_rorp, 0, 0, None]
 		self.cache_indicies.append(index)
 
 		if len(self.cache_indicies) > self.cache_size: self.shorten_cache()
@@ -276,14 +283,16 @@ class CacheCollatedPostProcess:
 		"""Remove one element from cache, possibly adding it to metadata"""
 		first_index = self.cache_indicies[0]
 		del self.cache_indicies[0]
-		old_source_rorp, old_dest_rorp, changed_flag, success_flag = \
+		old_source_rorp, old_dest_rorp, changed_flag, success_flag, inc = \
 						 self.cache_dict[first_index]
 		del self.cache_dict[first_index]
 		self.post_process(old_source_rorp, old_dest_rorp,
-						  changed_flag, success_flag)
+						  changed_flag, success_flag, inc)
 
-	def post_process(self, source_rorp, dest_rorp, changed, success):
+	def post_process(self, source_rorp, dest_rorp, changed, success, inc):
 		"""Post process source_rorp and dest_rorp.
+
+		The point of this is to write statistics and metadata.
 
 		changed will be true if the files have changed.  success will
 		be true if the files have been successfully updated (this is
@@ -294,12 +303,14 @@ class CacheCollatedPostProcess:
 			if source_rorp: self.statfileobj.add_source_file(source_rorp)
 			if dest_rorp: self.statfileobj.add_dest_file(dest_rorp)
 		if success == 0: metadata_rorp = dest_rorp
-		elif success == 1:
+		elif success == 1 or success == 2:
 			self.statfileobj.add_changed(source_rorp, dest_rorp)
 			metadata_rorp = source_rorp
 		else: metadata_rorp = None
 		if metadata_rorp and metadata_rorp.lstat():
 			metadata.WriteMetadata(metadata_rorp)
+		if Globals.file_statistics:
+			statistics.FileStats.update(source_rorp, dest_rorp, changed, inc)
 
 	def in_cache(self, index):
 		"""Return true if given index is cached"""
@@ -316,6 +327,10 @@ class CacheCollatedPostProcess:
 	def flag_changed(self, index):
 		"""Signal that the file with given index has changed"""
 		self.cache_dict[index][2] = 1
+
+	def set_inc(self, index, inc):
+		"""Set the increment of the current file"""
+		self.cache_dict[index][4] = inc
 
 	def get_rorps(self, index):
 		"""Retrieve (source_rorp, dest_rorp) from cache"""
@@ -337,6 +352,7 @@ class CacheCollatedPostProcess:
 		while self.cache_indicies: self.shorten_cache()
 		metadata.CloseMetadata()
 		if Globals.print_statistics: statistics.print_active_stats()
+		if Globals.file_statistics: statistics.FileStats.close()
 		statistics.write_active_statfileobj()
 
 
@@ -511,6 +527,7 @@ class IncrementITRB(PatchITRB):
 		if self.patch_to_temp(rp, diff_rorp, tf):
 			inc = self.inc_with_checking(tf, rp, self.get_incrp(index))
 			if inc is not None:
+				self.CCPP.set_inc(index, inc)
 				if inc.isreg():
 					inc.fsync_with_dir() # Write inc before rp changed
 				if tf.lstat():
@@ -531,10 +548,12 @@ class IncrementITRB(PatchITRB):
 			inc = self.inc_with_checking(diff_rorp, base_rp,
 										 self.get_incrp(index))
 			if inc and inc.isreg():
-				inc.fsync_with_dir() # must writte inc before rp changed
+				inc.fsync_with_dir() # must write inc before rp changed
 			self.prepare_dir(diff_rorp, base_rp)
-		elif (self.set_dir_replacement(diff_rorp, base_rp) and
-			  self.inc_with_checking(self.dir_replacement, base_rp,
-									 self.get_incrp(index))):
-			self.CCPP.flag_success(index)
+		elif self.set_dir_replacement(diff_rorp, base_rp):
+			inc = self.inc_with_checking(self.dir_replacement, base_rp,
+										 self.get_incrp(index))
+			if inc:
+				self.CCPP.set_inc(index, inc)
+				self.CCPP.flag_success(index)
 

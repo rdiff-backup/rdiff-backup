@@ -1,4 +1,4 @@
-New in v0.11.4 (2003/04/01)
+New in v0.11.4 (2003/03/15)
 ---------------------------
 
 Fixed bug incrementing sockets whose filenames were pretty long, but
@@ -6,6 +6,14 @@ not super long.  Reported by Olivier Mueller.
 
 Added Albert Chin-A-Young's patch to add a few options to the setup.py
 install script.
+
+Apparently fixed rare utime type bug.  Thanks to Christian Skarby for
+report and testing.
+
+Added detailed file_statistics (in addition to session_statistics) as
+requested by Dean Gaudet.  Disable with --no-file-statistics option.
+
+Minor speed enhancements.
 
 
 New in v0.11.3 (2003/03/04)
