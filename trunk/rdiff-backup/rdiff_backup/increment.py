@@ -19,7 +19,7 @@
 
 """Provides functions and *ITR classes, for writing increment files"""
 
-import Globals, Time, rpath, Rdiff, log, statistics
+import Globals, Time, rpath, Rdiff, log, statistics, robust
 
 
 def Increment(new, mirror, incpref):
@@ -59,9 +59,18 @@ def iscompressed(mirror):
 def makesnapshot(mirror, incpref):
 	"""Copy mirror to incfile, since new is quite different"""
 	compress = iscompressed(mirror)
-	if compress: snapshotrp = get_inc(incpref, "snapshot.gz")
+	if compress and mirror.isreg():
+		snapshotrp = get_inc(incpref, "snapshot.gz")
 	else: snapshotrp = get_inc(incpref, "snapshot")
-	rpath.copy_with_attribs(mirror, snapshotrp, compress)
+
+	if mirror.isspecial(): # check for errors when creating special increments
+		eh = robust.get_error_handler("SpecialFileError")
+		if robust.check_common_error(eh, rpath.copy_with_attribs,
+									 (mirror, snapshotrp, compress)) == 0:
+			snapshotrp.setdata()
+			if snapshotrp.lstat(): snapshotrp.delete()
+			snapshotrp.touch()
+	else: rpath.copy_with_attribs(mirror, snapshotrp, compress)
 	return snapshotrp
 
 def makediff(new, mirror, incpref):
