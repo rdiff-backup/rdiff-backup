@@ -51,42 +51,6 @@
 #include "netint.h"
 
 
-int
-_hs_fits_in_n8(size_t val)
-{
-    return val <= UINT8_MAX;
-}
-
-
-int
-_hs_fits_in_n16(size_t val)
-{
-    return val <= UINT16_MAX;
-}
-
-
-int
-_hs_fits_in_n32(size_t val)
-{
-    return val <= UINT32_MAX;
-}
-
-
-int
-_hs_int_len(off_t val)
-{
-        if (_hs_fits_in_n8(val))
-                return 1;
-        else if (_hs_fits_in_n16(val))
-                return 2;
-        else if (_hs_fits_in_n32(val))
-                return 4;
-        else {
-                _hs_fatal("can't handle integer this long yet");
-        }
-}
-
-
 /*
  * Write the magic for the start of a delta.
  */

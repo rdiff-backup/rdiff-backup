@@ -28,8 +28,3 @@
 
 void _hs_emit_delta_header(hs_stream_t *stream);
 void _hs_emit_literal_cmd(hs_stream_t *stream, int len);
-
-int _hs_fits_in_n8(size_t val);
-int _hs_fits_in_n16(size_t val);
-int _hs_fits_in_n32(size_t val);
-int _hs_int_len(off_t val);
