@@ -36,8 +36,9 @@ class Main:
 			  "parsable-output", "quoting-char=", "remote-cmd=",
 			  "remote-schema=", "remove-older-than=",
 			  "restore-as-of=", "resume", "resume-window=", "server",
-			  "terminal-verbosity=", "test-server", "verbosity",
-			  "version", "windows-mode", "windows-time-format"])
+			  "ssh-no-compression", "terminal-verbosity=",
+			  "test-server", "verbosity", "version", "windows-mode",
+			  "windows-time-format"])
 		except getopt.error, e:
 			self.commandline_error("Bad commandline options: %s" % str(e))
 
@@ -100,6 +101,8 @@ class Main:
 			elif opt == '--resume-window':
 				Globals.set_integer('resume_window', arg)
 			elif opt == "-s" or opt == "--server": self.action = "server"
+			elif opt == "--ssh-no-compression":
+				Globals.set('ssh_compression', None)
 			elif opt == "--terminal-verbosity": Log.setterm_verbosity(arg)
 			elif opt == "--test-server": self.action = "test-server"
 			elif opt == "-V" or opt == "--version":

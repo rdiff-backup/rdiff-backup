@@ -16,9 +16,10 @@ class SetConnections:
 
 	"""
 	# This is the schema that determines how rdiff-backup will open a
-	# pipe to the remote system.  If the file is given as A:B, %s will
+	# pipe to the remote system.  If the file is given as A::B, %s will
 	# be substituted with A in the schema.
-	__cmd_schema = 'ssh %s rdiff-backup --server'
+	__cmd_schema = 'ssh -C %s rdiff-backup --server'
+	__cmd_schema_no_compress = 'ssh %s rdiff-backup --server'
 
 	# This is a list of remote commands used to start the connections.
 	# The first is None because it is the local connection.
@@ -27,6 +28,9 @@ class SetConnections:
 	def InitRPs(cls, arglist, remote_schema = None, remote_cmd = None):
 		"""Map the given file descriptions into rpaths and return list"""
 		if remote_schema: cls.__cmd_schema = remote_schema
+		elif not Globals.ssh_compression:
+			cls.__cmd_schema = cls.__cmd_schema_no_compress
+
 		if not arglist: return []
 		desc_pairs = map(cls.parse_file_desc, arglist)
 

@@ -20,7 +20,7 @@ class Globals:
 	# This is used by the BufferedRead class to determine how many
 	# bytes to request from the underlying file per read().  Larger
 	# values may save on connection overhead and latency.
-	conn_bufsize = 4096
+	conn_bufsize = 98304
 
 	# True if script is running as a server
 	server = None
@@ -138,6 +138,9 @@ class Globals:
 	no_compression_regexp_string = "(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|" \
 							"jpg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
 	no_compression_regexp = None
+
+	# Determines whether or not ssh will be run with the -C switch
+	ssh_compression = 1
 
 	# On the reader and writer connections, the following will be
 	# replaced by the source and mirror Select objects respectively.
