@@ -1,8 +1,9 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*- * * $Id: filebuf.c,v 1.16
- * 2000/04/25 03:33:28 mbp Exp $ *
+/* -*- mode: c; c-file-style: "bsd" -*- */
+/* ----------------------------------------------------------------------
+ * $Id$ 
  * 
- * Copyright (C) 1999, 2000 by Martin Pool. Copyright (C) 1999 by
- * tridge@samba.org.
+ * Copyright (C) 1999, 2000 by Martin Pool.
+ * Copyright (C) 1999 by tridge@samba.org.
  * 
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free 
@@ -19,8 +20,6 @@
  * Temple Place, Suite 330, Boston, MA  02111-1307  USA */
 
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
 
 int
 hs_file_open(char const *filename, int mode)

@@ -18,6 +18,10 @@ run_test date >$from
 # In this case we make the input be a pipe, which is a reasonable
 # imitation of a socketpair.  This makes sure that map_ptr works OK on
 # a file on which we can neither seek nor determine the real size.
-cat $from | run_test hsmapread - 0,1000 >$new
-run_test cmp $from $new
+for ioargs in '' '-k' '-n -s'
+do
+    cat $from | run_test hsmapread $ioargs - 0,1000 >$new
+    run_test cmp $from $new
+done
+
 

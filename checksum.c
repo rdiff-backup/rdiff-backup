@@ -23,8 +23,6 @@
 */
 
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
 
 /* XXX: I think this is obsolete. */
 int checksum_seed = 0;

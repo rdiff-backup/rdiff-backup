@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
+/* -*- mode: c; c-file-style: "bsd" -*-  */
 /* $Id$
    
    Copyright (C) 1999, 2000 by Martin Pool <mbp@humbug.org.au>
@@ -19,9 +19,6 @@
 */
 
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
-#include "compress.h"
 
 static const int ptrbuf_tag = 384384;
 

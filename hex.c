@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*- */
+/* -*- mode: c; c-file-style: "bsd" -*- */
 /* 
    Copyright (C) 2000 by Martin Pool
    
@@ -18,10 +18,6 @@
 */
 
 #include "includes.h"
-#include "hsync.h"
-#include "hsyncproto.h"
-#include "private.h"
-#include "emit.h"
 
 void
 hs_hexify_buf(char *to_buf, unsigned char const *from_buf, int from_len)

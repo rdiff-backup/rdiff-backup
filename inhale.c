@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
+/* -*- mode: c; c-file-style: "bsd" -*-  */
 
 /* inhale -- read and recognize binary commands
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -20,9 +20,6 @@
 */
 
 #include "includes.h"
-#include "hsync.h"
-#include "hsyncproto.h"
-#include "private.h"
 
 /* For debugging porpoises, here are some human-readable forms. */
 struct hs_op_kind_name const _hs_op_kind_names[] = {

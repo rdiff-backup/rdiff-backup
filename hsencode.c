@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-
+/* -*- mode: c; c-file-style: "bsd" -*-
  * $Id$
  *
  * hsencode.c -- Command-line tool to generate combined encoded form 
@@ -21,8 +21,6 @@
 
 
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
 
 static void usage(char *progname)
 {

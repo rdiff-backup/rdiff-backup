@@ -21,10 +21,6 @@
 
 #include "includes.h"
 
-#include "includes.h"
-#include "hsync.h"
-#include "private.h"
-
 
 void 
 hs_bzero(void *buf, size_t size)

@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
+/* -*- mode: c; c-file-style: "bsd" -*-  */
 
 /* hsencode.c -- Generate combined encoded form
    
@@ -19,10 +19,6 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA */
 
 #include "includes.h"
-
-#include "hsync.h"
-#include "private.h"
-
 
 /* Return a newly-allocated string containing a human-readable form of
    the transfer statistics. */   

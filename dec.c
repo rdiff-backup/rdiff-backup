@@ -41,10 +41,6 @@
 
 #include "includes.h"
 
-#include "hsync.h"
-#include "hsyncproto.h"
-#include "private.h"
-
 #define MAXLITDATA	64*1024*1024
 #define DEFLITBUFSIZE	1024
 

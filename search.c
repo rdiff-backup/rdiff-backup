@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*- 
+/* -*- mode: c; c-file-style: "bsd" -*- 
  * $Id$
  *
  * search.c -- manage hashtables of checksums and blocks
@@ -27,8 +27,6 @@
    just check that pointer. */
 
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
 
 #define TABLESIZE (1<<16)
 #define NULL_TAG (-1)

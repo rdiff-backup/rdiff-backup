@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
+/* -*- mode: c; c-file-style: "bsd" -*-  */
 
 /* emit.h -- Things to do with processing the command stream.
    

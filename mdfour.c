@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup"; c-basic-offset: 4 -*-  */
+/* -*- mode: c; c-file-style: "bsd"; c-basic-offset: 4 -*-  */
 /* 
    mdfour code from Samba
    Copyright (C) 2000 by Martin Pool
@@ -29,12 +29,6 @@
 
 #include "includes.h"
 
-#ifndef uint32
-#define uint32 uint32_t
-#endif
-
-#include "hsync.h"
-#include "private.h"
 
 #define F(X,Y,Z) (((X)&(Y)) | ((~(X))&(Z)))
 #define G(X,Y,Z) (((X)&(Y)) | ((X)&(Z)) | ((Y)&(Z)))
@@ -50,12 +44,12 @@
 #define ROUND3(a,b,c,d,k,s) a = lshift(a + H(b,c,d) + X[k] + 0x6ED9EBA1,s)
 
 /* this applies md4 to 64 byte chunks */
-static void hs_mdfour64(hs_mdfour_t * m, uint32 * M)
+static void hs_mdfour64(hs_mdfour_t * m, uint32_t * M)
 {
      int j;
-     uint32 AA, BB, CC, DD;
-     uint32 X[16];
-     uint32 A, B, C, D;
+     uint32_t AA, BB, CC, DD;
+     uint32_t X[16];
+     uint32_t A, B, C, D;
 
      for (j = 0; j < 16; j++)
 	  X[j] = M[j];
@@ -142,7 +136,7 @@ static void hs_mdfour64(hs_mdfour_t * m, uint32 * M)
 }
 
 static void
-copy64(/*@out@*/ uint32 * M, unsigned char const *in)
+copy64(/*@out@*/ uint32_t * M, unsigned char const *in)
 {
      int i;
 
@@ -152,7 +146,7 @@ copy64(/*@out@*/ uint32 * M, unsigned char const *in)
 }
 
 static void
-copy4(/*@out@*/ unsigned char *out, uint32 const x)
+copy4(/*@out@*/ unsigned char *out, uint32_t const x)
 {
      out[0] = x & 0xFF;
      out[1] = (x >> 8) & 0xFF;
@@ -176,8 +170,8 @@ void hs_mdfour_begin(hs_mdfour_t * md)
 static void hs_mdfour_tail(hs_mdfour_t * m, unsigned char const *in, int n)
 {
      unsigned char buf[128];
-     uint32 M[16];
-     uint32 b;
+     uint32_t M[16];
+     uint32_t b;
 
      m->totalN += n;
 
@@ -203,7 +197,7 @@ static void hs_mdfour_tail(hs_mdfour_t * m, unsigned char const *in, int n)
 
 void hs_mdfour_update(hs_mdfour_t * md, unsigned char const *in, int n)
 {
-     uint32 M[16];
+     uint32_t M[16];
      int n2 = 64 - md->tail_len;
 
      if (n == 0) return;

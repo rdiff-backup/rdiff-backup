@@ -21,8 +21,6 @@
 /* Originally from rsync */
 
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
 
 static char last_byte;
 static int last_sparse;

@@ -25,10 +25,10 @@
 					   gotta sink in the ice.
 					   -- Shihad, `The General Electric'. */
 
+/* XXX: This file is becoming somewhat obsolete because we're moving
+   to prefer mapptrs. */
+
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
-#include "compress.h"
 
 const int filebuf_tag = 24031976;
 

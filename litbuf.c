@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
+/* -*- mode: c; c-file-style: "bsd" -*-  */
 /* $Id$ */
 /* litbuf -- buffer of data waiting to go out as signature or literal
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -20,10 +20,7 @@
 */
 
 #include "includes.h"
-#include "hsync.h"
-#include "hsyncproto.h"
-#include "private.h"
-#include "emit.h"
+
 
 /* Queue byte VALUE into the literal-data buffer. */
 int _hs_append_literal(hs_membuf_t * litbuf, char value)

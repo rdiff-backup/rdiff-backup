@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*- */
+/* -*- mode: c; c-file-style: "bsd" -*- */
 /* librsync/compress.c -- a shim between signature.c and librsync to
    add zlib compression
 
@@ -21,8 +21,6 @@
 
 #include "includes.h"
 #include "compress.h"
-#include "hsync.h"
-#include "private.h"
 
 /* TODO: Remove the static stuff? */
 

@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
+/* -*- mode: c; c-file-style: "bsd" -*-  */
 /* $Id$ */
 /* membuf.c -- Abstract IO to memory buffers.
 
@@ -23,9 +23,6 @@
    automatically grows using realloc as required. */
 
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
-#include "compress.h"
 
 static const int membuf_tag = 12341234;
 

@@ -20,9 +20,6 @@
 
 
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
-
 
 /* hsfilebufcat: write stdin to stdout, using an hs_filebuf_t to do
  * the input.  */

@@ -22,10 +22,6 @@
  */
 
 #include "includes.h"
-#include "hsync.h"
-#include "hsyncproto.h"
-#include "private.h"
-
 
 
 int const _hs_inbuf_dogtag = 0x6a656e;

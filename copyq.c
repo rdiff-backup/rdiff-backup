@@ -21,10 +21,6 @@
 
 
 #include "includes.h"
-#include "hsync.h"
-#include "hsyncproto.h"
-#include "private.h"
-#include "emit.h"
 
 /* If possible, append this copy command to the end of the previous one.  If
    not, flush the existing command and begin a new one.  */

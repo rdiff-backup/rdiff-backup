@@ -22,10 +22,6 @@
  */
 
 #include "includes.h"
-#include "hsync.h"
-#include "hsyncproto.h"
-#include "private.h"
-#include "emit.h"
 
 /* GENERATE NEW SIGNATURES AND DIFFERENCE STREAM
   

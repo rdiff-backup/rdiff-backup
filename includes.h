@@ -45,8 +45,10 @@
 #include <unistd.h>
 
 
-/*----------------------------------------
-
-  Here are our own headers. */
+/* libhsync headers. */
+#include "hsync.h"
+#include "hsyncproto.h"
+#include "private.h"
+#include "emit.h"
 #include "util.h"
-
+#include "gd02priv.h"

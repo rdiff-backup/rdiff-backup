@@ -13,8 +13,12 @@ cmds=$tmpdir/cmds
 expect=$tmpdir/expect
 
 run_test $srcdir/gen-mapover.py $cmds $expect $from
-run_test hsmapread $from `cat $cmds` >$new
-run_test cmp $expect $new
+
+for ioargs in '' '-k' '-n -s'
+do
+    run_test hsmapread $ioargs $from `cat $cmds` >$new
+    run_test cmp $expect $new
+done
 
 # the output files are pretty huge, so if we completed successfully
 # delete them.  if we failed they're left behind so that you can find

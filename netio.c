@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
+/* -*- mode: c; c-file-style: "bsd" -*-  */
 
 /* netio -- Network byte order IO
    Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
@@ -20,9 +20,6 @@
 */
 
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
-
 
 /* This will only return a short read if we reach eof.  The underlying
    functions are allowed to wimp out and return short if they

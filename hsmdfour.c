@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup"; c-basic-offset: 4 -*-  */
+/* -*- mode: c; c-file-style: "bsd" -*- */
 /* hsmdfour.c -- Write out the md4sum of stdin.
    
    Copyright (C) 2000 by Martin Pool.
@@ -19,8 +19,6 @@
 
 
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
 
 
 int main(int argc, char *argv[])

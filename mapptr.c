@@ -36,7 +36,14 @@
    this, the map will run up to the end of the file, and a flag will
    be returned to indicate that EOF was observed.  This will be
    checked each time you try to map past the end, so something good
-   will happen if the file grows underneath you. */
+   will happen if the file grows underneath you.
+
+   If the file is open with O_NONBLOCK, then the operating system may
+   choose to fail an attempt to read, saying that it would block.  In
+   this case, the map will not not fail, but it will indicate that
+   zero bytes are available.  The caller should be smart about doing a
+   select(2) on the fd and calling back when more data is
+   available. */
 
 
 /* TODO: If it turns out that we read more data than the user really
@@ -46,16 +53,19 @@
 
    TODO: Test this through a unix-domain socket and see what happens.
 
+   TODO: Support O_NONBLOCK.
+
    TODO: Optionally debug this by simulating short reads. */
+
+/* The Unix98 pread(2) function is pretty interesting: it reads data
+   at a given offset, but without moving the file offset and in only a
+   single call.  Cute, but probably pointless in this application. */
 
 #include "includes.h"
 
 #ifndef DO_HS_TRACE
 #define DO_HS_TRACE
 #endif
-
-#include "hsync.h"
-#include "private.h"
 
 #define CHUNK_SIZE (32*1024)
 #define IO_BUFFER_SIZE (4092)
@@ -149,13 +159,17 @@ _hs_map_do_read(hs_map_t *map,
     do {
 	nread = read(map->fd, p, (size_t) buf_remain);
 
-	if (nread < 0) {
+	if (nread < 0  &&  errno == EWOULDBLOCK) {
+	    _hs_trace("input from this file would block");
+	    break; /* go now */
+	} else if (nread < 0) {
 	    _hs_error("read error in hs_mapptr: %s", strerror(errno));
-	    /* Should we return null here? */
+	    /* Should we return null here?  We ought to tell the
+               caller about this somehow, but at the same time we
+               don't want to discard the data we have already
+               received. */
 	    break;
-	}
-
-	if (nread == 0) {
+	} else if (nread == 0) {
 	    /* GNU libc manual: A value of zero indicates end-of-file
 	     * (except if the value of the SIZE argument is also
 	     * zero).  This is not considered an error.  If you keep
@@ -201,12 +215,12 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
        read_{start,size} describes the region of the file that we want
        to read; we'll put it into the buffer starting at
        &p[read_offset]. */
-    hs_off_t        window_start, read_start;
+    hs_off_t window_start, read_start;
     ssize_t window_size;
-    ssize_t          read_max_size; /* space remaining */
+    ssize_t read_max_size;	/* space remaining */
     ssize_t read_min_size;	/* needed to fill this request */
     hs_off_t read_offset;
-    ssize_t             total_read, avail;
+    ssize_t total_read, avail;
 
     assert(map->tag == HS_MAP_TAG);
     assert(len != NULL);	/* check pointers */
@@ -221,7 +235,7 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     /* in most cases the region will already be available */
     if (offset >= map->p_offset &&
 	offset + *len <= map->p_offset + map->p_len) {
-	_hs_trace("region is already in the buffer");
+/*   	_hs_trace("region is already in the buffer"); */
 	return (map->p + (offset - map->p_offset));
     }
 

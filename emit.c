@@ -22,10 +22,6 @@
 */
 
 #include "includes.h"
-#include "hsync.h"
-#include "hsyncproto.h"
-#include "private.h"
-#include "emit.h"
 
 static int
 _hs_fits_in_byte(size_t val)

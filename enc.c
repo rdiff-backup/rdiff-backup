@@ -112,10 +112,6 @@
  */
 
 #include "includes.h"
-#include "hsync.h"
-#include "hsyncproto.h"
-#include "private.h"
-#include "emit.h"
 
 /* Define this to check all weak checksums the slow way.  As a
    debuggging assertion, calculate the weak checksum *in full* at

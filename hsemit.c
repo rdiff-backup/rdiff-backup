@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
+/* -*- mode: c; c-file-style: "bsd" -*-  */
 
 /* hsemit -- Convert a text stream of commands into hsync encoding.
    The output doesn't include literal data, since the point is just to
@@ -22,10 +22,6 @@
    USA */
 
 #include "includes.h"
-#include "hsync.h"
-#include "hsyncproto.h"
-#include "private.h"
-
 
 static int
 parse_args(int argc, char **argv)

@@ -21,14 +21,7 @@
    Temple Place, Suite 330, Boston, MA 02111-1307 USA 
   */
 
-
 #include "includes.h"
-#include "hsync.h"
-#include "hsyncproto.h"
-#include "private.h"
-#include "emit.h"
-
-
 
 int
 _hs_read_blocksize(hs_read_fn_t sigread_fn, void *sigreadprivate,

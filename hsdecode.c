@@ -1,4 +1,4 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-
+/* -*- mode: c; c-file-style: "bsd" -*-
  * $Id$
  *
  * hsdecode.c -- Apply changes, extract signature stream.
@@ -21,8 +21,6 @@
 
 
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
 
 static void usage(char *progname)
 {

@@ -20,8 +20,6 @@
    USA */
 
 #include "includes.h"
-#include "hsync.h"
-#include "private.h"
 
 char const * const hs_libhsync_version = PACKAGE " " VERSION;
 
