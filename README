@@ -1,0 +1,12 @@
+libhsync is the next generation of librsync, and provides flexible
+checksum-based differencing.  The main application at the moment in
+rproxy, but the library should eventually be generally useful.
+
+As of 0.4, development is concentrated on building a full regression
+suite.
+
+For more information:
+
+  http://linuxcare.com.au/rproxy/
+
+$Id$
