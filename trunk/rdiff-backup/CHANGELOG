@@ -29,6 +29,10 @@ Allow extended time strings for the --remove-older-than option.
 Added RESTORING section to the manual page because there seemed to be
 some general confusion about this.
 
+hardlink_data, current_mirror, and a few other files now carry the
+.data extension (instead of .snapshot), to make it clearer they are
+not copies of source files.
+
 
 New in v0.7.3 (2002/04/29)
 --------------------------
