@@ -57,13 +57,13 @@ _hs_copy(const uint32_t length,
 
     buf = malloc(length);
 
-    ret = read_fn(read_priv, buf, length);
+    ret = _hs_read_loop(read_fn, read_priv, buf, length);
     if (ret >= 0 && (ret < (int32_t) length)) {
 	errno = ENODATA;
 	goto fail;
     }
 
-    ret = write_fn(write_priv, buf, ret);
+    ret = _hs_write_loop(write_fn, write_priv, buf, ret);
     if ((unsigned) ret != length)
 	goto fail;
 

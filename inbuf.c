@@ -38,7 +38,7 @@ _hs_fill_inbuf(_hs_inbuf_t * inbuf, hs_read_fn_t read_fn, void *readprivate)
 	 abort();
     }
     
-    ret = read_fn(readprivate,
+    ret = _hs_read_loop(read_fn, readprivate,
 		  inbuf->buf + inbuf->amount, inbuf->len - inbuf->amount);
     if (ret < 0) {
 	_hs_fatal(__FILE__ "error reading into input buffer");

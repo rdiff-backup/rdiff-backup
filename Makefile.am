@@ -11,9 +11,11 @@ libhsync_la_SOURCES = dec.c enc.c \
 	mdfour.c search.c \
 	filebuf.c membuf.c ptrbuf.c \
 	checksum.c copyq.c \
-	compress.c compress.h inbuf.c \
+	inbuf.c \
 	inhale.c trace.c \
 	hex.c stats.c fileio.c 
+
+# compress.c compress.h 
 
 libhsyncdecode_la_SOURCES = dec.c \
 	private.h netio.c includes.h \
@@ -88,7 +90,7 @@ hsinhale_LDADD = libhsyncdecode.la
 # ``When the program is being tested, it is too late to make design
 # changes.''
 
-TESTS = test-cmds.sh test-decode.sh test-encode.sh test-chain.sh \
+TESTS = test-cmds.sh test-decode.sh test-encode.sh \
 	test-thrice.sh test-seq.sh
 
 

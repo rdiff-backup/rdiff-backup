@@ -50,15 +50,15 @@ int main(int argc, char *argv[])
 	 }
 	 /* fall through */
     case 4:			/* LT_FILE */
-	sigfb = hs_filebuf_open(argv[3], "rb");
+	sigfb = hs_filebuf_open(argv[3], O_RDONLY);
 	if (!sigfb)
 	    return 1;
 	/* Drop through */
     case 3:
-	if (!(ltfb = hs_filebuf_open(argv[2], "wb")))
+	 if (!(ltfb = hs_filebuf_open(argv[2], O_WRONLY | O_TRUNC | O_CREAT)))
 	    return 1;
     case 2:
-	if (!(newfb = hs_filebuf_open(argv[1], "rb")))
+	if (!(newfb = hs_filebuf_open(argv[1], O_RDONLY)))
 	    return 1;
 	break;
     case 1:
@@ -68,9 +68,9 @@ int main(int argc, char *argv[])
     }
 
     if (!ltfb)
-	ltfb = hs_filebuf_from_file(stdout);
+	ltfb = hs_filebuf_from_fd(STDOUT_FILENO);
     if (!sigfb)
-	sigfb = hs_filebuf_from_file(stdin);
+	sigfb = hs_filebuf_from_fd(STDIN_FILENO);
 
     ret = hs_encode(hs_filebuf_read, newfb,
 		    hs_filebuf_write, ltfb,

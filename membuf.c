@@ -154,15 +154,3 @@ ssize_t hs_membuf_read(void *private, char *buf, size_t len)
     return len;
 }
 
-
-
-ssize_t hs_membuf_zwrite(void *private, char const *buf, size_t len)
-{
-    size_t ret;
-    hs_membuf_t *mb = (hs_membuf_t *) private;
-
-    assert(mb->dogtag == membuf_tag);
-    ret = comp_write(hs_membuf_write, private, buf, len);
-
-    return ret;
-}

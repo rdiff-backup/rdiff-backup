@@ -28,21 +28,15 @@
 #include "private.h"
 #include "compress.h"
 
-// #define DEBUG 1
-const int filebuf_tag = 23031976;
+const int filebuf_tag = 24031976;
 
 struct file_buf {
      int dogtag;
      
-     FILE *f;
-     FILE *f_cache;
-
-     /* Maximum amount to read from the file, or -1 if we can read
-	until EOF. */
-     ssize_t length;
+     int fd, fd_cache;
 };
 
-hs_filebuf_t *hs_filebuf_from_file(FILE * fp)
+hs_filebuf_t *hs_filebuf_from_fd(int fd)
 {
      hs_filebuf_t *fb;
 
@@ -50,35 +44,37 @@ hs_filebuf_t *hs_filebuf_from_file(FILE * fp)
      return_val_if_fail(fb, NULL);
      
      fb->dogtag = filebuf_tag;
-     fb->f = fp;
-     fb->f_cache = NULL;
-     fb->length = -1;
+     fb->fd = fd;
+     fb->fd_cache = -1;
      
      return fb;
 }
 
 
-void hs_filebuf_add_cache(hs_filebuf_t *fb, FILE *fp)
+void
+hs_filebuf_add_cache(hs_filebuf_t *fb, int fd_cache)
 {
      assert(fb); assert(fb->dogtag == filebuf_tag);
 
-     fb->f_cache = fp;
+     fb->fd_cache = fd_cache;
 }
 
 
 /* TODO: Add matching close/free function. */
 
-hs_filebuf_t *hs_filebuf_open(char const *filename, char const *mode)
+hs_filebuf_t *
+hs_filebuf_open(char const *filename, int mode)
 {
-     FILE *fp;
+     int fd;
 
-     fp = fopen(filename, mode);
-     if (!fp) {
-	  _hs_fatal("error opening %s for mode %s", filename, mode);
+     fd = open(filename, mode, 0666);
+     if (fd == -1) {
+	  _hs_fatal("error opening %s for mode %#x: %s", filename, mode,
+		    strerror(errno));
 	  return NULL;
      }
 
-     return hs_filebuf_from_file(fp);
+     return hs_filebuf_from_fd(fd);
 }
 
 
@@ -87,94 +83,49 @@ void hs_filebuf_close(hs_filebuf_t *fbuf)
 {
      assert(fbuf->dogtag == filebuf_tag);
 
-     fclose(fbuf->f);
-     fbuf->f = NULL;
+     close(fbuf->fd);
+     fbuf->fd = -1;
 
-     if (fbuf->f_cache) {
-	  fclose(fbuf->f_cache);
-	  fbuf->f_cache = NULL;
+     if (fbuf->fd_cache != -1) {
+	  close(fbuf->fd_cache);
+	  fbuf->fd_cache = -1;
      }
 }
 
 
 
-ssize_t hs_filebuf_read(void *private, char *buf, size_t len)
-{
-     struct file_buf *fbuf = (struct file_buf *) private;
-     size_t n;
-     size_t len2;
-
-     assert(fbuf->dogtag == filebuf_tag);
-
-     if (fbuf->length == 0) {
-	  n = 0;
-	  goto out;
-     }
-
-     if (fbuf->length == -1) {
-	  n = fread(buf, 1, len, fbuf->f);
-	  if (n > 0 && fbuf->f_cache) {
-	       fwrite(buf, 1, n, fbuf->f_cache);
-	  }
-	  goto out;
-     }
-
-     if (fbuf->length >= 0)
-	  len2 = MIN(len, (size_t) fbuf->length);
-     else
-	  len2 = len;
-
-     n = fread(buf, 1, len2, fbuf->f);
-
-     if (n <= 0) {
-	  fbuf->length = 0;
-	  n = 0;
-	  goto out;
-     }
-
-     fbuf->length -= n;
-
-     if (n > 0 && fbuf->f_cache) {
-	  fwrite(buf, 1, n, fbuf->f_cache);
-     }
-
- out:
-
-     return n;
-}
-
-ssize_t hs_filebuf_zread(void *private, char *buf, size_t len)
-{
-     size_t ret;
-
-     ret = decomp_read(hs_filebuf_read, private, buf, len);
-
-     return ret;
-}
-
-ssize_t hs_filebuf_write(void *private, char const *buf, size_t len)
+/* May return short
+ */
+ssize_t
+hs_filebuf_read(void *private, char *buf, size_t len)
 {
      struct file_buf *fbuf = (struct file_buf *) private;
      size_t n;
 
      assert(fbuf->dogtag == filebuf_tag);
-     n = fwrite(buf, 1, len, fbuf->f);
-     if (fbuf->f_cache && n > 0) {
-	  fwrite(buf, 1, n, fbuf->f_cache);
-     }
+     assert(fbuf->fd != -1);
+
+     n = read(fbuf->fd, buf, len);
 
      return n;
 }
 
 
-ssize_t hs_filebuf_zwrite(void *private, char const *buf, size_t len)
+ssize_t
+hs_filebuf_write(void *private, char const *buf, size_t len)
 {
-     size_t ret;
+     struct file_buf *fbuf = (struct file_buf *) private;
+     size_t n;
 
-     ret = comp_write(hs_filebuf_write, private, buf, len);
+     assert(fbuf->dogtag == filebuf_tag);
+     n = write(fbuf->fd, buf, len);
+     if (fbuf->fd_cache != -1  &&  n > 0) {
+	  write(fbuf->fd_cache, buf, n);
+     }
 
-     return ret;
+     return n;
 }
+
 
 ssize_t
 hs_filebuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
@@ -183,14 +134,13 @@ hs_filebuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs)
      size_t n;
 
      assert(fbuf->dogtag == filebuf_tag);
-     assert(fbuf->f);
-     if (fseek(fbuf->f, ofs, SEEK_SET)) {
+     if (lseek(fbuf->fd, ofs, SEEK_SET) == -1) {
 	  fprintf(stderr, "hs_filebuf_read_ofs: "
 		  "seek to %ld failed: %s\n", (long) ofs, strerror(errno));
 	  return -1;
      }
 
-     n = fread(buf, 1, len, fbuf->f);
+     n = read(fbuf->fd, buf, len);
 
      return n;
 }

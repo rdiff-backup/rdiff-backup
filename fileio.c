@@ -132,7 +132,7 @@ _hs_map_file(int fd,hs_off_t len)
 
 /* slide the read window in the file */
 char *
-_hs_map_ptr(struct hs_map_struct *map,hs_off_t offset,int len)
+_hs_map_ptr(struct hs_map_struct *map, hs_off_t offset, int len)
 {
      int nread;
      hs_off_t window_start, read_start;

@@ -42,7 +42,7 @@ main(int argc UNUSED, char **argv UNUSED)
      hs_filebuf_t * outfb;
      hs_stats_t stats;
 
-     outfb = hs_filebuf_from_file(stdout);
+     outfb = hs_filebuf_from_fd(STDOUT_FILENO);
      
      while (1) {
 	  ret = scanf("%20s", cmd);

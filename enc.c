@@ -202,7 +202,7 @@ _hs_output_block_hash(hs_write_fn_t write_fn, void *write_priv,
 			 strong_sum);
      hs_hexify_buf(strong_hex, strong_sum, SUM_LENGTH);
 
-     write_fn(write_priv, strong_sum, SUM_LENGTH);
+     _hs_write_loop(write_fn, write_priv, strong_sum, SUM_LENGTH);
 
      _hs_trace("output block hash at abspos=%-10d weak=%#010x strong=%s",
 	       inbuf->abspos + inbuf->cursor,

@@ -76,10 +76,11 @@ void _hs_trace(char const *fmt, ...)
 
    Net IO functions */
 
-int _hs_do_read(hs_read_fn_t, void *readprivate, char *buf, size_t len);
+int _hs_read_loop(hs_read_fn_t, void *readprivate,
+		  char *buf, size_t len);
 
-int _hs_do_write(hs_write_fn_t, void *writeprivate, char const *buf,
-		 int len);
+int _hs_write_loop(hs_write_fn_t, void *writeprivate,
+		   char const *buf, int len);
 
 int _hs_read_netint(hs_read_fn_t read_fn, void *read_priv,
 		    uint32_t * result);

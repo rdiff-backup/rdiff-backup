@@ -146,7 +146,7 @@ _hs_inhale_command(hs_read_fn_t read_fn, void * read_priv,
      int ret;
      uint8_t type;
      
-     ret = read_fn(read_priv, &type, 1);
+     ret = _hs_read_loop(read_fn, read_priv, &type, 1);
      if (ret > 1) {
 	  _hs_error("long read while trying to get a one-byte command!");
 	  return -1;

@@ -97,11 +97,11 @@ ssize_t hs_filebuf_zwrite(void *private, char const *buf, size_t len);
 ssize_t hs_filebuf_read_ofs(void *private, char *buf, size_t len,
 			    hs_off_t ofs);
 
-hs_filebuf_t *hs_filebuf_open(char const *filename, char const *mode);
+hs_filebuf_t *hs_filebuf_open(char const *filename, int mode);
 void hs_filebuf_close(hs_filebuf_t *fbuf);
-void hs_filebuf_add_cache(hs_filebuf_t *fb, FILE *fp);
+void hs_filebuf_add_cache(hs_filebuf_t *fb, int);
 
-hs_filebuf_t *hs_filebuf_from_file(FILE * fp);
+hs_filebuf_t *hs_filebuf_from_fd(int);
 
 /* ========================================
 

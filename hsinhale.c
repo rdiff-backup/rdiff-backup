@@ -66,7 +66,7 @@ main(int argc UNUSED, char **argv UNUSED)
 
      setvbuf(stdout, NULL, _IONBF, 0);
      
-     infb = hs_filebuf_from_file(stdin);
+     infb = hs_filebuf_from_fd(STDIN_FILENO);
      
      do {
 	  ret = _hs_inhale_command(hs_filebuf_read, infb,
