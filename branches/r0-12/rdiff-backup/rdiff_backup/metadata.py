@@ -133,7 +133,8 @@ def Record2RORP(record_string):
 		elif field == "Uid": data_dict['uid'] = int(data)
 		elif field == "Gid": data_dict['gid'] = int(data)
 		elif field == "Permissions": data_dict['perms'] = int(data)
-		else: raise ParsingError("Unknown field in line '%s'" % line)
+		else: raise ParsingError("Unknown field in line '%s %s'" %
+								 (field, data))
 	return rpath.RORPath(index, data_dict)
 
 chars_to_quote = re.compile("\\n|\\\\")
