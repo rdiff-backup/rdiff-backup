@@ -1,5 +1,6 @@
 #! /bin/sh
 
+# Copyright (C) 2000 by Martin Pool
 # $Id$
 
 # This script generates everything necessary to build libhsync from

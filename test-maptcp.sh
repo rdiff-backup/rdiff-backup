@@ -7,8 +7,6 @@
 # Test the mapptr routines by running them across a localhost TCP
 # socket.
 
-source ${srcdir:-.}/testfns.sh $0 $@
-
 from=$tmpdir/basis
 new=$tmpdir/new.tmp
 cmds=$tmpdir/cmds

@@ -37,7 +37,7 @@ libhsync_la_SOURCES = \
 	nad.c 
 
 # NB: tests should exit with code 77 if they can't be run but haven't failed.
-TESTS_ENVIRONMENT = time $(SHELL)
+TESTS_ENVIRONMENT = time $(SHELL) driver.sh
 test_scripts := \
 	test-maptcp.sh \
 	test-tricky.sh \
@@ -65,7 +65,8 @@ TESTS = $(test_scripts)
 
 noinst_SCRIPTS = \
 	$(test_scripts) \
-	testfns.sh
+	driver.sh \
+	test-meta.sh
 
 test_data=test-chain/empty-sig			\
 test-decode/01-diff				\

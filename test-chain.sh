@@ -9,8 +9,6 @@
 # with an empty signature, we generate the difference from one
 # file to another.
 
-source ${srcdir:-.}/testfns.sh $0 $@
-
 diff=$tmpdir/diff.tmp
 files=`echo $srcdir/*.c|head -20`
 out=$tmpdir/out.tmp

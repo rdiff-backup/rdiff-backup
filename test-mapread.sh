@@ -9,8 +9,6 @@
 
 # $Id$
 
-source ${srcdir:-.}/testfns.sh $0 $@
-
 from=$srcdir/COPYING
 new=$tmpdir/new.tmp
 cmds=$tmpdir/cmds

@@ -1,13 +1,11 @@
 #! /bin/sh -pe
 
 # libhsync test case.
+
 # Copyright (C) 2000 by Martin Pool
-
-# Test that inbufs do the right thing near EOF.
-
 # $Id$
 
-source ${srcdir:-.}/testfns.sh $0 $@
+# Test that inbufs do the right thing near EOF.
 
 from=$tmpdir/basis
 new=$tmpdir/new.tmp

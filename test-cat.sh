@@ -1,10 +1,9 @@
 #! /bin/sh -pe
 
 # Copyright (C) 2000 by Martin Pool
+# $Id$
 
 # Test that our file buffers are operating properly.
-
-source ${srcdir:-.}/testfns.sh $0 $@
 
 files=`echo $srcdir/INSTALL`
 

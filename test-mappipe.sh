@@ -9,8 +9,6 @@
 
 # $Id$
 
-source ${srcdir:-.}/testfns.sh $0 $@
-
 from=$tmpdir/basis
 new=$tmpdir/new.tmp
 cmds=$tmpdir/cmds

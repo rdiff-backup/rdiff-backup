@@ -1,11 +1,9 @@
 #! /bin/sh -pe
 
 # libhsync test case.
+
 # Copyright (C) 2000 by Martin Pool
-
 # $Id$
-
-source ${srcdir:-.}/testfns.sh $0 $@
 
 from=$srcdir/COPYING
 new=$tmpdir/new.tmp

@@ -51,6 +51,9 @@ else
     AC_MSG_ERROR("--enable-trace must be set to yes or no")
 fi
 
+# TODO: Check for stdint.h.  If it's missing, try to find definitions of 
+# critical integer types through other means.
+
 dnl Checks for header files.
 AC_HEADER_STDC
 
