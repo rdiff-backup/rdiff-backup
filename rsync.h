@@ -21,10 +21,10 @@
  */
 
                               /*
-                               * You should never wear your best
-                               * trousers when you go out to fight for
-                               * freedom and liberty.
-                               *        -- Henrik Ibsen
+                               | You should never wear your best
+                               | trousers when you go out to fight for
+                               | freedom and liberty.
+                               |        -- Henrik Ibsen
                                */
 
 
@@ -168,7 +168,7 @@ char const *rs_strerror(rs_result r);
 typedef struct rs_stats {
     char const     *op;     /**< Human-readable name of current
                              * operation.  For example, "delta". */
-    int lit_cmds;           /**< Number of literal commands. */
+    int             lit_cmds;   /**< Number of literal commands. */
     rs_long_t       lit_bytes;  /**< Number of literal bytes. */
     rs_long_t       lit_cmdbytes; /**< Number of bytes used in literal
                                    * command headers. */
@@ -176,6 +176,11 @@ typedef struct rs_stats {
     rs_long_t       copy_cmds, copy_bytes, copy_cmdbytes;
     rs_long_t       sig_cmds, sig_bytes;
     int             false_matches;
+
+    rs_long_t       sig_blocks; /**< Number of blocks described by the
+                                   signature. */
+
+    size_t          block_len;
 
     rs_long_t       in_bytes;   /**< Total bytes read from input. */
     rs_long_t       out_bytes;  /**< Total bytes written to output. */
@@ -201,7 +206,7 @@ typedef struct rs_mdfour {
 typedef unsigned int rs_weak_sum_t;
 typedef unsigned char rs_strong_sum_t[RS_MD4_LENGTH];
 
-void            rs_mdfour(unsigned char *out, void const *in, int n); 
+void            rs_mdfour(unsigned char *out, void const *in, size_t); 
 void            rs_mdfour_begin(/* @out@ */ rs_mdfour_t * md);
 void            rs_mdfour_update(rs_mdfour_t * md, void const *,
 				 size_t n);
@@ -370,9 +375,10 @@ extern int rs_inbuflen, rs_outbuflen;
  */
 void rs_mdfour_file(FILE *in_file, char *result);
 
-rs_result rs_sig_file(FILE *old_file, FILE *sig_file, size_t, size_t); 
+rs_result rs_sig_file(FILE *old_file, FILE *sig_file,
+                      size_t block_len, size_t strong_len, rs_stats_t *); 
 
-rs_result rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset);
+rs_result rs_loadsig_file(FILE *, rs_signature_t **, rs_stats_t *);
 
 rs_result rs_file_copy_cb(void *arg, off_t pos, size_t *len, void **buf);
 

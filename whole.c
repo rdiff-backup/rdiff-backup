@@ -102,13 +102,15 @@ rs_whole_run(rs_job_t *job, FILE *in_file, FILE *out_file)
  */
 rs_result
 rs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
-            size_t strong_len)
+            size_t strong_len, rs_stats_t *stats)
 {
     rs_job_t        *job;
     rs_result       r;
 
     job = rs_sig_begin(new_block_len, strong_len);
     r = rs_whole_run(job, old_file, sig_file);
+    if (stats)
+        memcpy(stats, &job->stats, sizeof *stats);
     rs_job_free(job);
 
     return r;
@@ -122,13 +124,15 @@ rs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
  * \sa rs_readsig_begin()
  */
 rs_result
-rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset)
+rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset, rs_stats_t *stats)
 {
     rs_job_t            *job;
     rs_result           r;
 
     job = rs_loadsig_begin(sumset);
     r = rs_whole_run(job, sig_file, NULL);
+    if (stats)
+        memcpy(stats, &job->stats, sizeof *stats);
     rs_job_free(job);
 
     return r;
