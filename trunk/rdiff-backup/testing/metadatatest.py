@@ -40,13 +40,16 @@ class MetadataTest(unittest.TestCase):
 
 	def testIterator(self):
 		"""Test writing RORPs to file and iterating them back"""
+		def write_rorp_iter_to_file(rorp_iter, file):
+			for rorp in rorp_iter: file.write(RORP2Record(rorp))
+
 		l = self.get_rpaths()
 		fp = cStringIO.StringIO()
 		write_rorp_iter_to_file(iter(l), fp)
 		fp.seek(0)
 		cstring = fp.read()
 		fp.seek(0)
-		outlist = list(rorp_extractor(fp).iterate())
+		outlist = list(RorpExtractor(fp).iterate())
 		assert len(l) == len(outlist), (len(l), len(outlist))
 		for i in range(len(l)):
 			if not l[i].equal_verbose(outlist[i]):
@@ -65,18 +68,19 @@ class MetadataTest(unittest.TestCase):
 		rpath_iter = selection.Select(rootrp).set_iter()
 
 		start_time = time.time()
-		OpenMetadata(temprp)
-		for rp in rpath_iter: WriteMetadata(rp)
-		CloseMetadata()
+		MetadataFile.open_file(temprp)
+		for rp in rpath_iter: MetadataFile.write_object(rp)
+		MetadataFile.close_file()
 		print "Writing metadata took %s seconds" % (time.time() - start_time)
 		return temprp
 
 	def testSpeed(self):
 		"""Test testIterator on 10000 files"""
 		temprp = self.write_metadata_to_temp()
+		MetadataFile._rp = temprp
 		
 		start_time = time.time(); i = 0
-		for rorp in GetMetadata(temprp): i += 1
+		for rorp in MetadataFile.get_objects(): i += 1
 		print "Reading %s metadata entries took %s seconds." % \
 			  (i, time.time() - start_time)
 
@@ -98,11 +102,35 @@ class MetadataTest(unittest.TestCase):
 
 		"""
 		temprp = self.write_metadata_to_temp()
+		MetadataFile._rp = temprp
 		start_time = time.time(); i = 0
-		for rorp in GetMetadata(temprp, ("subdir3", "subdir10")): i += 1
+		for rorp in MetadataFile.get_objects(("subdir3", "subdir10")): i += 1
 		print "Reading %s metadata entries took %s seconds." % \
 			  (i, time.time() - start_time)
 		assert i == 51
 
+	def test_write(self):
+		"""Test writing to metadata file, then reading back contents"""
+		global tempdir
+		temprp = tempdir.append("write_test.gz")
+		if temprp.lstat(): temprp.delete()
+
+		self.make_temp()
+		rootrp = rpath.RPath(Globals.local_connection,
+							 "testfiles/various_file_types")
+		dirlisting = rootrp.listdir()
+		dirlisting.sort()
+		rps = map(rootrp.append, dirlisting)
+
+		assert not temprp.lstat()
+		MetadataFile.open_file(temprp)
+		for rp in rps: MetadataFile.write_object(rp)
+		MetadataFile.close_file()
+		assert temprp.lstat()
+
+		reread_rps = list(MetadataFile.get_objects())
+		assert len(reread_rps) == len(rps), (len(reread_rps), len(rps))
+		for i in range(len(reread_rps)):
+			assert reread_rps[i] == rps[i], i
 
 if __name__ == "__main__": unittest.main()

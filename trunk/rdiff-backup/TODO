@@ -1,4 +1,6 @@
+Use ctime to check whether files have been changed
 
+Include some option to summarize space taken up
 
 ---------[ Medium term ]---------------------------------------
 

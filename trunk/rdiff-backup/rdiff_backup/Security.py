@@ -76,8 +76,9 @@ def set_security_level(action, cmdpairs):
 			rdir = tempfile.gettempdir()
 		elif islocal(cp1):
 			sec_level = "read-only"
-			rdir = Main.restore_get_root(rpath.RPath(Globals.local_connection,
-													 getpath(cp1)))[0].path
+			Main.restore_get_root(rpath.RPath(Globals.local_connection,
+											  getpath(cp1)))
+			rdir = Main.restore_root.path
 		else:
 			assert islocal(cp2)
 			sec_level = "all"

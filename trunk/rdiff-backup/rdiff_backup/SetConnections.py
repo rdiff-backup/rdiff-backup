@@ -1,4 +1,4 @@
-# Copyright 2002 Ben Escoto
+# Copyright 2002, 2003 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -27,7 +27,7 @@ the related connections.
 
 import os
 from log import Log
-import Globals, FilenameMapping, connection, rpath
+import Globals, connection, rpath
 
 # This is the schema that determines how rdiff-backup will open a
 # pipe to the remote system.  If the file is given as A::B, %s will
@@ -178,7 +178,6 @@ def init_connection_settings(conn):
 	conn.log.Log.setterm_verbosity(Log.term_verbosity)
 	for setting_name in Globals.changed_settings:
 		conn.Globals.set(setting_name, Globals.get(setting_name))
-	FilenameMapping.set_init_quote_vals()
 
 def init_connection_remote(conn_number):
 	"""Run on server side to tell self that have given conn_number"""
@@ -203,8 +202,6 @@ def BackupInitConnections(reading_conn, writing_conn):
 	writing_conn.Globals.set("isbackup_writer", 1)
 	UpdateGlobal("backup_reader", reading_conn)
 	UpdateGlobal("backup_writer", writing_conn)
-	if writing_conn.os.getuid() == 0 and Globals.change_ownership != 0:
-		UpdateGlobal('change_ownership', 1)
 
 def CloseConnections():
 	"""Close all connections.  Run by client"""

@@ -1,4 +1,4 @@
-# Copyright 2002 Ben Escoto
+# Copyright 2002, 2003 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -29,7 +29,7 @@ handle that error.)
 
 """
 
-import re
+import re, types
 import Globals, log, rpath
 
 max_filename_length = 255
@@ -66,12 +66,14 @@ def set_init_quote_vals_local():
 def init_quoting_regexps():
 	"""Compile quoting regular expressions"""
 	global chars_to_quote_regexp, unquoting_regexp
+	assert chars_to_quote and type(chars_to_quote) is types.StringType, \
+		   "Chars to quote: '%s'" % (chars_to_quote,)
 	try:
 		chars_to_quote_regexp = \
 				 re.compile("[%s]|%s" % (chars_to_quote, quoting_char), re.S)
 		unquoting_regexp = re.compile("%s[0-9]{3}" % quoting_char, re.S)
 	except re.error:
-		log.Log.FatalError("Error '%s' when processing char quote list %s" %
+		log.Log.FatalError("Error '%s' when processing char quote list '%s'" %
 						   (re.error, chars_to_quote))
 
 def quote(path):
@@ -131,8 +133,16 @@ class QuotedRPath(rpath.RPath):
 
 	def isincfile(self):
 		"""Return true if path indicates increment, sets various variables"""
-		result = rpath.RPath.isincfile(self)
-		if result: self.inc_basestr = unquote(self.inc_basestr)
+		if not self.index: # consider the last component as quoted
+			dirname, basename = self.dirsplit()
+			temp_rp = rpath.RPath(self.conn, dirname, (unquote(basename),))
+			result = temp_rp.isincfile()
+			if result:
+				self.inc_basestr = unquote(temp_rp.inc_basestr)
+				self.inc_timestr = unquote(temp_rp.inc_timestr)
+		else:
+			result = rpath.RPath.isincfile(self)
+			if result: self.inc_basestr = unquote(self.inc_basestr)
 		return result
 		
 def get_quotedrpath(rp, separate_basename = 0):

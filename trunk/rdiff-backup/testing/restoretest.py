@@ -143,22 +143,6 @@ class RestoreTest(unittest.TestCase):
 						"testfiles/output", 5000)
 		assert CompareRecursive(inc1_rp, target_rp, compare_hardlinks = 0)
 
-#	def testRestoreCorrupt(self):
-#		"""Test restoring a partially corrupt archive
-#
-#		The problem here is that a directory is missing from what is
-#		to be restored, but because the previous backup was aborted in
-#		the middle, some of the files in that directory weren't marked
-#		as .missing.
-#
-#		"""
-#		Myrm("testfiles/output")
-#		InternalRestore(1, 1, "testfiles/restoretest4", "testfiles/output",
-#						10000)
-#		assert os.lstat("testfiles/output")
-#		self.assertRaises(OSError, os.lstat, "testfiles/output/tmp")
-#		self.assertRaises(OSError, os.lstat, "testfiles/output/rdiff-backup")
-
 	def testRestoreNoincs(self):
 		"""Test restoring a directory with no increments, just mirror"""
 		Myrm("testfiles/output")

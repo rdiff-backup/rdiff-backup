@@ -1,4 +1,4 @@
-# Copyright 2002 Ben Escoto
+# Copyright 2002, 2003 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -22,7 +22,7 @@
 from __future__ import generators
 import tempfile, os, cStringIO
 import Globals, Time, Rdiff, Hardlink, rorpiter, selection, rpath, \
-	   log, static, robust, metadata, statistics, TempFile
+	   log, static, robust, metadata, statistics, TempFile, eas_acls
 
 
 # This should be set to selection.Select objects over the source and
@@ -154,8 +154,13 @@ class MirrorStruct:
 
 		"""
 		if rest_time is None: rest_time = _rest_time
-		metadata_iter = metadata.GetMetadata_at_time(Globals.rbdir,
-				 rest_time, restrict_index = cls.mirror_base.index)
+		if Globals.write_eas:
+			metadata_iter = eas_acls.ExtendedAttributesFile.\
+			 get_combined_iter_at_time(
+			 Globals.rbdir, rest_time, restrict_index = cls.mirror_base.index)
+		else:
+			metadata_iter = metadata.MetadataFile.get_objects_at_time(
+			 Globals.rbdir, rest_time, restrict_index = cls.mirror_base.index)
 		if metadata_iter: rorp_iter = metadata_iter
 		elif require_metadata: log.Log.FatalError("Mirror metadata not found")
 		else:
