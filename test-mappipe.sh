@@ -11,10 +11,12 @@
 
 source ${srcdir:-.}/testfns.sh $0 $@
 
-from=$srcdir/libtool
+from=$tmpdir/basis
 new=$tmpdir/new.tmp
 cmds=$tmpdir/cmds
 expect=$tmpdir/expect
+
+run_test cat $srcdir/*.[ch] >$from
 
 run_test $srcdir/gen-inbuftest.py $cmds $expect $from
 
