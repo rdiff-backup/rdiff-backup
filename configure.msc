@@ -1,4 +1,3 @@
 #!/bin/sh
 export CC=cl
-export CFLAGS="-Z7 -Od -MD"
-./configure --build=windows32 --prefix='C:/Progra~1/librsync'
+./configure --prefix='C:/Progra~1/librsync'

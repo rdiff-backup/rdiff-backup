@@ -1,5 +1,7 @@
 Changes in 0.9.6
 
+ * Large file support fix.
+
  * Changed installed include file from rsync.h to librsync.h.
 
  * Migration to sourceforge for hosting.
@@ -10,11 +12,11 @@ Changes in 0.9.6
 
  * mdfour bigendian and >512M bugfix, plus optimisations patch.
  
- * autoconf/automake updates and cleanups
+ * autoconf/automake updates and cleanups for autoconf 2.53.
  
- * Windows compilation patch.
+ * Windows compilation patch, heavily modified.
  
- * MacOSX compilation patch. 
+ * MacOSX compilation patch, modified to autoconf vararg macro fix. 
 
  * Debian package build scripts patch.
  

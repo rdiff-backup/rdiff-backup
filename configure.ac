@@ -48,16 +48,20 @@ AC_CHECK_SIZEOF([unsigned char], 1)
 if test "$ac_cv_sizeof_unsigned_char" -ne 1; then
   AC_MSG_WARN(unsigned char seems to be $ac_cv_sizeof_unsigned_char bytes.  Expect trouble.)
 fi
-AC_CHECK_SIZEOF(short, 2)
-AC_CHECK_SIZEOF([unsigned short], 2)
-AC_CHECK_SIZEOF(int, 4)
-AC_CHECK_SIZEOF([unsigned int], 4)
-AC_CHECK_SIZEOF(long, 4)
-AC_CHECK_SIZEOF([unsigned long], 4)
-AC_CHECK_SIZEOF([long long], 0)
-AC_CHECK_SIZEOF(off_t, 4)
-AC_CHECK_SIZEOF(size_t, 4)
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF([unsigned short])
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF([unsigned int])
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF([unsigned long])
+AC_CHECK_SIZEOF([long long])
+AC_CHECK_SIZEOF(off_t)
+AC_CHECK_SIZEOF(size_t)
 
+#XXX: is this really the best way to do it? I think the limitation on
+# rs_long_t is that we need to be able to seek to it, which relates to
+# long file support. With fseeko, rs_long_t should be off_t, otherwise 
+# it should be long.
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
   [[#include <sys/types.h>
 #ifndef LONG_LONG
@@ -75,6 +79,7 @@ AC_SUBST(RS_LONG_T)
 #AC_FUNC_MALLOC      #XXX: needs malloc.c replacement  
 #AC_FUNC_MEMCMP      #XXX: needs memcmp.c replacement
 #AC_FUNC_REALLOC     #XXX: needs realloc.c replacement
+AC_FUNC_FSEEKO
 AC_CHECK_FUNCS([memmove memset strchr strerror strtol])
 AC_CHECK_FUNCS([gettext dgettext])
 AC_CHECK_FUNC(setreuid, [],
@@ -105,8 +110,10 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
     AC_MSG_RESULT(yes) ],
   [ AC_MSG_RESULT(no) ])
 
-if test "$GCC" = "yes"; then 
+if test "$GCC" = "yes"; then # GCC
   CFLAGS="-Wall -Wshadow -Wundef -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wstrict-prototypes -Wpointer-arith -Wcast-qual -Wcast-align $CFLAGS"
+elif test "$CC" = "lc"; then # MSVC
+  CFLAGS="-Z7 -Od -MD $CFLAGS"
 fi
 # TODO: Similar conditions for other known compilers.  For SUNWspro, use `-v'.
 

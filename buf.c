@@ -54,6 +54,11 @@
 #include "buf.h"
 #include "util.h"
 
+/* use fseeko instead of fseek for long file support if we have it */
+#ifdef HAVE_FSEEKO
+#define fseek fseeko
+#endif
+
 /**
  * File IO buffer sizes.
  */
@@ -65,7 +70,6 @@ struct rs_filebuf {
         char            *buf;
         size_t          buf_len;
 };
-
 
 
 rs_filebuf_t *rs_filebuf_new(FILE *f, size_t buf_len) 
