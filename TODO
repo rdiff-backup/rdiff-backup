@@ -82,8 +82,6 @@ $Id$
 
  * Encoding implementation
 
-   * Join up copy commands through the copyq if this is not done yet.
-
    * Join up signature commands
 
  * Encoding algorithm
