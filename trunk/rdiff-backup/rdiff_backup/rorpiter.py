@@ -393,5 +393,5 @@ class CacheIndexable:
 		try: return self.cache_dict[index]
 		except KeyError:
 			assert index >= self.cache_indicies[0], \
-				   repr((index, self.cache_indicies[0]))
+				   "Index out of order: "+repr((index, self.cache_indicies[0]))
 			return None

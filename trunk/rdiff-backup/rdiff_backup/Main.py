@@ -204,6 +204,7 @@ def take_action(rps):
 	"""Do whatever action says"""
 	if action == "server":
 		connection.PipeConnection(sys.stdin, sys.stdout).Server()
+		sys.exit(0)
 	elif action == "backup": Backup(rps[0], rps[1])
 	elif action == "restore": Restore(*rps)
 	elif action == "restore-as-of": RestoreAsOf(rps[0], rps[1])
