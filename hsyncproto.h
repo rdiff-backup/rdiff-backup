@@ -30,7 +30,10 @@
 
    We require 6 + 3 + 3 + 1 = 13 non-inline opcodes; we'll reserve
    three to keep things simple.  That means we have 240 inline
-   opcodes, or 120 each for literals and signature. */
+   opcodes, or 120 each for literals and signature.
+
+   TODO: What about a special case for offset=0?  This will be pretty
+   common. */
 
 enum {
     op_eof = 0,

@@ -118,9 +118,14 @@ _hs_emit_copy(rs_write_fn_t write_fn, void *write_priv,
     len_type = _hs_int_len(length);
     off_type = _hs_int_len(offset);
 
+    /* We cannot specify the offset as a byte, because that would so
+       rarely be useful.  */
+    if (off_type == 1)
+	 off_type = 2;
+
     /* Make sure this formula lines up with the values in hsyncproto.h */
 
-    if (off_type == 2 || off_type == 1) {
+    if (off_type == 2) {
 	cmd = op_copy_short_byte;
     } else if (off_type == 4) {
 	cmd = op_copy_int_byte;

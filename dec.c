@@ -93,6 +93,7 @@ static int _hs_check_gd_header(rs_read_fn_t ltread_fn, void *ltread_priv)
 	errno = EBADMSG;
 	return -1;
     }
+    _hs_trace("got version %#08x", remote_magic);
     return 0;
 }
 
