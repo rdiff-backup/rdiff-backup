@@ -1,0 +1,7 @@
+2002-01-25  Ben Elliston  <bje@redhat.com>
+
+	* changes.input: Replica test directory.
+	* delta.input: Likewise.
+	* mdfour.input: Likewise.
+	* signature.input: Likewise.
+	* triple.input: Likewise.
