@@ -158,6 +158,33 @@ class IncrementTest1(unittest.TestCase):
 		InternalBackup(1, 1, "testfiles/longfilenames1", Local.rpout.path, 100)
 		InternalBackup(1, 1, "testfiles/longfilenames2", Local.rpout.path, 200)
 
+	def test_long_socket(self):
+		"""Test backing up a directory with long sockets in them
+
+		For some reason many unicies don't allow sockets with long
+		names to be made in the usual way.
+
+		"""
+		sockdir = rpath.RPath(Globals.local_connection, "testfiles/sockettest")
+		if sockdir.lstat():
+			Myrm(sockdir.path)
+			sockdir.setdata()
+		sockdir.mkdir()
+		tmp_sock = sockdir.append("sock")
+		tmp_sock.mksock()
+		sock1 = sockdir.append("Long_socket_name---------------------------------------------------------------------------------------------------")
+		self.assertRaises(rpath.SkipFileException, sock1.mksock)
+		rpath.rename(tmp_sock, sock1)
+		assert sock1.issock()
+		sock2 = sockdir.append("Medium_socket_name--------------------------------------------------------------")
+		sock2.mksock()
+
+		Myrm(Local.rpout.path)
+		InternalBackup(1, 1, sockdir.path, Local.rpout.path,
+					   current_time = 1)
+		InternalBackup(1, 1, "testfiles/empty", Local.rpout.path,
+					   current_time = 10000)
+		
 	def testNoWrite(self):
 		"""Test backup/restore on dirs without write permissions"""
 		def write_string(rp, s = ""):
