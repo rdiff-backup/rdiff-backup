@@ -348,15 +348,11 @@ def backup_get_mirrortime():
 def backup_final_init(rpout):
 	"""Open the backup log and the error log, create increments dir"""
 	global prevtime
-	prevtime = backup_get_mirrortime()
-	need_check = checkdest_need_check(rpout)
 	if Log.verbosity > 0:
 		Log.open_logfile(Globals.rbdir.append("backup.log"))
+	checkdest_if_necessary(rpout)
+	prevtime = backup_get_mirrortime()
 	ErrorLog.open(Time.curtimestr, compress = Globals.compression)
-	if need_check:
-		Log("Previous backup seems to have failed, regressing "
-			"destination now.", 2)
-		rpout.conn.regress.Regress(rpout)
 	inc_base = Globals.rbdir.append_path("increments")
 	if not inc_base.lstat(): inc_base.mkdir()
 
