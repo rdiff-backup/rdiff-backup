@@ -163,7 +163,7 @@ static hs_result rdiff_delta(poptContext opcon)
     FILE            *sig_file, *new_file, *delta_file;
     char const      *sig_name;
     hs_result       result;
-    hs_sumset_t     *sumset;
+    hs_signature_t     *sumset;
 
     if (!(sig_name = poptGetArg(opcon))) {
         rdiff_usage("delta: must specify the signature filename");

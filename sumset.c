@@ -44,7 +44,7 @@
  * Deep deallocation of checksums.
  */
 void
-hs_free_sumset(hs_sumset_t * psums)
+hs_free_sumset(hs_signature_t * psums)
 {
         if (psums->block_sums)
                 free(psums->block_sums);
@@ -65,7 +65,7 @@ hs_free_sumset(hs_sumset_t * psums)
  * Dump signatures to the log.
  */
 void
-hs_sumset_dump(hs_sumset_t const *sums)
+hs_sumset_dump(hs_signature_t const *sums)
 {
         int i;
         char        strong_hex[HS_MD4_LENGTH * 3];

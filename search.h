@@ -23,5 +23,5 @@
 int
 hs_search_for_block(hs_weak_sum_t weak_sum,
 		     byte_t const *inbuf, size_t block_len,
-		     hs_sumset_t const *sums, hs_stats_t * stats,
+		     hs_signature_t const *sums, hs_stats_t * stats,
 		     off_t * match_where);

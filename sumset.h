@@ -26,13 +26,12 @@ typedef unsigned char hs_strong_sum_t[HS_MD4_LENGTH];
 
 typedef struct hs_rollsum hs_rollsum_t;
 
-
 typedef struct hs_target {
     short           t;
     int             i;
 } hs_target_t;
 
-typedef struct hs_sum_buf hs_sum_buf_t;
+typedef struct hs_block_sig hs_block_sig_t;
 
 /*
  * This structure describes all the sums generated for an instance of
@@ -40,14 +39,14 @@ typedef struct hs_sum_buf hs_sum_buf_t;
  * search.
  */
 struct hs_signature {
-        off_t           flength;	/* total file length */
-        int             count;          /* how many chunks */
-        int             remainder;	/* flength % block_length */
-        int             block_len;	/* block_length */
-        int             strong_sum_len;
-        hs_sum_buf_t   *block_sums;     /* points to info for each chunk */
-        int            *tag_table;
-        hs_target_t    *targets;
+    off_t           flength;	/* total file length */
+    int             count;      /* how many chunks */
+    int             remainder;	/* flength % block_length */
+    int             block_len;	/* block_length */
+    int             strong_sum_len;
+    hs_block_sig_t  *block_sums; /* points to info for each chunk */
+    int             *tag_table;
+    hs_target_t     *targets;
 };
 
 
@@ -55,7 +54,7 @@ struct hs_signature {
  * All blocks are the same length in the current algorithm except for
  * the last block which may be short.
  */
-struct hs_sum_buf {
+struct hs_block_sig {
     int             i;		/* index of this chunk */
     hs_weak_sum_t   weak_sum;	/* simple checksum */
     hs_strong_sum_t strong_sum;	/* checksum  */

@@ -57,7 +57,36 @@ static hs_result hs_loadsig_alloc(hs_job_t *job)
     hs_trace("allocated sigset_t (strong_sum_len=%d, block_len=%d)",
              job->strong_sum_len, job->block_len);
 
-    return HS_DONE;
+    return HS_RUNNING;
+}
+
+
+/**
+ * Add a just-read-in checksum pair to the signature block.
+ */
+static hs_result hs_loadsig_add_sum(hs_job_t *job, uint32_t weak,
+                                    char const *strong)
+{
+    size_t              new_size;
+    hs_signature_t      *sig = job->signature;
+    hs_block_sig_t      *asignature;
+
+    sig->count++;
+    new_size = sig->count * sizeof(hs_block_sig_t);
+
+    sig->block_sums = realloc(sig->block_sums, new_size);
+    
+    if (sig->block_sums == NULL) {
+        return HS_MEM_ERROR;
+    }
+    asignature = &(sig->block_sums[sig->count - 1]);
+
+    asignature->weak_sum = weak;
+    asignature->i = sig->count;
+
+    memcpy(asignature->strong_sum, strong, sig->strong_sum_len);
+
+    return HS_RUNNING;
 }
 
 
@@ -146,7 +175,7 @@ hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
 {
         int             ret = 0;
         int             block_len;
-        hs_sum_buf_t   *asignature;
+        hs_block_sig_t   *asignature;
         int             n = 0;
         int             checksum1;
         hs_signature_t    *sumbuf;
@@ -176,7 +205,7 @@ hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
                 }
                 assert(ret == 4);
 
-                sumbuf->block_sums = realloc(sumbuf->block_sums, (n + 1) * sizeof(hs_sum_buf_t));
+                sumbuf->block_sums = realloc(sumbuf->block_sums, (n + 1) * sizeof(hs_block_sig_t));
                 if (sumbuf->block_sums == NULL) {
                         errno = ENOMEM;
                         ret = -1;

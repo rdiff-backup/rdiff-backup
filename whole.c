@@ -138,7 +138,7 @@ hs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
  * \sa hs_readsig_begin()
  */
 hs_result
-hs_loadsig_file(FILE *sig_file, hs_sumset_t **sumset)
+hs_loadsig_file(FILE *sig_file, hs_signature_t **sumset)
 {
         hs_job_t        *job;
         hs_stream_t     stream;
@@ -152,7 +152,7 @@ hs_loadsig_file(FILE *sig_file, hs_sumset_t **sumset)
 
 
 hs_result
-hs_delta_file(hs_sumset_t *sumset, FILE *new_file, FILE *delta_file)
+hs_delta_file(hs_signature_t *sumset, FILE *new_file, FILE *delta_file)
 {
     hs_error("not implemented at the moment");
 
