@@ -1,6 +1,7 @@
 /* -*- mode: c; c-file-style: "k&r" -*-  */
 
-/* 
+/* checksum.c -- calculate and search table of checksums
+   
    Copyright (C) 2000 by Martin Pool
    Copyright (C) Andrew Tridgell 1996
    Copyright (C) Paul Mackerras 1996
