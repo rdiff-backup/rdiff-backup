@@ -25,6 +25,9 @@
  * anything that's not potentially part of the public interface.
  */
 
+#include <sys/types.h>
+#include <stdint.h>
+
 extern char const *const hs_libhsync_version;
 extern char const *const hs_libhsync_libversion;
 extern int const hs_libhsync_file_offset_bits;
@@ -154,9 +157,9 @@ size_t          hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, byte_t const **buf);
 hs_ptrbuf_t    *hs_ptrbuf_on_buffer(byte_t *buf, int len);
 ssize_t hs_ptrbuf_read_ofs(void *private, byte_t *buf, size_t len, off_t ofs);
 
-/* ============================================================
-
-   MD4 hash */
+/***********************************************************************
+ * MD4 hash
+ ***********************************************************************/
 
 typedef struct hs_mdfour {
     uint32_t        A, B, C, D;
