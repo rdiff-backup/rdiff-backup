@@ -119,11 +119,6 @@ same rules as
 and
 .B --exclude.
 .TP
-.BI "--exclude-mirror " regexp
-Exclude files in the mirror area matching regexp.  This argument can
-be used multiple times.  The rdiff-backup-data directory is
-automatically excluded, so this option rarely needs to be used.
-.TP
 .B --exclude-other-filesystems
 Exclude files on file systems (identified by device number) other than
 the file system the root of the source directory is on.
@@ -235,7 +230,7 @@ Don't replicate hard links on destination side.  Note that because
 metadata is written to a separate file, hard link information will not
 be lost even if the --no-hard-links option is given (however, mirror
 files will not be linked).  If many hard-linked files are present,
-this option can drastically increase memory usage.
+this option can drastically decrease memory usage.
 .TP
 .B --null-separator
 Use nulls (\\0) instead of newlines (\\n) as line separators, which
@@ -895,11 +890,11 @@ Files whose names are close to the maximum length (e.g. 235 chars if
 the maximum is 255) may be skipped because the filenames of related
 increment files would be too long.
 .PP
-The gzip library in versions 2.2 and earlier of python have trouble
-producing files over 2GB in length.  This bug will prevent
-rdiff-backup from producing large compressed increments (snapshots or
-diffs).  A workaround is to disable compression for large
-uncompressable files.
+The gzip library in versions 2.2 and earlier of python (but fixed in
+2.3a1) has trouble producing files over 2GB in length.  This bug will
+prevent rdiff-backup from producing large compressed increments
+(snapshots or diffs).  A workaround is to disable compression for
+large uncompressable files.
 
 .SH AUTHOR
 Ben Escoto <bescoto@stanford.edu>

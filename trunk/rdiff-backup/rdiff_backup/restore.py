@@ -94,6 +94,7 @@ def ListAtTime(mirror_rp, inc_rp, time):
 
 class MirrorStruct:
 	"""Hold functions to be run on the mirror side"""
+	_select = None # If selection command line arguments given, use Select here
 	def set_mirror_and_rest_times(cls, restore_to_time):
 		"""Set global variabels _mirror_time and _rest_time on mirror conn"""
 		global _mirror_time, _rest_time
@@ -148,15 +149,29 @@ class MirrorStruct:
 		Usually we can use the metadata file, but if this is
 		unavailable, we may have to build it from scratch.
 
+		If the cls._select object is set, use it to filter out the
+		unwanted files from the metadata_iter.
+
 		"""
 		if rest_time is None: rest_time = _rest_time
 		metadata_iter = metadata.GetMetadata_at_time(Globals.rbdir,
 				 rest_time, restrict_index = cls.mirror_base.index)
-		if metadata_iter: return metadata_iter
-		if require_metadata: log.Log.FatalError("Mirror metadata not found")
-		log.Log("Warning: Mirror metadata not found, "
-				"reading from directory", 2)
-		return cls.get_rorp_iter_from_rf(cls.root_rf)
+		if metadata_iter: rorp_iter = metadata_iter
+		elif require_metadata: log.Log.FatalError("Mirror metadata not found")
+		else:
+			log.Log("Warning: Mirror metadata not found, "
+					"reading from directory", 2)
+			rorp_iter = cls.get_rorp_iter_from_rf(cls.root_rf)
+
+		if cls._select:
+			rorp_iter = selection.FilterIter(cls._select, rorp_iter)
+		return rorp_iter
+
+	def set_mirror_select(cls, target_rp, select_opts, *filelists):
+		"""Initialize the mirror selection object"""
+		assert select_opts, "If no selection options, don't use selector"
+		cls._select = selection.Select(target_rp)
+		cls._select.ParseArgs(select_opts, filelists)
 
 	def get_rorp_iter_from_rf(cls, rf):
 		"""Recursively yield mirror rorps from rf"""

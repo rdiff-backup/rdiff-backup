@@ -30,7 +30,7 @@ import Globals, Time, SetConnections, selection, robust, rpath, \
 action = None
 remote_cmd, remote_schema = None, None
 force = None
-select_opts, select_mirror_opts = [], []
+select_opts = []
 select_files = []
 
 def parse_cmdlineoptions(arglist):
@@ -84,8 +84,6 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--exclude-globbing-filelist":
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))
-		elif opt == "--exclude-mirror":
-			select_mirror_opts.append(("--exclude", arg))
 		elif (opt == "--exclude-other-filesystems" or
 			  opt == "--exclude-regexp" or
 			  opt == "--exclude-special-files"): select_opts.append((opt, arg))
@@ -399,10 +397,22 @@ def restore_common(rpin, target, time):
 	restore_check_backup_dir(mirror_root)
 	mirror = mirror_root.new_index(index)
 	inc_rpath = datadir.append_path('increments', index)
-	restore_init_select(mirror_root, target)
+	restore_set_select(mirror_root, target)
 	restore_start_log(rpin, target, time)
 	restore.Restore(mirror, inc_rpath, target, time)
 	Log("Restore ended", 4)
+
+def restore_set_select(mirror_rp, target):
+	"""Set the selection iterator on mirror side from command line args
+
+	Here we set the selector on the mirror side, because that is where
+	we will be filtering, but the pathnames are relative to the target
+	directory.
+
+	"""
+	if select_opts: 
+		mirror_rp.conn.restore.MirrorStruct.set_mirror_select(
+			target, select_opts, *select_files)
 
 def restore_start_log(rpin, target, time):
 	"""Open restore log file, log initial message"""
@@ -445,19 +455,6 @@ def restore_check_backup_dir(rpin):
 		"Previous backup to %s seems to have failed."
 		"Rerun rdiff-backup with --check-destination-dir option to revert"
 		"directory to state before unsuccessful session." % (rpin.path,))
-
-def restore_init_select(rpin, rpout):
-	"""Initialize Select
-
-	Unlike the backup selections, here they are on the local
-	connection, because the backup operation is pipelined in a way
-	the restore operation isn't.
-
-	"""
-	restore._select_mirror = selection.Select(rpin)
-	restore._select_mirror.ParseArgs(select_mirror_opts, [])
-	restore._select_mirror.parse_rbdir_exclude()
-	restore._select_source = selection.Select(rpout)
 
 def restore_get_root(rpin):
 	"""Return (mirror root, index) and set the data dir

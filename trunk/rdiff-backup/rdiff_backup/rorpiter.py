@@ -286,7 +286,7 @@ class IterTreeReducer:
 
 
 class ITRBranch:
-	"""Helper class for IterTreeReducer below
+	"""Helper class for IterTreeReducer above
 
 	There are five stub functions below: start_process, end_process,
 	branch_process, can_fast_process, and fast_process.  A class that
