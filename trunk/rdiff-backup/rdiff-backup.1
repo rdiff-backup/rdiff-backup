@@ -80,6 +80,12 @@ remote side.  See
 and
 .BR --windows-mode .
 .TP
+.B --check-destination-dir
+If an rdiff-backup session fails, running rdiff-backup with this
+option on the destination dir will undo the failed directory.  This
+happens automatically if you attempt to back up to a directory and the
+last backup failed.
+.TP
 .BI "--current-time " seconds
 This option is useful mainly for testing.  If set, rdiff-backup will
 it for the current time instead of consulting the clock.  The argument
