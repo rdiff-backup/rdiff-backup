@@ -35,6 +35,7 @@ _genstr_date_regexp1 = re.compile("^(?P<year>[0-9]{4})[-/]"
 _genstr_date_regexp2 = re.compile("^(?P<month>[0-9]{1,2})[-/]"
 					   "(?P<day>[0-9]{1,2})[-/](?P<year>[0-9]{4})$")
 curtime = curtimestr = None
+dst_in_effect = time.daylight and time.localtime()[8]
 
 def setcurtime(curtime = None):
 	"""Sets the current time in curtime and curtimestr on all systems"""
@@ -83,8 +84,7 @@ def stringtotime(timestring):
 		assert 0 <= minute <= 59
 		assert 0 <= second <= 61  # leap seconds
 		timetuple = (year, month, day, hour, minute, second, -1, -1, -1)
-		if time.daylight:
-			utc_in_secs = time.mktime(timetuple) - time.altzone
+		if dst_in_effect: utc_in_secs = time.mktime(timetuple) - time.altzone
 		else: utc_in_secs = time.mktime(timetuple) - time.timezone
 
 		return long(utc_in_secs) + tzdtoseconds(timestring[19:])
@@ -144,8 +144,8 @@ def gettzd():
 	coincides with what localtime(), etc., use.
 
 	"""
-	if time.daylight: offset = -1 * time.altzone/60
-	else: offset = -1 * time.timezone/60
+	if dst_in_effect: offset = -time.altzone/60
+	else: offset = -time.timezone/60
 	if offset > 0: prefix = "+"
 	elif offset < 0: prefix = "-"
 	else: return "Z" # time is already in UTC

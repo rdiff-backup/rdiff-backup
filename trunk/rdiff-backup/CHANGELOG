@@ -10,6 +10,10 @@ was full (reported by Erik Forsberg).
 
 Fixed remote quoting errors found by Daniel Drucker.
 
+Fixed handling of daylight savings time.  Earlier bug would cause some
+files to be marked an hour later.  Thanks to Troels Arvin and Farkas
+Levente for bug report.
+
 
 New in v0.13.3 (2003/10/14)
 ---------------------------
