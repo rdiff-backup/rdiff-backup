@@ -430,6 +430,8 @@ def restore_set_fs_globals(target):
 	update_bool_global('write_acls', target_fsa.acls)
 	update_bool_global('read_eas', target_fsa.eas)
 	update_bool_global('write_eas', target_fsa.eas)
+	update_bool_global('read_resource_forks', target_fsa.resource_forks)
+	update_bool_global('write_resource_forks', target_fsa.resource_forks)
 	SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
 	SetConnections.UpdateGlobal('change_ownership', target_fsa.ownership)
 

@@ -89,7 +89,7 @@ def MakeTar():
 		assert not os.system("cp %s %s" % (filename, tardir)), filename
 
 	os.mkdir(tardir+"/rdiff_backup")
-	for filename in ["backup.py", "connection.py",
+	for filename in ["eas_acls.py", "backup.py", "connection.py",
 					 "FilenameMapping.py", "Hardlink.py",
 					 "increment.py", "__init__.py", "iterfile.py",
 					 "lazy.py", "librsync.py", "log.py", "Main.py",
