@@ -95,6 +95,7 @@ rs_result rs_job_free(rs_job_t *job)
 static rs_result rs_job_s_complete(rs_job_t *job)
 {
     rs_fatal("should not be reached");
+    return RS_INTERNAL_ERROR;
 }
 
 
