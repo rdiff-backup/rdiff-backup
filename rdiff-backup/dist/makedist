@@ -24,37 +24,42 @@ def CopyMan(destination, version):
 	fp.close()
 	infp.close()
 
-def MakeFAQ():
-	"""Create FAQ.html and FAQ.wml files from FAQ-body.html"""
-	faqbody_fp = open("FAQ-body.html", "r")
-	faqbody_string = faqbody_fp.read()
-	faqbody_fp.close()
+def MakeHTML(input_prefix, title):
+	"""Create html and wml versions from given html body
 
-	wml_fp = open("FAQ.wml", "w")
+	Input expected in <input_prefix>-body.html, and output will be put
+	in <input_prefix>.wml and <input_prefix>.html.
+
+	"""
+	body_fp = open("%s-body.html" % (input_prefix,), "r")
+	body_string = body_fp.read()
+	body_fp.close()
+
+	wml_fp = open("%s.wml" % (input_prefix,), "w")
 	wml_fp.write(
-"""#include 'template.wml' home=. curpage=faq title="rdiff-backup: FAQ"
+"""#include 'template.wml' home=. curpage=none title="%s"
 
 <divert body>
-<p><h2>FAQ:</h2>
+<p><h2>%s</h2>
 
-""")
-	wml_fp.write(faqbody_string)
+""" % (title, title))
+	wml_fp.write(body_string)
 	wml_fp.write("\n</divert>\n")
 	wml_fp.close()
 
-	html_fp = open("FAQ.html", "w")
+	html_fp = open("%s.html" % (input_prefix,), "w")
 	html_fp.write(
 """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
 <html>
   <head>
-    <title>rdiff-backup FAQ</title>
+    <title>%s</title>
   </head>
 
   <body>
-  <h1>rdiff-backup FAQ</h1>
-""")
-	html_fp.write(faqbody_string)
+  <h1>%s</h1>
+""" % (title, title))
+	html_fp.write(body_string)
 	html_fp.write("\n</body></html>")
 	html_fp.close()
 
@@ -82,7 +87,8 @@ def MakeTar():
 		os.system("rm -rf " + tardir)
 	except OSError: pass
 	os.mkdir(tardir)
-	for filename in ["CHANGELOG", "COPYING", "README", "FAQ.html",
+	for filename in ["CHANGELOG", "COPYING", "README",
+					 "FAQ.html", "examples.html",
 					 SourceDir + "/cmodule.c",
 					 SourceDir + "/_librsyncmodule.c",
 					 DistDir + "/setup.py"]:
@@ -124,24 +130,25 @@ def parse_cmdline(arglist):
 	"""Returns action"""
 	global Version
 	def error():
-		print "Syntax: makedist [--faq-only] [version_number]"
+		print "Syntax: makedist [--html-only] [version_number]"
 		sys.exit(1)		
 
-	optlist, args = getopt.getopt(arglist, "", ["faq-only"])
+	optlist, args = getopt.getopt(arglist, "", ["html-only"])
 	if len(args) != 1: error()
 	else: Version = args[0]
 
 	for opt, arg in optlist:
-		if opt == "--faq-only": return "FAQ"
+		if opt == "--html-only": return "HTML"
 		else: assert 0, "Bad argument"
 	return "All"
 
 def Main():
 	action = parse_cmdline(sys.argv[1:])
-	print "Making FAQ"
-	MakeFAQ()
+	print "Making HTML"
+	MakeHTML("FAQ", "rdiff-backup FAQ")
+	MakeHTML("examples", "rdiff-backup examples")
 
-	if action != "FAQ":
+	if action != "HTML":
 		assert action == "All"
 		print "Processing version " + Version
 		tarfile = MakeTar()
