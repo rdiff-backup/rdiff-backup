@@ -4,6 +4,9 @@ AC_REVISION($Id$)
 
 # Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
 
+                    # Linux is the gateway drug for freedom.
+                    #                -- Don Marti
+
 AC_INIT(trace.c)
 
 my_version=0.9.3pre
@@ -18,7 +21,6 @@ AM_PROG_LIBTOOL
 AM_CONFIG_HEADER(config.h)
 
 # Set up to get as many features as we can manage
-AC_DEFINE(_FILE_OFFSET_BITS, 64)
 AC_DEFINE(_GNU_SOURCE)
 
 AC_CANONICAL_HOST
@@ -35,6 +37,8 @@ AC_TYPE_OFF_T
 
 AC_C_CONST
 
+AC_SYS_LARGEFILE
+
 # See if the compiler has the nice GNU feature of 
 # putting argv[0] into a global
 AC_MSG_CHECKING([for program_invocation_short_name])
@@ -43,11 +47,6 @@ AC_TRY_COMPILE([#include <errno.h>],
     [ AC_DEFINE(HAVE_PROGRAM_INVOCATION_NAME)
       AC_MSG_RESULT(yes) ],
     [ AC_MSG_RESULT(no) ])
-
-# On us4 SGI IRIX64, the linker reports
-# ld32: WARNING 84 : /usr/lib32/libnsl.so is not used for resolving any symbol.
-
-# HEY!  Do we need SGI cc to do 64-bit mode?  Does gcc only do 32bit?
 
 # supply a snprintf if the system doesn't have one
 AC_REPLACE_FUNCS(snprintf)
@@ -126,11 +125,15 @@ then
     AC_MSG_WARN(unsigned char seems to be $ac_cv_sizeof_unsigned_char bytes.  Expect trouble.)
 fi
 
-AC_CHECK_SIZEOF(short)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(long long)
-AC_CHECK_SIZEOF(off_t)
+AC_CHECK_SIZEOF(short, 2)
+AC_CHECK_SIZEOF(unsigned short, 2)
+AC_CHECK_SIZEOF(int, 4)
+AC_CHECK_SIZEOF(unsigned int, 4)
+AC_CHECK_SIZEOF(long, 4)
+AC_CHECK_SIZEOF(unsigned long, 4)
+AC_CHECK_SIZEOF(long long, 0)
+AC_CHECK_SIZEOF(off_t, 4)
+AC_CHECK_SIZEOF(size_t, 4)
 
 dnl Checks for header files.
 AC_HEADER_STDC
