@@ -46,6 +46,7 @@
 
    TODO: Optionally debug this by simulating short reads. */
 
+
 #include "includes.h"
 #include "hsync.h"
 #include "private.h"
@@ -54,8 +55,8 @@
 #define IO_BUFFER_SIZE (4092)
 
 /* We'll read data in windows of this size, unless otherwise indicated. */
-int const       DEFAULT_WINDOW_SIZE = 256 * 1024; 
-int const       HS_MAP_TAG = 189900;
+static ssize_t const DEFAULT_WINDOW_SIZE = (ssize_t) (256 * 1024);
+static int const HS_MAP_TAG = 189900;
 
 
 /* 
@@ -76,8 +77,9 @@ int const       HS_MAP_TAG = 189900;
  */
 struct hs_map {
     int             tag;
-    char           *p;
-    int             fd, p_size, p_len;
+    /*@null@*/ char *p;
+    int             fd;
+    ssize_t p_size, p_len;
     hs_off_t        p_offset, p_fd_offset;
 };
 
@@ -94,8 +96,7 @@ _hs_map_file(int fd)
 
     map = (hs_map_t *) malloc(sizeof(*map));
     if (!map) {
-	_hs_fatal("map_file");
-	abort();
+	_hs_fatal("map_file couldn't allocate memory for hs_map_t");
     }
 
     map->tag = HS_MAP_TAG;
@@ -113,16 +114,19 @@ _hs_map_file(int fd)
 /* Read up to READ_SIZE bytes of data into MAP at &p[READ_OFFSET].
    Return the number of bytes added to the buffer, and set REACHED_EOF
    if appropriate. */
-int
-_hs_map_do_read(hs_map_t *map, int read_offset, int read_size, int *reached_eof)
+static ssize_t
+_hs_map_do_read(hs_map_t *map,
+		hs_off_t read_offset,
+		ssize_t read_size,
+		int *reached_eof)
 {
-    int total_read = 0;
-    int nread;
+    ssize_t total_read = 0;
+    ssize_t nread;
     
     do {
 	nread = read(map->fd,
 		     map->p + read_offset + total_read,
-		     read_size - total_read);
+		     (size_t) read_size - total_read);
 
 	if (nread < 0) {
 	    _hs_error("read error in hs_mapptr: %s", strerror(errno));
@@ -156,9 +160,13 @@ _hs_map_do_read(hs_map_t *map, int read_offset, int read_size, int *reached_eof)
    be set.
 
    LEN may be increased if more data than you requested is
-   available. */
-const char *
-_hs_map_ptr(hs_map_t * map, hs_off_t offset, int *len, int *reached_eof)
+   available.
+
+   The buffer is only valid until the next call to _hs_map_ptr on this
+   map, or until _hs_unmap_file.  You certainly MUST NOT free the
+   buffer. */
+/*@null@*/ const char *
+_hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
 {
     /* window_{start,size} define the part of the file that will in
        the future be covered by the map buffer, if we have our way.
@@ -167,11 +175,13 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, int *len, int *reached_eof)
        to read; we'll put it into the buffer starting at
        &p[read_offset]. */
     hs_off_t        window_start, read_start;
-    int             window_size, read_size, read_offset;
-    int             total_read, avail;
+    ssize_t window_size, read_size;
+    hs_off_t read_offset;
+    ssize_t             total_read, avail;
 
     assert(map->tag == HS_MAP_TAG);
-    assert(len && reached_eof);	/* check pointers */
+    assert(len != NULL);	/* check pointers */
+    assert(reached_eof != NULL);
     *reached_eof = 0;
 
     /* TODO: Perhaps we should allow this, but why? */
@@ -188,7 +198,7 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, int *len, int *reached_eof)
 
 
     /* nope, we are going to have to do a read. Work out our desired window */
-    if (offset > 2 * CHUNK_SIZE) {
+    if (offset > (hs_off_t) (2 * CHUNK_SIZE)) {
 	/* XXX: Is this useful?  If we're out of the first two blocks,
            then it tries to keep the start of the window block aligned
            in the file.  But why? */
@@ -209,14 +219,15 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, int *len, int *reached_eof)
 
     /* make sure we have allocated enough memory for the window */
     if (window_size > map->p_size) {
-	map->p = (char *) realloc(map->p, window_size);
+	map->p = (char *) realloc(map->p, (size_t) window_size);
 	if (!map->p) {
 	    _hs_fatal("map_ptr: out of memory");
-	    abort();
 	}
 	map->p_size = window_size;
     }
 
+    assert(map->p != NULL);
+    
     /* now try to avoid re-reading any bytes by reusing any bytes from the
      * previous buffer. */
     if (window_start >= map->p_offset &&
@@ -225,7 +236,8 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, int *len, int *reached_eof)
 	read_start = map->p_offset + map->p_len;
 	read_offset = read_start - window_start;
 	read_size = window_size - read_offset;
-	memmove(map->p, map->p + (map->p_len - read_offset), read_offset);
+	memmove(map->p, map->p + (map->p_len - read_offset),
+		(size_t) read_offset);
     } else {
 	read_start = window_start;
 	read_size = window_size;
