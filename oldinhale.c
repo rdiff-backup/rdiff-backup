@@ -31,6 +31,7 @@
   */
 
 #include "includes.h"
+#include "mapptr.h"
 #include "protocol.h"
 #include "command.h"
 #include "inhale.h"

@@ -21,6 +21,8 @@
 
 #include "includes.h"
 
+#include "mapptr.h"
+
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/file.h>

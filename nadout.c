@@ -26,6 +26,7 @@
  */
 
 #include "includes.h"
+#include "mapptr.h"
 #include "nad_p.h"
 #include "command.h"
 #include "emit.h"

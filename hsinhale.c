@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "includes.h"
+#include "mapptr.h"
 #include "command.h"
 #include "inhale.h"
 

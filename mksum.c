@@ -28,6 +28,8 @@
 
 #include "includes.h"
 
+#include "mapptr.h"
+
 const int       hs_mksum_job_magic = 123123;
 
 struct hs_mksum_job {

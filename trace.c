@@ -70,23 +70,10 @@ _hs_log_va(int level, char const *fn, char const *fmt, va_list va)
         char            buf[1000];
         char            full_buf[1000];
 
-	/* TODO: Use our own vsnprintf if necessary.  Sigh. */
-#ifdef have_vsnprintf
         vsnprintf(buf, sizeof buf - 1, fmt, va);
-#else
-	vsprintf(buf, fmt, va);
-#endif
 
-#ifdef HAVE_SNPRINTF
         snprintf(full_buf, sizeof full_buf - 1,
-                 "%s: %s: %s\n", MY_NAME,
-                 fn,
-                 buf);
-#else
-	sprintf(full_buf, "%s: %s: %s\n", MY_NAME,
-		fn,
-		buf);
-#endif /* HAVE_SPRINTF */
+                 "%s: %s: %s\n", MY_NAME, fn, buf);
 
 	_hs_trace_impl(level, full_buf);
     }

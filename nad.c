@@ -131,6 +131,7 @@ const int hs_encode_job_magic = 23452345;
 
 
 #include "includes.h"
+#include "mapptr.h" 
 #include "nad_p.h"
 #include "sum_p.h"
 #include "command.h"

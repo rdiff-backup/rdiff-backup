@@ -36,6 +36,7 @@
 #include "command.h"
 #include "protocol.h"
 #include "prototab.h"
+#include "mapptr.h"
 #include "inhale.h"
 
 #ifndef __LCLINT__
@@ -74,7 +75,7 @@ _hs_op_kind_name(hs_op_kind_t kind)
 }
 
 
-static int
+int
 _hs_read_varint(byte_t const *p, int len)
 {
     switch (len) {

@@ -50,6 +50,9 @@ dnl AC_CHECK_LIB(z, deflate)
 # I suppose harmless
 AC_SEARCH_LIBS(connect, [nsl socket inet])
 
+# supply a snprintf if the system doesn't have one
+AC_REPLACE_FUNCS(snprintf)
+
 dnl Check for declarations
 AC_MSG_CHECKING(for sockaddr.sin_len)
 AC_EGREP_HEADER(sin_len, sys/socket.h, 

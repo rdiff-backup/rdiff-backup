@@ -57,164 +57,95 @@
 #include "mapptr.h"
 #include "inhale.h"
 #include "protocol.h"
-
-static int
-_hs_copy(const uint32_t length,
-         hs_read_fn_t read_fn, void *read_priv,
-         hs_write_fn_t write_fn, void *write_priv, hs_mdfour_t * newsum)
-{
-    ssize_t         ret;
-    byte_t  *buf;
-
-    buf = malloc(length);
-    if (!buf)
-        goto fail;
-
-    ret = _hs_read_loop(read_fn, read_priv, buf, length);
-    if (ret >= 0 && (ret < (int32_t) length)) {
-        errno = ENODATA;
-        goto fail;
-    }
-
-    if (newsum)
-        hs_mdfour_update(newsum, buf, ret);
-
-    ret = _hs_write_loop(write_fn, write_priv, buf, ret);
-    if ((unsigned) ret != length)
-        goto fail;
-
-    free(buf);
-    return length;
-
-  fail:
-    if (buf)
-        free(buf);
-    return -1;
-}
-
+#include "vtr.h"
 
 
 static int
-_hs_check_gd_header(hs_read_fn_t ltread_fn, void *ltread_priv)
+_hs_check_gd_header(hs_map_t *map, off_t *lt_pos)
 {
-    int             ret;
     uint32_t        remote_magic, expect;
+    byte_t const    *p;
+    size_t map_len = 4;
+    int reached_eof;
 
     expect = HS_LT_MAGIC;
 
-    ret = _hs_read_netint(ltread_fn, ltread_priv, &remote_magic);
-    assert(ret == 4);
+    p = hs_map_ptr(map, *lt_pos, &map_len, &reached_eof);
+    assert(p);
+    assert(map_len >= 4);
+
+    remote_magic = _hs_read_varint(p, 4);
     if (remote_magic != expect) {
         _hs_fatal("version mismatch: %#010x != %#010x", remote_magic, expect);
         errno = EBADMSG;
         return -1;
     }
     _hs_trace("got version %#010x", remote_magic);
+
+    *lt_pos += 4;
     return 0;
 }
 
 
 static int
-_hs_check_filesum(hs_read_fn_t ltread_fn, void *ltread_priv,
-                   int length, hs_mdfour_t * newsum)
+_hs_check_filesum_vtr(hs_map_t *map, off_t *pos, size_t length, hs_mdfour_t * newsum)
 {
-    byte_t           *buf;
-    int             ret;
+    byte_t const *p;
     byte_t            actual_result[MD4_LENGTH];
+    size_t map_len = length;
+    int reached_eof;
 
-    assert(length == MD4_LENGTH);
-    buf = malloc(length);
-    assert(buf);
-
-    ret = _hs_read_loop(ltread_fn, ltread_priv, buf, length);
-    assert(ret == length);
-
+    p = hs_map_ptr(map, *pos, &map_len, &reached_eof);
+    assert(map_len >= length);
+    
     hs_mdfour_result(newsum, actual_result);
 
-    assert(memcmp(actual_result, buf, MD4_LENGTH) == 0);
+    assert(length == MD4_LENGTH);
+    assert(memcmp(actual_result, p, MD4_LENGTH) == 0);
     _hs_trace("file checksum matches");
-    free(buf);
+
+    *pos += length;
 
     return 1;
 }
 
 
-static int
-_hs_dec_copy(uint32_t offset, uint32_t length, hs_map_t *old_map,
-             hs_write_fn_t write_fn, void *write_priv, hs_mdfour_t * newsum)
-{
-    int             ret;
-    byte_t const            *buf;
-    int             at_eof;
-    size_t          mapped_len;
-
-    if (length > INT32_MAX) {
-        _hs_fatal("length %u is too big", length);
-        return -1;
-    }
-
-    mapped_len = length;
-    buf = hs_map_ptr(old_map, offset, &mapped_len, &at_eof);
-
-    if (buf == 0) {
-        _hs_error("error in read callback: off=%d, len=%d", offset, length);
-        goto fail;
-    } else if (mapped_len < length) {
-        _hs_error("short read: off=%d, len=%d, result=%d",
-                  offset, length, mapped_len);
-        errno = ENODATA;
-        goto fail;
-    }
-
-    if (newsum)
-        hs_mdfour_update(newsum, buf, length);
-
-    ret = _hs_write_loop(write_fn, write_priv, buf, length);
-    if (ret != (int) length) {
-        _hs_error("error in write callback: off=%d, len=%d", offset, length);
-        goto fail;
-    }
-
-    return length;
-
-  fail:
-    return -1;
-}
-
-
 ssize_t
-hs_decode(int oldread_fd,
-          hs_write_fn_t write_fn, void *write_priv,
-          hs_read_fn_t ltread_fn, void *ltread_priv,
-          hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats)
+hs_decode_vtr(int oldread_fd, int ltread_fd, 
+              hs_write_fn_t write_fn, void *write_priv,
+              hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats)
 {
-    int             ret;
-    uint32_t        length, offset;
-    int             kind;
+    int             result;
+    int             param1, param2;
+    hs_op_kind_t    kind;
     hs_mdfour_t     newsum;
-    hs_map_t       *old_map;
-    char                stats_str[256];
+    hs_map_t       *old_map, *lt_map;
+    char            stats_str[256];
+    off_t           lt_pos = 0;
 
     _hs_trace("**** begin");
     hs_bzero(stats, sizeof *stats);
-    if (_hs_check_gd_header(ltread_fn, ltread_priv) < 0)
-        return -1;
 
     stats->op = "decode";
     stats->algorithm = "decode";
 
     old_map = hs_map_file(oldread_fd);
+    lt_map = hs_map_file(ltread_fd);
 
+    if (_hs_check_gd_header(lt_map, &lt_pos) < 0)
+        return -1;
     hs_mdfour_begin(&newsum);
 
     /* TODO: Rewrite this to use map_ptr on the littok stream.  This
      * is not such a priority as the encoding algorithm, but it would
      * still be nice and would improve efficiency, I think. */
 
+    /* TODO: Change this to a job/callback structure like nad. */
+
     while (1) {
-        ret = _hs_inhale_command(ltread_fn, ltread_priv, &kind, &length,
-                                 &offset);
-        if (ret < 0) {
+        result = _hs_inhale_command_map(lt_map, &lt_pos, &kind,
+                                     &param1, &param2);
+        if (result != HS_DONE) {
             _hs_error("error while trying to read command byte");
             goto out;
         }
@@ -223,48 +154,48 @@ hs_decode(int oldread_fd,
             _hs_trace("EOF");
             break;              /* We're done! Cool bananas */
         } else if (kind == op_kind_literal) {
-            _hs_trace("LITERAL(len=%d)", length);
-            ret = _hs_copy(length, ltread_fn, ltread_priv, write_fn,
-                           write_priv, &newsum);
-            if (ret < 0)
+            _hs_trace("LITERAL(len=%d)", param1);
+            result = _hs_map_copy(lt_map, param1, &lt_pos, write_fn, write_priv, &newsum);
+            if (result != HS_DONE)
                 goto out;
             stats->lit_cmds++;
-            stats->lit_bytes += length;
+            stats->lit_bytes += param1;
         } else if (kind == op_kind_signature) {
-            _hs_trace("SIGNATURE(len=%d)", length);
-            ret = _hs_copy(length,
-                           ltread_fn, ltread_priv,
-                           newsig_fn, newsig_priv, NULL);
-            if (ret < 0)
+            _hs_trace("SIGNATURE(len=%d)", param1);
+            result = _hs_map_copy(lt_map, param1, &lt_pos, newsig_fn, newsig_priv, NULL);
+            if (result != HS_DONE)
                 goto out;
             stats->sig_cmds++;
-            stats->sig_bytes += length;
+            stats->sig_bytes += param1;
         } else if (kind == op_kind_copy) {
-            _hs_trace("COPY(offset=%d, len=%d)", offset, length);
-            ret = _hs_dec_copy(offset, length, old_map,
-                               write_fn, write_priv, &newsum);
-            if (ret < 0)
+            off_t copy_off = param1;
+            
+            _hs_trace("COPY(offset=%d, len=%d)", param1, param2);
+            result = _hs_map_copy(old_map, param2, &copy_off, 
+                                  write_fn, write_priv, &newsum);
+            if (result != HS_DONE)
                 goto out;
             stats->copy_cmds++;
-            stats->copy_bytes += length;
+            stats->copy_bytes += param2;
         } else if (kind == op_kind_checksum) {
-            _hs_trace("CHECKSUM(len=%d)", length);
-            ret = _hs_check_filesum(ltread_fn, ltread_priv, length, &newsum);
-            if (ret < 0)
+            _hs_trace("CHECKSUM(len=%d)", param1);
+            result = _hs_check_filesum_vtr(lt_map, &lt_pos, param1, &newsum);
+            if (result < 0)
                 goto out;
         } else {
             _hs_fatal("unexpected op kind %d!", kind);
-            ret = -1;
+            result = -1;
             goto out;
         }
     }
 
-    if (ret >= 0) {
+    if (result >= 0) {
         hs_format_stats(stats, stats_str, sizeof stats_str);
         _hs_trace("completed: %s", stats_str);
     }
 
  out:
+    _hs_unmap_file(lt_map);
     _hs_unmap_file(old_map);
 
     return 1;

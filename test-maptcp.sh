@@ -14,9 +14,24 @@ cmds=$tmpdir/cmds
 expect=$tmpdir/expect
 port=$tmpdir/port
 
-run_test make_input >$from
+run_test cat $srcdir/libhsync.a >$from
 
-for strategy in stepping ones forward 
+# NB: Can't use the `forward' pattern with map_copy because it
+# discards buffered data and can't step backwards even to the previous
+# region.
+
+for strategy in decoder stepping ones 
+do
+    run_test genmaptest $strategy 1000 $cmds $expect $from
+
+    for ioargs in '-c' '' '-k' '-n -k -s'
+    do
+	run_test sockrun -- hsmapread $debug $ioargs `cat $cmds` <$from >$new
+	run_test cmp $expect $new
+    done
+done
+
+for strategy in forward 
 do
     run_test genmaptest $strategy 1000 $cmds $expect $from
 

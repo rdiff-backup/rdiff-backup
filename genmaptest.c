@@ -30,6 +30,7 @@
 /* genmaptest -- Make up a test case and expected output for hsmapread.
  */
 
+
 #include "config.h"
 
 #include <stdlib.h>
@@ -103,7 +104,7 @@ emit(char const *buf, size_t size, off_t off, size_t len,
     fprintf(cmds, "%ld,%ld ", (long) off, (long) len);
 
     /* if this starts after the end, do nothing */
-    if (off < size) {
+    if (off < (off_t) size) {
         /* if this runs past the end, truncate */
         if (off + len > size) {
             len = size - off;
@@ -188,6 +189,42 @@ gen_ones(int ntests, char const *buf, size_t size,
 }
 
 
+
+/*
+ * Generate a pattern which looks like the decoder: read 1, read 1-7,
+ * read 1-10000.
+ */
+static void
+gen_decoder(int ntests, char const *buf, size_t size,
+            FILE *expect, FILE *cmds)
+{
+    off_t pos = 0;
+    size_t l;
+
+    while (1) {
+        if (ntests-- <= 0)
+            return;
+        l = 1;
+        emit(buf, size, pos, l, expect, cmds);
+        
+        if (ntests-- <= 0)
+            return;
+        l = rand() % 14;
+        emit(buf, size, pos, l, expect, cmds);
+        pos += l;
+        
+        if (ntests-- <= 0)
+            return;
+        l = rand() % 50000;
+        emit(buf, size, pos, l, expect, cmds);
+        pos += l;
+
+        if (pos > size)
+            return;
+    }
+}
+
+
 /*
  * Generate instructions walking forward through the file in small
  * steps, similarly to nad encoding.
@@ -211,6 +248,8 @@ gen_stepping(int ntests, char const *buf, size_t size,
 }
 
 
+
+
 static const struct {
     char const *name;
     void (*fn)(int ntests, char const *buf, size_t size,
@@ -221,6 +260,7 @@ static const struct {
     { "forward", gen_forward },
     { "ones", gen_ones },
     { "stepping", gen_stepping },
+    { "decoder", gen_decoder },
     { NULL, NULL }
 };
 

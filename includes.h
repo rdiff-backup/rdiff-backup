@@ -44,7 +44,6 @@
 #include "trace.h"
 #include "private.h"
 #include "util.h"
-#include "mapptr.h"
 #include "rollsum.h"
 #include "sumset.h"
 #include "mksum.h"

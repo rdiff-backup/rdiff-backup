@@ -47,6 +47,7 @@
  */
 
 #include "includes.h"
+#include "mapptr.h"
 #include "nad_p.h"
 #include "search.h"
 

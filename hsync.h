@@ -1,4 +1,4 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*=				       	-*- c-file-style: "bsd" -*-
  *
  * $Id$
  * 
@@ -98,7 +98,7 @@ typedef struct hs_stats {
 ssize_t
 hs_decode(int oldread_fd,
 	  hs_write_fn_t write_fn, void *write_priv,
-	  hs_read_fn_t ltread_fn, void *ltread_priv,
+          hs_read_fn_t ltread_fn, void *ltread_priv,
 	  hs_write_fn_t newsig_fn, void *newsig_priv, hs_stats_t * stats);
 
 /* ========================================

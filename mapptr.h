@@ -28,10 +28,13 @@ typedef struct hs_map   hs_map_t;
 
 hs_map_t               *hs_map_file(int fd);
 
-void const             *hs_map_ptr(hs_map_t *, off_t,
-                                    size_t * len, int *reached_eof);
+void const *hs_map_ptr(hs_map_t *, off_t, size_t *, int *reached_eof);
 
 void const             *_hs_map_walk(hs_map_t *, off_t, size_t *,
                                      int *reached_eof);
 
 void                    _hs_unmap_file(hs_map_t *);
+
+hs_result_t
+_hs_map_copy(hs_map_t *map, size_t length, off_t *pos,
+             hs_write_fn_t write_fn, void *write_priv, hs_mdfour_t * newsum);

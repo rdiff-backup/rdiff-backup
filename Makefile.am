@@ -32,6 +32,7 @@ install-exec-local:
 		$(DESTDIR)$(libdir)/libhsyncdecode.so*
 
 libhsync_a_SOURCES = \
+	vtr.c vtr.h \
 	dec.c \
 	emit.c emit.h \
 	private.h \
@@ -45,7 +46,7 @@ libhsync_a_SOURCES = \
 	inhale.c inhale.h \
 	trace.c trace.h \
 	hex.c stats.c \
-	mapptr.c mapptr.h map_p.h \
+	mapptr.c mapptr.h mapcopy.c map_p.h \
 	fileutil.c fileutil.h \
 	gdproto.c \
 	util.c util.h \
@@ -56,9 +57,10 @@ libhsync_a_SOURCES = \
 	search.c search.h \
 	nozzle.c \
 	command.h \
+	protocol.h \
 	prototab.c prototab.h \
 	oldinhale.c \
-	litbuf.c
+	litbuf.c 
 
 # TODO: If we ever care enough, build a second library containing only
 # the code necessary to be a client, and not stuff for encoding.  At
@@ -176,6 +178,4 @@ hsemit_SOURCES = hsemit.c
 
 hsinhale_SOURCES = hsinhale.c
 
-hsmapread_SOURCES = hsmapread.c filebuf.c util.c trace.c fileutil.c \
-	mapptr.c
-hsmapread_LDADD =
+hsmapread_SOURCES = hsmapread.c

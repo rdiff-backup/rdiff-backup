@@ -34,12 +34,13 @@
 
 #include "includes.h"
 
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/file.h>
 #include <string.h>
+
+#include "mapptr.h"
 
 /* The `walker' algorithm is not released yet. */
 #undef USE_WALKER
@@ -49,7 +50,8 @@ enum mapread_options
     keep_trying = 1,
     nonblocking = 2,
     use_select = 4,
-    walker = 8
+    walker = 8,
+    use_map_copy = 16
 };
 
 static void
@@ -66,6 +68,7 @@ usage(void)
            "  -w             use walker algorithm\n"
 #endif
            "  -D             turn on trace, if enabled in library\n"
+           "  -c             use _hs_map_copy\n"
            "\n"
            "Note that -n without -s will busy-wait.\n"
            "Ranges may be given either as a series of parameters, or separated\n"
@@ -103,7 +106,8 @@ select_for_read(int fd)
 
 
 static int
-copy_one_chunk(int fd, hs_map_t * map, off_t off, size_t want_len, int options)
+copy_one_chunk(int from_fd, hs_map_t * map, off_t off, size_t want_len,
+               int options)
 {
     byte_t const   *p;
     size_t          len;
@@ -133,7 +137,7 @@ copy_one_chunk(int fd, hs_map_t * map, off_t off, size_t want_len, int options)
     if (len < want_len && (options & keep_trying) && !saw_eof) {
 	_hs_trace("keep trying");
 	if (options & use_select) {
-	    if (select_for_read(fd) < 0)
+	    if (select_for_read(from_fd) < 0)
 		return 2;
 	}
 
@@ -170,12 +174,17 @@ copy_one_chunk(int fd, hs_map_t * map, off_t off, size_t want_len, int options)
  * onto the file FD, obeying OPTIONS.
  */
 static int
-read_chunks(int fd, hs_map_t * map, int argc, char **argv, int options)
+read_chunks(int from_fd, hs_map_t * map, int argc, char **argv, int options)
 {
-    int                     off;
+    off_t                   off;
     size_t                  want_len;
     int                     rc;
     char                   *o;
+    hs_filebuf_t           *out_fb;
+
+    if (options & use_map_copy) {
+        out_fb = hs_filebuf_from_fd(STDOUT_FILENO);
+    }
 
     for (; argc > 0; argc--, argv++) {
 	o = *argv;
@@ -186,8 +195,15 @@ read_chunks(int fd, hs_map_t * map, int argc, char **argv, int options)
 	    want_len = strtoul(o + 1, &o, 10);
 	    if (!(*o == '\0' || *o == ':'))
 		goto failed;
-	    if ((rc = copy_one_chunk(fd, map, off, want_len, options)))
-		return rc;
+            if (options & use_map_copy) {
+                rc = _hs_map_copy(map, want_len, &off,
+                                  hs_filebuf_write, out_fb, NULL);
+                if (rc != HS_DONE)
+                    _hs_fatal("map_copy didn't!");
+            } else { 
+                if ((rc = copy_one_chunk(from_fd, map, off, want_len, options)))
+                    return rc;
+            }
 	} while (*o++ == ':');
     }
 
@@ -226,13 +242,16 @@ chew_options(int argc, char **argv, int *options)
 {
     int             c;
 
-    while ((c = getopt(argc, argv, "knswD")) != -1)
+    while ((c = getopt(argc, argv, "cknswD")) != -1)
     {
         switch (c)
         {
         case '?':
         case ':':
             return -1;
+        case 'c':
+            *options |= use_map_copy;
+            break;
         case 'k':
             *options |= keep_trying;
             break;

@@ -139,6 +139,7 @@
 #include <string.h>
 #include <sys/file.h>
 
+#include "mapptr.h"
 #include "map_p.h"
 
 /* These values are intentionally small at the moment.  It would be
