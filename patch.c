@@ -62,7 +62,7 @@ static hs_result hs_patch_s_cmdbyte(hs_job_t *job)
 {
     hs_result result;
         
-    if ((result = hs_suck_n8(job->stream, &job->op)) != HS_DONE)
+    if ((result = hs_suck_n1(job->stream, &job->op)) != HS_DONE)
         return result;
 
     assert(job->op >= 0 && job->op <= 0xff);
@@ -141,18 +141,21 @@ static hs_result hs_patch_s_run(hs_job_t *job)
  */
 static hs_result hs_patch_s_literal(hs_job_t *job)
 {
-        int len;
-        if (job->cmd->len_1)
-                len = job->param1;
-        else
-                len = job->cmd->immediate;
+    int len;
+    if (job->cmd->len_1)
+        len = job->param1;
+    else
+        len = job->cmd->immediate;
         
-        hs_trace("copying %d bytes of literal data", len);
+    hs_trace("copying %d bytes of literal data", len);
 
-        hs_blow_copy(job->stream, len);
+    job->stats.lit_cmds++;
+    job->stats.lit_bytes += len;
 
-        job->statefn = hs_patch_s_cmdbyte;
-        return HS_RUNNING;
+    hs_blow_copy(job->stream, len);
+
+    job->statefn = hs_patch_s_cmdbyte;
+    return HS_RUNNING;
 }
 
 
@@ -164,7 +167,8 @@ static hs_result hs_patch_s_header(hs_job_t *job)
         int v;
         int result;
 
-        if ((result =hs_suck_n32(job->stream, &v)) != HS_DONE)
+        
+        if ((result =hs_suck_n4(job->stream, &v)) != HS_DONE)
                 return result;
 
         if (v != HS_DELTA_MAGIC)

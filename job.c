@@ -67,6 +67,8 @@ hs_job_t * hs_job_new(hs_stream_t *stream, char const *job_name)
     job->job_name = job_name;
     job->dogtag = hs_job_tag;
 
+    job->stats.op = job_name;
+
     hs_trace("start %s job", job_name);
 
     return job;
@@ -154,3 +156,12 @@ hs_result hs_job_iter(hs_job_t *job)
     }
 }
 
+
+/**
+ * Return pointer to statistics accumulated about this job.
+ */
+const hs_stats_t *
+hs_job_statistics(hs_job_t *job)
+{
+    return &job->stats;
+}

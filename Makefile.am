@@ -27,6 +27,7 @@
 lib_LTLIBRARIES = libhsync.la
 
 libhsync_la_SOURCES = \
+	stats.c \
 	readsums.c \
 	search.c search.h \
 	base64.c				\

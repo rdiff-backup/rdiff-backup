@@ -114,18 +114,18 @@ hs_result
 hs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
             size_t strong_len)
 {
-        hs_job_t        *job;
-        hs_stream_t     stream;
-        hs_result       r;
+    hs_job_t        *job;
+    hs_stream_t     stream;
+    hs_result       r;
 
-        hs_stream_init(&stream);
-        job = hs_sig_begin(&stream, new_block_len, strong_len);
+    hs_stream_init(&stream);
+    job = hs_sig_begin(&stream, new_block_len, strong_len);
 
-        r = hs_whole_run(job, old_file, sig_file);
+    r = hs_whole_run(job, old_file, sig_file);
 
-        hs_job_free(job);
+    hs_job_free(job);
 
-        return r;
+    return r;
 }
 
 
@@ -154,7 +154,7 @@ hs_loadsig_file(FILE *sig_file, hs_signature_t **sumset)
 
 
 hs_result
-hs_delta_file(hs_signature_t *sig, FILE *new_file, FILE *delta_file)
+hs_delta_file(hs_signature_t *sig, FILE *new_file, FILE *delta_file, hs_stats_t *stats)
 {
     hs_job_t            *job;
     hs_stream_t         stream;
@@ -165,6 +165,9 @@ hs_delta_file(hs_signature_t *sig, FILE *new_file, FILE *delta_file)
 
     r = hs_whole_run(job, new_file, delta_file);
 
+    if (stats)
+        memcpy(stats, &job->stats, sizeof *stats);
+
     hs_job_free(job);
 
     return r;
@@ -172,7 +175,7 @@ hs_delta_file(hs_signature_t *sig, FILE *new_file, FILE *delta_file)
 
 
 
-hs_result hs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file)
+hs_result hs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file, hs_stats_t *stats)
 {
     hs_job_t            *job;
     hs_stream_t         stream;
@@ -182,6 +185,9 @@ hs_result hs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file)
     job = hs_patch_begin(&stream, hs_file_copy_cb, basis_file);
 
     r = hs_whole_run(job, delta_file, new_file);
+    
+    if (stats)
+        memcpy(stats, &job->stats, sizeof *stats);
 
     hs_job_free(job);
 

@@ -92,7 +92,7 @@ static hs_result hs_loadsig_s_weak(hs_job_t *job)
     int                 l;
     hs_result           result;
 
-    result = hs_suck_n32(job->stream, &l);
+    result = hs_suck_n4(job->stream, &l);
     if (result == HS_DONE)
         ;
     else if (result == HS_INPUT_ENDED) /* ending here is OK */
@@ -130,7 +130,7 @@ static hs_result hs_loadsig_s_stronglen(hs_job_t *job)
     int                 l;
     hs_result           result;
 
-    if ((result = hs_suck_n32(job->stream, &l)) != HS_DONE)
+    if ((result = hs_suck_n4(job->stream, &l)) != HS_DONE)
         return result;
     job->strong_sum_len = l;
     
@@ -156,7 +156,7 @@ static hs_result hs_loadsig_s_blocklen(hs_job_t *job)
     int                 l;
     hs_result           result;
 
-    if ((result = hs_suck_n32(job->stream, &l)) != HS_DONE)
+    if ((result = hs_suck_n4(job->stream, &l)) != HS_DONE)
         return result;
     job->block_len = l;
 
@@ -175,7 +175,7 @@ static hs_result hs_loadsig_s_magic(hs_job_t *job)
     int                 l;
     hs_result           result;
 
-    if ((result = hs_suck_n32(job->stream, &l)) != HS_DONE) {
+    if ((result = hs_suck_n4(job->stream, &l)) != HS_DONE) {
         return result;
     } else if (l != HS_SIG_MAGIC) {
         hs_error("wrong magic number %#10x for signature", l);

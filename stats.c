@@ -2,7 +2,7 @@
  *
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,13 +20,27 @@
  */
 
 
-#include "includes.h"
+#include <config.h>
 
-#include <unistd.h>
+#include <assert.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <sys/file.h>
 #include <string.h>
 
+#include "hsync.h"
+#include "trace.h"
+
+/*
+ * TODO: Other things to show in statistics:
+ *
+ * Number of input and output bytes.
+ *
+ * Number of times we blocked waiting for input or output.
+ *
+ * Number of blocks.
+ */
 
 int
 hs_log_stats(hs_stats_t const *stats)
@@ -57,15 +71,12 @@ hs_format_stats(hs_stats_t const * stats,
 		char *buf, size_t size)
 {
     char const *op = stats->op;
-    char const *alg = stats->algorithm;
     int len;
 
     if (!op)
         op = "noop";
-    if (!alg)
-        alg = "none";
     
-    len = snprintf(buf, size, "%s/%s ", op, alg);
+    len = snprintf(buf, size, "%s ", op);
 
     if (stats->lit_cmds) {
         len += snprintf(buf+len, size-len, "literal[%d cmds, %d bytes] ",

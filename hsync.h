@@ -147,10 +147,7 @@ char const *hs_strerror(hs_result r);
  */
 typedef struct hs_stats {
     char const     *op;     /**< Human-readable name of current
-                                 * operation.  For example,
-                                 * "delta". */
-    char const *algorithm;  /**< Algorithm used to perform the
-                             * operation. */
+                             * operation.  For example, "delta". */
     int lit_cmds;           /**< Number of literal commands. */
     int lit_bytes;          /**< Number of literal bytes. */
         

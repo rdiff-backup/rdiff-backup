@@ -49,38 +49,58 @@
 #include "emit.h"
 #include "prototab.h"
 #include "netint.h"
+#include "sumset.h"
+#include "job.h"
 
 
 /*
  * Write the magic for the start of a delta.
  */
 void
-hs_emit_delta_header(hs_stream_t *stream)
+hs_emit_delta_header(hs_job_t *job)
 {
     hs_trace("emit DELTA magic");
-    hs_squirt_n32(stream, HS_DELTA_MAGIC);
+    hs_squirt_n4(job->stream, HS_DELTA_MAGIC);
 }
 
 
 
 /* Write a LITERAL command. */
 void
-hs_emit_literal_cmd(hs_stream_t *stream, int len)
+hs_emit_literal_cmd(hs_job_t *job, int len)
 {
-    int cmd = HS_OP_LITERAL_N4;
+    int cmd;
+    int bytes;
+
+    switch (bytes = hs_int_len(len)) {
+    case 1:
+        cmd = HS_OP_LITERAL_N1;
+        break;
+    case 2:
+        cmd = HS_OP_LITERAL_N2;
+        break;
+    case 4:
+        cmd = HS_OP_LITERAL_N4;
+        break;
+    default:
+        hs_fatal("What?");
+    }
     
-    hs_trace("emit LITERAL_N4(len=%d), cmd_byte=%#x", len, cmd);
-    hs_squirt_n8(stream, cmd);
-    hs_squirt_n32(stream, len);
+    hs_trace("emit LITERAL_N%d(len=%d), cmd_byte=%#x", bytes, len, cmd);
+    hs_squirt_n1(job->stream, cmd);
+    hs_squirt_netint(job->stream, len, bytes);
+
+    job->stats.lit_cmds++;
+    job->stats.lit_bytes += len;
 }
 
 
 /** Write an END command. */
 void
-hs_emit_end_cmd(hs_stream_t *stream)
+hs_emit_end_cmd(hs_job_t *job)
 {
     int cmd = HS_OP_END;
     
     hs_trace("emit END, cmd_byte=%#x", cmd);
-    hs_squirt_n8(stream, cmd);
+    hs_squirt_n1(job->stream, cmd);
 }

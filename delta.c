@@ -49,7 +49,7 @@
 
 static hs_result hs_delta_s_end(hs_job_t *job)
 {
-    hs_emit_end_cmd(job->stream);
+    hs_emit_end_cmd(job);
     return HS_DONE;
 }
 
@@ -65,7 +65,7 @@ static hs_result hs_delta_s_fake(hs_job_t *job)
 
     if (avail) {
         hs_trace("emit fake delta for %d available bytes", avail);
-        hs_emit_literal_cmd(stream, avail);
+        hs_emit_literal_cmd(job, avail);
         hs_blow_copy(stream, avail);
         return HS_RUNNING;
     } else {
@@ -84,7 +84,7 @@ static hs_result hs_delta_s_fake(hs_job_t *job)
  */
 static hs_result hs_delta_s_header(hs_job_t *job)
 {
-    hs_emit_delta_header(job->stream);
+    hs_emit_delta_header(job);
 
     job->statefn = hs_delta_s_fake;
 

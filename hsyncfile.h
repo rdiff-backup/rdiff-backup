@@ -51,6 +51,6 @@ hs_result hs_loadsig_file(FILE *sig_file, hs_signature_t **sumset);
 
 hs_result hs_file_copy_cb(void *arg, size_t *len, void **buf);
 
-hs_result hs_delta_file(hs_signature_t *, FILE *new_file, FILE *delta_file);
+hs_result hs_delta_file(hs_signature_t *, FILE *new_file, FILE *delta_file, hs_stats_t *);
 
-hs_result hs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file);
+hs_result hs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file, hs_stats_t *);

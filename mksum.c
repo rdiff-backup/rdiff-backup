@@ -58,11 +58,11 @@ static hs_result hs_sig_s_generate(hs_job_t *);
  */
 static hs_result hs_sig_s_header(hs_job_t *job)
 {
-    hs_squirt_n32(job->stream, HS_SIG_MAGIC);
+    hs_squirt_n4(job->stream, HS_SIG_MAGIC);
     
-    hs_squirt_n32(job->stream, job->block_len);
+    hs_squirt_n4(job->stream, job->block_len);
 
-    hs_squirt_n32(job->stream, job->strong_sum_len);
+    hs_squirt_n4(job->stream, job->strong_sum_len);
     hs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)",
              HS_SIG_MAGIC, job->block_len, job->strong_sum_len);
     
@@ -83,7 +83,7 @@ hs_sig_do_block(hs_job_t *job, const void *block, size_t len)
         hs_calc_strong_sum(block, len, strong_sum, job->strong_sum_len);
         hs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
 
-        hs_squirt_n32(job->stream, weak_sum);
+        hs_squirt_n4(job->stream, weak_sum);
         hs_blow_literal(job->stream, strong_sum, job->strong_sum_len);
 
         hs_trace("sent weak sum 0x%08x and strong sum %s", weak_sum,

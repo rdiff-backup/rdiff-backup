@@ -50,6 +50,8 @@
 static size_t block_len = HS_DEFAULT_BLOCK_LEN;
 static size_t strong_len = HS_DEFAULT_STRONG_LEN;
 
+static int show_stats = 0;
+
 
 /*
  * This little declaration is dedicated to Stephen Kapp and Reaper
@@ -76,8 +78,9 @@ const struct poptOption opts[] = {
     { "output-size", 'O', POPT_ARG_INT,  &hs_outbuflen },
     { "help",        '?', POPT_ARG_NONE, 0,             'h' },
     { "block-size",  'b', POPT_ARG_INT,  &block_len },
-    { "sum-size",    's', POPT_ARG_INT,  &strong_len },
-
+    { "sum-size",    'S', POPT_ARG_INT,  &strong_len },
+    { "statistics",  's', POPT_ARG_NONE, &show_stats },
+    { "stats",        0,  POPT_ARG_NONE, &show_stats },
     { 0 }
 };
 
@@ -113,13 +116,16 @@ static void help(void) {
            "             [OPTIONS] patch BASIS [DELTA [NEWFILE]]\n"
            "\n"
            "Options:\n"
-           "  -v, --verbose             trace internal processing\n"
-           "  -b, --block-size=BYTES    signature block size\n"
-           "  -s, --sum-size=BYTES      set signature strength\n"
-           "  -I, --input-size=BYTES    input buffer size\n"
-           "  -O, --output-size=BYTES   output buffer size\n"
-           "  -V, --version             show program version\n"
+           "  -v, --verbose             Trace internal processing\n"
+           "  -V, --version             Show program version\n"
            "  -?, --help                Show this help message\n"
+           "  -s, --statistics          Show performance statistics\n"
+           "Delta-encoding options:\n"
+           "  -b, --block-size=BYTES    Signature block size\n"
+           "  -S, --sum-size=BYTES      Set signature strength\n"
+           "IO options:\n"
+           "  -I, --input-size=BYTES    Input buffer size\n"
+           "  -O, --output-size=BYTES   Output buffer size\n"
            );
 }
 
@@ -172,6 +178,7 @@ static hs_result rdiff_delta(poptContext opcon)
     char const      *sig_name;
     hs_result       result;
     hs_signature_t  *sumset;
+    hs_stats_t      stats;
 
     if (!(sig_name = poptGetArg(opcon))) {
         rdiff_usage("Usage for delta: "
@@ -192,7 +199,12 @@ static hs_result rdiff_delta(poptContext opcon)
     if ((result = hs_build_hash_table(sumset)) != HS_DONE)
         return result;
 
-    return result = hs_delta_file(sumset, new_file, delta_file);
+    result = hs_delta_file(sumset, new_file, delta_file, &stats);
+
+    if (show_stats) 
+        hs_log_stats(&stats);
+
+    return result;
 }
 
 
@@ -202,6 +214,8 @@ static hs_result rdiff_patch(poptContext opcon)
     /*  patch BASIS [DELTA [NEWFILE]] */
     FILE               *basis_file, *delta_file, *new_file;
     char const         *basis_name;
+    hs_stats_t          stats;
+    hs_result           result;
 
     if (!(basis_name = poptGetArg(opcon))) {
         rdiff_usage("Usage for patch: "
@@ -215,7 +229,12 @@ static hs_result rdiff_patch(poptContext opcon)
 
     rdiff_no_more_args(opcon);
 
-    return hs_patch_file(basis_file, delta_file, new_file);
+    result = hs_patch_file(basis_file, delta_file, new_file, &stats);
+
+    if (show_stats) 
+        hs_log_stats(&stats);
+
+    return result;
 }
 
 
@@ -250,6 +269,6 @@ int main(const int argc, const char *argv[])
 
     if (result != HS_DONE)
         hs_error("failed: %s", hs_strerror(result));
-    
+
     return result;
 }

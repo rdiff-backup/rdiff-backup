@@ -58,8 +58,12 @@ struct hs_job {
     
     struct hs_prototab_ent const *cmd;
     hs_mdfour_t      output_md4;
+
+    /** Encoding statistics. */
+    hs_stats_t          stats;
 };
 
 
 hs_job_t * hs_job_new(hs_stream_t *stream, const char *);
 void hs_job_check(hs_job_t *job);
+const hs_stats_t *hs_job_statistics(hs_job_t *);

@@ -36,6 +36,13 @@
  * is not enough input to proceed.
  */
 
+/*
+ * TODO: If we don't have <stdint.h> (or perhaps even if we do),
+ * determine endianness and integer size by hand and use that to do
+ * our own conversion routines.  We possibly need this anyhow to do
+ * 64-bit integers, since there seems to be no ntohs() analog.
+ */
+
 #include <config.h>
 
 #include <assert.h>
@@ -64,7 +71,7 @@
 #include "stream.h"
 
 
-void hs_squirt_n32(hs_stream_t *stream, int d)
+void hs_squirt_n4(hs_stream_t *stream, int d)
 {
     uint32_t nd = htonl(d);
         
@@ -74,7 +81,7 @@ void hs_squirt_n32(hs_stream_t *stream, int d)
 
 
 void
-hs_squirt_n16(hs_stream_t *stream, int d)
+hs_squirt_n2(hs_stream_t *stream, int d)
 {
     uint16_t nd = htons(d);
 
@@ -83,7 +90,7 @@ hs_squirt_n16(hs_stream_t *stream, int d)
 
 
 void
-hs_squirt_n8(hs_stream_t *stream, int d)
+hs_squirt_n1(hs_stream_t *stream, int d)
 {
     uint8_t nd = d;
 
@@ -91,8 +98,24 @@ hs_squirt_n8(hs_stream_t *stream, int d)
 }
 
 
+void
+hs_squirt_netint(hs_stream_t *stream, int d, int len)
+{
+    switch (len) {
+    case 1:
+        hs_squirt_n1(stream, d);
+        break;
+    case 2:
+        hs_squirt_n2(stream, d);
+        break;
+    case 4:
+        hs_squirt_n4(stream, d);
+        break;
+    }
+}
 
-hs_result hs_suck_n32(hs_stream_t *stream, int *v)
+
+hs_result hs_suck_n4(hs_stream_t *stream, int *v)
 {
     void *p;
     int result;
@@ -106,7 +129,7 @@ hs_result hs_suck_n32(hs_stream_t *stream, int *v)
 }
 
 
-hs_result hs_suck_n8(hs_stream_t *stream, int *v)
+hs_result hs_suck_n1(hs_stream_t *stream, int *v)
 {
     void *p;
     int result;
@@ -120,14 +143,30 @@ hs_result hs_suck_n8(hs_stream_t *stream, int *v)
 }
 
 
+hs_result hs_suck_n2(hs_stream_t *stream, int *v)
+{
+    void *p;
+    int result;
+
+    if ((result = hs_scoop_read(stream, (size_t) 2, &p)) != HS_DONE)
+        return result;
+
+    *v = ntohs(*(uint16_t const *) p);
+
+    return result;
+}
+
+
 
 hs_result hs_suck_netint(hs_stream_t *stream, int len, int *v)
 {
     switch (len) {
     case 1:
-        return hs_suck_n8(stream, v);
+        return hs_suck_n1(stream, v);
+    case 2:
+        return hs_suck_n2(stream, v);
     case 4:
-        return hs_suck_n32(stream, v);
+        return hs_suck_n4(stream, v);
     default:
         hs_fatal("kaboom! can't read a %d-bit integer", len);
     }
@@ -136,19 +175,19 @@ hs_result hs_suck_netint(hs_stream_t *stream, int len, int *v)
 
 
 
-int hs_fits_in_n8(size_t val)
+int hs_fits_in_n1(size_t val)
 {
     return val <= UINT8_MAX;
 }
 
 
-int hs_fits_in_n16(size_t val)
+int hs_fits_in_n2(size_t val)
 {
     return val <= UINT16_MAX;
 }
 
 
-int hs_fits_in_n32(size_t val)
+int hs_fits_in_n4(size_t val)
 {
     return val <= UINT32_MAX;
 }
@@ -156,11 +195,11 @@ int hs_fits_in_n32(size_t val)
 
 int hs_int_len(off_t val)
 {
-    if (hs_fits_in_n8(val))
+    if (hs_fits_in_n1(val))
         return 1;
-    else if (hs_fits_in_n16(val))
+    else if (hs_fits_in_n2(val))
         return 2;
-    else if (hs_fits_in_n32(val))
+    else if (hs_fits_in_n4(val))
         return 4;
     else {
         hs_fatal("can't handle integer this long yet");

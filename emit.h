@@ -26,6 +26,6 @@
  */
 
 
-void hs_emit_delta_header(hs_stream_t *stream);
-void hs_emit_literal_cmd(hs_stream_t *stream, int len);
-void hs_emit_end_cmd(hs_stream_t *stream);
+void hs_emit_delta_header(hs_job_t *);
+void hs_emit_literal_cmd(hs_job_t *, int len);
+void hs_emit_end_cmd(hs_job_t *);
