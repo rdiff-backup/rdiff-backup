@@ -1,4 +1,4 @@
-New in v0.12.1 (2003/07/??)
+New in v0.12.1 (2003/07/22)
 ---------------------------
 
 Added --no-change-dir-inc-perms switch, to avoid some weird errors on
@@ -7,6 +7,11 @@ report.
 
 Fixed bug when regressing destination directory made with
 --windows-mode.  Reported by Tucker Sylvestro.
+
+The librsync blocksize is now chosen based on filesize.  This should
+make operations on large files faster (in some cases, orders of
+magnitude faster).  Thanks to Ty! Boyack for bringing this issue to my
+attention.
 
 
 New in v0.12.0 (2003/06/26)
