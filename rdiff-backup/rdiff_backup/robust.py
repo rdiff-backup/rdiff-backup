@@ -1,35 +1,45 @@
-import tempfile, errno, signal, cPickle
+# Copyright 2002 Ben Escoto
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
+# 02139, USA; either version 2 of the License, or (at your option) any
+# later version; incorporated herein by reference.
+
+"""Prevent mirror from being corrupted; handle errors
+
+Ideally no matter an instance of rdiff-backup gets aborted, no
+information should get lost.  The target directory should be left in a
+coherent state, and later instances of rdiff-backup should clean
+things up so there is no sign that anything ever got aborted or
+failed.
+
+Thus, files should be updated in an atomic way as possible.  Each file
+should be updated (and the corresponding diff files written) or not,
+and it should be clear which happened.  In general, I don't think this
+is possible, since the creation of the diff files and the changing of
+updated files cannot be guarateed to happen together.  It is possible,
+I think, to record various information to files which would allow a
+later process to figure out what the last operation was, but this
+would add several file operations to the processing of each file, and
+I don't think, would be a good tradeoff.
+
+The compromise reached here is that diff files should be created just
+before the mirror files are updated, and each file update should be
+done with a rename operation on a file in the same directory.
+Furthermore, every once in a while, rdiff-backup will record which
+file it just finished processing.  If any fatal errors are caught, it
+will also record the last processed file.  Future instances may not
+know exactly when the previous instance was aborted, but they will be
+able to narrow down the possibilities.
+
+"""
+
+import tempfile, errno, signal, cPickle, C
 from static import *
 
-#######################################################################
-#
-# robust - code which prevents mirror from being corrupted, error-recovery
-#
-# Ideally no matter an instance of rdiff-backup gets aborted, no
-# information should get lost.  The target directory should be left in
-# a coherent state, and later instances of rdiff-backup should clean
-# things up so there is no sign that anything ever got aborted or
-# failed.
-#
-# Thus, files should be updated in an atomic way as possible.  Each
-# file should be updated (and the corresponding diff files written) or
-# not, and it should be clear which happened.  In general, I don't
-# think this is possible, since the creation of the diff files and the
-# changing of updated files cannot be guarateed to happen together.
-# It is possible, I think, to record various information to files
-# which would allow a later process to figure out what the last
-# operation was, but this would add several file operations to the
-# processing of each file, and I don't think, would be a good
-# tradeoff.
-#
-# The compromise reached here is that diff files should be created
-# just before the mirror files are updated, and each file update
-# should be done with a rename operation on a file in the same
-# directory.  Furthermore, every once in a while, rdiff-backup will
-# record which file it just finished processing.  If any fatal errors
-# are caught, it will also record the last processed file.  Future
-# instances may not know exactly when the previous instance was
-# aborted, but they will be able to narrow down the possibilities.
 
 class RobustAction:
 	"""Represents a file operation to be accomplished later"""
@@ -243,7 +253,8 @@ class Robust:
 		"""
 		try: return function(*args)
  		except (EnvironmentError, SkipFileException, DSRPPermError,
-				RPathException, Rdiff.RdiffException), exc:
+				RPathException, Rdiff.RdiffException,
+				C.UnknownFileTypeError), exc:
 			TracebackArchive.add()
 			if (not isinstance(exc, EnvironmentError) or
 				(errno.errorcode[exc[0]] in

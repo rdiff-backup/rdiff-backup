@@ -1,7 +1,20 @@
+# Copyright 2002 Ben Escoto
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
+# 02139, USA; either version 2 of the License, or (at your option) any
+# later version; incorporated herein by reference.
+
+"""Hold a variety of constants usually set at initialization."""
+
 import re, os
 
+
 # The current version of rdiff-backup
-version = "0.9.0"
+version = "0.9.1"
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.

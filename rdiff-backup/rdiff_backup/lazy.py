@@ -1,11 +1,19 @@
+# Copyright 2002 Ben Escoto
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
+# 02139, USA; either version 2 of the License, or (at your option) any
+# later version; incorporated herein by reference.
+
+"""Define some lazy data structures and functions acting on them"""
+
 from __future__ import generators
 import os, stat, types
 from static import *
 
-#######################################################################
-#
-# lazy - Define some lazy data structures and functions acting on them
-#
 
 class Iter:
 	"""Hold static methods for the manipulation of lazy iterators"""
@@ -210,7 +218,7 @@ class IterTreeReducer:
 		self.base_index = self.index = None
 		self.subinstances = [self]
 		self.finished = None
-		self.caught_exception = None
+		self.caught_exception = self.start_successful = None
 
 	def finish_subinstances(self, index):
 		"""Run Finish() on all subinstances index has passed
@@ -235,9 +243,10 @@ class IterTreeReducer:
 
 	def call_end_proc(self):
 		"""Runs the end_process on self, checking for errors"""
-		if self.finished: self.caught_exception = 1
-		if self.caught_exception: self.log_pref_error(self.base_index)
-		Robust.check_common_error(self.on_error, self.end_process)
+		if self.finished or not self.start_successful:
+			self.caught_exception = 1
+		if self.caught_exception: self.log_prev_error(self.base_index)
+		else: Robust.check_common_error(self.on_error, self.end_process)
 		self.finished = 1
 
 	def add_subinstance(self):
@@ -248,7 +257,9 @@ class IterTreeReducer:
 
 	def process_w_subinstance(self, index, subinst, args):
 		"""Run start_process on latest subinstance"""
-		Robust.check_common_error(self.on_error, subinst.start_process, args)
+		Robust.check_common_error(subinst.on_error,
+								  subinst.start_process, args)
+		if not subinst.caught_exception: subinst.start_successful = 1
 		subinst.base_index = index
 
 	def start_process(self, *args):
@@ -278,7 +289,8 @@ class IterTreeReducer:
 
 	def log_prev_error(self, index):
 		"""Call function if no pending exception"""
-		Log("Skipping %s because of previous error" % os.path.join(*index), 2)
+		Log("Skipping %s because of previous error" %
+			(os.path.join(*index),), 2)
 
 	def __call__(self, *args):
 		"""Process args, where args[0] is current position in iterator
@@ -303,10 +315,10 @@ class IterTreeReducer:
 
 		if self.finish_subinstances(index) is None:
 			return None # We are no longer in the main tree
-		if self.caught_exception: self.log_prev_error(index)
-		else:
+		if self.subinstances[-1].start_successful:
 			subinst = self.add_subinstance()
 			self.process_w_subinstance(index, subinst, args)
+		else: self.log_prev_error(index)
 
 		self.index = index
 		return 1

@@ -1,14 +1,24 @@
+# Copyright 2002 Ben Escoto
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
+# 02139, USA; either version 2 of the License, or (at your option) any
+# later version; incorporated herein by reference.
+
+"""Wrapper class around a real path like "/usr/bin/env"
+
+The RPath and associated classes make some function calls more
+convenient (e.g. RPath.getperms()) and also make working with files on
+remote systems transparent.
+
+"""
+
 import os, stat, re, sys, shutil, gzip
 from static import *
 
-#######################################################################
-#
-# rpath - Wrapper class around a real path like "/usr/bin/env"
-#
-# The RPath and associated classes make some function calls more
-# convenient (e.g. RPath.getperms()) and also make working with files
-# on remote systems transparent.
-#
 
 class RPathException(Exception): pass
 
@@ -452,12 +462,11 @@ class RPath(RORPath):
 		"""Set data dictionary using C extension"""
 		self.data = self.conn.C.make_file_dict(self.path)
 
-	def setdata_old(self):
+	def make_file_dict_old(self):
 		"""Create the data dictionary"""
 		statblock = self.conn.RPathStatic.tupled_lstat(self.path)
 		if statblock is None:
-			self.data = {'type':None}
-			return
+			return {'type':None}
 		data = {}
 		mode = statblock[stat.ST_MODE]
 
@@ -474,7 +483,7 @@ class RPath(RORPath):
 			type = 'sym'
 			data['linkname'] = self.conn.os.readlink(self.path)
 		elif stat.S_ISSOCK(mode): type = 'sock'
-		else: raise RPathException("Unknown type for %s" % self.path)
+		else: raise C.UnknownFileError(self.path)
 		data['type'] = type
 		data['size'] = statblock[stat.ST_SIZE]
 		data['perms'] = stat.S_IMODE(mode)
@@ -487,10 +496,8 @@ class RPath(RORPath):
 		if not (type == 'sym' or type == 'dev'):
 			# mtimes on symlinks and dev files don't work consistently
 			data['mtime'] = long(statblock[stat.ST_MTIME])
-
-		if Globals.preserve_atime and not type == 'sym':
 			data['atime'] = long(statblock[stat.ST_ATIME])
-		self.data = data
+		return data
 
 	def check_consistency(self):
 		"""Raise an error if consistency of rp broken

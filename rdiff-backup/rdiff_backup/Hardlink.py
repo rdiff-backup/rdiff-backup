@@ -1,23 +1,29 @@
-from __future__ import generators
-import cPickle
+# Copyright 2002 Ben Escoto
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
+# 02139, USA; either version 2 of the License, or (at your option) any
+# later version; incorporated herein by reference.
 
-#######################################################################
-#
-# hardlink - code for preserving and restoring hardlinks
-#
-# If the preserve_hardlinks option is selected, linked files in the
-# source directory will be linked in the mirror directory.  Linked
-# files are treated like any other with respect to incrementing, but a
-# database of all links will be recorded at each session, so linked
-# files can still be restored from the increments.
-#
+"""Preserve and restore hard links
 
-"""Hardlink class methods and data
+If the preserve_hardlinks option is selected, linked files in the
+source directory will be linked in the mirror directory.  Linked files
+are treated like any other with respect to incrementing, but a
+database of all links will be recorded at each session, so linked
+files can still be restored from the increments.
 
 All these functions are meant to be executed on the destination
 side.  The source side should only transmit inode information.
 
 """
+
+from __future__ import generators
+import cPickle
+
 
 # In all of these lists of indicies are the values.  The keys in
 # _inode_ ones are (inode, devloc) pairs.
