@@ -20,7 +20,7 @@
 """Start (and end) here - read arguments, set global settings, etc."""
 
 from __future__ import generators
-import getopt, sys, re, os
+import getopt, sys, re, os, cStringIO
 from log import Log, LoggerError, ErrorLog
 import Globals, Time, SetConnections, selection, robust, rpath, \
 	   manage, backup, connection, restore, FilenameMapping, \
@@ -408,16 +408,26 @@ def restore_common(rpin, target, time):
 	Log("Restore ended", 4)
 
 def restore_set_select(mirror_rp, target):
-	"""Set the selection iterator on mirror side from command line args
+	"""Set the selection iterator on both side from command line args
 
-	Here we set the selector on the mirror side, because that is where
-	we will be filtering, but the pathnames are relative to the target
-	directory.
+	We must set both sides because restore filtering is different from
+	select filtering.  For instance, if a file is excluded it should
+	not be deleted from the target directory.
+
+	The StringIO stuff is because filelists need to be read and then
+	duplicated, because we need two copies of them now.
 
 	"""
+	def fp2string(fp):
+		buf = fp.read()
+		assert not fp.close()
+		return buf
+	select_data = map(fp2string, select_files)
 	if select_opts: 
 		mirror_rp.conn.restore.MirrorStruct.set_mirror_select(
-			target, select_opts, *select_files)
+			target, select_opts, *map(cStringIO.StringIO, select_data))
+		target.conn.restore.TargetStruct.set_target_select(
+			target, select_opts, *map(cStringIO.StringIO, select_data))
 
 def restore_start_log(rpin, target, time):
 	"""Open restore log file, log initial message"""

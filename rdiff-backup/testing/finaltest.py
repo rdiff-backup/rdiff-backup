@@ -102,6 +102,20 @@ class PathSetter(unittest.TestCase):
 		print "Restoring via cmdline: " + cmdstr
 		assert not os.system(cmdstr)
 
+	def exec_rb_restore_extra_args(self, time, extra_args, *args):
+		"""Like exec_rb_restore, but can provide extra arguments"""
+		arglist = []
+		arglist.append("--restore-as-of %s" % str(time))
+		arglist.append(extra_args)
+		arglist.append(self.src_prefix + args[0])
+		if len(args) > 1:
+			arglist.append(self.dest_prefix + args[1])
+			assert len(args) == 2
+
+		cmdstr = self.rb_schema + " ".join(arglist)
+		print "Restoring via cmdline: " + cmdstr
+		assert not os.system(cmdstr)
+		
 	def delete_tmpdirs(self):
 		"""Remove any temp directories created by previous tests"""
 		assert not os.system(MiscDir + '/myrm testfiles/output* '
@@ -411,6 +425,49 @@ testfiles/increment2/changed_dir""")
 		self.assertRaises(OSError, os.lstat,
 						  'testfiles/restoretarget1/executable2')
 
+	def testSelRestoreLocal(self):
+		"""Test selection options when restoring locally"""
+		self.set_connections(None, None, None, None)
+		self.run_sel_restore_test()
+
+	def testSelRestoreRemote(self):
+		"""Test selection options when both sides are remote"""
+		self.set_connections("test1/", "../", "test2/tmp/", "../../")
+		self.run_sel_restore_test("../../")
+
+	def run_sel_restore_test(self, prefix = ""):
+		"""Test selection options with restore"""
+		self.make_restore_sel_dir()
+		existing_file = self.make_restore_existing_target()
+		file1_target = Local.rpout1.append("file1")
+		file2_target = Local.rpout1.append("file2")
+		excludes = ("--exclude %s --exclude %s --force" %
+					(prefix + file1_target.path, prefix + existing_file.path))
+		self.exec_rb_restore_extra_args("now", excludes,
+										Local.rpout.path, Local.rpout1.path)
+		for rp in (file1_target, file2_target, existing_file):
+			rp.setdata()
+		assert not file1_target.lstat(), file1_target.lstat()
+		assert file2_target.lstat()
+		assert existing_file.lstat() # excluded file shouldn't be deleted
+
+	def make_restore_sel_dir(self):
+		"""Create rdiff-backup repository at Local.rpout"""
+		self.delete_tmpdirs()
+		Local.vft_in.mkdir()
+		rp1 = Local.vft_in.append("file1")
+		rp2 = Local.vft_in.append("file2")
+		rp1.touch()
+		rp2.touch()
+		self.exec_rb(None, Local.vft_in.path, Local.rpout.path)
+		Myrm(Local.vft_in.path)
+
+	def make_restore_existing_target(self):
+		"""Create an existing file in the restore target directory"""
+		Local.rpout1.mkdir()
+		existing_file = Local.rpout1.append("existing_file")
+		existing_file.touch()
+		return existing_file
 
 class FinalCorrupt(PathSetter):
 	"""Test messing with things a bit and making sure they still work"""

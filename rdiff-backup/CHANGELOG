@@ -1,3 +1,12 @@
+New in v0.12.7 (??????????)
+---------------------------
+
+Altered file selection when restoring so excluded files will not be
+deleted from the target dir.  The old behavior was technically
+intended and documented but not very convenient.  Thanks to Oliver
+Kaltenecker for bug report.
+
+
 New in v0.12.6 (2003/11/02)
 ---------------------------
 
