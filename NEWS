@@ -7,6 +7,8 @@ Changes in 0.5.3:
 
  * Add libhsyncinfo program to show compiled-in settings and version.
 
+ * Add test cases that run across localhost TCP sockets.
+
 Changes in 0.5.2:
 
  * Use mapptr for input. 

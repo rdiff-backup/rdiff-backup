@@ -34,4 +34,3 @@ hs_map_t       *_hs_map_file(int fd);
 
 void            _hs_unmap_file( /* @only@ */ hs_map_t * map);
 
-int             hs_file_open(char const *filename, int mode);

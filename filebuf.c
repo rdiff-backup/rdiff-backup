@@ -78,7 +78,7 @@ hs_filebuf_open(char const *filename, int mode)
 {
     int             fd;
 
-    fd = hs_file_open(filename, mode);
+    fd = _hs_file_open(filename, mode);
     if (fd == -1)
 	return NULL;
     else

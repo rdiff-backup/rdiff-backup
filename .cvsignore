@@ -30,6 +30,7 @@ libhsync-*.tar.gz
 libhsync-*.tar.gz.asc
 libhsyncinfo
 libtool
+sockcli
 socksvr
 stamp-h
 stamp-h.in

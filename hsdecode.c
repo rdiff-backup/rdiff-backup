@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 				     O_WRONLY | O_TRUNC | O_CREAT);
 	  if (!newsigfb)
 	       return 1;
-	  old_fd = hs_file_open(argv[optind], O_RDONLY);
+	  old_fd = _hs_file_open(argv[optind], O_RDONLY);
 	  if (old_fd == -1)
 	      return 1;
 	  break;

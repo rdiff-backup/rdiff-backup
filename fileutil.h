@@ -19,26 +19,5 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-
-#include "includes.h"
-
-
-void
-hs_bzero(void *buf, size_t size)
-{
-    memset(buf, 0, size);
-}
-
-
-void           *
-_hs_alloc_struct0(size_t size, char const *name)
-{
-    void           *p;
-
-    if (!(p = malloc(size))) {
-	_hs_fatal("couldn't allocate instance of %s", name);
-    }
-    hs_bzero(p, size);
-    return p;
-}
+int _hs_file_open(char const *filename, int mode);
+int _hs_file_copy_all(int from_fd, int to_fd);

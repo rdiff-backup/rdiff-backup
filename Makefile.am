@@ -26,7 +26,7 @@ libhsync_la_SOURCES = dec.c enc.c \
 	trace.c trace.h \
 	hex.c stats.c \
 	mapptr.c mapptr.h \
-	fileutil.c \
+	fileutil.c fileutil.h \
 	gdproto.c \
 	util.c util.h \
 	mksum.c mksum.h \
@@ -112,10 +112,13 @@ LDADD = libhsync.la
 bin_PROGRAMS = hsdecode hsencode hsmdfour hsmksum hsmapread hsnad \
 		libhsyncinfo
 check_PROGRAMS = hsemit hsinhale hsfilebufcat genmaptest \
-	socksvr
+	socksvr sockcli
 
 socksvr_SOURCES = socksvr.c trace.c util.c
 socksvr_LDADD =
+
+sockcli_SOURCES = sockcli.c trace.c util.c fileutil.c
+sockcli_LDADD =
 
 genmaptest_LDADD =
 

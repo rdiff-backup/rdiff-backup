@@ -253,3 +253,7 @@ int
                 _hs_newsig_header(int new_block_len,
 
 				  hs_write_fn_t write_fn, void *writeprivate);
+
+
+#include "fileutil.h"
+
