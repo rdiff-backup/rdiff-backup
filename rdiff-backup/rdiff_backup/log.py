@@ -194,21 +194,21 @@ class ErrorLog:
 	created.  See the error policy file for more info.
 
 	"""
-	log_fileobj = None
-	log_inc_rp = None
+	_log_fileobj = None
+	_log_inc_rp = None
 	def open(cls, compress = 1):
 		"""Open the error log, prepare for writing"""
-		assert not cls.log_fileobj and not cls.log_inc_rp, "log already open"
+		assert not cls._log_fileobj and not cls._log_inc_rp, "log already open"
 		if compress: typestr = 'data.gz'
 		else: typestr = 'data'
-		cls.log_inc_rp = Global.rbdir.append("error_log.%s.%s" %
-											 (Time.curtimestr, typestr))
-		assert not cls.log_inc_rp.lstat(), "Error file already exists"
-		cls.log_fileobj = cls.log_inc_rp.open("wb", compress = compress)
+		cls._log_inc_rp = Global.rbdir.append("error_log.%s.%s" %
+											  (Time.curtimestr, typestr))
+		assert not cls._log_inc_rp.lstat(), "Error file already exists"
+		cls._log_fileobj = cls._log_inc_rp.open("wb", compress = compress)
 
 	def isopen(cls):
 		"""True if the error log file is currently open"""
-		return cls.log_fileobj is not None
+		return cls._log_fileobj is not None
 
 	def write(cls, error_type, rp, exc):
 		"""Add line to log file indicating error exc with file rp"""
@@ -218,7 +218,7 @@ class ErrorLog:
 		else:
 			s = re.sub("\n", " ", s)
 			s += "\n"
-		cls.log_fileobj.write(s)
+		cls._log_fileobj.write(s)
 
 	def get_indexpath(cls, rp):
 		"""Return filename for logging.  rp is a rpath, string, or tuple"""
@@ -240,8 +240,8 @@ class ErrorLog:
 
 	def close(cls):
 		"""Close the error log file"""
-		assert not cls.log_fileobj.close()
-		cls.log_fileobj = cls.log_inc_rp = None
+		assert not cls._log_fileobj.close()
+		cls._log_fileobj = cls._log_inc_rp = None
 
 static.MakeClass(ErrorLog)
 

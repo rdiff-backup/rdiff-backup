@@ -149,24 +149,6 @@ def Collate2Iters(riter1, riter2):
 			yield (None, relem2)
 			relem2 = None
 
-def get_dissimilar_indicies(src_init_iter, dest_init_iter, statfileobj = None):
-	"""Get dissimilar indicies given two rorpiters
-
-	Returns an iterator which enumerates the indicies of the rorps
-	which are different on the source and destination ends.  If
-	statfileobj is given, call add_changed on each pair of different
-	indicies.
-
-	"""
-	collated = Collate2Iters(src_init_iter, dest_init_iter)
-	for src_rorp, dest_rorp in collated:
-		if (src_rorp and dest_rorp and src_rorp == dest_rorp and
-			(not Globals.preserve_hardlinks or
-			 Hardlink.rorp_eq(src_rorp, dest_rorp))): continue
-		if statfileobj: statfileobj.add_changed(src_rorp, dest_rorp)
-		if not dest_rorp: yield src_rorp.index
-		else: yield dest_rorp.index
-
 
 class IndexedTuple(UserList.UserList):
 	"""Like a tuple, but has .index

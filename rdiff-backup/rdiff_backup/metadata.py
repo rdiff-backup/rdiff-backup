@@ -280,6 +280,7 @@ def WriteMetadata(rorp):
 def CloseMetadata():
 	"""Close the metadata file"""
 	global metadata_rp, metadata_fileobj
+	assert metadata_fileobj, "Metadata file not open"
 	try: fileno = metadata_fileobj.fileno() # will not work if GzipFile
 	except AttributeError: fileno = metadata_fileobj.fileobj.fileno()
 	os.fsync(fileno)

@@ -90,7 +90,7 @@ def copy(rpin, rpout, compress = 0):
 
 	if rpout.lstat():
 		if rpin.isreg() or not cmp(rpin, rpout):
-			rpout.delete()   # easier to write that compare
+			rpout.delete()   # easier to write than compare
 		else: return
 
 	if rpin.isreg(): copy_reg_file(rpin, rpout, compress)
@@ -177,7 +177,7 @@ def cmp_attribs(rp1, rp2):
 	elif rp1.ischardev() and rp2.ischardev(): result = 1
 	else: result = (rp1.getmtime() == rp2.getmtime())
 	log.Log("Compare attribs of %s and %s: %s" %
-			(rp1.path, rp2.path, result), 7)
+			(rp1.get_indexpath(), rp2.get_indexpath(), result), 7)
 	return result
 
 def copy_with_attribs(rpin, rpout, compress = 0):
@@ -694,11 +694,7 @@ class RPath(RORPath):
 	def delete(self):
 		"""Delete file at self.path.  Recursively deletes directories."""
 		log.Log("Deleting %s" % self.path, 7)
-		self.setdata()
-		if not self.lstat():
-			log.Log("Warning: %s does not exist---deleted in meantime?"
-				% (self.path,), 2)
-		elif self.isdir():
+		if self.isdir():
 			try: self.rmdir()
 			except os.error: shutil.rmtree(self.path)
 		else: self.conn.os.unlink(self.path)

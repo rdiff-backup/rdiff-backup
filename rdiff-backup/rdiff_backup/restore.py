@@ -22,7 +22,7 @@
 from __future__ import generators
 import tempfile, os
 import Globals, Time, Rdiff, Hardlink, rorpiter, selection, rpath, \
-	   log, backup, static, robust, metadata
+	   log, static, robust, metadata, statistics, TempFile
 
 
 # This should be set to selection.Select objects over the source and
@@ -220,11 +220,18 @@ class TargetStruct:
 	def patch(cls, target, diff_iter):
 		"""Patch target with the diffs from the mirror side
 
-		This function was already written for use when backing up, so
-		just use that.
+		This function and the associated ITRB is similar to the
+		patching code in backup.py, but they have different error
+		correction requirements, so it seemed easier to just repeat it
+		all in this module.
 
 		"""
-		backup.DestinationStruct.patch(target, diff_iter)
+		ITR = rorpiter.IterTreeReducer(PatchITRB, [target])
+		for diff in rorpiter.FillInIter(diff_iter, target):
+			log.Log("Processing changed file " + diff.get_indexpath(), 5)
+			ITR(diff.index, diff)
+		ITR.Finish()
+		target.setdata()
 
 static.MakeClass(TargetStruct)
 
@@ -278,6 +285,7 @@ class CachedRF:
 		new_rfs = list(temp_rf.yield_sub_rfs())
 		assert new_rfs, "No RFs added for index %s" % index
 		self.rf_list[0:0] = new_rfs
+
 
 class RestoreFile:
 	"""Hold data about a single mirror file and its related increments
@@ -390,8 +398,12 @@ class RestoreFile:
 	def yield_sub_rfs(self):
 		"""Return RestoreFiles under current RestoreFile (which is dir)"""
 		assert self.mirror_rp.isdir() or self.inc_rp.isdir()
-		mirror_iter = self.yield_mirrorrps(self.mirror_rp)
-		inc_pair_iter = self.yield_inc_complexes(self.inc_rp)
+		if self.mirror_rp.isdir():
+			mirror_iter = self.yield_mirrorrps(self.mirror_rp)
+		else: mirror_iter = iter([])
+		if self.inc_rp.isdir():
+			inc_pair_iter = self.yield_inc_complexes(self.inc_rp)
+		else: inc_pair_iter = iter([])
 		collated = rorpiter.Collate2Iters(mirror_iter, inc_pair_iter)
 
 		for mirror_rp, inc_pair in collated:
@@ -405,6 +417,7 @@ class RestoreFile:
 
 	def yield_mirrorrps(self, mirrorrp):
 		"""Yield mirrorrps underneath given mirrorrp"""
+		assert mirrorrp.isdir()
 		for filename in robust.listrp(mirrorrp):
 			rp = mirrorrp.append(filename)
 			if rp.index != ('rdiff-backup-data',): yield rp
@@ -440,3 +453,92 @@ class RestoreFile:
 		keys = inc_dict.keys()
 		keys.sort()
 		for key in keys: yield inc_dict[key]
+
+
+class PatchITRB(rorpiter.ITRBranch):
+	"""Patch an rpath with the given diff iters (use with IterTreeReducer)
+
+	The main complication here involves directories.  We have to
+	finish processing the directory after what's in the directory, as
+	the directory may have inappropriate permissions to alter the
+	contents or the dir's mtime could change as we change the
+	contents.
+
+	This code was originally taken from backup.py.  However, because
+	of different error correction requirements, it is repeated here.
+
+	"""
+	def __init__(self, basis_root_rp):
+		"""Set basis_root_rp, the base of the tree to be incremented"""
+		self.basis_root_rp = basis_root_rp
+		assert basis_root_rp.conn is Globals.local_connection
+		self.statfileobj = (statistics.get_active_statfileobj() or
+							statistics.StatFileObj())
+		self.dir_replacement, self.dir_update = None, None
+		self.cached_rp = None
+
+	def get_rp_from_root(self, index):
+		"""Return RPath by adding index to self.basis_root_rp"""
+		if not self.cached_rp or self.cached_rp.index != index:
+			self.cached_rp = self.basis_root_rp.new_index(index)
+		return self.cached_rp
+
+	def can_fast_process(self, index, diff_rorp):
+		"""True if diff_rorp and mirror are not directories"""
+		rp = self.get_rp_from_root(index)
+		return not diff_rorp.isdir() and not rp.isdir()
+
+	def fast_process(self, index, diff_rorp):
+		"""Patch base_rp with diff_rorp (case where neither is directory)"""
+		rp = self.get_rp_from_root(index)
+		tf = TempFile.new(rp)
+		self.patch_to_temp(rp, diff_rorp, tf)
+		rpath.rename(tf, rp)
+
+	def patch_to_temp(self, basis_rp, diff_rorp, new):
+		"""Patch basis_rp, writing output in new, which doesn't exist yet"""
+		if diff_rorp.isflaglinked():
+			Hardlink.link_rp(diff_rorp, new, self.basis_root_rp)
+		elif diff_rorp.get_attached_filetype() == 'snapshot':
+			rpath.copy(diff_rorp, new)
+		else:
+			assert diff_rorp.get_attached_filetype() == 'diff'
+			Rdiff.patch_local(basis_rp, diff_rorp, new)
+		if new.lstat(): rpath.copy_attribs(diff_rorp, new)
+
+	def start_process(self, index, diff_rorp):
+		"""Start processing directory - record information for later"""
+		base_rp = self.base_rp = self.get_rp_from_root(index)
+		assert diff_rorp.isdir() or base_rp.isdir() or not base_rp.index
+		if diff_rorp.isdir(): self.prepare_dir(diff_rorp, base_rp)
+		else: self.set_dir_replacement(diff_rorp, base_rp)
+
+	def set_dir_replacement(self, diff_rorp, base_rp):
+		"""Set self.dir_replacement, which holds data until done with dir
+
+		This is used when base_rp is a dir, and diff_rorp is not.
+
+		"""
+		assert diff_rorp.get_attached_filetype() == 'snapshot'
+		self.dir_replacement = TempFile.new(base_rp)
+		rpath.copy_with_attribs(diff_rorp, self.dir_replacement)
+		if base_rp.isdir(): base_rp.chmod(0700)
+
+	def prepare_dir(self, diff_rorp, base_rp):
+		"""Prepare base_rp to turn into a directory"""
+		self.dir_update = diff_rorp.getRORPath() # make copy in case changes
+		if not base_rp.isdir():
+			if base_rp.lstat(): base_rp.delete()
+			base_rp.mkdir()
+		base_rp.chmod(0700)
+
+	def end_process(self):
+		"""Finish processing directory"""
+		if self.dir_update:
+			assert self.base_rp.isdir()
+			rpath.copy_attribs(self.dir_update, self.base_rp)
+		else:
+			assert self.dir_replacement
+			self.base_rp.rmdir()
+			if self.dir_replacement.lstat():
+				rpath.rename(self.dir_replacement, self.base_rp)
