@@ -1,15 +1,8 @@
                                                   -*- indented-text -*-
 $Id$
 
- * Better output conversions for long outputs
-
-   On C99 systems, we can do
-
-     printf("seek to %jd\n", (intmax_t) foo);
-
-   (Thanks to Chris Yeoh for the suggestion.)  However, not all
-   systems will understand %j or intmax_t, and so we might still need
-   to test for them.
+ * Most urgent: do rolling checksums rather than from-scratch if
+   possible.
 
  * Don't use the rs_buffers_t structure.
 
