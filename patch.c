@@ -152,7 +152,8 @@ static rs_result rs_patch_s_literal(rs_job_t *job)
     rs_trace("LITERAL(len=%ld)", (long) len);
 
     job->stats.lit_cmds++;
-    job->stats.lit_bytes += len;
+    job->stats.lit_bytes    += len;
+    job->stats.lit_cmdbytes += 1 + job->cmd->len_1;
 
     rs_tube_copy(job, len);
 
@@ -165,6 +166,7 @@ static rs_result rs_patch_s_literal(rs_job_t *job)
 static rs_result rs_patch_s_copy(rs_job_t *job)
 {
     rs_long_t  where, len;
+    rs_stats_t      *stats;
 
     where = job->param1;
     len = job->param2;
@@ -183,6 +185,12 @@ static rs_result rs_patch_s_copy(rs_job_t *job)
 
     job->basis_pos = where;
     job->basis_len = len;
+
+    stats = &job->stats;
+
+    stats->copy_cmds++;
+    stats->copy_bytes += len;
+    stats->copy_cmdbytes += 1 + job->cmd->len_1 + job->cmd->len_2;
 
     job->statefn = rs_patch_s_copying;
     return RS_RUNNING;
