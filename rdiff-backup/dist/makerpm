@@ -18,6 +18,7 @@ rpmbase = base + "-0.fdr.3" # Fedora suffix, with release number 1
 i386_rpm = rpmbase + ".i386.rpm"
 source_rpm = rpmbase + ".src.rpm"
 
+
 # These assume the rpm root directory $HOME/rpm.  The
 # nonstandard location allows for building by non-root user.
 assert not os.system("cp %s %s/SOURCES" % (tarfile, rpmroot))

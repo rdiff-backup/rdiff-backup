@@ -1,4 +1,4 @@
-# Copyright 2002, 2003 Ben Escoto
+# Copyright 2002 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -143,7 +143,7 @@ def cmp(rpin, rpout):
 	elif rpin.issock(): return rpout.issock()
 	else: raise RPathException("File %s has unknown type" % rpin.path)
 
-def copy_attribs(rpin, rpout, acls = 1):
+def copy_attribs(rpin, rpout):
 	"""Change file attributes of rpout to match rpin
 
 	Only changes the chmoddable bits, uid/gid ownership, and
@@ -153,12 +153,8 @@ def copy_attribs(rpin, rpout, acls = 1):
 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
 	check_for_files(rpin, rpout)
 	if rpin.issym(): return # symlinks have no valid attributes
-	if Globals.write_resource_forks and rpin.isreg() and rpout.isreg():
-		rpout.write_resource_fork(rpin.get_resource_fork())
-	if Globals.write_eas: rpout.write_ea(rpin.get_ea())
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if Globals.change_permissions: rpout.chmod(rpin.getperms())
-	if Globals.write_acls and acls: rpout.write_acl(rpin.get_acl())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
 
 def cmp_attribs(rp1, rp2):
@@ -172,8 +168,6 @@ def cmp_attribs(rp1, rp2):
 	if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
 		result = None
 	elif rp1.getperms() != rp2.getperms(): result = None
-	# Don't compare ctime for now, add later
-	#elif rp1.getctime() != rp2.getctime(): result = None
 	elif rp1.issym() and rp2.issym(): # Don't check times for some types
 		result = 1
 	elif rp1.isblkdev() and rp2.isblkdev(): result = 1
@@ -269,13 +263,8 @@ class RORPath:
 				pass # Don't compare gid/uid for symlinks
 			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
-			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
-			elif key == 'ea' and not Globals.read_eas: pass
-			elif key == 'acl' and not Globals.read_acls: pass
-			elif key == 'resourcefork' and not Globals.read_resource_forks:
-				pass
 			elif (key == 'inode' and
 				  (not self.isreg() or self.getnumlinks() == 1 or
 				   not Globals.compare_inode or
@@ -303,22 +292,16 @@ class RORPath:
 				  other.isreg() and other.getsize() == 0):
 				pass # Special files may be replaced with empty regular files
 			elif key == 'atime' and not Globals.preserve_atime: pass
-			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'inode': pass
-			elif key == 'ea' and not Globals.write_eas: pass
-			elif key == 'acl' and not Globals.write_acls: pass
-			elif key == 'resourcefork' and not Globals.write_resource_forks:
-				pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return 0
 		return 1
 
 	def equal_verbose(self, other, check_index = 1,
-					  compare_inodes = 0, compare_ownership = 0,
-					  compare_acls = 0, compare_eas = 0):
+					  compare_inodes = 0, compare_ownership = 0):
 		"""Like __eq__, but log more information.  Useful when testing"""
 		if check_index and self.index != other.index:
 			log.Log("Index %s != index %s" % (self.index, other.index), 2)
@@ -331,13 +314,10 @@ class RORPath:
 				pass
 			elif key == 'perms' and not Globals.change_permissions: pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
-			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'inode' and (not self.isreg() or not compare_inodes):
 				pass
-			elif key == 'ea' and not compare_eas: pass
-			elif key == 'acl' and not compare_acls: pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]):
 				if not other.data.has_key(key):
@@ -447,10 +427,6 @@ class RORPath:
 	def getmtime(self):
 		"""Return modification time in seconds"""
 		return self.data['mtime']
-
-	def getctime(self):
-		"""Return change time in seconds"""
-		return self.data['ctime']
 	
 	def getinode(self):
 		"""Return inode number of file"""
@@ -536,34 +512,6 @@ class RORPath:
 															   self.index)
 			self.file_already_open = None
 
-	def set_acl(self, acl):
-		"""Record access control list in dictionary.  Does not write"""
-		self.data['acl'] = acl
-
-	def get_acl(self):
-		"""Return access control list object from dictionary"""
-		return self.data['acl']
-
-	def set_ea(self, ea):
-		"""Record extended attributes in dictionary.  Does not write"""
-		self.data['ea'] = ea
-
-	def get_ea(self):
-		"""Return extended attributes object"""
-		return self.data['ea']
-
-	def has_resource_fork(self):
-		"""True if rpath has a resourcefork parameter"""
-		return self.data.has_key('resourcefork')
-
-	def get_resource_fork(self):
-		"""Return the resource fork in binary data"""
-		return self.data['resourcefork']
-
-	def set_resource_fork(self, rfork):
-		"""Record resource fork in dictionary.  Does not write"""
-		self.data['resourcefork'] = rfork
-
 
 class RPath(RORPath):
 	"""Remote Path class - wrapper around a possibly non-local pathname
@@ -598,7 +546,7 @@ class RPath(RORPath):
 			else: self.path = "/".join((base,) + index)
 		self.file = None
 		if data or base is None: self.data = data
-		else: self.setdata()
+		else: self.data = self.conn.C.make_file_dict(self.path)
 
 	def __str__(self):
 		return "Path: %s\nIndex: %s\nData: %s" % (self.path, self.index,
@@ -623,10 +571,6 @@ class RPath(RORPath):
 	def setdata(self):
 		"""Set data dictionary using C extension"""
 		self.data = self.conn.C.make_file_dict(self.path)
-		if Globals.read_eas and self.lstat(): self.get_ea()
-		if Globals.read_acls and self.lstat(): self.get_acl()
-		if Globals.read_resource_forks and self.isreg():
-			self.get_resource_fork()
 
 	def make_file_dict_old(self):
 		"""Create the data dictionary"""
@@ -663,7 +607,6 @@ class RPath(RORPath):
 			# mtimes on symlinks and dev files don't work consistently
 			data['mtime'] = long(statblock[stat.ST_MTIME])
 			data['atime'] = long(statblock[stat.ST_ATIME])
-			data['ctime'] = long(statblock[stat.ST_CTIME])
 		return data
 
 	def check_consistency(self):
@@ -784,7 +727,7 @@ class RPath(RORPath):
 		log.Log("Deleting %s" % self.path, 7)
 		if self.isdir():
 			try: self.rmdir()
-			except os.error: self.conn.shutil.rmtree(self.path)
+			except os.error: shutil.rmtree(self.path)
 		else: self.conn.os.unlink(self.path)
 		self.setdata()
 
@@ -990,60 +933,6 @@ class RPath(RORPath):
 		assert not fp.close()
 		return s
 
-	def get_acl(self):
-		"""Return access control list object, setting if necessary"""
-		try: acl = self.data['acl']
-		except KeyError:
-			acl = eas_acls.AccessControlList(self.index)
-			if not self.issym(): acl.read_from_rp(self)
-			self.data['acl'] = acl
-		return acl
-
-	def write_acl(self, acl):
-		"""Change access control list of rp"""
-		acl.write_to_rp(self)
-		self.data['acl'] = acl
-
-	def get_ea(self):
-		"""Return extended attributes object, setting if necessary"""
-		try: ea = self.data['ea']
-		except KeyError:
-			ea = eas_acls.ExtendedAttributes(self.index)
-			if not self.issym():
-				# Don't read from symlinks because they will be
-				# followed.  Update this when llistxattr,
-				# etc. available
-				ea.read_from_rp(self)
-			self.data['ea'] = ea
-		return ea
-
-	def write_ea(self, ea):
-		"""Change extended attributes of rp"""
-		ea.write_to_rp(self)
-		self.data['ea'] = ea
-
-	def get_resource_fork(self):
-		"""Return resource fork data, setting if necessary"""
-		assert self.isreg()
-		try: rfork = self.data['resourcefork']
-		except KeyError:
-			try:
-				rfork_fp = self.conn.open(os.path.join(self.path, 'rsrc'),
-										  'rb')
-				rfork = rfork_fp.read()
-				assert not rfork_fp.close()
-			except (IOError, OSError), e: rfork = ''
-			self.data['resourcefork'] = rfork
-		return rfork
-
-	def write_resource_fork(self, rfork_data):
-		"""Write new resource fork to self"""
-		log.Log("Writing resource fork to %s" % (self.index,), 7)
-		fp = self.conn.open(os.path.join(self.path, 'rsrc'), 'wb')
-		fp.write(rfork_data)
-		assert not fp.close()
-		self.set_resource_fork(rfork_data)
-
 
 class RPathFileHook:
 	"""Look like a file, but add closing hook"""
@@ -1060,4 +949,3 @@ class RPathFileHook:
 		self.closing_thunk()
 		return result
 
-import eas_acls # Put at end to avoid regress

@@ -1,4 +1,4 @@
-# Copyright 2002, 2003 Ben Escoto
+# Copyright 2002 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -22,8 +22,7 @@
 from __future__ import generators
 import errno
 import Globals, metadata, rorpiter, TempFile, Hardlink, robust, increment, \
-	   rpath, static, log, selection, Time, Rdiff, statistics, iterfile, \
-	   eas_acls
+	   rpath, static, log, selection, Time, Rdiff, statistics, iterfile
 
 def Mirror(src_rpath, dest_rpath):
 	"""Turn dest_rpath into a copy of src_rpath"""
@@ -123,18 +122,16 @@ class DestinationStruct:
 		destination except rdiff-backup-data directory.
 
 		"""
-		def get_iter_from_fs():
-			"""Get the combined iterator from the filesystem"""
-			sel = selection.Select(rpath)
-			sel.parse_rbdir_exclude()
-			return sel.set_iter()
-
 		if use_metadata:
-			rorp_iter = eas_acls.GetCombinedMetadataIter(
-				Globals.rbdir, Time.prevtime,
-				acls = Globals.read_acls, eas = Globals.read_eas)
-			if rorp_iter: return rorp_iter
-		return get_iter_from_fs()
+			metadata_iter = metadata.GetMetadata_at_time(Globals.rbdir,
+														 Time.prevtime)
+			if metadata_iter: return metadata_iter
+			log.Log("Warning: Metadata file not found.\n"
+					"Metadata will be read from filesystem.", 2)
+
+		sel = selection.Select(rpath)
+		sel.parse_rbdir_exclude()
+		return sel.set_iter()
 
 	def set_rorp_cache(cls, baserp, source_iter, for_increment):
 		"""Initialize cls.CCPP, the destination rorp cache
@@ -246,9 +243,7 @@ class CacheCollatedPostProcess:
 		self.cache_size = cache_size
 		self.statfileobj = statistics.init_statfileobj()
 		if Globals.file_statistics: statistics.FileStats.init()
-		metadata.MetadataFile.open_file()
-		if Globals.read_eas: eas_acls.ExtendedAttributesFile.open_file()
-		if Globals.read_acls: eas_acls.AccessControlListFile.open_file()
+		metadata.OpenMetadata()
 
 		# the following should map indicies to lists
 		# [source_rorp, dest_rorp, changed_flag, success_flag, increment]
@@ -322,13 +317,7 @@ class CacheCollatedPostProcess:
 			metadata_rorp = source_rorp
 		else: metadata_rorp = None
 		if metadata_rorp and metadata_rorp.lstat():
-			metadata.MetadataFile.write_object(metadata_rorp)
-			if Globals.read_eas and not metadata_rorp.get_ea().empty():
-				eas_acls.ExtendedAttributesFile.write_object(
-					metadata_rorp.get_ea())
-			if Globals.read_acls and not metadata_rorp.get_acl().is_basic():
-				eas_acls.AccessControlListFile.write_object(
-					metadata_rorp.get_acl())
+			metadata.WriteMetadata(metadata_rorp)
 		if Globals.file_statistics:
 			statistics.FileStats.update(source_rorp, dest_rorp, changed, inc)
 
@@ -370,9 +359,7 @@ class CacheCollatedPostProcess:
 	def close(self):
 		"""Process the remaining elements in the cache"""
 		while self.cache_indicies: self.shorten_cache()
-		metadata.MetadataFile.close_file()
-		if Globals.read_eas: eas_acls.ExtendedAttributesFile.close_file()
-		if Globals.read_acls: eas_acls.AccessControlListFile.close_file()
+		metadata.CloseMetadata()
 		if Globals.print_statistics: statistics.print_active_stats()
 		if Globals.file_statistics: statistics.FileStats.close()
 		statistics.write_active_statfileobj()
