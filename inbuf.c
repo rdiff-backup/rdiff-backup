@@ -77,7 +77,7 @@ int _hs_slide_inbuf(inbuf_t * inbuf)
 	    memcpy(inbuf->buf,
 		   inbuf->buf + inbuf->cursor,
 		   inbuf->amount - inbuf->cursor);
-	    _hs_trace(": slide %d bytes down to the start of the buffer",
+	    _hs_trace("slide %d bytes down to the start of the buffer",
 		      inbuf->amount - inbuf->cursor);
 	}
 
