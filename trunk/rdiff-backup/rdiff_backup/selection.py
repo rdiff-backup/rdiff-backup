@@ -80,19 +80,12 @@ class Select:
 	# This re should not match normal filenames, but usually just globs
 	glob_re = re.compile("(.*[*?[]|ignorecase\\:)", re.I | re.S)
 
-	def __init__(self, rootrp, quoted_filenames = None):
-		"""Select initializer.  rpath is the root directory
-
-		When files have quoted characters in them, quoted_filenames
-		should be true.  Then RPath's index will be the unquoted
-		version.
-
-		"""
+	def __init__(self, rootrp):
+		"""Select initializer.  rpath is the root directory"""
 		assert isinstance(rootrp, rpath.RPath)
 		self.selection_functions = []
 		self.rpath = rootrp
 		self.prefix = self.rpath.path
-		self.quoting_on = Globals.quoting_enabled and quoted_filenames
 
 	def set_iter(self, iterate_parents = None, sel_func = None):
 		"""Initialize more variables, get ready to iterate
@@ -103,9 +96,7 @@ class Select:
 		"""
 		if not sel_func: sel_func = self.Select
 		self.rpath.setdata() # this may have changed since Select init
-		if self.quoting_on:
-			self.iter = self.Iterate(self.rpath, self.Iterate, sel_func)
-		else: self.iter = self.Iterate_fast(self.rpath, sel_func)
+		self.iter = self.Iterate_fast(self.rpath, sel_func)
 
 		# only iterate parents if we are not starting from beginning
 		self.next = self.iter.next
@@ -113,12 +104,7 @@ class Select:
 		return self
 
 	def Iterate_fast(self, rpath, sel_func):
-		"""Like Iterate, but don't recur, saving time
-
-		Only handles standard case (quoting off, starting from
-		beginning).
-
-		"""
+		"""Like Iterate, but don't recur, saving time"""
 		def error_handler(exc, filename):
 			Log("Error initializing file %s/%s" % (rpath.path, filename), 2)
 			return None
@@ -194,17 +180,12 @@ class Select:
 			Log("Error initializing file %s/%s" % (rpath.path, filename), 2)
 			return None
 
-		if self.quoting_on:
-			for subdir in get_quoted_dir_children(rpath):
-				for rp in rec_func(subdir, rec_func, sel_func):
+		for filename in robust.listrp(rpath):
+			new_rp = robust.check_common_error(
+				error_handler, rpath.append, [filename])
+			if new_rp:
+				for rp in rec_func(new_rp, rec_func, sel_func):
 					yield rp
-		else:
-			for filename in robust.listrp(rpath):
-				new_rp = robust.check_common_error(
-					error_handler, rpath.append, [filename])
-				if new_rp:
-					for rp in rec_func(new_rp, rec_func, sel_func):
-						yield rp
 
 	def Select(self, rp):
 		"""Run through the selection functions and return dominant val 0/1/2"""
@@ -616,23 +597,5 @@ probably isn't what you meant.""" %
 			else: res = res + re.escape(c)
 		return res
 
-
-def get_quoted_dir_children(rpath):
-	"""For rpath directory, return list of quoted children in dir
-
-	This used to be in FilenameMapping, but was moved because it
-	depends on the robust.listrp routine.
-
-	"""
-	if not rpath.isdir(): return []
-	dir_pairs = [(FilenameMapping.unquote(filename), filename)
-				 for filename in robust.listrp(rpath)]
-	dir_pairs.sort() # sort by real index, not quoted part
-	child_list = []
-	for unquoted, filename in dir_pairs:
-		childrp = rpath.append(unquoted)
-		childrp.quote_path()
-		child_list.append(childrp)
-	return child_list
 
 

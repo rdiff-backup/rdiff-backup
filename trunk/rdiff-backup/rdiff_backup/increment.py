@@ -85,12 +85,19 @@ def makedir(mirrordir, incpref):
 	return dirsign
 
 def get_inc(rp, time, typestr):
-	"""Return increment like rp but with time and typestr suffixes"""
+	"""Return increment like rp but with time and typestr suffixes
+
+	To avoid any quoting, the returned rpath has empty index, and the
+	whole filename is in the base (which is not quoted).
+
+	"""
 	addtostr = lambda s: "%s.%s.%s" % (s, Time.timetostring(time), typestr)
 	if rp.index:
 		incrp = rp.__class__(rp.conn, rp.base, rp.index[:-1] +
 							 (addtostr(rp.index[-1]),))
-	else: incrp = rp.__class__(rp.conn, addtostr(rp.base), rp.index)
+	else:
+		dirname, basename = rp.dirsplit()
+		incrp = rp.__class__(rp.conn, dirname, (addtostr(basename),))
 	return incrp
 
 def get_inc_ext(rp, typestr, inctime = None):

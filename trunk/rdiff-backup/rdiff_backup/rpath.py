@@ -36,7 +36,7 @@ are dealing with are local or remote.
 """
 
 import os, stat, re, sys, shutil, gzip, socket, time
-import Globals, FilenameMapping, Time, static, log
+import Globals, Time, static, log
 
 
 class SkipFileException(Exception):
@@ -592,12 +592,6 @@ class RPath(RORPath):
 		s = self.conn.reval("lambda path: os.lstat(path).st_rdev", self.path)
 		return (s >> 8, s & 0xff)
 
-	def quote_path(self):
-		"""Set path from quoted version of index"""
-		quoted_list = [FilenameMapping.quote(path) for path in self.index]
-		self.path = "/".join([self.base] + quoted_list)
-		self.setdata()
-
 	def chmod(self, permissions):
 		"""Wrapper around os.chmod"""
 		self.conn.os.chmod(self.path, permissions)
@@ -843,7 +837,9 @@ class RPath(RORPath):
 
 	def getincbase_str(self):
 		"""Return the base filename string of an increment file"""
-		return self.getincbase().dirsplit()[1]
+		rp = self.getincbase()
+		if rp.index: return rp.index[-1]
+		else: return rp.dirsplit()[1]
 
 	def makedev(self, type, major, minor):
 		"""Make a special file with specified type, and major/minor nums"""

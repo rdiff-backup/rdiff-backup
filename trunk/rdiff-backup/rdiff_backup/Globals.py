@@ -102,19 +102,12 @@ changed_settings = []
 # The RPath of the rdiff-backup-data directory.
 rbdir = None
 
-# This string is used when recognizing and creating time strings.
-# If the time_separator is ":", then W3 datetime strings like
-# 2001-12-07T04:22:01-07:00 are produced.  It can be set to "_" to
-# make filenames that don't contain colons, which aren't allowed
-# under MS windows NT.
-time_separator = ":"
-
 # quoting_enabled is true if we should quote certain characters in
 # filenames on the source side (see FilenameMapping for more
 # info).  chars_to_quote is a string whose characters should be
 # quoted, and quoting_char is the character to quote with.
 quoting_enabled = None
-chars_to_quote = ""
+chars_to_quote = "A-Z:"
 quoting_char = ';'
 
 # If true, emit output intended to be easily readable by a

@@ -5,7 +5,7 @@ from rdiff_backup.rpath import RPath
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
 	 selection, lazy, Time, rpath
 
-SourceDir = "../src"
+SourceDir = "../rdiff_backup"
 AbsCurdir = os.getcwd() # Absolute path name of current directory
 AbsTFdir = AbsCurdir+"/testfiles"
 MiscDir = "../misc"

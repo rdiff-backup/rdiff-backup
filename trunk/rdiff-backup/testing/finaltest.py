@@ -1,6 +1,6 @@
 import unittest, os, re, sys, time
 from commontest import *
-from rdiff_backup import Globals, log, rpath, robust
+from rdiff_backup import Globals, log, rpath, robust, FilenameMapping
 
 """Regression tests"""
 
@@ -43,7 +43,7 @@ class PathSetter(unittest.TestCase):
 
 	def reset_schema(self):
 		self.rb_schema = SourceDir + \
-			 "/../rdiff-backup -v7 --remote-schema './chdir-wrapper2 %s' "
+			 "/../rdiff-backup -v5 --remote-schema './chdir-wrapper2 %s' "
 
 	def refresh(self, *rp_list):
 		"""Reread data for the given rps"""
@@ -60,20 +60,21 @@ class PathSetter(unittest.TestCase):
 	def exec_rb(self, time, *args):
 		"""Run rdiff-backup on given arguments"""
 		arglist = []
-		if time: arglist.append("--current-time %s" % str(time))
+		if time: arglist.extend(["--current-time", str(time)])
 		arglist.append(self.src_prefix + args[0])
 		if len(args) > 1:
 			arglist.append(self.dest_prefix + args[1])
 			assert len(args) == 2
 
-		cmdstr = self.rb_schema + ' '.join(arglist)
+		argstring = ' '.join(map(lambda s: "'%s'" % (s,), arglist))
+		cmdstr = self.rb_schema + argstring
 		print "executing " + cmdstr
 		assert not os.system(cmdstr)
 
 	def exec_rb_extra_args(self, time, extra_args, *args):
 		"""Run rdiff-backup on given arguments"""
 		arglist = []
-		if time: arglist.append("--current-time %s" % str(time))
+		if time: arglist.extend(["--current-time",  str(time)])
 		arglist.append(self.src_prefix + args[0])
 		if len(args) > 1:
 			arglist.append(self.dest_prefix + args[1])
@@ -166,14 +167,19 @@ class PathSetter(unittest.TestCase):
 			"testfiles/output/rdiff-backup-data/increments/nochange"))
 		assert nochange_incs == 1 or nochange_incs == 0, nochange_incs
 
-	def getinc_paths(self, basename, directory):
+	def getinc_paths(self, basename, directory, quoted = 0):
 		"""Return increment.______.dir paths"""
-		dirrp = rpath.RPath(Globals.local_connection, directory)
-		incfiles = [filename for filename in robust.listrp(dirrp)
-					if filename.startswith(basename)]
-		incfiles.sort()
-		incrps = map(lambda f: rpath.RPath(lc, directory+"/"+f), incfiles)
-		return map(lambda x: x.path, filter(rpath.RPath.isincfile, incrps))
+		if quoted:
+			FilenameMapping.set_init_quote_vals()
+			dirrp = FilenameMapping.QuotedRPath(Globals.local_connection,
+												  directory)
+		else: dirrp = rpath.RPath(Globals.local_connection, directory)
+		incbasenames = [filename for filename in robust.listrp(dirrp)
+						if filename.startswith(basename)]
+		incbasenames.sort()
+		incrps = map(dirrp.append, incbasenames)
+		return map(lambda x: x.path,
+				   filter(lambda incrp: incrp.isincfile(), incrps))
 
 
 class Final(PathSetter):
@@ -204,7 +210,7 @@ class Final(PathSetter):
 		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
 
 	def testProcRemote(self):
-		"""Test mirroring proc"""
+		"""Test mirroring proc remote"""
 		Myrm("testfiles/procoutput")
 		self.set_connections(None, None, "test2/tmp/", "../../")
 		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
@@ -226,12 +232,13 @@ class Final(PathSetter):
 
 		Globals.time_separator = "_"
 		inc_paths = self.getinc_paths("increments.",
-									  "testfiles/output/rdiff-backup-data")
+									  "testfiles/output/rdiff-backup-data", 1)
 		Globals.time_separator = ":"
-		assert len(inc_paths) == 1
+		assert len(inc_paths) == 1, inc_paths
 		# Restore increment2
 		self.exec_rb(None, inc_paths[0], 'testfiles/restoretarget2')
-		assert CompareRecursive(Local.inc2rp, Local.rpout2)
+		assert CompareRecursive(Local.inc2rp, Local.rpout2,
+								compare_hardlinks = 0)
 
 		# Now check to make sure no ":" in output directory
 		popen_fp = os.popen("find testfiles/output -name '*:*' | wc")
@@ -242,6 +249,10 @@ class Final(PathSetter):
 
 class FinalSelection(PathSetter):
 	"""Test selection options"""
+	def run(cmd):
+		print "Executing: ", cmd
+		assert not os.system(cmd)
+
 	def testSelLocal(self):
 		"""Quick backup testing a few selection options"""
 		self.delete_tmpdirs()
@@ -277,11 +288,11 @@ testfiles/increment2/changed_dir""")
 		# Test selective restoring
 		mirror_rp = rpath.RPath(Globals.local_connection, "testfiles/output")
 		restore_filename = get_increment_rp(mirror_rp, 10000).path
-		assert not os.system(self.rb_schema +
-		   "--include testfiles/restoretarget1/various_file_types/"
-							 "regular_file "
-		   "--exclude '**' " +
-		   restore_filename + " testfiles/restoretarget1")
+		self.run(self.rb_schema +
+				 "--include testfiles/restoretarget1/various_file_types/"
+				 "regular_file "
+				 "--exclude '**' " +
+				 restore_filename + " testfiles/restoretarget1")
 		assert os.lstat("testfiles/restoretarget1/various_file_types/"
 						"regular_file")
 		self.assertRaises(OSError, os.lstat, "testfiles/restoretarget1/tester")

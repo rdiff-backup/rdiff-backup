@@ -21,8 +21,8 @@
 
 from __future__ import generators
 import tempfile, os
-import Globals, Time, Rdiff, Hardlink, FilenameMapping, rorpiter, \
-	   selection, rpath, log, backup, static, robust, metadata
+import Globals, Time, Rdiff, Hardlink, rorpiter, selection, rpath, \
+	   log, backup, static, robust, metadata
 
 
 # This should be set to selection.Select objects over the source and
@@ -52,20 +52,13 @@ def Restore(mirror_rp, inc_rpath, target, restore_to_time):
 def get_inclist(inc_rpath):
 	"""Returns increments with given base"""
 	dirname, basename = inc_rpath.dirsplit()
-	parent_dir = rpath.RPath(inc_rpath.conn, dirname, ())
+	parent_dir = inc_rpath.__class__(inc_rpath.conn, dirname, ())
 	if not parent_dir.isdir(): return [] # inc directory not created yet
 	index = inc_rpath.index
 
-	if index:
-		get_inc_ext = lambda filename: \
-					  rpath.RPath(inc_rpath.conn, inc_rpath.base,
-								  inc_rpath.index[:-1] + (filename,))
-	else: get_inc_ext = lambda filename: \
-			 rpath.RPath(inc_rpath.conn, os.path.join(dirname, filename))
-
 	inc_list = []
 	for filename in parent_dir.listdir():
-		inc = get_inc_ext(filename)
+		inc = parent_dir.append(filename)
 		if inc.isincfile() and inc.getincbase_str() == basename:
 			inc_list.append(inc)
 	return inc_list
@@ -404,26 +397,17 @@ class RestoreFile:
 		for mirror_rp, inc_pair in collated:
 			if not inc_pair:
 				inc_rp = self.inc_rp.new_index(mirror_rp.index)
-				if Globals.quoting_enabled: inc_rp.quote_path()
 				inc_list = []
 			else: inc_rp, inc_list = inc_pair
 			if not mirror_rp:
 				mirror_rp = self.mirror_rp.new_index(inc_rp.index)
-				if Globals.quoting_enabled: mirror_rp.quote_path()
 			yield RestoreFile(mirror_rp, inc_rp, inc_list)
 
 	def yield_mirrorrps(self, mirrorrp):
 		"""Yield mirrorrps underneath given mirrorrp"""
-		if mirrorrp and mirrorrp.isdir():
-			if Globals.quoting_enabled:
-				for rp in selection.get_quoted_dir_children(mirrorrp):
-					if rp.index != ('rdiff-backup-data',): yield rp
-			else:
-				dirlist = mirrorrp.listdir()
-				dirlist.sort()
-				for filename in dirlist:
-					rp = mirrorrp.append(filename)
-					if rp.index != ('rdiff-backup-data',): yield rp
+		for filename in robust.listrp(mirrorrp):
+			rp = mirrorrp.append(filename)
+			if rp.index != ('rdiff-backup-data',): yield rp
 
 	def yield_inc_complexes(self, inc_rpath):
 		"""Yield (sub_inc_rpath, inc_list) IndexedTuples from given inc_rpath
@@ -433,23 +417,19 @@ class RestoreFile:
 
 		"""
 		if not inc_rpath.isdir(): return
-		inc_dict = {} # dictionary of basenames:inc_lists
+		inc_dict = {} # dictionary of basenames:IndexedTuples(index, inc_list)
 		dirlist = robust.listrp(inc_rpath)
-		if Globals.quoting_enabled:
-			dirlist = [FilenameMapping.unquote(fn) for fn in dirlist]
 
 		def affirm_dict_indexed(basename):
 			"""Make sure the rid dictionary has given basename as key"""
 			if not inc_dict.has_key(basename):
 				sub_inc_rp = inc_rpath.append(basename)
-				if Globals.quoting_enabled: sub_inc_rp.quote_path()
 				inc_dict[basename] = rorpiter.IndexedTuple(sub_inc_rp.index,
 														   (sub_inc_rp, []))
 
 		def add_to_dict(filename):
 			"""Add filename to the inc tuple dictionary"""
 			rp = inc_rpath.append(filename)
-			if Globals.quoting_enabled: rp.quote_path()
 			if rp.isincfile() and rp.getinctype() != 'data':
 				basename = rp.getincbase_str()
 				affirm_dict_indexed(basename)
