@@ -144,10 +144,10 @@ do_signature(int argc, char **argv)
 	return 1;
     }
     
-    old_file = _hs_file_open(argv[1], O_RDONLY);
-    sig_file = _hs_file_open(argv[2], output_mode);
+/*     old_file = _hs_file_open(argv[1], O_RDONLY); */
+/*     sig_file = _hs_file_open(argv[2], output_mode); */
 
-    hs_mksum_files(old_file, sig_file, block_len);
+/*     hs_mksum_files(old_file, sig_file, block_len); */
     
     return 0;
 }
@@ -164,13 +164,13 @@ do_delta(int argc, char **argv)
 	return 1;
     }
     
-    sig_file = _hs_file_open(argv[1], O_RDONLY);
-    new_file = _hs_file_open(argv[2], O_RDONLY);
-    delta_file = _hs_file_open(argv[3], output_mode);
+/*     sig_file = _hs_file_open(argv[1], O_RDONLY); */
+/*     new_file = _hs_file_open(argv[2], O_RDONLY); */
+/*     delta_file = _hs_file_open(argv[3], output_mode); */
 
-    hs_delta_files(new_file, delta_file);
+/*     hs_delta_files(new_file, delta_file); */
 
-    fclose(delta_file);
+/*     fclose(delta_file); */
     
     return 0;
 }
@@ -190,20 +190,23 @@ do_sum(int argc, char **argv)
     
     in_file = _hs_file_open(argv[1], O_RDONLY);
     
-    hs_mdfour_file(in_file, result);
-    hs_hexify(result_str, result, HS_MD4_LENGTH);
+/*     hs_mdfour_file(in_file, result); */
+/*     hs_hexify(result_str, result, HS_MD4_LENGTH); */
 
-    printf("%s\n", result_str);
+/*     printf("%s\n", result_str); */
 
     return 0;
 }
 
 
 
-static int
-do_patch(int argc, char *argv[])
+static int do_patch(int argc, char *argv[])
 {
         FILE *old_file, *delta_file, *new_file;
+        char *outbuf;
+        HSFILE *patch;
+        enum hs_result result;
+        size_t len;
 
         if (argc != 4) {
                 _hs_error("Patch operation needs three filenames: "
@@ -215,7 +218,18 @@ do_patch(int argc, char *argv[])
         delta_file = _hs_file_open(argv[2], O_RDONLY);
         new_file = _hs_file_open(argv[3], output_mode);
 
-        hs_patch_files(old_file, delta_file, new_file);
+        outbuf = malloc(hs_outbuflen);
+        assert(outbuf);
+        patch = hs_patch_open(old_file, delta_file);
+
+        do {
+                len = hs_outbuflen;
+                result = hs_patch_read(patch, outbuf, &len);
+                fwrite(outbuf, len, 1, new_file);
+        } while (result == HS_BLOCKED);
+
+        if (result != HS_OK)
+                _hs_error("patch failed: %s", hs_strerror(result));
     
         return 0;
 }
