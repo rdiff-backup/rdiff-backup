@@ -57,15 +57,17 @@ def parse_cmdlineoptions(arglist):
 		  "compare", "compare-at-time=", "current-time=", "exclude=",
 		  "exclude-device-files", "exclude-filelist=",
 		  "exclude-filelist-stdin", "exclude-globbing-filelist=",
-		  "exclude-mirror=", "exclude-other-filesystems",
-		  "exclude-regexp=", "exclude-special-files", "force",
-		  "group-mapping-file=", "include=", "include-filelist=",
-		  "include-filelist-stdin", "include-globbing-filelist=",
-		  "include-regexp=", "list-at-time=", "list-changed-since=",
-		  "list-increments", "list-increment-sizes",
-		  "never-drop-acls", "no-acls", "no-compare-inode",
-		  "no-compression", "no-compression-regexp=", "no-eas",
-		  "no-file-statistics", "no-hard-links", "null-separator",
+		  "exclude-globbing-filelist-stdin", "exclude-mirror=",
+		  "exclude-other-filesystems", "exclude-regexp=",
+		  "exclude-special-files", "force", "group-mapping-file=",
+		  "include=", "include-filelist=", "include-filelist-stdin",
+		  "include-globbing-filelist=",
+		  "include-globbing-filelist-stdin", "include-regexp=",
+		  "list-at-time=", "list-changed-since=", "list-increments",
+		  "list-increment-sizes", "never-drop-acls", "no-acls",
+		  "no-compare-inode", "no-compression",
+		  "no-compression-regexp=", "no-eas", "no-file-statistics",
+		  "no-hard-links", "null-separator",
 		  "override-chars-to-quote=", "parsable-output",
 		  "print-statistics", "remote-cmd=", "remote-schema=",
 		  "remove-older-than=", "restore-as-of=", "restrict=",
@@ -96,6 +98,10 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--exclude-globbing-filelist":
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))
+		elif opt == "--exclude-globbing-filelist-stdin":
+			select_opts.append(("--exclude-globbing-filelist",
+								"standard input"))
+			select_files.append(sys.stdin)
 		elif (opt == "--exclude-other-filesystems" or
 			  opt == "--exclude-regexp" or
 			  opt == "--exclude-special-files"): select_opts.append((opt, arg))
@@ -111,6 +117,10 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--include-globbing-filelist":
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))
+		elif opt == "--include-globbing-filelist-stdin":
+			select_opts.append(("--include-globbing-filelist",
+								"standard input"))
+			select_files.append(sys.stdin)
 		elif opt == "--include-regexp": select_opts.append((opt, arg))
 		elif opt == "--list-at-time":
 			restore_timestr, action = arg, "list-at-time"
