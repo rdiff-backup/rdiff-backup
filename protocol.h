@@ -3,7 +3,7 @@
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
  * Copyright (C) 1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or
@@ -41,5 +41,5 @@
 
 
 
-#define HS_DELTA_MAGIC          0x67640236      /* g d \2 6" */
-#define HS_SIG_MAGIC            0x67640136      /* g d \1 6" */
+#define HS_DELTA_MAGIC          0x72730236      /* r s \2 6" */
+#define HS_SIG_MAGIC            0x72730136      /* r s \1 6" */
