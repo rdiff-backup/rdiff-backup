@@ -40,10 +40,13 @@ install-sh
 latex
 librsync-*.tar.gz
 librsync-*.tar.gz.asc
+librsync.html
 librsyncinfo
 libtool
 ltconfig
 ltmain.sh
+man_librsync.html
+man_rdiff.html
 missing
 mkinstalldirs
 prototab.c
