@@ -58,6 +58,19 @@ AC_CHECK_SIZEOF([long long], 0)
 AC_CHECK_SIZEOF(off_t, 4)
 AC_CHECK_SIZEOF(size_t, 4)
 
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+  [[#include <sys/types.h>
+#ifndef LONG_LONG
+#error not defined
+#endif]],
+  [;])],
+  [ RS_LONG_T='LONG_LONG' ],
+  [ case "$ac_cv_sizeof_long_long" in
+    0) RS_LONG_T='long' ;;
+    *) RS_LONG_T='long long' ;;
+    esac ])
+AC_SUBST(RS_LONG_T)
+
 # Checks for library functions.
 #AC_FUNC_MALLOC      #XXX: needs malloc.c replacement  
 #AC_FUNC_MEMCMP      #XXX: needs memcmp.c replacement
@@ -108,5 +121,6 @@ AC_CONFIG_FILES([
   doc/Makefile 
   doc/Doxyfile 
   popt/Makefile 
-  testsuite/Makefile])
+  testsuite/Makefile
+  librsync-config.h])
 AC_OUTPUT
