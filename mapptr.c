@@ -46,16 +46,23 @@
    available. */
 
 
-/* TODO: Test this through a unix-domain socket and see what happens.
+/* TODO: Test this through a unix-domain or TCP localhost socket and
+ * see what happens.
  * 
  * TODO: Optionally debug this by simulating short reads.
  *
  * TODO: Make the default buffer smaller and make sure we test what
- * happens when it grows. */
+ * happens when it grows.
+ *
+ * TODO: Add an option to say we will never seek backwards, and so old
+ * data can be discarded immediately.
+ *
+ * TODO: Is it really worth the trouble of handling files that grow?
+ * */
 
 /* The Unix98 pread(2) function is pretty interesting: it reads data
-   at a given offset, but without moving the file offset and in only a
-   single call.  Cute, but probably pointless in this application. */
+ * at a given offset, but without moving the file offset and in only a
+ * single call.  Cute, but probably pointless in this application. */
 
 /* mapptr is fine, but it's not optimized for reading from a socket into
  * nad.
@@ -69,6 +76,19 @@
  *
  * On the other hand perhaps having less code is more important than
  * all the code being optimal. */
+
+
+/*----------------------------------------------------------------------
+ *
+ *  ====================================================  file
+ *     ||||||||||||||||||||||||||||||||||||||||||         buffer
+ *             $$$$$$$$$$$$$$$$$$$$$$$$$$                 window
+ *
+ * We have three overlapping extents here: the file is the sequence of
+ * bytes from the stream.  The buffer covers a certain region of it,
+ * but not all of the buffer is necessarily valid.  The window is the
+ * section of the buffer that contains valid data. */
+
 
 #include "includes.h"
 
@@ -114,7 +134,7 @@ struct hs_map {
    The file cursor is assumed to be at position 0 when this is called.
    For nonseekable files this is arbitrary; for seekable files bad
    things will happen if that's not true and we later have to seek. */
-hs_map_t       *
+hs_map_t *
 _hs_map_file(int fd)
 {
     hs_map_t       *map;
