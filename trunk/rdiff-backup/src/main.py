@@ -348,7 +348,7 @@ went wrong during your last backup?  Using """ + mirrorrps[-1].path, 2)
 		"""
 		self.restore_check_paths(rpin, target, 1)
 		try: time = Time.genstrtotime(self.restore_timestr)
-		except TimeError, exp: Log.FatalError(str(exp))
+		except TimeError, exc: Log.FatalError(str(exc))
 		self.restore_common(rpin, target, time)
 
 	def restore_common(self, rpin, target, time):
@@ -456,7 +456,7 @@ Try restoring from an increment file (the filenames look like
 						   (datadir.path,))
 
 		try: time = Time.genstrtotime(self.remove_older_than_string)
-		except TimeError, exp: Log.FatalError(str(exp))
+		except TimeError, exc: Log.FatalError(str(exc))
 		timep = Time.timetopretty(time)
 		Log("Deleting increment(s) before %s" % timep, 4)
 

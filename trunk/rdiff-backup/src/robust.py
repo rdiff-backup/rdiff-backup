@@ -1,4 +1,4 @@
-import tempfile
+import tempfile, errno
 execfile("hardlink.py")
 
 #######################################################################
@@ -56,10 +56,10 @@ class RobustAction:
 		try:
 			self.init_thunk()
 			self.final_thunk()
-		except Exception, exp: # Catch all errors
+		except Exception, exc: # Catch all errors
 			Log.exception()
-			self.error_thunk(exp)
-			raise exp
+			self.error_thunk(exc)
+			raise exc
 
 
 class Robust:
@@ -79,8 +79,8 @@ class Robust:
 				ra.init_thunk()
 		def final():
 			for ra in robust_action_list: ra.final_thunk()
-		def error(exp):
-			for ra in ras_with_completed_inits: ra.error_thunk(exp)
+		def error(exc):
+			for ra in ras_with_completed_inits: ra.error_thunk(exc)
 		return RobustAction(init, final, error)
 
 	def chain_nested(robust_action_list):
@@ -94,8 +94,8 @@ class Robust:
 			ralist_copy = robust_action_list[:]
 			ralist_copy.reverse()
 			for ra in ralist_copy: ra.final_thunk()
-		def error(exp):
-			for ra in ras_with_completed_inits: ra.error_thunk(exp)
+		def error(exc):
+			for ra in ras_with_completed_inits: ra.error_thunk(exc)
 		return RobustAction(init, final, error)
 
 	def make_tf_robustaction(init_thunk, tempfiles, final_renames = None):
@@ -118,7 +118,7 @@ class Robust:
 						if final_name.isdir(): # Cannot rename over directory
 							final_name.delete()
 						tempfiles[i].rename(final_name)
-		def error(exp):
+		def error(exc):
 			for tf in tempfiles: tf.delete()
 		return RobustAction(init_thunk, final, error)
 
@@ -203,7 +203,7 @@ class Robust:
 				RPathException), exc:
 			Log.exception()
 			if (not isinstance(exc, EnvironmentError) or
-				(errno.errorcode[exp[0]] in
+				(errno.errorcode[exc[0]] in
 				 ['EPERM', 'ENOENT', 'EACCES', 'EBUSY', 'EEXIST',
 				  'ENOTDIR', 'ENAMETOOLONG', 'EINTR', 'ENOTEMPTY',
 				  'EIO', # reported by docv
@@ -363,7 +363,7 @@ class SaveState:
 							('increments',) + last_file_rorp.index)
 			return Robust.symlink_action(cls._last_file_sym, symtext)
 		else: return RobustAction(lambda: None, cls.touch_last_file,
-								  lambda exp: None)
+								  lambda exc: None)
 
 	def checkpoint_inc_backup(cls, ITR, finalizer, last_file_rorp,
 							  override = None):

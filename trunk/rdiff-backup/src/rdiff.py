@@ -107,7 +107,7 @@ class Rdiff:
 		delta_tf = TempFileManager.new(rp_out, None)
 		def init(): delta_tf.write_from_fileobj(delta_fileobj)
 		return Robust.chain_nested([RobustAction(init, delta_tf.delete,
-												 lambda exp: delta_tf.delete),
+												 lambda exc: delta_tf.delete),
 									Rdiff.patch_action(rp_basis, delta_tf,
 													   rp_out, out_tf)])
 
@@ -130,7 +130,7 @@ class Rdiff:
 		return Robust.chain(Rdiff.write_delta_action(rpout, rpin, delta_tf),
 							Rdiff.patch_action(rpout, delta_tf),
 							RobustAction(lambda: None, delta_tf.delete,
-										 lambda exp: delta_tf.delete))
+										 lambda exc: delta_tf.delete))
 
 MakeStatic(Rdiff)
 
