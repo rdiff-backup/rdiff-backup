@@ -175,7 +175,7 @@ rs_mdfour64(rs_mdfour_t * m, const void *p)
  * There are some nice endianness routines in glib, including assembler
  * variants. If we ever depended on glib, then it could be good to use them
  * instead. */
-static void
+inline static void
 copy4( /* @out@ */ unsigned char *out, uint32_t const x)
 {
     out[0] = x;
@@ -188,7 +188,7 @@ copy4( /* @out@ */ unsigned char *out, uint32_t const x)
 /* We need this if there is a uint64 */
 /* --robert.weber@Colorado.edu	     */
 #ifdef HAVE_UINT64
-static void
+inline static void
 copy8( /* @out@ */ unsigned char *out, uint64_t const x)
 {
     out[0] = x;
@@ -205,7 +205,7 @@ copy8( /* @out@ */ unsigned char *out, uint64_t const x)
 
 /* We only need this if we are big-endian */
 #ifdef WORDS_BIGENDIAN
-static void
+inline static void
 copy64( /* @out@ */ uint32_t * M, unsigned char const *in)
 {
     int i=16;
@@ -221,7 +221,7 @@ copy64( /* @out@ */ uint32_t * M, unsigned char const *in)
  * Accumulate a block, making appropriate conversions for bigendian
  * machines.
  */
-static void
+inline static void
 rs_mdfour_block(rs_mdfour_t *md, void const *p)
 {
     uint32_t        M[16];
@@ -236,7 +236,7 @@ rs_mdfour_block(rs_mdfour_t *md, void const *p)
 #  ifdef __i386__
 
 /* If we are on an IA-32 machine, we can process directly. */
-static void
+inline static void
 rs_mdfour_block(rs_mdfour_t *md, void const *p)
 {
     rs_mdfour64(md,p);
@@ -247,7 +247,7 @@ rs_mdfour_block(rs_mdfour_t *md, void const *p)
 /* We are little-endian, but not on i386 and therefore may not be able
  * to do unaligned access safely/quickly.  So copy the input block to
  * an aligned buffer first. */
-static void
+inline static void
 rs_mdfour_block(rs_mdfour_t *md, void const *p)
 {
     uint32_t        M[16];
