@@ -18,6 +18,7 @@ class LibrsyncTest(unittest.TestCase):
 	new = RPath(Globals.local_connection, "testfiles/new")
 	new2 = RPath(Globals.local_connection, "testfiles/new2")
 	sig = RPath(Globals.local_connection, "testfiles/signature")
+	sig2 = RPath(Globals.local_connection, "testfiles/signature2")
 	delta = RPath(Globals.local_connection, "testfiles/delta")
 	def testSigFile(self):
 		"""Make sure SigFile generates same data as rdiff"""
@@ -36,6 +37,26 @@ class LibrsyncTest(unittest.TestCase):
 
 			assert rdiff_sig == librsync_sig, \
 				   (len(rdiff_sig), len(librsync_sig))
+
+	def testSigGenerator(self):
+		"""Test SigGenerator, make sure it's same as SigFile"""
+		for i in range(5):
+			MakeRandomFile(self.basis.path)
+
+			sf = librsync.SigFile(self.basis.open("rb"))
+			sigfile_string = sf.read()
+			sf.close()
+
+			sig_gen = librsync.SigGenerator()
+			infile = self.basis.open("rb")
+			while 1:
+				buf = infile.read(1000)
+				if not buf: break
+				sig_gen.update(buf)
+			siggen_string = sig_gen.getsig()
+
+			assert sigfile_string == siggen_string, \
+				   (len(sigfile_string), len(siggen_string))
 
 	def OldtestDelta(self):
 		"""Test delta generation against Rdiff"""

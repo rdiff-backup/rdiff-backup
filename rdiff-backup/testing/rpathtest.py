@@ -67,6 +67,11 @@ class CheckPerms(RPathTest):
 		assert self.rp_prefix.append('executable').getperms() == 0755
 		assert self.rp_prefix.append('executable2').getperms() == 0700
 
+	def testhighbits(self):
+		"""Test reporting of highbit permissions"""
+		p = RPath(self.lc, "testfiles/rpath2/foobar").getperms()
+		assert p == 04100, p
+
 	def testOrdinaryReport(self):
 		"""Ordinary file permissions..."""
 		assert self.rp_prefix.append("regular_file").getperms() == 0644
