@@ -694,10 +694,3 @@ class FilterIterITRB(rorpiter.ITRBranch):
 			assert s == 2, s
 			self.base_queue = next_rorp
 
-
-
-
-
-
-
-
