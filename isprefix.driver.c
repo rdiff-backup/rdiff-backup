@@ -1,4 +1,4 @@
-/*=                                     -*- c-file-style: "linux" -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
@@ -31,7 +31,7 @@ static void usage(void)
 }
 
 /*
- * Test driver for strisprefix.  Compares the two parameters; returns
+ * Test driver for isprefix.  Compares the two parameters; returns
  * true (0) if a prefix, false (1) otherwise.
  */
 int main(int argc, char **argv)
@@ -41,12 +41,12 @@ int main(int argc, char **argv)
     }
 
     if (strcmp(argv[1], "!")) { 
-	return !strisprefix(argv[1], argv[2]);
+	return !isprefix(argv[1], argv[2]);
     } else {
 	/* inverted */
 	if (argc < 4) {
 	    usage();
 	}
-	return strisprefix(argv[2], argv[3]);
+	return isprefix(argv[2], argv[3]);
     }
 }
