@@ -76,7 +76,7 @@
 /**
  * Try to accept a from the input buffer to get LEN bytes in the scoop.
  */
-static void rs_scoop_input(rs_job_t *job, size_t len)
+void rs_scoop_input(rs_job_t *job, size_t len)
 {
     rs_buffers_t *stream = job->stream;
     size_t tocopy;
