@@ -26,15 +26,18 @@ Wayne Davison <wayned@users.sourceforge.net>
   - librsync sf project admin
   - sf project creation, import cvs etc
   - many cvs commits of submitted patches
+  - rsync.h -> librsync.h rename
+  - librsync-conf.h addition and config.h issue resolution
 Martin Pool <mbp@users.sourceforge.net>
   - sf project admin 
   - sf project developers setup
 Donovan Baarda <abo@minkirri.apana.org.au>
   - librsync sf project admin
   - sf project tracker and lists setup
-  - MSVC6 and cygwin compiling patch
+  - MSVC6 and cygwin compiling patch and updates
   - mdfour optimisations and cleanups patch
   - autconf/autmake cleanups
+  - large file debugging and fixes
   - build and release
 Ben Escoto <bescoto@users.sourceforge.net>
   - librsync sf project admin
@@ -53,3 +56,5 @@ Mark Moraes <moraes@sbcglobal.net>
   - cygwin testsuite fixes email patch
 Robert Collins <robert.collins@itdomain.com.au>
   - autoconf/automake cleanups email (old patch)
+Paul Green <lists@webleicester.co.uk>
+  - large file testing and debugging
