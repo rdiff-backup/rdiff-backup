@@ -114,27 +114,23 @@ def remove_rbdir_increments():
 def iterate_raw_rfs(mirror_rp, inc_rp):
 	"""Iterate all RegressFile objects in mirror/inc directory
 
-	Also changes permissions of unreadable files to allow access and
-	then changes them back later.
+	Also changes permissions of unreadable files.  We don't have to
+	change them back later because regress will do that for us.
 
 	"""
 	root_rf = RegressFile(mirror_rp, inc_rp, restore.get_inclist(inc_rp))
 	def helper(rf):
 		mirror_rp = rf.mirror_rp
-		if (Globals.process_uid != 0 and
-			((mirror_rp.isreg() and not mirror_rp.readable()) or
-			 (mirror_rp.isdir() and not mirror_rp.hasfullperms()))):
-			unreadable, old_perms = 1, mirror_rp.getperms()
-			if mirror_rp.isreg(): mirror_rp.chmod(0400 | old_perms)
-			else: mirror_rp.chmod(0700 | old_perms)
-		else: unreadable = 0
+		if Globals.process_uid != 0:
+			if mirror_rp.isreg() and not mirror_rp.readable():
+				mirror_rp.chmod(0400 | mirror_rp.getperms())
+			elif mirror_rp.isdir() and not mirror_rp.hasfullperms():
+				mirror_rp.chmod(0700 | mirror_rp.getperms())
 		yield rf
-		if unreadable and mirror_rp.isreg(): mirror_rp.chmod(old_perms)
 		if rf.mirror_rp.isdir() or rf.inc_rp.isdir():
 			for sub_rf in rf.yield_sub_rfs():
 				for sub_sub_rf in helper(sub_rf):
 					yield sub_sub_rf
-		if unreadable and mirror_rp.isdir(): mirror_rp.chmod(old_perms)
 	return helper(root_rf)
 
 def yield_metadata():
@@ -248,14 +244,14 @@ class RegressITRB(rorpiter.ITRBranch):
 		if rf.mirror_rp.isreg():
 			tf = TempFile.new(rf.mirror_rp)
 			tf.write_from_fileobj(rf.get_restore_fp())
-			rpath.copy_attribs(rf.metadata_rorp, tf)
 			tf.fsync_with_dir() # make sure tf fully written before move
+			rpath.copy_attribs(rf.metadata_rorp, tf)
 			rpath.rename(tf, rf.mirror_rp) # move is atomic
 		else:
 			if rf.mirror_rp.lstat(): rf.mirror_rp.delete()
 			rf.mirror_rp.write_from_fileobj(rf.get_restore_fp())
 			rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
-		rf.mirror_rp.fsync_with_dir() # require move before inc delete
+		rf.mirror_rp.get_parent_rp().fsync() # require move before inc delete
 
 	def start_process(self, index, rf):
 		"""Start processing directory"""
