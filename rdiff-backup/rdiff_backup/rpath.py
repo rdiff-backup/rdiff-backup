@@ -1021,13 +1021,16 @@ class RPath(RORPath):
 		assert self.isreg()
 		try: rfork = self.data['resourcefork']
 		except KeyError:
-			rfork = self.append('rsrc').get_data()
+			rfork_fp = self.conn.open(os.path.join(self.path, 'rsrc'), 'rb')
+			rfork = rfork_fp.read()
+			assert not rfork_fp.close()
 			self.data['resourcefork'] = rfork
 		return rfork
 
 	def write_resource_fork(self, rfork_data):
 		"""Write new resource fork to self"""
-		fp = self.append('rsrc').open('wb')
+		log.Log("Writing resource fork to %s" % (self.index,), 7)
+		fp = self.conn.open(os.path.join(self.path, 'rsrc'), 'wb')
 		fp.write(rfork_data)
 		assert not fp.close()
 
