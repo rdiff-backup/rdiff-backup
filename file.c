@@ -20,10 +20,17 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+/*
+ * file.c -- This looks after the high-level, stdio-flavoured
+ * interface.
+ */
 
-                               /*
-                                * It was a cold and lonely winter
-                                */
+
+                              /*
+                               * "You know, it'd be much cheaper if
+                               * you flew on the 25th of December."
+                               */
+
 
 #include "config.h"
 
@@ -109,11 +116,19 @@ enum hs_result hs_patch_read(HSFILE *f, void *buf, size_t *len)
                                    pf->delta_file);
 		
 		result = hs_patch_iter(pf->job);
-		if (result == HS_BLOCKED && feof(pf->delta_file) && !pf->stream->avail_in)
+                
+		if (result == HS_BLOCKED && feof(pf->delta_file) &&
+                    !pf->stream->avail_in) {
+                        /* The library wants more input, but it has
+                         * none in its internal buffer and we're at
+                         * the end of the file.  Therefore the delta
+                         * must have been truncated. */
 			result = HS_SHORT_STREAM;
+                }
 	} while (result == HS_BLOCKED);
 
-        *len = pf->stream->avail_out;
+        /* Return the amount of output actually available. */
+        *len = hs_outbuflen - pf->stream->avail_out;
 
 	return result;
 }
