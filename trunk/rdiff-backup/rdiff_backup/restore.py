@@ -154,16 +154,13 @@ class MirrorStruct:
 
 		"""
 		if rest_time is None: rest_time = _rest_time
-		if Globals.write_eas:
-			metadata_iter = eas_acls.ExtendedAttributesFile.\
-			 get_combined_iter_at_time(
-			 Globals.rbdir, rest_time, restrict_index = cls.mirror_base.index)
-		else:
-			metadata_iter = metadata.MetadataFile.get_objects_at_time(
-			 Globals.rbdir, rest_time, restrict_index = cls.mirror_base.index)
-		if metadata_iter: rorp_iter = metadata_iter
-		elif require_metadata: log.Log.FatalError("Mirror metadata not found")
-		else:
+
+		rorp_iter = eas_acls.GetCombinedMetadataIter(
+			Globals.rbdir, rest_time, restrict_index = cls.mirror_base.index,
+			acls = Globals.write_acls, eas = Globals.write_eas)
+		if not rorp_iter:
+			if require_metadata:
+				log.Log.FatalError("Mirror metadata not found")
 			log.Log("Warning: Mirror metadata not found, "
 					"reading from directory", 2)
 			rorp_iter = cls.get_rorp_iter_from_rf(cls.root_rf)

@@ -8,9 +8,14 @@ attributes, access control lists, hard links, ownership, and directory
 fsyncing.  Options such as --windows-mode, --chars-to-quote,
 --quoting-char, and --windows-restore-mode have been removed.
 
-Now rdiff-backup supports extended attributes.  To take advantage of
-this you will need the python module pyxattr and a file system that
-supports EAs.  Thanks to Greg Freemyer for discussion.
+Now rdiff-backup supports user extended attributes (EAs).  To take
+advantage of this you will need the python module pyxattr and a file
+system that supports EAs.  Thanks to Greg Freemyer for valuable
+discussion on EA and ACL support.
+
+Support for access control lists (ACLs) was also added.  An ACL
+capable file system and the python package pylibacl (which exports the
+posix1e module) are required.
 
 Added --list-increment-sizes switch, which tells you how much space
 the various backup files take up.  (Suggested by Andrew Bressen)
