@@ -15,7 +15,7 @@ remote.
 Fixed --include error reporting bug reported by Ben Edwards.
 
 Small change so 'door' files and other unknown file types will be
-ignored.
+ignored.  (Thanks for Steve Simitzis for sending in a patch for this.)
 
 Fixed bug noticed by Dean Gaudet where, unless the
 --change-source-perms option is specified, rdiff-backup wouldn't even
