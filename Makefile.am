@@ -3,9 +3,12 @@
 
 ## $Id$
 
-CFLAGS += -W -Wall -g @DEFS@
-
 lib_LTLIBRARIES = libhsync.la
+
+# This is NOT the libhsync release number.  Rather, it is a
+# CURRENT:REVISION:AGE tuple describing binary compatibility to
+# libtool.
+libhsync_la_LDFLAGS = -version-info @libhsync_libversion@
 
 libhsync_la_SOURCES = dec.c enc.c \
 	emit.c emit.h \

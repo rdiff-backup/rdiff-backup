@@ -17,14 +17,16 @@ To build libhsync:
   * Make
   * libc-dev
 
-To run the regression suite (strongly recommended):
-
-  * Python 1.5
-
 To build from CVS, or to develop the library:
 
   * automake
   * autoconf
   * libtool
+
+>> Library Versions
+
+libhsync uses the GNU libtool library versioning system, so the
+filename does not correspond to the libhsync release.  To show the
+library release and version, use the libhsyncinfo tool.
 
 $Id$

@@ -22,6 +22,7 @@
 
 
 extern char const *const hs_libhsync_version;
+extern char const *const hs_libhsync_libversion;
 
 #if HAVE_OFF64_T
 typedef off_t   hs_off_t;

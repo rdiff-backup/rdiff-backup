@@ -28,6 +28,7 @@ hsmksum
 hsnad
 libhsync-*.tar.gz
 libhsync-*.tar.gz.asc
+libhsyncinfo
 libtool
 stamp-h
 stamp-h.in
