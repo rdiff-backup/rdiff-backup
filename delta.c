@@ -164,8 +164,8 @@ rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
     rs_long_t            match_where;
     int                  search_pos, end_pos;
     unsigned char        *inptr = (unsigned char *) p;
-    uint32_t             s1 = job->weak_sig & 0xFFFF;
-    uint32_t             s2 = job->weak_sig >> 16;
+    unsigned             s1 = job->weak_sig & 0xFFFF;
+    unsigned             s2 = job->weak_sig >> 16;
 
     if (job->basis_len) {
         rs_log(RS_LOG_ERR, "somehow got nonzero basis_len");
@@ -190,8 +190,18 @@ rs_delta_scan(rs_job_t *job, rs_long_t avail_len, void *p)
     for (search_pos = 0; search_pos <= end_pos; search_pos++) {
         size_t this_len = job->block_len;
             
-        /* Did we inherit the signature from rs_delta_match?*/
+        /* Did we inherit the signature from rs_delta_match, if
+         * so we know this block won't match and we should simply
+         * skip the first char.
+         */
         if (job->have_weak_sig < 0) {
+            /* advance by one; roll out the byte we just skipped over. */
+            unsigned char a = inptr[search_pos];
+            unsigned shift = a + RS_CHAR_OFFSET;
+
+            s1 -= shift;
+            s2 -= this_len * shift;
+            job->weak_sig = (s1 & 0xffff) | (s2 << 16);
             job->have_weak_sig = 1;
             /* We already know that this block won't match!*/
             continue;
