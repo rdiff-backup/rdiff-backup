@@ -128,6 +128,7 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time):
 
 	"""
 	Main.force = 1
+	Main.restore_root_set = 0
 	remote_schema = '%s'
 	#_reset_connections()
 	if not mirror_local:
@@ -221,7 +222,7 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 			Log("%s: %s" % (dest_rorp.index,
 							Hardlink.get_indicies(dest_rorp, None)), 3)
 			return None
-		if compare_eas and not eas_acls.compare_rps(src_rorp, dest_rorp):
+		if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
 			Log("Different EAs in files %s and %s" %
 				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
 			return None
@@ -240,7 +241,7 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 				if dest_rorp.index[-1].endswith('gz'): return 1
 				# Don't compare .missing increments because they don't matter
 				if dest_rorp.index[-1].endswith('.missing'): return 1
-		if compare_eas and not eas_acls.compare_rps(src_rorp, dest_rorp):
+		if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
 			Log("Different EAs in files %s and %s" %
 				(src_rorp.get_indexpath(), dest_rorp.get_indexpath()))
 			return None

@@ -1,6 +1,8 @@
-Use ctime to check whether files have been changed
+Use ctime to check whether files have been changed.  See message:
+http://mail.gnu.org/archive/html/rdiff-backup-users/2003-06/msg00050.html
+by Andrew Bressen.
 
-Include some option to summarize space taken up
+Profile 0.13.0
 
 ---------[ Medium term ]---------------------------------------
 
