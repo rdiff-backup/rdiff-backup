@@ -80,7 +80,7 @@ make_manyfiles() {
 
 echo "$test_name"
 
-. $srcdir/$test_script $*
+. $test_script $*
 
 # If nothing failed, then
 exit 0
