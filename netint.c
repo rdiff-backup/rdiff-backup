@@ -71,7 +71,7 @@
 rs_result
 rs_squirt_byte(rs_job_t *job, unsigned char d)
 {
-    rs_blow_literal(job, &d, 1);
+    rs_tube_write(job, &d, 1);
     return RS_DONE;
 }
 
@@ -103,7 +103,7 @@ rs_squirt_netint(rs_job_t *job, rs_long_t d, int len)
         d >>= 8;
     }
 
-    rs_blow_literal(job, buf, len);
+    rs_tube_write(job, buf, len);
 
     return RS_DONE;
 }

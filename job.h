@@ -72,10 +72,10 @@ struct rs_job {
     size_t      scoop_alloc;
     size_t      scoop_avail;
         
-    /** If USED is >0, then buf contains that much literal data to
+    /** If USED is >0, then buf contains that much write data to
      * be sent out. */
-    char        lit_buf[16];
-    int         lit_len;
+    char        write_buf[16];
+    int         write_len;
 
     /** If COPY_LEN is >0, then that much data should be copied
      * through from the input. */

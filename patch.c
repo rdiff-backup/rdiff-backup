@@ -149,7 +149,7 @@ static rs_result rs_patch_s_literal(rs_job_t *job)
     job->stats.lit_cmds++;
     job->stats.lit_bytes += len;
 
-    rs_blow_copy(job, len);
+    rs_tube_copy(job, len);
 
     job->statefn = rs_patch_s_cmdbyte;
     return RS_RUNNING;

@@ -99,13 +99,14 @@
 static const int RS_STREAM_DOGTAG = 2001125;
 
 
-/*
- * Copy up to MAX_LEN bytes from input of STREAM to its output.  Return
- * the number of bytes actually copied, which may be less than LEN if
- * there is not enough space in one or the other stream.
+/**
+ * \brief Copy up to \p max_len bytes from input of \b stream to its output.
+ *
+ * Return the number of bytes actually copied, which may be less than
+ * LEN if there is not enough space in one or the other stream.
  *
  * This always does the copy immediately.  Most functions should call
- * rs_blow_copy to cause the copy to happen gradually as space
+ * rs_tube_copy() to cause the copy to happen gradually as space
  * becomes available.
  */
 int rs_buffers_copy(rs_buffers_t *stream, int max_len)
@@ -129,7 +130,7 @@ int rs_buffers_copy(rs_buffers_t *stream, int max_len)
 
     if (!len)
         return 0;
-    rs_trace("stream copied chunk of %d bytes", len);
+/*     rs_trace("stream copied chunk of %d bytes", len); */
 
     memcpy(stream->next_out, stream->next_in, len);
     

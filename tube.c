@@ -71,12 +71,12 @@
 #include "stream.h"
 
 
-static void rs_tube_catchup_literal(rs_job_t *job)
+static void rs_tube_catchup_write(rs_job_t *job)
 {
     rs_buffers_t *stream = job->stream;
     int len, remain;
 
-    len = job->lit_len;
+    len = job->write_len;
     assert(len > 0);
 
     assert(len > 0);
@@ -88,23 +88,23 @@ static void rs_tube_catchup_literal(rs_job_t *job)
         return;
     }
 
-    memcpy(stream->next_out, job->lit_buf, len);
+    memcpy(stream->next_out, job->write_buf, len);
     stream->next_out += len;
     stream->avail_out -= len;
 
-    remain = job->lit_len - len;
-    rs_trace("transmitted %d literal bytes from tube, "
+    remain = job->write_len - len;
+    rs_trace("transmitted %d write bytes from tube, "
              "%d remain to be sent",
              len, remain);
 
     if (remain > 0) {
         /* Still something left in the tube... */
-        memmove(job->lit_buf, job->lit_buf + len, remain);
+        memmove(job->write_buf, job->write_buf + len, remain);
     } else {
         assert(remain == 0);
     }
 
-    job->lit_len = remain;
+    job->write_len = remain;
 }
 
 
@@ -137,7 +137,7 @@ rs_tube_copy_from_scoop(rs_job_t *job)
 
     job->copy_len -= this_len;
 
-    rs_trace("catch up on %d copied bytes from scoop, %d remain there, "
+    rs_trace("caught up on %d copied bytes from scoop, %d remain there, "
              "%d remain to be copied", 
              this_len, job->scoop_avail, job->copy_len);
 }
@@ -155,7 +155,7 @@ static void rs_tube_catchup_copy(rs_job_t *job)
 {
     rs_buffers_t *stream = job->stream;
 
-    assert(job->lit_len == 0);
+    assert(job->write_len == 0);
     assert(job->copy_len > 0);
 
     if (job->scoop_avail  && job->copy_len) {
@@ -170,8 +170,8 @@ static void rs_tube_catchup_copy(rs_job_t *job)
 
         job->copy_len -= this_copy;
 
-        rs_trace("transmitted %d copy bytes from tube, %d remain to be copied",
-                 this_copy, job->copy_len);
+        rs_trace("copied %ld bytes from input buffer, %ld remain to be copied",
+                 (long) this_copy, (long) job->copy_len);
     }
 }
 
@@ -183,11 +183,11 @@ static void rs_tube_catchup_copy(rs_job_t *job)
  */
 int rs_tube_catchup(rs_job_t *job)
 {
-    if (job->lit_len)
-        rs_tube_catchup_literal(job);
+    if (job->write_len)
+        rs_tube_catchup_write(job);
 
-    if (job->lit_len) {
-        /* there is still literal data queued, so we can't send
+    if (job->write_len) {
+        /* there is still write data queued, so we can't send
          * anything else. */
         return RS_BLOCKED;
     }
@@ -207,7 +207,7 @@ int rs_tube_catchup(rs_job_t *job)
  * output. */
 int rs_tube_is_idle(rs_job_t const *job)
 {
-    return job->lit_len == 0 && job->copy_len == 0;
+    return job->write_len == 0 && job->copy_len == 0;
 }
 
 
@@ -216,7 +216,7 @@ int rs_tube_is_idle(rs_job_t const *job)
  * the output of the stream.
  *
  * The data is copied from the scoop (if there is anything there) or
- * from the input, on the next call to rs_blow_literal().
+ * from the input, on the next call to rs_tube_write().
  *
  * We can only accept this request if there is no copy command already
  * pending.
@@ -225,7 +225,7 @@ int rs_tube_is_idle(rs_job_t const *job)
  * people can try to continue if possible.  Is this really required?
  * Callers can just go out and back in again after flushing the
  * tube. */
-void rs_blow_copy(rs_job_t *job, int len)
+void rs_tube_copy(rs_job_t *job, int len)
 {
     assert(job->copy_len == 0);
 
@@ -239,19 +239,19 @@ void rs_blow_copy(rs_job_t *job, int len)
  * supposed to get very big, so this will just pop loudly if you do
  * that.
  *
- * We can't accept literal data if there's already a copy command in the
- * tube, because the literal data comes out first.
+ * We can't accept write data if there's already a copy command in the
+ * tube, because the write data comes out first.
  */
 void
-rs_blow_literal(rs_job_t *job, const void *buf, size_t len)
+rs_tube_write(rs_job_t *job, const void *buf, size_t len)
 {
     assert(job->copy_len == 0);
 
-    if (len > sizeof(job->lit_buf) - job->lit_len) {
-        rs_fatal("tube popped when trying to blow %ld literal bytes!",
+    if (len > sizeof(job->write_buf) - job->write_len) {
+        rs_fatal("tube popped when trying to write %ld bytes!",
                  (long) len);
     }
 
-    memcpy(job->lit_buf + job->lit_len, buf, len);
-    job->lit_len += len;
+    memcpy(job->write_buf + job->write_len, buf, len);
+    job->write_len += len;
 }

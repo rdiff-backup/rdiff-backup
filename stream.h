@@ -31,8 +31,8 @@ int rs_buffers_is_empty(rs_buffers_t *stream);
 int rs_buffers_copy(rs_buffers_t *stream, int len);
 
 int rs_tube_catchup(rs_job_t *);
-void rs_blow_literal(rs_job_t *, void const *buf, size_t len);
-void rs_blow_copy(rs_job_t *, int len);
+void rs_tube_write(rs_job_t *, void const *buf, size_t len);
+void rs_tube_copy(rs_job_t *, int len);
 int rs_tube_is_idle(rs_job_t const *);
 void rs_check_tube(rs_job_t *);
 

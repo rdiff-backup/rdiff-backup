@@ -81,7 +81,7 @@ rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
     rs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
 
     rs_squirt_n4(job, weak_sum);
-    rs_blow_literal(job, strong_sum, job->strong_sum_len);
+    rs_tube_write(job, strong_sum, job->strong_sum_len);
 
     rs_trace("sent weak sum 0x%08x and strong sum %s", weak_sum,
              strong_sum_hex);
