@@ -26,7 +26,8 @@ do
     do
         for new in $old $old*~
         do
-            [ ! -r $new -o ! -r $old ] && continue
+            test ! -r $new && continue
+            test ! -r $old && continue
             echo $old $new
             triple_test $buf $old $new 
             triple_test $buf $new $old
