@@ -103,6 +103,7 @@ class LowLevelPipeConnection(Connection):
 	b - string
 	q - quit signal
 	R - RPath
+	Q - QuotedRPath
 	r - RORPath only
 	c - PipeConnection object
 
@@ -127,6 +128,8 @@ class LowLevelPipeConnection(Connection):
 		log.Log.conn("sending", obj, req_num)
 		if type(obj) is types.StringType: self._putbuf(obj, req_num)
 		elif isinstance(obj, connection.Connection):self._putconn(obj, req_num)
+		elif isinstance(obj, FilenameMapping.QuotedRPath):
+			self._putqrpath(obj, req_num)
 		elif isinstance(obj, rpath.RPath): self._putrpath(obj, req_num)
 		elif isinstance(obj, rpath.RORPath): self._putrorpath(obj, req_num)
 		elif ((hasattr(obj, "read") or hasattr(obj, "write"))
@@ -163,6 +166,12 @@ class LowLevelPipeConnection(Connection):
 		rpath_repr = (rpath.conn.conn_number, rpath.base,
 					  rpath.index, rpath.data)
 		self._write("R", cPickle.dumps(rpath_repr, 1), req_num)
+
+	def _putqrpath(self, qrpath, req_num):
+		"""Put a quoted rpath into the pipe (similar to _putrpath above)"""
+		qrpath_repr = (qrpath.conn.conn_number, qrpath.base,
+					   qrpath.index, qrpath.data)
+		self._write("Q", cPickle.dumps(qrpath_repr, 1), req_num)
 
 	def _putrorpath(self, rorpath, req_num):
 		"""Put an rorpath into the pipe
@@ -235,6 +244,7 @@ class LowLevelPipeConnection(Connection):
 			result = iterfile.FileToRORPIter(VirtualFile(self, int(data)))
 		elif format_string == "r": result = self._getrorpath(data)
 		elif format_string == "R": result = self._getrpath(data)
+		elif format_string == "Q": result = self._getqrpath(data)
 		else:
 			assert format_string == "c", header_string
 			result = Globals.connection_dict[int(data)]
@@ -251,6 +261,12 @@ class LowLevelPipeConnection(Connection):
 		conn_number, base, index, data = cPickle.loads(raw_rpath_buf)
 		return rpath.RPath(Globals.connection_dict[conn_number],
 						   base, index, data)
+
+	def _getqrpath(self, raw_qrpath_buf):
+		"""Return QuotedRPath object from raw buffer"""
+		conn_number, base, index, data = cPickle.loads(raw_qrpath_buf)
+		return FilenameMapping.QuotedRPath(
+			Globals.connection_dict[conn_number], base, index, data)
 
 	def _close(self):
 		"""Close the pipes associated with the connection"""
