@@ -6,7 +6,7 @@ SourceDir = "src"
 
 if len(sys.argv) == 2:
 	version = sys.argv[1]
-	specfile = "rdiff-backup-%s-1.spec" % version
+	specfile = "rdiff-backup-%s-2.spec" % version
 	print "Using specfile %s" % specfile
 else:
 	print "Syntax:  %s version_number" % sys.argv[0]
