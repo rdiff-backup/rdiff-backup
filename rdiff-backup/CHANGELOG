@@ -4,6 +4,10 @@ New in v0.12.6 (??????????)
 Yet another unreadable file non-root regress bug fix.  Sorry about
 that.
 
+Added --list-increment-sizes option from the development branch.
+Previously this option was in the man page but was omitted in the code
+(thanks to Michael Schwendt for report).
+
 
 New in v0.12.5 (2003/09/27)
 ---------------------------
