@@ -200,8 +200,7 @@ class Robust:
 		"""
 		try: return init_thunk()
  		except (EnvironmentError, SkipFileException, DSRPPermError,
-				RPathException), exc:
-			Log.exception()
+				RPathException, RdiffException), exc:
 			if (not isinstance(exc, EnvironmentError) or
 				(errno.errorcode[exc[0]] in
 				 ['EPERM', 'ENOENT', 'EACCES', 'EBUSY', 'EEXIST',
@@ -209,8 +208,11 @@ class Robust:
 				  'EIO', # reported by docv
 				  'ETXTBSY' # reported by Campbell on some NT system
 				  ])):
+				Log.exception()
 				return error_thunk(exc)
-			else: raise
+			else:
+				Log.exception(1, 2)
+				raise
 
 	def listrp(rp):
 		"""Like rp.listdir() but return [] if error, and sort results"""

@@ -241,7 +241,7 @@ class IterTreeReducer:
 
 	def Finish(self):
 		"""Call at end of sequence to tie everything up"""
-		assert not self.finished
+		assert not self.finished, (self.base_index, self.index)
 		if self.subinstance:
 			self.subinstance.Finish()
 			self.branch_process(self.subinstance)

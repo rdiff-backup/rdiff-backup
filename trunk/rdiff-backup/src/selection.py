@@ -74,12 +74,15 @@ class Select:
 		self.prefix = self.dsrpath.path
 		self.quoting_on = Globals.quoting_enabled and quoted_filenames
 
-	def set_iter(self, starting_index = None, sel_func = None):
+	def set_iter(self, starting_index = None, iterate_parents = None,
+				 sel_func = None):
 		"""Initialize more variables, get ready to iterate
 
-		Will iterate indicies greater than starting_index.  Selection
-		function sel_func is called on each dsrp and is usually
-		self.Select.  Returns self just for convenience.
+		Will iterate indicies greater than starting_index.  If
+		iterate_parents is true, will also include parents of
+		starting_index in iteration.  Selection function sel_func is
+		called on each dsrp and is usually self.Select.  Returns self
+		just for convenience.
 
 		"""
 		if not sel_func: sel_func = self.Select
@@ -88,7 +91,10 @@ class Select:
 			self.starting_index = starting_index
 			self.iter = self.iterate_starting_from(self.dsrpath,
 						            self.iterate_starting_from, sel_func)
-		else: self.iter = self.Iterate(self.dsrpath, self.Iterate, sel_func)
+		else:
+			assert not iterate_parents
+			self.iter = self.Iterate(self.dsrpath, self.Iterate, sel_func)
+		self.iterate_parents = iterate_parents
 		self.next = self.iter.next
 		self.__iter__ = lambda: self
 		return self
@@ -140,8 +146,10 @@ class Select:
 		if dsrpath.index > self.starting_index: # past starting_index
 			for dsrp in self.Iterate(dsrpath, self.Iterate, sel_func):
 				yield dsrp
-		elif dsrpath.index == self.starting_index[:len(dsrpath.index)]:
+		elif (dsrpath.index == self.starting_index[:len(dsrpath.index)]
+			  and dsrpath.isdir()):
 			# May encounter starting index on this branch
+			if self.iterate_parents: yield dsrpath
 			for dsrp in self.iterate_in_dir(dsrpath,
 											self.iterate_starting_from,
 											sel_func): yield dsrp
