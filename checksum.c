@@ -108,8 +108,17 @@ _hs_make_sum_struct(struct sum_struct **signatures,
        We could prealloc, but for now we'll give realloc the
        benefit of the doubt. */
 
-    while ((ret = _hs_read_netint(sigread_fn, sigreadprivate, &checksum1))
-	   == 4) {
+    while (1) {
+	 ret = _hs_read_netint(sigread_fn, sigreadprivate, &checksum1);
+
+	 if (ret == 0)
+	      break;
+	 if (ret < -1) {
+	      _hs_error("IO error while reading in signatures");
+	      return -1;
+	 }
+	 assert(ret == 4);
+	 
 	sumbuf->sums =
 	    realloc(sumbuf->sums, (count + 1) * sizeof(struct sum_buf));
 	if (sumbuf->sums == NULL) {
