@@ -1,3 +1,5 @@
+Fix support of case when source has EAs, dest doesn't.
+
 Consider adding --datadir option (Jean-Sébastien GOETSCHY)
 
 See if regressing takes too much memory (large directories).
