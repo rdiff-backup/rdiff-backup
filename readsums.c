@@ -139,7 +139,6 @@ static hs_result hs_loadsig_s_stronglen(hs_job_t *job)
         return HS_CORRUPT;
     }
 
-    job->signature = hs_alloc_struct(hs_signature_t);
     job->signature->block_len = job->block_len;
     job->signature->strong_sum_len = job->strong_sum_len;
     
@@ -201,12 +200,14 @@ static hs_result hs_loadsig_s_magic(hs_job_t *job)
  * \note After loading the signatures, you must call
  * hs_build_hash_table() before you can use them.
  */
-hs_job_t *hs_loadsig_begin(hs_stream_t *stream, hs_signature_t **sumset)
+hs_job_t *hs_loadsig_begin(hs_stream_t *stream, hs_signature_t **signature)
 {
     hs_job_t *job;
 
     job = hs_job_new(stream, "loadsig");
     job->statefn = hs_loadsig_s_magic;
+    *signature = job->signature = hs_alloc_struct(hs_signature_t);
+    job->signature->count = 0;
         
     return job;
 }
