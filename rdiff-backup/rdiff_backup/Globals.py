@@ -63,29 +63,6 @@ change_mirror_perms = (process_uid != 0)
 # If true, try to reset the atimes of the source partition.
 preserve_atime = None
 
-# If true, save the extended attributes when backing up.
-read_eas = None
-
-# If true, preserve the extended attributes on the mirror directory
-# when backing up, or write them to the restore directory.  This
-# requires read_eas.
-write_eas = None
-
-# If true, save access control lists when backup up.
-read_acls = None
-
-# If true, write access control list information to the destination
-# when backing up or restoring.  Requires read_acls.
-write_acls = None
-
-# If true, look for and save resource fork information when backing
-# up.
-read_resource_forks = None
-
-# If true, write resource fork information to destination when backing
-# up or restoring.  Requires read_resource_forks.
-write_resource_forks = None
-
 # This will be set as soon as the LocalConnection class loads
 local_connection = None
 
@@ -121,12 +98,6 @@ backup_writer = None
 # Connection of the client
 client_conn = None
 
-# When backing up, issource should be true on the reader and isdest on
-# the writer.  When restoring, issource should be true on the mirror
-# and isdest should be true on the target.
-issource = None
-isdest = None
-
 # This list is used by the set function below.  When a new
 # connection is created with init_connection, its Globals class
 # will match this one for all the variables mentioned in this
@@ -136,10 +107,12 @@ changed_settings = []
 # The RPath or QuotedRPath of the rdiff-backup-data directory.
 rbdir = None
 
-# chars_to_quote is a string whose characters should be quoted.  It
-# should be true if certain characters in filenames on the source side
-# should be escaped (see FilenameMapping for more info).
-chars_to_quote = None
+# quoting_enabled is true if we should quote certain characters in
+# filenames on the source side (see FilenameMapping for more
+# info).  chars_to_quote is a string whose characters should be
+# quoted, and quoting_char is the character to quote with.
+quoting_enabled = None
+chars_to_quote = "A-Z:"
 quoting_char = ';'
 
 # If true, emit output intended to be easily readable by a
@@ -207,8 +180,10 @@ compare_inode = 1
 # guarantee that any changes have been committed to disk.
 fsync_directories = 1
 
-# If set, exit with error instead of dropping ACLs or ACL entries.
-never_drop_acls = None
+# If set, directory increments are given the same permissions as the
+# directories they represent.  Otherwise they have the default
+# permissions.
+change_dir_inc_perms = 1
 
 
 def get(name):

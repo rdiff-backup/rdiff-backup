@@ -14,7 +14,6 @@ Globals.counter = 0
 verbosity = 5
 log.Log.setverbosity(verbosity)
 user = 'ben' # Non-root user to su to
-userid = 500 # id of user above
 assert os.getuid() == 0, "Run this test as root!"
 
 def Run(cmd):
@@ -28,50 +27,6 @@ class RootTest(unittest.TestCase):
 	def testLocal1(self): BackupRestoreSeries(1, 1, self.dirlist1)
 	def testLocal2(self): BackupRestoreSeries(1, 1, self.dirlist2)
 	def testRemote(self): BackupRestoreSeries(None, None, self.dirlist1)
-
-	def test_ownership_mapping(self):
-		"""Test --user-mapping-file and --group-mapping-file options"""
-		def write_ownership_dir():
-			"""Write the directory testfiles/root_mapping"""
-			rp = rpath.RPath(Globals.local_connection,
-							 "testfiles/root_mapping")
-			if rp.lstat(): Myrm(rp.path)
-			rp.mkdir()
-			rp1 = rp.append('1')
-			rp1.touch()
-			rp2 = rp.append('2')
-			rp2.touch()
-			rp2.chown(userid, 1) # use groupid 1, usually bin
-			return rp
-
-		def write_mapping_files(dir_rp):
-			"""Write user and group mapping files, return paths"""
-			user_map_rp = dir_rp.append('user_map')
-			group_map_rp = dir_rp.append('group_map')
-			user_map_rp.write_string('root:%s\n%s:root' % (user, user))
-			group_map_rp.write_string('0:1')
-			return user_map_rp.path, group_map_rp.path
-
-		def get_ownership(dir_rp):
-			"""Return pair (ids of dir_rp/1, ids of dir_rp2) of ids"""
-			rp1, rp2 = map(dir_rp.append, ('1', '2'))
-			assert rp1.isreg() and rp2.isreg(), (rp1.isreg(), rp2.isreg())
-			return (rp1.getuidgid(), rp2.getuidgid())
-
-		in_rp = write_ownership_dir()
-		user_map, group_map = write_mapping_files(in_rp)
-		out_rp = rpath.RPath(Globals.local_connection, 'testfiles/output')
-		if out_rp.lstat(): Myrm(out_rp.path)
-
-		assert get_ownership(in_rp) == ((0,0), (userid, 1)), \
-			   get_ownership(in_rp)
-		rdiff_backup(1, 0, in_rp.path, out_rp.path,
-					 extra_options = ("--user-mapping-file %s "
-									  "--group-mapping-file %s" %
-									  (user_map, group_map)))
-		assert get_ownership(out_rp) == ((userid, 1), (0, 1)), \
-			   get_ownership(in_rp)
-
 
 class HalfRoot(unittest.TestCase):
 	"""Backing up files where origin is root and destination is non-root"""
@@ -126,6 +81,23 @@ class HalfRoot(unittest.TestCase):
 		rp2_3.chmod(0)
 		return rp1, rp2
 
+	def cause_regress(self, rp):
+		"""Change some of the above to trigger regress"""
+		rp1_1 = rp.append('foo')
+		rp1_1.chmod(04)
+		rp_new = rp.append('lala')
+		rp_new.write_string('asoentuh')
+		rp_new.chmod(0)
+		assert not os.system('chown %s %s' % (user, rp_new.path))
+		rp1_3 = rp.append('unreadable_dir')
+		rp1_3.chmod(0700)
+		rp1_3_1 = rp1_3.append('file_inside')
+		rp1_3_1.chmod(01)
+		rp1_3.chmod(0)
+		
+		rbdir = rp.append('rdiff-backup-data')
+		rbdir.append('current_mirror.2000-12-31T21:33:20-07:00.data').touch()
+
 	def test_backup(self):
 		"""Test back up, simple restores"""
 		in_rp1, in_rp2 = self.make_dirs()
@@ -173,6 +145,12 @@ class HalfRoot(unittest.TestCase):
 		assert rout_perms == 0, rout_perms
 		assert outrp_perms == 0, outrp_perms
 
+		self.cause_regress(outrp)
+		cmd5 = ('su -c "rdiff-backup --check-destination-dir %s" %s' %
+				(outrp.path, user))
+		print "Executing regress: ", cmd5
+		assert not os.system(cmd5)
+		
 
 class NonRoot(unittest.TestCase):
 	"""Test backing up as non-root user

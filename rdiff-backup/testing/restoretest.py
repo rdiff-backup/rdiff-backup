@@ -51,26 +51,6 @@ class RestoreFileComparer:
 		for t in self.time_rp_dict.keys(): self.compare_at_time(t)
 
 
-class RestoreTimeTest(unittest.TestCase):
-	def test_time_from_session(self):
-		"""Test getting time from session number (as in Time.time_from_session)
-
-		Test here instead of in timetest because it depends on an
-		rdiff-backup-data directory already being laid out.
-
-		"""
-		restore._mirror_time = None # Reset
-		Globals.rbdir = rpath.RPath(lc,
-									"testfiles/restoretest3/rdiff-backup-data")
-		assert Time.genstrtotime("0B") == Time.time_from_session(0)
-		assert Time.genstrtotime("2B") == Time.time_from_session(2)
-		assert Time.genstrtotime("23B") == Time.time_from_session(23)
-
-		assert Time.time_from_session(0) == 40000, Time.time_from_session(0)
-		assert Time.time_from_session(2) == 20000, Time.time_from_session(2)
-		assert Time.time_from_session(5) == 10000, Time.time_from_session(5)
-
-
 class RestoreTest(unittest.TestCase):
 	"""Test Restore class"""
 	def get_rfcs(self):
@@ -162,6 +142,22 @@ class RestoreTest(unittest.TestCase):
 		InternalRestore(mirror_local, dest_local, "testfiles/restoretest3",
 						"testfiles/output", 5000)
 		assert CompareRecursive(inc1_rp, target_rp, compare_hardlinks = 0)
+
+#	def testRestoreCorrupt(self):
+#		"""Test restoring a partially corrupt archive
+#
+#		The problem here is that a directory is missing from what is
+#		to be restored, but because the previous backup was aborted in
+#		the middle, some of the files in that directory weren't marked
+#		as .missing.
+#
+#		"""
+#		Myrm("testfiles/output")
+#		InternalRestore(1, 1, "testfiles/restoretest4", "testfiles/output",
+#						10000)
+#		assert os.lstat("testfiles/output")
+#		self.assertRaises(OSError, os.lstat, "testfiles/output/tmp")
+#		self.assertRaises(OSError, os.lstat, "testfiles/output/rdiff-backup")
 
 	def testRestoreNoincs(self):
 		"""Test restoring a directory with no increments, just mirror"""
