@@ -20,10 +20,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-			      /* .. after a year and a day, mourning is
-			       * dangerous to the survivor and troublesome
-			       * to the dead.
-			       *	      -- Harold Bloom		    */
+			      /*
+                               | .. after a year and a day, mourning is
+			       | dangerous to the survivor and troublesome
+			       | to the dead.
+			       |	      -- Harold Bloom
+                               */
 
 /*
  * rdiff.c -- Command-line network-delta tool.
@@ -65,8 +67,13 @@ static size_t strong_len = RS_DEFAULT_STRONG_LEN;
 
 static int show_stats = 0;
 
+static int bzip2_level = 0;
+static int gzip_level  = 0;
 
 
+enum {
+    OPT_GZIP = 1069, OPT_BZIP2
+};
 
 const struct poptOption opts[] = {
     { "verbose",     'v', POPT_ARG_NONE, 0,             'v' },
@@ -78,6 +85,7 @@ const struct poptOption opts[] = {
     { "sum-size",    'S', POPT_ARG_INT,  &strong_len },
     { "statistics",  's', POPT_ARG_NONE, &show_stats },
     { "stats",        0,  POPT_ARG_NONE, &show_stats },
+    { "gzip",         0,  POPT_ARG_NONE, 0,             OPT_GZIP },
     { 0 }
 };
 
@@ -168,7 +176,8 @@ static void rdiff_show_version(void)
 
 static void rdiff_options(poptContext opcon)
 {
-    int c;
+    int             c;
+    char const      *a;
     
     while ((c = poptGetNextOpt(opcon)) != -1) {
         switch (c) {
@@ -184,6 +193,23 @@ static void rdiff_options(poptContext opcon)
             }
             rs_trace_set_level(RS_LOG_DEBUG);
             break;
+            
+        case OPT_GZIP:
+        case OPT_BZIP2:
+            if ((a = poptGetOptArg(opcon))) {
+                int l = atoi(a);
+                if (c == OPT_GZIP)
+                    gzip_level = l;
+                else
+                    bzip2_level = l;
+            } else {
+                if (c == OPT_GZIP)
+                    gzip_level = Z_DEFAULT_COMPRESSION;
+                else
+                    bzip2_level = 9;      /* demand the best */
+            }
+            break;
+            
         default:
             bad_option(opcon, c);
         }
