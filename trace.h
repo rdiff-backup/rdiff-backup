@@ -20,42 +20,48 @@
  */
 
 
-/* TODO: A function like perror */
+/* TODO: A function like perror that includes strerror output. */
 
 
 #ifdef __GNUC__
 
-void
-                _hs_trace0(char const *fmt, ...)
-    __attribute__ ((format(printf, 1, 2)));
-
-void            _hs_trace0(char const *fmt, ...)
-    __attribute__ ((format(printf, 1, 2)));
+void _hs_log0(int level, char const *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 
 #ifdef DO_HS_TRACE
-#    define _hs_trace(fmt, arg...)			\
-    do { _hs_trace0(__FUNCTION__ ": " fmt, ##arg);	\
+#  define _hs_trace(fmt, arg...)                                \
+    do { _hs_log0(LOG_DEBUG, __FUNCTION__ ": " fmt , ##arg);  \
     } while (0)
-#endif	/* DO_HS_TRACE */
+#else
+#  define _hs_trace(s, str...)
+#endif	/* !DO_HS_TRACE */
 
-#define return_val_if_fail(expr, val) if (!(expr))	\
-  { fprintf(stderr, "%s(%d): %s: assertion failed\n",	\
-    __FILE__, __LINE__, __FUNCTION__); return (val); }
 
 extern char const *program_invocation_short_name;
 
-#  define _hs_fatal(s, str...) do { fprintf (stderr,	\
-    "%s: " __FUNCTION__ ": "				\
-    s "\n" , program_invocation_short_name ,		\
-    ##str); abort(); } while(0)
+/* TODO: Don't assume this is a gcc thing; rather test in autoconf for
+ * the presence of __FUNCTION__. */
 
-#define _hs_error(s, str...) do {			\
-      fprintf(stderr,					\
-	     "%s: " __FUNCTION__ ": " s "\n" ,		\
-	     program_invocation_short_name , ##str);	\
+#define _hs_log(l, s, str...) do {              \
+     _hs_log0(l, __FUNCTION__ ": " s          \
+                , ##str);                       \
      } while (0)
 
-#  else				/* ! __GNUC__ */
+
+#define _hs_error(s, str...) do {               \
+     _hs_log0(LOG_ERR, __FUNCTION__ ": " s    \
+                , ##str);                       \
+     } while (0)
+
+
+#define _hs_fatal(s, str...) do {               \
+     _hs_log0(LOG_CRIT,                       \
+	      __FUNCTION__ ": " s               \
+	      , ##str);                         \
+     abort();                                   \
+     } while (0)
+
+
+#else /************************* ! __GNUC__ */
 
 #  define _hs_fatal(s, str...) do { fprintf (stderr,    \
     "libhsync: " s "\n" , ##str); abort(); } while(0)
@@ -64,11 +70,8 @@ extern char const *program_invocation_short_name;
     "libhsync: " s "\n" , ##str); } while(0)
 
 #  ifdef DO_HS_TRACE
-#    define _hs_trace _hs_trace0
-void            _hs_trace0(char const *, ...);
+#    define _hs_trace _hs_log0
+void            _hs_log0(char const *, ...);
 #  endif			/* DO_HS_TRACE */
 #endif				/* ! __GNUC__ */
 
-#ifndef DO_HS_TRACE
-#  define _hs_trace(s, str...)
-#endif				/* ! DO_HS_TRACE */

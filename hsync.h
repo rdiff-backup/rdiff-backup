@@ -34,9 +34,9 @@ typedef struct stat hs_statbuf_t;
 #endif				/* !HAVE_OFF64_T */
 
 
-/* ========================================
-
-   Callback function prototypes */
+/***********************************************************************
+ * Callback function prototypes
+ */
 typedef int     (*hs_read_fn_t) (void *readprivate, char *buf, size_t len);
 
 typedef int     (*hs_write_fn_t) (void *writeprivate, char const *buf,
@@ -44,17 +44,21 @@ typedef int     (*hs_write_fn_t) (void *writeprivate, char const *buf,
 				  size_t len);
 
 
-typedef void    hs_trace_fn_t(char const *fmt, va_list);
+/***********************************************************************
+ * Public trace functions.
+ */
+/* LEVEL is a syslog level. */
+typedef void    hs_trace_fn_t( int level, char const *fmt, va_list);
 void            hs_trace_to(hs_trace_fn_t *);
-void            hs_trace_to_stderr(char const *fmt, va_list va);
-
+void            hs_trace_to_stderr(int level, char const *fmt, va_list va);
 int             hs_supports_trace(void);
-
 
-/* ======================================== * * Return codes from incremental 
-   functions.  On each call, we can * return * *   HS_DONE   if we have
-   finished completely * *   HS_AGAIN  if we want to be called again when
-   convenient * *   HS_FAILED if an error occurred. */
+
+/***********************************************************************
+ * Return codes from incremental functions.  On each call, we can
+ * return HS_DONE if we have finished completely HS_AGAIN if we want
+ * to be called again when convenient HS_FAILED if an error
+ * occurred. */
 typedef enum {
     HS_DONE,
     HS_AGAIN,
@@ -133,7 +137,7 @@ void            hs_membuf_free(hs_membuf_t *);
 void            hs_membuf_truncate(hs_membuf_t * mb);
 size_t          hs_membuf_getbuf(hs_membuf_t const *mb, char const **buf);
 hs_membuf_t    *hs_membuf_on_buffer(char *buf, int len);
-
+ssize_t hs_membuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs);
 
 typedef struct hs_ptrbuf hs_ptrbuf_t;
 
@@ -145,6 +149,7 @@ hs_ptrbuf_t    *hs_ptrbuf_on_buffer(char *buf, int len);
 void            hs_ptrbuf_truncate(hs_ptrbuf_t * mb);
 size_t          hs_ptrbuf_getbuf(hs_ptrbuf_t const *mb, char const **buf);
 hs_ptrbuf_t    *hs_ptrbuf_on_buffer(char *buf, int len);
+ssize_t hs_ptrbuf_read_ofs(void *private, char *buf, size_t len, hs_off_t ofs);
 
 /* ============================================================
 
@@ -205,3 +210,10 @@ hs_encode_job_t *hs_encode_begin(int in_fd, hs_write_fn_t write_fn,
 				 hs_stats_t * stats, size_t new_block_len);
 
 hs_result_t     hs_encode_iter(hs_encode_job_t *);
+
+
+/***********************************************************************
+ * Utilities 
+ ***********************************************************************/
+
+extern void     hs_bzero(void *buf, size_t size);

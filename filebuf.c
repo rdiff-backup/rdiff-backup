@@ -51,7 +51,7 @@ hs_filebuf_from_fd(int fd)
     hs_filebuf_t   *fb;
 
     fb = calloc(1, sizeof(hs_filebuf_t));
-    return_val_if_fail(fb, NULL);
+    assert(fb);
 
     fb->dogtag = filebuf_tag;
     fb->fd = fd;

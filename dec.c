@@ -92,7 +92,7 @@ _hs_check_gd_header(hs_read_fn_t ltread_fn, void *ltread_priv)
     expect = HS_LT_MAGIC;
 
     ret = _hs_read_netint(ltread_fn, ltread_priv, &remote_magic);
-    return_val_if_fail(ret == 4, -1);
+    assert(ret == 4);
     if (remote_magic != expect) {
 	_hs_fatal("version mismatch: %#010x != %#010x", remote_magic, expect);
 	errno = EBADMSG;

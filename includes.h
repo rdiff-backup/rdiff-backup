@@ -47,6 +47,9 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 
+/* We take just the log levels from syslog.  We don't call it. */
+#include <syslog.h>
+
 
 /* libhsync headers. */
 #include "hsync.h"

@@ -281,7 +281,10 @@ _hs_nad_search_iter(hs_encode_job_t *job,
      * then immediately generate literals. */
     hs_mdfour_update(&job->filesum, p, avail);    
     _hs_send_literal(job->write_fn, job->write_priv, op_kind_literal,
-		     p, avail);
+		     p, avail);    
+    job->stats->lit_cmds++;
+    job->stats->lit_bytes += avail;
+
     job->search_cursor += avail;
 }
 

@@ -159,7 +159,7 @@ open_source(char const *filename, int *fd, int nonblocking)
 }
 
 
-int
+static int
 chew_options(int argc, char **argv, int *nonblocking,
 	     int *use_select, int *keep_trying)
 {

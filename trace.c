@@ -37,30 +37,30 @@ hs_trace_to(hs_trace_fn_t * new_impl)
 }
 
 
-/* This function is called by a macro that switches it depending on * the
-   compile-time setting, etc.  */
+/* This function is called by a macro that prepends the calling function
+ * name, etc.  */
 void
-_hs_trace0(char const *fmt, ...)
+_hs_log0(int level, char const *fmt, ...)
 {
     va_list         va;
 
     if (_hs_trace_impl) {
 	va_start(va, fmt);
-	_hs_trace_impl(fmt, va);
+	_hs_trace_impl(level, fmt, va);
 	va_end(va);
     }
 }
 
 
 void
-hs_trace_to_stderr(char const *fmt, va_list va)
+hs_trace_to_stderr(int UNUSED(level), char const *fmt, va_list va)
 {
     char            buf[1000];
     int             n;
 
     n = 0;
     buf[n++] = '\t';
-    vsnprintf(buf + n, sizeof buf - 1, fmt, va);
+    vsnprintf(buf + n, sizeof buf - 1 - n, fmt, va);
     n = strlen(buf);
     buf[n++] = '\n';
 

@@ -159,7 +159,7 @@ _hs_send_literal(hs_write_fn_t write_fn,
     }
 
     ret = hs_must_write(write_fn, write_priv, buf, amount);
-    return_val_if_fail(ret == (int) amount, -1);
+    assert(ret == (int)amount);
     return amount;
 }
 
