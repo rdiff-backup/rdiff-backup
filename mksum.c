@@ -1,9 +1,9 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*				       	-*- c-file-style: "linux" -*-
  *
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
  * Copyright (C) 1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -35,12 +35,13 @@
 #include <stdint.h>
 
 #include "hsync.h"
-#include "private.h"
 #include "stream.h"
 #include "util.h"
+#include "protocol.h"
+#include "netint.h"
 
 
-const int       hs_mksum_job_magic = 123124;
+const int       HS_MKSUM_TAG = 123124;
 
 struct hs_mksum_job {
     hs_stream_t    *stream;
@@ -48,7 +49,20 @@ struct hs_mksum_job {
     size_t          block_len;
     hs_stats_t      stats;
     size_t          strong_sum_len;
+
+        int             (*statefn)(hs_mksum_job_t *);
 };
+
+
+/*
+ * State of trying to send the signature header.
+ */
+static int _hs_mksum_s_header(hs_mksum_job_t *job)
+{
+        _hs_squirt_n32(job->stream, HS_SIG_MAGIC);
+
+        return HS_OK;
+}
 
 
 /* Set up a new encoding job. */
@@ -63,135 +77,45 @@ hs_mksum_begin(hs_stream_t *stream,
     _hs_stream_check(stream);
     job->stream = stream;
     job->block_len = new_block_len;
-    job->dogtag = hs_mksum_job_magic;
+    job->dogtag = HS_MKSUM_TAG;
 
     assert(strong_sum_len > 0 && strong_sum_len <= HS_MD4_LENGTH);
     job->strong_sum_len = strong_sum_len;
+
+    job->statefn = _hs_mksum_s_header;
 
     return job;
 }
 
 
 
-void
-hs_mksum_finish(hs_mksum_job_t * job)
+int hs_mksum_finish(hs_mksum_job_t * job)
 {
-    assert(job->dogtag == hs_mksum_job_magic);
-    _hs_bzero(job, sizeof *job);
-    free(job);
-}
+        assert(job->dogtag == HS_MKSUM_TAG);
+        _hs_bzero(job, sizeof *job);
+        free(job);
 
+        return HS_OK;
+}
 
 
 
 /* 
- * Nonblocking iteration interface for making up a file sum.  Returns
- * HS_AGAIN, HS_DONE or HS_FAILED.  Unless it returns HS_AGAIN, then
- * the job is closed on return.
+ * Nonblocking iteration interface for making up a file sum. 
  */
-hs_result_t
-hs_mksum_iter(hs_mksum_job_t *UNUSED(job))
+int hs_mksum_iter(hs_mksum_job_t *job, int ending)
 {
-/*      _hs_stream_copy(job->stream, 4); */
+        int result;
 
-    return HS_COMPLETE;
+        assert(job->dogtag == HS_MKSUM_TAG);
+
+        do {
+                result = _hs_tube_catchup(job->stream);
+                if (result != HS_OK)
+                        return result;
+                
+                result = job->statefn(job);
+        } while (result == HS_OK);
+
+        return result;
 }
-
-
-
-    
-#if 0
-    int             ret;
-    byte_t const     *p;
-    size_t         map_len;
-    int             saw_eof;
-
-    assert(job->dogtag = hs_mksum_job_magic);
-
-    if (!job->sent_header) {
-	ret = _hs_newsig_header(job->block_len,
-				job->write_fn, job->write_priv);
-	if (ret < 0) {
-	    _hs_fatal("error writing new sum signature");
-	    return HS_FAILED;
-	}
-	job->sent_header = 1;
-    }
-
-    /* Map a block of data */
-    map_len = job->block_len;
-    saw_eof = 0;
-    p = hs_map_ptr(job->in_map, job->cursor, &map_len, &saw_eof);
-    if (!p) {
-	_hs_error("error mapping file");
-	_hs_mksum_finish(job);
-	return HS_FAILED;
-    }
-
-    /* Calculate and write out the sums, if any. */
-    while (map_len > (size_t) job->block_len) {
-	_hs_trace("calc sum for @%ld+%ld", (long) job->cursor,
-		  (long) job->block_len);
-
-	_hs_mksum_of_block(p, job->block_len,
-			   job->write_fn, job->write_priv,
-			   job->strong_sum_len);
-
-	p += job->block_len;
-	job->cursor += job->block_len;
-	map_len -= job->block_len;
-    }
-
-    /* If we're at the end of the file, generate a signature for the * last
-       short block and go home. */
-    if (saw_eof) {
-	_hs_trace("calc sum for @%ld+%ld", (long) job->cursor,
-		  (long) map_len);
-
-	_hs_mksum_of_block(p, map_len,
-			   job->write_fn, job->write_priv,
-			   job->strong_sum_len);
-
-	_hs_mksum_finish(job);
-	return HS_DONE;
-    }
-
-    /* Well, we haven't finished yet.  Return and hopefully we'll be * called 
-       back. */
-    return HS_AGAIN;
-}
-#endif
-
-
-#if 0
-
-
-/* 
- * Generate and write out the checksums of a block.
- */
-void
-_hs_mksum_of_block(byte_t const *p, ssize_t len,
-		   hs_write_fn_t write_fn, void *write_priv,
-		   size_t strong_sum_len)
-{
-    uint32_t        weak_sum;
-    byte_t            strong_sum[MD4_LENGTH];
-
-#ifdef DO_HS_TRACE
-    char            strong_hex[MD4_LENGTH * 2 + 2];
-#endif
-
-    weak_sum = _hs_calc_weak_sum(p, len);
-    _hs_calc_strong_sum(p, len, strong_sum, strong_sum_len);
-
-#ifdef DO_HS_TRACE
-    hs_hexify_buf(strong_hex, strong_sum, strong_sum_len);
-    _hs_trace("calculated weak sum %08lx, strong sum %s",
-	      (long) weak_sum, strong_hex);
-#endif
-
-    _hs_write_netint(write_fn, write_priv, weak_sum);
-    _hs_write_loop(write_fn, write_priv, strong_sum, strong_sum_len);
-}
-#endif
-

@@ -1,9 +1,10 @@
-/*=                                     -*- c-file-style: "bsd" -*-
- * rproxy -- dynamic caching and delta update in HTTP
+/*=                                     -*- c-file-style: "linux" -*-
+ *
+ * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
- * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 1999 by Andrew Tridgell <tridge@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -33,25 +34,25 @@
  * Classes of operation that can be present.  Each may have several different
  * possible representations.
  */
-typedef enum hs_op_kind {
-    op_kind_eof = 1000,
-    op_kind_literal,
-    op_kind_signature,
-    op_kind_copy,
-    op_kind_checksum,
-    op_kind_reserved,           /* for future expansion */
+enum hs_op_kind {
+        HS_KIND_EOF = 1000,
+        HS_KIND_LITERAL,
+        HS_KIND_SIGNATURE,
+        HS_KIND_COPY,
+        HS_KIND_CHECKSUM,
+        HS_KIND_RESERVED,           /* for future expansion */
 
-    /* This one should never occur in file streams.  It's an internal
-     * marker for invalid commands. */
-    op_kind_invalid
-} hs_op_kind_t;
+        /* This one should never occur in file streams.  It's an
+         * internal marker for invalid commands. */
+        HS_KIND_INVALID
+};
 
 
 typedef struct hs_op_kind_name {
     char const           *name;
-    hs_op_kind_t const    kind;
+        enum hs_op_kind const    kind;
 } hs_op_kind_name_t;
 
-char const * _hs_op_kind_name(hs_op_kind_t);
+char const * _hs_op_kind_name(enum hs_op_kind);
 
 

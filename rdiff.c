@@ -1,9 +1,9 @@
-/*=				       	-*- c-file-style: "bsd" -*-
+/*=				       	-*- c-file-style: "linux" -*-
  *
  * rdiff -- generate and apply rsync signatures and deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -65,6 +65,7 @@ int output_mode = O_WRONLY|O_CREAT|O_TRUNC|O_EXCL;
 const struct option longopts[] = {
     { "help", no_argument, 0, 'h' },
     { "version", no_argument, 0, 'V' },
+    { "licence", no_argument, 0, 'L' },
     { "verbose", no_argument, 0, 'v' },
     { "force", no_argument, 0, 'f' },
     { "input-buffer", required_argument, 0, 'I' },
@@ -73,29 +74,28 @@ const struct option longopts[] = {
 };
 
 
-static void
-show_usage(void)
+static void show_usage(void)
 {
-    printf(
-	    "Usage: %s [OPTIONS] signature OLDFILE SIGNATURE\n"
-	    "   or: %s [OPTIONS] delta SIGNATURE NEWFILE DELTA\n"
-	    "   or: %s [OPTIONS] patch OLDFILE DELTA NEWFILE\n"
-	    "   or: %s [OPTIONS] sum INPUT\n"
-	    "Compute rsync checksums or deltas, or apply a delta.\n"
-	    "\n"
-	    "  -f, --force               overwrite existing files\n"
-	    "  -v, --verbose             trace internal processing\n"
-	    "  -I, --input-buffer=BYTES  input buffer size\n"
-	    "  -O, --output-buffer=BYTES output buffer size\n"
-	    "      --help                display this help and exit\n"
-	    "      --version             output version information and exit\n"
-	    ,
-	    PROGRAM, PROGRAM, PROGRAM, PROGRAM);
+    printf("Usage: %s [OPTIONS] signature OLDFILE SIGNATURE\n"
+           "   or: %s [OPTIONS] delta SIGNATURE NEWFILE DELTA\n"
+           "   or: %s [OPTIONS] patch OLDFILE DELTA NEWFILE\n"
+           "   or: %s [OPTIONS] sum INPUT\n"
+           "\n"
+           "Compute rsync checksums or deltas, or apply a delta.\n"
+           "\n"
+           "  -f, --force               overwrite existing files\n"
+           "  -v, --verbose             trace internal processing\n"
+           "  -I, --input-buffer=BYTES  input buffer size\n"
+           "  -O, --output-buffer=BYTES output buffer size\n"
+           "      --help                display this help and exit\n"
+           "      --version             output version information and exit\n"
+           "      --licence             show summary copying terms and exit\n"
+           ,
+           PROGRAM, PROGRAM, PROGRAM, PROGRAM);
 }
 
 
-static void
-process_args(int argc, char **argv)
+static void process_args(int argc, char **argv)
 {
     int             c, longind;
 
@@ -118,8 +118,11 @@ process_args(int argc, char **argv)
 	    _hs_readintarg(argv[optind], optarg, &hs_outbuflen);
 	    break;
 	case 'V':
-	    hs_show_version(PROGRAM);
+	    hs_show_version(stdout, PROGRAM);
 	    exit(0);
+        case 'L':
+                hs_show_licence(stdout);
+                exit(0);
 	case 'v':
 	    if (!hs_supports_trace()) {
 		_hs_error("library does not support trace");
@@ -196,14 +199,28 @@ do_sum(int argc, char **argv)
 }
 
 
-#if 0
+
 static int
-do_patch(int argc, char **argv)
+do_patch(int argc, char *argv[])
 {
-    _hs_error("sorry, not implemented!");
-    return 1;
+        FILE *old_file, *delta_file, *new_file;
+
+        if (argc != 4) {
+                _hs_error("Patch operation needs three filenames: "
+                          "OLDFILE DELTA NEWFILE");
+                return 1;
+        }
+
+        old_file = _hs_file_open(argv[1], O_RDONLY);
+        delta_file = _hs_file_open(argv[2], O_RDONLY);
+        new_file = _hs_file_open(argv[3], output_mode);
+
+        hs_patch_files(old_file, delta_file, new_file);
+    
+        return 0;
 }
-#endif
+
+
 
 int
 main(int argc, char **argv)
@@ -219,8 +236,8 @@ main(int argc, char **argv)
 	return do_signature(argc, argv);
     } else if (strisprefix(argv[0], "delta")) {
 	return do_delta(argc, argv);
-/*      } else if (strisprefix(argv[0], "patch")) { */
-/*  	return do_patch(argc, argv); */
+     } else if (strisprefix(argv[0], "patch")) {
+ 	return do_patch(argc, argv);
     } else if (strisprefix(argv[0], "sum")) {
 	return do_sum(argc, argv);
     }

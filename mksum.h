@@ -1,9 +1,9 @@
-/*=				       	-*- c-file-style: "bsd" -*-
+/*=				       	-*- c-file-style: "linux" -*-
  * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
- * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 1999 by Andrew Tridgell <tridge@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License

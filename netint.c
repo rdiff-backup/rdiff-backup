@@ -1,10 +1,10 @@
-/*=				       	-*- c-file-style: "bsd" -*-
+/*=				       	-*- c-file-style: "linux" -*-
  *
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
- * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 1999 by Andrew Tridgell <tridge@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -28,7 +28,13 @@
                              |        -- Sun Microsystems
                              */
 
-/* Network-byte-order output to the tube. */
+/*
+ * Network-byte-order output to the tube.
+ *
+ * All the `suck' routines return a result code.  The most common
+ * values are HS_OK if they have enough data, or HS_BLOCKED if there
+ * is not enough input to proceed.
+ */
 
 #include "config.h"
 
@@ -53,16 +59,16 @@
 #include <string.h>
 
 #include "hsync.h"
-#include "private.h"
-#include "tube.h"
 #include "netint.h"
+#include "trace.h"
+#include "stream.h"
 
-void
-_hs_squirt_n32(hs_stream_t *stream, int d)
+
+void _hs_squirt_n32(hs_stream_t *stream, int d)
 {
-    uint32_t nd = htonl(d);
-
-    _hs_blow_literal(stream, &nd, sizeof nd);
+        uint32_t nd = htonl(d);
+        
+        _hs_blow_literal(stream, &nd, sizeof nd);
 }
 
 
@@ -75,3 +81,31 @@ _hs_squirt_n8(hs_stream_t *stream, int d)
     _hs_blow_literal(stream, &nd, sizeof nd);
 }
 
+
+
+enum hs_result _hs_suck_n32(hs_stream_t *stream, int *v)
+{
+        void *p;
+        int result;
+
+        if ((result = _hs_stream_require(stream, sizeof (uint32_t), &p)))
+                return result;
+
+        *v = ntohl(* (uint32_t const *) p);
+
+        return result;
+}
+
+
+enum hs_result _hs_suck_n8(hs_stream_t *stream, int *v)
+{
+        void *p;
+        int result;
+
+        if ((result = _hs_stream_require(stream, sizeof (uint8_t), &p)))
+                return result;
+
+        *v = * (uint8_t const *) p;
+
+        return result;
+}

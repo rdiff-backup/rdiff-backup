@@ -1,9 +1,9 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*				       	-*- c-file-style: "linux" -*-
  *
  * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -28,3 +28,8 @@
 
 void _hs_emit_delta_header(hs_stream_t *stream);
 void _hs_emit_literal_cmd(hs_stream_t *stream, int len);
+
+int _hs_fits_in_n8(size_t val);
+int _hs_fits_in_n16(size_t val);
+int _hs_fits_in_n32(size_t val);
+int _hs_int_len(off_t val);

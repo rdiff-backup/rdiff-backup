@@ -1,8 +1,8 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*				       	-*- c-file-style: "linux" -*-
  *
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,10 +19,10 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* ========================================
+/***********************************************************************
+ * Checksums
+ ***********************************************************************/
 
-   Things to do with searching through the hashtable of blocks from
-   downstream.  */
 
 int             _hs_build_hash_table(hs_sumset_t *sums);
 

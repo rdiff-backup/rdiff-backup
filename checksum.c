@@ -1,8 +1,8 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*				       	-*- c-file-style: "linux" -*-
  *
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
  * Copyright (C) 1996 by Andrew Tridgell
  * Copyright (C) 1996 by Paul Mackerras
  * 

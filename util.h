@@ -1,10 +1,10 @@
-/*=				       	-*- c-file-style: "bsd" -*-
+/*=				       	-*- c-file-style: "linux" -*-
  *
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
- * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 1999 by Andrew Tridgell <tridge@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -36,3 +36,27 @@ void _hs_bzero(void *buf, size_t size);
 
 
 void _hs_readintarg(char const *opt, char const *arg, int *out);
+
+
+
+
+#undef	MAX
+#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
+
+#undef	MIN
+#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+
+#undef	ABS
+#define ABS(a)	   (((a) < 0) ? -(a) : (a))
+
+#undef	CLAMP
+#define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
+
+
+#ifdef __GNUC__
+#  define UNUSED(x) x __attribute__((unused))
+#elif __LCLINT__
+#  define UNUSED(x) /*@unused@*/ x
+#else				/* !__GNUC__ && !__LCLINT__ */
+#  define UNUSED(x) x
+#endif				/* !__GNUC__ && !__LCLINT__ */

@@ -1,9 +1,9 @@
-/*=                                     -*- c-file-style: "bsd" -*-
+/*=                                     -*- c-file-style: "linux" -*-
  *
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -22,48 +22,50 @@
 
 
 /*
- * Test driver for network-endian output through a tube.
+ * Test driver for network-endian output through a tube.  This test case
+ * hopes to catch hangup or data loss errors in the tube buffer.  It's
+ * not very scientific about this but just hopes that writing
+ * sufficiently large amounts of data will make the bugs come out.
  */
 
 
 #include "config.h"
 
 #include <assert.h>
-
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-
+#include <stdio.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
 #include "hsync.h"
+#include "netint.h"
+#include "tube.h"
+#include "streamfile.h"
+#include "tube.h"
 
 
 int main(void)
 {
-    hs_nozzle_t *in_iobuf, *out_iobuf;
-    hs_stream_t stream;
-    int input_done = 0, result;
+        hs_stream_t stream;
+        char outbuf[37];
+        int j;
 
-    hs_stream_init(&stream);
+        hs_stream_init(&stream);
 
-    out_iobuf = hs_nozzle_new(STDOUT_FILENO, &stream, hs_outbuflen, 'w');
+        for (j = 0; j < 20; j++) {
+                int i;
 
-    _hs_trace("generate checksum from fd%d to fd%d", in_fd, out_fd);
-    
-    do {
-	int i;
+                for (i = 0; i < 4; i++) {
+                        _hs_squirt_n32(&stream, i);
+                }
 
-	for (i = 0; i < 100; i++) {
-	    _hs_squirt_n32(stream, i);
-	}
+                while (!_hs_tube_is_idle(&stream)) { 
+                        _hs_tube_catchup(&stream);
+                        _hs_drain_to_file(&stream, outbuf, sizeof outbuf,
+                                          stdout);
+                }
+        }
 
-	_hs_tube_catchup();
-	_hs_nozzle_out(out_iobuf);
-    } while (!_hsinput_done || (result != HS_COMPLETE));
-    
-    hs_nozzle_delete(out_iobuf);
+        return 0;
 }
 
 

@@ -1,9 +1,9 @@
-/*				       	-*- c-file-style: "java" -*-
+/*				       	-*- c-file-style: "linux" -*-
  *
  * libhsync -- library for network deltas
  * $Id$
  *
- * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -38,11 +38,12 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdint.h>
+#include <stdarg.h>
 
 #include "hsync.h"
-
-#include "private.h"
+#include "util.h"
 #include "trace.h"
+
 
 int const hs_libhsync_file_offset_bits = SIZEOF_OFF_T * 8;
 

@@ -1,9 +1,9 @@
-/*=                                     -*- c-file-style: "bsd" -*-
+/*=                                     -*- c-file-style:"linux" -*-
  *
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -41,31 +41,36 @@
 #include "stream.h"
 #include "tube.h"
 #include "file.h"
-#include "nozzle.h"
-#include "streamcpy.h"
+#include "streamfile.h"
 
 
-
-int main(int UNUSED(argc), char UNUSED(** argv))
+static void _drain_tube(hs_stream_t *stream, char *outbuf, int len, FILE *out)
 {
-    hs_nozzle_t *out_nozzle, *in_nozzle;
-    hs_stream_t stream;
+        do {
+                _hs_tube_catchup(stream);
+                _hs_drain_to_file(stream, outbuf, len, out);
+        } while (!_hs_tube_is_idle(stream));
+}
 
-    hs_stream_init(&stream);
 
-    out_nozzle = _hs_nozzle_new(stdout, &stream, 2, "w");
-    in_nozzle = _hs_nozzle_new(stdin, &stream, 3, "r");
+int main(void)
+{
+        hs_stream_t stream;
+        char inbuf[2], outbuf[2];
 
-    _hs_blow_literal(&stream, "hello ", 6);
-    _hs_nozzle_drain(out_nozzle, &stream);
+        hs_stream_init(&stream);
 
-    _hs_stream_copy_file(&stream, in_nozzle, out_nozzle);
+        _hs_blow_literal(&stream, "hello ", 6);
+        _drain_tube(&stream, outbuf, sizeof outbuf, stdout);
 
-    _hs_blow_literal(&stream, "world\n", 6);
-    _hs_nozzle_drain(out_nozzle, &stream);
+        while (!feof(stdin)) {
+                _hs_fill_from_file(&stream, inbuf, sizeof inbuf, stdin);
+                _hs_stream_copy(&stream, 200);
+                _hs_drain_to_file(&stream, outbuf, sizeof outbuf, stdout);
+        }
     
-    _hs_nozzle_delete(out_nozzle);
-    _hs_nozzle_delete(in_nozzle);
+        _hs_blow_literal(&stream, "world\n", 6);
+        _drain_tube(&stream, outbuf, sizeof outbuf, stdout);
     
-    return 0;
+        return 0;
 }

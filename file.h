@@ -1,8 +1,8 @@
-/*=                                     -*- c-file-style: "bsd" -*-
+/*=                                     -*- c-file-style: "linux" -*-
  * libhsync -- dynamic caching and delta update in HTTP
  * $Id$
  * 
- * Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -19,3 +19,4 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+int _hs_stream_copy_file(hs_stream_t *stream, FILE *, FILE *);

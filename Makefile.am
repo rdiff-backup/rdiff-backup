@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-# Copyright (C) 2000 by Martin Pool <mbp@samba.org>
+# Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
 # $Id$
 
 # This program is free software; you can redistribute it and/or
@@ -27,7 +27,10 @@
 lib_LTLIBRARIES = libhsync.la
 
 libhsync_la_SOURCES =				\
-	nozzle.c nozzle.h			\
+	patch.c 				\
+	streamfile.c streamfile.h		\
+	prototab.c prototab.h 			\
+	command.c command.h 			\
 	emit.c emit.h				\
 	delta.c delta.h				\
 	netint.c netint.h			\
@@ -37,11 +40,12 @@ libhsync_la_SOURCES =				\
 	hsync.h					\
 	private.h				\
 	hex.c base64.c mdfour.c			\
-	stream.c stream.h			\
+	stream.c stream.h scoop.c		\
 	util.c util.h				\
 	mksum.c					\
 	trace.c trace.h				\
-	version.c
+	version.c				\
+	protocol.h
 
 # TODO: If we ever care enough, build a second library containing only
 # the code necessary to be a client, and not stuff for encoding.  At
@@ -61,7 +65,7 @@ libhsync_la_SOURCES =				\
 
 TESTS_ENVIRONMENT = bash $(srcdir)/driver.sh
 
-test_scripts = emitcmds.test isprefix.test mdfour.test stream.test	\
+test_scripts = emitcmds.test isprefix.test mdfour.test stream.test \
 	tube.test
 
 man_MANS = man/libhsync.3 man/rdiff.1
@@ -109,14 +113,13 @@ rdiff_SOURCES = rdiff.c				\
 	isprefix.c isprefix.h
 
 check_PROGRAMS = emit.driver stream.driver tube.driver	\
-	isprefix.driver
+	isprefix.driver inhale.driver squirt.driver
 
 isprefix_driver_SOURCES = isprefix.driver.c	\
 	isprefix.c isprefix.h
 isprefix_driver_LDADD = $(LIBOBJS)
 
-tube_driver_SOURCES = tube.driver.c		\
-	streamcpy.c streamcpy.h
+tube_driver_SOURCES = tube.driver.c
 
 stream_driver_SOURCES = stream.driver.c		\
 	streamcpy.c streamcpy.h

@@ -1,5 +1,6 @@
 /*=                                     -*- c-file-style: "linux" -*-
- * libhsync -- dynamic caching and delta update in HTTP
+ *
+ * libhsync -- the library for network deltas
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool <mbp@linuxcare.com.au>
@@ -20,19 +21,41 @@
  */
 
 
-#include "isprefix.h"
+#include "config.h"
+
+#include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "hsync.h"
+#include "command.h"
+
+/* For debugging purposes, here are some human-readable forms. */
+struct hs_op_kind_name const _hs_op_kind_names[] = {
+    {"EOF",       HS_KIND_EOF },
+    {"COPY",      HS_KIND_COPY },
+    {"LITERAL",   HS_KIND_LITERAL },
+    {"SIGNATURE", HS_KIND_SIGNATURE },
+    {"CHECKSUM",  HS_KIND_CHECKSUM },
+    {"INVALID",   HS_KIND_INVALID },
+    {NULL,        0 }
+};
+
 
 /*
- * Return true if TIP is a prefix of ICEBERG.
+ * Return a human-readable name for KIND.
  */
-int
-strisprefix(char const *tip, char const *iceberg)
+char const * _hs_op_kind_name(enum hs_op_kind kind)
 {
-    while (*tip) {
-	if (*tip != *iceberg)
-	    return 0;
-	tip++; iceberg++;
-    }
+        const struct hs_op_kind_name *k;
 
-    return 1;
+        for (k = _hs_op_kind_names; k->kind; k++) {
+                if (k->kind == kind) {
+                        return k->name;
+                }
+        }
+
+        return NULL;
 }
+
+

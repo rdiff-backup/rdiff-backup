@@ -1,10 +1,10 @@
-/*				       	-*- c-file-style: "bsd" -*-
+/*				       	-*- c-file-style: "linux" -*-
  *
  * libhsync -- library for network deltas
  * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@samba.org>
- * Copyright (C) 1999 by Andrew Tridgell
+ * Copyright (C) 1999, 2000 by Martin Pool <mbp@linuxcare.com.au>
+ * Copyright (C) 1999 by Andrew Tridgell <tridge@linuxcare.com.au>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,3 +23,6 @@
 
 void _hs_squirt_n32(hs_stream_t *stream, int d);
 void _hs_squirt_n8(hs_stream_t *stream, int d);
+
+enum hs_result _hs_suck_n32(hs_stream_t *stream, int *v);
+enum hs_result _hs_suck_n8(hs_stream_t *stream, int *v);
