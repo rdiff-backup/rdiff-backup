@@ -85,7 +85,7 @@ hs_squirt_byte(hs_stream_t *stream, unsigned char d)
  * \param len Length of integer, in bytes.
  */
 hs_result
-hs_squirt_netint(hs_stream_t *stream, off_t d, int len)
+hs_squirt_netint(hs_stream_t *stream, hs_long_t d, int len)
 {
     unsigned char       buf[HS_MAX_INT_BYTES];
     int                 i, j;
@@ -118,7 +118,7 @@ hs_squirt_n4(hs_stream_t *stream, int val)
 
 
 hs_result
-hs_suck_netint(hs_stream_t *stream, off_t *v, int len)
+hs_suck_netint(hs_stream_t *stream, hs_long_t *v, int len)
 {
     unsigned char       *buf;
     int                 i;
