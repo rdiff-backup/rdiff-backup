@@ -5,6 +5,11 @@
 
 $Id$
 
+This document is also available in printable form:
+
+  - http://rproxy.samba.org/doxygen/libhsync/refman.ps.gz
+  - http://rproxy.samba.org/doxygen/libhsync/refman.pdf
+
 \section intro Introduction
 
 libhsync is a library for calculating and applying network deltas,
@@ -72,7 +77,7 @@ After creation of a job, repeated calls to hs_job_iter() in between
 filling and emptying the buffers keeps data flowing through the
 stream.  The ::hs_result_t values returned may indicate
 
- - ::HS_OK:  processing is complete
+ - ::HS_DONE:  processing is complete
  - ::HS_BLOCKED: processing has blocked pending more data
  - one of various possible errors in processing
 

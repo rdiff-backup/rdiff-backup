@@ -91,7 +91,7 @@ EXTRA_PACKAGES         =
 LATEX_HEADER           = 
 PDF_HYPERLINKS         = YES
 USE_PDFLATEX           = NO
-LATEX_BATCHMODE        = NO
+LATEX_BATCHMODE        = YES
 #---------------------------------------------------------------------------
 # configuration options related to the RTF output
 #---------------------------------------------------------------------------
