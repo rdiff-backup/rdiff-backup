@@ -281,19 +281,25 @@ probably isn't what you meant.""" %
 
 	def filelist_read(self, filelist_fp, include, filelist_name):
 		"""Read filelist from fp, return (tuplelist, something_excluded)"""
+		prefix_warnings = [0]
+		def incr_warnings(exc):
+			"""Warn if prefix is incorrect"""
+			prefix_warnings[0] += 1
+			if prefix_warnings[0] < 6:
+				Log("Warning: file specification '%s' in filelist %s\n"
+					"doesn't start with correct prefix %s.  Ignoring." %
+					(exc, filelist_name, self.prefix), 2)
+				if prefix_warnings[0] == 5:
+					Log("Future prefix errors will not be logged.", 2)
+
 		something_excluded, tuple_list = None, []
-		prefix_warnings = 0
-		for line in filelist_fp:
-			if not line.strip(): continue # skip blanks
+		separator = Globals.null_separator and "\0" or "\n"
+		for line in filelist_fp.read().split(separator):
+			if not line: continue # skip blanks
 			try: tuple = self.filelist_parse_line(line, include)
 			except FilePrefixError, exc:
-				prefix_warnings += 1
-				if prefix_warnings < 6:
-					Log("Warning: file specification %s in filelist %s\n"
-						"doesn't start with correct prefix %s, ignoring." %
-						(exc, filelist_name, self.prefix), 2)
-					if prefix_warnings == 5:
-						Log("Future prefix errors will not be logged.", 2)
+				incr_warnings(exc)
+				continue
 			tuple_list.append(tuple)
 			if not tuple[1]: something_excluded = 1
 		if filelist_fp.close():

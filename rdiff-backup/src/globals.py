@@ -147,6 +147,10 @@ class Globals:
 							"jpg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
 	no_compression_regexp = None
 
+	# If true, filelists and directory statistics will be split on
+	# nulls instead of newlines.
+	null_separator = None
+
 	# Determines whether or not ssh will be run with the -C switch
 	ssh_compression = 1
 

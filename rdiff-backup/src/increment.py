@@ -219,6 +219,7 @@ class IncrementITR(ErrorITR, StatsITR):
 			# Write updated mirror to temp file so we can compute
 			# reverse diff locally
 			mirror_tf = TempFileManager.new(dsrp)
+			old_dsrp_tf = TempFileManager.new(dsrp)
 			def init_thunk():
 				if diff_rorp.isflaglinked():
 					Hardlink.link_rp(diff_rorp, mirror_tf, dsrp)
@@ -226,8 +227,16 @@ class IncrementITR(ErrorITR, StatsITR):
 													  mirror_tf).execute()
 				self.incrp = Inc.Increment_action(mirror_tf, dsrp,
 												  incpref).execute()
-			def final(init_val): mirror_tf.rename(dsrp)
-			def error(exc, ran_init, init_val): mirror_tf.delete()
+				if dsrp.lstat(): RPathStatic.rename(dsrp, old_dsrp_tf)
+				mirror_tf.rename(dsrp)
+
+			def final(init_val): old_dsrp_tf.delete()
+			def error(exc, ran_init, init_val):
+				if ran_init: old_dsrp_tf.delete() # everything is fine
+				else: # restore to previous state
+					if old_dsrp_tf.lstat(): old_dsrp_tf.rename(dsrp)
+					if self.incrp: self.incrp.delete()
+
 			RobustAction(init_thunk, final, error).execute()
 		else: self.incrp = Robust.chain(
 			Inc.Increment_action(diff_rorp, dsrp, incpref),
