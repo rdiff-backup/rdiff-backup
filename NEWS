@@ -1,3 +1,7 @@
+Changes in 0.9.4:
+
+ * Fixes for rsync.h from Thorsten Schuett <thorsten.schuett@zib.de>
+
 Changes in 0.9.3:
 
  * Big speed improvements in MD4 routines and generation of weak

@@ -39,6 +39,9 @@
  * See \ref intro for an introduction to use of this library.
  */
 
+#ifndef _RSYNC_H
+#define _RSYNC_H
+
 #include <sys/types.h>
 
 extern char const rs_librsync_version[];
@@ -324,6 +327,8 @@ rs_result rs_job_drive(rs_job_t *job, rs_buffers_t *buf,
                        rs_driven_cb in_cb, void *in_opaque,
                        rs_driven_cb out_cb, void *out_opaque);
 
+const rs_stats_t * rs_job_statistics(rs_job_t *job);
+
 rs_result       rs_job_free(rs_job_t *);
 
 int             rs_accum_value(rs_job_t *, char *sum, size_t sum_len);
@@ -385,4 +390,6 @@ rs_result rs_file_copy_cb(void *arg, off_t pos, size_t *len, void **buf);
 rs_result rs_delta_file(rs_signature_t *, FILE *new_file, FILE *delta_file, rs_stats_t *);
 
 rs_result rs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file, rs_stats_t *);
-#endif
+#endif /* ! RSYNC_NO_STDIO_INTERFACE */
+
+#endif /* ! _RSYNC_H */

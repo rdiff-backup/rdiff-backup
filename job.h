@@ -94,6 +94,5 @@ struct rs_job {
 rs_job_t * rs_job_new(const char *, rs_result (*statefn)(rs_job_t *));
 
 void rs_job_check(rs_job_t *job);
-const rs_stats_t *rs_job_statistics(rs_job_t *);
 
 int rs_job_input_is_ending(rs_job_t *job);

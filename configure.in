@@ -9,7 +9,7 @@ AC_REVISION($Id$)
 
 AC_INIT(trace.c)
 
-my_version=0.9.3
+my_version=0.9.4pre
 my_package=librsync
 my_url=http://rproxy.samba.org/
 echo "Configuring $my_package $my_version   ($my_url)"
