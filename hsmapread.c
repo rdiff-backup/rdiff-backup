@@ -79,30 +79,55 @@ read_chunks(hs_map_t *map, int argc, char **argv)
 }
 
 
+static int
+open_source(char const *filename, int *fd, size_t *file_len)
+{
+#if 0
+     struct stat statbuf;
+#endif
+
+     if (strcmp(filename, "-")) {
+	 *fd = open(filename, O_RDONLY);
+	 if (*fd < 0) {
+	     _hs_fatal("can't open %s: %s", filename, strerror(errno));
+	     return 1;
+	 }
+     } else {
+	 *fd = STDIN_FILENO;
+     }
+
+#if 0
+     if (fstat(*fd, &statbuf)) {
+	  _hs_fatal("can't stat %s: %s", filename, strerror(errno));
+	  return 1;
+     }
+     *file_len = statbuf.st_size;
+#else /* true */
+     *file_len = (off_t) 0x7fffffff;
+#endif /* ! 0 */
+
+     return 0;
+}
+
+
+
 int
 main(int argc, char **argv)
 {
      hs_map_t *map;
-     int infd, ret;
-     struct stat statbuf;
-     
+     int ret;
+     size_t      file_len;
+     int	 infd;
+
      if (argc < 3) {
 	  usage();
 	  return 0;
      }
 
-     infd = open(argv[1], O_RDONLY);
-     if (infd < 0) {
-	  _hs_fatal("can't open %s: %s", argv[1], strerror(errno));
-	  return 1;
-     }
+     if ((ret = open_source(argv[1], &infd, &file_len)) != 0)
+	 return ret;
 
-     if (fstat(infd, &statbuf)) {
-	  _hs_fatal("can't stat %s: %s", argv[1], strerror(errno));
-	  return 1;
-     }
-
-     map = hs_map_file(infd, statbuf.st_size);
+     map = hs_map_file(infd, file_len);
 
      ret = read_chunks(map, argc-2, argv+2); /* skip argv[0:1] */
      

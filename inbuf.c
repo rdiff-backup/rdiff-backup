@@ -1,23 +1,25 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  */
-
-/* libhsync
-   Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
-   
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-   
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-   USA
-*/
+/* -*- mode: c; c-file-style: "bsd" -*- */
+/*
+ * $Id$
+ *
+ * libhsync -- A library for rsync-style differencing.
+ * 
+ * Copyright (C) 2000 by Martin Pool
+ * 
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free 
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
 #include "includes.h"
 #include "hsync.h"
@@ -26,11 +28,49 @@
 
 
 
+int const _hs_inbuf_dogtag = 0x6a656e;
+
+
+/**
+ * Allocate and return a new hs_inbuf_t structure.
+ **/
+_hs_inbuf_t *
+_hs_new_inbuf(void)
+{
+    _hs_inbuf_t *inbuf;
+    inbuf = calloc(1, sizeof *inbuf);
+
+    /* must be at least two blocks; shouldn't be too small. */
+    inbuf->len = 8192;
+    inbuf->buf = malloc(inbuf->len);
+    inbuf->amount = 0;
+    inbuf->abspos = 0;
+    inbuf->tag = _hs_inbuf_dogtag;
+
+    return inbuf;
+}
+
+
+/**
+ * Release all resources used by this inbuf.
+ **/
+void
+_hs_free_inbuf(_hs_inbuf_t *inbuf)
+{
+    assert(inbuf->tag == _hs_inbuf_dogtag);
+    if (inbuf->buf)
+	free(inbuf->buf);
+    bzero(inbuf, sizeof *inbuf);
+    free(inbuf);
+}
+
 
 int
 _hs_fill_inbuf(_hs_inbuf_t * inbuf, hs_read_fn_t read_fn, void *readprivate)
 {
     int ret;
+
+    assert(inbuf->tag == _hs_inbuf_dogtag);
 
     if (inbuf->amount > inbuf->len) {
 	 abort();
@@ -55,21 +95,9 @@ _hs_fill_inbuf(_hs_inbuf_t * inbuf, hs_read_fn_t read_fn, void *readprivate)
 
 
 
-int _hs_alloc_inbuf(_hs_inbuf_t * inbuf, int block_len)
-{
-    bzero(inbuf, sizeof *inbuf);
-    /* must be at least two blocks; shouldn't be too small. */
-    inbuf->len = MAX(block_len * 2, 8192);
-    inbuf->buf = malloc(inbuf->len);
-    inbuf->amount = 0;
-    inbuf->abspos = 0;
-
-    return 0;
-}
-
-
 int _hs_slide_inbuf(_hs_inbuf_t * inbuf)
 {
+    assert(inbuf->tag == _hs_inbuf_dogtag);
     /* Copy the remaining data into the front of
        the buffer */
     if (inbuf->cursor != 0) {

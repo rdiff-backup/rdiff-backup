@@ -24,5 +24,3 @@ for i in range(ntests):
 
     cmdfile.write('%d,%d ' % (off,amount))
     datafile.write(suck[off:off+amount])
-    
-    

@@ -106,16 +106,6 @@ hs_filebuf_t *hs_filebuf_from_file(FILE * fp);
 
 /* ========================================
 
-   File map pointers
-*/
-
-struct hs_map;
-typedef struct hs_map hs_map_t;
-
-
-
-/* ========================================
-
    Memory buffers
 */
 

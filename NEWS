@@ -1,3 +1,12 @@
+Changes in 0.5.0:
+
+ * Rewrite hs_inbuf and hs_encode to make them simpler and more
+   reliable. 
+
+ * Test cases for input handling.
+
+ * Use the map_ptr idea for input from both streams and files.
+
 Changes in 0.4.1:
 
  * automake/autoconf now works cleanly when the build directory is

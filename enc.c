@@ -326,7 +326,7 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
      struct sum_struct *sums = 0;
      int ret;
      rollsum_t real_rollsum, *const rollsum = &real_rollsum;
-     _hs_inbuf_t real_inbuf, *const inbuf = &real_inbuf;
+     _hs_inbuf_t *inbuf;
      rollsum_t new_roll;
      int block_len, short_block;
      hs_membuf_t *sig_tmpbuf, *lit_tmpbuf;
@@ -376,7 +376,7 @@ hs_encode(hs_read_fn_t read_fn, void *readprivate,
      /* Allocate a buffer to hold literal output */
      sig_tmpbuf = hs_membuf_new();
      lit_tmpbuf = hs_membuf_new();
-     _hs_alloc_inbuf(inbuf, block_len);
+     inbuf = _hs_new_inbuf();
 
      ret = _hs_newsig_header(block_len, hs_membuf_write, sig_tmpbuf);
      if (ret < 0)

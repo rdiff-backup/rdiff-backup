@@ -1,4 +1,5 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*-  
+/* -*- mode: c; c-file-style: "bsd" -*-
+ *
  * $Id$
  *
  * private.h -- Private headers for libhsync
@@ -161,7 +162,21 @@ struct hs_ptrbuf {
     size_t length;
 };
 
-/* Buffer of new data waiting to be digested and encoded.
+/* ========================================
+
+   _hs_inbuf_t: a buffer of new data waiting to be digested.
+
+*/
+
+/*
+ * Buffer of new data waiting to be digested and encoded.  This is
+ * like a map_ptr, but more suitable for reading from a socket, where
+ * we can't seek, and therefore can't skip forwards or rewind.
+ * Therefore we must be prepared to give up any amount of memory
+ * rather than seek.
+ *
+ * The inbuf covers a particular part of the file with an in-memory
+ * buffer.  The file is addressed by absolute position,
    
    inbuf[0..inbufamount-1] is valid, inbufamount <= inbuflen,
    cursor <= inbufamount is the next one to be processed.
@@ -169,20 +184,22 @@ struct hs_ptrbuf {
    0 <= abspos is the absolute position in the input file of the start
    of the buffer.  We need this to generate new signatures at the
    right positions. */
-typedef struct inbuf {
+struct _hs_inbuf {
+    int tag;
     int len;
     char *buf;
     int amount;
     int cursor;
     int abspos;
-} _hs_inbuf_t;
+};
 
-int _hs_fill_inbuf(_hs_inbuf_t * inbuf, hs_read_fn_t read_fn,
-		   void *readprivate);
+typedef struct _hs_inbuf _hs_inbuf_t;
 
-int _hs_alloc_inbuf(_hs_inbuf_t * inbuf, int block_len);
+int _hs_fill_inbuf(_hs_inbuf_t *, hs_read_fn_t read_fn, void *readprivate);
 
-int _hs_slide_inbuf(_hs_inbuf_t * inbuf);
+_hs_inbuf_t * _hs_new_inbuf(void);
+void _hs_free_inbuf(_hs_inbuf_t *);
+int _hs_slide_inbuf(_hs_inbuf_t *);
 
 /* ========================================
 
@@ -312,12 +329,9 @@ int _hs_inhale_command(hs_read_fn_t read_fn, void * read_priv,
 
    map_ptr IO
 */
-struct hs_map {
-     int tag;
-     char *p;
-     int fd, p_size, p_len;
-     hs_off_t file_size, p_offset, p_fd_offset;
-};
+
+typedef struct hs_map hs_map_t;
+
 hs_map_t *hs_map_file(int fd, hs_off_t len);
 char const * hs_map_ptr(hs_map_t *map, hs_off_t offset, int len);
 void hs_unmap_file(hs_map_t *map);

@@ -1,4 +1,5 @@
-/* -*- mode: c; c-file-style: "stroustrup" -*- */
+/* -*- mode: c; c-file-style: "bsd" -*- */
+/* $Id$ */
 /* 
    Copyright (C) 2000 by Martin Pool
    Copyright (C) 1998 by Andrew Tridgell 
@@ -20,6 +21,11 @@
 
 /* Originally from rsync */
 
+/*
+ * TODO: We need to make sure that this works cleanly only sockets and
+ * similar things.  In that case, we don't know the `length' of the
+ * file, and we can never seek.  I think this code will do that.  */
+
 #include "includes.h"
 #include "hsync.h"
 #include "private.h"
@@ -29,7 +35,16 @@
 #define MAX_MAP_SIZE (256*1024)
 #define IO_BUFFER_SIZE (4092)
 
-#define HS_MAP_TAG (189900)
+int const HS_MAP_TAG = 189900;
+
+
+struct hs_map {
+     int tag;
+     char *p;
+     int fd, p_size, p_len;
+     hs_off_t file_size, p_offset, p_fd_offset;
+};
+
 
 /* this provides functionality somewhat similar to mmap() but using
    read(). It gives sliding window access to a file. mmap() is not
@@ -66,6 +81,7 @@ hs_map_ptr(hs_map_t *map, hs_off_t offset, int len)
      int nread;
      hs_off_t window_start, read_start;
      int window_size, read_size, read_offset;
+     int total_read;
 
      assert(map->tag == HS_MAP_TAG);
 
@@ -137,13 +153,29 @@ hs_map_ptr(hs_map_t *map, hs_off_t offset, int len)
 	       map->p_fd_offset = read_start;
 	  }
 
-	  if ((nread=read(map->fd,map->p + read_offset,read_size)) != read_size) {
-	       if (nread < 0) nread = 0;
-	       /* the best we can do is zero the buffer - the file
-		  has changed mid transfer! */
-	       memset(map->p+read_offset+nread, 0, read_size - nread);
-	  }
-	  map->p_fd_offset += nread;
+	  total_read = 0;
+	  do {
+	      nread = read(map->fd, map->p + read_offset, read_size - total_read);
+	      
+	      if (nread < 0) {
+		   _hs_error("read error in %s: %s", __FUNCTION__,
+			     strerror(errno));
+		   break;
+	      }
+
+	      total_read += nread;
+	      read_offset += nread;
+
+	      if (nread == 0) {
+		  /* early EOF in file. */
+		  /* the best we can do is zero the buffer - the file
+		     has changed mid transfer! */
+		  memset(map->p+read_offset, 0, read_size - total_read);
+		  break;
+	      }
+	  } while (total_read < read_size);
+
+	  map->p_fd_offset += total_read;
      }
 
      map->p_offset = window_start;

@@ -200,7 +200,7 @@ hs_decode(hs_readofs_fn_t oldread_fn, void *oldread_priv,
 	}
 
 	if (kind == op_kind_eof) {
-	    _hs_trace("op_eof");
+	    _hs_trace("EOF");
 	    break;		/* We're done! Cool bananas */
 	} else if (kind == op_kind_literal) {
 	    _hs_trace("LITERAL(len=%d)", length);
