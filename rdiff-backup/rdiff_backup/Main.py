@@ -527,7 +527,7 @@ def CalculateAverage(rps):
 
 def RemoveOlderThan(rootrp):
 	"""Remove all increment files older than a certain time"""
-	rom_check_dir(rootrp)
+	rot_check_dir(rootrp)
 	try: time = Time.genstrtotime(remove_older_than_string)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
 	timep = Time.timetopretty(time)
@@ -552,13 +552,13 @@ def RemoveOlderThan(rootrp):
 	else: Log("Deleting increments at times:\n" + inc_pretty_time, 3)
 	manage.delete_earlier_than(Globals.rbdir, time)
 
-def rom_check_dir(rootrp):
+def rot_check_dir(rootrp):
 	"""Check destination dir before RemoveOlderThan"""
 	SetConnections.UpdateGlobal('rbdir',
 								rootrp.append_path("rdiff-backup-data"))
 	if not Globals.rbdir.isdir():
 		Log.FatalError("Unable to open rdiff-backup-data dir %s" %
-					   (datadir.path,))
+					   (Globals.rbdir.path,))
 	checkdest_if_necessary(rootrp)
 
 
