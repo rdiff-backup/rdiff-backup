@@ -19,6 +19,11 @@ class RemoteMirrorTest(unittest.TestCase):
 		MirrorTest(1, None, ['testfiles/increment1', 'testfiles/increment2',
 							 'testfiles/increment3', 'testfiles/increment4'])
 
+	def testMirror3(self):
+		"""Local version of testMirror2"""
+		MirrorTest(1, 1, ['testfiles/increment1', 'testfiles/increment2',
+						  'testfiles/increment3', 'testfiles/increment4'])
+
 	def testMirrorWithCheckpointing(self):
 		"""Like testMirror but this time checkpoint"""
 		MirrorTest(None, None, ["testfiles/increment1"], 1)

@@ -70,6 +70,10 @@ IncrementFileSize 10 (10 bytes)
 		statline = s.get_stats_line(())
 		assert statline == ". 1 2 13 14 3 4 5 6 7 8 9 15 10"
 
+		statline = s.get_stats_line(("file name with spaces",))
+		assert statline == "file\\x20name\\x20with\\x20spaces 1 2 13 14 " \
+			   "3 4 5 6 7 8 9 15 10", repr(statline)
+
 	def test_byte_summary(self):
 		"""Test conversion of bytes to strings like 7.23MB"""
 		s = StatsObj()
