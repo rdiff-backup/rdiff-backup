@@ -7,7 +7,8 @@ Patch by Jeffrey Marshall fixes socket/fifo recognition on Mac OS X
 Patch by Jeffrey Marshall fixes --calculate-average mode, which seems
 to have broken recently.
 
-rdiff-backup should now work with python 2.3.
+rdiff-backup should now work with python 2.3.  Thanks to Arkadiusz
+Miskiewicz for bug reports.
 
 
 New in v0.12.2 (2003/07/24)
