@@ -1,19 +1,12 @@
-add --exclude-special-files to exclude fifos, symlinks, sockets, and
-device files.
-
-Change Windows mode to quote A-Z also.  (--windows-mode could be short
-for "--exclude-special-files --chars-to-quote A-Z: --quoting-char ;
---windows-time-format").
-
 Write some better selection test cases to test new Iterate_fast func.
 
 Work on killtest code - avoid returning a failure when a file is
 simply skipped.
 
----------[ Medium term ]---------------------------------------
+Look at error code, make sure filename is always mentioned (see Knops
+email).
 
-Interpret a list of filenames in globbing form
-(--include-globbing-filelist maybe).
+---------[ Medium term ]---------------------------------------
 
 Add --dry-run option (target for v1.1.x)
 

@@ -5,6 +5,24 @@ If get a socket error from trying to create a socket whose name is too
 long, just skip file instead of exiting with error (bug report by Ivo
 De Decker).
 
+Added --exclude-special-files switch, which excludes fifos, symlinks,
+sockets, and device files.
+
+--windows-mode is now short for --windows-time-format --chars-to-quote
+A-Z: --exclude-special-files.  Thanks to Paul-Erik Törrönen for some
+helpful windows info.
+
+Multiple --include and --exclude statements can now be given in a
+single file.  See the documentation on
+--{include|exclude}-globbing-filelist.  Thanks to Henrik Lewander for
+pointing out that command line length could otherwise be a problem.
+
+Fixed bug in filelist processing that ignored leading or trailing
+whitespace in filelists.  Now filenames with, for instance, trailing
+spaces can be used in filelists.  Filelists which took advantage of
+this bug for formatting may have to be editted.
+
+
 
 New in v0.10.1 (2002/09/16)
 ---------------------------
