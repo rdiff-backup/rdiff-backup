@@ -119,50 +119,50 @@ copy_one_chunk(int from_fd, hs_map_t * map, off_t off, size_t want_len,
     len = want_len;
 #ifdef USE_WALKER
     if (options & walker)
-	p = _hs_map_walk(map, (off_t) off, &len, &saw_eof);
+        p = _hs_map_walk(map, (off_t) off, &len, &saw_eof);
     else
 #endif
-	p = hs_map_ptr(map, (off_t) off, &len, &saw_eof);
+        p = hs_map_ptr(map, (off_t) off, &len, &saw_eof);
 
     assert((long) len >= 0);
 
     if (!p) {
-	_hs_error("hs_map_ptr failed!\n");
-	return 2;
+        _hs_error("hs_map_ptr failed!\n");
+        return 2;
     }
     _hs_trace("got back %ld bytes, wanted %ld, "
-	      "at eof=%s",
-	      (long) len, (long) want_len, saw_eof ? "true" : "false");
+              "at eof=%s",
+              (long) len, (long) want_len, saw_eof ? "true" : "false");
 
     if (len < want_len && (options & keep_trying) && !saw_eof) {
-	_hs_trace("keep trying");
-	if (options & use_select) {
-	    if (select_for_read(from_fd) < 0)
-		return 2;
-	}
+        _hs_trace("keep trying");
+        if (options & use_select) {
+            if (select_for_read(from_fd) < 0)
+                return 2;
+        }
 
-	goto try_read;
+        goto try_read;
     }
 
     /* mapread may have opportunistically given us more bytes than * we
      * wanted.  In this case, it would be really bad to write * them out,
      * because they're not expected.  It's harmless to * ignore them. */
     if (len > want_len)
-	len = want_len;
+        len = want_len;
 
     _hs_trace("write %ld bytes at output position %ld",
-	      (long) len, (long) out_pos);
+              (long) len, (long) out_pos);
     written = write(STDOUT_FILENO, p, len);
     if (written < 0) {
-	_hs_error("error writing out chunk: %s\n", strerror(errno));
-	return 3;
+        _hs_error("error writing out chunk: %s\n", strerror(errno));
+        return 3;
     }
 
     out_pos += len;
     if ((size_t) written != len) {
-	_hs_error("expected to write %d bytes, actually wrote %d\n",
-		  len, written);
-	return 4;
+        _hs_error("expected to write %d bytes, actually wrote %d\n",
+                  len, written);
+        return 4;
     }
 
     return 0;
@@ -187,14 +187,14 @@ read_chunks(int from_fd, hs_map_t * map, int argc, char **argv, int options)
     }
 
     for (; argc > 0; argc--, argv++) {
-	o = *argv;
-	do {
-	    off = strtoul(o, &o, 10);
-	    if (*o != ',')
-		goto failed;
-	    want_len = strtoul(o + 1, &o, 10);
-	    if (!(*o == '\0' || *o == ':'))
-		goto failed;
+        o = *argv;
+        do {
+            off = strtoul(o, &o, 10);
+            if (*o != ',')
+                goto failed;
+            want_len = strtoul(o + 1, &o, 10);
+            if (!(*o == '\0' || *o == ':'))
+                goto failed;
             if (options & use_map_copy) {
                 rc = _hs_map_copy(map, want_len, &off,
                                   hs_filebuf_write, out_fb, NULL);
@@ -204,14 +204,14 @@ read_chunks(int from_fd, hs_map_t * map, int argc, char **argv, int options)
                 if ((rc = copy_one_chunk(from_fd, map, off, want_len, options)))
                     return rc;
             }
-	} while (*o++ == ':');
+        } while (*o++ == ':');
     }
 
     return 0;
 
   failed:
     _hs_error("argument `%s' doesn't look like an OFFSET,LENGTH "
-	      "tuple\n", *argv);
+              "tuple\n", *argv);
     return 1;
 }
 
