@@ -331,5 +331,21 @@ class FinalCorrupt(PathSetter):
 		self.set_connections(None, None, "test1/", '../')
 		self.exec_rb(None, 'testfiles/corruptbackup_source',
 					 'testfiles/output')
+
+	def testCheckpointData(self):
+		"""Destination directory has bad checkpoint data, no sym"""
+		self.delete_tmpdirs()
+		assert not os.system("cp -a testfiles/corrupt_dest1 testfiles/output")
+		self.set_connections(None, None, None, None)
+		self.exec_rb(None, 'testfiles/various_file_types', 'testfiles/output')
+
+	def testCheckpointData2(self):
+		"""Destination directory has bad checkpoint data, with sym"""
+		self.delete_tmpdirs()
+		assert not os.system("cp -a testfiles/corrupt_dest2 testfiles/output")
+		self.set_connections(None, None, None, None)
+		self.exec_rb(None, 'testfiles/various_file_types', 'testfiles/output')
+		
+
 		
 if __name__ == "__main__": unittest.main()
