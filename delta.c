@@ -72,6 +72,9 @@
 static rs_result rs_delta_scan_short(rs_job_t *, rs_long_t avail_len, void *);
 static rs_result rs_delta_scan_full(rs_job_t *, rs_long_t avail_len, void *);
 
+static rs_result rs_delta_s_deferred_copy(rs_job_t *job);
+
+
 
 static rs_result rs_delta_s_end(rs_job_t *job)
 {
@@ -150,6 +153,8 @@ rs_delta_scan_short(rs_job_t *job, rs_long_t avail_len, void *inptr)
      * that and advance over the scooed data.  Otherwise, emit a
      * literal byte and keep searching while there's input data. */
 
+    /* TODO: Handle short end blocks. */
+    
     rs_trace("emit lazy literal for %ld bytes", (long) avail_len);
     rs_emit_literal_cmd(job, avail_len);
     rs_tube_copy(job, avail_len);
@@ -165,29 +170,64 @@ rs_delta_scan_short(rs_job_t *job, rs_long_t avail_len, void *inptr)
  * Emit exactly one LITERAL or COPY command.
  */
 static rs_result
-rs_delta_scan_full(rs_job_t *job, rs_long_t avail_len, void *inptr)
+rs_delta_scan_full(rs_job_t *job, rs_long_t avail_len, void *p)
 {
     rs_weak_sum_t        weak_sum;
     rs_long_t            match_where;
+    int                  search_pos;
+    unsigned char        *inptr = (unsigned char *) p;
     
-    weak_sum = rs_calc_weak_sum(inptr, job->block_len);
+    /* So, we have avail_len bytes of data, and we want to look
+     * through it for a match at some point.  It's OK if it's not at
+     * the start of the available input data.  If we're approaching
+     * the end and can't get a match, then we just block and get more
+     * later. */
 
-    rs_trace("got weak %#10x", weak_sum);
-
-    if (rs_search_for_block(weak_sum, inptr, job->block_len,
-                            job->signature, &job->stats,
-                            &match_where)) {
-        rs_trace("matched %ld!", (long) match_where);
-        rs_emit_copy_cmd(job, match_where, job->block_len);
-        rs_scoop_advance(job, job->block_len);
-    } else {
-        rs_emit_literal_cmd(job, job->block_len);
-        rs_tube_copy(job, job->block_len);
+    /* TODO: If we don't match immediately, just queue up *one*
+     * literal and then keep going. */
+    for (search_pos = 0; search_pos <= avail_len - job->block_len; search_pos++) {
+        weak_sum = rs_calc_weak_sum(inptr + search_pos, job->block_len);
+        if (rs_search_for_block(weak_sum, inptr + search_pos, job->block_len,
+                                job->signature, &job->stats, &match_where)) {
+            /* So, we got a match.  cool.  now, if there was literal data
+             * ahead of that, we need to flush it first.  otherwise, we
+             * can emit the copy command. */
+            /* TODO: Perhaps instead store this in the job, and set a new
+             * statefn. */
+            rs_trace("matched %ld!", (long) match_where);
+            job->basis_pos = match_where;
+            job->basis_len = job->block_len;
+            job->statefn = rs_delta_s_deferred_copy;
+            break;
+        }
     }
 
+    if (search_pos) {
+        /* There's some literal data at the start of this window which
+         * we know is not in any block. */
+        rs_trace("got %d bytes of literal data", search_pos);
+        rs_emit_literal_cmd(job, search_pos);
+        rs_tube_copy(job, search_pos);
+    }
+    
     return RS_RUNNING;
 }
 
+
+static rs_result rs_delta_s_deferred_copy(rs_job_t *job)
+{
+    if (!job->basis_len) {
+        rs_log(RS_LOG_ERR, "somehow got zero basis_len");
+        return RS_INTERNAL_ERROR;
+    }
+    
+    rs_emit_copy_cmd(job, job->basis_pos, job->basis_len);
+    rs_scoop_advance(job, job->basis_len);
+
+    job->statefn = rs_delta_s_scan;
+    
+    return RS_RUNNING;
+}
 
 
 /**
