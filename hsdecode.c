@@ -56,18 +56,18 @@ int main(int argc, char *argv[])
      }
 
      switch (argc - optind) {
-     case 3:
+     case 4:
 	  ltfb = hs_filebuf_open(argv[3 + optind], O_RDONLY);
 	  if (!ltfb)
 	       return 1;
 	  /* Drop through */
-     case 2:			/* LT_FILE */
+     case 3:			/* LT_FILE */
 	  outfb = hs_filebuf_open(argv[2 + optind],
 				  O_WRONLY | O_TRUNC | O_CREAT);
 	  if (!outfb)
 	       return 1;
 	  /* Drop through */
-     case 1:
+     case 2:
 	  newsigfb = hs_filebuf_open(argv[1 + optind],
 				     O_WRONLY | O_TRUNC | O_CREAT);
 	  if (!newsigfb)

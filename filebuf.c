@@ -123,6 +123,12 @@ hs_filebuf_read(void *private, char *buf, size_t len)
 
      n = read(fbuf->fd, buf, len);
 
+     if (n < 0) {
+	  _hs_error("error reading fd%d: %s", fbuf->fd, strerror(errno));
+     } else if (n == 0) {
+	  _hs_trace("eof on fd%d during read", fbuf->fd);
+     }
+
      return n;
 }
 

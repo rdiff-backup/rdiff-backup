@@ -49,6 +49,35 @@ _hs_read_loop(hs_read_fn_t read_fn, void *read_priv,
     return count;
 }
 
+
+
+/* Either read LEN bytes and return LEN, or zero for EOF, or fail
+   completely. */
+int
+_hs_must_read(hs_read_fn_t read_fn, void *read_priv,
+	      char *buf, ssize_t len)
+{
+     ssize_t ret;
+     ret = _hs_read_loop(read_fn, read_priv, buf, len);
+     if (ret == len)
+	  return ret;
+     else if (ret == 0) {
+	  _hs_error("unexpected EOF");
+	  return ret;
+     } else if (ret < 0) {
+	  return -1;
+     } else if (ret < len) {
+	  _hs_error("short read where one is not allowed: got %d bytes, "
+		    "wanted %d", ret, len);
+	  return -1;
+     } else { /* (ret > len) */
+	  _hs_error("too much data returned from read: got %d bytes, "
+		    "wanted just %d", ret, len);
+	  return -1;
+     }
+}
+
+
 int
 _hs_write_loop(hs_write_fn_t write_fn, void *write_priv,
 	       char const *buf, int len)
@@ -110,7 +139,7 @@ _hs_read_netshort(hs_read_fn_t read_fn, void *read_priv, uint16_t * result)
     uint16_t buf;
     int ret;
 
-    ret = _hs_read_loop(read_fn, read_priv, (char *) &buf, sizeof buf);
+    ret = _hs_must_read(read_fn, read_priv, (char *) &buf, sizeof buf);
     *result = ntohs(buf);
 
     return ret;
@@ -123,8 +152,7 @@ _hs_read_netint(hs_read_fn_t read_fn, void *read_priv, uint32_t * result)
     uint32_t buf;
     int ret;
 
-    ret = _hs_read_loop(read_fn, read_priv, (char *) &buf, sizeof buf);
-
+    ret = _hs_must_read(read_fn, read_priv, (char *) &buf, sizeof buf);
     *result = ntohl(buf);
 
     return ret;
@@ -138,13 +166,7 @@ _hs_read_netbyte(hs_read_fn_t read_fn, void *read_priv, uint8_t * result)
     int ret;
     const int len = sizeof buf;
 
-    ret = _hs_read_loop(read_fn, read_priv, (char *) &buf, len);
-    if (ret != len)
-	return ret;
-
-    if (ret == 0)
-	return 0;
-
+    ret = _hs_must_read(read_fn, read_priv, (char *) &buf, len);
     *result = buf;
 
     return len;
