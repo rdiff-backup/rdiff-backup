@@ -145,7 +145,7 @@ def parse_cmdlineoptions(arglist):
 			sys.exit(0)
 		elif opt == "-v" or opt == "--verbosity": Log.setverbosity(arg)
 		elif opt == "--windows-mode":
-			Globals.set('chars_to_quote', "A-Z:\\/*?\"<>|")
+			Globals.set('chars_to_quote', "^a-z._ -")
 			Globals.set('quoting_enabled', 1)
 			Globals.set('preserve_hardlinks', 0)
 			Globals.set('change_ownership', 0)
@@ -535,7 +535,7 @@ def RemoveOlderThan(rootrp):
 	times_in_secs = filter(lambda t: t < time, times_in_secs)
 	if not times_in_secs:
 		Log.FatalError("No increments older than %s found, exiting."
-					   % (timep,), 1)
+					   % (timep,), 1, errlevel = 0)
 
 	times_in_secs.sort()
 	inc_pretty_time = "\n".join(map(Time.timetopretty, times_in_secs))

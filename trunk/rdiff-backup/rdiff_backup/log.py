@@ -150,7 +150,7 @@ class Logger:
 		self.log_to_term("%s %s (%d): %s" %
 						 (conn_str, direction, req_num, result_repr), 9)
 
-	def FatalError(self, message, no_fatal_message = 0):
+	def FatalError(self, message, no_fatal_message = 0, errlevel = 1):
 		"""Log a fatal error and exit"""
 		assert no_fatal_message == 0 or no_fatal_message == 1
 		if no_fatal_message: prefix_string = ""
@@ -158,7 +158,7 @@ class Logger:
 		self(prefix_string + message, 1)
 		import Main
 		Main.cleanup()
-		sys.exit(1)
+		sys.exit(errlevel)
 
 	def exception_to_string(self, arglist = []):
 		"""Return string version of current exception plus what's in arglist"""
