@@ -10,6 +10,9 @@ Fix by Dean Gaudet for --calculate-average mode (it broke somewhere in
 Fix for regress warning code:  rdiff-backup should warn you if you are
 trying to back up a directory into itself.
 
+Now when determining group permissions check supplementary groups as
+well as main group.  (Bug report by Ryan Castle.)
+
 
 New in v0.13.4 (2004/01/31)
 ---------------------------

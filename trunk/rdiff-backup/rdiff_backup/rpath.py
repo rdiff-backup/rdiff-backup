@@ -840,8 +840,8 @@ class RPath(RORPath):
 		return uid == 0 or uid == self.data['uid']
 
 	def isgroup(self):
-		"""Return true if current process is in group of rp"""
-		return self.conn.Globals.get('process_gid') == self.data['gid']
+		"""Return true if process has group of rp"""
+		return self.data['gid'] in self.conn.Globals.get('process_groups')
 
 	def delete(self):
 		"""Delete file at self.path.  Recursively deletes directories."""
