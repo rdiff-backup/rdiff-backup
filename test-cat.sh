@@ -4,11 +4,13 @@
 
 # Test that our file buffers are operating properly.
 
-source testfns.sh $0 $@
+source ${srcdir:-.}/testfns.sh $0 $@
 
 files=`echo $srcdir/INSTALL`
 
 sizes="1 2 3 4 7 8 9 10 33 63 64 65 100 200 2000 10000"
+
+new=$tmpdir/new.tmp
 
 for from in $files
 do
@@ -16,8 +18,8 @@ do
     do
 	for opt in "" "-l"
 	do
-	    run_test hsfilebufcat $opt -b $size <$from >new.tmp
-	    run_test cmp $from new.tmp
+	    run_test hsfilebufcat $opt -b $size <$from >$new
+	    run_test cmp $from $new
 	done
     done
 done

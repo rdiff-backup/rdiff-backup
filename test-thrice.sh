@@ -9,7 +9,7 @@
 
 # `What I tell you three times is true'
 
-source testfns.sh $0 $@
+source ${srcdir:-.}/testfns.sh $0 $@
 
 data=../INSTALL
 

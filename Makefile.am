@@ -29,7 +29,7 @@ noinst_SCRIPTS = test-decode.sh test-encode.sh \
 	test-chain.sh test-cmds.sh \
 	make-cmds.py test-thrice.sh test-seq.sh test-meta.sh \
 	test-cat.sh \
-	test-md4sizes testfns.sh 
+	test-md4sizes.sh testfns.sh 
 
 test_data=test-chain/empty-sig  \
 test-decode/01-diff \
@@ -58,12 +58,10 @@ test-encode/01-new \
 test-encode/01-out \
 test-encode/01-sig \
 test-seq/in-01 \
-test-seq/in-02 \
-test-seq/in-03 \
 test-seq/in-04 \
-test-seq/in-06 \
 test-seq/in-07 \
-test-seq/in-08
+test-seq/in-08 \
+test-cmds/cmds.txt
 
 
 EXTRA_DIST = $(noinst_SCRIPTS) $(test_data)
@@ -73,10 +71,9 @@ include_HEADERS = hsync.h hsyncproto.h
 bin_PROGRAMS = hsdecode hsencode hsmdfour
 check_PROGRAMS = hsemit hsinhale hsfilebufcat
 
-check_DATA = test-cmds/cmds.txt
-
 test-cmds/cmds.txt: make-cmds.py
-	$(PYTHON) ./make-cmds.py > $@
+	mkdir -p test-cmds
+	$(PYTHON) $(srcdir)/make-cmds.py > $@
 
 hsmdfour_SOURCES = hsmdfour.c mdfour.c filebuf.c hex.c trace.c
 # hsmdfour_LDADD = libhsyncdecode.la

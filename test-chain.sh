@@ -8,18 +8,18 @@
 # with an empty signature, we generate the difference from one
 # file to another.
 
-source testfns.sh $0 $@
+source ${srcdir:-.}/testfns.sh $0 $@
 
-diff=diff.tmp
+diff=$tmpdir/diff.tmp
 files=`echo $srcdir/*.c|head -20`
-newsig=newsig.tmp
-out=out.tmp
+newsig=$tmpdir/newsig.tmp
+out=$tmpdir/out.tmp
 oldsig=empty-sig
 old=/dev/null
 
-fromsig=fromsig.tmp
-fromlt=fromlt.tmp
-ltfile=lt.tmp
+fromsig=$tmpdir/fromsig.tmp
+fromlt=$tmpdir/fromlt.tmp
+ltfile=$tmpdir/lt.tmp
 
 for from in $files
 do

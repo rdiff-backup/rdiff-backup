@@ -6,11 +6,11 @@
 # We expect the automake-generated Makefile to pass in $srcdir, but if we're
 # run from the commandline we may not have it.
 
-source testfns.sh $0 $@
+source ${srcdir:=.}/testfns.sh $0 $@
 
-out=out.tmp
-cmds=cmds.txt
-tmp=bin.tmp
+out=$tmpdir/out.tmp
+cmds=$testdir/cmds.txt
+tmp=$tmpdir/bin.tmp
 
 run_test hsemit < $cmds > $tmp
 run_test hsinhale > $out < $tmp

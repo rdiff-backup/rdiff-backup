@@ -4,7 +4,7 @@
 
 # Test that the test harness kind of works
 
-source testfns.sh $0
+source ${srcdir:-.}/testfns.sh $0
 
 # We expect this one to work OK
 run_test true love

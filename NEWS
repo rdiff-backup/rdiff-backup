@@ -1,0 +1,13 @@
+Changes in 0.4.0:
+
+* Better regression suite.
+
+* CHECKSUM token includes the file's checksum up to the current
+  location, to aid in self-testing.
+
+* Various bug fixes, particularly to do with short IO returns.
+
+
+Local variables:
+mode: indented-text
+End:
