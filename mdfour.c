@@ -35,6 +35,10 @@
  * 
  * 2002-06-27: Donovan Baarda <abo@minkirri.apana.org.au>
  *   further optimisations and cleanups.
+ *
+ * 2004-09-09: Simon Law  <sfllaw@debian.org>
+ *   handle little-endian machines that can't do unaligned access
+ *   (e.g. ia64, pa-risc).
  */
 
 #include <config.h>
@@ -222,8 +226,26 @@ void rs_mdfour_block(rs_mdfour_t *md, void const *p)
 
 
 #else /* WORDS_BIGENDIAN */
-/* if we are little endian, we can process directly */
+
+#  ifdef __i386__
+
+/* If we are on an IA-32 machine, we can process directly. */
 #define rs_mdfour_block(md,p) rs_mdfour64(md,p)
+
+#  else
+
+/* We are little-endian, but not on i386 and therefore may not be able
+ * to do unaligned access safely/quickly.  So copy the input block to
+ * an aligned buffer first. */
+void rs_mdfour_block(rs_mdfour_t *md, void const *p)
+{
+    uint32_t        M[16];
+
+    memcpy(M, p, 16 * sizeof(uint32_t));
+    rs_mdfour64(md, M);
+}
+
+#  endif /* ! __i386__ */
 #endif /* WORDS_BIGENDIAN */
 
 
