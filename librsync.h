@@ -1,7 +1,6 @@
 /*=                    -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- library for network deltas
- * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
  * 
@@ -32,7 +31,7 @@
  *
  * \brief Main public interface to librsync.
  * \author Martin Pool <mbp@samba.org>
- * \version librsync-0.9.1
+ * \version librsync-0.9.6
  *
  * $Id$
  *
@@ -43,26 +42,10 @@
 #define _RSYNC_H
 
 #include <sys/types.h>
+#include <librsync-config.h>
 
 extern char const rs_librsync_version[];
 extern char const rs_licence_string[];
-
-
-/**
- * \brief A long integer type that can handle the largest file
- * offsets.
- *
- * Perhaps this might have to be configured to be 'long long', 'long',
- * or something else depending on the platform.  On WIN32, many config.h's
- * define LONG_LONG as "__int64".
- */
-#ifdef LONG_LONG
-typedef LONG_LONG    rs_long_t;
-#elif SIZEOF_LONG_LONG
-typedef signed long long    rs_long_t;
-#else
-typedef long rs_long_t;
-#endif
 
 
 /**
