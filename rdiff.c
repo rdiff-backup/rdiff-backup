@@ -43,12 +43,12 @@
 #include <fcntl.h>
 #include <popt.h>
 
-#if HAVE_LIBZ && HAVE_ZLIB_H
-#    include <zlib.h>
+#ifdef HAVE_ZLIB_H
+#include <zlib.h>
 #endif
 
-#if HAVE_LIBBZ2 && HAVE_BZLIB_H
-#    include <bzlib.h>
+#ifdef HAVE_BZLIB_H
+#include <bzlib.h>
 #endif
 
 #include "rsync.h"
@@ -143,11 +143,11 @@ static void rdiff_show_version(void)
      */
     char const *bzlib = "", *zlib = "";
     
-#if HAVE_LIBZ && HAVE_ZLIB_H
+#ifdef HAVE_LIBZ
     zlib = ", gzip";
 #endif
 
-#if HAVE_LIBBZ2 && HAVE_BZLIB_H
+#ifdef HAVE_LIBBZ2
     bzlib = ", bzip2";
 #endif
    
