@@ -57,6 +57,19 @@
    at a given offset, but without moving the file offset and in only a
    single call.  Cute, but probably pointless in this application. */
 
+/* mapptr is fine, but it's not optimized for reading from a socket into
+ * nad.
+ *
+ * What's wrong?
+ *
+ * mapptr has the problem in this situation that it will try to read
+ * more data than is strictly required, and this damages liveness.
+ * Also, though this is less important, it retains old data in the
+ * buffer even when we know we won't use it, and this is bad.
+ *
+ * On the other hand perhaps having less code is more important than
+ * all the code being optimal. */
+
 #include "includes.h"
 
 #define CHUNK_SIZE (1024)
@@ -151,6 +164,9 @@ _hs_map_do_read(hs_map_t *map,
     
     do {
 	nread = read(map->fd, p, (size_t) buf_remain);
+
+	_hs_trace("tried to read %ld bytes, result %ld",
+		  (long) buf_remain, (long) nread);
 
 	if (nread < 0  &&  errno == EWOULDBLOCK) {
 	    _hs_trace("input from this file would block");

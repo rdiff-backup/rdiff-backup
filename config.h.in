@@ -6,9 +6,6 @@
 /* Define this to enable trace code */
 #undef DO_HS_TRACE
 
-/* Define if you have the z library (-lz).  */
-#undef HAVE_LIBZ
-
 /* Name of package */
 #undef PACKAGE
 

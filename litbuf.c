@@ -1,21 +1,28 @@
-/* -*- mode: c; c-file-style: "bsd" -*-  */
-/* $Id$ */
-/* litbuf -- buffer of data waiting to go out as signature or literal
-   Copyright (C) 2000 by Martin Pool <mbp@humbug.org.au>
+/*				       	-*- c-file-style: "bsd" -*-
+ * rproxy -- dynamic caching and delta update in HTTP
+ * $Id$
+ * 
+ * Copyright (C) 2000 by Martin Pool
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published by the Free 
-   Software Foundation; either version 2 of the License, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-   for more details.
-
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, write to the Free Software Foundation, Inc., 59 
-   Temple Place, Suite 330, Boston, MA 02111-1307 USA */
+/* TODO: You know, queueing things up to the size of either the
+ * typical TCP output buffer (32kb) or the typical packet limit (~1500
+ * or ~1300) might be good.  I wonder if we can what the buffer size
+ * is? */
 
 #include "includes.h"
 

@@ -1,5 +1,5 @@
 /*				       	-*- c-file-style: "bsd" -*-
- *
+ * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool
@@ -20,13 +20,19 @@
  */
 
 /*
- * hs_hose: sloppy output function, good for writing to nonblocking
- * output channels.  This is the brother of hs_mapptr, except that it
- * doesn't support random access.
+ * hs_hose: sloppy output function, good for writing to output streams
+ * which may be either blocking or nonblocking.  It doesn't support
+ * random access.
  *
  * We try to be smart by only copying data into the buffer if it can't
  * be written immediately.
- */
+ *
+ * Another way to be smart would be to defer deciding the encoding
+ * until the data is ready to be written out.  For example, suppose we
+ * get a series of small literal packets to send out, and on trying to
+ * send the first one we see EWOULDBLOCK.  The smart thing would be at
+ * that point to start combining all the others until we are allowed
+ * to do more output.  This is maybe too clever.  */
 
 /*
  * hs_host_t structure

@@ -1,5 +1,5 @@
 /*				       	-*- c-file-style: "bsd" -*-
- *
+ * rproxy -- dynamic caching and delta update in HTTP
  * $Id$
  * 
  * Copyright (C) 2000 by Martin Pool
@@ -129,6 +129,7 @@ struct hs_encode_job {
 
     /* This points to the rolling sums used for searching. */
     hs_off_t		search_cursor;
+    size_t		search_block_len;
     hs_rollsum_t       *rollsum;
 
     int			seen_eof;
@@ -139,8 +140,6 @@ struct hs_encode_job {
 
     hs_write_fn_t       write_fn;
     void	       *write_priv;
-
-    size_t		input_block;
 };
 
 
@@ -183,11 +182,15 @@ hs_encode_begin(int in_fd, hs_write_fn_t write_fn, void *write_priv,
     job->write_priv = write_priv;
     job->write_fn = write_fn;
 
-    /* FIXME: Should we use input blocks, or should we just read
-     * enough to run a coroutine? */
-    job->input_block = 32<<10;
-				    
     job->sums = sums;
+    if (job->sums) {
+	assert(job->sums->block_len > 0);
+	job->search_block_len = job->sums->block_len;
+    } else {
+	/* we can read and process one byte at a time, because we can never match. */
+	job->search_block_len = 1;
+    }
+    
     job->new_block_len = new_block_len;
     hs_bzero(stats, sizeof *stats);
 
@@ -224,7 +227,7 @@ _hs_nad_map(hs_encode_job_t *job,
 	       size_t *map_len)
 {
     char const	       *p;
-    hs_off_t		start;
+    hs_off_t		start, end, end2;
 
     /* once we've seen eof, we should never try to map any more
      * data. */
@@ -235,9 +238,18 @@ _hs_nad_map(hs_encode_job_t *job,
     start = job->search_cursor;
     if (start > job->sum_cursor)
 	start = job->sum_cursor;
+
+    end = job->search_cursor + job->search_block_len;
+    end2 = job->sum_cursor + job->new_block_len;
+    /* We choose the earlier end, because that's the earliest place
+     * that will allow us to get some useful work done.  Because the
+     * blocks can be different it need not be the same as in the
+     * previous condition. */
+    if (end2 < end)
+	end = end2;    
     
     *map_off = start;
-    *map_len = job->input_block;
+    *map_len = end - start;
 
     p = _hs_map_ptr(job->in_map, *map_off, map_len, &job->seen_eof);
 
@@ -257,7 +269,11 @@ _hs_nad_search_iter(hs_encode_job_t *job,
      * generate literal commands.
      *
      * XXX: We should leave a compile-time option to always generate
-     * literals because this will allow a nice simple test case. */
+     * literals because this will allow a nice simple test case.
+     *
+     * TODO: Even when searching is in place we should specially
+     * recognize the case where there's no old sums, because we can
+     * then immediately generate literals. */
     hs_mdfour_update(&job->filesum, p, avail);    
     _hs_send_literal(job->write_fn, job->write_priv, op_kind_literal,
 		     p, avail);
