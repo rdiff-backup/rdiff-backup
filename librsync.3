@@ -22,14 +22,13 @@
 .SH NAME
 librsync \- library for delta compression of streams
 .SH SYNOPSYS
-.nf 
 .B #include <stdio.h>
+.br
 .B #include <stdlib.h>
-
+.sp
 .B #include <rsync.h>
-
+.sp
 .B cc ... -lrsync
-
 .SH DESCRIPTION
 The \fBlibrsync\fP library implements network delta-compression of
 streams and files.  The algorithm is similar to that used in the
@@ -66,10 +65,7 @@ error code to the caller.  Patches to fix this are welcome, but at the
 current state of development aborting seems as useful as trusting to
 possibly-incomplete checking in the client.
 .SH "AUTHOR"
-Martin Pool <mbp@samba.org>
-.PP
-The ideas in rdiff draw heavily on the work of Andrew Tridgell and
-Paulus Mackerras, the original developers of rsync. 
+Martin Pool <mbp@samba.org>, with Andrew Tridgell <tridge@samba.org>.
 .PP
 rproxy/rdiff development has been supported in part by Linuxcare, Inc,
 a leading provider of enterprise services for open source software.
