@@ -21,7 +21,7 @@ tarfile = "-".join(base.split("-")[:-1]) + ".tar.gz"
 # These assume the rpm root directory $HOME/rpm.  The
 # nonstandard location allows for building by non-root user.
 assert not os.system("cp %s $HOME/rpm/SOURCES" % (tarfile,))
-assert not os.system("rpm -ba --sign -vv --target i386 " + specfile)
+assert not os.system("rpmbuild -ba --sign -vv --target i386 " + specfile)
 assert not os.system("cp $HOME/rpm/RPMS/i386/%s ." % i386rpm)
 assert not os.system("cp $HOME/rpm/SRPMS/%s ." % source_rpm)
 
