@@ -456,7 +456,6 @@ class RPath(RORPath):
 
 		if stat.S_ISREG(mode):
 			type = 'reg'
-			data['size'] = statblock[stat.ST_SIZE]
 		elif stat.S_ISDIR(mode): type = 'dir'
 		elif stat.S_ISCHR(mode):
 			type = 'dev'
@@ -471,6 +470,7 @@ class RPath(RORPath):
 		elif stat.S_ISSOCK(mode): type = 'sock'
 		else: raise RPathException("Unknown type for %s" % self.path)
 		data['type'] = type
+		data['size'] = statblock[stat.ST_SIZE]
 		data['perms'] = stat.S_IMODE(mode)
 		data['uid'] = statblock[stat.ST_UID]
 		data['gid'] = statblock[stat.ST_GID]
@@ -754,7 +754,7 @@ class RPath(RORPath):
 		if type == 'c': datatype = 'chr'
 		elif type == 'b': datatype = 'blk'
 		else: raise RPathException
-		self.data = {'type': datatype, 'devnums': (type, major, minor)}
+		self.setdata()
 
 	def getRORPath(self, include_contents = None):
 		"""Return read only version of self"""

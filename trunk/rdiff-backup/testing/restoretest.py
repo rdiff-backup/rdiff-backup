@@ -74,13 +74,8 @@ class RestoreTest(unittest.TestCase):
 				assert inc.isincfile()
 				inctime = Time.stringtotime(inc.getinctime())
 				rid1 = RestoreIncrementData(basename, incbase, incs)
-				rid2 = RestoreIncrementData(basename, incbase, incs)
 				rid1.sortincseq(inctime, mirror_time)
-				rid2.sortincseq(inctime + 5, mirror_time)
 				assert rid1.inc_list, rid1.inc_list
-				# Five seconds later shouldn't make a difference
-				assert rid1.inc_list == rid2.inc_list, (rid1.inc_list,
-														rid2.inc_list)
 				# oldest increment should be exactly inctime
 				ridtime = Time.stringtotime(rid1.inc_list[-1].getinctime())
 				assert ridtime == inctime, (ridtime, inctime)

@@ -1,12 +1,12 @@
 import unittest, os
 
 execfile("commontest.py")
-rbexec("increment.py")
+rbexec("main.py")
 
 
 lc = Globals.local_connection
 Globals.change_source_perms = 1
-Log.setverbosity(7)
+Log.setverbosity(4)
 
 def getrp(ending):
 	return RPath(lc, "testfiles/various_file_types/" + ending)
@@ -161,5 +161,75 @@ class inctest(unittest.TestCase):
 		rp.delete()
 		out2.delete()
 		out_gz.delete()
+
+class inctest2(unittest.TestCase):
+	"""Like inctest but contains more elaborate tests"""
+	def testStatistics(self):
+		"""Test the writing of statistics
+
+		The file sizes are approximate because the size of directories
+		could change with different file systems...
+
+		"""
+		Globals.compression = 1
+		Myrm("testfiles/output")
+		InternalBackup(1, 1, "testfiles/stattest1", "testfiles/output")
+		InternalBackup(1, 1, "testfiles/stattest2", "testfiles/output")
+
+		inc_base = RPath(Globals.local_connection,
+						 "testfiles/output/rdiff-backup-data/increments")
+
+		incs = Restore.get_inclist(inc_base.append("subdir").
+								   append("directory_statistics"))
+		assert len(incs) == 1
+		subdir_stats = self.parse_statistics(incs[0])
+		assert subdir_stats.total_files == 2, subdir_stats.total_files
+		assert 350000 < subdir_stats.total_file_size < 450000, \
+			   subdir_stats.total_file_size
+		assert subdir_stats.changed_files == 2, subdir_stats.changed_files
+		assert 350000 < subdir_stats.changed_file_size < 450000, \
+			   subdir_stats.changed_file_size
+		assert 10 < subdir_stats.increment_file_size < 20000, \
+			   subdir_stats.increment_file_size
+
+		incs = Restore.get_inclist(inc_base.append("directory_statistics"))
+		assert len(incs) == 1
+		root_stats = self.parse_statistics(incs[0])
+		assert root_stats.total_files == 6, root_stats.total_files
+		assert 650000 < root_stats.total_file_size < 750000, \
+			   root_stats.total_file_size
+		assert root_stats.changed_files == 4, root_stats.changed_files
+		assert 550000 < root_stats.changed_file_size < 650000, \
+			   root_stats.changed_file_size
+		assert 10 < root_stats.increment_file_size < 20000, \
+			   root_stats.increment_file_size
+
+	def parse_statistics(self, statrp):
+		"""Return StatObj from given statrp"""
+		assert statrp.isincfile() and statrp.getinctype() == "data"
+		s = StatObj()
+		fp = statrp.open("r")
+		for line in fp:
+			lsplit = line.split()
+			assert len(lsplit) == 2
+			field, num = lsplit[0], long(lsplit[1])
+			if field == "TotalFiles": s.total_files = num
+			elif field == "TotalFileSize": s.total_file_size = num
+			elif field == "ChangedFiles": s.changed_files = num
+			elif field == "ChangedFileSize": s.changed_file_size = num
+			elif field == "IncrementFileSize": s.increment_file_size = num
+			else: assert None, "Unrecognized field %s" % (field,)
+		assert not fp.close()
+		return s
+
+
+class StatObj:
+	"""Just hold various statistics"""
+	total_files = 0
+	total_file_size = 0
+	changed_files = 0
+	changed_file_size = 0
+	increment_file_size = 0
+	
 
 if __name__ == '__main__': unittest.main()
