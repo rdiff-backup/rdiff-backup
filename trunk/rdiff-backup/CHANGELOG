@@ -4,6 +4,10 @@ New in v0.13.2 (??????????)
 Specified socket type as SOCK_STREAM.  (Error reported by Erik
 Forsberg.)
 
+Fixed bug backing up unreadable regular files when rdiff-backup is run
+by root on the source site and non-root on the destination side.
+(Reported by Troels Arvin and Arkadiusz Miskiewicz.)
+
 
 New in v0.13.1 (2003/08/08)
 ---------------------------

@@ -2,15 +2,19 @@ import unittest, os
 from commontest import *
 from rdiff_backup import Globals, log
 
-"""Root tests
+"""Root tests - contain tests which need to be run as root.
 
-This is mainly a copy of regressiontest.py, but contains the two tests
-that are meant to be run as root.
+Some of the quoting here may not work with csh (works on bash).  Also,
+if you aren't me, check out the 'user' global variable.
+
 """
 
 Globals.set('change_source_perms', None)
 Globals.counter = 0
-log.Log.setverbosity(6)
+verbosity = 3
+log.Log.setverbosity(verbosity)
+user = 'ben' # Non-root user to su to
+assert os.getuid() == 0, "Run this test as root!"
 
 def Run(cmd):
 	print "Running: ", cmd
@@ -24,6 +28,56 @@ class RootTest(unittest.TestCase):
 	def testLocal2(self): BackupRestoreSeries(1, 1, self.dirlist2)
 	def testRemote(self): BackupRestoreSeries(None, None, self.dirlist1)
 
+class HalfRoot(unittest.TestCase):
+	"""Backing up files where origin is root and destination is non-root"""
+	def make_dirs(self):
+		"""Make source directories, return rpaths
+
+		These make a directory with a changing file that is not
+		self-readable.  (Caused problems earlier.)
+
+		"""
+		rp1 = rpath.RPath(Globals.local_connection, "testfiles/root_half1")
+		if rp1.lstat(): Myrm(rp1.path)
+		rp1.mkdir()
+		rp1_1 = rp1.append('foo')
+		rp1_1.write_string('hello')
+		rp1_1.chmod(0)
+		rp1_2 = rp1.append('to be deleted')
+		rp1_2.write_string('aosetuhaosetnuhontu')
+		rp1_2.chmod(0)
+
+		rp2 = rpath.RPath(Globals.local_connection, "testfiles/root_half2")
+		if rp2.lstat(): Myrm(rp2.path)
+		rp2.mkdir()
+		rp2_1 = rp2.append('foo')
+		rp2_1.write_string('goodbye')
+		rp2_1.chmod(0)
+		return rp1, rp2
+
+	def test_backup(self):
+		"""Right now just test backing up"""
+		in_rp1, in_rp2 = self.make_dirs()
+		outrp = rpath.RPath(Globals.local_connection, "testfiles/output")
+		if outrp.lstat(): outrp.delete()
+		remote_schema = 'su -c "rdiff-backup --server" %s' % (user,)
+		cmd_schema = ("rdiff-backup -v" + str(verbosity) +
+					  " --current-time %s --remote-schema '%%s' %s '%s'::%s")
+
+		cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
+		print "Executing: ", cmd1
+		assert not os.system(cmd1)
+		in_rp1.setdata()
+		outrp.setdata()
+		assert CompareRecursive(in_rp1, outrp)
+
+		cmd2 = cmd_schema % (20000, in_rp2.path, remote_schema, outrp.path)
+		print "Executing: ", cmd2
+		assert not os.system(cmd2)
+		in_rp2.setdata()
+		outrp.setdata()
+		assert CompareRecursive(in_rp2, outrp)
+
 class NonRoot(unittest.TestCase):
 	"""Test backing up as non-root user
 
@@ -32,7 +86,6 @@ class NonRoot(unittest.TestCase):
 	root, everything should be restored normally.
 
 	"""
-	user = 'ben'
 	def make_root_dirs(self):
 		"""Make directory createable only by root"""
 		rp = rpath.RPath(Globals.local_connection, "testfiles/root_out1")
@@ -61,10 +114,11 @@ class NonRoot(unittest.TestCase):
 		return rp, sp
 
 	def backup(self, input_rp, output_rp, time):
+		global user
 		backup_cmd = ("rdiff-backup --no-compare-inode "
 					  "--current-time %s %s %s" %
 					  (time, input_rp.path, output_rp.path))
-		Run("su %s -c '%s'" % (self.user, backup_cmd))
+		Run("su %s -c '%s'" % (user, backup_cmd))
 
 	def restore(self, dest_rp, restore_rp, time = None):
 		assert restore_rp.path == "testfiles/rest_out"
