@@ -1,8 +1,8 @@
 import unittest
 from commontest import *
-from log import *
-from restore import *
-import Globals
+from rdiff_backup.log import *
+from rdiff_backup.restore import *
+from rdiff_backup import Globals
 
 Log.setverbosity(3)
 

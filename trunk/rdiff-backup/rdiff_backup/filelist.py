@@ -1,5 +1,6 @@
 from __future__ import generators
-execfile("manage.py")
+from manage import *
+from rpath import *
 
 #######################################################################
 #

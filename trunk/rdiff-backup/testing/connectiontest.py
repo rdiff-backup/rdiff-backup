@@ -1,7 +1,7 @@
 import unittest, types, tempfile, os, sys
 from commontest import *
-from connection import *
-import Globals
+from rdiff_backup.connection import *
+from rdiff_backup import Globals
 
 class LocalConnectionTest(unittest.TestCase):
 	"""Test the dummy connection"""

@@ -1,6 +1,6 @@
 import unittest, time
 from commontest import *
-import Globals, Time
+from rdiff_backup import Globals, Time
 
 class TimeTest(unittest.TestCase):
 	def testConversion(self):

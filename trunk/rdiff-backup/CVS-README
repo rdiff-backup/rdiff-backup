@@ -16,12 +16,21 @@ PYTHONPATH=$RDB_ROOT $RDB_ROOT/rdiff-backup
 Running the unit tests:
 -----------------------
 
-If you want to try some of tests, you first have to untar the
-testfiles.tar.gz as root (the tarball contains device files, files
-with various uid/gid, etc):
+If you want to try some of tests, you first have to get the
+testfiles.tar.gz tarball.  It is available at
+
+http://rdiff-backup.stanford.edu/testfiles.tar.gz
+
+and untar it as root in the testing directory.  Root is required
+because the tarball contains device files, files with various uid/gid,
+etc.  If you don't have root, it's ok, all the tests except for
+roottest.py may still work.
 
 cd testing; tar -xvzf testfiles.tar.gz
 
 Then run the various *test.py files, for instance:
 
 cd testing; python lazytest.py
+
+If python restoretest.py doesn't work, try running ./makerestoretest3.
+

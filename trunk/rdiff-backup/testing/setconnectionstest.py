@@ -1,6 +1,6 @@
 import unittest
 from commontest import *
-import SetConnections
+from rdiff_backup import SetConnections
 
 class SetConnectionsTest(unittest.TestCase):
 	"""Set SetConnections Class"""

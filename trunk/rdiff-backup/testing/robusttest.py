@@ -1,7 +1,7 @@
 import os, unittest
 from commontest import *
-from rpath import *
-from robust import *
+from rdiff_backup.rpath import *
+from rdiff_backup.robust import *
 
 
 class TestRobustAction(unittest.TestCase):

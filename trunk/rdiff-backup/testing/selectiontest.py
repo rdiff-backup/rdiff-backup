@@ -1,9 +1,9 @@
 from __future__ import generators
 import re, StringIO, unittest
 from commontest import *
-from selection import *
-from destructive_stepping import *
-import Globals
+from rdiff_backup.selection import *
+from rdiff_backup.destructive_stepping import *
+from rdiff_backup import Globals
 
 
 class MatchingTest(unittest.TestCase):
