@@ -6,6 +6,10 @@ execfile("rorpiter.py")
 # destructive-stepping - Deal with side effects from traversing trees
 #
 
+class DSRPathError(Exception):
+	"""Exception used when a DSRPath can't get sufficient permissions"""
+	pass
+
 class DSRPath(RPath):
 	"""Destructive Stepping RPath
 
@@ -16,17 +20,81 @@ class DSRPath(RPath):
 	modifications are delayed, so that they can be done at the very
 	end when they won't be disturbed later.
 
+	Here are the new class variables:
+	delay_perms - true iff future perm changes should be delayed
+	newperms - holds the perm values while they are delayed
+	delay_atime - true iff some atime change are being delayed
+	newatime - holds the new atime
+	delay_mtime - true if some mtime change is being delayed
+	newmtime - holds the new mtime
+
 	"""
-	def __init__(self, *args):
-		self.perms_delayed = self.times_delayed = None
-		RPath.__init__(self, *args)
+	def __init__(self, source, *args):
+		"""Initialize DSRP
+
+		Source should be true iff the DSRPath is taken from the
+		"source" partition and thus settings like
+		Globals.change_source_perms should be paid attention to.
+
+		If args is [rpath], return the dsrpath equivalent of rpath,
+		otherwise use the same arguments as the RPath initializer.
+
+		"""
+		if len(args) == 2 and isinstance(args[0], RPath):
+			rp = args[0]
+			RPath.__init__(self, rp.conn, rp.base, rp.index)
+		else: RPath.__init__(self, *args)
+
+		self.set_delays(source)
+		self.set_init_perms(source)
+
+	def set_delays(self, source):
+		"""Delay writing permissions and times where appropriate"""
+		if not source or Globals.change_source_perms:
+			self.delay_perms, self.newperms = 1, None
+		else: self.delay_perms = None
+
+		if Globals.preserve_atime:
+			self.delay_atime = 1
+			# Now get atime right away if possible
+			if self.data.has_key('atime'): self.newatime = self.data['atime']
+			else: self.newatime = None
+		
+		if source:
+			self.delay_mtime = None # we'll never change mtime of source file
+		else:
+			self.delay_mtime = 1
+			# Save mtime now for a dir, because it might inadvertantly change
+			if self.isdir(): self.newmtime = self.getmtime()
+			else: self.newmtime = None
+
+	def set_init_perms(self, source):
+		"""If necessary, change permissions to ensure access"""
+		if self.isreg() and not self.readable():
+			if not source or Globals.change_source_perms and self.isowner():
+				self.chmod_bypass(0400)
+			else: self.warn("No read permissions")
+		elif self.isdir():
+			if source and (not self.readable() or self.executable()):
+				if Globals.change_source_perms and self.isowner():
+					self.chmod_bypass(0500)
+				else: warn("No read or exec permission")
+			elif not source and not self.hasfullperms():
+				self.chmod_bypass(0700)
+
+	def warn(self, err):
+		Log("Received error '%s' when dealing with file %s, skipping..."
+			% (err, self.path), 1)
+		raise DSRPathError(self.path)
 
 	def __getstate__(self):
 		"""Return picklable state.  See RPath __getstate__."""
 		assert self.conn is Globals.local_connection # Can't pickle a conn
 		pickle_dict = {}
-		for attrib in ['index', 'data', 'perms_delayed', 'times_delayed',
-					   'newperms', 'newtimes', 'path', 'base']:
+		for attrib in ['index', 'data', 'delay_perms', 'newperms',
+					   'delay_atime', 'newatime',
+					   'delay_mtime', 'newmtime',
+					   'path', 'base']:
 			if self.__dict__.has_key(attrib):
 				pickle_dict[attrib] = self.__dict__[attrib]
 		return pickle_dict
@@ -37,74 +105,45 @@ class DSRPath(RPath):
 		for attrib in pickle_dict.keys():
 			self.__dict__[attrib] = pickle_dict[attrib]
 
-	def delay_perm_writes(self):
-		"""Signal that permission writing should be delayed until the end"""
-		self.perms_delayed = 1
-		self.newperms = None
-
-	def delay_time_changes(self):
-		"""Signal that time changes should also be delayed until the end"""
-		self.times_delayed = 1
-		self.newtimes = None
-
 	def chmod(self, permissions):
 		"""Change permissions, delaying if self.perms_delayed is set"""
-		if self.perms_delayed:
-			self.newperms = 1
-			self.data['perms'] = permissions
+		if self.delay_perms: self.newperms = self.data['perms'] = permissions
 		else: RPath.chmod(self, permissions)
 
 	def chmod_bypass(self, permissions):
 		"""Change permissions without updating the data dictionary"""
+		self.delay_perms = 1
+		if self.newperms is None: self.newperms = self.getperms()
 		self.conn.os.chmod(self.path, permissions)
-		self.perms_delayed = self.newperms = 1
-
-	def remember_times(self):
-		"""Mark times as changed so they can be restored later"""
-		self.times_delayed = self.newtimes = 1
 
 	def settime(self, accesstime, modtime):
 		"""Change times, delaying if self.times_delayed is set"""
-		if self.times_delayed:
-			self.newtimes = 1
-			self.data['atime'] = accesstime
-			self.data['mtime'] = modtime
-		else: RPath.settime(self, accesstime, modtime)
+		if self.delay_atime: self.newatime = self.data['atime'] = accesstime
+		if self.delay_mtime: self.newmtime = self.data['mtime'] = modtime
 
-	def settime_bypass(self, accesstime, modtime):
-		"""Change times without updating data dictionary"""
-		self.conn.os.utime(self.path, (accesstime, modtime))
-
+		if not self.delay_atime or not self.delay_mtime:
+			RPath.settime(self, accesstime, modtime)
+		
 	def setmtime(self, modtime):
 		"""Change mtime, delaying if self.times_delayed is set"""
-		if self.times_delayed:
-			self.newtimes = 1
-			self.data['mtime'] = modtime
+		if self.delay_mtime: self.newmtime = self.data['mtime'] = modtime
 		else: RPath.setmtime(self, modtime)
-
-	def setmtime_bypass(self, modtime):
-		"""Change mtime without updating data dictionary"""
-		self.conn.os.utime(self.path, (time.time(), modtime))
-
-	def restoretimes(self):
-		"""Write times in self.data back to file"""
-		RPath.settime(self, self.data['atime'], self.data['mtime'])
-
-	def restoreperms(self):
-		"""Write permissions in self.data back to file"""
-		RPath.chmod(self, self.data['perms'])
 
 	def write_changes(self):
 		"""Write saved up permission/time changes"""
 		if not self.lstat(): return # File has been deleted in meantime
 
-		if self.perms_delayed and self.newperms:
-			self.conn.os.chmod(self.path, self.getperms())
-		if self.times_delayed:
-			if self.data.has_key('atime'):
-				self.settime_bypass(self.getatime(), self.getmtime())
-			elif self.newtimes and self.data.has_key('mtime'):
-				self.setmtime_bypass(self.getmtime())
+		if self.delay_perms and self.newperms is not None:
+			RPath.chmod(self, self.newperms)
+
+		do_atime = self.delay_atime and self.newatime is not None
+		do_mtime = self.delay_mtime and self.newmtime is not None
+		if do_atime and do_mtime:
+			RPath.settime(self, self.newatime, self.newmtime)
+		elif do_atime and not do_mtime:
+			RPath.settime(self, self.newatime, self.getmtime())
+		elif not do_atime and do_mtime:
+			RPath.setmtime(self, self.newmtime)
 
 
 class DestructiveStepping:
@@ -117,13 +156,6 @@ class DestructiveStepping:
 		Return false if everything good to go.
 
 		"""
-		if not source or Globals.change_source_perms:
-			dsrpath.delay_perm_writes()
-
-		def warn(err):
-			Log("Received error '%s' when dealing with file %s, skipping..."
-				% (err, dsrpath.path), 1)
-
 		def abort():
 			Log.FatalError("Missing access to file %s - aborting." %
 						   dsrpath.path)
@@ -158,17 +190,11 @@ class DestructiveStepping:
 			elif not source and not dsrpath.hasfullperms():
 				if Globals.change_mirror_perms: try_chmod(0700)
 
-		# Permissions above; now try to preserve access times if necessary
-		if (source and (Globals.preserve_atime or
-						Globals.change_source_perms) or
-			not source):
-			# These are the circumstances under which we will have to
-			# touch up a file's times after we are done with it
-			dsrpath.remember_times()
-		return None
+MakeStatic(DestructiveStepping)
 
-	def Finalizer(initial_state = None):
-		"""Return a finalizer that can work on an iterator of dsrpaths
+
+class DestructiveSteppingFinalizer(IterTreeReducer):
+		"""Finalizer that can work on an iterator of dsrpaths
 
 		The reason we have to use an IterTreeReducer is that some files
 		should be updated immediately, but for directories we sometimes
@@ -176,8 +202,11 @@ class DestructiveStepping:
 		coming back to it.
 
 		"""
-		return IterTreeReducer(lambda x: None, lambda x,y: None, None,
-							   lambda dsrpath, x, y: dsrpath.write_changes(),
-							   initial_state)
+		def start_process(self, index, dsrpath):
+			self.dsrpath = dsrpath
 
-MakeStatic(DestructiveStepping)
+		def end_process(self):
+			self.dsrpath.write_changes()
+
+
+
