@@ -9,8 +9,10 @@ some other special thing.
 
 import os, sys
 
-if len(sys.argv) > 1: os.chdir(sys.argv[1])
+if len(sys.argv) > 1:
+	olddir = os.getcwd()
+	os.chdir(sys.argv[1])
 #PipeConnection(sys.stdin, sys.stdout).Server()
 
-os.system("/home/ben/prog/python/rdiff-backup/rdiff-backup --server")
+os.system(os.path.join(olddir, "../rdiff-backup") + " --server")
 
