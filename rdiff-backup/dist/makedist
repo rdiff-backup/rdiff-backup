@@ -57,8 +57,13 @@ def MakeFAQ():
 	html_fp.write("\n</body></html>")
 	html_fp.close()
 
-def VersionedCopy(source, dest):
-	"""Copy source to dest, substituting $version with version"""
+def VersionedCopy(source, dest, munge_date = 0):
+	"""Copy source to dest, substituting $version with version
+
+	If munge_date is true, also replace $date with string like "August
+	8, 2003".
+
+	"""
 	fin = open(source, "rb")
 	inbuf = fin.read()
 	assert not fin.close()
@@ -67,6 +72,12 @@ def VersionedCopy(source, dest):
 	if outbuf == inbuf: assert 0, "No $version string replaced"
 	assert not re.search("\$version", outbuf), \
 		   "Two $version strings found in the same file %s" % (source,)
+
+	if munge_date:
+		inbuf = outbuf
+		outbuf = re.sub("\$date", time.strftime("%B %d, %Y"), inbuf, 1)
+		if outbuf == inbuf: assert 0, "No $date string replaced"
+		assert not re.search("\$date", outbuf), "Two $date strings found"
 
 	fout = open(dest, "wb")
 	fout.write(outbuf)
@@ -103,7 +114,7 @@ def MakeTar():
 
 	VersionedCopy("%s/Globals.py" % (SourceDir,),
 				  "%s/rdiff_backup/Globals.py" % (tardir,))
-	VersionedCopy("rdiff-backup", "%s/rdiff-backup" % (tardir,))
+	VersionedCopy("rdiff-backup", "%s/rdiff-backup" % (tardir,), 1)
 	VersionedCopy(DistDir + "/setup.py", "%s/setup.py" % (tardir,))
 
 	os.chmod(os.path.join(tardir, "setup.py"), 0755)
