@@ -29,8 +29,11 @@ It is now possible to restore from a read-only filesystem (before
 rdiff-backup would fail when trying to open log file).  Thanks to
 Gregor Zattler for bug report.
 
-Fixed bug that prevented certain restores when source directory given
-with trailing backslash.
+Fixed bug that prevented certain restores when the source directory
+was specified with a trailing backslash.
+
+Added a bit more logging so it should be apparent which file was being
+processed when an error occurs (thanks to Gerd Knops for suggestion).
 
 
 New in v0.10.1 (2002/09/16)
