@@ -43,7 +43,7 @@ compare_targets(struct target *t1, struct target *t2)
 
 
 int
-_hs_build_hash_table(hs_sum_set_t *sums)
+_hs_build_hash_table(hs_sumset_t *sums)
 {
      int i;
 
@@ -82,7 +82,7 @@ _hs_build_hash_table(hs_sum_set_t *sums)
 int
 _hs_find_in_hash(uint32_t weak_sum,
 		 char const *inbuf, int block_len,
-		 hs_sum_set_t const *sums,
+		 hs_sumset_t const *sums,
 		 hs_stats_t *stats)
 {
      int tag = gettag(weak_sum);

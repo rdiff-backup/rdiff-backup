@@ -41,18 +41,22 @@ int main(int argc, char *argv[])
      hs_stats_t stats;
      int new_block_len = 256;
      int c;
+     int			show_stats = 0;
 
      hs_trace_to(NULL);
 
-     while ((c = getopt(argc, argv, "D")) != -1) {
-	  switch (c) {
-	  case '?':
-	  case ':':
-	       return 1;
-	  case 'D':
-	       hs_trace_to(hs_trace_to_stderr);
-	       break;
-	  }
+     while ((c = getopt(argc, argv, "DS")) != -1) {
+	 switch (c) {
+	 case '?':
+	 case ':':
+	     return 1;
+	 case 'D':
+	     hs_trace_to(hs_trace_to_stderr);
+	     break;
+	 case 'S':
+	     show_stats = 1;
+	     break;
+	 }
      }
 
      switch (argc - optind) {
@@ -99,6 +103,9 @@ int main(int argc, char *argv[])
      hs_filebuf_close(ltfb);
      hs_filebuf_close(sigfb);
      hs_filebuf_close(newfb);
+
+     if (show_stats)
+	 hs_print_stats(stderr, &stats);
 
      return 0;
 }

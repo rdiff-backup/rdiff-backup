@@ -178,14 +178,17 @@ hs_decode(int oldread_fd,
     uint8_t         type;
     uint32_t        length, offset;
     int             kind;
-    char           *stats_str;
     hs_mdfour_t     newsum;
     hs_map_t	   *old_map;
+    char		stats_str[256];
 
     _hs_trace("**** begin");
     hs_bzero(stats, sizeof *stats);
     if (_hs_check_gd_header(ltread_fn, ltread_priv) < 0)
 	return -1;
+
+    stats->op = "decode";
+    stats->algorithm = "decode";
 
     old_map = _hs_map_file(oldread_fd);
 
@@ -244,9 +247,8 @@ hs_decode(int oldread_fd,
     }
 
     if (ret >= 0) {
-	stats_str = hs_format_stats(stats);
+	hs_format_stats(stats, stats_str, sizeof stats_str);
 	_hs_trace("completed: %s", stats_str);
-	free(stats_str);
     }
     
  out:

@@ -14,6 +14,8 @@
 # passed through.  For example in most cases -D will turn on debugging
 # trace.
 
+# NB: tests should exit with code 77 if they can't be run but haven't failed.
+
 if [ $# -lt 1 ]
 then
     echo 'test-driver: must have at least one parameter, the test script'
@@ -36,7 +38,11 @@ PATH=$builddir:$srcdir:$PATH
 
 testdir=$srcdir/$test_name
 tmpdir=$builddir/$test_name.d
-[ -d $tmpdir ] || mkdir $tmpdir
+[ -d $tmpdir ] || mkdir $tmpdir || exit 2
+
+function test_skipped {
+    echo $test_name: skipped; return 77
+}
 
 function run_test {
     $* || (echo $test_name: failed: "$*" >&2; return 2)

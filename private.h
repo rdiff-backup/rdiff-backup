@@ -160,7 +160,7 @@ struct target {
 /* This structure describes all the sums generated for an instance of
    a file.  It incorporates some redundancy to make it easier to
    search. */
-struct hs_sum_set {
+struct hs_sumset {
     hs_off_t        flength;	/* total file length */
     int             count;	/* how many chunks */
     int             remainder;	/* flength % block_length */

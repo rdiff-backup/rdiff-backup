@@ -9,7 +9,7 @@
 
 source ${srcdir:-.}/testfns.sh $0 $@
 
-files=`ls $srcdir/in-tricky/* |grep -v '~$'`
+files=`ls $srcdir/in-tricky/in-*`
 
 diff=$tmpdir/diff.tmp
 out=$tmpdir/out.tmp

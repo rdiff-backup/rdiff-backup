@@ -178,7 +178,7 @@ hs_encode_old(hs_read_fn_t read_fn, void *readprivate,
 	  hs_read_fn_t sigread_fn, void *sigreadprivate,
 	  UNUSED(int new_block_len), hs_stats_t * stats)
 {
-     hs_sum_set_t *sums = 0;
+     hs_sumset_t *sums = 0;
      int ret;
      hs_rollsum_t	rollsum;
      hs_rollsum_t	new_roll;
@@ -190,9 +190,9 @@ hs_encode_old(hs_read_fn_t read_fn, void *readprivate,
      int at_eof;
      int got_old;		/* true if there is an old signature */
      int need_bytes;		/* how much readahead do we need? */
-     char *stats_str;
      hs_mdfour_t filesum;
      char filesum_result[MD4_LENGTH], filesum_hex[MD4_LENGTH * 2 + 2];
+    char		stats_str[256];
      
      _hs_trace("**** begin");
 
@@ -200,10 +200,13 @@ hs_encode_old(hs_read_fn_t read_fn, void *readprivate,
      hs_bzero(&copyq, sizeof copyq);
      hs_bzero(&new_roll, sizeof new_roll);
 
+     stats->op = "encode";
+     stats->algorithm = "encode_old";
+
      hs_mdfour_begin(&filesum);
 
      got_old = 1;
-     sums = _hs_read_sum_set(sigread_fn, sigreadprivate);
+     sums = hs_read_sumset(sigread_fn, sigreadprivate);
      if (!sums) {
 	 got_old = 0;
 	 
@@ -370,9 +373,8 @@ hs_encode_old(hs_read_fn_t read_fn, void *readprivate,
      if (ret < 0)
 	  goto out;
 
-     stats_str = hs_format_stats(stats);
+     hs_format_stats(stats,stats_str, sizeof stats_str);
      _hs_trace("completed: %s", stats_str);
-     free(stats_str);
     
      ret = 1;
 
@@ -382,7 +384,7 @@ hs_encode_old(hs_read_fn_t read_fn, void *readprivate,
      if (lit_tmpbuf)
 	  hs_membuf_free(lit_tmpbuf);
      if (sums)
-	  _hs_free_sum_struct(sums);
+	  hs_free_sumset(sums);
      if (inbuf->buf)
 	  free(inbuf->buf);
 

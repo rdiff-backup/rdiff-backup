@@ -24,11 +24,7 @@
    Things to do with searching through the hashtable of blocks from
    downstream.  */
 
-int             _hs_build_hash_table(hs_sum_set_t *sums);
-
-void            _hs_free_sum_struct(/*@only@*/ hs_sum_set_t *);
-
-
+int             _hs_build_hash_table(hs_sumset_t *sums);
 
 uint32_t        _hs_calc_weak_sum(char const *buf1, int len);
 

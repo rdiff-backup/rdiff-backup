@@ -24,6 +24,8 @@ libhsync_la_SOURCES = dec.c enc.c \
 	mksum.c sumset.c \
 	rollsum.c nad.c
 
+# NB: tests should exit with code 77 if they can't be run but haven't failed.
+TESTS_ENVIRONMENT = $(SHELL)
 test_scripts := \
 	test-tricky.sh \
 	test-chain.sh \
@@ -33,7 +35,7 @@ test_scripts := \
 	test-mapread.sh \
 	test-cmds.sh \
 	test-thrice.sh \
-	test-delta.sh \
+	test-usebackups.sh \
 	test-seq.sh \
 	test-mappipe.sh \
 	test-mapeof.sh \

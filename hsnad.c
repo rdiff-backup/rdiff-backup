@@ -21,6 +21,8 @@
 
 #include "includes.h"
 
+int show_stats = 0;
+
 static void usage(char const *progname)
 {
     fprintf(stderr,
@@ -31,6 +33,7 @@ static void usage(char const *progname)
             "\n"
             "Options:\n"
             "  -D           show debugging trace if compiled in\n"
+	    "  -S           show statistics\n"
             "  -h           show help\n",
 	    progname
         );
@@ -42,7 +45,7 @@ static void process_args(int argc, char **argv)
     int			c;
     
     hs_trace_to(NULL);		/* may turn it on later */
-    while ((c = getopt(argc, argv, "D")) != -1) {
+    while ((c = getopt(argc, argv, "DS")) != -1) {
 	switch (c) {
 	case '?':
 	case ':':
@@ -56,6 +59,9 @@ static void process_args(int argc, char **argv)
 	    }
 	    hs_trace_to(hs_trace_to_stderr);
 	    break;
+	 case 'S':
+	     show_stats = 1;
+	     break;
 	}
     }
 }
@@ -68,7 +74,7 @@ int main(int argc, char **argv)
     hs_result_t		result;
     hs_stats_t		stats;
     hs_filebuf_t       *sig_fb;
-    hs_sum_set_t       *sum_set = NULL;
+    hs_sumset_t        *sums = NULL;
 
     process_args(argc, argv);
 
@@ -80,15 +86,21 @@ int main(int argc, char **argv)
 
     if (optind < argc) {
 	sig_fb = hs_filebuf_open(argv[optind], O_RDONLY);
-	sum_set = _hs_read_sum_set(hs_filebuf_read, sig_fb);
+	sums = hs_read_sumset(hs_filebuf_read, sig_fb);
     }
 
     job = hs_encode_begin(STDIN_FILENO, hs_filebuf_write, out,
-			  sum_set, &stats,
+			  sums, &stats,
 			  1024);
     do {
 	result = hs_encode_iter(job);
     } while (result == HS_AGAIN);
+
+    if (sums)
+	hs_free_sumset(sums);
+
+    if (show_stats)
+	 hs_print_stats(stderr, &stats);
 
     return result == HS_DONE ? 0 : 2;
 }

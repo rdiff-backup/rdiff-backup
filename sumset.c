@@ -25,15 +25,15 @@
 /* Read and remember all the signatures from last time.  Return null
  * if there are no signatures. */
 
-hs_sum_set_t *
-_hs_read_sum_set(hs_read_fn_t sigread_fn, void *sigread_priv)
+hs_sumset_t *
+hs_read_sumset(hs_read_fn_t sigread_fn, void *sigread_priv)
 {
     int ret = 0;
     int block_len;
     struct sum_buf *asignature;
     int index = 0;
     int checksum1;
-    hs_sum_set_t *sumbuf;
+    hs_sumset_t *sumbuf;
 
 
     ret = _hs_check_sig_version(sigread_fn, sigread_priv);
@@ -43,7 +43,7 @@ _hs_read_sum_set(hs_read_fn_t sigread_fn, void *sigread_priv)
     if (_hs_read_blocksize(sigread_fn, sigread_priv, &block_len) < 0)
 	return NULL;
 
-    sumbuf = _hs_alloc_struct(hs_sum_set_t);
+    sumbuf = _hs_alloc_struct(hs_sumset_t);
      
     sumbuf->block_len = block_len;
 
@@ -107,7 +107,7 @@ _hs_read_sum_set(hs_read_fn_t sigread_fn, void *sigread_priv)
 
 
 void
-_hs_free_sum_struct(hs_sum_set_t *psums)
+hs_free_sumset(hs_sumset_t *psums)
 {
     if (psums->sums)
 	free(psums->sums);

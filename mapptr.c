@@ -59,7 +59,7 @@
 
 #include "includes.h"
 
-#define CHUNK_SIZE (32*1024)
+#define CHUNK_SIZE (1024)
 #define IO_BUFFER_SIZE (4092)
 
 /* We'll read data in windows of this size, unless otherwise indicated. */
@@ -259,9 +259,11 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     /* make sure we have allocated enough memory for the window */
     if (!map->p) {
 	assert(map->p_size == 0);
+	_hs_trace("allocate initial %ld byte window", (long) window_size);
 	map->p = (char *) malloc((size_t) window_size);
 	map->p_size = window_size;
     } else if (window_size > map->p_size) {
+	_hs_trace("grow buffer to hold %ld byte window", (long) window_size);
 	map->p = (char *) realloc(map->p, (size_t) window_size);
 	map->p_size = window_size;
     }
@@ -286,6 +288,8 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
 	read_max_size = window_size;
 	read_offset = 0;
     }
+
+    map->p_offset = window_start;
 
     if (read_max_size <= 0) {
 	_hs_trace("Warning: unexpected read size of %d in map_ptr\n",
@@ -323,8 +327,6 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     assert(*reached_eof  ||  total_read >= read_min_size);
     map->p_fd_offset += total_read;
 
-    map->p_offset = window_start;
-
     /* If we didn't map all the data we wanted because we ran into * EOF,
      * then adjust everything so that the map doesn't hang out * over the end 
      * of the file.  */
@@ -334,8 +336,8 @@ _hs_map_ptr(hs_map_t * map, hs_off_t offset, ssize_t *len, int *reached_eof)
     map->p_len = read_offset + total_read;
 
     if (total_read == read_max_size) {
-	/* This was the formula before we worried about EOF, so * assert that 
-	 * it's still the same. */
+	/* This was the formula before we worried about EOF, so assert
+	 * that it's still the same. */
 	assert(map->p_len == window_size);
     }
 

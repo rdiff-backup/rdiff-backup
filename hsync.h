@@ -70,10 +70,12 @@ typedef enum {
    Decode */
 
 typedef struct hs_stats {
-	int lit_cmds, lit_bytes;
-	int copy_cmds, copy_bytes;
-	int sig_cmds, sig_bytes;
-	int false_matches;
+    char const		       *op;
+    char const		       *algorithm;
+    int lit_cmds, lit_bytes;
+    int copy_cmds, copy_bytes;
+    int sig_cmds, sig_bytes;
+    int false_matches;
 } hs_stats_t;
 
 ssize_t
@@ -171,7 +173,8 @@ void
 hs_hexify_buf(char *to_buf, unsigned char const *from_buf, int from_len);
 
 
-char *hs_format_stats(hs_stats_t const *stats);
+char *hs_format_stats(hs_stats_t const *, char *, size_t);
+void hs_print_stats(FILE *f, hs_stats_t const *);
 
 
 /* ========================================
@@ -190,17 +193,28 @@ hs_result_t hs_mksum_iter(hs_mksum_job_t *job);
 
 
 
+/* ========================================
+ *
+ * Sumsets
+ */
+typedef struct hs_sumset hs_sumset_t;
+
+hs_sumset_t *hs_read_sumset(hs_read_fn_t, void *);
+void hs_free_sumset(hs_sumset_t *psums);
+
+
 
 
 
 typedef struct hs_encode_job hs_encode_job_t;
-typedef struct hs_sum_set hs_sum_set_t;
 
 
 hs_encode_job_t *
 hs_encode_begin(int in_fd, hs_write_fn_t write_fn, void *write_priv,
-		hs_sum_set_t *sums,
+		hs_sumset_t *sums,
 		hs_stats_t *stats,
 		size_t new_block_len);
 
 hs_result_t hs_encode_iter(hs_encode_job_t *);
+
+

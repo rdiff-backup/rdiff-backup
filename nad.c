@@ -24,6 +24,21 @@
 
 /* GENERATE NEW SIGNATURES AND DIFFERENCE STREAM
   
+   Here's a diagram of the encoding process:
+   
+       	       	       	      /------- OLD SIGNATURE
+		       	     v
+   UPSTREAM -raw-+----> RS-ENCODE ----> chunked -> DOWNSTREAM
+   		 \     	       	       	  ^
+		  > --- NEW SIGNATURE ---/
+
+   As we read input from upstream, we have to send it into the
+   encoding process and also use it to generate a new signature.  We
+   never worry about caching the information because if we're encoding
+   we expect to encode again in the future, and the encoder never
+   needs the old value.  (Thank Dis for this, as it's complicated
+   enough already.)  
+
    OK, here's the deal: we hold the signatures for the cached
    instance, and we're reading the new instance from upstream.  As we
    read, we need to generate signatures for the new instance, and also
@@ -66,7 +81,7 @@
   
    Both the signature and search work is done from a single map_ptr
    buffer.  map_ptr does most of the intelligence about retaining and
-   discarding data.  We
+   discarding data.
   
    There are special cases when we're approaching the end of the
    file.  The final signature must be generated over the (possibly)
@@ -76,7 +91,16 @@
   
    At the same time, we also calculate a whole-file md4 checksum,
    which the decoder is likely to use as proof that the server is not
-   mentally competent.  */
+   mentally competent.
+
+   Perhaps mapptr is not quite the right interface to use here, though
+   it's pretty close.  It's kind of arguable whether this function
+   should call for more input or vice versa.  If it calls for input,
+   then perhaps it should call through a callback function.  Still,
+   for the time being almost everyone will want to just use plain IO,
+   so there's no immediate reason to complicate it.
+
+   */
 
 
 
@@ -91,13 +115,12 @@ struct hs_encode_job {
 
     /* On the next iteration, we'll try to generate the checksum for a
      * block at this location. */
-    hs_sum_set_t       *sums;
+    hs_sumset_t       *sums;
     hs_stats_t	       *stats;
 
-    /* We'll read more checksum data from this point. */
-    hs_off_t		check_cursor;
+    /* Accumulates a sum of the whole file as we see it.  Never
+     * reset. */
     hs_mdfour_t		filesum;
-    size_t		filesum_block;
 
     /* Things for the new checksum. */
     hs_off_t		sum_cursor;
@@ -125,8 +148,6 @@ static void
 _hs_nad_filesum_begin(hs_encode_job_t *job)
 {
     hs_mdfour_begin(&job->filesum);
-    job->check_cursor = 0;
-    job->filesum_block = 32 << 10;
 }
 
 
@@ -147,7 +168,7 @@ _hs_nad_sum_begin(hs_encode_job_t *job)
 
 hs_encode_job_t *
 hs_encode_begin(int in_fd, hs_write_fn_t write_fn, void *write_priv,
-		hs_sum_set_t *sums,
+		hs_sumset_t *sums,
 		hs_stats_t *stats,
 		size_t new_block_len)
 {
@@ -167,10 +188,13 @@ hs_encode_begin(int in_fd, hs_write_fn_t write_fn, void *write_priv,
     job->input_block = 32<<10;
 				    
     job->sums = sums;
-    job->stats = stats;
     job->new_block_len = new_block_len;
     hs_bzero(stats, sizeof *stats);
 
+    job->stats = stats;
+    stats->op = "encode";
+    stats->algorithm = "nad";
+    
     job->rollsum = _hs_alloc_struct(hs_rollsum_t);
 
     _hs_trace("**** begin");
@@ -208,9 +232,7 @@ _hs_nad_map(hs_encode_job_t *job,
 
     /* Find the range we have to map that won't skip data that hasn't
      * been processed, but that allows us to accomplish something. */
-    start = job->check_cursor;
-    if (start > job->search_cursor)
-	start = job->search_cursor;
+    start = job->search_cursor;
     if (start > job->sum_cursor)
 	start = job->sum_cursor;
     
@@ -225,25 +247,28 @@ _hs_nad_map(hs_encode_job_t *job,
 
 static void
 _hs_nad_search_iter(hs_encode_job_t *job,
-		       char const *p,
+		    char const *p,
 		       ssize_t avail)
 {
     if (avail <= 0)
 	return;
     
     /* Actual searching is stubbed out for the moment; we just
-     * generate literal commands. */
+     * generate literal commands.
+     *
+     * XXX: We should leave a compile-time option to always generate
+     * literals because this will allow a nice simple test case. */
+    hs_mdfour_update(&job->filesum, p, avail);    
     _hs_send_literal(job->write_fn, job->write_priv, op_kind_literal,
 		     p, avail);
     job->search_cursor += avail;
 }
 
 
-/* Write out checksums for whatever part of this file we can manage.  */
 static void
 _hs_nad_sum_iter(hs_encode_job_t *job,
-		    char const *p,
-		    ssize_t avail)
+		 char const *p,
+		 ssize_t avail)
 {
     while (avail >= (ssize_t) job->new_block_len ||
 	   (job->seen_eof  && avail > 0)) {
@@ -271,6 +296,7 @@ _hs_nad_sum_iter(hs_encode_job_t *job,
 }
 
 
+
 static void
 _hs_nad_filesum_flush(hs_encode_job_t *job)
 {
@@ -292,29 +318,27 @@ _hs_nad_filesum_flush(hs_encode_job_t *job)
 }
 
 
+
+/* FIXME: Make sure the filesum always runs up to just after the most
+ * recent search commands.  How can we write a test case that will
+ * trap this?
+ *
+ * This iteration is probably wrong: we don't want a separate cursor;
+ * instead we want to make sure we hash exactly what the search
+ * command covers, and then independently emit the file at appropriate
+ * intervals.  */
 static void
-_hs_nad_filesum_iter(hs_encode_job_t *job,
-			char const *p,
-			ssize_t avail)
+_hs_nad_filesum_iter(hs_encode_job_t *job)
 {
-    while (avail >= (ssize_t) job->filesum_block
-	   || (job->seen_eof && avail > 0)) {
-	size_t	l;
+    /* At the moment we only emit a single filesum at EOF.  We could do it
+     * earlier if we wanted, because the filesum is always correct up to the
+     * emited search data.  However, if we ever go back to queuing up output
+     * commands, then we'll have to make sure to flush them first. */
 
-	if (job->seen_eof)
-	    l = avail;
-	else
-	    l = job->filesum_block;
-	
-	_hs_trace("add in @%ld+%ld",
-		  (long) job->check_cursor, (long) l);
-	hs_mdfour_update(&job->filesum, p, l);
-	_hs_nad_filesum_flush(job);
-
-	p += l;
-	avail -= l;
-	job->check_cursor += l;
-    }
+    if (!job->seen_eof)
+	return;
+    
+    _hs_nad_filesum_flush(job);
 }
 
 
@@ -344,13 +368,12 @@ hs_encode_iter(hs_encode_job_t *job)
      * their cursor position, so we can give each of them a pointer
      * and length for their data. */
     _hs_nad_search_iter(job,
-			   p + job->search_cursor - map_off,
-			   map_len - job->search_cursor + map_off);
+			p + job->search_cursor - map_off,
+			map_len - job->search_cursor + map_off);
     _hs_nad_sum_iter(job,
-			p + job->sum_cursor - map_off,
-			map_len - job->sum_cursor + map_off);
-    _hs_nad_filesum_iter(job, p + job->check_cursor - map_off,
-			    map_len - job->check_cursor + map_off);
+		     p + job->sum_cursor - map_off,
+		     map_len - job->sum_cursor + map_off);
+    _hs_nad_filesum_iter(job);
 
     /* There is no need to flush: these functions all do output as
      * soon as they can. */
