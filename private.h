@@ -203,6 +203,7 @@ struct target {
     int i;
 };
 
+/* FIXME: Better names for the members of this structure. */
 typedef struct sum_struct {
     hs_off_t flength;		/* total file length */
     int count;			/* how many chunks */

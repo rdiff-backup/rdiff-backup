@@ -161,8 +161,8 @@ _hs_make_sum_struct(hs_read_fn_t sigread_fn, void *sigreadprivate,
 void
 _hs_free_sum_struct(struct sum_struct *psums)
 {
-    assert(psums->sums);
-    free(psums->sums);
+    if (psums->sums)
+	free(psums->sums);
 
     assert(psums->tag_table);
     free(psums->tag_table);
