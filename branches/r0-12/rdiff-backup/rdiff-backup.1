@@ -201,6 +201,13 @@ List the number and date of partial incremental backups contained in
 the specified destination directory.  No backup or restore will take
 place if this option is given.
 .TP
+.B --list-increment-sizes
+List the total size of all the increment and mirror files by time.
+This may be helpful in deciding how many increments to keep, and when
+to --remove-older-than.  Specifying a subdirectory is allowable; then
+only the sizes of the mirror and increments pertaining to that
+subdirectory will be listed.
+.TP
 .B --no-change-dir-inc-perms
 Do not change the permissions of the directory increments to match the
 directories they represent.  This option may be required on file

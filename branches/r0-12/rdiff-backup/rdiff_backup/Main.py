@@ -52,15 +52,16 @@ def parse_cmdlineoptions(arglist):
 		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=", "include-regexp=",
 		  "list-at-time=", "list-changed-since=", "list-increments",
-		  "no-change-dir-inc-perms", "no-compare-inode",
-		  "no-compression", "no-compression-regexp=",
-		  "no-file-statistics", "no-hard-links", "null-separator",
-		  "parsable-output", "print-statistics", "quoting-char=",
-		  "remote-cmd=", "remote-schema=", "remove-older-than=",
-		  "restore-as-of=", "restrict=", "restrict-read-only=",
-		  "restrict-update-only=", "server", "ssh-no-compression",
-		  "terminal-verbosity=", "test-server", "verbosity=",
-		  "version", "windows-mode", "windows-restore"])
+		  "list-increment-sizes", "no-change-dir-inc-perms",
+		  "no-compare-inode", "no-compression",
+		  "no-compression-regexp=", "no-file-statistics",
+		  "no-hard-links", "null-separator", "parsable-output",
+		  "print-statistics", "quoting-char=", "remote-cmd=",
+		  "remote-schema=", "remove-older-than=", "restore-as-of=",
+		  "restrict=", "restrict-read-only=", "restrict-update-only=",
+		  "server", "ssh-no-compression", "terminal-verbosity=",
+		  "test-server", "verbosity=", "version", "windows-mode",
+		  "windows-restore"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: %s" % str(e))
 
@@ -105,6 +106,7 @@ def parse_cmdlineoptions(arglist):
 			restore_timestr, action = arg, "list-changed-since"
 		elif opt == "-l" or opt == "--list-increments":
 			action = "list-increments"
+		elif opt == '--list-increment-sizes': action = 'list-increment-sizes'
 		elif opt == "--no-change-dir-inc-perms":
 			Globals.set("change_dir_inc_perms", 0)
 		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
@@ -185,6 +187,7 @@ def set_action():
 	if l < 2 and (action == "backup" or action == "restore-as-of"):
 		commandline_error("Two arguments are required (source, destination).")
 	if l == 2 and (action == "list-increments" or
+				   action == "list-increment-sizes" or
 				   action == "remove-older-than" or
 				   action == "list-at-time" or
 				   action == "list-changed-since" or
@@ -223,6 +226,7 @@ def take_action(rps):
 	elif action == "list-at-time": ListAtTime(rps[0])
 	elif action == "list-changed-since": ListChangedSince(rps[0])
 	elif action == "list-increments": ListIncrements(rps[0])
+	elif action == "list-increment-sizes": ListIncrementSizes(rps[0])
 	elif action == "remove-older-than": RemoveOlderThan(rps[0])
 	elif action == "calculate-average": CalculateAverage(rps)
 	elif action == "check-destination-dir": CheckDest(rps[0])
@@ -518,6 +522,13 @@ def ListIncrements(rp):
 	if Globals.parsable_output:
 		print manage.describe_incs_parsable(incs, mirror_time, mirror_rp)
 	else: print manage.describe_incs_human(incs, mirror_time, mirror_rp)
+
+
+def ListIncrementSizes(rp):
+	"""Print out a summary of the increments """
+	mirror_root, index = restore_get_root(rp)
+	restore_check_backup_dir(mirror_root)
+	print manage.ListIncrementSizes(mirror_root, index)
 
 
 def CalculateAverage(rps):

@@ -503,6 +503,18 @@ class FinalMisc(PathSetter):
 		self.exec_rb_extra_args(None, '--list-at-time 20000',
 								'testfiles/restoretest3')
 
+	def testListIncrementSizesLocal(self):
+		"""Test --list-increment-sizes switch.  Uses restoretest3"""
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, "--list-increment-sizes",
+								"testfiles/restoretest3")
+
+	def testListIncrementsRemote(self):
+		"""Test --list-increment-sizes mode remotely.  Uses restoretest3"""
+		self.set_connections('test1', '../', None, None)
+		self.exec_rb_extra_args(None, "--list-increment-sizes",
+								"testfiles/restoretest3")
+
 	def get_all_increments(self, rp):
 		"""Iterate all increments at or below given directory"""
 		assert rp.isdir()
