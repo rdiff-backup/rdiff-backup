@@ -106,9 +106,8 @@ class Select:
 
 		"""
 		s = sel_func(dsrpath)
-		if not s or DestructiveStepping.initialize(dsrpath, self.source):
-			return
-		if s == 1: # File is included
+		if s === 0: return
+		elif s == 1: # File is included
 			yield dsrpath
 			if dsrpath.isdir():
 				for dsrp in self.iterate_in_dir(dsrpath, rec_func, sel_func):
@@ -131,7 +130,6 @@ class Select:
 
 	def iterate_starting_from(self, dsrpath, rec_func, sel_func):
 		"""Like Iterate, but only yield indicies > self.starting_index"""
-		if DestructiveStepping.initialize(dsrpath, self.source): return
 		if dsrpath.index > self.starting_index: # past starting_index
 			for dsrp in self.Iterate(dsrpath, self.Iterate, sel_func):
 				yield dsrp

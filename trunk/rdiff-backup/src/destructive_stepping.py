@@ -6,7 +6,7 @@ execfile("rorpiter.py")
 # destructive-stepping - Deal with side effects from traversing trees
 #
 
-class DSRPathError(Exception):
+class DSRPPermError(Exception):
 	"""Exception used when a DSRPath can't get sufficient permissions"""
 	pass
 
@@ -85,7 +85,7 @@ class DSRPath(RPath):
 	def warn(self, err):
 		Log("Received error '%s' when dealing with file %s, skipping..."
 			% (err, self.path), 1)
-		raise DSRPathError(self.path)
+		raise DSRPermError(self.path)
 
 	def __getstate__(self):
 		"""Return picklable state.  See RPath __getstate__."""
