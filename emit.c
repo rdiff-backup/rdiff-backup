@@ -21,12 +21,6 @@
  */
 
 
-                              /*
-                               * [almost sobbing] They don't sleep
-                               * anymore on the beach.  They don't
-                               * sleep on the beach anymore.
-                               */
-
 /*
  * TODO: Pluggable encoding formats:
  *
