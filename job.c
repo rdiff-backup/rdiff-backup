@@ -22,9 +22,9 @@
 
 
                               /*
-                               * The hard, lifeless I covered up the
-                               * warm, pulsing It; protecting and
-                               * sheltering.
+                               | The hard, lifeless I covered up the
+                               | warm, pulsing It; protecting and
+                               | sheltering.
                                */
 
 /*
@@ -53,6 +53,9 @@
 #include "trace.h"
 
 
+static const int hs_job_tag = 20010225;
+
+
 hs_job_t * hs_job_new(hs_stream_t *stream, char const *job_name)
 {
     hs_job_t *job;
@@ -62,42 +65,53 @@ hs_job_t * hs_job_new(hs_stream_t *stream, char const *job_name)
     hs_stream_check(stream);
     job->stream = stream;
     job->job_name = job_name;
+    job->dogtag = hs_job_tag;
+
+    hs_trace("start %s job", job_name);
 
     return job;
 }
 
 
+void hs_job_check(hs_job_t *job)
+{
+    assert(job->dogtag == hs_job_tag);
+}
+
+
 hs_result hs_job_free(hs_job_t *job)
 {
-        hs_bzero(job, sizeof *job);
-        free(job);
+    hs_bzero(job, sizeof *job);
+    free(job);
 
-        return HS_DONE;
+    return HS_DONE;
 }
 
 
 
 static hs_result hs_job_s_complete(hs_job_t *job)
 {
-    hs_log(HS_LOG_WARNING,
-           "job has already finished, status: %s",
-           hs_strerror(job->final_result));
-    
-    return HS_DONE;
+    hs_fatal("should not be reached");
 }
 
 
 static hs_result hs_job_complete(hs_job_t *job, hs_result result)
 {
-    if (result != HS_DONE)
-        hs_error("%s job failed: %s", job->job_name, hs_strerror(result));
-    else
-        hs_trace("%s job done", job->job_name);
-
-    job->final_result = result;
-    job->statefn = hs_job_s_complete;
+    hs_job_check(job);
     
-    return result;
+    job->statefn = hs_job_s_complete;
+    job->final_result = result;
+
+    if (result != HS_DONE) {
+        hs_error("%s job failed: %s", job->job_name, hs_strerror(result));
+    } else {
+        hs_trace("%s job complete", job->job_name);
+    }
+
+    if (result == HS_DONE && !hs_tube_is_idle(job->stream))
+        return HS_BLOCKED;
+    else
+        return result;
 }
 
 
@@ -114,26 +128,29 @@ static hs_result hs_job_complete(hs_job_t *job, hs_result result)
 hs_result hs_job_iter(hs_job_t *job)
 {
     hs_result result;
-    while (1) {
-        if (job->stream->eof_in)
-            hs_trace("input file is ending");
 
+    hs_job_check(job);
+    while (1) {
         result = hs_tube_catchup(job->stream);
         if (result == HS_BLOCKED)
             return result;
-        else if (result == HS_DONE)
-            ;
-        else
+        else if (result != HS_DONE)
             return hs_job_complete(job, result);
 
-                
-        result = job->statefn(job);
-        if (result == HS_RUNNING)
-            ;
-        else if (result == HS_BLOCKED)
-            return result;
-        else 
-            return hs_job_complete(job, result);
-    } 
+        if (job->statefn == hs_job_s_complete) {
+            if (hs_tube_is_idle(job->stream))
+                return HS_DONE;
+            else
+                return HS_BLOCKED;
+        } else {
+            result = job->statefn(job);
+            if (result == HS_RUNNING)
+                continue;
+            else if (result == HS_BLOCKED)
+                return result;
+            else
+                return hs_job_complete(job, result);
+        }
+    }
 }
 

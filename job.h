@@ -22,13 +22,15 @@
 
 
 struct hs_job {
+    int                 dogtag;
+
     /** Human-readable job operation name. */
-    const char      *job_name;
+    const char          *job_name;
     
     hs_stream_t *stream;
 
     /** Callback for each processing step. */
-    hs_result (*statefn)(hs_job_t *);
+    hs_result           (*statefn)(hs_job_t *);
 
     /** Final result of processing job.  Used by hs_job_s_failed(). */
     hs_result final_result;
@@ -42,7 +44,7 @@ struct hs_job {
     
     /** Signature that's either being read in, or used for
      * generating a delta. */
-    hs_signature_t     *signature;
+    hs_signature_t      *signature;
     
     /** Command byte currently being processed, if any. */
     int op;
@@ -60,3 +62,4 @@ struct hs_job {
 
 
 hs_job_t * hs_job_new(hs_stream_t *stream, const char *);
+void hs_job_check(hs_job_t *job);
