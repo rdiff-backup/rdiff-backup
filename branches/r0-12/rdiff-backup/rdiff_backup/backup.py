@@ -143,7 +143,7 @@ class DestinationStruct:
 		dest_iter = cls.get_dest_select(baserp, for_increment)
 		collated = rorpiter.Collate2Iters(source_iter, dest_iter)
 		cls.CCPP = CacheCollatedPostProcess(
-			collated, Globals.pipeline_max_length*4)
+			collated, Globals.pipeline_max_length*4, baserp)
 		# pipeline len adds some leeway over just*3 (to and from and back)
 		
 	def get_sigs(cls, dest_base_rpath):
@@ -226,7 +226,7 @@ static.MakeClass(DestinationStruct)
 
 
 class CacheCollatedPostProcess:
-	"""Cache a collated iter of (source_rorp, dest_rp) pairs
+	"""Cache a collated iter of (source_rorp, dest_rorp) pairs
 
 	This is necessary for two reasons:
 
@@ -248,10 +248,12 @@ class CacheCollatedPostProcess:
 	metadata for it.
 
 	"""
-	def __init__(self, collated_iter, cache_size):
+	def __init__(self, collated_iter, cache_size, dest_root_rp):
 		"""Initialize new CCWP."""
 		self.iter = collated_iter # generates (source_rorp, dest_rorp) pairs
 		self.cache_size = cache_size
+		self.dest_root_rp = dest_root_rp
+
 		self.statfileobj = statistics.init_statfileobj()
 		if Globals.file_statistics: statistics.FileStats.init()
 		metadata.OpenMetadata()
@@ -294,6 +296,10 @@ class CacheCollatedPostProcess:
 		"""
 		if source_rorp: Hardlink.add_rorp(source_rorp, source = 1)
 		if dest_rorp: Hardlink.add_rorp(dest_rorp, source = 0)
+		if (dest_rorp and dest_rorp.isdir() and Globals.process_uid != 0 and
+			dest_rorp.getperms() % 01000 < 0700):
+			dest_rp = self.dest_root_rp.new_index(dest_rorp.index)
+			dest_rp.chmod(0700 | dest_rorp.getperms())
 
 	def shorten_cache(self):
 		"""Remove one element from cache, possibly adding it to metadata"""
@@ -331,6 +337,13 @@ class CacheCollatedPostProcess:
 			metadata.WriteMetadata(metadata_rorp)
 		if Globals.file_statistics:
 			statistics.FileStats.update(source_rorp, dest_rorp, changed, inc)
+
+		# Update permissions of unreadable directory
+		if (source_rorp and source_rorp.isdir() and Globals.process_uid != 0
+			and success and source_rorp.getperms() % 01000 < 0700):
+			dest_rp = self.dest_root_rp.new_index(source_rorp.index)
+			assert dest_rp.isdir(), dest_rp
+			dest_rp.chmod(source_rorp.getperms())
 
 	def in_cache(self, index):
 		"""Return true if given index is cached"""
@@ -579,4 +592,5 @@ class IncrementITRB(PatchITRB):
 			if inc:
 				self.CCPP.set_inc(index, inc)
 				self.CCPP.flag_success(index)
+
 
