@@ -29,7 +29,7 @@ class StatsObjTest(unittest.TestCase):
 		self.set_obj(s)
 		assert s.get_stat('SourceFiles') == 1
 
-		s1 = StatsITR()
+		s1 = StatsITRB()
 		assert s1.get_stat('SourceFiles') == 0
 
 	def test_get_stats_string(self):

@@ -218,7 +218,7 @@ class MultiplexTest(Iterators):
 		assert Iter.equal(i2, self.one_to_100())
 
 
-class ITRadder(IterTreeReducer):
+class ITRBadder(ITRBranch):
 	def start_process(self, index):
 		self.total = 0
 
@@ -232,13 +232,20 @@ class ITRadder(IterTreeReducer):
 		#print "Adding subinstance ", subinstance.total
 		self.total += subinstance.total
 
-class ITRadder2(IterTreeReducer):
+class ITRBadder2(ITRBranch):
 	def start_process(self, index):
 		self.total = 0
 
 	def end_process(self):
 		#print "Adding ", self.base_index
 		self.total += reduce(lambda x,y: x+y, self.base_index, 0)
+
+	def can_fast_process(self, index):
+		if len(index) == 3: return 1
+		else: return None
+
+	def fast_process(self, index):
+		self.total += index[0] + index[1] + index[2]
 
 	def branch_process(self, subinstance):
 		#print "Adding branch ", subinstance.total
@@ -257,24 +264,24 @@ class TreeReducerTest(unittest.TestCase):
 
 	def testTreeReducer(self):
 		"""testing IterTreeReducer"""
-		itm = ITRadder()
+		itm = IterTreeReducer(ITRBadder, [])
 		for index in self.i1:
 			val = itm(index)
 			assert val, (val, index)
 		itm.Finish()
-		assert itm.total == 6, itm.total
+		assert itm.root_branch.total == 6, itm.root_branch.total
 
-		itm2 = ITRadder2()
+		itm2 = IterTreeReducer(ITRBadder2, [])
 		for index in self.i2:
 			val = itm2(index)
 			if index == (): assert not val
 			else: assert val
 		itm2.Finish()
-		assert itm2.total == 12, itm2.total
+		assert itm2.root_branch.total == 12, itm2.root_branch.total
 
 	def testTreeReducerState(self):
 		"""Test saving and recreation of an IterTreeReducer"""
-		itm1a = ITRadder()
+		itm1a = IterTreeReducer(ITRBadder, [])
 		for index in self.i1a:
 			val = itm1a(index)
 			assert val, index
@@ -283,9 +290,9 @@ class TreeReducerTest(unittest.TestCase):
 			val = itm1b(index)
 			assert val, index
 		itm1b.Finish()
-		assert itm1b.total == 6, itm1b.total
+		assert itm1b.root_branch.total == 6, itm1b.root_branch.total
 
-		itm2a = ITRadder2()
+		itm2a = IterTreeReducer(ITRBadder2, [])
 		for index in self.i2a:
 			val = itm2a(index)
 			if index == (): assert not val
@@ -301,7 +308,7 @@ class TreeReducerTest(unittest.TestCase):
 			if index == (): assert not val
 			else: assert val
 		itm2c.Finish()
-		assert itm2c.total == 12, itm2c.total
+		assert itm2c.root_branch.total == 12, itm2c.root_branch.total
 
 
 if __name__ == "__main__": unittest.main()
