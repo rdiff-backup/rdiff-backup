@@ -54,6 +54,12 @@ class StatsObj:
 					if self.get_stat(attr) is not None]
 		return "".join(timelist + filelist)
 
+	def get_stats_logstring(self, title):
+		"""Like get_stats_string, but add header and footer"""
+		header = "-------------[ %s ]-------------" % title
+		footer = "-" * len(header)
+		return "%s\n%s%s\n" % (header, self.get_stats_string(), footer)
+
 	def init_stats_from_string(self, s):
 		"""Initialize attributes from string, return self for convenience"""
 		def error(line): raise StatsException("Bad line '%s'" % line)
@@ -64,7 +70,12 @@ class StatsObj:
 			if len(line_parts) < 2: error(line)
 			attr, value_string = line_parts[:2]
 			if not attr in self.stat_attrs: error(line)
-			try: self.set_stat(attr, long(value_string))
+			try:
+				try: val1 = long(value_string)
+				except ValueError: val1 = None
+				val2 = float(value_string)
+				if val1 == val2: self.set_stat(attr, val1) # use integer val
+				else: self.set_stat(attr, val2) # use float
 			except ValueError: error(line)
 		return self
 
@@ -110,6 +121,12 @@ class StatsObj:
 				self.set_stat(attr,
 							  self.get_stat(attr)/float(len(statobj_list)))
 		return self
+
+	def get_statsobj_copy(self):
+		"""Return new StatsObj object with same stats as self"""
+		s = StatObj()
+		for attr in self.stat_attrs: s.set_stat(attr, self.get_stat(attr))
+		return s
 
 
 class StatsITR(IterTreeReducer, StatsObj):

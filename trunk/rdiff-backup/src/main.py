@@ -24,16 +24,17 @@ class Main:
 			except IOError: Log.FatalError("Error opening file %s" % filename)
 
 		try: optlist, self.args = getopt.getopt(arglist, "blmr:sv:V",
-			 ["backup-mode", "change-source-perms",
-			  "chars-to-quote=", "checkpoint-interval=",
-			  "current-time=", "exclude=", "exclude-device-files",
-			  "exclude-filelist=", "exclude-filelist-stdin",
-			  "exclude-mirror=", "exclude-regexp=", "force",
-			  "include=", "include-filelist=",
-			  "include-filelist-stdin", "include-regexp=",
-			  "list-increments", "mirror-only", "no-compression",
-			  "no-compression-regexp=", "no-hard-links", "no-resume",
-			  "parsable-output", "quoting-char=", "remote-cmd=",
+			 ["backup-mode", "calculate-average",
+			  "change-source-perms", "chars-to-quote=",
+			  "checkpoint-interval=", "current-time=", "exclude=",
+			  "exclude-device-files", "exclude-filelist=",
+			  "exclude-filelist-stdin", "exclude-mirror=",
+			  "exclude-regexp=", "force", "include=",
+			  "include-filelist=", "include-filelist-stdin",
+			  "include-regexp=", "list-increments", "mirror-only",
+			  "no-compression", "no-compression-regexp=",
+			  "no-hard-links", "no-resume", "parsable-output",
+			  "print-statistics", "quoting-char=", "remote-cmd=",
 			  "remote-schema=", "remove-older-than=",
 			  "restore-as-of=", "resume", "resume-window=", "server",
 			  "ssh-no-compression", "terminal-verbosity=",
@@ -44,6 +45,8 @@ class Main:
 
 		for opt, arg in optlist:
 			if opt == "-b" or opt == "--backup-mode": self.action = "backup"
+			elif opt == "--calculate-average":
+				self.action = "calculate-average"
 			elif opt == "--change-source-perms":
 				Globals.set('change_source_perms', 1)
 			elif opt == "--chars-to-quote":
@@ -89,6 +92,8 @@ class Main:
 				self.restore_timestr = arg
 				self.action = "restore-as-of"
 			elif opt == "--parsable-output": Globals.set('parsable_output', 1)
+			elif opt == "--print-statistics":
+				Globals.set('print_statistics', 1)
 			elif opt == "--quoting-char":
 				Globals.set('quoting_char', arg)
 				Globals.set('quoting_enabled', 1)
@@ -160,6 +165,8 @@ class Main:
 		os.umask(077)
 		Time.setcurtime(Globals.current_time)
 		FilenameMapping.set_init_quote_vals()
+		Globals.set("isclient", 1)
+		SetConnections.UpdateGlobal("client_conn", Globals.local_connection)
 
 		# This is because I originally didn't think compiled regexps
 		# could be pickled, and so must be compiled on remote side.
@@ -177,6 +184,7 @@ class Main:
 		elif self.action == "test-server": SetConnections.TestConnections()
 		elif self.action == "list-increments": self.ListIncrements(rps[0])
 		elif self.action == "remove-older-than": self.RemoveOlderThan(rps[0])
+		elif self.action == "calculate-average": self.CalculateAverage(rps)
 		else: raise AssertionError("Unknown action " + self.action)
 
 	def cleanup(self):
@@ -442,6 +450,14 @@ Try restoring from an increment file (the filenames look like
 		if Globals.parsable_output:
 			print Manage.describe_incs_parsable(incs, mirror_time, mirrorrp)
 		else: print Manage.describe_incs_human(incs, mirror_time, mirrorrp)
+
+
+	def CalculateAverage(self, rps):
+		"""Print out the average of the given statistics files"""
+		statobjs = map(lambda rp: StatsObj().read_stats_from_rp(rp), rps)
+		average_stats = StatsObj().set_to_average(statobjs)
+		print average_stats.get_stats_logstring(
+			"Average of %d stat files" % len(rps))
 
 
 	def RemoveOlderThan(self, rootrp):
