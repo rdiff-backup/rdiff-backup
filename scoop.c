@@ -206,6 +206,9 @@ hs_result hs_scoop_readahead(hs_stream_t *stream, size_t len, void **ptr)
  * Read LEN bytes if possible, and remove them from the input scoop.
  * If there's not enough data yet, return HS_BLOCKED.
  *
+ * \param ptr will be updated to point to a read-only buffer holding
+ * the data, if enough is available.
+ *
  * \return HS_DONE if all the data was available, HS_BLOCKED if it's
  * not there.
  */
