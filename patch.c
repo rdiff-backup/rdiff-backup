@@ -58,10 +58,8 @@ struct hs_patch_job {
 
         /* Command byte currently being processed, if any, and lengths
          * of expected parameters. */
-        int op, len1, len2;
-        int param1, param2;
-
-        enum hs_op_kind kind;
+        int op, param1, param2;
+        hs_prototab_ent_t const *cmd;
 };
 
 
@@ -71,6 +69,7 @@ static enum hs_result _hs_patch_s_complete(hs_patch_job_t *);
 static enum hs_result _hs_patch_s_cmdbyte(hs_patch_job_t *);
 static enum hs_result _hs_patch_s_params(hs_patch_job_t *);
 static enum hs_result _hs_patch_s_run(hs_patch_job_t *);
+static enum hs_result _hs_patch_s_literal(hs_patch_job_t *);
 
 
 
@@ -95,19 +94,17 @@ static enum hs_result _hs_patch_s_cmdbyte(hs_patch_job_t *job)
                 return result;
 
         assert(job->op >= 0 && job->op <= 0xff);
-        job->kind = _hs_prototab[job->op].kind;
-        job->len1 = _hs_prototab[job->op].len_1;
-        job->len2 = _hs_prototab[job->op].len_2;
+        job->cmd = &_hs_prototab[job->op];
         
         _hs_trace("got command byte 0x%02x (%s)", job->op,
-                  _hs_op_kind_name(job->kind));
+                  _hs_op_kind_name(job->cmd->kind));
 
-        if (job->len1)
+        if (job->cmd->len_1)
                 job->statefn = _hs_patch_s_params;
         else
                 job->statefn = _hs_patch_s_run;
 
-        return HS_OK;
+        return HS_RUN_OK;
 }
 
 
@@ -118,7 +115,7 @@ static enum hs_result _hs_patch_s_cmdbyte(hs_patch_job_t *job)
 static enum hs_result _hs_patch_s_params(hs_patch_job_t *job)
 {
         enum hs_result result;
-        int len = job->len1 + job->len2;
+        int len = job->cmd->len_1 + job->cmd->len_2;
         void *p;
 
         assert(len);
@@ -128,18 +125,18 @@ static enum hs_result _hs_patch_s_params(hs_patch_job_t *job)
                 return result;
 
         /* we now must have LEN bytes buffered */
-        result = _hs_suck_netint(job->stream, job->len1, &job->param1);
+        result = _hs_suck_netint(job->stream, job->cmd->len_1, &job->param1);
         /* shouldn't fail, since we already checked */
         assert(result == HS_OK);
 
-        if (job->len2) {
-                result = _hs_suck_netint(job->stream, job->len2, &job->param2);
+        if (job->cmd->len_2) {
+                result = _hs_suck_netint(job->stream, job->cmd->len_2, &job->param2);
                 assert(result == HS_OK);
         }
 
         job->statefn = _hs_patch_s_run;
 
-        return HS_OK;
+        return HS_RUN_OK;
 }
 
 
@@ -149,10 +146,16 @@ static enum hs_result _hs_patch_s_params(hs_patch_job_t *job)
  */
 static enum hs_result _hs_patch_s_run(hs_patch_job_t *job)
 {
-        switch (job->kind) {
+        _hs_trace("running command 0x%x, kind %d", job->op, job->cmd->kind);
+
+        switch (job->cmd->kind) {
+        case HS_KIND_LITERAL:
+                job->statefn = _hs_patch_s_literal;
+                return HS_RUN_OK;
         case HS_KIND_EOF:
                 job->statefn = _hs_patch_s_complete;
                 return HS_OK;
+                /* so we exit here; trying to continue causes an error */
         default:
                 _hs_error("bogus command 0x%02x", job->op);
                 return HS_BAD_MAGIC;
@@ -160,13 +163,32 @@ static enum hs_result _hs_patch_s_run(hs_patch_job_t *job)
 }
 
 
+/*
+ * Called when trying to copy through literal data.
+ */
+static enum hs_result _hs_patch_s_literal(hs_patch_job_t *job)
+{
+        int len;
+        if (job->cmd->len_1)
+                len = job->param1;
+        else
+                len = job->cmd->immediate;
+        
+        _hs_trace("copying %d bytes of literal data", len);
+
+        _hs_blow_copy(job->stream, len);
+
+        job->statefn = _hs_patch_s_cmdbyte;
+        return HS_RUN_OK;
+}
+
 
 /*
  * Called after encountering EOF on the patch.
  */
 static enum hs_result _hs_patch_s_complete(hs_patch_job_t *UNUSED(job))
 {
-        return HS_OK;
+        _hs_fatal("the patch has already finished");
 }
 
 
@@ -227,9 +249,15 @@ int hs_patch_iter(hs_patch_job_t *job)
         
         _hs_patch_check(job);
 
-        do {
+        while (1) {
+                result = _hs_tube_catchup(job->stream);
+                if (result != HS_OK)
+                        return result;
+                
                 result = job->statefn(job);
-        } while (result == HS_RUN_OK);
+                if (result != HS_RUN_OK)
+                        return result;
+        }
 
         return result;
 }
