@@ -185,7 +185,9 @@ class MirrorStruct:
 		rorp = rf.get_attribs()
 		yield rorp
 		if rorp.isdir():
-			for sub_rf in rf.yield_sub_rfs(): yield sub_rf.get_attribs()
+			for sub_rf in rf.yield_sub_rfs():
+				for attribs in cls.get_rorp_iter_from_rf(sub_rf):
+					yield attribs
 
 	def subtract_indicies(cls, index, rorp_iter):
 		"""Subtract index from index of each rorp in rorp_iter
