@@ -205,6 +205,11 @@ upload-men: $(converted_men)
 		rsync -avz --delete $(converted_men) $(man_MANS) $$i/man; \
 	done
 
+upload-news: NEWS
+	for i in $(sites); do \
+		rsync -avz --delete $(srcdir)/NEWS $$i; \
+	done
+
 # Cater to people who prefer the name 'make test'
 .PHONY: test
 test: check;
