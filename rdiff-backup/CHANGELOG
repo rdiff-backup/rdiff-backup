@@ -1,4 +1,4 @@
-New in v0.12.3 (2003/08/??)
+New in v0.12.3 (2003/08/08)
 ---------------------------
 
 Patch by Jeffrey Marshall fixes socket/fifo recognition on Mac OS X
@@ -9,6 +9,11 @@ to have broken recently.
 
 rdiff-backup should now work with python 2.3.  Thanks to Arkadiusz
 Miskiewicz for bug reports.
+
+rdiff-backup now builds with and requires librsync 0.9.6.  This
+version should be much better than the old one and everyone should
+probably upgrade.  Much thanks to Donovan Baarda for all the work that
+went into this release.
 
 
 New in v0.12.2 (2003/07/24)

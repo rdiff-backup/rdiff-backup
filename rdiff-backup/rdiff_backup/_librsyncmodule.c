@@ -22,7 +22,7 @@
  * ----------------------------------------------------------------------- */
 
 #include <Python.h>
-#include <rsync.h>
+#include <librsync.h>
 #define RS_JOB_BLOCKSIZE 65536
 
 static PyObject *librsyncError;
