@@ -1,8 +1,12 @@
-New in v0.13.2 (??????????)
+New in v0.13.2 (2003/09/16)
 ---------------------------
 
 Change ownership policy and added --user-mapping-file and
 --group-mapping-file switches.  See man page for more information.
+
+Added option --never-drop-acls to cause fatal error instead of
+dropping any acls or acl entries.  Thanks to Greg Freemyer for
+suggestion.
 
 Specified socket type as SOCK_STREAM.  (Error reported by Erik
 Forsberg.)

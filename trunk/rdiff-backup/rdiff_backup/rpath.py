@@ -179,8 +179,7 @@ def copy_attribs_inc(rpin, rpout):
 	if rpin.isdir() and not rpout.isdir():
 		rpout.chmod(rpin.getperms() & 0777)
 	else: rpout.chmod(rpin.getperms())
-	if Globals.write_acls and not (rpin.isdir() and not rpout.isdir()):
-		rpout.write_acl(rpin.get_acl())
+	if Globals.write_acls: rpout.write_acl(rpin.get_acl(), map_names = 0)
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
 
 def cmp_attribs(rp1, rp2):
@@ -302,7 +301,8 @@ class RORPath:
 				   not Globals.compare_inode or
 				   not Globals.preserve_hardlinks)): pass
 			elif (not other.data.has_key(key) or
-				  self.data[key] != other.data[key]): return None
+				  self.data[key] != other.data[key]):
+				return None
 		return 1
 
 	def equal_loose(self, other):
@@ -1035,9 +1035,13 @@ class RPath(RORPath):
 		except KeyError: acl = self.data['acl'] = acl_get(self)
 		return acl
 
-	def write_acl(self, acl):
-		"""Change access control list of rp"""
-		acl.write_to_rp(self)
+	def write_acl(self, acl, map_names = 1):
+		"""Change access control list of rp
+
+		If map_names is true, map the ids in acl by user/group names.
+
+		"""
+		acl.write_to_rp(self, map_names)
 		self.data['acl'] = acl
 
 	def get_ea(self):

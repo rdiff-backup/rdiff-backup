@@ -10,8 +10,6 @@ by Andrew Bressen.
 
 Profile 0.13.x
 
-Look at EAs when unames change.
-
 Examine regress handling of acls/eas/resource forks.
 
 Look into that strange regress error July 22nd on

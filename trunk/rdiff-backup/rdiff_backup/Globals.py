@@ -207,6 +207,9 @@ compare_inode = 1
 # guarantee that any changes have been committed to disk.
 fsync_directories = 1
 
+# If set, exit with error instead of dropping ACLs or ACL entries.
+never_drop_acls = None
+
 
 def get(name):
 	"""Return the value of something in this module"""

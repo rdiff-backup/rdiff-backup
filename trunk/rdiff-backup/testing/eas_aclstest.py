@@ -1,4 +1,4 @@
-import unittest, os, time, cStringIO
+import unittest, os, time, cStringIO, posix1e, pwd, grp
 from commontest import *
 from rdiff_backup.eas_acls import *
 from rdiff_backup import Globals, rpath, Time, user_group
@@ -421,6 +421,75 @@ other::---
 					 extra_options = '-r now')
 		assert CompareRecursive(self.acl_testdir2, restore_dir,
 								compare_acls = 1)
+
+	def test_acl_mapping(self):
+		"""Test mapping ACL names"""
+		def make_dir(rootrp):
+			if rootrp.lstat(): rootrp.delete()
+			rootrp.mkdir()
+			rp = rootrp.append('1')
+			rp.touch()
+			acl = AccessControlLists(('1',), """user::rwx
+user:root:rwx
+user:ben:---
+user:bin:r--
+group::r-x
+group:root:r-x
+group:ben:-w-
+mask::r-x
+other::---""")
+			rp.write_acl(acl)
+			return rp
+		
+		def write_mapping_file(rootrp):
+			map_rp = rootrp.append('mapping_file')
+			map_rp.write_string("root:ben\nben:bin\nbin:root")
+			return map_rp
+
+		def get_perms_of_user(acl, user):
+			"""Return the permissions of ACL_USER in acl, or None"""
+			for type, owner_pair, perms in acl.entry_list:
+				if type == posix1e.ACL_USER and owner_pair[1] == user:
+					return perms
+			return None
+
+		self.make_temp()
+		rootrp = rpath.RPath(Globals.local_connection,
+							 'testfiles/acl_map_test')
+		rp = make_dir(rootrp)
+		map_rp = write_mapping_file(rootrp)
+
+		rdiff_backup(1, 1, rootrp.path, tempdir.path,
+					 extra_options = "--user-mapping-file %s" % (map_rp.path,))
+
+		out_rp = tempdir.append('1')
+		assert out_rp.isreg()
+		out_acl = tempdir.append('1').get_acl()
+		assert get_perms_of_user(out_acl, 'root') == 4
+		assert get_perms_of_user(out_acl, 'ben') == 7
+		assert get_perms_of_user(out_acl, 'bin') == 0
+
+	def test_acl_dropping(self):
+		"""Test dropping of ACL names"""
+		self.make_temp()
+		rp = tempdir.append('1')
+		rp.touch()
+		acl = AccessControlLists(('1',), """user::rwx
+user:aoensutheu:r--
+group::r-x
+group:aeuai:r-x
+group:enutohnh:-w-
+other::---""")
+		rp.write_acl(acl)
+		rp2 = tempdir.append('1')
+		acl2 = AccessControlLists(('1',))
+		acl2.read_from_rp(rp2)
+		assert acl2.is_basic()
+		Globals.never_drop_acls = 1
+		try: rp.write_acl(acl)
+		except SystemExit: pass
+		else: assert 0, "Above should have exited with fatal error"
+		Globals.never_drop_acls = None
 
 
 class CombinedTest(unittest.TestCase):
