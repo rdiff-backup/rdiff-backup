@@ -112,14 +112,7 @@ def InternalMirror(source_local, dest_local, src_dir, dest_dir):
 	src_root = rpath.RPath(Globals.local_connection, src_dir)
 	dest_root = rpath.RPath(Globals.local_connection, dest_dir)
 	dest_rbdir = dest_root.append("rdiff-backup-data")
-	dest_incdir = dest_rbdir.append("increments")
 
-	# We need to create these directories or else failure because
-	# --force option not given.
-	if not dest_root.lstat(): dest_root.mkdir()
-	if not dest_rbdir.lstat(): dest_rbdir.mkdir()
-	if not dest_incdir.lstat(): dest_incdir.mkdir()
-	
 	InternalBackup(source_local, dest_local, src_dir, dest_dir)
 	dest_root.setdata()
 	Myrm(dest_rbdir.path)
@@ -173,7 +166,7 @@ def _reset_connections(src_rp, dest_rp):
 
 def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 					 equality_func = None, exclude_rbdir = 1,
-					 ignore_tmp_files = None):
+					 ignore_tmp_files = None, compare_ownership = 0):
 	"""Compare src_rp and dest_rp, which can be directories
 
 	This only compares file attributes, not the actual data.  This
@@ -218,7 +211,9 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 	dsiter1, dsiter2 = src_select.set_iter(), dest_select.set_iter()
 
 	def hardlink_equal(src_rorp, dest_rorp):
-		if not src_rorp.equal_verbose(dest_rorp): return None
+		if not src_rorp.equal_verbose(dest_rorp,
+									  compare_ownership = compare_ownership):
+			return None
 		if Hardlink.rorp_eq(src_rorp, dest_rorp): return 1
 		Log("%s: %s" % (src_rorp.index, Hardlink.get_indicies(src_rorp, 1)), 3)
 		Log("%s: %s" % (dest_rorp.index,
@@ -240,7 +235,9 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 				if dest_rorp.index[-1].endswith('.missing'): return 1
 		if compare_hardlinks:
 			if Hardlink.rorp_eq(src_rorp, dest_rorp): return 1
-		elif src_rorp.equal_verbose(dest_rorp): return 1
+		elif src_rorp.equal_verbose(dest_rorp,
+									compare_ownership = compare_ownership):
+			return 1
 		Log("%s: %s" % (src_rorp.index, Hardlink.get_indicies(src_rorp, 1)), 3)
 		Log("%s: %s" % (dest_rorp.index,
 						Hardlink.get_indicies(dest_rorp, None)), 3)
@@ -256,7 +253,8 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 		else: result = lazy.Iter.equal(dsiter1, dsiter2, 1, rbdir_equal)
 	elif not exclude_rbdir:
 		result = lazy.Iter.equal(dsiter1, dsiter2, 1, rbdir_equal)
-	else: result = lazy.Iter.equal(dsiter1, dsiter2, 1)
+	else: result = lazy.Iter.equal(dsiter1, dsiter2, 1,
+	  lambda x, y: x.equal_verbose(y, compare_ownership = compare_ownership))
 
 	for i in dsiter1: pass # make sure all files processed anyway
 	for i in dsiter2: pass
@@ -321,6 +319,8 @@ def MirrorTest(source_local, dest_local, list_of_dirnames,
 	"""Mirror each of list_of_dirnames, and compare after each"""
 	Globals.set('preserve_hardlinks', compare_hardlinks)
 	dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
+	old_force_val = Main.force
+	Main.force = 1
 
 	Myrm(dest_dirname)
 	for dirname in list_of_dirnames:
@@ -331,3 +331,4 @@ def MirrorTest(source_local, dest_local, list_of_dirnames,
 		InternalMirror(source_local, dest_local, dirname, dest_dirname)
 		_reset_connections(src_rp, dest_rp)
 		assert CompareRecursive(src_rp, dest_rp, compare_hardlinks)
+	Main.force = old_force_val

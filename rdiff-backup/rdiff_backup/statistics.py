@@ -338,7 +338,7 @@ def write_active_statfileobj():
 	global _active_statfileobj
 	assert _active_statfileobj
 	rp_base = Globals.rbdir.append("session_statistics")
-	session_stats_rp = increment.get_inc_ext(rp_base, 'data', Time.curtime)
+	session_stats_rp = increment.get_inc(rp_base, 'data', Time.curtime)
 	_active_statfileobj.finish()
 	_active_statfileobj.write_stats_to_rp(session_stats_rp)
 	_active_statfileobj = None

@@ -21,7 +21,7 @@
 
 from __future__ import generators
 import getopt, sys, re, os
-from log import Log, LoggerError
+from log import Log, LoggerError, ErrorLog
 import Globals, Time, SetConnections, selection, robust, rpath, \
 	   manage, backup, connection, restore, FilenameMapping, \
 	   Security, Hardlink, regress, C
@@ -51,7 +51,8 @@ def parse_cmdlineoptions(arglist):
 		  "exclude-regexp=", "exclude-special-files", "force",
 		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=", "include-regexp=",
-		  "list-changed-since=", "list-increments", "no-compression",
+		  "list-changed-since=", "list-increments",
+		  "no-compare-inode", "no-compression",
 		  "no-compression-regexp=", "no-hard-links", "null-separator",
 		  "parsable-output", "print-statistics", "quoting-char=",
 		  "remote-cmd=", "remote-schema=", "remove-older-than=",
@@ -104,6 +105,7 @@ def parse_cmdlineoptions(arglist):
 			restore_timestr, action = arg, "list-changed-since"
 		elif opt == "-l" or opt == "--list-increments":
 			action = "list-increments"
+		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
 			Globals.set("no_compression_regexp_string", arg)
@@ -219,6 +221,7 @@ def take_action(rps):
 def cleanup():
 	"""Do any last minute cleaning before exiting"""
 	Log("Cleaning up", 6)
+	if ErrorLog.isopen(): ErrorLog.close()
 	Log.close_logfile()
 	if not Globals.server: SetConnections.CloseConnections()
 
@@ -296,6 +299,7 @@ option.""" % rpout.path)
 	if not datadir.lstat(): datadir.mkdir()
 	if Log.verbosity > 0:
 		Log.open_logfile(datadir.append("backup.log"))
+	ErrorLog.open(Time.curtimestr, compress = Globals.compression)
 	backup_warn_if_infinite_regress(rpin, rpout)
 
 def backup_warn_if_infinite_regress(rpin, rpout):
@@ -517,10 +521,11 @@ def RemoveOlderThan(rootrp):
 	Log("Deleting increment(s) before %s" % timep, 4)
 
 	times_in_secs = [inc.getinctime() for inc in 
-					 restore.get_inclist(datadir.append_path("increments"))]
+		  restore.get_inclist(Globals.rbdir.append_path("increments"))]
 	times_in_secs = filter(lambda t: t < time, times_in_secs)
 	if not times_in_secs:
-		Log.FatalError("No increments older than %s found" % timep)
+		Log.FatalError("No increments older than %s found, exiting."
+					   % (timep,), 1)
 
 	times_in_secs.sort()
 	inc_pretty_time = "\n".join(map(Time.timetopretty, times_in_secs))
@@ -532,7 +537,7 @@ def RemoveOlderThan(rootrp):
 	if len(times_in_secs) == 1:
 		Log("Deleting increment at time:\n" + inc_pretty_time, 3)
 	else: Log("Deleting increments at times:\n" + inc_pretty_time, 3)
-	manage.delete_earlier_than(datadir, time)
+	manage.delete_earlier_than(Globals.rbdir, time)
 
 def rom_check_dir(rootrp):
 	"""Check destination dir before RemoveOlderThan"""
@@ -571,7 +576,16 @@ def checkdest_need_check(dest_rp):
 	if not dest_rp.isdir() or not Globals.rbdir.isdir(): return None
 	curmirroot = Globals.rbdir.append("current_mirror")
 	curmir_incs = restore.get_inclist(curmirroot)
-	if not curmir_incs: return None
+	if not curmir_incs:
+		Log.FatalError(
+"""Bad rdiff-backup-data dir on destination side
+
+The rdiff-backup data directory
+%s
+exists, but we cannot find a valid current_mirror marker.  You can
+avoid this message by removing this directory; however any data in it
+will be lost.
+""" % (Globals.rbdir.path,))
 	elif len(curmir_incs) == 1: return 0
 	else:
 		assert len(curmir_incs) == 2, "Found too many current_mirror incs!"

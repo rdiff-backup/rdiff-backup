@@ -172,8 +172,8 @@ def init_connection_routing(conn, conn_number, remote_cmd):
 
 def init_connection_settings(conn):
 	"""Tell new conn about log settings and updated globals"""
-	conn.Log.setverbosity(Log.verbosity)
-	conn.Log.setterm_verbosity(Log.term_verbosity)
+	conn.log.Log.setverbosity(Log.verbosity)
+	conn.log.Log.setterm_verbosity(Log.term_verbosity)
 	for setting_name in Globals.changed_settings:
 		conn.Globals.set(setting_name, Globals.get(setting_name))
 	FilenameMapping.set_init_quote_vals()

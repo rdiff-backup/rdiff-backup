@@ -245,20 +245,14 @@ class MirrorTest(PathSetter):
 	def testPermSkipLocal(self):
 		"""Test to see if rdiff-backup will skip unreadable files"""
 		self.setPathnames(None, None, None, None)
-		Globals.change_source_perms = None
 		Time.setcurtime()
-		self.Mirror(self.one_unreadable, self.one_unreadable_out)
-		Globals.change_source_perms = 1
 		self.Mirror(self.one_unreadable, self.one_unreadable_out)
 		# Could add test, but for now just make sure it doesn't exit
 
 	def testPermSkipRemote(self):
 		"""Test skip of unreadable files remote"""
 		self.setPathnames('test1', '../', 'test2/tmp', '../../')
-		Globals.change_source_perms = None
 		Time.setcurtime()
-		self.Mirror(self.one_unreadable, self.one_unreadable_out)
-		Globals.change_source_perms = 1
 		self.Mirror(self.one_unreadable, self.one_unreadable_out)
 		# Could add test, but for now just make sure it doesn't exit
 
@@ -294,8 +288,6 @@ class MirrorTest(PathSetter):
 	def deleteoutput(self):
 		assert not os.system("rm -rf testfiles/output*")
 		self.rbdir = self.rpout.append('rdiff-backup-data')
-		self.rpout.mkdir()
-		self.rbdir.mkdir()
 		self.reset_rps()
 
 	def reset_rps(self):
@@ -309,8 +301,9 @@ class MirrorTest(PathSetter):
 			rp.setdata()
 		
 	def runtest(self):
+		self.deleteoutput()
 		Time.setcurtime()
-		assert self.rbdir.lstat()
+		assert not self.rbdir.lstat()
 		self.Mirror(self.inc1rp, self.rpout)
 		assert CompareRecursive(Local.inc1rp, Local.rpout)
 
@@ -328,6 +321,7 @@ class MirrorTest(PathSetter):
 		self.Mirror(self.inc1rp, self.rpout)
 		#rpath.RPath.copy_attribs(self.inc1rp, self.rpout)
 		assert CompareRecursive(Local.inc1rp, Local.rpout)
+		Myrm(Local.rpout.append("rdiff-backup-data").path)
 
 		self.Mirror(self.inc2rp, self.rpout)
 		assert CompareRecursive(Local.inc2rp, Local.rpout)
@@ -335,11 +329,13 @@ class MirrorTest(PathSetter):
 	def Mirror(self, rpin, rpout):
 		"""Like backup.Mirror, but setup first, cleanup later"""
 		Main.force = 1
+		assert not rpout.append("rdiff-backup-data").lstat()
 		Main.misc_setup([rpin, rpout])
 		Main.backup_set_select(rpin)
 		Main.backup_init_dirs(rpin, rpout)
 		backup.Mirror(rpin, rpout)
-		Log.close_logfile()
+		log.ErrorLog.close()
+		log.Log.close_logfile()
 		Hardlink.clear_dictionaries()
 
 if __name__ == "__main__": unittest.main()

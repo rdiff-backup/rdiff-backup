@@ -19,7 +19,8 @@
 
 """Catch various exceptions given system call"""
 
-import librsync, errno, signal, C, static, rpath, Globals, log, statistics
+import errno, signal
+import librsync, C, static, rpath, Globals, log, statistics
 
 def check_common_error(error_handler, function, args = []):
 	"""Apply function to args, if error, run error_handler on exception
@@ -34,9 +35,9 @@ def check_common_error(error_handler, function, args = []):
 		if catch_error(exc):
 			log.Log.exception()
 			conn = Globals.backup_writer
-			if conn is not None: statistics.record_error()
+			if conn is not None: conn.statistics.record_error()
 			if error_handler: return error_handler(exc, *args)
-			else: return
+			else: return None
 		log.Log.exception(1, 2)
 		raise
 
@@ -46,12 +47,28 @@ def catch_error(exc):
 							librsync.librsyncError, C.UnknownFileTypeError):
 		if isinstance(exc, exception_class): return 1
 	if (isinstance(exc, EnvironmentError) and
-		errno.errorcode[exc[0]] in ('EPERM', 'ENOENT', 'EACCES', 'EBUSY',
-									'EEXIST', 'ENOTDIR', 'ENAMETOOLONG',
-									'EINTR', 'ENOTEMPTY', 'EIO', 'ETXTBSY',
-									'ESRCH', 'EINVAL')):
+		# the invalid mode shows up in backups of /proc for some reason
+		(exc[0] == 'invalid mode: rb' or
+		 errno.errorcode.has_key(exc[0]) and
+		 errno.errorcode[exc[0]] in ('EPERM', 'ENOENT', 'EACCES', 'EBUSY',
+									 'EEXIST', 'ENOTDIR', 'ENAMETOOLONG',
+									 'EINTR', 'ENOTEMPTY', 'EIO', 'ETXTBSY',
+									 'ESRCH', 'EINVAL'))):
 		return 1
 	return 0
+
+def get_error_handler(error_type):
+	"""Return error handler function that can be used above
+
+	Function will just log error to the error_log and then return
+	None.  First two arguments must be the exception and then an rp
+	(from which the filename will be extracted).
+
+	"""
+	def error_handler(exc, rp, *args):
+		log.ErrorLog.write_if_open(error_type, rp, exc)
+		return 0
+	return error_handler
 
 def listrp(rp):
 	"""Like rp.listdir() but return [] if error, and sort results"""

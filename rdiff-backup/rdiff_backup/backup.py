@@ -30,7 +30,7 @@ def Mirror(src_rpath, dest_rpath):
 
 	source_rpiter = SourceS.get_source_select()
 	DestS.set_rorp_cache(dest_rpath, source_rpiter, 0)
-	dest_sigiter = DestS.get_sigs()
+	dest_sigiter = DestS.get_sigs(dest_rpath)
 	source_diffiter = SourceS.get_diffs(dest_sigiter)
 	DestS.patch(dest_rpath, source_diffiter)
 
@@ -41,7 +41,7 @@ def Mirror_and_increment(src_rpath, dest_rpath, inc_rpath):
 
 	source_rpiter = SourceS.get_source_select()
 	DestS.set_rorp_cache(dest_rpath, source_rpiter, 1)
-	dest_sigiter = DestS.get_sigs()
+	dest_sigiter = DestS.get_sigs(dest_rpath)
 	source_diffiter = SourceS.get_diffs(dest_sigiter)
 	DestS.patch_and_increment(dest_rpath, source_diffiter, inc_rpath)
 
@@ -74,23 +74,37 @@ class SourceStruct:
 	def get_diffs(cls, dest_sigiter):
 		"""Return diffs of any files with signature in dest_sigiter"""
 		source_rps = cls.source_select
-		def get_one_diff(dest_sig):
+		error_handler = robust.get_error_handler("ListError")
+		def attach_snapshot(diff_rorp, src_rp):
+			"""Attach file of snapshot to diff_rorp, w/ error checking"""
+			fileobj = robust.check_common_error(
+				error_handler, rpath.RPath.open, (src_rp, "rb"))
+			if fileobj: diff_rorp.setfile(fileobj)
+			else: diff_rorp.zero()
+			diff_rorp.set_attached_filetype('snapshot')
+
+		def attach_diff(diff_rorp, src_rp, dest_sig):
+			"""Attach file of diff to diff_rorp, w/ error checking"""
+			fileobj = robust.check_common_error(
+				error_handler, Rdiff.get_delta_sigrp, (dest_sig, src_rp))
+			if fileobj:
+				diff_rorp.setfile(fileobj)
+				diff_rorp.set_attached_filetype('diff')
+			else:
+				diff_rorp.zero()
+				diff_rorp.set_attached_filetype('snapshot')
+				
+		for dest_sig in dest_sigiter:
 			src_rp = (source_rps.get(dest_sig.index) or
 					  rpath.RORPath(dest_sig.index))
 			diff_rorp = src_rp.getRORPath()
 			if dest_sig.isflaglinked():
 				diff_rorp.flaglinked(dest_sig.get_link_flag())
 			elif dest_sig.isreg() and src_rp.isreg():
-				diff_rorp.setfile(Rdiff.get_delta_sigrp(dest_sig, src_rp))
-				diff_rorp.set_attached_filetype('diff')
-			else:
-				diff_rorp.set_attached_filetype('snapshot')
-				if src_rp.isreg(): diff_rorp.setfile(src_rp.open("rb"))
-			return diff_rorp
-
-		for dest_sig in dest_sigiter:
-			diff = robust.check_common_error(None, get_one_diff, [dest_sig])
-			if diff: yield diff
+				attach_diff(diff_rorp, src_rp, dest_sig)
+			elif src_rp.isreg(): attach_snapshot(diff_rorp, src_rp)
+			else: diff_rorp.set_attached_filetype('snapshot')
+			yield diff_rorp
 
 static.MakeClass(SourceStruct)
 
@@ -127,7 +141,7 @@ class DestinationStruct:
 		cls.CCPP = CacheCollatedPostProcess(collated,
 											Globals.pipeline_max_length*2)
 		
-	def get_sigs(cls):
+	def get_sigs(cls, dest_base_rpath):
 		"""Yield signatures of any changed destination files"""
 		for src_rorp, dest_rorp in cls.CCPP:
 			if (src_rorp and dest_rorp and src_rorp == dest_rorp and
@@ -142,7 +156,9 @@ class DestinationStruct:
 			elif dest_rorp:
 				dest_sig = dest_rorp.getRORPath()
 				if dest_rorp.isreg():
-					dest_sig.setfile(Rdiff.get_signature(dest_rorp))
+					dest_rp = dest_base_rpath.new_index(index)
+					assert dest_rp.isreg()
+					dest_sig.setfile(Rdiff.get_signature(dest_rp))
 			else: dest_sig = rpath.RORPath(index)
 			yield dest_sig			
 
@@ -250,14 +266,12 @@ class CacheCollatedPostProcess:
 
 		"""
 		if not changed or success:
-			self.statfileobj.add_source_file(source_rorp)
-			self.statfileobj.add_dest_file(dest_rorp)
+			if source_rorp: self.statfileobj.add_source_file(source_rorp)
+			if dest_rorp: self.statfileobj.add_dest_file(dest_rorp)
 		if success:
 			self.statfileobj.add_changed(source_rorp, dest_rorp)
 			metadata_rorp = source_rorp
-		else:
-			metadata_rorp = dest_rorp
-			if changed: self.statfileobj.add_error()
+		else: metadata_rorp = dest_rorp
 		if metadata_rorp and metadata_rorp.lstat():
 			metadata.WriteMetadata(metadata_rorp)
 
@@ -294,7 +308,7 @@ class PatchITRB(rorpiter.ITRBranch):
 	contents.
 
 	"""
-	def __init__(self, basis_root_rp, rorp_cache):
+	def __init__(self, basis_root_rp, CCPP):
 		"""Set basis_root_rp, the base of the tree to be incremented"""
 		self.basis_root_rp = basis_root_rp
 		assert basis_root_rp.conn is Globals.local_connection
@@ -302,6 +316,8 @@ class PatchITRB(rorpiter.ITRBranch):
 							statistics.StatFileObj())
 		self.dir_replacement, self.dir_update = None, None
 		self.cached_rp = None
+		self.CCPP = CCPP
+		self.error_handler = robust.get_error_handler("UpdateError")
 
 	def get_rp_from_root(self, index):
 		"""Return RPath by adding index to self.basis_root_rp"""
@@ -318,19 +334,36 @@ class PatchITRB(rorpiter.ITRBranch):
 		"""Patch base_rp with diff_rorp (case where neither is directory)"""
 		rp = self.get_rp_from_root(index)
 		tf = TempFile.new(rp)
-		self.patch_to_temp(rp, diff_rorp, tf)
-		rpath.rename(tf, rp)
+		if self.patch_to_temp(rp, diff_rorp, tf):
+			if tf.lstat(): rpath.rename(tf, rp)
+			elif rp.lstat(): rp.delete()
+			self.CCPP.flag_success(index)
+		else: 
+			tf.setdata()
+			if tf.lstat(): tf.delete()
 
 	def patch_to_temp(self, basis_rp, diff_rorp, new):
 		"""Patch basis_rp, writing output in new, which doesn't exist yet"""
 		if diff_rorp.isflaglinked():
 			Hardlink.link_rp(diff_rorp, new, self.basis_root_rp)
 		elif diff_rorp.get_attached_filetype() == 'snapshot':
-			rpath.copy(diff_rorp, new)
+			if diff_rorp.isspecial(): self.write_special(diff_rorp, new)
+			elif robust.check_common_error(self.error_handler, rpath.copy,
+										   (diff_rorp, new)) == 0: return 0
 		else:
 			assert diff_rorp.get_attached_filetype() == 'diff'
-			Rdiff.patch_local(basis_rp, diff_rorp, new)
+			if robust.check_common_error(self.error_handler,
+			   Rdiff.patch_local, (basis_rp, diff_rorp, new)) == 0: return 0
 		if new.lstat(): rpath.copy_attribs(diff_rorp, new)
+		return 1
+
+	def write_special(self, diff_rorp, new):
+		"""Write diff_rorp (which holds special file) to new"""
+		eh = robust.get_error_handler("SpecialFileError")
+		if robust.check_common_error(eh, rpath.copy, (diff_rorp, new)) == 0:
+			new.setdata()
+			if new.lstat(): new.delete()
+			new.touch()
 
 	def start_process(self, index, diff_rorp):
 		"""Start processing directory - record information for later"""
@@ -368,6 +401,7 @@ class PatchITRB(rorpiter.ITRBranch):
 			self.base_rp.rmdir()
 			if self.dir_replacement.lstat():
 				rpath.rename(self.dir_replacement, self.base_rp)
+		self.CCPP.flag_success(self.base_rp.index)
 
 
 class IncrementITRB(PatchITRB):
@@ -393,7 +427,9 @@ class IncrementITRB(PatchITRB):
 		tf = TempFile.new(rp)
 		self.patch_to_temp(rp, diff_rorp, tf)
 		increment.Increment(tf, rp, self.get_incrp(index))
-		rpath.rename(tf, rp)
+		if tf.lstat(): rpath.rename(tf, rp)
+		else: rp.delete()
+		self.CCPP.flag_success(index)
 
 	def start_process(self, index, diff_rorp):
 		"""Start processing directory"""

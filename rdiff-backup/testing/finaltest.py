@@ -42,8 +42,9 @@ class PathSetter(unittest.TestCase):
 		self.reset_schema()
 
 	def reset_schema(self):
-		self.rb_schema = SourceDir + \
-			 "/../rdiff-backup -v5 --remote-schema './chdir-wrapper2 %s' "
+		self.rb_schema = (SourceDir +
+						  "/../rdiff-backup -v3 --no-compare-inode " 
+						  "--remote-schema './chdir-wrapper2 %s' ")
 
 	def refresh(self, *rp_list):
 		"""Reread data for the given rps"""
@@ -213,6 +214,12 @@ class Final(PathSetter):
 		"""Test mirroring proc remote"""
 		Myrm("testfiles/procoutput")
 		self.set_connections(None, None, "test2/tmp/", "../../")
+		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
+
+	def testProcRemote2(self):
+		"""Test mirroring proc, this time when proc is remote, dest local"""
+		Myrm("testfiles/procoutput")
+		self.set_connections("test1/", "../", None, None)
 		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
 
 	def testWindowsMode(self):

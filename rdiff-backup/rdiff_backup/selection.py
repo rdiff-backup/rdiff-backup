@@ -95,18 +95,10 @@ class Select:
 		"""
 		if not sel_func: sel_func = self.Select
 		self.rpath.setdata() # this may have changed since Select init
-		self.iter = self.filter_readable(self.Iterate_fast(self.rpath,
-														   sel_func))
+		self.iter = self.Iterate_fast(self.rpath, sel_func)
 		self.next = self.iter.next
 		self.__iter__ = lambda: self
 		return self
-
-	def filter_readable(self, rp_iter):
-		"""Yield rps in iter except the unreadable regular files"""
-		for rp in rp_iter:
-			if not rp.isreg() or rp.readable(): yield rp
-			else: log.ErrorLog.write_if_open("ListError", rp,
-						   "Regular file lacks read permissions")
 
 	def Iterate_fast(self, rpath, sel_func):
 		"""Like Iterate, but don't recur, saving time"""
