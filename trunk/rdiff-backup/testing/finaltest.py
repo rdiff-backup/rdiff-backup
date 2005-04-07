@@ -47,7 +47,7 @@ class PathSetter(unittest.TestCase):
 
 	def reset_schema(self):
 		self.rb_schema = (SourceDir +
-						  "/../rdiff-backup -v9 --no-compare-inode " 
+						  "/../rdiff-backup -v3 --no-compare-inode " 
 						  "--remote-schema './chdir-wrapper2 %s' ")
 
 	def refresh(self, *rp_list):
