@@ -790,6 +790,10 @@ class RPath(RORPath):
 		"""Return similar RPath but with new index"""
 		return self.__class__(self.conn, self.base, index)
 
+	def new_index_empty(self, index):
+		"""Return similar RPath with given index, but initialize to empty"""
+		return self.__class__(self.conn, self.base, index, {'type': None})
+
 	def open(self, mode, compress = None):
 		"""Return open file.  Supports modes "w" and "r".
 
