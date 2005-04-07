@@ -94,5 +94,17 @@ class TimeTest(unittest.TestCase):
 		self.assertRaises(Time.TimeException, g2t, "")
 		self.assertRaises(Time.TimeException, g2t, "3q")
 
+	def testTimeZone(self):
+		"""Test stringtotime on two strings straddling timezones"""
+		f = Time.stringtotime
+		invf = Time.timetostring
+		s1 = "2005-04-03T03:45:03-03:00"
+		s2 = "2005-04-03T02:45:03-03:00"
+		diff = f(s1) - f(s2)
+		assert diff == 3600, diff
+
+		assert f(invf(f(s1))) == f(s1), (s1, invf(f(s1)), f(invf(f(s1))), f(s1))
+		assert f(invf(f(s2))) == f(s2), (s2, f(invf(f(s2))), f(s2))
+
 
 if __name__ == '__main__': unittest.main()
