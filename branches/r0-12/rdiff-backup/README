@@ -31,11 +31,11 @@ arguments will display some help.
 
 REQUIREMENTS:
 
-Remember that you must have Python 2.2 or later and librsync 0.9.6
-or later installed.  For Python, see http://www.python.org.  The
-rdiff-backup homepage at http://rdiff-backup.stanford.edu/ should have
-a recent version of librsync; otherwise see the librsync homepage at
-http://sourceforge.net/projects/librsync/.
+Remember that you must have Python 2.2 or later and librsync 0.9.7 or
+later installed.  For Python, see http://www.python.org.  The
+rdiff-backup homepage at http://www.nongnu.org/rdiff-backup/ should
+have a recent version of librsync; otherwise see the librsync homepage
+at http://librsync.sourceforge.net/.
 
 For remote operation, rdiff-backup should be in installed and in the
 PATH on remote system(s) (see man page for more information).
@@ -45,5 +45,5 @@ TROUBLESHOOTING:
 
 If you have everything installed properly, and it still doesn't work,
 see the enclosed FAQ.html, the web page at
-http://rdiff-backup.stanford.edu, and/or the mailing list.
+http://www.nongnu.org/rdiff-backup/, and/or the mailing list.
 
