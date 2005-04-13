@@ -47,7 +47,7 @@ def uid2uname(uid):
 	try: return uid2uname_dict[uid]
 	except KeyError:
 		try: uname = pwd.getpwuid(uid)[0]
-		except KeyError: uname = None
+		except (KeyError, OverflowError), e: uname = None
 		uid2uname_dict[uid] = uname
 		return uname
 
@@ -56,7 +56,7 @@ def gid2gname(gid):
 	try: return gid2gname_dict[gid]
 	except KeyError:
 		try: gname = grp.getgrgid(gid)[0]
-		except KeyError: gname = None
+		except (KeyError, OverflowError), e: gname = None
 		gid2gname_dict[gid] = gname
 		return gname
 
