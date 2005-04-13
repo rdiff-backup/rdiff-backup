@@ -49,7 +49,12 @@ sync:0"""
 		assert user_group.UserMap.get_id(123, 'daemon') == daemonid
 		
 		if 0: code.InteractiveConsole(globals()).interact()
-			   
-		
+
+	def test_overflow(self):
+		"""Make sure querying large uids/gids doesn't raise exception"""
+		large_num = 4000000000
+		assert user_group.uid2uname(large_num) is None
+		assert user_group.gid2gname(large_num) is None
+
 
 if __name__ == "__main__": unittest.main()

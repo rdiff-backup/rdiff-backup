@@ -1,3 +1,10 @@
+New in v0.13.7 (????/??/??)
+---------------------------
+
+Handle cases of junk uid/gids better on 64bit systems.  (Bug report by
+Nick Bailey)
+
+
 New in v0.13.6 (2005/04/07)
 ---------------------------
 
