@@ -4,6 +4,8 @@ New in v0.13.7 (????/??/??)
 Handle cases of junk uid/gids better on 64bit systems.  (Bug report by
 Nick Bailey)
 
+Filenames in the file_statistics*gz files are now quoted the same way
+as filenames in the metadata file (LF => \n and \ => \\).
 
 New in v0.13.6 (2005/04/07)
 ---------------------------
