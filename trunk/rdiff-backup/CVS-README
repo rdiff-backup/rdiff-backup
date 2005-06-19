@@ -47,3 +47,7 @@ So, three steps:
    If python restoretest.py doesn't work, try running
    ./makerestoretest3
 
+Note:
+- some of the tests may require a normal user ben and group ben to exist.
+- you may need to install extra packages for acl/xattr... (such as
+	python-pylibacl and python-pyxattr on debian)
