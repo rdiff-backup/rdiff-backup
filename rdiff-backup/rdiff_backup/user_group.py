@@ -144,7 +144,7 @@ class DefinedMap(Map):
 		except ValueError:
 			try: id = self.name2id_func(id_or_name)
 			except KeyError:
-				log.Log.FatalError("Cannot get id for user or group name"
+				log.Log.FatalError("Cannot get id for user or group name "
 								   + id_or_name)
 			return id
 
