@@ -475,6 +475,9 @@ other::---""")
 		self.make_temp()
 		rp = tempdir.append('1')
 		rp.touch()
+		"""ben uses a dvorak keyboard, and these sequences are
+			analogous to asdfsjkd for a qwerty user... these
+			users and groups are not expected to exist. -dean"""
 		acl = AccessControlLists(('1',), """user::rwx
 user:aoensutheu:r--
 group::r-x
