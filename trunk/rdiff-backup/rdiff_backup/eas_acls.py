@@ -242,7 +242,7 @@ class AccessControlLists:
 		"""Return entrytuple given text like 'user:foo:r--'"""
 		typetext, qualifier, permtext = text.split(':')
 		if qualifier:
-			try: id = int(qualifier)
+			try: uid = int(qualifier)
 			except ValueError: namepair = (None, qualifier)
 			else: namepair = (uid, None)
 

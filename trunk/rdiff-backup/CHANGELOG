@@ -7,6 +7,8 @@ Nick Bailey)
 Filenames in the file_statistics*gz files are now quoted the same way
 as filenames in the metadata file (LF => \n and \ => \\).
 
+Fix from Paul P Komkoff Jr for uid typo in text_to_entrytuple.
+
 New in v0.13.6 (2005/04/07)
 ---------------------------
 
