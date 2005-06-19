@@ -197,12 +197,13 @@ def cmp_attribs(rp1, rp2):
 	if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
 		result = None
 	elif rp1.getperms() != rp2.getperms(): result = None
-	elif rp1.getctime() != rp2.getctime(): result = None
 	elif rp1.issym() and rp2.issym(): # Don't check times for some types
 		result = 1
 	elif rp1.isblkdev() and rp2.isblkdev(): result = 1
 	elif rp1.ischardev() and rp2.ischardev(): result = 1
-	else: result = (rp1.getmtime() == rp2.getmtime())
+	else:
+		result = ((rp1.getctime() == rp2.getctime()) and
+			(rp1.getmtime() == rp2.getmtime()))
 	log.Log("Compare attribs of %s and %s: %s" %
 			(rp1.get_indexpath(), rp2.get_indexpath(), result), 7)
 	return result
