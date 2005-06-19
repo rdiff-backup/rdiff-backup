@@ -1,6 +1,6 @@
 import unittest
 from commontest import *
-from rdiff_backup import Globals, SetConnections
+from rdiff_backup import Globals, SetConnections, user_group
 
 class RemoteMirrorTest(unittest.TestCase):
 	"""Test mirroring"""
@@ -9,6 +9,8 @@ class RemoteMirrorTest(unittest.TestCase):
 		Log.setverbosity(3)
 		Globals.change_source_perms = 1
 		SetConnections.UpdateGlobal('checkpoint_interval', 3)
+		user_group.init_user_mapping()
+		user_group.init_group_mapping()
 
 	def testMirror(self):
 		"""Testing simple mirror"""
