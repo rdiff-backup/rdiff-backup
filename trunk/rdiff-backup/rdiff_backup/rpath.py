@@ -35,7 +35,7 @@ are dealing with are local or remote.
 
 """
 
-import os, stat, re, sys, shutil, gzip, socket, time
+import os, stat, re, sys, shutil, gzip, socket, time, errno
 import Globals, Time, static, log, user_group
 
 
@@ -1017,12 +1017,18 @@ class RPath(RORPath):
 
 	def makedev(self, type, major, minor):
 		"""Make a special file with specified type, and major/minor nums"""
-		cmdlist = ['mknod', self.path, type, str(major), str(minor)]
-		if self.conn.os.spawnvp(os.P_WAIT, 'mknod', cmdlist) != 0:
-			raise RPathException("Error running %s" % cmdlist)
-		if type == 'c': datatype = 'chr'
-		elif type == 'b': datatype = 'blk'
+		if type == 'c':
+			datatype = 'chr'
+			mode = stat.S_IFCHR | 0600
+		elif type == 'b':
+			datatype = 'blk'
+			mode = stat.S_IFBLK | 0600
 		else: raise RPathException
+		try: self.conn.os.mknod(self.path, mode, self.conn.os.makedev(major, minor))
+		except OSError, e:
+			if e.errno == errno.EPERM:
+				log.Log("unable to mknod %s -- using touch instead" % self.path, 4)
+				self.touch()
 		self.setdata()
 
 	def fsync(self, fp = None):
