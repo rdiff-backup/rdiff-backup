@@ -19,6 +19,11 @@ moved to another device (and the inodes don't change).
 bug#13475: correct an UpdateError when backing up hardlinks with EAs
 and/or ACLs.
 
+debian bug#306798: SELinux security attributes can not be removed and
+rdiff-backup should not fail when it fails to remove them from temp
+files.  fix from Konrad Podloucky.
+
+
 New in v0.13.6 (2005/04/07)
 ---------------------------
 
