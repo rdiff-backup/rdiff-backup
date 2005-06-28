@@ -12,6 +12,10 @@ Fix from Paul P Komkoff Jr for uid typo in text_to_entrytuple.
 bug#12726: fix regressing of devices while running as non-root -- zero
 length files are created as placeholders.
 
+bug#13476: must always compare device numbers when we compare inode
+numbers -- fix a non-fatal problem with hardlinks when a filesystem is
+moved to another device (and the inodes don't change).
+
 New in v0.13.6 (2005/04/07)
 ---------------------------
 
