@@ -47,9 +47,9 @@ class ExtendedAttributes:
 		else: self.attr_dict = attr_dict
 
 	def __eq__(self, ea):
-		"""Equal if all attributes and index are equal"""
+		"""Equal if all attributes are equal"""
 		assert isinstance(ea, ExtendedAttributes)
-		return ea.index == self.index and ea.attr_dict == self.attr_dict
+		return ea.attr_dict == self.attr_dict
 	def __ne__(self, ea): return not self.__eq__(ea)
 
 	def get_indexpath(self): return self.index and '/'.join(self.index) or '.'
@@ -292,7 +292,6 @@ class AccessControlLists:
 
 		"""
 		assert isinstance(acl, self.__class__)
-		if self.index != acl.index: return 0
 		if self.is_basic(): return acl.is_basic()
 		return (self.cmp_entry_list(self.entry_list, acl.entry_list) and
 				self.cmp_entry_list(self.default_entry_list,
@@ -302,9 +301,6 @@ class AccessControlLists:
 	
 	def eq_verbose(self, acl):
 		"""Returns same as __eq__ but print explanation if not equal"""
-		if self.index != acl.index:
-			print "index %s not equal to index %s" % (self.index, acl.index)
-			return 0
 		if not self.cmp_entry_list(self.entry_list, acl.entry_list):
 			print "ACL entries for %s compare differently" % (self.index,)
 			return 0
