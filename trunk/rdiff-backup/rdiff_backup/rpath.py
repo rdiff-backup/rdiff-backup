@@ -294,7 +294,7 @@ class RORPath:
 				pass # Don't compare gid/uid for symlinks
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'ctime': pass
-			elif key == 'devloc' or key == 'nlink': pass
+			elif key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'ea' and not Globals.eas_active: pass
 			elif key == 'acl' and not Globals.acls_active: pass
@@ -306,7 +306,7 @@ class RORPath:
 				other_name = other.data.get(key, None)
 				if (other_name and other_name != "None" and
 					other_name != self.data[key]): return None
-			elif (key == 'inode' and
+			elif ((key == 'inode' or key == 'devloc') and
 				  (not self.isreg() or self.getnumlinks() == 1 or
 				   not Globals.compare_inode or
 				   not Globals.preserve_hardlinks)):
