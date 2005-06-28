@@ -23,6 +23,9 @@ debian bug#306798: SELinux security attributes can not be removed and
 rdiff-backup should not fail when it fails to remove them from temp
 files.  fix from Konrad Podloucky.
 
+bug#12949: eliminate an exception during fs abilities testing on OS X 10.4.
+fix from Daniel Westermann-Clark.
+
 
 New in v0.13.6 (2005/04/07)
 ---------------------------

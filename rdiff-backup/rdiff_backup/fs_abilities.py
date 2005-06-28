@@ -241,13 +241,15 @@ rdiff-backup-data/chars_to_quote.
 		def supports_unusual_chars():
 			"""Test handling of several chars sometimes not supported"""
 			for filename in [':', '\\', chr(175)]:
-				rp = subdir.append(filename)
-				try: rp.touch()
-				except IOError:
+				try:
+					rp = subdir.append(filename)
+					rp.touch()
+				except (IOError, OSError):
 					assert not rp.lstat()
 					return 0
-				assert rp.lstat()
-				rp.delete()
+				else:
+					assert rp.lstat()
+					rp.delete()
 			return 1
 
 		def sanity_check():
