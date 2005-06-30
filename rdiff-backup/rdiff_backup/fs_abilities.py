@@ -39,7 +39,7 @@ class FSAbilities:
 	hardlinks = None # True if hard linking supported
 	fsync_dirs = None # True if directories can be fsync'd
 	dir_inc_perms = None # True if regular files can have full permissions
-	resource_forks = None # True if regular_file/rsrc holds resource fork
+	resource_forks = None # True if regular_file/..namedfork/rsrc holds resource fork
 	carbonfile = None # True if Mac Carbon file data is supported. 
 	name = None # Short string, not used for any technical purpose
 	read_only = None # True if capabilities were determined non-destructively
@@ -341,18 +341,18 @@ rdiff-backup-data/chars_to_quote.
 		self.carbonfile = 1
 
 	def set_resource_fork_readwrite(self, dir_rp):
-		"""Test for resource forks by writing to regular_file/rsrc"""
+		"""Test for resource forks by writing to regular_file/..namedfork/rsrc"""
 		assert dir_rp.conn is Globals.local_connection
 		reg_rp = dir_rp.append('regfile')
 		reg_rp.touch()
 
 		s = 'test string---this should end up in resource fork'
 		try:
-			fp_write = open(os.path.join(reg_rp.path, 'rsrc'), 'wb')
+			fp_write = open(os.path.join(reg_rp.path, '..namedfork', 'rsrc'), 'wb')
 			fp_write.write(s)
 			assert not fp_write.close()
 
-			fp_read = open(os.path.join(reg_rp.path, 'rsrc'), 'rb')
+			fp_read = open(os.path.join(reg_rp.path, '..namedfork', 'rsrc'), 'rb')
 			s_back = fp_read.read()
 			assert not fp_read.close()
 		except (OSError, IOError), e: self.resource_forks = 0
@@ -370,7 +370,7 @@ rdiff-backup-data/chars_to_quote.
 		for rp in selection.Select(dir_rp).set_iter():
 			if rp.isreg():
 				try:
-					rfork = rp.append('rsrc')
+					rfork = rp.append(os.path.join('..namedfork', 'rsrc'))
 					fp = rfork.open('rb')
 					fp.read()
 					assert not fp.close()

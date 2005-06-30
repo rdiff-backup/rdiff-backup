@@ -26,6 +26,10 @@ files.  fix from Konrad Podloucky.
 bug#12949: eliminate an exception during fs abilities testing on OS X 10.4.
 fix from Daniel Westermann-Clark.
 
+patch#4136: OSX filename/rsrc has been deprecated for some time, and as of OSX
+10.4 it causes log spam.  the new proper use is filename/..namedfork/rsrc.  fix
+from Daniel Westermann-Clark.
+
 
 New in v0.13.6 (2005/04/07)
 ---------------------------
