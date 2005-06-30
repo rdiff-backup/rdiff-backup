@@ -1141,7 +1141,7 @@ class RPath(RORPath):
 		try: rfork = self.data['resourcefork']
 		except KeyError:
 			try:
-				rfork_fp = self.conn.open(os.path.join(self.path, 'rsrc'),
+				rfork_fp = self.conn.open(os.path.join(self.path, '..namedfork', 'rsrc'),
 										  'rb')
 				rfork = rfork_fp.read()
 				assert not rfork_fp.close()
@@ -1152,7 +1152,7 @@ class RPath(RORPath):
 	def write_resource_fork(self, rfork_data):
 		"""Write new resource fork to self"""
 		log.Log("Writing resource fork to %s" % (self.index,), 7)
-		fp = self.conn.open(os.path.join(self.path, 'rsrc'), 'wb')
+		fp = self.conn.open(os.path.join(self.path, '..namedfork', 'rsrc'), 'wb')
 		fp.write(rfork_data)
 		assert not fp.close()
 		self.set_resource_fork(rfork_data)
