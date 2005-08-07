@@ -446,7 +446,7 @@ class FinalMisc(PathSetter):
 
 class FinalSelection(PathSetter):
 	"""Test selection options"""
-	def run(self, cmd):
+	def system(self, cmd):
 		print "Executing: ", cmd
 		assert not os.system(cmd)
 
@@ -456,7 +456,7 @@ class FinalSelection(PathSetter):
 
 		# Test --include option
 		assert not \
-			   os.system(self.rb_schema +
+			 self.system(self.rb_schema +
 						 "--current-time 10000 "
 						 "--include testfiles/increment2/various_file_types "
 						 "--exclude '**' "
@@ -485,11 +485,11 @@ testfiles/increment2/changed_dir""")
 		# Test selective restoring
 		mirror_rp = rpath.RPath(Globals.local_connection, "testfiles/output")
 		restore_filename = get_increment_rp(mirror_rp, 10000).path
-		self.run(self.rb_schema +
-				 "--include testfiles/restoretarget1/various_file_types/"
-				 "regular_file "
-				 "--exclude '**' " +
-				 restore_filename + " testfiles/restoretarget1")
+		self.system(self.rb_schema +
+					"--include testfiles/restoretarget1/various_file_types/"
+					"regular_file "
+					"--exclude '**' " +
+					restore_filename + " testfiles/restoretarget1")
 		assert os.lstat("testfiles/restoretarget1/various_file_types/"
 						"regular_file")
 		self.assertRaises(OSError, os.lstat, "testfiles/restoretarget1/tester")
