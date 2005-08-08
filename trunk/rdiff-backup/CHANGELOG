@@ -33,6 +33,9 @@ from Daniel Westermann-Clark.
 Log EACCES from listxattr rather than raising an exception -- this can happen
 when the repository has permission problems.
 
+Added Keith Edmunds patch adding the --create-full-path option.
+
+
 New in v0.13.6 (2005/04/07)
 ---------------------------
 
