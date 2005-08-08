@@ -84,6 +84,14 @@ Compare a directory with the backup set at the given time.  This can
 be useful to see how archived data differs from current data, or to
 check that a backup is current.
 .TP
+.BI "--create-full-path"
+Normally only the final directory of the destination path will be
+created if it does not exist. With this option, all missing directories
+on the destination path will be created. Use this option with care: if 
+there is a typo in the remote path, the remote filesystem could fill up 
+very quickly (by creating a duplicate backup tree). For this reason 
+this option is primarily aimed at scripts which automate backups.
+.TP
 .BI "--current-time " seconds
 This option is useful mainly for testing.  If set, rdiff-backup will
 it for the current time instead of consulting the clock.  The argument

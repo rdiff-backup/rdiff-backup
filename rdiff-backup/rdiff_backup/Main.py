@@ -28,6 +28,7 @@ import Globals, Time, SetConnections, selection, robust, rpath, \
 
 
 action = None
+create_full_path = None
 remote_cmd, remote_schema = None, None
 force = None
 select_opts = []
@@ -40,8 +41,8 @@ return_val = None # Set to cause exit code to be specified value
 
 def parse_cmdlineoptions(arglist):
 	"""Parse argument list and set global preferences"""
-	global args, action, force, restore_timestr, remote_cmd, remote_schema
-	global remove_older_than_string
+	global args, action, create_full_path, force, restore_timestr, remote_cmd
+	global remote_schema, remove_older_than_string
 	global user_mapping_filename, group_mapping_filename
 	def sel_fl(filename):
 		"""Helper function for including/excluding filelists below"""
@@ -54,11 +55,11 @@ def parse_cmdlineoptions(arglist):
 
 	try: optlist, args = getopt.getopt(arglist, "blr:sv:V",
 		 ["backup-mode", "calculate-average", "check-destination-dir",
-		  "compare", "compare-at-time=", "current-time=", "exclude=",
-		  "exclude-device-files", "exclude-fifos",
-		  "exclude-filelist=", "exclude-symbolic-links",
-		  "exclude-sockets", "exclude-filelist-stdin",
-		  "exclude-globbing-filelist=",
+		  "compare", "compare-at-time=", "create-full-path",
+		  "current-time=", "exclude=", "exclude-device-files",
+		  "exclude-fifos", "exclude-filelist=",
+		  "exclude-symbolic-links", "exclude-sockets",
+		  "exclude-filelist-stdin", "exclude-globbing-filelist=",
 		  "exclude-globbing-filelist-stdin", "exclude-mirror=",
 		  "exclude-other-filesystems", "exclude-regexp=",
 		  "exclude-special-files", "force", "group-mapping-file=",
@@ -88,6 +89,7 @@ def parse_cmdlineoptions(arglist):
 			action = "compare"
 			if opt == "--compare": restore_timestr = "now"
 			else: restore_timestr = arg
+		elif opt == "--create-full-path": create_full_path = 1
 		elif opt == "--current-time":
 			Globals.set_integer('current_time', arg)
 		elif (opt == "--exclude" or
@@ -325,7 +327,9 @@ def backup_check_dirs(rpin, rpout):
 			Log("Deleting %s" % rpout.path, 3)
 			rpout.delete()
 	if not rpout.lstat():
-		try: rpout.mkdir()
+		try: 
+			if create_full_path: rpout.makedirs()
+			else: rpout.mkdir()
 		except os.error:
 			Log.FatalError("Unable to create directory %s" % rpout.path)
 

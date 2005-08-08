@@ -776,6 +776,11 @@ class RPath(RORPath):
 		self.conn.os.mkdir(self.path)
 		self.setdata()
 
+	def makedirs(self):
+		log.Log("Making directory path " + self.path, 6)
+		self.conn.os.makedirs(self.path)
+		self.setdata()
+
 	def rmdir(self):
 		log.Log("Removing directory " + self.path, 6)
 		self.conn.os.rmdir(self.path)
