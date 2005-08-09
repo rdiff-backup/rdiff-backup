@@ -405,6 +405,14 @@ testfiles/select**/2
 						("--exclude", "**")],
 					   [(), ('1',), ('1', '1'), ('1', '2')])
 
+	def testGlob3(self):
+		"""Test for bug when **is in front"""
+		self.ParseTest([("--include", "**NOTEXIST"),
+						("--exclude", "**NOTEXISTEITHER"),
+						("--include", "testfiles/select/efools"),
+						("--exclude", "**")],
+					   [(), ('efools',), ('efools', 'ping')])
+
 	def testAlternateRoot(self):
 		"""Test select with different root"""
 		self.root = rpath.RPath(Globals.local_connection, "testfiles/select/1")
