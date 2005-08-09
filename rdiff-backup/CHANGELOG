@@ -35,6 +35,8 @@ when the repository has permission problems.
 
 Added Keith Edmunds patch adding the --create-full-path option.
 
+Fixed selection bug reported by Daniel Richard G.
+
 
 New in v0.13.6 (2005/04/07)
 ---------------------------

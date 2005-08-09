@@ -211,7 +211,8 @@ class Select:
 		"""Run through the selection functions and return dominant val 0/1/2"""
 		for sf in self.selection_functions:
 			result = sf(rp)
-			if result is not None: return result
+			if result == 1 or result == 0 or (result == 2 and rp.isdir()):
+				return result
 		return 1
 
 	def ParseArgs(self, argtuples, filelists):
