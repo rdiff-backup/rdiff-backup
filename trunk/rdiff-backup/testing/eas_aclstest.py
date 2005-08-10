@@ -245,6 +245,7 @@ other::---""")
 		new_acl = AccessControlLists(())
 		tempdir.chmod(0700)
 		new_acl.read_from_rp(tempdir)
+		print "@", new_acl
 		assert new_acl.is_basic(), str(new_acl)
 		assert not new_acl == self.sample_acl
 		assert new_acl != self.sample_acl
@@ -449,8 +450,8 @@ other::---""")
 
 		def get_perms_of_user(acl, user):
 			"""Return the permissions of ACL_USER in acl, or None"""
-			for type, owner_pair, perms in acl.entry_list:
-				if type == posix1e.ACL_USER and owner_pair[1] == user:
+			for typechar, owner_pair, perms in acl.entry_list:
+				if typechar == "u" and owner_pair[1] == user:
 					return perms
 			return None
 
