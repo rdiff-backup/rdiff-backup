@@ -228,21 +228,19 @@ class AccessControlLists:
 
 	def entrytuple_to_text(self, entrytuple):
 		"""Return text version of entrytuple, as in getfacl"""
-		type, name_pair, perms = entrytuple
-		if type == posix1e.ACL_USER_OBJ:
-			text = 'user::'
-		elif type == posix1e.ACL_USER:
+		tagchar, name_pair, perms = entrytuple
+		if tagchar == "U": text = 'user::'
+		elif tagchar == "u":
 			uid, uname = name_pair
 			text = 'user:%s:' % (uname or uid)
-		elif type == posix1e.ACL_GROUP_OBJ:
+		elif tagchar == "G":
 			text = 'group::'
-		elif type == posix1e.ACL_GROUP:
+		elif tagchar == "g":
 			gid, gname = name_pair
 			text = 'group:%s:' % (gname or gid)
-		elif type == posix1e.ACL_MASK:
-			text = 'mask::'
+		elif tagchar == "M": text = 'mask::'
 		else:
-			assert type == posix1e.ACL_OTHER, type
+			assert tagchar == "O", tagchar
 			text = 'other::'
 
 		permstring = '%s%s%s' % (perms & 4 and 'r' or '-',
@@ -251,32 +249,36 @@ class AccessControlLists:
 		return text+permstring
 
 	def text_to_entrytuple(self, text):
-		"""Return entrytuple given text like 'user:foo:r--'"""
+		"""Return entrytuple given text like 'user:foo:r--'
+
+		See the acl_to_list function for entrytuple documentation.
+
+		"""
 		typetext, qualifier, permtext = text.split(':')
 		if qualifier:
 			try: uid = int(qualifier)
 			except ValueError: namepair = (None, qualifier)
 			else: namepair = (uid, None)
 
-			if typetext == 'user': type = posix1e.ACL_USER
+			if typetext == 'user': typechar = "u"
 			else:
 				assert typetext == 'group', (typetext, text)
-				type = posix1e.ACL_GROUP
+				typechar = "g"
 		else:
 			namepair = None
-			if typetext == 'user': type = posix1e.ACL_USER_OBJ
-			elif typetext == 'group': type = posix1e.ACL_GROUP_OBJ
-			elif typetext == 'mask': type = posix1e.ACL_MASK
+			if typetext == 'user': typechar = "U"
+			elif typetext == 'group': typechar = "G"
+			elif typetext == 'mask': typechar = "M"
 			else:
 				assert typetext == 'other', (typetext, text)
-				type = posix1e.ACL_OTHER
+				typechar = "O"
 
 		assert len(permtext) == 3, (permtext, text)
 		read, write, execute = permtext
 		perms = ((read == 'r') << 2 |
 				 (write == 'w') << 1 |
 				 (execute == 'x'))
-		return (type, namepair, perms)
+		return (typechar, namepair, perms)
 
 	def cmp_entry_list(self, l1, l2):
 		"""True if the lists have same entries.  Assume preordered"""
@@ -385,15 +387,33 @@ def acl_to_list(acl):
 	lost when moved to another system.
 
 	The result will be a list of tuples.  Each tuple will have the
-	form (acltype, (uid or gid, uname or gname) or None,
-	permissions as an int).
+	form (acltype, (uid or gid, uname or gname) or None, permissions
+	as an int).  acltype is encoded as a single character:
+
+	U - ACL_USER_OBJ
+	u - ACL_USER
+	G - ACL_GROUP_OBJ
+	g - ACL_GROUP
+	M - ACL_MASK
+	O - ACL_OTHER
 
 	"""
+	def acltag_to_char(tag):
+		if tag == posix1e.ACL_USER_OBJ: return "U"
+		elif tag == posix1e.ACL_USER: return "u"
+		elif tag == posix1e.ACL_GROUP_OBJ: return "G"
+		elif tag == posix1e.ACL_GROUP: return "g"
+		elif tag == posix1e.ACL_MASK: return "M"
+		else:
+			assert tag == posix1e.ACL_OTHER, tag
+			return "O"
+
 	def entry_to_tuple(entry):
-		if entry.tag_type == posix1e.ACL_USER:
+		tagchar = acltag_to_char(entry.tag_type)
+		if tagchar == "u":
 			uid = entry.qualifier
 			owner_pair = (uid, user_group.uid2uname(uid))
-		elif entry.tag_type == posix1e.ACL_GROUP:
+		elif tagchar == "g":
 			gid = entry.qualifier
 			owner_pair = (gid, user_group.gid2gname(gid))
 		else: owner_pair = None
@@ -401,7 +421,7 @@ def acl_to_list(acl):
 		perms = (entry.permset.read << 2 | 
 				 entry.permset.write << 1 |
 				 entry.permset.execute)
-		return (entry.tag_type, owner_pair, perms)
+		return (tagchar, owner_pair, perms)
 	return map(entry_to_tuple, acl)
 
 def list_to_acl(entry_list, map_names = 1):
@@ -411,7 +431,20 @@ def list_to_acl(entry_list, map_names = 1):
 	current system, and drop if not available.  Otherwise just use the
 	same id.
 
+	See the acl_to_list function for the format of an acllist.
+
 	"""
+	def char_to_acltag(typechar):
+		"""Given typechar, query posix1e module for appropriate constant"""
+		if typechar == "U": return posix1e.ACL_USER_OBJ
+		elif typechar == "u": return posix1e.ACL_USER
+		elif typechar == "G": return posix1e.ACL_GROUP_OBJ
+		elif typechar == "g": return posix1e.ACL_GROUP
+		elif typechar == "M": return posix1e.ACL_MASK
+		else:
+			assert typechar == "O", typechar
+			return posix1e.ACL_OTHER
+
 	def warn_drop(name):
 		"""Warn about acl with name getting dropped"""
 		global dropped_acl_names
@@ -435,23 +468,23 @@ def list_to_acl(entry_list, map_names = 1):
 			return Map.get_id_from_id(id)
 
 	acl = posix1e.ACL()
-	for tag, owner_pair, perms in entry_list:
+	for typechar, owner_pair, perms in entry_list:
 		id = None
 		if owner_pair:
 			if map_names:
-				if tag == posix1e.ACL_USER: id = map_id_name(owner_pair, 0)
+				if typechar == "u": id = map_id_name(owner_pair, 0)
 				else:
-					assert tag == posix1e.ACL_GROUP, (tag, owner_pair, perms)
+					assert typechar == "g", (typechar, owner_pair, perms)
 					id = map_id_name(owner_pair, 1)
 				if id is None:
 					warn_drop(owner_pair[1])
 					continue
 			else:
-				assert owner_pair[0] is not None, (tag, owner_pair, perms)
+				assert owner_pair[0] is not None, (typechar, owner_pair, perms)
 				id = owner_pair[0]
 
 		entry = posix1e.Entry(acl)
-		entry.tag_type = tag
+		entry.tag_type = char_to_acltag(typechar)
 		if id is not None: entry.qualifier = id
 		entry.permset.read = perms >> 2
 		entry.permset.write = perms >> 1 & 1
