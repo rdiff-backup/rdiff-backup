@@ -755,15 +755,23 @@ class RPath(RORPath):
 	def settime(self, accesstime, modtime):
 		"""Change file modification times"""
 		log.Log("Setting time of %s to %d" % (self.path, modtime), 7)
-		self.conn.os.utime(self.path, (accesstime, modtime))
-		self.data['atime'] = accesstime
-		self.data['mtime'] = modtime
+		try: self.conn.os.utime(self.path, (accesstime, modtime))
+		except OverflowError:
+			log.Log("Cannot change times of %s to %s - problem is probably"
+					"64->32bit conversion" %
+					(self.path, (accesstime, modtime)), 2)
+		else:
+			self.data['atime'] = accesstime
+			self.data['mtime'] = modtime
 
 	def setmtime(self, modtime):
 		"""Set only modtime (access time to present)"""
 		log.Log(lambda: "Setting time of %s to %d" % (self.path, modtime), 7)
-		self.conn.os.utime(self.path, (long(time.time()), modtime))
-		self.data['mtime'] = modtime
+		try: self.conn.os.utime(self.path, (long(time.time()), modtime))
+		except OverflowError:
+			log.Log("Cannot change mtime of %s to %s - problem is probably"
+					"64->32bit conversion" % (self.path, modtime), 2)
+		else: self.data['mtime'] = modtime
 
 	def chown(self, uid, gid):
 		"""Set file's uid and gid"""
