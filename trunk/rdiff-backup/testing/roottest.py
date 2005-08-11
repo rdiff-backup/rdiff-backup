@@ -39,6 +39,9 @@ class RootTest(unittest.TestCase):
 		This checks for a bug in 0.13.4 where uids and gids would not
 		be restored correctly.
 
+		Also test to make sure symlinks get the right ownership.
+		(Earlier symlink ownership was not preserved.)
+
 		"""
 		dirrp = rpath.RPath(Globals.local_connection, "testfiles/root_owner")
 		def make_dir():
@@ -47,17 +50,25 @@ class RootTest(unittest.TestCase):
 			rp2 = dirrp.append('file2')
 			rp3 = dirrp.append('file3')
 			rp4 = dirrp.append('file4')
+			rp5 = dirrp.append('symlink')
 			rp1.touch()
 			rp2.touch()
 			rp3.touch()
 			rp4.touch()
+			rp5.symlink('foobar')
 			rp1.chown(2000, 2000)
 			rp2.chown(2001, 2001)
 			rp3.chown(2002, 2002)
 			rp4.chown(2003, 2003)
+			rp5.chown(2004, 2004)
 		make_dir()
-		BackupRestoreSeries(1, 1, ['testfiles/root_owner', 'testfiles/empty'],
+		BackupRestoreSeries(1, 1, ['testfiles/root_owner', 'testfiles/empty',
+								   'testfiles/root_owner'],
 							compare_ownership = 1)
+		symrp = rpath.RPath(Globals.local_connection,
+							'testfiles/output/symlink')
+		assert symrp.issym(), symrp
+		assert symrp.getuidgid() == (2004, 2004), symrp.getuidgid()
 
 	def test_ownership_mapping(self):
 		"""Test --user-mapping-file and --group-mapping-file options"""

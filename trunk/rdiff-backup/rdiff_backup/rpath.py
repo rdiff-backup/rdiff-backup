@@ -152,13 +152,13 @@ def copy_attribs(rpin, rpout):
 	"""
 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
 	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
-	if rpin.issym(): return # symlinks have no valid attributes
+	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
+	if rpin.issym(): return # symlinks don't have times or perms
 	if Globals.resource_forks_write and rpin.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if Globals.carbonfile_write and rpin.isreg():
 		rpout.write_carbonfile(rpin.get_carbonfile())
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
-	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
 	rpout.chmod(rpin.getperms())
 	if Globals.acls_write: rpout.write_acl(rpin.get_acl())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
@@ -173,13 +173,13 @@ def copy_attribs_inc(rpin, rpout):
 	"""
 	log.Log("Copying inc attrs from %s to %s" % (rpin.index, rpout.path), 7)
 	check_for_files(rpin, rpout)
-	if rpin.issym(): return # symlinks have no valid attributes
+	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
+	if rpin.issym(): return # symlinks don't have times or perms
 	if Globals.resource_forks_write and rpin.isreg() and rpout.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if Globals.carbonfile_write and rpin.isreg() and rpout.isreg():
 		rpout.write_carbonfile(rpin.get_carbonfile())
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
-	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if rpin.isdir() and not rpout.isdir():
 		rpout.chmod(rpin.getperms() & 0777)
 	else: rpout.chmod(rpin.getperms())
@@ -775,7 +775,7 @@ class RPath(RORPath):
 
 	def chown(self, uid, gid):
 		"""Set file's uid and gid"""
-		self.conn.os.chown(self.path, uid, gid)
+		self.conn.C.lchown(self.path, uid, gid)
 		self.data['uid'] = uid
 		self.data['gid'] = gid
 
