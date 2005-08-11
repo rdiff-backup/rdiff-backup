@@ -43,6 +43,9 @@ posix1e module.
 bug#13613: Fix for overflow error that could happen when backing up
 files with dates far in the future on a 64bit machine to a 32 bit one.
 
+Symlink ownership should be preserved now.  Reported by Naoki
+Takebayashi and others.
+
 
 New in v0.13.6 (2005/04/07)
 ---------------------------

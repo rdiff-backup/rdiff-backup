@@ -245,7 +245,6 @@ other::---""")
 		new_acl = AccessControlLists(())
 		tempdir.chmod(0700)
 		new_acl.read_from_rp(tempdir)
-		print "@", new_acl
 		assert new_acl.is_basic(), str(new_acl)
 		assert not new_acl == self.sample_acl
 		assert new_acl != self.sample_acl
