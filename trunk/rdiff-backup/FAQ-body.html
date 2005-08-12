@@ -264,10 +264,11 @@ taken up by the hardlink_data file to record hard links.</p>
 <li><strong><a name="bwlimit">Is there some way to limit rdiff-backup's
 bandwidth usage, as in rsync's --bwlimit option?</a></strong>
 
-<p>There is no internal rdiff-backup option to do this.  However, the
---sleep-ratio option can limit overall resource usage, including
-bandwidth.  Also, external utilities such as <a href="http://www.cons.org/cracauer/cstream.html">cstream</a> can be
-used to monitor bandwidth explicitly.  trevor@tecnopolis.ca writes:</p>
+<p>There is no internal rdiff-backup option to do this.  However,
+external utilities such as <a
+href="http://www.cons.org/cracauer/cstream.html">cstream</a> can be
+used to monitor bandwidth explicitly.  trevor@tecnopolis.ca
+writes:</p>
 
 <pre>rdiff-backup --remote-schema
   'cstream -v 1 -t 10000 | ssh %s '\''rdiff-backup --server'\'' | cstream -t 20000'
