@@ -40,6 +40,13 @@ at http://librsync.sourceforge.net/.
 For remote operation, rdiff-backup should be in installed and in the
 PATH on remote system(s) (see man page for more information).
 
+The python modules pylibacl and pyxattr are optional.  If they are
+installed and in the default pythonpath, rdiff-backup will support
+access control lists and user extended attributes, provided the file
+system(s) also support these features.  Pylibacl and pxattr can be
+downloaded from http://pylibacl.sourceforge.net/ and
+http://pyxattr.sourceforge.net/.
+
 
 TROUBLESHOOTING:
 
