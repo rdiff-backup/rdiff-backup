@@ -2,11 +2,7 @@
 
 <h3>Table of contents</h3>
 
-<ol><li><a href="#__future__">When I try to run rdiff-backup it says
-"ImportError: No module named __future__" or "SyntaxError: invalid
-syntax".  What's happening?</a></li>
-
-<li><a href="#verbosity">What do the different verbosity levels mean?</a></li>
+<ol><li><a href="#verbosity">What do the different verbosity levels mean?</a></li>
 
 <li><a href="#windows">Does rdiff-backup run under Windows?</a></li>
 
@@ -34,31 +30,16 @@ memory leak?</a></li>
 while backing up.  Now every time it runs it says "regressing
 destination" and then fails again.  What should I do?</a></li>
 
+<li><a href="#free_space">Where does rdiff-backup need free space and
+how much is required?  What is the problem if rdiff-backup says
+"<code>ValueError: Incorrect length of data produced</code>"?</a></li>
+
 </ol>
 
 
 <h3>Questions and Answers</h3>
 
 <ol>
-
-<li><strong><a name="__future__">When I try to run rdiff-backup it says "ImportError: No
-module named __future__" or "SyntaxError: invalid syntax".  What's
-happening?</a></strong>
-
-<p>rdiff-backup versions 0.2.x require Python version 2.1 or later,
-and versions 0.3.x and later require Python version 2.2 or later.  If
-you don't know what version of python you are running, type in "python
--V" from the shell.  I'm sorry if this is inconvenient, but
-rdiff-backup uses generators, iterators, nested scoping, and
-static/class methods extensively, and these were only added in version
-2.2.</p>
-
-<p>If you have two versions of python installed, and running "python"
-defaults to an early version, you'll probably have to change the first
-line of the rdiff-backup script.  For instance, you could set it to:</p>
-
-<pre>#!/usr/bin/env python2.2</pre>
-</li>
 
 <li><strong><a name="verbosity">What do the different verbosity levels mean?</a></strong>
 
@@ -128,7 +109,9 @@ be autodetected and compensated for by rdiff-backup.</p>
 
 <li><strong><a name="OSX">Does rdiff-backup run under Mac OS X?</a></strong>
 
-<p>Yes, but there may be some issues installing librsync. The easiest
+<p>Yes, quite a few people seem to be using rdiff-backup under Mac OS
+X.  rdiff-backup can also backup resource forks to a traditional unix
+filesystem, which is can be a handy feature for Mac users.  The easiest
 option is probably to use Fink <a
 href="http://fink.sourceforge.net/">http://fink.sourceforge.net/</a>,
 which can install rdiff-backup automatically for you. If you want to
@@ -148,31 +131,18 @@ these instructions build it fine with all tests running OK
 	make
 	make install</pre>
 
-<p>Also, if you are backing up to a file system that is not case
-sensitive you may need to use "--chars-to-quote A-Z".  If you do use
---chars-to-quote, remember to use it with the same arguments when
-restoring or listing increments.</p>
 </li>
 
 <li><strong><a name="remove_dir">My backup set contains some files that I just realized I
 don't want/need backed up.  How do I remove them from the backup
 volume to save space?</a></strong>
 
-<p>Let's take an example.  Suppose you ran:</p>
+<p>The only official way to remove files from an rdiff-backup
+repository is by letting them expire using the --remove-older-than
+option.  Deleting increments from the rdiff-backup-data directory will
+prevent you from recovering those files, but shouldn't prevent the
+rest of the repository from being restored.</p>
 
-<pre>rdiff-backup /usr /backup</pre>
-
-<p>and now realize that you don't want /usr/local backed up on /backup.
-Next time you back up, you run:</p>
-
-<pre>rdiff-backup --exclude /usr/local /usr /backup</pre>
-so that /usr/local is no longer copied to /backup/usr/local.
-
-<p>However, old information about /usr/local is still present in
-/backup/rdiff-backup-data/increments/usr/local.  You can try to
-manually remove this old information, but it's safer to let it be
-removed by rdiff-backup when you run it with the --remove-older-than
-option.</p>
 </li>
 
 <li><strong><a name="solaris">Does rdiff-backup work under Solaris?</a></strong>
@@ -339,8 +309,8 @@ hard linked together, rdiff-backup may need tens of MB.</p>
 
 <p>If rdiff-backup seems to be leaking memory, it is probably because
 it is using an early version of librsync.  <strong>librsync 0.9.5
-leaks lots of memory.</strong> Version 0.9.5.1 should not leak and is
-available from the rdiff-backup homepage.</p>
+leaks lots of memory.</strong> Later versions should not leak and are
+available from the <a href="https://sourceforge.net/projects/librsync/">librsync homepage</a>.</p>
 </li>
 
 <li><strong><a name="dir_not_empty">I use NFS and keep getting some error that includes "OSError: [Errno 39] Directory not empty"</a></strong>
@@ -390,5 +360,34 @@ destination.  Metadata will be read from the file system, which may
 result in some extra files being backed up, but there shouldn't be any
 data loss.</p>
 </li>
+
+<li><strong><a name="free_space">Where does rdiff-backup need free
+space and how much is required?  What is the problem when rdiff-backup
+says "<code>ValueError: Incorrect length of data
+produced</code>"?</a></strong>
+
+<p>When backing up, rdiff-backup needs free space in the mirror
+directory.  The amount of free space required is usually a bit more
+than the size of the file getting backed up, but can be as much as
+twice the size of the current file.  For instance, suppose you ran
+<code>rdiff-backup foo bar</code> and the largest file,
+<code>foo/largefile</code>, was 1GB.  Then rdiff-backup would need
+1+GB of free space in the <code>bar</code> directory.</p>
+
+<p>When restoring, rdiff-backup needs free space in the default temp
+directory.  Under unix systems this is usually the <code>/tmp</code>
+directory---see the entry for <code>tempfile.tempdir</code> in the <a
+href="http://www.python.org/doc/2.4.1/lib/module-tempfile.html">Python
+tempfile docs</a> for more
+information on the default temp directory.  The amount of free space
+required can vary, but it usually about the size of the largest file
+being restored.</p>
+
+<p>Usually free space errors are intelligible, like <code>IOError:
+[Errno 28] No space left on device</code> or similar.  However, do to
+a gzip quirk they may look like <code>ValueError: Incorrect length of data produced</code>.</p>
+
+</li>
+
 
 </ol>
