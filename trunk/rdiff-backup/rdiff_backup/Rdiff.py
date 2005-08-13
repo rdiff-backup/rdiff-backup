@@ -82,10 +82,7 @@ def patch_local(rp_basis, rp_delta, outrp = None, delta_compressed = None):
 	assert rp_basis.conn is Globals.local_connection
 	if delta_compressed: deltafile = rp_delta.open("rb", 1)
 	else: deltafile = rp_delta.open("rb")
-
-	sigfile = librsync.SigFile(rp_basis.open("rb"))
 	patchfile = librsync.PatchedFile(rp_basis.open("rb"), deltafile)
-
 	if outrp: outrp.write_from_fileobj(patchfile)
 	else: write_via_tempfile(patchfile, rp_basis)
 
