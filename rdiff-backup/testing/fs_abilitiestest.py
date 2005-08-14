@@ -13,7 +13,7 @@ class FSAbilitiesTest(unittest.TestCase):
 	"""
 	# Describes standard linux file system without acls/eas
 	dir_to_test = "testfiles"
-	eas = acls = 0
+	eas = acls = 1
 	chars_to_quote = ""
 	ownership = (os.getuid() == 0)
 	hardlinks = fsync_dirs = 1
