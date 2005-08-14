@@ -352,7 +352,8 @@ class RORPath:
 
 	def equal_verbose(self, other, check_index = 1,
 					  compare_inodes = 0, compare_ownership = 0,
-					  compare_acls = 0, compare_eas = 0, verbosity = 2):
+					  compare_acls = 0, compare_eas = 0, compare_size = 1,
+					  compare_type = 1, verbosity = 2):
 		"""Like __eq__, but log more information.  Useful when testing"""
 		if check_index and self.index != other.index:
 			log.Log("Index %s != index %s" % (self.index, other.index),
@@ -364,10 +365,11 @@ class RORPath:
 				(self.issym() or not compare_ownership)):
 				# Don't compare gid/uid for symlinks, or if told not to
 				pass
+			elif key == 'type' and not compare_type: pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
-			elif key == 'size' and not self.isreg(): pass
+			elif key == 'size' and (not self.isreg() or not compare_size): pass
 			elif key == 'inode' and (not self.isreg() or not compare_inodes):
 				pass
 			elif key == 'ea' and not compare_eas: pass
