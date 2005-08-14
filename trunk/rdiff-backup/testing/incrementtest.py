@@ -55,7 +55,7 @@ class inctest(unittest.TestCase):
 
 		diffrp = increment.Increment(rf, exec1, target)
 		assert diffrp.isreg(), diffrp
-		assert rpath.cmp_attribs(diffrp, exec1)
+		assert diffrp.equal_verbose(exec1, check_index = 0, compare_size = 0)
 		self.check_time(diffrp)
 		assert diffrp.getinctype() == 'diff', diffrp.getinctype()
 		diffrp.delete()
@@ -78,7 +78,7 @@ class inctest(unittest.TestCase):
 
 		snap_rp2 = increment.Increment(sym, rf, target)
 		self.check_time(snap_rp2)
-		assert rpath.cmp_attribs(snap_rp2, rf)
+		assert snap_rp2.equal_verbose(rf, check_index = 0)
 		assert rpath.cmp(snap_rp2, rf)
 		snap_rp2.delete()
 
@@ -87,13 +87,13 @@ class inctest(unittest.TestCase):
 		Globals.compression = 1
 		rp = increment.Increment(rf, sym, target)
 		self.check_time(rp)
-		assert rpath.cmp_attribs(rp, sym)
+		assert rp.equal_verbose(sym, check_index = 0, compare_size = 0)
 		assert rpath.cmp(rp, sym)
 		rp.delete()
 		
 		rp = increment.Increment(sym, rf, target)
 		self.check_time(rp)
-		assert rpath.cmp_attribs(rp, rf)
+		assert rp.equal_verbose(rf, check_index = 0, compare_size = 0)
 		assert rpath.cmpfileobj(rp.open("rb", 1), rf.open("rb"))
 		assert rp.isinccompressed()
 		rp.delete()
@@ -104,7 +104,8 @@ class inctest(unittest.TestCase):
 		self.check_time(rp)
 		assert rp.lstat()
 		assert target.isdir()
-		assert rpath.cmp_attribs(dir, rp)
+		assert dir.equal_verbose(rp, check_index = 0,
+								 compare_size = 0, compare_type = 0)
 		assert rp.isreg()
 		rp.delete()
 		target.delete()
@@ -114,7 +115,7 @@ class inctest(unittest.TestCase):
 		Globals.compression = None
 		rp = increment.Increment(rf, rf2, target)
 		self.check_time(rp)
-		assert rpath.cmp_attribs(rp, rf2)
+		assert rp.equal_verbose(rf2, check_index = 0, compare_size = 0)
 		Rdiff.patch_local(rf, rp, out2)
 		assert rpath.cmp(rf2, out2)
 		rp.delete()
@@ -125,7 +126,7 @@ class inctest(unittest.TestCase):
 		Globals.compression = 1
 		rp = increment.Increment(rf, rf2, target)
 		self.check_time(rp)
-		assert rpath.cmp_attribs(rp, rf2)
+		assert rp.equal_verbose(rf2, check_index = 0, compare_size = 0)
 		Rdiff.patch_local(rf, rp, out2, delta_compressed = 1)
 		assert rpath.cmp(rf2, out2)
 		rp.delete()
@@ -139,7 +140,7 @@ class inctest(unittest.TestCase):
 
 		rp = increment.Increment(rf, out_gz, target)
 		self.check_time(rp)
-		assert rpath.cmp_attribs(rp, out_gz)
+		assert rp.equal_verbose(out_gz, check_index = 0, compare_size = 0)
 		Rdiff.patch_local(rf, rp, out2)
 		assert rpath.cmp(out_gz, out2)
 		rp.delete()
