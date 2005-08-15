@@ -69,7 +69,7 @@ def parse_cmdlineoptions(arglist):
 		  "include-special-files", "include-symbolic-links",
 		  "list-at-time=", "list-changed-since=", "list-increments",
 		  "list-increment-sizes", "never-drop-acls", "no-acls",
-		  "no-compare-inode", "no-compression",
+		  "no-carbonfile", "no-compare-inode", "no-compression",
 		  "no-compression-regexp=", "no-eas", "no-file-statistics",
 		  "no-hard-links", "null-separator",
 		  "override-chars-to-quote=", "parsable-output",
@@ -143,6 +143,7 @@ def parse_cmdlineoptions(arglist):
 		elif opt == '--list-increment-sizes': action = 'list-increment-sizes'
 		elif opt == "--never-drop-acls": Globals.set("never_drop_acls", 1)
 		elif opt == "--no-acls": Globals.set("acls_active", 0)
+		elif opt == "--no-carbonfile": Globals.set("carbonfile_active", 0)
 		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
