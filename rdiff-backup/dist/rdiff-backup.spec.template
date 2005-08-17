@@ -38,6 +38,7 @@ differences from the previous backup will be transmitted.
 %{PYTHON_NAME} setup.py install --root $RPM_BUILD_ROOT
 # Produce .pyo files for %ghost directive later
 %{PYTHON_NAME} -Oc 'from compileall import *; compile_dir("'$RPM_BUILD_ROOT/%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup'")'
+rm -rf $RPM_BUILD_ROOT/usr/share/doc/* 
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -54,6 +55,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc CHANGELOG COPYING FAQ.html examples.html README
 
 %changelog
+* Tue Aug 16 2005 Ben Escoto <ben@emerose.org> - 1.0.0-2
+- Removing /usr/share/doc in build for some obscure reason
+
 * Mon Mar 28 2005 Ben Escoto <ben@emerose.org> - 0.13.5-1
 - Set librsync >= 0.9.7 to encourage upgrade
 
