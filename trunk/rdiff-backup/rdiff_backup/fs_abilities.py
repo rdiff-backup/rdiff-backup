@@ -190,10 +190,7 @@ rdiff-backup-data/chars_to_quote.
 		try:
 			tmp_rp.chown(uid+1, gid+1) # just choose random uid/gid
 			tmp_rp.chown(0, 0)
-		except (IOError, OSError), exc:
-			log.Log("Warning: ownership cannot be changed on filesystem "
-					"at %s" % (self.root_rp.path,), 3)
-			self.ownership = 0
+		except (IOError, OSError), exc: self.ownership = 0
 		else: self.ownership = 1
 		tmp_rp.delete()
 
