@@ -184,6 +184,12 @@ def FillInIter(rpiter, rootrp):
 			for i in range(1, len(cur_index)): # i==0 case already handled
 				if cur_index[:i] != old_index[:i]:
 					filler_rp = rootrp.new_index(cur_index[:i])
+					if not filler_rp.isdir():
+						log.Log("Warning: expected %s to be a directory but "
+								"found %s instead.\nThis is probably caused "
+								"by a bug in versions 1.0.0 and earlier." %
+								(filler_rp.path, filler_rp.lstat()), 2)
+						filler_rp.make_zero_dir(rootrp)
 					yield filler_rp
 		yield rp
 		old_index = cur_index

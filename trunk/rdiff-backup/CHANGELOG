@@ -1,3 +1,13 @@
+New in v1.0.1 (????/??/??)
+--------------------------
+
+Fix for "'filetype' of type exceptions.KeyError" error when restoring.
+Test case provided by Davy Durham.  (The problem was the
+mirror_metadata file could become un-synced when a file is deleted
+when rdiff-backup is running and later the directory that file is in
+gets deleted.)
+
+
 New in v1.0.0 (2005/08/14)
 --------------------------
 
