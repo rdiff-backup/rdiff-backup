@@ -283,6 +283,11 @@ class RORPath:
 		self.data = {'type': None}
 		self.file = None
 
+	def make_zero_dir(self, dir_rp):
+		"""Set self.data the same as dir_rp.data but with safe permissions"""
+		self.data = dir_rp.data.copy()
+		self.data['perms'] = 0700
+
 	def __nonzero__(self): return 1
 
 	def __eq__(self, other):
