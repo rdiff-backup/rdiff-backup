@@ -365,10 +365,11 @@ class CacheCollatedPostProcess:
 			if source_rorp: self.statfileobj.add_source_file(source_rorp)
 			if dest_rorp: self.statfileobj.add_dest_file(dest_rorp)
 		if success == 0: metadata_rorp = dest_rorp
-		elif success == 1 or success == 2:
+		elif success == 1: metadata_rorp = source_rorp
+		else: metadata_rorp = None # in case deleted because of ListError
+		if success == 1 or success == 2: 
 			self.statfileobj.add_changed(source_rorp, dest_rorp)
-			metadata_rorp = source_rorp
-		else: metadata_rorp = None
+
 		if metadata_rorp and metadata_rorp.lstat():
 			metadata.MetadataFile.write_object(metadata_rorp)
 			if Globals.eas_active and not metadata_rorp.get_ea().empty():
