@@ -109,7 +109,7 @@ section for more information.
 Exclude all device files.  This can be useful for security/permissions
 reasons or if rdiff-backup is not handling device files correctly.
 .TP
-.B "--exclude-fifo-files"
+.B "--exclude-fifos"
 Exclude all fifo files.
 .TP
 .BI "--exclude-filelist " filename
@@ -154,7 +154,7 @@ section for more information.
 .B --exclude-special-files
 Exclude all device files, fifo files, socket files, and symbolic links.
 .TP
-.B "--exclude-socket-files"
+.B "--exclude-sockets"
 Exclude all socket files.
 .TP
 .B "--exclude-symbolic-links"
@@ -570,8 +570,8 @@ The file selection system comprises a number of file
 selection conditions, which are set using one of the following command
 line options:
 .BR --exclude , --exclude-filelist ,
-.BR --exclude-device-files , --exclude-fifo-files ,
-.BR --exclude-socket-files , --exclude-symbolic-links ,
+.BR --exclude-device-files , --exclude-fifos ,
+.BR --exclude-sockets , --exclude-symbolic-links ,
 .BR --exclude-globbing-filelist ,
 .BR --exclude-filelist-stdin , --exclude-regexp , --exclude-special-files ,
 .BR --include ,
