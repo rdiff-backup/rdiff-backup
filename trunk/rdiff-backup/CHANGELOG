@@ -12,6 +12,9 @@ Librsync signature blocksize now based on square root of file length.
 rdiff-backup now writes its PID to current_mirror marker (suggested by
 Kevin Spicer).
 
+fsync_directories defaults to None, to avoid errors in testing
+(suggestion by Charles Duffy).
+
 
 New in v1.0.0 (2005/08/14)
 --------------------------
