@@ -1,24 +1,4 @@
-Test change to see if CVS notification is working!
-
-Change --exclude options with restore so excluded directories aren't
-deleted.  (Oliver Kaltenecker)
-
-Check support/bug reports on Savannah occasionally.
-
-Consider adding --datadir option (Jean-Sébastien GOETSCHY)
-
-write test case for --calculate-statistics
-
-Use ctime to check whether files have been changed.  See message:
-http://mail.gnu.org/archive/html/rdiff-backup-users/2003-06/msg00050.html
-by Andrew Bressen.
-
-Profile 0.13.x
-
-Examine regress handling of acls/eas/resource forks.
-
-Look into that strange regress error July 22nd on
-prog/old/rdiff-backup/testing/testfiles/long...
+Write PID of process to current_mirror file.
 
 ---------[ Medium term ]---------------------------------------
 

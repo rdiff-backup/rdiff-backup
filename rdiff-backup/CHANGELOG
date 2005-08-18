@@ -9,6 +9,9 @@ gets deleted.)
 
 Librsync signature blocksize now based on square root of file length.
 
+rdiff-backup now writes its PID to current_mirror marker (suggested by
+Kevin Spicer).
+
 
 New in v1.0.0 (2005/08/14)
 --------------------------
