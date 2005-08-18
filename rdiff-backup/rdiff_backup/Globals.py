@@ -210,7 +210,7 @@ compare_inode = 1
 
 # If set, directories can be fsync'd just like normal files, to
 # guarantee that any changes have been committed to disk.
-fsync_directories = 1
+fsync_directories = None
 
 # If set, exit with error instead of dropping ACLs or ACL entries.
 never_drop_acls = None
