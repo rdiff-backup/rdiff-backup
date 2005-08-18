@@ -453,8 +453,10 @@ def backup_touch_curmirror_local(rpin, rpout):
 	"""
 	mirrorrp = Globals.rbdir.append("current_mirror.%s.%s" % (Time.curtimestr,
 															  "data"))
-	Log("Touching mirror marker %s" % mirrorrp.path, 6)
-	mirrorrp.touch()
+	Log("Writing mirror marker %s" % mirrorrp.path, 6)
+	try: pid = os.getpid()
+	except: pid = "NA"
+	mirrorrp.write_string("PID %s\n" % (pid,))
 	mirrorrp.fsync_with_dir()
 
 def backup_remove_curmirror_local():
