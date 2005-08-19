@@ -606,7 +606,7 @@ Try restoring from an increment file (the filenames look like
 					   % (Globals.rbdir.path,))
 	elif result == 1: Log.FatalError(
 		"Previous backup to %s seems to have failed.\nRerun rdiff-backup "
-		"rdiff-with --check-destination-dir option to revert directory "
+		"with --check-destination-dir option to revert directory "
 		"to state before unsuccessful session." % (mirror_root.path,))
 
 def restore_set_root(rpin):
