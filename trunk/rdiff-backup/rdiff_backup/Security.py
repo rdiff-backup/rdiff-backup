@@ -37,11 +37,7 @@ disallowed_server_globals = ["server", "security_level", "restrict_path"]
 
 # Some common file commands we may want to check to make sure they are
 # in the right directory.  Any commands accessing files that could be
-# added to allowed_requests must be here.  A few others have also been
-# added---this is not a intended to be a complete list of course, just
-# some support for the depreciated --restrict option when the
-# security_level is "all" so you don't accidentally step out of the
-# directory.
+# added to allowed_requests must be here.
 #
 # The keys are files request, the value is the index of the argument
 # taking a file.
@@ -49,7 +45,7 @@ file_requests = {'os.listdir':0, 'C.make_file_dict':0, 'os.chmod':0,
 				 'os.chown':0, 'os.remove':0, 'os.removedirs':0,
 				 'os.rename':0, 'os.renames':0, 'os.rmdir':0, 'os.unlink':0,
 				 'os.utime':0, 'os.lchown':0, 'os.link':1, 'os.symlink':1,
-				 'os.mkdir':0, 'os.lchown':0}
+				 'os.mkdir':0}
 				 
 
 def initialize(action, cmdpairs):
