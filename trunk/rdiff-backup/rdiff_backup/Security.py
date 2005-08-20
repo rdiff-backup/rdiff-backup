@@ -173,7 +173,7 @@ def set_allowed_requests(sec_level):
 				  "restore.TargetStruct.get_initial_iter",
 				  "restore.TargetStruct.patch",
 				  "restore.TargetStruct.set_target_select",
-				  "regress.Regress"])
+				  "regress.Regress", "manage.delete_earlier_than_local"])
 	if Globals.server:
 		l.extend(["SetConnections.init_connection_remote",
 				  "log.Log.setverbosity", "log.Log.setterm_verbosity",

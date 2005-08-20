@@ -377,6 +377,12 @@ class FinalMisc(PathSetter):
 		self.exec_rb_extra_args(None, "--list-increment-sizes",
 								"testfiles/restoretest3")
 
+	def testListIncrementSizesRemote(self):
+		"""Test --list-increment-sizes switch.  Uses restoretest3"""
+		self.set_connections('test1', '../', None, None)
+		self.exec_rb_extra_args(None, "--list-increment-sizes",
+								"testfiles/restoretest3")
+
 	def testListIncrementsRemote(self):
 		"""Test --list-increment-sizes mode remotely.  Uses restoretest3"""
 		self.set_connections('test1', '../', None, None)
@@ -426,6 +432,18 @@ class FinalMisc(PathSetter):
 		self.exec_rb_extra_args(None, "--override-chars-to-quote '^a-z0-9_ -.'",
 								"testfiles/increment1", "testfiles/output")
 		self.exec_rb_extra_args(None, "--remove-older-than now", "testfiles/output")
+
+	def testRemoveOlderThanRemote(self):
+		"""Test --remove-older-than remotely"""
+		Myrm("testfiles/output")
+		assert not os.system("cp -a testfiles/restoretest3 testfiles/output")
+		self.set_connections("test1/", "../", None, None)
+		self.exec_rb_extra_args(None, "--remove-older-than 20000",
+								"testfiles/output")
+		rbdir = rpath.RPath(Globals.local_connection,
+							"testfiles/output/rdiff-backup-data")
+		for inc in self.get_all_increments(rbdir):
+			assert inc.getinctime() >= 20000
 
 	def testCompare(self):
 		"""Test --compare and --compare-older-than modes"""
