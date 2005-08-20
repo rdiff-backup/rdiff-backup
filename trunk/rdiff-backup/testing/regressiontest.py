@@ -12,7 +12,9 @@ testfiles
 
 Globals.set('change_source_perms', 1)
 Globals.counter = 0
-log.Log.setverbosity(7)
+Globals.security_level = "override"
+log.Log.setverbosity(3)
+
 
 def get_local_rp(extension):
 	return rpath.RPath(Globals.local_connection, "testfiles/" + extension)

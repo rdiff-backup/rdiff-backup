@@ -23,10 +23,12 @@ if len(sys.argv) > 2:
 try:
 	if len(sys.argv) == 2: sys.path.insert(0, sys.argv[1])
 	import rdiff_backup.Globals
+	import rdiff_backup.Security
 	from rdiff_backup.connection import *
 except (OSError, IOError, ImportError):
 	print_usage()
 	raise
 
-#Log.setverbosity(9)
+#log.Log.setverbosity(5)
+rdiff_backup.Globals.security_level = "override"
 PipeConnection(sys.stdin, sys.stdout).Server()

@@ -1,4 +1,4 @@
-import os, unittest, time
+import os, unittest, time, traceback, sys
 from commontest import *
 import rdiff_backup.Security as Security
 
@@ -12,7 +12,10 @@ class SecurityTest(unittest.TestCase):
 		problem.
 
 		"""
-		assert isinstance(exc, Security.Violation), exc
+		if not isinstance(exc, Security.Violation):
+			type, value, tb = sys.exc_info()
+			print "".join(traceback.format_tb(tb))
+			raise exc
 		#assert str(exc).find("Security") >= 0, "%s\n%s" % (exc, repr(exc))
 
 	def test_vet_request_ro(self):
@@ -187,6 +190,15 @@ class SecurityTest(unittest.TestCase):
 							   '--restrict-update-only testfiles/restore_out',
 								 extra_args = '-r now',
 								 success = 0)
+
+	def test_restrict_bug(self):
+		"""Test for bug 14209 --- mkdir outside --restrict arg"""
+		Myrm('testfiles/output')
+		self.secure_rdiff_backup('testfiles/various_file_types',
+								 'testfiles/output', 1,
+								 '--restrict foobar', success = 0)
+		output = rpath.RPath(Globals.local_connection, 'testfiles/output')
+		assert not output.lstat()
 
 
 if __name__ == "__main__": unittest.main()

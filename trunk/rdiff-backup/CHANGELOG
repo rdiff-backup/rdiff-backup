@@ -15,6 +15,11 @@ Kevin Spicer).
 fsync_directories defaults to None, to avoid errors in testing
 (suggestion by Charles Duffy).
 
+bug#14209: Security bug with --restrict-read-only and
+--restrict-update-only allowed file statting and directory listing
+outside path.  Bug with --restrict option allowed writes outside path.
+(Reported by Charles Duffy.)
+
 
 New in v1.0.0 (2005/08/14)
 --------------------------
