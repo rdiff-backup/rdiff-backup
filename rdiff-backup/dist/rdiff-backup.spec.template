@@ -1,7 +1,6 @@
 %define PYTHON_NAME %((rpm -q --quiet python2 && echo python2) || echo python)
-%define PYTHON_SEP %(rpm -q --quiet python2 && echo -)
-%define PYTHON_VERSION %(python -c 'import sys; print sys.version[:3],')
-%define NEXT_PYTHON_VERSION %(python -c 'import sys; print "%d.%d" % (sys.version_info[0], sys.version_info[1]+1),')
+%define PYTHON_VERSION %(%{PYTHON_NAME} -c 'import sys; print sys.version[:3],')
+%define NEXT_PYTHON_VERSION %(%{PYTHON_NAME} -c 'import sys; print "%d.%d" % (sys.version_info[0], sys.version_info[1]+1),')
 
 Version: $version
 Summary: Convenient and transparent local/remote incremental mirror/backup
@@ -47,14 +46,17 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_bindir}/rdiff-backup
 %{_mandir}/man1/rdiff-backup*
-%dir %{_libdir}/%{PYTHON_NAME}%{PYTHON_SEP}%{PYTHON_VERSION}/site-packages/rdiff_backup
-%{_libdir}/%{PYTHON_NAME}%{PYTHON_SEP}%{PYTHON_VERSION}/site-packages/rdiff_backup/*.py
-%{_libdir}/%{PYTHON_NAME}%{PYTHON_SEP}%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyc
-%{_libdir}/%{PYTHON_NAME}%{PYTHON_SEP}%{PYTHON_VERSION}/site-packages/rdiff_backup/*.so
-%ghost %{_libdir}/%{PYTHON_NAME}%{PYTHON_SEP}%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyo
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.py
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyc
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.so
+%ghost %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyo
 %doc CHANGELOG COPYING FAQ.html examples.html README
 
 %changelog
+* Mon Aug 22 2005 Ben Escoto <ben@emerose.org> - 1.0.0-3
+- Matthijs van der Klip's patch to fix python2 support
+
 * Tue Aug 16 2005 Ben Escoto <ben@emerose.org> - 1.0.0-2
 - Removing /usr/share/doc in build for some obscure reason
 
