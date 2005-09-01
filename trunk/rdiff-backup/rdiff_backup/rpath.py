@@ -1045,8 +1045,10 @@ class RPath(RORPath):
 			mode = stat.S_IFBLK | 0600
 		else: raise RPathException
 		try: self.conn.os.mknod(self.path, mode, self.conn.os.makedev(major, minor))
-		except OSError, e:
-			if e.errno == errno.EPERM:
+		except (OSError, AttributeError), e:
+			if isinstance(e, AttributeError) or e.errno == errno.EPERM:
+				# AttributeError will be raised by Python 2.2, which
+				# doesn't have os.mknod
 				log.Log("unable to mknod %s -- using touch instead" % self.path, 4)
 				self.touch()
 		self.setdata()

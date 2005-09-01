@@ -20,6 +20,8 @@ bug#14209: Security bug with --restrict-read-only and
 outside path.  Bug with --restrict option allowed writes outside path.
 (Reported by Charles Duffy.)
 
+bug #14304: Python 2.2 compatibility spoiled by device files.
+
 
 New in v1.0.0 (2005/08/14)
 --------------------------
