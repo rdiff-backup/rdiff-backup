@@ -371,6 +371,7 @@ static PyObject *acl_unquote(PyObject *self, PyObject *args)
 /* ------------- lchown taken from Python's posixmodule.c -------------- */
 /* duplicate here to avoid v2.3 requirement */
 
+#ifdef HAVE_LCHOWN
 static PyObject *
 posix_error_with_allocated_filename(char* name)
 {
@@ -398,6 +399,7 @@ posix_lchown(PyObject *self, PyObject *args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+#endif /* HAVE_LCHOWN */
 
 /* ------------- Python export lists -------------------------------- */
 
@@ -411,8 +413,10 @@ static PyMethodDef CMethods[] = {
    "Quote string, escaping non-printables"},
   {"acl_unquote", acl_unquote, METH_VARARGS,
    "Unquote string, producing original input to quote"},
+#ifdef HAVE_LCHOWN
   {"lchown", posix_lchown, METH_VARARGS,
    "Like chown, but don't follow symlinks"},
+#endif /* HAVE_LCHOWN */
   {NULL, NULL, 0, NULL}
 };
 

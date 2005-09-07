@@ -22,6 +22,8 @@ outside path.  Bug with --restrict option allowed writes outside path.
 
 bug #14304: Python 2.2 compatibility spoiled by device files.
 
+lchown no longer required, which is good news for Mac OS X 10.3.
+
 
 New in v1.0.0 (2005/08/14)
 --------------------------
