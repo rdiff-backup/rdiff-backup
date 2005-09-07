@@ -93,6 +93,7 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 	"""
 	Globals.current_time = current_time
 	#_reset_connections()
+	Globals.security_level = "override"
 	remote_schema = '%s'
 
 	if not source_local:
@@ -174,6 +175,7 @@ def get_increment_rp(mirror_rp, time):
 
 def _reset_connections(src_rp, dest_rp):
 	"""Reset some global connection information"""
+	Globals.security_level = "override"
 	Globals.isbackup_reader = Globals.isbackup_writer = None
 	#Globals.connections = [Globals.local_connection]
 	#Globals.connection_dict = {0: Globals.local_connection}

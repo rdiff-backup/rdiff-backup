@@ -782,7 +782,12 @@ class RPath(RORPath):
 
 	def chown(self, uid, gid):
 		"""Set file's uid and gid"""
-		self.conn.C.lchown(self.path, uid, gid)
+		if self.issym():
+			try: self.conn.C.lchown(self.path, uid, gid)
+			except AttributeError:
+				log.Log("Warning: lchown missing, cannot change ownership "
+						"of symlink " + self.path, 2)
+		else: os.chown(self.path, uid, gid)
 		self.data['uid'] = uid
 		self.data['gid'] = gid
 
