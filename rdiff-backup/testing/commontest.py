@@ -142,6 +142,7 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time,
 	Main.force = 1
 	Main.restore_root_set = 0
 	remote_schema = '%s'
+	Globals.security_level = "override"
 	#_reset_connections()
 	if not mirror_local:
 		mirror_dir = "cd test1; python ../server.py ../%s::../%s" % \
