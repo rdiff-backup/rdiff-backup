@@ -91,7 +91,8 @@ class PipeConnectionTest(unittest.TestCase):
 		"""Must start a server for this"""
 		stdin, stdout = os.popen2("python ./server.py "+SourceDir)
 		self.conn = PipeConnection(stdout, stdin)
-		#self.conn.Log.setverbosity(9)
+		Globals.security_level = "override"
+    	#self.conn.Log.setverbosity(9)
 		#Log.setverbosity(9)
 
 	def testBasic(self):
