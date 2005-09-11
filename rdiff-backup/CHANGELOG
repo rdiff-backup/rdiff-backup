@@ -1,4 +1,4 @@
-New in v1.0.1 (????/??/??)
+New in v1.0.1 (2005/09/10)
 --------------------------
 
 Fix for "'filetype' of type exceptions.KeyError" error when restoring.
