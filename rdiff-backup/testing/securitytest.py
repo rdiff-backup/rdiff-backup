@@ -200,6 +200,13 @@ class SecurityTest(unittest.TestCase):
 		output = rpath.RPath(Globals.local_connection, 'testfiles/output')
 		assert not output.lstat()
 
+	def test_quoting_bug(self):
+		"""Test for bug 14545 --- quoting causes bad violation"""
+		Myrm('testfiles/output')
+		self.secure_rdiff_backup('testfiles/various_file_types',
+								 'testfiles/output', 1, '',
+								 extra_args = '--override-chars-to-quote e')
+
 
 if __name__ == "__main__": unittest.main()
 		

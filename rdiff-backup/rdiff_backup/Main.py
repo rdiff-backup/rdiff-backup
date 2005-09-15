@@ -435,9 +435,7 @@ def backup_set_fs_globals(rpin, rpout):
 	SetConnections.UpdateGlobal('fsync_directories', dest_fsa.fsync_dirs)
 	SetConnections.UpdateGlobal('change_ownership', dest_fsa.ownership)
 	SetConnections.UpdateGlobal('chars_to_quote', dest_fsa.chars_to_quote)
-	if Globals.chars_to_quote:
-		for conn in Globals.connections:
-			conn.FilenameMapping.set_init_quote_vals()
+	if Globals.chars_to_quote: FilenameMapping.set_init_quote_vals()
 	
 def backup_touch_curmirror_local(rpin, rpout):
 	"""Make a file like current_mirror.time.data to record time
