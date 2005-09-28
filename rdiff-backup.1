@@ -1,4 +1,4 @@
-.TH RDIFF-BACKUP 1 "January 2004" "Version 0.13.4" "User Manuals"
+.TH RDIFF-BACKUP 1 "September 2005" "Version 1.0.1" "User Manuals"
 .SH NAME
 rdiff-backup \- local/remote mirror and incremental backup
 .SH SYNOPSIS
@@ -84,6 +84,14 @@ Compare a directory with the backup set at the given time.  This can
 be useful to see how archived data differs from current data, or to
 check that a backup is current.
 .TP
+.BI "--create-full-path"
+Normally only the final directory of the destination path will be
+created if it does not exist. With this option, all missing directories
+on the destination path will be created. Use this option with care: if 
+there is a typo in the remote path, the remote filesystem could fill up 
+very quickly (by creating a duplicate backup tree). For this reason 
+this option is primarily aimed at scripts which automate backups.
+.TP
 .BI "--current-time " seconds
 This option is useful mainly for testing.  If set, rdiff-backup will
 it for the current time instead of consulting the clock.  The argument
@@ -101,10 +109,17 @@ section for more information.
 Exclude all device files.  This can be useful for security/permissions
 reasons or if rdiff-backup is not handling device files correctly.
 .TP
+.B "--exclude-fifos"
+Exclude all fifo files.
+.TP
 .BI "--exclude-filelist " filename
 Excludes the files listed in 
+.IR filename .
+If
 .I filename
-See the
+is handwritten you probably want
+.B --include-globbing-filelist
+instead.  See the
 .B FILE SELECTION
 section for more information.
 .TP
@@ -137,7 +152,13 @@ See the
 section for more information.
 .TP
 .B --exclude-special-files
-Exclude all device files, fifos, sockets, and symlinks.
+Exclude all device files, fifo files, socket files, and symbolic links.
+.TP
+.B "--exclude-sockets"
+Exclude all socket files.
+.TP
+.B "--exclude-symbolic-links"
+Exclude all symbolic links.
 .TP
 .B --force
 Authorize the updating or overwriting of a destination path.
@@ -163,7 +184,11 @@ section for more information.
 .BI "--include-filelist " filename
 Like
 .BR --exclude-filelist ,
-but include the listed files instead.  See the
+but include the listed files instead.  If
+.I filename
+is handwritten you probably want
+.B --exclude-globbing-filelist
+instead.  See the
 .B FILE SELECTION
 section for more information.
 .TP
@@ -189,6 +214,12 @@ Only files explicitly matched by
 will be included by this option.  See the
 .B FILE SELECTION
 section for more information.
+.TP
+.B --include-special-files
+Include all device files, fifo files, socket files, and symbolic links.
+.TP
+.B --include-symbolic-links
+Include all symbolic links.
 .TP
 .BI "--list-at-time " time
 List the files in the archive that were present at the given time.  If
@@ -512,6 +543,20 @@ that in this man page...).  And finally, to include a literal % in the
 string specified by --remote-schema, quote it with another %, as in
 %%.
 
+Although ssh itself may be secure, using rdiff-backup in the default
+way presents some security risks.  For instance if the server is run
+as root, then an attacker who compromised the client could then use
+rdiff-backup to overwrite arbitary server files by "backing up" over
+them.  Such a setup can be made more secure by using the sshd
+configuration option
+.B command="rdiff-backup --server"
+possibly along with the
+.B --restrict*
+options to rdiff-backup.  For more information, see the web page, the
+wiki, and the entries for the
+.B --restrict*
+options on this man page.
+
 .SH FILE SELECTION
 .B rdiff-backup
 supports file selection options similar to (but different from)
@@ -524,7 +569,9 @@ and easy-to-use.
 The file selection system comprises a number of file
 selection conditions, which are set using one of the following command
 line options:
-.BR --exclude , --exclude-device-files , --exclude-filelist ,
+.BR --exclude , --exclude-filelist ,
+.BR --exclude-device-files , --exclude-fifos ,
+.BR --exclude-sockets , --exclude-symbolic-links ,
 .BR --exclude-globbing-filelist ,
 .BR --exclude-filelist-stdin , --exclude-regexp , --exclude-special-files ,
 .BR --include ,
@@ -863,7 +910,7 @@ prevent rdiff-backup from producing large compressed increments
 large uncompressable files.
 
 .SH AUTHOR
-Ben Escoto <bescoto@stanford.edu>
+Ben Escoto <ben@emerose.org>
 .PP
 Feel free to ask me questions or send me bug reports, but you may want to see the web page, mentioned below, first.
 
@@ -873,6 +920,6 @@ Feel free to ask me questions or send me bug reports, but you may want to see th
 .BR rsync (1),
 .BR ssh (1).
 The main rdiff-backup web page is at
-.IR http://rdiff-backup.stanford.edu/ .
+.IR http://www.nongnu.org/rdiff-backup/ .
 It has more information, links to the mailing list and CVS, etc.
 

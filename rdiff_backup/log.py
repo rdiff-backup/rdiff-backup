@@ -125,6 +125,7 @@ class Logger:
 		if self.log_file_open:
 			if self.log_file_local:
 				self.logfp.write(self.format(message, self.verbosity))
+				self.logfp.flush()
 			else: self.log_file_conn.log.Log.log_to_file(message)
 
 	def log_to_term(self, message, verbosity):

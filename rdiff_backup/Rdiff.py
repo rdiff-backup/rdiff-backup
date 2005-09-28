@@ -38,9 +38,9 @@ def find_blocksize(file_len):
 	patching can take a really long time.
 
 	"""
-	if file_len < 1024000: return 512 # set minimum of 512 bytes
-	else: # Split file into about 2000 pieces, rounding to 512
-		return long((file_len/(2000*512))*512)
+	if file_len < 4096: return 64 # set minimum of 64 bytes
+	else: # Use square root, rounding to nearest 16
+		return long(pow(file_len, 0.5)/16)*16
 
 def get_delta_sigfileobj(sig_fileobj, rp_new):
 	"""Like get_delta but signature is in a file object"""
@@ -82,10 +82,7 @@ def patch_local(rp_basis, rp_delta, outrp = None, delta_compressed = None):
 	assert rp_basis.conn is Globals.local_connection
 	if delta_compressed: deltafile = rp_delta.open("rb", 1)
 	else: deltafile = rp_delta.open("rb")
-
-	sigfile = librsync.SigFile(rp_basis.open("rb"))
 	patchfile = librsync.PatchedFile(rp_basis.open("rb"), deltafile)
-
 	if outrp: outrp.write_from_fileobj(patchfile)
 	else: write_via_tempfile(patchfile, rp_basis)
 

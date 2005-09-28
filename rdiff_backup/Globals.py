@@ -23,7 +23,7 @@ import re, os
 
 
 # The current version of rdiff-backup
-version = "0.13.4"
+version = "1.0.1"
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
@@ -49,6 +49,7 @@ server = None
 # vary depending on the connection.
 process_uid = os.getuid()
 process_gid = os.getgid()
+process_groups = [process_gid] + os.getgroups()
 
 # If true, when copying attributes, also change target's uid/gid
 change_ownership = None
@@ -209,7 +210,7 @@ compare_inode = 1
 
 # If set, directories can be fsync'd just like normal files, to
 # guarantee that any changes have been committed to disk.
-fsync_directories = 1
+fsync_directories = None
 
 # If set, exit with error instead of dropping ACLs or ACL entries.
 never_drop_acls = None

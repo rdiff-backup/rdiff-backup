@@ -24,9 +24,9 @@ esac
 exit 0
 
 @DPATCH@
---- rdiff_backup/Globals.py	Sat Jan 31 23:31:34 2004
-+++ rdiff_backup/Globals.py	Fri Jun 18 19:13:45 2004
-@@ -157,6 +157,10 @@
+--- rdiff_backup/Globals.py	2005-09-11 03:38:01.000000000 +0000
++++ rdiff_backup/Globals.py	2005-09-29 15:08:35.661693448 +0000
+@@ -158,6 +158,10 @@
  # hardlink information regardless.
  preserve_hardlinks = 1
  
@@ -37,53 +37,52 @@ exit 0
  # If this is false, then rdiff-backup will not compress any
  # increments.  Default is to compress based on regexp below.
  compression = 1
---- rdiff_backup/Main.py	Sat Jan 31 23:31:34 2004
-+++ rdiff_backup/Main.py	Fri Jun 18 19:13:21 2004
-@@ -127,7 +127,7 @@
- 			Globals.set("no_compression_regexp_string", arg)
+--- rdiff_backup/Main.py	2005-09-11 03:38:01.000000000 +0000
++++ rdiff_backup/Main.py	2005-09-29 15:14:47.793120872 +0000
+@@ -151,6 +151,7 @@
  		elif opt == "--no-eas": Globals.set("eas_active", 0)
  		elif opt == "--no-file-statistics": Globals.set('file_statistics', 0)
--		elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
+ 		elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 +		elif opt == "--no-hard-links": Globals.set('no_hard_links', 1)
  		elif opt == "--null-separator": Globals.set("null_separator", 1)
  		elif opt == "--override-chars-to-quote":
  			Globals.set('chars_to_quote', arg)
-@@ -402,7 +402,8 @@
- 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
+@@ -431,7 +432,8 @@
  					   "disabled on destination filesystem")
  
--	SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks)
-+	SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks and
+ 	if Globals.preserve_hardlinks != 0:
+-		SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks)
++		SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks and
 +		not Globals.no_hard_links)
  	SetConnections.UpdateGlobal('fsync_directories', dest_fsa.fsync_dirs)
  	SetConnections.UpdateGlobal('change_ownership', dest_fsa.ownership)
  	SetConnections.UpdateGlobal('chars_to_quote', dest_fsa.chars_to_quote)
-@@ -508,7 +509,8 @@
- 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
+@@ -540,7 +542,8 @@
  					   "disabled on destination filesystem")
  
--	SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
-+	SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks and
+ 	if Globals.preserve_hardlinks != 0:
+-		SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
++		SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks and
 +		not Globals.no_hard_links)
  	SetConnections.UpdateGlobal('change_ownership', target_fsa.ownership)
  
  	if Globals.chars_to_quote is None: # otherwise already overridden
-@@ -685,7 +687,8 @@
- 	update_triple(fsa.carbonfile,
+@@ -719,7 +722,8 @@
  				  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
  
--	SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks)
-+	SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks and
+ 	if Globals.preserve_hardlinks != 0:
+-		SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks)
++		SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks and
 +		not Globals.no_hard_links)
  	SetConnections.UpdateGlobal('fsync_directories', fsa.fsync_dirs)
  	SetConnections.UpdateGlobal('change_ownership', fsa.ownership)
  	SetConnections.UpdateGlobal('chars_to_quote', fsa.chars_to_quote)
---- rdiff_backup/rpath.py	Sat Jan 31 23:31:34 2004
-+++ rdiff_backup/rpath.py	Fri Jun 18 19:35:05 2004
-@@ -153,9 +153,11 @@
- 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
+--- rdiff_backup/rpath.py	2005-09-11 03:38:01.000000000 +0000
++++ rdiff_backup/rpath.py	2005-09-29 15:16:02.930698224 +0000
+@@ -154,9 +154,11 @@
  	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
- 	if rpin.issym(): return # symlinks have no valid attributes
+ 	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
+ 	if rpin.issym(): return # symlinks don't have times or perms
 -	if Globals.resource_forks_write and rpin.isreg():
 +	if (Globals.resource_forks_write and rpin.isreg() and
 +			not rpin.isflaglinked()):
@@ -93,4 +92,4 @@ exit 0
 +			not rpin.isflaglinked()):
  		rpout.write_carbonfile(rpin.get_carbonfile())
  	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
- 	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
+ 	rpout.chmod(rpin.getperms())

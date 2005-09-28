@@ -2,21 +2,22 @@ Source: rdiff-backup
 Section: utils
 Priority: optional
 Maintainer: Daniel Baumann <daniel.baumann@panthera-systems.net>
-Build-Depends: debhelper (>= 4.0.0), dpatch, librsync-dev (>= 0.9.6-7), python, python2.3-dev
-Build-Conflicts: python2.3-pylibacl, python2.3-pyxattr
-Standards-Version: 3.6.1
+Build-Depends: debhelper (>= 4.0.0), dpatch, librsync-dev (>= 0.9.7), python, python-dev, python-pylibacl, python-pyxattr
+Standards-Version: 3.6.2
 
 Package: rdiff-backup
 Architecture: any
-Depends: python2.3, rdiff
-Description: incremental backups using binary deltas
- rdiff-backup is a script that backs up one directory to another. The target
- directory ends up a copy of the source directory, but extra reverse diffs are
- stored in a special subdirectory of that target directory, so you can still
- recover files lost some time ago. The idea is to combine the best features of
- a mirror and an incremental backup. rdiff-backup also preserves subdirectories,
- symlinks, special files, permissions, uid/gid ownership (if it is running as
- root), and modification times. Finally, rdiff-backup can operate in a bandwidth
- efficient manner over a pipe, like rsync. Thus you can use rdiff-backup and ssh
- to securely back a hard drive up to a remote location, and only the differences
- will be transmitted.
+Depends: ${shlibs:Depends}, ${python:Depends}
+Description: remote incremental backup
+ rdiff-backup backs up one directory to another, possibly over a network. The
+ target directory ends up a copy of the source directory, but extra reverse
+ diffs are stored in a special subdirectory of that target directory, so you can
+ still recover files lost some time ago. The idea is to combine the best
+ features of a mirror and an incremental backup. rdiff-backup also preserves
+ subdirectories, hard links, dev files, permissions, uid/gid ownership,
+ modification times, extended attributes, acls, and resource forks.
+ .
+ Also, rdiff-backup can operate in a bandwidth efficient manner over a pipe,
+ like rsync. Thus you can use rdiff-backup and ssh to securely back a hard drive
+ up to a remote location, and only the differences will be transmitted. Finally,
+ rdiff-backup is easy to use and settings have sensical defaults.

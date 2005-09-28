@@ -35,7 +35,7 @@ are dealing with are local or remote.
 
 """
 
-import os, stat, re, sys, shutil, gzip, socket, time
+import os, stat, re, sys, shutil, gzip, socket, time, errno
 import Globals, Time, static, log, user_group
 
 
@@ -152,13 +152,13 @@ def copy_attribs(rpin, rpout):
 	"""
 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
 	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
-	if rpin.issym(): return # symlinks have no valid attributes
+	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
+	if rpin.issym(): return # symlinks don't have times or perms
 	if Globals.resource_forks_write and rpin.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if Globals.carbonfile_write and rpin.isreg():
 		rpout.write_carbonfile(rpin.get_carbonfile())
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
-	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
 	rpout.chmod(rpin.getperms())
 	if Globals.acls_write: rpout.write_acl(rpin.get_acl())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
@@ -173,13 +173,13 @@ def copy_attribs_inc(rpin, rpout):
 	"""
 	log.Log("Copying inc attrs from %s to %s" % (rpin.index, rpout.path), 7)
 	check_for_files(rpin, rpout)
-	if rpin.issym(): return # symlinks have no valid attributes
+	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
+	if rpin.issym(): return # symlinks don't have times or perms
 	if Globals.resource_forks_write and rpin.isreg() and rpout.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if Globals.carbonfile_write and rpin.isreg() and rpout.isreg():
 		rpout.write_carbonfile(rpin.get_carbonfile())
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
-	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if rpin.isdir() and not rpout.isdir():
 		rpout.chmod(rpin.getperms() & 0777)
 	else: rpout.chmod(rpin.getperms())
@@ -197,13 +197,13 @@ def cmp_attribs(rp1, rp2):
 	if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
 		result = None
 	elif rp1.getperms() != rp2.getperms(): result = None
-	# Don't compare ctime for now, add later
-	#elif rp1.getctime() != rp2.getctime(): result = None
 	elif rp1.issym() and rp2.issym(): # Don't check times for some types
 		result = 1
 	elif rp1.isblkdev() and rp2.isblkdev(): result = 1
 	elif rp1.ischardev() and rp2.ischardev(): result = 1
-	else: result = (rp1.getmtime() == rp2.getmtime())
+	else:
+		result = ((rp1.getctime() == rp2.getctime()) and
+			(rp1.getmtime() == rp2.getmtime()))
 	log.Log("Compare attribs of %s and %s: %s" %
 			(rp1.get_indexpath(), rp2.get_indexpath(), result), 7)
 	return result
@@ -283,6 +283,11 @@ class RORPath:
 		self.data = {'type': None}
 		self.file = None
 
+	def make_zero_dir(self, dir_rp):
+		"""Set self.data the same as dir_rp.data but with safe permissions"""
+		self.data = dir_rp.data.copy()
+		self.data['perms'] = 0700
+
 	def __nonzero__(self): return 1
 
 	def __eq__(self, other):
@@ -294,7 +299,7 @@ class RORPath:
 				pass # Don't compare gid/uid for symlinks
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'ctime': pass
-			elif key == 'devloc' or key == 'nlink': pass
+			elif key == 'nlink': pass
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'ea' and not Globals.eas_active: pass
 			elif key == 'acl' and not Globals.acls_active: pass
@@ -306,7 +311,7 @@ class RORPath:
 				other_name = other.data.get(key, None)
 				if (other_name and other_name != "None" and
 					other_name != self.data[key]): return None
-			elif (key == 'inode' and
+			elif ((key == 'inode' or key == 'devloc') and
 				  (not self.isreg() or self.getnumlinks() == 1 or
 				   not Globals.compare_inode or
 				   not Globals.preserve_hardlinks)):
@@ -352,7 +357,8 @@ class RORPath:
 
 	def equal_verbose(self, other, check_index = 1,
 					  compare_inodes = 0, compare_ownership = 0,
-					  compare_acls = 0, compare_eas = 0, verbosity = 2):
+					  compare_acls = 0, compare_eas = 0, compare_size = 1,
+					  compare_type = 1, verbosity = 2):
 		"""Like __eq__, but log more information.  Useful when testing"""
 		if check_index and self.index != other.index:
 			log.Log("Index %s != index %s" % (self.index, other.index),
@@ -364,10 +370,11 @@ class RORPath:
 				(self.issym() or not compare_ownership)):
 				# Don't compare gid/uid for symlinks, or if told not to
 				pass
+			elif key == 'type' and not compare_type: pass
 			elif key == 'atime' and not Globals.preserve_atime: pass
 			elif key == 'ctime': pass
 			elif key == 'devloc' or key == 'nlink': pass
-			elif key == 'size' and not self.isreg(): pass
+			elif key == 'size' and (not self.isreg() or not compare_size): pass
 			elif key == 'inode' and (not self.isreg() or not compare_inodes):
 				pass
 			elif key == 'ea' and not compare_eas: pass
@@ -755,25 +762,43 @@ class RPath(RORPath):
 	def settime(self, accesstime, modtime):
 		"""Change file modification times"""
 		log.Log("Setting time of %s to %d" % (self.path, modtime), 7)
-		self.conn.os.utime(self.path, (accesstime, modtime))
-		self.data['atime'] = accesstime
-		self.data['mtime'] = modtime
+		try: self.conn.os.utime(self.path, (accesstime, modtime))
+		except OverflowError:
+			log.Log("Cannot change times of %s to %s - problem is probably"
+					"64->32bit conversion" %
+					(self.path, (accesstime, modtime)), 2)
+		else:
+			self.data['atime'] = accesstime
+			self.data['mtime'] = modtime
 
 	def setmtime(self, modtime):
 		"""Set only modtime (access time to present)"""
 		log.Log(lambda: "Setting time of %s to %d" % (self.path, modtime), 7)
-		self.conn.os.utime(self.path, (long(time.time()), modtime))
-		self.data['mtime'] = modtime
+		try: self.conn.os.utime(self.path, (long(time.time()), modtime))
+		except OverflowError:
+			log.Log("Cannot change mtime of %s to %s - problem is probably"
+					"64->32bit conversion" % (self.path, modtime), 2)
+		else: self.data['mtime'] = modtime
 
 	def chown(self, uid, gid):
 		"""Set file's uid and gid"""
-		self.conn.os.chown(self.path, uid, gid)
+		if self.issym():
+			try: self.conn.C.lchown(self.path, uid, gid)
+			except AttributeError:
+				log.Log("Warning: lchown missing, cannot change ownership "
+						"of symlink " + self.path, 2)
+		else: os.chown(self.path, uid, gid)
 		self.data['uid'] = uid
 		self.data['gid'] = gid
 
 	def mkdir(self):
 		log.Log("Making directory " + self.path, 6)
 		self.conn.os.mkdir(self.path)
+		self.setdata()
+
+	def makedirs(self):
+		log.Log("Making directory path " + self.path, 6)
+		self.conn.os.makedirs(self.path)
 		self.setdata()
 
 	def rmdir(self):
@@ -840,15 +865,17 @@ class RPath(RORPath):
 		return uid == 0 or uid == self.data['uid']
 
 	def isgroup(self):
-		"""Return true if current process is in group of rp"""
-		return self.conn.Globals.get('process_gid') == self.data['gid']
+		"""Return true if process has group of rp"""
+		return self.data['gid'] in self.conn.Globals.get('process_groups')
 
 	def delete(self):
 		"""Delete file at self.path.  Recursively deletes directories."""
 		log.Log("Deleting %s" % self.path, 7)
 		if self.isdir():
 			try: self.rmdir()
-			except os.error: self.conn.shutil.rmtree(self.path)
+			except os.error:
+				if Globals.fsync_directories: self.fsync()
+				self.conn.shutil.rmtree(self.path)
 		else: self.conn.os.unlink(self.path)
 		self.setdata()
 
@@ -911,6 +938,10 @@ class RPath(RORPath):
 	def new_index(self, index):
 		"""Return similar RPath but with new index"""
 		return self.__class__(self.conn, self.base, index)
+
+	def new_index_empty(self, index):
+		"""Return similar RPath with given index, but initialize to empty"""
+		return self.__class__(self.conn, self.base, index, {'type': None})
 
 	def open(self, mode, compress = None):
 		"""Return open file.  Supports modes "w" and "r".
@@ -1011,12 +1042,20 @@ class RPath(RORPath):
 
 	def makedev(self, type, major, minor):
 		"""Make a special file with specified type, and major/minor nums"""
-		cmdlist = ['mknod', self.path, type, str(major), str(minor)]
-		if self.conn.os.spawnvp(os.P_WAIT, 'mknod', cmdlist) != 0:
-			raise RPathException("Error running %s" % cmdlist)
-		if type == 'c': datatype = 'chr'
-		elif type == 'b': datatype = 'blk'
+		if type == 'c':
+			datatype = 'chr'
+			mode = stat.S_IFCHR | 0600
+		elif type == 'b':
+			datatype = 'blk'
+			mode = stat.S_IFBLK | 0600
 		else: raise RPathException
+		try: self.conn.os.mknod(self.path, mode, self.conn.os.makedev(major, minor))
+		except (OSError, AttributeError), e:
+			if isinstance(e, AttributeError) or e.errno == errno.EPERM:
+				# AttributeError will be raised by Python 2.2, which
+				# doesn't have os.mknod
+				log.Log("unable to mknod %s -- using touch instead" % self.path, 4)
+				self.touch()
 		self.setdata()
 
 	def fsync(self, fp = None):
@@ -1129,7 +1168,7 @@ class RPath(RORPath):
 		try: rfork = self.data['resourcefork']
 		except KeyError:
 			try:
-				rfork_fp = self.conn.open(os.path.join(self.path, 'rsrc'),
+				rfork_fp = self.conn.open(os.path.join(self.path, '..namedfork', 'rsrc'),
 										  'rb')
 				rfork = rfork_fp.read()
 				assert not rfork_fp.close()
@@ -1140,7 +1179,7 @@ class RPath(RORPath):
 	def write_resource_fork(self, rfork_data):
 		"""Write new resource fork to self"""
 		log.Log("Writing resource fork to %s" % (self.index,), 7)
-		fp = self.conn.open(os.path.join(self.path, 'rsrc'), 'wb')
+		fp = self.conn.open(os.path.join(self.path, '..namedfork', 'rsrc'), 'wb')
 		fp.write(rfork_data)
 		assert not fp.close()
 		self.set_resource_fork(rfork_data)

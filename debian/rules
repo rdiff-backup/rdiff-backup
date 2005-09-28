@@ -1,20 +1,18 @@
 #!/usr/bin/make -f
-# Sample debian/rules that uses debhelper.
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
 include /usr/share/dpatch/dpatch.make
 
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g -O2
 
 build: build-stamp
-
 build-stamp: patch
 	dh_testdir
 
-	# Add here commands to compile the package.
-	python2.3 setup.py build
+	# Building package
+	python setup.py build
 
 	touch build-stamp
 
@@ -23,29 +21,24 @@ clean: unpatch
 	dh_testroot
 	rm -f build-stamp
 
-	# Add here commands to clean up after the build process.
-	python2.3 setup.py clean
+	# Cleaning package
+	python setup.py clean
 	rm -rf build
 
-	dh_clean 
+	dh_clean
 
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k 
+	dh_clean -k
 	dh_installdirs
 
-	# Add here commands to install the package into debian/rdiff-backup.
-	python2.3 setup.py install --prefix $(CURDIR)/debian/rdiff-backup/usr
-	install -m 644 $(CURDIR)/rdiff-backup.1 $(CURDIR)/debian/rdiff-backup/usr/share/man/man1
-	-rm -rf $(CURDIR)/debian/rdiff-backup/usr/share/doc/rdiff-backup-*
+	# Installing package
+	python setup.py install --prefix=$(CURDIR)/debian/rdiff-backup/usr
+	rm -rf $(CURDIR)/debian/rdiff-backup/usr/share/doc/rdiff-backup-*
 
-
-# Build architecture-independent files here.
 binary-indep: build install
-# We have nothing to do by default.
 
-# Build architecture-dependent files here.
 binary-arch: build install
 	dh_testdir
 	dh_testroot

@@ -71,6 +71,7 @@ class SourceStruct:
 		sel.set_iter()
 		cache_size = Globals.pipeline_max_length * 3 # to and from+leeway
 		cls._source_select = rorpiter.CacheIndexable(sel, cache_size)
+		Globals.set('select_mirror', sel)
 
 	def get_source_select(cls):
 		"""Return source select iterator, set by set_source_select"""
@@ -110,7 +111,9 @@ class SourceStruct:
 				diff_rorp.flaglinked(dest_sig.get_link_flag())
 			elif dest_sig.isreg() and src_rp.isreg():
 				attach_diff(diff_rorp, src_rp, dest_sig)
-			elif src_rp.isreg(): attach_snapshot(diff_rorp, src_rp)
+			elif src_rp.isreg():
+				attach_snapshot(diff_rorp, src_rp)
+				dest_sig.close_if_necessary()
 			else: diff_rorp.set_attached_filetype('snapshot')
 			yield diff_rorp
 
@@ -362,10 +365,11 @@ class CacheCollatedPostProcess:
 			if source_rorp: self.statfileobj.add_source_file(source_rorp)
 			if dest_rorp: self.statfileobj.add_dest_file(dest_rorp)
 		if success == 0: metadata_rorp = dest_rorp
-		elif success == 1 or success == 2:
+		elif success == 1: metadata_rorp = source_rorp
+		else: metadata_rorp = None # in case deleted because of ListError
+		if success == 1 or success == 2: 
 			self.statfileobj.add_changed(source_rorp, dest_rorp)
-			metadata_rorp = source_rorp
-		else: metadata_rorp = None
+
 		if metadata_rorp and metadata_rorp.lstat():
 			metadata.MetadataFile.write_object(metadata_rorp)
 			if Globals.eas_active and not metadata_rorp.get_ea().empty():
@@ -496,7 +500,8 @@ class PatchITRB(rorpiter.ITRBranch):
 			assert diff_rorp.get_attached_filetype() == 'diff'
 			if robust.check_common_error(self.error_handler,
 			   Rdiff.patch_local, (basis_rp, diff_rorp, new)) == 0: return 0
-		if new.lstat(): rpath.copy_attribs(diff_rorp, new)
+		if new.lstat() and not diff_rorp.isflaglinked():
+			rpath.copy_attribs(diff_rorp, new)
 		return self.matches_cached_rorp(diff_rorp, new)
 
 	def matches_cached_rorp(self, diff_rorp, new_rp):

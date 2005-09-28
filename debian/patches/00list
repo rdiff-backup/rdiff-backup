@@ -1,8 +1,3 @@
 rdiff-backup-hardlinks
-typo-fix
-typo-fix-2
-calculate-average
 afs-hardlinks
-backup_warn_if_infinite_regress
 no-compress-regexp
-restrict-read-only.dpatch

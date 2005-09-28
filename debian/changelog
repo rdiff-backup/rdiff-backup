@@ -1,3 +1,14 @@
+rdiff-backup (1.0.1-1) unstable; urgency=low
+
+  * New upstream release (Closes: #323332, #302099):
+    - works with SElinux (Closes: #306798).
+    - compiled with ACL support now (Closes: #224666).
+  * Removed old patches which are now in upstream.
+  * Added watch file.
+  * Bumped policy version.
+
+ -- Daniel Baumann <daniel.baumann@panthera-systems.net>  Wed, 28 Sep 2005 15:32:00 +0200
+
 rdiff-backup (0.13.4-5) unstable; urgency=high
 
   * Forgot debian/compat (Closes: #295638).
@@ -170,4 +181,3 @@ rdiff-backup (0.4.4-1) unstable; urgency=low
   * Initial Release, lintian clean.  Closes: #133442.
 
  -- John Goerzen <jgoerzen@complete.org>  Mon, 11 Feb 2002 14:15:42 -0500
-

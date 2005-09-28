@@ -28,6 +28,7 @@ import Globals, Time, SetConnections, selection, robust, rpath, \
 
 
 action = None
+create_full_path = None
 remote_cmd, remote_schema = None, None
 force = None
 select_opts = []
@@ -40,8 +41,8 @@ return_val = None # Set to cause exit code to be specified value
 
 def parse_cmdlineoptions(arglist):
 	"""Parse argument list and set global preferences"""
-	global args, action, force, restore_timestr, remote_cmd, remote_schema
-	global remove_older_than_string
+	global args, action, create_full_path, force, restore_timestr, remote_cmd
+	global remote_schema, remove_older_than_string
 	global user_mapping_filename, group_mapping_filename
 	def sel_fl(filename):
 		"""Helper function for including/excluding filelists below"""
@@ -54,18 +55,23 @@ def parse_cmdlineoptions(arglist):
 
 	try: optlist, args = getopt.getopt(arglist, "blr:sv:V",
 		 ["backup-mode", "calculate-average", "check-destination-dir",
-		  "compare", "compare-at-time=", "current-time=", "exclude=",
-		  "exclude-device-files", "exclude-filelist=",
+		  "compare", "compare-at-time=", "create-full-path",
+		  "current-time=", "exclude=", "exclude-device-files",
+		  "exclude-fifos", "exclude-filelist=",
+		  "exclude-symbolic-links", "exclude-sockets",
 		  "exclude-filelist-stdin", "exclude-globbing-filelist=",
-		  "exclude-mirror=", "exclude-other-filesystems",
-		  "exclude-regexp=", "exclude-special-files", "force",
-		  "group-mapping-file=", "include=", "include-filelist=",
-		  "include-filelist-stdin", "include-globbing-filelist=",
-		  "include-regexp=", "list-at-time=", "list-changed-since=",
-		  "list-increments", "list-increment-sizes",
-		  "never-drop-acls", "no-acls", "no-compare-inode",
-		  "no-compression", "no-compression-regexp=", "no-eas",
-		  "no-file-statistics", "no-hard-links", "null-separator",
+		  "exclude-globbing-filelist-stdin", "exclude-mirror=",
+		  "exclude-other-filesystems", "exclude-regexp=",
+		  "exclude-special-files", "force", "group-mapping-file=",
+		  "include=", "include-filelist=", "include-filelist-stdin",
+		  "include-globbing-filelist=",
+		  "include-globbing-filelist-stdin", "include-regexp=",
+		  "include-special-files", "include-symbolic-links",
+		  "list-at-time=", "list-changed-since=", "list-increments",
+		  "list-increment-sizes", "never-drop-acls", "no-acls",
+		  "no-carbonfile", "no-compare-inode", "no-compression",
+		  "no-compression-regexp=", "no-eas", "no-file-statistics",
+		  "no-hard-links", "null-separator",
 		  "override-chars-to-quote=", "parsable-output",
 		  "print-statistics", "remote-cmd=", "remote-schema=",
 		  "remove-older-than=", "restore-as-of=", "restrict=",
@@ -83,10 +89,18 @@ def parse_cmdlineoptions(arglist):
 			action = "compare"
 			if opt == "--compare": restore_timestr = "now"
 			else: restore_timestr = arg
+		elif opt == "--create-full-path": create_full_path = 1
 		elif opt == "--current-time":
 			Globals.set_integer('current_time', arg)
-		elif opt == "--exclude": select_opts.append((opt, arg))
-		elif opt == "--exclude-device-files": select_opts.append((opt, arg))
+		elif (opt == "--exclude" or
+			  opt == "--exclude-device-files" or
+			  opt == "--exclude-fifos" or
+			  opt == "--exclude-other-filesystems" or
+			  opt == "--exclude-regexp" or
+			  opt == "--exclude-special-files" or
+			  opt == "--exclude-sockets" or
+			  opt == "--exclude-symbolic-links"):
+			select_opts.append((opt, arg))
 		elif opt == "--exclude-filelist":
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))
@@ -96,12 +110,16 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--exclude-globbing-filelist":
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))
-		elif (opt == "--exclude-other-filesystems" or
-			  opt == "--exclude-regexp" or
-			  opt == "--exclude-special-files"): select_opts.append((opt, arg))
+		elif opt == "--exclude-globbing-filelist-stdin":
+			select_opts.append(("--exclude-globbing-filelist",
+								"standard input"))
+			select_files.append(sys.stdin)
 		elif opt == "--force": force = 1
 		elif opt == "--group-mapping-file": group_mapping_filename = arg
-		elif opt == "--include": select_opts.append((opt, arg))
+		elif (opt == "--include" or
+			  opt == "--include-special-files" or
+			  opt == "--include-symbolic-links"):
+			select_opts.append((opt, arg))
 		elif opt == "--include-filelist":
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))
@@ -111,6 +129,10 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--include-globbing-filelist":
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))
+		elif opt == "--include-globbing-filelist-stdin":
+			select_opts.append(("--include-globbing-filelist",
+								"standard input"))
+			select_files.append(sys.stdin)
 		elif opt == "--include-regexp": select_opts.append((opt, arg))
 		elif opt == "--list-at-time":
 			restore_timestr, action = arg, "list-at-time"
@@ -121,6 +143,7 @@ def parse_cmdlineoptions(arglist):
 		elif opt == '--list-increment-sizes': action = 'list-increment-sizes'
 		elif opt == "--never-drop-acls": Globals.set("never_drop_acls", 1)
 		elif opt == "--no-acls": Globals.set("acls_active", 0)
+		elif opt == "--no-carbonfile": Globals.set("carbonfile_active", 0)
 		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
@@ -178,7 +201,8 @@ def check_action():
 		if l == 2: pass # Will determine restore or backup later
 		else:
 			commandline_error("Switches missing or wrong number of arguments")
-	elif action == 'test-server': pass # test-server takes any number of args
+	elif action == 'test-server' or action == 'calculate-average':
+		pass # these two take any number of args
 	elif l > 2 or action not in arg_action_dict[l]:
 		commandline_error("Wrong number of arguments given.")
 
@@ -214,7 +238,7 @@ def init_user_group_mapping(destination_conn):
 		rp = rpath.RPath(Globals.local_connection, filename)
 		try: return rp.get_data()
 		except OSError, e:
-			log.FatalError("Error '%s' reading mapping file '%s'" %
+			Log.FatalError("Error '%s' reading mapping file '%s'" %
 						   (str(e), filename))
 	user_mapping_string = get_string_from_file(user_mapping_filename)
 	destination_conn.user_group.init_user_mapping(user_mapping_string)
@@ -272,9 +296,10 @@ def Backup(rpin, rpout):
 	init_user_group_mapping(rpout.conn)
 	backup_final_init(rpout)
 	backup_set_select(rpin)
+	backup_warn_if_infinite_regress(rpin, rpout)
 	if prevtime:
-		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
 		Time.setprevtime(prevtime)
+		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
 		backup.Mirror_and_increment(rpin, rpout, incdir)
 		rpout.conn.Main.backup_remove_curmirror_local()
 	else:
@@ -303,7 +328,9 @@ def backup_check_dirs(rpin, rpout):
 			Log("Deleting %s" % rpout.path, 3)
 			rpout.delete()
 	if not rpout.lstat():
-		try: rpout.mkdir()
+		try: 
+			if create_full_path: rpout.makedirs()
+			else: rpout.mkdir()
 		except os.error:
 			Log.FatalError("Unable to create directory %s" % rpout.path)
 
@@ -311,7 +338,6 @@ def backup_check_dirs(rpin, rpout):
 		Log.FatalError("Source directory %s does not exist" % rpin.path)
 	elif not rpin.isdir():
 		Log.FatalError("Source %s is not a directory" % rpin.path)
-	backup_warn_if_infinite_regress(rpin, rpout)
 	Globals.rbdir = rpout.append_path("rdiff-backup-data")
 
 def backup_set_rbdir(rpin, rpout):
@@ -337,14 +363,16 @@ option.""" % rpout.path)
 
 def backup_warn_if_infinite_regress(rpin, rpout):
 	"""Warn user if destination area contained in source area"""
-	if rpout.conn is rpin.conn: # it's meaningful to compare paths
-		if ((len(rpout.path) > len(rpin.path)+1 and
-			 rpout.path[:len(rpin.path)] == rpin.path and
-			 rpout.path[len(rpin.path)] == '/') or
-			(rpin.path == "." and rpout.path[0] != '/' and
-			 rpout.path[:2] != '..')):
-			# Just a few heuristics, we don't have to get every case
-			if Globals.backup_reader.Globals.select_source.Select(rpout): Log(
+	# Just a few heuristics, we don't have to get every case
+	if rpout.conn is not rpin.conn: return
+	if len(rpout.path) <= len(rpin.path)+1: return
+	if rpout.path[:len(rpin.path)+1] != rpin.path + '/': return
+
+	relative_rpout_comps = tuple(rpout.path[len(rpin.path)+1:].split('/'))
+	relative_rpout = rpin.new_index(relative_rpout_comps)
+	if not Globals.select_mirror.Select(relative_rpout): return
+
+	Log(
 """Warning: The destination directory '%s' may be contained in the
 source directory '%s'.  This could cause an infinite regress.  You
 may need to use the --exclude option.""" % (rpout.path, rpin.path), 2)
@@ -384,10 +412,10 @@ def backup_set_fs_globals(rpin, rpout):
 			rpout.conn.Globals.set_local(conn_attr, 1)
 
 	src_fsa = rpin.conn.fs_abilities.get_fsabilities_readonly('source', rpin)
-	Log(str(src_fsa), 3)
+	Log(str(src_fsa), 4)
 	dest_fsa = rpout.conn.fs_abilities.get_fsabilities_readwrite(
 		'destination', Globals.rbdir, 1, Globals.chars_to_quote)
-	Log(str(dest_fsa), 3)
+	Log(str(dest_fsa), 4)
 
 	update_triple(src_fsa.eas, dest_fsa.eas,
 				  ('eas_active', 'eas_write', 'eas_conn'))
@@ -402,7 +430,8 @@ def backup_set_fs_globals(rpin, rpout):
 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
 					   "disabled on destination filesystem")
 
-	SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks)
+	if Globals.preserve_hardlinks != 0:
+		SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks)
 	SetConnections.UpdateGlobal('fsync_directories', dest_fsa.fsync_dirs)
 	SetConnections.UpdateGlobal('change_ownership', dest_fsa.ownership)
 	SetConnections.UpdateGlobal('chars_to_quote', dest_fsa.chars_to_quote)
@@ -424,8 +453,10 @@ def backup_touch_curmirror_local(rpin, rpout):
 	"""
 	mirrorrp = Globals.rbdir.append("current_mirror.%s.%s" % (Time.curtimestr,
 															  "data"))
-	Log("Touching mirror marker %s" % mirrorrp.path, 6)
-	mirrorrp.touch()
+	Log("Writing mirror marker %s" % mirrorrp.path, 6)
+	try: pid = os.getpid()
+	except: pid = "NA"
+	mirrorrp.write_string("PID %s\n" % (pid,))
 	mirrorrp.fsync_with_dir()
 
 def backup_remove_curmirror_local():
@@ -489,11 +520,11 @@ def restore_set_fs_globals(target):
 		if src_support: Globals.rbdir.conn.Globals.set_local(conn_attr, 1)
 
 	target_fsa = target.conn.fs_abilities.get_fsabilities_readwrite(
-		'destination', target, 0)
-	Log(str(target_fsa), 3)
+		'destination', target, 0, Globals.chars_to_quote)
+	Log(str(target_fsa), 4)
 	mirror_fsa = Globals.rbdir.conn.fs_abilities.get_fsabilities_restoresource(
 		Globals.rbdir)
-	Log(str(mirror_fsa), 3)
+	Log(str(mirror_fsa), 4)
 
 	update_triple(mirror_fsa.eas, target_fsa.eas,
 				  ('eas_active', 'eas_write', 'eas_conn'))
@@ -508,7 +539,8 @@ def restore_set_fs_globals(target):
 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
 					   "disabled on destination filesystem")
 
-	SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
+	if Globals.preserve_hardlinks != 0:
+		SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
 	SetConnections.UpdateGlobal('change_ownership', target_fsa.ownership)
 
 	if Globals.chars_to_quote is None: # otherwise already overridden
@@ -574,7 +606,7 @@ Try restoring from an increment file (the filenames look like
 					   % (Globals.rbdir.path,))
 	elif result == 1: Log.FatalError(
 		"Previous backup to %s seems to have failed.\nRerun rdiff-backup "
-		"rdiff-with --check-destination-dir option to revert directory "
+		"with --check-destination-dir option to revert directory "
 		"to state before unsuccessful session." % (mirror_root.path,))
 
 def restore_set_root(rpin):
@@ -674,8 +706,9 @@ def single_set_fs_globals(rbdir):
 		SetConnections.UpdateGlobal(write_attr, 1)
 		rbdir.conn.Globals.set_local(conn_attr, 1)
 
-	fsa = rbdir.conn.fs_abilities.get_fsabilities_readwrite('archive', rbdir)
-	Log(str(fsa), 3)
+	fsa = rbdir.conn.fs_abilities.get_fsabilities_readwrite('archive',
+								   rbdir, 1, Globals.chars_to_quote)
+	Log(str(fsa), 4)
 
 	update_triple(fsa.eas, ('eas_active', 'eas_write', 'eas_conn'))
 	update_triple(fsa.acls, ('acls_active', 'acls_write', 'acls_conn'))
@@ -685,7 +718,8 @@ def single_set_fs_globals(rbdir):
 	update_triple(fsa.carbonfile,
 				  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
 
-	SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks)
+	if Globals.preserve_hardlinks != 0:
+		SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks)
 	SetConnections.UpdateGlobal('fsync_directories', fsa.fsync_dirs)
 	SetConnections.UpdateGlobal('change_ownership', fsa.ownership)
 	SetConnections.UpdateGlobal('chars_to_quote', fsa.chars_to_quote)
@@ -823,12 +857,12 @@ def checkdest_need_check(dest_rp):
 The rdiff-backup data directory
 %s
 exists, but we cannot find a valid current_mirror marker.  You can
-avoid this message by removing the rdiff_backup_data directory;
+avoid this message by removing the rdiff-backup-data directory;
 however any data in it will be lost.
 
 Probably this error was caused because the first rdiff-backup session
 into a new directory failed.  If this is the case it is safe to delete
-the rdiff_backup_data directory because there is no important
+the rdiff-backup-data directory because there is no important
 information in it.
 
 """ % (Globals.rbdir.path,))

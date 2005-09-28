@@ -39,7 +39,7 @@ class FSAbilities:
 	hardlinks = None # True if hard linking supported
 	fsync_dirs = None # True if directories can be fsync'd
 	dir_inc_perms = None # True if regular files can have full permissions
-	resource_forks = None # True if regular_file/rsrc holds resource fork
+	resource_forks = None # True if regular_file/..namedfork/rsrc holds resource fork
 	carbonfile = None # True if Mac Carbon file data is supported. 
 	name = None # Short string, not used for any technical purpose
 	read_only = None # True if capabilities were determined non-destructively
@@ -174,7 +174,7 @@ class FSAbilities:
 					log.Log("Warning: File system no longer needs quoting, "
 							"but will retain for backwards compatibility.", 2)
 					self.chars_to_quote = old_chars
-				else: log.FatalError("""New quoting requirements
+				else: log.Log.FatalError("""New quoting requirements
 
 This may be caused when you copy an rdiff-backup directory from a
 normal file system on to a windows one that cannot support the same
@@ -190,12 +190,7 @@ rdiff-backup-data/chars_to_quote.
 		try:
 			tmp_rp.chown(uid+1, gid+1) # just choose random uid/gid
 			tmp_rp.chown(0, 0)
-		except (IOError, OSError), exc:
-			if exc[0] in (errno.EPERM, errno.EINVAL):
-				log.Log("Warning: ownership cannot be changed on filesystem "
-						"at %s" % (self.root_rp.path,), 3)
-				self.ownership = 0
-			else: raise
+		except (IOError, OSError), exc: self.ownership = 0
 		else: self.ownership = 1
 		tmp_rp.delete()
 
@@ -209,11 +204,9 @@ rdiff-backup-data/chars_to_quote.
 			if hl_source.getinode() != hl_dest.getinode():
 				raise IOError(errno.EOPNOTSUPP, "Hard links don't compare")
 		except (IOError, OSError), exc:
-			if exc[0] in (errno.EOPNOTSUPP, errno.EPERM):
-				log.Log("Warning: hard linking not supported by filesystem "
-						"at %s" % (self.root_rp.path,), 3)
-				self.hardlinks = 0
-			else: raise
+			log.Log("Warning: hard linking not supported by filesystem "
+					"at %s" % (self.root_rp.path,), 3)
+			self.hardlinks = 0
 		else: self.hardlinks = 1
 
 	def set_fsync_dirs(self, testdir):
@@ -245,13 +238,15 @@ rdiff-backup-data/chars_to_quote.
 		def supports_unusual_chars():
 			"""Test handling of several chars sometimes not supported"""
 			for filename in [':', '\\', chr(175)]:
-				rp = subdir.append(filename)
-				try: rp.touch()
-				except IOError:
+				try:
+					rp = subdir.append(filename)
+					rp.touch()
+				except (IOError, OSError):
 					assert not rp.lstat()
 					return 0
-				assert rp.lstat()
-				rp.delete()
+				else:
+					assert rp.lstat()
+					rp.delete()
 			return 1
 
 		def sanity_check():
@@ -284,11 +279,8 @@ rdiff-backup-data/chars_to_quote.
 
 		try: posix1e.ACL(file=rp.path)
 		except IOError, exc:
-			if exc[0] == errno.EOPNOTSUPP:
-				log.Log("ACLs appear not to be supported by "
-						"filesystem at %s" % (rp.path,), 4)
-				self.acls = 0
-			else: raise
+			log.Log("ACLs not supported by filesystem at %s" % (rp.path,), 4)
+			self.acls = 0
 		else: self.acls = 1
 		
 	def set_eas(self, rp, write):
@@ -297,7 +289,7 @@ rdiff-backup-data/chars_to_quote.
 		assert rp.lstat()
 		try: import xattr
 		except ImportError:
-			log.Log("Unable to import module xattr.  EAs not "
+			log.Log("Unable to import module xattr.\nExtended attributes not "
 					"supported on filesystem at %s" % (rp.path,), 4)
 			self.eas = 0
 			return
@@ -308,11 +300,9 @@ rdiff-backup-data/chars_to_quote.
 				xattr.setxattr(rp.path, "user.test", "test val")
 				assert xattr.getxattr(rp.path, "user.test") == "test val"
 		except IOError, exc:
-			if exc[0] == errno.EOPNOTSUPP:
-				log.Log("Extended attributes not supported by "
-						"filesystem at %s" % (rp.path,), 4)
-				self.eas = 0
-			else: raise
+			log.Log("Extended attributes not supported by "
+					"filesystem at %s" % (rp.path,), 4)
+			self.eas = 0
 		else: self.eas = 1
 
 	def set_dir_inc_perms(self, rp):
@@ -348,18 +338,18 @@ rdiff-backup-data/chars_to_quote.
 		self.carbonfile = 1
 
 	def set_resource_fork_readwrite(self, dir_rp):
-		"""Test for resource forks by writing to regular_file/rsrc"""
+		"""Test for resource forks by writing to regular_file/..namedfork/rsrc"""
 		assert dir_rp.conn is Globals.local_connection
 		reg_rp = dir_rp.append('regfile')
 		reg_rp.touch()
 
 		s = 'test string---this should end up in resource fork'
 		try:
-			fp_write = open(os.path.join(reg_rp.path, 'rsrc'), 'wb')
+			fp_write = open(os.path.join(reg_rp.path, '..namedfork', 'rsrc'), 'wb')
 			fp_write.write(s)
 			assert not fp_write.close()
 
-			fp_read = open(os.path.join(reg_rp.path, 'rsrc'), 'rb')
+			fp_read = open(os.path.join(reg_rp.path, '..namedfork', 'rsrc'), 'rb')
 			s_back = fp_read.read()
 			assert not fp_read.close()
 		except (OSError, IOError), e: self.resource_forks = 0
@@ -377,7 +367,7 @@ rdiff-backup-data/chars_to_quote.
 		for rp in selection.Select(dir_rp).set_iter():
 			if rp.isreg():
 				try:
-					rfork = rp.append('rsrc')
+					rfork = rp.append(os.path.join('..namedfork', 'rsrc'))
 					fp = rfork.open('rb')
 					fp.read()
 					assert not fp.close()

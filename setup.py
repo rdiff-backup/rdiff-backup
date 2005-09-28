@@ -3,7 +3,7 @@
 import sys, os, getopt
 from distutils.core import setup, Extension
 
-version_string = "0.13.4"
+version_string = "1.0.1"
 
 if sys.version_info[:2] < (2,2):
 	print "Sorry, rdiff-backup requires version 2.2 or later of python"
@@ -45,8 +45,8 @@ setup(name="rdiff-backup",
 	  version=version_string,
 	  description="Local/remote mirroring+incremental backup",
 	  author="Ben Escoto",
-	  author_email="bescoto@stanford.edu",
-	  url="http://rdiff-backup.stanford.edu",
+	  author_email="ben@emerose.org",
+	  url="http://www.nongnu.org/rdiff-backup",
 	  packages = ['rdiff_backup'],
 	  ext_modules = [Extension("rdiff_backup.C", ["cmodule.c"]),
 					 Extension("rdiff_backup._librsync",
