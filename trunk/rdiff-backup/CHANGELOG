@@ -7,6 +7,12 @@ caused a spurious security violation.  (Important for Mac OS X)
 An error reading carbonfile data on Mac OS X should no longer cause a
 crash.  (Thanks to Kevin Horton for testing.)
 
+Carbonfile support now defaults to off, even if the system appears to
+support it.  It can be manually enabled with the --carbonfile switch.
+If you know something about Mac OS X and want to look at the
+carbonfile code so it can be re-enabled by default, please do so :)
+(help available from list)
+
 
 New in v1.0.1 (2005/09/10)
 --------------------------
