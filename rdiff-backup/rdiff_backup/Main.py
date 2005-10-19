@@ -84,6 +84,7 @@ def parse_cmdlineoptions(arglist):
 	for opt, arg in optlist:
 		if opt == "-b" or opt == "--backup-mode": action = "backup"
 		elif opt == "--calculate-average": action = "calculate-average"
+		elif opt == "--carbonfile": Globals.set("carbonfile_active", 1)
 		elif opt == "--check-destination-dir": action = "check-destination-dir"
 		elif opt == "--compare" or opt == "--compare-at-time":
 			action = "compare"
@@ -424,8 +425,13 @@ def backup_set_fs_globals(rpin, rpout):
 	update_triple(src_fsa.resource_forks, dest_fsa.resource_forks,
 				  ('resource_forks_active', 'resource_forks_write',
 				   'resource_forks_conn'))
+
 	update_triple(src_fsa.carbonfile, dest_fsa.carbonfile,
 				  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
+	if src_fsa.carbonfile and not Globals.carbonfile_active:
+		Log("Source may have carbonfile support, but support defaults to "
+			"off.\n  Use --carbonfile to enable.", 5)
+
 	if Globals.never_drop_acls and not Globals.acls_active:
 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
 					   "disabled on destination filesystem")
