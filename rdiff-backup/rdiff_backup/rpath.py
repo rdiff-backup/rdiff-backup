@@ -1145,11 +1145,18 @@ class RPath(RORPath):
 			self.data['carbonfile'] = cfile
 			return cfile
 		except MacOS.Error:
+			log.Log("Cannot read carbonfile information from %s" %
+					(self.path,), 2)
 			self.data['carbonfile'] = None 
 			return self.data['carbonfile']
 
 	def write_carbonfile(self, cfile):
 		"""Write new carbon data to self."""
+		if not cfile:
+			# This should be made cleaner---if you know Mac OS X tell
+			# me what could cause an error in get_carbonfile above
+			return
+			
 		log.Log("Writing carbon data to %s" % (self.index,), 7)
 		from Carbon.File import FSSpec
 		import MacOS

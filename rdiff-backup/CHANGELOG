@@ -4,6 +4,9 @@ New in v1.0.2 (????/??/??)
 Fix for bug 14545 which was introduced in version 1.0.1:  Quoting
 caused a spurious security violation.  (Important for Mac OS X)
 
+An error reading carbonfile data on Mac OS X should no longer cause a
+crash.  (Thanks to Kevin Horton for testing.)
+
 
 New in v1.0.1 (2005/09/10)
 --------------------------
