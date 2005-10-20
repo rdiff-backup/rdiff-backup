@@ -441,6 +441,8 @@ def backup_set_fs_globals(rpin, rpout):
 	SetConnections.UpdateGlobal('fsync_directories', dest_fsa.fsync_dirs)
 	SetConnections.UpdateGlobal('change_ownership', dest_fsa.ownership)
 	SetConnections.UpdateGlobal('chars_to_quote', dest_fsa.chars_to_quote)
+	if not dest_fsa.high_perms:
+		SetConnections.UpdateGlobal('permission_mask', 0777)
 	if Globals.chars_to_quote: FilenameMapping.set_init_quote_vals()
 	
 def backup_touch_curmirror_local(rpin, rpout):
@@ -546,6 +548,8 @@ def restore_set_fs_globals(target):
 	if Globals.preserve_hardlinks != 0:
 		SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
 	SetConnections.UpdateGlobal('change_ownership', target_fsa.ownership)
+	if not target_fsa.high_perms:
+		SetConnections.UpdateGlobal('permission_mask', 0777)
 
 	if Globals.chars_to_quote is None: # otherwise already overridden
 		if mirror_fsa.chars_to_quote:
@@ -726,6 +730,7 @@ def single_set_fs_globals(rbdir):
 		SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks)
 	SetConnections.UpdateGlobal('fsync_directories', fsa.fsync_dirs)
 	SetConnections.UpdateGlobal('change_ownership', fsa.ownership)
+	if not fsa.high_perms: SetConnections.UpdateGlobal('permission_mask', 0777)
 	SetConnections.UpdateGlobal('chars_to_quote', fsa.chars_to_quote)
 	if Globals.chars_to_quote:
 		for conn in Globals.connections:

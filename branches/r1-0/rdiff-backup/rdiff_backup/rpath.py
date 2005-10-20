@@ -756,7 +756,7 @@ class RPath(RORPath):
 
 	def chmod(self, permissions):
 		"""Wrapper around os.chmod"""
-		self.conn.os.chmod(self.path, permissions)
+		self.conn.os.chmod(self.path, permissions & Globals.permission_mask)
 		self.data['perms'] = permissions
 
 	def settime(self, accesstime, modtime):
