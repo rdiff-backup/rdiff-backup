@@ -216,6 +216,10 @@ fsync_directories = None
 # If set, exit with error instead of dropping ACLs or ACL entries.
 never_drop_acls = None
 
+# Apply this mask to permissions before chmoding.  (Set to 0777 to
+# prevent highbit permissions on systems which don't support them.)
+permission_mask = 07777
+
 
 def get(name):
 	"""Return the value of something in this module"""

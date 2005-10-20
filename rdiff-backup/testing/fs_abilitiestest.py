@@ -20,6 +20,7 @@ class FSAbilitiesTest(unittest.TestCase):
 	dir_inc_perms = 1
 	resource_forks = 0
 	carbonfile = 0
+	high_perms = 1
 
 	# Describes MS-Windows style file system
 	#dir_to_test = "/mnt/fat"
@@ -63,6 +64,7 @@ class FSAbilitiesTest(unittest.TestCase):
 		assert fsa.dir_inc_perms == self.dir_inc_perms, fsa.dir_inc_perms
 		assert fsa.resource_forks == self.resource_forks, fsa.resource_forks
 		assert fsa.carbonfile == self.carbonfile, fsa.carbonfile
+		assert fsa.high_perms == self.high_perms, fsa.high_perms
 		
 		ctq_rp = new_dir.append("chars_to_quote")
 		assert ctq_rp.lstat()
