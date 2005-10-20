@@ -8,6 +8,9 @@ Support req 104755: Added --preserve-numerical-ids option, which makes
 rdiff-backup preserve uids/gids instead of unames/gnames.  (Suggested
 by Wiebe Cazemier)
 
+Fix for bug #14799 reported by Bob McKay:  Crash when backing up files
+with high permissions (like suid) to some FAT systems.
+
 
 New in v1.0.2 (????/??/??)
 --------------------------
