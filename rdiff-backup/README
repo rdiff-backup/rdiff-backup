@@ -33,7 +33,7 @@ REQUIREMENTS:
 
 Remember that you must have Python 2.2 or later and librsync 0.9.7 or
 later installed.  For Python, see http://www.python.org.  The
-rdiff-backup homepage at http://www.nongnu.org/rdiff-backup/ should
+rdiff-backup homepage at http://rdiff-backup.nongnu.org/ should
 have a recent version of librsync; otherwise see the librsync homepage
 at http://librsync.sourceforge.net/.
 
@@ -52,5 +52,5 @@ TROUBLESHOOTING:
 
 If you have everything installed properly, and it still doesn't work,
 see the enclosed FAQ.html, the web page at
-http://www.nongnu.org/rdiff-backup/, and/or the mailing list.
+http://rdiff-backup.nongnu.org/, and/or the mailing list.
 
