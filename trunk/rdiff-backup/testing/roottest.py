@@ -109,7 +109,43 @@ class RootTest(unittest.TestCase):
 					 extra_options = ("--user-mapping-file %s "
 									  "--group-mapping-file %s" %
 									  (user_map, group_map)))
-		assert get_ownership(out_rp) == ((userid, 1), (0, 1)), \
+		assert get_ownership(out_rp) == ((userid, 0), (0, 1)), \
+			   get_ownership(out_rp)
+
+	def test_numerical_mapping(self):
+		"""Test --preserve-numerical-ids option
+
+		This doesn't really test much, since we don't have a
+		convenient system with different uname/ids.
+
+		"""
+		def write_ownership_dir():
+			"""Write the directory testfiles/root_mapping"""
+			rp = rpath.RPath(Globals.local_connection,
+							 "testfiles/root_mapping")
+			re_init_dir(rp)
+			rp1 = rp.append('1')
+			rp1.touch()
+			rp2 = rp.append('2')
+			rp2.touch()
+			rp2.chown(userid, 1) # use groupid 1, usually bin
+			return rp
+		
+		def get_ownership(dir_rp):
+			"""Return pair (ids of dir_rp/1, ids of dir_rp2) of ids"""
+			rp1, rp2 = map(dir_rp.append, ('1', '2'))
+			assert rp1.isreg() and rp2.isreg(), (rp1.isreg(), rp2.isreg())
+			return (rp1.getuidgid(), rp2.getuidgid())
+
+		in_rp = write_ownership_dir()
+		out_rp = rpath.RPath(Globals.local_connection, 'testfiles/output')
+		if out_rp.lstat(): Myrm(out_rp.path)
+
+		assert get_ownership(in_rp) == ((0,0), (userid, 1)), \
+			   get_ownership(in_rp)
+		rdiff_backup(1, 0, in_rp.path, out_rp.path,
+					 extra_options = ("--preserve-numerical-ids"))
+		assert get_ownership(out_rp) == ((0,0), (userid, 1)), \
 			   get_ownership(in_rp)
 
 

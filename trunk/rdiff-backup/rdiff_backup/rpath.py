@@ -152,7 +152,8 @@ def copy_attribs(rpin, rpout):
 	"""
 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
 	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
-	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
+	if Globals.change_ownership:
+		rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
 	if rpin.issym(): return # symlinks don't have times or perms
 	if Globals.resource_forks_write and rpin.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
@@ -1068,12 +1069,33 @@ class RPath(RORPath):
 		if not fp: self.conn.rpath.RPath.fsync_local(self)
 		else: os.fsync(fp.fileno())
 
-	def fsync_local(self):
-		"""fsync current file, run locally"""
+	def fsync_local(self, thunk = None):
+		"""fsync current file, run locally
+
+		If thunk is given, run it before syncing but after gathering
+		the file's file descriptor.
+
+		"""
 		assert self.conn is Globals.local_connection
-		fd = os.open(self.path, os.O_RDONLY)
-		os.fsync(fd)
-		os.close(fd)
+		try:
+			fd = os.open(self.path, os.O_RDONLY)
+			os.fsync(fd)
+			os.close(fd)
+		except OSError, e:
+			if e.errno != errno.EPERM or self.isdir(): raise
+
+			# Maybe the system doesn't like read-only fsyncing.
+			# However, to open RDWR, we may need to alter permissions
+			# temporarily.
+			if self.hasfullperms(): oldperms = None
+			else:
+				oldperms = self.getperms()
+				self.chmod(0700)
+			fd = os.open(self.path, os.O_RDWR)
+			if oldperms is not None: self.chmod(oldperms)
+			if thunk: thunk()
+			os.fsync(fd) # Sync after we switch back permissions!
+			os.close(fd)
 
 	def fsync_with_dir(self, fp = None):
 		"""fsync self and directory self is under"""
@@ -1087,11 +1109,7 @@ class RPath(RORPath):
 		file and the directory to make sure.
 
 		"""
-		if self.lstat() and not self.issym():
-			fp = self.open("rb")
-			self.delete()
-			os.fsync(fp.fileno())
-		assert not fp.close()
+		if self.lstat() and not self.issym(): self.fsync_local(self.delete)
 		if Globals.fsync_directories: self.get_parent_rp().fsync()
 
 	def get_data(self):
@@ -1223,6 +1241,7 @@ def setdata_local(rpath):
 	if Globals.resource_forks_conn and rpath.isreg():
 		rpath.get_resource_fork()
 	if Globals.carbonfile_conn and rpath.isreg(): rpath.get_carbonfile()
+
 
 # These two are overwritten by the eas_acls.py module.  We can't
 # import that module directly because of circular dependency problems.
