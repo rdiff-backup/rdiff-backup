@@ -301,6 +301,12 @@ or
 .B --list-increments
 switches, where the time will be given in seconds since the epoch.
 .TP
+.B --preserve-numerical-ids
+If set, rdiff-backup will preserve uids/gids instead of trying to
+preserve unames and gnames.  See the
+.B USERS and GROUPS
+section for more information.
+.TP
 .B --print-statistics
 If set, summary statistics will be printed after a successful backup
 If not set, this information will still be available from the
@@ -817,27 +823,35 @@ if /home/ben/1234567 existed.
 There can be complications preserving ownership across systems.  For
 instance the username that owns a file on the source system may not
 exist on the destination.  Here is how rdiff-backup maps ownership on
-the source to the destination:
+the source to the destination (or vice-versa, in the case of restoring):
 
 .TP
 .B 1.
-Attempt to preserve the user and group names for ownership and in
-ACLs.  This may result in files having different uids and gids across
-systems.
+If the --preserve-numerical-ids option is given, the remote files will
+always have the same uid and gid, both for ownership and ACL entries.
+This may cause unames and gnames to change.
 .TP
 .B 2.
-If this fails (e.g. because the username does not exist), preserve the
-original id, but only in cases of user and group ownership.  For ACLs,
-omit any entry that has a bad user or group name.
+Otherwise, attempt to preserve the user and group names for ownership
+and in ACLs.  This may result in files having different uids and gids
+across systems.
 .TP
 .B 3.
-However, the
+If a name cannot be preserved (e.g. because the username does not
+exist), preserve the original id, but only in cases of user and group
+ownership.  For ACLs, omit any entry that has a bad user or group
+name.
+.TP
+.B 4.
+The
 .B --user-mapping-file
 and
 .B --group-mapping-file
-options can override this behavior.  If either of these options is
-given, the policy descriped in 1 and 2 above will be followed, but
-with the mapped user and group instead of the original.
+options override this behavior.  If either of these options is given,
+the policy descriped in 2 and 3 above will be followed, but with the
+mapped user and group instead of the original.  If you specify both
+.B --preserve-numerical-ids
+and one of the mapping options, the behavior is undefined.
 
 .RE
 The user and group mapping files both have the same form:
@@ -855,6 +869,28 @@ old_name_or_id2:new_name_or_id2
 Each line should contain a name or id, followed by a colon ":",
 followed by another name or id.  If a name or id is not listed, they
 are treated in the default way described above.
+
+When restoring, the above behavior is also followed, but note that the
+original source user/group information will be the input, not the
+already mapped user/group information present in the backup
+repository.  For instance, suppose you have mapped all the files owned
+by
+.I alice
+in the source so that they are owned by
+.I ben
+in the repository, and now you want to restore, making sure the files owned originally by
+.I alice
+are still owned by 
+.IR alice .
+In this case there is no need to use any of the mapping options.
+However, if you wanted to restore the files so that the files
+originally owned by
+.I alice
+on the source are now owned by
+.IR ben ,
+you would have to use the mapping options, even though you just want
+the unames of the repository's files preserved in the restored files.
+
 
 .SH STATISTICS
 Every session rdiff-backup saves various statistics into two files,

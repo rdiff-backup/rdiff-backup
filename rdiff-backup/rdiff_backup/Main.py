@@ -33,7 +33,9 @@ remote_cmd, remote_schema = None, None
 force = None
 select_opts = []
 select_files = []
-user_mapping_filename, group_mapping_filename = None, None
+user_mapping_filename, group_mapping_filename, preserve_numerical_ids = \
+					   None, None, None
+
 # These are global because they are set while we are trying to figure
 # whether to restore or to backup
 restore_root, restore_index, restore_root_set = None, None, 0
@@ -43,7 +45,9 @@ def parse_cmdlineoptions(arglist):
 	"""Parse argument list and set global preferences"""
 	global args, action, create_full_path, force, restore_timestr, remote_cmd
 	global remote_schema, remove_older_than_string
-	global user_mapping_filename, group_mapping_filename
+	global user_mapping_filename, group_mapping_filename, \
+		   preserve_numerical_ids
+
 	def sel_fl(filename):
 		"""Helper function for including/excluding filelists below"""
 		try: return open(filename, "r")
@@ -73,7 +77,8 @@ def parse_cmdlineoptions(arglist):
 		  "no-compression-regexp=", "no-eas", "no-file-statistics",
 		  "no-hard-links", "null-separator",
 		  "override-chars-to-quote=", "parsable-output",
-		  "print-statistics", "remote-cmd=", "remote-schema=",
+		  "preserve-numerical-ids", "print-statistics",
+		  "remote-cmd=", "remote-schema=",
 		  "remove-older-than=", "restore-as-of=", "restrict=",
 		  "restrict-read-only=", "restrict-update-only=", "server",
 		  "ssh-no-compression", "terminal-verbosity=", "test-server",
@@ -156,6 +161,7 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--override-chars-to-quote":
 			Globals.set('chars_to_quote', arg)
 		elif opt == "--parsable-output": Globals.set('parsable_output', 1)
+		elif opt == "--preserve-numerical-ids": preserve_numerical_ids = 1
 		elif opt == "--print-statistics": Globals.set('print_statistics', 1)
 		elif opt == "-r" or opt == "--restore-as-of":
 			restore_timestr, action = arg, "restore-as-of"
@@ -233,7 +239,8 @@ def misc_setup(rps):
 
 def init_user_group_mapping(destination_conn):
 	"""Initialize user and group mapping on destination connection"""
-	global user_mapping_filename, group_mapping_filename
+	global user_mapping_filename, group_mapping_filename, \
+		   preserve_numerical_ids
 	def get_string_from_file(filename):
 		if not filename: return None
 		rp = rpath.RPath(Globals.local_connection, filename)
@@ -242,9 +249,11 @@ def init_user_group_mapping(destination_conn):
 			Log.FatalError("Error '%s' reading mapping file '%s'" %
 						   (str(e), filename))
 	user_mapping_string = get_string_from_file(user_mapping_filename)
-	destination_conn.user_group.init_user_mapping(user_mapping_string)
+	destination_conn.user_group.init_user_mapping(user_mapping_string,
+												  preserve_numerical_ids)
 	group_mapping_string = get_string_from_file(group_mapping_filename)
-	destination_conn.user_group.init_group_mapping(group_mapping_string)
+	destination_conn.user_group.init_group_mapping(group_mapping_string,
+												   preserve_numerical_ids)
 
 def take_action(rps):
 	"""Do whatever action says"""

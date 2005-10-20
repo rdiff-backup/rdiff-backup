@@ -1,3 +1,14 @@
+New in v1.1.0 (????/??/??)
+--------------------------
+
+When possible, fsync using a writable file descriptor.  This may help
+with cygwin.  (Requested/tested by Dave Kempe.)
+
+Support req 104755: Added --preserve-numerical-ids option, which makes
+rdiff-backup preserve uids/gids instead of unames/gnames.  (Suggested
+by Wiebe Cazemier)
+
+
 New in v1.0.2 (????/??/??)
 --------------------------
 
