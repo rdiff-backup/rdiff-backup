@@ -28,11 +28,12 @@ FSAbilities object describing it.
 """
 
 import errno, os
-import Globals, log, TempFile, selection
+import Globals, log, TempFile, selection, robust
 
 class FSAbilities:
 	"""Store capabilities of given file system"""
 	chars_to_quote = None # Hold characters not allowable in file names
+	case_sensitive = None # True if "foobar" and "FoObAr" are different files
 	ownership = None # True if chown works on this filesystem
 	acls = None # True if access control lists supported
 	eas = None # True if extended attributes supported
@@ -94,6 +95,7 @@ class FSAbilities:
 							  ('High-bit permissions', self.high_perms)])
 		add_boolean_list([('Access control lists', self.acls),
 						  ('Extended attributes', self.eas),
+						  ('Case sensitivity', self.case_sensitive),
 						  ('Mac OS X style resource forks',
 						   self.resource_forks),
 						  ('Mac OS X Finder information', self.carbonfile)])
@@ -117,6 +119,7 @@ class FSAbilities:
 		self.set_acls(rp)
 		self.set_resource_fork_readonly(rp)
 		self.set_carbonfile()
+		self.set_case_sensitive_readonly(rp)
 		return self
 
 	def init_readwrite(self, rbdir, use_ctq_file = 1,
@@ -233,10 +236,11 @@ rdiff-backup-data/chars_to_quote.
 				lower_a.delete()
 				upper_a.setdata()
 				assert not upper_a.lstat()
-				return 0
+				self.case_sensitive = 0
 			else:
 				upper_a.delete()
-				return 1
+				self.case_sensitive = 1
+			return self.case_sensitive
 
 		def supports_unusual_chars():
 			"""Test handling of several chars sometimes not supported"""
@@ -285,7 +289,50 @@ rdiff-backup-data/chars_to_quote.
 			log.Log("ACLs not supported by filesystem at %s" % (rp.path,), 4)
 			self.acls = 0
 		else: self.acls = 1
-		
+
+	def set_case_sensitive_readonly(self, rp):
+		"""Determine if directory at rp is case sensitive without writing"""
+		def find_letter(subdir):
+			"""Find a (subdir_rp, dirlist) with a letter in it, or None
+
+			Recurse down the directory, looking for any file that has
+			a letter in it.  Return the pair (rp, [list of filenames])
+			where the list is of the directory containing rp.
+
+			"""
+			l = robust.listrp(subdir)
+			for filename in l:
+				if filename != filename.swapcase():
+					return (subdir, l, filename)
+			for filename in l:
+				dir_rp = subdir.append(filename)
+				if dir_rp.isdir():
+					subsearch = find_letter(dir_rp)
+					if subsearch: return subsearch
+			return None
+
+		def test_triple(dir_rp, dirlist, filename):
+			"""Return 1 if filename shows system case sensitive"""
+			letter_rp = dir_rp.append(filename)
+			assert letter_rp.lstat(), letter_rp
+			swapped = filename.swapcase()
+			if swapped in dirlist: return 1
+
+			swapped_rp = dir_rp.append(swapped)
+			if swapped_rp.lstat(): return 0
+			return 1
+
+		triple = find_letter(rp)
+		if not triple:
+			log.Log("Warning: could not determine case sensitivity of "
+					"source directory at\n  " + rp.path + "\n"
+					"because we can't find any files with letters in them.\n"
+					"It will be treated as case sensitive.", 2)
+			self.case_sensitive = 1
+			return
+
+		self.case_sensitive = test_triple(*triple)
+
 	def set_eas(self, rp, write):
 		"""Set extended attributes from rp. Tests writing if write is true."""
 		assert Globals.local_connection is rp.conn

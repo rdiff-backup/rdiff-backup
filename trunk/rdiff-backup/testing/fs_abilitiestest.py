@@ -15,6 +15,7 @@ class FSAbilitiesTest(unittest.TestCase):
 	dir_to_test = "testfiles"
 	eas = acls = 1
 	chars_to_quote = ""
+	case_sensitive = 1
 	ownership = (os.getuid() == 0)
 	hardlinks = fsync_dirs = 1
 	dir_inc_perms = 1
@@ -32,6 +33,9 @@ class FSAbilitiesTest(unittest.TestCase):
 	#resource_forks = 0
 	#carbonfile = 0
 	
+	# A case insensitive directory (a cdrom mount on my system!)
+	case_insensitive_path = "/media/cdrecorder"
+
 	def testReadOnly(self):
 		"""Test basic querying read only"""
 		base_dir = rpath.RPath(Globals.local_connection, self.dir_to_test)
@@ -42,6 +46,7 @@ class FSAbilitiesTest(unittest.TestCase):
 		assert fsa.acls == self.acls, fsa.acls
 		assert fsa.resource_forks == self.resource_forks, fsa.resource_forks
 		assert fsa.carbonfile == self.carbonfile, fsa.carbonfile
+		assert fsa.case_sensitive == self.case_sensitive, fsa.case_sensitive
 
 	def testReadWrite(self):
 		"""Test basic querying read/write"""
@@ -74,6 +79,13 @@ class FSAbilitiesTest(unittest.TestCase):
 		assert chars_to_quote == self.chars_to_quote, chars_to_quote
 
 		new_dir.delete()
+
+	def test_case_sensitive(self):
+		"""Test a read-only case-INsensitive directory"""
+		rp = rpath.RPath(Globals.local_connection, self.case_insensitive_path)
+		fsa = fs_abilities.FSAbilities('read-only')
+		fsa.set_case_sensitive_readonly(rp)
+		assert fsa.case_sensitive == 0, fsa.case_sensitive
 
 if __name__ == "__main__": unittest.main()
 
