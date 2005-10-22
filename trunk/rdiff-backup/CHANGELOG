@@ -15,6 +15,9 @@ with high permissions (like suid) to some FAT systems.
 New in v1.0.2 (????/??/??)
 --------------------------
 
+Fix for spurious security violation from --create-full-path (reported
+by Mike Bydalek).
+
 Fix for bug 14545 which was introduced in version 1.0.1:  Quoting
 caused a spurious security violation.  (Important for Mac OS X)
 
