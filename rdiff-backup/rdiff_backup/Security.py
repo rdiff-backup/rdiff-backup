@@ -164,7 +164,7 @@ def set_allowed_requests(sec_level):
 				  "fs_abilities.get_fsabilities_readwrite"])
 	if sec_level == "all":
 		l.extend(["os.mkdir", "os.chown", "os.lchown", "os.rename",
-				  "os.unlink", "os.remove", "os.chmod",
+				  "os.unlink", "os.remove", "os.chmod", "os.makedirs",
 				  "backup.DestinationStruct.patch",
 				  "restore.TargetStruct.get_initial_iter",
 				  "restore.TargetStruct.patch",
