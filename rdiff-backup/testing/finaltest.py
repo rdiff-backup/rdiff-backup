@@ -47,7 +47,7 @@ class PathSetter(unittest.TestCase):
 
 	def reset_schema(self):
 		self.rb_schema = (SourceDir +
-						  "/../rdiff-backup -v3 --no-compare-inode " 
+						  "/../rdiff-backup -v5 --no-compare-inode " 
 						  "--remote-schema './chdir-wrapper2 %s' ")
 
 	def refresh(self, *rp_list):
@@ -78,9 +78,11 @@ class PathSetter(unittest.TestCase):
 		"""
 		arglist = []
 		if time: arglist.extend(["--current-time",  str(time)])
-		arglist.append(self.src_prefix + args[0])
+		if args[0][0] == "/": arglist.append(args[0])
+		else: arglist.append(self.src_prefix + args[0])
 		if len(args) > 1:
-			arglist.append(self.dest_prefix + args[1])
+			if args[1][0] == "/": arglist.append(args[1])
+			else: arglist.append(self.dest_prefix + args[1])
 			assert len(args) == 2
 
 		arg_string = ' '.join(map(lambda s: "'%s'" % (s,), arglist))
@@ -229,34 +231,34 @@ class Final(PathSetter):
 		Myrm("testfiles/procoutput")
 		procout = rpath.RPath(Globals.local_connection, 'testfiles/procoutput')
 		self.set_connections(None, None, None, None)
-		self.exec_rb(10000, '../../../../../../proc', procout.path)
+		self.exec_rb(10000, '/proc', procout.path)
 		time.sleep(1)
-		self.exec_rb(20000, '../../../../../../proc', procout.path)
+		self.exec_rb(20000, '/proc', procout.path)
 		time.sleep(1)
 		self.exec_rb(30000, Local.inc1rp.path, procout.path)
 		assert CompareRecursive(Local.inc1rp, procout)
 		time.sleep(1)
-		self.exec_rb(40000, '../../../../../../proc', procout.path)
+		self.exec_rb(40000, '/proc', procout.path)
 
 	def testProcRemote(self):
 		"""Test mirroring proc remote"""
 		Myrm("testfiles/procoutput")
 		procout = rpath.RPath(Globals.local_connection, 'testfiles/procoutput')
 		self.set_connections(None, None, "test2/tmp/", "../../")
-		self.exec_rb(10000, '../../../../../../proc', procout.path)
+		self.exec_rb(10000, '/proc', procout.path)
 		time.sleep(1)
-		self.exec_rb(20000, '../../../../../../proc', procout.path)
+		self.exec_rb(20000, '/proc', procout.path)
 		time.sleep(1)
 		self.exec_rb(30000, Local.inc1rp.path, procout.path)
 		assert CompareRecursive(Local.inc1rp, procout)
 		time.sleep(1)
-		self.exec_rb(40000, '../../../../../../proc', procout.path)
+		self.exec_rb(40000, '/proc', procout.path)
 
 	def testProcRemote2(self):
 		"""Test mirroring proc, this time when proc is remote, dest local"""
 		Myrm("testfiles/procoutput")
 		self.set_connections("test1/", "../", None, None)
-		self.exec_rb(None, '../../../../../../proc', 'testfiles/procoutput')
+		self.exec_rb(None, '/proc', 'testfiles/procoutput')
 
 	def testWindowsMode(self):
 		"""Test backup with quoting enabled

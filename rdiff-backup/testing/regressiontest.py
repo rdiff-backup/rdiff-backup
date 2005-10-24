@@ -1,6 +1,6 @@
 import unittest, os
 from commontest import *
-from rdiff_backup import Globals, SetConnections, log, rpath, backup
+from rdiff_backup import Globals, SetConnections, log, rpath, backup, fs_abilities
 
 
 """Regression tests
@@ -13,7 +13,7 @@ testfiles
 Globals.set('change_source_perms', 1)
 Globals.counter = 0
 Globals.security_level = "override"
-log.Log.setverbosity(3)
+log.Log.setverbosity(5)
 
 
 def get_local_rp(extension):
@@ -406,7 +406,7 @@ class MirrorTest(PathSetter):
 		Main.misc_setup([rpin, rpout])
 		Main.backup_check_dirs(rpin, rpout)
 		Main.backup_set_rbdir(rpin, rpout)
-		Main.backup_set_fs_globals(rpin, rpout)
+		rpout.conn.fs_abilities.backup_set_globals(rpin)
 		Main.backup_final_init(rpout)
 		Main.backup_set_select(rpin)
 		backup.Mirror(rpin, rpout)

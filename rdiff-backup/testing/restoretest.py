@@ -2,7 +2,7 @@ import unittest
 from commontest import *
 from rdiff_backup import log, restore, Globals, rpath, TempFile
 
-Log.setverbosity(3)
+Log.setverbosity(5)
 lc = Globals.local_connection
 tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
 restore_base_rp = rpath.RPath(Globals.local_connection,

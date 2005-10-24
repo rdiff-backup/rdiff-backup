@@ -15,6 +15,7 @@ class FSAbilitiesTest(unittest.TestCase):
 	dir_to_test = "testfiles"
 	eas = acls = 1
 	chars_to_quote = ""
+	extended_filenames = 1
 	case_sensitive = 1
 	ownership = (os.getuid() == 0)
 	hardlinks = fsync_dirs = 1
@@ -26,6 +27,7 @@ class FSAbilitiesTest(unittest.TestCase):
 	# Describes MS-Windows style file system
 	#dir_to_test = "/mnt/fat"
 	#eas = acls = 0
+	#extended_filenames = 0
 	#chars_to_quote = "^a-z0-9_ -"
 	#ownership = hardlinks = 0
 	#fsync_dirs = 1
@@ -62,7 +64,6 @@ class FSAbilitiesTest(unittest.TestCase):
 		assert fsa.read_only == 0, fsa.read_only
 		assert fsa.eas == self.eas, fsa.eas
 		assert fsa.acls == self.acls, fsa.acls
-		assert fsa.chars_to_quote == self.chars_to_quote, fsa.chars_to_quote
 		assert fsa.ownership == self.ownership, fsa.ownership
 		assert fsa.hardlinks == self.hardlinks, fsa.hardlinks
 		assert fsa.fsync_dirs == self.fsync_dirs, fsa.fsync_dirs
@@ -70,13 +71,14 @@ class FSAbilitiesTest(unittest.TestCase):
 		assert fsa.resource_forks == self.resource_forks, fsa.resource_forks
 		assert fsa.carbonfile == self.carbonfile, fsa.carbonfile
 		assert fsa.high_perms == self.high_perms, fsa.high_perms
+		assert fsa.extended_filenames == self.extended_filenames
 		
-		ctq_rp = new_dir.append("chars_to_quote")
-		assert ctq_rp.lstat()
-		fp = ctq_rp.open('rb')
-		chars_to_quote = fp.read()
-		assert not fp.close()
-		assert chars_to_quote == self.chars_to_quote, chars_to_quote
+		#ctq_rp = new_dir.append("chars_to_quote")
+		#assert ctq_rp.lstat()
+		#fp = ctq_rp.open('rb')
+		#chars_to_quote = fp.read()
+		#assert not fp.close()
+		#assert chars_to_quote == self.chars_to_quote, chars_to_quote
 
 		new_dir.delete()
 
