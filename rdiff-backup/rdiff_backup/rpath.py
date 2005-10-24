@@ -155,7 +155,8 @@ def copy_attribs(rpin, rpout):
 	if Globals.change_ownership:
 		rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
 	if rpin.issym(): return # symlinks don't have times or perms
-	if Globals.resource_forks_write and rpin.isreg():
+	if (Globals.resource_forks_write and rpin.isreg() and
+		rpin.has_resource_fork()):
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if Globals.carbonfile_write and rpin.isreg():
 		rpout.write_carbonfile(rpin.get_carbonfile())
@@ -176,7 +177,8 @@ def copy_attribs_inc(rpin, rpout):
 	check_for_files(rpin, rpout)
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if rpin.issym(): return # symlinks don't have times or perms
-	if Globals.resource_forks_write and rpin.isreg() and rpout.isreg():
+	if (Globals.resource_forks_write and rpin.isreg() and
+		rpin.has_resource_fork() and rpout.isreg()):
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if Globals.carbonfile_write and rpin.isreg() and rpout.isreg():
 		rpout.write_carbonfile(rpin.get_carbonfile())
@@ -604,7 +606,10 @@ class RORPath:
 
 	def get_acl(self):
 		"""Return access control list object from dictionary"""
-		return self.data['acl']
+		try: return self.data['acl']
+		except KeyError:
+			acl = self.data['acl'] = get_blank_acl(self.index)
+			return acl
 
 	def set_ea(self, ea):
 		"""Record extended attributes in dictionary.  Does not write"""
@@ -612,7 +617,10 @@ class RORPath:
 
 	def get_ea(self):
 		"""Return extended attributes object"""
-		return self.data['ea']
+		try: return self.data['ea']
+		except KeyError:
+			ea = self.data['ea'] = get_blank_ea(self.index)
+			return ea
 
 	def has_carbonfile(self):
 		"""True if rpath has a carbonfile parameter"""
@@ -1243,7 +1251,9 @@ def setdata_local(rpath):
 	if Globals.carbonfile_conn and rpath.isreg(): rpath.get_carbonfile()
 
 
-# These two are overwritten by the eas_acls.py module.  We can't
+# These functions are overwritten by the eas_acls.py module.  We can't
 # import that module directly because of circular dependency problems.
 def acl_get(rp): assert 0
+def get_blank_acl(index): assert 0
 def ea_get(rp): assert 0
+def get_blank_ea(index): assert 0

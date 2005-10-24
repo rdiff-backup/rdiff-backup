@@ -47,12 +47,16 @@ file_requests = {'os.listdir':0, 'C.make_file_dict':0, 'os.chmod':0,
 				 'os.utime':0, 'os.lchown':0, 'os.link':1, 'os.symlink':1,
 				 'os.mkdir':0, 'os.makedirs':0}
 				 
-
 def initialize(action, cmdpairs):
 	"""Initialize allowable request list and chroot"""
 	global allowed_requests
 	set_security_level(action, cmdpairs)
 	set_allowed_requests(Globals.security_level)
+
+def reset_restrict_path(rp):
+	"""Reset restrict path to be within rpath"""
+	assert rp.conn is Globals.local_connection
+	Globals.restrict_path = rp.normalize().path
 
 def set_security_level(action, cmdpairs):
 	"""If running client, set security level and restrict_path
@@ -137,8 +141,7 @@ def set_allowed_requests(sec_level):
 				  "Hardlink.initialize_dictionaries", "user_group.uid2uname",
 				  "user_group.gid2gname"])
 	if sec_level == "read-only" or sec_level == "all":
-		l.extend(["fs_abilities.get_fsabilities_readonly",
-				  "fs_abilities.get_fsabilities_restoresource",
+		l.extend(["fs_abilities.get_readonly_fsa",
 				  "restore.MirrorStruct.set_mirror_and_rest_times",
 				  "restore.MirrorStruct.set_mirror_select",
 				  "restore.MirrorStruct.initialize_rf_cache",
@@ -161,14 +164,16 @@ def set_allowed_requests(sec_level):
 				  "Globals.ITRB.increment_stat",
 				  "statistics.record_error",
 				  "log.ErrorLog.write_if_open",
-				  "fs_abilities.get_fsabilities_readwrite"])
+				  "fs_abilities.backup_set_globals"])
 	if sec_level == "all":
 		l.extend(["os.mkdir", "os.chown", "os.lchown", "os.rename",
-				  "os.unlink", "os.remove", "os.chmod",
+				  "os.unlink", "os.remove", "os.chmod", "os.makedirs",
 				  "backup.DestinationStruct.patch",
 				  "restore.TargetStruct.get_initial_iter",
 				  "restore.TargetStruct.patch",
 				  "restore.TargetStruct.set_target_select",
+				  "fs_abilities.restore_set_globals",
+				  "fs_abilities.single_set_globals",
 				  "regress.Regress", "manage.delete_earlier_than_local"])
 	if Globals.server:
 		l.extend(["SetConnections.init_connection_remote",
@@ -200,8 +205,7 @@ def vet_request(request, arglist):
 	if security_level == "override": return
 	if request.function_string in allowed_requests: return
 	if request.function_string in ("Globals.set", "Globals.set_local"):
-		if Globals.server and arglist[0] not in disallowed_server_globals:
-			return
+		if arglist[0] not in disallowed_server_globals: return
 	raise_violation(request, arglist)
 
 def vet_rpath(rpath):

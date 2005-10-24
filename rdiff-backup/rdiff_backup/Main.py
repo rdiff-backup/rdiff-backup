@@ -301,7 +301,7 @@ def Backup(rpin, rpout):
 	SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
 	backup_check_dirs(rpin, rpout)
 	backup_set_rbdir(rpin, rpout)
-	backup_set_fs_globals(rpin, rpout)
+	rpout.conn.fs_abilities.backup_set_globals(rpin)
 	if Globals.chars_to_quote: rpout = backup_quoted_rpaths(rpout)
 	init_user_group_mapping(rpout.conn)
 	backup_final_init(rpout)
@@ -353,7 +353,6 @@ def backup_check_dirs(rpin, rpout):
 def backup_set_rbdir(rpin, rpout):
 	"""Initialize data dir and logging"""
 	global incdir
-	SetConnections.UpdateGlobal('rbdir', Globals.rbdir)
 	incdir = Globals.rbdir.append_path("increments")
 
 	assert rpout.lstat(), (rpout.path, rpout.lstat())
@@ -370,6 +369,7 @@ want to update or overwrite it, run rdiff-backup with the --force
 option.""" % rpout.path)
 
 	if not Globals.rbdir.lstat(): Globals.rbdir.mkdir()
+	SetConnections.UpdateGlobal('rbdir', Globals.rbdir)
 
 def backup_warn_if_infinite_regress(rpin, rpout):
 	"""Warn user if destination area contained in source area"""
@@ -407,53 +407,6 @@ def backup_final_init(rpout):
 	inc_base = Globals.rbdir.append_path("increments")
 	if not inc_base.lstat(): inc_base.mkdir()
 
-def backup_set_fs_globals(rpin, rpout):
-	"""Use fs_abilities to set the globals that depend on filesystem"""
-	def update_triple(src_support, dest_support, attr_triple):
-		"""Update global settings for feature based on fsa results"""
-		active_attr, write_attr, conn_attr = attr_triple
-		if Globals.get(active_attr) == 0: return # don't override 0
-		for attr in attr_triple: SetConnections.UpdateGlobal(attr, None)
-		if not src_support: return # if source doesn't support, nothing
-		SetConnections.UpdateGlobal(active_attr, 1)
-		rpin.conn.Globals.set_local(conn_attr, 1)
-		if dest_support:
-			SetConnections.UpdateGlobal(write_attr, 1)
-			rpout.conn.Globals.set_local(conn_attr, 1)
-
-	src_fsa = rpin.conn.fs_abilities.get_fsabilities_readonly('source', rpin)
-	Log(str(src_fsa), 4)
-	dest_fsa = rpout.conn.fs_abilities.get_fsabilities_readwrite(
-		'destination', Globals.rbdir, 1, Globals.chars_to_quote)
-	Log(str(dest_fsa), 4)
-
-	update_triple(src_fsa.eas, dest_fsa.eas,
-				  ('eas_active', 'eas_write', 'eas_conn'))
-	update_triple(src_fsa.acls, dest_fsa.acls,
-				  ('acls_active', 'acls_write', 'acls_conn'))
-	update_triple(src_fsa.resource_forks, dest_fsa.resource_forks,
-				  ('resource_forks_active', 'resource_forks_write',
-				   'resource_forks_conn'))
-
-	update_triple(src_fsa.carbonfile, dest_fsa.carbonfile,
-				  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
-	if src_fsa.carbonfile and not Globals.carbonfile_active:
-		Log("Source may have carbonfile support, but support defaults to "
-			"off.\n  Use --carbonfile to enable.", 5)
-
-	if Globals.never_drop_acls and not Globals.acls_active:
-		Log.FatalError("--never-drop-acls specified, but ACL support\n"
-					   "disabled on destination filesystem")
-
-	if Globals.preserve_hardlinks != 0:
-		SetConnections.UpdateGlobal('preserve_hardlinks', dest_fsa.hardlinks)
-	SetConnections.UpdateGlobal('fsync_directories', dest_fsa.fsync_dirs)
-	SetConnections.UpdateGlobal('change_ownership', dest_fsa.ownership)
-	SetConnections.UpdateGlobal('chars_to_quote', dest_fsa.chars_to_quote)
-	if not dest_fsa.high_perms:
-		SetConnections.UpdateGlobal('permission_mask', 0777)
-	if Globals.chars_to_quote: FilenameMapping.set_init_quote_vals()
-	
 def backup_touch_curmirror_local(rpin, rpout):
 	"""Make a file like current_mirror.time.data to record time
 
@@ -496,7 +449,7 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 	"""
 	if not restore_root_set: assert restore_set_root(src_rp)
 	restore_check_paths(src_rp, dest_rp, restore_as_of)
-	restore_set_fs_globals(dest_rp)
+	dest_rp.conn.fs_abilities.restore_set_globals(dest_rp)
 	init_user_group_mapping(dest_rp.conn)
 	src_rp = restore_init_quoting(src_rp)
 	restore_check_backup_dir(restore_root, src_rp, restore_as_of)
@@ -520,51 +473,6 @@ def restore_init_quoting(src_rp):
 	SetConnections.UpdateGlobal(
 		'rbdir', FilenameMapping.get_quotedrpath(Globals.rbdir))
 	return FilenameMapping.get_quotedrpath(src_rp)
-
-def restore_set_fs_globals(target):
-	"""Use fs_abilities to set the globals that depend on filesystem"""
-	def update_triple(src_support, dest_support, attr_triple):
-		"""Update global settings for feature based on fsa results"""
-		active_attr, write_attr, conn_attr = attr_triple
-		if Globals.get(active_attr) == 0: return # don't override 0
-		for attr in attr_triple: SetConnections.UpdateGlobal(attr, None)
-		if not dest_support: return # if dest doesn't support, do nothing
-		SetConnections.UpdateGlobal(active_attr, 1)
-		target.conn.Globals.set_local(conn_attr, 1)
-		target.conn.Globals.set_local(write_attr, 1)
-		if src_support: Globals.rbdir.conn.Globals.set_local(conn_attr, 1)
-
-	target_fsa = target.conn.fs_abilities.get_fsabilities_readwrite(
-		'destination', target, 0, Globals.chars_to_quote)
-	Log(str(target_fsa), 4)
-	mirror_fsa = Globals.rbdir.conn.fs_abilities.get_fsabilities_restoresource(
-		Globals.rbdir)
-	Log(str(mirror_fsa), 4)
-
-	update_triple(mirror_fsa.eas, target_fsa.eas,
-				  ('eas_active', 'eas_write', 'eas_conn'))
-	update_triple(mirror_fsa.acls, target_fsa.acls,
-				  ('acls_active', 'acls_write', 'acls_conn'))
-	update_triple(mirror_fsa.resource_forks, target_fsa.resource_forks,
-				  ('resource_forks_active', 'resource_forks_write',
-				   'resource_forks_conn'))
-	update_triple(mirror_fsa.carbonfile, target_fsa.carbonfile,
-				  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
-	if Globals.never_drop_acls and not Globals.acls_active:
-		Log.FatalError("--never-drop-acls specified, but ACL support\n"
-					   "disabled on destination filesystem")
-
-	if Globals.preserve_hardlinks != 0:
-		SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
-	SetConnections.UpdateGlobal('change_ownership', target_fsa.ownership)
-	if not target_fsa.high_perms:
-		SetConnections.UpdateGlobal('permission_mask', 0777)
-
-	if Globals.chars_to_quote is None: # otherwise already overridden
-		if mirror_fsa.chars_to_quote:
-			SetConnections.UpdateGlobal('chars_to_quote',
-										mirror_fsa.chars_to_quote)
-		else: SetConnections.UpdateGlobal('chars_to_quote', "")
 
 def restore_set_select(mirror_rp, target):
 	"""Set the selection iterator on both side from command line args
@@ -662,6 +570,8 @@ def restore_set_root(rpin):
 
 	restore_root = parent_dir
 	Log("Using mirror root directory %s" % restore_root.path, 6)
+	if restore_root.conn is Globals.local_connection:
+		Security.reset_restrict_path(restore_root)
 	SetConnections.UpdateGlobal('rbdir',
 								restore_root.append_path("rdiff-backup-data"))
 	if not Globals.rbdir.isdir():
@@ -702,49 +612,10 @@ def require_root_set(rp):
 	if not restore_set_root(rp):
 		Log.FatalError(("Bad directory %s.\n" % (rp.path,)) +
 		  "It doesn't appear to be an rdiff-backup destination dir")
-	single_set_fs_globals(Globals.rbdir)
+	Globals.rbdir.conn.fs_abilities.single_set_globals(Globals.rbdir)
 	if Globals.chars_to_quote: return restore_init_quoting(rp)
 	else: return rp
 	
-def single_set_fs_globals(rbdir):
-	"""Use fs_abilities to set globals that depend on filesystem.
-
-	This is appropriate for listing increments, or any other operation
-	that depends only on the one file system.
-
-	"""
-	def update_triple(fsa_support, attr_triple):
-		"""Update global settings based on fsa result"""
-		active_attr, write_attr, conn_attr = attr_triple
-		if Globals.get(active_attr) == 0: return # don't override 0
-		for attr in attr_triple: SetConnections.UpdateGlobal(attr, None)
-		if not fsa_support: return
-		SetConnections.UpdateGlobal(active_attr, 1)
-		SetConnections.UpdateGlobal(write_attr, 1)
-		rbdir.conn.Globals.set_local(conn_attr, 1)
-
-	fsa = rbdir.conn.fs_abilities.get_fsabilities_readwrite('archive',
-								   rbdir, 1, Globals.chars_to_quote)
-	Log(str(fsa), 4)
-
-	update_triple(fsa.eas, ('eas_active', 'eas_write', 'eas_conn'))
-	update_triple(fsa.acls, ('acls_active', 'acls_write', 'acls_conn'))
-	update_triple(fsa.resource_forks,
-				  ('resource_forks_active', 'resource_forks_write',
-				   'resource_forks_conn'))
-	update_triple(fsa.carbonfile,
-				  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
-
-	if Globals.preserve_hardlinks != 0:
-		SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks)
-	SetConnections.UpdateGlobal('fsync_directories', fsa.fsync_dirs)
-	SetConnections.UpdateGlobal('change_ownership', fsa.ownership)
-	if not fsa.high_perms: SetConnections.UpdateGlobal('permission_mask', 0777)
-	SetConnections.UpdateGlobal('chars_to_quote', fsa.chars_to_quote)
-	if Globals.chars_to_quote:
-		for conn in Globals.connections:
-			conn.FilenameMapping.set_init_quote_vals()
-
 
 def ListIncrementSizes(rp):
 	"""Print out a summary of the increments """
