@@ -585,6 +585,11 @@ def rpath_acl_get(rp):
 	return acl
 rpath.acl_get = rpath_acl_get
 
+def rpath_get_blank_acl(index):
+	"""Get a blank AccessControlLists object (override rpath function)"""
+	return AccessControlLists(index)
+rpath.get_blank_acl = rpath_get_blank_acl
+
 def rpath_ea_get(rp):
 	"""Get extended attributes of given rpath
 
@@ -595,3 +600,9 @@ def rpath_ea_get(rp):
 	if not rp.issym(): ea.read_from_rp(rp)
 	return ea
 rpath.ea_get = rpath_ea_get
+
+def rpath_get_blank_ea(index):
+	"""Get a blank ExtendedAttributes object (override rpath function)"""
+	return ExtendedAttributes(index)
+rpath.get_blank_ea = rpath_get_blank_ea
+
