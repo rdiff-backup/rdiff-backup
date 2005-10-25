@@ -3,7 +3,7 @@ import os, sys, code
 from rdiff_backup.log import Log
 from rdiff_backup.rpath import RPath
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
-	 selection, lazy, Time, rpath, eas_acls, rorpiter
+	 selection, lazy, Time, rpath, eas_acls, rorpiter, Security
 
 RBBin = "../rdiff-backup"
 SourceDir = "../rdiff_backup"
@@ -72,15 +72,6 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 	print "Executing: ", cmdline
 	assert not os.system(cmdline)
 
-def cmd_schemas2rps(schema_list, remote_schema):
-	"""Input list of file descriptions and the remote schema, return rps
-
-	File descriptions should be strings of the form 'hostname.net::foo'
-
-	"""
-	return map(SetConnections.cmdpair2rp,
-			   SetConnections.get_cmd_pairs(schema_list, remote_schema))
-
 def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 				   current_time = None, eas = None, acls = None):
 	"""Backup src to dest internally
@@ -103,7 +94,9 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 		dest_dir = "cd test2/tmp; python ../../server.py ../../%s::../../%s" \
 				   % (SourceDir, dest_dir)
 
-	rpin, rpout = cmd_schemas2rps([src_dir, dest_dir], remote_schema)
+	cmdpairs = SetConnections.get_cmd_pairs([src_dir, dest_dir], remote_schema)
+	Security.initialize("backup", cmdpairs)
+	rpin, rpout = map(SetConnections.cmdpair2rp, cmdpairs)
 	for attr in ('eas_active', 'eas_write', 'eas_conn'):
 		SetConnections.UpdateGlobal(attr, eas)
 	for attr in ('acls_active', 'acls_write', 'acls_conn'):
@@ -151,7 +144,10 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time,
 		dest_dir = "cd test2/tmp; python ../../server.py ../../%s::../../%s" \
 				   % (SourceDir, dest_dir)
 
-	mirror_rp, dest_rp = cmd_schemas2rps([mirror_dir, dest_dir], remote_schema)
+	cmdpairs = SetConnections.get_cmd_pairs([mirror_dir, dest_dir],
+											remote_schema)
+	Security.initialize("restore", cmdpairs)
+	mirror_rp, dest_rp = map(SetConnections.cmdpair2rp, cmdpairs)
 	for attr in ('eas_active', 'eas_write', 'eas_conn'):
 		SetConnections.UpdateGlobal(attr, eas)
 	for attr in ('acls_active', 'acls_write', 'acls_conn'):
