@@ -171,6 +171,11 @@ class IncStatTest(unittest.TestCase):
 		could change with different file systems...
 
 		"""
+		def sorti(inclist):
+			l = [(inc.getinctime(), inc) for inc in inclist]
+			l.sort()
+			return [inc for (t, inc) in l]
+
 		Globals.compression = 1
 		Myrm("testfiles/output")
 		InternalBackup(1, 1, "testfiles/stattest1", "testfiles/output")
@@ -180,7 +185,7 @@ class IncStatTest(unittest.TestCase):
 		rbdir = rpath.RPath(Globals.local_connection,
 							"testfiles/output/rdiff-backup-data")
 
-		incs = restore.get_inclist(rbdir.append("session_statistics"))
+		incs = sorti(restore.get_inclist(rbdir.append("session_statistics")))
 		assert len(incs) == 2
 		s2 = statistics.StatsObj().read_stats_from_rp(incs[0])
 		assert s2.SourceFiles == 7

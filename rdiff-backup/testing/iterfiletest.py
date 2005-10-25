@@ -41,11 +41,11 @@ class testIterFile(unittest.TestCase):
 
 	def testFileException(self):
 		"""Test encoding a file which raises an exception"""
-		f = FileException(100*1024)
+		f = FileException(200*1024) # size depends on buffer size
 		new_iter = IterWrappingFile(FileWrappingIter(iter([f, "foo"])))
 		f_out = new_iter.next()
-		assert f_out.read(10000) == "a"*10000
-		try: buf = f_out.read(100*1024)
+		assert f_out.read(50000) == "a"*50000
+		try: buf = f_out.read(190*1024)
 		except IOError: pass
 		else: assert 0, len(buf)
 
