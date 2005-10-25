@@ -164,7 +164,9 @@ class FSAbilities:
 	def set_hardlinks(self, testdir):
 		"""Set self.hardlinks to true iff hard linked files can be made"""
 		hl_source = testdir.append("hardlinked_file1")
-		hl_dest = testdir.append("hardlinked_file2")
+		hl_dir = testdir.append("hl")
+		hl_dir.mkdir()
+		hl_dest = hl_dir.append("hardlinked_file2")
 		hl_source.touch()
 		try:
 			hl_dest.hardlink(hl_source.path)
