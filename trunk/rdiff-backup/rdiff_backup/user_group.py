@@ -155,7 +155,7 @@ class NumericalMap:
 	def map_acl(self, id, name = None): return id
 
 
-############ Public section - don't use outside user_group ###########
+############ Public section - can use these outside user_group ###########
 
 
 def uid2uname(uid):
@@ -213,3 +213,5 @@ def map_rpath(rp):
 	uname, gname = rp.getuname(), rp.getgname()
 	return (UserMap(uid, uname), GroupMap(gid, gname))
 
+def acl_user_map(uid, uname): return UserMap.map_acl(uid, uname)
+def acl_group_map(gid, gname): return GroupMap.map_acl(gid, gname)
