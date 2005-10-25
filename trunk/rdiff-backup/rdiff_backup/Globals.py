@@ -30,12 +30,12 @@ version = "$version"
 current_time = None
 
 # This determines how many bytes to read at a time when copying
-blocksize = 32768
+blocksize = 131072
 
 # This is used by the BufferedRead class to determine how many
 # bytes to request from the underlying file per read().  Larger
 # values may save on connection overhead and latency.
-conn_bufsize = 98304
+conn_bufsize = 393216
 
 # This is used in rorpiter.CacheIndexable.  The number represents the
 # number of rpaths which may be stuck in buffers when moving over a
