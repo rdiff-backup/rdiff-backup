@@ -88,6 +88,7 @@ class PathSetter(unittest.TestCase):
 		self.dest_prefix, self.dest_conn = \
 						  self.get_prefix_and_conn(dest_path, dest_return)
 		SetConnections.BackupInitConnections(self.src_conn, self.dest_conn)
+		Globals.restrict_path = "/" # we aren't testing security here
 
 		assert not os.system("rm -rf testfiles/output* "
 							 "testfiles/restoretarget* "
