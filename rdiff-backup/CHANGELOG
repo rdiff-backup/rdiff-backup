@@ -5,6 +5,9 @@ Refactored fs_abilities for more flexibility.  In particular, avoid
 quoting if both source and destination file systems are
 case-insensitive.
 
+Increased buffer sizes by factor of 4, because everyone probably has 4
+times as much RAM now as when I originally picked those values.
+
 When possible, fsync using a writable file descriptor.  This may help
 with cygwin.  (Requested/tested by Dave Kempe.)
 
