@@ -1,4 +1,4 @@
-New in v1.1.0 (????/??/??)
+New in v1.1.0 (2005/10/24)
 --------------------------
 
 Refactored fs_abilities for more flexibility.  In particular, avoid
@@ -19,7 +19,7 @@ Fix for bug #14799 reported by Bob McKay:  Crash when backing up files
 with high permissions (like suid) to some FAT systems.
 
 
-New in v1.0.2 (????/??/??)
+New in v1.0.2 (2005/10/24)
 --------------------------
 
 Fix for spurious security violation from --create-full-path (reported
