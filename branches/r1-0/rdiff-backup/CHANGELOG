@@ -3,6 +3,8 @@ New in v1.0.3 (????/??/??)
 
 Applied Alec Berryman's patch to update the no-compression regexp.
 
+Alec Berryman's fs_abilities patch is supposed to help with AFS.
+
 
 New in v1.0.2 (2005/10/24)
 --------------------------
