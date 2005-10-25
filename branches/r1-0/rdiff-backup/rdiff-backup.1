@@ -269,9 +269,9 @@ volume can contain compressed and uncompressed increments, so using
 this option inconsistently is fine.
 .TP
 .B "--no-compression-regexp " regexp
-Do not compress increments based on files whose filenames match regexp.
-The default is
-"(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|jpg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov)$"
+Do not compress increments based on files whose filenames match
+regexp.  The default includes many common audiovisual and archive
+files, and may be found in Globals.py.
 .TP
 .B --no-file-statistics
 This will disable writing to the file_statistics file in the

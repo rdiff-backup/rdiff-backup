@@ -167,8 +167,9 @@ compression = 1
 # case-insensitive regular expression won't be compressed (applies
 # to .snapshots and .diffs).  The second below will be the
 # compiled version of the first.
-no_compression_regexp_string = "(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|" \
-						"jpg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov|flac|shn)$"
+no_compression_regexp_string = ("(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|"
+    "jpg|jpeg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov|flac|shn|pgp|"
+    "gpg|rz|lzh|zoo|lharc|rar|arj|asc)$")
 no_compression_regexp = None
 
 # If true, filelists and directory statistics will be split on
