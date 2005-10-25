@@ -1,3 +1,9 @@
+New in v1.1.1 (????/??/??)
+--------------------------
+
+Applied Alec Berryman's patch to update the no-compression regexp.
+
+
 New in v1.1.0 (2005/10/24)
 --------------------------
 
