@@ -1,24 +1,3 @@
-New in v1.1.0 (2005/10/24)
---------------------------
-
-Refactored fs_abilities for more flexibility.  In particular, avoid
-quoting if both source and destination file systems are
-case-insensitive.
-
-Increased buffer sizes by factor of 4, because everyone probably has 4
-times as much RAM now as when I originally picked those values.
-
-When possible, fsync using a writable file descriptor.  This may help
-with cygwin.  (Requested/tested by Dave Kempe.)
-
-Support req 104755: Added --preserve-numerical-ids option, which makes
-rdiff-backup preserve uids/gids instead of unames/gnames.  (Suggested
-by Wiebe Cazemier)
-
-Fix for bug #14799 reported by Bob McKay:  Crash when backing up files
-with high permissions (like suid) to some FAT systems.
-
-
 New in v1.0.2 (2005/10/24)
 --------------------------
 
@@ -36,6 +15,9 @@ support it.  It can be manually enabled with the --carbonfile switch.
 If you know something about Mac OS X and want to look at the
 carbonfile code so it can be re-enabled by default, please do so :)
 (help available from list)
+
+Fix for bug #14799 reported by Bob McKay:  Crash when backing up files
+with high permissions (like suid) to some FAT systems.
 
 
 New in v1.0.1 (2005/09/10)

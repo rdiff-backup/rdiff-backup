@@ -1,6 +1,6 @@
 import unittest, os
 from commontest import *
-from rdiff_backup import Globals, SetConnections, log, rpath, backup, fs_abilities
+from rdiff_backup import Globals, SetConnections, log, rpath, backup
 
 
 """Regression tests
@@ -13,7 +13,7 @@ testfiles
 Globals.set('change_source_perms', 1)
 Globals.counter = 0
 Globals.security_level = "override"
-log.Log.setverbosity(5)
+log.Log.setverbosity(3)
 
 
 def get_local_rp(extension):
@@ -88,7 +88,6 @@ class PathSetter(unittest.TestCase):
 		self.dest_prefix, self.dest_conn = \
 						  self.get_prefix_and_conn(dest_path, dest_return)
 		SetConnections.BackupInitConnections(self.src_conn, self.dest_conn)
-		Globals.restrict_path = "/" # we aren't testing security here
 
 		assert not os.system("rm -rf testfiles/output* "
 							 "testfiles/restoretarget* "
@@ -407,7 +406,7 @@ class MirrorTest(PathSetter):
 		Main.misc_setup([rpin, rpout])
 		Main.backup_check_dirs(rpin, rpout)
 		Main.backup_set_rbdir(rpin, rpout)
-		rpout.conn.fs_abilities.backup_set_globals(rpin)
+		Main.backup_set_fs_globals(rpin, rpout)
 		Main.backup_final_init(rpout)
 		Main.backup_set_select(rpin)
 		backup.Mirror(rpin, rpout)

@@ -458,15 +458,24 @@ def list_to_acl(entry_list, map_names = 1):
 				"trigger further warnings" % (name,), 2)
 		dropped_acl_names[name] = name
 
+	def map_id_name(owner_pair, group = None):
+		"""Return id of mapped id and user given original owner_pair"""
+		id, name = owner_pair
+		Map = group and user_group.GroupMap or user_group.UserMap
+		if name: return Map.get_id_from_name(name)
+		else:
+			assert id is not None
+			return Map.get_id_from_id(id)
+
 	acl = posix1e.ACL()
 	for typechar, owner_pair, perms in entry_list:
 		id = None
 		if owner_pair:
 			if map_names:
-				if typechar == "u": id = user_group.acl_user_map(*owner_pair)
+				if typechar == "u": id = map_id_name(owner_pair, 0)
 				else:
 					assert typechar == "g", (typechar, owner_pair, perms)
-					id = user_group.acl_group_map(*owner_pair)
+					id = map_id_name(owner_pair, 1)
 				if id is None:
 					warn_drop(owner_pair[1])
 					continue
@@ -576,11 +585,6 @@ def rpath_acl_get(rp):
 	return acl
 rpath.acl_get = rpath_acl_get
 
-def rpath_get_blank_acl(index):
-	"""Get a blank AccessControlLists object (override rpath function)"""
-	return AccessControlLists(index)
-rpath.get_blank_acl = rpath_get_blank_acl
-
 def rpath_ea_get(rp):
 	"""Get extended attributes of given rpath
 
@@ -591,9 +595,3 @@ def rpath_ea_get(rp):
 	if not rp.issym(): ea.read_from_rp(rp)
 	return ea
 rpath.ea_get = rpath_ea_get
-
-def rpath_get_blank_ea(index):
-	"""Get a blank ExtendedAttributes object (override rpath function)"""
-	return ExtendedAttributes(index)
-rpath.get_blank_ea = rpath_get_blank_ea
-

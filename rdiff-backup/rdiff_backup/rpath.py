@@ -152,11 +152,9 @@ def copy_attribs(rpin, rpout):
 	"""
 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
 	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
-	if Globals.change_ownership:
-		rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
+	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
 	if rpin.issym(): return # symlinks don't have times or perms
-	if (Globals.resource_forks_write and rpin.isreg() and
-		rpin.has_resource_fork()):
+	if Globals.resource_forks_write and rpin.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if Globals.carbonfile_write and rpin.isreg():
 		rpout.write_carbonfile(rpin.get_carbonfile())
@@ -177,8 +175,7 @@ def copy_attribs_inc(rpin, rpout):
 	check_for_files(rpin, rpout)
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if rpin.issym(): return # symlinks don't have times or perms
-	if (Globals.resource_forks_write and rpin.isreg() and
-		rpin.has_resource_fork() and rpout.isreg()):
+	if Globals.resource_forks_write and rpin.isreg() and rpout.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if Globals.carbonfile_write and rpin.isreg() and rpout.isreg():
 		rpout.write_carbonfile(rpin.get_carbonfile())
@@ -606,10 +603,7 @@ class RORPath:
 
 	def get_acl(self):
 		"""Return access control list object from dictionary"""
-		try: return self.data['acl']
-		except KeyError:
-			acl = self.data['acl'] = get_blank_acl(self.index)
-			return acl
+		return self.data['acl']
 
 	def set_ea(self, ea):
 		"""Record extended attributes in dictionary.  Does not write"""
@@ -617,10 +611,7 @@ class RORPath:
 
 	def get_ea(self):
 		"""Return extended attributes object"""
-		try: return self.data['ea']
-		except KeyError:
-			ea = self.data['ea'] = get_blank_ea(self.index)
-			return ea
+		return self.data['ea']
 
 	def has_carbonfile(self):
 		"""True if rpath has a carbonfile parameter"""
@@ -1077,33 +1068,12 @@ class RPath(RORPath):
 		if not fp: self.conn.rpath.RPath.fsync_local(self)
 		else: os.fsync(fp.fileno())
 
-	def fsync_local(self, thunk = None):
-		"""fsync current file, run locally
-
-		If thunk is given, run it before syncing but after gathering
-		the file's file descriptor.
-
-		"""
+	def fsync_local(self):
+		"""fsync current file, run locally"""
 		assert self.conn is Globals.local_connection
-		try:
-			fd = os.open(self.path, os.O_RDONLY)
-			os.fsync(fd)
-			os.close(fd)
-		except OSError, e:
-			if e.errno != errno.EPERM or self.isdir(): raise
-
-			# Maybe the system doesn't like read-only fsyncing.
-			# However, to open RDWR, we may need to alter permissions
-			# temporarily.
-			if self.hasfullperms(): oldperms = None
-			else:
-				oldperms = self.getperms()
-				self.chmod(0700)
-			fd = os.open(self.path, os.O_RDWR)
-			if oldperms is not None: self.chmod(oldperms)
-			if thunk: thunk()
-			os.fsync(fd) # Sync after we switch back permissions!
-			os.close(fd)
+		fd = os.open(self.path, os.O_RDONLY)
+		os.fsync(fd)
+		os.close(fd)
 
 	def fsync_with_dir(self, fp = None):
 		"""fsync self and directory self is under"""
@@ -1117,7 +1087,11 @@ class RPath(RORPath):
 		file and the directory to make sure.
 
 		"""
-		if self.lstat() and not self.issym(): self.fsync_local(self.delete)
+		if self.lstat() and not self.issym():
+			fp = self.open("rb")
+			self.delete()
+			os.fsync(fp.fileno())
+		assert not fp.close()
 		if Globals.fsync_directories: self.get_parent_rp().fsync()
 
 	def get_data(self):
@@ -1250,10 +1224,7 @@ def setdata_local(rpath):
 		rpath.get_resource_fork()
 	if Globals.carbonfile_conn and rpath.isreg(): rpath.get_carbonfile()
 
-
-# These functions are overwritten by the eas_acls.py module.  We can't
+# These two are overwritten by the eas_acls.py module.  We can't
 # import that module directly because of circular dependency problems.
 def acl_get(rp): assert 0
-def get_blank_acl(index): assert 0
 def ea_get(rp): assert 0
-def get_blank_ea(index): assert 0
