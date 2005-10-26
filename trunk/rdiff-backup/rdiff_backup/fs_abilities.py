@@ -436,8 +436,8 @@ class SetGlobals:
 		self.update_triple(self.src_fsa.carbonfile, self.dest_fsa.carbonfile,
 			  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
 		if self.src_fsa.carbonfile and not Globals.carbonfile_active:
-			Log("Source may have carbonfile support, but support defaults to "
-				"off.\n  Use --carbonfile to enable.", 5)
+			log.Log("Source may have carbonfile support, but support "
+					"defaults to off.\n  Use --carbonfile to enable.", 5)
 
 	def set_hardlinks(self):
 		if Globals.preserve_hardlinks != 0:
