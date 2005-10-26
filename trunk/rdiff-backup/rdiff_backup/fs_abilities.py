@@ -514,7 +514,8 @@ class BackupSetGlobals(SetGlobals):
 			return actual_ctq
 		log.Log.FatalError("""New quoting requirements!
 
-The quoting this session appears to need do not match those in
+The quoting chars this session needs (%s) do not match
+the repository settings (%s) listed in
 
 %s
 
@@ -522,10 +523,7 @@ This may be caused when you copy an rdiff-backup repository from a
 normal file system onto a windows one that cannot support the same
 characters, or if you backup a case-sensitive file system onto a
 case-insensitive one that previously only had case-insensitive ones
-backed up onto it.
-
-If you want to risk it, remove the file
-rdiff-backup-data/chars_to_quote.""" % (ctq_rp.path,))
+backed up onto it.""" % (suggested_ctq, actual_ctq, ctq_rp.path))
 
 
 class RestoreSetGlobals(SetGlobals):
