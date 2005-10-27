@@ -90,7 +90,7 @@ class HashTest(unittest.TestCase):
 		hashlist = self.extract_hashs(metadata_rp)
 		assert hashlist == hashlist1, (hashlist1, hashlist)
 
-		rdiff_backup(1, 1, in_rp2.path, "testfiles/output", 20000, "-v5")
+		rdiff_backup(1, 1, in_rp2.path, "testfiles/output", 20000, "-v7")
 		incs = restore.get_inclist(meta_prefix)
 		assert len(incs) == 2
 		metadata_rp.delete() # easy way to find the other one

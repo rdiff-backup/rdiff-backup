@@ -1,4 +1,4 @@
-# Copyright 2002 Ben Escoto
+# Copyright 2002 2005 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -58,13 +58,14 @@ def get_inode_key(rorp):
 
 def add_rorp(rorp, dest_rorp = None):
 	"""Process new rorp and update hard link dictionaries"""
-	if not rorp.isreg() or rorp.getnumlinks() < 2: return
+	if not rorp.isreg() or rorp.getnumlinks() < 2: return None
 	rp_inode_key = get_inode_key(rorp)
 	if not _inode_index.has_key(rp_inode_key):
 		if not dest_rorp: dest_key = None
 		elif dest_rorp.getnumlinks() == 1: dest_key = "NA"
 		else: dest_key = get_inode_key(dest_rorp)
 		_inode_index[rp_inode_key] = (rorp.index, rorp.getnumlinks(), dest_key)
+	return rp_inode_key
 
 def del_rorp(rorp):
 	"""Remove rorp information from dictionary if seen all links"""
@@ -73,8 +74,12 @@ def del_rorp(rorp):
 	val = _inode_index.get(rp_inode_key)
 	if not val: return
 	index, remaining, dest_key = val
-	if remaining == 1: del _inode_index[rp_inode_key]
-	else: _inode_index[rp_inode_key] = (index, remaining-1, dest_key)
+	if remaining == 1:
+		del _inode_index[rp_inode_key]
+		return 1
+	else:
+		_inode_index[rp_inode_key] = (index, remaining-1, dest_key)
+		return 0
 
 def rorp_eq(src_rorp, dest_rorp):
 	"""Compare hardlinked for equality

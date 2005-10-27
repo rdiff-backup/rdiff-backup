@@ -119,6 +119,10 @@ def RORP2Record(rorpath):
 				str_list.append("  Inode %s\n" % rorpath.getinode())
 				str_list.append("  DeviceLoc %s\n" % rorpath.getdevloc())
 
+		# Save any hashes, if available
+		if rorpath.has_sha1():
+			str_list.append('  SHA1Digest %s\n' % rorpath.get_sha1())
+
 	elif type == "None": return "".join(str_list)
 	elif type == "dir" or type == "sock" or type == "fifo": pass
 	elif type == "sym":
@@ -166,6 +170,7 @@ def Record2RORP(record_string):
 		elif field == "CarbonFile":
 			if data == "None": data_dict['carbonfile'] = None
 			else: data_dict['carbonfile'] = string2carbonfile(data)
+		elif field == "SHA1Digest": data_dict['sha1'] = data
 		elif field == "NumHardLinks": data_dict['nlink'] = int(data)
 		elif field == "Inode": data_dict['inode'] = long(data)
 		elif field == "DeviceLoc": data_dict['devloc'] = long(data)

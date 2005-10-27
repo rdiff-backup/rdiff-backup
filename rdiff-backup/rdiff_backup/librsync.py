@@ -1,4 +1,4 @@
-# Copyright 2002 Ben Escoto
+# Copyright 2002 2005 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -24,7 +24,8 @@ which is written in C.  The goal was to use C as little as possible...
 
 """
 
-import _librsync, types, array
+import types, array
+import _librsync
 
 blocksize = _librsync.RS_JOB_BLOCKSIZE
 
@@ -95,15 +96,16 @@ class LikeFile:
 			new_in = self.infile.read(blocksize)
  			if not new_in:
 				self.infile_eof = 1
-				assert not self.infile.close()
+				self.infile_closeval = self.infile.close()
 				self.infile_closed = 1
 				break
 			self.inbuf += new_in
 
 	def close(self):
-		"""Close infile"""
-		if not self.infile_closed: assert not self.infile.close()
+		"""Close infile and pass on infile close value"""
 		self.closed = 1
+		if self.infile_closed: return self.infile_closeval
+		else: return self.infile.close()
 
 
 class SigFile(LikeFile):
