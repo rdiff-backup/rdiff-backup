@@ -82,7 +82,12 @@ def move(rpin, rpout):
 		rpin.delete()
 
 def copy(rpin, rpout, compress = 0):
-	"""Copy RPath rpin to rpout.  Works for symlinks, dirs, etc."""
+	"""Copy RPath rpin to rpout.  Works for symlinks, dirs, etc.
+
+	Returns close value of input for regular file, which can be used
+	to pass hashes on.
+
+	"""
 	log.Log("Regular copying %s to %s" % (rpin.index, rpout.path), 6)
 	if not rpin.lstat():
 		if rpout.lstat(): rpout.delete()
@@ -93,7 +98,7 @@ def copy(rpin, rpout, compress = 0):
 			rpout.delete()   # easier to write than compare
 		else: return
 
-	if rpin.isreg(): copy_reg_file(rpin, rpout, compress)
+	if rpin.isreg(): return copy_reg_file(rpin, rpout, compress)
 	elif rpin.isdir(): rpout.mkdir()
 	elif rpin.issym(): rpout.symlink(rpin.readlink())
 	elif rpin.ischardev():
@@ -115,7 +120,7 @@ def copy_reg_file(rpin, rpout, compress = 0):
 			rpout.setdata()
 			return
 	except AttributeError: pass
-	rpout.write_from_fileobj(rpin.open("rb"), compress = compress)
+	return rpout.write_from_fileobj(rpin.open("rb"), compress = compress)
 
 def cmp(rpin, rpout):
 	"""True if rpin has the same data as rpout
@@ -349,6 +354,7 @@ class RORPath:
 			elif key == 'carbonfile' and not Globals.carbonfile_write: pass
 			elif key == 'resourcefork' and not Globals.resource_forks_write:
 				pass
+			elif key == 'sha1': pass # one or other may not have set
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]): return 0
 
@@ -645,6 +651,18 @@ class RORPath:
 	def set_resource_fork(self, rfork):
 		"""Record resource fork in dictionary.  Does not write"""
 		self.data['resourcefork'] = rfork
+
+	def has_sha1(self):
+		"""True iff self has its sha1 digest set"""
+		return self.data.has_key('sha1')
+
+	def get_sha1(self):
+		"""Return sha1 digest.  Causes exception unless set_sha1 first"""
+		return self.data['sha1']
+
+	def set_sha1(self, digest):
+		"""Set sha1 hash (should be in hexdecimal)"""
+		self.data['sha1'] = digest
 
 
 class RPath(RORPath):
@@ -978,16 +996,16 @@ class RPath(RORPath):
 		"""Reads fp and writes to self.path.  Closes both when done
 
 		If compress is true, fp will be gzip compressed before being
-		written to self.
+		written to self.  Returns closing value of fp.
 
 		"""
 		log.Log("Writing file object to " + self.path, 7)
 		assert not self.lstat(), "File %s already exists" % self.path
 		outfp = self.open("wb", compress = compress)
 		copyfileobj(fp, outfp)
-		if fp.close() or outfp.close():
-			raise RPathException("Error closing file")
+		if outfp.close(): raise RPathException("Error closing file")
 		self.setdata()
+		return fp.close()
 
 	def write_string(self, s, compress = None):
 		"""Write string s into rpath"""

@@ -1,4 +1,4 @@
-# Copyright 2002 Ben Escoto
+# Copyright 2002 2005 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -20,7 +20,7 @@
 """Invoke rdiff utility to make signatures, deltas, or patch"""
 
 import os, librsync
-import Globals, log, static, TempFile, rpath
+import Globals, log, static, TempFile, rpath, hash
 
 
 def get_signature(rp, blocksize = None):
@@ -53,6 +53,14 @@ def get_delta_sigrp(rp_signature, rp_new):
 			(rp_new.path, rp_signature.get_indexpath()), 7)
 	return librsync.DeltaFile(rp_signature.open("rb"), rp_new.open("rb"))
 
+def get_delta_sigrp_hash(rp_signature, rp_new):
+	"""Like above but also calculate hash of new as close() value"""
+	log.Log("Getting delta with hash of %s with signature %s" %
+			(rp_new.path, rp_signature.get_indexpath()), 7)
+	return librsync.DeltaFile(rp_signature.open("rb"),
+							  hash.FileWrapper(rp_new.open("rb")))
+	
+
 def write_delta(basis, new, delta, compress = None):
 	"""Write rdiff delta which brings basis to new"""
 	log.Log("Writing delta %s from %s -> %s" %
@@ -68,8 +76,9 @@ def write_patched_fp(basis_fp, delta_fp, out_fp):
 def write_via_tempfile(fp, rp):
 	"""Write fileobj fp to rp by writing to tempfile and renaming"""
 	tf = TempFile.new(rp)
-	tf.write_from_fileobj(fp)
+	retval = tf.write_from_fileobj(fp)
 	rpath.rename(tf, rp)
+	return retval
 
 def patch_local(rp_basis, rp_delta, outrp = None, delta_compressed = None):
 	"""Patch routine that must be run locally, writes to outrp
@@ -83,8 +92,8 @@ def patch_local(rp_basis, rp_delta, outrp = None, delta_compressed = None):
 	if delta_compressed: deltafile = rp_delta.open("rb", 1)
 	else: deltafile = rp_delta.open("rb")
 	patchfile = librsync.PatchedFile(rp_basis.open("rb"), deltafile)
-	if outrp: outrp.write_from_fileobj(patchfile)
-	else: write_via_tempfile(patchfile, rp_basis)
+	if outrp: return outrp.write_from_fileobj(patchfile)
+	else: return write_via_tempfile(patchfile, rp_basis)
 
 def copy_local(rpin, rpout, rpnew = None):
 	"""Write rpnew == rpin using rpout as basis.  rpout and rpnew local"""

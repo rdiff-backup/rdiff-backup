@@ -23,7 +23,7 @@ from __future__ import generators
 import errno
 import Globals, metadata, rorpiter, TempFile, Hardlink, robust, increment, \
 	   rpath, static, log, selection, Time, Rdiff, statistics, iterfile, \
-	   eas_acls
+	   eas_acls, hash
 
 def Mirror(src_rpath, dest_rpath):
 	"""Turn dest_rpath into a copy of src_rpath"""
@@ -85,14 +85,14 @@ class SourceStruct:
 			"""Attach file of snapshot to diff_rorp, w/ error checking"""
 			fileobj = robust.check_common_error(
 				error_handler, rpath.RPath.open, (src_rp, "rb"))
-			if fileobj: diff_rorp.setfile(fileobj)
+			if fileobj: diff_rorp.setfile(hash.FileWrapper(fileobj))
 			else: diff_rorp.zero()
 			diff_rorp.set_attached_filetype('snapshot')
 
 		def attach_diff(diff_rorp, src_rp, dest_sig):
 			"""Attach file of diff to diff_rorp, w/ error checking"""
 			fileobj = robust.check_common_error(
-				error_handler, Rdiff.get_delta_sigrp, (dest_sig, src_rp))
+				error_handler, Rdiff.get_delta_sigrp_hash, (dest_sig, src_rp))
 			if fileobj:
 				diff_rorp.setfile(fileobj)
 				diff_rorp.set_attached_filetype('diff')
@@ -255,6 +255,9 @@ class CacheCollatedPostProcess:
 	    we enter them to computer signatures, and then reset after we
 	    are done patching everything inside them.
 
+	4.  We need some place to put hashes (like SHA1) after computing
+	    them and before writing them to the metadata.
+
 	The class caches older source_rorps and dest_rps so the patch
 	function can retrieve them if necessary.  The patch function can
 	also update the processed correctly flag.  When an item falls out
@@ -294,6 +297,11 @@ class CacheCollatedPostProcess:
 		# after we're finished with them
 		self.dir_perms_list = []
 
+		# A dictionary of {index: source_rorp}.  We use this to
+		# hold the digest of a hard linked file so it only needs to be
+		# computed once.
+		self.inode_digest_dict = {}
+
 	def __iter__(self): return self
 
 	def next(self):
@@ -316,7 +324,8 @@ class CacheCollatedPostProcess:
 
 		"""
 		if Globals.preserve_hardlinks and source_rorp:
-			Hardlink.add_rorp(source_rorp, dest_rorp)
+			if Hardlink.add_rorp(source_rorp, dest_rorp):
+				self.inode_digest_dict[source_rorp.index] = source_rorp
 		if (dest_rorp and dest_rorp.isdir() and Globals.process_uid != 0
 			and dest_rorp.getperms() % 01000 < 0700):
 			self.unreadable_dir_init(source_rorp, dest_rorp)
@@ -359,7 +368,8 @@ class CacheCollatedPostProcess:
 
 		"""
 		if Globals.preserve_hardlinks and source_rorp:
-			Hardlink.del_rorp(source_rorp)
+			if Hardlink.del_rorp(source_rorp):
+				del self.inode_digest_dict[source_rorp.index]
 
 		if not changed or success:
 			if source_rorp: self.statfileobj.add_source_file(source_rorp)
@@ -424,6 +434,17 @@ class CacheCollatedPostProcess:
 		"""Retrieve mirror_rorp with given index from cache"""
 		return self.cache_dict[index][1]
 
+	def update_hash(self, index, sha1sum):
+		"""Update the source rorp's SHA1 hash"""
+		self.get_source_rorp(index).set_sha1(sha1sum)
+
+	def update_hardlink_hash(self, diff_rorp):
+		"""Tag associated source_rorp with same hash diff_rorp points to"""
+		orig_rorp = self.inode_digest_dict[diff_rorp.get_link_flag()]
+		if orig_rorp.has_sha1():
+			new_source_rorp = self.get_source_rorp(diff_rorp.index)
+			new_source_rorp.set_sha1(orig_rorp.get_sha1())
+
 	def close(self):
 		"""Process the remaining elements in the cache"""
 		while self.cache_indicies: self.shorten_cache()
@@ -486,23 +507,51 @@ class PatchITRB(rorpiter.ITRBranch):
 			if tf.lstat(): tf.delete()
 
 	def patch_to_temp(self, basis_rp, diff_rorp, new):
-		"""Patch basis_rp, writing output in new, which doesn't exist yet"""
+		"""Patch basis_rp, writing output in new, which doesn't exist yet
+
+		Returns true if able to write new as desired, false if
+		UpdateError or similar gets in the way.
+
+		"""
 		if diff_rorp.isflaglinked():
-			Hardlink.link_rp(diff_rorp, new, self.basis_root_rp)
+			self.patch_hardlink_to_temp(diff_rorp, new)
 		elif diff_rorp.get_attached_filetype() == 'snapshot':
-			if diff_rorp.isspecial():
-				self.write_special(diff_rorp, new)
-				rpath.copy_attribs(diff_rorp, new)
-				return 1
-			elif robust.check_common_error(self.error_handler, rpath.copy,
-										   (diff_rorp, new)) == 0: return 0
-		else:
-			assert diff_rorp.get_attached_filetype() == 'diff'
-			if robust.check_common_error(self.error_handler,
-			   Rdiff.patch_local, (basis_rp, diff_rorp, new)) == 0: return 0
+			if not self.patch_snapshot_to_temp(diff_rorp, new):
+				return 0
+		elif not self.patch_diff_to_temp(basis_rp, diff_rorp, new):
+			return 0
 		if new.lstat() and not diff_rorp.isflaglinked():
 			rpath.copy_attribs(diff_rorp, new)
 		return self.matches_cached_rorp(diff_rorp, new)
+
+	def patch_hardlink_to_temp(self, diff_rorp, new):
+		"""Hardlink diff_rorp to temp, update hash if necessary"""
+		Hardlink.link_rp(diff_rorp, new, self.basis_root_rp)
+		self.CCPP.update_hardlink_hash(diff_rorp)
+
+	def patch_snapshot_to_temp(self, diff_rorp, new):
+		"""Write diff_rorp to new, return true if successful"""
+		if diff_rorp.isspecial():
+			self.write_special(diff_rorp, new)
+			rpath.copy_attribs(diff_rorp, new)
+			return 1
+		
+		report = robust.check_common_error(self.error_handler, rpath.copy,
+										   (diff_rorp, new))
+		if isinstance(report, hash.Report):
+			self.CCPP.update_hash(diff_rorp.index, report.sha1_digest)
+			return 1
+		return report != 0 # if == 0, error_handler caught something
+
+	def patch_diff_to_temp(self, basis_rp, diff_rorp, new):
+		"""Apply diff_rorp to basis_rp, write output in new"""
+		assert diff_rorp.get_attached_filetype() == 'diff'
+		report = robust.check_common_error(self.error_handler,
+			      Rdiff.patch_local, (basis_rp, diff_rorp, new))
+		if isinstance(report, hash.Report):
+			self.CCPP.update_hash(diff_rorp.index, report.sha1_digest)
+			return 1
+		return report != 0 # if report == 0, error
 
 	def matches_cached_rorp(self, diff_rorp, new_rp):
 		"""Return true if new_rp matches cached src rorp
