@@ -199,7 +199,8 @@ class FSAbilities:
 		assert ord_rp.lstat()
 		ord_rp.delete()
 
-		extended_filename = ':\\' + chr(175)
+		# Try a UTF-8 encoded character
+		extended_filename = ':\\ ' + chr(225) + chr(132) + chr(137)
 		try:
 			ext_rp = subdir.append(extended_filename)
 			ext_rp.touch()
@@ -423,8 +424,8 @@ class SetGlobals:
 		self.update_triple(self.src_fsa.acls, self.dest_fsa.acls,
 						   ('acls_active', 'acls_write', 'acls_conn'))
 		if Globals.never_drop_acls and not Globals.acls_active:
-			Log.FatalError("--never-drop-acls specified, but ACL support\n"
-						   "missing from destination filesystem")
+			log.Log.FatalError("--never-drop-acls specified, but ACL support\n"
+							   "missing from destination filesystem")
 
 	def set_resource_forks(self):
 		self.update_triple(self.src_fsa.resource_forks,
