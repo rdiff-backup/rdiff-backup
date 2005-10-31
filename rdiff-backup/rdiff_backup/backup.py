@@ -101,8 +101,8 @@ class SourceStruct:
 				diff_rorp.set_attached_filetype('snapshot')
 				
 		for dest_sig in dest_sigiter:
-			if dest_sig is iterfile.RORPIterFlushRepeat:
-				yield iterfile.RORPIterFlush # Flush buffer when get_sigs does
+			if dest_sig is iterfile.MiscIterFlushRepeat:
+				yield iterfile.MiscIterFlush # Flush buffer when get_sigs does
 				continue
 			src_rp = (source_rps.get(dest_sig.index) or
 					  rpath.RORPath(dest_sig.index))
@@ -172,7 +172,7 @@ class DestinationStruct:
 				if (Globals.backup_reader is not Globals.backup_writer and
 					num_rorps_skipped > flush_threshold):
 					num_rorps_skipped = 0
-					yield iterfile.RORPIterFlushRepeat
+					yield iterfile.MiscIterFlushRepeat
 			else:
 				index = src_rorp and src_rorp.index or dest_rorp.index
 				sig = cls.get_one_sig(dest_base_rpath, index,

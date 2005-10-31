@@ -40,7 +40,8 @@ def MakeOutputDir():
 	return rp
 
 def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
-				 current_time = None, extra_options = ""):
+				 current_time = None, extra_options = "",
+				 check_return_val = 1):
 	"""Run rdiff-backup with the given options
 
 	source_local and dest_local are boolean values.  If either is
@@ -70,7 +71,9 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 	cmdargs.extend([src_dir, dest_dir])
 	cmdline = " ".join(cmdargs)
 	print "Executing: ", cmdline
-	assert not os.system(cmdline)
+	ret_val = os.system(cmdline)
+	if check_return_val: assert not ret_val, ret_val
+	return ret_val
 
 def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 				   current_time = None, eas = None, acls = None):

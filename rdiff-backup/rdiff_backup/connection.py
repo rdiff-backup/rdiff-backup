@@ -153,8 +153,7 @@ class LowLevelPipeConnection(Connection):
 	def _putiter(self, iterator, req_num):
 		"""Put an iterator through the pipe"""
 		self._write("i",
-					str(VirtualFile.new(iterfile.RORPIterToFile(iterator))),
-					req_num)
+			str(VirtualFile.new(iterfile.MiscIterToFile(iterator))), req_num)
 
 	def _putrpath(self, rpath, req_num):
 		"""Put an rpath into the pipe
@@ -241,7 +240,7 @@ class LowLevelPipeConnection(Connection):
 		elif format_string == "b": result = data
 		elif format_string == "f": result = VirtualFile(self, int(data))
 		elif format_string == "i":
-			result = iterfile.FileToRORPIter(VirtualFile(self, int(data)))
+			result = iterfile.FileToMiscIter(VirtualFile(self, int(data)))
 		elif format_string == "r": result = self._getrorpath(data)
 		elif format_string == "R": result = self._getrpath(data)
 		elif format_string == "Q": result = self._getqrpath(data)
@@ -535,7 +534,7 @@ import Globals, Time, Rdiff, Hardlink, FilenameMapping, C, Security, \
 	   Main, rorpiter, selection, increment, statistics, manage, lazy, \
 	   iterfile, rpath, robust, restore, manage, backup, connection, \
 	   TempFile, SetConnections, librsync, log, regress, fs_abilities, \
-	   eas_acls, user_group
+	   eas_acls, user_group, compare
 
 Globals.local_connection = LocalConnection()
 Globals.connections.append(Globals.local_connection)

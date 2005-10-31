@@ -20,6 +20,7 @@
 """Contains a file wrapper that returns a hash on close"""
 
 import sha
+import Globals
 
 class FileWrapper:
 	"""Wrapper around a file-like object
@@ -51,3 +52,17 @@ class Report:
 	def __init__(self, close_val, sha1_digest):
 		assert not close_val # For now just assume inner file closes correctly
 		self.sha1_digest = sha1_digest
+
+
+def compute_sha1(rp, compressed = 0):
+	"""Return the hex sha1 hash of given rpath"""
+	assert rp.conn is Globals.local_connection # inefficient not to do locally
+	blocksize = Globals.blocksize
+	fp = FileWrapper(rp.open("r", compressed))
+	while 1:
+		if not fp.read(blocksize): break
+	digest = fp.close().sha1_digest
+	rp.set_sha1(digest)
+	return digest
+
+

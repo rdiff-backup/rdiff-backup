@@ -1,19 +1,21 @@
-Write PID of process to current_mirror file.
+--verify switch for checking hashs, and hash check on restore
+
+For comparing, check source filesystem
+
+Clean up connection dropped message
+
+Add metadata diffing
+
+Clean up compare reports
+
+Test comparing of single files, and files/directories specified by
+increment.  Also test --include/--exclude with compare options.
 
 ---------[ Medium term ]---------------------------------------
 
 Look into sparse file support (requested by Stelios K. Kyriacou)
 
-Look into security.py code, do some sort of security audit.
-
 Look at Kent Borg's suggestion for restore options and digests.
-
-Add --list-files-changed-between or similar option, to list files that
-have changed between two times
-
-Add --dry-run option (target for v1.1.x)
-
-Add # of increments option to --remove-older-than
 
 ---------[ Long term ]---------------------------------------
 

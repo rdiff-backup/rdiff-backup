@@ -25,12 +25,6 @@ import Globals, Time, Rdiff, Hardlink, rorpiter, selection, rpath, \
 	   log, static, robust, metadata, statistics, TempFile, eas_acls
 
 
-# This will be set to the time of the current mirror
-_mirror_time = None
-# This will be set to the exact time to restore to (not restore_to_time)
-_rest_time = None
-
-
 class RestoreError(Exception): pass
 
 def Restore(mirror_rp, inc_rpath, target, restore_to_time):
@@ -72,8 +66,8 @@ def ListChangedSince(mirror_rp, inc_rp, restore_to_time):
 	MirrorStruct.set_mirror_and_rest_times(restore_to_time)
 	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
 
-	old_iter = MirrorStruct.get_mirror_rorp_iter(_rest_time, 1)
-	cur_iter = MirrorStruct.get_mirror_rorp_iter(_mirror_time, 1)
+	old_iter = MirrorStruct.get_mirror_rorp_iter(MirrorStruct._rest_time, 1)
+	cur_iter = MirrorStruct.get_mirror_rorp_iter(MirrorStruct._mirror_time, 1)
 	collated = rorpiter.Collate2Iters(old_iter, cur_iter)
 	for old_rorp, cur_rorp in collated:
 		if not old_rorp: change = "new"
@@ -94,43 +88,23 @@ def ListAtTime(mirror_rp, inc_rp, time):
 	assert mirror_rp.conn is Globals.local_connection, "Run locally only"
 	MirrorStruct.set_mirror_and_rest_times(time)
 	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
-	old_iter = MirrorStruct.get_mirror_rorp_iter(_rest_time, 1)
+	old_iter = MirrorStruct.get_mirror_rorp_iter()
 	for rorp in old_iter: yield rorp
 	
-def Compare(src_iter, mirror_rp, inc_rp, compare_time):
-	"""Compares metadata in src_rp dir with metadata in mirror_rp at time"""
-	MirrorStruct.set_mirror_and_rest_times(compare_time)
-	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
-
-	mir_iter = MirrorStruct.get_mirror_rorp_iter(compare_time, 1)
-	collated = rorpiter.Collate2Iters(src_iter, mir_iter)
-	changed_files_found = 0
-	for src_rorp, mir_rorp in collated: 
-		if not mir_rorp: change = "new"
-		elif not src_rorp: change = "deleted"
-		elif src_rorp == mir_rorp: continue
-		else: change = "changed"
-		changed_files_found = 1
-		path_desc = (src_rorp and src_rorp.get_indexpath() or
-					 mir_rorp.get_indexpath())
-		log.Log("%-7s %s" % (change, path_desc), 2)
-		if change == "changed": # Log more description of difference
-			assert not src_rorp.equal_verbose_auto(mir_rorp, 3)
-
-	if not changed_files_found:
-		log.Log("No changes found.  Directory matches archive data.", 2)
-	MirrorStruct.close_rf_cache()
-	return changed_files_found
-
 
 class MirrorStruct:
 	"""Hold functions to be run on the mirror side"""
-	_select = None # If selection command line arguments given, use Select here
+	# If selection command line arguments given, use Select here
+	_select = None
+	# This will be set to the time of the current mirror
+	_mirror_time = None
+	# This will be set to the exact time to restore to (not restore_to_time)
+	_rest_time = None
+	
 	def set_mirror_and_rest_times(cls, restore_to_time):
-		"""Set global variabels _mirror_time and _rest_time on mirror conn"""
-		global _mirror_time, _rest_time
-		_mirror_time = cls.get_mirror_time()
-		_rest_time = cls.get_rest_time(restore_to_time)
+		"""Set class variabels _mirror_time and _rest_time on mirror conn"""
+		MirrorStruct._mirror_time = cls.get_mirror_time()
+		MirrorStruct._rest_time = cls.get_rest_time(restore_to_time)
 
 	def get_mirror_time(cls):
 		"""Return time (in seconds) of latest mirror"""
@@ -169,8 +143,8 @@ class MirrorStruct:
 
 		"""
 		# use dictionary to remove dups
-		if not _mirror_time: d = {cls.get_mirror_time(): None}
-		else: d = {_mirror_time: None}
+		if not cls._mirror_time: d = {cls.get_mirror_time(): None}
+		else: d = {cls._mirror_time: None}
 		if not rp or not rp.index: rp = Globals.rbdir.append("increments")
 		for inc in get_inclist(rp): d[inc.getinctime()] = None
 		for inc in get_inclist(Globals.rbdir.append("mirror_metadata")):
@@ -201,7 +175,7 @@ class MirrorStruct:
 		unwanted files from the metadata_iter.
 
 		"""
-		if rest_time is None: rest_time = _rest_time
+		if rest_time is None: rest_time = cls._rest_time
 
 		rorp_iter = eas_acls.GetCombinedMetadataIter(
 			Globals.rbdir, rest_time, restrict_index = cls.mirror_base.index,
@@ -371,7 +345,7 @@ class CachedRF:
 		rf = self.get_rf(index)
 		if not rf:
 			log.Log("""Error: Unable to retrieve data for file %s!
-The cause is probably data loss from the destination directory.""" %
+The cause is probably data loss from the backup repository.""" %
 					(index and "/".join(index) or '.',), 2)
 			return cStringIO.StringIO('')
 		return self.get_rf(index).get_restore_fp()
@@ -434,7 +408,8 @@ class RestoreFile:
 		"""
 		self.mirror_rp.inc_type = 'snapshot'
 		self.mirror_rp.inc_compressed = 0
-		if not self.inc_list or _rest_time >= _mirror_time:
+		if (not self.inc_list or
+			MirrorStruct._rest_time >= MirrorStruct._mirror_time):
 			self.relevant_incs = [self.mirror_rp]
 			return
 
@@ -461,7 +436,7 @@ class RestoreFile:
 		incpairs = []
 		for inc in self.inc_list:
 			time = inc.getinctime()
-			if time >= _rest_time: incpairs.append((time, inc))
+			if time >= MirrorStruct._rest_time: incpairs.append((time, inc))
 		incpairs.sort()
 		return [pair[1] for pair in incpairs]
 

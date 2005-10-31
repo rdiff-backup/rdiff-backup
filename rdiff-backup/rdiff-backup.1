@@ -82,9 +82,29 @@ This is equivalent to
 .BI "--compare-at-time " time
 Compare a directory with the backup set at the given time.  This can
 be useful to see how archived data differs from current data, or to
-check that a backup is current.
+check that a backup is current.  This only compares metadata, in the same
+way rdiff-backup decides whether a file has changed.
 .TP
-.BI "--create-full-path"
+.B --compare-full
+This is equivalent to
+.BI '--compare-full-at-time " now" '
+.TP
+.BI "--compare-full-at-time " time
+Compare a directory with the backup set at the given time.  To compare
+regular files, the repository data will be copied in its entirety to
+the source side and compared byte by byte.  This is the slowest but
+most complete compare option.
+.TP
+.B --compare-hash
+This is equivalent to
+.BI '--compare-hash-at-time " now" '
+.TP
+.BI "--compare-hash-at-time " time
+Compare a directory with the backup set at the given time.  Regular
+files will be compared by computing their SHA1 digest on the source
+side and comparing it to the digest recorded in the metadata.
+.TP
+.B --create-full-path
 Normally only the final directory of the destination path will be
 created if it does not exist. With this option, all missing directories
 on the destination path will be created. Use this option with care: if 

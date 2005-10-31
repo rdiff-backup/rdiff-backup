@@ -1,4 +1,4 @@
-# Copyright 2002, 2003, 2004 Ben Escoto
+# Copyright 2002, 2003, 2004, 2005 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -24,7 +24,7 @@ import getopt, sys, re, os, cStringIO
 from log import Log, LoggerError, ErrorLog
 import Globals, Time, SetConnections, selection, robust, rpath, \
 	   manage, backup, connection, restore, FilenameMapping, \
-	   Security, Hardlink, regress, C, fs_abilities, statistics
+	   Security, Hardlink, regress, C, fs_abilities, statistics, compare
 
 
 action = None
@@ -59,9 +59,10 @@ def parse_cmdlineoptions(arglist):
 
 	try: optlist, args = getopt.getopt(arglist, "blr:sv:V",
 		 ["backup-mode", "calculate-average", "check-destination-dir",
-		  "compare", "compare-at-time=", "create-full-path",
-		  "current-time=", "exclude=", "exclude-device-files",
-		  "exclude-fifos", "exclude-filelist=",
+		  "compare", "compare-at-time=", "compare-hash",
+		  "compare-hash-at-time=", "compare-full", "compare-full-at-time=",
+		  "create-full-path", "current-time=", "exclude=",
+		  "exclude-device-files", "exclude-fifos", "exclude-filelist=",
 		  "exclude-symbolic-links", "exclude-sockets",
 		  "exclude-filelist-stdin", "exclude-globbing-filelist=",
 		  "exclude-globbing-filelist-stdin", "exclude-mirror=",
@@ -91,10 +92,12 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--calculate-average": action = "calculate-average"
 		elif opt == "--carbonfile": Globals.set("carbonfile_active", 1)
 		elif opt == "--check-destination-dir": action = "check-destination-dir"
-		elif opt == "--compare" or opt == "--compare-at-time":
-			action = "compare"
-			if opt == "--compare": restore_timestr = "now"
-			else: restore_timestr = arg
+		elif opt in ("--compare", "--compare-at-time",
+					 "--compare-hash", "--compare-hash-at-time",
+					 "--compare-full", "--compare-full-at-time"):
+			if opt[-8:] == "-at-time": restore_timestr, opt = arg, opt[:-8]
+			else: restore_timestr = "now"
+			action = opt[2:]
 		elif opt == "--create-full-path": create_full_path = 1
 		elif opt == "--current-time":
 			Globals.set_integer('current_time', arg)
@@ -200,7 +203,8 @@ def check_action():
 					   1: ['list-increments', 'list-increment-sizes',
 						   'remove-older-than', 'list-at-time',
 						   'list-changed-since', 'check-destination-dir'],
-					   2: ['backup', 'restore', 'restore-as-of', 'compare']}
+					   2: ['backup', 'restore', 'restore-as-of',
+						   'compare', 'compare-hash', 'compare-full']}
 	l = len(args)
 	if l == 0 and action not in arg_action_dict[l]:
 		commandline_error("No arguments given")
@@ -263,7 +267,7 @@ def take_action(rps):
 	elif action == "backup": Backup(rps[0], rps[1])
 	elif action == "calculate-average": CalculateAverage(rps)
 	elif action == "check-destination-dir": CheckDest(rps[0])
-	elif action == "compare": Compare(*rps)
+	elif action.startswith("compare"): Compare(action, rps[0], rps[1])
 	elif action == "list-at-time": ListAtTime(rps[0])
 	elif action == "list-changed-since": ListChangedSince(rps[0])
 	elif action == "list-increments": ListIncrements(rps[0])
@@ -592,7 +596,7 @@ def restore_set_root(rpin):
 
 def ListIncrements(rp):
 	"""Print out a summary of the increments and their times"""
-	rp = require_root_set(rp)
+	rp = require_root_set(rp, 1)
 	restore_check_backup_dir(restore_root)
 	mirror_rp = restore_root.new_index(restore_index)
 	inc_rpath = Globals.rbdir.append_path('increments', restore_index)
@@ -602,24 +606,25 @@ def ListIncrements(rp):
 		print manage.describe_incs_parsable(incs, mirror_time, mirror_rp)
 	else: print manage.describe_incs_human(incs, mirror_time, mirror_rp)
 
-def require_root_set(rp):
+def require_root_set(rp, read_only):
 	"""Make sure rp is or is in a valid rdiff-backup dest directory.
 
-	Also initializes fs_abilities and quoting and return quoted rp if
-	necessary.
+	Also initializes fs_abilities (read or read/write) and quoting and
+	return quoted rp if necessary.
 
 	"""
 	if not restore_set_root(rp):
 		Log.FatalError(("Bad directory %s.\n" % (rp.path,)) +
 		  "It doesn't appear to be an rdiff-backup destination dir")
-	Globals.rbdir.conn.fs_abilities.single_set_globals(Globals.rbdir)
+	Globals.rbdir.conn.fs_abilities.single_set_globals(Globals.rbdir,
+													   read_only)
 	if Globals.chars_to_quote: return restore_init_quoting(rp)
 	else: return rp
 	
 
 def ListIncrementSizes(rp):
 	"""Print out a summary of the increments """
-	rp = require_root_set(rp)
+	rp = require_root_set(rp, 1)
 	print manage.ListIncrementSizes(restore_root, restore_index)
 
 
@@ -634,7 +639,7 @@ def CalculateAverage(rps):
 
 def RemoveOlderThan(rootrp):
 	"""Remove all increment files older than a certain time"""
-	rootrp = require_root_set(rootrp)
+	rootrp = require_root_set(rootrp, 0)
 	rot_require_rbdir_base(rootrp)
 	try: time = Time.genstrtotime(remove_older_than_string)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
@@ -670,7 +675,7 @@ def rot_require_rbdir_base(rootrp):
 
 def ListChangedSince(rp):
 	"""List all the files under rp that have changed since restoretime"""
-	rp = require_root_set(rp)
+	rp = require_root_set(rp, 1)
 	try: rest_time = Time.genstrtotime(restore_timestr)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
 	mirror_rp = restore_root.new_index(restore_index)
@@ -682,7 +687,7 @@ def ListChangedSince(rp):
 
 def ListAtTime(rp):
 	"""List files in archive under rp that are present at restoretime"""
-	rp = require_root_set(rp)
+	rp = require_root_set(rp, 1)
 	try: rest_time = Time.genstrtotime(restore_timestr)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
 	mirror_rp = restore_root.new_index(restore_index)
@@ -691,7 +696,7 @@ def ListAtTime(rp):
 		print rorp.get_indexpath()
 	
 
-def Compare(src_rp, dest_rp, compare_time = None):
+def Compare(compare_type, src_rp, dest_rp, compare_time = None):
 	"""Compare metadata in src_rp with metadata of backup session
 
 	Prints to stdout whenever a file in the src_rp directory has
@@ -702,16 +707,20 @@ def Compare(src_rp, dest_rp, compare_time = None):
 
 	"""
 	global return_val
-	dest_rp = require_root_set(dest_rp)
+	dest_rp = require_root_set(dest_rp, 1)
 	if not compare_time:
 		try: compare_time = Time.genstrtotime(restore_timestr)
 		except Time.TimeException, exc: Log.FatalError(str(exc))
 
 	mirror_rp = restore_root.new_index(restore_index)
-	inc_rp = mirror_rp.append_path("increments", restore_index)
+	inc_rp = Globals.rbdir.append_path("increments", restore_index)
 	backup_set_select(src_rp) # Sets source rorp iterator
-	src_iter = src_rp.conn.backup.SourceStruct.get_source_select()
-	return_val = restore.Compare(src_iter, mirror_rp, inc_rp, compare_time)
+	if compare_type == "compare": compare_func = compare.Compare
+	elif compare_type == "compare-hash": compare_func = compare.Compare_hash
+	else:
+		assert compare_type == "compare-full", compare_type
+		compare_func = compare.Compare_full
+	return_val = compare_func(src_rp, mirror_rp, inc_rp, compare_time)
 
 
 def CheckDest(dest_rp):
