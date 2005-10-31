@@ -1128,16 +1128,6 @@ class RPath(RORPath):
 		self.fsync(fp)
 		if Globals.fsync_directories: self.get_parent_rp().fsync()
 
-	def sync_delete(self):
-		"""Delete self with sync to guarantee completion
-
-		On some filesystems (like linux's ext2), we must sync both the
-		file and the directory to make sure.
-
-		"""
-		if self.lstat() and not self.issym(): self.fsync_local(self.delete)
-		if Globals.fsync_directories: self.get_parent_rp().fsync()
-
 	def get_data(self):
 		"""Open file as a regular file, read data, close, return data"""
 		fp = self.open("rb")

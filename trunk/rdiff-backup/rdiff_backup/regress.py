@@ -97,8 +97,8 @@ def set_restore_times():
 	backup time.  _mirror_time is the unsuccessful backup time.
 
 	"""
-	restore._mirror_time = unsuccessful_backup_time
-	restore._rest_time = regress_time
+	restore.MirrorStruct._mirror_time = unsuccessful_backup_time
+	restore.MirrorStruct._rest_time = regress_time
 
 def remove_rbdir_increments():
 	"""Delete the increments in the rdiff-backup-data directory

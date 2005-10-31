@@ -447,22 +447,6 @@ class FinalMisc(PathSetter):
 		for inc in self.get_all_increments(rbdir):
 			assert inc.getinctime() >= 20000
 
-	def testCompare(self):
-		"""Test --compare and --compare-older-than modes"""
-		Myrm("testfiles/output")
-		self.set_connections(None, None, None, None)
-		self.exec_rb(10000, 'testfiles/increment1', 'testfiles/output')
-		self.exec_rb(20000, 'testfiles/increment2', 'testfiles/output')
-
-		self.exec_rb_extra_args_retval(20000, '--compare', 0,
-					 'testfiles/increment2', 'testfiles/output')
-		self.exec_rb_extra_args_retval(20000, '--compare', 1,
-					 'testfiles/increment1', 'testfiles/output')
-		self.exec_rb_extra_args_retval(20000, '--compare-at-time 10000', 1,
-					 'testfiles/increment2', 'testfiles/output')
-		self.exec_rb_extra_args_retval(20000, '--compare-at-time 10000', 0,
-					 'testfiles/increment1', 'testfiles/output')
-
 
 class FinalSelection(PathSetter):
 	"""Test selection options"""

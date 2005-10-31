@@ -113,8 +113,9 @@ def set_security_level(action, cmdpairs):
 			sec_level = "all"
 			rdir = getpath(cp2)
 	elif action in ["test-server", "list-increments", 'list-increment-sizes',
-					 "list-at-time", "list-changed-since",
-					 "calculate-average", "remove-older-than", "compare"]:
+					"list-at-time", "list-changed-since",
+					"calculate-average", "remove-older-than", "compare",
+					"compare-hash", "compare-full"]:
 		sec_level = "minimal"
 		rdir = tempfile.gettempdir()
 	else: assert 0, "Unknown action %s" % action
@@ -151,7 +152,14 @@ def set_allowed_requests(sec_level):
 				  "restore.ListAtTime",
 				  "backup.SourceStruct.get_source_select",
 				  "backup.SourceStruct.set_source_select",
-				  "backup.SourceStruct.get_diffs"])
+				  "backup.SourceStruct.get_diffs",
+				  "compare.RepoSide.init_and_get_iter",
+				  "compare.RepoSide.close_rf_cache",
+				  "compare.RepoSide.attach_files",
+				  "compare.DataSide.get_source_select",
+				  "compare.DataSide.compare_fast",
+				  "compare.DataSide.compare_hash",
+				  "compare.DataSide.compare_full"])
 	if sec_level == "update-only" or sec_level == "all":
 		l.extend(["log.Log.open_logfile_local", "log.Log.close_logfile_local",
 				  "log.ErrorLog.open", "log.ErrorLog.isopen",
