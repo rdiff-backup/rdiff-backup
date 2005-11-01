@@ -115,7 +115,7 @@ def set_security_level(action, cmdpairs):
 	elif action in ["test-server", "list-increments", 'list-increment-sizes',
 					"list-at-time", "list-changed-since",
 					"calculate-average", "remove-older-than", "compare",
-					"compare-hash", "compare-full"]:
+					"compare-hash", "compare-full", "verify"]:
 		sec_level = "minimal"
 		rdir = tempfile.gettempdir()
 	else: assert 0, "Unknown action %s" % action
@@ -159,7 +159,8 @@ def set_allowed_requests(sec_level):
 				  "compare.DataSide.get_source_select",
 				  "compare.DataSide.compare_fast",
 				  "compare.DataSide.compare_hash",
-				  "compare.DataSide.compare_full"])
+				  "compare.DataSide.compare_full",
+				  "compare.Verify"])
 	if sec_level == "update-only" or sec_level == "all":
 		l.extend(["log.Log.open_logfile_local", "log.Log.close_logfile_local",
 				  "log.ErrorLog.open", "log.ErrorLog.isopen",

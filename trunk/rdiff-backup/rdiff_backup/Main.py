@@ -83,7 +83,8 @@ def parse_cmdlineoptions(arglist):
 		  "remove-older-than=", "restore-as-of=", "restrict=",
 		  "restrict-read-only=", "restrict-update-only=", "server",
 		  "ssh-no-compression", "terminal-verbosity=", "test-server",
-		  "user-mapping-file=", "verbosity=", "version"])
+		  "user-mapping-file=", "verbosity=", "verify",
+		  "verify-at-time=", "version"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: %s" % str(e))
 
@@ -190,10 +191,12 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--terminal-verbosity": Log.setterm_verbosity(arg)
 		elif opt == "--test-server": action = "test-server"
 		elif opt == "--user-mapping-file": user_mapping_filename = arg
+		elif opt == "-v" or opt == "--verbosity": Log.setverbosity(arg)
+		elif opt == "--verify": action, restore_timestr = "verify", "now"
+		elif opt == "--verify-at-time": action, restore_timestr = "verify", arg
 		elif opt == "-V" or opt == "--version":
 			print "rdiff-backup " + Globals.version
 			sys.exit(0)
-		elif opt == "-v" or opt == "--verbosity": Log.setverbosity(arg)
 		else: Log.FatalError("Unknown option %s" % opt)
 
 def check_action():
@@ -202,7 +205,8 @@ def check_action():
 	arg_action_dict = {0: ['server'],
 					   1: ['list-increments', 'list-increment-sizes',
 						   'remove-older-than', 'list-at-time',
-						   'list-changed-since', 'check-destination-dir'],
+						   'list-changed-since', 'check-destination-dir',
+						   'verify'],
 					   2: ['backup', 'restore', 'restore-as-of',
 						   'compare', 'compare-hash', 'compare-full']}
 	l = len(args)
@@ -276,6 +280,7 @@ def take_action(rps):
 	elif action == "restore": Restore(*rps)
 	elif action == "restore-as-of": Restore(rps[0], rps[1], 1)
 	elif action == "test-server": SetConnections.TestConnections()
+	elif action == "verify": Verify(rps[0])
 	else: raise AssertionError("Unknown action " + action)
 
 def cleanup():
@@ -721,6 +726,18 @@ def Compare(compare_type, src_rp, dest_rp, compare_time = None):
 		assert compare_type == "compare-full", compare_type
 		compare_func = compare.Compare_full
 	return_val = compare_func(src_rp, mirror_rp, inc_rp, compare_time)
+
+def Verify(dest_rp, verify_time = None):
+	"""Check the hashs of the regular files against mirror_metadata"""
+	global return_val
+	dest_rp = require_root_set(dest_rp, 1)
+	if not verify_time:
+		try: verify_time = Time.genstrtotime(restore_timestr)
+		except Time.TimeException, exc: Log.FatalError(str(exc))
+
+	mirror_rp = restore_root.new_index(restore_index)
+	inc_rp = Globals.rbdir.append_path("increments", restore_index)
+	return_val = dest_rp.conn.compare.Verify(mirror_rp, inc_rp, verify_time)
 
 
 def CheckDest(dest_rp):

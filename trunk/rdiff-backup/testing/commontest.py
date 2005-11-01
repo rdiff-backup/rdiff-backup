@@ -60,7 +60,7 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 	"""
 	if not source_local:
 		src_dir = ("'cd test1; ../%s --server'::../%s" % (RBBin, src_dir))
-	if not dest_local:
+	if dest_dir and not dest_local:
 		dest_dir = ("'cd test2/tmp; ../../%s --server'::../../%s" %
 					(RBBin, dest_dir))
 
@@ -68,7 +68,8 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 	if not (source_local and dest_local): cmdargs.append("--remote-schema %s")
 
 	if current_time: cmdargs.append("--current-time %s" % current_time)
-	cmdargs.extend([src_dir, dest_dir])
+	cmdargs.append(src_dir)
+	if dest_dir: cmdargs.append(dest_dir)
 	cmdline = " ".join(cmdargs)
 	print "Executing: ", cmdline
 	ret_val = os.system(cmdline)

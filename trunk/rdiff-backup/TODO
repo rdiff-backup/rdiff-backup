@@ -1,4 +1,6 @@
---verify switch for checking hashs, and hash check on restore
+Do hash check on restore
+
+Don't copy metadata onto a hardlink twice
 
 For comparing, check source filesystem
 
