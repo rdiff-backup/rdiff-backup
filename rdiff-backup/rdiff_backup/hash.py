@@ -57,12 +57,16 @@ class Report:
 def compute_sha1(rp, compressed = 0):
 	"""Return the hex sha1 hash of given rpath"""
 	assert rp.conn is Globals.local_connection # inefficient not to do locally
-	blocksize = Globals.blocksize
-	fp = FileWrapper(rp.open("r", compressed))
-	while 1:
-		if not fp.read(blocksize): break
-	digest = fp.close().sha1_digest
+	digest = compute_sha1_fp(rp.open("r", compressed))
 	rp.set_sha1(digest)
 	return digest
+
+def compute_sha1_fp(fp, compressed = 0):
+	"""Return hex sha1 hash of given file-like object"""
+	blocksize = Globals.blocksize
+	fw = FileWrapper(fp)
+	while 1:
+		if not fw.read(blocksize): break
+	return fw.close().sha1_digest
 
 

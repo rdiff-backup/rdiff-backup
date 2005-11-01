@@ -98,5 +98,53 @@ class CompareTest(unittest.TestCase):
 		"""Test --compare-full of subdirectory, remote"""
 		self.generic_selective_test(0, "--compare-full")		
 
+	def verify(self, local):
+		"""Used for the verify tests"""
+		def change_file(rp):
+			"""Given rpath, open it, and change a byte in the middle"""
+			fp = rp.open("rb")
+			fp.seek(int(rp.getsize()/2))
+			char = fp.read(1)
+			fp.close()
+
+			fp = rp.open("wb")
+			fp.seek(int(rp.getsize()/2))
+			if char == 'a': fp.write('b')
+			else: fp.write('a')
+			fp.close()
+
+		def modify_diff():
+			"""Write to the stph_icons.h diff"""
+			l = [filename for filename in
+				 os.listdir('testfiles/output/rdiff-backup-data/increments')
+				 if filename.startswith('stph_icons.h')]
+			assert len(l) == 1, l
+			diff_rp = rpath.RPath(Globals.local_connection,
+			  'testfiles/output/rdiff-backup-data/increments/' + l[0])
+			change_file(diff_rp)
+
+		rdiff_backup(local, local, 'testfiles/output', None,
+					 extra_options = "--verify")
+		rdiff_backup(local, local, 'testfiles/output', None,
+					 extra_options = "--verify-at-time 10000")
+		modify_diff()
+		ret_val =  rdiff_backup(local, local, 'testfiles/output', None,
+					 extra_options = "--verify-at-time 10000",
+								check_return_val = 0)
+		assert ret_val, ret_val
+		change_file(rpath.RPath(Globals.local_connection,
+								'testfiles/output/stph_icons.h'))
+		ret_val =  rdiff_backup(local, local, 'testfiles/output', None,
+					 extra_options = "--verify", check_return_val = 0)
+		assert ret_val, ret_val
+
+	def testVerifyLocal(self):
+		"""Test --verify of directory, local"""
+		self.verify(1)
+
+	def testVerifyRemote(self):
+		"""Test --verify remotely"""
+		self.verify(0)
+
 if __name__ == "__main__": unittest.main()
 

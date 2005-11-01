@@ -459,6 +459,23 @@ class RestoreFile:
 
 	def get_restore_fp(self):
 		"""Return file object of restored data"""
+		def get_fp():
+			current_fp = self.get_first_fp()
+			for inc_diff in self.relevant_incs[1:]:
+				log.Log("Applying patch %s" % (inc_diff.get_indexpath(),), 7)
+				assert inc_diff.getinctype() == 'diff'
+				delta_fp = inc_diff.open("rb", inc_diff.isinccompressed())
+				new_fp = tempfile.TemporaryFile()
+				Rdiff.write_patched_fp(current_fp, delta_fp, new_fp)
+				new_fp.seek(0)
+				current_fp = new_fp
+			return current_fp
+
+		def error_handler(exc):
+			log.Log("Error reading %s, substituting empty file." %
+					(self.mirror_rp.path,), 2)
+			return cStringIO.StringIO('')
+
 		if not self.relevant_incs[-1].isreg():
 			log.Log("""Warning: Could not restore file %s!
 
@@ -469,16 +486,7 @@ created.  This error is probably caused by data loss in the
 rdiff-backup destination directory, or a bug in rdiff-backup""" %
 					(self.mirror_rp.path, self.relevant_incs[-1].lstat()), 2)
 			return cStringIO.StringIO('')
-		current_fp = self.get_first_fp()
-		for inc_diff in self.relevant_incs[1:]:
-			log.Log("Applying patch %s" % (inc_diff.get_indexpath(),), 7)
-			assert inc_diff.getinctype() == 'diff'
-			delta_fp = inc_diff.open("rb", inc_diff.isinccompressed())
-			new_fp = tempfile.TemporaryFile()
-			Rdiff.write_patched_fp(current_fp, delta_fp, new_fp)
-			new_fp.seek(0)
-			current_fp = new_fp
-		return current_fp
+		return robust.check_common_error(error_handler, get_fp)
 
 	def get_first_fp(self):
 		"""Return first file object from relevant inc list"""

@@ -70,6 +70,35 @@ def Compare_full(src_rp, mirror_rp, inc_rp, compare_time):
 	repo_side.close_rf_cache()
 	return return_val
 
+def Verify(mirror_rp, inc_rp, verify_time):
+	"""Compute SHA1 sums of repository files and check against metadata"""
+	assert mirror_rp.conn is Globals.local_connection
+	repo_iter = RepoSide.init_and_get_iter(mirror_rp, inc_rp, verify_time)
+	base_index = RepoSide.mirror_base.index
+
+	bad_files = 0
+	for repo_rorp in repo_iter:
+		if not repo_rorp.isreg(): continue
+		if not repo_rorp.has_sha1():
+			log.Log("Warning: Cannot find SHA1 digest for file %s,\n"
+					"perhaps because these feature was added in v1.1.1"
+					% (repo_rorp.get_indexpath(),), 2)
+			continue
+		fp = RepoSide.rf_cache.get_fp(base_index + repo_rorp.index)
+		computed_hash = hash.compute_sha1_fp(fp)
+		if computed_hash == repo_rorp.get_sha1():
+			log.Log("Verified SHA1 digest of " + repo_rorp.get_indexpath(), 5)
+		else:
+			bad_files += 1
+			log.Log("Warning: Computed SHA1 digest of %s\n   %s\n"
+					"doesn't match recorded digest of\n   %s\n"
+					"Your backup repository may be corrupted!" %
+					(repo_rorp.get_indexpath(), computed_hash,
+					 repo_rorp.get_sha1()), 2)
+	RepoSide.close_rf_cache()
+	if not bad_files: log.Log("Every file verified successfully.", 3)
+	return bad_files
+
 def print_reports(report_iter):
 	"""Given an iter of CompareReport objects, print them to screen"""
 	assert not Globals.server
@@ -80,7 +109,7 @@ def print_reports(report_iter):
 		print "%s: %s" % (report.reason, indexpath)
 
 	if not changed_files_found:
-		log.Log("No changes found.  Directory matches archive data.", 2)
+		log.Log("No changes found.  Directory matches archive data.", 3)
 	return changed_files_found
 
 def get_basic_report(src_rp, repo_rorp, comp_data_func = None):
@@ -112,6 +141,11 @@ def get_basic_report(src_rp, repo_rorp, comp_data_func = None):
 	elif src_rp == repo_rorp: return None
 	else: return CompareReport(index, "changed")
 
+def log_success(src_rorp, mir_rorp = None):
+	"""Log that src_rorp and mir_rorp compare successfully"""
+	path = src_rorp and src_rorp.get_indexpath() or mir_rorp.get_indexpath()
+	log.Log("Successful compare: %s" % (path,), 5)
+
 
 class RepoSide(restore.MirrorStruct):
 	"""On the repository side, comparing is like restoring"""
@@ -132,13 +166,14 @@ class RepoSide(restore.MirrorStruct):
 		"""
 		repo_iter = cls.init_and_get_iter(mirror_rp, inc_rp, compare_time)
 		base_index = cls.mirror_base.index
-		for src_rp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
-			index = src_rp and src_rp.index or mir_rorp.index
-			if src_rp and mir_rorp:
-				if not src_rp.isreg() and src_rp == mir_rorp:
+		for src_rorp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
+			index = src_rorp and src_rorp.index or mir_rorp.index
+			if src_rorp and mir_rorp:
+				if not src_rorp.isreg() and src_rorp == mir_rorp:
+					log_success(src_rorp, mir_rorp)
 					continue # They must be equal, nothing else to check
-				if (src_rp.isreg() and mir_rorp.isreg() and
-					src_rp.getsize() == mir_rorp.getsize()):
+				if (src_rorp.isreg() and mir_rorp.isreg() and
+					src_rorp.getsize() == mir_rorp.getsize()):
 					mir_rorp.setfile(cls.rf_cache.get_fp(base_index + index))
 					mir_rorp.set_attached_filetype('snapshot')
 
@@ -156,6 +191,7 @@ class DataSide(backup.SourceStruct):
 		for src_rorp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
 			report = get_basic_report(src_rorp, mir_rorp)
 			if report: yield report
+			else: log_success(src_rorp, mir_rorp)
 
 	def compare_hash(cls, repo_iter):
 		"""Like above, but also compare sha1 sums of any regular files"""
@@ -174,6 +210,7 @@ class DataSide(backup.SourceStruct):
 		for src_rp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
 			report = get_basic_report(src_rp, mir_rorp, hashs_changed)
 			if report: yield report
+			else: log_success(src_rp, mir_rorp)
 
 	def compare_full(cls, src_root, repo_iter):
 		"""Given repo iter with full data attached, return report iter"""
@@ -191,6 +228,7 @@ class DataSide(backup.SourceStruct):
 			src_rp = src_root.new_index(repo_rorp.index)
 			report = get_basic_report(src_rp, repo_rorp, data_changed)
 			if report: yield report
+			else: log_success(repo_rorp)
 			
 static.MakeClass(DataSide)
 
