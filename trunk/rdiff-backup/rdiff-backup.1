@@ -12,7 +12,9 @@ rdiff-backup \- local/remote mirror and incremental backup
 .BI "| --remove-older-than " time_interval
 .BI "| --list-at-time " time
 .BI "| --list-changed-since " time
-.B "| --list-increment-sizes "}
+.B "| --list-increment-sizes "
+.B "| --verify"
+.BI "| --verify-at-time " time }
 .BI [[[ user@ ] host2.foo ]:: destination_directory ]
 
 .B rdiff-backup --calculate-average
@@ -426,6 +428,15 @@ section for more information.
 .BI -v [0-9] ", --verbosity " [0-9]
 Specify verbosity level (0 is totally silent, 3 is the default, and 9
 is noisiest).  This determines how much is written to the log file.
+.TP
+.B --verify
+This is short for
+.BI --verify-at-time " now"
+.TP
+.BI --verify-at-time " now"
+Check all the data in the repository at the given time by computing
+the SHA1 hash of all the regular files and comparing them with the
+hashes stored in the metadata file.
 .TP
 .B "-V, --version"
 Print the current version and exit

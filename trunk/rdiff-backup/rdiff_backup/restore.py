@@ -22,7 +22,7 @@
 from __future__ import generators
 import tempfile, os, cStringIO
 import Globals, Time, Rdiff, Hardlink, rorpiter, selection, rpath, \
-	   log, static, robust, metadata, statistics, TempFile, eas_acls
+	   log, static, robust, metadata, statistics, TempFile, eas_acls, hash
 
 
 class RestoreError(Exception): pass
@@ -256,7 +256,8 @@ class MirrorStruct:
 			mir_rorp.flaglinked(Hardlink.get_link_index(mir_rorp))
 		elif mir_rorp.isreg():
 			expanded_index = cls.mirror_base.index + mir_rorp.index
-			mir_rorp.setfile(cls.rf_cache.get_fp(expanded_index))
+			file_fp = cls.rf_cache.get_fp(expanded_index)
+			mir_rorp.setfile(hash.FileWrapper(file_fp))
 		mir_rorp.set_attached_filetype('snapshot')
 		return mir_rorp
 
@@ -616,15 +617,31 @@ class PatchITRB(rorpiter.ITRBranch):
 		self.patch_to_temp(rp, diff_rorp, tf)
 		rpath.rename(tf, rp)
 
+	def check_hash(self, copy_report, diff_rorp):
+		"""Check the hash in the copy_report with hash in diff_rorp"""
+		if not diff_rorp.isreg(): return
+		if not diff_rorp.has_sha1():
+			log.Log("Hash for %s missing, cannot check" %
+					(diff_rorp.get_indexpath()), 2)
+		elif copy_report.sha1_digest == diff_rorp.get_sha1():
+			log.Log("Hash %s of %s verified" %
+					(diff_rorp.get_sha1(), diff_rorp.get_indexpath()), 6)
+		else:
+			log.Log("Warning: Hash %s of %s\ndoesn't match recorded hash %s!"
+					% (copy_report.sha1_digest, diff_rorp.get_indexpath(),
+					   diff_rorp.get_sha1()), 2)
+
 	def patch_to_temp(self, basis_rp, diff_rorp, new):
 		"""Patch basis_rp, writing output in new, which doesn't exist yet"""
 		if diff_rorp.isflaglinked():
 			Hardlink.link_rp(diff_rorp, new, self.basis_root_rp)
-		elif diff_rorp.get_attached_filetype() == 'snapshot':
-			rpath.copy(diff_rorp, new)
+			return
+		if diff_rorp.get_attached_filetype() == 'snapshot':
+			copy_report = rpath.copy(diff_rorp, new)
 		else:
 			assert diff_rorp.get_attached_filetype() == 'diff'
-			Rdiff.patch_local(basis_rp, diff_rorp, new)
+			copy_report = Rdiff.patch_local(basis_rp, diff_rorp, new)
+		self.check_hash(copy_report, diff_rorp)
 		if new.lstat(): rpath.copy_attribs(diff_rorp, new)
 
 	def start_process(self, index, diff_rorp):
