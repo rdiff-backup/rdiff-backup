@@ -87,6 +87,9 @@ def patch_local(rp_basis, rp_delta, outrp = None, delta_compressed = None):
 	file (librsync may need to seek around in it).  If outrp is None,
 	patch rp_basis instead.
 
+	The return value is the close value of the delta, so it can be
+	used to produce hashes.
+
 	"""
 	assert rp_basis.conn is Globals.local_connection
 	if delta_compressed: deltafile = rp_delta.open("rb", 1)

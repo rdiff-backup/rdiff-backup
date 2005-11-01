@@ -195,7 +195,7 @@ class DataSide(backup.SourceStruct):
 
 	def compare_hash(cls, repo_iter):
 		"""Like above, but also compare sha1 sums of any regular files"""
-		def hashs_changed(src_rp, mir_rorp):
+		def hashes_changed(src_rp, mir_rorp):
 			"""Return 0 if their data hashes same, 1 otherwise"""
 			if not mir_rorp.has_sha1():
 				log.Log("Warning: Metadata file has no digest for %s, "
@@ -208,7 +208,7 @@ class DataSide(backup.SourceStruct):
 
 		src_iter = cls.get_source_select()
 		for src_rp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
-			report = get_basic_report(src_rp, mir_rorp, hashs_changed)
+			report = get_basic_report(src_rp, mir_rorp, hashes_changed)
 			if report: yield report
 			else: log_success(src_rp, mir_rorp)
 

@@ -728,7 +728,7 @@ def Compare(compare_type, src_rp, dest_rp, compare_time = None):
 	return_val = compare_func(src_rp, mirror_rp, inc_rp, compare_time)
 
 def Verify(dest_rp, verify_time = None):
-	"""Check the hashs of the regular files against mirror_metadata"""
+	"""Check the hashes of the regular files against mirror_metadata"""
 	global return_val
 	dest_rp = require_root_set(dest_rp, 1)
 	if not verify_time:
