@@ -1,7 +1,3 @@
-Do hash check on restore
-
-Don't copy metadata onto a hardlink twice
-
 For comparing, check source filesystem
 
 Clean up connection dropped message
