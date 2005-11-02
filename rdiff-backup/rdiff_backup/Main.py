@@ -54,7 +54,8 @@ def parse_cmdlineoptions(arglist):
 		return rpath.RPath(Globals.local_connection, path).normalize().path
 
 	try: optlist, args = getopt.getopt(arglist, "blr:sv:V",
-		 ["backup-mode", "calculate-average", "check-destination-dir",
+		 ["backup-mode", "calculate-average", "carbonfile",
+		  "check-destination-dir",
 		  "compare", "compare-at-time=", "create-full-path",
 		  "current-time=", "exclude=", "exclude-device-files",
 		  "exclude-fifos", "exclude-filelist=",
