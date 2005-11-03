@@ -56,7 +56,7 @@ field names and values.
 
 from __future__ import generators
 import re, gzip, os, binascii
-import log, Globals, rpath, Time, robust, increment, static
+import log, Globals, rpath, Time, robust, increment, static, rorpiter
 
 class ParsingError(Exception):
 	"""This is raised when bad or unparsable data is received"""
@@ -257,15 +257,20 @@ class FlatExtractor:
 
 	def iterate(self):
 		"""Return iterator that yields all objects with records"""
-		while 1:
-			next_pos = self.get_next_pos()
-			try: yield self.record_to_object(self.buf[:next_pos])
+		for record in self.iterate_records():
+			try: yield self.record_to_object(record)
 			except ParsingError, e:
 				if self.at_end: break # Ignore whitespace/bad records at end
 				log.Log("Error parsing flat file: %s" % (e,), 2)
+
+	def iterate_records(self):
+		"""Yield all text records in order"""
+		while 1:
+			next_pos = self.get_next_pos()
+			yield self.buf[:next_pos]
 			if self.at_end: break
 			self.buf = self.buf[next_pos:]
-		assert not self.close()
+		assert not self.fileobj.close()
 
 	def skip_to_index(self, index):
 		"""Scan through the file, set buffer to beginning of index record
@@ -304,7 +309,7 @@ class FlatExtractor:
 				yield obj
 			if self.at_end: break
 			self.buf = self.buf[next_pos:]
-		assert not self.close()
+		assert not self.fileobj.close()
 
 	def filename_to_index(self, filename):
 		"""Translate filename, possibly quoted, into an index tuple
@@ -315,9 +320,6 @@ class FlatExtractor:
 		"""
 		assert 0 # subclass
 
-	def close(self):
-		"""Return value of closing associated file"""
-		return self.fileobj.close()
 
 class RorpExtractor(FlatExtractor):
 	"""Iterate rorps from metadata file"""
@@ -335,87 +337,60 @@ class FlatFile:
 	recommended.
 
 	"""
-	_prefix = None # Set this to real prefix when subclassing
-	_rp, _fileobj = None, None
-	# Buffering may be useful because gzip writes are slow
-	_buffering_on = 1
+	rp, fileobj, mode = None, None, None
+	_buffering_on = 1 # Buffering may be useful because gzip writes are slow
 	_record_buffer, _max_buffer_size = None, 100
-	_extractor = FlatExtractor # Set to class that iterates objects
-
-	def open_file(cls, rp = None, compress = 1):
-		"""Open file for writing.  Use cls._rp if rp not given."""
-		assert not cls._fileobj, "Flatfile already open"
-		cls._record_buffer = []
-		if rp: cls._rp = rp
+	_extractor = FlatExtractor # Override to class that iterates objects
+	_object_to_record = None # Set to function converting object to record
+	_prefix = None # Set to required prefix
+	def __init__(self, rp, mode):
+		"""Open rp for reading ('r') or writing ('w')"""
+		self.rp = rp
+		self.mode = mode
+		self._record_buffer = []
+		assert rp.isincfile() and rp.getincbase_str() == self._prefix, rp
+		if mode == 'r':
+			self.fileobj = self.rp.open("rb", rp.isinccompressed())
 		else:
-			if compress: typestr = 'snapshot.gz'
-			else: typestr = 'snapshot'
-			cls._rp = Globals.rbdir.append(
-				"%s.%s.%s" % (cls._prefix, Time.curtimestr, typestr))
-		cls._fileobj = cls._rp.open("wb", compress = compress)
+			assert mode == 'w' and not self.rp.lstat(), (mode, rp)
+			self.fileobj = self.rp.open("wb", rp.isinccompressed())
 
-	def write_object(cls, object):
+	def write_record(self, record):
+		"""Write a (text) record into the file"""
+		if self._buffering_on:
+			self._record_buffer.append(record)
+			if len(self._record_buffer) >= self._max_buffer_size:
+				self.fileobj.write("".join(self._record_buffer))
+				self._record_buffer = []
+		else: self.fileobj.write(record)
+
+	def write_object(self, object):
 		"""Convert one object to record and write to file"""
-		record = cls._object_to_record(object)
-		if cls._buffering_on:
-			cls._record_buffer.append(record)
-			if len(cls._record_buffer) >= cls._max_buffer_size:
-				cls._fileobj.write("".join(cls._record_buffer))
-				cls._record_buffer = []
-		else: cls._fileobj.write(record)
+		self.write_record(self._object_to_record(object))
 
-	def close_file(cls):
-		"""Close file, for when any writing is done"""
-		assert cls._fileobj, "File already closed"
-		if cls._buffering_on and cls._record_buffer: 
-			cls._fileobj.write("".join(cls._record_buffer))
-			cls._record_buffer = []
-		try: fileno = cls._fileobj.fileno() # will not work if GzipFile
-		except AttributeError: fileno = cls._fileobj.fileobj.fileno()
-		os.fsync(fileno)
-		result = cls._fileobj.close()
-		cls._fileobj = None
-		cls._rp.setdata()
-		return result
-
-	def get_objects(cls, restrict_index = None, compressed = None):
+	def get_objects(self, restrict_index = None):
 		"""Return iterator of objects records from file rp"""
-		assert cls._rp, "Must have rp set before get_objects can be used"
-		if compressed is None:
-			if cls._rp.isincfile():
-				compressed = cls._rp.inc_compressed
-				assert (cls._rp.inc_type == 'data' or
-						cls._rp.inc_type == 'snapshot'), cls._rp.inc_type
-			else: compressed = cls._rp.get_indexpath().endswith('.gz')
+		if not restrict_index: return self._extractor(self.fileobj).iterate()
+		extractor = self._extractor(self.fileobj)
+		return extractor.iterate_starting_with(restrict_index)
 
-		fileobj = cls._rp.open('rb', compress = compressed)
-		if not restrict_index: return cls._extractor(fileobj).iterate()
-		else:
-			re = cls._extractor(fileobj)
-			return re.iterate_starting_with(restrict_index)
-		
-	def get_objects_at_time(cls, rbdir, time, restrict_index = None,
-							rblist = None):
-		"""Scan through rbdir, finding data at given time, iterate
+	def get_records(self):
+		"""Return iterator of text records"""
+		return self._extractor(self.fileobj).iterate_records()
 
-		If rblist is givenr, use that instead of listing rbdir.  Time
-		here is exact, we don't take the next one older or anything.
-		Returns None if no file matching prefix is found.
-
-		"""
-		if rblist is None:
-			rblist = map(lambda x: rbdir.append(x), robust.listrp(rbdir))
-
-		for rp in rblist:
-			if (rp.isincfile() and
-				(rp.getinctype() == "data" or rp.getinctype() == "snapshot")
-				and rp.getincbase_str() == cls._prefix):
-				if rp.getinctime() == time:
-					cls._rp = rp
-					return cls.get_objects(restrict_index)
-		return None
-
-static.MakeClass(FlatFile)
+	def close(self):
+		"""Close file, for when any writing is done"""
+		assert self.fileobj, "File already closed"
+		if self._buffering_on and self._record_buffer: 
+			self.fileobj.write("".join(self._record_buffer))
+			self._record_buffer = []
+		try: fileno = self.fileobj.fileno() # will not work if GzipFile
+		except AttributeError: fileno = self.fileobj.fileobj.fileno()
+		os.fsync(fileno)
+		result = self.fileobj.close()
+		self.fileobj = None
+		self.rp.setdata()
+		return result
 
 class MetadataFile(FlatFile):
 	"""Store/retrieve metadata from mirror_metadata as rorps"""
@@ -423,3 +398,165 @@ class MetadataFile(FlatFile):
 	_extractor = RorpExtractor
 	_object_to_record = staticmethod(RORP2Record)
 
+
+class CombinedWriter:
+	"""Used for simultaneously writting metadata, eas, and acls"""
+	def __init__(self, metawriter, eawriter, aclwriter):
+		self.metawriter = metawriter
+		self.eawriter, self.aclwriter = eawriter, aclwriter # these can be None
+
+	def write_object(self, rorp):
+		"""Write information in rorp to all the writers"""
+		self.metawriter.write_object(rorp)
+		if self.eawriter and not rorp.get_ea().empty():
+			self.eawriter.write_object(rorp.get_ea())
+		if self.aclwriter and not rorp.get_acl().is_basic():
+			self.aclwriter.write_object(rorp.get_acl())
+
+	def close(self):
+		self.metawriter.close()
+		if self.eawriter: self.eawriter.close()
+		if self.aclwriter: self.aclwriter.close()
+
+
+class Manager:
+	"""Read/Combine/Write metadata files by time"""
+	meta_prefix = 'mirror_metadata'
+	acl_prefix = 'access_control_lists'
+	ea_prefix = 'extended_attributes'
+
+	def __init__(self):
+		"""Set listing of rdiff-backup-data dir"""
+		self.rplist = []
+		self.timerpmap = {}
+		for filename in Globals.rbdir.listdir():
+			rp = Globals.rbdir.append(filename)
+			if rp.isincfile():
+				self.rplist.append(rp)
+				time = rp.getinctime()
+				if self.timerpmap.has_key(time):
+					self.timerpmap[time].append(rp)
+				else: self.timerpmap[time] = [rp]
+				
+	def _iter_helper(self, prefix, flatfileclass, time, restrict_index):
+		"""Used below to find the right kind of file by time"""
+		if not self.timerpmap.has_key(time): return None
+		for rp in self.timerpmap[time]:
+			if rp.getincbase_str() == prefix:
+				return flatfileclass(rp, 'r').get_objects(restrict_index)
+		return None
+
+	def get_meta_at_time(self, time, restrict_index):
+		"""Return iter of metadata rorps at given time (or None)"""
+		return self._iter_helper(self.meta_prefix, MetadataFile,
+								 time, restrict_index)
+
+	def get_eas_at_time(self, time, restrict_index):
+		"""Return Extended Attributes iter at given time (or None)"""
+		return self._iter_helper(self.ea_prefix,
+					  eas_acls.ExtendedAttributesFile, time, restrict_index)
+
+	def get_acls_at_time(self, time, restrict_index):
+		"""Return ACLs iter at given time from recordfile (or None)"""
+		return self._iter_helper(self.acl_prefix,
+					  eas_acls.AccessControlListFile, time, restrict_index)
+
+	def GetAtTime(self, time, restrict_index = None):
+		"""Return combined metadata iter with ea/acl info if necessary"""
+		cur_iter = self.get_meta_at_time(time, restrict_index)
+		if not cur_iter:
+			log.Log("Warning, could not find mirror_metadata file.\n"
+					"Metadata will be read from filesystem instead.", 2)
+			return None
+
+		if Globals.acls_active:
+			acl_iter = self.get_acls_at_time(time, restrict_index)
+			if not acl_iter:
+				log.Log("Warning: Access Control List file not found", 2)
+				acl_iter = iter([])
+			cur_iter = eas_acls.join_acl_iter(cur_iter, acl_iter)
+		if Globals.eas_active:
+			ea_iter = self.get_eas_at_time(time, restrict_index)
+			if not ea_iter:
+				log.Log("Warning: Extended Attributes file not found", 2)
+				ea_iter = iter([])
+			cur_iter = eas_acls.join_ea_iter(cur_iter, ea_iter)
+		return cur_iter
+
+	def _writer_helper(self, prefix, flatfileclass, typestr, time):
+		"""Used in the get_xx_writer functions, returns a writer class"""
+		if time is None: timestr = Time.curtimestr
+		else: timestr = Time.timetostring(time)		
+		filename = '%s.%s.%s.gz' % (prefix, timestr, typestr)
+		rp = Globals.rbdir.append(filename)
+		assert not rp.lstat(), "File %s already exists!" % (rp.path,)
+		return flatfileclass(rp, 'w')
+
+	def get_meta_writer(self, typestr, time):
+		"""Return MetadataFile object opened for writing at given time"""
+		return self._writer_helper(self.meta_prefix, MetadataFile,
+								   typestr, time)
+
+	def get_ea_writer(self, typestr, time):
+		"""Return ExtendedAttributesFile opened for writing"""
+		return self._writer_helper(self.ea_prefix,
+						 eas_acls.ExtendedAttributesFile, typestr, time)
+
+	def get_acl_writer(self, typestr, time):
+		"""Return AccessControlListFile opened for writing"""
+		return self._writer_helper(self.acl_prefix,
+						 eas_acls.AccessControlListFile, typestr, time)
+
+	def GetWriter(self, typestr = 'snapshot', time = None):
+		"""Get a writer object that can write meta and possibly acls/eas"""
+		metawriter = self.get_meta_writer(typestr, time)
+		if not Globals.eas_active and not Globals.acls_active:
+			return metawriter # no need for a CombinedWriter
+
+		if Globals.eas_active: ea_writer = self.get_ea_writer(typestr, time)
+		if Globals.acls_active: acl_writer = self.get_acl_writer(typestr, time)
+		return CombinedWriter(metawriter, ea_writer, acl_writer)
+
+ManagerObj = None # Set this later to Manager instance
+def SetManager():
+	global ManagerObj
+	ManagerObj = Manager()
+
+
+def patch(*meta_iters):
+	"""Return an iterator of metadata files by combining all the given iters
+
+	The iters should be given as a list/tuple in reverse chronological
+	order.  The earliest rorp in each iter will supercede all the
+	later ones.
+
+	"""
+	for meta_tuple in rorpiter.CollateIterators(*meta_iters):
+		for i in range(len(meta_tuple)-1, -1, -1):
+			if meta_tuple[i]:
+				if meta_tuple[i].lstat(): yield meta_tuple[i]
+				break # move to next index
+		else: assert 0, "No valid rorps"
+
+def Convert_diff(cur_time, old_time):
+	"""Convert the metadata snapshot at old_time to diff format
+
+	The point is just to save space.  The diff format is simple, just
+	include in the diff all of the older rorps that are different in
+	the two metadata rorps.
+
+	"""
+	rblist = [Globals.rbdir.append(filename)
+			  for filename in robust.listrp(Globals.rbdir)]
+	cur_iter = MetadataFile.get_objects_at_time(
+		Globals.rbdir, cur_time, None, rblist)
+	old_iter = MetadataFile.get_objects_at_time(
+		Globals.rbdir, old_time, None, rblist)
+	assert cur_iter.type == old_iter.type == 'snapshot'
+	diff_file = MetadataFile.open_file(None, 1, 'diff', old_time)
+
+	for cur_rorp, old_rorp in rorpiter.Collate2Iters(cur_iter, old_iter):
+		XXX
+
+
+import eas_acls # put at bottom to avoid python circularity bug
