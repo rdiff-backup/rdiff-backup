@@ -23,7 +23,7 @@ from __future__ import generators
 import errno
 import Globals, metadata, rorpiter, TempFile, Hardlink, robust, increment, \
 	   rpath, static, log, selection, Time, Rdiff, statistics, iterfile, \
-	   eas_acls, hash
+	   hash
 
 def Mirror(src_rpath, dest_rpath):
 	"""Turn dest_rpath into a copy of src_rpath"""
@@ -135,10 +135,9 @@ class DestinationStruct:
 			sel.parse_rbdir_exclude()
 			return sel.set_iter()
 
+		metadata.SetManager()
 		if use_metadata:
-			rorp_iter = eas_acls.GetCombinedMetadataIter(
-				Globals.rbdir, Time.prevtime,
-				acls = Globals.acls_active, eas = Globals.eas_active)
+			rorp_iter = metadata.ManagerObj.GetAtTime(Time.prevtime)
 			if rorp_iter: return rorp_iter
 		return get_iter_from_fs()
 
@@ -273,9 +272,7 @@ class CacheCollatedPostProcess:
 
 		self.statfileobj = statistics.init_statfileobj()
 		if Globals.file_statistics: statistics.FileStats.init()
-		metadata.MetadataFile.open_file()
-		if Globals.eas_active: eas_acls.ExtendedAttributesFile.open_file()
-		if Globals.acls_active: eas_acls.AccessControlListFile.open_file()
+		self.metawriter = metadata.ManagerObj.GetWriter()
 
 		# the following should map indicies to lists
 		# [source_rorp, dest_rorp, changed_flag, success_flag, increment]
@@ -381,13 +378,7 @@ class CacheCollatedPostProcess:
 			self.statfileobj.add_changed(source_rorp, dest_rorp)
 
 		if metadata_rorp and metadata_rorp.lstat():
-			metadata.MetadataFile.write_object(metadata_rorp)
-			if Globals.eas_active and not metadata_rorp.get_ea().empty():
-				eas_acls.ExtendedAttributesFile.write_object(
-					metadata_rorp.get_ea())
-			if Globals.acls_active and not metadata_rorp.get_acl().is_basic():
-				eas_acls.AccessControlListFile.write_object(
-					metadata_rorp.get_acl())
+			self.metawriter.write_object(metadata_rorp)
 		if Globals.file_statistics:
 			statistics.FileStats.update(source_rorp, dest_rorp, changed, inc)
 
@@ -451,9 +442,8 @@ class CacheCollatedPostProcess:
 		while self.dir_perms_list:
 			dir_rp, perms = self.dir_perms_list.pop()
 			dir_rp.chmod(perms)
-		metadata.MetadataFile.close_file()
-		if Globals.eas_active: eas_acls.ExtendedAttributesFile.close_file()
-		if Globals.acls_active: eas_acls.AccessControlListFile.close_file()
+		self.metawriter.close()
+
 		if Globals.print_statistics: statistics.print_active_stats()
 		if Globals.file_statistics: statistics.FileStats.close()
 		statistics.write_active_statfileobj()

@@ -22,7 +22,7 @@
 from __future__ import generators
 import tempfile, os, cStringIO
 import Globals, Time, Rdiff, Hardlink, rorpiter, selection, rpath, \
-	   log, static, robust, metadata, statistics, TempFile, eas_acls, hash
+	   log, static, robust, metadata, statistics, TempFile, hash
 
 
 class RestoreError(Exception): pass
@@ -177,9 +177,9 @@ class MirrorStruct:
 		"""
 		if rest_time is None: rest_time = cls._rest_time
 
-		rorp_iter = eas_acls.GetCombinedMetadataIter(
-			Globals.rbdir, rest_time, restrict_index = cls.mirror_base.index,
-			acls = Globals.acls_active, eas = Globals.eas_active)
+		if not metadata.ManagerObj: metadata.SetManager()
+		rorp_iter = metadata.ManagerObj.GetAtTime(rest_time,
+												  cls.mirror_base.index)
 		if not rorp_iter:
 			if require_metadata:
 				log.Log.FatalError("Mirror metadata not found")

@@ -30,7 +30,7 @@ from __future__ import generators
 import base64, errno, re
 try: import posix1e
 except ImportError: pass
-import static, Globals, metadata, connection, rorpiter, log, C, \
+import static, Globals, eas_acls, connection, metadata, rorpiter, log, C, \
 	   rpath, user_group
 
 # When an ACL gets dropped, put name in dropped_acl_names.  This is
@@ -170,24 +170,13 @@ class ExtendedAttributesFile(metadata.FlatFile):
 	_extractor = EAExtractor
 	_object_to_record = staticmethod(EA2Record)
 
-	def join(cls, rorp_iter, rbdir, time, restrict_index):
-		"""Add extended attribute information to existing rorp_iter"""
-		def helper(rorp_iter, ea_iter):
-			"""Add EA information in ea_iter to rorp_iter"""
-			collated = rorpiter.CollateIterators(rorp_iter, ea_iter)
-			for rorp, ea in collated:
-				assert rorp, (rorp, (ea.index, ea.attr_dict), time)
-				if not ea: ea = ExtendedAttributes(rorp.index)
-				rorp.set_ea(ea)
-				yield rorp
-			
-		ea_iter = cls.get_objects_at_time(rbdir, time, restrict_index)
-		if not ea_iter:
-			log.Log("Warning: Extended attributes file not found", 2)
-			ea_iter = iter([])
-		return helper(rorp_iter, ea_iter)
-
-static.MakeClass(ExtendedAttributesFile)
+def join_ea_iter(rorp_iter, ea_iter):
+	"""Update a rorp iter by adding the information from ea_iter"""
+	for rorp, ea in rorpiter.CollateIterators(rorp_iter, ea_iter):
+		assert rorp, "Missing rorp for index %s" % (ea.index,)
+		if not ea: ea = ExtendedAttributes(rorp.index)
+		rorp.set_ea(ea)
+		yield rorp
 
 
 class AccessControlLists:
@@ -521,49 +510,14 @@ class AccessControlListFile(metadata.FlatFile):
 	_extractor = ACLExtractor
 	_object_to_record = staticmethod(ACL2Record)
 
-	def join(cls, rorp_iter, rbdir, time, restrict_index):
-		"""Add access control list information to existing rorp_iter"""
-		def helper(rorp_iter, acl_iter):
-			"""Add ACL information in acl_iter to rorp_iter"""
-			collated = rorpiter.CollateIterators(rorp_iter, acl_iter)
-			for rorp, acl in collated:
-				assert rorp, "Missing rorp for index %s" % (acl.index,)
-				if not acl: acl = AccessControlLists(rorp.index)
-				rorp.set_acl(acl)
-				yield rorp
-
-		acl_iter = cls.get_objects_at_time(rbdir, time, restrict_index)
-		if not acl_iter:
-			log.Log("Warning: Access Control List file not found", 2)
-			acl_iter = iter([])
-		return helper(rorp_iter, acl_iter)
-
-static.MakeClass(AccessControlListFile)
-
-
-def GetCombinedMetadataIter(rbdir, time, restrict_index = None,
-							acls = None, eas = None):
-	"""Return iterator of rorps from metadata and related files
-
-	None will be returned if the metadata file is absent.  If acls or
-	eas is true, access control list or extended attribute information
-	will be added.
-
-	"""
-	metadata_iter = metadata.MetadataFile.get_objects_at_time(
-		rbdir, time, restrict_index)
-	if not metadata_iter:
-		log.Log("Warning, metadata file not found.\n"
-				"Metadata will be read from filesystem.", 2)
-		return None
-	if eas:
-		metadata_iter = ExtendedAttributesFile.join(
-			metadata_iter, rbdir, time, restrict_index)
-	if acls:
-		metadata_iter = AccessControlListFile.join(
-			metadata_iter, rbdir, time, restrict_index)
-	return metadata_iter
-
+def join_acl_iter(rorp_iter, acl_iter):
+	"""Update a rorp iter by adding the information from acl_iter"""
+	for rorp, acl in rorpiter.CollateIterators(rorp_iter, acl_iter):
+		assert rorp, "Missing rorp for index %s" % (acl.index,)
+		if not acl: acl = AccessControlLists(rorp.index)
+		rorp.set_acl(acl)
+		yield rorp
+	
 
 def rpath_acl_get(rp):
 	"""Get acls of given rpath rp.

@@ -60,7 +60,7 @@ class MetadataTest(unittest.TestCase):
 	def write_metadata_to_temp(self):
 		"""If necessary, write metadata of bigdir to file metadata.gz"""
 		global tempdir
-		temprp = tempdir.append("metadata.gz")
+		temprp = tempdir.append("mirror_metadata.2005-11-03T14:51:06-06:00.snapshot.gz")
 		if temprp.lstat(): return temprp
 
 		self.make_temp()
@@ -68,19 +68,19 @@ class MetadataTest(unittest.TestCase):
 		rpath_iter = selection.Select(rootrp).set_iter()
 
 		start_time = time.time()
-		MetadataFile.open_file(temprp)
-		for rp in rpath_iter: MetadataFile.write_object(rp)
-		MetadataFile.close_file()
+		mf = MetadataFile(temprp, 'w')
+		for rp in rpath_iter: mf.write_object(rp)
+		mf.close()
 		print "Writing metadata took %s seconds" % (time.time() - start_time)
 		return temprp
 
 	def testSpeed(self):
 		"""Test testIterator on 10000 files"""
 		temprp = self.write_metadata_to_temp()
-		MetadataFile._rp = temprp
+		mf = MetadataFile(temprp, 'r')
 		
 		start_time = time.time(); i = 0
-		for rorp in MetadataFile.get_objects(): i += 1
+		for rorp in mf.get_objects(): i += 1
 		print "Reading %s metadata entries took %s seconds." % \
 			  (i, time.time() - start_time)
 
@@ -102,9 +102,9 @@ class MetadataTest(unittest.TestCase):
 
 		"""
 		temprp = self.write_metadata_to_temp()
-		MetadataFile._rp = temprp
+		mf = MetadataFile(temprp, 'r')
 		start_time = time.time(); i = 0
-		for rorp in MetadataFile.get_objects(("subdir3", "subdir10")): i += 1
+		for rorp in mf.get_objects(("subdir3", "subdir10")): i += 1
 		print "Reading %s metadata entries took %s seconds." % \
 			  (i, time.time() - start_time)
 		assert i == 51
@@ -112,7 +112,7 @@ class MetadataTest(unittest.TestCase):
 	def test_write(self):
 		"""Test writing to metadata file, then reading back contents"""
 		global tempdir
-		temprp = tempdir.append("write_test.gz")
+		temprp = tempdir.append("mirror_metadata.2005-11-03T12:51:06-06:00.snapshot.gz")
 		if temprp.lstat(): temprp.delete()
 
 		self.make_temp()
@@ -123,14 +123,42 @@ class MetadataTest(unittest.TestCase):
 		rps = map(rootrp.append, dirlisting)
 
 		assert not temprp.lstat()
-		MetadataFile.open_file(temprp)
-		for rp in rps: MetadataFile.write_object(rp)
-		MetadataFile.close_file()
+		write_mf = MetadataFile(temprp, 'w')
+		for rp in rps: write_mf.write_object(rp)
+		write_mf.close()
 		assert temprp.lstat()
 
-		reread_rps = list(MetadataFile.get_objects())
+		reread_rps = list(MetadataFile(temprp, 'r').get_objects())
 		assert len(reread_rps) == len(rps), (len(reread_rps), len(rps))
 		for i in range(len(reread_rps)):
 			assert reread_rps[i] == rps[i], i
+
+	def test_patch(self):
+		"""Test combining 3 iters of metadata rorps"""
+		self.make_temp()
+		os.system('cp -a testfiles/various_file_types/* ' + tempdir.path)
+
+		rp1 = tempdir.append('regular_file')
+		rp2 = tempdir.append('subdir')
+		rp3 = rp2.append('subdir_file')
+		rp4 = tempdir.append('test')
+
+		rp1new = tempdir.append('regular_file')
+		rp1new.chmod(0)
+		zero = rpath.RORPath(('test',))
+
+		current = [rp1, rp2, rp3]
+		diff1 = [rp1, rp4]
+		diff2 = [rp1new, rp2, zero]
+
+		output = patch(iter(current), iter(diff1), iter(diff2))
+		out1 = output.next()
+		assert out1 is rp1new, out1
+		out2 = output.next()
+		assert out2 is rp2, out2
+		out3 = output.next()
+		assert out3 is rp3, out3
+		self.assertRaises(StopIteration, output.next)
+
 
 if __name__ == "__main__": unittest.main()
