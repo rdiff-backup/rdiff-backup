@@ -141,16 +141,16 @@ user.empty
 
 		# Now write records corresponding to above rps into file
 		Globals.rbdir = tempdir
-		Time.setcurtime(10000)
-		ExtendedAttributesFile.open_file()
+		man = metadata.PatchDiffMan()
+		writer = man.get_ea_writer('snapshot', 10000)
 		for rp in [self.ea_testdir1, rp1, rp2, rp3]:
 			ea = ExtendedAttributes(rp.index)
 			ea.read_from_rp(rp)
-			ExtendedAttributesFile.write_object(ea)
-		ExtendedAttributesFile.close_file()
+			writer.write_object(ea)
+		writer.close()
 
 		# Read back records and compare
-		ea_iter = ExtendedAttributesFile.get_objects_at_time(tempdir, 10000)
+		ea_iter = man.get_eas_at_time(10000, None)
 		assert ea_iter, "No extended_attributes.<time> file found"
 		sample_ea_reread = ea_iter.next()
 		assert sample_ea_reread == self.sample_ea
@@ -357,22 +357,23 @@ other::---
 	def testIterate(self):
 		"""Test writing several records and then reading them back"""
 		self.make_backup_dirs()
+		self.make_temp()
 		rp1 = self.acl_testdir1.append('1')
 		rp2 = self.acl_testdir1.append('2')
 		rp3 = self.acl_testdir1.append('3')
 
 		# Now write records corresponding to above rps into file
 		Globals.rbdir = tempdir
-		Time.setcurtime(10000)
-		AccessControlListFile.open_file()
+		man = metadata.PatchDiffMan()
+		writer = man.get_acl_writer('snapshot', 10000)
 		for rp in [self.acl_testdir1, rp1, rp2, rp3]:
 			acl = AccessControlLists(rp.index)
 			acl.read_from_rp(rp)
-			AccessControlListFile.write_object(acl)
-		AccessControlListFile.close_file()
+			writer.write_object(acl)
+		writer.close()
 
 		# Read back records and compare
-		acl_iter = AccessControlListFile.get_objects_at_time(tempdir, 10000)
+		acl_iter = man.get_acls_at_time(10000, None)
 		assert acl_iter, "No acl file found"
 		dir_acl_reread = acl_iter.next()
 		assert dir_acl_reread == self.dir_acl

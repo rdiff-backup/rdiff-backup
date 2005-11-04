@@ -4,6 +4,9 @@ New in v1.1.1 (????/??/??)
 rdiff-backup now writes SHA1 sums into its mirror_metadata file for
 all regular files, and checks them when restoring.
 
+The above greatly increases the size of the mirror_metadata files, so
+diff them for space efficiency, as suggested by Dean Gaudet.
+
 Added two new comparison modes: full file (using the --compare-full or
 --compare-full-at-time) or by hash (--compare-hash and
 --compare-hash-at-time).

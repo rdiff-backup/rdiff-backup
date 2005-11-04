@@ -1,5 +1,5 @@
 import unittest, StringIO
-from rdiff_backup import hash, rpath, regress, restore, metadata
+from rdiff_backup import hash
 from commontest import *
 
 class HashTest(unittest.TestCase):
@@ -81,7 +81,7 @@ class HashTest(unittest.TestCase):
 		in_rp1, hashlist1, in_rp2, hashlist2 = self.make_dirs()
 		Myrm("testfiles/output")
 
-		rdiff_backup(1, 1, in_rp1.path, "testfiles/output", 10000, "-v5")
+		rdiff_backup(1, 1, in_rp1.path, "testfiles/output", 10000, "-v3")
 		meta_prefix = rpath.RPath(Globals.local_connection,
 					  "testfiles/output/rdiff-backup-data/mirror_metadata")
 		incs = restore.get_inclist(meta_prefix)
@@ -90,14 +90,53 @@ class HashTest(unittest.TestCase):
 		hashlist = self.extract_hashs(metadata_rp)
 		assert hashlist == hashlist1, (hashlist1, hashlist)
 
-		rdiff_backup(1, 1, in_rp2.path, "testfiles/output", 20000, "-v7")
+		rdiff_backup(1, 1, in_rp2.path, "testfiles/output", 20000, "-v3")
 		incs = restore.get_inclist(meta_prefix)
 		assert len(incs) == 2
-		metadata_rp.delete() # easy way to find the other one
-		incs = restore.get_inclist(meta_prefix)
-		assert len(incs) == 1
-		hashlist = self.extract_hashs(incs[0])
+		if incs[0].getinctype() == 'snapshot': inc = incs[0]
+		else: inc = incs[1]
+		hashlist = self.extract_hashs(inc)
 		assert hashlist == hashlist2, (hashlist2, hashlist)
 
+	def test_rorpiter_xfer(self):
+		"""Test if hashes are transferred in files, rorpiter"""
+		#log.Log.setverbosity(5)
+		Globals.security_level = 'override'
+		conn = SetConnections.init_connection('python ./server.py .')
+		assert conn.reval("lambda x: x+1", 4) == 5 # connection sanity check
+
+		fp = hash.FileWrapper(StringIO.StringIO(self.s1))
+		conn.Globals.set('tmp_file', fp)
+		fp_remote = conn.Globals.get('tmp_file')
+		assert fp_remote.read() == self.s1
+		assert fp_remote.close().sha1_digest == self.s1_hash
+
+		# Tested xfer of file, now test xfer of files in rorpiter
+		root = MakeOutputDir()
+		rp1 = root.append('s1')
+		rp1.write_string(self.s1)
+		rp2 = root.append('s2')
+		rp2.write_string(self.s2)
+		rp1.setfile(hash.FileWrapper(rp1.open('rb')))
+		rp2.setfile(hash.FileWrapper(rp2.open('rb')))
+		rpiter = iter([rp1, rp2])
+
+		conn.Globals.set('tmp_conn_iter', rpiter)
+		remote_iter = conn.Globals.get('tmp_conn_iter')
+
+		rorp1 = remote_iter.next()
+		fp = rorp1.open('rb')
+		assert fp.read() == self.s1, fp.read()
+		ret_val = fp.close()
+		assert isinstance(ret_val, hash.Report), ret_val
+		assert ret_val.sha1_digest == self.s1_hash
+		rorp2 = remote_iter.next()
+		fp2 = rorp1.open('rb')
+		assert fp2.close().sha1_digest == self.s2_hash
+
+		conn.quit()
+
+
+from rdiff_backup import rpath, regress, restore, metadata, log, Globals
 
 if __name__ == "__main__": unittest.main()

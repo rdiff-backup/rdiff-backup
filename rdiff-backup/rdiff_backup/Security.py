@@ -206,12 +206,12 @@ def vet_request(request, arglist):
 	"""Examine request for security violations"""
 	#if Globals.server: sys.stderr.write(str(request) + "\n")
 	security_level = Globals.security_level
+	if security_level == "override": return
 	if Globals.restrict_path:
 		for arg in arglist:
 			if isinstance(arg, rpath.RPath): vet_rpath(arg)
 		if request.function_string in file_requests:
 			vet_filename(request, arglist)
-	if security_level == "override": return
 	if request.function_string in allowed_requests: return
 	if request.function_string in ("Globals.set", "Globals.set_local"):
 		if arglist[0] not in disallowed_server_globals: return

@@ -267,8 +267,10 @@ class FlatExtractor:
 		"""Yield all text records in order"""
 		while 1:
 			next_pos = self.get_next_pos()
+			if self.at_end:
+				if next_pos: yield self.buf[:next_pos]
+				break
 			yield self.buf[:next_pos]
-			if self.at_end: break
 			self.buf = self.buf[next_pos:]
 		assert not self.fileobj.close()
 
@@ -428,16 +430,23 @@ class Manager:
 	def __init__(self):
 		"""Set listing of rdiff-backup-data dir"""
 		self.rplist = []
-		self.timerpmap = {}
+		self.timerpmap, self.prefixmap = {}, {}
 		for filename in Globals.rbdir.listdir():
 			rp = Globals.rbdir.append(filename)
-			if rp.isincfile():
-				self.rplist.append(rp)
-				time = rp.getinctime()
-				if self.timerpmap.has_key(time):
-					self.timerpmap[time].append(rp)
-				else: self.timerpmap[time] = [rp]
+			if rp.isincfile(): self.add_incrp(rp)
 				
+	def add_incrp(self, rp):
+		"""Add rp to list of inc rps in the rbdir"""
+		self.rplist.append(rp)
+		time = rp.getinctime()
+		if self.timerpmap.has_key(time):
+			self.timerpmap[time].append(rp)
+		else: self.timerpmap[time] = [rp]
+
+		incbase = rp.getincbase_str()
+		if self.prefixmap.has_key(incbase): self.prefixmap[incbase].append(rp)
+		else: self.prefixmap[incbase] = [rp]
+
 	def _iter_helper(self, prefix, flatfileclass, time, restrict_index):
 		"""Used below to find the right kind of file by time"""
 		if not self.timerpmap.has_key(time): return None
@@ -490,6 +499,8 @@ class Manager:
 		filename = '%s.%s.%s.gz' % (prefix, timestr, typestr)
 		rp = Globals.rbdir.append(filename)
 		assert not rp.lstat(), "File %s already exists!" % (rp.path,)
+		assert rp.isincfile()
+		self.add_incrp(rp)
 		return flatfileclass(rp, 'w')
 
 	def get_meta_writer(self, typestr, time):
@@ -514,49 +525,112 @@ class Manager:
 			return metawriter # no need for a CombinedWriter
 
 		if Globals.eas_active: ea_writer = self.get_ea_writer(typestr, time)
+		else: ea_writer = None
 		if Globals.acls_active: acl_writer = self.get_acl_writer(typestr, time)
+		else: acl_writer = None
 		return CombinedWriter(metawriter, ea_writer, acl_writer)
+
+class PatchDiffMan(Manager):
+	"""Contains functions for patching and diffing metadata
+
+	To save space, we can record a full list of only the most recent
+	metadata, using the normal rdiff-backup reverse increment
+	strategy.  Instead of using librsync to compute diffs, though, we
+	use our own technique so that the diff files are still
+	hand-editable.
+
+	A mirror_metadata diff has the same format as a mirror_metadata
+	snapshot.  If the record for an index is missing from the diff, it
+	indicates no change from the original.  If it is present it
+	replaces the mirror_metadata entry, unless it has Type None, which
+	indicates the record should be deleted from the original.
+
+	"""
+	max_diff_chain = 9 # After this many diffs, make a new snapshot
+
+	def get_diffiter(self, new_iter, old_iter):
+		"""Iterate meta diffs of new_iter -> old_iter"""
+		for new_rorp, old_rorp in rorpiter.Collate2Iters(new_iter, old_iter):
+			if not old_rorp: yield rpath.RORPath(new_rorp.index)
+			elif not new_rorp or new_rorp.data != old_rorp.data:
+				# exact compare here, can't use == on rorps
+				yield old_rorp
+
+	def sorted_meta_inclist(self, min_time = 0):
+		"""Return list of mirror_metadata incs, reverse sorted by time"""
+		if not self.prefixmap.has_key('mirror_metadata'): return []
+		sortlist = [(rp.getinctime(), rp)
+					for rp in self.prefixmap['mirror_metadata']]
+		sortlist.sort()
+		sortlist.reverse()
+		return [rp for (time, rp) in sortlist if time >= min_time]
+
+	def check_needs_diff(self):
+		"""Check if we should diff, returns (new, old) rps, or (None, None)"""
+		inclist = self.sorted_meta_inclist()
+		assert len(inclist) >= 1
+		if len(inclist) == 1: return (None, None)
+		newrp, oldrp = inclist[:2]
+		assert newrp.getinctype() == oldrp.getinctype() == 'snapshot'
+
+		chainlen = 1
+		for rp in inclist[2:]:
+			if rp.getinctype() != 'diff': break
+			chainlen += 1
+		if chainlen >= self.max_diff_chain: return (None, None)
+		return (newrp, oldrp)
+
+	def ConvertMetaToDiff(self):
+		"""Replace a mirror snapshot with a diff if it's appropriate"""
+		newrp, oldrp = self.check_needs_diff()
+		if not newrp: return
+		log.Log("Writing mirror_metadata diff", 6)
+
+		diff_writer = self.get_meta_writer('diff', oldrp.getinctime())
+		new_iter = MetadataFile(newrp, 'r').get_objects()
+		old_iter = MetadataFile(oldrp, 'r').get_objects()
+		for diff_rorp in self.get_diffiter(new_iter, old_iter):
+			diff_writer.write_object(diff_rorp)
+		diff_writer.close() # includes sync
+		oldrp.delete()
+
+	def get_meta_at_time(self, time, restrict_index):
+		"""Get metadata rorp iter, possibly by patching with diffs"""
+		meta_iters = [MetadataFile(rp, 'r').get_objects(restrict_index)
+					  for rp in self.relevant_meta_incs(time)]
+		if not meta_iters: return None
+		if len(meta_iters) == 1: return meta_iters[0]
+		return self.iterate_patched_meta(meta_iters)
+
+	def relevant_meta_incs(self, time):
+		"""Return list [snapshotrp, diffrps ...] time sorted"""
+		inclist = self.sorted_meta_inclist(min_time = time)
+		if not inclist: return inclist
+		assert inclist[-1].getinctime() == time, inclist[-1]
+		for i in range(len(inclist)-1, -1, -1):
+			if inclist[i].getinctype() == 'snapshot':
+				return inclist[i:]
+		assert 0, "Inclist %s contains no snapshots" % (inclist,)
+
+	def iterate_patched_meta(self, meta_iter_list):
+		"""Return an iter of metadata rorps by combining the given iters
+
+		The iters should be given as a list/tuple in reverse
+		chronological order.  The earliest rorp in each iter will
+		supercede all the later ones.
+
+		"""
+		for meta_tuple in rorpiter.CollateIterators(*meta_iter_list):
+			for i in range(len(meta_tuple)-1, -1, -1):
+				if meta_tuple[i]:
+					if meta_tuple[i].lstat(): yield meta_tuple[i]
+					break # move to next index
+			else: assert 0, "No valid rorps"
 
 ManagerObj = None # Set this later to Manager instance
 def SetManager():
 	global ManagerObj
-	ManagerObj = Manager()
-
-
-def patch(*meta_iters):
-	"""Return an iterator of metadata files by combining all the given iters
-
-	The iters should be given as a list/tuple in reverse chronological
-	order.  The earliest rorp in each iter will supercede all the
-	later ones.
-
-	"""
-	for meta_tuple in rorpiter.CollateIterators(*meta_iters):
-		for i in range(len(meta_tuple)-1, -1, -1):
-			if meta_tuple[i]:
-				if meta_tuple[i].lstat(): yield meta_tuple[i]
-				break # move to next index
-		else: assert 0, "No valid rorps"
-
-def Convert_diff(cur_time, old_time):
-	"""Convert the metadata snapshot at old_time to diff format
-
-	The point is just to save space.  The diff format is simple, just
-	include in the diff all of the older rorps that are different in
-	the two metadata rorps.
-
-	"""
-	rblist = [Globals.rbdir.append(filename)
-			  for filename in robust.listrp(Globals.rbdir)]
-	cur_iter = MetadataFile.get_objects_at_time(
-		Globals.rbdir, cur_time, None, rblist)
-	old_iter = MetadataFile.get_objects_at_time(
-		Globals.rbdir, old_time, None, rblist)
-	assert cur_iter.type == old_iter.type == 'snapshot'
-	diff_file = MetadataFile.open_file(None, 1, 'diff', old_time)
-
-	for cur_rorp, old_rorp in rorpiter.Collate2Iters(cur_iter, old_iter):
-		XXX
+	ManagerObj = PatchDiffMan()
 
 
 import eas_acls # put at bottom to avoid python circularity bug

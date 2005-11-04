@@ -1,6 +1,6 @@
 import unittest, os, cStringIO, time
 from rdiff_backup.metadata import *
-from rdiff_backup import rpath, connection, Globals, selection
+from rdiff_backup import rpath, connection, Globals, selection, lazy
 
 tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
 
@@ -151,7 +151,9 @@ class MetadataTest(unittest.TestCase):
 		diff1 = [rp1, rp4]
 		diff2 = [rp1new, rp2, zero]
 
-		output = patch(iter(current), iter(diff1), iter(diff2))
+		Globals.rbdir = tempdir
+		output = PatchDiffMan().iterate_patched_meta(
+			            [iter(current), iter(diff1), iter(diff2)])
 		out1 = output.next()
 		assert out1 is rp1new, out1
 		out2 = output.next()
@@ -160,5 +162,57 @@ class MetadataTest(unittest.TestCase):
 		assert out3 is rp3, out3
 		self.assertRaises(StopIteration, output.next)
 
+	def test_meta_patch_cycle(self):
+		"""Create various metadata rorps, diff them, then compare"""
+		def write_dir_to_meta(manager, rp, time):
+			"""Record the metadata under rp to a mirror_metadata file"""
+			metawriter = man.get_meta_writer('snapshot', time)
+			for rorp in selection.Select(rp).set_iter():
+				metawriter.write_object(rorp)
+			metawriter.close()
+
+		def compare(man, rootrp, time):
+			assert lazy.Iter.equal(selection.Select(rootrp).set_iter(),
+								   man.get_meta_at_time(time, None))
+
+
+		self.make_temp()
+		Globals.rbdir = tempdir
+		man = PatchDiffMan()
+		inc1 = rpath.RPath(Globals.local_connection, "testfiles/increment1")
+		inc2 = rpath.RPath(Globals.local_connection, "testfiles/increment2")
+		inc3 = rpath.RPath(Globals.local_connection, "testfiles/increment3")
+		inc4 = rpath.RPath(Globals.local_connection, "testfiles/increment4")
+		write_dir_to_meta(man, inc1, 10000)
+		compare(man, inc1, 10000)
+		write_dir_to_meta(man, inc2, 20000)
+		compare(man, inc2, 20000)
+		man.ConvertMetaToDiff()
+		man = PatchDiffMan()
+		write_dir_to_meta(man, inc3, 30000)
+		compare(man, inc3, 30000)
+		man.ConvertMetaToDiff()
+		man = PatchDiffMan()
+		man.max_diff_chain = 3
+		write_dir_to_meta(man, inc4, 40000)
+		compare(man, inc4, 40000)
+		man.ConvertMetaToDiff()
+
+		man = PatchDiffMan()
+		l = man.sorted_meta_inclist()
+		assert l[0].getinctype() == 'snapshot'
+		assert l[0].getinctime() == 40000
+		assert l[1].getinctype() == 'snapshot'
+		assert l[1].getinctime() == 30000
+		assert l[2].getinctype() == 'diff'
+		assert l[2].getinctime() == 20000
+		assert l[3].getinctype() == 'diff'
+		assert l[3].getinctime() == 10000
+
+		compare(man, inc1, 10000)
+		compare(man, inc2, 20000)
+		compare(man, inc3, 30000)
+		compare(man, inc4, 40000)
+		
 
 if __name__ == "__main__": unittest.main()
