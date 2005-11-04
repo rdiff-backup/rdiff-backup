@@ -55,7 +55,7 @@ def get_delta_sigrp(rp_signature, rp_new):
 
 def get_delta_sigrp_hash(rp_signature, rp_new):
 	"""Like above but also calculate hash of new as close() value"""
-	log.Log("Getting delta with hash of %s with signature %s" %
+	log.Log("Getting delta (with hash) of %s with signature %s" %
 			(rp_new.path, rp_signature.get_indexpath()), 7)
 	return librsync.DeltaFile(rp_signature.open("rb"),
 							  hash.FileWrapper(rp_new.open("rb")))

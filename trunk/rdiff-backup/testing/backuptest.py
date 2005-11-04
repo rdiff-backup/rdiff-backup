@@ -6,7 +6,7 @@ class RemoteMirrorTest(unittest.TestCase):
 	"""Test mirroring"""
 	def setUp(self):
 		"""Start server"""
-		Log.setverbosity(3)
+		Log.setverbosity(5)
 		Globals.change_source_perms = 1
 		SetConnections.UpdateGlobal('checkpoint_interval', 3)
 		user_group.init_user_mapping()

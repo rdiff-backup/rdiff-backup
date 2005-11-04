@@ -177,7 +177,7 @@ class MirrorStruct:
 		"""
 		if rest_time is None: rest_time = cls._rest_time
 
-		if not metadata.ManagerObj: metadata.SetManager()
+		metadata.SetManager()
 		rorp_iter = metadata.ManagerObj.GetAtTime(rest_time,
 												  cls.mirror_base.index)
 		if not rorp_iter:

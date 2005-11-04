@@ -443,6 +443,7 @@ class CacheCollatedPostProcess:
 			dir_rp, perms = self.dir_perms_list.pop()
 			dir_rp.chmod(perms)
 		self.metawriter.close()
+		metadata.ManagerObj.ConvertMetaToDiff()
 
 		if Globals.print_statistics: statistics.print_active_stats()
 		if Globals.file_statistics: statistics.FileStats.close()

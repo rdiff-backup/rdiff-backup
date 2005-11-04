@@ -44,6 +44,7 @@ class UnwrapFile:
 		"o" for an object,
 		"f" for file,
 		"c" for a continution of a file,
+		"h" for the close value of a file
 		"e" for an exception, or
 		None if no more data can be read.
 
@@ -57,7 +58,7 @@ class UnwrapFile:
 			assert None, "Header %s is only %d bytes" % (header, len(header))
 		type, length = header[0], C.str2long(header[1:])
 		buf = self.file.read(length)
-		if type in ("o", "e"): return type, cPickle.loads(buf)
+		if type in ("o", "e", "h"): return type, cPickle.loads(buf)
 		else:
 			assert type in ("f", "c")
 			return type, buf
@@ -82,11 +83,7 @@ class IterWrappingFile(UnwrapFile):
 		type, data = self._get()
 		if not type: raise StopIteration
 		if type == "o" or type == "e": return data
-		elif type == "f":
-			file = IterVirtualFile(self, data)
-			if data: self.currently_in_file = file
-			else: self.currently_in_file = None
-			return file
+		elif type == "f": return IterVirtualFile(self, data)
 		else: raise IterFileException("Bad file type %s" % type)
 
 
@@ -107,8 +104,10 @@ class IterVirtualFile(UnwrapFile):
 		"""
 		UnwrapFile.__init__(self, iwf.file)
 		self.iwf = iwf
+		iwf.currently_in_file = self
 		self.buffer = initial_data
 		self.closed = None
+		if not initial_data: self.set_close_val()
 
 	def read(self, length = -1):
 		"""Read length bytes from the file, updating buffers as necessary"""
@@ -140,8 +139,16 @@ class IterVirtualFile(UnwrapFile):
 			self.buffer += data
 			return 1
 		else:
-			self.iwf.currently_in_file = None
+			self.set_close_val()
 			return None
+
+	def set_close_val(self):
+		"""Read the close value and clear currently_in_file"""
+		assert self.iwf.currently_in_file
+		self.iwf.currently_in_file = None
+		type, object = self.iwf._get()
+		assert type == 'h', type
+		self.close_value = object
 
 	def close(self):
 		"""Currently just reads whats left and discards it"""
@@ -149,6 +156,7 @@ class IterVirtualFile(UnwrapFile):
 			self.addtobuffer()
 			self.buffer = ""
 		self.closed = 1
+		return self.close_value
 
 
 class FileWrappingIter:
@@ -214,13 +222,16 @@ class FileWrappingIter:
 		buf = robust.check_common_error(self.read_error_handler,
 										self.currently_in_file.read,
 										[Globals.blocksize])
-		if buf == "" or buf is None:
-			self.currently_in_file.close()
-			self.currently_in_file = None			
-			if buf is None: # error occurred above, encode exception
-				prefix_letter = "e"
-				buf = cPickle.dumps(self.last_exception, 1)
-		total = "".join((prefix_letter, C.long2str(long(len(buf))), buf))
+		if buf is None: # error occurred above, encode exception
+			self.currently_in_file = None
+			excstr = cPickle.dumps(self.last_exception, 1)
+			total = "".join(('e', C.long2str(long(len(excstr))), excstr))
+		else:
+			total = "".join((prefix_letter, C.long2str(long(len(buf))), buf))
+			if buf == "": # end of file
+				cstr = cPickle.dumps(self.currently_in_file.close(), 1)
+				self.currently_in_file = None
+				total += "".join(('h', C.long2str(long(len(cstr))), cstr))
 		self.array_buf.fromstring(total)
 
 	def read_error_handler(self, exc, blocksize):
@@ -386,11 +397,7 @@ class FileToMiscIter(IterWrappingFile):
 	def get_file(self):
 		"""Read file object from file"""
 		type, data = self._get()
-		if type == "f":
-			file = IterVirtualFile(self, data)
-			if data: self.currently_in_file = file
-			else: self.currently_in_file = None
-			return file
+		if type == "f": return IterVirtualFile(self, data)
 		assert type == "e", "Expected type e, got %s" % (type,)
 		assert isinstance(data, Exception)
 		return ErrorFile(data)
@@ -411,7 +418,7 @@ class FileToMiscIter(IterWrappingFile):
 		type, length = self.buf[0], C.str2long(self.buf[1:8])
 		data = self.buf[8:8+length]
 		self.buf = self.buf[8+length:]
-		if type in "oer": return type, cPickle.loads(data)
+		if type in "oerh": return type, cPickle.loads(data)
 		else: return type, data
 
 

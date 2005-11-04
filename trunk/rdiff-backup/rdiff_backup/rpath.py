@@ -116,9 +116,9 @@ def copy_reg_file(rpin, rpout, compress = 0):
 	try:
 		if (rpout.conn is rpin.conn and
 			rpout.conn is not Globals.local_connection):
-			rpout.conn.rpath.copy_reg_file(rpin.path, rpout.path, compress)
+			v = rpout.conn.rpath.copy_reg_file(rpin.path, rpout.path, compress)
 			rpout.setdata()
-			return
+			return v
 	except AttributeError: pass
 	return rpout.write_from_fileobj(rpin.open("rb"), compress = compress)
 

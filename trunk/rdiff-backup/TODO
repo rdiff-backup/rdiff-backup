@@ -1,8 +1,8 @@
-For comparing, check source filesystem
+For comparing, check source filesystem's abilities
 
 Clean up connection dropped message
 
-Add metadata diffing
+Make sure regress handles metadata diffs
 
 Clean up compare reports
 

@@ -2,7 +2,7 @@ import unittest
 from commontest import *
 from rdiff_backup import log, restore, Globals, rpath, TempFile
 
-Log.setverbosity(5)
+Log.setverbosity(3)
 lc = Globals.local_connection
 tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
 restore_base_rp = rpath.RPath(Globals.local_connection,
@@ -31,8 +31,8 @@ class RestoreFileComparer:
 		"""Restore file, make sure it is the same at time t"""
 		log.Log("Checking result at time %s" % (t,), 7)
 		tf = TempFile.new(tempdir.append("foo"))
-		restore._mirror_time = mirror_time
-		restore._rest_time = t
+		restore.MirrorStruct._mirror_time = mirror_time
+		restore.MirrorStruct._rest_time = t
 		self.rf.set_relevant_incs()
 		out_rorpath = self.rf.get_attribs().getRORPath()
 		correct_result = self.time_rp_dict[t]
@@ -59,7 +59,7 @@ class RestoreTimeTest(unittest.TestCase):
 		rdiff-backup-data directory already being laid out.
 
 		"""
-		restore._mirror_time = None # Reset
+		restore.MirrorStruct._mirror_time = None # Reset
 		Globals.rbdir = rpath.RPath(lc,
 									"testfiles/restoretest3/rdiff-backup-data")
 		assert Time.genstrtotime("0B") == Time.time_from_session(0)
