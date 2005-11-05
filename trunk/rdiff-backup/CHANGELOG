@@ -15,6 +15,8 @@ Applied Alec Berryman's patch to update the no-compression regexp.
 
 Alec Berryman's fs_abilities patch is supposed to help with AFS.
 
+Fixed filename-too-long crash when quoting.
+
 
 New in v1.1.0 (2005/10/24)
 --------------------------
