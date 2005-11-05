@@ -465,14 +465,27 @@ class PatchITRB(rorpiter.ITRBranch):
 			self.cached_rp = self.basis_root_rp.new_index(index)
 		return self.cached_rp
 
+	def check_long_name(self, func, *args):
+		"""Execute function, checking for ENAMETOOLONG error"""
+		try: result = func(*args)
+		except OSError, exc:
+			if (errno.errorcode.has_key(exc[0]) and
+				errno.errorcode[exc[0]] == 'ENAMETOOLONG'):
+				self.error_handler(exc, args[0])
+				return None
+			else: raise
+		return result
+
 	def can_fast_process(self, index, diff_rorp):
 		"""True if diff_rorp and mirror are not directories"""
-		rp = self.get_rp_from_root(index)
-		return not diff_rorp.isdir() and not rp.isdir()
+		rp = self.check_long_name(self.get_rp_from_root, index)
+		# filename too long error qualifies (hack)
+		return not rp or (not diff_rorp.isdir() and not rp.isdir())
 
 	def fast_process(self, index, diff_rorp):
 		"""Patch base_rp with diff_rorp (case where neither is directory)"""
-		rp = self.get_rp_from_root(index)
+		rp = self.check_long_name(self.get_rp_from_root, index)
+		if not rp: return
 		tf = TempFile.new(rp)
 		if self.patch_to_temp(rp, diff_rorp, tf):
 			if tf.lstat():
@@ -593,23 +606,14 @@ class IncrementITRB(PatchITRB):
 			self.cached_incrp = self.inc_root_rp.new_index(index)
 		return self.cached_incrp
 
-	def inc_with_checking(self, new, old, inc_rp):
-		"""Produce increment taking new to old checking for errors"""
-		try: inc = increment.Increment(new, old, inc_rp)
-		except OSError, exc:
-			if (errno.errorcode.has_key(exc[0]) and
-				errno.errorcode[exc[0]] == 'ENAMETOOLONG'):
-				self.error_handler(exc, old)
-				return None
-			else: raise
-		return inc
-
 	def fast_process(self, index, diff_rorp):
 		"""Patch base_rp with diff_rorp and write increment (neither is dir)"""
-		rp = self.get_rp_from_root(index)
+		rp = self.check_long_name(self.get_rp_from_root, index)
+		if not rp: return
 		tf = TempFile.new(rp)
 		if self.patch_to_temp(rp, diff_rorp, tf):
-			inc = self.inc_with_checking(tf, rp, self.get_incrp(index))
+			inc = self.check_long_name(increment.Increment,
+									   tf, rp, self.get_incrp(index))
 			if inc is not None:
 				self.CCPP.set_inc(index, inc)
 				if inc.isreg():
@@ -629,14 +633,14 @@ class IncrementITRB(PatchITRB):
 		base_rp = self.base_rp = self.get_rp_from_root(index)
 		assert diff_rorp.isdir() or base_rp.isdir()
 		if diff_rorp.isdir():
-			inc = self.inc_with_checking(diff_rorp, base_rp,
-										 self.get_incrp(index))
+			inc = self.check_long_name(increment.Increment,
+								 diff_rorp, base_rp, self.get_incrp(index))
 			if inc and inc.isreg():
 				inc.fsync_with_dir() # must write inc before rp changed
 			self.prepare_dir(diff_rorp, base_rp)
 		elif self.set_dir_replacement(diff_rorp, base_rp):
-			inc = self.inc_with_checking(self.dir_replacement, base_rp,
-										 self.get_incrp(index))
+			inc = self.check_long_name(increment.Increment,
+						self.dir_replacement, base_rp, self.get_incrp(index))
 			if inc:
 				self.CCPP.set_inc(index, inc)
 				self.CCPP.flag_success(index)
