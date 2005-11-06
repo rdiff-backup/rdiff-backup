@@ -64,6 +64,7 @@ class ParsingError(Exception):
 
 def carbonfile2string(cfile):
 	"""Convert CarbonFile data to a string suitable for storing."""
+	if not cfile: return "None"
 	retvalparts = []
 	retvalparts.append('creator:%s' % binascii.hexlify(cfile['creator']))
 	retvalparts.append('type:%s' % binascii.hexlify(cfile['type']))
@@ -107,8 +108,7 @@ def RORP2Record(rorpath):
                 
 		# If there is Carbon data, save it.
 		if rorpath.has_carbonfile():
-			if not rorpath.get_carbonfile(): cfile = "None"
-			else: cfile = carbonfile2string(rorpath.get_carbonfile())
+			cfile = carbonfile2string(rorpath.get_carbonfile())
 			str_list.append("  CarbonFile %s\n" % (cfile,))
 
 		# If file is hardlinked, add that information

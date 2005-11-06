@@ -163,7 +163,8 @@ def copy_attribs(rpin, rpout):
 	if (Globals.resource_forks_write and rpin.isreg() and
 		rpin.has_resource_fork()):
 		rpout.write_resource_fork(rpin.get_resource_fork())
-	if Globals.carbonfile_write and rpin.isreg():
+	if (Globals.carbonfile_write and rpin.isreg() and
+		rpin.has_carbonfile()):
 		rpout.write_carbonfile(rpin.get_carbonfile())
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	rpout.chmod(rpin.getperms())
@@ -185,7 +186,8 @@ def copy_attribs_inc(rpin, rpout):
 	if (Globals.resource_forks_write and rpin.isreg() and
 		rpin.has_resource_fork() and rpout.isreg()):
 		rpout.write_resource_fork(rpin.get_resource_fork())
-	if Globals.carbonfile_write and rpin.isreg() and rpout.isreg():
+	if (Globals.carbonfile_write and rpin.isreg() and
+		rpin.has_carbonfile() and rpout.isreg()):
 		rpout.write_carbonfile(rpin.get_carbonfile())
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if rpin.isdir() and not rpout.isdir():
@@ -1161,36 +1163,9 @@ class RPath(RORPath):
 		ea.write_to_rp(self)
 		self.data['ea'] = ea
 
-	def get_carbonfile(self):
-		"""Return resource fork data, loading from filesystem if
-		necessary."""
-		from Carbon.File import FSSpec
-		import MacOS
-		try: return self.data['cfile']
-		except KeyError: pass
-
-		try:
-			fsobj = FSSpec(self.path)
-			finderinfo = fsobj.FSpGetFInfo()
-			cfile = {'creator': finderinfo.Creator,
-					 'type': finderinfo.Type,
-					 'location': finderinfo.Location,
-					 'flags': finderinfo.Flags}
-			self.data['carbonfile'] = cfile
-			return cfile
-		except MacOS.Error:
-			log.Log("Cannot read carbonfile information from %s" %
-					(self.path,), 2)
-			self.data['carbonfile'] = None 
-			return self.data['carbonfile']
-
 	def write_carbonfile(self, cfile):
 		"""Write new carbon data to self."""
-		if not cfile:
-			# This should be made cleaner---if you know Mac OS X tell
-			# me what could cause an error in get_carbonfile above
-			return
-			
+		if not cfile: return
 		log.Log("Writing carbon data to %s" % (self.index,), 7)
 		from Carbon.File import FSSpec
 		import MacOS
@@ -1256,7 +1231,25 @@ def setdata_local(rpath):
 	if Globals.acls_conn: rpath.data['acl'] = acl_get(rpath)
 	if Globals.resource_forks_conn and rpath.isreg():
 		rpath.get_resource_fork()
-	if Globals.carbonfile_conn and rpath.isreg(): rpath.get_carbonfile()
+	if Globals.carbonfile_conn and rpath.isreg():
+		rpath.data['carbonfile'] = carbonfile_get(rpath)
+
+def carbonfile_get(rpath):
+	"""Return carbonfile value for local rpath"""
+	from Carbon.File import FSSpec
+	import MacOS
+	try:
+		fsobj = FSSpec(self.path)
+		finderinfo = fsobj.FSpGetFInfo()
+		cfile = {'creator': finderinfo.Creator,
+				 'type': finderinfo.Type,
+				 'location': finderinfo.Location,
+				 'flags': finderinfo.Flags}
+		return cfile
+	except MacOS.Error:
+		log.Log("Cannot read carbonfile information from %s" %
+				(self.path,), 2)
+		return None
 
 
 # These functions are overwritten by the eas_acls.py module.  We can't

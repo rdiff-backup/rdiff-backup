@@ -88,7 +88,7 @@ resource_forks_conn = None
 
 # Like the above, but applies to MacOS Carbon Finder creator/type info.
 # As of 1.0.2 this has defaulted to off because of bugs
-carbonfile_active = 0
+carbonfile_active = None
 carbonfile_write = None
 carbonfile_conn = None
 
