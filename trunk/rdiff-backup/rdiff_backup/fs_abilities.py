@@ -513,7 +513,8 @@ class BackupSetGlobals(SetGlobals):
 			log.Log("Warning: File system no longer needs quoting, "
 					"but we will retain for backwards compatibility.", 2)
 			return actual_ctq
-		log.Log.FatalError("""New quoting requirements!
+		if Globals.chars_to_quote is None:
+			log.Log.FatalError("""New quoting requirements!
 
 The quoting chars this session needs (%s) do not match
 the repository settings (%s) listed in
