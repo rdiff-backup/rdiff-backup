@@ -1239,7 +1239,7 @@ def carbonfile_get(rpath):
 	from Carbon.File import FSSpec
 	import MacOS
 	try:
-		fsobj = FSSpec(self.path)
+		fsobj = FSSpec(rpath.path)
 		finderinfo = fsobj.FSpGetFInfo()
 		cfile = {'creator': finderinfo.Creator,
 				 'type': finderinfo.Type,
@@ -1248,7 +1248,7 @@ def carbonfile_get(rpath):
 		return cfile
 	except MacOS.Error:
 		log.Log("Cannot read carbonfile information from %s" %
-				(self.path,), 2)
+				(rpath.path,), 2)
 		return None
 
 
