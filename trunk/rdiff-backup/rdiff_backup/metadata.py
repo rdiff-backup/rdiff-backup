@@ -345,17 +345,19 @@ class FlatFile:
 	_extractor = FlatExtractor # Override to class that iterates objects
 	_object_to_record = None # Set to function converting object to record
 	_prefix = None # Set to required prefix
-	def __init__(self, rp, mode):
+	def __init__(self, rp, mode, check_path = 1, compress = 1):
 		"""Open rp for reading ('r') or writing ('w')"""
 		self.rp = rp
 		self.mode = mode
 		self._record_buffer = []
-		assert rp.isincfile() and rp.getincbase_str() == self._prefix, rp
+		if check_path:
+			assert rp.isincfile() and rp.getincbase_str() == self._prefix, rp
+			compress = rp.isinccompressed()
 		if mode == 'r':
-			self.fileobj = self.rp.open("rb", rp.isinccompressed())
+			self.fileobj = self.rp.open("rb", compress)
 		else:
 			assert mode == 'w' and not self.rp.lstat(), (mode, rp)
-			self.fileobj = self.rp.open("wb", rp.isinccompressed())
+			self.fileobj = self.rp.open("wb", compress)
 
 	def write_record(self, record):
 		"""Write a (text) record into the file"""
@@ -556,18 +558,17 @@ class PatchDiffMan(Manager):
 				# exact compare here, can't use == on rorps
 				yield old_rorp
 
-	def sorted_meta_inclist(self, min_time = 0):
-		"""Return list of mirror_metadata incs, reverse sorted by time"""
-		if not self.prefixmap.has_key('mirror_metadata'): return []
-		sortlist = [(rp.getinctime(), rp)
-					for rp in self.prefixmap['mirror_metadata']]
+	def sorted_prefix_inclist(self, prefix, min_time = 0):
+		"""Return reverse sorted (by time) list of incs with given prefix"""
+		if not self.prefixmap.has_key(prefix): return []
+		sortlist = [(rp.getinctime(), rp) for rp in self.prefixmap[prefix]]
 		sortlist.sort()
 		sortlist.reverse()
 		return [rp for (time, rp) in sortlist if time >= min_time]
 
 	def check_needs_diff(self):
 		"""Check if we should diff, returns (new, old) rps, or (None, None)"""
-		inclist = self.sorted_meta_inclist()
+		inclist = self.sorted_prefix_inclist('mirror_metadata')
 		assert len(inclist) >= 1
 		if len(inclist) == 1: return (None, None)
 		newrp, oldrp = inclist[:2]
@@ -604,7 +605,7 @@ class PatchDiffMan(Manager):
 
 	def relevant_meta_incs(self, time):
 		"""Return list [snapshotrp, diffrps ...] time sorted"""
-		inclist = self.sorted_meta_inclist(min_time = time)
+		inclist = self.sorted_prefix_inclist('mirror_metadata', min_time=time)
 		if not inclist: return inclist
 		assert inclist[-1].getinctime() == time, inclist[-1]
 		for i in range(len(inclist)-1, -1, -1):
@@ -631,6 +632,7 @@ ManagerObj = None # Set this later to Manager instance
 def SetManager():
 	global ManagerObj
 	ManagerObj = PatchDiffMan()
+	return ManagerObj
 
 
 import eas_acls # put at bottom to avoid python circularity bug
