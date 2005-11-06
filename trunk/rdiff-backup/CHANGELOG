@@ -1,4 +1,4 @@
-New in v1.1.1 (????/??/??)
+New in v1.1.1 (2005/11/05)
 --------------------------
 
 rdiff-backup now writes SHA1 sums into its mirror_metadata file for
