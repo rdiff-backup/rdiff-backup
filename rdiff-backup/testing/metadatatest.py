@@ -199,7 +199,7 @@ class MetadataTest(unittest.TestCase):
 		man.ConvertMetaToDiff()
 
 		man = PatchDiffMan()
-		l = man.sorted_meta_inclist()
+		l = man.sorted_prefix_inclist('mirror_metadata')
 		assert l[0].getinctype() == 'snapshot'
 		assert l[0].getinctime() == 40000
 		assert l[1].getinctype() == 'snapshot'

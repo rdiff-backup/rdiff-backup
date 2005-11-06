@@ -2,8 +2,6 @@ For comparing, check source filesystem's abilities
 
 Clean up connection dropped message
 
-Make sure regress handles metadata diffs
-
 Clean up compare reports
 
 Test comparing of single files, and files/directories specified by
@@ -21,5 +19,4 @@ Think about adding Gaudet's idea for keeping track of renamed files.
 
 Look into different inode generation techniques (see treescan, Dean
 Gaudet's other post).
-
 

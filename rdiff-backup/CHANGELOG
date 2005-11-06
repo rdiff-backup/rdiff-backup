@@ -17,6 +17,8 @@ Alec Berryman's fs_abilities patch is supposed to help with AFS.
 
 Fixed filename-too-long crash when quoting.
 
+Patched carbonfile support, re-enabled it by default.
+
 
 New in v1.1.0 (2005/10/24)
 --------------------------
