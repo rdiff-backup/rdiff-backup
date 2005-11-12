@@ -247,7 +247,7 @@ or within one second of each other.  Wait a second and try again.""" %
 
 	def write_if_open(cls, error_type, rp, exc):
 		"""Call cls.write(...) if error log open, only log otherwise"""
-		if not Globals.isbackup_writer:
+		if not Globals.isbackup_writer and Globals.backup_writer:
 			return Globals.backup_writer.log.ErrorLog.write_if_open(
 				error_type, rp, str(exc)) # convert exc bc of exc picking prob
 		if cls.isopen(): cls.write(error_type, rp, exc)
