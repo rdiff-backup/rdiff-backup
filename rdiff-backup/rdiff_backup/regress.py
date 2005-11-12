@@ -126,6 +126,11 @@ def regress_rbdir(meta_manager):
 		if new_rp.getincbase_str() != 'current_mirror':
 			log.Log("Deleting old diff at " + new_rp.path, 5)
 			new_rp.delete()
+	for rp in meta_manager.timerpmap[regress_time]:
+		if (rp.getincbase_str() == 'mirror_metadata' and
+			rp.getinctype() == 'diff'):
+			rp.delete()
+			break
 
 def recreate_meta(meta_manager):
 	"""Make regress_time mirror_metadata snapshot by patching
