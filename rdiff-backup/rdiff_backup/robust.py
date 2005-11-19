@@ -19,8 +19,8 @@
 
 """Catch various exceptions given system call"""
 
-import errno, signal
-import librsync, C, static, rpath, Globals, log, statistics
+import errno, signal, exceptions
+import librsync, C, static, rpath, Globals, log, statistics, connection
 
 def check_common_error(error_handler, function, args = []):
 	"""Apply function to args, if error, run error_handler on exception
@@ -38,7 +38,8 @@ def check_common_error(error_handler, function, args = []):
 			if conn is not None: conn.statistics.record_error()
 			if error_handler: return error_handler(exc, *args)
 			else: return None
-		log.Log.exception(1, 2)
+		if is_routine_fatal(exc): log.Log.exception(1, 6)
+		else: log.Log.exception(1, 2)
 		raise
 
 def catch_error(exc):
@@ -58,6 +59,22 @@ def catch_error(exc):
 									 'EDEADLK'))):
 		return 1
 	return 0
+
+def is_routine_fatal(exc):
+	"""Return string if exception is non-error unrecoverable, None otherwise
+
+	Used to suppress a stack trace for exceptions like keyboard
+	interrupts or connection drops.  Return value is string to use as
+	an exit message.
+
+	"""
+	if isinstance(exc, exceptions.KeyboardInterrupt):
+		return "User abort"
+	elif isinstance(exc, connection.ConnectionError):
+		return "Lost connection to the remote system"
+	elif isinstance(exc, SignalException):
+		return "Killed with signal %s" % (exc,)
+	return None
 
 def get_error_handler(error_type):
 	"""Return error handler function that can be used above

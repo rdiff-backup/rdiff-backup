@@ -265,7 +265,7 @@ def make_socket_local(rpath):
 def gzip_open_local_read(rpath):
 	"""Return open GzipFile.  See security note directly above"""
 	assert rpath.conn is Globals.local_connection
-	return gzip.GzipFile(rpath.path, "rb")
+	return GzipFile(rpath.path, "rb")
 
 def open_local_read(rpath):
 	"""Return open file (provided for security reasons)"""
@@ -982,13 +982,13 @@ class RPath(RORPath):
 
 		"""
 		if self.conn is Globals.local_connection:
-			if compress: return gzip.GzipFile(self.path, mode)
+			if compress: return GzipFile(self.path, mode)
 			else: return open(self.path, mode)
 
 		if compress:
 			if mode == "r" or mode == "rb":
 				return self.conn.rpath.gzip_open_local_read(self)
-			else: return self.conn.gzip.GzipFile(self.path, mode)
+			else: return self.conn.rpath.GzipFile(self.path, mode)
 		else:
 			if mode == "r" or mode == "rb":
 				return self.conn.rpath.open_local_read(self)
@@ -1215,6 +1215,16 @@ class RPathFileHook:
 		result = self.file.close()
 		self.closing_thunk()
 		return result
+
+
+class GzipFile(gzip.GzipFile):
+	"""Like gzip.GzipFile, except remove destructor
+
+	The default GzipFile's destructor prints out some messy error
+	messages.  Use this class instead to clean those up.
+
+	"""
+	def __del__(self): pass
 
 
 def setdata_local(rpath):
