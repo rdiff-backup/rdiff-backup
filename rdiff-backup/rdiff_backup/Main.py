@@ -685,8 +685,8 @@ def RemoveOlderThan(rootrp):
 def rot_require_rbdir_base(rootrp):
 	"""Make sure pointing to base of rdiff-backup dir"""
 	if restore_index != ():
-		Log.FatalError("Increments for directory %s cannot be removed separately.\n"
-					   "Instead run on entire directory %s." %
+		Log.FatalError("Increments for directory %s cannot be removed "
+					   "separately.\nInstead run on entire directory %s." %
 					   (rootrp.path, restore_root.path))
 
 

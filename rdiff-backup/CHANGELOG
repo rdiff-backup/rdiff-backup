@@ -7,6 +7,8 @@ rdiff-backup should now give a clean error message (no stack traces!)
 when aborted with control-C, killed with a signal, or when the
 connection is lost.
 
+When removing older than, delete empty increments directories
+
 
 New in v1.1.2 (2005/11/06)
 --------------------------
