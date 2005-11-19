@@ -1,3 +1,13 @@
+New in v1.1.3 (????/??/??)
+--------------------------
+
+Regression metadata bug introduced with 1.1.1/1.1.2 fixed.
+
+rdiff-backup should now give a clean error message (no stack traces!)
+when aborted with control-C, killed with a signal, or when the
+connection is lost.
+
+
 New in v1.1.2 (2005/11/06)
 --------------------------
 

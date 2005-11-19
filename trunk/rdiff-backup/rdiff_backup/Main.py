@@ -87,7 +87,7 @@ def parse_cmdlineoptions(arglist):
 		  "user-mapping-file=", "verbosity=", "verify",
 		  "verify-at-time=", "version"])
 	except getopt.error, e:
-		commandline_error("Bad commandline options: %s" % str(e))
+		commandline_error("Bad commandline options: " + str(e))
 
 	for opt, arg in optlist:
 		if opt == "-b" or opt == "--backup-mode": action = "backup"
@@ -231,9 +231,8 @@ def final_set_action(rps):
 	else: action = "backup"
 
 def commandline_error(message):
-	sys.stderr.write("Error: %s\n" % message)
-	sys.stderr.write("See the rdiff-backup manual page for instructions\n")
-	sys.exit(2)
+	Log.FatalError(message + "\nSee the rdiff-backup manual page for "
+				   "more information.")
 
 def misc_setup(rps):
 	"""Set default change ownership flag, umask, relay regexps"""
@@ -291,6 +290,19 @@ def cleanup():
 	Log.close_logfile()
 	if not Globals.server: SetConnections.CloseConnections()
 
+def error_check_Main(arglist):
+	"""Run Main on arglist, suppressing stack trace for routine errors"""
+	try: Main(arglist)
+	except SystemExit: raise
+	except Exception, exc:
+		errmsg = robust.is_routine_fatal(exc)
+		if errmsg:
+			Log.exception(2, 6)
+			Log.FatalError(errmsg)
+		else:
+			Log.exception(2, 2)
+			raise
+
 def Main(arglist):
 	"""Start everything up!"""
 	parse_cmdlineoptions(arglist)
@@ -303,7 +315,6 @@ def Main(arglist):
 	take_action(rps)
 	cleanup()
 	if return_val is not None: sys.exit(return_val)
-
 
 def Backup(rpin, rpout):
 	"""Backup, possibly incrementally, src_path to dest_path."""

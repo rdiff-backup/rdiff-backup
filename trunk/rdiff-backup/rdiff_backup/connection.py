@@ -31,6 +31,7 @@ except ImportError: pass
 
 class ConnectionError(Exception): pass
 class ConnectionReadError(ConnectionError): pass
+class ConnectionWriteError(ConnectionError): pass
 class ConnectionQuit(Exception): pass
 
 
@@ -197,14 +198,17 @@ class LowLevelPipeConnection(Connection):
 
 	def _write(self, headerchar, data, req_num):
 		"""Write header and then data to the pipe"""
-		self.outpipe.write(headerchar + chr(req_num) +
-						   C.long2str(long(len(data))))
-		self.outpipe.write(data)
-		self.outpipe.flush()
+		try:
+			self.outpipe.write(headerchar + chr(req_num) +
+							   C.long2str(long(len(data))))
+			self.outpipe.write(data)
+			self.outpipe.flush()
+		except IOError: raise ConnectionWriteError()
 
 	def _read(self, length):
 		"""Read length bytes from inpipe, returning result"""
-		return self.inpipe.read(length)
+		try: return self.inpipe.read(length)
+		except IOError: raise ConnectionReadError()
 
 	def _s2l_old(self, s):
 		"""Convert string to long int"""
@@ -228,11 +232,9 @@ class LowLevelPipeConnection(Connection):
 		if not len(header_string) == 9:
 			raise ConnectionReadError("Truncated header string (problem "
 									  "probably originated remotely)")
-		try:
-			format_string, req_num, length = (header_string[0],
-											  ord(header_string[1]),
-											  C.str2long(header_string[2:]))
-		except IndexError: raise ConnectionError()
+		format_string, req_num, length = (header_string[0],
+										  ord(header_string[1]),
+										  C.str2long(header_string[2:]))
 		if format_string == "q": raise ConnectionQuit("Received quit signal")
 
 		data = self._read(length)
@@ -337,6 +339,8 @@ class PipeConnection(LowLevelPipeConnection):
 
 	def extract_exception(self):
 		"""Return active exception"""
+		if robust.is_routine_fatal(sys.exc_info()[1]):
+			raise # Fatal error--No logging necessary, but connection down
 		if log.Log.verbosity >= 5 or log.Log.term_verbosity >= 5:
 			log.Log("Sending back exception %s of type %s: \n%s" %
 					(sys.exc_info()[1], sys.exc_info()[0],

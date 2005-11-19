@@ -20,6 +20,6 @@ import sys
 import rdiff_backup.Main
 
 if __name__ == "__main__" and not globals().has_key('__no_execute__'):
-	rdiff_backup.Main.Main(sys.argv[1:])
+	rdiff_backup.Main.error_check_Main(sys.argv[1:])
 
 

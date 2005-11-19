@@ -156,9 +156,9 @@ class Logger:
 		assert no_fatal_message == 0 or no_fatal_message == 1
 		if no_fatal_message: prefix_string = ""
 		else: prefix_string = "Fatal Error: "
-		self(prefix_string + message, 1)
-		import Main
-		Main.cleanup()
+		self.log_to_term(prefix_string + message, 1)
+		#import Main
+		#Main.cleanup()
 		sys.exit(errlevel)
 
 	def exception_to_string(self, arglist = []):
@@ -182,9 +182,12 @@ class Logger:
 		if (only_terminal == 0 or
 			(only_terminal == 1 and self.log_file_open)):
 			logging_func = self.__call__
-		else: logging_func = self.log_to_term
+		else:
+			logging_func = self.log_to_term
+			if verbosity >= self.term_verbosity: return
 
 		logging_func(self.exception_to_string(), verbosity)
+
 
 Log = Logger()
 
