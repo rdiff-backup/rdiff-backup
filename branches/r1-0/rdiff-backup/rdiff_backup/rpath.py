@@ -873,7 +873,7 @@ class RPath(RORPath):
 		log.Log("Deleting %s" % self.path, 7)
 		if self.isdir():
 			try: self.rmdir()
-			except os.error:
+			except EnvironmentError:
 				if Globals.fsync_directories: self.fsync()
 				self.conn.shutil.rmtree(self.path)
 		else: self.conn.os.unlink(self.path)
