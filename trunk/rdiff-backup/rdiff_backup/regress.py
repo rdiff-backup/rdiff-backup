@@ -1,4 +1,4 @@
-# Copyright 2002 Ben Escoto
+# Copyright 2002, 2005 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -35,7 +35,7 @@ be recovered.
 
 from __future__ import generators
 import Globals, restore, log, rorpiter, TempFile, metadata, rpath, C, \
-	   Time, backup, robust
+	   Time, backup, robust, longname
 
 # regress_time should be set to the time we want to regress back to
 # (usually the time of the last successful backup)
@@ -193,6 +193,7 @@ def iterate_meta_rfs(mirror_rp, inc_rp):
 	raw_rfs = iterate_raw_rfs(mirror_rp, inc_rp)
 	collated = rorpiter.Collate2Iters(raw_rfs, yield_metadata())
 	for raw_rf, metadata_rorp in collated:
+		raw_rf = longname.update_regressfile(raw_rf, metadata_rorp, mirror_rp)
 		if not raw_rf:
 			log.Log("Warning, metadata file has entry for %s,\n"
 					"but there are no associated files." %

@@ -1,9 +1,11 @@
 """commontest - Some functions and constants common to several test cases"""
 import os, sys, code
+# Avoid circularities
 from rdiff_backup.log import Log
 from rdiff_backup.rpath import RPath
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
 	 selection, lazy, Time, rpath, eas_acls, rorpiter, Security
+
 
 RBBin = "../rdiff-backup"
 SourceDir = "../rdiff_backup"
@@ -383,3 +385,5 @@ def raise_interpreter(use_locals = None):
 	if use_locals: local_dict = locals()
 	else: local_dict = globals()
 	code.InteractiveConsole(local_dict).interact()
+
+

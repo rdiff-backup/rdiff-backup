@@ -1,4 +1,4 @@
-# Copyright 2002, 2003, 2004 Ben Escoto
+# Copyright 2002, 2003, 2004, 2005 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -21,9 +21,7 @@
 
 from __future__ import generators
 import tempfile, os, cStringIO
-import Globals, Time, Rdiff, Hardlink, rorpiter, selection, rpath, \
-	   log, static, robust, metadata, statistics, TempFile, hash
-
+import static, rorpiter
 
 class RestoreError(Exception): pass
 
@@ -256,7 +254,7 @@ class MirrorStruct:
 			mir_rorp.flaglinked(Hardlink.get_link_index(mir_rorp))
 		elif mir_rorp.isreg():
 			expanded_index = cls.mirror_base.index + mir_rorp.index
-			file_fp = cls.rf_cache.get_fp(expanded_index)
+			file_fp = cls.rf_cache.get_fp(expanded_index, mir_rorp)
 			mir_rorp.setfile(hash.FileWrapper(file_fp))
 		mir_rorp.set_attached_filetype('snapshot')
 		return mir_rorp
@@ -325,7 +323,7 @@ class CachedRF:
 		return "\n".join((s1, s2, s3))
 
 	def get_rf(self, index):
-		"""Return RestoreFile of given index, or None"""
+		"""Get a RestoreFile for given index, or None"""
 		while 1:
 			if not self.rf_list:
 				if not self.add_rfs(index): return None
@@ -341,15 +339,16 @@ class CachedRF:
 					self.add_rfs(index)): return None
 			else: del self.rf_list[0]
 
-	def get_fp(self, index):
+	def get_fp(self, index, mir_rorp):
 		"""Return the file object (for reading) of given index"""
-		rf = self.get_rf(index)
+		rf = longname.update_rf(self.get_rf(index), mir_rorp,
+								self.root_rf.mirror_rp)
 		if not rf:
-			log.Log("""Error: Unable to retrieve data for file %s!
-The cause is probably data loss from the backup repository.""" %
-					(index and "/".join(index) or '.',), 2)
+			log.Log("Error: Unable to retrieve data for file %s!\nThe "
+					"cause is probably data loss from the backup repository."
+					% (index and "/".join(index) or '.',), 2)
 			return cStringIO.StringIO('')
-		return self.get_rf(index).get_restore_fp()
+		return rf.get_restore_fp()
 
 	def add_rfs(self, index):
 		"""Given index, add the rfs in that same directory
@@ -364,9 +363,7 @@ The cause is probably data loss from the backup repository.""" %
 		temp_rf = RestoreFile(self.root_rf.mirror_rp.new_index(parent_index),
 							  self.root_rf.inc_rp.new_index(parent_index), [])
 		new_rfs = list(temp_rf.yield_sub_rfs())
-		if not new_rfs:
-			log.Log("Warning: No RFs added for index %s" % (index,), 2)
-			return 0
+		if not new_rfs: return 0
 		self.rf_list[0:0] = new_rfs
 		return 1
 
@@ -384,9 +381,6 @@ class RestoreFile:
 
 	"""
 	def __init__(self, mirror_rp, inc_rp, inc_list):
-		assert mirror_rp.index == inc_rp.index, \
-			   ("mirror and inc indicies don't match: %s %s" %
-				(mirror_rp.get_indexpath(), inc_rp.get_indexpath()))
 		self.index = mirror_rp.index
 		self.mirror_rp = mirror_rp
 		self.inc_rp, self.inc_list = inc_rp, inc_list
@@ -485,7 +479,7 @@ constructed from existing increments because last increment had type
 %s.  Instead of the actual file's data, an empty length file will be
 created.  This error is probably caused by data loss in the
 rdiff-backup destination directory, or a bug in rdiff-backup""" %
-					(self.mirror_rp.path, self.relevant_incs[-1].lstat()), 2)
+	    (self.mirror_rp.get_indexpath(), self.relevant_incs[-1].lstat()), 2)
 			return cStringIO.StringIO('')
 		return robust.check_common_error(error_handler, get_fp)
 
@@ -505,13 +499,7 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
 
 	def yield_sub_rfs(self):
 		"""Return RestoreFiles under current RestoreFile (which is dir)"""
-		if not self.mirror_rp.isdir() and not self.inc_rp.isdir():
-			log.Log("""Warning: directory %s seems to be missing from backup!
-
-This is probably due to files being deleted manually from the
-rdiff-backup destination directory.  In general you shouldn't do this,
-as data loss may result.\n""" % (self.mirror_rp.get_indexpath(),), 2)
-			return
+		if not self.mirror_rp.isdir() and not self.inc_rp.isdir(): return
 		if self.mirror_rp.isdir():
 			mirror_iter = self.yield_mirrorrps(self.mirror_rp)
 		else: mirror_iter = iter([])
@@ -743,3 +731,8 @@ class PermissionChanger:
 	def finish(self):
 		"""Restore any remaining rps"""
 		for index, rp, perms in self.open_index_list: rp.chmod(perms)
+
+
+import Globals, Time, Rdiff, Hardlink, selection, rpath, \
+	   log, robust, metadata, statistics, TempFile, hash, longname
+

@@ -9,6 +9,9 @@ connection is lost.
 
 When removing older than, delete empty increments directories
 
+Long filename bug finally fixed (phew).  rdiff-backup should now
+correctly mirror any file that it can read.
+
 
 New in v1.1.2 (2005/11/06)
 --------------------------

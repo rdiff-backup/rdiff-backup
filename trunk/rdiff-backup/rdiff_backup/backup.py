@@ -23,7 +23,7 @@ from __future__ import generators
 import errno
 import Globals, metadata, rorpiter, TempFile, Hardlink, robust, increment, \
 	   rpath, static, log, selection, Time, Rdiff, statistics, iterfile, \
-	   hash
+	   hash, longname
 
 def Mirror(src_rpath, dest_rpath):
 	"""Turn dest_rpath into a copy of src_rpath"""
@@ -189,11 +189,12 @@ class DestinationStruct:
 		elif dest_rorp:
 			dest_sig = dest_rorp.getRORPath()
 			if dest_rorp.isreg():
-				sig_fp = cls.get_one_sig_fp(dest_base_rpath.new_index(index))
+				dest_rp = longname.get_mirror_rp(dest_base_rpath, dest_rorp)
+				sig_fp = cls.get_one_sig_fp(dest_rp)
 				if sig_fp is None: return None
 				dest_sig.setfile(sig_fp)
 		else: dest_sig = rpath.RORPath(index)
-		return dest_sig			
+		return dest_sig
 
 	def get_one_sig_fp(cls, dest_rp):
 		"""Return a signature fp of given index, corresponding to reg file"""
@@ -467,44 +468,26 @@ class PatchITRB(rorpiter.ITRBranch):
 		self.statfileobj = (statistics.get_active_statfileobj() or
 							statistics.StatFileObj())
 		self.dir_replacement, self.dir_update = None, None
-		self.cached_rp = None
 		self.CCPP = CCPP
 		self.error_handler = robust.get_error_handler("UpdateError")
 
-	def get_rp_from_root(self, index):
-		"""Return RPath by adding index to self.basis_root_rp"""
-		if not self.cached_rp or self.cached_rp.index != index:
-			self.cached_rp = self.basis_root_rp.new_index(index)
-		return self.cached_rp
-
-	def check_long_name(self, func, *args):
-		"""Execute function, checking for ENAMETOOLONG error"""
-		try: result = func(*args)
-		except OSError, exc:
-			if (errno.errorcode.has_key(exc[0]) and
-				errno.errorcode[exc[0]] == 'ENAMETOOLONG'):
-				self.error_handler(exc, args[0])
-				return None
-			else: raise
-		return result
-
 	def can_fast_process(self, index, diff_rorp):
 		"""True if diff_rorp and mirror are not directories"""
-		rp = self.check_long_name(self.get_rp_from_root, index)
-		# filename too long error qualifies (hack)
-		return not rp or (not diff_rorp.isdir() and not rp.isdir())
+		mirror_rorp = self.CCPP.get_mirror_rorp(index)
+		return not (diff_rorp.isdir() or (mirror_rorp and mirror_rorp.isdir()))
 
 	def fast_process(self, index, diff_rorp):
 		"""Patch base_rp with diff_rorp (case where neither is directory)"""
-		rp = self.check_long_name(self.get_rp_from_root, index)
-		if not rp: return
-		tf = TempFile.new(rp)
-		if self.patch_to_temp(rp, diff_rorp, tf):
+		mirror_rp, discard = longname.get_mirror_inc_rps(
+			self.CCPP.get_rorps(index), self.basis_root_rp)
+		assert not mirror_rp.isdir(), mirror_rp
+		tf = TempFile.new(mirror_rp)
+		if self.patch_to_temp(mirror_rp, diff_rorp, tf):
 			if tf.lstat():
-				rpath.rename(tf, rp)
+				rpath.rename(tf, mirror_rp)
 				self.CCPP.flag_success(index)
-			elif rp.lstat():
-				rp.delete()
+			elif mirror_rp and mirror_rp.lstat():
+				mirror_rp.delete()
 				self.CCPP.flag_deleted(index)
 		else: 
 			tf.setdata()
@@ -583,11 +566,12 @@ class PatchITRB(rorpiter.ITRBranch):
 
 	def start_process(self, index, diff_rorp):
 		"""Start processing directory - record information for later"""
-		base_rp = self.base_rp = self.get_rp_from_root(index)
-		assert diff_rorp.isdir() or base_rp.isdir() or not base_rp.index
-		if diff_rorp.isdir(): self.prepare_dir(diff_rorp, base_rp)
-		elif self.set_dir_replacement(diff_rorp, base_rp):
-			self.CCPP.flag_success(index)
+		self.base_rp, discard = longname.get_mirror_inc_rps(
+			self.CCPP.get_rorps(index), self.basis_root_rp)
+		if diff_rorp.isdir(): self.prepare_dir(diff_rorp, self.base_rp)
+		elif self.set_dir_replacement(diff_rorp, self.base_rp):
+			if diff_rorp.lstat(): self.CCPP.flag_success(index)
+			else: self.CCPP.flag_deleted(index)
 
 	def set_dir_replacement(self, diff_rorp, base_rp):
 		"""Set self.dir_replacement, which holds data until done with dir
@@ -607,10 +591,11 @@ class PatchITRB(rorpiter.ITRBranch):
 		else: return 1
 
 	def prepare_dir(self, diff_rorp, base_rp):
-		"""Prepare base_rp to turn into a directory"""
+		"""Prepare base_rp to be a directory"""
 		self.dir_update = diff_rorp.getRORPath() # make copy in case changes
 		if not base_rp.isdir():
-			if base_rp.lstat(): base_rp.delete()
+			if base_rp.lstat(): self.base_rp.delete()
+			base_rp.setdata()
 			base_rp.mkdir()
 			self.CCPP.flag_success(diff_rorp.index)
 		else: # maybe no change, so query CCPP before tagging success
@@ -622,8 +607,7 @@ class PatchITRB(rorpiter.ITRBranch):
 		if self.dir_update:
 			assert self.base_rp.isdir()
 			rpath.copy_attribs(self.dir_update, self.base_rp)
-		else:
-			assert self.dir_replacement
+		elif self.dir_replacement:
 			self.base_rp.rmdir()
 			if self.dir_replacement.lstat():
 				rpath.rename(self.dir_replacement, self.base_rp)
@@ -637,32 +621,24 @@ class IncrementITRB(PatchITRB):
 	"""
 	def __init__(self, basis_root_rp, inc_root_rp, rorp_cache):
 		self.inc_root_rp = inc_root_rp
-		self.cached_incrp = None
 		PatchITRB.__init__(self, basis_root_rp, rorp_cache)
-
-	def get_incrp(self, index):
-		"""Return inc RPath by adding index to self.basis_root_rp"""
-		if not self.cached_incrp or self.cached_incrp.index != index:
-			self.cached_incrp = self.inc_root_rp.new_index(index)
-		return self.cached_incrp
 
 	def fast_process(self, index, diff_rorp):
 		"""Patch base_rp with diff_rorp and write increment (neither is dir)"""
-		rp = self.check_long_name(self.get_rp_from_root, index)
-		if not rp: return
-		tf = TempFile.new(rp)
-		if self.patch_to_temp(rp, diff_rorp, tf):
-			inc = self.check_long_name(increment.Increment,
-									   tf, rp, self.get_incrp(index))
+		mirror_rp, inc_prefix = longname.get_mirror_inc_rps(
+			self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
+		tf = TempFile.new(mirror_rp)
+		if self.patch_to_temp(mirror_rp, diff_rorp, tf):
+			inc = increment.Increment(tf, mirror_rp, inc_prefix)
 			if inc is not None:
 				self.CCPP.set_inc(index, inc)
 				if inc.isreg():
 					inc.fsync_with_dir() # Write inc before rp changed
 				if tf.lstat():
-					rpath.rename(tf, rp)
+					rpath.rename(tf, mirror_rp)
 					self.CCPP.flag_success(index)
-				elif rp.lstat():
-					rp.delete()
+				elif mirror_rp.lstat():
+					mirror_rp.delete()
 					self.CCPP.flag_deleted(index)
 				return # normal return, otherwise error occurred
 		tf.setdata()
@@ -670,17 +646,19 @@ class IncrementITRB(PatchITRB):
 
 	def start_process(self, index, diff_rorp):
 		"""Start processing directory"""
-		base_rp = self.base_rp = self.get_rp_from_root(index)
-		assert diff_rorp.isdir() or base_rp.isdir()
+		self.base_rp, inc_prefix = longname.get_mirror_inc_rps(
+			self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
+		self.base_rp.setdata()
+		assert diff_rorp.isdir() or self.base_rp.isdir()
 		if diff_rorp.isdir():
-			inc = self.check_long_name(increment.Increment,
-								 diff_rorp, base_rp, self.get_incrp(index))
+			inc = increment.Increment(diff_rorp, self.base_rp, inc_prefix)
 			if inc and inc.isreg():
 				inc.fsync_with_dir() # must write inc before rp changed
-			self.prepare_dir(diff_rorp, base_rp)
-		elif self.set_dir_replacement(diff_rorp, base_rp):
-			inc = self.check_long_name(increment.Increment,
-						self.dir_replacement, base_rp, self.get_incrp(index))
+			self.base_rp.setdata() # in case written by increment above
+			self.prepare_dir(diff_rorp, self.base_rp)
+		elif self.set_dir_replacement(diff_rorp, self.base_rp):
+			inc = increment.Increment(self.dir_replacement, self.base_rp,
+									  inc_prefix)
 			if inc:
 				self.CCPP.set_inc(index, inc)
 				self.CCPP.flag_success(index)
