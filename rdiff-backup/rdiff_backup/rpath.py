@@ -357,8 +357,10 @@ class RORPath:
 			elif key == 'resourcefork' and not Globals.resource_forks_write:
 				pass
 			elif key == 'sha1': pass # one or other may not have set
+			elif key == 'mirrorname' or key == 'incname': pass
 			elif (not other.data.has_key(key) or
-				  self.data[key] != other.data[key]): return 0
+				  self.data[key] != other.data[key]):
+				return 0
 
 		if self.lstat() and not self.issym() and Globals.change_ownership:
 			# Now compare ownership.  Symlinks don't have ownership
@@ -653,6 +655,42 @@ class RORPath:
 	def set_resource_fork(self, rfork):
 		"""Record resource fork in dictionary.  Does not write"""
 		self.data['resourcefork'] = rfork
+
+	def has_alt_mirror_name(self):
+		"""True if rorp has an alternate mirror name specified"""
+		return self.data.has_key('mirrorname')
+
+	def get_alt_mirror_name(self):
+		"""Return alternate mirror name (for long filenames)"""
+		return self.data['mirrorname']
+
+	def set_alt_mirror_name(self, filename):
+		"""Set alternate mirror name to filename
+
+		Instead of writing to the traditional mirror file, store
+		mirror information in filename in the long filename
+		directory.
+
+		"""
+		self.data['mirrorname'] = filename
+
+	def has_alt_inc_name(self):
+		"""True if rorp has an alternate increment base specified"""
+		return self.data.has_key('incname')
+
+	def get_alt_inc_name(self):
+		"""Return alternate increment base (used for long name support)"""
+		return self.data['incname']
+
+	def set_alt_inc_name(self, name):
+		"""Set alternate increment name to name
+
+		If set, increments will be in the long name directory with
+		name as their base.  If the alt mirror name is set, this
+		should be set to the same.
+
+		"""
+		self.data['incname'] = name
 
 	def has_sha1(self):
 		"""True iff self has its sha1 digest set"""

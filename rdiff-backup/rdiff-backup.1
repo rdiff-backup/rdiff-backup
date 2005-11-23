@@ -961,15 +961,6 @@ automatically (as from
 or similar) it is probably a good idea to check the exit code.
 
 .SH BUGS
-rdiff-backup uses the shell command
-.BR mknod (1)
-to backup device files (e.g. /dev/ttyS0), so device files won't be
-handled correctly on systems with non-standard mknod syntax.
-.PP
-Files whose names are close to the maximum length (e.g. 235 chars if
-the maximum is 255) may be skipped because the filenames of related
-increment files would be too long.
-.PP
 The gzip library in versions 2.2 and earlier of python (but fixed in
 2.3a1) has trouble producing files over 2GB in length.  This bug will
 prevent rdiff-backup from producing large compressed increments

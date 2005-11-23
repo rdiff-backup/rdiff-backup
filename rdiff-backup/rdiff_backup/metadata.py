@@ -146,6 +146,15 @@ def RORP2Record(rorpath):
 	str_list.append("  Gid %s\n" % gid)
 	str_list.append("  Gname %s\n" % (rorpath.getgname() or ":"))
 	str_list.append("  Permissions %s\n" % rorpath.getperms())
+
+	# Add long filename information
+	if rorpath.has_alt_mirror_name():
+		str_list.append("  AlternateMirrorName %s\n" %
+						(rorpath.get_alt_mirror_name(),))
+	elif rorpath.has_alt_inc_name():
+		str_list.append("  AlternateIncrementName %s\n" %
+						(rorpath.get_alt_inc_name(),))
+
 	return "".join(str_list)
 
 line_parsing_regexp = re.compile("^ *([A-Za-z0-9]+) (.+)$", re.M)
@@ -188,6 +197,8 @@ def Record2RORP(record_string):
 			if data == ':' or data == 'None': data_dict['gname'] = None
 			else: data_dict['gname'] = data
 		elif field == "Permissions": data_dict['perms'] = int(data)
+		elif field == "AlternateMirrorName": data_dict['mirrorname'] = data
+		elif field == "AlternateIncrementName": data_dict['incname'] = data
 		else: raise ParsingError("Unknown field in line '%s %s'" %
 								 (field, data))
 	return rpath.RORPath(index, data_dict)

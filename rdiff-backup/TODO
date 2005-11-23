@@ -1,6 +1,13 @@
-For comparing, check source filesystem's abilities
+Make sure remove older than doesn't delete current snapshot.  When no
+increments found, don't act like there's an error (no stderr).
 
-Clean up connection dropped message
+Port close file fix to devel version
+
+Regress needs to fix alternate names also
+
+See if rorpiter.CacheIndexable is really necessary
+
+For comparing, check source filesystem's abilities
 
 Clean up compare reports
 
