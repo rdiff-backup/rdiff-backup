@@ -109,12 +109,12 @@ class SourceStruct:
 			diff_rorp = src_rp.getRORPath()
 			if dest_sig.isflaglinked():
 				diff_rorp.flaglinked(dest_sig.get_link_flag())
-			elif dest_sig.isreg() and src_rp.isreg():
-				attach_diff(diff_rorp, src_rp, dest_sig)
 			elif src_rp.isreg():
-				attach_snapshot(diff_rorp, src_rp)
+				if dest_sig.isreg(): attach_diff(diff_rorp, src_rp, dest_sig)
+				else: attach_snapshot(diff_rorp, src_rp)
+			else:
 				dest_sig.close_if_necessary()
-			else: diff_rorp.set_attached_filetype('snapshot')
+				diff_rorp.set_attached_filetype('snapshot')
 			yield diff_rorp
 
 static.MakeClass(SourceStruct)

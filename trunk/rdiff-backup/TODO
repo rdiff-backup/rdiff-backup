@@ -3,8 +3,6 @@ increments found, don't act like there's an error (no stderr).
 
 Port close file fix to devel version
 
-Regress needs to fix alternate names also
-
 See if rorpiter.CacheIndexable is really necessary
 
 For comparing, check source filesystem's abilities
