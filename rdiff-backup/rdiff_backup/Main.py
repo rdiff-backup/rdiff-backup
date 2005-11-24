@@ -658,17 +658,24 @@ def RemoveOlderThan(rootrp):
 	"""Remove all increment files older than a certain time"""
 	rootrp = require_root_set(rootrp, 0)
 	rot_require_rbdir_base(rootrp)
-	try: time = Time.genstrtotime(remove_older_than_string)
+
+	time = rot_check_time(remove_older_than_string)
+	if time is None: return
+	Log("Actual remove older than time: %s" % (time,), 6)
+	manage.delete_earlier_than(Globals.rbdir, time)
+
+def rot_check_time(time_string):
+	"""Check remove older than time_string, return time in seconds"""
+	try: time = Time.genstrtotime(time_string)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
-	timep = Time.timetopretty(time)
-	Log("Deleting increment(s) before %s" % timep, 4)
 
 	times_in_secs = [inc.getinctime() for inc in 
 		  restore.get_inclist(Globals.rbdir.append_path("increments"))]
 	times_in_secs = filter(lambda t: t < time, times_in_secs)
 	if not times_in_secs:
-		Log.FatalError("No increments older than %s found, exiting."
-					   % (timep,), 1, errlevel = 0)
+		Log("No increments older than %s found, exiting." %
+			(Time.timetopretty(time),), 3)
+		return None
 
 	times_in_secs.sort()
 	inc_pretty_time = "\n".join(map(Time.timetopretty, times_in_secs))
@@ -676,11 +683,10 @@ def RemoveOlderThan(rootrp):
 		Log.FatalError("Found %d relevant increments, dated:\n%s"
 			"\nIf you want to delete multiple increments in this way, "
 			"use the --force." % (len(times_in_secs), inc_pretty_time))
-
 	if len(times_in_secs) == 1:
 		Log("Deleting increment at time:\n" + inc_pretty_time, 3)
 	else: Log("Deleting increments at times:\n" + inc_pretty_time, 3)
-	manage.delete_earlier_than(Globals.rbdir, time)
+	return times_in_secs[-1]+1 # make sure we don't delete current increment
 
 def rot_require_rbdir_base(rootrp):
 	"""Make sure pointing to base of rdiff-backup dir"""
