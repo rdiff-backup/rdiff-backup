@@ -1,10 +1,3 @@
-Make sure remove older than doesn't delete current snapshot.  When no
-increments found, don't act like there's an error (no stderr).
-
-Port close file fix to devel version
-
-See if rorpiter.CacheIndexable is really necessary
-
 For comparing, check source filesystem's abilities
 
 Clean up compare reports

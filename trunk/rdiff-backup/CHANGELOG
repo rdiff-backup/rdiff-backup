@@ -16,6 +16,10 @@ Due to very detailed error report from Yoav, fixed a "Directory not
 empty" error that can arise on emulated filesystems like NFS and
 EncFS.
 
+Cleaned up remove older than report, and also stopped it from deleting
+current data files if you specify a time later than the current
+mirror.
+
 
 New in v1.1.2 (2005/11/06)
 --------------------------

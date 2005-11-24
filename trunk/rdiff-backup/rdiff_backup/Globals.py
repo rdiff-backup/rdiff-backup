@@ -37,9 +37,9 @@ blocksize = 131072
 # values may save on connection overhead and latency.
 conn_bufsize = 393216
 
-# This is used in rorpiter.CacheIndexable.  The number represents the
-# number of rpaths which may be stuck in buffers when moving over a
-# remote connection.
+# This is used in the CacheCollatedPostProcess and MiscIterToFile
+# classes.  The number represents the number of rpaths which may be
+# stuck in buffers when moving over a remote connection.
 pipeline_max_length = 500
 
 # True if script is running as a server
