@@ -425,13 +425,34 @@ class FinalMisc(PathSetter):
 		for inc in self.get_all_increments(rbdir):
 			assert inc.getinctime() >= 30000
 
+	def testRemoveOlderThanCurrent(self):
+		"""Make sure --remove-older-than doesn't delete current incs"""
+		Myrm("testfiles/output")
+		assert not os.system('cp -a testfiles/restoretest3 testfiles/output')
+		self.set_connections(None, None, None, None)
+		self.exec_rb_extra_args(None, '--remove-older-than now --force',
+								'testfiles/output')
+		rbdir = rpath.RPath(Globals.local_connection,
+							"testfiles/output/rdiff-backup-data")
+
+		has_cur_mirror, has_metadata = 0, 0
+		for inc in self.get_all_increments(rbdir):
+			if inc.getincbase().index[-1] == 'current_mirror':
+				has_cur_mirror = 1
+			elif inc.getincbase().index[-1] == 'mirror_metadata':
+				has_metadata = 1
+		assert has_cur_mirror and has_metadata, (has_cur_mirror, has_metadata)
+
 	def testRemoveOlderThanQuoting(self):
 		"""Test --remove-older-than when dest directory is quoted"""
 		Myrm("testfiles/output")
 		self.set_connections(None, None, None, None)
-		self.exec_rb_extra_args(None, "--override-chars-to-quote '^a-z0-9_ -.'",
-								"testfiles/increment1", "testfiles/output")
-		self.exec_rb_extra_args(None, "--remove-older-than now", "testfiles/output")
+		self.exec_rb_extra_args(None, "--override-chars-to-quote '^a-z0-9_ -.'"
+		  " --current-time 10000", "testfiles/increment1", "testfiles/output")
+		self.exec_rb_extra_args(None, "--override-chars-to-quote '^a-z0-9_ -.'"
+		  " --current-time 20000", "testfiles/increment2", "testfiles/output")
+		self.exec_rb_extra_args(None, "--remove-older-than now",
+								"testfiles/output")
 
 	def testRemoveOlderThanRemote(self):
 		"""Test --remove-older-than remotely"""
