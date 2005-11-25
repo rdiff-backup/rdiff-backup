@@ -84,7 +84,7 @@ def Verify(mirror_rp, inc_rp, verify_time):
 					"perhaps because these feature was added in v1.1.1"
 					% (repo_rorp.get_indexpath(),), 2)
 			continue
-		fp = RepoSide.rf_cache.get_fp(base_index + repo_rorp.index)
+		fp = RepoSide.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
 		computed_hash = hash.compute_sha1_fp(fp)
 		if computed_hash == repo_rorp.get_sha1():
 			log.Log("Verified SHA1 digest of " + repo_rorp.get_indexpath(), 5)
@@ -174,7 +174,8 @@ class RepoSide(restore.MirrorStruct):
 					continue # They must be equal, nothing else to check
 				if (src_rorp.isreg() and mir_rorp.isreg() and
 					src_rorp.getsize() == mir_rorp.getsize()):
-					mir_rorp.setfile(cls.rf_cache.get_fp(base_index + index))
+					fp = cls.rf_cache.get_fp(base_index + index, mir_rorp)
+					mir_rorp.setfile(fp)
 					mir_rorp.set_attached_filetype('snapshot')
 
 			if mir_rorp: yield mir_rorp
@@ -199,7 +200,7 @@ class DataSide(backup.SourceStruct):
 			"""Return 0 if their data hashes same, 1 otherwise"""
 			if not mir_rorp.has_sha1():
 				log.Log("Warning: Metadata file has no digest for %s, "
-						"unable to compare." % (index,), 2)
+						"unable to compare." % (mir_rorp.get_indexpath(),), 2)
 				return 0
 			elif (src_rp.getsize() == mir_rorp.getsize() and
 				  hash.compute_sha1(src_rp) == mir_rorp.get_sha1()):
