@@ -1,3 +1,7 @@
+Only warn, not abort, when get undefined metadata field
+
+Fix restore with --force over existing regular file.
+
 For comparing, check source filesystem's abilities
 
 Clean up compare reports
