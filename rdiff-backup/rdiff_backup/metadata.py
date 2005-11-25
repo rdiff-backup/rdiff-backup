@@ -199,8 +199,7 @@ def Record2RORP(record_string):
 		elif field == "Permissions": data_dict['perms'] = int(data)
 		elif field == "AlternateMirrorName": data_dict['mirrorname'] = data
 		elif field == "AlternateIncrementName": data_dict['incname'] = data
-		else: raise ParsingError("Unknown field in line '%s %s'" %
-								 (field, data))
+		else: log.Log("Unknown field in line '%s %s'" % (field, data), 2)
 	return rpath.RORPath(index, data_dict)
 
 chars_to_quote = re.compile("\\n|\\\\")
