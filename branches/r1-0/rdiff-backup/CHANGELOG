@@ -15,6 +15,9 @@ Cleaned up remove older than report, and also stopped it from deleting
 current data files if you specify a time later than the current
 mirror.
 
+--compare fix, now you don't need to specify the exact time of a
+session to avoid a "no metadata" error.
+
 
 New in v1.0.2 (2005/10/24)
 --------------------------
