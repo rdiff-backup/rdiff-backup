@@ -1,0 +1,8 @@
+--- rdiff-backup.old	Sat Apr  6 10:05:18 2002
++++ rdiff-backup	Sat Apr  6 10:05:25 2002
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python2
+ #
+ # rdiff-backup -- Mirror files while keeping incremental changes
+ # Version 0.7.1 released March 25, 2002
