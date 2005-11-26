@@ -183,8 +183,7 @@ def Record2RORP(record_string):
 			if data == ':' or data == 'None': data_dict['gname'] = None
 			else: data_dict['gname'] = data
 		elif field == "Permissions": data_dict['perms'] = int(data)
-		else: raise ParsingError("Unknown field in line '%s %s'" %
-								 (field, data))
+		else: log.Log("Unknown field in line '%s %s'" % (field, data), 2)
 	return rpath.RORPath(index, data_dict)
 
 chars_to_quote = re.compile("\\n|\\\\")
