@@ -1,6 +1,6 @@
 import unittest, os, cStringIO, time
-from rdiff_backup.metadata import *
 from rdiff_backup import rpath, connection, Globals, selection, lazy
+from rdiff_backup.metadata import *
 
 tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
 
