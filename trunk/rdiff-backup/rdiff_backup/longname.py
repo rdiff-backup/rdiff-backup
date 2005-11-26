@@ -250,11 +250,11 @@ def update_rf(rf, rorp, mirror_root):
 		"""Make a new rf when long name info is available"""
 		if rorp.has_alt_mirror_name():
 			inc_name = rorp.get_alt_mirror_name()
-			mirror_rp = get_long_rp(mirror_name)
-		elif rorp.has_alt_inc_name():
-			inc_name = rorp.get_alt_inc_name()
+			mirror_rp = get_long_rp(inc_name)
+		else:
 			mirror_rp = mirror_root.new_index(rorp.index)
-		else: assert 0, "Making new rf when rorp has no alternate name info"
+			if rorp.has_alt_inc_name(): inc_name = rorp.get_alt_inc_name()
+			else: return restore.RestoreFile(mirror_rp, None, [])
 
 		rf = restore.RestoreFile(mirror_rp, None, [])
 		update_incs(rf, inc_name)
