@@ -484,7 +484,7 @@ class BackupSetGlobals(SetGlobals):
 
 	def get_ctq_from_fsas(self):
 		"""Determine chars_to_quote just from filesystems, no ctq file"""
-		if not self.src_fsa.case_sensitive and self.dest_fsa.case_sensitive:
+		if self.src_fsa.case_sensitive and not self.dest_fsa.case_sensitive:
 			if self.dest_fsa.extended_filenames:
 				return "A-Z;" # Quote upper case and quoting char
 			else: return "^a-z0-9_ -." # quote everything but basic chars
