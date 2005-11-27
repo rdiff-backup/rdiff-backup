@@ -1,3 +1,10 @@
+New in v1.1.4 (????/??/??)
+--------------------------
+
+Quoting should be enabled only as needed between case-sensitive and
+non-case-sensitive systems (thanks for Andrew Ferguson for report).
+
+
 New in v1.1.3 (2005/11/25)
 --------------------------
 
