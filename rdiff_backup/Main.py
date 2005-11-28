@@ -54,7 +54,8 @@ def parse_cmdlineoptions(arglist):
 		return rpath.RPath(Globals.local_connection, path).normalize().path
 
 	try: optlist, args = getopt.getopt(arglist, "blr:sv:V",
-		 ["backup-mode", "calculate-average", "check-destination-dir",
+		 ["backup-mode", "calculate-average", "carbonfile",
+		  "check-destination-dir",
 		  "compare", "compare-at-time=", "create-full-path",
 		  "current-time=", "exclude=", "exclude-device-files",
 		  "exclude-fifos", "exclude-filelist=",
@@ -84,6 +85,7 @@ def parse_cmdlineoptions(arglist):
 	for opt, arg in optlist:
 		if opt == "-b" or opt == "--backup-mode": action = "backup"
 		elif opt == "--calculate-average": action = "calculate-average"
+		elif opt == "--carbonfile": Globals.set("carbonfile_active", 1)
 		elif opt == "--check-destination-dir": action = "check-destination-dir"
 		elif opt == "--compare" or opt == "--compare-at-time":
 			action = "compare"
@@ -424,8 +426,13 @@ def backup_set_fs_globals(rpin, rpout):
 	update_triple(src_fsa.resource_forks, dest_fsa.resource_forks,
 				  ('resource_forks_active', 'resource_forks_write',
 				   'resource_forks_conn'))
+
 	update_triple(src_fsa.carbonfile, dest_fsa.carbonfile,
 				  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
+	if src_fsa.carbonfile and not Globals.carbonfile_active:
+		Log("Source may have carbonfile support, but support defaults to "
+			"off.\n  Use --carbonfile to enable.", 5)
+
 	if Globals.never_drop_acls and not Globals.acls_active:
 		Log.FatalError("--never-drop-acls specified, but ACL support\n"
 					   "disabled on destination filesystem")
@@ -435,9 +442,9 @@ def backup_set_fs_globals(rpin, rpout):
 	SetConnections.UpdateGlobal('fsync_directories', dest_fsa.fsync_dirs)
 	SetConnections.UpdateGlobal('change_ownership', dest_fsa.ownership)
 	SetConnections.UpdateGlobal('chars_to_quote', dest_fsa.chars_to_quote)
-	if Globals.chars_to_quote:
-		for conn in Globals.connections:
-			conn.FilenameMapping.set_init_quote_vals()
+	if not dest_fsa.high_perms:
+		SetConnections.UpdateGlobal('permission_mask', 0777)
+	if Globals.chars_to_quote: FilenameMapping.set_init_quote_vals()
 	
 def backup_touch_curmirror_local(rpin, rpout):
 	"""Make a file like current_mirror.time.data to record time
@@ -542,6 +549,8 @@ def restore_set_fs_globals(target):
 	if Globals.preserve_hardlinks != 0:
 		SetConnections.UpdateGlobal('preserve_hardlinks', target_fsa.hardlinks)
 	SetConnections.UpdateGlobal('change_ownership', target_fsa.ownership)
+	if not target_fsa.high_perms:
+		SetConnections.UpdateGlobal('permission_mask', 0777)
 
 	if Globals.chars_to_quote is None: # otherwise already overridden
 		if mirror_fsa.chars_to_quote:
@@ -722,6 +731,7 @@ def single_set_fs_globals(rbdir):
 		SetConnections.UpdateGlobal('preserve_hardlinks', fsa.hardlinks)
 	SetConnections.UpdateGlobal('fsync_directories', fsa.fsync_dirs)
 	SetConnections.UpdateGlobal('change_ownership', fsa.ownership)
+	if not fsa.high_perms: SetConnections.UpdateGlobal('permission_mask', 0777)
 	SetConnections.UpdateGlobal('chars_to_quote', fsa.chars_to_quote)
 	if Globals.chars_to_quote:
 		for conn in Globals.connections:
@@ -747,17 +757,24 @@ def RemoveOlderThan(rootrp):
 	"""Remove all increment files older than a certain time"""
 	rootrp = require_root_set(rootrp)
 	rot_require_rbdir_base(rootrp)
-	try: time = Time.genstrtotime(remove_older_than_string)
+
+	time = rot_check_time(remove_older_than_string)
+	if time is None: return
+	Log("Actual remove older than time: %s" % (time,), 6)
+	manage.delete_earlier_than(Globals.rbdir, time)
+
+def rot_check_time(time_string):
+	"""Check remove older than time_string, return time in seconds"""
+	try: time = Time.genstrtotime(time_string)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
-	timep = Time.timetopretty(time)
-	Log("Deleting increment(s) before %s" % timep, 4)
 
 	times_in_secs = [inc.getinctime() for inc in 
 		  restore.get_inclist(Globals.rbdir.append_path("increments"))]
 	times_in_secs = filter(lambda t: t < time, times_in_secs)
 	if not times_in_secs:
-		Log.FatalError("No increments older than %s found, exiting."
-					   % (timep,), 1, errlevel = 0)
+		Log("No increments older than %s found, exiting." %
+			(Time.timetopretty(time),), 3)
+		return None
 
 	times_in_secs.sort()
 	inc_pretty_time = "\n".join(map(Time.timetopretty, times_in_secs))
@@ -765,17 +782,16 @@ def RemoveOlderThan(rootrp):
 		Log.FatalError("Found %d relevant increments, dated:\n%s"
 			"\nIf you want to delete multiple increments in this way, "
 			"use the --force." % (len(times_in_secs), inc_pretty_time))
-
 	if len(times_in_secs) == 1:
 		Log("Deleting increment at time:\n" + inc_pretty_time, 3)
 	else: Log("Deleting increments at times:\n" + inc_pretty_time, 3)
-	manage.delete_earlier_than(Globals.rbdir, time)
+	return times_in_secs[-1]+1 # make sure we don't delete current increment
 
 def rot_require_rbdir_base(rootrp):
 	"""Make sure pointing to base of rdiff-backup dir"""
 	if restore_index != ():
-		Log.FatalError("Increments for directory %s cannot be removed separately.\n"
-					   "Instead run on entire directory %s." %
+		Log.FatalError("Increments for directory %s cannot be removed "
+					   "separately.\nInstead run on entire directory %s." %
 					   (rootrp.path, restore_root.path))
 
 

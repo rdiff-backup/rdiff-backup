@@ -1,3 +1,11 @@
+rdiff-backup (1.0.3-1) unstable; urgency=low
+
+  * New upstream release (Closes: #338055).
+  * Removed old patches which are now in upstream.
+  * Added patch to fix manpage characters (Closes: #335162).
+
+ -- Daniel Baumann <daniel.baumann@panthera-systems.net>  Mon, 28 Nov 2005 09:21:00 +0100
+
 rdiff-backup (1.0.1-1) unstable; urgency=low
 
   * New upstream release (Closes: #323332, #302099):

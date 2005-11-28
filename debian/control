@@ -6,6 +6,7 @@ Build-Depends: debhelper (>= 4.0.0), dpatch, librsync-dev (>= 0.9.7), python, py
 Standards-Version: 3.6.2
 
 Package: rdiff-backup
+Section: utils
 Architecture: any
 Depends: ${shlibs:Depends}, ${python:Depends}
 Description: remote incremental backup

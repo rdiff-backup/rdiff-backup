@@ -102,7 +102,7 @@ def Compare(src_iter, mirror_rp, inc_rp, compare_time):
 	MirrorStruct.set_mirror_and_rest_times(compare_time)
 	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
 
-	mir_iter = MirrorStruct.get_mirror_rorp_iter(compare_time, 1)
+	mir_iter = MirrorStruct.get_mirror_rorp_iter(_rest_time, 1)
 	collated = rorpiter.Collate2Iters(src_iter, mir_iter)
 	changed_files_found = 0
 	for src_rorp, mir_rorp in collated: 

@@ -1,3 +1,2 @@
-rdiff-backup-hardlinks
-afs-hardlinks
-no-compress-regexp
+01-hardlinks
+02-manpage
