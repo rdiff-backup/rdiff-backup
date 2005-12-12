@@ -161,6 +161,11 @@ same rules as
 and
 .B --exclude.
 .TP
+.B --exclude-globbing-filelist-stdin
+Like
+.BR --exclude-globbing-filelist ,
+but the list of files will be read from standard input.
+.TP
 .B --exclude-other-filesystems
 Exclude files on file systems (identified by device number) other than
 the file system the root of the source directory is on.
@@ -227,6 +232,11 @@ same rules as
 .B --include
 and
 .B --exclude.
+.TP
+.B --include-globbing-filelist-stdin
+Like
+.BR --include-globbing-filelist ,
+but the list of files will be read from standard input.
 .TP
 .BI "--include-regexp " regexp
 Include files matching the regular expression
@@ -606,13 +616,21 @@ and easy-to-use.
 The file selection system comprises a number of file
 selection conditions, which are set using one of the following command
 line options:
-.BR --exclude , --exclude-filelist ,
-.BR --exclude-device-files , --exclude-fifos ,
-.BR --exclude-sockets , --exclude-symbolic-links ,
+.BR --exclude ,
+.BR --exclude-filelist ,
+.BR --exclude-device-files ,
+.BR --exclude-fifos ,
+.BR --exclude-sockets ,
+.BR --exclude-symbolic-links ,
 .BR --exclude-globbing-filelist ,
-.BR --exclude-filelist-stdin , --exclude-regexp , --exclude-special-files ,
+.BR --exclude-globbing-filelist-stdin ,
+.BR --exclude-filelist-stdin ,
+.BR --exclude-regexp ,
+.BR --exclude-special-files ,
 .BR --include ,
-.BR --include-filelist , --include-globbing-filelist ,
+.BR --include-filelist ,
+.BR --include-globbing-filelist ,
+.BR --include-globbing-filelist-stdin ,
 .BR --include-filelist-stdin ,
 and
 .BR --include-regexp .
