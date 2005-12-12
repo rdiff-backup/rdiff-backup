@@ -1,3 +1,10 @@
+New in v1.0.4 (????/??/??)
+--------------------------
+
+Files with ACLs will not be unnecessarily marked as changed (bug
+report by Carsten Lorenz).
+
+
 New in v1.0.3 (2005/11/25)
 --------------------------
 

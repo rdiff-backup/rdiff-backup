@@ -495,6 +495,18 @@ other::---""")
 		else: assert 0, "Above should have exited with fatal error"
 		Globals.never_drop_acls = None
 
+	def test_nochange(self):
+		"""Make sure files with ACLs not unnecessarily flagged changed"""
+		self.make_temp()
+		self.make_backup_dirs()
+		rdiff_backup(1, 1, self.acl_testdir1.path, tempdir.path,
+					 current_time = 10000)
+		rdiff_backup(1, 1, self.acl_testdir1.path, tempdir.path,
+					 current_time = 20000)
+		incdir = tempdir.append('rdiff-backup-data').append('increments')
+		assert incdir.isdir(), incdir
+		assert not incdir.listdir(), incdir.listdir()
+
 
 class CombinedTest(unittest.TestCase):
 	"""Test backing up and restoring directories with both EAs and ACLs"""
