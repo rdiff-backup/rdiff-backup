@@ -166,7 +166,10 @@ Exclude all socket files.
 Exclude all symbolic links.
 .TP
 .B --force
-Authorize the updating or overwriting of a destination path.
+Authorize a more drastic modification of a directory than usual (for
+instance, when overwriting of a destination path, or when removing
+multiple sessions with
+.BR --remove-older-than ).
 rdiff-backup will generally tell you if it needs this.
 .TP
 .BI "--group-mapping-file " filename
@@ -350,8 +353,15 @@ hours, and 7 seconds.  In this context, a month means 30 days, a year
 is 365 days, and a day is always 86400 seconds.
 
 rdiff-backup cannot remove-older-than and back up or restore in a
-single session.  If you want to, for instance, backup a directory and
-remove old files in it, you must run rdiff-backup twice.
+single session.  In order to both backup a directory and remove old
+files in it, you must run rdiff-backup twice.
+
+By default, rdiff-backup will only delete information from one session
+at a time.  To remove two or more sessions at the same time, supply the
+.B --force 
+option (rdiff-backup will tell you if 
+.B --force
+is required).
 
 Note that snapshots of deleted files are covered by this operation.
 Thus if you deleted a file two weeks ago, backed up immediately
