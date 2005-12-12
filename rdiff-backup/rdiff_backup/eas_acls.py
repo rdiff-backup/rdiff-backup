@@ -271,7 +271,7 @@ class AccessControlLists:
 
 	def cmp_entry_list(self, l1, l2):
 		"""True if the lists have same entries.  Assume preordered"""
-		if not l1: return l1 == l2
+		if not l1: return not l2
 		if not l2 or len(l1) != len(l2): return 0
 		for i in range(len(l1)):
 			type1, namepair1, perms1 = l1[i]
