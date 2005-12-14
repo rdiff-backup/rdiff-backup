@@ -1,0 +1,62 @@
+%define PYTHON_VERSION %(python -c 'import sys; print sys.version[:3],')
+%define NEXT_PYTHON_VERSION %(python -c 'import sys; print "%d.%d" % (sys.version_info[0], sys.version_info[1]+1),')
+
+Version: $version
+Summary: Convenient and transparent local/remote incremental mirror/backup
+Name: rdiff-backup
+Release: 0.fdr.1
+Epoch: 0
+URL: http://rdiff-backup.stanford.edu/
+Source: http://rdiff-backup.stanford.edu/OLD/$version/rdiff-backup-$version.tar.gz
+License: GPL
+Group: Applications/Archiving
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Requires: python >= 0:%{PYTHON_VERSION}, python < 0:%{NEXT_PYTHON_VERSION}
+BuildRequires: python-devel >= 0:2.2, librsync-devel >= 0:0.9.6
+
+%description
+rdiff-backup is a script, written in Python, that backs up one
+directory to another and is intended to be run periodically (nightly
+from cron for instance). The target directory ends up a copy of the
+source directory, but extra reverse diffs are stored in the target
+directory, so you can still recover files lost some time ago. The idea
+is to combine the best features of a mirror and an incremental
+backup. rdiff-backup can also operate in a bandwidth efficient manner
+over a pipe, like rsync. Thus you can use rdiff-backup and ssh to
+securely back a hard drive up to a remote location, and only the
+differences from the previous backup will be transmitted.
+
+%prep
+%setup -q
+
+%build
+python setup.py build
+
+%install
+python setup.py install --root $RPM_BUILD_ROOT
+# Produce .pyo files for %ghost directive later
+python -Oc 'from compileall import *; compile_dir("'$RPM_BUILD_ROOT/%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup'")'
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%defattr(-,root,root)
+%{_bindir}/rdiff-backup
+%{_mandir}/man1/rdiff-backup*
+%dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.py
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyc
+%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.so
+%ghost %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyo
+%doc CHANGELOG COPYING FAQ.html README
+
+%changelog
+* Sun Oct 05 2003 Ben Escoto <bescoto@stanford.edu> - 0:0.12.5-0.fdr.1
+- Added epochs to python versions, more concise %%defines, %%ghost files
+
+* Thu Aug 16 2003 Ben Escoto <bescoto@stanford.edu> - 0:0.12.3-0.fdr.4
+- Implemented various suggestions of Fedora QA
+
+* Sun Nov 4 2001 Ben Escoto <bescoto@stanford.edu>
+- Initial RPM
