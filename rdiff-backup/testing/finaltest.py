@@ -711,5 +711,19 @@ class FinalBugs(PathSetter):
 		rp1_d_f.setdata()
 		assert rp1_d_f.isreg(), 'File %s corrupted' % (rp1_d_f.path,)
 
+	def test_CCPP_keyerror(self):
+		"""Test when no change until middle of a directory
+
+		This tests CCPP, to make sure it isn't asked to provide rorps
+		for indicies that are out of the cache.
+
+		"""
+		self.delete_tmpdirs()
+		rdiff_backup(1, 1, 'testfiles/bigdir', 'testfiles/output')
+		rp = rpath.RPath(Globals.local_connection,
+						 'testfiles/bigdir/subdir3/subdir49/file49')
+		assert rp.isreg(), rp
+		rp.touch()
+		rdiff_backup(1, 1, 'testfiles/bigdir', 'testfiles/output')
 		
 if __name__ == "__main__": unittest.main()

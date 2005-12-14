@@ -300,6 +300,10 @@ class CacheCollatedPostProcess:
 		# computed once.
 		self.inode_digest_dict = {}
 
+		# Contains list of (index, (source_rorp, diff_rorp)) pairs for
+		# the parent directories of the last item in the cache.
+		self.parent_list = []
+
 	def __iter__(self): return self
 
 	def next(self):
@@ -354,6 +358,30 @@ class CacheCollatedPostProcess:
 		self.post_process(old_source_rorp, old_dest_rorp,
 						  changed_flag, success_flag, inc)
 		if self.dir_perms_list: self.reset_dir_perms(first_index)
+		self.update_parent_list(first_index, old_source_rorp, old_dest_rorp)
+
+	def update_parent_list(self, index, src_rorp, dest_rorp):
+		"""Update the parent cache with the recently expired main cache entry
+
+		This method keeps parent directories in the secondary parent
+		cache until all their children have expired from the main
+		cache.  This is necessary because we may realize we need a
+		parent directory's information after we have processed many
+		subfiles.
+
+		"""
+		if not (src_rorp and src_rorp.isdir() or
+				dest_rorp and dest_rorp.isdir()): return # neither is directory
+		if not self.parent_list: assert index == (), index
+		else:
+			last_parent_index = self.parent_list[-1][0]
+			lp_index, li = len(last_parent_index), len(index)
+			if li > lp_index: # descended into previous parent
+				assert li == lp_index + 1, (index, last_parent_index)
+			else: # In new directory
+				assert last_parent_index[:li-1] == index[:-1], index
+				self.parent_list = self.parent_list[:li]
+		self.parent_list.append((index, (src_rorp, dest_rorp)))
 
 	def post_process(self, source_rorp, dest_rorp, changed, success, inc):
 		"""Post process source_rorp and dest_rorp.
@@ -411,20 +439,29 @@ class CacheCollatedPostProcess:
 		"""Set the increment of the current file"""
 		self.cache_dict[index][4] = inc
 
+	def get_parent_rorps(self, index):
+		"""Retrieve (src_rorp, dest_rorp) pair from parent cache"""
+		for parent_index, pair in self.parent_list:
+			if parent_index == index: return pair
+		raise KeyError(index)
+
 	def get_rorps(self, index):
 		"""Retrieve (source_rorp, dest_rorp) from cache"""
-		return self.cache_dict[index][:2]
+		try: return self.cache_dict[index][:2]
+		except KeyError: return self.get_parent_rorps(index)
 
 	def get_source_rorp(self, index):
 		"""Retrieve source_rorp with given index from cache"""
 		assert index >= self.cache_indicies[0], \
 			   ("CCPP index out of order: %s %s" %
 				(repr(index), repr(self.cache_indicies[0])))
-		return self.cache_dict[index][0]
+		try: return self.cache_dict[index][0]
+		except KeyError: return self.get_parent_rorps(index)[0]
 
 	def get_mirror_rorp(self, index):
 		"""Retrieve mirror_rorp with given index from cache"""
-		return self.cache_dict[index][1]
+		try: return self.cache_dict[index][1]
+		except KeyError: return self.get_parent_rorps(index)[1]
 
 	def update_hash(self, index, sha1sum):
 		"""Update the source rorp's SHA1 hash"""
