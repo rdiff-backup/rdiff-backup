@@ -1,4 +1,4 @@
-New in v1.1.4 (????/??/??)
+New in v1.1.4 (2005/12/13)
 --------------------------
 
 Quoting should be enabled only as needed between case-sensitive and
@@ -6,6 +6,8 @@ non-case-sensitive systems (thanks for Andrew Ferguson for report).
 
 Files with ACLs will not be unnecessarily marked as changed (bug
 report by Carsten Lorenz).
+
+Fix for common KeyError bug introduced in v1.1.3.
 
 
 New in v1.1.3 (2005/11/25)
