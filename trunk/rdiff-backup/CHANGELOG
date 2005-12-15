@@ -1,3 +1,9 @@
+New in v1.1.5 (????/??/??)
+--------------------------
+
+Fix for restoring files in directories with really long names.
+
+
 New in v1.1.4 (2005/12/13)
 --------------------------
 
