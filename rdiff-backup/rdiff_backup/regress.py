@@ -353,7 +353,8 @@ def check_pids(curmir_incs):
 		pid = extract_pid(curmir_rp)
 		if pid is not None and pid_running(pid):
 			log.Log.FatalError(
-"""It appears that a previous rdiff-backup session with process id
-%d is still running.  To proceed with regress, rerun rdiff-backup with the
+"""It appears that a previous rdiff-backup session with process
+id %d is still running.  If two different rdiff-backup processes write
+the same repository simultaneously, data corruption will probably
+result.  To proceed with regress anyway, rerun rdiff-backup with the
 --force option.""" % (pid,))
-
