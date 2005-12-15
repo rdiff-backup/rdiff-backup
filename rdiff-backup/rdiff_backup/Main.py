@@ -801,6 +801,7 @@ information in it.
 """ % (Globals.rbdir.path,))
 	elif len(curmir_incs) == 1: return 0
 	else:
+		if not force: curmir_incs[0].conn.regress.check_pids(curmir_incs)
 		assert len(curmir_incs) == 2, "Found too many current_mirror incs!"
 		return 1
 

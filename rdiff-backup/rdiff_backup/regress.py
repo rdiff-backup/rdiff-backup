@@ -34,6 +34,7 @@ be recovered.
 """
 
 from __future__ import generators
+import signal, errno, re, os
 import Globals, restore, log, rorpiter, TempFile, metadata, rpath, C, \
 	   Time, backup, robust, longname
 
@@ -328,3 +329,31 @@ class RegressITRB(rorpiter.ITRBranch):
 		if rf.regress_inc:
 			log.Log("Deleting increment " + rf.regress_inc.path, 5)
 			rf.regress_inc.delete()
+
+
+def check_pids(curmir_incs):
+	"""Check PIDs in curmir markers to make sure rdiff-backup not running"""
+	pid_re = re.compile("^PID\s*([0-9]+)", re.I | re.M)
+	def extract_pid(curmir_rp):
+		"""Return process ID from a current mirror marker, if any"""
+		match = pid_re.search(curmir_rp.get_data())
+		if not match: return None
+		else: return int(match.group(1))
+
+	def pid_running(pid):
+		"""True if we know if process with pid is currently running"""
+		try: os.kill(pid, signal.NSIG)
+		except OSError, exc:
+			if exc[0] == errno.ESRCH: return 0
+			elif exc[0] == errno.EINVAL: return 1
+		Log("Warning: unable to check if PID %d still running" % (pid,), 2)
+
+	for curmir_rp in curmir_incs:
+		assert Globals.local_connection is curmir_rp.conn
+		pid = extract_pid(curmir_rp)
+		if pid is not None and pid_running(pid):
+			log.Log.FatalError(
+"""It appears that a previous rdiff-backup session with process id
+%d is still running.  To proceed with regress, rerun rdiff-backup with the
+--force option.""" % (pid,))
+
