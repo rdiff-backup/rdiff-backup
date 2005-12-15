@@ -3,6 +3,9 @@ New in v1.1.5 (????/??/??)
 
 Fix for restoring files in directories with really long names.
 
+rdiff-backup will now exit by default if it thinks another
+rdiff-backup process is currently working on the same repository.
+
 
 New in v1.1.4 (2005/12/13)
 --------------------------
