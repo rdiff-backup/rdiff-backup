@@ -454,5 +454,33 @@ class CheckPath(unittest.TestCase):
 		bin2 = RPath(Globals.local_connection, "/bin")
 		assert bin.path == "/bin", bin2.path
 
+class Gzip(RPathTest):
+	"""Test the gzip related functions/classes"""
+	def test_maybe_gzip(self):
+		"""Test MaybeGzip"""
+		dirrp = rpath.RPath(self.lc, "testfiles/output")
+		re_init_dir(dirrp)
+
+		base_rp = dirrp.append('foo')
+		fileobj = rpath.MaybeGzip(base_rp)
+		fileobj.close()
+		base_rp.setdata()
+		assert base_rp.isreg(), base_rp
+		assert base_rp.getsize() == 0
+		base_rp.delete()
+
+		base_gz = dirrp.append('foo.gz')
+		assert not base_gz.lstat()
+		fileobj = rpath.MaybeGzip(base_rp)
+		fileobj.write("lala")
+		fileobj.close()
+		base_rp.setdata()
+		base_gz.setdata()
+		assert not base_rp.lstat()
+		assert base_gz.isreg(), base_gz
+		data = base_gz.get_data(compressed = 1)
+		assert data == "lala", data
+		
+
 if __name__ == "__main__":
 	unittest.main()
