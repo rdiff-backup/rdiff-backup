@@ -424,6 +424,9 @@ def backup_final_init(rpout):
 		Log.open_logfile(Globals.rbdir.append("backup.log"))
 	checkdest_if_necessary(rpout)
 	prevtime = backup_get_mirrortime()
+	if prevtime >= Time.curtime: Log.FatalError(
+"""Time of Last backup is not in the past.  This is probably caused
+by running two backups in less than a second.  Wait a second a try again.""")
 	ErrorLog.open(Time.curtimestr, compress = Globals.compression)
 	inc_base = Globals.rbdir.append_path("increments")
 	if not inc_base.lstat(): inc_base.mkdir()
