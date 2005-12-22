@@ -4,6 +4,9 @@ New in v1.0.4 (????/??/??)
 Files with ACLs will not be unnecessarily marked as changed (bug
 report by Carsten Lorenz).
 
+Another fix for long-filenames crash, this time when a long-named
+directory with files in it gets deleted
+
 
 New in v1.0.3 (2005/11/25)
 --------------------------

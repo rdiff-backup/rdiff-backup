@@ -159,6 +159,7 @@ class IncrementTest1(unittest.TestCase):
 		Myrm(Local.rpout.path)
 		InternalBackup(1, 1, "testfiles/longfilenames1", Local.rpout.path, 100)
 		InternalBackup(1, 1, "testfiles/longfilenames2", Local.rpout.path, 200)
+		InternalBackup(1, 1, "testfiles/empty", Local.rpout.path, 300)
 
 	def test_quoted_hardlinks(self):
 		"""Test backing up a directory with quoted hardlinks in it"""

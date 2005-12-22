@@ -584,7 +584,10 @@ class PatchITRB(rorpiter.ITRBranch):
 			rpath.copy_attribs(self.dir_update, self.base_rp)
 		else:
 			assert self.dir_replacement
-			self.base_rp.rmdir()
+			try: self.base_rp.rmdir()
+			except OSError:
+				log.Log("Warning: unable to rmdir " + self.base_rp.path, 2)
+				self.base_rp.delete()
 			if self.dir_replacement.lstat():
 				rpath.rename(self.dir_replacement, self.base_rp)
 
