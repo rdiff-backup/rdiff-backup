@@ -1,0 +1,208 @@
+#!/usr/bin/python
+#
+# Copyright 2005 Dean Gaudet, Ben Escoto
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# rdiff-backup is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with rdiff-backup; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+
+
+import os, sys, re
+import rdiff_backup.connection, rdiff_backup.regress
+import rdiff_backup.rpath as rpath
+import rdiff_backup.Globals as Globals
+import rdiff_backup.restore as restore
+
+
+tag = None # Set to an rdiff-backup session time
+
+def check_args():
+	global tag
+	def error(msg):
+		sys.stderr.write("Command line error: %s\n" % (msg,))
+		sys.exit(2)
+	if not (2 <= len(sys.argv) <= 3):
+		error("usage: %s mirror-directory [date_tag]" % (sys.argv[0],))
+	Globals.rbdir = rpath.RPath(Globals.local_connection,
+								os.path.join(sys.argv[1], 'rdiff-backup-data'))
+	if not Globals.rbdir.isdir():
+		error("Directory %s not found" % (Globals.rbdir.path,))
+	if len(sys.argv) == 3: tag = sys.argv[2]
+
+def system(cmd):
+	if os.system(cmd): sys.exit("Error running command '%s'\n" % (cmd,))
+
+def get_rbdir_inc_rpath(prefix):
+	"""Get rp in rdiff-backup-data given prefix (either newest or with tag)"""
+	if tag:
+		rp1 = Globals.rbdir.append('%s.%s.data' % (prefix, tag)) 
+		if rp1.isreg(): return rp1
+		rp2 = Globals.rbdir.append('%s.%s.data.gz' % (prefix, tag))
+		if rp2.isreg(): return rp2
+		sys.exit(rp.path + " is not a regular file.  Bad tag specified?")
+	else:
+		rp_base = Globals.rbdir.append(prefix)
+		inclist = restore.get_inclist(rp_base)
+		if not inclist: sys.exit("No data files in rdiff-backup-data dir "
+								 "starting with %s were found!" % (prefix,))
+		inclist.sort(key = lambda i: i.getinctime())
+		return inclist[-1]
+
+def print_statistics():
+	print "\nSession statistics:"
+	print get_rbdir_inc_rpath('session_statistics').get_data()
+	print "\nAverage statistics:"
+	system("rdiff-backup --calculate-average %s/session_statistics.*" %
+		   (Globals.rbdir.path,))
+
+def get_open_filestats():
+	"""Return open file object based on file_statistics"""
+	file_stats_rp = get_rbdir_inc_rpath('file_statistics')
+	assert file_stats_rp.isincfile()
+	fileobj = file_stats_rp.open('r', file_stats_rp.isinccompressed())
+	fileobj.readline()
+	if fileobj.readline() != ("# Filename Changed SourceSize "
+							  "MirrorSize IncrementSize\n"):
+		sys.stderr.write("Format of %s may be unfamiliar\n"
+						 % (file_stats_rp.path))
+	return fileobj
+
+class FileStat:
+	"""Hold the information in one line of file_statistics
+
+	However, unlike file_statistics, a File can have subdirectories
+	under it.  In that case, the information should be cumulative.
+
+	"""
+	def __init__(self, nametuple, changed, sourcesize, incsize):
+		self.nametuple = nametuple
+		self.changed = changed
+		self.sourcesize, self.incsize = sourcesize, incsize
+		self.children = []
+
+	def add_child(self, child):
+		self.children.append(child)
+		self.changed += child.changed
+		self.sourcesize += child.sourcesize
+		self.incsize += child.incsize
+
+	def __str__(self):
+		return "%s %s %s %s" % (self.nametuple, self.changed,
+								self.sourcesize, self.incsize)
+
+def yield_fs_objs(filestatsobj):
+	"""Iterate FileStats from open file_statistics fileobj"""
+	r = re.compile("^(.*) ([0-9]+) ([0-9]+|NA) ([0-9]+|NA) ([0-9]+|NA)\n?$")
+	while 1:
+		line = filestatsobj.readline()
+		if not line: break
+		if line.startswith('#'): continue
+
+		match = r.match(line)
+		if not match:
+			print "Error parsing line: ", line
+			continue
+
+		filename = match.group(1)
+		if filename == '.': nametuple = ()
+		else: nametuple = tuple(filename.split('/'))
+		if match.group(3) == 'NA': sourcesize = 0
+		else: sourcesize = int(match.group(3))
+		if match.group(5) == 'NA': incsize = 0
+		else: incsize = int(match.group(5))
+
+		yield FileStat(nametuple, int(match.group(2)), sourcesize, incsize)
+
+def make_tree(fs_iter, root_fs):
+	"""Populate a tree of FileStat objects from fs_iter
+
+	We require that the nametuple of every FileStat put into the tree
+	starts with the same nametuple as root_fs.  Return value will be a
+	tuple (root fs object, overflow), where overflow is the next
+	FileStat object in the iterator, or None.
+
+	"""
+	try: fs = fs_iter.next()
+	except StopIteration: return (root_fs, None)
+
+	while 1:
+		if fs.nametuple[:len(root_fs.nametuple)] != root_fs.nametuple:
+			return (root_fs, fs)
+		subtree, fs = make_tree(fs_iter, fs)
+		root_fs.add_child(subtree)
+		if not fs: return (root_fs, None)
+
+def make_root_tree(fs_iter):
+	"""Like make_tree, but assume fs_iter starts at the root"""
+	try: root_fs = fs_iter.next()
+	except StopIteration: sys.exit("No files in iterator")
+	assert root_fs.nametuple == (), root_fs
+	tree, overflow = make_tree(fs_iter, root_fs)
+	assert overflow is None, overflow
+	return tree
+
+def get_top_fs(fs_tree, cutoff = .05, fs_func = lambda fs: fs.incsize):
+	"""Process the FileStat tree and find everything above the cutoff
+
+	cutoff is a fraction of the root.  Of course the root will be
+	above the cutoff, but we try to find the most specific directories
+	still above the cutoff.  The value of any directories that make
+	the cutoff will be excluded from the value of parent directories.
+
+	"""
+	abs_cutoff = cutoff*fs_func(fs_tree)
+	def helper(subtree):
+		"""Returns ([list of (top fs, value)], total excluded amount)"""
+		subtree_val = fs_func(subtree)
+		if subtree_val <= abs_cutoff: return ([], 0)
+
+		top_children, total_excluded = [], 0
+		for child in subtree.children:
+			top_sublist, excluded = helper(child)
+			top_children.extend(top_sublist)
+			total_excluded += excluded
+
+		current_value = subtree_val - total_excluded
+		if current_value >= abs_cutoff:
+			return ([(subtree, current_value)] + top_children, subtree_val)
+		else: return (top_children, total_excluded)
+	return helper(fs_tree)[0]
+
+def print_top_dirs(fs_tree, label, fs_func):
+	"""Print the top directories in sorted order"""
+	def print_line(fs, val):
+		percentage = float(val)/fs_func(fs_tree) * 100
+		path = fs.nametuple and '/'.join(fs.nametuple) or '.'
+		print '%s (%02.1f%%)' % (path, percentage)
+
+	s = "Top directories by %s (percent of total)" % (label,)
+	print s + '\n' + ('-'*len(s))
+	top_fs_pair_list = get_top_fs(fs_tree, .05, fs_func)
+	top_fs_pair_list.sort(key = lambda pair: pair[1], reverse = 1)
+	for fs, val in top_fs_pair_list: print_line(fs, val)
+	
+def Main():
+	check_args()
+	print_statistics()
+	fs_tree = make_root_tree(yield_fs_objs(get_open_filestats()))
+	print_top_dirs(fs_tree, "source size", lambda fs: fs.sourcesize)
+	print
+	print_top_dirs(fs_tree, "increment size", lambda fs: fs.incsize)
+	print
+	print_top_dirs(fs_tree, "number of files changed",
+				   lambda fs: fs.changed)
+
+if __name__ == '__main__': Main()
