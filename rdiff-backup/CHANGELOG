@@ -14,6 +14,9 @@ Added supplementary rdiff-backup-statistics utility for parsing
 rdiff-backup's statistics files (originally based off perl script by
 Dean Gaudet).
 
+rdiff-backup should now use much less memory than v1.1.1-1.1.4 if you
+have lots of hard links.
+
 
 New in v1.1.4 (2005/12/13)
 --------------------------
