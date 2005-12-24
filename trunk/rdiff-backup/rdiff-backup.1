@@ -314,11 +314,8 @@ rdiff-backup-data directory.  rdiff-backup will run slightly quicker
 and take up a bit less space.
 .TP
 .BI --no-hard-links
-Don't replicate hard links on destination side.  Note that because
-metadata is written to a separate file, hard link information will not
-be lost even if the --no-hard-links option is given (however, mirror
-files will not be linked).  If many hard-linked files are present,
-this option can drastically decrease memory usage.
+Don't replicate hard links on destination side.  If many hard-linked
+files are present, this option can drastically decrease memory usage.
 .TP
 .B --null-separator
 Use nulls (\\0) instead of newlines (\\n) as line separators, which

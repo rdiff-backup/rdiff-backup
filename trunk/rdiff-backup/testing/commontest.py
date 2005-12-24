@@ -386,4 +386,19 @@ def raise_interpreter(use_locals = None):
 	else: local_dict = globals()
 	code.InteractiveConsole(local_dict).interact()
 
-
+def getrefs(i, depth):
+	"""Get the i'th object in memory, return objects that reference it"""
+	import sys, gc, types
+	o = sys.getobjects(i)[-1]
+	for d in range(depth):
+		for ref in gc.get_referrers(o):
+			if type(ref) in (types.ListType, types.DictType,
+								types.InstanceType):
+				if type(ref) is types.DictType and ref.has_key('copyright'):
+					continue
+				o = ref
+				break
+		else:
+			print "Max depth ", d
+			return o
+	return o
