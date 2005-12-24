@@ -1,14 +1,18 @@
 New in v1.1.5 (????/??/??)
 --------------------------
 
-Fix for restoring files in directories with really long names.
-
 rdiff-backup will now exit by default if it thinks another
 rdiff-backup process is currently working on the same repository.
 
 Empty error_log, mirror_metadata, extended_attribute, and
 access_control_lists files will no longer be gzipped (suggestion by
 Hans F. Nordhaug).
+
+Fix for restoring files in directories with really long names.
+
+Added supplementary rdiff-backup-statistics utility for parsing
+rdiff-backup's statistics files (originally based off perl script by
+Dean Gaudet).
 
 
 New in v1.1.4 (2005/12/13)
