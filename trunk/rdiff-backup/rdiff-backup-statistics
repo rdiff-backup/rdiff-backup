@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# rdiff-backup-statistics -- Summarize rdiff-backup statistics files
 #
 # Copyright 2005 Dean Gaudet, Ben Escoto
 #
@@ -19,11 +20,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 
-
-import profile, pstats
 import os, sys, re, getopt
-from rdiff_backup import connection, regress, rpath, Globals, restore, Time, lazy
-
+from rdiff_backup import connection, regress, rpath, Globals, restore, \
+	 Time, lazy
 
 begin_time = None # Parse statistics at or after this time...
 end_time = None # ... and at or before this time (epoch seconds)
@@ -34,7 +33,7 @@ def parse_args():
 	try: optlist, args = getopt.getopt(sys.argv[1:], "",
 			["begin-time=", "end-time=", "minimum-ratio="])
 	except getopt.error, e:
-		sys.exit("Bad commandline options: " + str(e))
+		sys.exit("Bad command line: " + str(e))
 
 	for opt, arg in optlist:
 		if opt == "--begin-time": begin_time = Time.genstrtotime(arg)
@@ -43,8 +42,8 @@ def parse_args():
 		else: assert 0
 
 	if len(args) != 1:
-		sys.exit("Usage: %s --begin-time <time> --end-time <time> <backup-dir>"
-				 % (sys.argv[0],))
+		sys.exit("Usage: %s --begin-time <time> --end-time <time> "
+				 "--minimum-ratio <float> <backup-dir>" % (sys.argv[0],))
 
 	Globals.rbdir = rpath.RPath(Globals.local_connection,
 								os.path.join(args[0], 'rdiff-backup-data'))
@@ -401,6 +400,7 @@ class ReadlineBuffer:
 			self.buffer[0] += split[0]
 			self.buffer.extend(split[1:])
 		else: self.at_end = 1
+
 
 def sum_fst(rp_pairs):
 	"""Add the file statistics given as list of (session_rp, file_rp) pairs"""
