@@ -486,7 +486,9 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 	mirror file), dest_rp should be the target rp to be written.
 
 	"""
-	if not restore_root_set: assert restore_set_root(src_rp)
+	if not restore_root_set and not restore_set_root(src_rp):
+		Log.FatalError("Could not find rdiff-backup repository at "
+					   + src_rp.path)
 	restore_check_paths(src_rp, dest_rp, restore_as_of)
 	restore_set_fs_globals(dest_rp)
 	init_user_group_mapping(dest_rp.conn)
