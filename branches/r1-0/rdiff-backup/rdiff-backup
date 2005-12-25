@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # rdiff-backup -- Mirror files while keeping incremental changes
 # Version $version released $date
-# Copyright (C) 2001-2005  Ben Escoto <bescoto@stanford.edu>
+# Copyright (C) 2001-2005  Ben Escoto <rdiff-backup@emerose.org>
 #
 # This program is licensed under the GNU General Public License (GPL).
 # you can redistribute it and/or modify it under the terms of the GNU
@@ -12,7 +12,7 @@
 # file called COPYING.  The GPL is also available online at
 # http://www.gnu.org/copyleft/gpl.html.
 #
-# See http://rdiff-backup.stanford.edu/ for more information.  Please
+# See http://rdiff-backup.nongnu.org/ for more information.  Please
 # send mail to me or the mailing list if you find bugs or have any
 # suggestions.
 
