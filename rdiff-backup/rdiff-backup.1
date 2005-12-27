@@ -922,11 +922,6 @@ automatically (as from
 or similar) it is probably a good idea to check the exit code.
 
 .SH BUGS
-rdiff-backup uses the shell command
-.BR mknod (1)
-to backup device files (e.g. /dev/ttyS0), so device files won't be
-handled correctly on systems with non-standard mknod syntax.
-.PP
 Files whose names are close to the maximum length (e.g. 235 chars if
 the maximum is 255) may be skipped because the filenames of related
 increment files would be too long.
