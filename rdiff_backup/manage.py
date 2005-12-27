@@ -88,11 +88,11 @@ def delete_earlier_than_local(baserp, time):
 	"""Like delete_earlier_than, but run on local connection for speed"""
 	assert baserp.conn is Globals.local_connection
 	def yield_files(rp):
-		yield rp
 		if rp.isdir():
 			for filename in rp.listdir():
 				for sub_rp in yield_files(rp.append(filename)):
 					yield sub_rp
+		yield rp
 
 	for rp in yield_files(baserp):
 		if ((rp.isincfile() and rp.getinctime() < time) or

@@ -1,4 +1,4 @@
-.TH RDIFF-BACKUP 1 "November 2005" "Version 1.0.3" "User Manuals"
+.TH RDIFF-BACKUP 1 "December 2005" "Version 1.1.4" "User Manuals"
 .SH NAME
 rdiff-backup \- local/remote mirror and incremental backup
 .SH SYNOPSIS
@@ -12,7 +12,9 @@ rdiff-backup \- local/remote mirror and incremental backup
 .BI "| --remove-older-than " time_interval
 .BI "| --list-at-time " time
 .BI "| --list-changed-since " time
-.B "| --list-increment-sizes "}
+.B "| --list-increment-sizes "
+.B "| --verify"
+.BI "| --verify-at-time " time }
 .BI [[[ user@ ] host2.foo ]:: destination_directory ]
 
 .B rdiff-backup --calculate-average
@@ -82,9 +84,29 @@ This is equivalent to
 .BI "--compare-at-time " time
 Compare a directory with the backup set at the given time.  This can
 be useful to see how archived data differs from current data, or to
-check that a backup is current.
+check that a backup is current.  This only compares metadata, in the same
+way rdiff-backup decides whether a file has changed.
 .TP
-.BI "--create-full-path"
+.B --compare-full
+This is equivalent to
+.BI '--compare-full-at-time " now" '
+.TP
+.BI "--compare-full-at-time " time
+Compare a directory with the backup set at the given time.  To compare
+regular files, the repository data will be copied in its entirety to
+the source side and compared byte by byte.  This is the slowest but
+most complete compare option.
+.TP
+.B --compare-hash
+This is equivalent to
+.BI '--compare-hash-at-time " now" '
+.TP
+.BI "--compare-hash-at-time " time
+Compare a directory with the backup set at the given time.  Regular
+files will be compared by computing their SHA1 digest on the source
+side and comparing it to the digest recorded in the metadata.
+.TP
+.B --create-full-path
 Normally only the final directory of the destination path will be
 created if it does not exist. With this option, all missing directories
 on the destination path will be created. Use this option with care: if 
@@ -139,6 +161,11 @@ same rules as
 and
 .B --exclude.
 .TP
+.B --exclude-globbing-filelist-stdin
+Like
+.BR --exclude-globbing-filelist ,
+but the list of files will be read from standard input.
+.TP
 .B --exclude-other-filesystems
 Exclude files on file systems (identified by device number) other than
 the file system the root of the source directory is on.
@@ -161,7 +188,10 @@ Exclude all socket files.
 Exclude all symbolic links.
 .TP
 .B --force
-Authorize the updating or overwriting of a destination path.
+Authorize a more drastic modification of a directory than usual (for
+instance, when overwriting of a destination path, or when removing
+multiple sessions with
+.BR --remove-older-than ).
 rdiff-backup will generally tell you if it needs this.
 .TP
 .BI "--group-mapping-file " filename
@@ -205,6 +235,11 @@ same rules as
 .B --include
 and
 .B --exclude.
+.TP
+.B --include-globbing-filelist-stdin
+Like
+.BR --include-globbing-filelist ,
+but the list of files will be read from standard input.
 .TP
 .BI "--include-regexp " regexp
 Include files matching the regular expression
@@ -301,6 +336,12 @@ or
 .B --list-increments
 switches, where the time will be given in seconds since the epoch.
 .TP
+.B --preserve-numerical-ids
+If set, rdiff-backup will preserve uids/gids instead of trying to
+preserve unames and gnames.  See the
+.B USERS and GROUPS
+section for more information.
+.TP
 .B --print-statistics
 If set, summary statistics will be printed after a successful backup
 If not set, this information will still be available from the
@@ -340,8 +381,15 @@ hours, and 7 seconds.  In this context, a month means 30 days, a year
 is 365 days, and a day is always 86400 seconds.
 
 rdiff-backup cannot remove-older-than and back up or restore in a
-single session.  If you want to, for instance, backup a directory and
-remove old files in it, you must run rdiff-backup twice.
+single session.  In order to both backup a directory and remove old
+files in it, you must run rdiff-backup twice.
+
+By default, rdiff-backup will only delete information from one session
+at a time.  To remove two or more sessions at the same time, supply the
+.B --force 
+option (rdiff-backup will tell you if 
+.B --force
+is required).
 
 Note that snapshots of deleted files are covered by this operation.
 Thus if you deleted a file two weeks ago, backed up immediately
@@ -400,6 +448,15 @@ section for more information.
 .BI -v [0-9] ", --verbosity " [0-9]
 Specify verbosity level (0 is totally silent, 3 is the default, and 9
 is noisiest).  This determines how much is written to the log file.
+.TP
+.B --verify
+This is short for
+.BI --verify-at-time " now"
+.TP
+.BI --verify-at-time " now"
+Check all the data in the repository at the given time by computing
+the SHA1 hash of all the regular files and comparing them with the
+hashes stored in the metadata file.
 .TP
 .B "-V, --version"
 Print the current version and exit
@@ -569,13 +626,21 @@ and easy-to-use.
 The file selection system comprises a number of file
 selection conditions, which are set using one of the following command
 line options:
-.BR --exclude , --exclude-filelist ,
-.BR --exclude-device-files , --exclude-fifos ,
-.BR --exclude-sockets , --exclude-symbolic-links ,
+.BR --exclude ,
+.BR --exclude-filelist ,
+.BR --exclude-device-files ,
+.BR --exclude-fifos ,
+.BR --exclude-sockets ,
+.BR --exclude-symbolic-links ,
 .BR --exclude-globbing-filelist ,
-.BR --exclude-filelist-stdin , --exclude-regexp , --exclude-special-files ,
+.BR --exclude-globbing-filelist-stdin ,
+.BR --exclude-filelist-stdin ,
+.BR --exclude-regexp ,
+.BR --exclude-special-files ,
 .BR --include ,
-.BR --include-filelist , --include-globbing-filelist ,
+.BR --include-filelist ,
+.BR --include-globbing-filelist ,
+.BR --include-globbing-filelist-stdin ,
 .BR --include-filelist-stdin ,
 and
 .BR --include-regexp .
@@ -817,27 +882,35 @@ if /home/ben/1234567 existed.
 There can be complications preserving ownership across systems.  For
 instance the username that owns a file on the source system may not
 exist on the destination.  Here is how rdiff-backup maps ownership on
-the source to the destination:
+the source to the destination (or vice-versa, in the case of restoring):
 
 .TP
 .B 1.
-Attempt to preserve the user and group names for ownership and in
-ACLs.  This may result in files having different uids and gids across
-systems.
+If the --preserve-numerical-ids option is given, the remote files will
+always have the same uid and gid, both for ownership and ACL entries.
+This may cause unames and gnames to change.
 .TP
 .B 2.
-If this fails (e.g. because the username does not exist), preserve the
-original id, but only in cases of user and group ownership.  For ACLs,
-omit any entry that has a bad user or group name.
+Otherwise, attempt to preserve the user and group names for ownership
+and in ACLs.  This may result in files having different uids and gids
+across systems.
 .TP
 .B 3.
-However, the
+If a name cannot be preserved (e.g. because the username does not
+exist), preserve the original id, but only in cases of user and group
+ownership.  For ACLs, omit any entry that has a bad user or group
+name.
+.TP
+.B 4.
+The
 .B --user-mapping-file
 and
 .B --group-mapping-file
-options can override this behavior.  If either of these options is
-given, the policy descriped in 1 and 2 above will be followed, but
-with the mapped user and group instead of the original.
+options override this behavior.  If either of these options is given,
+the policy descriped in 2 and 3 above will be followed, but with the
+mapped user and group instead of the original.  If you specify both
+.B --preserve-numerical-ids
+and one of the mapping options, the behavior is undefined.
 
 .RE
 The user and group mapping files both have the same form:
@@ -855,6 +928,28 @@ old_name_or_id2:new_name_or_id2
 Each line should contain a name or id, followed by a colon ":",
 followed by another name or id.  If a name or id is not listed, they
 are treated in the default way described above.
+
+When restoring, the above behavior is also followed, but note that the
+original source user/group information will be the input, not the
+already mapped user/group information present in the backup
+repository.  For instance, suppose you have mapped all the files owned
+by
+.I alice
+in the source so that they are owned by
+.I ben
+in the repository, and now you want to restore, making sure the files owned originally by
+.I alice
+are still owned by 
+.IR alice .
+In this case there is no need to use any of the mapping options.
+However, if you wanted to restore the files so that the files
+originally owned by
+.I alice
+on the source are now owned by
+.IR ben ,
+you would have to use the mapping options, even though you just want
+the unames of the repository's files preserved in the restored files.
+
 
 .SH STATISTICS
 Every session rdiff-backup saves various statistics into two files,
@@ -894,15 +989,6 @@ automatically (as from
 or similar) it is probably a good idea to check the exit code.
 
 .SH BUGS
-rdiff-backup uses the shell command
-.BR mknod (1)
-to backup device files (e.g. /dev/ttyS0), so device files won't be
-handled correctly on systems with non-standard mknod syntax.
-.PP
-Files whose names are close to the maximum length (e.g. 235 chars if
-the maximum is 255) may be skipped because the filenames of related
-increment files would be too long.
-.PP
 The gzip library in versions 2.2 and earlier of python (but fixed in
 2.3a1) has trouble producing files over 2GB in length.  This bug will
 prevent rdiff-backup from producing large compressed increments

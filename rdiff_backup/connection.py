@@ -31,6 +31,7 @@ except ImportError: pass
 
 class ConnectionError(Exception): pass
 class ConnectionReadError(ConnectionError): pass
+class ConnectionWriteError(ConnectionError): pass
 class ConnectionQuit(Exception): pass
 
 
@@ -153,8 +154,7 @@ class LowLevelPipeConnection(Connection):
 	def _putiter(self, iterator, req_num):
 		"""Put an iterator through the pipe"""
 		self._write("i",
-					str(VirtualFile.new(iterfile.RORPIterToFile(iterator))),
-					req_num)
+			str(VirtualFile.new(iterfile.MiscIterToFile(iterator))), req_num)
 
 	def _putrpath(self, rpath, req_num):
 		"""Put an rpath into the pipe
@@ -198,14 +198,17 @@ class LowLevelPipeConnection(Connection):
 
 	def _write(self, headerchar, data, req_num):
 		"""Write header and then data to the pipe"""
-		self.outpipe.write(headerchar + chr(req_num) +
-						   C.long2str(long(len(data))))
-		self.outpipe.write(data)
-		self.outpipe.flush()
+		try:
+			self.outpipe.write(headerchar + chr(req_num) +
+							   C.long2str(long(len(data))))
+			self.outpipe.write(data)
+			self.outpipe.flush()
+		except IOError: raise ConnectionWriteError()
 
 	def _read(self, length):
 		"""Read length bytes from inpipe, returning result"""
-		return self.inpipe.read(length)
+		try: return self.inpipe.read(length)
+		except IOError: raise ConnectionReadError()
 
 	def _s2l_old(self, s):
 		"""Convert string to long int"""
@@ -229,11 +232,9 @@ class LowLevelPipeConnection(Connection):
 		if not len(header_string) == 9:
 			raise ConnectionReadError("Truncated header string (problem "
 									  "probably originated remotely)")
-		try:
-			format_string, req_num, length = (header_string[0],
-											  ord(header_string[1]),
-											  C.str2long(header_string[2:]))
-		except IndexError: raise ConnectionError()
+		format_string, req_num, length = (header_string[0],
+										  ord(header_string[1]),
+										  C.str2long(header_string[2:]))
 		if format_string == "q": raise ConnectionQuit("Received quit signal")
 
 		data = self._read(length)
@@ -241,7 +242,7 @@ class LowLevelPipeConnection(Connection):
 		elif format_string == "b": result = data
 		elif format_string == "f": result = VirtualFile(self, int(data))
 		elif format_string == "i":
-			result = iterfile.FileToRORPIter(VirtualFile(self, int(data)))
+			result = iterfile.FileToMiscIter(VirtualFile(self, int(data)))
 		elif format_string == "r": result = self._getrorpath(data)
 		elif format_string == "R": result = self._getrpath(data)
 		elif format_string == "Q": result = self._getqrpath(data)
@@ -338,6 +339,8 @@ class PipeConnection(LowLevelPipeConnection):
 
 	def extract_exception(self):
 		"""Return active exception"""
+		if robust.is_routine_fatal(sys.exc_info()[1]):
+			raise # Fatal error--No logging necessary, but connection down
 		if log.Log.verbosity >= 5 or log.Log.term_verbosity >= 5:
 			log.Log("Sending back exception %s of type %s: \n%s" %
 					(sys.exc_info()[1], sys.exc_info()[0],
@@ -535,7 +538,7 @@ import Globals, Time, Rdiff, Hardlink, FilenameMapping, C, Security, \
 	   Main, rorpiter, selection, increment, statistics, manage, lazy, \
 	   iterfile, rpath, robust, restore, manage, backup, connection, \
 	   TempFile, SetConnections, librsync, log, regress, fs_abilities, \
-	   eas_acls, user_group
+	   eas_acls, user_group, compare
 
 Globals.local_connection = LocalConnection()
 Globals.connections.append(Globals.local_connection)

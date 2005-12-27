@@ -1,4 +1,4 @@
-# Copyright 2002 Ben Escoto
+# Copyright 2002, 2005 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -35,7 +35,7 @@ be recovered.
 
 from __future__ import generators
 import Globals, restore, log, rorpiter, TempFile, metadata, rpath, C, \
-	   Time, backup, robust
+	   Time, backup, robust, longname
 
 # regress_time should be set to the time we want to regress back to
 # (usually the time of the last successful backup)
@@ -63,9 +63,9 @@ def Regress(mirror_rp):
 	assert mirror_rp.index == () and inc_rpath.index == ()
 	assert mirror_rp.isdir() and inc_rpath.isdir()
 	assert mirror_rp.conn is inc_rpath.conn is Globals.local_connection
-	set_regress_time()
+	manager, former_current_mirror_rp = set_regress_time()
 	set_restore_times()
-	former_current_mirror_rp = remove_rbdir_increments()
+	regress_rbdir(manager)
 	ITR = rorpiter.IterTreeReducer(RegressITRB, [])
 	for rf in iterate_meta_rfs(mirror_rp, inc_rpath): ITR(rf.index, rf)
 	ITR.Finish()
@@ -81,14 +81,15 @@ def set_regress_time():
 
 	"""
 	global regress_time, unsuccessful_backup_time
-	curmir_incs = restore.get_inclist(Globals.rbdir.append("current_mirror"))
+	manager = metadata.SetManager()
+	curmir_incs = manager.sorted_prefix_inclist('current_mirror')
 	assert len(curmir_incs) == 2, \
 		   "Found %s current_mirror flags, expected 2" % len(curmir_incs)
-	inctimes = [inc.getinctime() for inc in curmir_incs]
-	inctimes.sort()
-	regress_time = inctimes[0]
-	unsuccessful_backup_time = inctimes[-1]
+	mirror_rp_to_delete = curmir_incs[0]
+	regress_time = curmir_incs[1].getinctime()
+	unsuccessful_backup_time = mirror_rp_to_delete.getinctime()
 	log.Log("Regressing to " + Time.timetopretty(regress_time), 4)
+	return manager, mirror_rp_to_delete
 
 def set_restore_times():
 	"""Set _rest_time and _mirror_time in the restore module
@@ -97,27 +98,59 @@ def set_restore_times():
 	backup time.  _mirror_time is the unsuccessful backup time.
 
 	"""
-	restore._mirror_time = unsuccessful_backup_time
-	restore._rest_time = regress_time
+	restore.MirrorStruct._mirror_time = unsuccessful_backup_time
+	restore.MirrorStruct._rest_time = regress_time
 
-def remove_rbdir_increments():
+def regress_rbdir(meta_manager):
 	"""Delete the increments in the rdiff-backup-data directory
 
 	Returns the former current mirror rp so we can delete it later.
 	All of the other rp's should be deleted before the actual regress,
 	to clear up disk space the rest of the procedure may need.
 
+	Also, in case the previous session failed while diffing the
+	metadata file, either recreate the mirror_metadata snapshot, or
+	delete the extra regress_time diff.
+
 	"""
-	former_current_mirror = None
-	for filename in Globals.rbdir.listdir():
-		rp = Globals.rbdir.append(filename)
-		if rp.isincfile() and rp.getinctime() == unsuccessful_backup_time:
-			if rp.getincbase_str() == "current_mirror":
-				former_current_mirror = rp
+	has_meta_diff, has_meta_snap = 0, 0
+	for old_rp in meta_manager.timerpmap[regress_time]:
+		if old_rp.getincbase_str() == 'mirror_metadata':
+			if old_rp.getinctype() == 'snapshot': has_meta_snap = 1
 			else:
-				log.Log("Removing rdiff-backup-data increment " + rp.path, 5)
-				rp.delete()
-	return former_current_mirror
+				assert old_rp.getinctype() == 'diff', old_rp
+				has_meta_diff = 1
+	if has_meta_diff and not has_meta_snap: recreate_meta(meta_manager)
+
+	for new_rp in meta_manager.timerpmap[unsuccessful_backup_time]:
+		if new_rp.getincbase_str() != 'current_mirror':
+			log.Log("Deleting old diff at " + new_rp.path, 5)
+			new_rp.delete()
+	for rp in meta_manager.timerpmap[regress_time]:
+		if (rp.getincbase_str() == 'mirror_metadata' and
+			rp.getinctype() == 'diff'):
+			rp.delete()
+			break
+
+def recreate_meta(meta_manager):
+	"""Make regress_time mirror_metadata snapshot by patching
+
+	We write to a tempfile first.  Otherwise, in case of a crash, it
+	would seem we would have an intact snapshot and partial diff, not
+	the reverse.
+
+	"""
+	temprp = TempFile.new_in_dir(Globals.rbdir)
+	writer = metadata.MetadataFile(temprp, 'w', check_path = 0)
+	for rorp in meta_manager.get_meta_at_time(regress_time, None):
+		writer.write_object(rorp)
+	writer.close()
+
+	finalrp = Globals.rbdir.append("mirror_metadata.%s.snapshot.gz" %
+								   Time.timetostring(regress_time))
+	assert not finalrp.lstat(), finalrp
+	rpath.rename(temprp, finalrp)
+	if Globals.fsync_directories: Globals.rbdir.fsync()
 
 def iterate_raw_rfs(mirror_rp, inc_rp):
 	"""Iterate all RegressFile objects in mirror/inc directory
@@ -143,11 +176,11 @@ def iterate_raw_rfs(mirror_rp, inc_rp):
 
 def yield_metadata():
 	"""Iterate rorps from metadata file, if any are available"""
-	metadata_iter = metadata.MetadataFile.get_objects_at_time(Globals.rbdir,
-															  regress_time)
+	metadata.SetManager()
+	metadata_iter = metadata.ManagerObj.GetAtTime(regress_time)
 	if metadata_iter: return metadata_iter
-	log.Log.FatalError("No metadata for time %s found, cannot regress"
-					   % Time.timetopretty(regress_time))
+	log.Log.FatalError("No metadata for time %s (%s) found,\ncannot regress"
+					   % (Time.timetopretty(regress_time), regress_time))
 
 def iterate_meta_rfs(mirror_rp, inc_rp):
 	"""Yield RegressFile objects with extra metadata information added
@@ -160,6 +193,7 @@ def iterate_meta_rfs(mirror_rp, inc_rp):
 	raw_rfs = iterate_raw_rfs(mirror_rp, inc_rp)
 	collated = rorpiter.Collate2Iters(raw_rfs, yield_metadata())
 	for raw_rf, metadata_rorp in collated:
+		raw_rf = longname.update_regressfile(raw_rf, metadata_rorp, mirror_rp)
 		if not raw_rf:
 			log.Log("Warning, metadata file has entry for %s,\n"
 					"but there are no associated files." %
