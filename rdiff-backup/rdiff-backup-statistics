@@ -27,11 +27,12 @@ from rdiff_backup import connection, regress, rpath, Globals, restore, \
 begin_time = None # Parse statistics at or after this time...
 end_time = None # ... and at or before this time (epoch seconds)
 min_ratio = .05 # report only files/directories over this number
+separator = "\n" # The line separator in file_statistics file
 
 def parse_args():
-	global begin_time, end_time, min_ratio
+	global begin_time, end_time, min_ratio, separator
 	try: optlist, args = getopt.getopt(sys.argv[1:], "",
-			["begin-time=", "end-time=", "minimum-ratio="])
+			["begin-time=", "end-time=", "minimum-ratio=", "null-separator"])
 	except getopt.error, e:
 		sys.exit("Bad command line: " + str(e))
 
@@ -39,11 +40,13 @@ def parse_args():
 		if opt == "--begin-time": begin_time = Time.genstrtotime(arg)
 		elif opt == "--end-time": end_time = Time.genstrtotime(arg)
 		elif opt == "--minimum-ratio": min_ratio = float(arg)
+		elif opt == "--null-separator": separator = '\0'
 		else: assert 0
 
 	if len(args) != 1:
-		sys.exit("Usage: %s --begin-time <time> --end-time <time> "
-				 "--minimum-ratio <float> <backup-dir>" % (sys.argv[0],))
+		sys.exit("Usage: %s [--begin-time <time>] [--end-time <time>] "
+				 "[--minimum-ratio <float>] [--null-separator] <backup-dir>"
+				 % (sys.argv[0],))
 
 	Globals.rbdir = rpath.RPath(Globals.local_connection,
 								os.path.join(args[0], 'rdiff-backup-data'))
@@ -213,9 +216,9 @@ def make_fst(session_rp, filestat_rp):
 						get_min('IncrementFileSize'))
 
 	def yield_fs_objs(filestatsobj):
-		"""Iterate FileStats by opening file_statistics fileobj"""
+		"""Iterate FileStats by processing file_statistics fileobj"""
 		r = re.compile("^(.*) ([0-9]+) ([0-9]+|NA) ([0-9]+|NA) "
-					   "([0-9]+|NA)\n?$")
+					   "([0-9]+|NA)%s?$" % (separator,))
 		for line in filestatsobj:
 			if line.startswith('#'): continue
 			match = r.match(line)
@@ -372,8 +375,6 @@ class ReadlineBuffer:
 
 	"""
 	blocksize = 65536
-	separator = '\n'
-
 	def __init__(self, rp):
 		"""Initialize with rpath"""
 		self.buffer = ['']
@@ -396,7 +397,7 @@ class ReadlineBuffer:
 		"""Read next block from fileobj, split and add to bufferlist"""
 		block = self.fileobj.read(self.blocksize)
 		if block:
-			split = block.split(self.separator)
+			split = block.split(separator)
 			self.buffer[0] += split[0]
 			self.buffer.extend(split[1:])
 		else: self.at_end = 1
@@ -415,6 +416,7 @@ def sum_fst(rp_pairs):
 	return total_fst
 	
 def Main():
+	Time.setcurtime()
 	parse_args()
 	srp = StatisticsRPaths(Globals.rbdir)
 	if not srp.combined_pairs: sys.exit("No matching sessions found")
