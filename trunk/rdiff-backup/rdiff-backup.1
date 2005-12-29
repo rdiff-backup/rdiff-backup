@@ -613,12 +613,20 @@ options on this man page.
 
 .SH FILE SELECTION
 .B rdiff-backup
-supports file selection options similar to (but different from)
-.BR rsync (1).
-When rdiff-backup is run, it searches through the given source
-directory and backs up all the files specified by the file selection
-system.  The system may appear complicated, but it is supposed to be flexible
-and easy-to-use.
+has a number of file selection options.  When rdiff-backup is run, it
+searches through the given source directory and backs up all the files
+matching the specified options.  This selection system may appear
+complicated, but it is supposed to be flexible and easy-to-use.  If
+you just want to learn the basics, first look at the selection
+examples in the examples.html file included in the package, or on the
+web at
+.IR http://rdiff-backup.nongnu.org/examples.html
+
+.BR rdiff-backup 's
+selection system was originally inspired by
+.BR rsync (1),
+but there are many differences.  (For instance, trailing backslashes
+have no special significance.)
 
 The file selection system comprises a number of file
 selection conditions, which are set using one of the following command
