@@ -19,7 +19,7 @@ def CopyMan(destination, version):
 	firstline = ('.TH RDIFF-BACKUP 1 "%s" "%s" "User Manuals"\n' %
 				 (date, version))
 	fp.write(firstline)
-	infp = open("rdiff-backup.1", "r")
+	infp = open(os.path.basename(destination), "r")
 	infp.readline()
 	fp.write(infp.read())
 	fp.close()
@@ -124,11 +124,14 @@ def MakeTar():
 	VersionedCopy("%s/Globals.py" % (SourceDir,),
 				  "%s/rdiff_backup/Globals.py" % (tardir,))
 	VersionedCopy("rdiff-backup", "%s/rdiff-backup" % (tardir,), 1)
+	VersionedCopy("rdiff-backup-statistics", "%s/rdiff-backup-statistics"
+				  % (tardir,), 1)
 	VersionedCopy(DistDir + "/setup.py", "%s/setup.py" % (tardir,))
 
 	os.chmod(os.path.join(tardir, "setup.py"), 0755)
 	os.chmod(os.path.join(tardir, "rdiff-backup"), 0644)
 	CopyMan(os.path.join(tardir, "rdiff-backup.1"), Version)
+	CopyMan(os.path.join(tardir, "rdiff-backup-statistics.1"), Version)
 	os.system("tar -cvzf %s %s" % (tarfile, tardir))
 	shutil.rmtree(tardir)
 	return tarfile
