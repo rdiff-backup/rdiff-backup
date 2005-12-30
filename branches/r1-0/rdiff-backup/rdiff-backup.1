@@ -923,9 +923,9 @@ rdiff-backup is run with high verbosity.
 
 .SH EXIT STATUS
 If rdiff-backup finishes successfully, the exit status will be 0.  If
-there is an error, it will be non-zero (usually 1, but don't depend on
-this specific value).  When setting up rdiff-backup to run
-automatically (as from
+there is an unrecoverable (critical) error, it will be non-zero
+(usually 1, but don't depend on this specific value).  When setting up
+rdiff-backup to run automatically (as from
 .BR cron (8)
 or similar) it is probably a good idea to check the exit code.
 
