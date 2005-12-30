@@ -45,7 +45,8 @@ def parse_args():
 
 	if len(args) != 1:
 		sys.exit("Usage: %s [--begin-time <time>] [--end-time <time>] "
-				 "[--minimum-ratio <float>] [--null-separator] <backup-dir>"
+		   "[--minimum-ratio <float>] [--null-separator] <backup-dir>\n\n"
+		   "See the rdiff-backup-statistics man page for more information."
 				 % (sys.argv[0],))
 
 	Globals.rbdir = rpath.RPath(Globals.local_connection,
