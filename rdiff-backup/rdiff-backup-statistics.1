@@ -43,11 +43,16 @@ boring.
 Do not read statistics files older than
 .IR time .
 By default, all statistics files will be read.
+.I time
+should be in the same format taken by --restore-as-of.  (See
+.B TIME FORMATS
+in the rdiff-backup man page for details.)
 .TP
 .BI --end-time " time"
-Do not read statistics files newer than
+Like
+.B --begin-time
+but exclude statistics files later than
 .IR time .
-By default, all statistics files will be read.
 .TP
 .BI --minimum-ratio " ratio"
 Print all directories contributing more than the given ratio to the
