@@ -535,13 +535,14 @@ def restore_start_log(rpin, target, time):
 	if Log.verbosity >= 3: Log.log_to_file(log_message)
 
 def restore_check_paths(rpin, rpout, restoreasof = None):
-	"""Check paths and return pair of corresponding rps"""
+	"""Make sure source and destination exist, and have appropriate type"""
 	if not restoreasof:
 		if not rpin.lstat():
 			Log.FatalError("Source file %s does not exist" % rpin.path)
 	if not force and rpout.lstat() and (not rpout.isdir() or rpout.listdir()):
 		Log.FatalError("Restore target %s already exists, "
 					   "specify --force to overwrite." % rpout.path)
+	if force and rpout.lstat() and not rpout.isdir(): rpout.delete()
 
 def restore_check_backup_dir(mirror_root, src_rp = None, restore_as_of = 1):
 	"""Make sure backup dir root rpin is in consistent state"""
