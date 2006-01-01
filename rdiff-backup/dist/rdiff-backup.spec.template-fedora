@@ -43,6 +43,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %{_bindir}/rdiff-backup
+%{_bindir}/rdiff-backup-statistics
 %{_mandir}/man1/rdiff-backup*
 %dir %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup
 %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.py
