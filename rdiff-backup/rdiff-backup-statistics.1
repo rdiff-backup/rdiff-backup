@@ -3,10 +3,10 @@
 rdiff-backup-statistics \- summarize rdiff-backup statistics files
 .SH SYNOPSIS
 .B rdiff-backup-statistics
-.BI [--begin-time " time" ]
-.BI [--end-time " time" ]
-.BI [--minimum-ratio " ratio" ]
-.B [--null-separator]
+.BI [\-\-begin-time " time" ]
+.BI [\-\-end-time " time" ]
+.BI [\-\-minimum-ratio " ratio" ]
+.B [\-\-null-separator]
 .I repository
 
 .SH DESCRIPTION
@@ -39,29 +39,29 @@ boring.
 
 .SH OPTIONS
 .TP
-.BI --begin-time " time"
+.BI \-\-begin-time " time"
 Do not read statistics files older than
 .IR time .
 By default, all statistics files will be read.
 .I time
-should be in the same format taken by --restore-as-of.  (See
+should be in the same format taken by \-\-restore-as-of.  (See
 .B TIME FORMATS
 in the rdiff-backup man page for details.)
 .TP
-.BI --end-time " time"
+.BI \-\-end-time " time"
 Like
-.B --begin-time
+.B \-\-begin-time
 but exclude statistics files later than
 .IR time .
 .TP
-.BI --minimum-ratio " ratio"
+.BI \-\-minimum-ratio " ratio"
 Print all directories contributing more than the given ratio to the
 total.  The default value is .05, or 5 percent.
 .TP
-.B --null-separator
+.B \-\-null-separator
 Specify that the lines of the file_statistics file are separated by
 nulls (\\0).  The default is to assume that newlines separate.  Use
-this switch if rdiff-backup was run with the --null-separator when
+this switch if rdiff-backup was run with the \-\-null-separator when
 making the given repository.
 
 .SH BUGS
