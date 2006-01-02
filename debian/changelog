@@ -1,3 +1,9 @@
+rdiff-backup (1.1.5-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Daniel Baumann <daniel.baumann@panthera-systems.net>  Mon,  2 Jan 2006 15:53:00 +0100
+
 rdiff-backup (1.1.4-1) unstable; urgency=low
 
   * New upstream release:

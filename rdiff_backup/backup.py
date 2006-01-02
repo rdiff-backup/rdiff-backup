@@ -295,11 +295,6 @@ class CacheCollatedPostProcess:
 		# after we're finished with them
 		self.dir_perms_list = []
 
-		# A dictionary of {index: source_rorp}.  We use this to
-		# hold the digest of a hard linked file so it only needs to be
-		# computed once.
-		self.inode_digest_dict = {}
-
 		# Contains list of (index, (source_rorp, diff_rorp)) pairs for
 		# the parent directories of the last item in the cache.
 		self.parent_list = []
@@ -326,8 +321,7 @@ class CacheCollatedPostProcess:
 
 		"""
 		if Globals.preserve_hardlinks and source_rorp:
-			if Hardlink.add_rorp(source_rorp, dest_rorp):
-				self.inode_digest_dict[source_rorp.index] = source_rorp
+			Hardlink.add_rorp(source_rorp, dest_rorp)
 		if (dest_rorp and dest_rorp.isdir() and Globals.process_uid != 0
 			and dest_rorp.getperms() % 01000 < 0700):
 			self.unreadable_dir_init(source_rorp, dest_rorp)
@@ -394,8 +388,7 @@ class CacheCollatedPostProcess:
 
 		"""
 		if Globals.preserve_hardlinks and source_rorp:
-			if Hardlink.del_rorp(source_rorp):
-				del self.inode_digest_dict[source_rorp.index]
+			Hardlink.del_rorp(source_rorp)
 
 		if not changed or success:
 			if source_rorp: self.statfileobj.add_source_file(source_rorp)
@@ -469,10 +462,10 @@ class CacheCollatedPostProcess:
 
 	def update_hardlink_hash(self, diff_rorp):
 		"""Tag associated source_rorp with same hash diff_rorp points to"""
-		orig_rorp = self.inode_digest_dict[diff_rorp.get_link_flag()]
-		if orig_rorp.has_sha1():
-			new_source_rorp = self.get_source_rorp(diff_rorp.index)
-			new_source_rorp.set_sha1(orig_rorp.get_sha1())
+		sha1sum = Hardlink.get_sha1(diff_rorp)
+		if not sha1sum: return
+		source_rorp = self.get_source_rorp(diff_rorp.index)
+		source_rorp.set_sha1(sha1sum)
 
 	def close(self):
 		"""Process the remaining elements in the cache"""

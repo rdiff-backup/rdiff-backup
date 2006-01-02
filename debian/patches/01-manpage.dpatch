@@ -1,13 +1,68 @@
 #!/bin/sh /usr/share/dpatch/dpatch-run
-## 01-manpage.dpatch by Daniel Baumann <daniel.baumann@panthera-systems.net>
+## 02-manpage.dpatch by Daniel Baumann <daniel.baumann@panthera-systems.net>
 ##
 ## DP: Fix manpage characters
 
 @DPATCH@
 
-diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backup.1
---- rdiff-backup-1.1.4.orig/rdiff-backup.1	2005-12-14 03:17:14.000000000 +0000
-+++ rdiff-backup-1.1.4/rdiff-backup.1	2005-12-27 15:11:50.372905344 +0000
+diff -Naur rdiff-backup-1.1.5.orig/rdiff-backup-statistics.1 rdiff-backup-1.1.5/rdiff-backup-statistics.1
+--- rdiff-backup-1.1.5.orig/rdiff-backup-statistics.1	2006-01-01 02:46:05.000000000 +0000
++++ rdiff-backup-1.1.5/rdiff-backup-statistics.1	2006-01-02 12:59:40.228095136 +0000
+@@ -3,10 +3,10 @@
+ rdiff-backup-statistics \- summarize rdiff-backup statistics files
+ .SH SYNOPSIS
+ .B rdiff-backup-statistics
+-.BI [--begin-time " time" ]
+-.BI [--end-time " time" ]
+-.BI [--minimum-ratio " ratio" ]
+-.B [--null-separator]
++.BI [\-\-begin-time " time" ]
++.BI [\-\-end-time " time" ]
++.BI [\-\-minimum-ratio " ratio" ]
++.B [\-\-null-separator]
+ .I repository
+ 
+ .SH DESCRIPTION
+@@ -39,29 +39,29 @@
+ 
+ .SH OPTIONS
+ .TP
+-.BI --begin-time " time"
++.BI \-\-begin-time " time"
+ Do not read statistics files older than
+ .IR time .
+ By default, all statistics files will be read.
+ .I time
+-should be in the same format taken by --restore-as-of.  (See
++should be in the same format taken by \-\-restore-as-of.  (See
+ .B TIME FORMATS
+ in the rdiff-backup man page for details.)
+ .TP
+-.BI --end-time " time"
++.BI \-\-end-time " time"
+ Like
+-.B --begin-time
++.B \-\-begin-time
+ but exclude statistics files later than
+ .IR time .
+ .TP
+-.BI --minimum-ratio " ratio"
++.BI \-\-minimum-ratio " ratio"
+ Print all directories contributing more than the given ratio to the
+ total.  The default value is .05, or 5 percent.
+ .TP
+-.B --null-separator
++.B \-\-null-separator
+ Specify that the lines of the file_statistics file are separated by
+ nulls (\\0).  The default is to assume that newlines separate.  Use
+-this switch if rdiff-backup was run with the --null-separator when
++this switch if rdiff-backup was run with the \-\-null-separator when
+ making the given repository.
+ 
+ .SH BUGS
+diff -Naur rdiff-backup-1.1.5.orig/rdiff-backup.1 rdiff-backup-1.1.5/rdiff-backup.1
+--- rdiff-backup-1.1.5.orig/rdiff-backup.1	2006-01-01 02:46:05.000000000 +0000
++++ rdiff-backup-1.1.5/rdiff-backup.1	2006-01-02 12:59:13.621140008 +0000
 @@ -8,19 +8,19 @@
  .BI [[[ user@ ] host2.foo ]:: destination_directory ]
  
@@ -303,7 +358,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  used to compare the contents of two different rdiff-backup sessions.
  .TP
 -.B "-l, --list-increments"
-+.B "\-l, \-\-list-increments"
++.B "-l, \-\-list-increments"
  List the number and date of partial incremental backups contained in
  the specified destination directory.  No backup or restore will take
  place if this option is given.
@@ -329,7 +384,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  This relatively esoteric option prevents rdiff-backup from flagging a
  file as changed when its inode changes.  This option may be useful if
  you are backing up two different directories to the same rdiff-backup
-@@ -297,59 +297,59 @@
+@@ -297,56 +297,56 @@
  get messed up, as the metadata file may no longer have the correct
  inode information.
  .TP
@@ -354,12 +409,8 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  .TP
 -.BI --no-hard-links
 +.BI \-\-no-hard-links
- Don't replicate hard links on destination side.  Note that because
- metadata is written to a separate file, hard link information will not
--be lost even if the --no-hard-links option is given (however, mirror
-+be lost even if the \-\-no-hard-links option is given (however, mirror
- files will not be linked).  If many hard-linked files are present,
- this option can drastically decrease memory usage.
+ Don't replicate hard links on destination side.  If many hard-linked
+ files are present, this option can drastically decrease memory usage.
  .TP
 -.B --null-separator
 +.B \-\-null-separator
@@ -402,7 +453,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  Restore the specified directory as it was as of
  .IR restore_time .
  See the
-@@ -360,7 +360,7 @@
+@@ -357,7 +357,7 @@
  .B RESTORING
  section for more information on restoring.
  .TP
@@ -411,7 +462,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  Specify an alternate method of connecting to a remote computer.  This
  is necessary to get rdiff-backup not to use ssh for remote backups, or
  if, for instance, rdiff-backup is not in the PATH on the remote side.
-@@ -368,7 +368,7 @@
+@@ -365,7 +365,7 @@
  .B REMOTE OPERATION
  section for more information.
  .TP
@@ -420,7 +471,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  Remove the incremental backup information in the destination directory
  that has been around longer than the given time.
  .I time_spec
-@@ -386,88 +386,88 @@
+@@ -383,88 +383,88 @@
  
  By default, rdiff-backup will only delete information from one session
  at a time.  To remove two or more sessions at the same time, supply the
@@ -521,7 +572,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  hashes stored in the metadata file.
  .TP
 -.B "-V, --version"
-+.B "\-V, \-\-version"
++.B "-V, \-\-version"
  Print the current version and exit
  
  .SH RESTORING
@@ -536,7 +587,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  options.  Secondly, you can run it on an increment file.
  .PP
  For example, suppose in the past you have run:
-@@ -483,7 +483,7 @@
+@@ -480,7 +480,7 @@
  One way to do this is to run:
  .PP
  .RS
@@ -545,7 +596,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  .PP
  .RE
  where above the "3D" means 3 days (for other ways to specify the time,
-@@ -493,7 +493,7 @@
+@@ -490,7 +490,7 @@
  is the directory containing the current version of /usr/local.
  .PP
  Note that the option to
@@ -554,23 +605,19 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  always specifies an exact time.  (So "3D" refers to the instant 72
  hours before the present.)  If there was no backup made at that time,
  rdiff-backup restores the state recorded for the previous backup.  For
-@@ -520,8 +520,8 @@
+@@ -517,8 +517,8 @@
  If you are not sure exactly which version of a file you need, it is
  probably easiest to either restore from the increments files as
  described immediately above, or to see which increments are available
 -with -l/--list-increments, and then specify exact times into
 --r/--restore-as-of.
 +with \-l/\-\-list-increments, and then specify exact times into
-+-r/\-\-restore-as-of.
++\-r/\-\-restore-as-of.
  
  .SH TIME FORMATS
  rdiff-backup uses time strings in two places.  Firstly, all of the
-@@ -529,10 +529,10 @@
- filenames in the w3 datetime format as described in a w3 note at
- http://www.w3.org/TR/NOTE-datetime.  Basically they look like
- "2001-07-15T04:09:38-07:00", which means what it looks like.  The
--"-07:00" section means the time zone is 7 hours behind UTC.
-+"\-07:00" section means the time zone is 7 hours behind UTC.
+@@ -529,7 +529,7 @@
+ "-07:00" section means the time zone is 7 hours behind UTC.
  .PP
  Secondly, the
 -.BI -r , " --restore-as-of" ", and " --remove-older-than
@@ -578,7 +625,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  options take a time string, which can be given in any of several
  formats:
  .IP 1.
-@@ -569,14 +569,14 @@
+@@ -566,14 +566,14 @@
  host_info into the remote schema, and runs the resulting command,
  reading its input and output.
  .PP
@@ -597,7 +644,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  .RE
  is basically equivalent to (but slower than)
  .RS
-@@ -597,7 +597,7 @@
+@@ -594,7 +594,7 @@
  to type in '\\\\\\\\' at the shell prompt to get a literal backslash
  (if it makes you feel better, I had to type in 8 backslashes to get
  that in this man page...).  And finally, to include a literal % in the
@@ -606,7 +653,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  %%.
  
  Although ssh itself may be secure, using rdiff-backup in the default
-@@ -606,12 +606,12 @@
+@@ -603,12 +603,12 @@
  rdiff-backup to overwrite arbitary server files by "backing up" over
  them.  Such a setup can be made more secure by using the sshd
  configuration option
@@ -622,7 +669,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  options on this man page.
  
  .SH FILE SELECTION
-@@ -626,24 +626,24 @@
+@@ -631,24 +631,24 @@
  The file selection system comprises a number of file
  selection conditions, which are set using one of the following command
  line options:
@@ -664,7 +711,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  Each file selection condition either matches or doesn't match a given
  file.  A given file is excluded by the file selection system exactly
  when the first matching file selection condition specifies that the
-@@ -655,7 +655,7 @@
+@@ -660,7 +660,7 @@
  For instance,
  .PP
  .RS
@@ -673,7 +720,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  .PP
  .RE
  is exactly the same as
-@@ -666,11 +666,11 @@
+@@ -671,11 +671,11 @@
  .RE
  because the include and exclude directives match exactly the same
  files, and the
@@ -687,7 +734,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  .PP
  .RE
  would backup the /usr/local/bin directory (and its contents), but not
-@@ -710,7 +710,7 @@
+@@ -715,7 +715,7 @@
  before rdiff-backup sees them.
  
  The
@@ -696,7 +743,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  option matches a file iff:
  .TP
  .B 1.
-@@ -722,7 +722,7 @@
+@@ -727,7 +727,7 @@
  .PP
  .RE
  Conversely,
@@ -705,7 +752,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  matches a file iff:
  .TP
  .B 1.
-@@ -739,15 +739,15 @@
+@@ -744,15 +744,15 @@
  For example,
  .PP
  .RS
@@ -724,7 +771,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  /usr/local
  .PP
  .RE
-@@ -757,7 +757,7 @@
+@@ -762,7 +762,7 @@
  that included subdirectories have somewhere to go.  Finally,
  .PP
  .RS
@@ -733,7 +780,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  ignorecase:'/usr/[a-z0-9]foo/*/**.py'
  .PP
  .RE
-@@ -767,16 +767,16 @@
+@@ -772,16 +772,16 @@
  match /usr.
  
  The
@@ -755,18 +802,16 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  interpreted similarly to the way
  .I extended shell patterns
  are, with a few exceptions:
-@@ -797,8 +797,8 @@
+@@ -802,7 +802,7 @@
  .B 3.
  Lines starting with "+ " are interpreted as include directives, even
  if found in a filelist referenced by
 -.BR --exclude-filelist .
--Similarly, lines starting with "- " exclude files even if they are
 +.BR \-\-exclude-filelist .
-+Similarly, lines starting with "\- " exclude files even if they are
+ Similarly, lines starting with "- " exclude files even if they are
  found within an include filelist.
  
- .RE
-@@ -820,7 +820,7 @@
+@@ -825,7 +825,7 @@
  - /var
  
  .RE
@@ -775,7 +820,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  /usr/local/bin.  It would exclude /usr/local/doc,
  /usr/local/doc/python, etc.  It neither excludes nor includes
  /usr/local/man, leaving the fate of this directory to the next
-@@ -829,15 +829,15 @@
+@@ -834,14 +834,14 @@
  specifications.
  
  The
@@ -790,13 +835,11 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
 +.B \-\-include
  and
 -.B --exclude
--options are interpreted (although "+ " and "- " prefixing is still
 +.B \-\-exclude
-+options are interpreted (although "+ " and "\- " prefixing is still
+ options are interpreted (although "+ " and "- " prefixing is still
  allowed).  For instance, if the file "globbing-list.txt" contains the
  lines:
- 
-@@ -852,26 +852,26 @@
+@@ -857,26 +857,26 @@
  - **
  
  .RE
@@ -830,7 +873,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  .PP
  .RE
  matches any files whose full pathnames contain 7 consecutive digits
-@@ -886,7 +886,7 @@
+@@ -891,7 +891,7 @@
  
  .TP
  .B 1.
@@ -839,7 +882,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  always have the same uid and gid, both for ownership and ACL entries.
  This may cause unames and gnames to change.
  .TP
-@@ -903,13 +903,13 @@
+@@ -908,13 +908,13 @@
  .TP
  .B 4.
  The
@@ -856,7 +899,7 @@ diff -Naur rdiff-backup-1.1.4.orig/rdiff-backup.1 rdiff-backup-1.1.4/rdiff-backu
  and one of the mapping options, the behavior is undefined.
  
  .RE
-@@ -965,16 +965,16 @@
+@@ -970,16 +970,16 @@
  save space.
  
  Statistics related options include

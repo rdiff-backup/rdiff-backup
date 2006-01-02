@@ -424,6 +424,9 @@ def backup_final_init(rpout):
 		Log.open_logfile(Globals.rbdir.append("backup.log"))
 	checkdest_if_necessary(rpout)
 	prevtime = backup_get_mirrortime()
+	if prevtime >= Time.curtime: Log.FatalError(
+"""Time of Last backup is not in the past.  This is probably caused
+by running two backups in less than a second.  Wait a second a try again.""")
 	ErrorLog.open(Time.curtimestr, compress = Globals.compression)
 	inc_base = Globals.rbdir.append_path("increments")
 	if not inc_base.lstat(): inc_base.mkdir()
@@ -468,7 +471,9 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 	mirror file), dest_rp should be the target rp to be written.
 
 	"""
-	if not restore_root_set: assert restore_set_root(src_rp)
+	if not restore_root_set and not restore_set_root(src_rp):
+		Log.FatalError("Could not find rdiff-backup repository at "
+					   + src_rp.path)
 	restore_check_paths(src_rp, dest_rp, restore_as_of)
 	dest_rp.conn.fs_abilities.restore_set_globals(dest_rp)
 	init_user_group_mapping(dest_rp.conn)
@@ -530,13 +535,14 @@ def restore_start_log(rpin, target, time):
 	if Log.verbosity >= 3: Log.log_to_file(log_message)
 
 def restore_check_paths(rpin, rpout, restoreasof = None):
-	"""Check paths and return pair of corresponding rps"""
+	"""Make sure source and destination exist, and have appropriate type"""
 	if not restoreasof:
 		if not rpin.lstat():
 			Log.FatalError("Source file %s does not exist" % rpin.path)
 	if not force and rpout.lstat() and (not rpout.isdir() or rpout.listdir()):
 		Log.FatalError("Restore target %s already exists, "
 					   "specify --force to overwrite." % rpout.path)
+	if force and rpout.lstat() and not rpout.isdir(): rpout.delete()
 
 def restore_check_backup_dir(mirror_root, src_rp = None, restore_as_of = 1):
 	"""Make sure backup dir root rpin is in consistent state"""
@@ -801,6 +807,7 @@ information in it.
 """ % (Globals.rbdir.path,))
 	elif len(curmir_incs) == 1: return 0
 	else:
+		if not force: curmir_incs[0].conn.regress.check_pids(curmir_incs)
 		assert len(curmir_incs) == 2, "Found too many current_mirror incs!"
 		return 1
 

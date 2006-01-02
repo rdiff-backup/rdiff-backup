@@ -322,26 +322,26 @@ class CachedRF:
 		s3 = "--------------------------"
 		return "\n".join((s1, s2, s3))
 
-	def get_rf(self, index):
+	def get_rf(self, index, mir_rorp = None):
 		"""Get a RestoreFile for given index, or None"""
 		while 1:
 			if not self.rf_list:
-				if not self.add_rfs(index): return None
+				if not self.add_rfs(index, mir_rorp): return None
 			rf = self.rf_list[0]
 			if rf.index == index:
-				if Globals.process_uid != 0: self.perm_changer(index)
+				if Globals.process_uid != 0: self.perm_changer(index, mir_rorp)
 				return rf
 			elif rf.index > index:
 				# Try to add earlier indicies.  But if first is
 				# already from same directory, or we can't find any
 				# from that directory, then we know it can't be added.
 				if (index[:-1] == rf.index[:-1] or not
-					self.add_rfs(index)): return None
+					self.add_rfs(index, mir_rorp)): return None
 			else: del self.rf_list[0]
 
 	def get_fp(self, index, mir_rorp):
 		"""Return the file object (for reading) of given index"""
-		rf = longname.update_rf(self.get_rf(index), mir_rorp,
+		rf = longname.update_rf(self.get_rf(index, mir_rorp), mir_rorp,
 								self.root_rf.mirror_rp)
 		if not rf:
 			log.Log("Error: Unable to retrieve data for file %s!\nThe "
@@ -350,7 +350,7 @@ class CachedRF:
 			return cStringIO.StringIO('')
 		return rf.get_restore_fp()
 
-	def add_rfs(self, index):
+	def add_rfs(self, index, mir_rorp = None):
 		"""Given index, add the rfs in that same directory
 
 		Returns false if no rfs are available, which usually indicates
@@ -358,6 +358,7 @@ class CachedRF:
 
 		"""
 		if not index: return self.root_rf
+		if mir_rorp.has_alt_mirror_name(): return # longname alias separate
 		parent_index = index[:-1]
 		if Globals.process_uid != 0: self.perm_changer(parent_index)
 		temp_rf = RestoreFile(self.root_rf.mirror_rp.new_index(parent_index),
@@ -686,8 +687,9 @@ class PermissionChanger:
 		# order that need clearing
 		self.open_index_list = []
 
-	def __call__(self, index):
+	def __call__(self, index, mir_rorp = None):
 		"""Given rpath, change permissions up to and including index"""
+		if mir_rorp and mir_rorp.has_alt_mirror_name(): return
 		old_index = self.current_index
 		self.current_index = index
 		if not index or index <= old_index: return

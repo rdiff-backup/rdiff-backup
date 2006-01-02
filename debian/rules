@@ -35,7 +35,9 @@ install: build
 
 	# Installing package
 	python setup.py install --prefix=$(CURDIR)/debian/rdiff-backup/usr
-	#rm -rf $(CURDIR)/debian/rdiff-backup/usr/share/doc/rdiff-backup-*
+
+	# Removing double files
+	rm -rf debian/rdiff-backup/usr/share/doc/rdiff-backup-*
 
 binary-indep: build install
 
