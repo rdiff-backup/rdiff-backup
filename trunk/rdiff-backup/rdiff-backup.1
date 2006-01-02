@@ -8,19 +8,19 @@ rdiff-backup \- local/remote mirror and incremental backup
 .BI [[[ user@ ] host2.foo ]:: destination_directory ]
 
 .B rdiff-backup
-.B {{ -l | --list-increments }
-.BI "| --remove-older-than " time_interval
-.BI "| --list-at-time " time
-.BI "| --list-changed-since " time
-.B "| --list-increment-sizes "
-.B "| --verify"
-.BI "| --verify-at-time " time }
+.B {{ \-l | \-\-list-increments }
+.BI "| \-\-remove-older-than " time_interval
+.BI "| \-\-list-at-time " time
+.BI "| \-\-list-changed-since " time
+.B "| \-\-list-increment-sizes "
+.B "| \-\-verify"
+.BI "| \-\-verify-at-time " time }
 .BI [[[ user@ ] host2.foo ]:: destination_directory ]
 
-.B rdiff-backup --calculate-average
+.B rdiff-backup \-\-calculate-average
 .I statfile1 statfile2 ...
 
-.B rdiff-backup --test-server
+.B rdiff-backup \-\-test-server
 .BI [ user1 ] @host1.net1 :: path
 .BI [[ user2 ] @host2.net2 :: path ]
 .I ...
@@ -62,51 +62,51 @@ out the examples.html file included in the rdiff-backup distribution.
 
 .SH OPTIONS
 .TP
-.B -b, --backup-mode
+.B \-b, \-\-backup-mode
 Force backup mode even if first argument appears to be an increment or
 mirror file.
 .TP
-.B --calculate-average
+.B \-\-calculate-average
 Enter calculate average mode.  The arguments should be a number of
 statistics files.  rdiff-backup will print the average of the listed
 statistics files and exit.
 .TP
-.B --check-destination-dir
+.B \-\-check-destination-dir
 If an rdiff-backup session fails, running rdiff-backup with this
 option on the destination dir will undo the failed directory.  This
 happens automatically if you attempt to back up to a directory and the
 last backup failed.
 .TP
-.B --compare
+.B \-\-compare
 This is equivalent to
-.BI '--compare-at-time " now" '
+.BI '\-\-compare-at-time " now" '
 .TP
-.BI "--compare-at-time " time
+.BI "\-\-compare-at-time " time
 Compare a directory with the backup set at the given time.  This can
 be useful to see how archived data differs from current data, or to
 check that a backup is current.  This only compares metadata, in the same
 way rdiff-backup decides whether a file has changed.
 .TP
-.B --compare-full
+.B \-\-compare-full
 This is equivalent to
-.BI '--compare-full-at-time " now" '
+.BI '\-\-compare-full-at-time " now" '
 .TP
-.BI "--compare-full-at-time " time
+.BI "\-\-compare-full-at-time " time
 Compare a directory with the backup set at the given time.  To compare
 regular files, the repository data will be copied in its entirety to
 the source side and compared byte by byte.  This is the slowest but
 most complete compare option.
 .TP
-.B --compare-hash
+.B \-\-compare-hash
 This is equivalent to
-.BI '--compare-hash-at-time " now" '
+.BI '\-\-compare-hash-at-time " now" '
 .TP
-.BI "--compare-hash-at-time " time
+.BI "\-\-compare-hash-at-time " time
 Compare a directory with the backup set at the given time.  Regular
 files will be compared by computing their SHA1 digest on the source
 side and comparing it to the digest recorded in the metadata.
 .TP
-.B --create-full-path
+.B \-\-create-full-path
 Normally only the final directory of the destination path will be
 created if it does not exist. With this option, all missing directories
 on the destination path will be created. Use this option with care: if 
@@ -114,12 +114,12 @@ there is a typo in the remote path, the remote filesystem could fill up
 very quickly (by creating a duplicate backup tree). For this reason 
 this option is primarily aimed at scripts which automate backups.
 .TP
-.BI "--current-time " seconds
+.BI "\-\-current-time " seconds
 This option is useful mainly for testing.  If set, rdiff-backup will
 it for the current time instead of consulting the clock.  The argument
 is the number of seconds since the epoch.
 .TP
-.BI "--exclude " shell_pattern
+.BI "\-\-exclude " shell_pattern
 Exclude the file or files matched by
 .IR shell_pattern .
 If a directory is matched, then files under that directory will also
@@ -127,121 +127,121 @@ be matched.  See the
 .B FILE SELECTION
 section for more information.
 .TP
-.B "--exclude-device-files"
+.B "\-\-exclude-device-files"
 Exclude all device files.  This can be useful for security/permissions
 reasons or if rdiff-backup is not handling device files correctly.
 .TP
-.B "--exclude-fifos"
+.B "\-\-exclude-fifos"
 Exclude all fifo files.
 .TP
-.BI "--exclude-filelist " filename
+.BI "\-\-exclude-filelist " filename
 Excludes the files listed in 
 .IR filename .
 If
 .I filename
 is handwritten you probably want
-.B --include-globbing-filelist
+.B \-\-include-globbing-filelist
 instead.  See the
 .B FILE SELECTION
 section for more information.
 .TP
-.B --exclude-filelist-stdin
+.B \-\-exclude-filelist-stdin
 Like
-.B --exclude-filelist,
+.B \-\-exclude-filelist,
 but the list of files will be read from standard input.  See the
 .B FILE SELECTION
 section for more information.
 .TP
-.BR "--exclude-globbing-filelist " filename
+.BR "\-\-exclude-globbing-filelist " filename
 Like
-.B --exclude-filelist
+.B \-\-exclude-filelist
 but each line of the filelist will be interpreted according to the
 same rules as
-.B --include
+.B \-\-include
 and
-.B --exclude.
+.B \-\-exclude.
 .TP
-.B --exclude-globbing-filelist-stdin
+.B \-\-exclude-globbing-filelist-stdin
 Like
-.BR --exclude-globbing-filelist ,
+.BR \-\-exclude-globbing-filelist ,
 but the list of files will be read from standard input.
 .TP
-.B --exclude-other-filesystems
+.B \-\-exclude-other-filesystems
 Exclude files on file systems (identified by device number) other than
 the file system the root of the source directory is on.
 .TP
-.BI "--exclude-regexp " regexp
+.BI "\-\-exclude-regexp " regexp
 Exclude files matching the given regexp.  Unlike the
-.B --exclude
+.B \-\-exclude
 option, this option does not match files in a directory it matches.
 See the
 .B FILE SELECTION
 section for more information.
 .TP
-.B --exclude-special-files
+.B \-\-exclude-special-files
 Exclude all device files, fifo files, socket files, and symbolic links.
 .TP
-.B "--exclude-sockets"
+.B "\-\-exclude-sockets"
 Exclude all socket files.
 .TP
-.B "--exclude-symbolic-links"
+.B "\-\-exclude-symbolic-links"
 Exclude all symbolic links.
 .TP
-.B --force
+.B \-\-force
 Authorize a more drastic modification of a directory than usual (for
 instance, when overwriting of a destination path, or when removing
 multiple sessions with
-.BR --remove-older-than ).
+.BR \-\-remove-older-than ).
 rdiff-backup will generally tell you if it needs this.
 .TP
-.BI "--group-mapping-file " filename
+.BI "\-\-group-mapping-file " filename
 Map group names and ids according the the group mapping file
 .IR filename .
 See the
 .B USERS AND GROUPS
 section for more information.
 .TP
-.BI "--include " shell_pattern
+.BI "\-\-include " shell_pattern
 Similar to
-.B --exclude
+.B \-\-exclude
 but include matched files instead.  Unlike
-.BR --exclude ,
+.BR \-\-exclude ,
 this option will also match parent directories of matched files
 (although not necessarily their contents).  See the
 .B FILE SELECTION
 section for more information.
 .TP
-.BI "--include-filelist " filename
+.BI "\-\-include-filelist " filename
 Like
-.BR --exclude-filelist ,
+.BR \-\-exclude-filelist ,
 but include the listed files instead.  If
 .I filename
 is handwritten you probably want
-.B --exclude-globbing-filelist
+.B \-\-exclude-globbing-filelist
 instead.  See the
 .B FILE SELECTION
 section for more information.
 .TP
-.B --include-filelist-stdin
+.B \-\-include-filelist-stdin
 Like
-.BR --include-filelist ,
+.BR \-\-include-filelist ,
 but read the list of included files from standard input.
 .TP
-.BI "--include-globbing-filelist " filename
+.BI "\-\-include-globbing-filelist " filename
 Like
-.B --include-filelist
+.B \-\-include-filelist
 but each line of the filelist will be interpreted according to the
 same rules as
-.B --include
+.B \-\-include
 and
-.B --exclude.
+.B \-\-exclude.
 .TP
-.B --include-globbing-filelist-stdin
+.B \-\-include-globbing-filelist-stdin
 Like
-.BR --include-globbing-filelist ,
+.BR \-\-include-globbing-filelist ,
 but the list of files will be read from standard input.
 .TP
-.BI "--include-regexp " regexp
+.BI "\-\-include-regexp " regexp
 Include files matching the regular expression
 .IR regexp .
 Only files explicitly matched by
@@ -250,18 +250,18 @@ will be included by this option.  See the
 .B FILE SELECTION
 section for more information.
 .TP
-.B --include-special-files
+.B \-\-include-special-files
 Include all device files, fifo files, socket files, and symbolic links.
 .TP
-.B --include-symbolic-links
+.B \-\-include-symbolic-links
 Include all symbolic links.
 .TP
-.BI "--list-at-time " time
+.BI "\-\-list-at-time " time
 List the files in the archive that were present at the given time.  If
 a directory in the archive is specified, list only the files under
 that directory.
 .TP
-.BI "--list-changed-since " time
+.BI "\-\-list-changed-since " time
 List the files that have changed in the destination directory since
 the given time.  See
 .B TIME FORMATS
@@ -271,25 +271,25 @@ If a directory in the archive is specified, list only the files under
 that directory.  This option does not read the source directory; it is
 used to compare the contents of two different rdiff-backup sessions.
 .TP
-.B "-l, --list-increments"
+.B "-l, \-\-list-increments"
 List the number and date of partial incremental backups contained in
 the specified destination directory.  No backup or restore will take
 place if this option is given.
 .TP
-.B --list-increment-sizes
+.B \-\-list-increment-sizes
 List the total size of all the increment and mirror files by time.
 This may be helpful in deciding how many increments to keep, and when
-to --remove-older-than.  Specifying a subdirectory is allowable; then
+to \-\-remove-older-than.  Specifying a subdirectory is allowable; then
 only the sizes of the mirror and increments pertaining to that
 subdirectory will be listed.
 .TP
-.B --never-drop-acls
+.B \-\-never-drop-acls
 Exit with error instead of dropping acls or acl entries.  Normally
 this may happen (with a warning) because the destination does not
 support them or because the relevant user/group names do not exist on
 the destination side.
 .TP
-.B --no-compare-inode
+.B \-\-no-compare-inode
 This relatively esoteric option prevents rdiff-backup from flagging a
 file as changed when its inode changes.  This option may be useful if
 you are backing up two different directories to the same rdiff-backup
@@ -297,56 +297,56 @@ destination directory.  The downside is that hard link information may
 get messed up, as the metadata file may no longer have the correct
 inode information.
 .TP
-.B --no-compression
+.B \-\-no-compression
 Disable the default gzip compression of most of the .snapshot and .diff
 increment files stored in the rdiff-backup-data directory.  A backup
 volume can contain compressed and uncompressed increments, so using
 this option inconsistently is fine.
 .TP
-.B "--no-compression-regexp " regexp
+.B "\-\-no-compression-regexp " regexp
 Do not compress increments based on files whose filenames match
 regexp.  The default includes many common audiovisual and archive
 files, and may be found in Globals.py.
 .TP
-.B --no-file-statistics
+.B \-\-no-file-statistics
 This will disable writing to the file_statistics file in the
 rdiff-backup-data directory.  rdiff-backup will run slightly quicker
 and take up a bit less space.
 .TP
-.BI --no-hard-links
+.BI \-\-no-hard-links
 Don't replicate hard links on destination side.  If many hard-linked
 files are present, this option can drastically decrease memory usage.
 .TP
-.B --null-separator
+.B \-\-null-separator
 Use nulls (\\0) instead of newlines (\\n) as line separators, which
 may help when dealing with filenames containing newlines.  This
 affects the expected format of the files specified by the
---{include|exclude}-filelist[-stdin] switches as well as the format of
+\-\-{include|exclude}-filelist[-stdin] switches as well as the format of
 the directory statistics file.
 .TP
-.B --parsable-output
+.B \-\-parsable-output
 If set, rdiff-backup's output will be tailored for easy parsing by
 computers, instead of convenience for humans.  Currently this only
 applies when listing increments using the
-.B -l
+.B \-l
 or
-.B --list-increments
+.B \-\-list-increments
 switches, where the time will be given in seconds since the epoch.
 .TP
-.B --preserve-numerical-ids
+.B \-\-preserve-numerical-ids
 If set, rdiff-backup will preserve uids/gids instead of trying to
 preserve unames and gnames.  See the
 .B USERS and GROUPS
 section for more information.
 .TP
-.B --print-statistics
+.B \-\-print-statistics
 If set, summary statistics will be printed after a successful backup
 If not set, this information will still be available from the
 session statistics file.  See the
 .B STATISTICS
 section for more information.
 .TP
-.BI "-r, --restore-as-of " restore_time
+.BI "\-r, \-\-restore-as-of " restore_time
 Restore the specified directory as it was as of
 .IR restore_time .
 See the
@@ -357,7 +357,7 @@ and see the
 .B RESTORING
 section for more information on restoring.
 .TP
-.BI "--remote-schema " schema
+.BI "\-\-remote-schema " schema
 Specify an alternate method of connecting to a remote computer.  This
 is necessary to get rdiff-backup not to use ssh for remote backups, or
 if, for instance, rdiff-backup is not in the PATH on the remote side.
@@ -365,7 +365,7 @@ See the
 .B REMOTE OPERATION
 section for more information.
 .TP
-.BI "--remove-older-than " time_spec
+.BI "\-\-remove-older-than " time_spec
 Remove the incremental backup information in the destination directory
 that has been around longer than the given time.
 .I time_spec
@@ -383,88 +383,88 @@ files in it, you must run rdiff-backup twice.
 
 By default, rdiff-backup will only delete information from one session
 at a time.  To remove two or more sessions at the same time, supply the
-.B --force 
+.B \-\-force 
 option (rdiff-backup will tell you if 
-.B --force
+.B \-\-force
 is required).
 
 Note that snapshots of deleted files are covered by this operation.
 Thus if you deleted a file two weeks ago, backed up immediately
-afterwards, and then ran rdiff-backup with --remove-older-than 10D
+afterwards, and then ran rdiff-backup with \-\-remove-older-than 10D
 today, no trace of that file would remain.  Finally, file selection
-options such as --include and --exclude don't affect
---remove-older-than.
+options such as \-\-include and \-\-exclude don't affect
+\-\-remove-older-than.
 .TP
-.BI "--restrict " path
+.BI "\-\-restrict " path
 Require that all file access be inside the given path.  This switch,
-and the following two, are intended to be used with the --server
+and the following two, are intended to be used with the \-\-server
 switch to provide a bit more protection when doing automated remote
 backups.  They are
 .B not intended as your only line of defense
 so please don't do something silly like allow public access to an
-rdiff-backup server run with --restrict-read-only.
+rdiff-backup server run with \-\-restrict-read-only.
 .TP
-.BI "--restrict-read-only " path
+.BI "\-\-restrict-read-only " path
 Like
-.BR --restrict ,
+.BR \-\-restrict ,
 but also reject all write requests.
 .TP
-.BI "--restrict-update-only " path
+.BI "\-\-restrict-update-only " path
 Like
-.BR --restrict ,
+.BR \-\-restrict ,
 but only allow writes as part of an incremental backup.  Requests for other types of writes (for instance, deleting 
 .IR path )
 will be rejected.
 .TP
-.B --server
+.B \-\-server
 Enter server mode (not to be invoked directly, but instead used by
 another rdiff-backup process on a remote computer).
 .TP
-.B --ssh-no-compression
-When running ssh, do not use the -C option to enable compression.
-.B --ssh-no-compression
+.B \-\-ssh-no-compression
+When running ssh, do not use the \-C option to enable compression.
+.B \-\-ssh-no-compression
 is ignored if you specify a new schema using
-.B --remote-schema.
+.B \-\-remote-schema.
 .TP
-.BI "--terminal-verbosity " [0-9]
+.BI "\-\-terminal-verbosity " [0-9]
 Select which messages will be displayed to the terminal.  If missing
 the level defaults to the verbosity level.
 .TP
-.B --test-server
+.B \-\-test-server
 Test for the presence of a compatible rdiff-backup server as specified
 in the following host::filename argument(s).  The filename section
 will be ignored.
 .TP
-.BI "--user-mapping-file " filename
+.BI "\-\-user-mapping-file " filename
 Map user names and ids according to the user mapping file
 .IR filename .
 See the
 .B USERS and GROUPS
 section for more information.
 .TP
-.BI -v [0-9] ", --verbosity " [0-9]
+.BI \-v [0-9] ", \-\-verbosity " [0-9]
 Specify verbosity level (0 is totally silent, 3 is the default, and 9
 is noisiest).  This determines how much is written to the log file.
 .TP
-.B --verify
+.B \-\-verify
 This is short for
-.BI --verify-at-time " now"
+.BI \-\-verify-at-time " now"
 .TP
-.BI --verify-at-time " now"
+.BI \-\-verify-at-time " now"
 Check all the data in the repository at the given time by computing
 the SHA1 hash of all the regular files and comparing them with the
 hashes stored in the metadata file.
 .TP
-.B "-V, --version"
+.B "-V, \-\-version"
 Print the current version and exit
 
 .SH RESTORING
 There are two ways to tell rdiff-backup to restore a file or
 directory.  Firstly, you can run rdiff-backup on a mirror file and use
 the
-.B -r
+.B \-r
 or
-.B --restore-as-of
+.B \-\-restore-as-of
 options.  Secondly, you can run it on an increment file.
 .PP
 For example, suppose in the past you have run:
@@ -480,7 +480,7 @@ placed at /usr/local.old.
 One way to do this is to run:
 .PP
 .RS
-rdiff-backup -r 3D /usr.backup/local /usr/local.old
+rdiff-backup \-r 3D /usr.backup/local /usr/local.old
 .PP
 .RE
 where above the "3D" means 3 days (for other ways to specify the time,
@@ -490,7 +490,7 @@ section).  The /usr.backup/local directory was selected, because that
 is the directory containing the current version of /usr/local.
 .PP
 Note that the option to
-.B --restore-as-of
+.B \-\-restore-as-of
 always specifies an exact time.  (So "3D" refers to the instant 72
 hours before the present.)  If there was no backup made at that time,
 rdiff-backup restores the state recorded for the previous backup.  For
@@ -517,8 +517,8 @@ would also restore the file as desired.
 If you are not sure exactly which version of a file you need, it is
 probably easiest to either restore from the increments files as
 described immediately above, or to see which increments are available
-with -l/--list-increments, and then specify exact times into
--r/--restore-as-of.
+with \-l/\-\-list-increments, and then specify exact times into
+\-r/\-\-restore-as-of.
 
 .SH TIME FORMATS
 rdiff-backup uses time strings in two places.  Firstly, all of the
@@ -529,7 +529,7 @@ http://www.w3.org/TR/NOTE-datetime.  Basically they look like
 "-07:00" section means the time zone is 7 hours behind UTC.
 .PP
 Secondly, the
-.BI -r , " --restore-as-of" ", and " --remove-older-than
+.BI \-r , " \-\-restore-as-of" ", and " \-\-remove-older-than
 options take a time string, which can be given in any of several
 formats:
 .IP 1.
@@ -566,14 +566,14 @@ splits the filename into host_info::pathname.  It then substitutes
 host_info into the remote schema, and runs the resulting command,
 reading its input and output.
 .PP
-The default remote schema is 'ssh -C %s rdiff-backup --server' where
+The default remote schema is 'ssh \-C %s rdiff-backup \-\-server' where
 host_info is substituted for '%s'.  So if the host_info is
 user@host.net, then rdiff-backup runs 'ssh user@host.net rdiff-backup
---server'.  Using --remote-schema, rdiff-backup can invoke an
+\-\-server'.  Using \-\-remote-schema, rdiff-backup can invoke an
 arbitrary command in order to open up a remote pipe.  For instance,
 .RS
-rdiff-backup --remote-schema 'cd /usr; %s' foo 'rdiff-backup
---server'::bar
+rdiff-backup \-\-remote-schema 'cd /usr; %s' foo 'rdiff-backup
+\-\-server'::bar
 .RE
 is basically equivalent to (but slower than)
 .RS
@@ -594,7 +594,7 @@ the backslash is also a common shell quoting character, you may need
 to type in '\\\\\\\\' at the shell prompt to get a literal backslash
 (if it makes you feel better, I had to type in 8 backslashes to get
 that in this man page...).  And finally, to include a literal % in the
-string specified by --remote-schema, quote it with another %, as in
+string specified by \-\-remote-schema, quote it with another %, as in
 %%.
 
 Although ssh itself may be secure, using rdiff-backup in the default
@@ -603,12 +603,12 @@ as root, then an attacker who compromised the client could then use
 rdiff-backup to overwrite arbitary server files by "backing up" over
 them.  Such a setup can be made more secure by using the sshd
 configuration option
-.B command="rdiff-backup --server"
+.B command="rdiff-backup \-\-server"
 possibly along with the
-.B --restrict*
+.B \-\-restrict*
 options to rdiff-backup.  For more information, see the web page, the
 wiki, and the entries for the
-.B --restrict*
+.B \-\-restrict*
 options on this man page.
 
 .SH FILE SELECTION
@@ -631,24 +631,24 @@ have no special significance.)
 The file selection system comprises a number of file
 selection conditions, which are set using one of the following command
 line options:
-.BR --exclude ,
-.BR --exclude-filelist ,
-.BR --exclude-device-files ,
-.BR --exclude-fifos ,
-.BR --exclude-sockets ,
-.BR --exclude-symbolic-links ,
-.BR --exclude-globbing-filelist ,
-.BR --exclude-globbing-filelist-stdin ,
-.BR --exclude-filelist-stdin ,
-.BR --exclude-regexp ,
-.BR --exclude-special-files ,
-.BR --include ,
-.BR --include-filelist ,
-.BR --include-globbing-filelist ,
-.BR --include-globbing-filelist-stdin ,
-.BR --include-filelist-stdin ,
+.BR \-\-exclude ,
+.BR \-\-exclude-filelist ,
+.BR \-\-exclude-device-files ,
+.BR \-\-exclude-fifos ,
+.BR \-\-exclude-sockets ,
+.BR \-\-exclude-symbolic-links ,
+.BR \-\-exclude-globbing-filelist ,
+.BR \-\-exclude-globbing-filelist-stdin ,
+.BR \-\-exclude-filelist-stdin ,
+.BR \-\-exclude-regexp ,
+.BR \-\-exclude-special-files ,
+.BR \-\-include ,
+.BR \-\-include-filelist ,
+.BR \-\-include-globbing-filelist ,
+.BR \-\-include-globbing-filelist-stdin ,
+.BR \-\-include-filelist-stdin ,
 and
-.BR --include-regexp .
+.BR \-\-include-regexp .
 Each file selection condition either matches or doesn't match a given
 file.  A given file is excluded by the file selection system exactly
 when the first matching file selection condition specifies that the
@@ -660,7 +660,7 @@ considered not to exist in either the source or target directories.
 For instance,
 .PP
 .RS
-rdiff-backup --include /usr --exclude /usr /usr /backup
+rdiff-backup \-\-include /usr \-\-exclude /usr /usr /backup
 .PP
 .RE
 is exactly the same as
@@ -671,11 +671,11 @@ rdiff-backup /usr /backup
 .RE
 because the include and exclude directives match exactly the same
 files, and the
-.B --include
+.B \-\-include
 comes first, giving it precedence.  Similarly,
 .PP
 .RS
-rdiff-backup --include /usr/local/bin --exclude /usr/local /usr /backup
+rdiff-backup \-\-include /usr/local/bin \-\-exclude /usr/local /usr /backup
 .PP
 .RE
 would backup the /usr/local/bin directory (and its contents), but not
@@ -715,7 +715,7 @@ into a shell, so the shell does not interpret the globbing patterns
 before rdiff-backup sees them.
 
 The
-.BI "--exclude " pattern
+.BI "\-\-exclude " pattern
 option matches a file iff:
 .TP
 .B 1.
@@ -727,7 +727,7 @@ the file is inside a directory matched by the option.
 .PP
 .RE
 Conversely,
-.BI "--include " pattern
+.BI "\-\-include " pattern
 matches a file iff:
 .TP
 .B 1.
@@ -744,15 +744,15 @@ the file is a directory which contains a file matched by the option.
 For example,
 .PP
 .RS
-.B --exclude
+.B \-\-exclude
 /usr/local
 .PP
 .RE
 matches /usr/local, /usr/local/lib, and /usr/local/lib/netscape.  It
-is the same as --exclude /usr/local --exclude '/usr/local/**'.
+is the same as \-\-exclude /usr/local \-\-exclude '/usr/local/**'.
 .PP
 .RS
-.B --include
+.B \-\-include
 /usr/local
 .PP
 .RE
@@ -762,7 +762,7 @@ don't have to worry about including parent directories to make sure
 that included subdirectories have somewhere to go.  Finally,
 .PP
 .RS
-.B --include
+.B \-\-include
 ignorecase:'/usr/[a-z0-9]foo/*/**.py'
 .PP
 .RE
@@ -772,16 +772,16 @@ file that the given pattern can be expanded into, the option will not
 match /usr.
 
 The
-.BR --include-filelist ,
-.BR --exclude-filelist ,
-.BR --include-filelist-stdin ,
+.BR \-\-include-filelist ,
+.BR \-\-exclude-filelist ,
+.BR \-\-include-filelist-stdin ,
 and
-.B --exclude-filelist-stdin
+.B \-\-exclude-filelist-stdin
 options also introduce file selection conditions.  They direct
 rdiff-backup to read in a file, each line of which is a file
 specification, and to include or exclude the matching files.  Lines
 are separated by newlines or nulls, depending on whether the
---null-separator switch was given.  Each line in a filelist is
+\-\-null-separator switch was given.  Each line in a filelist is
 interpreted similarly to the way
 .I extended shell patterns
 are, with a few exceptions:
@@ -802,7 +802,7 @@ So /usr/local in an include file will not match /usr/local/doc.
 .B 3.
 Lines starting with "+ " are interpreted as include directives, even
 if found in a filelist referenced by
-.BR --exclude-filelist .
+.BR \-\-exclude-filelist .
 Similarly, lines starting with "- " exclude files even if they are
 found within an include filelist.
 
@@ -825,7 +825,7 @@ For example, if the file "list.txt" contains the lines:
 - /var
 
 .RE
-then "--include-filelist list.txt" would include /usr, /usr/local, and
+then "\-\-include-filelist list.txt" would include /usr, /usr/local, and
 /usr/local/bin.  It would exclude /usr/local/doc,
 /usr/local/doc/python, etc.  It neither excludes nor includes
 /usr/local/man, leaving the fate of this directory to the next
@@ -834,14 +834,14 @@ specification condition.  Finally, it is undefined what happens with
 specifications.
 
 The
-.B --include-globbing-filelist
+.B \-\-include-globbing-filelist
 and
-.B --exclude-globbing-filelist
+.B \-\-exclude-globbing-filelist
 options also specify filelists, but each line in the filelist will be
 interpreted as a globbing pattern the way
-.B --include
+.B \-\-include
 and
-.B --exclude
+.B \-\-exclude
 options are interpreted (although "+ " and "- " prefixing is still
 allowed).  For instance, if the file "globbing-list.txt" contains the
 lines:
@@ -857,26 +857,26 @@ dir/foo
 - **
 
 .RE
-Then "--include-globbing-filelist globbing-list.txt" would be exactly
-the same as specifying "--include dir/foo --include dir/bar --exclude **"
+Then "\-\-include-globbing-filelist globbing-list.txt" would be exactly
+the same as specifying "\-\-include dir/foo \-\-include dir/bar \-\-exclude **"
 on the command line.
 
 Finally, the
-.B --include-regexp
+.B \-\-include-regexp
 and
-.B --exclude-regexp
+.B \-\-exclude-regexp
 allow files to be included and excluded if their filenames match a
 python regular expression.  Regular expression syntax is too
 complicated to explain here, but is covered in Python's library
 reference.  Unlike the
-.B --include
+.B \-\-include
 and
-.B --exclude
+.B \-\-exclude
 options, the regular expression options don't match files containing
 or contained in matched files.  So for instance
 .PP
 .RS
---include '[0-9]{7}(?!foo)'
+\-\-include '[0-9]{7}(?!foo)'
 .PP
 .RE
 matches any files whose full pathnames contain 7 consecutive digits
@@ -891,7 +891,7 @@ the source to the destination (or vice-versa, in the case of restoring):
 
 .TP
 .B 1.
-If the --preserve-numerical-ids option is given, the remote files will
+If the \-\-preserve-numerical-ids option is given, the remote files will
 always have the same uid and gid, both for ownership and ACL entries.
 This may cause unames and gnames to change.
 .TP
@@ -908,13 +908,13 @@ name.
 .TP
 .B 4.
 The
-.B --user-mapping-file
+.B \-\-user-mapping-file
 and
-.B --group-mapping-file
+.B \-\-group-mapping-file
 options override this behavior.  If either of these options is given,
 the policy descriped in 2 and 3 above will be followed, but with the
 mapped user and group instead of the original.  If you specify both
-.B --preserve-numerical-ids
+.B \-\-preserve-numerical-ids
 and one of the mapping options, the behavior is undefined.
 
 .RE
@@ -970,16 +970,16 @@ but describes every directory backed up.  It also may be compressed to
 save space.
 
 Statistics related options include
-.B --print-statistics
+.B \-\-print-statistics
 and
-.BR --null-separator .
+.BR \-\-null-separator .
 
 Also, rdiff-backup will save various messages to the log file, which
 is rdiff-backup-data/backup.log for backup sessions and
 rdiff-backup-data/restore.log for restore sessions.  Generally what is
 written to this file will coincide with the messages diplayed to
 stdout or stderr, although this can be changed with the
-.B --terminal-verbosity
+.B \-\-terminal-verbosity
 option.
 
 The log file is not compressed and can become quite large if
