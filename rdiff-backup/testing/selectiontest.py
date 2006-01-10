@@ -448,4 +448,27 @@ testfiles/select**/2
 #						  verbose = 1)
 
 
+class CommandTest(unittest.TestCase):
+	"""Test rdiff-backup on actual directories"""
+	def testEmptyDirInclude(self):
+		"""Make sure empty directories are included with **xx exps
+
+		This checks for a bug present in 1.0.3/1.1.5 and similar.
+
+		"""
+		outrp = MakeOutputDir()
+		selrp = rpath.RPath(Globals.local_connection, 'testfiles/seltest')
+		re_init_dir(selrp)
+		emptydir = selrp.append('emptydir')
+		emptydir.mkdir()
+
+		rdiff_backup(1, 1, selrp.path, outrp.path,
+					 extra_options = ("--include **XX "
+									  "--exclude testfiles/seltest/YYYY"))
+
+		outempty = outrp.append('emptydir')
+		assert outempty.isdir(), outempty
+
+
+
 if __name__ == "__main__": unittest.main()
