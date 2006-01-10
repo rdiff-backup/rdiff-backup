@@ -7,6 +7,10 @@ report by Carsten Lorenz).
 Another fix for long-filenames crash, this time when a long-named
 directory with files in it gets deleted
 
+Selection fix: empty directories could sometimes be improperly
+excluded if certain include expressions involving a non-trailing '**'
+were used.  Bug reported by Toni Price.
+
 
 New in v1.0.3 (2005/11/25)
 --------------------------

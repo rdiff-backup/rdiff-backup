@@ -209,10 +209,12 @@ class Select:
 
 	def Select(self, rp):
 		"""Run through the selection functions and return dominant val 0/1/2"""
+		scanned = 0 # 0, by default, or 2 if prev sel func scanned rp
 		for sf in self.selection_functions:
 			result = sf(rp)
-			if result == 1 or result == 0 or (result == 2 and rp.isdir()):
-				return result
+			if result == 1: return 1
+			elif result == 0: return scanned
+			elif result == 2: scanned = 2
 		return 1
 
 	def ParseArgs(self, argtuples, filelists):
