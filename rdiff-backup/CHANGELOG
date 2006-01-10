@@ -1,3 +1,11 @@
+New in v1.1.6 (????/??/??)
+--------------------------
+
+Selection fix: empty directories could sometimes be improperly
+excluded if certain include expressions involving a non-trailing '**'
+were used.  Bug reported by Toni Price.
+
+
 New in v1.1.5 (2006/01/01)
 --------------------------
 
