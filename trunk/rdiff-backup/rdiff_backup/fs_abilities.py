@@ -193,7 +193,7 @@ class FSAbilities:
 		assert not self.read_only
 
 		# Make sure ordinary filenames ok
-		ordinary_filename = '5-_ a.'
+		ordinary_filename = '5-_ a.snapshot.gz'
 		ord_rp = subdir.append(ordinary_filename)
 		ord_rp.touch()
 		assert ord_rp.lstat()
