@@ -257,7 +257,7 @@ rdiff-backup-data/chars_to_quote.
 
 		def sanity_check():
 			"""Make sure basic filenames writable"""
-			for filename in ['5-_ a.']:
+			for filename in ['5-_ a.snapshot.gz']:
 				rp = subdir.append(filename)
 				rp.touch()
 				assert rp.lstat()
