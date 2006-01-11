@@ -201,11 +201,12 @@ class FSAbilities:
 
 		# Try a UTF-8 encoded character
 		extended_filename = ':\\ ' + chr(225) + chr(132) + chr(137)
+		ext_rp = None
 		try:
 			ext_rp = subdir.append(extended_filename)
 			ext_rp.touch()
 		except (IOError, OSError):
-			assert not ext_rp.lstat()
+			if ext_rp: assert not ext_rp.lstat()
 			self.extended_filenames = 0
 		else:
 			assert ext_rp.lstat()
