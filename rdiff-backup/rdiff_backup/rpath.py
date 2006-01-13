@@ -1148,6 +1148,7 @@ class RPath(RORPath):
 			os.fsync(fd)
 			os.close(fd)
 		except OSError, e:
+			if locals().has_key('fd'): os.close(fd)
 			if e.errno != errno.EPERM or self.isdir(): raise
 
 			# Maybe the system doesn't like read-only fsyncing.
