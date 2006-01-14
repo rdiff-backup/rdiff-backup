@@ -11,6 +11,9 @@ Selection fix: empty directories could sometimes be improperly
 excluded if certain include expressions involving a non-trailing '**'
 were used.  Bug reported by Toni Price.
 
+Bug #15436 reported by Remy Blank: rdiff-backup would sometimes crash
+if ACLs and uname did not exist on destination.
+
 
 New in v1.0.3 (2005/11/25)
 --------------------------
