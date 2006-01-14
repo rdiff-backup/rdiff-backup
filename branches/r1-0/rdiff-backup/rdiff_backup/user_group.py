@@ -92,7 +92,7 @@ class Map:
 		try: return self.name2id_dict[name]
 		except KeyError:
 			out_id = self.find_id_from_name(name)
-			self.name2id_dict[name] = out_id
+			if out_id is not None: self.name2id_dict[name] = out_id
 			return out_id
 
 	def get_id_from_id(self, id): return id
