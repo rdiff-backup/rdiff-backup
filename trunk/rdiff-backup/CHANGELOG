@@ -5,6 +5,9 @@ Selection fix: empty directories could sometimes be improperly
 excluded if certain include expressions involving a non-trailing '**'
 were used.  Bug reported by Toni Price.
 
+A few minor changes to help rdiff-backup back up to an SMB/CIFS share.
+Thanks to Cengiz Gunay for testing.
+
 
 New in v1.1.5 (2006/01/01)
 --------------------------
