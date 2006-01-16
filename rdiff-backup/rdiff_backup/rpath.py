@@ -82,12 +82,7 @@ def move(rpin, rpout):
 		rpin.delete()
 
 def copy(rpin, rpout, compress = 0):
-	"""Copy RPath rpin to rpout.  Works for symlinks, dirs, etc.
-
-	Returns close value of input for regular file, which can be used
-	to pass hashes on.
-
-	"""
+	"""Copy RPath rpin to rpout.  Works for symlinks, dirs, etc."""
 	log.Log("Regular copying %s to %s" % (rpin.index, rpout.path), 6)
 	if not rpin.lstat():
 		if rpout.lstat(): rpout.delete()
@@ -98,7 +93,7 @@ def copy(rpin, rpout, compress = 0):
 			rpout.delete()   # easier to write than compare
 		else: return
 
-	if rpin.isreg(): return copy_reg_file(rpin, rpout, compress)
+	if rpin.isreg(): copy_reg_file(rpin, rpout, compress)
 	elif rpin.isdir(): rpout.mkdir()
 	elif rpin.issym(): rpout.symlink(rpin.readlink())
 	elif rpin.ischardev():
@@ -116,11 +111,11 @@ def copy_reg_file(rpin, rpout, compress = 0):
 	try:
 		if (rpout.conn is rpin.conn and
 			rpout.conn is not Globals.local_connection):
-			v = rpout.conn.rpath.copy_reg_file(rpin.path, rpout.path, compress)
+			rpout.conn.rpath.copy_reg_file(rpin.path, rpout.path, compress)
 			rpout.setdata()
-			return v
+			return
 	except AttributeError: pass
-	return rpout.write_from_fileobj(rpin.open("rb"), compress = compress)
+	rpout.write_from_fileobj(rpin.open("rb"), compress = compress)
 
 def cmp(rpin, rpout):
 	"""True if rpin has the same data as rpout
@@ -157,14 +152,11 @@ def copy_attribs(rpin, rpout):
 	"""
 	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
 	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
-	if Globals.change_ownership:
-		rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
+	if Globals.change_ownership: rpout.chown(*user_group.map_rpath(rpin))
 	if rpin.issym(): return # symlinks don't have times or perms
-	if (Globals.resource_forks_write and rpin.isreg() and
-		rpin.has_resource_fork()):
+	if Globals.resource_forks_write and rpin.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
-	if (Globals.carbonfile_write and rpin.isreg() and
-		rpin.has_carbonfile()):
+	if Globals.carbonfile_write and rpin.isreg():
 		rpout.write_carbonfile(rpin.get_carbonfile())
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	rpout.chmod(rpin.getperms())
@@ -183,11 +175,9 @@ def copy_attribs_inc(rpin, rpout):
 	check_for_files(rpin, rpout)
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if rpin.issym(): return # symlinks don't have times or perms
-	if (Globals.resource_forks_write and rpin.isreg() and
-		rpin.has_resource_fork() and rpout.isreg()):
+	if Globals.resource_forks_write and rpin.isreg() and rpout.isreg():
 		rpout.write_resource_fork(rpin.get_resource_fork())
-	if (Globals.carbonfile_write and rpin.isreg() and
-		rpin.has_carbonfile() and rpout.isreg()):
+	if Globals.carbonfile_write and rpin.isreg() and rpout.isreg():
 		rpout.write_carbonfile(rpin.get_carbonfile())
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if rpin.isdir() and not rpout.isdir():
@@ -265,7 +255,7 @@ def make_socket_local(rpath):
 def gzip_open_local_read(rpath):
 	"""Return open GzipFile.  See security note directly above"""
 	assert rpath.conn is Globals.local_connection
-	return GzipFile(rpath.path, "rb")
+	return gzip.GzipFile(rpath.path, "rb")
 
 def open_local_read(rpath):
 	"""Return open file (provided for security reasons)"""
@@ -356,11 +346,8 @@ class RORPath:
 			elif key == 'carbonfile' and not Globals.carbonfile_write: pass
 			elif key == 'resourcefork' and not Globals.resource_forks_write:
 				pass
-			elif key == 'sha1': pass # one or other may not have set
-			elif key == 'mirrorname' or key == 'incname': pass
 			elif (not other.data.has_key(key) or
-				  self.data[key] != other.data[key]):
-				return 0
+				  self.data[key] != other.data[key]): return 0
 
 		if self.lstat() and not self.issym() and Globals.change_ownership:
 			# Now compare ownership.  Symlinks don't have ownership
@@ -616,10 +603,7 @@ class RORPath:
 
 	def get_acl(self):
 		"""Return access control list object from dictionary"""
-		try: return self.data['acl']
-		except KeyError:
-			acl = self.data['acl'] = get_blank_acl(self.index)
-			return acl
+		return self.data['acl']
 
 	def set_ea(self, ea):
 		"""Record extended attributes in dictionary.  Does not write"""
@@ -627,10 +611,7 @@ class RORPath:
 
 	def get_ea(self):
 		"""Return extended attributes object"""
-		try: return self.data['ea']
-		except KeyError:
-			ea = self.data['ea'] = get_blank_ea(self.index)
-			return ea
+		return self.data['ea']
 
 	def has_carbonfile(self):
 		"""True if rpath has a carbonfile parameter"""
@@ -655,54 +636,6 @@ class RORPath:
 	def set_resource_fork(self, rfork):
 		"""Record resource fork in dictionary.  Does not write"""
 		self.data['resourcefork'] = rfork
-
-	def has_alt_mirror_name(self):
-		"""True if rorp has an alternate mirror name specified"""
-		return self.data.has_key('mirrorname')
-
-	def get_alt_mirror_name(self):
-		"""Return alternate mirror name (for long filenames)"""
-		return self.data['mirrorname']
-
-	def set_alt_mirror_name(self, filename):
-		"""Set alternate mirror name to filename
-
-		Instead of writing to the traditional mirror file, store
-		mirror information in filename in the long filename
-		directory.
-
-		"""
-		self.data['mirrorname'] = filename
-
-	def has_alt_inc_name(self):
-		"""True if rorp has an alternate increment base specified"""
-		return self.data.has_key('incname')
-
-	def get_alt_inc_name(self):
-		"""Return alternate increment base (used for long name support)"""
-		return self.data['incname']
-
-	def set_alt_inc_name(self, name):
-		"""Set alternate increment name to name
-
-		If set, increments will be in the long name directory with
-		name as their base.  If the alt mirror name is set, this
-		should be set to the same.
-
-		"""
-		self.data['incname'] = name
-
-	def has_sha1(self):
-		"""True iff self has its sha1 digest set"""
-		return self.data.has_key('sha1')
-
-	def get_sha1(self):
-		"""Return sha1 digest.  Causes exception unless set_sha1 first"""
-		return self.data['sha1']
-
-	def set_sha1(self, digest):
-		"""Set sha1 hash (should be in hexdecimal)"""
-		self.data['sha1'] = digest
 
 
 class RPath(RORPath):
@@ -940,7 +873,7 @@ class RPath(RORPath):
 		log.Log("Deleting %s" % self.path, 7)
 		if self.isdir():
 			try: self.rmdir()
-			except os.error:
+			except EnvironmentError:
 				if Globals.fsync_directories: self.fsync()
 				self.conn.shutil.rmtree(self.path)
 		else: self.conn.os.unlink(self.path)
@@ -1020,13 +953,13 @@ class RPath(RORPath):
 
 		"""
 		if self.conn is Globals.local_connection:
-			if compress: return GzipFile(self.path, mode)
+			if compress: return gzip.GzipFile(self.path, mode)
 			else: return open(self.path, mode)
 
 		if compress:
 			if mode == "r" or mode == "rb":
 				return self.conn.rpath.gzip_open_local_read(self)
-			else: return self.conn.rpath.GzipFile(self.path, mode)
+			else: return self.conn.gzip.GzipFile(self.path, mode)
 		else:
 			if mode == "r" or mode == "rb":
 				return self.conn.rpath.open_local_read(self)
@@ -1036,16 +969,16 @@ class RPath(RORPath):
 		"""Reads fp and writes to self.path.  Closes both when done
 
 		If compress is true, fp will be gzip compressed before being
-		written to self.  Returns closing value of fp.
+		written to self.
 
 		"""
 		log.Log("Writing file object to " + self.path, 7)
 		assert not self.lstat(), "File %s already exists" % self.path
 		outfp = self.open("wb", compress = compress)
 		copyfileobj(fp, outfp)
-		if outfp.close(): raise RPathException("Error closing file")
+		if fp.close() or outfp.close():
+			raise RPathException("Error closing file")
 		self.setdata()
-		return fp.close()
 
 	def write_string(self, s, compress = None):
 		"""Write string s into rpath"""
@@ -1135,43 +1068,35 @@ class RPath(RORPath):
 		if not fp: self.conn.rpath.RPath.fsync_local(self)
 		else: os.fsync(fp.fileno())
 
-	def fsync_local(self, thunk = None):
-		"""fsync current file, run locally
-
-		If thunk is given, run it before syncing but after gathering
-		the file's file descriptor.
-
-		"""
+	def fsync_local(self):
+		"""fsync current file, run locally"""
 		assert self.conn is Globals.local_connection
-		try:
-			fd = os.open(self.path, os.O_RDONLY)
-			os.fsync(fd)
-			os.close(fd)
-		except OSError, e:
-			if locals().has_key('fd'): os.close(fd)
-			if e.errno != errno.EPERM or self.isdir(): raise
-
-			# Maybe the system doesn't like read-only fsyncing.
-			# However, to open RDWR, we may need to alter permissions
-			# temporarily.
-			if self.hasfullperms(): oldperms = None
-			else:
-				oldperms = self.getperms()
-				self.chmod(0700)
-			fd = os.open(self.path, os.O_RDWR)
-			if oldperms is not None: self.chmod(oldperms)
-			if thunk: thunk()
-			os.fsync(fd) # Sync after we switch back permissions!
-			os.close(fd)
+		fd = os.open(self.path, os.O_RDONLY)
+		os.fsync(fd)
+		os.close(fd)
 
 	def fsync_with_dir(self, fp = None):
 		"""fsync self and directory self is under"""
 		self.fsync(fp)
 		if Globals.fsync_directories: self.get_parent_rp().fsync()
 
-	def get_data(self, compressed = None):
+	def sync_delete(self):
+		"""Delete self with sync to guarantee completion
+
+		On some filesystems (like linux's ext2), we must sync both the
+		file and the directory to make sure.
+
+		"""
+		if self.lstat() and not self.issym():
+			fp = self.open("rb")
+			self.delete()
+			os.fsync(fp.fileno())
+		assert not fp.close()
+		if Globals.fsync_directories: self.get_parent_rp().fsync()
+
+	def get_data(self):
 		"""Open file as a regular file, read data, close, return data"""
-		fp = self.open("rb", compressed)
+		fp = self.open("rb")
 		s = fp.read()
 		assert not fp.close()
 		return s
@@ -1202,9 +1127,36 @@ class RPath(RORPath):
 		ea.write_to_rp(self)
 		self.data['ea'] = ea
 
+	def get_carbonfile(self):
+		"""Return resource fork data, loading from filesystem if
+		necessary."""
+		from Carbon.File import FSSpec
+		import MacOS
+		try: return self.data['cfile']
+		except KeyError: pass
+
+		try:
+			fsobj = FSSpec(self.path)
+			finderinfo = fsobj.FSpGetFInfo()
+			cfile = {'creator': finderinfo.Creator,
+					 'type': finderinfo.Type,
+					 'location': finderinfo.Location,
+					 'flags': finderinfo.Flags}
+			self.data['carbonfile'] = cfile
+			return cfile
+		except MacOS.Error:
+			log.Log("Cannot read carbonfile information from %s" %
+					(self.path,), 2)
+			self.data['carbonfile'] = None 
+			return self.data['carbonfile']
+
 	def write_carbonfile(self, cfile):
 		"""Write new carbon data to self."""
-		if not cfile: return
+		if not cfile:
+			# This should be made cleaner---if you know Mac OS X tell
+			# me what could cause an error in get_carbonfile above
+			return
+			
 		log.Log("Writing carbon data to %s" % (self.index,), 7)
 		from Carbon.File import FSSpec
 		import MacOS
@@ -1256,67 +1208,6 @@ class RPathFileHook:
 		return result
 
 
-class GzipFile(gzip.GzipFile):
-	"""Like gzip.GzipFile, except remove destructor
-
-	The default GzipFile's destructor prints out some messy error
-	messages.  Use this class instead to clean those up.
-
-	"""
-	def __del__(self): pass
-	def __getattr__(self, name):
-		if name == 'fileno': return self.fileobj.fileno
-		else: raise AttributeError(name)
-
-
-class MaybeGzip:
-	"""Represent a file object that may or may not be compressed
-
-	We don't want to compress 0 length files.  This class lets us
-	delay the opening of the file until either the first write (so we
-	know it has data and should be compressed), or close (when there's
-	no data).
-
-	"""
-	def __init__(self, base_rp, callback = None):
-		"""Return file-like object with filename based on base_rp"""
-		assert not base_rp.lstat(), base_rp
-		self.base_rp = base_rp
-		# callback will be called with final write rp as only argument
-		self.callback = callback
-		self.fileobj = None # Will be None unless data gets written
-		self.closed = 0
-
-	def __getattr__(self, name):
-		if name == 'fileno': return self.fileobj.fileno
-		else: raise AttributeError(name)
-
-	def get_gzipped_rp(self):
-		"""Return gzipped rp by adding .gz to base_rp"""
-		if self.base_rp.index:
-			newind = self.base_rp.index[:-1] + (self.base_rp.index[-1]+'.gz',)
-			return self.base_rp.new_index(newind)
-		else: return self.base_rp.append_path('.gz')
-
-	def write(self, buf):
-		"""Write buf to fileobj"""
-		if self.fileobj: return self.fileobj.write(buf)
-		if not buf: return
-
-		new_rp = self.get_gzipped_rp()
-		if self.callback: self.callback(new_rp)
-		self.fileobj = new_rp.open("w", compress = 1)
-		return self.fileobj.write(buf)
-
-	def close(self):
-		"""Close related fileobj, pass return value"""
-		if self.closed: return None
-		self.closed = 1
-		if self.fileobj: return self.fileobj.close()
-		if self.callback: self.callback(self.base_rp)
-		self.base_rp.touch()
-
-
 def setdata_local(rpath):
 	"""Set eas/acls, uid/gid, resource fork in data dictionary
 
@@ -1331,30 +1222,9 @@ def setdata_local(rpath):
 	if Globals.acls_conn: rpath.data['acl'] = acl_get(rpath)
 	if Globals.resource_forks_conn and rpath.isreg():
 		rpath.get_resource_fork()
-	if Globals.carbonfile_conn and rpath.isreg():
-		rpath.data['carbonfile'] = carbonfile_get(rpath)
+	if Globals.carbonfile_conn and rpath.isreg(): rpath.get_carbonfile()
 
-def carbonfile_get(rpath):
-	"""Return carbonfile value for local rpath"""
-	from Carbon.File import FSSpec
-	import MacOS
-	try:
-		fsobj = FSSpec(rpath.path)
-		finderinfo = fsobj.FSpGetFInfo()
-		cfile = {'creator': finderinfo.Creator,
-				 'type': finderinfo.Type,
-				 'location': finderinfo.Location,
-				 'flags': finderinfo.Flags}
-		return cfile
-	except MacOS.Error:
-		log.Log("Cannot read carbonfile information from %s" %
-				(rpath.path,), 2)
-		return None
-
-
-# These functions are overwritten by the eas_acls.py module.  We can't
+# These two are overwritten by the eas_acls.py module.  We can't
 # import that module directly because of circular dependency problems.
 def acl_get(rp): assert 0
-def get_blank_acl(index): assert 0
 def ea_get(rp): assert 0
-def get_blank_ea(index): assert 0

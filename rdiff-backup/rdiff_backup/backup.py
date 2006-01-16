@@ -23,7 +23,7 @@ from __future__ import generators
 import errno
 import Globals, metadata, rorpiter, TempFile, Hardlink, robust, increment, \
 	   rpath, static, log, selection, Time, Rdiff, statistics, iterfile, \
-	   hash, longname
+	   eas_acls
 
 def Mirror(src_rpath, dest_rpath):
 	"""Turn dest_rpath into a copy of src_rpath"""
@@ -85,14 +85,14 @@ class SourceStruct:
 			"""Attach file of snapshot to diff_rorp, w/ error checking"""
 			fileobj = robust.check_common_error(
 				error_handler, rpath.RPath.open, (src_rp, "rb"))
-			if fileobj: diff_rorp.setfile(hash.FileWrapper(fileobj))
+			if fileobj: diff_rorp.setfile(fileobj)
 			else: diff_rorp.zero()
 			diff_rorp.set_attached_filetype('snapshot')
 
 		def attach_diff(diff_rorp, src_rp, dest_sig):
 			"""Attach file of diff to diff_rorp, w/ error checking"""
 			fileobj = robust.check_common_error(
-				error_handler, Rdiff.get_delta_sigrp_hash, (dest_sig, src_rp))
+				error_handler, Rdiff.get_delta_sigrp, (dest_sig, src_rp))
 			if fileobj:
 				diff_rorp.setfile(fileobj)
 				diff_rorp.set_attached_filetype('diff')
@@ -101,8 +101,8 @@ class SourceStruct:
 				diff_rorp.set_attached_filetype('snapshot')
 				
 		for dest_sig in dest_sigiter:
-			if dest_sig is iterfile.MiscIterFlushRepeat:
-				yield iterfile.MiscIterFlush # Flush buffer when get_sigs does
+			if dest_sig is iterfile.RORPIterFlushRepeat:
+				yield iterfile.RORPIterFlush # Flush buffer when get_sigs does
 				continue
 			src_rp = (source_rps.get(dest_sig.index) or
 					  rpath.RORPath(dest_sig.index))
@@ -135,9 +135,10 @@ class DestinationStruct:
 			sel.parse_rbdir_exclude()
 			return sel.set_iter()
 
-		metadata.SetManager()
 		if use_metadata:
-			rorp_iter = metadata.ManagerObj.GetAtTime(Time.prevtime)
+			rorp_iter = eas_acls.GetCombinedMetadataIter(
+				Globals.rbdir, Time.prevtime,
+				acls = Globals.acls_active, eas = Globals.eas_active)
 			if rorp_iter: return rorp_iter
 		return get_iter_from_fs()
 
@@ -171,7 +172,7 @@ class DestinationStruct:
 				if (Globals.backup_reader is not Globals.backup_writer and
 					num_rorps_skipped > flush_threshold):
 					num_rorps_skipped = 0
-					yield iterfile.MiscIterFlushRepeat
+					yield iterfile.RORPIterFlushRepeat
 			else:
 				index = src_rorp and src_rorp.index or dest_rorp.index
 				sig = cls.get_one_sig(dest_base_rpath, index,
@@ -189,12 +190,11 @@ class DestinationStruct:
 		elif dest_rorp:
 			dest_sig = dest_rorp.getRORPath()
 			if dest_rorp.isreg():
-				dest_rp = longname.get_mirror_rp(dest_base_rpath, dest_rorp)
-				sig_fp = cls.get_one_sig_fp(dest_rp)
+				sig_fp = cls.get_one_sig_fp(dest_base_rpath.new_index(index))
 				if sig_fp is None: return None
 				dest_sig.setfile(sig_fp)
 		else: dest_sig = rpath.RORPath(index)
-		return dest_sig
+		return dest_sig			
 
 	def get_one_sig_fp(cls, dest_rp):
 		"""Return a signature fp of given index, corresponding to reg file"""
@@ -255,9 +255,6 @@ class CacheCollatedPostProcess:
 	    we enter them to computer signatures, and then reset after we
 	    are done patching everything inside them.
 
-	4.  We need some place to put hashes (like SHA1) after computing
-	    them and before writing them to the metadata.
-
 	The class caches older source_rorps and dest_rps so the patch
 	function can retrieve them if necessary.  The patch function can
 	also update the processed correctly flag.  When an item falls out
@@ -273,7 +270,9 @@ class CacheCollatedPostProcess:
 
 		self.statfileobj = statistics.init_statfileobj()
 		if Globals.file_statistics: statistics.FileStats.init()
-		self.metawriter = metadata.ManagerObj.GetWriter()
+		metadata.MetadataFile.open_file()
+		if Globals.eas_active: eas_acls.ExtendedAttributesFile.open_file()
+		if Globals.acls_active: eas_acls.AccessControlListFile.open_file()
 
 		# the following should map indicies to lists
 		# [source_rorp, dest_rorp, changed_flag, success_flag, increment]
@@ -294,10 +293,6 @@ class CacheCollatedPostProcess:
 		# be used to reset the permissions of certain directories
 		# after we're finished with them
 		self.dir_perms_list = []
-
-		# Contains list of (index, (source_rorp, diff_rorp)) pairs for
-		# the parent directories of the last item in the cache.
-		self.parent_list = []
 
 	def __iter__(self): return self
 
@@ -352,30 +347,6 @@ class CacheCollatedPostProcess:
 		self.post_process(old_source_rorp, old_dest_rorp,
 						  changed_flag, success_flag, inc)
 		if self.dir_perms_list: self.reset_dir_perms(first_index)
-		self.update_parent_list(first_index, old_source_rorp, old_dest_rorp)
-
-	def update_parent_list(self, index, src_rorp, dest_rorp):
-		"""Update the parent cache with the recently expired main cache entry
-
-		This method keeps parent directories in the secondary parent
-		cache until all their children have expired from the main
-		cache.  This is necessary because we may realize we need a
-		parent directory's information after we have processed many
-		subfiles.
-
-		"""
-		if not (src_rorp and src_rorp.isdir() or
-				dest_rorp and dest_rorp.isdir()): return # neither is directory
-		if not self.parent_list: assert index == (), index
-		else:
-			last_parent_index = self.parent_list[-1][0]
-			lp_index, li = len(last_parent_index), len(index)
-			if li > lp_index: # descended into previous parent
-				assert li == lp_index + 1, (index, last_parent_index)
-			else: # In new directory
-				assert last_parent_index[:li-1] == index[:-1], index
-				self.parent_list = self.parent_list[:li]
-		self.parent_list.append((index, (src_rorp, dest_rorp)))
 
 	def post_process(self, source_rorp, dest_rorp, changed, success, inc):
 		"""Post process source_rorp and dest_rorp.
@@ -400,7 +371,13 @@ class CacheCollatedPostProcess:
 			self.statfileobj.add_changed(source_rorp, dest_rorp)
 
 		if metadata_rorp and metadata_rorp.lstat():
-			self.metawriter.write_object(metadata_rorp)
+			metadata.MetadataFile.write_object(metadata_rorp)
+			if Globals.eas_active and not metadata_rorp.get_ea().empty():
+				eas_acls.ExtendedAttributesFile.write_object(
+					metadata_rorp.get_ea())
+			if Globals.acls_active and not metadata_rorp.get_acl().is_basic():
+				eas_acls.AccessControlListFile.write_object(
+					metadata_rorp.get_acl())
 		if Globals.file_statistics:
 			statistics.FileStats.update(source_rorp, dest_rorp, changed, inc)
 
@@ -432,40 +409,20 @@ class CacheCollatedPostProcess:
 		"""Set the increment of the current file"""
 		self.cache_dict[index][4] = inc
 
-	def get_parent_rorps(self, index):
-		"""Retrieve (src_rorp, dest_rorp) pair from parent cache"""
-		for parent_index, pair in self.parent_list:
-			if parent_index == index: return pair
-		raise KeyError(index)
-
 	def get_rorps(self, index):
 		"""Retrieve (source_rorp, dest_rorp) from cache"""
-		try: return self.cache_dict[index][:2]
-		except KeyError: return self.get_parent_rorps(index)
+		return self.cache_dict[index][:2]
 
 	def get_source_rorp(self, index):
 		"""Retrieve source_rorp with given index from cache"""
 		assert index >= self.cache_indicies[0], \
 			   ("CCPP index out of order: %s %s" %
 				(repr(index), repr(self.cache_indicies[0])))
-		try: return self.cache_dict[index][0]
-		except KeyError: return self.get_parent_rorps(index)[0]
+		return self.cache_dict[index][0]
 
 	def get_mirror_rorp(self, index):
 		"""Retrieve mirror_rorp with given index from cache"""
-		try: return self.cache_dict[index][1]
-		except KeyError: return self.get_parent_rorps(index)[1]
-
-	def update_hash(self, index, sha1sum):
-		"""Update the source rorp's SHA1 hash"""
-		self.get_source_rorp(index).set_sha1(sha1sum)
-
-	def update_hardlink_hash(self, diff_rorp):
-		"""Tag associated source_rorp with same hash diff_rorp points to"""
-		sha1sum = Hardlink.get_sha1(diff_rorp)
-		if not sha1sum: return
-		source_rorp = self.get_source_rorp(diff_rorp.index)
-		source_rorp.set_sha1(sha1sum)
+		return self.cache_dict[index][1]
 
 	def close(self):
 		"""Process the remaining elements in the cache"""
@@ -473,9 +430,9 @@ class CacheCollatedPostProcess:
 		while self.dir_perms_list:
 			dir_rp, perms = self.dir_perms_list.pop()
 			dir_rp.chmod(perms)
-		self.metawriter.close()
-		metadata.ManagerObj.ConvertMetaToDiff()
-
+		metadata.MetadataFile.close_file()
+		if Globals.eas_active: eas_acls.ExtendedAttributesFile.close_file()
+		if Globals.acls_active: eas_acls.AccessControlListFile.close_file()
 		if Globals.print_statistics: statistics.print_active_stats()
 		if Globals.file_statistics: statistics.FileStats.close()
 		statistics.write_active_statfileobj()
@@ -498,85 +455,67 @@ class PatchITRB(rorpiter.ITRBranch):
 		self.statfileobj = (statistics.get_active_statfileobj() or
 							statistics.StatFileObj())
 		self.dir_replacement, self.dir_update = None, None
+		self.cached_rp = None
 		self.CCPP = CCPP
 		self.error_handler = robust.get_error_handler("UpdateError")
 
+	def get_rp_from_root(self, index):
+		"""Return RPath by adding index to self.basis_root_rp"""
+		if not self.cached_rp or self.cached_rp.index != index:
+			self.cached_rp = self.basis_root_rp.new_index(index)
+		return self.cached_rp
+
+	def check_long_name(self, func, *args):
+		"""Execute function, checking for ENAMETOOLONG error"""
+		try: result = func(*args)
+		except OSError, exc:
+			if (errno.errorcode.has_key(exc[0]) and
+				errno.errorcode[exc[0]] == 'ENAMETOOLONG'):
+				self.error_handler(exc, args[0])
+				return None
+			else: raise
+		return result
+
 	def can_fast_process(self, index, diff_rorp):
 		"""True if diff_rorp and mirror are not directories"""
-		mirror_rorp = self.CCPP.get_mirror_rorp(index)
-		return not (diff_rorp.isdir() or (mirror_rorp and mirror_rorp.isdir()))
+		rp = self.check_long_name(self.get_rp_from_root, index)
+		# filename too long error qualifies (hack)
+		return not rp or (not diff_rorp.isdir() and not rp.isdir())
 
 	def fast_process(self, index, diff_rorp):
 		"""Patch base_rp with diff_rorp (case where neither is directory)"""
-		mirror_rp, discard = longname.get_mirror_inc_rps(
-			self.CCPP.get_rorps(index), self.basis_root_rp)
-		assert not mirror_rp.isdir(), mirror_rp
-		tf = TempFile.new(mirror_rp)
-		if self.patch_to_temp(mirror_rp, diff_rorp, tf):
+		rp = self.check_long_name(self.get_rp_from_root, index)
+		if not rp: return
+		tf = TempFile.new(rp)
+		if self.patch_to_temp(rp, diff_rorp, tf):
 			if tf.lstat():
-				rpath.rename(tf, mirror_rp)
+				rpath.rename(tf, rp)
 				self.CCPP.flag_success(index)
-			elif mirror_rp and mirror_rp.lstat():
-				mirror_rp.delete()
+			elif rp.lstat():
+				rp.delete()
 				self.CCPP.flag_deleted(index)
 		else: 
 			tf.setdata()
 			if tf.lstat(): tf.delete()
 
 	def patch_to_temp(self, basis_rp, diff_rorp, new):
-		"""Patch basis_rp, writing output in new, which doesn't exist yet
-
-		Returns true if able to write new as desired, false if
-		UpdateError or similar gets in the way.
-
-		"""
+		"""Patch basis_rp, writing output in new, which doesn't exist yet"""
 		if diff_rorp.isflaglinked():
-			self.patch_hardlink_to_temp(diff_rorp, new)
+			Hardlink.link_rp(diff_rorp, new, self.basis_root_rp)
 		elif diff_rorp.get_attached_filetype() == 'snapshot':
-			result = self.patch_snapshot_to_temp(diff_rorp, new)
-			if not result: return 0
-			elif result == 2: return 1 # SpecialFile
-		elif not self.patch_diff_to_temp(basis_rp, diff_rorp, new):
-			return 0
+			if diff_rorp.isspecial():
+				self.write_special(diff_rorp, new)
+				rpath.copy_attribs(diff_rorp, new)
+				return 1
+			elif robust.check_common_error(self.error_handler, rpath.copy,
+										   (diff_rorp, new)) == 0: return 0
+		else:
+			assert diff_rorp.get_attached_filetype() == 'diff'
+			if robust.check_common_error(self.error_handler,
+			   Rdiff.patch_local, (basis_rp, diff_rorp, new)) == 0: return 0
 		if new.lstat() and not diff_rorp.isflaglinked():
 			rpath.copy_attribs(diff_rorp, new)
 		return self.matches_cached_rorp(diff_rorp, new)
-
-	def patch_hardlink_to_temp(self, diff_rorp, new):
-		"""Hardlink diff_rorp to temp, update hash if necessary"""
-		Hardlink.link_rp(diff_rorp, new, self.basis_root_rp)
-		self.CCPP.update_hardlink_hash(diff_rorp)
-
-	def patch_snapshot_to_temp(self, diff_rorp, new):
-		"""Write diff_rorp to new, return true if successful
-
-		Returns 1 if normal success, 2 if special file is written,
-		whether or not it is successful.  This is because special
-		files either fail with a SpecialFileError, or don't need to be
-		compared.
-
-		"""
-		if diff_rorp.isspecial():
-			self.write_special(diff_rorp, new)
-			rpath.copy_attribs(diff_rorp, new)
-			return 2
-		
-		report = robust.check_common_error(self.error_handler, rpath.copy,
-										   (diff_rorp, new))
-		if isinstance(report, hash.Report):
-			self.CCPP.update_hash(diff_rorp.index, report.sha1_digest)
-			return 1
-		return report != 0 # if == 0, error_handler caught something
-
-	def patch_diff_to_temp(self, basis_rp, diff_rorp, new):
-		"""Apply diff_rorp to basis_rp, write output in new"""
-		assert diff_rorp.get_attached_filetype() == 'diff'
-		report = robust.check_common_error(self.error_handler,
-			      Rdiff.patch_local, (basis_rp, diff_rorp, new))
-		if isinstance(report, hash.Report):
-			self.CCPP.update_hash(diff_rorp.index, report.sha1_digest)
-			return 1
-		return report != 0 # if report == 0, error
 
 	def matches_cached_rorp(self, diff_rorp, new_rp):
 		"""Return true if new_rp matches cached src rorp
@@ -604,12 +543,11 @@ class PatchITRB(rorpiter.ITRBranch):
 
 	def start_process(self, index, diff_rorp):
 		"""Start processing directory - record information for later"""
-		self.base_rp, discard = longname.get_mirror_inc_rps(
-			self.CCPP.get_rorps(index), self.basis_root_rp)
-		if diff_rorp.isdir(): self.prepare_dir(diff_rorp, self.base_rp)
-		elif self.set_dir_replacement(diff_rorp, self.base_rp):
-			if diff_rorp.lstat(): self.CCPP.flag_success(index)
-			else: self.CCPP.flag_deleted(index)
+		base_rp = self.base_rp = self.get_rp_from_root(index)
+		assert diff_rorp.isdir() or base_rp.isdir() or not base_rp.index
+		if diff_rorp.isdir(): self.prepare_dir(diff_rorp, base_rp)
+		elif self.set_dir_replacement(diff_rorp, base_rp):
+			self.CCPP.flag_success(index)
 
 	def set_dir_replacement(self, diff_rorp, base_rp):
 		"""Set self.dir_replacement, which holds data until done with dir
@@ -629,11 +567,10 @@ class PatchITRB(rorpiter.ITRBranch):
 		else: return 1
 
 	def prepare_dir(self, diff_rorp, base_rp):
-		"""Prepare base_rp to be a directory"""
+		"""Prepare base_rp to turn into a directory"""
 		self.dir_update = diff_rorp.getRORPath() # make copy in case changes
 		if not base_rp.isdir():
-			if base_rp.lstat(): self.base_rp.delete()
-			base_rp.setdata()
+			if base_rp.lstat(): base_rp.delete()
 			base_rp.mkdir()
 			self.CCPP.flag_success(diff_rorp.index)
 		else: # maybe no change, so query CCPP before tagging success
@@ -645,8 +582,12 @@ class PatchITRB(rorpiter.ITRBranch):
 		if self.dir_update:
 			assert self.base_rp.isdir()
 			rpath.copy_attribs(self.dir_update, self.base_rp)
-		elif self.dir_replacement:
-			self.base_rp.rmdir()
+		else:
+			assert self.dir_replacement
+			try: self.base_rp.rmdir()
+			except OSError:
+				log.Log("Warning: unable to rmdir " + self.base_rp.path, 2)
+				self.base_rp.delete()
 			if self.dir_replacement.lstat():
 				rpath.rename(self.dir_replacement, self.base_rp)
 
@@ -659,24 +600,32 @@ class IncrementITRB(PatchITRB):
 	"""
 	def __init__(self, basis_root_rp, inc_root_rp, rorp_cache):
 		self.inc_root_rp = inc_root_rp
+		self.cached_incrp = None
 		PatchITRB.__init__(self, basis_root_rp, rorp_cache)
+
+	def get_incrp(self, index):
+		"""Return inc RPath by adding index to self.basis_root_rp"""
+		if not self.cached_incrp or self.cached_incrp.index != index:
+			self.cached_incrp = self.inc_root_rp.new_index(index)
+		return self.cached_incrp
 
 	def fast_process(self, index, diff_rorp):
 		"""Patch base_rp with diff_rorp and write increment (neither is dir)"""
-		mirror_rp, inc_prefix = longname.get_mirror_inc_rps(
-			self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
-		tf = TempFile.new(mirror_rp)
-		if self.patch_to_temp(mirror_rp, diff_rorp, tf):
-			inc = increment.Increment(tf, mirror_rp, inc_prefix)
+		rp = self.check_long_name(self.get_rp_from_root, index)
+		if not rp: return
+		tf = TempFile.new(rp)
+		if self.patch_to_temp(rp, diff_rorp, tf):
+			inc = self.check_long_name(increment.Increment,
+									   tf, rp, self.get_incrp(index))
 			if inc is not None:
 				self.CCPP.set_inc(index, inc)
 				if inc.isreg():
 					inc.fsync_with_dir() # Write inc before rp changed
 				if tf.lstat():
-					rpath.rename(tf, mirror_rp)
+					rpath.rename(tf, rp)
 					self.CCPP.flag_success(index)
-				elif mirror_rp.lstat():
-					mirror_rp.delete()
+				elif rp.lstat():
+					rp.delete()
 					self.CCPP.flag_deleted(index)
 				return # normal return, otherwise error occurred
 		tf.setdata()
@@ -684,19 +633,17 @@ class IncrementITRB(PatchITRB):
 
 	def start_process(self, index, diff_rorp):
 		"""Start processing directory"""
-		self.base_rp, inc_prefix = longname.get_mirror_inc_rps(
-			self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
-		self.base_rp.setdata()
-		assert diff_rorp.isdir() or self.base_rp.isdir()
+		base_rp = self.base_rp = self.get_rp_from_root(index)
+		assert diff_rorp.isdir() or base_rp.isdir()
 		if diff_rorp.isdir():
-			inc = increment.Increment(diff_rorp, self.base_rp, inc_prefix)
+			inc = self.check_long_name(increment.Increment,
+								 diff_rorp, base_rp, self.get_incrp(index))
 			if inc and inc.isreg():
 				inc.fsync_with_dir() # must write inc before rp changed
-			self.base_rp.setdata() # in case written by increment above
-			self.prepare_dir(diff_rorp, self.base_rp)
-		elif self.set_dir_replacement(diff_rorp, self.base_rp):
-			inc = increment.Increment(self.dir_replacement, self.base_rp,
-									  inc_prefix)
+			self.prepare_dir(diff_rorp, base_rp)
+		elif self.set_dir_replacement(diff_rorp, base_rp):
+			inc = self.check_long_name(increment.Increment,
+						self.dir_replacement, base_rp, self.get_incrp(index))
 			if inc:
 				self.CCPP.set_inc(index, inc)
 				self.CCPP.flag_success(index)

@@ -30,16 +30,16 @@ version = "$version"
 current_time = None
 
 # This determines how many bytes to read at a time when copying
-blocksize = 131072
+blocksize = 32768
 
 # This is used by the BufferedRead class to determine how many
 # bytes to request from the underlying file per read().  Larger
 # values may save on connection overhead and latency.
-conn_bufsize = 393216
+conn_bufsize = 98304
 
-# This is used in the CacheCollatedPostProcess and MiscIterToFile
-# classes.  The number represents the number of rpaths which may be
-# stuck in buffers when moving over a remote connection.
+# This is used in rorpiter.CacheIndexable.  The number represents the
+# number of rpaths which may be stuck in buffers when moving over a
+# remote connection.
 pipeline_max_length = 500
 
 # True if script is running as a server
@@ -88,7 +88,7 @@ resource_forks_conn = None
 
 # Like the above, but applies to MacOS Carbon Finder creator/type info.
 # As of 1.0.2 this has defaulted to off because of bugs
-carbonfile_active = None
+carbonfile_active = 0
 carbonfile_write = None
 carbonfile_conn = None
 
@@ -220,6 +220,7 @@ never_drop_acls = None
 # Apply this mask to permissions before chmoding.  (Set to 0777 to
 # prevent highbit permissions on systems which don't support them.)
 permission_mask = 07777
+
 
 def get(name):
 	"""Return the value of something in this module"""

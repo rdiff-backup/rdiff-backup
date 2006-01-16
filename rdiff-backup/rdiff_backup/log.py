@@ -19,7 +19,7 @@
 
 """Manage logging, displaying and recording messages with required verbosity"""
 
-import time, sys, traceback, types, rpath
+import time, sys, traceback, types
 import Globals, static, re
 
 
@@ -156,9 +156,9 @@ class Logger:
 		assert no_fatal_message == 0 or no_fatal_message == 1
 		if no_fatal_message: prefix_string = ""
 		else: prefix_string = "Fatal Error: "
-		self.log_to_term(prefix_string + message, 1)
-		#import Main
-		#Main.cleanup()
+		self(prefix_string + message, 1)
+		import Main
+		Main.cleanup()
 		sys.exit(errlevel)
 
 	def exception_to_string(self, arglist = []):
@@ -182,12 +182,9 @@ class Logger:
 		if (only_terminal == 0 or
 			(only_terminal == 1 and self.log_file_open)):
 			logging_func = self.__call__
-		else:
-			logging_func = self.log_to_term
-			if verbosity >= self.term_verbosity: return
+		else: logging_func = self.log_to_term
 
 		logging_func(self.exception_to_string(), verbosity)
-
 
 Log = Logger()
 
@@ -203,17 +200,24 @@ class ErrorLog:
 
 	"""
 	_log_fileobj = None
+	_log_inc_rp = None
 	def open(cls, time_string, compress = 1):
 		"""Open the error log, prepare for writing"""
 		if not Globals.isbackup_writer:
 			return Globals.backup_writer.log.ErrorLog.open(time_string,
 														   compress)
-		assert not cls._log_fileobj, "log already open"
+		assert not cls._log_fileobj and not cls._log_inc_rp, "log already open"
 		assert Globals.isbackup_writer
+		if compress: typestr = 'data.gz'
+		else: typestr = 'data'
+		cls._log_inc_rp = Globals.rbdir.append("error_log.%s.%s" %
+											   (time_string, typestr))
+		assert not cls._log_inc_rp.lstat(), ("""Error file %s already exists.
 
-		base_rp = Globals.rbdir.append("error_log.%s.data" % (time_string,))
-		if compress: cls._log_fileobj = rpath.MaybeGzip(base_rp)
-		else: cls._log_fileobj = cls._log_inc_rp.open("wb", compress = 0)
+This is probably caused by your attempting to run two backups simultaneously
+or within one second of each other.  Wait a second and try again.""" %
+											 (cls._log_inc_rp.path,))
+		cls._log_fileobj = cls._log_inc_rp.open("wb", compress = compress)
 
 	def isopen(cls):
 		"""True if the error log file is currently open"""
@@ -260,7 +264,7 @@ class ErrorLog:
 		if not Globals.isbackup_writer:
 			return Globals.backup_writer.log.ErrorLog.close()
 		assert not cls._log_fileobj.close()
-		cls._log_fileobj = None
+		cls._log_fileobj = cls._log_inc_rp = None
 
 static.MakeClass(ErrorLog)
 
