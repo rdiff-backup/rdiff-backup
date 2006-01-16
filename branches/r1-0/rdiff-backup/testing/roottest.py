@@ -201,8 +201,8 @@ class HalfRoot(unittest.TestCase):
 		in_rp1, in_rp2 = self.make_dirs()
 		outrp = rpath.RPath(Globals.local_connection, "testfiles/output")
 		if outrp.lstat(): outrp.delete()
-		remote_schema = 'su -c "rdiff-backup --server" %s' % (user,)
-		cmd_schema = ("rdiff-backup -v" + str(verbosity) +
+		remote_schema = 'su -c "../rdiff-backup --server" %s' % (user,)
+		cmd_schema = ("../rdiff-backup -v" + str(verbosity) +
 					  " --current-time %s --remote-schema '%%s' %s '%s'::%s")
 
 		cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
@@ -221,7 +221,7 @@ class HalfRoot(unittest.TestCase):
 
 		rout_rp = rpath.RPath(Globals.local_connection,
 							  "testfiles/restore_out")
-		restore_schema = ("rdiff-backup -v" + str(verbosity) +
+		restore_schema = ("../rdiff-backup -v" + str(verbosity) +
 						  " -r %s --remote-schema '%%s' '%s'::%s %s")
 		Myrm(rout_rp.path)
 		cmd3 = restore_schema % (10000, remote_schema, outrp.path,
@@ -244,7 +244,7 @@ class HalfRoot(unittest.TestCase):
 		assert outrp_perms == 0, outrp_perms
 
 		self.cause_regress(outrp)
-		cmd5 = ('su -c "rdiff-backup --check-destination-dir %s" %s' %
+		cmd5 = ('su -c "../rdiff-backup --check-destination-dir %s" %s' %
 				(outrp.path, user))
 		print "Executing regress: ", cmd5
 		assert not os.system(cmd5)
@@ -286,7 +286,7 @@ class NonRoot(unittest.TestCase):
 
 	def backup(self, input_rp, output_rp, time):
 		global user
-		backup_cmd = ("rdiff-backup --no-compare-inode "
+		backup_cmd = ("../rdiff-backup --no-compare-inode "
 					  "--current-time %s %s %s" %
 					  (time, input_rp.path, output_rp.path))
 		Run("su %s -c '%s'" % (user, backup_cmd))
@@ -295,8 +295,8 @@ class NonRoot(unittest.TestCase):
 		assert restore_rp.path == "testfiles/rest_out"
 		Myrm(restore_rp.path)
 		if time is None: time = "now"
-		restore_cmd = "rdiff-backup -r %s %s %s" % (time, dest_rp.path,
-													restore_rp.path,)
+		restore_cmd = "../rdiff-backup -r %s %s %s" % (time, dest_rp.path,
+													   restore_rp.path,)
 		Run(restore_cmd)		
 
 	def test_non_root(self):
