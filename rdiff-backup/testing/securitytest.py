@@ -73,12 +73,12 @@ class SecurityTest(unittest.TestCase):
 							extra_args = "", success = 1, current_time = None):
 		"""Run rdiff-backup locally, with given restrict settings"""
 		if not current_time: current_time = int(time.time())
-		prefix = ('rdiff-backup --current-time %s ' % (current_time,) +
+		prefix = ('../rdiff-backup --current-time %s ' % (current_time,) +
 				  '--remote-schema %s ')
 
-		if in_local: out_dir = ("'rdiff-backup %s --server'::%s" %
+		if in_local: out_dir = ("'../rdiff-backup %s --server'::%s" %
 								(restrict_args, out_dir))
-		else: in_dir = ("'rdiff-backup %s --server'::%s" %
+		else: in_dir = ("'../rdiff-backup %s --server'::%s" %
 						(restrict_args, in_dir))
 
 		cmdline = "%s %s %s %s" % (prefix, extra_args, in_dir, out_dir)

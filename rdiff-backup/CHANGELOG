@@ -1,4 +1,4 @@
-New in v1.0.4 (????/??/??)
+New in v1.0.4 (2006/01/15)
 --------------------------
 
 Files with ACLs will not be unnecessarily marked as changed (bug
@@ -12,7 +12,7 @@ excluded if certain include expressions involving a non-trailing '**'
 were used.  Bug reported by Toni Price.
 
 Bug #15436 reported by Remy Blank: rdiff-backup would sometimes crash
-if ACLs and uname did not exist on destination.
+on ACLs if the owning uname did not exist on destination.
 
 
 New in v1.0.3 (2005/11/25)

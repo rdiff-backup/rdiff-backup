@@ -106,7 +106,7 @@ class RegressTest(unittest.TestCase):
 		marker.touch()
 		self.change_unreadable()
 
-		cmd = "rdiff-backup --check-destination-dir " + self.output_rp.path
+		cmd = "../rdiff-backup --check-destination-dir " + self.output_rp.path
 		print "Executing:", cmd
 		assert not os.system(cmd)
 
