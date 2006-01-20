@@ -187,7 +187,7 @@ def time_from_session(session_num, rp = None):
 	session_times = Globals.rbdir.conn.restore.MirrorStruct \
 					.get_increment_times()
 	session_times.sort()
-	if len(session_times) < session_num:
+	if len(session_times) <= session_num:
 		return session_times[0] # Use oldest if two few backups
 	return session_times[-session_num-1]
 	
