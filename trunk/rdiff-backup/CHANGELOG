@@ -8,7 +8,10 @@ were used.  Bug reported by Toni Price.
 A few minor changes to help rdiff-backup back up to an SMB/CIFS share.
 Thanks to Cengiz Gunay for testing.
 
-Fix an off-by-1 error in the "--remove-older-than nB" time specification.
+Fix a traceback due to an off-by-1 error in "--remove-older-than nB".
+
+Fix a security violation when restoring from a remote repository.
+(Patch from Charles Duffy.)
 
 
 New in v1.1.5 (2006/01/01)

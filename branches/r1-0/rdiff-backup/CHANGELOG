@@ -3,6 +3,8 @@ New in v1.0.5 (????/??/??)
 
 Fix a traceback due to an off-by-1 error in "--remove-older-than nB".
 
+Fix a security violation when restoring from a remote repository.
+(Patch from Charles Duffy.)
 
 New in v1.0.4 (2006/01/15)
 --------------------------
