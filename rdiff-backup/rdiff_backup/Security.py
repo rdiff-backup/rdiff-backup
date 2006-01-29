@@ -143,6 +143,7 @@ def set_allowed_requests(sec_level):
 				  "user_group.gid2gname"])
 	if sec_level == "read-only" or sec_level == "all":
 		l.extend(["fs_abilities.get_readonly_fsa",
+				  "restore.MirrorStruct.get_increment_times",
 				  "restore.MirrorStruct.set_mirror_and_rest_times",
 				  "restore.MirrorStruct.set_mirror_select",
 				  "restore.MirrorStruct.initialize_rf_cache",
