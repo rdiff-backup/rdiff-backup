@@ -269,7 +269,7 @@ class FlatExtractor:
 		"""Return iterator that yields all objects with records"""
 		for record in self.iterate_records():
 			try: yield self.record_to_object(record)
-			except ParsingError, e:
+			except (ParsingError, ValueError), e:
 				if self.at_end: break # Ignore whitespace/bad records at end
 				log.Log("Error parsing flat file: %s" % (e,), 2)
 
@@ -314,7 +314,7 @@ class FlatExtractor:
 		while 1:
 			next_pos = self.get_next_pos()
 			try: obj = self.record_to_object(self.buf[:next_pos])
-			except ParsingError, e:
+			except (ParsingError, ValueError), e:
 				log.Log("Error parsing metadata file: %s" % (e,), 2)
 			else:
 				if obj.index[:len(index)] != index: break
