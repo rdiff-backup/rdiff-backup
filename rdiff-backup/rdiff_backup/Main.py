@@ -616,10 +616,16 @@ Try restoring from an increment file (the filenames look like
 	if result is None:
 		Log.FatalError("%s does not appear to be an rdiff-backup directory."
 					   % (Globals.rbdir.path,))
-	elif result == 1: Log.FatalError(
-		"Previous backup to %s seems to have failed.\nRerun rdiff-backup "
-		"with --check-destination-dir option to revert directory "
-		"to state before unsuccessful session." % (mirror_root.path,))
+	elif result == 1: Log.FatalError("""
+The previous backup to %s is still in progress or has failed.
+You can rerun rdiff-backup with --check-destination-dir option to revert
+the directory to the state it was in before an unsuccessful session.
+However,
+*** -------------------------------------------------------------------- ***
+*** If an rdiff-backup process is currently running,                     ***
+*** DO NOT RUN --check-destination-dir OR OTHERWISE MODIFY THE DIRECTORY ***
+*** -------------------------------------------------------------------- ***
+""" % (mirror_root.path,))
 
 def restore_set_root(rpin):
 	"""Set data dir, restore_root and index, or return None if fail
