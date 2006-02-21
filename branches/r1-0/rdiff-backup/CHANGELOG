@@ -6,6 +6,11 @@ Fix a traceback due to an off-by-1 error in "--remove-older-than nB".
 Fix a security violation when restoring from a remote repository.
 (Patch from Charles Duffy.)
 
+--list-at-time, --list-increments, and --list-increment-sizes should
+now work from a read-only repository.  (Bug reported by Wolfgang
+Dautermann.)
+
+
 New in v1.0.4 (2006/01/15)
 --------------------------
 
