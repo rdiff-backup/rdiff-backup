@@ -1,3 +1,9 @@
+Changes in 0.9.8 (not yet released)
+
+ * Improved rdiff man page from Debian.
+ 
+ * Improved librsync.spec file for building RPMs.
+
 Changes in 0.9.7 (released 2004-10-10)
 
  * Yet more large file support fixes.

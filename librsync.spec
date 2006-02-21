@@ -1,12 +1,15 @@
 Summary:  	Rsync libraries
 Name:     	librsync
-Version:  	0.9.6
+Version:  	0.9.7
 Release:  	1
-Copyright:	LGPL
+License:	LGPL
 Group:    	System Environment/Libraries
-Source:  	http://prdownloads.sourceforge.net/librsync/librsync-0.9.6.tar.gz?download
+Source:  	http://prdownloads.sourceforge.net/librsync/librsync-%{version}.tar.gz
 URL:       	http://www.sourceforge.net/projects/librsync
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
+BuildRequires:	libtool
+BuildRequires:	autoconf
+BuildRequires:	automake
 
 %description
 librsync implements the "rsync" algorithm, which allows remote
@@ -40,17 +43,13 @@ and incompatible with rsync 2.4.6.
 This package contains header files necessary for developing programs
 based on librsync.
 
-%prep 
+%prep
 %setup
 # The next line is only needed if there are any non-upstream patches.  In
 # this distribution there are none.
-#%patch 
+#%patch
 %build
-libtoolize --force
-aclocal
-autoheader
-automake Makefile popt/Makefile
-autoconf
+./autogen.sh
 ./configure --prefix=/usr --mandir=/usr/share/man/
 make CFLAGS="$RPM_OPT_FLAGS"
 
@@ -68,7 +67,6 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %doc AUTHORS COPYING COPYING NEWS README
-%{_libdir}/librsync.la
 %{_bindir}/rdiff
 %{_mandir}/man3/librsync.3.gz
 %{_mandir}/man1/rdiff.1.gz
@@ -77,5 +75,6 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_prefix}/include/*
 %{_libdir}/librsync.a
+%{_libdir}/librsync.la
 
 %changelog
