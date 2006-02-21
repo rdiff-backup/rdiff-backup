@@ -683,7 +683,7 @@ def restore_set_root(rpin):
 
 def ListIncrements(rp):
 	"""Print out a summary of the increments and their times"""
-	rp = require_root_set(rp)
+	rp = require_root_set(rp, readonly = 1)
 	restore_check_backup_dir(restore_root)
 	mirror_rp = restore_root.new_index(restore_index)
 	inc_rpath = Globals.rbdir.append_path('increments', restore_index)
@@ -693,7 +693,7 @@ def ListIncrements(rp):
 		print manage.describe_incs_parsable(incs, mirror_time, mirror_rp)
 	else: print manage.describe_incs_human(incs, mirror_time, mirror_rp)
 
-def require_root_set(rp):
+def require_root_set(rp, readonly = None):
 	"""Make sure rp is or is in a valid rdiff-backup dest directory.
 
 	Also initializes fs_abilities and quoting and return quoted rp if
@@ -703,11 +703,11 @@ def require_root_set(rp):
 	if not restore_set_root(rp):
 		Log.FatalError(("Bad directory %s.\n" % (rp.path,)) +
 		  "It doesn't appear to be an rdiff-backup destination dir")
-	single_set_fs_globals(Globals.rbdir)
+	single_set_fs_globals(Globals.rbdir, readonly)
 	if Globals.chars_to_quote: return restore_init_quoting(rp)
 	else: return rp
 	
-def single_set_fs_globals(rbdir):
+def single_set_fs_globals(rbdir, readonly = None):
 	"""Use fs_abilities to set globals that depend on filesystem.
 
 	This is appropriate for listing increments, or any other operation
@@ -724,8 +724,10 @@ def single_set_fs_globals(rbdir):
 		SetConnections.UpdateGlobal(write_attr, 1)
 		rbdir.conn.Globals.set_local(conn_attr, 1)
 
-	fsa = rbdir.conn.fs_abilities.get_fsabilities_readwrite('archive',
-								   rbdir, 1, Globals.chars_to_quote)
+	if readonly: fsa = rbdir.conn.fs_abilities.get_fsabilities_readonly(
+			'archive', rbdir, Globals.chars_to_quote)
+	else: fsa = rbdir.conn.fs_abilities.get_fsabilities_readwrite(
+		    'archive', rbdir, 1, Globals.chars_to_quote)
 	Log(str(fsa), 4)
 
 	update_triple(fsa.eas, ('eas_active', 'eas_write', 'eas_conn'))
@@ -806,7 +808,7 @@ def rot_require_rbdir_base(rootrp):
 
 def ListChangedSince(rp):
 	"""List all the files under rp that have changed since restoretime"""
-	rp = require_root_set(rp)
+	rp = require_root_set(rp, readonly = 1)
 	try: rest_time = Time.genstrtotime(restore_timestr)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
 	mirror_rp = restore_root.new_index(restore_index)
@@ -818,7 +820,7 @@ def ListChangedSince(rp):
 
 def ListAtTime(rp):
 	"""List files in archive under rp that are present at restoretime"""
-	rp = require_root_set(rp)
+	rp = require_root_set(rp, readonly = 1)
 	try: rest_time = Time.genstrtotime(restore_timestr)
 	except Time.TimeException, exc: Log.FatalError(str(exc))
 	mirror_rp = restore_root.new_index(restore_index)

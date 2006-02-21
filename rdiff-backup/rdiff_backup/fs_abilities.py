@@ -100,14 +100,14 @@ class FSAbilities:
 		s.append(s[0])
 		return '\n'.join(s)
 
-	def init_readonly(self, rp):
+	def init_readonly(self, rp, override_chars_to_quote = None):
 		"""Set variables using fs tested at RPath rp.  Run locally.
 
 		This method does not write to the file system at all, and
 		should be run on the file system when the file system will
 		only need to be read.
 
-		Only self.acls and self.eas are set.
+		Only self.acls, self.eas, and self.chars_to_quote are set.
 
 		"""
 		assert rp.conn is Globals.local_connection
@@ -117,6 +117,13 @@ class FSAbilities:
 		self.set_acls(rp)
 		self.set_resource_fork_readonly(rp)
 		self.set_carbonfile()
+
+		if override_chars_to_quote is None:
+			ctq_rp = rp.append('chars_to_quote')
+			if ctq_rp.isreg(): self.chars_to_quote = ctq_rp.get_data()
+			else: self.chars_to_quote = "" # default is no quoting
+		else: self.chars_to_quote = override_chars_to_quote
+
 		return self
 
 	def init_readwrite(self, rbdir, use_ctq_file = 1,
@@ -395,13 +402,13 @@ rdiff-backup-data/chars_to_quote.
 		else: self.high_perms = 1
 		tmp_rp.delete()
 
-def get_fsabilities_readonly(desc_string, rp):
+def get_fsabilities_readonly(desc_string, rb, ctq = None):
 	"""Return an FSAbilities object with given description_string
 
 	Will be initialized read_only with given RPath rp.
 
 	"""
-	return FSAbilities(desc_string).init_readonly(rp)
+	return FSAbilities(desc_string).init_readonly(rb, ctq)
 
 def get_fsabilities_readwrite(desc_string, rb, use_ctq_file = 1, ctq = None):
 	"""Like above but initialize read/write and pass other arguments"""
