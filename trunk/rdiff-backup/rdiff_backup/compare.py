@@ -24,6 +24,7 @@ compare.  This uses elements of the backup and restore modules.
 
 """
 
+from __future__ import generators
 import Globals, restore, rorpiter, log, backup, static, rpath, hash, robust
 
 def Compare(src_rp, mirror_rp, inc_rp, compare_time):

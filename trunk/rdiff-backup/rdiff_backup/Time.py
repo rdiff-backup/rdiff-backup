@@ -96,6 +96,11 @@ def stringtopretty(timestring):
 	"""Return pretty version of time given w3 time string"""
 	return timetopretty(stringtotime(timestring))
 
+def prettytotime(prettystring):
+	"""Converts time like "Mon Jun 5 11:00:23" to epoch sec, or None"""
+	try: return time.mktime(time.strptime(prettystring))
+	except ValueError: return None
+
 def inttopretty(seconds):
 	"""Convert num of seconds to readable string like "2 hours"."""
 	partlist = []
@@ -221,6 +226,10 @@ the day).""" % timestr)
 	# Test for time given as number of backups, like 3B
 	if _session_regexp.search(timestr):
 		return time_from_session(int(timestr[:-1]), rp)
+
+	# Try for long time, like "Mon Jun 5 11:00:23 1990"
+	t = prettytotime(timestr)
+	if t is not None: return t
 
 	try: # test for an interval, like "2 days ago"
 		return curtime - intstringtoseconds(timestr)
