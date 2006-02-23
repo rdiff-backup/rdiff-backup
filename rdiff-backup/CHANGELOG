@@ -13,6 +13,9 @@ Fix a traceback due to an off-by-1 error in "--remove-older-than nB".
 Fix a security violation when restoring from a remote repository.
 (Patch from Charles Duffy.)
 
+Added times like "Mon Jun 5 11:00:23 1997" to the recognized time
+strings.  (Suggested by Wolfgang Dautermann.)
+
 
 New in v1.1.5 (2006/01/01)
 --------------------------

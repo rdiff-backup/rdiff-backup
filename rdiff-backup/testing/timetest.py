@@ -72,6 +72,14 @@ class TimeTest(unittest.TestCase):
 		assert Time.inttopretty(3661) == "1 hour 1 minute 1 second"
 		assert Time.inttopretty(353.234234) == "5 minutes 53.23 seconds"
 
+	def testPrettyTimes(self):
+		"""Convert seconds to pretty and back"""
+		now = int(time.time())
+		for i in [1, 200000, now]:
+			assert Time.prettytotime(Time.timetopretty(i)) == i, i
+		assert Time.prettytotime("now") is None
+		assert Time.prettytotime("12314") is None
+
 	def testGenericString(self):
 		"""Test genstrtotime, conversion of arbitrary string to time"""
 		g2t = Time.genstrtotime
