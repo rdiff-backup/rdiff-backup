@@ -24,7 +24,7 @@
 #include "types.h"
 
 struct rs_mdfour {
-    int                 A, B, C, D;
+    unsigned int        A, B, C, D;
 #if HAVE_UINT64
     uint64_t            totalN;
 #else

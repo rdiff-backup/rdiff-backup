@@ -214,12 +214,9 @@ static rs_result rs_patch_s_copying(rs_job_t *job)
     void            *buf, *ptr;
     rs_buffers_t    *buffs = job->stream;
 
-    len = job->basis_len;
-    
     /* copy only as much as will fit in the output buffer, so that we
      * don't have to block or store the input. */
-    if (len > buffs->avail_out)
-        len = buffs->avail_out;
+    len = (buffs->avail_out < job->basis_len) ? buffs->avail_out : job->basis_len;
 
     if (!len)
         return RS_BLOCKED;
