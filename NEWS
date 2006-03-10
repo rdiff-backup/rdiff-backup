@@ -3,6 +3,9 @@ Changes in 0.9.8 (not yet released)
  * Improved rdiff man page from Debian.
  
  * Improved librsync.spec file for building RPMs.
+ 
+ * Fixed bug #1110812 'internal error: job made no progress'; on large
+   files.
 
 Changes in 0.9.7 (released 2004-10-10)
 

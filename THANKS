@@ -114,3 +114,6 @@ Contributors for 0.9.8 (release pending)
  * Charles Duffy <cduffy@users.sourceforge.net>
    - [#1056544] Submitted patch with improved spec file for building RPMs.
    - [#1056548] Reported man page bug about using '-' for stdin/stdout.
+
+ * Don Malcolm <donmalcolm@users.sourceforge.net>
+   - [#1439412] Submitted patch for bug #1110812 error on large files.
