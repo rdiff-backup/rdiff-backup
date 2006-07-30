@@ -1,3 +1,10 @@
+rdiff-backup (1.1.5-2) unstable; urgency=low
+
+  * New email address.
+  * Bumped policy version.
+
+ -- Daniel Baumann <daniel@debian.org>  Sun, 30 Jul 2006 08:46:00 +0200
+
 rdiff-backup (1.1.5-1) unstable; urgency=low
 
   * New upstream release.

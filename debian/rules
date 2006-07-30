@@ -8,7 +8,7 @@ include /usr/share/dpatch/dpatch.make
 CFLAGS = -Wall -g -O2
 
 build: build-stamp
-build-stamp: patch
+build-stamp: patch-stamp
 	dh_testdir
 
 	# Building package
