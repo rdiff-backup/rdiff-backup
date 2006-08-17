@@ -1,3 +1,9 @@
+rdiff-backup (1.1.5-3) unstable; urgency=low
+
+  * Migrated to new python policy (Closes: #380928, #383415).
+
+ -- Daniel Baumann <daniel@debian.org>  Thu, 17 Aug 2006 17:06:00 +0200
+
 rdiff-backup (1.1.5-2) unstable; urgency=low
 
   * New email address.
