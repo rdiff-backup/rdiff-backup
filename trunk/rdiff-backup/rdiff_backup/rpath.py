@@ -165,13 +165,13 @@ def copy_attribs(rpin, rpout):
 	if Globals.change_ownership:
 		rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
 	if rpin.issym(): return # symlinks don't have times or perms
+	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if (Globals.resource_forks_write and rpin.isreg() and
 		rpin.has_resource_fork()):
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if (Globals.carbonfile_write and rpin.isreg() and
 		rpin.has_carbonfile()):
 		rpout.write_carbonfile(rpin.get_carbonfile())
-	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	rpout.chmod(rpin.getperms())
 	if Globals.acls_write: rpout.write_acl(rpin.get_acl())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
@@ -188,13 +188,13 @@ def copy_attribs_inc(rpin, rpout):
 	check_for_files(rpin, rpout)
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if rpin.issym(): return # symlinks don't have times or perms
+	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if (Globals.resource_forks_write and rpin.isreg() and
 		rpin.has_resource_fork() and rpout.isreg()):
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if (Globals.carbonfile_write and rpin.isreg() and
 		rpin.has_carbonfile() and rpout.isreg()):
 		rpout.write_carbonfile(rpin.get_carbonfile())
-	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if rpin.isdir() and not rpout.isdir():
 		rpout.chmod(rpin.getperms() & 0777)
 	else: rpout.chmod(rpin.getperms())
