@@ -64,8 +64,11 @@ class ExtendedAttributes:
 				return
 			raise
 		for attr in attr_list:
-			if not attr.startswith('user.'):
-				# Only preserve user extended attributes
+			if attr.startswith('system.'):
+				# Do not preserve system extended attributes
+				continue
+			if attr == 'com.apple.FinderInfo' or attr == 'come.apple.ResourceFork':
+				# FinderInfo and Resource Fork handled elsewhere
 				continue
 			try: self.attr_dict[attr] = rp.conn.xattr.getxattr(rp.path, attr)
 			except IOError, exc:
@@ -92,7 +95,14 @@ class ExtendedAttributes:
 		"""Write extended attributes to rpath rp"""
 		self.clear_rp(rp)
 		for (name, value) in self.attr_dict.iteritems():
-			rp.conn.xattr.setxattr(rp.path, name, value)
+			try:
+				rp.conn.xattr.setxattr(rp.path, name, value)
+			except IOError, exc:
+				# Mac and Linux attributes have different namespaces, so
+				# fail gracefully if can't call setxattr
+				if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EACCES:
+					continue
+				else: raise
 
 	def get(self, name):
 		"""Return attribute attached to given name"""
