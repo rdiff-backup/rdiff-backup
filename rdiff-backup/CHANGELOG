@@ -1,6 +1,8 @@
 New in v1.1.6 (????/??/??)
 --------------------------
 
+Set symlink permissions properly.  (Patch from Andrew Ferguson.)
+
 Selection fix: empty directories could sometimes be improperly
 excluded if certain include expressions involving a non-trailing '**'
 were used.  Bug reported by Toni Price.
