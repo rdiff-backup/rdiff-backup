@@ -67,7 +67,7 @@ class ExtendedAttributes:
 			if attr.startswith('system.'):
 				# Do not preserve system extended attributes
 				continue
-			if attr == 'com.apple.FinderInfo' or attr == 'come.apple.ResourceFork':
+			if attr == 'com.apple.FinderInfo' or attr == 'com.apple.ResourceFork':
 				# FinderInfo and Resource Fork handled elsewhere
 				continue
 			try: self.attr_dict[attr] = rp.conn.xattr.getxattr(rp.path, attr)
