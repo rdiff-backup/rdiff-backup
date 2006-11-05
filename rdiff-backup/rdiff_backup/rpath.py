@@ -95,12 +95,7 @@ def copy(rpin, rpout, compress = 0):
 
 	if rpin.isreg(): copy_reg_file(rpin, rpout, compress)
 	elif rpin.isdir(): rpout.mkdir()
-	elif rpin.issym():
-		# some systems support permissions for symlinks, but
-		# only by setting at creation via the umask
-		os.umask(0777 - rpin.getperms())
-		rpout.symlink(rpin.readlink())
-		os.umask(077)	# restore rdiff-backup standard umask
+	elif rpin.issym(): rpout.symlink(rpin.readlink())
 	elif rpin.ischardev():
 		major, minor = rpin.getdevnums()
 		rpout.makedev("c", major, minor)
