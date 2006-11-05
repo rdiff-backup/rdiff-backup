@@ -1,6 +1,8 @@
 New in v1.1.6 (????/??/??)
 --------------------------
 
+--min-file-size/--max-file-size support.  (Patch from Wout Mertens.)
+
 Mac OS X Extended Attributes support.  (Patch from Andrew Ferguson.)
 
 Preserve Mac OS X 'Creation Date' field across backups.  (Patch from Andrew
