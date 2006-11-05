@@ -70,6 +70,7 @@ def carbonfile2string(cfile):
 	retvalparts.append('type:%s' % binascii.hexlify(cfile['type']))
 	retvalparts.append('location:%d,%d' % cfile['location'])
 	retvalparts.append('flags:%d' % cfile['flags'])
+	retvalparts.append('createDate:%d' % cfile['createDate'])
 	return '|'.join(retvalparts)
 
 def string2carbonfile(data):
@@ -87,6 +88,8 @@ def string2carbonfile(data):
 			retval['location'] = (int(a), int(b))
 		elif key == 'flags':
 			retval['flags'] = int(value)
+		elif key == 'createDate':
+			retval['createDate'] = int(value)
 	return retval
 
 def RORP2Record(rorpath):

@@ -1212,6 +1212,8 @@ class RPath(RORPath):
 		if not cfile: return
 		log.Log("Writing carbon data to %s" % (self.index,), 7)
 		from Carbon.File import FSSpec
+		from Carbon.File import FSRef
+		import Carbon.Files
 		import MacOS
 		fsobj = FSSpec(self.path)
 		finderinfo = fsobj.FSpGetFInfo()
@@ -1220,7 +1222,16 @@ class RPath(RORPath):
 		finderinfo.Location = cfile['location']
 		finderinfo.Flags = cfile['flags']
 		fsobj.FSpSetFInfo(finderinfo)
-		self.set_carbonfile(cfile)
+
+		"""Write Creation Date to self (if stored in metadata)."""
+		try:
+			cdate = cfile['createDate']
+			fsref = FSRef(fsobj)
+			cataloginfo, d1, d2, d3 = fsref.FSGetCatalogInfo(Carbon.Files.kFSCatInfoCreateDate)
+			cataloginfo.createDate = (0, cdate, 0)
+			fsref.FSSetCatalogInfo(Carbon.Files.kFSCatInfoCreateDate, cataloginfo)
+			self.set_carbonfile(cfile)
+		except KeyError: self.set_carbonfile(cfile)
 
 	def get_resource_fork(self):
 		"""Return resource fork data, setting if necessary"""
@@ -1342,14 +1353,18 @@ def setdata_local(rpath):
 def carbonfile_get(rpath):
 	"""Return carbonfile value for local rpath"""
 	from Carbon.File import FSSpec
+	from Carbon.File import FSRef
+	import Carbon.Files
 	import MacOS
 	try:
 		fsobj = FSSpec(rpath.path)
 		finderinfo = fsobj.FSpGetFInfo()
+		cataloginfo, d1, d2, d3 = FSRef(fsobj).FSGetCatalogInfo(Carbon.Files.kFSCatInfoCreateDate)
 		cfile = {'creator': finderinfo.Creator,
 				 'type': finderinfo.Type,
 				 'location': finderinfo.Location,
-				 'flags': finderinfo.Flags}
+				 'flags': finderinfo.Flags,
+				 'createDate': cataloginfo.createDate[1]}
 		return cfile
 	except MacOS.Error:
 		log.Log("Cannot read carbonfile information from %s" %

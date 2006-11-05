@@ -1,6 +1,9 @@
 New in v1.1.6 (????/??/??)
 --------------------------
 
+Preserve Mac OS X 'Creation Date' field across backups.  (Patch from Andrew
+Ferguson.)
+
 Set symlink permissions properly.  (Patch from Andrew Ferguson.)
 
 Selection fix: empty directories could sometimes be improperly
