@@ -1,6 +1,8 @@
 New in v1.0.5 (????/??/??)
 --------------------------
 
+Set symlink permissions properly.  (Patch from Andrew Ferguson.)
+
 Fix a traceback due to an off-by-1 error in "--remove-older-than nB".
 
 Fix a security violation when restoring from a remote repository.
