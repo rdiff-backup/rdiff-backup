@@ -133,10 +133,10 @@ class PipeConnectionTest(unittest.TestCase):
 
 	def testIterators(self):
 		"""Test transmission of iterators"""
-		i = iter([5, 10, 15]*100)
+		i = iter(map(RORPsubstitute, range(10)))
 		assert self.conn.hasattr(i, "next")
-		ret_val = self.conn.reval("lambda i: i.next()*i.next()", i)
-		assert ret_val == 50, ret_val
+		datastring = self.conn.reval("lambda i: i.next().data", i)
+		assert datastring == "Hello, there 0", datastring
 
 	def testRPaths(self):
 		"""Test transmission of rpaths"""
@@ -212,5 +212,12 @@ class RedirectedConnectionTest(unittest.TestCase):
 	def tearDown(self):
 		SetConnections.CloseConnections()
 
+class RORPsubstitute:
+	"""Used in testIterators above to simulate a RORP"""
+	def __init__(self, i):
+		self.index = i
+		self.data = "Hello, there %d" % i
+		self.file = None
 
-if __name__ == "__main__": unittest.main()
+if __name__ == "__main__":
+	unittest.main()

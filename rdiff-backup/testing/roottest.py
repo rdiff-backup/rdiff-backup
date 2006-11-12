@@ -109,43 +109,7 @@ class RootTest(unittest.TestCase):
 					 extra_options = ("--user-mapping-file %s "
 									  "--group-mapping-file %s" %
 									  (user_map, group_map)))
-		assert get_ownership(out_rp) == ((userid, 0), (0, 1)), \
-			   get_ownership(out_rp)
-
-	def test_numerical_mapping(self):
-		"""Test --preserve-numerical-ids option
-
-		This doesn't really test much, since we don't have a
-		convenient system with different uname/ids.
-
-		"""
-		def write_ownership_dir():
-			"""Write the directory testfiles/root_mapping"""
-			rp = rpath.RPath(Globals.local_connection,
-							 "testfiles/root_mapping")
-			re_init_dir(rp)
-			rp1 = rp.append('1')
-			rp1.touch()
-			rp2 = rp.append('2')
-			rp2.touch()
-			rp2.chown(userid, 1) # use groupid 1, usually bin
-			return rp
-		
-		def get_ownership(dir_rp):
-			"""Return pair (ids of dir_rp/1, ids of dir_rp2) of ids"""
-			rp1, rp2 = map(dir_rp.append, ('1', '2'))
-			assert rp1.isreg() and rp2.isreg(), (rp1.isreg(), rp2.isreg())
-			return (rp1.getuidgid(), rp2.getuidgid())
-
-		in_rp = write_ownership_dir()
-		out_rp = rpath.RPath(Globals.local_connection, 'testfiles/output')
-		if out_rp.lstat(): Myrm(out_rp.path)
-
-		assert get_ownership(in_rp) == ((0,0), (userid, 1)), \
-			   get_ownership(in_rp)
-		rdiff_backup(1, 0, in_rp.path, out_rp.path,
-					 extra_options = ("--preserve-numerical-ids"))
-		assert get_ownership(out_rp) == ((0,0), (userid, 1)), \
+		assert get_ownership(out_rp) == ((userid, 1), (0, 1)), \
 			   get_ownership(in_rp)
 
 
@@ -237,8 +201,8 @@ class HalfRoot(unittest.TestCase):
 		in_rp1, in_rp2 = self.make_dirs()
 		outrp = rpath.RPath(Globals.local_connection, "testfiles/output")
 		if outrp.lstat(): outrp.delete()
-		remote_schema = 'su -c "rdiff-backup --server" %s' % (user,)
-		cmd_schema = ("rdiff-backup -v" + str(verbosity) +
+		remote_schema = 'su -c "../rdiff-backup --server" %s' % (user,)
+		cmd_schema = ("../rdiff-backup -v" + str(verbosity) +
 					  " --current-time %s --remote-schema '%%s' %s '%s'::%s")
 
 		cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
@@ -257,7 +221,7 @@ class HalfRoot(unittest.TestCase):
 
 		rout_rp = rpath.RPath(Globals.local_connection,
 							  "testfiles/restore_out")
-		restore_schema = ("rdiff-backup -v" + str(verbosity) +
+		restore_schema = ("../rdiff-backup -v" + str(verbosity) +
 						  " -r %s --remote-schema '%%s' '%s'::%s %s")
 		Myrm(rout_rp.path)
 		cmd3 = restore_schema % (10000, remote_schema, outrp.path,
@@ -280,7 +244,7 @@ class HalfRoot(unittest.TestCase):
 		assert outrp_perms == 0, outrp_perms
 
 		self.cause_regress(outrp)
-		cmd5 = ('su -c "rdiff-backup --check-destination-dir %s" %s' %
+		cmd5 = ('su -c "../rdiff-backup --check-destination-dir %s" %s' %
 				(outrp.path, user))
 		print "Executing regress: ", cmd5
 		assert not os.system(cmd5)
@@ -322,7 +286,7 @@ class NonRoot(unittest.TestCase):
 
 	def backup(self, input_rp, output_rp, time):
 		global user
-		backup_cmd = ("rdiff-backup --no-compare-inode "
+		backup_cmd = ("../rdiff-backup --no-compare-inode "
 					  "--current-time %s %s %s" %
 					  (time, input_rp.path, output_rp.path))
 		Run("su %s -c '%s'" % (user, backup_cmd))
@@ -331,8 +295,8 @@ class NonRoot(unittest.TestCase):
 		assert restore_rp.path == "testfiles/rest_out"
 		Myrm(restore_rp.path)
 		if time is None: time = "now"
-		restore_cmd = "rdiff-backup -r %s %s %s" % (time, dest_rp.path,
-													restore_rp.path,)
+		restore_cmd = "../rdiff-backup -r %s %s %s" % (time, dest_rp.path,
+													   restore_rp.path,)
 		Run(restore_cmd)		
 
 	def test_non_root(self):

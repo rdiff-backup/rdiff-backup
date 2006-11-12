@@ -1,4 +1,4 @@
-# Copyright 2002 2005 Ben Escoto
+# Copyright 2002 Ben Escoto
 #
 # This file is part of rdiff-backup.
 #
@@ -31,15 +31,15 @@ source side should only transmit inode information.
 """
 
 from __future__ import generators
-import Globals, Time, log, robust, errno
+import cPickle
+import Globals, Time, rpath, log, robust, errno
 
 # The keys in this dictionary are (inode, devloc) pairs.  The values
-# are a pair (index, remaining_links, dest_key, sha1sum) where index
-# is the rorp index of the first such linked file, remaining_links is
-# the number of files hard linked to this one we may see, and key is
+# are a pair (index, remaining_links, dest_key) where index is the
+# rorp index of the first such linked file, remaining_links is the
+# number of files hard linked to this one we may see, and key is
 # either (dest_inode, dest_devloc) or None, and represents the
-# hardlink info of the existing file on the destination.  Finally
-# sha1sum is the hash of the file if it exists, or None.
+# hardlink info of the existing file on the destination.
 _inode_index = None
 
 def initialize_dictionaries():
@@ -58,16 +58,13 @@ def get_inode_key(rorp):
 
 def add_rorp(rorp, dest_rorp = None):
 	"""Process new rorp and update hard link dictionaries"""
-	if not rorp.isreg() or rorp.getnumlinks() < 2: return None
+	if not rorp.isreg() or rorp.getnumlinks() < 2: return
 	rp_inode_key = get_inode_key(rorp)
 	if not _inode_index.has_key(rp_inode_key):
 		if not dest_rorp: dest_key = None
 		elif dest_rorp.getnumlinks() == 1: dest_key = "NA"
 		else: dest_key = get_inode_key(dest_rorp)
-		digest = rorp.has_sha1() and rorp.get_sha1() or None
-		_inode_index[rp_inode_key] = (rorp.index, rorp.getnumlinks(),
-									  dest_key, digest)
-	return rp_inode_key
+		_inode_index[rp_inode_key] = (rorp.index, rorp.getnumlinks(), dest_key)
 
 def del_rorp(rorp):
 	"""Remove rorp information from dictionary if seen all links"""
@@ -75,13 +72,9 @@ def del_rorp(rorp):
 	rp_inode_key = get_inode_key(rorp)
 	val = _inode_index.get(rp_inode_key)
 	if not val: return
-	index, remaining, dest_key, digest = val
-	if remaining == 1:
-		del _inode_index[rp_inode_key]
-		return 1
-	else:
-		_inode_index[rp_inode_key] = (index, remaining-1, dest_key, digest)
-		return 0
+	index, remaining, dest_key = val
+	if remaining == 1: del _inode_index[rp_inode_key]
+	else: _inode_index[rp_inode_key] = (index, remaining-1, dest_key)
 
 def rorp_eq(src_rorp, dest_rorp):
 	"""Compare hardlinked for equality
@@ -97,11 +90,11 @@ def rorp_eq(src_rorp, dest_rorp):
 
 	if src_rorp.getnumlinks() < dest_rorp.getnumlinks(): return 0
 	src_key = get_inode_key(src_rorp)
-	index, remaining, dest_key, digest = _inode_index[src_key]
+	index, remaining, dest_key = _inode_index[src_key]
 	if dest_key == "NA":
 		# Allow this to be ok for first comparison, but not any
 		# subsequent ones
-		_inode_index[src_key] = (index, remaining, None, None)
+		_inode_index[src_key] = (index, remaining, None)
 		return 1
 	return dest_key == get_inode_key(dest_rorp)
 
@@ -115,10 +108,6 @@ def islinked(rorp):
 def get_link_index(rorp):
 	"""Return first index on target side rorp is already linked to"""
 	return _inode_index[get_inode_key(rorp)][0]
-
-def get_sha1(rorp):
-	"""Return sha1 digest of what rorp is linked to"""
-	return _inode_index[get_inode_key(rorp)][3]
 
 def link_rp(diff_rorp, dest_rpath, dest_root = None):
 	"""Make dest_rpath into a link using link flag in diff_rorp"""

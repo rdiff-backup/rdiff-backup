@@ -41,11 +41,11 @@ class testIterFile(unittest.TestCase):
 
 	def testFileException(self):
 		"""Test encoding a file which raises an exception"""
-		f = FileException(200*1024) # size depends on buffer size
+		f = FileException(100*1024)
 		new_iter = IterWrappingFile(FileWrappingIter(iter([f, "foo"])))
 		f_out = new_iter.next()
-		assert f_out.read(50000) == "a"*50000
-		try: buf = f_out.read(190*1024)
+		assert f_out.read(10000) == "a"*10000
+		try: buf = f_out.read(100*1024)
 		except IOError: pass
 		else: assert 0, len(buf)
 
@@ -53,7 +53,7 @@ class testIterFile(unittest.TestCase):
 		self.assertRaises(StopIteration, new_iter.next)
 
 
-class testMiscIters(unittest.TestCase):
+class testRORPIters(unittest.TestCase):
 	"""Test sending rorpiter back and forth"""
 	def setUp(self):
 		"""Make testfiles/output directory and a few files"""
@@ -83,7 +83,7 @@ class testMiscIters(unittest.TestCase):
 		self.regfile2.setdata()
 		self.regfile3.setdata()
 		
-	def print_MiscIterFile(self, rpiter_file):
+	def print_RORPIterFile(self, rpiter_file):
 		"""Print the given rorpiter file"""
 		while 1:
 			buf = rpiter_file.read()
@@ -93,7 +93,7 @@ class testMiscIters(unittest.TestCase):
 	def testBasic(self):
 		"""Test basic conversion"""
 		l = [self.outputrp, self.regfile1, self.regfile2, self.regfile3]
-		i_out = FileToMiscIter(MiscIterToFile(iter(l)))
+		i_out = FileToRORPIter(RORPIterToFile(iter(l)))
 
 		out1 = i_out.next()
 		assert out1 == self.outputrp
@@ -113,54 +113,34 @@ class testMiscIters(unittest.TestCase):
 		i_out.next()
 		self.assertRaises(StopIteration, i_out.next)
 
-	def testMix(self):
-		"""Test a mix of RPs and ordinary objects"""
-		l = [5, self.regfile3, "hello"]
-		s = MiscIterToFile(iter(l)).read()
-		i_out = FileToMiscIter(StringIO.StringIO(s))
-
-		out1 = i_out.next()
-		assert out1 == 5, out1
-
-		out2 = i_out.next()
-		assert out2 == self.regfile3
-		fp = out2.open("rb")
-		assert fp.read() == "goodbye"
-		assert not fp.close()
-
-		out3 = i_out.next()
-		assert out3 == "hello", out3
-
-		self.assertRaises(StopIteration, i_out.next)
-
 	def testFlush(self):
-		"""Test flushing property of MiscIterToFile"""
-		l = [self.outputrp, MiscIterFlush, self.outputrp]
-		filelike = MiscIterToFile(iter(l))
+		"""Test flushing property of RORPIterToFile"""
+		l = [self.outputrp, RORPIterFlush, self.outputrp]
+		filelike = RORPIterToFile(iter(l))
 		new_filelike = StringIO.StringIO((filelike.read() + "z" +
 										  C.long2str(0L)))
 
-		i_out = FileToMiscIter(new_filelike)
+		i_out = FileToRORPIter(new_filelike)
 		assert i_out.next() == self.outputrp
 		self.assertRaises(StopIteration, i_out.next)
 
-		i_out2 = FileToMiscIter(filelike)
+		i_out2 = FileToRORPIter(filelike)
 		assert i_out2.next() == self.outputrp
 		self.assertRaises(StopIteration, i_out2.next)
 
 	def testFlushRepeat(self):
 		"""Test flushing like above, but have Flush obj emerge from iter"""
-		l = [self.outputrp, MiscIterFlushRepeat, self.outputrp]
-		filelike = MiscIterToFile(iter(l))
+		l = [self.outputrp, RORPIterFlushRepeat, self.outputrp]
+		filelike = RORPIterToFile(iter(l))
 		new_filelike = StringIO.StringIO((filelike.read() + "z" +
 										  C.long2str(0L)))
 
-		i_out = FileToMiscIter(new_filelike)
+		i_out = FileToRORPIter(new_filelike)
 		assert i_out.next() == self.outputrp
-		assert i_out.next() is MiscIterFlushRepeat
+		assert i_out.next() is RORPIterFlushRepeat
 		self.assertRaises(StopIteration, i_out.next)
 
-		i_out2 = FileToMiscIter(filelike)
+		i_out2 = FileToRORPIter(filelike)
 		assert i_out2.next() == self.outputrp
 		self.assertRaises(StopIteration, i_out2.next)
 

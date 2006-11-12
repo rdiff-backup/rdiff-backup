@@ -30,7 +30,7 @@ from __future__ import generators
 import base64, errno, re
 try: import posix1e
 except ImportError: pass
-import static, Globals, eas_acls, connection, metadata, rorpiter, log, C, \
+import static, Globals, metadata, connection, rorpiter, log, C, \
 	   rpath, user_group
 
 # When an ACL gets dropped, put name in dropped_acl_names.  This is
@@ -64,11 +64,8 @@ class ExtendedAttributes:
 				return
 			raise
 		for attr in attr_list:
-			if attr.startswith('system.'):
-				# Do not preserve system extended attributes
-				continue
-			if attr == 'com.apple.FinderInfo' or attr == 'com.apple.ResourceFork':
-				# FinderInfo and Resource Fork handled elsewhere
+			if not attr.startswith('user.'):
+				# Only preserve user extended attributes
 				continue
 			try: self.attr_dict[attr] = rp.conn.xattr.getxattr(rp.path, attr)
 			except IOError, exc:
@@ -95,14 +92,7 @@ class ExtendedAttributes:
 		"""Write extended attributes to rpath rp"""
 		self.clear_rp(rp)
 		for (name, value) in self.attr_dict.iteritems():
-			try:
-				rp.conn.xattr.setxattr(rp.path, name, value)
-			except IOError, exc:
-				# Mac and Linux attributes have different namespaces, so
-				# fail gracefully if can't call setxattr
-				if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EACCES:
-					continue
-				else: raise
+			rp.conn.xattr.setxattr(rp.path, name, value)
 
 	def get(self, name):
 		"""Return attribute attached to given name"""
@@ -180,13 +170,24 @@ class ExtendedAttributesFile(metadata.FlatFile):
 	_extractor = EAExtractor
 	_object_to_record = staticmethod(EA2Record)
 
-def join_ea_iter(rorp_iter, ea_iter):
-	"""Update a rorp iter by adding the information from ea_iter"""
-	for rorp, ea in rorpiter.CollateIterators(rorp_iter, ea_iter):
-		assert rorp, "Missing rorp for index %s" % (ea.index,)
-		if not ea: ea = ExtendedAttributes(rorp.index)
-		rorp.set_ea(ea)
-		yield rorp
+	def join(cls, rorp_iter, rbdir, time, restrict_index):
+		"""Add extended attribute information to existing rorp_iter"""
+		def helper(rorp_iter, ea_iter):
+			"""Add EA information in ea_iter to rorp_iter"""
+			collated = rorpiter.CollateIterators(rorp_iter, ea_iter)
+			for rorp, ea in collated:
+				assert rorp, (rorp, (ea.index, ea.attr_dict), time)
+				if not ea: ea = ExtendedAttributes(rorp.index)
+				rorp.set_ea(ea)
+				yield rorp
+			
+		ea_iter = cls.get_objects_at_time(rbdir, time, restrict_index)
+		if not ea_iter:
+			log.Log("Warning: Extended attributes file not found", 2)
+			ea_iter = iter([])
+		return helper(rorp_iter, ea_iter)
+
+static.MakeClass(ExtendedAttributesFile)
 
 
 class AccessControlLists:
@@ -457,15 +458,24 @@ def list_to_acl(entry_list, map_names = 1):
 				"trigger further warnings" % (name,), 2)
 		dropped_acl_names[name] = name
 
+	def map_id_name(owner_pair, group = None):
+		"""Return id of mapped id and user given original owner_pair"""
+		id, name = owner_pair
+		Map = group and user_group.GroupMap or user_group.UserMap
+		if name: return Map.get_id_from_name(name)
+		else:
+			assert id is not None
+			return Map.get_id_from_id(id)
+
 	acl = posix1e.ACL()
 	for typechar, owner_pair, perms in entry_list:
 		id = None
 		if owner_pair:
 			if map_names:
-				if typechar == "u": id = user_group.acl_user_map(*owner_pair)
+				if typechar == "u": id = map_id_name(owner_pair, 0)
 				else:
 					assert typechar == "g", (typechar, owner_pair, perms)
-					id = user_group.acl_group_map(*owner_pair)
+					id = map_id_name(owner_pair, 1)
 				if id is None:
 					warn_drop(owner_pair[1])
 					continue
@@ -520,14 +530,49 @@ class AccessControlListFile(metadata.FlatFile):
 	_extractor = ACLExtractor
 	_object_to_record = staticmethod(ACL2Record)
 
-def join_acl_iter(rorp_iter, acl_iter):
-	"""Update a rorp iter by adding the information from acl_iter"""
-	for rorp, acl in rorpiter.CollateIterators(rorp_iter, acl_iter):
-		assert rorp, "Missing rorp for index %s" % (acl.index,)
-		if not acl: acl = AccessControlLists(rorp.index)
-		rorp.set_acl(acl)
-		yield rorp
-	
+	def join(cls, rorp_iter, rbdir, time, restrict_index):
+		"""Add access control list information to existing rorp_iter"""
+		def helper(rorp_iter, acl_iter):
+			"""Add ACL information in acl_iter to rorp_iter"""
+			collated = rorpiter.CollateIterators(rorp_iter, acl_iter)
+			for rorp, acl in collated:
+				assert rorp, "Missing rorp for index %s" % (acl.index,)
+				if not acl: acl = AccessControlLists(rorp.index)
+				rorp.set_acl(acl)
+				yield rorp
+
+		acl_iter = cls.get_objects_at_time(rbdir, time, restrict_index)
+		if not acl_iter:
+			log.Log("Warning: Access Control List file not found", 2)
+			acl_iter = iter([])
+		return helper(rorp_iter, acl_iter)
+
+static.MakeClass(AccessControlListFile)
+
+
+def GetCombinedMetadataIter(rbdir, time, restrict_index = None,
+							acls = None, eas = None):
+	"""Return iterator of rorps from metadata and related files
+
+	None will be returned if the metadata file is absent.  If acls or
+	eas is true, access control list or extended attribute information
+	will be added.
+
+	"""
+	metadata_iter = metadata.MetadataFile.get_objects_at_time(
+		rbdir, time, restrict_index)
+	if not metadata_iter:
+		log.Log("Warning, metadata file not found.\n"
+				"Metadata will be read from filesystem.", 2)
+		return None
+	if eas:
+		metadata_iter = ExtendedAttributesFile.join(
+			metadata_iter, rbdir, time, restrict_index)
+	if acls:
+		metadata_iter = AccessControlListFile.join(
+			metadata_iter, rbdir, time, restrict_index)
+	return metadata_iter
+
 
 def rpath_acl_get(rp):
 	"""Get acls of given rpath rp.
@@ -540,11 +585,6 @@ def rpath_acl_get(rp):
 	return acl
 rpath.acl_get = rpath_acl_get
 
-def rpath_get_blank_acl(index):
-	"""Get a blank AccessControlLists object (override rpath function)"""
-	return AccessControlLists(index)
-rpath.get_blank_acl = rpath_get_blank_acl
-
 def rpath_ea_get(rp):
 	"""Get extended attributes of given rpath
 
@@ -555,9 +595,3 @@ def rpath_ea_get(rp):
 	if not rp.issym(): ea.read_from_rp(rp)
 	return ea
 rpath.ea_get = rpath_ea_get
-
-def rpath_get_blank_ea(index):
-	"""Get a blank ExtendedAttributes object (override rpath function)"""
-	return ExtendedAttributes(index)
-rpath.get_blank_ea = rpath_get_blank_ea
-

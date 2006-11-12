@@ -32,6 +32,8 @@ handle that error.)
 import re, types
 import Globals, log, rpath
 
+max_filename_length = 255
+
 # If true, enable character quoting, and set characters making
 # regex-style range.
 chars_to_quote = None
@@ -112,8 +114,8 @@ class QuotedRPath(rpath.RPath):
 	"""
 	def __init__(self, connection, base, index = (), data = None):
 		"""Make new QuotedRPath"""
-		self.quoted_index = tuple(map(quote, index))
-		rpath.RPath.__init__(self, connection, base, self.quoted_index, data)
+		quoted_index = tuple(map(quote, index))
+		rpath.RPath.__init__(self, connection, base, quoted_index, data)
 		self.index = index
 
 	def listdir(self):

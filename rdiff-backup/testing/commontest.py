@@ -1,11 +1,9 @@
 """commontest - Some functions and constants common to several test cases"""
 import os, sys, code
-# Avoid circularities
 from rdiff_backup.log import Log
 from rdiff_backup.rpath import RPath
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
-	 selection, lazy, Time, rpath, eas_acls, rorpiter, Security
-
+	 selection, lazy, Time, rpath, eas_acls, rorpiter
 
 RBBin = "../rdiff-backup"
 SourceDir = "../rdiff_backup"
@@ -62,7 +60,7 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 	"""
 	if not source_local:
 		src_dir = ("'cd test1; ../%s --server'::../%s" % (RBBin, src_dir))
-	if dest_dir and not dest_local:
+	if not dest_local:
 		dest_dir = ("'cd test2/tmp; ../../%s --server'::../../%s" %
 					(RBBin, dest_dir))
 
@@ -70,13 +68,21 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 	if not (source_local and dest_local): cmdargs.append("--remote-schema %s")
 
 	if current_time: cmdargs.append("--current-time %s" % current_time)
-	cmdargs.append(src_dir)
-	if dest_dir: cmdargs.append(dest_dir)
+	cmdargs.extend([src_dir, dest_dir])
 	cmdline = " ".join(cmdargs)
 	print "Executing: ", cmdline
 	ret_val = os.system(cmdline)
 	if check_return_val: assert not ret_val, ret_val
 	return ret_val
+
+def cmd_schemas2rps(schema_list, remote_schema):
+	"""Input list of file descriptions and the remote schema, return rps
+
+	File descriptions should be strings of the form 'hostname.net::foo'
+
+	"""
+	return map(SetConnections.cmdpair2rp,
+			   SetConnections.get_cmd_pairs(schema_list, remote_schema))
 
 def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 				   current_time = None, eas = None, acls = None):
@@ -100,9 +106,7 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 		dest_dir = "cd test2/tmp; python ../../server.py ../../%s::../../%s" \
 				   % (SourceDir, dest_dir)
 
-	cmdpairs = SetConnections.get_cmd_pairs([src_dir, dest_dir], remote_schema)
-	Security.initialize("backup", cmdpairs)
-	rpin, rpout = map(SetConnections.cmdpair2rp, cmdpairs)
+	rpin, rpout = cmd_schemas2rps([src_dir, dest_dir], remote_schema)
 	for attr in ('eas_active', 'eas_write', 'eas_conn'):
 		SetConnections.UpdateGlobal(attr, eas)
 	for attr in ('acls_active', 'acls_write', 'acls_conn'):
@@ -150,10 +154,7 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time,
 		dest_dir = "cd test2/tmp; python ../../server.py ../../%s::../../%s" \
 				   % (SourceDir, dest_dir)
 
-	cmdpairs = SetConnections.get_cmd_pairs([mirror_dir, dest_dir],
-											remote_schema)
-	Security.initialize("restore", cmdpairs)
-	mirror_rp, dest_rp = map(SetConnections.cmdpair2rp, cmdpairs)
+	mirror_rp, dest_rp = cmd_schemas2rps([mirror_dir, dest_dir], remote_schema)
 	for attr in ('eas_active', 'eas_write', 'eas_conn'):
 		SetConnections.UpdateGlobal(attr, eas)
 	for attr in ('acls_active', 'acls_write', 'acls_conn'):
@@ -385,20 +386,3 @@ def raise_interpreter(use_locals = None):
 	if use_locals: local_dict = locals()
 	else: local_dict = globals()
 	code.InteractiveConsole(local_dict).interact()
-
-def getrefs(i, depth):
-	"""Get the i'th object in memory, return objects that reference it"""
-	import sys, gc, types
-	o = sys.getobjects(i)[-1]
-	for d in range(depth):
-		for ref in gc.get_referrers(o):
-			if type(ref) in (types.ListType, types.DictType,
-								types.InstanceType):
-				if type(ref) is types.DictType and ref.has_key('copyright'):
-					continue
-				o = ref
-				break
-		else:
-			print "Max depth ", d
-			return o
-	return o

@@ -28,20 +28,18 @@ FSAbilities object describing it.
 """
 
 import errno, os
-import Globals, log, TempFile, selection, robust, SetConnections, \
-	   static, FilenameMapping
+import Globals, log, TempFile, selection
 
 class FSAbilities:
 	"""Store capabilities of given file system"""
-	extended_filenames = None # True if filenames can handle ":" etc.
-	case_sensitive = None # True if "foobar" and "FoObAr" are different files
+	chars_to_quote = None # Hold characters not allowable in file names
 	ownership = None # True if chown works on this filesystem
 	acls = None # True if access control lists supported
 	eas = None # True if extended attributes supported
 	hardlinks = None # True if hard linking supported
 	fsync_dirs = None # True if directories can be fsync'd
 	dir_inc_perms = None # True if regular files can have full permissions
-	resource_forks = None # True if system supports resource forks
+	resource_forks = None # True if regular_file/..namedfork/rsrc holds resource fork
 	carbonfile = None # True if Mac Carbon file data is supported. 
 	name = None # Short string, not used for any technical purpose
 	read_only = None # True if capabilities were determined non-destructively
@@ -79,32 +77,37 @@ class FSAbilities:
 			else: return ('Detected abilities for %s file system' %
 						  (read_string,))
 
+		def add_ctq_line():
+			"""Get line describing chars to quote"""
+			ctq_str = (self.chars_to_quote is None and 'N/A'
+					   or repr(self.chars_to_quote))
+			addline('Characters needing quoting', ctq_str)
+
 		s.append(get_title_line())
 		if not self.read_only:
+			add_ctq_line()
 			add_boolean_list([('Ownership changing', self.ownership),
 							  ('Hard linking', self.hardlinks),
 							  ('fsync() directories', self.fsync_dirs),
 							  ('Directory inc permissions',
 							   self.dir_inc_perms),
-							  ('High-bit permissions', self.high_perms),
-							  ('Extended filenames', self.extended_filenames)])
+							  ('High-bit permissions', self.high_perms)])
 		add_boolean_list([('Access control lists', self.acls),
 						  ('Extended attributes', self.eas),
-						  ('Case sensitivity', self.case_sensitive),
 						  ('Mac OS X style resource forks',
 						   self.resource_forks),
 						  ('Mac OS X Finder information', self.carbonfile)])
 		s.append(s[0])
 		return '\n'.join(s)
 
-	def init_readonly(self, rp):
+	def init_readonly(self, rp, override_chars_to_quote = None):
 		"""Set variables using fs tested at RPath rp.  Run locally.
 
 		This method does not write to the file system at all, and
 		should be run on the file system when the file system will
 		only need to be read.
 
-		Only self.acls and self.eas are set.
+		Only self.acls, self.eas, and self.chars_to_quote are set.
 
 		"""
 		assert rp.conn is Globals.local_connection
@@ -114,15 +117,28 @@ class FSAbilities:
 		self.set_acls(rp)
 		self.set_resource_fork_readonly(rp)
 		self.set_carbonfile()
-		self.set_case_sensitive_readonly(rp)
+
+		if override_chars_to_quote is None:
+			ctq_rp = rp.append('chars_to_quote')
+			if ctq_rp.isreg(): self.chars_to_quote = ctq_rp.get_data()
+			else: self.chars_to_quote = "" # default is no quoting
+		else: self.chars_to_quote = override_chars_to_quote
+
 		return self
 
-	def init_readwrite(self, rbdir):
+	def init_readwrite(self, rbdir, use_ctq_file = 1,
+					   override_chars_to_quote = None):
 		"""Set variables using fs tested at rp_base.  Run locally.
 
 		This method creates a temp directory in rp_base and writes to
 		it in order to test various features.  Use on a file system
 		that will be written to.
+
+		This sets self.chars_to_quote, self.ownership, self.acls,
+		self.eas, self.hardlinks, and self.fsync_dirs.
+
+		If user_ctq_file is true, try reading the "chars_to_quote"
+		file in directory.
 
 		"""
 		assert rbdir.conn is Globals.local_connection
@@ -131,11 +147,9 @@ class FSAbilities:
 			rbdir.mkdir()
 		self.root_rp = rbdir
 		self.read_only = 0
+
 		subdir = TempFile.new_in_dir(rbdir)
 		subdir.mkdir()
-
-		self.set_extended_filenames(subdir)
-		self.set_case_sensitive_readwrite(subdir)
 		self.set_ownership(subdir)
 		self.set_hardlinks(subdir)
 		self.set_fsync_dirs(subdir)
@@ -145,9 +159,39 @@ class FSAbilities:
 		self.set_resource_fork_readwrite(subdir)
 		self.set_carbonfile()
 		self.set_high_perms_readwrite(subdir)
-
+		if override_chars_to_quote is None: self.set_chars_to_quote(subdir)
+		else: self.chars_to_quote = override_chars_to_quote
+		if use_ctq_file: self.compare_chars_to_quote(rbdir)
 		subdir.delete()
 		return self
+
+	def compare_chars_to_quote(self, rbdir):
+		"""Read chars_to_quote file, compare with current settings"""
+		assert self.chars_to_quote is not None
+		ctq_rp = rbdir.append("chars_to_quote")
+		def write_new_chars():
+			"""Replace old chars_to_quote file with new value"""
+			if ctq_rp.lstat(): ctq_rp.delete()
+			fp = ctq_rp.open("wb")
+			fp.write(self.chars_to_quote)
+			assert not fp.close()
+
+		if not ctq_rp.lstat(): write_new_chars()
+		else:
+			old_chars = ctq_rp.get_data()
+			if old_chars != self.chars_to_quote:
+				if self.chars_to_quote == "":
+					log.Log("Warning: File system no longer needs quoting, "
+							"but will retain for backwards compatibility.", 2)
+					self.chars_to_quote = old_chars
+				elif Globals.chars_to_quote is None:
+					log.Log.FatalError("""New quoting requirements
+
+This may be caused when you copy an rdiff-backup directory from a
+normal file system on to a windows one that cannot support the same
+characters.  If you want to risk it, remove the file
+rdiff-backup-data/chars_to_quote.
+""")
 
 	def set_ownership(self, testdir):
 		"""Set self.ownership to true iff testdir's ownership can be changed"""
@@ -157,7 +201,7 @@ class FSAbilities:
 		try:
 			tmp_rp.chown(uid+1, gid+1) # just choose random uid/gid
 			tmp_rp.chown(0, 0)
-		except (IOError, OSError): self.ownership = 0
+		except (IOError, OSError), exc: self.ownership = 0
 		else: self.ownership = 1
 		tmp_rp.delete()
 
@@ -172,7 +216,7 @@ class FSAbilities:
 			hl_dest.hardlink(hl_source.path)
 			if hl_source.getinode() != hl_dest.getinode():
 				raise IOError(errno.EOPNOTSUPP, "Hard links don't compare")
-		except (IOError, OSError):
+		except (IOError, OSError), exc:
 			log.Log("Warning: hard linking not supported by filesystem "
 					"at %s" % (self.root_rp.path,), 3)
 			self.hardlinks = 0
@@ -182,36 +226,57 @@ class FSAbilities:
 		"""Set self.fsync_dirs if directories can be fsync'd"""
 		assert testdir.conn is Globals.local_connection
 		try: testdir.fsync()
-		except (IOError, OSError):
+		except (IOError, OSError), exc:
 			log.Log("Directories on file system at %s are not fsyncable.\n"
 					"Assuming it's unnecessary." % (testdir.path,), 4)
 			self.fsync_dirs = 0
 		else: self.fsync_dirs = 1
 
-	def set_extended_filenames(self, subdir):
-		"""Set self.extended_filenames by trying to write a path"""
-		assert not self.read_only
+	def set_chars_to_quote(self, subdir):
+		"""Set self.chars_to_quote by trying to write various paths"""
+		def is_case_sensitive():
+			"""Return true if file system is case sensitive"""
+			upper_a = subdir.append("A")
+			upper_a.touch()
+			lower_a = subdir.append("a")
+			if lower_a.lstat():
+				lower_a.delete()
+				upper_a.setdata()
+				assert not upper_a.lstat()
+				return 0
+			else:
+				upper_a.delete()
+				return 1
 
-		# Make sure ordinary filenames ok
-		ordinary_filename = '5-_ a.snapshot.gz'
-		ord_rp = subdir.append(ordinary_filename)
-		ord_rp.touch()
-		assert ord_rp.lstat()
-		ord_rp.delete()
+		def supports_unusual_chars():
+			"""Test handling of several chars sometimes not supported"""
+			for filename in [':', '\\', chr(175)]:
+				try:
+					rp = subdir.append(filename)
+					rp.touch()
+				except (IOError, OSError):
+					assert not rp.lstat()
+					return 0
+				else:
+					assert rp.lstat()
+					rp.delete()
+			return 1
 
-		# Try a UTF-8 encoded character
-		extended_filename = ':\\ ' + chr(225) + chr(132) + chr(137)
-		ext_rp = None
-		try:
-			ext_rp = subdir.append(extended_filename)
-			ext_rp.touch()
-		except (IOError, OSError):
-			if ext_rp: assert not ext_rp.lstat()
-			self.extended_filenames = 0
+		def sanity_check():
+			"""Make sure basic filenames writable"""
+			for filename in ['5-_ a.snapshot.gz']:
+				rp = subdir.append(filename)
+				rp.touch()
+				assert rp.lstat()
+				rp.delete()
+
+		sanity_check()
+		if is_case_sensitive():
+			if supports_unusual_chars(): self.chars_to_quote = ""
+			else: self.chars_to_quote = "^A-Za-z0-9_ -."
 		else:
-			assert ext_rp.lstat()
-			ext_rp.delete()
-			self.extended_filenames = 1
+			if supports_unusual_chars(): self.chars_to_quote = "A-Z;"
+			else: self.chars_to_quote = "^a-z0-9_ -."
 
 	def set_acls(self, rp):
 		"""Set self.acls based on rp.  Does not write.  Needs to be local"""
@@ -226,69 +291,11 @@ class FSAbilities:
 			return
 
 		try: posix1e.ACL(file=rp.path)
-		except IOError:
+		except IOError, exc:
 			log.Log("ACLs not supported by filesystem at %s" % (rp.path,), 4)
 			self.acls = 0
 		else: self.acls = 1
-
-	def set_case_sensitive_readwrite(self, subdir):
-		"""Determine if directory at rp is case sensitive by writing"""
-		assert not self.read_only
-		upper_a = subdir.append("A")
-		upper_a.touch()
-		lower_a = subdir.append("a")
-		if lower_a.lstat():
-			lower_a.delete()
-			upper_a.setdata()
-			assert not upper_a.lstat()
-			self.case_sensitive = 0
-		else:
-			upper_a.delete()
-			self.case_sensitive = 1
-
-	def set_case_sensitive_readonly(self, rp):
-		"""Determine if directory at rp is case sensitive without writing"""
-		def find_letter(subdir):
-			"""Find a (subdir_rp, dirlist) with a letter in it, or None
-
-			Recurse down the directory, looking for any file that has
-			a letter in it.  Return the pair (rp, [list of filenames])
-			where the list is of the directory containing rp.
-
-			"""
-			l = robust.listrp(subdir)
-			for filename in l:
-				if filename != filename.swapcase():
-					return (subdir, l, filename)
-			for filename in l:
-				dir_rp = subdir.append(filename)
-				if dir_rp.isdir():
-					subsearch = find_letter(dir_rp)
-					if subsearch: return subsearch
-			return None
-
-		def test_triple(dir_rp, dirlist, filename):
-			"""Return 1 if filename shows system case sensitive"""
-			letter_rp = dir_rp.append(filename)
-			assert letter_rp.lstat(), letter_rp
-			swapped = filename.swapcase()
-			if swapped in dirlist: return 1
-
-			swapped_rp = dir_rp.append(swapped)
-			if swapped_rp.lstat(): return 0
-			return 1
-
-		triple = find_letter(rp)
-		if not triple:
-			log.Log("Warning: could not determine case sensitivity of "
-					"source directory at\n  " + rp.path + "\n"
-					"because we can't find any files with letters in them.\n"
-					"It will be treated as case sensitive.", 2)
-			self.case_sensitive = 1
-			return
-
-		self.case_sensitive = test_triple(*triple)
-
+		
 	def set_eas(self, rp, write):
 		"""Set extended attributes from rp. Tests writing if write is true."""
 		assert Globals.local_connection is rp.conn
@@ -305,7 +312,7 @@ class FSAbilities:
 			if write:
 				xattr.setxattr(rp.path, "user.test", "test val")
 				assert xattr.getxattr(rp.path, "user.test") == "test val"
-		except IOError:
+		except IOError, exc:
 			log.Log("Extended attributes not supported by "
 					"filesystem at %s" % (rp.path,), 4)
 			self.eas = 0
@@ -358,7 +365,7 @@ class FSAbilities:
 			fp_read = open(os.path.join(reg_rp.path, '..namedfork', 'rsrc'), 'rb')
 			s_back = fp_read.read()
 			assert not fp_read.close()
-		except (OSError, IOError): self.resource_forks = 0
+		except (OSError, IOError), e: self.resource_forks = 0
 		else: self.resource_forks = (s_back == s)
 		reg_rp.delete()
 
@@ -377,7 +384,7 @@ class FSAbilities:
 					fp = rfork.open('rb')
 					fp.read()
 					assert not fp.close()
-				except (OSError, IOError):
+				except (OSError, IOError), e:
 					self.resource_forks = 0
 					return
 				self.resource_forks = 1
@@ -391,264 +398,27 @@ class FSAbilities:
 		try:
 			tmp_rp.chmod(07000)
 			tmp_rp.chmod(07777)
-		except (OSError, IOError): self.high_perms = 0
+		except (OSError, IOError), e: self.high_perms = 0
 		else: self.high_perms = 1
 		tmp_rp.delete()
 
-def get_readonly_fsa(desc_string, rp):
-	"""Return an fsa with given description_string
+def get_fsabilities_readonly(desc_string, rb, ctq = None):
+	"""Return an FSAbilities object with given description_string
 
-	Will be initialized read_only with given RPath rp.  We separate
-	this out into a separate function so the request can be vetted by
-	the security module.
+	Will be initialized read_only with given RPath rp.
 
 	"""
-	return FSAbilities(desc_string).init_readonly(rp)
+	return FSAbilities(desc_string).init_readonly(rb, ctq)
 
+def get_fsabilities_readwrite(desc_string, rb, use_ctq_file = 1, ctq = None):
+	"""Like above but initialize read/write and pass other arguments"""
+	return FSAbilities(desc_string).init_readwrite(
+		rb, use_ctq_file = use_ctq_file, override_chars_to_quote = ctq)
 
-class SetGlobals:
-	"""Various functions for setting Globals vars given FSAbilities above
-
-	Container for BackupSetGlobals and RestoreSetGlobals (don't use directly)
-
-	"""
-	def __init__(self, in_conn, out_conn, src_fsa, dest_fsa):
-		"""Just store some variables for use below"""
-		self.in_conn, self.out_conn = in_conn, out_conn
-		self.src_fsa, self.dest_fsa = src_fsa, dest_fsa
-
-	def set_eas(self):
-		self.update_triple(self.src_fsa.eas, self.dest_fsa.eas,
-						   ('eas_active', 'eas_write', 'eas_conn'))
-
-	def set_acls(self):
-		self.update_triple(self.src_fsa.acls, self.dest_fsa.acls,
-						   ('acls_active', 'acls_write', 'acls_conn'))
-		if Globals.never_drop_acls and not Globals.acls_active:
-			log.Log.FatalError("--never-drop-acls specified, but ACL support\n"
-							   "missing from destination filesystem")
-
-	def set_resource_forks(self):
-		self.update_triple(self.src_fsa.resource_forks,
-						   self.dest_fsa.resource_forks,
-						   ('resource_forks_active', 'resource_forks_write',
-							'resource_forks_conn'))
-
-	def set_carbonfile(self):
-		self.update_triple(self.src_fsa.carbonfile, self.dest_fsa.carbonfile,
-			  ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
-
-	def set_hardlinks(self):
-		if Globals.preserve_hardlinks != 0:
-			SetConnections.UpdateGlobal('preserve_hardlinks',
-										self.dest_fsa.hardlinks)
-
-	def set_fsync_directories(self):
-		SetConnections.UpdateGlobal('fsync_directories',
-									self.dest_fsa.fsync_dirs)
-
-	def set_change_ownership(self):
-		SetConnections.UpdateGlobal('change_ownership',
-									self.dest_fsa.ownership)
-
-	def set_high_perms(self):
-		if not self.dest_fsa.high_perms:
-			SetConnections.UpdateGlobal('permission_mask', 0777)
-
-
-class BackupSetGlobals(SetGlobals):
-	"""Functions for setting fsa related globals for backup session"""
-	def update_triple(self, src_support, dest_support, attr_triple):
-		"""Many of the settings have a common form we can handle here"""
-		active_attr, write_attr, conn_attr = attr_triple
-		if Globals.get(active_attr) == 0: return # don't override 0
-		for attr in attr_triple: SetConnections.UpdateGlobal(attr, None)
-		if not src_support: return # if source doesn't support, nothing
-		SetConnections.UpdateGlobal(active_attr, 1)
-		self.in_conn.Globals.set_local(conn_attr, 1)
-		if dest_support:
-			SetConnections.UpdateGlobal(write_attr, 1)
-			self.out_conn.Globals.set_local(conn_attr, 1)
-
-	def set_chars_to_quote(self, rbdir):
-		"""Set chars_to_quote setting for backup session
-
-		Unlike the other options, the chars_to_quote setting also
-		depends on the current settings in the rdiff-backup-data
-		directory, not just the current fs features.
-
-		"""
-		ctq = self.compare_ctq_file(rbdir, self.get_ctq_from_fsas())
-
-		SetConnections.UpdateGlobal('chars_to_quote', ctq)
-		if Globals.chars_to_quote: FilenameMapping.set_init_quote_vals()
-
-	def get_ctq_from_fsas(self):
-		"""Determine chars_to_quote just from filesystems, no ctq file"""
-		if self.src_fsa.case_sensitive and not self.dest_fsa.case_sensitive:
-			if self.dest_fsa.extended_filenames:
-				return "A-Z;" # Quote upper case and quoting char
-			else: return "^a-z0-9_ -." # quote everything but basic chars
-
-		if self.dest_fsa.extended_filenames:
-			return "" # Don't quote anything
-		else: return "^A-Za-z0-9_ -."
-
-	def compare_ctq_file(self, rbdir, suggested_ctq):
-		"""Compare ctq file with suggested result, return actual ctq"""
-		ctq_rp = rbdir.append("chars_to_quote")
-		if not ctq_rp.lstat():
-			if Globals.chars_to_quote is None: actual_ctq = suggested_ctq
-			else: actual_ctq = Globals.chars_to_quote
-			ctq_rp.write_string(actual_ctq)
-			return actual_ctq
-
-		if Globals.chars_to_quote is None: actual_ctq = ctq_rp.get_data()
-		else: actual_ctq = Globals.chars_to_quote # Globals override
-
-		if actual_ctq == suggested_ctq: return actual_ctq
-		if suggested_ctq == "":
-			log.Log("Warning: File system no longer needs quoting, "
-					"but we will retain for backwards compatibility.", 2)
-			return actual_ctq
-		if Globals.chars_to_quote is None:
-			log.Log.FatalError("""New quoting requirements!
-
-The quoting chars this session needs (%s) do not match
-the repository settings (%s) listed in
-
-%s
-
-This may be caused when you copy an rdiff-backup repository from a
-normal file system onto a windows one that cannot support the same
-characters, or if you backup a case-sensitive file system onto a
-case-insensitive one that previously only had case-insensitive ones
-backed up onto it.""" % (suggested_ctq, actual_ctq, ctq_rp.path))
-
-
-class RestoreSetGlobals(SetGlobals):
-	"""Functions for setting fsa-related globals for restore session"""
-	def update_triple(self, src_support, dest_support, attr_triple):
-		"""Update global settings for feature based on fsa results
-
-		This is slightly different from BackupSetGlobals.update_triple
-		because (using the mirror_metadata file) rpaths from the
-		source may have more information than the file system
-		supports.
-
-		"""
-		active_attr, write_attr, conn_attr = attr_triple
-		if Globals.get(active_attr) == 0: return # don't override 0
-		for attr in attr_triple: SetConnections.UpdateGlobal(attr, None)
-		if not dest_support: return # if dest doesn't support, do nothing
-		SetConnections.UpdateGlobal(active_attr, 1)
-		self.out_conn.Globals.set_local(conn_attr, 1)
-		self.out_conn.Globals.set_local(write_attr, 1)
-		if src_support: self.in_conn.Globals.set_local(conn_attr, 1)
-
-	def set_chars_to_quote(self, rbdir):
-		"""Set chars_to_quote from rdiff-backup-data dir"""
-		if Globals.chars_to_quote is not None: return # already overridden
-		
-		ctq_rp = rbdir.append("chars_to_quote")
-		if ctq_rp.lstat():
-			SetConnections.UpdateGlobal("chars_to_quote", ctq_rp.get_data())
-		else:
-			log.Log("Warning: chars_to_quote file not found,\n"
-					"assuming no quoting in backup repository.", 2)
-			SetConnections.UpdateGlobal("chars_to_quote", "")
-
-
-class SingleSetGlobals(RestoreSetGlobals):
-	"""For setting globals when dealing only with one filesystem"""
-	def __init__(self, conn, fsa):
-		self.conn = conn
-		self.dest_fsa = fsa
-
-	def update_triple(self, fsa_support, attr_triple):
-		"""Update global vars from single fsa test"""
-		active_attr, write_attr, conn_attr = attr_triple
-		if Globals.get(active_attr) == 0: return # don't override 0
-		for attr in attr_triple: SetConnections.UpdateGlobal(attr, None)
-		if not fsa_support: return
-		SetConnections.UpdateGlobal(active_attr, 1)
-		SetConnections.UpdateGlobal(write_attr, 1)
-		self.conn.Globals.set_local(conn_attr, 1)
-
-	def set_eas(self):
-		self.update_triple(self.dest_fsa.eas,
-						   ('eas_active', 'eas_write', 'eas_conn'))
-	def set_acls(self):
-		self.update_triple(self.dest_fsa.acls,
-						  ('acls_active', 'acls_write', 'acls_conn'))
-	def set_resource_forks(self):
-		self.update_triple(self.dest_fsa.resource_forks,
-						   ('resource_forks_active',
-							'resource_forks_write', 'resource_forks_conn'))
-	def set_carbonfile(self):
-		self.update_triple(self.dest_fsa.carbonfile,
-			 ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
-
-
-def backup_set_globals(rpin):
-	"""Given rps for source filesystem and repository, set fsa globals
-
-	This should be run on the destination connection, because we may
-	need to write a new chars_to_quote file.
-
-	"""
-	assert Globals.rbdir.conn is Globals.local_connection
-	src_fsa = rpin.conn.fs_abilities.get_readonly_fsa('source', rpin)
-	log.Log(str(src_fsa), 4)
-	dest_fsa = FSAbilities('destination').init_readwrite(Globals.rbdir)
-	log.Log(str(dest_fsa), 4)
-
-	bsg = BackupSetGlobals(rpin.conn, Globals.rbdir.conn, src_fsa, dest_fsa)
-	bsg.set_eas()
-	bsg.set_acls()
-	bsg.set_resource_forks()
-	bsg.set_carbonfile()
-	bsg.set_hardlinks()
-	bsg.set_fsync_directories()
-	bsg.set_change_ownership()
-	bsg.set_high_perms()
-	bsg.set_chars_to_quote(Globals.rbdir)
-
-def restore_set_globals(rpout):
-	"""Set fsa related globals for restore session, given in/out rps"""
-	assert rpout.conn is Globals.local_connection
-	src_fsa = Globals.rbdir.conn.fs_abilities.get_readonly_fsa(
-		                  'rdiff-backup repository', Globals.rbdir)
-	log.Log(str(src_fsa), 4)
-	dest_fsa = FSAbilities('restore target').init_readwrite(rpout)
-	log.Log(str(dest_fsa), 4)
-
-	rsg = RestoreSetGlobals(Globals.rbdir.conn, rpout.conn, src_fsa, dest_fsa)
-	rsg.set_eas()
-	rsg.set_acls()
-	rsg.set_resource_forks()
-	rsg.set_carbonfile()
-	rsg.set_hardlinks()
-	# No need to fsync anything when restoring
-	rsg.set_change_ownership()
-	rsg.set_high_perms()
-	rsg.set_chars_to_quote(Globals.rbdir)
-
-def single_set_globals(rp, read_only = None):
-	"""Set fsa related globals for operation on single filesystem"""
-	if read_only:
-		fsa = rp.conn.fs_abilities.get_readonly_fsa(rp.path, rp)
-	else: fsa = FSAbilities(rp.path).init_readwrite(rp)
-	log.Log(str(fsa), 4)
-
-	ssg = SingleSetGlobals(rp.conn, fsa)
-	ssg.set_eas()
-	ssg.set_acls()
-	ssg.set_resource_forks()
-	ssg.set_carbonfile()
-	if not read_only:
-		ssg.set_hardlinks()
-		ssg.set_change_ownership()
-		ssg.set_high_perms()
-	ssg.set_chars_to_quote(Globals.rbdir)
-
+def get_fsabilities_restoresource(rp):
+	"""Used when restoring, get abilities of source directory"""
+	fsa = FSAbilities('source').init_readonly(rp)
+	ctq_rp = rp.append("chars_to_quote")
+	if ctq_rp.lstat(): fsa.chars_to_quote = ctq_rp.get_data()
+	else: fsa.chars_to_quote = ""
+	return fsa

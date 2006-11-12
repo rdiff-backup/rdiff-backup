@@ -47,16 +47,12 @@ file_requests = {'os.listdir':0, 'C.make_file_dict':0, 'os.chmod':0,
 				 'os.utime':0, 'os.lchown':0, 'os.link':1, 'os.symlink':1,
 				 'os.mkdir':0, 'os.makedirs':0}
 				 
+
 def initialize(action, cmdpairs):
 	"""Initialize allowable request list and chroot"""
 	global allowed_requests
 	set_security_level(action, cmdpairs)
 	set_allowed_requests(Globals.security_level)
-
-def reset_restrict_path(rp):
-	"""Reset restrict path to be within rpath"""
-	assert rp.conn is Globals.local_connection
-	Globals.restrict_path = rp.normalize().path
 
 def set_security_level(action, cmdpairs):
 	"""If running client, set security level and restrict_path
@@ -113,9 +109,8 @@ def set_security_level(action, cmdpairs):
 			sec_level = "all"
 			rdir = getpath(cp2)
 	elif action in ["test-server", "list-increments", 'list-increment-sizes',
-					"list-at-time", "list-changed-since",
-					"calculate-average", "remove-older-than", "compare",
-					"compare-hash", "compare-full", "verify"]:
+					 "list-at-time", "list-changed-since",
+					 "calculate-average", "remove-older-than", "compare"]:
 		sec_level = "minimal"
 		rdir = tempfile.gettempdir()
 	else: assert 0, "Unknown action %s" % action
@@ -142,7 +137,8 @@ def set_allowed_requests(sec_level):
 				  "Hardlink.initialize_dictionaries", "user_group.uid2uname",
 				  "user_group.gid2gname"])
 	if sec_level == "read-only" or sec_level == "all":
-		l.extend(["fs_abilities.get_readonly_fsa",
+		l.extend(["fs_abilities.get_fsabilities_readonly",
+				  "fs_abilities.get_fsabilities_restoresource",
 				  "restore.MirrorStruct.get_increment_times",
 				  "restore.MirrorStruct.set_mirror_and_rest_times",
 				  "restore.MirrorStruct.set_mirror_select",
@@ -153,15 +149,7 @@ def set_allowed_requests(sec_level):
 				  "restore.ListAtTime",
 				  "backup.SourceStruct.get_source_select",
 				  "backup.SourceStruct.set_source_select",
-				  "backup.SourceStruct.get_diffs",
-				  "compare.RepoSide.init_and_get_iter",
-				  "compare.RepoSide.close_rf_cache",
-				  "compare.RepoSide.attach_files",
-				  "compare.DataSide.get_source_select",
-				  "compare.DataSide.compare_fast",
-				  "compare.DataSide.compare_hash",
-				  "compare.DataSide.compare_full",
-				  "compare.Verify"])
+				  "backup.SourceStruct.get_diffs"])
 	if sec_level == "update-only" or sec_level == "all":
 		l.extend(["log.Log.open_logfile_local", "log.Log.close_logfile_local",
 				  "log.ErrorLog.open", "log.ErrorLog.isopen",
@@ -174,7 +162,7 @@ def set_allowed_requests(sec_level):
 				  "Globals.ITRB.increment_stat",
 				  "statistics.record_error",
 				  "log.ErrorLog.write_if_open",
-				  "fs_abilities.backup_set_globals"])
+				  "fs_abilities.get_fsabilities_readwrite"])
 	if sec_level == "all":
 		l.extend(["os.mkdir", "os.chown", "os.lchown", "os.rename",
 				  "os.unlink", "os.remove", "os.chmod", "os.makedirs",
@@ -182,8 +170,6 @@ def set_allowed_requests(sec_level):
 				  "restore.TargetStruct.get_initial_iter",
 				  "restore.TargetStruct.patch",
 				  "restore.TargetStruct.set_target_select",
-				  "fs_abilities.restore_set_globals",
-				  "fs_abilities.single_set_globals",
 				  "regress.Regress", "manage.delete_earlier_than_local"])
 	if Globals.server:
 		l.extend(["SetConnections.init_connection_remote",
@@ -207,15 +193,16 @@ def vet_request(request, arglist):
 	"""Examine request for security violations"""
 	#if Globals.server: sys.stderr.write(str(request) + "\n")
 	security_level = Globals.security_level
-	if security_level == "override": return
 	if Globals.restrict_path:
 		for arg in arglist:
 			if isinstance(arg, rpath.RPath): vet_rpath(arg)
 		if request.function_string in file_requests:
 			vet_filename(request, arglist)
+	if security_level == "override": return
 	if request.function_string in allowed_requests: return
 	if request.function_string in ("Globals.set", "Globals.set_local"):
-		if arglist[0] not in disallowed_server_globals: return
+		if Globals.server and arglist[0] not in disallowed_server_globals:
+			return
 	raise_violation(request, arglist)
 
 def vet_rpath(rpath):

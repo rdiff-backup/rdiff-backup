@@ -1,78 +1,41 @@
-New in v1.1.6 (2006/11/11)
+New in v1.0.5 (2006/11/11)
 --------------------------
-
-Man page update from roland <devzero@web.de>.
-
---min-file-size/--max-file-size support.  (Patch from Wout Mertens.)
-
-Mac OS X Extended Attributes support.  (Patch from Andrew Ferguson.)
-
-Preserve Mac OS X 'Creation Date' field across backups.  (Patch from Andrew
-Ferguson.)
-
-Set symlink permissions properly.  (Patch from Andrew Ferguson.)
-
-Selection fix: empty directories could sometimes be improperly
-excluded if certain include expressions involving a non-trailing '**'
-were used.  Bug reported by Toni Price.
-
-A few minor changes to help rdiff-backup back up to an SMB/CIFS share.
-Thanks to Cengiz Gunay for testing.
 
 Fix a traceback due to an off-by-1 error in "--remove-older-than nB".
 
 Fix a security violation when restoring from a remote repository.
 (Patch from Charles Duffy.)
 
-Added times like "Mon Jun 5 11:00:23 1997" to the recognized time
-strings.  (Suggested by Wolfgang Dautermann.)
+--list-at-time, --list-increments, and --list-increment-sizes should
+now work from a read-only repository.  (Bug reported by Wolfgang
+Dautermann.)
 
 
-New in v1.1.5 (2006/01/01)
+New in v1.0.4 (2006/01/15)
 --------------------------
-
-rdiff-backup will now exit by default if it thinks another
-rdiff-backup process is currently working on the same repository.
-
-Empty error_log, mirror_metadata, extended_attribute, and
-access_control_lists files will no longer be gzipped (suggestion by
-Hans F. Nordhaug).
-
-Fix for restoring files in directories with really long names.
-
-Added supplementary rdiff-backup-statistics utility for parsing
-rdiff-backup's statistics files (originally based off perl script by
-Dean Gaudet).
-
-rdiff-backup should now use much less memory than v1.1.1-1.1.4 if you
-have lots of hard links.
-
-
-New in v1.1.4 (2005/12/13)
---------------------------
-
-Quoting should be enabled only as needed between case-sensitive and
-non-case-sensitive systems (thanks for Andrew Ferguson for report).
 
 Files with ACLs will not be unnecessarily marked as changed (bug
 report by Carsten Lorenz).
 
-Fix for common KeyError bug introduced in v1.1.3.
+Another fix for long-filenames crash, this time when a long-named
+directory with files in it gets deleted
+
+Selection fix: empty directories could sometimes be improperly
+excluded if certain include expressions involving a non-trailing '**'
+were used.  Bug reported by Toni Price.
+
+Bug #15436 reported by Remy Blank: rdiff-backup would sometimes crash
+on ACLs if the owning uname did not exist on destination.
 
 
-New in v1.1.3 (2005/11/25)
+New in v1.0.3 (2005/11/25)
 --------------------------
 
-Regression metadata bug introduced with 1.1.1/1.1.2 fixed.
+Applied Alec Berryman's patch to update the no-compression regexp.
 
-rdiff-backup should now give a clean error message (no stack traces!)
-when aborted with control-C, killed with a signal, or when the
-connection is lost.
+Alec Berryman's fs_abilities patch is supposed to help with AFS.
 
-When removing older than, delete empty increments directories
-
-Long filename bug finally fixed (phew).  rdiff-backup should now
-correctly mirror any file that it can read.
+Fixed (version of) filename-too-long crash when quoting.
 
 Due to very detailed error report from Yoav, fixed a "Directory not
 empty" error that can arise on emulated filesystems like NFS and
@@ -82,55 +45,8 @@ Cleaned up remove older than report, and also stopped it from deleting
 current data files if you specify a time later than the current
 mirror.
 
-
-New in v1.1.2 (2005/11/06)
---------------------------
-
-This version corrects a packaging error in v1.1.1, which was totally
-broken.
-
-
-New in v1.1.1 (2005/11/05)
---------------------------
-
-rdiff-backup now writes SHA1 sums into its mirror_metadata file for
-all regular files, and checks them when restoring.
-
-The above greatly increases the size of the mirror_metadata files, so
-diff them for space efficiency, as suggested by Dean Gaudet.
-
-Added two new comparison modes: full file (using the --compare-full or
---compare-full-at-time) or by hash (--compare-hash and
---compare-hash-at-time).
-
-Applied Alec Berryman's patch to update the no-compression regexp.
-
-Alec Berryman's fs_abilities patch is supposed to help with AFS.
-
-Fixed filename-too-long crash when quoting.
-
-Patched carbonfile support, re-enabled it by default.
-
-
-New in v1.1.0 (2005/10/24)
---------------------------
-
-Refactored fs_abilities for more flexibility.  In particular, avoid
-quoting if both source and destination file systems are
-case-insensitive.
-
-Increased buffer sizes by factor of 4, because everyone probably has 4
-times as much RAM now as when I originally picked those values.
-
-When possible, fsync using a writable file descriptor.  This may help
-with cygwin.  (Requested/tested by Dave Kempe.)
-
-Support req 104755: Added --preserve-numerical-ids option, which makes
-rdiff-backup preserve uids/gids instead of unames/gnames.  (Suggested
-by Wiebe Cazemier)
-
-Fix for bug #14799 reported by Bob McKay:  Crash when backing up files
-with high permissions (like suid) to some FAT systems.
+--compare fix, now you don't need to specify the exact time of a
+session to avoid a "no metadata" error.
 
 
 New in v1.0.2 (2005/10/24)
@@ -150,6 +66,9 @@ support it.  It can be manually enabled with the --carbonfile switch.
 If you know something about Mac OS X and want to look at the
 carbonfile code so it can be re-enabled by default, please do so :)
 (help available from list)
+
+Fix for bug #14799 reported by Bob McKay:  Crash when backing up files
+with high permissions (like suid) to some FAT systems.
 
 
 New in v1.0.1 (2005/09/10)
