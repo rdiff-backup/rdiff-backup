@@ -1,6 +1,8 @@
 New in v1.1.6 (????/??/??)
 --------------------------
 
+Man page update from roland <devzero@web.de>.
+
 --min-file-size/--max-file-size support.  (Patch from Wout Mertens.)
 
 Mac OS X Extended Attributes support.  (Patch from Andrew Ferguson.)

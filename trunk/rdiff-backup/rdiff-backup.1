@@ -71,6 +71,9 @@ Enter calculate average mode.  The arguments should be a number of
 statistics files.  rdiff-backup will print the average of the listed
 statistics files and exit.
 .TP
+.B \-\-carbonfile 
+Enable backup of MacOS X carbonfile information.
+.TP
 .B \-\-check-destination-dir
 If an rdiff-backup session fails, running rdiff-backup with this
 option on the destination dir will undo the failed directory.  This
@@ -295,6 +298,12 @@ this may happen (with a warning) because the destination does not
 support them or because the relevant user/group names do not exist on
 the destination side.
 .TP
+.B \-\-no-acls
+No Access Control Lists - disable backup of ACLs
+.TP
+.B \-\-no-carbonfile
+Disable backup of MacOS X carbonfile information
+.TP
 .B \-\-no-compare-inode
 This relatively esoteric option prevents rdiff-backup from flagging a
 file as changed when its inode changes.  This option may be useful if
@@ -313,6 +322,9 @@ this option inconsistently is fine.
 Do not compress increments based on files whose filenames match
 regexp.  The default includes many common audiovisual and archive
 files, and may be found in Globals.py.
+.TP
+.B \-\-no-eas
+No Extended Attributes support - disable backup of EAs.
 .TP
 .B \-\-no-file-statistics
 This will disable writing to the file_statistics file in the
@@ -339,6 +351,10 @@ or
 .B \-\-list-increments
 switches, where the time will be given in seconds since the epoch.
 .TP
+.B \-\-override-chars-to-quote 
+.TP
+If the filesystem to which we are backing up is not case-sensitive, automatic 'quoting' of characters occurs. For example, a file 'Developer.doc' will be converted into ';068eveloper.doc'. To override this behavior, you need to specify this option.
+.TP
 .B \-\-preserve-numerical-ids
 If set, rdiff-backup will preserve uids/gids instead of trying to
 preserve unames and gnames.  See the
@@ -362,6 +378,9 @@ section for more information on the format of
 and see the
 .B RESTORING
 section for more information on restoring.
+.TP
+.BI "\-\-remote-cmd " cmd
+Deprecated. Please use \-\-remote-schema instead
 .TP
 .BI "\-\-remote-schema " schema
 Specify an alternate method of connecting to a remote computer.  This
