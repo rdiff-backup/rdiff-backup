@@ -1,4 +1,4 @@
-New in v1.0.5 (????/??/??)
+New in v1.0.5 (2006/11/11)
 --------------------------
 
 Fix a traceback due to an off-by-1 error in "--remove-older-than nB".
