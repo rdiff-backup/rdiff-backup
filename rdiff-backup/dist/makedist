@@ -90,7 +90,7 @@ def VersionedCopy(source, dest, munge_date = 0):
 	fout.write(outbuf)
 	assert not fout.close()
 
-def MakeTar():
+def MakeTar(specfiles):
 	"""Create rdiff-backup tar file"""
 	tardir = "rdiff-backup-%s" % Version
 	tarfile = "rdiff-backup-%s.tar.gz" % Version
@@ -103,7 +103,7 @@ def MakeTar():
 					 "FAQ.html", "examples.html",
 					 SourceDir + "/cmodule.c",
 					 SourceDir + "/_librsyncmodule.c",
-					 DistDir + "/setup.py"]:
+					 DistDir + "/setup.py"] + specfiles:
 		assert not os.system("cp %s %s" % (filename, tardir)), filename
 
 	os.mkdir(tardir+"/rdiff_backup")
@@ -141,7 +141,7 @@ def MakeSpecFile():
 	specfile, fedora_specfile= "rdiff-backup.spec", "rdiff-backup.spec-fedora"
 	VersionedCopy(spec_template, specfile)
 	VersionedCopy(fedora_spec_template, fedora_specfile)
-	return specfile, fedora_specfile
+	return [specfile, fedora_specfile]
 
 def parse_cmdline(arglist):
 	"""Returns action"""
@@ -168,10 +168,10 @@ def Main():
 	if action != "HTML":
 		assert action == "All"
 		print "Processing version " + Version
-		tarfile = MakeTar()
-		print "Made tar file " + tarfile
 		specfiles = MakeSpecFile()
 		print "Made specfiles ", specfiles
+		tarfile = MakeTar(specfiles)
+		print "Made tar file " + tarfile
 
 
 if __name__ == "__main__" and not globals().has_key('__no_execute__'):
