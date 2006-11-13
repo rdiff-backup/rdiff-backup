@@ -70,7 +70,8 @@ def carbonfile2string(cfile):
 	retvalparts.append('type:%s' % binascii.hexlify(cfile['type']))
 	retvalparts.append('location:%d,%d' % cfile['location'])
 	retvalparts.append('flags:%d' % cfile['flags'])
-	retvalparts.append('createDate:%d' % cfile['createDate'])
+	try: retvalparts.append('createDate:%d' % cfile['createDate'])
+	except KeyError: log.Log("Writing pre-1.1.6 style metadata, without creation date", 9)
 	return '|'.join(retvalparts)
 
 def string2carbonfile(data):
