@@ -6,8 +6,8 @@ Summary: Convenient and transparent local/remote incremental mirror/backup
 Name: rdiff-backup
 Release: 0.fdr.1
 Epoch: 0
-URL: http://rdiff-backup.stanford.edu/
-Source: http://rdiff-backup.stanford.edu/OLD/$version/rdiff-backup-$version.tar.gz
+URL: http://www.nongnu.org/rdiff-backup/
+Source: http://savannah.nongnu.org/download/rdiff-backup/rdiff-backup-%{version}.tar.gz
 License: GPL
 Group: Applications/Archiving
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -53,6 +53,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc CHANGELOG COPYING FAQ.html README
 
 %changelog
+* Wed Nov 15 2006 Gordon Rowell <gordonr@gormand.com.au> 0:1.1.7-0.fdr.1
+- update URLs
+
 * Sun Oct 05 2003 Ben Escoto <bescoto@stanford.edu> - 0:0.12.5-0.fdr.1
 - Added epochs to python versions, more concise %%defines, %%ghost files
 
