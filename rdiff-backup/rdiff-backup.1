@@ -305,12 +305,15 @@ No Access Control Lists - disable backup of ACLs
 Disable backup of MacOS X carbonfile information
 .TP
 .B \-\-no-compare-inode
-This relatively esoteric option prevents rdiff-backup from flagging a
-file as changed when its inode changes.  This option may be useful if
-you are backing up two different directories to the same rdiff-backup
-destination directory.  The downside is that hard link information may
-get messed up, as the metadata file may no longer have the correct
-inode information.
+This option prevents rdiff-backup from flagging a hardlinked file as changed
+when its device number and/or inode changes.  This option is useful in
+situations where the source filesystem lacks persistent device and/or inode
+numbering.  For example, network filesystems may have mount-to-mount
+differences in their device number (but possibly stable inode numbers);
+USB/1394 devices may come up at different device numbers each remount (but
+would generally have same inode number); and there are filesystems which
+don't even have the same inode numbers from use to use.  Without the
+option rdiff-backup may generate unnecessary numbers of tiny diff files.
 .TP
 .B \-\-no-compression
 Disable the default gzip compression of most of the .snapshot and .diff
