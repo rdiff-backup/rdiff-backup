@@ -1,3 +1,20 @@
+rdiff-backup (1.1.5-4~bpo.1) sarge-backports; urgency=medium
+
+  * Rebuild for Debian Backports <http://www.backports.org/>.
+  * Reverted python policy transition:
+    - removed Build-Depends on python-support (>= 0.4.1).
+    - replaced dh_pysupport with dh_python.
+
+ -- Daniel Baumann <daniel@debian.org>  Wed, 27 Dec 2006 20:39:00 +0100
+
+rdiff-backup (1.1.5-4) unstable; urgency=medium
+
+  * In a previous version, the python-pylibacl and python-pyxattr got lost
+    from depends, re-adding them as recommends now, which is more appropriate
+    anyway (Closes: #404708).
+
+ -- Daniel Baumann <daniel@debian.org>  Wed, 27 Dec 2006 20:38:00 +0100
+
 rdiff-backup (1.1.5-3) unstable; urgency=low
 
   * Migrated to new python policy (Closes: #380928, #383415).
