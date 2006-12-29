@@ -209,10 +209,12 @@ class Select:
 
 	def Select(self, rp):
 		"""Run through the selection functions and return dominant val 0/1/2"""
+		scanned = 0 # 0, by default, or 2 if prev sel func scanned rp
 		for sf in self.selection_functions:
 			result = sf(rp)
-			if result == 1 or result == 0 or (result == 2 and rp.isdir()):
-				return result
+			if result == 1: return 1
+			elif result == 0: return scanned
+			elif result == 2: scanned = 2
 		return 1
 
 	def ParseArgs(self, argtuples, filelists):
@@ -272,6 +274,10 @@ class Select:
 					self.add_selection_func(self.special_get_sf(1))
 				elif opt == "--include-symbolic-links":
 					self.add_selection_func(self.symlinks_get_sf(1))
+				elif opt == "--max-file-size":
+					self.add_selection_func(self.size_get_sf(1, arg))
+				elif opt == "--min-file-size":
+					self.add_selection_func(self.size_get_sf(0, arg))
 				else: assert 0, "Bad selection option %s" % opt
 		except SelectError, e: self.parse_catch_error(e)
 		assert filelists_index == len(filelists)
@@ -503,6 +509,16 @@ probably isn't what you meant.""" %
 			else: return None
 		sel_func.exclude = not include
 		sel_func.name = (include and "include" or "exclude") + " special files"
+		return sel_func
+
+	def size_get_sf(self, min_max, sizestr):
+		"""Return selection function given by filesize"""
+		size = int(sizestr)
+		assert size > 0
+		if min_max: sel_func = lambda rp: (rp.getsize() <= size)
+		else: sel_func = lambda rp: (rp.getsize() >= size)
+		sel_func.exclude = 1
+		sel_func.name = "%s size %d" % (min_max and "Maximum" or "Minimum", size)
 		return sel_func
 
 	def glob_get_sf(self, glob_str, include):

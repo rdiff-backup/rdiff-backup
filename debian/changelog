@@ -1,3 +1,14 @@
+rdiff-backup (1.1.7-1) experimental; urgency=low
+
+  * New upstream release:
+    - fixes problem with device files handling as user (Closes: #395096).
+    - fixes problems with storing to smbfs/cifs (Closes: #386983, #404947).
+  * Dropping 01-manpage.dpatch, went upstream.
+  * Uploading to experimental to not interfere the testing migration of
+    1.1.5-4.
+
+ -- Daniel Baumann <daniel@debian.org>  Fri, 29 Dec 2006 16:15:00 +0100
+
 rdiff-backup (1.1.5-4) unstable; urgency=medium
 
   * In a previous version, the python-pylibacl and python-pyxattr got lost

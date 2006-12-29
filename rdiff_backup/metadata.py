@@ -70,6 +70,8 @@ def carbonfile2string(cfile):
 	retvalparts.append('type:%s' % binascii.hexlify(cfile['type']))
 	retvalparts.append('location:%d,%d' % cfile['location'])
 	retvalparts.append('flags:%d' % cfile['flags'])
+	try: retvalparts.append('createDate:%d' % cfile['createDate'])
+	except KeyError: log.Log("Writing pre-1.1.6 style metadata, without creation date", 9)
 	return '|'.join(retvalparts)
 
 def string2carbonfile(data):
@@ -87,6 +89,8 @@ def string2carbonfile(data):
 			retval['location'] = (int(a), int(b))
 		elif key == 'flags':
 			retval['flags'] = int(value)
+		elif key == 'createDate':
+			retval['createDate'] = int(value)
 	return retval
 
 def RORP2Record(rorpath):
@@ -269,7 +273,7 @@ class FlatExtractor:
 		"""Return iterator that yields all objects with records"""
 		for record in self.iterate_records():
 			try: yield self.record_to_object(record)
-			except ParsingError, e:
+			except (ParsingError, ValueError), e:
 				if self.at_end: break # Ignore whitespace/bad records at end
 				log.Log("Error parsing flat file: %s" % (e,), 2)
 
@@ -314,7 +318,7 @@ class FlatExtractor:
 		while 1:
 			next_pos = self.get_next_pos()
 			try: obj = self.record_to_object(self.buf[:next_pos])
-			except ParsingError, e:
+			except (ParsingError, ValueError), e:
 				log.Log("Error parsing metadata file: %s" % (e,), 2)
 			else:
 				if obj.index[:len(index)] != index: break
