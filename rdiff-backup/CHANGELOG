@@ -1,6 +1,9 @@
 New in v1.1.8 (????/??/??)
 --------------------------
 
+Test for symlink permissions support to avoid unncessary syscalls on
+platforms that don't support them. (Patch from Andrew Ferguson.)
+
 RPM specfile update from Gordon Rowell.
 
 
