@@ -46,6 +46,7 @@ class FSAbilities:
 	name = None # Short string, not used for any technical purpose
 	read_only = None # True if capabilities were determined non-destructively
 	high_perms = None # True if suid etc perms are (read/write) supported
+	symlink_perms = None # True if symlink perms are affected by umask
 
 	def __init__(self, name = None):
 		"""FSAbilities initializer.  name is only used in logging"""
@@ -87,6 +88,7 @@ class FSAbilities:
 							  ('Directory inc permissions',
 							   self.dir_inc_perms),
 							  ('High-bit permissions', self.high_perms),
+							  ('Symlink permissions', self.symlink_perms),
 							  ('Extended filenames', self.extended_filenames)])
 		add_boolean_list([('Access control lists', self.acls),
 						  ('Extended attributes', self.eas),
@@ -145,6 +147,7 @@ class FSAbilities:
 		self.set_resource_fork_readwrite(subdir)
 		self.set_carbonfile()
 		self.set_high_perms_readwrite(subdir)
+		self.set_symlink_perms(subdir)
 
 		subdir.delete()
 		return self
@@ -395,6 +398,21 @@ class FSAbilities:
 		else: self.high_perms = 1
 		tmp_rp.delete()
 
+	def set_symlink_perms(self, dir_rp):
+		"""Test if symlink permissions are affected by umask"""
+		sym_source = dir_rp.append("symlinked_file1")
+		sym_source.touch()
+		sym_dest = dir_rp.append("symlinked_file2")
+		sym_dest.symlink(sym_source.path)
+		sym_dest.setdata()
+		assert sym_dest.issym()
+		orig_umask = os.umask(077)
+		if sym_dest.getperms() == 0700: self.symlink_perms = 1
+		else: self.symlink_perms = 0
+		os.umask(orig_umask)
+		sym_dest.delete()
+		sym_source.delete()
+		
 def get_readonly_fsa(desc_string, rp):
 	"""Return an fsa with given description_string
 
@@ -455,6 +473,9 @@ class SetGlobals:
 		if not self.dest_fsa.high_perms:
 			SetConnections.UpdateGlobal('permission_mask', 0777)
 
+	def set_symlink_perms(self):
+		SetConnections.UpdateGlobal('symlink_perms',
+									self.dest_fsa.symlink_perms)
 
 class BackupSetGlobals(SetGlobals):
 	"""Functions for setting fsa related globals for backup session"""
@@ -612,6 +633,7 @@ def backup_set_globals(rpin):
 	bsg.set_fsync_directories()
 	bsg.set_change_ownership()
 	bsg.set_high_perms()
+	bsg.set_symlink_perms()
 	bsg.set_chars_to_quote(Globals.rbdir)
 
 def restore_set_globals(rpout):
@@ -632,6 +654,7 @@ def restore_set_globals(rpout):
 	# No need to fsync anything when restoring
 	rsg.set_change_ownership()
 	rsg.set_high_perms()
+	rsg.set_symlink_perms()
 	rsg.set_chars_to_quote(Globals.rbdir)
 
 def single_set_globals(rp, read_only = None):
@@ -650,5 +673,6 @@ def single_set_globals(rp, read_only = None):
 		ssg.set_hardlinks()
 		ssg.set_change_ownership()
 		ssg.set_high_perms()
+		ssg.set_symlink_perms()
 	ssg.set_chars_to_quote(Globals.rbdir)
 

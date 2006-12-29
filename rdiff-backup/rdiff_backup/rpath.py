@@ -103,9 +103,9 @@ def copy(rpin, rpout, compress = 0):
 	elif rpin.issym():
 		# some systems support permissions for symlinks, but
 		# only by setting at creation via the umask
-		orig_umask = os.umask(0777 & ~rpin.getperms())
+		if Globals.symlink_perms: orig_umask = os.umask(0777 & ~rpin.getperms())
 		rpout.symlink(rpin.readlink())
-		os.umask(orig_umask)	# restore previous umask
+		if Globals.symlink_perms: os.umask(orig_umask)	# restore previous umask
 	elif rpin.ischardev():
 		major, minor = rpin.getdevnums()
 		rpout.makedev("c", major, minor)

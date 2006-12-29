@@ -221,6 +221,11 @@ never_drop_acls = None
 # prevent highbit permissions on systems which don't support them.)
 permission_mask = 07777
 
+# If true, symlinks permissions are affected by the process umask, and
+# we should change the umask when creating them in order to preserve
+# the original permissions
+symlink_perms = None
+
 def get(name):
 	"""Return the value of something in this module"""
 	return globals()[name]
