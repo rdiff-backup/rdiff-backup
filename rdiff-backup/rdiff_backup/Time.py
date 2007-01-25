@@ -193,7 +193,7 @@ def time_from_session(session_num, rp = None):
 					.get_increment_times()
 	session_times.sort()
 	if len(session_times) <= session_num:
-		return session_times[0] # Use oldest if two few backups
+		return session_times[0] # Use oldest if too few backups
 	return session_times[-session_num-1]
 	
 def genstrtotime(timestr, curtime = None, rp = None):
