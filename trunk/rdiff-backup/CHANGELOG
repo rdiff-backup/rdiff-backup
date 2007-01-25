@@ -1,6 +1,9 @@
 New in v1.1.8 (????/??/??)
 --------------------------
 
+Allow for preservation of FinderInfo for folders and fix typo
+in Time.py. (Patch from Andrew Ferguson.)
+
 Test for symlink permissions support to avoid unncessary syscalls on
 platforms that don't support them. (Patch from Andrew Ferguson.)
 
