@@ -46,6 +46,8 @@ class FSAbilities:
 	name = None # Short string, not used for any technical purpose
 	read_only = None # True if capabilities were determined non-destructively
 	high_perms = None # True if suid etc perms are (read/write) supported
+	escape_dos_devices = None # True if dos device files can't be created (e.g.,
+							  # aux, con, com1, etc)
 	symlink_perms = None # True if symlink perms are affected by umask
 
 	def __init__(self, name = None):
@@ -93,6 +95,7 @@ class FSAbilities:
 		add_boolean_list([('Access control lists', self.acls),
 						  ('Extended attributes', self.eas),
 						  ('Case sensitivity', self.case_sensitive),
+						  ('Escape DOS devices', self.escape_dos_devices),
 						  ('Mac OS X style resource forks',
 						   self.resource_forks),
 						  ('Mac OS X Finder information', self.carbonfile)])
@@ -117,6 +120,7 @@ class FSAbilities:
 		self.set_resource_fork_readonly(rp)
 		self.set_carbonfile()
 		self.set_case_sensitive_readonly(rp)
+		self.set_escape_dos_devices(rp)
 		return self
 
 	def init_readwrite(self, rbdir):
@@ -148,6 +152,7 @@ class FSAbilities:
 		self.set_carbonfile()
 		self.set_high_perms_readwrite(subdir)
 		self.set_symlink_perms(subdir)
+		self.set_escape_dos_devices(subdir)
 
 		subdir.delete()
 		return self
@@ -412,7 +417,21 @@ class FSAbilities:
 		os.umask(orig_umask)
 		sym_dest.delete()
 		sym_source.delete()
-		
+
+	def set_escape_dos_devices(self, subdir):
+		"""If special file aux can be stat'd, escape special files"""
+		device_rp = subdir.append("aux")
+		if device_rp.lstat():
+			assert device_rp.lstat()
+			log.Log("escape_dos_devices required by filesystem at %s" \
+					% (subdir.path), 4)
+			self.escape_dos_devices = 1
+		else:
+			assert not device_rp.lstat()
+			log.Log("escape_dos_devices not required by filesystem at %s" \
+					% (subdir.path), 4)
+			self.escape_dos_devices = 0
+
 def get_readonly_fsa(desc_string, rp):
 	"""Return an fsa with given description_string
 
@@ -423,6 +442,9 @@ def get_readonly_fsa(desc_string, rp):
 	"""
 	return FSAbilities(desc_string).init_readonly(rp)
 
+	def set_escape_dos_devices(self):
+		SetConnections.UpdateGlobal('escape_dos_devices', \
+									self.dest_fsa.escape_dos_devices)
 
 class SetGlobals:
 	"""Various functions for setting Globals vars given FSAbilities above
@@ -491,6 +513,16 @@ class BackupSetGlobals(SetGlobals):
 			SetConnections.UpdateGlobal(write_attr, 1)
 			self.out_conn.Globals.set_local(conn_attr, 1)
 
+	def set_must_escape_dos_devices(self, rbdir):
+		"""If local edd or src edd, then must escape """
+		device_rp = rbdir.append("aux")
+		if device_rp.lstat(): local_edd = 1
+		else: local_edd = 0
+		SetConnections.UpdateGlobal('must_escape_dos_devices', \
+			self.src_fsa.escape_dos_devices or local_edd)
+		log.Log("Backup: must_escape_dos_devices = %d" % \
+				(self.src_fsa.escape_dos_devices or local_edd), 4)
+
 	def set_chars_to_quote(self, rbdir):
 		"""Set chars_to_quote setting for backup session
 
@@ -509,11 +541,11 @@ class BackupSetGlobals(SetGlobals):
 		if self.src_fsa.case_sensitive and not self.dest_fsa.case_sensitive:
 			if self.dest_fsa.extended_filenames:
 				return "A-Z;" # Quote upper case and quoting char
-			else: return "^a-z0-9_ -." # quote everything but basic chars
+			else: return "^a-z0-9_ .-" # quote everything but basic chars
 
 		if self.dest_fsa.extended_filenames:
 			return "" # Don't quote anything
-		else: return "^A-Za-z0-9_ -."
+		else: return "^A-Za-z0-9_ .-"
 
 	def compare_ctq_file(self, rbdir, suggested_ctq):
 		"""Compare ctq file with suggested result, return actual ctq"""
@@ -566,6 +598,16 @@ class RestoreSetGlobals(SetGlobals):
 		self.out_conn.Globals.set_local(conn_attr, 1)
 		self.out_conn.Globals.set_local(write_attr, 1)
 		if src_support: self.in_conn.Globals.set_local(conn_attr, 1)
+
+	def set_must_escape_dos_devices(self, rbdir):
+		"""If local edd or src edd, then must escape """
+		device_rp = rbdir.append("aux")
+		if device_rp.lstat(): local_edd = 1
+		else: local_edd = 0
+		SetConnections.UpdateGlobal('must_escape_dos_devices', \
+			self.src_fsa.escape_dos_devices or local_edd)
+		log.Log("Restore: must_escape_dos_devices = %d" % \
+				(self.src_fsa.escape_dos_devices or local_edd), 4)
 
 	def set_chars_to_quote(self, rbdir):
 		"""Set chars_to_quote from rdiff-backup-data dir"""
@@ -635,6 +677,8 @@ def backup_set_globals(rpin):
 	bsg.set_high_perms()
 	bsg.set_symlink_perms()
 	bsg.set_chars_to_quote(Globals.rbdir)
+	bsg.set_escape_dos_devices()
+	bsg.set_must_escape_dos_devices(Globals.rbdir)
 
 def restore_set_globals(rpout):
 	"""Set fsa related globals for restore session, given in/out rps"""
@@ -656,6 +700,8 @@ def restore_set_globals(rpout):
 	rsg.set_high_perms()
 	rsg.set_symlink_perms()
 	rsg.set_chars_to_quote(Globals.rbdir)
+	rsg.set_escape_dos_devices()
+	rsg.set_must_escape_dos_devices(Globals.rbdir)
 
 def single_set_globals(rp, read_only = None):
 	"""Set fsa related globals for operation on single filesystem"""
@@ -675,4 +721,6 @@ def single_set_globals(rp, read_only = None):
 		ssg.set_high_perms()
 		ssg.set_symlink_perms()
 	ssg.set_chars_to_quote(Globals.rbdir)
+	ssg.set_escape_dos_devices()
+	ssg.set_must_escape_dos_devices(Globals.rbdir)
 
