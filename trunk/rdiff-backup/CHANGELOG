@@ -1,6 +1,11 @@
 New in v1.1.8 (????/??/??)
 --------------------------
 
+Add "FilenameMapping.set_init_quote_vals" security exception.
+[Marc Dyksterhouse]
+
+Escape DOS device filenames when necessary.  [Marc Dyksterhouse]
+
 Allow for preservation of FinderInfo for folders and fix typo
 in Time.py. (Patch from Andrew Ferguson.)
 
@@ -8,11 +13,6 @@ Test for symlink permissions support to avoid unncessary syscalls on
 platforms that don't support them. (Patch from Andrew Ferguson.)
 
 RPM specfile update from Gordon Rowell.
-
-Add "FilenameMapping.set_init_quote_vals" security exception.
-[Marc Dyksterhouse]
-
-Escape DOS device filenames when necessary.  [Marc Dyksterhouse]
 
 
 New in v1.1.7 (2006/11/12)
