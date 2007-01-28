@@ -12,6 +12,8 @@ RPM specfile update from Gordon Rowell.
 Add "FilenameMapping.set_init_quote_vals" security exception.
 [Marc Dyksterhouse]
 
+Escape DOS device filenames when necessary.  [Marc Dyksterhouse]
+
 
 New in v1.1.7 (2006/11/12)
 --------------------------
