@@ -131,6 +131,7 @@ def set_allowed_requests(sec_level):
 		 "Globals.get", "Globals.is_not_None", "Globals.get_dict_val",
 		 "log.Log.open_logfile_allconn", "log.Log.close_logfile_allconn",
 		 "Log.log_to_file", "FilenameMapping.set_init_quote_vals_local",
+		 "FilenameMapping.set_init_quote_vals",
 		 "SetConnections.add_redirected_conn", "RedirectedRun",
 		 "sys.stdout.write", "robust.install_signal_handlers"]
 	if (sec_level == "read-only" or sec_level == "update-only" or
