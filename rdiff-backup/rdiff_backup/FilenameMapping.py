@@ -83,7 +83,17 @@ def quote(path):
 	the quoting character.
 
 	"""
-	return chars_to_quote_regexp.sub(quote_single, path)
+	QuotedPath = chars_to_quote_regexp.sub(quote_single, path)
+	if not Globals.must_escape_dos_devices:
+		return QuotedPath
+
+	# Escape first char of any special DOS device files even if filename has an
+	# extension.  Special names are: aux, prn, con, nul, com0-9, and lpt1-2.
+	if not re.search(r"^aux(\..*)*$|^prn(\..*)*$|^con(\..*)*$|^nul(\..*)*$|" \
+					 r"^com[0-9](\..*)*$|^lpt[12]{1}(\..*)*$", QuotedPath, \
+					 re.I):
+		return QuotedPath
+	return "%s%03d" % (quoting_char, ord(QuotedPath[0])) + QuotedPath[1:]
 
 def quote_single(match):
 	"""Return replacement for a single character"""
