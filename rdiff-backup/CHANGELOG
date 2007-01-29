@@ -1,6 +1,9 @@
 New in v1.1.8 (????/??/??)
 --------------------------
 
+Cygwin generates EACCESS on fsync -- so accept it rather than dieing.
+(Marc Dyksterhouse).
+
 Add "FilenameMapping.set_init_quote_vals" security exception.
 (Marc Dyksterhouse)
 
