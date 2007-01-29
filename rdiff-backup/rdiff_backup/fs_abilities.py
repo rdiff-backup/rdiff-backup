@@ -442,10 +442,6 @@ def get_readonly_fsa(desc_string, rp):
 	"""
 	return FSAbilities(desc_string).init_readonly(rp)
 
-	def set_escape_dos_devices(self):
-		SetConnections.UpdateGlobal('escape_dos_devices', \
-									self.dest_fsa.escape_dos_devices)
-
 class SetGlobals:
 	"""Various functions for setting Globals vars given FSAbilities above
 
@@ -498,6 +494,10 @@ class SetGlobals:
 	def set_symlink_perms(self):
 		SetConnections.UpdateGlobal('symlink_perms',
 									self.dest_fsa.symlink_perms)
+
+	def set_escape_dos_devices(self):
+		SetConnections.UpdateGlobal('escape_dos_devices', \
+									self.dest_fsa.escape_dos_devices)
 
 class BackupSetGlobals(SetGlobals):
 	"""Functions for setting fsa related globals for backup session"""
