@@ -738,6 +738,15 @@ insensitive), then this prefix will be removed and any character in
 the string can be replaced with an upper- or lowercase version of
 itself.
 
+If you need to match filenames which contain the above globbing 
+characters, they may be escaped using a backslash "\\". The backslash
+will only escape the character following it so for 
+.B **
+you will need 
+to use "\\*\\*" to avoid escaping it to the 
+.B * 
+globbing character.
+
 Remember that you may need to quote these characters when typing them
 into a shell, so the shell does not interpret the globbing patterns
 before rdiff-backup sees them.
