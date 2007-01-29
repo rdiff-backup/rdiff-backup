@@ -1,6 +1,9 @@
 New in v1.1.9 (????/??/??)
 --------------------------
 
+Fix fs_abilities.py patch error with set_escape_dos_devices.
+(Marc Dyksterhouse)
+
 Glob escaping support via backslash.  (Andrew Price)
 
 
