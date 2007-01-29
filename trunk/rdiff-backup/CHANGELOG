@@ -2,9 +2,10 @@ New in v1.1.8 (????/??/??)
 --------------------------
 
 Add "FilenameMapping.set_init_quote_vals" security exception.
-[Marc Dyksterhouse]
+(Marc Dyksterhouse)
 
-Escape DOS device filenames when necessary.  [Marc Dyksterhouse]
+Escape DOS device filenames when necessary.  Adjust DOS filename
+quoting to work properly with cygwin.  (Marc Dyksterhouse)
 
 Allow for preservation of FinderInfo for folders and fix typo
 in Time.py. (Patch from Andrew Ferguson.)
