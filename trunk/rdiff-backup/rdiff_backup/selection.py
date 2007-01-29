@@ -629,8 +629,8 @@ probably isn't what you meant.""" %
 		"""Returned regular expression equivalent to shell glob pat
 
 		Currently only the ?, *, [], and ** expressions are supported.
-		Ranges like [a-z] are also currently unsupported.  There is no
-		way to quote these special characters.
+		Ranges like [a-z] are also currently unsupported.  These special
+		characters can be quoted by prepending them with a backslash.
 
 		This function taken with minor modifications from efnmatch.py
 		by Donovan Baarda.
