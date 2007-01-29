@@ -541,11 +541,13 @@ class BackupSetGlobals(SetGlobals):
 		if self.src_fsa.case_sensitive and not self.dest_fsa.case_sensitive:
 			if self.dest_fsa.extended_filenames:
 				return "A-Z;" # Quote upper case and quoting char
-			else: return "^a-z0-9_ .-" # quote everything but basic chars
+			# Quote the following 0 - 31, ", *, /, :, <, >, ?, \, |, ;
+			# Also quote uppercase A-Z
+			else: return 'A-Z\000-\037\"*/:<>?\\\\|\177;'
 
 		if self.dest_fsa.extended_filenames:
 			return "" # Don't quote anything
-		else: return "^A-Za-z0-9_ .-"
+		else: return '\000-\037\"*/:<>?\\\\|\177;'
 
 	def compare_ctq_file(self, rbdir, suggested_ctq):
 		"""Compare ctq file with suggested result, return actual ctq"""
