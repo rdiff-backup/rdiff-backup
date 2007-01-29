@@ -1,4 +1,4 @@
-New in v1.1.8 (????/??/??)
+New in v1.1.8 (2007/01/29)
 --------------------------
 
 Cygwin generates EACCESS on fsync -- so accept it rather than dieing.
