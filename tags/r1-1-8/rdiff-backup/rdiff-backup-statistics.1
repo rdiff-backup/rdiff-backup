@@ -1,0 +1,79 @@
+.TH RDIFF-BACKUP-STATISTICS 1 "NOVEMBER 2006" "Version 1.1.6" "User Manuals" \" -*- nroff -*-
+.SH NAME
+rdiff-backup-statistics \- summarize rdiff-backup statistics files
+.SH SYNOPSIS
+.B rdiff-backup-statistics
+.BI [\-\-begin-time " time" ]
+.BI [\-\-end-time " time" ]
+.BI [\-\-minimum-ratio " ratio" ]
+.B [\-\-null-separator]
+.I repository
+
+.SH DESCRIPTION
+.BI rdiff-backup-statistics
+reads the matching statistics files in a backup repository made by
+.B rdiff-backup
+and prints some summary statistics to the screen.  It does not alter
+the repository in any way.
+
+The required argument is the pathname of the root of an rdiff-backup
+repository.  For instance, if you ran "rdiff-backup in out", you could
+later run "rdiff-backup-statistics out".
+
+The output has two parts.  The first is simply an average of the all
+matching session_statistics files.  The meaning of these fields is
+explained in the FAQ included in the package, and also at
+.IR http://rdiff-backup.nongnu.org/FAQ.html#statistics .
+
+The second section lists some particularly significant files
+(including directories).  These files are either contain a lot of
+data, take up increment space, or contain a lot of changed files.  All
+the files that are above the minimum ratio (default 5%) will be
+listed.
+
+If a file or directory is listed, its contributions are subtracted
+from its parent.  That is why the percentage listed after a directory
+can be larger than the percentage of its parent.  Without this, the
+root directory would always be the largest, and the output would be
+boring.
+
+.SH OPTIONS
+.TP
+.BI \-\-begin-time " time"
+Do not read statistics files older than
+.IR time .
+By default, all statistics files will be read.
+.I time
+should be in the same format taken by \-\-restore-as-of.  (See
+.B TIME FORMATS
+in the rdiff-backup man page for details.)
+.TP
+.BI \-\-end-time " time"
+Like
+.B \-\-begin-time
+but exclude statistics files later than
+.IR time .
+.TP
+.BI \-\-minimum-ratio " ratio"
+Print all directories contributing more than the given ratio to the
+total.  The default value is .05, or 5 percent.
+.TP
+.B \-\-null-separator
+Specify that the lines of the file_statistics file are separated by
+nulls (\\0).  The default is to assume that newlines separate.  Use
+this switch if rdiff-backup was run with the \-\-null-separator when
+making the given repository.
+
+.SH BUGS
+When aggregating multiple statistics files, some directories above
+(but close to) the minimum ratio may not be displayed.  For this
+reason, you may want to set the minimum-ratio lower than need.
+
+.SH AUTHOR
+Ben Escoto <ben@emerose.org>, based on original script by Dean Gaudet.
+
+.SH SEE ALSO
+.BR rdiff-backup (1),
+.BR python (1).
+The rdiff-backup web page is at
+.IR http://rdiff-backup.nongnu.org/ .
