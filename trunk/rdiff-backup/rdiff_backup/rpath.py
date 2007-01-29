@@ -495,7 +495,8 @@ class RORPath:
 
 	def getperms(self):
 		"""Return permission block of file"""
-		return self.data['perms']
+		if self.data.has_key('perms'): return self.data['perms']
+		else: return 0
 
 	def getuname(self):
 		"""Return username that owns the file"""
@@ -934,11 +935,13 @@ class RPath(RORPath):
 	def isowner(self):
 		"""Return true if current process is owner of rp or root"""
 		uid = self.conn.os.getuid()
-		return uid == 0 or uid == self.data['uid']
+		return uid == 0 or \
+			   (self.data.has_key('uid') and uid == self.data['uid'])
 
 	def isgroup(self):
 		"""Return true if process has group of rp"""
-		return self.data['gid'] in self.conn.Globals.get('process_groups')
+		return (self.data.has_key('gid') and \
+				self.data['gid'] in self.conn.Globals.get('process_groups'))
 
 	def delete(self):
 		"""Delete file at self.path.  Recursively deletes directories."""
@@ -1154,7 +1157,8 @@ class RPath(RORPath):
 			os.close(fd)
 		except OSError, e:
 			if locals().has_key('fd'): os.close(fd)
-			if e.errno != errno.EPERM or self.isdir(): raise
+			if (e.errno != errno.EPERM and e.errno != errno.EACCES) \
+				or self.isdir(): raise
 
 			# Maybe the system doesn't like read-only fsyncing.
 			# However, to open RDWR, we may need to alter permissions
