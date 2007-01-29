@@ -77,7 +77,7 @@ class Select:
 
 	"""
 	# This re should not match normal filenames, but usually just globs
-	glob_re = re.compile("(.*[*?[]|ignorecase\\:)", re.I | re.S)
+	glob_re = re.compile("(.*[*?[\\\\]|ignorecase\\:)", re.I | re.S)
 
 	def __init__(self, rootrp):
 		"""Select initializer.  rpath is the root directory"""
@@ -640,7 +640,10 @@ probably isn't what you meant.""" %
 		while i < n:
 			c, s = pat[i], pat[i:i+2]
 			i = i+1
-			if s == '**':
+			if c == '\\':
+				res = res + re.escape(s[-1])
+				i = i + 1
+			elif s == '**':
 				res = res + '.*'
 				i = i + 1
 			elif c == '*': res = res + '[^/]*'
