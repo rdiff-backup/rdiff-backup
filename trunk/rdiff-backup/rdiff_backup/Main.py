@@ -381,7 +381,10 @@ def backup_set_rbdir(rpin, rpout):
 
 	assert rpout.lstat(), (rpout.path, rpout.lstat())
 	if rpout.isdir() and not rpout.listdir(): # rpout is empty dir
-		rpout.chmod(0700) # just make sure permissions aren't too lax
+		try:
+			rpout.chmod(0700) # just make sure permissions aren't too lax
+		except OSError:
+			log.Log("Cannot change permissions on target directory.", 2)
 	elif not Globals.rbdir.lstat() and not force: Log.FatalError(
 """Destination directory
 
