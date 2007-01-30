@@ -1,6 +1,9 @@
 New in v1.1.9 (????/??/??)
 --------------------------
 
+Cygwin generates OSError when changing permissions on partitions.
+(Patch from Andrew Ferguson.)
+
 Fix fs_abilities.py patch error with set_escape_dos_devices.
 (Marc Dyksterhouse)
 
