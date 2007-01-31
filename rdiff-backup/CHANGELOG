@@ -1,8 +1,8 @@
 New in v1.1.10 (????/??/??)
 ---------------------------
 
-Fix --list-increments bug in set_escape_dos_devices. (Marc
-Dyksterhouse)
+Fix --list-increments bug in set_must_escape_dos_devices.
+(Marc Dyksterhouse)
 
 
 New in v1.1.9 (2007/01/29)
