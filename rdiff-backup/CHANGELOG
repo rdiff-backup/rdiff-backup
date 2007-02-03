@@ -1,6 +1,9 @@
 New in v1.1.10 (????/??/??)
 ---------------------------
 
+Fix restore from read-only bug -- rx perms on a repository directory are
+enough, no need for write perms when restoring.  (patch from Andrew Price)
+
 Fix --list-increments bug in set_must_escape_dos_devices.
 (Marc Dyksterhouse)
 
