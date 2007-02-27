@@ -553,7 +553,7 @@ def rpath_ea_get(rp):
 
 	"""
 	ea = ExtendedAttributes(rp.index)
-	if not rp.issym(): ea.read_from_rp(rp)
+	if not rp.issym() and not rp.issock(): ea.read_from_rp(rp)
 	return ea
 rpath.ea_get = rpath_ea_get
 
