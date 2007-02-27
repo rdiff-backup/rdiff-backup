@@ -1,6 +1,9 @@
 New in v1.1.10 (????/??/??)
 ---------------------------
 
+Sockets don't have extended attributes -- don't try to access them.
+(Patch from Andrew Ferguson.)
+
 Fix restore from read-only bug -- rx perms on a repository directory are
 enough, no need for write perms when restoring.  (patch from Andrew Price)
 
