@@ -67,8 +67,9 @@ class ExtendedAttributes:
 			if attr.startswith('system.'):
 				# Do not preserve system extended attributes
 				continue
-			if attr == 'com.apple.FinderInfo' or attr == 'com.apple.ResourceFork':
-				# FinderInfo and Resource Fork handled elsewhere
+			if not rp.isdir() and attr == 'com.apple.FinderInfo' or attr == 'com.apple.ResourceFork':
+				# FinderInfo and Resource Fork handled elsewhere, except
+				# for directories
 				continue
 			try: self.attr_dict[attr] = rp.conn.xattr.getxattr(rp.path, attr)
 			except IOError, exc:

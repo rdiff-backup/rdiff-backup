@@ -23,7 +23,7 @@ import re, os
 
 
 # The current version of rdiff-backup
-version = "1.1.7"
+version = "1.1.9"
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
@@ -220,6 +220,11 @@ never_drop_acls = None
 # Apply this mask to permissions before chmoding.  (Set to 0777 to
 # prevent highbit permissions on systems which don't support them.)
 permission_mask = 07777
+
+# If true, symlinks permissions are affected by the process umask, and
+# we should change the umask when creating them in order to preserve
+# the original permissions
+symlink_perms = None
 
 def get(name):
 	"""Return the value of something in this module"""

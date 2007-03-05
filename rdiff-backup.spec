@@ -2,13 +2,13 @@
 %define PYTHON_VERSION %(%{PYTHON_NAME} -c 'import sys; print sys.version[:3],')
 %define NEXT_PYTHON_VERSION %(%{PYTHON_NAME} -c 'import sys; print "%d.%d" % (sys.version_info[0], sys.version_info[1]+1),')
 
-Version: 1.1.7
+Version: 1.1.9
 Summary: Convenient and transparent local/remote incremental mirror/backup
 Name: rdiff-backup
 Release: 1
 Epoch: 0
-URL: http://rdiff-backup.stanford.edu/
-Source: http://rdiff-backup.stanford.edu/OLD/1.1.7/rdiff-backup-1.1.7.tar.gz
+URL: http://www.nongnu.org/rdiff-backup/
+Source: http://savannah.nongnu.org/download/rdiff-backup/rdiff-backup-%{version}.tar.gz
 License: GPL
 Group: Applications/Archiving
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -55,6 +55,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc CHANGELOG COPYING FAQ.html examples.html README
 
 %changelog
+* Wed Nov 15 2006 Gordon Rowell <gordonr@gormand.com.au> 1.1.7-1
+- Update URLs
+
 * Mon Aug 22 2005 Ben Escoto <ben@emerose.org> - 1.0.0-3
 - Matthijs van der Klip's patch to fix python2 support
 

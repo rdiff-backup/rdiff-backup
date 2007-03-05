@@ -1,4 +1,2 @@
-# watch control file for uscan
-
 version=3
 http://savannah.nongnu.org/download/rdiff-backup/rdiff-backup-(.*)\.tar\.gz
