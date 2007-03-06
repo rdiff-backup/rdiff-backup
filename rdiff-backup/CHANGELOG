@@ -1,6 +1,9 @@
 New in v1.1.10 (????/??/??)
 ---------------------------
 
+Use signal 0 rather than signal.NSIG when testing if another rdiff-backup
+is still running.  (Patch from Sébastien Maret)
+
 Sockets don't have extended attributes -- don't try to access them.
 (Patch from Andrew Ferguson.)
 
