@@ -3,10 +3,12 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+include /usr/share/dpatch/dpatch.make
+
 CFLAGS = -Wall -g -O2
 
 build: build-stamp
-build-stamp:
+build-stamp: patch-stamp
 	dh_testdir
 
 	# Building package
@@ -14,7 +16,7 @@ build-stamp:
 
 	touch build-stamp
 
-clean:
+clean: unpatch
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp

@@ -1,3 +1,10 @@
+rdiff-backup (1.1.9-2) unstable; urgency=low
+
+  * Added patch from Marc Dyksterhouse to fix --list-increments
+    (Closes: #413981).
+
+ -- Daniel Baumann <daniel@debian.org>  Sun,  1 Apr 2007 19:13:00 +0100
+
 rdiff-backup (1.1.9-1) unstable; urgency=low
 
   * New upstream release.

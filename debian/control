@@ -2,7 +2,7 @@ Source: rdiff-backup
 Section: utils
 Priority: optional
 Maintainer: Daniel Baumann <daniel@debian.org>
-Build-Depends: debhelper (>= 5), python-support (>= 0.4.1), python-dev, python-pylibacl, python-pyxattr, librsync-dev
+Build-Depends: debhelper (>= 5), dpatch, python-support (>= 0.4.1), python-dev, python-pylibacl, python-pyxattr, librsync-dev
 Standards-Version: 3.7.2
 
 Package: rdiff-backup
