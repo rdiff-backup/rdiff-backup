@@ -190,6 +190,12 @@ Exclude all socket files.
 .B "\-\-exclude-symbolic-links"
 Exclude all symbolic links.
 .TP
+.BI "\-\exclude-if-present " filename
+Exclude directories if
+.IR filename
+is present. This option needs to come before any other include or
+exclude options.
+.TP
 .B \-\-force
 Authorize a more drastic modification of a directory than usual (for
 instance, when overwriting of a destination path, or when removing

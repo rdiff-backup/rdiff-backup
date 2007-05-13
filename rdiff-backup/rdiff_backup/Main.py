@@ -67,7 +67,7 @@ def parse_cmdlineoptions(arglist):
 		  "exclude-symbolic-links", "exclude-sockets",
 		  "exclude-filelist-stdin", "exclude-globbing-filelist=",
 		  "exclude-globbing-filelist-stdin", "exclude-mirror=",
-		  "exclude-other-filesystems", "exclude-regexp=",
+		  "exclude-other-filesystems", "exclude-regexp=", "exclude-if-present=",
 		  "exclude-special-files", "force", "group-mapping-file=",
 		  "include=", "include-filelist=", "include-filelist-stdin",
 		  "include-globbing-filelist=",
@@ -109,6 +109,7 @@ def parse_cmdlineoptions(arglist):
 			  opt == "--exclude-fifos" or
 			  opt == "--exclude-other-filesystems" or
 			  opt == "--exclude-regexp" or
+			  opt == "--exclude-if-present" or
 			  opt == "--exclude-special-files" or
 			  opt == "--exclude-sockets" or
 			  opt == "--exclude-symbolic-links"):
