@@ -1,6 +1,9 @@
 New in v1.1.10 (????/??/??)
 ---------------------------
 
+New --exclude-if-present option (i.e. --exclude-if-present .nobackup).
+(Jeff Strunk).
+
 Use signal 0 rather than signal.NSIG when testing if another rdiff-backup
 is still running.  (Patch from Sébastien Maret)
 
