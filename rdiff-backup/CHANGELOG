@@ -1,6 +1,9 @@
 New in v1.1.11 (????/??/??)
 ---------------------------
 
+Fix for bug #19612 -- Incorrect line broke --no-compression option.
+(Fix by Thiago in bug comment)
+
 Fix for bug #19896 -- symlink() doesn't work on a CIFS-mounted Windows
 share.  (Jonathan Hankins)
 
