@@ -420,17 +420,20 @@ class FSAbilities:
 
 	def set_escape_dos_devices(self, subdir):
 		"""If special file aux can be stat'd, escape special files"""
-		device_rp = subdir.append("aux")
-		if device_rp.lstat():
-			assert device_rp.lstat()
+		try:
+			device_rp = subdir.append("aux")
+			if device_rp.lstat():
+				log.Log("escape_dos_devices required by filesystem at %s" \
+						% (subdir.path), 4)
+				self.escape_dos_devices = 1
+			else:
+				log.Log("escape_dos_devices not required by filesystem at %s" \
+						% (subdir.path), 4)
+				self.escape_dos_devices = 0
+		except(OSError):
 			log.Log("escape_dos_devices required by filesystem at %s" \
 					% (subdir.path), 4)
 			self.escape_dos_devices = 1
-		else:
-			assert not device_rp.lstat()
-			log.Log("escape_dos_devices not required by filesystem at %s" \
-					% (subdir.path), 4)
-			self.escape_dos_devices = 0
 
 def get_readonly_fsa(desc_string, rp):
 	"""Return an fsa with given description_string
@@ -515,9 +518,11 @@ class BackupSetGlobals(SetGlobals):
 
 	def set_must_escape_dos_devices(self, rbdir):
 		"""If local edd or src edd, then must escape """
-		device_rp = rbdir.append("aux")
-		if device_rp.lstat(): local_edd = 1
-		else: local_edd = 0
+		try:
+			device_rp = rbdir.append("aux")
+			if device_rp.lstat(): local_edd = 1
+			else: local_edd = 0
+		except (OSError): local_edd = 1
 		SetConnections.UpdateGlobal('must_escape_dos_devices', \
 			self.src_fsa.escape_dos_devices or local_edd)
 		log.Log("Backup: must_escape_dos_devices = %d" % \
@@ -606,9 +611,11 @@ class RestoreSetGlobals(SetGlobals):
 		if getattr(self, "src_fsa", None) is not None:
 			src_edd = self.src_fsa.escape_dos_devices
 		else: src_edd = 0
-		device_rp = rbdir.append("aux")
-		if device_rp.lstat(): local_edd = 1
-		else: local_edd = 0
+		try:
+			device_rp = rbdir.append("aux")
+			if device_rp.lstat(): local_edd = 1
+			else: local_edd = 0
+		except (OSError): local_edd = 1
 		SetConnections.UpdateGlobal('must_escape_dos_devices', \
 			src_edd or local_edd)
 		log.Log("Restore: must_escape_dos_devices = %d" % \

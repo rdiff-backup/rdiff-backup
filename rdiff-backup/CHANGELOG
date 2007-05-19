@@ -1,6 +1,10 @@
 New in v1.1.11 (????/??/??)
 ---------------------------
 
+Fix for bug #19895 -- eliminate traceback for special file detection
+on CIFS mounts.  (Jonathan Hankins)
+
+
 New in v1.1.10 (2007/05/12)
 ---------------------------
 
