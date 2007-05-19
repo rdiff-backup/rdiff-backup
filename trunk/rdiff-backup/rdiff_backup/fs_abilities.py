@@ -408,14 +408,18 @@ class FSAbilities:
 		sym_source = dir_rp.append("symlinked_file1")
 		sym_source.touch()
 		sym_dest = dir_rp.append("symlinked_file2")
-		sym_dest.symlink(sym_source.path)
-		sym_dest.setdata()
-		assert sym_dest.issym()
-		orig_umask = os.umask(077)
-		if sym_dest.getperms() == 0700: self.symlink_perms = 1
-		else: self.symlink_perms = 0
-		os.umask(orig_umask)
-		sym_dest.delete()
+		try:
+			sym_dest.symlink(sym_source.path)
+		except (OSError):
+			self.symlink_perms = 0
+		else:
+			sym_dest.setdata()
+			assert sym_dest.issym()
+			orig_umask = os.umask(077)
+			if sym_dest.getperms() == 0700: self.symlink_perms = 1
+			else: self.symlink_perms = 0
+			os.umask(orig_umask)
+			sym_dest.delete()
 		sym_source.delete()
 
 	def set_escape_dos_devices(self, subdir):
