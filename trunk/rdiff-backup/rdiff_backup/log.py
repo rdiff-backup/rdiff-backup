@@ -213,7 +213,7 @@ class ErrorLog:
 
 		base_rp = Globals.rbdir.append("error_log.%s.data" % (time_string,))
 		if compress: cls._log_fileobj = rpath.MaybeGzip(base_rp)
-		else: cls._log_fileobj = cls._log_inc_rp.open("wb", compress = 0)
+		else: cls._log_fileobj = base_rp.open("wb", compress = 0)
 
 	def isopen(cls):
 		"""True if the error log file is currently open"""
