@@ -1,6 +1,8 @@
 New in v1.1.11 (????/??/??)
 ---------------------------
 
+Fix typo in Main.py introduced in 1.1.9 (Andrew Ferguson)
+
 FIFOs don't have extended attributes -- don't try to access them.
 (Andrew Ferguson)
 
