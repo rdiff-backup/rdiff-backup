@@ -385,7 +385,7 @@ def backup_set_rbdir(rpin, rpout):
 		try:
 			rpout.chmod(0700) # just make sure permissions aren't too lax
 		except OSError:
-			log.Log("Cannot change permissions on target directory.", 2)
+			Log("Cannot change permissions on target directory.", 2)
 	elif not Globals.rbdir.lstat() and not force: Log.FatalError(
 """Destination directory
 
