@@ -1,6 +1,9 @@
 New in v1.1.11 (????/??/??)
 ---------------------------
 
+FIFOs don't have extended attributes -- don't try to access them.
+(Andrew Ferguson)
+
 Fix for bug #19612 -- Incorrect line broke --no-compression option.
 (Fix by Thiago in bug comment)
 
