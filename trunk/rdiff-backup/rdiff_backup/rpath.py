@@ -847,6 +847,8 @@ class RPath(RORPath):
 	def setmtime(self, modtime):
 		"""Set only modtime (access time to present)"""
 		log.Log(lambda: "Setting time of %s to %d" % (self.path, modtime), 7)
+		if modtime < 0: log.Log("Warning: modification time of %s is"
+								"before 1970" % self.path, 2)
 		try: self.conn.os.utime(self.path, (long(time.time()), modtime))
 		except OverflowError:
 			log.Log("Cannot change mtime of %s to %s - problem is probably"
