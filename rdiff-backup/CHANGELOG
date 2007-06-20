@@ -1,6 +1,8 @@
 New in v1.1.12 (????/??/??)
 ---------------------------
 
+Warn if file modification time is before 1970. (Andrew Ferguson)
+
 
 New in v1.1.11 (2007/07/15)
 ---------------------------
