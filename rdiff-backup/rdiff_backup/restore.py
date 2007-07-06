@@ -21,7 +21,7 @@
 
 from __future__ import generators
 import tempfile, os, cStringIO
-import static, rorpiter
+import static, rorpiter, FilenameMapping
 
 class RestoreError(Exception): pass
 
@@ -40,6 +40,7 @@ def Restore(mirror_rp, inc_rpath, target, restore_to_time):
 def get_inclist(inc_rpath):
 	"""Returns increments with given base"""
 	dirname, basename = inc_rpath.dirsplit()
+	basename = FilenameMapping.unquote(basename)
 	parent_dir = inc_rpath.__class__(inc_rpath.conn, dirname, ())
 	if not parent_dir.isdir(): return [] # inc directory not created yet
 	index = inc_rpath.index
@@ -47,7 +48,8 @@ def get_inclist(inc_rpath):
 	inc_list = []
 	for filename in parent_dir.listdir():
 		inc = parent_dir.append(filename)
-		if inc.isincfile() and inc.getincbase_str() == basename:
+		if inc.isincfile() and FilenameMapping.unquote(
+							   inc.getincbase_str()) == basename:
 			inc_list.append(inc)
 	return inc_list
 
