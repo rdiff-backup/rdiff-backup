@@ -21,7 +21,7 @@
 
 from __future__ import generators
 from log import Log
-import Globals, Time, static, statistics, restore, selection
+import Globals, Time, static, statistics, restore, selection, FilenameMapping
 
 
 class ManageException(Exception): pass
@@ -70,7 +70,8 @@ def describe_incs_human(incs, mirror_time, mirrorrp):
 	result = ["Found %d increments:" % len(incpairs)]
 	for time, inc in incpairs:
 		result.append("    %s   %s" %
-					  (inc.dirsplit()[1], Time.timetopretty(time)))
+					  (FilenameMapping.unquote(inc.dirsplit()[1]),
+					   Time.timetopretty(time)))
 	result.append("Current mirror: %s" % Time.timetopretty(mirror_time))
 	return "\n".join(result)
 

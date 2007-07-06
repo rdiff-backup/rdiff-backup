@@ -1,6 +1,9 @@
 New in v1.1.12 (????/??/??)
 ---------------------------
 
+Handle quoted current_mirror markers and clean-up the listing of
+increments with quoted names. (Andrew Ferguson)
+
 Warn if file modification time is before 1970. (Andrew Ferguson)
 
 
