@@ -68,10 +68,15 @@ def describe_incs_human(incs, mirror_time, mirrorrp):
 	incpairs.sort()
 
 	result = ["Found %d increments:" % len(incpairs)]
-	for time, inc in incpairs:
-		result.append("    %s   %s" %
-					  (FilenameMapping.unquote(inc.dirsplit()[1]),
-					   Time.timetopretty(time)))
+	if Globals.chars_to_quote:
+		for time, inc in incpairs:
+			result.append("    %s   %s" %
+						  (FilenameMapping.unquote(inc.dirsplit()[1]),
+						   Time.timetopretty(time)))
+	else:
+		for time, inc in incpairs:
+			result.append("    %s   %s" %
+						  (inc.dirsplit()[1], Time.timetopretty(time)))
 	result.append("Current mirror: %s" % Time.timetopretty(mirror_time))
 	return "\n".join(result)
 
