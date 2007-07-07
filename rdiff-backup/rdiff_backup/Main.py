@@ -773,11 +773,7 @@ def Verify(dest_rp, verify_time = None):
 
 def CheckDest(dest_rp):
 	"""Check the destination directory, """
-	if Globals.chars_to_quote:
-		dest_rp = FilenameMapping.get_quotedrpath(dest_rp)
-	if Globals.rbdir is None:
-		SetConnections.UpdateGlobal('rbdir',
-									dest_rp.append_path("rdiff-backup-data"))
+	dest_rp = require_root_set(dest_rp, 0)
 	need_check = checkdest_need_check(dest_rp)
 	if need_check is None:
 		Log.FatalError("No destination dir found at %s" % (dest_rp.path,))
