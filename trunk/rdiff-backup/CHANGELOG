@@ -1,6 +1,8 @@
 New in v1.1.12 (????/??/??)
 ---------------------------
 
+Make --check-destination-dir handle quoted situations. (Andrew Ferguson)
+
 Handle quoted current_mirror markers and clean-up the listing of
 increments with quoted names. (Andrew Ferguson)
 
