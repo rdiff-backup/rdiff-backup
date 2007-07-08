@@ -1,6 +1,9 @@
 New in v1.1.12 (????/??/??)
 ---------------------------
 
+Workaround for tempfile.TemporaryFile() having different behavior
+on Windows/Cygwin. (Andrew Ferguson)
+
 Make --check-destination-dir handle quoted situations. (Andrew Ferguson)
 
 Handle quoted current_mirror markers and clean-up the listing of
