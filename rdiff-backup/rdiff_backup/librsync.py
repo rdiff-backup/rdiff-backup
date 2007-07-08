@@ -152,6 +152,8 @@ class PatchedFile(LikeFile):
 
 		"""
 		LikeFile.__init__(self, delta_file)
+		if hasattr(basis_file, 'file'):
+			basis_file = basis_file.file
 		if type(basis_file) is not types.FileType:
 			raise TypeError("basis_file must be a (true) file")
 		try: self.maker = _librsync.new_patchmaker(basis_file)
