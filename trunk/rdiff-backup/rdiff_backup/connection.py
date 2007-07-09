@@ -20,7 +20,7 @@
 """Support code for remote execution and data transfer"""
 
 from __future__ import generators
-import types, os, tempfile, cPickle, shutil, traceback, pickle, \
+import types, os, tempfile, cPickle, shutil, traceback, \
 	   socket, sys, gzip
 # The following EA and ACL modules may be used if available
 try: import xattr
@@ -140,8 +140,7 @@ class LowLevelPipeConnection(Connection):
 
 	def _putobj(self, obj, req_num):
 		"""Send a generic python obj down the outpipe"""
-		# for some reason there is an error when cPickle is used below..
-		self._write("o", pickle.dumps(obj, 1), req_num)
+		self._write("o", cPickle.dumps(obj, 1), req_num)
 
 	def _putbuf(self, buf, req_num):
 		"""Send buffer buf down the outpipe"""
