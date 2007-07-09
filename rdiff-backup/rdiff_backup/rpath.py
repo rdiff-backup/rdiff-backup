@@ -753,17 +753,17 @@ class RPath(RORPath):
 	def __getstate__(self):
 		"""Return picklable state
 
-		The connection must be local because we can't pickle a
-		connection.  Data and any attached file also won't be saved.
+		The rpath's connection will be encoded as its conn_number.  It
+		and the other information is put in a tuple. Data and any attached
+		file won't be saved.
 
 		"""
-		assert self.conn is Globals.local_connection
-		return (self.index, self.base, self.data)
+		return (self.conn.conn_number, self.base, self.index, self.data)
 
 	def __setstate__(self, rpath_state):
 		"""Reproduce RPath from __getstate__ output"""
-		self.conn = Globals.local_connection
-		self.index, self.base, self.data = rpath_state
+		conn_number, self.base, self.index, self.data = rpath_state
+		self.conn = Globals.connection_dict[conn_number]
 		self.path = "/".join((self.base,) + self.index)
 
 	def setdata(self):

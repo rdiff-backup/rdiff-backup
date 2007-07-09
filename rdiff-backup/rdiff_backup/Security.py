@@ -172,6 +172,7 @@ def set_allowed_requests(sec_level):
 				  "backup.DestinationStruct.patch_and_increment",
 				  "Main.backup_touch_curmirror_local",
 				  "Main.backup_remove_curmirror_local",
+				  "regress.check_pids",
 				  "Globals.ITRB.increment_stat",
 				  "statistics.record_error",
 				  "log.ErrorLog.write_if_open",

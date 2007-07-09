@@ -1,6 +1,10 @@
 New in v1.1.12 (????/??/??)
 ---------------------------
 
+Squash bug where --check-destination-dir or regress operation failed
+after crash when --force option was not used. RPath's are now
+properly pickled. (Andrew Ferguson)
+
 Workaround for tempfile.TemporaryFile() having different behavior
 on Windows/Cygwin. (Andrew Ferguson)
 
