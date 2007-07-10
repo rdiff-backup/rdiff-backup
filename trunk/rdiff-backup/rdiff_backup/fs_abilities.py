@@ -277,7 +277,10 @@ class FSAbilities:
 
 		def test_triple(dir_rp, dirlist, filename):
 			"""Return 1 if filename shows system case sensitive"""
-			letter_rp = dir_rp.append(filename)
+			try:
+				letter_rp = dir_rp.append(filename)
+			except OSError:
+				return 0
 			assert letter_rp.lstat(), letter_rp
 			swapped = filename.swapcase()
 			if swapped in dirlist: return 1
