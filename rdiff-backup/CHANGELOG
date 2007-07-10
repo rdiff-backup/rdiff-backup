@@ -1,6 +1,9 @@
 New in v1.1.12 (????/??/??)
 ---------------------------
 
+Do something sensible if we get an IOError while trying to appropriately
+log another exception. (Andrew Ferguson)
+
 Handle exception when get permission denied on a file while trying
 to establish case sensitivity on read-only side. (Andrew Ferguson)
 
