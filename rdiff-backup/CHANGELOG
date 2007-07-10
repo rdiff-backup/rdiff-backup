@@ -1,6 +1,9 @@
 New in v1.1.12 (????/??/??)
 ---------------------------
 
+Finally solve AttributeError due to no 'inc_compressed' attribute
+that occured during some regress operations. (Andrew Ferguson)
+
 Squash bug where --check-destination-dir or regress operation failed
 after crash when --force option was not used. RPath's are now
 properly pickled. (Andrew Ferguson)
