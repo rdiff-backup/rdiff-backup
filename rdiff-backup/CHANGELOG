@@ -1,6 +1,9 @@
 New in v1.1.12 (????/??/??)
 ---------------------------
 
+Handle exception when get permission denied on a file while trying
+to establish case sensitivity on read-only side. (Andrew Ferguson)
+
 Finally solve AttributeError due to no 'inc_compressed' attribute
 that occured during some regress operations. (Andrew Ferguson)
 
