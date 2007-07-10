@@ -186,7 +186,12 @@ class Logger:
 			logging_func = self.log_to_term
 			if verbosity >= self.term_verbosity: return
 
-		logging_func(self.exception_to_string(), verbosity)
+		exception_string = self.exception_to_string()
+		try:
+			logging_func(exception_string, verbosity)
+		except IOError:
+			print "IOError while trying to log exception!"
+			print exception_string
 
 
 Log = Logger()
