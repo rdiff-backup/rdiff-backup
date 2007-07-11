@@ -1074,11 +1074,11 @@ class RPath(RORPath):
 		if self.index: dotsplit = self.index[-1].split(".")
 		else: dotsplit = self.base.split(".")
 		if dotsplit[-1] == "gz":
-			compressed = 1
+			self.inc_compressed = 1
 			if len(dotsplit) < 4: return None
 			timestring, ext = dotsplit[-3:-1]
 		else:
-			compressed = None
+			self.inc_compressed = None
 			if len(dotsplit) < 3: return None
 			timestring, ext = dotsplit[-2:]
 		if Time.stringtotime(timestring) is None: return None
@@ -1086,9 +1086,8 @@ class RPath(RORPath):
 				ext == "missing" or ext == "diff" or ext == "data"):
 			return None
 		self.inc_timestr = timestring
-		self.inc_compressed = compressed
 		self.inc_type = ext
-		if compressed: self.inc_basestr = ".".join(dotsplit[:-3])
+		if self.inc_compressed: self.inc_basestr = ".".join(dotsplit[:-3])
 		else: self.inc_basestr = ".".join(dotsplit[:-2])
 		return 1
 
