@@ -1,6 +1,8 @@
 New in v1.1.12 (????/??/??)
 ---------------------------
 
+listxattr() can also throw EPERM error if not supported. (Andrew Ferguson)
+
 Do something sensible if we get an IOError while trying to appropriately
 log another exception. (Andrew Ferguson)
 
