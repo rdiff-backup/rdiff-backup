@@ -58,7 +58,8 @@ class ExtendedAttributes:
 		"""Set the extended attributes from an rpath"""
 		try: attr_list = rp.conn.xattr.listxattr(rp.path)
 		except IOError, exc:
-			if exc[0] == errno.EOPNOTSUPP: return # if not sup, consider empty
+			if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EPERM:
+				return # if not supported, consider empty
 			if exc[0] == errno.EACCES:
 				log.Log("Warning: listattr(%s): %s" % (rp.path, exc), 3)
 				return
