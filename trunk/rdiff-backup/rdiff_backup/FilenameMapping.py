@@ -88,9 +88,9 @@ def quote(path):
 		return QuotedPath
 
 	# Escape first char of any special DOS device files even if filename has an
-	# extension.  Special names are: aux, prn, con, nul, com0-9, and lpt1-2.
+	# extension.  Special names are: aux, prn, con, nul, com0-9, and lpt1-9.
 	if not re.search(r"^aux(\..*)*$|^prn(\..*)*$|^con(\..*)*$|^nul(\..*)*$|" \
-					 r"^com[0-9](\..*)*$|^lpt[12]{1}(\..*)*$", QuotedPath, \
+					 r"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$", QuotedPath, \
 					 re.I):
 		return QuotedPath
 	return "%s%03d" % (quoting_char, ord(QuotedPath[0])) + QuotedPath[1:]
