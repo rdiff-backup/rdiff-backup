@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.5
 
 import sys, os
 from distutils.core import setup, Extension
@@ -19,8 +19,10 @@ def get_libraries():
 	lib_dirs = filter(lambda x: x.startswith("lib"), build_files)
 	assert len(lib_dirs) == 1, "No library directory or too many"
 	libdir = lib_dirs[0]
-	clib = os.path.join("build", libdir, "C.so")
-	rsynclib = os.path.join("build", libdir, "_librsync.so")
+	if sys.platform == "cygwin" or os.name == "nt": libext = "dll"
+	else: libext = "so"
+	clib = os.path.join("build", libdir, "C." + libext)
+	rsynclib = os.path.join("build", libdir, "_librsync." + libext)
 	try:
 		os.lstat(clib)
 		os.lstat(rsynclib)
