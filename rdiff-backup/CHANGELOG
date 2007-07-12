@@ -1,4 +1,4 @@
-New in v1.1.12 (????/??/??)
+New in v1.1.12 (2007/07/12)
 ---------------------------
 
 Use .dll as library file extension on Cygwin and Windows. (Andrew Ferguson)
