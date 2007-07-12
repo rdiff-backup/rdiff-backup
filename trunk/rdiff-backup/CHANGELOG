@@ -1,6 +1,8 @@
 New in v1.1.12 (????/??/??)
 ---------------------------
 
+Use .dll as library file extension on Cygwin and Windows. (Andrew Ferguson)
+
 Avoid setting permissions to 000 because they're out of sync. (Andrew Ferguson)
 
 listxattr() can also throw EPERM error if not supported. (Andrew Ferguson)
