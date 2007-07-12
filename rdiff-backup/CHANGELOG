@@ -1,6 +1,8 @@
 New in v1.1.12 (????/??/??)
 ---------------------------
 
+Avoid setting permissions to 000 because they're out of sync. (Andrew Ferguson)
+
 listxattr() can also throw EPERM error if not supported. (Andrew Ferguson)
 
 Do something sensible if we get an IOError while trying to appropriately

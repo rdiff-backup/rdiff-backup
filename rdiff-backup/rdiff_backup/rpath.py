@@ -1167,6 +1167,9 @@ class RPath(RORPath):
 			if self.hasfullperms(): oldperms = None
 			else:
 				oldperms = self.getperms()
+				if not oldperms: # self.data['perms'] is probably out of sync
+					self.setdata()
+					oldperms = self.getperms()
 				self.chmod(0700)
 			fd = os.open(self.path, os.O_RDWR)
 			if oldperms is not None: self.chmod(oldperms)
