@@ -186,7 +186,12 @@ class Logger:
 			logging_func = self.log_to_term
 			if verbosity >= self.term_verbosity: return
 
-		logging_func(self.exception_to_string(), verbosity)
+		exception_string = self.exception_to_string()
+		try:
+			logging_func(exception_string, verbosity)
+		except IOError:
+			print "IOError while trying to log exception!"
+			print exception_string
 
 
 Log = Logger()
@@ -213,7 +218,7 @@ class ErrorLog:
 
 		base_rp = Globals.rbdir.append("error_log.%s.data" % (time_string,))
 		if compress: cls._log_fileobj = rpath.MaybeGzip(base_rp)
-		else: cls._log_fileobj = cls._log_inc_rp.open("wb", compress = 0)
+		else: cls._log_fileobj = base_rp.open("wb", compress = 0)
 
 	def isopen(cls):
 		"""True if the error log file is currently open"""

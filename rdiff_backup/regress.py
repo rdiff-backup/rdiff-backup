@@ -342,11 +342,11 @@ def check_pids(curmir_incs):
 
 	def pid_running(pid):
 		"""True if we know if process with pid is currently running"""
-		try: os.kill(pid, signal.NSIG)
+		try: os.kill(pid, 0)
 		except OSError, exc:
 			if exc[0] == errno.ESRCH: return 0
-			elif exc[0] == errno.EINVAL: return 1
-		Log("Warning: unable to check if PID %d still running" % (pid,), 2)
+			else: Log("Warning: unable to check if PID %d still running" % (pid,), 2)
+		return 1
 
 	for curmir_rp in curmir_incs:
 		assert Globals.local_connection is curmir_rp.conn

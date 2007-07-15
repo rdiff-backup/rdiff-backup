@@ -234,6 +234,8 @@ class Select:
 			for opt, arg in argtuples:
 				if opt == "--exclude":
 					self.add_selection_func(self.glob_get_sf(arg, 0))
+				elif opt == "--exclude-if-present":
+					self.add_selection_func(self.presence_get_sf(arg, 0))
 				elif opt == "--exclude-device-files":
 					self.add_selection_func(self.devfiles_get_sf(0))
 				elif opt == "--exclude-symbolic-links":
@@ -469,6 +471,18 @@ probably isn't what you meant.""" %
 
 		sel_func.exclude = not include
 		sel_func.name = "Regular expression: %s" % regexp_string
+		return sel_func
+
+	def presence_get_sf(self, presence_filename, include):
+		"""Return selection function given by a file if present"""
+		assert include == 0 or include == 1
+
+		def sel_func(rp):
+			if rp.isdir() and rp.readable() and rp.append(presence_filename).isreg(): return include
+			return None
+
+		sel_func.exclude = not include
+		sel_func.name = "Presence file: %s" % presence_filename
 		return sel_func
 
 	def gen_get_sf(self, pred, include, name):

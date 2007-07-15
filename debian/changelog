@@ -1,3 +1,16 @@
+rdiff-backup (1.1.12-1) unstable; urgency=low
+
+  * New upstream release:
+    - Doesn't crash if previous backup failed
+      Closes: #376781, #388720, #422961, #426216).
+    - Doesn't fail when saving fat32 to fat32 (Closes: #422593).
+    - Fixes a typo with RPath in metadata (Closes: #349593).
+    - Doesn't crash without compression (Closes: #395100).
+  * Fixed typo in long description (Closes: #426806).
+  * Dropping 01-fs-abilities.dpatch, went upstream.
+
+ -- Daniel Baumann <daniel@debian.org>  Sun, 15 Jul 2007 20:58:00 +0200
+
 rdiff-backup (1.1.9-2) unstable; urgency=low
 
   * Added patch from Marc Dyksterhouse to fix --list-increments

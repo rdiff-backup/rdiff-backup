@@ -753,17 +753,17 @@ class RPath(RORPath):
 	def __getstate__(self):
 		"""Return picklable state
 
-		The connection must be local because we can't pickle a
-		connection.  Data and any attached file also won't be saved.
+		The rpath's connection will be encoded as its conn_number.  It
+		and the other information is put in a tuple. Data and any attached
+		file won't be saved.
 
 		"""
-		assert self.conn is Globals.local_connection
-		return (self.index, self.base, self.data)
+		return (self.conn.conn_number, self.base, self.index, self.data)
 
 	def __setstate__(self, rpath_state):
 		"""Reproduce RPath from __getstate__ output"""
-		self.conn = Globals.local_connection
-		self.index, self.base, self.data = rpath_state
+		conn_number, self.base, self.index, self.data = rpath_state
+		self.conn = Globals.connection_dict[conn_number]
 		self.path = "/".join((self.base,) + self.index)
 
 	def setdata(self):
@@ -847,6 +847,8 @@ class RPath(RORPath):
 	def setmtime(self, modtime):
 		"""Set only modtime (access time to present)"""
 		log.Log(lambda: "Setting time of %s to %d" % (self.path, modtime), 7)
+		if modtime < 0: log.Log("Warning: modification time of %s is"
+								"before 1970" % self.path, 2)
 		try: self.conn.os.utime(self.path, (long(time.time()), modtime))
 		except OverflowError:
 			log.Log("Cannot change mtime of %s to %s - problem is probably"
@@ -1072,11 +1074,11 @@ class RPath(RORPath):
 		if self.index: dotsplit = self.index[-1].split(".")
 		else: dotsplit = self.base.split(".")
 		if dotsplit[-1] == "gz":
-			compressed = 1
+			self.inc_compressed = 1
 			if len(dotsplit) < 4: return None
 			timestring, ext = dotsplit[-3:-1]
 		else:
-			compressed = None
+			self.inc_compressed = None
 			if len(dotsplit) < 3: return None
 			timestring, ext = dotsplit[-2:]
 		if Time.stringtotime(timestring) is None: return None
@@ -1084,9 +1086,8 @@ class RPath(RORPath):
 				ext == "missing" or ext == "diff" or ext == "data"):
 			return None
 		self.inc_timestr = timestring
-		self.inc_compressed = compressed
 		self.inc_type = ext
-		if compressed: self.inc_basestr = ".".join(dotsplit[:-3])
+		if self.inc_compressed: self.inc_basestr = ".".join(dotsplit[:-3])
 		else: self.inc_basestr = ".".join(dotsplit[:-2])
 		return 1
 
@@ -1166,6 +1167,9 @@ class RPath(RORPath):
 			if self.hasfullperms(): oldperms = None
 			else:
 				oldperms = self.getperms()
+				if not oldperms: # self.data['perms'] is probably out of sync
+					self.setdata()
+					oldperms = self.getperms()
 				self.chmod(0700)
 			fd = os.open(self.path, os.O_RDWR)
 			if oldperms is not None: self.chmod(oldperms)
