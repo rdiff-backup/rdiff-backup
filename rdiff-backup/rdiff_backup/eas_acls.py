@@ -81,17 +81,22 @@ class ExtendedAttributes:
 
 	def clear_rp(self, rp):
 		"""Delete all the extended attributes in rpath"""
-		for name in rp.conn.xattr.listxattr(rp.path):
-			try:
-				rp.conn.xattr.removexattr(rp.path, name)
-			except IOError, exc:
-				# SELinux attributes cannot be removed, and we don't want
-				# to bail out or be too noisy at low log levels.
-				if exc[0] == errno.EACCES:
-					log.Log("Warning: unable to remove xattr %s from %s"
-						% (name, rp.path), 7)
-					continue
-				else: raise
+		try:
+			for name in rp.conn.xattr.listxattr(rp.path):
+				try:
+					rp.conn.xattr.removexattr(rp.path, name)
+				except IOError, exc:
+					# SELinux attributes cannot be removed, and we don't want
+					# to bail out or be too noisy at low log levels.
+					if exc[0] == errno.EACCES:
+						log.Log("Warning: unable to remove xattr %s from %s"
+							% (name, rp.path), 7)
+						continue
+					else: raise
+		except IOError, exc:
+			if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EPERM:
+				return # if not supported, consider empty
+			else: raise
 
 	def write_to_rp(self, rp):
 		"""Write extended attributes to rpath rp"""
