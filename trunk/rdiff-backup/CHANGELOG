@@ -1,6 +1,9 @@
 New in v1.1.13 (????/??/??)
 ---------------------------
 
+Don't throw an error when clearing extended attributes if they are not
+supported on the file. (Andrew Ferguson)
+
 
 New in v1.1.12 (2007/07/12)
 ---------------------------
