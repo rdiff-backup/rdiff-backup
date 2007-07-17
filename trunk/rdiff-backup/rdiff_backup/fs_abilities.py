@@ -304,6 +304,11 @@ class FSAbilities:
 		"""Set extended attributes from rp. Tests writing if write is true."""
 		assert Globals.local_connection is rp.conn
 		assert rp.lstat()
+		if Globals.eas_active == 0:
+			log.Log("Extended attributes test skipped. rdiff-backup run "
+					"with --no-eas option.", 4)
+			self.eas = 0
+			return
 		try: import xattr
 		except ImportError:
 			log.Log("Unable to import module xattr.\nExtended attributes not "

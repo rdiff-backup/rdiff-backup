@@ -1,6 +1,9 @@
 New in v1.1.13 (????/??/??)
 ---------------------------
 
+Don't run the extended attributes test if rdiff-backup is run with
+the --no-eas option. Prevents hang in isolated cases. (Andrew Ferguson)
+
 Don't throw an error when clearing extended attributes if they are not
 supported on the file. (Andrew Ferguson)
 
