@@ -226,6 +226,10 @@ permission_mask = 07777
 # the original permissions
 symlink_perms = None
 
+# If set, the path that should be used instead of the default Python
+# tempfile.tempdir value on remote connections
+remote_tempdir = None
+
 def get(name):
 	"""Return the value of something in this module"""
 	return globals()[name]

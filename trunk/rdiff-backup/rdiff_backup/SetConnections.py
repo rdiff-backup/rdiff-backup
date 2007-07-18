@@ -52,6 +52,9 @@ def get_cmd_pairs(arglist, remote_schema = None, remote_cmd = None):
 	if remote_schema: __cmd_schema = remote_schema
 	elif not Globals.ssh_compression: __cmd_schema = __cmd_schema_no_compress
 
+	if Globals.remote_tempdir:
+		__cmd_schema += (" --tempdir=" + Globals.remote_tempdir)
+
 	if not arglist: return []
 	desc_pairs = map(parse_file_desc, arglist)
 

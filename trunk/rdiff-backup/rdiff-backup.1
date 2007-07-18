@@ -1,4 +1,4 @@
-.TH RDIFF-BACKUP 1 "NOVEMBER 2006" "Version 1.1.6" "User Manuals" \" -*- nroff -*-
+.TH RDIFF-BACKUP 1 "JULY 2007" "Version 1.1.13" "User Manuals" \" -*- nroff -*-
 .SH NAME
 rdiff-backup \- local/remote mirror and incremental backup
 .SH SYNOPSIS
@@ -190,7 +190,7 @@ Exclude all socket files.
 .B "\-\-exclude-symbolic-links"
 Exclude all symbolic links.
 .TP
-.BI "\-\exclude-if-present " filename
+.BI "\-\-exclude-if-present " filename
 Exclude directories if
 .IR filename
 is present. This option needs to come before any other include or
@@ -361,7 +361,6 @@ or
 switches, where the time will be given in seconds since the epoch.
 .TP
 .B \-\-override-chars-to-quote 
-.TP
 If the filesystem to which we are backing up is not case-sensitive, automatic 'quoting' of characters occurs. For example, a file 'Developer.doc' will be converted into ';068eveloper.doc'. To override this behavior, you need to specify this option.
 .TP
 .B \-\-preserve-numerical-ids
@@ -398,6 +397,11 @@ if, for instance, rdiff-backup is not in the PATH on the remote side.
 See the
 .B REMOTE OPERATION
 section for more information.
+.TP
+.BI "\-\-remote-tempdir " path
+Adds the \-\-tempdir option with argument
+.I path
+when invoking remote instances of rdiff-backup.
 .TP
 .BI "\-\-remove-older-than " time_spec
 Remove the incremental backup information in the destination directory
@@ -459,6 +463,12 @@ When running ssh, do not use the \-C option to enable compression.
 .B \-\-ssh-no-compression
 is ignored if you specify a new schema using
 .B \-\-remote-schema.
+.TP
+.BI "\-\-tempdir " path
+Sets the directory that rdiff-backup uses for temporary files to
+the given path. The environment variables TMPDIR, TEMP, and TMP can
+also be used to set the temporary files directory. See the
+documentation of the Python tempfile module for more information.
 .TP
 .BI "\-\-terminal-verbosity " [0-9]
 Select which messages will be displayed to the terminal.  If missing
