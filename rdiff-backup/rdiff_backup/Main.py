@@ -20,7 +20,7 @@
 """Start (and end) here - read arguments, set global settings, etc."""
 
 from __future__ import generators
-import getopt, sys, re, os, cStringIO
+import getopt, sys, re, os, cStringIO, tempfile
 from log import Log, LoggerError, ErrorLog
 import Globals, Time, SetConnections, selection, robust, rpath, \
 	   manage, backup, connection, restore, FilenameMapping, \
@@ -81,11 +81,11 @@ def parse_cmdlineoptions(arglist):
 		  "no-eas", "no-file-statistics", "no-hard-links", "null-separator",
 		  "override-chars-to-quote=", "parsable-output",
 		  "preserve-numerical-ids", "print-statistics",
-		  "remote-cmd=", "remote-schema=",
+		  "remote-cmd=", "remote-schema=", "remote-tempdir=",
 		  "remove-older-than=", "restore-as-of=", "restrict=",
 		  "restrict-read-only=", "restrict-update-only=", "server",
-		  "ssh-no-compression", "terminal-verbosity=", "test-server",
-		  "user-mapping-file=", "verbosity=", "verify",
+		  "ssh-no-compression", "tempdir=", "terminal-verbosity=",
+		  "test-server", "user-mapping-file=", "verbosity=", "verify",
 		  "verify-at-time=", "version"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: " + str(e))
@@ -176,6 +176,7 @@ def parse_cmdlineoptions(arglist):
 			restore_timestr, action = arg, "restore-as-of"
 		elif opt == "--remote-cmd": remote_cmd = arg
 		elif opt == "--remote-schema": remote_schema = arg
+		elif opt == "--remote-tempdir": Globals.remote_tempdir = arg
 		elif opt == "--remove-older-than":
 			remove_older_than_string = arg
 			action = "remove-older-than"
@@ -193,6 +194,7 @@ def parse_cmdlineoptions(arglist):
 			Globals.server = 1
 		elif opt == "--ssh-no-compression":
 			Globals.set('ssh_compression', None)
+		elif opt == "--tempdir": tempfile.tempdir = arg
 		elif opt == "--terminal-verbosity": Log.setterm_verbosity(arg)
 		elif opt == "--test-server": action = "test-server"
 		elif opt == "--user-mapping-file": user_mapping_filename = arg
