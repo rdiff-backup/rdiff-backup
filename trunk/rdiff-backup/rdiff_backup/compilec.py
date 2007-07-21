@@ -11,8 +11,6 @@ setup(name="CModule",
 	  description="rdiff-backup's C component",
 	  ext_modules=[Extension("C", ["cmodule.c"]),
 				   Extension("_librsync", ["_librsyncmodule.c"],
-					   		 include_dirs=["/sw/include"],
-							 include_libs=["/sw/lib"],
 							 libraries=["rsync"])])
 
 def get_libraries():
