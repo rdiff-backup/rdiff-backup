@@ -1,6 +1,9 @@
 New in v1.1.13 (????/??/??)
 ---------------------------
 
+Fix "too many open files" bug when handling large directories. Patch
+from Anonymous in Savannah bug #20528.
+
 New options: --tempdir and --remote-tempdir. The first one sets the
 directory that rdiff-backup uses for temporary files on the local system.
 The second adds the --tempdir option with the given path when invoking
