@@ -205,6 +205,7 @@ def parse_cmdlineoptions(arglist):
 			print "rdiff-backup " + Globals.version
 			sys.exit(0)
 		else: Log.FatalError("Unknown option %s" % opt)
+	Log("Using rdiff-backup version %s" % (Globals.version), 4)
 
 def check_action():
 	"""Check to make sure action is compatible with args"""
