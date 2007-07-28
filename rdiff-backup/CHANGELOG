@@ -1,6 +1,9 @@
 New in v1.1.13 (????/??/??)
 ---------------------------
 
+Fix symlink behavior when filesystem is mounted via CIFS. Closes
+Savannah bug #20342. (Andrew Ferguson)
+
 Fix "too many open files" bug when handling large directories. Patch
 from Anonymous in Savannah bug #20528.
 
