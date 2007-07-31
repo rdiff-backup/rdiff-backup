@@ -1,6 +1,13 @@
 New in v1.1.13 (????/??/??)
 ---------------------------
 
+Prevent the extended filenames / UTF-8 test from raising an exception
+on broken CIFS configurations which transform some characters to '?'.
+Problem reported by Luca Cappe. (Andrew Ferguson)
+
+Cygwin on FAT32 hangs when trying to open a file named "aux". Change
+the escape DOS devices test to use "con" instead. (Andrew Ferguson)
+
 Fix symlink behavior when filesystem is mounted via CIFS. Closes
 Savannah bug #20342. (Andrew Ferguson)
 

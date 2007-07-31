@@ -218,8 +218,17 @@ class FSAbilities:
 			self.extended_filenames = 0
 		else:
 			assert ext_rp.lstat()
-			ext_rp.delete()
-			self.extended_filenames = 1
+			try:
+				ext_rp.delete()
+			except (IOError, OSError):
+				# Broken CIFS setups will sometimes create UTF-8 files
+				# and even stat them, but not let us perform file operations
+				# on them. Test file will be deleted via shutil.rmtree()
+				# when subdir is deleted. UTF-8 characters not in the
+				# underlying codepage get translated to '?'
+				self.extended_filenames = 0
+			else:
+				self.extended_filenames = 1
 
 	def set_acls(self, rp):
 		"""Set self.acls based on rp.  Does not write.  Needs to be local"""
@@ -433,7 +442,7 @@ class FSAbilities:
 	def set_escape_dos_devices(self, subdir):
 		"""If special file aux can be stat'd, escape special files"""
 		try:
-			device_rp = subdir.append("aux")
+			device_rp = subdir.append("con")
 			if device_rp.lstat():
 				log.Log("escape_dos_devices required by filesystem at %s" \
 						% (subdir.path), 4)
@@ -531,7 +540,7 @@ class BackupSetGlobals(SetGlobals):
 	def set_must_escape_dos_devices(self, rbdir):
 		"""If local edd or src edd, then must escape """
 		try:
-			device_rp = rbdir.append("aux")
+			device_rp = rbdir.append("con")
 			if device_rp.lstat(): local_edd = 1
 			else: local_edd = 0
 		except (OSError): local_edd = 1
@@ -624,7 +633,7 @@ class RestoreSetGlobals(SetGlobals):
 			src_edd = self.src_fsa.escape_dos_devices
 		else: src_edd = 0
 		try:
-			device_rp = rbdir.append("aux")
+			device_rp = rbdir.append("con")
 			if device_rp.lstat(): local_edd = 1
 			else: local_edd = 0
 		except (OSError): local_edd = 1
