@@ -28,6 +28,10 @@ Finally, the --lflags and --libs options, and the LFLAGS and LIBS
 environment variables are also recognized.  Running setup.py with no
 arguments will display some help.
 
+More information about using setup.py and how rdiff-backup is installed
+is available from the Python guide, Installing Python Modules for System
+Administrators, located at http://docs.python.org/inst/inst.html,
+particularly Section 4.
 
 REQUIREMENTS:
 
@@ -37,16 +41,20 @@ rdiff-backup homepage at http://rdiff-backup.nongnu.org/ should
 have a recent version of librsync; otherwise see the librsync homepage
 at http://librsync.sourceforge.net/.
 
-For remote operation, rdiff-backup should be in installed and in the
+For remote operation, rdiff-backup should be installed and in the
 PATH on remote system(s) (see man page for more information).
 
 The python modules pylibacl and pyxattr are optional.  If they are
 installed and in the default pythonpath, rdiff-backup will support
 access control lists and user extended attributes, provided the file
-system(s) also support these features.  Pylibacl and pxattr can be
+system(s) also support these features.  Pylibacl and pyxattr can be
 downloaded from http://pylibacl.sourceforge.net/ and
-http://pyxattr.sourceforge.net/.
+http://pyxattr.sourceforge.net/. Mac OS X users need a different
+pyxattr module, which can be downloaded from
+http://cheeseshop.python.org/pypi/xattr
 
+If you want to use rdiff-backup-statistics, you must have Python 2.4
+or later.
 
 TROUBLESHOOTING:
 
@@ -54,3 +62,5 @@ If you have everything installed properly, and it still doesn't work,
 see the enclosed FAQ.html, the web page at
 http://rdiff-backup.nongnu.org/, and/or the mailing list.
 
+The FAQ in particular is an important reference, especially if you are
+using smbfs/CIFS, Windows, or have compiled by hand on Mac OS X.
