@@ -1,6 +1,10 @@
 New in v1.1.13 (????/??/??)
 ---------------------------
 
+Gracefully handle situations where rdiff-backup tries to set the sticky
+bit on non-directory files on systems that don't support that action.
+Thanks to Jim Nasby for the bug report. (Andrew Ferguson)
+
 Prevent the extended filenames / UTF-8 test from raising an exception
 on broken CIFS configurations which transform some characters to '?'.
 Problem reported by Luca Cappe. (Andrew Ferguson)
