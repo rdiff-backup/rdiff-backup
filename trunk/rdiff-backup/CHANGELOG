@@ -1,6 +1,8 @@
 New in v1.1.13 (????/??/??)
 ---------------------------
 
+Warn if can't write extended attribute. (Andrew Ferguson)
+
 Gracefully handle situations where rdiff-backup tries to set the sticky
 bit on non-directory files on systems that don't support that action.
 Thanks to Jim Nasby for the bug report. (Andrew Ferguson)
