@@ -345,7 +345,7 @@ def check_pids(curmir_incs):
 		try: os.kill(pid, 0)
 		except OSError, exc:
 			if exc[0] == errno.ESRCH: return 0
-			else: Log("Warning: unable to check if PID %d still running" % (pid,), 2)
+			else: log.Log("Warning: unable to check if PID %d still running" % (pid,), 2)
 		return 1
 
 	for curmir_rp in curmir_incs:

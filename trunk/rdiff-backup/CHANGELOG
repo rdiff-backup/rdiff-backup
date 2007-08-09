@@ -1,6 +1,9 @@
 New in v1.1.13 (????/??/??)
 ---------------------------
 
+Properly pickle QuotedRPaths. Fixes regress operation on quoted filesystems.
+Closes Savannah bug #20570 reported by Morgan Read. (Andrew Ferguson)
+
 Warn if can't write extended attribute. (Andrew Ferguson)
 
 Gracefully handle situations where rdiff-backup tries to set the sticky
