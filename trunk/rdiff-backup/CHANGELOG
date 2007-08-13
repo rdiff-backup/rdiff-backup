@@ -1,5 +1,8 @@
-New in v1.1.14 (????/??/??)
+New in v1.1.14 (2007/08/12)
 ---------------------------
+
+New release to workaround Python bug. EFTYPE is not defined in Python's
+errno module, but is necessary to check on BSD's. (Andrew Ferguson)
 
 
 New in v1.1.13 (2007/08/12)
