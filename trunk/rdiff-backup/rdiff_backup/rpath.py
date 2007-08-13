@@ -831,8 +831,8 @@ class RPath(RORPath):
 		"""Wrapper around os.chmod"""
 		try:
 			self.conn.os.chmod(self.path, permissions & Globals.permission_mask)
-		except OSError, exc:
-			if exc[0] == errno.EFTYPE and not self.isdir():
+		except OSError, e:
+			if e.errno == errno.EFTYPE and not self.isdir():
 				# Some systems throw this error if try to set sticky bit
 				# on a non-directory. Remove sticky bit and try again.
 				log.Log("Unable to set permissions of %s to %o - trying again"
