@@ -832,7 +832,8 @@ class RPath(RORPath):
 		try:
 			self.conn.os.chmod(self.path, permissions & Globals.permission_mask)
 		except OSError, e:
-			if e.errno == errno.EFTYPE and not self.isdir():
+		    # XXX: BSD defines EFTYPE as 79, but it is not in python
+			if e.errno == 79 and not self.isdir():
 				# Some systems throw this error if try to set sticky bit
 				# on a non-directory. Remove sticky bit and try again.
 				log.Log("Unable to set permissions of %s to %o - trying again"
