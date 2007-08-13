@@ -224,7 +224,7 @@ class DataSide(backup.SourceStruct):
 			"""Return 0 if full compare of data matches, 1 otherwise"""
 			if src_rp.getsize() != repo_rorp.getsize(): return 1
 			return not robust.check_common_error(error_handler,
-				 rpath.cmpfileobj, (src_rp.open("rb"), repo_rorp.open("rb")))
+				 rpath.cmp, (src_rp, repo_rorp))
 
 		for repo_rorp in repo_iter:
 			src_rp = src_root.new_index(repo_rorp.index)

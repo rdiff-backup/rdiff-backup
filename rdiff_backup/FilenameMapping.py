@@ -126,6 +126,13 @@ class QuotedRPath(rpath.RPath):
 		rpath.RPath.__init__(self, connection, base, self.quoted_index, data)
 		self.index = index
 
+	def __setstate__(self, rpath_state):
+		"""Reproduce QuotedRPath from __getstate__ output"""
+		conn_number, self.base, self.index, self.data = rpath_state
+		self.conn = Globals.connection_dict[conn_number]
+		self.quoted_index = tuple(map(quote, self.index))
+		self.path = "/".join((self.base,) + self.quoted_index)
+
 	def listdir(self):
 		"""Return list of unquoted filenames in current directory
 

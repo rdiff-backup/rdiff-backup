@@ -1,3 +1,10 @@
+rdiff-backup (1.1.14-1) unstable; urgency=low
+
+  * New upstream release:
+    - Adds support for custom tmpdir location (Closes: #289395).
+
+ -- Daniel Baumann <daniel@debian.org>  Mon, 13 Aug 2007 23:18:00 +0200
+
 rdiff-backup (1.1.12-1) unstable; urgency=low
 
   * New upstream release:
