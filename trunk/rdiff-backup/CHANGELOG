@@ -1,4 +1,4 @@
-New in v1.1.13 (????/??/??)
+New in v1.1.13 (2007/08/12)
 ---------------------------
 
 Properly pickle QuotedRPaths. Fixes regress operation on quoted filesystems.
