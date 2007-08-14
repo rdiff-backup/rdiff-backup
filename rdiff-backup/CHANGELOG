@@ -1,6 +1,9 @@
 New in v1.1.15 (????/??/??)
 ---------------------------
 
+Rewrite quoting logic to independently check for escaping Windows special
+characters, non-ASCII chars, and uppercase chars. (Andrew Ferguson)
+
 Permit Unicode log messages. (Andrew Ferguson)
 
 

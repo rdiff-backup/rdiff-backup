@@ -33,7 +33,8 @@ import Globals, log, TempFile, selection, robust, SetConnections, \
 
 class FSAbilities:
 	"""Store capabilities of given file system"""
-	extended_filenames = None # True if filenames can handle ":" etc.
+	extended_filenames = None # True if filenames can have non-ASCII chars
+	win_reserved_filenames = None # True if filenames can't have ",*,: etc.
 	case_sensitive = None # True if "foobar" and "FoObAr" are different files
 	ownership = None # True if chown works on this filesystem
 	acls = None # True if access control lists supported
@@ -91,7 +92,9 @@ class FSAbilities:
 							   self.dir_inc_perms),
 							  ('High-bit permissions', self.high_perms),
 							  ('Symlink permissions', self.symlink_perms),
-							  ('Extended filenames', self.extended_filenames)])
+							  ('Extended filenames', self.extended_filenames),
+							  ('Windows reserved filenames',
+							   self.win_reserved_filenames)])
 		add_boolean_list([('Access control lists', self.acls),
 						  ('Extended attributes', self.eas),
 						  ('Case sensitivity', self.case_sensitive),
@@ -141,6 +144,7 @@ class FSAbilities:
 		subdir.mkdir()
 
 		self.set_extended_filenames(subdir)
+		self.set_win_reserved_filenames(subdir)
 		self.set_case_sensitive_readwrite(subdir)
 		self.set_ownership(subdir)
 		self.set_hardlinks(subdir)
@@ -208,7 +212,7 @@ class FSAbilities:
 		ord_rp.delete()
 
 		# Try a UTF-8 encoded character
-		extended_filename = ':\\ ' + chr(225) + chr(132) + chr(137)
+		extended_filename = 'uni' + chr(225) + chr(132) + chr(137)
 		ext_rp = None
 		try:
 			ext_rp = subdir.append(extended_filename)
@@ -229,6 +233,28 @@ class FSAbilities:
 				self.extended_filenames = 0
 			else:
 				self.extended_filenames = 1
+
+	def set_win_reserved_filenames(self, subdir):
+		"""Set self.win_reserved_filenames by trying to write a path"""
+		assert not self.read_only
+
+		# Try Windows reserved characters
+		win_reserved_filename = ':\\"'
+		win_rp = None
+		try:
+			win_rp = subdir.append(win_reserved_filename)
+			win_rp.touch()
+		except (IOError, OSError):
+			if win_rp: assert not win_rp.lstat()
+			self.win_reserved_filenames = 1
+		else:
+			assert win_rp.lstat()
+			try:
+				win_rp.delete()
+			except (IOError, OSError):
+				self.win_reserved_filenames = 1
+			else:
+				self.win_reserved_filenames = 0
 
 	def set_acls(self, rp):
 		"""Set self.acls based on rp.  Does not write.  Needs to be local"""
@@ -564,16 +590,21 @@ class BackupSetGlobals(SetGlobals):
 
 	def get_ctq_from_fsas(self):
 		"""Determine chars_to_quote just from filesystems, no ctq file"""
-		if self.src_fsa.case_sensitive and not self.dest_fsa.case_sensitive:
-			if self.dest_fsa.extended_filenames:
-				return "A-Z;" # Quote upper case and quoting char
-			# Quote the following 0 - 31, ", *, /, :, <, >, ?, \, |, ;
-			# Also quote uppercase A-Z
-			else: return 'A-Z\000-\037\"*/:<>?\\\\|\177;'
+		ctq = []
 
-		if self.dest_fsa.extended_filenames:
-			return "" # Don't quote anything
-		else: return '\000-\037\"*/:<>?\\\\|\177;'
+		if self.src_fsa.case_sensitive and not self.dest_fsa.case_sensitive:
+			ctq.append("A-Z") # Quote upper case
+		if not self.dest_fsa.extended_filenames:
+			ctq.append('\000-\037') # Quote 0 - 31
+			ctq.append('\200-\377') # Quote non-ASCII characters 0x80 - 0xFF
+		if self.dest_fsa.win_reserved_filenames:
+			if self.dest_fsa.extended_filenames:
+				ctq.append('\000-\037') # Quote 0 - 31
+			# Quote ", *, /, :, <, >, ?, \, |, and 127 (DEL)
+			ctq.append('\"*/:<>?\\\\|\177')
+
+		if ctq: ctq.append(';') # Quote quoting char if quoting anything
+		return "".join(ctq)
 
 	def compare_ctq_file(self, rbdir, suggested_ctq):
 		"""Compare ctq file with suggested result, return actual ctq"""
