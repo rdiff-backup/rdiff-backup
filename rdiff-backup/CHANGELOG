@@ -1,6 +1,10 @@
 New in v1.1.15 (????/??/??)
 ---------------------------
 
+restore_set_root should check if it can read a particular directory
+before checking if "rdiff-backup-data" is contained in it. Closes
+Savannah bug #21106. (Patch from Alex Chapman)
+
 Regress.restore_orig_regfile should check if directories can be fsync'd
 before doing so. Fixes Savannah bug #21546. (Patch from Marc Horowitz)
 
