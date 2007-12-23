@@ -2,8 +2,9 @@ Source: rdiff-backup
 Section: utils
 Priority: optional
 Maintainer: Daniel Baumann <daniel@debian.org>
-Build-Depends: debhelper (>= 5), python-support (>= 0.4.1), python-dev, python-pylibacl, python-pyxattr, librsync-dev
-Standards-Version: 3.7.2
+Build-Depends: debhelper (>= 5), python-support, python-dev, python-pylibacl, python-pyxattr, librsync-dev
+Standards-Version: 3.7.3
+Homepage: http://rdiff-backup.nongnu.org/
 
 Package: rdiff-backup
 Section: utils
@@ -23,5 +24,3 @@ Description: remote incremental backup
  like rsync. Thus you can use rdiff-backup and ssh to securely back a hard drive
  up to a remote location, and only the differences will be transmitted. Finally,
  rdiff-backup is easy to use and settings have sensible defaults.
- .
-  Hompage: <http://rdiff-backup.nongnu.org/>

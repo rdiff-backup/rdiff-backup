@@ -1,3 +1,10 @@
+rdiff-backup (1.1.14-2) unstable; urgency=low
+
+  * Bumping to new policy.
+  * Using new homepage field in control.
+
+ -- Daniel Baumann <daniel@debian.org>  Sun, 23 Dec 2007 17:26:00 +0100
+
 rdiff-backup (1.1.14-1) unstable; urgency=low
 
   * New upstream release:
