@@ -1,6 +1,9 @@
 New in v1.1.15 (????/??/??)
 ---------------------------
 
+Regress.restore_orig_regfile should check if directories can be fsync'd
+before doing so. Fixes Savannah bug #21546. (Patch from Marc Horowitz)
+
 Rewrite quoting logic to independently check for escaping Windows special
 characters, non-ASCII chars, and uppercase chars. (Andrew Ferguson)
 
