@@ -294,7 +294,8 @@ class RegressITRB(rorpiter.ITRBranch):
 			if rf.mirror_rp.lstat(): rf.mirror_rp.delete()
 			rf.mirror_rp.write_from_fileobj(rf.get_restore_fp())
 			rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
-		rf.mirror_rp.get_parent_rp().fsync() # require move before inc delete
+		if Globals.fsync_directories:
+			rf.mirror_rp.get_parent_rp().fsync() # force move before inc delete
 
 	def start_process(self, index, rf):
 		"""Start processing directory"""
