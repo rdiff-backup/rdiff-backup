@@ -599,10 +599,6 @@ class RORPath:
 		"""Signal that rorp is a signature/diff for a hardlink file"""
 		self.data['linked'] = index
 
-	def is_readable(self):
-		"""Check whether user can read the file or directory"""
-		return self.conn.os.access(self.path, self.conn.os.R_OK)
-
 	def open(self, mode):
 		"""Return file type object if any was given using self.setfile"""
 		if mode != "rb": raise RPathException("Bad mode %s" % mode)
