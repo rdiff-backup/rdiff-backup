@@ -118,7 +118,7 @@ very quickly (by creating a duplicate backup tree). For this reason
 this option is primarily aimed at scripts which automate backups.
 .TP
 .BI "\-\-current-time " seconds
-This option is useful mainly for testing.  If set, rdiff-backup will
+This option is useful mainly for testing.  If set, rdiff-backup will use
 it for the current time instead of consulting the clock.  The argument
 is the number of seconds since the epoch.
 .TP
@@ -143,7 +143,7 @@ Excludes the files listed in
 If
 .I filename
 is handwritten you probably want
-.B \-\-include-globbing-filelist
+.B \-\-exclude-globbing-filelist
 instead.  See the
 .B FILE SELECTION
 section for more information.
@@ -226,7 +226,7 @@ Like
 but include the listed files instead.  If
 .I filename
 is handwritten you probably want
-.B \-\-exclude-globbing-filelist
+.B \-\-include-globbing-filelist
 instead.  See the
 .B FILE SELECTION
 section for more information.
@@ -585,7 +585,7 @@ seconds after the epoch)
 A string like "2002-01-25T07:00:00+02:00" in datetime format 
 .IP 4.
 An interval, which is a number followed by one of the characters s, m,
-h, D, W, M, or Y (indicating seconds, minutes, hourse, days, weeks,
+h, D, W, M, or Y (indicating seconds, minutes, hours, days, weeks,
 months, or years respectively), or a series of such pairs.  In this
 case the string refers to the time that preceded the current time by
 the length of the interval.  For instance, "1h78m" indicates the time
@@ -594,7 +594,7 @@ unsophisticated: a month is always 30 days, a year is always 365 days,
 and a day is always 86400 seconds.
 .IP 5.
 A date format of the form YYYY/MM/DD, YYYY-MM-DD, MM/DD/YYYY, or
-MM/DD/YYYY, which indicates midnight on the day in question, relative
+MM-DD-YYYY, which indicates midnight on the day in question, relative
 to the current timezone settings.  For instance, "2002/3/5",
 "03-05-2002", and "2002-3-05" all mean March 5th, 2002.
 .IP 6.
