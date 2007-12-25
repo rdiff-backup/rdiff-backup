@@ -1,6 +1,9 @@
 New in v1.1.15 (????/??/??)
 ---------------------------
 
+Print a more helpful error message when we get a "Result too large"
+error when trying to copy a file. (Andrew Ferguson)
+
 Fix bug where rdiff-backup fails after all increments are removed. Closes
 Savannah bug #20291. (Andrew Ferguson)
 
