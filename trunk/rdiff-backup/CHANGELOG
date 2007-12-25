@@ -1,6 +1,9 @@
 New in v1.1.15 (????/??/??)
 ---------------------------
 
+Fix bug where rdiff-backup fails after all increments are removed. Closes
+Savannah bug #20291. (Andrew Ferguson)
+
 Don't assume that a file cannot be read simply becasue of the access
 permissions -- eg, NFS with (rw,all_squash) options. Closes Savannah
 bug #21202. (Based on patch from Marc Horowitz)
