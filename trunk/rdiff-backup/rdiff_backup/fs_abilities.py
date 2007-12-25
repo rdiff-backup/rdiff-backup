@@ -227,12 +227,13 @@ class FSAbilities:
 			except (IOError, OSError):
 				# Broken CIFS setups will sometimes create UTF-8 files
 				# and even stat them, but not let us perform file operations
-				# on them. Test file will be deleted via shutil.rmtree()
-				# when subdir is deleted. UTF-8 characters not in the
+				# on them. Test file cannot be deleted. UTF-8 chars not in the
 				# underlying codepage get translated to '?'
-				self.extended_filenames = 0
-			else:
-				self.extended_filenames = 1
+				log.Log.FatalError("Could not delete extended filenames test "
+								   "file. If you are using a CIFS share, please"
+								   " see the FAQ entry about characters being "
+								   "transformed to a '?'")
+			self.extended_filenames = 1
 
 	def set_win_reserved_filenames(self, subdir):
 		"""Set self.win_reserved_filenames by trying to write a path"""
