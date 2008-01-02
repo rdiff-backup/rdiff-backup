@@ -1,6 +1,7 @@
 <!-- #bbpragma doctype="-//W3C//DTD XHTML 1.0 Strict//EN" root_element="body" -->
 <h3><a name="ToC3">Table of contents</a></h3>
 <ol><li><a href="#verbosity">What do the different verbosity levels mean?</a></li>
+<li><a href="#compatible">Is rdiff-backup backwards compatible?</a></li>
 <li><a href="#windows">Does rdiff-backup run under Windows?</a></li>
 <li><a href="#OSX">Does rdiff-backup run under Mac OS X?</a></li>
 <li><a href="#cifs">Can I backup files to a CIFS or smbfs mount?</a></li>
@@ -24,6 +25,9 @@ how much is required? What is the problem if rdiff-backup says
 "<code>ValueError: Incorrect length of data produced</code>"?</a></li>
 <li><a href="#librsync_bug">What does "internal error: job made no progress" mean?</a></li>
 <li><a href="#path">Why does rdiff-backup say it's not in my $PATH? It is when I login!</a></li>
+<li><a href="#touple">What does "<code>touple index out of range</code>" mean?</a></li>
+<li><a href="#crc">What does "<code>IO Error: CRC check failed</code>" mean?</a></li>
+<li><a href="#badindex">What does "<code>AssertionError: Bad index order</code>" mean?</a></li>
 </ol>
 <h3><a name="ToC4">Questions and Answers</a></h3>
 <ol>
@@ -42,6 +46,21 @@ how much is required? What is the problem if rdiff-backup says
 <tr><td>8</td><td>All logging is dated</td></tr>
 <tr><td>9</td><td>Details on which objects are moving across the connection</td></tr>
 </table>
+</li>
+<li><strong><a name="compatible">Is rdiff-backup backwards compatible?</a></strong>
+
+<p>In general, rdiff-backup does not strive to make newer clients compatible 
+with older servers (or vice versa). However, there is no intention to 
+purposefully make different versions incompatible across the network -- changes 
+are introduced primarily to fix bugs or introduce new features that cannot be 
+implemented without breaking the network protocol. Furthermore, rdiff-backup 
+does try to make it possible to read older archives.</p>
+
+<p>When running as a client, rdiff-backup checks the version of rdiff-backup 
+running on the server, and prints a warning message if the two versions are 
+different. If you have any problems with your backup, it is strongly 
+recommended that you upgrade the older version before reporting any issues.</p>
+
 </li>
 <li><strong><a name="windows">Does rdiff-backup run under Windows?</a></strong>
 <p>Yes, although it is not a heavily tested configuration. Using the latest releases, such as
@@ -101,11 +120,21 @@ experience one of these common errors:</p>
 	This can be resolved by unmounting the share, running the following command as root:<br>
 	<code>$ echo 0 &gt; /proc/fs/cifs/LookupCacheEnabled</code><br>
 	and then remounting the CIFS share.<br><br>
-	<li>If filenames in the mirror directory have some characters transformed to a '?' instead of remaining
-	the expected Unicode character, you will need to adjust the <code>iocharset=</code> mount option. This
-	happens because the server is using a codepage with only partial Unicode support and is not translating
-	characters correctly. See the mount.cifs man page for more information. Using smbfs can also improve this
-	situation since it has both an <code>iocharset=</code> and a <code>codepage=</code> option.
+	<li>If filenames in the mirror directory have some characters transformed 
+	to a '?' instead of remaining the expected Unicode character, you will 
+	need to adjust the <code>iocharset=</code> mount option. This happens 
+	because the server is using a codepage with only partial Unicode support 
+	and is not translating characters correctly. See the mount.cifs man page 
+	for more information. Using smbfs can also improve this situation since it 
+	has both an <code>iocharset=</code> and a <code>codepage=</code> option.
+	There is also an 
+	<a href="http://wiki.rdiff-backup.org/wiki/index.php/BackingUpUnicodeToSmbfsMount">entry in the Wiki</a> about this.<br><br>
+	</li>
+	<li>If you have trouble with filenames containing a colon ':', or another
+	reserved Windows character, try using the <code>mapchars</code> option to
+	the CIFS mount. At least one user has reported success when using this
+	option while mounting a NAS system via CIFS. See the mount.cifs man page
+	for more information.</li>
 </ul>
 <p>If you're still having trouble backing up to a CIFS or smbfs mount, try searching the
 <a href="http://lists.gnu.org/archive/html/rdiff-backup-users/">mailing-list archives</a> and then sending
@@ -116,7 +145,7 @@ further questions to the list.</p>
 Windows's FAT32 or NTFS), rdiff-backup escapes uppercase characters in filenames to make sure that no files
 are accidentally overwritten. When a filesystem is case-preserving but case-insensitive, it means that it
 remembers that a file is named "Foo" but doesn't distinguish between "Foo", "foo", "foO", "fOo", etc. However,
-Filesystems such as Linux's ext3 do treat these names as separate files.</p>
+filesystems such as Linux's ext3 do treat these names as separate files.</p>
 <p>Imagine you have a Linux directory with two files, "bar" and "BAR", and you copy them to a Mac system. You will
 wind up with only one file (!) since HFS+ doesn't distinguish between the names, and the second file copied will
 overwrite the first. Therefore, when rdiff-backup copies files from case-sensitive to case-insensitive filesystems, it escapes the uppercase characters (eg, "M" is replaced with ";077", and "F" with ";070") so that no filename
@@ -354,4 +383,44 @@ information, read the <a href="http://linux.die.net/man/1/bash">bash manpage</a>
 <code>.bashrc</code> and <code>.bash_profile</code> files.</p>
 <p>In particular, this can happen if rdiff-backup was installed via Fink on a remote Mac OS X system. <code>/sw/bin</code> is magically added to your <code>$PATH</code> by the script <code>/sw/bin/init.sh</code> when you login with an interative shell. Fink did this behind the scenes when you set it up. Simply add <code>/sw/bin</code> to your path manually, or copy rdiff-backup to a directory that is in your <code>$PATH</code>.</p>
 </li>
+<li><strong><a name="touple">What does "<code>touple index out of range</code>" mean?</a></strong>
+
+<p>If you see the error "<code>tuple index out of range</code>" after running a command like:<br><br>
+<code>$ rdiff-backup -l /path/to/backup/rdiff-backup-data/</code><br><br>
+then the solution is to simply remove the extra "rdiff-backup-data" from the end of the path. The list increments option, and others like it, take the path to the repository, not the path to the rdiff-backup-data directory. In the above example, you should run again with:<br><br>
+<code>$ rdiff-backup -l /path/to/backup</code><br><br>
+If you get this error message for an unrelated reason, try contacting the mailing list.</p>
+
+</li>
+
+<li><strong><a name="crc">What does "<code>IO Error: CRC check failed</code>" mean?</a></strong>
+
+<p>This error message means that a 
+<a href="http://en.wikipedia.org/wiki/Cyclic_redundancy_check">Cyclic Redudancy 
+Check</a> failed during some operation, most likely while gzip'ing or 
+un-gzip'ing a file. Possible causes of this error include an incomplete 
+gzip operation, and hardware failure. A brute-force way to recover from this 
+error is to remove the rdiff-backup-data directory. However, this will remove 
+all of your past increments. A better approach may be to delete the particular 
+file that is causing the problem. A command like:<br><br>
+<code>$ find rdiff-backup-data -type f -name \*.gz -print0 | xargs -0r gzip --test</code><br><br>
+will find the failing file. For more information on this approach, see this 
+mailing list post: <a href="http://lists.nongnu.org/archive/html/rdiff-backup-users/2007-11/msg00008.html">http://lists.nongnu.org/archive/html/rdiff-backup-users/2007-11/msg00008.html</a>.</p>
+</li>
+
+<li><strong><a name="badindex">What does "<code>AssertionError: Bad index order</code>" mean?</a></strong>
+
+<p>If rdiff-backup fails with the message "<code>AssertionError: Bad index order</code>," it could be because the files in a directory have changed while
+rdiff-backup is running. Possible ways of dealing with this situation  include 
+implementing filesystem snapshots using the volume manager, excluding the 
+offending directory, or suspending the process that is changing the directory. 
+After the text "Bad index order", the error messge will indicate which files 
+have caused the problem.
+</p>
+
+<p>If you get this message for an unreleated reason, try contacting the mailing 
+list.</p>
+
+</li>
+
 </ol>
