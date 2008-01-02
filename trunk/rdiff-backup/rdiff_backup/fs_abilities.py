@@ -185,8 +185,9 @@ class FSAbilities:
 			if hl_source.getinode() != hl_dest.getinode():
 				raise IOError(errno.EOPNOTSUPP, "Hard links don't compare")
 		except (IOError, OSError):
-			log.Log("Warning: hard linking not supported by filesystem "
-					"at %s" % (self.root_rp.path,), 3)
+			if Globals.preserve_hardlinks != 0:
+				log.Log("Warning: hard linking not supported by filesystem "
+						"at %s" % (self.root_rp.path,), 3)
 			self.hardlinks = 0
 		else: self.hardlinks = 1
 

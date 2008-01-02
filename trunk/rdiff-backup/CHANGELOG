@@ -1,6 +1,9 @@
 New in v1.1.15 (????/??/??)
 ---------------------------
 
+Don't print the warning message about unsupported hard links if the user
+has specified the --no-hard-links option. (Suggested by Andreas Olsson)
+
 Print a more helpful error message when we get a "Result too large"
 error when trying to copy a file. (Andrew Ferguson)
 
