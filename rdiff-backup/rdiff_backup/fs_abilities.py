@@ -577,7 +577,7 @@ class BackupSetGlobals(SetGlobals):
 		log.Log("Backup: must_escape_dos_devices = %d" % \
 				(self.src_fsa.escape_dos_devices or local_edd), 4)
 
-	def set_chars_to_quote(self, rbdir):
+	def set_chars_to_quote(self, rbdir, force):
 		"""Set chars_to_quote setting for backup session
 
 		Unlike the other options, the chars_to_quote setting also
@@ -585,10 +585,12 @@ class BackupSetGlobals(SetGlobals):
 		directory, not just the current fs features.
 
 		"""
-		ctq = self.compare_ctq_file(rbdir, self.get_ctq_from_fsas())
+		(ctq, update) = self.compare_ctq_file(rbdir,
+				self.get_ctq_from_fsas(), force)
 
 		SetConnections.UpdateGlobal('chars_to_quote', ctq)
 		if Globals.chars_to_quote: FilenameMapping.set_init_quote_vals()
+		return update
 
 	def get_ctq_from_fsas(self):
 		"""Determine chars_to_quote just from filesystems, no ctq file"""
@@ -608,25 +610,33 @@ class BackupSetGlobals(SetGlobals):
 		if ctq: ctq.append(';') # Quote quoting char if quoting anything
 		return "".join(ctq)
 
-	def compare_ctq_file(self, rbdir, suggested_ctq):
+	def compare_ctq_file(self, rbdir, suggested_ctq, force):
 		"""Compare ctq file with suggested result, return actual ctq"""
 		ctq_rp = rbdir.append("chars_to_quote")
 		if not ctq_rp.lstat():
 			if Globals.chars_to_quote is None: actual_ctq = suggested_ctq
 			else: actual_ctq = Globals.chars_to_quote
 			ctq_rp.write_string(actual_ctq)
-			return actual_ctq
+			return (actual_ctq, None)
 
 		if Globals.chars_to_quote is None: actual_ctq = ctq_rp.get_data()
 		else: actual_ctq = Globals.chars_to_quote # Globals override
 
-		if actual_ctq == suggested_ctq: return actual_ctq
+		if actual_ctq == suggested_ctq: return (actual_ctq, None)
 		if suggested_ctq == "":
 			log.Log("Warning: File system no longer needs quoting, "
 					"but we will retain for backwards compatibility.", 2)
-			return actual_ctq
+			return (actual_ctq, None)
 		if Globals.chars_to_quote is None:
-			log.Log.FatalError("""New quoting requirements!
+			if force:
+				log.Log("Warning: migrating rdiff-backup repository from"
+						"old quoting chars %r to new quoting chars %r" %
+						(actual_ctq, suggested_ctq), 2)
+				ctq_rp.delete()
+				ctq_rp.write_string(suggested_ctq)
+				return  (suggested_ctq, 1)
+			else:
+				log.Log.FatalError("""New quoting requirements!
 
 The quoting chars this session needs %r do not match
 the repository settings %r listed in
@@ -637,7 +647,11 @@ This may be caused when you copy an rdiff-backup repository from a
 normal file system onto a windows one that cannot support the same
 characters, or if you backup a case-sensitive file system onto a
 case-insensitive one that previously only had case-insensitive ones
-backed up onto it.""" % (suggested_ctq, actual_ctq, ctq_rp.path))
+backed up onto it.
+
+By specificying the --force option, rdiff-backup will migrate the
+repository from the old quoting chars to the new ones.""" %
+			(suggested_ctq, actual_ctq, ctq_rp.path))
 
 
 class RestoreSetGlobals(SetGlobals):
@@ -719,7 +733,7 @@ class SingleSetGlobals(RestoreSetGlobals):
 			 ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
 
 
-def backup_set_globals(rpin):
+def backup_set_globals(rpin, force):
 	"""Given rps for source filesystem and repository, set fsa globals
 
 	This should be run on the destination connection, because we may
@@ -742,9 +756,13 @@ def backup_set_globals(rpin):
 	bsg.set_change_ownership()
 	bsg.set_high_perms()
 	bsg.set_symlink_perms()
-	bsg.set_chars_to_quote(Globals.rbdir)
+	update_quoting = bsg.set_chars_to_quote(Globals.rbdir, force)
 	bsg.set_escape_dos_devices()
 	bsg.set_must_escape_dos_devices(Globals.rbdir)
+
+	if update_quoting and force:
+		FilenameMapping.update_quoting(Globals.rbdir)
+
 
 def restore_set_globals(rpout):
 	"""Set fsa related globals for restore session, given in/out rps"""

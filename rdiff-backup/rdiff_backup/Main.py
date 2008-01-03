@@ -329,7 +329,7 @@ def Backup(rpin, rpout):
 	SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
 	backup_check_dirs(rpin, rpout)
 	backup_set_rbdir(rpin, rpout)
-	rpout.conn.fs_abilities.backup_set_globals(rpin)
+	rpout.conn.fs_abilities.backup_set_globals(rpin, force)
 	if Globals.chars_to_quote: rpout = backup_quoted_rpaths(rpout)
 	init_user_group_mapping(rpout.conn)
 	backup_final_init(rpout)
