@@ -1,6 +1,9 @@
 New in v1.1.15 (????/??/??)
 ---------------------------
 
+New feature: If quoting requirements change, rdiff-backup can requote the
+entire repository if user specifies the --force option. (Andrew Ferguson)
+
 Don't print the warning message about unsupported hard links if the user
 has specified the --no-hard-links option. (Suggested by Andreas Olsson)
 
