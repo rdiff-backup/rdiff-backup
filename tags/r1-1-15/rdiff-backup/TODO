@@ -1,0 +1,22 @@
+Fix restore with --force over existing regular file.
+
+For comparing, check source filesystem's abilities
+
+Clean up compare reports
+
+Test comparing of single files, and files/directories specified by
+increment.  Also test --include/--exclude with compare options.
+
+---------[ Medium term ]---------------------------------------
+
+Look into sparse file support (requested by Stelios K. Kyriacou)
+
+Look at Kent Borg's suggestion for restore options and digests.
+
+---------[ Long term ]---------------------------------------
+
+Think about adding Gaudet's idea for keeping track of renamed files.
+
+Look into different inode generation techniques (see treescan, Dean
+Gaudet's other post).
+
