@@ -1,6 +1,8 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Properly initialize new QuotedRPaths. Fixes --list-at-time, etc. when
+the target is remote. (Andrew Ferguson)
 
 New in v1.1.15 (2008/01/03)
 ---------------------------

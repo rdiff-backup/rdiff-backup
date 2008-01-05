@@ -124,8 +124,15 @@ class QuotedRPath(rpath.RPath):
 	def __init__(self, connection, base, index = (), data = None):
 		"""Make new QuotedRPath"""
 		self.quoted_index = tuple(map(quote, index))
-		rpath.RPath.__init__(self, connection, base, self.quoted_index, data)
+		self.conn = connection
 		self.index = index
+		self.base = base
+		if base is not None:
+			if base == "/": self.path = "/" + "/".join(self.quoted_index)
+			else: self.path = "/".join((base,) + self.quoted_index)
+		self.file = None
+		if data or base is None: self.data = data
+		else: self.setdata()
 
 	def __setstate__(self, rpath_state):
 		"""Reproduce QuotedRPath from __getstate__ output"""
