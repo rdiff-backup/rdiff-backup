@@ -1,6 +1,9 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+rdiff-backup-statistics now supports quoted repositories. Closes Savannah
+bug #21813. (Andrew Ferguson)
+
 Add EBADF to the list of recoverable errors when fsync() is called. This
 fixes an rdiff-backup error on AIX and IRIX. Closes Savannah bug #15839.
 (Fix from Peter O'Gorman)
