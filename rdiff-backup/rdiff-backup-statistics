@@ -22,7 +22,7 @@
 
 import os, sys, re, getopt
 from rdiff_backup import connection, regress, rpath, Globals, restore, \
-	 Time, lazy
+	 Time, lazy, FilenameMapping
 
 begin_time = None # Parse statistics at or after this time...
 end_time = None # ... and at or before this time (epoch seconds)
@@ -97,8 +97,8 @@ class StatisticsRPaths:
 
 def print_session_statistics(stat_rpaths):
 	print "Session statistics:"
-	system("rdiff-backup --calculate-average " +
-		   " ".join([inc.path for inc in stat_rpaths.session_rps]))
+	system('rdiff-backup --calculate-average "' +
+		   " ".join([inc.path for inc in stat_rpaths.session_rps]) + '"')
 
 
 class FileStatisticsTree:
@@ -415,10 +415,20 @@ def sum_fst(rp_pairs):
 		fst = make_fst(session_rp, filestat_rp)
 		total_fst += fst
 	return total_fst
-	
+
+def set_chars_to_quote():
+	ctq_rp = Globals.rbdir.append("chars_to_quote")
+	if ctq_rp.lstat():
+		Globals.chars_to_quote = ctq_rp.get_data()
+	if Globals.chars_to_quote:
+		Globals.must_escape_dos_devices = 0 # No DOS devices will be present
+		FilenameMapping.set_init_quote_vals()
+		Globals.rbdir = FilenameMapping.get_quotedrpath(Globals.rbdir)
+
 def Main():
 	Time.setcurtime()
 	parse_args()
+	set_chars_to_quote()	
 	srp = StatisticsRPaths(Globals.rbdir)
 	if not srp.combined_pairs: sys.exit("No matching sessions found")
 	if len(srp.combined_pairs) == 1: fst = make_fst(*srp.combined_pairs[0])
