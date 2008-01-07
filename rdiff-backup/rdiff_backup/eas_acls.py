@@ -109,7 +109,7 @@ class ExtendedAttributes:
 				# fail gracefully if can't call setxattr
 				if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EACCES:
 					log.Log("Warning: unable to write xattr %s to %s"
-							% (name, rp.path), 3)
+							% (name, rp.path), 6)
 					continue
 				else: raise
 
