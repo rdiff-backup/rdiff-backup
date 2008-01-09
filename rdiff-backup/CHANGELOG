@@ -1,6 +1,10 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Change high-bit permissions test to check both files and directories.
+Improves rdiff-backup's support for AFS and closes Debian bug #450409.
+(Patch from Marc Horowitz)
+
 rdiff-backup-statistics now supports quoted repositories. Closes Savannah
 bug #21813. (Andrew Ferguson)
 
