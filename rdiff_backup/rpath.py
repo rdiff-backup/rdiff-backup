@@ -125,7 +125,17 @@ def copy_reg_file(rpin, rpout, compress = 0):
 			rpout.setdata()
 			return v
 	except AttributeError: pass
-	return rpout.write_from_fileobj(rpin.open("rb"), compress = compress)
+	try:
+		return rpout.write_from_fileobj(rpin.open("rb"), compress = compress)
+	except IOError, e:
+		if (e.errno == errno.ERANGE):
+			log.Log.FatalError("'IOError - Result too large' while reading %s. "
+							   "If you are using a Mac, this is probably "
+							   "the result of HFS+ filesystem corruption. "
+							   "Please exclude this file from your backup "
+							   "before proceeding." % rpin.path)
+		else:
+			raise
 
 def cmp(rpin, rpout):
 	"""True if rpin has the same data as rpout
@@ -836,9 +846,9 @@ class RPath(RORPath):
 					and not self.isdir():
 				# Some systems throw this error if try to set sticky bit
 				# on a non-directory. Remove sticky bit and try again.
-				log.Log("Unable to set permissions of %s to %o - trying again"
-						"without sticky bit (%o)" % (self.path, permissions,
-						permissions & 06777), 2)
+				log.Log("Warning: Unable to set permissions of %s to %o - "
+						"trying again without sticky bit (%o)" % (self.path, 
+						permissions, permissions & 06777), 2)
 				self.conn.os.chmod(self.path, permissions
 											  & 06777 & Globals.permission_mask)
 			else:

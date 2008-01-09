@@ -112,7 +112,8 @@ class Logger:
 		if verbosity > self.verbosity and verbosity > self.term_verbosity:
 			return
 
-		if not type(message) is types.StringType:
+		if not (type(message) is types.StringType
+				or type(message) is types.UnicodeType):
 			assert type(message) is types.FunctionType
 			message = message()
 

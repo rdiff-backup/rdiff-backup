@@ -29,7 +29,8 @@ handle that error.)
 
 """
 
-import re, types
+from __future__ import generators
+import os, re, types
 import Globals, log, rpath
 
 # If true, enable character quoting, and set characters making
@@ -71,7 +72,7 @@ def init_quoting_regexps():
 				 re.compile("[%s]|%s" % (chars_to_quote, quoting_char), re.S)
 		unquoting_regexp = re.compile("%s[0-9]{3}" % quoting_char, re.S)
 	except re.error:
-		log.Log.FatalError("Error '%s' when processing char quote list '%s'" %
+		log.Log.FatalError("Error '%s' when processing char quote list %r" %
 						   (re.error, chars_to_quote))
 
 def quote(path):
@@ -171,3 +172,84 @@ def get_quotedrpath(rp, separate_basename = 0):
 def get_quoted_sep_base(filename):
 	"""Get QuotedRPath from filename assuming last bit is quoted"""
 	return get_quotedrpath(rpath.RPath(Globals.local_connection, filename), 1)
+
+def update_quoting(rbdir):
+	"""Update the quoting of a repository by renaming any
+	files that should be quoted differently.
+	"""
+
+	def requote(name):
+		unquoted_name = unquote(name)
+		quoted_name = quote(unquoted_name)
+		if name != quoted_name:
+			return quoted_name
+		else:
+			return None
+	
+	def process(dirpath_rp, name, list):
+		new_name = requote(name)
+		if new_name:
+			if list:
+				list.remove(name)
+				list.append(new_name)
+			name_rp = dirpath_rp.append(name)
+			new_rp = dirpath_rp.append(new_name)
+			log.Log("Re-quoting %s to %s" % (name_rp.path, new_rp.path), 5)
+			rpath.move(name_rp, new_rp)
+
+	assert rbdir.conn is Globals.local_connection
+	mirror_rp = rbdir.get_parent_rp()
+	mirror = mirror_rp.path
+
+	log.Log("Re-quoting repository %s" % mirror_rp.path, 3)
+
+	try:
+		os_walk = os.walk
+	except AttributeError:
+		os_walk = walk
+
+	for dirpath, dirs, files in os_walk(mirror):
+		dirpath_rp = mirror_rp.newpath(dirpath)
+
+		for name in dirs: process(dirpath_rp, name, dirs)
+		for name in files: process(dirpath_rp, name, None)
+
+"""
+os.walk() copied directly from Python 2.5.1's os.py
+
+Backported here for Python 2.2 support. os.walk() was first added
+in Python 2.3.
+"""
+def walk(top, topdown=True, onerror=None):
+	from os import error, listdir
+	from os.path import join, isdir, islink
+	# We may not have read permission for top, in which case we can't
+	# get a list of the files the directory contains.  os.path.walk
+	# always suppressed the exception then, rather than blow up for a
+	# minor reason when (say) a thousand readable directories are still
+	# left to visit.  That logic is copied here.
+	try:
+		# Note that listdir and error are globals in this module due
+		# to earlier import-*.
+		names = listdir(top)
+	except error, err:
+		if onerror is not None:
+			onerror(err)
+		return
+
+	dirs, nondirs = [], []
+	for name in names:
+		if isdir(join(top, name)):
+			dirs.append(name)
+		else:
+			nondirs.append(name)
+
+	if topdown:
+		yield top, dirs, nondirs
+	for name in dirs:
+		path = join(top, name)
+		if not islink(path):
+			for x in walk(path, topdown, onerror):
+				yield x
+	if not topdown:
+		yield top, dirs, nondirs

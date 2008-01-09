@@ -1,3 +1,9 @@
+rdiff-backup (1.1.15-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Daniel Baumann <daniel@debian.org>  Wed,  9 Jan 2008 20:59:00 +0100
+
 rdiff-backup (1.1.14-2) unstable; urgency=low
 
   * Bumping to new policy.
