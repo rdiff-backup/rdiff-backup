@@ -82,7 +82,7 @@ def Verify(mirror_rp, inc_rp, verify_time):
 		if not repo_rorp.isreg(): continue
 		if not repo_rorp.has_sha1():
 			log.Log("Warning: Cannot find SHA1 digest for file %s,\n"
-					"perhaps because these feature was added in v1.1.1"
+					"perhaps because this feature was added in v1.1.1"
 					% (repo_rorp.get_indexpath(),), 2)
 			continue
 		fp = RepoSide.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
