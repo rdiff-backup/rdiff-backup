@@ -439,14 +439,19 @@ class FSAbilities:
 
 	def set_high_perms_readwrite(self, dir_rp):
 		"""Test for writing high-bit permissions like suid"""
-		tmp_rp = dir_rp.append("high_perms")
-		tmp_rp.touch()
+		tmpf_rp = dir_rp.append("high_perms_file")
+		tmpf_rp.touch()
+		tmpd_rp = dir_rp.append("high_perms_dir")
+		tmpd_rp.touch()
 		try:
-			tmp_rp.chmod(07000)
-			tmp_rp.chmod(07777)
+			tmpf_rp.chmod(07000)
+			tmpf_rp.chmod(07777)
+			tmpd_rp.chmod(07000)
+			tmpd_rp.chmod(07777)
 		except (OSError, IOError): self.high_perms = 0
 		else: self.high_perms = 1
-		tmp_rp.delete()
+		tmpf_rp.delete()
+		tmpd_rp.delete()
 
 	def set_symlink_perms(self, dir_rp):
 		"""Test if symlink permissions are affected by umask"""
