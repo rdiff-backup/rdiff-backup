@@ -228,6 +228,7 @@ class AccessControlLists:
 
 	def __str__(self):
 		"""Return text version of acls"""
+		if not self.entry_list: return ""
 		slist = map(self.entrytuple_to_text, self.entry_list)
 		if self.default_entry_list:
 			slist.extend(map(lambda e: "default:" + self.entrytuple_to_text(e),
