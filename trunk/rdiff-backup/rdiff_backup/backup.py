@@ -161,18 +161,18 @@ class DestinationStruct:
 		every so often so it doesn't get congested on destination end.
 
 		"""
-		flush_threshold = int(Globals.pipeline_max_length/2)
-		num_rorps_skipped = 0
+		flush_threshold = Globals.pipeline_max_length - 2
+		num_rorps_seen = 0
 		for src_rorp, dest_rorp in cls.CCPP:
-			if (src_rorp and dest_rorp and src_rorp == dest_rorp and
+			if (Globals.backup_reader is not Globals.backup_writer):
+				num_rorps_seen += 1
+				if (num_rorps_seen > flush_threshold):
+					num_rorps_seen = 0
+					yield iterfile.MiscIterFlushRepeat
+			if not (src_rorp and dest_rorp and src_rorp == dest_rorp and
 				(not Globals.preserve_hardlinks or
 				 Hardlink.rorp_eq(src_rorp, dest_rorp))):
-				num_rorps_skipped += 1
-				if (Globals.backup_reader is not Globals.backup_writer and
-					num_rorps_skipped > flush_threshold):
-					num_rorps_skipped = 0
-					yield iterfile.MiscIterFlushRepeat
-			else:
+
 				index = src_rorp and src_rorp.index or dest_rorp.index
 				sig = cls.get_one_sig(dest_base_rpath, index,
 									  src_rorp, dest_rorp)
