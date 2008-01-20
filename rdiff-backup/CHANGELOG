@@ -1,6 +1,10 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Improve the handling of directories with many small files when backing-up
+over a network connection. Thanks to Austin Clements for the test case.
+(Andrew Ferguson)
+
 Change high-bit permissions test to check both files and directories.
 Improves rdiff-backup's support for AFS and closes Debian bug #450409.
 (Patch from Marc Horowitz)
