@@ -1,6 +1,8 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Manpage improvements from Justin Pryzby.
+
 Improve the handling of directories with many small files when backing-up
 over a network connection. Thanks to Austin Clements for the test case.
 (Andrew Ferguson)
