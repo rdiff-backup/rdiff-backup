@@ -651,16 +651,13 @@ class PatchITRB(rorpiter.ITRBranch):
 		"""Finish processing directory"""
 		if self.dir_update:
 			assert self.base_rp.isdir()
+			rpath.copy_attribs(self.dir_update, self.base_rp)
 
 			if (Globals.process_uid != 0 and
 					self.dir_update.getperms() % 01000 < 0700):
-				# Directory's permissions were adjusted at the start to
-				# make it readable -- remove it from the list since they
-				# will be reset by the copy_attribs() call
-				self.CCPP.dir_perms_list.remove((self.base_rp,
-					self.dir_update.getperms()))
-
-			rpath.copy_attribs(self.dir_update, self.base_rp)
+				# Directory was unreadable at start -- keep it readable
+				# until the end of the backup process.
+				self.base_rp.chmod(0700 | self.dir_update.getperms())
 		elif self.dir_replacement:
 			self.base_rp.rmdir()
 			if self.dir_replacement.lstat():
