@@ -1,6 +1,10 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Correctly handle updates to nested directories with unreadable permissions.
+Thanks to John Goerzen for the bug report. Closes Debian bugs #389134 and
+#411849. (Andrew Ferguson)
+
 Manpage improvements from Justin Pryzby.
 
 Improve the handling of directories with many small files when backing-up
