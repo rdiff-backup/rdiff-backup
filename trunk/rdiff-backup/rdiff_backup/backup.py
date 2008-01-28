@@ -212,7 +212,14 @@ class DestinationStruct:
 			return Rdiff.get_signature(dest_rp)
 		except IOError, e:
 			if (e.errno == errno.EPERM):
-				log.Log.FatalError("Could not open %s for reading. Check "
+				try:
+					# Try chmod'ing anyway -- This can work on NFS and AFS
+					# depending on the setup. We keep the if() statement
+					# above for performance reasons.
+					dest_rp.chmod(0400 | dest_rp.getperms())
+					return Rdiff.get_signature(dest_rp)
+				except (IOError, OSError):
+					log.Log.FatalError("Could not open %s for reading. Check "
 						"permissions on file." % (dest_rp.path,))
 			else:
 				raise
