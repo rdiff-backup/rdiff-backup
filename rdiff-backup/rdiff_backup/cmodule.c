@@ -24,7 +24,9 @@
 #include <Python.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#if !defined(MS_WIN64) && !defined(MS_WIN32)
 #include <unistd.h>
+#endif
 #include <errno.h>
 
 
@@ -46,13 +48,17 @@
 /* This code taken from Python's posixmodule.c */
 #undef STAT
 #if defined(MS_WIN64) || defined(MS_WIN32)
+#	define LSTAT _stati64
 #	define STAT _stati64
 #	define FSTAT _fstati64
 #	define STRUCT_STAT struct _stati64
+#	define SYNC _flushall
 #else
+#	define LSTAT lstat
 #	define STAT stat
 #	define FSTAT fstat
 #	define STRUCT_STAT struct stat
+#	define SYNC sync
 #endif
 #ifndef PY_LONG_LONG 
     #define PY_LONG_LONG LONG_LONG 
@@ -67,6 +73,15 @@
 #undef S_ISFIFO               /* their definition of a fifo includes sockets */
 #define S_ISSOCK(mode)        (((mode) & S_IFMT) == S_IFSOCK)
 #define S_ISFIFO(mode)        (((mode) & S_IFMT) == S_IFIFO)
+#endif
+
+#if defined(MS_WIN64) || defined(MS_WIN32)
+#define S_ISSOCK(mode) (0)
+#define S_ISFIFO(mode) (0)
+#define S_ISLNK(mode) (0)
+#define S_ISLNK(mode) (0)
+#define S_ISCHR(mode) (0)
+#define S_ISBLK(mode) (0)
 #endif
 
 static PyObject *UnknownFileTypeError;
@@ -90,7 +105,7 @@ static PyObject *c_make_file_dict(self, args)
   if (!PyArg_ParseTuple(args, "s", &filename)) return NULL;
 
   Py_BEGIN_ALLOW_THREADS
-  res = lstat(filename, &sbuf);
+  res = LSTAT(filename, &sbuf);
   Py_END_ALLOW_THREADS
 
   if (res != 0) {
@@ -225,7 +240,7 @@ static PyObject *my_sync(self, args)
 	 PyObject *args;
 {
   if (!PyArg_ParseTuple(args, "")) return NULL;
-  sync();
+  SYNC();
   return Py_BuildValue("");
 }
 

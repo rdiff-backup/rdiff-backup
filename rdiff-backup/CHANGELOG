@@ -1,6 +1,8 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Get cmodule.c building natively on Windows. (Patch from Josh Nisly)
+
 Don't give up right away if we can't open a file. Try chmod'ing it even
 if we aren't root or don't own it, since that can sometimes work on AFS
 and NFS. Closes Savannah bug #21202. (Andrew Ferguson)
