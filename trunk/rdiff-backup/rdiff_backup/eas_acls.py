@@ -201,7 +201,7 @@ def join_ea_iter(rorp_iter, ea_iter):
 class AccessControlLists:
 	"""Hold a file's access control list information
 
-	Since posix1e.ACL objects cannot be picked, and because they lack
+	Since posix1e.ACL objects cannot be pickled, and because they lack
 	user/group name information, store everything in self.entry_list
 	and self.default_entry_list.
 
