@@ -1,6 +1,8 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Let setup.py accept arguments on Windows. (Patch from Josh Nisly)
+
 Get cmodule.c building natively on Windows. (Patch from Josh Nisly)
 
 Don't give up right away if we can't open a file. Try chmod'ing it even
