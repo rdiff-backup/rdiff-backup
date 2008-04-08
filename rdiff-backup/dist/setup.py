@@ -14,7 +14,7 @@ lflags_arg = []
 libname = ['rsync']
 incdir_list = libdir_list = None
 
-if os.name == 'posix':
+if os.name == 'posix' or os.name == 'nt':
 	LIBRSYNC_DIR = os.environ.get('LIBRSYNC_DIR', '')
 	LFLAGS = os.environ.get('LFLAGS', [])
 	LIBS = os.environ.get('LIBS', [])
