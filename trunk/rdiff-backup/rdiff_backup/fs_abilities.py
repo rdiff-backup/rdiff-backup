@@ -169,7 +169,7 @@ class FSAbilities:
 		try:
 			tmp_rp.chown(uid+1, gid+1) # just choose random uid/gid
 			tmp_rp.chown(0, 0)
-		except (IOError, OSError): self.ownership = 0
+		except (IOError, OSError, AttributeError): self.ownership = 0
 		else: self.ownership = 1
 		tmp_rp.delete()
 
@@ -184,7 +184,7 @@ class FSAbilities:
 			hl_dest.hardlink(hl_source.path)
 			if hl_source.getinode() != hl_dest.getinode():
 				raise IOError(errno.EOPNOTSUPP, "Hard links don't compare")
-		except (IOError, OSError):
+		except (IOError, OSError, AttributeError):
 			if Globals.preserve_hardlinks != 0:
 				log.Log("Warning: hard linking not supported by filesystem "
 						"at %s" % (self.root_rp.path,), 3)
@@ -460,7 +460,7 @@ class FSAbilities:
 		sym_dest = dir_rp.append("symlinked_file2")
 		try:
 			sym_dest.symlink(sym_source.path)
-		except (OSError):
+		except (OSError, AttributeError):
 			self.symlink_perms = 0
 		else:
 			sym_dest.setdata()

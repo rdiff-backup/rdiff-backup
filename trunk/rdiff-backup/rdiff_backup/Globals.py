@@ -47,9 +47,14 @@ server = None
 
 # uid and gid of the owner of the rdiff-backup process.  This can
 # vary depending on the connection.
-process_uid = os.getuid()
-process_gid = os.getgid()
-process_groups = [process_gid] + os.getgroups()
+try:
+	process_uid = os.getuid()
+	process_gid = os.getgid()
+	process_groups = [process_gid] + os.getgroups()
+except AttributeError:
+	process_uid = 0
+	process_gid = 0
+	process_groups = [0]
 
 # If true, when copying attributes, also change target's uid/gid
 change_ownership = None

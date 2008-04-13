@@ -132,7 +132,14 @@ def init_connection(remote_cmd):
 	if not remote_cmd: return Globals.local_connection
 
 	Log("Executing " + remote_cmd, 4)
-	stdin, stdout = os.popen2(remote_cmd)
+	if os.name == "nt":
+		import subprocess
+		process = subprocess.Popen(remote_cmd, shell=False, bufsize=0,
+								stdin=subprocess.PIPE, 
+								stdout=subprocess.PIPE)
+		(stdin, stdout) = (process.stdin, process.stdout)
+	else:
+		stdin, stdout = os.popen2(remote_cmd)
 	conn_number = len(Globals.connections)
 	conn = connection.PipeConnection(stdout, stdin, conn_number)
 
