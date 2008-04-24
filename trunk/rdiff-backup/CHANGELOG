@@ -1,6 +1,10 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Improve Unicode support by escaping Unicode characters in filenames
+when printing them in log messages from eas_acls.py. (Fix from
+Saptarshi Guha)
+
 Handle Windows' lack of getuid(), getgid(), hardlinks and symlinks in
 fs_abilities.py. Use subproces.Popen() on Windows since it does not support
 os.popen2(). (Patch from Josh Nisly)
