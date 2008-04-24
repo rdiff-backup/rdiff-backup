@@ -61,7 +61,7 @@ class ExtendedAttributes:
 			if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EPERM:
 				return # if not supported, consider empty
 			if exc[0] == errno.EACCES:
-				log.Log("Warning: listattr(%s): %s" % (rp.path, exc), 3)
+				log.Log("Warning: listattr(%s): %s" % (repr(rp.path), exc), 3)
 				return
 			raise
 		for attr in attr_list:
@@ -90,7 +90,7 @@ class ExtendedAttributes:
 					# to bail out or be too noisy at low log levels.
 					if exc[0] == errno.EACCES:
 						log.Log("Warning: unable to remove xattr %s from %s"
-							% (name, rp.path), 7)
+							% (name, repr(rp.path)), 7)
 						continue
 					else: raise
 		except IOError, exc:
@@ -109,7 +109,7 @@ class ExtendedAttributes:
 				# fail gracefully if can't call setxattr
 				if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EACCES:
 					log.Log("Warning: unable to write xattr %s to %s"
-							% (name, rp.path), 6)
+							% (name, repr(rp.path)), 6)
 					continue
 				else: raise
 
