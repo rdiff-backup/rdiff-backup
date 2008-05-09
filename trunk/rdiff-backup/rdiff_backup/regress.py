@@ -141,8 +141,9 @@ def recreate_meta(meta_manager):
 	the reverse.
 
 	"""
-	temprp = TempFile.new_in_dir(Globals.rbdir)
-	writer = metadata.MetadataFile(temprp, 'w', check_path = 0)
+	temprp = [TempFile.new_in_dir(Globals.rbdir)]
+	def callback(rp): temprp[0] = rp
+	writer = metadata.MetadataFile(temprp[0], 'w', check_path = 0, callback = callback)
 	for rorp in meta_manager.get_meta_at_time(regress_time, None):
 		writer.write_object(rorp)
 	writer.close()
@@ -150,7 +151,7 @@ def recreate_meta(meta_manager):
 	finalrp = Globals.rbdir.append("mirror_metadata.%s.snapshot.gz" %
 								   Time.timetostring(regress_time))
 	assert not finalrp.lstat(), finalrp
-	rpath.rename(temprp, finalrp)
+	rpath.rename(temprp[0], finalrp)
 	if Globals.fsync_directories: Globals.rbdir.fsync()
 
 def iterate_raw_rfs(mirror_rp, inc_rp):

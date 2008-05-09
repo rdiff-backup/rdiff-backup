@@ -1,6 +1,9 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Finally fix 'No such file or directory' bug when attempting to regress after
+a failed backup. (Patch from Josh Nisly)
+
 Improve Unicode support by escaping Unicode characters in filenames
 when printing them in log messages from eas_acls.py. (Fix from
 Saptarshi Guha)
