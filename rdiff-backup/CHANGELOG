@@ -1,6 +1,10 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Add Windows-specific logic for checking if another rdiff-backup process
+is running. Do not try to handle non-existant SIGHUP and SIGQUIT signals
+on Windows. (Patch from Josh Nisly)
+
 Do not use inode numbers on Windows and gracefully handle attempts to
 rename over existing files on Windows. (Patch from Josh Nisly)
 

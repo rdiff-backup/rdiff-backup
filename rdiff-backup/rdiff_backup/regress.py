@@ -348,6 +348,21 @@ def check_pids(curmir_incs):
 		except OSError, exc:
 			if exc[0] == errno.ESRCH: return 0
 			else: log.Log("Warning: unable to check if PID %d still running" % (pid,), 2)
+		except AttributeError:
+			assert os.name == 'nt'
+			import win32api, win32con, pywintypes
+			try:
+				process = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 
+											0, pid)
+			except pywintypes.error, error:
+				if error[0] == 87: return 0
+				else:
+					msg = "Warning: unable to check if PID %d still running"
+					log.Log(msg % pid, 2)
+			if process:
+				win32api.CloseHandle(process)
+				return 1
+			return 0
 		return 1
 
 	for curmir_rp in curmir_incs:
