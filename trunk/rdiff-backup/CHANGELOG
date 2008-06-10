@@ -1,6 +1,10 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Don't set modification times for directories on Windows. Also, assume
+that user has access to all files on Windows since there is no support
+for getuid(). (Patch from Josh Nisly)
+
 Add Windows-specific logic for checking if another rdiff-backup process
 is running. Do not try to handle non-existant SIGHUP and SIGQUIT signals
 on Windows. (Patch from Josh Nisly)
