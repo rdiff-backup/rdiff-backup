@@ -244,12 +244,22 @@ def rename(rp_source, rp_dest):
 	log.Log(lambda: "Renaming %s to %s" % (rp_source.path, rp_dest.path), 7)
 	if not rp_source.lstat(): rp_dest.delete()
 	else:
-		if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode():
+		if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode() and \
+				rp_source.getinode() != -1:
 			log.Log("Warning: Attempt to rename over same inode: %s to %s"
 					% (rp_source.path, rp_dest.path), 2)
 			# You can't rename one hard linked file over another
 			rp_source.delete()
-		else: rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+		else:
+			try:
+			    rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+			except OSError, error:
+				if error.errno != errno.EEXIST: raise
+
+				# On Windows, files can't be renamed on top of an existing file
+				rp_source.conn.os.unlink(rp_dest.path)
+				rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+			    
 		rp_dest.data = rp_source.data
 		rp_source.data = {'type': None}
 

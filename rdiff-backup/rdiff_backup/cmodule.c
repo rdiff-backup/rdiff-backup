@@ -66,6 +66,8 @@
 
 /* The following section is by Jeffrey A. Marshall and compensates for
  * a bug in Mac OS X's S_ISFIFO and S_ISSOCK macros.
+ * Note: Starting in Mac OS X 10.3, the buggy macros were changed to be
+ * the same as the ones below.
  */
 #ifdef __APPLE__
 /* S_ISFIFO/S_ISSOCK macros from <sys/stat.h> on mac osx are bogus */
@@ -116,13 +118,18 @@ static PyObject *c_make_file_dict(self, args)
 	  return NULL;
 	}
   }
+#if defined(MS_WINDOWS)
+  size = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_size);
+  inode = PyLong_FromLongLong((PY_LONG_LONG)-1);
+#else
 #ifdef HAVE_LARGEFILE_SUPPORT
   size = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_size);
   inode = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_ino);
 #else
   size = PyInt_FromLong(sbuf.st_size);
   inode = PyInt_FromLong((long)sbuf.st_ino);
-#endif
+#endif /* HAVE_LARGEFILE_SUPPORT */
+#endif /* defined(MS_WINDOWS) */
   mode = (long)sbuf.st_mode;
   perms = mode & 07777;
 #if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
