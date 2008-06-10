@@ -1,6 +1,9 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Do not use inode numbers on Windows and gracefully handle attempts to
+rename over existing files on Windows. (Patch from Josh Nisly)
+
 Finally fix 'No such file or directory' bug when attempting to regress after
 a failed backup. (Patch from Josh Nisly)
 
