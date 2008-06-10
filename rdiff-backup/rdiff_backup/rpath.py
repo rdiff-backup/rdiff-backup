@@ -886,6 +886,11 @@ class RPath(RORPath):
 		except OverflowError:
 			log.Log("Cannot change mtime of %s to %s - problem is probably"
 					"64->32bit conversion" % (self.path, modtime), 2)
+		except OSError:
+			# It's not possible to set a modification time for
+			# directories on Windows.
+		    if self.conn.os.name != 'nt' or not self.isdir():
+		        raise
 		else: self.data['mtime'] = modtime
 
 	def chown(self, uid, gid):
@@ -969,7 +974,10 @@ class RPath(RORPath):
 		
 	def isowner(self):
 		"""Return true if current process is owner of rp or root"""
-		uid = self.conn.os.getuid()
+		try:
+		    uid = self.conn.os.getuid()
+		except AttributeError:
+		    return True # Windows doesn't have getuid(), so hope for the best
 		return uid == 0 or \
 			   (self.data.has_key('uid') and uid == self.data['uid'])
 
