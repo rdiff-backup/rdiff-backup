@@ -7,6 +7,7 @@ rdiff-backup-statistics \- summarize rdiff-backup statistics files
 .BI [\-\-end-time " time" ]
 .BI [\-\-minimum-ratio " ratio" ]
 .B [\-\-null-separator]
+.B [\-\-quiet]
 .I repository
 
 .SH DESCRIPTION
@@ -63,6 +64,10 @@ Specify that the lines of the file_statistics file are separated by
 nulls (\\0).  The default is to assume that newlines separate.  Use
 this switch if rdiff-backup was run with the \-\-null-separator when
 making the given repository.
+.TP
+.B \-\-quiet
+Suppress printing of the "Processing statistics from session..."
+output lines.
 
 .SH BUGS
 When aggregating multiple statistics files, some directories above
