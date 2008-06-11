@@ -1,6 +1,10 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+rdiff-backup-statistics enhancements suggested by James Marsh: flush stdout
+before running other commands, and add a --quiet option to suppress printing
+the "Processing statistics from session..." lines. (Andrew Ferguson)
+
 Don't set modification times for directories on Windows. Also, assume
 that user has access to all files on Windows since there is no support
 for getuid(). (Patch from Josh Nisly)
