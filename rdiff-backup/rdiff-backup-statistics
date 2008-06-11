@@ -98,7 +98,7 @@ class StatisticsRPaths:
 def print_session_statistics(stat_rpaths):
 	print "Session statistics:"
 	system('rdiff-backup --calculate-average "' +
-		   " ".join([inc.path for inc in stat_rpaths.session_rps]) + '"')
+		   '" "'.join([inc.path for inc in stat_rpaths.session_rps]) + '"')
 
 
 class FileStatisticsTree:
