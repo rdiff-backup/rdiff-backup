@@ -57,10 +57,10 @@ class ExtendedAttributes:
 	def read_from_rp(self, rp):
 		"""Set the extended attributes from an rpath"""
 		try: attr_list = rp.conn.xattr.listxattr(rp.path)
-		except IOError, exc:
+		except (IOError, ListError), exc:
 			if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EPERM:
 				return # if not supported, consider empty
-			if exc[0] == errno.EACCES:
+			if exc[0] == errno.EACCES or exc[0] == errno.ENOENT:
 				log.Log("Warning: listattr(%s): %s" % (repr(rp.path), exc), 3)
 				return
 			raise
@@ -93,9 +93,13 @@ class ExtendedAttributes:
 							% (name, repr(rp.path)), 7)
 						continue
 					else: raise
-		except IOError, exc:
+		except (IOError, ListError), exc:
 			if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EPERM:
 				return # if not supported, consider empty
+			if exc[0] == errno.ENOENT: # path is bad
+				log.Log("Warning: unable to clear xattrs on %s: %s" %
+						(repr(rp.path), exc), 3)
+				return
 			else: raise
 
 	def write_to_rp(self, rp):
@@ -104,10 +108,11 @@ class ExtendedAttributes:
 		for (name, value) in self.attr_dict.iteritems():
 			try:
 				rp.conn.xattr.setxattr(rp.path, name, value)
-			except IOError, exc:
+			except (IOError, ListError), exc:
 				# Mac and Linux attributes have different namespaces, so
 				# fail gracefully if can't call setxattr
-				if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EACCES:
+				if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EACCES \
+						 or exc[0] == errno.ENOENT:
 					log.Log("Warning: unable to write xattr %s to %s"
 							% (name, repr(rp.path)), 6)
 					continue
@@ -376,13 +381,21 @@ def get_acl_lists_from_rp(rp):
 	"""Returns (acl_list, def_acl_list) from an rpath.  Call locally"""
 	assert rp.conn is Globals.local_connection
 	try: acl = posix1e.ACL(file=rp.path)
-	except IOError, exc:
+	except (IOError, ListError), exc:
 		if exc[0] == errno.EOPNOTSUPP: acl = None
+		if exc[0] == errno.ENOENT:
+			log.Log("Warning: unable to read ACL from %s: %s"
+					% (repr(rp.path), exc), 3)
+			acl = None
 		else: raise
 	if rp.isdir():
 		try: def_acl = posix1e.ACL(filedef=rp.path)
-		except IOError, exc:
+		except (IOError, ListError), exc:
 			if exc[0] == errno.EOPNOTSUPP: def_acl = None
+			if exc[0] == errno.ENOENT:
+				log.Log("Warning: unable to read default ACL from %s: %s"
+					% (repr(rp.path), exc), 3)
+				def_acl = None
 			else: raise
 	else: def_acl = None
 	return (acl and acl_to_list(acl), def_acl and acl_to_list(def_acl))

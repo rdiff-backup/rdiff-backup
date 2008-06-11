@@ -1,6 +1,10 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Don't abort if can't read extended attributes or ACL because the path is
+considered bad by the EA/ACL subsystem; print a warning instead. Problem
+reported by Farkas Levente. (Andrew Ferguson)
+
 rdiff-backup-statistics enhancements suggested by James Marsh: flush stdout
 before running other commands, and add a --quiet option to suppress printing
 the "Processing statistics from session..." lines. (Andrew Ferguson)
