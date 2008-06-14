@@ -188,7 +188,7 @@ class FSAbilities:
 			if Globals.preserve_hardlinks != 0:
 				log.Log("Warning: hard linking not supported by filesystem "
 						"at %s" % (self.root_rp.path,), 3)
-			self.hardlinks = 0
+			self.hardlinks = None
 		else: self.hardlinks = 1
 
 	def set_fsync_dirs(self, testdir):

@@ -116,7 +116,7 @@ def RORP2Record(rorpath):
 			str_list.append("  CarbonFile %s\n" % (cfile,))
 
 		# If file is hardlinked, add that information
-		if Globals.preserve_hardlinks:
+		if Globals.preserve_hardlinks != 0:
 			numlinks = rorpath.getnumlinks()
 			if numlinks > 1:
 				str_list.append("  NumHardLinks %s\n" % numlinks)

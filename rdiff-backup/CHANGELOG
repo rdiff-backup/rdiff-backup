@@ -1,6 +1,9 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Properly preserve hard links when the destination does not support them.
+Thanks to Andreas Olsson for noticing the problem. (Andrew Ferguson)
+
 Fix another case where rdiff-backup fails because it has insufficient
 permissions on a file it owns. Thanks to Peter Schuller for the test
 case. (Andrew Ferguson)
