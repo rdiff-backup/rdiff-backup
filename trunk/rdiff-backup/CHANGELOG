@@ -1,6 +1,10 @@
 New in v1.1.16 (????/??/??)
 ---------------------------
 
+Fix another case where rdiff-backup fails because it has insufficient
+permissions on a file it owns. Thanks to Peter Schuller for the test
+case. (Andrew Ferguson)
+
 Don't abort if can't read extended attributes or ACL because the path is
 considered bad by the EA/ACL subsystem; print a warning instead. Problem
 reported by Farkas Levente. (Andrew Ferguson)
