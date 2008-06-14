@@ -202,6 +202,10 @@ instance, when overwriting of a destination path, or when removing
 multiple sessions with
 .BR \-\-remove-older-than ).
 rdiff-backup will generally tell you if it needs this.
+.BR WARNING: 
+You can cause data loss if you mis-use this option.
+Furthermore, do NOT use this option when doing a restore, as it will 
+DELETE FILES, unless you absolutely know what you are doing.
 .TP
 .BI "\-\-group-mapping-file " filename
 Map group names and ids according the the group mapping file
