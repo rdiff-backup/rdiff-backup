@@ -1,4 +1,4 @@
-New in v1.1.16 (????/??/??)
+New in v1.1.16 (2008/06/17)
 ---------------------------
 
 Properly preserve hard links when the destination does not support them.
