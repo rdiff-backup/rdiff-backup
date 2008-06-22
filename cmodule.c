@@ -24,7 +24,9 @@
 #include <Python.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#if !defined(MS_WIN64) && !defined(MS_WIN32)
 #include <unistd.h>
+#endif
 #include <errno.h>
 
 
@@ -46,13 +48,17 @@
 /* This code taken from Python's posixmodule.c */
 #undef STAT
 #if defined(MS_WIN64) || defined(MS_WIN32)
+#	define LSTAT _stati64
 #	define STAT _stati64
 #	define FSTAT _fstati64
 #	define STRUCT_STAT struct _stati64
+#	define SYNC _flushall
 #else
+#	define LSTAT lstat
 #	define STAT stat
 #	define FSTAT fstat
 #	define STRUCT_STAT struct stat
+#	define SYNC sync
 #endif
 #ifndef PY_LONG_LONG 
     #define PY_LONG_LONG LONG_LONG 
@@ -60,6 +66,8 @@
 
 /* The following section is by Jeffrey A. Marshall and compensates for
  * a bug in Mac OS X's S_ISFIFO and S_ISSOCK macros.
+ * Note: Starting in Mac OS X 10.3, the buggy macros were changed to be
+ * the same as the ones below.
  */
 #ifdef __APPLE__
 /* S_ISFIFO/S_ISSOCK macros from <sys/stat.h> on mac osx are bogus */
@@ -67,6 +75,15 @@
 #undef S_ISFIFO               /* their definition of a fifo includes sockets */
 #define S_ISSOCK(mode)        (((mode) & S_IFMT) == S_IFSOCK)
 #define S_ISFIFO(mode)        (((mode) & S_IFMT) == S_IFIFO)
+#endif
+
+#if defined(MS_WIN64) || defined(MS_WIN32)
+#define S_ISSOCK(mode) (0)
+#define S_ISFIFO(mode) (0)
+#define S_ISLNK(mode) (0)
+#define S_ISLNK(mode) (0)
+#define S_ISCHR(mode) (0)
+#define S_ISBLK(mode) (0)
 #endif
 
 static PyObject *UnknownFileTypeError;
@@ -90,7 +107,7 @@ static PyObject *c_make_file_dict(self, args)
   if (!PyArg_ParseTuple(args, "s", &filename)) return NULL;
 
   Py_BEGIN_ALLOW_THREADS
-  res = lstat(filename, &sbuf);
+  res = LSTAT(filename, &sbuf);
   Py_END_ALLOW_THREADS
 
   if (res != 0) {
@@ -101,13 +118,18 @@ static PyObject *c_make_file_dict(self, args)
 	  return NULL;
 	}
   }
+#if defined(MS_WINDOWS)
+  size = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_size);
+  inode = PyLong_FromLongLong((PY_LONG_LONG)-1);
+#else
 #ifdef HAVE_LARGEFILE_SUPPORT
   size = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_size);
   inode = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_ino);
 #else
   size = PyInt_FromLong(sbuf.st_size);
   inode = PyInt_FromLong((long)sbuf.st_ino);
-#endif
+#endif /* HAVE_LARGEFILE_SUPPORT */
+#endif /* defined(MS_WINDOWS) */
   mode = (long)sbuf.st_mode;
   perms = mode & 07777;
 #if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
@@ -225,7 +247,7 @@ static PyObject *my_sync(self, args)
 	 PyObject *args;
 {
   if (!PyArg_ParseTuple(args, "")) return NULL;
-  sync();
+  SYNC();
   return Py_BuildValue("");
 }
 

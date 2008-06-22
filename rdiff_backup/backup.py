@@ -161,18 +161,18 @@ class DestinationStruct:
 		every so often so it doesn't get congested on destination end.
 
 		"""
-		flush_threshold = int(Globals.pipeline_max_length/2)
-		num_rorps_skipped = 0
+		flush_threshold = Globals.pipeline_max_length - 2
+		num_rorps_seen = 0
 		for src_rorp, dest_rorp in cls.CCPP:
-			if (src_rorp and dest_rorp and src_rorp == dest_rorp and
+			if (Globals.backup_reader is not Globals.backup_writer):
+				num_rorps_seen += 1
+				if (num_rorps_seen > flush_threshold):
+					num_rorps_seen = 0
+					yield iterfile.MiscIterFlushRepeat
+			if not (src_rorp and dest_rorp and src_rorp == dest_rorp and
 				(not Globals.preserve_hardlinks or
 				 Hardlink.rorp_eq(src_rorp, dest_rorp))):
-				num_rorps_skipped += 1
-				if (Globals.backup_reader is not Globals.backup_writer and
-					num_rorps_skipped > flush_threshold):
-					num_rorps_skipped = 0
-					yield iterfile.MiscIterFlushRepeat
-			else:
+
 				index = src_rorp and src_rorp.index or dest_rorp.index
 				sig = cls.get_one_sig(dest_base_rpath, index,
 									  src_rorp, dest_rorp)
@@ -212,7 +212,14 @@ class DestinationStruct:
 			return Rdiff.get_signature(dest_rp)
 		except IOError, e:
 			if (e.errno == errno.EPERM):
-				log.Log.FatalError("Could not open %s for reading. Check "
+				try:
+					# Try chmod'ing anyway -- This can work on NFS and AFS
+					# depending on the setup. We keep the if() statement
+					# above for performance reasons.
+					dest_rp.chmod(0400 | dest_rp.getperms())
+					return Rdiff.get_signature(dest_rp)
+				except (IOError, OSError):
+					log.Log.FatalError("Could not open %s for reading. Check "
 						"permissions on file." % (dest_rp.path,))
 			else:
 				raise
@@ -652,6 +659,12 @@ class PatchITRB(rorpiter.ITRBranch):
 		if self.dir_update:
 			assert self.base_rp.isdir()
 			rpath.copy_attribs(self.dir_update, self.base_rp)
+
+			if (Globals.process_uid != 0 and
+					self.dir_update.getperms() % 01000 < 0700):
+				# Directory was unreadable at start -- keep it readable
+				# until the end of the backup process.
+				self.base_rp.chmod(0700 | self.dir_update.getperms())
 		elif self.dir_replacement:
 			self.base_rp.rmdir()
 			if self.dir_replacement.lstat():

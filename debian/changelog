@@ -1,3 +1,17 @@
+rdiff-backup (1.1.16-1) unstable; urgency=medium
+
+  * Removing 01-manpage.dpatch, went upstream.
+  * Reordering rules file.
+  * Rewriting copyright file in machine-interpretable format.
+  * Removing watch file.
+  * Simplyfing control file.
+  * Adding vcs fields in control file.
+  * Upgrading package to standards 3.8.0.
+  * Upgrading package to debhelper 7.
+  * Merging upstream version 1.1.16.
+
+ -- Daniel Baumann <daniel@debian.org>  Sun, 22 Jun 2008 23:14:00 +0200
+
 rdiff-backup (1.1.15-2) unstable; urgency=low
 
   * Applied patches from Justin Pryzby <jpryzby@quoininc.com> to fix manpage

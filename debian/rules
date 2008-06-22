@@ -1,31 +1,22 @@
 #!/usr/bin/make -f
 
-# Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
-
-include /usr/share/dpatch/dpatch.make
-
-CFLAGS = -Wall -g -O2
-
-build: build-stamp
-build-stamp: patch
-	dh_testdir
-
-	# Building package
-	python setup.py build
-
-	touch build-stamp
-
-clean: unpatch
+clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp
 
-	# Cleaning package
 	python setup.py clean
 	rm -rf build
 
 	dh_clean
+
+build: build-stamp
+build-stamp:
+	dh_testdir
+
+	python setup.py build
+
+	touch build-stamp
 
 install: build
 	dh_testdir
@@ -33,22 +24,18 @@ install: build
 	dh_clean -k
 	dh_installdirs
 
-	# Installing package
 	python setup.py install --prefix=$(CURDIR)/debian/rdiff-backup/usr
 
-	# Removing double files
 	rm -rf debian/rdiff-backup/usr/share/doc/rdiff-backup-*
 
-binary-indep: build install
+binary: binary-arch
 
 binary-arch: build install
 	dh_testdir
 	dh_testroot
 	dh_installchangelogs CHANGELOG
 	dh_installdocs
-	dh_install
 	dh_installman
-	dh_link
 	dh_strip
 	dh_compress
 	dh_fixperms
@@ -59,5 +46,6 @@ binary-arch: build install
 	dh_md5sums
 	dh_builddeb
 
-binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install
+binary-indep:
+
+.PHONY: clean build install binary binary-arch binary-indep

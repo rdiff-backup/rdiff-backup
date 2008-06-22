@@ -2,7 +2,7 @@
 %define PYTHON_VERSION %(%{PYTHON_NAME} -c 'import sys; print sys.version[:3],')
 %define NEXT_PYTHON_VERSION %(%{PYTHON_NAME} -c 'import sys; print "%d.%d" % (sys.version_info[0], sys.version_info[1]+1),')
 
-Version: 1.1.15
+Version: 1.1.16
 Summary: Convenient and transparent local/remote incremental mirror/backup
 Name: rdiff-backup
 Release: 1

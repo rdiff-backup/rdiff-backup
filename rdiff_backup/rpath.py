@@ -244,12 +244,22 @@ def rename(rp_source, rp_dest):
 	log.Log(lambda: "Renaming %s to %s" % (rp_source.path, rp_dest.path), 7)
 	if not rp_source.lstat(): rp_dest.delete()
 	else:
-		if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode():
+		if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode() and \
+				rp_source.getinode() != -1:
 			log.Log("Warning: Attempt to rename over same inode: %s to %s"
 					% (rp_source.path, rp_dest.path), 2)
 			# You can't rename one hard linked file over another
 			rp_source.delete()
-		else: rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+		else:
+			try:
+			    rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+			except OSError, error:
+				if error.errno != errno.EEXIST: raise
+
+				# On Windows, files can't be renamed on top of an existing file
+				rp_source.conn.os.unlink(rp_dest.path)
+				rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+			    
 		rp_dest.data = rp_source.data
 		rp_source.data = {'type': None}
 
@@ -876,6 +886,11 @@ class RPath(RORPath):
 		except OverflowError:
 			log.Log("Cannot change mtime of %s to %s - problem is probably"
 					"64->32bit conversion" % (self.path, modtime), 2)
+		except OSError:
+			# It's not possible to set a modification time for
+			# directories on Windows.
+		    if self.conn.os.name != 'nt' or not self.isdir():
+		        raise
 		else: self.data['mtime'] = modtime
 
 	def chown(self, uid, gid):
@@ -959,7 +974,10 @@ class RPath(RORPath):
 		
 	def isowner(self):
 		"""Return true if current process is owner of rp or root"""
-		uid = self.conn.os.getuid()
+		try:
+		    uid = self.conn.os.getuid()
+		except AttributeError:
+		    return True # Windows doesn't have getuid(), so hope for the best
 		return uid == 0 or \
 			   (self.data.has_key('uid') and uid == self.data['uid'])
 
@@ -1181,7 +1199,7 @@ class RPath(RORPath):
 			os.close(fd)
 		except OSError, e:
 			if locals().has_key('fd'): os.close(fd)
-			if (e.errno != errno.EPERM and e.errno != errno.EACCES) \
+			if (e.errno not in (errno.EPERM, errno.EACCES, errno.EBADF)) \
 				or self.isdir(): raise
 
 			# Maybe the system doesn't like read-only fsyncing.

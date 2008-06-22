@@ -3,7 +3,7 @@
 import sys, os, getopt
 from distutils.core import setup, Extension
 
-version_string = "1.1.15"
+version_string = "1.1.16"
 
 if sys.version_info[:2] < (2,2):
 	print "Sorry, rdiff-backup requires version 2.2 or later of python"
@@ -14,7 +14,7 @@ lflags_arg = []
 libname = ['rsync']
 incdir_list = libdir_list = None
 
-if os.name == 'posix':
+if os.name == 'posix' or os.name == 'nt':
 	LIBRSYNC_DIR = os.environ.get('LIBRSYNC_DIR', '')
 	LFLAGS = os.environ.get('LFLAGS', [])
 	LIBS = os.environ.get('LIBS', [])

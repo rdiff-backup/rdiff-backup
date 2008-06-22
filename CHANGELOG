@@ -1,3 +1,75 @@
+New in v1.1.16 (2008/06/17)
+---------------------------
+
+Properly preserve hard links when the destination does not support them.
+Thanks to Andreas Olsson for noticing the problem. (Andrew Ferguson)
+
+Fix another case where rdiff-backup fails because it has insufficient
+permissions on a file it owns. Thanks to Peter Schuller for the test
+case. (Andrew Ferguson)
+
+Don't abort if can't read extended attributes or ACL because the path is
+considered bad by the EA/ACL subsystem; print a warning instead. Problem
+reported by Farkas Levente. (Andrew Ferguson)
+
+rdiff-backup-statistics enhancements suggested by James Marsh: flush stdout
+before running other commands, and add a --quiet option to suppress printing
+the "Processing statistics from session..." lines. (Andrew Ferguson)
+
+Don't set modification times for directories on Windows. Also, assume
+that user has access to all files on Windows since there is no support
+for getuid(). (Patch from Josh Nisly)
+
+Add Windows-specific logic for checking if another rdiff-backup process
+is running. Do not try to handle non-existant SIGHUP and SIGQUIT signals
+on Windows. (Patch from Josh Nisly)
+
+Do not use inode numbers on Windows and gracefully handle attempts to
+rename over existing files on Windows. (Patch from Josh Nisly)
+
+Finally fix 'No such file or directory' bug when attempting to regress after
+a failed backup. (Patch from Josh Nisly)
+
+Improve Unicode support by escaping Unicode characters in filenames
+when printing them in log messages from eas_acls.py. (Fix from
+Saptarshi Guha)
+
+Handle Windows' lack of getuid(), getgid(), hardlinks and symlinks in
+fs_abilities.py. Use subproces.Popen() on Windows since it does not support
+os.popen2(). (Patch from Josh Nisly)
+
+Let setup.py accept arguments on Windows. (Patch from Josh Nisly)
+
+Get cmodule.c building natively on Windows. (Patch from Josh Nisly)
+
+Don't give up right away if we can't open a file. Try chmod'ing it even
+if we aren't root or don't own it, since that can sometimes work on AFS
+and NFS. Closes Savannah bug #21202. (Andrew Ferguson)
+
+Correctly handle updates to nested directories with unreadable permissions.
+Thanks to John Goerzen for the bug report. Closes Debian bugs #389134 and
+#411849. (Andrew Ferguson)
+
+Manpage improvements from Justin Pryzby.
+
+Improve the handling of directories with many small files when backing-up
+over a network connection. Thanks to Austin Clements for the test case.
+(Andrew Ferguson)
+
+Change high-bit permissions test to check both files and directories.
+Improves rdiff-backup's support for AFS and closes Debian bug #450409.
+(Patch from Marc Horowitz)
+
+rdiff-backup-statistics now supports quoted repositories. Closes Savannah
+bug #21813. (Andrew Ferguson)
+
+Add EBADF to the list of recoverable errors when fsync() is called. This
+fixes an rdiff-backup error on AIX and IRIX. Closes Savannah bug #15839.
+(Fix from Peter O'Gorman)
+
+Properly initialize new QuotedRPaths. Fixes --list-at-time, etc. when
+the target is remote. (Andrew Ferguson)
+
 New in v1.1.15 (2008/01/03)
 ---------------------------
 

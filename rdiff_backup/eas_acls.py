@@ -60,8 +60,8 @@ class ExtendedAttributes:
 		except IOError, exc:
 			if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EPERM:
 				return # if not supported, consider empty
-			if exc[0] == errno.EACCES:
-				log.Log("Warning: listattr(%s): %s" % (rp.path, exc), 3)
+			if exc[0] == errno.EACCES or exc[0] == errno.ENOENT:
+				log.Log("Warning: listattr(%s): %s" % (repr(rp.path), exc), 3)
 				return
 			raise
 		for attr in attr_list:
@@ -90,12 +90,16 @@ class ExtendedAttributes:
 					# to bail out or be too noisy at low log levels.
 					if exc[0] == errno.EACCES:
 						log.Log("Warning: unable to remove xattr %s from %s"
-							% (name, rp.path), 7)
+							% (name, repr(rp.path)), 7)
 						continue
 					else: raise
 		except IOError, exc:
 			if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EPERM:
 				return # if not supported, consider empty
+			if exc[0] == errno.ENOENT: # path is bad
+				log.Log("Warning: unable to clear xattrs on %s: %s" %
+						(repr(rp.path), exc), 3)
+				return
 			else: raise
 
 	def write_to_rp(self, rp):
@@ -107,9 +111,10 @@ class ExtendedAttributes:
 			except IOError, exc:
 				# Mac and Linux attributes have different namespaces, so
 				# fail gracefully if can't call setxattr
-				if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EACCES:
+				if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EACCES \
+						 or exc[0] == errno.ENOENT:
 					log.Log("Warning: unable to write xattr %s to %s"
-							% (name, rp.path), 3)
+							% (name, repr(rp.path)), 6)
 					continue
 				else: raise
 
@@ -201,7 +206,7 @@ def join_ea_iter(rorp_iter, ea_iter):
 class AccessControlLists:
 	"""Hold a file's access control list information
 
-	Since posix1e.ACL objects cannot be picked, and because they lack
+	Since posix1e.ACL objects cannot be pickled, and because they lack
 	user/group name information, store everything in self.entry_list
 	and self.default_entry_list.
 
@@ -228,6 +233,7 @@ class AccessControlLists:
 
 	def __str__(self):
 		"""Return text version of acls"""
+		if not self.entry_list: return ""
 		slist = map(self.entrytuple_to_text, self.entry_list)
 		if self.default_entry_list:
 			slist.extend(map(lambda e: "default:" + self.entrytuple_to_text(e),
@@ -377,11 +383,19 @@ def get_acl_lists_from_rp(rp):
 	try: acl = posix1e.ACL(file=rp.path)
 	except IOError, exc:
 		if exc[0] == errno.EOPNOTSUPP: acl = None
+		if exc[0] == errno.ENOENT:
+			log.Log("Warning: unable to read ACL from %s: %s"
+					% (repr(rp.path), exc), 3)
+			acl = None
 		else: raise
 	if rp.isdir():
 		try: def_acl = posix1e.ACL(filedef=rp.path)
 		except IOError, exc:
 			if exc[0] == errno.EOPNOTSUPP: def_acl = None
+			if exc[0] == errno.ENOENT:
+				log.Log("Warning: unable to read default ACL from %s: %s"
+					% (repr(rp.path), exc), 3)
+				def_acl = None
 			else: raise
 	else: def_acl = None
 	return (acl and acl_to_list(acl), def_acl and acl_to_list(def_acl))

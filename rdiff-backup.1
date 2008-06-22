@@ -1,4 +1,4 @@
-.TH RDIFF-BACKUP 1 "January 2008" "Version 1.1.15" "User Manuals"
+.TH RDIFF-BACKUP 1 "June 2008" "Version 1.1.16" "User Manuals"
 .SH NAME
 rdiff-backup \- local/remote mirror and incremental backup
 .SH SYNOPSIS
@@ -202,6 +202,10 @@ instance, when overwriting of a destination path, or when removing
 multiple sessions with
 .BR \-\-remove-older-than ).
 rdiff-backup will generally tell you if it needs this.
+.BR WARNING: 
+You can cause data loss if you mis-use this option.
+Furthermore, do NOT use this option when doing a restore, as it will 
+DELETE FILES, unless you absolutely know what you are doing.
 .TP
 .BI "\-\-group-mapping-file " filename
 Map group names and ids according the the group mapping file
@@ -366,11 +370,11 @@ If the filesystem to which we are backing up is not case-sensitive, automatic 'q
 .B \-\-preserve-numerical-ids
 If set, rdiff-backup will preserve uids/gids instead of trying to
 preserve unames and gnames.  See the
-.B USERS and GROUPS
+.B USERS AND GROUPS
 section for more information.
 .TP
 .B \-\-print-statistics
-If set, summary statistics will be printed after a successful backup
+If set, summary statistics will be printed after a successful backup.
 If not set, this information will still be available from the
 session statistics file.  See the
 .B STATISTICS
@@ -483,7 +487,7 @@ will be ignored.
 Map user names and ids according to the user mapping file
 .IR filename .
 See the
-.B USERS and GROUPS
+.B USERS AND GROUPS
 section for more information.
 .TP
 .BI \-v [0-9] ", \-\-verbosity " [0-9]
@@ -644,7 +648,7 @@ string specified by \-\-remote-schema, quote it with another %, as in
 Although ssh itself may be secure, using rdiff-backup in the default
 way presents some security risks.  For instance if the server is run
 as root, then an attacker who compromised the client could then use
-rdiff-backup to overwrite arbitary server files by "backing up" over
+rdiff-backup to overwrite arbitrary server files by "backing up" over
 them.  Such a setup can be made more secure by using the sshd
 configuration option
 .B command="rdiff-backup \-\-server"
@@ -965,7 +969,7 @@ The
 and
 .B \-\-group-mapping-file
 options override this behavior.  If either of these options is given,
-the policy descriped in 2 and 3 above will be followed, but with the
+the policy described in 2 and 3 above will be followed, but with the
 mapped user and group instead of the original.  If you specify both
 .B \-\-preserve-numerical-ids
 and one of the mapping options, the behavior is undefined.
@@ -1022,7 +1026,7 @@ directory statistics file is more compact (and slightly less readable)
 but describes every directory backed up.  It also may be compressed to
 save space.
 
-Statistics related options include
+Statistics\-related options include
 .B \-\-print-statistics
 and
 .BR \-\-null-separator .
@@ -1030,7 +1034,7 @@ and
 Also, rdiff-backup will save various messages to the log file, which
 is rdiff-backup-data/backup.log for backup sessions and
 rdiff-backup-data/restore.log for restore sessions.  Generally what is
-written to this file will coincide with the messages diplayed to
+written to this file will coincide with the messages displayed to
 stdout or stderr, although this can be changed with the
 .B \-\-terminal-verbosity
 option.

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # rdiff-backup-statistics -- Summarize rdiff-backup statistics files
-# Version 1.1.15 released January 03, 2008
+# Version 1.1.16 released June 17, 2008
 # Copyright 2005 Dean Gaudet, Ben Escoto
 #
 # This file is part of rdiff-backup.
@@ -22,17 +22,18 @@
 
 import os, sys, re, getopt
 from rdiff_backup import connection, regress, rpath, Globals, restore, \
-	 Time, lazy
+	 Time, lazy, FilenameMapping
 
 begin_time = None # Parse statistics at or after this time...
 end_time = None # ... and at or before this time (epoch seconds)
 min_ratio = .05 # report only files/directories over this number
 separator = "\n" # The line separator in file_statistics file
+quiet = False # Suppress the "Processing statistics from session ..." lines
 
 def parse_args():
-	global begin_time, end_time, min_ratio, separator
+	global begin_time, end_time, min_ratio, separator, quiet
 	try: optlist, args = getopt.getopt(sys.argv[1:], "",
-			["begin-time=", "end-time=", "minimum-ratio=", "null-separator"])
+			["begin-time=", "end-time=", "minimum-ratio=", "null-separator", "quiet"])
 	except getopt.error, e:
 		sys.exit("Bad command line: " + str(e))
 
@@ -41,6 +42,7 @@ def parse_args():
 		elif opt == "--end-time": end_time = Time.genstrtotime(arg)
 		elif opt == "--minimum-ratio": min_ratio = float(arg)
 		elif opt == "--null-separator": separator = '\0'
+		elif opt == "--quiet": quiet = True
 		else: assert 0
 
 	if len(args) != 1:
@@ -56,6 +58,7 @@ def parse_args():
 	if len(sys.argv) == 3: tag = sys.argv[2]
 
 def system(cmd):
+	sys.stdout.flush()
 	if os.system(cmd): sys.exit("Error running command '%s'\n" % (cmd,))
 
 
@@ -97,8 +100,8 @@ class StatisticsRPaths:
 
 def print_session_statistics(stat_rpaths):
 	print "Session statistics:"
-	system("rdiff-backup --calculate-average " +
-		   " ".join([inc.path for inc in stat_rpaths.session_rps]))
+	system('rdiff-backup --calculate-average "' +
+		   '" "'.join([inc.path for inc in stat_rpaths.session_rps]) + '"')
 
 
 class FileStatisticsTree:
@@ -406,19 +409,30 @@ class ReadlineBuffer:
 
 def sum_fst(rp_pairs):
 	"""Add the file statistics given as list of (session_rp, file_rp) pairs"""
+	global quiet
 	n = len(rp_pairs)
-	print "Processing statistics from session 1 of %d" % (n,)
+	if not quiet: print "Processing statistics from session 1 of %d" % (n,)
 	total_fst = make_fst(*rp_pairs[0])
 	for i in range(1, n):
-		print "Processing statistics from session %d of %d" % (i+1, n)
+		if not quiet: print "Processing statistics from session %d of %d" % (i+1, n)
 		session_rp, filestat_rp = rp_pairs[i]
 		fst = make_fst(session_rp, filestat_rp)
 		total_fst += fst
 	return total_fst
-	
+
+def set_chars_to_quote():
+	ctq_rp = Globals.rbdir.append("chars_to_quote")
+	if ctq_rp.lstat():
+		Globals.chars_to_quote = ctq_rp.get_data()
+	if Globals.chars_to_quote:
+		Globals.must_escape_dos_devices = 0 # No DOS devices will be present
+		FilenameMapping.set_init_quote_vals()
+		Globals.rbdir = FilenameMapping.get_quotedrpath(Globals.rbdir)
+
 def Main():
 	Time.setcurtime()
 	parse_args()
+	set_chars_to_quote()	
 	srp = StatisticsRPaths(Globals.rbdir)
 	if not srp.combined_pairs: sys.exit("No matching sessions found")
 	if len(srp.combined_pairs) == 1: fst = make_fst(*srp.combined_pairs[0])

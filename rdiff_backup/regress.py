@@ -141,8 +141,9 @@ def recreate_meta(meta_manager):
 	the reverse.
 
 	"""
-	temprp = TempFile.new_in_dir(Globals.rbdir)
-	writer = metadata.MetadataFile(temprp, 'w', check_path = 0)
+	temprp = [TempFile.new_in_dir(Globals.rbdir)]
+	def callback(rp): temprp[0] = rp
+	writer = metadata.MetadataFile(temprp[0], 'w', check_path = 0, callback = callback)
 	for rorp in meta_manager.get_meta_at_time(regress_time, None):
 		writer.write_object(rorp)
 	writer.close()
@@ -150,7 +151,7 @@ def recreate_meta(meta_manager):
 	finalrp = Globals.rbdir.append("mirror_metadata.%s.snapshot.gz" %
 								   Time.timetostring(regress_time))
 	assert not finalrp.lstat(), finalrp
-	rpath.rename(temprp, finalrp)
+	rpath.rename(temprp[0], finalrp)
 	if Globals.fsync_directories: Globals.rbdir.fsync()
 
 def iterate_raw_rfs(mirror_rp, inc_rp):
@@ -347,6 +348,21 @@ def check_pids(curmir_incs):
 		except OSError, exc:
 			if exc[0] == errno.ESRCH: return 0
 			else: log.Log("Warning: unable to check if PID %d still running" % (pid,), 2)
+		except AttributeError:
+			assert os.name == 'nt'
+			import win32api, win32con, pywintypes
+			try:
+				process = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 
+											0, pid)
+			except pywintypes.error, error:
+				if error[0] == 87: return 0
+				else:
+					msg = "Warning: unable to check if PID %d still running"
+					log.Log(msg % pid, 2)
+			if process:
+				win32api.CloseHandle(process)
+				return 1
+			return 0
 		return 1
 
 	for curmir_rp in curmir_incs:

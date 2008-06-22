@@ -2,12 +2,13 @@ Source: rdiff-backup
 Section: utils
 Priority: optional
 Maintainer: Daniel Baumann <daniel@debian.org>
-Build-Depends: debhelper (>= 5), dpatch, python-support, python-dev, python-pylibacl, python-pyxattr, librsync-dev
-Standards-Version: 3.7.3
+Build-Depends: debhelper (>= 7), python-support, python-dev, python-pylibacl, python-pyxattr, librsync-dev
+Standards-Version: 3.8.0
 Homepage: http://rdiff-backup.nongnu.org/
+Vcs-Browser: http://git.debian.net/?p=rdiff-backup.git
+Vcs-Git: git://git.debian.net/git/rdiff-backup.git
 
 Package: rdiff-backup
-Section: utils
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
 Recommends: python-pylibacl, python-pyxattr
