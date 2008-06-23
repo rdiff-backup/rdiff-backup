@@ -93,10 +93,10 @@ def VersionedCopy(source, dest, munge_date = 0):
 def MakeTar(specfiles):
 	"""Create rdiff-backup tar file"""
 	tardir = "rdiff-backup-%s" % Version
-	tarfile = "rdiff-backup-%s.tar.gz" % Version
+	tarfilename = "rdiff-backup-%s.tar.gz" % Version
 	try:
 		os.lstat(tardir)
-		os.system("rm -rf " + tardir)
+		shutil.rmtree(tardir)
 	except OSError: pass
 	os.mkdir(tardir)
 	for filename in ["CHANGELOG", "COPYING", "README",
@@ -104,7 +104,8 @@ def MakeTar(specfiles):
 					 SourceDir + "/cmodule.c",
 					 SourceDir + "/_librsyncmodule.c",
 					 DistDir + "/setup.py"] + specfiles:
-		assert not os.system("cp %s %s" % (filename, tardir)), filename
+		shutil.copyfile(filename,
+						os.path.join(tardir, os.path.basename(filename)))
 
 	os.mkdir(tardir+"/rdiff_backup")
 	for filename in ["eas_acls.py", "backup.py", "connection.py", "compare.py",
@@ -118,8 +119,8 @@ def MakeTar(specfiles):
 					 "SetConnections.py", "static.py",
 					 "statistics.py", "TempFile.py", "Time.py",
 					 "user_group.py"]:
-		assert not os.system("cp %s/%s %s/rdiff_backup" %
-							 (SourceDir, filename, tardir)), filename
+		shutil.copyfile(os.path.join(SourceDir, filename),
+						os.path.join(tardir, "rdiff_backup", filename))
 
 	VersionedCopy("%s/Globals.py" % (SourceDir,),
 				  "%s/rdiff_backup/Globals.py" % (tardir,))
@@ -132,9 +133,17 @@ def MakeTar(specfiles):
 	os.chmod(os.path.join(tardir, "rdiff-backup"), 0644)
 	CopyMan(os.path.join(tardir, "rdiff-backup.1"), Version)
 	CopyMan(os.path.join(tardir, "rdiff-backup-statistics.1"), Version)
-	os.system("tar -cvzf %s %s" % (tarfile, tardir))
+	if os.name != 'nt':
+		os.system("tar -cvzf %s %s" % (tarfilename, tardir))
+	else:
+		import tarfile
+		tar = tarfile.open(tarfilename, 'w:gz')
+		for path in os.listdir(tardir):
+			tar.add(os.path.join(tardir, path))
+		tar.close()
+
 	shutil.rmtree(tardir)
-	return tarfile
+	return tarfilename
 
 def MakeSpecFile():
 	"""Create spec file using spec template"""
