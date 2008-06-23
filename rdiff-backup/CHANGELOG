@@ -1,6 +1,9 @@
 New in v1.1.17 (????/??/??)
 ---------------------------
 
+Actually make rdiff-backup robust to failure to read an ACL because the file
+cannot be found. (Andrew Ferguson)
+
 Get makedist working on Windows. (Patch from Josh Nisly)
 
 

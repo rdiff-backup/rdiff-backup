@@ -96,7 +96,7 @@ class ExtendedAttributes:
 		except IOError, exc:
 			if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EPERM:
 				return # if not supported, consider empty
-			if exc[0] == errno.ENOENT: # path is bad
+			elif exc[0] == errno.ENOENT: # path is bad
 				log.Log("Warning: unable to clear xattrs on %s: %s" %
 						(repr(rp.path), exc), 3)
 				return
@@ -382,8 +382,9 @@ def get_acl_lists_from_rp(rp):
 	assert rp.conn is Globals.local_connection
 	try: acl = posix1e.ACL(file=rp.path)
 	except IOError, exc:
-		if exc[0] == errno.EOPNOTSUPP: acl = None
-		if exc[0] == errno.ENOENT:
+		if exc[0] == errno.EOPNOTSUPP:
+			acl = None
+		elif exc[0] == errno.ENOENT:
 			log.Log("Warning: unable to read ACL from %s: %s"
 					% (repr(rp.path), exc), 3)
 			acl = None
@@ -391,8 +392,9 @@ def get_acl_lists_from_rp(rp):
 	if rp.isdir():
 		try: def_acl = posix1e.ACL(filedef=rp.path)
 		except IOError, exc:
-			if exc[0] == errno.EOPNOTSUPP: def_acl = None
-			if exc[0] == errno.ENOENT:
+			if exc[0] == errno.EOPNOTSUPP:
+				def_acl = None
+			elif exc[0] == errno.ENOENT:
 				log.Log("Warning: unable to read default ACL from %s: %s"
 					% (repr(rp.path), exc), 3)
 				def_acl = None
