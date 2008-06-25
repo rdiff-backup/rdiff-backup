@@ -1,3 +1,9 @@
+rdiff-backup (1.1.16-2) unstable; urgency=medium
+
+  * Making build-depends against librsync version to ensure 4gb bugfix.
+
+ -- Daniel Baumann <daniel@debian.org>  Wed, 25 Jun 2008 11:42:00 +0200
+
 rdiff-backup (1.1.16-1) unstable; urgency=medium
 
   * Removing 01-manpage.dpatch, went upstream.
