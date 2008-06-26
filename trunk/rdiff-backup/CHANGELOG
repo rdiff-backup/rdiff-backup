@@ -1,6 +1,9 @@
 New in v1.1.17 (????/??/??)
 ---------------------------
 
+Optimize --check-destination and other functions by determining the increment
+files server-side instead of client-side. (Patch from Josh Nisly)
+
 Actually make rdiff-backup robust to failure to read an ACL because the file
 cannot be found. (Andrew Ferguson)
 

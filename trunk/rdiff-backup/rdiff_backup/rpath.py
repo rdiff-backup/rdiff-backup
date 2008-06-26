@@ -297,6 +297,26 @@ def open_local_read(rpath):
 	assert rpath.conn is Globals.local_connection
 	return open(rpath.path, "rb")
 
+def get_incfile_info(basename):
+	"""Returns None or tuple of 
+	(is_compressed, timestr, type, and basename)"""
+	dotsplit = basename.split(".")
+	if dotsplit[-1] == "gz":
+		compressed = 1
+		if len(dotsplit) < 4: return None
+		timestring, ext = dotsplit[-3:-1]
+	else:
+		compressed = None
+		if len(dotsplit) < 3: return None
+		timestring, ext = dotsplit[-2:]
+	if Time.stringtotime(timestring) is None: return None
+	if not (ext == "snapshot" or ext == "dir" or
+			ext == "missing" or ext == "diff" or ext == "data"):
+		return None
+	if compressed: basestr = ".".join(dotsplit[:-3])
+	else: basestr = ".".join(dotsplit[:-2])
+	return (compressed, timestring, ext, basestr)
+
 
 class RORPath:
 	"""Read Only RPath - carry information about a path
@@ -1112,25 +1132,17 @@ class RPath(RORPath):
 		Also sets various inc information used by the *inc* functions.
 
 		"""
-		if self.index: dotsplit = self.index[-1].split(".")
-		else: dotsplit = self.base.split(".")
-		if dotsplit[-1] == "gz":
-			self.inc_compressed = 1
-			if len(dotsplit) < 4: return None
-			timestring, ext = dotsplit[-3:-1]
+		if self.index: basename = self.index[-1]
+		else: basename = self.base
+
+		inc_info = get_incfile_info(basename)
+
+		if inc_info:
+			self.inc_compressed, self.inc_timestr, \
+				self.inc_type, self.inc_basestr = inc_info
+			return 1
 		else:
-			self.inc_compressed = None
-			if len(dotsplit) < 3: return None
-			timestring, ext = dotsplit[-2:]
-		if Time.stringtotime(timestring) is None: return None
-		if not (ext == "snapshot" or ext == "dir" or
-				ext == "missing" or ext == "diff" or ext == "data"):
 			return None
-		self.inc_timestr = timestring
-		self.inc_type = ext
-		if self.inc_compressed: self.inc_basestr = ".".join(dotsplit[:-3])
-		else: self.inc_basestr = ".".join(dotsplit[:-2])
-		return 1
 
 	def isinccompressed(self):
 		"""Return true if inc file is compressed"""
