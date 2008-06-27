@@ -1,6 +1,9 @@
 New in v1.1.17 (????/??/??)
 ---------------------------
 
+Fix user_group.py to run on native Windows, which lacks grp and pwd Python
+modules. (Patch from Fred Gansevles)
+
 Optimize --check-destination and other functions by determining the increment
 files server-side instead of client-side. (Patch from Josh Nisly)
 
