@@ -30,7 +30,11 @@ objects should only be used on the destination.
 
 """
 
-import grp, pwd
+try:
+	import grp, pwd
+except ImportError:
+	pass
+
 import log, Globals
 
 ############ "Private" section - don't use outside user_group ###########
@@ -52,7 +56,7 @@ def uname2uid(uname):
 	try: return uname2uid_dict[uname]
 	except KeyError:
 		try: uid = pwd.getpwnam(uname)[2]
-		except KeyError: uid = None
+		except (KeyError, NameError): uid = None
 		uname2uid_dict[uname] = uid
 		return uid
 
@@ -62,7 +66,7 @@ def gname2gid(gname):
 	try: return gname2gid_dict[gname]
 	except KeyError:
 		try: gid = grp.getgrnam(gname)[2]
-		except KeyError: gid = None
+		except (KeyError, NameError): gid = None
 		gname2gid_dict[gname] = gid
 		return gid
 
@@ -163,7 +167,7 @@ def uid2uname(uid):
 	try: return uid2uname_dict[uid]
 	except KeyError:
 		try: uname = pwd.getpwuid(uid)[0]
-		except (KeyError, OverflowError), e: uname = None
+		except (KeyError, OverflowError, NameError), e: uname = None
 		uid2uname_dict[uid] = uname
 		return uname
 
@@ -172,7 +176,7 @@ def gid2gname(gid):
 	try: return gid2gname_dict[gid]
 	except KeyError:
 		try: gname = grp.getgrgid(gid)[0]
-		except (KeyError, OverflowError), e: gname = None
+		except (KeyError, OverflowError, NameError), e: gname = None
 		gid2gname_dict[gid] = gname
 		return gname
 
