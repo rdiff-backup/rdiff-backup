@@ -118,7 +118,7 @@ def MakeTar(specfiles):
 					 "Security.py", "selection.py",
 					 "SetConnections.py", "static.py",
 					 "statistics.py", "TempFile.py", "Time.py",
-					 "user_group.py"]:
+					 "user_group.py", "win_acls.py"]:
 		shutil.copyfile(os.path.join(SourceDir, filename),
 						os.path.join(tardir, "rdiff_backup", filename))
 
