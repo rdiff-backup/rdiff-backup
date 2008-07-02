@@ -1,0 +1,199 @@
+# Copyright 2008 Fred Gansevles <fred@betterbe.com>
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# rdiff-backup is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with rdiff-backup; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+
+import C, metadata, re, rorpiter, rpath
+
+try:
+	from win32security import *
+except:
+	GROUP_SECURITY_INFORMATION = 0
+	OWNER_SECURITY_INFORMATION = 0
+	DACL_SECURITY_INFORMATION = 0
+
+class ACL:
+	flags = (GROUP_SECURITY_INFORMATION|
+		 OWNER_SECURITY_INFORMATION|
+		 DACL_SECURITY_INFORMATION)
+
+	def __init__(self, index=()):
+		self.__acl = ""
+		self.index = index
+
+	def get_indexpath(self): return self.index and '/'.join(self.index) or '.'
+
+	def load_from_rp(self, rp, skip_inherit_only = True):
+		self.index = rp.index
+		try:
+			sd = rp.conn.win32security.GetFileSecurity(rp.path, ACL.flags)
+		except:
+			return
+
+		if skip_inherit_only:
+			# skip the inherit_only aces
+			acl = sd.GetSecurityDescriptorDacl()
+			if acl:
+				n = acl.GetAceCount()
+				# traverse the ACL in reverse, so the indices stay correct
+				while n:
+					n -= 1
+					ace_flags = acl.GetAce(n)[0][1]
+					if ace_flags & INHERIT_ONLY_ACE:
+						acl.DeleteAce(n)
+			sd.SetSecurityDescriptorDacl(1, acl, 0)
+
+			if ACL.flags & SACL_SECURITY_INFORMATION:
+				acl = sd.GetSecurityDescriptorSacl()
+				if acl:
+					n = acl.GetAceCount()
+					# traverse the ACL in reverse, so the indices stay correct
+					while n:
+						n -= 1
+						ace_flags = acl.GetAce(n)[0][1]
+						if ace_flags & INHERIT_ONLY_ACE:
+							acl.DeleteAce(n)
+					sd.SetSecurityDescriptorSacl(1, acl, 0)
+
+		self.__acl = \
+			rp.conn.win32security.ConvertSecurityDescriptorToStringSecurityDescriptor(sd,
+					SDDL_REVISION_1, ACL.flags)
+
+	def clear_rp(self, rp):
+		# not sure how to interpret this
+		# I'll jus clear all acl-s from rp.path
+		sd = rp.conn.win32security.GetFileSecurity(rp.path, ACL.flags)
+
+		acl = sd.GetSecurityDescriptorDacl()
+		if acl:
+			n = acl.GetAceCount()
+			# traverse the ACL in reverse, so the indices stay correct
+			while n:
+				n -= 1
+				acl.DeleteAce(n)
+			sd.SetSecurityDescriptorDacl(1, acl, 0)
+
+		if ACL.flags & SACL_SECURITY_INFORMATION:
+			acl = sd.GetSecurityDescriptorSacl()
+			if acl:
+				n = acl.GetAceCount()
+				# traverse the ACL in reverse, so the indices stay correct
+				while n:
+					n -= 1
+					acl.DeleteAce(n)
+				sd.SetSecurityDescriptorSacl(1, acl, 0)
+
+		SetFileSecurity(rp.path, ACL.flags, sd)
+
+	def write_to_rp(self, rp):
+		if self.__acl:
+			sd = rp.conn.win32security.ConvertStringSecurityDescriptorToSecurityDescriptor(self.__acl,
+						SDDL_REVISION_1)
+			rp.conn.win32security.SetFileSecurity(rp.path, ACL.flags, sd)
+
+	def __str__(self):
+		return '# file: %s\n%s\n' % \
+				(C.acl_quote(self.get_indexpath()), unicode(self.__acl))
+
+	def from_string(self, acl_str):
+		lines = acl_str.splitlines()
+		if len(lines) != 2 or not lines[0][:8] == "# file: ":
+			raise metadata.ParsingError("Bad record beginning: " + lines[0][:8])
+		filename = lines[0][8:]
+		if filename == '.': self.index = ()
+		else: self.index = tuple(C.acl_unquote(filename).split('/'))
+		self.__acl = lines[1]
+
+def Record2WACL(record):
+	acl = ACL()
+	acl.from_string(record)
+	return acl
+
+def WACL2Record(wacl):
+	return unicode(wacl)
+
+class WACLExtractor(metadata.FlatExtractor):
+	"""Iterate ExtendedAttributes objects from the WACL information file"""
+	record_boundary_regexp = re.compile('(?:\\n|^)(# file: (.*?))\\n')
+	record_to_object = staticmethod(Record2WACL)
+	def filename_to_index(self, filename):
+		"""Convert possibly quoted filename to index tuple"""
+		if filename == '.': return ()
+		else: return tuple(C.acl_unquote(filename).split('/'))
+
+class WinAccessControlListFile(metadata.FlatFile):
+	"""Store/retrieve ACLs from extended_attributes file"""
+	_prefix = "win_access_control_lists"
+	_extractor = WACLExtractor
+	_object_to_record = staticmethod(WACL2Record)
+
+def join_wacl_iter(rorp_iter, wacl_iter):
+	"""Update a rorp iter by adding the information from acl_iter"""
+	for rorp, wacl in rorpiter.CollateIterators(rorp_iter, wacl_iter):
+		assert rorp, "Missing rorp for index %s" % (wacl.index,)
+		if not wacl: wacl = ACL(rorp.index)
+		rorp.set_win_acl(unicode(wacl))
+		yield rorp
+	
+def rpath_acl_win_get(rpath):
+	acl = ACL()
+	acl.load_from_rp(rpath)
+	return unicode(acl)
+rpath.win_acl_get = rpath_acl_win_get
+
+def rpath_get_blank_win_acl(index):
+	acl = ACL(index)
+	return unicode(acl)
+rpath.get_blank_win_acl = rpath_get_blank_win_acl
+
+def rpath_set_win_acl(rp, acl_str):
+	acl = ACL()
+	acl.from_string(acl_str)
+	acl.write_to_rp(rp)
+rpath.write_win_acl = rpath_set_win_acl
+
+def init_acls():
+	# A process that tries to read or write a SACL needs
+	# to have and enable the SE_SECURITY_NAME privilege.
+	# And inorder to backup/restore, the SE_BACKUP_NAME and
+	# SE_RESTORE_NAME privileges are needed.
+	import win32api
+	try:
+		hnd = OpenProcessToken(win32api.GetCurrentProcess(),
+			TOKEN_ADJUST_PRIVILEGES| TOKEN_QUERY)
+	except win32api.error:
+		return
+	try:
+		try:
+			lpv = lambda priv: LookupPrivilegeValue(None, priv)
+			# enable the SE_*_NAME priveleges
+			SecurityName = lpv(SE_SECURITY_NAME)
+			AdjustTokenPrivileges(hnd, False, [
+				(SecurityName, SE_PRIVILEGE_ENABLED),
+				(lpv(SE_BACKUP_NAME), SE_PRIVILEGE_ENABLED),
+				(lpv(SE_RESTORE_NAME), SE_PRIVILEGE_ENABLED)
+				])
+		except win32api.error:
+			return
+		for name, enabled in GetTokenInformation(hnd, TokenPrivileges):
+			if name == SecurityName and enabled:
+				# now we *may* access the SACL (sigh)
+				ACL.flags |= SACL_SECURITY_INFORMATION
+				break
+	finally:
+		win32api.CloseHandle(hnd)
+

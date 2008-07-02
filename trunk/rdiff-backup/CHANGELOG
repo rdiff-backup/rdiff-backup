@@ -1,6 +1,8 @@
 New in v1.1.17 (????/??/??)
 ---------------------------
 
+Support for Windows ACLs. (Patch from Josh Nisly and Fred Gansevles)
+
 Fix user_group.py to run on native Windows, which lacks grp and pwd Python
 modules. (Patch from Fred Gansevles)
 

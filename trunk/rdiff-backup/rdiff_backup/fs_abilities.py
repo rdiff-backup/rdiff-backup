@@ -29,7 +29,7 @@ FSAbilities object describing it.
 
 import errno, os
 import Globals, log, TempFile, selection, robust, SetConnections, \
-	   static, FilenameMapping
+	   static, FilenameMapping, win_acls
 
 class FSAbilities:
 	"""Store capabilities of given file system"""
@@ -39,6 +39,7 @@ class FSAbilities:
 	ownership = None # True if chown works on this filesystem
 	acls = None # True if access control lists supported
 	eas = None # True if extended attributes supported
+	win_acls = None # True if windows access control lists supported
 	hardlinks = None # True if hard linking supported
 	fsync_dirs = None # True if directories can be fsync'd
 	dir_inc_perms = None # True if regular files can have full permissions
@@ -97,6 +98,7 @@ class FSAbilities:
 							   self.win_reserved_filenames)])
 		add_boolean_list([('Access control lists', self.acls),
 						  ('Extended attributes', self.eas),
+						  ('Windows access control lists', self.win_acls),
 						  ('Case sensitivity', self.case_sensitive),
 						  ('Escape DOS devices', self.escape_dos_devices),
 						  ('Mac OS X style resource forks',
@@ -120,6 +122,7 @@ class FSAbilities:
 		self.read_only = 1
 		self.set_eas(rp, 0)
 		self.set_acls(rp)
+		self.set_win_acls(rp)
 		self.set_resource_fork_readonly(rp)
 		self.set_carbonfile()
 		self.set_case_sensitive_readonly(rp)
@@ -151,6 +154,7 @@ class FSAbilities:
 		self.set_fsync_dirs(subdir)
 		self.set_eas(subdir, 1)
 		self.set_acls(subdir)
+		self.set_win_acls(subdir)
 		self.set_dir_inc_perms(subdir)
 		self.set_resource_fork_readwrite(subdir)
 		self.set_carbonfile()
@@ -364,6 +368,24 @@ class FSAbilities:
 			self.eas = 0
 		else: self.eas = 1
 
+	def set_win_acls(self, dir_rp):
+		"""Test if windows access control lists are supported"""
+		try:
+			import win32security
+		except ImportError:
+			log.Log("Unable to import win32security module. Windows ACLs\n"
+					"not supported by filesystem at %s" % dir_rp.path, 4)
+			self.win_acls = 0
+			return
+		try:
+			win_acls.init_acls()
+		except OSError:
+			log.Log("Windows ACLs not supported by filesystem\n"
+					"at %s" % dir_rp.path, 4)
+			self.win_acls = 0
+			return
+		self.win_acls = 1
+
 	def set_dir_inc_perms(self, rp):
 		"""See if increments can have full permissions like a directory"""
 		test_rp = rp.append('dir_inc_check')
@@ -520,6 +542,10 @@ class SetGlobals:
 		if Globals.never_drop_acls and not Globals.acls_active:
 			log.Log.FatalError("--never-drop-acls specified, but ACL support\n"
 							   "missing from destination filesystem")
+
+	def set_win_acls(self):
+		self.update_triple(self.src_fsa.win_acls, self.dest_fsa.win_acls,
+			  ('win_acls_active', 'win_acls_write', 'win_acls_conn'))
 
 	def set_resource_forks(self):
 		self.update_triple(self.src_fsa.resource_forks,
@@ -729,6 +755,10 @@ class SingleSetGlobals(RestoreSetGlobals):
 	def set_acls(self):
 		self.update_triple(self.dest_fsa.acls,
 						  ('acls_active', 'acls_write', 'acls_conn'))
+	def set_win_acls(self):
+		self.update_triple(self.src_fsa.win_acls, self.dest_fsa.win_acls,
+			  ('win_acls_active', 'win_acls_write', 'win_acls_conn'))
+
 	def set_resource_forks(self):
 		self.update_triple(self.dest_fsa.resource_forks,
 						   ('resource_forks_active',
@@ -754,6 +784,7 @@ def backup_set_globals(rpin, force):
 	bsg = BackupSetGlobals(rpin.conn, Globals.rbdir.conn, src_fsa, dest_fsa)
 	bsg.set_eas()
 	bsg.set_acls()
+	bsg.set_win_acls()
 	bsg.set_resource_forks()
 	bsg.set_carbonfile()
 	bsg.set_hardlinks()
@@ -781,6 +812,7 @@ def restore_set_globals(rpout):
 	rsg = RestoreSetGlobals(Globals.rbdir.conn, rpout.conn, src_fsa, dest_fsa)
 	rsg.set_eas()
 	rsg.set_acls()
+	rsg.set_win_acls()
 	rsg.set_resource_forks()
 	rsg.set_carbonfile()
 	rsg.set_hardlinks()

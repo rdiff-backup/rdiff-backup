@@ -185,6 +185,7 @@ def copy_attribs(rpin, rpout):
 	rpout.chmod(rpin.getperms())
 	if Globals.acls_write: rpout.write_acl(rpin.get_acl())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
+	if Globals.win_acls_write: rpout.write_win_acl(rpin.get_win_acl())
 
 def copy_attribs_inc(rpin, rpout):
 	"""Change file attributes of rpout to match rpin
@@ -358,6 +359,7 @@ class RORPath:
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'ea' and not Globals.eas_active: pass
 			elif key == 'acl' and not Globals.acls_active: pass
+			elif key == 'win_acl' and not Globals.win_acls_active: pass
 			elif key == 'carbonfile' and not Globals.carbonfile_active: pass
 			elif key == 'resourcefork' and not Globals.resource_forks_active:
 				pass
@@ -398,6 +400,7 @@ class RORPath:
 			elif key == 'inode': pass
 			elif key == 'ea' and not Globals.eas_write: pass
 			elif key == 'acl' and not Globals.acls_write: pass
+			elif key == 'win_acl' and not Globals.win_acls_write: pass
 			elif key == 'carbonfile' and not Globals.carbonfile_write: pass
 			elif key == 'resourcefork' and not Globals.resource_forks_write:
 				pass
@@ -415,8 +418,8 @@ class RORPath:
 
 	def equal_verbose(self, other, check_index = 1,
 					  compare_inodes = 0, compare_ownership = 0,
-					  compare_acls = 0, compare_eas = 0, compare_size = 1,
-					  compare_type = 1, verbosity = 2):
+					  compare_acls = 0, compare_eas = 0, compare_win_acls = 0,
+					  compare_size = 1, compare_type = 1, verbosity = 2):
 		"""Like __eq__, but log more information.  Useful when testing"""
 		if check_index and self.index != other.index:
 			log.Log("Index %s != index %s" % (self.index, other.index),
@@ -437,6 +440,7 @@ class RORPath:
 				pass
 			elif key == 'ea' and not compare_eas: pass
 			elif key == 'acl' and not compare_acls: pass
+			elif key == 'win_acl' and not compare_win_acls: pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]):
 				if not other.data.has_key(key):
@@ -454,7 +458,8 @@ class RORPath:
 		return self.equal_verbose(other,
 								  compare_inodes = compare_inodes,
 								  compare_eas = Globals.eas_active,
-								  compare_acls = Globals.acls_active)
+								  compare_acls = Globals.acls_active,
+								  compare_win_acls = Globals.win_acls_active)
 							 
 	def __ne__(self, other): return not self.__eq__(other)
 
@@ -701,6 +706,17 @@ class RORPath:
 	def set_resource_fork(self, rfork):
 		"""Record resource fork in dictionary.  Does not write"""
 		self.data['resourcefork'] = rfork
+
+	def set_win_acl(self, acl):
+		"""Record Windows access control list in dictionary. Does not write"""
+		self.data['win_acl'] = acl
+
+	def get_win_acl(self):
+		"""Return access control list object from dictionary"""
+		try: return self.data['win_acl']
+		except KeyError:
+			acl = self.data['win_acl'] = get_blank_win_acl(self.index)
+			return acl
 
 	def has_alt_mirror_name(self):
 		"""True if rorp has an alternate mirror name specified"""
@@ -1316,6 +1332,16 @@ class RPath(RORPath):
 		assert not fp.close()
 		self.set_resource_fork(rfork_data)
 
+	def get_win_acl(self):
+		"""Return Windows access control list, setting if necessary"""
+		try: acl = self.data['win_acl']
+		except KeyError: acl = self.data['win_acl'] = win_acl_get(self)
+		return acl
+
+	def write_win_acl(self, acl):
+		"""Change access control list of rp"""
+		write_win_acl(self, acl)
+		self.data['win_acl'] = acl
 
 class RPathFileHook:
 	"""Look like a file, but add closing hook"""
@@ -1406,6 +1432,8 @@ def setdata_local(rpath):
 	rpath.data['gname'] = user_group.gid2gname(rpath.data['gid'])
 	if Globals.eas_conn: rpath.data['ea'] = ea_get(rpath)
 	if Globals.acls_conn: rpath.data['acl'] = acl_get(rpath)
+	if Globals.win_acls_conn:
+		rpath.data['win_acl'] = win_acl_get(rpath)
 	if Globals.resource_forks_conn and rpath.isreg():
 		rpath.get_resource_fork()
 	if Globals.carbonfile_conn and rpath.isreg():
@@ -1439,3 +1467,7 @@ def acl_get(rp): assert 0
 def get_blank_acl(index): assert 0
 def ea_get(rp): assert 0
 def get_blank_ea(index): assert 0
+
+def win_acl_get(rp): assert 0
+def write_win_acl(rp): assert 0
+def get_blank_win_acl(): assert 0

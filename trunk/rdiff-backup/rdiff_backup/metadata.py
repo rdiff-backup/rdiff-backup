@@ -433,9 +433,10 @@ class MetadataFile(FlatFile):
 
 class CombinedWriter:
 	"""Used for simultaneously writting metadata, eas, and acls"""
-	def __init__(self, metawriter, eawriter, aclwriter):
+	def __init__(self, metawriter, eawriter, aclwriter, winaclwriter):
 		self.metawriter = metawriter
-		self.eawriter, self.aclwriter = eawriter, aclwriter # these can be None
+		self.eawriter, self.aclwriter, self.winaclwriter = \
+				eawriter, aclwriter, winaclwriter # these can be None
 
 	def write_object(self, rorp):
 		"""Write information in rorp to all the writers"""
@@ -444,11 +445,14 @@ class CombinedWriter:
 			self.eawriter.write_object(rorp.get_ea())
 		if self.aclwriter and not rorp.get_acl().is_basic():
 			self.aclwriter.write_object(rorp.get_acl())
+		if self.winaclwriter:
+			self.winaclwriter.write_object(rorp.get_win_acl())
 
 	def close(self):
 		self.metawriter.close()
 		if self.eawriter: self.eawriter.close()
 		if self.aclwriter: self.aclwriter.close()
+		if self.winaclwriter: self.winaclwriter.close()
 
 
 class Manager:
@@ -456,6 +460,7 @@ class Manager:
 	meta_prefix = 'mirror_metadata'
 	acl_prefix = 'access_control_lists'
 	ea_prefix = 'extended_attributes'
+	wacl_prefix = 'win_access_control_lists'
 
 	def __init__(self):
 		"""Set listing of rdiff-backup-data dir"""
@@ -501,6 +506,11 @@ class Manager:
 		return self._iter_helper(self.acl_prefix,
 					  eas_acls.AccessControlListFile, time, restrict_index)
 
+	def get_win_acls_at_time(self, time, restrict_index):
+		"""Return WACLs iter at given time from recordfile (or None)"""
+		return self._iter_helper(self.wacl_prefix,
+					  win_acls.WinAccessControlListFile, time, restrict_index)
+
 	def GetAtTime(self, time, restrict_index = None):
 		"""Return combined metadata iter with ea/acl info if necessary"""
 		cur_iter = self.get_meta_at_time(time, restrict_index)
@@ -521,6 +531,14 @@ class Manager:
 				log.Log("Warning: Extended Attributes file not found", 2)
 				ea_iter = iter([])
 			cur_iter = eas_acls.join_ea_iter(cur_iter, ea_iter)
+		if Globals.win_acls_active:
+			wacl_iter = self.get_win_acls_at_time(time, restrict_index)
+			if not wacl_iter:
+				log.Log("Warning: Windows Access Control List file not"
+						" found.", 2)
+				wacl_iter = iter([])
+			cur_iter = win_acls.join_wacl_iter(cur_iter, wacl_iter)
+
 		return cur_iter
 
 	def _writer_helper(self, prefix, flatfileclass, typestr, time):
@@ -548,17 +566,26 @@ class Manager:
 		return self._writer_helper(self.acl_prefix,
 						 eas_acls.AccessControlListFile, typestr, time)
 
+	def get_win_acl_writer(self, typestr, time):
+		"""Return WinAccessControlListFile opened for writing"""
+		return self._writer_helper(self.wacl_prefix,
+						 win_acls.WinAccessControlListFile, typestr, time)
+
 	def GetWriter(self, typestr = 'snapshot', time = None):
 		"""Get a writer object that can write meta and possibly acls/eas"""
 		metawriter = self.get_meta_writer(typestr, time)
-		if not Globals.eas_active and not Globals.acls_active:
+		if not Globals.eas_active and not Globals.acls_active and \
+				not Globals.win_acls_active:
 			return metawriter # no need for a CombinedWriter
 
 		if Globals.eas_active: ea_writer = self.get_ea_writer(typestr, time)
 		else: ea_writer = None
 		if Globals.acls_active: acl_writer = self.get_acl_writer(typestr, time)
 		else: acl_writer = None
-		return CombinedWriter(metawriter, ea_writer, acl_writer)
+		if Globals.win_acls_active: win_acl_writer = \
+				self.get_win_acl_writer(typestr, time)
+		else: win_acl_writer = None
+		return CombinedWriter(metawriter, ea_writer, acl_writer, win_acl_writer)
 
 class PatchDiffMan(Manager):
 	"""Contains functions for patching and diffing metadata
@@ -663,4 +690,4 @@ def SetManager():
 	return ManagerObj
 
 
-import eas_acls # put at bottom to avoid python circularity bug
+import eas_acls, win_acls # put at bottom to avoid python circularity bug

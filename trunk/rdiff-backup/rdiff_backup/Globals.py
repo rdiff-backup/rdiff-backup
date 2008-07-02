@@ -85,6 +85,12 @@ acls_active = None
 acls_write = None
 acls_conn = None
 
+# Like the above, but applies to support of Windows
+# access control lists.
+win_acls_active = None
+win_acls_write = None
+win_acls_conn = None
+
 # Like above two setting groups, but applies to support of Mac OS X
 # style resource forks.
 resource_forks_active = None
