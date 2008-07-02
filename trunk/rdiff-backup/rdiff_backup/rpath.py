@@ -246,7 +246,7 @@ def rename(rp_source, rp_dest):
 	if not rp_source.lstat(): rp_dest.delete()
 	else:
 		if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode() and \
-				rp_source.getinode() != -1:
+				rp_source.getinode() != 0:
 			log.Log("Warning: Attempt to rename over same inode: %s to %s"
 					% (rp_source.path, rp_dest.path), 2)
 			# You can't rename one hard linked file over another
@@ -824,10 +824,13 @@ class RPath(RORPath):
 
 	def setdata(self):
 		"""Set data dictionary using C extension"""
-		self.data = self.conn.C.make_file_dict(self.path)
+		try:
+			self.data = self.conn.C.make_file_dict(self.path)
+		except AttributeError:
+			self.data = self.make_file_dict_python()
 		if self.lstat(): self.conn.rpath.setdata_local(self)
 
-	def make_file_dict_old(self):
+	def make_file_dict_python(self):
 		"""Create the data dictionary"""
 		statblock = self.conn.rpath.tupled_lstat(self.path)
 		if statblock is None:
