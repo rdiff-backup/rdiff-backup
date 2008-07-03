@@ -1,6 +1,8 @@
 New in v1.1.17 (????/??/??)
 ---------------------------
 
+Catch another reasonable error when reading EAs. (Andrew Ferguson)
+
 Use the Python os.lstat() on Windows. (Patch from Josh Nisly)
 
 Support for Windows ACLs. (Patch from Josh Nisly and Fred Gansevles)
