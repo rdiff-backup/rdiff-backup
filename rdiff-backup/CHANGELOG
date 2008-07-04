@@ -1,6 +1,10 @@
 New in v1.1.17 (????/??/??)
 ---------------------------
 
+Fix typo in fs_abilities noticed by Martin Krafft. Add EILSEQ ("Invalid or
+incomplete multibyte or wide character") to the list of recoverable errors.
+Thanks to Hanno Stock for catching that. (Andrew Ferguson)
+
 Catch another reasonable error when reading EAs. (Andrew Ferguson)
 
 Use the Python os.lstat() on Windows. (Patch from Josh Nisly)

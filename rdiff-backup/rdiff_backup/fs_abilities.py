@@ -541,7 +541,7 @@ class SetGlobals:
 						   ('acls_active', 'acls_write', 'acls_conn'))
 		if Globals.never_drop_acls and not Globals.acls_active:
 			log.Log.FatalError("--never-drop-acls specified, but ACL support\n"
-							   "missing from destination filesystem")
+							   "missing from source filesystem")
 
 	def set_win_acls(self):
 		self.update_triple(self.src_fsa.win_acls, self.dest_fsa.win_acls,
