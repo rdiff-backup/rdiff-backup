@@ -103,7 +103,10 @@ def rorp_eq(src_rorp, dest_rorp):
 		# subsequent ones
 		_inode_index[src_key] = (index, remaining, None, None)
 		return 1
-	return dest_key == get_inode_key(dest_rorp)
+	try:
+		return dest_key == get_inode_key(dest_rorp)
+	except KeyError:
+		return 0 # Inode key might be missing if the metadata file is corrupt
 
 def islinked(rorp):
 	"""True if rorp's index is already linked to something on src side"""
