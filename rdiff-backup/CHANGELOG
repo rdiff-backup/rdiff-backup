@@ -1,6 +1,9 @@
 New in v1.1.17 (????/??/??)
 ---------------------------
 
+Properly handle uid/gid comparison when the metadata about a destination
+file has become corrupt. Closes Debian bug #410586. (Andrew Ferguson)
+
 Properly handle hardlink comparison when the metadata about a destination
 hardlink has become corrupt. Closes Debian bug #486653. (Andrew Ferguson)
 

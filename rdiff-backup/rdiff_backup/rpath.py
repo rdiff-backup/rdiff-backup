@@ -412,7 +412,10 @@ class RORPath:
 
 		if self.lstat() and not self.issym() and Globals.change_ownership:
 			# Now compare ownership.  Symlinks don't have ownership
-			if user_group.map_rpath(self) != other.getuidgid(): return 0
+			try:
+				if user_group.map_rpath(self) != other.getuidgid(): return 0
+			except KeyError:
+				return 0 # uid/gid might be missing if metadata file is corrupt
 
 		return 1
 
