@@ -13,6 +13,7 @@ if sys.version_info[:2] < (2,2):
 lflags_arg = []
 libname = ['rsync']
 incdir_list = libdir_list = None
+extra_options = {}
 
 if os.name == 'posix' or os.name == 'nt':
 	LIBRSYNC_DIR = os.environ.get('LIBRSYNC_DIR', '')
@@ -40,6 +41,21 @@ if os.name == 'posix' or os.name == 'nt':
 			libdir_list = [os.path.join(LIBRSYNC_DIR, 'lib')]
 		if '-lrsync' in LIBS:
 			libname = []
+		if os.name == 'nt':
+			try:
+				import py2exe
+			except ImportError:
+				pass
+			else:
+				extra_options = {
+					'console': ['rdiff-backup'],
+				}
+				if '--single-file' in sys.argv[1:]:
+					sys.argv.remove('--single-file')
+					extra_options.update({
+						'options': {'py2exe': {'bundle_files': 1}},
+						'zipfile': None
+					})
 
 setup(name="rdiff-backup",
 	  version=version_string,
@@ -59,5 +75,6 @@ setup(name="rdiff-backup",
 	  data_files = [('share/man/man1', ['rdiff-backup.1',
 										'rdiff-backup-statistics.1']),
 					('share/doc/rdiff-backup-%s' % (version_string,),
-					 ['CHANGELOG', 'COPYING', 'README', 'FAQ.html'])])
+					 ['CHANGELOG', 'COPYING', 'README', 'FAQ.html'])],
+					**extra_options)
 

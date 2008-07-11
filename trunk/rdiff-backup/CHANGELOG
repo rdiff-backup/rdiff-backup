@@ -1,6 +1,9 @@
 New in v1.1.17 (????/??/??)
 ---------------------------
 
+Allow rdiff-backup to be built into a single executable on Windows using
+py2exe ("setup.py py2exe --single-file"). (Patch from Josh Nisly)
+
 Properly handle uid/gid comparison when the metadata about a destination
 file has become corrupt. Closes Debian bug #410586. (Andrew Ferguson)
 
