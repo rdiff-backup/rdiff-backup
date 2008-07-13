@@ -1,6 +1,12 @@
 New in v1.1.17 (????/??/??)
 ---------------------------
 
+Move make_file_dict_python so that it is run on the remote end instead of
+the local end. This improves performance for Windows hosts since it eliminates
+the lag due to checking os.name. It also makes the Windows design parallel
+to the Posix design, since the Windows method now returns a dictionary across
+the wire. (Andrew Ferguson)
+
 Catch EPERM error when trying to write extended attributes. (Andrew Ferguson)
 
 Allow rdiff-backup to be built into a single executable on Windows using

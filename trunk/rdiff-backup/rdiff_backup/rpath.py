@@ -36,7 +36,7 @@ are dealing with are local or remote.
 """
 
 import os, stat, re, sys, shutil, gzip, socket, time, errno
-import Globals, Time, static, log, user_group
+import Globals, Time, static, log, user_group, C
 
 
 class SkipFileException(Exception):
@@ -264,16 +264,65 @@ def rename(rp_source, rp_dest):
 		rp_dest.data = rp_source.data
 		rp_source.data = {'type': None}
 
-def tupled_lstat(filename):
-	"""Like os.lstat, but return only a tuple, or None if os.error
+def make_file_dict(filename):
+	"""Generate the data dictionary for the given RPath
 
-	Later versions of os.lstat return a special lstat object,
-	which can confuse the pickler and cause errors in remote
-	operations.  This has been fixed in Python 2.2.1.
-
+	This is a global function so that os.name can be called locally,
+	thus avoiding network lag and so that we only need to send the
+	filename over the network, thus avoiding the need to pickle an
+	(incomplete) rpath object.
 	"""
-	try: return tuple(os.lstat(filename))
-	except os.error: return None
+	if os.name != 'nt':
+		return C.make_file_dict(filename)
+	else:
+		return make_file_dict_python(filename)
+
+def make_file_dict_python(filename):
+	"""Create the data dictionary using a Python call to os.lstat
+	
+	We do this on Windows since Python's implementation is much better
+	than the one in cmodule.c    Eventually, we will move to using
+	this on all platforms since CPUs have gotten much faster than
+	they were when it was necessary to write cmodule.c
+	"""
+	try:
+		statblock = os.lstat(filename)
+	except os.error:
+		return {'type':None}
+	data = {}
+	mode = statblock[stat.ST_MODE]
+
+	if stat.S_ISREG(mode): type = 'reg'
+	elif stat.S_ISDIR(mode): type = 'dir'
+	elif stat.S_ISCHR(mode):
+		type = 'dev'
+		s = statblock.st_rdev
+		data['devnums'] = ('c',) + (s >> 8, s & 0xff)
+	elif stat.S_ISBLK(mode):
+		type = 'dev'
+		s = statblock.st_rdev
+		data['devnums'] = ('b',) + (s >> 8, s & 0xff)
+	elif stat.S_ISFIFO(mode): type = 'fifo'
+	elif stat.S_ISLNK(mode):
+		type = 'sym'
+		data['linkname'] = os.readlink(filename)
+	elif stat.S_ISSOCK(mode): type = 'sock'
+	else: raise C.UnknownFileError(filename)
+	data['type'] = type
+	data['size'] = statblock[stat.ST_SIZE]
+	data['perms'] = stat.S_IMODE(mode)
+	data['uid'] = statblock[stat.ST_UID]
+	data['gid'] = statblock[stat.ST_GID]
+	data['inode'] = statblock[stat.ST_INO]
+	data['devloc'] = statblock[stat.ST_DEV]
+	data['nlink'] = statblock[stat.ST_NLINK]
+
+	if not (type == 'sym' or type == 'dev'):
+		# mtimes on symlinks and dev files don't work consistently
+		data['mtime'] = long(statblock[stat.ST_MTIME])
+		data['atime'] = long(statblock[stat.ST_ATIME])
+		data['ctime'] = long(statblock[stat.ST_CTIME])
+	return data
 
 def make_socket_local(rpath):
 	"""Make a local socket at the given path
@@ -826,50 +875,9 @@ class RPath(RORPath):
 		self.path = "/".join((self.base,) + self.index)
 
 	def setdata(self):
-		"""Set data dictionary using C extension"""
-		try:
-			self.data = self.conn.C.make_file_dict(self.path)
-		except AttributeError:
-			self.data = self.make_file_dict_python()
+		"""Set data dictionary using the wrapper"""
+		self.data = self.conn.rpath.make_file_dict(self.path)
 		if self.lstat(): self.conn.rpath.setdata_local(self)
-
-	def make_file_dict_python(self):
-		"""Create the data dictionary"""
-		statblock = self.conn.rpath.tupled_lstat(self.path)
-		if statblock is None:
-			return {'type':None}
-		data = {}
-		mode = statblock[stat.ST_MODE]
-
-		if stat.S_ISREG(mode): type = 'reg'
-		elif stat.S_ISDIR(mode): type = 'dir'
-		elif stat.S_ISCHR(mode):
-			type = 'dev'
-			data['devnums'] = ('c',) + self._getdevnums()
-		elif stat.S_ISBLK(mode):
-			type = 'dev'
-			data['devnums'] = ('b',) + self._getdevnums()
-		elif stat.S_ISFIFO(mode): type = 'fifo'
-		elif stat.S_ISLNK(mode):
-			type = 'sym'
-			data['linkname'] = self.conn.os.readlink(self.path)
-		elif stat.S_ISSOCK(mode): type = 'sock'
-		else: raise C.UnknownFileError(self.path)
-		data['type'] = type
-		data['size'] = statblock[stat.ST_SIZE]
-		data['perms'] = stat.S_IMODE(mode)
-		data['uid'] = statblock[stat.ST_UID]
-		data['gid'] = statblock[stat.ST_GID]
-		data['inode'] = statblock[stat.ST_INO]
-		data['devloc'] = statblock[stat.ST_DEV]
-		data['nlink'] = statblock[stat.ST_NLINK]
-
-		if not (type == 'sym' or type == 'dev'):
-			# mtimes on symlinks and dev files don't work consistently
-			data['mtime'] = long(statblock[stat.ST_MTIME])
-			data['atime'] = long(statblock[stat.ST_ATIME])
-			data['ctime'] = long(statblock[stat.ST_CTIME])
-		return data
 
 	def check_consistency(self):
 		"""Raise an error if consistency of rp broken
@@ -883,11 +891,6 @@ class RPath(RORPath):
 		assert temptype == self.data['type'], \
 			   "\nName: %s\nOld: %s --> New: %s\n" % \
 			   (self.path, temptype, self.data['type'])
-
-	def _getdevnums(self):
-		"""Return tuple for special file (major, minor)"""
-		s = self.conn.reval("lambda path: os.lstat(path).st_rdev", self.path)
-		return (s >> 8, s & 0xff)
 
 	def chmod(self, permissions):
 		"""Wrapper around os.chmod"""
