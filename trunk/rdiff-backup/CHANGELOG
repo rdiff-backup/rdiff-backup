@@ -1,6 +1,8 @@
 New in v1.1.17 (????/??/??)
 ---------------------------
 
+Catch EPERM error when trying to write extended attributes. (Andrew Ferguson)
+
 Allow rdiff-backup to be built into a single executable on Windows using
 py2exe ("setup.py py2exe --single-file"). (Patch from Josh Nisly)
 
