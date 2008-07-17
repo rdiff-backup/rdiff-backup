@@ -23,7 +23,7 @@ import re, os
 
 
 # The current version of rdiff-backup
-version = "1.1.16"
+version = "1.1.17"
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
@@ -84,6 +84,12 @@ eas_conn = None
 acls_active = None
 acls_write = None
 acls_conn = None
+
+# Like the above, but applies to support of Windows
+# access control lists.
+win_acls_active = None
+win_acls_write = None
+win_acls_conn = None
 
 # Like above two setting groups, but applies to support of Mac OS X
 # style resource forks.

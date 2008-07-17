@@ -1,3 +1,11 @@
+rdiff-backup (1.1.17-1) unstable; urgency=low
+
+  * Merging upstream version 1.1.17 (Closes: #491185):
+    - fixes failure with 'exceptions.KeyError' (Closes: #410586).
+    - fixes failure with 'KeyError inode' exception (Closes: #486653).
+
+ -- Daniel Baumann <daniel@debian.org>  Thu, 17 Jul 2008 16:30:00 +0200
+
 rdiff-backup (1.1.16-2) unstable; urgency=medium
 
   * Making build-depends against librsync version to ensure 4gb bugfix.

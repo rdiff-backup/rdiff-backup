@@ -27,7 +27,8 @@ try: import xattr
 except ImportError: pass
 try: import posix1e
 except ImportError: pass
-
+try: import win32security
+except ImportError: pass
 
 class ConnectionError(Exception): pass
 class ConnectionReadError(ConnectionError): pass
@@ -538,6 +539,9 @@ import Globals, Time, Rdiff, Hardlink, FilenameMapping, C, Security, \
 	   iterfile, rpath, robust, restore, manage, backup, connection, \
 	   TempFile, SetConnections, librsync, log, regress, fs_abilities, \
 	   eas_acls, user_group, compare
+
+try: import win_acls
+except ImportError: pass
 
 Globals.local_connection = LocalConnection()
 Globals.connections.append(Globals.local_connection)

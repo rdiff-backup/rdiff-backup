@@ -52,7 +52,7 @@ def catch_error(exc):
 		(exc[0] in ('invalid mode: rb', 'Not a gzipped file') or
 		 errno.errorcode.has_key(exc[0]) and
 		 errno.errorcode[exc[0]] in ('EPERM', 'ENOENT', 'EACCES', 'EBUSY',
-									 'EEXIST', 'ENOTDIR',
+									 'EEXIST', 'ENOTDIR', 'EILSEQ',
 									 'ENAMETOOLONG', 'EINTR',
 									 'ENOTEMPTY', 'EIO', 'ETXTBSY',
 									 'ESRCH', 'EINVAL', 'EDEADLOCK',

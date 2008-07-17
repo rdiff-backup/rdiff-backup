@@ -48,10 +48,6 @@
 /* This code taken from Python's posixmodule.c */
 #undef STAT
 #if defined(MS_WIN64) || defined(MS_WIN32)
-#	define LSTAT _stati64
-#	define STAT _stati64
-#	define FSTAT _fstati64
-#	define STRUCT_STAT struct _stati64
 #	define SYNC _flushall
 #else
 #	define LSTAT lstat
@@ -77,15 +73,6 @@
 #define S_ISFIFO(mode)        (((mode) & S_IFMT) == S_IFIFO)
 #endif
 
-#if defined(MS_WIN64) || defined(MS_WIN32)
-#define S_ISSOCK(mode) (0)
-#define S_ISFIFO(mode) (0)
-#define S_ISLNK(mode) (0)
-#define S_ISLNK(mode) (0)
-#define S_ISCHR(mode) (0)
-#define S_ISBLK(mode) (0)
-#endif
-
 static PyObject *UnknownFileTypeError;
 static PyObject *c_make_file_dict(PyObject *self, PyObject *args);
 static PyObject *long2str(PyObject *self, PyObject *args);
@@ -98,6 +85,10 @@ static PyObject *c_make_file_dict(self, args)
 	 PyObject *self;
 	 PyObject *args;
 {
+#if defined(MS_WINDOWS)
+	PyErr_SetString(PyExc_AttributeError, "This function is not implemented on Windows.");
+	return NULL;
+#else
   PyObject *size, *inode, *mtime, *atime, *ctime, *devloc, *return_val;
   char *filename, filetype[5];
   STRUCT_STAT sbuf;
@@ -118,10 +109,7 @@ static PyObject *c_make_file_dict(self, args)
 	  return NULL;
 	}
   }
-#if defined(MS_WINDOWS)
-  size = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_size);
-  inode = PyLong_FromLongLong((PY_LONG_LONG)-1);
-#else
+
 #ifdef HAVE_LARGEFILE_SUPPORT
   size = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_size);
   inode = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_ino);
@@ -129,10 +117,9 @@ static PyObject *c_make_file_dict(self, args)
   size = PyInt_FromLong(sbuf.st_size);
   inode = PyInt_FromLong((long)sbuf.st_ino);
 #endif /* HAVE_LARGEFILE_SUPPORT */
-#endif /* defined(MS_WINDOWS) */
   mode = (long)sbuf.st_mode;
   perms = mode & 07777;
-#if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
+#if defined(HAVE_LONG_LONG)
   devloc = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_dev);
 #else
   devloc = PyInt_FromLong((long)sbuf.st_dev);
@@ -189,7 +176,7 @@ static PyObject *c_make_file_dict(self, args)
   } else if (S_ISCHR(mode) || S_ISBLK(mode)) {
 	/* Device files */
 	char devtype[2];
-#if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
+#if defined(HAVE_LONG_LONG)
 	PY_LONG_LONG devnums = (PY_LONG_LONG)sbuf.st_rdev;
 	PyObject *major_num = PyLong_FromLongLong(major(devnums));
 #else
@@ -223,6 +210,7 @@ static PyObject *c_make_file_dict(self, args)
   Py_DECREF(atime);
   Py_DECREF(ctime);
   return return_val;
+#endif /* defined(MS_WINDOWS) */
 }
 
 /* Convert python long into 7 byte string */
