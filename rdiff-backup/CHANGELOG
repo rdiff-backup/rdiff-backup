@@ -1,4 +1,4 @@
-New in v1.1.17 (????/??/??)
+New in v1.1.17 (2008/07/17)
 ---------------------------
 
 Move make_file_dict_python so that it is run on the remote end instead of
