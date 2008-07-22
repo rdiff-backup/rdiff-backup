@@ -150,7 +150,11 @@ def EA2Record(ea):
 		if not val: str_list.append(name)
 		else:
 			encoded_val = base64.encodestring(val).replace('\n', '')
-			str_list.append('%s=0s%s' % (C.acl_quote(name), encoded_val))
+			try:
+				str_list.append('%s=0s%s' % (C.acl_quote(name), encoded_val))
+			except UnicodeEncodeError:
+				log.Log("Warning: unable to store Unicode extended attribute %s"
+							% repr(name), 3)
 	return '\n'.join(str_list)+'\n'
 
 def Record2EA(record):
