@@ -273,9 +273,14 @@ def make_file_dict(filename):
 	(incomplete) rpath object.
 	"""
 	if os.name != 'nt':
-		return C.make_file_dict(filename)
-	else:
-		return make_file_dict_python(filename)
+		try:
+			return C.make_file_dict(filename)
+		except OSError, error:
+			# Unicode filenames should be process by the Python version 
+			if error.errno != errno.EILSEQ and error.errno != errno.EINVAL:
+				raise
+
+	return make_file_dict_python(filename)
 
 def make_file_dict_python(filename):
 	"""Create the data dictionary using a Python call to os.lstat

@@ -1,6 +1,9 @@
 New in v1.1.18 (????/??/??)
 ---------------------------
 
+Fall back on the Python make_file_dict function when the filename contains
+non-ASCII characters. (Andrew Ferguson)
+
 Ignore Extended Attributes which have Unicode characters outside the current
 system representation. These will be correctly handled when rdiff-backup
 switches to Python 3, which will have full Unicode support. (Andrew Ferguson)
