@@ -1,4 +1,4 @@
-New in v1.1.18 (????/??/??)
+New in v1.2.0 (2008/07/27)
 ---------------------------
 
 Fall back on the Python make_file_dict function when the filename contains
