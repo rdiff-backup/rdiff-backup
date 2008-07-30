@@ -344,8 +344,12 @@ class CacheIndexable:
 		self.cache_dict[next_index] = next_elem
 		self.cache_indicies.append(next_index)
 
-		if len(self.cache_indicies) > self.cache_size: 
-			del self.cache_dict[self.cache_indicies[0]]
+		if len(self.cache_indicies) > self.cache_size:
+			try:
+				del self.cache_dict[self.cache_indicies[0]]
+			except KeyError:
+				log.Log("Warning: index %s missing from iterator cache" %
+					(first_index,),2)
 			del self.cache_indicies[0]
 
 		return next_elem
