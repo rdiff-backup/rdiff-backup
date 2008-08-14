@@ -349,7 +349,7 @@ class CacheIndexable:
 				del self.cache_dict[self.cache_indicies[0]]
 			except KeyError:
 				log.Log("Warning: index %s missing from iterator cache" %
-					(first_index,),2)
+					(self.cache_indicies[0],), 2)
 			del self.cache_indicies[0]
 
 		return next_elem
