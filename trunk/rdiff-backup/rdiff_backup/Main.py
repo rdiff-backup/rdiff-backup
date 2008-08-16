@@ -301,7 +301,7 @@ def error_check_Main(arglist):
 	"""Run Main on arglist, suppressing stack trace for routine errors"""
 	try: Main(arglist)
 	except SystemExit: raise
-	except Exception, exc:
+	except (Exception, KeyboardInterrupt), exc:
 		errmsg = robust.is_routine_fatal(exc)
 		if errmsg:
 			Log.exception(2, 6)

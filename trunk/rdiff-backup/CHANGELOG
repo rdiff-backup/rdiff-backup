@@ -1,6 +1,8 @@
 New in v1.2.1 (????/??/??)
 ---------------------------
 
+Properly catch KeyboardInterrupt on Python 2.5. (Andrew Ferguson)
+
 Don't crash if a CacheIndexable tries to clear a non-existent cache entry,
 since the entry must already be cleared. (Andrew Ferguson)
 
