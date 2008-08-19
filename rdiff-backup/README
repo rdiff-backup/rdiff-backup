@@ -39,7 +39,8 @@ Remember that you must have Python 2.2 or later and librsync 0.9.7 or
 later installed.  For Python, see http://www.python.org.  The
 rdiff-backup homepage at http://rdiff-backup.nongnu.org/ should
 have a recent version of librsync; otherwise see the librsync homepage
-at http://librsync.sourceforge.net/.
+at http://librsync.sourceforge.net/. On Windows, you must have the
+Python for Windows extensions installed: http://pywin32.sourceforge.net/
 
 For remote operation, rdiff-backup should be installed and in the
 PATH on remote system(s) (see man page for more information).
