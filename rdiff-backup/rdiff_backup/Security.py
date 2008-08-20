@@ -141,7 +141,7 @@ def set_allowed_requests(sec_level):
 				  "log.Log.log_to_file", "os.getuid", "Time.setcurtime_local",
 				  "rpath.gzip_open_local_read", "rpath.open_local_read",
 				  "Hardlink.initialize_dictionaries", "user_group.uid2uname",
-				  "user_group.gid2gname"])
+				  "user_group.gid2gname", "Main.get_os_name"])
 	if sec_level == "read-only" or sec_level == "all":
 		l.extend(["fs_abilities.get_readonly_fsa",
 				  "restore.MirrorStruct.get_increment_times",
