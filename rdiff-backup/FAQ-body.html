@@ -63,9 +63,9 @@ recommended that you upgrade the older version before reporting any issues.</p>
 
 </li>
 <li><strong><a name="windows">Does rdiff-backup run under Windows?</a></strong>
-<p>Yes, although it is not a heavily tested configuration. Using the latest releases, such as
-1.1.12 and beyond, rdiff-backup runs quite well under Cygwin. Dave Kempe has also made some .exe versions <a href="http://solutionsfirst.com.au/~dave/backup/">available for download</a>.</p>
-<p>The setup under Cygwin is the same as under other Unix-like operating systems. From the Cygwin installer you will need Python 2.2 or higher (under Interpreters), autoconf, automake, binutils, gcc, make, and patchutils (all under Devel). Then you will need to compile and install librsync, which can be downloaded <a href="https://sourceforge.net/project/showfiles.php?group_id=56125">from Sourceforge</a>. Finally, you can compile and install rdiff-backup using the usual instructions.</p>
+<p>Yes, although it is not a heavily tested configuration. Rdiff-backup can be run as a native Windows application or under Cygwin. To run as a native Windows application, simply download the provided .exe binary. To setup remote operation, you will also need an SSH client, such as <a href="http://www.chiark.greenend.org.uk/~sgtatham/putty/">Putty</a> or <a href="http://www.ssh.com">SSH Secure Shell</a>. See the Wiki for more details on <a href="http://wiki.rdiff-backup.org/wiki/index.php/BackupFromWindowsToLinux">remote operation under native Windows</a>. Dave Kempe has also made some older .exe versions <a href="http://solutionsfirst.com.au/~dave/backup/">available for download</a>.</p>
+
+<p>If you wish to run rdiff-backup under Cygwin, use at least version 1.1.12. The setup under Cygwin is the same as under other Unix-like operating systems. From the Cygwin installer you will need Python 2.2 or higher (under Interpreters), autoconf, automake, binutils, gcc, make, and patchutils (all under Devel). Then you will need to compile and install librsync, which can be downloaded <a href="https://sourceforge.net/project/showfiles.php?group_id=56125">from Sourceforge</a>. Finally, you can compile and install rdiff-backup using the usual instructions.</p>
 <p>Although some Windows filesystems lack features like FIFOs, case
 sensitive filenames, or files with colons (":") in them, all of these situations should
 be autodetected and compensated for by rdiff-backup.</p>
