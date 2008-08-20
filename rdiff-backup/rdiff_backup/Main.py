@@ -827,7 +827,3 @@ def checkdest_if_necessary(dest_rp):
 		Log("Previous backup seems to have failed, regressing "
 			"destination now.", 2)
 		dest_rp.conn.regress.Regress(dest_rp)
-
-def get_os_name():
-	"""Created as a function so that it can be called remotely."""
-	return os.name

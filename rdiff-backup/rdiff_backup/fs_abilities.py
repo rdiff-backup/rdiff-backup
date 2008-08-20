@@ -519,6 +519,10 @@ def get_readonly_fsa(desc_string, rp):
 	the security module.
 
 	"""
+	if os.name == 'nt' and (desc_string == 'source' or
+			desc_string == 'rdiff-backup repository'):
+		log.Log("Hardlinks disabled by default on Windows", 4)
+		Globals.set('preserve_hardlinks', 0)
 	return FSAbilities(desc_string).init_readonly(rp)
 
 class SetGlobals:
@@ -776,9 +780,6 @@ def backup_set_globals(rpin, force):
 
 	"""
 	assert Globals.rbdir.conn is Globals.local_connection
-	if rpin.conn.Main.get_os_name() == "nt":
-		log.Log("Hardlinks disabled by default on Windows", 4)
-		Globals.set('preserve_hardlinks', 0)
 	src_fsa = rpin.conn.fs_abilities.get_readonly_fsa('source', rpin)
 	log.Log(str(src_fsa), 4)
 	dest_fsa = FSAbilities('destination').init_readwrite(Globals.rbdir)
@@ -806,9 +807,6 @@ def backup_set_globals(rpin, force):
 def restore_set_globals(rpout):
 	"""Set fsa related globals for restore session, given in/out rps"""
 	assert rpout.conn is Globals.local_connection
-	if rpout.conn.Main.get_os_name() == "nt":
-		log.Log("Hardlinks disabled by default on Windows", 4)
-		Globals.set('preserve_hardlinks', 0)
 	src_fsa = Globals.rbdir.conn.fs_abilities.get_readonly_fsa(
 		                  'rdiff-backup repository', Globals.rbdir)
 	log.Log(str(src_fsa), 4)
