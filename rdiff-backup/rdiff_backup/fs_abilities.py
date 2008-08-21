@@ -269,14 +269,14 @@ class FSAbilities:
 		try: import posix1e
 		except ImportError:
 			log.Log("Unable to import module posix1e from pylibacl "
-					"package.\nACLs not supported on filesystem at %s" %
+					"package.\nPOSIX ACLs not supported on filesystem at %s" %
 					(rp.path,), 4)
 			self.acls = 0
 			return
 
 		try: posix1e.ACL(file=rp.path)
 		except IOError:
-			log.Log("ACLs not supported by filesystem at %s" % (rp.path,), 4)
+			log.Log("POSIX ACLs not supported by filesystem at %s" % (rp.path,), 4)
 			self.acls = 0
 		else: self.acls = 1
 
