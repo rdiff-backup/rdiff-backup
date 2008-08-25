@@ -99,7 +99,7 @@ def MakeTar(specfiles):
 		shutil.rmtree(tardir)
 	except OSError: pass
 	os.mkdir(tardir)
-	for filename in ["CHANGELOG", "COPYING", "README",
+	for filename in ["CHANGELOG", "COPYING", "README", "Windows-README.txt",
 					 "FAQ.html", "examples.html",
 					 SourceDir + "/cmodule.c",
 					 SourceDir + "/_librsyncmodule.c",
