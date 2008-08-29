@@ -269,14 +269,14 @@ class FSAbilities:
 		try: import posix1e
 		except ImportError:
 			log.Log("Unable to import module posix1e from pylibacl "
-					"package.\nACLs not supported on filesystem at %s" %
+					"package.\nPOSIX ACLs not supported on filesystem at %s" %
 					(rp.path,), 4)
 			self.acls = 0
 			return
 
 		try: posix1e.ACL(file=rp.path)
 		except IOError:
-			log.Log("ACLs not supported by filesystem at %s" % (rp.path,), 4)
+			log.Log("POSIX ACLs not supported by filesystem at %s" % (rp.path,), 4)
 			self.acls = 0
 		else: self.acls = 1
 
@@ -519,6 +519,10 @@ def get_readonly_fsa(desc_string, rp):
 	the security module.
 
 	"""
+	if os.name == 'nt' and (desc_string == 'source' or
+			desc_string == 'rdiff-backup repository'):
+		log.Log("Hardlinks disabled by default on Windows", 4)
+		Globals.set('preserve_hardlinks', 0)
 	return FSAbilities(desc_string).init_readonly(rp)
 
 class SetGlobals:
