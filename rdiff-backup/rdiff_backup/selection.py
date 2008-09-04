@@ -478,7 +478,9 @@ probably isn't what you meant.""" %
 		assert include == 0 or include == 1
 
 		def sel_func(rp):
-			if rp.isdir() and rp.readable() and rp.append(presence_filename).isreg(): return include
+			if rp.isdir() and rp.readable() and \
+					rp.append(presence_filename).lstat():
+				return include
 			return None
 
 		sel_func.exclude = not include

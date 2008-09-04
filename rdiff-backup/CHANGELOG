@@ -1,6 +1,8 @@
 New in v1.2.2 (????/??/??)
 ---------------------------
 
+Adjust --exclude-if-present option to support directories, symlinks, device
+files, etc. Closes bug #24192. Thanks to Vadim Zeitlin for the suggestion.
 
 
 New in v1.2.1 (2008/08/24)
