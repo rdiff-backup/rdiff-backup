@@ -368,6 +368,8 @@ class PipeConnection(LowLevelPipeConnection):
 		result = self.get_response(req_num)
 		self.unused_request_numbers[req_num] = None
 		if isinstance(result, Exception): raise result
+		elif isinstance(result, SystemExit): raise result
+		elif isinstance(result, KeyboardInterrupt): raise result
 		else: return result
 
 	def get_new_req_num(self):
