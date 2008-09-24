@@ -1,6 +1,10 @@
 New in v1.2.2 (????/??/??)
 ---------------------------
 
+Improve support for Python 2.5, which refactored the built-in exceptions so
+that SystemExit and KeyboardInterrupt no longer derive from Exception.
+Closes support request #106504. (Andrew Ferguson)
+
 Adjust --exclude-if-present option to support directories, symlinks, device
 files, etc. Closes bug #24192. Thanks to Vadim Zeitlin for the suggestion.
 
