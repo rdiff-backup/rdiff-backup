@@ -1,6 +1,9 @@
 New in v1.2.2 (????/??/??)
 ---------------------------
 
+Properly fix "AttributeError: RPath instance has no attribute 'inc_compressed'"
+bug. Fix in 1.1.12 was in correct place, but wrong solution. (Andrew Ferguson)
+
 Improve support for Python 2.5, which refactored the built-in exceptions so
 that SystemExit and KeyboardInterrupt no longer derive from Exception.
 Closes support request #106504. (Andrew Ferguson)
