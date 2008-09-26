@@ -1,6 +1,9 @@
 New in v1.2.2 (????/??/??)
 ---------------------------
 
+On Mac OS X, read the com.apple.FinderInfo extended attribute since it is the
+only storage location for the 'busy' (Z) Finder attribute. (Andrew Ferguson)
+
 Properly fix "AttributeError: RPath instance has no attribute 'inc_compressed'"
 bug. Fix in 1.1.12 was in correct place, but wrong solution. (Andrew Ferguson)
 
