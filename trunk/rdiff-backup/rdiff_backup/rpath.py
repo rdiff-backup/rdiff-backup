@@ -1455,6 +1455,10 @@ def setdata_local(rpath):
 
 def carbonfile_get(rpath):
 	"""Return carbonfile value for local rpath"""
+	# Note, after we drop support for Mac OS X 10.0 - 10.3, it will no longer
+	# be necessary to read the finderinfo struct since it is a strict subset
+	# of the data stored in the com.apple.FinderInfo extended attribute
+	# introduced in 10.4. Indeed, FSpGetFInfo() is deprecated on 10.4.
 	from Carbon.File import FSSpec
 	from Carbon.File import FSRef
 	import Carbon.Files
