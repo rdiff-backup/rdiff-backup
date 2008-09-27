@@ -198,8 +198,8 @@ def copy_attribs_inc(rpin, rpout):
 	log.Log("Copying inc attrs from %s to %s" % (rpin.index, rpout.path), 7)
 	check_for_files(rpin, rpout)
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
-	if rpin.issym(): return # symlinks don't have times or perms
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
+	if rpin.issym(): return # symlinks don't have times or perms
 	if (Globals.resource_forks_write and rpin.isreg() and
 		rpin.has_resource_fork() and rpout.isreg()):
 		rpout.write_resource_fork(rpin.get_resource_fork())
