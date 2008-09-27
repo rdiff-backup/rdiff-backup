@@ -56,7 +56,7 @@ class ExtendedAttributes:
 
 	def read_from_rp(self, rp):
 		"""Set the extended attributes from an rpath"""
-		try: attr_list = rp.conn.xattr.listxattr(rp.path)
+		try: attr_list = rp.conn.xattr.listxattr(rp.path, rp.issym())
 		except IOError, exc:
 			if exc[0] in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
 				return # if not supported, consider empty
@@ -71,7 +71,7 @@ class ExtendedAttributes:
 			if not rp.isdir() and attr == 'com.apple.ResourceFork':
 				# Resource Fork handled elsewhere, except for directories
 				continue
-			try: self.attr_dict[attr] = rp.conn.xattr.getxattr(rp.path, attr)
+			try: self.attr_dict[attr] = rp.conn.xattr.getxattr(rp.path, attr, rp.issym())
 			except IOError, exc:
 				# File probably modified while reading, just continue
 				if exc[0] == errno.ENODATA: continue
@@ -81,9 +81,9 @@ class ExtendedAttributes:
 	def clear_rp(self, rp):
 		"""Delete all the extended attributes in rpath"""
 		try:
-			for name in rp.conn.xattr.listxattr(rp.path):
+			for name in rp.conn.xattr.listxattr(rp.path, rp.issym()):
 				try:
-					rp.conn.xattr.removexattr(rp.path, name)
+					rp.conn.xattr.removexattr(rp.path, name, rp.issym())
 				except IOError, exc:
 					# SELinux attributes cannot be removed, and we don't want
 					# to bail out or be too noisy at low log levels.
@@ -106,7 +106,7 @@ class ExtendedAttributes:
 		self.clear_rp(rp)
 		for (name, value) in self.attr_dict.iteritems():
 			try:
-				rp.conn.xattr.setxattr(rp.path, name, value)
+				rp.conn.xattr.setxattr(rp.path, name, value, 0, rp.issym())
 			except IOError, exc:
 				# Mac and Linux attributes have different namespaces, so
 				# fail gracefully if can't call setxattr
@@ -580,7 +580,7 @@ def rpath_ea_get(rp):
 
 	"""
 	ea = ExtendedAttributes(rp.index)
-	if not rp.issym() and not rp.issock() and not rp.isfifo():
+	if not rp.issock() and not rp.isfifo():
 		ea.read_from_rp(rp)
 	return ea
 rpath.ea_get = rpath_ea_get

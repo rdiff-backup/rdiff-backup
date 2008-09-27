@@ -174,8 +174,8 @@ def copy_attribs(rpin, rpout):
 	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
 	if Globals.change_ownership:
 		rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
-	if rpin.issym(): return # symlinks don't have times or perms
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
+	if rpin.issym(): return # symlinks don't have times or perms
 	if (Globals.resource_forks_write and rpin.isreg() and
 		rpin.has_resource_fork()):
 		rpout.write_resource_fork(rpin.get_resource_fork())
