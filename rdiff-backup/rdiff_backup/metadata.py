@@ -379,7 +379,7 @@ class FlatFile:
 			self.fileobj = self.rp.open("rb", compress)
 		else:
 			assert mode == 'w'
-			if compress and check_path and not rp_base.isinccompressed()):
+			if compress and check_path and not rp_base.isinccompressed():
 				def callback(rp): self.rp = rp
 				self.fileobj = rpath.MaybeGzip(rp_base, callback)
 			else:
