@@ -1,6 +1,8 @@
 New in v1.2.2 (????/??/??)
 ---------------------------
 
+Support extended attributes on symbolic links. (Andrew Ferguson)
+
 On Mac OS X, read the com.apple.FinderInfo extended attribute since it is the
 only storage location for the 'busy' (Z) Finder attribute. (Andrew Ferguson)
 
