@@ -1,6 +1,9 @@
 New in v1.2.2 (????/??/??)
 ---------------------------
 
+Improve handling of Windows ACLs by switching to API functions which
+understand inherited ACEs; fixes support for Windows 2000. (Andrew Ferguson)
+
 Support extended attributes on symbolic links. (Andrew Ferguson)
 
 On Mac OS X, read the com.apple.FinderInfo extended attribute since it is the

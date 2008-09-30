@@ -40,7 +40,7 @@ class ACL:
 	def load_from_rp(self, rp, skip_inherit_only = True):
 		self.index = rp.index
 		try:
-			sd = rp.conn.win32security.GetFileSecurity(rp.path, ACL.flags)
+			sd = rp.conn.win32security.GetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags)
 		except:
 			return
 
@@ -69,6 +69,11 @@ class ACL:
 							acl.DeleteAce(n)
 					sd.SetSecurityDescriptorSacl(1, acl, 0)
 
+		if not sd.GetSecurityDescriptorDacl():
+			sd.SetSecurityDescriptorDacl(0, None, 0)
+		if not sd.GetSecurityDescriptorSacl():
+			sd.SetSecurityDescriptorSacl(0, None, 0)
+
 		self.__acl = \
 			rp.conn.win32security.ConvertSecurityDescriptorToStringSecurityDescriptor(sd,
 					SDDL_REVISION_1, ACL.flags)
@@ -76,7 +81,7 @@ class ACL:
 	def clear_rp(self, rp):
 		# not sure how to interpret this
 		# I'll jus clear all acl-s from rp.path
-		sd = rp.conn.win32security.GetFileSecurity(rp.path, ACL.flags)
+		sd = rp.conn.win32security.GetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags)
 
 		acl = sd.GetSecurityDescriptorDacl()
 		if acl:
@@ -85,7 +90,7 @@ class ACL:
 			while n:
 				n -= 1
 				acl.DeleteAce(n)
-			sd.SetSecurityDescriptorDacl(1, acl, 0)
+			sd.SetSecurityDescriptorDacl(0, acl, 0)
 
 		if ACL.flags & SACL_SECURITY_INFORMATION:
 			acl = sd.GetSecurityDescriptorSacl()
@@ -95,15 +100,44 @@ class ACL:
 				while n:
 					n -= 1
 					acl.DeleteAce(n)
-				sd.SetSecurityDescriptorSacl(1, acl, 0)
+				sd.SetSecurityDescriptorSacl(0, acl, 0)
 
-		SetFileSecurity(rp.path, ACL.flags, sd)
+		rp.conn.win32security.SetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags,
+			sd.GetSecurityDescriptorOwner(), sd.GetSecurityDescriptorGroup(),
+			sd.GetSecurityDescriptorDacl(), sd.GetSecurityDescriptorSacl())
 
 	def write_to_rp(self, rp):
 		if self.__acl:
 			sd = rp.conn.win32security.ConvertStringSecurityDescriptorToSecurityDescriptor(self.__acl,
 						SDDL_REVISION_1)
-			rp.conn.win32security.SetFileSecurity(rp.path, ACL.flags, sd)
+
+			# Enable the next block of code for dirs after we have a mechanism in
+			# backup.py (and similar) to do a first pass to see if a directory
+			# has SE_DACL_PROTECTED. In that case, we will need to
+			#		1) dest_rorp.write_win_acl(source_rorp.get_win_acl())
+			#				--> And clear the existing dest_rorp one while doing so
+			#		2) Check if backup user has Admin privs to write to dest_rorp
+			#		3) If not, add Admin write privs to dest_rorp and add dir
+			#				to dir_perms_list-equivalent
+			#		4) THEN, allow the pre_process() function to finish and the
+			#				files be copied over. Those files which wish to
+			#				will now inherit the correct ACE objects.
+			#		5) If dir was on dir_perms_list-equivalent, drop the write
+			#				write permission we added.
+			#		6) When copy_attribs is called in end_process, make sure
+			#				that the write_win_acl() call isn't made this time
+			# The reason we will need to do this is because otherwise, the files
+			# which are created during step 4 will reference the ACE entries
+			# which we clear during step 6. We need to clear them *before* the
+			# children files/subdirs are created and generate the appropriate
+			# DACL so the inheritance magic can happen during step 4.
+			(flags, revision) = sd.GetSecurityDescriptorControl()
+			if (not rp.isdir() and flags & SE_DACL_PROTECTED):
+				self.clear_rp(rp)
+			
+			rp.conn.win32security.SetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags,
+				sd.GetSecurityDescriptorOwner(), sd.GetSecurityDescriptorGroup(),
+				sd.GetSecurityDescriptorDacl(), sd.GetSecurityDescriptorSacl())
 
 	def __str__(self):
 		return '# file: %s\n%s\n' % \
