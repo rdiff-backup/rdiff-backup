@@ -122,7 +122,7 @@ class FSAbilities:
 		self.read_only = 1
 		self.set_eas(rp, 0)
 		self.set_acls(rp)
-		self.set_win_acls(rp)
+		self.set_win_acls(rp, 0)
 		self.set_resource_fork_readonly(rp)
 		self.set_carbonfile()
 		self.set_case_sensitive_readonly(rp)
@@ -154,7 +154,7 @@ class FSAbilities:
 		self.set_fsync_dirs(subdir)
 		self.set_eas(subdir, 1)
 		self.set_acls(subdir)
-		self.set_win_acls(subdir)
+		self.set_win_acls(subdir, 1)
 		self.set_dir_inc_perms(subdir)
 		self.set_resource_fork_readwrite(subdir)
 		self.set_carbonfile()
@@ -368,27 +368,53 @@ class FSAbilities:
 			self.eas = 0
 		except AssertionError:
 			log.Log("Extended attributes support is broken on filesystem at "
-					"%s. Please upgrade the filesystem driver, contact the "
-					"developers, or use the --no-eas option to disable "
-					"extended attributes support and suppress this message."
+					"%s.\nPlease upgrade the filesystem driver, contact the "
+					"developers,\nor use the --no-eas option to disable "
+					"extended attributes\nsupport and suppress this message."
 					% (rp.path,), 1)
 			self.eas = 0
 		else: self.eas = 1
 
-	def set_win_acls(self, dir_rp):
+	def set_win_acls(self, dir_rp, write):
 		"""Test if windows access control lists are supported"""
+		assert Globals.local_connection is dir_rp.conn
+		assert dir_rp.lstat()
 		try:
-			import win32security
+			import win32security, pywintypes
 		except ImportError:
 			log.Log("Unable to import win32security module. Windows ACLs\n"
 					"not supported by filesystem at %s" % dir_rp.path, 4)
 			self.win_acls = 0
 			return
 		try:
+			sd = win32security.GetNamedSecurityInfo(dir_rp.path,
+						win32security.SE_FILE_OBJECT,
+						win32security.OWNER_SECURITY_INFORMATION | 
+						win32security.GROUP_SECURITY_INFORMATION | 
+						win32security.DACL_SECURITY_INFORMATION)
+			acl = sd.GetSecurityDescriptorDacl()
+			n = acl.GetAceCount()
+			if write:
+				win32security.SetNamedSecurityInfo(dir_rp.path,
+						win32security.SE_FILE_OBJECT,
+						win32security.OWNER_SECURITY_INFORMATION | 
+						win32security.GROUP_SECURITY_INFORMATION | 
+						win32security.DACL_SECURITY_INFORMATION,
+						sd.GetSecurityDescriptorOwner(),
+						sd.GetSecurityDescriptorGroup(),
+						sd.GetSecurityDescriptorDacl(),
+						None)
+		except (OSError, AttributeError, pywintypes.error):
+			log.Log("Unable to load a Windows ACL.\nWindows ACLs not supported "
+					"by filesystem at %s" % dir_rp.path, 4)
+			self.win_acls = 0
+			return
+		
+		try:
 			win_acls.init_acls()
-		except OSError:
-			log.Log("Windows ACLs not supported by filesystem\n"
-					"at %s" % dir_rp.path, 4)
+		except (OSError, AttributeError, pywintypes.error):
+			log.Log("Unable to init win_acls.\nWindows ACLs not supported by "
+					"filesystem at %s" % dir_rp.path, 4)
 			self.win_acls = 0
 			return
 		self.win_acls = 1
@@ -414,7 +440,7 @@ class FSAbilities:
 		try:
 			import Carbon.File
 			import MacOS
-		except:
+		except (ImportError, AttributeError):
 			self.carbonfile = 0
 			return
 

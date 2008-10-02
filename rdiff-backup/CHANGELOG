@@ -1,6 +1,10 @@
 New in v1.2.2 (????/??/??)
 ---------------------------
 
+Add error handling and logging to Windows ACL support; fixes Windows backup to
+SMB share. Improve test in fs_abilities to determine if Windows ACLs are
+supported. (Andrew Ferguson)
+
 Add a warning message if extended attributes support is broken by the
 filesystem (such as with older EncFS versions). (Andrew Ferguson)
 
