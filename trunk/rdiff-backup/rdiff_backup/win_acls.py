@@ -17,11 +17,12 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 
-import C, metadata, re, rorpiter, rpath
+import C, metadata, re, rorpiter, rpath, log
 
 try:
 	from win32security import *
-except:
+	import pywintypes
+except ImportError:
 	GROUP_SECURITY_INFORMATION = 0
 	OWNER_SECURITY_INFORMATION = 0
 	DACL_SECURITY_INFORMATION = 0
@@ -40,8 +41,11 @@ class ACL:
 	def load_from_rp(self, rp, skip_inherit_only = True):
 		self.index = rp.index
 		try:
-			sd = rp.conn.win32security.GetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags)
-		except:
+			sd = rp.conn.win32security. \
+					GetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags)
+		except (OSError, IOError, pywintypes.error), exc:
+			log.Log("Warning: unable to read ACL from %s: %s"
+					% (repr(rp.path), exc), 4)
 			return
 
 		if skip_inherit_only:
@@ -70,18 +74,30 @@ class ACL:
 					sd.SetSecurityDescriptorSacl(1, acl, 0)
 
 		if not sd.GetSecurityDescriptorDacl():
-			sd.SetSecurityDescriptorDacl(0, None, 0)
-		if not sd.GetSecurityDescriptorSacl():
+				sd.SetSecurityDescriptorDacl(0, None, 0)
+		if (ACL.flags & SACL_SECURITY_INFORMATION) and not \
+				sd.GetSecurityDescriptorSacl():
 			sd.SetSecurityDescriptorSacl(0, None, 0)
 
-		self.__acl = \
-			rp.conn.win32security.ConvertSecurityDescriptorToStringSecurityDescriptor(sd,
+		try:
+			self.__acl = \
+				rp.conn.win32security. \
+					ConvertSecurityDescriptorToStringSecurityDescriptor(sd,
 					SDDL_REVISION_1, ACL.flags)
+		except (OSError, IOError, pywintypes.error), exc:
+			log.Log("Warning: unable to convert ACL from %s to string: %s"
+					% (repr(rp.path), exc), 4)
+			self.__acl = ''
 
 	def clear_rp(self, rp):
 		# not sure how to interpret this
-		# I'll jus clear all acl-s from rp.path
-		sd = rp.conn.win32security.GetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags)
+		# I'll just clear all acl-s from rp.path
+		try:
+			sd = rp.conn.win32security. \
+					GetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags)
+		except (OSError, IOError, pywintypes.error), exc:
+			log.Log("Warning: unable to read ACL from %s for clearing: %s"
+					% (repr(rp.path), exc), 4)
 
 		acl = sd.GetSecurityDescriptorDacl()
 		if acl:
@@ -102,42 +118,65 @@ class ACL:
 					acl.DeleteAce(n)
 				sd.SetSecurityDescriptorSacl(0, acl, 0)
 
-		rp.conn.win32security.SetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags,
-			sd.GetSecurityDescriptorOwner(), sd.GetSecurityDescriptorGroup(),
-			sd.GetSecurityDescriptorDacl(), sd.GetSecurityDescriptorSacl())
+		try:
+			rp.conn.win32security. \
+				SetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags,
+				sd.GetSecurityDescriptorOwner(),sd.GetSecurityDescriptorGroup(),
+				sd.GetSecurityDescriptorDacl(),
+				(ACL.flags & SACL_SECURITY_INFORMATION) and 
+					sd.GetSecurityDescriptorSacl() or None)
+		except (OSError, IOError, pywintypes.error), exc:
+			log.Log("Warning: unable to set ACL on %s after clearing: %s"
+					% (repr(rp.path), exc), 4)
 
 	def write_to_rp(self, rp):
-		if self.__acl:
-			sd = rp.conn.win32security.ConvertStringSecurityDescriptorToSecurityDescriptor(self.__acl,
-						SDDL_REVISION_1)
+		if not self.__acl:
+			return
 
-			# Enable the next block of code for dirs after we have a mechanism in
-			# backup.py (and similar) to do a first pass to see if a directory
-			# has SE_DACL_PROTECTED. In that case, we will need to
-			#		1) dest_rorp.write_win_acl(source_rorp.get_win_acl())
-			#				--> And clear the existing dest_rorp one while doing so
-			#		2) Check if backup user has Admin privs to write to dest_rorp
-			#		3) If not, add Admin write privs to dest_rorp and add dir
-			#				to dir_perms_list-equivalent
-			#		4) THEN, allow the pre_process() function to finish and the
-			#				files be copied over. Those files which wish to
-			#				will now inherit the correct ACE objects.
-			#		5) If dir was on dir_perms_list-equivalent, drop the write
-			#				write permission we added.
-			#		6) When copy_attribs is called in end_process, make sure
-			#				that the write_win_acl() call isn't made this time
-			# The reason we will need to do this is because otherwise, the files
-			# which are created during step 4 will reference the ACE entries
-			# which we clear during step 6. We need to clear them *before* the
-			# children files/subdirs are created and generate the appropriate
-			# DACL so the inheritance magic can happen during step 4.
-			(flags, revision) = sd.GetSecurityDescriptorControl()
-			if (not rp.isdir() and flags & SE_DACL_PROTECTED):
-				self.clear_rp(rp)
-			
-			rp.conn.win32security.SetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags,
-				sd.GetSecurityDescriptorOwner(), sd.GetSecurityDescriptorGroup(),
-				sd.GetSecurityDescriptorDacl(), sd.GetSecurityDescriptorSacl())
+		try:
+			sd = rp.conn.win32security. \
+				ConvertStringSecurityDescriptorToSecurityDescriptor(
+					self.__acl, SDDL_REVISION_1)
+		except (OSError, IOError, pywintypes.error), exc:
+			log.Log("Warning: unable to convert string %s to ACL: %s"
+				% (repr(self.__acl), exc), 4)
+
+		# Enable next block of code for dirs after we have a mechanism in
+		# backup.py (and similar) to do a first pass to see if a directory
+		# has SE_DACL_PROTECTED. In that case, we will need to
+		#		1) dest_rorp.write_win_acl(source_rorp.get_win_acl())
+		#				--> And clear existing dest_rorp one while doing so
+		#		2) Check if backup user has Admin privs to write dest_rorp
+		#				--> May need to use Win32 AccessCheck() API
+		#		3) If not, add Admin write privs to dest_rorp and add dir
+		#				to dir_perms_list-equivalent
+		#		4) THEN, allow the pre_process() function to finish and the
+		#				files be copied over. Those files which wish to
+		#				will now inherit the correct ACE objects.
+		#		5) If dir was on dir_perms_list-equivalent, drop the write
+		#				write permission we added.
+		#		6) When copy_attribs is called in end_process, make sure
+		#				that the write_win_acl() call isn't made this time
+		# The reason we will need to do this is because otherwise, the files
+		# which are created during step 4 will reference the ACE entries
+		# which we clear during step 6. We need to clear them *before* the
+		# children files/subdirs are created and generate the appropriate
+		# DACL so the inheritance magic can happen during step 4.
+
+		(flags, revision) = sd.GetSecurityDescriptorControl()
+		if (not rp.isdir() and flags & SE_DACL_PROTECTED):
+			self.clear_rp(rp)
+
+		try:
+			rp.conn.win32security. \
+				SetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags,
+				sd.GetSecurityDescriptorOwner(),sd.GetSecurityDescriptorGroup(),
+				sd.GetSecurityDescriptorDacl(),
+				(ACL.flags & SACL_SECURITY_INFORMATION) and 
+					sd.GetSecurityDescriptorSacl() or None)
+		except (OSError, IOError, pywintypes.error), exc:
+			log.Log("Warning: unable to set ACL on %s: %s"
+					% (repr(rp.path), exc), 4)
 
 	def __str__(self):
 		return '# file: %s\n%s\n' % \
@@ -208,20 +247,24 @@ def init_acls():
 	import win32api
 	try:
 		hnd = OpenProcessToken(win32api.GetCurrentProcess(),
-			TOKEN_ADJUST_PRIVILEGES| TOKEN_QUERY)
-	except win32api.error:
+			TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY)
+	except win32api.error, exc:
+		log.Log("Warning: unable to open Windows process token: %s"
+				% exc, 5)
 		return
 	try:
 		try:
 			lpv = lambda priv: LookupPrivilegeValue(None, priv)
-			# enable the SE_*_NAME priveleges
+			# enable the SE_*_NAME privileges 
 			SecurityName = lpv(SE_SECURITY_NAME)
 			AdjustTokenPrivileges(hnd, False, [
 				(SecurityName, SE_PRIVILEGE_ENABLED),
 				(lpv(SE_BACKUP_NAME), SE_PRIVILEGE_ENABLED),
 				(lpv(SE_RESTORE_NAME), SE_PRIVILEGE_ENABLED)
 				])
-		except win32api.error:
+		except win32api.error, exc:
+			log.Log("Warning: unable to enable SE_*_NAME privileges: %s"
+				% exc, 5)
 			return
 		for name, enabled in GetTokenInformation(hnd, TokenPrivileges):
 			if name == SecurityName and enabled:
@@ -230,4 +273,3 @@ def init_acls():
 				break
 	finally:
 		win32api.CloseHandle(hnd)
-
