@@ -366,6 +366,13 @@ class FSAbilities:
 			log.Log("Extended attributes not supported by "
 					"filesystem at %s" % (rp.path,), 4)
 			self.eas = 0
+		except AssertionError:
+			log.Log("Extended attributes support is broken on filesystem at "
+					"%s. Please upgrade the filesystem driver, contact the "
+					"developers, or use the --no-eas option to disable "
+					"extended attributes support and suppress this message."
+					% (rp.path,), 1)
+			self.eas = 0
 		else: self.eas = 1
 
 	def set_win_acls(self, dir_rp):
