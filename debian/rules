@@ -25,8 +25,9 @@ install: build
 	dh_installdirs
 
 	python setup.py install --prefix=$(CURDIR)/debian/rdiff-backup/usr
-
 	rm -rf debian/rdiff-backup/usr/share/doc/rdiff-backup-*
+
+	install -D -m 0644 debian/config/bash-completion debian/rdiff-backup/etc/bash_completion.d/rdiff-backup
 
 binary: binary-arch
 

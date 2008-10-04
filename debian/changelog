@@ -1,3 +1,10 @@
+rdiff-backup (1.2.1-2) unstable; urgency=low
+
+  * Updating vcs fields in control file.
+  * Adding bash-completion from Andreas Olsson <andreas@arrakis.se>.
+
+ -- Daniel Baumann <daniel@debian.org>  Sat,  4 Oct 2008 10:46:00 +0200
+
 rdiff-backup (1.2.1-1) unstable; urgency=medium
 
   * Merging upstream version 1.2.1.
