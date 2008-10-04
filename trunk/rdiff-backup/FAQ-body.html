@@ -119,7 +119,7 @@ experience one of these common errors:</p>
 	<li>rdiff-backup fails to run, printing an exception about "<code>assert not upper_a.lstat()</code>" failing.
 	This can be resolved by unmounting the share, running the following command as root:<br>
 	<code>$ echo 0 &gt; /proc/fs/cifs/LookupCacheEnabled</code><br>
-	and then remounting the CIFS share.<br><br>
+	and then remounting the CIFS share.<br><br></li>
 	<li>If filenames in the mirror directory have some characters transformed 
 	to a '?' instead of remaining the expected Unicode character, you will 
 	need to adjust the <code>iocharset=</code> mount option. This happens 
@@ -134,7 +134,10 @@ experience one of these common errors:</p>
 	reserved Windows character, try using the <code>mapchars</code> option to
 	the CIFS mount. At least one user has reported success when using this
 	option while mounting a NAS system via CIFS. See the mount.cifs man page
-	for more information.</li>
+	for more information.<br><br></li>
+	<li>Other CIFS mount options which may be helpful include <code>nocase</code>
+	and <code>directio</code>. A user with a DroboShare reported that 
+	<code>-o mapchars,nocase,directio</code> worked for that NAS appliance.</li>
 </ul>
 <p>If you're still having trouble backing up to a CIFS or smbfs mount, try searching the
 <a href="http://lists.gnu.org/archive/html/rdiff-backup-users/">mailing-list archives</a> and then sending
