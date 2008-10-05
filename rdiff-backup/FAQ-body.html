@@ -135,9 +135,11 @@ experience one of these common errors:</p>
 	the CIFS mount. At least one user has reported success when using this
 	option while mounting a NAS system via CIFS. See the mount.cifs man page
 	for more information.<br><br></li>
-	<li>Other CIFS mount options which may be helpful include <code>nocase</code>
-	and <code>directio</code>. A user with a DroboShare reported that 
-	<code>-o mapchars,nocase,directio</code> worked for that NAS appliance.</li>
+	<li>Other CIFS mount options which may be helpful include <code>nocase</code>,
+	<code>directio</code>, and <code>sfu</code>. Also, try changing the value of
+	<code>/proc/fs/cifs/LinuxExtensionsEnabled</code> (requires remount). A user
+	with a DroboShare reported that <code>-o mapchars,nocase,directio</code>
+	worked for that NAS appliance.</li>
 </ul>
 <p>If you're still having trouble backing up to a CIFS or smbfs mount, try searching the
 <a href="http://lists.gnu.org/archive/html/rdiff-backup-users/">mailing-list archives</a> and then sending
