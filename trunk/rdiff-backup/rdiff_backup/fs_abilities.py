@@ -266,6 +266,12 @@ class FSAbilities:
 		"""Set self.acls based on rp.  Does not write.  Needs to be local"""
 		assert Globals.local_connection is rp.conn
 		assert rp.lstat()
+		if Globals.acls_active == 0:
+			log.Log("POSIX ACLs test skipped. rdiff-backup run "
+					"with --no-acls option.", 4)
+			self.acls = 0
+			return
+
 		try: import posix1e
 		except ImportError:
 			log.Log("Unable to import module posix1e from pylibacl "
@@ -379,6 +385,12 @@ class FSAbilities:
 		"""Test if windows access control lists are supported"""
 		assert Globals.local_connection is dir_rp.conn
 		assert dir_rp.lstat()
+		if Globals.win_acls_active == 0:
+			log.Log("Windows ACLs test skipped. rdiff-backup run "
+					"with --no-acls option.", 4)
+			self.win_acls = 0
+			return
+
 		try:
 			import win32security, pywintypes
 		except ImportError:
