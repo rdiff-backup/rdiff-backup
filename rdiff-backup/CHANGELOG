@@ -1,6 +1,9 @@
 New in v1.2.2 (????/??/??)
 ---------------------------
 
+Don't backup Windows ACLs if the --no-acls option is specified. Thanks to
+Richard Metzger for reporting the issue. (Andrew Ferguson)
+
 Add error handling and logging to Windows ACL support; fixes Windows backup to
 SMB share. Improve test in fs_abilities to determine if Windows ACLs are
 supported. (Andrew Ferguson)

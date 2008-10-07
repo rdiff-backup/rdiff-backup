@@ -157,7 +157,9 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--max-file-size": select_opts.append((opt, arg))
 		elif opt == "--min-file-size": select_opts.append((opt, arg))
 		elif opt == "--never-drop-acls": Globals.set("never_drop_acls", 1)
-		elif opt == "--no-acls": Globals.set("acls_active", 0)
+		elif opt == "--no-acls":
+			Globals.set("acls_active", 0)
+			Globals.set("win_acls_active", 0)
 		elif opt == "--no-carbonfile": Globals.set("carbonfile_active", 0)
 		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
 		elif opt == "--no-compression": Globals.set("compression", None)
