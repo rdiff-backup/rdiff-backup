@@ -164,6 +164,19 @@ installed in the PATH on the remote system.  See the man page for more
 information on this.  This message may also be displayed if the remote
 version of rdiff-backup is quite different from the local version (%s)."""
 					   % (exception, remote_cmd, Globals.version))
+	except OverflowError, exc:
+		Log.FatalError("""Integer overflow while attempting to establish the 
+remote connection by executing
+
+    %s
+
+Please make sure that nothing is printed (e.g., by your login shell) when this
+command executes. Try running this command:
+
+    %s
+	
+which should only print out the text: rdiff-backup <version>""" % (remote_cmd,
+	remote_cmd.replace("--server", "--version")))
 		
 	if remote_version != Globals.version:
 		Log("Warning: Local version %s does not match remote version %s."
