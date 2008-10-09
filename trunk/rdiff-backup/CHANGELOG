@@ -1,6 +1,9 @@
 New in v1.2.2 (????/??/??)
 ---------------------------
 
+Print a more informative error message if the user's remote shell prints
+extraneous information before rdiff-backup runs. (Andrew Ferguson)
+
 Don't backup Windows ACLs if the --no-acls option is specified. Thanks to
 Richard Metzger for reporting the issue. (Andrew Ferguson)
 
