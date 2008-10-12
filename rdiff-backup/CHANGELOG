@@ -1,6 +1,8 @@
 New in v1.2.2 (????/??/??)
 ---------------------------
 
+Automatically resume after a failed initial backup. (Patch from Josh Nisly)
+
 Improve compatibility between Unix and remote native Windows client. It is now
 possible to use SSH daemons other than Putty on Windows. (Andrew Ferguson)
 

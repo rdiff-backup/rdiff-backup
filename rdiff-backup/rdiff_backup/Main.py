@@ -380,6 +380,44 @@ def backup_check_dirs(rpin, rpout):
 		Log.FatalError("Source %s is not a directory" % rpin.path)
 	Globals.rbdir = rpout.append_path("rdiff-backup-data")
 
+def check_failed_initial_backup():
+	"""Returns true if it looks like initial backup failed."""
+	if Globals.rbdir.lstat():
+		rbdir_files = Globals.rbdir.listdir()
+		mirror_markers = filter(lambda x: x.startswith("current_mirror"),
+								rbdir_files)
+		error_logs = filter(lambda x: x.startswith("error_log"),
+							rbdir_files)
+		metadata_mirrors = filter(lambda x: x.startswith("mirror_metadata"),
+								rbdir_files)
+		# If we have no current_mirror marker, and the increments directory
+		# is empty, we most likely have a failed backup.
+		return not mirror_markers and len(error_logs) <= 1 and \
+				len(metadata_mirrors) <= 1
+	return False
+
+def fix_failed_initial_backup():
+	"""Clear Globals.rbdir after a failed initial backup"""
+	Log("Found interrupted initial backup. Removing...",  2)
+	rbdir_files = Globals.rbdir.listdir()
+	# Try to delete the increments dir first
+	if 'increments' in rbdir_files:
+		rbdir_files.remove('increments')
+		rp = Globals.rbdir.append('increments')
+		try:
+			rp.conn.rpath.delete_dir_no_files(rp)
+		except rpath.RPathException:
+			Log("Increments dir contains files.", 4)
+			return
+		except Security.Violation:
+			Log("Server doesn't support resuming.", 2)
+			return
+	
+	for file_name in rbdir_files:
+		rp = Globals.rbdir.append_path(file_name)
+		if not rp.isdir(): # Only remove files, not folders
+			rp.delete()
+
 def backup_set_rbdir(rpin, rpout):
 	"""Initialize data dir and logging"""
 	global incdir
@@ -400,6 +438,8 @@ exists, but does not look like a rdiff-backup directory.  Running
 rdiff-backup like this could mess up what is currently in it.  If you
 want to update or overwrite it, run rdiff-backup with the --force
 option.""" % rpout.path)
+	elif check_failed_initial_backup():
+		fix_failed_initial_backup()
 
 	if not Globals.rbdir.lstat(): Globals.rbdir.mkdir()
 	SetConnections.UpdateGlobal('rbdir', Globals.rbdir)

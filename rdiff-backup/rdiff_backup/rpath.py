@@ -372,6 +372,14 @@ def get_incfile_info(basename):
 	else: basestr = ".".join(dotsplit[:-2])
 	return (compressed, timestring, ext, basestr)
 
+def delete_dir_no_files(rp):
+	"""Deletes the directory at rp.path if empty. Raises if the
+	directory contains files."""
+	assert rp.isdir()
+	if rp.contains_files():
+		raise RPathException("Directory contains files.")
+	rp.delete()
+
 
 class RORPath:
 	"""Read Only RPath - carry information about a path
@@ -1046,6 +1054,21 @@ class RPath(RORPath):
 				self.conn.shutil.rmtree(self.path)
 		else: self.conn.os.unlink(self.path)
 		self.setdata()
+
+	def contains_files(self):
+		"""Returns true if self (or subdir) contains any regular files."""
+		log.Log("Determining if directory contains files: %s" % self.path, 7)
+		if not self.isdir():
+			return False
+		dir_entries = self.listdir()
+		for entry in dir_entries:
+			child_rp = self.append(entry)
+			if not child_rp.isdir():
+				return True
+			else:
+				if child_rp.contains_files():
+					return True
+		return False
 
 	def quote(self):
 		"""Return quoted self.path for use with os.system()"""
