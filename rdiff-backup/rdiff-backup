@@ -19,6 +19,13 @@
 import sys
 import rdiff_backup.Main
 
+try:
+	import msvcrt, os
+	msvcrt.setmode(0, os.O_BINARY)
+	msvcrt.setmode(1, os.O_BINARY)
+except ImportError:
+	pass
+
 if __name__ == "__main__" and not globals().has_key('__no_execute__'):
 	rdiff_backup.Main.error_check_Main(sys.argv[1:])
 

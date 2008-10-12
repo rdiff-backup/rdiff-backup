@@ -1422,7 +1422,7 @@ class MaybeGzip:
 
 		new_rp = self.get_gzipped_rp()
 		if self.callback: self.callback(new_rp)
-		self.fileobj = new_rp.open("w", compress = 1)
+		self.fileobj = new_rp.open("wb", compress = 1)
 		return self.fileobj.write(buf)
 
 	def close(self):
