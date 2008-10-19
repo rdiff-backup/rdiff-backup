@@ -13,30 +13,38 @@ ADDITIONAL ISSUES:
 
 Currently, rdiff-backup's --include and --exclude options do not support
 Windows paths with \ as the directory separator. Instead, it is necessary to
-use / which is the Unix directory separator. However, you will need to run
-rdiff-backup from the same directory as the source of your backup, eg:
+use / which is the Unix directory separator.
 
-cd c:\
-rdiff-backup.exe --include "c:/My Stuff" --exclude "c:/**" c:/ c:/Backup
+Additionally, you may need to run rdiff-backup from the same directory as the
+source of your backup, eg:
+
+> cd c:\
+> rdiff-backup.exe --include "c:/My Stuff" --exclude "c:/**" c:/ c:/Backup
 
 will work to backup "c:\My Stuff" to "c:\Backup", but:
 
-cd "c:\My Stuff"
-rdiff-backup.exe --include "c:/My Stuff" --exclude "c:/**" c:/ c:/Backup
+> cd "c:\My Stuff"
+> rdiff-backup.exe --include "c:/My Stuff" --exclude "c:/**" c:/ c:/Backup
 
-will not work.
+will not work. UPDATE: With appropriate escaping, it looks like it is
+possible for this to work. Follow this example:
+
+> mkdir c:\foo
+> cd "c:\Documents and Settings"
+> rdiff-backup.exe --include c:\\/foo --exclude c:\\/** c:\/ c:\bar 
+
+The \\ is necessary in the --include and --exclude options because those
+options permit regular-expressions, and \ is the escape character in
+regular-expressions, and thus needs to be escaped itself.
 
 
 TROUBLESHOOTING:
 
 If you have everything installed properly, and it still doesn't work,
-see the enclosed FAQ.html, the web page at http://rdiff-backup.nongnu.org,
+see the enclosed manual, FAQ, the web page at http://rdiff-backup.nongnu.org,
 the Wiki at: http://wiki.rdiff-backup.org, and/or the mailing list. You can
 subscribe to the mailing list at:
 http://lists.nongnu.org/mailman/listinfo/rdiff-backup-users
-
-Rdiff-backup manual (Unix man page):
-http://www.nongnu.org/rdiff-backup/rdiff-backup.1.html
 
 Recommended Wiki entries:
 http://wiki.rdiff-backup.org/wiki/index.php/BackupFromWindowsToLinux
