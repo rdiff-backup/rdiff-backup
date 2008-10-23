@@ -255,7 +255,10 @@ def rename(rp_source, rp_dest):
 			try:
 			    rp_source.conn.os.rename(rp_source.path, rp_dest.path)
 			except OSError, error:
-				if error.errno != errno.EEXIST: raise
+				if error.errno != errno.EEXIST:
+					log.Log("OSError while renaming %s to %s"
+							% (rp_source.path, rp_dest.path), 1)
+					raise
 
 				# On Windows, files can't be renamed on top of an existing file
 				rp_source.conn.os.unlink(rp_dest.path)

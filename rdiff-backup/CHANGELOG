@@ -1,6 +1,8 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Inform the user of which file has failed if an exception occurs during a
+rename operation. (Andrew Ferguson)
 
 
 New in v1.2.2 (2008/10/19)
