@@ -1,3 +1,43 @@
+New in v1.2.2 (2008/10/19)
+---------------------------
+
+Automatically resume after a failed initial backup. (Patch from Josh Nisly)
+
+Improve compatibility between Unix and remote native Windows client. It is now
+possible to use SSH daemons other than Putty on Windows. (Andrew Ferguson)
+
+Print a more informative error message if the user's remote shell prints
+extraneous information before rdiff-backup runs. (Andrew Ferguson)
+
+Don't backup Windows ACLs if the --no-acls option is specified. Thanks to
+Richard Metzger for reporting the issue. (Andrew Ferguson)
+
+Add error handling and logging to Windows ACL support; fixes Windows backup to
+SMB share. Improve test in fs_abilities to determine if Windows ACLs are
+supported. (Andrew Ferguson)
+
+Add a warning message if extended attributes support is broken by the
+filesystem (such as with older EncFS versions). (Andrew Ferguson)
+
+Improve handling of Windows ACLs by switching to API functions which
+understand inherited ACEs; fixes support for Windows 2000. (Andrew Ferguson)
+
+Support extended attributes on symbolic links. (Andrew Ferguson)
+
+On Mac OS X, read the com.apple.FinderInfo extended attribute since it is the
+only storage location for the 'busy' (Z) Finder attribute. (Andrew Ferguson)
+
+Properly fix "AttributeError: RPath instance has no attribute 'inc_compressed'"
+bug. Fix in 1.1.12 was in correct place, but wrong solution. (Andrew Ferguson)
+
+Improve support for Python 2.5, which refactored the built-in exceptions so
+that SystemExit and KeyboardInterrupt no longer derive from Exception.
+Closes support request #106504. (Andrew Ferguson)
+
+Adjust --exclude-if-present option to support directories, symlinks, device
+files, etc. Closes bug #24192. Thanks to Vadim Zeitlin for the suggestion.
+
+
 New in v1.2.1 (2008/08/24)
 ---------------------------
 

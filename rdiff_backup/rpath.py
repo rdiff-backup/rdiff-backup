@@ -174,8 +174,8 @@ def copy_attribs(rpin, rpout):
 	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
 	if Globals.change_ownership:
 		rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
-	if rpin.issym(): return # symlinks don't have times or perms
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
+	if rpin.issym(): return # symlinks don't have times or perms
 	if (Globals.resource_forks_write and rpin.isreg() and
 		rpin.has_resource_fork()):
 		rpout.write_resource_fork(rpin.get_resource_fork())
@@ -198,8 +198,8 @@ def copy_attribs_inc(rpin, rpout):
 	log.Log("Copying inc attrs from %s to %s" % (rpin.index, rpout.path), 7)
 	check_for_files(rpin, rpout)
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
-	if rpin.issym(): return # symlinks don't have times or perms
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
+	if rpin.issym(): return # symlinks don't have times or perms
 	if (Globals.resource_forks_write and rpin.isreg() and
 		rpin.has_resource_fork() and rpout.isreg()):
 		rpout.write_resource_fork(rpin.get_resource_fork())
@@ -371,6 +371,14 @@ def get_incfile_info(basename):
 	if compressed: basestr = ".".join(dotsplit[:-3])
 	else: basestr = ".".join(dotsplit[:-2])
 	return (compressed, timestring, ext, basestr)
+
+def delete_dir_no_files(rp):
+	"""Deletes the directory at rp.path if empty. Raises if the
+	directory contains files."""
+	assert rp.isdir()
+	if rp.contains_files():
+		raise RPathException("Directory contains files.")
+	rp.delete()
 
 
 class RORPath:
@@ -1047,6 +1055,21 @@ class RPath(RORPath):
 		else: self.conn.os.unlink(self.path)
 		self.setdata()
 
+	def contains_files(self):
+		"""Returns true if self (or subdir) contains any regular files."""
+		log.Log("Determining if directory contains files: %s" % self.path, 7)
+		if not self.isdir():
+			return False
+		dir_entries = self.listdir()
+		for entry in dir_entries:
+			child_rp = self.append(entry)
+			if not child_rp.isdir():
+				return True
+			else:
+				if child_rp.contains_files():
+					return True
+		return False
+
 	def quote(self):
 		"""Return quoted self.path for use with os.system()"""
 		return '"%s"' % self.regex_chars_to_quote.sub(
@@ -1422,7 +1445,7 @@ class MaybeGzip:
 
 		new_rp = self.get_gzipped_rp()
 		if self.callback: self.callback(new_rp)
-		self.fileobj = new_rp.open("w", compress = 1)
+		self.fileobj = new_rp.open("wb", compress = 1)
 		return self.fileobj.write(buf)
 
 	def close(self):
@@ -1455,6 +1478,10 @@ def setdata_local(rpath):
 
 def carbonfile_get(rpath):
 	"""Return carbonfile value for local rpath"""
+	# Note, after we drop support for Mac OS X 10.0 - 10.3, it will no longer
+	# be necessary to read the finderinfo struct since it is a strict subset
+	# of the data stored in the com.apple.FinderInfo extended attribute
+	# introduced in 10.4. Indeed, FSpGetFInfo() is deprecated on 10.4.
 	from Carbon.File import FSSpec
 	from Carbon.File import FSRef
 	import Carbon.Files
