@@ -1,6 +1,9 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Handle ELOOP ("Too many levels of symbolic links") error when reading extended
+attributes from symlinks. Closes Savannah bug #24790. (Andrew Ferguson)
+
 Inform the user of which file has failed if an exception occurs during a
 rename operation. (Andrew Ferguson)
 

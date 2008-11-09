@@ -56,11 +56,12 @@ class ExtendedAttributes:
 
 	def read_from_rp(self, rp):
 		"""Set the extended attributes from an rpath"""
-		try: attr_list = rp.conn.xattr.listxattr(rp.path, rp.issym())
+		try:
+			attr_list = rp.conn.xattr.listxattr(rp.path, rp.issym())
 		except IOError, exc:
 			if exc[0] in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
 				return # if not supported, consider empty
-			if exc[0] == errno.EACCES or exc[0] == errno.ENOENT:
+			if exc[0] in (errno.EACCES, errno.ENOENT, errno.ELOOP):
 				log.Log("Warning: listattr(%s): %s" % (repr(rp.path), exc), 3)
 				return
 			raise
@@ -71,7 +72,9 @@ class ExtendedAttributes:
 			if not rp.isdir() and attr == 'com.apple.ResourceFork':
 				# Resource Fork handled elsewhere, except for directories
 				continue
-			try: self.attr_dict[attr] = rp.conn.xattr.getxattr(rp.path, attr, rp.issym())
+			try:
+				self.attr_dict[attr] = \
+					rp.conn.xattr.getxattr(rp.path, attr, rp.issym())
 			except IOError, exc:
 				# File probably modified while reading, just continue
 				if exc[0] == errno.ENODATA: continue
