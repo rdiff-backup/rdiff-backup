@@ -53,7 +53,7 @@ def catch_error(exc):
 		 errno.errorcode.has_key(exc[0]) and
 		 errno.errorcode[exc[0]] in ('EPERM', 'ENOENT', 'EACCES', 'EBUSY',
 									 'EEXIST', 'ENOTDIR', 'EILSEQ',
-									 'ENAMETOOLONG', 'EINTR',
+									 'ENAMETOOLONG', 'EINTR', 'ESTALE',
 									 'ENOTEMPTY', 'EIO', 'ETXTBSY',
 									 'ESRCH', 'EINVAL', 'EDEADLOCK',
 									 'EDEADLK', 'EOPNOTSUPP'))):
