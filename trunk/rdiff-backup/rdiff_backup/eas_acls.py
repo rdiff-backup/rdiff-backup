@@ -79,6 +79,8 @@ class ExtendedAttributes:
 				# File probably modified while reading, just continue
 				if exc[0] == errno.ENODATA: continue
 				elif exc[0] == errno.ENOENT: break
+				# Handle bug in pyxattr < 0.2.2
+				elif exc[0] == errno.ERANGE: continue
 				else: raise
 
 	def clear_rp(self, rp):
