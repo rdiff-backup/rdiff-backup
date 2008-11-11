@@ -1,6 +1,9 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Workaround for broken support for symlink extended attributes in pyxattr < 
+0.2.2. Thanks to Leo Bergolth for reporting the issue. (Andrew Ferguson)
+
 Handle ELOOP ("Too many levels of symbolic links") error when reading extended
 attributes from symlinks. Closes Savannah bug #24790. (Andrew Ferguson)
 
