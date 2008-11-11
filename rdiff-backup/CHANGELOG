@@ -1,6 +1,9 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Add "Stale NFS file handle" (ESTALE) to the list of recoverable errors. Thanks
+to Guillaume Vachon for reporting the issue. (Andrew Ferguson)
+
 Workaround for broken support for symlink extended attributes in pyxattr < 
 0.2.2. Thanks to Leo Bergolth for reporting the issue. (Andrew Ferguson)
 
