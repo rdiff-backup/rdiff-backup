@@ -1,6 +1,9 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Properly handle EINVAL "Invalid argument" errors when setting extended
+attributes. Thanks to Kevin Fenzi for reporting the issue. (Andrew Ferguson)
+
 Add warning message if pyxattr is below version 0.2.2. (Andrew Ferguson)
 
 Add "Stale NFS file handle" (ESTALE) to the list of recoverable errors. Thanks
