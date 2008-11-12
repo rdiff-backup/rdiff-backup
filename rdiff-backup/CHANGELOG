@@ -1,6 +1,8 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Add warning message if pyxattr is below version 0.2.2. (Andrew Ferguson)
+
 Add "Stale NFS file handle" (ESTALE) to the list of recoverable errors. Thanks
 to Guillaume Vachon for reporting the issue. (Andrew Ferguson)
 
