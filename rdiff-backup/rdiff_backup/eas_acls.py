@@ -116,7 +116,7 @@ class ExtendedAttributes:
 				# Mac and Linux attributes have different namespaces, so
 				# fail gracefully if can't call setxattr
 				if exc[0] in (errno.EOPNOTSUPP, errno.EPERM, errno.EACCES,
-						errno.ENOENT):
+						errno.ENOENT, errno.EINVAL):
 					log.Log("Warning: unable to write xattr %s to %s"
 							% (name, repr(rp.path)), 6)
 					continue
