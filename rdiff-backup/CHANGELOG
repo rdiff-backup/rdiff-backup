@@ -1,6 +1,9 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Print nicer error messages in rdiff-backup-statistics (without tracebacks).
+Closes Ubuntu bug #292586. (Andrew Ferguson)
+
 Properly handle EINVAL "Invalid argument" errors when setting extended
 attributes. Thanks to Kevin Fenzi for reporting the issue. (Andrew Ferguson)
 

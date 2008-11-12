@@ -22,7 +22,7 @@
 
 import os, sys, re, getopt
 from rdiff_backup import connection, regress, rpath, Globals, restore, \
-	 Time, lazy, FilenameMapping
+	 Time, lazy, FilenameMapping, robust
 
 begin_time = None # Parse statistics at or after this time...
 end_time = None # ... and at or before this time (epoch seconds)
@@ -443,5 +443,20 @@ def Main():
 	fst.print_top_dirs("increment size", lambda fs: fs.incsize)
 	fst.print_top_dirs("number of files changed", lambda fs: fs.changed)
 
-if __name__ == '__main__': Main()
+def error_check_Main():
+	"""Run Main on arglist, suppressing stack trace for routine errors"""
+	try:
+		Main()
+	except SystemExit:
+		raise
+	except KeyboardInterrupt:
+		print "User abort"
+	except (Exception, KeyboardInterrupt), exc:
+		if robust.catch_error(exc):
+			print exc
+		else:
+			raise
+
+
+if __name__ == '__main__': error_check_Main()
 
