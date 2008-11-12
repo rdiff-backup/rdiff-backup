@@ -364,6 +364,16 @@ class FSAbilities:
 			return
 
 		try:
+			ver = xattr.__version__
+		except AttributeError:
+			ver = 'unknown'
+		if ver < '0.2.2' or ver == 'unknown':
+			log.Log("Warning: Your version of pyxattr (%s) has broken support "
+					"for extended\nattributes on symlinks. If you choose not "
+					"to upgrade to a more recent version,\nyou may see many "
+					"warning messages from listattr().\n" % (ver,), 3)
+
+		try:
 			xattr.listxattr(rp.path)
 			if write:
 				xattr.setxattr(rp.path, "user.test", "test val")
