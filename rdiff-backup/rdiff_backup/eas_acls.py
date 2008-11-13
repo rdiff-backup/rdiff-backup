@@ -62,7 +62,7 @@ class ExtendedAttributes:
 			if exc[0] in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
 				return # if not supported, consider empty
 			if exc[0] in (errno.EACCES, errno.ENOENT, errno.ELOOP):
-				log.Log("Warning: listattr(%s): %s" % (repr(rp.path), exc), 3)
+				log.Log("Warning: listattr(%s): %s" % (repr(rp.path), exc), 4)
 				return
 			raise
 		for attr in attr_list:

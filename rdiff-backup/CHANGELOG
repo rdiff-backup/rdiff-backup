@@ -1,6 +1,8 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Throttle verbosity of listattr() warning messages from 3 to 4. (Andrew Ferguson)
+
 Escape trailing spaces and periods on systems which require it, such as
 Windows and modern Linux with FAT32. (Andrew Ferguson)
 
