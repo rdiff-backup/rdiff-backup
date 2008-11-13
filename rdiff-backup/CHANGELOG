@@ -1,6 +1,9 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Escape trailing spaces and periods on systems which require it, such as
+Windows and modern Linux with FAT32. (Andrew Ferguson)
+
 Print nicer error messages in rdiff-backup-statistics (without tracebacks).
 Closes Ubuntu bug #292586. (Andrew Ferguson)
 
