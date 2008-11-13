@@ -586,7 +586,7 @@ class FSAbilities:
 				log.Log("escape_trailing_spaces required by filesystem at %s" \
 						% (subdir.path), 4)
 				self.escape_trailing_spaces = 1 
-		except(OSError):
+		except (OSError, IOError):
 			log.Log("escape_trailing_spaces required by filesystem at %s" \
 					% (subdir.path), 4)
 			self.escape_trailing_spaces = 1
@@ -707,7 +707,8 @@ class BackupSetGlobals(SetGlobals):
 				space_rp.delete()
 			else:
 				local_ets = 1
-		except (OSError): local_ets = 1
+		except (OSError, IOError):
+			local_ets = 1
 		SetConnections.UpdateGlobal('must_escape_trailing_spaces', \
 			self.src_fsa.escape_trailing_spaces or local_ets)
 		log.Log("Backup: must_escape_trailing_spaces = %d" % \
@@ -839,7 +840,8 @@ class RestoreSetGlobals(SetGlobals):
 				space_rp.delete()
 			else:
 				local_ets = 1
-		except (OSError): local_ets = 1
+		except (OSError, IOError):
+			local_ets = 1
 		SetConnections.UpdateGlobal('must_escape_trailing_spaces', \
 			src_ets or local_ets)
 		log.Log("Restore: must_escape_trailing_spaces = %d" % \
