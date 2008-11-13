@@ -104,7 +104,7 @@ class FSAbilities:
 						  ('Case sensitivity', self.case_sensitive),
 						  ('Escape DOS devices', self.escape_dos_devices),
 						  ('Escape trailing spaces',
-						   self.escape_trailing_spaces)
+						   self.escape_trailing_spaces),
 						  ('Mac OS X style resource forks',
 						   self.resource_forks),
 						  ('Mac OS X Finder information', self.carbonfile)])
@@ -576,7 +576,8 @@ class FSAbilities:
 		"""If file with trailing space can't be created, escape such files"""
 		try:
 			space_rp = subdir.append("test ")
-			if space_rp.touch() and space_rp.lstat():
+			space_rp.touch()
+			if space_rp.lstat():
 				log.Log("escape_trailing_spaces not required by filesystem " \
 						"at %s" % (subdir.path), 4)
 				self.escape_trailing_spaces = 0
@@ -700,7 +701,8 @@ class BackupSetGlobals(SetGlobals):
 		"""If local ets or src ets, then must escape """
 		try:
 			space_rp = rbdir.append("test ")
-			if space_rp.touch() and space_rp.lstat():
+			space_rp.touch()
+			if space_rp.lstat():
 				local_ets = 0
 				space_rp.delete()
 			else:
@@ -831,7 +833,8 @@ class RestoreSetGlobals(SetGlobals):
 			src_ets = 0
 		try:
 			space_rp = rbdir.append("test ")
-			if space_rp.touch() and space_rp.lstat():
+			space_rp.touch()
+			if space_rp.lstat():
 				local_ets = 0
 				space_rp.delete()
 			else:
