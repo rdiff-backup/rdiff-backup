@@ -1,6 +1,8 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Fix for Python 2.2 in win_acls.py (Closes Savannah bug #24922).
+
 Throttle verbosity of listattr() warning messages from 3 to 4. (Andrew Ferguson)
 
 Escape trailing spaces and periods on systems which require it, such as
