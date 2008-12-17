@@ -1059,7 +1059,7 @@ class RPath(RORPath):
 		else:
 			try: self.conn.os.unlink(self.path)
 			except OSError, error:
-				if error.errno == errno.EPERM:
+				if error.errno in (errno.EPERM, errno.EACCES):
 					# On Windows, read-only files cannot be deleted.
 					# Remove the read-only attribute and try again.
 					self.chmod(0700)
