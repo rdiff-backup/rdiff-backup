@@ -261,6 +261,7 @@ def rename(rp_source, rp_dest):
 					raise
 
 				# On Windows, files can't be renamed on top of an existing file
+				rp_source.conn.os.chmod(rp_dest.path, 0700)
 				rp_source.conn.os.unlink(rp_dest.path)
 				rp_source.conn.os.rename(rp_source.path, rp_dest.path)
 			    
@@ -1055,7 +1056,17 @@ class RPath(RORPath):
 			except os.error:
 				if Globals.fsync_directories: self.fsync()
 				self.conn.shutil.rmtree(self.path)
-		else: self.conn.os.unlink(self.path)
+		else:
+			try: self.conn.os.unlink(self.path)
+			except OSError, error:
+				if error.errno == errno.EPERM:
+					# On Windows, read-only files cannot be deleted.
+					# Remove the read-only attribute and try again.
+					self.chmod(0700)
+					self.conn.os.unlink(self.path)
+				else:
+					raise
+
 		self.setdata()
 
 	def contains_files(self):
