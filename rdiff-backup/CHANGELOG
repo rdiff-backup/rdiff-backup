@@ -1,7 +1,10 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
-Supress warnings about the deprecated sha module in Python 2.6. We'll remove
+Add ETIMEDOUT to the list of recoverable errors; when irrecoverable, a
+ConnectionError is raised. Closes Ubuntu bug #304659. (Andrew Ferguson)
+
+Suppress warnings about the deprecated sha module in Python 2.6. We'll remove
 this after rdiff-backup is ported to Python 3. (Patch from Josh Nisly)
 
 Test for symlink permissions now produces a functioning symlink. Thanks to
