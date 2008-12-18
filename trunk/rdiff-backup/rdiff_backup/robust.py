@@ -56,7 +56,7 @@ def catch_error(exc):
 									 'ENAMETOOLONG', 'EINTR', 'ESTALE',
 									 'ENOTEMPTY', 'EIO', 'ETXTBSY',
 									 'ESRCH', 'EINVAL', 'EDEADLOCK',
-									 'EDEADLK', 'EOPNOTSUPP'))):
+									 'EDEADLK', 'EOPNOTSUPP', 'ETIMEDOUT'))):
 		return 1
 	return 0
 
