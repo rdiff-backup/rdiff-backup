@@ -1,6 +1,9 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Test for symlink permissions now produces a functioning symlink. Thanks to
+Julien Poffet for reporting the issue. (Andrew Ferguson)
+
 Fix for crash when deleting read-only files on Windows. (Patch from Josh Nisly)
 
 Fix for Python 2.2 in win_acls.py (Closes Savannah bug #24922).

@@ -542,16 +542,14 @@ class FSAbilities:
 		sym_source.touch()
 		sym_dest = dir_rp.append("symlinked_file2")
 		try:
-			sym_dest.symlink(sym_source.path)
+			sym_dest.symlink("symlinked_file1")
 		except (OSError, AttributeError):
 			self.symlink_perms = 0
 		else:
 			sym_dest.setdata()
 			assert sym_dest.issym()
-			orig_umask = os.umask(077)
 			if sym_dest.getperms() == 0700: self.symlink_perms = 1
 			else: self.symlink_perms = 0
-			os.umask(orig_umask)
 			sym_dest.delete()
 		sym_source.delete()
 
