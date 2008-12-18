@@ -1,6 +1,9 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Print a more helpful error message if we cannot write to the backup
+destination. (Andrew Ferguson)
+
 Add ETIMEDOUT to the list of recoverable errors; when irrecoverable, a
 ConnectionError is raised. Closes Ubuntu bug #304659. (Andrew Ferguson)
 
