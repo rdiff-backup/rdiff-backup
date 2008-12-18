@@ -19,6 +19,11 @@
 
 """Contains a file wrapper that returns a hash on close"""
 
+# Until rdiff-backup is ported to Python 3 (or abandons support for versions
+# below Python 2.5), we'll ignore the warning about the deprecated sha module
+import warnings
+warnings.simplefilter('ignore')
+
 import sha
 import Globals
 
