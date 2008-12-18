@@ -441,7 +441,21 @@ option.""" % rpout.path)
 	elif check_failed_initial_backup():
 		fix_failed_initial_backup()
 
-	if not Globals.rbdir.lstat(): Globals.rbdir.mkdir()
+	if not Globals.rbdir.lstat():
+		try:
+			Globals.rbdir.mkdir()
+		except IOError, exc:
+			Log.FatalError(
+"""Could not create rdiff-backup directory
+
+%s
+
+due to
+
+%s
+
+Please check that the rdiff-backup user can create files and directories in the
+destination directory: %s""" % (Globals.rbdir.path, exc, rpout.path))
 	SetConnections.UpdateGlobal('rbdir', Globals.rbdir)
 
 def backup_warn_if_infinite_regress(rpin, rpout):
