@@ -704,8 +704,13 @@ def require_root_set(rp, read_only):
 	if not restore_set_root(rp):
 		Log.FatalError(("Bad directory %s.\n" % (rp.path,)) +
 		  "It doesn't appear to be an rdiff-backup destination dir")
-	Globals.rbdir.conn.fs_abilities.single_set_globals(Globals.rbdir,
-													   read_only)
+	try:
+		Globals.rbdir.conn.fs_abilities.single_set_globals(Globals.rbdir,
+														   read_only)
+	except IOError, exc:
+		print("\n")
+		Log.FatalError("Could not open rdiff-backup directory\n\n%s\n\n"
+					   "due to\n\n%s" % (Globals.rbdir.path, exc))
 	if Globals.chars_to_quote: return restore_init_quoting(rp)
 	else: return rp
 	
