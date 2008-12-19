@@ -255,6 +255,8 @@ def rename(rp_source, rp_dest):
 			try:
 			    rp_source.conn.os.rename(rp_source.path, rp_dest.path)
 			except OSError, error:
+				# XXX errno.EINVAL and len(rp_dest.path) >= 260 indicates
+				# pathname too long on Windows
 				if error.errno != errno.EEXIST:
 					log.Log("OSError while renaming %s to %s"
 							% (rp_source.path, rp_dest.path), 1)
