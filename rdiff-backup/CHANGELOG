@@ -1,6 +1,9 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Print a more helpful error message if we cannot read the backup destination.
+Closes Ubuntu bug #292586 (again). (Andrew Ferguson)
+
 Print a more helpful error message if we cannot write to the backup
 destination. (Andrew Ferguson)
 
