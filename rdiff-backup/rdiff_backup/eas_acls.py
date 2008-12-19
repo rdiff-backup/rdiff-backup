@@ -229,7 +229,7 @@ class AccessControlLists:
 		"""Set self.entry_list and self.default_entry_list from text"""
 		self.entry_list, self.default_entry_list = [], []
 		for line in text.split('\n'):
-			comment_pos = text.find('#')
+			comment_pos = line.find('#')
 			if comment_pos >= 0: line = line[:comment_pos]
 			line = line.strip()
 			if not line: continue

@@ -742,7 +742,8 @@ class BackupSetGlobals(SetGlobals):
 			# Quote ", *, /, :, <, >, ?, \, |, and 127 (DEL)
 			ctq.append('\"*/:<>?\\\\|\177')
 
-		if ctq: ctq.append(';') # Quote quoting char if quoting anything
+		# Quote quoting char if quoting anything
+		if ctq: ctq.append(Globals.quoting_char)
 		return "".join(ctq)
 
 	def compare_ctq_file(self, rbdir, suggested_ctq, force):
