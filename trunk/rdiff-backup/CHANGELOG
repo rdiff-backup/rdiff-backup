@@ -1,6 +1,9 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Support comments in rdiff-backup's ACL files and quote the quoting character
+properly if user changed it. (Patch from Oliver Mulatz)
+
 Print a more helpful error message if we cannot read the backup destination.
 Closes Ubuntu bug #292586 (again). (Andrew Ferguson)
 
