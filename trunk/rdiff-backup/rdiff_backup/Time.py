@@ -144,7 +144,7 @@ def gettzd(timeinseconds = None):
 	"""Return w3's timezone identification string.
 
 	Expresed as [+/-]hh:mm.  For instance, PDT is -07:00 during
-	dayling savings and -08:00 otherwise.  Zone is coincides with what
+	dayling savings and -08:00 otherwise.  Zone coincides with what
 	localtime(), etc., use.  If no argument given, use the current
 	time.
 
