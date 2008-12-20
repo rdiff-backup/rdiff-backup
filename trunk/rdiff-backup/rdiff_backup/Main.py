@@ -444,7 +444,7 @@ option.""" % rpout.path)
 	if not Globals.rbdir.lstat():
 		try:
 			Globals.rbdir.mkdir()
-		except IOError, exc:
+		except (OSError, IOError), exc:
 			Log.FatalError(
 """Could not create rdiff-backup directory
 
