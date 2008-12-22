@@ -1,6 +1,9 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Do not backup reparse points on native Windows. Thanks to John Covici for
+reporting the issue. (Andrew Ferguson)
+
 Support comments in rdiff-backup's ACL files and quote the quoting character
 properly if user changed it. (Patch from Oliver Mulatz)
 
