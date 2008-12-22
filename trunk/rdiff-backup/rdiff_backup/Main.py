@@ -357,7 +357,7 @@ def backup_quoted_rpaths(rpout):
 def backup_set_select(rpin):
 	"""Create Select objects on source connection"""
 	if rpin.conn.os.name == 'nt':
-		log.Log("Symbolic links excluded by default on Windows", 4)
+		Log("Symbolic links excluded by default on Windows", 4)
 		select_opts.append(("--exclude-symbolic-links", None))
 	rpin.conn.backup.SourceStruct.set_source_select(rpin, select_opts,
 													*select_files)
