@@ -1,4 +1,4 @@
-.TH RDIFF-BACKUP 1 "JULY 2007" "Version 1.1.13" "User Manuals" \" -*- nroff -*-
+.TH RDIFF-BACKUP 1 "DECEMBER 2008" "Version 1.2.3" "User Manuals" \" -*- nroff -*-
 .SH NAME
 rdiff-backup \- local/remote mirror and incremental backup
 .SH SYNOPSIS
@@ -188,7 +188,8 @@ Exclude all device files, fifo files, socket files, and symbolic links.
 Exclude all socket files.
 .TP
 .B "\-\-exclude-symbolic-links"
-Exclude all symbolic links.
+Exclude all symbolic links. This option is automatically enabled if the backup
+source is running on native Windows to avoid backing-up NTFS reparse points.
 .TP
 .BI "\-\-exclude-if-present " filename
 Exclude directories if

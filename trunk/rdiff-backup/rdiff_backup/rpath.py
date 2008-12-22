@@ -38,6 +38,10 @@ are dealing with are local or remote.
 import os, stat, re, sys, shutil, gzip, socket, time, errno
 import Globals, Time, static, log, user_group, C
 
+try:
+	import win32file, winnt
+except ImportError:
+	pass
 
 class SkipFileException(Exception):
 	"""Signal that the current file should be skipped but then continue
@@ -327,6 +331,12 @@ def make_file_dict_python(filename):
 	data['inode'] = statblock[stat.ST_INO]
 	data['devloc'] = statblock[stat.ST_DEV]
 	data['nlink'] = statblock[stat.ST_NLINK]
+
+	if os.name == 'nt':
+		attribs = win32file.GetFileAttributes(filename)
+		if attribs & winnt.FILE_ATTRIBUTE_REPARSE_POINT:
+			data['type'] = 'sym'
+			data['linkname'] = None
 
 	if not (type == 'sym' or type == 'dev'):
 		# mtimes on symlinks and dev files don't work consistently
