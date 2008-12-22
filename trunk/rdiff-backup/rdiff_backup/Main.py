@@ -424,7 +424,10 @@ def fix_failed_initial_backup():
 def backup_set_rbdir(rpin, rpout):
 	"""Initialize data dir and logging"""
 	global incdir
-	incdir = Globals.rbdir.append_path("increments")
+	try:
+		incdir = Globals.rbdir.append_path("increments")
+	except (OSError, IOError), exc:
+		Log.FatalError("Could not begin backup due to\n%s" % exc)
 
 	assert rpout.lstat(), (rpout.path, rpout.lstat())
 	if rpout.isdir() and not rpout.listdir(): # rpout is empty dir
@@ -543,7 +546,11 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 		Log.FatalError("Could not find rdiff-backup repository at "
 					   + src_rp.path)
 	restore_check_paths(src_rp, dest_rp, restore_as_of)
-	dest_rp.conn.fs_abilities.restore_set_globals(dest_rp)
+	try:
+		dest_rp.conn.fs_abilities.restore_set_globals(dest_rp)
+	except (OSError, IOError), exc:
+		print "\n"
+		Log.FatalError("Could not begin backup due to\n%s" % exc)
 	init_user_group_mapping(dest_rp.conn)
 	src_rp = restore_init_quoting(src_rp)
 	restore_check_backup_dir(restore_root, src_rp, restore_as_of)
@@ -710,7 +717,7 @@ def require_root_set(rp, read_only):
 	try:
 		Globals.rbdir.conn.fs_abilities.single_set_globals(Globals.rbdir,
 														   read_only)
-	except IOError, exc:
+	except (OSError, IOError), exc:
 		print("\n")
 		Log.FatalError("Could not open rdiff-backup directory\n\n%s\n\n"
 					   "due to\n\n%s" % (Globals.rbdir.path, exc))
@@ -876,7 +883,12 @@ information in it.
 """ % (Globals.rbdir.path,))
 	elif len(curmir_incs) == 1: return 0
 	else:
-		if not force: curmir_incs[0].conn.regress.check_pids(curmir_incs)
+		if not force:
+			try:
+				curmir_incs[0].conn.regress.check_pids(curmir_incs)
+			except (OSError, IOError), exc:
+				Log.FatalError("Could not check if rdiff-backup is currently"
+							   "running due to\n%s" % exc)
 		assert len(curmir_incs) == 2, "Found too many current_mirror incs!"
 		return 1
 
