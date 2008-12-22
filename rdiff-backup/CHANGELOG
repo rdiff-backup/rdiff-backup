@@ -1,6 +1,11 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Print a more helpful error message if we get an error while reading an old
+current_mirror marker. This can happen because it has been locked or deleted
+by a just-finished rdiff-backup process. Closes Ubuntu bugs #88140 and
+#284506. (Andrew Ferguson)
+
 Do not backup reparse points on native Windows. Thanks to John Covici for
 reporting the issue. (Andrew Ferguson)
 
