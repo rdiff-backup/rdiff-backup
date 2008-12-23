@@ -1,6 +1,9 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+Report that connection has dropped if filesystem operation returns ENOTCONN.
+Closes Ubuntu bug #219920. (Andrew Ferguson)
+
 Print a more helpful error message if we get an error while reading an old
 current_mirror marker. This can happen because it has been locked or deleted
 by a just-finished rdiff-backup process. Closes Ubuntu bugs #88140 and
