@@ -242,6 +242,6 @@ the day).""" % timestr)
 	timestr = "%s-%02d-%02dT00:00:00%s" % (match.group('year'),
 			     int(match.group('month')), int(match.group('day')), gettzd())
 	t = stringtotime(timestr)
-	if t: return t
+	if t is not None: return t
 	else: error()
 
