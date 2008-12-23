@@ -1,6 +1,8 @@
 New in v1.2.3 (????/??/??)
 ---------------------------
 
+The epoch is now a valid date. Closes Savannah bug #24814. (Andrew Ferguson)
+
 Report that connection has dropped if filesystem operation returns ENOTCONN.
 Closes Ubuntu bug #219920. (Andrew Ferguson)
 
