@@ -9,6 +9,21 @@ your PATH. Everything is included in the binary (including Python) for local
 operation. For remote operation, you will need to install a Windows SSH
 program. You will also need to install rdiff-backup on the remote system(s).
 
+You will need the Microsoft Visual C++ 2008 redistributables. If these are
+not installed on your system, rdiff-backup will be unable to run and Windows
+will display a message such as "The system cannot execute the specified
+program". To install the redistributables for all users, install the package
+available from Microsoft.com (search for "visual c 2008 redistributable").
+
+Alternatively, you can install the redistributable in a "side-by-side"
+configuration, which does not require administrator privelges. Simply
+download the DLL package from:
+http://download.savannah.gnu.org/releases/rdiff-backup/Microsoft.VC90.zip
+and copy the four enclosed files to the same directory as rdiff-backup.exe.
+
+You will need to follow either method only once.
+
+
 ADDITIONAL ISSUES:
 
 Currently, rdiff-backup's --include and --exclude options do not support
