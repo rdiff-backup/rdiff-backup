@@ -1,5 +1,8 @@
-New in v1.2.3 (????/??/??)
+New in v1.2.3 (2008/12/28)
 ---------------------------
+
+The official Windows build now includes the librsync patch for files > 4GB.
+This requires the Visual C++ 2008 redistributable, available from Microsoft.
 
 The epoch is now a valid date. Closes Savannah bug #24814. (Andrew Ferguson)
 
