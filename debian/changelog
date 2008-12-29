@@ -1,3 +1,12 @@
+rdiff-backup (1.2.3-1) unstable; urgency=high
+
+  * Replacing obsolete dh_clean -k with dh_prep.
+  * Merging upstream version 1.2.3:
+    - fixes regression with "Too many levels of symbolic links" exception
+      (Closes: #409514).
+
+ -- Daniel Baumann <daniel@debian.org>  Mon, 29 Dec 2008 22:26:00 +0100
+
 rdiff-backup (1.2.2-1) unstable; urgency=low
 
   * Merging upstream version 1.2.2.

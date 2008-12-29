@@ -53,10 +53,10 @@ def catch_error(exc):
 		 errno.errorcode.has_key(exc[0]) and
 		 errno.errorcode[exc[0]] in ('EPERM', 'ENOENT', 'EACCES', 'EBUSY',
 									 'EEXIST', 'ENOTDIR', 'EILSEQ',
-									 'ENAMETOOLONG', 'EINTR',
+									 'ENAMETOOLONG', 'EINTR', 'ESTALE',
 									 'ENOTEMPTY', 'EIO', 'ETXTBSY',
 									 'ESRCH', 'EINVAL', 'EDEADLOCK',
-									 'EDEADLK', 'EOPNOTSUPP'))):
+									 'EDEADLK', 'EOPNOTSUPP', 'ETIMEDOUT'))):
 		return 1
 	return 0
 
@@ -74,6 +74,8 @@ def is_routine_fatal(exc):
 		return "Lost connection to the remote system"
 	elif isinstance(exc, SignalException):
 		return "Killed with signal %s" % (exc,)
+	elif isinstance(exc, EnvironmentError) and e.errno == errno.ENOTCONN:
+		return ("Filesystem reports connection failure:\n%s" % exc)
 	return None
 
 def get_error_handler(error_type):
