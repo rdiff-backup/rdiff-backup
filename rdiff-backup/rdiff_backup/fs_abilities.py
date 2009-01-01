@@ -571,10 +571,6 @@ class FSAbilities:
 			self.escape_dos_devices = 1
 
 	def set_escape_trailing_spaces(self, subdir):
-		# Disable this for 1.2.4
-		self.escape_trailing_spaces = 0
-		return
-
 		"""If file with trailing space can't be created, escape such files"""
 		try:
 			space_rp = subdir.append("test ")
@@ -701,10 +697,6 @@ class BackupSetGlobals(SetGlobals):
 
 	def set_must_escape_trailing_spaces(self, rbdir):
 		"""If local ets or src ets, then must escape """
-		# Disable this for 1.2.4
-		SetConnections.UpdateGlobal('must_escape_trailing_spaces', 0) 
-		return
-
 		try:
 			space_rp = rbdir.append("test ")
 			space_rp.touch()
@@ -835,10 +827,6 @@ class RestoreSetGlobals(SetGlobals):
 
 	def set_must_escape_trailing_spaces(self, rbdir):
 		"""If local ets or src ets, then must escape """
-		# Disable this for 1.2.4
-		SetConnections.UpdateGlobal('must_escape_trailing_spaces', 0) 
-		return
-
 		if getattr(self, "src_fsa", None) is not None:
 			src_ets = self.src_fsa.escape_trailing_spaces
 		else:
