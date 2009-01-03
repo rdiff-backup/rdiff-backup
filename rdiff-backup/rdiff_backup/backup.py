@@ -490,10 +490,6 @@ class CacheCollatedPostProcess:
 		self.metawriter.close()
 		metadata.ManagerObj.ConvertMetaToDiff()
 
-		if Globals.print_statistics: statistics.print_active_stats()
-		if Globals.file_statistics: statistics.FileStats.close()
-		statistics.write_active_statfileobj()
-
 
 class PatchITRB(rorpiter.ITRBranch):
 	"""Patch an rpath with the given diff iters (use with IterTreeReducer)
