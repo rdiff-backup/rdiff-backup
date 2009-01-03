@@ -1,6 +1,9 @@
 New in v1.3.0 (????/??/??)
 ---------------------------
 
+Take start and end times from same system so that the elapsed time printed in
+the statistics is not affected by time zone. (Andrew Ferguson)
+
 Properly fix escaping DOS devices and trailing periods and spaces; now supports
 native Windows and Linxu/FAT32. (Andrew Ferguson)
 

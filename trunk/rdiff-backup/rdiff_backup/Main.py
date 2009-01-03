@@ -20,7 +20,7 @@
 """Start (and end) here - read arguments, set global settings, etc."""
 
 from __future__ import generators
-import getopt, sys, re, os, cStringIO, tempfile
+import getopt, sys, re, os, cStringIO, tempfile, time
 from log import Log, LoggerError, ErrorLog
 import Globals, Time, SetConnections, selection, robust, rpath, \
 	   manage, backup, connection, restore, FilenameMapping, \
@@ -345,6 +345,7 @@ def Backup(rpin, rpout):
 	else:
 		backup.Mirror(rpin, rpout)
 		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
+	rpout.conn.Main.backup_close_statistics(time.time())
 
 def backup_quoted_rpaths(rpout):
 	"""Get QuotedRPath versions of important RPaths.  Return rpout"""
@@ -533,6 +534,19 @@ def backup_remove_curmirror_local():
 
 	C.sync() # Make sure everything is written before curmirror is removed
 	older_inc.delete()
+
+def backup_close_statistics(end_time):
+	"""Close out the tracking of the backup statistics.
+	
+	Moved to run at this point so that only the clock of the system on which
+	rdiff-backup is run is used (set by passing in time.time() from that
+	system). Use at end of session.
+
+	"""
+	assert Globals.rbdir.conn is Globals.local_connection
+	if Globals.print_statistics: statistics.print_active_stats(end_time)
+	if Globals.file_statistics: statistics.FileStats.close()
+	statistics.write_active_statfileobj(end_time)
 
 
 def Restore(src_rp, dest_rp, restore_as_of = None):
