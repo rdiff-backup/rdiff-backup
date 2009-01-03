@@ -1,4 +1,4 @@
-.TH RDIFF-BACKUP 1 "DECEMBER 2008" "Version 1.2.3" "User Manuals" \" -*- nroff -*-
+.TH RDIFF-BACKUP 1 "JANUARY 2009" "Version 1.3.0" "User Manuals" \" -*- nroff -*-
 .SH NAME
 rdiff-backup \- local/remote mirror and incremental backup
 .SH SYNOPSIS
@@ -485,6 +485,13 @@ the level defaults to the verbosity level.
 Test for the presence of a compatible rdiff-backup server as specified
 in the following host::filename argument(s).  The filename section
 will be ignored.
+.TP
+.B \-\-use-compatible-timestamps
+Create timestamps in which the hour/minute/second separator is a - (hyphen)
+instead of a : (colon). It is safe to use this option on one backup, and then
+not use it on another; rdiff-backup supports the intermingling of different
+timestamp formats. This option is enabled by default on platforms which
+require that the colon be escaped.
 .TP
 .BI "\-\-user-mapping-file " filename
 Map user names and ids according to the user mapping file

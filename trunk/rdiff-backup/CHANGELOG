@@ -1,6 +1,10 @@
 New in v1.3.0 (????/??/??)
 ---------------------------
 
+New option: --use-compatible-timestamps, which causes rdiff-backup to use - as
+the hour/minute/second separator instead of :. Enabled by default on systems
+which require : to be escaped. (Oliver Mulatz)
+
 Allow rdiff-backup to backup files which it cannot read, but can change
 the permissions of. (Andrew Ferguson)
 
