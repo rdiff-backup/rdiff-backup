@@ -159,6 +159,11 @@ rbdir = None
 chars_to_quote = None
 quoting_char = ';'
 
+# If true, the timestamps use the following format: "2008-09-01T04-49-04-07-00"
+# (instead of "2008-09-01T04:49:04-07:00"). This creates timestamps which
+# don't need to be escaped on Windows.
+use_compatible_timestamps = 0 
+
 # If true, emit output intended to be easily readable by a
 # computer.  False means output is intended for humans.
 parsable_output = None

@@ -85,8 +85,8 @@ def parse_cmdlineoptions(arglist):
 		  "remove-older-than=", "restore-as-of=", "restrict=",
 		  "restrict-read-only=", "restrict-update-only=", "server",
 		  "ssh-no-compression", "tempdir=", "terminal-verbosity=",
-		  "test-server", "user-mapping-file=", "verbosity=", "verify",
-		  "verify-at-time=", "version"])
+		  "test-server", "use-compatible-timestamps", "user-mapping-file=",
+		  "verbosity=", "verify", "verify-at-time=", "version"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: " + str(e))
 
@@ -199,6 +199,8 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--tempdir": tempfile.tempdir = arg
 		elif opt == "--terminal-verbosity": Log.setterm_verbosity(arg)
 		elif opt == "--test-server": action = "test-server"
+		elif opt == "use-compatible-timestamps":
+			Globals.set("use_compatible_timestamps", 1)
 		elif opt == "--user-mapping-file": user_mapping_filename = arg
 		elif opt == "-v" or opt == "--verbosity": Log.setverbosity(arg)
 		elif opt == "--verify": action, restore_timestr = "verify", "now"

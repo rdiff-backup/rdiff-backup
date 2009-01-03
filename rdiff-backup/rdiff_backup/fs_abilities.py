@@ -708,6 +708,12 @@ class SetGlobals:
 	def set_symlink_perms(self):
 		SetConnections.UpdateGlobal('symlink_perms',
 									self.dest_fsa.symlink_perms)
+	
+	def set_compatible_timestamps(self):
+		if Globals.chars_to_quote.find(":") > -1:
+			SetConnections.UpdateGlobal('use_compatible_timestamps', 1)
+			log.Log("Enabled use_compatible_timestamps", 4)
+
 
 class BackupSetGlobals(SetGlobals):
 	"""Functions for setting fsa related globals for backup session"""
@@ -963,6 +969,7 @@ def backup_set_globals(rpin, force):
 	bsg.set_symlink_perms()
 	update_quoting = bsg.set_chars_to_quote(Globals.rbdir, force)
 	bsg.set_special_escapes(Globals.rbdir)
+	bsg.set_compatible_timestamps()
 
 	if update_quoting and force:
 		FilenameMapping.update_quoting(Globals.rbdir)
@@ -990,6 +997,7 @@ def restore_set_globals(rpout):
 	rsg.set_symlink_perms()
 	rsg.set_chars_to_quote(Globals.rbdir)
 	rsg.set_special_escapes(Globals.rbdir)
+	rsg.set_compatible_timestamps()
 
 def single_set_globals(rp, read_only = None):
 	"""Set fsa related globals for operation on single filesystem"""
@@ -1010,4 +1018,5 @@ def single_set_globals(rp, read_only = None):
 		ssg.set_symlink_perms()
 	ssg.set_chars_to_quote(Globals.rbdir)
 	ssg.set_special_escapes(Globals.rbdir)
+	ssg.set_compatible_timestamps()
 
