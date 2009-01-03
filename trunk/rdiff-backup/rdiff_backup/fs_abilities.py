@@ -29,7 +29,7 @@ FSAbilities object describing it.
 
 import errno, os
 import Globals, log, TempFile, selection, robust, SetConnections, \
-	   static, FilenameMapping, win_acls
+	   static, FilenameMapping, win_acls, Time
 
 class FSAbilities:
 	"""Store capabilities of given file system"""
@@ -712,6 +712,7 @@ class SetGlobals:
 	def set_compatible_timestamps(self):
 		if Globals.chars_to_quote.find(":") > -1:
 			SetConnections.UpdateGlobal('use_compatible_timestamps', 1)
+			Time.setcurtime(Time.curtime) # update Time.curtimestr on all conns
 			log.Log("Enabled use_compatible_timestamps", 4)
 
 
