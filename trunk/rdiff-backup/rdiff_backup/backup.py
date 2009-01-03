@@ -110,8 +110,16 @@ class SourceStruct:
 			if dest_sig.isflaglinked():
 				diff_rorp.flaglinked(dest_sig.get_link_flag())
 			elif src_rp.isreg():
+				reset_perms = False
+				if (Globals.process_uid != 0 and not src_rp.readable() and
+						src_rp.isowner()):
+					reset_perms = True
+					src_rp.chmod(0400 | src_rp.getperms())
+
 				if dest_sig.isreg(): attach_diff(diff_rorp, src_rp, dest_sig)
 				else: attach_snapshot(diff_rorp, src_rp)
+
+				if reset_perms: src_rp.chmod(src_rp.getperms() & ~0400)
 			else:
 				dest_sig.close_if_necessary()
 				diff_rorp.set_attached_filetype('snapshot')

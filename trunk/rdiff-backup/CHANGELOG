@@ -1,6 +1,9 @@
 New in v1.3.0 (????/??/??)
 ---------------------------
 
+Allow rdiff-backup to backup files which it cannot read, but can change
+the permissions of. (Andrew Ferguson)
+
 Take start and end times from same system so that the elapsed time printed in
 the statistics is not affected by time zone. (Andrew Ferguson)
 
