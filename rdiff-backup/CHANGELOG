@@ -1,6 +1,8 @@
-New in v1.2.5 (????/??/??)
+New in v1.3.0 (????/??/??)
 ---------------------------
 
+Properly fix escaping DOS devices and trailing periods and spaces; now supports
+native Windows and Linxu/FAT32. (Andrew Ferguson)
 
 
 New in v1.2.4 (2009/01/01)

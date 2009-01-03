@@ -50,8 +50,8 @@ class FSAbilities:
 	high_perms = None # True if suid etc perms are (read/write) supported
 	escape_dos_devices = None # True if dos device files can't be created (e.g.,
 							  # aux, con, com1, etc)
-	escape_trailing_spaces = None # True if files with trailing spaces or
-								  # periods can't be created
+	escape_trailing_spaces = None # True if trailing spaces or periods at the
+								  # end of filenames aren't preserved
 	symlink_perms = None # True if symlink perms are affected by umask
 
 	def __init__(self, name = None):
@@ -131,7 +131,7 @@ class FSAbilities:
 		self.set_carbonfile()
 		self.set_case_sensitive_readonly(rp)
 		self.set_escape_dos_devices(rp)
-		self.set_escape_trailing_spaces(rp)
+		self.set_escape_trailing_spaces_readonly(rp)
 		return self
 
 	def init_readwrite(self, rbdir):
@@ -166,7 +166,7 @@ class FSAbilities:
 		self.set_high_perms_readwrite(subdir)
 		self.set_symlink_perms(subdir)
 		self.set_escape_dos_devices(subdir)
-		self.set_escape_trailing_spaces(subdir)
+		self.set_escape_trailing_spaces_readwrite(subdir)
 
 		subdir.delete()
 		return self
@@ -554,44 +554,88 @@ class FSAbilities:
 		sym_source.delete()
 
 	def set_escape_dos_devices(self, subdir):
-		"""If special file con can be stat'd, escape special files"""
+		"""Test if DOS device files can be used as filenames.
+
+		This test must detect if the underlying OS is Windows, whehter we are
+		running under Cygwin or natively. Cygwin allows these special files to
+		be stat'd from any directory. Native Windows returns OSError (like
+		non-Cygwin POSIX), but we can check for that using os.name.
+
+		Note that 'con' and 'aux' have some unusual behaviors as shown below.
+
+		os.lstat() 	 |	con			aux			prn
+		-------------+-------------------------------------
+		Unix		 |	OSError,2	OSError,2	OSError,2
+		Cygwin/NTFS	 |	-success-	-success-	-success-
+		Cygwin/FAT32 |	-success-	-HANGS-
+		Native Win	 |	WinError,2	WinError,87	WinError,87
+		"""
+		if os.name == "nt":
+			self.escape_dos_devices = 1
+			return
+
 		try:
 			device_rp = subdir.append("con")
 			if device_rp.lstat():
-				log.Log("escape_dos_devices required by filesystem at %s" \
-						% (subdir.path), 4)
 				self.escape_dos_devices = 1
 			else:
-				log.Log("escape_dos_devices not required by filesystem at %s" \
-						% (subdir.path), 4)
-				self.escape_dos_devices = 0
+				self.escape_dos_devices = 0 
 		except(OSError):
-			log.Log("escape_dos_devices required by filesystem at %s" \
-					% (subdir.path), 4)
 			self.escape_dos_devices = 1
 
-	def set_escape_trailing_spaces(self, subdir):
-		# Disable this for 1.2.4
-		self.escape_trailing_spaces = 0
-		return
+	def set_escape_trailing_spaces_readwrite(self, testdir):
+		"""Windows and Linux/FAT32 will not preserve trailing spaces or periods.
+	
+		Linux/FAT32 behaves inconsistently: It will give an OSError,22 if
+		os.mkdir() is called on a directory name with a space at the end, but
+		will give an IOError("invalid mode") if you attempt to create a filename
+		with a space at the end. However, if a period is placed at the end of
+		the name, Linux/FAT32 is consistent with Cygwin and Native Windows.
+		"""
 
-		"""If file with trailing space can't be created, escape such files"""
-		try:
-			space_rp = subdir.append("test ")
-			space_rp.touch()
-			if space_rp.lstat():
-				log.Log("escape_trailing_spaces not required by filesystem " \
-						"at %s" % (subdir.path), 4)
-				self.escape_trailing_spaces = 0
-				space_rp.delete()
-			else:
-				log.Log("escape_trailing_spaces required by filesystem at %s" \
-						% (subdir.path), 4)
-				self.escape_trailing_spaces = 1 
-		except (OSError, IOError):
-			log.Log("escape_trailing_spaces required by filesystem at %s" \
-					% (subdir.path), 4)
+		period_rp = testdir.append("foo.")
+		assert not period_rp.lstat()
+
+		tmp_rp = testdir.append("foo")
+		tmp_rp.touch()
+		assert tmp_rp.lstat()
+
+		period_rp.setdata()
+		if period_rp.lstat():
 			self.escape_trailing_spaces = 1
+		else:
+			self.escape_trailing_spaces = 0
+
+		tmp_rp.delete()
+
+	def set_escape_trailing_spaces_readonly(self, rp):
+		"""Determine if directory at rp permits filenames with trailing
+		spaces or periods without writing."""
+
+		def test_period(dir_rp, dirlist):
+			"""Return 1 if trailing spaces and periods should be escaped"""
+			filename = dirlist[0]
+			try:
+				test_rp = dir_rp.append(filename)
+			except OSError:
+				return 0
+			assert test_rp.lstat(), test_rp
+			period = filename + '.' 
+			if period in dirlist: return 0 
+
+			period_rp = dir_rp.append(period)
+			if period_rp.lstat(): return 1
+			return 0
+
+		dirlist = robust.listrp(rp)
+		if len(dirlist):
+			self.escape_trailing_spaces = test_period(rp, dirlist)
+		else:
+			log.Log("Warning: could not determine if source directory at\n  "
+					+ rp.path + "\npermits trailing spaces or periods in "
+					"filenames because we can't find any files.\n"
+					"It will be treated as permitting such files.", 2)
+			self.escape_trailing_spaces = 0
 
 
 def get_readonly_fsa(desc_string, rp):
@@ -665,14 +709,6 @@ class SetGlobals:
 		SetConnections.UpdateGlobal('symlink_perms',
 									self.dest_fsa.symlink_perms)
 
-	def set_escape_dos_devices(self):
-		SetConnections.UpdateGlobal('escape_dos_devices', \
-									self.dest_fsa.escape_dos_devices)
-
-	def set_escape_trailing_spaces(self):
-		SetConnections.UpdateGlobal('escape_trailing_spaces', \
-									self.dest_fsa.escape_trailing_spaces)
-
 class BackupSetGlobals(SetGlobals):
 	"""Functions for setting fsa related globals for backup session"""
 	def update_triple(self, src_support, dest_support, attr_triple):
@@ -687,43 +723,50 @@ class BackupSetGlobals(SetGlobals):
 			SetConnections.UpdateGlobal(write_attr, 1)
 			self.out_conn.Globals.set_local(conn_attr, 1)
 
-	def set_must_escape_dos_devices(self, rbdir):
-		"""If local edd or src edd, then must escape """
-		try:
-			device_rp = rbdir.append("con")
-			if device_rp.lstat(): local_edd = 1
-			else: local_edd = 0
-		except (OSError): local_edd = 1
-		SetConnections.UpdateGlobal('must_escape_dos_devices', \
-			self.src_fsa.escape_dos_devices or local_edd)
-		log.Log("Backup: must_escape_dos_devices = %d" % \
-				(self.src_fsa.escape_dos_devices or local_edd), 4)
+	def set_special_escapes(self, rbdir):
+		"""Escaping DOS devices and trailing periods/spaces works like
+		regular filename escaping. If only the destination requires it,
+		then we do it. Otherwise, it is not necessary, since the files
+		couldn't have been created in the first place. We also record
+		whether we have done it in order to handle the case where a
+		volume which was escaped is later restored by an OS that does
+		not require it."""
 
-	def set_must_escape_trailing_spaces(self, rbdir):
-		"""If local ets or src ets, then must escape """
-		# Disable this for 1.2.4
-		SetConnections.UpdateGlobal('must_escape_trailing_spaces', 0) 
-		return
+		suggested_edd = (self.dest_fsa.escape_dos_devices and not \
+				self.src_fsa.escape_dos_devices)
+		suggested_ets = (self.dest_fsa.escape_trailing_spaces and not \
+				self.src_fsa.escape_trailing_spaces)
 
-		try:
-			space_rp = rbdir.append("test ")
-			space_rp.touch()
-			if space_rp.lstat():
-				local_ets = 0
-				space_rp.delete()
-			else:
-				local_ets = 1
-		except (OSError, IOError):
-			local_ets = 1
-		SetConnections.UpdateGlobal('must_escape_trailing_spaces', \
-			self.src_fsa.escape_trailing_spaces or local_ets)
-		log.Log("Backup: must_escape_trailing_spaces = %d" % \
-				(self.src_fsa.escape_trailing_spaces or local_ets), 4)
+		se_rp = rbdir.append("special_escapes")
+		if not se_rp.lstat():
+			actual_edd, actual_ets = suggested_edd, suggested_ets
+			se = ""
+			if actual_edd: se = se + "escape_dos_devices\n"
+			if actual_ets: se = se + "escape_trailing_spaces\n"
+			se_rp.write_string(se)
+		else:
+			se = se_rp.get_data().split("\n")
+			actual_edd = ("escape_dos_devices" in se)
+			actual_ets = ("escape_trailing_spaces" in se)
+
+			if actual_edd != suggested_edd and not suggested_edd:
+				log.Log("Warning: System no longer needs DOS devices escaped, "
+						"but we will retain for backwards compatibility.", 2)
+			if actual_ets != suggested_ets and not suggested_ets:
+				log.Log("Warning: System no longer needs trailing spaces or "
+						"periods escaped, but we will retain for backwards "
+						"compatibility.", 2)
+
+		SetConnections.UpdateGlobal('escape_dos_devices', actual_edd)
+		log.Log("Backup: escape_dos_devices = %d" % actual_edd, 4)
+
+		SetConnections.UpdateGlobal('escape_trailing_spaces', actual_ets)
+		log.Log("Backup: escape_trailing_spaces = %d" % actual_ets, 4)
 
 	def set_chars_to_quote(self, rbdir, force):
 		"""Set chars_to_quote setting for backup session
 
-		Unlike the other options, the chars_to_quote setting also
+		Unlike most other options, the chars_to_quote setting also
 		depends on the current settings in the rdiff-backup-data
 		directory, not just the current fs features.
 
@@ -818,45 +861,33 @@ class RestoreSetGlobals(SetGlobals):
 		self.out_conn.Globals.set_local(write_attr, 1)
 		if src_support: self.in_conn.Globals.set_local(conn_attr, 1)
 
-	def set_must_escape_dos_devices(self, rbdir):
-		"""If local edd or src edd, then must escape """
-		if getattr(self, "src_fsa", None) is not None:
-			src_edd = self.src_fsa.escape_dos_devices
-		else: src_edd = 0
-		try:
-			device_rp = rbdir.append("con")
-			if device_rp.lstat(): local_edd = 1
-			else: local_edd = 0
-		except (OSError): local_edd = 1
-		SetConnections.UpdateGlobal('must_escape_dos_devices', \
-			src_edd or local_edd)
-		log.Log("Restore: must_escape_dos_devices = %d" % \
-				(src_edd or local_edd), 4)
-
-	def set_must_escape_trailing_spaces(self, rbdir):
-		"""If local ets or src ets, then must escape """
-		# Disable this for 1.2.4
-		SetConnections.UpdateGlobal('must_escape_trailing_spaces', 0) 
-		return
-
-		if getattr(self, "src_fsa", None) is not None:
-			src_ets = self.src_fsa.escape_trailing_spaces
+	def set_special_escapes(self, rbdir):
+		"""Set escape_dos_devices and escape_trailing_spaces from
+		rdiff-backup-data dir, just like chars_to_quote"""
+		se_rp = rbdir.append("special_escapes")
+		if se_rp.lstat():
+			se = se_rp.get_data().split("\n")
+			actual_edd = ("escape_dos_devices" in se)
+			actual_ets = ("escape_trailing_spaces" in se)
 		else:
-			src_ets = 0
-		try:
-			space_rp = rbdir.append("test ")
-			space_rp.touch()
-			if space_rp.lstat():
-				local_ets = 0
-				space_rp.delete()
+			log.Log("Warning: special_escapes file not found,\n"
+					"will assume need to escape DOS devices and trailing "
+					"spaces based on file systems.", 2)
+			if getattr(self, "src_fsa", None) is not None:
+				actual_edd = (self.src_fsa.escape_dos_devices and not
+								self.dest_fsa.escape_dos_devices)
+				actual_ets = (self.src_fsa.escape_trailing_spaces and not
+								self.dest_fsa.escape_trailing_spaces)
 			else:
-				local_ets = 1
-		except (OSError, IOError):
-			local_ets = 1
-		SetConnections.UpdateGlobal('must_escape_trailing_spaces', \
-			src_ets or local_ets)
-		log.Log("Restore: must_escape_trailing_spaces = %d" % \
-				(src_ets or local_ets), 4)
+				# Single filesystem operation
+				actual_edd = self.dest_fsa.escape_dos_devices
+				actual_ets = self.dest_fsa.escape_trailing_spaces
+
+		SetConnections.UpdateGlobal('escape_dos_devices', actual_edd)
+		log.Log("Backup: escape_dos_devices = %d" % actual_edd, 4)
+
+		SetConnections.UpdateGlobal('escape_trailing_spaces', actual_ets)
+		log.Log("Backup: escape_trailing_spaces = %d" % actual_ets, 4)
 
 	def set_chars_to_quote(self, rbdir):
 		"""Set chars_to_quote from rdiff-backup-data dir"""
@@ -931,10 +962,7 @@ def backup_set_globals(rpin, force):
 	bsg.set_high_perms()
 	bsg.set_symlink_perms()
 	update_quoting = bsg.set_chars_to_quote(Globals.rbdir, force)
-	bsg.set_escape_dos_devices()
-	bsg.set_escape_trailing_spaces()
-	bsg.set_must_escape_dos_devices(Globals.rbdir)
-	bsg.set_must_escape_trailing_spaces(Globals.rbdir)
+	bsg.set_special_escapes(Globals.rbdir)
 
 	if update_quoting and force:
 		FilenameMapping.update_quoting(Globals.rbdir)
@@ -961,10 +989,7 @@ def restore_set_globals(rpout):
 	rsg.set_high_perms()
 	rsg.set_symlink_perms()
 	rsg.set_chars_to_quote(Globals.rbdir)
-	rsg.set_escape_dos_devices()
-	rsg.set_escape_trailing_spaces()
-	rsg.set_must_escape_dos_devices(Globals.rbdir)
-	rsg.set_must_escape_trailing_spaces(Globals.rbdir)
+	rsg.set_special_escapes(Globals.rbdir)
 
 def single_set_globals(rp, read_only = None):
 	"""Set fsa related globals for operation on single filesystem"""
@@ -984,8 +1009,5 @@ def single_set_globals(rp, read_only = None):
 		ssg.set_high_perms()
 		ssg.set_symlink_perms()
 	ssg.set_chars_to_quote(Globals.rbdir)
-	ssg.set_escape_dos_devices()
-	ssg.set_escape_trailing_spaces()
-	ssg.set_must_escape_dos_devices(Globals.rbdir)
-	ssg.set_must_escape_trailing_spaces(Globals.rbdir)
+	ssg.set_special_escapes(Globals.rbdir)
 
