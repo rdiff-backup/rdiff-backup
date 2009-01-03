@@ -860,7 +860,8 @@ def checkdest_need_check(dest_rp):
 	"""Return None if no dest dir found, 1 if dest dir needs check, 0 o/w"""
 	if not dest_rp.isdir() or not Globals.rbdir.isdir(): return None
 	for filename in Globals.rbdir.listdir():
-		if filename not in ['chars_to_quote', 'backup.log']: break
+		if filename not in ['chars_to_quote', 'special_escapes',
+				'backup.log']: break
 	else: # This may happen the first backup just after we test for quoting
 		return None
 	curmirroot = Globals.rbdir.append("current_mirror")
