@@ -110,16 +110,8 @@ class SourceStruct:
 			if dest_sig.isflaglinked():
 				diff_rorp.flaglinked(dest_sig.get_link_flag())
 			elif src_rp.isreg():
-				reset_perms = False
-				if (Globals.process_uid != 0 and not src_rp.readable() and
-						src_rp.isowner()):
-					reset_perms = True
-					src_rp.chmod(0400 | src_rp.getperms())
-
 				if dest_sig.isreg(): attach_diff(diff_rorp, src_rp, dest_sig)
 				else: attach_snapshot(diff_rorp, src_rp)
-
-				if reset_perms: src_rp.chmod(src_rp.getperms() & ~0400)
 			else:
 				dest_sig.close_if_necessary()
 				diff_rorp.set_attached_filetype('snapshot')
@@ -498,6 +490,10 @@ class CacheCollatedPostProcess:
 		self.metawriter.close()
 		metadata.ManagerObj.ConvertMetaToDiff()
 
+		if Globals.print_statistics: statistics.print_active_stats()
+		if Globals.file_statistics: statistics.FileStats.close()
+		statistics.write_active_statfileobj()
+
 
 class PatchITRB(rorpiter.ITRBranch):
 	"""Patch an rpath with the given diff iters (use with IterTreeReducer)
@@ -532,8 +528,11 @@ class PatchITRB(rorpiter.ITRBranch):
 		tf = TempFile.new(mirror_rp)
 		if self.patch_to_temp(mirror_rp, diff_rorp, tf):
 			if tf.lstat():
-				rpath.rename(tf, mirror_rp)
-				self.CCPP.flag_success(index)
+				if robust.check_common_error(self.error_handler, rpath.rename,
+						(tf, mirror_rp)) is None:
+					self.CCPP.flag_success(index)
+				else:
+					tf.delete()
 			elif mirror_rp and mirror_rp.lstat():
 				mirror_rp.delete()
 				self.CCPP.flag_deleted(index)
@@ -691,14 +690,18 @@ class IncrementITRB(PatchITRB):
 			self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
 		tf = TempFile.new(mirror_rp)
 		if self.patch_to_temp(mirror_rp, diff_rorp, tf):
-			inc = increment.Increment(tf, mirror_rp, inc_prefix)
-			if inc is not None:
+			inc = robust.check_common_error(self.error_handler,
+					increment.Increment, (tf, mirror_rp, inc_prefix))
+			if inc is not None and not isinstance(inc, int):
 				self.CCPP.set_inc(index, inc)
 				if inc.isreg():
 					inc.fsync_with_dir() # Write inc before rp changed
 				if tf.lstat():
-					rpath.rename(tf, mirror_rp)
-					self.CCPP.flag_success(index)
+					if robust.check_common_error(self.error_handler,
+							rpath.rename, (tf, mirror_rp)) is None:
+						self.CCPP.flag_success(index)
+					else:
+						tf.delete()
 				elif mirror_rp.lstat():
 					mirror_rp.delete()
 					self.CCPP.flag_deleted(index)
