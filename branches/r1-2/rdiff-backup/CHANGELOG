@@ -1,3 +1,12 @@
+New in v1.2.5 (2009/01/06)
+---------------------------
+
+Fix typo in robust.py which broke error reporting. Closes Savannah bug #25255.
+
+Ignore Windows errors caused by too long filenames; the files are not yet
+backed-up, but the backup process is no longer halted. (Andrew Ferguson)
+
+
 New in v1.2.4 (2009/01/01)
 ---------------------------
 
