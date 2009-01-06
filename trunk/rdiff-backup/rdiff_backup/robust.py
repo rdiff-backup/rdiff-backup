@@ -74,7 +74,7 @@ def is_routine_fatal(exc):
 		return "Lost connection to the remote system"
 	elif isinstance(exc, SignalException):
 		return "Killed with signal %s" % (exc,)
-	elif isinstance(exc, EnvironmentError) and e.errno == errno.ENOTCONN:
+	elif isinstance(exc, EnvironmentError) and exc.errno == errno.ENOTCONN:
 		return ("Filesystem reports connection failure:\n%s" % exc)
 	return None
 
