@@ -532,8 +532,11 @@ class PatchITRB(rorpiter.ITRBranch):
 		tf = TempFile.new(mirror_rp)
 		if self.patch_to_temp(mirror_rp, diff_rorp, tf):
 			if tf.lstat():
-				rpath.rename(tf, mirror_rp)
-				self.CCPP.flag_success(index)
+				if robust.check_common_error(self.error_handler, rpath.rename,
+						(tf, mirror_rp)) is None:
+					self.CCPP.flag_success(index)
+				else:
+					tf.delete()
 			elif mirror_rp and mirror_rp.lstat():
 				mirror_rp.delete()
 				self.CCPP.flag_deleted(index)
@@ -691,14 +694,18 @@ class IncrementITRB(PatchITRB):
 			self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
 		tf = TempFile.new(mirror_rp)
 		if self.patch_to_temp(mirror_rp, diff_rorp, tf):
-			inc = increment.Increment(tf, mirror_rp, inc_prefix)
-			if inc is not None:
+			inc = robust.check_common_error(self.error_handler,
+					increment.Increment, (tf, mirror_rp, inc_prefix))
+			if inc is not None and not isinstance(inc, int):
 				self.CCPP.set_inc(index, inc)
 				if inc.isreg():
 					inc.fsync_with_dir() # Write inc before rp changed
 				if tf.lstat():
-					rpath.rename(tf, mirror_rp)
-					self.CCPP.flag_success(index)
+					if robust.check_common_error(self.error_handler,
+							rpath.rename, (tf, mirror_rp)) is None:
+						self.CCPP.flag_success(index)
+					else:
+						tf.delete()
 				elif mirror_rp.lstat():
 					mirror_rp.delete()
 					self.CCPP.flag_deleted(index)
