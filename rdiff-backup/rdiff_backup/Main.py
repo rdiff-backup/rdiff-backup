@@ -199,7 +199,7 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--tempdir": tempfile.tempdir = arg
 		elif opt == "--terminal-verbosity": Log.setterm_verbosity(arg)
 		elif opt == "--test-server": action = "test-server"
-		elif opt == "use-compatible-timestamps":
+		elif opt == "--use-compatible-timestamps":
 			Globals.set("use_compatible_timestamps", 1)
 		elif opt == "--user-mapping-file": user_mapping_filename = arg
 		elif opt == "-v" or opt == "--verbosity": Log.setverbosity(arg)
