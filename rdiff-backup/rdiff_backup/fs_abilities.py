@@ -796,6 +796,7 @@ backed up onto it.
 By specificying the --force option, rdiff-backup will migrate the
 repository from the old quoting chars to the new ones.""" %
 			(suggested_ctq, actual_ctq, ctq_rp.path))
+		return (actual_ctq, None) # Maintain Globals override
 
 
 class RestoreSetGlobals(SetGlobals):
