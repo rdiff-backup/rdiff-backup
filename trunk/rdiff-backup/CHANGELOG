@@ -1,6 +1,8 @@
 New in v1.3.1 (????/??/??)
 ---------------------------
 
+Fix --override-chars-to-quote option. (Andrew Ferguson)
+
 Fix typo in robust.py which broke error reporting. Closes Savannah bug #25255.
 
 Ignore Windows errors caused by too long filenames; the files are not yet
