@@ -119,7 +119,10 @@ def parse_file_desc(file_desc):
 
 def fill_schema(host_info):
 	"""Fills host_info into the schema and returns remote command"""
-	return __cmd_schema % host_info
+	try:
+		return __cmd_schema % host_info
+	except TypeError:
+		Log.FatalError("Invalid remote schema:\n\n%s\n" % __cmd_schema)
 
 def init_connection(remote_cmd):
 	"""Run remote_cmd, register connection, and then return it
@@ -134,10 +137,13 @@ def init_connection(remote_cmd):
 	Log("Executing " + remote_cmd, 4)
 	if os.name == "nt":
 		import subprocess
-		process = subprocess.Popen(remote_cmd, shell=False, bufsize=0,
+		try:
+			process = subprocess.Popen(remote_cmd, shell=False, bufsize=0,
 								stdin=subprocess.PIPE, 
 								stdout=subprocess.PIPE)
-		(stdin, stdout) = (process.stdin, process.stdout)
+			(stdin, stdout) = (process.stdin, process.stdout)
+		except OSError:
+			(stdin, stdout) = (None, None)
 	else:
 		stdin, stdout = os.popen2(remote_cmd)
 	conn_number = len(Globals.connections)
@@ -152,7 +158,7 @@ def init_connection(remote_cmd):
 def check_connection_version(conn, remote_cmd):
 	"""Log warning if connection has different version"""
 	try: remote_version = conn.Globals.get('version')
-	except connection.ConnectionReadError, exception:
+	except connection.ConnectionError, exception:
 		Log.FatalError("""%s
 
 Couldn't start up the remote connection by executing
@@ -247,9 +253,7 @@ def test_connection(conn_number):
 	conn = Globals.connections[conn_number]
 	try:
 		assert conn.Globals.get('current_time') is None
-		assert type(conn.os.name) is str
-		if (conn.os.name != 'nt'):
-			assert type(conn.os.getuid()) is int
+		assert type(conn.os.listdir('.')) is list
 		version = conn.Globals.get('version')
 	except:
 		sys.stderr.write("Server tests failed\n")

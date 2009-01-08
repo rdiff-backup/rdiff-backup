@@ -1,6 +1,12 @@
 New in v1.2.6 (????/??/??)
 ---------------------------
 
+Print more helpful error messages when the remote command cannot be started
+on Windows. Thanks to Dominic for the bug report. (Andrew Ferguson)
+
+Fix --test-server option when used with remote Windows clients. Thanks to
+Thanos Diacakis for testing. (Andrew Ferguson)
+
 Fix --override-chars-to-quote option. (Andrew Ferguson)
 
 
