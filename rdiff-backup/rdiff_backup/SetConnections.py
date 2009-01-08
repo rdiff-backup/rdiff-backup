@@ -247,7 +247,9 @@ def test_connection(conn_number):
 	conn = Globals.connections[conn_number]
 	try:
 		assert conn.Globals.get('current_time') is None
-		assert type(conn.os.getuid()) is int
+		assert type(conn.os.name) is str
+		if (conn.os.name != 'nt'):
+			assert type(conn.os.getuid()) is int
 		version = conn.Globals.get('version')
 	except:
 		sys.stderr.write("Server tests failed\n")
