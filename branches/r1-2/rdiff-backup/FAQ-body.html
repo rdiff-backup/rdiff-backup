@@ -28,6 +28,7 @@ how much is required? What is the problem if rdiff-backup says
 <li><a href="#touple">What does "<code>touple index out of range</code>" mean?</a></li>
 <li><a href="#crc">What does "<code>IO Error: CRC check failed</code>" mean?</a></li>
 <li><a href="#badindex">What does "<code>AssertionError: Bad index order</code>" mean?</a></li>
+<li><a href="#utc">How can rdiff-backup use UTC as the timzeone?</a></li>
 </ol>
 <h3><a name="ToC4">Questions and Answers</a></h3>
 <ol>
@@ -112,9 +113,12 @@ a full explanation of why this happens see this post to the mailing list:
 <li><strong><a name="cifs">Can I backup files to a CIFS or smbfs mount?</a></strong>
 <p>You can certainly try! Using a CIFS or smbfs mount as the mirror directory has been troublesome for
 some users because of the wide variety of Samba configurations. If possible, the best solution is always
-to use rdiff-backup over SSH in the default configuration. Under both Linux and Mac OS X, smbfs seems to
-be working quite well. However, it has a 2 GB file limit and is deprecated on Linux. CIFS users sometimes
-experience one of these common errors:</p>
+to use rdiff-backup over SSH in the default configuration. Using rdiff-backup in the default configuration
+is also guaranteed to be faster because there is lower network utilization. Rdiff-backup uses
+the rsync algorithm to minimize the amount of bandwidth consumed. By using smbfs or CIFS, the complete file
+is transferred over the network.</p>
+<p>Under both Linux and Mac OS X, smbfs seems to be working quite well. However, it has a 2 GB file limit and is
+deprecated on Linux. CIFS users sometimes experience one of these common errors:</p>
 <ul>
 	<li>rdiff-backup fails to run, printing an exception about "<code>assert not upper_a.lstat()</code>" failing.
 	This can be resolved by unmounting the share, running the following command as root:<br>
@@ -425,6 +429,15 @@ have caused the problem.
 
 <p>If you get this message for an unreleated reason, try contacting the mailing 
 list.</p>
+
+</li>
+
+<li><strong><a name="utc">How can rdiff-backup use UTC as the timezone?</a></strong>
+
+<p>Like other Unix and Python programs, rdiff-backup respects the <code>TZ</code> environment variable, which can
+be used to temporarily change the timezone. On Unix, simply set <code>TZ=UTC</code> either in your shell, or on the
+command line used to run rdiff-backup. On Windows, the command <code>USE TZ=UTC</code> sets the <code>%TZ%</code>
+environment variable, and can be used either in a batch script, or at the DOS prompt.</p>
 
 </li>
 
