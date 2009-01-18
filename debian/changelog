@@ -1,3 +1,9 @@
+rdiff-backup (1.2.4-1) unstable; urgency=low
+
+  * Merging upstream version 1.2.4.
+
+ -- Daniel Baumann <daniel@debian.org>  Sat, 17 Jan 2009 23:13:00 -0500
+
 rdiff-backup (1.2.3-1) unstable; urgency=high
 
   * Replacing obsolete dh_clean -k with dh_prep.
