@@ -1,0 +1,462 @@
+#!/usr/bin/python
+# rdiff-backup-statistics -- Summarize rdiff-backup statistics files
+# Version $version released $date
+# Copyright 2005 Dean Gaudet, Ben Escoto
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# rdiff-backup is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with rdiff-backup; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+
+import os, sys, re, getopt
+from rdiff_backup import connection, regress, rpath, Globals, restore, \
+	 Time, lazy, FilenameMapping, robust
+
+begin_time = None # Parse statistics at or after this time...
+end_time = None # ... and at or before this time (epoch seconds)
+min_ratio = .05 # report only files/directories over this number
+separator = "\n" # The line separator in file_statistics file
+quiet = False # Suppress the "Processing statistics from session ..." lines
+
+def parse_args():
+	global begin_time, end_time, min_ratio, separator, quiet
+	try: optlist, args = getopt.getopt(sys.argv[1:], "",
+			["begin-time=", "end-time=", "minimum-ratio=", "null-separator", "quiet"])
+	except getopt.error, e:
+		sys.exit("Bad command line: " + str(e))
+
+	for opt, arg in optlist:
+		if opt == "--begin-time": begin_time = Time.genstrtotime(arg)
+		elif opt == "--end-time": end_time = Time.genstrtotime(arg)
+		elif opt == "--minimum-ratio": min_ratio = float(arg)
+		elif opt == "--null-separator": separator = '\0'
+		elif opt == "--quiet": quiet = True
+		else: assert 0
+
+	if len(args) != 1:
+		sys.exit("Usage: %s [--begin-time <time>] [--end-time <time>] "
+		   "[--minimum-ratio <float>] [--null-separator] <backup-dir>\n\n"
+		   "See the rdiff-backup-statistics man page for more information."
+				 % (sys.argv[0],))
+
+	Globals.rbdir = rpath.RPath(Globals.local_connection,
+								os.path.join(args[0], 'rdiff-backup-data'))
+	if not Globals.rbdir.isdir():
+		sys.exit("Directory %s not found" % (Globals.rbdir.path,))
+	if len(sys.argv) == 3: tag = sys.argv[2]
+
+def system(cmd):
+	sys.stdout.flush()
+	if os.system(cmd): sys.exit("Error running command '%s'\n" % (cmd,))
+
+
+class StatisticsRPaths:
+	"""Hold file_statistics and session_statistics rpaths"""
+	def __init__(self, rbdir):
+		"""Initializer - read increment files from rbdir"""
+		self.rbdir = rbdir
+		self.session_rps = self.get_sorted_inc_rps('session_statistics')
+		self.filestat_rps = self.get_sorted_inc_rps('file_statistics')
+		self.combined_pairs = self.get_combined_pairs()
+
+	def get_sorted_inc_rps(self, prefix):
+		"""Return list of sorted rps with given prefix"""
+		incs = restore.get_inclist(self.rbdir.append(prefix))
+		if begin_time:
+			incs = filter(lambda i: i.getinctime() >= begin_time, incs)
+		if end_time:
+			incs = filter(lambda i: i.getinctime() <= end_time, incs)
+		incs.sort(key = lambda i: i.getinctime())
+		return incs
+
+	def get_combined_pairs(self):
+		"""Return list of matched (session_rp, file_rp) pairs"""
+		session_dict = {}
+		for inc in self.session_rps: session_dict[inc.getinctime()] = inc
+		filestat_dict = {}
+		for inc in self.filestat_rps: filestat_dict[inc.getinctime()] = inc
+
+		result = []
+		keylist = session_dict.keys()
+		keylist.sort()
+		for time in keylist:
+			if filestat_dict.has_key(time):
+				result.append((session_dict[time], filestat_dict[time]))
+			else: sys.stderr.write("No file_statistics to match %s\n" %
+								   (session_dict[time].path,))
+		return result
+
+def print_session_statistics(stat_rpaths):
+	print "Session statistics:"
+	system('rdiff-backup --calculate-average "' +
+		   '" "'.join([inc.path for inc in stat_rpaths.session_rps]) + '"')
+
+
+class FileStatisticsTree:
+	"""Holds a tree of important files/directories, along with cutoffs"""
+	def __init__(self, cutoff_fs, fs_root):
+		"""Initialize with FileStat cutoff object, and root of tree"""
+		self.cutoff_fs = cutoff_fs
+		self.fs_root = fs_root
+
+	def __iadd__(self, other):
+		"""Add cutoffs, and merge the other's fs_root"""
+		self.cutoff_fs += other.cutoff_fs
+		self.merge_tree(self.fs_root, other.fs_root)
+		return self
+
+	def merge_tree(self, myfs, otherfs):
+		"""Add other_fs's tree to one of my fs trees"""
+		assert myfs.nametuple == otherfs.nametuple
+		total_children = {}
+		mine = dict([(child.nametuple, child) for child in myfs.children])
+		others = dict([(child.nametuple, child) for child in otherfs.children])
+		for name in mine.keys() + others.keys(): # Remove duplicates
+			if not total_children.has_key(name):
+				total_children[name] = (mine.get(name), others.get(name))
+
+		# Subtract subdirectories so we can rebuild
+		for child in myfs.children: myfs -= child
+		for child in otherfs.children: otherfs -= child
+		myfs.children = []
+
+		for (name, (mychild, otherchild)) in total_children.items():
+			if mychild:
+				if otherchild: self.merge_tree(mychild, otherchild)
+				myfs += mychild
+				myfs.children.append(mychild)
+			elif otherchild:
+				myfs += otherchild
+				myfs.children.append(otherchild)
+			else: assert 0
+		myfs += otherfs
+
+	def get_top_fs(self, fs_func):
+		"""Process the FileStat tree and find everything above the cutoff
+
+		fs_func will be used to evaluate cutoff_fs and those in the
+		tree.  Of course the root will be above the cutoff, but we try
+		to find the most specific directories still above the cutoff.
+		The value of any directories that make the cutoff will be
+		excluded from the value of parent directories.
+
+		"""
+		abs_cutoff = fs_func(self.cutoff_fs)
+		def helper(subtree):
+			"""Returns ([list of (top fs, value)], total excluded amount)"""
+			subtree_val = fs_func(subtree)
+			if subtree_val <= abs_cutoff: return ([], 0)
+
+			top_children, total_excluded = [], 0
+			for child in subtree.children:
+				top_sublist, excluded = helper(child)
+				top_children.extend(top_sublist)
+				total_excluded += excluded
+
+			current_value = subtree_val - total_excluded
+			if current_value >= abs_cutoff:
+				return ([(subtree, current_value)] + top_children, subtree_val)
+			else: return (top_children, total_excluded)
+		return helper(self.fs_root)[0]
+
+	def print_top_dirs(self, label, fs_func):
+		"""Print the top directories in sorted order"""
+		def print_line(fs, val):
+			percentage = float(val)/fs_func(self.fs_root) * 100
+			path = fs.nametuple and '/'.join(fs.nametuple) or '.'
+			print '%s (%02.1f%%)' % (path, percentage)
+
+		s = "Top directories by %s (percent of total)" % (label,)
+		print "\n%s\n%s" % (s, ('-'*len(s)))
+		top_fs_pair_list = self.get_top_fs(fs_func)
+		top_fs_pair_list.sort(key = lambda pair: pair[1], reverse = 1)
+		for fs, val in top_fs_pair_list: print_line(fs, val)
+
+def make_fst(session_rp, filestat_rp):
+	"""Construct FileStatisticsTree given session and file stat rps
+
+	We would like a full tree, but this in general will take too much
+	memory.  Instead we will build a tree that has only the
+	files/directories with some stat exceeding the min ratio.
+
+	"""
+	def get_ss_dict():
+		"""Parse session statistics file and return dictionary with ss data"""
+		fileobj = session_rp.open('r', session_rp.isinccompressed())
+		return_val = {}
+		for line in fileobj:
+			if line.startswith('#'): continue
+			comps = line.split()
+			if len(comps) < 2:
+				sys.stderr.write("Unable to parse session statistics line: "
+								 +line)
+				continue
+			return_val[comps[0]] = float(comps[1])
+		return return_val
+
+	def get_cutoff_fs(session_dict):
+		"""Return FileStat object set with absolute cutoffs
+
+		Any FileStat object that is bigger than the result in any
+		aspect will be considered "important".
+
+		"""
+		def get_min(attrib): return min_ratio*session_dict[attrib]
+		min_changed = min_ratio*(session_dict['NewFiles'] +
+				session_dict['ChangedFiles'] + session_dict['NewFiles'])
+		return FileStat((), min_changed, get_min('SourceFileSize'),
+						get_min('IncrementFileSize'))
+
+	def yield_fs_objs(filestatsobj):
+		"""Iterate FileStats by processing file_statistics fileobj"""
+		r = re.compile("^(.*) ([0-9]+) ([0-9]+|NA) ([0-9]+|NA) "
+					   "([0-9]+|NA)%s?$" % (separator,))
+		for line in filestatsobj:
+			if line.startswith('#'): continue
+			match = r.match(line)
+			if not match:
+				sys.stderr.write("Error parsing line: %s\n" % (line,))
+				continue
+
+			filename = match.group(1)
+			if filename == '.': nametuple = ()
+			else: nametuple = tuple(filename.split('/'))
+
+			sourcesize_str = match.group(3)
+			if sourcesize_str == 'NA': sourcesize = 0
+			else: sourcesize = int(sourcesize_str)
+
+			incsize_str = match.group(5)
+			if incsize_str == 'NA': incsize = 0
+			else: incsize = int(incsize_str)
+
+			yield FileStat(nametuple, int(match.group(2)), sourcesize, incsize)
+
+	def accumulate_fs(fs_iter):
+		"""Yield the FileStat objects in fs_iter, but with total statistics
+
+		In fs_iter, the statistics of directories FileStats only apply
+		to themselves.  This will iterate the same FileStats, but
+		directories will include all the files under them.  As a
+		result, the directories will come after the files in them
+		(e.g. '.' will be last.).
+
+		Naturally this would be written recursively, but profiler said
+		it was too slow in python.
+
+		"""
+		root = fs_iter.next()
+		assert root.nametuple == (), root
+		stack = [root]
+		try: fs = fs_iter.next()
+		except StopIteration:
+			yield root
+			return
+
+		while 1:
+			if fs and fs.is_child(stack[-1]):
+				stack.append(fs)
+				try: fs = fs_iter.next()
+				except StopIteration: fs = None
+			else:
+				expired = stack.pop()
+				yield expired
+				if not stack: return
+				else: stack[-1].add_child(expired)
+
+
+	def make_tree_one_level(fs_iter, first_fs):
+		"""Populate a tree of FileStat objects from fs_iter
+
+		This function wants the fs_iter in the reverse direction as
+		usual, with the parent coming directly after all the children.
+		It will return the parent of first_fs.
+
+		"""
+		children = [first_fs]
+		fs = fs_iter.next()
+		while 1:
+			if first_fs.is_child(fs):
+				fs.children = children
+				return fs
+			elif first_fs.is_brother(fs):
+				children.append(fs)
+				fs = fs_iter.next()
+			else: fs = make_tree_one_level(fs_iter, fs)
+
+	def make_root_tree(fs_iter):
+		"""Like make_tree, but assume fs_iter starts at the root"""
+		try: fs = fs_iter.next()
+		except StopIteration: sys.exit("No files in iterator")
+
+		while fs.nametuple != (): fs = make_tree_one_level(fs_iter, fs)
+		return fs
+
+	cutoff_fs = get_cutoff_fs(get_ss_dict())
+	filestat_fileobj = ReadlineBuffer(filestat_rp)
+	accumulated_iter = accumulate_fs(yield_fs_objs(filestat_fileobj))
+	important_iter = lazy.Iter.filter(lambda fs: fs >= cutoff_fs,
+									  accumulated_iter)
+	trimmed_tree = make_root_tree(important_iter)
+	return FileStatisticsTree(cutoff_fs, trimmed_tree)
+
+
+class FileStat:
+	"""Hold the information in one line of file_statistics
+
+	However, unlike file_statistics, a File can have subdirectories
+	under it.  In that case, the information should be cumulative.
+
+	"""
+	def __init__(self, nametuple, changed, sourcesize, incsize):
+		self.nametuple = nametuple
+		self.changed = changed
+		self.sourcesize, self.incsize = sourcesize, incsize
+		self.children = []
+
+	def add_child(self, child): self += child
+
+	def is_subdir(self, parent):
+		"""Return True if self is an eventual subdir of parent"""
+		return self.nametuple[:len(parent.nametuple)] == parent.nametuple
+
+	def is_child(self, parent):
+		"""Return True if self is an immediate child of parent"""
+		return self.nametuple and self.nametuple[:-1] == parent.nametuple
+
+	def is_brother(self, brother):
+		"""Return True if self is in same directory as brother"""
+		if not self.nametuple or not brother.nametuple: return 0
+		return self.nametuple[:-1] == brother.nametuple[:-1]
+
+	def __str__(self):
+		return "%s %s %s %s" % (self.nametuple, self.changed,
+								self.sourcesize, self.incsize)
+
+	def __eq__(self, other):
+		return (self.changed == other.changed and
+				self.sourcesize == other.sourcesize and
+				self.incsize == other.incsize)
+
+	def __ge__(self, other):
+		"""Note the 'or' -- this relation is not a well ordering"""
+		return (self.changed >= other.changed or
+				self.sourcesize >= other.sourcesize or
+				self.incsize >= other.incsize)
+
+	def __iadd__(self, other):
+		"""Add values of other to self"""
+		self.changed += other.changed
+		self.sourcesize += other.sourcesize
+		self.incsize += other.incsize
+		return self
+
+	def __isub__(self, other):
+		"""Subtract values of other from self"""
+		self.changed -= other.changed
+		self.sourcesize -= other.sourcesize
+		self.incsize -= other.incsize
+		return self
+
+
+class ReadlineBuffer:
+	"""Iterate lines like a normal filelike obj
+
+	Use this because gzip doesn't provide any buffering, so readline()
+	is very slow.
+
+	"""
+	blocksize = 65536
+	def __init__(self, rp):
+		"""Initialize with rpath"""
+		self.buffer = ['']
+		self.at_end = 0
+		
+		if rp.isincfile():
+			self.fileobj = rp.open('r', rp.isinccompressed())
+		else: self.fileobj = rp.open('r')
+
+	def __iter__(self):
+		"""Yield the lines in self.fileobj"""
+		while self.buffer or not self.at_end:
+			if len(self.buffer) > 1: yield self.buffer.pop(0)
+			elif not self.at_end: self.addtobuffer()
+			else:
+				last = self.buffer.pop()
+				if last: yield last
+
+	def addtobuffer(self):
+		"""Read next block from fileobj, split and add to bufferlist"""
+		block = self.fileobj.read(self.blocksize)
+		if block:
+			split = block.split(separator)
+			self.buffer[0] += split[0]
+			self.buffer.extend(split[1:])
+		else: self.at_end = 1
+
+
+def sum_fst(rp_pairs):
+	"""Add the file statistics given as list of (session_rp, file_rp) pairs"""
+	global quiet
+	n = len(rp_pairs)
+	if not quiet: print "Processing statistics from session 1 of %d" % (n,)
+	total_fst = make_fst(*rp_pairs[0])
+	for i in range(1, n):
+		if not quiet: print "Processing statistics from session %d of %d" % (i+1, n)
+		session_rp, filestat_rp = rp_pairs[i]
+		fst = make_fst(session_rp, filestat_rp)
+		total_fst += fst
+	return total_fst
+
+def set_chars_to_quote():
+	ctq_rp = Globals.rbdir.append("chars_to_quote")
+	if ctq_rp.lstat():
+		Globals.chars_to_quote = ctq_rp.get_data()
+	if Globals.chars_to_quote:
+		Globals.must_escape_dos_devices = 0 # No DOS devices will be present
+		FilenameMapping.set_init_quote_vals()
+		Globals.rbdir = FilenameMapping.get_quotedrpath(Globals.rbdir)
+
+def Main():
+	Time.setcurtime()
+	parse_args()
+	set_chars_to_quote()	
+	srp = StatisticsRPaths(Globals.rbdir)
+	if not srp.combined_pairs: sys.exit("No matching sessions found")
+	if len(srp.combined_pairs) == 1: fst = make_fst(*srp.combined_pairs[0])
+	else: fst = sum_fst(srp.combined_pairs)
+
+	print_session_statistics(srp)
+	fst.print_top_dirs("source size", lambda fs: fs.sourcesize)
+	fst.print_top_dirs("increment size", lambda fs: fs.incsize)
+	fst.print_top_dirs("number of files changed", lambda fs: fs.changed)
+
+def error_check_Main():
+	"""Run Main on arglist, suppressing stack trace for routine errors"""
+	try:
+		Main()
+	except SystemExit:
+		raise
+	except KeyboardInterrupt:
+		print "User abort"
+	except (Exception, KeyboardInterrupt), exc:
+		if robust.catch_error(exc):
+			print exc
+		else:
+			raise
+
+
+if __name__ == '__main__': error_check_Main()
+
