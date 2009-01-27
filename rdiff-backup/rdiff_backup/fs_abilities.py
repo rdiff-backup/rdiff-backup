@@ -556,7 +556,7 @@ class FSAbilities:
 	def set_escape_dos_devices(self, subdir):
 		"""Test if DOS device files can be used as filenames.
 
-		This test must detect if the underlying OS is Windows, whehter we are
+		This test must detect if the underlying OS is Windows, whether we are
 		running under Cygwin or natively. Cygwin allows these special files to
 		be stat'd from any directory. Native Windows returns OSError (like
 		non-Cygwin POSIX), but we can check for that using os.name.
@@ -843,7 +843,7 @@ characters, or if you backup a case-sensitive file system onto a
 case-insensitive one that previously only had case-insensitive ones
 backed up onto it.
 
-By specificying the --force option, rdiff-backup will migrate the
+By specifying the --force option, rdiff-backup will migrate the
 repository from the old quoting chars to the new ones.""" %
 			(suggested_ctq, actual_ctq, ctq_rp.path))
 		return (actual_ctq, None) # Maintain Globals override
