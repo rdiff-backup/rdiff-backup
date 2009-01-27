@@ -20,7 +20,7 @@
 """Start (and end) here - read arguments, set global settings, etc."""
 
 from __future__ import generators
-import getopt, sys, re, os, cStringIO, tempfile, time
+import getopt, sys, re, os, cStringIO, tempfile
 from log import Log, LoggerError, ErrorLog
 import Globals, Time, SetConnections, selection, robust, rpath, \
 	   manage, backup, connection, restore, FilenameMapping, \
@@ -85,8 +85,8 @@ def parse_cmdlineoptions(arglist):
 		  "remove-older-than=", "restore-as-of=", "restrict=",
 		  "restrict-read-only=", "restrict-update-only=", "server",
 		  "ssh-no-compression", "tempdir=", "terminal-verbosity=",
-		  "test-server", "use-compatible-timestamps", "user-mapping-file=",
-		  "verbosity=", "verify", "verify-at-time=", "version"])
+		  "test-server", "user-mapping-file=", "verbosity=", "verify",
+		  "verify-at-time=", "version"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: " + str(e))
 
@@ -199,8 +199,6 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--tempdir": tempfile.tempdir = arg
 		elif opt == "--terminal-verbosity": Log.setterm_verbosity(arg)
 		elif opt == "--test-server": action = "test-server"
-		elif opt == "--use-compatible-timestamps":
-			Globals.set("use_compatible_timestamps", 1)
 		elif opt == "--user-mapping-file": user_mapping_filename = arg
 		elif opt == "-v" or opt == "--verbosity": Log.setverbosity(arg)
 		elif opt == "--verify": action, restore_timestr = "verify", "now"
@@ -347,7 +345,6 @@ def Backup(rpin, rpout):
 	else:
 		backup.Mirror(rpin, rpout)
 		rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
-	rpout.conn.Main.backup_close_statistics(time.time())
 
 def backup_quoted_rpaths(rpout):
 	"""Get QuotedRPath versions of important RPaths.  Return rpout"""
@@ -536,19 +533,6 @@ def backup_remove_curmirror_local():
 
 	C.sync() # Make sure everything is written before curmirror is removed
 	older_inc.delete()
-
-def backup_close_statistics(end_time):
-	"""Close out the tracking of the backup statistics.
-	
-	Moved to run at this point so that only the clock of the system on which
-	rdiff-backup is run is used (set by passing in time.time() from that
-	system). Use at end of session.
-
-	"""
-	assert Globals.rbdir.conn is Globals.local_connection
-	if Globals.print_statistics: statistics.print_active_stats(end_time)
-	if Globals.file_statistics: statistics.FileStats.close()
-	statistics.write_active_statfileobj(end_time)
 
 
 def Restore(src_rp, dest_rp, restore_as_of = None):
@@ -876,8 +860,7 @@ def checkdest_need_check(dest_rp):
 	"""Return None if no dest dir found, 1 if dest dir needs check, 0 o/w"""
 	if not dest_rp.isdir() or not Globals.rbdir.isdir(): return None
 	for filename in Globals.rbdir.listdir():
-		if filename not in ['chars_to_quote', 'special_escapes',
-				'backup.log']: break
+		if filename not in ['chars_to_quote', 'backup.log']: break
 	else: # This may happen the first backup just after we test for quoting
 		return None
 	curmirroot = Globals.rbdir.append("current_mirror")

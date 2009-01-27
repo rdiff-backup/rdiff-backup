@@ -1,7 +1,7 @@
-New in v1.3.1 (2009/01/27)
+New in v1.2.6 (2009/01/27)
 ---------------------------
 
-Improve support for handling too long filenames under Windows. Too long 
+Improve support for handling too long filenames under Windows. Too long
 directory names and paths are still a problem. (Andrew Ferguson)
 
 Print more helpful error messages when the remote command cannot be started
@@ -12,27 +12,14 @@ Thanos Diacakis for testing. (Andrew Ferguson)
 
 Fix --override-chars-to-quote option. (Andrew Ferguson)
 
+
+New in v1.2.5 (2009/01/06)
+---------------------------
+
 Fix typo in robust.py which broke error reporting. Closes Savannah bug #25255.
 
 Ignore Windows errors caused by too long filenames; the files are not yet
 backed-up, but the backup process is no longer halted. (Andrew Ferguson)
-
-
-New in v1.3.0 (2009/01/03)
----------------------------
-
-New option: --use-compatible-timestamps, which causes rdiff-backup to use - as
-the hour/minute/second separator instead of :. Enabled by default on systems
-which require : to be escaped. (Oliver Mulatz)
-
-Allow rdiff-backup to backup files which it cannot read, but can change
-the permissions of. (Andrew Ferguson)
-
-Take start and end times from same system so that the elapsed time printed in
-the statistics is not affected by time zone. (Andrew Ferguson)
-
-Properly fix escaping DOS devices and trailing periods and spaces; now supports
-native Windows and Linxu/FAT32. (Andrew Ferguson)
 
 
 New in v1.2.4 (2009/01/01)
