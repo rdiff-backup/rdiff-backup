@@ -1,5 +1,8 @@
-New in v1.3.1 (????/??/??)
+New in v1.3.1 (2009/01/27)
 ---------------------------
+
+Improve support for handling too long filenames under Windows. Too long 
+directory names and paths are still a problem. (Andrew Ferguson)
 
 Print more helpful error messages when the remote command cannot be started
 on Windows. Thanks to Dominic for the bug report. (Andrew Ferguson)
