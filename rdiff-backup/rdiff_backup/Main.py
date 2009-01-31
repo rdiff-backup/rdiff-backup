@@ -919,4 +919,9 @@ def checkdest_if_necessary(dest_rp):
 	if need_check == 1:
 		Log("Previous backup seems to have failed, regressing "
 			"destination now.", 2)
-		dest_rp.conn.regress.Regress(dest_rp)
+		try:
+			dest_rp.conn.regress.Regress(dest_rp)
+		except Security.Violation:
+			Log.FatalError("Security violation while attempting to regress "
+						   "destination, perhaps due to --restrict-read-only "
+						   "or --restrict-update-only.")

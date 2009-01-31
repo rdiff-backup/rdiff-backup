@@ -1,7 +1,8 @@
 New in v1.3.2 (????/??/??)
 ---------------------------
 
-
+Improve error message if regress operation fails due to Security Violation.
+Thanks to Grzegorz Marszalek for the bug report. (Andrew Ferguson)
 
 
 New in v1.3.1 (2009/01/27)
