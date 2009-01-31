@@ -1,6 +1,9 @@
 New in v1.3.2 (????/??/??)
 ---------------------------
 
+Disable hardlinks by default on Windows when performing operations such as
+--compare, etc. Thanks to Ryan for the bug report. (Andrew Ferguson)
+
 Change --min-file-size and --max-file-size to agree with man page. These
 options no longer include files, and will only apply to regular files. Thanks
 to Johannes Jensen for the suggestion. (Andrew Ferguson)
