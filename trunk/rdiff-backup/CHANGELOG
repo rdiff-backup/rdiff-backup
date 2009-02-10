@@ -1,6 +1,9 @@
 New in v1.3.2 (????/??/??)
 ---------------------------
 
+Fix typo which caused failure when checking if another rdiff-backup process is
+running on Windows. Thanks to Ryan for the bug report. (Andrew Ferguson)
+
 Disable hardlinks by default on Windows when performing operations such as
 --compare, etc. Thanks to Ryan for the bug report. (Andrew Ferguson)
 
