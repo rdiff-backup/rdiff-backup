@@ -1,6 +1,8 @@
 New in v1.3.2 (????/??/??)
 ---------------------------
 
+Fix Python 2.2 compatibility. Closes Savannah bug #25529. (Andrew Ferguson)
+
 Fix typo which caused failure when checking if another rdiff-backup process is
 running on Windows. Thanks to Ryan for the bug report. (Andrew Ferguson)
 

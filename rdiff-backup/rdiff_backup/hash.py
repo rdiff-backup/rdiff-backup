@@ -22,7 +22,7 @@
 # Until rdiff-backup is ported to Python 3 (or abandons support for versions
 # below Python 2.5), we'll ignore the warning about the deprecated sha module
 import warnings
-warnings.simplefilter('ignore')
+warnings.filterwarnings("ignore", ".*sha module.*", DeprecationWarning)
 
 import sha
 import Globals
