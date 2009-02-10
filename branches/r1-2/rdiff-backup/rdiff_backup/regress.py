@@ -351,6 +351,7 @@ def check_pids(curmir_incs):
 		except AttributeError:
 			assert os.name == 'nt'
 			import win32api, win32con, pywintypes
+			process = None
 			try:
 				process = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 
 											0, pid)

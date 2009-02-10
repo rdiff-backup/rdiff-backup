@@ -1,3 +1,10 @@
+New in v1.2.7 (????/??/??)
+---------------------------
+
+Fix typo which caused failure when checking if another rdiff-backup process is
+running on Windows. Thanks to Ryan for the bug report. (Andrew Ferguson)
+
+
 New in v1.2.6 (2009/01/27)
 ---------------------------
 
