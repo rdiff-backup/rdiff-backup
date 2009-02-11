@@ -4,10 +4,10 @@ New in v1.3.2 (????/??/??)
 Fix Python 2.2 compatibility. Closes Savannah bug #25529. (Andrew Ferguson)
 
 Fix typo which caused failure when checking if another rdiff-backup process is
-running on Windows. Thanks to Ryan for the bug report. (Andrew Ferguson)
+running on Windows. Thanks to Ryan Hughes for the bug report. (Andrew Ferguson)
 
 Disable hardlinks by default on Windows when performing operations such as
---compare, etc. Thanks to Ryan for the bug report. (Andrew Ferguson)
+--compare, etc. Thanks to Ryan Hughes for the bug report. (Andrew Ferguson)
 
 Change --min-file-size and --max-file-size to agree with man page. These
 options no longer include files, and will only apply to regular files. Thanks
