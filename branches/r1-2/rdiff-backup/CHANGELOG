@@ -1,6 +1,9 @@
 New in v1.2.7 (????/??/??)
 ---------------------------
 
+Don't crash when filesystem can't set ACL. Thanks to Matt Thompson for the bug
+report. (Andrew Ferguson)
+
 Properly disable hardlinks by default on Windows.
 
 Fix Python 2.2 compatibility. Closes Savannah bug #25529. (Andrew Ferguson)
