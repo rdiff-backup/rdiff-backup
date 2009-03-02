@@ -605,7 +605,7 @@ def get_readonly_fsa(desc_string, rp):
 	if os.name == 'nt' and (desc_string == 'source' or
 			desc_string == 'rdiff-backup repository'):
 		log.Log("Hardlinks disabled by default on Windows", 4)
-		Globals.set('preserve_hardlinks', 0)
+		SetConnections.UpdateGlobal('preserve_hardlinks', 0)
 	return FSAbilities(desc_string).init_readonly(rp)
 
 class SetGlobals:
