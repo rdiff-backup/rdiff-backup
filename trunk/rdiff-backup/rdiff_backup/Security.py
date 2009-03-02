@@ -132,14 +132,14 @@ def set_allowed_requests(sec_level):
 		 "Globals.get", "Globals.is_not_None", "Globals.get_dict_val",
 		 "log.Log.open_logfile_allconn", "log.Log.close_logfile_allconn",
 		 "Log.log_to_file", "FilenameMapping.set_init_quote_vals_local",
-		 "FilenameMapping.set_init_quote_vals",
+		 "FilenameMapping.set_init_quote_vals", "Time.setcurtime_local",
 		 "SetConnections.add_redirected_conn", "RedirectedRun",
 		 "sys.stdout.write", "robust.install_signal_handlers"]
 	if (sec_level == "read-only" or sec_level == "update-only" or
 		sec_level == "all"):
 		l.extend(["rpath.make_file_dict", "os.listdir", "rpath.ea_get",
 				  "rpath.acl_get", "rpath.setdata_local",
-				  "log.Log.log_to_file", "os.getuid", "Time.setcurtime_local",
+				  "log.Log.log_to_file", "os.getuid",
 				  "rpath.gzip_open_local_read", "rpath.open_local_read",
 				  "Hardlink.initialize_dictionaries", "user_group.uid2uname",
 				  "user_group.gid2gname"])
