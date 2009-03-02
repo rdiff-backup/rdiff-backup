@@ -1,6 +1,9 @@
 New in v1.3.2 (????/??/??)
 ---------------------------
 
+Fix Security Error when performing non-backup operations on Windows. Thanks to
+Tommy Keene for the bug report. (Andrew Ferguson)
+
 Properly disable hardlinks by default on Windows.
 
 Fix Python 2.2 compatibility. Closes Savannah bug #25529. (Andrew Ferguson)
