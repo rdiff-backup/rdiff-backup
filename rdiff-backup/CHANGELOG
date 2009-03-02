@@ -1,6 +1,9 @@
 New in v1.3.2 (????/??/??)
 ---------------------------
 
+Don't crash when filesystem can't set ACL. Thanks to Matt Thompson for the bug
+report. (Andrew Ferguson)
+
 Fix Security Error when performing non-backup operations on Windows. Thanks to
 Tommy Keene for the bug report. (Andrew Ferguson)
 

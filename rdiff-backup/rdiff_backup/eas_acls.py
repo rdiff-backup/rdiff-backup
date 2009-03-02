@@ -377,7 +377,15 @@ def set_rp_acl(rp, entry_list = None, default_entry_list = None,
 	assert rp.conn is Globals.local_connection
 	if entry_list: acl = list_to_acl(entry_list, map_names)
 	else: acl = posix1e.ACL()
-	acl.applyto(rp.path)
+
+	try:
+		acl.applyto(rp.path)
+	except IOError, exc:
+		if exc[0] == errno.EOPNOTSUPP:
+			log.Log("Warning: unable to set ACL on %s: %s" % 
+					(repr(rp.path), exc), 4)
+			return
+		else: raise
 
 	if rp.isdir():
 		if default_entry_list:
