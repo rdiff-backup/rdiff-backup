@@ -531,10 +531,8 @@ probably isn't what you meant.""" %
 		"""Return selection function given by filesize"""
 		size = int(sizestr)
 		assert size > 0
-		def sel_func(rp):
-			if not rp.isreg(): return None
-			if min_max: return ((rp.getsize() <= size) and None)
-			else: return ((rp.getsize() >= size) and None)
+		if min_max: sel_func = lambda rp: (rp.getsize() <= size)
+		else: sel_func = lambda rp: (rp.getsize() >= size)
 		sel_func.exclude = 1
 		sel_func.name = "%s size %d" % (min_max and "Maximum" or "Minimum", size)
 		return sel_func
