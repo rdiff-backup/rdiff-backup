@@ -1,7 +1,7 @@
 New in v1.3.3 (????/??/??)
 ---------------------------
 
-
+Fix --compare-hash options on Windows. Thanks to Serge Zub for the fix.
 
 
 New in v1.3.2 (2009/03/02)
