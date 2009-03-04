@@ -62,7 +62,7 @@ class Report:
 def compute_sha1(rp, compressed = 0):
 	"""Return the hex sha1 hash of given rpath"""
 	assert rp.conn is Globals.local_connection # inefficient not to do locally
-	digest = compute_sha1_fp(rp.open("r", compressed))
+	digest = compute_sha1_fp(rp.open("rb", compressed))
 	rp.set_sha1(digest)
 	return digest
 
