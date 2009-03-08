@@ -1,6 +1,8 @@
 New in v1.2.8 (????/??/??)
 ---------------------------
 
+Don't crash on zlib errors. Closes Debian bug #518531. (Andrew Ferguson)
+
 Make sticky bit warnings quieter while determining file system abilities.
 Closes Savannah bug #25788. (Andrew Ferguson)
 
