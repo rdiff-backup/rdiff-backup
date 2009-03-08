@@ -566,7 +566,7 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 		dest_rp.conn.fs_abilities.restore_set_globals(dest_rp)
 	except (OSError, IOError), exc:
 		print "\n"
-		Log.FatalError("Could not begin backup due to\n%s" % exc)
+		Log.FatalError("Could not begin restore due to\n%s" % exc)
 	init_user_group_mapping(dest_rp.conn)
 	src_rp = restore_init_quoting(src_rp)
 	restore_check_backup_dir(restore_root, src_rp, restore_as_of)
