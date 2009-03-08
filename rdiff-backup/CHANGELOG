@@ -1,6 +1,9 @@
 New in v1.3.3 (????/??/??)
 ---------------------------
 
+Make sticky bit warnings quieter while determining file system abilities.
+Closes Savannah bug #25788. (Andrew Ferguson)
+
 Fix situation where destination file cannot be opened because of an access
 error. Thanks to Dean Cording for the bug report. (Andrew Ferguson)
 
