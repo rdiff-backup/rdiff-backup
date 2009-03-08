@@ -1,6 +1,9 @@
 New in v1.3.3 (????/??/??)
 ---------------------------
 
+Fix situation where destination file cannot be opened because of an access
+error. Thanks to Dean Cording for the bug report. (Andrew Ferguson)
+
 Fix --compare-hash options on Windows. Thanks to Serge Zub for the fix.
 
 

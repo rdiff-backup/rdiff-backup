@@ -219,7 +219,7 @@ class DestinationStruct:
 		try:
 			return Rdiff.get_signature(dest_rp)
 		except IOError, e:
-			if (e.errno == errno.EPERM):
+			if (e.errno == errno.EPERM or e.errno == errno.EACCES):
 				try:
 					# Try chmod'ing anyway -- This can work on NFS and AFS
 					# depending on the setup. We keep the if() statement
