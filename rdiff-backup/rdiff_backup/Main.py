@@ -20,7 +20,7 @@
 """Start (and end) here - read arguments, set global settings, etc."""
 
 from __future__ import generators
-import getopt, sys, re, os, cStringIO, tempfile
+import getopt, sys, re, os, cStringIO, tempfile, errno
 from log import Log, LoggerError, ErrorLog
 import Globals, Time, SetConnections, selection, robust, rpath, \
 	   manage, backup, connection, restore, FilenameMapping, \
@@ -426,8 +426,12 @@ def backup_set_rbdir(rpin, rpout):
 	global incdir
 	try:
 		incdir = Globals.rbdir.append_path("increments")
-	except (OSError, IOError), exc:
-		Log.FatalError("Could not begin backup due to\n%s" % exc)
+	except IOError, exc:
+		if exc.errno == errno.EACCES:
+			print "\n"
+			Log.FatalError("Could not begin backup due to\n%s" % exc)
+		else:
+			raise
 
 	assert rpout.lstat(), (rpout.path, rpout.lstat())
 	if rpout.isdir() and not rpout.listdir(): # rpout is empty dir
@@ -548,9 +552,12 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 	restore_check_paths(src_rp, dest_rp, restore_as_of)
 	try:
 		dest_rp.conn.fs_abilities.restore_set_globals(dest_rp)
-	except (OSError, IOError), exc:
-		print "\n"
-		Log.FatalError("Could not begin restore due to\n%s" % exc)
+	except IOError, exc:
+		if exc.errno == errno.EACCES:
+			print "\n"
+			Log.FatalError("Could not begin restore due to\n%s" % exc)
+		else:
+			raise
 	init_user_group_mapping(dest_rp.conn)
 	src_rp = restore_init_quoting(src_rp)
 	restore_check_backup_dir(restore_root, src_rp, restore_as_of)
@@ -561,9 +568,17 @@ def Restore(src_rp, dest_rp, restore_as_of = None):
 	else: time = src_rp.getinctime()
 	restore_set_select(restore_root, dest_rp)
 	restore_start_log(src_rp, dest_rp, time)
-	restore.Restore(restore_root.new_index(restore_index),
-					inc_rpath, dest_rp, time)
-	Log("Restore finished", 4)
+	try:
+		restore.Restore(restore_root.new_index(restore_index),
+						inc_rpath, dest_rp, time)
+	except IOError, exc:
+		if exc.errno == errno.EACCES:
+			print "\n"
+			Log.FatalError("Could not complete restore due to\n%s" % exc)
+		else:
+			raise
+	else:
+		Log("Restore finished", 4)
 
 def restore_init_quoting(src_rp):
 	"""Change rpaths into quoted versions of themselves if necessary"""
