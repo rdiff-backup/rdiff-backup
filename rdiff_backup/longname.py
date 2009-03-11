@@ -113,6 +113,8 @@ def check_new_index(base, index, make_dirs = 0):
 			if (errno.errorcode.has_key(exc[0]) and
 				errno.errorcode[exc[0]] == 'ENAMETOOLONG'):
 				return None
+			if (exc[1] == "The filename or extension is too long"):
+				return None
 			raise
 		return result
 
