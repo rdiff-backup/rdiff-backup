@@ -45,7 +45,7 @@ def check_common_error(error_handler, function, args = []):
 def catch_error(exc):
 	"""Return true if exception exc should be caught"""
 	for exception_class in (rpath.SkipFileException, rpath.RPathException,
-							librsync.librsyncError, C.UnknownFileTypeError
+							librsync.librsyncError, C.UnknownFileTypeError,
 							zlib.error):
 		if isinstance(exc, exception_class): return 1
 	if (isinstance(exc, EnvironmentError) and
