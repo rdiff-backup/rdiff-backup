@@ -1,3 +1,10 @@
+New in v1.3.4 (????/??/??)
+---------------------------
+
+Allow --test-server option to be combined with --restrict. Thanks to Nick
+Moffitt for reporting the error. Closes Ubuntu bug  #349072. (Andrew Ferguson)
+
+
 New in v1.3.3 (2009/03/16)
 ---------------------------
 
