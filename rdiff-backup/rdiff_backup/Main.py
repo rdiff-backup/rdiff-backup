@@ -288,7 +288,7 @@ def take_action(rps):
 	elif action == "remove-older-than": RemoveOlderThan(rps[0])
 	elif action == "restore": Restore(*rps)
 	elif action == "restore-as-of": Restore(rps[0], rps[1], 1)
-	elif action == "test-server": SetConnections.TestConnections()
+	elif action == "test-server": SetConnections.TestConnections(rps)
 	elif action == "verify": Verify(rps[0])
 	else: raise AssertionError("Unknown action " + action)
 
