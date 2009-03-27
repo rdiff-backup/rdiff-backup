@@ -1,3 +1,10 @@
+New in v1.2.9 (????/??/??)
+---------------------------
+
+Allow --test-server option to be combined with --restrict. Thanks to Nick
+Moffitt for reporting the error. Closes Ubuntu bug  #349072. (Andrew Ferguson)
+
+
 New in v1.2.8 (2009/03/16)
 ---------------------------
 
@@ -117,7 +124,7 @@ Add warning message if pyxattr is below version 0.2.2. (Andrew Ferguson)
 Add "Stale NFS file handle" (ESTALE) to the list of recoverable errors. Thanks
 to Guillaume Vachon for reporting the issue. (Andrew Ferguson)
 
-Workaround for broken support for symlink extended attributes in pyxattr < 
+Workaround for broken support for symlink extended attributes in pyxattr <
 0.2.2. Thanks to Leo Bergolth for reporting the issue. (Andrew Ferguson)
 
 Handle ELOOP ("Too many levels of symbolic links") error when reading extended
@@ -782,7 +789,7 @@ New in v0.13.4 (2004/01/31)
 Checked in patch by John Goerzen to support Mac OS X Finder
 information.  As John says:
 > Specifically, it adds storage of:
-> 
+>
 >  * 4-byte creator
 >  * 4-byte type
 >  * integer flags
@@ -812,7 +819,7 @@ intended and documented but not very convenient.  Thanks to Oliver
 Kaltenecker for bug report.
 
 Fixed error when --restrict path given with trailing backslash.  Bug
-report by Åke Brännström.
+report by ï¿½ke Brï¿½nnstrï¿½m.
 
 Fixed many functions like --list-increments, --remove-older-than,
 etc. which previously didn't work with filename quoting.  Thanks to
@@ -1179,7 +1186,7 @@ sockets, and device files.
 
 --windows-mode is now short for --windows-time-format --chars-to-quote
 A-Z: --no-hard-links --exclude-special-files.  Thanks to Paul-Erik
-Törrönen for some helpful windows info.
+Tï¿½rrï¿½nen for some helpful windows info.
 
 Multiple --include and --exclude statements can now be given in a
 single file.  See the documentation on
