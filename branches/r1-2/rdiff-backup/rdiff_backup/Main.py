@@ -867,7 +867,7 @@ def CheckDest(dest_rp):
 		Log.FatalError("No destination dir found at %s" % (dest_rp.path,))
 	elif need_check == 0:
 		Log.FatalError("Destination dir %s does not need checking" %
-					   (dest_rp.path,), errlevel = 0)
+					   (dest_rp.path,), no_fatal_message = 1, errlevel = 0)
 	init_user_group_mapping(dest_rp.conn)
 	dest_rp.conn.regress.Regress(dest_rp)
 

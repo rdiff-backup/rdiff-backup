@@ -1,6 +1,9 @@
 New in v1.3.4 (????/??/??)
 ---------------------------
 
+Don't print "Fatal Error" if --check-destination-dir completed successfully.
+Thanks to Serge Zub for the suggestion. (Andrew Ferguson)
+
 Allow --test-server option to be combined with --restrict. Thanks to Nick
 Moffitt for reporting the error. Closes Ubuntu bug  #349072. (Andrew Ferguson)
 
