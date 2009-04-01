@@ -245,7 +245,7 @@ def TestConnections(rpaths):
 	"""Test connections, printing results"""
 	if len(Globals.connections) == 1: print "No remote connections specified"
 	else:
-		assert len(Globals.connection) == len(rpaths) + 1
+		assert len(Globals.connections) == len(rpaths) + 1
 		for i in range(1, len(Globals.connections)):
 			test_connection(i, rpaths[i-1])
 
