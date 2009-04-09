@@ -181,7 +181,7 @@ class ACL:
 
 	def __str__(self):
 		return '# file: %s\n%s\n' % \
-				(C.acl_quote(self.get_indexpath()), unicode(self.__acl))
+					(self.get_indexpath(), unicode(self.__acl))
 
 	def from_string(self, acl_str):
 		lines = acl_str.splitlines()
@@ -189,7 +189,7 @@ class ACL:
 			raise metadata.ParsingError("Bad record beginning: " + lines[0][:8])
 		filename = lines[0][8:]
 		if filename == '.': self.index = ()
-		else: self.index = tuple(C.acl_unquote(filename).split('/'))
+		else: self.index = tuple(filename.split('/'))
 		self.__acl = lines[1]
 
 def Record2WACL(record):

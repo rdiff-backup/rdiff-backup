@@ -125,7 +125,11 @@ class Logger:
 		"""Write the message to the log file, if possible"""
 		if self.log_file_open:
 			if self.log_file_local:
-				self.logfp.write(self.format(message, self.verbosity))
+				str = self.format(message, self.verbosity)
+				if type(str) != unicode:
+					str = unicode(str, 'utf-8')
+				str = str.encode('utf-8')
+				self.logfp.write(str)
 				self.logfp.flush()
 			else: self.log_file_conn.log.Log.log_to_file(message)
 
@@ -133,7 +137,14 @@ class Logger:
 		"""Write message to stdout/stderr"""
 		if verbosity <= 2 or Globals.server: termfp = sys.stderr
 		else: termfp = sys.stdout
-		termfp.write(self.format(message, self.term_verbosity))
+		str = self.format(message, self.term_verbosity)
+		if type(str) != unicode:
+			str = unicode(str, 'utf-8')
+		try:
+			# Try to log as unicode, but fall back to ascii (for Windows)
+			termfp.write(str.encode('utf-8'))
+		except UnicodeDecodeError:
+			termfp.write(str.encode('ascii', 'replace'))
 
 	def conn(self, direction, result, req_num):
 		"""Log some data on the connection
@@ -165,10 +176,17 @@ class Logger:
 	def exception_to_string(self, arglist = []):
 		"""Return string version of current exception plus what's in arglist"""
 		type, value, tb = sys.exc_info()
-		s = ("Exception '%s' raised of class '%s':\n%s" %
-			 (value, type, "".join(traceback.format_tb(tb))))
+		s = (u"Exception '%s' raised of class '%s':\n%s" %
+			 (value, type, u"".join(traceback.format_tb(tb))))
+		s = s.encode('ascii', 'replace')
 		if arglist:
-			s += "__Arguments:\n" + "\n".join(map(str, arglist))
+			s += "__Arguments:"
+			for arg in arglist:
+				s += "\n"
+				try:
+					s += str(arg)
+				except UnicodeError:
+					s += unicode(arg).encode('ascii', 'replace')
 		return s
 
 	def exception(self, only_terminal = 0, verbosity = 5):
@@ -259,7 +277,8 @@ class ErrorLog:
 		"""Return log string to put in error log"""
 		assert (error_type == "ListError" or error_type == "UpdateError" or
 				error_type == "SpecialFileError"), "Unknown type "+error_type
-		return "%s %s %s" % (error_type, cls.get_indexpath(rp), str(exc))
+		str = u"%s %s %s" % (error_type, cls.get_indexpath(rp), unicode(exc))
+		return str.encode('utf-8')
 
 	def close(cls):
 		"""Close the error log file"""

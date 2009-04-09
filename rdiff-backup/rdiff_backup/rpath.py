@@ -35,7 +35,7 @@ are dealing with are local or remote.
 
 """
 
-import os, stat, re, sys, shutil, gzip, socket, time, errno
+import os, stat, re, sys, shutil, gzip, socket, time, errno, codecs
 import Globals, Time, static, log, user_group, C
 
 try:
@@ -284,6 +284,8 @@ def make_file_dict(filename):
 	"""
 	if os.name != 'nt':
 		try:
+			if type(filename) == unicode:
+				filename = filename.encode('utf-8')
 			return C.make_file_dict(filename)
 		except OSError, error:
 			# Unicode filenames should be process by the Python version 
@@ -333,7 +335,7 @@ def make_file_dict_python(filename):
 	data['nlink'] = statblock[stat.ST_NLINK]
 
 	if os.name == 'nt':
-		attribs = win32file.GetFileAttributes(filename)
+		attribs = win32file.GetFileAttributesW(filename)
 		if attribs & winnt.FILE_ATTRIBUTE_REPARSE_POINT:
 			data['type'] = 'sym'
 			data['linkname'] = None
@@ -995,7 +997,12 @@ class RPath(RORPath):
 
 	def listdir(self):
 		"""Return list of string paths returned by os.listdir"""
-		return self.conn.os.listdir(self.path)
+		path = self.path
+		# Use pass in unicode to os.listdir, so that the returned
+		# entries are in unicode.
+		if type(path) != unicode:
+			path = unicode(path, 'utf-8')
+		return self.conn.os.listdir(path)
 
 	def symlink(self, linktext):
 		"""Make symlink at self.path pointing to linktext"""
@@ -1406,6 +1413,23 @@ class RPath(RORPath):
 		write_win_acl(self, acl)
 		self.data['win_acl'] = acl
 
+class UnicodeFile:
+	""" Wraps a RPath and reads/writes unicode. """
+
+	def __init__(self, fileobj):
+		self.fileobj = fileobj
+
+	def read(self, length = -1):
+		return unicode(self.fileobj.read(length), 'utf-8')
+
+	def write(self, buf):
+		if type(buf) != unicode:
+			buf = unicode(buf, 'utf-8')
+		return self.fileobj.write(buf.encode('utf-8'))
+
+	def close(self):
+		return self.fileobj.close()
+
 class RPathFileHook:
 	"""Look like a file, but add closing hook"""
 	def __init__(self, file, closing_thunk):
@@ -1429,6 +1453,18 @@ class GzipFile(gzip.GzipFile):
 	messages.  Use this class instead to clean those up.
 
 	"""
+	def __init__(self, filename=None, mode=None):
+		""" This is needed because we need to write an
+		encoded filename to the file, but use normal
+		unicode with the filename."""
+		if mode and 'b' not in mode:
+			mode += 'b'
+		if type(filename) != unicode:
+			filename = unicode(filename, 'utf-8')
+		fileobj = open(filename, mode or 'rb')
+		gzip.GzipFile.__init__(self, filename.encode('utf-8'),
+							mode=mode, fileobj=fileobj)
+
 	def __del__(self): pass
 	def __getattr__(self, name):
 		if name == 'fileno': return self.fileobj.fileno
