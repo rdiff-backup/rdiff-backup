@@ -158,7 +158,10 @@ class QuotedRPath(rpath.RPath):
 		correctly and append()ed to the currect QuotedRPath.
 
 		"""
-		return map(unquote, self.conn.os.listdir(self.path))
+		path = self.path
+		if type(path) != unicode:
+			path = unicode(path, 'utf-8')
+		return map(unquote, self.conn.os.listdir(path))
 
 	def __str__(self):
 		return "QuotedPath: %s\nIndex: %s\nData: %s" % \

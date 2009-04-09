@@ -1,6 +1,9 @@
 New in v1.3.4 (????/??/??)
 ---------------------------
 
+Start using Unicode internally for filenames. This fixes Unicode support
+on Windows (Josh Nisly)
+
 Don't print "Fatal Error" if --check-destination-dir completed successfully.
 Thanks to Serge Zub for the suggestion. (Andrew Ferguson)
 

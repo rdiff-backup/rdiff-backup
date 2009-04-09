@@ -20,7 +20,7 @@
 """Generate and process aggregated backup information"""
 
 import re, os, time
-import Globals, Time, increment, log, static, metadata
+import Globals, Time, increment, log, static, metadata, rpath
 
 class StatsException(Exception): pass
 
@@ -219,13 +219,13 @@ class StatsObj:
 
 	def write_stats_to_rp(self, rp):
 		"""Write statistics string to given rpath"""
-		fp = rp.open("wb")
+		fp = rpath.UnicodeFile(rp.open("wb"))
 		fp.write(self.get_stats_string())
 		assert not fp.close()
 
 	def read_stats_from_rp(self, rp):
 		"""Set statistics from rpath, return self for convenience"""
-		fp = rp.open("r")
+		fp = rpath.UnicodeFile(rp.open("r"))
 		self.set_stats_from_string(fp.read())
 		fp.close()
 		return self
@@ -364,7 +364,8 @@ class FileStats:
 		suffix = Globals.compression and 'data.gz' or 'data'
 		cls._rp = increment.get_inc(rpbase, suffix, Time.curtime)
 		assert not cls._rp.lstat()
-		cls._fileobj = cls._rp.open("wb", compress = Globals.compression)
+		cls._fileobj = rpath.UnicodeFile(cls._rp.open("wb", 
+							compress = Globals.compression))
 
 		cls._line_sep = Globals.null_separator and '\0' or '\n'
 		cls.write_docstring()
