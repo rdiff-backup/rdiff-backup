@@ -159,6 +159,10 @@ rbdir = None
 chars_to_quote = None
 quoting_char = ';'
 
+
+# Some systems don't support unicode in filenames
+use_unicode_paths = None
+
 # If true, emit output intended to be easily readable by a
 # computer.  False means output is intended for humans.
 parsable_output = None
@@ -316,5 +320,3 @@ def postset_regexp_local(name, re_string, flags):
 	"""Set name to compiled re_string locally"""
 	if flags: globals()[name] = re.compile(re_string, flags)
 	else: globals()[name] = re.compile(re_string)
-
-
