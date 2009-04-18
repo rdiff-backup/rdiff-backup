@@ -34,6 +34,7 @@ import Globals, log, TempFile, selection, robust, SetConnections, \
 class FSAbilities:
 	"""Store capabilities of given file system"""
 	extended_filenames = None # True if filenames can have non-ASCII chars
+	unicode_filenames = None # True if we can use unicode in paths
 	win_reserved_filenames = None # True if filenames can't have ",*,: etc.
 	case_sensitive = None # True if "foobar" and "FoObAr" are different files
 	ownership = None # True if chown works on this filesystem
@@ -97,7 +98,8 @@ class FSAbilities:
 							  ('Symlink permissions', self.symlink_perms),
 							  ('Extended filenames', self.extended_filenames),
 							  ('Windows reserved filenames',
-							   self.win_reserved_filenames)])
+							   self.win_reserved_filenames),
+							  ('Unicode filenames', self.unicode_filenames)])
 		add_boolean_list([('Access control lists', self.acls),
 						  ('Extended attributes', self.eas),
 						  ('Windows access control lists', self.win_acls),
@@ -153,6 +155,7 @@ class FSAbilities:
 
 		self.set_extended_filenames(subdir)
 		self.set_win_reserved_filenames(subdir)
+		self.set_unicode_filenames(subdir)
 		self.set_case_sensitive_readwrite(subdir)
 		self.set_ownership(subdir)
 		self.set_hardlinks(subdir)
@@ -268,6 +271,24 @@ class FSAbilities:
 			else:
 				self.win_reserved_filenames = 0
 
+	def set_unicode_filenames(self, subdir):
+		"""Set self.unicode_filenames by trying to write a path"""
+		assert not self.read_only
+
+		# Try a unicode filename
+		unicode_filename = u'\u3046\u3069\u3093\u5c4b.txt'
+		unicode_rp = None
+		try:
+			unicode_rp = subdir.append(unicode_filename)
+			unicode_rp.touch()
+		except UnicodeEncodeError:
+			if unicode_rp: assert not unicode_rp.lstat()
+			self.unicode_filenames = 0
+		else:
+			assert unicode_rp.lstat()
+			unicode_rp.delete()
+			self.unicode_filenames = 1
+
 	def set_acls(self, rp):
 		"""Set self.acls based on rp.  Does not write.  Needs to be local"""
 		assert Globals.local_connection is rp.conn
@@ -317,6 +338,7 @@ class FSAbilities:
 			where the list is of the directory containing rp.
 
 			"""
+			subdir.path = unicode(subdir.path)
 			l = robust.listrp(subdir)
 			for filename in l:
 				if filename != filename.swapcase():
@@ -679,6 +701,10 @@ class SetGlobals:
 		self.update_triple(self.src_fsa.win_acls, self.dest_fsa.win_acls,
 			  ('win_acls_active', 'win_acls_write', 'win_acls_conn'))
 
+	def set_unicode_filenames(self):
+		SetConnections.UpdateGlobal('use_unicode_paths',
+									self.dest_fsa.unicode_filenames)
+
 	def set_resource_forks(self):
 		self.update_triple(self.src_fsa.resource_forks,
 						   self.dest_fsa.resource_forks,
@@ -963,6 +989,7 @@ def backup_set_globals(rpin, force):
 	bsg.set_eas()
 	bsg.set_acls()
 	bsg.set_win_acls()
+	bsg.set_unicode_filenames()
 	bsg.set_resource_forks()
 	bsg.set_carbonfile()
 	bsg.set_hardlinks()
@@ -991,6 +1018,7 @@ def restore_set_globals(rpout):
 	rsg.set_eas()
 	rsg.set_acls()
 	rsg.set_win_acls()
+	rsg.set_unicode_filenames()
 	rsg.set_resource_forks()
 	rsg.set_carbonfile()
 	rsg.set_hardlinks()

@@ -159,6 +159,10 @@ rbdir = None
 chars_to_quote = None
 quoting_char = ';'
 
+
+# Some systems don't support unicode in filenames
+use_unicode_paths = None
+
 # If true, the timestamps use the following format: "2008-09-01T04-49-04-07-00"
 # (instead of "2008-09-01T04:49:04-07:00"). This creates timestamps which
 # don't need to be escaped on Windows.
