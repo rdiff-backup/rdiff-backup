@@ -159,7 +159,7 @@ class QuotedRPath(rpath.RPath):
 
 		"""
 		path = self.path
-		if type(path) != unicode:
+		if type(path) != unicode and Globals.use_unicode_paths:
 			path = unicode(path, 'utf-8')
 		return map(unquote, self.conn.os.listdir(path))
 

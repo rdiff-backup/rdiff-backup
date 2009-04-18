@@ -309,23 +309,23 @@ def make_file_dict_python(filename):
 	data = {}
 	mode = statblock[stat.ST_MODE]
 
-	if stat.S_ISREG(mode): type = 'reg'
-	elif stat.S_ISDIR(mode): type = 'dir'
+	if stat.S_ISREG(mode): type_ = 'reg'
+	elif stat.S_ISDIR(mode): type_ = 'dir'
 	elif stat.S_ISCHR(mode):
-		type = 'dev'
+		type_ = 'dev'
 		s = statblock.st_rdev
 		data['devnums'] = ('c',) + (s >> 8, s & 0xff)
 	elif stat.S_ISBLK(mode):
-		type = 'dev'
+		type_ = 'dev'
 		s = statblock.st_rdev
 		data['devnums'] = ('b',) + (s >> 8, s & 0xff)
-	elif stat.S_ISFIFO(mode): type = 'fifo'
+	elif stat.S_ISFIFO(mode): type_ = 'fifo'
 	elif stat.S_ISLNK(mode):
-		type = 'sym'
+		type_ = 'sym'
 		data['linkname'] = os.readlink(filename)
-	elif stat.S_ISSOCK(mode): type = 'sock'
+	elif stat.S_ISSOCK(mode): type_ = 'sock'
 	else: raise C.UnknownFileError(filename)
-	data['type'] = type
+	data['type'] = type_
 	data['size'] = statblock[stat.ST_SIZE]
 	data['perms'] = stat.S_IMODE(mode)
 	data['uid'] = statblock[stat.ST_UID]
@@ -335,12 +335,16 @@ def make_file_dict_python(filename):
 	data['nlink'] = statblock[stat.ST_NLINK]
 
 	if os.name == 'nt':
-		attribs = win32file.GetFileAttributesW(filename)
+		global type
+		if type(filename) == unicode:
+			attribs = win32file.GetFileAttributesW(filename)
+		else:
+			attribs = win32file.GetFileAttributes(filename)
 		if attribs & winnt.FILE_ATTRIBUTE_REPARSE_POINT:
 			data['type'] = 'sym'
 			data['linkname'] = None
 
-	if not (type == 'sym' or type == 'dev'):
+	if not (type_ == 'sym' or type_ == 'dev'):
 		# mtimes on symlinks and dev files don't work consistently
 		data['mtime'] = long(statblock[stat.ST_MTIME])
 		data['atime'] = long(statblock[stat.ST_ATIME])
@@ -1000,7 +1004,7 @@ class RPath(RORPath):
 		path = self.path
 		# Use pass in unicode to os.listdir, so that the returned
 		# entries are in unicode.
-		if type(path) != unicode:
+		if type(path) != unicode and Globals.use_unicode_paths:
 			path = unicode(path, 'utf-8')
 		return self.conn.os.listdir(path)
 
