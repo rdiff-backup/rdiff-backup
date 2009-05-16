@@ -28,6 +28,11 @@ except ImportError:
 	OWNER_SECURITY_INFORMATION = 0
 	DACL_SECURITY_INFORMATION = 0
 
+def encode(str_):
+	if type(str_) == unicode:
+		return str_.encode('utf-8')
+	return str_
+
 class ACL:
 	flags = (GROUP_SECURITY_INFORMATION|
 		 OWNER_SECURITY_INFORMATION|
@@ -181,7 +186,8 @@ class ACL:
 
 	def __str__(self):
 		return '# file: %s\n%s\n' % \
-					(self.get_indexpath(), unicode(self.__acl))
+					(C.acl_quote(encode(self.get_indexpath())),
+					unicode(self.__acl))
 
 	def from_string(self, acl_str):
 		lines = acl_str.splitlines()
@@ -189,7 +195,7 @@ class ACL:
 			raise metadata.ParsingError("Bad record beginning: " + lines[0][:8])
 		filename = lines[0][8:]
 		if filename == '.': self.index = ()
-		else: self.index = tuple(filename.split('/'))
+		else: self.index = tuple(unicode(C.acl_unquote(filename)).split('/'))
 		self.__acl = lines[1]
 
 def Record2WACL(record):
