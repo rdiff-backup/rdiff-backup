@@ -104,6 +104,7 @@ class ACL:
 		except (OSError, IOError, pywintypes.error), exc:
 			log.Log("Warning: unable to read ACL from %s for clearing: %s"
 					% (repr(rp.path), exc), 4)
+			return
 
 		acl = sd.GetSecurityDescriptorDacl()
 		if acl:
