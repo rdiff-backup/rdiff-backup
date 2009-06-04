@@ -376,17 +376,17 @@ class FlatFile:
 			compress = 1
 		if mode == 'r':
 			self.rp = rp_base
-			self.fileobj = rpath.UnicodeFile(self.rp.open("rb", compress))
+			self.fileobj = rpath.MaybeUnicode(self.rp.open("rb", compress))
 		else:
 			assert mode == 'w'
 			if compress and check_path and not rp_base.isinccompressed():
 				def callback(rp): self.rp = rp
-				self.fileobj = rpath.UnicodeFile(rpath.MaybeGzip(rp_base,
+				self.fileobj = rpath.MaybeUnicode(rpath.MaybeGzip(rp_base,
 												callback))
 			else:
 				self.rp = rp_base
 				assert not self.rp.lstat(), self.rp
-				self.fileobj = rpath.UnicodeFile(self.rp.open("wb", 
+				self.fileobj = rpath.MaybeUnicode(self.rp.open("wb", 
 												compress = compress))
 
 	def write_record(self, record):

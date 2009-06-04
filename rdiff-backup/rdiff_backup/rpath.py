@@ -1417,19 +1417,24 @@ class RPath(RORPath):
 		write_win_acl(self, acl)
 		self.data['win_acl'] = acl
 
-class UnicodeFile:
-	""" Wraps a RPath and reads/writes unicode. """
+class MaybeUnicode:
+	""" Wraps a RPath and reads/writes unicode if Globals.use_unicode_paths is on. """
 
 	def __init__(self, fileobj):
 		self.fileobj = fileobj
 
 	def read(self, length = -1):
-		return unicode(self.fileobj.read(length), 'utf-8')
+		data = self.fileobj.read(length)
+		if Globals.use_unicode_paths:
+			data = unicode(data, 'utf-8')
+		return data
 
 	def write(self, buf):
-		if type(buf) != unicode:
-			buf = unicode(buf, 'utf-8')
-		return self.fileobj.write(buf.encode('utf-8'))
+		if Globals.use_unicode_paths:
+			if type(buf) != unicode:
+				buf = unicode(buf, 'utf-8')
+			buf = buf.encode('utf-8')
+		return self.fileobj.write(buf)
 
 	def close(self):
 		return self.fileobj.close()
@@ -1463,7 +1468,7 @@ class GzipFile(gzip.GzipFile):
 		unicode with the filename."""
 		if mode and 'b' not in mode:
 			mode += 'b'
-		if type(filename) != unicode:
+		if type(filename) != unicode and Globals.use_unicode_paths:
 			filename = unicode(filename, 'utf-8')
 		fileobj = open(filename, mode or 'rb')
 		gzip.GzipFile.__init__(self, filename.encode('utf-8'),
