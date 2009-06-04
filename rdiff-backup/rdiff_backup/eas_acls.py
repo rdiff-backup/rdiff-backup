@@ -180,8 +180,11 @@ def Record2EA(record):
 		raise metadata.ParsingError("Bad record beginning: " + first[:8])
 	filename = first[8:]
 	if filename == '.': index = ()
-	else: index = tuple(unicode(C.acl_unquote(encode(filename)),
-											'utf-8').split('/'))
+	else:
+		unquoted_filename = C.acl_unquote(encode(filename))
+		if Globals.use_unicode_paths:
+			unquoted_filename = unicode(unquoted_filename, 'utf-8')
+		index = tuple(unquoted_filename.split('/'))
 	ea = ExtendedAttributes(index)
 
 	for line in lines:
@@ -556,8 +559,11 @@ def Record2ACL(record):
 		raise metadata.ParsingError("Bad record beginning: "+ first_line)
 	filename = first_line[8:]
 	if filename == '.': index = ()
-	else: index = tuple(unicode(C.acl_unquote(encode(filename)),
-						'utf-8').split('/'))
+	else:
+		unquoted_filename = C.acl_unquote(encode(filename))
+		if Globals.use_unicode_paths:
+			unquoted_filename = unicode(unquoted_filename, 'utf-8')
+		index = tuple(unquoted_filename.split('/'))
 	return AccessControlLists(index, record[newline_pos:])
 
 class ACLExtractor(EAExtractor):
