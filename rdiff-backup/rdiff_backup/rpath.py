@@ -1429,6 +1429,12 @@ class MaybeUnicode:
 			data = unicode(data, 'utf-8')
 		return data
 
+	def readline(self, length=-1):
+		data = self.fileobj.readline(length)
+		if Globals.use_unicode_paths:
+			data = unicode(data, 'utf-8')
+		return data
+
 	def write(self, buf):
 		if Globals.use_unicode_paths:
 			if type(buf) != unicode:
