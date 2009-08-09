@@ -1,52 +1,11 @@
 #!/usr/bin/make -f
 
-clean:
-	dh_testdir
-	dh_testroot
-	rm -f build-stamp
+%:
+	dh ${@}
 
-	python setup.py clean
-	rm -rf build
+override_dh_auto_install:
+	dh_auto_install
+	install -D -m 0644 debian/local/bash-completion debian/rdiff-backup/etc/bash_completion.d/rdiff-backup
 
-	dh_clean
-
-build: build-stamp
-build-stamp:
-	dh_testdir
-
-	python setup.py build
-
-	touch build-stamp
-
-install: build
-	dh_testdir
-	dh_testroot
-	dh_prep
-	dh_installdirs
-
-	python setup.py install --prefix=$(CURDIR)/debian/rdiff-backup/usr
+	# Removing useless files
 	rm -rf debian/rdiff-backup/usr/share/doc/rdiff-backup-*
-
-	install -D -m 0644 debian/config/bash-completion debian/rdiff-backup/etc/bash_completion.d/rdiff-backup
-
-binary: binary-arch
-
-binary-arch: build install
-	dh_testdir
-	dh_testroot
-	dh_installchangelogs CHANGELOG
-	dh_installdocs
-	dh_installman
-	dh_strip
-	dh_compress
-	dh_fixperms
-	dh_pysupport
-	dh_installdeb
-	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
-
-binary-indep:
-
-.PHONY: clean build install binary binary-arch binary-indep

@@ -1,16 +1,16 @@
 Source: rdiff-backup
 Section: utils
 Priority: optional
-Maintainer: Daniel Baumann <daniel@debian.org>
-Build-Depends: debhelper (>= 7), python-support, python-dev, python-pylibacl, python-pyxattr, librsync-dev (>= 0.9.7-4)
-Standards-Version: 3.8.0
+Maintainer: Debian QA Group <packages@qa.debian.org>
+Build-Depends:
+ debhelper (>= 7), python-support, python-dev, python-pylibacl, python-pyxattr,
+ librsync-dev
+Standards-Version: 3.8.2
 Homepage: http://rdiff-backup.nongnu.org/
-Vcs-Browser: http://git.debian.net/?p=debian/rdiff-backup.git
-Vcs-Git: git://git.debian.net/git/debian/rdiff-backup.git
 
 Package: rdiff-backup
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}, ${python:Depends}
 Recommends: python-pylibacl, python-pyxattr
 Description: remote incremental backup
  rdiff-backup backs up one directory to another, possibly over a network. The

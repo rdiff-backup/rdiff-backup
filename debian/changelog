@@ -1,3 +1,16 @@
+rdiff-backup (1.2.8-2) unstable; urgency=low
+
+  * Prefixing debhelper files with package name.
+  * Wrapping build-depends.
+  * Removing version from librsync build-depends, already fulfilled in stable.
+  * Renaming local directory to store debian additions to more sensible name.
+  * Minimizing rules file.
+  * Updating year in copyright file.
+  * Removing vcs fields.
+  * Orphaning package.
+
+ -- Daniel Baumann <daniel@debian.org>  Sun, 09 Aug 2009 11:41:00 +0200
+
 rdiff-backup (1.2.8-1) unstable; urgency=low
 
   * Merging upstream version 1.2.8 (Closes: #520089):
@@ -49,7 +62,7 @@ rdiff-backup (1.2.1-2) unstable; urgency=low
   * Updating vcs fields in control file.
   * Adding bash-completion from Andreas Olsson <andreas@arrakis.se>.
 
- -- Daniel Baumann <daniel@debian.org>  Sat,  4 Oct 2008 10:46:00 +0200
+ -- Daniel Baumann <daniel@debian.org>  Sat, 04 Oct 2008 10:46:00 +0200
 
 rdiff-backup (1.2.1-1) unstable; urgency=medium
 
@@ -103,7 +116,7 @@ rdiff-backup (1.1.15-1) unstable; urgency=low
 
   * New upstream release.
 
- -- Daniel Baumann <daniel@debian.org>  Wed,  9 Jan 2008 20:59:00 +0100
+ -- Daniel Baumann <daniel@debian.org>  Wed, 09 Jan 2008 20:59:00 +0100
 
 rdiff-backup (1.1.14-2) unstable; urgency=low
 
@@ -137,14 +150,14 @@ rdiff-backup (1.1.9-2) unstable; urgency=low
   * Added patch from Marc Dyksterhouse to fix --list-increments
     (Closes: #413981).
 
- -- Daniel Baumann <daniel@debian.org>  Sun,  1 Apr 2007 19:13:00 +0100
+ -- Daniel Baumann <daniel@debian.org>  Sun, 01 Apr 2007 19:13:00 +0100
 
 rdiff-backup (1.1.9-1) unstable; urgency=low
 
   * New upstream release.
   * Bumped to debhelper 5.
 
- -- Daniel Baumann <daniel@debian.org>  Mon,  5 Mar 2007 01:27:00 +0100
+ -- Daniel Baumann <daniel@debian.org>  Mon, 05 Mar 2007 01:27:00 +0100
 
 rdiff-backup (1.1.7-1) experimental; urgency=low
 
@@ -182,7 +195,7 @@ rdiff-backup (1.1.5-1) unstable; urgency=low
 
   * New upstream release.
 
- -- Daniel Baumann <daniel.baumann@panthera-systems.net>  Mon,  2 Jan 2006 15:53:00 +0100
+ -- Daniel Baumann <daniel.baumann@panthera-systems.net>  Mon, 02 Jan 2006 15:53:00 +0100
 
 rdiff-backup (1.1.4-1) unstable; urgency=low
 
@@ -264,7 +277,7 @@ rdiff-backup (0.13.4-1) unstable; urgency=low
     in the Debian diff.
   * .deb now includes examples.html.  Closes: #239750.
 
- -- John Goerzen <jgoerzen@complete.org>  Fri,  4 Jun 2004 11:47:24 -0500
+ -- John Goerzen <jgoerzen@complete.org>  Fri, 04 Jun 2004 11:47:24 -0500
 
 rdiff-backup (0.13.3.jgoerzen-3) unstable; urgency=low
 
@@ -326,7 +339,7 @@ rdiff-backup (0.10.1-3) unstable; urgency=low
 
   * Added build-depends on python2.2.  Closes: #167651.
 
- -- John Goerzen <jgoerzen@complete.org>  Thu,  7 Nov 2002 08:44:55 -0600
+ -- John Goerzen <jgoerzen@complete.org>  Thu, 07 Nov 2002 08:44:55 -0600
 
 rdiff-backup (0.10.1-2) unstable; urgency=low
 
@@ -362,7 +375,7 @@ rdiff-backup (0.5.3-1) unstable; urgency=low
 
   * New upstream release
 
- -- John Goerzen <jgoerzen@complete.org>  Tue,  5 Mar 2002 09:48:05 -0500
+ -- John Goerzen <jgoerzen@complete.org>  Tue, 05 Mar 2002 09:48:05 -0500
 
 rdiff-backup (0.5.0-2) unstable; urgency=low
 
