@@ -1,0 +1,11 @@
+#!/usr/bin/make -f
+
+%:
+	dh ${@}
+
+override_dh_auto_install:
+	dh_auto_install
+	install -D -m 0644 debian/local/bash-completion debian/rdiff-backup/etc/bash_completion.d/rdiff-backup
+
+	# Removing useless files
+	rm -rf debian/rdiff-backup/usr/share/doc/rdiff-backup-*

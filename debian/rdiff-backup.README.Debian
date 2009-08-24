@@ -1,0 +1,8 @@
+rdiff-backup for Debian
+-----------------------
+
+Note: rdiff-backup *depends* on a filesystem capable of long-filenames on the
+      target-side. If you want to backup onto a Windows filesystems, you have to
+      mount them as vfat.
+
+ -- Daniel Baumann <daniel@debian.org>  Mon, 28 Nov 2005 09:21:00 +0100

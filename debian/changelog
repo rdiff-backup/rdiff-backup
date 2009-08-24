@@ -1,0 +1,397 @@
+rdiff-backup (1.2.8-2) unstable; urgency=low
+
+  * Prefixing debhelper files with package name.
+  * Wrapping build-depends.
+  * Removing version from librsync build-depends, already fulfilled in stable.
+  * Renaming local directory to store debian additions to more sensible name.
+  * Minimizing rules file.
+  * Updating year in copyright file.
+  * Removing vcs fields.
+  * Orphaning package.
+
+ -- Daniel Baumann <daniel@debian.org>  Sun, 09 Aug 2009 11:41:00 +0200
+
+rdiff-backup (1.2.8-1) unstable; urgency=low
+
+  * Merging upstream version 1.2.8 (Closes: #520089):
+    - Don't crash on zlib errors (Closes: #518531).
+
+ -- Daniel Baumann <daniel@debian.org>  Thu, 19 Mar 2009 06:25:00 +0100
+
+rdiff-backup (1.2.7-1) unstable; urgency=low
+
+  * Merging upstream version 1.2.7.
+
+ -- Daniel Baumann <daniel@debian.org>  Wed, 11 Mar 2009 08:10:00 +0100
+
+rdiff-backup (1.2.6-1) unstable; urgency=low
+
+  * Merging upstream version 1.2.6.
+
+ -- Daniel Baumann <daniel@debian.org>  Wed, 11 Mar 2009 08:06:00 +0100
+
+rdiff-backup (1.2.5-1) unstable; urgency=low
+
+  * Merging upstream version 1.2.5.
+
+ -- Daniel Baumann <daniel@debian.org>  Sat, 17 Jan 2009 23:17:00 -0500
+
+rdiff-backup (1.2.4-1) unstable; urgency=low
+
+  * Merging upstream version 1.2.4.
+
+ -- Daniel Baumann <daniel@debian.org>  Sat, 17 Jan 2009 23:13:00 -0500
+
+rdiff-backup (1.2.3-1) unstable; urgency=high
+
+  * Replacing obsolete dh_clean -k with dh_prep.
+  * Merging upstream version 1.2.3:
+    - fixes regression with "Too many levels of symbolic links" exception
+      (Closes: #409514).
+
+ -- Daniel Baumann <daniel@debian.org>  Mon, 29 Dec 2008 22:26:00 +0100
+
+rdiff-backup (1.2.2-1) unstable; urgency=low
+
+  * Merging upstream version 1.2.2.
+
+ -- Daniel Baumann <daniel@debian.org>  Tue, 28 Oct 2008 13:50:00 +0100
+
+rdiff-backup (1.2.1-2) unstable; urgency=low
+
+  * Updating vcs fields in control file.
+  * Adding bash-completion from Andreas Olsson <andreas@arrakis.se>.
+
+ -- Daniel Baumann <daniel@debian.org>  Sat, 04 Oct 2008 10:46:00 +0200
+
+rdiff-backup (1.2.1-1) unstable; urgency=medium
+
+  * Merging upstream version 1.2.1.
+
+ -- Daniel Baumann <daniel@debian.org>  Fri, 29 Aug 2008 22:19:00 +0200
+
+rdiff-backup (1.2.0-1) unstable; urgency=medium
+
+  * Merging upstream version 1.2.0
+    (Closes: #345627, #420869, #426110, #443686, #463035, #480785, #481098).
+
+ -- Daniel Baumann <daniel@debian.org>  Thu, 31 Jul 2008 22:27:00 +0200
+
+rdiff-backup (1.1.17-1) unstable; urgency=low
+
+  * Merging upstream version 1.1.17 (Closes: #491185):
+    - fixes failure with 'exceptions.KeyError' (Closes: #410586).
+    - fixes failure with 'KeyError inode' exception (Closes: #486653).
+
+ -- Daniel Baumann <daniel@debian.org>  Thu, 17 Jul 2008 16:30:00 +0200
+
+rdiff-backup (1.1.16-2) unstable; urgency=medium
+
+  * Making build-depends against librsync version to ensure 4gb bugfix.
+
+ -- Daniel Baumann <daniel@debian.org>  Wed, 25 Jun 2008 11:42:00 +0200
+
+rdiff-backup (1.1.16-1) unstable; urgency=medium
+
+  * Removing 01-manpage.dpatch, went upstream.
+  * Reordering rules file.
+  * Rewriting copyright file in machine-interpretable format.
+  * Removing watch file.
+  * Simplyfing control file.
+  * Adding vcs fields in control file.
+  * Upgrading package to standards 3.8.0.
+  * Upgrading package to debhelper 7.
+  * Merging upstream version 1.1.16.
+
+ -- Daniel Baumann <daniel@debian.org>  Sun, 22 Jun 2008 23:14:00 +0200
+
+rdiff-backup (1.1.15-2) unstable; urgency=low
+
+  * Applied patches from Justin Pryzby <jpryzby@quoininc.com> to fix manpage
+    typos (Closes: #461934).
+
+ -- Daniel Baumann <daniel@debian.org>  Mon, 21 Jan 2008 21:42:00 +0100
+
+rdiff-backup (1.1.15-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Daniel Baumann <daniel@debian.org>  Wed, 09 Jan 2008 20:59:00 +0100
+
+rdiff-backup (1.1.14-2) unstable; urgency=low
+
+  * Bumping to new policy.
+  * Using new homepage field in control.
+
+ -- Daniel Baumann <daniel@debian.org>  Sun, 23 Dec 2007 17:26:00 +0100
+
+rdiff-backup (1.1.14-1) unstable; urgency=low
+
+  * New upstream release:
+    - Adds support for custom tmpdir location (Closes: #289395).
+
+ -- Daniel Baumann <daniel@debian.org>  Mon, 13 Aug 2007 23:18:00 +0200
+
+rdiff-backup (1.1.12-1) unstable; urgency=low
+
+  * New upstream release:
+    - Doesn't crash if previous backup failed
+      Closes: #376781, #388720, #422961, #426216).
+    - Doesn't fail when saving fat32 to fat32 (Closes: #422593).
+    - Fixes a typo with RPath in metadata (Closes: #349593).
+    - Doesn't crash without compression (Closes: #395100).
+  * Fixed typo in long description (Closes: #426806).
+  * Dropping 01-fs-abilities.dpatch, went upstream.
+
+ -- Daniel Baumann <daniel@debian.org>  Sun, 15 Jul 2007 20:58:00 +0200
+
+rdiff-backup (1.1.9-2) unstable; urgency=low
+
+  * Added patch from Marc Dyksterhouse to fix --list-increments
+    (Closes: #413981).
+
+ -- Daniel Baumann <daniel@debian.org>  Sun, 01 Apr 2007 19:13:00 +0100
+
+rdiff-backup (1.1.9-1) unstable; urgency=low
+
+  * New upstream release.
+  * Bumped to debhelper 5.
+
+ -- Daniel Baumann <daniel@debian.org>  Mon, 05 Mar 2007 01:27:00 +0100
+
+rdiff-backup (1.1.7-1) experimental; urgency=low
+
+  * New upstream release:
+    - fixes problem with device files handling as user (Closes: #395096).
+    - fixes problems with storing to smbfs/cifs (Closes: #386983, #404947).
+  * Dropping 01-manpage.dpatch, went upstream.
+  * Uploading to experimental to not interfere the testing migration of
+    1.1.5-4.
+
+ -- Daniel Baumann <daniel@debian.org>  Fri, 29 Dec 2006 16:15:00 +0100
+
+rdiff-backup (1.1.5-4) unstable; urgency=medium
+
+  * In a previous version, the python-pylibacl and python-pyxattr got lost
+    from depends, re-adding them as recommends now, which is more appropriate
+    anyway (Closes: #404708).
+
+ -- Daniel Baumann <daniel@debian.org>  Wed, 27 Dec 2006 20:38:00 +0100
+
+rdiff-backup (1.1.5-3) unstable; urgency=low
+
+  * Migrated to new python policy (Closes: #380928, #383415).
+
+ -- Daniel Baumann <daniel@debian.org>  Thu, 17 Aug 2006 17:06:00 +0200
+
+rdiff-backup (1.1.5-2) unstable; urgency=low
+
+  * New email address.
+  * Bumped policy version.
+
+ -- Daniel Baumann <daniel@debian.org>  Sun, 30 Jul 2006 08:46:00 +0200
+
+rdiff-backup (1.1.5-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Daniel Baumann <daniel.baumann@panthera-systems.net>  Mon, 02 Jan 2006 15:53:00 +0100
+
+rdiff-backup (1.1.4-1) unstable; urgency=low
+
+  * New upstream release:
+    - now using development-releases as they are stable enough.
+
+ -- Daniel Baumann <daniel.baumann@panthera-systems.net>  Tue, 27 Dec 2005 15:50:00 +0100
+
+rdiff-backup (1.0.3-1) unstable; urgency=low
+
+  * New upstream release (Closes: #338055).
+  * Removed old patches which are now in upstream.
+  * Added patch to fix manpage characters (Closes: #335162).
+
+ -- Daniel Baumann <daniel.baumann@panthera-systems.net>  Mon, 28 Nov 2005 09:21:00 +0100
+
+rdiff-backup (1.0.1-1) unstable; urgency=low
+
+  * New upstream release (Closes: #323332, #302099):
+    - works with SElinux (Closes: #306798).
+    - compiled with ACL support now (Closes: #224666).
+  * Removed old patches which are now in upstream.
+  * Added watch file.
+  * Bumped policy version.
+
+ -- Daniel Baumann <daniel.baumann@panthera-systems.net>  Wed, 28 Sep 2005 15:32:00 +0200
+
+rdiff-backup (0.13.4-5) unstable; urgency=high
+
+  * Forgot debian/compat (Closes: #295638).
+
+ -- Daniel Baumann <daniel.baumann@panthera-systems.net>  Fri, 18 Feb 2005 00:29:00 +0100
+
+rdiff-backup (0.13.4-4) unstable; urgency=low
+
+  * New maintainer (Closes: #261578).
+  * Took over Alec Berrymans <alec@thened.net> interim package.
+  * debian/* redone and updated to new policy.
+  * debian/control: added correct python depency (Closes: #252960).
+  * Added rdiff-backup-hardlinks.dpatch to insure flag '--no-hard-links' is not
+    overridden by filesystem abilities and to fix handling of hard links on Mac
+    OS X (Thanks to Dave Vasilevsky <djvasi@gmail.com>).
+  * Added typo-fix.dpatch to fix an error message typo (Thanks to Thomas Jarosch
+    <thomas.jarosch@intra2net.com>).
+  * Added patch from CVS to fix broken '--calculate-average' flag (Thanks to
+    Dean Gaudet <dean@arctic.org>, Closes: #241906, #225471, #225485).
+  * Patched hard link test with afs-hardlinks.dpatch to only enable hard links
+    if able to link across directories. AFS only allows hard links within a
+    directory (Closes: #260018).
+  * Patched error message thrown when invoking after an unsuccessful backup with
+    typo-fix-2.dpatch (Closes: #256266).
+  * Added patch backup_warn_if_infinite_regress.dpatch backported from CVS to
+    fix handling of destination directory as subdirectories of source directory
+    (Closes: #235875).
+  * Patched types of files not to be compressed with no-compress-regexp.dpatch
+    (Closes: #270715).
+  * Added patch restrict-read-only.dpatch to correct the behavior of the
+    '--restrict-read-only' flag to bring it in line with the documented behavior
+    (Thanks to Dean Gaudet <dean@arctic.org>, Closes: #277044).
+
+ -- Daniel Baumann <daniel.baumann@panthera-systems.net>  Tue, 15 Feb 2005 18:29:00 +0100
+
+rdiff-backup (0.13.4-3) unstable; urgency=low
+
+  * Orphaning this package.  (WNPP bug has been submitted).
+
+ -- John Goerzen <jgoerzen@complete.org>  Mon, 26 Jul 2004 14:56:59 -0500
+
+rdiff-backup (0.13.4-2) unstable; urgency=low
+
+  * Added build-dep on python.  Closes: #259127.
+
+ -- John Goerzen <jgoerzen@complete.org>  Tue, 13 Jul 2004 10:53:51 -0500
+
+rdiff-backup (0.13.4-1) unstable; urgency=low
+
+  * New upstream release.  This version contains my
+    MacOS X patches upstream, so they are no longer included
+    in the Debian diff.
+  * .deb now includes examples.html.  Closes: #239750.
+
+ -- John Goerzen <jgoerzen@complete.org>  Fri, 04 Jun 2004 11:47:24 -0500
+
+rdiff-backup (0.13.3.jgoerzen-3) unstable; urgency=low
+
+  * xattr support was failing with IOError: [Errno 78] Function not
+    implemented on Alpha.  Back out xattr and ACL support for now.
+
+ -- John Goerzen <jgoerzen@complete.org>  Mon, 22 Dec 2003 18:00:20 -0600
+
+rdiff-backup (0.13.3.jgoerzen-2) unstable; urgency=low
+
+  * Add support for ACLs and EAs by (build-)depending on pylibacl and
+    pyxattr.  Closes: #224666.
+  * Newer debhelper builds package in debian/rdiff-backup instead of
+    debian/tmp.  The rules file command that deleted the rdiff-backup-0.x.y
+    directory that setup.py installed therefore quit working.  Fixed.
+    Closes: #224664.
+
+ -- John Goerzen <jgoerzen@complete.org>  Sat, 20 Dec 2003 16:26:42 -0600
+
+rdiff-backup (0.13.3.jgoerzen-1) unstable; urgency=low
+
+  * New upstream release.  0.13.3 is stabilizing.
+    Closes: #221840.
+  * The "jgoerzen" in the name means this includes my patches to the 0.13.3
+    tree, which implement saving of Finder metadata from MacOS.  I expect
+    this to be integrated into the mainline shortly.   These patches are in
+    my tla archive
+    jgoerzen@complete.org--projects/rdiff-backup--jgoerzen--0.13 at
+    http://arch.complete.org/projects.
+
+ -- John Goerzen <jgoerzen@complete.org>  Wed, 17 Dec 2003 21:05:39 -0600
+
+rdiff-backup (0.12.5-2) unstable; urgency=low
+
+  * Build-dep on librsync-dev >= 0.9.6-7 to get a versioned
+    lib dependency in the generated .deb.  That version fixed
+    its shlibs file.  Closes: #210368.
+
+ -- John Goerzen <jgoerzen@complete.org>  Sat, 11 Oct 2003 23:09:14 -0500
+
+rdiff-backup (0.12.5-1) unstable; urgency=low
+
+  * New upstream release.  Closes: #213094.
+  * Calls debian/python, and removed .pyc files from .deb.
+    Closes: #207416.
+
+ -- John Goerzen <jgoerzen@complete.org>  Fri, 10 Oct 2003 11:43:41 -0500
+
+rdiff-backup (0.12.3-1) unstable; urgency=low
+
+  * New upstream release.  Closes: #202749, #192238, #203209.
+  * Deleted usr/share/doc/rdiff-backup-*.  Closes: #182001.
+  * Updated to Python 2.3.
+  * New req: librsync 0.9.6.
+
+ -- John Goerzen <jgoerzen@complete.org>  Mon, 11 Aug 2003 17:40:27 -0500
+
+rdiff-backup (0.10.1-3) unstable; urgency=low
+
+  * Added build-depends on python2.2.  Closes: #167651.
+
+ -- John Goerzen <jgoerzen@complete.org>  Thu, 07 Nov 2002 08:44:55 -0600
+
+rdiff-backup (0.10.1-2) unstable; urgency=low
+
+  * Fixed installation -- now uses new setup.py.  Closes: #167131.
+
+ -- John Goerzen <jgoerzen@complete.org>  Wed, 30 Oct 2002 15:53:21 -0600
+
+rdiff-backup (0.10.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- John Goerzen <jgoerzen@complete.org>  Mon, 28 Oct 2002 15:50:25 -0600
+
+rdiff-backup (0.8.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- John Goerzen <jgoerzen@complete.org>  Fri, 12 Jul 2002 07:57:45 -0500
+
+rdiff-backup (0.6.1-1) unstable; urgency=low
+
+  * New upstream release.  Closes: #147470, #143828.
+
+ -- John Goerzen <jgoerzen@complete.org>  Thu, 23 May 2002 16:07:09 -0500
+
+rdiff-backup (0.6.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- John Goerzen <jgoerzen@complete.org>  Tue, 19 Mar 2002 09:46:20 -0500
+
+rdiff-backup (0.5.3-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- John Goerzen <jgoerzen@complete.org>  Tue, 05 Mar 2002 09:48:05 -0500
+
+rdiff-backup (0.5.0-2) unstable; urgency=low
+
+  * Applied a patch from the upstream author to correct remote
+    backups in some situations.
+
+ -- John Goerzen <jgoerzen@complete.org>  Thu, 21 Feb 2002 08:46:52 -0500
+
+rdiff-backup (0.5.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- John Goerzen <jgoerzen@complete.org>  Mon, 18 Feb 2002 10:53:30 -0500
+
+rdiff-backup (0.4.4-1) unstable; urgency=low
+
+  * Initial Release, lintian clean.  Closes: #133442.
+
+ -- John Goerzen <jgoerzen@complete.org>  Mon, 11 Feb 2002 14:15:42 -0500
