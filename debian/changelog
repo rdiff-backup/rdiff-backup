@@ -1,3 +1,13 @@
+rdiff-backup (1.2.8-3) unstable; urgency=low
+
+  * New debian/watch file
+  * debian/control
+    - Bump to Standard-Versions 3.8.3
+    - New maintainer (Closes: #540633).
+    - Set Uploaders field to PAPT.
+
+ -- Carl Chenet <chaica@ohmytux.com>  Tue, 25 Aug 2009 00:35:33 +0200
+
 rdiff-backup (1.2.8-2) unstable; urgency=low
 
   * Prefixing debhelper files with package name.
