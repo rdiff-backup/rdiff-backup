@@ -6,8 +6,9 @@ rdiff-backup (1.2.8-3) unstable; urgency=low
     - New maintainer (Closes: #540633).
     - Set Uploaders field to PAPT.
     - Vcs-Svn and Vcs-Browser fields were added.
+    - Bump debhelper to (>= 7.0.50~).
 
- -- Carl Chenet <chaica@ohmytux.com>  Thu, 27 Aug 2009 21:30:57 +0200
+ -- Carl Chenet <chaica@ohmytux.com>  Fri, 28 Aug 2009 00:40:32 +0200
 
 rdiff-backup (1.2.8-2) unstable; urgency=low
 
