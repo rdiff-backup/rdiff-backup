@@ -5,8 +5,9 @@ rdiff-backup (1.2.8-3) unstable; urgency=low
     - Bump to Standard-Versions 3.8.3
     - New maintainer (Closes: #540633).
     - Set Uploaders field to PAPT.
+    - Vcs-Svn and Vcs-Browser fields were added.
 
- -- Carl Chenet <chaica@ohmytux.com>  Tue, 25 Aug 2009 00:35:33 +0200
+ -- Carl Chenet <chaica@ohmytux.com>  Thu, 27 Aug 2009 21:30:57 +0200
 
 rdiff-backup (1.2.8-2) unstable; urgency=low
 

@@ -8,6 +8,8 @@ Build-Depends:
  librsync-dev
 Standards-Version: 3.8.3
 Homepage: http://rdiff-backup.nongnu.org/
+Vcs-Svn: svn://svn.debian.org/python-apps/packages/pyro/trunk/
+Vcs-Browser: http://svn.debian.org/viewsvn/python-apps/packages/pyro/trunk/
 
 Package: rdiff-backup
 Architecture: any
