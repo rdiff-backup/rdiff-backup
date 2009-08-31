@@ -7,8 +7,10 @@ rdiff-backup (1.2.8-3) unstable; urgency=low
     - Set Uploaders field to PAPT.
     - Vcs-Svn and Vcs-Browser fields were added.
     - Bump debhelper to (>= 7.0.50~).
+  * debian/rules
+    - Use now a private directory for not polluting global namespace
 
- -- Carl Chenet <chaica@ohmytux.com>  Fri, 28 Aug 2009 00:40:32 +0200
+ -- Carl Chenet <chaica@ohmytux.com>  Mon, 31 Aug 2009 23:25:49 +0200
 
 rdiff-backup (1.2.8-2) unstable; urgency=low
 
