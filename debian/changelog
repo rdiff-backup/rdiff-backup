@@ -1,4 +1,4 @@
-rdiff-backup (1.2.8-4) UNRELEASED; urgency=low
+rdiff-backup (1.2.8-4) unstable; urgency=low
 
   * Patch fixing restricted test-server option (Closes:#522278).
   * debian/control
@@ -6,10 +6,11 @@ rdiff-backup (1.2.8-4) UNRELEASED; urgency=low
   * debian/rules
     - add call to dpatch
   * Create debian/patches directory
-  * Create 00list file
-  * Create 01_fix_restricted_test-server_option.dpatch 
+  * Create debian/patches/00list file
+  * Create debian/patches/01_fix_restricted_test-server_option.dpatch 
+  * Create debian/README.source for dpatch
 
- -- Carl Chenet <chaica@ohmytux.com>  Wed, 02 Sep 2009 22:27:41 +0200
+ -- Carl Chenet <chaica@ohmytux.com>  Mon, 07 Sep 2009 23:42:56 +0200
 
 rdiff-backup (1.2.8-3) unstable; urgency=low
 

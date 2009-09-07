@@ -3,10 +3,10 @@
 include /usr/share/dpatch/dpatch.make
 
 build: patch-stamp
-       dh build
+	dh build
 
 clean: unpatch
-       dh clean
+	dh clean
 
 %:
 	dh $@
