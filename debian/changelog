@@ -1,3 +1,17 @@
+rdiff-backup (1.2.8-4) unstable; urgency=low
+
+  * Patch fixing restricted test-server option (Closes:#522278).
+  * debian/control
+    - add dpatch in Build-Depends
+  * debian/rules
+    - add call to dpatch
+  * Create debian/patches directory
+  * Create debian/patches/00list file
+  * Create debian/patches/01_fix_restricted_test-server_option.dpatch 
+  * Create debian/README.source for dpatch
+
+ -- Carl Chenet <chaica@ohmytux.com>  Mon, 07 Sep 2009 23:42:56 +0200
+
 rdiff-backup (1.2.8-3) unstable; urgency=low
 
   * New debian/watch file

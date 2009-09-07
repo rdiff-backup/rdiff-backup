@@ -1,5 +1,13 @@
 #!/usr/bin/make -f
 
+include /usr/share/dpatch/dpatch.make
+
+build: patch-stamp
+	dh build
+
+clean: unpatch
+	dh clean
+
 %:
 	dh $@
 
