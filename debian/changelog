@@ -1,3 +1,10 @@
+rdiff-backup (1.2.8-5) unstable; urgency=low
+
+  * debian/local/bash-completion 
+    - Switch from dashes to underscores in bash function names (Closes:#531606)
+
+ -- Carl Chenet <chaica@ohmytux.com>  Mon, 14 Sep 2009 20:59:42 +0200
+
 rdiff-backup (1.2.8-4) unstable; urgency=low
 
   * Patch fixing restricted test-server option (Closes:#522278).
