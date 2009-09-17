@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Carl Chenet <chaica@ohmytux.com>
 Uploaders: Python Applications Packaging Team <python-apps-team@lists.alioth.debian.org>
 Build-Depends:
- debhelper (>= 7.0.50~), python-support, python-dev, python-pylibacl, python-pyxattr,
+ debhelper (>= 7.0.50~), python-support, python-all-dev, python-pylibacl, python-pyxattr,
  librsync-dev, dpatch
 Standards-Version: 3.8.3
 Homepage: http://rdiff-backup.nongnu.org/

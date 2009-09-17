@@ -11,16 +11,7 @@ clean: unpatch
 %:
 	dh $@
 
-override_dh_link:
-	dh_link usr/lib/rdiff-backup/rdiff-backup usr/bin/rdiff-backup
-	dh_link usr/lib/rdiff-backup/rdiff-backup-statistics usr/bin/rdiff-backup-statistics
-	dh_link
-
-override_dh_auto_install:
-	dh_auto_install -- --install-lib=/usr/lib/rdiff-backup \
-		--install-scripts=/usr/lib/rdiff-backup 
-		--librsync-dir=/usr/lib/rdiff-backup 
-		--libs=/usr/lib/rdiff-backup
+override_dh_install:
 	install -D -m 0644 debian/local/bash-completion debian/rdiff-backup/etc/bash_completion.d/rdiff-backup
 
 	# Removing useless files
