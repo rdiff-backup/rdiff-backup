@@ -11,7 +11,7 @@
 
 shopt -s extglob
 
-_rdiff-backup ()
+_rdiff_backup ()
 {
 	local cur prev wfilearg wpatharg wnumarg wotherarg longopts shortopts options
 	COMPREPLAY=()
@@ -94,4 +94,4 @@ _rdiff-backup ()
 	fi
 }
 
-complete -F _rdiff-backup -o filenames rdiff-backup
+complete -F _rdiff_backup -o filenames rdiff-backup
