@@ -7,6 +7,8 @@ rdiff-backup (1.2.8-5) unstable; urgency=low
   [ Piotr Ożarowski ]
   * Provide public module again (sorry for not checking rdepends more
     carefully, closes: #547135)
+    - bump minimum required debhelper version to 7.3.5
+    - replace python-dev with python-all-dev build dependency
 
  -- Carl Chenet <chaica@ohmytux.com>  Thu, 17 Sep 2009 21:07:43 +0200
 
