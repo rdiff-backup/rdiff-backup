@@ -28,6 +28,8 @@ except ImportError:
 	OWNER_SECURITY_INFORMATION = 0
 	DACL_SECURITY_INFORMATION = 0
 
+	pywintypes = None
+
 def encode(str_):
 	if type(str_) == unicode:
 		return str_.encode('utf-8')
@@ -46,6 +48,12 @@ class ACL:
 
 	def load_from_rp(self, rp, skip_inherit_only = True):
 		self.index = rp.index
+
+		# Sometimes, we are asked to load from an rpath when ACL's
+		# are not supported. Ignore the request in this case.
+		if not pywintypes:
+			return
+
 		try:
 			sd = rp.conn.win32security. \
 					GetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags)
