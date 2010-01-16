@@ -394,9 +394,9 @@ static PyObject *
 posix_lchown(PyObject *self, PyObject *args)
 {
 	char *path = NULL;
-	int uid, gid;
+	long uid, gid;
 	int res;
-	if (!PyArg_ParseTuple(args, "etii:lchown",
+	if (!PyArg_ParseTuple(args, "etll:lchown",
 	                      Py_FileSystemDefaultEncoding, &path,
 	                      &uid, &gid))
 		return NULL;
