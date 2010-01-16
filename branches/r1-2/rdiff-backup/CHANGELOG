@@ -1,6 +1,9 @@
 New in v1.2.9 (????/??/??)
 ---------------------------
 
+Fix OverflowError on 64-bit systems when backing up symlinks with uid or gid
+above INT_MAX. Thanks to Michel Le Cocq for the bug report. (Andrew Ferguson)
+
 Don't print "Fatal Error" if --check-destination-dir completed successfully.
 Thanks to Serge Zub for the suggestion. (Andrew Ferguson)
 
