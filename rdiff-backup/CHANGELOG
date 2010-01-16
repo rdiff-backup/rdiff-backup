@@ -1,6 +1,9 @@
 New in v1.3.4 (????/??/??)
 ---------------------------
 
+Fix OverflowError on 64-bit systems when backing up symlinks with uid or gid
+above INT_MAX. Thanks to Michel Le Cocq for the bug report. (Andrew Ferguson)
+
 Start using Unicode internally for filenames. This fixes Unicode support
 on Windows (Josh Nisly)
 
