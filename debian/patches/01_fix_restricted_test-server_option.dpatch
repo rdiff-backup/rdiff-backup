@@ -8,7 +8,7 @@
 @DPATCH@
 diff -urNad rdiff-backup-1.2.8~/rdiff_backup/Main.py rdiff-backup-1.2.8/rdiff_backup/Main.py
 --- rdiff-backup-1.2.8~/rdiff_backup/Main.py	2009-03-16 15:36:21.000000000 +0100
-+++ rdiff-backup-1.2.8/rdiff_backup/Main.py	2009-09-07 22:11:31.000000000 +0200
++++ rdiff-backup-1.2.8/rdiff_backup/Main.py	2010-02-20 11:26:27.000000000 +0100
 @@ -288,7 +288,7 @@
  	elif action == "remove-older-than": RemoveOlderThan(rps[0])
  	elif action == "restore": Restore(*rps)
@@ -20,8 +20,8 @@ diff -urNad rdiff-backup-1.2.8~/rdiff_backup/Main.py rdiff-backup-1.2.8/rdiff_ba
  
 diff -urNad rdiff-backup-1.2.8~/rdiff_backup/SetConnections.py rdiff-backup-1.2.8/rdiff_backup/SetConnections.py
 --- rdiff-backup-1.2.8~/rdiff_backup/SetConnections.py	2009-03-16 15:36:21.000000000 +0100
-+++ rdiff-backup-1.2.8/rdiff_backup/SetConnections.py	2009-09-07 22:17:35.000000000 +0200
-@@ -241,20 +241,24 @@
++++ rdiff-backup-1.2.8/rdiff_backup/SetConnections.py	2010-02-20 11:29:43.000000000 +0100
+@@ -241,20 +241,25 @@
  	Globals.backup_reader = Globals.isbackup_reader = \
  		  Globals.backup_writer = Globals.isbackup_writer = None
  
@@ -43,7 +43,7 @@ diff -urNad rdiff-backup-1.2.8~/rdiff_backup/SetConnections.py rdiff-backup-1.2.
  	try:
  		assert conn.Globals.get('current_time') is None
 -		assert type(conn.os.listdir('.')) is list
--		version = conn.Globals.get('version')
+ 		version = conn.Globals.get('version')
 +		try:
 +			assert type(conn.os.getuid()) is int
 +		except AttributeError: # Windows doesn't support os.getuid()
