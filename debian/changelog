@@ -1,3 +1,13 @@
+rdiff-backup (1.2.8-6) unstable; urgency=low
+
+  * debian/control
+    - switching Maintainer to PAPT team
+    - switching Uploaders to Carl Chenet <chaica@ohmytux.com>
+  * debian/patches/01_fix_restricted_test-server_option.dpatch
+    - added one line accidentely removed in the previous patch (Closes:#570627)
+
+ -- Carl Chenet <chaica@ohmytux.com>  Sat, 20 Feb 2010 12:29:55 +0100
+
 rdiff-backup (1.2.8-5) unstable; urgency=low
 
   [ Carl Chenet ]
