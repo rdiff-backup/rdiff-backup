@@ -1,11 +1,6 @@
-#! /bin/sh /usr/share/dpatch/dpatch-run
-## 01_fix_restricted_test-server_option.dpatch by Carl Chenet <chaica@ohmytux.com>
-##
-## All lines beginning with `## DP:' are a description of the patch.
-## DP: Reimplemented from the Ubuntu patch by <andreas@arrakis.se>
-## DP: Original patch from : https://bugs.launchpad.net/ubuntu/+source/rdiff-backup/+bug/349072
+# Description: 01_fix_restricted_test-server_option.diff
+# Author: Carl Chenet <chaica@ohmytux.com>
 
-@DPATCH@
 diff -urNad rdiff-backup-1.2.8~/rdiff_backup/Main.py rdiff-backup-1.2.8/rdiff_backup/Main.py
 --- rdiff-backup-1.2.8~/rdiff_backup/Main.py	2009-03-16 15:36:21.000000000 +0100
 +++ rdiff-backup-1.2.8/rdiff_backup/Main.py	2010-02-20 11:26:27.000000000 +0100

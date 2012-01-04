@@ -1,15 +1,7 @@
 #!/usr/bin/make -f
 
-include /usr/share/dpatch/dpatch.make
-
-build: patch-stamp
-	dh build
-
-clean: unpatch
-	dh clean
-
 %:
-	dh $@
+	dh $@ --with python2
 
 override_dh_install:
 	install -D -m 0644 debian/local/bash-completion debian/rdiff-backup/etc/bash_completion.d/rdiff-backup

@@ -1,12 +1,13 @@
 Source: rdiff-backup
 Section: utils
 Priority: optional
+X-Python-Version: >= 2.5
 Maintainer: Python Applications Packaging Team <python-apps-team@lists.alioth.debian.org>
 Uploaders: Carl Chenet <chaica@ohmytux.com>
 Build-Depends:
- debhelper (>= 7.3.5~), python-support, python-all-dev, python-pylibacl, python-pyxattr,
- librsync-dev, dpatch
-Standards-Version: 3.8.3
+ debhelper (>= 7.3.5~), python-all-dev, python-pylibacl, python-pyxattr,
+ librsync-dev
+Standards-Version: 3.9.2
 Homepage: http://rdiff-backup.nongnu.org/
 Vcs-Svn: svn://svn.debian.org/python-apps/packages/rdiff-backup/trunk/
 Vcs-Browser: http://svn.debian.org/viewsvn/python-apps/packages/rdiff-backup/trunk/
