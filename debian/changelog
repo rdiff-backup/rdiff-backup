@@ -1,3 +1,20 @@
+rdiff-backup (1.2.8-7) unstable; urgency=low
+
+  * debian/control
+    - bump Standards-Version to 3.9.2
+    - add X-Python-Version field
+    - remove dpatch build-dependency
+  * debian/source/format
+    - switch to 3.0 (quilt)
+  * debian/patches
+    - migrated *.dpatch to quilt format
+    - add 02_python_2.6_deprecationwarning.diff patch (Closes:#587370)
+    - add 03_fix_hardlinks.diff (Closes:#558035)
+  * debian/rules
+    - switch to dh --with python2
+
+ -- Carl Chenet <chaica@ohmytux.com>  Wed, 04 Jan 2012 02:23:04 +0100
+
 rdiff-backup (1.2.8-6) unstable; urgency=low
 
   * debian/control
