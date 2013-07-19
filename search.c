@@ -48,57 +48,73 @@
 #include "search.h"
 #include "checksum.h"
 
-
-#define TABLESIZE (1<<16)
+#define TABLE_SIZE (1<<16)
 #define NULL_TAG (-1)
-
 
 #define gettag2(s1,s2) (((s1) + (s2)) & 0xFFFF)
 #define gettag(sum) gettag2((sum)&0xFFFF,(sum)>>16)
 
-
-static int
-rs_compare_targets(rs_target_t const *t1, rs_target_t const *t2)
-{
-    return ((int) t1->t - (int) t2->t);
-}
-
-
 rs_result
 rs_build_hash_table(rs_signature_t * sums)
 {
-    int                     i;
+    int rs_compare_targets(void const *a1, void const *a2) {
+	rs_target_t const *t1 = a1;
+	rs_target_t const *t2 = a2;
 
-    sums->tag_table = calloc(TABLESIZE, sizeof sums->tag_table[0]);
+	int v = (int) t1->t - (int) t2->t;
+	if (v != 0)
+	    return v;
+
+	rs_weak_sum_t w1 = sums->block_sigs[t1->i].weak_sum;
+	rs_weak_sum_t w2 = sums->block_sigs[t2->i].weak_sum;
+
+	v = (w1 > w2) - (w1 < w2);
+	if (v != 0)
+	    return v;
+
+	return memcmp(sums->block_sigs[t1->i].strong_sum,
+		sums->block_sigs[t2->i].strong_sum,
+		sums->strong_sum_len);
+    }
+
+    int i;
+
+    sums->tag_table = calloc(TABLE_SIZE, sizeof(sums->tag_table[0]));
     if (!sums->tag_table)
         return RS_MEM_ERROR;
     
     if (sums->count > 0) {
 	sums->targets = calloc(sums->count, sizeof(rs_target_t));
-        if (!sums->targets)
+        if (!sums->targets) {
+	    free(sums->tag_table);
+	    sums->tag_table = NULL;
             return RS_MEM_ERROR;
+	}
 
 	for (i = 0; i < sums->count; i++) {
 	    sums->targets[i].i = i;
 	    sums->targets[i].t = gettag(sums->block_sigs[i].weak_sum);
 	}
 
-	/* FIXME: Perhaps if this operating system has comparison_fn_t
-         * like GNU, then use it in the cast.  But really does anyone
-         * care?  */
 	qsort(sums->targets, sums->count,
 	      sizeof(sums->targets[0]),
-              (int (*)(const void *, const void *)) rs_compare_targets);
+              rs_compare_targets);
     }
 
-    for (i = 0; i < TABLESIZE; i++)
-	sums->tag_table[i] = NULL_TAG;
+    for (i = 0; i < TABLE_SIZE; i++) {
+	sums->tag_table[i].l = NULL_TAG;
+	sums->tag_table[i].r = NULL_TAG;
+    }
 
     for (i = sums->count - 1; i >= 0; i--) {
-	sums->tag_table[sums->targets[i].t] = i;
+	sums->tag_table[sums->targets[i].t].l = i;
     }
 
-    rs_trace("done");
+    for (i = 0; i < sums->count; i++) {
+	sums->tag_table[sums->targets[i].t].r = i;
+    }
+
+    rs_trace("rs_build_hash_table done");
     return RS_DONE;
 }
 
@@ -119,44 +135,57 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
                     rs_signature_t const *sig, rs_stats_t * stats,
                     rs_long_t * match_where)
 {
-    int                     hash_tag = gettag(weak_sum);
-    int                     j = sig->tag_table[hash_tag];
-    rs_strong_sum_t         strong_sum;
-    int                     got_strong = 0;
+    rs_strong_sum_t strong_sum;
+    int got_strong = 0;
+    int hash_tag = gettag(weak_sum);
+    tag_table_entry_t *bucket = &(sig->tag_table[hash_tag]);
+    int l = bucket->l;
+    int r = bucket->r + 1;
+    int v = 1;
 
-    if (j == NULL_TAG) {
+    if (l == NULL_TAG)
 	return 0;
+
+    while (l < r) {
+	int m = (l + r) >> 1;
+	int i = sig->targets[m].i;
+	rs_block_sig_t *b = &(sig->block_sigs[i]);
+	v = (weak_sum > b->weak_sum) - (weak_sum < b->weak_sum); // v < 0  - weak_sum <  b->weak_sum
+								 // v == 0 - weak_sum == b->weak_sum
+								 // v > 0  - weak_sum >  b->weak_sum
+	if (v == 0) {
+	    if (!got_strong) {
+		rs_calc_strong_sum(inbuf, block_len, &strong_sum);
+		got_strong = 1;
+	    }
+	    v = memcmp(strong_sum, b->strong_sum, sig->strong_sum_len);
+
+	    if (v == 0) {
+		l = m;
+		r = m;
+		break;
+	    }
+	}
+
+	if (v > 0)
+	    l = m + 1;
+	else
+	    r = m;
     }
 
-    for (; j < sig->count && sig->targets[j].t == hash_tag; j++) {
-	int                     i = sig->targets[j].i;
-	int                     token;
-
-	if (weak_sum != sig->block_sigs[i].weak_sum)
-	    continue;
-
-	token = sig->block_sigs[i].i;
-
-	rs_trace("found weak match for %08x in token %d", weak_sum, token);
-
+    if (l == r) {
+	int i = sig->targets[l].i;
+	rs_block_sig_t *b = &(sig->block_sigs[i]);
+	if (weak_sum != b->weak_sum)
+	    return 0;
 	if (!got_strong) {
 	    rs_calc_strong_sum(inbuf, block_len, &strong_sum);
 	    got_strong = 1;
 	}
-
-	/* FIXME: Use correct dynamic sum length! */
-	if (memcmp(strong_sum, sig->block_sigs[i].strong_sum,
-                   sig->strong_sum_len) == 0) {
-	    /* XXX: This is a remnant of rsync: token number 1 is the
-	     * block at offset 0.  It would be good to clear this
-	     * up. */
-	    *match_where = (rs_long_t)(token - 1) * sig->block_len;
-	    return 1;
-	} else {
-	    rs_trace("this was a false positive, the strong sig doesn't match");
-	    stats->false_matches++;
-	}
+	v = memcmp(strong_sum, b->strong_sum, sig->strong_sum_len);
+	int token = b->i;
+	*match_where = (rs_long_t)(token - 1) * sig->block_len;
     }
 
-    return 0;
+    return !v;
 }
