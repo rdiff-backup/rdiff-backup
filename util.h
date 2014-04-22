@@ -37,7 +37,7 @@ void rs_bzero(void *buf, size_t size);
 
 #ifdef __GNUC__
 #  define UNUSED(x) x __attribute__((unused))
-#elif __LCLINT__
+#elif defined(__LCLINT__) || defined(S_SPLINT_S)
 #  define UNUSED(x) /*@unused@*/ x
 #else				/* !__GNUC__ && !__LCLINT__ */
 #  define UNUSED(x) x
