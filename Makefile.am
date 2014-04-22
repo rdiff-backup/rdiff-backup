@@ -18,7 +18,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = doc testsuite
+SUBDIRS = . doc testsuite
 ACLOCAL_AMFLAGS = -I m4
 
 MAINTAINERCLEANFILES = Makefile.in \
