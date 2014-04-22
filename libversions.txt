@@ -1,6 +1,4 @@
-libtool versions for librsync
-
-   So, libtool library versions are described by three integers:
+libtool versions for librsync, described by three integers:
 
 CURRENT
      The most recent interface number that this library implements.

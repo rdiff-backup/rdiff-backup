@@ -6,18 +6,9 @@ synchronization that was popularized by the rsync utility and is used in
 rproxy. This algorithm transfers the differences between 2 files without
 needing both files on the same system.
 
-This library was previously known as libhsync up to version 0.9.0. It
-was originaly developed as part of rproxy, but is now used by other
-applications and has its own project on SourceForge.
+librsync's canonical branches (since 2014-04) are at
 
-See the SourceForge project site for all released packages, mailing
-lists, bug tracker, patch tracker, and CVS.
-
-  http://librsync.sourceforge.net/
-
-To use anonymous CVS, see the file README.CVS in this directory. Also
-read HACKING for a description of development conventions used by this
-project.
+  https://github.com/librsync/librsync/
 
 >> Requirements
 
@@ -93,4 +84,38 @@ the Doxygen tool:
 
   http://www.doxygen.org/
 
-$Id$
+>> Debugging
+
+If you are using GNU libc, you might like to use
+
+  MALLOC_CHECK_=2 ./rdiff
+
+to detect some allocation bugs. Report any bugs you find to the bug tracker.
+
+>> Releasing
+
+Make sure you have cvs2cl installed to generate ChangeLog. Before a
+formal release, make sure that the following files have been updated
+to reflect the new version:
+
+ * AUTHORS - make sure all significant authors are included. 
+  
+ * NEWS - make sure the top "Changes in X.Y.Z" is correct. 
+  
+ * THANKS - make sure the bottom "Contributors for X.Y.Z" is correct.
+  
+ * configure.ac - make sure AC_INIT and librsync_libversion are right.
+  
+ * libversions.txt - make sure libversion is added.
+  
+ * librsync.spec - make sure version and URL are right.
+  
+ * PCBuild/config.h,librsync-config.h - update using configure.msc
+   using cygwin.
+
+Do a complete configure and distcheck to ensure everything is properly
+configured, built, and tested:
+
+  $ ./autogen.sh [OPTIONS]
+  $ ./configure
+  $ make distcheck

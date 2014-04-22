@@ -1,9 +1,5 @@
--*- indented-text -*- 
-
-Instructions and conventions for people wanting to work on librsync.
-Also read README.CVS for detailed instructions and requirements on
-working with CVS. Please consider these guidelines even if you're
-doing your own fork. 
+Instructions and conventions for people wanting to work on librsync.  Please
+consider these guidelines even if you're doing your own fork. 
 
  * If you make a significant change (of more than 15 lines, say), then
    add yourself to the copyright for that file, and to the AUTHORS file.
@@ -18,13 +14,5 @@ doing your own fork.
    and update items under a "Changes in X.Y.Z" heading at the top of
    the file. Do this as you go along, so that we don't need to work
    out what happened when it's time for a release.
-
- * ChangeLog contains a list of detailed developer-visible change in
-   GNU Coding Standards format. It is not included in CVS, but is
-   auto-generated from CVS commit messages and included in the
-   distribution tar-ball. Please keep this in mind when entering your
-   CVS commit messages. Meaningful commit messages will ensure a
-   useful Changelog, which makes it a lot easier if people ever create
-   their own trees away from the central CVS server.
 
  * Please try to update docs and tests in parallel with code changes.

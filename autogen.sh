@@ -1,7 +1,6 @@
 #! /bin/sh
 
 # Copyright (C) 2000, 2001 by Martin Pool
-# $Id$
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
@@ -18,10 +17,10 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-# This script generates everything necessary to build librsync from
-# CVS.  It is based on the file of the same name in glib.  It is not
-# needed for distributed versions, because all the necessary files are
-# included in the tarball by autoconf.
+# This script generates everything necessary to build librsync from a bare
+# source tree.  It is based on the file of the same name in glib.  It is not
+# needed for distributed versions, because all the necessary files are included
+# in the tarball by autoconf.
 
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
