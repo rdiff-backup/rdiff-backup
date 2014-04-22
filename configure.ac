@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.53)
-AC_INIT([librsync],[0.9.7])
+AC_INIT([librsync],[0.9.8pre])
 AC_REVISION([$Revision$])
 AC_COPYRIGHT([Copyright (C) 1999, 2000, 01, 02, 04 by Martin Pool <mbp@samba.org>])
 AC_CONFIG_SRCDIR([trace.c])
