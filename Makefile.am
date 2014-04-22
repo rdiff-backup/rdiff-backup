@@ -19,6 +19,7 @@
 
 AUTOMAKE_OPTIONS = foreign
 SUBDIRS = doc testsuite
+ACLOCAL_AMFLAGS = -I m4
 
 MAINTAINERCLEANFILES = Makefile.in \
 	aclocal.m4 config.guess config.h.in config.sub configure \
