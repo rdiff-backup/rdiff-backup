@@ -10,6 +10,8 @@ Changes in 0.9.8 (not yet released)
  * Moved hosting to https://github.com/librsync/librsync/
 
  * Travis-CI.org integration test at https://travis-ci.org/librsync/librsync/
+ 
+ * Remove bundled copy of popt; it must be installed separately.
 
 Changes in 0.9.7 (released 2004-10-10)
 

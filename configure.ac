@@ -29,7 +29,7 @@ AC_PROG_LIBTOOL
 # Checks for libraries.
 AC_CHECK_LIB(z, deflate)
 AC_CHECK_LIB(bz2, BZ2_bzCompress)
-AC_CHECK_LIB(popt, poptGetContext,,[BUILD_POPT='popt/libpopt.a'; CFLAGS="$CFLAGS -I$srcdir/popt"])
+AC_CHECK_LIB(popt, poptGetContext, [], AC_MSG_WARN([cannot find libpopt: won't be able to run tests or build rdiff]))
 
 # Checks for header files.
 AC_FUNC_ALLOCA
@@ -140,7 +140,6 @@ AC_CONFIG_FILES([
   Makefile 
   doc/Makefile 
   doc/Doxyfile 
-  popt/Makefile 
   testsuite/Makefile
   librsync-config.h])
 AC_OUTPUT

@@ -95,12 +95,6 @@ $Id$
    and is coupled with librsync in unhealthy ways (trace?). Recommend
    changing to RSA API.
     
- * Change popt library to proper automake conditional recursive
-   SUBDIR instead of an EXTRA_LIBRARIES in a seperate dir (or just
-   remove it from the distribution and make the library a dependency).
- 
-   Or perhaps don't use popt, but just getopt.
-   
  * Create library for autoconf replacement functions
  
    Make libreplace.a library in dir replace/ for autoconf replacement
