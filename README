@@ -74,12 +74,24 @@ SGI Make.  I used gcc.
 
 windows32: see above.
 
->> API Documentation
+>> rdiff man page
 
-librsync contains markup for automatic API documentation generation using
-the Doxygen tool:
+>> Documentation
 
-  http://www.doxygen.org/
+Documentation for the rdiff command-line tool:
+
+- http://librsync.sourcefrog.net/doc/rdiff.html
+- http://librsync.sourcefrog.net/doc/rdiff.pdf
+
+and for the library:
+
+- http://librsync.sourcefrog.net/doc/librsync.html
+- http://librsync.sourcefrog.net/doc/librsync.pdf
+
+Generated API documentation:
+
+- https://rproxy.samba.org/doxygen/librsync/refman.pdf
+- https://rproxy.samba.org/doxygen/librsync/
 
 >> Debugging
 
