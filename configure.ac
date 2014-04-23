@@ -7,7 +7,7 @@ AC_COPYRIGHT([Copyright (C) 1999-2014 by Martin Pool <mbp@sourcefrog.net>])
 AC_CONFIG_SRCDIR([trace.c])
 AM_CONFIG_HEADER(config.h)
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 
 # GNU library versioning: This is NOT the librsync release number.
 # See libversions.txt and the libtool manual for an explanation of the
