@@ -1,13 +1,43 @@
-# README for librsync
+# librsync
 
 librsync implements the rolling-checksum algorithm of remote file
 synchronization that was popularized by the rsync utility and is used in
 rproxy. This algorithm transfers the differences between 2 files without
 needing both files on the same system.
 
-librsync's canonical branches (since 2014-04) are at
+librsync does *not* implement the rsync wire protocol. If you want to talk to
+an rsync server to transfer files you'll need to shell out to `rsync`. librsync
+is for building other programs that transfer files as efficiently as rsync. You
+can use librsync to make backup tools, distribute binary patches to programs,
+or sync directories to a server or between peers.
 
-  https://github.com/librsync/librsync/
+This tree also produces the `rdiff` command-line tool that exposes the key
+operations of librsync: generating file signatures, generating the delta from a
+signature to a new file, and applying the delta to regenerate the new file
+given the old file.
+
+## Copyright
+
+librsync is Copyright 1999-2014 Martin Pool and others.
+
+librsync is distributed under the GNU LGPL v2.1 (see COPYING), which basically
+means that you can dynamically link librsync into non-GPL programs, but you
+must redistribute the librsync source, with any modifications you have made.
+
+## Contact
+
+librsync's home is
+
+- https://github.com/librsync/librsync/
+- http://librsync.sourcefrog.net/
+
+There are two mailing lists:
+
+- https://groups.google.com/forum/#!forum/librsync-announce
+- https://groups.google.com/forum/#!forum/librsync
+
+There are some questions and answers about librsync on stackoverflow.com tagged
+`librsync`.  That is a good place to start if you have questions.
 
 ## Requirements
 
@@ -17,27 +47,22 @@ To build librsync you will need:
 
 * Make
 
-* popt -- command line parsing library
+* popt command line parsing library
 
   Available from http://rpm5.org/files/popt/
 
+* automake, libtool, and autoconf
+
 ## Compiling
 
-To build and test librsync from the extracted distribution do;
+If you're building from a git tree you must first create the autoconf files:
 
-   $ ./configure
-   $ make all check
+    $ ./autogen.sh
 
-## Note for RedHat 7.0
+To build and test librsync then do
 
-RedHat 7.0 (Guiness) ships with a buggy version of GCC 2.96 that
-produces many warnings while compiling librsync.  These are harmless
--- the library seems to work anyhow.  You can avoid the warnings by
-using the 'kgcc' version of the compiler:
-
-   $ export CC=kgcc
-   $ ./autogen.sh
-   $ make all check
+    $ ./configure
+    $ make all check
 
 ## Note for Windows
 
@@ -45,9 +70,9 @@ With cygwin you can build using gcc as under a normal unix system. It
 is also possible to compile under cygwin using MSVC++. You must have
 environment variables needed by MSCV set using the Vcvars32.bat
 script. With these variables set, you just do;
-  
-   $ ./configure.msc
-   $ make all check
+
+    $ ./configure.msc
+    $ make all check
 
 The PCbuild directory contains a project and pre-generated config
 files for use with the MSVC++ IDE. This should be enought to compile
@@ -62,18 +87,8 @@ information.
 
 ## Platforms
 
-librsync is known to run on:
-
-GNU Linux Debian 3.0 x86
-
-SUNWspro: (use -v for more warnings)
-
-mips-sgi-irix6.5: works, but you must use GNU Make rather than the default
-SGI Make.  I used gcc.
-
-windows32: see above.
-
-## rdiff man page
+librsync should be widely portable. Patches to fix portability bugs are
+welcome.
 
 ## Documentation
 
@@ -89,41 +104,17 @@ and for the library:
 
 Generated API documentation:
 
-- https://rproxy.samba.org/doxygen/librsync/refman.pdf
 - https://rproxy.samba.org/doxygen/librsync/
+- https://rproxy.samba.org/doxygen/librsync/refman.pdf
+
+These are all produced from the source tree.
 
 ## Debugging
 
 If you are using GNU libc, you might like to use
 
-   MALLOC_CHECK_=2 ./rdiff
+    MALLOC_CHECK_=2 ./rdiff
 
-to detect some allocation bugs. Report any bugs you find to the bug tracker.
+to detect some allocation bugs.
 
-## Releasing
-
-Make sure you have cvs2cl installed to generate ChangeLog. Before a
-formal release, make sure that the following files have been updated
-to reflect the new version:
-
-* AUTHORS - make sure all significant authors are included. 
-  
-* NEWS - make sure the top "Changes in X.Y.Z" is correct. 
-  
-* THANKS - make sure the bottom "Contributors for X.Y.Z" is correct.
-  
-* configure.ac - make sure AC_INIT and librsync_libversion are right.
-  
-* libversions.txt - make sure libversion is added.
-  
-* librsync.spec - make sure version and URL are right.
-  
-* PCBuild/config.h,librsync-config.h - update using configure.msc
-  using cygwin.
-
-Do a complete configure and distcheck to ensure everything is properly
-configured, built, and tested:
-
-   $ ./autogen.sh [OPTIONS]
-   $ ./configure
-   $ make distcheck
+librsync has annotations for the SPLINT static checking tool.
