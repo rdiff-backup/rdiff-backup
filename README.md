@@ -64,6 +64,18 @@ To build and test librsync then do
     $ ./configure
     $ make all check
 
+You can also do what's called a `VPATH` build, where the build products are
+kept separate from the source tree:
+
+    $ mkdir _build   # for example
+    $ cd _build
+    $ ../configure && make check
+
+After building you can install `rdiff` and `librsync` for system-wide use. The
+destination is controlled by `--prefix` and related options to `./configure`.
+
+    $ sudo make install
+
 ## Note for Windows
 
 With cygwin you can build using gcc as under a normal unix system. It
