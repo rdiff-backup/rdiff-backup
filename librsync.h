@@ -190,10 +190,15 @@ typedef struct rs_stats {
  */
 typedef struct rs_mdfour rs_mdfour_t;
 
-#define RS_MD4_LENGTH 16
+/* Commenting this out deliberately - in case library users
+ * depend on this size - this could potentially overflow
+ * buffers now
+ * #define RS_MD4_LENGTH 16
+ */
+#define RS_MAX_STRONG_SUM_LENGTH 32
 
 typedef unsigned int rs_weak_sum_t;
-typedef unsigned char rs_strong_sum_t[RS_MD4_LENGTH];
+typedef unsigned char rs_strong_sum_t[RS_MAX_STRONG_SUM_LENGTH];
 
 void            rs_mdfour(unsigned char *out, void const *in, size_t); 
 void            rs_mdfour_begin(/* @out@ */ rs_mdfour_t * md);
@@ -280,7 +285,7 @@ typedef struct rs_buffers_s rs_buffers_t;
 
 /** Default length of strong signatures, in bytes.  The MD4 checksum
  * is truncated to this size. */
-#define RS_DEFAULT_STRONG_LEN 8
+#define RS_DEFAULT_STRONG_LEN 32
 
 /** Default block length, if not determined by any other factors. */
 #define RS_DEFAULT_BLOCK_LEN 2048

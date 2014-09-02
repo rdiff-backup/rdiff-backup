@@ -73,7 +73,7 @@ static rs_result rs_loadsig_add_sum(rs_job_t *job, rs_strong_sum_t *strong)
     memcpy(asignature->strong_sum, strong, sig->strong_sum_len);
 
     if (rs_trace_enabled()) {
-        char                hexbuf[RS_MD4_LENGTH * 2 + 2];
+        char                hexbuf[RS_MAX_STRONG_SUM_LENGTH * 2 + 2];
         rs_hexify(hexbuf, strong, sig->strong_sum_len);
 
         rs_trace("read in checksum: weak=%#x, strong=%s", asignature->weak_sum,
@@ -133,7 +133,7 @@ static rs_result rs_loadsig_s_stronglen(rs_job_t *job)
         return result;
     job->strong_sum_len = l;
     
-    if (l < 0  ||  l > RS_MD4_LENGTH) {
+    if (l < 0  ||  l > RS_MAX_STRONG_SUM_LENGTH) {
         rs_error("strong sum length %d is implausible", l);
         return RS_CORRUPT;
     }
@@ -178,11 +178,17 @@ static rs_result rs_loadsig_s_magic(rs_job_t *job)
 
     if ((result = rs_suck_n4(job, &l)) != RS_DONE) {
         return result;
-    } else if (l != RS_SIG_MAGIC) {
-        rs_error("wrong magic number %#10x for signature", l);
-        return RS_BAD_MAGIC;
-    } else {
-        rs_trace("got signature magic %#10x", l);
+    }
+
+    switch(l) {
+        case RS_MD4_SIG_MAGIC:
+        case RS_BLAKE2_SIG_MAGIC:
+            job->magic = job->signature->magic = l;
+            rs_trace("got signature magic %#10x", l);
+            break;
+	default:
+            rs_error("wrong magic number %#10x for signature", l);
+            return RS_BAD_MAGIC;
     }
 
     job->statefn = rs_loadsig_s_blocklen;
@@ -208,7 +214,7 @@ rs_job_t *rs_loadsig_begin(rs_signature_t **signature)
     job = rs_job_new("loadsig", rs_loadsig_s_magic);
     *signature = job->signature = rs_alloc_struct(rs_signature_t);
     job->signature->count = 0;
-        
+
     return job;
 }
 

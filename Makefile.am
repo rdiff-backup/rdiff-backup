@@ -43,7 +43,8 @@ librsync_la_SOURCES =  prototab.c prototab.h \
 	rollsum.c rollsum.h \
 	scoop.c search.c search.h stats.c stream.c stream.h sumset.c \
 	sumset.h trace.c trace.h tube.c types.h util.c util.h \
-	version.c whole.c whole.h snprintf.h
+	version.c whole.c whole.h snprintf.h \
+	blake2b-ref.c blake2.h blake2-impl.h
 
 librsync_la_LIBADD = @LIBOBJS@
 

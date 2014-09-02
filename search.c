@@ -47,6 +47,7 @@
 #include "sumset.h"
 #include "search.h"
 #include "checksum.h"
+#include "protocol.h"
 
 
 #define TABLESIZE (1<<16)
@@ -140,7 +141,14 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
 	rs_trace("found weak match for %08x in token %d", weak_sum, token);
 
 	if (!got_strong) {
-	    rs_calc_strong_sum(inbuf, block_len, &strong_sum);
+            if(sig->magic == RS_BLAKE2_SIG_MAGIC) {
+	        rs_calc_blake2_sum(inbuf, block_len, &strong_sum);
+	    } else if (sig->magic == RS_MD4_SIG_MAGIC) {
+                rs_calc_md4_sum(inbuf, block_len, &strong_sum);
+	    } else {
+	        rs_error("Unknown signature algorithm - this is a BUG");
+		return 0; /* FIXME: Is this the best way to handle this? */
+	    }
 	    got_strong = 1;
 	}
 

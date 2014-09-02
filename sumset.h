@@ -53,6 +53,7 @@ struct rs_signature {
     rs_block_sig_t  *block_sigs; /* points to info for each chunk */
     int             *tag_table;
     rs_target_t     *targets;
+    int             magic;
 };
 
 

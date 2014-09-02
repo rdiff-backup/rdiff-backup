@@ -458,7 +458,7 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
     }
 
     job->strong_sum_len = sig->strong_sum_len;
-    if (job->strong_sum_len < 0  ||  job->strong_sum_len > RS_MD4_LENGTH) {
+    if (job->strong_sum_len < 0  ||  job->strong_sum_len > RS_MAX_STRONG_SUM_LENGTH) {
         rs_log(RS_LOG_ERR, "unreasonable strong_sum_len %d in signature",
                job->strong_sum_len);
         return NULL;
@@ -466,5 +466,4 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
 
     return job;
 }
-
 

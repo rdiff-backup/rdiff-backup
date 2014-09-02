@@ -64,11 +64,11 @@ static rs_result rs_sig_s_generate(rs_job_t *);
  */
 static rs_result rs_sig_s_header(rs_job_t *job)
 {
-    rs_squirt_n4(job, RS_SIG_MAGIC);
+    rs_squirt_n4(job, job->magic);
     rs_squirt_n4(job, job->block_len);
     rs_squirt_n4(job, job->strong_sum_len);
     rs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)",
-             RS_SIG_MAGIC, (int) job->block_len, (int) job->strong_sum_len);
+             job->magic, (int) job->block_len, (int) job->strong_sum_len);
     job->stats.block_len = job->block_len;
     
     job->statefn = rs_sig_s_generate;
@@ -88,13 +88,20 @@ rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
 
     weak_sum = rs_calc_weak_sum(block, len);
 
-    rs_calc_strong_sum(block, len, &strong_sum);
+    if(job->magic == RS_BLAKE2_SIG_MAGIC) {
+        rs_calc_blake2_sum(block, len, &strong_sum);
+    } else if(job->magic == RS_MD4_SIG_MAGIC) {
+        rs_calc_md4_sum(block, len, &strong_sum);
+    } else {
+        rs_error("Invalid job magic - this is a BUG");
+        return RS_INTERNAL_ERROR;
+    }
 
     rs_squirt_n4(job, weak_sum);
     rs_tube_write(job, strong_sum, job->strong_sum_len);
 
     if (rs_trace_enabled()) {
-        char                strong_sum_hex[RS_MD4_LENGTH * 2 + 1];
+        char                strong_sum_hex[RS_MAX_STRONG_SUM_LENGTH * 2 + 1];
         rs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
         rs_trace("sent weak sum 0x%08x and strong sum %s", weak_sum,
                  strong_sum_hex);
@@ -147,8 +154,10 @@ rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len)
 
     job = rs_job_new("signature", rs_sig_s_header);
     job->block_len = new_block_len;
+    job->magic = RS_BLAKE2_SIG_MAGIC;
 
-    assert(strong_sum_len > 0 && strong_sum_len <= RS_MD4_LENGTH);
+    assert(strong_sum_len > 0);
+    assert(strong_sum_len <= RS_MAX_STRONG_SUM_LENGTH);
     job->strong_sum_len = strong_sum_len;
 
     return job;
