@@ -5,6 +5,7 @@ Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache
+compile
 config.guess
 config.h
 config.h.in
@@ -29,6 +30,7 @@ prototab.c
 prototab.h
 stamp-h1
 *.Po
+test-driver
 testsuite/mutate.tmp
 testsuite/isprefix.driver
 rdiff
