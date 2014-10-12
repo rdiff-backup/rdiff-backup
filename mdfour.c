@@ -3,7 +3,7 @@
  * librsync -- the library for network deltas
  * $Id$
  * 
- * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 1997-1999 by Andrew Tridgell
  * Copyright (C) 2002, 2003 by Donovan Baarda <abo@minkirri.apana.org.au> 
  * 

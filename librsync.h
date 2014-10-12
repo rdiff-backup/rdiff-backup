@@ -2,7 +2,7 @@
  *
  * librsync -- library for network deltas
  * 
- * Copyright (C) 2000, 2001 by Martin Pool <mbp@samba.org>
+ * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 2003 by Donovan Baarda <abo@minkirri.apana.org.au> 
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -31,7 +31,7 @@
 /** \file librsync.h
  *
  * \brief Main public interface to librsync.
- * \author Martin Pool <mbp@samba.org>
+ * \author Martin Pool <mbp@sourcefrog.net>
  * \version librsync-0.9.6
  *
  * $Id$

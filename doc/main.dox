@@ -1,7 +1,7 @@
 -*- text -*-
 /**
 \mainpage The librsync delta-encoding library
-\author Martin Pool <mbp@samba.org>
+\author Martin Pool <mbp@sourcefrog.net>
 
 $Id$
 
