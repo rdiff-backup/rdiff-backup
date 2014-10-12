@@ -326,3 +326,13 @@
   * We'd know how much signature data we expect to read, rather than
     requiring it to be terminated by the caller.
 
+* Only use `inline` if the compiler supports it; perhaps allow it to be
+  disabled or even just let the compiler decide?
+
+* Fall back from `uint8_t` to probably `unsigned char` if necessary.
+
+* Don't randomly use chars and longs; use rs_byte_t and rs_size_t.
+
+* Fold snprintf.h into librsync-config.h.in or even maybe config.h.in.
+
+* Maybe just drop snprintf, if plausibly everyone has it? Or can we avoid it?
