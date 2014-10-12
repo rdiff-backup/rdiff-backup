@@ -281,10 +281,6 @@
 
   * Just more testing in general.
 
-  * Perhaps merge in Comfychair into a subdirectory and use that
-    rather than the shell-based scripts. There is also the C based
-    "check" framework which looks nice.
-
   * Test broken pipes and that IO errors are handled properly.
 
   * Test files >2GB, >4GB.  Presumably these must be done in streams
@@ -292,6 +288,15 @@
     ridiculous.  I wonder if it will take too long to run these
     tests?  Probably, but perhaps we can afford to run just one
     carefully-chosen test.
+
+  * Fuzz instruction streams. <https://code.google.com/p/american-fuzzy-lop/>?
+
+  * Generate random data; do random mutations.
+
+  * Try different block lengths.
+
+  * Tests should fail if they can't find their inputs, or have zero
+    inputs: at present they tend to succeed by default.
 
 * Security audit
 
