@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.53)
-AC_INIT([librsync],[0.9.8pre])
+AC_INIT([librsync],[1.0.0pre])
 AC_COPYRIGHT([Copyright (C) 1999-2014 by Martin Pool <mbp@sourcefrog.net>])
 AC_CONFIG_SRCDIR([trace.c])
 AM_CONFIG_HEADER(config.h)

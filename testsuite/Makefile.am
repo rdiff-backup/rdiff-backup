@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 # Copyright (C) 2002 by Ben Elliston <bje@redhat.com>
-# $Id$
+# Copyright (C) 2014 by Martin Pool <mbp@sourcefrog.net>
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
@@ -29,13 +29,11 @@ isprefix_driver_LDADD = ../isprefix.o # XXX: should link replaced functions
 # failed.  Generally these tests should be ordered so that more basic
 # tests are run first.
 
-TESTS_ENVIRONMENT = $(SH) $(srcdir)/driver.sh
-
 TESTS = \
 	signature.test mutate.test sources.test isprefix.test	\
 	delta.test mksum.test triple.test changes.test
 
-noinst_SCRIPTS = driver.sh mutate.pl $(TESTS)
+noinst_SCRIPTS = testcommon.sh mutate.pl $(TESTS)
 
 test_data = dot \
 	changes.input/01.in changes.input/02.in \

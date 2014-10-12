@@ -1,11 +1,10 @@
-#! /bin/sh
+#! /bin/sh -ex
 
 # librsync -- the library for network deltas
-# $Id$
-# 
-# Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@samba.org>
+
+# Copyright (C) 1999, 2000, 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
 # Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
-# 
+
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
 # as published by the Free Software Foundation; either version 2.1 of
@@ -20,16 +19,19 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
+. $srcdir/testcommon.sh
+
 new=$tmpdir/delta.tmp
 
-for delta in $testdir/*.delta
+inputdir=$srcdir/delta.input
+
+for delta in $inputdir/*.delta
 do
     for inbuf in $bufsizes
     do
         cmd="../rdiff -I$inbuf patch /dev/null $delta $new"
         run_test $cmd
-        expect=$testdir/`basename $delta .delta`.expect
-        diff $expect $new || fail_test "$cmd"
-        countdown
+        expect=$inputdir/`basename $delta .delta`.expect
+	check_compare $expect $new
     done
 done
