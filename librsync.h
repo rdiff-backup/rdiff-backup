@@ -32,9 +32,7 @@
  *
  * \brief Main public interface to librsync.
  * \author Martin Pool <mbp@sourcefrog.net>
- * \version librsync-0.9.6
- *
- * $Id$
+ * \version librsync-1.0.0
  *
  * See \ref intro for an introduction to use of this library.
  */
