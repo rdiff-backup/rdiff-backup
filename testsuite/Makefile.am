@@ -30,6 +30,7 @@ isprefix_driver_LDADD = ../isprefix.o # XXX: should link replaced functions
 # tests are run first.
 
 TESTS = \
+	help.test \
 	signature.test mutate.test sources.test isprefix.test	\
 	delta.test triple.test changes.test
 
