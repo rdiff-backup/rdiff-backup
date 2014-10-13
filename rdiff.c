@@ -1,7 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
- * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
  * 
@@ -85,12 +84,14 @@ enum {
 };
 
 extern int rs_roll_paranoia;
+char *rs_hash_name;
 
 const struct poptOption opts[] = {
     { "verbose",     'v', POPT_ARG_NONE, 0,             'v' },
     { "version",     'V', POPT_ARG_NONE, 0,             'V' },
     { "input-size",  'I', POPT_ARG_INT,  &rs_inbuflen },
     { "output-size", 'O', POPT_ARG_INT,  &rs_outbuflen },
+    { "hash",        'H', POPT_ARG_STRING, &rs_hash_name },
     { "help",        '?', POPT_ARG_NONE, 0,             'h' },
     {  0,            'h', POPT_ARG_NONE, 0,             'h' },
     { "block-size",  'b', POPT_ARG_INT,  &block_len },
@@ -143,6 +144,8 @@ static void help(void) {
            "  -V, --version             Show program version\n"
            "  -?, --help                Show this help message\n"
            "  -s, --statistics          Show performance statistics\n"
+	   "Signature generation options:\n"
+	   "  -H, --hash=ALG            Hash algorithm: mdfour\n"
            "Delta-encoding options:\n"
            "  -b, --block-size=BYTES    Signature block size\n"
            "  -S, --sum-size=BYTES      Set signature strength\n"
@@ -158,14 +161,10 @@ static void help(void) {
 
 static void rdiff_show_version(void)
 {
-    /*
-     * This little declaration is dedicated to Stephen Kapp and Reaper
-     * Technologies, who by all appearances redistributed a modified but
-     * unacknowledged version of GNU Keyring in violation of the licence
-     * and all laws of politeness and good taste.
-     */
     char const *bzlib = "", *zlib = "", *trace = "";
     
+#if 0
+    /* Compression isn't implemented so don't mention it. */
 #ifdef HAVE_LIBZ
     zlib = ", gzip";
 #endif
@@ -173,14 +172,15 @@ static void rdiff_show_version(void)
 #ifdef HAVE_LIBBZ2
     bzlib = ", bzip2";
 #endif
+#endif
 
 #ifndef DO_RS_TRACE
     trace = ", trace disabled";
 #endif
    
     printf("rdiff (%s) [%s]\n"
-           "Copyright (C) 1997-2001 by Martin Pool, Andrew Tridgell and others.\n"
-           "http://rproxy.samba.org/\n"
+           "Copyright (C) 1997-2014 by Martin Pool, Andrew Tridgell and others.\n"
+           "http://librsync.sourcefrog.net/\n"
            "Capabilities: %ld bit files%s%s%s\n"
            "\n"
            "librsync comes with NO WARRANTY, to the extent permitted by law.\n"
