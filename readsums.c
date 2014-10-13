@@ -38,7 +38,6 @@
 #include "job.h"
 #include "trace.h"
 #include "netint.h"
-#include "protocol.h"
 #include "util.h"
 #include "stream.h"
 

@@ -1,9 +1,8 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- library for network deltas
- * $Id$
  * 
- * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
+ * Copyright 1999-2001, 2014 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -47,7 +46,6 @@
 #include "util.h"
 #include "sumset.h"
 #include "job.h"
-#include "protocol.h"
 #include "netint.h"
 #include "trace.h"
 #include "checksum.h"
@@ -88,12 +86,12 @@ rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
 
     weak_sum = rs_calc_weak_sum(block, len);
 
-    if(job->magic == RS_BLAKE2_SIG_MAGIC) {
+    if (job->magic == RS_BLAKE2_SIG_MAGIC) {
         rs_calc_blake2_sum(block, len, &strong_sum);
     } else if(job->magic == RS_MD4_SIG_MAGIC) {
         rs_calc_md4_sum(block, len, &strong_sum);
     } else {
-        rs_error("Invalid job magic - this is a BUG");
+        rs_error("BUG: invalid job magic %#lx", (unsigned long) job->magic);
         return RS_INTERNAL_ERROR;
     }
 
@@ -148,16 +146,34 @@ rs_sig_s_generate(rs_job_t *job)
  *
  * \sa rs_sig_file()
  */
-rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len)
+rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
+		        rs_long_t sig_magic)
 {
     rs_job_t *job;
+    int max_length;
 
     job = rs_job_new("signature", rs_sig_s_header);
     job->block_len = new_block_len;
-    job->magic = RS_BLAKE2_SIG_MAGIC;
+
+    if (!sig_magic)
+        sig_magic = RS_BLAKE2_SIG_MAGIC;
+
+    switch (sig_magic) {
+    case RS_BLAKE2_SIG_MAGIC:
+        max_length = RS_BLAKE2_SUM_LENGTH;
+	job->magic = sig_magic;
+	break;
+    case RS_MD4_SIG_MAGIC:
+	job->magic = sig_magic;
+        max_length = RS_MD4_SUM_LENGTH;
+	break;
+    default:
+	rs_error("invalid sig_magic %#lx", (unsigned long) sig_magic);
+	return NULL;
+    }
 
     assert(strong_sum_len > 0);
-    assert(strong_sum_len <= RS_MAX_STRONG_SUM_LENGTH);
+    assert(strong_sum_len <= max_length);
     job->strong_sum_len = strong_sum_len;
 
     return job;

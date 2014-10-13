@@ -39,7 +39,7 @@ librsync_la_SOURCES =  prototab.c prototab.h \
 	base64.c buf.c buf.h checksum.c checksum.h command.c \
 	command.h delta.c emit.c emit.h fileutil.c fileutil.h \
 	hex.c job.c job.h mdfour.c mdfour.h mksum.c msg.c netint.c netint.h \
-	patch.c protocol.h readsums.c librsync.h librsync-config.h \
+	patch.c readsums.c librsync.h librsync-config.h \
 	rollsum.c rollsum.h \
 	scoop.c search.c search.h stats.c stream.c stream.h sumset.c \
 	sumset.h trace.c trace.h tube.c types.h util.c util.h \

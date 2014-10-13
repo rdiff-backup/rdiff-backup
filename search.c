@@ -47,7 +47,6 @@
 #include "sumset.h"
 #include "search.h"
 #include "checksum.h"
-#include "protocol.h"
 
 
 #define TABLESIZE (1<<16)

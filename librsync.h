@@ -2,7 +2,7 @@
  *
  * librsync -- library for network deltas
  * 
- * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
+ * Copyright 2000, 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 2003 by Donovan Baarda <abo@minkirri.apana.org.au> 
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -69,6 +69,25 @@ typedef enum {
     RS_LOG_DEBUG         = 7    /**< Debug-level messages */
 } rs_loglevel;
 
+
+
+                          /*
+                           | "The IETF already has more than enough
+                           | RFCs that codify the obvious, make
+                           | stupidity illegal, support truth,
+                           | justice, and the IETF way, and generally
+                           | demonstrate the author is a brilliant and
+                           | valuable Contributor to The Standards
+                           | Process."
+                           |     -- Vernon Schryver
+                           */
+
+
+typedef enum {
+    RS_DELTA_MAGIC          = 0x72730236,      /* r s \2 6 */
+    RS_MD4_SIG_MAGIC        = 0x72730136,      /* r s \1 6 */
+    RS_BLAKE2_SIG_MAGIC     = 0x72730137       /* r s \1 7 */
+} rs_magic_number;
 
 
 /**
@@ -193,6 +212,8 @@ typedef struct rs_mdfour rs_mdfour_t;
  * buffers now
  * #define RS_MD4_LENGTH 16
  */
+extern const int RS_MD4_SUM_LENGTH, RS_BLAKE2_SUM_LENGTH;
+
 #define RS_MAX_STRONG_SUM_LENGTH 32
 
 typedef unsigned int rs_weak_sum_t;
@@ -281,10 +302,6 @@ struct rs_buffers_s {
  */
 typedef struct rs_buffers_s rs_buffers_t;
 
-/** Default length of strong signatures, in bytes.  The MD4 checksum
- * is truncated to this size. */
-#define RS_DEFAULT_STRONG_LEN 32
-
 /** Default block length, if not determined by any other factors. */
 #define RS_DEFAULT_BLOCK_LEN 2048
 
@@ -322,7 +339,8 @@ rs_result       rs_job_free(rs_job_t *);
 
 int             rs_accum_value(rs_job_t *, char *sum, size_t sum_len);
 
-rs_job_t *rs_sig_begin(size_t new_block_len, size_t strong_sum_len);
+rs_job_t *rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
+		       rs_long_t sig_magic);
 
 rs_job_t *rs_delta_begin(rs_signature_t *);
 
@@ -370,7 +388,9 @@ extern int rs_inbuflen, rs_outbuflen;
 void rs_mdfour_file(FILE *in_file, char *result);
 
 rs_result rs_sig_file(FILE *old_file, FILE *sig_file,
-                      size_t block_len, size_t strong_len, rs_stats_t *); 
+                      size_t block_len, size_t strong_len,
+		      rs_long_t sign_magic,
+		      rs_stats_t *); 
 
 rs_result rs_loadsig_file(FILE *, rs_signature_t **, rs_stats_t *);
 
