@@ -31,7 +31,7 @@ isprefix_driver_LDADD = ../isprefix.o # XXX: should link replaced functions
 
 TESTS = \
 	signature.test mutate.test sources.test isprefix.test	\
-	delta.test mksum.test triple.test changes.test
+	delta.test triple.test changes.test
 
 noinst_SCRIPTS = testcommon.sh mutate.pl $(TESTS)
 
@@ -42,7 +42,6 @@ test_data = dot \
 	delta.input/02.delta delta.input/02.expect \
 	delta.input/03.delta delta.input/03.expect \
 	mdfour.input/01.expect mdfour.input/01.data \
-	mksum.input/COPYING.sig \
 	triple.input/copying.in triple.input/half.in \
 	triple.input/hello.in triple.input/zero.in \
 	signature.input/01.in signature.input/01.sig
