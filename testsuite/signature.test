@@ -2,8 +2,12 @@
 
 # librsync -- the library for network deltas
 # 
+# signature.test: Test that `rdiff signature` produces the exactly expected
+# output: this is supposed to check that it remains compatible with previous
+# versions.
+
 # Copyright (C) 2001 by Martin Pool <mbp@sourcefrog.net>
-# 
+ 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
 # as published by the Free Software Foundation; either version 2.1 of
@@ -28,8 +32,6 @@ do
     do
         expect=`echo $input | sed -e 's/.in$/.sig/'`
         run_test ../rdiff -I$inbuf signature "$input" "$new"
-        cmp "$expect" "$new" || fail_test "signature -I$inbuf $input"
-        echo ok $i signature $input $inbuf
-	i=`expr $i + 1`
+	check_compare "$expect" "$new"
     done
 done
