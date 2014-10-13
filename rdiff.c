@@ -158,12 +158,6 @@ static void help(void) {
 
 static void rdiff_show_version(void)
 {
-    /*
-     * This little declaration is dedicated to Stephen Kapp and Reaper
-     * Technologies, who by all appearances redistributed a modified but
-     * unacknowledged version of GNU Keyring in violation of the licence
-     * and all laws of politeness and good taste.
-     */
     char const *bzlib = "", *zlib = "", *trace = "";
     
 #ifdef HAVE_LIBZ
