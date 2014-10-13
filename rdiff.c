@@ -173,8 +173,8 @@ static void rdiff_show_version(void)
 #endif
    
     printf("rdiff (%s) [%s]\n"
-           "Copyright (C) 1997-2001 by Martin Pool, Andrew Tridgell and others.\n"
-           "http://rproxy.samba.org/\n"
+           "Copyright (C) 1997-2014 by Martin Pool, Andrew Tridgell and others.\n"
+           "http://librsync.sourcefrog.net/\n"
            "Capabilities: %ld bit files%s%s%s\n"
            "\n"
            "librsync comes with NO WARRANTY, to the extent permitted by law.\n"

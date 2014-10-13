@@ -24,9 +24,7 @@ EXTRA_DIST = $(man_MANS)
 
 # Doxygen API documentation
 
-sites=front.linuxcare.com.au:/var/www/projects/rproxy \
-	rproxy.sourceforge.net:/home/groups/rproxy/htdocs \
-	rproxy.samba.org:/space/httpd/rproxy/htdocs
+sites=
 
 .PHONY: do-doxy upload-doxy
 

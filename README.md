@@ -1,8 +1,9 @@
 # librsync
 
 librsync implements the rolling-checksum algorithm of remote file
-synchronization that was popularized by the rsync utility and is used in
-rproxy. This algorithm transfers the differences between 2 files without
+synchronization that was popularized by the rsync utility.
+
+This algorithm transfers the differences between 2 files without
 needing both files on the same system.
 
 librsync does *not* implement the rsync wire protocol. If you want to talk to
@@ -113,11 +114,6 @@ and for the library:
 
 - http://librsync.sourcefrog.net/doc/librsync.html
 - http://librsync.sourcefrog.net/doc/librsync.pdf
-
-Generated API documentation:
-
-- https://rproxy.samba.org/doxygen/librsync/
-- https://rproxy.samba.org/doxygen/librsync/refman.pdf
 
 These are all produced from the source tree.
 
