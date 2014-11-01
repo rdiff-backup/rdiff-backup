@@ -147,10 +147,10 @@ rs_sig_s_generate(rs_job_t *job)
  * \sa rs_sig_file()
  */
 rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
-		        rs_long_t sig_magic)
+                        rs_long_t sig_magic)
 {
     rs_job_t *job;
-    int max_length;
+    int native_length;
 
     job = rs_job_new("signature", rs_sig_s_header);
     job->block_len = new_block_len;
@@ -160,21 +160,27 @@ rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
 
     switch (sig_magic) {
     case RS_BLAKE2_SIG_MAGIC:
-        max_length = RS_BLAKE2_SUM_LENGTH;
-	job->magic = sig_magic;
-	break;
+        native_length = RS_BLAKE2_SUM_LENGTH;
+        job->magic = sig_magic;
+        break;
     case RS_MD4_SIG_MAGIC:
-	job->magic = sig_magic;
-        max_length = RS_MD4_SUM_LENGTH;
-	break;
+        job->magic = sig_magic;
+        native_length = RS_MD4_SUM_LENGTH;
+        break;
     default:
-	rs_error("invalid sig_magic %#lx", (unsigned long) sig_magic);
-	return NULL;
+        rs_error("invalid sig_magic %#lx", (unsigned long) sig_magic);
+        return NULL;
     }
 
-    assert(strong_sum_len > 0);
-    assert(strong_sum_len <= max_length);
-    job->strong_sum_len = strong_sum_len;
+    if (!strong_sum_len)
+        job->strong_sum_len = native_length;
+    else {
+        assert(strong_sum_len <= native_length);
+        job->strong_sum_len = strong_sum_len;
+    }
 
     return job;
 }
+
+/* vim: expandtab shiftwidth=4
+ */
