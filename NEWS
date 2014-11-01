@@ -1,18 +1,17 @@
 Changes in 1.0.0 (not yet released)
 
- * SECURITY: librsync previously used a truncated MD4 "strong" check sum 
-   to match blocks. However, MD4 is not cryptographically strong. It's 
-   possible that an attacker who can control the contents of one part of a 
-   file could use it to control other regions of the file, if it's
-   transferred using librsync/rdiff. For example this might occur in a 
-   database, mailbox, or VM image containing some attacker-controlled 
-   data.
+ * SECURITY: CVE-2014-8242: librsync previously used a truncated MD4
+   "strong" check sum to match blocks. However, MD4 is not cryptographically
+   strong. It's possible that an attacker who can control the contents of one
+   part of a file could use it to control other regions of the file, if it's
+   transferred using librsync/rdiff. For example this might occur in a
+   database, mailbox, or VM image containing some attacker-controlled data.
 
    To mitigate this issue, signatures will by default be computed with a
    256-bit BLAKE2 hash. Old versions of librsync will complain about a
    bad magic number when given these signature files.
 
-   Backward compatibility can be obtained using the new 
+   Backward compatibility can be obtained using the new
    `rdiff sig --hash=md4`
    option or through specifying the "signature magic" in the API, but 
    this should not be used when either the old or new file contain 
