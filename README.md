@@ -126,3 +126,9 @@ If you are using GNU libc, you might like to use
 to detect some allocation bugs.
 
 librsync has annotations for the SPLINT static checking tool.
+
+## Testing
+
+You can run the tests with `make check`.
+
+Tests are automatically run at https://travis-ci.org/librsync/librsync.
