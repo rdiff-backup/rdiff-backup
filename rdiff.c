@@ -146,7 +146,7 @@ static void help(void) {
            "  -?, --help                Show this help message\n"
            "  -s, --statistics          Show performance statistics\n"
            "Signature generation options:\n"
-           "  -H, --hash=ALG            Hash algorithm: blake2, md4 (default)\n"
+           "  -H, --hash=ALG            Hash algorithm: blake2 (default), md4\n"
            "Delta-encoding options:\n"
            "  -b, --block-size=BYTES    Signature block size\n"
            "  -S, --sum-size=BYTES      Set signature strength\n"
@@ -253,10 +253,7 @@ static rs_result rdiff_sig(poptContext opcon)
 
     rdiff_no_more_args(opcon);
 
-    if (!rs_hash_name) 
-        rs_hash_name = "md4";
-
-    if (!strcmp(rs_hash_name, "blake2")) {
+    if (!rs_hash_name || !strcmp(rs_hash_name, "blake2")) {
         sig_magic = RS_BLAKE2_SIG_MAGIC;
     } else if (!strcmp(rs_hash_name, "md4")) {
         /* By default, for compatibility with rdiff 0.9.8 and before, mdfour
