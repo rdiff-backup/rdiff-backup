@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# Copyright (C) 2000, 2001 by Martin Pool
+# Copyright 2000, 2001, 2014 by Martin Pool
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
@@ -64,11 +64,17 @@ test -f "$changelog" && {
 	DIE=1
 }
 
-(libtool --version) < /dev/null > /dev/null 2>&1 || {
+if [ -z "$LIBTOOLIZE" ]
+then
+        LIBTOOLIZE=libtoolize
+fi
+
+($LIBTOOLIZE --version) < /dev/null > /dev/null 2>&1 || {
 	echo
 	echo "You must have libtool installed to compile $PROJECT."
 	echo "Download the appropriate package for your distribution,"
 	echo "or go to http://www.gnu.org/software/libtool/"
+	echo "You can set $LIBTOOLIZE."
 	DIE=1
 }
 
@@ -87,7 +93,7 @@ esac
 
 set -x
 aclocal $ACLOCAL_FLAGS
-libtoolize --force
+$LIBTOOLIZE --force
 autoheader
 automake -a --foreign $am_opt
 autoconf

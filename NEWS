@@ -1,4 +1,4 @@
-Changes in 0.9.8 (not yet released)
+Changes in 1.0.0 (not yet released)
 
  * Improved rdiff man page from Debian.
  
@@ -12,6 +12,9 @@ Changes in 0.9.8 (not yet released)
  * Travis-CI.org integration test at https://travis-ci.org/librsync/librsync/
  
  * Remove bundled copy of popt; it must be installed separately.
+
+ * You can set `$LIBTOOLIZE` before running `autogen.sh`, for example on
+   OS X Homebrew where it is called `glibtoolize`.
 
 Changes in 0.9.7 (released 2004-10-10)
 
