@@ -19,3 +19,4 @@ RELEASE  CURRENT  REVISION  AGE   COMMENTS
 0.9.4	 1	  1	    0	   
 0.9.5	 1	  1	    0
 0.9.6	 1	  2	    0     refined and debugged
+1.0.0    2        0         0     add BLAKE2 as default
