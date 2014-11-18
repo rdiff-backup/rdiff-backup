@@ -39,10 +39,11 @@ typedef struct rs_target {
 
 typedef struct rs_block_sig rs_block_sig_t;
 
-typedef struct tag_table_entry {
-    int l;
-    int r;
-} tag_table_entry_t ;
+typedef struct rs_tag_table_entry {
+    int l; // left bound of the hash tag in sorted array of targets
+    int r; // right bound of the hash tag in sorted array of targets
+    // all tags between l and r inclusively are the same
+} rs_tag_table_entry_t ;
 
 /*
  * This structure describes all the sums generated for an instance of
@@ -56,7 +57,7 @@ struct rs_signature {
     int             block_len;	/* block_length */
     int             strong_sum_len;
     rs_block_sig_t  *block_sigs; /* points to info for each chunk */
-    tag_table_entry_t	*tag_table;
+    rs_tag_table_entry_t	*tag_table;
     rs_target_t     *targets;
 };
 

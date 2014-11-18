@@ -54,35 +54,71 @@
 #define gettag2(s1,s2) (((s1) + (s2)) & 0xFFFF)
 #define gettag(sum) gettag2((sum)&0xFFFF,(sum)>>16)
 
+static void swap(rs_target_t *t1, rs_target_t *t2) {
+    unsigned short ts = t1->t;
+    t1->t = t2->t;
+    t2->t = ts;
+
+    int ti = t1->i;
+    t1->i = t2->i;
+    t2->i = ti;
+}
+
+int rs_compare_targets(rs_target_t const *t1, rs_target_t const *t2, rs_signature_t * sums) {
+    int v = (int) t1->t - (int) t2->t;
+    if (v != 0)
+	return v;
+
+    rs_weak_sum_t w1 = sums->block_sigs[t1->i].weak_sum;
+    rs_weak_sum_t w2 = sums->block_sigs[t2->i].weak_sum;
+
+    v = (w1 > w2) - (w1 < w2);
+    if (v != 0)
+	return v;
+
+    return memcmp(sums->block_sigs[t1->i].strong_sum,
+	    sums->block_sigs[t2->i].strong_sum,
+	    sums->strong_sum_len);
+}
+
+static int heap_sort(rs_signature_t * sums) {
+    unsigned int i, j, c, n, k, p;
+    for (i = 1; i < sums->count; ++i) {
+	for (j = i; j > 0;) {
+	    p = (j - 1) >> 1;
+	    if (rs_compare_targets(&sums->targets[j], &sums->targets[p], sums) > 0)
+		swap(&sums->targets[j], &sums->targets[p]);
+	    else
+		break;
+	    j = p;
+	}
+    }
+
+    for (n = sums->count - 1; n > 0;) {
+	swap(&sums->targets[0], &sums->targets[n]);
+	--n;
+	for (i = 0; ((i << 1) + 1) <= n;) {
+	    k = (i << 1) + 1;
+	    if ((k + 1 <= n) && (rs_compare_targets(&sums->targets[k], &sums->targets[k + 1], sums) < 0))
+		k = k + 1;
+	    if (rs_compare_targets(&sums->targets[k], &sums->targets[i], sums) > 0)
+		swap(&sums->targets[k], &sums->targets[i]);
+	    else
+		break;
+	    i = k;
+	}
+    }
+}
+
 rs_result
 rs_build_hash_table(rs_signature_t * sums)
 {
-    int rs_compare_targets(void const *a1, void const *a2) {
-	rs_target_t const *t1 = a1;
-	rs_target_t const *t2 = a2;
-
-	int v = (int) t1->t - (int) t2->t;
-	if (v != 0)
-	    return v;
-
-	rs_weak_sum_t w1 = sums->block_sigs[t1->i].weak_sum;
-	rs_weak_sum_t w2 = sums->block_sigs[t2->i].weak_sum;
-
-	v = (w1 > w2) - (w1 < w2);
-	if (v != 0)
-	    return v;
-
-	return memcmp(sums->block_sigs[t1->i].strong_sum,
-		sums->block_sigs[t2->i].strong_sum,
-		sums->strong_sum_len);
-    }
-
     int i;
 
     sums->tag_table = calloc(TABLE_SIZE, sizeof(sums->tag_table[0]));
     if (!sums->tag_table)
         return RS_MEM_ERROR;
-    
+
     if (sums->count > 0) {
 	sums->targets = calloc(sums->count, sizeof(rs_target_t));
         if (!sums->targets) {
@@ -96,9 +132,7 @@ rs_build_hash_table(rs_signature_t * sums)
 	    sums->targets[i].t = gettag(sums->block_sigs[i].weak_sum);
 	}
 
-	qsort(sums->targets, sums->count,
-	      sizeof(sums->targets[0]),
-              rs_compare_targets);
+	heap_sort(sums);
     }
 
     for (i = 0; i < TABLE_SIZE; i++) {
@@ -138,7 +172,7 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
     rs_strong_sum_t strong_sum;
     int got_strong = 0;
     int hash_tag = gettag(weak_sum);
-    tag_table_entry_t *bucket = &(sig->tag_table[hash_tag]);
+    rs_tag_table_entry_t *bucket = &(sig->tag_table[hash_tag]);
     int l = bucket->l;
     int r = bucket->r + 1;
     int v = 1;
