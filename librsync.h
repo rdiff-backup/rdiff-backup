@@ -50,6 +50,8 @@ extern "C" {
 extern char const rs_librsync_version[];
 extern char const rs_licence_string[];
 
+typedef unsigned char rs_byte_t;
+
 
 /**
  * \brief Log severity levels.

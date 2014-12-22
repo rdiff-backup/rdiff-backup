@@ -1,7 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- library for network deltas
- * $Id$
  *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 2003 by Donovan Baarda <abo@minkirri.apana.org.au> 
@@ -166,7 +165,7 @@ static rs_result rs_delta_s_scan(rs_job_t *job)
             result=rs_appendmiss(job,1);
             if (rs_roll_paranoia) {
                 RollsumInit(&test);
-                RollsumUpdate(&test,job->scoop_next+job->scoop_pos,
+                RollsumUpdate(&test, job->scoop_next+job->scoop_pos,
                               job->block_len);
                 if (RollsumDigest(&test) != RollsumDigest(&job->weak_sum)) {
                     rs_fatal("mismatch between rolled sum %#x and check %#x",

@@ -1,7 +1,6 @@
 /*=                    -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
- * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
  * 
@@ -85,7 +84,7 @@ void rs_scoop_input(rs_job_t *job, size_t len)
 
     if (job->scoop_alloc < len) {
         /* need to allocate a new buffer, too */
-        char *newbuf;
+        rs_byte_t *newbuf;
         int newsize = 2 * len;
         newbuf = rs_alloc(newsize, "scoop buffer");
         if (job->scoop_avail)
