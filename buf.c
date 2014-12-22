@@ -1,7 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
- * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
  * 
@@ -22,7 +21,6 @@
 
                               /*
                                | Pick a window, Jimmy, you're leaving.
-                               |   -- Martin Schwenke, regularly
                                */
 
 
@@ -213,7 +211,7 @@ rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf)
 
     got = fread(*buf, 1, *len, f);
     if (got == -1) {
-        rs_error(strerror(errno));
+        rs_error("read error: %s", strerror(errno));
         return RS_IO_ERROR;
     } else if (got == 0) {
         rs_error("unexpected eof on fd%d", fileno(f));

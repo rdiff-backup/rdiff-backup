@@ -12,7 +12,7 @@ AM_INIT_AUTOMAKE([foreign])
 # GNU library versioning: This is NOT the librsync release number.
 # See libversions.txt and the libtool manual for an explanation of the
 # library versioning
-librsync_libversion=1:2:0
+librsync_libversion=2:0:0
 
 # Disable shared libs by default.
 AC_DISABLE_SHARED

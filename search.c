@@ -1,9 +1,8 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
- * $Id$
  * 
- * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
+ * Copyright (C) 1999, 2000, 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -115,7 +114,8 @@ rs_build_hash_table(rs_signature_t * sums)
  */
 int
 rs_search_for_block(rs_weak_sum_t weak_sum,
-                    char const *inbuf, size_t block_len,
+                    const rs_byte_t *inbuf,
+                    size_t block_len,
                     rs_signature_t const *sig, rs_stats_t * stats,
                     rs_long_t * match_where)
 {
@@ -140,7 +140,14 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
 	rs_trace("found weak match for %08x in token %d", weak_sum, token);
 
 	if (!got_strong) {
-	    rs_calc_strong_sum(inbuf, block_len, &strong_sum);
+            if(sig->magic == RS_BLAKE2_SIG_MAGIC) {
+	        rs_calc_blake2_sum(inbuf, block_len, &strong_sum);
+	    } else if (sig->magic == RS_MD4_SIG_MAGIC) {
+                rs_calc_md4_sum(inbuf, block_len, &strong_sum);
+	    } else {
+	        rs_error("Unknown signature algorithm - this is a BUG");
+		return 0; /* FIXME: Is this the best way to handle this? */
+	    }
 	    got_strong = 1;
 	}
 

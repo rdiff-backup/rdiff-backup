@@ -1,7 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- library for network deltas
- * $Id$
  *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 2003 by Donovan Baarda <abo@minkirri.apana.org.au> 
@@ -80,6 +79,8 @@
 #include "types.h"
 #include "rollsum.h"
 
+const int RS_MD4_SUM_LENGTH = 16;
+const int RS_BLAKE2_SUM_LENGTH = 32;
 
 /**
  * 2002-06-26: Donovan Baarda
@@ -164,7 +165,7 @@ static rs_result rs_delta_s_scan(rs_job_t *job)
             result=rs_appendmiss(job,1);
             if (rs_roll_paranoia) {
                 RollsumInit(&test);
-                RollsumUpdate(&test,job->scoop_next+job->scoop_pos,
+                RollsumUpdate(&test, job->scoop_next+job->scoop_pos,
                               job->block_len);
                 if (RollsumDigest(&test) != RollsumDigest(&job->weak_sum)) {
                     rs_fatal("mismatch between rolled sum %#x and check %#x",
@@ -458,7 +459,7 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
     }
 
     job->strong_sum_len = sig->strong_sum_len;
-    if (job->strong_sum_len < 0  ||  job->strong_sum_len > RS_MD4_LENGTH) {
+    if (job->strong_sum_len < 0  ||  job->strong_sum_len > RS_MAX_STRONG_SUM_LENGTH) {
         rs_log(RS_LOG_ERR, "unreasonable strong_sum_len %d in signature",
                job->strong_sum_len);
         return NULL;
@@ -466,5 +467,4 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
 
     return job;
 }
-
 

@@ -1,9 +1,8 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
- * $Id$
  * 
- * Copyright (C) 1999, 2000 by Martin Pool <mbp@sourcefrog.net>
+ * Copyright (C) 1999, 2000, 2014 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 1999 by Andrew Tridgell
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -23,7 +22,8 @@
 
 int
 rs_search_for_block(rs_weak_sum_t weak_sum,
-                    char const *inbuf, size_t block_len,
+                    const rs_byte_t *inbuf,
+                    size_t block_len,
                     rs_signature_t const *sums, rs_stats_t * stats,
                     rs_long_t * match_where);
 

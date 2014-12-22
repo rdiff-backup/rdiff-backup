@@ -61,7 +61,7 @@ void
 rs_sumset_dump(rs_signature_t const *sums)
 {
         int i;
-        char        strong_hex[RS_MD4_LENGTH * 3];
+        char        strong_hex[RS_MAX_STRONG_SUM_LENGTH * 3];
     
         rs_log(RS_LOG_INFO, 
                 "sumset info: block_len=%d, file length=%lu, "

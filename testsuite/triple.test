@@ -27,12 +27,14 @@ do
     do
         for new in $inputdir/*.in
         do
-            run_test ../rdiff $debug -I$buf -O$buf signature $old $tmpdir/sig
-            run_test ../rdiff $debug -I$buf -O$buf delta $tmpdir/sig $new $tmpdir/delta
-            run_test ../rdiff $debug -I$buf -O$buf patch $old $tmpdir/delta $tmpdir/new
+            for hashopt in $all_hashopts
+            do
+                run_test ../rdiff $debug $hashopt -I$buf -O$buf signature $old $tmpdir/sig
+                run_test ../rdiff $debug $hashopt -I$buf -O$buf delta $tmpdir/sig $new $tmpdir/delta
+                run_test ../rdiff $debug $hashopt -I$buf -O$buf patch $old $tmpdir/delta $tmpdir/new
 
-            check_compare $new $tmpdir/new "triple -I$buf -O$buf $old $new"
-
+                check_compare $new $tmpdir/new "triple -I$buf -O$buf $old $new"
+            done
         done
     done
 done
