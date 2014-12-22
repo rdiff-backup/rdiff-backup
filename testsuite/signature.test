@@ -26,12 +26,15 @@
 
 new=$tmpdir/signature
 
-for input in "$srcdir/signature.input"/*.in
+for hashfunc in md4 blake2
 do
-    for inbuf in $bufsizes
+    for input in "$srcdir/signature.input"/*.in
     do
-        expect=`echo $input | sed -e 's/.in$/.sig/'`
-        run_test ../rdiff --hash=md4 -I$inbuf signature "$input" "$new"
-	check_compare "$expect" "$new"
+        for inbuf in $bufsizes
+        do
+            expect=`echo $input | sed -e 's/.in$/.sig/' -e "s,input,input/$hashfunc,"`
+            run_test ../rdiff --hash=$hashfunc -I$inbuf signature "$input" "$new"
+            check_compare "$expect" "$new"
+        done
     done
 done
