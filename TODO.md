@@ -298,6 +298,8 @@
   * Tests should fail if they can't find their inputs, or have zero
     inputs: at present they tend to succeed by default.
 
+  * Test varying strong-sum inputs: default, short, long.
+
 * Security audit
 
   * If this code was to read differences or sums from random machines

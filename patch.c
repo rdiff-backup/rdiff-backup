@@ -36,7 +36,6 @@
 #include "librsync.h"
 #include "util.h"
 #include "trace.h"
-#include "protocol.h"
 #include "netint.h"
 #include "command.h"
 #include "sumset.h"

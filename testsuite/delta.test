@@ -2,6 +2,8 @@
 
 # librsync -- the library for network deltas
 
+# delta.test: Check application of some canned deltas to /dev/null
+
 # Copyright (C) 1999, 2000, 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
 # Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
 

@@ -76,11 +76,12 @@ triple_test () {
     buf="$1"
     old="$2"
     new="$3"
+    hashopt="$4"
     
-    run_test ../rdiff $debug -I$buf -O$buf $stats signature --block-size=$block_len \
+    run_test ../rdiff $debug $hashopt -I$buf -O$buf $stats signature --block-size=$block_len \
              $old $tmpdir/sig
-    run_test ../rdiff $debug -I$buf -O$buf $stats delta $tmpdir/sig $new $tmpdir/delta
-    run_test ../rdiff $debug -I$buf -O$buf $stats patch $old $tmpdir/delta $tmpdir/new
+    run_test ../rdiff $debug $hashopt -I$buf -O$buf $stats delta $tmpdir/sig $new $tmpdir/delta
+    run_test ../rdiff $debug $hashopt -I$buf -O$buf $stats patch $old $tmpdir/delta $tmpdir/new
     check_compare $new $tmpdir/new "triple -I$buf -O$buf $old $new"
 }
 

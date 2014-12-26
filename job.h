@@ -1,9 +1,8 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
- * $Id$
  * 
- * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
+ * Copyright (C) 2000, 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -70,15 +69,15 @@ struct rs_job {
      *  scoop_buf[0..scoop_alloc], and scoop_next[0..scoop_avail] contains
      *  data yet to be processed. scoop_next[scoop_pos..scoop_avail] is the
      *  data yet to be scanned.  */
-    char       *scoop_buf;             /* the allocation pointer */
-    char       *scoop_next;            /* the data pointer */
+    rs_byte_t   *scoop_buf;          /* the allocation pointer */
+    rs_byte_t   *scoop_next;         /* the data pointer */
     size_t      scoop_alloc;           /* the allocation size */
     size_t      scoop_avail;           /* the data size */
     size_t      scoop_pos;             /* the scan position */
         
     /** If USED is >0, then buf contains that much write data to
      * be sent out. */
-    char        write_buf[20];
+    rs_byte_t   write_buf[36];
     int         write_len;
 
     /** If \p copy_len is >0, then that much data should be copied
@@ -91,6 +90,8 @@ struct rs_job {
     /** Callback used to copy data from the basis into the output. */
     rs_copy_cb      *copy_cb;
     void            *copy_arg;
+
+    int             magic;
 };
 
 

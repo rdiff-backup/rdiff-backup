@@ -1,9 +1,11 @@
 #! /bin/sh -e
 
 # librsync -- the library for network deltas
-# 
 # Copyright (C) 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
-# 
+
+# mutate.test: Make some deterministic pseudorandom changes to a file and
+# compute deltas across them.
+ 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
 # as published by the Free Software Foundation; either version 2.1 of
@@ -42,11 +44,14 @@ while test $i -lt 100
 do
     perl "$srcdir/mutate.pl" $i 5 <"$old" >"$new" 2>>"$tmpdir/mutate.log"
 
-    run_test ../rdiff $debug signature $old $sig
-    run_test ../rdiff $debug delta $sig $new $delta
-    run_test ../rdiff $debug patch $old $delta "$out"
+    for hashopt in '' -Hmd4 -Hblake2
+    do
+	run_test ../rdiff $debug signature $old $sig
+	run_test ../rdiff $debug delta $sig $new $delta
+	run_test ../rdiff $debug patch $old $delta "$out"
 
-    check_compare "$new" "$out" "mutate $i $old $new"
+	check_compare "$new" "$out" "mutate $i $old $new"
+    done
 
     i=`expr $i + 1`
 done

@@ -1,9 +1,8 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- library for network deltas
- * $Id$
  * 
- * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
+ * Copyright 1999-2001, 2014 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -47,7 +46,6 @@
 #include "util.h"
 #include "sumset.h"
 #include "job.h"
-#include "protocol.h"
 #include "netint.h"
 #include "trace.h"
 #include "checksum.h"
@@ -64,11 +62,11 @@ static rs_result rs_sig_s_generate(rs_job_t *);
  */
 static rs_result rs_sig_s_header(rs_job_t *job)
 {
-    rs_squirt_n4(job, RS_SIG_MAGIC);
+    rs_squirt_n4(job, job->magic);
     rs_squirt_n4(job, job->block_len);
     rs_squirt_n4(job, job->strong_sum_len);
     rs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)",
-             RS_SIG_MAGIC, (int) job->block_len, (int) job->strong_sum_len);
+             job->magic, (int) job->block_len, (int) job->strong_sum_len);
     job->stats.block_len = job->block_len;
     
     job->statefn = rs_sig_s_generate;
@@ -88,13 +86,20 @@ rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
 
     weak_sum = rs_calc_weak_sum(block, len);
 
-    rs_calc_strong_sum(block, len, &strong_sum);
+    if (job->magic == RS_BLAKE2_SIG_MAGIC) {
+        rs_calc_blake2_sum(block, len, &strong_sum);
+    } else if(job->magic == RS_MD4_SIG_MAGIC) {
+        rs_calc_md4_sum(block, len, &strong_sum);
+    } else {
+        rs_error("BUG: invalid job magic %#lx", (unsigned long) job->magic);
+        return RS_INTERNAL_ERROR;
+    }
 
     rs_squirt_n4(job, weak_sum);
     rs_tube_write(job, strong_sum, job->strong_sum_len);
 
     if (rs_trace_enabled()) {
-        char                strong_sum_hex[RS_MD4_LENGTH * 2 + 1];
+        char                strong_sum_hex[RS_MAX_STRONG_SUM_LENGTH * 2 + 1];
         rs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
         rs_trace("sent weak sum 0x%08x and strong sum %s", weak_sum,
                  strong_sum_hex);
@@ -141,15 +146,41 @@ rs_sig_s_generate(rs_job_t *job)
  *
  * \sa rs_sig_file()
  */
-rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len)
+rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
+                        rs_long_t sig_magic)
 {
     rs_job_t *job;
+    int native_length;
 
     job = rs_job_new("signature", rs_sig_s_header);
     job->block_len = new_block_len;
 
-    assert(strong_sum_len > 0 && strong_sum_len <= RS_MD4_LENGTH);
-    job->strong_sum_len = strong_sum_len;
+    if (!sig_magic)
+        sig_magic = RS_BLAKE2_SIG_MAGIC;
+
+    switch (sig_magic) {
+    case RS_BLAKE2_SIG_MAGIC:
+        native_length = RS_BLAKE2_SUM_LENGTH;
+        job->magic = sig_magic;
+        break;
+    case RS_MD4_SIG_MAGIC:
+        job->magic = sig_magic;
+        native_length = RS_MD4_SUM_LENGTH;
+        break;
+    default:
+        rs_error("invalid sig_magic %#lx", (unsigned long) sig_magic);
+        return NULL;
+    }
+
+    if (!strong_sum_len)
+        job->strong_sum_len = native_length;
+    else {
+        assert(strong_sum_len <= native_length);
+        job->strong_sum_len = strong_sum_len;
+    }
 
     return job;
 }
+
+/* vim: expandtab shiftwidth=4
+ */

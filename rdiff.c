@@ -1,7 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
- * $Id$
  * 
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
  * 
@@ -20,11 +19,11 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-			      /*
+                              /*
                                | .. after a year and a day, mourning is
-			       | dangerous to the survivor and troublesome
-			       | to the dead.
-			       |	      -- Harold Bloom
+                               | dangerous to the survivor and troublesome
+                               | to the dead.
+                               |              -- Harold Bloom
                                */
 
 /*
@@ -50,6 +49,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <fcntl.h>
 #include <popt.h>
 
@@ -72,7 +72,7 @@
 #define PROGRAM "rdiff"
 
 static size_t block_len = RS_DEFAULT_BLOCK_LEN;
-static size_t strong_len = RS_DEFAULT_STRONG_LEN;
+static size_t strong_len = 0;
 
 static int show_stats = 0;
 
@@ -85,12 +85,14 @@ enum {
 };
 
 extern int rs_roll_paranoia;
+char *rs_hash_name;
 
 const struct poptOption opts[] = {
     { "verbose",     'v', POPT_ARG_NONE, 0,             'v' },
     { "version",     'V', POPT_ARG_NONE, 0,             'V' },
     { "input-size",  'I', POPT_ARG_INT,  &rs_inbuflen },
     { "output-size", 'O', POPT_ARG_INT,  &rs_outbuflen },
+    { "hash",        'H', POPT_ARG_STRING, &rs_hash_name },
     { "help",        '?', POPT_ARG_NONE, 0,             'h' },
     {  0,            'h', POPT_ARG_NONE, 0,             'h' },
     { "block-size",  'b', POPT_ARG_INT,  &block_len },
@@ -143,6 +145,8 @@ static void help(void) {
            "  -V, --version             Show program version\n"
            "  -?, --help                Show this help message\n"
            "  -s, --statistics          Show performance statistics\n"
+           "Signature generation options:\n"
+           "  -H, --hash=ALG            Hash algorithm: blake2 (default), md4\n"
            "Delta-encoding options:\n"
            "  -b, --block-size=BYTES    Signature block size\n"
            "  -S, --sum-size=BYTES      Set signature strength\n"
@@ -160,12 +164,15 @@ static void rdiff_show_version(void)
 {
     char const *bzlib = "", *zlib = "", *trace = "";
     
+#if 0
+    /* Compression isn't implemented so don't mention it. */
 #ifdef HAVE_LIBZ
     zlib = ", gzip";
 #endif
 
 #ifdef HAVE_LIBBZ2
     bzlib = ", bzip2";
+#endif
 #endif
 
 #ifndef DO_RS_TRACE
@@ -239,13 +246,30 @@ static rs_result rdiff_sig(poptContext opcon)
     FILE            *basis_file, *sig_file;
     rs_stats_t      stats;
     rs_result       result;
+    rs_long_t       sig_magic;
     
     basis_file = rs_file_open(poptGetArg(opcon), "rb");
     sig_file = rs_file_open(poptGetArg(opcon), "wb");
 
     rdiff_no_more_args(opcon);
-    
-    result = rs_sig_file(basis_file, sig_file, block_len, strong_len, &stats);
+
+    if (!rs_hash_name || !strcmp(rs_hash_name, "blake2")) {
+        sig_magic = RS_BLAKE2_SIG_MAGIC;
+    } else if (!strcmp(rs_hash_name, "md4")) {
+        /* By default, for compatibility with rdiff 0.9.8 and before, mdfour
+         * sums are truncated to only 8 bytes, making them even weaker, but
+         * making the signature file shorter. 
+         */
+        if (!strong_len)
+            strong_len = 8;
+        sig_magic = RS_MD4_SIG_MAGIC;
+    } else {
+        rs_error("unknown hash algorithm %s", rs_hash_name);
+        return RS_PARAM_ERROR;
+    }
+
+    result = rs_sig_file(basis_file, sig_file, block_len, strong_len,
+                         sig_magic, &stats);
 
     rs_file_close(sig_file);
     rs_file_close(basis_file);
@@ -373,3 +397,6 @@ int main(const int argc, const char *argv[])
     poptFreeContext(opcon);
     return result;
 }
+
+/* vim: et sw=4
+ */

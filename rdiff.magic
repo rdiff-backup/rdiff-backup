@@ -3,13 +3,15 @@
 #
 # librsync -- the library for network deltas
 #
-# Copyright (C) 2001 by Martin Pool.  You may do whatever you want with
+# Copyright 2001, 2014 by Martin Pool.  You may do whatever you want with
 # this file.
-#
-# $Id$
 
 0       belong          0x72730236      rdiff network-delta data
 
-0       belong          0x72730136      rdiff network-delta signature data
->4      belong          x               (block length=%d,
+0       belong          0x72730136      rdiff network-delta signature data (MD4,
+>4      belong          x               block length=%d,
+>8      belong          x               signature strength=%d)
+
+0       belong          0x72730137      rdiff network-delta signature data (BLAKE2,
+>4      belong          x               block length=%d,
 >8      belong          x               signature strength=%d)

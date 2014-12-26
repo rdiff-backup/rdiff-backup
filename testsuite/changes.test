@@ -3,6 +3,8 @@
 # librsync -- the library for network deltas
 # 
 # Copyright (C) 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
+
+# changes.test: Test converting in both directions between each pair of files.
  
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
@@ -27,7 +29,10 @@ do
     old=$inputdir/01.in
     for new in $inputdir/*.in
     do
-        triple_test $buf $old $new 
-        triple_test $buf $new $old
+	for hashopt in '' -Hmd4 -Hblake2
+	do
+	    triple_test $buf $old $new $hashopt
+	    triple_test $buf $new $old $hashopt 
+	done
     done
 done
