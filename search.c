@@ -189,7 +189,14 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
 								 // v > 0  - weak_sum >  b->weak_sum
 	if (v == 0) {
 	    if (!got_strong) {
-		rs_calc_strong_sum(inbuf, block_len, &strong_sum);
+		if(sig->magic == RS_BLAKE2_SIG_MAGIC) {
+		    rs_calc_blake2_sum(inbuf, block_len, &strong_sum);
+		} else if (sig->magic == RS_MD4_SIG_MAGIC) {
+		    rs_calc_md4_sum(inbuf, block_len, &strong_sum);
+		} else {
+		    rs_error("Unknown signature algorithm - this is a BUG");
+		    return 0; /* FIXME: Is this the best way to handle this? */
+		}
 		got_strong = 1;
 	    }
 	    v = memcmp(strong_sum, b->strong_sum, sig->strong_sum_len);
