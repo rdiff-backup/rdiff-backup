@@ -1,4 +1,4 @@
-Changes in 1.0.0 (not yet released)
+Changes in librsync 1.0.0 (2015-01-23)
 
  * SECURITY: CVE-2014-8242: librsync previously used a truncated MD4
    "strong" check sum to match blocks. However, MD4 is not cryptographically
