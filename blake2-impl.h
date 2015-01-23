@@ -10,6 +10,11 @@
    You should have received a copy of the CC0 Public Domain Dedication along with
    this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 */
+
+/* This code, but not the algorithm, has been slightly modified for use in 
+ * librsync.
+ */
+
 #pragma once
 #ifndef __BLAKE2_IMPL_H__
 #define __BLAKE2_IMPL_H__
@@ -23,7 +28,7 @@
 static inline uint32_t load32( const void *src )
 {
 #if defined(NATIVE_LITTLE_ENDIAN)
-  return *( uint32_t * )( src );
+  return *( const uint32_t * )( src );
 #else
   const uint8_t *p = ( const uint8_t * )src;
   uint32_t w = *p++;
@@ -37,7 +42,7 @@ static inline uint32_t load32( const void *src )
 static inline uint64_t load64( const void *src )
 {
 #if defined(NATIVE_LITTLE_ENDIAN)
-  return *( uint64_t * )( src );
+  return *( const uint64_t * )( src );
 #else
   const uint8_t *p = ( const uint8_t * )src;
   uint64_t w = *p++;

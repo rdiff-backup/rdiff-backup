@@ -11,6 +11,10 @@
    this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 */
 
+/* This code, but not the algorithm, has been slightly modified for use in 
+ * librsync.
+ */
+
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
