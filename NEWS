@@ -25,6 +25,8 @@ Changes in 1.0.0 (not yet released)
    Thanks to Michael Samuel <miknet.net> for reporting this and offering an
    initial patch.
 
+ * Various build fixes, thanks Timothy Gu.
+
  * Improved rdiff man page from Debian.
  
  * Improved librsync.spec file for building RPMs.
