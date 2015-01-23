@@ -2,7 +2,7 @@
  *
  * librsync -- the library for network deltas
  *
- * Copyright 2000, 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
+ * Copyright 2000, 2001, 2014, 2015 by Martin Pool <mbp@sourcefrog.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -106,7 +106,8 @@ rs_whole_run(rs_job_t *job, FILE *in_file, FILE *out_file)
  */
 rs_result
 rs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
-            size_t strong_len, rs_long_t sig_magic,
+            size_t strong_len,
+	    rs_magic_number sig_magic,
 	    rs_stats_t *stats)
 {
     rs_job_t        *job;

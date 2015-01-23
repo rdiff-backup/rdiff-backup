@@ -2,7 +2,7 @@
  *
  * librsync -- library for network deltas
  * 
- * Copyright 1999-2001, 2014 by Martin Pool <mbp@sourcefrog.net>
+ * Copyright 1999-2001, 2014, 2015 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -147,7 +147,7 @@ rs_sig_s_generate(rs_job_t *job)
  * \sa rs_sig_file()
  */
 rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
-                        rs_long_t sig_magic)
+                        rs_magic_number sig_magic)
 {
     rs_job_t *job;
     int native_length;

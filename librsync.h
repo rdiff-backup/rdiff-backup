@@ -1,20 +1,20 @@
 /*=                    -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- library for network deltas
- * 
- * Copyright 2000, 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
- * Copyright (C) 2003 by Donovan Baarda <abo@minkirri.apana.org.au> 
- * 
+ *
+ * Copyright 2000, 2001, 2014, 2015 by Martin Pool <mbp@sourcefrog.net>
+ * Copyright (C) 2003 by Donovan Baarda <abo@minkirri.apana.org.au>
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -85,9 +85,25 @@ typedef enum {
                            */
 
 
+/**
+ * A uint32 magic number, emitted in bigendian/network order at the start of
+ * librsync files.
+ **/
 typedef enum {
+    /** A delta file. At present, there's only one delta format. **/
     RS_DELTA_MAGIC          = 0x72730236,      /* r s \2 6 */
+
+    /**
+     * A signature file with MD4 signatures.  Backward compatible with
+     * librsync < 1.0, but strongly deprecated because it creates a security
+     * vulnerability on files containing partly untrusted data. See
+     * <https://github.com/librsync/librsync/issues/5>.
+     **/
     RS_MD4_SIG_MAGIC        = 0x72730136,      /* r s \1 6 */
+
+    /**
+     * A signature file using the BLAKE2 hash. Supported from librsync 1.0.
+     **/
     RS_BLAKE2_SIG_MAGIC     = 0x72730137       /* r s \1 7 */
 } rs_magic_number;
 
@@ -144,9 +160,9 @@ typedef enum {
     RS_RUNNING  =       2,      /**< Not yet finished or blocked.
                                  * This value should never be returned
                                  * to the caller.  */
-    
+
     RS_TEST_SKIPPED =   77,     /**< Test neither passed or failed. */
-    
+
     RS_IO_ERROR =	100,    /**< Error in file or network IO. */
     RS_SYNTAX_ERROR =   101,    /**< Command line syntax error. */
     RS_MEM_ERROR =	102,    /**< Out of memory. */
@@ -185,7 +201,7 @@ typedef struct rs_stats {
     rs_long_t       lit_bytes;  /**< Number of literal bytes. */
     rs_long_t       lit_cmdbytes; /**< Number of bytes used in literal
                                    * command headers. */
-        
+
     rs_long_t       copy_cmds, copy_bytes, copy_cmdbytes;
     rs_long_t       sig_cmds, sig_bytes;
     int             false_matches;
@@ -216,7 +232,7 @@ extern const int RS_MD4_SUM_LENGTH, RS_BLAKE2_SUM_LENGTH;
 typedef unsigned int rs_weak_sum_t;
 typedef unsigned char rs_strong_sum_t[RS_MAX_STRONG_SUM_LENGTH];
 
-void            rs_mdfour(unsigned char *out, void const *in, size_t); 
+void            rs_mdfour(unsigned char *out, void const *in, size_t);
 void            rs_mdfour_begin(/* @out@ */ rs_mdfour_t * md);
 void            rs_mdfour_update(rs_mdfour_t * md, void const *,
 				 size_t n);
@@ -336,8 +352,24 @@ rs_result       rs_job_free(rs_job_t *);
 
 int             rs_accum_value(rs_job_t *, char *sum, size_t sum_len);
 
-rs_job_t *rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
-		       rs_long_t sig_magic);
+/**
+ * \brief Start generating a signature.
+ *
+ * \return A new rs_job_t into which the old file data can be passed.
+ *
+ * \param sig_magic Indicates the version of signature file to generate,
+ * see rs_magic_number.
+ *
+ * \param new_block_len Size of checksum blocks.  Larger values make the
+ * signature shorter, and the delta longer.
+ *
+ * \param strong_sum_len If non-zero, truncate the strong signatures to this
+ * many bytes, to make the signature shorter.  It's recommended you leave this
+ * at zero to get the full strength.
+ **/
+rs_job_t *rs_sig_begin(size_t new_block_len,
+		       size_t strong_sum_len,
+		       rs_magic_number sig_magic);
 
 rs_job_t *rs_delta_begin(rs_signature_t *);
 
@@ -386,8 +418,8 @@ void rs_mdfour_file(FILE *in_file, char *result);
 
 rs_result rs_sig_file(FILE *old_file, FILE *sig_file,
                       size_t block_len, size_t strong_len,
-		      rs_long_t sign_magic,
-		      rs_stats_t *); 
+		      rs_magic_number sign_magic,
+		      rs_stats_t *);
 
 rs_result rs_loadsig_file(FILE *, rs_signature_t **, rs_stats_t *);
 
