@@ -25,6 +25,10 @@ librsync is distributed under the GNU LGPL v2.1 (see COPYING), which basically
 means that you can dynamically link librsync into non-GPL programs, but you
 must redistribute the librsync source, with any modifications you have made.
 
+librsync contains the BLAKE2 hash algorithm, written by Samuel Neves and
+released under the CC0 public domain
+dedication, <http://creativecommons.org/publicdomain/zero/1.0/>.
+
 ## Contact
 
 librsync's home is
