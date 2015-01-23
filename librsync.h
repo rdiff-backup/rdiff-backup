@@ -209,11 +209,6 @@ typedef struct rs_stats {
  */
 typedef struct rs_mdfour rs_mdfour_t;
 
-/* Commenting this out deliberately - in case library users
- * depend on this size - this could potentially overflow
- * buffers now
- * #define RS_MD4_LENGTH 16
- */
 extern const int RS_MD4_SUM_LENGTH, RS_BLAKE2_SUM_LENGTH;
 
 #define RS_MAX_STRONG_SUM_LENGTH 32
