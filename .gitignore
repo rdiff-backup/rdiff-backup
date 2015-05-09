@@ -8,3 +8,4 @@ librsync.so*
 Makefile
 CMakeFiles
 *.lo
+cmake_install.cmake
