@@ -9,3 +9,4 @@ Makefile
 CMakeFiles
 *.lo
 cmake_install.cmake
+*.la
