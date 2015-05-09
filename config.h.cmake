@@ -171,7 +171,7 @@
 /* Version number of package */
 #define VERSION "${LIBRSYNC_PATCH_VERSION}"
 
-/* FIXME Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
 #if defined AC_APPLE_UNIVERSAL_BUILD
 # if defined __BIG_ENDIAN__

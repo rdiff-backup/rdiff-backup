@@ -95,12 +95,28 @@ if (ZLIB_FOUND)
   include_directories(${ZLIB_INCLUDE_DIRS})
 endif (ZLIB_FOUND)
 
+# Doxygen doc generator
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
+    add_custom_target(doc
+        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen" VERBATIM
+    )
+endif(DOXYGEN_FOUND)
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/librsync-config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/librsync-config.h)
 
+
+
+
 #add_subdirectory(doc)
-#add_subdirectory(testsuite)
+
+#build testsuite
+add_subdirectory(testsuite)
 
 
 ########### next target ###############
