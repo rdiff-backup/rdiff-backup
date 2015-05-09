@@ -19,6 +19,7 @@ if (NOT CMAKE_SYSTEM_NAME)
 	message(FATAL_ERROR "No target OS set")
 endif()
 
+execute_process(COMMAND perl "${CMAKE_SOURCE_DIR}/mkprototab.pl" "prototab.c" "prototab.h")
 
 include ( CheckIncludeFiles )
 check_include_files ( alloca.h HAVE_ALLOCA_H )
