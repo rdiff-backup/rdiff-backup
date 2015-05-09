@@ -41,7 +41,7 @@
  *   (e.g. ia64, pa-risc).
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <stdlib.h>
 #include <string.h>

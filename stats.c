@@ -20,7 +20,7 @@
  */
 
 
-#include <config.h>
+#include "config.h"
 
 #include <assert.h>
 #include <stdlib.h>

@@ -47,7 +47,7 @@
  * 64-bit integers, since there seems to be no ntohs() analog.
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <assert.h>
 #include <sys/types.h>

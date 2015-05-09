@@ -83,7 +83,7 @@
 /* TODO: Return errors rather than aborting if something goes wrong.  */
 
 
-#include <config.h>
+#include "config.h"
 
 #include <assert.h>
 #include <stdlib.h>

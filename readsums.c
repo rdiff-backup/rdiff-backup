@@ -26,7 +26,7 @@
  * readsums.c -- Load signatures from a file into an ::rs_signature_t.
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <assert.h>
 #include <stdlib.h>

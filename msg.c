@@ -35,7 +35,7 @@
                                | Arco, and have a nice day.
                                */
 
-#include <config.h>
+#include "config.h"
 
 #include <stdlib.h>
 #include <stdio.h>
