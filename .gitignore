@@ -10,3 +10,5 @@ CMakeFiles
 *.lo
 cmake_install.cmake
 *.la
+prototab.c
+prototab.h
