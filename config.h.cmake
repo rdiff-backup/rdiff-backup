@@ -169,7 +169,7 @@
 
 
 /* Version number of package */
-#define VERSION "${librsync_VERSION}"
+#define VERSION "${LIBRSYNC_PATCH_VERSION}"
 
 /* FIXME Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */

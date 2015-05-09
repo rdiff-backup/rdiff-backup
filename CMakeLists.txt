@@ -2,12 +2,12 @@ project(librsync)
 cmake_minimum_required(VERSION 2.6)
 
 
-set(librsync_MAJOR_VERSION 1)
-set(librsync_MINOR_VERSION 0)
-set(librsync_PATCH_VERSION 0)
+set(LIBRSYNC_MAJOR_VERSION 1)
+set(LIBRSYNC_MINOR_VERSION 0)
+set(LIBRSYNC_PATCH_VERSION 0)
 
-set(librsync_VERSION
-  ${librsync_MAJOR_VERSION}.${librsync_MINOR_VERSION}.${librsync_PATCH_VERSION})
+set(LIBRSYNC_VERSION
+  ${LIBRSYNC_MAJOR_VERSION}.${LIBRSYNC_MINOR_VERSION}.${LIBRSYNC_PATCH_VERSION})
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
