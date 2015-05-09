@@ -56,25 +56,13 @@ To build librsync you will need:
 
   Available from http://rpm5.org/files/popt/
 
-* automake, libtool, and autoconf
+* cmake
 
 ## Compiling
 
-If you're building from a git tree you must first create the autoconf files:
+Generate Makefile by running
 
-    $ ./autogen.sh
-
-To build and test librsync then do
-
-    $ ./configure
-    $ make all check
-
-You can also do what's called a `VPATH` build, where the build products are
-kept separate from the source tree:
-
-    $ mkdir _build   # for example
-    $ cd _build
-    $ ../configure && make check
+    $ cmake CMakeList.txt
 
 After building you can install `rdiff` and `librsync` for system-wide use. The
 destination is controlled by `--prefix` and related options to `./configure`.
