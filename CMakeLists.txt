@@ -161,7 +161,6 @@ set(rsync_LIB_SRCS
 add_library(rsync SHARED ${rsync_LIB_SRCS})
 
 target_link_libraries(rsync
-${POPT_LIBRARIES}
 ${BZIP2_LIBRARIES}
 ${ZLIB_LIBRARIES}
 )
@@ -182,7 +181,7 @@ set(rdiff_SRCS
 
 add_executable(rdiff ${rdiff_SRCS})
 
-target_link_libraries(rdiff rsync)
+target_link_libraries(rdiff rsync ${POPT_LIBRARIES})
 
 #install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS})
 
