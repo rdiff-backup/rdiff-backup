@@ -99,8 +99,8 @@ const struct poptOption opts[] = {
     { "sum-size",    'S', POPT_ARG_INT,  &strong_len },
     { "statistics",  's', POPT_ARG_NONE, &show_stats },
     { "stats",        0,  POPT_ARG_NONE, &show_stats },
-    { "gzip",         0,  POPT_ARG_NONE, 0,             OPT_GZIP },
-    { "bzip2",        0,  POPT_ARG_NONE, 0,             OPT_BZIP2 },
+    { "gzip",        'z',  POPT_ARG_NONE, 0,             OPT_GZIP },
+    { "bzip2",       'i',  POPT_ARG_NONE, 0,             OPT_BZIP2 },
     { "paranoia",     0,  POPT_ARG_NONE, &rs_roll_paranoia },
     { 0 }
 };
