@@ -66,8 +66,7 @@ Generate Makefile by running
 
     $ cmake .
 
-After building you can install `rdiff` and `librsync` for system-wide use. The
-destination is controlled by `--prefix` and related options to `./configure`.
+After building you can install `rdiff` and `librsync` for system-wide use.
 
     $ sudo make install
 
@@ -78,8 +77,7 @@ is also possible to compile under cygwin using MSVC++. You must have
 environment variables needed by MSCV set using the Vcvars32.bat
 script. With these variables set, you just do;
 
-    $ ./configure.msc
-    $ make all check
+    $ FIXME test in MSVC
 
 The PCbuild directory contains a project and pre-generated config
 files for use with the MSVC++ IDE. This should be enought to compile
