@@ -106,17 +106,30 @@ if(DOXYGEN_FOUND)
     )
 endif(DOXYGEN_FOUND)
 
+
+# Testing
+# build testsuite
+add_subdirectory(testsuite)
+
+add_test(NAME Help COMMAND help.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
+add_test(NAME Isprefix COMMAND isprefix.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
+add_test(NAME Mutate COMMAND mutate.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
+add_test(NAME Signature COMMAND signature.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
+add_test(NAME Sources COMMAND sources.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
+add_test(NAME Triple COMMAND triple.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
+add_test(NAME Delta COMMAND delta.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
+add_test(NAME Changes COMMAND changes.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
+
+
+enable_testing()
+
+# Create conf files
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/librsync-config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/librsync-config.h)
 
 
 
-
-#add_subdirectory(doc)
-
-#build testsuite
-add_subdirectory(testsuite)
 
 
 ########### next target ###############

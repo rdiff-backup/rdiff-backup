@@ -7,6 +7,7 @@
 # using a known-good Python implementation, and also by passing the
 # same parameters to the hsmapread driver.
 
+srcdir='.'
 . $srcdir/testcommon.sh
 
 run_test ./isprefix.driver foo foobar

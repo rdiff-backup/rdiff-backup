@@ -17,6 +17,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
+
 testinputdir=$srcdir/$test_base.input
 tmpdir=`mktemp -d -t librsynctest_XXXXXXXX`
 trap "{ rm -r $tmpdir; }" EXIT
