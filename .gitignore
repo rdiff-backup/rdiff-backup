@@ -14,3 +14,7 @@ prototab.c
 prototab.h
 doc/Doxyfile
 tests/isprefix.driver
+html
+latex
+Testing
+*.user
