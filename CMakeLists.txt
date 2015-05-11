@@ -103,7 +103,9 @@ message (STATUS "SITE_NAME  = ${SITE_NAME}")
 
 # Find POPT
 find_package(POPT REQUIRED)
-include_directories(${POPT_INCLUDE_DIRS})
+if ( POPT_FOUND )
+  include_directories(${POPT_INCLUDE_DIRS})
+endif ( POPT_FOUND )
 
 # Find BZIP
 find_package (BZip2 REQUIRED)
@@ -115,9 +117,8 @@ if (BZIP2_FOUND)
 endif (BZIP2_FOUND)
 
 # Find Perl
-find_package (Perl)
+find_package (Perl REQUIRED)
 if (PERL_FOUND)
-  message (STATUS "Found Perl")
   message (STATUS "PERL_EXECUTABLE  = ${PERL_EXECUTABLE}")
 endif (PERL_FOUND)
 
@@ -142,7 +143,7 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 # Generate prototab.c/h
-execute_process(COMMAND perl "${CMAKE_SOURCE_DIR}/src/mkprototab.pl" "${CMAKE_SOURCE_DIR}/src/prototab.c" "${CMAKE_SOURCE_DIR}/src/prototab.h")
+execute_process(COMMAND ${PERL_EXECUTABLE} "${CMAKE_SOURCE_DIR}/src/mkprototab.pl" "${CMAKE_SOURCE_DIR}/src/prototab.c" "${CMAKE_SOURCE_DIR}/src/prototab.h")
 
 # Testing
 # build testsuite
