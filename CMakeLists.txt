@@ -68,6 +68,23 @@ check_type_size ( "unsigned int" SIZEOF_UNSIGNED_INT )
 check_type_size ( "unsigned long" SIZEOF_UNSIGNED_LONG )
 check_type_size ( "unsigned short" SIZEOF_UNSIGNED_SHORT )
 
+#!FIXME: is this really the best way to do it? I think the limitation on
+# rs_long_t is that we need to be able to seek to it, which relates to
+# long file support. With fseeko, rs_long_t should be off_t, otherwise
+# it should be long.
+if ( HAVE_SYS_TYPES_H AND LONG_LONG )
+  set( RS_LONG_T LONG_LONG )
+  message (STATUS "RS_LONG_T = ${LONG_LONG}")
+else()
+  if ( SIZEOF_LONG_LONG )
+    set( RS_LONG_T "long long" )
+    message (STATUS "RS_LONG_T = long long")
+  else ( SIZEOF_LONG_LONG )
+    set( RS_LONG_T "long" )
+    message (STATUS "RS_LONG_T = long")
+  endif ( SIZEOF_LONG_LONG )
+endif()
+
 site_name(SITE_NAME)
 
 message (STATUS "PROJECT_NAME  = ${PROJECT_NAME}")

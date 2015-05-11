@@ -35,6 +35,6 @@
  * or something else depending on the platform.  On WIN32, many config.h's
  * define LONG_LONG as "__int64".
  */
-typedef @RS_LONG_T@    rs_long_t;
+typedef ${RS_LONG_T}    rs_long_t;
 
 #endif /* _LIBRSYNC_CONFIG_H */
