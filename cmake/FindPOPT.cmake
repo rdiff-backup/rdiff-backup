@@ -44,7 +44,7 @@ if (NOT POPT_FOUND)
   ## Check for the header files
 
   find_path (POPT_INCLUDE_DIRS popt.h
-    HINTS ${POPT_ROOT_DIR} ${CMAKE_INSTALL_PREFIX}
+    HINTS ${POPT_ROOT_DIR} ${CMAKE_INSTALL_PREFIX} $ENV{programfiles}\\GnuWin32 $ENV{programfiles32}\\GnuWin32
     PATH_SUFFIXES include
     )
 
@@ -52,7 +52,7 @@ if (NOT POPT_FOUND)
   ## Check for the library
 
   find_library (POPT_LIBRARIES popt
-    HINTS ${POPT_ROOT_DIR} ${CMAKE_INSTALL_PREFIX}
+    HINTS ${POPT_ROOT_DIR} ${CMAKE_INSTALL_PREFIX} $ENV{programfiles}\\GnuWin32 $ENV{programfiles32}\\GnuWin32
     PATH_SUFFIXES lib
     )
 
