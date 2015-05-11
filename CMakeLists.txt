@@ -19,8 +19,6 @@ if (NOT CMAKE_SYSTEM_NAME)
 	message(FATAL_ERROR "No target OS set")
 endif()
 
-execute_process(COMMAND perl "${CMAKE_SOURCE_DIR}/src/mkprototab.pl" "${CMAKE_SOURCE_DIR}/src/prototab.c" "${CMAKE_SOURCE_DIR}/src/prototab.h")
-
 include ( CheckIncludeFiles )
 check_include_files ( alloca.h HAVE_ALLOCA_H )
 check_include_files ( dlfcn.h HAVE_DLFCN_H )
@@ -116,6 +114,13 @@ if (BZIP2_FOUND)
   include_directories(${BZIP2_INCLUDE_DIR})
 endif (BZIP2_FOUND)
 
+# Find Perl
+find_package (Perl)
+if (PERL_FOUND)
+  message (STATUS "Found Perl")
+  message (STATUS "PERL_EXECUTABLE  = ${PERL_EXECUTABLE}")
+endif (PERL_FOUND)
+
 # Find ZLIB
 find_package (ZLIB REQUIRED)
 if (ZLIB_FOUND)
@@ -136,6 +141,8 @@ if(DOXYGEN_FOUND)
     )
 endif(DOXYGEN_FOUND)
 
+# Generate prototab.c/h
+execute_process(COMMAND perl "${CMAKE_SOURCE_DIR}/src/mkprototab.pl" "${CMAKE_SOURCE_DIR}/src/prototab.c" "${CMAKE_SOURCE_DIR}/src/prototab.h")
 
 # Testing
 # build testsuite
@@ -154,9 +161,9 @@ add_test(NAME Changes COMMAND changes.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOU
 enable_testing()
 
 # Create conf files
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/src/config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/librsync-config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/src/librsync-config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/librsync-config.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/librsync-config.h)
 
 
 
