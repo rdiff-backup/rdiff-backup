@@ -1,5 +1,7 @@
 # librsync
 
+[![Build Status](https://travis-ci.org/Salamek/librsync.svg?branch=master)](https://travis-ci.org/Salamek/librsync)
+
 librsync implements the rolling-checksum algorithm of remote file
 synchronization that was popularized by the rsync utility.
 
