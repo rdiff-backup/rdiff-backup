@@ -62,7 +62,7 @@ To build librsync you will need:
 
 Generate Makefile by running
 
-    $ cmake CMakeList.txt
+    $ cmake .
 
 After building you can install `rdiff` and `librsync` for system-wide use. The
 destination is controlled by `--prefix` and related options to `./configure`.
@@ -121,6 +121,4 @@ librsync has annotations for the SPLINT static checking tool.
 
 ## Testing
 
-You can run the tests with `make check`.
-
-Tests are automatically run at https://travis-ci.org/librsync/librsync.
+You can run the tests with `make test`.
