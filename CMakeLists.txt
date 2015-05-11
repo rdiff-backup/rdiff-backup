@@ -109,16 +109,16 @@ endif(DOXYGEN_FOUND)
 
 # Testing
 # build testsuite
-add_subdirectory(testsuite)
+add_subdirectory(tests)
 
-add_test(NAME Help COMMAND help.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
-add_test(NAME Isprefix COMMAND isprefix.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
-add_test(NAME Mutate COMMAND mutate.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
-add_test(NAME Signature COMMAND signature.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
-add_test(NAME Sources COMMAND sources.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
-add_test(NAME Triple COMMAND triple.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
-add_test(NAME Delta COMMAND delta.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
-add_test(NAME Changes COMMAND changes.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/testsuite)
+add_test(NAME Help COMMAND help.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_test(NAME Isprefix COMMAND isprefix.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_test(NAME Mutate COMMAND mutate.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_test(NAME Signature COMMAND signature.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_test(NAME Sources COMMAND sources.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_test(NAME Triple COMMAND triple.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_test(NAME Delta COMMAND delta.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_test(NAME Changes COMMAND changes.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 
 enable_testing()
