@@ -41,7 +41,7 @@
 #define _RSYNC_H
 
 #include <sys/types.h>
-#include <librsync-config.h>
+#include "librsync-config.h"
 
 #ifdef __cplusplus
 extern "C" {
