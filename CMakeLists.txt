@@ -19,7 +19,7 @@ if (NOT CMAKE_SYSTEM_NAME)
 	message(FATAL_ERROR "No target OS set")
 endif()
 
-execute_process(COMMAND perl "${CMAKE_SOURCE_DIR}/mkprototab.pl" "prototab.c" "prototab.h")
+execute_process(COMMAND perl "${CMAKE_SOURCE_DIR}/src/mkprototab.pl" "prototab.c" "prototab.h")
 
 include ( CheckIncludeFiles )
 check_include_files ( alloca.h HAVE_ALLOCA_H )
@@ -141,9 +141,9 @@ add_test(NAME Changes COMMAND changes.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOU
 enable_testing()
 
 # Create conf files
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/src/config.h)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/librsync-config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/librsync-config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/librsync-config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/src/librsync-config.h)
 
 
 
@@ -152,57 +152,57 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/librsync-config.h.cmake ${CMAKE_CURRE
 ########### next target ###############
 
 set(rsync_LIB_SRCS
-    prototab.c
-    prototab.h
-    base64.c
-    buf.c
-    buf.h
-    config.h
-    checksum.c
-    checksum.h
-    command.c
-    command.h
-    delta.c
-    emit.c
-    emit.h
-    fileutil.c
-    fileutil.h
-    hex.c
-    job.c
-    job.h
-    mdfour.c
-    mdfour.h
-    mksum.c
-    msg.c
-    netint.c
-    netint.h
-    patch.c
-    readsums.c
-    librsync.h
-    librsync-config.h
-    rollsum.c
-    rollsum.h
-    scoop.c
-    search.c
-    search.h
-    stats.c
-    stream.c
-    stream.h
-    sumset.c
-    sumset.h
-    trace.c
-    trace.h
-    tube.c
-    types.h
-    util.c
-    util.h
-    version.c
-    whole.c
-    whole.h
-    snprintf.h
-    blake2b-ref.c
-    blake2.h
-    blake2-impl.h)
+    src/prototab.c
+    src/prototab.h
+    src/base64.c
+    src/buf.c
+    src/buf.h
+    src/config.h
+    src/checksum.c
+    src/checksum.h
+    src/command.c
+    src/command.h
+    src/delta.c
+    src/emit.c
+    src/emit.h
+    src/fileutil.c
+    src/fileutil.h
+    src/hex.c
+    src/job.c
+    src/job.h
+    src/mdfour.c
+    src/mdfour.h
+    src/mksum.c
+    src/msg.c
+    src/netint.c
+    src/netint.h
+    src/patch.c
+    src/readsums.c
+    src/librsync.h
+    src/librsync-config.h
+    src/rollsum.c
+    src/rollsum.h
+    src/scoop.c
+    src/search.c
+    src/search.h
+    src/stats.c
+    src/stream.c
+    src/stream.h
+    src/sumset.c
+    src/sumset.h
+    src/trace.c
+    src/trace.h
+    src/tube.c
+    src/types.h
+    src/util.c
+    src/util.h
+    src/version.c
+    src/whole.c
+    src/whole.h
+    src/snprintf.h
+    src/blake2b-ref.c
+    src/blake2.h
+    src/blake2-impl.h)
 
 add_library(rsync SHARED ${rsync_LIB_SRCS})
 
@@ -218,12 +218,12 @@ install(TARGETS rsync ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION lib)
 ########### next target ###############
 
 set(rdiff_SRCS
-    rdiff.c
-    isprefix.c
-    isprefix.h
-    librsync.h
-    librsync-config.h
-    trace.h)
+    src/rdiff.c
+    src/isprefix.c
+    src/isprefix.h
+    src/librsync.h
+    src/librsync-config.h
+    src/trace.h)
 
 add_executable(rdiff ${rdiff_SRCS})
 
