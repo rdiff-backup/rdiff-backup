@@ -1,8 +1,15 @@
-# "It took the night to believe"
-
 language: c
-install: sudo apt-get install libpopt-dev
-script: ./autogen.sh && ./configure && make && make check
-# separate `make` shouldn't be necessary - https://github.com/librsync/librsync/issues/1
 
+install: sudo apt-get install libpopt-dev
+
+compiler:
+  - gcc
+  - clang
+
+before_script:
+  - mkdir build
+  - cd build
+  - cmake ..
+
+script: make && make test
 
