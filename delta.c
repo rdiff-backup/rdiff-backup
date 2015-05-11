@@ -126,12 +126,12 @@ static rs_result rs_delta_s_scan(rs_job_t *job);
 static rs_result rs_delta_s_flush(rs_job_t *job);
 static rs_result rs_delta_s_end(rs_job_t *job);
 void rs_getinput(rs_job_t *job);
-inline int rs_findmatch(rs_job_t *job, rs_long_t *match_pos, size_t *match_len);
-inline rs_result rs_appendmatch(rs_job_t *job, rs_long_t match_pos, size_t match_len);
-inline rs_result rs_appendmiss(rs_job_t *job, size_t miss_len);
-inline rs_result rs_appendflush(rs_job_t *job);
-inline rs_result rs_processmatch(rs_job_t *job);
-inline rs_result rs_processmiss(rs_job_t *job);
+static inline int rs_findmatch(rs_job_t *job, rs_long_t *match_pos, size_t *match_len);
+static inline rs_result rs_appendmatch(rs_job_t *job, rs_long_t match_pos, size_t match_len);
+static inline rs_result rs_appendmiss(rs_job_t *job, size_t miss_len);
+static inline rs_result rs_appendflush(rs_job_t *job);
+static inline rs_result rs_processmatch(rs_job_t *job);
+static inline rs_result rs_processmiss(rs_job_t *job);
 
 /**
  * \brief Get a block of data if possible, and see if it matches.
