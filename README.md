@@ -6,11 +6,18 @@ synchronization that was popularized by the rsync utility.
 This algorithm transfers the differences between 2 files without
 needing both files on the same system.
 
-librsync does *not* implement the rsync wire protocol. If you want to talk to
-an rsync server to transfer files you'll need to shell out to `rsync`. librsync
-is for building other programs that transfer files as efficiently as rsync. You
-can use librsync to make backup tools, distribute binary patches to programs,
-or sync directories to a server or between peers.
+*librsync does not implement the rsync wire protocol. If you want to talk to
+an rsync server to transfer files you'll need to shell out to `rsync`. 
+You cannot make use of librsync to talk to an rsync server.*
+
+librsync also does not include any network functions for talking to SSH 
+or any other server. To access a remote filesystem, you need to provide
+your own code or make use of some other virtual filesystem layer.
+
+librsync is for building other programs that transfer files as efficiently 
+as rsync. You can use librsync in a program you write to do backups, 
+distribute binary patches to programs, or sync directories to a server
+or between peers.
 
 This tree also produces the `rdiff` command-line tool that exposes the key
 operations of librsync: generating file signatures, generating the delta from a
@@ -19,7 +26,7 @@ given the old file.
 
 ## Copyright
 
-librsync is Copyright 1999-2014 Martin Pool and others.
+librsync is Copyright 1999-2015 Martin Pool and others.
 
 librsync is distributed under the GNU LGPL v2.1 (see COPYING), which basically
 means that you can dynamically link librsync into non-GPL programs, but you
