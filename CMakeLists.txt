@@ -159,7 +159,8 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 # Generate prototab.c/h
-execute_process(COMMAND ${PERL_EXECUTABLE} "${CMAKE_SOURCE_DIR}/src/mkprototab.pl" "${CMAKE_SOURCE_DIR}/src/prototab.c" "${CMAKE_SOURCE_DIR}/src/prototab.h")
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
+execute_process(COMMAND ${PERL_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/src/mkprototab.pl" "${CMAKE_CURRENT_BINARY_DIR}/src/prototab.c" "${CMAKE_CURRENT_BINARY_DIR}/src/prototab.h")
 
 # Testing
 # build testsuite
@@ -178,74 +179,61 @@ add_test(NAME Changes COMMAND changes.test WORKING_DIRECTORY ${CMAKE_CURRENT_SOU
 enable_testing()
 
 # Create conf files
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/src/config.h)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/librsync-config.h.cmake ${CMAKE_CURRENT_SOURCE_DIR}/src/librsync-config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/librsync-config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/src/librsync-config.h)
 
+
+# We need to be able to #include "file" from a few places,
+# * The original source dir
+# * The generated source dir
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 
 
 
 ########### next target ###############
 
+# Only list the .c files that need to be compiled
+# (Don't list .h files)
+
 set(rsync_LIB_SRCS
-    src/prototab.c
-    src/prototab.h
+    # This was generated
+    ${CMAKE_CURRENT_BINARY_DIR}/src/prototab.c
     src/base64.c
     src/buf.c
-    src/buf.h
-    src/config.h
     src/checksum.c
-    src/checksum.h
     src/command.c
-    src/command.h
     src/delta.c
     src/emit.c
-    src/emit.h
     src/fileutil.c
-    src/fileutil.h
     src/hex.c
     src/job.c
-    src/job.h
     src/mdfour.c
-    src/mdfour.h
     src/mksum.c
     src/msg.c
     src/netint.c
-    src/netint.h
     src/patch.c
     src/readsums.c
-    src/librsync.h
-    src/librsync-config.h
     src/rollsum.c
-    src/rollsum.h
     src/scoop.c
     src/search.c
-    src/search.h
     src/stats.c
     src/stream.c
-    src/stream.h
     src/sumset.c
-    src/sumset.h
     src/trace.c
-    src/trace.h
     src/tube.c
-    src/types.h
     src/util.c
-    src/util.h
     src/version.c
     src/whole.c
-    src/whole.h
-    src/snprintf.h
-    src/blake2b-ref.c
-    src/blake2.h
-    src/blake2-impl.h)
+    src/blake2b-ref.c)
 
 add_library(rsync SHARED ${rsync_LIB_SRCS})
 
 target_link_libraries(rsync
-${BZIP2_LIBRARIES}
-${ZLIB_LIBRARIES}
+   ${BZIP2_LIBRARIES}
+   ${ZLIB_LIBRARIES}
 )
 
 set_target_properties(rsync PROPERTIES VERSION 1.0.0 SOVERSION 1)
@@ -256,11 +244,7 @@ install(TARGETS rsync ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION lib)
 
 set(rdiff_SRCS
     src/rdiff.c
-    src/isprefix.c
-    src/isprefix.h
-    src/librsync.h
-    src/librsync-config.h
-    src/trace.h)
+    src/isprefix.c)
 
 add_executable(rdiff ${rdiff_SRCS})
 
@@ -271,4 +255,7 @@ install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION bin)
 
 ########### install files ###############
 
-install(FILES  librsync.h librsync-config.h DESTINATION include)
+install(FILES
+        src/librsync.h
+        ${CMAKE_CURRENT_BINARY_DIR}/src/librsync-config.h
+        DESTINATION include)
