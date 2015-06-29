@@ -33,7 +33,7 @@ for delta in $inputdir/*.delta
 do
     for inbuf in $bufsizes
     do
-        cmd="../rdiff -I$inbuf patch /dev/null $delta $new"
+        cmd="$bindir/rdiff -I$inbuf patch /dev/null $delta $new"
         run_test $cmd
         expect=$inputdir/`basename $delta .delta`.expect
 	check_compare $expect $new
