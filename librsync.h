@@ -373,7 +373,22 @@ rs_job_t *rs_sig_begin(size_t new_block_len,
 
 rs_job_t *rs_delta_begin(rs_signature_t *);
 
+
+/**
+ * \brief Read a signature from a file into an ::rs_signature_t structure
+ * in memory.
+ *
+ * Once there, it can be used to generate a delta to a newer version of
+ * the file.
+ *
+ * \note After loading the signatures, you must call
+ * rs_build_hash_table() before you can use them.
+ */
 rs_job_t *rs_loadsig_begin(rs_signature_t **);
+
+rs_result rs_build_hash_table(rs_signature_t* sums);
+
+
 
 /**
  * \brief Callback used to retrieve parts of the basis file.
@@ -394,8 +409,6 @@ typedef rs_result rs_copy_cb(void *opaque, rs_long_t pos,
 
 rs_job_t *rs_patch_begin(rs_copy_cb *, void *copy_arg);
 
-
-rs_result rs_build_hash_table(rs_signature_t* sums);
 
 
 
