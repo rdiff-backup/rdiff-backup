@@ -2,6 +2,9 @@ Changes in librsync 1.0.1-HEAD (not released yet)
 
  * Better performance on large files. (VictorDenisov)
 
+ * Restore shipped copy of popt, for easier building. popt is only
+   built into diffnot ibrsync
+
 Changes in librsync 1.0.0 (2015-01-23)
 
  * SECURITY: CVE-2014-8242: librsync previously used a truncated MD4
@@ -41,8 +44,6 @@ Changes in librsync 1.0.0 (2015-01-23)
  * Moved hosting to https://github.com/librsync/librsync/
 
  * Travis-CI.org integration test at https://travis-ci.org/librsync/librsync/
- 
- * Remove bundled copy of popt; it must be installed separately.
 
  * You can set `$LIBTOOLIZE` before running `autogen.sh`, for example on
    OS X Homebrew where it is called `glibtoolize`.

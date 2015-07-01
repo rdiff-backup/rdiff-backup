@@ -63,11 +63,12 @@ To build librsync you will need:
 
   Available from http://rpm5.org/files/popt/
 
+    A cut-down version of popt1.5 is included and will be used
+    automatically if there is no popt library on your build host.
+
 * automake, libtool, and autoconf
 
 ## Compiling
-
-If you're building from a git tree you must first create the autoconf files:
 
     $ ./autogen.sh
 
