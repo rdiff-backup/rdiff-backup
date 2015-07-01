@@ -18,3 +18,5 @@ html
 latex
 Testing
 *.user
+.sw?
+.*.sw?

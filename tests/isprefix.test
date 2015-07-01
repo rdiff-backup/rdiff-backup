@@ -10,14 +10,14 @@
 srcdir='.'
 . $srcdir/testcommon.sh
 
-run_test ./isprefix.driver foo foobar
-run_test ./isprefix.driver '' foobar
-run_test ./isprefix.driver foobar foobar
-run_test ./isprefix.driver f f
-run_test ./isprefix.driver '' ''
-run_test ./isprefix.driver f foobar
+run_test $bindir/tests/isprefix.driver foo foobar
+run_test $bindir/tests/isprefix.driver '' foobar
+run_test $bindir/tests/isprefix.driver foobar foobar
+run_test $bindir/tests/isprefix.driver f f
+run_test $bindir/tests/isprefix.driver '' ''
+run_test $bindir/tests/isprefix.driver f foobar
 
-run_test ./isprefix.driver ! foobar foo
-run_test ./isprefix.driver ! goo foo
-run_test ./isprefix.driver ! foo ''
-run_test ./isprefix.driver ! f g
+run_test $bindir/tests/isprefix.driver ! foobar foo
+run_test $bindir/tests/isprefix.driver ! goo foo
+run_test $bindir/tests/isprefix.driver ! foo ''
+run_test $bindir/tests/isprefix.driver ! f g

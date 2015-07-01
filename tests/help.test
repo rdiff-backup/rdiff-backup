@@ -23,8 +23,8 @@
 srcdir='.'
 . $srcdir/testcommon.sh
 
-run_test ../rdiff --help
-run_test ../rdiff --version
+run_test $bindir/rdiff --help
+run_test $bindir/rdiff --version
 
-run_test ../rdiff --help | grep ' --statistics'
-run_test ../rdiff --version | grep 'Copyright'
+run_test $bindir/rdiff --help | grep ' --statistics'
+run_test $bindir/rdiff --version | grep 'Copyright'
