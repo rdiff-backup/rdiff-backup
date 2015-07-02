@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# Copyright 2000, 2001, 2014 by Martin Pool
+# Copyright 2000, 2001, 2014, 2015 by Martin Pool
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
@@ -74,7 +74,7 @@ fi
 	echo "You must have libtool installed to compile $PROJECT."
 	echo "Download the appropriate package for your distribution,"
 	echo "or go to http://www.gnu.org/software/libtool/"
-	echo "You can set $LIBTOOLIZE."
+	echo "You can set the \$LIBTOOLIZE environment variable."
 	DIE=1
 }
 
