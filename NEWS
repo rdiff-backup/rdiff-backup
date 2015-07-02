@@ -3,7 +3,12 @@ Changes in librsync 1.0.1-HEAD (not released yet)
  * Better performance on large files. (VictorDenisov)
 
  * Restore shipped copy of popt, for easier building. popt is only
-   built into diffnot ibrsync
+   built into diffnot ibrsync. (Martin Pool)
+
+ * Add comment on usage of rs_build_hash_table(), and assert correct use.
+   Callers must call rs_build_hash_table() after loading the signature,
+   and before calling rs_delta_begin().
+   Thanks to Paul Harris <paulharris@computer.org>
 
 Changes in librsync 1.0.0 (2015-01-23)
 

@@ -169,6 +169,10 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
                     rs_signature_t const *sig, rs_stats_t * stats,
                     rs_long_t * match_where)
 {
+    /* Caller must have called rs_build_hash_table() by now */
+    if (!sig->tag_table)
+        rs_fatal("Must have called rs_build_hash_table() by now");
+
     rs_strong_sum_t strong_sum;
     int got_strong = 0;
     int hash_tag = gettag(weak_sum);
