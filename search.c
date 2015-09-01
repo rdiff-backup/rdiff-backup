@@ -63,7 +63,7 @@ static void swap(rs_target_t *t1, rs_target_t *t2) {
     t2->i = ti;
 }
 
-int rs_compare_targets(rs_target_t const *t1, rs_target_t const *t2, rs_signature_t * sums) {
+static int rs_compare_targets(rs_target_t const *t1, rs_target_t const *t2, rs_signature_t * sums) {
     int v = (int) t1->t - (int) t2->t;
     if (v != 0)
 	return v;
@@ -80,8 +80,8 @@ int rs_compare_targets(rs_target_t const *t1, rs_target_t const *t2, rs_signatur
 	    sums->strong_sum_len);
 }
 
-static int heap_sort(rs_signature_t * sums) {
-    unsigned int i, j, c, n, k, p;
+static void heap_sort(rs_signature_t * sums) {
+    unsigned int i, j, n, k, p;
     for (i = 1; i < sums->count; ++i) {
 	for (j = i; j > 0;) {
 	    p = (j - 1) >> 1;
