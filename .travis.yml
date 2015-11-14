@@ -8,6 +8,8 @@ compiler:
 
 before_script:
   - cmake .
+  
+sudo: false
 
 addons:
   apt:
