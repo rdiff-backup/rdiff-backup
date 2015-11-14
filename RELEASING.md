@@ -14,13 +14,9 @@ If you are making a new tarball release of librsync, follow this checklist:
 
 * librsync.spec - make sure version and URL are right.
 
-* PCBuild/config.h,librsync-config.h - update using configure.msc
-  using cygwin.
 
 Do a complete configure and distcheck to ensure everything is properly
 configured, built, and tested:
 
-    $ ./autogen.sh [OPTIONS]
-    $ ./configure
-    $ make distcheck
+    $ TODO
 
