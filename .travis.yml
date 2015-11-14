@@ -9,4 +9,10 @@ compiler:
 before_script:
   - cmake .
 
+addons:
+  apt:
+    packages:
+    - cmake
+    - libpopt-dev
+
 script: make && make test
