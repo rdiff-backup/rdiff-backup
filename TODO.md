@@ -20,9 +20,6 @@
 * Change existing text documentation in README.* etc to use a single
   consistant format, probably markdown.
 
-* Version numbering: perhaps keep release numbers in sync with
-  (Unix) library versions.
-
 * Fix up consecutive matches
 
   We often have several consecutive matches, and we can combine them
