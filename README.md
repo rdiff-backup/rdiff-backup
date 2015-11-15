@@ -93,12 +93,11 @@ The PCbuild directory contains a project and pre-generated config
 files for use with the MSVC++ IDE. This should be enought to compile
 rdiff.exe without requiring cygwin.
 
-## Library Versions
+## Versioning
 
-librsync uses the GNU libtool library versioning system, so the filename
-does not correspond to the librsync release.  To show the library release
-and version, use the librsyncinfo tool. See `libversions.txt` for more
-information.
+librsync uses the semver.org approach to versioning.
+
+The solib version is simply the major number of the library version.
 
 ## Platforms
 
