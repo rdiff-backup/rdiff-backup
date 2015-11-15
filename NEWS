@@ -25,8 +25,8 @@ Changes in librsync 1.0.0 (2015-01-23)
 
    Backward compatibility can be obtained using the new
    `rdiff sig --hash=md4`
-   option or through specifying the "signature magic" in the API, but 
-   this should not be used when either the old or new file contain 
+   option or through specifying the "signature magic" in the API, but
+   this should not be used when either the old or new file contain
    untrusted data.
 
    Deltas generated from those signatures will also use BLAKE2 during
@@ -98,7 +98,7 @@ Changes in 0.9.6
  
  * Windows compilation patch, heavily modified.
  
- * MacOSX compilation patch, modified to autoconf vararg macro fix. 
+ * MacOSX compilation patch, modified to autoconf vararg macro fix.
 
  * Debian package build scripts patch.
  
@@ -201,7 +201,7 @@ Changes in 0.5.6:
 
  * Back out of using libtool and shared libraries, as it is
    unnecessary at this stage, complicates installation and slows down
-   compilation. 
+   compilation.
 
  * Use mapptr when reading data to decode, so that decoding should
    have less latency and be more reliable.
@@ -224,7 +224,7 @@ Changes in 0.5.5:
  * Add hsdumpsums debugging tool.
 
  * Hex strings (eg strong checksums) are broken up by underscores for
-   readability. 
+   readability.
 
  * Stats now go to the log rather than stdout.
 
@@ -236,13 +236,13 @@ Changes in 0.5.4:
 
  * Improved mapptr input code
 
- * Turn on more warnings if using gcc 
+ * Turn on more warnings if using gcc
 
  * More test cases
 
 Changes in 0.5.3:
 
- * Improvements to mapptr to make it work better for network IO. 
+ * Improvements to mapptr to make it work better for network IO.
  
  * Debug trace code is compiled in unless turned off in ./configure
    (although most programs will not write it out unless asked.)
@@ -264,9 +264,9 @@ Changes in 0.5.3:
 
 Changes in 0.5.2:
 
- * Use mapptr for input. 
+ * Use mapptr for input.
 
- * Implement a new structure for encoding in nad.c.  It doesn't 
+ * Implement a new structure for encoding in nad.c.  It doesn't
    encode at the moment, but it's much more maintainable.
 
  * More regression cases.
@@ -276,7 +276,7 @@ Changes in 0.5.2:
 Changes in 0.5.0:
 
  * Rewrite hs_inbuf and hs_encode to make them simpler and more
-   reliable. 
+   reliable.
 
  * Test cases for input handling.
 
