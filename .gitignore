@@ -22,3 +22,4 @@ Testing
 *.user
 .sw?
 .*.sw?
+isprefix_test
