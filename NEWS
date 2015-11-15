@@ -1,4 +1,4 @@
-Changes in librsync 1.0.1-HEAD (not released yet)
+Changes in librsync 1.0.1 (not released yet)
 
  * Better performance on large files. (VictorDenisov)
 
@@ -9,7 +9,11 @@ Changes in librsync 1.0.1-HEAD (not released yet)
    Callers must call rs_build_hash_table() after loading the signature,
    and before calling rs_delta_begin().
    Thanks to Paul Harris <paulharris@computer.org>
-
+   
+ * Switch from autoconf to CMake.
+ 
+   Thanks to Adam Schubert.
+   
 Changes in librsync 1.0.0 (2015-01-23)
 
  * SECURITY: CVE-2014-8242: librsync previously used a truncated MD4
@@ -191,7 +195,7 @@ Changes in 0.5.7:
  * Slightly improved test cases
 
 Changes in 0.5.6:
- 
+
  * Don't install debugging tools into /usr/local/bin; leave them in
    the source directory.
 
