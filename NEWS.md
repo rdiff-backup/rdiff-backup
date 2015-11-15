@@ -67,14 +67,14 @@
  
  * Refactored delta calculation code to be cleaner and faster.
 
- * #879763: Fixed mdfour to work on little-endian machines which don't
+ * \#879763: Fixed mdfour to work on little-endian machines which don't
    like unaligned word access.  This should make librsync work on
    pa-risc, and it makes it slightly faster on ia64.
 
- * #1022764: Fix corrupted encoding of some COPY commands in large
+ * \#1022764: Fix corrupted encoding of some COPY commands in large
    files.
 
- * #1024881: Print long integers directly, rather than via casts to
+ * \#1024881: Print long integers directly, rather than via casts to
    double.
 
  * Fix printf formats for size_t: both the format and the argument
