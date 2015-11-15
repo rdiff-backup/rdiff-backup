@@ -1,4 +1,6 @@
-Changes in librsync 1.0.1-HEAD (not released yet)
+# librsync NEWS
+
+## librsync 1.0.1-HEAD (not released yet)
 
  * Better performance on large files. (VictorDenisov)
 
@@ -10,7 +12,7 @@ Changes in librsync 1.0.1-HEAD (not released yet)
    and before calling rs_delta_begin().
    Thanks to Paul Harris <paulharris@computer.org>
 
-Changes in librsync 1.0.0 (2015-01-23)
+## librsync 1.0.0 (2015-01-23)
 
  * SECURITY: CVE-2014-8242: librsync previously used a truncated MD4
    "strong" check sum to match blocks. However, MD4 is not cryptographically
@@ -25,8 +27,8 @@ Changes in librsync 1.0.0 (2015-01-23)
 
    Backward compatibility can be obtained using the new
    `rdiff sig --hash=md4`
-   option or through specifying the "signature magic" in the API, but 
-   this should not be used when either the old or new file contain 
+   option or through specifying the "signature magic" in the API, but
+   this should not be used when either the old or new file contain
    untrusted data.
 
    Deltas generated from those signatures will also use BLAKE2 during
@@ -53,7 +55,7 @@ Changes in librsync 1.0.0 (2015-01-23)
  * You can set `$LIBTOOLIZE` before running `autogen.sh`, for example on
    OS X Homebrew where it is called `glibtoolize`.
 
-Changes in 0.9.7 (released 2004-10-10)
+## 0.9.7 (released 2004-10-10)
 
  * Yet more large file support fixes.
  
@@ -78,7 +80,7 @@ Changes in 0.9.7 (released 2004-10-10)
  * Fix printf formats for size_t: both the format and the argument
    should be cast to long.
  
-Changes in 0.9.6
+## 0.9.6
 
  * Large file support fixes.
 
@@ -98,15 +100,15 @@ Changes in 0.9.6
  
  * Windows compilation patch, heavily modified.
  
- * MacOSX compilation patch, modified to autoconf vararg macro fix. 
+ * MacOSX compilation patch, modified to autoconf vararg macro fix.
 
  * Debian package build scripts patch.
  
-Changes in 0.9.5:
+## 0.9.5
 
  * Bugfix patch from Shirish Hemant Phatak
 
-Changes in 0.9.4: (library 1.1.0)
+## 0.9.4: (library 1.1.0)
 
  * Fixes for rsync.h from Thorsten Schuett <thorsten.schuett@zib.de>
 
@@ -116,7 +118,7 @@ Changes in 0.9.4: (library 1.1.0)
 
  * No (intentional) changes to binary API.
 
-Changes in 0.9.3:
+## 0.9.3
 
  * Big speed improvements in MD4 routines and generation of weak
    checksums.
@@ -142,12 +144,12 @@ Changes in 0.9.3:
 
  * Works on sparc64-unknown-linux-gnu (Debian/2.2)
 
-Changes in 0.9.2:
+## 0.9.2
 
  * Improve delta algorithm so that deltas are actually
    delta-compressed, rather than faked.
 
-Changes in 0.9.1:
+## 0.9.1
 
  * Rename the library to `librsync'.
 
@@ -172,7 +174,7 @@ Changes in 0.9.1:
 
  * Return RS_PARAM_ERROR when library is misused.
 
-Changes in 0.9.0:
+## 0.9.0
 
  * Redesign API to be more like zlib/bzlib.
 
@@ -184,13 +186,13 @@ Changes in 0.9.0:
 
  * Use Doxygen for API documentation.
 
-Changes in 0.5.7:
+## 0.5.7
 
  * Changes stats string format.
 
  * Slightly improved test cases
 
-Changes in 0.5.6:
+## 0.5.6
  
  * Don't install debugging tools into /usr/local/bin; leave them in
    the source directory.
@@ -201,14 +203,14 @@ Changes in 0.5.6:
 
  * Back out of using libtool and shared libraries, as it is
    unnecessary at this stage, complicates installation and slows down
-   compilation. 
+   compilation.
 
  * Use mapptr when reading data to decode, so that decoding should
    have less latency and be more reliable.
 
  * Cope better on systems that are missing functions like snprintf.
 
-Changes in 0.5.5:
+## 0.5.5
 
  * Put genuine search encoding back into the nad algorithm, and
    further clean up the nad code.  Literals are now sent out using a
@@ -224,7 +226,7 @@ Changes in 0.5.5:
  * Add hsdumpsums debugging tool.
 
  * Hex strings (eg strong checksums) are broken up by underscores for
-   readability. 
+   readability.
 
  * Stats now go to the log rather than stdout.
 
@@ -232,17 +234,17 @@ Changes in 0.5.5:
    present in the buffer -- it does a copy if required, but not
    necessarily real IO.
 
-Changes in 0.5.4:
+## 0.5.4
 
  * Improved mapptr input code
 
- * Turn on more warnings if using gcc 
+ * Turn on more warnings if using gcc
 
  * More test cases
 
-Changes in 0.5.3:
+## 0.5.3
 
- * Improvements to mapptr to make it work better for network IO. 
+ * Improvements to mapptr to make it work better for network IO.
  
  * Debug trace code is compiled in unless turned off in ./configure
    (although most programs will not write it out unless asked.)
@@ -262,34 +264,34 @@ Changes in 0.5.3:
  * Reverse build scripts so that driver.sh calls the particular
    script.
 
-Changes in 0.5.2:
+## 0.5.2
 
- * Use mapptr for input. 
+ * Use mapptr for input.
 
- * Implement a new structure for encoding in nad.c.  It doesn't 
+ * Implement a new structure for encoding in nad.c.  It doesn't
    encode at the moment, but it's much more maintainable.
 
  * More regression cases.
 
  * Clean up build process.
 
-Changes in 0.5.0:
+## 0.5.0
 
  * Rewrite hs_inbuf and hs_encode to make them simpler and more
-   reliable. 
+   reliable.
 
  * Test cases for input handling.
 
  * Use the map_ptr idea for input from both streams and files.
 
-Changes in 0.4.1:
+## 0.4.1
 
  * automake/autoconf now works cleanly when the build directory is
    different to the source directory.
 
  * --enable-ccmalloc works again.
 
-Changes in 0.4.0:
+## 0.4.0
 
 * A much better regression suite.
 
@@ -297,8 +299,3 @@ Changes in 0.4.0:
   location, to aid in self-testing.
 
 * Various bug fixes, particularly to do with short IO returns.
-
-
-Local variables:
-mode: indented-text
-End:
