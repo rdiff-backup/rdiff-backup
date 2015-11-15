@@ -42,3 +42,4 @@ librsync-[0-9]*tar.gz
 librsync-[0-9]*/
 /m4/
 tags
+*.dylib
