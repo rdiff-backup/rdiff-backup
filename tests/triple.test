@@ -1,0 +1,42 @@
+#! /bin/sh
+
+# librsync -- the library for network deltas
+# 
+# Copyright (C) 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation; either version 2.1 of
+# the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+srcdir='.'
+
+. $srcdir/testcommon.sh
+inputdir=$srcdir/triple.input
+
+for buf in $bufsizes
+do
+    for old in $inputdir/*.in
+    do
+        for new in $inputdir/*.in
+        do
+            for hashopt in $all_hashopts
+            do
+                run_test ../rdiff $debug $hashopt -I$buf -O$buf signature $old $tmpdir/sig
+                run_test ../rdiff $debug $hashopt -I$buf -O$buf delta $tmpdir/sig $new $tmpdir/delta
+                run_test ../rdiff $debug $hashopt -I$buf -O$buf patch $old $tmpdir/delta $tmpdir/new
+
+                check_compare $new $tmpdir/new "triple -I$buf -O$buf $old $new"
+            done
+        done
+    done
+done

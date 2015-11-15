@@ -1,6 +1,20 @@
 # "It took the night to believe"
 
 language: c
-script: ./autogen.sh && ./configure && make && make check
-# separate `make` shouldn't be necessary - https://github.com/librsync/librsync/issues/1
 
+compiler:
+  - gcc
+  - clang
+
+before_script:
+  - cmake .
+  
+sudo: false
+
+addons:
+  apt:
+    packages:
+    - cmake
+    - libpopt-dev
+
+script: make && make test

@@ -1,9 +1,5 @@
 * Upload built documentation to librsync.sourcefrog.net, delete dead sites.
 
-* Change to using SCons or some other build system?  Much easier to build
-  shared libraries than
-  Make, and possibly easier to build on Windows.
-
 * Documentation
   
     Would be nice...
@@ -23,9 +19,6 @@
 
 * Change existing text documentation in README.* etc to use a single
   consistant format, probably markdown.
-
-* Version numbering: perhaps keep release numbers in sync with
-  (Unix) library versions.
 
 * Fix up consecutive matches
 

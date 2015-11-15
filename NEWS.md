@@ -12,6 +12,10 @@
    and before calling rs_delta_begin().
    Thanks to Paul Harris <paulharris@computer.org>
 
+ * Switch from autoconf to CMake.
+ 
+   Thanks to Adam Schubert.
+   
 ## librsync 1.0.0 (2015-01-23)
 
  * SECURITY: CVE-2014-8242: librsync previously used a truncated MD4

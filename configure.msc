@@ -1,2 +1,0 @@
-#!/bin/sh
-./configure CC=cl --prefix='C:/Progra~1/librsync'
