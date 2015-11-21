@@ -1,6 +1,6 @@
 # librsync NEWS
 
-## librsync 1.0.1-HEAD (not released yet)
+## librsync 1.0.1 (2015-11-21)
 
  * Better performance on large files. (VictorDenisov)
 
