@@ -4,9 +4,6 @@
 
  * Better performance on large files. (VictorDenisov)
 
- * Restore shipped copy of popt, for easier building. popt is only
-   built into diffnot ibrsync. (Martin Pool)
-
  * Add comment on usage of rs_build_hash_table(), and assert correct use.
    Callers must call rs_build_hash_table() after loading the signature,
    and before calling rs_delta_begin().

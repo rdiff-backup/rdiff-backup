@@ -65,10 +65,8 @@ To build librsync you will need:
 
   Available from http://rpm5.org/files/popt/
 
-    A cut-down version of popt1.5 is included and will be used
-    automatically if there is no popt library on your build host.
-
 * cmake (http://cmake.org/)
+
 
 ## Compiling
 
@@ -79,6 +77,7 @@ Generate the Makefile by running
 After building you can install `rdiff` and `librsync` for system-wide use.
 
     $ make && sudo make install
+
 
 ## Note for Windows
 
