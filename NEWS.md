@@ -1,5 +1,16 @@
 # librsync NEWS
 
+## librsync 2.0.0
+
+Released 2015-11-29
+
+Note: despite the major version bump, this release has few changes and should
+be binary and API compatible with the previous version.
+
+ * Bump librsync version number to 2.0, to match the library
+   soname/dylib version.
+   (Martin Pool, https://github.com/librsync/librsync/issues/48)
+
 ## librsync 1.0.1 (2015-11-21)
 
  * Better performance on large files. (VictorDenisov)
