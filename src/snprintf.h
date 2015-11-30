@@ -1,4 +1,3 @@
-/* $Id$ */
 
 /* Some platforms don't have one or both of these functions.
  * MSVC has _snprintf and _vsnprintf functions instead.

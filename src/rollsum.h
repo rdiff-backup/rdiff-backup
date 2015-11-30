@@ -1,7 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * rollsum -- the librsync rolling checksum
- * $Id$
  * 
  * Copyright (C) 2003 by Donovan Baarda <abo@minkirri.apana.org.au> 
  * based on work, Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
