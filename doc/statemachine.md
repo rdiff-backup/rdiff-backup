@@ -1,18 +1,6 @@
-.. -*- rst -*-
+# librsync state machine
 
-==================
-librsync internals
-==================
-
-:Author: Martin Pool 
-:Version: 0.10
-:Licence: GNU GPL v2
-
-.. contents::
-
-
-State Machines
-==============
+## State Machines
 
 
 Internally, the operations are implemented as state machines that move
@@ -29,22 +17,19 @@ librsync will never block waiting for IO, unless the callbacks do
 that.
 
 The current state is represented by the private field
-``job->statefn``, which points to a function with a name like
-``rs_OPERATION_s_STATE``.  Every time librsync tries to make progress,
+`job->statefn`, which points to a function with a name like
+`rs_OPERATION_s_STATE`.  Every time librsync tries to make progress,
 it will call this function.
 
-The state function returns one of the ``rs_result_t`` values.  The
+The state function returns one of the ::rs_result values.  The
 most important values are
 
-RS_DONE
-  Completed successfully.
+ * ::RS_DONE: Completed successfully.
 
-RS_BLOCKED
-  Cannot make further progress at this point.
+ * ::RS_BLOCKED: Cannot make further progress at this point.
 
-RS_RUNNING
-  The state function has neither completed nor blocked but wants to be
-  called again.  **XXX**: Perhaps this should be removed?
+ * ::RS_RUNNING: The state function has neither completed nor blocked but
+    wants to be called again.  **XXX**: Perhaps this should be removed?
 
 States need to correspond to suspension points.  The only place the
 job can resume after blocking is at the entry to a state function.
@@ -61,15 +46,14 @@ rs__s_done.  This makes sure that any pending output is flushed out
 before RS_DONE is returned to the application.
 
 
-Blocking input and output
-=========================
+## Blocking input and output
 
 The IO callbacks are allowed to block or to process only part of the
 requested data.  The library needs to cope with this frustration.
 
 The library might not get as much input as it wanted when it is first
 called.  If it gets a partial read, it needs to hold onto that
-valuable and irreplaceable data.  
+valuable and irreplaceable data.
 
 It cannot keep it on the stack, because it will be lost if the read
 blocks.  It needs to be kept in the job structure, or in somewhere
@@ -95,7 +79,7 @@ need a different buffer to build up literal outgoing data.
 librsync deals with short, bounded-size headers and checksums, and
 with arbitrarily-large streaming data.  Although the commands are of
 bounded size, they are not of fixed size, because there are different
-encodings to suit different situations.  
+encodings to suit different situations.
 
 The situation is very similar to fetching variable-length headers from
 a socket.  We cannot read the whole command in a single input, because
@@ -105,8 +89,7 @@ complicates things.  Therefore we need to read the type byte first,
 and then possibly read some parameters.
 
 
-Input scoop
-===========
+## Input scoop
 
 A module called the *scoop* is used for buffering data going into
 librsync.  It accumulates data when the application does not supply it
@@ -138,8 +121,7 @@ One the state function has consumed the data, it should call
 rs__scoop_reset, which resets scoop_avail to 0.
 
 
-Output queue
-============
+## Output queue
 
 The library can set up data to be written out by putting a
 pointer/length for it in the output queue::
@@ -148,14 +130,13 @@ pointer/length for it in the output queue::
     size_t      outq_bytes;
 
 The job infrastructure will make sure this is written out before the
-next call into the state machine.  This implies it is 
+next call into the state machine.  This implies it is
 
 There is only one outq_ptr, so any given state function can only
 produce one contiguous block of output.
 
 
-Buffer sharing
---------------
+## Buffer sharing
 
 The scoop buffer may be used by the output queue.  This means that
 data can traverse the library with no extra copies: one copy into the
@@ -172,8 +153,7 @@ This is safe because neither the scoop nor the state function will
 get to run before the output queue has completely drained.
 
 
-Readahead
-=========
+## Readahead
 
 How much readahead is required?
 
