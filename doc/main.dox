@@ -3,7 +3,6 @@
 \mainpage The librsync delta-encoding library
 \author Martin Pool <mbp@sourcefrog.net>
 
-$Id$
 
 librsync can be downloaded from http://librsync.sourcefrog.net/,
 and used, modified and redistributed under the terms of the GNU Lesser

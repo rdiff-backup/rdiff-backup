@@ -1,7 +1,6 @@
 #! /usr/bin/perl -w
 
 # librsync -- the library for network deltas
-# $Id$
 #
 # Copyright (C) 1999, 2000 by Martin Pool <mbp@sourcefrog.net>
 # Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>

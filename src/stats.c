@@ -1,6 +1,5 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * $Id$
  * 
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
  * 

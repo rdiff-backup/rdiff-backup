@@ -1,7 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- generate and apply network deltas
- * $Id$
  * 
  * Copyright (C) 2000, 2001, 2004 by Martin Pool <mbp@sourcefrog.net>
  * 

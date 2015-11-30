@@ -5,4 +5,3 @@ To do this, simply execute the command:
 
   rpm -ta librsync-0.9.3.tar.gz
 
-$Id$
