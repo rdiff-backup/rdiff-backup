@@ -30,12 +30,138 @@
 
 /** \file librsync.h
  *
- * \brief Main public interface to librsync.
+ * \brief Public interface to librsync.
  * \author Martin Pool <mbp@sourcefrog.net>
- * \version librsync-2.0.0
  *
- * See \ref intro for an introduction to use of this library.
+ \section intro Introduction
+
+
+ The library supports three basic operations:
+
+    -# Generating the signature S of a file A .
+    -# Calculating a delta D from S and a new file B.
+    -# Applying D to A to reconstruct B.
+
+ The library also provides the \ref rdiff command-line tool, which
+ makes this functionality available to users and scripting languages.
+
+ \section api Programming interface
+
+ The public interface to librsync (librsync.h) has functions in several
+ main areas:
+
+    - \ref api_streaming
+    - \ref api_delta
+    - \ref api_buffers
+    - \ref api_whole
+    - \ref api_trace
+    - \ref api_stats
+    - \ref api_utility
+
+ All external symbols have the prefix ``<tt>rs_</tt>'', or
+ ``<tt>RS_</tt>'' in the case of preprocessor symbols.
+
+ \subsection api_streaming Data streaming
+
+ A key design requirement for librsync is that it should handle data as
+ and when the hosting application requires it.  librsync can be used
+ inside applications that do non-blocking IO or filtering of network
+ streams, because it never does IO directly, or needs to block waiting
+ for data.
+
+ The programming interface to librsync is similar to that of zlib and
+ bzlib.  Arbitrary-length input and output buffers are passed to the
+ library by the application, through an instance of ::rs_buffers_t.  The
+ library proceeds as far as it can, and returns an ::rs_result value
+ indicating whether it needs more data or space.
+
+ All the state needed by the library to resume processing when more
+ data is available is kept in a small opaque ::rs_job_t structure.
+ After creation of a job, repeated calls to rs_job_iter() in between
+ filling and emptying the buffers keeps data flowing through the
+ stream.  The ::rs_result_t values returned may indicate
+
+  - ::RS_DONE:  processing is complete
+  - ::RS_BLOCKED: processing has blocked pending more data
+  - one of various possible errors in processing
+
+ These can be converted to a human-readable string by rs_strerror().
+
+ \note Smaller buffers have high relative handling costs.  Application
+ performance will be improved by using buffers of at least 32kb or so
+ on each call.
+
+ \subsection api_delta Generating and applying deltas
+
+ All encoding operations are performed by using a <tt>*_begin</tt>
+ function to create a ::rs_job_t object, passing in any necessary
+ initialization parameters.  The various jobs available are:
+
+  - rs_sig_begin(): Calculate the signature of a file.
+  - rs_loadsig_begin(): Load a signature into memory.
+  - rs_delta_begin(): Calculate the delta between a signature and a new
+    file.
+  - rs_patch_begin(): Apply a delta to a basis to recreate the new
+    file.
+
+ \subsection api_buffers Buffers
+
+ After creating a job, input and output buffers are passed to
+ rs_job_iter() in an ::rs_buffers_t structure.
+
+ On input, the buffers structure must contain the address and length of
+ the input and output buffers.  The library updates these values to
+ indicate the amount of \b remaining buffer.  So, on return, \c
+ avail_out is not the amount of output data produced, but rather the
+ amount of output buffer space unfilled.  This means that the values on
+ return are consistent with the values on entry, but not necessarily
+ what you would expect.
+
+ A similar system is used by \p libz and \p libbz2.
+
+ \warning The input may not be completely consumed by the iteration if
+ there is not enough output space.  The application must retain unused
+ input data, and pass it in again when it is ready for more output.
+
+ \subsection api_whole Processing whole files
+
+   Some applications do not require fine-grained control over IO, but
+   rather just want to process a whole file with a single call.
+   librsync provides `whole-file' functionality to do exactly that.
+
+   Processing of a whole file begins with creation of a ::rs_job_t
+   object for the appropriate operation, just as if the application was
+   going to do buffering itself.  After creation, the job may be passed
+   to rs_whole_run(), which will feed it to and from two FILEs as
+   necessary until end of file is reached or the operation completes.
+
+ \subsection api_trace Debugging trace and error logging
+
+ librsync can output trace or log messages as it proceeds.  These
+ follow a fairly standard priority-based filtering system
+ (rs_trace_set_level()), using the same severity levels as UNIX syslog.
+ Messages by default are sent to stderr, but may be passed to an
+ application-provided callback (rs_trace_to(), rs_trace_fn_t()).
+
+ \subsection api_stats Encoding statistics
+
+   Encoding and decoding routines accumulate compression performance
+   statistics in a ::rs_stats_t structure as they run.  These may be
+   converted to human-readable form or written to the log file using
+   rs_format_stats() or rs_log_stats() respectively.
+
+ \subsection api_utility Utility functions
+
+ Some additional functions are used internally and also exposed in the
+ API:
+
+  - encoding/decoding binary data: rs_base64(), rs_unbase64(),
+    rs_hexify().
+  - MD4 message digests: rs_mdfour(), rs_mdfour_begin(),
+    rs_mdfour_update(), rs_mdfour_result().
+
  */
+
 
 #ifndef _RSYNC_H
 #define _RSYNC_H

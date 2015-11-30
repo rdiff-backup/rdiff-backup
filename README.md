@@ -1,20 +1,20 @@
 # librsync
 
-[![Build Status](https://travis-ci.org/librsync/librsync.svg?branch=master)](https://travis-ci.org/librsync/librsync)
+librsync is a library for calculating and applying network deltas,
+with an interface designed to ease integration into diverse
+network applications.
 
-librsync implements the rolling-checksum algorithm of remote file
-synchronization that was popularized by the rsync utility.
+librsync encapsulates the core algorithms of the rsync protocol, which
+help with efficient calculation of the differences between two files.
+The rsync algorithm is different from most differencing algorithms
+because it does not require the presence of the two files to calculate
+the delta.  Instead, it requires a set of checksums of each block of
+one file, which together form a signature for that file.  Blocks at
+any in the other file which have the same checksum are likely to be
+identical, and whatever remains is the difference.
 
 This algorithm transfers the differences between 2 files without
 needing both files on the same system.
-
-*librsync does not implement the rsync wire protocol. If you want to talk to
-an rsync server to transfer files you'll need to shell out to `rsync`.
-You cannot make use of librsync to talk to an rsync server.*
-
-librsync also does not include any network functions for talking to SSH
-or any other server. To access a remote filesystem, you need to provide
-your own code or make use of some other virtual filesystem layer.
 
 librsync is for building other programs that transfer files as efficiently
 as rsync. You can use librsync in a program you write to do backups,
@@ -26,9 +26,25 @@ operations of librsync: generating file signatures, generating the delta from a
 signature to a new file, and applying the delta to regenerate the new file
 given the old file.
 
+## What librsync is not
+
+1. librsync does not implement the rsync wire protocol. If you want to talk to
+an rsync server to transfer files you'll need to shell out to `rsync`.
+You cannot make use of librsync to talk to an rsync server.
+
+2. librsync does not deal with file metadata or structure, such as filenames,
+permissions, or directories. To this library, a file is just a stream of bytes.
+Higher-level tools can deal with such issues in a way appropriate to their
+users.
+ 
+3. librsync also does not include any network functions for talking to SSH
+or any other server. To access a remote filesystem, you need to provide
+your own code or make use of some other virtual filesystem layer.
+
+
 ## Copyright
 
-librsync is Copyright 1999-2015 Martin Pool and others.
+librsync is copyright 1999-2015 Martin Pool and others.
 
 librsync is distributed under the GNU LGPL v2.1 (see COPYING), which basically
 means that you can dynamically link librsync into non-GPL programs, but you
@@ -40,10 +56,9 @@ dedication, <http://creativecommons.org/publicdomain/zero/1.0/>.
 
 ## Contact
 
-librsync's home is
+librsync's home is http://librsync.sourcefrog.net/.
 
-- https://github.com/librsync/librsync/
-- http://librsync.sourcefrog.net/
+Source and bug tracking is at https://github.com/librsync/librsync/.
 
 There are two mailing lists:
 
@@ -53,6 +68,10 @@ There are two mailing lists:
 There are some questions and answers about librsync on stackoverflow.com tagged
 `librsync`.  That is a good place to start if you have questions.
 
+## Downloads
+
+Tarballs and git tags are at https://github.com/librsync/librsync/releases.
+
 ## Requirements
 
 To build librsync you will need:
@@ -61,11 +80,9 @@ To build librsync you will need:
 
 * Make
 
-* popt command line parsing library
+* `popt` command line parsing library (http://rpm5.org/files/popt/)
 
-  Available from http://rpm5.org/files/popt/
-
-* cmake (http://cmake.org/)
+* CMake (http://cmake.org/)
 
 
 ## Compiling
@@ -88,34 +105,33 @@ script. With these variables set, you just do;
 
     $ FIXME test in MSVC
 
-The PCbuild directory contains a project and pre-generated config
-files for use with the MSVC++ IDE. This should be enought to compile
-rdiff.exe without requiring cygwin.
 
 ## Versioning
 
-librsync uses the semver.org approach to versioning.
+librsync uses the http://semver.org/ approach to versioning.
 
 The solib version is simply the major number of the library version.
+
+See [NEWS.md](NEWS.md) for a list of changes.
+
 
 ## Platforms
 
 librsync should be widely portable. Patches to fix portability bugs are
 welcome.
 
+
 ## Documentation
 
-Documentation for the rdiff command-line tool:
+If you are reading this file on GitHub, see
 
-- http://librsync.sourcefrog.net/doc/rdiff.html
-- http://librsync.sourcefrog.net/doc/rdiff.pdf
+ * [librsync.h](src/librsync.h)
 
-and for the library:
+If you are reading the Doxygen version of this file, see:
 
-- http://librsync.sourcefrog.net/doc/librsync.html
-- http://librsync.sourcefrog.net/doc/librsync.pdf
+ * @ref librsync.h
+ * @ref rdiff
 
-These are all produced from the source tree.
 
 ## Debugging
 
@@ -127,6 +143,7 @@ to detect some allocation bugs.
 
 librsync has annotations for the SPLINT static checking tool.
 
+
 ## Testing
 
 You can run the tests with `make test`.
@@ -134,3 +151,7 @@ You can run the tests with `make test`.
 **Note that CMake will not automatically build before testing.**
 
 You need `make all && make test`.
+
+## Continuous integration
+
+https://travis-ci.org/librsync/librsync
