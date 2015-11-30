@@ -88,6 +88,8 @@ To build librsync you will need:
 
 * CMake (http://cmake.org/)
 
+* Doxygen (optional to build docs) (https://www.stack.nl/~dimitri/doxygen)
+
 
 ## Compiling
 
