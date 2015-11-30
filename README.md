@@ -152,7 +152,9 @@ librsync has annotations for the SPLINT static checking tool.
 
 You can run the tests with `make test`.
 
-**Note that CMake will not automatically build before testing.**
+**Note that CMake will not automatically build before testing.** This is a bug,
+https://github.com/librsync/librsync/issues/49, and a patch to fix it would be
+welcome.
 
 You need `make all && make test`.
 
