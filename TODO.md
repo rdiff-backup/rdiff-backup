@@ -83,18 +83,6 @@
   and is coupled with librsync in unhealthy ways (trace?). Recommend
   changing to RSA API.
    
-* Create library for autoconf replacement functions
-
-  Make libreplace.a library in dir replace/ for autoconf replacement
-  functions. Move snprintf.[ch] into this library. Add malloc.c, memcmp.c,
-  and realloc.c functions, uncommenting checks in configure.in.
-  
-  Add common.h header to centralise all configure driven "#if SOMETHING"
-  header variations, replacing them throughout code with #include "common.h".
-  
-  Make snprintf.c into two proper replacement functions for snprintf
-  and vsnprintf instead of using conditional compilation.
-
 * Don't use the rs_buffers_t structure.
 
   There's something confusing about the existence of this structure.
