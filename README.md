@@ -26,6 +26,9 @@ operations of librsync: generating file signatures, generating the delta from a
 signature to a new file, and applying the delta to regenerate the new file
 given the old file.
 
+librsync is used by: Dropbox, rdiff-backup, duplicity, and others.  If you use
+it, please let me know.
+
 ## What librsync is not
 
 1. librsync does not implement the rsync wire protocol. If you want to talk to
