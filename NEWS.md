@@ -71,7 +71,7 @@ be binary and API compatible with the previous version.
 
  * Yet more large file support fixes.
  
- * C++ support for easy #include <librsync.h> in C++.
+ * `extern "C"` guards in librsync.h to let it be used from C++.
  
  * Removed Debian files from dist tarball.
  

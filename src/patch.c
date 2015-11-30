@@ -1,20 +1,19 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
- * $Id$
- * 
+ *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -246,7 +245,7 @@ static rs_result rs_patch_s_copying(rs_job_t *job)
     if (!job->basis_len) {
         /* Done! */
         job->statefn = rs_patch_s_cmdbyte;
-    } 
+    }
 
     return RS_RUNNING;
 }
@@ -281,14 +280,14 @@ static rs_result rs_patch_s_header(rs_job_t *job)
 
 
 /**
- * \brief Apply a \ref gloss_delta to a \ref gloss_basis to recreate
- * the new file.
+ * \brief Apply a \a delta to a \a basis file to recreate
+ * the \a new file.
  *
  * This gives you back a ::rs_job_t object, which can be cranked by
  * calling rs_job_iter() and updating the stream pointers.  When
  * finished, call rs_job_finish() to dispose of it.
  *
- * \param stream Contains pointers to input and output buffers, to be
+ * \c job->stream Contains pointers to input and output buffers, to be
  * adjusted by caller on each iteration.
  *
  * \param copy_cb Callback used to retrieve content from the basis

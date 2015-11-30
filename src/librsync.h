@@ -38,9 +38,9 @@
 
  The library supports three basic operations:
 
-    -# Generating the signature S of a file A .
-    -# Calculating a delta D from S and a new file B.
-    -# Applying D to A to reconstruct B.
+    -# mksum: Generating the signature S of a file A .
+    -# delta: Calculating a delta D from S and a new file B.
+    -# path: Applying D to A to reconstruct B.
 
  The library also provides the \ref rdiff command-line tool, which
  makes this functionality available to users and scripting languages.
@@ -79,7 +79,7 @@
  data is available is kept in a small opaque ::rs_job_t structure.
  After creation of a job, repeated calls to rs_job_iter() in between
  filling and emptying the buffers keeps data flowing through the
- stream.  The ::rs_result_t values returned may indicate
+ stream.  The ::rs_result values returned may indicate
 
   - ::RS_DONE:  processing is complete
   - ::RS_BLOCKED: processing has blocked pending more data
@@ -501,7 +501,7 @@ rs_job_t *rs_delta_begin(rs_signature_t *);
 
 
 /**
- * \brief Read a signature from a file into an ::rs_signature_t structure
+ * \brief Read a signature from a file into an ::rs_signature structure
  * in memory.
  *
  * Once there, it can be used to generate a delta to a newer version of

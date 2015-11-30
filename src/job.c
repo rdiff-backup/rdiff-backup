@@ -1,20 +1,19 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
- * $Id$
- * 
+ *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -124,13 +123,14 @@ static rs_result rs_job_complete(rs_job_t *job, rs_result result)
 }
 
 
-/** 
+/**
  * \brief Run a ::rs_job_t state machine until it blocks
- * (::RS_BLOCKED), returns an error, or completes (::RS_COMPLETE).
+ * (::RS_BLOCKED), returns an error, or completes (::RS_DONE).
  *
  * \return The ::rs_result that caused iteration to stop.
  *
- * \param ending True if there is no more data after what's in the
+ * \c job->stream->eof_in should be true if there is no more data after what's
+ * in the
  * input buffer.  The final block checksum will run across whatever's
  * in there, without trying to accumulate anything else.
  */
@@ -144,7 +144,7 @@ rs_result rs_job_iter(rs_job_t *job, rs_buffers_t *buffers)
 
     result = rs_job_work(job, buffers);
 
-    if (result == RS_BLOCKED  ||  result == RS_DONE) 
+    if (result == RS_BLOCKED  ||  result == RS_DONE)
         if ((orig_in == buffers->avail_in)  &&  (orig_out == buffers->avail_out)
             && orig_in && orig_out) {
             rs_log(RS_LOG_ERR, "internal error: job made no progress "
@@ -251,4 +251,3 @@ rs_job_drive(rs_job_t *job, rs_buffers_t *buf,
 
     return result;
 }
-
