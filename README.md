@@ -69,7 +69,8 @@ There are two mailing lists:
 - https://groups.google.com/forum/#!forum/librsync
 
 There are some questions and answers about librsync on stackoverflow.com tagged
-`librsync`.  That is a good place to start if you have questions.
+`librsync` (http://stackoverflow.com/questions/tagged/librsync).
+That is a good place to see if your question has already been answered.
 
 ## Downloads
 
