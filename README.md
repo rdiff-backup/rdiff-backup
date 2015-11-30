@@ -138,6 +138,9 @@ If you are reading the Doxygen version of this file, see:
  * @ref librsync.h
  * @ref rdiff
 
+The generated documentation is available at http://librsync.sourcefrog.net/.
+
+To build it locally, `make doc`. 
 
 ## Debugging
 
