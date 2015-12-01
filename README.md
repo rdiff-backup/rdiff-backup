@@ -26,7 +26,9 @@ operations of librsync: generating file signatures, generating the delta from a
 signature to a new file, and applying the delta to regenerate the new file
 given the old file.
 
-librsync is used by: Dropbox, rdiff-backup, duplicity, and others.  If you use
+librsync is used by: [Dropbox](dropbox.com),
+[rdiff-backup](http://www.nongnu.org/rdiff-backup/),
+[Duplicity](http://www.nongnu.org/duplicity/), and others.  If you use
 it, please let me know.
 
 ## What librsync is not
@@ -74,7 +76,8 @@ That is a good place to see if your question has already been answered.
 
 ## Downloads
 
-Tarballs and git tags are at https://github.com/librsync/librsync/releases.
+Source tarballs and git tags are at
+https://github.com/librsync/librsync/releases.
 
 ## Requirements
 
@@ -140,7 +143,7 @@ If you are reading the Doxygen version of this file, see:
 
 The generated documentation is available at http://librsync.sourcefrog.net/.
 
-To build it locally, `make doc`. 
+To build it locally, `make doc`.
 
 ## Debugging
 
@@ -157,9 +160,8 @@ librsync has annotations for the SPLINT static checking tool.
 
 You can run the tests with `make test`.
 
-**Note that CMake will not automatically build before testing.** This is a bug,
-https://github.com/librsync/librsync/issues/49, and a patch to fix it would be
-welcome.
+**Note that CMake will not automatically build before testing.**  
+([This is a bug](https://github.com/librsync/librsync/issues/49).)
 
 You need `make all && make test`.
 
