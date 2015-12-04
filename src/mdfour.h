@@ -24,9 +24,6 @@
 
 /** \private
   * Internal state while computing an MD4 hash.
-  *
-  * \todo Rename to ::rs__mdfour to match the promised naming convention for 
-  * private symbols.
   */
 struct rs_mdfour {
     unsigned int        A, B, C, D;

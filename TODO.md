@@ -1,3 +1,9 @@
+* Fix symbol names:
+
+  * Rename all symbols that are intended to be private to `rs__`
+  
+  * Rename those that don't match either prefix.
+  
 * Upload built documentation to librsync.sourcefrog.net, delete dead sites.
 
 * Documentation
