@@ -99,7 +99,7 @@ rs_trace_to(rs_trace_fn_t * new_impl)
 }
 
 
-/** 
+/**
  * Set the least important message severity that will be output.
  */
 void
@@ -120,15 +120,15 @@ rs_log_va(int flags, char const *fn, char const *fmt, va_list va)
 
         vsnprintf(buf, sizeof buf - 1, fmt, va);
 
-        if (flags & RS_LOG_NONAME) { 
+        if (flags & RS_LOG_NONAME) {
             snprintf(full_buf, sizeof full_buf - 1,
                      "%s: %s%s\n",
                      MY_NAME, rs_severities[level], buf);
-        } else { 
+        } else {
             snprintf(full_buf, sizeof full_buf - 1,
                      "%s: %s(%s) %s\n",
                      MY_NAME, rs_severities[level], fn, buf);
-        } 
+        }
 
 	rs_trace_impl(level, full_buf);
     }
@@ -175,7 +175,7 @@ rs_trace_stderr(int UNUSED(level), char const *msg)
 /* This is called directly if the machine doesn't allow varargs
  * macros. */
 void
-rs_fatal0(char const *s, ...) 
+rs_fatal0(char const *s, ...)
 {
     va_list	va;
 
@@ -188,7 +188,7 @@ rs_fatal0(char const *s, ...)
 /* This is called directly if the machine doesn't allow varargs
  * macros. */
 void
-rs_error0(char const *s, ...) 
+rs_error0(char const *s, ...)
 {
     va_list	va;
 
@@ -201,7 +201,7 @@ rs_error0(char const *s, ...)
 /* This is called directly if the machine doesn't allow varargs
  * macros. */
 void
-rs_trace0(char const *s, ...) 
+rs_trace0(char const *s, ...)
 {
 #ifdef DO_RS_TRACE
     va_list	va;
@@ -213,11 +213,6 @@ rs_trace0(char const *s, ...)
 }
 
 
-/**
- * Return true if the library contains trace code; otherwise false.
- * If this returns false, then trying to turn trace on will achieve
- * nothing.
- */
 int
 rs_supports_trace(void)
 {
@@ -227,5 +222,3 @@ rs_supports_trace(void)
     return 0;
 #endif				/* !DO_RS_TRACE */
 }
-
-
