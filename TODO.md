@@ -183,7 +183,7 @@
   * State-machine searching
 
     Building a state machine from a regular expression is a brilliant
-    idea.  (I think `The Practice of Programming' walks through the
+    idea.  (I think *The Practice of Programming* walks through the
     construction of this at a fairly simple level.)
 
     In particular, we can search for any of a large number of
@@ -298,7 +298,7 @@
 
   * What do we need to do to compile in support for this?
 
-    * On GNU, defining _LARGEFILE_SOURCE as we now do should be
+    * On GNU, defining `_LARGEFILE_SOURCE` as we now do should be
       sufficient.
 
     * SCO and similar things on 32-bit platforms may be more
