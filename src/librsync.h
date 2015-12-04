@@ -421,6 +421,9 @@ char *rs_format_stats(rs_stats_t const *, char *, size_t);
 int rs_log_stats(rs_stats_t const *stats);
 
 
+/**
+ * \typedef rs_signature_t
+ */
 typedef struct rs_signature rs_signature_t;
 
 void rs_free_sumset(rs_signature_t *);
@@ -570,11 +573,14 @@ rs_job_t *rs_delta_begin(rs_signature_t *);
  * the file.
  *
  * \note After loading the signatures, you must call
- * rs_build_hash_table() before you can use them.
+ * \ref rs_build_hash_table() before you can use them.
  */
 rs_job_t *rs_loadsig_begin(rs_signature_t **);
 
 
+/**
+ * Call this after loading a signature to index it.
+ */
 rs_result rs_build_hash_table(rs_signature_t* sums);
 
 

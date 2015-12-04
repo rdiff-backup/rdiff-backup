@@ -21,8 +21,9 @@
  */
 
 
-/*
- * readsums.c -- Load signatures from a file into an ::rs_signature_t.
+/**
+ * \file readsums.c
+ * \brief Load signatures from a file.
  */
 
 #include "config.h"
@@ -195,16 +196,6 @@ static rs_result rs_loadsig_s_magic(rs_job_t *job)
 }
 
 
-/**
- * \brief Read a signature from a file into an ::rs_signature_t structure
- * in memory.
- *
- * Once there, it can be used to generate a delta to a newer version of
- * the file.
- *
- * \note After loading the signatures, you must call
- * ::rs_build_hash_table() before you can use them.
- */
 rs_job_t *rs_loadsig_begin(rs_signature_t **signature)
 {
     rs_job_t *job;
