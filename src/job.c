@@ -26,15 +26,16 @@
                                | sheltering.
                                */
 
-/*
- * job.c -- Generic state-machine interface.  The point of this is
+/**
+ * \file job.c
+ *
+ * \brief
+ * Generic state-machine interface.
+ *
+ * The point of this is
  * that we need to be able to suspend and resume processing at any
  * point at which the buffers may block.  We could do that using
  * setjmp or similar tricks, but this is probably simpler.
- *
- * TODO: We have a few functions to do with reading a netint, stashing
- * it somewhere, then moving into a different state.  Is it worth
- * writing generic functions fo r that, or would it be too confusing?
  */
 
 
@@ -124,7 +125,7 @@ static rs_result rs_job_complete(rs_job_t *job, rs_result result)
 
 
 /**
- * \brief Run a ::rs_job_t state machine until it blocks
+ * \brief Run a ::rs_job state machine until it blocks
  * (::RS_BLOCKED), returns an error, or completes (::RS_DONE).
  *
  * \return The ::rs_result that caused iteration to stop.

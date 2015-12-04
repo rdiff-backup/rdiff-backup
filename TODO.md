@@ -26,6 +26,10 @@
 * Change existing text documentation in README.* etc to use a single
   consistant format, probably markdown.
 
+* We have a few functions to do with reading a netint, stashing
+  it somewhere, then moving into a different state.  Is it worth
+  writing generic functions for that, or would it be too confusing?
+
 * Fix up consecutive matches
 
   We often have several consecutive matches, and we can combine them
