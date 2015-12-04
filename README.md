@@ -132,13 +132,9 @@ welcome.
 
 ## Documentation
 
-If you are reading this file on GitHub, see
-
- * [librsync.h](src/librsync.h)
-
 If you are reading the Doxygen version of this file, see:
 
- * @ref librsync.h
+ * @ref librsync
  * @ref rdiff
 
 The generated documentation is available at http://librsync.sourcefrog.net/.
