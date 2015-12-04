@@ -13,7 +13,7 @@ one file, which together form a signature for that file.  Blocks at
 any in the other file which have the same checksum are likely to be
 identical, and whatever remains is the difference.
 
-This algorithm transfers the differences between 2 files without
+This algorithm transfers the differences between two files without
 needing both files on the same system.
 
 librsync is for building other programs that transfer files as efficiently

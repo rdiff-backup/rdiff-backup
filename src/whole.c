@@ -91,19 +91,6 @@ rs_whole_run(rs_job_t *job, FILE *in_file, FILE *out_file)
 
 
 
-/**
- * Generate the signature of a basis file, and write it out to
- * another.
- *
- * \param new_block_len block size for signature generation, in bytes
- *
- * \param strong_len truncated length of strong checksums, in bytes
- *
- * \param sig_magic A signature magic number indicating 
- * what format to use.
- *
- * \sa rs_sig_begin()
- */
 rs_result
 rs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
             size_t strong_len,
@@ -123,12 +110,6 @@ rs_sig_file(FILE *old_file, FILE *sig_file, size_t new_block_len,
 }
 
 
-/**
- * Load signatures from a signature file into memory.  Return a
- * pointer to the newly allocated structure in SUMSET.
- *
- * \sa rs_readsig_begin()
- */
 rs_result
 rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset, rs_stats_t *stats)
 {

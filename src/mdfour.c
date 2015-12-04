@@ -1,21 +1,21 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
- * 
+ *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 1997-1999 by Andrew Tridgell
- * Copyright (C) 2002, 2003 by Donovan Baarda <abo@minkirri.apana.org.au> 
- * 
+ * Copyright (C) 2002, 2003 by Donovan Baarda <abo@minkirri.apana.org.au>
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -26,12 +26,12 @@
  * TODO: Perhaps use the MD4 routine from OpenSSL if it's installed.
  * It's probably not worth the trouble.
  *
- * This was originally written by Andrew Tridgell for use in Samba. 
+ * This was originally written by Andrew Tridgell for use in Samba.
  * It was then modified by;
- * 
- * 2002-06-xx: Robert Weber <robert.weber@Colorado.edu> 
+ *
+ * 2002-06-xx: Robert Weber <robert.weber@Colorado.edu>
  *   optimisations and fixed >512M support.
- * 
+ *
  * 2002-06-27: Donovan Baarda <abo@minkirri.apana.org.au>
  *   further optimisations and cleanups.
  *
@@ -170,7 +170,7 @@ rs_mdfour64(rs_mdfour_t * m, const void *p)
  * These next routines are necessary because MD4 is specified in terms of
  * little-endian int32s, but we have a byte buffer.  On little-endian
  * platforms, I think we can just use the buffer pointer directly.
- * 
+ *
  * There are some nice endianness routines in glib, including assembler
  * variants. If we ever depended on glib, then it could be good to use them
  * instead. */
@@ -277,7 +277,7 @@ rs_mdfour_begin(rs_mdfour_t * md)
     md->D = 0x10325476;
 #if HAVE_UINT64
     md->totalN = 0;
-#else 
+#else
     md->totalN_hi = md->totalN_lo = 0;
 #endif
 }
@@ -290,7 +290,7 @@ rs_mdfour_begin(rs_mdfour_t * md)
  * This must be called exactly once per file.
  *
  * Modified by Robert Weber to use uint64 in order that we can sum files
- * > 2^29 = 512 MB.  
+ * > 2^29 = 512 MB.
  * --Robert.Weber@colorado.edu
  */
 static void
@@ -323,11 +323,6 @@ rs_mdfour_tail(rs_mdfour_t * m)
 }
 
 
-/**
- * Feed some data into the MD4 accumulator.
- *
- * \param n Number of bytes fed in.
- */
 void
 rs_mdfour_update(rs_mdfour_t * md, void const *in_void, size_t n)
 {
@@ -337,7 +332,7 @@ rs_mdfour_update(rs_mdfour_t * md, void const *in_void, size_t n)
 #ifdef HAVE_UINT64
     md->totalN+=n;
 #else /* HAVE_UINT64 */
-    if ((md->totalN_lo += n) < n) 
+    if ((md->totalN_lo += n) < n)
 	md->totalN_hi++;
 #endif /* HAVE_UINT64 */
 

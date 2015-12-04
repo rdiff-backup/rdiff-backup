@@ -148,13 +148,23 @@ not be called from outside the library.
 
    Some applications do not require fine-grained control over IO, but
    rather just want to process a whole file with a single call.
-   librsync provides `whole-file' functionality to do exactly that.
+   librsync provides whole-file APIs to do exactly that.
+   
+   These functions open files, process the entire contents, and return an
+   overall result. The whole-file operations are the core of the
+   \ref rdiff program.
 
    Processing of a whole file begins with creation of a ::rs_job_t
    object for the appropriate operation, just as if the application was
    going to do buffering itself.  After creation, the job may be passed
    to rs_whole_run(), which will feed it to and from two FILEs as
    necessary until end of file is reached or the operation completes.
+   
+   \see rs_sig_file()
+   \see rs_loadsig_file()
+   \see rs_mdfour_file()
+   \see rs_delta_file()
+   \see rs_patch_file()
 
  \subsection api_trace Debugging trace and error logging
 
@@ -170,6 +180,8 @@ not be called from outside the library.
    statistics in a ::rs_stats_t structure as they run.  These may be
    converted to human-readable form or written to the log file using
    rs_format_stats() or rs_log_stats() respectively.
+   
+   NULL may be passed as the \p stats pointer if you don't want the stats.
 
  \subsection api_utility Utility functions
 
@@ -324,8 +336,9 @@ typedef enum rs_result {
     RS_IO_ERROR =	100,    /**< Error in file or network IO. */
     RS_SYNTAX_ERROR =   101,    /**< Command line syntax error. */
     RS_MEM_ERROR =	102,    /**< Out of memory. */
-    RS_INPUT_ENDED =	103,	/**< End of input file, possibly
-                                   unexpected. */
+    /** Unexpected end of input file, perhaps due to a truncated file
+     * or dropped network connection. */
+    RS_INPUT_ENDED =	103,
     RS_BAD_MAGIC =      104,    /**< Bad magic number at start of
                                    stream.  Probably not a librsync
                                    file, or possibly the wrong kind of
@@ -391,7 +404,15 @@ typedef unsigned char rs_strong_sum_t[RS_MAX_STRONG_SUM_LENGTH];
 
 void            rs_mdfour(unsigned char *out, void const *in, size_t);
 void            rs_mdfour_begin(/* @out@ */ rs_mdfour_t * md);
-void            rs_mdfour_update(rs_mdfour_t * md, void const *,
+
+/**
+ * Feed some data into the MD4 accumulator.
+ *
+ * \param md  MD4 accumulator.
+ * \param in_void Data to add.
+ * \param n   Number of bytes fed in.
+ */
+void            rs_mdfour_update(rs_mdfour_t * md, void const *in_void,
 				 size_t n);
 void rs_mdfour_result(rs_mdfour_t * md, unsigned char *out);
 
@@ -591,17 +612,44 @@ extern int rs_inbuflen, rs_outbuflen;
 /**
  * Calculate the MD4 sum of a file.
  *
+ * \param in_file File to read from.
  * \param result Binary (not hex) MD4 of the whole contents of the
  * file.
  */
 void rs_mdfour_file(FILE *in_file, char *result);
 
+/**
+ * Generate the signature of a basis file, and write it out to
+ * another.
+ *
+ * \param old_file Stdio readable file whose signature will be generated.
+ *
+ * \param sig_file Writable stdio file to which the signature will be written./
+ *
+ * \param block_len block size for signature generation, in bytes
+ *
+ * \param strong_len truncated length of strong checksums, in bytes
+ *
+ * \param sig_magic A signature magic number indicating
+ * what format to use.
+ *
+ * \param stats Optional pointer to receive statistics.
+ *
+ * \sa \ref api_whole
+ */
 rs_result rs_sig_file(FILE *old_file, FILE *sig_file,
                       size_t block_len, size_t strong_len,
-		      rs_magic_number sign_magic,
-		      rs_stats_t *);
+		      rs_magic_number sig_magic,
+		      rs_stats_t *stats);
 
-rs_result rs_loadsig_file(FILE *, rs_signature_t **, rs_stats_t *);
+/**
+ * Load signatures from a signature file into memory.  Return a
+ * pointer to the newly allocated structure in \p sumset.
+ *
+ * \sa \ref api_whole
+ */
+rs_result rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset,
+    rs_stats_t *stats);
 
 rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf);
 
