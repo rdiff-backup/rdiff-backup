@@ -28,22 +28,39 @@
                                */
 
 
-/** \file librsync.h
+/** \page librsync
  *
  * \brief Public interface to librsync.
  * \author Martin Pool <mbp@sourcefrog.net>
  *
  \section intro Introduction
 
+The librsync library implements network delta-compression of streams and
+files.
+
+librsync was originally used in the rproxy experiment in
+delta-compression for HTTP. One popular application is
+[rdiff-backup](http://rdiff-backup.stanford.edu/), which uses rdiff
+deltas for incremental backups.
 
  The library supports three basic operations:
 
-    -# mksum: Generating the signature S of a file A .
-    -# delta: Calculating a delta D from S and a new file B.
-    -# path: Applying D to A to reconstruct B.
+    -# \b sig: Generating the signature S of a file A .
+    -# \b loadsig: Read a signature from a file into memory.
+    -# \b delta: Calculating a delta D from S and a new file B.
+    -# \b path: Applying D to A to reconstruct B.
 
  The library also provides the \ref rdiff command-line tool, which
  makes this functionality available to users and scripting languages.
+
+librsync provides a high-level
+interface (\ref api_whole) for applications that just
+want to make and use signatures and deltas with a single function call.
+
+Alternatively there is a streaming interface (\ref api_streaming)
+which can support blocking
+or non-blocking IO and processing of encapsulated, encrypted or
+compressed streams.
 
  \section api Programming interface
 
@@ -58,8 +75,12 @@
     - \ref api_stats
     - \ref api_utility
 
- All external symbols have the prefix ``<tt>rs_</tt>'', or
- ``<tt>RS_</tt>'' in the case of preprocessor symbols.
+ All external symbols have the prefix \c rs_, or
+ \c RS_ in the case of preprocessor symbols.
+ 
+Symbols beginning with \c rs__ (double underscore) are private and should
+not be called from outside the library.
+
 
  \subsection api_streaming Data streaming
 
@@ -107,7 +128,7 @@
  \subsection api_buffers Buffers
 
  After creating a job, input and output buffers are passed to
- rs_job_iter() in an ::rs_buffers_t structure.
+ rs_job_iter() in an ::rs_buffers_s structure.
 
  On input, the buffers structure must contain the address and length of
  the input and output buffers.  The library updates these values to
@@ -162,6 +183,11 @@
 
  */
 
+
+/*!
+ * \file librsync.h
+ * \brief Public header for \ref librsync.
+ */
 
 #ifndef _RSYNC_H
 #define _RSYNC_H
@@ -252,7 +278,11 @@ void            rs_trace_to(rs_trace_fn_t *);
 void            rs_trace_stderr(int level, char const *msg);
 
 /** Check whether the library was compiled with debugging trace
- * suport. */
+ *
+ * \returns True if the library contains trace code; otherwise false.
+ * If this returns false, then trying to turn trace on will achieve
+ * nothing.
+ */
 int             rs_supports_trace(void);
 
 
@@ -278,14 +308,16 @@ void rs_base64(unsigned char const *buf, int n, char *out);
 
 
 /**
+ * \enum rs_result
  * \brief Return codes from nonblocking rsync operations.
  */
-typedef enum {
+typedef enum rs_result {
     RS_DONE =		0,	/**< Completed successfully. */
     RS_BLOCKED =	1, 	/**< Blocked waiting for more data. */
-    RS_RUNNING  =       2,      /**< Not yet finished or blocked.
-                                 * This value should never be returned
-                                 * to the caller.  */
+    
+    /** The job is still running, and not yet finished or blocked.
+     * (This value should never be seen by the application.) */
+    RS_RUNNING  =       2,
 
     RS_TEST_SKIPPED =   77,     /**< Test neither passed or failed. */
 
@@ -305,7 +337,6 @@ typedef enum {
     RS_PARAM_ERROR =    108     /**< Bad value passed in to library,
                                  * probably an application bug. */
 } rs_result;
-
 
 
 /**
@@ -379,10 +410,10 @@ void rs_sumset_dump(rs_signature_t const *);
  * Stream through which the calling application feeds data to and from the
  * library.
  *
- * On each call to rs_job_iter, the caller can make available
+ * On each call to ::rs_job_iter(), the caller can make available
  *
- *  - avail_in bytes of input data at next_in
- *  - avail_out bytes of output space at next_out
+ *  - #avail_in bytes of input data at #next_in
+ *  - #avail_out bytes of output space at #next_out
  *  - some of both
  *
  * Buffers must be allocated and passed in by the caller.  This
@@ -390,46 +421,56 @@ void rs_sumset_dump(rs_signature_t const *);
  *
  * Pay attention to the meaning of the returned pointer and length
  * values.  They do \b not indicate the location and amount of
- * returned data.  Rather, if \p *out_ptr was originally set to \p
- * out_buf, then the output data begins at \p out_buf, and has length
- * \p *out_ptr - \p out_buf.
+ * returned data.  Rather, if #next_out was originally set to \c
+ * out_buf, then the output data begins at \c out_buf, and has length
+ * <code>*next_out - \p out_buf</code>.
  *
- * Note also that if \p *avail_in is nonzero on return, then not all of
+ * Note also that if *#avail_in is nonzero on return, then not all of
  * the input data has been consumed.  The caller should either provide
- * more output buffer space and call rs_work() again passing the same
- * \p next_in and \p avail_in, or put the remaining input data into some
- * persistent buffer and call rs_work() with it again when there is
+ * more output buffer space and call ::rs_job_iter() again passing the same
+ * #next_in and #avail_in, or put the remaining input data into some
+ * persistent buffer and call rs_job_iter() with it again when there is
  * more output space.
  *
- * \param next_in References a pointer which on entry should point to
- * the start of the data to be encoded.  Updated to point to the byte
- * after the last one consumed.
- *
- * \param avail_in References the length of available input.  Updated to
- * be the number of unused data bytes, which will be zero if all the
- * input was consumed.  May be zero if there is no new input, but the
- * caller just wants to drain output.
- *
- * \param next_out References a pointer which on entry points to the
- * start of the output buffer.  Updated to point to the byte after the
- * last one filled.
- *
- * \param avail_out References the size of available output buffer.
- * Updated to the size of unused output buffer.
- *
- * \return The ::rs_result that caused iteration to stop.
- *
- * \sa rs_buffers_t
  * \sa \ref api_buffers
  */
 struct rs_buffers_s {
-    char *next_in;		/**< Next input byte */
-    size_t avail_in;            /**< Number of bytes available at next_in */
-    int eof_in;                 /**< True if there is no more data
-                                 * after this.  */
-
-    char *next_out;		/**< Next output byte should be put there */
-    size_t avail_out;           /**< Remaining free space at next_out */
+    /** \brief Next input byte.
+     * References a pointer which on entry should point to
+     * the start of the data to be encoded.  Updated to point to the byte
+     * after the last one consumed.
+     **/
+    char *next_in;
+    
+    /**
+     * \brief Number of bytes available at next_in
+     * References the length of available input.  Updated to
+     * be the number of unused data bytes, which will be zero if all the
+     * input was consumed.  May be zero if there is no new input, but the
+     * caller just wants to drain output.
+     */
+    size_t avail_in;
+    
+     /**
+      * \brief True if there is no more data after this.
+      */
+    int eof_in;
+    
+    /**
+     * \brief Next output byte should be put there
+     * References a pointer which on entry points to the
+     * start of the output buffer.  Updated to point to the byte after the
+     * last one filled.
+     */
+    char *next_out;
+    
+    /**
+     * \brief Remaining free space at next_out
+     *
+     * References the size of available output buffer.
+     * Updated to the size of unused output buffer.
+     */
+    size_t avail_out;
 };
 
 /**
@@ -445,12 +486,12 @@ typedef struct rs_buffers_s rs_buffers_t;
 #define RS_DEFAULT_BLOCK_LEN 2048
 
 
-/** \typedef struct rs_job rs_job_t
+/** \typedef rs_job_t
  *
  * \brief Job of work to be done.
  *
  * Created by functions such as rs_sig_begin(), and then iterated
- * over by rs_job_iter(). */
+ * over by ::rs_job_iter(). */
 typedef struct rs_job rs_job_t;
 
 /**
@@ -512,8 +553,8 @@ rs_job_t *rs_delta_begin(rs_signature_t *);
  */
 rs_job_t *rs_loadsig_begin(rs_signature_t **);
 
-rs_result rs_build_hash_table(rs_signature_t* sums);
 
+rs_result rs_build_hash_table(rs_signature_t* sums);
 
 
 /**
