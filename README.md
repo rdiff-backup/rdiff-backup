@@ -28,8 +28,8 @@ given the old file.
 
 librsync is used by: [Dropbox](dropbox.com),
 [rdiff-backup](http://www.nongnu.org/rdiff-backup/),
-[Duplicity](http://www.nongnu.org/duplicity/), and others.  If you use
-it, please let me know.
+[Duplicity](http://www.nongnu.org/duplicity/), and others.  
+(If you would like to be listed here, let me know.)
 
 ## What librsync is not
 
@@ -51,13 +51,18 @@ your own code or make use of some other virtual filesystem layer.
 
 librsync is copyright 1999-2015 Martin Pool and others.
 
-librsync is distributed under the GNU LGPL v2.1 (see COPYING), which basically
+librsync is distributed under the [GNU LGPL v2.1][LGPL]
+(see COPYING), which basically
 means that you can dynamically link librsync into non-GPL programs, but you
 must redistribute the librsync source, with any modifications you have made.
 
+[LGPL]: http://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+
 librsync contains the BLAKE2 hash algorithm, written by Samuel Neves and
-released under the CC0 public domain
-dedication, <http://creativecommons.org/publicdomain/zero/1.0/>.
+released under the
+[CC0 public domain dedication][CC0].
+
+[CC0]: http://creativecommons.org/publicdomain/zero/1.0/
 
 ## Contact
 
@@ -70,9 +75,11 @@ There are two mailing lists:
 - https://groups.google.com/forum/#!forum/librsync-announce
 - https://groups.google.com/forum/#!forum/librsync
 
-There are some questions and answers about librsync on stackoverflow.com tagged
-`librsync` (http://stackoverflow.com/questions/tagged/librsync).
+There are some [questions and answers about librsync on stackoverflow.com tagged
+`librsync`][stackoverflow].
 That is a good place to see if your question has already been answered.
+
+[stackoverflow]: http://stackoverflow.com/questions/tagged/librsync
 
 ## Downloads
 
@@ -117,9 +124,17 @@ script. With these variables set, you just do;
 
 ## Versioning
 
-librsync uses the http://semver.org/ approach to versioning.
+librsync uses the [SemVer] approach to versioning: the major version number
+changes when the API changes in an incompatible way, the minor version
+changes when new features are added, and the patchlevel changes when there
+are improvements or fixes that do not change the API.
 
-The solib version is simply the major number of the library version.
+[SemVer]: http://semver.org/
+
+The solib/dylib version is simply the major number of the library version.
+
+The librsync signature and patch files are separately versioned under
+application control.
 
 See [NEWS.md](NEWS.md) for a list of changes.
 
