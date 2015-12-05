@@ -1,8 +1,7 @@
-Misc librsync info
-------------------
 
-Debug messages
-==============
+## API overview
+
+### Debug messages
 
 librsync can optionally produce a error/debug trace while it runs. Error
 messages supplement return codes by describing in more detail what went
