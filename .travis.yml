@@ -16,5 +16,9 @@ addons:
     packages:
     - cmake
     - libpopt-dev
+    - doxygen
 
-script: make && make test
+script:
+    - make
+    - make test
+    - make doc
