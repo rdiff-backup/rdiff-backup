@@ -1,5 +1,13 @@
 # librsync
 
+http://librsync.sourcefrog.net/
+
+Copyright 1999-2015 Martin Pool and other contributors.
+
+[TOC]
+
+## Introduction
+
 librsync is a library for calculating and applying network deltas,
 with an interface designed to ease integration into diverse
 network applications.
@@ -64,9 +72,13 @@ released under the
 
 [CC0]: http://creativecommons.org/publicdomain/zero/1.0/
 
-## Contact
+## Coordinates
 
-librsync's home is http://librsync.sourcefrog.net/.
+librsync's home is http://librsync.sourcefrog.net/ and built documentation
+is available there.
+
+If you are reading the Doxygen version of this file, see
+@ref rdiff for the command line tool.
 
 Source and bug tracking is at https://github.com/librsync/librsync/.
 
@@ -81,10 +93,11 @@ That is a good place to see if your question has already been answered.
 
 [stackoverflow]: http://stackoverflow.com/questions/tagged/librsync
 
-## Downloads
-
 Source tarballs and git tags are at
 https://github.com/librsync/librsync/releases.
+
+Test results for builds of public github branches are at
+https://travis-ci.org/librsync/librsync.
 
 ## Requirements
 
@@ -101,7 +114,7 @@ To build librsync you will need:
 * Doxygen (optional to build docs) (https://www.stack.nl/~dimitri/doxygen)
 
 
-## Compiling
+## Building
 
 Generate the Makefile by running
 
@@ -109,18 +122,39 @@ Generate the Makefile by running
 
 After building you can install `rdiff` and `librsync` for system-wide use.
 
-    $ make && sudo make install
+    $ make
+    
+To run the tests:
 
+    $ make test
+    
+(Note that [CMake will not automatically build before testing](https://github.com/librsync/librsync/issues/49).)
 
-## Note for Windows
+To install:
+
+    $ sudo make install
+    
+To build the documentation:
+
+    $ make doc
+
+librsync should be widely portable. Patches to fix portability bugs are
+welcome.
+
+If you are using GNU libc, you might like to use
+
+    MALLOC_CHECK_=2 ./rdiff
+
+to detect some allocation bugs.
+
+librsync has annotations for the SPLINT static checking tool.
+
+### Cygwin
 
 With cygwin you can build using gcc as under a normal unix system. It
 is also possible to compile under cygwin using MSVC++. You must have
 environment variables needed by MSCV set using the Vcvars32.bat
-script. With these variables set, you just do;
-
-    $ FIXME test in MSVC
-
+script.
 
 ## Versioning
 
@@ -137,45 +171,3 @@ The librsync signature and patch files are separately versioned under
 application control.
 
 See [NEWS.md](NEWS.md) for a list of changes.
-
-
-## Platforms
-
-librsync should be widely portable. Patches to fix portability bugs are
-welcome.
-
-
-## Documentation
-
-If you are reading the Doxygen version of this file, see:
-
- * @ref librsync
- * @ref rdiff
-
-The generated documentation is available at http://librsync.sourcefrog.net/.
-
-To build it locally, `make doc`.
-
-## Debugging
-
-If you are using GNU libc, you might like to use
-
-    MALLOC_CHECK_=2 ./rdiff
-
-to detect some allocation bugs.
-
-librsync has annotations for the SPLINT static checking tool.
-
-
-## Testing
-
-You can run the tests with `make test`.
-
-**Note that CMake will not automatically build before testing.**  
-([This is a bug](https://github.com/librsync/librsync/issues/49).)
-
-You need `make all && make test`.
-
-## Continuous integration
-
-https://travis-ci.org/librsync/librsync
