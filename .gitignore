@@ -30,3 +30,5 @@ Testing
 .sw?
 .*.sw?
 isprefix_test
+
+*.bak
