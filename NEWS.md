@@ -1,5 +1,14 @@
 # librsync NEWS
 
+## librsync 2.0.1
+
+NOT RELEASED YET
+
+ * Extensively reworked Doxygen documentation, now available at
+   http://librsync.sourcefrog.net/
+   (Martin Pool)
+   
+
 ## librsync 2.0.0
 
 Released 2015-11-29
