@@ -3,60 +3,6 @@
 
 ### Debug messages
 
-librsync can optionally produce a error/debug trace while it runs. Error
-messages supplement return codes by describing in more detail what went
-wrong. Debug messages are useful when debugging librsync or applications
-that call it.
-
-The default configuration is that warning and error messages are written
-to stderr. This should be appropriate for many applications. If it is
-not, the level and destination of messages may be changed.
-
-Messages are passed out of librsync through a trace callback which is
-passed a severity and message string. The type for this callback is:
-
-    typedef void rs_trace_fn_t(int level, char const *msg);
-
-The default trace function is:
-
-    void rs_trace_stderr(int level, char const *msg);
-
-The trace callback may be changed at runtime:
-
-    void rs_trace_to(rs_trace_fn_t *trace_fn);
-
-Messages from librsync are labelled with a severity indicator of
-enumerated type `rs_loglevel`:
-
-`RS_LOG_CRIT`
-
-:   Critical error such as hitting an unimplemented case in librsync.
-    librsync may abort the process if it cannot return safely.
-
-`RS_LOG_ERR`
-
-:   Serious error. The current operation has probably failed.
-
-`RS_LOG_WARNING`
-
-:   A problem was encountered but it has not interrupted processing.
-
-`RS_LOG_INFO`
-
-:   Information on normal progress. May be suitable for a
-    `--verbose` mode.
-
-`RS_LOG_DEBUG`
-
-:   Very detailed internal debug information. Useful when debugging
-    librsync or programs that call it.
-
-The application may also specify a minimum severity of interest. The
-default level is `RS_LOG_INFO`. Messages lower than the specified level
-are discarded without being passed to the trace callback:
-
-    void rs_trace_set_level(rs_loglevel level);
-
 IO callbacks
 ============
 
