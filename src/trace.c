@@ -99,9 +99,6 @@ rs_trace_to(rs_trace_fn_t * new_impl)
 }
 
 
-/**
- * Set the least important message severity that will be output.
- */
 void
 rs_trace_set_level(rs_loglevel level)
 {
