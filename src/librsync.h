@@ -49,6 +49,90 @@ extern char const rs_licence_string[];
 typedef unsigned char rs_byte_t;
 
 
+
+                          /*
+                           | "The IETF already has more than enough
+                           | RFCs that codify the obvious, make
+                           | stupidity illegal, support truth,
+                           | justice, and the IETF way, and generally
+                           | demonstrate the author is a brilliant and
+                           | valuable Contributor to The Standards
+                           | Process."
+                           |     -- Vernon Schryver
+                           */
+
+
+/**
+ * A uint32 magic number, emitted in bigendian/network order at the start of
+ * librsync files.
+ **/
+typedef enum {
+    /** A delta file. At present, there's only one delta format.
+     *
+     * The four-byte literal \c "rs\x026".
+     **/
+    RS_DELTA_MAGIC          = 0x72730236,
+
+    /**
+     * A signature file with MD4 signatures.
+     *
+     * Backward compatible with
+     * librsync < 1.0, but strongly deprecated because it creates a security
+     * vulnerability on files containing partly untrusted data. See
+     * <https://github.com/librsync/librsync/issues/5>.
+     *
+     * The four-byte literal \c "rs\x016".
+     **/
+    RS_MD4_SIG_MAGIC        = 0x72730136,
+
+    /**
+     * A signature file using the BLAKE2 hash. Supported from librsync 1.0.
+     *
+     * The four-byte literal \c "rs\x017".
+     **/
+    RS_BLAKE2_SIG_MAGIC     = 0x72730137
+} rs_magic_number;
+
+
+
+/**
+ * \defgroup api_trace Debugging trace and error logging
+ * @{
+ 
+librsync can output trace or log messages as it proceeds.
+Error
+messages supplement return codes by describing in more detail what went
+wrong. Debug messages are useful when debugging librsync or applications
+that call it.
+
+These
+follow a fairly standard priority-based filtering system
+(rs_trace_set_level()), using the same severity levels as UNIX syslog.
+Messages by default are sent to stderr, but may be passed to an
+application-provided callback (rs_trace_to(), rs_trace_fn_t()).
+
+The default configuration is that warning and error messages are written
+to stderr. This should be appropriate for many applications. If it is
+not, the level and destination of messages may be changed.
+
+Messages are passed out of librsync through a trace callback which is
+passed a severity and message string. The type for this callback is
+\ref rs_trace_fn_t.
+
+The default trace function is \ref rs_trace_stderr.
+
+The trace callback may be changed at runtime with \ref rs_trace_to.
+
+Messages from librsync are labelled with a severity indicator of
+enumerated type \ref rs_loglevel.
+
+The application may also specify a minimum severity of interest through
+\ref rs_trace_set_level.
+Messages lower than the specified level
+are discarded without being passed to the trace callback.
+
+ */
+ 
 /**
  * \brief Log severity levels.
  *
@@ -68,49 +152,13 @@ typedef enum {
 } rs_loglevel;
 
 
-
-                          /*
-                           | "The IETF already has more than enough
-                           | RFCs that codify the obvious, make
-                           | stupidity illegal, support truth,
-                           | justice, and the IETF way, and generally
-                           | demonstrate the author is a brilliant and
-                           | valuable Contributor to The Standards
-                           | Process."
-                           |     -- Vernon Schryver
-                           */
-
-
-/**
- * A uint32 magic number, emitted in bigendian/network order at the start of
- * librsync files.
- **/
-typedef enum {
-    /** A delta file. At present, there's only one delta format. **/
-    RS_DELTA_MAGIC          = 0x72730236,      /* r s \2 6 */
-
-    /**
-     * A signature file with MD4 signatures.  Backward compatible with
-     * librsync < 1.0, but strongly deprecated because it creates a security
-     * vulnerability on files containing partly untrusted data. See
-     * <https://github.com/librsync/librsync/issues/5>.
-     **/
-    RS_MD4_SIG_MAGIC        = 0x72730136,      /* r s \1 6 */
-
-    /**
-     * A signature file using the BLAKE2 hash. Supported from librsync 1.0.
-     **/
-    RS_BLAKE2_SIG_MAGIC     = 0x72730137       /* r s \1 7 */
-} rs_magic_number;
-
-
 /**
  * \typedef rs_trace_fn_t
  * \brief Callback to write out log messages.
  * \param level a syslog level.
  * \param msg message to be logged.
  */
-typedef void    rs_trace_fn_t(int level, char const *msg);
+typedef void    rs_trace_fn_t(rs_loglevel level, char const *msg);
 
 /**
  * Set the least important message severity that will be output.
@@ -122,7 +170,7 @@ void            rs_trace_to(rs_trace_fn_t *);
 
 /** Default trace callback that writes to stderr.  Implements
  * ::rs_trace_fn_t, and may be passed to rs_trace_to(). */
-void            rs_trace_stderr(int level, char const *msg);
+void            rs_trace_stderr(rs_loglevel level, char const *msg);
 
 /** Check whether the library was compiled with debugging trace
  *
@@ -132,6 +180,9 @@ void            rs_trace_stderr(int level, char const *msg);
  */
 int             rs_supports_trace(void);
 
+/**
+ * @}
+ */
 
 
 /**
