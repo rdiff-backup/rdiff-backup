@@ -53,7 +53,7 @@ given the old file.
 
 librsync was originally written for the rproxy experiment in
 delta-compression for HTTP.
-librsync is used by: [Dropbox](dropbox.com),
+librsync is used by: [Dropbox](https://dropbox.com/),
 [rdiff-backup](http://www.nongnu.org/rdiff-backup/),
 [Duplicity](http://www.nongnu.org/duplicity/), and others.
 (If you would like to be listed here, let me know.)
