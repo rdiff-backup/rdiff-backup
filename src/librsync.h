@@ -285,12 +285,16 @@ void rs_mdfour_result(rs_mdfour_t * md, unsigned char *out);
  *
  * \param buf Buffer to receive result.
  * \param size Size of buffer.
- * \return buf
+ * \return \p buf.
+ * \see \ref api_stats
  */
-char *rs_format_stats(rs_stats_t const *, char *, size_t);
+char *rs_format_stats(rs_stats_t const *stats, char *buf, size_t size);
 
 /**
  * Write statistics into the current log as text.
+ *
+ * \see \ref api_stats
+ * \see \ref api_trace
  */
 int rs_log_stats(rs_stats_t const *stats);
 
