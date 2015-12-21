@@ -420,8 +420,10 @@ typedef enum rs_work_options {
 rs_result       rs_job_iter(rs_job_t *, rs_buffers_t *);
 
 /**
- * \todo Document me.
- */
+ * Type of application-supplied function for rs_job_drive().
+ *
+ * \see \ref api_pull.
+ **/
 typedef rs_result rs_driven_cb(rs_job_t *job, rs_buffers_t *buf,
                                void *opaque);
 
