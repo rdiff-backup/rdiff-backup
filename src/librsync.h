@@ -311,7 +311,14 @@ int rs_log_stats(rs_stats_t const *stats);
  */
 typedef struct rs_signature rs_signature_t;
 
+/**
+ * Deep deallocation of checksums.
+ */
 void rs_free_sumset(rs_signature_t *);
+
+/**
+ * Dump signatures to the log.
+ */
 void rs_sumset_dump(rs_signature_t const *);
 
 
@@ -498,6 +505,8 @@ rs_job_t *rs_loadsig_begin(rs_signature_t **);
 
 /**
  * Call this after loading a signature to index it.
+ *
+ * Use rs_free_sumset() to release it after use.
  */
 rs_result rs_build_hash_table(rs_signature_t* sums);
 
