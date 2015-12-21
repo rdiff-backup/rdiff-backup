@@ -32,7 +32,7 @@ interface.
 
 \sa \ref api_pull - Intermediate-complexity callback interface.
 
-\sa \ref copy_callbacks - for reading from the basis file
+\sa \ref api_callbacks - for reading from the basis file
 when doing a "patch" operation.
 
 

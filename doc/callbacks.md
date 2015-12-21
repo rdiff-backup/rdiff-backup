@@ -45,7 +45,7 @@ it previously asked librsync to write output.
 
 ## Input callbacks
 
-Input callbacks are passed a ::rs_buffers struct into which they can store
+Input callbacks are passed a ::rs_buffers_s struct into which they can store
 a pointer to the data they have read. Note that librsync does not allocate
 the buffer, the caller must do so. The input callback should update
 ::rs_buffers_s::next_in, ::rs_buffers_s::avail_in, and set ::rs_buffers_s::eof_in
