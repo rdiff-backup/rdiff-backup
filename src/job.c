@@ -34,8 +34,11 @@
  *
  * The point of this is
  * that we need to be able to suspend and resume processing at any
- * point at which the buffers may block.  We could do that using
- * setjmp or similar tricks, but this is probably simpler.
+ * point at which the buffers may block.
+ *
+ * \see \ref api_streaming
+ * \see rs_job_iter()
+ * \see ::rs_job
  */
 
 
@@ -124,17 +127,6 @@ static rs_result rs_job_complete(rs_job_t *job, rs_result result)
 }
 
 
-/**
- * \brief Run a ::rs_job state machine until it blocks
- * (::RS_BLOCKED), returns an error, or completes (::RS_DONE).
- *
- * \return The ::rs_result that caused iteration to stop.
- *
- * \c job->stream->eof_in should be true if there is no more data after what's
- * in the
- * input buffer.  The final block checksum will run across whatever's
- * in there, without trying to accumulate anything else.
- */
 rs_result rs_job_iter(rs_job_t *job, rs_buffers_t *buffers)
 {
     rs_result       result;
@@ -216,10 +208,6 @@ rs_job_input_is_ending(rs_job_t *job)
 
 
 
-/**
- * Actively process a job, by making callbacks to fill and empty the
- * buffers until the job is done.
- */
 rs_result
 rs_job_drive(rs_job_t *job, rs_buffers_t *buf,
              rs_driven_cb in_cb, void *in_opaque,

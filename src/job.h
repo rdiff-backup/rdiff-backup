@@ -24,6 +24,7 @@
 
 /**
  * \struct rs_job
+ * The contents of this structure are private.
  */
 struct rs_job {
     int                 dogtag;

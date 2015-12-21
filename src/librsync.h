@@ -43,7 +43,13 @@
 extern "C" {
 #endif
 
+/** Library version string.
+ * \see \ref versioning
+ */
 extern char const rs_librsync_version[];
+
+/** Summary of the licence for librsync.
+ */
 extern char const rs_licence_string[];
 
 typedef unsigned char rs_byte_t;
@@ -208,6 +214,8 @@ void rs_base64(unsigned char const *buf, int n, char *out);
 /**
  * \enum rs_result
  * \brief Return codes from nonblocking rsync operations.
+ * \see rs_strerror()
+ * \see api_callbacks
  */
 typedef enum rs_result {
     RS_DONE =		0,	/**< Completed successfully. */
@@ -304,6 +312,9 @@ void rs_mdfour_result(rs_mdfour_t * md, unsigned char *out);
 
 char *rs_format_stats(rs_stats_t const *, char *, size_t);
 
+/**
+ * Write statistics into the current log as text.
+ */
 int rs_log_stats(rs_stats_t const *stats);
 
 
@@ -317,23 +328,26 @@ void rs_sumset_dump(rs_signature_t const *);
 
 
 /**
- * Stream through which the calling application feeds data to and from the
- * library.
+ * Description of input and output buffers.
  *
  * On each call to ::rs_job_iter(), the caller can make available
  *
  *  - #avail_in bytes of input data at #next_in
  *  - #avail_out bytes of output space at #next_out
- *  - some of both
+ *  - or some of both
  *
- * Buffers must be allocated and passed in by the caller.  This
- * routine never allocates, reallocates or frees buffers.
+ * Buffers must be allocated and passed in by the caller.
  *
- * Pay attention to the meaning of the returned pointer and length
- * values.  They do \b not indicate the location and amount of
- * returned data.  Rather, if #next_out was originally set to \c
- * out_buf, then the output data begins at \c out_buf, and has length
- * <code>*next_out - \p out_buf</code>.
+ * On input, the buffers structure must contain the address and length of
+ * the input and output buffers.  The library updates these values to
+ * indicate the amount of \b remaining buffer.  So, on return,
+ * #avail_out is not the amount of output data produced, but rather the
+ * amount of output buffer space still available.
+ *
+ * This means that the values on
+ * return are consistent with the values on entry, and suitable to be passed
+ * in on a second call, but they don't directly tell you how much output
+ * data was produced.
  *
  * Note also that if *#avail_in is nonzero on return, then not all of
  * the input data has been consumed.  The caller should either provide
@@ -342,7 +356,7 @@ void rs_sumset_dump(rs_signature_t const *);
  * persistent buffer and call rs_job_iter() with it again when there is
  * more output space.
  *
- * \sa \ref api_buffers
+ * \sa rs_job_iter()
  */
 struct rs_buffers_s {
     /** \brief Next input byte.
@@ -384,11 +398,7 @@ struct rs_buffers_s {
 };
 
 /**
- * Stream through which the calling application feeds data to and from the
- * library.
- *
- * \sa struct rs_buffers_s
- * \sa \ref api_buffers
+ * \see ::rs_buffers_s
  */
 typedef struct rs_buffers_s rs_buffers_t;
 
@@ -396,12 +406,18 @@ typedef struct rs_buffers_s rs_buffers_t;
 #define RS_DEFAULT_BLOCK_LEN 2048
 
 
-/** \typedef rs_job_t
- *
+/**
  * \brief Job of work to be done.
  *
  * Created by functions such as rs_sig_begin(), and then iterated
- * over by ::rs_job_iter(). */
+ * over by rs_job_iter().
+ *
+ * The contents are opaque to the application, and instances are always
+ * allocated by the library.
+ *
+ * \see \ref api_streaming
+ * \see rs_job
+ */
 typedef struct rs_job rs_job_t;
 
 /**
@@ -413,18 +429,40 @@ typedef enum rs_work_options {
                                  * up. */
 } rs_work_options;
 
-
+/**
+ * \brief Run a ::rs_job state machine until it blocks
+ * (::RS_BLOCKED), returns an error, or completes (::RS_DONE).
+ *
+ * \return The ::rs_result that caused iteration to stop.
+ *
+ * \c job->stream->eof_in should be true if there is no more data after what's
+ * in the
+ * input buffer.  The final block checksum will run across whatever's
+ * in there, without trying to accumulate anything else.
+ */
 rs_result       rs_job_iter(rs_job_t *, rs_buffers_t *);
 
+/**
+ * \todo Document me.
+ */
 typedef rs_result rs_driven_cb(rs_job_t *job, rs_buffers_t *buf,
                                void *opaque);
 
+/**
+ * Actively process a job, by making callbacks to fill and empty the
+ * buffers until the job is done.
+ */
 rs_result rs_job_drive(rs_job_t *job, rs_buffers_t *buf,
                        rs_driven_cb in_cb, void *in_opaque,
                        rs_driven_cb out_cb, void *out_opaque);
 
+/**
+ * Return a pointer to the statistics in a job.
+ */
 const rs_stats_t * rs_job_statistics(rs_job_t *job);
 
+/** Deallocate job state.
+ */
 rs_result       rs_job_free(rs_job_t *);
 
 int             rs_accum_value(rs_job_t *, char *sum, size_t sum_len);
