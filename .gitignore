@@ -32,3 +32,5 @@ Testing
 isprefix_test
 
 *.bak
+
+*.tmp
