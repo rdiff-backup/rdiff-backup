@@ -201,9 +201,6 @@ rs_job_work(rs_job_t *job, rs_buffers_t *buffers)
 }
 
 
-/**
- * \brief Return pointer to statistics accumulated about this job.
- */
 const rs_stats_t *
 rs_job_statistics(rs_job_t *job)
 {
