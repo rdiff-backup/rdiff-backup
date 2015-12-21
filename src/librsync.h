@@ -73,7 +73,10 @@ typedef unsigned char rs_byte_t;
  * librsync files.
  **/
 typedef enum {
-    /** A delta file. At present, there's only one delta format.
+    /**
+     * A delta file.
+     *
+     * At present, there's only one delta format.
      *
      * The four-byte literal \c "rs\x026".
      **/
@@ -88,6 +91,8 @@ typedef enum {
      * <https://github.com/librsync/librsync/issues/5>.
      *
      * The four-byte literal \c "rs\x016".
+     *
+     * \see rs_sig_begin()
      **/
     RS_MD4_SIG_MAGIC        = 0x72730136,
 
@@ -95,6 +100,8 @@ typedef enum {
      * A signature file using the BLAKE2 hash. Supported from librsync 1.0.
      *
      * The four-byte literal \c "rs\x017".
+     *
+     * \see rs_sig_begin()
      **/
     RS_BLAKE2_SIG_MAGIC     = 0x72730137
 } rs_magic_number;
@@ -183,8 +190,8 @@ void rs_base64(unsigned char const *buf, int n, char *out);
  * \see api_callbacks
  */
 typedef enum rs_result {
-    RS_DONE =		0,	/**< Completed successfully. */
-    RS_BLOCKED =	1, 	/**< Blocked waiting for more data. */
+    RS_DONE =        0,    /**< Completed successfully. */
+    RS_BLOCKED =    1,     /**< Blocked waiting for more data. */
     
     /** The job is still running, and not yet finished or blocked.
      * (This value should never be seen by the application.) */
@@ -192,12 +199,12 @@ typedef enum rs_result {
 
     RS_TEST_SKIPPED =   77,     /**< Test neither passed or failed. */
 
-    RS_IO_ERROR =	100,    /**< Error in file or network IO. */
+    RS_IO_ERROR =    100,    /**< Error in file or network IO. */
     RS_SYNTAX_ERROR =   101,    /**< Command line syntax error. */
-    RS_MEM_ERROR =	102,    /**< Out of memory. */
+    RS_MEM_ERROR =    102,    /**< Out of memory. */
     /** Unexpected end of input file, perhaps due to a truncated file
      * or dropped network connection. */
-    RS_INPUT_ENDED =	103,
+    RS_INPUT_ENDED =    103,
     RS_BAD_MAGIC =      104,    /**< Bad magic number at start of
                                    stream.  Probably not a librsync
                                    file, or possibly the wrong kind of
@@ -272,7 +279,7 @@ void            rs_mdfour_begin(/* @out@ */ rs_mdfour_t * md);
  * \param n   Number of bytes fed in.
  */
 void            rs_mdfour_update(rs_mdfour_t * md, void const *in_void,
-				 size_t n);
+                 size_t n);
 void rs_mdfour_result(rs_mdfour_t * md, unsigned char *out);
 
 /**
@@ -414,6 +421,10 @@ typedef enum rs_work_options {
  * \brief Run a ::rs_job state machine until it blocks
  * (::RS_BLOCKED), returns an error, or completes (::RS_DONE).
  *
+ * \param job Description of job state. See \ref api_streaming.
+ *
+ * \param buffers Pointer to structure describing input and output buffers.
+ *
  * \return The ::rs_result that caused iteration to stop.
  *
  * \c job->stream->eof_in should be true if there is no more data after what's
@@ -421,7 +432,7 @@ typedef enum rs_work_options {
  * input buffer.  The final block checksum will run across whatever's
  * in there, without trying to accumulate anything else.
  */
-rs_result       rs_job_iter(rs_job_t *, rs_buffers_t *);
+rs_result       rs_job_iter(rs_job_t *job, rs_buffers_t *buffers);
 
 /**
  * Type of application-supplied function for rs_job_drive().
@@ -455,8 +466,8 @@ int             rs_accum_value(rs_job_t *, char *sum, size_t sum_len);
  *
  * \return A new rs_job_t into which the old file data can be passed.
  *
- * \param sig_magic Indicates the version of signature file to generate,
- * see rs_magic_number.
+ * \param sig_magic Indicates the version of signature file format to generate.
+ * See ::rs_magic_number.
  *
  * \param new_block_len Size of checksum blocks.  Larger values make the
  * signature shorter, and the delta longer.
@@ -464,11 +475,19 @@ int             rs_accum_value(rs_job_t *, char *sum, size_t sum_len);
  * \param strong_sum_len If non-zero, truncate the strong signatures to this
  * many bytes, to make the signature shorter.  It's recommended you leave this
  * at zero to get the full strength.
- **/
+ *
+ * \sa rs_sig_file()
+ */
 rs_job_t *rs_sig_begin(size_t new_block_len,
-		       size_t strong_sum_len,
-		       rs_magic_number sig_magic);
-
+                       size_t strong_sum_len,
+                       rs_magic_number sig_magic);
+               
+/**
+ * Prepare to compute a streaming delta.
+ *
+ * \todo Add a version of this that takes a ::rs_magic_number controlling the
+ * delta format.
+ **/
 rs_job_t *rs_delta_begin(rs_signature_t *);
 
 
@@ -508,9 +527,30 @@ typedef rs_result rs_copy_cb(void *opaque, rs_long_t pos,
 
 
 
-rs_job_t *rs_patch_begin(rs_copy_cb *, void *copy_arg);
-
-
+/**
+ * \brief Apply a \a delta to a \a basis file to recreate
+ * the \a new file.
+ *
+ * This gives you back a ::rs_job_t object, which can be cranked by
+ * calling rs_job_iter() and updating the stream pointers.  When
+ * finished, call rs_job_free() to dispose of it.
+ *
+ * \param copy_cb Callback used to retrieve content from the basis
+ * file.
+ *
+ * \param copy_arg Opaque environment pointer passed through to the
+ * callback.
+ *
+ * \todo As output is produced, accumulate the MD4 checksum of the
+ * output.  Then if we find a CHECKSUM command we can check it's
+ * contents against the output.
+ *
+ * \todo Implement COPY commands.
+ *
+ * \sa rs_patch_file()
+ * \sa \ref api_streaming
+ */
+rs_job_t *rs_patch_begin(rs_copy_cb *copy_cb, void *copy_arg);
 
 
 #ifndef RSYNC_NO_STDIO_INTERFACE
@@ -554,8 +594,8 @@ void rs_mdfour_file(FILE *in_file, char *result);
  */
 rs_result rs_sig_file(FILE *old_file, FILE *sig_file,
                       size_t block_len, size_t strong_len,
-		      rs_magic_number sig_magic,
-		      rs_stats_t *stats);
+              rs_magic_number sig_magic,
+              rs_stats_t *stats);
 
 /**
  * Load signatures from a signature file into memory.  Return a
@@ -566,10 +606,23 @@ rs_result rs_sig_file(FILE *old_file, FILE *sig_file,
 rs_result rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset,
     rs_stats_t *stats);
 
+/**
+ * ::rs_copy_cb that reads from a stdio file.
+ **/
 rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf);
 
+
+/**
+ * Generate a delta between a signature and a new file, int a delta file.
+ * \sa \ref api_whole
+ **/
 rs_result rs_delta_file(rs_signature_t *, FILE *new_file, FILE *delta_file, rs_stats_t *);
 
+
+/**
+ * Apply a patch, relative to a basis, into a new file.
+ * \sa \ref api_whole
+ */
 rs_result rs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file, rs_stats_t *);
 #endif /* ! RSYNC_NO_STDIO_INTERFACE */
 

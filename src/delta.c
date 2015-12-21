@@ -3,7 +3,7 @@
  * librsync -- library for network deltas
  *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
- * Copyright (C) 2003 by Donovan Baarda <abo@minkirri.apana.org.au> 
+ * Copyright (C) 2003 by Donovan Baarda <abo@minkirri.apana.org.au>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -84,18 +84,18 @@ const int RS_BLAKE2_SUM_LENGTH = 32;
 
 /**
  * 2002-06-26: Donovan Baarda
- * 
+ *
  * The following is based entirely on pysync. It is much cleaner than the
  * previous incarnation of this code. It is slightly complicated because in
  * this case the output can block, so the main delta loop needs to stop
  * when this happens.
- * 
+ *
  * In pysync a 'last' attribute is used to hold the last miss or match for
- * extending if possible. In this code, basis_len and scoop_pos are used 
+ * extending if possible. In this code, basis_len and scoop_pos are used
  * instead of 'last'. When basis_len > 0, last is a match. When basis_len =
  * 0 and scoop_pos is > 0, last is a miss. When both are 0, last is None
  * (ie, nothing).
- * 
+ *
  * Pysync is also slightly different in that a 'flush' method is available
  * to force output of accumulated data. This 'flush' is use to finalise
  * delta calculation. In librsync input is terminated with an eof flag on
@@ -104,19 +104,19 @@ const int RS_BLAKE2_SUM_LENGTH = 32;
  * for a flush style API if one is ever needed. Note that flush in pysync
  * can be used for more than just terminating delta calculation, so a flush
  * based API can in some ways be more flexible...
- * 
+ *
  * The input data is first scanned, then processed. Scanning identifies
  * input data as misses or matches, and emits the instruction stream.
  * Processing the data consumes it off the input scoop and outputs the
  * processed miss data into the tube.
- * 
+ *
  * The scoop contains all data yet to be processed. The scoop_pos is an
  * index into the scoop that indicates the point scanned to. As data is
  * scanned, scoop_pos is incremented. As data is processed, it is removed
  * from the scoop and scoop_pos adjusted. Everything gets complicated
  * because the tube can block. When the tube is blocked, no data can be
  * processed.
- * 
+ *
  */
 
 /* used by rdiff, but now redundant */
@@ -135,7 +135,7 @@ static inline rs_result rs_processmiss(rs_job_t *job);
 
 /**
  * \brief Get a block of data if possible, and see if it matches.
- * 
+ *
  * On each call, we try to process all of the input data available on the
  * scoop and input buffer. */
 static rs_result rs_delta_s_scan(rs_job_t *job)
@@ -151,7 +151,7 @@ static rs_result rs_delta_s_scan(rs_job_t *job)
     /* output any pending output from the tube */
     result=rs_tube_catchup(job);
     /* while output is not blocked and there is a block of data */
-    while ((result==RS_DONE) && 
+    while ((result==RS_DONE) &&
            ((job->scoop_pos + job->block_len) < job->scoop_avail)) {
         /* check if this block matches */
         if (rs_findmatch(job,&match_pos,&match_len)) {
@@ -249,9 +249,9 @@ void rs_getinput(rs_job_t *job) {
  * find a match at scoop_pos, returning the match_pos and match_len.
  * Note that this will calculate weak_sum if required. It will also
  * determine the match_len.
- * 
+ *
  * Note that this routine could be modified to do xdelta style matches that
- * would extend matches past block boundaries by matching backwards and 
+ * would extend matches past block boundaries by matching backwards and
  * forwards beyond the block boundaries. Extending backwards would require
  * decrementing scoop_pos as appropriate.
  */
@@ -309,8 +309,8 @@ inline rs_result rs_appendmatch(rs_job_t *job, rs_long_t match_pos, size_t match
 
 /**
  * Append a miss of length miss_len to the delta, extending a previous miss
- * if possible, or flushing any previous match. 
- * 
+ * if possible, or flushing any previous match.
+ *
  * This also breaks misses up into block_len segments to avoid accumulating
  * too much in memory. */
 inline rs_result rs_appendmiss(rs_job_t *job, size_t miss_len)
@@ -356,8 +356,8 @@ inline rs_result rs_appendflush(rs_job_t *job)
  * function processes that match data, returning RS_DONE if it completes,
  * or RS_BLOCKED if it gets blocked. After it completes scoop_pos is reset
  * to still point at the next unscanned data.
- * 
- * This function currently just removes data from the scoop and adjusts 
+ *
+ * This function currently just removes data from the scoop and adjusts
  * scoop_pos appropriately. In the future this could be used for something
  * like context compressing of miss data. Note that it also calls
  * rs_tube_catchup to output any pending output. */
@@ -374,13 +374,13 @@ inline rs_result rs_processmatch(rs_job_t *job)
  * function processes that miss data, returning RS_DONE if it completes, or
  * RS_BLOCKED if it gets blocked. After it completes scoop_pos is reset to
  * still point at the next unscanned data.
- * 
+ *
  * This function uses rs_tube_copy to queue copying from the scoop into
  * output. and uses rs_tube_catchup to do the copying. This automaticly
  * removes data from the scoop, but this can block. While rs_tube_catchup
  * is blocked, scoop_pos does not point at legit data, so scanning can also
  * not proceed.
- * 
+ *
  * In the future this could do compression of miss data before outputing
  * it. */
 inline rs_result rs_processmiss(rs_job_t *job)
@@ -410,7 +410,7 @@ static rs_result rs_delta_s_slack(rs_job_t *job)
         if (rs_job_input_is_ending(job)) {
             job->statefn = rs_delta_s_end;
             return RS_RUNNING;
-        } else {                
+        } else {
             return RS_BLOCKED;
         }
     }
@@ -440,9 +440,6 @@ static rs_result rs_delta_s_header(rs_job_t *job)
 }
 
 
-/**
- * Prepare to compute a streaming delta.
- */
 rs_job_t *rs_delta_begin(rs_signature_t *sig)
 {
     /* Caller must have called rs_build_hash_table() by now */
@@ -471,4 +468,3 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
 
     return job;
 }
-

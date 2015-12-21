@@ -1,29 +1,31 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- library for network deltas
- * 
+ *
  * Copyright 1999-2001, 2014, 2015 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 
+/**
+ * \file mksum.c Generate file signatures.
+ **/
+ 
 /*
- * mksum.c -- Generate file signatures.
- *
  * Generating checksums is pretty easy, since we can always just
  * process whatever data is available.  When a whole block has
  * arrived, or we've reached the end of the file, we write the
@@ -59,6 +61,7 @@ static rs_result rs_sig_s_generate(rs_job_t *);
                                            
 /**
  * State of trying to send the signature header.
+ * \private
  */
 static rs_result rs_sig_s_header(rs_job_t *job)
 {
@@ -77,6 +80,7 @@ static rs_result rs_sig_s_header(rs_job_t *job)
 /**
  * Generate the checksums for a block and write it out.  Called when
  * we already know we have enough data in memory at \p block.
+ * \private
  */
 static rs_result
 rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
@@ -111,8 +115,9 @@ rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
 }
 
 
-/*
+/**
  * State of reading a block and trying to generate its sum.
+ * \private
  */
 static rs_result
 rs_sig_s_generate(rs_job_t *job)
@@ -142,10 +147,6 @@ rs_sig_s_generate(rs_job_t *job)
 }
 
 
-/** \brief Set up a new encoding job.
- *
- * \sa rs_sig_file()
- */
 rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
                         rs_magic_number sig_magic)
 {

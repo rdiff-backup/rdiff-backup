@@ -278,32 +278,6 @@ static rs_result rs_patch_s_header(rs_job_t *job)
 }
 
 
-
-/**
- * \brief Apply a \a delta to a \a basis file to recreate
- * the \a new file.
- *
- * This gives you back a ::rs_job_t object, which can be cranked by
- * calling rs_job_iter() and updating the stream pointers.  When
- * finished, call rs_job_finish() to dispose of it.
- *
- * \c job->stream Contains pointers to input and output buffers, to be
- * adjusted by caller on each iteration.
- *
- * \param copy_cb Callback used to retrieve content from the basis
- * file.
- *
- * \param copy_arg Opaque environment pointer passed through to the
- * callback.
- *
- * \todo As output is produced, accumulate the MD4 checksum of the
- * output.  Then if we find a CHECKSUM command we can check it's
- * contents against the output.
- *
- * \todo Implement COPY commands.
- *
- * \sa rs_patch_file()
- */
 rs_job_t *
 rs_patch_begin(rs_copy_cb *copy_cb, void *copy_arg)
 {
