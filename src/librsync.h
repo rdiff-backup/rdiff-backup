@@ -421,7 +421,7 @@ typedef enum rs_work_options {
  * \brief Run a ::rs_job state machine until it blocks
  * (::RS_BLOCKED), returns an error, or completes (::RS_DONE).
  *
- * \param job Description of job state. See \ref api_streaming.
+ * \param job Description of job state.
  *
  * \param buffers Pointer to structure describing input and output buffers.
  *
@@ -431,6 +431,8 @@ typedef enum rs_work_options {
  * in the
  * input buffer.  The final block checksum will run across whatever's
  * in there, without trying to accumulate anything else.
+ *
+ * \see \ref api_streaming.
  */
 rs_result       rs_job_iter(rs_job_t *job, rs_buffers_t *buffers);
 
