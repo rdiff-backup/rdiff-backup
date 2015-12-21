@@ -531,6 +531,8 @@ rs_job_t *rs_patch_begin(rs_copy_cb *, void *copy_arg);
 
 
 #ifndef RSYNC_NO_STDIO_INTERFACE
+#include <stdio.h>
+
 /**
  * Buffer sizes for file IO.
  *
