@@ -427,7 +427,7 @@ typedef enum rs_work_options {
  *
  * \return The ::rs_result that caused iteration to stop.
  *
- * \c job->stream->eof_in should be true if there is no more data after what's
+ * \c buffers->eof_in should be true if there is no more data after what's
  * in the
  * input buffer.  The final block checksum will run across whatever's
  * in there, without trying to accumulate anything else.
