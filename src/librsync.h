@@ -459,8 +459,6 @@ const rs_stats_t * rs_job_statistics(rs_job_t *job);
  */
 rs_result       rs_job_free(rs_job_t *);
 
-int             rs_accum_value(rs_job_t *, char *sum, size_t sum_len);
-
 /**
  * \brief Start generating a signature.
  *
