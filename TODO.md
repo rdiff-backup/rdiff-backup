@@ -4,28 +4,6 @@
   
   * Rename those that don't match either prefix.
   
-* Upload built documentation to librsync.sourcefrog.net, delete dead sites.
-
-* Documentation
-  
-    Would be nice...
-
-    Most importantly, some kind of manpage for rdiff, since it's
-    closest to being an end-user tool.  After that, some API
-    documentation.
-
-    Can either persist in doing the API documentation through
-    Doxygen, though I don't think it's very well suited to C
-    libraries.  Perhaps it's better to just write a manpage as a
-    regular document, describing the functions in the most sensible
-    order.
-
-    At the moment, reStructuredText looks like a good bet for an
-    input format.
-
-* Change existing text documentation in README.* etc to use a single
-  consistant format, probably markdown.
-
 * We have a few functions to do with reading a netint, stashing
   it somewhere, then moving into a different state.  Is it worth
   writing generic functions for that, or would it be too confusing?
