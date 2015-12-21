@@ -408,14 +408,6 @@ typedef struct rs_buffers_s rs_buffers_t;
  */
 typedef struct rs_job rs_job_t;
 
-/**
- * Bitmask values that may be passed to the options parameter of
- * rs_work().
- */
-typedef enum rs_work_options {
-    RS_END = 0x01               /**< End of input file; please finish
-                                 * up. */
-} rs_work_options;
 
 /**
  * \brief Run a ::rs_job state machine until it blocks

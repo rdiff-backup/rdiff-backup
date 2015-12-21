@@ -8,6 +8,9 @@ NOT RELEASED YET
    http://librsync.sourcefrog.net/
    (Martin Pool)
    
+ * Removed some declarations from librsync.h that were unimplemented or no
+   longer ever useful: `rs_work_options`, `rs_accum_value`.
+   
 
 ## librsync 2.0.0
 

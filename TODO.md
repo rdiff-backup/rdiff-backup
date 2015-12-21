@@ -78,11 +78,11 @@
   scoop.c: Scoop needs major refactor. Perhaps the API needs
   tweaking?
 
-  rsync.h: documentation refers to rs_work(), which has been replaced
-  by rs_job_iter. Vestigial rs_work_options enum typedef should be
-  removed. rs_buffers_s and rs_buffers_t should be one typedef? Just
-  how useful is rs_job_drive anyway? Not implemented, rs_accum_value
-  Not implemented rs_mdfour_file
+  rsync.h: rs_buffers_s and rs_buffers_t should be one typedef?
+  
+  * Just how useful is rs_job_drive anyway?
+  
+  * Not implemented rs_mdfour_file
 
   patch.c: rs_patch_s_copying() does alloc, copy free, when it could
   just copy directly into rs_buffer_t buffer. This _does_ mean the
@@ -91,7 +91,7 @@
 
   mdfour.c: This code has a different API to the RSA code in libmd
   and is coupled with librsync in unhealthy ways (trace?). Recommend
-  changing to RSA API.
+  changing to RSA API?
    
 * Don't use the rs_buffers_t structure.
 
