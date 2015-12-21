@@ -7,7 +7,7 @@ The library supports four basic operations:
 -# \b delta: Calculating a delta D from S and a new file B.
 -# \b path: Applying D to A to reconstruct B.
 
-These are all available in two different modes:
+These are all available in three different modes:
 
 - \ref api_whole - for applications that just
   want to make and use signatures and deltas on whole files
