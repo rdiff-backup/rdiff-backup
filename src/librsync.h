@@ -100,51 +100,13 @@ typedef enum {
 } rs_magic_number;
 
 
-
-/**
- * \defgroup api_trace Debugging trace and error logging
- * @{
- 
-librsync can output trace or log messages as it proceeds.
-Error
-messages supplement return codes by describing in more detail what went
-wrong. Debug messages are useful when debugging librsync or applications
-that call it.
-
-These
-follow a fairly standard priority-based filtering system
-(rs_trace_set_level()), using the same severity levels as UNIX syslog.
-Messages by default are sent to stderr, but may be passed to an
-application-provided callback (rs_trace_to(), rs_trace_fn_t()).
-
-The default configuration is that warning and error messages are written
-to stderr. This should be appropriate for many applications. If it is
-not, the level and destination of messages may be changed.
-
-Messages are passed out of librsync through a trace callback which is
-passed a severity and message string. The type for this callback is
-\ref rs_trace_fn_t.
-
-The default trace function is \ref rs_trace_stderr.
-
-The trace callback may be changed at runtime with \ref rs_trace_to.
-
-Messages from librsync are labelled with a severity indicator of
-enumerated type \ref rs_loglevel.
-
-The application may also specify a minimum severity of interest through
-\ref rs_trace_set_level.
-Messages lower than the specified level
-are discarded without being passed to the trace callback.
-
- */
- 
 /**
  * \brief Log severity levels.
  *
  * These are the same as syslog, at least in glibc.
  *
  * \sa rs_trace_set_level()
+ * \sa \ref api_trace
  */
 typedef enum {
     RS_LOG_EMERG         = 0,   /**< System is unusable */
@@ -163,19 +125,25 @@ typedef enum {
  * \brief Callback to write out log messages.
  * \param level a syslog level.
  * \param msg message to be logged.
+ * \sa \ref api_trace
  */
 typedef void    rs_trace_fn_t(rs_loglevel level, char const *msg);
 
 /**
  * Set the least important message severity that will be output.
+ * \sa \ref api_trace
  */
 void            rs_trace_set_level(rs_loglevel level);
 
-/** Set trace callback. */
+/** Set trace callback.
+ * \sa \ref api_trace
+ */
 void            rs_trace_to(rs_trace_fn_t *);
 
 /** Default trace callback that writes to stderr.  Implements
- * ::rs_trace_fn_t, and may be passed to rs_trace_to(). */
+ * ::rs_trace_fn_t, and may be passed to rs_trace_to().
+ * \sa \ref api_trace
+ */
 void            rs_trace_stderr(rs_loglevel level, char const *msg);
 
 /** Check whether the library was compiled with debugging trace
@@ -183,24 +151,21 @@ void            rs_trace_stderr(rs_loglevel level, char const *msg);
  * \returns True if the library contains trace code; otherwise false.
  * If this returns false, then trying to turn trace on will achieve
  * nothing.
+ * \sa \ref api_trace
  */
 int             rs_supports_trace(void);
 
 /**
- * @}
- */
-
-
-/**
- * Convert FROM_LEN bytes at FROM_BUF into a hex representation in
- * TO_BUF, which must be twice as long plus one byte for the null
+ * Convert \p from_len bytes at \p from_buf into a hex representation in
+ * \p to_buf, which must be twice as long plus one byte for the null
  * terminator.
  */
 void     rs_hexify(char *to_buf, void const *from_buf, int from_len);
 
 /**
- * Decode a base64 buffer in place.  \return the number of binary
- * bytes.
+ * Decode a base64 buffer in place.
+ *
+ * \returns The number of binary bytes.
  */
 size_t rs_unbase64(char *s);
 
@@ -310,6 +275,18 @@ void            rs_mdfour_update(rs_mdfour_t * md, void const *in_void,
 				 size_t n);
 void rs_mdfour_result(rs_mdfour_t * md, unsigned char *out);
 
+/**
+ * \brief Return a human-readable representation of statistics.
+ *
+ * The string is truncated if it does not fit.  100 characters should
+ * be sufficient space.
+ *
+ * \param stats Statistics from an encoding or decoding operation.
+ *
+ * \param buf Buffer to receive result.
+ * \param size Size of buffer.
+ * \return buf
+ */
 char *rs_format_stats(rs_stats_t const *, char *, size_t);
 
 /**
