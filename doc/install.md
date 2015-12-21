@@ -10,11 +10,13 @@ To build librsync you will need:
 
 * [popt] command line parsing library
 
-* CMake (http://cmake.org/)
+* [CMake]
 
-* Doxygen (optional to build docs) (https://www.stack.nl/~dimitri/doxygen)
+* [Doxygen] - optional, to build docs
 
 [popt]: http://rpm5.org/files/popt/
+[CMake]: http://cmake.org/
+[Doxygen]: https://www.stack.nl/~dimitri/doxygen
 
 
 ## Building
