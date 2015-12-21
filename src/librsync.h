@@ -557,15 +557,6 @@ extern int rs_inbuflen, rs_outbuflen;
 
 
 /**
- * Calculate the MD4 sum of a file.
- *
- * \param in_file File to read from.
- * \param result Binary (not hex) MD4 of the whole contents of the
- * file.
- */
-void rs_mdfour_file(FILE *in_file, char *result);
-
-/**
  * Generate the signature of a basis file, and write it out to
  * another.
  *

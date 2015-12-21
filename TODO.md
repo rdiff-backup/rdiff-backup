@@ -82,8 +82,6 @@
   
   * Just how useful is rs_job_drive anyway?
   
-  * Not implemented rs_mdfour_file
-
   patch.c: rs_patch_s_copying() does alloc, copy free, when it could
   just copy directly into rs_buffer_t buffer. This _does_ mean the
   callback can't allocate it's own data, though this can be done by

@@ -11,6 +11,8 @@ NOT RELEASED YET
  * Removed some declarations from librsync.h that were unimplemented or no
    longer ever useful: `rs_work_options`, `rs_accum_value`.
    
+ * Remove declaration of unimplemented `rs_mdfour_file()`.
+   
 
 ## librsync 2.0.0
 
