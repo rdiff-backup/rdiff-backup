@@ -228,7 +228,9 @@ char const *rs_strerror(rs_result r);
  * \brief Performance statistics from a librsync encoding or decoding
  * operation.
  *
- * \sa rs_format_stats(), rs_log_stats()
+ * \sa \ref api_stats
+ * \sa rs_format_stats()
+ * \sa rs_log_stats()
  */
 typedef struct rs_stats {
     char const     *op;     /**< Human-readable name of current
