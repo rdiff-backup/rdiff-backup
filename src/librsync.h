@@ -228,7 +228,7 @@ char const *rs_strerror(rs_result r);
  * \brief Performance statistics from a librsync encoding or decoding
  * operation.
  *
- * \sa \ref api_stats
+ * \sa api_stats
  * \sa rs_format_stats()
  * \sa rs_log_stats()
  */
