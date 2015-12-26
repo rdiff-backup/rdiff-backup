@@ -62,3 +62,7 @@ Each signature block format is (see `rs_sig_do_block`):
 
     u32 weak_sum;
     u8[strong_sum_len] strong_sum;
+
+## Delta files
+
+TODO(https://github.com/librsync/librsync/issues/46): Document delta format.
