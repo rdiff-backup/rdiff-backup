@@ -1,4 +1,4 @@
-# librsync formats
+# File formats {#page_formats}
 
 ## Generalities
 

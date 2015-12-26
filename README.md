@@ -80,3 +80,4 @@ your own code or make use of some other virtual filesystem layer.
 * \ref page_contributing
 * \ref rdiff command line interface
 * \ref NEWS.md
+* \ref page_formats
