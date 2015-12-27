@@ -175,15 +175,15 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
     int got_strong = 0;
     int hash_tag = gettag(weak_sum);
     rs_tag_table_entry_t *bucket = &(sig->tag_table[hash_tag]);
-    int l = bucket->l;
-    int r = bucket->r + 1;
-    int v = 1;
+    int l = bucket->l; /* left bound of search region */
+    int r = bucket->r + 1; /* right bound of search region */
+    int v = 1; /* direction of next move: -ve left, +ve right */
 
     if (l == NULL_TAG)
         return 0;
 
     while (l < r) {
-        int m = (l + r) >> 1;
+        int m = (l + r) >> 1; /* midpoint of search region */
         int i = sig->targets[m].i;
         rs_block_sig_t *b = &(sig->block_sigs[i]);
         v = (weak_sum > b->weak_sum) - (weak_sum < b->weak_sum);
@@ -193,6 +193,7 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
 
         if (v == 0) {
             if (!got_strong) {
+                /* Lazy calculate strong sum after finding weak match. */
                 if(sig->magic == RS_BLAKE2_SIG_MAGIC) {
                     rs_calc_blake2_sum(inbuf, block_len, &strong_sum);
                 } else if (sig->magic == RS_MD4_SIG_MAGIC) {
