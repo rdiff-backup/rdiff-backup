@@ -465,6 +465,15 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
                job->strong_sum_len);
         return NULL;
     }
+    
+    switch (job->signature->magic) {
+    case RS_BLAKE2_SIG_MAGIC:
+    case RS_MD4_SIG_MAGIC:
+        break;
+    default:
+        rs_error("Unknown signature algorithm %#x", job->signature->magic);
+        return NULL;
+    }
 
     return job;
 }

@@ -199,8 +199,10 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
                 } else if (sig->magic == RS_MD4_SIG_MAGIC) {
                     rs_calc_md4_sum(inbuf, block_len, &strong_sum);
                 } else {
-                    rs_error("Unknown signature algorithm - this is a BUG");
-                    return 0; /* FIXME: Is this the best way to handle this? */
+                    /* Bad input data is checked in rs_delta_begin, so this
+                     * should never be reached. */
+                    rs_fatal("Unknown signature algorithm %#x", sig->magic);
+                    return 0;
                 }
                 got_strong = 1;
             }
