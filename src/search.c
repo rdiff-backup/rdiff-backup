@@ -1,31 +1,31 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
- * 
+ *
  * Copyright (C) 1999, 2000, 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 1999 by Andrew Tridgell
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* 
+/*
  * This file contains code for searching the sumset for matching
  * values.
  */
 
-/* 
+/*
  * TODO: The common case is that the next block in both streams
  * match. Can we make that a bit faster at all?  We'd need to perhaps
  * add a link forward between blocks in the sum_struct corresponding
@@ -153,7 +153,7 @@ rs_build_hash_table(rs_signature_t * sums)
 
 
 
-/* 
+/*
  * See if there is a match for the specified block INBUF..BLOCK_LEN in
  * the checksum set, using precalculated WEAK_SUM.
  *
@@ -188,9 +188,11 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
 	int m = (l + r) >> 1;
 	int i = sig->targets[m].i;
 	rs_block_sig_t *b = &(sig->block_sigs[i]);
-	v = (weak_sum > b->weak_sum) - (weak_sum < b->weak_sum); // v < 0  - weak_sum <  b->weak_sum
-								 // v == 0 - weak_sum == b->weak_sum
-								 // v > 0  - weak_sum >  b->weak_sum
+	v = (weak_sum > b->weak_sum) - (weak_sum < b->weak_sum);
+        // v < 0  - weak_sum <  b->weak_sum
+        // v == 0 - weak_sum == b->weak_sum
+        // v > 0  - weak_sum >  b->weak_sum
+
 	if (v == 0) {
 	    if (!got_strong) {
 		if(sig->magic == RS_BLAKE2_SIG_MAGIC) {
