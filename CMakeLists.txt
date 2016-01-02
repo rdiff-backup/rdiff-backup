@@ -66,12 +66,8 @@ check_function_exists ( alloca HAVE_ALLOCA )
 check_function_exists ( fseeko HAVE_FSEEKO )
 check_function_exists ( memmove HAVE_MEMMOVE )
 check_function_exists ( memset HAVE_MEMSET )
-check_function_exists ( snprintf HAVE_SNPRINTF )
 check_function_exists ( strchr HAVE_STRCHR )
 check_function_exists ( strerror HAVE_STRERROR )
-check_function_exists ( vsnprintf HAVE_VSNPRINTF )
-check_function_exists ( _snprintf HAVE__SNPRINTF )
-check_function_exists ( _vsnprintf HAVE__VSNPRINTF )
 
 include(CheckTypeSize)
 check_type_size ( "long" SIZEOF_LONG )
@@ -171,6 +167,10 @@ execute_process(COMMAND ${PERL_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/src/mkpr
 
 # Testing
 
+add_test(NAME rdiff_bad_option
+         COMMAND rdiff_bad_option.sh ${CMAKE_CURRENT_BINARY_DIR}
+         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+
 add_executable(isprefix_test tests/isprefix_test.c src/isprefix.c)
 
 add_test(NAME isprefix_test COMMAND isprefix_test)
@@ -182,7 +182,6 @@ add_test(NAME Sources COMMAND sources.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_D
 add_test(NAME Triple COMMAND triple.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 add_test(NAME Delta COMMAND delta.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 add_test(NAME Changes COMMAND changes.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-
 
 enable_testing()
 
