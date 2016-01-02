@@ -112,6 +112,13 @@ if(APPLE)
   endif()
 endif()
 
+if (CMAKE_C_COMPILER_ID MATCHES "(Clang|Gnu)")
+  # TODO: Set for MSVC and other compilers.
+  # TODO: Set -Werror when the build is clean.
+
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+endif()
+
 site_name(SITE_NAME)
 
 message (STATUS "PROJECT_NAME  = ${PROJECT_NAME}")
@@ -261,3 +268,5 @@ install(FILES
         src/librsync.h
         ${CMAKE_CURRENT_BINARY_DIR}/src/librsync-config.h
         DESTINATION include)
+
+message (STATUS "CMAKE_C_FLAGS  = ${CMAKE_C_FLAGS}")
