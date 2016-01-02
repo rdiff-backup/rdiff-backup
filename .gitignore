@@ -34,3 +34,6 @@ isprefix_test
 *.bak
 
 *.tmp
+
+# for rtags
+compile_commands.json
