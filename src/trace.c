@@ -52,7 +52,6 @@
 #include "librsync.h"
 #include "util.h"
 #include "trace.h"
-#include "snprintf.h"
 
 rs_trace_fn_t  *rs_trace_impl = rs_trace_stderr;
 

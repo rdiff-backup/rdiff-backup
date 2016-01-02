@@ -13,6 +13,8 @@ NOT RELEASED YET
    Remove declaration of unimplemented `rs_mdfour_file()`.
    (Martin Pool)
  
+ * Remove shipped `snprintf` code: no longer acutally linked after changing to
+   CMake, and since it's part of C99 it should be widely available.
 
 ## librsync 2.0.0
 
