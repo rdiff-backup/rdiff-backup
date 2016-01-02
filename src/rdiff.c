@@ -124,8 +124,6 @@ static void rdiff_no_more_args(poptContext opcon)
 
 static void bad_option(poptContext opcon, int error)
 {
-    char       msgbuf[1000];
-
     fprintf(stderr, "%s: %s: %s",
             PROGRAM, poptStrerror(error), poptBadOption(opcon, 0));
     exit(RS_SYNTAX_ERROR);
