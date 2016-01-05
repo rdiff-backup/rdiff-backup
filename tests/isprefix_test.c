@@ -40,4 +40,6 @@ int main(int argc, char **argv)
     assert(!isprefix("goo", "foo"));
     assert(!isprefix("foo", ""));
     assert(!isprefix("f", "g"));
+
+    return 0;
 }
