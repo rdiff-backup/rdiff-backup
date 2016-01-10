@@ -13,6 +13,7 @@ addons:
     - cmake
     - libpopt-dev
     - doxygen
+    - ninja-build
 
 script:
     - make
