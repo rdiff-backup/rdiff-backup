@@ -174,7 +174,6 @@ add_test(NAME rdiff_bad_option
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 add_executable(isprefix_test
-    EXCLUDE_FROM_ALL
     tests/isprefix_test.c src/isprefix.c)
 
 add_test(NAME isprefix_test COMMAND isprefix_test)
