@@ -2,12 +2,8 @@
 
 language: c
 
-compiler:
-  - gcc
-  - clang
-
 before_script:
-  - cmake .
+  - cmake $CMAKE_GENERATOR .
   
 sudo: false
 
@@ -22,3 +18,18 @@ script:
     - make
     - make test
     - make doc
+
+matrix:
+  include:
+    - compiler: clang
+      os: osx
+    - compiler: gcc
+    - compiler: clang
+    - compiler: clang
+      sudo: required
+      dist: trusty
+    - compiler: clang
+      env: CMAKE_GENERATOR="-G Ninja"
+      dist: trusty
+
+# TODO: Build Ninja
