@@ -7,6 +7,9 @@ before_script:
   
 sudo: required
 
+env:
+  - CTEST_OUTPUT_ON_FAILURE=1
+
 addons:
   apt:
     packages:
