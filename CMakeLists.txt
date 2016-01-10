@@ -117,10 +117,11 @@ if (CMAKE_C_COMPILER_ID MATCHES "(Clang|Gnu|GNU)")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 endif()
 
-site_name(SITE_NAME)
+site_name(BUILD_HOSTNAME)
 
 message (STATUS "PROJECT_NAME  = ${PROJECT_NAME}")
-message (STATUS "SITE_NAME  = ${SITE_NAME}")
+message (STATUS "BUILD_HOSTNAME = ${BUILD_HOSTNAME}")
+message (STATUS "CMAKE_SYSTEM = ${CMAKE_SYSTEM}")
 
 # Find POPT
 find_package(POPT REQUIRED)

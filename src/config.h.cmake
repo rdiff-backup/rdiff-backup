@@ -114,9 +114,6 @@
 /* Name of package */
 #define PACKAGE "${PROJECT_NAME}"
 
-/* Canonical GNU hostname */
-#define RS_CANONICAL_HOST "${SITE_NAME}"
-
 /* The size of `long', as computed by sizeof. */
 #cmakedefine SIZEOF_LONG ${SIZEOF_LONG}
 
