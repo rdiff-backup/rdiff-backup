@@ -21,6 +21,11 @@ NOT RELEASED YET
    It's a bit faster and nicer than Make.
    (Martin Pool)
 
+ * `make check` (or `ninja check` etc) will now build and run the tests.
+   Previously due to a CMake limitation, `make test` would only run existing
+   tests and could fail if they weren't built.
+   (Martin Pool, https://github.com/librsync/librsync/issues/49)
+
 ## librsync 2.0.0
 
 Released 2015-11-29

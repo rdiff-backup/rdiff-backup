@@ -29,11 +29,9 @@ After building you can install `rdiff` and `librsync` for system-wide use.
 
     $ make
     
-To run the tests:
+To build and run the tests:
 
-    $ make test
-    
-(Note that [CMake will not automatically build before testing](https://github.com/librsync/librsync/issues/49).)
+    $ make check
 
 To install:
 
@@ -55,15 +53,14 @@ to detect some allocation bugs.
 librsync has annotations for the SPLINT static checking tool.
 
 
-## Build-Ninja
+## Ninja builds
 
 CMake generates input files for an underlying build tool that will actually do
 the build. Typically this is Make, but others are supported. In particular
 [Ninja] is a nice alternative. To use it:
 
     $ cmake -G Ninja .
-    $ ninja all
-    $ ninja test
+    $ ninja check
 
 [Ninja]: http://build-ninja.org
 

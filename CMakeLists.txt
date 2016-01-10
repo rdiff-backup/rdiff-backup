@@ -173,17 +173,28 @@ add_test(NAME rdiff_bad_option
          COMMAND rdiff_bad_option.sh ${CMAKE_CURRENT_BINARY_DIR}
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
-add_executable(isprefix_test tests/isprefix_test.c src/isprefix.c)
+add_executable(isprefix_test
+    EXCLUDE_FROM_ALL
+    tests/isprefix_test.c src/isprefix.c)
 
 add_test(NAME isprefix_test COMMAND isprefix_test)
 
 add_test(NAME Help COMMAND help.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+
 add_test(NAME Mutate COMMAND mutate.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 add_test(NAME Signature COMMAND signature.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 add_test(NAME Sources COMMAND sources.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 add_test(NAME Triple COMMAND triple.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 add_test(NAME Delta COMMAND delta.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 add_test(NAME Changes COMMAND changes.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+
+
+# `make check` that will build everything and then run the tests.
+# See https://cmake.org/Wiki/CMakeEmulateMakeCheck and
+# https://github.com/librsync/librsync/issues/49
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+add_dependencies(check rdiff isprefix_test)
+
 
 enable_testing()
 
@@ -271,3 +282,5 @@ install(FILES
         DESTINATION include)
 
 message (STATUS "CMAKE_C_FLAGS  = ${CMAKE_C_FLAGS}")
+
+# vim: shiftwidth=4 expandtab
