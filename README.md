@@ -4,7 +4,7 @@ http://librsync.sourcefrog.net/
 
 \copyright
 
-Copyright 1999-2015 Martin Pool and other contributors.
+Copyright 1999-2016 Martin Pool and other contributors.
 
 librsync is distributed under the [GNU LGPL v2.1][LGPL]
 (see COPYING), which basically

@@ -175,7 +175,7 @@ static void rdiff_show_version(void)
 #endif
 
     printf("rdiff (%s)\n"
-           "Copyright (C) 1997-2014 by Martin Pool, Andrew Tridgell and others.\n"
+           "Copyright (C) 1997-2016 by Martin Pool, Andrew Tridgell and others.\n"
            "http://librsync.sourcefrog.net/\n"
            "Capabilities: %ld bit files%s%s%s\n"
            "\n"
