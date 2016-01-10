@@ -5,7 +5,7 @@ language: c
 before_script:
   - cmake $CMAKE_GENERATOR .
   
-sudo: false
+sudo: required
 
 addons:
   apt:
@@ -27,10 +27,9 @@ matrix:
       before_install:
         - brew update
         - brew install popt
-    - compiler: gcc
+    - dist: precise
+      sudo: false
     - compiler: clang
-    - compiler: clang
-      sudo: required
       dist: trusty
     - compiler: clang
       env: CMAKE_GENERATOR="-G Ninja"
