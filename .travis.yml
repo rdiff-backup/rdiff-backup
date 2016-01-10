@@ -2,14 +2,14 @@
 
 language: c
 
-compiler:
-  - gcc
-  - clang
-
 before_script:
-  - cmake .
+  - cmake --help
+  - cmake $CMAKE_GENERATOR .
   
-sudo: false
+sudo: required
+
+env:
+  - CTEST_OUTPUT_ON_FAILURE=1
 
 addons:
   apt:
@@ -17,8 +17,34 @@ addons:
     - cmake
     - libpopt-dev
     - doxygen
+    - ninja-build
 
 script:
-    - make
-    - make test
-    - make doc
+  - make check
+
+matrix:
+  include:
+    - compiler: clang
+      os: osx
+      before_install:
+        - brew update
+        - brew install popt
+      script:
+        - make check doc
+
+    - dist: precise
+      sudo: false
+
+    - compiler: clang
+      dist: trusty
+
+    - compiler: clang
+      env: CMAKE_GENERATOR="-G Ninja"
+      dist: trusty
+      script:
+        - ninja check doc
+
+# Docs are tested on Trusty with Ninja, and on OSX (which might have a more
+# recent Doxygen.)
+
+# vim: shiftwidth=2 expandtab
