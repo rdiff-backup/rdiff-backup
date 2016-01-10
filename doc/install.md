@@ -8,7 +8,8 @@ To build librsync you will need:
 
 * [CMake]
 
-* Make, or some other build tool supported by CMake
+* Some build tool supported by CMake: [Make] is most common,
+  [Ninja] is nicer.
 
 * [popt] command line parsing library
 
@@ -17,7 +18,8 @@ To build librsync you will need:
 [popt]: http://rpm5.org/files/popt/
 [CMake]: http://cmake.org/
 [Doxygen]: https://www.stack.nl/~dimitri/doxygen
-
+[Ninja]: http://build-ninja.org
+[Make]: https://www.gnu.org/software/make/
 
 ## Building
 
@@ -61,8 +63,6 @@ the build. Typically this is Make, but others are supported. In particular
 
     $ cmake -G Ninja .
     $ ninja check
-
-[Ninja]: http://build-ninja.org
 
 
 ## Cygwin
