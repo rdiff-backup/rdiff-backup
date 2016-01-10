@@ -6,11 +6,11 @@ To build librsync you will need:
 
 * A C compiler and appropriate headers and libraries
 
-* Make
+* [CMake]
+
+* Make, or some other build tool supported by CMake
 
 * [popt] command line parsing library
-
-* [CMake]
 
 * [Doxygen] - optional, to build docs
 
@@ -53,6 +53,20 @@ If you are using GNU libc, you might like to use
 to detect some allocation bugs.
 
 librsync has annotations for the SPLINT static checking tool.
+
+
+## Build-Ninja
+
+CMake generates input files for an underlying build tool that will actually do
+the build. Typically this is Make, but others are supported. In particular
+[Ninja] is a nice alternative. To use it:
+
+    $ cmake -G Ninja .
+    $ ninja all
+    $ ninja test
+
+[Ninja]: http://build-ninja.org
+
 
 ## Cygwin
 
