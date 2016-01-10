@@ -45,3 +45,9 @@ doxygen_sqlite3.db
 
 # Coverage reports
 *.gcov
+
+# Optional build using http://build-ninja.org
+.ninja_deps
+.ninja_log
+build.ninja
+rules.ninja
