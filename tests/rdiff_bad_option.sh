@@ -21,7 +21,7 @@
 
 # Bad command-line options return an error and print a message.
 
-errout=`mktemp -t rdiff_bad_option_test`
+errout=`mktemp -t rdiff_bad_option_test_XXXXXXX`
 trap "rm $errout" EXIT
 ! $1/rdiff --imaginary-option 2>"$errout"
 cat "$errout"
