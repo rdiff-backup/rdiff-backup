@@ -20,9 +20,7 @@ addons:
     - ninja-build
 
 script:
-    - make
-    - make test
-    - make doc
+  - make check
 
 matrix:
   include:
@@ -31,12 +29,22 @@ matrix:
       before_install:
         - brew update
         - brew install popt
+      script:
+        - make check doc
+
     - dist: precise
       sudo: false
+
     - compiler: clang
       dist: trusty
+
     - compiler: clang
       env: CMAKE_GENERATOR="-G Ninja"
       dist: trusty
+      script:
+        - ninja check doc
 
-# TODO: Build Ninja
+# Docs are tested on Trusty with Ninja, and on OSX (which might have a more
+# recent Doxygen.)
+
+# vim: shiftwidth=2 expandtab
