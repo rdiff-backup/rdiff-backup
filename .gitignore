@@ -37,4 +37,7 @@ isprefix_test
 
 # for rtags
 compile_commands.json
+
+# Cache sometimes leftover by Doxygen,
+# similar to https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=758975
 doxygen_sqlite3.db
