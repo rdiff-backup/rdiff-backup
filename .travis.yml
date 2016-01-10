@@ -3,6 +3,7 @@
 language: c
 
 before_script:
+  - cmake --help
   - cmake $CMAKE_GENERATOR .
   
 sudo: required
