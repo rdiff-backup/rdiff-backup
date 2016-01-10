@@ -15,6 +15,11 @@ NOT RELEASED YET
  
  * Remove shipped `snprintf` code: no longer acutally linked after changing to
    CMake, and since it's part of C99 it should be widely available.
+   (Martin Pool)
+
+ * Document that Ninja (http://ninja-build.org/) is supported under CMake.
+   It's a bit faster and nicer than Make.
+   (Martin Pool)
 
 ## librsync 2.0.0
 
