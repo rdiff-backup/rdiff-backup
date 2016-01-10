@@ -37,3 +37,4 @@ isprefix_test
 
 # for rtags
 compile_commands.json
+doxygen_sqlite3.db
