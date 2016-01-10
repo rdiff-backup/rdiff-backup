@@ -24,6 +24,9 @@ matrix:
   include:
     - compiler: clang
       os: osx
+      before_install:
+        - brew update
+        - brew install popt
     - compiler: gcc
     - compiler: clang
     - compiler: clang
