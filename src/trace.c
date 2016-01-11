@@ -178,6 +178,7 @@ rs_fatal0(char const *s, ...)
     va_start(va, s);
     rs_log_va(RS_LOG_CRIT, PACKAGE, s, va);
     va_end(va);
+    abort();
 }
 
 
