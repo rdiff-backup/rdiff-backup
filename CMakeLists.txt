@@ -37,6 +37,11 @@ if (NOT CMAKE_SYSTEM_NAME)
 	message(FATAL_ERROR "No target OS set")
 endif()
 
+# Add an option to exclude rdiff executable from build
+# This is useful, because it allows to remove POPT dependency if a user is interested only in the
+# rsync library itself and not in the rdiff executable
+option(BUILD_RDIFF "Whether to build rdiff executable or not" ON)
+
 include ( CheckIncludeFiles )
 check_include_files ( alloca.h HAVE_ALLOCA_H )
 check_include_files ( dlfcn.h HAVE_DLFCN_H )
@@ -123,18 +128,21 @@ message (STATUS "BUILD_HOSTNAME = ${BUILD_HOSTNAME}")
 message (STATUS "CMAKE_SYSTEM = ${CMAKE_SYSTEM}")
 
 # Find POPT
-find_package(POPT REQUIRED)
-if ( POPT_FOUND )
-  include_directories(${POPT_INCLUDE_DIRS})
-endif ( POPT_FOUND )
+if (BUILD_RDIFF)
+  find_package(POPT)
+  if (POPT_FOUND)
+    include_directories(${POPT_INCLUDE_DIRS})
+  endif (POPT_FOUND)
+endif (BUILD_RDIFF)
 
 # Find BZIP
-find_package (BZip2 REQUIRED)
+find_package (BZip2)
 if (BZIP2_FOUND)
   message (STATUS "Found components for BZIP2")
   message (STATUS "BZIP2_INCLUDE_DIR  = ${BZIP2_INCLUDE_DIR}")
   message (STATUS "BZIP2_LIBRARIES = ${BZIP2_LIBRARIES}")
   include_directories(${BZIP2_INCLUDE_DIR})
+  list(APPEND rsync_LIB_DEPS ${BZIP2_LIBRARIES})
 endif (BZIP2_FOUND)
 
 # Find Perl
@@ -144,12 +152,13 @@ if (PERL_FOUND)
 endif (PERL_FOUND)
 
 # Find ZLIB
-find_package (ZLIB REQUIRED)
+find_package (ZLIB)
 if (ZLIB_FOUND)
   message (STATUS "Found components for ZLIB")
   message (STATUS "ZLIB_INCLUDE_DIR  = ${ZLIB_INCLUDE_DIR}")
   message (STATUS "ZLIB_LIBRARIES = ${ZLIB_LIBRARIES}")
   include_directories(${ZLIB_INCLUDE_DIRS})
+  list(APPEND rsync_LIB_DEPS ${ZLIB_LIBRARIES})
 endif (ZLIB_FOUND)
 
 # Doxygen doc generator
@@ -191,8 +200,13 @@ add_test(NAME Changes COMMAND changes.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_D
 # `make check` that will build everything and then run the tests.
 # See https://cmake.org/Wiki/CMakeEmulateMakeCheck and
 # https://github.com/librsync/librsync/issues/49
+if (BUILD_RDIFF)
+  set(LAST_TARGET rdiff)
+else (BUILD_RDIFF)
+  set(LAST_TARGET rsync)
+endif (BUILD_RDIFF)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-add_dependencies(check rdiff isprefix_test)
+add_dependencies(check ${LAST_TARGET} isprefix_test)
 
 
 enable_testing()
@@ -250,10 +264,7 @@ set(rsync_LIB_SRCS
 
 add_library(rsync SHARED ${rsync_LIB_SRCS})
 
-target_link_libraries(rsync
-   ${BZIP2_LIBRARIES}
-   ${ZLIB_LIBRARIES}
-)
+target_link_libraries(rsync ${rsync_LIB_DEPS})
 
 set_target_properties(rsync PROPERTIES VERSION ${LIBRSYNC_VERSION}
         SOVERSION ${LIBRSYNC_MAJOR_VERSION})
@@ -262,15 +273,17 @@ install(TARGETS rsync ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION lib)
 
 ########### next target ###############
 
-set(rdiff_SRCS
-    src/rdiff.c
-    src/isprefix.c)
-
-add_executable(rdiff ${rdiff_SRCS})
-
-target_link_libraries(rdiff rsync ${POPT_LIBRARIES})
-
-install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION bin)
+if (BUILD_RDIFF)
+  set(rdiff_SRCS
+      src/rdiff.c
+      src/isprefix.c)
+  
+  add_executable(rdiff ${rdiff_SRCS})
+  
+  target_link_libraries(rdiff rsync ${POPT_LIBRARIES})
+  
+  install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION bin)
+endif (BUILD_RDIFF)
 
 
 ########### install files ###############
