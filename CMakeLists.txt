@@ -277,11 +277,14 @@ if (BUILD_RDIFF)
   set(rdiff_SRCS
       src/rdiff.c
       src/isprefix.c)
-  
+
   add_executable(rdiff ${rdiff_SRCS})
-  
-  target_link_libraries(rdiff rsync ${POPT_LIBRARIES})
-  
+  if (POPT_FOUND)
+    target_link_libraries(rdiff rsync ${POPT_LIBRARIES})
+  else (POPT_FOUND)
+    message (WARNING "Popt library is required for rdiff target")
+  endif (POPT_FOUND)
+
   install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION bin)
 endif (BUILD_RDIFF)
 
