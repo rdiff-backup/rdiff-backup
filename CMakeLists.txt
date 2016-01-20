@@ -40,7 +40,10 @@ endif()
 # Add an option to exclude rdiff executable from build
 # This is useful, because it allows to remove POPT dependency if a user is interested only in the
 # rsync library itself and not in the rdiff executable
-option(BUILD_RDIFF "Whether to build rdiff executable or not" ON)
+option(BUILD_RDIFF "Whether or not to build rdiff executable" ON)
+
+# Add an option to include compression support
+option(ENABLE_COMPRESSION "Whether or not to build with compression support" OFF)
 
 include ( CheckIncludeFiles )
 check_include_files ( alloca.h HAVE_ALLOCA_H )
@@ -65,6 +68,12 @@ check_include_files ( zlib.h HAVE_ZLIB_H )
 set ( STDC_HEADERS 1 )
 set ( DO_RS_TRACE 0 )
 set ( HAVE_PROGRAM_INVOCATION_NAME 0)
+
+# Remove compression support if not needed
+if (NOT ENABLE_COMPRESSION)
+  SET(HAVE_BZLIB_H 0)
+  SET(HAVE_ZLIB_H 0)
+endif (NOT ENABLE_COMPRESSION)
 
 
 include ( CheckFunctionExists )
@@ -128,12 +137,10 @@ message (STATUS "BUILD_HOSTNAME = ${BUILD_HOSTNAME}")
 message (STATUS "CMAKE_SYSTEM = ${CMAKE_SYSTEM}")
 
 # Find POPT
-if (BUILD_RDIFF)
-  find_package(POPT)
-  if (POPT_FOUND)
-    include_directories(${POPT_INCLUDE_DIRS})
-  endif (POPT_FOUND)
-endif (BUILD_RDIFF)
+find_package(POPT)
+if (POPT_FOUND)
+  include_directories(${POPT_INCLUDE_DIRS})
+endif (POPT_FOUND)
 
 # Find BZIP
 find_package (BZip2)
@@ -142,7 +149,6 @@ if (BZIP2_FOUND)
   message (STATUS "BZIP2_INCLUDE_DIR  = ${BZIP2_INCLUDE_DIR}")
   message (STATUS "BZIP2_LIBRARIES = ${BZIP2_LIBRARIES}")
   include_directories(${BZIP2_INCLUDE_DIR})
-  list(APPEND rsync_LIB_DEPS ${BZIP2_LIBRARIES})
 endif (BZIP2_FOUND)
 
 # Find Perl
@@ -158,7 +164,6 @@ if (ZLIB_FOUND)
   message (STATUS "ZLIB_INCLUDE_DIR  = ${ZLIB_INCLUDE_DIR}")
   message (STATUS "ZLIB_LIBRARIES = ${ZLIB_LIBRARIES}")
   include_directories(${ZLIB_INCLUDE_DIRS})
-  list(APPEND rsync_LIB_DEPS ${ZLIB_LIBRARIES})
 endif (ZLIB_FOUND)
 
 # Doxygen doc generator
@@ -264,7 +269,16 @@ set(rsync_LIB_SRCS
 
 add_library(rsync SHARED ${rsync_LIB_SRCS})
 
-target_link_libraries(rsync ${rsync_LIB_DEPS})
+# Optionally link zlib and bzip2 if
+# - compression is enabled
+# - and libraries are found
+if (ENABLE_COMPRESSION)
+  if (ZLIB_FOUND AND BZIP2_FOUND)
+    target_link_libraries(rsync ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES})
+  else (ZLIB_FOUND AND BZIP2_FOUND)
+    message (WARNING "zlib and bzip2 librares are required to enable compression")
+  endif (ZLIB_FOUND AND BZIP2_FOUND)
+endif (ENABLE_COMPRESSION)
 
 set_target_properties(rsync PROPERTIES VERSION ${LIBRSYNC_VERSION}
         SOVERSION ${LIBRSYNC_MAJOR_VERSION})
