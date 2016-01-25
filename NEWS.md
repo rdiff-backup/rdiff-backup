@@ -26,6 +26,10 @@ NOT RELEASED YET
    tests and could fail if they weren't built.
    (Martin Pool, https://github.com/librsync/librsync/issues/49)
 
+ * Added cmake options to exclude rdiff target and compression from build.
+   See install documentation for details.
+   Thanks to Michele Bertasi.
+
 ## librsync 2.0.0
 
 Released 2015-11-29

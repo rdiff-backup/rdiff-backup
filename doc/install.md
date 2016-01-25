@@ -30,7 +30,7 @@ Generate the Makefile by running
 After building you can install `rdiff` and `librsync` for system-wide use.
 
     $ make
-    
+
 To build and run the tests:
 
     $ make check
@@ -38,7 +38,7 @@ To build and run the tests:
 To install:
 
     $ sudo make install
-    
+
 To build the documentation:
 
     $ make doc
@@ -53,6 +53,25 @@ If you are using GNU libc, you might like to use
 to detect some allocation bugs.
 
 librsync has annotations for the SPLINT static checking tool.
+
+
+## Build options
+
+The build is customizable by using CMake options in the configure step:
+
+    $ cmake -D <option-name>=<value> .
+
+If you are interested in building only the `librsync` target, you can skip
+the `rdiff` build. In this way you don't need its dependencies (e.g. `popt`).
+To do that, set the `BUILD_RDIFF` option to `OFF`:
+
+    $ cmake -D BUILD_RDIFF=OFF .
+
+Compression support is under development (see
+[#8](https://github.com/librsync/librsync/issues/8)). It is so disabled by
+default. You can turn it on by using `ENABLE_COMPRESSION` option:
+
+    $ cmake -D ENABLE_COMPRESSION=ON .
 
 
 ## Ninja builds

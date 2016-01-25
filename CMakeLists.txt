@@ -44,6 +44,11 @@ option(BUILD_RDIFF "Whether or not to build rdiff executable" ON)
 
 # Add an option to include compression support
 option(ENABLE_COMPRESSION "Whether or not to build with compression support" OFF)
+# TODO: Remove this warning when compression is implemented.
+#       Consider turning compression ON by default.
+if (ENABLE_COMPRESSION)
+    message(WARNING "Compression support is not functional. See issue #8.")
+endif (ENABLE_COMPRESSION)
 
 include ( CheckIncludeFiles )
 check_include_files ( alloca.h HAVE_ALLOCA_H )
