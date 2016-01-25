@@ -37,6 +37,19 @@ if (NOT CMAKE_SYSTEM_NAME)
 	message(FATAL_ERROR "No target OS set")
 endif()
 
+# Add an option to exclude rdiff executable from build
+# This is useful, because it allows to remove POPT dependency if a user is interested only in the
+# rsync library itself and not in the rdiff executable
+option(BUILD_RDIFF "Whether or not to build rdiff executable" ON)
+
+# Add an option to include compression support
+option(ENABLE_COMPRESSION "Whether or not to build with compression support" OFF)
+# TODO: Remove this warning when compression is implemented.
+#       Consider turning compression ON by default.
+if (ENABLE_COMPRESSION)
+    message(WARNING "Compression support is not functional. See issue #8.")
+endif (ENABLE_COMPRESSION)
+
 include ( CheckIncludeFiles )
 check_include_files ( alloca.h HAVE_ALLOCA_H )
 check_include_files ( dlfcn.h HAVE_DLFCN_H )
@@ -60,6 +73,12 @@ check_include_files ( zlib.h HAVE_ZLIB_H )
 set ( STDC_HEADERS 1 )
 set ( DO_RS_TRACE 0 )
 set ( HAVE_PROGRAM_INVOCATION_NAME 0)
+
+# Remove compression support if not needed
+if (NOT ENABLE_COMPRESSION)
+  SET(HAVE_BZLIB_H 0)
+  SET(HAVE_ZLIB_H 0)
+endif (NOT ENABLE_COMPRESSION)
 
 
 include ( CheckFunctionExists )
@@ -123,13 +142,13 @@ message (STATUS "BUILD_HOSTNAME = ${BUILD_HOSTNAME}")
 message (STATUS "CMAKE_SYSTEM = ${CMAKE_SYSTEM}")
 
 # Find POPT
-find_package(POPT REQUIRED)
-if ( POPT_FOUND )
+find_package(POPT)
+if (POPT_FOUND)
   include_directories(${POPT_INCLUDE_DIRS})
-endif ( POPT_FOUND )
+endif (POPT_FOUND)
 
 # Find BZIP
-find_package (BZip2 REQUIRED)
+find_package (BZip2)
 if (BZIP2_FOUND)
   message (STATUS "Found components for BZIP2")
   message (STATUS "BZIP2_INCLUDE_DIR  = ${BZIP2_INCLUDE_DIR}")
@@ -144,7 +163,7 @@ if (PERL_FOUND)
 endif (PERL_FOUND)
 
 # Find ZLIB
-find_package (ZLIB REQUIRED)
+find_package (ZLIB)
 if (ZLIB_FOUND)
   message (STATUS "Found components for ZLIB")
   message (STATUS "ZLIB_INCLUDE_DIR  = ${ZLIB_INCLUDE_DIR}")
@@ -169,30 +188,38 @@ execute_process(COMMAND ${PERL_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/src/mkpr
 
 # Testing
 
-add_test(NAME rdiff_bad_option
-         COMMAND rdiff_bad_option.sh ${CMAKE_CURRENT_BINARY_DIR}
-         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-
 add_executable(isprefix_test
     tests/isprefix_test.c src/isprefix.c)
-
+    
 add_test(NAME isprefix_test COMMAND isprefix_test)
 
-add_test(NAME Help COMMAND help.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-
-add_test(NAME Mutate COMMAND mutate.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-add_test(NAME Signature COMMAND signature.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-add_test(NAME Sources COMMAND sources.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-add_test(NAME Triple COMMAND triple.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-add_test(NAME Delta COMMAND delta.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-add_test(NAME Changes COMMAND changes.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+# Disable rdiff specific tests
+if (BUILD_RDIFF)
+    add_test(NAME rdiff_bad_option
+             COMMAND rdiff_bad_option.sh ${CMAKE_CURRENT_BINARY_DIR}
+             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    
+    add_test(NAME Help COMMAND help.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    
+    add_test(NAME Mutate COMMAND mutate.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    add_test(NAME Signature COMMAND signature.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    add_test(NAME Sources COMMAND sources.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    add_test(NAME Triple COMMAND triple.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    add_test(NAME Delta COMMAND delta.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    add_test(NAME Changes COMMAND changes.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+endif (BUILD_RDIFF)
 
 
 # `make check` that will build everything and then run the tests.
 # See https://cmake.org/Wiki/CMakeEmulateMakeCheck and
 # https://github.com/librsync/librsync/issues/49
+if (BUILD_RDIFF)
+  set(LAST_TARGET rdiff)
+else (BUILD_RDIFF)
+  set(LAST_TARGET rsync)
+endif (BUILD_RDIFF)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-add_dependencies(check rdiff isprefix_test)
+add_dependencies(check ${LAST_TARGET} isprefix_test)
 
 
 enable_testing()
@@ -250,10 +277,16 @@ set(rsync_LIB_SRCS
 
 add_library(rsync SHARED ${rsync_LIB_SRCS})
 
-target_link_libraries(rsync
-   ${BZIP2_LIBRARIES}
-   ${ZLIB_LIBRARIES}
-)
+# Optionally link zlib and bzip2 if
+# - compression is enabled
+# - and libraries are found
+if (ENABLE_COMPRESSION)
+  if (ZLIB_FOUND AND BZIP2_FOUND)
+    target_link_libraries(rsync ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES})
+  else (ZLIB_FOUND AND BZIP2_FOUND)
+    message (WARNING "zlib and bzip2 librares are required to enable compression")
+  endif (ZLIB_FOUND AND BZIP2_FOUND)
+endif (ENABLE_COMPRESSION)
 
 set_target_properties(rsync PROPERTIES VERSION ${LIBRSYNC_VERSION}
         SOVERSION ${LIBRSYNC_MAJOR_VERSION})
@@ -262,15 +295,20 @@ install(TARGETS rsync ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION lib)
 
 ########### next target ###############
 
-set(rdiff_SRCS
-    src/rdiff.c
-    src/isprefix.c)
+if (BUILD_RDIFF)
+  set(rdiff_SRCS
+      src/rdiff.c
+      src/isprefix.c)
 
-add_executable(rdiff ${rdiff_SRCS})
+  add_executable(rdiff ${rdiff_SRCS})
+  if (POPT_FOUND)
+    target_link_libraries(rdiff rsync ${POPT_LIBRARIES})
+  else (POPT_FOUND)
+    message (WARNING "Popt library is required for rdiff target")
+  endif (POPT_FOUND)
 
-target_link_libraries(rdiff rsync ${POPT_LIBRARIES})
-
-install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION bin)
+  install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION bin)
+endif (BUILD_RDIFF)
 
 
 ########### install files ###############
