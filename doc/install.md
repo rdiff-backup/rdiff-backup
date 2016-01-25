@@ -67,6 +67,9 @@ To do that, set the `BUILD_RDIFF` option to `OFF`:
 
     $ cmake -D BUILD_RDIFF=OFF .
 
+Be aware that many tests depend on `rdiff` executable, so when it is disabled,
+also those tests are.
+
 Compression support is under development (see
 [#8](https://github.com/librsync/librsync/issues/8)). It is so disabled by
 default. You can turn it on by using `ENABLE_COMPRESSION` option:
