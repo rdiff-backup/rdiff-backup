@@ -4,7 +4,7 @@ language: c
 
 before_script:
   - cmake --help
-  - cmake $CMAKE_GENERATOR .
+  - cmake $CMAKE_OPTIONS $CMAKE_GENERATOR .
   
 sudo: required
 
@@ -43,6 +43,11 @@ matrix:
       dist: trusty
       script:
         - ninja check doc
+
+    - dist: precise
+      sudo: false
+      env: CMAKE_OPTIONS="-D BUILD_RDIFF=OFF"
+
 
 # Docs are tested on Trusty with Ninja, and on OSX (which might have a more
 # recent Doxygen.)
