@@ -222,7 +222,7 @@ static rs_result rs_patch_s_copying(rs_job_t *job)
     rs_trace("copy " PRINTF_FORMAT_U64 " bytes from basis at offset " PRINTF_FORMAT_U64 "",
              PRINTF_CAST_U64(len), PRINTF_CAST_U64(job->basis_pos));
 
-    ptr = buf = rs_alloc(len, "basis buffer");
+    ptr = buf = buffs->next_out;
     
     result = (job->copy_cb)(job->copy_arg, job->basis_pos, &len, &ptr);
     if (result != RS_DONE)
@@ -232,15 +232,14 @@ static rs_result rs_patch_s_copying(rs_job_t *job)
     
     rs_trace("got " PRINTF_FORMAT_U64 " bytes back from basis callback", PRINTF_CAST_U64(len));
 
-    memcpy(buffs->next_out, ptr, len);
+    if (ptr != buf)
+        memcpy(buffs->next_out, ptr, len);
 
     buffs->next_out += len;
     buffs->avail_out -= len;
 
     job->basis_pos += len;
     job->basis_len -= len;
-
-    free(buf);
 
     if (!job->basis_len) {
         /* Done! */
