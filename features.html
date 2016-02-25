@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
     <meta charset='utf-8'>
@@ -9,159 +10,171 @@
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <title>Rdiff-backup by sol1</title>
+    <title>Features - rdiff-backup</title>
   </head>
 
- <section id="main_content">
+  <body>
+    <div id="container">
+      <div class="inner">
+        <section id="main_content">
 
-<h1 id="medium-title"><a name="ToC2">Features</a></h1>
-<p>For many people hard disks provide the form of persistent storage
-that is most readily available and cheapest per MB. I think that
-rdiff-backup is often the best way to back one hard drive to
-another.</p>
-<div class="feature-list"><ul>
-<li><p><strong>Easy to use:</strong> In most cases, the command
-<pre>
-     rdiff-backup dir1 dir2
-</pre>will work out-of-the-box to backup dir1 to dir2.
-<pre>
-     rdiff-backup dir1 user@system::/dir2
-</pre> will backup dir1 to dir2 on a different system (provided rdiff-backup is installed on both systems). rdiff-backup
-also comes with a lot of <a href="docs.html">up-to-date documentation</a>.</p>
-<li><p><strong>Creates mirror:</strong> rdiff-backup makes the backup
-directory into an almost exact copy of the source directory (the only
-difference is one extra subdirectory on the backup side). If you
-delete a file from the source directory you can simply copy it from
-the backup directory, use "find" or "locate" to find the file, or use
-any other familiar utility. Also, if the two directories are on
-different disks, you can recover almost immediately if the disk
-containing the source directory crashes, just by mounting the backup
-directory where the source directory used to be.</p></li>
-<li><p><strong>Keeps increments:</strong> Normally, with a mirror, any
-changes made to the source directory are immediately sent to the
-backup directory, and old changes are lost. rdiff-backup saves those
-changes in the form of reverse diffs, so you can recover the older
-form of the file.</p>
-<P>For instance, suppose last week you deleted half of some document,
-thinking that what you had written was garbage. Yesterday, your
-backup event ran, saving these changes. Today you realize that you
-were on to something and want what you deleted back. If you just
-mirrored, you would be out of luck, since the copy on your mirror
-would be the newer one. With rdiff-backup, the newer version would
-indeed be present, but in a special directory (rdiff-backup-data/)
-there would be a file that recorded this change. Running rdiff-backup
-on this file recovers the version from a week ago.</p></li>
-<li><p><strong>Preserves all information:</strong> Whether you restore
-from the mirror directory or from an earlier incremental backup,
-rdiff-backup will reproduce your files exactly as they were. Files
-missing at the time of backup will also be missing after the restore.
-Files hard linked when backed up will be hard linked after the
-restore. rdiff-backup also preserves permissions, user and group
-ownership, modification time, device files, fifos, and symlinks.</p>
-<P>Sometimes it is impossible for the information to be replicated
-exactly on the destination. For instance, ownership cannot usually be
-replicated without root access at the destination; windows file
-systems may not be case sensitive and have no ownership at all.
-rdiff-backup records file metadata in a separate file so that all
-information is preserved even if the destination file system is
-missing features.</p>
-</li>
-<li><p><strong>Space efficient:</strong> Suppose you have a large
-database file that changes a little bit every day. A normal
-incremental backup would keep saving copy after copy of this database,
-wasting a lot of space. rdiff-backup uses librsync, which implements
-the same efficient diffing algorithm that rsync uses. It works on
-binary files as well as text, so only a fraction of the data in your
-database would be saved in each incremental backup.</p></li>
-<li><p><strong>Bandwidth efficient:</strong> rdiff-backup depends on
-librsync, and thus uses the same diffing algorithm as rsync (rsync and
-rdiff-backup strictly speaking do not share any code however). As a
-result, when when writing to a remote location, rdiff-backup will only
-send diffs over and can use much less bandwidth than, say, ftp or
-scp.</p>
-<P>For instance, suppose you slightly alter large file A to make large
-file A', and A is still on the remote system. When rdiff-backup is
-run, it will only send over the diff A->A' (in order to "copy" A' to
-the remote system). Neither A nor A' needs to be sent in its
-entirety.</p></li>
-<li><p><strong>Transparent data format:</strong> Except for recording
-the hard link structure of old data sets, rdiff-backup doesn't
-absolutely require any data files formatted specifically for rdiff-backup.
-So if you want to stop using rdiff-backup in the future, you won't be
-stuck with any undecipherable files in some strange format. As noted
-above, the mirror directory will just be a copy of the source
-directory as it was when rdiff-backup was last run. Earlier states of
-your files are saved just by 1) keeping a copy of them, 2) in diff
-form as produced by rdiff, or 3) as a gzipped version of 1 or
-2.</p></li>
-<li><p><strong>Filesystem feature autodetection:</strong> People use
-rdiff-backup in many different environments. The filesystem they want
-to back up may be on Linux, Windows, or Mac. It may or may not be
-case sensitive, support characters like ":", have resource forks,
-extended attributes, or access control lists. Moreover, the file
-system they are backing up to may or may not support these features.</p>
-<p>rdiff-backup tries to handle these situations automatically without
-the need for switches like --acl --ea --no-ownership, etc. When run
-it will run tests on both the source and destination filesystems to
-see what features each supports like case sensitivity, changing
-uid/gid ownership, resource forks, extended attributes, or access
-control lists. To see the results of this testing, run rdiff-backup
-with verbosity 4 or higher, as in <code>-v4</code>.</p>
-<li><p><strong>Mac OS X resource fork support:</strong> On Mac OS X
-systems, rdiff-backup will backup the resource forks which store, for
-instance, Finder information. Most unix backup programs would only
-backup the data forks and discard the resource forks.</p></li>
-<li><p><strong>ACL and EA support:</strong> If rdiff-backup can find
-the <a href="http://pylibacl.sourceforge.net/">pylibacl</a> and <a
-href="http://pyxattr.sourceforge.net/">pyxattr</a>
-(<a href="http://cheeseshop.python.org/pypi/xattr">mac version</a>) modules, and if the file system supports these features, rdiff-backup will preserve Access
-Control Lists and user-level Extended Attributes. ACLs are not supported,
-however, on Mac OS X or Windows as those systems do not use standard
-POSIX.1e access controls.</p></li>
-<li><p><strong>Keeps statistics:</strong> After each session
-rdiff-backup writes summary statistics to a text file. You can
-inspect these to see how large your repository is, how fast it is
-growing, and how much space rdiff-backup is saving you, and more.
-Here is an example <code>session_statistics</code> file:<p>
-<p><pre>StartTime 1124018521.00 (Sun Aug 14 06:22:01 2005)
-EndTime 1124019454.64 (Sun Aug 14 06:37:34 2005)
-ElapsedTime 933.64 (15 minutes 33.64 seconds)
-SourceFiles 975715
-SourceFileSize 13078345389 (12.2 GB)
-MirrorFiles 975604
-MirrorFileSize 13076177922 (12.2 GB)
-NewFiles 119
-NewFileSize 1103075 (1.05 MB)
-DeletedFiles 8
-DeletedFileSize 190653 (186 KB)
-ChangedFiles 2032
-ChangedSourceSize 395324417 (377 MB)
-ChangedMirrorSize 394069372 (376 MB)
-IncrementFiles 2233
-IncrementFileSize 6098156 (5.82 MB)
-TotalDestinationSizeChange 8265623 (7.88 MB)
-Errors 80
-</pre></p>
-<p>rdiff-backup also saves very detailed statistics in a
-<code>file_statistics</code>. This file is also in (compressed) text
-form, but is usually too voluminous to read manually.</p> </li>
-</ul></div>
-</div>
- </section>
+          <h1 id="medium-title"><a name="ToC2">Features</a></h1>
+          <p>For many people hard disks provide the form of persistent storage
+          that is most readily available and cheapest per MB. I think that
+          rdiff-backup is often the best way to back one hard drive to
+          another.</p>
 
-<footer>
-          Rdiff-backup is maintained by <a href="https://github.com/sol1">sol1</a><br>
+          <div class="feature-list">
+
+            <ul>
+            <li><p><strong>Easy to use:</strong> In most cases, the command
+            <pre>
+                 rdiff-backup dir1 dir2
+            </pre>will work out-of-the-box to backup dir1 to dir2.
+            <pre>
+                 rdiff-backup dir1 user@system::/dir2
+            </pre> will backup dir1 to dir2 on a different system (provided rdiff-backup is installed on both systems). rdiff-backup
+            also comes with a lot of <a href="docs.html">up-to-date documentation</a>.</p>
+            <li><p><strong>Creates mirror:</strong> rdiff-backup makes the backup
+            directory into an almost exact copy of the source directory (the only
+            difference is one extra subdirectory on the backup side). If you
+            delete a file from the source directory you can simply copy it from
+            the backup directory, use "find" or "locate" to find the file, or use
+            any other familiar utility. Also, if the two directories are on
+            different disks, you can recover almost immediately if the disk
+            containing the source directory crashes, just by mounting the backup
+            directory where the source directory used to be.</p></li>
+            <li><p><strong>Keeps increments:</strong> Normally, with a mirror, any
+            changes made to the source directory are immediately sent to the
+            backup directory, and old changes are lost. rdiff-backup saves those
+            changes in the form of reverse diffs, so you can recover the older
+            form of the file.</p>
+            <P>For instance, suppose last week you deleted half of some document,
+            thinking that what you had written was garbage. Yesterday, your
+            backup event ran, saving these changes. Today you realize that you
+            were on to something and want what you deleted back. If you just
+            mirrored, you would be out of luck, since the copy on your mirror
+            would be the newer one. With rdiff-backup, the newer version would
+            indeed be present, but in a special directory (rdiff-backup-data/)
+            there would be a file that recorded this change. Running rdiff-backup
+            on this file recovers the version from a week ago.</p></li>
+            <li><p><strong>Preserves all information:</strong> Whether you restore
+            from the mirror directory or from an earlier incremental backup,
+            rdiff-backup will reproduce your files exactly as they were. Files
+            missing at the time of backup will also be missing after the restore.
+            Files hard linked when backed up will be hard linked after the
+            restore. rdiff-backup also preserves permissions, user and group
+            ownership, modification time, device files, fifos, and symlinks.</p>
+            <P>Sometimes it is impossible for the information to be replicated
+            exactly on the destination. For instance, ownership cannot usually be
+            replicated without root access at the destination; windows file
+            systems may not be case sensitive and have no ownership at all.
+            rdiff-backup records file metadata in a separate file so that all
+            information is preserved even if the destination file system is
+            missing features.</p>
+            </li>
+            <li><p><strong>Space efficient:</strong> Suppose you have a large
+            database file that changes a little bit every day. A normal
+            incremental backup would keep saving copy after copy of this database,
+            wasting a lot of space. rdiff-backup uses librsync, which implements
+            the same efficient diffing algorithm that rsync uses. It works on
+            binary files as well as text, so only a fraction of the data in your
+            database would be saved in each incremental backup.</p></li>
+            <li><p><strong>Bandwidth efficient:</strong> rdiff-backup depends on
+            librsync, and thus uses the same diffing algorithm as rsync (rsync and
+            rdiff-backup strictly speaking do not share any code however). As a
+            result, when when writing to a remote location, rdiff-backup will only
+            send diffs over and can use much less bandwidth than, say, ftp or
+            scp.</p>
+            <P>For instance, suppose you slightly alter large file A to make large
+            file A', and A is still on the remote system. When rdiff-backup is
+            run, it will only send over the diff A->A' (in order to "copy" A' to
+            the remote system). Neither A nor A' needs to be sent in its
+            entirety.</p></li>
+            <li><p><strong>Transparent data format:</strong> Except for recording
+            the hard link structure of old data sets, rdiff-backup doesn't
+            absolutely require any data files formatted specifically for rdiff-backup.
+            So if you want to stop using rdiff-backup in the future, you won't be
+            stuck with any undecipherable files in some strange format. As noted
+            above, the mirror directory will just be a copy of the source
+            directory as it was when rdiff-backup was last run. Earlier states of
+            your files are saved just by 1) keeping a copy of them, 2) in diff
+            form as produced by rdiff, or 3) as a gzipped version of 1 or
+            2.</p></li>
+            <li><p><strong>Filesystem feature autodetection:</strong> People use
+            rdiff-backup in many different environments. The filesystem they want
+            to back up may be on Linux, Windows, or Mac. It may or may not be
+            case sensitive, support characters like ":", have resource forks,
+            extended attributes, or access control lists. Moreover, the file
+            system they are backing up to may or may not support these features.</p>
+            <p>rdiff-backup tries to handle these situations automatically without
+            the need for switches like --acl --ea --no-ownership, etc. When run
+            it will run tests on both the source and destination filesystems to
+            see what features each supports like case sensitivity, changing
+            uid/gid ownership, resource forks, extended attributes, or access
+            control lists. To see the results of this testing, run rdiff-backup
+            with verbosity 4 or higher, as in <code>-v4</code>.</p>
+            <li><p><strong>Mac OS X resource fork support:</strong> On Mac OS X
+            systems, rdiff-backup will backup the resource forks which store, for
+            instance, Finder information. Most unix backup programs would only
+            backup the data forks and discard the resource forks.</p></li>
+            <li><p><strong>ACL and EA support:</strong> If rdiff-backup can find
+            the <a href="http://pylibacl.sourceforge.net/">pylibacl</a> and <a
+            href="http://pyxattr.sourceforge.net/">pyxattr</a>
+            (<a href="http://cheeseshop.python.org/pypi/xattr">mac version</a>) modules, and if the file system supports these features, rdiff-backup will preserve Access
+            Control Lists and user-level Extended Attributes. ACLs are not supported,
+            however, on Mac OS X or Windows as those systems do not use standard
+            POSIX.1e access controls.</p></li>
+            <li><p><strong>Keeps statistics:</strong> After each session
+            rdiff-backup writes summary statistics to a text file. You can
+            inspect these to see how large your repository is, how fast it is
+            growing, and how much space rdiff-backup is saving you, and more.
+            Here is an example <code>session_statistics</code> file:<p>
+            <p><pre>StartTime 1124018521.00 (Sun Aug 14 06:22:01 2005)
+            EndTime 1124019454.64 (Sun Aug 14 06:37:34 2005)
+            ElapsedTime 933.64 (15 minutes 33.64 seconds)
+            SourceFiles 975715
+            SourceFileSize 13078345389 (12.2 GB)
+            MirrorFiles 975604
+            MirrorFileSize 13076177922 (12.2 GB)
+            NewFiles 119
+            NewFileSize 1103075 (1.05 MB)
+            DeletedFiles 8
+            DeletedFileSize 190653 (186 KB)
+            ChangedFiles 2032
+            ChangedSourceSize 395324417 (377 MB)
+            ChangedMirrorSize 394069372 (376 MB)
+            IncrementFiles 2233
+            IncrementFileSize 6098156 (5.82 MB)
+            TotalDestinationSizeChange 8265623 (7.88 MB)
+            Errors 80
+            </pre></p>
+            <p>rdiff-backup also saves very detailed statistics in a
+            <code>file_statistics</code>. This file is also in (compressed) text
+            form, but is usually too voluminous to read manually.</p> </li>
+            </ul>
+
+          </div>
+
+        </section>
+
+        <footer>
+          rdiff-backup is maintained by <a href="https://github.com/sol1">sol1</a><br>
           This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
         </footer>
 
-                  <script type="text/javascript">
-            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-          </script>
-          <script type="text/javascript">
-            try {
-              var pageTracker = _gat._getTracker("UA-73754875-1");
-            pageTracker._trackPageview();
-            } catch(err) {}
-          </script>
+        <script type="text/javascript">
+          var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+          document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+        </script>
+        <script type="text/javascript">
+          try {
+            var pageTracker = _gat._getTracker("UA-73754875-1");
+          pageTracker._trackPageview();
+          } catch(err) {}
+        </script>
+
+      </div>
+    </div>
+  </body>
 </html>
