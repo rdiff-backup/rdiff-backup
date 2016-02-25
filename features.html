@@ -16,9 +16,28 @@
   <body>
     <div id="container">
       <div class="inner">
+
+        <header>
+          <h1>rdiff-backup</h1>
+          <h2>Reverse differential backup tool, over a network or locally.</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/sol1/rdiff-backup/archive/r1-2-8.zip" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/sol1/rdiff-backup/archive/r1-2-8.tar.gz" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/sol1/rdiff-backup" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <section id="pages" class="clearfix">
+          <a href="index.html" id="features" class="button"><span>Introduction</span></a>
+          <a href="http://www.nongnu.org/rdiff-backup/docs.html" id="features" class="button"><span>Documentation</span></a>
+        </section>
+
+        <hr>
+
         <section id="main_content">
 
-          <h1 id="medium-title"><a name="ToC2">Features</a></h1>
+          <h3><a name="ToC2">rdiff-backup Features</a></h3>
           <p>For many people hard disks provide the form of persistent storage
           that is most readily available and cheapest per MB. I think that
           rdiff-backup is often the best way to back one hard drive to
@@ -34,7 +53,7 @@
             <pre>
                  rdiff-backup dir1 user@system::/dir2
             </pre> will backup dir1 to dir2 on a different system (provided rdiff-backup is installed on both systems). rdiff-backup
-            also comes with a lot of <a href="docs.html">up-to-date documentation</a>.</p>
+            also comes with a lot of <a href="http://www.nongnu.org/rdiff-backup/docs.html">up-to-date documentation</a>.</p>
             <li><p><strong>Creates mirror:</strong> rdiff-backup makes the backup
             directory into an almost exact copy of the source directory (the only
             difference is one extra subdirectory on the backup side). If you
