@@ -40,6 +40,18 @@ Here are some basic examples. For more detail and information about restoring fi
 
 `rdiff-backup user@example.com::/some/remote-dir /some/local-dir`
 
+## Support
+
+For help, try looking at the [documentation](http://www.nongnu.org/rdiff-backup/docs.html) and/or [the FAQ](http://www.nongnu.org/rdiff-backup/FAQ.html). If that doesn't help with your problem, try reading or posting a message to the [mailing list](http://www.nongnu.org/rdiff-backup/savannah.html#mailing_list).
+
 ## License
 
 rdiff-backup is released under the [GNU General Public License](rdiff-backup/COPYING).
+
+## Acknowledgements
+
+[Sol1](http://sol1.com.au) is the current maintainer of rdiff-backup.
+
+Previous project leads / maintainers were Edward Ned Harvey, Andrew Ferguson, Dean Gaudet and the original author Ben Escoto.
+
+[Other contributors](http://www.nongnu.org/rdiff-backup/acknowledgments.html) include Daniel Hazelbaker, Dean Gaudet, Andrew Ferguson, Josh Nisly and Fred Gansevles.
