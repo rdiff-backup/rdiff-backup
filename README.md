@@ -44,6 +44,14 @@ Here are some basic examples. For more detail and information about restoring fi
 
 For help, try looking at the [documentation](http://www.nongnu.org/rdiff-backup/docs.html) and/or [the FAQ](http://www.nongnu.org/rdiff-backup/FAQ.html). If that doesn't help with your problem, try reading or posting a message to the [mailing list](http://www.nongnu.org/rdiff-backup/savannah.html#mailing_list).
 
+[Sol1](http://sol1.com.au) has taken over maintainership as of February 2016. We are currently in the process of migrating from the previous [Savannah bugs database](http://savannah.nongnu.org/bugs/?group=rdiff-backup) to the GitHub [issues list](https://github.com/sol1/rdiff-backup/issues) in this repository. Current bugs are being triaged and migrated as we can.
+
+If you think you've found a bug, please search both databases then, if you can't find anything, [create a new issue](https://github.com/sol1/rdiff-backup/issues/new).
+
+## Contributing
+
+Contributions are welcome. Fork this repo on GitHub, commit and open a new pull request accordingly.
+
 ## License
 
 rdiff-backup is released under the [GNU General Public License](rdiff-backup/COPYING).
