@@ -6,7 +6,7 @@ rdiff-backup backs up one directory to another, possibly over a network. The tar
 
 Read more on [the rdiff-backup website](http://www.nongnu.org/rdiff-backup/).
 
-## Installation
+## Installing
 
 rdiff-backup is available in package form across many operating systems.
 
@@ -21,6 +21,27 @@ rdiff-backup is available in package form across many operating systems.
 
 ### Windows
 
+ * With the [Cygwin](https://cygwin.com/) setup tool, install the `rdiff-backup` package, or
  * With [Chocolatey](https://chocolatey.org/): `choco install rdiff-backup` (and probably `choco install win32-openssh` if you'd like to back up over a network)
 
-See also the [old README](rdiff-backup/README) which contains information about building from source.
+The [old README](rdiff-backup/README) contains information about building from source.
+
+## Usage
+
+Here are some basic examples. For more detail and information about restoring files, see [these examples](http://www.nongnu.org/rdiff-backup/examples.html).
+
+### Local to local backup
+
+`rdiff-backup /some/local-dir /some/other-local-dir`
+
+### Local to remote backup
+
+`rdiff-backup /some/local-dir user@example.com::/some/remote-dir`
+
+### Remote to local backup
+
+`rdiff-backup user@example.com::/some/remote-dir /some/local-dir`
+
+## License
+
+rdiff-backup is released under the [GNU Public License](rdiff-backup/COPYING).
