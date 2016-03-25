@@ -1,0 +1,134 @@
+---
+layout: page
+title: Related
+---
+
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Strict//EN' "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<body>
+<div id="main">
+<p>This page describes and links to projects related to rdiff-backup,
+either because they depend on or work with rdiff-backup, or because
+they are competing backup programs.</p>
+<h2><a name="ToC3">Software written for rdiff-backup:</a></h2>
+<ul>
+<li>Filip Gruszczyski has written a <a
+	href="http://fuse.sourceforge.net/">FUSE</a> plugin named <b><a
+		href="http://code.google.com/p/archfs/">archfs</a></b> which allows browsing
+through rdiff-backup increments directly as a filesystem.</li>
+<li><b><a href="http://safekeep.sourceforge.net/">SafeKeep</a></b> for Linux is a front-end for rdiff-backup providing LVM snapshots and easy configuration.</li>
+<li>Christian Marie has written an rdiff-backup <b><a
+href="http://www.nagiosexchange.org/cgi-bin/page.cgi?g=Detailed%2F1894.html;d=1">Nagios
+plugin</a></b>. You should always monitor your backups, and <a href="http://www.nagios.org/">Nagios</a> is a popular and flexible system monitoring tool.</li>
+<li><b><a href="http://jr.falleri.free.fr/keep">Keep</a></b> is a graphical 
+backup program for KDE that uses rdiff-backup as the backend.</li>
+<li><b><a href="https://launchpad.net/gnomeeasybackup">EasyBackup</a></b> is a graphical backup solution for Gnome which is integrated with the Nautilus file manager and uses rdiff-backup as the backend.</li>
+<li><b><a href="http://alioth.debian.org/projects/slbackup/">slbackup</a></b>
+is a graphical backup program included in <a
+href="http://www.skolelinux.org/portal/">Skolelinux</a>. Apparently
+it uses rdiff-backup as the backend. (<a href="http://www.skolelinux.no/~klaus/newnotater/x2949.html">Here</a> is a page with some instructions.)</li>
+<li> <b><a
+href="http://rdiffbackupweb.sourceforge.net/">rdiff-backup-web</a></b> is
+a web-based frontend to rdiff-backup by David Evans. In alpha state
+as of Dec 2005.</li>
+<li>Julien Perez has written an alternative to rsnapshot called 
+<b><a href="http://rbackup.lescigales.org/">rBackup</a></b> which uses rdiff-backup
+as the backend instead of rsync. It uses a configuration file to backup directories,
+subversion repositories, and mysql databases.
+</li>
+<li>Steve Rader has writen
+<b><a href="http://www.physics.wisc.edu/~rader/rdiff-backup-tools/">rdiff-backup-tools</a></b>,
+a set of bash scripts that vaguely emulate EMC's Legato NetWorker.</li>
+<li><b><a href="http://freshmeat.net/projects/backupninja">Backupninja</a></b> is a
+set of scripts and configuration files for managing backup software, and
+includes support for rdiff-backup.</li>
+</ul>
+There are many scripts to help rdiff-backup work in various environments available
+on the rdiff-backup Wiki: <a href="http://wiki.rdiff-backup.org/wiki/index.php/ContribScripts">http://wiki.rdiff-backup.org/wiki/index.php/ContribScripts</a>
+<h2><a name="ToC4">Articles/books that mention rdiff-backup</a></h2>
+<ul>
+<li>(2007-08-24) <a href="http://www.howtoforge.com/sshfs_rdiff_backup">Use SSHFS With rdiff-backup</a> by Stef Bon.
+<li>(2005-10-13) <a href="http://www.howtoforge.com/book/print/443">Automated Backups With rdiff-backup</a> by Falko Timme.
+<li>(2004-09-03) <a href="http://fedoranews.org/ghenry/rdiff/">HOWTO: Automate remote backups using rdiff-backup and perl</a> by Gavin Henry in <a href="http://fedoranews.org">FedoraNews.org.</a>
+</li>
+<li>(2004-03-22) <a href="http://www.pycs.net/lateral/stories/26.html">Personal Backups with rdiff-backup</a> by Roberto Alsina.</li>
+<li>Kirk Bauer's book <a
+href="http://kaybee.org:81/kirk/aua.html">Automating UNIX and Linux
+Administration</a> (<a href="http://www.amazon.com/gp/product/1590592123/ref=ase_kaybee-20/103-1716073-5395018?s=books&v=glance&n=283155&tagActionCode=kaybee-20">Amazon link</a>) has a few pages on rdiff-backup.</li>
+</ul>
+<h2><a name="ToC5">Other related backup programs:</a></h2>
+<p>Here are short descriptions of other mirroring/diffing backup
+programs which may compete with rdiff-backup. Of course you should
+consider me biased in favor of rdiff-backup, but I recognize that
+rdiff-backup is not the best choice for every situation, and I try to
+be fair in my comparisons.</p>
+<ul><li><b><a href="http://rsync.samba.org">rsync</a></b> - the inspiration
+for rdiff-backup. Although rsync and rdiff-backup do not share any
+code, rdiff-backup uses the rsync algorithm, invented by rsync author
+Andrew Tridgell.
+<p>Compared to rdiff-backup, rsync is faster, so it is often the
+better choice when pure mirroring is required. Also rdiff-backup does
+not have a separate server like rsyncd (instead it relies on ssh-based
+networking and authentication).</p>
+<p>However, rdiff-backup uses much less memory than rsync on large
+directories. Second, by itself rsync only mirrors and does not keep
+incremental information (but see below). Third, rsync may not
+preserve all the information you want to backup. For instance, if you
+don't run rsync as root, you will lose all ownership information.
+Fourth, rdiff-backup has a number of extra features, like extended
+attribute and ACL suport, detailed file statistics, and SHA1
+checksums.</p> </li>
+<li><a name="rsync-scripts"><b>rsync-based scripts</b></a> - Because
+rsync does not save incremental information, it is usually
+inappropriate for backing up. There are several utilities which use
+the rsync binary, but keep old data by using rsync --link-dest option
+and rotating the destination directory.
+<p>Compared to rdiff-backup, these are usually faster but use more
+memory and disk space. They make each increment appear as a separate
+complete directory, which is a neat feature. On the other hand, these
+will usually be missing the features that are missing from rsync (see
+above).</p>
+<p>Here are various programs which use the rsync strategy:</p>
+<ul>
+<li><b><a
+href="http://www.mikerubel.org/computers/rsync_snapshots/">Mike
+Rubel's rsync snapshots</a></b> - the original rsync hardlinking
+script</li>
+<li><b><a href="http://www.rsnapshot.org/">rsnapshot</a></b> - based
+off Mike Rubel's article</li>
+<li><b><a href="http://www.dirvish.com/">Dirvish</a></b> - perhaps the
+most feature-filled of these programs</li>
+<li><b><a href="http://www.effortlessis.com/backupbuddy/others.php">Backup Buddy</a></b> - a simple, easy-to-use option</li>
+<li><b><a href="http://www.pollux.franken.de/hjb/rsback/">rsback</a></b></li>
+<li><b><a href="http://www.perusion.com/misc/Snapback2/">Snapback2</a></b></li>
+<li><b><a href="http://colas.nahaboo.net/software/rsync-incr/">rsync-incr</a></b></li>
+<li><b><a href="http://rsyncbackup.erlang.no/">rsyncbackup</a></b></li>
+<li><b><a href="http://linux.schottelius.org/ccollect/">ccollect</a></b></li>
+<li><b><a href="http://www.ribs-backup.org/">RIBS backup</a></b></li>
+</ul>
+<p></p></li>
+<li><b><a href="http://backuppc.sourceforge.net/">BackupPC</a></b> - A
+great, innovative program which notices when you save many copies of
+the same file. Definitely take a look at this if you back up many
+similar systems to the same destination (e.g. many windows PCs to a
+central linux server).
+<li><b><a
+href="http://www.cis.upenn.edu/~bcpierce/unison/index.html">Unison</a></b>
+- a interesting bidirectional mirroring tool. Similar to rsync, but
+changes propagate in either direction. Consider this if you need to
+keep two directories synced and either may get edited.</li>
+<li><b><a href="http://duplicity.nongnu.org/">duplicity</A></b> - Not
+really like rdiff-backup because it doesn't mirror at all, but it's
+here because it's written by the same author. It uses the rsync
+algorithm but with a totally encrypted/untrusted destination.</li>
+</ul>
+</div>
+<div id="footer">
+
+<hr/>
+A standards (CSS) compliant web browser will display this page correctly.<br/>
+Last modified Wed Jul 11 11:32:40 2007
+</div>
+</body>
+</html>

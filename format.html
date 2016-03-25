@@ -1,0 +1,170 @@
+---
+layout: page
+title: Format
+---
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>rdiff-backup file format</title>
+  </head>
+
+  <body>
+    <h1>rdiff-backup file format</h1>
+
+This web page describes how rdiff-backup stores backup information, at
+least as of version 0.6.x.  This a pretty boring document and should
+only be useful to people who want to write utilities to automatically
+process or create rdiff-backup compatible files.  Normal people can
+use rdiff-backup easily without reading any of this (I hope).
+
+<h3>1. Overview</h3>
+
+<P> When rdiff-backup is run, it copies the source directory (and all
+the source files, i.e. files in the source directory) to the mirror
+directory, and writes to a special data directory.  For instance, when
+"rdiff-backup foo bar" is run, <i>foo</i> is the source directory,
+<i>bar</i> is the mirror directory, and <i>bar/rdiff-backup-data</i> is the
+data directory.
+
+<P>Each source file is associated with a mirror file, and possibly one
+or more increments files.  If the source file is named
+<i>path/to/some_file</i> relative to the source directory, then its
+associated mirror file is also <i>path/to/some_file</i>, but relative
+to the mirror directory.  The associated increments are all named
+<i>increments/path/to/some_file.EXT</i> relative to the data
+directory, with the exception of the increments associated with the
+source directory itself, which are just named <i>increments.EXT</i>.
+The extensions will be described later.
+
+<P>The purpose of all this is to provide transparent incremental
+backup.  Each mirror file is an exact duplicate of its source file
+counterpart (one exception: the mirror directory contains the data
+directory; the source directory doesn't), while each increment file
+represents the state of its corresponding source file counterpart at
+some time in the past.
+
+<h3>2. The mirror directory</h3>
+
+<P>After rdiff-backup is run, the contents of the mirror directory are
+the same as the contents of the source directory.  This is why it is
+called the mirror directory.  But there is one exception - the mirror
+directory will contain the data directory while the source directory
+won't.  (If the source directory contains a directory called
+<i>rdiff-backup-data</i>, it will be ignored.)
+
+<P>What constitutes sameness here could vary between instances.  For
+example, a non-root user running rdiff-backup will not be able to
+change the permissions on the mirror files, so in this case two files
+could be the same even if they have different ownership.  But, the
+closer the better.
+
+<h3>3. The data directory</h3>
+
+<P>rdiff-backup may write to log files in this directory, like
+<i>backup.log</i> and <i>restore.log</i>.  rdiff-backup never reads
+these, so they can be deleted if convenient.
+
+<P>More importantly, all the increment files are stored in the data
+directory.
+
+<h4>3a. Increment file names</h4>
+
+<P>As mentioned earlier, each increment file is associated with a
+source file.  The source directory itself is associated with the
+increment files <i>increments.EXT</i>; source files of the form
+<i>path/to/some_file</i> are associated with increment files
+<i>increments/path/to/some_file.EXT</i>.
+
+<P>The extension has the form [timestring].[suffix].  The timestring
+is in w3 datetime format, described at <a
+href="http://www.w3.org/TR/NOTE-datetime">http://www.w3.org/TR/NOTE-datetime</a>.
+This format was chosen because it seemed semi-standard, it is not too
+hard for humans to read, represented time order and ascii sort order
+are the same (so 'ls' gives you the increments in order), and it
+doesn't contain characters which usually require quoting when typed
+into a shell.  An example of a w3 datetime timestring is
+<i>2001-12-05T18:18:57-07:00</i>, meaning December 5th, 2001,
+6:18:15PM, US Pacific time (7 hours before UTC).  The increment file
+represents the state of the source file at the indicated time.
+
+<P>The suffix is one of <i>snapshot</i>, <i>diff</i>, <i>dir</i>, or
+<i>missing</i>, indicating an increment file of type snapshot, diff,
+or, dir and missing markers, respectively.
+
+<h4>3b. Increment file types</h4>
+
+There are four increment file types:
+
+<ul>
+
+<li><strong>snapshot - </strong>A snapshot increment file is an exact
+copy of its associated source file, including applicable permissions,
+ownership, etc.  Snapshots are never made of directories.
+
+<li><strong>diff - </strong>A diff snapshot has the same metafile
+information (permissions, etc.) as its source counterpart, but instead
+of containing all the data of the source file at some time, it
+contains a diff, as produced by <strong>rdiff</strong> from the next
+later version of the source file to the version covered by the diff
+increment.  Clearly, diff increments will only be created for regular
+files.
+
+<li><strong>dir markers - </strong>Dir markers just indicate that the
+associated source file is a directory.  A dir marker has the same
+permissions, ownership, etc. as its source file.  Dir markers are only
+created by an instance of rdiff-backup if something about a directory
+changes (this includes the content of files in the directory, the
+permissions of the directory, the permissions of a file in a
+subdirectory of the directory, and so forth).
+
+<li><strong>missing markers - </strong>Missing markers indicate that
+the associated source file does not exist at the given time and are
+made whenever a file exists at one backup instance that didn't exist
+at the last one.
+
+</ul>
+
+<h3>4. Basic restoration procedure</h3>
+
+The above more or less determines the basic restore strategy.  Suppose
+we want to restore a file back to time <strong>T</strong>.  First we
+make the mirror file the restoration candidate.  If there are no
+increments, then we are done - the mirror file is what we want.  If
+there are increments, consider the one dated last.  If it is a:
+
+<ul>
+<li><strong>snapshot</strong>, then that increment becomes the
+restoration candidate;
+
+<li><strong>diff</strong>, then apply that diff to the restoration
+candidate, and copy the permissions, etc., from the diff to get the
+new restoration candidate;
+
+<li><strong>dir marker</strong>, then the restoration candidate is a
+directory with the given permissions, etc.  Also, start a recursive
+process and restore all the files in that directory too;
+
+<li><strong>missing marker</strong>, then there is no more restoration
+candidate - the file may not have existed at that time.
+</ul>
+
+Then repeat this procedure, moving backward in time, applying earlier
+and earlier diffs.  The final restoration candidate is the source file
+as it was at time <strong>T</strong>.
+
+<h3>5. Concluding remarks</h3>
+
+Well, that's all.  I realize that the above falls short of
+mathematical rigor, but hopefully it is enough for the readers'
+purposes.  Please mail me or post to the mailing list if something is
+unclear or too brief.
+
+    <hr>
+    <address><a href="mailto:bescoto@stanford.edu"></a></address>
+<!-- Created: Sun Nov 11 17:51:37 PST 2001 -->
+<!-- hhmts start -->
+Last modified: Sat Feb  1 11:59:44 PST 2003
+<!-- hhmts end -->
+  </body>
+</html>
