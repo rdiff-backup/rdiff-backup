@@ -50,6 +50,7 @@
 #include "librsync.h"
 #include "trace.h"
 #include "buf.h"
+#include "job.h"
 #include "util.h"
 
 /* use fseeko instead of fseek for long file support if we have it */
@@ -147,6 +148,8 @@ rs_result rs_infilebuf_fill(rs_job_t *job, rs_buffers_t *buf,
     buf->avail_in = len;
     buf->next_in = fb->buf;
 
+    job->stats.in_bytes += len;
+
     return RS_DONE;
 }
 
@@ -192,6 +195,8 @@ rs_result rs_outfilebuf_drain(rs_job_t *job, rs_buffers_t *buf, void *opaque)
 
         buf->next_out = fb->buf;
         buf->avail_out = fb->buf_len;
+
+        job->stats.out_bytes += result;
     }
         
     return RS_DONE;

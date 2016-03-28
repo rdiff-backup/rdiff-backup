@@ -47,6 +47,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "librsync.h"
 #include "stream.h"
@@ -72,6 +73,7 @@ rs_job_t * rs_job_new(char const *job_name, rs_result (*statefn)(rs_job_t *))
     job->statefn = statefn;
 
     job->stats.op = job_name;
+    job->stats.start = time(NULL);
 
     rs_trace("start %s job", job_name);
 
@@ -118,6 +120,7 @@ static rs_result rs_job_complete(rs_job_t *job, rs_result result)
         rs_trace("%s job complete", job->job_name);
     }
 
+    job->stats.end = time(NULL);
     if (result == RS_DONE && !rs_tube_is_idle(job))
         /* Processing is finished, but there is still some data
          * waiting to get into the output buffer. */

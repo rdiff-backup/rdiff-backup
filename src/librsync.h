@@ -251,6 +251,8 @@ typedef struct rs_stats {
 
     rs_long_t       in_bytes;   /**< Total bytes read from input. */
     rs_long_t       out_bytes;  /**< Total bytes written to output. */
+
+    time_t          start, end;
 } rs_stats_t;
 
 
