@@ -55,6 +55,8 @@
 /* use fseeko instead of fseek for long file support if we have it */
 #ifdef HAVE_FSEEKO
 #define fseek fseeko
+#elif defined HAVE_FSEEKO64
+#define fseek fseeko64
 #endif
 
 /**
