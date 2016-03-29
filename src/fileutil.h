@@ -19,5 +19,5 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-FILE * rs_file_open(char const *filename, char const * mode);
+FILE * rs_file_open(char const *filename, char const * mode, int force);
 int rs_file_close(FILE * file);

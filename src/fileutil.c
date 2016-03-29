@@ -49,7 +49,7 @@
  * \param fopen-style mode string.
  */
 FILE *
-rs_file_open(char const *filename, char const *mode)
+rs_file_open(char const *filename, char const *mode, int force)
 {
     FILE           *f;
     int		    is_write;
@@ -61,6 +61,15 @@ rs_file_open(char const *filename, char const *mode)
 	    return stdout;
 	else
 	    return stdin;
+    }
+
+    if (!force && is_write) {
+	if ((f = fopen(filename, "rb"))) {
+	    // File exists
+	    rs_error("File exists \"%s\", aborting!", filename);
+	    fclose(f);
+	    exit(RS_IO_ERROR);
+	}
     }
 
     if (!(f = fopen(filename, mode))) {

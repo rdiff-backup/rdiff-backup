@@ -35,7 +35,7 @@ do
         for inbuf in $bufsizes
         do
             expect=`echo $input | sed -e 's/.in$/.sig/' -e "s,input,input/$hashfunc,"`
-            run_test $bindir/rdiff --hash=$hashfunc -I$inbuf signature "$input" "$new"
+            run_test $bindir/rdiff --hash=$hashfunc -I$inbuf -f signature "$input" "$new"
             check_compare "$expect" "$new"
         done
     done

@@ -77,7 +77,7 @@ static int show_stats = 0;
 
 static int bzip2_level = 0;
 static int gzip_level  = 0;
-
+static int file_force  = 0;
 
 enum {
     OPT_GZIP = 1069, OPT_BZIP2
@@ -100,6 +100,7 @@ const struct poptOption opts[] = {
     { "stats",        0,  POPT_ARG_NONE, &show_stats },
     { "gzip",        'z', POPT_ARG_NONE, 0,             OPT_GZIP },
     { "bzip2",       'i', POPT_ARG_NONE, 0,             OPT_BZIP2 },
+    { "force",       'f', POPT_ARG_NONE, &file_force },
     { "paranoia",     0,  POPT_ARG_NONE, &rs_roll_paranoia },
     { 0 }
 };
@@ -140,6 +141,7 @@ static void help(void) {
            "  -V, --version             Show program version\n"
            "  -?, --help                Show this help message\n"
            "  -s, --statistics          Show performance statistics\n"
+           "  -f, --force               Force overwriting existing files\n"
            "Signature generation options:\n"
            "  -H, --hash=ALG            Hash algorithm: blake2 (default), md4\n"
            "Delta-encoding options:\n"
@@ -243,8 +245,8 @@ static rs_result rdiff_sig(poptContext opcon)
     rs_result       result;
     rs_long_t       sig_magic;
 
-    basis_file = rs_file_open(poptGetArg(opcon), "rb");
-    sig_file = rs_file_open(poptGetArg(opcon), "wb");
+    basis_file = rs_file_open(poptGetArg(opcon), "rb", file_force);
+    sig_file = rs_file_open(poptGetArg(opcon), "wb", file_force);
 
     rdiff_no_more_args(opcon);
 
@@ -292,9 +294,9 @@ static rs_result rdiff_delta(poptContext opcon)
         return RS_SYNTAX_ERROR;
     }
 
-    sig_file = rs_file_open(sig_name, "rb");
-    new_file = rs_file_open(poptGetArg(opcon), "rb");
-    delta_file = rs_file_open(poptGetArg(opcon), "wb");
+    sig_file = rs_file_open(sig_name, "rb", file_force);
+    new_file = rs_file_open(poptGetArg(opcon), "rb", file_force);
+    delta_file = rs_file_open(poptGetArg(opcon), "wb", file_force);
 
     rdiff_no_more_args(opcon);
 
@@ -338,9 +340,9 @@ static rs_result rdiff_patch(poptContext opcon)
         return RS_SYNTAX_ERROR;
     }
 
-    basis_file = rs_file_open(basis_name, "rb");
-    delta_file = rs_file_open(poptGetArg(opcon), "rb");
-    new_file =   rs_file_open(poptGetArg(opcon), "wb");
+    basis_file = rs_file_open(basis_name, "rb", file_force);
+    delta_file = rs_file_open(poptGetArg(opcon), "rb", file_force);
+    new_file =   rs_file_open(poptGetArg(opcon), "wb", file_force);
 
     rdiff_no_more_args(opcon);
 
