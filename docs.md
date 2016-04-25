@@ -1,6 +1,7 @@
---- layout: page title: Documentation ---
-
-<div id="main">
+---
+layout: page
+title: Documentation 
+---
 
 These are also included in the tar, zip, and rpm packages:
 
@@ -19,12 +20,3 @@ Other documentation:
 *   [Japanese Documentation](http://seki.jpn.org/modules/pukiwiki/index.php?rdiff-backup) - An rdiff-backup page in Japanese, courtesy of Katsutoshi Seki.
 *   [rdiff-backup file format](format.html) - Describes in more detail how rdiff-backup stores file information. Intended mainly for implementors, not users.
 *   [W3 note describing a time format rdiff-backup uses](http://www.w3.org/TR/NOTE-datetime)
-
-</div>
-
-<div id="footer">
-
-* * *
-
-A standards (CSS) compliant web browser will display this page correctly.  
-Last modified Wed Jan 7 19:53:43 EST 2009</div>

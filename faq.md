@@ -34,93 +34,17 @@ title: FAQ
 
     There is no formal specification, but here is a rough description (settings are always cumulative, so 5 displays everything 4 does):
 
-    <table cellspacing="10" summary="">
-
-    <tbody>
-
-    <tr>
-
-    <td>0</td>
-
-    <td>No information given</td>
-
-    </tr>
-
-    <tr>
-
-    <td>1</td>
-
-    <td>Fatal Errors displayed</td>
-
-    </tr>
-
-    <tr>
-
-    <td>2</td>
-
-    <td>Warnings</td>
-
-    </tr>
-
-    <tr>
-
-    <td>3</td>
-
-    <td>Important messages, and maybe later some global statistics (default)</td>
-
-    </tr>
-
-    <tr>
-
-    <td>4</td>
-
-    <td>Some global settings, miscellaneous messages</td>
-
-    </tr>
-
-    <tr>
-
-    <td>5</td>
-
-    <td>Mentions which files were changed</td>
-
-    </tr>
-
-    <tr>
-
-    <td>6</td>
-
-    <td>More information on each file processed</td>
-
-    </tr>
-
-    <tr>
-
-    <td>7</td>
-
-    <td>More information on various things</td>
-
-    </tr>
-
-    <tr>
-
-    <td>8</td>
-
-    <td>All logging is dated</td>
-
-    </tr>
-
-    <tr>
-
-    <td>9</td>
-
-    <td>Details on which objects are moving across the connection</td>
-
-    </tr>
-
-    </tbody>
-
-    </table>
+	|----------------+-------------|
+	| verbosity level | description |  
+	|-----------------|-------------|
+	| 0 | No information given |
+	| 1	| Fatal errors displayed |
+	| 2 | warnings |
+	| 3 | Important messages, and maybe later some global statistics (default) |
+	| 4 | Some global settings, miscellaneous messages |
+	| 5 | Mentions which files were changed |
+	| 6 | More information on each file processed |
+	| 7 | More information on various things |
 
 2.  **<a name="compatible">Is rdiff-backup backwards compatible?</a>**
 
@@ -224,152 +148,267 @@ title: FAQ
     at least I think I've now got round it).
     </pre>
 
-10.  **<a name="speed">How fast is rdiff-backup? Can it be run on large data sets?</a>**
+10. **<a name="speed">How fast is rdiff-backup? Can it be run on large data sets?</a>**
 
-    rdiff-backup can be limited by the CPU, disk IO, or available bandwidth, and the length of a session can be affected by the amount of data, how much the data changed, and how many files are present. That said, in the typical case the number/size of changed files is relatively small compared to that of unchanged files, and rdiff-backup is often either CPU or bandwidth bound, and takes time proportional to the total number of files. Initial mirrorings will usually be bandwidth or disk bound, and will take much longer than subsequent updates.
+	rdiff-backup can be limited by the CPU, disk IO, or available bandwidth, 
+	and the length of a session can be affected by the amount of data, how much
+	the data changed, and how many files are present. That said, in the 
+	typical case the number/size of changed files is relatively small compared
+	to that of unchanged files, and rdiff-backup is often either CPU or 
+	bandwidth bound, and takes time proportional to the total number of files.
+	Initial mirrorings will usually be bandwidth or disk bound, and will take 
+	much longer than subsequent updates.
 
-    To give one arbitrary data point, when I back up my personal HD locally (about 36GB, 530000 files, maybe 500 MB turnover, Athlon 2000, 7200 IDE disks, version 0.12.2) rdiff-backup takes about 15 minutes and is usually CPU bound.
+	To give one arbitrary data point, when I back up my personal HD locally 
+	(about 36GB, 530000 files, maybe 500 MB turnover, Athlon 2000, 7200 IDE 
+	disks, version 0.12.2) rdiff-backup takes about 15 minutes and is 
+	usually CPU bound.
 
-11.  **<a name="statistics">What do the various fields mean in the session statistics and directory statistics files?</a>**
+11. **<a name="statistics">What do the various fields mean in the session statistics and directory statistics files?</a>**
 
-    Let's examine an example session statistics file:
+	Let's examine an example session statistics file:
 
-    <pre>StartTime 1028200920.44 (Thu Aug  1 04:22:00 2002)
-    EndTime 1028203082.77 (Thu Aug  1 04:58:02 2002)
-    ElapsedTime 2162.33 (36 minutes 2.33 seconds)
-    SourceFiles 494619
-    SourceFileSize 8535991560 (7.95 GB)
-    MirrorFiles 493797
-    MirrorFileSize 8521756994 (7.94 GB)
-    NewFiles 1053
-    NewFileSize 23601632 (22.5 MB)
-    DeletedFiles 231
-    DeletedFileSize 10346238 (9.87 MB)
-    ChangedFiles 572
-    ChangedSourceSize 86207321 (82.2 MB)
-    ChangedMirrorSize 85228149 (81.3 MB)
-    IncrementFiles 1857
-    IncrementFileSize 13799799 (13.2 MB)
-    TotalDestinationSizeChange 28034365 (26.7 MB)
-    Errors 0</pre>
+		StartTime 1028200920.44 (Thu Aug  1 04:22:00 2002)
+		EndTime 1028203082.77 (Thu Aug  1 04:58:02 2002)
+		ElapsedTime 2162.33 (36 minutes 2.33 seconds)
+		SourceFiles 494619
+		SourceFileSize 8535991560 (7.95 GB)
+		MirrorFiles 493797
+		MirrorFileSize 8521756994 (7.94 GB)
+		NewFiles 1053
+		NewFileSize 23601632 (22.5 MB)
+		DeletedFiles 231
+		DeletedFileSize 10346238 (9.87 MB)
+		ChangedFiles 572
+		ChangedSourceSize 86207321 (82.2 MB)
+		ChangedMirrorSize 85228149 (81.3 MB)
+		IncrementFiles 1857
+		IncrementFileSize 13799799 (13.2 MB)
+		TotalDestinationSizeChange 28034365 (26.7 MB)
+		Errors 0
 
-    StartTime and EndTime are measured in seconds since the epoch. ElapsedTime is just EndTime - StartTime, the length of the rdiff-backup session.
+	StartTime and EndTime are measured in seconds since the epoch. ElapsedTime
+	is just EndTime - StartTime, the length of the rdiff-backup session.
 
-    SourceFiles are the number of files found in the source directory, and SourceFileSize is the total size of those files. MirrorFiles are the number of files found in the mirror directory (not including the rdiff-backup-data directory) and MirrorFileSize is the total size of those files. All sizes are in bytes. If the source directory hasn't changed since the last backup, MirrorFiles == SourceFiles and SourceFileSize == MirrorFileSize.
+	SourceFiles are the number of files found in the source directory, and
+	SourceFileSize is the total size of those files. MirrorFiles are the number of
+	files found in the mirror directory (not including the rdiff-backup-data
+	directory) and MirrorFileSize is the total size of those files. All sizes
+	are in
+	bytes. If the source directory hasn't changed since the last backup,
+	MirrorFiles
+	== SourceFiles and SourceFileSize == MirrorFileSize.
+	NewFiles and NewFileSize are the total number and size of the files found in
+	the source directory but not in the mirror directory. They are new as of the
+	last backup.
 
-    NewFiles and NewFileSize are the total number and size of the files found in the source directory but not in the mirror directory. They are new as of the last backup.
+	DeletedFiles and DeletedFileSize are the total number and size of the files
+	found in the mirror directory but not the source directory. They have been
+	deleted since the last backup.
 
-    DeletedFiles and DeletedFileSize are the total number and size of the files found in the mirror directory but not the source directory. They have been deleted since the last backup.
+	ChangedFiles are the number of files that exist both on the mirror and on
+	the source directories and have changed since the previous backup.
+	ChangedSourceSize is their total size on the source directory, and
+	ChangedMirrorSize is their total size on the mirror directory.
+	
+	IncrementFiles is the number of increment files written to the
+	rdiff-backup-data directory, and IncrementFileSize is their total size.
+	Generally one increment file will be written for every new, deleted, and
+	changed	file.
 
-    ChangedFiles are the number of files that exist both on the mirror and on the source directories and have changed since the previous backup. ChangedSourceSize is their total size on the source directory, and ChangedMirrorSize is their total size on the mirror directory.
+	TotalDestinationSizeChange is the number of bytes the destination directory
+	as a whole (mirror portion and rdiff-backup-data directory) has grown during
+	the given rdiff-backup session. This is usually close to IncrementFileSize +
+	NewFileSize - DeletedFileSize + ChangedSourceSize - ChangedMirrorSize, but
+	it also includes the space taken up by the hardlink_data file to record hard
+	links.
 
-    IncrementFiles is the number of increment files written to the rdiff-backup-data directory, and IncrementFileSize is their total size. Generally one increment file will be written for every new, deleted, and changed file.
+12. **<a name="bwlimit">Is there some way to limit rdiff-backup's bandwidth usage, as in rsync's --bwlimit option?</a>**
 
-    TotalDestinationSizeChange is the number of bytes the destination directory as a whole (mirror portion and rdiff-backup-data directory) has grown during the given rdiff-backup session. This is usually close to IncrementFileSize + NewFileSize - DeletedFileSize + ChangedSourceSize - ChangedMirrorSize, but it also includes the space taken up by the hardlink_data file to record hard links.
+	There is no internal rdiff-backup option to do this. However, external
+	utilities such as [cstream](http://www.cons.org/cracauer/cstream.html) can be
+	used to monitor bandwidth explicitly. trevor@tecnopolis.ca writes:
 
-12.  **<a name="bwlimit">Is there some way to limit rdiff-backup's bandwidth usage, as in rsync's --bwlimit option?</a>**
+	>	rdiff-backup --remote-schema
+	>	'cstream -v 1 -t 10000 | ssh %s '\''rdiff-backup --server'\'' \
+	>	| cstream -t 20000'
+	>	'netbak@foo.bar.com::/mnt/backup' localbakdir
+	>
+	> (must run from a bsh-type shell, not a csh type)
+	>
+	> That would apply a limit in both directions [10000 bytes/sec outgoing,
+	> 20000 bytes/sec incoming].  I don't think you'd ever really want to do
+	> this though as really you just want to limit it in one direction.
+	> Also, note how I only -v 1 in one direction.  You probably don't want
+	> to output stats for both directions as it will confuse whatever script
+	> you have parsing the output.  I guess it wouldn't hurt for manual runs
+	> however.
+	>
+	> To only limit bandwidth in one directory, simply remove one of the cstream commands. Two cstream caveats may be worth mentioning:
+	>
+	> 1. Because cstream is limiting the uncompressed data heading into or out of ssh, if ssh
+	>    compression is turned on, cstream may be overly restrictive.
+	> 2. cstream may be "bursty", limiting average bandwidth but allowing
+	> rdiff-backup to exceed
+	>    it for significant periods.
+	> 
+	> Another option is to limit bandwidth at a lower (and perhaps more
+	> appropriate) level.
+	> Adam Lazur mentions [The Wonder Shaper](http://lartc.org/wondershaper/).
 
-    There is no internal rdiff-backup option to do this. However, external utilities such as [cstream](http://www.cons.org/cracauer/cstream.html) can be used to monitor bandwidth explicitly. trevor@tecnopolis.ca writes:
+13. **<a name="leak">How much memory should rdiff-backup use? Is there a memory leak?</a>**
 
-    <pre>rdiff-backup --remote-schema
-      'cstream -v 1 -t 10000 | ssh %s '\''rdiff-backup --server'\'' | cstream -t 20000'
-      'netbak@foo.bar.com::/mnt/backup' localbakdir
+	The amount of memory rdiff-backup uses should not depend much on the size of 
+	directories being processed. Keeping track of hard links may use up memory, 
+	so if you have, say, hundreds of thousands of files hard linked together, 
+	rdiff-backup may need tens of MB.
 
-    (must run from a bsh-type shell, not a csh type)
+	If rdiff-backup seems to be leaking memory, it is probably because it is
+	using an early version of librsync. **librsync 0.9.5 leaks lots of memory.**
+	Later versions should not leak and are available from the [librsync
+	homepage](https://sourceforge.net/projects/librsync/).
 
-    That would apply a limit in both directions [10000 bytes/sec outgoing,
-    20000 bytes/sec incoming].  I don't think you'd ever really want to do
-    this though as really you just want to limit it in one direction.
-    Also, note how I only -v 1 in one direction.  You probably don't want
-    to output stats for both directions as it will confuse whatever script
-    you have parsing the output.  I guess it wouldn't hurt for manual runs
-    however.</pre>
+14. **<a name="dir_not_empty">I use NFS and keep getting some error that includes "OSError: [Errno 39] Directory not empty"</a>**
 
-    To only limit bandwidth in one directory, simply remove one of the cstream commands. Two cstream caveats may be worth mentioning:
+	Several users have reported seeing errors that contain lines like this:
 
-    1.  Because cstream is limiting the uncompressed data heading into or out of ssh, if ssh compression is turned on, cstream may be overly restrictive.
-    2.  cstream may be "bursty", limiting average bandwidth but allowing rdiff-backup to exceed it for significant periods.
+	File "/usr/lib/python2.2/site-packages/rdiff_backup/rpath.py",
+		line 661, in rmdir
+	OSError: [Errno 39] Directory not empty:
+		'/nfs/backup/redfish/win/Program Files/Common Files/GMT/Banners/11132'
+	Exception exceptions.TypeError: "'NoneType' object is not callable"
+		in <bound method GzipFile.__del__ of
 
-    Another option is to limit bandwidth at a lower (and perhaps more appropriate) level. Adam Lazur mentions [The Wonder Shaper](http://lartc.org/wondershaper/).
+	All of these users were backing up onto NFS (Network File System). I think
+	this is probably a bug in NFS, although tell me if you know how to make
+	rdiff-backup more NFS-friendly. To avoid this problem, run rdiff-backup
+	locally on both ends instead of over NFS. This should be faster anyway.
 
-13.  **<a name="leak">How much memory should rdiff-backup use? Is there a memory leak?</a>**
+14. **<a name="regress\_failure">For some reason rdiff-backup failed while backing up. Now every time it runs it says "regressing destination" and then fails again. What should I do?</a>**
 
-    The amount of memory rdiff-backup uses should not depend much on the size of directories being processed. Keeping track of hard links may use up memory, so if you have, say, hundreds of thousands of files hard linked together, rdiff-backup may need tens of MB.
+	Firstly, this shouldn't happen. If it does, it indicates a corrupted
+	destination directory, a bug in rdiff-backup, or some other serious recurring
+	problem.
 
-    If rdiff-backup seems to be leaking memory, it is probably because it is using an early version of librsync. **librsync 0.9.5 leaks lots of memory.** Later versions should not leak and are available from the [librsync homepage](https://sourceforge.net/projects/librsync/).
+	However, here is a workaround that you might want to use, even though it
+	probably won't solve the underlying problem: In the destination's
+	rdiff-backup-data directory, there should be two "current_mirror" files, for
+	instance:
 
-14.  **<a name="dir_not_empty">I use NFS and keep getting some error that includes "OSError: [Errno 39] Directory not empty"</a>**
+		current_mirror.2003-09-07T16:43:00-07:00.data
+		current_mirror.2003-09-08T04:22:01-07:00.data
 
-    Several users have reported seeing errors that contain lines like this:
+	Delete the one with the earlier date. Also move the mirror_metadata file with
+	the later date out of the way, because it probably didn't get written
+	correctly because
+	that session was aborted:
 
-    <pre>File "/usr/lib/python2.2/site-packages/rdiff_backup/rpath.py",
-        line 661, in rmdir
-    OSError: [Errno 39] Directory not empty:
-        '/nfs/backup/redfish/win/Program Files/Common Files/GMT/Banners/11132'
-    Exception exceptions.TypeError: "'NoneType' object is not callable"
-         in <bound method GzipFile.__del__ of</pre>
+		mv mirror_metadata.2003-09-08T04:22:01-07:00.snapshot.gz aborted-metadata.2003-09-08T04:22:01-07:00.snapshot.gz
 
-    All of these users were backing up onto NFS (Network File System). I think this is probably a bug in NFS, although tell me if you know how to make rdiff-backup more NFS-friendly. To avoid this problem, run rdiff-backup locally on both ends instead of over NFS. This should be faster anyway.
+	The next time rdiff-backup runs it won't try regressing the destination.
+	Metadata will be read from the file system, which may result in some extra
+	files being backed up, but there shouldn't be any data loss.
 
-15.  **<a name="regress_failure">For some reason rdiff-backup failed while backing up. Now every time it runs it says "regressing destination" and then fails again. What should I do?</a>**
+16. **<a name="free_space">Where does rdiff-backup need free space and how much is required? What is the problem when rdiff-backup says "`ValueError: Incorrect length of data produced`"?</a>**
 
-    Firstly, this shouldn't happen. If it does, it indicates a corrupted destination directory, a bug in rdiff-backup, or some other serious recurring problem.
+	When backing up, rdiff-backup needs free space in the mirror directory. The
+	amount of free space required is usually a bit more than the size of the file
+	getting backed up, but can be as much as twice the size of the current file.
+	For instance, suppose you ran `rdiff-backup foo bar` and the largest file,
+	`foo/largefile`, was 1GB. Then rdiff-backup would need 1+GB of free space in
+	the `bar` directory.
 
-    However, here is a workaround that you might want to use, even though it probably won't solve the underlying problem: In the destination's rdiff-backup-data directory, there should be two "current_mirror" files, for instance:
+	When restoring or regressing, rdiff-backup needs free space in the default
+	temp directory. Under unix systems this is usually the `/tmp` directory. The
+temp directory that rdiff-backup uses can be set using the `--tempdir` and
+	`--remote-tempdir` options available in versions 1.1.13 and newer. See the
+	entry for `tempfile.tempdir` in the 
+	[Python tempfile docs](http://www.python.org/doc/2.4.1/lib/module-tempfile.html) 
+	for more information on the default temp directory. The amount of free space
+	required can vary, but it usually about the size of the largest file being
+	restored.
 
-    <pre>current_mirror.2003-09-07T16:43:00-07:00.data
-    current_mirror.2003-09-08T04:22:01-07:00.data</pre>
+	Usually free space errors are intelligible, like `IOError: [Errno 28] No
+	space left on device` or similar. However, due to a gzip quirk they may look
+	like `ValueError: Incorrect length of data produced`.
 
-    Delete the one with the earlier date. Also move the mirror_metadata file with the later date out of the way, because it probably didn't get written correctly because that session was aborted:
+17. **<a name="librsync_bug">What does "internal error: job made no progress" mean?</a>**
 
-    <pre>mv mirror_metadata.2003-09-08T04:22:01-07:00.snapshot.gz aborted-metadata.2003-09-08T04:22:01-07:00.snapshot.gz</pre>
+	This error happens due to a bug in `librsync` that prevents it from handling
+files greater than 4 GB in some situations, such as when transferring between a
+32-bit host and a 64-bit host. [A patch is
+available](https://sourceforge.net/tracker/index.php?func=detail&aid=1439412&group_id=56125&atid=479441)
+from the librsync project page on Sourceforge. The [CVS
+version](https://sourceforge.net/cvs/?group_id=56125) of librsync also contains
+the patch. More information is also available in [Debian bug report
+#355178](http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=355178).
 
-    The next time rdiff-backup runs it won't try regressing the destination. Metadata will be read from the file system, which may result in some extra files being backed up, but there shouldn't be any data loss.
+18. **<a name="path">Why does rdiff-backup say it's not in my $PATH? It is when I login!</a>**
 
-16.  **<a name="free_space">Where does rdiff-backup need free space and how much is required? What is the problem when rdiff-backup says "`ValueError: Incorrect length of data produced`"?</a>**
+	If you get an error like `sh: line1: rdiff-backup: command not found`, but
+rdiff-backup _is_ in your `$PATH` when you login to the remote host, it is
+happening because the value of bash's `$PATH` is set differently when you login
+to an interactive shell than when you run a command remotely via SSH. For more
+information, read the [bash manpage](http://linux.die.net/man/1/bash) and look
+at your `.bashrc` and `.bash_profile` files.
 
-    When backing up, rdiff-backup needs free space in the mirror directory. The amount of free space required is usually a bit more than the size of the file getting backed up, but can be as much as twice the size of the current file. For instance, suppose you ran `rdiff-backup foo bar` and the largest file, `foo/largefile`, was 1GB. Then rdiff-backup would need 1+GB of free space in the `bar` directory.
+	In particular, this can happen if rdiff-backup was installed via Fink on a
+remote Mac OS X system. `/sw/bin` is magically added to your `$PATH` by the
+script `/sw/bin/init.sh` when you login with an interative shell. Fink did this
+behind the scenes when you set it up. Simply add `/sw/bin` to your path
+manually, or copy rdiff-backup to a directory that is in your `$PATH`.
 
-    When restoring or regressing, rdiff-backup needs free space in the default temp directory. Under unix systems this is usually the `/tmp` directory. The temp directory that rdiff-backup uses can be set using the `--tempdir` and `--remote-tempdir` options available in versions 1.1.13 and newer. See the entry for `tempfile.tempdir` in the [Python tempfile docs](http://www.python.org/doc/2.4.1/lib/module-tempfile.html) for more information on the default temp directory. The amount of free space required can vary, but it usually about the size of the largest file being restored.
+19. **<a name="touple">What does "`touple index out of range`" mean?</a>**
 
-    Usually free space errors are intelligible, like `IOError: [Errno 28] No space left on device` or similar. However, due to a gzip quirk they may look like `ValueError: Incorrect length of data produced`.
+	If you see the error "`tuple index out of range`" after running a command like:  
 
-17.  **<a name="librsync_bug">What does "internal error: job made no progress" mean?</a>**
+		rdiff-backup -l /path/to/backup/rdiff-backup-data/
 
-    This error happens due to a bug in `librsync` that prevents it from handling files greater than 4 GB in some situations, such as when transferring between a 32-bit host and a 64-bit host. [A patch is available](https://sourceforge.net/tracker/index.php?func=detail&aid=1439412&group_id=56125&atid=479441) from the librsync project page on Sourceforge. The [CVS version](https://sourceforge.net/cvs/?group_id=56125) of librsync also contains the patch. More information is also available in [Debian bug report #355178](http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=355178).
+	then the solution is to simply remove the extra "rdiff-backup-data" from the
+end of the path. The list increments option, and others like it, take the path
+to the repository, not the path to the rdiff-backup-data directory. In the above
+example, you should run again with:  
 
-18.  **<a name="path">Why does rdiff-backup say it's not in my $PATH? It is when I login!</a>**
+		rdiff-backup -l /path/to/backup
 
-    If you get an error like `sh: line1: rdiff-backup: command not found`, but rdiff-backup _is_ in your `$PATH` when you login to the remote host, it is happening because the value of bash's `$PATH` is set differently when you login to an interactive shell than when you run a command remotely via SSH. For more information, read the [bash manpage](http://linux.die.net/man/1/bash) and look at your `.bashrc` and `.bash_profile` files.
+	If you get this error message for an unrelated reason, try contacting the
+	mailing list.
 
-    In particular, this can happen if rdiff-backup was installed via Fink on a remote Mac OS X system. `/sw/bin` is magically added to your `$PATH` by the script `/sw/bin/init.sh` when you login with an interative shell. Fink did this behind the scenes when you set it up. Simply add `/sw/bin` to your path manually, or copy rdiff-backup to a directory that is in your `$PATH`.
+20. **<a name="crc">What does "`IO Error: CRC check failed`" mean?</a>**
 
-19.  **<a name="touple">What does "`touple index out of range`" mean?</a>**
+	This error message means that a [Cyclic Redudancy
+	Check](http://en.wikipedia.org/wiki/Cyclic_redundancy_check) failed during some
+	operation, most likely while gzip'ing or un-gzip'ing a file. Possible causes of
+	this error include an incomplete gzip operation, and hardware failure. A
+	brute-force way to recover from this error is to remove the rdiff-backup-data
+	directory. However, this will remove all of your past increments. A better
+	approach may be to delete the particular file that is causing the problem. A
+	command like:  
 
-    If you see the error "`tuple index out of range`" after running a command like:  
+		`$ find rdiff-backup-data -type f -name \*.gz -print0 | xargs -0r gzip --test`  
 
-    `$ rdiff-backup -l /path/to/backup/rdiff-backup-data/`  
+	will find the failing file. For more information on this approach, see this
+	mailing list post:
+[http://lists.nongnu.org/archive/html/rdiff-backup-users/2007-11/msg00008.html](http://lists.nongnu.org/archive/html/rdiff-backup-users/2007-11/msg00008.html).
 
-    then the solution is to simply remove the extra "rdiff-backup-data" from the end of the path. The list increments option, and others like it, take the path to the repository, not the path to the rdiff-backup-data directory. In the above example, you should run again with:  
+21. **<a name="badindex">What does "`AssertionError: Bad index order`" mean?</a>**
 
-    `$ rdiff-backup -l /path/to/backup`  
+	If rdiff-backup fails with the message "`AssertionError: Bad index order`,"
+it could be because the files in a directory have changed while rdiff-backup is
+running. Possible ways of dealing with this situation include implementing
+filesystem snapshots using the volume manager, excluding the offending
+directory, or suspending the process that is changing the directory. After the
+text "Bad index order", the error messge will indicate which files have caused
+the problem.
 
-    If you get this error message for an unrelated reason, try contacting the mailing list.
+	If you get this message for an unreleated reason, try contacting the mailing
+list.
 
-20.  **<a name="crc">What does "`IO Error: CRC check failed`" mean?</a>**
+22. **<a name="utc">How can rdiff-backup use UTC as the timezone?</a>**
 
-    This error message means that a [Cyclic Redudancy Check](http://en.wikipedia.org/wiki/Cyclic_redundancy_check) failed during some operation, most likely while gzip'ing or un-gzip'ing a file. Possible causes of this error include an incomplete gzip operation, and hardware failure. A brute-force way to recover from this error is to remove the rdiff-backup-data directory. However, this will remove all of your past increments. A better approach may be to delete the particular file that is causing the problem. A command like:  
-
-    `$ find rdiff-backup-data -type f -name \*.gz -print0 | xargs -0r gzip --test`  
-
-    will find the failing file. For more information on this approach, see this mailing list post: [http://lists.nongnu.org/archive/html/rdiff-backup-users/2007-11/msg00008.html](http://lists.nongnu.org/archive/html/rdiff-backup-users/2007-11/msg00008.html).
-
-21.  **<a name="badindex">What does "`AssertionError: Bad index order`" mean?</a>**
-
-    If rdiff-backup fails with the message "`AssertionError: Bad index order`," it could be because the files in a directory have changed while rdiff-backup is running. Possible ways of dealing with this situation include implementing filesystem snapshots using the volume manager, excluding the offending directory, or suspending the process that is changing the directory. After the text "Bad index order", the error messge will indicate which files have caused the problem.
-
-    If you get this message for an unreleated reason, try contacting the mailing list.
-
-22.  **<a name="utc">How can rdiff-backup use UTC as the timezone?</a>**
-
-    Like other Unix and Python programs, rdiff-backup respects the `TZ` environment variable, which can be used to temporarily change the timezone. On Unix, simply set `TZ=UTC` either in your shell, or on the command line used to run rdiff-backup. On Windows, the command `USE TZ=UTC` sets the `%TZ%` environment variable, and can be used either in a batch script, or at the DOS prompt.
+	Like other Unix and Python programs, rdiff-backup respects the `TZ`
+	environment variable, which can be used to temporarily change the timezone. On
+	Unix, simply set `TZ=UTC` either in your shell, or on the command line used to
+	run rdiff-backup. On Windows, the command `USE TZ=UTC` sets the `%TZ%`
+	environment variable, and can be used either in a batch script, or at the DOS
+	prompt.

@@ -1,8 +1,9 @@
---- layout: page title: Examples ---
+---
+layout: page
+title: Examples
+---
 
-<div id="main">
-
-### <a name="ToC3">Sections</a>
+### Sections
 
 *   [Backing up](#backup)
 *   [Restoring](#restore)
@@ -171,12 +172,3 @@ The following examples assume that you have run `rdiff-backup in-dir out-dir` in
 *   If you are having problems connecting to a remote host, the `--test-server` command may be useful. This command simply verifies that there is a working rdiff-backup server on the remote side.
 
     > `rdiff-backup --test-server hostname.net::/ignored`
-
-</div>
-
-<div id="footer">
-
-* * *
-
-A standards (CSS) compliant web browser will display this page correctly.  
-Last modified Fri Dec 23 23:05:53 2005</div>

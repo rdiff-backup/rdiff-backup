@@ -1,4 +1,7 @@
---- layout: page title: Format --- <title>rdiff-backup file format</title>
+--- 
+layout: page 
+title: Format 
+--- 
 
 # rdiff-backup file format
 
@@ -58,4 +61,4 @@ Well, that's all. I realize that the above falls short of mathematical rigor, bu
 
 * * *
 
-<address>[](mailto:bescoto@stanford.edu)</address>
+By [bescoto@stanford.edu](mailto:bescoto@stanford.edu)
