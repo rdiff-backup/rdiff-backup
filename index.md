@@ -23,9 +23,12 @@ Many users seem to use rdiff-backup on MS Windows but this configuration is less
 
 Using rdiff-backup to backup files to a server mounted via smbfs or CIFS has been a troublesome configuration for some users. Mounting via smbfs tends to be more reliable than CIFS, although it is deprecated on Linux and does not support files greater than 2 GB. See [the FAQ](FAQ.html) for more on this setup.
 
-## Help: ##
+## Support or Contact ##
 
-Try looking at the [Documentation](docs.html), and/or [FAQ](FAQ.html). If that doesn't help with your problem, try reading or posting a message to the [mailing list](savannah.html#mailing_list).
+Please use the [GitHub issue tracker][ghtracker]. The [mailing list][mail] will also remain active for the time being.
+
+[ghtracker]: https://github.com/sol1/rdiff-backup/issues
+[mail]: https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users]
 
 ## Requirements: ##
 
