@@ -7,12 +7,12 @@ NOT RELEASED YET
  * Extensively reworked Doxygen documentation, now available at
    http://librsync.sourcefrog.net/
    (Martin Pool)
-   
+
  * Removed some declarations from librsync.h that were unimplemented or no
    longer ever useful: `rs_work_options`, `rs_accum_value`.
    Remove declaration of unimplemented `rs_mdfour_file()`.
    (Martin Pool)
- 
+
  * Remove shipped `snprintf` code: no longer acutally linked after changing to
    CMake, and since it's part of C99 it should be widely available.
    (Martin Pool)
@@ -33,6 +33,8 @@ NOT RELEASED YET
  * `popt` is only needed when `rdiff` is being built. (gulikoza)
 
  * Use `fseeko64` on mingw. (gulikoza)
+
+ * `rdiff -s` option now shows bytes read/written and speed. (gulikoza)
 
 ## librsync 2.0.0
 
@@ -55,9 +57,9 @@ be binary and API compatible with the previous version.
    Thanks to Paul Harris <paulharris@computer.org>
 
  * Switch from autoconf to CMake.
- 
+
    Thanks to Adam Schubert.
-   
+
 ## librsync 1.0.0 (2015-01-23)
 
  * SECURITY: CVE-2014-8242: librsync previously used a truncated MD4
@@ -88,12 +90,12 @@ be binary and API compatible with the previous version.
  * Various build fixes, thanks Timothy Gu.
 
  * Improved rdiff man page from Debian.
- 
+
  * Improved librsync.spec file for building RPMs.
- 
+
  * Fixed bug #1110812 'internal error: job made no progress'; on large
    files.
- 
+
  * Moved hosting to https://github.com/librsync/librsync/
 
  * Travis-CI.org integration test at https://travis-ci.org/librsync/librsync/
@@ -104,13 +106,13 @@ be binary and API compatible with the previous version.
 ## 0.9.7 (released 2004-10-10)
 
  * Yet more large file support fixes.
- 
+
  * `extern "C"` guards in librsync.h to let it be used from C++.
- 
+
  * Removed Debian files from dist tarball.
- 
+
  * Changed rdiff to an installed program on "make install".
- 
+
  * Refactored delta calculation code to be cleaner and faster.
 
  * \#879763: Fixed mdfour to work on little-endian machines which don't
@@ -125,7 +127,7 @@ be binary and API compatible with the previous version.
 
  * Fix printf formats for size_t: both the format and the argument
    should be cast to long.
- 
+
 ## 0.9.6
 
  * Large file support fixes.
@@ -137,19 +139,19 @@ be binary and API compatible with the previous version.
  * Migration to sourceforge for hosting.
 
  * Rollsum bugfix that produces much smaller deltas.
- 
+
  * Memory leaks bugfix patches.
 
  * mdfour bigendian and >512M bugfix, plus optimisations patch.
- 
+
  * autoconf/automake updates and cleanups for autoconf 2.53.
- 
+
  * Windows compilation patch, heavily modified.
- 
+
  * MacOSX compilation patch, modified to autoconf vararg macro fix.
 
  * Debian package build scripts patch.
- 
+
 ## 0.9.5
 
  * Bugfix patch from Shirish Hemant Phatak
@@ -239,7 +241,7 @@ be binary and API compatible with the previous version.
  * Slightly improved test cases
 
 ## 0.5.6
- 
+
  * Don't install debugging tools into /usr/local/bin; leave them in
    the source directory.
 
@@ -291,7 +293,7 @@ be binary and API compatible with the previous version.
 ## 0.5.3
 
  * Improvements to mapptr to make it work better for network IO.
- 
+
  * Debug trace code is compiled in unless turned off in ./configure
    (although most programs will not write it out unless asked.)
 

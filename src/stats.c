@@ -60,7 +60,8 @@ rs_format_stats(rs_stats_t const * stats,
 		char *buf, size_t size)
 {
     char const *op = stats->op;
-    int len;
+    int len, sec;
+    double mb_in, mb_out;
 
     if (!op)
         op = "noop";
@@ -98,6 +99,17 @@ rs_format_stats(rs_stats_t const * stats,
                          PRINTF_CAST_U64(stats->sig_blocks),
                          PRINTF_CAST_U64(stats->block_len));
     }
+    
+    sec = (stats->end - stats->start);
+    if (sec == 0) sec = 1;
+
+    mb_in = (stats->in_bytes/(1024.0*1024.0*sec));
+    mb_out = (stats->out_bytes/(1024.0*1024.0*sec));
+
+    len += snprintf(buf+len, size-len,
+                         " speed[%.1f MB (%.1f MB/s) in, %.1f MB (%.1f MB/s) out, %d sec]",
+                         (stats->in_bytes/(1024.0*1024.0)), mb_in,
+                         (stats->out_bytes/(1024.0*1024.0)), mb_out, sec);
     
     return buf;
 }
