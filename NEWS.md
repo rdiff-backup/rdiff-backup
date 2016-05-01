@@ -30,6 +30,10 @@ NOT RELEASED YET
    See install documentation for details.
    Thanks to Michele Bertasi.
 
+ * `popt` is only needed when `rdiff` is being built. (gulikoza)
+
+ * Use `fseeko64` on mingw. (gulikoza)
+
 ## librsync 2.0.0
 
 Released 2015-11-29
