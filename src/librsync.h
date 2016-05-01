@@ -192,7 +192,7 @@ void rs_base64(unsigned char const *buf, int n, char *out);
 typedef enum rs_result {
     RS_DONE =        0,    /**< Completed successfully. */
     RS_BLOCKED =    1,     /**< Blocked waiting for more data. */
-    
+
     /** The job is still running, and not yet finished or blocked.
      * (This value should never be seen by the application.) */
     RS_RUNNING  =       2,
@@ -364,7 +364,7 @@ struct rs_buffers_s {
      * after the last one consumed.
      **/
     char *next_in;
-    
+
     /**
      * \brief Number of bytes available at next_in
      * References the length of available input.  Updated to
@@ -373,12 +373,12 @@ struct rs_buffers_s {
      * caller just wants to drain output.
      */
     size_t avail_in;
-    
+
      /**
       * \brief True if there is no more data after this.
       */
     int eof_in;
-    
+
     /**
      * \brief Next output byte should be put there
      * References a pointer which on entry points to the
@@ -386,7 +386,7 @@ struct rs_buffers_s {
      * last one filled.
      */
     char *next_out;
-    
+
     /**
      * \brief Remaining free space at next_out
      *
@@ -484,7 +484,7 @@ rs_result       rs_job_free(rs_job_t *);
 rs_job_t *rs_sig_begin(size_t new_block_len,
                        size_t strong_sum_len,
                        rs_magic_number sig_magic);
-               
+
 /**
  * Prepare to compute a streaming delta.
  *
@@ -521,7 +521,8 @@ rs_result rs_build_hash_table(rs_signature_t* sums);
  * \param pos Position where copying should begin.
  *
  * \param len On input, the amount of data that should be retrieved.
- * Updated to show how much is actually available.
+ * Updated to show how much is actually available, but should not be greater
+ * than the input value.
  *
  * \param buf On input, a buffer of at least \p *len bytes.  May be
  * updated to point to a buffer allocated by the callback if it

@@ -60,12 +60,12 @@ static rs_result rs_patch_s_copying(rs_job_t *);
 static rs_result rs_patch_s_cmdbyte(rs_job_t *job)
 {
     rs_result result;
-        
+
     if ((result = rs_suck_byte(job, &job->op)) != RS_DONE)
         return result;
 
     job->cmd = &rs_prototab[job->op];
-        
+
     rs_trace("got command byte 0x%02x (%s), len_1=" PRINTF_FORMAT_U64 "", job->op,
              rs_op_kind_name(job->cmd->kind),
              PRINTF_CAST_U64(job->cmd->len_1));
@@ -125,7 +125,7 @@ static rs_result rs_patch_s_run(rs_job_t *job)
     case RS_KIND_LITERAL:
         job->statefn = rs_patch_s_literal;
         return RS_RUNNING;
-        
+
     case RS_KIND_END:
         return RS_DONE;
         /* so we exit here; trying to continue causes an error */
@@ -147,7 +147,7 @@ static rs_result rs_patch_s_run(rs_job_t *job)
 static rs_result rs_patch_s_literal(rs_job_t *job)
 {
     rs_long_t   len = job->param1;
-    
+
     rs_trace("LITERAL(len=" PRINTF_FORMAT_U64 ")", PRINTF_CAST_U64(len));
 
     if (len < 0) {
@@ -174,7 +174,7 @@ static rs_result rs_patch_s_copy(rs_job_t *job)
 
     where = job->param1;
     len = job->param2;
-        
+
     rs_trace("COPY(where=" PRINTF_FORMAT_U64 ", len=" PRINTF_FORMAT_U64 ")", PRINTF_CAST_U64(where), PRINTF_CAST_U64(len));
 
     if (len < 0) {
@@ -208,13 +208,13 @@ static rs_result rs_patch_s_copy(rs_job_t *job)
 static rs_result rs_patch_s_copying(rs_job_t *job)
 {
     rs_result       result;
-    size_t          len;
+    size_t          desired_len, len;
     void            *ptr;
     rs_buffers_t    *buffs = job->stream;
 
     /* copy only as much as will fit in the output buffer, so that we
      * don't have to block or store the input. */
-    len = (buffs->avail_out < job->basis_len) ? buffs->avail_out : job->basis_len;
+    desired_len = len = (buffs->avail_out < job->basis_len) ? buffs->avail_out : job->basis_len;
 
     if (!len)
         return RS_BLOCKED;
@@ -223,14 +223,19 @@ static rs_result rs_patch_s_copying(rs_job_t *job)
              PRINTF_CAST_U64(len), PRINTF_CAST_U64(job->basis_pos));
 
     ptr = buffs->next_out;
-    
+
     result = (job->copy_cb)(job->copy_arg, job->basis_pos, &len, &ptr);
     if (result != RS_DONE)
         return result;
     else
         rs_trace("copy callback returned %s", rs_strerror(result));
-    
+
     rs_trace("got " PRINTF_FORMAT_U64 " bytes back from basis callback", PRINTF_CAST_U64(len));
+
+    if (len > desired_len) {
+        rs_trace("warning: copy_cb returned more than the requested length.");
+        len = desired_len;
+    }
 
     /* copy back to out buffer only if the callback has used its own buffer */
     if (ptr != buffs->next_out)
@@ -259,7 +264,7 @@ static rs_result rs_patch_s_header(rs_job_t *job)
     int       v;
     rs_result result;
 
-        
+
     if ((result = rs_suck_n4(job, &v)) != RS_DONE)
         return result;
 
@@ -282,7 +287,7 @@ rs_job_t *
 rs_patch_begin(rs_copy_cb *copy_cb, void *copy_arg)
 {
     rs_job_t *job = rs_job_new("patch", rs_patch_s_header);
-        
+
     job->copy_cb = copy_cb;
     job->copy_arg = copy_arg;
 
