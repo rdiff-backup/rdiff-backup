@@ -19,6 +19,7 @@
 project(librsync)
 cmake_minimum_required(VERSION 2.6)
 
+INCLUDE(CMakeDependentOption)
 
 set(LIBRSYNC_MAJOR_VERSION 2)
 set(LIBRSYNC_MINOR_VERSION 0)
@@ -36,11 +37,6 @@ endif()
 if (NOT CMAKE_SYSTEM_NAME)
 	message(FATAL_ERROR "No target OS set")
 endif()
-
-# Add an option to exclude rdiff executable from build
-# This is useful, because it allows to remove POPT dependency if a user is interested only in the
-# rsync library itself and not in the rdiff executable
-option(BUILD_RDIFF "Whether or not to build rdiff executable" ON)
 
 # Add an option to include compression support
 option(ENABLE_COMPRESSION "Whether or not to build with compression support" OFF)
@@ -151,6 +147,11 @@ find_package(POPT)
 if (POPT_FOUND)
   include_directories(${POPT_INCLUDE_DIRS})
 endif (POPT_FOUND)
+
+# Add an option to exclude rdiff executable from build
+# This is useful, because it allows to remove POPT dependency if a user is interested only in the
+# rsync library itself and not in the rdiff executable
+cmake_dependent_option(BUILD_RDIFF "Whether or not to build rdiff executable" ON "POPT_FOUND" OFF)
 
 # Find BZIP
 find_package (BZip2)
