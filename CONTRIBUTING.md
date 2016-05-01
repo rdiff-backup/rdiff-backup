@@ -3,6 +3,21 @@
 Instructions and conventions for people wanting to work on librsync.  Please
 consider these guidelines even if you're doing your own fork.
 
+## Pull requests
+
+Fixes or improvements in pull requests are welcome.  Please:
+
+- [ ] Send small PRs that address one issues each.
+
+- [ ] Update `NEWS.md` to say what you changed.
+
+- [ ] Add a test as a self-contained C file in `tests/` that passes or fails,
+  and is hooked into `CMakeLists.txt`.
+
+- [ ] Keep the code style consistent with what's already there, especially in
+  keeping symbols with an `rs_` prefix.
+
+
 ## NEWS
 
 [NEWS.md](NEWS.md) contains a list of user-visible changes in the library between
