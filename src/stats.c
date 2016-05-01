@@ -61,11 +61,11 @@ rs_format_stats(rs_stats_t const * stats,
 {
     char const *op = stats->op;
     int len, sec;
-    double mb_in, mb_out;
+    double mbps_in, mbps_out;
 
     if (!op)
         op = "noop";
-    
+
     len = snprintf(buf, size, "%s statistics: ", op);
 
     if (stats->lit_cmds) {
@@ -91,7 +91,7 @@ rs_format_stats(rs_stats_t const * stats,
                         PRINTF_CAST_U64(stats->false_matches),
                         PRINTF_CAST_U64(stats->copy_cmdbytes));
     }
-        
+
 
     if (stats->sig_blocks) {
         len  += snprintf(buf+len, size-len,
@@ -99,17 +99,15 @@ rs_format_stats(rs_stats_t const * stats,
                          PRINTF_CAST_U64(stats->sig_blocks),
                          PRINTF_CAST_U64(stats->block_len));
     }
-    
+
     sec = (stats->end - stats->start);
-    if (sec == 0) sec = 1;
-
-    mb_in = (stats->in_bytes/(1024.0*1024.0*sec));
-    mb_out = (stats->out_bytes/(1024.0*1024.0*sec));
-
+    if (sec == 0) sec = 1; // avoid division by zero
+    mbps_in = stats->in_bytes / 1e6 / sec;
+    mbps_out = stats->out_bytes / 1e6 / sec;
     len += snprintf(buf+len, size-len,
-                         " speed[%.1f MB (%.1f MB/s) in, %.1f MB (%.1f MB/s) out, %d sec]",
-                         (stats->in_bytes/(1024.0*1024.0)), mb_in,
-                         (stats->out_bytes/(1024.0*1024.0)), mb_out, sec);
-    
+        " speed[%.1f MB (%.1f MB/s) in, %.1f MB (%.1f MB/s) out, %d sec]",
+        (stats->in_bytes/1e6), mbps_in,
+        (stats->out_bytes/1e6), mbps_out, sec);
+
     return buf;
 }
