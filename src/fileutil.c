@@ -57,10 +57,17 @@ rs_file_open(char const *filename, char const *mode)
     is_write = mode[0] == 'w';
 
     if (!filename  ||  !strcmp("-", filename)) {
-	if (is_write)
+	if (is_write) {
+#if _WIN32
+	    _setmode(_fileno(stdout), _O_BINARY);
+#endif
 	    return stdout;
-	else
+	} else {
+#if _WIN32
+	    _setmode(_fileno(stdin), _O_BINARY);
+#endif
 	    return stdin;
+	}
     }
 
     if (!(f = fopen(filename, mode))) {
