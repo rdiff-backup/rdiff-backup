@@ -100,7 +100,7 @@ check_type_size ( "unsigned short" SIZEOF_UNSIGNED_SHORT )
 # rs_long_t is that we need to be able to seek to it, which relates to
 # long file support. With fseeko, rs_long_t should be off_t, otherwise
 # it should be long.
-if ( HAVE_FSEEKO64 )
+if ( HAVE_FSEEKO64 AND SIZEOF_OFF64_T )
   set( RS_LONG_T "off64_t" )
   message (STATUS "RS_LONG_T = off64_t")
 elseif ( HAVE_SYS_TYPES_H AND LONG_LONG )
