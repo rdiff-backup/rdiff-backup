@@ -49,6 +49,13 @@ struct rs_job {
     /** Signature that's either being read in, or used for
      * generating a delta. */
     rs_signature_t      *signature;
+
+    /** The length of signature file in bytes, if available;
+     * used for preallocating needed memory for sums */
+    rs_long_t           sig_file_bytes;
+
+    /** Estimated number of signature chunks */
+    int                 estimated_signature_count;
     
     /** Command byte currently being processed, if any. */
     unsigned char       op;
