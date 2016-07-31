@@ -87,11 +87,11 @@ triple_test () {
     new="$3"
     hashopt="$4"
     
-    run_test $bindir/rdiff $debug $hashopt -I$buf -O$buf $stats signature --block-size=$block_len \
+    run_test $bindir/rdiff $debug $hashopt -f -I$buf -O$buf $stats signature --block-size=$block_len \
              $old $tmpdir/sig
-    run_test $bindir/rdiff $debug $hashopt -I$buf -O$buf $stats delta $tmpdir/sig $new $tmpdir/delta
-    run_test $bindir/rdiff $debug $hashopt -I$buf -O$buf $stats patch $old $tmpdir/delta $tmpdir/new
-    check_compare $new $tmpdir/new "triple -I$buf -O$buf $old $new"
+    run_test $bindir/rdiff $debug $hashopt -f -I$buf -O$buf $stats delta $tmpdir/sig $new $tmpdir/delta
+    run_test $bindir/rdiff $debug $hashopt -f -I$buf -O$buf $stats patch $old $tmpdir/delta $tmpdir/new
+    check_compare $new $tmpdir/new "triple -f -I$buf -O$buf $old $new"
 }
 
 make_input () {

@@ -31,9 +31,9 @@ do
         do
             for hashopt in -Hmd4 -Hblake2
             do
-                run_test ../rdiff $debug $hashopt -I$buf -O$buf signature $old $tmpdir/sig
-                run_test ../rdiff $debug $hashopt -I$buf -O$buf delta $tmpdir/sig $new $tmpdir/delta
-                run_test ../rdiff $debug $hashopt -I$buf -O$buf patch $old $tmpdir/delta $tmpdir/new
+                run_test ../rdiff $debug $hashopt -f -I$buf -O$buf signature $old $tmpdir/sig
+                run_test ../rdiff $debug $hashopt -f -I$buf -O$buf delta $tmpdir/sig $new $tmpdir/delta
+                run_test ../rdiff $debug $hashopt -f -I$buf -O$buf patch $old $tmpdir/delta $tmpdir/new
 
                 check_compare $new $tmpdir/new "triple -I$buf -O$buf $old $new"
 

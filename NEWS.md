@@ -36,6 +36,11 @@ NOT RELEASED YET
 
  * `rdiff -s` option now shows bytes read/written and speed. (gulikoza)
 
+ * Running rdiff should not overwrite existing files (signatures, deltas and
+   new patched files) by default. If the destination file exists, rdiff will
+   now exit with an error. (gulikoza)
+   Add new option -f (--force) to overwrite existing files.
+
 ## librsync 2.0.0
 
 Released 2015-11-29
