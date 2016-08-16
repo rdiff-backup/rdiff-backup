@@ -24,7 +24,7 @@
 /**
  * \file mksum.c Generate file signatures.
  **/
- 
+
 /*
  * Generating checksums is pretty easy, since we can always just
  * process whatever data is available.  When a whole block has
@@ -58,7 +58,7 @@ static rs_result rs_sig_s_header(rs_job_t *);
 static rs_result rs_sig_s_generate(rs_job_t *);
 
 
-                                           
+
 /**
  * State of trying to send the signature header.
  * \private
@@ -71,7 +71,7 @@ static rs_result rs_sig_s_header(rs_job_t *job)
     rs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)",
              job->magic, (int) job->block_len, (int) job->strong_sum_len);
     job->stats.block_len = job->block_len;
-    
+
     job->statefn = rs_sig_s_generate;
     return RS_RUNNING;
 }
@@ -85,7 +85,7 @@ static rs_result rs_sig_s_header(rs_job_t *job)
 static rs_result
 rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
 {
-    unsigned int        weak_sum;
+    rs_weak_sum_t       weak_sum;
     rs_strong_sum_t     strong_sum;
 
     weak_sum = rs_calc_weak_sum(block, len);
@@ -125,11 +125,11 @@ rs_sig_s_generate(rs_job_t *job)
     rs_result           result;
     size_t              len;
     void                *block;
-        
+
     /* must get a whole block, otherwise try again */
     len = job->block_len;
     result = rs_scoop_read(job, len, &block);
-        
+
     /* unless we're near eof, in which case we'll accept
      * whatever's in there */
     if ((result == RS_BLOCKED && rs_job_input_is_ending(job))) {

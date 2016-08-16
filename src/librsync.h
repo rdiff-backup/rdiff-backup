@@ -37,6 +37,7 @@
 #define _RSYNC_H
 
 #include <sys/types.h>
+#include "types.h"
 #include "librsync-config.h"
 
 #ifdef __cplusplus
@@ -269,7 +270,7 @@ extern const int RS_MD4_SUM_LENGTH, RS_BLAKE2_SUM_LENGTH;
 
 #define RS_MAX_STRONG_SUM_LENGTH 32
 
-typedef unsigned int rs_weak_sum_t;
+typedef uint32_t rs_weak_sum_t;
 typedef unsigned char rs_strong_sum_t[RS_MAX_STRONG_SUM_LENGTH];
 
 void            rs_mdfour(unsigned char *out, void const *in, size_t);
