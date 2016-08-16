@@ -30,6 +30,7 @@
 int main(int argc, char **argv)
 {
     Rollsum r;
+    int i;
     unsigned char buf[256];
 
     /* Test RollsumInit() */
@@ -70,7 +71,7 @@ int main(int argc, char **argv)
     assert(RollsumDigest(&r) == 0x00000000);
 
     /* Test RollsumUpdate() */
-    for (int i=0; i < 256; i++)
+    for (i=0; i < 256; i++)
         buf[i] = i;
     RollsumUpdate(&r, buf, 256);
     assert((uint32_t)RollsumDigest(&r) == 0x3a009e80);
