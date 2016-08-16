@@ -27,12 +27,12 @@
 #define DO8(buf,i)  DO4(buf,i); DO4(buf,i+4);
 #define DO16(buf)   DO8(buf,0); DO8(buf,8);
 
-void RollsumUpdate(Rollsum *sum,const unsigned char *buf,unsigned int len) {
+void RollsumUpdate(Rollsum *sum, const unsigned char *buf, size_t len) {
     /* ANSI C says no overflow for unsigned. zlib's adler32 goes to extra
     effort to avoid overflow for its mod prime, which we don't have.*/
-    unsigned int n = len;
-    unsigned long s1 = sum->s1;
-    unsigned long s2 = sum->s2;
+    size_t n = len;
+    uint_fast16_t s1 = sum->s1;
+    uint_fast16_t s2 = sum->s2;
 
     while (n >= 16) {
         DO16(buf);

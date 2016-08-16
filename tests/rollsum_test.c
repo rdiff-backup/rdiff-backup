@@ -74,6 +74,6 @@ int main(int argc, char **argv)
     for (i=0; i < 256; i++)
         buf[i] = i;
     RollsumUpdate(&r, buf, 256);
-    assert((uint32_t)RollsumDigest(&r) == 0x3a009e80);
+    assert(RollsumDigest(&r) == 0x3a009e80);
     return 0;
 }
