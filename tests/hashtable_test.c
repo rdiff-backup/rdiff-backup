@@ -97,22 +97,22 @@ int main(int argc, char **argv)
         entry_init(&entry[i], i);
 
     /* Test hashtable_init() */
-    hashtable_init(&t, 256, (hash_f) & key_hash, (cmp_f) & match_cmp);
+    hashtable_init(&t, 256, (hash_f)&key_hash, (cmp_f)&match_cmp);
     assert(t.size == 512);
     assert(t.table != NULL);
-    assert(t.hash == (hash_f) & key_hash);
-    assert(t.cmp == (cmp_f) & match_cmp);
+    assert(t.hash == (hash_f)&key_hash);
+    assert(t.cmp == (cmp_f)&match_cmp);
 
     /* Test hashtable_add() */
     assert(hashtable_add(&t, &e) == &e);        /* Added duplicated copy. */
     assert(hashtable_add(&t, &entry[0]) == &entry[0]);  /* Ignored duplicated instance. */
     for (i = 0; i < 256; i++)
         assert(hashtable_add(&t, &entry[i]) == &entry[i]);
-    assert((void *) &e == t.table[0]);
-    assert((void *) &entry[0] == t.table[1]);
-    assert((void *) &entry[1] == t.table[3]);
-    assert((void *) &entry[2] == t.table[2]);
-    assert((void *) &entry[3] == t.table[4]);
+    assert((void *)&e == t.table[0]);
+    assert((void *)&entry[0] == t.table[1]);
+    assert((void *)&entry[1] == t.table[3]);
+    assert((void *)&entry[2] == t.table[2]);
+    assert((void *)&entry[3] == t.table[4]);
 
     /* Test hashtable_find() */
     match_init(&m, 0);
