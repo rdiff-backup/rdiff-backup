@@ -106,11 +106,10 @@ void *hashtable_next(hashtable_iter_t *i)
     assert(i->index <= i->htable->size);
     hashtable_t *t = i->htable;
 
-    do {
-        if (i->index == t->size)
-            return NULL;
+    while (i->index < t->size) {
         if (t->table[i->index])
             return t->table[i->index++];
-    } while (i->index++);
+        i->index++;
+    }
     return NULL;
 }
