@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * rollsum_test -- tests for the librsync rolling checksum.
+ * hashtable_test -- tests for the hashtable.
  *
  * Copyright (C) 2003 by Donovan Baarda <abo@minkirri.apana.org.au>
  *
@@ -24,43 +24,61 @@
 #include <assert.h>
 #include "hashtable.h"
 
+/* Key type for the hashtable. */
+typedef int key_t;
+void key_init(key_t *k, int i)
+{
+    /* This is chosen to cause bad key collisions and clustering. */
+    *k = (i / 2) * (i / 2);
+}
+
+int key_hash(const key_t *k)
+{
+    return *k;
+}
+
+int key_cmp(key_t *k, const key_t *o)
+{
+    return *k - *o;
+}
+
 /* Entry type for values in hashtable. */
 typedef struct entry {
-    int key;
+    key_t key;                  /* Inherit from key_t. */
     int value;
 } entry_t;
 
 void entry_init(entry_t *e, int i)
 {
-    e->key = (i / 2) * (i / 2);
+    key_init(&e->key, i);
     e->value = i;
 }
 
-int entry_hash(const entry_t *e)
-{
-    return e->key;
-}
-
-/* Match type for finding matching entries in hashtable. */
+/* Match type for finding matching entries in hashtable.
+ *
+ * This demonstrates using deferred calculation and comparison of the
+ * expected value only when the key matches. */
 typedef struct match {
-    entry_t entry;
+    key_t key;                  /* Inherit from key_t. */
+    int value;
     int source;
 } match_t;
 
-void match_init(match_t *e, int i)
+void match_init(match_t *m, int i)
 {
-    entry_init(&e->entry, i);
-    e->entry.value = 0;
-    e->source = i;
+    key_init(&m->key, i);
+    m->value = 0;
+    m->source = i;
 }
 
-int entry_cmp(const entry_t *e, match_t *o)
+int match_cmp(match_t *m, const entry_t *e)
 {
-    int ans = e->key - o->entry.key;
+    int ans = key_cmp(&m->key, &e->key);
+    /* Calculate and compare value if key matches */
     if (ans == 0) {
-        if (o->entry.value != o->source)
-            o->entry.value = o->source;
-        ans = e->value - o->entry.value;
+        if (m->value != m->source)
+            m->value = m->source;
+        ans = m->value - e->value;
     }
     return ans;
 }
@@ -79,15 +97,15 @@ int main(int argc, char **argv)
         entry_init(&entry[i], i);
 
     /* Test hashtable_init() */
-    hashtable_init(&t, 256, (hash_f) & entry_hash, (cmp_f) & entry_cmp);
+    hashtable_init(&t, 256, (hash_f) & key_hash, (cmp_f) & match_cmp);
     assert(t.size == 512);
     assert(t.table != NULL);
-    assert(t.hash == (hash_f) & entry_hash);
-    assert(t.cmp == (cmp_f) & entry_cmp);
+    assert(t.hash == (hash_f) & key_hash);
+    assert(t.cmp == (cmp_f) & match_cmp);
 
     /* Test hashtable_add() */
-    assert(hashtable_add(&t, &e) == &e);        /* added duplicated copy */
-    assert(hashtable_add(&t, &entry[0]) == &entry[0]);  /* ignored duplicated instance */
+    assert(hashtable_add(&t, &e) == &e);        /* Added duplicated copy. */
+    assert(hashtable_add(&t, &entry[0]) == &entry[0]);  /* Ignored duplicated instance. */
     for (i = 0; i < 256; i++)
         assert(hashtable_add(&t, &entry[i]) == &entry[i]);
     assert((void *) &e == t.table[0]);
@@ -98,22 +116,22 @@ int main(int argc, char **argv)
 
     /* Test hashtable_find() */
     match_init(&m, 0);
-    assert(hashtable_find(&t, &m) == &e);       /* finds first duplicate added */
-    assert(m.entry.value == m.source);  /* cmp() updated m.entry.value */
+    assert(hashtable_find(&t, &m) == &e);       /* Finds first duplicate added. */
+    assert(m.value == m.source);        /* match_cmp() updated m.value. */
     for (i = 1; i < 256; i++) {
         match_init(&m, i);
         assert(hashtable_find(&t, &m) == &entry[i]);
-        assert(m.entry.value == m.source);      /* cmp() updated m.entry.value */
+        assert(m.value == m.source);    /* match_cmp() updated m.value. */
     }
     match_init(&m, 256);
-    assert(hashtable_find(&t, &m) == NULL);     /* find missing entry */
-    assert(m.entry.value == 0); /* cmp() didn't update m.entry.value */
+    assert(hashtable_find(&t, &m) == NULL);     /* Find missing entry. */
+    assert(m.value == 0);       /* match_cmp() didn't update m.value. */
 
     /* Test hashtable iterators */
     entry_t *p;
-    hashtable_iter_t it;
+    hashtable_iter_t iter;
     int count = 0;
-    for (p = hashtable_iter(&it, &t); p != NULL; p = hashtable_next(&it)) {
+    for (p = hashtable_iter(&iter, &t); p != NULL; p = hashtable_next(&iter)) {
         assert(p == &e || (&entry[0] <= p && p <= &entry[255]));
         count++;
     }

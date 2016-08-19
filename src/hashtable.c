@@ -48,21 +48,21 @@ void hashtable_done(hashtable_t *t)
 }
 
 /* Compare function that only compares pointers. */
-int same_cmp(const void *e, void *o)
+int pointer_cmp(void *k, const void *o)
 {
-    return e - o;
+    return k - o;
 }
 
 /* Find the index of the first matching or free entry. */
-int hashtable_index(hashtable_t *t, void *e, cmp_f cmp)
+int hashtable_index(hashtable_t *t, cmp_f cmp, void *k)
 {
-    assert(e != NULL);
+    assert(k != NULL);
     int mask = t->size - 1;
-    int index = t->hash(e) % mask;
+    int index = t->hash(k) % mask;
     int i = index, s = 1;
 
     do {
-        if (!t->table[i] || !cmp(t->table[i], e)) {
+        if (!t->table[i] || !cmp(k, t->table[i])) {
             return i;
         }
         i = (i + s++) & mask;
@@ -73,7 +73,7 @@ int hashtable_index(hashtable_t *t, void *e, cmp_f cmp)
 void *hashtable_add(hashtable_t *t, void *e)
 {
     assert(e != NULL);
-    int i = hashtable_index(t, e, &same_cmp);
+    int i = hashtable_index(t, &pointer_cmp, e);
 
     if (i == -1)
         return NULL;
@@ -81,10 +81,10 @@ void *hashtable_add(hashtable_t *t, void *e)
     return e;
 }
 
-void *hashtable_find(hashtable_t *t, void *e)
+void *hashtable_find(hashtable_t *t, void *k)
 {
-    assert(e != NULL);
-    int i = hashtable_index(t, e, t->cmp);
+    assert(k != NULL);
+    int i = hashtable_index(t, t->cmp, k);
 
     if (i == -1)
         return NULL;
@@ -95,16 +95,16 @@ void *hashtable_iter(hashtable_iter_t *i, hashtable_t *t)
 {
     assert(i != NULL);
     assert(t != NULL);
-    i->hasht = t;
+    i->htable = t;
     i->index = 0;
     return hashtable_next(i);
 }
 
 void *hashtable_next(hashtable_iter_t *i)
 {
-    assert(i->hasht != NULL);
-    assert(i->index <= i->hasht->size);
-    hashtable_t *t = i->hasht;
+    assert(i->htable != NULL);
+    assert(i->index <= i->htable->size);
+    hashtable_t *t = i->htable;
 
     do {
         if (i->index == t->size)

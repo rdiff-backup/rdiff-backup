@@ -29,83 +29,92 @@
  * This is a minimal hashtable containing pointers to arbitrary
  * entries with configurable hashtable size and support for custom
  * hash() and cmp() methods. The cmp() method can either be a simple
- * comparison between two entries, or can be against a special match
+ * comparison between two keys, or can be against a special match
  * object containing additional mutable state. This allows for things
  * like deferred and cached evaluation of costly comparison data.
  *
  * It uses open addressing with quadratic probing for collisions.
- * There is no support for removing entries, only adding them. There
- * is an iterator for iterating through all entries in the hashtable.
+ * There is no support for removing entries, only adding them.
+ * Multiple entries with the same key can be added, and you can use a
+ * fancy cmp() function to find particular entries by more than just
+ * their key. There is an iterator for iterating through all entries
+ * in the hashtable.
  *
  * Example:
  *
+ *   typedef ... key_t;
+ *   int key_hash(const key_t *e);
+ *   int key_cmp(key_t *e, const key_t *o);
+ *
  *   typedef struct entry {
- *     ...
+ *     key_t key;  // Inherit from key_t.
+ *     ...extra entry value data...
  *   } entry_t;
  *   void entry_init(entry_t *e, ...);
- *   int entry_hash(entry_t *e);
- *   int entry_cmp(entry_t *e, entry_t *o);
  *
  *   hashtable_t t;
  *   entry_t entries[300];
- *   entry_t m;
+ *   key_t k;
  *   entry_t *e;
  *
- *   entry_init(&entries[5], 5);
- *   hashtable_init(&t, 300, &entry_hash, &entry_cmp);
+ *   hashtable_init(&t, 300, &key_hash, &key_cmp);
+ *   entry_init(&entries[5], ...);
  *   hashtable_add(&t, &entries[5]);
- *   entry_init(&m, 5);
- *   e = hashtable_find(&t, &m);
+ *   k = ...;
+ *   e = hashtable_find(&t, &k);
  *
  *   hashtable_iter i;
- *   for (e=hashtable_iter(&i, &t); e != NULL; e = hashtable_next(&i))
+ *   for (e = hashtable_iter(&i, &t); e != NULL; e = hashtable_next(&i))
  *     ...
  *
  * The hash() and cmp() fuctions will typically take pointers to
- * entry instances the same as the pointers stored in the hashtable.
- * However it is also possible for them to take "match objects" that
- * are a "subclass" of the entry type that contain additional state
- * for complicated comparision operations.
+ * key/entry instances the same as the pointers stored in the
+ * hashtable. However it is also possible for them to take "match
+ * objects" that are a "subclass" of the entry type that contain
+ * additional state for complicated comparision operations.
  *
  * Example:
  *
- *   typedef struct entry {
- *     ...
- *   } entry_t;
- *
  *   typedef struct match {
- *     entry_t e;
- *     ...
- *    }
+ *     key_t key;  // Inherit from key_t;
+ *     ...extra match criteria and state data...
+ *   } match_t;
+ *   int match_cmp(match_t *m, const entry_t *e);
  *
- *    int myhash(const entry_t *e);
- *    int mycmp(const entry_t *e, match_t *m);
+ *   ...
+ *   match_t m;
+ *
+ *   hashtable_init(&t, 300, &key_hash, &match_cmp);
+ *   ...
+ *   m = ...;
+ *   e = hashtable_find(&t, &m);
  *
  * The cmp() function is only called for finding hashtable entries
- * and can mutate the match object. This allows for things like
- * deferred and cached evaluation of expensive match data.
+ * and can mutate the match_t object for doing things like deferred
+ * and cached evaluation of expensive match data. It can also access
+ * the whole entry_t object to match against more than just the key.
  */
 
 /* The hash() function type.
  *
  * Args:
- *   *e - the entry or match object to hash.
+ *   *k - the key or match object to hash.
  *
  * Returns:
  *   An int hash value.
  */
-typedef int (*hash_f) (const void *e);
+typedef int (*hash_f) (const void *k);
 
 /* The cmp() function type.
  *
  * Args:
- *   *e - the entry to try and match to.
- *   *o - the entry or match object to match against.
+ *   *k - the key or match object to try and match to.
+ *   *o - the key or entry object to match against.
  *
  * Returns:
  *   -1, 0, or 1 if *e is less, equal, or more that *o.
  */
-typedef int (*cmp_f) (const void *e, void *o);
+typedef int (*cmp_f) (void *k, const void *o);
 
 /* The hashtable type. */
 typedef struct hashtable {
@@ -117,7 +126,7 @@ typedef struct hashtable {
 
 /* The hashtable iterator type. */
 typedef struct hashtable_iter {
-    hashtable_t *hasht;         /* The hashtable to iterate over. */
+    hashtable_t *htable;        /* The hashtable to iterate over. */
     int index;                  /* The index to scan from for the next entry. */
 } hashtable_iter_t;
 
@@ -175,12 +184,12 @@ void *hashtable_add(hashtable_t *t, void *e);
  *
  * Args:
  *   *t - The hashtable to search.
- *   *e - The entry or match object to search for.
+ *   *k - The key or match object to search for.
  *
  * Returns:
  *   The first found entry, or NULL if nothing was found.
  */
-void *hashtable_find(hashtable_t *t, void *e);
+void *hashtable_find(hashtable_t *t, void *k);
 
 /* Initialize a hashtable_iter_t and return the first entry.
  *
