@@ -22,6 +22,9 @@
 #ifndef _ROLLSUM_H_
 #define _ROLLSUM_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 /* We should make this something other than zero to improve the
  * checksum algorithm: tridge suggests a prime number. */
 #define ROLLSUM_CHAR_OFFSET 31
@@ -30,42 +33,42 @@
 
 /** \private */
 typedef struct _Rollsum {
-    unsigned long count;               /* count of bytes included in sum */
-    unsigned long s1;                  /* s1 part of sum */
-    unsigned long s2;                  /* s2 part of sum */
+    size_t count;               /* count of bytes included in sum */
+    uint_fast16_t s1;           /* s1 part of sum */
+    uint_fast16_t s2;           /* s2 part of sum */
 } Rollsum;
 
-void RollsumUpdate(Rollsum *sum,const unsigned char *buf,unsigned int len);
-/* The following are implemented as macros.
-void RollsumInit(Rollsum *sum);
-void RollsumRotate(Rollsum *sum,unsigned char out, unsigned char in);
-void RollsumRollin(Rollsum *sum,unsigned char c);
-void RollsumRollout(Rollsum *sum,unsigned char c);
-unsigned long RollsumDigest(Rollsum *sum);
-*/
+void RollsumUpdate(Rollsum *sum, const unsigned char *buf, size_t len);
 
-/* macro implementations of simple routines */
-#define RollsumInit(sum) { \
-    (sum)->count=(sum)->s1=(sum)->s2=0; \
+/* static inline implementations of simple routines */
+static inline void RollsumInit(Rollsum *sum)
+{
+    sum->count = sum->s1 = sum->s2 = 0;
 }
 
-#define RollsumRotate(sum,out,in) { \
-    (sum)->s1 += (unsigned char)(in) - (unsigned char)(out); \
-    (sum)->s2 += (sum)->s1 - (sum)->count*((unsigned char)(out)+ROLLSUM_CHAR_OFFSET); \
+static inline void RollsumRotate(Rollsum *sum, unsigned char out, unsigned char in)
+{
+    sum->s1 += in - out;
+    sum->s2 += sum->s1 - sum->count * (out + ROLLSUM_CHAR_OFFSET);
 }
 
-#define RollsumRollin(sum,c) { \
-    (sum)->s1 += ((unsigned char)(c)+ROLLSUM_CHAR_OFFSET); \
-    (sum)->s2 += (sum)->s1; \
-    (sum)->count++; \
+static inline void RollsumRollin(Rollsum *sum, unsigned char in)
+{
+    sum->s1 += in + ROLLSUM_CHAR_OFFSET;
+    sum->s2 += sum->s1;
+    sum->count++;
 }
 
-#define RollsumRollout(sum,c) { \
-    (sum)->s1 -= ((unsigned char)(c)+ROLLSUM_CHAR_OFFSET); \
-    (sum)->s2 -= (sum)->count*((unsigned char)(c)+ROLLSUM_CHAR_OFFSET); \
-    (sum)->count--; \
+static inline void RollsumRollout(Rollsum *sum, unsigned char out)
+{
+    sum->s1 -= out + ROLLSUM_CHAR_OFFSET;
+    sum->s2 -= sum->count * (out + ROLLSUM_CHAR_OFFSET);
+    sum->count--;
 }
 
-#define RollsumDigest(sum) (((sum)->s2 << 16) | ((sum)->s1 & 0xffff))
+static inline uint32_t RollsumDigest(Rollsum *sum)
+{
+    return ((uint32_t)sum->s2 << 16) | ((uint32_t)sum->s1 & 0xffff);
+}
 
-#endif /* _ROLLSUM_H_ */
+#endif                          /* _ROLLSUM_H_ */
