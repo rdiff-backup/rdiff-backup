@@ -55,6 +55,13 @@ blocks within the basis file.
 You must configure read, write and basis callbacks after creating the
 job but before it is run.
 
+You can set job->sig_file_bytes to signature file size or
+job->estimated_signature_count before running the job
+if the signature file size (or the number of chunks) is known in advance.
+If both are set, estimated_signature_count is used.
+This will preallocate the needed memory for signature sums instead of
+calling realloc for each block.
+
 
 ## Running Jobs
 

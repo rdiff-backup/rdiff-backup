@@ -57,10 +57,14 @@ static rs_result rs_loadsig_add_sum(rs_job_t *job, rs_strong_sum_t *strong)
     rs_block_sig_t      *asignature;
 
     sig->count++;
-    new_size = sig->count * sizeof(rs_block_sig_t);
+    if (sig->count > job->estimated_signature_count) {
 
-    sig->block_sigs = realloc(sig->block_sigs, new_size);
-    
+        job->estimated_signature_count = sig->count;
+        new_size = sig->count * sizeof(rs_block_sig_t);
+
+        sig->block_sigs = realloc(sig->block_sigs, new_size);
+    }
+
     if (sig->block_sigs == NULL) {
         return RS_MEM_ERROR;
     }
@@ -145,6 +149,24 @@ static rs_result rs_loadsig_s_stronglen(rs_job_t *job)
 
     job->statefn = rs_loadsig_s_weak;
     
+    /* Estimate the number of blocks stored in signature */
+    /* Magic+header is 12 bytes,
+       each block thereafter is 4 bytes weak_sum+strong_sum_len bytes */
+    if ((job->estimated_signature_count == 0) && (job->sig_file_bytes > 0)) {
+        job->estimated_signature_count = (job->sig_file_bytes-12)/(4+job->strong_sum_len);
+        rs_trace("estimating %d blocks in signature (%d bytes)",
+            job->estimated_signature_count, job->estimated_signature_count*sizeof(rs_block_sig_t));
+    }
+
+    /* Allocate memory for signature sums */
+    if (job->estimated_signature_count > 0) {
+        job->signature->block_sigs = calloc(job->estimated_signature_count, sizeof(rs_block_sig_t));
+        if (job->signature->block_sigs == NULL) {
+            job->estimated_signature_count = 0;
+            return RS_MEM_ERROR;
+        }
+    }
+
     return RS_RUNNING;
 }
 
