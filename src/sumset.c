@@ -56,11 +56,8 @@ rs_sumset_dump(rs_signature_t const *sums)
         char        strong_hex[RS_MAX_STRONG_SUM_LENGTH * 3];
     
         rs_log(RS_LOG_INFO,
-                "sumset info: block_len=%d, file length=%lu, "
-                "number of chunks=%d, remainder=%d",
-                sums->block_len,
-                (unsigned long) sums->flength, sums->count,
-                sums->remainder);
+                "sumset info: magic=%x, block_len=%d, block_num=%d",
+                sums->magic, sums->block_len, sums->count);
 
         for (i = 0; i < sums->count; i++) {
                 rs_hexify(strong_hex, sums->block_sigs[i].strong_sum,
