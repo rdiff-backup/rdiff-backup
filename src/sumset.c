@@ -31,39 +31,30 @@
 #include "util.h"
 #include "trace.h"
 
-
-void
-rs_free_sumset(rs_signature_t * psums)
+void rs_free_sumset(rs_signature_t *psums)
 {
-        if (psums->block_sigs)
-                free(psums->block_sigs);
+    if (psums->block_sigs)
+        free(psums->block_sigs);
 
-        if (psums->tag_table)
-		free(psums->tag_table);
+    if (psums->tag_table)
+        free(psums->tag_table);
 
-        if (psums->targets)
-                free(psums->targets);
+    if (psums->targets)
+        free(psums->targets);
 
-        rs_bzero(psums, sizeof *psums);
-        free(psums);
+    rs_bzero(psums, sizeof *psums);
+    free(psums);
 }
 
-
-void
-rs_sumset_dump(rs_signature_t const *sums)
+void rs_sumset_dump(rs_signature_t const *sums)
 {
-        int i;
-        char        strong_hex[RS_MAX_STRONG_SUM_LENGTH * 3];
-    
-        rs_log(RS_LOG_INFO,
-                "sumset info: magic=%x, block_len=%d, block_num=%d",
-                sums->magic, sums->block_len, sums->count);
+    int i;
+    char strong_hex[RS_MAX_STRONG_SUM_LENGTH * 3];
 
-        for (i = 0; i < sums->count; i++) {
-                rs_hexify(strong_hex, sums->block_sigs[i].strong_sum,
-                          sums->strong_sum_len);
-                rs_log(RS_LOG_INFO,
-                        "sum %6d: weak=%08x, strong=%s",
-                        i, sums->block_sigs[i].weak_sum, strong_hex);
-        }
+    rs_log(RS_LOG_INFO, "sumset info: magic=%x, block_len=%d, block_num=%d", sums->magic, sums->block_len, sums->count);
+
+    for (i = 0; i < sums->count; i++) {
+        rs_hexify(strong_hex, sums->block_sigs[i].strong_sum, sums->strong_sum_len);
+        rs_log(RS_LOG_INFO, "sum %6d: weak=%08x, strong=%s", i, sums->block_sigs[i].weak_sum, strong_hex);
+    }
 }

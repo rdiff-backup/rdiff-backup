@@ -20,25 +20,24 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
 /* Description of the match described by a signature. */
 typedef struct rs_target {
-    unsigned short  t;
-    int             i;
+    unsigned short t;
+    int i;
 } rs_target_t;
 
 /* Hashtable entry pointing at a range of rs_targets. */
 typedef struct rs_tag_table_entry {
-    int l; // left bound of the hash tag in sorted array of targets
-    int r; // right bound of the hash tag in sorted array of targets
-    // all tags between l and r inclusively are the same
-} rs_tag_table_entry_t ;
+    /* All tags between l and r inclusively are the same. */
+    int l;                      /* Left bound of the hash tag in sorted array of targets. */
+    int r;                      /* right bound of the hash tag in sorted array of targets. */
+} rs_tag_table_entry_t;
 
 /* Signature of a single block. */
 typedef struct rs_block_sig {
-    int             i;		/* index of this chunk */
-    rs_weak_sum_t   weak_sum;	/* weak checksum */
-    rs_strong_sum_t strong_sum;	/* strong checksum  */
+    int i;                      /* Index of this block. */
+    rs_weak_sum_t weak_sum;     /* Block's weak checksum. */
+    rs_strong_sum_t strong_sum; /* Block's strong checksum.  */
 } rs_block_sig_t;
 
 /*
@@ -47,11 +46,11 @@ typedef struct rs_block_sig {
  * search.
  */
 struct rs_signature {
-    int             magic;
-    int             block_len;	/* The block length. */
-    int             strong_sum_len;  /* The block strong sum length. */
-    int             count;      /* Total number of blocks. */
-    rs_block_sig_t  *block_sigs; /* The block signatures for all blocks. */
-    rs_tag_table_entry_t	*tag_table;
-    rs_target_t     *targets;
+    int magic;                  /* The signature magic value. */
+    int block_len;              /* The block length. */
+    int strong_sum_len;         /* The block strong sum length. */
+    int count;                  /* Total number of blocks. */
+    rs_block_sig_t *block_sigs; /* The block signatures for all blocks. */
+    rs_tag_table_entry_t *tag_table;
+    rs_target_t *targets;
 };
