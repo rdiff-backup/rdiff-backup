@@ -21,28 +21,25 @@
  */
 
 
-/*
- * TODO: These structures are not terribly useful.  Perhaps we need a
- * splay tree or something that will let us smoothly grow as data is
- * read in.
- */
-
-
-/**
- * \brief Description of the match described by a signature.
- */
+/* Description of the match described by a signature. */
 typedef struct rs_target {
     unsigned short  t;
     int             i;
 } rs_target_t;
 
-typedef struct rs_block_sig rs_block_sig_t;
-
+/* Hashtable entry pointing at a range of rs_targets. */
 typedef struct rs_tag_table_entry {
     int l; // left bound of the hash tag in sorted array of targets
     int r; // right bound of the hash tag in sorted array of targets
     // all tags between l and r inclusively are the same
 } rs_tag_table_entry_t ;
+
+/* Signature of a single block. */
+typedef struct rs_block_sig {
+    int             i;		/* index of this chunk */
+    rs_weak_sum_t   weak_sum;	/* weak checksum */
+    rs_strong_sum_t strong_sum;	/* strong checksum  */
+} rs_block_sig_t;
 
 /*
  * This structure describes all the sums generated for an instance of
@@ -51,21 +48,10 @@ typedef struct rs_tag_table_entry {
  */
 struct rs_signature {
     int             magic;
-    int             block_len;	/* block_length */
-    int             strong_sum_len;
-    int             count;      /* how many blocks */
-    rs_block_sig_t  *block_sigs; /* points to info for each chunk */
+    int             block_len;	/* The block length. */
+    int             strong_sum_len;  /* The block strong sum length. */
+    int             count;      /* Total number of blocks. */
+    rs_block_sig_t  *block_sigs; /* The block signatures for all blocks. */
     rs_tag_table_entry_t	*tag_table;
     rs_target_t     *targets;
-};
-
-
-/*
- * All blocks are the same length in the current algorithm except for
- * the last block which may be short.
- */
-struct rs_block_sig {
-    int             i;		/* index of this chunk */
-    rs_weak_sum_t   weak_sum;	/* simple checksum */
-    rs_strong_sum_t strong_sum;	/* checksum  */
 };
