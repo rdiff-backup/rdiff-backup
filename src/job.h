@@ -54,9 +54,6 @@ struct rs_job {
      * used for preallocating needed memory for sums */
     rs_long_t           sig_file_bytes;
 
-    /** Estimated number of signature chunks */
-    int                 estimated_signature_count;
-    
     /** Command byte currently being processed, if any. */
     unsigned char       op;
 
