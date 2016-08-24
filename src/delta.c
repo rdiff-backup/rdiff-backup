@@ -21,11 +21,10 @@
  */
 
                                 /*
-                                 | Let's climb to the TOP of that
-                                 | MOUNTAIN and think about STRIP
-                                 | MINING!!
+                                   | Let's climb to the TOP of that
+                                   | MOUNTAIN and think about STRIP
+                                   | MINING!!
                                  */
-
 
 /*
  * delta.c -- Generate in streaming mode an rsync delta given a set of
@@ -60,7 +59,6 @@
  *
  * If nothing matches, it is not so good.
  */
-
 
 #include "config.h"
 
@@ -140,47 +138,43 @@ static inline rs_result rs_processmiss(rs_job_t *job);
  * scoop and input buffer. */
 static rs_result rs_delta_s_scan(rs_job_t *job)
 {
-    rs_long_t      match_pos;
-    size_t         match_len;
-    rs_result      result;
-    Rollsum        test;
+    rs_long_t match_pos;
+    size_t match_len;
+    rs_result result;
+    Rollsum test;
 
     rs_job_check(job);
     /* read the input into the scoop */
     rs_getinput(job);
     /* output any pending output from the tube */
-    result=rs_tube_catchup(job);
+    result = rs_tube_catchup(job);
     /* while output is not blocked and there is a block of data */
-    while ((result==RS_DONE) &&
-           ((job->scoop_pos + job->block_len) < job->scoop_avail)) {
+    while ((result == RS_DONE) && ((job->scoop_pos + job->block_len) < job->scoop_avail)) {
         /* check if this block matches */
-        if (rs_findmatch(job,&match_pos,&match_len)) {
+        if (rs_findmatch(job, &match_pos, &match_len)) {
             /* append the match and reset the weak_sum */
-            result=rs_appendmatch(job,match_pos,match_len);
+            result = rs_appendmatch(job, match_pos, match_len);
             RollsumInit(&job->weak_sum);
         } else {
             /* rotate the weak_sum and append the miss byte */
-            RollsumRotate(&job->weak_sum,job->scoop_next[job->scoop_pos],
-                          job->scoop_next[job->scoop_pos+job->block_len]);
-            result=rs_appendmiss(job,1);
+            RollsumRotate(&job->weak_sum, job->scoop_next[job->scoop_pos],
+                          job->scoop_next[job->scoop_pos + job->block_len]);
+            result = rs_appendmiss(job, 1);
             if (rs_roll_paranoia) {
                 RollsumInit(&test);
-                RollsumUpdate(&test, job->scoop_next+job->scoop_pos,
-                              job->block_len);
+                RollsumUpdate(&test, job->scoop_next + job->scoop_pos, job->block_len);
                 if (RollsumDigest(&test) != RollsumDigest(&job->weak_sum)) {
-                    rs_fatal("mismatch between rolled sum %#x and check %#x",
-                             (int)RollsumDigest(&job->weak_sum),
+                    rs_fatal("mismatch between rolled sum %#x and check %#x", (int)RollsumDigest(&job->weak_sum),
                              (int)RollsumDigest(&test));
                 }
-                
             }
         }
     }
     /* if we completed OK */
-    if (result==RS_DONE) {
+    if (result == RS_DONE) {
         /* if we reached eof, we can flush the last fragment */
         if (job->stream->eof_in) {
-            job->statefn=rs_delta_s_flush;
+            job->statefn = rs_delta_s_flush;
             return RS_RUNNING;
         } else {
             /* we are blocked waiting for more data */
@@ -190,43 +184,41 @@ static rs_result rs_delta_s_scan(rs_job_t *job)
     return result;
 }
 
-
 static rs_result rs_delta_s_flush(rs_job_t *job)
 {
-    rs_long_t      match_pos;
-    size_t         match_len;
-    rs_result      result;
+    rs_long_t match_pos;
+    size_t match_len;
+    rs_result result;
 
     rs_job_check(job);
     /* read the input into the scoop */
     rs_getinput(job);
     /* output any pending output */
-    result=rs_tube_catchup(job);
+    result = rs_tube_catchup(job);
     /* while output is not blocked and there is any remaining data */
-    while ((result==RS_DONE) && (job->scoop_pos < job->scoop_avail)) {
+    while ((result == RS_DONE) && (job->scoop_pos < job->scoop_avail)) {
         /* check if this block matches */
-        if (rs_findmatch(job,&match_pos,&match_len)) {
+        if (rs_findmatch(job, &match_pos, &match_len)) {
             /* append the match and reset the weak_sum */
-            result=rs_appendmatch(job,match_pos,match_len);
+            result = rs_appendmatch(job, match_pos, match_len);
             RollsumInit(&job->weak_sum);
         } else {
             /* rollout from weak_sum and append the miss byte */
-            RollsumRollout(&job->weak_sum,job->scoop_next[job->scoop_pos]);
+            RollsumRollout(&job->weak_sum, job->scoop_next[job->scoop_pos]);
             rs_trace("block reduced to %d", (int)job->weak_sum.count);
-            result=rs_appendmiss(job,1);
+            result = rs_appendmiss(job, 1);
         }
     }
     /* if we are not blocked, flush and set end statefn. */
-    if (result==RS_DONE) {
-        result=rs_appendflush(job);
-        job->statefn=rs_delta_s_end;
+    if (result == RS_DONE) {
+        result = rs_appendflush(job);
+        job->statefn = rs_delta_s_end;
     }
-    if (result==RS_DONE) {
+    if (result == RS_DONE) {
         return RS_RUNNING;
     }
     return result;
 }
-
 
 static rs_result rs_delta_s_end(rs_job_t *job)
 {
@@ -234,17 +226,16 @@ static rs_result rs_delta_s_end(rs_job_t *job)
     return RS_DONE;
 }
 
-
-void rs_getinput(rs_job_t *job) {
+void rs_getinput(rs_job_t *job)
+{
     size_t len;
-    
-    len=rs_scoop_total_avail(job);
+
+    len = rs_scoop_total_avail(job);
     if (job->scoop_avail < len) {
-        rs_scoop_input(job,len);
+        rs_scoop_input(job, len);
     }
 }
 
-        
 /**
  * find a match at scoop_pos, returning the match_pos and match_len.
  * Note that this will calculate weak_sum if required. It will also
@@ -255,57 +246,52 @@ void rs_getinput(rs_job_t *job) {
  * forwards beyond the block boundaries. Extending backwards would require
  * decrementing scoop_pos as appropriate.
  */
-inline int rs_findmatch(rs_job_t *job, rs_long_t *match_pos, size_t *match_len) {
+inline int rs_findmatch(rs_job_t *job, rs_long_t *match_pos, size_t *match_len)
+{
     /* calculate the weak_sum if we don't have one */
     if (job->weak_sum.count == 0) {
         /* set match_len to min(block_len, scan_avail) */
-        *match_len=job->scoop_avail - job->scoop_pos;
+        *match_len = job->scoop_avail - job->scoop_pos;
         if (*match_len > job->block_len) {
             *match_len = job->block_len;
         }
         /* Update the weak_sum */
-        RollsumUpdate(&job->weak_sum,job->scoop_next+job->scoop_pos,*match_len);
-        rs_trace("calculate weak sum from scratch length %d",(int)job->weak_sum.count);
+        RollsumUpdate(&job->weak_sum, job->scoop_next + job->scoop_pos, *match_len);
+        rs_trace("calculate weak sum from scratch length %d", (int)job->weak_sum.count);
     } else {
         /* set the match_len to the weak_sum count */
-        *match_len=job->weak_sum.count;
+        *match_len = job->weak_sum.count;
     }
-    return rs_search_for_block(RollsumDigest(&job->weak_sum),
-                               job->scoop_next+job->scoop_pos,
-                               *match_len,
-                               job->signature,
-                               &job->stats,
-                               match_pos);
+    return rs_search_for_block(RollsumDigest(&job->weak_sum), job->scoop_next + job->scoop_pos, *match_len,
+                               job->signature, &job->stats, match_pos);
 }
-
 
 /**
  * Append a match at match_pos of length match_len to the delta, extending
  * a previous match if possible, or flushing any previous miss/match. */
 inline rs_result rs_appendmatch(rs_job_t *job, rs_long_t match_pos, size_t match_len)
 {
-    rs_result result=RS_DONE;
-    
+    rs_result result = RS_DONE;
+
     /* if last was a match that can be extended, extend it */
     if (job->basis_len && (job->basis_pos + job->basis_len) == match_pos) {
-        job->basis_len+=match_len;
+        job->basis_len += match_len;
     } else {
         /* else appendflush the last value */
-        result=rs_appendflush(job);
+        result = rs_appendflush(job);
         /* make this the new match value */
-        job->basis_pos=match_pos;
-        job->basis_len=match_len;
+        job->basis_pos = match_pos;
+        job->basis_len = match_len;
     }
     /* increment scoop_pos to point at next unscanned data */
-    job->scoop_pos+=match_len;
+    job->scoop_pos += match_len;
     /* we can only process from the scoop if output is not blocked */
-    if (result==RS_DONE) {
-        /* process the match data off the scoop*/
-        result=rs_processmatch(job);
+    if (result == RS_DONE) {
+        /* process the match data off the scoop */
+        result = rs_processmatch(job);
     }
     return result;
 }
-
 
 /**
  * Append a miss of length miss_len to the delta, extending a previous miss
@@ -315,17 +301,16 @@ inline rs_result rs_appendmatch(rs_job_t *job, rs_long_t match_pos, size_t match
  * too much in memory. */
 inline rs_result rs_appendmiss(rs_job_t *job, size_t miss_len)
 {
-    rs_result result=RS_DONE;
-    
+    rs_result result = RS_DONE;
+
     /* if last was a match, or block_len misses, appendflush it */
     if (job->basis_len || (job->scoop_pos >= rs_outbuflen)) {
-        result=rs_appendflush(job);
+        result = rs_appendflush(job);
     }
     /* increment scoop_pos */
-    job->scoop_pos+=miss_len;
+    job->scoop_pos += miss_len;
     return result;
 }
-
 
 /**
  * Flush any accumulating hit or miss, appending it to the delta.
@@ -334,22 +319,20 @@ inline rs_result rs_appendflush(rs_job_t *job)
 {
     /* if last is a match, emit it and reset last by resetting basis_len */
     if (job->basis_len) {
-        rs_trace("matched " PRINTF_FORMAT_U64 " bytes at " PRINTF_FORMAT_U64 "!",
-                 PRINTF_CAST_U64(job->basis_len),
+        rs_trace("matched " PRINTF_FORMAT_U64 " bytes at " PRINTF_FORMAT_U64 "!", PRINTF_CAST_U64(job->basis_len),
                  PRINTF_CAST_U64(job->basis_pos));
         rs_emit_copy_cmd(job, job->basis_pos, job->basis_len);
-        job->basis_len=0;
+        job->basis_len = 0;
         return rs_processmatch(job);
-    /* else if last is a miss, emit and process it*/
+        /* else if last is a miss, emit and process it */
     } else if (job->scoop_pos) {
-        rs_trace("got %ld bytes of literal data", (long) job->scoop_pos);
+        rs_trace("got %ld bytes of literal data", (long)job->scoop_pos);
         rs_emit_literal_cmd(job, job->scoop_pos);
         return rs_processmiss(job);
     }
     /* otherwise, nothing to flush so we are done */
     return RS_DONE;
 }
-
 
 /**
  * The scoop contains match data at scoop_next of length scoop_pos. This
@@ -363,12 +346,12 @@ inline rs_result rs_appendflush(rs_job_t *job)
  * rs_tube_catchup to output any pending output. */
 inline rs_result rs_processmatch(rs_job_t *job)
 {
-    job->scoop_avail-=job->scoop_pos;
-    job->scoop_next+=job->scoop_pos;
-    job->scoop_pos=0;
+    job->scoop_avail -= job->scoop_pos;
+    job->scoop_next += job->scoop_pos;
+    job->scoop_pos = 0;
     return rs_tube_catchup(job);
 }
-    
+
 /**
  * The scoop contains miss data at scoop_next of length scoop_pos. This
  * function processes that miss data, returning RS_DONE if it completes, or
@@ -386,10 +369,9 @@ inline rs_result rs_processmatch(rs_job_t *job)
 inline rs_result rs_processmiss(rs_job_t *job)
 {
     rs_tube_copy(job, job->scoop_pos);
-    job->scoop_pos=0;
+    job->scoop_pos = 0;
     return rs_tube_catchup(job);
 }
-
 
 /**
  * \brief State function that does a slack delta containing only
@@ -397,12 +379,11 @@ inline rs_result rs_processmiss(rs_job_t *job)
  */
 static rs_result rs_delta_s_slack(rs_job_t *job)
 {
-    rs_buffers_t * const stream = job->stream;
+    rs_buffers_t *const stream = job->stream;
     size_t avail = stream->avail_in;
 
     if (avail) {
-        rs_trace("emit slack delta for " PRINTF_FORMAT_U64
-                 " available bytes", PRINTF_CAST_U64(avail));
+        rs_trace("emit slack delta for " PRINTF_FORMAT_U64 " available bytes", PRINTF_CAST_U64(avail));
         rs_emit_literal_cmd(job, avail);
         rs_tube_copy(job, avail);
         return RS_RUNNING;
@@ -415,7 +396,6 @@ static rs_result rs_delta_s_slack(rs_job_t *job)
         }
     }
 }
-
 
 /**
  * State function for writing out the header of the encoding job.
@@ -431,14 +411,12 @@ static rs_result rs_delta_s_header(rs_job_t *job)
         }
         job->statefn = rs_delta_s_scan;
     } else {
-        rs_trace("block length is zero for this delta; "
-                 "therefore using slack deltas");
+        rs_trace("block length is zero for this delta; " "therefore using slack deltas");
         job->statefn = rs_delta_s_slack;
     }
 
     return RS_RUNNING;
 }
-
 
 rs_job_t *rs_delta_begin(rs_signature_t *sig)
 {
@@ -454,18 +432,16 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
     RollsumInit(&job->weak_sum);
 
     if ((job->block_len = sig->block_len) < 0) {
-        rs_log(RS_LOG_ERR, "unreasonable block_len %d in signature",
-               job->block_len);
+        rs_log(RS_LOG_ERR, "unreasonable block_len %d in signature", job->block_len);
         return NULL;
     }
 
     job->strong_sum_len = sig->strong_sum_len;
-    if (job->strong_sum_len < 0  ||  job->strong_sum_len > RS_MAX_STRONG_SUM_LENGTH) {
-        rs_log(RS_LOG_ERR, "unreasonable strong_sum_len %d in signature",
-               job->strong_sum_len);
+    if (job->strong_sum_len < 0 || job->strong_sum_len > RS_MAX_STRONG_SUM_LENGTH) {
+        rs_log(RS_LOG_ERR, "unreasonable strong_sum_len %d in signature", job->strong_sum_len);
         return NULL;
     }
-    
+
     switch (job->signature->magic) {
     case RS_BLAKE2_SIG_MAGIC:
     case RS_MD4_SIG_MAGIC:
