@@ -140,37 +140,14 @@ static rs_result rs_sig_s_generate(rs_job_t *job)
 rs_job_t *rs_sig_begin(size_t new_block_len, size_t strong_sum_len, rs_magic_number sig_magic)
 {
     rs_job_t *job;
-    int native_length;
+    rs_signature_t sig;
 
     job = rs_job_new("signature", rs_sig_s_header);
-    job->block_len = new_block_len;
-
-    if (!sig_magic)
-        sig_magic = RS_BLAKE2_SIG_MAGIC;
-
-    switch (sig_magic) {
-    case RS_BLAKE2_SIG_MAGIC:
-        native_length = RS_BLAKE2_SUM_LENGTH;
-        job->magic = sig_magic;
-        break;
-    case RS_MD4_SIG_MAGIC:
-        job->magic = sig_magic;
-        native_length = RS_MD4_SUM_LENGTH;
-        break;
-    default:
-        rs_error("invalid sig_magic %#lx", (unsigned long)sig_magic);
+    if (rs_signature_init(&sig, sig_magic, new_block_len, strong_sum_len, 0) != RS_DONE)
         return NULL;
-    }
-
-    if (!strong_sum_len)
-        job->strong_sum_len = native_length;
-    else {
-        assert(strong_sum_len <= native_length);
-        job->strong_sum_len = strong_sum_len;
-    }
-
+    job->magic = sig.magic;
+    job->block_len = sig.block_len;
+    job->strong_sum_len = sig.strong_sum_len;
+    rs_signature_done(&sig);
     return job;
 }
-
-/* vim: expandtab shiftwidth=4
- */
