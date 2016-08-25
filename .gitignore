@@ -32,12 +32,13 @@ Testing
 # Editor temp files
 .sw?
 .*.sw?
+*~
 
 # OSX build outputs
 *.dSYM
 
 # Test binaries
-isprefix_test
+*_test
 
 *.bak
 
