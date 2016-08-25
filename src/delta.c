@@ -420,36 +420,18 @@ static rs_result rs_delta_s_header(rs_job_t *job)
 
 rs_job_t *rs_delta_begin(rs_signature_t *sig)
 {
-    /* Caller must have called rs_build_hash_table() by now */
-    if (!sig->tag_table)
-        rs_fatal("Must call rs_build_hash_table() prior to calling rs_delta_begin()");
-
     rs_job_t *job;
 
     job = rs_job_new("delta", rs_delta_s_header);
-    job->signature = sig;
-
-    RollsumInit(&job->weak_sum);
-
-    if ((job->block_len = sig->block_len) < 0) {
-        rs_log(RS_LOG_ERR, "unreasonable block_len %d in signature", job->block_len);
-        return NULL;
+    /* Caller can pass NULL sig for "slack deltas". */
+    if (sig) {
+        rs_signature_check(sig);
+        /* Caller must have called rs_build_hash_table() by now. */
+        assert(sig->tag_table);
+        job->signature = sig;
+        job->block_len = sig->block_len;
+        job->strong_sum_len = sig->strong_sum_len;
+        RollsumInit(&job->weak_sum);
     }
-
-    job->strong_sum_len = sig->strong_sum_len;
-    if (job->strong_sum_len < 0 || job->strong_sum_len > RS_MAX_STRONG_SUM_LENGTH) {
-        rs_log(RS_LOG_ERR, "unreasonable strong_sum_len %d in signature", job->strong_sum_len);
-        return NULL;
-    }
-
-    switch (job->signature->magic) {
-    case RS_BLAKE2_SIG_MAGIC:
-    case RS_MD4_SIG_MAGIC:
-        break;
-    default:
-        rs_error("Unknown signature algorithm %#x", job->signature->magic);
-        return NULL;
-    }
-
     return job;
 }
