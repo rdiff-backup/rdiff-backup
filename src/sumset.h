@@ -20,6 +20,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <assert.h>
+#include "checksum.h"
+
 /** Description of the match described by a signature. */
 typedef struct rs_target {
     unsigned short t;
@@ -67,3 +70,26 @@ void rs_signature_done(rs_signature_t *sig);
 
 /** Add a block to an rs_signature instance. */
 rs_block_sig_t *rs_signature_add_block(rs_signature_t *sig, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum);
+
+/** Assert that a signature is valid.
+ *
+ * We don't use a static inline function here so that assert failure
+ * output points at where rs_signature_check() was called from. */
+#define rs_signature_check(sig) do {\
+    assert((sig->magic == RS_BLAKE2_SIG_MAGIC && sig->strong_sum_len <= RS_BLAKE2_SUM_LENGTH)\
+           || (sig->magic == RS_MD4_SIG_MAGIC && sig->strong_sum_len <= RS_MD4_SUM_LENGTH));\
+    assert(0 < sig->block_len);\
+    assert(0 < sig->strong_sum_len && sig->strong_sum_len <= RS_MAX_STRONG_SUM_LENGTH);\
+    assert(0 <= sig->count && sig->count <= sig->size);\
+} while (0)
+
+/** Calculate the strong sum of a buffer. */
+static inline void rs_signature_calc_strong_sum(rs_signature_t const *sig, void const *buf, size_t len,
+                                                rs_strong_sum_t *sum)
+{
+    if (sig->magic == RS_BLAKE2_SIG_MAGIC) {
+        rs_calc_blake2_sum(buf, len, sum);
+    } else {
+        rs_calc_md4_sum(buf, len, sum);
+    }
+}

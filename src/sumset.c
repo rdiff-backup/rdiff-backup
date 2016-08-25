@@ -58,8 +58,8 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int s
         return RS_BAD_MAGIC;
     }
     strong_len = strong_len ? strong_len : max_strong_len;
-    if (strong_len > max_strong_len) {
-        rs_error("invalid strong_sum_len %d > %d for magic %#x", strong_len, max_strong_len, magic);
+    if (strong_len < 1 || max_strong_len < strong_len) {
+        rs_error("invalid strong_sum_len %d for magic %#x", strong_len, magic);
         return RS_PARAM_ERROR;
     }
     /* Set attributes from args. */
@@ -73,6 +73,7 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int s
     sig->targets = NULL;
     if (block_num)
         sig->block_sigs = rs_alloc(block_num * sizeof(rs_block_sig_t), "signature->block_sigs");
+    rs_signature_check(sig);
     return RS_DONE;
 }
 
@@ -86,7 +87,7 @@ void rs_signature_done(rs_signature_t *sig)
 
 rs_block_sig_t *rs_signature_add_block(rs_signature_t *sig, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum)
 {
-    assert(0 <= sig->count && sig->count <= sig->size);
+    rs_signature_check(sig);
     /* If block_sigs is full, allocate more space. */
     if (sig->count == sig->size) {
         sig->size = sig->size ? sig->size * 2 : 16;
