@@ -190,6 +190,27 @@ if(DOXYGEN_FOUND)
     )
 endif(DOXYGEN_FOUND)
 
+# Code tidy target to reformat code with indent.
+file(GLOB tidy_SRCS src/*.[ch])
+# Exclude blake2 sources to preserve upstream formatting.
+file(GLOB blake2_SRCS src/blake2*.[ch])
+list(REMOVE_ITEM tidy_SRCS ${blake2_SRCS})
+set(TYPE_RE "(\\w+_t)")
+set(CAST_RE "(\\(${TYPE_RE}( \\*+)?\\))")
+add_custom_target(tidy
+    COMMENT "Reformatting all source files to preferred coding style."
+    # Note indent requires all userdefined types to be specified with '-T <type>' args to
+    # format them correctly. Rather than do that, we just postprocess with sed.
+    #
+    # Linux format with no tabs, indent 4, format column1 comments.
+    COMMAND indent -linux -nut -i4 -fc1 -T FILE -T Rollsum ${tidy_SRCS}
+    # Remove space between * or & and identifier after userdefined types.
+    COMMAND sed -r -i "s:((${TYPE_RE}|${CAST_RE}) (&|\\*+)) :\\1:g" ${tidy_SRCS}
+    # Remove space after type cast for userdefined types like indent -ncs.
+    COMMAND sed -r -i "s:(${CAST_RE}) :\\1:g" ${tidy_SRCS}
+    VERBATIM
+)
+
 # Generate prototab.c/h
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
 execute_process(COMMAND ${PERL_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/src/mkprototab.pl" "${CMAKE_CURRENT_BINARY_DIR}/src/prototab.c" "${CMAKE_CURRENT_BINARY_DIR}/src/prototab.h")
@@ -198,7 +219,7 @@ execute_process(COMMAND ${PERL_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/src/mkpr
 
 add_executable(isprefix_test
     tests/isprefix_test.c src/isprefix.c)
-    
+
 add_test(NAME isprefix_test COMMAND isprefix_test)
 
 add_executable(rollsum_test
@@ -210,9 +231,9 @@ if (BUILD_RDIFF)
     add_test(NAME rdiff_bad_option
              COMMAND rdiff_bad_option.sh ${CMAKE_CURRENT_BINARY_DIR}
              WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-    
+
     add_test(NAME Help COMMAND help.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-    
+
     add_test(NAME Mutate COMMAND mutate.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     add_test(NAME Signature COMMAND signature.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     add_test(NAME Sources COMMAND sources.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
