@@ -20,6 +20,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+
 /**
  * \file mksum.c Generate file signatures.
  **/
@@ -50,9 +51,12 @@
 #include "netint.h"
 #include "trace.h"
 
+
 /* Possible state functions for signature generation. */
 static rs_result rs_sig_s_header(rs_job_t *);
 static rs_result rs_sig_s_generate(rs_job_t *);
+
+
 
 /**
  * State of trying to send the signature header.
@@ -76,30 +80,32 @@ static rs_result rs_sig_s_header(rs_job_t *job)
     rs_squirt_n4(job, job->magic);
     rs_squirt_n4(job, job->block_len);
     rs_squirt_n4(job, job->strong_sum_len);
-    rs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)", job->magic, (int)job->block_len,
-             (int)job->strong_sum_len);
+    rs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)",
+             job->magic, (int) job->block_len, (int) job->strong_sum_len);
     job->stats.block_len = job->block_len;
 
     job->statefn = rs_sig_s_generate;
     return RS_RUNNING;
 }
 
+
 /**
  * Generate the checksums for a block and write it out.  Called when
  * we already know we have enough data in memory at \p block.
  * \private
  */
-static rs_result rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
+static rs_result
+rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
 {
-    rs_weak_sum_t weak_sum;
-    rs_strong_sum_t strong_sum;
+    rs_weak_sum_t       weak_sum;
+    rs_strong_sum_t     strong_sum;
 
     weak_sum = rs_calc_weak_sum(block, len);
     rs_signature_calc_strong_sum(job->signature, block, len, &strong_sum);
     rs_squirt_n4(job, weak_sum);
     rs_tube_write(job, strong_sum, job->strong_sum_len);
     if (rs_trace_enabled()) {
-        char strong_sum_hex[RS_MAX_STRONG_SUM_LENGTH * 2 + 1];
+        char                strong_sum_hex[RS_MAX_STRONG_SUM_LENGTH * 2 + 1];
         rs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
         rs_trace("sent block: weak=0x%08x, strong=%s", weak_sum, strong_sum_hex);
     }
@@ -107,15 +113,17 @@ static rs_result rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
     return RS_RUNNING;
 }
 
+
 /**
  * State of reading a block and trying to generate its sum.
  * \private
  */
-static rs_result rs_sig_s_generate(rs_job_t *job)
+static rs_result
+rs_sig_s_generate(rs_job_t *job)
 {
-    rs_result result;
-    size_t len;
-    void *block;
+    rs_result           result;
+    size_t              len;
+    void                *block;
 
     /* must get a whole block, otherwise try again */
     len = job->block_len;
@@ -134,11 +142,15 @@ static rs_result rs_sig_s_generate(rs_job_t *job)
         rs_trace("generate stopped: %s", rs_strerror(result));
         return result;
     }
-    rs_trace("got %ld byte block", (long)len);
+
+    rs_trace("got %ld byte block", (long) len);
+
     return rs_sig_do_block(job, block, len);
 }
 
-rs_job_t *rs_sig_begin(size_t new_block_len, size_t strong_sum_len, rs_magic_number sig_magic)
+
+rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
+                        rs_magic_number sig_magic)
 {
     rs_job_t *job;
 
