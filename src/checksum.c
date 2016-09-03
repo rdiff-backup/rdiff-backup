@@ -1,21 +1,21 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
- * 
+ *
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 1996 by Andrew Tridgell
  * Copyright (C) 1996 by Paul Mackerras
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -29,36 +29,18 @@
 
 #include "librsync.h"
 #include "checksum.h"
+#include "rollsum.h"
 #include "blake2.h"
 
 
-/* This can possibly be used to restart the checksum system in the
- * case where we detected corruption.  I'm not sure yet how to make
- * this useful in librsync. */
-int checksum_seed = 0;
-
-/*
- * A simple 32 bit checksum that can be updated from either end
- * (inspired by Mark Adler's Adler-32 checksum)
- */
-unsigned int rs_calc_weak_sum(void const *p, int len)
+/* A simple 32bit checksum that can be incrementally updated. */
+rs_weak_sum_t rs_calc_weak_sum(void const *buf, size_t len)
 {
-        int i;
-        unsigned        s1, s2;
-        unsigned char const    *buf = (unsigned char const *) p;
+    Rollsum sum;
 
-        s1 = s2 = 0;
-        for (i = 0; i < (len - 4); i += 4) {
-                s2 += 4 * (s1 + buf[i]) + 3 * buf[i + 1] +
-                        2 * buf[i + 2] + buf[i + 3] + 10 * RS_CHAR_OFFSET;
-                s1 += (buf[i + 0] + buf[i + 1] + buf[i + 2] + buf[i + 3] +
-                       4 * RS_CHAR_OFFSET);
-        }
-        for (; i < len; i++) {
-                s1 += (buf[i] + RS_CHAR_OFFSET);
-                s2 += s1;
-        }
-        return (s1 & 0xffff) + (s2 << 16);
+    RollsumInit(&sum);
+    RollsumUpdate(&sum, buf, len);
+    return RollsumDigest(&sum);
 }
 
 
