@@ -270,6 +270,7 @@ set(rsync_LIB_SRCS
     src/delta.c
     src/emit.c
     src/fileutil.c
+    src/hashtable.c
     src/hex.c
     src/job.c
     src/mdfour.c
@@ -280,7 +281,6 @@ set(rsync_LIB_SRCS
     src/readsums.c
     src/rollsum.c
     src/scoop.c
-    src/search.c
     src/stats.c
     src/stream.c
     src/sumset.c

@@ -32,12 +32,46 @@
 #include "util.h"
 #include "trace.h"
 
-void rs_block_sig_init(rs_block_sig_t *sig, int i, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum,
-                       int strong_len)
+void rs_block_sig_init(rs_block_sig_t *sig, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum, int strong_len)
 {
-    sig->i = i;
     sig->weak_sum = weak_sum;
     memcpy(sig->strong_sum, strong_sum, strong_len);
+}
+
+unsigned rs_block_sig_hash(const rs_block_sig_t *sig)
+{
+    return (unsigned)sig->weak_sum;
+}
+
+typedef struct blocksig_match {
+    rs_block_sig_t blocksig;
+    rs_signature_t *signature;
+    int got_strong;
+    const void *buf;
+    size_t len;
+} blocksig_match_t;
+
+void blocksig_match_init(blocksig_match_t *match, rs_signature_t *sig, rs_weak_sum_t weak_sum, const void *buf,
+                         size_t len)
+{
+    match->blocksig.weak_sum = weak_sum;
+    match->signature = sig;
+    match->got_strong = 0;
+    match->buf = buf;
+    match->len = len;
+}
+
+int blocksig_match_cmp(blocksig_match_t *match, const rs_block_sig_t *blocksig)
+{
+    int v;
+
+    if ((v = match->blocksig.weak_sum - blocksig->weak_sum))
+        return v;
+    if (!match->got_strong) {
+        rs_signature_calc_strong_sum(match->signature, match->buf, match->len, &(match->blocksig.strong_sum));
+        match->got_strong = 1;
+    }
+    return memcmp(&match->blocksig.strong_sum, &blocksig->strong_sum, match->signature->strong_sum_len);
 }
 
 rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int strong_len, int block_num)
@@ -68,20 +102,18 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int s
     sig->strong_sum_len = strong_len;
     sig->count = 0;
     sig->size = block_num;
-    sig->block_sigs = NULL;
-    sig->tag_table = NULL;
-    sig->targets = NULL;
     if (block_num)
         sig->block_sigs = rs_alloc(block_num * sizeof(rs_block_sig_t), "signature->block_sigs");
+    /* Set hashtable size to zero to indicate it has not been constructed yet. */
+    sig->hashtable.size = 0;
     rs_signature_check(sig);
     return RS_DONE;
 }
 
 void rs_signature_done(rs_signature_t *sig)
 {
-    free(sig->block_sigs);
-    free(sig->tag_table);
-    free(sig->targets);
+    if (sig->hashtable.size)
+        hashtable_done(&sig->hashtable);
     rs_bzero(sig, sizeof(*sig));
 }
 
@@ -94,8 +126,34 @@ rs_block_sig_t *rs_signature_add_block(rs_signature_t *sig, rs_weak_sum_t weak_s
         sig->block_sigs = rs_realloc(sig->block_sigs, sig->size * sizeof(rs_block_sig_t), "signature->block_sigs");
     }
     rs_block_sig_t *b = &sig->block_sigs[sig->count++];
-    rs_block_sig_init(b, sig->count, weak_sum, strong_sum, sig->strong_sum_len);
+    rs_block_sig_init(b, weak_sum, strong_sum, sig->strong_sum_len);
     return b;
+}
+
+rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum, void const *buf, size_t len)
+{
+    blocksig_match_t m;
+    rs_block_sig_t *b;
+
+    rs_signature_check(sig);
+    blocksig_match_init(&m, sig, weak_sum, buf, len);
+    if ((b = hashtable_find(&sig->hashtable, &m))) {
+        return (rs_long_t)(b - sig->block_sigs) * sig->block_len;
+    }
+    return -1;
+}
+
+rs_result rs_build_hash_table(rs_signature_t *sig)
+{
+    int i;
+
+    rs_signature_check(sig);
+    hashtable_init(&sig->hashtable, sig->count, (hash_f)&rs_block_sig_hash, (cmp_f)&blocksig_match_cmp);
+    if (!sig->hashtable.table)
+        return RS_MEM_ERROR;
+    for (i = 0; i < sig->count; i++)
+        hashtable_add(&sig->hashtable, &sig->block_sigs[i]);
+    return RS_DONE;
 }
 
 void rs_free_sumset(rs_signature_t *psums)

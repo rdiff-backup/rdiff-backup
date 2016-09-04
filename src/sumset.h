@@ -21,45 +21,29 @@
  */
 
 #include <assert.h>
+#include "hashtable.h"
 #include "checksum.h"
-
-/** Description of the match described by a signature. */
-typedef struct rs_target {
-    unsigned short t;
-    int i;
-} rs_target_t;
-
-/** Hashtable entry pointing at a range of rs_targets. */
-typedef struct rs_tag_table_entry {
-    /* All tags between l and r inclusively are the same. */
-    int l;                      /**> Left bound of the hash tag in sorted array of targets. */
-    int r;                      /**> right bound of the hash tag in sorted array of targets. */
-} rs_tag_table_entry_t;
 
 /** Signature of a single block. */
 typedef struct rs_block_sig {
-    int i;                      /**> Index of this block. */
     rs_weak_sum_t weak_sum;     /**> Block's weak checksum. */
     rs_strong_sum_t strong_sum; /**> Block's strong checksum.  */
 } rs_block_sig_t;
 
-void rs_block_sig_init(rs_block_sig_t *sig, int i, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum,
-                       int strong_len);
+void rs_block_sig_init(rs_block_sig_t *sig, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum, int strong_len);
 
 /** Signature of a whole file.
  *
- * This includes the all the block sums generated for a file and
- * datastructures for fast matching against them.
- */
+ * This includes the all the block sums generated for a file and datastructures
+ * for fast matching against them. */
 struct rs_signature {
-    int magic;                  /**> The signature magic value. */
-    int block_len;              /**> The block length. */
-    int strong_sum_len;         /**> The block strong sum length. */
-    int count;                  /**> Total number of blocks. */
-    int size;                   /**> Total number of blocks allocated. */
-    rs_block_sig_t *block_sigs; /**> The block signatures for all blocks. */
-    rs_tag_table_entry_t *tag_table;
-    rs_target_t *targets;
+    int magic;                  /**< The signature magic value. */
+    int block_len;              /**< The block length. */
+    int strong_sum_len;         /**< The block strong sum length. */
+    int count;                  /**< Total number of blocks. */
+    int size;                   /**< Total number of blocks allocated. */
+    rs_block_sig_t *block_sigs; /**< The block signatures for all blocks. */
+    hashtable_t hashtable;      /**< The hashtable for finding matches. */
 };
 
 /** Initialize an rs_signature instance. */
@@ -71,16 +55,20 @@ void rs_signature_done(rs_signature_t *sig);
 /** Add a block to an rs_signature instance. */
 rs_block_sig_t *rs_signature_add_block(rs_signature_t *sig, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum);
 
+/** Find a matching block offset in a signature. */
+rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum, void const *buf, size_t len);
+
 /** Assert that a signature is valid.
  *
- * We don't use a static inline function here so that assert failure
- * output points at where rs_signature_check() was called from. */
+ * We don't use a static inline function here so that assert failure output
+ * points at where rs_signature_check() was called from. */
 #define rs_signature_check(sig) do {\
     assert((sig->magic == RS_BLAKE2_SIG_MAGIC && sig->strong_sum_len <= RS_BLAKE2_SUM_LENGTH)\
            || (sig->magic == RS_MD4_SIG_MAGIC && sig->strong_sum_len <= RS_MD4_SUM_LENGTH));\
     assert(0 < sig->block_len);\
     assert(0 < sig->strong_sum_len && sig->strong_sum_len <= RS_MAX_STRONG_SUM_LENGTH);\
     assert(0 <= sig->count && sig->count <= sig->size);\
+    assert(!sig->hashtable.size || sig->hashtable.table);\
 } while (0)
 
 /** Calculate the strong sum of a buffer. */

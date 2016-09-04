@@ -172,7 +172,7 @@ static rs_result rs_delta_s_scan(rs_job_t *job)
                              (int)RollsumDigest(&job->weak_sum),
                              (int)RollsumDigest(&test));
                 }
-                
+
             }
         }
     }
@@ -237,14 +237,14 @@ static rs_result rs_delta_s_end(rs_job_t *job)
 
 void rs_getinput(rs_job_t *job) {
     size_t len;
-    
+
     len=rs_scoop_total_avail(job);
     if (job->scoop_avail < len) {
         rs_scoop_input(job,len);
     }
 }
 
-        
+
 /**
  * find a match at scoop_pos, returning the match_pos and match_len.
  * Note that this will calculate weak_sum if required. It will also
@@ -270,12 +270,11 @@ inline int rs_findmatch(rs_job_t *job, rs_long_t *match_pos, size_t *match_len) 
         /* set the match_len to the weak_sum count */
         *match_len=job->weak_sum.count;
     }
-    return rs_search_for_block(RollsumDigest(&job->weak_sum),
-                               job->scoop_next+job->scoop_pos,
-                               *match_len,
-                               job->signature,
-                               &job->stats,
-                               match_pos);
+    *match_pos = rs_signature_find_match(job->signature,
+					 RollsumDigest(&job->weak_sum),
+					 job->scoop_next+job->scoop_pos,
+					 *match_len);
+    return *match_pos != -1;
 }
 
 
@@ -285,7 +284,7 @@ inline int rs_findmatch(rs_job_t *job, rs_long_t *match_pos, size_t *match_len) 
 inline rs_result rs_appendmatch(rs_job_t *job, rs_long_t match_pos, size_t match_len)
 {
     rs_result result=RS_DONE;
-    
+
     /* if last was a match that can be extended, extend it */
     if (job->basis_len && (job->basis_pos + job->basis_len) == match_pos) {
         job->basis_len+=match_len;
@@ -316,7 +315,7 @@ inline rs_result rs_appendmatch(rs_job_t *job, rs_long_t match_pos, size_t match
 inline rs_result rs_appendmiss(rs_job_t *job, size_t miss_len)
 {
     rs_result result=RS_DONE;
-    
+
     /* if last was a match, or block_len misses, appendflush it */
     if (job->basis_len || (job->scoop_pos >= rs_outbuflen)) {
         result=rs_appendflush(job);
@@ -368,7 +367,7 @@ inline rs_result rs_processmatch(rs_job_t *job)
     job->scoop_pos=0;
     return rs_tube_catchup(job);
 }
-    
+
 /**
  * The scoop contains miss data at scoop_next of length scoop_pos. This
  * function processes that miss data, returning RS_DONE if it completes, or
@@ -449,7 +448,7 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
     if (sig) {
         rs_signature_check(sig);
         /* Caller must have called rs_build_hash_table() by now. */
-        assert(sig->tag_table);
+        assert(sig->hashtable.size);
         job->signature = sig;
         job->block_len = sig->block_len;
         job->strong_sum_len = sig->strong_sum_len;
