@@ -101,9 +101,9 @@
  *   *k - the key or match object to hash.
  *
  * Returns:
- *   An int hash value.
+ *   An unsigned hash value.
  */
-typedef int (*hash_f) (const void *k);
+typedef unsigned (*hash_f) (const void *k);
 
 /* The cmp() function type.
  *
