@@ -67,7 +67,8 @@ static rs_result rs_sig_s_header(rs_job_t *job)
     rs_signature_t *sig = job->signature;
     rs_result result;
 
-    if ((result = rs_signature_init(sig, job->magic, job->block_len, job->strong_sum_len, 0)) != RS_DONE)
+    if ((result = rs_signature_init(sig, job->sig_magic, job->sig_block_len,
+				    job->sig_strong_len, 0)) != RS_DONE)
         return result;
     rs_squirt_n4(job, sig->magic);
     rs_squirt_n4(job, sig->block_len);
@@ -94,7 +95,7 @@ rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
     rs_strong_sum_t     strong_sum;
 
     weak_sum = rs_calc_weak_sum(block, len);
-    rs_signature_calc_strong_sum(job->signature, block, len, &strong_sum);
+    rs_signature_calc_strong_sum(sig, block, len, &strong_sum);
     rs_squirt_n4(job, weak_sum);
     rs_tube_write(job, strong_sum, sig->strong_sum_len);
     if (rs_trace_enabled()) {
@@ -147,8 +148,8 @@ rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
     job = rs_job_new("signature", rs_sig_s_header);
     job->signature = rs_alloc_struct(rs_signature_t);
     job->job_owns_sig = 1;
-    job->magic = sig_magic;
-    job->block_len = new_block_len;
-    job->strong_sum_len = strong_sum_len;
+    job->sig_magic = sig_magic;
+    job->sig_block_len = new_block_len;
+    job->sig_strong_len = strong_sum_len;
     return job;
 }

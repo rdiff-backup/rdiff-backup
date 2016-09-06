@@ -104,9 +104,10 @@ static rs_result rs_loadsig_s_stronglen(rs_job_t *job)
         return RS_CORRUPT;
     }
     rs_trace("got strong sum length %d", l);
-    job->strong_sum_len = l;
+    job->sig_strong_len = l;
     /* Initialize the signature. */
-    if ((result = rs_signature_init(job->signature, job->magic, job->block_len, job->strong_sum_len,
+    if ((result = rs_signature_init(job->signature, job->sig_magic,
+				    job->sig_block_len, job->sig_strong_len,
 				    job->sig_fsize)) != RS_DONE)
         return result;
     job->statefn = rs_loadsig_s_weak;
@@ -126,7 +127,7 @@ static rs_result rs_loadsig_s_blocklen(rs_job_t *job)
         return RS_CORRUPT;
     }
     rs_trace("got block length %d", l);
-    job->block_len = l;
+    job->sig_block_len = l;
     job->stats.block_len = l;
     job->statefn = rs_loadsig_s_stronglen;
     return RS_RUNNING;
@@ -141,7 +142,7 @@ static rs_result rs_loadsig_s_magic(rs_job_t *job)
     if ((result = rs_suck_n4(job, &l)) != RS_DONE)
         return result;
     rs_trace("got signature magic %#10x", l);
-    job->magic = l;
+    job->sig_magic = l;
     job->statefn = rs_loadsig_s_blocklen;
     return RS_RUNNING;
 }

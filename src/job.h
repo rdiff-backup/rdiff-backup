@@ -40,23 +40,21 @@ struct rs_job {
     /** Final result of processing job.  Used by rs_job_s_failed(). */
     rs_result final_result;
 
-    /* XXX: These are redundant with their equivalents in the signature field.
-     * Perhaps we could get rid of them, but they are currently used in many
-     * places, including as temporary storage before a signature is
-     * initialized in mksum.c and readsums.c. */
-    int                 magic;
-    int                 block_len;
-    int                 strong_sum_len;
+    /* Arguments for initializing the signature used by mksum.c and
+     * readsums.c. */
+    int                 sig_magic;
+    int                 sig_block_len;
+    int                 sig_strong_len;
+
+    /** The size of the signature file if available. Used by loadsums.c
+     * when initializing the signature to preallocate memory. */
+    rs_long_t           sig_fsize;
 
     /** Pointer to the signature that's being used by the operation. */
     rs_signature_t      *signature;
 
     /** Flag indicating signature should be destroyed with the job. */
     int                 job_owns_sig;
-
-    /** The length of signature file in bytes, if available.
-     * Used by loadsums.c for preallocating memory for signatures. */
-    rs_long_t           sig_fsize;
 
     /** Command byte currently being processed, if any. */
     unsigned char       op;
