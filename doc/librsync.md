@@ -5,7 +5,7 @@ The library supports four basic operations:
 -# \b sig: Generating the signature S of a file A .
 -# \b loadsig: Read a signature from a file into memory.
 -# \b delta: Calculating a delta D from S and a new file B.
--# \b path: Applying D to A to reconstruct B.
+-# \b patch: Applying D to A to reconstruct B.
 
 These are all available in three different modes:
 

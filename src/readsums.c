@@ -45,6 +45,24 @@
 static rs_result rs_loadsig_s_weak(rs_job_t *job);
 static rs_result rs_loadsig_s_strong(rs_job_t *job);
 
+/**
+ * Add a just-read-in checksum pair to the signature block.
+ */
+static rs_result rs_loadsig_add_sum(rs_job_t *job, rs_strong_sum_t *strong)
+{
+    rs_signature_t      *sig = job->signature;
+
+    if (rs_trace_enabled()) {
+        char hexbuf[RS_MAX_STRONG_SUM_LENGTH * 2 + 2];
+        rs_hexify(hexbuf, strong, sig->strong_sum_len);
+        rs_trace("got block: weak=%#x, strong=%s", job->weak_sig, hexbuf);
+    }
+    rs_signature_add_block(job->signature, job->weak_sig, strong);
+    job->stats.sig_blocks++;
+    return RS_RUNNING;
+}
+
+
 static rs_result rs_loadsig_s_weak(rs_job_t *job)
 {
     int                 l;
@@ -61,23 +79,15 @@ static rs_result rs_loadsig_s_weak(rs_job_t *job)
 }
 
 
-
 static rs_result rs_loadsig_s_strong(rs_job_t *job)
 {
     rs_result           result;
-    rs_strong_sum_t     *strong_sum;
+    rs_strong_sum_t     *strongsum;
 
-    if ((result = rs_scoop_read(job, job->signature->strong_sum_len, (void **)&strong_sum)) != RS_DONE)
+    if ((result = rs_scoop_read(job, job->signature->strong_sum_len, (void **)&strongsum)) != RS_DONE)
         return result;
-    if (rs_trace_enabled()) {
-        char hexbuf[RS_MAX_STRONG_SUM_LENGTH * 2 + 2];
-        rs_hexify(hexbuf, strong_sum, job->strong_sum_len);
-        rs_trace("got block: weak=%#x, strong=%s", job->weak_sig, hexbuf);
-    }
-    rs_signature_add_block(job->signature, job->weak_sig, strong_sum);
-    job->stats.sig_blocks++;
     job->statefn = rs_loadsig_s_weak;
-    return RS_RUNNING;
+    return rs_loadsig_add_sum(job, strongsum);
 }
 
 
@@ -94,12 +104,11 @@ static rs_result rs_loadsig_s_stronglen(rs_job_t *job)
         return RS_CORRUPT;
     }
     rs_trace("got strong sum length %d", l);
-    job->strong_sum_len = l;
-    /* Estimate the number of blocks stored in signature if we know the sig filesize. */
-    /* Magic+header is 12 bytes, each block thereafter is 4 bytes weak_sum+strong_sum_len bytes */
-    l = job->sig_file_bytes ? (job->sig_file_bytes - 12) / (4 + job->strong_sum_len) : 0;
+    job->sig_strong_len = l;
     /* Initialize the signature. */
-    if ((result = rs_signature_init(job->signature, job->magic, job->block_len, job->strong_sum_len, l)) != RS_DONE)
+    if ((result = rs_signature_init(job->signature, job->sig_magic,
+				    job->sig_block_len, job->sig_strong_len,
+				    job->sig_fsize)) != RS_DONE)
         return result;
     job->statefn = rs_loadsig_s_weak;
     return RS_RUNNING;
@@ -118,7 +127,7 @@ static rs_result rs_loadsig_s_blocklen(rs_job_t *job)
         return RS_CORRUPT;
     }
     rs_trace("got block length %d", l);
-    job->block_len = l;
+    job->sig_block_len = l;
     job->stats.block_len = l;
     job->statefn = rs_loadsig_s_stronglen;
     return RS_RUNNING;
@@ -133,7 +142,7 @@ static rs_result rs_loadsig_s_magic(rs_job_t *job)
     if ((result = rs_suck_n4(job, &l)) != RS_DONE)
         return result;
     rs_trace("got signature magic %#10x", l);
-    job->magic = l;
+    job->sig_magic = l;
     job->statefn = rs_loadsig_s_blocklen;
     return RS_RUNNING;
 }

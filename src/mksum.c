@@ -67,22 +67,15 @@ static rs_result rs_sig_s_header(rs_job_t *job)
     rs_signature_t *sig = job->signature;
     rs_result result;
 
-    if ((result = rs_signature_init(sig, job->magic, job->block_len, job->strong_sum_len, 0)) != RS_DONE) {
-        /* Make sure signature is freed when we are done. */
-        rs_free_sumset(sig);
-        job->signature = NULL;
+    if ((result = rs_signature_init(sig, job->sig_magic, job->sig_block_len,
+				    job->sig_strong_len, 0)) != RS_DONE)
         return result;
-    }
-    /* Set the job values back to the signature values. */
-    job->magic = sig->magic;
-    job->block_len = sig->block_len;
-    job->strong_sum_len = sig->strong_sum_len;
-    rs_squirt_n4(job, job->magic);
-    rs_squirt_n4(job, job->block_len);
-    rs_squirt_n4(job, job->strong_sum_len);
+    rs_squirt_n4(job, sig->magic);
+    rs_squirt_n4(job, sig->block_len);
+    rs_squirt_n4(job, sig->strong_sum_len);
     rs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)",
-             job->magic, (int) job->block_len, (int) job->strong_sum_len);
-    job->stats.block_len = job->block_len;
+             sig->magic, (int) sig->block_len, (int) sig->strong_sum_len);
+    job->stats.block_len = sig->block_len;
 
     job->statefn = rs_sig_s_generate;
     return RS_RUNNING;
@@ -97,16 +90,17 @@ static rs_result rs_sig_s_header(rs_job_t *job)
 static rs_result
 rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
 {
+    rs_signature_t      *sig = job->signature;
     rs_weak_sum_t       weak_sum;
     rs_strong_sum_t     strong_sum;
 
     weak_sum = rs_calc_weak_sum(block, len);
-    rs_signature_calc_strong_sum(job->signature, block, len, &strong_sum);
+    rs_signature_calc_strong_sum(sig, block, len, &strong_sum);
     rs_squirt_n4(job, weak_sum);
-    rs_tube_write(job, strong_sum, job->strong_sum_len);
+    rs_tube_write(job, strong_sum, sig->strong_sum_len);
     if (rs_trace_enabled()) {
         char                strong_sum_hex[RS_MAX_STRONG_SUM_LENGTH * 2 + 1];
-        rs_hexify(strong_sum_hex, strong_sum, job->strong_sum_len);
+        rs_hexify(strong_sum_hex, strong_sum, sig->strong_sum_len);
         rs_trace("sent block: weak=0x%08x, strong=%s", weak_sum, strong_sum_hex);
     }
     job->stats.sig_blocks++;
@@ -126,7 +120,7 @@ rs_sig_s_generate(rs_job_t *job)
     void                *block;
 
     /* must get a whole block, otherwise try again */
-    len = job->block_len;
+    len = job->signature->block_len;
     result = rs_scoop_read(job, len, &block);
 
     /* unless we're near eof, in which case we'll accept
@@ -134,9 +128,6 @@ rs_sig_s_generate(rs_job_t *job)
     if ((result == RS_BLOCKED && rs_job_input_is_ending(job))) {
         result = rs_scoop_read_rest(job, &len, &block);
     } else if (result == RS_INPUT_ENDED) {
-        /* Make sure the signature is freed when we are done. */
-        rs_free_sumset(job->signature);
-        job->signature = NULL;
         return RS_DONE;
     } else if (result != RS_DONE) {
         rs_trace("generate stopped: %s", rs_strerror(result));
@@ -156,8 +147,9 @@ rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
 
     job = rs_job_new("signature", rs_sig_s_header);
     job->signature = rs_alloc_struct(rs_signature_t);
-    job->magic = sig_magic;
-    job->block_len = new_block_len;
-    job->strong_sum_len = strong_sum_len;
+    job->job_owns_sig = 1;
+    job->sig_magic = sig_magic;
+    job->sig_block_len = new_block_len;
+    job->sig_strong_len = strong_sum_len;
     return job;
 }

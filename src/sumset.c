@@ -74,7 +74,7 @@ int blocksig_match_cmp(blocksig_match_t *match, const rs_block_sig_t *blocksig)
     return memcmp(&match->blocksig.strong_sum, &blocksig->strong_sum, match->signature->strong_sum_len);
 }
 
-rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int strong_len, int block_num)
+rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int strong_len, rs_long_t sig_fsize)
 {
     int max_strong_len;
 
@@ -101,9 +101,11 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int s
     sig->block_len = block_len;
     sig->strong_sum_len = strong_len;
     sig->count = 0;
-    sig->size = block_num;
-    if (block_num)
-        sig->block_sigs = rs_alloc(block_num * sizeof(rs_block_sig_t), "signature->block_sigs");
+    /* Calculate the number of blocks if we have the signature file size. */
+    /* Magic+header is 12 bytes, each block thereafter is 4 bytes weak_sum+strong_sum_len bytes */
+    sig->size = (int)(sig_fsize ? (sig_fsize - 12) / (4 + strong_len) : 0);
+    if (sig->size)
+        sig->block_sigs = rs_alloc(sig->size * sizeof(rs_block_sig_t), "signature->block_sigs");
     /* Set hashtable size to zero to indicate it has not been constructed yet. */
     sig->hashtable.size = 0;
     rs_signature_check(sig);
