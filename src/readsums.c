@@ -45,6 +45,24 @@
 static rs_result rs_loadsig_s_weak(rs_job_t *job);
 static rs_result rs_loadsig_s_strong(rs_job_t *job);
 
+/**
+ * Add a just-read-in checksum pair to the signature block.
+ */
+static rs_result rs_loadsig_add_sum(rs_job_t *job, rs_strong_sum_t *strong)
+{
+    rs_signature_t      *sig = job->signature;
+
+    if (rs_trace_enabled()) {
+        char hexbuf[RS_MAX_STRONG_SUM_LENGTH * 2 + 2];
+        rs_hexify(hexbuf, strong, sig->strong_sum_len);
+        rs_trace("got block: weak=%#x, strong=%s", job->weak_sig, hexbuf);
+    }
+    rs_signature_add_block(job->signature, job->weak_sig, strong);
+    job->stats.sig_blocks++;
+    return RS_RUNNING;
+}
+
+
 static rs_result rs_loadsig_s_weak(rs_job_t *job)
 {
     int                 l;
@@ -61,23 +79,15 @@ static rs_result rs_loadsig_s_weak(rs_job_t *job)
 }
 
 
-
 static rs_result rs_loadsig_s_strong(rs_job_t *job)
 {
     rs_result           result;
-    rs_strong_sum_t     *strong_sum;
+    rs_strong_sum_t     *strongsum;
 
-    if ((result = rs_scoop_read(job, job->signature->strong_sum_len, (void **)&strong_sum)) != RS_DONE)
+    if ((result = rs_scoop_read(job, job->signature->strong_sum_len, (void **)&strongsum)) != RS_DONE)
         return result;
-    if (rs_trace_enabled()) {
-        char hexbuf[RS_MAX_STRONG_SUM_LENGTH * 2 + 2];
-        rs_hexify(hexbuf, strong_sum, job->strong_sum_len);
-        rs_trace("got block: weak=%#x, strong=%s", job->weak_sig, hexbuf);
-    }
-    rs_signature_add_block(job->signature, job->weak_sig, strong_sum);
-    job->stats.sig_blocks++;
     job->statefn = rs_loadsig_s_weak;
-    return RS_RUNNING;
+    return rs_loadsig_add_sum(job, strongsum);
 }
 
 
