@@ -67,12 +67,8 @@ static rs_result rs_sig_s_header(rs_job_t *job)
     rs_signature_t *sig = job->signature;
     rs_result result;
 
-    if ((result = rs_signature_init(sig, job->magic, job->block_len, job->strong_sum_len, 0)) != RS_DONE) {
-        /* Make sure signature is freed when we are done. */
-        rs_free_sumset(sig);
-        job->signature = NULL;
+    if ((result = rs_signature_init(sig, job->magic, job->block_len, job->strong_sum_len, 0)) != RS_DONE)
         return result;
-    }
     /* Set the job values back to the signature values. */
     job->magic = sig->magic;
     job->block_len = sig->block_len;
@@ -134,9 +130,6 @@ rs_sig_s_generate(rs_job_t *job)
     if ((result == RS_BLOCKED && rs_job_input_is_ending(job))) {
         result = rs_scoop_read_rest(job, &len, &block);
     } else if (result == RS_INPUT_ENDED) {
-        /* Make sure the signature is freed when we are done. */
-        rs_free_sumset(job->signature);
-        job->signature = NULL;
         return RS_DONE;
     } else if (result != RS_DONE) {
         rs_trace("generate stopped: %s", rs_strerror(result));
@@ -156,6 +149,7 @@ rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
 
     job = rs_job_new("signature", rs_sig_s_header);
     job->signature = rs_alloc_struct(rs_signature_t);
+    job->job_owns_sig = 1;
     job->magic = sig_magic;
     job->block_len = new_block_len;
     job->strong_sum_len = strong_sum_len;

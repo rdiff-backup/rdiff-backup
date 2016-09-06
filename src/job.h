@@ -31,7 +31,7 @@ struct rs_job {
 
     /** Human-readable job operation name. */
     const char          *job_name;
-    
+
     rs_buffers_t *stream;
 
     /** Callback for each processing step. */
@@ -40,15 +40,19 @@ struct rs_job {
     /** Final result of processing job.  Used by rs_job_s_failed(). */
     rs_result final_result;
 
-    /* XXX: These next two are redundant with their equivalents in the
-     * signature field.  Perhaps we should get rid of them, but
-     * they're also used in the mksum operation. */
+    /* XXX: These are redundant with their equivalents in the signature field.
+     * Perhaps we could get rid of them, but they are currently used in many
+     * places, including as temporary storage before a signature is
+     * initialized in mksum.c and readsums.c. */
+    int                 magic;
     int                 block_len;
     int                 strong_sum_len;
 
-    /** Signature that's either being read in, or used for
-     * generating a delta. */
+    /** Pointer to the signature that's being used by the operation. */
     rs_signature_t      *signature;
+
+    /** Flag indicating signature should be destroyed with the job. */
+    int                 job_owns_sig;
 
     /** The length of signature file in bytes, if available;
      * used for preallocating needed memory for sums */
@@ -59,13 +63,13 @@ struct rs_job {
 
     /** The weak signature digest used by readsums.c */
     rs_weak_sum_t       weak_sig;
-    
+
     /** The rollsum weak signature accumulator used by delta.c */
     Rollsum             weak_sum;
 
     /** Lengths of expected parameters. */
     rs_long_t           param1, param2;
-    
+
     struct rs_prototab_ent const *cmd;
     rs_mdfour_t      output_md4;
 
@@ -82,7 +86,7 @@ struct rs_job {
     size_t      scoop_alloc;           /* the allocation size */
     size_t      scoop_avail;           /* the data size */
     size_t      scoop_pos;             /* the scan position */
-        
+
     /** If USED is >0, then buf contains that much write data to
      * be sent out. */
     rs_byte_t   write_buf[36];
@@ -99,7 +103,6 @@ struct rs_job {
     rs_copy_cb      *copy_cb;
     void            *copy_arg;
 
-    int             magic;
 };
 
 
