@@ -49,8 +49,7 @@ void rs_block_sig_init(rs_block_sig_t *sig, int i, rs_weak_sum_t weak_sum, rs_st
 /** Signature of a whole file.
  *
  * This includes the all the block sums generated for a file and
- * datastructures for fast matching against them.
- */
+ * datastructures for fast matching against them. */
 struct rs_signature {
     int magic;                  /**> The signature magic value. */
     int block_len;              /**> The block length. */
@@ -62,8 +61,21 @@ struct rs_signature {
     rs_target_t *targets;
 };
 
-/** Initialize an rs_signature instance. */
-rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int strong_len, int block_num);
+/** Initialize an rs_signature instance.
+ *
+ * /param *sig the signature to initialize.
+ *
+ * /param magic the signature magic value. Must be set to a valid magic value.
+ *
+ * /param block_len the block size to use. Must be > 0.
+ *
+ * /param strong_len the strongsum size to use. Must be <= the max strongsum
+ * size for the strongsum type indicated by the magic value. Use 0 to use the
+ * recommended size for the provided magic value.
+ *
+ * /param sig_fsize signature file size to preallocate required storage for.
+ * Use 0 if size is unknown. */
+rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int strong_len, rs_long_t sig_fsize);
 
 /** Destroy an rs_signature instance. */
 void rs_signature_done(rs_signature_t *sig);

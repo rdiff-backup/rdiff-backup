@@ -105,11 +105,9 @@ static rs_result rs_loadsig_s_stronglen(rs_job_t *job)
     }
     rs_trace("got strong sum length %d", l);
     job->strong_sum_len = l;
-    /* Estimate the number of blocks stored in signature if we know the sig filesize. */
-    /* Magic+header is 12 bytes, each block thereafter is 4 bytes weak_sum+strong_sum_len bytes */
-    l = job->sig_file_bytes ? (job->sig_file_bytes - 12) / (4 + job->strong_sum_len) : 0;
     /* Initialize the signature. */
-    if ((result = rs_signature_init(job->signature, job->magic, job->block_len, job->strong_sum_len, l)) != RS_DONE)
+    if ((result = rs_signature_init(job->signature, job->magic, job->block_len, job->strong_sum_len,
+				    job->sig_fsize)) != RS_DONE)
         return result;
     job->statefn = rs_loadsig_s_weak;
     return RS_RUNNING;

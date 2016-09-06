@@ -54,9 +54,9 @@ struct rs_job {
     /** Flag indicating signature should be destroyed with the job. */
     int                 job_owns_sig;
 
-    /** The length of signature file in bytes, if available;
-     * used for preallocating needed memory for sums */
-    rs_long_t           sig_file_bytes;
+    /** The length of signature file in bytes, if available.
+     * Used by loadsums.c for preallocating memory for signatures. */
+    rs_long_t           sig_fsize;
 
     /** Command byte currently being processed, if any. */
     unsigned char       op;
