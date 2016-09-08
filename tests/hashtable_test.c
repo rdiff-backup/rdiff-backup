@@ -99,6 +99,7 @@ int main(int argc, char **argv)
     /* Test hashtable_init() */
     hashtable_init(&t, 256, (hash_f)&key_hash, (cmp_f)&match_cmp);
     assert(t.size == 512);
+    assert(t.count == 0);
     assert(t.table != NULL);
     assert(t.hash == (hash_f)&key_hash);
     assert(t.cmp == (cmp_f)&match_cmp);
@@ -108,6 +109,7 @@ int main(int argc, char **argv)
     assert(hashtable_add(&t, &entry[0]) == &entry[0]);  /* Ignored duplicated instance. */
     for (i = 0; i < 256; i++)
         assert(hashtable_add(&t, &entry[i]) == &entry[i]);
+    assert(t.count == 257);
     assert((void *)&e == t.table[0]);
     assert((void *)&entry[0] == t.table[1]);
     assert((void *)&entry[1] == t.table[3]);

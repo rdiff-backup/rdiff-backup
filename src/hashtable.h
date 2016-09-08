@@ -119,6 +119,7 @@ typedef int (*cmp_f) (void *k, const void *o);
 /* The hashtable type. */
 typedef struct hashtable {
     int size;                   /* Size of allocated hashtable. */
+    int count;                  /* Number of entries in hashtable. */
     void **table;               /* Table of pointers to entries. */
     hash_f hash;                /* Function for hashing entries. */
     cmp_f cmp;                  /* Function for comparing entries. */

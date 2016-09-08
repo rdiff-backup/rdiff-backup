@@ -31,6 +31,7 @@ void hashtable_init(hashtable_t *t, int size, hash_f hash, cmp_f cmp)
     t->size = 8;
     while (t->size < size)
         t->size <<= 1;
+    t->count = 0;
     t->table = calloc(t->size, sizeof(void *));
     t->hash = hash;
     t->cmp = cmp;
@@ -42,6 +43,7 @@ void hashtable_done(hashtable_t *t)
     free(t->table);
 #ifndef NDEBUG
     t->size = 0;
+    t->count = 0;
     t->hash = NULL;
     t->cmp = NULL;
 #endif                          /* NDEBUG */
@@ -77,6 +79,7 @@ void *hashtable_add(hashtable_t *t, void *e)
 
     if (i == -1)
         return NULL;
+    t->count++;
     t->table[i] = e;
     return e;
 }
