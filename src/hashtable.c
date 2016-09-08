@@ -49,49 +49,39 @@ void hashtable_done(hashtable_t *t)
 #endif                          /* NDEBUG */
 }
 
-/* Compare function that only compares pointers. */
-int pointer_cmp(void *k, const void *o)
-{
-    return k - o;
-}
+/* Prefix macro for probing table t for key k with index i. */
+#define do_probe(t, k) \
+    int mask = t->size - 1;\
+    int index = t->hash(k) % mask;\
+    int i = index, s = 1;\
+    do
 
-/* Find the index of the first matching or free entry. */
-int hashtable_index(hashtable_t *t, cmp_f cmp, void *k)
-{
-    assert(k != NULL);
-    int mask = t->size - 1;
-    int index = t->hash(k) % mask;
-    int i = index, s = 1;
-
-    do {
-        if (!t->table[i] || !cmp(k, t->table[i])) {
-            return i;
-        }
-        i = (i + s++) & mask;
-    } while (i != index);
-    return -1;
-}
+/* Suffix macro for do_probe. */
+#define while_probe \
+    while ((i = (i + s++) & mask) != index)
 
 void *hashtable_add(hashtable_t *t, void *e)
 {
     assert(e != NULL);
-    int i = hashtable_index(t, &pointer_cmp, e);
-
-    if (i == -1)
-        return NULL;
-    t->count++;
-    t->table[i] = e;
-    return e;
+    do_probe(t, e) {
+        if (!t->table[i]) {
+	    t->count++;
+	    return t->table[i] = e;
+        }
+    } while_probe;
+    return NULL;
 }
 
 void *hashtable_find(hashtable_t *t, void *k)
 {
     assert(k != NULL);
-    int i = hashtable_index(t, t->cmp, k);
+    void *e;
 
-    if (i == -1)
-        return NULL;
-    return t->table[i];
+    do_probe(t, k) {
+        if (!(e = t->table[i]) || !t->cmp(k, e))
+            return e;
+    } while_probe;
+    return NULL;
 }
 
 void *hashtable_iter(hashtable_iter_t *i, hashtable_t *t)

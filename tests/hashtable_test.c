@@ -106,13 +106,14 @@ int main(int argc, char **argv)
 
     /* Test hashtable_add() */
     assert(hashtable_add(&t, &e) == &e);        /* Added duplicated copy. */
-    assert(hashtable_add(&t, &entry[0]) == &entry[0]);  /* Ignored duplicated instance. */
+    assert(hashtable_add(&t, &entry[0]) == &entry[0]);  /* Added duplicated instance. */
     for (i = 0; i < 256; i++)
         assert(hashtable_add(&t, &entry[i]) == &entry[i]);
-    assert(t.count == 257);
+    assert(t.count == 258);
     assert((void *)&e == t.table[0]);
     assert((void *)&entry[0] == t.table[1]);
-    assert((void *)&entry[1] == t.table[3]);
+    assert((void *)&entry[0] == t.table[3]);
+    assert((void *)&entry[1] == t.table[6]);
     assert((void *)&entry[2] == t.table[2]);
     assert((void *)&entry[3] == t.table[4]);
 
@@ -137,7 +138,7 @@ int main(int argc, char **argv)
         assert(p == &e || (&entry[0] <= p && p <= &entry[255]));
         count++;
     }
-    assert(count == 257);
+    assert(count == 258);
 
     return 0;
 }

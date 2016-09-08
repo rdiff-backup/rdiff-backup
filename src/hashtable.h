@@ -162,11 +162,10 @@ void hashtable_done(hashtable_t *t);
 
 /* Add an entry to a hashtable.
  *
- * This doesn't use cmp() to check for existing copies, but does
- * compare pointers to check for existing instances. So it will add
- * duplicate copies, but will not add duplicate instances. If you
- * want to avoid adding duplicate copies, use hashtable_find() to
- * check for existing entries first.
+ * This doesn't use cmp() or do any checks for existing copies or
+ * instances, so it will add duplicates. If you want to avoid adding
+ * duplicates, use hashtable_find() to check for existing entries
+ * first.
  *
  * Args:
  *   *t - The hashtable to add to.
