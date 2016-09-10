@@ -32,6 +32,9 @@
  * comparison between two keys, or can be against a special match
  * object containing additional mutable state. This allows for things
  * like deferred and cached evaluation of costly comparison data.
+ * The hash() function output is avalanched with the MurmurHash3
+ * finalization function before being used as a hashtable index, so
+ * it doesn't need to avoid clustering.
  *
  * It uses open addressing with quadratic probing for collisions.
  * There is no support for removing entries, only adding them.

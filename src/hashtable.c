@@ -49,16 +49,27 @@ void hashtable_done(hashtable_t *t)
 #endif                          /* NDEBUG */
 }
 
+static inline unsigned mix32(unsigned int h)
+{
+    /* MurmurHash3 finalization mix function. */
+    h ^= h >> 16;
+    h *= 0x85ebca6b;
+    h ^= h >> 13;
+    h *= 0xc2b2ae35;
+    h ^= h >> 16;
+    return h;
+}
+
 /* Prefix macro for probing table t for key k with index i. */
 #define do_probe(t, k) \
-    int mask = t->size - 1;\
-    int index = t->hash(k) % mask;\
-    int i = index, s = 1;\
+    unsigned mask = t->size - 1;\
+    unsigned index = mix32(t->hash(k)) & mask;\
+    unsigned i = index, s = 0;\
     do
 
 /* Suffix macro for do_probe. */
 #define while_probe \
-    while ((i = (i + s++) & mask) != index)
+    while ((i = (i + ++s) & mask) != index)
 
 void *hashtable_add(hashtable_t *t, void *e)
 {
