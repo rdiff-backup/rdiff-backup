@@ -110,12 +110,6 @@ int main(int argc, char **argv)
     for (i = 0; i < 256; i++)
         assert(hashtable_add(&t, &entry[i]) == &entry[i]);
     assert(t.count == 258);
-    assert((void *)&e == t.table[0]);
-    assert((void *)&entry[0] == t.table[1]);
-    assert((void *)&entry[0] == t.table[3]);
-    assert((void *)&entry[1] == t.table[6]);
-    assert((void *)&entry[2] == t.table[2]);
-    assert((void *)&entry[3] == t.table[4]);
 
     /* Test hashtable_find() */
     match_init(&m, 0);
