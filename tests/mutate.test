@@ -48,9 +48,9 @@ do
 
     for hashopt in '' -Hmd4 -Hblake2
     do
-	run_test $bindir/rdiff -f $debug signature $old $sig
+	run_test $bindir/rdiff -f $debug $hashopt signature $old $sig
 	run_test $bindir/rdiff -f $debug delta $sig $new $delta
-	run_test $bindir/rdiff -f $debug patch $old $delta "$out"
+	run_test $bindir/rdiff -f $debug patch $old $delta $out
 
 	check_compare "$new" "$out" "mutate $i $old $new"
     done
