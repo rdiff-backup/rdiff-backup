@@ -76,8 +76,8 @@ void *hashtable_add(hashtable_t *t, void *e)
     assert(e != NULL);
     do_probe(t, e) {
         if (!t->table[i]) {
-	    t->count++;
-	    return t->table[i] = e;
+            t->count++;
+            return t->table[i] = e;
         }
     } while_probe;
     return NULL;

@@ -16,15 +16,14 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA. */
 #ifndef _HASHTABLE_H_
 #define _HASHTABLE_H_
 
 #include <assert.h>
 #include <stdlib.h>
 
-/* Simple hashtable.
+/** Simple hashtable.
  *
  * This is a minimal hashtable containing pointers to arbitrary
  * entries with configurable hashtable size and support for custom
@@ -32,16 +31,15 @@
  * comparison between two keys, or can be against a special match
  * object containing additional mutable state. This allows for things
  * like deferred and cached evaluation of costly comparison data.
- * The hash() function output is avalanched with the MurmurHash3
- * finalization function before being used as a hashtable index, so
- * it doesn't need to avoid clustering.
+ * The hash() function doesn't need to avoid clustering behaviour.
  *
- * It uses open addressing with quadratic probing for collisions.
- * There is no support for removing entries, only adding them.
- * Multiple entries with the same key can be added, and you can use a
- * fancy cmp() function to find particular entries by more than just
- * their key. There is an iterator for iterating through all entries
- * in the hashtable.
+ * It uses open addressing with quadratic probing for collisions. The
+ * MurmurHash3 finalization function is used on the hash() output to
+ * avoid clustering. There is no support for removing entries, only
+ * adding them. Multiple entries with the same key can be added, and
+ * you can use a fancy cmp() function to find particular entries by
+ * more than just their key. There is an iterator for iterating
+ * through all entries in the hashtable.
  *
  * Example:
  *
@@ -95,10 +93,9 @@
  * The cmp() function is only called for finding hashtable entries
  * and can mutate the match_t object for doing things like deferred
  * and cached evaluation of expensive match data. It can also access
- * the whole entry_t object to match against more than just the key.
- */
+ * the whole entry_t object to match against more than just the key. */
 
-/* The hash() function type.
+/** The hash() function type.
  *
  * Args:
  *   *k - the key or match object to hash.
@@ -108,18 +105,17 @@
  */
 typedef unsigned (*hash_f) (const void *k);
 
-/* The cmp() function type.
+/** The cmp() function type.
  *
  * Args:
  *   *k - the key or match object to try and match to.
  *   *o - the key or entry object to match against.
  *
  * Returns:
- *   -1, 0, or 1 if *e is less, equal, or more that *o.
- */
+ *   -1, 0, or 1 if *e is less, equal, or more that *o. */
 typedef int (*cmp_f) (void *k, const void *o);
 
-/* The hashtable type. */
+/** The hashtable type. */
 typedef struct hashtable {
     int size;                   /* Size of allocated hashtable. */
     int count;                  /* Number of entries in hashtable. */
@@ -128,13 +124,13 @@ typedef struct hashtable {
     cmp_f cmp;                  /* Function for comparing entries. */
 } hashtable_t;
 
-/* The hashtable iterator type. */
+/** The hashtable iterator type. */
 typedef struct hashtable_iter {
     hashtable_t *htable;        /* The hashtable to iterate over. */
     int index;                  /* The index to scan from for the next entry. */
 } hashtable_iter_t;
 
-/* Initialize a hashtable instance.
+/** Initialize a hashtable instance.
  *
  * The provided size is used as an indication of the number of
  * entries you wish to add, but the allocated size is 25% larger and
@@ -148,22 +144,20 @@ typedef struct hashtable_iter {
  *   *t - The hashtable to initialize.
  *   size - The desired minimum size of the hash table.
  *   hash - The hash function to use.
- *   cmp - The compare function to use.
- */
+ *   cmp - The compare function to use. */
 void hashtable_init(hashtable_t *t, int size, hash_f hash, cmp_f cmp);
 
-/* Destroy a hashtable instance.
+/** Destroy a hashtable instance.
  *
  * This will free the allocated table of pointers, but will not free
  * the entries in the hashtable. If you want to free the entries too,
  * use a hashtable iterator to free the the entries first.
  *
  * Args:
- *   *t - The hashtable to destroy.
- */
+ *   *t - The hashtable to destroy. */
 void hashtable_done(hashtable_t *t);
 
-/* Add an entry to a hashtable.
+/** Add an entry to a hashtable.
  *
  * This doesn't use cmp() or do any checks for existing copies or
  * instances, so it will add duplicates. If you want to avoid adding
@@ -175,11 +169,10 @@ void hashtable_done(hashtable_t *t);
  *   *e - The entry object to add.
  *
  * Returns:
- *   The added entry, or NULL if the table is full.
- */
+ *   The added entry, or NULL if the table is full. */
 void *hashtable_add(hashtable_t *t, void *e);
 
-/* Find an entry in a hashtable.
+/** Find an entry in a hashtable.
  *
  * Uses cmp() to find the first matching entry in the table in the
  * same hash() bucket. Note this does not check for matching hash()
@@ -190,11 +183,10 @@ void *hashtable_add(hashtable_t *t, void *e);
  *   *k - The key or match object to search for.
  *
  * Returns:
- *   The first found entry, or NULL if nothing was found.
- */
+ *   The first found entry, or NULL if nothing was found. */
 void *hashtable_find(hashtable_t *t, void *k);
 
-/* Initialize a hashtable_iter_t and return the first entry.
+/** Initialize a hashtable_iter_t and return the first entry.
  *
  * This works together with hashtable_next() for iterating through
  * all entries in a hashtable.
@@ -208,18 +200,16 @@ void *hashtable_find(hashtable_t *t, void *k);
  *   *t - the hashtable to iterate over.
  *
  * Returns:
- *   The first entry or NULL if the hashtable is empty.
- */
+ *   The first entry or NULL if the hashtable is empty. */
 void *hashtable_iter(hashtable_iter_t *i, hashtable_t *t);
 
-/* Get the next entry from a hashtable iterator or NULL when finished.
+/** Get the next entry from a hashtable iterator or NULL when finished.
  *
  * Args:
  *   *i - the hashtable iterator to use.
  *
  * Returns:
- *   The next entry or NULL if the iterator is finished.
- */
+ *   The next entry or NULL if the iterator is finished. */
 void *hashtable_next(hashtable_iter_t *i);
 
 #endif                          /* _HASHTABLE_H_ */
