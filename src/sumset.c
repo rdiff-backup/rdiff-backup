@@ -65,12 +65,15 @@ int blocksig_match_cmp(blocksig_match_t *match, const rs_block_sig_t *blocksig)
 {
     int v;
 
+    match->signature->cmp_weak_count++;
     if ((v = match->blocksig.weak_sum - blocksig->weak_sum))
         return v;
     if (!match->got_strong) {
+        match->signature->calc_strong_count++;
         rs_signature_calc_strong_sum(match->signature, match->buf, match->len, &(match->blocksig.strong_sum));
         match->got_strong = 1;
     }
+    match->signature->cmp_strong_count++;
     return memcmp(&match->blocksig.strong_sum, &blocksig->strong_sum, match->signature->strong_sum_len);
 }
 
@@ -108,6 +111,8 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int s
         sig->block_sigs = rs_alloc(sig->size * sizeof(rs_block_sig_t), "signature->block_sigs");
     /* Set hashtable size to zero to indicate it has not been constructed yet. */
     sig->hashtable.size = 0;
+    sig->find_count = sig->match_count = 0;
+    sig->cmp_weak_count = sig->cmp_strong_count = sig->calc_strong_count = 0;
     rs_signature_check(sig);
     return RS_DONE;
 }
@@ -139,10 +144,19 @@ rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum, v
 
     rs_signature_check(sig);
     blocksig_match_init(&m, sig, weak_sum, buf, len);
+    sig->find_count++;
     if ((b = hashtable_find(&sig->hashtable, &m))) {
+        sig->match_count++;
         return (rs_long_t)(b - sig->block_sigs) * sig->block_len;
     }
     return -1;
+}
+
+void rs_signature_log_stats(rs_signature_t const *sig)
+{
+    rs_log(RS_LOG_INFO|RS_LOG_NONAME,
+           "match statistics: signature[%ld searches, %ld matches, %ld weaksum-cmps, %ld strongsum-cmps, %ld strongsum-calcs]",
+           sig->find_count, sig->match_count, sig->cmp_weak_count, sig->cmp_strong_count, sig->calc_strong_count);
 }
 
 rs_result rs_build_hash_table(rs_signature_t *sig)

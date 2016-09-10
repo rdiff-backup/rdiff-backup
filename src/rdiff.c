@@ -66,6 +66,7 @@
 #include "util.h"
 #include "trace.h"
 #include "isprefix.h"
+#include "sumset.h"
 
 
 #define PROGRAM "rdiff"
@@ -312,14 +313,16 @@ static rs_result rdiff_delta(poptContext opcon)
 
     result = rs_delta_file(sumset, new_file, delta_file, &stats);
 
-    rs_free_sumset(sumset);
-
     rs_file_close(delta_file);
     rs_file_close(new_file);
     rs_file_close(sig_file);
 
-    if (show_stats)
+    if (show_stats) {
+        rs_signature_log_stats(sumset);
         rs_log_stats(&stats);
+    }
+
+    rs_free_sumset(sumset);
 
     return result;
 }

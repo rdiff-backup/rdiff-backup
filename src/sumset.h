@@ -44,6 +44,12 @@ struct rs_signature {
     int size;                   /**< Total number of blocks allocated. */
     rs_block_sig_t *block_sigs; /**< The block signatures for all blocks. */
     hashtable_t hashtable;      /**< The hashtable for finding matches. */
+    /* The following are for accumulating rs_signature_find_match() stats. */
+    long find_count;            /**< The count of finds tried. */
+    long match_count;           /**< The count of matches found. */
+    long cmp_weak_count;        /**< The count of weaksum compares done. */
+    long cmp_strong_count;      /**< The count of strongsum compares done. */
+    long calc_strong_count;     /**< The count of strongsum calcs done. */
 };
 
 /** Initialize an rs_signature instance.
@@ -70,6 +76,9 @@ rs_block_sig_t *rs_signature_add_block(rs_signature_t *sig, rs_weak_sum_t weak_s
 
 /** Find a matching block offset in a signature. */
 rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum, void const *buf, size_t len);
+
+/** Log the rs_signature_find_match() stats. */
+void rs_signature_log_stats(rs_signature_t const *sig);
 
 /** Assert that a signature is valid.
  *
