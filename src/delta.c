@@ -79,9 +79,6 @@
 #include "types.h"
 #include "rollsum.h"
 
-const int RS_MD4_SUM_LENGTH = 16;
-const int RS_BLAKE2_SUM_LENGTH = 32;
-
 /**
  * 2002-06-26: Donovan Baarda
  *

@@ -198,7 +198,7 @@ execute_process(COMMAND ${PERL_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/src/mkpr
 
 add_executable(isprefix_test
     tests/isprefix_test.c src/isprefix.c)
-    
+
 add_test(NAME isprefix_test COMMAND isprefix_test)
 
 add_executable(rollsum_test
@@ -209,14 +209,18 @@ add_executable(hashtable_test
     tests/hashtable_test.c src/hashtable.c)
 add_test(NAME hashtable_test COMMAND hashtable_test)
 
+add_executable(sumset_test
+    tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c src/checksum.c src/rollsum.c src/mdfour.c src/blake2b-ref.c)
+add_test(NAME sumset_test COMMAND sumset_test)
+
 # Disable rdiff specific tests
 if (BUILD_RDIFF)
     add_test(NAME rdiff_bad_option
              COMMAND rdiff_bad_option.sh ${CMAKE_CURRENT_BINARY_DIR}
              WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-    
+
     add_test(NAME Help COMMAND help.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-    
+
     add_test(NAME Mutate COMMAND mutate.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     add_test(NAME Signature COMMAND signature.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     add_test(NAME Sources COMMAND sources.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -235,7 +239,7 @@ else (BUILD_RDIFF)
   set(LAST_TARGET rsync)
 endif (BUILD_RDIFF)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test hashtable_test)
+add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test hashtable_test sumset_test)
 
 
 enable_testing()
