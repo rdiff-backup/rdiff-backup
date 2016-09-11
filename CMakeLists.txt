@@ -210,7 +210,7 @@ add_executable(hashtable_test
 add_test(NAME hashtable_test COMMAND hashtable_test)
 
 add_executable(sumset_test
-    tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c src/checksum.c src/rollsum.c src/mdfour.c src/blake2b-ref.c)
+    tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c src/checksum.c src/rollsum.c src/mdfour.c src/blake2b-ref.c src/hashtable.c)
 add_test(NAME sumset_test COMMAND sumset_test)
 
 # Disable rdiff specific tests
