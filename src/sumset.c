@@ -112,6 +112,8 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int s
     sig->size = (int)(sig_fsize ? (sig_fsize - 12) / (4 + strong_len) : 0);
     if (sig->size)
         sig->block_sigs = rs_alloc(sig->size * sizeof(rs_block_sig_t), "signature->block_sigs");
+    else
+	sig->block_sigs = NULL;
     /* Set hashtable size to zero to indicate it has not been constructed yet. */
     sig->hashtable.size = 0;
     sig->find_count = sig->match_count = 0;
