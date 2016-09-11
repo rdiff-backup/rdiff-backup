@@ -32,6 +32,9 @@
 #include "util.h"
 #include "trace.h"
 
+const int RS_MD4_SUM_LENGTH = 16;
+const int RS_BLAKE2_SUM_LENGTH = 32;
+
 void rs_block_sig_init(rs_block_sig_t *sig, int i, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum,
                        int strong_len)
 {
