@@ -160,8 +160,12 @@ rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum, v
 void rs_signature_log_stats(rs_signature_t const *sig)
 {
     rs_log(RS_LOG_INFO|RS_LOG_NONAME,
-           "match statistics: signature[%ld searches, %ld matches, %ld weaksum-cmps, %ld strongsum-cmps, %ld strongsum-calcs]",
-           sig->find_count, sig->match_count, sig->cmp_weak_count, sig->cmp_strong_count, sig->calc_strong_count);
+           "match statistics: signature[%ld searches, %ld (%.3f%%) matches, %ld (%.3fx) weaksum-cmps, %ld (%.3f%%) strongsum-cmps, %ld (%.3f%%) strongsum-calcs]",
+           sig->find_count,
+	   sig->match_count, 100.0 * (double)sig->match_count / sig->find_count,
+	   sig->cmp_weak_count, (double)sig->cmp_weak_count / sig->find_count,
+	   sig->cmp_strong_count, 100.0 * (double)sig->cmp_strong_count / sig->find_count,
+	   sig->calc_strong_count, 100.0 * (double)sig->calc_strong_count / sig->find_count);
 }
 
 rs_result rs_build_hash_table(rs_signature_t *sig)
