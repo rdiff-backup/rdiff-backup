@@ -26,8 +26,8 @@
 void hashtable_init(hashtable_t *t, int size, hash_f hash, cmp_f cmp)
 {
     assert(t != NULL);
-    /* Increase size by 25% and use next power of 2 larger than 8. */
-    size += size / 4;
+    /* Double size and use next power of 2 larger than 8. */
+    size += size;
     t->size = 8;
     while (t->size < size)
         t->size <<= 1;

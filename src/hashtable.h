@@ -133,7 +133,7 @@ typedef struct hashtable_iter {
 /** Initialize a hashtable instance.
  *
  * The provided size is used as an indication of the number of
- * entries you wish to add, but the allocated size is 25% larger and
+ * entries you wish to add, but the allocated size is doubled and
  * rounded up to the next power of 2. This is to avoid degraded
  * performance using open addressing and to ensure the quadratic
  * probing will seach the whole table. The table can be filled to the
