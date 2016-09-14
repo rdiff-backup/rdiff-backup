@@ -43,7 +43,7 @@ struct rs_signature {
     int count;                  /**< Total number of blocks. */
     int size;                   /**< Total number of blocks allocated. */
     rs_block_sig_t *block_sigs; /**< The block signatures for all blocks. */
-    hashtable_t hashtable;      /**< The hashtable for finding matches. */
+    hashtable_t *hashtable;     /**< The hashtable for finding matches. */
     /* The following are for accumulating rs_signature_find_match() stats. */
     long find_count;            /**< The count of finds tried. */
     long match_count;           /**< The count of matches found. */
@@ -90,7 +90,7 @@ void rs_signature_log_stats(rs_signature_t const *sig);
     assert(0 < sig->block_len);\
     assert(0 < sig->strong_sum_len && sig->strong_sum_len <= RS_MAX_STRONG_SUM_LENGTH);\
     assert(0 <= sig->count && sig->count <= sig->size);\
-    assert(!sig->hashtable.size || sig->hashtable.table);\
+    assert(!sig->hashtable || sig->hashtable->count == sig->count);\
 } while (0)
 
 /** Calculate the strong sum of a buffer. */

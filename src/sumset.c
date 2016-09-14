@@ -114,8 +114,7 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int s
         sig->block_sigs = rs_alloc(sig->size * sizeof(rs_block_sig_t), "signature->block_sigs");
     else
 	sig->block_sigs = NULL;
-    /* Set hashtable size to zero to indicate it has not been constructed yet. */
-    sig->hashtable.size = 0;
+    sig->hashtable = NULL;
     sig->find_count = sig->match_count = 0;
     sig->cmp_weak_count = sig->cmp_strong_count = sig->calc_strong_count = 0;
     rs_signature_check(sig);
@@ -124,8 +123,7 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int s
 
 void rs_signature_done(rs_signature_t *sig)
 {
-    if (sig->hashtable.size)
-        hashtable_done(&sig->hashtable);
+    hashtable_free(sig->hashtable);
     rs_bzero(sig, sizeof(*sig));
 }
 
@@ -150,7 +148,7 @@ rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum, v
     rs_signature_check(sig);
     blocksig_match_init(&m, sig, weak_sum, buf, len);
     sig->find_count++;
-    if ((b = hashtable_find(&sig->hashtable, &m))) {
+    if ((b = hashtable_find(sig->hashtable, &m))) {
         sig->match_count++;
         return (rs_long_t)(b - sig->block_sigs) * sig->block_len;
     }
@@ -173,11 +171,11 @@ rs_result rs_build_hash_table(rs_signature_t *sig)
     int i;
 
     rs_signature_check(sig);
-    hashtable_init(&sig->hashtable, sig->count, (hash_f)&rs_block_sig_hash, (cmp_f)&blocksig_match_cmp);
-    if (!sig->hashtable.table)
+    sig->hashtable = hashtable_new(sig->count, (hash_f)&rs_block_sig_hash, (cmp_f)&blocksig_match_cmp);
+    if (!sig->hashtable)
         return RS_MEM_ERROR;
     for (i = 0; i < sig->count; i++)
-        hashtable_add(&sig->hashtable, &sig->block_sigs[i]);
+        hashtable_add(sig->hashtable, &sig->block_sigs[i]);
     return RS_DONE;
 }
 

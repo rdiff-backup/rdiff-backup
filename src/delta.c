@@ -437,7 +437,7 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
     if (sig) {
         rs_signature_check(sig);
         /* Caller must have called rs_build_hash_table() by now. */
-        assert(sig->hashtable.size);
+        assert(sig->hashtable);
         job->signature = sig;
         RollsumInit(&job->weak_sum);
     }

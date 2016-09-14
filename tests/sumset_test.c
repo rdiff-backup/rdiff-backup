@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     assert(sig.count == 0);
     assert(sig.size == 0);
     assert(sig.block_sigs == NULL);
-    assert(sig.hashtable.size == 0);
+    assert(sig.hashtable == NULL);
     assert(sig.find_count == 0);
     assert(sig.match_count == 0);
     assert(sig.cmp_weak_count == 0);
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
 
     /* Test rs_build_hash_table(). */
     rs_build_hash_table(&sig);
-    assert(sig.hashtable.count == 16);
+    assert(sig.hashtable->count == 16);
 
     /* Test rs_signature_find_match(). */
     /* different weak, different block. */

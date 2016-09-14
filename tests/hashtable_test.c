@@ -86,7 +86,7 @@ int match_cmp(match_t *m, const entry_t *e)
 /* Test driver for hashtable. */
 int main(int argc, char **argv)
 {
-    hashtable_t t;
+    hashtable_t *t;
     entry_t entry[256];
     entry_t e;
     match_t m;
@@ -96,43 +96,44 @@ int main(int argc, char **argv)
     for (i = 0; i < 256; i++)
         entry_init(&entry[i], i);
 
-    /* Test hashtable_init() */
-    hashtable_init(&t, 256, (hash_f)&key_hash, (cmp_f)&match_cmp);
-    assert(t.size == 512);
-    assert(t.count == 0);
-    assert(t.table != NULL);
-    assert(t.hash == (hash_f)&key_hash);
-    assert(t.cmp == (cmp_f)&match_cmp);
+    /* Test hashtable_new() */
+    t = hashtable_new(256, (hash_f)&key_hash, (cmp_f)&match_cmp);
+    assert(t->size == 512);
+    assert(t->count == 0);
+    assert(t->hash == (hash_f)&key_hash);
+    assert(t->cmp == (cmp_f)&match_cmp);
+    assert(t->table != NULL);
 
     /* Test hashtable_add() */
-    assert(hashtable_add(&t, &e) == &e);        /* Added duplicated copy. */
-    assert(hashtable_add(&t, &entry[0]) == &entry[0]);  /* Added duplicated instance. */
+    assert(hashtable_add(t, &e) == &e); /* Added duplicated copy. */
+    assert(hashtable_add(t, &entry[0]) == &entry[0]);   /* Added duplicated instance. */
     for (i = 0; i < 256; i++)
-        assert(hashtable_add(&t, &entry[i]) == &entry[i]);
-    assert(t.count == 258);
+        assert(hashtable_add(t, &entry[i]) == &entry[i]);
+    assert(t->count == 258);
 
     /* Test hashtable_find() */
     match_init(&m, 0);
-    assert(hashtable_find(&t, &m) == &e);       /* Finds first duplicate added. */
+    assert(hashtable_find(t, &m) == &e);        /* Finds first duplicate added. */
     assert(m.value == m.source);        /* match_cmp() updated m.value. */
     for (i = 1; i < 256; i++) {
         match_init(&m, i);
-        assert(hashtable_find(&t, &m) == &entry[i]);
+        assert(hashtable_find(t, &m) == &entry[i]);
         assert(m.value == m.source);    /* match_cmp() updated m.value. */
     }
     match_init(&m, 256);
-    assert(hashtable_find(&t, &m) == NULL);     /* Find missing entry. */
+    assert(hashtable_find(t, &m) == NULL);      /* Find missing entry. */
     assert(m.value == 0);       /* match_cmp() didn't update m.value. */
 
     /* Test hashtable iterators */
     entry_t *p;
     hashtable_iter_t iter;
     int count = 0;
-    for (p = hashtable_iter(&iter, &t); p != NULL; p = hashtable_next(&iter)) {
+    for (p = hashtable_iter(&iter, t); p != NULL; p = hashtable_next(&iter)) {
         assert(p == &e || (&entry[0] <= p && p <= &entry[255]));
         count++;
     }
     assert(count == 258);
+    hashtable_free(t);
 
     return 0;
 }

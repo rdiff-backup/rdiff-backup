@@ -53,20 +53,22 @@
  *   } entry_t;
  *   void entry_init(entry_t *e, ...);
  *
- *   hashtable_t t;
+ *   hashtable_t *t;
  *   entry_t entries[300];
  *   key_t k;
  *   entry_t *e;
  *
- *   hashtable_init(&t, 300, &key_hash, &key_cmp);
+ *   t = hashtable_new(300, &key_hash, &key_cmp);
  *   entry_init(&entries[5], ...);
- *   hashtable_add(&t, &entries[5]);
+ *   hashtable_add(t, &entries[5]);
  *   k = ...;
- *   e = hashtable_find(&t, &k);
+ *   e = hashtable_find(t, &k);
  *
  *   hashtable_iter i;
- *   for (e = hashtable_iter(&i, &t); e != NULL; e = hashtable_next(&i))
+ *   for (e = hashtable_iter(&i, t); e != NULL; e = hashtable_next(&i))
  *     ...
+ *
+ *   hashtable_free(t);
  *
  * The hash() and cmp() fuctions will typically take pointers to
  * key/entry instances the same as the pointers stored in the
@@ -85,10 +87,10 @@
  *   ...
  *   match_t m;
  *
- *   hashtable_init(&t, 300, &key_hash, &match_cmp);
+ *   t = hashtable_new(300, &key_hash, &match_cmp);
  *   ...
  *   m = ...;
- *   e = hashtable_find(&t, &m);
+ *   e = hashtable_find(t, &m);
  *
  * The cmp() function is only called for finding hashtable entries
  * and can mutate the match_t object for doing things like deferred
@@ -116,21 +118,21 @@ typedef unsigned (*hash_f) (const void *k);
 typedef int (*cmp_f) (void *k, const void *o);
 
 /** The hashtable type. */
-typedef struct hashtable {
+typedef struct _hashtable {
     int size;                   /* Size of allocated hashtable. */
     int count;                  /* Number of entries in hashtable. */
-    void **table;               /* Table of pointers to entries. */
     hash_f hash;                /* Function for hashing entries. */
     cmp_f cmp;                  /* Function for comparing entries. */
+    void *table[];              /* Table of pointers to entries. */
 } hashtable_t;
 
 /** The hashtable iterator type. */
-typedef struct hashtable_iter {
+typedef struct _hashtable_iter {
     hashtable_t *htable;        /* The hashtable to iterate over. */
     int index;                  /* The index to scan from for the next entry. */
 } hashtable_iter_t;
 
-/** Initialize a hashtable instance.
+/** Allocate and initialize a hashtable instance.
  *
  * The provided size is used as an indication of the number of
  * entries you wish to add, but the allocated size is doubled and
@@ -141,21 +143,23 @@ typedef struct hashtable_iter {
  * more than 80% full.
  *
  * Args:
- *   *t - The hashtable to initialize.
  *   size - The desired minimum size of the hash table.
  *   hash - The hash function to use.
- *   cmp - The compare function to use. */
-void hashtable_init(hashtable_t *t, int size, hash_f hash, cmp_f cmp);
-
-/** Destroy a hashtable instance.
+ *   cmp - The compare function to use.
  *
- * This will free the allocated table of pointers, but will not free
- * the entries in the hashtable. If you want to free the entries too,
- * use a hashtable iterator to free the the entries first.
+ * Returns:
+ *   The initialized hashtable instance or NULL if it failed. */
+hashtable_t *hashtable_new(int size, hash_f hash, cmp_f cmp);
+
+/** Destroy and free a hashtable instance.
+ *
+ * This will free the hashtable, but will not free the entries in the
+ * hashtable. If you want to free the entries too, use a hashtable
+ * iterator to free the the entries first.
  *
  * Args:
- *   *t - The hashtable to destroy. */
-void hashtable_done(hashtable_t *t);
+ *   *t - The hashtable to destroy and free. */
+void hashtable_free(hashtable_t *t);
 
 /** Add an entry to a hashtable.
  *
@@ -192,7 +196,7 @@ void *hashtable_find(hashtable_t *t, void *k);
  * all entries in a hashtable.
  *
  * Example:
- *   for (e = hashtable_iter(&i, &t); e != NULL; e = hashtable_next(&i))
+ *   for (e = hashtable_iter(&i, t); e != NULL; e = hashtable_next(&i))
  *     ...
  *
  * Args:

@@ -23,30 +23,25 @@
 #include <stdio.h>
 #include "hashtable.h"
 
-void hashtable_init(hashtable_t *t, int size, hash_f hash, cmp_f cmp)
+hashtable_t *hashtable_new(int size, hash_f hash, cmp_f cmp)
 {
-    assert(t != NULL);
-    /* Double size and use next power of 2 larger than 8. */
-    size += size;
-    t->size = 8;
-    while (t->size < size)
-        t->size <<= 1;
+    hashtable_t *t;
+    int size2;
+
+    /* Use next power of 2 larger than 2x the requested size. */
+    for (size2 = 1; size2 < 2 * size; size2 <<= 1) ;
+    if (!(t = calloc(1, sizeof(hashtable_t)+ size2 * sizeof(void *))))
+        return NULL;
+    t->size = size2;
     t->count = 0;
-    t->table = calloc(t->size, sizeof(void *));
     t->hash = hash;
     t->cmp = cmp;
+    return t;
 }
 
-void hashtable_done(hashtable_t *t)
+void hashtable_free(hashtable_t *t)
 {
-    assert(t != NULL);
-    free(t->table);
-#ifndef NDEBUG
-    t->size = 0;
-    t->count = 0;
-    t->hash = NULL;
-    t->cmp = NULL;
-#endif                          /* NDEBUG */
+    free(t);
 }
 
 static inline unsigned mix32(unsigned int h)
