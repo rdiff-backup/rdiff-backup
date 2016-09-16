@@ -123,7 +123,8 @@ typedef struct _hashtable {
     int count;                  /* Number of entries in hashtable. */
     hash_f hash;                /* Function for hashing entries. */
     cmp_f cmp;                  /* Function for comparing entries. */
-    void *table[];              /* Table of pointers to entries. */
+    void **etable;              /* Table of pointers to entries. */
+    unsigned ktable[];          /* Table of hash keys. */
 } hashtable_t;
 
 /** The hashtable iterator type. */
@@ -184,11 +185,11 @@ void *hashtable_add(hashtable_t *t, void *e);
  *
  * Args:
  *   *t - The hashtable to search.
- *   *k - The key or match object to search for.
+ *   *m - The key or match object to search for.
  *
  * Returns:
  *   The first found entry, or NULL if nothing was found. */
-void *hashtable_find(hashtable_t *t, void *k);
+void *hashtable_find(hashtable_t *t, void *m);
 
 /** Initialize a hashtable_iter_t and return the first entry.
  *

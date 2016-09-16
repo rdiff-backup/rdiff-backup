@@ -102,7 +102,8 @@ int main(int argc, char **argv)
     assert(t->count == 0);
     assert(t->hash == (hash_f)&key_hash);
     assert(t->cmp == (cmp_f)&match_cmp);
-    assert(t->table != NULL);
+    assert(t->etable != NULL);
+    assert(t->ktable != NULL);
 
     /* Test hashtable_add() */
     assert(hashtable_add(t, &e) == &e); /* Added duplicated copy. */
