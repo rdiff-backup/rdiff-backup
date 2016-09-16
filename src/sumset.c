@@ -66,17 +66,11 @@ void rs_block_match_init(rs_block_match_t *match, rs_signature_t *sig, rs_weak_s
 
 int rs_block_match_cmp(rs_block_match_t *match, const rs_block_sig_t *block_sig)
 {
-    int v;
-
-    match->signature->cmp_weak_count++;
-    if ((v = match->block_sig.weak_sum - block_sig->weak_sum))
-        return v;
     if (!match->got_strong) {
         match->signature->calc_strong_count++;
         rs_signature_calc_strong_sum(match->signature, match->buf, match->len, &(match->block_sig.strong_sum));
         match->got_strong = 1;
     }
-    match->signature->cmp_strong_count++;
     return memcmp(&match->block_sig.strong_sum, &block_sig->strong_sum, match->signature->strong_sum_len);
 }
 
@@ -113,10 +107,9 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int s
     if (sig->size)
         sig->block_sigs = rs_alloc(sig->size * sizeof(rs_block_sig_t), "signature->block_sigs");
     else
-	sig->block_sigs = NULL;
+        sig->block_sigs = NULL;
     sig->hashtable = NULL;
-    sig->find_count = sig->match_count = 0;
-    sig->cmp_weak_count = sig->cmp_strong_count = sig->calc_strong_count = 0;
+    sig->calc_strong_count = 0;
     rs_signature_check(sig);
     return RS_DONE;
 }
@@ -147,9 +140,7 @@ rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum, v
 
     rs_signature_check(sig);
     rs_block_match_init(&m, sig, weak_sum, buf, len);
-    sig->find_count++;
     if ((b = hashtable_find(sig->hashtable, &m))) {
-        sig->match_count++;
         return (rs_long_t)(b - sig->block_sigs) * sig->block_len;
     }
     return -1;
@@ -157,15 +148,17 @@ rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum, v
 
 void rs_signature_log_stats(rs_signature_t const *sig)
 {
+    hashtable_t *t = sig->hashtable;
+
     rs_log(RS_LOG_INFO|RS_LOG_NONAME,
            "match statistics: signature[%ld searches, %ld (%.3f%%) matches, "
-	   "%ld (%.3fx) weak sum compares, %ld (%.3f%%) strong sum compares, "
-	   "%ld (%.3f%%) strong sum calcs]",
-           sig->find_count,
-	   sig->match_count, 100.0 * (double)sig->match_count / sig->find_count,
-	   sig->cmp_weak_count, (double)sig->cmp_weak_count / sig->find_count,
-	   sig->cmp_strong_count, 100.0 * (double)sig->cmp_strong_count / sig->find_count,
-	   sig->calc_strong_count, 100.0 * (double)sig->calc_strong_count / sig->find_count);
+           "%ld (%.3fx) weak sum compares, %ld (%.3f%%) strong sum compares, "
+           "%ld (%.3f%%) strong sum calcs]",
+           t->find_count,
+           t->match_count, 100.0 * (double)t->match_count / t->find_count,
+           t->keycmp_count, (double)t->keycmp_count / t->find_count,
+           t->entrycmp_count, 100.0 * (double)t->entrycmp_count / t->find_count,
+           sig->calc_strong_count, 100.0 * (double)sig->calc_strong_count / t->find_count);
 }
 
 rs_result rs_build_hash_table(rs_signature_t *sig)
