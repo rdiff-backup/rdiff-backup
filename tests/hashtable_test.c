@@ -124,6 +124,12 @@ int main(int argc, char **argv)
     match_init(&m, 256);
     assert(hashtable_find(t, &m) == NULL);      /* Find missing entry. */
     assert(m.value == 0);       /* match_cmp() didn't update m.value. */
+#ifndef HASHTABLE_NSTATS
+    assert(t->find_count == 257);
+    assert(t->match_count == 256);
+    assert(t->cmp_key_count >= 256);
+    assert(t->cmp_entry_count >= 256);
+#endif
 
     /* Test hashtable iterators */
     entry_t *p;

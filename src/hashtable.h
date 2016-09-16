@@ -39,7 +39,9 @@
  * adding them. Multiple entries with the same key can be added, and
  * you can use a fancy cmp() function to find particular entries by
  * more than just their key. There is an iterator for iterating
- * through all entries in the hashtable.
+ * through all entries in the hashtable. There are optional
+ * hashtable_find() find/match/keycmp/entrycmp stats counters that
+ * can be disabled by defining HASHTABLE_NSTATS.
  *
  * Example:
  *
@@ -97,6 +99,7 @@
  * and cached evaluation of expensive match data. It can also access
  * the whole entry_t object to match against more than just the key. */
 
+
 /** The hash() function type.
  *
  * Args:
@@ -123,6 +126,13 @@ typedef struct _hashtable {
     int count;                  /* Number of entries in hashtable. */
     hash_f hash;                /* Function for hashing entries. */
     cmp_f cmp;                  /* Function for comparing entries. */
+#ifndef HASHTABLE_NSTATS
+    /* The following are for accumulating hashtable_find() stats. */
+    long find_count;            /* The count of finds tried. */
+    long match_count;           /* The count of matches found. */
+    long keycmp_count;          /* The count of key compares done. */
+    long entrycmp_count;        /* The count of entry compares done. */
+#endif
     void **etable;              /* Table of pointers to entries. */
     unsigned ktable[];          /* Table of hash keys. */
 } hashtable_t;

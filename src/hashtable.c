@@ -53,6 +53,9 @@ hashtable_t *hashtable_new(int size, hash_f hash, cmp_f cmp)
     t->count = 0;
     t->hash = hash;
     t->cmp = cmp;
+#ifndef HASHTABLE_NSTATS
+    t->find_count = t->match_count = t->keycmp_count = t->entrycmp_count = 0;
+#endif
     return t;
 }
 
@@ -108,17 +111,31 @@ void *hashtable_add(hashtable_t *t, void *e)
     return NULL;
 }
 
+/* Conditional macro for incrementing stats counters. */
+#ifndef HASHTABLE_NSTATS
+#  define stats_inc(c) (c++)
+#else
+#  define stats_inc(c)
+#endif
+
 void *hashtable_find(hashtable_t *t, void *m)
 {
     assert(m != NULL);
     unsigned km = get_key(t, m), ke;
     void *e;
 
+    stats_inc(t->find_count);
     do_probe(t, km) {
         if (!(ke = t->ktable[i]))
             return NULL;
-        if (km == ke && !t->cmp(m, e = t->etable[i]))
-            return e;
+	stats_inc(t->keycmp_count);
+        if (km == ke) {
+	    stats_inc(t->entrycmp_count);
+	    if (!t->cmp(m, e = t->etable[i])) {
+		stats_inc(t->match_count);
+		return e;
+	    }
+	}
     } while_probe;
     return NULL;
 }
