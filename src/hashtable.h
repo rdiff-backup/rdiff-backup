@@ -146,12 +146,11 @@ typedef struct _hashtable_iter {
 /** Allocate and initialize a hashtable instance.
  *
  * The provided size is used as an indication of the number of
- * entries you wish to add, but the allocated size is doubled and
- * rounded up to the next power of 2. This is to avoid degraded
- * performance using open addressing and to ensure the quadratic
- * probing will seach the whole table. The table can be filled to the
- * full allocated size, but performance will degrade badly if it is
- * more than 80% full.
+ * entries you wish to add, but the allocated size will probably be
+ * larger depending on the implementation to enable optimisations or
+ * avoid degraded performance. It may be possible to fill the table
+ * beyond the requested size, but performance can start to degrade
+ * badly if it is over filled.
  *
  * Args:
  *   size - The desired minimum size of the hash table.
@@ -190,8 +189,7 @@ void *hashtable_add(hashtable_t *t, void *e);
 /** Find an entry in a hashtable.
  *
  * Uses cmp() to find the first matching entry in the table in the
- * same hash() bucket. Note this does not check for matching hash()
- * values, and relies on cmp() to do that.
+ * same hash() bucket.
  *
  * Args:
  *   *t - The hashtable to search.
