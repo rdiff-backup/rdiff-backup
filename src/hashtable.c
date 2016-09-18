@@ -113,9 +113,9 @@ void *hashtable_add(hashtable_t *t, void *e)
 
 /* Conditional macro for incrementing stats counters. */
 #ifndef HASHTABLE_NSTATS
-#  define stats_inc(c) (c++)
+#define stats_inc(c) (c++)
 #else
-#  define stats_inc(c)
+#define stats_inc(c)
 #endif
 
 void *hashtable_find(hashtable_t *t, void *m)
@@ -128,14 +128,14 @@ void *hashtable_find(hashtable_t *t, void *m)
     do_probe(t, km) {
         if (!(ke = t->ktable[i]))
             return NULL;
-	stats_inc(t->keycmp_count);
+        stats_inc(t->keycmp_count);
         if (km == ke) {
-	    stats_inc(t->entrycmp_count);
-	    if (!t->cmp(m, e = t->etable[i])) {
-		stats_inc(t->match_count);
-		return e;
-	    }
-	}
+            stats_inc(t->entrycmp_count);
+            if (!t->cmp(m, e = t->etable[i])) {
+                stats_inc(t->match_count);
+                return e;
+            }
+        }
     } while_probe;
     return NULL;
 }

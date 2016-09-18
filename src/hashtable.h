@@ -99,7 +99,6 @@
  * and cached evaluation of expensive match data. It can also access
  * the whole entry_t object to match against more than just the key. */
 
-
 /** The hash() function type.
  *
  * Args:
