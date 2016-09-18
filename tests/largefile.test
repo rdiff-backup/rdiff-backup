@@ -27,24 +27,26 @@
 srcdir='.'
 . $srcdir/testcommon.sh
 
-# If we specify a number of blocks in $2 like '1024K', then also use
-# persistent random data files in /tmp/librsync_{$2} so tests are more
-# repeatable. Otherwise default to '64K' and use $tmpdir.
-# Note $1 is used to specify "BINDIR" by cmake tests, so we use $2.
+# Note $1 is used to specify "BINDIR" by cmake tests, so we use
+# arguments after that.
+
+# Allow the number of blocks to be specified in $2 in the form '64K'.
 blocks=${2:-64K}
-if [ -n "$2" ]; then
-  datadir=/tmp/librsynctest_${blocks}
-  mkdir -p $datadir
-else
-  datadir=$tmpdir
-fi;
-old="$datadir/old"
-new="$datadir/new"
-sig="$datadir/sig"
-delta="$datadir/delta"
-out="$datadir/out"
+
+# Allow a data directory to be specified in $3 to use persistent
+# random data files to make tests more repeatable, otherwise use
+# $tmpdir.
+datadir=${3:-$tmpdir}
+echo "DATADIR $datadir"
+
+old="$datadir/old.$blocks"
+new="$datadir/new.$blocks"
+sig="$datadir/sig.$blocks"
+delta="$datadir/delta.$blocks"
+out="$datadir/out.$blocks"
 
 if [ ! -f "$old" ]; then
+   mkdir -p $datadir
    dd bs=$blocks count=1024 if=/dev/urandom >"$old"
    dd bs=$blocks count=256 if=/dev/urandom >"$new"
    dd bs=$blocks count=256 skip=128 if="$old" >>"$new"
