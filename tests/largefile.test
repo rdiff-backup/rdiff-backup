@@ -1,21 +1,22 @@
 #! /bin/sh -e
-
+#
 # librsync -- the library for network deltas
 # Copyright (C) 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
-
-# mutate.test: Make some deterministic pseudorandom changes to a file and
-# compute deltas across them.
- 
+#
+# largefile.test: Generate some large random files with 50% matches
+# and generate signature, delta, and patch files, comparing for
+# correctness.
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
 # as published by the Free Software Foundation; either version 2.1 of
 # the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Lesser General Public
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -24,28 +25,35 @@
 # large data files and takes a long time.
 
 srcdir='.'
-
 . $srcdir/testcommon.sh
 
-#datadir=~/tmp/librsynctest_largefile
-datadir=$tmpdir
+# If we specify a number of blocks in $2 like '1024K', then also use
+# persistent random data files in /tmp/librsync_{$2} so tests are more
+# repeatable. Otherwise default to '64K' and use $tmpdir.
+# Note $1 is used to specify "BINDIR" by cmake tests, so we use $2.
+blocks=${2:-64K}
+if [ -n "$2" ]; then
+  datadir=/tmp/librsynctest_${blocks}
+  mkdir -p $datadir
+else
+  datadir=$tmpdir
+fi;
 old="$datadir/old"
 new="$datadir/new"
 sig="$datadir/sig"
 delta="$datadir/delta"
 out="$datadir/out"
 
-size=1024K
 if [ ! -f "$old" ]; then
-   dd bs=$size count=1024 if=/dev/urandom >"$old"
-   dd bs=$size count=256 if=/dev/urandom >"$new"
-   dd bs=$size count=256 skip=128 if="$old" >>"$new"
-   dd bs=$size count=256 if=/dev/urandom >>"$new"
-   dd bs=$size count=256 skip=640 if="$old" >>"$new"
+   dd bs=$blocks count=1024 if=/dev/urandom >"$old"
+   dd bs=$blocks count=256 if=/dev/urandom >"$new"
+   dd bs=$blocks count=256 skip=128 if="$old" >>"$new"
+   dd bs=$blocks count=256 if=/dev/urandom >>"$new"
+   dd bs=$blocks count=256 skip=640 if="$old" >>"$new"
 fi
 
-run_test $bindir/rdiff -f $debug -b 1024 -S 8 -s signature $old $sig
-run_test $bindir/rdiff -f $debug -s -I 32768 -O 32768 delta $sig $new $delta
-run_test $bindir/rdiff -f $debug -s patch $old $delta $out
+run_test time $bindir/rdiff $debug -f -b 1024 -S 8 -s signature $old $sig
+run_test time $bindir/rdiff $debug -f -s -I 32768 -O 32768 delta $sig $new $delta
+run_test time $bindir/rdiff $debug -f -s patch $old $delta $out
 check_compare $new $out "large files"
 true
