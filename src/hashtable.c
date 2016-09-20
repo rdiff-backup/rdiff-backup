@@ -79,7 +79,7 @@ static inline unsigned mix32(unsigned int h)
 }
 
 /* Get hash key, reserving zero as an empty bucket marker. */
-static inline unsigned get_key(hashtable_t *t, void *e)
+static inline unsigned get_key(const hashtable_t *t, const void *e)
 {
     unsigned k = t->hash(e);
     return k ? k : k - 1;
@@ -87,8 +87,8 @@ static inline unsigned get_key(hashtable_t *t, void *e)
 
 /* Prefix macro for probing table t for key k with index i. */
 #define do_probe(t, k) \
-    unsigned mask = t->size - 1;\
-    unsigned index = mix32(k) & mask;\
+    const unsigned mask = t->size - 1;\
+    const unsigned index = mix32(k) & mask;\
     unsigned i = index, s = 0;\
     do
 
@@ -99,7 +99,7 @@ static inline unsigned get_key(hashtable_t *t, void *e)
 void *hashtable_add(hashtable_t *t, void *e)
 {
     assert(e != NULL);
-    unsigned k = get_key(t, e);
+    const unsigned k = get_key(t, e);
 
     do_probe(t, k) {
         if (!t->ktable[i]) {
@@ -121,7 +121,8 @@ void *hashtable_add(hashtable_t *t, void *e)
 void *hashtable_find(hashtable_t *t, void *m)
 {
     assert(m != NULL);
-    unsigned km = get_key(t, m), ke;
+    const unsigned km = get_key(t, m);
+    unsigned ke;
     void *e;
 
     stats_inc(t->find_count);
@@ -153,7 +154,7 @@ void *hashtable_next(hashtable_iter_t *i)
 {
     assert(i->htable != NULL);
     assert(i->index <= i->htable->size);
-    hashtable_t *t = i->htable;
+    const hashtable_t *t = i->htable;
     void *e;
 
     while (i->index < t->size) {
