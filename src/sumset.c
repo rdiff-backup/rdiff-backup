@@ -49,7 +49,6 @@ unsigned rs_block_sig_hash(const rs_block_sig_t *sig)
 typedef struct rs_block_match {
     rs_block_sig_t block_sig;
     rs_signature_t *signature;
-    int got_strong;
     const void *buf;
     size_t len;
 } rs_block_match_t;
@@ -59,19 +58,19 @@ void rs_block_match_init(rs_block_match_t *match, rs_signature_t *sig, rs_weak_s
 {
     match->block_sig.weak_sum = weak_sum;
     match->signature = sig;
-    match->got_strong = 0;
     match->buf = buf;
     match->len = len;
 }
 
 int rs_block_match_cmp(rs_block_match_t *match, const rs_block_sig_t *block_sig)
 {
-    if (!match->got_strong) {
+    /* If buf is not NULL, the strong sum is yet to be calculated. */
+    if (match->buf) {
 #ifndef HASHTABLE_NSTATS
         match->signature->calc_strong_count++;
 #endif
         rs_signature_calc_strong_sum(match->signature, match->buf, match->len, &(match->block_sig.strong_sum));
-        match->got_strong = 1;
+        match->buf = NULL;
     }
     return memcmp(&match->block_sig.strong_sum, &block_sig->strong_sum, match->signature->strong_sum_len);
 }
