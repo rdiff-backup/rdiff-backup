@@ -50,10 +50,6 @@ int main(int argc, char **argv)
     assert(sig.size == 0);
     assert(sig.block_sigs == NULL);
     assert(sig.hashtable == NULL);
-    assert(sig.find_count == 0);
-    assert(sig.match_count == 0);
-    assert(sig.cmp_weak_count == 0);
-    assert(sig.cmp_strong_count == 0);
     assert(sig.calc_strong_count == 0);
 
     /* Blake2 magic. */
@@ -127,10 +123,6 @@ int main(int argc, char **argv)
     assert(rs_signature_find_match(&sig, weak, &buf[2], 16) == -1);
     /* Matching weak, matching block. */
     assert(rs_signature_find_match(&sig, weak, &buf[15*16], 16) == 15*16);
-    assert(sig.find_count == 3);
-    assert(sig.match_count == 1);
-    assert(sig.cmp_weak_count >= 2);
-    assert(sig.cmp_strong_count == 2);
     assert(sig.calc_strong_count == 2);
     rs_signature_done(&sig);
 

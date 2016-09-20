@@ -127,8 +127,8 @@ int main(int argc, char **argv)
 #ifndef HASHTABLE_NSTATS
     assert(t->find_count == 257);
     assert(t->match_count == 256);
-    assert(t->cmp_key_count >= 256);
-    assert(t->cmp_entry_count >= 256);
+    assert(t->keycmp_count >= 256);
+    assert(t->entrycmp_count >= 256);
 #endif
 
     /* Test hashtable iterators */
