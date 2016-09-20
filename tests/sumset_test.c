@@ -50,7 +50,9 @@ int main(int argc, char **argv)
     assert(sig.size == 0);
     assert(sig.block_sigs == NULL);
     assert(sig.hashtable == NULL);
+#ifndef HASHTABLE_NSTATS
     assert(sig.calc_strong_count == 0);
+#endif
 
     /* Blake2 magic. */
     res = rs_signature_init(&sig, RS_BLAKE2_SIG_MAGIC, 16, 6, 0);
@@ -123,7 +125,9 @@ int main(int argc, char **argv)
     assert(rs_signature_find_match(&sig, weak, &buf[2], 16) == -1);
     /* Matching weak, matching block. */
     assert(rs_signature_find_match(&sig, weak, &buf[15*16], 16) == 15*16);
+#ifndef HASHTABLE_NSTATS
     assert(sig.calc_strong_count == 2);
+#endif
     rs_signature_done(&sig);
 
     return 0;

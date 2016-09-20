@@ -45,7 +45,9 @@ struct rs_signature {
     rs_block_sig_t *block_sigs; /**< The block signatures for all blocks. */
     hashtable_t *hashtable;     /**< The hashtable for finding matches. */
     /* The is extra stats not included in the hashtable stats. */
+#ifndef HASHTABLE_NSTATS
     long calc_strong_count;     /**< The count of strongsum calcs done. */
+#endif
 };
 
 /** Initialize an rs_signature instance.

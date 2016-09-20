@@ -67,7 +67,9 @@ void rs_block_match_init(rs_block_match_t *match, rs_signature_t *sig, rs_weak_s
 int rs_block_match_cmp(rs_block_match_t *match, const rs_block_sig_t *block_sig)
 {
     if (!match->got_strong) {
+#ifndef HASHTABLE_NSTATS
         match->signature->calc_strong_count++;
+#endif
         rs_signature_calc_strong_sum(match->signature, match->buf, match->len, &(match->block_sig.strong_sum));
         match->got_strong = 1;
     }
@@ -109,7 +111,9 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int s
     else
         sig->block_sigs = NULL;
     sig->hashtable = NULL;
+#ifndef HASHTABLE_NSTATS
     sig->calc_strong_count = 0;
+#endif
     rs_signature_check(sig);
     return RS_DONE;
 }
@@ -148,6 +152,7 @@ rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum, v
 
 void rs_signature_log_stats(rs_signature_t const *sig)
 {
+#ifndef HASHTABLE_NSTATS
     hashtable_t *t = sig->hashtable;
 
     rs_log(RS_LOG_INFO|RS_LOG_NONAME,
@@ -159,6 +164,7 @@ void rs_signature_log_stats(rs_signature_t const *sig)
            t->keycmp_count, (double)t->keycmp_count / t->find_count,
            t->entrycmp_count, 100.0 * (double)t->entrycmp_count / t->find_count,
            sig->calc_strong_count, 100.0 * (double)sig->calc_strong_count / t->find_count);
+#endif
 }
 
 rs_result rs_build_hash_table(rs_signature_t *sig)
