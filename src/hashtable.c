@@ -82,11 +82,12 @@ static inline unsigned mix32(unsigned int h)
 static inline unsigned get_key(const hashtable_t *t, const void *e)
 {
     unsigned k = t->hash(e);
-    return k ? k : k - 1;
+    return k ? k : -1;
 }
 
-/* Prefix macro for probing table t for key k with index i. */
-#define do_probe(t, k) \
+/* Prefix macro for probing table t for entry e with key k and index i. */
+#define do_probe(t, e, k) \
+    const unsigned k = get_key(t, e);\
     const unsigned mask = t->size - 1;\
     const unsigned index = mix32(k) & mask;\
     unsigned i = index, s = 0;\
@@ -99,9 +100,7 @@ static inline unsigned get_key(const hashtable_t *t, const void *e)
 void *hashtable_add(hashtable_t *t, void *e)
 {
     assert(e != NULL);
-    const unsigned k = get_key(t, e);
-
-    do_probe(t, k) {
+    do_probe(t, e, k) {
         if (!t->ktable[i]) {
             t->count++;
             t->ktable[i] = k;
@@ -121,12 +120,11 @@ void *hashtable_add(hashtable_t *t, void *e)
 void *hashtable_find(hashtable_t *t, void *m)
 {
     assert(m != NULL);
-    const unsigned km = get_key(t, m);
-    unsigned ke;
     void *e;
+    unsigned ke;
 
     stats_inc(t->find_count);
-    do_probe(t, km) {
+    do_probe(t, m, km) {
         if (!(ke = t->ktable[i]))
             return NULL;
         stats_inc(t->keycmp_count);
