@@ -19,6 +19,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+/* Force DEBUG on so that tests can use assert(). */
+#undef NDEBUG
 #include <stdio.h>
 #include <stdint.h>
 #include <assert.h>
