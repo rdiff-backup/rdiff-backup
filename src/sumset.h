@@ -42,7 +42,7 @@ struct rs_signature {
     int strong_sum_len;         /**< The block strong sum length. */
     int count;                  /**< Total number of blocks. */
     int size;                   /**< Total number of blocks allocated. */
-    rs_block_sig_t *block_sigs; /**< The block signatures for all blocks. */
+    void *block_sigs;           /**< The packed block_sigs for all blocks. */
     hashtable_t *hashtable;     /**< The hashtable for finding matches. */
     /* The is extra stats not included in the hashtable stats. */
 #ifndef HASHTABLE_NSTATS

@@ -104,8 +104,8 @@ int main(int argc, char **argv)
     assert(sig.count == 1);
     assert(sig.size == 16);
     assert(sig.block_sigs != NULL);
-    assert(sig.block_sigs[0].weak_sum == 0x12345678);
-    assert(memcmp(sig.block_sigs[0].strong_sum, &strong, 6) == 0);
+    assert(((rs_block_sig_t *)sig.block_sigs)->weak_sum == 0x12345678);
+    assert(memcmp(((rs_block_sig_t *)sig.block_sigs)->strong_sum, &strong, 6) == 0);
     rs_signature_done(&sig);
 
     /* Prepare rs_build_hash_table() and rs_signature_find_match() tests. */
