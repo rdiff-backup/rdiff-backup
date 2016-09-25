@@ -137,7 +137,7 @@ static inline rs_result rs_processmiss(rs_job_t *job);
  * scoop and input buffer. */
 static rs_result rs_delta_s_scan(rs_job_t *job)
 {
-    size_t         block_len = job->signature->block_len;
+    const size_t   block_len = job->signature->block_len;
     rs_long_t      match_pos;
     size_t         match_len;
     rs_result      result;
@@ -253,7 +253,7 @@ void rs_getinput(rs_job_t *job) {
  * decrementing scoop_pos as appropriate.
  */
 inline int rs_findmatch(rs_job_t *job, rs_long_t *match_pos, size_t *match_len) {
-    size_t block_len = job->signature->block_len;
+    const size_t block_len = job->signature->block_len;
 
     /* calculate the weak_sum if we don't have one */
     if (job->weak_sum.count == 0) {
