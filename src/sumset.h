@@ -52,17 +52,17 @@ struct rs_signature {
 
 /** Initialize an rs_signature instance.
  *
- * /param *sig the signature to initialize.
+ * \param *sig the signature to initialize.
  *
- * /param magic the signature magic value. Must be set to a valid magic value.
+ * \param magic the signature magic value. Must be set to a valid magic value.
  *
- * /param block_len the block size to use. Must be > 0.
+ * \param block_len the block size to use. Must be > 0.
  *
- * /param strong_len the strongsum size to use. Must be <= the max strongsum
+ * \param strong_len the strongsum size to use. Must be <= the max strongsum
  * size for the strongsum type indicated by the magic value. Use 0 to use the
  * recommended size for the provided magic value.
  *
- * /param sig_fsize signature file size to preallocate required storage for.
+ * \param sig_fsize signature file size to preallocate required storage for.
  * Use 0 if size is unknown. */
 rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int strong_len, rs_long_t sig_fsize);
 
@@ -83,12 +83,12 @@ void rs_signature_log_stats(rs_signature_t const *sig);
  * We don't use a static inline function here so that assert failure output
  * points at where rs_signature_check() was called from. */
 #define rs_signature_check(sig) do {\
-    assert((sig->magic == RS_BLAKE2_SIG_MAGIC && sig->strong_sum_len <= RS_BLAKE2_SUM_LENGTH)\
-           || (sig->magic == RS_MD4_SIG_MAGIC && sig->strong_sum_len <= RS_MD4_SUM_LENGTH));\
-    assert(0 < sig->block_len);\
-    assert(0 < sig->strong_sum_len && sig->strong_sum_len <= RS_MAX_STRONG_SUM_LENGTH);\
-    assert(0 <= sig->count && sig->count <= sig->size);\
-    assert(!sig->hashtable || sig->hashtable->count == sig->count);\
+    assert(((sig)->magic == RS_BLAKE2_SIG_MAGIC && (sig)->strong_sum_len <= RS_BLAKE2_SUM_LENGTH)\
+           || ((sig)->magic == RS_MD4_SIG_MAGIC && (sig)->strong_sum_len <= RS_MD4_SUM_LENGTH));\
+    assert(0 < (sig)->block_len);\
+    assert(0 < (sig)->strong_sum_len && (sig)->strong_sum_len <= RS_MAX_STRONG_SUM_LENGTH);\
+    assert(0 <= (sig)->count && (sig)->count <= (sig)->size);\
+    assert(!(sig)->hashtable || (sig)->hashtable->count == (sig)->count);\
 } while (0)
 
 /** Calculate the strong sum of a buffer. */

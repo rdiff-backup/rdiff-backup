@@ -31,18 +31,18 @@ do
         do
             for hashopt in -Hmd4 -Hblake2
             do
-                run_test ../rdiff $debug $hashopt -f -I$buf -O$buf signature $old $tmpdir/sig
-                run_test ../rdiff $debug $hashopt -f -I$buf -O$buf delta $tmpdir/sig $new $tmpdir/delta
-                run_test ../rdiff $debug $hashopt -f -I$buf -O$buf patch $old $tmpdir/delta $tmpdir/new
+                run_test $bindir/rdiff $debug $hashopt -f -I$buf -O$buf signature $old $tmpdir/sig
+                run_test $bindir/rdiff $debug $hashopt -f -I$buf -O$buf delta $tmpdir/sig $new $tmpdir/delta
+                run_test $bindir/rdiff $debug $hashopt -f -I$buf -O$buf patch $old $tmpdir/delta $tmpdir/new
 
                 check_compare $new $tmpdir/new "triple -I$buf -O$buf $old $new"
 
                 # Run tests again and check if reading and writing to pipes works
                 :> $tmpdir/new
-                cat $old | run_test ../rdiff $debug $hashopt -I$buf -O$buf signature > $tmpdir/sig
+                cat $old | run_test $bindir/rdiff $debug $hashopt -I$buf -O$buf signature > $tmpdir/sig
                 # this test pipes signature instead of $new so that signature memory preallocation is tested
-                cat $tmpdir/sig | run_test ../rdiff $debug $hashopt -I$buf -O$buf delta - $new > $tmpdir/delta
-                cat $tmpdir/delta | run_test ../rdiff $debug $hashopt -I$buf -O$buf patch $old > $tmpdir/new
+                cat $tmpdir/sig | run_test $bindir/rdiff $debug $hashopt -I$buf -O$buf delta - $new > $tmpdir/delta
+                cat $tmpdir/delta | run_test $bindir/rdiff $debug $hashopt -I$buf -O$buf patch $old > $tmpdir/new
 
                 check_compare $new $tmpdir/new "triple -I$buf -O$buf $old $new"
             done
