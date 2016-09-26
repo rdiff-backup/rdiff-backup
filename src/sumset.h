@@ -26,8 +26,8 @@
 
 /** Signature of a single block. */
 typedef struct rs_block_sig {
-    rs_weak_sum_t weak_sum;     /**> Block's weak checksum. */
-    rs_strong_sum_t strong_sum; /**> Block's strong checksum.  */
+    rs_weak_sum_t weak_sum;     /**< Block's weak checksum. */
+    rs_strong_sum_t strong_sum; /**< Block's strong checksum.  */
 } rs_block_sig_t;
 
 void rs_block_sig_init(rs_block_sig_t *sig, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum, int strong_len);
