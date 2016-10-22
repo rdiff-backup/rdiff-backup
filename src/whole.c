@@ -119,7 +119,7 @@ rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset, rs_stats_t *stats)
     job = rs_loadsig_begin(sumset);
 
     /* Estimate a number of signatures by file size */
-    rs_get_filesize(sig_file, &job->sig_file_bytes);
+    rs_get_filesize(sig_file, &job->sig_fsize);
 
     r = rs_whole_run(job, sig_file, NULL);
     if (stats)

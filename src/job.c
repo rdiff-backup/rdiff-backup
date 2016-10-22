@@ -89,9 +89,9 @@ void rs_job_check(rs_job_t *job)
 
 rs_result rs_job_free(rs_job_t *job)
 {
-    if (job->scoop_buf)
-            free(job->scoop_buf);
-
+    free(job->scoop_buf);
+    if (job->job_owns_sig)
+	  rs_free_sumset(job->signature);
     rs_bzero(job, sizeof *job);
     free(job);
 

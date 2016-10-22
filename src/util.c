@@ -71,6 +71,18 @@ rs_alloc(size_t size, char const *name)
 }
 
 
+void *
+rs_realloc(void *ptr, size_t size, char const *name)
+{
+    void *p;
+
+    if (!(p = realloc(ptr, size))) {
+	rs_fatal("couldn't reallocate instance of %s", name);
+     }
+     return p;
+}
+
+
 #ifdef HAVE_FSTATI64
 #  ifdef stat
 #   undef stat

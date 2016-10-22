@@ -43,7 +43,6 @@
 #include "util.h"
 #include "sumset.h"
 #include "search.h"
-#include "checksum.h"
 
 #define TABLE_SIZE (1<<16)
 #define NULL_TAG (-1)
@@ -194,16 +193,7 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
         if (v == 0) {
             if (!got_strong) {
                 /* Lazy calculate strong sum after finding weak match. */
-                if(sig->magic == RS_BLAKE2_SIG_MAGIC) {
-                    rs_calc_blake2_sum(inbuf, block_len, &strong_sum);
-                } else if (sig->magic == RS_MD4_SIG_MAGIC) {
-                    rs_calc_md4_sum(inbuf, block_len, &strong_sum);
-                } else {
-                    /* Bad input data is checked in rs_delta_begin, so this
-                     * should never be reached. */
-                    rs_fatal("Unknown signature algorithm %#x", sig->magic);
-                    return 0;
-                }
+		rs_signature_calc_strong_sum(sig, inbuf, block_len, &strong_sum);
                 got_strong = 1;
             }
             v = memcmp(strong_sum, b->strong_sum, sig->strong_sum_len);
@@ -227,14 +217,7 @@ rs_search_for_block(rs_weak_sum_t weak_sum,
         if (weak_sum != b->weak_sum)
             return 0;
         if (!got_strong) {
-            if(sig->magic == RS_BLAKE2_SIG_MAGIC) {
-                rs_calc_blake2_sum(inbuf, block_len, &strong_sum);
-            } else if (sig->magic == RS_MD4_SIG_MAGIC) {
-                rs_calc_md4_sum(inbuf, block_len, &strong_sum);
-            } else {
-                rs_error("Unknown signature algorithm - this is a BUG");
-                return 0; /* FIXME: Is this the best way to handle this? */
-            }
+	    rs_signature_calc_strong_sum(sig, inbuf, block_len, &strong_sum);
             got_strong = 1;
         }
         v = memcmp(strong_sum, b->strong_sum, sig->strong_sum_len);
