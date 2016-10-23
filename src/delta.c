@@ -76,7 +76,6 @@
 #include "job.h"
 #include "trace.h"
 #include "search.h"
-#include "types.h"
 #include "rollsum.h"
 
 /**
