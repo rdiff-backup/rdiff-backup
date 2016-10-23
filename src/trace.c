@@ -65,10 +65,6 @@ int rs_trace_level = RS_LOG_INFO;
 
 static void rs_log_va(int level, char const *fn, char const *fmt, va_list va);
 
-#if SIZEOF_SIZE_T > SIZEOF_LONG
-#  warning size_t is larger than a long integer, values in trace messages may be wrong
-#endif
-
 
 /**
  * Log severity strings, if any.  Must match ordering in
@@ -109,7 +105,7 @@ static void
 rs_log_va(int flags, char const *fn, char const *fmt, va_list va)
 {
     int level = flags & RS_LOG_PRIMASK;
-    
+
     if (rs_trace_impl && level <= rs_trace_level) {
         char            buf[1000];
         char            full_buf[1000];
@@ -126,7 +122,7 @@ rs_log_va(int flags, char const *fn, char const *fmt, va_list va)
                      MY_NAME, rs_severities[level], fn, buf);
         }
 
-	rs_trace_impl(level, full_buf);
+        rs_trace_impl(level, full_buf);
     }
 }
 
@@ -173,7 +169,7 @@ rs_trace_stderr(rs_loglevel UNUSED(level), char const *msg)
 void
 rs_fatal0(char const *s, ...)
 {
-    va_list	va;
+    va_list  va;
 
     va_start(va, s);
     rs_log_va(RS_LOG_CRIT, PACKAGE, s, va);
@@ -187,7 +183,7 @@ rs_fatal0(char const *s, ...)
 void
 rs_error0(char const *s, ...)
 {
-    va_list	va;
+    va_list  va;
 
     va_start(va, s);
     rs_log_va(RS_LOG_ERR, PACKAGE, s, va);
@@ -201,7 +197,7 @@ void
 rs_trace0(char const *s, ...)
 {
 #ifdef DO_RS_TRACE
-    va_list	va;
+    va_list  va;
 
     va_start(va, s);
     rs_log_va(RS_LOG_DEBUG, PACKAGE, s, va);
@@ -217,5 +213,5 @@ rs_supports_trace(void)
     return 1;
 #else
     return 0;
-#endif				/* !DO_RS_TRACE */
+#endif /* !DO_RS_TRACE */
 }
