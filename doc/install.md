@@ -76,6 +76,9 @@ default. You can turn it on by using `ENABLE_COMPRESSION` option:
 
     $ cmake -D ENABLE_COMPRESSION=ON .
 
+To build code for debug trace messages:
+
+    $ cmake -D ENABLE_TRACE=ON .
 
 ## Ninja builds
 
