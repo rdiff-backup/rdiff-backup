@@ -48,7 +48,6 @@
 
 #include "librsync.h"
 #include "trace.h"
-#include "types.h"
 #include "mdfour.h"
 
 
@@ -255,7 +254,7 @@ rs_mdfour_block(rs_mdfour_t *md, void const *p)
 
     if (ptrval & 3) {
         uint32_t        M[16];
-        
+
         memcpy(M, p, 16 * sizeof(uint32_t));
         rs_mdfour64(md, M);
     } else {

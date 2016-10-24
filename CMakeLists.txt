@@ -38,6 +38,13 @@ if (NOT CMAKE_SYSTEM_NAME)
 	message(FATAL_ERROR "No target OS set")
 endif()
 
+set(DO_RS_TRACE 0)
+option(ENABLE_TRACE "Compile in detailed trace messages" OFF)
+if (ENABLE_TRACE)
+    set(DO_RS_TRACE 1)
+endif (ENABLE_TRACE)
+message(STATUS "DO_RS_TRACE=${DO_RS_TRACE}")
+
 # Add an option to include compression support
 option(ENABLE_COMPRESSION "Whether or not to build with compression support" OFF)
 # TODO: Remove this warning when compression is implemented.
@@ -67,7 +74,6 @@ check_include_files ( zlib.h HAVE_ZLIB_H )
 
 #Temporary configuration
 set ( STDC_HEADERS 1 )
-set ( DO_RS_TRACE 0 )
 set ( HAVE_PROGRAM_INVOCATION_NAME 0)
 
 # Remove compression support if not needed

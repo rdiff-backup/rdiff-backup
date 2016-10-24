@@ -37,7 +37,7 @@
 #define _RSYNC_H
 
 #include <sys/types.h>
-#include "types.h"
+#include <stdint.h>
 #include "librsync-config.h"
 
 #ifdef __cplusplus

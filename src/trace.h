@@ -44,6 +44,8 @@
  * Not all platforms using gnu C necessarily have a corresponding
  * printf, but it's probably a good starting point.  Most unix systems
  * seem to use %ll.
+ *
+ * TODO: Use inttypes.h constants.
  */
 #if defined(HAVE_FSEEKO64) && defined(WIN32)
 #  define PRINTF_CAST_U64(x) ((off64_t) (x))
