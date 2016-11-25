@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 #ifndef HASHTABLE_NSTATS
     assert(t->find_count == 257);
     assert(t->match_count == 256);
-    assert(t->keycmp_count >= 256);
+    assert(t->hashcmp_count >= 256);
     assert(t->entrycmp_count >= 256);
 #endif
 
