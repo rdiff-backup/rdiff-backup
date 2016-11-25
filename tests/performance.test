@@ -24,13 +24,25 @@
 # Note this test is not included in make check because it creates very
 # large data files that are not deleted and takes a long time.
 
+srcdir='.'
+. $srcdir/testcommon.sh
+
+# Note $1 is used to specify "BINDIR" by cmake tests, so we use
+# arguments after that.
+
+# Allow a data directory to be specified in $2 to use persistent
+# random data files to make tests more repeatable, otherwise use
+# /tmp.
+datadir=${2:-/tmp}
+echo "DATADIR $datadir"
+
 run_test () {
   echo $1 blocks of 1K size.
   echo ========================
-  ./largefile.test .. $1 /tmp
+  $srcdir/largefile.test $bindir $1 $2
   echo
 }
 
 for size in 32K 44K 51K 64K 716K 1024K; do
-  run_test $size
+  run_test $size $datadir
 done;
