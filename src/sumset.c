@@ -179,7 +179,7 @@ void rs_signature_log_stats(rs_signature_t const *sig)
            "%ld (%.3f%%) strong sum calcs]",
            t->find_count,
            t->match_count, 100.0 * (double)t->match_count / t->find_count,
-           t->keycmp_count, (double)t->keycmp_count / t->find_count,
+           t->hashcmp_count, (double)t->hashcmp_count / t->find_count,
            t->entrycmp_count, 100.0 * (double)t->entrycmp_count / t->find_count,
            sig->calc_strong_count, 100.0 * (double)sig->calc_strong_count / t->find_count);
 #endif

@@ -40,7 +40,7 @@
  * you can use a fancy cmp() function to find particular entries by
  * more than just their key. There is an iterator for iterating
  * through all entries in the hashtable. There are optional
- * hashtable_find() find/match/keycmp/entrycmp stats counters that
+ * hashtable_find() find/match/hashcmp/entrycmp stats counters that
  * can be disabled by defining HASHTABLE_NSTATS.
  *
  * Example:
@@ -129,7 +129,7 @@ typedef struct _hashtable {
     /* The following are for accumulating hashtable_find() stats. */
     long find_count;            /* The count of finds tried. */
     long match_count;           /* The count of matches found. */
-    long keycmp_count;          /* The count of key compares done. */
+    long hashcmp_count;         /* The count of hash compares done. */
     long entrycmp_count;        /* The count of entry compares done. */
 #endif
     void **etable;              /* Table of pointers to entries. */

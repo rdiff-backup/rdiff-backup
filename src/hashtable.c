@@ -54,7 +54,7 @@ hashtable_t *hashtable_new(int size, hash_f hash, cmp_f cmp)
     t->hash = hash;
     t->cmp = cmp;
 #ifndef HASHTABLE_NSTATS
-    t->find_count = t->match_count = t->keycmp_count = t->entrycmp_count = 0;
+    t->find_count = t->match_count = t->hashcmp_count = t->entrycmp_count = 0;
 #endif
     return t;
 }
@@ -127,7 +127,7 @@ void *hashtable_find(hashtable_t *t, void *m)
     do_probe(t, m, km) {
         if (!(ke = t->ktable[i]))
             return NULL;
-        stats_inc(t->keycmp_count);
+        stats_inc(t->hashcmp_count);
         if (km == ke) {
             stats_inc(t->entrycmp_count);
             if (!t->cmp(m, e = t->etable[i])) {
