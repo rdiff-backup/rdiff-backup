@@ -19,6 +19,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+/* Force DEBUG on so that tests can use assert(). */
+#undef NDEBUG
 #include "config.h"
 #include <string.h>
 #include <assert.h>
@@ -49,8 +51,10 @@ int main(int argc, char **argv)
     assert(sig.count == 0);
     assert(sig.size == 0);
     assert(sig.block_sigs == NULL);
-    assert(sig.tag_table == NULL);
-    assert(sig.targets == NULL);
+    assert(sig.hashtable == NULL);
+#ifndef HASHTABLE_NSTATS
+    assert(sig.calc_strong_count == 0);
+#endif
 
     /* Blake2 magic. */
     res = rs_signature_init(&sig, RS_BLAKE2_SIG_MAGIC, 16, 6, 0);
@@ -79,8 +83,6 @@ int main(int argc, char **argv)
     assert(sig.count == 0);
     assert(sig.size == 8);
     assert(sig.block_sigs != NULL);
-    assert(sig.tag_table == NULL);
-    assert(sig.targets == NULL);
 
     /* Test rs_signature_done(). */
     rs_signature_done(&sig);
@@ -96,15 +98,38 @@ int main(int argc, char **argv)
     rs_signature_calc_strong_sum(&sig, &buf, 256, &strong);
     assert(memcmp(&strong, "\x39\xa7\xeb\x9f\xed\xc1", 6) == 0);
 
-    /* Test rs_signature_add_block() */
+    /* Test rs_signature_add_block(). */
     res = rs_signature_init(&sig, 0, 16, 6, 0);
     rs_signature_add_block(&sig, weak, &strong);
     assert(sig.count == 1);
     assert(sig.size == 16);
     assert(sig.block_sigs != NULL);
-    assert(sig.block_sigs[0].i == 1);
-    assert(sig.block_sigs[0].weak_sum == 0x12345678);
-    assert(memcmp(sig.block_sigs[0].strong_sum, &strong, 6) == 0);
+    assert(((rs_block_sig_t *)sig.block_sigs)->weak_sum == 0x12345678);
+    assert(memcmp(((rs_block_sig_t *)sig.block_sigs)->strong_sum, &strong, 6) == 0);
+    rs_signature_done(&sig);
+
+    /* Prepare rs_build_hash_table() and rs_signature_find_match() tests. */
+    res = rs_signature_init(&sig, 0, 16, 6, 0);
+    for (i = 0; i < 256; i+=16) {
+        weak = rs_calc_weak_sum(&buf[i], 16);
+	rs_signature_calc_strong_sum(&sig, &buf[i], 16, &strong);
+	rs_signature_add_block(&sig, weak, &strong);
+    }
+
+    /* Test rs_build_hash_table(). */
+    rs_build_hash_table(&sig);
+    assert(sig.hashtable->count == 16);
+
+    /* Test rs_signature_find_match(). */
+    /* different weak, different block. */
+    assert(rs_signature_find_match(&sig, 0x12345678, &buf[2], 16) == -1);
+    /* Matching weak, different block. */
+    assert(rs_signature_find_match(&sig, weak, &buf[2], 16) == -1);
+    /* Matching weak, matching block. */
+    assert(rs_signature_find_match(&sig, weak, &buf[15*16], 16) == 15*16);
+#ifndef HASHTABLE_NSTATS
+    assert(sig.calc_strong_count == 2);
+#endif
     rs_signature_done(&sig);
 
     return 0;

@@ -211,8 +211,12 @@ add_executable(rollsum_test
     tests/rollsum_test.c src/rollsum.c)
 add_test(NAME rollsum_test COMMAND rollsum_test)
 
+add_executable(hashtable_test
+    tests/hashtable_test.c src/hashtable.c)
+add_test(NAME hashtable_test COMMAND hashtable_test)
+
 add_executable(sumset_test
-    tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c src/checksum.c src/rollsum.c src/mdfour.c src/blake2b-ref.c)
+    tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c src/checksum.c src/rollsum.c src/mdfour.c src/blake2b-ref.c src/hashtable.c)
 add_test(NAME sumset_test COMMAND sumset_test)
 
 # Disable rdiff specific tests
@@ -241,7 +245,7 @@ else (BUILD_RDIFF)
   set(LAST_TARGET rsync)
 endif (BUILD_RDIFF)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test sumset_test)
+add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test hashtable_test sumset_test)
 
 
 enable_testing()
@@ -276,6 +280,7 @@ set(rsync_LIB_SRCS
     src/delta.c
     src/emit.c
     src/fileutil.c
+    src/hashtable.c
     src/hex.c
     src/job.c
     src/mdfour.c
@@ -286,7 +291,6 @@ set(rsync_LIB_SRCS
     src/readsums.c
     src/rollsum.c
     src/scoop.c
-    src/search.c
     src/stats.c
     src/stream.c
     src/sumset.c

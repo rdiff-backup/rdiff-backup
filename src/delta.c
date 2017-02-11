@@ -268,12 +268,11 @@ inline int rs_findmatch(rs_job_t *job, rs_long_t *match_pos, size_t *match_len) 
         /* set the match_len to the weak_sum count */
         *match_len=job->weak_sum.count;
     }
-    return rs_search_for_block(RollsumDigest(&job->weak_sum),
-                               job->scoop_next+job->scoop_pos,
-                               *match_len,
-                               job->signature,
-                               &job->stats,
-                               match_pos);
+    *match_pos = rs_signature_find_match(job->signature,
+					 RollsumDigest(&job->weak_sum),
+					 job->scoop_next+job->scoop_pos,
+					 *match_len);
+    return *match_pos != -1;
 }
 
 
@@ -437,7 +436,7 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
     if (sig) {
         rs_signature_check(sig);
         /* Caller must have called rs_build_hash_table() by now. */
-        assert(sig->tag_table);
+        assert(sig->hashtable);
         job->signature = sig;
         RollsumInit(&job->weak_sum);
     }

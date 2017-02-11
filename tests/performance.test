@@ -1,0 +1,48 @@
+#! /bin/sh -e
+#
+# librsync -- the library for network deltas
+# Copyright (C) 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
+#
+# performance.test: Run largefile.test with a variety of different
+# numbers of blocks, using persistent data files in /tmp so the tests
+# are repeatable.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation; either version 2.1 of
+# the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+# Note this test is not included in make check because it creates very
+# large data files that are not deleted and takes a long time.
+
+srcdir='.'
+. $srcdir/testcommon.sh
+
+# Note $1 is used to specify "BINDIR" by cmake tests, so we use
+# arguments after that.
+
+# Allow a data directory to be specified in $2 to use persistent
+# random data files to make tests more repeatable, otherwise use
+# /tmp.
+datadir=${2:-/tmp}
+echo "DATADIR $datadir"
+
+run_test () {
+  echo $1 blocks of 1K size.
+  echo ========================
+  $srcdir/largefile.test $bindir $1 $2
+  echo
+}
+
+for size in 32K 44K 51K 64K 716K 1024K; do
+  run_test $size $datadir
+done;
