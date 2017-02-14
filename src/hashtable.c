@@ -85,29 +85,23 @@ static inline unsigned get_key(const hashtable_t *t, const void *e)
     return k ? k : -1;
 }
 
-/* Prefix macro for probing table t for entry e with key k and index i. */
-#define do_probe(t, e, k) \
-    const unsigned k = get_key(t, e);\
+/* Loop macro for probing table t for entry e, setting km to the hash for e,
+ and iterating with index i and entry hash k, terminating at an empty bucket. */
+#define for_probe(t, e, km, i, k) \
+    const unsigned km = get_key(t, e);\
     const unsigned mask = t->size - 1;\
-    const unsigned index = mix32(k) & mask;\
-    unsigned i = index, s = 0;\
-    do
-
-/* Suffix macro for do_probe. */
-#define while_probe \
-    while ((i = (i + ++s) & mask) != index)
+    unsigned i, s, k;\
+    for (i = mix32(km) & mask, s = 0; (k = t->ktable[i]); i = (i + ++s) & mask)
 
 void *hashtable_add(hashtable_t *t, void *e)
 {
     assert(e != NULL);
-    do_probe(t, e, k) {
-        if (!t->ktable[i]) {
-            t->count++;
-            t->ktable[i] = k;
-            return t->etable[i] = e;
-        }
-    } while_probe;
-    return NULL;
+    if (t->count + 1 == t->size)
+	return NULL;
+    for_probe(t, e, km, i, k);
+    t->count++;
+    t->ktable[i] = km;
+    return t->etable[i] = e;
 }
 
 /* Conditional macro for incrementing stats counters. */
@@ -121,12 +115,9 @@ void *hashtable_find(hashtable_t *t, void *m)
 {
     assert(m != NULL);
     void *e;
-    unsigned ke;
 
     stats_inc(t->find_count);
-    do_probe(t, m, km) {
-        if (!(ke = t->ktable[i]))
-            return NULL;
+    for_probe(t, m, km, i, ke) {
         stats_inc(t->hashcmp_count);
         if (km == ke) {
             stats_inc(t->entrycmp_count);
@@ -135,7 +126,7 @@ void *hashtable_find(hashtable_t *t, void *m)
                 return e;
             }
         }
-    } while_probe;
+    }
     return NULL;
 }
 
