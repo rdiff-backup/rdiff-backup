@@ -19,9 +19,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 #include <assert.h>
-
-/* If ENTRY is not defined, define non-type-dependent methods. */
-#ifndef ENTRY
 #include <stdlib.h>
 #include <stdio.h>
 #include "hashtable.h"
@@ -90,84 +87,3 @@ void *hashtable_next(hashtable_iter_t *i)
     }
     return NULL;
 }
-
-/* If ENTRY is defined, define type-dependent methods. */
-#else /* ENTRY */
-
-#define JOIN2(x, y) x##y
-#define JOIN(x, y) JOIN2(x, y)
-
-#ifndef KEY
-#define KEY ENTRY
-#endif
-
-#ifndef MATCH
-#define MATCH KEY
-#endif
-
-#define KEY_HASH JOIN(KEY, _hash)
-#define MATCH_CMP JOIN(MATCH, _cmp)
-
-/* MurmurHash3 finalization mix function. */
-static inline unsigned mix32(unsigned int h)
-{
-    h ^= h >> 16;
-    h *= 0x85ebca6b;
-    h ^= h >> 13;
-    h *= 0xc2b2ae35;
-    h ^= h >> 16;
-    return h;
-}
-
-/* Loop macro for probing table t for key k, setting hk to the hash for k
- reserving zero for empty buckets, and iterating with index i and entry hash h,
- terminating at an empty bucket. */
-#define for_probe(t, k, hk, i, h) \
-    const unsigned mask = t->size - 1;\
-    unsigned hk = KEY_HASH(k), i, s, h;\
-    hk = hk ? hk : -1;\
-    for (i = mix32(hk) & mask, s = 0; (h = t->ktable[i]); i = (i + ++s) & mask)
-
-void *hashtable_add(hashtable_t *t, void *e)
-{
-    assert(e != NULL);
-    if (t->count + 1 == t->size)
-	return NULL;
-    for_probe(t, e, he, i, h);
-    t->count++;
-    t->ktable[i] = he;
-    return t->etable[i] = e;
-}
-
-/* Conditional macro for incrementing stats counters. */
-#ifndef HASHTABLE_NSTATS
-#define stats_inc(c) (c++)
-#else
-#define stats_inc(c)
-#endif
-
-void *hashtable_find(hashtable_t *t, void *m)
-{
-    assert(m != NULL);
-    void *e;
-
-    stats_inc(t->find_count);
-    for_probe(t, m, hm, i, he) {
-        stats_inc(t->hashcmp_count);
-        if (hm == he) {
-            stats_inc(t->entrycmp_count);
-            if (!MATCH_CMP(m, e = t->etable[i])) {
-                stats_inc(t->match_count);
-                return e;
-            }
-        }
-    }
-    return NULL;
-}
-
-#undef ENTRY
-#undef KEY
-#undef MATCH
-#undef KEY_HASH
-#undef MATCH_CMP
-#endif /* ENTRY */

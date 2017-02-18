@@ -88,7 +88,7 @@ int match_cmp(match_t *m, const entry_t *e)
 #define ENTRY entry
 #define KEY key
 #define MATCH match
-#include "hashtable.c"
+#include "hashtable.h"
 
 /* Test driver for hashtable. */
 int main(int argc, char **argv)

@@ -47,10 +47,8 @@
  * to specify the basenames (the prefixes for the *_t type, *_hash(),
  * and *_cmp() methods) of the ENTRY, and optionally KEY (default:
  * ENTRY) and match (default: KEY) types before doing "#include
- * hashtable.c". This produces application optimized type specific
- * hashtable_add() and hashtable_find() methods. Note hashtable.c
- * still needs to be compiled and linked for the other non-type
- * dependent methods.
+ * hashtable.h". This produces static inline application optimized
+ * type specific hashtable_add() and hashtable_find() methods.
  *
  * Example:
  *
@@ -66,7 +64,7 @@
  *
  *   #define ENTRY entry
  *   #define KEY key
- *   #include hashtable.c
+ *   #include "hashtable.h"
  *
  *   hashtable_t *t;
  *   entry_t entries[300];
@@ -102,7 +100,7 @@
  *   #define ENTRY entry
  *   #define KEY key
  *   #define MATCH match
- *   #include hashtable.c
+ *   #include "hashtable.h"
  *
  *   ...
  *   match_t m;
@@ -192,6 +190,45 @@ void *hashtable_iter(hashtable_iter_t *i, hashtable_t *t);
  *   The next entry or NULL if the iterator is finished. */
 void *hashtable_next(hashtable_iter_t *i);
 
+#endif                          /* _HASHTABLE_H_ */
+
+/* If ENTRY is defined, define type-dependent static inline methods. */
+#ifdef ENTRY
+
+#define JOIN2(x, y) x##y
+#define JOIN(x, y) JOIN2(x, y)
+
+#ifndef KEY
+#define KEY ENTRY
+#endif
+
+#ifndef MATCH
+#define MATCH KEY
+#endif
+
+#define KEY_HASH JOIN(KEY, _hash)
+#define MATCH_CMP JOIN(MATCH, _cmp)
+
+/* MurmurHash3 finalization mix function. */
+static inline unsigned mix32(unsigned int h)
+{
+    h ^= h >> 16;
+    h *= 0x85ebca6b;
+    h ^= h >> 13;
+    h *= 0xc2b2ae35;
+    h ^= h >> 16;
+    return h;
+}
+
+/* Loop macro for probing table t for key k, setting hk to the hash for k
+ reserving zero for empty buckets, and iterating with index i and entry hash h,
+ terminating at an empty bucket. */
+#define for_probe(t, k, hk, i, h) \
+    const unsigned mask = t->size - 1;\
+    unsigned hk = KEY_HASH(k), i, s, h;\
+    hk = hk ? hk : -1;\
+    for (i = mix32(hk) & mask, s = 0; (h = t->ktable[i]); i = (i + ++s) & mask)
+
 /** Add an entry to a hashtable.
  *
  * This doesn't use MATCH_CMP() or do any checks for existing copies or
@@ -205,7 +242,23 @@ void *hashtable_next(hashtable_iter_t *i);
  *
  * Returns:
  *   The added entry, or NULL if the table is full. */
-void *hashtable_add(hashtable_t *t, void *e);
+static inline void *hashtable_add(hashtable_t *t, void *e)
+{
+    assert(e != NULL);
+    if (t->count + 1 == t->size)
+	return NULL;
+    for_probe(t, e, he, i, h);
+    t->count++;
+    t->ktable[i] = he;
+    return t->etable[i] = e;
+}
+
+/* Conditional macro for incrementing stats counters. */
+#ifndef HASHTABLE_NSTATS
+#define stats_inc(c) (c++)
+#else
+#define stats_inc(c)
+#endif
 
 /** Find an entry in a hashtable.
  *
@@ -218,6 +271,28 @@ void *hashtable_add(hashtable_t *t, void *e);
  *
  * Returns:
  *   The first found entry, or NULL if nothing was found. */
-void *hashtable_find(hashtable_t *t, void *m);
+static inline void *hashtable_find(hashtable_t *t, void *m)
+{
+    assert(m != NULL);
+    void *e;
 
-#endif                          /* _HASHTABLE_H_ */
+    stats_inc(t->find_count);
+    for_probe(t, m, hm, i, he) {
+        stats_inc(t->hashcmp_count);
+        if (hm == he) {
+            stats_inc(t->entrycmp_count);
+            if (!MATCH_CMP(m, e = t->etable[i])) {
+                stats_inc(t->match_count);
+                return e;
+            }
+        }
+    }
+    return NULL;
+}
+
+#undef ENTRY
+#undef KEY
+#undef MATCH
+#undef KEY_HASH
+#undef MATCH_CMP
+#endif                          /* ENTRY */
