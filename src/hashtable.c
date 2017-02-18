@@ -19,6 +19,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 #include <assert.h>
+
+/* If ENTRY is not defined, define non-type-dependent methods. */
+#ifndef ENTRY
 #include <stdlib.h>
 #include <stdio.h>
 #include "hashtable.h"
@@ -34,7 +37,7 @@
 #define HASHTABLE_LOADFACTOR_NUM 8
 #define HASHTABLE_LOADFACTOR_DEN 10
 
-hashtable_t *hashtable_new(int size, hash_f hash, cmp_f cmp)
+hashtable_t *hashtable_new(int size)
 {
     hashtable_t *t;
     int size2;
@@ -51,8 +54,6 @@ hashtable_t *hashtable_new(int size, hash_f hash, cmp_f cmp)
     }
     t->size = size2;
     t->count = 0;
-    t->hash = hash;
-    t->cmp = cmp;
 #ifndef HASHTABLE_NSTATS
     t->find_count = t->match_count = t->hashcmp_count = t->entrycmp_count = 0;
 #endif
@@ -65,69 +66,6 @@ void hashtable_free(hashtable_t *t)
         free(t->etable);
         free(t);
     }
-}
-
-/* MurmurHash3 finalization mix function. */
-static inline unsigned mix32(unsigned int h)
-{
-    h ^= h >> 16;
-    h *= 0x85ebca6b;
-    h ^= h >> 13;
-    h *= 0xc2b2ae35;
-    h ^= h >> 16;
-    return h;
-}
-
-/* Get hash key, reserving zero as an empty bucket marker. */
-static inline unsigned get_key(const hashtable_t *t, const void *e)
-{
-    unsigned k = t->hash(e);
-    return k ? k : -1;
-}
-
-/* Loop macro for probing table t for entry e, setting km to the hash for e,
- and iterating with index i and entry hash k, terminating at an empty bucket. */
-#define for_probe(t, e, km, i, k) \
-    const unsigned km = get_key(t, e);\
-    const unsigned mask = t->size - 1;\
-    unsigned i, s, k;\
-    for (i = mix32(km) & mask, s = 0; (k = t->ktable[i]); i = (i + ++s) & mask)
-
-void *hashtable_add(hashtable_t *t, void *e)
-{
-    assert(e != NULL);
-    if (t->count + 1 == t->size)
-	return NULL;
-    for_probe(t, e, km, i, k);
-    t->count++;
-    t->ktable[i] = km;
-    return t->etable[i] = e;
-}
-
-/* Conditional macro for incrementing stats counters. */
-#ifndef HASHTABLE_NSTATS
-#define stats_inc(c) (c++)
-#else
-#define stats_inc(c)
-#endif
-
-void *hashtable_find(hashtable_t *t, void *m)
-{
-    assert(m != NULL);
-    void *e;
-
-    stats_inc(t->find_count);
-    for_probe(t, m, km, i, ke) {
-        stats_inc(t->hashcmp_count);
-        if (km == ke) {
-            stats_inc(t->entrycmp_count);
-            if (!t->cmp(m, e = t->etable[i])) {
-                stats_inc(t->match_count);
-                return e;
-            }
-        }
-    }
-    return NULL;
 }
 
 void *hashtable_iter(hashtable_iter_t *i, hashtable_t *t)
@@ -152,3 +90,84 @@ void *hashtable_next(hashtable_iter_t *i)
     }
     return NULL;
 }
+
+/* If ENTRY is defined, define type-dependent methods. */
+#else /* ENTRY */
+
+#define JOIN2(x, y) x##y
+#define JOIN(x, y) JOIN2(x, y)
+
+#ifndef KEY
+#define KEY ENTRY
+#endif
+
+#ifndef MATCH
+#define MATCH KEY
+#endif
+
+#define KEY_HASH JOIN(KEY, _hash)
+#define MATCH_CMP JOIN(MATCH, _cmp)
+
+/* MurmurHash3 finalization mix function. */
+static inline unsigned mix32(unsigned int h)
+{
+    h ^= h >> 16;
+    h *= 0x85ebca6b;
+    h ^= h >> 13;
+    h *= 0xc2b2ae35;
+    h ^= h >> 16;
+    return h;
+}
+
+/* Loop macro for probing table t for key k, setting hk to the hash for k
+ reserving zero for empty buckets, and iterating with index i and entry hash h,
+ terminating at an empty bucket. */
+#define for_probe(t, k, hk, i, h) \
+    const unsigned mask = t->size - 1;\
+    unsigned hk = KEY_HASH(k), i, s, h;\
+    hk = hk ? hk : -1;\
+    for (i = mix32(hk) & mask, s = 0; (h = t->ktable[i]); i = (i + ++s) & mask)
+
+void *hashtable_add(hashtable_t *t, void *e)
+{
+    assert(e != NULL);
+    if (t->count + 1 == t->size)
+	return NULL;
+    for_probe(t, e, he, i, h);
+    t->count++;
+    t->ktable[i] = he;
+    return t->etable[i] = e;
+}
+
+/* Conditional macro for incrementing stats counters. */
+#ifndef HASHTABLE_NSTATS
+#define stats_inc(c) (c++)
+#else
+#define stats_inc(c)
+#endif
+
+void *hashtable_find(hashtable_t *t, void *m)
+{
+    assert(m != NULL);
+    void *e;
+
+    stats_inc(t->find_count);
+    for_probe(t, m, hm, i, he) {
+        stats_inc(t->hashcmp_count);
+        if (hm == he) {
+            stats_inc(t->entrycmp_count);
+            if (!MATCH_CMP(m, e = t->etable[i])) {
+                stats_inc(t->match_count);
+                return e;
+            }
+        }
+    }
+    return NULL;
+}
+
+#undef ENTRY
+#undef KEY
+#undef MATCH
+#undef KEY_HASH
+#undef MATCH_CMP
+#endif /* ENTRY */

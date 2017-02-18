@@ -30,8 +30,8 @@
  * hash() and cmp() methods. The cmp() method can either be a simple
  * comparison between two keys, or can be against a special match
  * object containing additional mutable state. This allows for things
- * like deferred and cached evaluation of costly comparison data.
- * The hash() function doesn't need to avoid clustering behaviour.
+ * like deferred and cached evaluation of costly comparison data. The
+ * hash() function doesn't need to avoid clustering behaviour.
  *
  * It uses open addressing with quadratic probing for collisions. The
  * MurmurHash3 finalization function is used on the hash() output to
@@ -42,6 +42,15 @@
  * through all entries in the hashtable. There are optional
  * hashtable_find() find/match/hashcmp/entrycmp stats counters that
  * can be disabled by defining HASHTABLE_NSTATS.
+ *
+ * The hash() and cmp() methods to use are specified by using #define
+ * to specify the basenames (the prefixes for the *_t type, *_hash(),
+ * and *_cmp() methods) of the ENTRY, and optionally KEY (default:
+ * ENTRY) and match (default: KEY) types before doing "#include
+ * hashtable.c". This produces application optimized type specific
+ * hashtable_add() and hashtable_find() methods. Note hashtable.c
+ * still needs to be compiled and linked for the other non-type
+ * dependent methods.
  *
  * Example:
  *
@@ -55,12 +64,16 @@
  *   } entry_t;
  *   void entry_init(entry_t *e, ...);
  *
+ *   #define ENTRY entry
+ *   #define KEY key
+ *   #include hashtable.c
+ *
  *   hashtable_t *t;
  *   entry_t entries[300];
  *   key_t k;
  *   entry_t *e;
  *
- *   t = hashtable_new(300, &key_hash, &key_cmp);
+ *   t = hashtable_new(300);
  *   entry_init(&entries[5], ...);
  *   hashtable_add(t, &entries[5]);
  *   k = ...;
@@ -86,10 +99,15 @@
  *   } match_t;
  *   int match_cmp(match_t *m, const entry_t *e);
  *
+ *   #define ENTRY entry
+ *   #define KEY key
+ *   #define MATCH match
+ *   #include hashtable.c
+ *
  *   ...
  *   match_t m;
  *
- *   t = hashtable_new(300, &key_hash, &match_cmp);
+ *   t = hashtable_new(300);
  *   ...
  *   m = ...;
  *   e = hashtable_find(t, &m);
@@ -99,32 +117,10 @@
  * and cached evaluation of expensive match data. It can also access
  * the whole entry_t object to match against more than just the key. */
 
-/** The hash() function type.
- *
- * Args:
- *   *k - the key or match object to hash.
- *
- * Returns:
- *   An unsigned hash value.
- */
-typedef unsigned (*hash_f) (const void *k);
-
-/** The cmp() function type.
- *
- * Args:
- *   *k - the key or match object to try and match to.
- *   *o - the key or entry object to match against.
- *
- * Returns:
- *   -1, 0, or 1 if *e is less, equal, or more that *o. */
-typedef int (*cmp_f) (void *k, const void *o);
-
 /** The hashtable type. */
 typedef struct _hashtable {
     int size;                   /* Size of allocated hashtable. */
     int count;                  /* Number of entries in hashtable. */
-    hash_f hash;                /* Function for hashing entries. */
-    cmp_f cmp;                  /* Function for comparing entries. */
 #ifndef HASHTABLE_NSTATS
     /* The following are for accumulating hashtable_find() stats. */
     long find_count;            /* The count of finds tried. */
@@ -158,7 +154,7 @@ typedef struct _hashtable_iter {
  *
  * Returns:
  *   The initialized hashtable instance or NULL if it failed. */
-hashtable_t *hashtable_new(int size, hash_f hash, cmp_f cmp);
+hashtable_t *hashtable_new(int size);
 
 /** Destroy and free a hashtable instance.
  *
@@ -169,34 +165,6 @@ hashtable_t *hashtable_new(int size, hash_f hash, cmp_f cmp);
  * Args:
  *   *t - The hashtable to destroy and free. */
 void hashtable_free(hashtable_t *t);
-
-/** Add an entry to a hashtable.
- *
- * This doesn't use cmp() or do any checks for existing copies or
- * instances, so it will add duplicates. If you want to avoid adding
- * duplicates, use hashtable_find() to check for existing entries
- * first.
- *
- * Args:
- *   *t - The hashtable to add to.
- *   *e - The entry object to add.
- *
- * Returns:
- *   The added entry, or NULL if the table is full. */
-void *hashtable_add(hashtable_t *t, void *e);
-
-/** Find an entry in a hashtable.
- *
- * Uses cmp() to find the first matching entry in the table in the
- * same hash() bucket.
- *
- * Args:
- *   *t - The hashtable to search.
- *   *m - The key or match object to search for.
- *
- * Returns:
- *   The first found entry, or NULL if nothing was found. */
-void *hashtable_find(hashtable_t *t, void *m);
 
 /** Initialize a hashtable_iter_t and return the first entry.
  *
@@ -223,5 +191,33 @@ void *hashtable_iter(hashtable_iter_t *i, hashtable_t *t);
  * Returns:
  *   The next entry or NULL if the iterator is finished. */
 void *hashtable_next(hashtable_iter_t *i);
+
+/** Add an entry to a hashtable.
+ *
+ * This doesn't use MATCH_CMP() or do any checks for existing copies or
+ * instances, so it will add duplicates. If you want to avoid adding
+ * duplicates, use hashtable_find() to check for existing entries
+ * first.
+ *
+ * Args:
+ *   *t - The hashtable to add to.
+ *   *e - The entry object to add.
+ *
+ * Returns:
+ *   The added entry, or NULL if the table is full. */
+void *hashtable_add(hashtable_t *t, void *e);
+
+/** Find an entry in a hashtable.
+ *
+ * Uses MATCH_CMP() to find the first matching entry in the table in the
+ * same hash() bucket.
+ *
+ * Args:
+ *   *t - The hashtable to search.
+ *   *m - The key or match object to search for.
+ *
+ * Returns:
+ *   The first found entry, or NULL if nothing was found. */
+void *hashtable_find(hashtable_t *t, void *m);
 
 #endif                          /* _HASHTABLE_H_ */

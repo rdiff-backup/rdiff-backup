@@ -85,6 +85,11 @@ int match_cmp(match_t *m, const entry_t *e)
     return ans;
 }
 
+#define ENTRY entry
+#define KEY key
+#define MATCH match
+#include "hashtable.c"
+
 /* Test driver for hashtable. */
 int main(int argc, char **argv)
 {
@@ -99,11 +104,9 @@ int main(int argc, char **argv)
         entry_init(&entry[i], i);
 
     /* Test hashtable_new() */
-    t = hashtable_new(256, (hash_f)&key_hash, (cmp_f)&match_cmp);
+    t = hashtable_new(256);
     assert(t->size == 512);
     assert(t->count == 0);
-    assert(t->hash == (hash_f)&key_hash);
-    assert(t->cmp == (cmp_f)&match_cmp);
     assert(t->etable != NULL);
     assert(t->ktable != NULL);
 

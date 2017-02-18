@@ -76,6 +76,11 @@ int rs_block_match_cmp(rs_block_match_t *match, const rs_block_sig_t *block_sig)
     return memcmp(&match->block_sig.strong_sum, &block_sig->strong_sum, match->signature->strong_sum_len);
 }
 
+/* Instantiate hashtable for rs_block_sig and rs_block_match. */
+#define ENTRY rs_block_sig
+#define MATCH rs_block_match
+#include "hashtable.c"
+
 /* Get the size of a packed rs_block_sig_t. */
 static inline size_t rs_block_sig_size(const rs_signature_t *sig)
 {
@@ -190,7 +195,7 @@ rs_result rs_build_hash_table(rs_signature_t *sig)
     int i;
 
     rs_signature_check(sig);
-    sig->hashtable = hashtable_new(sig->count, (hash_f)&rs_block_sig_hash, (cmp_f)&rs_block_match_cmp);
+    sig->hashtable = hashtable_new(sig->count);
     if (!sig->hashtable)
         return RS_MEM_ERROR;
     for (i = 0; i < sig->count; i++)
