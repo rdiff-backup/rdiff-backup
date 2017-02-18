@@ -206,6 +206,9 @@ void *hashtable_next(hashtable_iter_t *i);
 #define MATCH KEY
 #endif
 
+#define ENTRY_T JOIN(ENTRY, _t)
+#define KEY_T JOIN(KEY, _t)
+#define MATCH_T JOIN(MATCH, _t)
 #define KEY_HASH JOIN(KEY, _hash)
 #define MATCH_CMP JOIN(MATCH, _cmp)
 
@@ -225,7 +228,7 @@ static inline unsigned mix32(unsigned int h)
  terminating at an empty bucket. */
 #define for_probe(t, k, hk, i, h) \
     const unsigned mask = t->size - 1;\
-    unsigned hk = KEY_HASH(k), i, s, h;\
+    unsigned hk = KEY_HASH((KEY_T *)k), i, s, h;\
     hk = hk ? hk : -1;\
     for (i = mix32(hk) & mask, s = 0; (h = t->ktable[i]); i = (i + ++s) & mask)
 
@@ -242,7 +245,7 @@ static inline unsigned mix32(unsigned int h)
  *
  * Returns:
  *   The added entry, or NULL if the table is full. */
-static inline void *hashtable_add(hashtable_t *t, void *e)
+static inline ENTRY_T *hashtable_add(hashtable_t *t, ENTRY_T *e)
 {
     assert(e != NULL);
     if (t->count + 1 == t->size)
@@ -271,10 +274,10 @@ static inline void *hashtable_add(hashtable_t *t, void *e)
  *
  * Returns:
  *   The first found entry, or NULL if nothing was found. */
-static inline void *hashtable_find(hashtable_t *t, void *m)
+static inline ENTRY_T *hashtable_find(hashtable_t *t, MATCH_T *m)
 {
     assert(m != NULL);
-    void *e;
+    ENTRY_T *e;
 
     stats_inc(t->find_count);
     for_probe(t, m, hm, i, he) {
@@ -293,6 +296,9 @@ static inline void *hashtable_find(hashtable_t *t, void *m)
 #undef ENTRY
 #undef KEY
 #undef MATCH
+#undef ENTRY_T
+#undef KEY_T
+#undef MATCH_T
 #undef KEY_HASH
 #undef MATCH_CMP
 #endif                          /* ENTRY */
