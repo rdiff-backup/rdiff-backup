@@ -298,7 +298,7 @@ cannot match any files in the base directory
 Useful file specifications begin with the base directory or some
 pattern (such as '**') which matches the base directory.""" %
 			(exc, self.prefix))
-		elif isinstance(e, GlobbingError):
+		elif isinstance(exc, GlobbingError):
 			log.Log.FatalError("Fatal Error while processing expression\n"
 							   "%s" % exc)
 		else: raise
