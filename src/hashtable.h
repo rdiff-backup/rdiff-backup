@@ -43,12 +43,13 @@
  * hashtable_find() find/match/hashcmp/entrycmp stats counters that
  * can be disabled by defining HASHTABLE_NSTATS.
  *
- * The hash() and cmp() methods to use are specified by using #define
- * to specify the basenames (the prefixes for the *_t type, *_hash(),
- * and *_cmp() methods) of the ENTRY, and optionally KEY (default:
- * ENTRY) and match (default: KEY) types before doing "#include
- * hashtable.h". This produces static inline application optimized
- * type specific hashtable_add() and hashtable_find() methods.
+ * The types and methods of the hashtable contents are specified by
+ * using #define to specify the basenames (the prefixes for the *_t
+ * type, *_hash(), and *_cmp() methods) of the ENTRY, and optionally
+ * KEY (default: ENTRY) and match (default: KEY) types before doing
+ * "#include hashtable.h". This produces static inline type-safe
+ * methods that are either application optimized for speed or
+ * wrappers around void* implementation methods for compact code.
  *
  * Example:
  *
@@ -83,8 +84,8 @@
  *
  *   hashtable_free(t);
  *
- * The hash() and cmp() fuctions will typically take pointers to
- * key/entry instances the same as the pointers stored in the
+ * The key_hash() and key_cmp() fuctions will typically take pointers
+ * to key/entry instances the same as the pointers stored in the
  * hashtable. However it is also possible for them to take "match
  * objects" that are a "subclass" of the entry type that contain
  * additional state for complicated comparision operations.
@@ -110,10 +111,11 @@
  *   m = ...;
  *   e = hashtable_find(t, &m);
  *
- * The cmp() function is only called for finding hashtable entries
- * and can mutate the match_t object for doing things like deferred
- * and cached evaluation of expensive match data. It can also access
- * the whole entry_t object to match against more than just the key. */
+ * The match_cmp() function is only called for finding hashtable
+ * entries and can mutate the match_t object for doing things like
+ * deferred and cached evaluation of expensive match data. It can
+ * also access the whole entry_t object to match against more than
+ * just the key. */
 
 /** The hashtable type. */
 typedef struct _hashtable {
@@ -164,31 +166,9 @@ hashtable_t *hashtable_new(int size);
  *   *t - The hashtable to destroy and free. */
 void hashtable_free(hashtable_t *t);
 
-/** Initialize a hashtable_iter_t and return the first entry.
- *
- * This works together with hashtable_next() for iterating through
- * all entries in a hashtable.
- *
- * Example:
- *   for (e = hashtable_iter(&i, t); e != NULL; e = hashtable_next(&i))
- *     ...
- *
- * Args:
- *   *i - the hashtable iterator to initialize.
- *   *t - the hashtable to iterate over.
- *
- * Returns:
- *   The first entry or NULL if the hashtable is empty. */
-void *hashtable_iter(hashtable_iter_t *i, hashtable_t *t);
-
-/** Get the next entry from a hashtable iterator or NULL when finished.
- *
- * Args:
- *   *i - the hashtable iterator to use.
- *
- * Returns:
- *   The next entry or NULL if the iterator is finished. */
-void *hashtable_next(hashtable_iter_t *i);
+/* void* implementations for the type-safe static inline wrappers below. */
+void *_hashtable_iter(hashtable_iter_t *i, hashtable_t *t);
+void *_hashtable_next(hashtable_iter_t *i);
 
 #endif                          /* _HASHTABLE_H_ */
 
@@ -224,8 +204,8 @@ static inline unsigned mix32(unsigned int h)
 }
 
 /* Loop macro for probing table t for key k, setting hk to the hash for k
- reserving zero for empty buckets, and iterating with index i and entry hash h,
- terminating at an empty bucket. */
+   reserving zero for empty buckets, and iterating with index i and entry hash h,
+   terminating at an empty bucket. */
 #define for_probe(t, k, hk, i, h) \
     const unsigned mask = t->size - 1;\
     unsigned hk = KEY_HASH((KEY_T *)k), i, s, h;\
@@ -249,7 +229,7 @@ static inline ENTRY_T *hashtable_add(hashtable_t *t, ENTRY_T *e)
 {
     assert(e != NULL);
     if (t->count + 1 == t->size)
-	return NULL;
+        return NULL;
     for_probe(t, e, he, i, h);
     t->count++;
     t->ktable[i] = he;
@@ -291,6 +271,38 @@ static inline ENTRY_T *hashtable_find(hashtable_t *t, MATCH_T *m)
         }
     }
     return NULL;
+}
+
+/** Initialize a hashtable_iter_t and return the first entry.
+ *
+ * This works together with hashtable_next() for iterating through
+ * all entries in a hashtable.
+ *
+ * Example:
+ *   for (e = hashtable_iter(&i, t); e != NULL; e = hashtable_next(&i))
+ *     ...
+ *
+ * Args:
+ *   *i - the hashtable iterator to initialize.
+ *   *t - the hashtable to iterate over.
+ *
+ * Returns:
+ *   The first entry or NULL if the hashtable is empty. */
+static inline ENTRY_T *hashtable_iter(hashtable_iter_t *i, hashtable_t *t)
+{
+    return _hashtable_iter(i, t);
+}
+
+/** Get the next entry from a hashtable iterator or NULL when finished.
+ *
+ * Args:
+ *   *i - the hashtable iterator to use.
+ *
+ * Returns:
+ *   The next entry or NULL if the iterator is finished. */
+static inline ENTRY_T *hashtable_next(hashtable_iter_t *i)
+{
+    return _hashtable_next(i);
 }
 
 #undef ENTRY

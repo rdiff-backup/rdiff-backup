@@ -24,11 +24,11 @@
 #include "hashtable.h"
 
 /* Open addressing works best if it can take advantage of memory caches using
- * locality for probes of adjacent buckets on collisions. So we pack the keys
- * tightly together in their own key table and avoid referencing the element
- * table and elements as much as possible. Key value zero is reserved as a
- * marker for an empty bucket to avoid checking for NULL in the element table.
- * If we do get a hash value of zero, we -1 to wrap it around to 0xffff. */
+   locality for probes of adjacent buckets on collisions. So we pack the keys
+   tightly together in their own key table and avoid referencing the element
+   table and elements as much as possible. Key value zero is reserved as a
+   marker for an empty bucket to avoid checking for NULL in the element table.
+   If we do get a hash value of zero, we -1 to wrap it around to 0xffff. */
 
 /* Use max 0.8 load factor to avoid bad open addressing performance. */
 #define HASHTABLE_LOADFACTOR_NUM 8
@@ -65,16 +65,16 @@ void hashtable_free(hashtable_t *t)
     }
 }
 
-void *hashtable_iter(hashtable_iter_t *i, hashtable_t *t)
+void *_hashtable_iter(hashtable_iter_t *i, hashtable_t *t)
 {
     assert(i != NULL);
     assert(t != NULL);
     i->htable = t;
     i->index = 0;
-    return hashtable_next(i);
+    return _hashtable_next(i);
 }
 
-void *hashtable_next(hashtable_iter_t *i)
+void *_hashtable_next(hashtable_iter_t *i)
 {
     assert(i->htable != NULL);
     assert(i->index <= i->htable->size);
