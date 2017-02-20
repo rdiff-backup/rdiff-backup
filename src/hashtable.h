@@ -43,13 +43,14 @@
  * hashtable_find() find/match/hashcmp/entrycmp stats counters that
  * can be disabled by defining HASHTABLE_NSTATS.
  *
- * The types and methods of the hashtable contents are specified by
- * using #define to specify the basenames (the prefixes for the *_t
- * type, *_hash(), and *_cmp() methods) of the ENTRY, and optionally
- * KEY (default: ENTRY) and match (default: KEY) types before doing
- * "#include hashtable.h". This produces static inline type-safe
- * methods that are either application optimized for speed or
- * wrappers around void* implementation methods for compact code.
+ * The hashtable name and types and methods of the hashtable contents
+ * are specified by using #define to specify the basenames (the
+ * prefixes for the *_t type and *_func() methods) of the ENTRY, and
+ * optionally hashtable NAME (default: ENTRY_hashtable) KEY (default:
+ * ENTRY) and match (default: KEY) types before doing "#include
+ * hashtable.h". This produces static inline type-safe methods that
+ * are either application optimized for speed or wrappers around
+ * void* implementation methods for compactness.
  *
  * Example:
  *
@@ -72,17 +73,17 @@
  *   key_t k;
  *   entry_t *e;
  *
- *   t = hashtable_new(300);
+ *   t = entry_hashtable_new(300);
  *   entry_init(&entries[5], ...);
- *   hashtable_add(t, &entries[5]);
+ *   entry_hashtable_add(t, &entries[5]);
  *   k = ...;
- *   e = hashtable_find(t, &k);
+ *   e = entry_hashtable_find(t, &k);
  *
  *   hashtable_iter i;
- *   for (e = hashtable_iter(&i, t); e != NULL; e = hashtable_next(&i))
+ *   for (e = entry_hashtable_iter(&i, t); e != NULL; e = entry_hashtable_next(&i))
  *     ...
  *
- *   hashtable_free(t);
+ *   entry_hashtable_free(t);
  *
  * The key_hash() and key_cmp() fuctions will typically take pointers
  * to key/entry instances the same as the pointers stored in the
@@ -106,10 +107,10 @@
  *   ...
  *   match_t m;
  *
- *   t = hashtable_new(300);
+ *   t = entry_hashtable_new(300);
  *   ...
  *   m = ...;
- *   e = hashtable_find(t, &m);
+ *   e = entry_hashtable_find(t, &m);
  *
  * The match_cmp() function is only called for finding hashtable
  * entries and can mutate the match_t object for doing things like
@@ -138,37 +139,22 @@ typedef struct _hashtable_iter {
     int index;                  /* The index to scan from for the next entry. */
 } hashtable_iter_t;
 
-/** Allocate and initialize a hashtable instance.
- *
- * The provided size is used as an indication of the number of
- * entries you wish to add, but the allocated size will probably be
- * larger depending on the implementation to enable optimisations or
- * avoid degraded performance. It may be possible to fill the table
- * beyond the requested size, but performance can start to degrade
- * badly if it is over filled.
- *
- * Args:
- *   size - The desired minimum size of the hash table.
- *   hash - The hash function to use.
- *   cmp - The compare function to use.
- *
- * Returns:
- *   The initialized hashtable instance or NULL if it failed. */
-hashtable_t *hashtable_new(int size);
-
-/** Destroy and free a hashtable instance.
- *
- * This will free the hashtable, but will not free the entries in the
- * hashtable. If you want to free the entries too, use a hashtable
- * iterator to free the the entries first.
- *
- * Args:
- *   *t - The hashtable to destroy and free. */
-void hashtable_free(hashtable_t *t);
-
 /* void* implementations for the type-safe static inline wrappers below. */
+hashtable_t *_hashtable_new(int size);
+void _hashtable_free(hashtable_t *t);
 void *_hashtable_iter(hashtable_iter_t *i, hashtable_t *t);
 void *_hashtable_next(hashtable_iter_t *i);
+
+/* MurmurHash3 finalization mix function. */
+static inline unsigned mix32(unsigned int h)
+{
+    h ^= h >> 16;
+    h *= 0x85ebca6b;
+    h ^= h >> 13;
+    h *= 0xc2b2ae35;
+    h ^= h >> 16;
+    return h;
+}
 
 #endif                          /* _HASHTABLE_H_ */
 
@@ -186,21 +172,49 @@ void *_hashtable_next(hashtable_iter_t *i);
 #define MATCH KEY
 #endif
 
+#ifndef NAME
+#define NAME JOIN(ENTRY, _hashtable)
+#endif
+
 #define ENTRY_T JOIN(ENTRY, _t)
 #define KEY_T JOIN(KEY, _t)
 #define MATCH_T JOIN(MATCH, _t)
 #define KEY_HASH JOIN(KEY, _hash)
 #define MATCH_CMP JOIN(MATCH, _cmp)
+#define FUNC(f) JOIN(NAME, f)
 
-/* MurmurHash3 finalization mix function. */
-static inline unsigned mix32(unsigned int h)
+/** Allocate and initialize a hashtable instance.
+ *
+ * The provided size is used as an indication of the number of
+ * entries you wish to add, but the allocated size will probably be
+ * larger depending on the implementation to enable optimisations or
+ * avoid degraded performance. It may be possible to fill the table
+ * beyond the requested size, but performance can start to degrade
+ * badly if it is over filled.
+ *
+ * Args:
+ *   size - The desired minimum size of the hash table.
+ *   hash - The hash function to use.
+ *   cmp - The compare function to use.
+ *
+ * Returns:
+ *   The initialized hashtable instance or NULL if it failed. */
+hashtable_t *FUNC(_new)(int size)
 {
-    h ^= h >> 16;
-    h *= 0x85ebca6b;
-    h ^= h >> 13;
-    h *= 0xc2b2ae35;
-    h ^= h >> 16;
-    return h;
+    return _hashtable_new(size);
+}
+
+/** Destroy and free a hashtable instance.
+ *
+ * This will free the hashtable, but will not free the entries in the
+ * hashtable. If you want to free the entries too, use a hashtable
+ * iterator to free the the entries first.
+ *
+ * Args:
+ *   *t - The hashtable to destroy and free. */
+void FUNC(_free)(hashtable_t *t)
+{
+    _hashtable_free(t);
 }
 
 /* Loop macro for probing table t for key k, setting hk to the hash for k
@@ -225,7 +239,7 @@ static inline unsigned mix32(unsigned int h)
  *
  * Returns:
  *   The added entry, or NULL if the table is full. */
-static inline ENTRY_T *hashtable_add(hashtable_t *t, ENTRY_T *e)
+static inline ENTRY_T *FUNC(_add)(hashtable_t *t, ENTRY_T *e)
 {
     assert(e != NULL);
     if (t->count + 1 == t->size)
@@ -254,7 +268,7 @@ static inline ENTRY_T *hashtable_add(hashtable_t *t, ENTRY_T *e)
  *
  * Returns:
  *   The first found entry, or NULL if nothing was found. */
-static inline ENTRY_T *hashtable_find(hashtable_t *t, MATCH_T *m)
+static inline ENTRY_T *FUNC(_find)(hashtable_t *t, MATCH_T *m)
 {
     assert(m != NULL);
     ENTRY_T *e;
@@ -288,7 +302,7 @@ static inline ENTRY_T *hashtable_find(hashtable_t *t, MATCH_T *m)
  *
  * Returns:
  *   The first entry or NULL if the hashtable is empty. */
-static inline ENTRY_T *hashtable_iter(hashtable_iter_t *i, hashtable_t *t)
+static inline ENTRY_T *FUNC(_iter)(hashtable_iter_t *i, hashtable_t *t)
 {
     return _hashtable_iter(i, t);
 }
@@ -300,7 +314,7 @@ static inline ENTRY_T *hashtable_iter(hashtable_iter_t *i, hashtable_t *t)
  *
  * Returns:
  *   The next entry or NULL if the iterator is finished. */
-static inline ENTRY_T *hashtable_next(hashtable_iter_t *i)
+static inline ENTRY_T *FUNC(_next)(hashtable_iter_t *i)
 {
     return _hashtable_next(i);
 }
@@ -308,9 +322,11 @@ static inline ENTRY_T *hashtable_next(hashtable_iter_t *i)
 #undef ENTRY
 #undef KEY
 #undef MATCH
+#undef NAME
 #undef ENTRY_T
 #undef KEY_T
 #undef MATCH_T
 #undef KEY_HASH
 #undef MATCH_CMP
+#undef FUNC
 #endif                          /* ENTRY */

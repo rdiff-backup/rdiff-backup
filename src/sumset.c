@@ -79,6 +79,7 @@ static inline int rs_block_match_cmp(rs_block_match_t *match, const rs_block_sig
 /* Instantiate hashtable for rs_block_sig and rs_block_match. */
 #define ENTRY rs_block_sig
 #define MATCH rs_block_match
+#define NAME hashtable
 #include "hashtable.h"
 
 /* Get the size of a packed rs_block_sig_t. */

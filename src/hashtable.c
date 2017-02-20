@@ -34,7 +34,7 @@
 #define HASHTABLE_LOADFACTOR_NUM 8
 #define HASHTABLE_LOADFACTOR_DEN 10
 
-hashtable_t *hashtable_new(int size)
+hashtable_t *_hashtable_new(int size)
 {
     hashtable_t *t;
     int size2;
@@ -57,7 +57,7 @@ hashtable_t *hashtable_new(int size)
     return t;
 }
 
-void hashtable_free(hashtable_t *t)
+void _hashtable_free(hashtable_t *t)
 {
     if (t) {
         free(t->etable);
