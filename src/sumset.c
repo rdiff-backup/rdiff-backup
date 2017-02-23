@@ -36,7 +36,7 @@
 const int RS_MD4_SUM_LENGTH = 16;
 const int RS_BLAKE2_SUM_LENGTH = 32;
 
-void rs_block_sig_init(rs_block_sig_t *sig, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum, int strong_len)
+static void rs_block_sig_init(rs_block_sig_t *sig, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum, int strong_len)
 {
     sig->weak_sum = weak_sum;
     memcpy(sig->strong_sum, strong_sum, strong_len);
@@ -54,8 +54,8 @@ typedef struct rs_block_match {
     size_t len;
 } rs_block_match_t;
 
-void rs_block_match_init(rs_block_match_t *match, rs_signature_t *sig, rs_weak_sum_t weak_sum, const void *buf,
-                         size_t len)
+static void rs_block_match_init(rs_block_match_t *match, rs_signature_t *sig, rs_weak_sum_t weak_sum, const void *buf,
+				size_t len)
 {
     match->block_sig.weak_sum = weak_sum;
     match->signature = sig;
