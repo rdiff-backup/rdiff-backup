@@ -85,9 +85,36 @@ int match_cmp(match_t *m, const entry_t *e)
     return ans;
 }
 
+
+/* Instantiate a simple key_hashtable of keys. */
+#define ENTRY key
+#include "hashtable.h"
+
+/* Instantiate a fancy hashtable of entrys using a custom match. */
+#define ENTRY entry
+#define KEY key
+#define MATCH match
+#define NAME hashtable
+#include "hashtable.h"
+
 /* Test driver for hashtable. */
 int main(int argc, char **argv)
 {
+    /* Test key_hashtable instance. */
+    hashtable_t *kt;
+    hashtable_iter_t ki;
+    key_t k1, k2;
+
+    key_init(&k1, 1);
+    key_init(&k2, 2);
+    assert((kt = key_hashtable_new(16)) != NULL);
+    assert(key_hashtable_add(kt, &k1) == &k1);
+    assert(key_hashtable_find(kt, &k1) == &k1);
+    assert(key_hashtable_find(kt, &k2) == NULL);
+    assert(key_hashtable_iter(&ki, kt) == &k1);
+    assert(key_hashtable_next(&ki) == NULL);
+
+    /* Test hashtable instance. */
     hashtable_t *t;
     entry_t entry[256];
     entry_t e;
@@ -99,11 +126,9 @@ int main(int argc, char **argv)
         entry_init(&entry[i], i);
 
     /* Test hashtable_new() */
-    t = hashtable_new(256, (hash_f)&key_hash, (cmp_f)&match_cmp);
+    t = hashtable_new(256);
     assert(t->size == 512);
     assert(t->count == 0);
-    assert(t->hash == (hash_f)&key_hash);
-    assert(t->cmp == (cmp_f)&match_cmp);
     assert(t->etable != NULL);
     assert(t->ktable != NULL);
 

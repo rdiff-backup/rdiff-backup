@@ -36,13 +36,13 @@
 const int RS_MD4_SUM_LENGTH = 16;
 const int RS_BLAKE2_SUM_LENGTH = 32;
 
-void rs_block_sig_init(rs_block_sig_t *sig, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum, int strong_len)
+static void rs_block_sig_init(rs_block_sig_t *sig, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum, int strong_len)
 {
     sig->weak_sum = weak_sum;
     memcpy(sig->strong_sum, strong_sum, strong_len);
 }
 
-unsigned rs_block_sig_hash(const rs_block_sig_t *sig)
+static inline unsigned rs_block_sig_hash(const rs_block_sig_t *sig)
 {
     return (unsigned)sig->weak_sum;
 }
@@ -54,8 +54,8 @@ typedef struct rs_block_match {
     size_t len;
 } rs_block_match_t;
 
-void rs_block_match_init(rs_block_match_t *match, rs_signature_t *sig, rs_weak_sum_t weak_sum, const void *buf,
-                         size_t len)
+static void rs_block_match_init(rs_block_match_t *match, rs_signature_t *sig, rs_weak_sum_t weak_sum, const void *buf,
+				size_t len)
 {
     match->block_sig.weak_sum = weak_sum;
     match->signature = sig;
@@ -63,7 +63,7 @@ void rs_block_match_init(rs_block_match_t *match, rs_signature_t *sig, rs_weak_s
     match->len = len;
 }
 
-int rs_block_match_cmp(rs_block_match_t *match, const rs_block_sig_t *block_sig)
+static inline int rs_block_match_cmp(rs_block_match_t *match, const rs_block_sig_t *block_sig)
 {
     /* If buf is not NULL, the strong sum is yet to be calculated. */
     if (match->buf) {
@@ -75,6 +75,12 @@ int rs_block_match_cmp(rs_block_match_t *match, const rs_block_sig_t *block_sig)
     }
     return memcmp(&match->block_sig.strong_sum, &block_sig->strong_sum, match->signature->strong_sum_len);
 }
+
+/* Instantiate hashtable for rs_block_sig and rs_block_match. */
+#define ENTRY rs_block_sig
+#define MATCH rs_block_match
+#define NAME hashtable
+#include "hashtable.h"
 
 /* Get the size of a packed rs_block_sig_t. */
 static inline size_t rs_block_sig_size(const rs_signature_t *sig)
@@ -190,7 +196,7 @@ rs_result rs_build_hash_table(rs_signature_t *sig)
     int i;
 
     rs_signature_check(sig);
-    sig->hashtable = hashtable_new(sig->count, (hash_f)&rs_block_sig_hash, (cmp_f)&rs_block_match_cmp);
+    sig->hashtable = hashtable_new(sig->count);
     if (!sig->hashtable)
         return RS_MEM_ERROR;
     for (i = 0; i < sig->count; i++)
