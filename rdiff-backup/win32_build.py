@@ -1,3 +1,7 @@
+"""Last tested, this was *not* operational, but was only used as a guide to
+re-establish a working Win32 build. This was initially copied from
+https://lists.nongnu.org/archive/html/rdiff-backup-users/2009-02/msg00110.html
+from the post by Josh Nisly."""
 import glob
 import os
 import shutil
