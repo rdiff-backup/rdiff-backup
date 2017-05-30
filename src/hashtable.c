@@ -24,17 +24,17 @@
 #include "hashtable.h"
 
 /* Open addressing works best if it can take advantage of memory caches using
- * locality for probes of adjacent buckets on collisions. So we pack the keys
- * tightly together in their own key table and avoid referencing the element
- * table and elements as much as possible. Key value zero is reserved as a
- * marker for an empty bucket to avoid checking for NULL in the element table.
- * If we do get a hash value of zero, we -1 to wrap it around to 0xffff. */
+   locality for probes of adjacent buckets on collisions. So we pack the keys
+   tightly together in their own key table and avoid referencing the element
+   table and elements as much as possible. Key value zero is reserved as a
+   marker for an empty bucket to avoid checking for NULL in the element table.
+   If we do get a hash value of zero, we -1 to wrap it around to 0xffff. */
 
 /* Use max 0.8 load factor to avoid bad open addressing performance. */
 #define HASHTABLE_LOADFACTOR_NUM 8
 #define HASHTABLE_LOADFACTOR_DEN 10
 
-hashtable_t *hashtable_new(int size, hash_f hash, cmp_f cmp)
+hashtable_t *_hashtable_new(int size)
 {
     hashtable_t *t;
     int size2;
@@ -51,15 +51,13 @@ hashtable_t *hashtable_new(int size, hash_f hash, cmp_f cmp)
     }
     t->size = size2;
     t->count = 0;
-    t->hash = hash;
-    t->cmp = cmp;
 #ifndef HASHTABLE_NSTATS
     t->find_count = t->match_count = t->hashcmp_count = t->entrycmp_count = 0;
 #endif
     return t;
 }
 
-void hashtable_free(hashtable_t *t)
+void _hashtable_free(hashtable_t *t)
 {
     if (t) {
         free(t->etable);
@@ -67,88 +65,16 @@ void hashtable_free(hashtable_t *t)
     }
 }
 
-/* MurmurHash3 finalization mix function. */
-static inline unsigned mix32(unsigned int h)
-{
-    h ^= h >> 16;
-    h *= 0x85ebca6b;
-    h ^= h >> 13;
-    h *= 0xc2b2ae35;
-    h ^= h >> 16;
-    return h;
-}
-
-/* Get hash key, reserving zero as an empty bucket marker. */
-static inline unsigned get_key(const hashtable_t *t, const void *e)
-{
-    unsigned k = t->hash(e);
-    return k ? k : -1;
-}
-
-/* Prefix macro for probing table t for entry e with key k and index i. */
-#define do_probe(t, e, k) \
-    const unsigned k = get_key(t, e);\
-    const unsigned mask = t->size - 1;\
-    const unsigned index = mix32(k) & mask;\
-    unsigned i = index, s = 0;\
-    do
-
-/* Suffix macro for do_probe. */
-#define while_probe \
-    while ((i = (i + ++s) & mask) != index)
-
-void *hashtable_add(hashtable_t *t, void *e)
-{
-    assert(e != NULL);
-    do_probe(t, e, k) {
-        if (!t->ktable[i]) {
-            t->count++;
-            t->ktable[i] = k;
-            return t->etable[i] = e;
-        }
-    } while_probe;
-    return NULL;
-}
-
-/* Conditional macro for incrementing stats counters. */
-#ifndef HASHTABLE_NSTATS
-#define stats_inc(c) (c++)
-#else
-#define stats_inc(c)
-#endif
-
-void *hashtable_find(hashtable_t *t, void *m)
-{
-    assert(m != NULL);
-    void *e;
-    unsigned ke;
-
-    stats_inc(t->find_count);
-    do_probe(t, m, km) {
-        if (!(ke = t->ktable[i]))
-            return NULL;
-        stats_inc(t->hashcmp_count);
-        if (km == ke) {
-            stats_inc(t->entrycmp_count);
-            if (!t->cmp(m, e = t->etable[i])) {
-                stats_inc(t->match_count);
-                return e;
-            }
-        }
-    } while_probe;
-    return NULL;
-}
-
-void *hashtable_iter(hashtable_iter_t *i, hashtable_t *t)
+void *_hashtable_iter(hashtable_iter_t *i, hashtable_t *t)
 {
     assert(i != NULL);
     assert(t != NULL);
     i->htable = t;
     i->index = 0;
-    return hashtable_next(i);
+    return _hashtable_next(i);
 }
 
-void *hashtable_next(hashtable_iter_t *i)
+void *_hashtable_next(hashtable_iter_t *i)
 {
     assert(i->htable != NULL);
     assert(i->index <= i->htable->size);
