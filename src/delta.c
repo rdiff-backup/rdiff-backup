@@ -20,7 +20,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-                                /*
+                                /*=
                                  | Let's climb to the TOP of that
                                  | MOUNTAIN and think about STRIP
                                  | MINING!!
@@ -75,7 +75,6 @@
 #include "sumset.h"
 #include "job.h"
 #include "trace.h"
-#include "search.h"
 #include "rollsum.h"
 
 /**
