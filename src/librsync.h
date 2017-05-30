@@ -38,7 +38,6 @@
 
 #include <sys/types.h>
 #include <stdint.h>
-#include "librsync-config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,8 +52,8 @@ extern char const rs_librsync_version[];
  */
 extern char const rs_licence_string[];
 
-typedef unsigned char rs_byte_t;
-
+typedef uint8_t rs_byte_t;
+typedef intmax_t rs_long_t;
 
 
                           /*
