@@ -50,6 +50,13 @@
 #include "whole.h"
 #include "util.h"
 
+
+/**
+ * Whole file IO buffer sizes.
+ */
+int rs_inbuflen = 16000, rs_outbuflen = 16000;
+
+
 /**
  * Run a job continuously, with input to/from the two specified files.
  * The job should already be set up, and must be free by the caller

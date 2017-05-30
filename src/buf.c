@@ -60,11 +60,6 @@
 #define fseek fseeko64
 #endif
 
-/**
- * File IO buffer sizes.
- */
-int rs_inbuflen = 16000, rs_outbuflen = 16000;
-
 
 struct rs_filebuf {
         FILE *f;
