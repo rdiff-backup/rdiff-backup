@@ -200,7 +200,7 @@ rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf)
     FILE       *f = (FILE *) arg;
 
     if (fseek(f, pos, SEEK_SET)) {
-        rs_log(RS_LOG_ERR, "seek failed: %s", strerror(errno));
+        rs_error("seek failed: %s", strerror(errno));
         return RS_IO_ERROR;
     }
 

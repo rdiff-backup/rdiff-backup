@@ -216,11 +216,12 @@ void rs_sumset_dump(rs_signature_t const *sums)
     rs_block_sig_t *b;
     char strong_hex[RS_MAX_STRONG_SUM_LENGTH * 3];
 
-    rs_log(RS_LOG_INFO, "sumset info: magic=%#x, block_len=%d, block_num=%d", sums->magic, sums->block_len, sums->count);
+    rs_log(RS_LOG_INFO|RS_LOG_NONAME, "sumset info: magic=%#x, block_len=%d, block_num=%d",
+	   sums->magic, sums->block_len, sums->count);
 
     for (i = 0; i < sums->count; i++) {
         b = rs_block_sig_ptr(sums, i);
         rs_hexify(strong_hex, b->strong_sum, sums->strong_sum_len);
-        rs_log(RS_LOG_INFO, "sum %6d: weak="FMT_WEAKSUM", strong=%s", i, b->weak_sum, strong_hex);
+        rs_log(RS_LOG_INFO|RS_LOG_NONAME, "sum %6d: weak="FMT_WEAKSUM", strong=%s", i, b->weak_sum, strong_hex);
     }
 }

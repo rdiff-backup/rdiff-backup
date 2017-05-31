@@ -149,7 +149,7 @@ static rs_result rs_patch_s_literal(rs_job_t *job)
     rs_trace("LITERAL(len="FMT_LONG")", len);
 
     if (len < 0) {
-        rs_log(RS_LOG_ERR, "invalid length="FMT_LONG" on LITERAL command", len);
+        rs_error("invalid length="FMT_LONG" on LITERAL command", len);
         return RS_CORRUPT;
     }
 
@@ -176,12 +176,12 @@ static rs_result rs_patch_s_copy(rs_job_t *job)
     rs_trace("COPY(where="FMT_LONG", len="FMT_LONG")", where, len);
 
     if (len < 0) {
-        rs_log(RS_LOG_ERR, "invalid length="FMT_LONG" on COPY command", len);
+        rs_error("invalid length="FMT_LONG" on COPY command", len);
         return RS_CORRUPT;
     }
 
     if (where < 0) {
-        rs_log(RS_LOG_ERR, "invalid where="FMT_LONG" on COPY command", where);
+        rs_error("invalid where="FMT_LONG" on COPY command", where);
         return RS_CORRUPT;
     }
 
@@ -266,7 +266,7 @@ static rs_result rs_patch_s_header(rs_job_t *job)
         return result;
 
     if (v != RS_DELTA_MAGIC) {
-        rs_log(RS_LOG_ERR, "got magic number %#x rather than expected value %#x", v, RS_DELTA_MAGIC);
+        rs_error("got magic number %#x rather than expected value %#x", v, RS_DELTA_MAGIC);
         return RS_BAD_MAGIC;
     } else
         rs_trace("got patch magic %#x", v);
