@@ -1,19 +1,19 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- dynamic caching and delta update in HTTP
- * 
+ *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation; either version 2.1 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -92,9 +92,7 @@ static void rs_tube_catchup_write(rs_job_t *job)
     stream->avail_out -= len;
 
     remain = job->write_len - len;
-    rs_trace("transmitted %d write bytes from tube, "
-             "%d remain to be sent",
-             len, remain);
+    rs_trace("transmitted %d write bytes from tube, %d remain to be sent", len, remain);
 
     if (remain > 0) {
         /* Still something left in the tube... */
@@ -118,29 +116,23 @@ rs_tube_copy_from_scoop(rs_job_t *job)
     size_t       this_len;
     rs_buffers_t *stream = job->stream;
 
-    this_len = job->copy_len;
-    if (this_len > job->scoop_avail) {
-        this_len = job->scoop_avail;
-    }
+    this_len = job->copy_len < job->scoop_avail ? job->copy_len : job->scoop_avail;
     if (this_len > stream->avail_out) {
         this_len = stream->avail_out;
     }
-
     memcpy(stream->next_out, job->scoop_next, this_len);
 
     stream->next_out += this_len;
     stream->avail_out -= this_len;
-        
+
     job->scoop_avail -= this_len;
     job->scoop_next += this_len;
 
     job->copy_len -= this_len;
 
-    rs_trace("caught up on %ld copied bytes from scoop, %ld remain there, "
-             "%ld remain to be copied", 
-             (long) this_len, (long) job->scoop_avail, (long) job->copy_len);
+    rs_trace("caught up on "FMT_SIZE" copied bytes from scoop, "FMT_SIZE" remain there, "FMT_LONG" remain to be copied",
+	     this_len, job->scoop_avail, job->copy_len);
 }
-
 
 
 /**
@@ -161,7 +153,7 @@ static void rs_tube_catchup_copy(rs_job_t *job)
         /* there's still some data in the scoop, so we should use that. */
         rs_tube_copy_from_scoop(job);
     }
-    
+
     if (job->copy_len) {
         size_t  this_copy;
 
@@ -169,13 +161,12 @@ static void rs_tube_catchup_copy(rs_job_t *job)
 
         job->copy_len -= this_copy;
 
-        rs_trace("copied " PRINTF_FORMAT_U64 " bytes from input buffer, " PRINTF_FORMAT_U64 " remain to be copied",
-                 PRINTF_CAST_U64(this_copy), PRINTF_CAST_U64(job->copy_len));
+        rs_trace("copied "FMT_SIZE" bytes from input buffer, "FMT_LONG" remain to be copied", this_copy, job->copy_len);
     }
 }
 
 
-/*
+/**
  * Put whatever will fit from the tube into the output of the stream.
  * Return RS_DONE if the tube is now empty and ready to accept another
  * command, RS_BLOCKED if there is still stuff waiting to go out.
@@ -193,7 +184,7 @@ int rs_tube_catchup(rs_job_t *job)
 
     if (job->copy_len)
         rs_tube_catchup_copy(job);
-    
+
     if (job->copy_len) {
         if (job->stream->eof_in && !job->stream->avail_in && !job->scoop_avail) {
             rs_log(RS_LOG_ERR,
@@ -239,8 +230,7 @@ void rs_tube_copy(rs_job_t *job, int len)
 }
 
 
-
-/*
+/**
  * Push some data into the tube for storage.  The tube's never
  * supposed to get very big, so this will just pop loudly if you do
  * that.
@@ -254,8 +244,7 @@ rs_tube_write(rs_job_t *job, const void *buf, size_t len)
     assert(job->copy_len == 0);
 
     if (len > sizeof(job->write_buf) - job->write_len) {
-        rs_fatal("tube popped when trying to write %ld bytes!",
-                 (long) len);
+        rs_fatal("tube popped when trying to write "FMT_SIZE" bytes!", len);
     }
 
     memcpy(job->write_buf + job->write_len, buf, len);

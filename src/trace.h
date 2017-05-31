@@ -35,34 +35,11 @@
  * fatal terminates the whole process
  */
 
-
-
-/* There is no portable way in C99 to printf 64-bit types.  Many
- * platforms do have a format which will do it, but it's not
- * standardized.  Therefore these macros.
- *
- * Not all platforms using gnu C necessarily have a corresponding
- * printf, but it's probably a good starting point.  Most unix systems
- * seem to use %ll.
- *
- * TODO: Use inttypes.h constants.
- */
-#if defined(HAVE_FSEEKO64) && defined(WIN32)
-#  define PRINTF_CAST_U64(x) ((off64_t) (x))
-#  define PRINTF_FORMAT_U64 "%I64u"
-#elif SIZEOF_LONG == 8
-#  define PRINTF_CAST_U64(x) ((unsigned long) (x))
-#  define PRINTF_FORMAT_U64 "%lu"
-#elif defined(__GNUC__)
-#  define PRINTF_CAST_U64(x) ((unsigned long long) (x))
-#  define PRINTF_FORMAT_U64 "%llu"
-#else
-   /* This conversion works everywhere, but it's probably pretty slow.
-    *
-    * Note that 'f' takes a double vararg, not a float. */
-#  define PRINTF_CAST_U64(x) ((double) (x))
-#  define PRINTF_FORMAT_U64 "%.0f"
-#endif
+#include <inttypes.h>
+/* Printf format patters for standard librsync types. */
+#define FMT_LONG "%"PRIdMAX
+#define FMT_WEAKSUM "%08"PRIu32
+#define FMT_SIZE "%zu"
 
 
 #if defined(__clang__) || defined(__GNUC__)

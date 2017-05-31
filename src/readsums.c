@@ -55,7 +55,7 @@ static rs_result rs_loadsig_add_sum(rs_job_t *job, rs_strong_sum_t *strong)
     if (rs_trace_enabled()) {
         char hexbuf[RS_MAX_STRONG_SUM_LENGTH * 2 + 2];
         rs_hexify(hexbuf, strong, sig->strong_sum_len);
-        rs_trace("got block: weak=%#x, strong=%s", job->weak_sig, hexbuf);
+        rs_trace("got block: weak="FMT_WEAKSUM", strong=%s", job->weak_sig, hexbuf);
     }
     rs_signature_add_block(job->signature, job->weak_sig, strong);
     job->stats.sig_blocks++;
@@ -141,7 +141,7 @@ static rs_result rs_loadsig_s_magic(rs_job_t *job)
 
     if ((result = rs_suck_n4(job, &l)) != RS_DONE)
         return result;
-    rs_trace("got signature magic %#10x", l);
+    rs_trace("got signature magic %#x", l);
     job->sig_magic = l;
     job->statefn = rs_loadsig_s_blocklen;
     return RS_RUNNING;

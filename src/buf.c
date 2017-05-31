@@ -96,10 +96,10 @@ void rs_filebuf_free(rs_filebuf_t *fb)
 rs_result rs_infilebuf_fill(rs_job_t *job, rs_buffers_t *buf,
                             void *opaque)
 {
-    int                     len;
+    size_t                  len;
     rs_filebuf_t            *fb = (rs_filebuf_t *) opaque;
     FILE                    *f = fb->f;
-        
+
     /* This is only allowed if either the buf has no input buffer
      * yet, or that buffer could possibly be BUF. */
     if (buf->next_in != NULL) {
@@ -120,23 +120,20 @@ rs_result rs_infilebuf_fill(rs_job_t *job, rs_buffers_t *buf,
         /* Still some data remaining.  Perhaps we should read
            anyhow? */
         return RS_DONE;
-        
+
     len = fread(fb->buf, 1, fb->buf_len, f);
     if (len <= 0) {
-        /* This will happen if file size is a multiple of input block len
-         */
+        /* This will happen if file size is a multiple of input block len */
         if (feof(f)) {
             rs_trace("seen end of file on input");
             buf->eof_in = 1;
             return RS_DONE;
         }
         if (ferror(f)) {
-            rs_error("error filling buf from file: %s",
-                     strerror(errno));
+            rs_error("error filling buf from file: %s", strerror(errno));
             return RS_IO_ERROR;
         } else {
-            rs_error("no error bit, but got %d return when trying to read",
-                     len);
+            rs_error("no error bit, but got "FMT_SIZE" return when trying to read", len);
             return RS_IO_ERROR;
         }
     }
@@ -164,13 +161,13 @@ rs_result rs_outfilebuf_drain(rs_job_t *job, rs_buffers_t *buf, void *opaque)
      * yet, or that buffer could possibly be BUF. */
     if (buf->next_out == NULL) {
         assert(buf->avail_out == 0);
-                
+
         buf->next_out = fb->buf;
         buf->avail_out = fb->buf_len;
-                
+
         return RS_DONE;
     }
-        
+
     assert(buf->avail_out <= fb->buf_len);
     assert(buf->next_out >= fb->buf);
     assert(buf->next_out <= fb->buf + fb->buf_len);
@@ -178,13 +175,12 @@ rs_result rs_outfilebuf_drain(rs_job_t *job, rs_buffers_t *buf, void *opaque)
     present = buf->next_out - fb->buf;
     if (present > 0) {
         int result;
-                
+
         assert(present > 0);
 
         result = fwrite(fb->buf, 1, present, f);
         if (present != result) {
-            rs_error("error draining buf to file: %s",
-                     strerror(errno));
+            rs_error("error draining buf to file: %s", strerror(errno));
             return RS_IO_ERROR;
         }
 
@@ -193,7 +189,7 @@ rs_result rs_outfilebuf_drain(rs_job_t *job, rs_buffers_t *buf, void *opaque)
 
         job->stats.out_bytes += result;
     }
-        
+
     return RS_DONE;
 }
 

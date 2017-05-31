@@ -110,7 +110,7 @@ static rs_result rs_job_s_complete(rs_job_t *job)
 static rs_result rs_job_complete(rs_job_t *job, rs_result result)
 {
     rs_job_check(job);
-    
+
     job->statefn = rs_job_s_complete;
     job->final_result = result;
 
@@ -133,7 +133,7 @@ static rs_result rs_job_complete(rs_job_t *job, rs_result result)
 rs_result rs_job_iter(rs_job_t *job, rs_buffers_t *buffers)
 {
     rs_result       result;
-    rs_long_t       orig_in, orig_out;
+    size_t          orig_in, orig_out;
 
     orig_in  = buffers->avail_in;
     orig_out = buffers->avail_out;
@@ -144,9 +144,8 @@ rs_result rs_job_iter(rs_job_t *job, rs_buffers_t *buffers)
         if ((orig_in == buffers->avail_in)  &&  (orig_out == buffers->avail_out)
             && orig_in && orig_out) {
             rs_log(RS_LOG_ERR, "internal error: job made no progress "
-                   "[orig_in=" PRINTF_FORMAT_U64 ", orig_out=" PRINTF_FORMAT_U64 ", final_in=" PRINTF_FORMAT_U64 ", final_out=" PRINTF_FORMAT_U64 "]",
-                   PRINTF_CAST_U64(orig_in), PRINTF_CAST_U64(orig_out), PRINTF_CAST_U64(buffers->avail_in),
-                   PRINTF_CAST_U64(buffers->avail_out));
+		   "[orig_in="FMT_SIZE", orig_out="FMT_SIZE", final_in="FMT_SIZE", final_out="FMT_SIZE"]",
+                   orig_in, orig_out, buffers->avail_in, buffers->avail_out);
             return RS_INTERNAL_ERROR;
         }
 
@@ -166,7 +165,7 @@ rs_job_work(rs_job_t *job, rs_buffers_t *buffers)
         return RS_PARAM_ERROR;
     }
     job->stream = buffers;
-    
+
     while (1) {
         result = rs_tube_catchup(job);
         if (result == RS_BLOCKED)
