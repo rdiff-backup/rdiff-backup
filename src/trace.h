@@ -38,7 +38,7 @@
 #include <inttypes.h>
 /* Printf format patters for standard librsync types. */
 #define FMT_LONG "%"PRIdMAX
-#define FMT_WEAKSUM "%08"PRIu32
+#define FMT_WEAKSUM "%08"PRIx32
 #define FMT_SIZE "%zu"
 
 
