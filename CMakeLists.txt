@@ -104,6 +104,7 @@ check_type_size ( "unsigned int" SIZEOF_UNSIGNED_INT )
 check_type_size ( "unsigned long" SIZEOF_UNSIGNED_LONG )
 check_type_size ( "unsigned short" SIZEOF_UNSIGNED_SHORT )
 
+# Check for printf "%zu" size_t formating support.
 include(CheckCSourceRuns)
 check_c_source_runs("#include <stdio.h>\nint main(){char o[8];sprintf(o, \"%zu\", (size_t)7);return o[0] != '7';}" HAVE_PRINTF_Z)
 
