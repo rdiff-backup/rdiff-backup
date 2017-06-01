@@ -39,7 +39,12 @@
 /* Printf format patters for standard librsync types. */
 #define FMT_LONG "%"PRIdMAX
 #define FMT_WEAKSUM "%08"PRIx32
+/* Old MSVC compilers don't support "%zu" and have "%Iu" instead. */
+#ifdef HAVE_PRINTF_Z
 #define FMT_SIZE "%zu"
+#else
+#define FMT_SIZE "%Iu"
+#endif
 
 
 #if defined(__clang__) || defined(__GNUC__)
