@@ -41,11 +41,16 @@ NOT RELEASED YET
    now exit with an error. (gulikoza)
    Add new option -f (--force) to overwrite existing files.
 
- * Add signature memory preallocation (instead of calling realloc for
-   every sig block). See streaming.md job->estimated_signature_count for
-   usage when using the library. `rdiff` uses this by default if possible.
+ * Improve signature memory allocation (doubling size instead of
+   calling realloc for every sig block) and added support for
+   preallocation. See streaming.md job->estimated_signature_count for
+   usage when using the library. `rdiff` uses this by default if
+   possible.
 
- * `stdint.h` from C99 is now required.
+ * `stdint.h` and `inttypes.h` from C99 is now required.
+
+ * New open addressing hashtable implementation that significantly
+   speeds up delta operations, particularly for large files.
 
 ## librsync 2.0.0
 
