@@ -70,34 +70,27 @@ rs_format_stats(rs_stats_t const * stats,
 
     if (stats->lit_cmds) {
         len += snprintf(buf+len, size-len,
-                        "literal[%d cmds, " PRINTF_FORMAT_U64 " bytes, " PRINTF_FORMAT_U64 " cmdbytes] ",
-                        stats->lit_cmds,
-                        PRINTF_CAST_U64(stats->lit_bytes),
-                        PRINTF_CAST_U64(stats->lit_cmdbytes));
+                        "literal[%d cmds, "FMT_LONG" bytes, "FMT_LONG" cmdbytes] ",
+                        stats->lit_cmds, stats->lit_bytes, stats->lit_cmdbytes);
     }
 
     if (stats->sig_cmds) {
         len += snprintf(buf+len, size-len,
-                        "in-place-signature[" PRINTF_FORMAT_U64 " cmds, " PRINTF_FORMAT_U64 " bytes] ",
-                        PRINTF_CAST_U64(stats->sig_cmds),
-                        PRINTF_CAST_U64(stats->sig_bytes));
+                        "in-place-signature["FMT_LONG" cmds, "FMT_LONG" bytes] ",
+                        stats->sig_cmds, stats->sig_bytes);
     }
 
     if (stats->copy_cmds || stats->false_matches) {
         len += snprintf(buf+len, size-len,
-                        "copy[" PRINTF_FORMAT_U64 " cmds, " PRINTF_FORMAT_U64 " bytes, " PRINTF_FORMAT_U64 " false, " PRINTF_FORMAT_U64 " cmdbytes]",
-                        PRINTF_CAST_U64(stats->copy_cmds),
-                        PRINTF_CAST_U64(stats->copy_bytes),
-                        PRINTF_CAST_U64(stats->false_matches),
-                        PRINTF_CAST_U64(stats->copy_cmdbytes));
+                        "copy["FMT_LONG" cmds, "FMT_LONG" bytes, "FMT_LONG" cmdbytes, %d false]",
+                        stats->copy_cmds, stats->copy_bytes, stats->copy_cmdbytes, stats->false_matches);
     }
 
 
     if (stats->sig_blocks) {
         len  += snprintf(buf+len, size-len,
-                         "signature[" PRINTF_FORMAT_U64 " blocks, " PRINTF_FORMAT_U64 " bytes per block]",
-                         PRINTF_CAST_U64(stats->sig_blocks),
-                         PRINTF_CAST_U64(stats->block_len));
+                         "signature["FMT_LONG" blocks, "FMT_SIZE" bytes per block]",
+                         stats->sig_blocks, stats->block_len);
     }
 
     sec = (stats->end - stats->start);

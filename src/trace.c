@@ -114,12 +114,10 @@ rs_log_va(int flags, char const *fn, char const *fmt, va_list va)
 
         if (flags & RS_LOG_NONAME) {
             snprintf(full_buf, sizeof full_buf - 1,
-                     "%s: %s%s\n",
-                     MY_NAME, rs_severities[level], buf);
+                     "%s: %s%s\n", MY_NAME, rs_severities[level], buf);
         } else {
             snprintf(full_buf, sizeof full_buf - 1,
-                     "%s: %s(%s) %s\n",
-                     MY_NAME, rs_severities[level], fn, buf);
+                     "%s: %s(%s) %s\n", MY_NAME, rs_severities[level], fn, buf);
         }
 
         rs_trace_impl(level, full_buf);

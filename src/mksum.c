@@ -74,7 +74,7 @@ static rs_result rs_sig_s_header(rs_job_t *job)
     rs_squirt_n4(job, sig->block_len);
     rs_squirt_n4(job, sig->strong_sum_len);
     rs_trace("sent header (magic %#x, block len = %d, strong sum len = %d)",
-             sig->magic, (int) sig->block_len, (int) sig->strong_sum_len);
+             sig->magic, sig->block_len, sig->strong_sum_len);
     job->stats.block_len = sig->block_len;
 
     job->statefn = rs_sig_s_generate;
@@ -101,7 +101,7 @@ rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
     if (rs_trace_enabled()) {
         char                strong_sum_hex[RS_MAX_STRONG_SUM_LENGTH * 2 + 1];
         rs_hexify(strong_sum_hex, strong_sum, sig->strong_sum_len);
-        rs_trace("sent block: weak=0x%08x, strong=%s", weak_sum, strong_sum_hex);
+        rs_trace("sent block: weak="FMT_WEAKSUM", strong=%s", weak_sum, strong_sum_hex);
     }
     job->stats.sig_blocks++;
     return RS_RUNNING;
@@ -134,7 +134,7 @@ rs_sig_s_generate(rs_job_t *job)
         return result;
     }
 
-    rs_trace("got %ld byte block", (long) len);
+    rs_trace("got "FMT_SIZE" byte block", len);
 
     return rs_sig_do_block(job, block, len);
 }

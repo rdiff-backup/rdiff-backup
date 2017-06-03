@@ -104,25 +104,9 @@ check_type_size ( "unsigned int" SIZEOF_UNSIGNED_INT )
 check_type_size ( "unsigned long" SIZEOF_UNSIGNED_LONG )
 check_type_size ( "unsigned short" SIZEOF_UNSIGNED_SHORT )
 
-#!FIXME: is this really the best way to do it? I think the limitation on
-# rs_long_t is that we need to be able to seek to it, which relates to
-# long file support. With fseeko, rs_long_t should be off_t, otherwise
-# it should be long.
-if ( HAVE_FSEEKO64 AND SIZEOF_OFF64_T )
-  set( RS_LONG_T "off64_t" )
-  message (STATUS "RS_LONG_T = off64_t")
-elseif ( HAVE_SYS_TYPES_H AND LONG_LONG )
-  set( RS_LONG_T LONG_LONG )
-  message (STATUS "RS_LONG_T = ${LONG_LONG}")
-else()
-  if ( SIZEOF_LONG_LONG )
-    set( RS_LONG_T "long long" )
-    message (STATUS "RS_LONG_T = long long")
-  else ( SIZEOF_LONG_LONG )
-    set( RS_LONG_T "long" )
-    message (STATUS "RS_LONG_T = long")
-  endif ( SIZEOF_LONG_LONG )
-endif()
+# Check for printf "%zu" size_t formating support.
+include(CheckCSourceRuns)
+check_c_source_runs("#include <stdio.h>\nint main(){char o[8];sprintf(o, \"%zu\", (size_t)7);return o[0] != '7';}" HAVE_PRINTF_Z)
 
 # OS X
 if(APPLE)
@@ -253,16 +237,11 @@ enable_testing()
 # Create conf files
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/src/config.h)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/librsync-config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/src/librsync-config.h)
-
-
 # We need to be able to #include "file" from a few places,
 # * The original source dir
 # * The generated source dir
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
-
-
 
 
 ########### next target ###############
@@ -341,7 +320,6 @@ endif (BUILD_RDIFF)
 
 install(FILES
         src/librsync.h
-        ${CMAKE_CURRENT_BINARY_DIR}/src/librsync-config.h
         DESTINATION include)
 
 message (STATUS "CMAKE_C_FLAGS  = ${CMAKE_C_FLAGS}")

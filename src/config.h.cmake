@@ -135,6 +135,9 @@
 /* The size of `unsigned short', as computed by sizeof. */
 #cmakedefine SIZEOF_UNSIGNED_SHORT ${SIZEOF_UNSIGNED_SHORT}
 
+/* Define to 1 if printf supports the size_t "%zu" length field. */
+#cmakedefine HAVE_PRINTF_Z ${HAVE_PRINTF_Z}
+
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
    automatically deduced at runtime.
