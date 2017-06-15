@@ -566,8 +566,10 @@ rs_job_t *rs_patch_begin(rs_copy_cb *copy_cb, void *copy_arg);
 /**
  * Buffer sizes for file IO.
  *
- * You probably only need to change these in testing.
- */
+ * The default 0 means use the recommended buffer size for the
+ * operation being performed, any other value will override the
+ * recommended sizes. You probably only need to change these in
+ * testing. */
 extern int rs_inbuflen, rs_outbuflen;
 
 
