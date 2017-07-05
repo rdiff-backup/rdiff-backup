@@ -91,13 +91,13 @@ static inline size_t rs_block_sig_size(const rs_signature_t *sig)
 /* Get the pointer to the block_sig_t from a block index. */
 static inline rs_block_sig_t *rs_block_sig_ptr(const rs_signature_t *sig, int block_idx)
 {
-    return sig->block_sigs + block_idx * rs_block_sig_size(sig);
+    return (char*)sig->block_sigs + block_idx * rs_block_sig_size(sig);
 }
 
 /* Get the index of a block from a block_sig_t pointer. */
 static inline int rs_block_sig_idx(const rs_signature_t *sig, rs_block_sig_t *block_sig)
 {
-    return ((void *)block_sig - sig->block_sigs) / rs_block_sig_size(sig);
+    return ((char *)block_sig - sig->block_sigs) / rs_block_sig_size(sig);
 }
 
 rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len, int strong_len, rs_long_t sig_fsize)
