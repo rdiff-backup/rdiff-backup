@@ -33,10 +33,6 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#if defined(WIN32) || defined(WIN64)
-	#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-#endif
-
 #include "librsync.h"
 #include "util.h"
 #include "trace.h"
