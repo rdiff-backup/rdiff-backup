@@ -306,14 +306,15 @@ static inline rs_result rs_appendmatch(rs_job_t *job, rs_long_t match_pos, size_
  * Append a miss of length miss_len to the delta, extending a previous miss
  * if possible, or flushing any previous match.
  *
- * This also breaks misses up into rs_outbuflen segments to avoid accumulating
+ * This also breaks misses up into 4*block_len segments to avoid accumulating
  * too much in memory. */
 static inline rs_result rs_appendmiss(rs_job_t *job, size_t miss_len)
 {
+    const size_t   max_miss = 4 * job->signature->block_len;
     rs_result result=RS_DONE;
 
-    /* If last was a match, or rs_outbuflen misses, appendflush it. */
-    if (job->basis_len || (job->scoop_pos >= rs_outbuflen)) {
+    /* If last was a match, or max_miss misses, appendflush it. */
+    if (job->basis_len || (job->scoop_pos >= max_miss)) {
         result=rs_appendflush(job);
     }
     /* increment scoop_pos */
