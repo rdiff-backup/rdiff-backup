@@ -42,6 +42,15 @@
 #include "trace.h"
 
 
+/* Use fseeko64 or fseeko for long file support if we have it */
+#ifdef HAVE_FSEEKO64
+#  define fopen fopen64
+#  define fseek fseeko64
+#elif defined HAVE_FSEEKO
+#  define fseek fseeko
+#endif
+
+
 /**
  * \brief Open a file, with special handling for `-' or unspecified
  * parameters on input and output.
@@ -85,7 +94,7 @@ rs_file_open(char const *filename, char const *mode, int force)
 		  strerror(errno));
 	exit(RS_IO_ERROR);
     }
-    
+
     return f;
 }
 
@@ -93,4 +102,28 @@ int rs_file_close(FILE * f)
 {
     if ((f == stdin) || (f == stdout)) return 0;
     return fclose(f);
+}
+
+
+rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf)
+{
+    int        got;
+    FILE       *f = (FILE *) arg;
+
+    if (fseek(f, pos, SEEK_SET)) {
+        rs_error("seek failed: %s", strerror(errno));
+        return RS_IO_ERROR;
+    }
+
+    got = fread(*buf, 1, *len, f);
+    if (got == -1) {
+        rs_error("read error: %s", strerror(errno));
+        return RS_IO_ERROR;
+    } else if (got == 0) {
+        rs_error("unexpected eof on fd%d", fileno(f));
+        return RS_INPUT_ENDED;
+    } else {
+        *len = got;
+        return RS_DONE;
+    }
 }
