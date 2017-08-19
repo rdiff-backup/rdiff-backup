@@ -32,7 +32,10 @@ NOT RELEASED YET
 
  * `popt` is only needed when `rdiff` is being built. (gulikoza)
 
- * Use `fseeko64` on mingw. (gulikoza)
+ * Improved large file support for platforms using different variants
+   of `fseek` (`fseeko`, `fseeko64`, `_fseeki64`), `fstat` (`fstat64`,
+   `_fstati64`), and `fileno` (`_fileno`). (dbaarda, charlievieth,
+   gulikoza, marius-nicolae)
 
  * `rdiff -s` option now shows bytes read/written and speed. (gulikoza)
 
