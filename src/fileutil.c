@@ -69,6 +69,11 @@
 #  define S_ISREG(x) ((x) & _S_IFREG)
 #endif
 
+/* Use _fileno if it exists and fileno doesn't. */
+#if !defined(HAVE_FILENO) && defined(HAVE__FILENO)
+#  define fileno(f) _fileno((f))
+#endif
+
 
 /** Open a file with special handling for '-' or unspecified filenames.
  *

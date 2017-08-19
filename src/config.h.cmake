@@ -45,6 +45,12 @@
 /* Define to 1 if _fstati64 exists and is declared. */
 #cmakedefine HAVE__FSTATI64 1
 
+/* Define to 1 if fileno exists and is declared (Posix). */
+#cmakedefine HAVE_FILENO 1
+
+/* Define to 1 if _fileno exists and is declared (ISO C++). */
+#cmakedefine HAVE__FILENO 1
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #cmakedefine HAVE_INTTYPES_H 1
 
