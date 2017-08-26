@@ -53,14 +53,6 @@
 #include "job.h"
 #include "util.h"
 
-/* use fseeko instead of fseek for long file support if we have it */
-#ifdef HAVE_FSEEKO
-#define fseek fseeko
-#elif defined HAVE_FSEEKO64
-#define fseek fseeko64
-#endif
-
-
 struct rs_filebuf {
         FILE *f;
         char            *buf;
@@ -191,28 +183,4 @@ rs_result rs_outfilebuf_drain(rs_job_t *job, rs_buffers_t *buf, void *opaque)
     }
 
     return RS_DONE;
-}
-
-
-rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf)
-{
-    int        got;
-    FILE       *f = (FILE *) arg;
-
-    if (fseek(f, pos, SEEK_SET)) {
-        rs_error("seek failed: %s", strerror(errno));
-        return RS_IO_ERROR;
-    }
-
-    got = fread(*buf, 1, *len, f);
-    if (got == -1) {
-        rs_error("read error: %s", strerror(errno));
-        return RS_IO_ERROR;
-    } else if (got == 0) {
-        rs_error("unexpected eof on fd%d", fileno(f));
-        return RS_INPUT_ENDED;
-    } else {
-        *len = got;
-        return RS_DONE;
-    }
 }

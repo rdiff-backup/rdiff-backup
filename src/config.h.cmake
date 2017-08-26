@@ -36,6 +36,21 @@
 /* Define to 1 if fseeko64 (and presumably ftello64) exists and is declared. */
 #cmakedefine HAVE_FSEEKO64 1
 
+/* Define to 1 if _fseeki64 (and presumably _ftelli64) exists and is declared. */
+#cmakedefine HAVE__FSEEKI64 1
+
+/* Define to 1 if fstat64 exists and is declared. */
+#cmakedefine HAVE_FSTAT64 1
+
+/* Define to 1 if _fstati64 exists and is declared. */
+#cmakedefine HAVE__FSTATI64 1
+
+/* Define to 1 if fileno exists and is declared (Posix). */
+#cmakedefine HAVE_FILENO 1
+
+/* Define to 1 if _fileno exists and is declared (ISO C++). */
+#cmakedefine HAVE__FILENO 1
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #cmakedefine HAVE_INTTYPES_H 1
 
@@ -125,6 +140,12 @@
 
 /* The size of `size_t', as computed by sizeof. */
 #cmakedefine SIZEOF_SIZE_T ${SIZEOF_SIZE_T}
+
+/* The size of `off_t', as computed by sizeof. */
+#cmakedefine SIZEOF_OFF_T ${SIZEOF_OFF_T}
+
+/* The size of `off64_t', as computed by sizeof. */
+#cmakedefine SIZEOF_OFF64_T ${SIZEOF_OFF64_T}
 
 /* The size of `unsigned int', as computed by sizeof. */
 #cmakedefine SIZEOF_UNSIGNED_INT ${SIZEOF_UNSIGNED_INT}
