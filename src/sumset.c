@@ -208,6 +208,7 @@ rs_result rs_build_hash_table(rs_signature_t *sig)
         if (!hashtable_find(sig->hashtable, &m))
             hashtable_add(sig->hashtable, b);
     }
+    hashtable_stats_init(sig->hashtable);
     return RS_DONE;
 }
 
