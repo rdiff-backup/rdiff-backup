@@ -159,8 +159,8 @@ int main(int argc, char **argv)
     hashtable_stats_init(t);
     assert(t->find_count == 0);
     assert(t->match_count == 0);
-    assert(t->hashcmp_count >= 0);
-    assert(t->entrycmp_count >= 0);
+    assert(t->hashcmp_count == 0);
+    assert(t->entrycmp_count == 0);
 #endif
 
     /* Test hashtable iterators */
