@@ -234,6 +234,18 @@ static inline void _FUNC(_free)(hashtable_t *t)
     _hashtable_free(t);
 }
 
+/** Initialize hashtable stats counters.
+ *
+ * This will reset all the stats counters for the hashtable,
+ *
+ * \param *t - The hashtable to initializ stats for. */
+static inline void _FUNC(_stats_init)(hashtable_t *t)
+{
+#ifndef HASHTABLE_NSTATS
+    t->find_count = t->match_count = t->hashcmp_count = t->entrycmp_count = 0;
+#endif
+}
+
 /** Add an entry to a hashtable.
  *
  * This doesn't use MATCH_CMP() or do any checks for existing copies or

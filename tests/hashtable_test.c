@@ -156,6 +156,11 @@ int main(int argc, char **argv)
     assert(t->match_count == 256);
     assert(t->hashcmp_count >= 256);
     assert(t->entrycmp_count >= 256);
+    hashtable_stats_init(t);
+    assert(t->find_count == 0);
+    assert(t->match_count == 0);
+    assert(t->hashcmp_count == 0);
+    assert(t->entrycmp_count == 0);
 #endif
 
     /* Test hashtable iterators */

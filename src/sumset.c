@@ -39,7 +39,8 @@ const int RS_BLAKE2_SUM_LENGTH = 32;
 static void rs_block_sig_init(rs_block_sig_t *sig, rs_weak_sum_t weak_sum, rs_strong_sum_t *strong_sum, int strong_len)
 {
     sig->weak_sum = weak_sum;
-    memcpy(sig->strong_sum, strong_sum, strong_len);
+    if (strong_sum)
+      memcpy(sig->strong_sum, strong_sum, strong_len);
 }
 
 static inline unsigned rs_block_sig_hash(const rs_block_sig_t *sig)
@@ -54,10 +55,10 @@ typedef struct rs_block_match {
     size_t len;
 } rs_block_match_t;
 
-static void rs_block_match_init(rs_block_match_t *match, rs_signature_t *sig, rs_weak_sum_t weak_sum, const void *buf,
-				size_t len)
+static void rs_block_match_init(rs_block_match_t *match, rs_signature_t *sig, rs_weak_sum_t weak_sum,
+                                rs_strong_sum_t *strong_sum, const void *buf, size_t len)
 {
-    match->block_sig.weak_sum = weak_sum;
+    rs_block_sig_init(&match->block_sig, weak_sum, strong_sum, sig->strong_sum_len);
     match->signature = sig;
     match->buf = buf;
     match->len = len;
@@ -167,7 +168,7 @@ rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum, v
     rs_block_sig_t *b;
 
     rs_signature_check(sig);
-    rs_block_match_init(&m, sig, weak_sum, buf, len);
+    rs_block_match_init(&m, sig, weak_sum, NULL, buf, len);
     if ((b = hashtable_find(sig->hashtable, &m))) {
         return (rs_long_t)rs_block_sig_idx(sig, b) * sig->block_len;
     }
@@ -193,14 +194,21 @@ void rs_signature_log_stats(rs_signature_t const *sig)
 
 rs_result rs_build_hash_table(rs_signature_t *sig)
 {
+    rs_block_match_t m;
+    rs_block_sig_t *b;
     int i;
 
     rs_signature_check(sig);
     sig->hashtable = hashtable_new(sig->count);
     if (!sig->hashtable)
         return RS_MEM_ERROR;
-    for (i = 0; i < sig->count; i++)
-        hashtable_add(sig->hashtable, rs_block_sig_ptr(sig, i));
+    for (i = 0; i < sig->count; i++) {
+        b = rs_block_sig_ptr(sig, i);
+        rs_block_match_init(&m, sig, b->weak_sum, &b->strong_sum, NULL, 0);
+        if (!hashtable_find(sig->hashtable, &m))
+            hashtable_add(sig->hashtable, b);
+    }
+    hashtable_stats_init(sig->hashtable);
     return RS_DONE;
 }
 
@@ -217,7 +225,7 @@ void rs_sumset_dump(rs_signature_t const *sums)
     char strong_hex[RS_MAX_STRONG_SUM_LENGTH * 3];
 
     rs_log(RS_LOG_INFO|RS_LOG_NONAME, "sumset info: magic=%#x, block_len=%d, block_num=%d",
-	   sums->magic, sums->block_len, sums->count);
+           sums->magic, sums->block_len, sums->count);
 
     for (i = 0; i < sums->count; i++) {
         b = rs_block_sig_ptr(sums, i);
