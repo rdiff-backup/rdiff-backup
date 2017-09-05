@@ -157,7 +157,7 @@
 #cmakedefine SIZEOF_UNSIGNED_SHORT ${SIZEOF_UNSIGNED_SHORT}
 
 /* Define to 1 if printf supports the size_t "%zu" length field. */
-#cmakedefine HAVE_PRINTF_Z ${HAVE_PRINTF_Z}
+#cmakedefine HAVE_PRINTF_Z 1
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
@@ -197,15 +197,7 @@
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
-#if defined AC_APPLE_UNIVERSAL_BUILD
-# if defined __BIG_ENDIAN__
-#  define WORDS_BIGENDIAN 1
-# endif
-#else
-# ifndef WORDS_BIGENDIAN
-/* #  undef WORDS_BIGENDIAN */
-# endif
-#endif
+#cmakedefine WORDS_BIGENDIAN 1
 
 /* FIXME Enable large inode numbers on Mac OS X 10.5.  */
 #ifndef _DARWIN_USE_64_BIT_INODE

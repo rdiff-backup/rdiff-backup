@@ -111,6 +111,14 @@ check_type_size ( "unsigned short" SIZEOF_UNSIGNED_SHORT )
 include(CheckCSourceRuns)
 check_c_source_runs("#include <stdio.h>\nint main(){char o[8];sprintf(o, \"%zu\", (size_t)7);return o[0] != '7';}" HAVE_PRINTF_Z)
 
+include (TestBigEndian)
+TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
+if (WORDS_BIGENDIAN)
+  message(STATUS "System is big-endian.")
+else (WORDS_BIGENDIAN)
+  message(STATUS "System is little-endian.")
+endif (WORDS_BIGENDIAN)
+
 # OS X
 if(APPLE)
   set(CMAKE_MACOSX_RPATH ON)
