@@ -188,8 +188,9 @@ if (LIBB2_FOUND)
   message (STATUS "LIBB2_LIBRARIES = ${LIBB2_LIBRARIES}")
 endif (LIBB2_FOUND)
 
-# Add an option to turn off using LIBB2 even if found.
-cmake_dependent_option(USE_LIBB2 "Use the libb2 blake2 implementation." ON "LIBB2_FOUND" OFF)
+# Add an option to use LIBB2 if found. It defaults to off because the
+# reference implementation is currently faster.
+cmake_dependent_option(USE_LIBB2 "Use the libb2 blake2 implementation." OFF "LIBB2_FOUND" OFF)
 
 # Doxygen doc generator
 find_package(Doxygen)
