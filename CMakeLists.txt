@@ -175,10 +175,23 @@ endif (PERL_FOUND)
 find_package (ZLIB)
 if (ZLIB_FOUND)
   message (STATUS "Found components for ZLIB")
-  message (STATUS "ZLIB_INCLUDE_DIR  = ${ZLIB_INCLUDE_DIR}")
+  message (STATUS "ZLIB_INCLUDE_DIRS  = ${ZLIB_INCLUDE_DIRS}")
   message (STATUS "ZLIB_LIBRARIES = ${ZLIB_LIBRARIES}")
   include_directories(${ZLIB_INCLUDE_DIRS})
 endif (ZLIB_FOUND)
+
+# Find libb2
+find_package(libb2)
+if (LIBB2_FOUND)
+  message (STATUS "Found components for libb2")
+  message (STATUS "LIBB2_INCLUDE_DIRS  = ${LIBB2_INCLUDE_DIRS}")
+  message (STATUS "LIBB2_LIBRARIES = ${LIBB2_LIBRARIES}")
+  include_directories(${LIBB2_INCLUDE_DIRS})
+else (LIBB2_FOUND)
+  message (STATUS "No libb2 found, using included blake2 implementation.")
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/blake2)
+  set(blake2_SRCS src/blake2/blake2b-ref.c)
+endif (LIBB2_FOUND)
 
 # Doxygen doc generator
 find_package(Doxygen)
@@ -211,7 +224,9 @@ add_executable(hashtable_test
 add_test(NAME hashtable_test COMMAND hashtable_test)
 
 add_executable(sumset_test
-    tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c src/checksum.c src/rollsum.c src/mdfour.c src/blake2b-ref.c src/hashtable.c)
+    tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c
+    src/checksum.c src/rollsum.c src/mdfour.c src/hashtable.c ${blake2_SRCS})
+
 add_test(NAME sumset_test COMMAND sumset_test)
 
 # Disable rdiff specific tests
@@ -289,7 +304,7 @@ set(rsync_LIB_SRCS
     src/util.c
     src/version.c
     src/whole.c
-    src/blake2b-ref.c)
+    ${blake2_SRCS})
 
 add_library(rsync SHARED ${rsync_LIB_SRCS})
 
@@ -303,6 +318,11 @@ if (ENABLE_COMPRESSION)
     message (WARNING "zlib and bzip2 librares are required to enable compression")
   endif (ZLIB_FOUND AND BZIP2_FOUND)
 endif (ENABLE_COMPRESSION)
+
+if (LIBB2_FOUND)
+  target_link_libraries(rsync ${LIBB2_LIBRARIES})
+  target_link_libraries(sumset_test ${LIBB2_LIBRARIES})
+endif (LIBB2_FOUND)
 
 set_target_properties(rsync PROPERTIES VERSION ${LIBRSYNC_VERSION}
         SOVERSION ${LIBRSYNC_MAJOR_VERSION})
