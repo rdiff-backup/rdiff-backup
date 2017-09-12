@@ -175,10 +175,22 @@ endif (PERL_FOUND)
 find_package (ZLIB)
 if (ZLIB_FOUND)
   message (STATUS "Found components for ZLIB")
-  message (STATUS "ZLIB_INCLUDE_DIR  = ${ZLIB_INCLUDE_DIR}")
+  message (STATUS "ZLIB_INCLUDE_DIRS  = ${ZLIB_INCLUDE_DIRS}")
   message (STATUS "ZLIB_LIBRARIES = ${ZLIB_LIBRARIES}")
   include_directories(${ZLIB_INCLUDE_DIRS})
 endif (ZLIB_FOUND)
+
+# Find libb2
+find_package(libb2)
+if (LIBB2_FOUND)
+  message (STATUS "Found components for libb2")
+  message (STATUS "LIBB2_INCLUDE_DIRS  = ${LIBB2_INCLUDE_DIRS}")
+  message (STATUS "LIBB2_LIBRARIES = ${LIBB2_LIBRARIES}")
+endif (LIBB2_FOUND)
+
+# Add an option to use LIBB2 if found. It defaults to off because the
+# reference implementation is currently faster.
+cmake_dependent_option(USE_LIBB2 "Use the libb2 blake2 implementation." OFF "LIBB2_FOUND" OFF)
 
 # Doxygen doc generator
 find_package(Doxygen)
@@ -190,6 +202,17 @@ if(DOXYGEN_FOUND)
         COMMENT "Generating API documentation with Doxygen" VERBATIM
     )
 endif(DOXYGEN_FOUND)
+
+if (USE_LIBB2)
+  message (STATUS "Using libb2 blake2 implementation.")
+  include_directories(${LIBB2_INCLUDE_DIRS})
+  set(blake2_LIBS ${LIBB2_LIBRARIES})
+else (USE_LIBB2)
+  message (STATUS "Using included blake2 implementation.")
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/blake2)
+  set(blake2_SRCS src/blake2/blake2b-ref.c)
+endif (USE_LIBB2)
+
 
 # Generate prototab.c/h
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
@@ -211,7 +234,9 @@ add_executable(hashtable_test
 add_test(NAME hashtable_test COMMAND hashtable_test)
 
 add_executable(sumset_test
-    tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c src/checksum.c src/rollsum.c src/mdfour.c src/blake2b-ref.c src/hashtable.c)
+    tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c
+    src/checksum.c src/rollsum.c src/mdfour.c src/hashtable.c ${blake2_SRCS})
+target_link_libraries(sumset_test ${blake2_LIBS})
 add_test(NAME sumset_test COMMAND sumset_test)
 
 # Disable rdiff specific tests
@@ -289,9 +314,10 @@ set(rsync_LIB_SRCS
     src/util.c
     src/version.c
     src/whole.c
-    src/blake2b-ref.c)
+    ${blake2_SRCS})
 
 add_library(rsync SHARED ${rsync_LIB_SRCS})
+target_link_libraries(rsync ${blake2_LIBS})
 
 # Optionally link zlib and bzip2 if
 # - compression is enabled
