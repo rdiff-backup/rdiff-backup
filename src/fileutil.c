@@ -34,6 +34,9 @@
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
 #endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
 #include <string.h>
 #include <errno.h>
 
@@ -42,14 +45,43 @@
 #include "trace.h"
 
 
-/**
- * \brief Open a file, with special handling for `-' or unspecified
- * parameters on input and output.
+/* Use fseeko64, _fseeki64, or fseeko for long files if they exist. */
+#if defined(HAVE_FSEEKO64) && (SIZEOF_OFF_T < 8)
+#  define fopen(f, m) fopen64((f), (m))
+#  define fseek(f, o, w) fseeko64((f), (o), (w))
+#elif defined(HAVE__FSEEKI64)
+#  define fseek(f, o, w) _fseeki64((f), (o), (w))
+#elif defined(HAVE_FSEEKO)
+#  define fseek(f, o, w) fseeko((f), (o), (w))
+#endif
+
+/* Use fstat64 or _fstati64 for long file fstat if they exist. */
+#if defined(HAVE_FSTAT64) && (SIZEOF_OFF_T < 8)
+#  define stat stat64
+#  define fstat(f,s) fstat64((f), (s))
+#elif defined(HAVE__FSTATI64)
+#  define stat _stati64
+#  define fstat(f,s) _fstati64((f), (s))
+#endif
+
+/* Make sure S_ISREG is defined. */
+#ifndef S_ISREG
+#  define S_ISREG(x) ((x) & _S_IFREG)
+#endif
+
+/* Use _fileno if it exists and fileno doesn't. */
+#if !defined(HAVE_FILENO) && defined(HAVE__FILENO)
+#  define fileno(f) _fileno((f))
+#endif
+
+
+/** Open a file with special handling for '-' or unspecified filenames.
  *
- * \param fopen-style mode string.
+ * \param filename - The filename to open.
+ * \param mode - fopen style mode string.
+ * \param force - bool to force overwriting of existing files.
  */
-FILE *
-rs_file_open(char const *filename, char const *mode, int force)
+FILE *rs_file_open(char const *filename, char const *mode, int force)
 {
     FILE           *f;
     int		    is_write;
@@ -85,7 +117,7 @@ rs_file_open(char const *filename, char const *mode, int force)
 		  strerror(errno));
 	exit(RS_IO_ERROR);
     }
-    
+
     return f;
 }
 
@@ -93,4 +125,35 @@ int rs_file_close(FILE * f)
 {
     if ((f == stdin) || (f == stdout)) return 0;
     return fclose(f);
+}
+
+void rs_get_filesize(FILE *f, rs_long_t *size)
+{
+    struct stat st;
+    if (size && (fstat(fileno(f), &st) == 0) && (S_ISREG(st.st_mode))) {
+        *size = st.st_size;
+    }
+}
+
+rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf)
+{
+    int        got;
+    FILE       *f = (FILE *) arg;
+
+    if (fseek(f, pos, SEEK_SET)) {
+        rs_error("seek failed: %s", strerror(errno));
+        return RS_IO_ERROR;
+    }
+
+    got = fread(*buf, 1, *len, f);
+    if (got == -1) {
+        rs_error("read error: %s", strerror(errno));
+        return RS_IO_ERROR;
+    } else if (got == 0) {
+        rs_error("unexpected eof on fd%d", fileno(f));
+        return RS_INPUT_ENDED;
+    } else {
+        *len = got;
+        return RS_DONE;
+    }
 }

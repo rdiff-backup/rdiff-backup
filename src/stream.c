@@ -1,19 +1,19 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- dynamic caching and delta update in HTTP
- * 
+ *
  * Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -109,19 +109,17 @@
 int rs_buffers_copy(rs_buffers_t *stream, int max_len)
 {
     int len = max_len;
-    
+
     assert(len > 0);
 
     if ((unsigned) len > stream->avail_in) {
-        rs_trace("copy limited to %ld available input bytes",
-                 (long) stream->avail_in);
+        rs_trace("copy limited to "FMT_SIZE" available input bytes", stream->avail_in);
         len = stream->avail_in;
     }
 
 
     if ((unsigned) len > stream->avail_out) {
-        rs_trace("copy limited to %ld available output bytes",
-                 (long) stream->avail_out);
+        rs_trace("copy limited to "FMT_SIZE" available output bytes", stream->avail_out);
         len = stream->avail_out;
     }
 
@@ -130,7 +128,7 @@ int rs_buffers_copy(rs_buffers_t *stream, int max_len)
 /*     rs_trace("stream copied chunk of %d bytes", len); */
 
     memcpy(stream->next_out, stream->next_in, len);
-    
+
     stream->next_out += len;
     stream->avail_out -= len;
 

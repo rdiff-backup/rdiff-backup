@@ -20,14 +20,11 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
 void * rs_alloc(size_t size, char const *name);
+void * rs_realloc(void *ptr, size_t size, char const *name);
 void *rs_alloc_struct0(size_t size, char const *name);
 
 void rs_bzero(void *buf, size_t size);
-
-void rs_get_filesize(FILE *f, rs_long_t *size);
-
 
 /*
  * Allocate and zero-fill an instance of TYPE.

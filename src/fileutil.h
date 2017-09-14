@@ -21,3 +21,4 @@
 
 FILE * rs_file_open(char const *filename, char const * mode, int force);
 int rs_file_close(FILE * file);
+void rs_get_filesize(FILE *f, rs_long_t *size);

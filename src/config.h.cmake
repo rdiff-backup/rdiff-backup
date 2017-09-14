@@ -36,6 +36,21 @@
 /* Define to 1 if fseeko64 (and presumably ftello64) exists and is declared. */
 #cmakedefine HAVE_FSEEKO64 1
 
+/* Define to 1 if _fseeki64 (and presumably _ftelli64) exists and is declared. */
+#cmakedefine HAVE__FSEEKI64 1
+
+/* Define to 1 if fstat64 exists and is declared. */
+#cmakedefine HAVE_FSTAT64 1
+
+/* Define to 1 if _fstati64 exists and is declared. */
+#cmakedefine HAVE__FSTATI64 1
+
+/* Define to 1 if fileno exists and is declared (Posix). */
+#cmakedefine HAVE_FILENO 1
+
+/* Define to 1 if _fileno exists and is declared (ISO C++). */
+#cmakedefine HAVE__FILENO 1
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #cmakedefine HAVE_INTTYPES_H 1
 
@@ -126,6 +141,12 @@
 /* The size of `size_t', as computed by sizeof. */
 #cmakedefine SIZEOF_SIZE_T ${SIZEOF_SIZE_T}
 
+/* The size of `off_t', as computed by sizeof. */
+#cmakedefine SIZEOF_OFF_T ${SIZEOF_OFF_T}
+
+/* The size of `off64_t', as computed by sizeof. */
+#cmakedefine SIZEOF_OFF64_T ${SIZEOF_OFF64_T}
+
 /* The size of `unsigned int', as computed by sizeof. */
 #cmakedefine SIZEOF_UNSIGNED_INT ${SIZEOF_UNSIGNED_INT}
 
@@ -134,6 +155,9 @@
 
 /* The size of `unsigned short', as computed by sizeof. */
 #cmakedefine SIZEOF_UNSIGNED_SHORT ${SIZEOF_UNSIGNED_SHORT}
+
+/* Define to 1 if printf supports the size_t "%zu" length field. */
+#cmakedefine HAVE_PRINTF_Z 1
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
@@ -173,15 +197,7 @@
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
-#if defined AC_APPLE_UNIVERSAL_BUILD
-# if defined __BIG_ENDIAN__
-#  define WORDS_BIGENDIAN 1
-# endif
-#else
-# ifndef WORDS_BIGENDIAN
-/* #  undef WORDS_BIGENDIAN */
-# endif
-#endif
+#cmakedefine WORDS_BIGENDIAN 1
 
 /* FIXME Enable large inode numbers on Mac OS X 10.5.  */
 #ifndef _DARWIN_USE_64_BIT_INODE

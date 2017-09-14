@@ -20,8 +20,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "types.h"
-
 /** \private
   * Internal state while computing an MD4 hash.
   */

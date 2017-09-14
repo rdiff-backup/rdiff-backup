@@ -32,7 +32,10 @@ NOT RELEASED YET
 
  * `popt` is only needed when `rdiff` is being built. (gulikoza)
 
- * Use `fseeko64` on mingw. (gulikoza)
+ * Improved large file support for platforms using different variants
+   of `fseek` (`fseeko`, `fseeko64`, `_fseeki64`), `fstat` (`fstat64`,
+   `_fstati64`), and `fileno` (`_fileno`). (dbaarda, charlievieth,
+   gulikoza, marius-nicolae)
 
  * `rdiff -s` option now shows bytes read/written and speed. (gulikoza)
 
@@ -41,9 +44,16 @@ NOT RELEASED YET
    now exit with an error. (gulikoza)
    Add new option -f (--force) to overwrite existing files.
 
- * Add signature memory preallocation (instead of calling realloc for
-   every sig block). See streaming.md job->estimated_signature_count for
-   usage when using the library. `rdiff` uses this by default if possible.
+ * Improve signature memory allocation (doubling size instead of
+   calling realloc for every sig block) and added support for
+   preallocation. See streaming.md job->estimated_signature_count for
+   usage when using the library. `rdiff` uses this by default if
+   possible.
+
+ * `stdint.h` and `inttypes.h` from C99 is now required.
+
+ * New open addressing hashtable implementation that significantly
+   speeds up delta operations, particularly for large files.
 
 ## librsync 2.0.0
 

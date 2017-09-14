@@ -37,8 +37,9 @@
 #define _RSYNC_H
 
 #include <sys/types.h>
-#include "types.h"
-#include "librsync-config.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,8 +54,8 @@ extern char const rs_librsync_version[];
  */
 extern char const rs_licence_string[];
 
-typedef unsigned char rs_byte_t;
-
+typedef uint8_t rs_byte_t;
+typedef intmax_t rs_long_t;
 
 
                           /*
@@ -566,8 +567,10 @@ rs_job_t *rs_patch_begin(rs_copy_cb *copy_cb, void *copy_arg);
 /**
  * Buffer sizes for file IO.
  *
- * You probably only need to change these in testing.
- */
+ * The default 0 means use the recommended buffer size for the
+ * operation being performed, any other value will override the
+ * recommended sizes. You probably only need to change these in
+ * testing. */
 extern int rs_inbuflen, rs_outbuflen;
 
 
