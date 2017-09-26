@@ -16,7 +16,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-project(librsync)
+project(librsync C)
 cmake_minimum_required(VERSION 2.6)
 
 INCLUDE(CMakeDependentOption)
