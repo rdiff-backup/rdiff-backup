@@ -86,7 +86,7 @@ void rs_signature_log_stats(rs_signature_t const *sig);
     assert(0 < (sig)->block_len);\
     assert(0 < (sig)->strong_sum_len && (sig)->strong_sum_len <= RS_MAX_STRONG_SUM_LENGTH);\
     assert(0 <= (sig)->count && (sig)->count <= (sig)->size);\
-    assert(!(sig)->hashtable || (sig)->hashtable->count == (sig)->count);\
+    assert(!(sig)->hashtable || (sig)->hashtable->count <= (sig)->count);\
 } while (0)
 
 /** Calculate the strong sum of a buffer. */
