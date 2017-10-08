@@ -35,7 +35,7 @@ are dealing with are local or remote.
 
 """
 
-import os, stat, re, sys, shutil, gzip, socket, time, errno, codecs
+import os, stat, re, sys, shutil, gzip, socket, time, errno, codecs, locale
 import Globals, Time, static, log, user_group, C
 
 try:
@@ -1423,23 +1423,36 @@ class MaybeUnicode:
 
 	def __init__(self, fileobj):
 		self.fileobj = fileobj
+		self.defaultCodec = locale.getdefaultlocale()[1]
 
 	def read(self, length = -1):
 		data = self.fileobj.read(length)
 		if Globals.use_unicode_paths:
-			data = unicode(data, 'utf-8')
+			try:
+				data = unicode(data, 'utf-8')
+			except UnicodeDecodeError:
+				# Try again with default locale
+				data = unicode(data, self.defaultCodec)
 		return data
 
 	def readline(self, length=-1):
 		data = self.fileobj.readline(length)
 		if Globals.use_unicode_paths:
-			data = unicode(data, 'utf-8')
+			try:
+				data = unicode(data, 'utf-8')
+			except UnicodeDecodeError:
+				# Try again with default locale
+				data = unicode(data, self.defaultCodec)
 		return data
 
 	def write(self, buf):
 		if Globals.use_unicode_paths:
 			if type(buf) != unicode:
-				buf = unicode(buf, 'utf-8')
+				try:
+					buf = unicode(buf, 'utf-8')
+				except UnicodeDecodeError:
+					# Try again with default locale
+					buf = unicode(buf, self.defaultCodec)
 			buf = buf.encode('utf-8')
 		return self.fileobj.write(buf)
 

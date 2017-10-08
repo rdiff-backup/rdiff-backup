@@ -18,6 +18,7 @@
 # USA
 
 from __future__ import generators
+import locale
 import C, metadata, re, rorpiter, rpath, log
 
 try:
@@ -204,7 +205,14 @@ class ACL:
 			raise metadata.ParsingError("Bad record beginning: " + lines[0][:8])
 		filename = lines[0][8:]
 		if filename == '.': self.index = ()
-		else: self.index = tuple(unicode(C.acl_unquote(filename)).split('/'))
+		else:
+			s = C.acl_unquote(filename)
+			try:
+				s = unicode(s)
+			except UnicodeDecodeError:
+				# Try with default codec
+				s = unicode(s, locale.getdefaultlocale()[1])
+			self.index = tuple(s.split('/'))
 		self.__acl = lines[1]
 
 def Record2WACL(record):
