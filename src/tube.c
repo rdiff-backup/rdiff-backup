@@ -144,23 +144,17 @@ rs_tube_copy_from_scoop(rs_job_t *job)
  */
 static void rs_tube_catchup_copy(rs_job_t *job)
 {
-    rs_buffers_t *stream = job->stream;
-
     assert(job->write_len == 0);
     assert(job->copy_len > 0);
 
-    if (job->scoop_avail  && job->copy_len) {
-        /* there's still some data in the scoop, so we should use that. */
+    /* If there's data in the scoop, send that first. */
+    if (job->scoop_avail && job->copy_len) {
         rs_tube_copy_from_scoop(job);
     }
-
-    if (job->copy_len) {
-        size_t  this_copy;
-
-        this_copy = rs_buffers_copy(stream, job->copy_len);
-
+    /* If there's more to copy and we emptied the scoop, send input. */
+    if (job->copy_len && !job->scoop_avail) {
+        size_t this_copy = rs_buffers_copy(job->stream, job->copy_len);
         job->copy_len -= this_copy;
-
         rs_trace("copied "FMT_SIZE" bytes from input buffer, "FMT_LONG" remain to be copied", this_copy, job->copy_len);
     }
 }
