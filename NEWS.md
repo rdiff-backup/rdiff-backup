@@ -74,6 +74,14 @@ NOT RELEASED YET
  * Fixed hanging for truncated input files. It will now correctly report an
    error indicating an unexpected EOF was encountered. (dbaarda,
    https://github.com/librsync/librsync/issues/32)
+   
+ * Fixed #13 so that faster slack delta's are used for signatures of
+   empty files. (dbaarda,
+   https://github.com/librsync/librsync/issues/13)
+   
+ * Fixed #33 so rs_job_iter() doesn't need calling twice with eof=1.
+   Also tidied and optimized it a bit. (dbaarda,
+   https://github.com/librsync/librsync/issues/33)
 
 ## librsync 2.0.0
 
