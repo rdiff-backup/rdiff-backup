@@ -91,7 +91,7 @@ rs_result rs_job_free(rs_job_t *job)
 {
     free(job->scoop_buf);
     if (job->job_owns_sig)
-	  rs_free_sumset(job->signature);
+          rs_free_sumset(job->signature);
     rs_bzero(job, sizeof *job);
     free(job);
 
@@ -99,34 +99,20 @@ rs_result rs_job_free(rs_job_t *job)
 }
 
 
-
-static rs_result rs_job_s_complete(rs_job_t *job)
-{
-    rs_fatal("should not be reached");
-    return RS_INTERNAL_ERROR;
-}
-
-
 static rs_result rs_job_complete(rs_job_t *job, rs_result result)
 {
     rs_job_check(job);
+    assert(result != RS_RUNNING && result != RS_BLOCKED);
+    assert(rs_tube_is_idle(job) || result != RS_DONE);
 
-    job->statefn = rs_job_s_complete;
     job->final_result = result;
-
+    job->stats.end = time(NULL);
     if (result != RS_DONE) {
         rs_error("%s job failed: %s", job->job_name, rs_strerror(result));
     } else {
         rs_trace("%s job complete", job->job_name);
     }
-
-    job->stats.end = time(NULL);
-    if (result == RS_DONE && !rs_tube_is_idle(job))
-        /* Processing is finished, but there is still some data
-         * waiting to get into the output buffer. */
-        return RS_BLOCKED;
-    else
-        return result;
+    return result;
 }
 
 
@@ -135,63 +121,48 @@ rs_result rs_job_iter(rs_job_t *job, rs_buffers_t *buffers)
     rs_result       result;
     size_t          orig_in, orig_out;
 
+    rs_job_check(job);
+    assert(buffers);
+
     orig_in  = buffers->avail_in;
     orig_out = buffers->avail_out;
-
     result = rs_job_work(job, buffers);
-
-    if (result == RS_BLOCKED  ||  result == RS_DONE)
+    if (result == RS_BLOCKED || result == RS_DONE)
         if ((orig_in == buffers->avail_in)  &&  (orig_out == buffers->avail_out)
             && orig_in && orig_out) {
             rs_error("internal error: job made no progress "
-		   "[orig_in="FMT_SIZE", orig_out="FMT_SIZE", final_in="FMT_SIZE", final_out="FMT_SIZE"]",
+                   "[orig_in="FMT_SIZE", orig_out="FMT_SIZE", final_in="FMT_SIZE", final_out="FMT_SIZE"]",
                    orig_in, orig_out, buffers->avail_in, buffers->avail_out);
             return RS_INTERNAL_ERROR;
         }
-
     return result;
 }
 
 
-static rs_result
-rs_job_work(rs_job_t *job, rs_buffers_t *buffers)
+static rs_result rs_job_work(rs_job_t *job, rs_buffers_t *buffers)
 {
     rs_result result;
 
     rs_job_check(job);
+    assert(buffers);
 
-    if (!buffers) {
-        rs_error("NULL buffer passed to rs_job_iter");
-        return RS_PARAM_ERROR;
-    }
     job->stream = buffers;
-
     while (1) {
         result = rs_tube_catchup(job);
+        if (result == RS_DONE && job->statefn) {
+            result = job->statefn(job);
+            if (result == RS_DONE) {
+                /* The job is done so clear statefn. */
+                job->statefn = NULL;
+                /* There might be stuff in the tube, so keep running. */
+                continue;
+            }
+        }
         if (result == RS_BLOCKED)
             return result;
-        else if (result != RS_DONE)
+        if (result != RS_RUNNING)
             return rs_job_complete(job, result);
-
-        if (job->statefn == rs_job_s_complete) {
-            if (rs_tube_is_idle(job))
-                return RS_DONE;
-            else
-                return RS_BLOCKED;
-        } else {
-            result = job->statefn(job);
-            if (result == RS_RUNNING)
-                continue;
-            else if (result == RS_BLOCKED)
-                return result;
-            else
-                return rs_job_complete(job, result);
-        }
     }
-
-    /* TODO: Before returning, check that we actually made some
-     * progress.  If not, and we're not returning an error, this is a
-     * bug. */
 }
 
 
@@ -207,7 +178,6 @@ rs_job_input_is_ending(rs_job_t *job)
 {
     return job->stream->eof_in;
 }
-
 
 
 rs_result
