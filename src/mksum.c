@@ -68,7 +68,7 @@ static rs_result rs_sig_s_header(rs_job_t *job)
     rs_result result;
 
     if ((result = rs_signature_init(sig, job->sig_magic, job->sig_block_len,
-				    job->sig_strong_len, 0)) != RS_DONE)
+                                    job->sig_strong_len, 0)) != RS_DONE)
         return result;
     rs_squirt_n4(job, sig->magic);
     rs_squirt_n4(job, sig->block_len);
@@ -122,20 +122,16 @@ rs_sig_s_generate(rs_job_t *job)
     /* must get a whole block, otherwise try again */
     len = job->signature->block_len;
     result = rs_scoop_read(job, len, &block);
-
-    /* unless we're near eof, in which case we'll accept
-     * whatever's in there */
-    if ((result == RS_BLOCKED && rs_job_input_is_ending(job))) {
+    /* If we are near EOF, get whatever is left. */
+    if (result == RS_INPUT_ENDED)
         result = rs_scoop_read_rest(job, &len, &block);
-    } else if (result == RS_INPUT_ENDED) {
+    if (result == RS_INPUT_ENDED) {
         return RS_DONE;
     } else if (result != RS_DONE) {
         rs_trace("generate stopped: %s", rs_strerror(result));
         return result;
     }
-
     rs_trace("got "FMT_SIZE" byte block", len);
-
     return rs_sig_do_block(job, block, len);
 }
 

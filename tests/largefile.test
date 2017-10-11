@@ -54,8 +54,8 @@ if [ ! -f "$old" ]; then
    dd bs=$blocks count=256 skip=640 if="$old" >>"$new"
 fi
 
-run_test time $bindir/rdiff $debug -f -b 1024 -S 8 -s signature $old $sig
-run_test time $bindir/rdiff $debug -f -s -I 32768 -O 32768 delta $sig $new $delta
+run_test time $bindir/rdiff $debug -f -s -b 1024 -S 8 signature $old $sig
+run_test time $bindir/rdiff $debug -f -s delta $sig $new $delta
 run_test time $bindir/rdiff $debug -f -s patch $old $delta $out
 check_compare $new $out "large files"
 true

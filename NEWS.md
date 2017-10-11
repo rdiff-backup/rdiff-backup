@@ -5,21 +5,18 @@
 NOT RELEASED YET
 
  * Extensively reworked Doxygen documentation, now available at
-   http://librsync.sourcefrog.net/
-   (Martin Pool)
+   http://librsync.sourcefrog.net/ (Martin Pool)
 
  * Removed some declarations from librsync.h that were unimplemented or no
-   longer ever useful: `rs_work_options`, `rs_accum_value`.
-   Remove declaration of unimplemented `rs_mdfour_file()`.
-   (Martin Pool)
+   longer ever useful: `rs_work_options`, `rs_accum_value`. Remove
+   declaration of unimplemented `rs_mdfour_file()`. (Martin Pool)
 
  * Remove shipped `snprintf` code: no longer acutally linked after changing to
    CMake, and since it's part of C99 it should be widely available.
    (Martin Pool)
 
  * Document that Ninja (http://ninja-build.org/) is supported under CMake.
-   It's a bit faster and nicer than Make.
-   (Martin Pool)
+   It's a bit faster and nicer than Make. (Martin Pool)
 
  * `make check` (or `ninja check` etc) will now build and run the tests.
    Previously due to a CMake limitation, `make test` would only run existing
@@ -27,8 +24,7 @@ NOT RELEASED YET
    (Martin Pool, https://github.com/librsync/librsync/issues/49)
 
  * Added cmake options to exclude rdiff target and compression from build.
-   See install documentation for details.
-   Thanks to Michele Bertasi.
+   See install documentation for details. Thanks to Michele Bertasi.
 
  * `popt` is only needed when `rdiff` is being built. (gulikoza)
 
@@ -37,23 +33,47 @@ NOT RELEASED YET
    `_fstati64`), and `fileno` (`_fileno`). (dbaarda, charlievieth,
    gulikoza, marius-nicolae)
 
- * `rdiff -s` option now shows bytes read/written and speed. (gulikoza)
+ * `rdiff -s` option now shows bytes read/written and speed. (gulikoza).
+   For delta operations it also shows hashtable match statistics. (dbaarda)
 
  * Running rdiff should not overwrite existing files (signatures, deltas and
    new patched files) by default. If the destination file exists, rdiff will
-   now exit with an error. (gulikoza)
-   Add new option -f (--force) to overwrite existing files.
+   now exit with an error. Add new option -f (--force) to overwrite existing
+   files. (gulikoza)
 
- * Improve signature memory allocation (doubling size instead of
-   calling realloc for every sig block) and added support for
-   preallocation. See streaming.md job->estimated_signature_count for
-   usage when using the library. `rdiff` uses this by default if
-   possible.
+ * Improve signature memory allocation (doubling size instead of calling
+   realloc for every sig block) and added support for preallocation. See
+   streaming.md job->estimated_signature_count for usage when using the
+   library. `rdiff` uses this by default if possible. (gulikoza, dbaarda)
 
- * `stdint.h` and `inttypes.h` from C99 is now required.
+ * Significantly tidied signature handling code and testing, resulting in more
+   consistent error handling behaviour, and making it easier to plug in
+   alternative weak and strong sum implementations. Also fixed "slack delta"
+   support for delta calculation with no signature. (dbaarda)
 
- * New open addressing hashtable implementation that significantly
-   speeds up delta operations, particularly for large files.
+ * `stdint.h` and `inttypes.h` from C99 is now required. Removed redundant
+   librsync-config.h header file. (dbaarda)
+
+ * Lots of small fixes for windows platforms and building with MSVC.
+   (lasalvavida, mbrt, dbaarda)
+
+ * New open addressing hashtable implementation that significantly speeds up
+   delta operations, particularly for large files. Also fixed degenerate
+   behaviour with large number of duplicate blocks like runs of zeros
+   in sparse files. (dbaarda)
+
+ * Optional support with cmake option for using libb2 blake2 implementation.
+   Also updated included reference blake2 implementation with bug fixes
+   (dbaarda).
+
+ * Improved default values for input and output buffer sizes. The defaults are
+   now --input-size=0 and --output-size=0, which will choose recommended
+   default sizes based on the --block-size and the operation being performed.
+   (dbaarda)
+
+ * Fixed hanging for truncated input files. It will now correctly report an
+   error indicating an unexpected EOF was encountered. (dbaarda,
+   https://github.com/librsync/librsync/issues/32)
 
 ## librsync 2.0.0
 
