@@ -428,8 +428,8 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
     rs_job_t *job;
 
     job = rs_job_new("delta", rs_delta_s_header);
-    /* Caller can pass NULL sig for "slack deltas". */
-    if (sig) {
+    /* Caller can pass NULL sig or empty sig for "slack deltas". */
+    if (sig && sig->count > 0) {
         rs_signature_check(sig);
         /* Caller must have called rs_build_hash_table() by now. */
         assert(sig->hashtable);
