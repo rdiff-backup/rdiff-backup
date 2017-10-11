@@ -106,6 +106,15 @@ struct rs_job {
 
 rs_job_t * rs_job_new(const char *, rs_result (*statefn)(rs_job_t *));
 
-void rs_job_check(rs_job_t *job);
-
 int rs_job_input_is_ending(rs_job_t *job);
+
+/** Magic job tag number for checking jobs have been initialized. */
+#define RS_JOB_TAG 20010225
+
+/** Assert that a job is valid.
+ *
+ * We don't use a static inline function here so that assert failure output
+ * points at where rs_job_check() was called from. */
+#define rs_job_check(job) do {\
+    assert(job->dogtag == RS_JOB_TAG);\
+} while (0)

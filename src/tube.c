@@ -131,7 +131,7 @@ rs_tube_copy_from_scoop(rs_job_t *job)
     job->copy_len -= this_len;
 
     rs_trace("caught up on "FMT_SIZE" copied bytes from scoop, "FMT_SIZE" remain there, "FMT_LONG" remain to be copied",
-	     this_len, job->scoop_avail, job->copy_len);
+             this_len, job->scoop_avail, job->copy_len);
 }
 
 
@@ -167,27 +167,22 @@ static void rs_tube_catchup_copy(rs_job_t *job)
  */
 int rs_tube_catchup(rs_job_t *job)
 {
-    if (job->write_len)
-        rs_tube_catchup_write(job);
-
     if (job->write_len) {
-        /* there is still write data queued, so we can't send
-         * anything else. */
-        return RS_BLOCKED;
+        rs_tube_catchup_write(job);
+        if (job->write_len)
+            return RS_BLOCKED;
     }
-
-    if (job->copy_len)
-        rs_tube_catchup_copy(job);
 
     if (job->copy_len) {
-        if (job->stream->eof_in && !job->stream->avail_in && !job->scoop_avail) {
-            rs_error("reached end of file while copying literal data through buffers");
-            return RS_INPUT_ENDED;
+        rs_tube_catchup_copy(job);
+        if (job->copy_len) {
+            if (job->stream->eof_in && !job->stream->avail_in && !job->scoop_avail) {
+                rs_error("reached end of file while copying literal data through buffers");
+                return RS_INPUT_ENDED;
+            }
+            return RS_BLOCKED;
         }
-
-        return RS_BLOCKED;
     }
-
     return RS_DONE;
 }
 
