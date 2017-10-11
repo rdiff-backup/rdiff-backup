@@ -57,8 +57,6 @@
 #include "trace.h"
 
 
-static const int rs_job_tag = 20010225;
-
 static rs_result rs_job_work(rs_job_t *job, rs_buffers_t *buffers);
 
 
@@ -69,7 +67,7 @@ rs_job_t * rs_job_new(char const *job_name, rs_result (*statefn)(rs_job_t *))
     job = rs_alloc_struct(rs_job_t);
 
     job->job_name = job_name;
-    job->dogtag = rs_job_tag;
+    job->dogtag = RS_JOB_TAG;
     job->statefn = statefn;
 
     job->stats.op = job_name;
@@ -78,12 +76,6 @@ rs_job_t * rs_job_new(char const *job_name, rs_result (*statefn)(rs_job_t *))
     rs_trace("start %s job", job_name);
 
     return job;
-}
-
-
-void rs_job_check(rs_job_t *job)
-{
-    assert(job->dogtag == rs_job_tag);
 }
 
 
