@@ -80,7 +80,7 @@ if (NOT POPT_FOUND)
 
   mark_as_advanced (
     POPT_ROOT_DIR
-    POPT_INCLUDES
+    POPT_INCLUDE_DIRS
     POPT_LIBRARIES
     )
 
