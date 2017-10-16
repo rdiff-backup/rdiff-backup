@@ -310,7 +310,7 @@ static inline rs_result rs_appendmatch(rs_job_t *job, rs_long_t match_pos, size_
  * too much in memory. */
 static inline rs_result rs_appendmiss(rs_job_t *job, size_t miss_len)
 {
-    const size_t   max_miss = 4 * job->signature->block_len;
+    const size_t   max_miss = 32768;  /* For 0.01% 3 command bytes overhead. */
     rs_result result=RS_DONE;
 
     /* If last was a match, or max_miss misses, appendflush it. */
