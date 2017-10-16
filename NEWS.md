@@ -82,6 +82,12 @@ NOT RELEASED YET
  * Fixed #33 so rs_job_iter() doesn't need calling twice with eof=1.
    Also tidied and optimized it a bit. (dbaarda,
    https://github.com/librsync/librsync/issues/33)
+   
+ * Fixed #55 remove excessive rs_fatal() calls, replacing checks for
+   programming errors with assert statements. Now rs_fatal() will only
+   be called for rare unrecoverable fatal errors like malloc failures or
+   impossibly large inputs. (dbaarda,
+   https://github.com/librsync/librsync/issues/55)
 
 ## librsync 2.0.0
 
