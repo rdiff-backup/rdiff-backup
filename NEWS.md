@@ -1,8 +1,12 @@
 # librsync NEWS
 
-## librsync 2.0.1
+## librsync 2.0.2
 
 NOT RELEASED YET
+
+## librsync 2.0.1
+
+Released 2017-10-17
 
  * Extensively reworked Doxygen documentation, now available at
    http://librsync.sourcefrog.net/ (Martin Pool)
@@ -74,15 +78,15 @@ NOT RELEASED YET
  * Fixed hanging for truncated input files. It will now correctly report an
    error indicating an unexpected EOF was encountered. (dbaarda,
    https://github.com/librsync/librsync/issues/32)
-   
+
  * Fixed #13 so that faster slack delta's are used for signatures of
    empty files. (dbaarda,
    https://github.com/librsync/librsync/issues/13)
-   
+
  * Fixed #33 so rs_job_iter() doesn't need calling twice with eof=1.
    Also tidied and optimized it a bit. (dbaarda,
    https://github.com/librsync/librsync/issues/33)
-   
+
  * Fixed #55 remove excessive rs_fatal() calls, replacing checks for
    programming errors with assert statements. Now rs_fatal() will only
    be called for rare unrecoverable fatal errors like malloc failures or
