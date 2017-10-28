@@ -561,7 +561,7 @@ probably isn't what you meant.""" %
 		globbing characters are used.
 
 		"""
-		if not filename.startswith(self.prefix):
+		if not filename.startswith(self.prefix + "/"):
 			raise FilePrefixError(filename)
 		index = tuple(filter(lambda x: x,
 							 filename[len(self.prefix):].split("/")))
