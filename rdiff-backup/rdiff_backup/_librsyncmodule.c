@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------- *
- *   
+ *
  *   Copyright 2002 2003 Ben Escoto
  *
  *   This file is part of rdiff-backup.
@@ -51,7 +51,7 @@ _librsync_new_sigmaker(PyObject* self, PyObject* args)
 {
   _librsync_SigMakerObject* sm;
   long blocklen;
-  
+
   if (!PyArg_ParseTuple(args, "l:new_sigmaker", &blocklen))
 	return NULL;
 
@@ -59,8 +59,13 @@ _librsync_new_sigmaker(PyObject* self, PyObject* args)
   if (sm == NULL) return NULL;
   sm->x_attr = NULL;
 
+#ifdef RS_DEFAULT_STRONG_LEN
   sm->sig_job = rs_sig_begin((size_t)blocklen,
-							 (size_t)RS_DEFAULT_STRONG_LEN);
+                (size_t)RS_DEFAULT_STRONG_LEN);
+#else
+  sm->sig_job = rs_sig_begin((size_t)blocklen,
+                (size_t)8, RS_MD4_SIG_MAGIC);
+#endif
   return (PyObject*)sm;
 }
 
@@ -340,7 +345,7 @@ _librsync_new_patchmaker(PyObject* self, PyObject* args)
 	return NULL;
   }
   Py_INCREF(python_file);
-  
+
   pm = PyObject_New(_librsync_PatchMakerObject, &_librsync_PatchMakerType);
   if (pm == NULL) return NULL;
   pm->x_attr = NULL;
