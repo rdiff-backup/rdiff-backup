@@ -86,7 +86,9 @@ static inline int rs_block_match_cmp(rs_block_match_t *match, const rs_block_sig
 /* Get the size of a packed rs_block_sig_t. */
 static inline size_t rs_block_sig_size(const rs_signature_t *sig)
 {
-    return offsetof(rs_block_sig_t, strong_sum) + sig->strong_sum_len;
+    /* Round up to next multiple of sizeof(weak_sum) to align memory correctly. */
+    return offsetof(rs_block_sig_t, strong_sum) + ((sig->strong_sum_len + sizeof(rs_weak_sum_t) - 1) /
+	sizeof(rs_weak_sum_t)) * sizeof(rs_weak_sum_t);
 }
 
 /* Get the pointer to the block_sig_t from a block index. */
