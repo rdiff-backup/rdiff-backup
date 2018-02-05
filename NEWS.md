@@ -14,7 +14,7 @@ NOT RELEASED YET
 
  * Fix hashtable_test.c name collision for key_t in sys/types.h on some
    platforms (dbaarda, https://github.com/librsync/librsync/issues/134)
-   
+
 ## librsync 2.0.1
 
 Released 2017-10-17
