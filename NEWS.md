@@ -4,6 +4,14 @@
 
 NOT RELEASED YET
 
+ * Improve CMake install paths configuration (wRAR,
+   https://github.com/librsync/librsync/pull/133) and platform support
+   checking when cross-compiling (fornwall,
+   https://github.com/librsync/librsync/pull/136).
+
+ * Fix Unaligned memory access for rs_block_sig_init() (dbaarda,
+   https://github.com/librsync/librsync/issues/135).
+
 ## librsync 2.0.1
 
 Released 2017-10-17
