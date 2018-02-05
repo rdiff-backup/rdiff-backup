@@ -57,69 +57,70 @@
  * \param NAME - optional hashtable type basename (default: ENTRY_hashtable).
  *
  * Example: \code
- *   typedef ... key_t;
- *   int key_hash(const key_t *e);
- *   int key_cmp(key_t *e, const key_t *o);
+ *   typedef ... mykey_t;
+ *   int mykey_hash(const mykey_t *e);
+ *   int mykey_cmp(mykey_t *e, const mykey_t *o);
  *
- *   typedef struct entry {
- *     key_t key;  // Inherit from key_t.
+ *   typedef struct myentry {
+ *     mykey_t key;  // Inherit from mykey_t.
  *     ...extra entry value data...
- *   } entry_t;
- *   void entry_init(entry_t *e, ...);
+ *   } myentry_t;
+ *   void myentry_init(myentry_t *e, ...);
  *
- *   #define ENTRY entry
- *   #define KEY key
+ *   #define ENTRY myentry
+ *   #define KEY mykey
  *   #include "hashtable.h"
  *
  *   hashtable_t *t;
- *   entry_t entries[300];
- *   key_t k;
- *   entry_t *e;
+ *   myentry_t entries[300];
+ *   mykey_t k;
+ *   myentry_t *e;
  *
- *   t = entry_hashtable_new(300);
- *   entry_init(&entries[5], ...);
- *   entry_hashtable_add(t, &entries[5]);
+ *   t = myentry_hashtable_new(300);
+ *   myentry_init(&entries[5], ...);
+ *   myentry_hashtable_add(t, &entries[5]);
  *   k = ...;
- *   e = entry_hashtable_find(t, &k);
+ *   e = myentry_hashtable_find(t, &k);
  *
- *   hashtable_iter i;
- *   for (e = entry_hashtable_iter(&i, t); e != NULL; e = entry_hashtable_next(&i))
+ *   hashtable_iter_t i;
+ *   for (e = myentry_hashtable_iter(&i, t); e != NULL;
+ *        e = myentry_hashtable_next(&i))
  *     ...
  *
- *   entry_hashtable_free(t);
+ *   myentry_hashtable_free(t);
  * \endcode
  *
- * The key_hash() and key_cmp() fuctions will typically take pointers
- * to key/entry instances the same as the pointers stored in the
+ * The mykey_hash() and mykey_cmp() fuctions will typically take pointers
+ * to mykey/myentry instances the same as the pointers stored in the
  * hashtable. However it is also possible for them to take "match
  * objects" that are a "subclass" of the entry type that contain
  * additional state for complicated comparision operations.
  *
  * Example: \code
- *   typedef struct match {
- *     key_t key;  // Inherit from key_t;
+ *   typedef struct mymatch {
+ *     mykey_t key;  // Inherit from mykey_t;
  *     ...extra match criteria and state data...
- *   } match_t;
- *   int match_cmp(match_t *m, const entry_t *e);
+ *   } mymatch_t;
+ *   int mymatch_cmp(mymatch_t *m, const myentry_t *e);
  *
- *   #define ENTRY entry
- *   #define KEY key
- *   #define MATCH match
+ *   #define ENTRY myentry
+ *   #define KEY mykey
+ *   #define MATCH mymatch
  *   #include "hashtable.h"
  *
  *   ...
- *   match_t m;
+ *   mymatch_t m;
  *
- *   t = entry_hashtable_new(300);
+ *   t = myentry_hashtable_new(300);
  *   ...
  *   m = ...;
- *   e = entry_hashtable_find(t, &m);
+ *   e = myentry_hashtable_find(t, &m);
  * \endcode
  *
- * The match_cmp() function is only called for finding hashtable
- * entries and can mutate the match_t object for doing things like
+ * The mymatch_cmp() function is only called for finding hashtable
+ * entries and can mutate the mymatch_t object for doing things like
  * deferred and cached evaluation of expensive match data. It can
- * also access the whole entry_t object to match against more than
+ * also access the whole myentry_t object to match against more than
  * just the key. */
 
 /** The hashtable type. */
