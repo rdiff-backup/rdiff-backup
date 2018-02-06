@@ -16,14 +16,15 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-project(librsync)
+project(librsync C)
 cmake_minimum_required(VERSION 2.6)
 
 INCLUDE(CMakeDependentOption)
+include(GNUInstallDirs)
 
 set(LIBRSYNC_MAJOR_VERSION 2)
 set(LIBRSYNC_MINOR_VERSION 0)
-set(LIBRSYNC_PATCH_VERSION 1)
+set(LIBRSYNC_PATCH_VERSION 2)
 
 set(LIBRSYNC_VERSION
   ${LIBRSYNC_MAJOR_VERSION}.${LIBRSYNC_MINOR_VERSION}.${LIBRSYNC_PATCH_VERSION})
@@ -107,9 +108,14 @@ check_type_size ( "unsigned int" SIZEOF_UNSIGNED_INT )
 check_type_size ( "unsigned long" SIZEOF_UNSIGNED_LONG )
 check_type_size ( "unsigned short" SIZEOF_UNSIGNED_SHORT )
 
-# Check for printf "%zu" size_t formating support.
-include(CheckCSourceRuns)
-check_c_source_runs("#include <stdio.h>\nint main(){char o[8];sprintf(o, \"%zu\", (size_t)7);return o[0] != '7';}" HAVE_PRINTF_Z)
+# Check for printf "%zu" size_t formatting support.
+if(CMAKE_CROSSCOMPILING)
+  set(HAVE_PRINTF_Z ON)
+  message (STATUS "Cross compiling - assuming printf \"%zu\" size_t formatting support")
+else()
+  include(CheckCSourceRuns)
+  check_c_source_runs("#include <stdio.h>\nint main(){char o[8];sprintf(o, \"%zu\", (size_t)7);return o[0] != '7';}" HAVE_PRINTF_Z)
+endif()
 
 include (TestBigEndian)
 TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
@@ -124,11 +130,11 @@ if(APPLE)
   set(CMAKE_MACOSX_RPATH ON)
   set(CMAKE_SKIP_BUILD_RPATH FALSE)
   set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" isSystemDir)
   if("${isSystemDir}" STREQUAL "-1")
-    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
   endif()
 endif()
 
@@ -352,7 +358,7 @@ endif (ENABLE_COMPRESSION)
 
 set_target_properties(rsync PROPERTIES VERSION ${LIBRSYNC_VERSION}
         SOVERSION ${LIBRSYNC_MAJOR_VERSION})
-install(TARGETS rsync ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION lib)
+install(TARGETS rsync ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 
 ########### next target ###############
@@ -369,7 +375,7 @@ if (BUILD_RDIFF)
     message (WARNING "Popt library is required for rdiff target")
   endif (POPT_FOUND)
 
-  install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION bin)
+  install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif (BUILD_RDIFF)
 
 
@@ -377,7 +383,7 @@ endif (BUILD_RDIFF)
 
 install(FILES
         src/librsync.h
-        DESTINATION include)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 message (STATUS "CMAKE_C_FLAGS  = ${CMAKE_C_FLAGS}")
 

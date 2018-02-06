@@ -1,74 +1,36 @@
 * Fix symbol names:
 
   * Rename all symbols that are intended to be private to `rs__`
-  
+
   * Rename those that don't match either prefix.
-  
+
 * We have a few functions to do with reading a netint, stashing
   it somewhere, then moving into a different state.  Is it worth
   writing generic functions for that, or would it be too confusing?
 
-* Fix up consecutive matches
+* Duplicate block handling. Currently duplicate blocks are included in
+  the signature, but we only put the first duplicate block in the
+  hashtable so the delta only includes references to the first block.
+  This can result in sub-optimal copy commands, breaking single large
+  copies with duplicate blocks into multiple copies referencing the
+  earlier copy of the block. However, this could also make patching use
+  the disk cache more effectively. This solution is probably fine,
+  particularly given how small copy instructions are, but there might be
+  solutions for improving copy commands for long runs of duplicate blocks.
 
-  We often have several consecutive matches, and we can combine them
-  into a single COPY command.  So far so good.
-
-  In some inputs, there might be several identical blocks.
-
-  When we're matching, we want to prefer to match a block that comes
-  just after the previous match, so that they'll join up nicely into
-  a single larger match.  rsync does this; librsync doesn't at the
-  moment.  It does cause a measurable problem.
-
-  In fact, we could introduce an additional optimization over rsync.
-  Suppose that the block A occurs twice, once followed by B and once
-  by C.  When we first match it, we'll probably make an arbitrary
-  choice of which one to use.  But if we next observe C, then it
-  might be better to have given the offset of the A that precedes C,
-  so that they can be joined into a single copy operation.
-
-  This might be a bit complex.  You can imagine in fact needing an
-  arbitrarily deep lookback.
-
-  As a simpler optimization, we might just try to prefer matching
-  blocks in the same order that they occur in the input.
-  
-  But for now we ought to at least check for consecutive blocks.
-
-  On the other hand, abo says:
-
-       In reality copy's are such a huge gain that merging them efficiently
-       is a bit of a non-issue. Each copy command is only a couple of
-       bytes... who cares if we output twice as many as we need to... it's
-       the misses that take up whole blocks of data that people will notice.
-
-       I believe we are already outputing consecutive blocks as a single
-       "copy" command, but have you looked at the "search" code? We have far
-       more serious problems with the hash-table that need to be fixed first
-       :-)
-
-       We are not getting all the hits that we could due to a limited
-       hash-table, and this is going to make a much bigger difference than
-       optimizing the copy commands.
-  
 * Optimisations and code cleanups;
 
   scoop.c: Scoop needs major refactor. Perhaps the API needs
   tweaking?
 
   rsync.h: rs_buffers_s and rs_buffers_t should be one typedef?
-  
+
   * Just how useful is rs_job_drive anyway?
-  
-  patch.c: rs_patch_s_copying() does alloc, copy free, when it could
-  just copy directly into rs_buffer_t buffer. This _does_ mean the
-  callback can't allocate it's own data, though this can be done by
-  checking if the callback changed the pointer.
 
   mdfour.c: This code has a different API to the RSA code in libmd
   and is coupled with librsync in unhealthy ways (trace?). Recommend
   changing to RSA API?
-   
+
 * Don't use the rs_buffers_t structure.
 
   There's something confusing about the existence of this structure.
@@ -120,10 +82,6 @@
 
   Some are more likely to change than others.  We need a chart
   showing which source files depend on which variable.
-
-* Error handling
-
-  * What happens if the user terminates the request?
 
 * Encoding implementation
 
@@ -180,21 +138,6 @@
     I wonder if we can use similar principles here rather than the
     current simple rolling-sum mechanism?  Could it let us match
     variable-length signatures?
-
-  * Cross-file matches
-
-    If the downstream server had many similar URLs, it might be nice
-    if it could draw on all of them as a basis.  At the moment
-    there's no way to express this, and I think the work of sending
-    up signatures for all of them may be too hard.
-
-    Better just to make sure we choose the best basis if there is
-    none present.  Perhaps this needs to weigh several factors.
-
-    One factor might be that larger files are better because they're
-    more likely to have a match.  I'm not sure if that's very strong,
-    because they'll just bloat the request.  Another is that more
-    recent files might be more useful.
 
 * Support gzip compression of the difference stream.  Does this
   belong here, or should it be in the client and librsync just have
@@ -273,8 +216,6 @@
     on the network, then it's a security boundary.  Make sure that
     corrupt input data can't make the program crash or misbehave.
 
-* Use slprintf not strnprintf, etc.
-
 * Long files
 
   * How do we handle the large signatures required to support large
@@ -282,27 +223,8 @@
     when the length is unknown?  Perhaps we should allow a way for
     the signature to scale up as it grows.
 
-  * What do we need to do to compile in support for this?
-
-    * On GNU, defining `_LARGEFILE_SOURCE` as we now do should be
-      sufficient.
-
-    * SCO and similar things on 32-bit platforms may be more
-      difficult.  Some SCO systems have no 64-bit types at all, so
-      there we will have to do without.
-
-    * On larger Unix platforms we hope that large file support will
-      be the default.
-
 * Perhaps make extracted signatures still be wrapped in commands.
   What would this lead to?
 
   * We'd know how much signature data we expect to read, rather than
     requiring it to be terminated by the caller.
-
-* Only use `inline` if the compiler supports it; perhaps allow it to be
-  disabled or even just let the compiler decide?
-
-* Fall back from `uint8_t` to probably `unsigned char` if necessary.
-
-* Don't randomly use chars and longs; use rs_byte_t and rs_size_t.

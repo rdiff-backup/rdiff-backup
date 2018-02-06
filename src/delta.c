@@ -310,7 +310,7 @@ static inline rs_result rs_appendmatch(rs_job_t *job, rs_long_t match_pos, size_
  * too much in memory. */
 static inline rs_result rs_appendmiss(rs_job_t *job, size_t miss_len)
 {
-    const size_t   max_miss = 4 * job->signature->block_len;
+    const size_t   max_miss = 32768;  /* For 0.01% 3 command bytes overhead. */
     rs_result result=RS_DONE;
 
     /* If last was a match, or max_miss misses, appendflush it. */
@@ -428,8 +428,8 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
     rs_job_t *job;
 
     job = rs_job_new("delta", rs_delta_s_header);
-    /* Caller can pass NULL sig for "slack deltas". */
-    if (sig) {
+    /* Caller can pass NULL sig or empty sig for "slack deltas". */
+    if (sig && sig->count > 0) {
         rs_signature_check(sig);
         /* Caller must have called rs_build_hash_table() by now. */
         assert(sig->hashtable);
