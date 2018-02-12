@@ -27,8 +27,7 @@
                                  */
 
 
-/*
- * delta.c -- Generate in streaming mode an rsync delta given a set of
+/** \file delta.c -- Generate in streaming mode an rsync delta given a set of
  * signatures, and a new file.
  *
  * The size of blocks for signature generation is determined by the
@@ -111,7 +110,6 @@
  * from the scoop and scoop_pos adjusted. Everything gets complicated
  * because the tube can block. When the tube is blocked, no data can be
  * processed.
- *
  */
 
 /* used by rdiff, but now redundant */

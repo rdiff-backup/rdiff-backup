@@ -19,15 +19,14 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-                              /*
+                              /*=
                                | .. after a year and a day, mourning is
                                | dangerous to the survivor and troublesome
                                | to the dead.
                                |              -- Harold Bloom
                                */
 
-/*
- * rdiff.c -- Command-line network-delta tool.
+/** \file rdiff.c -- Command-line network-delta tool.
  *
  * TODO: Add a -z option to gzip/gunzip patches.  This would be
  * somewhat useful, but more importantly a good test of the streaming
@@ -397,6 +396,3 @@ int main(const int argc, const char *argv[])
     poptFreeContext(opcon);
     return result;
 }
-
-/* vim: et sw=4
- */

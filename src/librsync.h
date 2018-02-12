@@ -20,7 +20,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-                              /*
+                              /*=
                                | You should never wear your best
                                | trousers when you go out to fight for
                                | freedom and liberty.
@@ -28,10 +28,7 @@
                                */
 
 
-/*!
- * \file librsync.h
- * \brief Public header for librsync.
- */
+/** \file librsync.h Public header for librsync. */
 
 #ifndef _RSYNC_H
 #define _RSYNC_H
@@ -58,7 +55,7 @@ typedef uint8_t rs_byte_t;
 typedef intmax_t rs_long_t;
 
 
-                          /*
+                          /*=
                            | "The IETF already has more than enough
                            | RFCs that codify the obvious, make
                            | stupidity illegal, support truth,

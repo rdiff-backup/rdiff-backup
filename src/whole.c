@@ -19,15 +19,13 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-                              /*
+                              /*=
                                | Is it possible that software is not
                                | like anything else, that it is meant
                                | to be discarded: that the whole point
                                | is to always see it as a soap bubble?
                                |        -- Alan Perlis
                                */
-
-
 
 #include "config.h"
 

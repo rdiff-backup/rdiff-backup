@@ -20,10 +20,9 @@
  */
 
 
-                              /*
+                              /*=
                                | This is Tranquility Base.
                                */
-
 
 #include "config.h"
 

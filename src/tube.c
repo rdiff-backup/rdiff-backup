@@ -19,7 +19,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-                              /*
+                              /*=
                                | Where a calculator on the ENIAC is
                                | equpped with 18,000 vaccuum tubes and
                                | weighs 30 tons, computers in the
@@ -30,7 +30,7 @@
                                */
 
 
-/* tube: a somewhat elastic but fairly small buffer for data passing
+/** \file tube.c A somewhat elastic but fairly small buffer for data passing
  * through a stream.
  *
  * In most cases the iter can adjust to send just as much data will

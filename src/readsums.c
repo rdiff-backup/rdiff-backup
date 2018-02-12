@@ -1,4 +1,4 @@
-/*=                     -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
  *
@@ -21,8 +21,7 @@
  */
 
 
-/**
- * \file readsums.c
+/** \file readsums.c
  * \brief Load signatures from a file.
  */
 

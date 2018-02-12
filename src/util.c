@@ -19,11 +19,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-                                /* 
+                                /*=
                                  | On heroin, I have all the answers.
                                  */
-
 
 #include "config.h"
 #include <stdlib.h>

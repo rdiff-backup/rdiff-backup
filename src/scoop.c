@@ -1,4 +1,4 @@
-/*=                    -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
+/*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- the library for network deltas
  *
@@ -19,8 +19,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/*
- * scoop.c -- This file deals with readahead from caller-supplied
+/* \file scoop.c This file deals with readahead from caller-supplied
  * buffers.
  *
  * Many functions require a certain minimum amount of input to do their
@@ -52,7 +51,7 @@
  */
 
 
-                              /*
+                              /*=
                                | To walk on water you've gotta sink
                                | in the ice.
                                |   -- Shihad, `The General Electric'.

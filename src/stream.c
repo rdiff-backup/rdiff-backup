@@ -19,12 +19,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-                     /*
-                      * Programming languages should be designed not
-                      * by piling feature on top of feature, but by
-                      * removing the weaknesses and restrictions that
-                      * make additional features appear necessary.
-                      *    -- Revised^5 Report on Scheme
+                     /*=
+                      | Programming languages should be designed not
+                      | by piling feature on top of feature, but by
+                      | removing the weaknesses and restrictions that
+                      | make additional features appear necessary.
+                      |    -- Revised^5 Report on Scheme
                       */
 
 

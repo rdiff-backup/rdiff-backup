@@ -1,34 +1,33 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
  * librsync -- library for network deltas
- * 
+ *
  * Copyright (C) 1999, 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
  * Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation; either version 2.1 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-                            /*
+                            /*=
                              | Ummm, well, OK.  The network's the
                              | network, the computer's the
                              | computer.  Sorry for the confusion.
                              |        -- Sun Microsystems
                              */
 
-/*
- * Network-byte-order output to the tube.
+/** \file netint.c Network-byte-order output to the tube.
  *
  * All the `suck' routines return a result code.  The most common
  * values are RS_DONE if they have enough data, or RS_BLOCKED if there
@@ -37,9 +36,7 @@
  * All the netint operations are done in a fairly simpleminded way,
  * since we don't want to rely on stdint types that may not be
  * available on some platforms.
- */
-
-/*
+ *
  * TODO: If we don't have <stdint.h> (or perhaps even if we do),
  * determine endianness and integer size by hand and use that to do
  * our own conversion routines.  We possibly need this anyhow to do
@@ -147,7 +144,7 @@ rs_suck_byte(rs_job_t *job, unsigned char *v)
 {
     void *inb;
     rs_result result;
-    
+
     if ((result = rs_scoop_read(job, 1, &inb)) == RS_DONE)
         *v = *((unsigned char *) inb);
 
@@ -164,7 +161,7 @@ rs_suck_n4(rs_job_t *job, int *v)
     result = rs_suck_netint(job, &d, 4);
     *v = d;
     return result;
-}        
+}
 
 
 int rs_int_len(rs_long_t val)

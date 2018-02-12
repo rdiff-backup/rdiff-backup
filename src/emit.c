@@ -46,7 +46,7 @@
 #include "job.h"
 
 
-/*
+/**
  * Write the magic for the start of a delta.
  */
 void
@@ -58,7 +58,7 @@ rs_emit_delta_header(rs_job_t *job)
 
 
 
-/* Write a LITERAL command. */
+/** Write a LITERAL command. */
 void
 rs_emit_literal_cmd(rs_job_t *job, int len)
 {

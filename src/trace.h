@@ -19,20 +19,19 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-/*
- * TODO: A function like perror that includes strerror output.  Apache
- * does this by adding flags as well as the severity level which say
- * whether such information should be included.
- */
-
-
-/*
+/** \file trace.h logging functions.
+ *
  * trace may be turned off.
  *
  * error is always on, but you can return and continue in some way
  *
  * fatal terminates the whole process
+ */
+
+/*
+ * TODO: A function like perror that includes strerror output.  Apache
+ * does this by adding flags as well as the severity level which say
+ * whether such information should be included.
  */
 
 #include <inttypes.h>

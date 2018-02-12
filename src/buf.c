@@ -19,14 +19,14 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-                              /*
+                              /*=
                                | Pick a window, Jimmy, you're leaving.
                                */
 
 
-/*
- * buf.c -- Buffers that map between stdio file streams and librsync
- * streams.  As the stream consumes input and produces output, it is
+/** \file buf.c Buffers that map between stdio file streams and librsync streams.
+ *
+ * As the stream consumes input and produces output, it is
  * refilled from appropriate input and output FILEs.  A dynamically
  * allocated buffer of configurable size is used as an intermediary.
  *

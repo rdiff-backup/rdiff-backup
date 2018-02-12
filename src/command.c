@@ -19,7 +19,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
 #include "config.h"
 
 #include <assert.h>
@@ -41,7 +40,7 @@ struct rs_op_kind_name const rs_op_kind_names[] = {
 };
 
 
-/*
+/**
  * Return a human-readable name for KIND.
  */
 char const * rs_op_kind_name(enum rs_op_kind kind)

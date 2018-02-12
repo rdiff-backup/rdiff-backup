@@ -22,8 +22,7 @@
 #include "mdfour.h"
 #include "rollsum.h"
 
-/**
- * \struct rs_job
+/** \struct rs_job
  * The contents of this structure are private.
  */
 struct rs_job {

@@ -33,7 +33,7 @@
 #include "blake2.h"
 
 
-/* A simple 32bit checksum that can be incrementally updated. */
+/** A simple 32bit checksum that can be incrementally updated. */
 rs_weak_sum_t rs_calc_weak_sum(void const *buf, size_t len)
 {
     Rollsum sum;
