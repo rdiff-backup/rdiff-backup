@@ -229,10 +229,11 @@ add_custom_target(tidy
     # format them correctly. Rather than do that, we just postprocess with sed.
     #
     # Linux format with no tabs, indent 4, 120 wide code, 80 wide comments, format column1 comments.
-    COMMAND indent -linux -nut -i4 -l120 -lc80 -fc1 -fca -T FILE -T Rollsum -T rs_result ${tidy_SRCS}
-    # Remove space between * or & and identifier after userdefined types, and
-    # remove space after type cast for userdefined types like indent -ncs.
-    COMMAND sed -r -i "s:((${TYPE_RE}|${CAST_RE}) (&|\\*+)) :\\1:g; s:(${CAST_RE}) :\\1:g;" ${tidy_SRCS}
+    COMMAND indent -linux -nut -i4 -l120 -lc80 -fc1 -fca -sob -T FILE -T Rollsum -T rs_result ${tidy_SRCS}
+    # Remove space between * or & and identifier after userdefined types,
+    # remove space after type cast for userdefined types like indent -ncs,
+    #and remove trailing whitespace.
+    COMMAND sed -r -i "s:((${TYPE_RE}|${CAST_RE}) (&|\\*+)) :\\1:g; s:(${CAST_RE}) :\\1:g; s:\\s+$::" ${tidy_SRCS}
     VERBATIM
 )
 # Code tidyc target to reformat all code and comments with https://github.com/dbaarda/tidyc.
