@@ -52,8 +52,11 @@
  * wrappers around void* implementation methods for compactness.
  *
  * \param ENTRY - the entry type basename.
+ *
  * \param KEY - optional key type basename (default: ENTRY).
+ *
  * \param MATCH - optional match type basename (default: KEY).
+ *
  * \param NAME - optional hashtable type basename (default: ENTRY_hashtable).
  *
  * Example: \code
@@ -255,6 +258,7 @@ static inline void _FUNC(_stats_init)(hashtable_t *t)
  * first.
  *
  * \param *t - The hashtable to add to.
+ *
  * \param *e - The entry object to add.
  *
  * \return The added entry, or NULL if the table is full. */
@@ -275,6 +279,7 @@ static inline ENTRY_T *_FUNC(_add)(hashtable_t *t, ENTRY_T *e)
  * same hash() bucket.
  *
  * \param *t - The hashtable to search.
+ *
  * \param *m - The key or match object to search for.
  *
  * \return The first found entry, or NULL if nothing was found. */
@@ -308,6 +313,7 @@ static inline ENTRY_T *_FUNC(_find)(hashtable_t *t, MATCH_T *m)
  * \endcode
  *
  * \param *i - the hashtable iterator to initialize.
+ *
  * \param *t - the hashtable to iterate over.
  *
  * \return The first entry or NULL if the hashtable is empty. */
