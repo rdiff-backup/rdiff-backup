@@ -48,9 +48,7 @@
  * Therefore, when we emit a COPY command, we have to send it with a
  * length that is the same as the block matched, and not the block
  * length from the signature.
- */
-
-/*
+ *
  * Profiling results as of v1.26, 2001-03-18:
  *
  * If everything matches, then we spend almost all our time in
@@ -58,25 +56,7 @@
  * good profile.
  *
  * If nothing matches, it is not so good.
- */
-
-
-#include "config.h"
-
-#include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
-
-#include "librsync.h"
-#include "emit.h"
-#include "stream.h"
-#include "util.h"
-#include "sumset.h"
-#include "job.h"
-#include "trace.h"
-#include "rollsum.h"
-
-/**
+ *
  * 2002-06-26: Donovan Baarda
  *
  * The following is based entirely on pysync. It is much cleaner than the
@@ -112,6 +92,21 @@
  * processed.
  */
 
+#include "config.h"
+
+#include <assert.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "librsync.h"
+#include "emit.h"
+#include "stream.h"
+#include "util.h"
+#include "sumset.h"
+#include "job.h"
+#include "trace.h"
+#include "rollsum.h"
+
 /* used by rdiff, but now redundant */
 int rs_roll_paranoia = 0;
 
@@ -126,8 +121,7 @@ static inline rs_result rs_appendflush(rs_job_t *job);
 static inline rs_result rs_processmatch(rs_job_t *job);
 static inline rs_result rs_processmiss(rs_job_t *job);
 
-/**
- * \brief Get a block of data if possible, and see if it matches.
+/** Get a block of data if possible, and see if it matches.
  *
  * On each call, we try to process all of the input data available on the
  * scoop and input buffer. */
@@ -237,12 +231,12 @@ static inline void rs_getinput(rs_job_t *job) {
 }
 
 
-/**
- * find a match at scoop_pos, returning the match_pos and match_len.
+/** find a match at scoop_pos, returning the match_pos and match_len.
+ *
  * Note that this will calculate weak_sum if required. It will also
  * determine the match_len.
  *
- * Note that this routine could be modified to do xdelta style matches that
+ * This routine could be modified to do xdelta style matches that
  * would extend matches past block boundaries by matching backwards and
  * forwards beyond the block boundaries. Extending backwards would require
  * decrementing scoop_pos as appropriate.
@@ -272,8 +266,7 @@ static inline int rs_findmatch(rs_job_t *job, rs_long_t *match_pos, size_t *matc
 }
 
 
-/**
- * Append a match at match_pos of length match_len to the delta, extending
+/** Append a match at match_pos of length match_len to the delta, extending
  * a previous match if possible, or flushing any previous miss/match. */
 static inline rs_result rs_appendmatch(rs_job_t *job, rs_long_t match_pos, size_t match_len)
 {
@@ -300,11 +293,10 @@ static inline rs_result rs_appendmatch(rs_job_t *job, rs_long_t match_pos, size_
 }
 
 
-/**
- * Append a miss of length miss_len to the delta, extending a previous miss
+/** Append a miss of length miss_len to the delta, extending a previous miss
  * if possible, or flushing any previous match.
  *
- * This also breaks misses up into 4*block_len segments to avoid accumulating
+ * This also breaks misses up into 32KB segments to avoid accumulating
  * too much in memory. */
 static inline rs_result rs_appendmiss(rs_job_t *job, size_t miss_len)
 {
@@ -321,9 +313,7 @@ static inline rs_result rs_appendmiss(rs_job_t *job, size_t miss_len)
 }
 
 
-/**
- * Flush any accumulating hit or miss, appending it to the delta.
- */
+/** Flush any accumulating hit or miss, appending it to the delta. */
 static inline rs_result rs_appendflush(rs_job_t *job)
 {
     /* if last is a match, emit it and reset last by resetting basis_len */
@@ -343,7 +333,8 @@ static inline rs_result rs_appendflush(rs_job_t *job)
 }
 
 
-/**
+/** Process matching data in the scoop.
+ *
  * The scoop contains match data at scoop_next of length scoop_pos. This
  * function processes that match data, returning RS_DONE if it completes,
  * or RS_BLOCKED if it gets blocked. After it completes scoop_pos is reset
@@ -361,7 +352,8 @@ static inline rs_result rs_processmatch(rs_job_t *job)
     return rs_tube_catchup(job);
 }
 
-/**
+/** Process miss data in the scoop.
+ *
  * The scoop contains miss data at scoop_next of length scoop_pos. This
  * function processes that miss data, returning RS_DONE if it completes, or
  * RS_BLOCKED if it gets blocked. After it completes scoop_pos is reset to
@@ -383,10 +375,8 @@ static inline rs_result rs_processmiss(rs_job_t *job)
 }
 
 
-/**
- * \brief State function that does a slack delta containing only
- * literal data to recreate the input.
- */
+/** State function that does a slack delta containing only
+ * literal data to recreate the input. */
 static rs_result rs_delta_s_slack(rs_job_t *job)
 {
     rs_buffers_t * const stream = job->stream;
@@ -405,9 +395,7 @@ static rs_result rs_delta_s_slack(rs_job_t *job)
 }
 
 
-/**
- * State function for writing out the header of the encoding job.
- */
+/** State function for writing out the header of the encoding job. */
 static rs_result rs_delta_s_header(rs_job_t *job)
 {
     rs_emit_delta_header(job);
