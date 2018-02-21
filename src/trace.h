@@ -23,16 +23,13 @@
  *
  * trace may be turned off.
  *
- * error is always on, but you can return and continue in some way
+ * error is always on, but you can return and continue in some way.
  *
- * fatal terminates the whole process
- */
-
-/*
- * TODO: A function like perror that includes strerror output.  Apache
+ * fatal terminates the whole process.
+ *
+ * \todo A function like perror that includes strerror output.  Apache
  * does this by adding flags as well as the severity level which say
- * whether such information should be included.
- */
+ * whether such information should be included. */
 
 #include <inttypes.h>
 /* Printf format patters for standard librsync types. */
@@ -47,10 +44,8 @@
 
 
 #if defined(__clang__) || defined(__GNUC__)
-/*
- * TODO: Also look for the C9X predefined identifier `_function', or
- * whatever it's called.
- */
+/** \todo Also look for the C9X predefined identifier `_function', or
+ * whatever it's called. */
 
 void rs_log0(int level, char const *fn, char const *fmt, ...)
     __attribute__ ((format(printf, 3, 4)));
@@ -102,12 +97,10 @@ enum {
 };
 
 
-/**
- * \macro rs_trace_enabled()
+/** \macro rs_trace_enabled()
  *
  * Call this before putting too much effort into generating trace
- * messages.
- */
+ * messages. */
 
 extern int rs_trace_level;
 
