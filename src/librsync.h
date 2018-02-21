@@ -27,7 +27,6 @@
                                |        -- Henrik Ibsen
                                */
 
-
 /** \file librsync.h Public header for librsync. */
 
 #ifndef _RSYNC_H
@@ -53,7 +52,6 @@ extern char const rs_licence_string[];
 typedef uint8_t rs_byte_t;
 typedef intmax_t rs_long_t;
 
-
                           /*=
                            | "The IETF already has more than enough
                            | RFCs that codify the obvious, make
@@ -64,7 +62,6 @@ typedef intmax_t rs_long_t;
                            | Process."
                            |     -- Vernon Schryver
                            */
-
 
 /** A uint32 magic number, emitted in bigendian/network order at the start of
  * librsync files. */
@@ -161,10 +158,8 @@ void     rs_hexify(char *to_buf, void const *from_buf, int from_len);
  * \returns The number of binary bytes. */
 size_t rs_unbase64(char *s);
 
-
 /** Encode a buffer as base64. */
 void rs_base64(unsigned char const *buf, int n, char *out);
-
 
 /** \enum rs_result Return codes from nonblocking rsync operations.
  *
@@ -173,13 +168,10 @@ void rs_base64(unsigned char const *buf, int n, char *out);
 typedef enum rs_result {
     RS_DONE =        0,    /**< Completed successfully. */
     RS_BLOCKED =    1,     /**< Blocked waiting for more data. */
-
     RS_RUNNING  =       2, /**< The job is still running, and not yet finished
 			    * or blocked. (This value should never be seen by
 			    * the application.) */
-
     RS_TEST_SKIPPED =   77,     /**< Test neither passed or failed. */
-
     RS_IO_ERROR =    100,    /**< Error in file or network IO. */
     RS_SYNTAX_ERROR =   101,    /**< Command line syntax error. */
     RS_MEM_ERROR =    102,    /**< Out of memory. */
@@ -198,10 +190,8 @@ typedef enum rs_result {
                                  * probably an application bug. */
 } rs_result;
 
-
 /** Return an English description of a ::rs_result value. */
 char const *rs_strerror(rs_result r);
-
 
 /** Performance statistics from a librsync encoding or decoding
  * operation.
@@ -287,7 +277,6 @@ char *rs_format_stats(rs_stats_t const *stats, char *buf, size_t size);
  */
 int rs_log_stats(rs_stats_t const *stats);
 
-
 /**
  * \typedef rs_signature_t
  */
@@ -302,7 +291,6 @@ void rs_free_sumset(rs_signature_t *);
  * Dump signatures to the log.
  */
 void rs_sumset_dump(rs_signature_t const *);
-
 
 /**
  * Description of input and output buffers.
@@ -382,7 +370,6 @@ typedef struct rs_buffers_s rs_buffers_t;
 /** Default block length, if not determined by any other factors. */
 #define RS_DEFAULT_BLOCK_LEN 2048
 
-
 /** Job of work to be done.
  *
  * Created by functions such as rs_sig_begin(), and then iterated
@@ -394,7 +381,6 @@ typedef struct rs_buffers_s rs_buffers_t;
  * \sa \ref api_streaming
  * \sa rs_job */
 typedef struct rs_job rs_job_t;
-
 
 /** Run a ::rs_job state machine until it blocks
  * (::RS_BLOCKED), returns an error, or completes (::RS_DONE).
@@ -456,7 +442,6 @@ rs_job_t *rs_sig_begin(size_t new_block_len,
  * delta format. */
 rs_job_t *rs_delta_begin(rs_signature_t *);
 
-
 /** Read a signature from a file into an ::rs_signature structure
  * in memory.
  *
@@ -467,12 +452,10 @@ rs_job_t *rs_delta_begin(rs_signature_t *);
  * \ref rs_build_hash_table() before you can use them. */
 rs_job_t *rs_loadsig_begin(rs_signature_t **);
 
-
 /** Call this after loading a signature to index it.
  *
  * Use rs_free_sumset() to release it after use. */
 rs_result rs_build_hash_table(rs_signature_t* sums);
-
 
 /** Callback used to retrieve parts of the basis file.
  *
@@ -487,8 +470,6 @@ rs_result rs_build_hash_table(rs_signature_t* sums);
  * prefers. */
 typedef rs_result rs_copy_cb(void *opaque, rs_long_t pos,
                              size_t *len, void **buf);
-
-
 
 /** Apply a \a delta to a \a basis file to recreate
  * the \a new file.
@@ -513,7 +494,6 @@ typedef rs_result rs_copy_cb(void *opaque, rs_long_t pos,
  * \sa \ref api_streaming */
 rs_job_t *rs_patch_begin(rs_copy_cb *copy_cb, void *copy_arg);
 
-
 #ifndef RSYNC_NO_STDIO_INTERFACE
 #include <stdio.h>
 
@@ -524,7 +504,6 @@ rs_job_t *rs_patch_begin(rs_copy_cb *copy_cb, void *copy_arg);
  * recommended sizes. You probably only need to change these in
  * testing. */
 extern int rs_inbuflen, rs_outbuflen;
-
 
 /** Generate the signature of a basis file, and write it out to
  * another.
@@ -563,12 +542,10 @@ rs_result rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset,
 /** ::rs_copy_cb that reads from a stdio file. */
 rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf);
 
-
 /** Generate a delta between a signature and a new file into a delta file.
  *
  * \sa \ref api_whole */
 rs_result rs_delta_file(rs_signature_t *, FILE *new_file, FILE *delta_file, rs_stats_t *);
-
 
 /** Apply a patch, relative to a basis, into a new file.
  *
