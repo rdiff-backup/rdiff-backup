@@ -19,7 +19,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* \file scoop.c This file deals with readahead from caller-supplied
+/** \file scoop.c This file deals with readahead from caller-supplied
  * buffers.
  *
  * Many functions require a certain minimum amount of input to do their
@@ -39,9 +39,7 @@
  *
  * As a future optimization, we might try to take data directly from the
  * input buffer if there's already enough there.
- */
-
-/*
+ *
  * TODO: We probably know a maximum amount of data that can be scooped
  * up, so we could just avoid dynamic allocation.  However that can't
  * be fixed at compile time, because when generating a delta it needs
@@ -49,7 +47,6 @@
  * up when the job is allocated?  It would be kind of nice to not do
  * any memory allocation after startup, as bzlib does this.
  */
-
 
                               /*=
                                | To walk on water you've gotta sink
@@ -71,9 +68,7 @@
 #include "util.h"
 
 
-/**
- * Try to accept a from the input buffer to get LEN bytes in the scoop.
- */
+/** Try to accept a from the input buffer to get LEN bytes in the scoop. */
 void rs_scoop_input(rs_job_t *job, size_t len)
 {
     rs_buffers_t *stream = job->stream;
@@ -101,7 +96,6 @@ void rs_scoop_input(rs_job_t *job, size_t len)
         memmove(job->scoop_buf, job->scoop_next, job->scoop_avail);
         job->scoop_next = job->scoop_buf;
     }
-
     /* take as much input as is available, to give up to LEN bytes
      * in the scoop. */
     tocopy = len - job->scoop_avail;
@@ -116,16 +110,15 @@ void rs_scoop_input(rs_job_t *job, size_t len)
     stream->avail_in -= tocopy;
 }
 
-
-/**
- * Advance the input cursor forward \p len bytes.  This is used after
- * doing readahead, when you decide you want to keep it.  \p len must
- * be no more than the amount of available data, so you can't cheat.
+/** Advance the input cursor forward \p len bytes.
+ *
+ * This is used after doing readahead, when you decide you want to keep it.
+ * \p len must be no more than the amount of available data, so you can't
+ * cheat.
  *
  * So when creating a delta, we require one block of readahead.  But
  * after examining that block, we might decide to advance over all of
- * it (if there is a match), or just one byte (if not).
- */
+ * it (if there is a match), or just one byte (if not). */
 void rs_scoop_advance(rs_job_t *job, size_t len)
 {
     rs_buffers_t *stream = job->stream;
@@ -147,8 +140,6 @@ void rs_scoop_advance(rs_job_t *job, size_t len)
     }
 }
 
-
-
 /** Read from scoop without advancing.
  *
  * Ask for LEN bytes of input from the stream.  If that much data is
@@ -159,8 +150,7 @@ void rs_scoop_advance(rs_job_t *job, size_t len)
  *
  * The data is not actually removed from the input, so this function
  * lets you do readahead.  If you want to keep any of the data, you
- * should also call rs_scoop_advance() to skip over it.
- */
+ * should also call rs_scoop_advance() to skip over it. */
 rs_result rs_scoop_readahead(rs_job_t *job, size_t len, void **ptr)
 {
     rs_buffers_t *stream = job->stream;
@@ -192,7 +182,6 @@ rs_result rs_scoop_readahead(rs_job_t *job, size_t len, void **ptr)
     }
 }
 
-
 /** Read LEN bytes if possible, and remove them from the input scoop.
  *
  * \param ptr will be updated to point to a read-only buffer holding
@@ -210,7 +199,6 @@ rs_result rs_scoop_read(rs_job_t *job, size_t len, void **ptr)
         rs_scoop_advance(job, len);
     return result;
 }
-
 
 /** Read whatever data remains in the input stream.
  *
@@ -233,11 +221,8 @@ rs_result rs_scoop_read_rest(rs_job_t *job, size_t *len, void **ptr)
         return RS_BLOCKED;
 }
 
-
-/**
- * Return the total number of bytes available including the scoop and input
- * buffer.
- */
+/** Return the total number of bytes available including the scoop and input
+ * buffer. */
 size_t rs_scoop_total_avail(rs_job_t *job)
 {
     return job->scoop_avail + job->stream->avail_in;
