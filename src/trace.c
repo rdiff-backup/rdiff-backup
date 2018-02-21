@@ -26,12 +26,10 @@
                                       | There are lumps in it.
                                       */
 
-
-
-/*
- * TODO: Have a bit set in the log level that says not to include the
- * function name.
- */
+/** \file trace.c logging and debugging output.
+ *
+ * \todo Have a bit set in the log level that says not to include the
+ * function name. */
 
 #include "config.h"
 #ifdef HAVE_UNISTD_H
@@ -65,20 +63,13 @@ int rs_trace_level = RS_LOG_INFO;
 
 static void rs_log_va(int level, char const *fn, char const *fmt, va_list va);
 
-
-/**
- * Log severity strings, if any.  Must match ordering in
- * ::rs_loglevel.
- */
+/** Log severity strings, if any.  Must match ordering in ::rs_loglevel. */
 static const char *rs_severities[] = {
     "EMERGENCY! ", "ALERT! ", "CRITICAL! ", "ERROR: ", "Warning: ",
     "", "", ""
 };
 
-
-
-/**
- * \brief Set the destination of trace information.
+/** Set the destination of trace information.
  *
  * The callback scheme allows for use within applications that may
  * have their own particular ways of reporting errors: log files for a
@@ -93,13 +84,11 @@ rs_trace_to(rs_trace_fn_t * new_impl)
     rs_trace_impl = new_impl;
 }
 
-
 void
 rs_trace_set_level(rs_loglevel level)
 {
     rs_trace_level = level;
 }
-
 
 static void
 rs_log_va(int flags, char const *fn, char const *fmt, va_list va)
@@ -124,12 +113,8 @@ rs_log_va(int flags, char const *fn, char const *fmt, va_list va)
     }
 }
 
-
-
-/**
- * Called by a macro, used on platforms where we can't determine the
- * calling function name.
- */
+/* Called by a macro, used on platforms where we can't determine the
+   calling function name. */
 void
 rs_log0_nofn(int level, char const *fmt, ...)
 {
@@ -140,9 +125,8 @@ rs_log0_nofn(int level, char const *fmt, ...)
     va_end(va);
 }
 
-
 /* Called by a macro that prepends the calling function name,
- * etc.  */
+   etc.  */
 void
 rs_log0(int level, char const *fn, char const *fmt, ...)
 {
@@ -153,7 +137,6 @@ rs_log0(int level, char const *fn, char const *fmt, ...)
     va_end(va);
 }
 
-
 void
 rs_trace_stderr(rs_loglevel UNUSED(level), char const *msg)
 {
@@ -161,9 +144,8 @@ rs_trace_stderr(rs_loglevel UNUSED(level), char const *msg)
     write(STDERR_FILENO, msg, strlen(msg));
 }
 
-
 /* This is called directly if the machine doesn't allow varargs
- * macros. */
+   macros. */
 void
 rs_fatal0(char const *s, ...)
 {
@@ -175,9 +157,8 @@ rs_fatal0(char const *s, ...)
     abort();
 }
 
-
 /* This is called directly if the machine doesn't allow varargs
- * macros. */
+   macros. */
 void
 rs_error0(char const *s, ...)
 {
@@ -188,9 +169,8 @@ rs_error0(char const *s, ...)
     va_end(va);
 }
 
-
 /* This is called directly if the machine doesn't allow varargs
- * macros. */
+   macros. */
 void
 rs_trace0(char const *s, ...)
 {
@@ -202,7 +182,6 @@ rs_trace0(char const *s, ...)
     va_end(va);
 #endif /* !DO_RS_TRACE */
 }
-
 
 int
 rs_supports_trace(void)
