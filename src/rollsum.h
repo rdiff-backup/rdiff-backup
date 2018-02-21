@@ -29,9 +29,7 @@
  * checksum algorithm: tridge suggests a prime number. */
 #define ROLLSUM_CHAR_OFFSET 31
 
-/* the Rollsum struct type*/
-
-/** \private */
+/** The Rollsum struct type \private. */
 typedef struct _Rollsum {
     size_t count;               /* count of bytes included in sum */
     uint_fast16_t s1;           /* s1 part of sum */
@@ -41,6 +39,7 @@ typedef struct _Rollsum {
 void RollsumUpdate(Rollsum *sum, const unsigned char *buf, size_t len);
 
 /* static inline implementations of simple routines */
+
 static inline void RollsumInit(Rollsum *sum)
 {
     sum->count = sum->s1 = sum->s2 = 0;
