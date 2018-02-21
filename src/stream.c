@@ -27,8 +27,11 @@
                       |    -- Revised^5 Report on Scheme
                       */
 
-
-/*
+/** \file stream.c Manage librsync streams of IO.
+ *
+ * See \sa scoop.c and \sa tube.c for related code for input and output
+ * respectively.
+ *
  * OK, so I'll admit IO here is a little complex.  The most important
  * player here is the stream, which is an object for managing filter
  * operations.  It has both input and output sides, both of which is
@@ -52,11 +55,6 @@
  *
  * So on return from an encoding function, either the input or the
  * output or possibly both will have no more bytes available.
- */
-
-/*
- * Manage librsync streams of IO.  See scoop.c and tube.c for related
- * code for input and output respectively.
  *
  * librsync never does IO or memory allocation, but relies on the
  * caller.  This is very nice for integration, but means that we have
@@ -78,10 +76,9 @@
  * On each call into a stream iterator, it should begin by trying to
  * flush output.  This may well use up all the remaining stream space,
  * in which case nothing else can be done.
- */
-
-/* TODO: Return errors rather than aborting if something goes wrong.  */
-
+ *
+ * TODO: Kill this file and move the vestigial code remaining closer to where
+ * it's used.  */
 
 #include "config.h"
 
@@ -95,11 +92,9 @@
 #include "util.h"
 #include "trace.h"
 
-
-/**
- * \brief Copy up to \p max_len bytes from input of \b stream to its output.
+/** Copy up to \p max_len bytes from input of \b stream to its output.
  *
- * Return the number of bytes actually copied, which may be less than
+ * \return the number of bytes actually copied, which may be less than
  * LEN if there is not enough space in one or the other stream.
  *
  * This always does the copy immediately.  Most functions should call
@@ -138,8 +133,8 @@ int rs_buffers_copy(rs_buffers_t *stream, int max_len)
     return len;
 }
 
-
-/**
+/** Assert input is empty or output is full.
+ *
  * Whenever a stream processing function exits, it should have done so
  * because it has either consumed all the input or has filled the
  * output buffer.  This function checks that simple postcondition.
