@@ -19,16 +19,11 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-/*
- * TODO: Pluggable encoding formats:
+/** \file emit.c encoding output routines.
  *
- *  - gdiff-style
- *  - rsync 24
- *  - ed (text)
- *  - Delta HTTP
+ * \todo Pluggable encoding formats: gdiff-style, rsync 24, ed (text),
+ * Delta HTTP.
  */
-
 
 #include "config.h"
 
@@ -46,9 +41,7 @@
 #include "job.h"
 
 
-/**
- * Write the magic for the start of a delta.
- */
+/** Write the magic for the start of a delta. */
 void
 rs_emit_delta_header(rs_job_t *job)
 {
@@ -129,7 +122,7 @@ rs_emit_copy_cmd(rs_job_t *job, rs_long_t where, rs_long_t len)
     stats->copy_bytes += len;
     stats->copy_cmdbytes += 1 + where_bytes + len_bytes;
 
-    /* TODO: All the stats */
+    /* \todo All the stats */
 }
 
 

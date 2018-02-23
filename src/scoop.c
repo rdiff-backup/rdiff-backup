@@ -19,6 +19,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+                              /*=
+                               | To walk on water you've gotta sink
+                               | in the ice.
+                               |   -- Shihad, `The General Electric'.
+                               */
+
 /** \file scoop.c This file deals with readahead from caller-supplied
  * buffers.
  *
@@ -40,19 +46,13 @@
  * As a future optimization, we might try to take data directly from the
  * input buffer if there's already enough there.
  *
- * TODO: We probably know a maximum amount of data that can be scooped
+ * \todo We probably know a maximum amount of data that can be scooped
  * up, so we could just avoid dynamic allocation.  However that can't
  * be fixed at compile time, because when generating a delta it needs
  * to be large enough to hold one full block.  Perhaps we can set it
  * up when the job is allocated?  It would be kind of nice to not do
  * any memory allocation after startup, as bzlib does this.
  */
-
-                              /*=
-                               | To walk on water you've gotta sink
-                               | in the ice.
-                               |   -- Shihad, `The General Electric'.
-                               */
 
 #include "config.h"
 

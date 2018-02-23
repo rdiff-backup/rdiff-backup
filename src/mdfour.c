@@ -21,9 +21,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* MD4 message digest algorithm.
+/** \file mdfour.c MD4 message digest algorithm.
  *
- * TODO: Perhaps use the MD4 routine from OpenSSL if it's installed.
+ * \todo Perhaps use the MD4 routine from OpenSSL if it's installed.
  * It's probably not worth the trouble.
  *
  * This was originally written by Andrew Tridgell for use in Samba.

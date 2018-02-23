@@ -37,7 +37,7 @@
  * since we don't want to rely on stdint types that may not be
  * available on some platforms.
  *
- * TODO: If we don't have <stdint.h> (or perhaps even if we do),
+ * \todo If we don't have <stdint.h> (or perhaps even if we do),
  * determine endianness and integer size by hand and use that to do
  * our own conversion routines.  We possibly need this anyhow to do
  * 64-bit integers, since there seems to be no ntohs() analog.

@@ -77,7 +77,7 @@
  * flush output.  This may well use up all the remaining stream space,
  * in which case nothing else can be done.
  *
- * TODO: Kill this file and move the vestigial code remaining closer to where
+ * \todo Kill this file and move the vestigial code remaining closer to where
  * it's used.  */
 
 #include "config.h"

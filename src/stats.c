@@ -17,6 +17,10 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+/** \file stats.c stats reporting functions.
+ *
+ * \todo Other things to show in statistics: number of input and output bytes,
+ * number of times we blocked waiting for input or output, number of blocks. */
 
 #include "config.h"
 
@@ -32,16 +36,6 @@
 
 #include "librsync.h"
 #include "trace.h"
-
-/*
- * TODO: Other things to show in statistics:
- *
- * Number of input and output bytes.
- *
- * Number of times we blocked waiting for input or output.
- *
- * Number of blocks.
- */
 
 int
 rs_log_stats(rs_stats_t const *stats)

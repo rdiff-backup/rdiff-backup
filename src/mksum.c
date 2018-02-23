@@ -28,9 +28,8 @@
  * process whatever data is available.  When a whole block has
  * arrived, or we've reached the end of the file, we write the
  * checksum out.
- */
-
-/* TODO: Perhaps force blocks to be a multiple of 64 bytes, so that we
+ *
+ * \todo Perhaps force blocks to be a multiple of 64 bytes, so that we
  * can be sure checksum generation will be more efficient.  I guess it
  * will be OK at the moment, though, because tails are only used if
  * necessary. */
