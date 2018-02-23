@@ -230,8 +230,8 @@ add_custom_target(tidy
     #
     # Hide the enclosing 'extern "C" {...}' block for indenting in librsync.h
     COMMAND sed -r -i "s:^(extern \"C\") \\{:\\1;:; s:^\\}(\\s+/\\* extern \"C\" \\*/):;\\1:" src/librsync.h
-    # Linux format with no tabs, indent 4, 120 wide code, 80 wide comments, format column1 comments.
-    COMMAND indent -linux -nut -i4 -l120 -lc80 -fc1 -fca -sob -T FILE -T Rollsum -T rs_result ${tidy_SRCS}
+    # Linux format with no tabs, indent 4, preproc indent 2, 80 columns, format comments, swallow blank lines.
+    COMMAND indent -linux -nut -i4 -ppi2 -l80 -lc80 -fc1 -fca -sob -T FILE -T Rollsum -T rs_result ${tidy_SRCS}
     # Remove space between * or & and identifier after userdefined types,
     # remove space after type cast for userdefined types like indent -ncs,
     #and remove trailing whitespace.
@@ -243,8 +243,8 @@ add_custom_target(tidy
 # Code tidyc target to reformat all code and comments with https://github.com/dbaarda/tidyc.
 add_custom_target(tidyc
     COMMENT "Reformatting all code and comments to preferred coding style."
-    # Recomended format, reformat linebreaks, reformat comments, reformat docbook, docbook autobrief.
-    COMMAND tidyc -R -C -ppi0 -T FILE -T Rollsum -T rs_result ${tidy_SRCS}
+    # Recomended format, reformat linebreaks, reformat comments, 80 columns.
+    COMMAND tidyc -R -C -l80 -T FILE -T Rollsum -T rs_result ${tidy_SRCS}
     VERBATIM
 )
 
