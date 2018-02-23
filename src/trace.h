@@ -80,7 +80,7 @@ void rs_log0(int level, char const *fn, char const *fmt, ...)
 #  define rs_fatal rs_fatal0
 #  define rs_error rs_error0
 #  define rs_log   rs_log0_nofn
-#endif				/* ! __GNUC__ */
+#endif				/* !__GNUC__ */
 
 void rs_trace0(char const *s, ...);
 void rs_fatal0(char const *s, ...);

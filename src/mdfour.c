@@ -262,7 +262,7 @@ rs_mdfour_block(rs_mdfour_t *md, void const *p)
     }
 }
 
-#  endif /* ! __i386__ */
+#  endif /* !__i386__ */
 #endif /* WORDS_BIGENDIAN */
 
 

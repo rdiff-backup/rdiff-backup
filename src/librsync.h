@@ -551,10 +551,10 @@ rs_result rs_delta_file(rs_signature_t *, FILE *new_file, FILE *delta_file, rs_s
  *
  * \sa \ref api_whole */
 rs_result rs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file, rs_stats_t *);
-#endif /* ! RSYNC_NO_STDIO_INTERFACE */
+#endif /* !RSYNC_NO_STDIO_INTERFACE */
 
 #ifdef __cplusplus
 }                               /* extern "C" */
 #endif
 
-#endif /* ! _RSYNC_H */
+#endif /* !_RSYNC_H */
