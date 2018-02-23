@@ -17,10 +17,10 @@ The preferred style for non-docbook comments are as follows;
 ```C
 
                          /*=
-			  | A short poem that
-			  | shall never ever be
-			  | reformated or reindented
-			  */
+                          | A short poem that
+                          | shall never ever be
+                          | reformated or reindented
+                          */
 
     /* Single line comment indented to match code indenting. */
 
@@ -52,7 +52,7 @@ follows;
     int a;                      /**< brief attribute description */
     int b;                      /**< multiline attribute description
                                  *
-				 * With blank line delimited paragraphs.*/
+                                 * With blank line delimited paragraphs.*/
 ```
 
 There is a `make tidy` target that will use GNU indent to reformat all
