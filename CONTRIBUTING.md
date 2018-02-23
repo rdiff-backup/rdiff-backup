@@ -16,15 +16,15 @@ The preferred style for non-docbook comments are as follows;
 
 ```C
 
-                         \*=
+                         /*=
 			  | A short poem that
 			  | shall never ever be
 			  | reformated or reindented
 			  */
 
-    \* Single line comment indented to match code indenting. */
+    /* Single line comment indented to match code indenting. */
 
-    \* Blank line delimited paragraph multi-line comments.
+    /* Blank line delimited paragraph multi-line comments.
 
        Without leading stars, or blank line comment delimiters. */
 
@@ -35,7 +35,7 @@ The preferred style for docbook comments is javadoc with autobrief as
 follows;
 
 ```C
-\** \file file.c Brief summary paragraph.
+/** \file file.c Brief summary paragraph.
   *
   * With blank line paragraph delimiters and leading stars.
   *
