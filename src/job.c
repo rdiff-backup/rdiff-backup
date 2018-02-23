@@ -27,14 +27,10 @@
 
 /** \file job.c Generic state-machine interface.
  *
- * The point of this is
- * that we need to be able to suspend and resume processing at any
- * point at which the buffers may block.
+ * The point of this is that we need to be able to suspend and resume
+ * processing at any point at which the buffers may block.
  *
- * \sa \ref api_streaming
- * \sa rs_job_iter()
- * \sa ::rs_job
- */
+ * \sa \ref api_streaming \sa rs_job_iter() \sa ::rs_job */
 
 #include "config.h"
 
@@ -50,11 +46,9 @@
 #include "job.h"
 #include "trace.h"
 
-
 static rs_result rs_job_work(rs_job_t *job, rs_buffers_t *buffers);
 
-
-rs_job_t * rs_job_new(char const *job_name, rs_result (*statefn)(rs_job_t *))
+rs_job_t *rs_job_new(char const *job_name, rs_result (*statefn) (rs_job_t *))
 {
     rs_job_t *job;
 
@@ -72,18 +66,16 @@ rs_job_t * rs_job_new(char const *job_name, rs_result (*statefn)(rs_job_t *))
     return job;
 }
 
-
 rs_result rs_job_free(rs_job_t *job)
 {
     free(job->scoop_buf);
     if (job->job_owns_sig)
-          rs_free_sumset(job->signature);
+        rs_free_sumset(job->signature);
     rs_bzero(job, sizeof *job);
     free(job);
 
     return RS_DONE;
 }
-
 
 static rs_result rs_job_complete(rs_job_t *job, rs_result result)
 {
@@ -101,29 +93,28 @@ static rs_result rs_job_complete(rs_job_t *job, rs_result result)
     return result;
 }
 
-
 rs_result rs_job_iter(rs_job_t *job, rs_buffers_t *buffers)
 {
-    rs_result       result;
-    size_t          orig_in, orig_out;
+    rs_result result;
+    size_t orig_in, orig_out;
 
     rs_job_check(job);
     assert(buffers);
 
-    orig_in  = buffers->avail_in;
+    orig_in = buffers->avail_in;
     orig_out = buffers->avail_out;
     result = rs_job_work(job, buffers);
     if (result == RS_BLOCKED || result == RS_DONE)
-        if ((orig_in == buffers->avail_in)  &&  (orig_out == buffers->avail_out)
+        if ((orig_in == buffers->avail_in) && (orig_out == buffers->avail_out)
             && orig_in && orig_out) {
-            rs_error("internal error: job made no progress "
-                   "[orig_in="FMT_SIZE", orig_out="FMT_SIZE", final_in="FMT_SIZE", final_out="FMT_SIZE"]",
-                   orig_in, orig_out, buffers->avail_in, buffers->avail_out);
+            rs_error("internal error: job made no progress " "[orig_in="
+                     FMT_SIZE ", orig_out=" FMT_SIZE ", final_in=" FMT_SIZE
+                     ", final_out=" FMT_SIZE "]", orig_in, orig_out,
+                     buffers->avail_in, buffers->avail_out);
             return RS_INTERNAL_ERROR;
         }
     return result;
 }
-
 
 static rs_result rs_job_work(rs_job_t *job, rs_buffers_t *buffers)
 {
@@ -151,27 +142,20 @@ static rs_result rs_job_work(rs_job_t *job, rs_buffers_t *buffers)
     }
 }
 
-
-const rs_stats_t *
-rs_job_statistics(rs_job_t *job)
+const rs_stats_t *rs_job_statistics(rs_job_t *job)
 {
     return &job->stats;
 }
 
-
-int
-rs_job_input_is_ending(rs_job_t *job)
+int rs_job_input_is_ending(rs_job_t *job)
 {
     return job->stream->eof_in;
 }
 
-
-rs_result
-rs_job_drive(rs_job_t *job, rs_buffers_t *buf,
-             rs_driven_cb in_cb, void *in_opaque,
-             rs_driven_cb out_cb, void *out_opaque)
+rs_result rs_job_drive(rs_job_t *job, rs_buffers_t *buf, rs_driven_cb in_cb,
+                       void *in_opaque, rs_driven_cb out_cb, void *out_opaque)
 {
-    rs_result       result, iores;
+    rs_result result, iores;
 
     rs_bzero(buf, sizeof *buf);
 
@@ -183,11 +167,11 @@ rs_job_drive(rs_job_t *job, rs_buffers_t *buf,
         }
 
         result = rs_job_iter(job, buf);
-        if (result != RS_DONE  &&  result != RS_BLOCKED)
+        if (result != RS_DONE && result != RS_BLOCKED)
             return result;
 
         if (out_cb) {
-            iores = (out_cb)(job, buf, out_opaque);
+            iores = (out_cb) (job, buf, out_opaque);
             if (iores != RS_DONE)
                 return iores;
         }

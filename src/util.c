@@ -31,17 +31,14 @@
 #include "util.h"
 #include "trace.h"
 
-void
-rs_bzero(void *buf, size_t size)
+void rs_bzero(void *buf, size_t size)
 {
     memset(buf, 0, size);
 }
 
-
-void *
-rs_alloc_struct0(size_t size, char const *name)
+void *rs_alloc_struct0(size_t size, char const *name)
 {
-    void           *p;
+    void *p;
 
     if (!(p = malloc(size))) {
         rs_fatal("couldn't allocate instance of %s", name);
@@ -50,12 +47,9 @@ rs_alloc_struct0(size_t size, char const *name)
     return p;
 }
 
-
-
-void *
-rs_alloc(size_t size, char const *name)
+void *rs_alloc(size_t size, char const *name)
 {
-    void           *p;
+    void *p;
 
     if (!(p = malloc(size))) {
         rs_fatal("couldn't allocate instance of %s", name);
@@ -64,14 +58,12 @@ rs_alloc(size_t size, char const *name)
     return p;
 }
 
-
-void *
-rs_realloc(void *ptr, size_t size, char const *name)
+void *rs_realloc(void *ptr, size_t size, char const *name)
 {
     void *p;
 
     if (!(p = realloc(ptr, size))) {
-	rs_fatal("couldn't reallocate instance of %s", name);
-     }
-     return p;
+        rs_fatal("couldn't reallocate instance of %s", name);
+    }
+    return p;
 }

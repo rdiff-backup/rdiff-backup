@@ -35,10 +35,9 @@
 
 /** \file msg.c error messages for re_result values.
  *
- * \todo (Suggestion by tridge) Add a function which outputs a
- * complete text description of a job, including only the fields
- * relevant to the current encoding function.
- */
+ * \todo (Suggestion by tridge) Add a function which outputs a complete text
+ * description of a job, including only the fields relevant to the current
+ * encoding function. */
 
 #include "config.h"
 

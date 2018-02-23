@@ -34,14 +34,14 @@ size_t rs_unbase64(char *s)
 {
     char const *b64 =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    int             bit_offset, byte_offset, idx, i, n;
-    unsigned char  *d = (unsigned char *) s;
-    char           *p;
+    int bit_offset, byte_offset, idx, i, n;
+    unsigned char *d = (unsigned char *)s;
+    char *p;
 
     n = i = 0;
 
     while (*s && (p = strchr(b64, *s))) {
-        idx = (int) (p - b64);
+        idx = (int)(p - b64);
         byte_offset = (i * 6) / 8;
         bit_offset = (i * 6) % 8;
         d[byte_offset] &= ~((1 << (8 - bit_offset)) - 1);
@@ -66,14 +66,14 @@ void rs_base64(unsigned char const *buf, int n, char *out)
 {
     char const *b64 =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    int             bytes, i;
+    int bytes, i;
 
     /* work out how many bytes of output there are */
     bytes = ((n * 8) + 5) / 6;
 
     for (i = 0; i < bytes; i++) {
-        int             byte = (i * 6) / 8;
-        int             bit = (i * 6) % 8;
+        int byte = (i * 6) / 8;
+        int bit = (i * 6) % 8;
 
         if (bit < 3) {
             if (byte >= n)
@@ -83,8 +83,9 @@ void rs_base64(unsigned char const *buf, int n, char *out)
             if (byte + 1 == n) {
                 *out = b64[(buf[byte] << (bit - 2)) & 0x3F];
             } else {
-                *out = b64[(buf[byte] << (bit - 2) |
-                            buf[byte + 1] >> (10 - bit)) & 0x3F];
+                *out =
+                    b64[(buf[byte] << (bit - 2) | buf[byte + 1] >> (10 - bit)) &
+                        0x3F];
             }
         }
         out++;

@@ -20,16 +20,14 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/** \private
-  * Internal state while computing an MD4 hash.
-  */
+/** \private Internal state while computing an MD4 hash. */
 struct rs_mdfour {
-    unsigned int        A, B, C, D;
+    unsigned int A, B, C, D;
 #if HAVE_UINT64
-    uint64_t            totalN;
+    uint64_t totalN;
 #else
-    uint32_t            totalN_hi, totalN_lo;
+    uint32_t totalN_hi, totalN_lo;
 #endif
-    int                 tail_len;
-    unsigned char       tail[64];
+    int tail_len;
+    unsigned char tail[64];
 };
