@@ -75,7 +75,7 @@ void rs_log0(int level, char const *fn, char const *fmt, ...)
      } while (0)
 
 
-#else /************************* ! __GNUC__ */
+#else /* !__GNUC__ */
 #  define rs_trace rs_trace0
 #  define rs_fatal rs_fatal0
 #  define rs_error rs_error0
