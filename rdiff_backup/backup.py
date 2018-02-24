@@ -707,7 +707,9 @@ class IncrementITRB(PatchITRB):
 		self.base_rp, inc_prefix = longname.get_mirror_inc_rps(
 			self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
 		self.base_rp.setdata()
-		assert diff_rorp.isdir() or self.base_rp.isdir()
+		assert diff_rorp.isdir() or self.base_rp.isdir(), \
+				("Either %s or %s must be a directory" % (repr(diff_rorp.path),
+				 repr(self.base_rp.path)))
 		if diff_rorp.isdir():
 			inc = increment.Increment(diff_rorp, self.base_rp, inc_prefix)
 			if inc and inc.isreg():

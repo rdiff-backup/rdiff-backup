@@ -38,6 +38,10 @@ are dealing with are local or remote.
 import os, stat, re, sys, shutil, gzip, socket, time, errno
 import Globals, Time, static, log, user_group, C
 
+try:
+	import win32file, winnt
+except ImportError:
+	pass
 
 class SkipFileException(Exception):
 	"""Signal that the current file should be skipped but then continue
@@ -255,9 +259,15 @@ def rename(rp_source, rp_dest):
 			try:
 			    rp_source.conn.os.rename(rp_source.path, rp_dest.path)
 			except OSError, error:
-				if error.errno != errno.EEXIST: raise
+				# XXX errno.EINVAL and len(rp_dest.path) >= 260 indicates
+				# pathname too long on Windows
+				if error.errno != errno.EEXIST:
+					log.Log("OSError while renaming %s to %s"
+							% (rp_source.path, rp_dest.path), 1)
+					raise
 
 				# On Windows, files can't be renamed on top of an existing file
+				rp_source.conn.os.chmod(rp_dest.path, 0700)
 				rp_source.conn.os.unlink(rp_dest.path)
 				rp_source.conn.os.rename(rp_source.path, rp_dest.path)
 			    
@@ -321,6 +331,12 @@ def make_file_dict_python(filename):
 	data['inode'] = statblock[stat.ST_INO]
 	data['devloc'] = statblock[stat.ST_DEV]
 	data['nlink'] = statblock[stat.ST_NLINK]
+
+	if os.name == 'nt':
+		attribs = win32file.GetFileAttributes(filename)
+		if attribs & winnt.FILE_ATTRIBUTE_REPARSE_POINT:
+			data['type'] = 'sym'
+			data['linkname'] = None
 
 	if not (type == 'sym' or type == 'dev'):
 		# mtimes on symlinks and dev files don't work consistently
@@ -1052,7 +1068,17 @@ class RPath(RORPath):
 			except os.error:
 				if Globals.fsync_directories: self.fsync()
 				self.conn.shutil.rmtree(self.path)
-		else: self.conn.os.unlink(self.path)
+		else:
+			try: self.conn.os.unlink(self.path)
+			except OSError, error:
+				if error.errno in (errno.EPERM, errno.EACCES):
+					# On Windows, read-only files cannot be deleted.
+					# Remove the read-only attribute and try again.
+					self.chmod(0700)
+					self.conn.os.unlink(self.path)
+				else:
+					raise
+
 		self.setdata()
 
 	def contains_files(self):

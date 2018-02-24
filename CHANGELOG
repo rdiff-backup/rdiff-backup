@@ -1,3 +1,70 @@
+New in v1.2.3 (2008/12/28)
+---------------------------
+
+The official Windows build now includes the librsync patch for files > 4GB.
+This requires the Visual C++ 2008 redistributable, available from Microsoft.
+
+The epoch is now a valid date. Closes Savannah bug #24814. (Andrew Ferguson)
+
+Report that connection has dropped if filesystem operation returns ENOTCONN.
+Closes Ubuntu bug #219920. (Andrew Ferguson)
+
+Print a more helpful error message if we get an error while reading an old
+current_mirror marker. This can happen because it has been locked or deleted
+by a just-finished rdiff-backup process. Closes Ubuntu bugs #88140 and
+#284506. (Andrew Ferguson)
+
+Do not backup reparse points on native Windows. Thanks to John Covici for
+reporting the issue. (Andrew Ferguson)
+
+Support comments in rdiff-backup's ACL files and quote the quoting character
+properly if user changed it. (Patch from Oliver Mulatz)
+
+Print a more helpful error message if we cannot read the backup destination.
+Closes Ubuntu bug #292586 (again). (Andrew Ferguson)
+
+Print a more helpful error message if we cannot write to the backup
+destination. (Andrew Ferguson)
+
+Add ETIMEDOUT to the list of recoverable errors; when irrecoverable, a
+ConnectionError is raised. Closes Ubuntu bug #304659. (Andrew Ferguson)
+
+Suppress warnings about the deprecated sha module in Python 2.6. We'll remove
+this after rdiff-backup is ported to Python 3. (Patch from Josh Nisly)
+
+Test for symlink permissions now produces a functioning symlink. Thanks to
+Julien Poffet for reporting the issue. (Andrew Ferguson)
+
+Fix for crash when deleting read-only files on Windows. (Patch from Josh Nisly)
+
+Fix for Python 2.2 in win_acls.py (Closes Savannah bug #24922).
+
+Throttle verbosity of listattr() warning messages from 3 to 4. (Andrew Ferguson)
+
+Escape trailing spaces and periods on systems which require it, such as
+Windows and modern Linux with FAT32. (Andrew Ferguson)
+
+Print nicer error messages in rdiff-backup-statistics (without tracebacks).
+Closes Ubuntu bug #292586. (Andrew Ferguson)
+
+Properly handle EINVAL "Invalid argument" errors when setting extended
+attributes. Thanks to Kevin Fenzi for reporting the issue. (Andrew Ferguson)
+
+Add warning message if pyxattr is below version 0.2.2. (Andrew Ferguson)
+
+Add "Stale NFS file handle" (ESTALE) to the list of recoverable errors. Thanks
+to Guillaume Vachon for reporting the issue. (Andrew Ferguson)
+
+Workaround for broken support for symlink extended attributes in pyxattr < 
+0.2.2. Thanks to Leo Bergolth for reporting the issue. (Andrew Ferguson)
+
+Handle ELOOP ("Too many levels of symbolic links") error when reading extended
+attributes from symlinks. Closes Savannah bug #24790. (Andrew Ferguson)
+
+Inform the user of which file has failed if an exception occurs during a
+rename operation. (Andrew Ferguson)
+
+
 New in v1.2.2 (2008/10/19)
 ---------------------------
 

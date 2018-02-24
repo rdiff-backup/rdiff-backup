@@ -50,6 +50,8 @@ class FSAbilities:
 	high_perms = None # True if suid etc perms are (read/write) supported
 	escape_dos_devices = None # True if dos device files can't be created (e.g.,
 							  # aux, con, com1, etc)
+	escape_trailing_spaces = None # True if files with trailing spaces or
+								  # periods can't be created
 	symlink_perms = None # True if symlink perms are affected by umask
 
 	def __init__(self, name = None):
@@ -101,6 +103,8 @@ class FSAbilities:
 						  ('Windows access control lists', self.win_acls),
 						  ('Case sensitivity', self.case_sensitive),
 						  ('Escape DOS devices', self.escape_dos_devices),
+						  ('Escape trailing spaces',
+						   self.escape_trailing_spaces),
 						  ('Mac OS X style resource forks',
 						   self.resource_forks),
 						  ('Mac OS X Finder information', self.carbonfile)])
@@ -127,6 +131,7 @@ class FSAbilities:
 		self.set_carbonfile()
 		self.set_case_sensitive_readonly(rp)
 		self.set_escape_dos_devices(rp)
+		self.set_escape_trailing_spaces(rp)
 		return self
 
 	def init_readwrite(self, rbdir):
@@ -161,6 +166,7 @@ class FSAbilities:
 		self.set_high_perms_readwrite(subdir)
 		self.set_symlink_perms(subdir)
 		self.set_escape_dos_devices(subdir)
+		self.set_escape_trailing_spaces(subdir)
 
 		subdir.delete()
 		return self
@@ -364,6 +370,16 @@ class FSAbilities:
 			return
 
 		try:
+			ver = xattr.__version__
+		except AttributeError:
+			ver = 'unknown'
+		if ver < '0.2.2' or ver == 'unknown':
+			log.Log("Warning: Your version of pyxattr (%s) has broken support "
+					"for extended\nattributes on symlinks. If you choose not "
+					"to upgrade to a more recent version,\nyou may see many "
+					"warning messages from listattr().\n" % (ver,), 3)
+
+		try:
 			xattr.listxattr(rp.path)
 			if write:
 				xattr.setxattr(rp.path, "user.test", "test val")
@@ -526,21 +542,19 @@ class FSAbilities:
 		sym_source.touch()
 		sym_dest = dir_rp.append("symlinked_file2")
 		try:
-			sym_dest.symlink(sym_source.path)
+			sym_dest.symlink("symlinked_file1")
 		except (OSError, AttributeError):
 			self.symlink_perms = 0
 		else:
 			sym_dest.setdata()
 			assert sym_dest.issym()
-			orig_umask = os.umask(077)
 			if sym_dest.getperms() == 0700: self.symlink_perms = 1
 			else: self.symlink_perms = 0
-			os.umask(orig_umask)
 			sym_dest.delete()
 		sym_source.delete()
 
 	def set_escape_dos_devices(self, subdir):
-		"""If special file aux can be stat'd, escape special files"""
+		"""If special file con can be stat'd, escape special files"""
 		try:
 			device_rp = subdir.append("con")
 			if device_rp.lstat():
@@ -555,6 +569,26 @@ class FSAbilities:
 			log.Log("escape_dos_devices required by filesystem at %s" \
 					% (subdir.path), 4)
 			self.escape_dos_devices = 1
+
+	def set_escape_trailing_spaces(self, subdir):
+		"""If file with trailing space can't be created, escape such files"""
+		try:
+			space_rp = subdir.append("test ")
+			space_rp.touch()
+			if space_rp.lstat():
+				log.Log("escape_trailing_spaces not required by filesystem " \
+						"at %s" % (subdir.path), 4)
+				self.escape_trailing_spaces = 0
+				space_rp.delete()
+			else:
+				log.Log("escape_trailing_spaces required by filesystem at %s" \
+						% (subdir.path), 4)
+				self.escape_trailing_spaces = 1 
+		except (OSError, IOError):
+			log.Log("escape_trailing_spaces required by filesystem at %s" \
+					% (subdir.path), 4)
+			self.escape_trailing_spaces = 1
+
 
 def get_readonly_fsa(desc_string, rp):
 	"""Return an fsa with given description_string
@@ -631,6 +665,10 @@ class SetGlobals:
 		SetConnections.UpdateGlobal('escape_dos_devices', \
 									self.dest_fsa.escape_dos_devices)
 
+	def set_escape_trailing_spaces(self):
+		SetConnections.UpdateGlobal('escape_trailing_spaces', \
+									self.dest_fsa.escape_trailing_spaces)
+
 class BackupSetGlobals(SetGlobals):
 	"""Functions for setting fsa related globals for backup session"""
 	def update_triple(self, src_support, dest_support, attr_triple):
@@ -656,6 +694,23 @@ class BackupSetGlobals(SetGlobals):
 			self.src_fsa.escape_dos_devices or local_edd)
 		log.Log("Backup: must_escape_dos_devices = %d" % \
 				(self.src_fsa.escape_dos_devices or local_edd), 4)
+
+	def set_must_escape_trailing_spaces(self, rbdir):
+		"""If local ets or src ets, then must escape """
+		try:
+			space_rp = rbdir.append("test ")
+			space_rp.touch()
+			if space_rp.lstat():
+				local_ets = 0
+				space_rp.delete()
+			else:
+				local_ets = 1
+		except (OSError, IOError):
+			local_ets = 1
+		SetConnections.UpdateGlobal('must_escape_trailing_spaces', \
+			self.src_fsa.escape_trailing_spaces or local_ets)
+		log.Log("Backup: must_escape_trailing_spaces = %d" % \
+				(self.src_fsa.escape_trailing_spaces or local_ets), 4)
 
 	def set_chars_to_quote(self, rbdir, force):
 		"""Set chars_to_quote setting for backup session
@@ -687,7 +742,8 @@ class BackupSetGlobals(SetGlobals):
 			# Quote ", *, /, :, <, >, ?, \, |, and 127 (DEL)
 			ctq.append('\"*/:<>?\\\\|\177')
 
-		if ctq: ctq.append(';') # Quote quoting char if quoting anything
+		# Quote quoting char if quoting anything
+		if ctq: ctq.append(Globals.quoting_char)
 		return "".join(ctq)
 
 	def compare_ctq_file(self, rbdir, suggested_ctq, force):
@@ -769,6 +825,27 @@ class RestoreSetGlobals(SetGlobals):
 		log.Log("Restore: must_escape_dos_devices = %d" % \
 				(src_edd or local_edd), 4)
 
+	def set_must_escape_trailing_spaces(self, rbdir):
+		"""If local ets or src ets, then must escape """
+		if getattr(self, "src_fsa", None) is not None:
+			src_ets = self.src_fsa.escape_trailing_spaces
+		else:
+			src_ets = 0
+		try:
+			space_rp = rbdir.append("test ")
+			space_rp.touch()
+			if space_rp.lstat():
+				local_ets = 0
+				space_rp.delete()
+			else:
+				local_ets = 1
+		except (OSError, IOError):
+			local_ets = 1
+		SetConnections.UpdateGlobal('must_escape_trailing_spaces', \
+			src_ets or local_ets)
+		log.Log("Restore: must_escape_trailing_spaces = %d" % \
+				(src_ets or local_ets), 4)
+
 	def set_chars_to_quote(self, rbdir):
 		"""Set chars_to_quote from rdiff-backup-data dir"""
 		if Globals.chars_to_quote is not None: return # already overridden
@@ -843,7 +920,9 @@ def backup_set_globals(rpin, force):
 	bsg.set_symlink_perms()
 	update_quoting = bsg.set_chars_to_quote(Globals.rbdir, force)
 	bsg.set_escape_dos_devices()
+	bsg.set_escape_trailing_spaces()
 	bsg.set_must_escape_dos_devices(Globals.rbdir)
+	bsg.set_must_escape_trailing_spaces(Globals.rbdir)
 
 	if update_quoting and force:
 		FilenameMapping.update_quoting(Globals.rbdir)
@@ -871,7 +950,9 @@ def restore_set_globals(rpout):
 	rsg.set_symlink_perms()
 	rsg.set_chars_to_quote(Globals.rbdir)
 	rsg.set_escape_dos_devices()
+	rsg.set_escape_trailing_spaces()
 	rsg.set_must_escape_dos_devices(Globals.rbdir)
+	rsg.set_must_escape_trailing_spaces(Globals.rbdir)
 
 def single_set_globals(rp, read_only = None):
 	"""Set fsa related globals for operation on single filesystem"""
@@ -892,5 +973,7 @@ def single_set_globals(rp, read_only = None):
 		ssg.set_symlink_perms()
 	ssg.set_chars_to_quote(Globals.rbdir)
 	ssg.set_escape_dos_devices()
+	ssg.set_escape_trailing_spaces()
 	ssg.set_must_escape_dos_devices(Globals.rbdir)
+	ssg.set_must_escape_trailing_spaces(Globals.rbdir)
 

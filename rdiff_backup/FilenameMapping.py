@@ -85,8 +85,19 @@ def quote(path):
 
 	"""
 	QuotedPath = chars_to_quote_regexp.sub(quote_single, path)
-	if not Globals.must_escape_dos_devices:
+	if not Globals.must_escape_dos_devices \
+			and not Globals.must_escape_trailing_spaces:
 		return QuotedPath
+
+	# Escape a trailing space or period (invalid in names on FAT32 under DOS,
+	# Windows and modern Linux)
+	if Globals.must_escape_trailing_spaces:
+		if len(QuotedPath) and (QuotedPath[-1] == ' ' or QuotedPath[-1] == '.'):
+			QuotedPath = QuotedPath[:-1] + \
+				"%s%03d" % (quoting_char, ord(QuotedPath[-1]))
+
+		if not Globals.must_escape_dos_devices:
+			return QuotedPath
 
 	# Escape first char of any special DOS device files even if filename has an
 	# extension.  Special names are: aux, prn, con, nul, com0-9, and lpt1-9.
