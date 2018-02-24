@@ -43,6 +43,7 @@ class FSAbilities:
 	carbonfile = None # True if Mac Carbon file data is supported. 
 	name = None # Short string, not used for any technical purpose
 	read_only = None # True if capabilities were determined non-destructively
+	high_perms = None # True if suid etc perms are (read/write) supported
 
 	def __init__(self, name = None):
 		"""FSAbilities initializer.  name is only used in logging"""
@@ -89,7 +90,8 @@ class FSAbilities:
 							  ('Hard linking', self.hardlinks),
 							  ('fsync() directories', self.fsync_dirs),
 							  ('Directory inc permissions',
-							   self.dir_inc_perms)])
+							   self.dir_inc_perms),
+							  ('High-bit permissions', self.high_perms)])
 		add_boolean_list([('Access control lists', self.acls),
 						  ('Extended attributes', self.eas),
 						  ('Mac OS X style resource forks',
@@ -149,6 +151,7 @@ class FSAbilities:
 		self.set_dir_inc_perms(subdir)
 		self.set_resource_fork_readwrite(subdir)
 		self.set_carbonfile()
+		self.set_high_perms_readwrite(subdir)
 		if override_chars_to_quote is None: self.set_chars_to_quote(subdir)
 		else: self.chars_to_quote = override_chars_to_quote
 		if use_ctq_file: self.compare_chars_to_quote(rbdir)
@@ -174,7 +177,8 @@ class FSAbilities:
 					log.Log("Warning: File system no longer needs quoting, "
 							"but will retain for backwards compatibility.", 2)
 					self.chars_to_quote = old_chars
-				else: log.Log.FatalError("""New quoting requirements
+				elif Globals.chars_to_quote is None:
+					log.Log.FatalError("""New quoting requirements
 
 This may be caused when you copy an rdiff-backup directory from a
 normal file system on to a windows one that cannot support the same
@@ -197,7 +201,9 @@ rdiff-backup-data/chars_to_quote.
 	def set_hardlinks(self, testdir):
 		"""Set self.hardlinks to true iff hard linked files can be made"""
 		hl_source = testdir.append("hardlinked_file1")
-		hl_dest = testdir.append("hardlinked_file2")
+		hl_dir = testdir.append("hl")
+		hl_dir.mkdir()
+		hl_dest = hl_dir.append("hardlinked_file2")
 		hl_source.touch()
 		try:
 			hl_dest.hardlink(hl_source.path)
@@ -378,6 +384,16 @@ rdiff-backup-data/chars_to_quote.
 				return
 		self.resource_forks = 0
 
+	def set_high_perms_readwrite(self, dir_rp):
+		"""Test for writing high-bit permissions like suid"""
+		tmp_rp = dir_rp.append("high_perms")
+		tmp_rp.touch()
+		try:
+			tmp_rp.chmod(07000)
+			tmp_rp.chmod(07777)
+		except (OSError, IOError), e: self.high_perms = 0
+		else: self.high_perms = 1
+		tmp_rp.delete()
 
 def get_fsabilities_readonly(desc_string, rp):
 	"""Return an FSAbilities object with given description_string

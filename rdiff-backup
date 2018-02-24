@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # rdiff-backup -- Mirror files while keeping incremental changes
-# Version 1.0.1 released September 10, 2005
+# Version 1.0.3 released November 25, 2005
 # Copyright (C) 2001-2005  Ben Escoto <bescoto@stanford.edu>
 #
 # This program is licensed under the GNU General Public License (GPL).

@@ -45,7 +45,7 @@ file_requests = {'os.listdir':0, 'C.make_file_dict':0, 'os.chmod':0,
 				 'os.chown':0, 'os.remove':0, 'os.removedirs':0,
 				 'os.rename':0, 'os.renames':0, 'os.rmdir':0, 'os.unlink':0,
 				 'os.utime':0, 'os.lchown':0, 'os.link':1, 'os.symlink':1,
-				 'os.mkdir':0}
+				 'os.mkdir':0, 'os.makedirs':0}
 				 
 
 def initialize(action, cmdpairs):
@@ -164,7 +164,7 @@ def set_allowed_requests(sec_level):
 				  "fs_abilities.get_fsabilities_readwrite"])
 	if sec_level == "all":
 		l.extend(["os.mkdir", "os.chown", "os.lchown", "os.rename",
-				  "os.unlink", "os.remove", "os.chmod",
+				  "os.unlink", "os.remove", "os.chmod", "os.makedirs",
 				  "backup.DestinationStruct.patch",
 				  "restore.TargetStruct.get_initial_iter",
 				  "restore.TargetStruct.patch",

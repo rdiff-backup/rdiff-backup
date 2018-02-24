@@ -23,7 +23,7 @@ import re, os
 
 
 # The current version of rdiff-backup
-version = "1.0.1"
+version = "1.0.3"
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
@@ -87,7 +87,8 @@ resource_forks_write = None
 resource_forks_conn = None
 
 # Like the above, but applies to MacOS Carbon Finder creator/type info.
-carbonfile_active = None
+# As of 1.0.2 this has defaulted to off because of bugs
+carbonfile_active = 0
 carbonfile_write = None
 carbonfile_conn = None
 
@@ -166,8 +167,9 @@ compression = 1
 # case-insensitive regular expression won't be compressed (applies
 # to .snapshots and .diffs).  The second below will be the
 # compiled version of the first.
-no_compression_regexp_string = "(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|" \
-						"jpg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov|flac|shn)$"
+no_compression_regexp_string = ("(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|"
+    "jpg|jpeg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov|flac|shn|pgp|"
+    "gpg|rz|lzh|zoo|lharc|rar|arj|asc)$")
 no_compression_regexp = None
 
 # If true, filelists and directory statistics will be split on
@@ -214,6 +216,10 @@ fsync_directories = None
 
 # If set, exit with error instead of dropping ACLs or ACL entries.
 never_drop_acls = None
+
+# Apply this mask to permissions before chmoding.  (Set to 0777 to
+# prevent highbit permissions on systems which don't support them.)
+permission_mask = 07777
 
 
 def get(name):

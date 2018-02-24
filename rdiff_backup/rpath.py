@@ -756,7 +756,7 @@ class RPath(RORPath):
 
 	def chmod(self, permissions):
 		"""Wrapper around os.chmod"""
-		self.conn.os.chmod(self.path, permissions)
+		self.conn.os.chmod(self.path, permissions & Globals.permission_mask)
 		self.data['perms'] = permissions
 
 	def settime(self, accesstime, modtime):
@@ -873,7 +873,7 @@ class RPath(RORPath):
 		log.Log("Deleting %s" % self.path, 7)
 		if self.isdir():
 			try: self.rmdir()
-			except os.error:
+			except EnvironmentError:
 				if Globals.fsync_directories: self.fsync()
 				self.conn.shutil.rmtree(self.path)
 		else: self.conn.os.unlink(self.path)
@@ -1145,11 +1145,18 @@ class RPath(RORPath):
 			self.data['carbonfile'] = cfile
 			return cfile
 		except MacOS.Error:
+			log.Log("Cannot read carbonfile information from %s" %
+					(self.path,), 2)
 			self.data['carbonfile'] = None 
 			return self.data['carbonfile']
 
 	def write_carbonfile(self, cfile):
 		"""Write new carbon data to self."""
+		if not cfile:
+			# This should be made cleaner---if you know Mac OS X tell
+			# me what could cause an error in get_carbonfile above
+			return
+			
 		log.Log("Writing carbon data to %s" % (self.index,), 7)
 		from Carbon.File import FSSpec
 		import MacOS
