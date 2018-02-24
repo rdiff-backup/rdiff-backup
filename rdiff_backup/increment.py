@@ -34,7 +34,7 @@ def Increment(new, mirror, incpref):
 
 	"""
 	log.Log("Incrementing mirror file " + mirror.path, 5)
-	if ((new and new.isdir()) or mirror.isdir()) and not incpref.isdir():
+	if ((new and new.isdir()) or mirror.isdir()) and not incpref.lstat():
 		incpref.mkdir()
 
 	if not mirror.lstat(): incrp = makemissing(incpref)

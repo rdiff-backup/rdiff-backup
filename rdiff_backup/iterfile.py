@@ -41,14 +41,15 @@ class UnwrapFile:
 		"""Return pair (type, data) next in line on the file
 
 		type is a single character which is either
-		"o" for object,
+		"o" for an object,
 		"f" for file,
 		"c" for a continution of a file,
+		"h" for the close value of a file
 		"e" for an exception, or
 		None if no more data can be read.
 
 		Data is either the file's data, if type is "c" or "f", or the
-		actual object if the type is "o" or "e".
+		actual object if the type is "o", "e", or "r"
 
 		"""
 		header = self.file.read(8)
@@ -57,8 +58,10 @@ class UnwrapFile:
 			assert None, "Header %s is only %d bytes" % (header, len(header))
 		type, length = header[0], C.str2long(header[1:])
 		buf = self.file.read(length)
-		if type == "o" or type == "e": return type, cPickle.loads(buf)
-		else: return type, buf
+		if type in ("o", "e", "h"): return type, cPickle.loads(buf)
+		else:
+			assert type in ("f", "c")
+			return type, buf
 
 
 class IterWrappingFile(UnwrapFile):
@@ -80,11 +83,7 @@ class IterWrappingFile(UnwrapFile):
 		type, data = self._get()
 		if not type: raise StopIteration
 		if type == "o" or type == "e": return data
-		elif type == "f":
-			file = IterVirtualFile(self, data)
-			if data: self.currently_in_file = file
-			else: self.currently_in_file = None
-			return file
+		elif type == "f": return IterVirtualFile(self, data)
 		else: raise IterFileException("Bad file type %s" % type)
 
 
@@ -105,8 +104,10 @@ class IterVirtualFile(UnwrapFile):
 		"""
 		UnwrapFile.__init__(self, iwf.file)
 		self.iwf = iwf
+		iwf.currently_in_file = self
 		self.buffer = initial_data
 		self.closed = None
+		if not initial_data: self.set_close_val()
 
 	def read(self, length = -1):
 		"""Read length bytes from the file, updating buffers as necessary"""
@@ -138,8 +139,16 @@ class IterVirtualFile(UnwrapFile):
 			self.buffer += data
 			return 1
 		else:
-			self.iwf.currently_in_file = None
+			self.set_close_val()
 			return None
+
+	def set_close_val(self):
+		"""Read the close value and clear currently_in_file"""
+		assert self.iwf.currently_in_file
+		self.iwf.currently_in_file = None
+		type, object = self.iwf._get()
+		assert type == 'h', type
+		self.close_value = object
 
 	def close(self):
 		"""Currently just reads whats left and discards it"""
@@ -147,6 +156,7 @@ class IterVirtualFile(UnwrapFile):
 			self.addtobuffer()
 			self.buffer = ""
 		self.closed = 1
+		return self.close_value
 
 
 class FileWrappingIter:
@@ -212,13 +222,16 @@ class FileWrappingIter:
 		buf = robust.check_common_error(self.read_error_handler,
 										self.currently_in_file.read,
 										[Globals.blocksize])
-		if buf == "" or buf is None:
-			assert not self.currently_in_file.close()
-			self.currently_in_file = None			
-			if buf is None: # error occurred above, encode exception
-				prefix_letter = "e"
-				buf = cPickle.dumps(self.last_exception, 1)
-		total = "".join((prefix_letter, C.long2str(long(len(buf))), buf))
+		if buf is None: # error occurred above, encode exception
+			self.currently_in_file = None
+			excstr = cPickle.dumps(self.last_exception, 1)
+			total = "".join(('e', C.long2str(long(len(excstr))), excstr))
+		else:
+			total = "".join((prefix_letter, C.long2str(long(len(buf))), buf))
+			if buf == "": # end of file
+				cstr = cPickle.dumps(self.currently_in_file.close(), 1)
+				self.currently_in_file = None
+				total += "".join(('h', C.long2str(long(len(cstr))), cstr))
 		self.array_buf.fromstring(total)
 
 	def read_error_handler(self, exc, blocksize):
@@ -238,33 +251,37 @@ class FileWrappingIter:
 	def close(self): self.closed = 1
 
 
-class RORPIterFlush:
-	"""Used to signal that a RORPIterToFile should flush buffer"""
+class MiscIterFlush:
+	"""Used to signal that a MiscIterToFile should flush buffer"""
 	pass
 
-class RORPIterFlushRepeat(RORPIterFlush):
-	"""Flush, but then cause RORPIter to yield this same object
+class MiscIterFlushRepeat(MiscIterFlush):
+	"""Flush, but then cause Misc Iter to yield this same object
 
-	Thus if we put together a pipeline of these, one RORPIterContFlush
+	Thus if we put together a pipeline of these, one MiscIterFlushRepeat
 	can cause all the segments to flush in sequence.
 
 	"""
 	pass
 
-class RORPIterToFile(FileWrappingIter):
-	"""Take a RORPIter and give it a file-ish interface
+class MiscIterToFile(FileWrappingIter):
+	"""Take an iter and give it a file-ish interface
+
+	This expands on the FileWrappingIter by understanding how to
+	process RORPaths with file objects attached.  It adds a new
+	character "r" to mark these.
 
 	This is how we send signatures and diffs across the line.  As
 	sending each one separately via a read() call would result in a
 	lot of latency, the read()'s are buffered - a read() call with no
 	arguments will return a variable length string (possibly empty).
 
-	To flush the RORPIterToFile, have the iterator yield a
-	RORPIterFlush class.
+	To flush the MiscIterToFile, have the iterator yield a
+	MiscIterFlush class.
 
 	"""
 	def __init__(self, rpiter, max_buffer_bytes = None, max_buffer_rps = None):
-		"""RORPIterToFile initializer
+		"""MiscIterToFile initializer
 
 		max_buffer_bytes is the maximum size of the buffer in bytes.
 		max_buffer_rps is the maximum size of the buffer in rorps.
@@ -313,17 +330,18 @@ class RORPIterToFile(FileWrappingIter):
 			if hasattr(currentobj, "read") and hasattr(currentobj, "close"):
 				self.currently_in_file = currentobj
 				self.addfromfile("f")
-			elif (type(currentobj) is types.ClassType and
-				  issubclass(currentobj, iterfile.RORPIterFlush)):
-				if currentobj is iterfile.RORPIterFlushRepeat:
-					self.add_flush_repeater()
+			elif currentobj is iterfile.MiscIterFlush: return None
+			elif currentobj is iterfile.MiscIterFlushRepeat:
+				self.add_misc(currentobj)
 				return None
-			else: self.addrorp(currentobj)
+			elif isinstance(currentobj, rpath.RORPath):
+				self.addrorp(currentobj)
+			else: self.add_misc(currentobj)
 		return 1
 
-	def add_flush_repeater(self):
-		"""Add a RORPIterFlushRepeat object to the buffer"""
-		pickle = cPickle.dumps(iterfile.RORPIterFlushRepeat, 1)
+	def add_misc(self, obj):
+		"""Add an arbitrary pickleable object to the buffer"""
+		pickle = cPickle.dumps(obj, 1)
 		self.array_buf.fromstring("o")
 		self.array_buf.fromstring(C.long2str(long(len(pickle))))
 		self.array_buf.fromstring(pickle)
@@ -336,7 +354,7 @@ class RORPIterToFile(FileWrappingIter):
 		else:
 			pickle = cPickle.dumps((rorp.index, rorp.data, 0), 1)
 			self.rorps_in_buffer += 1
-		self.array_buf.fromstring("o")
+		self.array_buf.fromstring("r")
 		self.array_buf.fromstring(C.long2str(long(len(pickle))))
 		self.array_buf.fromstring(pickle)
 		
@@ -348,8 +366,8 @@ class RORPIterToFile(FileWrappingIter):
 	def close(self): self.closed = 1
 
 
-class FileToRORPIter(IterWrappingFile):
-	"""Take a RORPIterToFile and turn it back into a RORPIter"""
+class FileToMiscIter(IterWrappingFile):
+	"""Take a MiscIterToFile and turn it back into a iterator"""
 	def __init__(self, file):
 		IterWrappingFile.__init__(self, file)
 		self.buf = ""
@@ -363,9 +381,8 @@ class FileToRORPIter(IterWrappingFile):
 		type = None
 		while not type: type, data = self._get()
 		if type == "z": raise StopIteration
-		elif type == "o":
-			if data is iterfile.RORPIterFlushRepeat: return data
-			else: return self.get_rorp(data)
+		elif type == "r": return self.get_rorp(data)
+		elif type == "o": return data
 		else: raise IterFileException("Bad file type %s" % (type,))
 		
 	def get_rorp(self, pickled_tuple):
@@ -380,11 +397,7 @@ class FileToRORPIter(IterWrappingFile):
 	def get_file(self):
 		"""Read file object from file"""
 		type, data = self._get()
-		if type == "f":
-			file = IterVirtualFile(self, data)
-			if data: self.currently_in_file = file
-			else: self.currently_in_file = None
-			return file
+		if type == "f": return IterVirtualFile(self, data)
 		assert type == "e", "Expected type e, got %s" % (type,)
 		assert isinstance(data, Exception)
 		return ErrorFile(data)
@@ -401,20 +414,21 @@ class FileToRORPIter(IterWrappingFile):
 		if not self.buf: self.buf += self.file.read()
 		if not self.buf: return None, None
 
-		assert len(self.buf) >= 8, "Unexpected end of RORPIter file"
+		assert len(self.buf) >= 8, "Unexpected end of MiscIter file"
 		type, length = self.buf[0], C.str2long(self.buf[1:8])
 		data = self.buf[8:8+length]
 		self.buf = self.buf[8+length:]
-		if type == "o" or type == "e": return type, cPickle.loads(data)
+		if type in "oerh": return type, cPickle.loads(data)
 		else: return type, data
 
 
 class ErrorFile:
-	"""File-like that just raises error (used by FileToRORPIter above)"""
+	"""File-like that just raises error (used by FileToMiscIter above)"""
 	def __init__(self, exc):
 		"""Initialize new ErrorFile.  exc is the exception to raise on read"""
 		self.exc = exc
 	def read(self, l=-1): raise self.exc
 	def close(self): return None
+
 
 import iterfile

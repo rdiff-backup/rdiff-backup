@@ -164,10 +164,6 @@ def FillInIter(rpiter, rootrp):
 	(2,5).  This is used when we need to process directories before or
 	after processing a file in that directory.
 
-	If start_index is given, start with start_index instead of ().
-	The indicies of rest of the rorps should also start with
-	start_index.
-
 	"""
 	# Handle first element as special case
 	first_rp = rpiter.next() # StopIteration gets passed upwards
