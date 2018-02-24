@@ -94,7 +94,6 @@ def ListAtTime(mirror_rp, inc_rp, time):
 	assert mirror_rp.conn is Globals.local_connection, "Run locally only"
 	MirrorStruct.set_mirror_and_rest_times(time)
 	MirrorStruct.initialize_rf_cache(mirror_rp, inc_rp)
-
 	old_iter = MirrorStruct.get_mirror_rorp_iter(_rest_time, 1)
 	for rorp in old_iter: yield rorp
 	
@@ -152,9 +151,8 @@ class MirrorStruct:
 		and what was actually on the mirror side will correspond to the
 		older one.
 
-		So here we assume all rdiff-backup events were recorded in
-		"increments" increments, and if it's in-between we pick the
-		older one here.
+		So if restore_to_time is inbetween two increments, return the
+		older one.
 
 		"""
 		inctimes = cls.get_increment_times()
@@ -164,11 +162,21 @@ class MirrorStruct:
 			return min(inctimes)
 
 	def get_increment_times(cls, rp = None):
-		"""Return list of times of backups, including current mirror"""
-		if not _mirror_time: return_list = [cls.get_mirror_time()]
-		else: return_list = [_mirror_time]
+		"""Return list of times of backups, including current mirror
+
+		Take the total list of times from the increments.<time>.dir
+		file and the mirror_metadata file.  Sorted ascending.
+
+		"""
+		# use dictionary to remove dups
+		if not _mirror_time: d = {cls.get_mirror_time(): None}
+		else: d = {_mirror_time: None}
 		if not rp or not rp.index: rp = Globals.rbdir.append("increments")
-		for inc in get_inclist(rp): return_list.append(inc.getinctime())
+		for inc in get_inclist(rp): d[inc.getinctime()] = None
+		for inc in get_inclist(Globals.rbdir.append("mirror_metadata")):
+			d[inc.getinctime()] = None
+		return_list = d.keys()
+		return_list.sort()
 		return return_list
 
 	def initialize_rf_cache(cls, mirror_base, inc_base):
@@ -348,7 +356,7 @@ class CachedRF:
 				if not self.add_rfs(index): return None
 			rf = self.rf_list[0]
 			if rf.index == index:
-				if Globals.process_uid != 0: self.perm_changer(rf.mirror_rp)
+				if Globals.process_uid != 0: self.perm_changer(index)
 				return rf
 			elif rf.index > index:
 				# Try to add earlier indicies.  But if first is
@@ -377,9 +385,9 @@ The cause is probably data loss from the destination directory.""" %
 		"""
 		if not index: return self.root_rf
 		parent_index = index[:-1]
+		if Globals.process_uid != 0: self.perm_changer(parent_index)
 		temp_rf = RestoreFile(self.root_rf.mirror_rp.new_index(parent_index),
 							  self.root_rf.inc_rp.new_index(parent_index), [])
-		if Globals.process_uid != 0: self.perm_changer(temp_rf.mirror_rp)
 		new_rfs = list(temp_rf.yield_sub_rfs())
 		if not new_rfs:
 			log.Log("Warning: No RFs added for index %s" % (index,), 2)
@@ -534,7 +542,7 @@ as data loss may result.\n""" % (self.mirror_rp.get_indexpath(),), 2)
 				inc_list = []
 			else: inc_rp, inc_list = inc_pair
 			if not mirror_rp:
-				mirror_rp = self.mirror_rp.new_index(inc_rp.index)
+				mirror_rp = self.mirror_rp.new_index_empty(inc_rp.index)
 			yield self.__class__(mirror_rp, inc_rp, inc_list)
 
 	def yield_mirrorrps(self, mirrorrp):
@@ -690,16 +698,15 @@ class PermissionChanger:
 		# order that need clearing
 		self.open_index_list = []
 
-	def __call__(self, rp):
-		"""Given rpath, change permissions up and including rp"""
-		index, old_index = rp.index, self.current_index
+	def __call__(self, index):
+		"""Given rpath, change permissions up to and including index"""
+		old_index = self.current_index
 		self.current_index = index
-		if not index or index == old_index: return
-		assert index > old_index, (index, old_index)
-		self.restore_old(rp, index)
-		self.add_new(rp, old_index, index)
+		if not index or index <= old_index: return
+		self.restore_old(index)
+		self.add_new(old_index, index)
 
-	def restore_old(self, rp, index):
+	def restore_old(self, index):
 		"""Restore permissions for indicies we are done with"""
 		while self.open_index_list:
 			old_index, old_rp, old_perms = self.open_index_list[0]
@@ -707,29 +714,31 @@ class PermissionChanger:
 			else: break
 			del self.open_index_list[0]
 
-	def add_new(self, rp, old_index, index):
+	def add_new(self, old_index, index):
 		"""Change permissions of directories between old_index and index"""
-		for rp in self.get_new_rp_list(rp, old_index, index):
+		for rp in self.get_new_rp_list(old_index, index):
 			if ((rp.isreg() and not rp.readable()) or
 				(rp.isdir() and not rp.hasfullperms())):
 				old_perms = rp.getperms()
-				self.open_index_list.insert(0, (index, rp, old_perms))
+				self.open_index_list.insert(0, (rp.index, rp, old_perms))
 				if rp.isreg(): rp.chmod(0400 | old_perms)
 				else: rp.chmod(0700 | old_perms)
 
-	def get_new_rp_list(self, rp, old_index, index):
-		"""Return list of new rp's between old_index and index"""
+	def get_new_rp_list(self, old_index, index):
+		"""Return list of new rp's between old_index and index
+
+		Do this lazily so that the permissions on the outer
+		directories are fixed before we need the inner dirs.
+
+		"""
 		for i in range(len(index)-1, -1, -1):
 			if old_index[:i] == index[:i]:
 				common_prefix_len = i
 				break
 		else: assert 0
 
-		new_rps = []
-		for total_len in range(common_prefix_len+1, len(index)):
-			new_rps.append(self.root_rp.new_index(index[:total_len]))
-		new_rps.append(rp)
-		return new_rps
+		for total_len in range(common_prefix_len+1, len(index)+1):
+			yield self.root_rp.new_index(index[:total_len])
 
 	def finish(self):
 		"""Restore any remaining rps"""

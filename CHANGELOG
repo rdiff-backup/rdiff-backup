@@ -1,4 +1,132 @@
-New in v0.13.4 (??????????)
+New in v1.0.1 (2005/09/10)
+--------------------------
+
+Fix for "'filetype' of type exceptions.KeyError" error when restoring.
+Test case provided by Davy Durham.  (The problem was the
+mirror_metadata file could become un-synced when a file is deleted
+when rdiff-backup is running and later the directory that file is in
+gets deleted.)
+
+Librsync signature blocksize now based on square root of file length.
+
+rdiff-backup now writes its PID to current_mirror marker (suggested by
+Kevin Spicer).
+
+fsync_directories defaults to None, to avoid errors in testing
+(suggestion by Charles Duffy).
+
+bug#14209: Security bug with --restrict-read-only and
+--restrict-update-only allowed file statting and directory listing
+outside path.  Bug with --restrict option allowed writes outside path.
+(Reported by Charles Duffy.)
+
+bug #14304: Python 2.2 compatibility spoiled by device files.
+
+lchown no longer required, which is good news for Mac OS X 10.3.
+
+
+New in v1.0.0 (2005/08/14)
+--------------------------
+
+Handle cases of junk uid/gids better on 64bit systems.  (Bug report by
+Nick Bailey)
+
+Filenames in the file_statistics*gz files are now quoted the same way
+as filenames in the metadata file (LF => \n and \ => \\).
+
+Fix from Paul P Komkoff Jr for uid typo in text_to_entrytuple.
+
+bug#12726: fix regressing of devices while running as non-root -- zero
+length files are created as placeholders.
+
+bug#13476: must always compare device numbers when we compare inode
+numbers -- fix a non-fatal problem with hardlinks when a filesystem is
+moved to another device (and the inodes don't change).
+
+bug#13475: correct an UpdateError when backing up hardlinks with EAs
+and/or ACLs.
+
+debian bug#306798: SELinux security attributes can not be removed and
+rdiff-backup should not fail when it fails to remove them from temp
+files.  fix from Konrad Podloucky.
+
+bug#12949: eliminate an exception during fs abilities testing on OS X 10.4.
+fix from Daniel Westermann-Clark.
+
+patch#4136: OSX filename/rsrc has been deprecated for some time, and as of OSX
+10.4 it causes log spam.  the new proper use is filename/..namedfork/rsrc.  fix
+from Daniel Westermann-Clark.
+
+Log EACCES from listxattr rather than raising an exception -- this can happen
+when the repository has permission problems.
+
+Added Keith Edmunds patch adding the --create-full-path option.
+
+Fixed selection bug reported by Daniel Richard G.
+
+bug#13576: You can now back ACLs to a computer that doesn't have the
+posix1e module.
+
+bug#13613: Fix for overflow error that could happen when backing up
+files with dates far in the future on a 64bit machine to a 32 bit one.
+
+Symlink ownership should be preserved now.  Reported by Naoki
+Takebayashi and others.
+
+
+New in v0.13.6 (2005/04/07)
+---------------------------
+
+Fixed timezone bug.  Hopefully this is the last one.  (Thanks to
+Randall Nortman for bug report.)
+
+Added fix for listing/restoring certain bad archives made when there
+was a timezone bug.  (Thanks to Stephen Isard)
+
+************** Serious bug fix ******************
+If a directory in the source directory was replaced by certain
+symlinks, then if later backups failed they could cause files in the
+directory that the symlink pointed to to be deleted!  Much thanks to
+Alistair Popple for pointing this bug out and providing a test case.
+
+
+New in v0.13.5 (2005/03/28)
+---------------------------
+
+Added error-correcting fsync suggestion by Antoine Perdaens.
+rdiff-backup may work better with NFS now.
+
+Fix by Dean Gaudet for --calculate-average mode (it broke somewhere in
+0.13.x).
+
+Fix for regress warning code:  rdiff-backup should warn you if you are
+trying to back up a directory into itself.
+
+Fix for restoring certain directories when not run as root.
+
+Now when determining group permissions check supplementary groups as
+well as main group.  (Bug report by Ryan Castle.)
+
+Fixed bug which could cause crash when backing up 3 or more hard
+linked files and the first gets deleted during processing.  (Thanks to
+Dean Gaudet for bug report.)
+
+Fixed user/group restoring error noticed by Fran Firman.
+
+Checked in Robert Shaw's --chars-to-quote patch
+
+Treated hard link permission problem on Mac OS X by applying
+suggestion by David Vasilevsky
+
+Dean Gaudet's patch fixes "--restrict /" option.
+
+Added Robert Shaw's --exclude-fifo, --include-symbolic-links,
+etc. options.
+
+Added Maximilian Mehnert's fix for too many open files bug.
+
+
+New in v0.13.4 (2004/01/31)
 ---------------------------
 
 Checked in patch by John Goerzen to support Mac OS X Finder

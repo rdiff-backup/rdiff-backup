@@ -20,7 +20,7 @@
 """Generate and process aggregated backup information"""
 
 import re, os, time
-import Globals, Time, increment, log, static
+import Globals, Time, increment, log, static, metadata
 
 class StatsException(Exception): pass
 
@@ -381,6 +381,7 @@ class FileStats:
 		"""Update file stats with given information"""
 		if source_rorp: filename = source_rorp.get_indexpath()
 		else: filename = dest_rorp.get_indexpath()
+		filename = metadata.quote_path(filename)
 
 		size_list = map(cls.get_size, [source_rorp, dest_rorp, inc])
 		line = " ".join([filename, str(changed)] + size_list)
