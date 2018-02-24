@@ -202,14 +202,21 @@ class DestinationStruct:
 			log.ErrorLog.write_if_open("UpdateError", dest_rp,
 				"File changed from regular file before signature")
 			return None
-		if Globals.process_uid != 0 and not dest_rp.readable():
+		if (Globals.process_uid != 0 and not dest_rp.readable() and
+				dest_rp.isowner()):
 			# This branch can happen with root source and non-root
 			# destination.  Permissions are changed permanently, which
 			# should propogate to the diffs
-			assert dest_rp.isowner(), 'no ownership of %s' % (dest_rp.path,)
 			dest_rp.chmod(0400 | dest_rp.getperms())
-		return Rdiff.get_signature(dest_rp)
-				
+		try:
+			return Rdiff.get_signature(dest_rp)
+		except IOError, e:
+			if (e.errno == errno.EPERM):
+				log.Log.FatalError("Could not open %s for reading. Check "
+						"permissions on file." % (dest_rp.path,))
+			else:
+				raise
+
 	def patch(cls, dest_rpath, source_diffiter, start_index = ()):
 		"""Patch dest_rpath with an rorpiter of diffs"""
 		ITR = rorpiter.IterTreeReducer(PatchITRB, [dest_rpath, cls.CCPP])

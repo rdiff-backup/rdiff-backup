@@ -329,7 +329,7 @@ def Backup(rpin, rpout):
 	SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
 	backup_check_dirs(rpin, rpout)
 	backup_set_rbdir(rpin, rpout)
-	rpout.conn.fs_abilities.backup_set_globals(rpin)
+	rpout.conn.fs_abilities.backup_set_globals(rpin, force)
 	if Globals.chars_to_quote: rpout = backup_quoted_rpaths(rpout)
 	init_user_group_mapping(rpout.conn)
 	backup_final_init(rpout)
@@ -429,7 +429,7 @@ def backup_get_mirrortime():
 
 def backup_final_init(rpout):
 	"""Open the backup log and the error log, create increments dir"""
-	global prevtime
+	global prevtime, incdir
 	if Log.verbosity > 0:
 		Log.open_logfile(Globals.rbdir.append("backup.log"))
 	checkdest_if_necessary(rpout)
@@ -438,8 +438,7 @@ def backup_final_init(rpout):
 """Time of Last backup is not in the past.  This is probably caused
 by running two backups in less than a second.  Wait a second a try again.""")
 	ErrorLog.open(Time.curtimestr, compress = Globals.compression)
-	inc_base = Globals.rbdir.append_path("increments")
-	if not inc_base.lstat(): inc_base.mkdir()
+	if not incdir.lstat(): incdir.mkdir()
 
 def backup_touch_curmirror_local(rpin, rpout):
 	"""Make a file like current_mirror.time.data to record time
@@ -598,7 +597,7 @@ def restore_set_root(rpin):
 	i = len(pathcomps)
 	while i >= min_len_pathcomps:
 		parent_dir = rpath.RPath(rpin.conn, "/".join(pathcomps[:i]))
-		if (parent_dir.isdir() and
+		if (parent_dir.isdir() and parent_dir.readable() and
 			"rdiff-backup-data" in parent_dir.listdir()): break
 		if parent_dir.path == rpin.conn.Globals.get('restrict_path'):
 			return None

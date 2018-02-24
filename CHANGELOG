@@ -1,3 +1,35 @@
+New in v1.1.15 (2008/01/03)
+---------------------------
+
+New feature: If quoting requirements change, rdiff-backup can requote the
+entire repository if user specifies the --force option. (Andrew Ferguson)
+
+Don't print the warning message about unsupported hard links if the user
+has specified the --no-hard-links option. (Suggested by Andreas Olsson)
+
+Print a more helpful error message when we get a "Result too large"
+error when trying to copy a file. (Andrew Ferguson)
+
+Fix bug where rdiff-backup fails after all increments are removed. Closes
+Savannah bug #20291. (Andrew Ferguson)
+
+Don't assume that a file cannot be read simply becasue of the access
+permissions -- eg, NFS with (rw,all_squash) options. Closes Savannah
+bug #21202. (Based on patch from Marc Horowitz)
+
+restore_set_root should check if it can read a particular directory
+before checking if "rdiff-backup-data" is contained in it. Closes
+Savannah bug #21106. (Patch from Alex Chapman)
+
+Regress.restore_orig_regfile should check if directories can be fsync'd
+before doing so. Fixes Savannah bug #21546. (Patch from Marc Horowitz)
+
+Rewrite quoting logic to independently check for escaping Windows special
+characters, non-ASCII chars, and uppercase chars. (Andrew Ferguson)
+
+Permit Unicode log messages. (Andrew Ferguson)
+
+
 New in v1.1.14 (2007/08/13)
 ---------------------------
 
