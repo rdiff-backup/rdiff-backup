@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # rdiff-backup -- Mirror files while keeping incremental changes
-# Version 1.2.1 released August 24, 2008
+# Version 1.2.2 released October 19, 2008
 # Copyright (C) 2001-2005  Ben Escoto <rdiff-backup@emerose.org>
 #
 # This program is licensed under the GNU General Public License (GPL).
@@ -18,6 +18,13 @@
 
 import sys
 import rdiff_backup.Main
+
+try:
+	import msvcrt, os
+	msvcrt.setmode(0, os.O_BINARY)
+	msvcrt.setmode(1, os.O_BINARY)
+except ImportError:
+	pass
 
 if __name__ == "__main__" and not globals().has_key('__no_execute__'):
 	rdiff_backup.Main.error_check_Main(sys.argv[1:])

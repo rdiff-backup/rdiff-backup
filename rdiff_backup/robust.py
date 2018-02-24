@@ -30,7 +30,7 @@ def check_common_error(error_handler, function, args = []):
 
 	"""
 	try: return function(*args)
-	except Exception, exc:
+	except (Exception, KeyboardInterrupt, SystemExit), exc:
 		TracebackArchive.add([function] + list(args))
 		if catch_error(exc):
 			log.Log.exception()
