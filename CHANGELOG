@@ -1,3 +1,18 @@
+New in v1.2.1 (2008/08/24)
+---------------------------
+
+Produce a new binary for Windows which includes the Python for Windows
+Extensions. Thanks to Shohn Trojacek for reporting the problem.
+
+Disable hardlinks by default when backup source or restore destination is
+on Windows. (Andrew Ferguson)
+
+Properly catch KeyboardInterrupt on Python 2.5. (Andrew Ferguson)
+
+Don't crash if a CacheIndexable tries to clear a non-existent cache entry,
+since the entry must already be cleared. (Andrew Ferguson)
+
+
 New in v1.2.0 (2008/07/27)
 ---------------------------
 
