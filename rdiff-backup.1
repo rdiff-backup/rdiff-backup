@@ -1,4 +1,4 @@
-.TH RDIFF-BACKUP 1 "January 2007" "Version 1.1.9" "User Manuals"
+.TH RDIFF-BACKUP 1 "July 2007" "Version 1.1.12" "User Manuals"
 .SH NAME
 rdiff-backup \- local/remote mirror and incremental backup
 .SH SYNOPSIS
@@ -189,6 +189,12 @@ Exclude all socket files.
 .TP
 .B "\-\-exclude-symbolic-links"
 Exclude all symbolic links.
+.TP
+.BI "\-\exclude-if-present " filename
+Exclude directories if
+.IR filename
+is present. This option needs to come before any other include or
+exclude options.
 .TP
 .B \-\-force
 Authorize a more drastic modification of a directory than usual (for

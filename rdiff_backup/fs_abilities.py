@@ -277,7 +277,10 @@ class FSAbilities:
 
 		def test_triple(dir_rp, dirlist, filename):
 			"""Return 1 if filename shows system case sensitive"""
-			letter_rp = dir_rp.append(filename)
+			try:
+				letter_rp = dir_rp.append(filename)
+			except OSError:
+				return 0
 			assert letter_rp.lstat(), letter_rp
 			swapped = filename.swapcase()
 			if swapped in dirlist: return 1
@@ -408,29 +411,36 @@ class FSAbilities:
 		sym_source = dir_rp.append("symlinked_file1")
 		sym_source.touch()
 		sym_dest = dir_rp.append("symlinked_file2")
-		sym_dest.symlink(sym_source.path)
-		sym_dest.setdata()
-		assert sym_dest.issym()
-		orig_umask = os.umask(077)
-		if sym_dest.getperms() == 0700: self.symlink_perms = 1
-		else: self.symlink_perms = 0
-		os.umask(orig_umask)
-		sym_dest.delete()
+		try:
+			sym_dest.symlink(sym_source.path)
+		except (OSError):
+			self.symlink_perms = 0
+		else:
+			sym_dest.setdata()
+			assert sym_dest.issym()
+			orig_umask = os.umask(077)
+			if sym_dest.getperms() == 0700: self.symlink_perms = 1
+			else: self.symlink_perms = 0
+			os.umask(orig_umask)
+			sym_dest.delete()
 		sym_source.delete()
 
 	def set_escape_dos_devices(self, subdir):
 		"""If special file aux can be stat'd, escape special files"""
-		device_rp = subdir.append("aux")
-		if device_rp.lstat():
-			assert device_rp.lstat()
+		try:
+			device_rp = subdir.append("aux")
+			if device_rp.lstat():
+				log.Log("escape_dos_devices required by filesystem at %s" \
+						% (subdir.path), 4)
+				self.escape_dos_devices = 1
+			else:
+				log.Log("escape_dos_devices not required by filesystem at %s" \
+						% (subdir.path), 4)
+				self.escape_dos_devices = 0
+		except(OSError):
 			log.Log("escape_dos_devices required by filesystem at %s" \
 					% (subdir.path), 4)
 			self.escape_dos_devices = 1
-		else:
-			assert not device_rp.lstat()
-			log.Log("escape_dos_devices not required by filesystem at %s" \
-					% (subdir.path), 4)
-			self.escape_dos_devices = 0
 
 def get_readonly_fsa(desc_string, rp):
 	"""Return an fsa with given description_string
@@ -515,9 +525,11 @@ class BackupSetGlobals(SetGlobals):
 
 	def set_must_escape_dos_devices(self, rbdir):
 		"""If local edd or src edd, then must escape """
-		device_rp = rbdir.append("aux")
-		if device_rp.lstat(): local_edd = 1
-		else: local_edd = 0
+		try:
+			device_rp = rbdir.append("aux")
+			if device_rp.lstat(): local_edd = 1
+			else: local_edd = 0
+		except (OSError): local_edd = 1
 		SetConnections.UpdateGlobal('must_escape_dos_devices', \
 			self.src_fsa.escape_dos_devices or local_edd)
 		log.Log("Backup: must_escape_dos_devices = %d" % \
@@ -603,13 +615,18 @@ class RestoreSetGlobals(SetGlobals):
 
 	def set_must_escape_dos_devices(self, rbdir):
 		"""If local edd or src edd, then must escape """
-		device_rp = rbdir.append("aux")
-		if device_rp.lstat(): local_edd = 1
-		else: local_edd = 0
+		if getattr(self, "src_fsa", None) is not None:
+			src_edd = self.src_fsa.escape_dos_devices
+		else: src_edd = 0
+		try:
+			device_rp = rbdir.append("aux")
+			if device_rp.lstat(): local_edd = 1
+			else: local_edd = 0
+		except (OSError): local_edd = 1
 		SetConnections.UpdateGlobal('must_escape_dos_devices', \
-			self.src_fsa.escape_dos_devices or local_edd)
+			src_edd or local_edd)
 		log.Log("Restore: must_escape_dos_devices = %d" % \
-				(self.src_fsa.escape_dos_devices or local_edd), 4)
+				(src_edd or local_edd), 4)
 
 	def set_chars_to_quote(self, rbdir):
 		"""Set chars_to_quote from rdiff-backup-data dir"""

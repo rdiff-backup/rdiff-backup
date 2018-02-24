@@ -1,3 +1,73 @@
+New in v1.1.12 (2007/07/12)
+---------------------------
+
+Use .dll as library file extension on Cygwin and Windows. (Andrew Ferguson)
+
+Avoid setting permissions to 000 because they're out of sync. (Andrew Ferguson)
+
+listxattr() can also throw EPERM error if not supported. (Andrew Ferguson)
+
+Do something sensible if we get an IOError while trying to appropriately
+log another exception. (Andrew Ferguson)
+
+Handle exception when get permission denied on a file while trying
+to establish case sensitivity on read-only side. (Andrew Ferguson)
+
+Finally solve AttributeError due to no 'inc_compressed' attribute
+that occured during some regress operations. (Andrew Ferguson)
+
+Squash bug where --check-destination-dir or regress operation failed
+after crash when --force option was not used. RPath's are now
+properly pickled. (Andrew Ferguson)
+
+Workaround for tempfile.TemporaryFile() having different behavior
+on Windows/Cygwin. (Andrew Ferguson)
+
+Make --check-destination-dir handle quoted situations. (Andrew Ferguson)
+
+Handle quoted current_mirror markers and clean-up the listing of
+increments with quoted names. (Andrew Ferguson)
+
+Warn if file modification time is before 1970. (Andrew Ferguson)
+
+
+New in v1.1.11 (2007/06/15)
+---------------------------
+
+Fix typo in Main.py introduced in 1.1.9 (Andrew Ferguson)
+
+FIFOs don't have extended attributes -- don't try to access them.
+(Andrew Ferguson)
+
+Fix for bug #19612 -- Incorrect line broke --no-compression option.
+(Fix by Thiago in bug comment)
+
+Fix for bug #19896 -- symlink() doesn't work on a CIFS-mounted Windows
+share.  (Jonathan Hankins)
+
+Fix for bug #19895 -- eliminate traceback for special file detection
+on CIFS mounts.  (Jonathan Hankins)
+
+
+New in v1.1.10 (2007/05/12)
+---------------------------
+
+New --exclude-if-present option (i.e. --exclude-if-present .nobackup).
+(Jeff Strunk).
+
+Use signal 0 rather than signal.NSIG when testing if another rdiff-backup
+is still running.  (Patch from Sébastien Maret)
+
+Sockets don't have extended attributes -- don't try to access them.
+(Patch from Andrew Ferguson.)
+
+Fix restore from read-only bug -- rx perms on a repository directory are
+enough, no need for write perms when restoring.  (patch from Andrew Price)
+
+Fix --list-increments bug in set_must_escape_dos_devices.
+(Marc Dyksterhouse)
+
+
 New in v1.1.9 (2007/01/29)
 --------------------------
 
