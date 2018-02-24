@@ -9,8 +9,8 @@ Build-Depends:
  librsync-dev
 Standards-Version: 3.9.2
 Homepage: http://rdiff-backup.nongnu.org/
-Vcs-Svn: svn://anonscm.debian.org/python-apps/packages/rdiff-backup/trunk/
-Vcs-Browser: http://anonscm.debian.org/viewvc/python-apps/packages/rdiff-backup/trunk/
+Vcs-Git: https://salsa.debian.org/python-team/applications/rdiff-backup.git
+Vcs-Browser: https://salsa.debian.org/python-team/applications/rdiff-backup
 
 Package: rdiff-backup
 Architecture: any
