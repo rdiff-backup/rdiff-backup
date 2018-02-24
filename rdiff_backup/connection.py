@@ -203,7 +203,7 @@ class LowLevelPipeConnection(Connection):
 							   C.long2str(long(len(data))))
 			self.outpipe.write(data)
 			self.outpipe.flush()
-		except IOError: raise ConnectionWriteError()
+		except (IOError, AttributeError): raise ConnectionWriteError()
 
 	def _read(self, length):
 		"""Read length bytes from inpipe, returning result"""
