@@ -41,7 +41,7 @@ disallowed_server_globals = ["server", "security_level", "restrict_path"]
 #
 # The keys are files request, the value is the index of the argument
 # taking a file.
-file_requests = {'os.listdir':0, 'C.make_file_dict':0, 'os.chmod':0,
+file_requests = {'os.listdir':0, 'rpath.make_file_dict':0, 'os.chmod':0,
 				 'os.chown':0, 'os.remove':0, 'os.removedirs':0,
 				 'os.rename':0, 'os.renames':0, 'os.rmdir':0, 'os.unlink':0,
 				 'os.utime':0, 'os.lchown':0, 'os.link':1, 'os.symlink':1,
@@ -136,7 +136,7 @@ def set_allowed_requests(sec_level):
 		 "sys.stdout.write", "robust.install_signal_handlers"]
 	if (sec_level == "read-only" or sec_level == "update-only" or
 		sec_level == "all"):
-		l.extend(["C.make_file_dict", "os.listdir", "rpath.ea_get",
+		l.extend(["rpath.make_file_dict", "os.listdir", "rpath.ea_get",
 				  "rpath.acl_get", "rpath.setdata_local",
 				  "log.Log.log_to_file", "os.getuid", "Time.setcurtime_local",
 				  "rpath.gzip_open_local_read", "rpath.open_local_read",

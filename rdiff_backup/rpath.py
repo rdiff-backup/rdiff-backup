@@ -36,7 +36,7 @@ are dealing with are local or remote.
 """
 
 import os, stat, re, sys, shutil, gzip, socket, time, errno
-import Globals, Time, static, log, user_group
+import Globals, Time, static, log, user_group, C
 
 
 class SkipFileException(Exception):
@@ -185,6 +185,7 @@ def copy_attribs(rpin, rpout):
 	rpout.chmod(rpin.getperms())
 	if Globals.acls_write: rpout.write_acl(rpin.get_acl())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
+	if Globals.win_acls_write: rpout.write_win_acl(rpin.get_win_acl())
 
 def copy_attribs_inc(rpin, rpout):
 	"""Change file attributes of rpout to match rpin
@@ -245,7 +246,7 @@ def rename(rp_source, rp_dest):
 	if not rp_source.lstat(): rp_dest.delete()
 	else:
 		if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode() and \
-				rp_source.getinode() != -1:
+				rp_source.getinode() != 0:
 			log.Log("Warning: Attempt to rename over same inode: %s to %s"
 					% (rp_source.path, rp_dest.path), 2)
 			# You can't rename one hard linked file over another
@@ -263,16 +264,65 @@ def rename(rp_source, rp_dest):
 		rp_dest.data = rp_source.data
 		rp_source.data = {'type': None}
 
-def tupled_lstat(filename):
-	"""Like os.lstat, but return only a tuple, or None if os.error
+def make_file_dict(filename):
+	"""Generate the data dictionary for the given RPath
 
-	Later versions of os.lstat return a special lstat object,
-	which can confuse the pickler and cause errors in remote
-	operations.  This has been fixed in Python 2.2.1.
-
+	This is a global function so that os.name can be called locally,
+	thus avoiding network lag and so that we only need to send the
+	filename over the network, thus avoiding the need to pickle an
+	(incomplete) rpath object.
 	"""
-	try: return tuple(os.lstat(filename))
-	except os.error: return None
+	if os.name != 'nt':
+		return C.make_file_dict(filename)
+	else:
+		return make_file_dict_python(filename)
+
+def make_file_dict_python(filename):
+	"""Create the data dictionary using a Python call to os.lstat
+	
+	We do this on Windows since Python's implementation is much better
+	than the one in cmodule.c    Eventually, we will move to using
+	this on all platforms since CPUs have gotten much faster than
+	they were when it was necessary to write cmodule.c
+	"""
+	try:
+		statblock = os.lstat(filename)
+	except os.error:
+		return {'type':None}
+	data = {}
+	mode = statblock[stat.ST_MODE]
+
+	if stat.S_ISREG(mode): type = 'reg'
+	elif stat.S_ISDIR(mode): type = 'dir'
+	elif stat.S_ISCHR(mode):
+		type = 'dev'
+		s = statblock.st_rdev
+		data['devnums'] = ('c',) + (s >> 8, s & 0xff)
+	elif stat.S_ISBLK(mode):
+		type = 'dev'
+		s = statblock.st_rdev
+		data['devnums'] = ('b',) + (s >> 8, s & 0xff)
+	elif stat.S_ISFIFO(mode): type = 'fifo'
+	elif stat.S_ISLNK(mode):
+		type = 'sym'
+		data['linkname'] = os.readlink(filename)
+	elif stat.S_ISSOCK(mode): type = 'sock'
+	else: raise C.UnknownFileError(filename)
+	data['type'] = type
+	data['size'] = statblock[stat.ST_SIZE]
+	data['perms'] = stat.S_IMODE(mode)
+	data['uid'] = statblock[stat.ST_UID]
+	data['gid'] = statblock[stat.ST_GID]
+	data['inode'] = statblock[stat.ST_INO]
+	data['devloc'] = statblock[stat.ST_DEV]
+	data['nlink'] = statblock[stat.ST_NLINK]
+
+	if not (type == 'sym' or type == 'dev'):
+		# mtimes on symlinks and dev files don't work consistently
+		data['mtime'] = long(statblock[stat.ST_MTIME])
+		data['atime'] = long(statblock[stat.ST_ATIME])
+		data['ctime'] = long(statblock[stat.ST_CTIME])
+	return data
 
 def make_socket_local(rpath):
 	"""Make a local socket at the given path
@@ -296,6 +346,26 @@ def open_local_read(rpath):
 	"""Return open file (provided for security reasons)"""
 	assert rpath.conn is Globals.local_connection
 	return open(rpath.path, "rb")
+
+def get_incfile_info(basename):
+	"""Returns None or tuple of 
+	(is_compressed, timestr, type, and basename)"""
+	dotsplit = basename.split(".")
+	if dotsplit[-1] == "gz":
+		compressed = 1
+		if len(dotsplit) < 4: return None
+		timestring, ext = dotsplit[-3:-1]
+	else:
+		compressed = None
+		if len(dotsplit) < 3: return None
+		timestring, ext = dotsplit[-2:]
+	if Time.stringtotime(timestring) is None: return None
+	if not (ext == "snapshot" or ext == "dir" or
+			ext == "missing" or ext == "diff" or ext == "data"):
+		return None
+	if compressed: basestr = ".".join(dotsplit[:-3])
+	else: basestr = ".".join(dotsplit[:-2])
+	return (compressed, timestring, ext, basestr)
 
 
 class RORPath:
@@ -338,6 +408,7 @@ class RORPath:
 			elif key == 'size' and not self.isreg(): pass
 			elif key == 'ea' and not Globals.eas_active: pass
 			elif key == 'acl' and not Globals.acls_active: pass
+			elif key == 'win_acl' and not Globals.win_acls_active: pass
 			elif key == 'carbonfile' and not Globals.carbonfile_active: pass
 			elif key == 'resourcefork' and not Globals.resource_forks_active:
 				pass
@@ -378,6 +449,7 @@ class RORPath:
 			elif key == 'inode': pass
 			elif key == 'ea' and not Globals.eas_write: pass
 			elif key == 'acl' and not Globals.acls_write: pass
+			elif key == 'win_acl' and not Globals.win_acls_write: pass
 			elif key == 'carbonfile' and not Globals.carbonfile_write: pass
 			elif key == 'resourcefork' and not Globals.resource_forks_write:
 				pass
@@ -389,14 +461,17 @@ class RORPath:
 
 		if self.lstat() and not self.issym() and Globals.change_ownership:
 			# Now compare ownership.  Symlinks don't have ownership
-			if user_group.map_rpath(self) != other.getuidgid(): return 0
+			try:
+				if user_group.map_rpath(self) != other.getuidgid(): return 0
+			except KeyError:
+				return 0 # uid/gid might be missing if metadata file is corrupt
 
 		return 1
 
 	def equal_verbose(self, other, check_index = 1,
 					  compare_inodes = 0, compare_ownership = 0,
-					  compare_acls = 0, compare_eas = 0, compare_size = 1,
-					  compare_type = 1, verbosity = 2):
+					  compare_acls = 0, compare_eas = 0, compare_win_acls = 0,
+					  compare_size = 1, compare_type = 1, verbosity = 2):
 		"""Like __eq__, but log more information.  Useful when testing"""
 		if check_index and self.index != other.index:
 			log.Log("Index %s != index %s" % (self.index, other.index),
@@ -417,6 +492,7 @@ class RORPath:
 				pass
 			elif key == 'ea' and not compare_eas: pass
 			elif key == 'acl' and not compare_acls: pass
+			elif key == 'win_acl' and not compare_win_acls: pass
 			elif (not other.data.has_key(key) or
 				  self.data[key] != other.data[key]):
 				if not other.data.has_key(key):
@@ -434,7 +510,8 @@ class RORPath:
 		return self.equal_verbose(other,
 								  compare_inodes = compare_inodes,
 								  compare_eas = Globals.eas_active,
-								  compare_acls = Globals.acls_active)
+								  compare_acls = Globals.acls_active,
+								  compare_win_acls = Globals.win_acls_active)
 							 
 	def __ne__(self, other): return not self.__eq__(other)
 
@@ -682,6 +759,17 @@ class RORPath:
 		"""Record resource fork in dictionary.  Does not write"""
 		self.data['resourcefork'] = rfork
 
+	def set_win_acl(self, acl):
+		"""Record Windows access control list in dictionary. Does not write"""
+		self.data['win_acl'] = acl
+
+	def get_win_acl(self):
+		"""Return access control list object from dictionary"""
+		try: return self.data['win_acl']
+		except KeyError:
+			acl = self.data['win_acl'] = get_blank_win_acl(self.index)
+			return acl
+
 	def has_alt_mirror_name(self):
 		"""True if rorp has an alternate mirror name specified"""
 		return self.data.has_key('mirrorname')
@@ -787,47 +875,9 @@ class RPath(RORPath):
 		self.path = "/".join((self.base,) + self.index)
 
 	def setdata(self):
-		"""Set data dictionary using C extension"""
-		self.data = self.conn.C.make_file_dict(self.path)
+		"""Set data dictionary using the wrapper"""
+		self.data = self.conn.rpath.make_file_dict(self.path)
 		if self.lstat(): self.conn.rpath.setdata_local(self)
-
-	def make_file_dict_old(self):
-		"""Create the data dictionary"""
-		statblock = self.conn.rpath.tupled_lstat(self.path)
-		if statblock is None:
-			return {'type':None}
-		data = {}
-		mode = statblock[stat.ST_MODE]
-
-		if stat.S_ISREG(mode): type = 'reg'
-		elif stat.S_ISDIR(mode): type = 'dir'
-		elif stat.S_ISCHR(mode):
-			type = 'dev'
-			data['devnums'] = ('c',) + self._getdevnums()
-		elif stat.S_ISBLK(mode):
-			type = 'dev'
-			data['devnums'] = ('b',) + self._getdevnums()
-		elif stat.S_ISFIFO(mode): type = 'fifo'
-		elif stat.S_ISLNK(mode):
-			type = 'sym'
-			data['linkname'] = self.conn.os.readlink(self.path)
-		elif stat.S_ISSOCK(mode): type = 'sock'
-		else: raise C.UnknownFileError(self.path)
-		data['type'] = type
-		data['size'] = statblock[stat.ST_SIZE]
-		data['perms'] = stat.S_IMODE(mode)
-		data['uid'] = statblock[stat.ST_UID]
-		data['gid'] = statblock[stat.ST_GID]
-		data['inode'] = statblock[stat.ST_INO]
-		data['devloc'] = statblock[stat.ST_DEV]
-		data['nlink'] = statblock[stat.ST_NLINK]
-
-		if not (type == 'sym' or type == 'dev'):
-			# mtimes on symlinks and dev files don't work consistently
-			data['mtime'] = long(statblock[stat.ST_MTIME])
-			data['atime'] = long(statblock[stat.ST_ATIME])
-			data['ctime'] = long(statblock[stat.ST_CTIME])
-		return data
 
 	def check_consistency(self):
 		"""Raise an error if consistency of rp broken
@@ -841,11 +891,6 @@ class RPath(RORPath):
 		assert temptype == self.data['type'], \
 			   "\nName: %s\nOld: %s --> New: %s\n" % \
 			   (self.path, temptype, self.data['type'])
-
-	def _getdevnums(self):
-		"""Return tuple for special file (major, minor)"""
-		s = self.conn.reval("lambda path: os.lstat(path).st_rdev", self.path)
-		return (s >> 8, s & 0xff)
 
 	def chmod(self, permissions):
 		"""Wrapper around os.chmod"""
@@ -1112,25 +1157,17 @@ class RPath(RORPath):
 		Also sets various inc information used by the *inc* functions.
 
 		"""
-		if self.index: dotsplit = self.index[-1].split(".")
-		else: dotsplit = self.base.split(".")
-		if dotsplit[-1] == "gz":
-			self.inc_compressed = 1
-			if len(dotsplit) < 4: return None
-			timestring, ext = dotsplit[-3:-1]
+		if self.index: basename = self.index[-1]
+		else: basename = self.base
+
+		inc_info = get_incfile_info(basename)
+
+		if inc_info:
+			self.inc_compressed, self.inc_timestr, \
+				self.inc_type, self.inc_basestr = inc_info
+			return 1
 		else:
-			self.inc_compressed = None
-			if len(dotsplit) < 3: return None
-			timestring, ext = dotsplit[-2:]
-		if Time.stringtotime(timestring) is None: return None
-		if not (ext == "snapshot" or ext == "dir" or
-				ext == "missing" or ext == "diff" or ext == "data"):
 			return None
-		self.inc_timestr = timestring
-		self.inc_type = ext
-		if self.inc_compressed: self.inc_basestr = ".".join(dotsplit[:-3])
-		else: self.inc_basestr = ".".join(dotsplit[:-2])
-		return 1
 
 	def isinccompressed(self):
 		"""Return true if inc file is compressed"""
@@ -1304,6 +1341,16 @@ class RPath(RORPath):
 		assert not fp.close()
 		self.set_resource_fork(rfork_data)
 
+	def get_win_acl(self):
+		"""Return Windows access control list, setting if necessary"""
+		try: acl = self.data['win_acl']
+		except KeyError: acl = self.data['win_acl'] = win_acl_get(self)
+		return acl
+
+	def write_win_acl(self, acl):
+		"""Change access control list of rp"""
+		write_win_acl(self, acl)
+		self.data['win_acl'] = acl
 
 class RPathFileHook:
 	"""Look like a file, but add closing hook"""
@@ -1394,6 +1441,8 @@ def setdata_local(rpath):
 	rpath.data['gname'] = user_group.gid2gname(rpath.data['gid'])
 	if Globals.eas_conn: rpath.data['ea'] = ea_get(rpath)
 	if Globals.acls_conn: rpath.data['acl'] = acl_get(rpath)
+	if Globals.win_acls_conn:
+		rpath.data['win_acl'] = win_acl_get(rpath)
 	if Globals.resource_forks_conn and rpath.isreg():
 		rpath.get_resource_fork()
 	if Globals.carbonfile_conn and rpath.isreg():
@@ -1427,3 +1476,7 @@ def acl_get(rp): assert 0
 def get_blank_acl(index): assert 0
 def ea_get(rp): assert 0
 def get_blank_ea(index): assert 0
+
+def win_acl_get(rp): assert 0
+def write_win_acl(rp): assert 0
+def get_blank_win_acl(): assert 0

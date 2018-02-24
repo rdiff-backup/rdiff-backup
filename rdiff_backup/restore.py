@@ -47,8 +47,10 @@ def get_inclist(inc_rpath):
 
 	inc_list = []
 	for filename in parent_dir.listdir():
-		inc = parent_dir.append(filename)
-		if inc.isincfile() and inc.getincbase_str() == basename:
+		inc_info = rpath.get_incfile_info(filename)
+		if inc_info and inc_info[3] == basename:
+			inc = parent_dir.append(filename)
+			assert inc.isincfile()
 			inc_list.append(inc)
 	return inc_list
 
