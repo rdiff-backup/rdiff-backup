@@ -104,7 +104,12 @@ def signal_handler(signum, frame):
 
 def install_signal_handlers():
 	"""Install signal handlers on current connection"""
-	for signum in [signal.SIGQUIT, signal.SIGHUP, signal.SIGTERM]:
+	signals = [signal.SIGTERM, signal.SIGINT]
+	try:
+		signals.extend([signal.SIGHUP, signal.SIGQUIT])
+	except AttributeError:
+	    pass
+	for signum in signals:
 		signal.signal(signum, signal_handler)
 
 

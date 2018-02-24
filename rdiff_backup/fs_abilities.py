@@ -169,7 +169,7 @@ class FSAbilities:
 		try:
 			tmp_rp.chown(uid+1, gid+1) # just choose random uid/gid
 			tmp_rp.chown(0, 0)
-		except (IOError, OSError): self.ownership = 0
+		except (IOError, OSError, AttributeError): self.ownership = 0
 		else: self.ownership = 1
 		tmp_rp.delete()
 
@@ -184,11 +184,11 @@ class FSAbilities:
 			hl_dest.hardlink(hl_source.path)
 			if hl_source.getinode() != hl_dest.getinode():
 				raise IOError(errno.EOPNOTSUPP, "Hard links don't compare")
-		except (IOError, OSError):
+		except (IOError, OSError, AttributeError):
 			if Globals.preserve_hardlinks != 0:
 				log.Log("Warning: hard linking not supported by filesystem "
 						"at %s" % (self.root_rp.path,), 3)
-			self.hardlinks = 0
+			self.hardlinks = None
 		else: self.hardlinks = 1
 
 	def set_fsync_dirs(self, testdir):
@@ -439,14 +439,19 @@ class FSAbilities:
 
 	def set_high_perms_readwrite(self, dir_rp):
 		"""Test for writing high-bit permissions like suid"""
-		tmp_rp = dir_rp.append("high_perms")
-		tmp_rp.touch()
+		tmpf_rp = dir_rp.append("high_perms_file")
+		tmpf_rp.touch()
+		tmpd_rp = dir_rp.append("high_perms_dir")
+		tmpd_rp.touch()
 		try:
-			tmp_rp.chmod(07000)
-			tmp_rp.chmod(07777)
+			tmpf_rp.chmod(07000)
+			tmpf_rp.chmod(07777)
+			tmpd_rp.chmod(07000)
+			tmpd_rp.chmod(07777)
 		except (OSError, IOError): self.high_perms = 0
 		else: self.high_perms = 1
-		tmp_rp.delete()
+		tmpf_rp.delete()
+		tmpd_rp.delete()
 
 	def set_symlink_perms(self, dir_rp):
 		"""Test if symlink permissions are affected by umask"""
@@ -455,7 +460,7 @@ class FSAbilities:
 		sym_dest = dir_rp.append("symlinked_file2")
 		try:
 			sym_dest.symlink(sym_source.path)
-		except (OSError):
+		except (OSError, AttributeError):
 			self.symlink_perms = 0
 		else:
 			sym_dest.setdata()
