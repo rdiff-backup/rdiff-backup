@@ -533,8 +533,9 @@ class PatchITRB(rorpiter.ITRBranch):
 		if diff_rorp.isflaglinked():
 			self.patch_hardlink_to_temp(diff_rorp, new)
 		elif diff_rorp.get_attached_filetype() == 'snapshot':
-			if not self.patch_snapshot_to_temp(diff_rorp, new):
-				return 0
+			result = self.patch_snapshot_to_temp(diff_rorp, new)
+			if not result: return 0
+			elif result == 2: return 1 # SpecialFile
 		elif not self.patch_diff_to_temp(basis_rp, diff_rorp, new):
 			return 0
 		if new.lstat() and not diff_rorp.isflaglinked():
@@ -547,11 +548,18 @@ class PatchITRB(rorpiter.ITRBranch):
 		self.CCPP.update_hardlink_hash(diff_rorp)
 
 	def patch_snapshot_to_temp(self, diff_rorp, new):
-		"""Write diff_rorp to new, return true if successful"""
+		"""Write diff_rorp to new, return true if successful
+
+		Returns 1 if normal success, 2 if special file is written,
+		whether or not it is successful.  This is because special
+		files either fail with a SpecialFileError, or don't need to be
+		compared.
+
+		"""
 		if diff_rorp.isspecial():
 			self.write_special(diff_rorp, new)
 			rpath.copy_attribs(diff_rorp, new)
-			return 1
+			return 2
 		
 		report = robust.check_common_error(self.error_handler, rpath.copy,
 										   (diff_rorp, new))

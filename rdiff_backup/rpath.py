@@ -100,7 +100,12 @@ def copy(rpin, rpout, compress = 0):
 
 	if rpin.isreg(): return copy_reg_file(rpin, rpout, compress)
 	elif rpin.isdir(): rpout.mkdir()
-	elif rpin.issym(): rpout.symlink(rpin.readlink())
+	elif rpin.issym():
+		# some systems support permissions for symlinks, but
+		# only by setting at creation via the umask
+		orig_umask = os.umask(0777 & ~rpin.getperms())
+		rpout.symlink(rpin.readlink())
+		os.umask(orig_umask)	# restore previous umask
 	elif rpin.ischardev():
 		major, minor = rpin.getdevnums()
 		rpout.makedev("c", major, minor)
@@ -160,13 +165,13 @@ def copy_attribs(rpin, rpout):
 	if Globals.change_ownership:
 		rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
 	if rpin.issym(): return # symlinks don't have times or perms
+	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if (Globals.resource_forks_write and rpin.isreg() and
 		rpin.has_resource_fork()):
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if (Globals.carbonfile_write and rpin.isreg() and
 		rpin.has_carbonfile()):
 		rpout.write_carbonfile(rpin.get_carbonfile())
-	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	rpout.chmod(rpin.getperms())
 	if Globals.acls_write: rpout.write_acl(rpin.get_acl())
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
@@ -183,13 +188,13 @@ def copy_attribs_inc(rpin, rpout):
 	check_for_files(rpin, rpout)
 	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
 	if rpin.issym(): return # symlinks don't have times or perms
+	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if (Globals.resource_forks_write and rpin.isreg() and
 		rpin.has_resource_fork() and rpout.isreg()):
 		rpout.write_resource_fork(rpin.get_resource_fork())
 	if (Globals.carbonfile_write and rpin.isreg() and
 		rpin.has_carbonfile() and rpout.isreg()):
 		rpout.write_carbonfile(rpin.get_carbonfile())
-	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if rpin.isdir() and not rpout.isdir():
 		rpout.chmod(rpin.getperms() & 0777)
 	else: rpout.chmod(rpin.getperms())
@@ -1148,6 +1153,7 @@ class RPath(RORPath):
 			os.fsync(fd)
 			os.close(fd)
 		except OSError, e:
+			if locals().has_key('fd'): os.close(fd)
 			if e.errno != errno.EPERM or self.isdir(): raise
 
 			# Maybe the system doesn't like read-only fsyncing.
@@ -1206,6 +1212,8 @@ class RPath(RORPath):
 		if not cfile: return
 		log.Log("Writing carbon data to %s" % (self.index,), 7)
 		from Carbon.File import FSSpec
+		from Carbon.File import FSRef
+		import Carbon.Files
 		import MacOS
 		fsobj = FSSpec(self.path)
 		finderinfo = fsobj.FSpGetFInfo()
@@ -1214,7 +1222,16 @@ class RPath(RORPath):
 		finderinfo.Location = cfile['location']
 		finderinfo.Flags = cfile['flags']
 		fsobj.FSpSetFInfo(finderinfo)
-		self.set_carbonfile(cfile)
+
+		"""Write Creation Date to self (if stored in metadata)."""
+		try:
+			cdate = cfile['createDate']
+			fsref = FSRef(fsobj)
+			cataloginfo, d1, d2, d3 = fsref.FSGetCatalogInfo(Carbon.Files.kFSCatInfoCreateDate)
+			cataloginfo.createDate = (0, cdate, 0)
+			fsref.FSSetCatalogInfo(Carbon.Files.kFSCatInfoCreateDate, cataloginfo)
+			self.set_carbonfile(cfile)
+		except KeyError: self.set_carbonfile(cfile)
 
 	def get_resource_fork(self):
 		"""Return resource fork data, setting if necessary"""
@@ -1336,14 +1353,18 @@ def setdata_local(rpath):
 def carbonfile_get(rpath):
 	"""Return carbonfile value for local rpath"""
 	from Carbon.File import FSSpec
+	from Carbon.File import FSRef
+	import Carbon.Files
 	import MacOS
 	try:
 		fsobj = FSSpec(rpath.path)
 		finderinfo = fsobj.FSpGetFInfo()
+		cataloginfo, d1, d2, d3 = FSRef(fsobj).FSGetCatalogInfo(Carbon.Files.kFSCatInfoCreateDate)
 		cfile = {'creator': finderinfo.Creator,
 				 'type': finderinfo.Type,
 				 'location': finderinfo.Location,
-				 'flags': finderinfo.Flags}
+				 'flags': finderinfo.Flags,
+				 'createDate': cataloginfo.createDate[1]}
 		return cfile
 	except MacOS.Error:
 		log.Log("Cannot read carbonfile information from %s" %

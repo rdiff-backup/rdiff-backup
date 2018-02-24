@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # rdiff-backup-statistics -- Summarize rdiff-backup statistics files
-# Version 1.1.5 released December 31, 2005
+# Version 1.1.7 released November 12, 2006
 # Copyright 2005 Dean Gaudet, Ben Escoto
 #
 # This file is part of rdiff-backup.
