@@ -19,21 +19,17 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-/*
- * TODO: A function like perror that includes strerror output.  Apache
- * does this by adding flags as well as the severity level which say
- * whether such information should be included.
- */
-
-
-/*
+/** \file trace.h logging functions.
+ *
  * trace may be turned off.
  *
- * error is always on, but you can return and continue in some way
+ * error is always on, but you can return and continue in some way.
  *
- * fatal terminates the whole process
- */
+ * fatal terminates the whole process.
+ *
+ * \todo A function like perror that includes strerror output.  Apache does
+ * this by adding flags as well as the severity level which say whether such
+ * information should be included. */
 
 #include <inttypes.h>
 /* Printf format patters for standard librsync types. */
@@ -41,52 +37,46 @@
 #define FMT_WEAKSUM "%08"PRIx32
 /* Old MSVC compilers don't support "%zu" and have "%Iu" instead. */
 #ifdef HAVE_PRINTF_Z
-#define FMT_SIZE "%zu"
+#  define FMT_SIZE "%zu"
 #else
-#define FMT_SIZE "%Iu"
+#  define FMT_SIZE "%Iu"
 #endif
 
-
 #if defined(__clang__) || defined(__GNUC__)
-/*
- * TODO: Also look for the C9X predefined identifier `_function', or
- * whatever it's called.
- */
+/** \todo Also look for the C9X predefined identifier `_function', or whatever
+ * it's called. */
 
 void rs_log0(int level, char const *fn, char const *fmt, ...)
     __attribute__ ((format(printf, 3, 4)));
 
-#ifdef DO_RS_TRACE
-#  define rs_trace(fmt, arg...)                            \
-    do { rs_log0(RS_LOG_DEBUG, __FUNCTION__, fmt , ##arg);  \
+#  ifdef DO_RS_TRACE
+#    define rs_trace(fmt, arg...) \
+    do { rs_log0(RS_LOG_DEBUG, __FUNCTION__, fmt , ##arg); \
     } while (0)
-#else
-#  define rs_trace(fmt, arg...)
-#endif	/* !DO_RS_TRACE */
+#  else
+#    define rs_trace(fmt, arg...)
+#  endif                        /* !DO_RS_TRACE */
 
-#define rs_log(l, s, str...) do {              \
-     rs_log0((l), __FUNCTION__, (s) , ##str);  \
+#  define rs_log(l, s, str...) do { \
+     rs_log0((l), __FUNCTION__, (s) , ##str); \
      } while (0)
 
-
-#define rs_error(s, str...) do {                       \
-     rs_log0(RS_LOG_ERR,  __FUNCTION__, (s) , ##str);  \
+#  define rs_error(s, str...) do { \
+     rs_log0(RS_LOG_ERR,  __FUNCTION__, (s) , ##str); \
      } while (0)
 
-
-#define rs_fatal(s, str...) do {               \
-     rs_log0(RS_LOG_CRIT,  __FUNCTION__,       \
-	      (s) , ##str);                    \
-     abort();                                  \
+#  define rs_fatal(s, str...) do { \
+     rs_log0(RS_LOG_CRIT,  __FUNCTION__, \
+	      (s) , ##str); \
+     abort(); \
      } while (0)
 
-
-#else /************************* ! __GNUC__ */
+#else                           /* !__GNUC__ */
 #  define rs_trace rs_trace0
 #  define rs_fatal rs_fatal0
 #  define rs_error rs_error0
 #  define rs_log   rs_log0_nofn
-#endif				/* ! __GNUC__ */
+#endif                          /* !__GNUC__ */
 
 void rs_trace0(char const *s, ...);
 void rs_fatal0(char const *s, ...);
@@ -95,20 +85,14 @@ void rs_log0(int level, char const *fn, char const *fmt, ...);
 void rs_log0_nofn(int level, char const *fmt, ...);
 
 enum {
-    RS_LOG_PRIMASK       = 7,   /**< Mask to extract priority
-                                   part. \internal */
+    RS_LOG_PRIMASK = 7,         /**< Mask to extract priority part. \internal */
 
-    RS_LOG_NONAME        = 8    /**< \b Don't show function name in
-                                   message. */
+    RS_LOG_NONAME = 8           /**< \b Don't show function name in message. */
 };
 
-
-/**
- * \macro rs_trace_enabled()
+/** \macro rs_trace_enabled()
  *
- * Call this before putting too much effort into generating trace
- * messages.
- */
+ * Call this before putting too much effort into generating trace messages. */
 
 extern int rs_trace_level;
 

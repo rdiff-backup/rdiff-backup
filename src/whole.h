@@ -19,5 +19,5 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-rs_result rs_whole_run(rs_job_t *job, FILE *in_file, FILE *out_file, int inbuflen, int outbuflen);
+rs_result rs_whole_run(rs_job_t *job, FILE *in_file, FILE *out_file,
+                       int inbuflen, int outbuflen);

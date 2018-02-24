@@ -19,8 +19,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-                              /*
+                              /*=
                                | Welcome to Arco AM/PM Mini-Market. We
                                | would like to advise our customers
                                | that any individual who offers to
@@ -34,19 +33,18 @@
                                | Arco, and have a nice day.
                                */
 
+/** \file msg.c error messages for re_result values.
+ *
+ * \todo (Suggestion by tridge) Add a function which outputs a complete text
+ * description of a job, including only the fields relevant to the current
+ * encoding function. */
+
 #include "config.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "librsync.h"
-
-/*
- * TODO: (Suggestion by tridge) Add a function which outputs a
- * complete text description of a job, including only the fields
- * relevant to the current encoding function.
- */
-
 
 char const *rs_strerror(rs_result r)
 {

@@ -21,24 +21,22 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* MD4 message digest algorithm.
+/** \file mdfour.c MD4 message digest algorithm.
  *
- * TODO: Perhaps use the MD4 routine from OpenSSL if it's installed.
- * It's probably not worth the trouble.
+ * \todo Perhaps use the MD4 routine from OpenSSL if it's installed. It's
+ * probably not worth the trouble.
  *
- * This was originally written by Andrew Tridgell for use in Samba.
- * It was then modified by;
+ * This was originally written by Andrew Tridgell for use in Samba. It was then
+ * modified by;
  *
- * 2002-06-xx: Robert Weber <robert.weber@Colorado.edu>
- *   optimisations and fixed >512M support.
+ * 2002-06-xx: Robert Weber <robert.weber@Colorado.edu> optimisations and fixed
+ * >512M support.
  *
- * 2002-06-27: Donovan Baarda <abo@minkirri.apana.org.au>
- *   further optimisations and cleanups.
+ * 2002-06-27: Donovan Baarda <abo@minkirri.apana.org.au> further optimisations
+ * and cleanups.
  *
- * 2004-09-09: Simon Law  <sfllaw@debian.org>
- *   handle little-endian machines that can't do unaligned access
- *   (e.g. ia64, pa-risc).
- */
+ * 2004-09-09: Simon Law <sfllaw@debian.org> handle little-endian machines that
+ * can't do unaligned access (e.g. ia64, pa-risc). */
 
 #include "config.h"
 
@@ -49,7 +47,6 @@
 #include "librsync.h"
 #include "trace.h"
 #include "mdfour.h"
-
 
 #define F(X,Y,Z) (((X)&(Y)) | ((~(X))&(Z)))
 #define G(X,Y,Z) (((X)&(Y)) | ((X)&(Z)) | ((Y)&(Z)))
@@ -67,31 +64,23 @@ static unsigned char PADDING[64] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
+static void rs_mdfour_block(rs_mdfour_t *md, void const *p);
 
-static void
-rs_mdfour_block(rs_mdfour_t *md, void const *p);
-
-
-
-/**
- * Update an MD4 accumulator from a 64-byte chunk.
+/** Update an MD4 accumulator from a 64-byte chunk.
  *
- * This cannot be used for the last chunk of the file, which must be
- * padded and contain the file length.  rs_mdfour_tail() is used for
- * that.
+ * This cannot be used for the last chunk of the file, which must be padded and
+ * contain the file length.  rs_mdfour_tail() is used for that.
  *
- * \todo Recode to be fast, and to use system integer types.  Perhaps
- * if we can find an mdfour implementation already on the system
- * (e.g. in OpenSSL) then we should use it instead of our own?
+ * \todo Recode to be fast, and to use system integer types.  Perhaps if we can
+ * find an mdfour implementation already on the system (e.g. in OpenSSL) then
+ * we should use it instead of our own?
  *
- * \param X A series of integer, read little-endian from the file.
- */
-static void
-rs_mdfour64(rs_mdfour_t * m, const void *p)
+ * \param X A series of integer, read little-endian from the file. */
+static void rs_mdfour64(rs_mdfour_t *m, const void *p)
 {
-    uint32_t        AA, BB, CC, DD;
-    uint32_t        A, B, C, D;
-    const uint32_t *X = (const uint32_t *) p;
+    uint32_t AA, BB, CC, DD;
+    uint32_t A, B, C, D;
+    const uint32_t *X = (const uint32_t *)p;
 
     A = m->A;
     B = m->B;
@@ -164,17 +153,14 @@ rs_mdfour64(rs_mdfour_t * m, const void *p)
     m->D = D;
 }
 
-
-/**
- * These next routines are necessary because MD4 is specified in terms of
+/** These next routines are necessary because MD4 is specified in terms of
  * little-endian int32s, but we have a byte buffer.  On little-endian
  * platforms, I think we can just use the buffer pointer directly.
  *
  * There are some nice endianness routines in glib, including assembler
  * variants. If we ever depended on glib, then it could be good to use them
  * instead. */
-inline static void
-copy4( /* @out@ */ unsigned char *out, uint32_t const x)
+inline static void copy4( /* @out@ */ unsigned char *out, uint32_t const x)
 {
     out[0] = x;
     out[1] = x >> 8;
@@ -182,12 +168,10 @@ copy4( /* @out@ */ unsigned char *out, uint32_t const x)
     out[3] = x >> 24;
 }
 
-
 /* We need this if there is a uint64 */
-/* --robert.weber@Colorado.edu	     */
+/* --robert.weber@Colorado.edu */
 #ifdef HAVE_UINT64
-inline static void
-copy8( /* @out@ */ unsigned char *out, uint64_t const x)
+inline static void copy8( /* @out@ */ unsigned char *out, uint64_t const x)
 {
     out[0] = x;
     out[1] = x >> 8;
@@ -198,15 +182,13 @@ copy8( /* @out@ */ unsigned char *out, uint64_t const x)
     out[6] = x >> 48;
     out[7] = x >> 56;
 }
-#endif /* HAVE_UINT64 */
-
+#endif                          /* HAVE_UINT64 */
 
 /* We only need this if we are big-endian */
 #ifdef WORDS_BIGENDIAN
-inline static void
-copy64( /* @out@ */ uint32_t * M, unsigned char const *in)
+inline static void copy64( /* @out@ */ uint32_t *M, unsigned char const *in)
 {
-    int i=16;
+    int i = 16;
 
     while (i--) {
         *M++ = (in[3] << 24) | (in[2] << 16) | (in[1] << 8) | in[0];
@@ -214,60 +196,51 @@ copy64( /* @out@ */ uint32_t * M, unsigned char const *in)
     }
 }
 
-
-/**
- * Accumulate a block, making appropriate conversions for bigendian
- * machines.
+/** Accumulate a block, making appropriate conversions for bigendian machines.
  */
-inline static void
-rs_mdfour_block(rs_mdfour_t *md, void const *p)
+inline static void rs_mdfour_block(rs_mdfour_t *md, void const *p)
 {
-    uint32_t        M[16];
+    uint32_t M[16];
 
     copy64(M, p);
     rs_mdfour64(md, M);
 }
 
-
-#else /* WORDS_BIGENDIAN */
+#else                           /* WORDS_BIGENDIAN */
 
 #  ifdef __i386__
 
 /* If we are on an IA-32 machine, we can process directly. */
-inline static void
-rs_mdfour_block(rs_mdfour_t *md, void const *p)
+inline static void rs_mdfour_block(rs_mdfour_t *md, void const *p)
 {
-    rs_mdfour64(md,p);
+    rs_mdfour64(md, p);
 }
 
-#  else /* !WORDS_BIGENDIAN && !__i386__ */
+#  else                         /* !WORDS_BIGENDIAN && !__i386__ */
 
-/* We are little-endian, but not on i386 and therefore may not be able
- * to do unaligned access safely/quickly.
- *
- * So if the input is not already aligned correctly, copy it to an
- * aligned buffer first.  */
-inline static void
-rs_mdfour_block(rs_mdfour_t *md, void const *p)
+/* We are little-endian, but not on i386 and therefore may not be able to do
+   unaligned access safely/quickly.
+
+   So if the input is not already aligned correctly, copy it to an aligned
+   buffer first. */
+inline static void rs_mdfour_block(rs_mdfour_t *md, void const *p)
 {
-    unsigned long ptrval = (unsigned long) p;
+    unsigned long ptrval = (unsigned long)p;
 
     if (ptrval & 3) {
-        uint32_t        M[16];
+        uint32_t M[16];
 
         memcpy(M, p, 16 * sizeof(uint32_t));
         rs_mdfour64(md, M);
     } else {
-        rs_mdfour64(md, (const uint32_t *) p);
+        rs_mdfour64(md, (const uint32_t *)p);
     }
 }
 
-#  endif /* ! __i386__ */
-#endif /* WORDS_BIGENDIAN */
+#  endif                        /* !__i386__ */
+#endif                          /* WORDS_BIGENDIAN */
 
-
-void
-rs_mdfour_begin(rs_mdfour_t * md)
+void rs_mdfour_begin(rs_mdfour_t *md)
 {
     memset(md, 0, sizeof(*md));
     md->A = 0x67452301;
@@ -281,64 +254,57 @@ rs_mdfour_begin(rs_mdfour_t * md)
 #endif
 }
 
-
-/**
- * Handle special behaviour for processing the last block of a file
- * when calculating its MD4 checksum.
+/** Handle special behaviour for processing the last block of a file when
+ * calculating its MD4 checksum.
  *
  * This must be called exactly once per file.
  *
- * Modified by Robert Weber to use uint64 in order that we can sum files
- * > 2^29 = 512 MB.
- * --Robert.Weber@colorado.edu
- */
-static void
-rs_mdfour_tail(rs_mdfour_t * m)
+ * Modified by Robert Weber to use uint64 in order that we can sum files > 2^29
+ * = 512 MB. --Robert.Weber@colorado.edu */
+static void rs_mdfour_tail(rs_mdfour_t *m)
 {
 #ifdef HAVE_UINT64
-    uint64_t         b;
-#else /* HAVE_UINT64 */
-    uint32_t         b[2];
-#endif /* HAVE_UINT64 */
-    unsigned char   buf[8];
-    size_t          pad_len;
+    uint64_t b;
+#else                           /* HAVE_UINT64 */
+    uint32_t b[2];
+#endif                          /* HAVE_UINT64 */
+    unsigned char buf[8];
+    size_t pad_len;
 
     /* convert the totalN byte count into a bit count buffer */
 #ifdef HAVE_UINT64
     b = m->totalN << 3;
     copy8(buf, b);
-#else /* HAVE_UINT64 */
+#else                           /* HAVE_UINT64 */
     b[0] = m->totalN_lo << 3;
     b[1] = ((m->totalN_hi << 3) | (m->totalN_lo >> 29));
     copy4(buf, b[0]);
     copy4(buf + 4, b[1]);
-#endif /* HAVE_UINT64 */
+#endif                          /* HAVE_UINT64 */
 
     /* calculate length and process the padding data */
-    pad_len=(m->tail_len <56) ? (56 - m->tail_len) : (120 - m->tail_len);
-    rs_mdfour_update(m,PADDING,pad_len);
+    pad_len = (m->tail_len < 56) ? (56 - m->tail_len) : (120 - m->tail_len);
+    rs_mdfour_update(m, PADDING, pad_len);
     /* process the bit count */
-    rs_mdfour_update(m,buf,8);
+    rs_mdfour_update(m, buf, 8);
 }
 
-
-void
-rs_mdfour_update(rs_mdfour_t * md, void const *in_void, size_t n)
+void rs_mdfour_update(rs_mdfour_t *md, void const *in_void, size_t n)
 {
-    unsigned char const        *in = (unsigned char const *) in_void;
+    unsigned char const *in = (unsigned char const *)in_void;
 
     /* increment totalN */
 #ifdef HAVE_UINT64
-    md->totalN+=n;
-#else /* HAVE_UINT64 */
+    md->totalN += n;
+#else                           /* HAVE_UINT64 */
     if ((md->totalN_lo += n) < n)
-	md->totalN_hi++;
-#endif /* HAVE_UINT64 */
+        md->totalN_hi++;
+#endif                          /* HAVE_UINT64 */
 
-    /* If there's any leftover data in the tail buffer, then first we have
-     * to make it up to a whole block to process it.  */
+    /* If there's any leftover data in the tail buffer, then first we have to
+       make it up to a whole block to process it. */
     if (md->tail_len) {
-        size_t  tail_gap = 64 - md->tail_len;
+        size_t tail_gap = 64 - md->tail_len;
         if (tail_gap <= n) {
             memcpy(&md->tail[md->tail_len], in, tail_gap);
             rs_mdfour_block(md, md->tail);
@@ -353,16 +319,14 @@ rs_mdfour_update(rs_mdfour_t * md, void const *in_void, size_t n)
         in += 64;
         n -= 64;
     }
-    /* Put remaining bytes onto tail*/
+    /* Put remaining bytes onto tail */
     if (n) {
         memcpy(&md->tail[md->tail_len], in, n);
         md->tail_len += n;
     }
 }
 
-
-void
-rs_mdfour_result(rs_mdfour_t * md, unsigned char *out)
+void rs_mdfour_result(rs_mdfour_t *md, unsigned char *out)
 {
     rs_mdfour_tail(md);
 
@@ -372,11 +336,9 @@ rs_mdfour_result(rs_mdfour_t * md, unsigned char *out)
     copy4(out + 12, md->D);
 }
 
-
-void
-rs_mdfour(unsigned char *out, void const *in, size_t n)
+void rs_mdfour(unsigned char *out, void const *in, size_t n)
 {
-    rs_mdfour_t     md;
+    rs_mdfour_t md;
 
     rs_mdfour_begin(&md);
     rs_mdfour_update(&md, in, n);

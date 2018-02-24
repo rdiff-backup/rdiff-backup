@@ -198,17 +198,6 @@ endif (LIBB2_FOUND)
 # reference implementation is currently faster.
 cmake_dependent_option(USE_LIBB2 "Use the libb2 blake2 implementation." OFF "LIBB2_FOUND" OFF)
 
-# Doxygen doc generator
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
-    add_custom_target(doc
-        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Generating API documentation with Doxygen" VERBATIM
-    )
-endif(DOXYGEN_FOUND)
-
 if (USE_LIBB2)
   message (STATUS "Using libb2 blake2 implementation.")
   include_directories(${LIBB2_INCLUDE_DIRS})
@@ -219,6 +208,45 @@ else (USE_LIBB2)
   set(blake2_SRCS src/blake2/blake2b-ref.c)
 endif (USE_LIBB2)
 
+# Doxygen doc generator.
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile @ONLY)
+    add_custom_target(doc
+        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen" VERBATIM
+    )
+endif(DOXYGEN_FOUND)
+
+# Code tidy target to reformat code with indent.
+file(GLOB tidy_SRCS src/*.[ch])
+set(TYPE_RE "(\\w+_t)")
+set(CAST_RE "(\\(${TYPE_RE}( \\*+)?\\))")
+add_custom_target(tidy
+    COMMENT "Reformatting all code to preferred coding style."
+    # Note indent requires all userdefined types to be specified with '-T <type>' args to
+    # format them correctly. Rather than do that, we just postprocess with sed.
+    #
+    # Hide the enclosing 'extern "C" {...}' block for indenting in librsync.h
+    COMMAND sed -r -i "s:^(extern \"C\") \\{:\\1;:; s:^\\}(\\s+/\\* extern \"C\" \\*/):;\\1:" src/librsync.h
+    # Linux format with no tabs, indent 4, preproc indent 2, 80 columns, format comments, swallow blank lines.
+    COMMAND indent -linux -nut -i4 -ppi2 -l80 -lc80 -fc1 -fca -sob -T FILE -T Rollsum -T rs_result ${tidy_SRCS}
+    # Remove space between * or & and identifier after userdefined types,
+    # remove space after type cast for userdefined types like indent -ncs,
+    #and remove trailing whitespace.
+    COMMAND sed -r -i "s:((${TYPE_RE}|${CAST_RE}) (&|\\*+)) :\\1:g; s:(${CAST_RE}) :\\1:g; s:\\s+$::" ${tidy_SRCS}
+    # Restore the enclosing 'extern "C" {...}' block in librsync.h
+    COMMAND sed -r -i "s:^(extern \"C\");:\\1 {:; s:^;(\\s+/\\* extern \"C\" \\*/):}\\1:" src/librsync.h
+    VERBATIM
+)
+# Code tidyc target to reformat all code and comments with https://github.com/dbaarda/tidyc.
+add_custom_target(tidyc
+    COMMENT "Reformatting all code and comments to preferred coding style."
+    # Recomended format, reformat linebreaks, reformat comments, 80 columns.
+    COMMAND tidyc -R -C -l80 -T FILE -T Rollsum -T rs_result ${tidy_SRCS}
+    VERBATIM
+)
 
 # Generate prototab.c/h
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)

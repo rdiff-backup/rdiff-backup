@@ -32,8 +32,7 @@
 #include "rollsum.h"
 #include "blake2.h"
 
-
-/* A simple 32bit checksum that can be incrementally updated. */
+/** A simple 32bit checksum that can be incrementally updated. */
 rs_weak_sum_t rs_calc_weak_sum(void const *buf, size_t len)
 {
     Rollsum sum;
@@ -43,23 +42,20 @@ rs_weak_sum_t rs_calc_weak_sum(void const *buf, size_t len)
     return RollsumDigest(&sum);
 }
 
-
-/**
- * Calculate and store into SUM a strong MD4 checksum of the file
- * blocks seen so far.
+/** Calculate and store into SUM a strong MD4 checksum of the file blocks seen
+ * so far.
  *
- * In plain rsync, the checksum is perturbed by a seed value.  This is
- * used when retrying a failed transmission: we've discovered that the
- * hashes collided at some point, so we're going to try again with
- * different hashes to see if we can get it right.  (Check tridge's
- * thesis for details and to see if that's correct.)
+ * In plain rsync, the checksum is perturbed by a seed value.  This is used
+ * when retrying a failed transmission: we've discovered that the hashes
+ * collided at some point, so we're going to try again with different hashes to
+ * see if we can get it right.  (Check tridge's thesis for details and to see
+ * if that's correct.)
  *
- * Since we can't retry a web transaction I'm not sure if it's very
- * useful in rproxy.
- */
+ * Since we can't retry a web transaction I'm not sure if it's very useful in
+ * rproxy. */
 void rs_calc_md4_sum(void const *buf, size_t len, rs_strong_sum_t *sum)
 {
-    rs_mdfour((unsigned char *) sum, buf, len);
+    rs_mdfour((unsigned char *)sum, buf, len);
 }
 
 void rs_calc_blake2_sum(void const *buf, size_t len, rs_strong_sum_t *sum)

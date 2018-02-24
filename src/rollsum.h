@@ -20,18 +20,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 #ifndef _ROLLSUM_H_
-#define _ROLLSUM_H_
+#  define _ROLLSUM_H_
 
-#include <stddef.h>
-#include <stdint.h>
+#  include <stddef.h>
+#  include <stdint.h>
 
-/* We should make this something other than zero to improve the
- * checksum algorithm: tridge suggests a prime number. */
-#define ROLLSUM_CHAR_OFFSET 31
+/* We should make this something other than zero to improve the checksum
+   algorithm: tridge suggests a prime number. */
+#  define ROLLSUM_CHAR_OFFSET 31
 
-/* the Rollsum struct type*/
-
-/** \private */
+/** The Rollsum struct type \private. */
 typedef struct _Rollsum {
     size_t count;               /* count of bytes included in sum */
     uint_fast16_t s1;           /* s1 part of sum */
@@ -41,12 +39,14 @@ typedef struct _Rollsum {
 void RollsumUpdate(Rollsum *sum, const unsigned char *buf, size_t len);
 
 /* static inline implementations of simple routines */
+
 static inline void RollsumInit(Rollsum *sum)
 {
     sum->count = sum->s1 = sum->s2 = 0;
 }
 
-static inline void RollsumRotate(Rollsum *sum, unsigned char out, unsigned char in)
+static inline void RollsumRotate(Rollsum *sum, unsigned char out,
+                                 unsigned char in)
 {
     sum->s1 += in - out;
     sum->s2 += sum->s1 - sum->count * (out + ROLLSUM_CHAR_OFFSET);

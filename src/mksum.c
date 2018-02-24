@@ -20,22 +20,15 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-
-/**
- * \file mksum.c Generate file signatures.
- **/
-
-/*
- * Generating checksums is pretty easy, since we can always just
- * process whatever data is available.  When a whole block has
- * arrived, or we've reached the end of the file, we write the
- * checksum out.
- */
-
-/* TODO: Perhaps force blocks to be a multiple of 64 bytes, so that we
- * can be sure checksum generation will be more efficient.  I guess it
- * will be OK at the moment, though, because tails are only used if
- * necessary. */
+/** \file mksum.c Generate file signatures.
+ *
+ * Generating checksums is pretty easy, since we can always just process
+ * whatever data is available.  When a whole block has arrived, or we've
+ * reached the end of the file, we write the checksum out.
+ *
+ * \todo Perhaps force blocks to be a multiple of 64 bytes, so that we can be
+ * sure checksum generation will be more efficient.  I guess it will be OK at
+ * the moment, though, because tails are only used if necessary. */
 
 #include "config.h"
 
@@ -51,24 +44,19 @@
 #include "netint.h"
 #include "trace.h"
 
-
 /* Possible state functions for signature generation. */
 static rs_result rs_sig_s_header(rs_job_t *);
 static rs_result rs_sig_s_generate(rs_job_t *);
 
-
-
-/**
- * State of trying to send the signature header.
- * \private
- */
+/** State of trying to send the signature header. \private */
 static rs_result rs_sig_s_header(rs_job_t *job)
 {
     rs_signature_t *sig = job->signature;
     rs_result result;
 
-    if ((result = rs_signature_init(sig, job->sig_magic, job->sig_block_len,
-                                    job->sig_strong_len, 0)) != RS_DONE)
+    if ((result =
+         rs_signature_init(sig, job->sig_magic, job->sig_block_len,
+                           job->sig_strong_len, 0)) != RS_DONE)
         return result;
     rs_squirt_n4(job, sig->magic);
     rs_squirt_n4(job, sig->block_len);
@@ -81,43 +69,34 @@ static rs_result rs_sig_s_header(rs_job_t *job)
     return RS_RUNNING;
 }
 
-
-/**
- * Generate the checksums for a block and write it out.  Called when
- * we already know we have enough data in memory at \p block.
- * \private
- */
-static rs_result
-rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
+/** Generate the checksums for a block and write it out.  Called when we
+ * already know we have enough data in memory at \p block. \private */
+static rs_result rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
 {
-    rs_signature_t      *sig = job->signature;
-    rs_weak_sum_t       weak_sum;
-    rs_strong_sum_t     strong_sum;
+    rs_signature_t *sig = job->signature;
+    rs_weak_sum_t weak_sum;
+    rs_strong_sum_t strong_sum;
 
     weak_sum = rs_calc_weak_sum(block, len);
     rs_signature_calc_strong_sum(sig, block, len, &strong_sum);
     rs_squirt_n4(job, weak_sum);
     rs_tube_write(job, strong_sum, sig->strong_sum_len);
     if (rs_trace_enabled()) {
-        char                strong_sum_hex[RS_MAX_STRONG_SUM_LENGTH * 2 + 1];
+        char strong_sum_hex[RS_MAX_STRONG_SUM_LENGTH * 2 + 1];
         rs_hexify(strong_sum_hex, strong_sum, sig->strong_sum_len);
-        rs_trace("sent block: weak="FMT_WEAKSUM", strong=%s", weak_sum, strong_sum_hex);
+        rs_trace("sent block: weak=" FMT_WEAKSUM ", strong=%s", weak_sum,
+                 strong_sum_hex);
     }
     job->stats.sig_blocks++;
     return RS_RUNNING;
 }
 
-
-/**
- * State of reading a block and trying to generate its sum.
- * \private
- */
-static rs_result
-rs_sig_s_generate(rs_job_t *job)
+/** State of reading a block and trying to generate its sum. \private */
+static rs_result rs_sig_s_generate(rs_job_t *job)
 {
-    rs_result           result;
-    size_t              len;
-    void                *block;
+    rs_result result;
+    size_t len;
+    void *block;
 
     /* must get a whole block, otherwise try again */
     len = job->signature->block_len;
@@ -131,13 +110,12 @@ rs_sig_s_generate(rs_job_t *job)
         rs_trace("generate stopped: %s", rs_strerror(result));
         return result;
     }
-    rs_trace("got "FMT_SIZE" byte block", len);
+    rs_trace("got " FMT_SIZE " byte block", len);
     return rs_sig_do_block(job, block, len);
 }
 
-
-rs_job_t * rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
-                        rs_magic_number sig_magic)
+rs_job_t *rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
+                       rs_magic_number sig_magic)
 {
     rs_job_t *job;
 

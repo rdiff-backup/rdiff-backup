@@ -19,24 +19,22 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-                              /*
+                              /*=
                                | Pick a window, Jimmy, you're leaving.
                                */
 
-
-/*
- * buf.c -- Buffers that map between stdio file streams and librsync
- * streams.  As the stream consumes input and produces output, it is
- * refilled from appropriate input and output FILEs.  A dynamically
- * allocated buffer of configurable size is used as an intermediary.
+/** \file buf.c Buffers that map between stdio file streams and librsync
+ * streams.
  *
- * TODO: Perhaps be more efficient by filling the buffer on every call
- * even if not yet completely empty.  Check that it's really our
- * buffer, and shuffle remaining data down to the front.
+ * As the stream consumes input and produces output, it is refilled from
+ * appropriate input and output FILEs.  A dynamically allocated buffer of
+ * configurable size is used as an intermediary.
  *
- * TODO: Perhaps expose a routine for shuffling the buffers.
- */
-
+ * \todo Perhaps be more efficient by filling the buffer on every call even if
+ * not yet completely empty.  Check that it's really our buffer, and shuffle
+ * remaining data down to the front.
+ *
+ * \todo Perhaps expose a routine for shuffling the buffers. */
 
 #include "config.h"
 #include <sys/types.h>
@@ -54,11 +52,10 @@
 #include "util.h"
 
 struct rs_filebuf {
-        FILE *f;
-        char            *buf;
-        size_t          buf_len;
+    FILE *f;
+    char *buf;
+    size_t buf_len;
 };
-
 
 rs_filebuf_t *rs_filebuf_new(FILE *f, size_t buf_len)
 {
@@ -71,29 +68,24 @@ rs_filebuf_t *rs_filebuf_new(FILE *f, size_t buf_len)
     return pf;
 }
 
-
 void rs_filebuf_free(rs_filebuf_t *fb)
 {
-	free(fb->buf);
-        rs_bzero(fb, sizeof *fb);
-        free(fb);
+    free(fb->buf);
+    rs_bzero(fb, sizeof *fb);
+    free(fb);
 }
 
-
-/*
- * If the stream has no more data available, read some from F into
- * BUF, and let the stream use that.  On return, SEEN_EOF is true if
- * the end of file has passed into the stream.
- */
-rs_result rs_infilebuf_fill(rs_job_t *job, rs_buffers_t *buf,
-                            void *opaque)
+/* If the stream has no more data available, read some from F into BUF, and let
+   the stream use that.  On return, SEEN_EOF is true if the end of file has
+   passed into the stream. */
+rs_result rs_infilebuf_fill(rs_job_t *job, rs_buffers_t *buf, void *opaque)
 {
-    size_t                  len;
-    rs_filebuf_t            *fb = (rs_filebuf_t *) opaque;
-    FILE                    *f = fb->f;
+    size_t len;
+    rs_filebuf_t *fb = (rs_filebuf_t *)opaque;
+    FILE *f = fb->f;
 
-    /* This is only allowed if either the buf has no input buffer
-     * yet, or that buffer could possibly be BUF. */
+    /* This is only allowed if either the buf has no input buffer yet, or that
+       buffer could possibly be BUF. */
     if (buf->next_in != NULL) {
         assert(buf->avail_in <= fb->buf_len);
         assert(buf->next_in >= fb->buf);
@@ -109,8 +101,7 @@ rs_result rs_infilebuf_fill(rs_job_t *job, rs_buffers_t *buf,
     }
 
     if (buf->avail_in)
-        /* Still some data remaining.  Perhaps we should read
-           anyhow? */
+        /* Still some data remaining.  Perhaps we should read anyhow? */
         return RS_DONE;
 
     len = fread(fb->buf, 1, fb->buf_len, f);
@@ -125,7 +116,8 @@ rs_result rs_infilebuf_fill(rs_job_t *job, rs_buffers_t *buf,
             rs_error("error filling buf from file: %s", strerror(errno));
             return RS_IO_ERROR;
         } else {
-            rs_error("no error bit, but got "FMT_SIZE" return when trying to read", len);
+            rs_error("no error bit, but got " FMT_SIZE
+                     " return when trying to read", len);
             return RS_IO_ERROR;
         }
     }
@@ -137,20 +129,17 @@ rs_result rs_infilebuf_fill(rs_job_t *job, rs_buffers_t *buf,
     return RS_DONE;
 }
 
-
-/*
- * The buf is already using BUF for an output buffer, and probably
- * contains some buffered output now.  Write this out to F, and reset
- * the buffer cursor.
+/* The buf is already using BUF for an output buffer, and probably contains
+   some buffered output now.  Write this out to F, and reset the buffer cursor.
  */
 rs_result rs_outfilebuf_drain(rs_job_t *job, rs_buffers_t *buf, void *opaque)
 {
     int present;
-    rs_filebuf_t *fb = (rs_filebuf_t *) opaque;
+    rs_filebuf_t *fb = (rs_filebuf_t *)opaque;
     FILE *f = fb->f;
 
-    /* This is only allowed if either the buf has no output buffer
-     * yet, or that buffer could possibly be BUF. */
+    /* This is only allowed if either the buf has no output buffer yet, or that
+       buffer could possibly be BUF. */
     if (buf->next_out == NULL) {
         assert(buf->avail_out == 0);
 
