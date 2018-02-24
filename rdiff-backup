@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # rdiff-backup -- Mirror files while keeping incremental changes
-# Version 1.2.6 released January 27, 2009
+# Version 1.2.7 released March 02, 2009
 # Copyright (C) 2001-2005  Ben Escoto <rdiff-backup@emerose.org>
 #
 # This program is licensed under the GNU General Public License (GPL).
