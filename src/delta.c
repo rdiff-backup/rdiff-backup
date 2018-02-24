@@ -43,9 +43,9 @@
  * it may be a short match.  Short blocks in the signature don't include their
  * length -- we just allow for the final short block of the file to match any
  * block in the signature, and if they have the same checksum we assume they
- * must have the same length. Therefore, when we emit a COPY command, we have
- * to send it with a length that is the same as the block matched, and not the
- * block length from the signature.
+ * must have the same length. Therefore, when we emit a COPY command, we have to
+ * send it with a length that is the same as the block matched, and not the block
+ * length from the signature.
  *
  * Profiling results as of v1.26, 2001-03-18:
  *
@@ -56,36 +56,32 @@
  *
  * 2002-06-26: Donovan Baarda
  *
- * The following is based entirely on pysync. It is much cleaner than the
- * previous incarnation of this code. It is slightly complicated because in
- * this case the output can block, so the main delta loop needs to stop when
- * this happens.
+ * The following is based entirely on pysync. It is much cleaner than the previous
+ * incarnation of this code. It is slightly complicated because in this case the
+ * output can block, so the main delta loop needs to stop when this happens.
  *
  * In pysync a 'last' attribute is used to hold the last miss or match for
- * extending if possible. In this code, basis_len and scoop_pos are used
- * instead of 'last'. When basis_len > 0, last is a match. When basis_len = 0
- * and scoop_pos is > 0, last is a miss. When both are 0, last is None (ie,
- * nothing).
+ * extending if possible. In this code, basis_len and scoop_pos are used instead of
+ * 'last'. When basis_len > 0, last is a match. When basis_len = 0 and scoop_pos is
+ * > 0, last is a miss. When both are 0, last is None (ie, nothing).
  *
- * Pysync is also slightly different in that a 'flush' method is available to
- * force output of accumulated data. This 'flush' is use to finalise delta
- * calculation. In librsync input is terminated with an eof flag on the input
- * stream. I have structured this code similar to pysync with a seperate flush
- * function that is used when eof is reached. This allows for a flush style API
- * if one is ever needed. Note that flush in pysync can be used for more than
- * just terminating delta calculation, so a flush based API can in some ways be
- * more flexible...
+ * Pysync is also slightly different in that a 'flush' method is available to force
+ * output of accumulated data. This 'flush' is use to finalise delta calculation. In
+ * librsync input is terminated with an eof flag on the input stream. I have
+ * structured this code similar to pysync with a seperate flush function that is used
+ * when eof is reached. This allows for a flush style API if one is ever needed. Note
+ * that flush in pysync can be used for more than just terminating delta calculation,
+ * so a flush based API can in some ways be more flexible...
  *
- * The input data is first scanned, then processed. Scanning identifies input
- * data as misses or matches, and emits the instruction stream. Processing the
- * data consumes it off the input scoop and outputs the processed miss data
- * into the tube.
+ * The input data is first scanned, then processed. Scanning identifies input data as
+ * misses or matches, and emits the instruction stream. Processing the data consumes
+ * it off the input scoop and outputs the processed miss data into the tube.
  *
- * The scoop contains all data yet to be processed. The scoop_pos is an index
- * into the scoop that indicates the point scanned to. As data is scanned,
- * scoop_pos is incremented. As data is processed, it is removed from the scoop
- * and scoop_pos adjusted. Everything gets complicated because the tube can
- * block. When the tube is blocked, no data can be processed. */
+ * The scoop contains all data yet to be processed. The scoop_pos is an index into the
+ * scoop that indicates the point scanned to. As data is scanned, scoop_pos is
+ * incremented. As data is processed, it is removed from the scoop and scoop_pos
+ * adjusted. Everything gets complicated because the tube can block. When the tube is
+ * blocked, no data can be processed. */
 
 #include "config.h"
 

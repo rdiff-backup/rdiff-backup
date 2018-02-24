@@ -49,8 +49,8 @@
  * we could just avoid dynamic allocation.  However that can't be fixed at
  * compile time, because when generating a delta it needs to be large enough to
  * hold one full block.  Perhaps we can set it up when the job is allocated? It
- * would be kind of nice to not do any memory allocation after startup, as
- * bzlib does this. */
+ * would be kind of nice to not do any memory allocation after startup, as bzlib
+ * does this. */
 
 #include "config.h"
 
@@ -140,12 +140,12 @@ void rs_scoop_advance(rs_job_t *job, size_t len)
 /** Read from scoop without advancing.
  *
  * Ask for LEN bytes of input from the stream.  If that much data is available,
- * then return a pointer to it in PTR, advance the stream input pointer over
- * the data, and return RS_DONE.  If there's not enough data, then accept
- * whatever is there into a buffer, advance over it, and return RS_BLOCKED.
+ * then return a pointer to it in PTR, advance the stream input pointer over the
+ * data, and return RS_DONE.  If there's not enough data, then accept whatever is
+ * there into a buffer, advance over it, and return RS_BLOCKED.
  *
- * The data is not actually removed from the input, so this function lets you
- * do readahead.  If you want to keep any of the data, you should also call
+ * The data is not actually removed from the input, so this function lets you do
+ * readahead.  If you want to keep any of the data, you should also call
  * rs_scoop_advance() to skip over it. */
 rs_result rs_scoop_readahead(rs_job_t *job, size_t len, void **ptr)
 {

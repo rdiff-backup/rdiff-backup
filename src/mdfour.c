@@ -72,8 +72,8 @@ static void rs_mdfour_block(rs_mdfour_t *md, void const *p);
  * contain the file length.  rs_mdfour_tail() is used for that.
  *
  * \todo Recode to be fast, and to use system integer types.  Perhaps if we can
- * find an mdfour implementation already on the system (e.g. in OpenSSL) then
- * we should use it instead of our own?
+ * find an mdfour implementation already on the system (e.g. in OpenSSL) then we
+ * should use it instead of our own?
  *
  * \param X A series of integer, read little-endian from the file. */
 static void rs_mdfour64(rs_mdfour_t *m, const void *p)

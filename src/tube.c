@@ -47,8 +47,8 @@
  *
  * \todo I think our current copy code will lock up if the application only
  * ever calls us with either input or output buffers, and not both.  So I guess
- * in that case we might need to copy into some temporary buffer space, and
- * then back out again later. */
+ * in that case we might need to copy into some temporary buffer space, and then
+ * back out again later. */
 
 #include "config.h"
 

@@ -45,9 +45,9 @@
  * partial completion.  So there are functions which either complete, or queue
  * whatever was not sent and return RS_BLOCKED.
  *
- * The output buffer is a little more clever than simply a data buffer.
- * Instead it knows that we can send either literal data, or data copied
- * through from the input of the stream.
+ * The output buffer is a little more clever than simply a data buffer. Instead
+ * it knows that we can send either literal data, or data copied through from
+ * the input of the stream.
  *
  * In buf.c you will find functions that then map buffers onto stdio files.
  *
@@ -55,26 +55,26 @@
  * possibly both will have no more bytes available.
  *
  * librsync never does IO or memory allocation, but relies on the caller.  This
- * is very nice for integration, but means that we have to be fairly flexible
- * as to when we can `read' or `write' stuff internally.
+ * is very nice for integration, but means that we have to be fairly flexible as
+ * to when we can `read' or `write' stuff internally.
  *
- * librsync basically does two types of IO.  It reads network integers of
- * various lengths which encode command and control information such as
- * versions and signatures.  It also does bulk data transfer.
+ * librsync basically does two types of IO.  It reads network integers of various
+ * lengths which encode command and control information such as versions and
+ * signatures.  It also does bulk data transfer.
  *
  * IO of network integers is internally buffered, because higher levels of the
  * code need to see them transmitted atomically: it's no good to read half of a
- * uint32.  So there is a small and fixed length internal buffer which
- * accumulates these.  Unlike previous versions of the library, we don't
- * require that the caller hold the start until the whole thing has arrived,
- * which guarantees that we can always make progress.
+ * uint32.  So there is a small and fixed length internal buffer which accumulates
+ * these.  Unlike previous versions of the library, we don't require that the
+ * caller hold the start until the whole thing has arrived, which guarantees that
+ * we can always make progress.
  *
- * On each call into a stream iterator, it should begin by trying to flush
- * output.  This may well use up all the remaining stream space, in which case
- * nothing else can be done.
+ * On each call into a stream iterator, it should begin by trying to flush output.
+ * This may well use up all the remaining stream space, in which case nothing else
+ * can be done.
  *
- * \todo Kill this file and move the vestigial code remaining closer to where
- * it's used. */
+ * \todo Kill this file and move the vestigial code remaining closer to where it's
+ * used. */
 
 #include "config.h"
 

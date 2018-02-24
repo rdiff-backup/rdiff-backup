@@ -292,9 +292,9 @@ void rs_sumset_dump(rs_signature_t const *);
  *
  * Note also that if *#avail_in is nonzero on return, then not all of the input
  * data has been consumed.  The caller should either provide more output buffer
- * space and call ::rs_job_iter() again passing the same #next_in and
- * #avail_in, or put the remaining input data into some persistent buffer and
- * call rs_job_iter() with it again when there is more output space.
+ * space and call ::rs_job_iter() again passing the same #next_in and #avail_in,
+ * or put the remaining input data into some persistent buffer and call
+ * rs_job_iter() with it again when there is more output space.
  *
  * \sa rs_job_iter() */
 struct rs_buffers_s {
@@ -308,8 +308,8 @@ struct rs_buffers_s {
     /** Number of bytes available at next_in.
      *
      * References the length of available input.  Updated to be the number of
-     * unused data bytes, which will be zero if all the input was consumed.
-     * May be zero if there is no new input, but the caller just wants to drain
+     * unused data bytes, which will be zero if all the input was consumed. May
+     * be zero if there is no new input, but the caller just wants to drain
      * output. */
     size_t avail_in;
 
@@ -422,8 +422,8 @@ rs_result rs_build_hash_table(rs_signature_t *sums);
  * \param pos Position where copying should begin.
  *
  * \param len On input, the amount of data that should be retrieved. Updated to
- * show how much is actually available, but should not be greater than the
- * input value.
+ * show how much is actually available, but should not be greater than the input
+ * value.
  *
  * \param buf On input, a buffer of at least \p *len bytes.  May be updated to
  * point to a buffer allocated by the callback if it prefers. */
@@ -440,9 +440,8 @@ typedef rs_result rs_copy_cb(void *opaque, rs_long_t pos, size_t *len,
  *
  * \param copy_arg Opaque environment pointer passed through to the callback.
  *
- * \todo As output is produced, accumulate the MD4 checksum of the output.
- * Then if we find a CHECKSUM command we can check it's contents against the
- * output.
+ * \todo As output is produced, accumulate the MD4 checksum of the output. Then
+ * if we find a CHECKSUM command we can check it's contents against the output.
  *
  * \todo Implement COPY commands.
  *

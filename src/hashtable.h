@@ -38,15 +38,14 @@
  * Multiple entries with the same key can be added, and you can use a fancy
  * cmp() function to find particular entries by more than just their key. There
  * is an iterator for iterating through all entries in the hashtable. There are
- * optional hashtable_find() find/match/hashcmp/entrycmp stats counters that
- * can be disabled by defining HASHTABLE_NSTATS.
+ * optional hashtable_find() find/match/hashcmp/entrycmp stats counters that can
+ * be disabled by defining HASHTABLE_NSTATS.
  *
- * The types and methods of the hashtable and its contents are specified by
- * using \#define parameters set to their basenames (the prefixes for the *_t
- * type and *_func() methods) before doing \#include "hashtable.h". This
- * produces static inline type-safe methods that are either application
- * optimized for speed or wrappers around void* implementation methods for
- * compactness.
+ * The types and methods of the hashtable and its contents are specified by using
+ * \#define parameters set to their basenames (the prefixes for the *_t type and
+ * *_func() methods) before doing \#include "hashtable.h". This produces static
+ * inline type-safe methods that are either application optimized for speed or
+ * wrappers around void* implementation methods for compactness.
  *
  * \param ENTRY - the entry type basename.
  *
