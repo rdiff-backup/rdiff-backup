@@ -77,7 +77,7 @@ class Select:
 
 	"""
 	# This re should not match normal filenames, but usually just globs
-	glob_re = re.compile("(.*[*?[]|ignorecase\\:)", re.I | re.S)
+	glob_re = re.compile("(.*[*?[\\\\]|ignorecase\\:)", re.I | re.S)
 
 	def __init__(self, rootrp):
 		"""Select initializer.  rpath is the root directory"""
@@ -629,8 +629,8 @@ probably isn't what you meant.""" %
 		"""Returned regular expression equivalent to shell glob pat
 
 		Currently only the ?, *, [], and ** expressions are supported.
-		Ranges like [a-z] are also currently unsupported.  There is no
-		way to quote these special characters.
+		Ranges like [a-z] are also currently unsupported.  These special
+		characters can be quoted by prepending them with a backslash.
 
 		This function taken with minor modifications from efnmatch.py
 		by Donovan Baarda.
@@ -640,7 +640,10 @@ probably isn't what you meant.""" %
 		while i < n:
 			c, s = pat[i], pat[i:i+2]
 			i = i+1
-			if s == '**':
+			if c == '\\':
+				res = res + re.escape(s[-1])
+				i = i + 1
+			elif s == '**':
 				res = res + '.*'
 				i = i + 1
 			elif c == '*': res = res + '[^/]*'

@@ -46,6 +46,9 @@ class FSAbilities:
 	name = None # Short string, not used for any technical purpose
 	read_only = None # True if capabilities were determined non-destructively
 	high_perms = None # True if suid etc perms are (read/write) supported
+	escape_dos_devices = None # True if dos device files can't be created (e.g.,
+							  # aux, con, com1, etc)
+	symlink_perms = None # True if symlink perms are affected by umask
 
 	def __init__(self, name = None):
 		"""FSAbilities initializer.  name is only used in logging"""
@@ -87,10 +90,12 @@ class FSAbilities:
 							  ('Directory inc permissions',
 							   self.dir_inc_perms),
 							  ('High-bit permissions', self.high_perms),
+							  ('Symlink permissions', self.symlink_perms),
 							  ('Extended filenames', self.extended_filenames)])
 		add_boolean_list([('Access control lists', self.acls),
 						  ('Extended attributes', self.eas),
 						  ('Case sensitivity', self.case_sensitive),
+						  ('Escape DOS devices', self.escape_dos_devices),
 						  ('Mac OS X style resource forks',
 						   self.resource_forks),
 						  ('Mac OS X Finder information', self.carbonfile)])
@@ -115,6 +120,7 @@ class FSAbilities:
 		self.set_resource_fork_readonly(rp)
 		self.set_carbonfile()
 		self.set_case_sensitive_readonly(rp)
+		self.set_escape_dos_devices(rp)
 		return self
 
 	def init_readwrite(self, rbdir):
@@ -145,6 +151,8 @@ class FSAbilities:
 		self.set_resource_fork_readwrite(subdir)
 		self.set_carbonfile()
 		self.set_high_perms_readwrite(subdir)
+		self.set_symlink_perms(subdir)
+		self.set_escape_dos_devices(subdir)
 
 		subdir.delete()
 		return self
@@ -395,6 +403,35 @@ class FSAbilities:
 		else: self.high_perms = 1
 		tmp_rp.delete()
 
+	def set_symlink_perms(self, dir_rp):
+		"""Test if symlink permissions are affected by umask"""
+		sym_source = dir_rp.append("symlinked_file1")
+		sym_source.touch()
+		sym_dest = dir_rp.append("symlinked_file2")
+		sym_dest.symlink(sym_source.path)
+		sym_dest.setdata()
+		assert sym_dest.issym()
+		orig_umask = os.umask(077)
+		if sym_dest.getperms() == 0700: self.symlink_perms = 1
+		else: self.symlink_perms = 0
+		os.umask(orig_umask)
+		sym_dest.delete()
+		sym_source.delete()
+
+	def set_escape_dos_devices(self, subdir):
+		"""If special file aux can be stat'd, escape special files"""
+		device_rp = subdir.append("aux")
+		if device_rp.lstat():
+			assert device_rp.lstat()
+			log.Log("escape_dos_devices required by filesystem at %s" \
+					% (subdir.path), 4)
+			self.escape_dos_devices = 1
+		else:
+			assert not device_rp.lstat()
+			log.Log("escape_dos_devices not required by filesystem at %s" \
+					% (subdir.path), 4)
+			self.escape_dos_devices = 0
+
 def get_readonly_fsa(desc_string, rp):
 	"""Return an fsa with given description_string
 
@@ -404,7 +441,6 @@ def get_readonly_fsa(desc_string, rp):
 
 	"""
 	return FSAbilities(desc_string).init_readonly(rp)
-
 
 class SetGlobals:
 	"""Various functions for setting Globals vars given FSAbilities above
@@ -455,6 +491,13 @@ class SetGlobals:
 		if not self.dest_fsa.high_perms:
 			SetConnections.UpdateGlobal('permission_mask', 0777)
 
+	def set_symlink_perms(self):
+		SetConnections.UpdateGlobal('symlink_perms',
+									self.dest_fsa.symlink_perms)
+
+	def set_escape_dos_devices(self):
+		SetConnections.UpdateGlobal('escape_dos_devices', \
+									self.dest_fsa.escape_dos_devices)
 
 class BackupSetGlobals(SetGlobals):
 	"""Functions for setting fsa related globals for backup session"""
@@ -469,6 +512,16 @@ class BackupSetGlobals(SetGlobals):
 		if dest_support:
 			SetConnections.UpdateGlobal(write_attr, 1)
 			self.out_conn.Globals.set_local(conn_attr, 1)
+
+	def set_must_escape_dos_devices(self, rbdir):
+		"""If local edd or src edd, then must escape """
+		device_rp = rbdir.append("aux")
+		if device_rp.lstat(): local_edd = 1
+		else: local_edd = 0
+		SetConnections.UpdateGlobal('must_escape_dos_devices', \
+			self.src_fsa.escape_dos_devices or local_edd)
+		log.Log("Backup: must_escape_dos_devices = %d" % \
+				(self.src_fsa.escape_dos_devices or local_edd), 4)
 
 	def set_chars_to_quote(self, rbdir):
 		"""Set chars_to_quote setting for backup session
@@ -488,11 +541,13 @@ class BackupSetGlobals(SetGlobals):
 		if self.src_fsa.case_sensitive and not self.dest_fsa.case_sensitive:
 			if self.dest_fsa.extended_filenames:
 				return "A-Z;" # Quote upper case and quoting char
-			else: return "^a-z0-9_ -." # quote everything but basic chars
+			# Quote the following 0 - 31, ", *, /, :, <, >, ?, \, |, ;
+			# Also quote uppercase A-Z
+			else: return 'A-Z\000-\037\"*/:<>?\\\\|\177;'
 
 		if self.dest_fsa.extended_filenames:
 			return "" # Don't quote anything
-		else: return "^A-Za-z0-9_ -."
+		else: return '\000-\037\"*/:<>?\\\\|\177;'
 
 	def compare_ctq_file(self, rbdir, suggested_ctq):
 		"""Compare ctq file with suggested result, return actual ctq"""
@@ -545,6 +600,16 @@ class RestoreSetGlobals(SetGlobals):
 		self.out_conn.Globals.set_local(conn_attr, 1)
 		self.out_conn.Globals.set_local(write_attr, 1)
 		if src_support: self.in_conn.Globals.set_local(conn_attr, 1)
+
+	def set_must_escape_dos_devices(self, rbdir):
+		"""If local edd or src edd, then must escape """
+		device_rp = rbdir.append("aux")
+		if device_rp.lstat(): local_edd = 1
+		else: local_edd = 0
+		SetConnections.UpdateGlobal('must_escape_dos_devices', \
+			self.src_fsa.escape_dos_devices or local_edd)
+		log.Log("Restore: must_escape_dos_devices = %d" % \
+				(self.src_fsa.escape_dos_devices or local_edd), 4)
 
 	def set_chars_to_quote(self, rbdir):
 		"""Set chars_to_quote from rdiff-backup-data dir"""
@@ -612,7 +677,10 @@ def backup_set_globals(rpin):
 	bsg.set_fsync_directories()
 	bsg.set_change_ownership()
 	bsg.set_high_perms()
+	bsg.set_symlink_perms()
 	bsg.set_chars_to_quote(Globals.rbdir)
+	bsg.set_escape_dos_devices()
+	bsg.set_must_escape_dos_devices(Globals.rbdir)
 
 def restore_set_globals(rpout):
 	"""Set fsa related globals for restore session, given in/out rps"""
@@ -632,7 +700,10 @@ def restore_set_globals(rpout):
 	# No need to fsync anything when restoring
 	rsg.set_change_ownership()
 	rsg.set_high_perms()
+	rsg.set_symlink_perms()
 	rsg.set_chars_to_quote(Globals.rbdir)
+	rsg.set_escape_dos_devices()
+	rsg.set_must_escape_dos_devices(Globals.rbdir)
 
 def single_set_globals(rp, read_only = None):
 	"""Set fsa related globals for operation on single filesystem"""
@@ -650,5 +721,8 @@ def single_set_globals(rp, read_only = None):
 		ssg.set_hardlinks()
 		ssg.set_change_ownership()
 		ssg.set_high_perms()
+		ssg.set_symlink_perms()
 	ssg.set_chars_to_quote(Globals.rbdir)
+	ssg.set_escape_dos_devices()
+	ssg.set_must_escape_dos_devices(Globals.rbdir)
 
