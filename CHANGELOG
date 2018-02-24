@@ -1,3 +1,20 @@
+New in v1.2.8 (2009/03/16)
+---------------------------
+
+Improve handling of incorrect permissions on backup repository during restore
+operation. Closes Ubuntu bug #329722. (Andrew Ferguson)
+
+Don't crash on zlib errors. Closes Debian bug #518531. (Andrew Ferguson)
+
+Make sticky bit warnings quieter while determining file system abilities.
+Closes Savannah bug #25788. (Andrew Ferguson)
+
+Fix situation where destination file cannot be opened because of an access
+error. Thanks to Dean Cording for the bug report. (Andrew Ferguson)
+
+Fix --compare-hash options on Windows. Thanks to Serge Zub for the fix.
+
+
 New in v1.2.7 (2009/03/02)
 ---------------------------
 

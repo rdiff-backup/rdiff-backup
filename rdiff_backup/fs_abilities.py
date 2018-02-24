@@ -451,15 +451,17 @@ class FSAbilities:
 		"""See if increments can have full permissions like a directory"""
 		test_rp = rp.append('dir_inc_check')
 		test_rp.touch()
-		try: test_rp.chmod(07777)
+		try: test_rp.chmod(07777, 4)
 		except OSError:
 			test_rp.delete()
 			self.dir_inc_perms = 0
 			return
 		test_rp.setdata()
 		assert test_rp.isreg()
-		if test_rp.getperms() == 07777: self.dir_inc_perms = 1
-		else: self.dir_inc_perms = 0
+		if test_rp.getperms() == 07777 or test_rp.getperms() == 06777:
+			self.dir_inc_perms = 1
+		else:
+			self.dir_inc_perms = 0
 		test_rp.delete()
 
 	def set_carbonfile(self):
@@ -527,10 +529,10 @@ class FSAbilities:
 		tmpd_rp = dir_rp.append("high_perms_dir")
 		tmpd_rp.touch()
 		try:
-			tmpf_rp.chmod(07000)
-			tmpf_rp.chmod(07777)
-			tmpd_rp.chmod(07000)
-			tmpd_rp.chmod(07777)
+			tmpf_rp.chmod(07000, 4)
+			tmpf_rp.chmod(07777, 4)
+			tmpd_rp.chmod(07000, 4)
+			tmpd_rp.chmod(07777, 4)
 		except (OSError, IOError): self.high_perms = 0
 		else: self.high_perms = 1
 		tmpf_rp.delete()
