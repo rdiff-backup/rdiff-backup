@@ -829,7 +829,20 @@ class RPath(RORPath):
 
 	def chmod(self, permissions):
 		"""Wrapper around os.chmod"""
-		self.conn.os.chmod(self.path, permissions & Globals.permission_mask)
+		try:
+			self.conn.os.chmod(self.path, permissions & Globals.permission_mask)
+		except OSError, e:
+			if e.strerror == "Inappropriate file type or format" \
+					and not self.isdir():
+				# Some systems throw this error if try to set sticky bit
+				# on a non-directory. Remove sticky bit and try again.
+				log.Log("Unable to set permissions of %s to %o - trying again"
+						"without sticky bit (%o)" % (self.path, permissions,
+						permissions & 06777), 2)
+				self.conn.os.chmod(self.path, permissions
+											  & 06777 & Globals.permission_mask)
+			else:
+				raise
 		self.data['perms'] = permissions
 
 	def settime(self, accesstime, modtime):

@@ -23,7 +23,7 @@ import re, os
 
 
 # The current version of rdiff-backup
-version = "1.1.12"
+version = "1.1.14"
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
@@ -225,6 +225,10 @@ permission_mask = 07777
 # we should change the umask when creating them in order to preserve
 # the original permissions
 symlink_perms = None
+
+# If set, the path that should be used instead of the default Python
+# tempfile.tempdir value on remote connections
+remote_tempdir = None
 
 def get(name):
 	"""Return the value of something in this module"""
