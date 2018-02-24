@@ -1168,9 +1168,9 @@ class RPath(RORPath):
 		self.fsync(fp)
 		if Globals.fsync_directories: self.get_parent_rp().fsync()
 
-	def get_data(self):
+	def get_data(self, compressed = None):
 		"""Open file as a regular file, read data, close, return data"""
-		fp = self.open("rb")
+		fp = self.open("rb", compressed)
 		s = fp.read()
 		assert not fp.close()
 		return s
@@ -1263,6 +1263,57 @@ class GzipFile(gzip.GzipFile):
 
 	"""
 	def __del__(self): pass
+	def __getattr__(self, name):
+		if name == 'fileno': return self.fileobj.fileno
+		else: raise AttributeError(name)
+
+
+class MaybeGzip:
+	"""Represent a file object that may or may not be compressed
+
+	We don't want to compress 0 length files.  This class lets us
+	delay the opening of the file until either the first write (so we
+	know it has data and should be compressed), or close (when there's
+	no data).
+
+	"""
+	def __init__(self, base_rp, callback = None):
+		"""Return file-like object with filename based on base_rp"""
+		assert not base_rp.lstat(), base_rp
+		self.base_rp = base_rp
+		# callback will be called with final write rp as only argument
+		self.callback = callback
+		self.fileobj = None # Will be None unless data gets written
+		self.closed = 0
+
+	def __getattr__(self, name):
+		if name == 'fileno': return self.fileobj.fileno
+		else: raise AttributeError(name)
+
+	def get_gzipped_rp(self):
+		"""Return gzipped rp by adding .gz to base_rp"""
+		if self.base_rp.index:
+			newind = self.base_rp.index[:-1] + (self.base_rp.index[-1]+'.gz',)
+			return self.base_rp.new_index(newind)
+		else: return self.base_rp.append_path('.gz')
+
+	def write(self, buf):
+		"""Write buf to fileobj"""
+		if self.fileobj: return self.fileobj.write(buf)
+		if not buf: return
+
+		new_rp = self.get_gzipped_rp()
+		if self.callback: self.callback(new_rp)
+		self.fileobj = new_rp.open("w", compress = 1)
+		return self.fileobj.write(buf)
+
+	def close(self):
+		"""Close related fileobj, pass return value"""
+		if self.closed: return None
+		self.closed = 1
+		if self.fileobj: return self.fileobj.close()
+		if self.callback: self.callback(self.base_rp)
+		self.base_rp.touch()
 
 
 def setdata_local(rpath):

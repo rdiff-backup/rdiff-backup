@@ -355,19 +355,33 @@ class FlatFile:
 	_extractor = FlatExtractor # Override to class that iterates objects
 	_object_to_record = None # Set to function converting object to record
 	_prefix = None # Set to required prefix
-	def __init__(self, rp, mode, check_path = 1, compress = 1):
-		"""Open rp for reading ('r') or writing ('w')"""
-		self.rp = rp
+	def __init__(self, rp_base, mode, check_path = 1, compress = 1,
+				 callback = None):
+		"""Open rp (or rp+'.gz') for reading ('r') or writing ('w')
+
+		If callback is available, it will be called on the rp upon
+		closing (because the rp may not be known in advance).
+
+		"""
 		self.mode = mode
+		self.callback = callback
 		self._record_buffer = []
 		if check_path:
-			assert rp.isincfile() and rp.getincbase_str() == self._prefix, rp
-			compress = rp.isinccompressed()
+			assert (rp_base.isincfile() and
+					rp_base.getincbase_str() == self._prefix), rp_base
+			compress = 1
 		if mode == 'r':
+			self.rp = rp_base
 			self.fileobj = self.rp.open("rb", compress)
 		else:
-			assert mode == 'w' and not self.rp.lstat(), (mode, rp)
-			self.fileobj = self.rp.open("wb", compress)
+			assert mode == 'w'
+			if compress and not rp_base.isinccompressed():
+				def callback(rp): self.rp = rp
+				self.fileobj = rpath.MaybeGzip(rp_base, callback)
+			else:
+				self.rp = rp_base
+				assert not self.rp.lstat(), self.rp
+				self.fileobj = self.rp.open("wb", compress = compress)
 
 	def write_record(self, record):
 		"""Write a (text) record into the file"""
@@ -398,12 +412,11 @@ class FlatFile:
 		if self._buffering_on and self._record_buffer: 
 			self.fileobj.write("".join(self._record_buffer))
 			self._record_buffer = []
-		try: fileno = self.fileobj.fileno() # will not work if GzipFile
-		except AttributeError: fileno = self.fileobj.fileobj.fileno()
-		os.fsync(fileno)
 		result = self.fileobj.close()
 		self.fileobj = None
+		self.rp.fsync_with_dir()
 		self.rp.setdata()
+		if self.callback: self.callback(self.rp)
 		return result
 
 class MetadataFile(FlatFile):
@@ -449,6 +462,7 @@ class Manager:
 				
 	def add_incrp(self, rp):
 		"""Add rp to list of inc rps in the rbdir"""
+		assert rp.isincfile(), rp
 		self.rplist.append(rp)
 		time = rp.getinctime()
 		if self.timerpmap.has_key(time):
@@ -508,12 +522,11 @@ class Manager:
 		"""Used in the get_xx_writer functions, returns a writer class"""
 		if time is None: timestr = Time.curtimestr
 		else: timestr = Time.timetostring(time)		
-		filename = '%s.%s.%s.gz' % (prefix, timestr, typestr)
+		filename = '%s.%s.%s' % (prefix, timestr, typestr)
 		rp = Globals.rbdir.append(filename)
 		assert not rp.lstat(), "File %s already exists!" % (rp.path,)
 		assert rp.isincfile()
-		self.add_incrp(rp)
-		return flatfileclass(rp, 'w')
+		return flatfileclass(rp, 'w', callback = self.add_incrp)
 
 	def get_meta_writer(self, typestr, time):
 		"""Return MetadataFile object opened for writing at given time"""
