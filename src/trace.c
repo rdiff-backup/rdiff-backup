@@ -63,7 +63,7 @@ int rs_trace_level = RS_LOG_INFO;
 
 static void rs_log_va(int level, char const *fn, char const *fmt, va_list va);
 
-/** Log severity strings, if any.  Must match ordering in ::rs_loglevel. */
+/** Log severity strings, if any. Must match ordering in ::rs_loglevel. */
 static const char *rs_severities[] = {
     "EMERGENCY! ", "ALERT! ", "CRITICAL! ", "ERROR: ", "Warning: ",
     "", "", ""

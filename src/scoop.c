@@ -28,17 +28,17 @@
 /** \file scoop.c This file deals with readahead from caller-supplied buffers.
  *
  * Many functions require a certain minimum amount of input to do their
- * processing.  For example, to calculate a strong checksum of a block we need
+ * processing. For example, to calculate a strong checksum of a block we need
  * at least a block of input.
  *
  * Since we put the buffers completely under the control of the caller, we
- * can't count on ever getting this much data all in one go.  We can't simply
+ * can't count on ever getting this much data all in one go. We can't simply
  * wait, because the caller might have a smaller buffer than we require and so
- * we'll never get it.  For the same reason we must always accept all the data
+ * we'll never get it. For the same reason we must always accept all the data
  * we're given.
  *
  * So, stream input data that's required for readahead is put into a special
- * buffer, from which the caller can then read.  It's essentially like an
+ * buffer, from which the caller can then read. It's essentially like an
  * internal pipe, which on any given read request may or may not be able to
  * actually supply the data.
  *
@@ -46,9 +46,9 @@
  * buffer if there's already enough there.
  *
  * \todo We probably know a maximum amount of data that can be scooped up, so
- * we could just avoid dynamic allocation.  However that can't be fixed at
+ * we could just avoid dynamic allocation. However that can't be fixed at
  * compile time, because when generating a delta it needs to be large enough to
- * hold one full block.  Perhaps we can set it up when the job is allocated? It
+ * hold one full block. Perhaps we can set it up when the job is allocated? It
  * would be kind of nice to not do any memory allocation after startup, as
  * bzlib does this. */
 
@@ -113,7 +113,7 @@ void rs_scoop_input(rs_job_t *job, size_t len)
  * This is used after doing readahead, when you decide you want to keep it. \p
  * len must be no more than the amount of available data, so you can't cheat.
  *
- * So when creating a delta, we require one block of readahead.  But after
+ * So when creating a delta, we require one block of readahead. But after
  * examining that block, we might decide to advance over all of it (if there is
  * a match), or just one byte (if not). */
 void rs_scoop_advance(rs_job_t *job, size_t len)
@@ -139,13 +139,13 @@ void rs_scoop_advance(rs_job_t *job, size_t len)
 
 /** Read from scoop without advancing.
  *
- * Ask for LEN bytes of input from the stream.  If that much data is available,
+ * Ask for LEN bytes of input from the stream. If that much data is available,
  * then return a pointer to it in PTR, advance the stream input pointer over
- * the data, and return RS_DONE.  If there's not enough data, then accept
+ * the data, and return RS_DONE. If there's not enough data, then accept
  * whatever is there into a buffer, advance over it, and return RS_BLOCKED.
  *
  * The data is not actually removed from the input, so this function lets you
- * do readahead.  If you want to keep any of the data, you should also call
+ * do readahead. If you want to keep any of the data, you should also call
  * rs_scoop_advance() to skip over it. */
 rs_result rs_scoop_readahead(rs_job_t *job, size_t len, void **ptr)
 {

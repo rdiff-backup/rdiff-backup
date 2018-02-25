@@ -27,11 +27,11 @@
  * streams.
  *
  * As the stream consumes input and produces output, it is refilled from
- * appropriate input and output FILEs.  A dynamically allocated buffer of
+ * appropriate input and output FILEs. A dynamically allocated buffer of
  * configurable size is used as an intermediary.
  *
  * \todo Perhaps be more efficient by filling the buffer on every call even if
- * not yet completely empty.  Check that it's really our buffer, and shuffle
+ * not yet completely empty. Check that it's really our buffer, and shuffle
  * remaining data down to the front.
  *
  * \todo Perhaps expose a routine for shuffling the buffers. */
@@ -76,7 +76,7 @@ void rs_filebuf_free(rs_filebuf_t *fb)
 }
 
 /* If the stream has no more data available, read some from F into BUF, and let
-   the stream use that.  On return, SEEN_EOF is true if the end of file has
+   the stream use that. On return, SEEN_EOF is true if the end of file has
    passed into the stream. */
 rs_result rs_infilebuf_fill(rs_job_t *job, rs_buffers_t *buf, void *opaque)
 {
@@ -101,7 +101,7 @@ rs_result rs_infilebuf_fill(rs_job_t *job, rs_buffers_t *buf, void *opaque)
     }
 
     if (buf->avail_in)
-        /* Still some data remaining.  Perhaps we should read anyhow? */
+        /* Still some data remaining. Perhaps we should read anyhow? */
         return RS_DONE;
 
     len = fread(fb->buf, 1, fb->buf_len, f);
@@ -130,8 +130,7 @@ rs_result rs_infilebuf_fill(rs_job_t *job, rs_buffers_t *buf, void *opaque)
 }
 
 /* The buf is already using BUF for an output buffer, and probably contains
-   some buffered output now.  Write this out to F, and reset the buffer cursor.
- */
+   some buffered output now. Write this out to F, and reset the buffer cursor. */
 rs_result rs_outfilebuf_drain(rs_job_t *job, rs_buffers_t *buf, void *opaque)
 {
     int present;

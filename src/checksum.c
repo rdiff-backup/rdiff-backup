@@ -45,11 +45,11 @@ rs_weak_sum_t rs_calc_weak_sum(void const *buf, size_t len)
 /** Calculate and store into SUM a strong MD4 checksum of the file blocks seen
  * so far.
  *
- * In plain rsync, the checksum is perturbed by a seed value.  This is used
- * when retrying a failed transmission: we've discovered that the hashes
- * collided at some point, so we're going to try again with different hashes to
- * see if we can get it right.  (Check tridge's thesis for details and to see
- * if that's correct.)
+ * In plain rsync, the checksum is perturbed by a seed value. This is used when
+ * retrying a failed transmission: we've discovered that the hashes collided at
+ * some point, so we're going to try again with different hashes to see if we
+ * can get it right. (Check tridge's thesis for details and to see if that's
+ * correct.)
  *
  * Since we can't retry a web transaction I'm not sure if it's very useful in
  * rproxy. */

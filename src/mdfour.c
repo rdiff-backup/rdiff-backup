@@ -69,9 +69,9 @@ static void rs_mdfour_block(rs_mdfour_t *md, void const *p);
 /** Update an MD4 accumulator from a 64-byte chunk.
  *
  * This cannot be used for the last chunk of the file, which must be padded and
- * contain the file length.  rs_mdfour_tail() is used for that.
+ * contain the file length. rs_mdfour_tail() is used for that.
  *
- * \todo Recode to be fast, and to use system integer types.  Perhaps if we can
+ * \todo Recode to be fast, and to use system integer types. Perhaps if we can
  * find an mdfour implementation already on the system (e.g. in OpenSSL) then
  * we should use it instead of our own?
  *
@@ -154,8 +154,8 @@ static void rs_mdfour64(rs_mdfour_t *m, const void *p)
 }
 
 /** These next routines are necessary because MD4 is specified in terms of
- * little-endian int32s, but we have a byte buffer.  On little-endian
- * platforms, I think we can just use the buffer pointer directly.
+ * little-endian int32s, but we have a byte buffer. On little-endian platforms,
+ * I think we can just use the buffer pointer directly.
  *
  * There are some nice endianness routines in glib, including assembler
  * variants. If we ever depended on glib, then it could be good to use them

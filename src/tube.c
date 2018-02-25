@@ -32,21 +32,21 @@
 /** \file tube.c A somewhat elastic but fairly small buffer for data passing
  * through a stream.
  *
- * In most cases the iter can adjust to send just as much data will fit.  In
+ * In most cases the iter can adjust to send just as much data will fit. In
  * some cases that would be too complicated, because it has to transmit an
- * integer or something similar.  So in that case we stick whatever won't fit
+ * integer or something similar. So in that case we stick whatever won't fit
  * into a small buffer.
  *
  * A tube can contain some literal data to go out (typically command bytes),
  * and also an instruction to copy data from the stream's input or from some
- * other location.  Both literal data and a copy command can be queued at the
+ * other location. Both literal data and a copy command can be queued at the
  * same time, but only in that order and at most one of each.
  *
- * \todo As an optimization, write it directly to the stream if possible.  But
+ * \todo As an optimization, write it directly to the stream if possible. But
  * for simplicity don't do that yet.
  *
  * \todo I think our current copy code will lock up if the application only
- * ever calls us with either input or output buffers, and not both.  So I guess
+ * ever calls us with either input or output buffers, and not both. So I guess
  * in that case we might need to copy into some temporary buffer space, and
  * then back out again later. */
 
@@ -191,8 +191,8 @@ int rs_tube_is_idle(rs_job_t const *job)
  *
  * We can only accept this request if there is no copy command already pending.
  *
- * \todo Try to do the copy immediately, and return a result.  Then, people can
- * try to continue if possible.  Is this really required? Callers can just go
+ * \todo Try to do the copy immediately, and return a result. Then, people can
+ * try to continue if possible. Is this really required? Callers can just go
  * out and back in again after flushing the tube. */
 void rs_tube_copy(rs_job_t *job, int len)
 {

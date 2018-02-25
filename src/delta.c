@@ -33,14 +33,14 @@
  * in the incoming signature.
  *
  * To calculate a signature, we need to be able to see at least one block of
- * the new file at a time.  Once we have that, we calculate its weak signature,
+ * the new file at a time. Once we have that, we calculate its weak signature,
  * and see if there is any block in the signature hash table that has the same
- * weak sum.  If there is one, then we also compute the strong sum of the new
+ * weak sum. If there is one, then we also compute the strong sum of the new
  * block, and cross check that. If they're the same, then we can assume we have
  * a match.
  *
  * The final block of the file has to be handled a little differently, because
- * it may be a short match.  Short blocks in the signature don't include their
+ * it may be a short match. Short blocks in the signature don't include their
  * length -- we just allow for the final short block of the file to match any
  * block in the signature, and if they have the same checksum we assume they
  * must have the same length. Therefore, when we emit a COPY command, we have

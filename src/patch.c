@@ -47,8 +47,8 @@ static rs_result rs_patch_s_literal(rs_job_t *);
 static rs_result rs_patch_s_copy(rs_job_t *);
 static rs_result rs_patch_s_copying(rs_job_t *);
 
-/** State of trying to read the first byte of a command.  Once we've taken
- * that in, we can know how much data to read to get the arguments. */
+/** State of trying to read the first byte of a command. Once we've taken that
+ * in, we can know how much data to read to get the arguments. */
 static rs_result rs_patch_s_cmdbyte(rs_job_t *job)
 {
     rs_result result;

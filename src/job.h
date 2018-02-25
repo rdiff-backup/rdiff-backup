@@ -34,7 +34,7 @@ struct rs_job {
     /** Callback for each processing step. */
     rs_result (*statefn) (rs_job_t *);
 
-    /** Final result of processing job.  Used by rs_job_s_failed(). */
+    /** Final result of processing job. Used by rs_job_s_failed(). */
     rs_result final_result;
 
     /* Arguments for initializing the signature used by mksum.c and readsums.c.
@@ -71,7 +71,7 @@ struct rs_job {
     /** Encoding statistics. */
     rs_stats_t stats;
 
-    /** Buffer of data in the scoop.  Allocation is scoop_buf[0..scoop_alloc],
+    /** Buffer of data in the scoop. Allocation is scoop_buf[0..scoop_alloc],
      * and scoop_next[0..scoop_avail] contains data yet to be processed.
      * scoop_next[scoop_pos..scoop_avail] is the data yet to be scanned. */
     rs_byte_t *scoop_buf;       /* the allocation pointer */
