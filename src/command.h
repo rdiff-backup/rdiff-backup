@@ -25,7 +25,7 @@
  * The vague idea is that eventually this file will be more abstract than
  * protocol.h, but it's not clear that will ever be required. */
 
-/** Classes of operation that can be present.  Each may have several different
+/** Classes of operation that can be present. Each may have several different
  * possible representations. */
 enum rs_op_kind {
     RS_KIND_END = 1000,
@@ -35,8 +35,8 @@ enum rs_op_kind {
     RS_KIND_CHECKSUM,
     RS_KIND_RESERVED,           /* for future expansion */
 
-    /* This one should never occur in file streams.  It's an internal marker
-       for invalid commands. */
+    /* This one should never occur in file streams. It's an internal marker for
+       invalid commands. */
     RS_KIND_INVALID
 };
 

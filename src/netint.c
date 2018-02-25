@@ -29,7 +29,7 @@
 
 /** \file netint.c Network-byte-order output to the tube.
  *
- * All the `suck' routines return a result code.  The most common values are
+ * All the `suck' routines return a result code. The most common values are
  * RS_DONE if they have enough data, or RS_BLOCKED if there is not enough input
  * to proceed.
  *
@@ -39,7 +39,7 @@
  *
  * \todo If we don't have <stdint.h> (or perhaps even if we do), determine
  * endianness and integer size by hand and use that to do our own conversion
- * routines.  We possibly need this anyhow to do 64-bit integers, since there
+ * routines. We possibly need this anyhow to do 64-bit integers, since there
  * seems to be no ntohs() analog. */
 
 #include "config.h"

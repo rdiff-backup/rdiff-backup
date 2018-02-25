@@ -240,7 +240,7 @@ void rs_mdfour_result(rs_mdfour_t *md, unsigned char *out);
 
 /** Return a human-readable representation of statistics.
  *
- * The string is truncated if it does not fit.  100 characters should be
+ * The string is truncated if it does not fit. 100 characters should be
  * sufficient space.
  *
  * \param stats Statistics from an encoding or decoding operation.
@@ -281,8 +281,8 @@ void rs_sumset_dump(rs_signature_t const *);
  * Buffers must be allocated and passed in by the caller.
  *
  * On input, the buffers structure must contain the address and length of the
- * input and output buffers.  The library updates these values to indicate the
- * amount of \b remaining buffer.  So, on return, #avail_out is not the amount
+ * input and output buffers. The library updates these values to indicate the
+ * amount of \b remaining buffer. So, on return, #avail_out is not the amount
  * of output data produced, but rather the amount of output buffer space still
  * available.
  *
@@ -291,23 +291,23 @@ void rs_sumset_dump(rs_signature_t const *);
  * directly tell you how much output data was produced.
  *
  * Note also that if *#avail_in is nonzero on return, then not all of the input
- * data has been consumed.  The caller should either provide more output buffer
- * space and call ::rs_job_iter() again passing the same #next_in and #avail_in,
- * or put the remaining input data into some persistent buffer and call
- * rs_job_iter() with it again when there is more output space.
+ * data has been consumed. The caller should either provide more output buffer
+ * space and call ::rs_job_iter() again passing the same #next_in and
+ * #avail_in, or put the remaining input data into some persistent buffer and
+ * call rs_job_iter() with it again when there is more output space.
  *
  * \sa rs_job_iter() */
 struct rs_buffers_s {
     /** Next input byte.
      *
      * References a pointer which on entry should point to the start of the
-     * data to be encoded.  Updated to point to the byte after the last one
+     * data to be encoded. Updated to point to the byte after the last one
      * consumed. */
     char *next_in;
 
     /** Number of bytes available at next_in.
      *
-     * References the length of available input.  Updated to be the number of
+     * References the length of available input. Updated to be the number of
      * unused data bytes, which will be zero if all the input was consumed. May
      * be zero if there is no new input, but the caller just wants to drain
      * output. */
@@ -319,7 +319,7 @@ struct rs_buffers_s {
     /** Next output byte should be put there.
      *
      * References a pointer which on entry points to the start of the output
-     * buffer.  Updated to point to the byte after the last one filled. */
+     * buffer. Updated to point to the byte after the last one filled. */
     char *next_out;
 
     /** Remaining free space at next_out.
@@ -356,7 +356,7 @@ typedef struct rs_job rs_job_t;
  * \return The ::rs_result that caused iteration to stop.
  *
  * \c buffers->eof_in should be true if there is no more data after what's in
- * the input buffer.  The final block checksum will run across whatever's in
+ * the input buffer. The final block checksum will run across whatever's in
  * there, without trying to accumulate anything else.
  *
  * \sa \ref api_streaming */
@@ -386,11 +386,11 @@ rs_result rs_job_free(rs_job_t *);
  * \param sig_magic Indicates the version of signature file format to generate.
  * See ::rs_magic_number.
  *
- * \param new_block_len Size of checksum blocks.  Larger values make the
+ * \param new_block_len Size of checksum blocks. Larger values make the
  * signature shorter, and the delta longer.
  *
  * \param strong_sum_len If non-zero, truncate the strong signatures to this
- * many bytes, to make the signature shorter.  It's recommended you leave this
+ * many bytes, to make the signature shorter. It's recommended you leave this
  * at zero to get the full strength.
  *
  * \sa rs_sig_file() */
@@ -422,10 +422,10 @@ rs_result rs_build_hash_table(rs_signature_t *sums);
  * \param pos Position where copying should begin.
  *
  * \param len On input, the amount of data that should be retrieved. Updated to
- * show how much is actually available, but should not be greater than the input
- * value.
+ * show how much is actually available, but should not be greater than the
+ * input value.
  *
- * \param buf On input, a buffer of at least \p *len bytes.  May be updated to
+ * \param buf On input, a buffer of at least \p *len bytes. May be updated to
  * point to a buffer allocated by the callback if it prefers. */
 typedef rs_result rs_copy_cb(void *opaque, rs_long_t pos, size_t *len,
                              void **buf);
@@ -433,7 +433,7 @@ typedef rs_result rs_copy_cb(void *opaque, rs_long_t pos, size_t *len,
 /** Apply a \a delta to a \a basis file to recreate the \a new file.
  *
  * This gives you back a ::rs_job_t object, which can be cranked by calling
- * rs_job_iter() and updating the stream pointers.  When finished, call
+ * rs_job_iter() and updating the stream pointers. When finished, call
  * rs_job_free() to dispose of it.
  *
  * \param copy_cb Callback used to retrieve content from the basis file.

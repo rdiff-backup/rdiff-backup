@@ -23,11 +23,11 @@
 /** \file mksum.c Generate file signatures.
  *
  * Generating checksums is pretty easy, since we can always just process
- * whatever data is available.  When a whole block has arrived, or we've
- * reached the end of the file, we write the checksum out.
+ * whatever data is available. When a whole block has arrived, or we've reached
+ * the end of the file, we write the checksum out.
  *
  * \todo Perhaps force blocks to be a multiple of 64 bytes, so that we can be
- * sure checksum generation will be more efficient.  I guess it will be OK at
+ * sure checksum generation will be more efficient. I guess it will be OK at
  * the moment, though, because tails are only used if necessary. */
 
 #include "config.h"
@@ -69,7 +69,7 @@ static rs_result rs_sig_s_header(rs_job_t *job)
     return RS_RUNNING;
 }
 
-/** Generate the checksums for a block and write it out.  Called when we
+/** Generate the checksums for a block and write it out. Called when we
  * already know we have enough data in memory at \p block. \private */
 static rs_result rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
 {

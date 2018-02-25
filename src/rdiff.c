@@ -28,16 +28,16 @@
 
 /** \file rdiff.c -- Command-line network-delta tool.
  *
- * \todo Add a -z option to gzip/gunzip patches.  This would be somewhat
- * useful, but more importantly a good test of the streaming API.  Also add -I
- * for bzip2.
+ * \todo Add a -z option to gzip/gunzip patches. This would be somewhat useful,
+ * but more importantly a good test of the streaming API. Also add -I for
+ * bzip2.
  *
  * \todo If built with debug support and we have mcheck, then turn it on.
  * (Optionally?)
  *
  * \todo popt doesn't handle single dashes very well at the moment: we'd like
  * to use them as arguments to indicate stdin/stdout, but it turns them into
- * options.  I sent a patch to the popt maintainers; hopefully it will be fixed
+ * options. I sent a patch to the popt maintainers; hopefully it will be fixed
  * in the future.
  *
  * \todo Add an option for delta to check whether the files are identical. */

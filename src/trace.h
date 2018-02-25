@@ -27,8 +27,8 @@
  *
  * fatal terminates the whole process.
  *
- * \todo A function like perror that includes strerror output.  Apache does
- * this by adding flags as well as the severity level which say whether such
+ * \todo A function like perror that includes strerror output. Apache does this
+ * by adding flags as well as the severity level which say whether such
  * information should be included. */
 
 #include <inttypes.h>
