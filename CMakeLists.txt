@@ -230,11 +230,11 @@ add_custom_target(tidy
     #
     # Hide the enclosing 'extern "C" {...}' block for indenting in librsync.h
     COMMAND sed -r -i "s:^(extern \"C\") \\{:\\1;:; s:^\\}(\\s+/\\* extern \"C\" \\*/):;\\1:" src/librsync.h
-    # Linux format with no tabs, indent 4, preproc indent 2, 80 columns, format comments, swallow blank lines.
-    COMMAND indent -linux -nut -i4 -ppi2 -l80 -lc80 -fc1 -fca -sob -T FILE -T Rollsum -T rs_result ${tidy_SRCS}
+    # Linux format with no tabs, indent 4, preproc indent 2, 80 columns, swallow blank lines.
+    COMMAND indent -linux -nut -i4 -ppi2 -l80 -lc80 -fc1 -sob -T FILE -T Rollsum -T rs_result ${tidy_SRCS}
     # Remove space between * or & and identifier after userdefined types,
     # remove space after type cast for userdefined types like indent -ncs,
-    #and remove trailing whitespace.
+    # and remove trailing whitespace.
     COMMAND sed -r -i "s:((${TYPE_RE}|${CAST_RE}) (&|\\*+)) :\\1:g; s:(${CAST_RE}) :\\1:g; s:\\s+$::" ${tidy_SRCS}
     # Restore the enclosing 'extern "C" {...}' block in librsync.h
     COMMAND sed -r -i "s:^(extern \"C\");:\\1 {:; s:^;(\\s+/\\* extern \"C\" \\*/):}\\1:" src/librsync.h
