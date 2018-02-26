@@ -20,8 +20,6 @@ tags
 *.dylib
 cmake_install.cmake
 *.la
-src/prototab.c
-src/prototab.h
 doc/Doxyfile
 tests/isprefix.driver
 html
