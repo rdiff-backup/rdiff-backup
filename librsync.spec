@@ -1,27 +1,25 @@
+# This RPM supposes that you download the master.zip from github to SOURCES directory as librsync-master.zip
+
+%define name librsync
+%define version master
+%define gitsource https://github.com/librsync/%{name}/archive/master.zip
+
 Summary:  	Rsync libraries
-Name:     	librsync
-Version:  	0.9.7
-Release:  	1
+Name:     	%{name}
+Version:  	%{version}
+Release:  	1%{?dist}
 License:	LGPL
 Group:    	System Environment/Libraries
-Source:  	http://prdownloads.sourceforge.net/librsync/librsync-%{version}.tar.gz
-URL:       	http://www.sourceforge.net/projects/librsync
+Source0:	%{name}-master.zip
+URL:       	http://librsync.sourcefrog.net/
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
-BuildRequires:	libtool
-BuildRequires:	autoconf
-BuildRequires:	automake
+BuildRequires:  libtool perl zlib cmake popt-devel bzip2-devel doxygen
 
 %description
 librsync implements the "rsync" algorithm, which allows remote
 differencing of binary files.  librsync computes a delta relative to a
 file's checksum, so the two files need not both be present to generate
 a delta.
-
-This library was previously known as libhsync up to version 0.9.0.
-
-The current version of this package does not implement the rsync
-network protocol and uses a delta format slightly more efficient than
-and incompatible with rsync 2.4.6.
 
 %package devel
 Summary: Headers and development libraries for librsync
@@ -34,28 +32,31 @@ differencing of binary files.  librsync computes a delta relative to a
 file's checksum, so the two files need not both be present to generate
 a delta.
 
-This library was previously known as libhsync up to version 0.9.0.
-
-The current version of this package does not implement the rsync
-network protocol and uses a delta format slightly more efficient than
-and incompatible with rsync 2.4.6.
-
 This package contains header files necessary for developing programs
 based on librsync.
 
 %prep
+#wget --no-check-certificate --timeout=5 -O %{_sourcedir}/%{name}-master.zip %{gitsource}
 %setup
 # The next line is only needed if there are any non-upstream patches.  In
 # this distribution there are none.
 #%patch
 %build
-./autogen.sh
-./configure --prefix=/usr --mandir=/usr/share/man/
+
+# By default, cmake installs to /usr/local, need to tweak here
+cmake -DCMAKE_INSTALL_PREFIX=%{_prefix}  -DCMAKE_BUILD_TYPE=Release .
 make CFLAGS="$RPM_OPT_FLAGS"
+make doc
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make  DESTDIR=$RPM_BUILD_ROOT install
+make DESTDIR=$RPM_BUILD_ROOT install
+
+# Missing man ugly fix
+mkdir --parents $RPM_BUILD_ROOT/usr/share/man/man3
+mkdir --parents $RPM_BUILD_ROOT/usr/share/man/man1
+cp %{_builddir}/librsync-%{version}/doc/rdiff.1 $RPM_BUILD_ROOT/usr/share/man/man1/rdiff.1
+cp %{_builddir}/librsync-%{version}/doc/librsync.3 $RPM_BUILD_ROOT/usr/share/man/man3/librsync.3
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -66,15 +67,19 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS COPYING COPYING NEWS README
+%doc AUTHORS COPYING NEWS.md README.md
 %{_bindir}/rdiff
-%{_mandir}/man3/librsync.3.gz
 %{_mandir}/man1/rdiff.1.gz
+%{_libdir}/%{name}*
+%{_mandir}/man3/librsync.3.gz
 
 %files devel
 %defattr(-,root,root)
-%{_prefix}/include/*
-%{_libdir}/librsync.a
-%{_libdir}/librsync.la
+%{_includedir}/%{name}*
 
 %changelog
+* Mon Feb 26 2018 Orsiris de Jong <ozy@netpower>
+- Updated SPEC file for librsync 2.0.2
+- Fixed cmake paths for RHEL 7 64 bits
+- Fix bogus man page paths
+- Added automatic source download using wget (for tests)
