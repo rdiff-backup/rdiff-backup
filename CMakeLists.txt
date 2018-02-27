@@ -395,4 +395,11 @@ install(FILES
 
 message (STATUS "CMAKE_C_FLAGS  = ${CMAKE_C_FLAGS}")
 
+install(FILES
+	doc/librsync.3
+	DESTINATION ${CMAKE_INSTALL_MANDIR}/man3)
+install(FILES
+	doc/rdiff.1
+	DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+
 # vim: shiftwidth=4 expandtab
