@@ -36,7 +36,7 @@ This package contains header files necessary for developing programs
 based on librsync.
 
 %prep
-#wget --no-check-certificate --timeout=5 -O %{_sourcedir}/%{name}-master.zip %{gitsource}
+#wget --no-check-certificate --timeout=5 -O %{_sourcedir}/v%{version}.zip %{gitsource}
 %setup
 # The next line is only needed if there are any non-upstream patches.  In
 # this distribution there are none.
@@ -53,7 +53,7 @@ rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT install
 
 %clean
-#rm -rf $RPM_BUILD_ROOT
+rm -rf $RPM_BUILD_ROOT
 
 %post -p /sbin/ldconfig
 
@@ -72,7 +72,7 @@ make DESTDIR=$RPM_BUILD_ROOT install
 %{_includedir}/%{name}*
 
 %changelog
-* Mon Feb 26 2018 Orsiris de Jong <ozy@netpower>
+* Tue Feb 27 2018 Orsiris de Jong <ozy@netpower>
 - Updated SPEC file for librsync 2.0.2
 - Fixed cmake paths for RHEL 7 64 bits
 - Added automatic source download using wget (for tests)
