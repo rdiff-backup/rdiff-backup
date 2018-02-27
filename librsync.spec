@@ -13,7 +13,7 @@ Group:    	System Environment/Libraries
 Source0:	%{gitsource}
 URL:       	http://librsync.sourcefrog.net
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
-BuildRequires:  perl zlib cmake popt-devel bzip2-devel doxygen
+BuildRequires:  zlib cmake popt-devel bzip2-devel doxygen
 
 %description
 librsync implements the "rsync" algorithm, which allows remote
