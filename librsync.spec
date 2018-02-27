@@ -1,8 +1,8 @@
-# This RPM supposes that you download the master.zip from github to SOURCES directory as librsync-master.zip
+# This RPM supposes that you download the release zip file from github to SOURCES directory as v2.0.2.zip
 
 %define name librsync
-%define version master
-%define gitsource https://github.com/librsync/%{name}/archive/master.zip
+%define version 2.0.2
+%define gitsource https://github.com/librsync/%{name}/archive/v%{version}.zip
 
 Summary:  	Rsync libraries
 Name:     	%{name}
@@ -10,10 +10,10 @@ Version:  	%{version}
 Release:  	1%{?dist}
 License:	LGPL
 Group:    	System Environment/Libraries
-Source0:	%{name}-master.zip
-URL:       	http://librsync.sourcefrog.net/
+Source0:	%{gitsource}
+URL:       	http://www.sourceforge.net/projects/librsync
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
-BuildRequires:  libtool perl zlib cmake popt-devel bzip2-devel doxygen
+BuildRequires:  perl zlib cmake popt-devel bzip2-devel doxygen
 
 %description
 librsync implements the "rsync" algorithm, which allows remote
@@ -44,7 +44,7 @@ based on librsync.
 %build
 
 # By default, cmake installs to /usr/local, need to tweak here
-cmake -DCMAKE_INSTALL_PREFIX=%{_prefix}  -DCMAKE_BUILD_TYPE=Release .
+cmake -DCMAKE_INSTALL_PREFIX=%{_prefix} -DCMAKE_BUILD_TYPE=Release .
 make CFLAGS="$RPM_OPT_FLAGS"
 make doc
 
@@ -52,14 +52,8 @@ make doc
 rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT install
 
-# Missing man ugly fix
-mkdir --parents $RPM_BUILD_ROOT/usr/share/man/man3
-mkdir --parents $RPM_BUILD_ROOT/usr/share/man/man1
-cp %{_builddir}/librsync-%{version}/doc/rdiff.1 $RPM_BUILD_ROOT/usr/share/man/man1/rdiff.1
-cp %{_builddir}/librsync-%{version}/doc/librsync.3 $RPM_BUILD_ROOT/usr/share/man/man3/librsync.3
-
 %clean
-rm -rf $RPM_BUILD_ROOT
+#rm -rf $RPM_BUILD_ROOT
 
 %post -p /sbin/ldconfig
 
@@ -81,5 +75,5 @@ rm -rf $RPM_BUILD_ROOT
 * Mon Feb 26 2018 Orsiris de Jong <ozy@netpower>
 - Updated SPEC file for librsync 2.0.2
 - Fixed cmake paths for RHEL 7 64 bits
-- Fix bogus man page paths
 - Added automatic source download using wget (for tests)
+- Updated dependencies
