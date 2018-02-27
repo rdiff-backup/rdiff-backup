@@ -11,7 +11,7 @@ Release:  	1%{?dist}
 License:	LGPL
 Group:    	System Environment/Libraries
 Source0:	%{gitsource}
-URL:       	http://www.sourceforge.net/projects/librsync
+URL:       	http://librsync.sourcefrog.net
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
 BuildRequires:  perl zlib cmake popt-devel bzip2-devel doxygen
 
