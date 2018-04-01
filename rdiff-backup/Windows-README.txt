@@ -57,12 +57,8 @@ TROUBLESHOOTING:
 
 If you have everything installed properly, and it still doesn't work,
 see the enclosed manual, FAQ, the web page at http://rdiff-backup.nongnu.org,
-the Wiki at: http://wiki.rdiff-backup.org, and/or the mailing list. You can
-subscribe to the mailing list at:
+and/or the mailing list. You can subscribe to the mailing list at:
 http://lists.nongnu.org/mailman/listinfo/rdiff-backup-users
-
-Recommended Wiki entries:
-http://wiki.rdiff-backup.org/wiki/index.php/BackupFromWindowsToLinux
 
 You can also try searching the mailing list archives:
 http://lists.nongnu.org/archive/html/rdiff-backup-users/

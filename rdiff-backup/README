@@ -83,8 +83,8 @@ or later.
 TROUBLESHOOTING:
 
 If you have everything installed properly, and it still doesn't work,
-see the enclosed FAQ.html, the web page at http://rdiff-backup.nongnu.org,
-the Wiki at: http://wiki.rdiff-backup.org, and/or the mailing list.
+see the enclosed FAQ.html, the web page at http://rdiff-backup.nongnu.org
+and/or the mailing list.
 
 The FAQ in particular is an important reference, especially if you are
 using smbfs/CIFS, Windows, or have compiled by hand on Mac OS X.
