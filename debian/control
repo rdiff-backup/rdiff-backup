@@ -1,7 +1,6 @@
 Source: rdiff-backup
 Section: utils
 Priority: optional
-X-Python-Version: >= 2.5
 Maintainer: Python Applications Packaging Team <python-apps-team@lists.alioth.debian.org>
 Uploaders: Carl Chenet <chaica@ohmytux.com>
 Build-Depends:

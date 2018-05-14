@@ -5,6 +5,7 @@ rdiff-backup (1.2.8-8) UNRELEASED; urgency=low
 
   [ Ondřej Nový ]
   * d/changelog: Remove trailing whitespaces
+  * d/control: Remove ancient X-Python-Version field
 
  -- Jakub Wilk <jwilk@debian.org>  Sun, 05 May 2013 18:05:42 +0200
 
