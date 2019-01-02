@@ -1,0 +1,17 @@
+# Supplementary magic data for the file(1) command to support
+# rdiff(1).  The format is described in magic(5).
+#
+# librsync -- the library for network deltas
+#
+# Copyright 2001, 2014 by Martin Pool.  You may do whatever you want with
+# this file.
+
+0       belong          0x72730236      rdiff network-delta data
+
+0       belong          0x72730136      rdiff network-delta signature data (MD4,
+>4      belong          x               block length=%d,
+>8      belong          x               signature strength=%d)
+
+0       belong          0x72730137      rdiff network-delta signature data (BLAKE2,
+>4      belong          x               block length=%d,
+>8      belong          x               signature strength=%d)

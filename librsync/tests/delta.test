@@ -1,0 +1,61 @@
+#! /bin/sh -ex
+
+# librsync -- the library for network deltas
+
+# delta.test: Check application of some canned deltas to /dev/null
+
+# Copyright (C) 1999, 2000, 2001, 2014 by Martin Pool <mbp@sourcefrog.net>
+# Copyright (C) 1999 by Andrew Tridgell <tridge@samba.org>
+
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation; either version 2.1 of
+# the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+srcdir='.'
+
+. $srcdir/testcommon.sh
+
+new=$tmpdir/delta.tmp
+
+inputdir=$srcdir/delta.input
+
+for delta in $inputdir/*.delta
+do
+    for inbuf in $bufsizes
+    do
+        cmd="$bindir/rdiff -I$inbuf -f patch /dev/null $delta $new"
+        run_test $cmd
+        expect=$inputdir/`basename $delta .delta`.expect
+	check_compare $expect $new
+    done
+done
+
+# Make sure rdiff can't overwrite files if ran without -f
+# RS_IO_ERROR == 100 should be returned if file exists
+RS_IO_ERROR=100
+output_expect="File exists \".*\", aborting!"
+expect=$tmpdir/delta_new.tmp
+ret=0
+
+# Change $new and rerun last test to check it won't be reverted
+echo "$output_expect" > $expect
+echo "$output_expect" > $new
+cmd="$bindir/rdiff patch /dev/null $delta $new"
+echo "    $cmd" >&2
+output="`$cmd 2>&1`" || ret=$?
+[ "$ret" -eq "$RS_IO_ERROR" ] ||
+    fail_test "$ret" "RS_IO_ERROR ($RS_IO_ERROR) not returned while trying to overwrite existing file"
+[ "$(echo "$output" | grep -c "$output_expect")" -gt 0 ] ||
+    fail_test "$output" "\"$output_expect\" not returned when trying to overwrite files without --force"
+# Check the file has not changed
+check_compare $expect $new

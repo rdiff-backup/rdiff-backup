@@ -1,0 +1,30 @@
+Source: librsync
+Section: utils
+Priority: optional
+Maintainer: John Goerzen <jgoerzen@complete.org>
+Build-Depends: debhelper (>> 3.0.0), libpopt-dev (>= 1.6.2), zlib1g-dev, autoconf2.13
+Standards-Version: 3.5.2
+
+Package: librsync1
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Binary diff library based on the rsync algorithm
+ librsync is the next generation of librsync, and provides flexible
+ checksum-based differencing.  The main application at the moment in
+ rproxy, but the library should eventually be generally useful.
+
+Package: librsync-dev
+Section: devel
+Architecture: any
+Depends: librsync1 (= ${Source-Version}), libc6-dev
+Description: Binary diff library based on the rsync algorithm
+ These are the development files for librsync1.
+
+Package: rdiff
+Section: utils
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Binary diff tool for signature-based differences
+ rdiff is a little like diff and patch all rolled into one, with
+ support for binary files.

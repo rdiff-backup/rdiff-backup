@@ -1,0 +1,12 @@
+This package was debianized by John Goerzen <jgoerzen@complete.org> on
+Mon, 11 Feb 2002 13:03:19 -0500.
+
+The homepage is http://librsync.sourcefrog.net/.
+
+Upstream Author(s): Martin Pool <mbp@sourcefrog.net>
+Andrew Tridgell <tridge@samba.org>
+
+
+Copyright:
+
+GNU LGPL version 2.1, found at /usr/share/common-licenses/LGPL-2.1

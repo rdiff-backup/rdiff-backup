@@ -1,0 +1,71 @@
+.\"
+.\" librsync -- dynamic caching and delta update in HTTP
+.\" 
+.\" Copyright (C) 2000, 2001 by Martin Pool <mbp@sourcefrog.net>
+.\" 
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU Lesser General Public License
+.\" as published by the Free Software Foundation; either version 2.1 of
+.\" the License, or (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+.\" Lesser General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU Lesser General Public
+.\" License along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.TH librsync 3 "$Date$" "Martin Pool"
+.SH NAME
+librsync \- library for delta compression of streams
+.SH SYNOPSYS
+ #include \fB<stdio.h>\fP
+.br
+ #include \fB<stdlib.h>\fP
+.br
+ #include \fB<librsync.h>\fP
+
+ cc ... \fB-lrsync\fP
+
+.SH DESCRIPTION
+The \fBlibrsync\fP library implements network delta-compression of
+streams and files.  The algorithm is similar to that used in the
+\fBrsync(1)\fP and \fBxdelta(2)\fP programs, but specialized for
+transfer of arbitrary-length octet streams.  Unlike most diff
+programs, \fBlibrsync\fP does not require access to both of the files
+on the same machine, but rather only a short ``signature'' of the old
+file and the complete contents of the new file.
+.PP
+The canonical use of \fBlibrsync\fP is in the \fBrproxy(8)\fP
+reference implementation of the \fIrsync\fP proposed extension to
+HTTP.  It may be useful to other programs which wish to do
+delta-compression in HTTP, or within their own protocol.  There are
+HTTP-specific utility functions within \fBlibrsync\fP, but they need
+not be used.
+.PP
+A number of tools such as \fBrdiff(1)\fP provide command-line and
+scriptable access to rsync functions.
+.SH "SEE ALSO"
+.BR rdiff "(1)"
+.PP
+.I rdiff and librsync Manual
+.PP
+\fIhttp://rproxy.sourceforge.net/\fP or \fIhttp://linuxcare.com.au/rproxy/\fP.
+.PP
+\fIdraft-pool-rsync\fP
+.SH BUGS
+The rsync protocol is still evolving.  There may be bugs in the
+implementation.  The interface may change in the future, but it is
+becoming more stable.
+.PP
+Many routines will panic in case of error rather than returning an
+error code to the caller.  Patches to fix this are welcome, but at the
+current state of development aborting seems as useful as trusting to
+possibly-incomplete checking in the client.
+.SH "AUTHOR"
+Martin Pool <mbp@sourcefrog.net>, with Andrew Tridgell <tridge@samba.org>.
+.PP
+rdiff development has been supported by Linuxcare, Inc and VA Linux
+Systems.
