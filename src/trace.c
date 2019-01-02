@@ -51,6 +51,11 @@
 #include "util.h"
 #include "trace.h"
 
+/* MSVC may not have snprintf() but rather _snprintf() */
+#if defined _MSC_VER && _MSC_VER < 1900
+#define snprintf _snprintf
+#endif
+
 rs_trace_fn_t *rs_trace_impl = rs_trace_stderr;
 
 int rs_trace_level = RS_LOG_INFO;

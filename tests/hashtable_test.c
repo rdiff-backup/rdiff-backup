@@ -22,7 +22,11 @@
 /* Force DEBUG on so that tests can use assert(). */
 #undef NDEBUG
 #include <stdio.h>
+#if defined _MSC_VER && _MSC_VER < 1900
+#include <msvcstdint.h>
+#else
 #include <stdint.h>
+#endif
 #include <assert.h>
 #include "hashtable.h"
 
@@ -104,6 +108,14 @@ int main(int argc, char **argv)
     hashtable_t *kt;
     hashtable_iter_t ki;
     mykey_t k1, k2;
+    hashtable_t *t;
+    myentry_t entry[256];
+    myentry_t e;
+    mymatch_t m;
+    int i;
+    myentry_t *p;
+    hashtable_iter_t iter;
+    int count = 0;
 
     mykey_init(&k1, 1);
     mykey_init(&k2, 2);
@@ -115,12 +127,6 @@ int main(int argc, char **argv)
     assert(mykey_hashtable_next(&ki) == NULL);
 
     /* Test myhashtable instance. */
-    hashtable_t *t;
-    myentry_t entry[256];
-    myentry_t e;
-    mymatch_t m;
-    int i;
-
     myentry_init(&e, 0);
     for (i = 0; i < 256; i++)
         myentry_init(&entry[i], i);
@@ -164,9 +170,6 @@ int main(int argc, char **argv)
 #endif
 
     /* Test hashtable iterators */
-    myentry_t *p;
-    hashtable_iter_t iter;
-    int count = 0;
     for (p = myhashtable_iter(&iter, t); p != NULL; p = myhashtable_next(&iter)) {
         assert(p == &e || (&entry[0] <= p && p <= &entry[255]));
         count++;

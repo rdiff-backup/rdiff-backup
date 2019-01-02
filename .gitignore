@@ -26,6 +26,11 @@ html
 latex
 Testing
 *.user
+*.exe
+*.exe.manifest
+rsync.dll
+rsync.dll.manifest
+install_manifest
 
 # Editor temp files
 .sw?

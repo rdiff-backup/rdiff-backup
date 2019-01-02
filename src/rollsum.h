@@ -23,7 +23,16 @@
 #  define _ROLLSUM_H_
 
 #  include <stddef.h>
+#if defined _MSC_VER && _MSC_VER < 1900
+#  include <msvcstdint.h>
+#else
 #  include <stdint.h>
+#endif
+
+/* inline keyword for MSVC */
+#if !defined __cplusplus && defined _MSC_VER
+#define inline __inline
+#endif
 
 /* We should make this something other than zero to improve the checksum
    algorithm: tridge suggests a prime number. */

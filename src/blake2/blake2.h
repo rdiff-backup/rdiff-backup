@@ -16,7 +16,11 @@
 #define BLAKE2_H
 
 #include <stddef.h>
+#if defined _MSC_VER && _MSC_VER < 1900
+#include <msvcstdint.h>
+#else
 #include <stdint.h>
+#endif
 
 #if defined(_MSC_VER)
 #define BLAKE2_PACKED(x) __pragma(pack(push, 1)) x __pragma(pack(pop))

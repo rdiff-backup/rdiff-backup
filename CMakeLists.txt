@@ -382,6 +382,10 @@ install(FILES
         src/librsync.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+install(FILES
+        src/msvcstdint.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
 message (STATUS "CMAKE_C_FLAGS  = ${CMAKE_C_FLAGS}")
 
 install(FILES

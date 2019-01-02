@@ -13,7 +13,11 @@
    https://blake2.net.
 */
 
+#if defined _MSC_VER && _MSC_VER < 1900
+#include <msvcstdint.h>
+#else
 #include <stdint.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 

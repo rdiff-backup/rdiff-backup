@@ -31,7 +31,11 @@
  * by adding flags as well as the severity level which say whether such
  * information should be included. */
 
-#include <inttypes.h>
+#if defined _MSC_VER && _MSC_VER < 1900
+#  include <msvcinttypes.h>
+#else
+#  include <inttypes.h>
+#endif
 /* Printf format patters for standard librsync types. */
 #define FMT_LONG "%"PRIdMAX
 #define FMT_WEAKSUM "%08"PRIx32

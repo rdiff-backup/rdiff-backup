@@ -37,6 +37,11 @@
 #include "librsync.h"
 #include "trace.h"
 
+/* MSVC may not have snprintf() but rather _snprintf() */
+#if defined _MSC_VER && _MSC_VER < 1900
+#define snprintf _snprintf
+#endif
+
 int rs_log_stats(rs_stats_t const *stats)
 {
     char buf[1000];

@@ -22,7 +22,11 @@
 /* Force DEBUG on so that tests can use assert(). */
 #undef NDEBUG
 #include <stdio.h>
+#if defined _MSC_VER && _MSC_VER < 1900
+#include <msvcstdint.h>
+#else
 #include <stdint.h>
+#endif
 #include <assert.h>
 #include "rollsum.h"
 

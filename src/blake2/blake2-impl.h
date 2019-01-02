@@ -15,7 +15,11 @@
 #ifndef BLAKE2_IMPL_H
 #define BLAKE2_IMPL_H
 
+#if defined _MSC_VER && _MSC_VER < 1900
+#include <msvcstdint.h>
+#else
 #include <stdint.h>
+#endif
 #include <string.h>
 #include "config.h"
 

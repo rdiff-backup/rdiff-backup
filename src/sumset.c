@@ -175,6 +175,7 @@ rs_block_sig_t *rs_signature_add_block(rs_signature_t *sig,
                                        rs_weak_sum_t weak_sum,
                                        rs_strong_sum_t *strong_sum)
 {
+    rs_block_sig_t *b;
     rs_signature_check(sig);
     /* If block_sigs is full, allocate more space. */
     if (sig->count == sig->size) {
@@ -183,7 +184,7 @@ rs_block_sig_t *rs_signature_add_block(rs_signature_t *sig,
             rs_realloc(sig->block_sigs, sig->size * rs_block_sig_size(sig),
                        "signature->block_sigs");
     }
-    rs_block_sig_t *b = rs_block_sig_ptr(sig, sig->count++);
+    b = rs_block_sig_ptr(sig, sig->count++);
     rs_block_sig_init(b, weak_sum, strong_sum, sig->strong_sum_len);
     return b;
 }

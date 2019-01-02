@@ -48,6 +48,11 @@
 #include "trace.h"
 #include "mdfour.h"
 
+/* inline keyword for MSVC */
+#if !defined __cplusplus && defined _MSC_VER
+#define inline __inline
+#endif
+
 #define F(X,Y,Z) (((X)&(Y)) | ((~(X))&(Z)))
 #define G(X,Y,Z) (((X)&(Y)) | ((X)&(Z)) | ((Y)&(Z)))
 #define H(X,Y,Z) ((X)^(Y)^(Z))
