@@ -19,7 +19,7 @@
 
 """Manage logging, displaying and recording messages with required verbosity"""
 
-import time, sys, traceback, types, rpath, locale
+import time, sys, traceback, types, rpath
 import Globals, static, re
 
 
@@ -139,18 +139,12 @@ class Logger:
 		else: termfp = sys.stdout
 		str = self.format(message, self.term_verbosity)
 		if type(str) != unicode:
-			try:
-				str = unicode(str, 'utf-8')
-			except UnicodeDecodeError:
-				str = unicode(str, locale.getdefaultlocale()[1])
+			str = unicode(str, 'utf-8')
 		try:
 			# Try to log as unicode, but fall back to ascii (for Windows)
 			termfp.write(str.encode('utf-8'))
 		except UnicodeDecodeError:
-			try:
-				termfp.write(str.encode(locale.getdefaultlocale()[1]))
-			except UnicodeDecodeError:
-				termfp.write(str.encode('ascii', 'replace'))
+			termfp.write(str.encode('ascii', 'replace'))
 
 	def conn(self, direction, result, req_num):
 		"""Log some data on the connection
