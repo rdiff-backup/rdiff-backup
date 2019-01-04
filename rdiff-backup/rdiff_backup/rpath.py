@@ -1088,6 +1088,9 @@ class RPath(RORPath):
 					# Remove the read-only attribute and try again.
 					self.chmod(0700)
 					self.conn.os.unlink(self.path)
+                                elif error.errno == errno.ENOENT:
+                                        log.Log("Warning: file %s does not exist. We had to "
+                                                "delete it, so we are going on anyway." % self.path, 2)
 				else:
 					raise
 
