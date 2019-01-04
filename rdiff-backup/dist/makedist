@@ -4,6 +4,8 @@ import os, re, shutil, time, sys, getopt
 
 SourceDir = "rdiff_backup"
 DistDir = "dist"
+# If True, we leave a .tar.gz. If False, we leave a directory.
+TarRequested = True
 
 # Various details about the files must also be specified by the rpm
 # spec template.
@@ -90,10 +92,9 @@ def VersionedCopy(source, dest, munge_date = 0):
 	fout.write(outbuf)
 	assert not fout.close()
 
-def MakeTar(specfiles):
-	"""Create rdiff-backup tar file"""
+def MakeDir(specfiles):
+	"""Create rdiff-backup distribution directory"""
 	tardir = "rdiff-backup-%s" % Version
-	tarfilename = "rdiff-backup-%s.tar.gz" % Version
 	try:
 		os.lstat(tardir)
 		shutil.rmtree(tardir)
@@ -133,6 +134,11 @@ def MakeTar(specfiles):
 	os.chmod(os.path.join(tardir, "rdiff-backup"), 0644)
 	CopyMan(os.path.join(tardir, "rdiff-backup.1"), Version)
 	CopyMan(os.path.join(tardir, "rdiff-backup-statistics.1"), Version)
+        return tardir
+
+def MakeTar(tardir):
+	"""Create rdiff-backup tar file and wipe distribution directory"""
+	tarfilename = "%s.tar.gz" % tardir
 	if os.name != 'nt':
 		os.system("tar -cvzf %s %s" % (tarfilename, tardir))
 	else:
@@ -154,19 +160,21 @@ def MakeSpecFile():
 
 def parse_cmdline(arglist):
 	"""Returns action"""
-	global Version
+	global Version, TarRequested
 	def error():
-		print "Syntax: makedist [--html-only] [version_number]"
+		print "Syntax: makedist [--html-only] [--no-tar] [version_number]"
 		sys.exit(1)		
 
-	optlist, args = getopt.getopt(arglist, "", ["html-only"])
+	optlist, args = getopt.getopt(arglist, "", ["html-only", "no-tar"])
 	if len(args) != 1: error()
 	else: Version = args[0]
 
+        retval = "All"
 	for opt, arg in optlist:
-		if opt == "--html-only": return "HTML"
+		if opt == "--html-only": retval = "HTML"
+                elif opt == "--no-tar": TarRequested = False
 		else: assert 0, "Bad argument"
-	return "All"
+	return retval
 
 def Main():
 	action = parse_cmdline(sys.argv[1:])
@@ -179,8 +187,12 @@ def Main():
 		print "Processing version " + Version
 		specfiles = MakeSpecFile()
 		print "Made specfiles ", specfiles
-		tarfile = MakeTar(specfiles)
-		print "Made tar file " + tarfile
+                dirName = MakeDir(specfiles)
+                if TarRequested:
+		        tarfile = MakeTar(dirName)
+		        print "Made tar file " + tarfile
+                else:
+                        print "Made directory " + dirName
 
 
 if __name__ == "__main__" and not globals().has_key('__no_execute__'):
