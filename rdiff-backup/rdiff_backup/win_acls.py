@@ -18,7 +18,7 @@
 # USA
 
 from __future__ import generators
-import C, metadata, re, rorpiter, rpath, log
+import Globals, C, metadata, re, rorpiter, rpath, log
 
 try:
 	from win32security import *
@@ -204,7 +204,11 @@ class ACL:
 			raise metadata.ParsingError("Bad record beginning: " + lines[0][:8])
 		filename = lines[0][8:]
 		if filename == '.': self.index = ()
-		else: self.index = tuple(unicode(C.acl_unquote(filename)).split('/'))
+		else:
+                        unquoted_filename = C.acl_unquote(encode(filename))
+                        if Globals.use_unicode_paths:
+			        unquoted_filename = unicode(unquoted_filename, 'utf-8')
+                        self.index = tuple(unquoted_filename.split('/'))
 		self.__acl = lines[1]
 
 def Record2WACL(record):
