@@ -38,10 +38,8 @@ are dealing with are local or remote.
 import os, stat, re, sys, shutil, gzip, socket, time, errno, codecs
 import Globals, Time, static, log, user_group, C
 
-try:
+if os.name == 'nt':
 	import win32file, winnt
-except ImportError:
-	pass
 
 class SkipFileException(Exception):
 	"""Signal that the current file should be skipped but then continue
