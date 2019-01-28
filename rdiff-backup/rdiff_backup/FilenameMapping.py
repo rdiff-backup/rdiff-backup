@@ -228,6 +228,8 @@ def update_quoting(rbdir):
 	except AttributeError:
 		os_walk = walk
 
+	if type(mirror) != unicode and Globals.use_unicode_paths:
+		mirror = unicode(mirror, 'utf-8')
 	for dirpath, dirs, files in os_walk(mirror):
 		dirpath_rp = mirror_rp.newpath(dirpath)
 
