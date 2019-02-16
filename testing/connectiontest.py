@@ -89,7 +89,8 @@ class PipeConnectionTest(unittest.TestCase):
 
 	def setUp(self):
 		"""Must start a server for this"""
-		stdin, stdout = os.popen2("python ./server.py "+SourceDir)
+		stdin, stdout = os.popen2("%s ./server.py %s" \
+                        % (sys.executable, SourceDir))
 		self.conn = PipeConnection(stdout, stdin)
 		Globals.security_level = "override"
     	#self.conn.Log.setverbosity(9)
@@ -172,10 +173,10 @@ class RedirectedConnectionTest(unittest.TestCase):
 	def setUp(self):
 		"""Must start two servers for this"""
 		#Log.setverbosity(9)
-		self.conna = SetConnections.init_connection("python ./server.py " +
-													SourceDir)
-		self.connb = SetConnections.init_connection("python ./server.py " +
-													SourceDir)
+		self.conna = SetConnections.init_connection("%s ./server.py %s" \
+                        % (sys.executable, SourceDir))
+		self.connb = SetConnections.init_connection("%s ./server.py %s" \
+                        % (sys.executable, SourceDir))
 
 	def testBasic(self):
 		"""Test basic operations with redirection"""

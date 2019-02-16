@@ -31,7 +31,7 @@ def re_init_dir(rp):
 def Make():
 	"""Make sure the rdiff-backup script in the source dir is up-to-date"""
 	os.chdir(SourceDir)
-	os.system("python ./Make")
+	os.system("%s ./Make" % (sys.executable))
 	os.chdir(AbsCurdir)
 
 def MakeOutputDir():
@@ -94,11 +94,11 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 	remote_schema = '%s'
 
 	if not source_local:
-		src_dir = "cd test1; python ../server.py ../%s::../%s" % \
-				  (SourceDir, src_dir)
+		src_dir = "cd test1; %s ../server.py ../%s::../%s" % \
+				  (sys.executable, SourceDir, src_dir)
 	if not dest_local:
-		dest_dir = "cd test2/tmp; python ../../server.py ../../%s::../../%s" \
-				   % (SourceDir, dest_dir)
+		dest_dir = "cd test2/tmp; %s ../../server.py ../../%s::../../%s" \
+				   % (sys.executable, SourceDir, dest_dir)
 
 	cmdpairs = SetConnections.get_cmd_pairs([src_dir, dest_dir], remote_schema)
 	Security.initialize("backup", cmdpairs)
@@ -144,11 +144,11 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time,
 	Globals.security_level = "override"
 	#_reset_connections()
 	if not mirror_local:
-		mirror_dir = "cd test1; python ../server.py ../%s::../%s" % \
-					 (SourceDir, mirror_dir)
+		mirror_dir = "cd test1; %s ../server.py ../%s::../%s" % \
+					 (sys.executable, SourceDir, mirror_dir)
 	if not dest_local:
-		dest_dir = "cd test2/tmp; python ../../server.py ../../%s::../../%s" \
-				   % (SourceDir, dest_dir)
+		dest_dir = "cd test2/tmp; %s ../../server.py ../../%s::../../%s" \
+				   % (sys.executable, SourceDir, dest_dir)
 
 	cmdpairs = SetConnections.get_cmd_pairs([mirror_dir, dest_dir],
 											remote_schema)
@@ -381,7 +381,7 @@ def MirrorTest(source_local, dest_local, list_of_dirnames,
 	Main.force = old_force_val
 
 def raise_interpreter(use_locals = None):
-	"""Start python interpreter, with local variables if locals is true"""
+	"""Start Python interpreter, with local variables if locals is true"""
 	if use_locals: local_dict = locals()
 	else: local_dict = globals()
 	code.InteractiveConsole(local_dict).interact()

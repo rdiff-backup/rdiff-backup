@@ -46,15 +46,15 @@ class ProcessFuncs(unittest.TestCase):
 
 	def exec_rb(self, time, wait, *args):
 		"""Run rdiff-backup return pid.  Wait until done if wait is true"""
-		arglist = ['python', '../rdiff-backup', '-v3']
+		arglist = [sys.executable, '../rdiff-backup', '-v3']
 		if time:
 			arglist.append("--current-time")
 			arglist.append(str(time))
 		arglist.extend(args)
 
 		print("Running ", arglist)
-		if wait: return os.spawnvp(os.P_WAIT, 'python', arglist)
-		else: return os.spawnvp(os.P_NOWAIT, 'python', arglist)
+		if wait: return os.spawnvp(os.P_WAIT, sys.executable, arglist)
+		else: return os.spawnvp(os.P_NOWAIT, sys.executable, arglist)
 
 	def exec_and_kill(self, min_max_pair, backup_time, arg1, arg2):
 		"""Run rdiff-backup, then kill and run again

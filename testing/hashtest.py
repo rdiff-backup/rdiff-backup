@@ -1,4 +1,6 @@
-import unittest, io
+#!/usr/bin/env python3
+
+import unittest, io, sys
 from rdiff_backup import hash
 from commontest import *
 
@@ -102,7 +104,7 @@ class HashTest(unittest.TestCase):
 		"""Test if hashes are transferred in files, rorpiter"""
 		#log.Log.setverbosity(5)
 		Globals.security_level = 'override'
-		conn = SetConnections.init_connection('python ./server.py .')
+		conn = SetConnections.init_connection('%s ./server.py .' % (sys.executable))
 		assert conn.reval("lambda x: x+1", 4) == 5 # connection sanity check
 
 		fp = hash.FileWrapper(io.StringIO(self.s1))
