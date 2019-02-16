@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Builds two rpms, one for generic release, and the other for the
 # Fedora project.

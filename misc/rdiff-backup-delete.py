@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """rdiff-backup-delete.py
 Script to delete a file or directory from rdiff-backup mirrors, including metadata and file statistics

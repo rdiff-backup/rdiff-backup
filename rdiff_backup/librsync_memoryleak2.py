@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Demonstrate a memory leak in pysync/librsync"""
 

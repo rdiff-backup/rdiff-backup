@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Like rdiff, but written in python and uses librsync module.
 

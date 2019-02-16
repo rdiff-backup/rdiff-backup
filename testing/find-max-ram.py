@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """find-max-ram - Returns the maximum amount of memory used by a program.
 
