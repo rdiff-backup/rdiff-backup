@@ -2,17 +2,17 @@ INSTALLATION:
 
 Thank you for trying rdiff-backup.  To install, run:
 
-	python setup.py install
+	python dist/setup.py install
 
 The build process can be also be run separately:
 
-	python setup.py build
+	python dist/setup.py build
 
 The default prefix is generally /usr, so files would be put in /usr/bin,
 /usr/share/man/, etc.  An alternate prefix can be specified using the
 --prefix=<prefix> option.  For example:
 
-	python setup.py install --prefix=/usr/local
+	python dist/setup.py install --prefix=/usr/local
 
 The default prefix depends on how you (or your distribution) installed and
 configured Python. Suggested reading is "How installation works" from the
@@ -24,7 +24,7 @@ default location, usually /usr/include and /usr/lib.  If you want the
 setup script to check different locations, use the --librsync-dir
 switch or the LIBRSYNC_DIR environment variable.  For instance,
 
-	python setup.py --librsync-dir=/usr/local build
+	python dist/setup.py --librsync-dir=/usr/local build
 
 instructs the setup program to look in /usr/local/include and
 /usr/local/lib for the librsync files.
@@ -34,7 +34,7 @@ environment variables are also recognized.  Running setup.py with no
 arguments will display some help. Additional help is displayed by the
 command:
 
-	python setup.py install --help
+	python dist/setup.py install --help
 
 More information about using setup.py and how rdiff-backup is installed
 is available from the Python guide, Installing Python Modules for System
@@ -46,14 +46,14 @@ to save a list of the files installed to <file>.
 
 To build from source on Windows, you can use the command:
 
-	python setup.py py2exe --single-file
+	python dist/setup.py py2exe --single-file
 
 to build a single executable file which contains Python, librsync, and
 all required modules.
 
 REQUIREMENTS:
 
-Remember that you must have Python 2.2 or later and librsync 0.9.7 or
+Remember that you must have Python 3.2 or later and librsync 1.0.0 or
 later installed.  For Python, see http://www.python.org.  The
 rdiff-backup homepage at http://rdiff-backup.nongnu.org/ should
 have a recent version of librsync; otherwise see the librsync homepage
@@ -77,8 +77,8 @@ http://pyxattr.sourceforge.net/. Mac OS X users need a different
 pyxattr module, which can be downloaded from
 http://cheeseshop.python.org/pypi/xattr
 
-If you want to use rdiff-backup-statistics, you must have Python 2.4
-or later.
+In order to build rdiff-backup, you need python3-devel and librsync-devel, as
+well as a C compiler (gcc).
 
 TROUBLESHOOTING:
 

@@ -38,7 +38,7 @@ _librsync_seterror(rs_result result, char *location)
 
 
 /* --------------- SigMaker Object for incremental signatures */
-staticforward PyTypeObject _librsync_SigMakerType;
+static PyTypeObject _librsync_SigMakerType;
 
 typedef struct {
   PyObject_HEAD
@@ -148,8 +148,7 @@ _librsync_sigmaker_setattr(_librsync_SigMakerObject *sm,
 }
 
 static PyTypeObject _librsync_SigMakerType = {
-  PyObject_HEAD_INIT(NULL)
-  0,
+  PyVarObject_HEAD_INIT(NULL, 0)
   "sigmaker",
   sizeof(_librsync_SigMakerObject),
   0,
@@ -168,7 +167,7 @@ static PyTypeObject _librsync_SigMakerType = {
 
 /* --------------- DeltaMaker Object for incremental deltas */
 
-staticforward PyTypeObject _librsync_DeltaMakerType;
+static PyTypeObject _librsync_DeltaMakerType;
 
 typedef struct {
   PyObject_HEAD
@@ -300,8 +299,7 @@ _librsync_deltamaker_setattr(_librsync_DeltaMakerObject *dm,
 }
 
 static PyTypeObject _librsync_DeltaMakerType = {
-  PyObject_HEAD_INIT(NULL)
-  0,
+  PyVarObject_HEAD_INIT(NULL, 0)
   "deltamaker",
   sizeof(_librsync_DeltaMakerObject),
   0,
@@ -321,7 +319,7 @@ static PyTypeObject _librsync_DeltaMakerType = {
 /* --------------- PatchMaker Object for incremental patching */
 
 
-staticforward PyTypeObject _librsync_PatchMakerType;
+static PyTypeObject _librsync_PatchMakerType;
 
 typedef struct {
   PyObject_HEAD
@@ -340,7 +338,8 @@ _librsync_new_patchmaker(PyObject* self, PyObject* args)
 
   if (!PyArg_ParseTuple(args, "O:new_patchmaker", &python_file))
 	return NULL;
-  if (!PyFile_Check(python_file)) {
+  int python_fd = PyObject_AsFileDescriptor(python_file);
+  if (python_fd < 0) {
 	PyErr_SetString(PyExc_TypeError, "Need true file object");
 	return NULL;
   }
@@ -351,7 +350,7 @@ _librsync_new_patchmaker(PyObject* self, PyObject* args)
   pm->x_attr = NULL;
 
   pm->basis_file = python_file;
-  cfile = PyFile_AsFile(python_file);
+  cfile = fdopen(python_fd, "w+"); /* FIXME not sure mode is correct */
   pm->patch_job = rs_patch_begin(rs_file_copy_cb, cfile);
 
   return (PyObject*)pm;
@@ -436,8 +435,7 @@ _librsync_patchmaker_setattr(_librsync_PatchMakerObject *pm,
 }
 
 static PyTypeObject _librsync_PatchMakerType = {
-  PyObject_HEAD_INIT(NULL)
-  0,
+  PyVarObject_HEAD_INIT(NULL, 0)
   "patchmaker",
   sizeof(_librsync_PatchMakerObject),
   0,
@@ -470,9 +468,11 @@ void init_librsync(void)
 {
   PyObject *m, *d;
 
-  _librsync_SigMakerType.ob_type = &PyType_Type;
-  _librsync_DeltaMakerType.ob_type = &PyType_Type;
-  m = Py_InitModule("_librsync", _librsyncMethods);
+  Py_TYPE(&_librsync_SigMakerType) = &PyType_Type;
+  Py_TYPE(&_librsync_DeltaMakerType) = &PyType_Type;
+  static struct PyModuleDef librsync_def = {
+            PyModuleDef_HEAD_INIT, "_librsync", "RSync Lib", -1, _librsyncMethods, };
+  m = PyModule_Create(&librsync_def);
   d = PyModule_GetDict(m);
   librsyncError = PyErr_NewException("_librsync.librsyncError", NULL, NULL);
   PyDict_SetItemString(d, "librsyncError", librsyncError);
