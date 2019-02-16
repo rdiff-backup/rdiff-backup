@@ -1,5 +1,5 @@
-from __future__ import generators
-import re, StringIO, unittest, types
+
+import re, io, unittest, types
 from commontest import *
 from rdiff_backup.selection import *
 from rdiff_backup import Globals, rpath, lazy
@@ -77,7 +77,7 @@ class MatchingTest(unittest.TestCase):
 
 	def testFilelistInclude(self):
 		"""Test included filelist"""
-		fp = StringIO.StringIO("""
+		fp = io.StringIO("""
 testfiles/select/1/2
 testfiles/select/1
 testfiles/select/1/2/3
@@ -94,7 +94,7 @@ testfiles/select/3/3/2""")
 
 	def testFilelistWhitespaceInclude(self):
 		"""Test included filelist, with some whitespace"""
-		fp = StringIO.StringIO("""
+		fp = io.StringIO("""
 + testfiles/select/1  
 - testfiles/select/2  
 testfiles/select/3\t""")
@@ -107,7 +107,7 @@ testfiles/select/3\t""")
 
 	def testFilelistIncludeNullSep(self):
 		"""Test included filelist but with null_separator set"""
-		fp = StringIO.StringIO("""\0testfiles/select/1/2\0testfiles/select/1\0testfiles/select/1/2/3\0testfiles/select/3/3/2\0testfiles/select/hello\nthere\0""")
+		fp = io.StringIO("""\0testfiles/select/1/2\0testfiles/select/1\0testfiles/select/1/2/3\0testfiles/select/3/3/2\0testfiles/select/hello\nthere\0""")
 		Globals.null_separator = 1
 		sf = self.Select.filelist_get_sf(fp, 1, "test")
 		assert sf(self.root) == 1
@@ -123,7 +123,7 @@ testfiles/select/3\t""")
 
 	def testFilelistExclude(self):
 		"""Test included filelist"""
-		fp = StringIO.StringIO("""
+		fp = io.StringIO("""
 testfiles/select/1/2
 testfiles/select/1
 this is a badly formed line which should be ignored
@@ -142,7 +142,7 @@ testfiles/select/3/3/2""")
 
 	def testFilelistInclude2(self):
 		"""testFilelistInclude2 - with modifiers"""
-		fp = StringIO.StringIO("""
+		fp = io.StringIO("""
 testfiles/select/1/1
 - testfiles/select/1/2
 + testfiles/select/1/3
@@ -159,7 +159,7 @@ testfiles/select/1/1
 
 	def testFilelistExclude2(self):
 		"""testFilelistExclude2 - with modifiers"""
-		fp = StringIO.StringIO("""
+		fp = io.StringIO("""
 testfiles/select/1/1
 - testfiles/select/1/2
 + testfiles/select/1/3
@@ -265,11 +265,11 @@ testfiles/select/1/1
 		assert select.glob_get_sf("**", 0)(root) == 0
 		assert select.glob_get_sf("/foo/*", 0)(root) == None
 
-		select.filelist_get_sf(StringIO.StringIO("/"), 1, "test")(root) == 1
-		select.filelist_get_sf(StringIO.StringIO("/foo/bar"), 1,
+		select.filelist_get_sf(io.StringIO("/"), 1, "test")(root) == 1
+		select.filelist_get_sf(io.StringIO("/foo/bar"), 1,
 							   "test")(root) == 1
-		select.filelist_get_sf(StringIO.StringIO("/"), 0, "test")(root) == 0
-		select.filelist_get_sf(StringIO.StringIO("/foo/bar"), 0,
+		select.filelist_get_sf(io.StringIO("/"), 0, "test")(root) == 0
+		select.filelist_get_sf(io.StringIO("/foo/bar"), 0,
 							   "test")(root) == None
 
 	def testOtherFilesystems(self):
@@ -303,8 +303,8 @@ class ParseArgsTest(unittest.TestCase):
 		"""Turn strings in filelist into fileobjs"""
 		new_filelists = []
 		for f in filelist:
-			if type(f) is types.StringType:
-				new_filelists.append(StringIO.StringIO(f))
+			if type(f) is bytes:
+				new_filelists.append(io.StringIO(f))
 			else: new_filelists.append(f)
 		return new_filelists
 

@@ -19,7 +19,7 @@
 
 """Provides functions and *ITR classes, for writing increment files"""
 
-import Globals, Time, rpath, Rdiff, log, statistics, robust
+from . import Globals, Time, rpath, Rdiff, log, statistics, robust
 
 
 def Increment(new, mirror, incpref):
@@ -85,10 +85,10 @@ def makediff(new, mirror, incpref):
 		# Check for unreadable files
 		if not new.readable():
 			old_new_perms = new.getperms()
-			new.chmod(0400 | old_new_perms)
+			new.chmod(0o400 | old_new_perms)
 		if not mirror.readable():
 			old_mirror_perms = mirror.getperms()
-			mirror.chmod(0400 | old_mirror_perms)
+			mirror.chmod(0o400 | old_mirror_perms)
 	
 	Rdiff.write_delta(new, mirror, diff, compress)
 

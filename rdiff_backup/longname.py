@@ -39,7 +39,7 @@ it later.
 """
 
 import types, errno
-import log, Globals, restore, rpath, FilenameMapping, regress
+from . import log, Globals, restore, rpath, FilenameMapping, regress
 
 long_name_dir = "long_filename_data"
 rootrp = None
@@ -109,8 +109,8 @@ def check_new_index(base, index, make_dirs = 0):
 	"""
 	def wrap_call(func, *args):
 		try: result = func(*args)
-		except EnvironmentError, exc:
-			if (errno.errorcode.has_key(exc[0]) and
+		except EnvironmentError as exc:
+			if (exc[0] in errno.errorcode and
 				errno.errorcode[exc[0]] == 'ENAMETOOLONG'):
 				return None
 			if (exc[1] == "The filename or extension is too long"):

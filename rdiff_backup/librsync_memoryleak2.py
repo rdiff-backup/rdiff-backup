@@ -3,7 +3,7 @@
 """Demonstrate a memory leak in pysync/librsync"""
 
 import os, _librsync
-from librsync import *
+from .librsync import *
 
 os.chdir("/tmp")
 
@@ -26,12 +26,12 @@ def copy(infileobj, outpath):
 	assert not infileobj.close()
 
 def test_cycle():
-	for i in xrange(100000):
+	for i in range(100000):
 		sm = _librsync.new_sigmaker()
 		sm.cycle("a")
 
 def main_test():
-	for i in xrange(100000):
+	for i in range(100000):
 		# Write signature file
 		afile = open("a", "rb")
 		copy(SigFile(afile), "sig")

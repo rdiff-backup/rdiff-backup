@@ -19,9 +19,9 @@
 
 """list, delete, and otherwise manage increments"""
 
-from __future__ import generators
-from log import Log
-import Globals, Time, static, statistics, restore, selection, FilenameMapping
+
+from .log import Log
+from . import Globals, Time, static, statistics, restore, selection, FilenameMapping
 
 
 class ManageException(Exception): pass
@@ -151,7 +151,7 @@ def ListIncrementSizes(mirror_root, index):
 		for inc in inc_iter:
 			if not inc.isincfile(): continue
 			t = inc.getinctime()
-			if not time_dict.has_key(t): time_dict[t] = 0
+			if t not in time_dict: time_dict[t] = 0
 			time_dict[t] += inc.getsize()
 		return time_dict
 
@@ -179,7 +179,7 @@ def ListIncrementSizes(mirror_root, index):
 		mirror_time = restore.get_inclist(cur_mir_base)[0].getinctime()
 		triples.append((mirror_time, mirror_total, mirror_total))
 
-		inc_times = time_dict.keys()
+		inc_times = list(time_dict.keys())
 		inc_times.sort()
 		inc_times.reverse()
 		cumulative_size = mirror_total

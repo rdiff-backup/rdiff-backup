@@ -42,7 +42,7 @@ class FSAbilitiesTest(unittest.TestCase):
 		"""Test basic querying read only"""
 		base_dir = rpath.RPath(Globals.local_connection, self.dir_to_test)
 		fsa = fs_abilities.FSAbilities('read-only').init_readonly(base_dir)
-		print fsa
+		print(fsa)
 		assert fsa.read_only == 1, fsa.read_only
 		assert fsa.eas == self.eas, fsa.eas
 		assert fsa.acls == self.acls, fsa.acls
@@ -59,8 +59,8 @@ class FSAbilitiesTest(unittest.TestCase):
 		new_dir.mkdir()
 		t = time.time()
 		fsa = fs_abilities.FSAbilities('read/write').init_readwrite(new_dir)
-		print "Time elapsed = ", time.time() - t
-		print fsa
+		print("Time elapsed = ", time.time() - t)
+		print(fsa)
 		assert fsa.read_only == 0, fsa.read_only
 		assert fsa.eas == self.eas, fsa.eas
 		assert fsa.acls == self.acls, fsa.acls

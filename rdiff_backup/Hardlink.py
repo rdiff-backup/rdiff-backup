@@ -30,7 +30,7 @@ source side should only transmit inode information.
 
 """
 
-from __future__ import generators
+
 import Globals, Time, log, robust, errno
 
 # The keys in this dictionary are (inode, devloc) pairs.  The values
@@ -60,7 +60,7 @@ def add_rorp(rorp, dest_rorp = None):
 	"""Process new rorp and update hard link dictionaries"""
 	if not rorp.isreg() or rorp.getnumlinks() < 2: return None
 	rp_inode_key = get_inode_key(rorp)
-	if not _inode_index.has_key(rp_inode_key):
+	if rp_inode_key not in _inode_index:
 		if not dest_rorp: dest_key = None
 		elif dest_rorp.getnumlinks() == 1: dest_key = "NA"
 		else: dest_key = get_inode_key(dest_rorp)
@@ -128,7 +128,7 @@ def link_rp(diff_rorp, dest_rpath, dest_root = None):
 	if not dest_root: dest_root = dest_rpath # use base of dest_rpath
 	dest_link_rpath = dest_root.new_index(diff_rorp.get_link_flag())
 	try: dest_rpath.hardlink(dest_link_rpath.path)
-	except EnvironmentError, exc:
+	except EnvironmentError as exc:
 		# This can happen if the source of dest_link_rpath was deleted
 		# after it's linking info was recorded but before
 		# dest_link_rpath was written.

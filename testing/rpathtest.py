@@ -1,4 +1,4 @@
-import os, cPickle, sys, unittest, time
+import os, pickle, sys, unittest, time
 from commontest import *
 from rdiff_backup.rpath import *
 from rdiff_backup import rpath
@@ -17,7 +17,7 @@ class RORPStateTest(RPathTest):
 		rorp = RPath(self.lc, self.prefix, ("regular_file",)).getRORPath()
 		rorp.file = sys.stdin # try to confuse pickler
 		assert rorp.isreg()
-		rorp2 = cPickle.loads(cPickle.dumps(rorp, 1))
+		rorp2 = pickle.loads(pickle.dumps(rorp, 1))
 		assert rorp2.isreg()
 		assert rorp2.data == rorp.data and rorp.index == rorp2.index
 		
@@ -64,26 +64,26 @@ class CheckPerms(RPathTest):
 	"""Check to see if permissions are reported and set accurately"""
 	def testExecReport(self):
 		"""Check permissions for executable files"""
-		assert self.rp_prefix.append('executable').getperms() == 0755
-		assert self.rp_prefix.append('executable2').getperms() == 0700
+		assert self.rp_prefix.append('executable').getperms() == 0o755
+		assert self.rp_prefix.append('executable2').getperms() == 0o700
 
 	def testhighbits(self):
 		"""Test reporting of highbit permissions"""
 		p = RPath(self.lc, "testfiles/rpath2/foobar").getperms()
-		assert p == 04100, p
+		assert p == 0o4100, p
 
 	def testOrdinaryReport(self):
 		"""Ordinary file permissions..."""
-		assert self.rp_prefix.append("regular_file").getperms() == 0644
-		assert self.rp_prefix.append('two_hardlinked_files1').getperms() == 0640
+		assert self.rp_prefix.append("regular_file").getperms() == 0o644
+		assert self.rp_prefix.append('two_hardlinked_files1').getperms() == 0o640
 
 	def testChmod(self):
 		"""Test changing file permission"""
 		rp = self.rp_prefix.append("changeable_permission")
-		rp.chmod(0700)
-		assert rp.getperms() == 0700
-		rp.chmod(0644)
-		assert rp.getperms() == 0644
+		rp.chmod(0o700)
+		assert rp.getperms() == 0o700
+		rp.chmod(0o644)
+		assert rp.getperms() == 0o644
 
 	def testExceptions(self):
 		"""What happens when file absent"""
@@ -108,13 +108,13 @@ class CheckTimes(RPathTest):
 		rp = RPath(self.lc, self.prefix, ("ctimetest.1",))
 		rp2 = RPath(self.lc, self.prefix, ("ctimetest.2",))
 		rp.touch()
-		rp.chmod(0700)
+		rp.chmod(0o700)
 		copy_with_attribs(rp, rp2)
 		assert cmp_attribs(rp, rp2)
 
 		time.sleep(1)
-		rp2.chmod(0755)
-		rp2.chmod(0700)
+		rp2.chmod(0o755)
+		rp2.chmod(0o700)
 		rp2.setdata()
 		assert rp2.getctime() > rp.getctime()
 		assert not cmp_attribs(rp, rp2)
@@ -187,7 +187,7 @@ class CheckSockets(RPathTest):
 		assert not sock.lstat()
 		try: sock.mksock()
 		except SkipFileException: pass
-		else: print "Warning, making long socket did not fail"
+		else: print("Warning, making long socket did not fail")
 		sock.setdata()
 		if sock.lstat(): sock.delete()
 
@@ -250,13 +250,13 @@ class FilenameOps(RPathTest):
 
 	def testNormalize(self):
 		"""rpath.normalize() dictionary test"""
-		for (before, after) in self.normdict.items():
+		for (before, after) in list(self.normdict.items()):
 			assert RPath(self.lc, before, ()).normalize().path == after, \
 				   "Normalize fails for %s => %s" % (before, after)
 
 	def testDirsplit(self):
 		"""Test splitting of various directories"""
-		for full, split in self.dirsplitdict.items():
+		for full, split in list(self.dirsplitdict.items()):
 			result = RPath(self.lc, full, ()).dirsplit()
 			assert result == split, \
 				   "%s => %s instead of %s" % (full, result, split)

@@ -107,7 +107,7 @@ def copy(rpin, rpout, compress = 0):
 	elif rpin.issym():
 		# some systems support permissions for symlinks, but
 		# only by setting at creation via the umask
-		if Globals.symlink_perms: orig_umask = os.umask(0777 & ~rpin.getperms())
+		if Globals.symlink_perms: orig_umask = os.umask(0o777 & ~rpin.getperms())
 		rpout.symlink(rpin.readlink())
 		if Globals.symlink_perms: os.umask(orig_umask)	# restore previous umask
 	elif rpin.ischardev():
@@ -131,7 +131,7 @@ def copy_reg_file(rpin, rpout, compress = 0):
 	except AttributeError: pass
 	try:
 		return rpout.write_from_fileobj(rpin.open("rb"), compress = compress)
-	except IOError, e:
+	except IOError as e:
 		if (e.errno == errno.ERANGE):
 			log.Log.FatalError("'IOError - Result too large' while reading %s. "
 							   "If you are using a Mac, this is probably "
@@ -201,7 +201,7 @@ def copy_attribs_inc(rpin, rpout):
 	"""
 	log.Log("Copying inc attrs from %s to %s" % (rpin.index, rpout.path), 7)
 	check_for_files(rpin, rpout)
-	if Globals.change_ownership: apply(rpout.chown, rpin.getuidgid())
+	if Globals.change_ownership: rpout.chown(*rpin.getuidgid())
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
 	if rpin.issym(): return # symlinks don't have times or perms
 	if (Globals.resource_forks_write and rpin.isreg() and
@@ -211,7 +211,7 @@ def copy_attribs_inc(rpin, rpout):
 		rpin.has_carbonfile() and rpout.isreg()):
 		rpout.write_carbonfile(rpin.get_carbonfile())
 	if rpin.isdir() and not rpout.isdir():
-		rpout.chmod(rpin.getperms() & 0777)
+		rpout.chmod(rpin.getperms() & 0o777)
 	else: rpout.chmod(rpin.getperms())
 	if Globals.acls_write: rpout.write_acl(rpin.get_acl(), map_names = 0)
 	if not rpin.isdev(): rpout.setmtime(rpin.getmtime())
@@ -258,7 +258,7 @@ def rename(rp_source, rp_dest):
 		else:
 			try:
 			    rp_source.conn.os.rename(rp_source.path, rp_dest.path)
-			except OSError, error:
+			except OSError as error:
 				# XXX errno.EINVAL and len(rp_dest.path) >= 260 indicates
 				# pathname too long on Windows
 				if error.errno != errno.EEXIST:
@@ -267,7 +267,7 @@ def rename(rp_source, rp_dest):
 					raise
 
 				# On Windows, files can't be renamed on top of an existing file
-				rp_source.conn.os.chmod(rp_dest.path, 0700)
+				rp_source.conn.os.chmod(rp_dest.path, 0o700)
 				rp_source.conn.os.unlink(rp_dest.path)
 				rp_source.conn.os.rename(rp_source.path, rp_dest.path)
 			    
@@ -284,10 +284,10 @@ def make_file_dict(filename):
 	"""
 	if os.name != 'nt':
 		try:
-			if type(filename) == unicode:
+			if type(filename) == str:
 				filename = filename.encode('utf-8')
 			return C.make_file_dict(filename)
-		except OSError, error:
+		except OSError as error:
 			# Unicode filenames should be process by the Python version 
 			if error.errno != errno.EILSEQ and error.errno != errno.EINVAL:
 				raise
@@ -336,7 +336,7 @@ def make_file_dict_python(filename):
 
 	if os.name == 'nt':
 		global type
-		if type(filename) == unicode:
+		if type(filename) == str:
 			attribs = win32file.GetFileAttributesW(filename)
 		else:
 			attribs = win32file.GetFileAttributes(filename)
@@ -346,9 +346,9 @@ def make_file_dict_python(filename):
 
 	if not (type_ == 'sym' or type_ == 'dev'):
 		# mtimes on symlinks and dev files don't work consistently
-		data['mtime'] = long(statblock[stat.ST_MTIME])
-		data['atime'] = long(statblock[stat.ST_ATIME])
-		data['ctime'] = long(statblock[stat.ST_CTIME])
+		data['mtime'] = int(statblock[stat.ST_MTIME])
+		data['atime'] = int(statblock[stat.ST_ATIME])
+		data['ctime'] = int(statblock[stat.ST_CTIME])
 	return data
 
 def make_socket_local(rpath):
@@ -361,7 +361,7 @@ def make_socket_local(rpath):
 	assert rpath.conn is Globals.local_connection
 	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 	try: s.bind(rpath.path)
-	except socket.error, exc:
+	except socket.error as exc:
 		raise SkipFileException("Socket error: " + str(exc))
 
 def gzip_open_local_read(rpath):
@@ -426,15 +426,15 @@ class RORPath:
 	def make_zero_dir(self, dir_rp):
 		"""Set self.data the same as dir_rp.data but with safe permissions"""
 		self.data = dir_rp.data.copy()
-		self.data['perms'] = 0700
+		self.data['perms'] = 0o700
 
-	def __nonzero__(self): return 1
+	def __bool__(self): return 1
 
 	def __eq__(self, other):
 		"""True iff the two rorpaths are equivalent"""
 		if self.index != other.index: return None
 
-		for key in self.data.keys(): # compare dicts key by key
+		for key in list(self.data.keys()): # compare dicts key by key
 			if self.issym() and key in ('uid', 'gid', 'uname', 'gname'):
 				pass # Don't compare gid/uid for symlinks
 			elif key == 'atime' and not Globals.preserve_atime: pass
@@ -472,7 +472,7 @@ class RORPath:
 		original rpath.
 
 		"""
-		for key in self.data.keys(): # compare dicts key by key
+		for key in list(self.data.keys()): # compare dicts key by key
 			if key in ('uid', 'gid', 'uname', 'gname'): pass
 			elif (key == 'type' and self.isspecial() and
 				  other.isreg() and other.getsize() == 0):
@@ -490,7 +490,7 @@ class RORPath:
 				pass
 			elif key == 'sha1': pass # one or other may not have set
 			elif key == 'mirrorname' or key == 'incname': pass
-			elif (not other.data.has_key(key) or
+			elif (key not in other.data or
 				  self.data[key] != other.data[key]):
 				return 0
 
@@ -513,7 +513,7 @@ class RORPath:
 					verbosity)
 			return None
 
-		for key in self.data.keys(): # compare dicts key by key
+		for key in list(self.data.keys()): # compare dicts key by key
 			if (key in ('uid', 'gid', 'uname', 'gname') and
 				(self.issym() or not compare_ownership)):
 				# Don't compare gid/uid for symlinks, or if told not to
@@ -528,9 +528,9 @@ class RORPath:
 			elif key == 'ea' and not compare_eas: pass
 			elif key == 'acl' and not compare_acls: pass
 			elif key == 'win_acl' and not compare_win_acls: pass
-			elif (not other.data.has_key(key) or
+			elif (key not in other.data or
 				  self.data[key] != other.data[key]):
-				if not other.data.has_key(key):
+				if key not in other.data:
 					log.Log("Second is missing key %s" % (key,), verbosity)
 				else: log.Log("Value of %s differs: %s vs %s" %
 							  (key, self.data[key], other.data[key]),
@@ -627,7 +627,7 @@ class RORPath:
 
 	def getperms(self):
 		"""Return permission block of file"""
-		if self.data.has_key('perms'): return self.data['perms']
+		if 'perms' in self.data: return self.data['perms']
 		else: return 0
 
 	def getuname(self):
@@ -642,7 +642,7 @@ class RORPath:
 
 	def hassize(self):
 		"""True if rpath has a size parameter"""
-		return self.data.has_key('size')
+		return 'size' in self.data
 
 	def getsize(self):
 		"""Return length of file in bytes"""
@@ -674,7 +674,7 @@ class RORPath:
 
 	def getnumlinks(self):
 		"""Number of places inode is linked to"""
-		if self.data.has_key('nlink'): return self.data['nlink']
+		if 'nlink' in self.data: return self.data['nlink']
 		else: return 1
 
 	def readlink(self):
@@ -721,7 +721,7 @@ class RORPath:
 		because it is hardlinked on the remote side.
 
 		"""
-		return self.data.has_key('linked')
+		return 'linked' in self.data
 
 	def get_link_flag(self):
 		"""Return previous index that a file is hard linked to"""
@@ -772,7 +772,7 @@ class RORPath:
 
 	def has_carbonfile(self):
 		"""True if rpath has a carbonfile parameter"""
-		return self.data.has_key('carbonfile')
+		return 'carbonfile' in self.data
 
 	def get_carbonfile(self):
 		"""Returns the carbonfile data"""
@@ -784,7 +784,7 @@ class RORPath:
 
 	def has_resource_fork(self):
 		"""True if rpath has a resourcefork parameter"""
-		return self.data.has_key('resourcefork')
+		return 'resourcefork' in self.data
 
 	def get_resource_fork(self):
 		"""Return the resource fork in binary data"""
@@ -807,7 +807,7 @@ class RORPath:
 
 	def has_alt_mirror_name(self):
 		"""True if rorp has an alternate mirror name specified"""
-		return self.data.has_key('mirrorname')
+		return 'mirrorname' in self.data
 
 	def get_alt_mirror_name(self):
 		"""Return alternate mirror name (for long filenames)"""
@@ -825,7 +825,7 @@ class RORPath:
 
 	def has_alt_inc_name(self):
 		"""True if rorp has an alternate increment base specified"""
-		return self.data.has_key('incname')
+		return 'incname' in self.data
 
 	def get_alt_inc_name(self):
 		"""Return alternate increment base (used for long name support)"""
@@ -843,7 +843,7 @@ class RORPath:
 
 	def has_sha1(self):
 		"""True iff self has its sha1 digest set"""
-		return self.data.has_key('sha1')
+		return 'sha1' in self.data
 
 	def get_sha1(self):
 		"""Return sha1 digest.  Causes exception unless set_sha1 first"""
@@ -931,16 +931,16 @@ class RPath(RORPath):
 		"""Wrapper around os.chmod"""
 		try:
 			self.conn.os.chmod(self.path, permissions & Globals.permission_mask)
-		except OSError, e:
+		except OSError as e:
 			if e.strerror == "Inappropriate file type or format" \
 					and not self.isdir():
 				# Some systems throw this error if try to set sticky bit
 				# on a non-directory. Remove sticky bit and try again.
 				log.Log("Warning: Unable to set permissions of %s to %o - "
 						"trying again without sticky bit (%o)" % (self.path, 
-						permissions, permissions & 06777), loglevel)
+						permissions, permissions & 0o6777), loglevel)
 				self.conn.os.chmod(self.path, permissions
-											  & 06777 & Globals.permission_mask)
+											  & 0o6777 & Globals.permission_mask)
 			else:
 				raise
 		self.data['perms'] = permissions
@@ -962,7 +962,7 @@ class RPath(RORPath):
 		log.Log(lambda: "Setting time of %s to %d" % (self.path, modtime), 7)
 		if modtime < 0: log.Log("Warning: modification time of %s is"
 								"before 1970" % self.path, 2)
-		try: self.conn.os.utime(self.path, (long(time.time()), modtime))
+		try: self.conn.os.utime(self.path, (int(time.time()), modtime))
 		except OverflowError:
 			log.Log("Cannot change mtime of %s to %s - problem is probably"
 					"64->32bit conversion" % (self.path, modtime), 2)
@@ -1004,8 +1004,8 @@ class RPath(RORPath):
 		path = self.path
 		# Use pass in unicode to os.listdir, so that the returned
 		# entries are in unicode.
-		if type(path) != unicode and Globals.use_unicode_paths:
-			path = unicode(path, 'utf-8')
+		if type(path) != str and Globals.use_unicode_paths:
+			path = str(path, 'utf-8')
 		return self.conn.os.listdir(path)
 
 	def symlink(self, linktext):
@@ -1041,21 +1041,21 @@ class RPath(RORPath):
 
 	def hasfullperms(self):
 		"""Return true if current process has full permissions on the file"""
-		if self.isowner(): return self.getperms() % 01000 >= 0700
-		elif self.isgroup(): return self.getperms() % 0100 >= 070
-		else: return self.getperms() % 010 >= 07
+		if self.isowner(): return self.getperms() % 0o1000 >= 0o700
+		elif self.isgroup(): return self.getperms() % 0o100 >= 0o70
+		else: return self.getperms() % 0o10 >= 0o7
 
 	def readable(self):
 		"""Return true if current process has read permissions on the file"""
-		if self.isowner(): return self.getperms() % 01000 >= 0400
-		elif self.isgroup(): return self.getperms() % 0100 >= 040
-		else: return self.getperms() % 010 >= 04
+		if self.isowner(): return self.getperms() % 0o1000 >= 0o400
+		elif self.isgroup(): return self.getperms() % 0o100 >= 0o40
+		else: return self.getperms() % 0o10 >= 0o4
 
 	def executable(self):
 		"""Return true if current process has execute permissions"""
-		if self.isowner(): return self.getperms() % 0200 >= 0100
-		elif self.isgroup(): return self.getperms() % 020 >= 010
-		else: return self.getperms() % 02 >= 01
+		if self.isowner(): return self.getperms() % 0o200 >= 0o100
+		elif self.isgroup(): return self.getperms() % 0o20 >= 0o10
+		else: return self.getperms() % 0o2 >= 0o1
 		
 	def isowner(self):
 		"""Return true if current process is owner of rp or root"""
@@ -1064,11 +1064,11 @@ class RPath(RORPath):
 		except AttributeError:
 		    return True # Windows doesn't have getuid(), so hope for the best
 		return uid == 0 or \
-			   (self.data.has_key('uid') and uid == self.data['uid'])
+			   ('uid' in self.data and uid == self.data['uid'])
 
 	def isgroup(self):
 		"""Return true if process has group of rp"""
-		return (self.data.has_key('gid') and \
+		return ('gid' in self.data and \
 				self.data['gid'] in self.conn.Globals.get('process_groups'))
 
 	def delete(self):
@@ -1081,11 +1081,11 @@ class RPath(RORPath):
 				self.conn.shutil.rmtree(self.path)
 		else:
 			try: self.conn.os.unlink(self.path)
-			except OSError, error:
+			except OSError as error:
 				if error.errno in (errno.EPERM, errno.EACCES):
 					# On Windows, read-only files cannot be deleted.
 					# Remove the read-only attribute and try again.
-					self.chmod(0700)
+					self.chmod(0o700)
 					self.conn.os.unlink(self.path)
 				else:
 					raise
@@ -1120,8 +1120,7 @@ class RPath(RORPath):
 		be retained.
 
 		"""
-		newpath = "/".join(filter(lambda x: x and x != ".",
-								  self.path.split("/")))
+		newpath = "/".join([x for x in self.path.split("/") if x and x != "."])
 		if self.path[0] == "/": newpath = "/" + newpath
 		elif not newpath: newpath = "."
 		return self.newpath(newpath)
@@ -1263,13 +1262,13 @@ class RPath(RORPath):
 		"""Make a special file with specified type, and major/minor nums"""
 		if type == 'c':
 			datatype = 'chr'
-			mode = stat.S_IFCHR | 0600
+			mode = stat.S_IFCHR | 0o600
 		elif type == 'b':
 			datatype = 'blk'
-			mode = stat.S_IFBLK | 0600
+			mode = stat.S_IFBLK | 0o600
 		else: raise RPathException
 		try: self.conn.os.mknod(self.path, mode, self.conn.os.makedev(major, minor))
-		except (OSError, AttributeError), e:
+		except (OSError, AttributeError) as e:
 			if isinstance(e, AttributeError) or e.errno == errno.EPERM:
 				# AttributeError will be raised by Python 2.2, which
 				# doesn't have os.mknod
@@ -1299,8 +1298,8 @@ class RPath(RORPath):
 			fd = os.open(self.path, os.O_RDONLY)
 			os.fsync(fd)
 			os.close(fd)
-		except OSError, e:
-			if locals().has_key('fd'): os.close(fd)
+		except OSError as e:
+			if 'fd' in locals(): os.close(fd)
 			if (e.errno not in (errno.EPERM, errno.EACCES, errno.EBADF)) \
 				or self.isdir(): raise
 
@@ -1313,7 +1312,7 @@ class RPath(RORPath):
 				if not oldperms: # self.data['perms'] is probably out of sync
 					self.setdata()
 					oldperms = self.getperms()
-				self.chmod(0700)
+				self.chmod(0o700)
 			fd = os.open(self.path, os.O_RDWR)
 			if oldperms is not None: self.chmod(oldperms)
 			if thunk: thunk()
@@ -1394,7 +1393,7 @@ class RPath(RORPath):
 										  'rb')
 				rfork = rfork_fp.read()
 				assert not rfork_fp.close()
-			except (IOError, OSError), e: rfork = ''
+			except (IOError, OSError) as e: rfork = ''
 			self.data['resourcefork'] = rfork
 		return rfork
 
@@ -1426,19 +1425,19 @@ class MaybeUnicode:
 	def read(self, length = -1):
 		data = self.fileobj.read(length)
 		if Globals.use_unicode_paths:
-			data = unicode(data, 'utf-8')
+			data = str(data, 'utf-8')
 		return data
 
 	def readline(self, length=-1):
 		data = self.fileobj.readline(length)
 		if Globals.use_unicode_paths:
-			data = unicode(data, 'utf-8')
+			data = str(data, 'utf-8')
 		return data
 
 	def write(self, buf):
 		if Globals.use_unicode_paths:
-			if type(buf) != unicode:
-				buf = unicode(buf, 'utf-8')
+			if type(buf) != str:
+				buf = str(buf, 'utf-8')
 			buf = buf.encode('utf-8')
 		return self.fileobj.write(buf)
 
@@ -1474,8 +1473,8 @@ class GzipFile(gzip.GzipFile):
 		unicode with the filename."""
 		if mode and 'b' not in mode:
 			mode += 'b'
-		if type(filename) != unicode and Globals.use_unicode_paths:
-			filename = unicode(filename, 'utf-8')
+		if type(filename) != str and Globals.use_unicode_paths:
+			filename = str(filename, 'utf-8')
 		fileobj = open(filename, mode or 'rb')
 		gzip.GzipFile.__init__(self, filename.encode('utf-8'),
 							mode=mode, fileobj=fileobj)
@@ -1545,7 +1544,7 @@ def setdata_local(rpath):
 	reset_perms = False
 	if (Globals.process_uid != 0 and not rpath.readable() and rpath.isowner()):
 		reset_perms = True
-		rpath.chmod(0400 | rpath.getperms())
+		rpath.chmod(0o400 | rpath.getperms())
 
 	rpath.data['uname'] = user_group.uid2uname(rpath.data['uid'])
 	rpath.data['gname'] = user_group.gid2gname(rpath.data['gid'])
@@ -1558,7 +1557,7 @@ def setdata_local(rpath):
 	if Globals.carbonfile_conn and rpath.isreg():
 		rpath.data['carbonfile'] = carbonfile_get(rpath)
 
-	if reset_perms: rpath.chmod(rpath.getperms() & ~0400)
+	if reset_perms: rpath.chmod(rpath.getperms() & ~0o400)
 
 
 def carbonfile_get(rpath):

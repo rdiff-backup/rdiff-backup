@@ -10,11 +10,11 @@ specified directory.
 import os, stat, sys, math
 
 if len(sys.argv) > 5 or len(sys.argv) < 4:
-	print "Usage: init_files [directory name] [file size] [file count] [base]"
-	print
-	print "Creates file_count files in directory_name of size file_size."
-	print "The created directory has a tree type structure where each level"
-	print "has at most base files or directories in it.  Default is 50."
+	print("Usage: init_files [directory name] [file size] [file count] [base]")
+	print()
+	print("Creates file_count files in directory_name of size file_size.")
+	print("The created directory has a tree type structure where each level")
+	print("has at most base files or directories in it.  Default is 50.")
 	sys.exit(1)
 
 dirname = sys.argv[1]
@@ -29,7 +29,7 @@ else: base = int(sys.argv[4])
 def make_file(path):
 	"""Make the file at path"""
 	fp = open(path, "w")
-	for i in xrange(int(math.floor(filesize/block_size))): fp.write(block)
+	for i in range(int(math.floor(filesize/block_size))): fp.write(block)
 	fp.write(block_change)
 	fp.close()
 
@@ -39,7 +39,7 @@ def find_sublevels(count):
 
 def make_dir(dir, count):
 	"""Make count files in the directory, making subdirectories if necessary"""
-	print "Making directory %s with %d files" % (dir, count)
+	print("Making directory %s with %d files" % (dir, count))
 	os.mkdir(dir)
 	level = find_sublevels(count)
 	assert count <= pow(base, level)
@@ -61,7 +61,7 @@ def start(dir):
 	try: os.stat(dir)
 	except os.error: pass
 	else:
-		print "Directory %s already exists, exiting." % dir
+		print("Directory %s already exists, exiting." % dir)
 		sys.exit(1)
 
 	make_dir(dirname, filecount)

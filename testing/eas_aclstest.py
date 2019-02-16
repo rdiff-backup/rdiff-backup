@@ -1,4 +1,4 @@
-import unittest, os, time, cStringIO, posix1e, pwd, grp
+import unittest, os, time, io, posix1e, pwd, grp
 from commontest import *
 from rdiff_backup.eas_acls import *
 from rdiff_backup import Globals, rpath, Time, user_group, log
@@ -55,8 +55,8 @@ class EATest(unittest.TestCase):
 		record = EA2Record(self.sample_ea)
 		new_ea = Record2EA(record)
 		if not new_ea == self.sample_ea:
-			new_list = new_ea.attr_dict.keys()
-			sample_list = self.sample_ea.attr_dict.keys()
+			new_list = list(new_ea.attr_dict.keys())
+			sample_list = list(self.sample_ea.attr_dict.keys())
 			new_list.sort()
 			sample_list.sort()
 			assert new_list == sample_list, (new_list, sample_list)
@@ -83,22 +83,22 @@ user.empty
 # file: 2foo/\\012
 user.empty
 """
-		extractor = EAExtractor(cStringIO.StringIO(record_list))
+		extractor = EAExtractor(io.StringIO(record_list))
 		ea_iter = extractor.iterate_starting_with(())
-		first = ea_iter.next()
+		first = next(ea_iter)
 		assert first.index == ('0foo',), first
-		second = ea_iter.next()
+		second = next(ea_iter)
 		assert second.index == ('1foo', 'bar', 'baz'), second
-		third = ea_iter.next() # Test quoted filenames
+		third = next(ea_iter) # Test quoted filenames
 		assert third.index == ('2foo', '\n'), third.index
-		try: ea_iter.next()
+		try: next(ea_iter)
 		except StopIteration: pass
 		else: assert 0, "Too many elements in iterator"
 
-		extractor = EAExtractor(cStringIO.StringIO(record_list))
+		extractor = EAExtractor(io.StringIO(record_list))
 		ea_iter = extractor.iterate_starting_with(('1foo', 'bar'))
 		assert ea_iter.next().index == ('1foo', 'bar', 'baz')
-		try: ea_iter.next()
+		try: next(ea_iter)
 		except StopIteration: pass
 		else: assert 0, "Too many elements in iterator"
 
@@ -116,7 +116,7 @@ user.empty
 		rp1_2 = self.ea_testdir1.append('2')
 		rp1_3 = self.ea_testdir1.append('3')
 		rp1_4 = self.ea_testdir1.append('4')
-		map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3, rp1_4])
+		list(map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3, rp1_4]))
 		self.sample_ea.write_to_rp(self.ea_testdir1)
 		self.ea1.write_to_rp(rp1_1)
 		self.ea2.write_to_rp(rp1_2)
@@ -126,7 +126,7 @@ user.empty
 		rp2_1 = self.ea_testdir2.append('1')
 		rp2_2 = self.ea_testdir2.append('2')
 		rp2_3 = self.ea_testdir2.append('3')
-		map(rpath.RPath.touch, [rp2_1, rp2_2, rp2_3])
+		list(map(rpath.RPath.touch, [rp2_1, rp2_2, rp2_3]))
 		self.ea3.write_to_rp(self.ea_testdir2)
 		self.sample_ea.write_to_rp(rp2_1)
 		self.ea1.write_to_rp(rp2_2)
@@ -152,15 +152,15 @@ user.empty
 		# Read back records and compare
 		ea_iter = man.get_eas_at_time(10000, None)
 		assert ea_iter, "No extended_attributes.<time> file found"
-		sample_ea_reread = ea_iter.next()
+		sample_ea_reread = next(ea_iter)
 		assert sample_ea_reread == self.sample_ea
-		ea1_reread = ea_iter.next()
+		ea1_reread = next(ea_iter)
 		assert ea1_reread == self.ea1
-		ea2_reread = ea_iter.next()
+		ea2_reread = next(ea_iter)
 		assert ea2_reread == self.ea2
-		ea3_reread = ea_iter.next()
+		ea3_reread = next(ea_iter)
 		assert ea3_reread == self.ea3
-		try: ea_iter.next()
+		try: next(ea_iter)
 		except StopIteration: pass
 		else: assert 0, "Expected end to iterator"
 
@@ -243,7 +243,7 @@ other::---""")
 		"""Test basic writing and reading of ACLs"""
 		self.make_temp()
 		new_acl = AccessControlLists(())
-		tempdir.chmod(0700)
+		tempdir.chmod(0o700)
 		new_acl.read_from_rp(tempdir)
 		assert new_acl.is_basic(), str(new_acl)
 		assert not new_acl == self.sample_acl
@@ -277,10 +277,10 @@ other::---""")
 		record = ACL2Record(self.sample_acl)
 		new_acl = Record2ACL(record)
 		if new_acl != self.sample_acl:
-			print "New_acl", new_acl.entry_list
-			print "sample_acl", self.sample_acl.entry_list
-			print "New_acl text", str(new_acl)
-			print "sample acl text", str(self.sample_acl)
+			print("New_acl", new_acl.entry_list)
+			print("sample_acl", self.sample_acl.entry_list)
+			print("New_acl text", str(new_acl))
+			print("sample acl text", str(self.sample_acl))
 			assert 0
 
 		record2 = ACL2Record(self.dir_acl)
@@ -313,22 +313,22 @@ group:root:---
 mask::---
 other::---
 """
-		extractor = ACLExtractor(cStringIO.StringIO(record_list))
+		extractor = ACLExtractor(io.StringIO(record_list))
 		acl_iter = extractor.iterate_starting_with(())
-		first = acl_iter.next()
+		first = next(acl_iter)
 		assert first.index == ('0foo',), first
-		second = acl_iter.next()
+		second = next(acl_iter)
 		assert second.index == ('1foo', 'bar', 'baz'), second
-		third = acl_iter.next() # Test quoted filenames
+		third = next(acl_iter) # Test quoted filenames
 		assert third.index == ('2foo', '\n'), third.index
-		try: acl_iter.next()
+		try: next(acl_iter)
 		except StopIteration: pass
 		else: assert 0, "Too many elements in iterator"
 
-		extractor = ACLExtractor(cStringIO.StringIO(record_list))
+		extractor = ACLExtractor(io.StringIO(record_list))
 		acl_iter = extractor.iterate_starting_with(('1foo', 'bar'))
 		assert acl_iter.next().index == ('1foo', 'bar', 'baz')
-		try: acl_iter.next()
+		try: next(acl_iter)
 		except StopIteration: pass
 		else: assert 0, "Too many elements in iterator"
 
@@ -340,15 +340,15 @@ other::---
 		rp1_1 = self.acl_testdir1.append('1')
 		rp1_2 = self.acl_testdir1.append('2')
 		rp1_3 = self.acl_testdir1.append('3')
-		map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3])
+		list(map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3]))
 		self.dir_acl.write_to_rp(self.acl_testdir1)
 		self.acl1.write_to_rp(rp1_1)
 		self.acl2.write_to_rp(rp1_2)
 		self.acl3.write_to_rp(rp1_3)
 
 		self.acl_testdir2.mkdir()
-		rp2_1, rp2_2, rp2_3 = map(self.acl_testdir2.append, ('1', '2', '3'))
-		map(rpath.RPath.touch, (rp2_1, rp2_2, rp2_3))
+		rp2_1, rp2_2, rp2_3 = list(map(self.acl_testdir2.append, ('1', '2', '3')))
+		list(map(rpath.RPath.touch, (rp2_1, rp2_2, rp2_3)))
 		self.sample_acl.write_to_rp(self.acl_testdir2)
 		self.acl3.write_to_rp(rp2_1)
 		self.acl1.write_to_rp(rp2_2)
@@ -375,15 +375,15 @@ other::---
 		# Read back records and compare
 		acl_iter = man.get_acls_at_time(10000, None)
 		assert acl_iter, "No acl file found"
-		dir_acl_reread = acl_iter.next()
+		dir_acl_reread = next(acl_iter)
 		assert dir_acl_reread == self.dir_acl
-		acl1_reread = acl_iter.next()
+		acl1_reread = next(acl_iter)
 		assert acl1_reread == self.acl1
-		acl2_reread = acl_iter.next()
+		acl2_reread = next(acl_iter)
 		assert acl2_reread == self.acl2
-		acl3_reread = acl_iter.next()
+		acl3_reread = next(acl_iter)
 		assert acl3_reread == self.acl3
-		try: extra = acl_iter.next()
+		try: extra = next(acl_iter)
 		except StopIteration: pass
 		else: assert 0, "Got unexpected object: " + repr(extra)
 
@@ -520,8 +520,8 @@ class CombinedTest(unittest.TestCase):
 		if self.combo_testdir1.lstat(): self.combo_testdir1.delete()
 		if self.combo_testdir2.lstat(): self.combo_testdir2.delete()
 		self.combo_testdir1.mkdir()
-		rp1_1, rp1_2, rp1_3 = map(self.combo_testdir1.append, ('1', '2', '3'))
-		map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3])
+		rp1_1, rp1_2, rp1_3 = list(map(self.combo_testdir1.append, ('1', '2', '3')))
+		list(map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3]))
 		ACLTest.dir_acl.write_to_rp(self.combo_testdir1)
 		EATest.sample_ea.write_to_rp(self.combo_testdir1)
 		ACLTest.acl1.write_to_rp(rp1_1)
@@ -530,8 +530,8 @@ class CombinedTest(unittest.TestCase):
 		EATest.ea3.write_to_rp(rp1_3)
 
 		self.combo_testdir2.mkdir()
-		rp2_1, rp2_2, rp2_3 = map(self.combo_testdir2.append, ('1', '2', '3'))
-		map(rpath.RPath.touch, [rp2_1, rp2_2, rp2_3])
+		rp2_1, rp2_2, rp2_3 = list(map(self.combo_testdir2.append, ('1', '2', '3')))
+		list(map(rpath.RPath.touch, [rp2_1, rp2_2, rp2_3]))
 		ACLTest.sample_acl.write_to_rp(self.combo_testdir2)
 		EATest.ea1.write_to_rp(rp2_1)
 		EATest.ea3.write_to_rp(rp2_2)

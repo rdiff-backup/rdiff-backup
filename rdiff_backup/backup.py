@@ -19,9 +19,9 @@
 
 """High level functions for mirroring and mirror+incrementing"""
 
-from __future__ import generators
+
 import errno
-import Globals, metadata, rorpiter, TempFile, Hardlink, robust, increment, \
+from . import Globals, metadata, rorpiter, TempFile, Hardlink, robust, increment, \
 	   rpath, static, log, selection, Time, Rdiff, statistics, iterfile, \
 	   hash, longname
 
@@ -114,12 +114,12 @@ class SourceStruct:
 				if (Globals.process_uid != 0 and not src_rp.readable() and
 						src_rp.isowner()):
 					reset_perms = True
-					src_rp.chmod(0400 | src_rp.getperms())
+					src_rp.chmod(0o400 | src_rp.getperms())
 
 				if dest_sig.isreg(): attach_diff(diff_rorp, src_rp, dest_sig)
 				else: attach_snapshot(diff_rorp, src_rp)
 
-				if reset_perms: src_rp.chmod(src_rp.getperms() & ~0400)
+				if reset_perms: src_rp.chmod(src_rp.getperms() & ~0o400)
 			else:
 				dest_sig.close_if_necessary()
 				diff_rorp.set_attached_filetype('snapshot')
@@ -215,16 +215,16 @@ class DestinationStruct:
 			# This branch can happen with root source and non-root
 			# destination.  Permissions are changed permanently, which
 			# should propogate to the diffs
-			dest_rp.chmod(0400 | dest_rp.getperms())
+			dest_rp.chmod(0o400 | dest_rp.getperms())
 		try:
 			return Rdiff.get_signature(dest_rp)
-		except IOError, e:
+		except IOError as e:
 			if (e.errno == errno.EPERM or e.errno == errno.EACCES):
 				try:
 					# Try chmod'ing anyway -- This can work on NFS and AFS
 					# depending on the setup. We keep the if() statement
 					# above for performance reasons.
-					dest_rp.chmod(0400 | dest_rp.getperms())
+					dest_rp.chmod(0o400 | dest_rp.getperms())
 					return Rdiff.get_signature(dest_rp)
 				except (IOError, OSError):
 					log.Log.FatalError("Could not open %s for reading. Check "
@@ -323,9 +323,9 @@ class CacheCollatedPostProcess:
 
 	def __iter__(self): return self
 
-	def next(self):
+	def __next__(self):
 		"""Return next (source_rorp, dest_rorp) pair.  StopIteration passed"""
-		source_rorp, dest_rorp = self.iter.next()
+		source_rorp, dest_rorp = next(self.iter)
 		self.pre_process(source_rorp, dest_rorp)
 		index = source_rorp and source_rorp.index or dest_rorp.index
 		self.cache_dict[index] = [source_rorp, dest_rorp, 0, 0, None]
@@ -345,7 +345,7 @@ class CacheCollatedPostProcess:
 		if Globals.preserve_hardlinks and source_rorp:
 			Hardlink.add_rorp(source_rorp, dest_rorp)
 		if (dest_rorp and dest_rorp.isdir() and Globals.process_uid != 0
-			and dest_rorp.getperms() % 01000 < 0700):
+			and dest_rorp.getperms() % 0o1000 < 0o700):
 			self.unreadable_dir_init(source_rorp, dest_rorp)
 
 	def unreadable_dir_init(self, source_rorp, dest_rorp):
@@ -356,7 +356,7 @@ class CacheCollatedPostProcess:
 
 		"""
 		dest_rp = self.dest_root_rp.new_index(dest_rorp.index)
-		dest_rp.chmod(0700 | dest_rorp.getperms())
+		dest_rp.chmod(0o700 | dest_rorp.getperms())
 		if source_rorp and source_rorp.isdir():
 			self.dir_perms_list.append((dest_rp, source_rorp.getperms()))
 
@@ -436,7 +436,7 @@ class CacheCollatedPostProcess:
 
 	def in_cache(self, index):
 		"""Return true if given index is cached"""
-		return self.cache_dict.has_key(index)
+		return index in self.cache_dict
 
 	def flag_success(self, index):
 		"""Signal that the file with given index was updated successfully"""
@@ -668,10 +668,10 @@ class PatchITRB(rorpiter.ITRBranch):
 			rpath.copy_attribs(self.dir_update, self.base_rp)
 
 			if (Globals.process_uid != 0 and
-					self.dir_update.getperms() % 01000 < 0700):
+					self.dir_update.getperms() % 0o1000 < 0o700):
 				# Directory was unreadable at start -- keep it readable
 				# until the end of the backup process.
-				self.base_rp.chmod(0700 | self.dir_update.getperms())
+				self.base_rp.chmod(0o700 | self.dir_update.getperms())
 		elif self.dir_replacement:
 			self.base_rp.rmdir()
 			if self.dir_replacement.lstat():

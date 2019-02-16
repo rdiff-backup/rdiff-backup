@@ -23,7 +23,7 @@ class LongNameTest(unittest.TestCase):
 		really_long.touch()
 
 		try: too_long = self.out_rp.append("a"*(max_len+1))
-		except EnvironmentError, e:
+		except EnvironmentError as e:
 			assert errno.errorcode[e[0]] == 'ENAMETOOLONG', e
 		else: assert 0, "File made successfully with length " + str(max_len+1)
 

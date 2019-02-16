@@ -8,7 +8,7 @@ def MakeRandomFile(path):
 	"""Writes a random file of length between 10000 and 100000"""
 	fp = open(path, "w")
 	randseq = []
-	for i in xrange(random.randrange(5000, 30000)):
+	for i in range(random.randrange(5000, 30000)):
 		randseq.append(chr(random.randrange(256)))
 	fp.write("".join(randseq))
 	fp.close()
@@ -43,7 +43,7 @@ class RdiffTest(unittest.TestCase):
 		for i in range(2):
 			MakeRandomFile(self.basis.path)
 			MakeRandomFile(self.new.path)
-			map(rpath.RPath.setdata, [self.basis, self.new])
+			list(map(rpath.RPath.setdata, [self.basis, self.new]))
 			assert self.basis.lstat() and self.new.lstat()
 			self.signature.write_from_fileobj(Rdiff.get_signature(self.basis))
 			assert self.signature.lstat()
@@ -52,7 +52,7 @@ class RdiffTest(unittest.TestCase):
 			assert self.delta.lstat()
 			Rdiff.patch_local(self.basis, self.delta, self.output)
 			assert rpath.cmp(self.new, self.output)
-			map(rpath.RPath.delete, rplist)
+			list(map(rpath.RPath.delete, rplist))
 
 	def testRdiffDeltaPatchGzip(self):
 		"""Same as above by try gzipping patches"""
@@ -63,7 +63,7 @@ class RdiffTest(unittest.TestCase):
 			
 		MakeRandomFile(self.basis.path)
 		MakeRandomFile(self.new.path)
-		map(rpath.RPath.setdata, [self.basis, self.new])
+		list(map(rpath.RPath.setdata, [self.basis, self.new]))
 		assert self.basis.lstat() and self.new.lstat()
 		self.signature.write_from_fileobj(Rdiff.get_signature(self.basis))
 		assert self.signature.lstat()
@@ -77,7 +77,7 @@ class RdiffTest(unittest.TestCase):
 		Rdiff.patch_local(self.basis, self.delta, self.output,
 						  delta_compressed = 1)
 		assert rpath.cmp(self.new, self.output)
-		map(rpath.RPath.delete, rplist)
+		list(map(rpath.RPath.delete, rplist))
 
 	def testWriteDelta(self):
 		"""Test write delta feature of rdiff"""
@@ -85,21 +85,21 @@ class RdiffTest(unittest.TestCase):
 		rplist = [self.basis, self.new, self.delta, self.output]
 		MakeRandomFile(self.basis.path)
 		MakeRandomFile(self.new.path)
-		map(rpath.RPath.setdata, [self.basis, self.new])
+		list(map(rpath.RPath.setdata, [self.basis, self.new]))
 		assert self.basis.lstat() and self.new.lstat()
 
 		Rdiff.write_delta(self.basis, self.new, self.delta)
 		assert self.delta.lstat()
 		Rdiff.patch_local(self.basis, self.delta, self.output)
 		assert rpath.cmp(self.new, self.output)
-		map(rpath.RPath.delete, rplist)		
+		list(map(rpath.RPath.delete, rplist))		
 
 	def testWriteDeltaGzip(self):
 		"""Same as above but delta is written gzipped"""
 		rplist = [self.basis, self.new, self.delta, self.output]
 		MakeRandomFile(self.basis.path)
 		MakeRandomFile(self.new.path)
-		map(rpath.RPath.setdata, [self.basis, self.new])
+		list(map(rpath.RPath.setdata, [self.basis, self.new]))
 		assert self.basis.lstat() and self.new.lstat()
 		delta_gz = rpath.RPath(self.delta.conn, self.delta.path + ".gz")
 		if delta_gz.lstat(): delta_gz.delete()
@@ -111,7 +111,7 @@ class RdiffTest(unittest.TestCase):
 		self.delta.setdata()
 		Rdiff.patch_local(self.basis, self.delta, self.output)
 		assert rpath.cmp(self.new, self.output)
-		map(rpath.RPath.delete, rplist)		
+		list(map(rpath.RPath.delete, rplist))		
 
 	def testRdiffRename(self):
 		"""Rdiff replacing original file with patch outfile"""
@@ -121,7 +121,7 @@ class RdiffTest(unittest.TestCase):
 
 		MakeRandomFile(self.basis.path)
 		MakeRandomFile(self.new.path)
-		map(rpath.RPath.setdata, [self.basis, self.new])
+		list(map(rpath.RPath.setdata, [self.basis, self.new]))
 		assert self.basis.lstat() and self.new.lstat()
 		self.signature.write_from_fileobj(Rdiff.get_signature(self.basis))
 		assert self.signature.lstat()
@@ -130,7 +130,7 @@ class RdiffTest(unittest.TestCase):
 		assert self.delta.lstat()
 		Rdiff.patch_local(self.basis, self.delta)
 		assert rpath.cmp(self.basis, self.new)
-		map(rpath.RPath.delete, rplist)
+		list(map(rpath.RPath.delete, rplist))
 
 	def testCopy(self):
 		"""Using rdiff to copy two files"""
@@ -140,10 +140,10 @@ class RdiffTest(unittest.TestCase):
 
 		MakeRandomFile(self.basis.path)
 		MakeRandomFile(self.new.path)
-		map(rpath.RPath.setdata, rplist)
+		list(map(rpath.RPath.setdata, rplist))
 		Rdiff.copy_local(self.basis, self.new)
 		assert rpath.cmp(self.basis, self.new)
-		map(rpath.RPath.delete, rplist)
+		list(map(rpath.RPath.delete, rplist))
 
 
 if __name__ == '__main__':

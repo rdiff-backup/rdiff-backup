@@ -36,7 +36,7 @@ class HardlinkTest(unittest.TestCase):
 		for dsrp in selection.Select(self.hardlink_dir3).set_iter():
 			Hardlink.add_rorp(dsrp)
 		
-		assert len(Hardlink._inode_index.keys()) == 3, \
+		assert len(list(Hardlink._inode_index.keys())) == 3, \
 			   Hardlink._inode_index
 
 	def testCompletedDict(self):

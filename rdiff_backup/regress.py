@@ -33,7 +33,7 @@ be recovered.
 
 """
 
-from __future__ import generators
+
 import signal, errno, re, os
 import Globals, restore, log, rorpiter, TempFile, metadata, rpath, C, \
 	   Time, backup, robust, longname
@@ -166,9 +166,9 @@ def iterate_raw_rfs(mirror_rp, inc_rp):
 		mirror_rp = rf.mirror_rp
 		if Globals.process_uid != 0:
 			if mirror_rp.isreg() and not mirror_rp.readable():
-				mirror_rp.chmod(0400 | mirror_rp.getperms())
+				mirror_rp.chmod(0o400 | mirror_rp.getperms())
 			elif mirror_rp.isdir() and not mirror_rp.hasfullperms():
-				mirror_rp.chmod(0700 | mirror_rp.getperms())
+				mirror_rp.chmod(0o700 | mirror_rp.getperms())
 		yield rf
 		if rf.mirror_rp.isdir() or rf.inc_rp.isdir():
 			for sub_rf in rf.yield_sub_rfs():
@@ -305,7 +305,7 @@ class RegressITRB(rorpiter.ITRBranch):
 			if not rf.mirror_rp.isdir():
 				if rf.mirror_rp.lstat(): rf.mirror_rp.delete()
 				rf.mirror_rp.mkdir()
-			if not rf.mirror_rp.hasfullperms(): rf.mirror_rp.chmod(0700)
+			if not rf.mirror_rp.hasfullperms(): rf.mirror_rp.chmod(0o700)
 		self.rf = rf
 
 	def end_process(self):
@@ -345,7 +345,7 @@ def check_pids(curmir_incs):
 	def pid_running(pid):
 		"""True if we know if process with pid is currently running"""
 		try: os.kill(pid, 0)
-		except OSError, exc:
+		except OSError as exc:
 			if exc[0] == errno.ESRCH: return 0
 			else: log.Log("Warning: unable to check if PID %d still running" % (pid,), 2)
 		except AttributeError:
@@ -355,7 +355,7 @@ def check_pids(curmir_incs):
 			try:
 				process = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 
 											0, pid)
-			except pywintypes.error, error:
+			except pywintypes.error as error:
 				if error[0] == 87: return 0
 				else:
 					msg = "Warning: unable to check if PID %d still running"

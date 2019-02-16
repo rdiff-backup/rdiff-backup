@@ -24,9 +24,9 @@ documentation on what this code does can be found on the man page.
 
 """
 
-from __future__ import generators
+
 import re
-import FilenameMapping, robust, rpath, Globals, log, rorpiter
+from . import FilenameMapping, robust, rpath, Globals, log, rorpiter
 
 
 class SelectError(Exception):
@@ -96,7 +96,7 @@ class Select:
 		if not sel_func: sel_func = self.Select
 		self.rpath.setdata() # this may have changed since Select init
 		self.iter = self.Iterate_fast(self.rpath, sel_func)
-		self.next = self.iter.next
+		self.next = self.iter.__next__
 		self.__iter__ = lambda: self
 		return self
 
@@ -129,7 +129,7 @@ class Select:
 		delayed_rp_stack = []
 
 		while diryield_stack:
-			try: rpath, val = diryield_stack[-1].next()
+			try: rpath, val = next(diryield_stack[-1])
 			except StopIteration:
 				diryield_stack.pop()
 				if delayed_rp_stack: delayed_rp_stack.pop()
@@ -165,7 +165,7 @@ class Select:
 		elif s == 2:
 			if rp.isdir(): # Directory is merely scanned
 				iid = self.iterate_in_dir(rp, rec_func, sel_func)
-				try: first = iid.next()
+				try: first = next(iid)
 				except StopIteration: return # no files inside; skip rp
 				yield rp
 				yield first
@@ -249,9 +249,9 @@ class Select:
 						filelists[filelists_index], 0, arg))
 					filelists_index += 1
 				elif opt == "--exclude-globbing-filelist":
-					map(self.add_selection_func,
+					list(map(self.add_selection_func,
 						self.filelist_globbing_get_sfs(
-						           filelists[filelists_index], 0, arg))
+						           filelists[filelists_index], 0, arg)))
 					filelists_index += 1
 				elif opt == "--exclude-other-filesystems":
 					self.add_selection_func(self.other_filesystems_get_sf(0))
@@ -266,9 +266,9 @@ class Select:
 						filelists[filelists_index], 1, arg))
 					filelists_index += 1
 				elif opt == "--include-globbing-filelist":
-					map(self.add_selection_func,
+					list(map(self.add_selection_func,
 						self.filelist_globbing_get_sfs(
-						          filelists[filelists_index], 1, arg))
+						          filelists[filelists_index], 1, arg)))
 					filelists_index += 1
 				elif opt == "--include-regexp":
 					self.add_selection_func(self.regexp_get_sf(arg, 1))
@@ -281,7 +281,7 @@ class Select:
 				elif opt == "--min-file-size":
 					self.add_selection_func(self.size_get_sf(0, arg))
 				else: assert 0, "Bad selection option %s" % opt
-		except SelectError, e: self.parse_catch_error(e)
+		except SelectError as e: self.parse_catch_error(e)
 		assert filelists_index == len(filelists)
 
 		self.parse_last_excludes()
@@ -374,7 +374,7 @@ probably isn't what you meant.""" %
 		for line in filelist_fp.read().split(separator):
 			if not line: continue # skip blanks
 			try: tuple = self.filelist_parse_line(line, include)
-			except FilePrefixError, exc:
+			except FilePrefixError as exc:
 				incr_warnings(exc)
 				continue
 			tuple_list.append(tuple)
@@ -401,7 +401,7 @@ probably isn't what you meant.""" %
 
 		if not line.startswith(self.prefix): raise FilePrefixError(line)
 		line = line[len(self.prefix):] # Discard prefix
-		index = tuple(filter(lambda x: x, line.split("/"))) # remove empties
+		index = tuple([x for x in line.split("/") if x]) # remove empties
 		return (index, include)
 
 	def filelist_pair_match(self, rp, pair):
@@ -563,8 +563,7 @@ probably isn't what you meant.""" %
 		"""
 		if not filename.startswith(self.prefix):
 			raise FilePrefixError(filename)
-		index = tuple(filter(lambda x: x,
-							 filename[len(self.prefix):].split("/")))
+		index = tuple([x for x in filename[len(self.prefix):].split("/") if x])
 		return self.glob_get_tuple_sf(index, include)
 
 	def glob_get_tuple_sf(self, tuple, include):
@@ -637,11 +636,10 @@ probably isn't what you meant.""" %
 			raise GlobbingError("Consecutive '/'s found in globbing string "
 								+ glob_str)
 
-		prefixes = map(lambda i: "/".join(glob_parts[:i+1]),
-					   range(len(glob_parts)))
+		prefixes = ["/".join(glob_parts[:i+1]) for i in range(len(glob_parts))]
 		# we must make exception for root "/", only dir to end in slash
 		if prefixes[0] == "": prefixes[0] = "/"
-		return map(self.glob_to_re, prefixes)
+		return list(map(self.glob_to_re, prefixes))
 
 	def glob_to_re(self, pat):
 		"""Returned regular expression equivalent to shell glob pat
@@ -700,10 +698,10 @@ class FilterIter:
 
 	def __iter__(self): return self
 
-	def next(self):
+	def __next__(self):
 		"""Return next object, or StopIteration"""
 		while not self.stored_rorps:
-			try: next_rorp = self.rorp_iter.next()
+			try: next_rorp = next(self.rorp_iter)
 			except StopIteration:
 				if self.itr_finished: raise
 				else:

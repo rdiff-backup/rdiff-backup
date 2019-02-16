@@ -5,7 +5,7 @@
 import sys, os, librsync
 
 dir1, dir2 = sys.argv[1:3]
-for i in xrange(1000):
+for i in range(1000):
 	dir1fn = "%s/%s" % (dir1, i)
 	dir2fn = "%s/%s" % (dir2, i)
 

@@ -28,7 +28,7 @@ FSAbilities object describing it.
 """
 
 import errno, os
-import Globals, log, TempFile, selection, robust, SetConnections, \
+from . import Globals, log, TempFile, selection, robust, SetConnections, \
 	   static, FilenameMapping, win_acls, Time
 
 class FSAbilities:
@@ -276,7 +276,7 @@ class FSAbilities:
 		assert not self.read_only
 
 		# Try a unicode filename
-		unicode_filename = u'\u3046\u3069\u3093\u5c4b.txt'
+		unicode_filename = '\u3046\u3069\u3093\u5c4b.txt'
 		unicode_rp = None
 		try:
 			unicode_rp = subdir.append(unicode_filename)
@@ -338,7 +338,7 @@ class FSAbilities:
 			where the list is of the directory containing rp.
 
 			"""
-			subdir.path = unicode(subdir.path)
+			subdir.path = str(subdir.path)
 			l = robust.listrp(subdir)
 			for filename in l:
 				if filename != filename.swapcase():
@@ -473,14 +473,14 @@ class FSAbilities:
 		"""See if increments can have full permissions like a directory"""
 		test_rp = rp.append('dir_inc_check')
 		test_rp.touch()
-		try: test_rp.chmod(07777, 4)
+		try: test_rp.chmod(0o7777, 4)
 		except OSError:
 			test_rp.delete()
 			self.dir_inc_perms = 0
 			return
 		test_rp.setdata()
 		assert test_rp.isreg()
-		if test_rp.getperms() == 07777 or test_rp.getperms() == 06777:
+		if test_rp.getperms() == 0o7777 or test_rp.getperms() == 0o6777:
 			self.dir_inc_perms = 1
 		else:
 			self.dir_inc_perms = 0
@@ -551,10 +551,10 @@ class FSAbilities:
 		tmpd_rp = dir_rp.append("high_perms_dir")
 		tmpd_rp.touch()
 		try:
-			tmpf_rp.chmod(07000, 4)
-			tmpf_rp.chmod(07777, 4)
-			tmpd_rp.chmod(07000, 4)
-			tmpd_rp.chmod(07777, 4)
+			tmpf_rp.chmod(0o7000, 4)
+			tmpf_rp.chmod(0o7777, 4)
+			tmpd_rp.chmod(0o7000, 4)
+			tmpd_rp.chmod(0o7777, 4)
 		except (OSError, IOError): self.high_perms = 0
 		else: self.high_perms = 1
 		tmpf_rp.delete()
@@ -572,7 +572,7 @@ class FSAbilities:
 		else:
 			sym_dest.setdata()
 			assert sym_dest.issym()
-			if sym_dest.getperms() == 0700: self.symlink_perms = 1
+			if sym_dest.getperms() == 0o700: self.symlink_perms = 1
 			else: self.symlink_perms = 0
 			sym_dest.delete()
 		sym_source.delete()
@@ -730,7 +730,7 @@ class SetGlobals:
 
 	def set_high_perms(self):
 		if not self.dest_fsa.high_perms:
-			SetConnections.UpdateGlobal('permission_mask', 0777)
+			SetConnections.UpdateGlobal('permission_mask', 0o777)
 
 	def set_symlink_perms(self):
 		SetConnections.UpdateGlobal('symlink_perms',

@@ -1,7 +1,8 @@
-from __future__ import generators
+
 import unittest, time, pickle
 from commontest import *
 from rdiff_backup import log, rpath, rorpiter, Globals, lazy
+from functools import reduce
 
 #Log.setverbosity(8)
 
@@ -21,7 +22,7 @@ class RORPIterTest(unittest.TestCase):
 
 	def testCollateIterators(self):
 		"""Test basic collating"""
-		indicies = map(index, [0,1,2,3])
+		indicies = list(map(index, [0,1,2,3]))
 		helper = lambda i: indicies[i]
 
 		makeiter1 = lambda: iter(indicies)
@@ -45,9 +46,8 @@ class RORPIterTest(unittest.TestCase):
 
 		assert lazy.Iter.equal(rorpiter.CollateIterators(makeiter1(),
 														 iter([])),
-							   iter(map(lambda i: (i, None),
-										indicies)))
-		assert lazy.Iter.equal(iter(map(lambda i: (i, None), indicies)),
+							   iter([(i, None) for i in indicies]))
+		assert lazy.Iter.equal(iter([(i, None) for i in indicies]),
 							   rorpiter.CollateIterators(makeiter1(),
 														 iter([])))
 		
@@ -93,9 +93,9 @@ class DirHandlerTest(unittest.TestCase):
 		self.c = self.rootrp.append("c")
 		self.a.mkdir()
 		self.b.mkdir()
-		self.b.chmod(0700)
+		self.b.chmod(0o700)
 		self.c.mkdir()
-		self.c.chmod(0500) # No write permissions to c
+		self.c.chmod(0o500) # No write permissions to c
 
 		self.rootmtime = self.rootrp.getmtime()
 		self.amtime = self.a.getmtime()
@@ -116,7 +116,7 @@ class DirHandlerTest(unittest.TestCase):
 		new_a_rp.touch()
 
 		DH(self.b)
-		self.b.chmod(0751)
+		self.b.chmod(0o751)
 		new_b_rp = self.b.append("aoenuth")
 		DH(new_b_rp)
 		new_b_rp.touch()
@@ -137,8 +137,8 @@ class DirHandlerTest(unittest.TestCase):
 		assert self.a.getmtime() == self.amtime
 		assert self.c.getmtime() == self.cmtime
 		assert self.rootrp.getmtime() == self.rootmtime
-		assert self.b.getperms() == 0751
-		assert self.c.getperms() == 0500
+		assert self.b.getperms() == 0o751
+		assert self.c.getperms() == 0o500
 
 
 class FillTest(unittest.TestCase):
@@ -149,12 +149,12 @@ class FillTest(unittest.TestCase):
 			for int_index in [(1,2), (1,3), (1,4),
 							  (2,), (2,1),
 							  (3,4,5), (3,6)]:
-				index = tuple(map(lambda i: str(i), int_index))
+				index = tuple([str(i) for i in int_index])
 				yield rootrp.new_index(index)
 
 		filled_in = rorpiter.FillInIter(get_rpiter(), rootrp)
 		rp_list = list(filled_in)
-		index_list = map(lambda rp: tuple(map(int, rp.index)), rp_list)
+		index_list = [tuple(map(int, rp.index)) for rp in rp_list]
 		assert index_list == [(), (1,), (1,2), (1,3), (1,4),
 							  (2,), (2,1),
 							  (3,), (3,4), (3,4,5), (3,6)], index_list
@@ -258,7 +258,7 @@ class CacheIndexableTest(unittest.TestCase):
 	def get_iter(self):
 		"""Return iterator yielding indexed objects, add to dict d"""
 		for i in range(100):
-			it = rorpiter.IndexedTuple((i,), range(i))
+			it = rorpiter.IndexedTuple((i,), list(range(i)))
 			self.d[(i,)] = it
 			yield it
 
@@ -267,16 +267,16 @@ class CacheIndexableTest(unittest.TestCase):
 		self.d = {}
 		
 		ci = rorpiter.CacheIndexable(self.get_iter(), 3)
-		val0 = ci.next()
-		val1 = ci.next()
-		val2 = ci.next()
+		val0 = next(ci)
+		val1 = next(ci)
+		val2 = next(ci)
 		
 		assert ci.get((1,)) == self.d[(1,)]
 		assert ci.get((3,)) is None
 
-		val3 = ci.next()
-		val4 = ci.next()
-		val5 = ci.next()
+		val3 = next(ci)
+		val4 = next(ci)
+		val5 = next(ci)
 
 		assert ci.get((3,)) == self.d[(3,)]
 		assert ci.get((4,)) == self.d[(4,)]

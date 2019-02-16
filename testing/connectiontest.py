@@ -9,7 +9,7 @@ class LocalConnectionTest(unittest.TestCase):
 
 	def testGetAttrs(self):
 		"""Test getting of various attributes"""
-		assert type(self.lc.LocalConnection) is types.ClassType
+		assert type(self.lc.LocalConnection) is type
 		try: self.lc.asotnuhaoseu
 		except (NameError, KeyError): pass
 		else: unittest.fail("NameError or KeyError should be raised")
@@ -103,7 +103,7 @@ class PipeConnectionTest(unittest.TestCase):
 
 	def testModules(self):
 		"""Test module emulation"""
-		assert type(self.conn.tempfile.mktemp()) is types.StringType
+		assert type(self.conn.tempfile.mktemp()) is bytes
 		assert self.conn.os.path.join("a", "b") == "a/b"
 		rp1 = rpath.RPath(self.conn, self.regfilename)
 		assert rp1.isreg()

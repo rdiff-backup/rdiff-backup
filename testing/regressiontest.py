@@ -82,7 +82,7 @@ class PathSetter(unittest.TestCase):
 		Globals.isbackup_reader = None
 		Globals.rbdir = None
 
-		print "Setting up connection"
+		print("Setting up connection")
 		self.src_prefix, self.src_conn = \
 						 self.get_prefix_and_conn(src_path, src_return)
 		self.dest_prefix, self.dest_conn = \
@@ -122,7 +122,7 @@ class PathSetter(unittest.TestCase):
 		self.one_unreadable_out = self.get_dest_rp('testfiles/unreadable_out')
 
 	def tearDown(self):
-		print "Taking down connections"
+		print("Taking down connections")
 		SetConnections.CloseConnections()
 
 
@@ -222,15 +222,15 @@ class IncrementTest1(unittest.TestCase):
 
 			nw_out1_2 = get_local_rp("no_write_out/2")
 			write_string(nw_out1_2, 'e')
-			nw_out1_1.chmod(0400)
+			nw_out1_1.chmod(0o400)
 
 			nw1_sub = get_local_rp("no_write_out/subdir")
 			nw1_sub.mkdir()
 
 			nw_out1_sub1 = get_local_rp("no_write_out/subdir/1")
 			write_string(nw_out1_sub1, 'f')
-			nw1_sub.chmod(0500)
-			nw_out1.chmod(0500)
+			nw1_sub.chmod(0o500)
+			nw_out1.chmod(0o500)
 
 			nw_out2 = get_local_rp("no_write_out2")
 			nw_out2.mkdir()
@@ -240,7 +240,7 @@ class IncrementTest1(unittest.TestCase):
 
 			nw_out2_2 = get_local_rp("no_write_out2/2")
 			write_string(nw_out2_2, 'aeu')
-			nw_out1.chmod(0500)
+			nw_out1.chmod(0o500)
 
 		Myrm("testfiles/no_write_out")
 		Myrm("testfiles/no_write_out2")

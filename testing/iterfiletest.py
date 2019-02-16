@@ -1,4 +1,4 @@
-import unittest, StringIO
+import unittest, io
 from commontest import *
 from rdiff_backup.iterfile import *
 from rdiff_backup import lazy
@@ -17,8 +17,8 @@ class FileException:
 
 class testIterFile(unittest.TestCase):
 	def setUp(self):
-		self.iter1maker = lambda: iter(range(50))
-		self.iter2maker = lambda: iter(map(str, range(50)))
+		self.iter1maker = lambda: iter(list(range(50)))
+		self.iter2maker = lambda: iter(map(str, list(range(50))))
 
 	def testConversion(self):
 		"""Test iter to file conversion"""
@@ -29,28 +29,28 @@ class testIterFile(unittest.TestCase):
 	def testFile(self):
 		"""Test sending files through iters"""
 		buf1 = "hello"*10000
-		file1 = StringIO.StringIO(buf1)
+		file1 = io.StringIO(buf1)
 		buf2 = "goodbye"*10000
-		file2 = StringIO.StringIO(buf2)
+		file2 = io.StringIO(buf2)
 		file_iter = FileWrappingIter(iter([file1, file2]))
 
 		new_iter = IterWrappingFile(file_iter)
 		assert new_iter.next().read() == buf1
 		assert new_iter.next().read() == buf2
-		self.assertRaises(StopIteration, new_iter.next)
+		self.assertRaises(StopIteration, new_iter.__next__)
 
 	def testFileException(self):
 		"""Test encoding a file which raises an exception"""
 		f = FileException(200*1024) # size depends on buffer size
 		new_iter = IterWrappingFile(FileWrappingIter(iter([f, "foo"])))
-		f_out = new_iter.next()
+		f_out = next(new_iter)
 		assert f_out.read(50000) == "a"*50000
 		try: buf = f_out.read(190*1024)
 		except IOError: pass
 		else: assert 0, len(buf)
 
-		assert new_iter.next() == "foo"
-		self.assertRaises(StopIteration, new_iter.next)
+		assert next(new_iter) == "foo"
+		self.assertRaises(StopIteration, new_iter.__next__)
 
 
 class testMiscIters(unittest.TestCase):
@@ -95,74 +95,74 @@ class testMiscIters(unittest.TestCase):
 		l = [self.outputrp, self.regfile1, self.regfile2, self.regfile3]
 		i_out = FileToMiscIter(MiscIterToFile(iter(l)))
 
-		out1 = i_out.next()
+		out1 = next(i_out)
 		assert out1 == self.outputrp
 
-		out2 = i_out.next()
+		out2 = next(i_out)
 		assert out2 == self.regfile1
 		fp = out2.open("rb")
 		assert fp.read() == "hello"
 		assert not fp.close()
 
-		out3 = i_out.next()
+		out3 = next(i_out)
 		assert out3 == self.regfile2
 		fp = out3.open("rb")
 		assert fp.read() == ""
 		assert not fp.close()
 
-		i_out.next()
-		self.assertRaises(StopIteration, i_out.next)
+		next(i_out)
+		self.assertRaises(StopIteration, i_out.__next__)
 
 	def testMix(self):
 		"""Test a mix of RPs and ordinary objects"""
 		l = [5, self.regfile3, "hello"]
 		s = MiscIterToFile(iter(l)).read()
-		i_out = FileToMiscIter(StringIO.StringIO(s))
+		i_out = FileToMiscIter(io.StringIO(s))
 
-		out1 = i_out.next()
+		out1 = next(i_out)
 		assert out1 == 5, out1
 
-		out2 = i_out.next()
+		out2 = next(i_out)
 		assert out2 == self.regfile3
 		fp = out2.open("rb")
 		assert fp.read() == "goodbye"
 		assert not fp.close()
 
-		out3 = i_out.next()
+		out3 = next(i_out)
 		assert out3 == "hello", out3
 
-		self.assertRaises(StopIteration, i_out.next)
+		self.assertRaises(StopIteration, i_out.__next__)
 
 	def testFlush(self):
 		"""Test flushing property of MiscIterToFile"""
 		l = [self.outputrp, MiscIterFlush, self.outputrp]
 		filelike = MiscIterToFile(iter(l))
-		new_filelike = StringIO.StringIO((filelike.read() + "z" +
-										  C.long2str(0L)))
+		new_filelike = io.StringIO((filelike.read() + "z" +
+										  C.long2str(0)))
 
 		i_out = FileToMiscIter(new_filelike)
-		assert i_out.next() == self.outputrp
-		self.assertRaises(StopIteration, i_out.next)
+		assert next(i_out) == self.outputrp
+		self.assertRaises(StopIteration, i_out.__next__)
 
 		i_out2 = FileToMiscIter(filelike)
-		assert i_out2.next() == self.outputrp
-		self.assertRaises(StopIteration, i_out2.next)
+		assert next(i_out2) == self.outputrp
+		self.assertRaises(StopIteration, i_out2.__next__)
 
 	def testFlushRepeat(self):
 		"""Test flushing like above, but have Flush obj emerge from iter"""
 		l = [self.outputrp, MiscIterFlushRepeat, self.outputrp]
 		filelike = MiscIterToFile(iter(l))
-		new_filelike = StringIO.StringIO((filelike.read() + "z" +
-										  C.long2str(0L)))
+		new_filelike = io.StringIO((filelike.read() + "z" +
+										  C.long2str(0)))
 
 		i_out = FileToMiscIter(new_filelike)
-		assert i_out.next() == self.outputrp
-		assert i_out.next() is MiscIterFlushRepeat
-		self.assertRaises(StopIteration, i_out.next)
+		assert next(i_out) == self.outputrp
+		assert next(i_out) is MiscIterFlushRepeat
+		self.assertRaises(StopIteration, i_out.__next__)
 
 		i_out2 = FileToMiscIter(filelike)
-		assert i_out2.next() == self.outputrp
-		self.assertRaises(StopIteration, i_out2.next)
+		assert next(i_out2) == self.outputrp
+		self.assertRaises(StopIteration, i_out2.__next__)
 
 
 

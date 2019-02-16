@@ -6,7 +6,7 @@ from distutils.core import setup, Extension
 version_string = "$version"
 
 if sys.version_info[:2] < (2,2):
-	print "Sorry, rdiff-backup requires version 2.2 or later of python"
+	print("Sorry, rdiff-backup requires version 2.2 or later of python")
 	sys.exit(1)
 
 # Defaults

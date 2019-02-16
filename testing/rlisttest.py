@@ -11,35 +11,34 @@ class BasicObject:
 	def __eq__(self, other):
 		return self.index == other.index and self.data == other.data
 
-l1_pre = filter(lambda x: x != 342 and not x in [650, 651, 652] and
-				x != 911 and x != 987,
-				range(1, 1001))
-l2_pre = filter(lambda x: not x in [222, 223, 224, 225] and x != 950
-				and x != 999 and x != 444,
-				range(1, 1001))
+l1_pre = [x for x in range(1, 1001) if x != 342 and not x in [650, 651, 652] and
+				x != 911 and x != 987]
+l2_pre = [x for x in range(1, 1001) if not x in [222, 223, 224, 225] and x != 950
+				and x != 999 and x != 444]
 
-l1 = map(BasicObject, l1_pre)
-l2 = map(BasicObject, l2_pre)
-combined = map(BasicObject, range(1, 1001))
+l1 = list(map(BasicObject, l1_pre))
+l2 = list(map(BasicObject, l2_pre))
+combined = list(map(BasicObject, list(range(1, 1001))))
 
-def lmaphelper2((x, i)):
+def lmaphelper2(xxx_todo_changeme):
 	"""Return difference triple to say that index x only in list # i"""
+	(x, i) = xxx_todo_changeme
 	if i == 1: return (BasicObject(x), None)
 	elif i == 2: return (None, BasicObject(x))
 	else: assert 0, "Invalid parameter %s for i" % i
 
-difference1 = map(lmaphelper2, [(222, 1), (223, 1), (224, 1), (225, 1),
+difference1 = list(map(lmaphelper2, [(222, 1), (223, 1), (224, 1), (225, 1),
 								(342, 2), (444, 1), (650, 2), (651, 2),
 								(652, 2), (911, 2), (950, 1), (987, 2),
-								(999, 1)])
-difference2 = map(lambda (a, b): (b, a), difference1)
+								(999, 1)]))
+difference2 = [(a_b[1], a_b[0]) for a_b in difference1]
 
 def comparelists(l1, l2):
-	print len(l1), len(l2)
+	print(len(l1), len(l2))
 	for i in range(len(l1)):
-		if l1[i] != l2[i]: print l1[i], l2[i]
-	print l1
-	print l2
+		if l1[i] != l2[i]: print(l1[i], l2[i])
+	print(l1)
+	print(l2)
 
 
 
@@ -79,20 +78,20 @@ class CachingIterTest(unittest.TestCase):
 	"""Test the Caching Iter object"""
 	def testNormalIter(self):
 		"""Make sure it can act like a normal iterator"""
-		ci = CachingIter(iter(range(10)))
-		for i in range(10): assert i == ci.next()
-		self.assertRaises(StopIteration, ci.next)
+		ci = CachingIter(iter(list(range(10))))
+		for i in range(10): assert i == next(ci)
+		self.assertRaises(StopIteration, ci.__next__)
 
 	def testPushing(self):
 		"""Pushing extra objects onto the iterator"""
-		ci = CachingIter(iter(range(10)))
+		ci = CachingIter(iter(list(range(10))))
 		ci.push(12)
 		ci.push(11)
-		assert ci.next() == 11
-		assert ci.next() == 12
-		assert ci.next() == 0
+		assert next(ci) == 11
+		assert next(ci) == 12
+		assert next(ci) == 0
 		ci.push(10)
-		assert ci.next() == 10
+		assert next(ci) == 10
 		
 		
 if __name__ == "__main__": unittest.main()

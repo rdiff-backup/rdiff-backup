@@ -17,7 +17,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 
-from __future__ import generators
+
 import C, metadata, re, rorpiter, rpath, log
 
 try:
@@ -31,7 +31,7 @@ except ImportError:
 	pywintypes = None
 
 def encode(str_):
-	if type(str_) == unicode:
+	if type(str_) == str:
 		return str_.encode('utf-8')
 	return str_
 
@@ -57,7 +57,7 @@ class ACL:
 		try:
 			sd = rp.conn.win32security. \
 					GetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags)
-		except (OSError, IOError, pywintypes.error), exc:
+		except (OSError, IOError, pywintypes.error) as exc:
 			log.Log("Warning: unable to read ACL from %s: %s"
 					% (repr(rp.path), exc), 4)
 			return
@@ -98,7 +98,7 @@ class ACL:
 				rp.conn.win32security. \
 					ConvertSecurityDescriptorToStringSecurityDescriptor(sd,
 					SDDL_REVISION_1, ACL.flags)
-		except (OSError, IOError, pywintypes.error), exc:
+		except (OSError, IOError, pywintypes.error) as exc:
 			log.Log("Warning: unable to convert ACL from %s to string: %s"
 					% (repr(rp.path), exc), 4)
 			self.__acl = ''
@@ -109,7 +109,7 @@ class ACL:
 		try:
 			sd = rp.conn.win32security. \
 					GetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags)
-		except (OSError, IOError, pywintypes.error), exc:
+		except (OSError, IOError, pywintypes.error) as exc:
 			log.Log("Warning: unable to read ACL from %s for clearing: %s"
 					% (repr(rp.path), exc), 4)
 			return
@@ -140,7 +140,7 @@ class ACL:
 				sd.GetSecurityDescriptorDacl(),
 				(ACL.flags & SACL_SECURITY_INFORMATION) and 
 					sd.GetSecurityDescriptorSacl() or None)
-		except (OSError, IOError, pywintypes.error), exc:
+		except (OSError, IOError, pywintypes.error) as exc:
 			log.Log("Warning: unable to set ACL on %s after clearing: %s"
 					% (repr(rp.path), exc), 4)
 
@@ -152,7 +152,7 @@ class ACL:
 			sd = rp.conn.win32security. \
 				ConvertStringSecurityDescriptorToSecurityDescriptor(
 					self.__acl, SDDL_REVISION_1)
-		except (OSError, IOError, pywintypes.error), exc:
+		except (OSError, IOError, pywintypes.error) as exc:
 			log.Log("Warning: unable to convert string %s to ACL: %s"
 				% (repr(self.__acl), exc), 4)
 
@@ -189,14 +189,14 @@ class ACL:
 				sd.GetSecurityDescriptorDacl(),
 				(ACL.flags & SACL_SECURITY_INFORMATION) and 
 					sd.GetSecurityDescriptorSacl() or None)
-		except (OSError, IOError, pywintypes.error), exc:
+		except (OSError, IOError, pywintypes.error) as exc:
 			log.Log("Warning: unable to set ACL on %s: %s"
 					% (repr(rp.path), exc), 4)
 
 	def __str__(self):
 		return '# file: %s\n%s\n' % \
 					(C.acl_quote(encode(self.get_indexpath())),
-					unicode(self.__acl))
+					str(self.__acl))
 
 	def from_string(self, acl_str):
 		lines = acl_str.splitlines()
@@ -204,7 +204,7 @@ class ACL:
 			raise metadata.ParsingError("Bad record beginning: " + lines[0][:8])
 		filename = lines[0][8:]
 		if filename == '.': self.index = ()
-		else: self.index = tuple(unicode(C.acl_unquote(filename)).split('/'))
+		else: self.index = tuple(str(C.acl_unquote(filename)).split('/'))
 		self.__acl = lines[1]
 
 def Record2WACL(record):
@@ -213,7 +213,7 @@ def Record2WACL(record):
 	return acl
 
 def WACL2Record(wacl):
-	return unicode(wacl)
+	return str(wacl)
 
 class WACLExtractor(metadata.FlatExtractor):
 	"""Iterate ExtendedAttributes objects from the WACL information file"""
@@ -235,18 +235,18 @@ def join_wacl_iter(rorp_iter, wacl_iter):
 	for rorp, wacl in rorpiter.CollateIterators(rorp_iter, wacl_iter):
 		assert rorp, "Missing rorp for index %s" % (wacl.index,)
 		if not wacl: wacl = ACL(rorp.index)
-		rorp.set_win_acl(unicode(wacl))
+		rorp.set_win_acl(str(wacl))
 		yield rorp
 	
 def rpath_acl_win_get(rpath):
 	acl = ACL()
 	acl.load_from_rp(rpath)
-	return unicode(acl)
+	return str(acl)
 rpath.win_acl_get = rpath_acl_win_get
 
 def rpath_get_blank_win_acl(index):
 	acl = ACL(index)
-	return unicode(acl)
+	return str(acl)
 rpath.get_blank_win_acl = rpath_get_blank_win_acl
 
 def rpath_set_win_acl(rp, acl_str):
@@ -264,7 +264,7 @@ def init_acls():
 	try:
 		hnd = OpenProcessToken(win32api.GetCurrentProcess(),
 			TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY)
-	except win32api.error, exc:
+	except win32api.error as exc:
 		log.Log("Warning: unable to open Windows process token: %s"
 				% exc, 5)
 		return
@@ -278,7 +278,7 @@ def init_acls():
 				(lpv(SE_BACKUP_NAME), SE_PRIVILEGE_ENABLED),
 				(lpv(SE_RESTORE_NAME), SE_PRIVILEGE_ENABLED)
 				])
-		except win32api.error, exc:
+		except win32api.error as exc:
 			log.Log("Warning: unable to enable SE_*_NAME privileges: %s"
 				% exc, 5)
 			return

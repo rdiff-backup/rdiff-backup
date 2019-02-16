@@ -14,7 +14,7 @@ def Test_SetConnGlobals(conn, setting, value):
 	conn.Globals.set(setting, value)
 
 def print_usage():
-	print "Usage: server.py  [path to source files]", __doc__
+	print("Usage: server.py  [path to source files]", __doc__)
 
 if len(sys.argv) > 2:
 	print_usage()

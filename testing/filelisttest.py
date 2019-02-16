@@ -1,4 +1,4 @@
-import unittest, StringIO
+import unittest, io
 from commontest import *
 from rdiff_backup.filelist import *
 
@@ -14,12 +14,12 @@ a/b/c
 
 test"""
 		baserp = RPath(Globals.local_connection, "/base")
-		i = Filelist.File2Iter(StringIO.StringIO(filelist), baserp)
+		i = Filelist.File2Iter(io.StringIO(filelist), baserp)
 		assert i.next().path == "/base/hello"
 		assert i.next().path == "/base/goodbye"
 		assert i.next().path == "/base/a/b/c"
 		assert i.next().path == "/base/test"
-		self.assertRaises(StopIteration, i.next)
+		self.assertRaises(StopIteration, i.__next__)
 
 	def testmake_subdirs(self):
 		"""Test Filelist.make_subdirs"""

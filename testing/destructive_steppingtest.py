@@ -1,4 +1,4 @@
-from __future__ import generators
+
 import unittest
 from commontest import *
 from rdiff_backup import rpath, selection, Globals, destructive_stepping
@@ -18,25 +18,25 @@ class DSTest(unittest.TestCase):
 			sel = selection.Select(destructive_stepping.
 								        DSRPath(1, self.noperms)).set_iter()
 			ds_iter = sel.iterate_with_finalizer()
-			noperms = ds_iter.next()
+			noperms = next(ds_iter)
 			assert noperms.isdir() and noperms.getperms() == 0, \
 				   (noperms.isdir(), noperms.getperms())
 
-			bar = ds_iter.next()
+			bar = next(ds_iter)
 			assert bar.isreg() and bar.getperms() == 0, \
 				   "%s %s" % (bar.isreg(), bar.getperms())
 			barbuf = bar.open("rb").read()
 			assert len(barbuf) > 0
 			
-			foo = ds_iter.next()
+			foo = next(ds_iter)
 			assert foo.isreg() and foo.getperms() == 0
 			assert foo.getmtime() < 1000300000
 
-			fuz = ds_iter.next()
-			assert fuz.isreg() and fuz.getperms() == 0200
+			fuz = next(ds_iter)
+			assert fuz.isreg() and fuz.getperms() == 0o200
 			fuzbuf = fuz.open("rb").read()
 			assert len(fuzbuf) > 0
 
-			self.assertRaises(StopIteration, ds_iter.next)
+			self.assertRaises(StopIteration, ds_iter.__next__)
 
 if __name__ == "__main__": unittest.main()

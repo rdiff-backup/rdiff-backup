@@ -26,7 +26,7 @@ access_control_lists.<time>.snapshot.
 
 """
 
-from __future__ import generators
+
 import base64, errno, re
 try: import posix1e
 except ImportError: pass
@@ -39,7 +39,7 @@ import static, Globals, eas_acls, connection, metadata, rorpiter, log, C, \
 dropped_acl_names = {}
 
 def encode(str_):
-	if type(str_) == unicode:
+	if type(str_) == str:
 		return str_.encode('utf-8')
 	return str_
 
@@ -64,7 +64,7 @@ class ExtendedAttributes:
 		try:
 			attr_list = rp.conn.xattr.listxattr(encode(rp.path),
 												rp.issym())
-		except IOError, exc:
+		except IOError as exc:
 			if exc[0] in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
 				return # if not supported, consider empty
 			if exc[0] in (errno.EACCES, errno.ENOENT, errno.ELOOP):
@@ -82,7 +82,7 @@ class ExtendedAttributes:
 				self.attr_dict[attr] = \
 					rp.conn.xattr.getxattr(encode(rp.path),
 											attr, rp.issym())
-			except IOError, exc:
+			except IOError as exc:
 				# File probably modified while reading, just continue
 				if exc[0] == errno.ENODATA: continue
 				elif exc[0] == errno.ENOENT: break
@@ -98,7 +98,7 @@ class ExtendedAttributes:
 				try:
 					rp.conn.xattr.removexattr(encode(rp.path),
 											name, rp.issym())
-				except IOError, exc:
+				except IOError as exc:
 					# SELinux attributes cannot be removed, and we don't want
 					# to bail out or be too noisy at low log levels.
 					if exc[0] == errno.EACCES:
@@ -106,7 +106,7 @@ class ExtendedAttributes:
 							% (name, repr(rp.path)), 7)
 						continue
 					else: raise
-		except IOError, exc:
+		except IOError as exc:
 			if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EPERM:
 				return # if not supported, consider empty
 			elif exc[0] == errno.ENOENT: # path is bad
@@ -118,11 +118,11 @@ class ExtendedAttributes:
 	def write_to_rp(self, rp):
 		"""Write extended attributes to rpath rp"""
 		self.clear_rp(rp)
-		for (name, value) in self.attr_dict.iteritems():
+		for (name, value) in self.attr_dict.items():
 			try:
 				rp.conn.xattr.setxattr(encode(rp.path), name,
 										value, 0, rp.issym())
-			except IOError, exc:
+			except IOError as exc:
 				# Mac and Linux attributes have different namespaces, so
 				# fail gracefully if can't call setxattr
 				if exc[0] in (errno.EOPNOTSUPP, errno.EPERM, errno.EACCES,
@@ -160,7 +160,7 @@ def ea_compare_rps(rp1, rp2):
 def EA2Record(ea):
 	"""Convert ExtendedAttributes object to text record"""
 	str_list = ['# file: %s' % C.acl_quote(encode(ea.get_indexpath()))]
-	for (name, val) in ea.attr_dict.iteritems():
+	for (name, val) in ea.attr_dict.items():
 		if not val: str_list.append(name)
 		else:
 			encoded_val = base64.encodestring(val).replace('\n', '')
@@ -183,7 +183,7 @@ def Record2EA(record):
 	else:
 		unquoted_filename = C.acl_unquote(encode(filename))
 		if Globals.use_unicode_paths:
-			unquoted_filename = unicode(unquoted_filename, 'utf-8')
+			unquoted_filename = str(unquoted_filename, 'utf-8')
 		index = tuple(unquoted_filename.split('/'))
 	ea = ExtendedAttributes(index)
 
@@ -257,10 +257,9 @@ class AccessControlLists:
 	def __str__(self):
 		"""Return text version of acls"""
 		if not self.entry_list: return ""
-		slist = map(self.entrytuple_to_text, self.entry_list)
+		slist = list(map(self.entrytuple_to_text, self.entry_list))
 		if self.default_entry_list:
-			slist.extend(map(lambda e: "default:" + self.entrytuple_to_text(e),
-							 self.default_entry_list))
+			slist.extend(["default:" + self.entrytuple_to_text(e) for e in self.default_entry_list])
 		return "\n".join(slist)
 
 	def entrytuple_to_text(self, entrytuple):
@@ -353,11 +352,11 @@ class AccessControlLists:
 	def eq_verbose(self, acl):
 		"""Returns same as __eq__ but print explanation if not equal"""
 		if not self.cmp_entry_list(self.entry_list, acl.entry_list):
-			print "ACL entries for %s compare differently" % (self.index,)
+			print("ACL entries for %s compare differently" % (self.index,))
 			return 0
 		if not self.cmp_entry_list(self.default_entry_list,
 								   acl.default_entry_list):
-			print "Default ACL entries for %s do not compare" % (self.index,)
+			print("Default ACL entries for %s do not compare" % (self.index,))
 			return 0
 		return 1
 
@@ -395,7 +394,7 @@ def set_rp_acl(rp, entry_list = None, default_entry_list = None,
 
 	try:
 		acl.applyto(encode(rp.path))
-	except IOError, exc:
+	except IOError as exc:
 		if exc[0] == errno.EOPNOTSUPP:
 			log.Log("Warning: unable to set ACL on %s: %s" % 
 					(repr(rp.path), exc), 4)
@@ -412,7 +411,7 @@ def get_acl_lists_from_rp(rp):
 	"""Returns (acl_list, def_acl_list) from an rpath.  Call locally"""
 	assert rp.conn is Globals.local_connection
 	try: acl = posix1e.ACL(file=encode(rp.path))
-	except IOError, exc:
+	except IOError as exc:
 		if exc[0] == errno.EOPNOTSUPP:
 			acl = None
 		elif exc[0] == errno.ENOENT:
@@ -422,7 +421,7 @@ def get_acl_lists_from_rp(rp):
 		else: raise
 	if rp.isdir():
 		try: def_acl = posix1e.ACL(filedef=encode(rp.path))
-		except IOError, exc:
+		except IOError as exc:
 			if exc[0] == errno.EOPNOTSUPP:
 				def_acl = None
 			elif exc[0] == errno.ENOENT:
@@ -477,7 +476,7 @@ def acl_to_list(acl):
 				 entry.permset.write << 1 |
 				 entry.permset.execute)
 		return (tagchar, owner_pair, perms)
-	return map(entry_to_tuple, acl)
+	return list(map(entry_to_tuple, acl))
 
 def list_to_acl(entry_list, map_names = 1):
 	"""Return posix1e.ACL object from list representation
@@ -507,7 +506,7 @@ def list_to_acl(entry_list, map_names = 1):
 			log.Log.FatalError(
 "--never-drop-acls specified but cannot map name\n"
 "%s occurring inside an ACL." % (name,))
-		if dropped_acl_names.has_key(name): return
+		if name in dropped_acl_names: return
 		log.Log("Warning: name %s not found on system, dropping ACL entry.\n"
 				"Further ACL entries dropped with this name will not "
 				"trigger further warnings" % (name,), 2)
@@ -562,7 +561,7 @@ def Record2ACL(record):
 	else:
 		unquoted_filename = C.acl_unquote(encode(filename))
 		if Globals.use_unicode_paths:
-			unquoted_filename = unicode(unquoted_filename, 'utf-8')
+			unquoted_filename = str(unquoted_filename, 'utf-8')
 		index = tuple(unquoted_filename.split('/'))
 	return AccessControlLists(index, record[newline_pos:])
 

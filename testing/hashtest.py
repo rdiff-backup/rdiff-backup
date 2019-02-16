@@ -1,4 +1,4 @@
-import unittest, StringIO
+import unittest, io
 from rdiff_backup import hash
 from commontest import *
 
@@ -15,13 +15,13 @@ class HashTest(unittest.TestCase):
 
 	def test_basic(self):
 		"""Compare sha1sum of a few strings"""
-		sfile = StringIO.StringIO(self.s1)
+		sfile = io.StringIO(self.s1)
 		fw = hash.FileWrapper(sfile)
 		assert fw.read() == self.s1
 		report = fw.close()
 		assert report.sha1_digest == self.s1_hash, report.sha1_digest
 
-		sfile2 = StringIO.StringIO(self.s1)
+		sfile2 = io.StringIO(self.s1)
 		fw2 = hash.FileWrapper(sfile2)
 		assert fw2.read(5) == self.s1[:5]
 		assert fw2.read() == self.s1[5:]
@@ -105,7 +105,7 @@ class HashTest(unittest.TestCase):
 		conn = SetConnections.init_connection('python ./server.py .')
 		assert conn.reval("lambda x: x+1", 4) == 5 # connection sanity check
 
-		fp = hash.FileWrapper(StringIO.StringIO(self.s1))
+		fp = hash.FileWrapper(io.StringIO(self.s1))
 		conn.Globals.set('tmp_file', fp)
 		fp_remote = conn.Globals.get('tmp_file')
 		assert fp_remote.read() == self.s1
@@ -124,13 +124,13 @@ class HashTest(unittest.TestCase):
 		conn.Globals.set('tmp_conn_iter', rpiter)
 		remote_iter = conn.Globals.get('tmp_conn_iter')
 
-		rorp1 = remote_iter.next()
+		rorp1 = next(remote_iter)
 		fp = rorp1.open('rb')
 		assert fp.read() == self.s1, fp.read()
 		ret_val = fp.close()
 		assert isinstance(ret_val, hash.Report), ret_val
 		assert ret_val.sha1_digest == self.s1_hash
-		rorp2 = remote_iter.next()
+		rorp2 = next(remote_iter)
 		fp2 = rorp1.open('rb')
 		assert fp2.close().sha1_digest == self.s2_hash
 

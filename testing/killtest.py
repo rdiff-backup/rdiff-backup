@@ -52,7 +52,7 @@ class ProcessFuncs(unittest.TestCase):
 			arglist.append(str(time))
 		arglist.extend(args)
 
-		print "Running ", arglist
+		print("Running ", arglist)
 		if wait: return os.spawnvp(os.P_WAIT, 'python', arglist)
 		else: return os.spawnvp(os.P_NOWAIT, 'python', arglist)
 
@@ -76,7 +76,7 @@ class ProcessFuncs(unittest.TestCase):
 				assert exitstatus != 0
 				break
 			time.sleep(0.2)
-		print "---------------------- killed"
+		print("---------------------- killed")
 
 	def create_killtest_dirs(self):
 		"""Create testfiles/killtest? directories
@@ -107,18 +107,18 @@ class ProcessFuncs(unittest.TestCase):
 		for i in range(total_tests):
 			try:
 				result = self.runtest(exclude_rbdir, ignore_tmp, compare_links)
-			except TimingError, te:
-				print te
+			except TimingError as te:
+				print(te)
 				timing_problems += 1
 				continue
 			if result != 1:
 				if stop_on_error: assert 0, "Compare Failure"
 				else: failures += 1
 
-		print total_tests, "tests attempted total"
-		print "%s setup problems, %s failures, %s successes" % \
+		print(total_tests, "tests attempted total")
+		print("%s setup problems, %s failures, %s successes" % \
 			  (timing_problems, failures,
-			   total_tests - timing_problems - failures)		
+			   total_tests - timing_problems - failures))		
 
 class KillTest(ProcessFuncs):
 	"""Test rdiff-backup by killing it, recovering, and then comparing"""
@@ -158,7 +158,7 @@ class KillTest(ProcessFuncs):
 			run_once(50000, Local.kt3rp, 4)			
 
 		for i in range(len(time_list)):
-			print "%s -> %s" % (i, " ".join(map(str, time_list[i])))
+			print("%s -> %s" % (i, " ".join(map(str, time_list[i]))))
 
 	def mark_incomplete(self, curtime, rp):
 		"""Check the date of current mirror
@@ -171,9 +171,9 @@ class KillTest(ProcessFuncs):
 		"""
 		rbdir = rp.append_path("rdiff-backup-data")
 		inclist = restore.get_inclist(rbdir.append("current_mirror"))
-		assert 1 <= len(inclist) <= 2, str(map(lambda x: x.path, inclist))
+		assert 1 <= len(inclist) <= 2, str([x.path for x in inclist])
 
-		inc_date_pairs = map(lambda inc: (inc.getinctime(), inc), inclist)
+		inc_date_pairs = [(inc.getinctime(), inc) for inc in inclist]
 		inc_date_pairs.sort()
 		if len(inclist) == 2:
 			assert inc_date_pairs[-1][0] == curtime, \
@@ -251,7 +251,7 @@ class KillTest(ProcessFuncs):
 			if result == 0: killed_too_late[3] += 1
 			elif result == -1: killed_too_soon[3] += 1
 
-		print "Killed too soon out of %s: %s" % (count, killed_too_soon)
-		print "Killed too late out of %s: %s" % (count, killed_too_late)
+		print("Killed too soon out of %s: %s" % (count, killed_too_soon))
+		print("Killed too late out of %s: %s" % (count, killed_too_late))
 
 if __name__ == "__main__": unittest.main()

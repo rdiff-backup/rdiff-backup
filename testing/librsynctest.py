@@ -91,9 +91,9 @@ class LibrsyncTest(unittest.TestCase):
 			librsync_delta = df.read()
 			df.close()
 
-			print len(rdiff_delta), len(librsync_delta)
-			print repr(rdiff_delta[:100])
-			print repr(librsync_delta[:100])
+			print(len(rdiff_delta), len(librsync_delta))
+			print(repr(rdiff_delta[:100]))
+			print(repr(librsync_delta[:100]))
 			assert rdiff_delta == librsync_delta
 
 	def testDelta(self):

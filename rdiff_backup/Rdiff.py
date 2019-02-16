@@ -20,7 +20,7 @@
 """Invoke rdiff utility to make signatures, deltas, or patch"""
 
 import os, librsync
-import Globals, log, static, TempFile, rpath, hash
+from . import Globals, log, static, TempFile, rpath, hash
 
 
 def get_signature(rp, blocksize = None):
@@ -40,7 +40,7 @@ def find_blocksize(file_len):
 	"""
 	if file_len < 4096: return 64 # set minimum of 64 bytes
 	else: # Use square root, rounding to nearest 16
-		return long(pow(file_len, 0.5)/16)*16
+		return int(pow(file_len, 0.5)/16)*16
 
 def get_delta_sigfileobj(sig_fileobj, rp_new):
 	"""Like get_delta but signature is in a file object"""

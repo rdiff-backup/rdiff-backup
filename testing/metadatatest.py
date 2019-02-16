@@ -1,4 +1,4 @@
-import unittest, os, cStringIO, time
+import unittest, os, io, time
 from rdiff_backup import rpath, connection, Globals, selection, lazy
 from rdiff_backup.metadata import *
 
@@ -25,9 +25,8 @@ class MetadataTest(unittest.TestCase):
 		"""Return list of rorps"""
 		vft = rpath.RPath(Globals.local_connection,
 						  "testfiles/various_file_types")
-		rpaths = map(lambda x: vft.append(x), vft.listdir())
-		extra_rpaths = map(lambda x: rpath.RPath(Globals.local_connection, x),
-						   ['/bin/ls', '/dev/ttyS0', '/dev/hda', 'aoeuaou'])
+		rpaths = [vft.append(x) for x in vft.listdir()]
+		extra_rpaths = [rpath.RPath(Globals.local_connection, x) for x in ['/bin/ls', '/dev/ttyS0', '/dev/hda', 'aoeuaou']]
 		return [vft] + rpaths + extra_rpaths
 
 	def testRORP2Record(self):
@@ -44,7 +43,7 @@ class MetadataTest(unittest.TestCase):
 			for rorp in rorp_iter: file.write(RORP2Record(rorp))
 
 		l = self.get_rpaths()
-		fp = cStringIO.StringIO()
+		fp = io.StringIO()
 		write_rorp_iter_to_file(iter(l), fp)
 		fp.seek(0)
 		cstring = fp.read()
@@ -71,7 +70,7 @@ class MetadataTest(unittest.TestCase):
 		mf = MetadataFile(temprp, 'w')
 		for rp in rpath_iter: mf.write_object(rp)
 		mf.close()
-		print "Writing metadata took %s seconds" % (time.time() - start_time)
+		print("Writing metadata took %s seconds" % (time.time() - start_time))
 		return temprp
 
 	def testSpeed(self):
@@ -81,8 +80,8 @@ class MetadataTest(unittest.TestCase):
 		
 		start_time = time.time(); i = 0
 		for rorp in mf.get_objects(): i += 1
-		print "Reading %s metadata entries took %s seconds." % \
-			  (i, time.time() - start_time)
+		print("Reading %s metadata entries took %s seconds." % \
+			  (i, time.time() - start_time))
 
 		start_time = time.time()
 		blocksize = 32 * 1024
@@ -91,8 +90,8 @@ class MetadataTest(unittest.TestCase):
 			buf = tempfp.read(blocksize)
 			if not buf: break
 		assert not tempfp.close()
-		print "Simply decompressing metadata file took %s seconds" % \
-			  (time.time() - start_time)
+		print("Simply decompressing metadata file took %s seconds" % \
+			  (time.time() - start_time))
 
 	def testIterate_restricted(self):
 		"""Test getting rorps restricted to certain index
@@ -105,8 +104,8 @@ class MetadataTest(unittest.TestCase):
 		mf = MetadataFile(temprp, 'r')
 		start_time = time.time(); i = 0
 		for rorp in mf.get_objects(("subdir3", "subdir10")): i += 1
-		print "Reading %s metadata entries took %s seconds." % \
-			  (i, time.time() - start_time)
+		print("Reading %s metadata entries took %s seconds." % \
+			  (i, time.time() - start_time))
 		assert i == 51
 
 	def test_write(self):
@@ -120,7 +119,7 @@ class MetadataTest(unittest.TestCase):
 							 "testfiles/various_file_types")
 		dirlisting = rootrp.listdir()
 		dirlisting.sort()
-		rps = map(rootrp.append, dirlisting)
+		rps = list(map(rootrp.append, dirlisting))
 
 		assert not temprp.lstat()
 		write_mf = MetadataFile(temprp, 'w')
@@ -154,13 +153,13 @@ class MetadataTest(unittest.TestCase):
 		Globals.rbdir = tempdir
 		output = PatchDiffMan().iterate_patched_meta(
 			            [iter(current), iter(diff1), iter(diff2)])
-		out1 = output.next()
+		out1 = next(output)
 		assert out1 is rp1new, out1
-		out2 = output.next()
+		out2 = next(output)
 		assert out2 is rp2, out2
-		out3 = output.next()
+		out3 = next(output)
 		assert out3 is rp3, out3
-		self.assertRaises(StopIteration, output.next)
+		self.assertRaises(StopIteration, output.__next__)
 
 	def test_meta_patch_cycle(self):
 		"""Create various metadata rorps, diff them, then compare"""

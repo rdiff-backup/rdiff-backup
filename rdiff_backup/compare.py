@@ -24,8 +24,8 @@ compare.  This uses elements of the backup and restore modules.
 
 """
 
-from __future__ import generators
-import Globals, restore, rorpiter, log, backup, static, rpath, hash, robust
+
+from . import Globals, restore, rorpiter, log, backup, static, rpath, hash, robust
 
 def Compare(src_rp, mirror_rp, inc_rp, compare_time):
 	"""Compares metadata in src_rp dir with metadata in mirror_rp at time"""
@@ -107,7 +107,7 @@ def print_reports(report_iter):
 	for report in report_iter:
 		changed_files_found = 1
 		indexpath = report.index and "/".join(report.index) or "."
-		print "%s: %s" % (report.reason, indexpath)
+		print("%s: %s" % (report.reason, indexpath))
 
 	if not changed_files_found:
 		log.Log("No changes found.  Directory matches archive data.", 3)

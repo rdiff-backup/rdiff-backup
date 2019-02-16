@@ -28,9 +28,9 @@ files), where files is the number of files attached (usually 1 or
 
 """
 
-from __future__ import generators
-import os, tempfile, UserList, types
-import Globals, rpath, iterfile, log
+
+import os, tempfile, collections, types
+from . import Globals, rpath, iterfile, log
 
 
 def CollateIterators(*rorp_iters):
@@ -53,15 +53,14 @@ def CollateIterators(*rorp_iters):
 		"""Set the overflow and rorps list"""
 		for i in range(iter_num):
 			if not overflow[i] and rorps[i] is None:
-				try: rorps[i] = rorp_iters[i].next()
+				try: rorps[i] = next(rorp_iters[i])
 				except StopIteration:
 					overflow[i] = 1
 					rorps[i] = None
 
 	def getleastindex(rorps):
 		"""Return the first index in rorps, assuming rorps isn't empty"""
-		return min(map(lambda rorp: rorp.index,
-					   filter(lambda x: x, rorps)))
+		return min([rorp.index for rorp in [x for x in rorps if x]])
 
 	def yield_tuples(iter_num, overflow, rorps):
 		while 1:
@@ -89,7 +88,7 @@ def Collate2Iters(riter1, riter2):
 	relem1, relem2 = None, None
 	while 1:
 		if not relem1:
-			try: relem1 = riter1.next()
+			try: relem1 = next(riter1)
 			except StopIteration:
 				if relem2: yield (None, relem2)
 				for relem2 in riter2:
@@ -97,7 +96,7 @@ def Collate2Iters(riter1, riter2):
 				break
 			index1 = relem1.index
 		if not relem2:
-			try: relem2 = riter2.next()
+			try: relem2 = next(riter2)
 			except StopIteration:
 				if relem1: yield (relem1, None)
 				for relem1 in riter1:
@@ -116,7 +115,7 @@ def Collate2Iters(riter1, riter2):
 			relem2 = None
 
 
-class IndexedTuple(UserList.UserList):
+class IndexedTuple(collections.UserList):
 	"""Like a tuple, but has .index
 
 	This is used by CollateIterator above, and can be passed to the
@@ -148,7 +147,7 @@ class IndexedTuple(UserList.UserList):
 	def __eq__(self, other):
 		if isinstance(other, IndexedTuple):
 			return self.index == other.index and self.data == other.data
-		elif type(other) is types.TupleType:
+		elif type(other) is tuple:
 			return self.data == other
 		else: return None
 
@@ -166,7 +165,7 @@ def FillInIter(rpiter, rootrp):
 
 	"""
 	# Handle first element as special case
-	first_rp = rpiter.next() # StopIteration gets passed upwards
+	first_rp = next(rpiter) # StopIteration gets passed upwards
 	cur_index = first_rp.index
 	for i in range(len(cur_index)): yield rootrp.new_index(cur_index[:i])
 	yield first_rp
@@ -337,9 +336,9 @@ class CacheIndexable:
 		self.cache_dict = {}
 		self.cache_indicies = []
 
-	def next(self):
+	def __next__(self):
 		"""Return next elem, add to cache.  StopIteration passed upwards"""
-		next_elem = self.iter.next()
+		next_elem = next(self.iter)
 		next_index = next_elem.index
 		self.cache_dict[next_index] = next_elem
 		self.cache_indicies.append(next_index)

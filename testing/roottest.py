@@ -18,7 +18,7 @@ userid = 500 # id of user above
 assert os.getuid() == 0, "Run this test as root!"
 
 def Run(cmd):
-	print "Running: ", cmd
+	print("Running: ", cmd)
 	assert not os.system(cmd)
 
 class RootTest(unittest.TestCase):
@@ -94,7 +94,7 @@ class RootTest(unittest.TestCase):
 
 		def get_ownership(dir_rp):
 			"""Return pair (ids of dir_rp/1, ids of dir_rp2) of ids"""
-			rp1, rp2 = map(dir_rp.append, ('1', '2'))
+			rp1, rp2 = list(map(dir_rp.append, ('1', '2')))
 			assert rp1.isreg() and rp2.isreg(), (rp1.isreg(), rp2.isreg())
 			return (rp1.getuidgid(), rp2.getuidgid())
 
@@ -133,7 +133,7 @@ class RootTest(unittest.TestCase):
 		
 		def get_ownership(dir_rp):
 			"""Return pair (ids of dir_rp/1, ids of dir_rp2) of ids"""
-			rp1, rp2 = map(dir_rp.append, ('1', '2'))
+			rp1, rp2 = list(map(dir_rp.append, ('1', '2')))
 			assert rp1.isreg() and rp2.isreg(), (rp1.isreg(), rp2.isreg())
 			return (rp1.getuidgid(), rp2.getuidgid())
 
@@ -218,15 +218,15 @@ class HalfRoot(unittest.TestCase):
 	def cause_regress(self, rp):
 		"""Change some of the above to trigger regress"""
 		rp1_1 = rp.append('foo')
-		rp1_1.chmod(04)
+		rp1_1.chmod(0o4)
 		rp_new = rp.append('lala')
 		rp_new.write_string('asoentuh')
 		rp_new.chmod(0)
 		assert not os.system('chown %s %s' % (user, rp_new.path))
 		rp1_3 = rp.append('unreadable_dir')
-		rp1_3.chmod(0700)
+		rp1_3.chmod(0o700)
 		rp1_3_1 = rp1_3.append('file_inside')
-		rp1_3_1.chmod(01)
+		rp1_3_1.chmod(0o1)
 		rp1_3.chmod(0)
 		
 		rbdir = rp.append('rdiff-backup-data')
@@ -242,14 +242,14 @@ class HalfRoot(unittest.TestCase):
 					  " --current-time %s --remote-schema '%%s' %s '%s'::%s")
 
 		cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
-		print "Executing: ", cmd1
+		print("Executing: ", cmd1)
 		assert not os.system(cmd1)
 		in_rp1.setdata()
 		outrp.setdata()
 		assert CompareRecursive(in_rp1, outrp)
 
 		cmd2 = cmd_schema % (20000, in_rp2.path, remote_schema, outrp.path)
-		print "Executing: ", cmd2
+		print("Executing: ", cmd2)
 		assert not os.system(cmd2)
 		in_rp2.setdata()
 		outrp.setdata()
@@ -262,7 +262,7 @@ class HalfRoot(unittest.TestCase):
 		Myrm(rout_rp.path)
 		cmd3 = restore_schema % (10000, remote_schema, outrp.path,
 								 rout_rp.path)
-		print "Executing restore: ", cmd3
+		print("Executing restore: ", cmd3)
 		assert not os.system(cmd3)
 		rout_perms = rout_rp.append('unreadable_dir').getperms()
 		outrp_perms = outrp.append('unreadable_dir').getperms()
@@ -272,7 +272,7 @@ class HalfRoot(unittest.TestCase):
 		Myrm(rout_rp.path)
 		cmd4 = restore_schema % ("now", remote_schema, outrp.path,
 								 rout_rp.path)
-		print "Executing restore: ", cmd4
+		print("Executing restore: ", cmd4)
 		assert not os.system(cmd4)
 		rout_perms = rout_rp.append('unreadable_dir').getperms()
 		outrp_perms = outrp.append('unreadable_dir').getperms()
@@ -282,7 +282,7 @@ class HalfRoot(unittest.TestCase):
 		self.cause_regress(outrp)
 		cmd5 = ('su -c "rdiff-backup --check-destination-dir %s" %s' %
 				(outrp.path, user))
-		print "Executing regress: ", cmd5
+		print("Executing regress: ", cmd5)
 		assert not os.system(cmd5)
 		
 

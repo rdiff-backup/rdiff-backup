@@ -30,7 +30,7 @@ def check_common_error(error_handler, function, args = []):
 
 	"""
 	try: return function(*args)
-	except (Exception, KeyboardInterrupt, SystemExit), exc:
+	except (Exception, KeyboardInterrupt, SystemExit) as exc:
 		TracebackArchive.add([function] + list(args))
 		if catch_error(exc):
 			log.Log.exception()
@@ -51,7 +51,7 @@ def catch_error(exc):
 	if (isinstance(exc, EnvironmentError) and
 		# the invalid mode shows up in backups of /proc for some reason
 		(exc[0] in ('invalid mode: rb', 'Not a gzipped file') or
-		 errno.errorcode.has_key(exc[0]) and
+		 exc[0] in errno.errorcode and
 		 errno.errorcode[exc[0]] in ('EPERM', 'ENOENT', 'EACCES', 'EBUSY',
 									 'EEXIST', 'ENOTDIR', 'EILSEQ',
 									 'ENAMETOOLONG', 'EINTR', 'ESTALE',

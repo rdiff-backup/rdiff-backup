@@ -20,7 +20,8 @@
 """Generate and process aggregated backup information"""
 
 import re, os, time
-import Globals, Time, increment, log, static, metadata, rpath
+from . import Globals, Time, increment, log, static, metadata, rpath
+from functools import reduce
 
 class StatsException(Exception): pass
 
@@ -99,11 +100,10 @@ class StatsObj:
 
 	def get_stats_line(self, index, use_repr = 1):
 		"""Return one line abbreviated version of full stats string"""
-		file_attrs = map(lambda attr: str(self.get_stat(attr)),
-						 self.stat_file_attrs)
+		file_attrs = [str(self.get_stat(attr)) for attr in self.stat_file_attrs]
 		if not index: filename = "."
 		else:
-			filename = apply(os.path.join, index)
+			filename = os.path.join(*index)
 			if use_repr:
 				# use repr to quote newlines in relative filename, then
 				# take of leading and trailing quote and quote spaces.
@@ -118,7 +118,7 @@ class StatsObj:
 		if len(lineparts) < len(stat_file_attrs): error()
 		for attr, val_string in zip(stat_file_attrs,
 									lineparts[-len(stat_file_attrs):]):
-			try: val = long(val_string)
+			try: val = int(val_string)
 			except ValueError:
 				try: val = float(val_string)
 				except ValueError: error()
@@ -209,7 +209,7 @@ class StatsObj:
 			attr, value_string = line_parts[:2]
 			if not attr in self.stat_attrs: error(line)
 			try:
-				try: val1 = long(value_string)
+				try: val1 = int(value_string)
 				except ValueError: val1 = None
 				val2 = float(value_string)
 				if val1 == val2: self.set_stat(attr, val1) # use integer val
@@ -384,7 +384,7 @@ class FileStats:
 		else: filename = dest_rorp.get_indexpath()
 		filename = metadata.quote_path(filename)
 
-		size_list = map(cls.get_size, [source_rorp, dest_rorp, inc])
+		size_list = list(map(cls.get_size, [source_rorp, dest_rorp, inc]))
 		line = " ".join([filename, str(changed)] + size_list)
 		cls.line_buffer.append(line)
 		if len(cls.line_buffer) >= 100: cls.write_buffer()

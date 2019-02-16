@@ -71,7 +71,7 @@ class Logger:
 		"""Open logfile locally - should only be run on one connection"""
 		assert rpath.conn is Globals.local_connection
 		try: self.logfp = rpath.open("a")
-		except (OSError, IOError), e:
+		except (OSError, IOError) as e:
 			raise LoggerError("Unable to open logfile %s: %s"
 							  % (rpath.path, e))
 		self.log_file_local = 1
@@ -112,8 +112,8 @@ class Logger:
 		if verbosity > self.verbosity and verbosity > self.term_verbosity:
 			return
 
-		if not (type(message) is types.StringType
-				or type(message) is types.UnicodeType):
+		if not (type(message) is bytes
+				or type(message) is str):
 			assert type(message) is types.FunctionType
 			message = message()
 
@@ -126,8 +126,8 @@ class Logger:
 		if self.log_file_open:
 			if self.log_file_local:
 				str = self.format(message, self.verbosity)
-				if type(str) != unicode:
-					str = unicode(str, 'utf-8')
+				if type(str) != str:
+					str = str(str, 'utf-8')
 				str = str.encode('utf-8')
 				self.logfp.write(str)
 				self.logfp.flush()
@@ -138,8 +138,8 @@ class Logger:
 		if verbosity <= 2 or Globals.server: termfp = sys.stderr
 		else: termfp = sys.stdout
 		str = self.format(message, self.term_verbosity)
-		if type(str) != unicode:
-			str = unicode(str, 'utf-8')
+		if type(str) != str:
+			str = str(str, 'utf-8')
 		try:
 			# Try to log as unicode, but fall back to ascii (for Windows)
 			termfp.write(str.encode('utf-8'))
@@ -156,7 +156,7 @@ class Logger:
 
 		"""
 		if self.term_verbosity < 9: return
-		if type(result) is types.StringType: result_repr = repr(result)
+		if type(result) is bytes: result_repr = repr(result)
 		else: result_repr = str(result)
 		if Globals.server: conn_str = "Server"
 		else: conn_str = "Client"
@@ -176,8 +176,8 @@ class Logger:
 	def exception_to_string(self, arglist = []):
 		"""Return string version of current exception plus what's in arglist"""
 		type, value, tb = sys.exc_info()
-		s = (u"Exception '%s' raised of class '%s':\n%s" %
-			 (value, type, u"".join(traceback.format_tb(tb))))
+		s = ("Exception '%s' raised of class '%s':\n%s" %
+			 (value, type, "".join(traceback.format_tb(tb))))
 		s = s.encode('ascii', 'replace')
 		if arglist:
 			s += "__Arguments:"
@@ -186,7 +186,7 @@ class Logger:
 				try:
 					s += str(arg)
 				except UnicodeError:
-					s += unicode(arg).encode('ascii', 'replace')
+					s += str(arg).encode('ascii', 'replace')
 		return s
 
 	def exception(self, only_terminal = 0, verbosity = 5):
@@ -209,8 +209,8 @@ class Logger:
 		try:
 			logging_func(exception_string, verbosity)
 		except IOError:
-			print "IOError while trying to log exception!"
-			print exception_string
+			print("IOError while trying to log exception!")
+			print(exception_string)
 
 
 Log = Logger()
@@ -262,7 +262,7 @@ class ErrorLog:
 		"""Return filename for logging.  rp is a rpath, string, or tuple"""
 		try: return obj.get_indexpath()
 		except AttributeError:
-			if type(obj) is types.TupleType: return "/".join(obj)
+			if type(obj) is tuple: return "/".join(obj)
 			else: return str(obj)
 
 	def write_if_open(cls, error_type, rp, exc):
@@ -277,7 +277,7 @@ class ErrorLog:
 		"""Return log string to put in error log"""
 		assert (error_type == "ListError" or error_type == "UpdateError" or
 				error_type == "SpecialFileError"), "Unknown type "+error_type
-		str = u"%s %s %s" % (error_type, cls.get_indexpath(rp), unicode(exc))
+		str = "%s %s %s" % (error_type, cls.get_indexpath(rp), str(exc))
 		return str.encode('utf-8')
 
 	def close(cls):

@@ -82,7 +82,7 @@ class RegressTest(unittest.TestCase):
 				   "/../rdiff-backup -v3 --check-destination-dir "
 				   "--remote-schema './chdir-wrapper2 %s' "
 				   "test1::../" + self.output_rp.path)
-		print "Running:", cmdline
+		print("Running:", cmdline)
 		assert not os.system(cmdline)
 
 	def test_local(self):
@@ -107,7 +107,7 @@ class RegressTest(unittest.TestCase):
 		self.change_unreadable()
 
 		cmd = "rdiff-backup --check-destination-dir " + self.output_rp.path
-		print "Executing:", cmd
+		print("Executing:", cmd)
 		assert not os.system(cmd)
 
 	def make_unreadable(self):

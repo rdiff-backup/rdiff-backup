@@ -25,7 +25,7 @@ import warnings
 warnings.filterwarnings("ignore", ".*sha module.*", DeprecationWarning)
 
 import sha
-import Globals
+from . import Globals
 
 class FileWrapper:
 	"""Wrapper around a file-like object

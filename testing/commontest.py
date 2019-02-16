@@ -18,7 +18,7 @@ def Myrm(dirstring):
 	"""Run myrm on given directory string"""
 	root_rp = rpath.RPath(Globals.local_connection, dirstring)
 	for rp in selection.Select(root_rp).set_iter():
-		if rp.isdir(): rp.chmod(0700) # otherwise may not be able to remove
+		if rp.isdir(): rp.chmod(0o700) # otherwise may not be able to remove
 	assert not os.system("rm -rf %s" % (dirstring,))
 
 def re_init_dir(rp):
@@ -73,7 +73,7 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 	cmdargs.append(src_dir)
 	if dest_dir: cmdargs.append(dest_dir)
 	cmdline = " ".join(cmdargs)
-	print "Executing: ", cmdline
+	print("Executing: ", cmdline)
 	ret_val = os.system(cmdline)
 	if check_return_val: assert not ret_val, ret_val
 	return ret_val
@@ -102,7 +102,7 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 
 	cmdpairs = SetConnections.get_cmd_pairs([src_dir, dest_dir], remote_schema)
 	Security.initialize("backup", cmdpairs)
-	rpin, rpout = map(SetConnections.cmdpair2rp, cmdpairs)
+	rpin, rpout = list(map(SetConnections.cmdpair2rp, cmdpairs))
 	for attr in ('eas_active', 'eas_write', 'eas_conn'):
 		SetConnections.UpdateGlobal(attr, eas)
 	for attr in ('acls_active', 'acls_write', 'acls_conn'):
@@ -153,7 +153,7 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time,
 	cmdpairs = SetConnections.get_cmd_pairs([mirror_dir, dest_dir],
 											remote_schema)
 	Security.initialize("restore", cmdpairs)
-	mirror_rp, dest_rp = map(SetConnections.cmdpair2rp, cmdpairs)
+	mirror_rp, dest_rp = list(map(SetConnections.cmdpair2rp, cmdpairs))
 	for attr in ('eas_active', 'eas_write', 'eas_conn'):
 		SetConnections.UpdateGlobal(attr, eas)
 	for attr in ('acls_active', 'acls_write', 'acls_conn'):
@@ -392,13 +392,13 @@ def getrefs(i, depth):
 	o = sys.getobjects(i)[-1]
 	for d in range(depth):
 		for ref in gc.get_referrers(o):
-			if type(ref) in (types.ListType, types.DictType,
+			if type(ref) in (list, dict,
 								types.InstanceType):
-				if type(ref) is types.DictType and ref.has_key('copyright'):
+				if type(ref) is dict and 'copyright' in ref:
 					continue
 				o = ref
 				break
 		else:
-			print "Max depth ", d
+			print("Max depth ", d)
 			return o
 	return o

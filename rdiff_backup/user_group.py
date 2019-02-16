@@ -35,7 +35,7 @@ try:
 except ImportError:
 	pass
 
-import log, Globals
+from . import log, Globals
 
 ############ "Private" section - don't use outside user_group ###########
 
@@ -167,7 +167,7 @@ def uid2uname(uid):
 	try: return uid2uname_dict[uid]
 	except KeyError:
 		try: uname = pwd.getpwuid(uid)[0]
-		except (KeyError, OverflowError, NameError), e: uname = None
+		except (KeyError, OverflowError, NameError) as e: uname = None
 		uid2uname_dict[uid] = uname
 		return uname
 
@@ -176,7 +176,7 @@ def gid2gname(gid):
 	try: return gid2gname_dict[gid]
 	except KeyError:
 		try: gname = grp.getgrgid(gid)[0]
-		except (KeyError, OverflowError, NameError), e: gname = None
+		except (KeyError, OverflowError, NameError) as e: gname = None
 		gid2gname_dict[gid] = gname
 		return gname
 

@@ -17,9 +17,9 @@ class CTest(unittest.TestCase):
 			dict1 = rp.make_file_dict_old()
 			dict2 = C.make_file_dict(rp.path)
 			if dict1 != dict2:
-				print "Python dictionary: ", dict1
-				print "not equal to C dictionary: ", dict2
-				print "for path ", rp.path
+				print("Python dictionary: ", dict1)
+				print("not equal to C dictionary: ", dict2)
+				print("for path ", rp.path)
 				assert 0
 
 	def test_strlong(self):
@@ -34,7 +34,7 @@ class CTest(unittest.TestCase):
 			assert len(s) == 7, repr(s)
 			s_out = C.long2str(C.str2long(s))
 			assert s_out == s, (s_out, C.str2long(s), s)
-		for l in 0L, 1L, 4000000000L, 34234L, 234234234L:
+		for l in 0, 1, 4000000000, 34234, 234234234:
 			assert C.str2long(C.long2str(l)) == l
 
 	def test_sync(self):

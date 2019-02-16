@@ -54,9 +54,9 @@ field names and values.
 
 """
 
-from __future__ import generators
+
 import re, gzip, os, binascii, codecs
-import log, Globals, rpath, Time, robust, increment, static, rorpiter
+from . import log, Globals, rpath, Time, robust, increment, static, rorpiter
 
 class ParsingError(Exception):
 	"""This is raised when bad or unparsable data is received"""
@@ -176,7 +176,7 @@ def Record2RORP(record_string):
 		elif field == "Type":
 			if data == "None": data_dict['type'] = None
 			else: data_dict['type'] = data
-		elif field == "Size": data_dict['size'] = long(data)
+		elif field == "Size": data_dict['size'] = int(data)
 		elif field == "ResourceFork":
 			if data == "None": data_dict['resourcefork'] = ""
 			else: data_dict['resourcefork'] = binascii.unhexlify(data)
@@ -185,13 +185,13 @@ def Record2RORP(record_string):
 			else: data_dict['carbonfile'] = string2carbonfile(data)
 		elif field == "SHA1Digest": data_dict['sha1'] = data
 		elif field == "NumHardLinks": data_dict['nlink'] = int(data)
-		elif field == "Inode": data_dict['inode'] = long(data)
-		elif field == "DeviceLoc": data_dict['devloc'] = long(data)
+		elif field == "Inode": data_dict['inode'] = int(data)
+		elif field == "DeviceLoc": data_dict['devloc'] = int(data)
 		elif field == "SymData": data_dict['linkname'] = unquote_path(data)
 		elif field == "DeviceNum":
 			devchar, major_str, minor_str = data.split(" ")
 			data_dict['devnums'] = (devchar, int(major_str), int(minor_str))
-		elif field == "ModTime": data_dict['mtime'] = long(data)
+		elif field == "ModTime": data_dict['mtime'] = int(data)
 		elif field == "Uid": data_dict['uid'] = int(data)
 		elif field == "Gid": data_dict['gid'] = int(data)
 		elif field == "Uname":
@@ -273,7 +273,7 @@ class FlatExtractor:
 		"""Return iterator that yields all objects with records"""
 		for record in self.iterate_records():
 			try: yield self.record_to_object(record)
-			except (ParsingError, ValueError), e:
+			except (ParsingError, ValueError) as e:
 				if self.at_end: break # Ignore whitespace/bad records at end
 				log.Log("Error parsing flat file: %s" % (e,), 2)
 
@@ -318,7 +318,7 @@ class FlatExtractor:
 		while 1:
 			next_pos = self.get_next_pos()
 			try: obj = self.record_to_object(self.buf[:next_pos])
-			except (ParsingError, ValueError), e:
+			except (ParsingError, ValueError) as e:
 				log.Log("Error parsing metadata file: %s" % (e,), 2)
 			else:
 				if obj.index[:len(index)] != index: break
@@ -476,17 +476,17 @@ class Manager:
 		assert rp.isincfile(), rp
 		self.rplist.append(rp)
 		time = rp.getinctime()
-		if self.timerpmap.has_key(time):
+		if time in self.timerpmap:
 			self.timerpmap[time].append(rp)
 		else: self.timerpmap[time] = [rp]
 
 		incbase = rp.getincbase_str()
-		if self.prefixmap.has_key(incbase): self.prefixmap[incbase].append(rp)
+		if incbase in self.prefixmap: self.prefixmap[incbase].append(rp)
 		else: self.prefixmap[incbase] = [rp]
 
 	def _iter_helper(self, prefix, flatfileclass, time, restrict_index):
 		"""Used below to find the right kind of file by time"""
-		if not self.timerpmap.has_key(time): return None
+		if time not in self.timerpmap: return None
 		for rp in self.timerpmap[time]:
 			if rp.getincbase_str() == prefix:
 				return flatfileclass(rp, 'r').get_objects(restrict_index)
@@ -616,7 +616,7 @@ class PatchDiffMan(Manager):
 
 	def sorted_prefix_inclist(self, prefix, min_time = 0):
 		"""Return reverse sorted (by time) list of incs with given prefix"""
-		if not self.prefixmap.has_key(prefix): return []
+		if prefix not in self.prefixmap: return []
 		sortlist = [(rp.getinctime(), rp) for rp in self.prefixmap[prefix]]
 		sortlist.sort()
 		sortlist.reverse()
@@ -691,4 +691,4 @@ def SetManager():
 	return ManagerObj
 
 
-import eas_acls, win_acls # put at bottom to avoid python circularity bug
+from . import eas_acls, win_acls # put at bottom to avoid python circularity bug

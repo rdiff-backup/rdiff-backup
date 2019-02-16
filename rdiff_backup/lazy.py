@@ -19,9 +19,9 @@
 
 """Define some lazy data structures and functions acting on them"""
 
-from __future__ import generators
+
 import os, stat, types
-import static
+from . import static
 
 
 class Iter:
@@ -62,16 +62,16 @@ class Iter:
 
 		"""
 		for i1 in iter1:
-			try: i2 = iter2.next()
+			try: i2 = next(iter2)
 			except StopIteration:
-				if verbose: print "End when i1 = %s" % (i1,)
+				if verbose: print("End when i1 = %s" % (i1,))
 				return None
 			if not operator(i1, i2):
-				if verbose: print "%s not equal to %s" % (i1, i2)
+				if verbose: print("%s not equal to %s" % (i1, i2))
 				return None
-		try: i2 = iter2.next()
+		try: i2 = next(iter2)
 		except StopIteration: return 1
-		if verbose: print "End when i2 = %s" % (i2,)
+		if verbose: print("End when i2 = %s" % (i2,))
 		return None
 
 	def Or(iter):
@@ -92,20 +92,20 @@ class Iter:
 		"""Return length of iterator"""
 		i = 0
 		while 1:
-			try: iter.next()
+			try: next(iter)
 			except StopIteration: return i
 			i = i+1
 
 	def foldr(f, default, iter):
 		"""foldr the "fundamental list recursion operator"?"""
-		try: next = iter.next()
+		try: next = next(iter)
 		except StopIteration: return default
 		return f(next, Iter.foldr(f, default, iter))
 
 	def foldl(f, default, iter):
 		"""the fundamental list iteration operator.."""
 		while 1:
-			try: next = iter.next()
+			try: next = next(iter)
 			except StopIteration: return default
 			default = f(default, next)
 
@@ -138,7 +138,7 @@ class Iter:
 		def get_next(fork_num):
 			"""Return the next element requested by fork_num"""
 			if forkposition[fork_num] == -1:
-				try:  buffer.insert(0, iter.next())
+				try:  buffer.insert(0, next(iter))
 				except StopIteration:
 					# call closing_func if necessary
 					if (forkposition == starting_forkposition and
@@ -162,7 +162,7 @@ class Iter:
 		def make_iterator(fork_num):
 			while(1): yield get_next(fork_num)
 
-		return tuple(map(make_iterator, range(num_of_forks)))
+		return tuple(map(make_iterator, list(range(num_of_forks))))
 
 static.MakeStatic(Iter)
 
@@ -185,7 +185,7 @@ class IterMultiplex2:
 		buf, iter = self.buffer, self.iter
 		while(1):
 			if self.a_leading_by >= 0: # a is in front, add new element
-				elem = iter.next() # exception will be passed
+				elem = next(iter) # exception will be passed
 				buf.append(elem)
 			else: elem = buf.pop(0) # b is in front, subtract an element
 			self.a_leading_by += 1
@@ -196,7 +196,7 @@ class IterMultiplex2:
 		buf, iter = self.buffer, self.iter
 		while(1):
 			if self.a_leading_by <= 0: # b is in front, add new element
-				elem = iter.next() # exception will be passed
+				elem = next(iter) # exception will be passed
 				buf.append(elem)
 			else: elem = buf.pop(0) # a is in front, subtract an element
 			self.a_leading_by -= 1

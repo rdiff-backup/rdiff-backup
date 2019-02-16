@@ -14,7 +14,7 @@ class SecurityTest(unittest.TestCase):
 		"""
 		if not isinstance(exc, Security.Violation):
 			type, value, tb = sys.exc_info()
-			print "".join(traceback.format_tb(tb))
+			print("".join(traceback.format_tb(tb)))
 			raise exc
 		#assert str(exc).find("Security") >= 0, "%s\n%s" % (exc, repr(exc))
 
@@ -24,7 +24,7 @@ class SecurityTest(unittest.TestCase):
 		conn = SetConnections.init_connection(remote_cmd)
 		assert type(conn.os.getuid()) is type(5)
 		try: conn.os.remove("/tmp/foobar")
-		except Exception, e: self.assert_exc_sec(e)
+		except Exception as e: self.assert_exc_sec(e)
 		else: assert 0, "No exception raised"
 		SetConnections.CloseConnections()
 
@@ -34,7 +34,7 @@ class SecurityTest(unittest.TestCase):
 		conn = SetConnections.init_connection(remote_cmd)
 		assert type(conn.os.getuid()) is type(5)
 		try: conn.os.remove("/tmp/foobar")
-		except Exception, e: self.assert_exc_sec(e)
+		except Exception as e: self.assert_exc_sec(e)
 		else: assert 0, "No exception raised"
 		SetConnections.CloseConnections()
 
@@ -52,7 +52,7 @@ class SecurityTest(unittest.TestCase):
 			try:
 				rp = rpath.RPath(conn, path)
 				conn.Globals.set("TEST_var", rp)
-			except Exception, e:
+			except Exception as e:
 				self.assert_exc_sec(e)
 				continue
 			assert 0, "No violation raised by rp %s" % (rp,)
@@ -82,7 +82,7 @@ class SecurityTest(unittest.TestCase):
 						(restrict_args, in_dir))
 
 		cmdline = "%s %s %s %s" % (prefix, extra_args, in_dir, out_dir)
-		print "Executing:", cmdline
+		print("Executing:", cmdline)
 		exit_val = os.system(cmdline)
 		if success: assert not exit_val
 		else: assert exit_val, "Success when wanted failure"

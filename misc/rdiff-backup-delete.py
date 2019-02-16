@@ -41,24 +41,24 @@ def delete_entry(base,path):
         # print "File/Directory '%s' doesn't appear to exist, skipping deletion" % p
         return
     if filetype == 'dir':
-        print "dir:\t'%s' - deleting recursively" % p
+        print("dir:\t'%s' - deleting recursively" % p)
         if not dryrun:
             shutil.rmtree(p)
         else:
-            print "\t(dryrun, not deleting)"
+            print("\t(dryrun, not deleting)")
     else:
-        print "%s:\t'%s'" % (filetype,p)
+        print("%s:\t'%s'" % (filetype,p))
         if not dryrun:
             os.remove(p)
         else:
-            print "\t(dryrun, not deleted)"
+            print("\t(dryrun, not deleted)")
 
 def remove_mirror():
     """Delete specified file/dir from mirror"""
     global base
     global path
     global dryrun
-    print "\nLooking for mirror in %s" % base
+    print("\nLooking for mirror in %s" % base)
     delete_entry(base,path)
 
 def remove_increments():
@@ -68,10 +68,10 @@ def remove_increments():
     global dryrun
     pattern = "^%s\\.[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.+?[0-9]{2}:[0-9]{2}\.(dir|missing|diff|diff\.gz)$"
     p = (base+'/rdiff-backup-data/increments' + '/' + '/'.join(path.split('/')[0:-1])).rstrip('/')
-    print "\nLooking for increments in %s" % p
+    print("\nLooking for increments in %s" % p)
     increments = []
     fname = path.split('/')[-1]
-    list(map(lambda x: re.match(pattern % fname, x) and increments.append(x), os.listdir(p)))
+    list([re.match(pattern % fname, x) and increments.append(x) for x in os.listdir(p)])
     for inc in increments:
         delete_entry(p,inc)
     delete_entry(p,fname)
@@ -85,12 +85,12 @@ def remove_metadata():
     p = base + "/rdiff-backup-data"
     pattern_head = "^File\s+%s(/.*)?$"
     pattern_body = "^\s+.*$"
-    print "\nLooking for mirror metadata in %s" % p
+    print("\nLooking for mirror metadata in %s" % p)
     metadata = []
-    list(map(lambda x: metadata.append(x.split('/')[-1]), glob.glob(base + '/rdiff-backup-data/mirror_metadata*')))
+    list([metadata.append(x.split('/')[-1]) for x in glob.glob(base + '/rdiff-backup-data/mirror_metadata*')])
     for meta in metadata:
         matchfound = 0
-        print "file:\t%s" % meta
+        print("file:\t%s" % meta)
         fdin = gzip.GzipFile(p + '/' + meta, 'rb')
         fdout = gzip.GzipFile(p + '/' + 'temp_' + meta, 'wb', 9)
         switch = False
@@ -98,7 +98,7 @@ def remove_metadata():
             if re.match(pattern_head % path , r):
                 switch = True
                 matchfound += 1
-                print "\t\t%s" % r.strip()
+                print("\t\t%s" % r.strip())
             elif switch:
                 if not re.match(pattern_body, r):
                     fdout.write(r)
@@ -107,12 +107,12 @@ def remove_metadata():
                 fdout.write(r)
         fdout.close()
         fdin.close()
-        print "\t%s match%s found." % (matchfound, "" if matchfound == 1 else "es")
+        print("\t%s match%s found." % (matchfound, "" if matchfound == 1 else "es"))
         if dryrun:
-            print "\t(dryrun, not altered)\n"
+            print("\t(dryrun, not altered)\n")
             os.remove(p + '/' + 'temp_' + meta)
         else:
-            print
+            print()
             os.remove(p + '/' + meta)
             os.rename(p + '/' + 'temp_' + meta, p + '/' + meta)
 
@@ -124,28 +124,28 @@ def remove_statistics():
     global filetype
     p = base + "/rdiff-backup-data"
     pattern = "^%s(/[^\s]*)?(\s[^\s]+){4}$"
-    print "\nLooking for statistics in %s" % p
+    print("\nLooking for statistics in %s" % p)
     statistics = []
-    list(map(lambda x: statistics.append(x.split('/')[-1]), glob.glob(base + '/rdiff-backup-data/file_statistics*')))
+    list([statistics.append(x.split('/')[-1]) for x in glob.glob(base + '/rdiff-backup-data/file_statistics*')])
     for stats in statistics:
         matchfound = 0
-        print "file:\t%s" % stats
+        print("file:\t%s" % stats)
         fdin = gzip.GzipFile(p + '/' + stats, 'rb')
         fdout = gzip.GzipFile(p + '/' + 'temp_' + stats, 'wb', 9)
         for r in fdin:
             if re.match(pattern % path, r):
                 matchfound += 1
-                print "\t\t%s" % r.strip()
+                print("\t\t%s" % r.strip())
             else:
                 fdout.write(r)
         fdout.close()
         fdin.close()
-        print "\t%s match%s found." % (matchfound, "" if matchfound == 1 else "es")
+        print("\t%s match%s found." % (matchfound, "" if matchfound == 1 else "es"))
         if dryrun:
-            print "\t(dryrun, not altered)\n"
+            print("\t(dryrun, not altered)\n")
             os.remove(p + '/' + 'temp_' + stats)
         else:
-            print
+            print()
             os.remove(p + '/' + stats)
             os.rename(p + '/' + 'temp_' + stats, p + '/' + stats)
 

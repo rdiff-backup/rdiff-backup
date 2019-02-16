@@ -19,9 +19,9 @@
 
 """Read increment files and restore to original"""
 
-from __future__ import generators
-import tempfile, os, cStringIO
-import static, rorpiter, FilenameMapping
+
+import tempfile, os, io
+from . import static, rorpiter, FilenameMapping
 
 class RestoreError(Exception): pass
 
@@ -131,7 +131,7 @@ class MirrorStruct:
 
 		"""
 		inctimes = cls.get_increment_times()
-		older_times = filter(lambda time: time <= restore_to_time, inctimes)
+		older_times = [time for time in inctimes if time <= restore_to_time]
 		if older_times: return max(older_times)
 		else: # restore time older than oldest increment, just return that
 			return min(inctimes)
@@ -150,7 +150,7 @@ class MirrorStruct:
 		for inc in get_inclist(rp): d[inc.getinctime()] = None
 		for inc in get_inclist(Globals.rbdir.append("mirror_metadata")):
 			d[inc.getinctime()] = None
-		return_list = d.keys()
+		return_list = list(d.keys())
 		return_list.sort()
 		return return_list
 
@@ -350,7 +350,7 @@ class CachedRF:
 			log.Log("Error: Unable to retrieve data for file %s!\nThe "
 					"cause is probably data loss from the backup repository."
 					% (index and "/".join(index) or '.',), 2)
-			return cStringIO.StringIO('')
+			return io.StringIO('')
 		return rf.get_restore_fp()
 
 	def add_rfs(self, index, mir_rorp = None):
@@ -473,7 +473,7 @@ class RestoreFile:
 		def error_handler(exc):
 			log.Log("Error reading %s, substituting empty file." %
 					(self.mirror_rp.path,), 2)
-			return cStringIO.StringIO('')
+			return io.StringIO('')
 
 		if not self.relevant_incs[-1].isreg():
 			log.Log("""Warning: Could not restore file %s!
@@ -484,7 +484,7 @@ constructed from existing increments because last increment had type
 created.  This error is probably caused by data loss in the
 rdiff-backup destination directory, or a bug in rdiff-backup""" %
 	    (self.mirror_rp.get_indexpath(), self.relevant_incs[-1].lstat()), 2)
-			return cStringIO.StringIO('')
+			return io.StringIO('')
 		return robust.check_common_error(error_handler, get_fp)
 
 	def get_first_fp(self):
@@ -552,7 +552,7 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
 				elif rp.isdir(): inc_dict.setdefault(filename, [])
 
 			for filename in dirlist: add_to_dict(filename)
-			return inc_dict.items()
+			return list(inc_dict.items())
 
 		def inc_filenames2incrps(filenames):
 			"""Map list of filenames into increment rps"""
@@ -652,7 +652,7 @@ class PatchITRB(rorpiter.ITRBranch):
 		assert diff_rorp.get_attached_filetype() == 'snapshot'
 		self.dir_replacement = TempFile.new(base_rp)
 		rpath.copy_with_attribs(diff_rorp, self.dir_replacement)
-		if base_rp.isdir(): base_rp.chmod(0700)
+		if base_rp.isdir(): base_rp.chmod(0o700)
 
 	def prepare_dir(self, diff_rorp, base_rp):
 		"""Prepare base_rp to turn into a directory"""
@@ -660,7 +660,7 @@ class PatchITRB(rorpiter.ITRBranch):
 		if not base_rp.isdir():
 			if base_rp.lstat(): base_rp.delete()
 			base_rp.mkdir()
-		base_rp.chmod(0700)
+		base_rp.chmod(0o700)
 
 	def end_process(self):
 		"""Finish processing directory"""
@@ -714,8 +714,8 @@ class PermissionChanger:
 				(rp.isdir() and not (rp.executable() and rp.readable()))):
 				old_perms = rp.getperms()
 				self.open_index_list.insert(0, (rp.index, rp, old_perms))
-				if rp.isreg(): rp.chmod(0400 | old_perms)
-				else: rp.chmod(0700 | old_perms)
+				if rp.isreg(): rp.chmod(0o400 | old_perms)
+				else: rp.chmod(0o700 | old_perms)
 
 	def get_new_rp_list(self, old_index, index):
 		"""Return list of new rp's between old_index and index
@@ -738,6 +738,6 @@ class PermissionChanger:
 		for index, rp, perms in self.open_index_list: rp.chmod(perms)
 
 
-import Globals, Time, Rdiff, Hardlink, selection, rpath, \
+from . import Globals, Time, Rdiff, Hardlink, selection, rpath, \
 	   log, robust, metadata, statistics, TempFile, hash, longname
 

@@ -18,7 +18,7 @@ def run_cmd(cmd):
 	"""Run the given cmd, return the amount of time it took"""
 	if new_pythonpath: full_cmd = "PYTHONPATH=%s %s" % (new_pythonpath, cmd)
 	else: full_cmd = cmd
-	print "Running command '%s'" % (full_cmd,)
+	print("Running command '%s'" % (full_cmd,))
 	t = time.time()
 	assert not os.system(full_cmd)
 	return time.time() - t
@@ -33,7 +33,7 @@ def create_many_files(dirname, s, count = 1000):
 	Myrm("testfiles/many_out")
 	dir_rp = rpath.RPath(Globals.local_connection, dirname)
 	dir_rp.mkdir()
-	for i in xrange(count):
+	for i in range(count):
 		rp = dir_rp.append(str(i))
 		fp = rp.open("wb")
 		fp.write(s)
@@ -48,9 +48,9 @@ def create_nested(dirname, s, depth, branch_factor = 10):
 
 	def helper(rp, depth):
 		rp.mkdir()
-		sub_rps = map(lambda i: rp.append(str(i)), range(branch_factor))
-		if depth == 1: map(write, sub_rps)
-		else: map(lambda rp: helper(rp, depth-1), sub_rps)
+		sub_rps = [rp.append(str(i)) for i in range(branch_factor)]
+		if depth == 1: list(map(write, sub_rps))
+		else: list(map(lambda rp: helper(rp, depth-1), sub_rps))
 
 	Myrm("testfiles/nested_out")
 	helper(rpath.RPath(Globals.local_connection, dirname), depth)
@@ -61,16 +61,16 @@ def benchmark(backup_cmd, restore_cmd, desc, update_func = None):
 	If update_func is given, run it and then do backup a third time.
 
 	"""
-	print "Initially backing up %s: %ss" % (desc, run_cmd(backup_cmd))
-	print "Updating %s, no change: %ss" % (desc, run_cmd(backup_cmd))
+	print("Initially backing up %s: %ss" % (desc, run_cmd(backup_cmd)))
+	print("Updating %s, no change: %ss" % (desc, run_cmd(backup_cmd)))
 
 	if update_func:
 		update_func()
-		print "Updating %s, all changed: %ss" % (desc, run_cmd(backup_cmd))
+		print("Updating %s, all changed: %ss" % (desc, run_cmd(backup_cmd)))
 
 	Myrm("testfiles/rest_out")
-	print "Restoring %s to empty dir: %ss" % (desc, run_cmd(restore_cmd))
-	print "Restoring %s to unchanged dir: %ss" % (desc, run_cmd(restore_cmd))
+	print("Restoring %s to empty dir: %ss" % (desc, run_cmd(restore_cmd)))
+	print("Restoring %s to unchanged dir: %ss" % (desc, run_cmd(restore_cmd)))
 
 def many_files():
 	"""Time backup and restore of 2000 files"""
@@ -88,11 +88,11 @@ def many_files_rsync():
 	create_many_files("testfiles/many_out", "a", count)
 	rsync_command = ("rsync -e ssh -aH --delete testfiles/many_out " +
 					 output_desc)
-	print "Initial rsync: %ss" % (run_cmd(rsync_command),)
-	print "rsync update: %ss" % (run_cmd(rsync_command),)
+	print("Initial rsync: %ss" % (run_cmd(rsync_command),))
+	print("rsync update: %ss" % (run_cmd(rsync_command),))
 
 	create_many_files("testfiles/many_out", "e", count)
-	print "Update changed rsync: %ss" % (run_cmd(rsync_command),)
+	print("Update changed rsync: %ss" % (run_cmd(rsync_command),))
 
 def nested_files():
 	"""Time backup and restore of 10000 nested files"""
@@ -111,18 +111,18 @@ def nested_files_rsync():
 	create_nested("testfiles/nested_out", "a", depth)
 	rsync_command = ("rsync -e ssh -aH --delete testfiles/nested_out " +
 					 output_desc)
-	print "Initial rsync: %ss" % (run_cmd(rsync_command),)
-	print "rsync update: %ss" % (run_cmd(rsync_command),)
+	print("Initial rsync: %ss" % (run_cmd(rsync_command),))
+	print("rsync update: %ss" % (run_cmd(rsync_command),))
 
 	create_nested("testfiles/nested_out", "e", depth)
-	print "Update changed rsync: %ss" % (run_cmd(rsync_command),)
+	print("Update changed rsync: %ss" % (run_cmd(rsync_command),))
 
 if len(sys.argv) < 2 or len(sys.argv) > 3:
-	print "Syntax:  benchmark.py benchmark_func [output_description]"
-	print
-	print "Where output_description defaults to 'testfiles/output'."
-	print "Currently benchmark_func includes:"
-	print "'many_files', 'many_files_rsync', and, 'nested_files'."
+	print("Syntax:  benchmark.py benchmark_func [output_description]")
+	print()
+	print("Where output_description defaults to 'testfiles/output'.")
+	print("Currently benchmark_func includes:")
+	print("'many_files', 'many_files_rsync', and, 'nested_files'.")
 	sys.exit(1)
 
 if len(sys.argv) == 3:
@@ -133,9 +133,9 @@ if output_local:
 	assert not rpath.RPath(Globals.local_connection, output_desc).lstat(), \
 		   "Outfile file %s exists, try deleting it first" % (output_desc,)
 
-if os.environ.has_key('BENCHMARKPYPATH'):
+if 'BENCHMARKPYPATH' in os.environ:
 	new_pythonpath = os.environ['BENCHMARKPYPATH']
 
 function_name = sys.argv[1]
-print "Running ", function_name
+print("Running ", function_name)
 eval(sys.argv[1])()

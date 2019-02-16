@@ -85,7 +85,7 @@ class LikeFile:
 		"""Add one cycle's worth of output to self.outbuf"""
 		if not self.infile_eof: self._add_to_inbuf()
 		try: self.eof, len_inbuf_read, cycle_out = self.maker.cycle(self.inbuf)
-		except _librsync.librsyncError, e: raise librsyncError(str(e))
+		except _librsync.librsyncError as e: raise librsyncError(str(e))
 		self.inbuf = self.inbuf[len_inbuf_read:]
 		self.outbuf.fromstring(cycle_out)
 
@@ -119,7 +119,7 @@ class SigFile(LikeFile):
 		"""
 		LikeFile.__init__(self, infile)
 		try: self.maker = _librsync.new_sigmaker(blocksize)
-		except _librsync.librsyncError, e: raise librsyncError(str(e))
+		except _librsync.librsyncError as e: raise librsyncError(str(e))
 
 class DeltaFile(LikeFile):
 	"""File-like object which incrementally generates a librsync delta"""
@@ -132,13 +132,13 @@ class DeltaFile(LikeFile):
 
 		"""
 		LikeFile.__init__(self, new_file)
-		if type(signature) is types.StringType: sig_string = signature
+		if type(signature) is bytes: sig_string = signature
 		else:
 			self.check_file(signature)
 			sig_string = signature.read()
 			assert not signature.close()
 		try: self.maker = _librsync.new_deltamaker(sig_string)
-		except _librsync.librsyncError, e: raise librsyncError(str(e))
+		except _librsync.librsyncError as e: raise librsyncError(str(e))
 
 
 class PatchedFile(LikeFile):
@@ -157,7 +157,7 @@ class PatchedFile(LikeFile):
 		if type(basis_file) is not types.FileType:
 			raise TypeError("basis_file must be a (true) file")
 		try: self.maker = _librsync.new_patchmaker(basis_file)
-		except _librsync.librsyncError, e: raise librsyncError(str(e))		
+		except _librsync.librsyncError as e: raise librsyncError(str(e))		
 
 
 class SigGenerator:
@@ -170,7 +170,7 @@ class SigGenerator:
 	def __init__(self, blocksize = _librsync.RS_DEFAULT_BLOCK_LEN):
 		"""Return new signature instance"""
 		try: self.sig_maker = _librsync.new_sigmaker(blocksize)
-		except _librsync.librsyncError, e: raise librsyncError(str(e))
+		except _librsync.librsyncError as e: raise librsyncError(str(e))
 		self.gotsig = None
 		self.buffer = ""
 		self.sig_string = ""
@@ -187,7 +187,7 @@ class SigGenerator:
 	def process_buffer(self):
 		"""Run self.buffer through sig_maker, add to self.sig_string"""
 		try: eof, len_buf_read, cycle_out = self.sig_maker.cycle(self.buffer)
-		except _librsync.librsyncError, e: raise librsyncError(str(e))
+		except _librsync.librsyncError as e: raise librsyncError(str(e))
 		self.buffer = self.buffer[len_buf_read:]
 		self.sig_string += cycle_out
 		return eof

@@ -52,7 +52,7 @@ Two caveats:
 
 """
 
-import Globals, log, rpath, cPickle, TempFile, os, restore
+import Globals, log, rpath, pickle, TempFile, os, restore
 
 # Holds an rpath of the journal directory, a file object, and then
 journal_dir_rp = None
@@ -174,15 +174,14 @@ class Entry:
 		incroot = Globals.rbdir.append_path("increments")
 		incbase = incroot.new_index(self.index)
 		inclist = restore.get_inclist(incbase)
-		inclist = filter(lambda inc:
-						 inc.getinctime() == unsuccessful_backup_time, inclist)
+		inclist = [inc for inc in inclist if inc.getinctime() == unsuccessful_backup_time]
 		assert len(inclist) <= 1
 		if inclist: return inclist[0]
 		else: return None
 
 	def to_string(self):
 		"""Return string form of entry"""
-		return cPickle.dumps({'index': self.index,
+		return pickle.dumps({'index': self.index,
 							  'testfile_option': self.testfile_option,
 							  'testfile_type': self.testfile_type,
 							  'temp_index': self.temp_index})
@@ -199,14 +198,14 @@ class Entry:
 
 	def init_from_string(self, s):
 		"""Initialize values from string.  Return 0 if problem."""
-		try: val_dict = cPickle.loads(s)
-		except cPickle.UnpicklingError: return 0
+		try: val_dict = pickle.loads(s)
+		except pickle.UnpicklingError: return 0
 		try:
 			self.index = val_dict['index']
 			self.testfile_type = val_dict['testfile_type']
 			self.testfile_option = val_dict['testfile_option']
 			self.temp_index = val_dict['temp_index']
-		except TypeError, KeyError: return 0
+		except TypeError as KeyError: return 0
 		return 1
 
 	def init_from_rp(self, entry_rp):

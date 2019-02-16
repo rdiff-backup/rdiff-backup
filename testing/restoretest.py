@@ -24,7 +24,7 @@ class RestoreFileComparer:
 
 	def add_rpath(self, rp, t):
 		"""Add rp, which represents what rf should be at given time t"""
-		assert not self.time_rp_dict.has_key(t)
+		assert t not in self.time_rp_dict
 		self.time_rp_dict[t] = rp
 
 	def compare_at_time(self, t):
@@ -48,7 +48,7 @@ class RestoreFileComparer:
 
 	def compare_all(self):
 		"""Check restore results for all available times"""
-		for t in self.time_rp_dict.keys(): self.compare_at_time(t)
+		for t in list(self.time_rp_dict.keys()): self.compare_at_time(t)
 
 
 class RestoreTimeTest(unittest.TestCase):

@@ -1,4 +1,4 @@
-from __future__ import generators
+
 import unittest, os, re, sys, time
 from commontest import *
 from rdiff_backup import Globals, log, rpath, robust, FilenameMapping
@@ -85,9 +85,9 @@ class PathSetter(unittest.TestCase):
 			else: arglist.append(self.dest_prefix + args[1])
 			assert len(args) == 2
 
-		arg_string = ' '.join(map(lambda s: "'%s'" % (s,), arglist))
+		arg_string = ' '.join(["'%s'" % (s,) for s in arglist])
 		cmdstr = "%s %s %s" % (self.rb_schema, extra_args, arg_string)
-		print "executing " + cmdstr
+		print("executing " + cmdstr)
 		actual_val = os.system(cmdstr)
 		assert ((actual_val == 0 and ret_val == 0) or
 				(actual_val > 0 and ret_val > 0)), \
@@ -103,7 +103,7 @@ class PathSetter(unittest.TestCase):
 			assert len(args) == 2
 
 		cmdstr = self.rb_schema + " ".join(arglist)
-		print "Restoring via cmdline: " + cmdstr
+		print("Restoring via cmdline: " + cmdstr)
 		assert not os.system(cmdstr)
 
 	def exec_rb_restore_extra_args(self, time, extra_args, *args):
@@ -117,7 +117,7 @@ class PathSetter(unittest.TestCase):
 			assert len(args) == 2
 
 		cmdstr = self.rb_schema + " ".join(arglist)
-		print "Restoring via cmdline: " + cmdstr
+		print("Restoring via cmdline: " + cmdstr)
 		assert not os.system(cmdstr)
 		
 	def delete_tmpdirs(self):
@@ -200,9 +200,8 @@ class PathSetter(unittest.TestCase):
 		incbasenames = [filename for filename in robust.listrp(dirrp)
 						if filename.startswith(basename)]
 		incbasenames.sort()
-		incrps = map(dirrp.append, incbasenames)
-		return map(lambda x: x.path,
-				   filter(lambda incrp: incrp.isincfile(), incrps))
+		incrps = list(map(dirrp.append, incbasenames))
+		return [x.path for x in [incrp for incrp in incrps if incrp.isincfile()]]
 
 
 class Final(PathSetter):
@@ -472,7 +471,7 @@ class FinalMisc(PathSetter):
 class FinalSelection(PathSetter):
 	"""Test selection options"""
 	def system(self, cmd):
-		print "Executing: ", cmd
+		print("Executing: ", cmd)
 		assert not os.system(cmd)
 
 	def testSelLocal(self):

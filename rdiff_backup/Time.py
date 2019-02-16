@@ -20,7 +20,7 @@
 """Provide time related exceptions and functions"""
 
 import time, types, re, sys, calendar
-import Globals
+from . import Globals
 
 
 class TimeException(Exception): pass
@@ -40,7 +40,7 @@ def setcurtime(curtime = None):
 	"""Sets the current time in curtime and curtimestr on all systems"""
 	t = curtime or time.time()
 	for conn in Globals.connections:
-		conn.Time.setcurtime_local(long(t))
+		conn.Time.setcurtime_local(int(t))
 
 def setcurtime_local(timeinseconds):
 	"""Only set the current time locally"""
@@ -82,8 +82,8 @@ def stringtotime(timestring):
 
 	try:
 		date, daytime = timestring[:19].split("T")
-		year, month, day = map(int, date.split("-"))
-		hour, minute, second = map(int, regexp.split(daytime))
+		year, month, day = list(map(int, date.split("-")))
+		hour, minute, second = list(map(int, regexp.split(daytime)))
 		assert 1900 < year < 2100, year
 		assert 1 <= month <= 12
 		assert 1 <= day <= 31
@@ -93,7 +93,7 @@ def stringtotime(timestring):
 		timetuple = (year, month, day, hour, minute, second, -1, -1, 0)
 		utc_in_secs = calendar.timegm(timetuple)
 
-		return long(utc_in_secs) + tzdtoseconds(timestring[19:])
+		return int(utc_in_secs) + tzdtoseconds(timestring[19:])
 	except (TypeError, ValueError, AssertionError): return None
 
 def timetopretty(timeinseconds):
@@ -122,7 +122,7 @@ def inttopretty(seconds):
 
 	if seconds == 1: partlist.append("1 second")
 	elif not partlist or seconds > 1:
-		if isinstance(seconds, int) or isinstance(seconds, long):
+		if isinstance(seconds, int) or isinstance(seconds, int):
 			partlist.append("%s seconds" % seconds)
 		else: partlist.append("%.2f seconds" % seconds)
 	return " ".join(partlist)
@@ -167,7 +167,7 @@ def gettzd(timeinseconds = None):
 
 	if Globals.use_compatible_timestamps: time_separator = '-'
 	else: time_separator = ':'
-	hours, minutes = map(abs, divmod(offset, 60))
+	hours, minutes = list(map(abs, divmod(offset, 60)))
 	assert 0 <= hours <= 23
 	assert 0 <= minutes <= 59
 	return "%s%02d%s%02d" % (prefix, hours, time_separator, minutes)
@@ -181,10 +181,10 @@ def tzdtoseconds(tzd):
 
 def cmp(time1, time2):
 	"""Compare time1 and time2 and return -1, 0, or 1"""
-	if type(time1) is types.StringType:
+	if type(time1) is bytes:
 		time1 = stringtotime(time1)
 		assert time1 is not None
-	if type(time2) is types.StringType:
+	if type(time2) is bytes:
 		time2 = stringtotime(time2)
 		assert time2 is not None
 

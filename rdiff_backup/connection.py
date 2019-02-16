@@ -19,8 +19,8 @@
 
 """Support code for remote execution and data transfer"""
 
-from __future__ import generators
-import types, os, tempfile, cPickle, shutil, traceback, \
+
+import types, os, tempfile, pickle, shutil, traceback, \
 	   socket, sys, gzip
 # The following EA and ACL modules may be used if available
 try: import xattr
@@ -47,7 +47,7 @@ class Connection:
 	"""
 	def __repr__(self): return self.__str__()
 	def __str__(self): return "Simple Connection" # override later
-	def __nonzero__(self): return 1
+	def __bool__(self): return 1
 
 class LocalConnection(Connection):
 	"""Local connection
@@ -73,7 +73,7 @@ class LocalConnection(Connection):
 	def __str__(self): return "LocalConnection"
 
 	def reval(self, function_string, *args):
-		return apply(eval(function_string), args)
+		return eval(function_string)(*args)
 
 	def quit(self): pass
 
@@ -128,7 +128,7 @@ class LowLevelPipeConnection(Connection):
 	def _put(self, obj, req_num):
 		"""Put an object into the pipe (will send raw if string)"""
 		log.Log.conn("sending", obj, req_num)
-		if type(obj) is types.StringType: self._putbuf(obj, req_num)
+		if type(obj) is bytes: self._putbuf(obj, req_num)
 		elif isinstance(obj, connection.Connection):self._putconn(obj, req_num)
 		elif isinstance(obj, FilenameMapping.QuotedRPath):
 			self._putqrpath(obj, req_num)
@@ -141,7 +141,7 @@ class LowLevelPipeConnection(Connection):
 
 	def _putobj(self, obj, req_num):
 		"""Send a generic python obj down the outpipe"""
-		self._write("o", cPickle.dumps(obj, 1), req_num)
+		self._write("o", pickle.dumps(obj, 1), req_num)
 
 	def _putbuf(self, buf, req_num):
 		"""Send buffer buf down the outpipe"""
@@ -165,13 +165,13 @@ class LowLevelPipeConnection(Connection):
 		"""
 		rpath_repr = (rpath.conn.conn_number, rpath.base,
 					  rpath.index, rpath.data)
-		self._write("R", cPickle.dumps(rpath_repr, 1), req_num)
+		self._write("R", pickle.dumps(rpath_repr, 1), req_num)
 
 	def _putqrpath(self, qrpath, req_num):
 		"""Put a quoted rpath into the pipe (similar to _putrpath above)"""
 		qrpath_repr = (qrpath.conn.conn_number, qrpath.base,
 					   qrpath.index, qrpath.data)
-		self._write("Q", cPickle.dumps(qrpath_repr, 1), req_num)
+		self._write("Q", pickle.dumps(qrpath_repr, 1), req_num)
 
 	def _putrorpath(self, rorpath, req_num):
 		"""Put an rorpath into the pipe
@@ -181,7 +181,7 @@ class LowLevelPipeConnection(Connection):
 
 		"""
 		rorpath_repr = (rorpath.index, rorpath.data)
-		self._write("r", cPickle.dumps(rorpath_repr, 1), req_num)
+		self._write("r", pickle.dumps(rorpath_repr, 1), req_num)
 
 	def _putconn(self, pipeconn, req_num):
 		"""Put a connection into the pipe
@@ -200,7 +200,7 @@ class LowLevelPipeConnection(Connection):
 		"""Write header and then data to the pipe"""
 		try:
 			self.outpipe.write(headerchar + chr(req_num) +
-							   C.long2str(long(len(data))))
+							   C.long2str(int(len(data))))
 			self.outpipe.write(data)
 			self.outpipe.flush()
 		except (IOError, AttributeError): raise ConnectionWriteError()
@@ -213,7 +213,7 @@ class LowLevelPipeConnection(Connection):
 	def _s2l_old(self, s):
 		"""Convert string to long int"""
 		assert len(s) == 7
-		l = 0L
+		l = 0
 		for i in range(7): l = l*256 + ord(s[i])
 		return l
 
@@ -238,7 +238,7 @@ class LowLevelPipeConnection(Connection):
 		if format_string == "q": raise ConnectionQuit("Received quit signal")
 
 		data = self._read(length)
-		if format_string == "o": result = cPickle.loads(data)
+		if format_string == "o": result = pickle.loads(data)
 		elif format_string == "b": result = data
 		elif format_string == "f": result = VirtualFile(self, int(data))
 		elif format_string == "i":
@@ -254,18 +254,18 @@ class LowLevelPipeConnection(Connection):
 
 	def _getrorpath(self, raw_rorpath_buf):
 		"""Reconstruct RORPath object from raw data"""
-		index, data = cPickle.loads(raw_rorpath_buf)
+		index, data = pickle.loads(raw_rorpath_buf)
 		return rpath.RORPath(index, data)
 
 	def _getrpath(self, raw_rpath_buf):
 		"""Return RPath object indicated by raw_rpath_buf"""
-		conn_number, base, index, data = cPickle.loads(raw_rpath_buf)
+		conn_number, base, index, data = pickle.loads(raw_rpath_buf)
 		return rpath.RPath(Globals.connection_dict[conn_number],
 						   base, index, data)
 
 	def _getqrpath(self, raw_qrpath_buf):
 		"""Return QuotedRPath object from raw buffer"""
-		conn_number, base, index, data = cPickle.loads(raw_qrpath_buf)
+		conn_number, base, index, data = pickle.loads(raw_qrpath_buf)
 		return FilenameMapping.QuotedRPath(
 			Globals.connection_dict[conn_number], base, index, data)
 
@@ -332,7 +332,7 @@ class PipeConnection(LowLevelPipeConnection):
 			argument_list.append(arg)
 		try:
 			Security.vet_request(request, argument_list)
-			result = apply(eval(request.function_string), argument_list)
+			result = eval(request.function_string)(*argument_list)
 		except: result = self.extract_exception()
 		self._put(result, req_num)
 		self.unused_request_numbers[req_num] = None
@@ -376,7 +376,7 @@ class PipeConnection(LowLevelPipeConnection):
 		"""Allot a new request number and return it"""
 		if not self.unused_request_numbers:
 			raise ConnectionError("Exhaused possible connection numbers")
-		req_num = self.unused_request_numbers.keys()[0]
+		req_num = list(self.unused_request_numbers.keys())[0]
 		del self.unused_request_numbers[req_num]
 		return req_num
 
@@ -447,7 +447,7 @@ class EmulateCallable:
 		self.connection = connection
 		self.name = name
 	def __call__(self, *args):
-		return apply(self.connection.reval, (self.name,) + args)
+		return self.connection.reval(*(self.name,) + args)
 	def __getattr__(self, attr_name):
 		return EmulateCallable(self.connection,
 							   "%s.%s" % (self.name, attr_name))
@@ -458,8 +458,7 @@ class EmulateCallableRedirected:
 		self.conn_number, self.routing_conn = conn_number, routing_conn
 		self.name = name
 	def __call__(self, *args):
-		return apply(self.routing_conn.reval,
-					 ("RedirectedRun", self.conn_number, self.name) + args)
+		return self.routing_conn.reval(*("RedirectedRun", self.conn_number, self.name) + args)
 	def __getattr__(self, attr_name):
 		return EmulateCallableRedirected(self.conn_number, self.routing_conn,
 										 "%s.%s" % (self.name, attr_name))
@@ -542,7 +541,7 @@ import Globals, Time, Rdiff, Hardlink, FilenameMapping, C, Security, \
 	   TempFile, SetConnections, librsync, log, regress, fs_abilities, \
 	   eas_acls, user_group, compare
 
-try: import win_acls
+try: from . import win_acls
 except ImportError: pass
 
 Globals.local_connection = LocalConnection()

@@ -239,7 +239,7 @@ never_drop_acls = None
 
 # Apply this mask to permissions before chmoding.  (Set to 0777 to
 # prevent highbit permissions on systems which don't support them.)
-permission_mask = 07777
+permission_mask = 0o7777
 
 # If true, symlinks permissions are affected by the process umask, and
 # we should change the umask when creating them in order to preserve

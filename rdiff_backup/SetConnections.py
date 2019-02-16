@@ -26,8 +26,8 @@ the related connections.
 """
 
 import os, sys
-from log import Log
-import Globals, connection, rpath
+from .log import Log
+from . import Globals, connection, rpath
 
 # This is the schema that determines how rdiff-backup will open a
 # pipe to the remote system.  If the file is given as A::B, %s will
@@ -56,16 +56,16 @@ def get_cmd_pairs(arglist, remote_schema = None, remote_cmd = None):
 		__cmd_schema += (" --tempdir=" + Globals.remote_tempdir)
 
 	if not arglist: return []
-	desc_pairs = map(parse_file_desc, arglist)
+	desc_pairs = list(map(parse_file_desc, arglist))
 
-	if filter(lambda x: x[0], desc_pairs): # True if any host_info found
+	if [x for x in desc_pairs if x[0]]: # True if any host_info found
 		if remote_cmd:
 			Log.FatalError("The --remote-cmd flag is not compatible "
 						   "with remote file descriptions.")
 	elif remote_schema:
 		Log("Remote schema option ignored - no remote file "
 			"descriptions.", 2)
-	cmdpairs = map(desc2cmd_pairs, desc_pairs)
+	cmdpairs = list(map(desc2cmd_pairs, desc_pairs))
 	if remote_cmd: # last file description gets remote_cmd
 		cmd_pairs[-1] = (remote_cmd, cmd_pairs[-1][1])
 	return cmdpairs
@@ -158,7 +158,7 @@ def init_connection(remote_cmd):
 def check_connection_version(conn, remote_cmd):
 	"""Log warning if connection has different version"""
 	try: remote_version = conn.Globals.get('version')
-	except connection.ConnectionError, exception:
+	except connection.ConnectionError as exception:
 		Log.FatalError("""%s
 
 Couldn't start up the remote connection by executing
@@ -170,7 +170,7 @@ installed in the PATH on the remote system.  See the man page for more
 information on this.  This message may also be displayed if the remote
 version of rdiff-backup is quite different from the local version (%s)."""
 					   % (exception, remote_cmd, Globals.version))
-	except OverflowError, exc:
+	except OverflowError as exc:
 		Log.FatalError("""Integer overflow while attempting to establish the 
 remote connection by executing
 
@@ -243,7 +243,7 @@ def CloseConnections():
 
 def TestConnections(rpaths):
 	"""Test connections, printing results"""
-	if len(Globals.connections) == 1: print "No remote connections specified"
+	if len(Globals.connections) == 1: print("No remote connections specified")
 	else:
 		assert len(Globals.connections) == len(rpaths) + 1
 		for i in range(1, len(Globals.connections)):
@@ -251,7 +251,7 @@ def TestConnections(rpaths):
 
 def test_connection(conn_number, rp):
 	"""Test connection.  conn_number 0 is the local connection"""
-	print "Testing server started by: ", __conn_remote_cmds[conn_number]
+	print("Testing server started by: ", __conn_remote_cmds[conn_number])
 	conn = Globals.connections[conn_number]
 	try:
 		assert conn.Globals.get('current_time') is None
@@ -264,7 +264,7 @@ def test_connection(conn_number, rp):
 		sys.stderr.write("Server tests failed\n")
 		raise
 	if not version == Globals.version:
-		print """Server may work, but there is a version mismatch:
+		print("""Server may work, but there is a version mismatch:
 Local version: %s
 Remote version: %s
 
@@ -272,5 +272,5 @@ In general, an attempt is made to guarantee compatibility only between
 different minor versions of the same stable series.  For instance, you
 should expect 0.12.4 and 0.12.7 to be compatible, but not 0.12.7
 and 0.13.3, nor 0.13.2 and 0.13.4.
-""" % (Globals.version, version)
-	else: print "Server OK"
+""" % (Globals.version, version))
+	else: print("Server OK")
