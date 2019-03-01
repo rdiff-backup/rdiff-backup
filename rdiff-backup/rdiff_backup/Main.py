@@ -86,7 +86,8 @@ def parse_cmdlineoptions(arglist):
 		  "restrict-read-only=", "restrict-update-only=", "server",
 		  "ssh-no-compression", "tempdir=", "terminal-verbosity=",
 		  "test-server", "user-mapping-file=", "verbosity=", "verify",
-		  "verify-at-time=", "version"])
+		  "verify-at-time=", "version",
+		  "no-fsync"])
 	except getopt.error, e:
 		commandline_error("Bad commandline options: " + str(e))
 
@@ -206,6 +207,7 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "-V" or opt == "--version":
 			print "rdiff-backup " + Globals.version
 			sys.exit(0)
+		elif opt == "--no-fsync": Globals.do_fsync = False
 		else: Log.FatalError("Unknown option %s" % opt)
 	Log("Using rdiff-backup version %s" % (Globals.version), 4)
 
@@ -534,8 +536,8 @@ def backup_remove_curmirror_local():
 	if curmir_incs[0].getinctime() < curmir_incs[1].getinctime():
 		older_inc = curmir_incs[0]
 	else: older_inc = curmir_incs[1]
-
-	C.sync() # Make sure everything is written before curmirror is removed
+	if Globals.do_fsync:
+		C.sync() # Make sure everything is written before curmirror is removed
 	older_inc.delete()
 
 

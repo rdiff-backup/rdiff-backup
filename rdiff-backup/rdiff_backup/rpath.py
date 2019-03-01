@@ -1284,8 +1284,9 @@ class RPath(RORPath):
 		This can be useful for directories.
 
 		"""
-		if not fp: self.conn.rpath.RPath.fsync_local(self)
-		else: os.fsync(fp.fileno())
+		if Globals.do_fsync:
+			if not fp: self.conn.rpath.RPath.fsync_local(self)
+			else: os.fsync(fp.fileno())
 
 	def fsync_local(self, thunk = None):
 		"""fsync current file, run locally
@@ -1294,6 +1295,7 @@ class RPath(RORPath):
 		the file's file descriptor.
 
 		"""
+		assert Globals.do_fsync
 		assert self.conn is Globals.local_connection
 		try:
 			fd = os.open(self.path, os.O_RDONLY)

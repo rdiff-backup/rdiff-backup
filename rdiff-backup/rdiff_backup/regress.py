@@ -71,7 +71,8 @@ def Regress(mirror_rp):
 	for rf in iterate_meta_rfs(mirror_rp, inc_rpath): ITR(rf.index, rf)
 	ITR.Finish()
 	if former_current_mirror_rp:
-		C.sync() # Sync first, since we are marking dest dir as good now
+		if Globals.do_fsync:
+			C.sync() # Sync first, since we are marking dest dir as good now
 		former_current_mirror_rp.delete()
 
 def set_regress_time():
