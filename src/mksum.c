@@ -20,7 +20,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/** \file mksum.c Generate file signatures.
+/** \file mksum.c
+ * Generate file signatures.
  *
  * Generating checksums is pretty easy, since we can always just process
  * whatever data is available. When a whole block has arrived, or we've reached

@@ -22,7 +22,7 @@
 #include "mdfour.h"
 #include "rollsum.h"
 
-/** \struct rs_job The contents of this structure are private. */
+/** The contents of this structure are private. */
 struct rs_job {
     int dogtag;
 

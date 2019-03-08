@@ -27,7 +27,8 @@
                       |    -- Revised^5 Report on Scheme
                       */
 
-/** \file stream.c Manage librsync streams of IO.
+/** \file stream.c
+ * Manage librsync streams of IO.
  *
  * See \sa scoop.c and \sa tube.c for related code for input and output
  * respectively.

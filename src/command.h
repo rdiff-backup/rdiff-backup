@@ -20,7 +20,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/** \file command.h Types of commands present in the encoding stream.
+/** \file command.h
+ * Types of commands present in the encoding stream.
  *
  * The vague idea is that eventually this file will be more abstract than
  * protocol.h, but it's not clear that will ever be required. */

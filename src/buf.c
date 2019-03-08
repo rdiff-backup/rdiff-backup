@@ -23,8 +23,8 @@
                                | Pick a window, Jimmy, you're leaving.
                                */
 
-/** \file buf.c Buffers that map between stdio file streams and librsync
- * streams.
+/** \file buf.c
+ * Buffers that map between stdio file streams and librsync streams.
  *
  * As the stream consumes input and produces output, it is refilled from
  * appropriate input and output FILEs. A dynamically allocated buffer of

@@ -17,7 +17,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/** \file stats.c stats reporting functions.
+/** \file stats.c
+ * stats reporting functions.
  *
  * \todo Other things to show in statistics: number of input and output bytes,
  * number of times we blocked waiting for input or output, number of blocks. */

@@ -28,7 +28,8 @@
 				     |    -- http://abc.net.au/thegames/
 				     */
 
-/** \file prototab.h Delta file commands. */
+/** \file prototab.h
+ * Delta file commands. */
 
 typedef struct rs_prototab_ent {
     enum rs_op_kind kind;

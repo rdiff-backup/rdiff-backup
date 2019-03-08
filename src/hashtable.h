@@ -23,7 +23,8 @@
 #  include <assert.h>
 #  include <stdlib.h>
 
-/** \file hashtable.h A generic open addressing hashtable.
+/** \file hashtable.h
+ * A generic open addressing hashtable.
  *
  * This is a minimal hashtable containing pointers to arbitrary entries with
  * configurable hashtable size and support for custom hash() and cmp() methods.

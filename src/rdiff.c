@@ -26,7 +26,8 @@
                                |              -- Harold Bloom
                                */
 
-/** \file rdiff.c -- Command-line network-delta tool.
+/** \file rdiff.c
+ * Command-line network-delta tool.
  *
  * \todo Add a -z option to gzip/gunzip patches. This would be somewhat useful,
  * but more importantly a good test of the streaming API. Also add -I for

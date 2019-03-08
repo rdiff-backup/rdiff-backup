@@ -21,7 +21,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/** \file mdfour.c MD4 message digest algorithm.
+/** \file mdfour.c
+ * MD4 message digest algorithm.
  *
  * \todo Perhaps use the MD4 routine from OpenSSL if it's installed. It's
  * probably not worth the trouble.
@@ -75,7 +76,9 @@ static void rs_mdfour_block(rs_mdfour_t *md, void const *p);
  * find an mdfour implementation already on the system (e.g. in OpenSSL) then
  * we should use it instead of our own?
  *
- * \param X A series of integer, read little-endian from the file. */
+ * \param *m An rs_mdfour_t instance to accumulate with.
+ *
+ * \param *p An array of uint32 integers, as read little-endian from the file. */
 static void rs_mdfour64(rs_mdfour_t *m, const void *p)
 {
     uint32_t AA, BB, CC, DD;

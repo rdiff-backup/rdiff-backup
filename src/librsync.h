@@ -27,8 +27,8 @@
                                |        -- Henrik Ibsen
                                */
 
-/** \file librsync.h Public header for librsync. */
-
+/** \file librsync.h
+ * Public header for librsync. */
 #ifndef _RSYNC_H
 #  define _RSYNC_H
 
@@ -108,7 +108,7 @@ typedef enum {
     RS_LOG_DEBUG = 7            /**< Debug-level messages */
 } rs_loglevel;
 
-/** \typedef rs_trace_fn_t Callback to write out log messages.
+/** Callback to write out log messages.
  *
  * \param level a syslog level.
  *
@@ -155,7 +155,7 @@ size_t rs_unbase64(char *s);
 /** Encode a buffer as base64. */
 void rs_base64(unsigned char const *buf, int n, char *out);
 
-/** \enum rs_result Return codes from nonblocking rsync operations.
+/** Return codes from nonblocking rsync operations.
  *
  * \sa rs_strerror() \sa api_callbacks */
 typedef enum rs_result {
@@ -211,9 +211,7 @@ typedef struct rs_stats {
     time_t start, end;
 } rs_stats_t;
 
-/** \typedef struct rs_mdfour rs_mdfour_t
- *
- * \brief MD4 message-digest accumulator.
+/** MD4 message-digest accumulator.
  *
  * \sa rs_mdfour(), rs_mdfour_begin(), rs_mdfour_update(), rs_mdfour_result() */
 typedef struct rs_mdfour rs_mdfour_t;
@@ -259,7 +257,7 @@ char *rs_format_stats(rs_stats_t const *stats, char *buf, size_t size);
  * \sa \ref api_stats \sa \ref api_trace */
 int rs_log_stats(rs_stats_t const *stats);
 
-/** \typedef rs_signature_t */
+/** The signature datastructure type. */
 typedef struct rs_signature rs_signature_t;
 
 /** Deep deallocation of checksums. */
