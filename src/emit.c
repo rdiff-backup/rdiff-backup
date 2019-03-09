@@ -19,7 +19,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/** \file emit.c encoding output routines.
+/** \file emit.c
+ * encoding output routines.
  *
  * \todo Pluggable encoding formats: gdiff-style, rsync 24, ed (text), Delta
  * HTTP. */

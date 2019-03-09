@@ -26,8 +26,9 @@
                                  | MINING!!
                                  */
 
-/** \file delta.c -- Generate in streaming mode an rsync delta given a set of
- * signatures, and a new file.
+/** \file delta.c
+ * Generate in streaming mode an rsync delta given a set of signatures, and a
+ * new file.
  *
  * The size of blocks for signature generation is determined by the block size
  * in the incoming signature.

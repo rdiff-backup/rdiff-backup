@@ -25,7 +25,8 @@
                                | sheltering.
                                */
 
-/** \file job.c Generic state-machine interface.
+/** \file job.c
+ * Generic state-machine interface.
  *
  * The point of this is that we need to be able to suspend and resume
  * processing at any point at which the buffers may block.

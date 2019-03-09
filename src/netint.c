@@ -27,7 +27,8 @@
                              |        -- Sun Microsystems
                              */
 
-/** \file netint.c Network-byte-order output to the tube.
+/** \file netint.c
+ * Network-byte-order output to the tube.
  *
  * All the `suck' routines return a result code. The most common values are
  * RS_DONE if they have enough data, or RS_BLOCKED if there is not enough input

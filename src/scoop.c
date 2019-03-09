@@ -25,7 +25,8 @@
                                |   -- Shihad, `The General Electric'.
                                */
 
-/** \file scoop.c This file deals with readahead from caller-supplied buffers.
+/** \file scoop.c
+ * This file deals with readahead from caller-supplied buffers.
  *
  * Many functions require a certain minimum amount of input to do their
  * processing. For example, to calculate a strong checksum of a block we need
@@ -182,8 +183,12 @@ rs_result rs_scoop_readahead(rs_job_t *job, size_t len, void **ptr)
 
 /** Read LEN bytes if possible, and remove them from the input scoop.
  *
- * \param ptr will be updated to point to a read-only buffer holding the data,
- * if enough is available.
+ * \param *job An rs_job_t pointer to the job instance.
+ *
+ * \param len The length of the data in the ptr buffer.
+ *
+ * \param **ptr will be updated to point to a read-only buffer holding the
+ * data, if enough is available.
  *
  * \return RS_DONE if there was enough data, RS_BLOCKED if there was not enough
  * data yet, or RS_INPUT_ENDED if there was not enough data and at EOF. */
@@ -198,6 +203,8 @@ rs_result rs_scoop_read(rs_job_t *job, size_t len, void **ptr)
 }
 
 /** Read whatever data remains in the input stream.
+ *
+ * \param *job The rs_job_t instance the job instance.
  *
  * \param *len will be updated to the length of the available data.
  *

@@ -27,6 +27,10 @@ latex
 Testing
 *.user
 
+# CMake generated Doxygen files
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake
+
 # Editor temp files
 .sw?
 .*.sw?

@@ -35,17 +35,18 @@ The preferred style for docbook comments is javadoc with autobrief as
 follows;
 
 ```C
-/** \file file.c Brief summary paragraph.
+/** /file file.c
+  * Brief summary paragraph.
   *
   * With blank line paragraph delimiters and leading stars.
   *
-  * \param foo parameter descriptions...
+  * /param foo parameter descriptions...
   *
-  * \param bar ...in separate blank-line delimited paragraphs.
+  * /param bar ...in separate blank-line delimited paragraphs.
   *
-  * Example:\code
+  * Example:/code
   *  code blocks that will never be reformated.
-  * \endcode
+  * /endcode
   *
   * Without blank-line comment delimiters. */
 

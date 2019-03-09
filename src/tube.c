@@ -29,8 +29,9 @@
                                |   -- Popular Mechanics, March 1949
                                */
 
-/** \file tube.c A somewhat elastic but fairly small buffer for data passing
- * through a stream.
+/** \file tube.c
+ * A somewhat elastic but fairly small buffer for data passing through a
+ * stream.
  *
  * In most cases the iter can adjust to send just as much data will fit. In
  * some cases that would be too complicated, because it has to transmit an

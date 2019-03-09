@@ -20,7 +20,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/** \file readsums.c Load signatures from a file. */
+/** \file readsums.c
+ * Load signatures from a file. */
 
 #include "config.h"
 

@@ -20,7 +20,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/** \file prototab.c Delta file commands.
+/** \file prototab.c
+ * Delta file commands.
  *
  * This file defines an array mapping command IDs to the operation kind,
  * implied literal value, and length of the first and second parameters. The
