@@ -430,13 +430,30 @@ static PyMethodDef CMethods[] = {
   {NULL, NULL, 0, NULL}
 };
 
-void initC(void)
+static struct PyModuleDef CModuledef = {
+  PyModuleDef_HEAD_INIT,
+  "C",                 /* m_name */
+  "C wrapper module",  /* m_doc */
+  -1,                  /* m_size */
+  CMethods,            /* m_methods */
+  NULL,                /* m_reload */
+  NULL,                /* m_traverse */
+  NULL,                /* m_clear */
+  NULL,                /* m_free */
+};
+
+PyMODINIT_FUNC PyInit_C(void)
 {
   PyObject *m, *d;
 
-  m = Py_InitModule("C", CMethods);
+  m = PyModule_Create(&CModuledef);
+  if (m == NULL)
+    return NULL;
+
   d = PyModule_GetDict(m);
   UnknownFileTypeError = PyErr_NewException("C.UnknownFileTypeError",
 											NULL, NULL);
   PyDict_SetItemString(d, "UnknownFileTypeError", UnknownFileTypeError);
+
+  return m;
 }
