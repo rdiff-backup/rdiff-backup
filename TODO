@@ -13,10 +13,11 @@ Look into sparse file support (requested by Stelios K. Kyriacou)
 
 Look at Kent Borg's suggestion for restore options and digests.
 
+Rename the "C" module into something more meaningful.
+
 ---------[ Long term ]---------------------------------------
 
 Think about adding Gaudet's idea for keeping track of renamed files.
 
 Look into different inode generation techniques (see treescan, Dean
 Gaudet's other post).
-
