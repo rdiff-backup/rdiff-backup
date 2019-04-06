@@ -114,24 +114,24 @@ static PyObject *c_make_file_dict(self, args)
   size = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_size);
   inode = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_ino);
 #else
-  size = PyInt_FromLong(sbuf.st_size);
-  inode = PyInt_FromLong((long)sbuf.st_ino);
+  size = PyLong_FromLong(sbuf.st_size);
+  inode = PyLong_FromLong((long)sbuf.st_ino);
 #endif /* HAVE_LARGEFILE_SUPPORT */
   mode = (long)sbuf.st_mode;
   perms = mode & 07777;
 #if defined(HAVE_LONG_LONG)
   devloc = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_dev);
 #else
-  devloc = PyInt_FromLong((long)sbuf.st_dev);
+  devloc = PyLong_FromLong((long)sbuf.st_dev);
 #endif
 #if SIZEOF_TIME_T > SIZEOF_LONG
   mtime = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_mtime);
   atime = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_atime);
   ctime = PyLong_FromLongLong((PY_LONG_LONG)sbuf.st_ctime);
 #else
-  mtime = PyInt_FromLong((long)sbuf.st_mtime);
-  atime = PyInt_FromLong((long)sbuf.st_atime);
-  ctime = PyInt_FromLong((long)sbuf.st_ctime);
+  mtime = PyLong_FromLong((long)sbuf.st_mtime);
+  atime = PyLong_FromLong((long)sbuf.st_atime);
+  ctime = PyLong_FromLong((long)sbuf.st_ctime);
 #endif
 
   /* Build return dictionary from stat struct */
@@ -181,7 +181,7 @@ static PyObject *c_make_file_dict(self, args)
 	PyObject *major_num = PyLong_FromLongLong(major(devnums));
 #else
 	long int devnums = (long)sbuf.st_dev;
-	PyObject *major_num = PyInt_FromLong(major(devnums));
+	PyObject *major_num = PyLong_FromLong(major(devnums));
 #endif
 	int minor_num = (int)(minor(devnums));
 	if S_ISCHR(mode) strcpy(devtype, "c");
