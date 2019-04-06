@@ -464,7 +464,7 @@ static PyMethodDef _librsyncMethods[] = {
   {NULL, NULL, 0, NULL}
 };
 
-void init_librsync(void)
+PyMODINIT_FUNC PyInit__librsync(void)
 {
   PyObject *m, *d;
 
@@ -473,6 +473,9 @@ void init_librsync(void)
   static struct PyModuleDef librsync_def = {
             PyModuleDef_HEAD_INIT, "_librsync", "RSync Lib", -1, _librsyncMethods, };
   m = PyModule_Create(&librsync_def);
+  if (m == NULL)
+    return NULL;
+
   d = PyModule_GetDict(m);
   librsyncError = PyErr_NewException("_librsync.librsyncError", NULL, NULL);
   PyDict_SetItemString(d, "librsyncError", librsyncError);
@@ -480,4 +483,6 @@ void init_librsync(void)
 					   Py_BuildValue("l", (long)RS_JOB_BLOCKSIZE));
   PyDict_SetItemString(d, "RS_DEFAULT_BLOCK_LEN",
 					   Py_BuildValue("l", (long)RS_DEFAULT_BLOCK_LEN));
+
+  return m;
 }
