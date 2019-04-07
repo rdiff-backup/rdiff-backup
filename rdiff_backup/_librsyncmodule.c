@@ -116,9 +116,13 @@ static PyMethodDef _librsync_sigmaker_methods[] = {
 };
 
 static PyObject *
-_librsync_sigmaker_getattr(_librsync_SigMakerObject *sm,
-											 char *name)
+_librsync_sigmaker_getattro(_librsync_SigMakerObject *sm, PyObject *nameobj)
 {
+  /* transform bitearray object into string */
+  char *name = "";
+  if (PyByteArray_Check(nameobj))
+    name = PyByteArray_AsString(nameobj);
+
   if (sm->x_attr != NULL) {
 	PyObject *v = PyDict_GetItemString(sm->x_attr, name);
 	if (v != NULL) {
@@ -126,7 +130,7 @@ _librsync_sigmaker_getattr(_librsync_SigMakerObject *sm,
 	  return v;
 	}
   }
-  return Py_FindMethod(_librsync_sigmaker_methods, (PyObject *)sm, name);
+  return PyObject_GenericGetAttr((PyObject*) sm, nameobj);
 }
 
 static int
@@ -154,7 +158,7 @@ static PyTypeObject _librsync_SigMakerType = {
   0,
   _librsync_sigmaker_dealloc, /*tp_dealloc*/
   0,          /*tp_print*/
-  (getattrfunc)_librsync_sigmaker_getattr, /*tp_getattr*/
+  0,          /*tp_getattr*/
   (setattrfunc)_librsync_sigmaker_setattr, /*tp_setattr*/
   0,          /*tp_compare*/
   0,          /*tp_repr*/
@@ -162,6 +166,21 @@ static PyTypeObject _librsync_SigMakerType = {
   0,          /*tp_as_sequence*/
   0,          /*tp_as_mapping*/
   0,          /*tp_hash */
+  0,          /* tp_call */
+  0,          /* tp_str */
+  (getattrofunc)_librsync_sigmaker_getattro, /* tp_getattro */
+  0,          /* tp_setattro */
+  0,          /* tp_as_buffer */
+  Py_TPFLAGS_DEFAULT, /* tp_flags */
+  0,          /* tp_doc */
+  0,          /* tp_traverse */
+  0,          /* tp_clear */
+  0,          /* tp_richcompare */
+  0,          /* tp_weaklistoffset */
+  0,          /* tp_iter */
+  0,          /* tp_iternext */
+  _librsync_sigmaker_methods, /* tp_methods */
+  0,          /* tp_members */
 };
 
 
@@ -268,8 +287,13 @@ static PyMethodDef _librsync_deltamaker_methods[] = {
 };
 
 static PyObject *
-_librsync_deltamaker_getattr(_librsync_DeltaMakerObject *dm, char *name)
+_librsync_deltamaker_getattro(_librsync_DeltaMakerObject *dm, PyObject *nameobj)
 {
+  /* transform bytearray object into string */
+  char *name = "";
+  if (PyByteArray_Check(nameobj))
+    name = PyByteArray_AsString(nameobj);
+
   if (dm->x_attr != NULL) {
 	PyObject *v = PyDict_GetItemString(dm->x_attr, name);
 	if (v != NULL) {
@@ -277,7 +301,7 @@ _librsync_deltamaker_getattr(_librsync_DeltaMakerObject *dm, char *name)
 	  return v;
 	}
   }
-  return Py_FindMethod(_librsync_deltamaker_methods, (PyObject *)dm, name);
+  return PyObject_GenericGetAttr((PyObject*) dm, nameobj);
 }
 
 static int
@@ -305,7 +329,7 @@ static PyTypeObject _librsync_DeltaMakerType = {
   0,
   _librsync_deltamaker_dealloc, /*tp_dealloc*/
   0,          /*tp_print*/
-  (getattrfunc)_librsync_deltamaker_getattr, /*tp_getattr*/
+  0,          /*tp_getattr*/
   (setattrfunc)_librsync_deltamaker_setattr, /*tp_setattr*/
   0,          /*tp_compare*/
   0,          /*tp_repr*/
@@ -313,6 +337,21 @@ static PyTypeObject _librsync_DeltaMakerType = {
   0,          /*tp_as_sequence*/
   0,          /*tp_as_mapping*/
   0,          /*tp_hash */
+  0,          /* tp_call */
+  0,          /* tp_str */
+  (getattrofunc)_librsync_deltamaker_getattro, /* tp_getattro */
+  0,          /* tp_setattro */
+  0,          /* tp_as_buffer */
+  Py_TPFLAGS_DEFAULT, /* tp_flags */
+  0,          /* tp_doc */
+  0,          /* tp_traverse */
+  0,          /* tp_clear */
+  0,          /* tp_richcompare */
+  0,          /* tp_weaklistoffset */
+  0,          /* tp_iter */
+  0,          /* tp_iternext */
+  _librsync_deltamaker_methods, /* tp_methods */
+  0,          /* tp_members */
 };
 
 
@@ -404,8 +443,13 @@ static PyMethodDef _librsync_patchmaker_methods[] = {
 };
 
 static PyObject *
-_librsync_patchmaker_getattr(_librsync_PatchMakerObject *pm, char *name)
+_librsync_patchmaker_getattro(_librsync_PatchMakerObject *pm, PyObject *nameobj)
 {
+  /* transform bytearray object into string */
+  char *name = "";
+  if (PyByteArray_Check(nameobj))
+    name = PyByteArray_AsString(nameobj);
+
   if (pm->x_attr != NULL) {
 	PyObject *v = PyDict_GetItemString(pm->x_attr, name);
 	if (v != NULL) {
@@ -413,7 +457,7 @@ _librsync_patchmaker_getattr(_librsync_PatchMakerObject *pm, char *name)
 	  return v;
 	}
   }
-  return Py_FindMethod(_librsync_patchmaker_methods, (PyObject *)pm, name);
+  return PyObject_GenericGetAttr((PyObject*) pm, nameobj);
 }
 
 static int
@@ -441,7 +485,7 @@ static PyTypeObject _librsync_PatchMakerType = {
   0,
   _librsync_patchmaker_dealloc, /*tp_dealloc*/
   0,          /*tp_print*/
-  (getattrfunc)_librsync_patchmaker_getattr, /*tp_getattr*/
+  0,          /*tp_getattr*/
   (setattrfunc)_librsync_patchmaker_setattr, /*tp_setattr*/
   0,          /*tp_compare*/
   0,          /*tp_repr*/
@@ -449,6 +493,21 @@ static PyTypeObject _librsync_PatchMakerType = {
   0,          /*tp_as_sequence*/
   0,          /*tp_as_mapping*/
   0,          /*tp_hash */
+  0,          /* tp_call */
+  0,          /* tp_str */
+  (getattrofunc)_librsync_patchmaker_getattro, /* tp_getattro */
+  0,          /* tp_setattro */
+  0,          /* tp_as_buffer */
+  Py_TPFLAGS_DEFAULT, /* tp_flags */
+  0,          /* tp_doc */
+  0,          /* tp_traverse */
+  0,          /* tp_clear */
+  0,          /* tp_richcompare */
+  0,          /* tp_weaklistoffset */
+  0,          /* tp_iter */
+  0,          /* tp_iternext */
+  _librsync_patchmaker_methods, /* tp_methods */
+  0,          /* tp_members */
 };
 
 
