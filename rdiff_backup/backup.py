@@ -54,6 +54,7 @@ def Mirror_and_increment(src_rpath, dest_rpath, inc_rpath):
 class SourceStruct:
 	"""Hold info used on source side when backing up"""
 	_source_select = None # will be set to source Select iterator
+	@classmethod
 	def set_source_select(cls, rpath, tuplelist, *filelists):
 		"""Initialize select object using tuplelist
 
@@ -73,10 +74,12 @@ class SourceStruct:
 		cls._source_select = rorpiter.CacheIndexable(sel, cache_size)
 		Globals.set('select_mirror', sel)
 
+	@classmethod
 	def get_source_select(cls):
 		"""Return source select iterator, set by set_source_select"""
 		return cls._source_select
 
+	@classmethod
 	def get_diffs(cls, dest_sigiter):
 		"""Return diffs of any files with signature in dest_sigiter"""
 		source_rps = cls._source_select
@@ -125,11 +128,10 @@ class SourceStruct:
 				diff_rorp.set_attached_filetype('snapshot')
 			yield diff_rorp
 
-static.MakeClass(SourceStruct)
-
 
 class DestinationStruct:
 	"""Hold info used by destination side when backing up"""
+	@classmethod
 	def get_dest_select(cls, rpath, use_metadata = 1):
 		"""Return destination select rorpath iterator
 
@@ -149,6 +151,7 @@ class DestinationStruct:
 			if rorp_iter: return rorp_iter
 		return get_iter_from_fs()
 
+	@classmethod
 	def set_rorp_cache(cls, baserp, source_iter, for_increment):
 		"""Initialize cls.CCPP, the destination rorp cache
 
@@ -162,6 +165,7 @@ class DestinationStruct:
 			collated, Globals.pipeline_max_length*4, baserp)
 		# pipeline len adds some leeway over just*3 (to and from and back)
 		
+	@classmethod
 	def get_sigs(cls, dest_base_rpath):
 		"""Yield signatures of any changed destination files
 
@@ -188,6 +192,7 @@ class DestinationStruct:
 					cls.CCPP.flag_changed(index)
 					yield sig
 
+	@classmethod
 	def get_one_sig(cls, dest_base_rpath, index, src_rorp, dest_rorp):
 		"""Return a signature given source and destination rorps"""
 		if (Globals.preserve_hardlinks and src_rorp and
@@ -204,6 +209,7 @@ class DestinationStruct:
 		else: dest_sig = rpath.RORPath(index)
 		return dest_sig
 
+	@classmethod
 	def get_one_sig_fp(cls, dest_rp):
 		"""Return a signature fp of given index, corresponding to reg file"""
 		if not dest_rp.isreg():
@@ -232,6 +238,7 @@ class DestinationStruct:
 			else:
 				raise
 
+	@classmethod
 	def patch(cls, dest_rpath, source_diffiter, start_index = ()):
 		"""Patch dest_rpath with an rorpiter of diffs"""
 		ITR = rorpiter.IterTreeReducer(PatchITRB, [dest_rpath, cls.CCPP])
@@ -242,6 +249,7 @@ class DestinationStruct:
 		cls.CCPP.close()
 		dest_rpath.setdata()
 
+	@classmethod
 	def patch_and_increment(cls, dest_rpath, source_diffiter, inc_rpath):
 		"""Patch dest_rpath with rorpiter of diffs and write increments"""
 		ITR = rorpiter.IterTreeReducer(IncrementITRB,
@@ -252,8 +260,6 @@ class DestinationStruct:
 		ITR.Finish()
 		cls.CCPP.close()
 		dest_rpath.setdata()
-
-static.MakeClass(DestinationStruct)
 
 
 class CacheCollatedPostProcess:

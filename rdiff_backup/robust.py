@@ -124,6 +124,7 @@ class SignalException(Exception):
 class TracebackArchive:
 	"""Save last 10 caught exceptions, so they can be printed if fatal"""
 	_traceback_strings = []
+	@classmethod
 	def add(cls, extra_args = []):
 		"""Add most recent exception to archived list
 
@@ -135,12 +136,11 @@ class TracebackArchive:
 		if len(cls._traceback_strings) > 10:
 			cls._traceback_strings = cls._traceback_strings[:10]
 
+	@classmethod
 	def log(cls):
 		"""Print all exception information to log file"""
 		if cls._traceback_strings:
 			log.Log("------------ Old traceback info -----------\n%s\n"
 					"-------------------------------------------" %
 					("\n".join(cls._traceback_strings),), 3)
-
-static.MakeClass(TracebackArchive)
 

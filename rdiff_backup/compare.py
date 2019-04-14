@@ -150,6 +150,7 @@ def log_success(src_rorp, mir_rorp = None):
 
 class RepoSide(restore.MirrorStruct):
 	"""On the repository side, comparing is like restoring"""
+	@classmethod
 	def init_and_get_iter(cls, mirror_rp, inc_rp, compare_time):
 		"""Return rorp iter at given compare time"""
 		cls.set_mirror_and_rest_times(compare_time)
@@ -157,6 +158,7 @@ class RepoSide(restore.MirrorStruct):
 		return cls.subtract_indicies(cls.mirror_base.index,
 									 cls.get_mirror_rorp_iter())
 
+	@classmethod
 	def attach_files(cls, src_iter, mirror_rp, inc_rp, compare_time):
 		"""Attach data to all the files that need checking
 
@@ -182,11 +184,10 @@ class RepoSide(restore.MirrorStruct):
 			if mir_rorp: yield mir_rorp
 			else: yield rpath.RORPath(index) # indicate deleted mir_rorp
 
-static.MakeClass(RepoSide)
-
 
 class DataSide(backup.SourceStruct):
 	"""On the side that has the current data, compare is like backing up"""
+	@classmethod
 	def compare_fast(cls, repo_iter):
 		"""Compare rorps (metadata only) quickly, return report iter"""
 		src_iter = cls.get_source_select()
@@ -195,6 +196,7 @@ class DataSide(backup.SourceStruct):
 			if report: yield report
 			else: log_success(src_rorp, mir_rorp)
 
+	@classmethod
 	def compare_hash(cls, repo_iter):
 		"""Like above, but also compare sha1 sums of any regular files"""
 		def hashes_changed(src_rp, mir_rorp):
@@ -214,6 +216,7 @@ class DataSide(backup.SourceStruct):
 			if report: yield report
 			else: log_success(src_rp, mir_rorp)
 
+	@classmethod
 	def compare_full(cls, src_root, repo_iter):
 		"""Given repo iter with full data attached, return report iter"""
 		def error_handler(exc, src_rp, repo_rorp):
@@ -231,8 +234,6 @@ class DataSide(backup.SourceStruct):
 			report = get_basic_report(src_rp, repo_rorp, data_changed)
 			if report: yield report
 			else: log_success(repo_rorp)
-			
-static.MakeClass(DataSide)
 
 
 class CompareReport:

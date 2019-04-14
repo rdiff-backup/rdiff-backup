@@ -102,11 +102,13 @@ class MirrorStruct:
 	# This will be set to the exact time to restore to (not restore_to_time)
 	_rest_time = None
 	
+	@classmethod
 	def set_mirror_and_rest_times(cls, restore_to_time):
 		"""Set class variabels _mirror_time and _rest_time on mirror conn"""
 		MirrorStruct._mirror_time = cls.get_mirror_time()
 		MirrorStruct._rest_time = cls.get_rest_time(restore_to_time)
 
+	@classmethod
 	def get_mirror_time(cls):
 		"""Return time (in seconds) of latest mirror"""
 		cur_mirror_incs = get_inclist(Globals.rbdir.append("current_mirror"))
@@ -116,6 +118,7 @@ class MirrorStruct:
 			log.Log("Warning, two different times for current mirror found", 2)
 		return cur_mirror_incs[0].getinctime()
 
+	@classmethod
 	def get_rest_time(cls, restore_to_time):
 		"""Return older time, if restore_to_time is in between two inc times
 
@@ -136,6 +139,7 @@ class MirrorStruct:
 		else: # restore time older than oldest increment, just return that
 			return min(inctimes)
 
+	@classmethod
 	def get_increment_times(cls, rp = None):
 		"""Return list of times of backups, including current mirror
 
@@ -154,6 +158,7 @@ class MirrorStruct:
 		return_list.sort()
 		return return_list
 
+	@classmethod
 	def initialize_rf_cache(cls, mirror_base, inc_base):
 		"""Set cls.rf_cache to CachedRF object"""
 		inc_list = get_inclist(inc_base)
@@ -162,10 +167,12 @@ class MirrorStruct:
 		cls.root_rf = rf
 		cls.rf_cache = CachedRF(rf)
 
+	@classmethod
 	def close_rf_cache(cls):
 		"""Run anything remaining on CachedRF object"""
 		cls.rf_cache.close()
 
+	@classmethod
 	def get_mirror_rorp_iter(cls, rest_time = None, require_metadata = None):
 		"""Return iter of mirror rps at given restore time
 
@@ -192,12 +199,14 @@ class MirrorStruct:
 			rorp_iter = selection.FilterIter(cls._select, rorp_iter)
 		return rorp_iter
 
+	@classmethod
 	def set_mirror_select(cls, target_rp, select_opts, *filelists):
 		"""Initialize the mirror selection object"""
 		assert select_opts, "If no selection options, don't use selector"
 		cls._select = selection.Select(target_rp)
 		cls._select.ParseArgs(select_opts, filelists)
 
+	@classmethod
 	def get_rorp_iter_from_rf(cls, rf):
 		"""Recursively yield mirror rorps from rf"""
 		rorp = rf.get_attribs()
@@ -207,6 +216,7 @@ class MirrorStruct:
 				for attribs in cls.get_rorp_iter_from_rf(sub_rf):
 					yield attribs
 
+	@classmethod
 	def subtract_indicies(cls, index, rorp_iter):
 		"""Subtract index from index of each rorp in rorp_iter
 
@@ -222,6 +232,7 @@ class MirrorStruct:
 				yield rorp
 		return get_iter()
 
+	@classmethod
 	def get_diffs(cls, target_iter):
 		"""Given rorp iter of target files, return diffs
 
@@ -235,6 +246,7 @@ class MirrorStruct:
 		collated = rorpiter.Collate2Iters(mir_iter, target_iter)
 		return cls.get_diffs_from_collated(collated)
 
+	@classmethod
 	def get_diffs_from_collated(cls, collated):
 		"""Get diff iterator from collated"""
 		for mir_rorp, target_rorp in collated:
@@ -250,6 +262,7 @@ class MirrorStruct:
 				Hardlink.del_rorp(mir_rorp)
 			if diff: yield diff
 
+	@classmethod
 	def get_diff(cls, mir_rorp, target_rorp):
 		"""Get a diff for mir_rorp at time"""
 		if not mir_rorp: mir_rorp = rpath.RORPath(target_rorp.index)
@@ -262,22 +275,23 @@ class MirrorStruct:
 		mir_rorp.set_attached_filetype('snapshot')
 		return mir_rorp
 
-static.MakeClass(MirrorStruct)
-
 
 class TargetStruct:
 	"""Hold functions to be run on the target side when restoring"""
 	_select = None
+	@classmethod
 	def set_target_select(cls, target, select_opts, *filelists):
 		"""Return a selection object iterating the rorpaths in target"""
 		cls._select = selection.Select(target)
 		cls._select.ParseArgs(select_opts, filelists)
 		cls._select.set_iter()
 
+	@classmethod
 	def get_initial_iter(cls, target):
 		"""Return selector previously set with set_initial_iter"""
 		return cls._select or selection.Select(target).set_iter()
 
+	@classmethod
 	def patch(cls, target, diff_iter):
 		"""Patch target with the diffs from the mirror side
 
@@ -293,8 +307,6 @@ class TargetStruct:
 			ITR(diff.index, diff)
 		ITR.Finish()
 		target.setdata()
-
-static.MakeClass(TargetStruct)
 
 
 class CachedRF:

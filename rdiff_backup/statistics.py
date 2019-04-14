@@ -357,6 +357,7 @@ class FileStats:
 	"""Keep track of less detailed stats on file-by-file basis"""
 	_fileobj, _rp = None, None
 	_line_sep = None
+	@classmethod
 	def init(cls):
 		"""Open file stats object and prepare to write"""
 		assert not (cls._fileobj or cls._rp), (cls._fileobj, cls._rp)
@@ -371,6 +372,7 @@ class FileStats:
 		cls.write_docstring()
 		cls.line_buffer = []
 
+	@classmethod
 	def write_docstring(cls):
 		"""Write the first line (a documentation string) into file"""
 		cls._fileobj.write("# Format of each line in file statistics file:")
@@ -378,6 +380,7 @@ class FileStats:
 		cls._fileobj.write("# Filename Changed SourceSize MirrorSize "
 						   "IncrementSize" + cls._line_sep)
 
+	@classmethod
 	def update(cls, source_rorp, dest_rorp, changed, inc):
 		"""Update file stats with given information"""
 		if source_rorp: filename = source_rorp.get_indexpath()
@@ -389,12 +392,14 @@ class FileStats:
 		cls.line_buffer.append(line)
 		if len(cls.line_buffer) >= 100: cls.write_buffer()
 
+	@classmethod
 	def get_size(cls, rorp):
 		"""Return the size of rorp as string, or "NA" if not a regular file"""
 		if not rorp: return "NA"
 		if rorp.isreg(): return str(rorp.getsize())
 		else: return "0"
 
+	@classmethod
 	def write_buffer(cls):
 		"""Write buffer to file because buffer is full
 
@@ -407,6 +412,7 @@ class FileStats:
 		cls._fileobj.write(cls._line_sep.join(cls.line_buffer))
 		cls.line_buffer = []
 
+	@classmethod
 	def close(cls):
 		"""Close file stats file"""
 		assert cls._fileobj, cls._fileobj
@@ -414,4 +420,3 @@ class FileStats:
 		assert not cls._fileobj.close()
 		cls._fileobj = cls._rp = None
 
-static.MakeClass(FileStats)

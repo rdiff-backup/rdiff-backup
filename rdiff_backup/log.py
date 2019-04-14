@@ -227,6 +227,7 @@ class ErrorLog:
 
 	"""
 	_log_fileobj = None
+	@classmethod
 	def open(cls, time_string, compress = 1):
 		"""Open the error log, prepare for writing"""
 		if not Globals.isbackup_writer:
@@ -239,12 +240,14 @@ class ErrorLog:
 		if compress: cls._log_fileobj = rpath.MaybeGzip(base_rp)
 		else: cls._log_fileobj = base_rp.open("wb", compress = 0)
 
+	@classmethod
 	def isopen(cls):
 		"""True if the error log file is currently open"""
 		if Globals.isbackup_writer or not Globals.backup_writer:
 			return cls._log_fileobj is not None
 		else: return Globals.backup_writer.log.ErrorLog.isopen()
 
+	@classmethod
 	def write(cls, error_type, rp, exc):
 		"""Add line to log file indicating error exc with file rp"""
 		if not Globals.isbackup_writer:
@@ -258,6 +261,7 @@ class ErrorLog:
 			s += "\n"
 		cls._log_fileobj.write(s)
 
+	@classmethod
 	def get_indexpath(cls, obj):
 		"""Return filename for logging.  rp is a rpath, string, or tuple"""
 		try: return obj.get_indexpath()
@@ -265,6 +269,7 @@ class ErrorLog:
 			if type(obj) is tuple: return "/".join(obj)
 			else: return str(obj)
 
+	@classmethod
 	def write_if_open(cls, error_type, rp, exc):
 		"""Call cls.write(...) if error log open, only log otherwise"""
 		if not Globals.isbackup_writer and Globals.backup_writer:
@@ -273,6 +278,7 @@ class ErrorLog:
 		if cls.isopen(): cls.write(error_type, rp, exc)
 		else: Log(cls.get_log_string(error_type, rp, exc), 2)
 
+	@classmethod
 	def get_log_string(cls, error_type, rp, exc):
 		"""Return log string to put in error log"""
 		assert (error_type == "ListError" or error_type == "UpdateError" or
@@ -280,12 +286,11 @@ class ErrorLog:
 		str = "%s %s %s" % (error_type, cls.get_indexpath(rp), str(exc))
 		return str.encode('utf-8')
 
+	@classmethod
 	def close(cls):
 		"""Close the error log file"""
 		if not Globals.isbackup_writer:
 			return Globals.backup_writer.log.ErrorLog.close()
 		assert not cls._log_fileobj.close()
 		cls._log_fileobj = None
-
-static.MakeClass(ErrorLog)
 
