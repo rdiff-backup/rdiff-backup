@@ -26,7 +26,8 @@ try:
 except ImportError:
 	pass
 
-if __name__ == "__main__" and not globals().has_key('__no_execute__'):
+# the __no_execute__ flag is used for tests
+if __name__ == "__main__" and '__no_execute__' not in globals():
 	rdiff_backup.Main.error_check_Main(sys.argv[1:])
 
 
