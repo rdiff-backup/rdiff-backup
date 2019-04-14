@@ -19,7 +19,7 @@
 
 """Catch various exceptions given system call"""
 
-import errno, signal, exceptions, zlib
+import errno, signal, zlib
 from . import librsync, C, rpath, Globals, log, statistics, connection
 
 def check_common_error(error_handler, function, args = []):
@@ -69,7 +69,7 @@ def is_routine_fatal(exc):
 	an exit message.
 
 	"""
-	if isinstance(exc, exceptions.KeyboardInterrupt):
+	if isinstance(exc, KeyboardInterrupt):
 		return "User abort"
 	elif isinstance(exc, connection.ConnectionError):
 		return "Lost connection to the remote system"
