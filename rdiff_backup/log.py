@@ -96,7 +96,7 @@ class Logger:
 
 	def format(self, message, verbosity):
 		"""Format the message, possibly adding date information"""
-		if verbosity < 9: return message + "\n"
+		if verbosity < 9: return "%s\n" % message
 		else: return "%s  %s\n" % (time.asctime(time.localtime(time.time())),
 								   message)
 
@@ -138,13 +138,9 @@ class Logger:
 		if verbosity <= 2 or Globals.server: termfp = sys.stderr
 		else: termfp = sys.stdout
 		tmpstr = self.format(message, self.term_verbosity)
-		if type(tmpstr) != str:
+		if type(tmpstr) != str:  # transform bytes in string
 			tmpstr = str(tmpstr, 'utf-8')
-		try:
-			# Try to log as unicode, but fall back to ascii (for Windows)
-			termfp.write(tmpstr.encode('utf-8'))
-		except UnicodeDecodeError:
-			termfp.write(tmpstr.encode('ascii', 'replace'))
+		termfp.write(tmpstr)
 
 	def conn(self, direction, result, req_num):
 		"""Log some data on the connection
