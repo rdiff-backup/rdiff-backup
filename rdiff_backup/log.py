@@ -125,11 +125,11 @@ class Logger:
 		"""Write the message to the log file, if possible"""
 		if self.log_file_open:
 			if self.log_file_local:
-				str = self.format(message, self.verbosity)
-				if type(str) != str:
-					str = str(str, 'utf-8')
-				str = str.encode('utf-8')
-				self.logfp.write(str)
+				tmpstr = self.format(message, self.verbosity)
+				if type(tmpstr) != str:
+					tmpstr = str(tmpstr, 'utf-8')
+				tmpstr = tmpstr.encode('utf-8')
+				self.logfp.write(tmpstr)
 				self.logfp.flush()
 			else: self.log_file_conn.log.Log.log_to_file(message)
 
@@ -137,14 +137,14 @@ class Logger:
 		"""Write message to stdout/stderr"""
 		if verbosity <= 2 or Globals.server: termfp = sys.stderr
 		else: termfp = sys.stdout
-		str = self.format(message, self.term_verbosity)
-		if type(str) != str:
-			str = str(str, 'utf-8')
+		tmpstr = self.format(message, self.term_verbosity)
+		if type(tmpstr) != str:
+			tmpstr = str(tmpstr, 'utf-8')
 		try:
 			# Try to log as unicode, but fall back to ascii (for Windows)
-			termfp.write(str.encode('utf-8'))
+			termfp.write(tmpstr.encode('utf-8'))
 		except UnicodeDecodeError:
-			termfp.write(str.encode('ascii', 'replace'))
+			termfp.write(tmpstr.encode('ascii', 'replace'))
 
 	def conn(self, direction, result, req_num):
 		"""Log some data on the connection
@@ -283,8 +283,8 @@ class ErrorLog:
 		"""Return log string to put in error log"""
 		assert (error_type == "ListError" or error_type == "UpdateError" or
 				error_type == "SpecialFileError"), "Unknown type "+error_type
-		str = "%s %s %s" % (error_type, cls.get_indexpath(rp), str(exc))
-		return str.encode('utf-8')
+		tmpstr = "%s %s %s" % (error_type, cls.get_indexpath(rp), str(exc))
+		return tmpstr.encode('utf-8')
 
 	@classmethod
 	def close(cls):
