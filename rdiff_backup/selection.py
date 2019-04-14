@@ -505,16 +505,16 @@ probably isn't what you meant.""" %
 		"""Return a selection function matching all dev files"""
 		return self.gen_get_sf(rpath.RORPath.isdev, include, "device files")
 
- 	def symlinks_get_sf(self, include):
- 		"""Return a selection function matching all symlinks"""
+	def symlinks_get_sf(self, include):
+		"""Return a selection function matching all symlinks"""
 		return self.gen_get_sf(rpath.RORPath.issym, include, "symbolic links")
 
- 	def sockets_get_sf(self, include):
- 		"""Return a selection function matching all sockets"""
+	def sockets_get_sf(self, include):
+		"""Return a selection function matching all sockets"""
 		return self.gen_get_sf(rpath.RORPath.issock, include, "socket files")
 
- 	def fifos_get_sf(self, include):
- 		"""Return a selection function matching all fifos"""
+	def fifos_get_sf(self, include):
+		"""Return a selection function matching all fifos"""
 		return self.gen_get_sf(rpath.RORPath.isfifo, include, "fifo files")
 
 	def special_get_sf(self, include):

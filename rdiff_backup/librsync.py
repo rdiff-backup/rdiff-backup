@@ -94,7 +94,7 @@ class LikeFile:
 		assert not self.infile_eof
 		while len(self.inbuf) < blocksize:
 			new_in = self.infile.read(blocksize)
- 			if not new_in:
+			if not new_in:
 				self.infile_eof = 1
 				self.infile_closeval = self.infile.close()
 				self.infile_closed = 1
