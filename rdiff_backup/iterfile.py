@@ -20,7 +20,7 @@
 """Convert an iterator to a file object and vice-versa"""
 
 import pickle, array, types
-import Globals, C, robust, log, rpath
+from . import Globals, C, robust, log, rpath
 
 
 class IterFileException(Exception): pass

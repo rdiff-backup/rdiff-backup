@@ -22,7 +22,7 @@
 
 import getopt, sys, re, os, io, tempfile, time, errno
 from .log import Log, LoggerError, ErrorLog
-import Globals, Time, SetConnections, selection, robust, rpath, \
+from . import Globals, Time, SetConnections, selection, robust, rpath, \
 	   manage, backup, connection, restore, FilenameMapping, \
 	   Security, Hardlink, regress, C, fs_abilities, statistics, compare
 

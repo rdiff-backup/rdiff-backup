@@ -2,8 +2,9 @@
 
 """Demonstrate a memory leak in pysync/librsync"""
 
-import os, _librsync
-from .librsync import *
+import os
+import rdiff_backup._librsync
+from rdiff_backup.librsync import *
 
 os.chdir("/tmp")
 

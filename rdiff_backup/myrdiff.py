@@ -6,7 +6,9 @@ Useful for benchmarking and testing of librsync and _librsync.
 
 """
 
-import librsync, sys
+import sys
+import rdiff_backup.librsync
+
 blocksize = 32768
 
 def makesig(inpath, outpath):

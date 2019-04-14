@@ -8,7 +8,8 @@ statistics afterwards.
 """
 
 __no_execute__ = 1
-import sys, rdiff_backup.Main, profile, pstats
+import sys, profile, pstats
+import rdiff_backup.Main
 profile.run("rdiff_backup.Main.Main(%s)" % repr(sys.argv[1:]),
 			"profile-output")
 p = pstats.Stats("profile-output")

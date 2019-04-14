@@ -52,7 +52,8 @@ Two caveats:
 
 """
 
-import Globals, log, rpath, pickle, TempFile, os, restore
+import os
+from . import Globals, log, rpath, pickle, TempFile, restore
 
 # Holds an rpath of the journal directory, a file object, and then
 journal_dir_rp = None

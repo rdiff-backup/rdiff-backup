@@ -20,8 +20,8 @@
 """Generate and process aggregated backup information"""
 
 import re, os, time
-from . import Globals, Time, increment, log, static, metadata, rpath
 from functools import reduce
+from . import Globals, Time, increment, log, static, metadata, rpath
 
 class StatsException(Exception): pass
 

@@ -18,7 +18,8 @@
 # USA
 
 
-import C, metadata, re, rorpiter, rpath, log
+import re
+from . import C, metadata, rorpiter, rpath, log
 
 try:
 	from win32security import *
