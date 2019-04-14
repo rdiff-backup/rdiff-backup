@@ -21,40 +21,46 @@
 
 
 import os, stat, types
-from . import static
 
 
 class Iter:
 	"""Hold static methods for the manipulation of lazy iterators"""
 
+	@staticmethod
 	def filter(predicate, iterator):
 		"""Like filter in a lazy functional programming language"""
 		for i in iterator:
 			if predicate(i): yield i
 
+	@staticmethod
 	def map(function, iterator):
 		"""Like map in a lazy functional programming language"""
 		for i in iterator: yield function(i)
 
+	@staticmethod
 	def foreach(function, iterator):
 		"""Run function on each element in iterator"""
 		for i in iterator: function(i)
 
+	@staticmethod
 	def cat(*iters):
 		"""Lazily concatenate iterators"""
 		for iter in iters:
 			for i in iter: yield i
 
+	@staticmethod
 	def cat2(iter_of_iters):
 		"""Lazily concatenate iterators, iterated by big iterator"""
 		for iter in iter_of_iters:
 			for i in iter: yield i
 
+	@staticmethod
 	def empty(iter):
 		"""True if iterator has length 0"""
 		for i in iter: return None
 		return 1
 
+	@staticmethod
 	def equal(iter1, iter2, verbose = None, operator = lambda x, y: x == y):
 		"""True if iterator 1 has same elements as iterator 2
 
@@ -74,6 +80,7 @@ class Iter:
 		if verbose: print("End when i2 = %s" % (i2,))
 		return None
 
+	@staticmethod
 	def Or(iter):
 		"""True if any element in iterator is true.  Short circuiting"""
 		i = None
@@ -81,6 +88,7 @@ class Iter:
 			if i: return i
 		return i
 
+	@staticmethod
 	def And(iter):
 		"""True if all elements in iterator are true.  Short circuiting"""
 		i = 1
@@ -88,6 +96,7 @@ class Iter:
 			if not i: return i
 		return i
 
+	@staticmethod
 	def len(iter):
 		"""Return length of iterator"""
 		i = 0
@@ -96,12 +105,14 @@ class Iter:
 			except StopIteration: return i
 			i = i+1
 
+	@staticmethod
 	def foldr(f, default, iter):
 		"""foldr the "fundamental list recursion operator"?"""
 		try: next = next(iter)
 		except StopIteration: return default
 		return f(next, Iter.foldr(f, default, iter))
 
+	@staticmethod
 	def foldl(f, default, iter):
 		"""the fundamental list iteration operator.."""
 		while 1:
@@ -109,6 +120,7 @@ class Iter:
 			except StopIteration: return default
 			default = f(default, next)
 
+	@staticmethod
 	def multiplex(iter, num_of_forks, final_func = None, closing_func = None):
 		"""Split a single iterater into a number of streams
 
@@ -163,8 +175,6 @@ class Iter:
 			while(1): yield get_next(fork_num)
 
 		return tuple(map(make_iterator, list(range(num_of_forks))))
-
-static.MakeStatic(Iter)
 
 
 class IterMultiplex2:
