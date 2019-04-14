@@ -29,7 +29,7 @@ FSAbilities object describing it.
 
 import errno, os
 from . import Globals, log, TempFile, selection, robust, SetConnections, \
-	   static, FilenameMapping, win_acls, Time
+	   FilenameMapping, win_acls, Time
 
 class FSAbilities:
 	"""Store capabilities of given file system"""

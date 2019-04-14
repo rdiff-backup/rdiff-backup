@@ -56,7 +56,7 @@ field names and values.
 
 
 import re, gzip, os, binascii, codecs
-from . import log, Globals, rpath, Time, robust, increment, static, rorpiter
+from . import log, Globals, rpath, Time, robust, increment, rorpiter
 
 class ParsingError(Exception):
 	"""This is raised when bad or unparsable data is received"""

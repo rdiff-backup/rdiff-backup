@@ -21,7 +21,7 @@
 
 
 from .log import Log
-from . import Globals, Time, static, statistics, restore, selection, FilenameMapping
+from . import Globals, Time, statistics, restore, selection, FilenameMapping
 
 
 class ManageException(Exception): pass

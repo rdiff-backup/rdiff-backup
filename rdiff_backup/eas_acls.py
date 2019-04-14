@@ -30,7 +30,7 @@ access_control_lists.<time>.snapshot.
 import base64, errno, re
 try: import posix1e
 except ImportError: pass
-from . import static, Globals, eas_acls, connection, metadata, rorpiter, log, C, \
+from . import Globals, eas_acls, connection, metadata, rorpiter, log, C, \
 	   rpath, user_group
 
 # When an ACL gets dropped, put name in dropped_acl_names.  This is

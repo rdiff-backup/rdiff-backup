@@ -20,7 +20,7 @@
 """Invoke rdiff utility to make signatures, deltas, or patch"""
 
 import os, librsync
-from . import Globals, log, static, TempFile, rpath, hash
+from . import Globals, log, TempFile, rpath, hash
 
 
 def get_signature(rp, blocksize = None):

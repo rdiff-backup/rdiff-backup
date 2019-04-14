@@ -36,7 +36,7 @@ are dealing with are local or remote.
 """
 
 import os, stat, re, sys, shutil, gzip, socket, time, errno, codecs
-from . import Globals, Time, static, log, user_group, C
+from . import Globals, Time, log, user_group, C
 
 try:
 	import win32file, winnt

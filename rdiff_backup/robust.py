@@ -20,7 +20,7 @@
 """Catch various exceptions given system call"""
 
 import errno, signal, exceptions, zlib
-from . import librsync, C, static, rpath, Globals, log, statistics, connection
+from . import librsync, C, rpath, Globals, log, statistics, connection
 
 def check_common_error(error_handler, function, args = []):
 	"""Apply function to args, if error, run error_handler on exception

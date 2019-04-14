@@ -22,7 +22,7 @@
 
 import errno
 from . import Globals, metadata, rorpiter, TempFile, Hardlink, robust, increment, \
-	   rpath, static, log, selection, Time, Rdiff, statistics, iterfile, \
+	   rpath, log, selection, Time, Rdiff, statistics, iterfile, \
 	   hash, longname
 
 def Mirror(src_rpath, dest_rpath):

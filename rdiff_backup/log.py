@@ -20,7 +20,7 @@
 """Manage logging, displaying and recording messages with required verbosity"""
 
 import time, sys, traceback, types, re
-from . import Globals, static, rpath
+from . import Globals, rpath
 
 
 class LoggerError(Exception): pass

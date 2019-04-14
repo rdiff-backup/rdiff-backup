@@ -21,7 +21,7 @@
 
 import re, os, time
 from functools import reduce
-from . import Globals, Time, increment, log, static, metadata, rpath
+from . import Globals, Time, increment, log, metadata, rpath
 
 class StatsException(Exception): pass
 

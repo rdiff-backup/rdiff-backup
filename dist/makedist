@@ -116,7 +116,7 @@ def MakeTar(specfiles):
 					 "metadata.py", "Rdiff.py", "regress.py", "restore.py",
 					 "robust.py", "rorpiter.py", "rpath.py",
 					 "Security.py", "selection.py",
-					 "SetConnections.py", "static.py",
+					 "SetConnections.py",
 					 "statistics.py", "TempFile.py", "Time.py",
 					 "user_group.py", "win_acls.py"]:
 		shutil.copyfile(os.path.join(SourceDir, filename),

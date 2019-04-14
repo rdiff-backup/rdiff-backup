@@ -21,7 +21,7 @@
 
 
 import tempfile, os, io
-from . import static, rorpiter, FilenameMapping
+from . import rorpiter, FilenameMapping
 
 class RestoreError(Exception): pass
 
