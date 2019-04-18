@@ -284,8 +284,6 @@ def make_file_dict(filename):
 	"""
 	if os.name != 'nt':
 		try:
-			if type(filename) == str:
-				filename = filename.encode('utf-8')
 			return C.make_file_dict(filename)
 		except OSError as error:
 			# Unicode filenames should be process by the Python version 
