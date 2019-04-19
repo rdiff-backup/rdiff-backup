@@ -69,10 +69,10 @@ class SourceStruct:
 		"""
 		sel = selection.Select(rpath)
 		sel.ParseArgs(tuplelist, filelists)
-		sel.set_iter()
+		sel_iter = sel.set_iter()
 		cache_size = Globals.pipeline_max_length * 3 # to and from+leeway
-		cls._source_select = rorpiter.CacheIndexable(sel, cache_size)
-		Globals.set('select_mirror', sel)
+		cls._source_select = rorpiter.CacheIndexable(sel_iter, cache_size)
+		Globals.set('select_mirror', sel_iter)
 
 	@classmethod
 	def get_source_select(cls):
