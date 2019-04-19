@@ -426,8 +426,6 @@ class RORPath:
 		self.data = dir_rp.data.copy()
 		self.data['perms'] = 0o700
 
-	def __bool__(self): return 1
-
 	def __eq__(self, other):
 		"""True iff the two rorpaths are equivalent"""
 		if self.index != other.index: return None
