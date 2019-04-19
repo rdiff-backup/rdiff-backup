@@ -345,9 +345,10 @@ def check_pids(curmir_incs):
 	def pid_running(pid):
 		"""True if we know if process with pid is currently running"""
 		try: os.kill(pid, 0)
-		except OSError as exc:
-			if exc[0] == errno.ESRCH: return 0
-			else: log.Log("Warning: unable to check if PID %d still running" % (pid,), 2)
+		except ProcessLookupError as exc:  # errno.ESRCH - pid doesn't exist
+			return 0
+		except OSError as exc:  # any other OS error
+			log.Log("Warning: unable to check if PID %d still running" % (pid,), 2)
 		except AttributeError:
 			assert os.name == 'nt'
 			import win32api, win32con, pywintypes
