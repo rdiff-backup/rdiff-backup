@@ -338,7 +338,7 @@ def check_pids(curmir_incs):
 	pid_re = re.compile("^PID\s*([0-9]+)", re.I | re.M)
 	def extract_pid(curmir_rp):
 		"""Return process ID from a current mirror marker, if any"""
-		match = pid_re.search(curmir_rp.get_data())
+		match = pid_re.search(curmir_rp.get_string())
 		if not match: return None
 		else: return int(match.group(1))
 

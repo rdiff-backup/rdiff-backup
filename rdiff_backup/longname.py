@@ -81,7 +81,7 @@ def get_next_free():
 		"""Return next int free by reading the next_free file, or None"""
 		rp = get_long_rp(counter_filename)
 		if not rp.lstat(): return None
-		return int(rp.get_data())
+		return int(rp.get_string())
 
 	def write_next_free(i):
 		"""Write value i into the counter file"""

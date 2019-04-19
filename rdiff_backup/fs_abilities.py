@@ -779,7 +779,7 @@ class BackupSetGlobals(SetGlobals):
 			if actual_ets: se = se + "escape_trailing_spaces\n"
 			se_rp.write_string(se)
 		else:
-			se = se_rp.get_data().split("\n")
+			se = se_rp.get_string().split("\n")
 			actual_edd = ("escape_dos_devices" in se)
 			actual_ets = ("escape_trailing_spaces" in se)
 
@@ -840,7 +840,7 @@ class BackupSetGlobals(SetGlobals):
 			ctq_rp.write_string(actual_ctq)
 			return (actual_ctq, None)
 
-		if Globals.chars_to_quote is None: actual_ctq = ctq_rp.get_data()
+		if Globals.chars_to_quote is None: actual_ctq = ctq_rp.get_string()
 		else: actual_ctq = Globals.chars_to_quote # Globals override
 
 		if actual_ctq == suggested_ctq: return (actual_ctq, None)
@@ -901,7 +901,7 @@ class RestoreSetGlobals(SetGlobals):
 		rdiff-backup-data dir, just like chars_to_quote"""
 		se_rp = rbdir.append("special_escapes")
 		if se_rp.lstat():
-			se = se_rp.get_data().split("\n")
+			se = se_rp.get_string().split("\n")
 			actual_edd = ("escape_dos_devices" in se)
 			actual_ets = ("escape_trailing_spaces" in se)
 		else:
@@ -930,7 +930,7 @@ class RestoreSetGlobals(SetGlobals):
 		
 		ctq_rp = rbdir.append("chars_to_quote")
 		if ctq_rp.lstat():
-			SetConnections.UpdateGlobal("chars_to_quote", ctq_rp.get_data())
+			SetConnections.UpdateGlobal("chars_to_quote", ctq_rp.get_string())
 		else:
 			log.Log("Warning: chars_to_quote file not found,\n"
 					"assuming no quoting in backup repository.", 2)

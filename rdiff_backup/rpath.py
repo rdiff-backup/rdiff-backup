@@ -1320,9 +1320,16 @@ class RPath(RORPath):
 		self.fsync(fp)
 		if Globals.fsync_directories: self.get_parent_rp().fsync()
 
-	def get_data(self, compressed = None):
+	def get_bytes(self, compressed = None):
 		"""Open file as a regular file, read data, close, return data"""
 		fp = self.open("rb", compressed)
+		d = fp.read()
+		assert not fp.close()
+		return d
+
+	def get_string(self, compressed = None):
+		"""Open file as a regular file, read string, close, return string"""
+		fp = self.open("r", compressed)
 		s = fp.read()
 		assert not fp.close()
 		return s

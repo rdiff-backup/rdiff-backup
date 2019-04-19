@@ -180,7 +180,7 @@ class Entry:
 		if inclist: return inclist[0]
 		else: return None
 
-	def to_string(self):
+	def to_bytes(self):
 		"""Return string form of entry"""
 		return pickle.dumps({'index': self.index,
 							  'testfile_option': self.testfile_option,
@@ -191,15 +191,15 @@ class Entry:
 		"""Write the current entry into the journal"""
 		entry_rp = TempFile.new_in_dir(journal_dir_rp)
 		fp = entry_rp.open("wb")
-		fp.write(self.to_string())
+		fp.write(self.to_bytes())
 		entry_rp.fsync(fp)
 		assert not fp.close()
 		sync_journal()
 		self.entry_rp = entry_rp
 
-	def init_from_string(self, s):
-		"""Initialize values from string.  Return 0 if problem."""
-		try: val_dict = pickle.loads(s)
+	def init_from_bytes(self, b):
+		"""Initialize values from bytestream.  Return 0 if problem."""
+		try: val_dict = pickle.loads(b)
 		except pickle.UnpicklingError: return 0
 		try:
 			self.index = val_dict['index']
@@ -212,7 +212,7 @@ class Entry:
 	def init_from_rp(self, entry_rp):
 		"""Initialize values from an rpath.  Return 0 if problem"""
 		if not entry_rp.isreg(): return 0
-		success = self.init_from_string(entry_rp.get_data())
+		success = self.init_from_bytes(entry_rp.get_bytes())
 		if not success: return 0
 		self.entry_rp = entry_rp
 		return 1
