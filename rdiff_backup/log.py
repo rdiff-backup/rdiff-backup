@@ -126,9 +126,8 @@ class Logger:
 		if self.log_file_open:
 			if self.log_file_local:
 				tmpstr = self.format(message, self.verbosity)
-				if type(tmpstr) != str:
+				if type(tmpstr) != str:  # transform bytes into string
 					tmpstr = str(tmpstr, 'utf-8')
-				tmpstr = tmpstr.encode('utf-8')
 				self.logfp.write(tmpstr)
 				self.logfp.flush()
 			else: self.log_file_conn.log.Log.log_to_file(message)
