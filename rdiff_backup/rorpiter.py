@@ -165,7 +165,10 @@ def FillInIter(rpiter, rootrp):
 
 	"""
 	# Handle first element as special case
-	first_rp = next(rpiter) # StopIteration gets passed upwards
+	try:
+		first_rp = next(rpiter)
+	except StopIteration:
+		return
 	cur_index = first_rp.index
 	for i in range(len(cur_index)): yield rootrp.new_index(cur_index[:i])
 	yield first_rp
