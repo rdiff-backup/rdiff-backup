@@ -491,7 +491,7 @@ def backup_get_mirrortime():
 	assert len(mirror_rps) <= 1, \
 		   "Found %s current_mirror rps, expected <=1" % (len(mirror_rps),)
 	if mirror_rps: return mirror_rps[0].getinctime()
-	else: return None
+	else: return 0  # is always in the past
 
 def backup_final_init(rpout):
 	"""Open the backup log and the error log, create increments dir"""
