@@ -55,7 +55,7 @@ class LikeFile:
 		self.infile = infile
 		self.closed = self.infile_closed = None
 		self.inbuf = ""
-		self.outbuf = array.array('c')
+		self.outbuf = array.array('b')
 		self.eof = self.infile_eof = None
 
 	def check_file(self, file, need_seek = None):
