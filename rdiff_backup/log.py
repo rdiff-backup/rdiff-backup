@@ -173,7 +173,6 @@ class Logger:
 		type, value, tb = sys.exc_info()
 		s = ("Exception '%s' raised of class '%s':\n%s" %
 			 (value, type, "".join(traceback.format_tb(tb))))
-		s = s.encode('ascii', 'replace')
 		if arglist:
 			s += "__Arguments:"
 			for arg in arglist:
