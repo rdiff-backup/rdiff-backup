@@ -77,7 +77,7 @@ class LikeFile:
 				self._add_to_outbuf_once()
 			real_len = min(length, len(self.outbuf))
 			
-		return_val = self.outbuf[:real_len].tostring()
+		return_val = self.outbuf[:real_len].tobytes()
 		del self.outbuf[:real_len]
 		return return_val
 
@@ -87,7 +87,7 @@ class LikeFile:
 		try: self.eof, len_inbuf_read, cycle_out = self.maker.cycle(self.inbuf)
 		except _librsync.librsyncError as e: raise librsyncError(str(e))
 		self.inbuf = self.inbuf[len_inbuf_read:]
-		self.outbuf.fromstring(cycle_out)
+		self.outbuf.frombytes(cycle_out)
 
 	def _add_to_inbuf(self):
 		"""Make sure len(self.inbuf) >= blocksize"""
