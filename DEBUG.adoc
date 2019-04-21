@@ -26,13 +26,16 @@ sudo dnf debuginfo-install bzip2-libs-1.0.6-28.fc29.x86_64 glibc-2.28-27.fc29.x8
 Then calling:
 
 ------------------------------------------------------------------------
+python3 dist/setup.py clean --all  #<1>
 python3-debug dist/setup.py clean --all
-python3-debug dist/setup.py build
+CFLAGS='-Wall -O0 -g' python3-debug dist/setup.py build  #<2>
 PYTHONPATH=build/lib.linux-x86_64-3.7-pydebug/ build/scripts-3.7/rdiff-backup -v 10 \
 	/some/dir1 /some/dir2
 [...]
 Segmentation fault (core dumped)
 ------------------------------------------------------------------------
+<1> just to be sure
+<2> the CFLAGS avoids optimizations making debugging more complicated
 
 At this stage `coredumpctl list` shows me that my coredump is the last one, so that I can
 call `coredumpctl gdb`, which itself tells me (in multiple steps) that I'm missing some
