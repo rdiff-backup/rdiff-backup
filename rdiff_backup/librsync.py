@@ -24,7 +24,7 @@ which is written in C.  The goal was to use C as little as possible...
 
 """
 
-import types, array
+import io, array
 from . import _librsync
 
 blocksize = _librsync.RS_JOB_BLOCKSIZE
@@ -154,7 +154,7 @@ class PatchedFile(LikeFile):
 		LikeFile.__init__(self, delta_file)
 		if hasattr(basis_file, 'file'):
 			basis_file = basis_file.file
-		if type(basis_file) is not types.FileType:
+		if not isinstance(basis_file, io.IOBase):
 			raise TypeError("basis_file must be a (true) file")
 		try: self.maker = _librsync.new_patchmaker(basis_file)
 		except _librsync.librsyncError as e: raise librsyncError(str(e))		
