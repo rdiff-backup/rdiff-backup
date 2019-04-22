@@ -47,10 +47,17 @@ So now back into `coredumpctl gdb`, with some commands because I'm no gdb specia
 ------------------------------------------------------------------------
 help
 help stack
-backtrace
-py-bt
-[...]
+backtrace  #<1>
+bt full    #<2>
+py-bt      #<3>
+frame <FrameNumber>   #<4>
+p <SomeVar> #<5> 
 ------------------------------------------------------------------------
+<1> get a backtrace of all function calls leading to the coredump (also `bt`)
+<2> backtrace with local vars
+<3> py-bt is the Python version of backtrace
+<4> jump between frames as listed by bt using their `#FrameNumber`
+<5> print some variable/expression in the context of the selected frame
 
 
 == ResourceWarning unclosed file
