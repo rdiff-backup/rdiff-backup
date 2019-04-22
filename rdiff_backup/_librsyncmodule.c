@@ -389,7 +389,8 @@ _librsync_new_patchmaker(PyObject* self, PyObject* args)
   pm->x_attr = NULL;
 
   pm->basis_file = python_file;
-  cfile = fdopen(python_fd, "w+"); /* FIXME not sure mode is correct */
+  cfile = fdopen(python_fd, "rb"); /* same mode as in the Python code */
+  if (cfile == NULL) return NULL;
   pm->patch_job = rs_patch_begin(rs_file_copy_cb, cfile);
 
   return (PyObject*)pm;
