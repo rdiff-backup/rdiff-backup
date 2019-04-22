@@ -59,6 +59,24 @@ p <SomeVar> #<5>
 <4> jump between frames as listed by bt using their `#FrameNumber`
 <5> print some variable/expression in the context of the selected frame
 
+Jumping between frames and printing the different variables, we can recognize that:
+
+. the core dump is due to a seek on a null file pointer
+. that the file pointer comes from the job pointer handed over to the function rs_job_iter
+. the job pointer itself comes from the self variable handed over to _librsync_patchmaker_cycle
+. reading through the https://librsync.github.io/rdiff.html[librsync documentation], it appears that the job type is opaque, i.e. I can't directly influence and it has been created via the `rs_patch_begin` function within the function `_librsync_new_patchmaker` in `rdiff_backup/_librsyncmodule.c`.
+
+At this stage, it seems to me that the core file has given most of its secrets and I need to debug the live program:
+
+------------------------------------------------------------------------
+$ PYTHONTRACEMALLOC=1 PYTHONPATH=build/lib.linux-x86_64-3.7-pydebug/ gdb python3-debug
+(gdb) break rdiff_backup/_librsyncmodule.c:_librsync_new_patchmaker
+(gdb) run build/scripts-3.7/rdiff-backup /some/source/dir /some/target/dir
+------------------------------------------------------------------------
+
+The debugger runs until the breakpoint is reached, after which a succession of `next` and `print <SomeVar>` allows me to analyze the code step by step, and to come to the conclusion that my
+quickly `cfile = fdopen(python_fd, ...` is somehow wrong as it creates a null file pointer
+whereas python_fd looks like a valid file descriptor (an integer equal to 5).
 
 == ResourceWarning unclosed file
 
