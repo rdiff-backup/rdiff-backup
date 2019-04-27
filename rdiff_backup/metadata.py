@@ -269,7 +269,7 @@ class FlatExtractor:
 					return len(self.buf)
 				else:
 					if type(newbuf) != str:
-						newbuf = str(newbuf)
+						newbuf = str(newbuf, 'utf8')
 					self.buf += newbuf
 
 	def iterate(self):

@@ -110,10 +110,7 @@ def check_new_index(base, index, make_dirs = 0):
 	def wrap_call(func, *args):
 		try: result = func(*args)
 		except EnvironmentError as exc:
-			if (exc[0] in errno.errorcode and
-				errno.errorcode[exc[0]] == 'ENAMETOOLONG'):
-				return None
-			if (exc[1] == "The filename or extension is too long"):
+			if (exc.errno == errno.ENAMETOOLONG):
 				return None
 			raise
 		return result

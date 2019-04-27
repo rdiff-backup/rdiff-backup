@@ -132,7 +132,7 @@ def link_rp(diff_rorp, dest_rpath, dest_root = None):
 		# This can happen if the source of dest_link_rpath was deleted
 		# after it's linking info was recorded but before
 		# dest_link_rpath was written.
-		if errno.errorcode[exc[0]] == 'ENOENT':
+		if exc.errno == errno.ENOENT:
 			dest_rpath.touch() # This will cause an UpdateError later
 		else: raise Exception("EnvironmentError '%s' linking %s to %s" %
 							  (exc, dest_rpath.path, dest_link_rpath.path))

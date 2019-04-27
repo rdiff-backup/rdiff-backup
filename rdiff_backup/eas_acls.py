@@ -64,9 +64,9 @@ class ExtendedAttributes:
 		try:
 			attr_list = rp.conn.xattr.listxattr(rp.path, rp.issym())
 		except IOError as exc:
-			if exc[0] in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
+			if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
 				return # if not supported, consider empty
-			if exc[0] in (errno.EACCES, errno.ENOENT, errno.ELOOP):
+			if exc.errno in (errno.EACCES, errno.ENOENT, errno.ELOOP):
 				log.Log("Warning: listattr(%s): %s" % (repr(rp.path), exc), 4)
 				return
 			raise
@@ -82,10 +82,10 @@ class ExtendedAttributes:
 					rp.conn.xattr.getxattr(rp.path, attr, rp.issym())
 			except IOError as exc:
 				# File probably modified while reading, just continue
-				if exc[0] == errno.ENODATA: continue
-				elif exc[0] == errno.ENOENT: break
+				if exc.errno == errno.ENODATA: continue
+				elif exc.errno == errno.ENOENT: break
 				# Handle bug in pyxattr < 0.2.2
-				elif exc[0] == errno.ERANGE: continue
+				elif exc.errno == errno.ERANGE: continue
 				else: raise
 
 	def clear_rp(self, rp):
@@ -94,22 +94,18 @@ class ExtendedAttributes:
 			for name in rp.conn.xattr.listxattr(rp.path, rp.issym()):
 				try:
 					rp.conn.xattr.removexattr(rp.path, name, rp.issym())
-				except IOError as exc:
+				except PermissionError as exc:  # errno.EACCES
 					# SELinux attributes cannot be removed, and we don't want
 					# to bail out or be too noisy at low log levels.
-					if exc[0] == errno.EACCES:
-						log.Log("Warning: unable to remove xattr %s from %s"
-							% (name, repr(rp.path)), 7)
-						continue
-					else: raise
-		except IOError as exc:
-			if exc[0] == errno.EOPNOTSUPP or exc[0] == errno.EPERM:
-				return # if not supported, consider empty
-			elif exc[0] == errno.ENOENT: # path is bad
-				log.Log("Warning: unable to clear xattrs on %s: %s" %
-						(repr(rp.path), exc), 3)
-				return
-			else: raise
+					log.Log("Warning: unable to remove xattr %s from %s"
+						% (name, repr(rp.path)), 7)
+					continue
+		except io.UnsupportedOperation as exc:  # errno.EOPNOTSUPP or errno.EPERM
+			return # if not supported, consider empty
+		except FileNotFoundError as exc:
+			log.Log("Warning: unable to clear xattrs on %s: %s" %
+				(repr(rp.path), exc), 3)
+			return
 
 	def write_to_rp(self, rp):
 		"""Write extended attributes to rpath rp"""
@@ -120,7 +116,7 @@ class ExtendedAttributes:
 			except IOError as exc:
 				# Mac and Linux attributes have different namespaces, so
 				# fail gracefully if can't call setxattr
-				if exc[0] in (errno.EOPNOTSUPP, errno.EPERM, errno.EACCES,
+				if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.EACCES,
 						errno.ENOENT, errno.EINVAL):
 					log.Log("Warning: unable to write xattr %s to %s"
 							% (name, repr(rp.path)), 6)
@@ -392,7 +388,7 @@ def set_rp_acl(rp, entry_list = None, default_entry_list = None,
 	try:
 		acl.applyto(rp.path)
 	except IOError as exc:
-		if exc[0] == errno.EOPNOTSUPP:
+		if exc.errno == errno.EOPNOTSUPP:
 			log.Log("Warning: unable to set ACL on %s: %s" % 
 					(repr(rp.path), exc), 4)
 			return
@@ -408,22 +404,22 @@ def get_acl_lists_from_rp(rp):
 	"""Returns (acl_list, def_acl_list) from an rpath.  Call locally"""
 	assert rp.conn is Globals.local_connection
 	try: acl = posix1e.ACL(file=rp.path)
+	except FileNotFoundError as exc:
+		log.Log("Warning: unable to read ACL from %s: %s"
+				% (repr(rp.path), exc), 3)
+		acl = None
 	except IOError as exc:
-		if exc[0] == errno.EOPNOTSUPP:
-			acl = None
-		elif exc[0] == errno.ENOENT:
-			log.Log("Warning: unable to read ACL from %s: %s"
-					% (repr(rp.path), exc), 3)
+		if exc.errno == errno.EOPNOTSUPP:
 			acl = None
 		else: raise
 	if rp.isdir():
 		try: def_acl = posix1e.ACL(filedef=rp.path)
+		except FileNotFoundError as exc:
+			log.Log("Warning: unable to read default ACL from %s: %s"
+				% (repr(rp.path), exc), 3)
+			def_acl = None
 		except IOError as exc:
-			if exc[0] == errno.EOPNOTSUPP:
-				def_acl = None
-			elif exc[0] == errno.ENOENT:
-				log.Log("Warning: unable to read default ACL from %s: %s"
-					% (repr(rp.path), exc), 3)
+			if exc.errno == errno.EOPNOTSUPP:
 				def_acl = None
 			else: raise
 	else: def_acl = None
