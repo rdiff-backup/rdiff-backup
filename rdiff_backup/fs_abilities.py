@@ -405,7 +405,7 @@ class FSAbilities:
 			xattr.listxattr(rp.path)
 			if write:
 				xattr.setxattr(rp.path, "user.test", "test val")
-				assert xattr.getxattr(rp.path, "user.test") == "test val"
+				assert str(xattr.getxattr(rp.path, "user.test"),'utf8') == "test val"
 		except IOError:
 			log.Log("Extended attributes not supported by "
 					"filesystem at %s" % (rp.path,), 4)
