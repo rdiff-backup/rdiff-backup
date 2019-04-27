@@ -50,7 +50,7 @@ def catch_error(exc):
 		if isinstance(exc, exception_class): return 1
 	if (isinstance(exc, EnvironmentError) and
 		# the invalid mode shows up in backups of /proc for some reason
-		(exc.args[0] in ('invalid mode: rb', 'Not a gzipped file') or # FIXME won't work!
+		('invalid mode: rb' in exc.args[0] or 'Not a gzipped file' in exc.args[0] or
 		 exc.errno in (errno.EPERM, errno.ENOENT, errno.EACCES, errno.EBUSY,
 									errno.EEXIST, errno.ENOTDIR, errno.EILSEQ,
 									errno.ENAMETOOLONG, errno.EINTR, errno.ESTALE,
