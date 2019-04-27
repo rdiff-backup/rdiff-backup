@@ -267,7 +267,10 @@ class FlatExtractor:
 				if not newbuf:
 					self.at_end = 1
 					return len(self.buf)
-				else: self.buf += newbuf
+				else:
+					if type(newbuf) != str:
+						newbuf = str(newbuf)
+					self.buf += newbuf
 
 	def iterate(self):
 		"""Return iterator that yields all objects with records"""
@@ -275,7 +278,8 @@ class FlatExtractor:
 			try: yield self.record_to_object(record)
 			except (ParsingError, ValueError) as e:
 				if self.at_end: break # Ignore whitespace/bad records at end
-				log.Log("Error parsing flat file: %s" % (e,), 2)
+				log.Log("Error parsing flat file: %s [%s(%s)]" %
+					(e, type(self), self.fileobj.fileobj.name), 2)
 
 	def iterate_records(self):
 		"""Yield all text records in order"""
@@ -376,7 +380,7 @@ class FlatFile:
 			compress = 1
 		if mode == 'r':
 			self.rp = rp_base
-			self.fileobj = rpath.MaybeUnicode(self.rp.open("rb", compress))
+			self.fileobj = rpath.MaybeUnicode(self.rp.open("r", compress))
 		else:
 			assert mode == 'w'
 			if compress and check_path and not rp_base.isinccompressed():
@@ -386,7 +390,7 @@ class FlatFile:
 			else:
 				self.rp = rp_base
 				assert not self.rp.lstat(), self.rp
-				self.fileobj = rpath.MaybeUnicode(self.rp.open("wb", 
+				self.fileobj = rpath.MaybeUnicode(self.rp.open("w", 
 												compress = compress))
 
 	def write_record(self, record):

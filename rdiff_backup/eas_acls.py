@@ -155,12 +155,17 @@ def ea_compare_rps(rp1, rp2):
 def EA2Record(ea):
 	"""Convert ExtendedAttributes object to text record"""
 	str_list = ['# file: %s' % C.acl_quote(ea.get_indexpath())]
+
+	def b2s(b):
+		"""Transforms nicely a byte-like object into a string, without b prefix"""
+		return str(b,'utf8')
+
 	for (name, val) in ea.attr_dict.items():
-		if not val: str_list.append(name)
+		if not val: str_list.append(b2s(name))
 		else:
-			encoded_val = base64.b64encode(val)
+			encoded_val = b2s(base64.b64encode(val))
 			try:
-				str_list.append('%s=0s%s' % (C.acl_quote(str(name)), encoded_val))
+				str_list.append('%s=0s%s' % (C.acl_quote(b2s(name)), encoded_val))
 			except UnicodeEncodeError:
 				log.Log("Warning: unable to store Unicode extended attribute %s"
 							% repr(name), 3)
