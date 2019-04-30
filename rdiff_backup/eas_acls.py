@@ -191,7 +191,7 @@ def Record2EA(record):
 			assert line[eq_pos+1:eq_pos+3] == '0s', \
 				   "Currently only base64 encoding supported"
 			encoded_val = line[eq_pos+3:]
-			ea.set(name, base64.b64decode(encoded_val))
+			ea.set(name.encode(), base64.b64decode(encoded_val))
 	return ea
 
 
