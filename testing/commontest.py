@@ -1,4 +1,5 @@
-"""commontest - Some functions and constants common to several test cases"""
+"""commontest - Some functions and constants common to several test cases.
+Can be called also directly to setup the test environment"""
 import os, sys, code
 # Avoid circularities
 from rdiff_backup.log import Log
@@ -7,11 +8,15 @@ from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
 	 selection, lazy, Time, rpath, eas_acls, rorpiter, Security
 
 
-RBBin = "../rdiff-backup"
-SourceDir = "../rdiff_backup"
-AbsCurdir = os.getcwd() # Absolute path name of current directory
-AbsTFdir = AbsCurdir+"/testfiles"
-MiscDir = "../misc"
+RBBin = "rdiff-backup"
+
+# Working directory is defined by Tox, venv or the current build directory
+abs_work_dir = os.getenv('TOX_ENV_DIR', os.getenv('VIRTUAL_ENV',
+    os.path.join(os.getcwd(), 'build')))
+abs_test_dir = os.path.join(abs_work_dir, 'testfiles')
+abs_output_dir = os.path.join(abs_test_dir, 'output')
+abs_restore_dir = os.path.join(abs_test_dir, 'restore')
+
 __no_execute__ = 1 # Keeps the actual rdiff-backup program from running
 
 def Myrm(dirstring):
@@ -28,16 +33,10 @@ def re_init_dir(rp):
 		rp.setdata()
 	rp.mkdir()
 
-def Make():
-	"""Make sure the rdiff-backup script in the source dir is up-to-date"""
-	os.chdir(SourceDir)
-	os.system("%s ./Make" % (sys.executable))
-	os.chdir(AbsCurdir)
-
 def MakeOutputDir():
-	"""Initialize the testfiles/output directory"""
-	Myrm("testfiles/output")
-	rp = rpath.RPath(Globals.local_connection, "testfiles/output")
+	"""Initialize the output directory"""
+	Myrm(abs_output_dir)
+	rp = rpath.RPath(Globals.local_connection, abs_output_dir)
 	rp.mkdir()
 	return rp
 
@@ -75,7 +74,8 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 	cmdline = " ".join(cmdargs)
 	print("Executing: ", cmdline)
 	ret_val = os.system(cmdline)
-	if check_return_val: assert not ret_val, ret_val
+	if check_return_val:
+		assert not ret_val, "Return code %d of command `%s` isn't zero." % (ret_val, cmdline)
 	return ret_val
 
 def InternalBackup(source_local, dest_local, src_dir, dest_dir,
@@ -306,8 +306,8 @@ def reset_hardlink_dicts():
 
 def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 						compare_hardlinks = 1,
-						dest_dirname = "testfiles/output",
-						restore_dirname = "testfiles/rest_out",
+						dest_dirname = abs_output_dir,
+						restore_dirname = abs_restore_dir,
 						compare_backups = 1,
 						compare_eas = 0,
 						compare_acls = 0,
@@ -362,7 +362,7 @@ def BackupRestoreSeries(source_local, dest_local, list_of_dirnames,
 
 def MirrorTest(source_local, dest_local, list_of_dirnames,
 			   compare_hardlinks = 1,
-			   dest_dirname = "testfiles/output"):
+			   dest_dirname = abs_output_dir):
 	"""Mirror each of list_of_dirnames, and compare after each"""
 	Globals.set('preserve_hardlinks', compare_hardlinks)
 	dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
@@ -402,3 +402,6 @@ def getrefs(i, depth):
 			print("Max depth ", d)
 			return o
 	return o
+
+if __name__ == '__main__':
+    os.makedirs(abs_test_dir, exist_ok=True)

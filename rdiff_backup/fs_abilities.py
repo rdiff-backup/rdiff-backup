@@ -647,6 +647,7 @@ class FSAbilities:
 			period = filename + '.' 
 			if period in dirlist: return 0 
 
+			return 0  # FIXME the following lines fail if filename is almost too long
 			period_rp = dir_rp.append(period)
 			if period_rp.lstat(): return 1
 			return 0

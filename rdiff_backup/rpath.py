@@ -1438,9 +1438,7 @@ class MaybeUnicode:
 		return data
 
 	def write(self, buf):
-		if Globals.use_unicode_paths:
-			if type(buf) != str:
-				buf = str(buf, 'utf-8')
+		if type(buf) == str:
 			buf = buf.encode('utf-8')
 		return self.fileobj.write(buf)
 

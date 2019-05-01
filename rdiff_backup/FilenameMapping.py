@@ -65,7 +65,7 @@ def set_init_quote_vals_local():
 def init_quoting_regexps():
 	"""Compile quoting regular expressions"""
 	global chars_to_quote_regexp, unquoting_regexp
-	assert chars_to_quote and type(chars_to_quote) is bytes, \
+	assert chars_to_quote and type(chars_to_quote) is str, \
 		   "Chars to quote: '%s'" % (chars_to_quote,)
 	try:
 		chars_to_quote_regexp = \

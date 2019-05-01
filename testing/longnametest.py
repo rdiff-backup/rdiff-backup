@@ -6,7 +6,7 @@ max_len = 255
 
 class LongNameTest(unittest.TestCase):
 	"""Test the longname module"""
-	root_rp = rpath.RPath(Globals.local_connection, "testfiles")
+	root_rp = rpath.RPath(Globals.local_connection, abs_test_dir)
 	out_rp = root_rp.append_path('output')
 
 	def test_length_limit(self):
@@ -24,7 +24,7 @@ class LongNameTest(unittest.TestCase):
 
 		try: too_long = self.out_rp.append("a"*(max_len+1))
 		except EnvironmentError as e:
-			assert errno.errorcode[e[0]] == 'ENAMETOOLONG', e
+			assert e.errno == errno.ENAMETOOLONG, e
 		else: assert 0, "File made successfully with length " + str(max_len+1)
 
 	def make_input_dirs(self):
@@ -55,7 +55,7 @@ class LongNameTest(unittest.TestCase):
 	def check_dir1(self, dirrp):
 		"""Make sure dirrp looks like dir1"""
 		rp1 = dirrp.append('A'*max_len)
-		assert rp1.get_data() == 'foobar', "data doesn't match"
+		assert rp1.get_string() == 'foobar', "data doesn't match"
 		rp2 = dirrp.append('B'*max_len)
 		assert rp2.isdir(), rp2
 		rp21 = rp2.append('C'*max_len)
@@ -64,7 +64,7 @@ class LongNameTest(unittest.TestCase):
 	def check_dir2(self, dirrp):
 		"""Make sure dirrp looks like dir2"""
 		rp1 = dirrp.append('A'*max_len)
-		assert rp1.get_data() == 'Hello, world', "data doesn't match"
+		assert rp1.get_string() == 'Hello, world', "data doesn't match"
 		rp2 = dirrp.append('D'*max_len)
 		assert rp2.isdir(), rp2
 		rp21 = rp2.append('C'*max_len)
