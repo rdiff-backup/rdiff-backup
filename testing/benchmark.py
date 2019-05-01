@@ -10,8 +10,7 @@ just use clock time, so this isn't exact at all.
 
 """
 
-output_local = 1
-output_desc = "testfiles/output"
+output_desc = abs_output_dir
 new_pythonpath = None
 
 def run_cmd(cmd):
@@ -23,6 +22,15 @@ def run_cmd(cmd):
 	assert not os.system(full_cmd)
 	return time.time() - t
 
+
+def clean_subdir(maindir, subdir):
+	"""Remove a sub-directory and return its name joined
+	to the main directory"""
+	dir = os.path.join(maindir, subdir)
+	Myrm(dir)
+	return dir
+
+
 def create_many_files(dirname, s, count = 1000):
 	"""Create many short files in the dirname directory
 
@@ -30,29 +38,28 @@ def create_many_files(dirname, s, count = 1000):
 	contain the string s.
 
 	"""
-	Myrm("testfiles/many_out")
 	dir_rp = rpath.RPath(Globals.local_connection, dirname)
-	dir_rp.mkdir()
+	if (not dir_rp.isdir()): dir_rp.mkdir()
 	for i in range(count):
-		rp = dir_rp.append(str(i))
-		fp = rp.open("wb")
+		rp = dir_rp.append("file_%d" % i)
+		fp = rp.open("w")
 		fp.write(s)
 		assert not fp.close()
 
 def create_nested(dirname, s, depth, branch_factor = 10):
 	"""Create many short files in branching directory"""
 	def write(rp):
-		fp = rp.open("wb")
+		fp = rp.open("w")
 		fp.write(s)
 		assert not fp.close()
 
 	def helper(rp, depth):
 		rp.mkdir()
-		sub_rps = [rp.append(str(i)) for i in range(branch_factor)]
+		sub_rps = [rp.append("file_%d" % i) for i in range(branch_factor)]
 		if depth == 1: list(map(write, sub_rps))
 		else: list(map(lambda rp: helper(rp, depth-1), sub_rps))
 
-	Myrm("testfiles/nested_out")
+	nestedout_dir = clean_subdir(abs_test_dir, 'nested_out')
 	helper(rpath.RPath(Globals.local_connection, dirname), depth)
 
 def benchmark(backup_cmd, restore_cmd, desc, update_func = None):
@@ -68,70 +75,77 @@ def benchmark(backup_cmd, restore_cmd, desc, update_func = None):
 		update_func()
 		print("Updating %s, all changed: %ss" % (desc, run_cmd(backup_cmd)))
 
-	Myrm("testfiles/rest_out")
+	restout_dir = clean_subdir(abs_test_dir, 'rest_out')
 	print("Restoring %s to empty dir: %ss" % (desc, run_cmd(restore_cmd)))
 	print("Restoring %s to unchanged dir: %ss" % (desc, run_cmd(restore_cmd)))
 
 def many_files():
 	"""Time backup and restore of 2000 files"""
 	count = 2000
-	create_many_files("testfiles/many_out", "a", count)
-	backup_cmd = "rdiff-backup testfiles/many_out " + output_desc
-	restore_cmd = "rdiff-backup --force -r now %s testfiles/rest_out" % \
-				  (output_desc,)
-	update_func = lambda: create_many_files("testfiles/many_out", "e", count)
+	manyout_dir = clean_subdir(abs_test_dir, 'many_out')
+	restout_dir = clean_subdir(abs_test_dir, 'rest_out')
+	create_many_files(manyout_dir, "a", count)
+	backup_cmd = "rdiff-backup '%s' '%s'" % (manyout_dir, output_desc)
+	restore_cmd = "rdiff-backup --force -r now '%s' '%s'" % \
+				  (output_desc, restout_dir)
+	update_func = lambda: create_many_files(manyout_dir, "e", count)
 	benchmark(backup_cmd, restore_cmd, "2000 1-byte files", update_func)
 
 def many_files_rsync():
 	"""Test rsync benchmark"""
 	count = 2000
-	create_many_files("testfiles/many_out", "a", count)
-	rsync_command = ("rsync -e ssh -aH --delete testfiles/many_out " +
-					 output_desc)
+	manyout_dir = clean_subdir(abs_test_dir, 'many_out')
+	create_many_files(manyout_dir, "a", count)
+	rsync_command = "rsync -e ssh -aH --delete '%s' '%s'" % \
+					 (manyout_dir, output_desc)
 	print("Initial rsync: %ss" % (run_cmd(rsync_command),))
 	print("rsync update: %ss" % (run_cmd(rsync_command),))
 
-	create_many_files("testfiles/many_out", "e", count)
+	create_many_files(manyout_dir, "e", count)
 	print("Update changed rsync: %ss" % (run_cmd(rsync_command),))
 
 def nested_files():
 	"""Time backup and restore of 10000 nested files"""
 	depth = 4
-	create_nested("testfiles/nested_out", "a", depth)
-	backup_cmd = "rdiff-backup testfiles/nested_out " + output_desc
-	restore_cmd = "rdiff-backup --force -r now %s testfiles/rest_out" % \
-				  (output_desc,)
-	update_func = lambda: create_nested("testfiles/nested_out", "e", depth)
+	nestedout_dir = clean_subdir(abs_test_dir, 'nested_out')
+	restout_dir = clean_subdir(abs_test_dir, 'rest_out')
+	create_nested(nestedout_dir, "a", depth)
+	backup_cmd = "rdiff-backup '%s' '%s'" % (nestedout_dir, output_desc)
+	restore_cmd = "rdiff-backup --force -r now '%s' '%s'" % \
+				  (output_desc, restout_dir)
+	update_func = lambda: create_nested(nestedout_dir, "e", depth)
 	benchmark(backup_cmd, restore_cmd, "10000 1-byte nested files",
 			  update_func)
 
 def nested_files_rsync():
 	"""Test rsync on nested files"""
 	depth = 4
-	create_nested("testfiles/nested_out", "a", depth)
-	rsync_command = ("rsync -e ssh -aH --delete testfiles/nested_out " +
-					 output_desc)
+	nestedout_dir = clean_subdir(abs_test_dir, 'nested_out')
+	create_nested(nestedout_dir, "a", depth)
+	rsync_command = "rsync -e ssh -aH --delete '%s' '%s'" % \
+					(nestedout_dir, output_desc)
 	print("Initial rsync: %ss" % (run_cmd(rsync_command),))
 	print("rsync update: %ss" % (run_cmd(rsync_command),))
 
-	create_nested("testfiles/nested_out", "e", depth)
+	create_nested(nestedout_dir, "e", depth)
 	print("Update changed rsync: %ss" % (run_cmd(rsync_command),))
 
 if len(sys.argv) < 2 or len(sys.argv) > 3:
 	print("Syntax:  benchmark.py benchmark_func [output_description]")
-	print()
-	print("Where output_description defaults to 'testfiles/output'.")
+	print("")
+	print("Where output_description defaults to '%s'." % abs_output_dir)
 	print("Currently benchmark_func includes:")
 	print("'many_files', 'many_files_rsync', and, 'nested_files'.")
 	sys.exit(1)
 
 if len(sys.argv) == 3:
 	output_desc = sys.argv[2]
-	if ":" in output_desc: output_local = None
+	if ":" not in output_desc:  # file is local
+		assert not rpath.RPath(Globals.local_connection, output_desc).lstat(), \
+		   "Outfile file '%s' exists, try deleting it first." % (output_desc,)
+else:   # we assume we can always remove the default output directory
+	Myrm(output_desc)
 
-if output_local:
-	assert not rpath.RPath(Globals.local_connection, output_desc).lstat(), \
-		   "Outfile file %s exists, try deleting it first" % (output_desc,)
 
 if 'BENCHMARKPYPATH' in os.environ:
 	new_pythonpath = os.environ['BENCHMARKPYPATH']
