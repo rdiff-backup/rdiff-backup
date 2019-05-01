@@ -2,3 +2,7 @@
 .*.swp
 build/
 __pycache__
+
+# tox testing stuff
+.tox/
+MANIFEST
