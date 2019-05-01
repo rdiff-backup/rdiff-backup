@@ -5,8 +5,8 @@ from distutils.core import setup, Extension
 
 version_string = "$version"
 
-if sys.version_info[:2] < (3,3):
-	print("Sorry, rdiff-backup requires version 3.3 or later of python")
+if sys.version_info[:2] < (3,5):
+	print("Sorry, rdiff-backup requires version 3.5 or later of python")
 	sys.exit(1)
 
 # Defaults
@@ -74,6 +74,6 @@ setup(name="rdiff-backup",
 	  scripts = ['rdiff-backup', 'rdiff-backup-statistics'],
 	  data_files = [('share/man/man1', ['rdiff-backup.1', 'rdiff-backup-statistics.1']),
 					('share/doc/rdiff-backup-%s' % (version_string,),
-					 ['CHANGELOG', 'COPYING', 'README', 'FAQ.html'])],
-					**extra_options)
+					 ['CHANGELOG', 'COPYING', 'README', 'FAQ-body.html'])],
+					**extra_options) # FIXME improve FAQ.html vs. body
 

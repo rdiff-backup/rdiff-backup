@@ -1,6 +1,19 @@
-= How to debug rdiff-backup?
+= Development Guide for rdiff-backup
 
-== Trace back a coredump
+Some notes for developers and other people willing to help development.
+
+== Testing rdiff-backup
+
+- Install:
+* tox
+* libacl-devel (for sys/acl.h)
+- run `tox`
+
+That's it...
+
+== How to debug rdiff-backup?
+
+=== Trace back a coredump
 
 As I write those notes, I have an issue where calling the program generates a `Segmentation fault (core dumped)`. At this stage, this document is just some notes taken as I'm trying to debug this problem under Fedora (29).
 
@@ -78,7 +91,7 @@ The debugger runs until the breakpoint is reached, after which a succession of `
 quickly `cfile = fdopen(python_fd, ...` is somehow wrong as it creates a null file pointer
 whereas python_fd looks like a valid file descriptor (an integer equal to 5).
 
-== ResourceWarning unclosed file
+=== ResourceWarning unclosed file
 
 ------------------------------------------------------------------------
 /home/ericl/Public/rdiff-backup/build/lib.linux-x86_64-3.7-pydebug/rdiff_backup/robust.py:32: ResourceWarning: unclosed file <_io.BufferedReader name='/var/tmp/rdiff/rdiff-backup-data/increments/bla.2019-04-20T11:59:45+02:00.diff.gz'>

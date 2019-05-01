@@ -53,7 +53,7 @@ all required modules.
 
 REQUIREMENTS:
 
-Remember that you must have Python 3.3 or later and librsync 1.0.0 or
+Remember that you must have Python 3.5 or later and librsync 1.0.0 or
 later installed.  For Python, see http://www.python.org.  The
 rdiff-backup homepage at http://rdiff-backup.nongnu.org/ should
 have a recent version of librsync; otherwise see the librsync homepage
