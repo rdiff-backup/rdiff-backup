@@ -26,12 +26,22 @@ def Myrm(dirstring):
 		if rp.isdir(): rp.chmod(0o700) # otherwise may not be able to remove
 	assert not os.system("rm -rf %s" % (dirstring,))
 
-def re_init_dir(rp):
+def re_init_rpath_dir(rp):
 	"""Delete directory if present, then recreate"""
 	if rp.lstat():
 		Myrm(rp.path)
 		rp.setdata()
 	rp.mkdir()
+
+
+def re_init_subdir(maindir, subdir):
+	"""Remove a sub-directory and return its name joined
+	to the main directory as an empty directory"""
+	dir = os.path.join(maindir, subdir)
+	Myrm(dir)
+	os.makedirs(dir)
+	return dir
+
 
 def MakeOutputDir():
 	"""Initialize the output directory"""

@@ -458,7 +458,7 @@ class CommandTest(unittest.TestCase):
 		"""
 		outrp = MakeOutputDir()
 		selrp = rpath.RPath(Globals.local_connection, 'testfiles/seltest')
-		re_init_dir(selrp)
+		re_init_rpath_dir(selrp)
 		emptydir = selrp.append('emptydir')
 		emptydir.mkdir()
 

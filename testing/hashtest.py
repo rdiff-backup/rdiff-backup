@@ -33,9 +33,9 @@ class HashTest(unittest.TestCase):
 	def make_dirs(self):
 		"""Make two input directories"""
 		d1 = self.root_rp.append("hashtest1")
-		re_init_dir(d1)
+		re_init_rpath_dir(d1)
 		d2 = self.root_rp.append("hashtest2")
-		re_init_dir(d2)
+		re_init_rpath_dir(d2)
 
 		d1f1 = d1.append("file1")
 		d1f1.write_string(self.s1)

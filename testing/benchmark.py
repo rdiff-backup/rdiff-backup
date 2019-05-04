@@ -26,14 +26,6 @@ def run_cmd(cmd):
 	return time.time() - t
 
 
-def clean_subdir(maindir, subdir):
-	"""Remove a sub-directory and return its name joined
-	to the main directory"""
-	dir = os.path.join(maindir, subdir)
-	Myrm(dir)
-	return dir
-
-
 def create_many_files(dirname, s, count = 1000):
 	"""Create many short files in the dirname directory
 
@@ -57,12 +49,12 @@ def create_nested(dirname, s, depth, branch_factor = 10):
 		assert not fp.close()
 
 	def helper(rp, depth):
-		rp.mkdir()
+		if (not rp.isdir()): rp.mkdir()
 		sub_rps = [rp.append("file_%d" % i) for i in range(branch_factor)]
 		if depth == 1: list(map(write, sub_rps))
 		else: list(map(lambda rp: helper(rp, depth-1), sub_rps))
 
-	nestedout_dir = clean_subdir(abs_test_dir, 'nested_out')
+	nestedout_dir = re_init_subdir(abs_test_dir, 'nested_out')
 	helper(rpath.RPath(Globals.local_connection, dirname), depth)
 
 def benchmark(backup_cmd, restore_cmd, desc, update_func = None):
@@ -78,15 +70,15 @@ def benchmark(backup_cmd, restore_cmd, desc, update_func = None):
 		update_func()
 		print("Updating %s, all changed: %ss" % (desc, run_cmd(backup_cmd)))
 
-	restout_dir = clean_subdir(abs_test_dir, 'rest_out')
+	restout_dir = re_init_subdir(abs_test_dir, 'rest_out')
 	print("Restoring %s to empty dir: %ss" % (desc, run_cmd(restore_cmd)))
 	print("Restoring %s to unchanged dir: %ss" % (desc, run_cmd(restore_cmd)))
 
 def many_files():
 	"""Time backup and restore of 2000 files"""
 	count = 2000
-	manyout_dir = clean_subdir(abs_test_dir, 'many_out')
-	restout_dir = clean_subdir(abs_test_dir, 'rest_out')
+	manyout_dir = re_init_subdir(abs_test_dir, 'many_out')
+	restout_dir = re_init_subdir(abs_test_dir, 'rest_out')
 	create_many_files(manyout_dir, "a", count)
 	backup_cmd = "rdiff-backup '%s' '%s'" % (manyout_dir, output_desc)
 	restore_cmd = "rdiff-backup --force -r now '%s' '%s'" % \
@@ -97,7 +89,7 @@ def many_files():
 def many_files_rsync():
 	"""Test rsync benchmark"""
 	count = 2000
-	manyout_dir = clean_subdir(abs_test_dir, 'many_out')
+	manyout_dir = re_init_subdir(abs_test_dir, 'many_out')
 	create_many_files(manyout_dir, "a", count)
 	rsync_command = "rsync -e ssh -aH --delete '%s' '%s'" % \
 					 (manyout_dir, output_desc)
@@ -110,8 +102,8 @@ def many_files_rsync():
 def nested_files():
 	"""Time backup and restore of 10000 nested files"""
 	depth = 4
-	nestedout_dir = clean_subdir(abs_test_dir, 'nested_out')
-	restout_dir = clean_subdir(abs_test_dir, 'rest_out')
+	nestedout_dir = re_init_subdir(abs_test_dir, 'nested_out')
+	restout_dir = re_init_subdir(abs_test_dir, 'rest_out')
 	create_nested(nestedout_dir, "a", depth)
 	backup_cmd = "rdiff-backup '%s' '%s'" % (nestedout_dir, output_desc)
 	restore_cmd = "rdiff-backup --force -r now '%s' '%s'" % \
@@ -123,7 +115,7 @@ def nested_files():
 def nested_files_rsync():
 	"""Test rsync on nested files"""
 	depth = 4
-	nestedout_dir = clean_subdir(abs_test_dir, 'nested_out')
+	nestedout_dir = re_init_subdir(abs_test_dir, 'nested_out')
 	create_nested(nestedout_dir, "a", depth)
 	rsync_command = "rsync -e ssh -aH --delete '%s' '%s'" % \
 					(nestedout_dir, output_desc)

@@ -459,7 +459,7 @@ class Gzip(RPathTest):
 	def test_maybe_gzip(self):
 		"""Test MaybeGzip"""
 		dirrp = rpath.RPath(self.lc, "testfiles/output")
-		re_init_dir(dirrp)
+		re_init_rpath_dir(dirrp)
 
 		base_rp = dirrp.append('foo')
 		fileobj = rpath.MaybeGzip(base_rp)

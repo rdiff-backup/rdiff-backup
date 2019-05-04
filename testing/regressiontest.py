@@ -165,7 +165,7 @@ class IncrementTest1(unittest.TestCase):
 		"""Test backing up a directory with quoted hardlinks in it"""
 		hldir = rpath.RPath(Globals.local_connection,
 							"testfiles/quoted_hardlinks")
-		re_init_dir(hldir)
+		re_init_rpath_dir(hldir)
 		hl1 = hldir.append("HardLink1")
 		hl1.touch()
 		hl2 = hldir.append("HardLink2")
@@ -187,7 +187,7 @@ class IncrementTest1(unittest.TestCase):
 
 		"""
 		sockdir = rpath.RPath(Globals.local_connection, "testfiles/sockettest")
-		re_init_dir(sockdir)
+		re_init_rpath_dir(sockdir)
 		tmp_sock = sockdir.append("sock")
 		tmp_sock.mksock()
 		sock1 = sockdir.append("Long_socket_name---------------------------------------------------------------------------------------------------")
@@ -260,7 +260,7 @@ class IncrementTest1(unittest.TestCase):
 		def make_confdir():
 			confdir = rpath.RPath(Globals.local_connection,
 								  "testfiles/conf1test")
-			re_init_dir(confdir)
+			re_init_rpath_dir(confdir)
 			dir1 = confdir.append('dir')
 			dir1.mkdir()
 			dir1_1 = dir1.append('1-dir')

@@ -34,7 +34,7 @@ class FilenameMappingTest(unittest.TestCase):
 		MakeOutputDir()
 		outrp = rpath.RPath(Globals.local_connection, "testfiles/output")
 		inrp = rpath.RPath(Globals.local_connection, "testfiles/quotetest")
-		re_init_dir(inrp)
+		re_init_rpath_dir(inrp)
 		long_filename = "A"*200 # when quoted should cause overflow
 		longrp = inrp.append(long_filename)
 		longrp.touch()

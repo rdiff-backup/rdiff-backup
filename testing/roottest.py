@@ -45,7 +45,7 @@ class RootTest(unittest.TestCase):
 		"""
 		dirrp = rpath.RPath(Globals.local_connection, "testfiles/root_owner")
 		def make_dir():
-			re_init_dir(dirrp)
+			re_init_rpath_dir(dirrp)
 			rp1 = dirrp.append('file1')
 			rp2 = dirrp.append('file2')
 			rp3 = dirrp.append('file3')
@@ -76,7 +76,7 @@ class RootTest(unittest.TestCase):
 			"""Write the directory testfiles/root_mapping"""
 			rp = rpath.RPath(Globals.local_connection,
 							 "testfiles/root_mapping")
-			re_init_dir(rp)
+			re_init_rpath_dir(rp)
 			rp1 = rp.append('1')
 			rp1.touch()
 			rp2 = rp.append('2')
@@ -123,7 +123,7 @@ class RootTest(unittest.TestCase):
 			"""Write the directory testfiles/root_mapping"""
 			rp = rpath.RPath(Globals.local_connection,
 							 "testfiles/root_mapping")
-			re_init_dir(rp)
+			re_init_rpath_dir(rp)
 			rp1 = rp.append('1')
 			rp1.touch()
 			rp2 = rp.append('2')
@@ -159,7 +159,7 @@ class HalfRoot(unittest.TestCase):
 
 		"""
 		rp1 = rpath.RPath(Globals.local_connection, "testfiles/root_half1")
-		re_init_dir(rp1)
+		re_init_rpath_dir(rp1)
 		rp1_1 = rp1.append('foo')
 		rp1_1.write_string('hello')
 		rp1_1.chmod(0)
@@ -180,7 +180,7 @@ class HalfRoot(unittest.TestCase):
 		rp1_3.chmod(0)
 
 		rp2 = rpath.RPath(Globals.local_connection, "testfiles/root_half2")
-		re_init_dir(rp2)
+		re_init_rpath_dir(rp2)
 		rp2_1 = rp2.append('foo')
 		rp2_1.write_string('goodbye')
 		rp2_1.chmod(0)
@@ -297,7 +297,7 @@ class NonRoot(unittest.TestCase):
 	def make_root_dirs(self):
 		"""Make directory createable only by root"""
 		rp = rpath.RPath(Globals.local_connection, "testfiles/root_out1")
-		re_init_dir(rp)
+		re_init_rpath_dir(rp)
 		rp1 = rp.append("1")
 		rp1.touch()
 		rp2 = rp.append("2")
