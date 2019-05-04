@@ -15,6 +15,9 @@ new_pythonpath = None
 
 def run_cmd(cmd):
 	"""Run the given cmd, return the amount of time it took"""
+	time.sleep(1)  # just to be sure to not have the infamous message
+	# Fatal Error: Time of Last backup is not in the past.  This is probably caused
+	# by running two backups in less than a second.  Wait a second and try again.
 	if new_pythonpath: full_cmd = "PYTHONPATH=%s %s" % (new_pythonpath, cmd)
 	else: full_cmd = cmd
 	print("Running command '%s'" % (full_cmd,))
