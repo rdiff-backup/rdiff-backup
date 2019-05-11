@@ -25,7 +25,7 @@ the related connections.
 
 """
 
-import os, sys
+import os, sys, subprocess
 from .log import Log
 from . import Globals, connection, rpath
 
@@ -135,17 +135,13 @@ def init_connection(remote_cmd):
 	if not remote_cmd: return Globals.local_connection
 
 	Log("Executing " + remote_cmd, 4)
-	if os.name == "nt":
-		import subprocess
-		try:
-			process = subprocess.Popen(remote_cmd, shell=False, bufsize=0,
-								stdin=subprocess.PIPE, 
-								stdout=subprocess.PIPE)
-			(stdin, stdout) = (process.stdin, process.stdout)
-		except OSError:
-			(stdin, stdout) = (None, None)
-	else:
-		stdin, stdout = os.popen2(remote_cmd)
+	try:
+		process = subprocess.Popen(remote_cmd, shell=False, bufsize=0,
+							stdin=subprocess.PIPE, 
+							stdout=subprocess.PIPE)
+		(stdin, stdout) = (process.stdin, process.stdout)
+	except OSError:
+		(stdin, stdout) = (None, None)
 	conn_number = len(Globals.connections)
 	conn = connection.PipeConnection(stdout, stdin, conn_number)
 

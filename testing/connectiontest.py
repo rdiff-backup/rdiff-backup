@@ -1,4 +1,4 @@
-import unittest, types, tempfile, os, sys
+import unittest, types, tempfile, os, sys, connection
 from commontest import *
 from rdiff_backup.connection import *
 from rdiff_backup import Globals, rpath, FilenameMapping
@@ -89,8 +89,11 @@ class PipeConnectionTest(unittest.TestCase):
 
 	def setUp(self):
 		"""Must start a server for this"""
-		stdin, stdout = os.popen2("%s ./server.py %s" \
-                        % (sys.executable, SourceDir))
+		pipe_cmd = "%s ./server.py %s" \
+                        % (sys.executable, SourceDir)
+                p = connection.Popen(pipe_cmd, shell=True,
+			stdin=connection.PIPE, stdout=connection.PIPE, close_fds=True)
+		(stdin, stdout) = (p.stdin, p.stdout)
 		self.conn = PipeConnection(stdout, stdin)
 		Globals.security_level = "override"
     	#self.conn.Log.setverbosity(9)
