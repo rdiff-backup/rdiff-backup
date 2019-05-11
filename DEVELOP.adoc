@@ -7,7 +7,11 @@ Some notes for developers and other people willing to help development.
 - Install:
 * tox
 * libacl-devel (for sys/acl.h)
-- run `tox`
+- unpack the test-files (see note) to a directory `rdiff-backup_testfiles` next to the cloned Git repository
+- run `tox` to use the default `tox.ini`
+- or `tox -c tox_slow.ini` for long tests
+
+NOTE: the test files are currently still available from https://download-mirror.savannah.gnu.org/releases/rdiff-backup/testfiles.tar.gz until I've found a better place or approach. For now you need to unpack the archive file and rename the created directory according to the above instructions.
 
 That's it...
 
