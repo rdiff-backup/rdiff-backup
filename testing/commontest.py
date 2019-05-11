@@ -23,6 +23,9 @@ old_inc2_dir = os.path.join(old_test_dir, 'increment2')
 old_inc3_dir = os.path.join(old_test_dir, 'increment3')
 old_inc4_dir = os.path.join(old_test_dir, 'increment4')
 
+# the directory in which all testing scripts are placed is the one
+abs_testing_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+
 __no_execute__ = 1 # Keeps the actual rdiff-backup program from running
 
 def Myrm(dirstring):
@@ -48,6 +51,9 @@ def re_init_subdir(maindir, subdir):
 	os.makedirs(dir)
 	return dir
 
+# two temporary directories to simulate remote actions
+abs_remote1_dir = re_init_subdir(abs_test_dir, 'remote1')
+abs_remote2_dir = re_init_subdir(abs_test_dir, 'remote2')
 
 def MakeOutputDir():
 	"""Initialize the output directory"""
@@ -64,7 +70,7 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 	source_local and dest_local are boolean values.  If either is
 	false, then rdiff-backup will be run pretending that src_dir and
 	dest_dir, respectively, are remote.  The server process will be
-	run in directories test1 and test2/tmp respectively.
+	run in directories remote1 and remote2 respectively.
 
 	src_dir and dest_dir are the source and destination
 	(mirror) directories, relative to the testing directory.
@@ -76,10 +82,10 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 
 	"""
 	if not source_local:
-		src_dir = ("'cd test1; ../%s --server'::../%s" % (RBBin, src_dir))
+		src_dir = ("'cd %s; %s --server'::%s" % (abs_remote1_dir, RBBin, src_dir))
 	if dest_dir and not dest_local:
-		dest_dir = ("'cd test2/tmp; ../../%s --server'::../../%s" %
-					(RBBin, dest_dir))
+		dest_dir = ("'cd %s; %s --server'::%s" %
+					(abs_remote2_dir, RBBin, dest_dir))
 
 	cmdargs = [RBBin, extra_options]
 	if not (source_local and dest_local): cmdargs.append("--remote-schema %s")
@@ -110,11 +116,11 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 	remote_schema = '%s'
 
 	if not source_local:
-		src_dir = "cd test1; %s ../server.py ../%s::../%s" % \
-				  (sys.executable, SourceDir, src_dir)
+		src_dir = "cd %s; %s/server.py::%s" % \
+				  (abs_remote1_dir, abs_testing_dir, src_dir)
 	if not dest_local:
-		dest_dir = "cd test2/tmp; %s ../../server.py ../../%s::../../%s" \
-				   % (sys.executable, SourceDir, dest_dir)
+		dest_dir = "cd %s; %s/server.py::%s" \
+				   % (abs_remote2_dir, abs_testing_dir, dest_dir)
 
 	cmdpairs = SetConnections.get_cmd_pairs([src_dir, dest_dir], remote_schema)
 	Security.initialize("backup", cmdpairs)
@@ -160,11 +166,11 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time,
 	Globals.security_level = "override"
 	#_reset_connections()
 	if not mirror_local:
-		mirror_dir = "cd test1; %s ../server.py ../%s::../%s" % \
-					 (sys.executable, SourceDir, mirror_dir)
+		mirror_dir = "cd %s; %s/server.py::%s" % \
+					 (abs_remote1_dir, abs_testing_dir, mirror_dir)
 	if not dest_local:
-		dest_dir = "cd test2/tmp; %s ../../server.py ../../%s::../../%s" \
-				   % (sys.executable, SourceDir, dest_dir)
+		dest_dir = "cd %s; %s/server.py::%s" \
+				   % (abs_remote2_dir, abs_testing_dir, dest_dir)
 
 	cmdpairs = SetConnections.get_cmd_pairs([mirror_dir, dest_dir],
 											remote_schema)
