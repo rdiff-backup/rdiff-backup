@@ -404,7 +404,7 @@ def get_acl_lists_from_rp(rp):
 	"""Returns (acl_list, def_acl_list) from an rpath.  Call locally"""
 	assert rp.conn is Globals.local_connection
 	try: acl = posix1e.ACL(file=rp.path)
-	except FileNotFoundError as exc:
+	except (FileNotFoundError, UnicodeEncodeError) as exc:
 		log.Log("Warning: unable to read ACL from %s: %s"
 				% (repr(rp.path), exc), 3)
 		acl = None
@@ -414,7 +414,7 @@ def get_acl_lists_from_rp(rp):
 		else: raise
 	if rp.isdir():
 		try: def_acl = posix1e.ACL(filedef=rp.path)
-		except FileNotFoundError as exc:
+		except (FileNotFoundError, UnicodeEncodeError) as exc:
 			log.Log("Warning: unable to read default ACL from %s: %s"
 				% (repr(rp.path), exc), 3)
 			def_acl = None

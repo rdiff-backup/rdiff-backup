@@ -199,7 +199,7 @@ def iterate_meta_rfs(mirror_rp, inc_rp):
 		if not raw_rf:
 			log.Log("Warning, metadata file has entry for %s,\n"
 					"but there are no associated files." %
-					(metadata_rorp.get_indexpath(),), 2)
+					(metadata_rorp.get_safepath(),), 2)
 			continue
 		raw_rf.set_metadata_rorp(metadata_rorp)
 		yield raw_rf
@@ -264,7 +264,7 @@ class RegressITRB(rorpiter.ITRBranch):
 		"""Process when nothing is a directory"""
 		if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
 			log.Log("Regressing file %s" %
-					(rf.metadata_rorp.get_indexpath()), 5)
+					(rf.metadata_rorp.get_safepath()), 5)
 			if rf.metadata_rorp.isreg(): self.restore_orig_regfile(rf)
 			else:
 				if rf.mirror_rp.lstat(): rf.mirror_rp.delete()

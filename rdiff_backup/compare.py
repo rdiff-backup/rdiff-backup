@@ -83,18 +83,18 @@ def Verify(mirror_rp, inc_rp, verify_time):
 		if not repo_rorp.has_sha1():
 			log.Log("Warning: Cannot find SHA1 digest for file %s,\n"
 					"perhaps because this feature was added in v1.1.1"
-					% (repo_rorp.get_indexpath(),), 2)
+					% (repo_rorp.get_safepath(),), 2)
 			continue
 		fp = RepoSide.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
 		computed_hash = hash.compute_sha1_fp(fp)
 		if computed_hash == repo_rorp.get_sha1():
-			log.Log("Verified SHA1 digest of " + repo_rorp.get_indexpath(), 5)
+			log.Log("Verified SHA1 digest of " + repo_rorp.get_safepath(), 5)
 		else:
 			bad_files += 1
 			log.Log("Warning: Computed SHA1 digest of %s\n   %s\n"
 					"doesn't match recorded digest of\n   %s\n"
 					"Your backup repository may be corrupted!" %
-					(repo_rorp.get_indexpath(), computed_hash,
+					(repo_rorp.get_safepath(), computed_hash,
 					 repo_rorp.get_sha1()), 2)
 	RepoSide.close_rf_cache()
 	if not bad_files: log.Log("Every file verified successfully.", 3)
@@ -144,7 +144,7 @@ def get_basic_report(src_rp, repo_rorp, comp_data_func = None):
 
 def log_success(src_rorp, mir_rorp = None):
 	"""Log that src_rorp and mir_rorp compare successfully"""
-	path = src_rorp and src_rorp.get_indexpath() or mir_rorp.get_indexpath()
+	path = src_rorp and src_rorp.get_safepath() or mir_rorp.get_safepath()
 	log.Log("Successful compare: %s" % (path,), 5)
 
 
@@ -203,7 +203,7 @@ class DataSide(backup.SourceStruct):
 			"""Return 0 if their data hashes same, 1 otherwise"""
 			if not mir_rorp.has_sha1():
 				log.Log("Warning: Metadata file has no digest for %s, "
-						"unable to compare." % (mir_rorp.get_indexpath(),), 2)
+						"unable to compare." % (mir_rorp.get_safepath(),), 2)
 				return 0
 			elif (src_rp.getsize() == mir_rorp.getsize() and
 				  hash.compute_sha1(src_rp) == mir_rorp.get_sha1()):

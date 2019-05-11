@@ -303,7 +303,7 @@ class TargetStruct:
 		"""
 		ITR = rorpiter.IterTreeReducer(PatchITRB, [target])
 		for diff in rorpiter.FillInIter(diff_iter, target):
-			log.Log("Processing changed file " + diff.get_indexpath(), 5)
+			log.Log("Processing changed file " + diff.get_safepath(), 5)
 			ITR(diff.index, diff)
 		ITR.Finish()
 		target.setdata()
@@ -473,7 +473,7 @@ class RestoreFile:
 		def get_fp():
 			current_fp = self.get_first_fp()
 			for inc_diff in self.relevant_incs[1:]:
-				log.Log("Applying patch %s" % (inc_diff.get_indexpath(),), 7)
+				log.Log("Applying patch %s" % (inc_diff.get_safepath(),), 7)
 				assert inc_diff.getinctype() == 'diff'
 				delta_fp = inc_diff.open("rb", inc_diff.isinccompressed())
 				new_fp = tempfile.TemporaryFile()
@@ -495,7 +495,7 @@ constructed from existing increments because last increment had type
 %s.  Instead of the actual file's data, an empty length file will be
 created.  This error is probably caused by data loss in the
 rdiff-backup destination directory, or a bug in rdiff-backup""" %
-	    (self.mirror_rp.get_indexpath(), self.relevant_incs[-1].lstat()), 2)
+	    (self.mirror_rp.get_safepath(), self.relevant_incs[-1].lstat()), 2)
 			return io.StringIO('')
 		return robust.check_common_error(error_handler, get_fp)
 
@@ -626,13 +626,13 @@ class PatchITRB(rorpiter.ITRBranch):
 		if not diff_rorp.isreg(): return
 		if not diff_rorp.has_sha1():
 			log.Log("Hash for %s missing, cannot check" %
-					(diff_rorp.get_indexpath()), 2)
+					(diff_rorp.get_safepath()), 2)
 		elif copy_report.sha1_digest == diff_rorp.get_sha1():
 			log.Log("Hash %s of %s verified" %
-					(diff_rorp.get_sha1(), diff_rorp.get_indexpath()), 6)
+					(diff_rorp.get_sha1(), diff_rorp.get_safepath()), 6)
 		else:
 			log.Log("Warning: Hash %s of %s\ndoesn't match recorded hash %s!"
-					% (copy_report.sha1_digest, diff_rorp.get_indexpath(),
+					% (copy_report.sha1_digest, diff_rorp.get_safepath(),
 					   diff_rorp.get_sha1()), 2)
 
 	def patch_to_temp(self, basis_rp, diff_rorp, new):

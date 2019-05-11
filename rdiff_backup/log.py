@@ -258,10 +258,10 @@ class ErrorLog:
 	@classmethod
 	def get_indexpath(cls, obj):
 		"""Return filename for logging.  rp is a rpath, string, or tuple"""
-		try: return obj.get_indexpath()
+		try: return obj.get_safepath()
 		except AttributeError:
 			if type(obj) is tuple: return "/".join(obj)
-			else: return str(obj)
+			else: return repr(obj)
 
 	@classmethod
 	def write_if_open(cls, error_type, rp, exc):

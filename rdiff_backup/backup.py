@@ -243,7 +243,7 @@ class DestinationStruct:
 		"""Patch dest_rpath with an rorpiter of diffs"""
 		ITR = rorpiter.IterTreeReducer(PatchITRB, [dest_rpath, cls.CCPP])
 		for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
-			log.Log("Processing changed file " + diff.get_indexpath(), 5)
+			log.Log("Processing changed file " + diff.get_safepath(), 5)
 			ITR(diff.index, diff)
 		ITR.Finish()
 		cls.CCPP.close()
@@ -255,7 +255,7 @@ class DestinationStruct:
 		ITR = rorpiter.IterTreeReducer(IncrementITRB,
 									   [dest_rpath, inc_rpath, cls.CCPP])
 		for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
-			log.Log("Processing changed file " + diff.get_indexpath(), 5)
+			log.Log("Processing changed file " + diff.get_safepath(), 5)
 			ITR(diff.index, diff)
 		ITR.Finish()
 		cls.CCPP.close()

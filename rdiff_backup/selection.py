@@ -284,6 +284,7 @@ class Select:
 
 		self.parse_last_excludes()
 		self.parse_rbdir_exclude()
+		self.parse_brokenname_exclude()
 
 	def parse_catch_error(self, exc):
 		"""Deal with selection error exc"""
@@ -305,6 +306,22 @@ pattern (such as '**') which matches the base directory.""" %
 		"""Add exclusion of rdiff-backup-data dir to front of list"""
 		self.add_selection_func(
 			self.glob_get_tuple_sf(("rdiff-backup-data",), 0), 1)
+
+	def parse_brokenname_exclude(self):
+		"""Add exclusion of files with broken unicode names to front of list"""
+
+		def exclude_broken_name_func(rp):
+			try:
+				rp.path.encode('utf8')
+				return None # no exception, let it go
+			except UnicodeEncodeError as exc:
+				log.Log("Warning: ignoring file %s with wrong encoding: %s" % \
+					(repr(rp.path), exc), 2)
+				return 0 # something wrong with encoding, ignore
+
+		exclude_broken_name_func.exclude = 1
+		exclude_broken_name_func.name = "Exclude broken file names"
+		self.add_selection_func(exclude_broken_name_func, 1)
 
 	def parse_last_excludes(self):
 		"""Exit with error if last selection function isn't an exclude"""

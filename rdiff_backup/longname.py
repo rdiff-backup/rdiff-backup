@@ -230,7 +230,7 @@ def update_rf(rf, rorp, mirror_root):
 	def update_incs(rf, inc_base):
 		"""Swap inclist in rf with those with base inc_base and return"""
 		log.Log("Restoring with increment base %s for file %s" %
-				(inc_base, rorp.get_indexpath()), 6)		
+				(inc_base, rorp.get_safepath()), 6)
 		rf.inc_rp = get_long_rp(inc_base)
 		rf.inc_list = get_inclist(inc_base)
 		rf.set_relevant_incs()

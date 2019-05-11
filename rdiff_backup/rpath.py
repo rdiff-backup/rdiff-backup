@@ -76,7 +76,7 @@ def check_for_files(*rps):
 	"""Make sure that all the rps exist, raise error if not"""
 	for rp in rps:
 		if not rp.lstat():
-			raise RPathException("File %s does not exist" % rp.get_indexpath())
+			raise RPathException("File %s does not exist" % rp.get_safepath())
 
 def move(rpin, rpout):
 	"""Move rpin to rpout, renaming if possible"""
@@ -235,7 +235,7 @@ def cmp_attribs(rp1, rp2):
 		result = ((rp1.getctime() == rp2.getctime()) and
 			(rp1.getmtime() == rp2.getmtime()))
 	log.Log("Compare attribs of %s and %s: %s" %
-			(rp1.get_indexpath(), rp2.get_indexpath(), result), 7)
+			(rp1.get_safepath(), rp2.get_safepath(), result), 7)
 	return result
 
 def copy_with_attribs(rpin, rpout, compress = 0):
@@ -270,7 +270,7 @@ def rename(rp_source, rp_dest):
 				rp_source.conn.os.chmod(rp_dest.path, 0o700)
 				rp_source.conn.os.unlink(rp_dest.path)
 				rp_source.conn.os.rename(rp_source.path, rp_dest.path)
-			    
+
 		rp_dest.data = rp_source.data
 		rp_source.data = {'type': None}
 
@@ -286,9 +286,11 @@ def make_file_dict(filename):
 		try:
 			return C.make_file_dict(filename)
 		except OSError as error:
-			# Unicode filenames should be process by the Python version 
+			# Unicode filenames should be processed by the Python version
 			if error.errno != errno.EILSEQ and error.errno != errno.EINVAL:
 				raise
+		except UnicodeEncodeError as error:
+			pass
 
 	return make_file_dict_python(filename)
 
@@ -373,7 +375,7 @@ def open_local_read(rpath):
 	return open(rpath.path, "rb")
 
 def get_incfile_info(basename):
-	"""Returns None or tuple of 
+	"""Returns None or tuple of
 	(is_compressed, timestr, type, and basename)"""
 	dotsplit = basename.split(".")
 	if dotsplit[-1] == "gz":
@@ -543,7 +545,7 @@ class RORPath:
 								  compare_eas = Globals.eas_active,
 								  compare_acls = Globals.acls_active,
 								  compare_win_acls = Globals.win_acls_active)
-							 
+
 	def __ne__(self, other): return not self.__eq__(other)
 
 	def __str__(self):
@@ -552,7 +554,7 @@ class RORPath:
 
 	def summary_string(self):
 		"""Return summary string"""
-		return "%s %s" % (self.get_indexpath(), self.lstat())
+		return "%s %s" % (self.get_safepath(), self.lstat())
 
 	def __getstate__(self):
 		"""Return picklable state
@@ -696,6 +698,15 @@ class RORPath:
 		"""
 		if not self.index: return "."
 		return "/".join(self.index)
+
+	def get_safepath(self):
+		"""Return safe path of index even with names throwing UnicodeEncodeError
+
+		For instance, if the index is ("a", "b"), return "'a/b'".
+
+		"""
+		if not self.index: return "."
+		return repr("/".join(self.index))
 
 	def get_attached_filetype(self):
 		"""If there is a file attached, say what it is
@@ -933,7 +944,7 @@ class RPath(RORPath):
 				# Some systems throw this error if try to set sticky bit
 				# on a non-directory. Remove sticky bit and try again.
 				log.Log("Warning: Unable to set permissions of %s to %o - "
-						"trying again without sticky bit (%o)" % (self.path, 
+						"trying again without sticky bit (%o)" % (self.path,
 						permissions, permissions & 0o6777), loglevel)
 				self.conn.os.chmod(self.path, permissions
 											  & 0o6777 & Globals.permission_mask)
