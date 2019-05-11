@@ -6,24 +6,24 @@ from rdiff_backup import compare
 
 class CompareTest(unittest.TestCase):
 	def setUp(self):
-		Myrm("testfiles/output")
-		rdiff_backup(1, 1, 'testfiles/increment2', 'testfiles/output',
+		self.outdir = re_init_subdir(abs_test_dir, "output")
+		rdiff_backup(1, 1, old_inc2_dir, self.outdir,
 					 current_time = 10000)
-		rdiff_backup(1, 1, 'testfiles/increment3', 'testfiles/output',
+		rdiff_backup(1, 1, old_inc3_dir, self.outdir,
 					 current_time = 20000)
 
 	def generic_test(self, local, compare_option):
 		"""Used for 6 tests below"""
-		rdiff_backup(local, local, 'testfiles/increment3', 'testfiles/output',
+		rdiff_backup(local, local, old_inc3_dir, self.outdir,
 					 extra_options = compare_option)
-		ret_val = rdiff_backup(local, local, 'testfiles/increment2',
-		             'testfiles/output', extra_options = compare_option,
+		ret_val = rdiff_backup(local, local, old_inc2_dir,
+		             self.outdir, extra_options = compare_option,
 					  check_return_val = 0)
 		assert ret_val, ret_val
-		rdiff_backup(local, local, 'testfiles/increment2', 'testfiles/output',
+		rdiff_backup(local, local, old_inc2_dir, self.outdir,
 					 extra_options = compare_option + "-at-time 10000")
-		ret_val = rdiff_backup(local, local, 'testfiles/increment3',
-			'testfiles/output',
+		ret_val = rdiff_backup(local, local, old_inc3_dir,
+			self.outdir,
 			extra_options = compare_option + "-at-time 10000",
 			check_return_val = 0)
 		assert ret_val, ret_val
@@ -54,22 +54,23 @@ class CompareTest(unittest.TestCase):
 
 	def generic_selective_test(self, local, compare_option):
 		"""Used for selective tests--just compare part of a backup"""
-		rdiff_backup(local, local, 'testfiles/increment3/various_file_types',
-					 'testfiles/output/various_file_types',
+		rdiff_backup(local, local, os.path.join(old_inc3_dir, 'various_file_types'),
+					 os.path.join(abs_output_dir, 'various_file_types'),
 					 extra_options = compare_option)
 		ret_val = rdiff_backup(local, local,
-							   'testfiles/increment2/increment1',
-							   'testfiles/output/increment1',
+							   os.path.join(old_inc2_dir, 'increment1'),
+							   os.path.join(abs_output_dir, 'increment1'),
 							   extra_options = compare_option,
 							   check_return_val = 0)
 		assert ret_val, ret_val
 
-		rdiff_backup(local, local, 'testfiles/increment2/newdir',
-					 'testfiles/output/newdir',
+		rdiff_backup(local, local,
+					 os.path.join(old_inc2_dir, 'newdir'),
+					 os.path.join(abs_output_dir, 'newdir'),
 					 extra_options = compare_option + "-at-time 10000")
 		ret_val = rdiff_backup(local, local,
-							   'testfiles/increment3/newdir',
-							   'testfiles/output/newdir',
+							   os.path.join(old_inc3_dir, 'newdir'),
+							   os.path.join(abs_output_dir, 'newdir'),
 						extra_options = compare_option + "-at-time 10000",
 							   check_return_val = 0)
 		assert ret_val, ret_val
@@ -115,26 +116,26 @@ class CompareTest(unittest.TestCase):
 
 		def modify_diff():
 			"""Write to the stph_icons.h diff"""
-			l = [filename for filename in
-				 os.listdir('testfiles/output/rdiff-backup-data/increments')
+			incs_dir = os.path.join(abs_output_dir, 'rdiff-backup-data', 'increments')
+			l = [filename for filename in os.listdir(incs_dir)
 				 if filename.startswith('stph_icons.h')]
 			assert len(l) == 1, l
 			diff_rp = rpath.RPath(Globals.local_connection,
-			  'testfiles/output/rdiff-backup-data/increments/' + l[0])
+			  os.path.join(incs_dir, l[0]))
 			change_file(diff_rp)
 
-		rdiff_backup(local, local, 'testfiles/output', None,
+		rdiff_backup(local, local, abs_output_dir, None,
 					 extra_options = "--verify")
-		rdiff_backup(local, local, 'testfiles/output', None,
+		rdiff_backup(local, local, abs_output_dir, None,
 					 extra_options = "--verify-at-time 10000")
 		modify_diff()
-		ret_val =  rdiff_backup(local, local, 'testfiles/output', None,
+		ret_val =  rdiff_backup(local, local, abs_output_dir, None,
 					 extra_options = "--verify-at-time 10000",
 								check_return_val = 0)
 		assert ret_val, ret_val
 		change_file(rpath.RPath(Globals.local_connection,
-								'testfiles/output/stph_icons.h'))
-		ret_val =  rdiff_backup(local, local, 'testfiles/output', None,
+								os.path.join(abs_output_dir, 'stph_icons.h')))
+		ret_val =  rdiff_backup(local, local, abs_output_dir, None,
 					 extra_options = "--verify", check_return_val = 0)
 		assert ret_val, ret_val
 

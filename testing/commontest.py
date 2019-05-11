@@ -17,6 +17,12 @@ abs_test_dir = os.path.join(abs_work_dir, 'testfiles')
 abs_output_dir = os.path.join(abs_test_dir, 'output')
 abs_restore_dir = os.path.join(abs_test_dir, 'restore')
 
+old_test_dir = os.getcwd() + '_testfiles'
+old_inc1_dir = os.path.join(old_test_dir, 'increment1')
+old_inc2_dir = os.path.join(old_test_dir, 'increment2')
+old_inc3_dir = os.path.join(old_test_dir, 'increment3')
+old_inc4_dir = os.path.join(old_test_dir, 'increment4')
+
 __no_execute__ = 1 # Keeps the actual rdiff-backup program from running
 
 def Myrm(dirstring):
