@@ -110,8 +110,8 @@ class CompareTest(unittest.TestCase):
 
 			fp = rp.open("wb")
 			fp.seek(int(rp.getsize()/2))
-			if char == 'a': fp.write('b')
-			else: fp.write('a')
+			if char == b'a': fp.write(b'b')
+			else: fp.write(b'a')
 			fp.close()
 
 		def modify_diff():
