@@ -1,6 +1,6 @@
 """commontest - Some functions and constants common to several test cases.
 Can be called also directly to setup the test environment"""
-import os, sys, code
+import os, sys, code, shutil
 # Avoid circularities
 from rdiff_backup.log import Log
 from rdiff_backup.rpath import RPath
@@ -8,7 +8,7 @@ from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
 	 selection, lazy, Time, rpath, eas_acls, rorpiter, Security
 
 
-RBBin = "rdiff-backup"
+RBBin = shutil.which("rdiff-backup")
 
 # Working directory is defined by Tox, venv or the current build directory
 abs_work_dir = os.getenv('TOX_ENV_DIR', os.getenv('VIRTUAL_ENV',
