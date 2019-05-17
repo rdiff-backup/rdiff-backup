@@ -153,6 +153,8 @@ class Logger:
 		if self.term_verbosity < 9: return
 		if type(result) is bytes: result_repr = repr(result)
 		else: result_repr = str(result)
+		# shorten the result to a max size of 720 chars with ellipsis if needed
+		result_repr = result_repr[:720] + (result_repr[720:] and '[...]')
 		if Globals.server: conn_str = "Server"
 		else: conn_str = "Client"
 		self.log_to_term("%s %s (%d): %s" %
