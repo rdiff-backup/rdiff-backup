@@ -1,6 +1,8 @@
 New in v1.3.4 (????/??/??)
 ---------------------------
 
+Add support for Python 3.5 to 3.8, remove support for Python 2.x (Eric Lavarde)
+
 Fix OverflowError on 64-bit systems when backing up symlinks with uid or gid
 above INT_MAX. Thanks to Michel Le Cocq for the bug report. (Andrew Ferguson)
 
