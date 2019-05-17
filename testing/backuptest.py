@@ -14,17 +14,15 @@ class RemoteMirrorTest(unittest.TestCase):
 
 	def testMirror(self):
 		"""Testing simple mirror"""
-		MirrorTest(None, None, ["testfiles/increment1"])
+		MirrorTest(None, None, [old_inc1_dir])
 
 	def testMirror2(self):
 		"""Test mirror with larger data set"""
-		MirrorTest(1, None, ['testfiles/increment1', 'testfiles/increment2',
-							 'testfiles/increment3', 'testfiles/increment4'])
+		MirrorTest(1, None, [old_inc1_dir, old_inc2_dir, old_inc3_dir, old_inc4_dir])
 
 	def testMirror3(self):
 		"""Local version of testMirror2"""
-		MirrorTest(1, 1, ['testfiles/increment1', 'testfiles/increment2',
-						  'testfiles/increment3', 'testfiles/increment4'])
+		MirrorTest(1, 1, [old_inc1_dir, old_inc2_dir, old_inc3_dir, old_inc4_dir])
 
 
 if __name__ == "__main__": unittest.main()
