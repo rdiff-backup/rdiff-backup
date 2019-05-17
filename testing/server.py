@@ -29,6 +29,6 @@ except (OSError, IOError, ImportError):
 	print_usage()
 	raise
 
-#log.Log.setverbosity(5)
+log.Log.setverbosity(10)
 rdiff_backup.Globals.security_level = "override"
-PipeConnection(sys.stdin, sys.stdout).Server()
+PipeConnection(sys.stdin.buffer, sys.stdout.buffer).Server()

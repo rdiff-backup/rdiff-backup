@@ -149,12 +149,12 @@ class LowLevelPipeConnection(Connection):
 
 	def _putfile(self, fp, req_num):
 		"""Send a file to the client using virtual files"""
-		self._write("f", str(VirtualFile.new(fp)), req_num)
+		self._write("f", self._i2b(VirtualFile.new(fp)), req_num)
 
 	def _putiter(self, iterator, req_num):
 		"""Put an iterator through the pipe"""
 		self._write("i",
-			str(VirtualFile.new(iterfile.MiscIterToFile(iterator))), req_num)
+			self._i2b(VirtualFile.new(iterfile.MiscIterToFile(iterator))), req_num)
 
 	def _putrpath(self, rpath, req_num):
 		"""Put an rpath into the pipe
@@ -190,17 +190,21 @@ class LowLevelPipeConnection(Connection):
 		string form) of its connection number it is *connected to*.
 
 		"""
-		self._write("c", str(pipeconn.conn_number), req_num)
+		self._write("c", self._i2b(pipeconn.conn_number), req_num)
 
 	def _putquit(self):
 		"""Send a string that takes down server"""
-		self._write("q", "", 255)
+		self._write("q", b"", 255)
 
 	def _write(self, headerchar, data, req_num):
 		"""Write header and then data to the pipe"""
+		assert len(headerchar) == 1, \
+			"Header type %s can only have one letter/byte" % headerchar
+		if isinstance(headerchar, str):
+			headerchar = headerchar.encode()
 		try:
-			self.outpipe.write(headerchar + chr(req_num) +
-							   C.long2str(int(len(data))))
+			self.outpipe.write(headerchar + self._i2b(req_num, 1) +
+							   self._i2b(len(data), 7))
 			self.outpipe.write(data)
 			self.outpipe.flush()
 		except (IOError, AttributeError): raise ConnectionWriteError()
@@ -210,21 +214,15 @@ class LowLevelPipeConnection(Connection):
 		try: return self.inpipe.read(length)
 		except IOError: raise ConnectionReadError()
 
-	def _s2l_old(self, s):
-		"""Convert string to long int"""
-		assert len(s) == 7
-		l = 0
-		for i in range(7): l = l*256 + ord(s[i])
-		return l
+	def _b2i(self, b):
+		"""Convert bytes to int"""
+		return int.from_bytes(b, byteorder='little')
 
-	def _l2s_old(self, l):
-		"""Convert long int to string"""
-		s = ""
-		for i in range(7):
-			l, remainder = divmod(l, 256)
-			s = chr(remainder) + s
-		assert remainder == 0
-		return s
+	def _i2b(self, i, size = 0):
+		"""Convert int to string"""
+		if (size == 0):
+			size = (i.bit_length() + 7) // 8
+		return i.to_bytes(size, byteorder='little')
 
 	def _get(self):
 		"""Read an object from the pipe and return (req_num, value)"""
@@ -232,23 +230,24 @@ class LowLevelPipeConnection(Connection):
 		if not len(header_string) == 9:
 			raise ConnectionReadError("Truncated header string (problem "
 									  "probably originated remotely)")
-		format_string, req_num, length = (header_string[0],
-										  ord(header_string[1]),
-										  C.str2long(header_string[2:]))
-		if format_string == "q": raise ConnectionQuit("Received quit signal")
+		format_string = header_string[0:1]
+		req_num = self._b2i(header_string[1:2])
+		length = self._b2i(header_string[2:])
+
+		if format_string == b"q": raise ConnectionQuit("Received quit signal")
 
 		data = self._read(length)
-		if format_string == "o": result = pickle.loads(data)
-		elif format_string == "b": result = data
-		elif format_string == "f": result = VirtualFile(self, int(data))
-		elif format_string == "i":
-			result = iterfile.FileToMiscIter(VirtualFile(self, int(data)))
-		elif format_string == "r": result = self._getrorpath(data)
-		elif format_string == "R": result = self._getrpath(data)
-		elif format_string == "Q": result = self._getqrpath(data)
+		if format_string == b"o": result = pickle.loads(data)
+		elif format_string == b"b": result = data
+		elif format_string == b"f": result = VirtualFile(self, self._b2i(data))
+		elif format_string == b"i":
+			result = iterfile.FileToMiscIter(VirtualFile(self, self._b2i(data)))
+		elif format_string == b"r": result = self._getrorpath(data)
+		elif format_string == b"R": result = self._getrpath(data)
+		elif format_string == b"Q": result = self._getqrpath(data)
 		else:
-			assert format_string == "c", header_string
-			result = Globals.connection_dict[int(data)]
+			assert format_string == b"c", header_string
+			result = Globals.connection_dict[self._b2i(data)]
 		log.Log.conn("received", result, req_num)
 		return (req_num, result)
 
@@ -535,7 +534,7 @@ class VirtualFile:
 
 # everything has to be available here for remote connection's use, but
 # put at bottom to reduce circularities.
-from . import Globals, Time, Rdiff, Hardlink, FilenameMapping, C, Security, \
+from . import Globals, Time, Rdiff, Hardlink, FilenameMapping, Security, \
 	   Main, rorpiter, selection, increment, statistics, manage, lazy, \
 	   iterfile, rpath, robust, restore, manage, backup, connection, \
 	   TempFile, SetConnections, librsync, log, regress, fs_abilities, \

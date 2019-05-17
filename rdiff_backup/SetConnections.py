@@ -136,7 +136,7 @@ def init_connection(remote_cmd):
 
 	Log("Executing " + remote_cmd, 4)
 	try:
-		process = subprocess.Popen(remote_cmd, shell=False, bufsize=0,
+		process = subprocess.Popen(remote_cmd, shell=True, bufsize=0,
 							stdin=subprocess.PIPE, 
 							stdout=subprocess.PIPE)
 		(stdin, stdout) = (process.stdin, process.stdout)

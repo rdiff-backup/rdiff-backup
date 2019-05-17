@@ -1,7 +1,10 @@
-import unittest, types, tempfile, os, sys, connection
+import unittest, types, tempfile, os, sys, subprocess
 from commontest import *
 from rdiff_backup.connection import *
 from rdiff_backup import Globals, rpath, FilenameMapping
+
+SourceDir = 'rdiff_backup'
+regfilename = os.path.join(old_test_dir, "various_file_types", "regular_file")
 
 class LocalConnectionTest(unittest.TestCase):
 	"""Test the dummy connection"""
@@ -43,60 +46,54 @@ class LowLevelPipeConnectionTest(unittest.TestCase):
 
 	def testObjects(self):
 		"""Try moving objects across connection"""
-		outpipe = open(self.filename, "w")
-		LLPC = LowLevelPipeConnection(None, outpipe)
-		for obj in self.objs: LLPC._putobj(obj, 3)
-		outpipe.close()
-		inpipe = open(self.filename, "r")
-		LLPC.inpipe = inpipe
-		for obj in self.objs:
-			gotten = LLPC._get()
-			assert gotten == (3, obj), gotten
-		inpipe.close
+		with open(self.filename, "wb") as outpipe:
+			LLPC = LowLevelPipeConnection(None, outpipe)
+			for obj in self.objs: LLPC._putobj(obj, 3)
+		with open(self.filename, "rb") as inpipe:
+			LLPC.inpipe = inpipe
+			for obj in self.objs:
+				gotten = LLPC._get()
+				assert gotten == (3, obj), gotten
 		os.unlink(self.filename)
-		
+
 	def testBuf(self):
 		"""Try moving a buffer"""
-		outpipe = open(self.filename, "w")
-		LLPC = LowLevelPipeConnection(None, outpipe)
-		inbuf = open("testfiles/various_file_types/regular_file", "r").read()
-		LLPC._putbuf(inbuf, 234)
-		outpipe.close()
-		inpipe = open(self.filename, "r")
-		LLPC.inpipe = inpipe
-		assert (234, inbuf) == LLPC._get()
-		inpipe.close()
+		with open(self.filename, "wb") as outpipe:
+			LLPC = LowLevelPipeConnection(None, outpipe)
+			with open(regfilename, "rb") as inpipe:
+				inbuf = inpipe.read()
+			LLPC._putbuf(inbuf, 234)
+		with open(self.filename, "rb") as inpipe:
+			LLPC.inpipe = inpipe
+			assert (234, inbuf) == LLPC._get()
 		os.unlink(self.filename)
 
 	def testSendingExceptions(self):
 		"""Exceptions should also be sent down pipe well"""
-		outpipe = open(self.filename, "w")
-		LLPC = LowLevelPipeConnection(None, outpipe)
-		for exception in self.excts: LLPC._putobj(exception, 0)
-		outpipe.close()
-		inpipe = open(self.filename, "r")
-		LLPC.inpipe = inpipe
-		for exception in self.excts:
-			incoming_exception = LLPC._get()
-			assert isinstance(incoming_exception[1], exception.__class__)
-		inpipe.close()
+		with open(self.filename, "wb") as outpipe:
+			LLPC = LowLevelPipeConnection(None, outpipe)
+			for exception in self.excts: LLPC._putobj(exception, 0)
+		with open(self.filename, "rb") as inpipe:
+			LLPC.inpipe = inpipe
+			for exception in self.excts:
+				incoming_exception = LLPC._get()
+				assert isinstance(incoming_exception[1], exception.__class__)
 		os.unlink(self.filename)
 
 
 class PipeConnectionTest(unittest.TestCase):
 	"""Test Pipe connection"""
-	regfilename = "testfiles/various_file_types/regular_file"
 
 	def setUp(self):
 		"""Must start a server for this"""
-		pipe_cmd = "%s ./server.py %s" \
-                        % (sys.executable, SourceDir)
-                p = connection.Popen(pipe_cmd, shell=True,
-			stdin=connection.PIPE, stdout=connection.PIPE, close_fds=True)
-		(stdin, stdout) = (p.stdin, p.stdout)
+		pipe_cmd = "%s testing/server.py %s" \
+				% (sys.executable, SourceDir)
+		self.p = subprocess.Popen(pipe_cmd, shell=True,
+			stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True)
+		(stdin, stdout) = (self.p.stdin, self.p.stdout)
 		self.conn = PipeConnection(stdout, stdin)
 		Globals.security_level = "override"
-    	#self.conn.Log.setverbosity(9)
+		#self.conn.Log.setverbosity(9)
 		#Log.setverbosity(9)
 
 	def testBasic(self):
@@ -107,28 +104,31 @@ class PipeConnectionTest(unittest.TestCase):
 
 	def testModules(self):
 		"""Test module emulation"""
-		assert type(self.conn.tempfile.mktemp()) is bytes
+		assert type(self.conn.tempfile.mktemp()) is str
 		assert self.conn.os.path.join("a", "b") == "a/b"
-		rp1 = rpath.RPath(self.conn, self.regfilename)
+		rp1 = rpath.RPath(self.conn, regfilename)
 		assert rp1.isreg()
 
 	def testVirtualFiles(self):
 		"""Testing virtual files"""
-		tempout = self.conn.open("testfiles/tempout", "w")
+		# generate file name for temporary file
+		temp_file = os.path.join(abs_test_dir, "tempout")
+
+		tempout = self.conn.open(temp_file, "wb")
 		assert isinstance(tempout, VirtualFile)
-		regfilefp = open(self.regfilename, "r")
+		regfilefp = open(regfilename, "rb")
 		rpath.copyfileobj(regfilefp, tempout)
 		tempout.close()
 		regfilefp.close()
-		tempoutlocal = open("testfiles/tempout", "r")
-		regfilefp = open(self.regfilename, "r")
+		tempoutlocal = open(temp_file, "rb")
+		regfilefp = open(regfilename, "rb")
 		assert rpath.cmpfileobj(regfilefp, tempoutlocal)
 		tempoutlocal.close()
 		regfilefp.close()
-		os.unlink("testfiles/tempout")
+		os.unlink(temp_file)
 
-		assert rpath.cmpfileobj(self.conn.open(self.regfilename, "r"),
-								open(self.regfilename, "r"))
+		assert rpath.cmpfileobj(self.conn.open(regfilename, "rb"),
+								open(regfilename, "rb"))
 
 	def testString(self):
 		"""Test transmitting strings"""
@@ -138,21 +138,19 @@ class PipeConnectionTest(unittest.TestCase):
 	def testIterators(self):
 		"""Test transmission of iterators"""
 		i = iter([5, 10, 15]*100)
-		assert self.conn.hasattr(i, "next")
-		ret_val = self.conn.reval("lambda i: i.next()*i.next()", i)
+		assert self.conn.hasattr(i, "__next__")
+		ret_val = self.conn.reval("lambda i: next(i)*next(i)", i)
 		assert ret_val == 50, ret_val
 
 	def testRPaths(self):
 		"""Test transmission of rpaths"""
-		rp = rpath.RPath(self.conn,
-						 "testfiles/various_file_types/regular_file")
+		rp = rpath.RPath(self.conn, regfilename)
 		assert self.conn.reval("lambda rp: rp.data", rp) == rp.data
 		assert self.conn.reval("lambda rp: rp.conn is Globals.local_connection", rp)
 
 	def testQuotedRPaths(self):
 		"""Test transmission of quoted rpaths"""
-		qrp = FilenameMapping.QuotedRPath(self.conn,
-						   "testfiles/various_file_types/regular_file")
+		qrp = FilenameMapping.QuotedRPath(self.conn, regfilename)
 		assert self.conn.reval("lambda qrp: qrp.data", qrp) == qrp.data
 		assert qrp.isreg(), qrp
 		qrp_class_str = self.conn.reval("lambda qrp: str(qrp.__class__)", qrp)
@@ -169,6 +167,8 @@ class PipeConnectionTest(unittest.TestCase):
 	def tearDown(self):
 		"""Bring down connection"""
 		self.conn.quit()
+		if (self.p.poll() == None):
+			self.p.terminate()
 
 
 class RedirectedConnectionTest(unittest.TestCase):
@@ -176,10 +176,10 @@ class RedirectedConnectionTest(unittest.TestCase):
 	def setUp(self):
 		"""Must start two servers for this"""
 		#Log.setverbosity(9)
-		self.conna = SetConnections.init_connection("%s ./server.py %s" \
-                        % (sys.executable, SourceDir))
-		self.connb = SetConnections.init_connection("%s ./server.py %s" \
-                        % (sys.executable, SourceDir))
+		self.conna = SetConnections.init_connection("%s testing/server.py %s" \
+			% (sys.executable, SourceDir))
+		self.connb = SetConnections.init_connection("%s testing/server.py %s" \
+			% (sys.executable, SourceDir))
 
 	def testBasic(self):
 		"""Test basic operations with redirection"""
