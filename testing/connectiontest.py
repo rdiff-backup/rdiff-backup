@@ -127,8 +127,8 @@ class PipeConnectionTest(unittest.TestCase):
 		regfilefp.close()
 		os.unlink(temp_file)
 
-		assert rpath.cmpfileobj(self.conn.open(regfilename, "rb"),
-								open(regfilename, "rb"))
+		with open(regfilename, "rb") as localfh:
+			assert rpath.cmpfileobj(self.conn.open(regfilename, "rb"), localfh)
 
 	def testString(self):
 		"""Test transmitting strings"""
