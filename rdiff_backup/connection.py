@@ -215,14 +215,14 @@ class LowLevelPipeConnection(Connection):
 		except IOError: raise ConnectionReadError()
 
 	def _b2i(self, b):
-		"""Convert bytes to int"""
-		return int.from_bytes(b, byteorder='little')
+		"""Convert bytes to int using big endian byteorder"""
+		return int.from_bytes(b, byteorder='big')
 
 	def _i2b(self, i, size = 0):
-		"""Convert int to string"""
+		"""Convert int to string using big endian byteorder"""
 		if (size == 0):
 			size = (i.bit_length() + 7) // 8
-		return i.to_bytes(size, byteorder='little')
+		return i.to_bytes(size, byteorder='big')
 
 	def _get(self):
 		"""Read an object from the pipe and return (req_num, value)"""

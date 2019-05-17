@@ -75,8 +75,6 @@
 
 static PyObject *UnknownFileTypeError;
 static PyObject *c_make_file_dict(PyObject *self, PyObject *args);
-static PyObject *long2str(PyObject *self, PyObject *args);
-static PyObject *str2long(PyObject *self, PyObject *args);
 static PyObject *my_sync(PyObject *self, PyObject *args);
 
 /* Turn a stat structure into a python dictionary.  The preprocessor
@@ -213,21 +211,6 @@ static PyObject *c_make_file_dict(self, args)
 #endif /* defined(MS_WINDOWS) */
 }
 
-/* Convert python long into 7 byte string */
-static PyObject *long2str(self, args)
-	 PyObject *self;
-	 PyObject *args;
-{
-  unsigned char s[7];
-  PyLongObject *pylong;
-  PyObject *return_val;
-
-  if (!PyArg_ParseTuple(args, "O!", &PyLong_Type, &pylong)) return NULL;
-  if (_PyLong_AsByteArray(pylong, s, 7, 0, 0) != 0) return NULL;
-  else return Py_BuildValue("s#", s, 7);
-  return return_val;
-}
-
 
 /* Run sync() and return None */
 static PyObject *my_sync(self, args)
@@ -237,23 +220,6 @@ static PyObject *my_sync(self, args)
   if (!PyArg_ParseTuple(args, "")) return NULL;
   SYNC();
   return Py_BuildValue("");
-}
-
-
-/* Reverse of above; convert 7 byte string into python long */
-static PyObject *str2long(self, args)
-	 PyObject *self;
-	 PyObject *args;
-{
-  unsigned char *s;
-  int ssize;
-
-  if (!PyArg_ParseTuple(args, "s#", &s, &ssize)) return NULL;
-  if (ssize != 7) {
-	PyErr_SetString(PyExc_TypeError, "Single argument must be 7 char string");
-	return NULL;
-  }
-  return _PyLong_FromByteArray(s, 7, 0, 0);
 }
 
 
@@ -416,8 +382,6 @@ posix_lchown(PyObject *self, PyObject *args)
 static PyMethodDef CMethods[] = {
   {"make_file_dict", c_make_file_dict, METH_VARARGS,
    "Make dictionary from file stat"},
-  {"long2str", long2str, METH_VARARGS, "Convert python long to 7 byte string"},
-  {"str2long", str2long, METH_VARARGS, "Convert 7 byte string to python long"},
   {"sync", my_sync, METH_VARARGS, "sync buffers to disk"},
   {"acl_quote", acl_quote, METH_VARARGS,
    "Quote string, escaping non-printables"},

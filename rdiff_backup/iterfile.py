@@ -30,13 +30,6 @@ class UnwrapFile:
 	def __init__(self, file):
 		self.file = file
 
-	def _s2l_old(self, s):
-		"""Convert string to long int"""
-		assert len(s) == 7
-		l = 0
-		for i in range(7): l = l*256 + ord(s[i])
-		return l
-
 	def _get(self):
 		"""Return pair (type, data) next in line on the file
 
@@ -56,12 +49,16 @@ class UnwrapFile:
 		if not header: return None, None
 		if len(header) != 8:
 			assert None, "Header %s is only %d bytes" % (header, len(header))
-		type, length = header[0], C.str2long(header[1:])
+		type, length = header[0], self._b2i(header[1:])
 		buf = self.file.read(length)
 		if type in ("o", "e", "h"): return type, pickle.loads(buf)
 		else:
 			assert type in ("f", "c")
 			return type, buf
+
+	def _b2i(self, b):
+		"""Convert bytes to int using big endian byteorder"""
+		return int.from_bytes(b, byteorder='big')
 
 
 class IterWrappingFile(UnwrapFile):
@@ -207,7 +204,7 @@ class FileWrappingIter:
 			else:
 				pickle = pickle.dumps(currentobj, 1)
 				self.array_buf.frombytes("o")
-				self.array_buf.frombytes(C.long2str(int(len(pickle))))
+				self.array_buf.frombytes(self._i2b(len(pickle), 7))
 				self.array_buf.frombytes(pickle)
 		return 1
 
@@ -225,13 +222,13 @@ class FileWrappingIter:
 		if buf is None: # error occurred above, encode exception
 			self.currently_in_file = None
 			excstr = pickle.dumps(self.last_exception, 1)
-			total = "".join(('e', C.long2str(int(len(excstr))), excstr))
+			total = "".join(('e', self._i2b(len(excstr), 7), excstr))
 		else:
-			total = "".join((prefix_letter, C.long2str(int(len(buf))), buf))
+			total = "".join((prefix_letter, self._i2b(len(buf), 7), buf))
 			if buf == "": # end of file
 				cstr = pickle.dumps(self.currently_in_file.close(), 1)
 				self.currently_in_file = None
-				total += "".join(('h', C.long2str(int(len(cstr))), cstr))
+				total += "".join(('h', self._i2b(len(cstr), 7), cstr))
 		self.array_buf.frombytes(total)
 
 	def read_error_handler(self, exc, blocksize):
@@ -247,6 +244,12 @@ class FileWrappingIter:
 			s = chr(remainder) + s
 		assert remainder == 0
 		return s
+
+	def _i2b(self, i, size = 0):
+		"""Convert int to string using big endian byteorder"""
+		if (size == 0):
+			size = (i.bit_length() + 7) // 8
+		return i.to_bytes(size, byteorder='big')
 
 	def close(self): self.closed = 1
 
@@ -343,7 +346,7 @@ class MiscIterToFile(FileWrappingIter):
 		"""Add an arbitrary pickleable object to the buffer"""
 		pickle = pickle.dumps(obj, 1)
 		self.array_buf.frombytes("o")
-		self.array_buf.frombytes(C.long2str(int(len(pickle))))
+		self.array_buf.frombytes(self._i2b(len(pickle), 7))
 		self.array_buf.frombytes(pickle)
 
 	def addrorp(self, rorp):
@@ -355,13 +358,13 @@ class MiscIterToFile(FileWrappingIter):
 			pickle = pickle.dumps((rorp.index, rorp.data, 0), 1)
 			self.rorps_in_buffer += 1
 		self.array_buf.frombytes("r")
-		self.array_buf.frombytes(C.long2str(int(len(pickle))))
+		self.array_buf.frombytes(self._i2b(len(pickle), 7))
 		self.array_buf.frombytes(pickle)
-		
+
 	def addfinal(self):
 		"""Signal the end of the iterator to the other end"""
 		self.array_buf.frombytes("z")
-		self.array_buf.frombytes(C.long2str(0))
+		self.array_buf.frombytes(self._i2b(0, 7))
 
 	def close(self): self.closed = 1
 
@@ -415,7 +418,7 @@ class FileToMiscIter(IterWrappingFile):
 		if not self.buf: return None, None
 
 		assert len(self.buf) >= 8, "Unexpected end of MiscIter file"
-		type, length = self.buf[0], C.str2long(self.buf[1:8])
+		type, length = self.buf[0], self._b2i(self.buf[1:8])
 		data = self.buf[8:8+length]
 		self.buf = self.buf[8+length:]
 		if type in "oerh": return type, pickle.loads(data)
