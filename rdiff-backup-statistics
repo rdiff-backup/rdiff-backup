@@ -34,7 +34,7 @@ def parse_args():
 	global begin_time, end_time, min_ratio, separator, quiet
 	try: optlist, args = getopt.getopt(sys.argv[1:], "",
 			["begin-time=", "end-time=", "minimum-ratio=", "null-separator", "quiet"])
-	except getopt.error, e:
+	except getopt.GetoptError as e:
 		sys.exit("Bad command line: " + str(e))
 
 	for opt, arg in optlist:
@@ -78,6 +78,7 @@ class StatisticsRPaths:
 			incs = filter(lambda i: i.getinctime() >= begin_time, incs)
 		if end_time:
 			incs = filter(lambda i: i.getinctime() <= end_time, incs)
+		incs = list(incs)
 		incs.sort(key = lambda i: i.getinctime())
 		return incs
 
@@ -89,17 +90,17 @@ class StatisticsRPaths:
 		for inc in self.filestat_rps: filestat_dict[inc.getinctime()] = inc
 
 		result = []
-		keylist = session_dict.keys()
+		keylist = list(session_dict)  # get a list of keys
 		keylist.sort()
 		for time in keylist:
-			if filestat_dict.has_key(time):
+			if time in filestat_dict:
 				result.append((session_dict[time], filestat_dict[time]))
 			else: sys.stderr.write("No file_statistics to match %s\n" %
 								   (session_dict[time].path,))
 		return result
 
 def print_session_statistics(stat_rpaths):
-	print "Session statistics:"
+	print("Session statistics:")
 	system('rdiff-backup --calculate-average "' +
 		   '" "'.join([inc.path for inc in stat_rpaths.session_rps]) + '"')
 
@@ -124,7 +125,7 @@ class FileStatisticsTree:
 		mine = dict([(child.nametuple, child) for child in myfs.children])
 		others = dict([(child.nametuple, child) for child in otherfs.children])
 		for name in mine.keys() + others.keys(): # Remove duplicates
-			if not total_children.has_key(name):
+			if name not in total_children:
 				total_children[name] = (mine.get(name), others.get(name))
 
 		# Subtract subdirectories so we can rebuild
@@ -176,10 +177,10 @@ class FileStatisticsTree:
 		def print_line(fs, val):
 			percentage = float(val)/fs_func(self.fs_root) * 100
 			path = fs.nametuple and '/'.join(fs.nametuple) or '.'
-			print '%s (%02.1f%%)' % (path, percentage)
+			print('%s (%02.1f%%)' % (path, percentage))
 
 		s = "Top directories by %s (percent of total)" % (label,)
-		print "\n%s\n%s" % (s, ('-'*len(s)))
+		print("\n%s\n%s" % (s, ('-'*len(s))))
 		top_fs_pair_list = self.get_top_fs(fs_func)
 		top_fs_pair_list.sort(key = lambda pair: pair[1], reverse = 1)
 		for fs, val in top_fs_pair_list: print_line(fs, val)
@@ -257,10 +258,10 @@ def make_fst(session_rp, filestat_rp):
 		it was too slow in python.
 
 		"""
-		root = fs_iter.next()
+		root = next(fs_iter)
 		assert root.nametuple == (), root
 		stack = [root]
-		try: fs = fs_iter.next()
+		try: fs = next(fs_iter)
 		except StopIteration:
 			yield root
 			return
@@ -268,7 +269,7 @@ def make_fst(session_rp, filestat_rp):
 		while 1:
 			if fs and fs.is_child(stack[-1]):
 				stack.append(fs)
-				try: fs = fs_iter.next()
+				try: fs = next(fs_iter)
 				except StopIteration: fs = None
 			else:
 				expired = stack.pop()
@@ -286,19 +287,19 @@ def make_fst(session_rp, filestat_rp):
 
 		"""
 		children = [first_fs]
-		fs = fs_iter.next()
+		fs = next(fs_iter)
 		while 1:
 			if first_fs.is_child(fs):
 				fs.children = children
 				return fs
 			elif first_fs.is_brother(fs):
 				children.append(fs)
-				fs = fs_iter.next()
+				fs = next(fs_iter)
 			else: fs = make_tree_one_level(fs_iter, fs)
 
 	def make_root_tree(fs_iter):
 		"""Like make_tree, but assume fs_iter starts at the root"""
-		try: fs = fs_iter.next()
+		try: fs = next(fs_iter)
 		except StopIteration: sys.exit("No files in iterator")
 
 		while fs.nametuple != (): fs = make_tree_one_level(fs_iter, fs)
@@ -401,7 +402,7 @@ class ReadlineBuffer:
 		"""Read next block from fileobj, split and add to bufferlist"""
 		block = self.fileobj.read(self.blocksize)
 		if block:
-			split = block.split(separator)
+			split = block.decode().split(separator)
 			self.buffer[0] += split[0]
 			self.buffer.extend(split[1:])
 		else: self.at_end = 1
@@ -411,10 +412,10 @@ def sum_fst(rp_pairs):
 	"""Add the file statistics given as list of (session_rp, file_rp) pairs"""
 	global quiet
 	n = len(rp_pairs)
-	if not quiet: print "Processing statistics from session 1 of %d" % (n,)
+	if not quiet: print("Processing statistics from session 1 of %d" % (n,))
 	total_fst = make_fst(*rp_pairs[0])
 	for i in range(1, n):
-		if not quiet: print "Processing statistics from session %d of %d" % (i+1, n)
+		if not quiet: print("Processing statistics from session %d of %d" % (i+1, n))
 		session_rp, filestat_rp = rp_pairs[i]
 		fst = make_fst(session_rp, filestat_rp)
 		total_fst += fst
@@ -423,7 +424,7 @@ def sum_fst(rp_pairs):
 def set_chars_to_quote():
 	ctq_rp = Globals.rbdir.append("chars_to_quote")
 	if ctq_rp.lstat():
-		Globals.chars_to_quote = ctq_rp.get_data()
+		Globals.chars_to_quote = ctq_rp.get_string()
 	if Globals.chars_to_quote:
 		Globals.must_escape_dos_devices = 0 # No DOS devices will be present
 		FilenameMapping.set_init_quote_vals()
@@ -450,10 +451,10 @@ def error_check_Main():
 	except SystemExit:
 		raise
 	except KeyboardInterrupt:
-		print "User abort"
-	except (Exception, KeyboardInterrupt), exc:
+		print("User abort")
+	except (Exception, KeyboardInterrupt) as exc:
 		if robust.catch_error(exc):
-			print exc
+			print(exc)
 		else:
 			raise
 
