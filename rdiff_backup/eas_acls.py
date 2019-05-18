@@ -127,7 +127,7 @@ class ExtendedAttributes:
 		"""Return attribute attached to given name"""
 		return self.attr_dict[name]
 
-	def set(self, name, value = ""):
+	def set(self, name, value = b""):
 		"""Set given name to given value.  Does not write to disk"""
 		self.attr_dict[name] = value
 
@@ -185,7 +185,7 @@ def Record2EA(record):
 		if not line: continue
 		assert line[0] != '#', line
 		eq_pos = line.find('=')
-		if eq_pos == -1: ea.set(line)
+		if eq_pos == -1: ea.set(line.encode())
 		else:
 			name = line[:eq_pos]
 			assert line[eq_pos+1:eq_pos+3] == '0s', \
