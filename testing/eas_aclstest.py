@@ -53,6 +53,7 @@ class EATest(unittest.TestCase):
 
 		self.sample_ea.write_to_rp(tempdir)
 		new_ea.read_from_rp(tempdir)
+		if new_ea.attr_dict: new_ea.attr_dict.pop(b'security.selinux', None)
 		assert new_ea.attr_dict == self.sample_ea.attr_dict, \
 			   (new_ea.attr_dict, self.sample_ea.attr_dict)
 		assert new_ea == self.sample_ea
@@ -76,7 +77,7 @@ class EATest(unittest.TestCase):
 
 	def testExtractor(self):
 		"""Test seeking inside a record list"""
-		record_list = b"""# file: 0foo
+		record_list = """# file: 0foo
 user.multiline=0sVGhpcyBpcyBhIGZhaXJseSBsb25nIGV4dGVuZGVkIGF0dHJpYnV0ZS4KCQkJIEVuY29kaW5nIGl0IHdpbGwgcmVxdWlyZSBzZXZlcmFsIGxpbmVzIG9mCgkJCSBiYXNlNjQusbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGx
 user.third=0saGVsbG8=
 user.not_empty=0sZm9vYmFy
@@ -217,7 +218,12 @@ user.empty
 
 class ACLTest(unittest.TestCase):
 	"""Test access control lists"""
-	sample_acl = AccessControlLists((),"""user::rwx
+
+	# find out current user and group
+	current_user = pwd.getpwuid(os.getuid()).pw_name
+	current_group = grp.getgrgid(os.getgid()).gr_name
+
+	sample_acl = AccessControlLists((), """user::rwx
 user:root:rwx
 group::r-x
 group:root:r-x
@@ -235,16 +241,16 @@ default:group::r-x
 default:mask::r-x
 default:other::---""")
 	acl1 = AccessControlLists(('a1',), """user::r--
-user:ben:---
+user:{0}:---
 group::---
 group:root:---
 mask::---
-other::---""")
+other::---""".format(current_user))
 	acl2 = AccessControlLists(('a2',), """user::rwx
 group::r-x
-group:ben:rwx
+group:{0}:rwx
 mask::---
-other::---""")
+other::---""".format(current_group))
 	acl3 = AccessControlLists(('a3',), """user::rwx
 user:root:---
 group::r-x
@@ -319,26 +325,26 @@ other::---""")
 		"""Test seeking inside a record list"""
 		record_list = """# file: 0foo
 user::r--
-user:ben:---
+user:{0}:---
 group::---
 group:root:---
 mask::---
 other::---
 # file: 1foo/bar/baz
 user::r--
-user:ben:---
+user:{0}:---
 group::---
 group:root:---
 mask::---
 other::---
 # file: 2foo/\\012
 user::r--
-user:ben:---
+user:{0}:---
 group::---
 group:root:---
 mask::---
 other::---
-"""
+""".format(self.current_user)
 		extractor = ACLExtractor(io.StringIO(record_list))
 		acl_iter = extractor.iterate_starting_with(())
 		first = next(acl_iter)
@@ -463,19 +469,20 @@ other::---
 			rp.touch()
 			acl = AccessControlLists(('a1',), """user::rwx
 user:root:rwx
-user:ben:---
+user:{0}:---
 user:bin:r--
 group::r-x
 group:root:r-x
-group:ben:-w-
+group:{1}:-w-
 mask::r-x
-other::---""")
+other::---""".format(self.current_user, self.current_group))
 			rp.write_acl(acl)
 			return rp
 
 		def write_mapping_file(rootrp):
 			map_rp = rootrp.append('mapping_file')
-			map_rp.write_string("root:ben\nben:bin\nbin:root")
+			map_rp.write_string("root:{1}\n{0}:bin\nbin:root".format(
+						self.current_user, self.current_group))
 			return map_rp
 
 		def get_perms_of_user(acl, user):
@@ -498,7 +505,7 @@ other::---""")
 		assert out_rp.isreg()
 		out_acl = tempdir.append('a1').get_acl()
 		assert get_perms_of_user(out_acl, 'root') == 4
-		assert get_perms_of_user(out_acl, 'ben') == 7
+		assert get_perms_of_user(out_acl, self.current_user) == 7
 		assert get_perms_of_user(out_acl, 'bin') == 0
 
 	def test_acl_dropping(self):
