@@ -541,7 +541,7 @@ def acl_compare_rps(rp1, rp2):
 def ACL2Record(acl):
 	"""Convert an AccessControlLists object into a text record"""
 	return '# file: %s\n%s\n' % \
-		(C.acl_quote(acl.get_indexpath()), str(acl, 'utf-8'))
+		(C.acl_quote(acl.get_indexpath()), str(acl))
 
 def Record2ACL(record):
 	"""Convert text record to an AccessControlLists object"""
