@@ -5,9 +5,8 @@ from rdiff_backup import Globals, rpath, Time, user_group, log
 
 user_group.init_user_mapping()
 user_group.init_group_mapping()
-tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
-restore_dir = rpath.RPath(Globals.local_connection,
-						  "testfiles/restore_out")
+tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
+restore_dir = rpath.RPath(Globals.local_connection, abs_restore_dir)
 log.Log.setverbosity(3)
 
 class EATest(unittest.TestCase):
@@ -25,18 +24,22 @@ class EATest(unittest.TestCase):
 	ea2.set('user.third', 'Another random attribute')
 	ea3 = ExtendedAttributes(('3',))
 	ea4 = ExtendedAttributes(('4',), {'user.deleted': 'File to be deleted'})
-	ea_testdir1 = rpath.RPath(Globals.local_connection, "testfiles/ea_test1")
-	ea_testdir2 = rpath.RPath(Globals.local_connection, "testfiles/ea_test2")
+	ea_test1_dir = os.path.join(abs_test_dir, 'ea_test1')
+	ea_test1_rpath = rpath.RPath(Globals.local_connection, ea_test1_dir)
+	ea_test2_dir = os.path.join(abs_test_dir, 'ea_test2')
+	ea_test2_rpath = rpath.RPath(Globals.local_connection, ea_test2_dir)
+	ea_empty_dir = os.path.join(abs_test_dir, 'ea_empty')
+	ea_empty_rpath = rpath.RPath(Globals.local_connection, ea_empty_dir)
 
-	def make_temp(self):
-		"""Make temp directory testfiles/output"""
+	def make_temp_out_dirs(self):
+		"""Make temp output and restore directories empty"""
 		if tempdir.lstat(): tempdir.delete()
 		tempdir.mkdir()
 		if restore_dir.lstat(): restore_dir.delete()
 
 	def testBasic(self):
 		"""Test basic writing and reading of extended attributes"""
-		self.make_temp()
+		self.make_temp_out_dirs()
 		new_ea = ExtendedAttributes(())
 		new_ea.read_from_rp(tempdir)
 		assert not new_ea.attr_dict
@@ -97,7 +100,7 @@ user.empty
 
 		extractor = EAExtractor(io.StringIO(record_list))
 		ea_iter = extractor.iterate_starting_with(('1foo', 'bar'))
-		assert ea_iter.next().index == ('1foo', 'bar', 'baz')
+		assert next(ea_iter).index == ('1foo', 'bar', 'baz')
 		try: next(ea_iter)
 		except StopIteration: pass
 		else: assert 0, "Too many elements in iterator"
@@ -109,41 +112,45 @@ user.empty
 		to extended attribute code.
 
 		"""
-		if self.ea_testdir1.lstat(): self.ea_testdir1.delete()
-		if self.ea_testdir2.lstat(): self.ea_testdir2.delete()
-		self.ea_testdir1.mkdir()
-		rp1_1 = self.ea_testdir1.append('1')
-		rp1_2 = self.ea_testdir1.append('2')
-		rp1_3 = self.ea_testdir1.append('3')
-		rp1_4 = self.ea_testdir1.append('4')
+		if self.ea_test1_rpath.lstat(): self.ea_test1_rpath.delete()
+		if self.ea_test2_rpath.lstat(): self.ea_test2_rpath.delete()
+		self.ea_test1_rpath.mkdir()
+		rp1_1 = self.ea_test1_rpath.append('1')
+		rp1_2 = self.ea_test1_rpath.append('2')
+		rp1_3 = self.ea_test1_rpath.append('3')
+		rp1_4 = self.ea_test1_rpath.append('4')
 		list(map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3, rp1_4]))
-		self.sample_ea.write_to_rp(self.ea_testdir1)
+		self.sample_ea.write_to_rp(self.ea_test1_rpath)
 		self.ea1.write_to_rp(rp1_1)
 		self.ea2.write_to_rp(rp1_2)
 		self.ea4.write_to_rp(rp1_4)
 
-		self.ea_testdir2.mkdir()
-		rp2_1 = self.ea_testdir2.append('1')
-		rp2_2 = self.ea_testdir2.append('2')
-		rp2_3 = self.ea_testdir2.append('3')
+		self.ea_test2_rpath.mkdir()
+		rp2_1 = self.ea_test2_rpath.append('1')
+		rp2_2 = self.ea_test2_rpath.append('2')
+		rp2_3 = self.ea_test2_rpath.append('3')
 		list(map(rpath.RPath.touch, [rp2_1, rp2_2, rp2_3]))
-		self.ea3.write_to_rp(self.ea_testdir2)
+		self.ea3.write_to_rp(self.ea_test2_rpath)
 		self.sample_ea.write_to_rp(rp2_1)
 		self.ea1.write_to_rp(rp2_2)
 		self.ea2.write_to_rp(rp2_3)
 
+		# just create an empty dir for tests
+		if self.ea_empty_rpath.lstat(): self.ea_empty_rpath.delete()
+		self.ea_empty_rpath.mkdir()
+
 	def testIterate(self):
 		"""Test writing several records and then reading them back"""
 		self.make_backup_dirs()
-		rp1 = self.ea_testdir1.append('1')
-		rp2 = self.ea_testdir1.append('2')
-		rp3 = self.ea_testdir1.append('3')
+		rp1 = self.ea_test1_rpath.append('1')
+		rp2 = self.ea_test1_rpath.append('2')
+		rp3 = self.ea_test1_rpath.append('3')
 
 		# Now write records corresponding to above rps into file
 		Globals.rbdir = tempdir
 		man = metadata.PatchDiffMan()
 		writer = man.get_ea_writer('snapshot', 10000)
-		for rp in [self.ea_testdir1, rp1, rp2, rp3]:
+		for rp in [self.ea_test1_rpath, rp1, rp2, rp3]:
 			ea = ExtendedAttributes(rp.index)
 			ea.read_from_rp(rp)
 			writer.write_object(ea)
@@ -167,32 +174,32 @@ user.empty
 	def testSeriesLocal(self):
 		"""Test backing up and restoring directories with EAs locally"""
 		self.make_backup_dirs()
-		dirlist = ['testfiles/ea_test1', 'testfiles/empty',
-				   'testfiles/ea_test2', 'testfiles/ea_test1']
+		dirlist = [self.ea_test1_dir, self.ea_empty_dir,
+				   self.ea_test2_dir, self.ea_test1_dir]
 		BackupRestoreSeries(1, 1, dirlist, compare_eas = 1)
 
 	def testSeriesRemote(self):
 		"""Test backing up, restoring directories with EA remotely"""
 		self.make_backup_dirs()
-		dirlist = ['testfiles/ea_test1', 'testfiles/ea_test2',
-				   'testfiles/empty', 'testfiles/ea_test1']
+		dirlist = [self.ea_test1_dir, self.ea_test2_dir,
+				   self.ea_empty_dir, self.ea_test1_dir]
 		BackupRestoreSeries(None, None, dirlist, compare_eas = 1)
 
 	def test_final_local(self):
 		"""Test backing up and restoring using 'rdiff-backup' script"""
 		self.make_backup_dirs()
-		self.make_temp()
-		rdiff_backup(1, 1, self.ea_testdir1.path, tempdir.path,
+		self.make_temp_out_dirs()
+		rdiff_backup(1, 1, self.ea_test1_rpath.path, tempdir.path,
 					 current_time = 10000)
-		assert CompareRecursive(self.ea_testdir1, tempdir, compare_eas = 1)
+		assert CompareRecursive(self.ea_test1_rpath, tempdir, compare_eas = 1)
 
-		rdiff_backup(1, 1, self.ea_testdir2.path, tempdir.path,
+		rdiff_backup(1, 1, self.ea_test2_rpath.path, tempdir.path,
 					 current_time = 20000)
-		assert CompareRecursive(self.ea_testdir2, tempdir, compare_eas = 1)
+		assert CompareRecursive(self.ea_test2_rpath, tempdir, compare_eas = 1)
 
 		rdiff_backup(1, 1, tempdir.path, restore_dir.path,
 					 extra_options = '-r 10000')
-		assert CompareRecursive(self.ea_testdir1, restore_dir, compare_eas = 1)
+		assert CompareRecursive(self.ea_test1_rpath, restore_dir, compare_eas = 1)
 
 
 class ACLTest(unittest.TestCase):
@@ -231,17 +238,21 @@ group::r-x
 mask::---
 other::---""")
 	empty_acl = AccessControlLists((), "user::rwx\ngroup::---\nother::---")
-	acl_testdir1 = rpath.RPath(Globals.local_connection, 'testfiles/acl_test1')
-	acl_testdir2 = rpath.RPath(Globals.local_connection, 'testfiles/acl_test2')
-	def make_temp(self):
-		"""Make temp directory testfile/output"""
+	acl_test1_dir = os.path.join(abs_test_dir, 'acl_test1')
+	acl_test1_rpath = rpath.RPath(Globals.local_connection, acl_test1_dir)
+	acl_test2_dir = os.path.join(abs_test_dir, 'acl_test2')
+	acl_test2_rpath = rpath.RPath(Globals.local_connection, acl_test2_dir)
+	acl_empty_dir = os.path.join(abs_test_dir, 'acl_empty')
+	acl_empty_rpath = rpath.RPath(Globals.local_connection, acl_empty_dir)
+	def make_temp_out_dirs(self):
+		"""Make temp output and restore directories empty"""
 		if tempdir.lstat(): tempdir.delete()
 		tempdir.mkdir()
 		if restore_dir.lstat(): restore_dir.delete()
 
 	def testBasic(self):
 		"""Test basic writing and reading of ACLs"""
-		self.make_temp()
+		self.make_temp_out_dirs()
 		new_acl = AccessControlLists(())
 		tempdir.chmod(0o700)
 		new_acl.read_from_rp(tempdir)
@@ -256,10 +267,10 @@ other::---""")
 		assert str(new_acl) == str(self.sample_acl), \
 			   (str(new_acl), str(self.sample_acl))
 		assert new_acl == self.sample_acl
-		
+
 	def testBasicDir(self):
 		"""Test reading and writing of ACL w/ defaults to directory"""
-		self.make_temp()
+		self.make_temp_out_dirs()
 		new_acl = AccessControlLists(())
 		new_acl.read_from_rp(tempdir)
 		assert new_acl.is_basic()
@@ -327,46 +338,50 @@ other::---
 
 		extractor = ACLExtractor(io.StringIO(record_list))
 		acl_iter = extractor.iterate_starting_with(('1foo', 'bar'))
-		assert acl_iter.next().index == ('1foo', 'bar', 'baz')
+		assert next(acl_iter).index == ('1foo', 'bar', 'baz')
 		try: next(acl_iter)
 		except StopIteration: pass
 		else: assert 0, "Too many elements in iterator"
 
 	def make_backup_dirs(self):
 		"""Create testfiles/acl_test[12] directories"""
-		if self.acl_testdir1.lstat(): self.acl_testdir1.delete()
-		if self.acl_testdir2.lstat(): self.acl_testdir2.delete()
-		self.acl_testdir1.mkdir()
-		rp1_1 = self.acl_testdir1.append('1')
-		rp1_2 = self.acl_testdir1.append('2')
-		rp1_3 = self.acl_testdir1.append('3')
+		if self.acl_test1_rpath.lstat(): self.acl_test1_rpath.delete()
+		self.acl_test1_rpath.mkdir()
+		rp1_1 = self.acl_test1_rpath.append('1')
+		rp1_2 = self.acl_test1_rpath.append('2')
+		rp1_3 = self.acl_test1_rpath.append('3')
 		list(map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3]))
-		self.dir_acl.write_to_rp(self.acl_testdir1)
+		self.dir_acl.write_to_rp(self.acl_test1_rpath)
 		self.acl1.write_to_rp(rp1_1)
 		self.acl2.write_to_rp(rp1_2)
 		self.acl3.write_to_rp(rp1_3)
 
-		self.acl_testdir2.mkdir()
-		rp2_1, rp2_2, rp2_3 = list(map(self.acl_testdir2.append, ('1', '2', '3')))
+		if self.acl_test2_rpath.lstat(): self.acl_test2_rpath.delete()
+		self.acl_test2_rpath.mkdir()
+		rp2_1, rp2_2, rp2_3 = list(map(self.acl_test2_rpath.append, ('1', '2', '3')))
 		list(map(rpath.RPath.touch, (rp2_1, rp2_2, rp2_3)))
-		self.sample_acl.write_to_rp(self.acl_testdir2)
+		self.sample_acl.write_to_rp(self.acl_test2_rpath)
 		self.acl3.write_to_rp(rp2_1)
 		self.acl1.write_to_rp(rp2_2)
 		self.acl2.write_to_rp(rp2_3)
-		
+
+		# just create an empty dir for tests
+		if self.acl_empty_rpath.lstat(): self.acl_empty_rpath.delete()
+		self.acl_empty_rpath.mkdir()
+
 	def testIterate(self):
 		"""Test writing several records and then reading them back"""
 		self.make_backup_dirs()
-		self.make_temp()
-		rp1 = self.acl_testdir1.append('1')
-		rp2 = self.acl_testdir1.append('2')
-		rp3 = self.acl_testdir1.append('3')
+		self.make_temp_out_dirs()
+		rp1 = self.acl_test1_rpath.append('1')
+		rp2 = self.acl_test1_rpath.append('2')
+		rp3 = self.acl_test1_rpath.append('3')
 
 		# Now write records corresponding to above rps into file
 		Globals.rbdir = tempdir
 		man = metadata.PatchDiffMan()
 		writer = man.get_acl_writer('snapshot', 10000)
-		for rp in [self.acl_testdir1, rp1, rp2, rp3]:
+		for rp in [self.acl_test1_rpath, rp1, rp2, rp3]:
 			acl = AccessControlLists(rp.index)
 			acl.read_from_rp(rp)
 			writer.write_object(acl)
@@ -390,38 +405,38 @@ other::---
 	def testSeriesLocal(self):
 		"""Test backing up and restoring directories with ACLs locally"""
 		self.make_backup_dirs()
-		dirlist = ['testfiles/acl_test1', 'testfiles/empty',
-				   'testfiles/acl_test2', 'testfiles/acl_test1']
+		dirlist = [self.acl_test1_dir, self.acl_empty_dir,
+				   self.acl_test2_dir, self.acl_test1_dir]
 		BackupRestoreSeries(1, 1, dirlist, compare_acls = 1)
 
 	def testSeriesRemote(self):
 		"""Test backing up, restoring directories with EA remotely"""
 		self.make_backup_dirs()
-		dirlist = ['testfiles/acl_test1', 'testfiles/acl_test2',
-				   'testfiles/empty', 'testfiles/acl_test1']
+		dirlist = [self.acl_test1_dir, self.acl_test2_dir,
+				   self.acl_empty_dir, self.acl_test1_dir]
 		BackupRestoreSeries(None, None, dirlist, compare_acls = 1)
 
 	def test_final_local(self):
 		"""Test backing up and restoring using 'rdiff-backup' script"""
 		self.make_backup_dirs()
-		self.make_temp()
-		rdiff_backup(1, 1, self.acl_testdir1.path, tempdir.path,
+		self.make_temp_out_dirs()
+		rdiff_backup(1, 1, self.acl_test1_rpath.path, tempdir.path,
 					 current_time = 10000)
-		assert CompareRecursive(self.acl_testdir1, tempdir, compare_acls = 1)
+		assert CompareRecursive(self.acl_test1_rpath, tempdir, compare_acls = 1)
 
-		rdiff_backup(1, 1, self.acl_testdir2.path, tempdir.path,
+		rdiff_backup(1, 1, self.acl_test2_rpath.path, tempdir.path,
 					 current_time = 20000)
-		assert CompareRecursive(self.acl_testdir2, tempdir, compare_acls = 1)
+		assert CompareRecursive(self.acl_test2_rpath, tempdir, compare_acls = 1)
 
 		rdiff_backup(1, 1, tempdir.path, restore_dir.path,
 					 extra_options = '-r 10000')
-		assert CompareRecursive(self.acl_testdir1, restore_dir,
+		assert CompareRecursive(self.acl_test1_rpath, restore_dir,
 								compare_acls = 1)
 
 		restore_dir.delete()
 		rdiff_backup(1, 1, tempdir.path, restore_dir.path,
 					 extra_options = '-r now')
-		assert CompareRecursive(self.acl_testdir2, restore_dir,
+		assert CompareRecursive(self.acl_test2_rpath, restore_dir,
 								compare_acls = 1)
 
 	def test_acl_mapping(self):
@@ -442,7 +457,7 @@ mask::r-x
 other::---""")
 			rp.write_acl(acl)
 			return rp
-		
+
 		def write_mapping_file(rootrp):
 			map_rp = rootrp.append('mapping_file')
 			map_rp.write_string("root:ben\nben:bin\nbin:root")
@@ -455,9 +470,9 @@ other::---""")
 					return perms
 			return None
 
-		self.make_temp()
+		self.make_temp_out_dirs()
 		rootrp = rpath.RPath(Globals.local_connection,
-							 'testfiles/acl_map_test')
+							os.path.join(abs_test_dir, 'acl_map_test'))
 		rp = make_dir(rootrp)
 		map_rp = write_mapping_file(rootrp)
 
@@ -473,7 +488,7 @@ other::---""")
 
 	def test_acl_dropping(self):
 		"""Test dropping of ACL names"""
-		self.make_temp()
+		self.make_temp_out_dirs()
 		rp = tempdir.append('1')
 		rp.touch()
 		"""ben uses a dvorak keyboard, and these sequences are
@@ -498,11 +513,11 @@ other::---""")
 
 	def test_nochange(self):
 		"""Make sure files with ACLs not unnecessarily flagged changed"""
-		self.make_temp()
+		self.make_temp_out_dirs()
 		self.make_backup_dirs()
-		rdiff_backup(1, 1, self.acl_testdir1.path, tempdir.path,
+		rdiff_backup(1, 1, self.acl_test1_rpath.path, tempdir.path,
 					 current_time = 10000)
-		rdiff_backup(1, 1, self.acl_testdir1.path, tempdir.path,
+		rdiff_backup(1, 1, self.acl_test1_rpath.path, tempdir.path,
 					 current_time = 20000)
 		incdir = tempdir.append('rdiff-backup-data').append('increments')
 		assert incdir.isdir(), incdir
@@ -511,45 +526,52 @@ other::---""")
 
 class CombinedTest(unittest.TestCase):
 	"""Test backing up and restoring directories with both EAs and ACLs"""
-	combo_testdir1 = rpath.RPath(Globals.local_connection,
-								 'testfiles/ea_acl_test1')
-	combo_testdir2 = rpath.RPath(Globals.local_connection,
-								 'testfiles/ea_acl_test2')
+	combo_test1_dir = os.path.join(abs_test_dir, 'ea_acl_test1')
+	combo_test1_rpath = rpath.RPath(Globals.local_connection, combo_test1_dir)
+	combo_test2_dir = os.path.join(abs_test_dir, 'ea_acl_test2')
+	combo_test2_rpath = rpath.RPath(Globals.local_connection, combo_test2_dir)
+	combo_empty_dir = os.path.join(abs_test_dir, 'ea_acl_empty')
+	combo_empty_rpath = rpath.RPath(Globals.local_connection, combo_empty_dir)
+
 	def make_backup_dirs(self):
 		"""Create testfiles/ea_acl_test[12] directories"""
-		if self.combo_testdir1.lstat(): self.combo_testdir1.delete()
-		if self.combo_testdir2.lstat(): self.combo_testdir2.delete()
-		self.combo_testdir1.mkdir()
-		rp1_1, rp1_2, rp1_3 = list(map(self.combo_testdir1.append, ('1', '2', '3')))
+		if self.combo_test1_rpath.lstat(): self.combo_test1_rpath.delete()
+		if self.combo_test2_rpath.lstat(): self.combo_test2_rpath.delete()
+		self.combo_test1_rpath.mkdir()
+		rp1_1, rp1_2, rp1_3 = list(map(self.combo_test1_rpath.append, ('1', '2', '3')))
 		list(map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3]))
-		ACLTest.dir_acl.write_to_rp(self.combo_testdir1)
-		EATest.sample_ea.write_to_rp(self.combo_testdir1)
+		ACLTest.dir_acl.write_to_rp(self.combo_test1_rpath)
+		EATest.sample_ea.write_to_rp(self.combo_test1_rpath)
 		ACLTest.acl1.write_to_rp(rp1_1)
 		EATest.ea2.write_to_rp(rp1_2)
 		ACLTest.acl3.write_to_rp(rp1_3)
 		EATest.ea3.write_to_rp(rp1_3)
 
-		self.combo_testdir2.mkdir()
-		rp2_1, rp2_2, rp2_3 = list(map(self.combo_testdir2.append, ('1', '2', '3')))
+		self.combo_test2_rpath.mkdir()
+		rp2_1, rp2_2, rp2_3 = list(map(self.combo_test2_rpath.append, ('1', '2', '3')))
 		list(map(rpath.RPath.touch, [rp2_1, rp2_2, rp2_3]))
-		ACLTest.sample_acl.write_to_rp(self.combo_testdir2)
+		ACLTest.sample_acl.write_to_rp(self.combo_test2_rpath)
 		EATest.ea1.write_to_rp(rp2_1)
 		EATest.ea3.write_to_rp(rp2_2)
 		ACLTest.acl2.write_to_rp(rp2_2)
 
+		# just create an empty dir for tests
+		if self.combo_empty_rpath.lstat(): self.combo_empty_rpath.delete()
+		self.combo_empty_rpath.mkdir()
+
 	def testSeriesLocal(self):
 		"""Test backing up and restoring EAs/ACLs locally"""
 		self.make_backup_dirs()
-		dirlist = ['testfiles/ea_acl_test1', 'testfiles/ea_acl_test2',
-				   'testfiles/empty', 'testfiles/ea_acl_test1']
+		dirlist = [self.combo_test1_dir, self.combo_test2_dir,
+				   self.combo_empty_dir, self.combo_test1_dir]
 		BackupRestoreSeries(1, 1, dirlist,
 							compare_eas = 1, compare_acls = 1)
 
 	def testSeriesRemote(self):
 		"""Test backing up and restoring EAs/ACLs locally"""
 		self.make_backup_dirs()
-		dirlist = ['testfiles/ea_acl_test1', 'testfiles/empty',
-				   'testfiles/ea_acl_test2', 'testfiles/ea_acl_test1']
+		dirlist = [self.combo_test1_dir, self.combo_empty_dir,
+				   self.combo_test2_dir, self.combo_test1_dir]
 		BackupRestoreSeries(None, None, dirlist,
 							compare_eas = 1, compare_acls = 1)
 
