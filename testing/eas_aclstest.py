@@ -12,18 +12,18 @@ log.Log.setverbosity(3)
 class EATest(unittest.TestCase):
 	"""Test extended attributes"""
 	sample_ea = ExtendedAttributes(
-		(), {'user.empty':'', 'user.not_empty':'foobar', 'user.third':'hello',
-			 'user.binary':chr(0)+chr(1)+chr(2)+chr(140)+'/="',
-			 'user.multiline':"""This is a fairly long extended attribute.
+		(), {b'user.empty':b'', b'user.not_empty':b'foobar', b'user.third':b'hello',
+			 b'user.binary':bytes((0,1,2,140)) + b'/="',
+			 b'user.multiline':b"""This is a fairly long extended attribute.
 			 Encoding it will require several lines of
-			 base64.""" + chr(177)*300})
+			 base64.""" + bytes((177,)*300)})
 	empty_ea = ExtendedAttributes(())
-	ea1 = ExtendedAttributes(('1',), sample_ea.attr_dict.copy())
-	ea1.delete('user.not_empty')
-	ea2 = ExtendedAttributes(('2',), sample_ea.attr_dict.copy())
-	ea2.set('user.third', 'Another random attribute')
-	ea3 = ExtendedAttributes(('3',))
-	ea4 = ExtendedAttributes(('4',), {'user.deleted': 'File to be deleted'})
+	ea1 = ExtendedAttributes(('e1',), sample_ea.attr_dict.copy())
+	ea1.delete(b'user.not_empty')
+	ea2 = ExtendedAttributes(('e2',), sample_ea.attr_dict.copy())
+	ea2.set(b'user.third', b'Another random attribute')
+	ea3 = ExtendedAttributes(('e3',))
+	ea4 = ExtendedAttributes(('e4',), {b'user.deleted': b'File to be deleted'})
 	ea_test1_dir = os.path.join(abs_test_dir, 'ea_test1')
 	ea_test1_rpath = rpath.RPath(Globals.local_connection, ea_test1_dir)
 	ea_test2_dir = os.path.join(abs_test_dir, 'ea_test2')
@@ -33,8 +33,10 @@ class EATest(unittest.TestCase):
 
 	def make_temp_out_dirs(self):
 		"""Make temp output and restore directories empty"""
+		tempdir.setdata()  # in case the file changed in-between
 		if tempdir.lstat(): tempdir.delete()
 		tempdir.mkdir()
+		restore_dir.setdata()
 		if restore_dir.lstat(): restore_dir.delete()
 
 	def testBasic(self):
@@ -42,7 +44,9 @@ class EATest(unittest.TestCase):
 		self.make_temp_out_dirs()
 		new_ea = ExtendedAttributes(())
 		new_ea.read_from_rp(tempdir)
-		assert not new_ea.attr_dict
+                # we ignore SELinux extended attributes for comparaison
+		if new_ea.attr_dict: new_ea.attr_dict.pop(b'security.selinux', None)
+		assert not new_ea.attr_dict, "The attributes of %s should have been empty: %s" % (tempdir, new_ea.attr_dict)
 		assert not new_ea == self.sample_ea
 		assert new_ea != self.sample_ea
 		assert new_ea == self.empty_ea
@@ -72,7 +76,7 @@ class EATest(unittest.TestCase):
 
 	def testExtractor(self):
 		"""Test seeking inside a record list"""
-		record_list = """# file: 0foo
+		record_list = b"""# file: 0foo
 user.multiline=0sVGhpcyBpcyBhIGZhaXJseSBsb25nIGV4dGVuZGVkIGF0dHJpYnV0ZS4KCQkJIEVuY29kaW5nIGl0IHdpbGwgcmVxdWlyZSBzZXZlcmFsIGxpbmVzIG9mCgkJCSBiYXNlNjQusbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGxsbGx
 user.third=0saGVsbG8=
 user.not_empty=0sZm9vYmFy
@@ -115,10 +119,10 @@ user.empty
 		if self.ea_test1_rpath.lstat(): self.ea_test1_rpath.delete()
 		if self.ea_test2_rpath.lstat(): self.ea_test2_rpath.delete()
 		self.ea_test1_rpath.mkdir()
-		rp1_1 = self.ea_test1_rpath.append('1')
-		rp1_2 = self.ea_test1_rpath.append('2')
-		rp1_3 = self.ea_test1_rpath.append('3')
-		rp1_4 = self.ea_test1_rpath.append('4')
+		rp1_1 = self.ea_test1_rpath.append('e1')
+		rp1_2 = self.ea_test1_rpath.append('e2')
+		rp1_3 = self.ea_test1_rpath.append('e3')
+		rp1_4 = self.ea_test1_rpath.append('e4')
 		list(map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3, rp1_4]))
 		self.sample_ea.write_to_rp(self.ea_test1_rpath)
 		self.ea1.write_to_rp(rp1_1)
@@ -126,9 +130,9 @@ user.empty
 		self.ea4.write_to_rp(rp1_4)
 
 		self.ea_test2_rpath.mkdir()
-		rp2_1 = self.ea_test2_rpath.append('1')
-		rp2_2 = self.ea_test2_rpath.append('2')
-		rp2_3 = self.ea_test2_rpath.append('3')
+		rp2_1 = self.ea_test2_rpath.append('e1')
+		rp2_2 = self.ea_test2_rpath.append('e2')
+		rp2_3 = self.ea_test2_rpath.append('e3')
 		list(map(rpath.RPath.touch, [rp2_1, rp2_2, rp2_3]))
 		self.ea3.write_to_rp(self.ea_test2_rpath)
 		self.sample_ea.write_to_rp(rp2_1)
@@ -142,9 +146,9 @@ user.empty
 	def testIterate(self):
 		"""Test writing several records and then reading them back"""
 		self.make_backup_dirs()
-		rp1 = self.ea_test1_rpath.append('1')
-		rp2 = self.ea_test1_rpath.append('2')
-		rp3 = self.ea_test1_rpath.append('3')
+		rp1 = self.ea_test1_rpath.append('e1')
+		rp2 = self.ea_test1_rpath.append('e2')
+		rp3 = self.ea_test1_rpath.append('e3')
 
 		# Now write records corresponding to above rps into file
 		Globals.rbdir = tempdir
@@ -160,13 +164,22 @@ user.empty
 		ea_iter = man.get_eas_at_time(10000, None)
 		assert ea_iter, "No extended_attributes.<time> file found"
 		sample_ea_reread = next(ea_iter)
-		assert sample_ea_reread == self.sample_ea
+                # we ignore SELinux extended attributes for comparaison
+		if sample_ea_reread.attr_dict: sample_ea_reread.attr_dict.pop(b'security.selinux', None)
+		assert sample_ea_reread == self.sample_ea, "Re-read EAs %s are different from %s" % \
+								(sample_ea_reread.attr_dict, self.sample_ea.attr_dict)
 		ea1_reread = next(ea_iter)
-		assert ea1_reread == self.ea1
+		if ea1_reread.attr_dict: ea1_reread.attr_dict.pop(b'security.selinux', None)
+		assert ea1_reread == self.ea1, "Re-read EAs %s are different from %s" % \
+								(ea1_reread.attr_dict, self.ea1.attr_dict)
 		ea2_reread = next(ea_iter)
-		assert ea2_reread == self.ea2
+		if ea2_reread.attr_dict: ea2_reread.attr_dict.pop(b'security.selinux', None)
+		assert ea2_reread == self.ea2, "Re-read EAs %s are different from %s" % \
+								(ea2_reread.attr_dict, self.ea2.attr_dict)
 		ea3_reread = next(ea_iter)
-		assert ea3_reread == self.ea3
+		if ea3_reread.attr_dict: ea3_reread.attr_dict.pop(b'security.selinux', None)
+		assert ea3_reread == self.ea3, "Re-read EAs %s are different from %s" % \
+								(ea3_reread.attr_dict, self.ea3.attr_dict)
 		try: next(ea_iter)
 		except StopIteration: pass
 		else: assert 0, "Expected end to iterator"
@@ -221,18 +234,18 @@ default:user:root:---
 default:group::r-x
 default:mask::r-x
 default:other::---""")
-	acl1 = AccessControlLists(('1',), """user::r--
+	acl1 = AccessControlLists(('a1',), """user::r--
 user:ben:---
 group::---
 group:root:---
 mask::---
 other::---""")
-	acl2 = AccessControlLists(('2',), """user::rwx
+	acl2 = AccessControlLists(('a2',), """user::rwx
 group::r-x
 group:ben:rwx
 mask::---
 other::---""")
-	acl3 = AccessControlLists(('3',), """user::rwx
+	acl3 = AccessControlLists(('a3',), """user::rwx
 user:root:---
 group::r-x
 mask::---
@@ -246,8 +259,10 @@ other::---""")
 	acl_empty_rpath = rpath.RPath(Globals.local_connection, acl_empty_dir)
 	def make_temp_out_dirs(self):
 		"""Make temp output and restore directories empty"""
+		tempdir.setdata()  # in case the file changed in-between
 		if tempdir.lstat(): tempdir.delete()
 		tempdir.mkdir()
+		restore_dir.setdata()  # in case the file changed in-between
 		if restore_dir.lstat(): restore_dir.delete()
 
 	def testBasic(self):
@@ -347,9 +362,9 @@ other::---
 		"""Create testfiles/acl_test[12] directories"""
 		if self.acl_test1_rpath.lstat(): self.acl_test1_rpath.delete()
 		self.acl_test1_rpath.mkdir()
-		rp1_1 = self.acl_test1_rpath.append('1')
-		rp1_2 = self.acl_test1_rpath.append('2')
-		rp1_3 = self.acl_test1_rpath.append('3')
+		rp1_1 = self.acl_test1_rpath.append('a1')
+		rp1_2 = self.acl_test1_rpath.append('a2')
+		rp1_3 = self.acl_test1_rpath.append('a3')
 		list(map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3]))
 		self.dir_acl.write_to_rp(self.acl_test1_rpath)
 		self.acl1.write_to_rp(rp1_1)
@@ -358,7 +373,7 @@ other::---
 
 		if self.acl_test2_rpath.lstat(): self.acl_test2_rpath.delete()
 		self.acl_test2_rpath.mkdir()
-		rp2_1, rp2_2, rp2_3 = list(map(self.acl_test2_rpath.append, ('1', '2', '3')))
+		rp2_1, rp2_2, rp2_3 = list(map(self.acl_test2_rpath.append, ('a1', 'a2', 'a3')))
 		list(map(rpath.RPath.touch, (rp2_1, rp2_2, rp2_3)))
 		self.sample_acl.write_to_rp(self.acl_test2_rpath)
 		self.acl3.write_to_rp(rp2_1)
@@ -373,9 +388,9 @@ other::---
 		"""Test writing several records and then reading them back"""
 		self.make_backup_dirs()
 		self.make_temp_out_dirs()
-		rp1 = self.acl_test1_rpath.append('1')
-		rp2 = self.acl_test1_rpath.append('2')
-		rp3 = self.acl_test1_rpath.append('3')
+		rp1 = self.acl_test1_rpath.append('a1')
+		rp2 = self.acl_test1_rpath.append('a2')
+		rp3 = self.acl_test1_rpath.append('a3')
 
 		# Now write records corresponding to above rps into file
 		Globals.rbdir = tempdir
@@ -444,9 +459,9 @@ other::---
 		def make_dir(rootrp):
 			if rootrp.lstat(): rootrp.delete()
 			rootrp.mkdir()
-			rp = rootrp.append('1')
+			rp = rootrp.append('a1')
 			rp.touch()
-			acl = AccessControlLists(('1',), """user::rwx
+			acl = AccessControlLists(('a1',), """user::rwx
 user:root:rwx
 user:ben:---
 user:bin:r--
@@ -479,9 +494,9 @@ other::---""")
 		rdiff_backup(1, 1, rootrp.path, tempdir.path,
 					 extra_options = "--user-mapping-file %s" % (map_rp.path,))
 
-		out_rp = tempdir.append('1')
+		out_rp = tempdir.append('a1')
 		assert out_rp.isreg()
-		out_acl = tempdir.append('1').get_acl()
+		out_acl = tempdir.append('a1').get_acl()
 		assert get_perms_of_user(out_acl, 'root') == 4
 		assert get_perms_of_user(out_acl, 'ben') == 7
 		assert get_perms_of_user(out_acl, 'bin') == 0
@@ -489,20 +504,20 @@ other::---""")
 	def test_acl_dropping(self):
 		"""Test dropping of ACL names"""
 		self.make_temp_out_dirs()
-		rp = tempdir.append('1')
+		rp = tempdir.append('a1')
 		rp.touch()
 		"""ben uses a dvorak keyboard, and these sequences are
 			analogous to asdfsjkd for a qwerty user... these
 			users and groups are not expected to exist. -dean"""
-		acl = AccessControlLists(('1',), """user::rwx
+		acl = AccessControlLists(('a1',), """user::rwx
 user:aoensutheu:r--
 group::r-x
 group:aeuai:r-x
 group:enutohnh:-w-
 other::---""")
 		rp.write_acl(acl)
-		rp2 = tempdir.append('1')
-		acl2 = AccessControlLists(('1',))
+		rp2 = tempdir.append('a1')
+		acl2 = AccessControlLists(('a1',))
 		acl2.read_from_rp(rp2)
 		assert acl2.is_basic()
 		Globals.never_drop_acls = 1
@@ -538,7 +553,7 @@ class CombinedTest(unittest.TestCase):
 		if self.combo_test1_rpath.lstat(): self.combo_test1_rpath.delete()
 		if self.combo_test2_rpath.lstat(): self.combo_test2_rpath.delete()
 		self.combo_test1_rpath.mkdir()
-		rp1_1, rp1_2, rp1_3 = list(map(self.combo_test1_rpath.append, ('1', '2', '3')))
+		rp1_1, rp1_2, rp1_3 = list(map(self.combo_test1_rpath.append, ('c1', 'c2', 'c3')))
 		list(map(rpath.RPath.touch, [rp1_1, rp1_2, rp1_3]))
 		ACLTest.dir_acl.write_to_rp(self.combo_test1_rpath)
 		EATest.sample_ea.write_to_rp(self.combo_test1_rpath)
@@ -548,7 +563,7 @@ class CombinedTest(unittest.TestCase):
 		EATest.ea3.write_to_rp(rp1_3)
 
 		self.combo_test2_rpath.mkdir()
-		rp2_1, rp2_2, rp2_3 = list(map(self.combo_test2_rpath.append, ('1', '2', '3')))
+		rp2_1, rp2_2, rp2_3 = list(map(self.combo_test2_rpath.append, ('c1', 'c2', 'c3')))
 		list(map(rpath.RPath.touch, [rp2_1, rp2_2, rp2_3]))
 		ACLTest.sample_acl.write_to_rp(self.combo_test2_rpath)
 		EATest.ea1.write_to_rp(rp2_1)
