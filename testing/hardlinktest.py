@@ -6,71 +6,67 @@ Log.setverbosity(6)
 
 class HardlinkTest(unittest.TestCase):
 	"""Test cases for Hard links"""
-	outputrp = rpath.RPath(Globals.local_connection, "testfiles/output")
-	hardlink_dir1 = rpath.RPath(Globals.local_connection,
-								"testfiles/hardlinks/dir1")
-	hardlink_dir1copy = rpath.RPath(Globals.local_connection,
-									"testfiles/hardlinks/dir1copy")
-	hardlink_dir2 = rpath.RPath(Globals.local_connection,
-								"testfiles/hardlinks/dir2")
-	hardlink_dir3 = rpath.RPath(Globals.local_connection,
-								"testfiles/hardlinks/dir3")
+	outputrp = rpath.RPath(Globals.local_connection, abs_output_dir)
+	re_init_rpath_dir(outputrp)
 
-	def reset_output(self):
-		"""Erase and recreate testfiles/output directory"""
-		os.system(MiscDir+'/myrm testfiles/output')
-		self.outputrp.mkdir()
+	hlinks_dir = os.path.join(old_test_dir, "hardlinks")
+	hlinks_dir1 = os.path.join(hlinks_dir, "dir1")
+	hlinks_dir1copy = os.path.join(hlinks_dir, "dir1copy")
+	hlinks_dir2 = os.path.join(hlinks_dir, "dir2")
+	hlinks_dir3 = os.path.join(hlinks_dir, "dir3")
+	hlinks_rp1 = rpath.RPath(Globals.local_connection, hlinks_dir1)
+	hlinks_rp1copy = rpath.RPath(Globals.local_connection, hlinks_dir1copy)
+	hlinks_rp2 = rpath.RPath(Globals.local_connection, hlinks_dir2)
+	hlinks_rp3 = rpath.RPath(Globals.local_connection, hlinks_dir3)
 
 	def testEquality(self):
 		"""Test rorp_eq function in conjunction with CompareRecursive"""
-		assert CompareRecursive(self.hardlink_dir1, self.hardlink_dir1copy)
-		assert CompareRecursive(self.hardlink_dir1, self.hardlink_dir2,
+		assert CompareRecursive(self.hlinks_rp1, self.hlinks_rp1copy)
+		assert CompareRecursive(self.hlinks_rp1, self.hlinks_rp2,
 								compare_hardlinks = None)
-		assert not CompareRecursive(self.hardlink_dir1, self.hardlink_dir2,
+		assert not CompareRecursive(self.hlinks_rp1, self.hlinks_rp2,
 								compare_hardlinks = 1)
 
 	def testBuildingDict(self):
 		"""See if the partial inode dictionary is correct"""
 		Globals.preserve_hardlinks = 1
 		reset_hardlink_dicts()
-		for dsrp in selection.Select(self.hardlink_dir3).set_iter():
+		for dsrp in selection.Select(self.hlinks_rp3).set_iter():
 			Hardlink.add_rorp(dsrp)
-		
+
 		assert len(list(Hardlink._inode_index.keys())) == 3, \
 			   Hardlink._inode_index
 
 	def testCompletedDict(self):
 		"""See if the hardlink dictionaries are built correctly"""
 		reset_hardlink_dicts()
-		for dsrp in selection.Select(self.hardlink_dir1).set_iter():
+		for dsrp in selection.Select(self.hlinks_rp1).set_iter():
 			Hardlink.add_rorp(dsrp)
 			Hardlink.del_rorp(dsrp)
 		assert Hardlink._inode_index == {}, Hardlink._inode_index
 
 		reset_hardlink_dicts()
-		for dsrp in selection.Select(self.hardlink_dir2).set_iter():
+		for dsrp in selection.Select(self.hlinks_rp2).set_iter():
 			Hardlink.add_rorp(dsrp)
 			Hardlink.del_rorp(dsrp)
 		assert Hardlink._inode_index == {}, Hardlink._inode_index
 
 	def testSeries(self):
 		"""Test hardlink system by backing up and restoring a few dirs"""
-		dirlist = ['testfiles/hardlinks/dir1',
-				   'testfiles/hardlinks/dir2',
-				   'testfiles/hardlinks/dir3',
-				   'testfiles/various_file_types']
+		dirlist = [self.hlinks_dir1, self.hlinks_dir2, self.hlinks_dir3,
+				   os.path.join(old_test_dir, 'various_file_types')]
 		BackupRestoreSeries(None, None, dirlist, compare_hardlinks=1)
 		BackupRestoreSeries(1, 1, dirlist, compare_hardlinks=1)
 
 	def testInnerRestore(self):
 		"""Restore part of a dir, see if hard links preserved"""
 		MakeOutputDir()
-		output = rpath.RPath(Globals.local_connection,
-							 "testfiles/output")
-		
+		output = rpath.RPath(Globals.local_connection, abs_output_dir)
+		hlout1_dir = os.path.join(abs_test_dir, "out_hardlink1")
+		hlout2_dir = os.path.join(abs_test_dir, "out_hardlink2")
+
 		# Now set up directories out_hardlink1 and out_hardlink2
-		hlout1 = rpath.RPath(Globals.local_connection,
-							 "testfiles/out_hardlink1")
+		hlout1 = rpath.RPath(Globals.local_connection, hlout1_dir)
 		if hlout1.lstat(): hlout1.delete()
 		hlout1.mkdir()
 		hlout1_sub = hlout1.append("subdir")
@@ -84,12 +80,10 @@ class HardlinkTest(unittest.TestCase):
 		hl1_2.hardlink(hl1_1.path)
 		hl1_3.touch()
 		hl1_4.hardlink(hl1_3.path)
-		
-		hlout2 = rpath.RPath(Globals.local_connection,
-							 "testfiles/out_hardlink2")
+
+		hlout2 = rpath.RPath(Globals.local_connection, hlout2_dir)
 		if hlout2.lstat(): hlout2.delete()
-		assert not os.system("cp -a testfiles/out_hardlink1 "
-							 "testfiles/out_hardlink2")
+		assert not os.system("cp -a %s %s" % (hlout1_dir, hlout2_dir))
 		hlout2_sub = hlout2.append("subdir")
 		hl2_1 = hlout2_sub.append("hardlink1")
 		hl2_2 = hlout2_sub.append("hardlink2")
@@ -125,14 +119,16 @@ class HardlinkTest(unittest.TestCase):
 			   out_subdir.append("hardlink2").getinode()
 
 		# Now try restoring, still checking hard links.
-		out2 = rpath.RPath(Globals.local_connection, "testfiles/out2")
+		sub_dir = os.path.join(abs_output_dir, "subdir")
+		out2_dir = os.path.join(abs_test_dir, "out2")
+		out2 = rpath.RPath(Globals.local_connection, out2_dir)
 		hlout1 = out2.append("hardlink1")
 		hlout2 = out2.append("hardlink2")
 		hlout3 = out2.append("hardlink3")
 		hlout4 = out2.append("hardlink4")
 
 		if out2.lstat(): out2.delete()
-		InternalRestore(1, 1, "testfiles/output/subdir", "testfiles/out2", 1)
+		InternalRestore(1, 1, sub_dir, out2_dir, 1)
 		out2.setdata()
 		for rp in [hlout1, hlout2, hlout3, hlout4]: rp.setdata()
 		assert hlout1.getinode() == hlout2.getinode()
@@ -140,7 +136,7 @@ class HardlinkTest(unittest.TestCase):
 		assert hlout1.getinode() != hlout3.getinode()
 		
 		if out2.lstat(): out2.delete()
-		InternalRestore(1, 1, "testfiles/output/subdir", "testfiles/out2",
+		InternalRestore(1, 1, sub_dir, out2_dir,
 						int(time.time()))
 		out2.setdata()
 		for rp in [hlout1, hlout2, hlout3, hlout4]: rp.setdata()
