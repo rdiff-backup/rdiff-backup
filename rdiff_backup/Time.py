@@ -181,10 +181,10 @@ def tzdtoseconds(tzd):
 
 def cmp(time1, time2):
 	"""Compare time1 and time2 and return -1, 0, or 1"""
-	if type(time1) is bytes:
+	if type(time1) is str:
 		time1 = stringtotime(time1)
 		assert time1 is not None
-	if type(time2) is bytes:
+	if type(time2) is str:
 		time2 = stringtotime(time2)
 		assert time2 is not None
 

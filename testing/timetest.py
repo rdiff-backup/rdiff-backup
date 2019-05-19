@@ -7,7 +7,7 @@ class TimeTest(unittest.TestCase):
 		"""test timetostring and stringtotime"""
 		Time.setcurtime()
 		assert type(Time.curtime) is float or int
-		assert type(Time.curtimestr) is bytes
+		assert type(Time.curtimestr) is str
 		assert (Time.cmp(int(Time.curtime), Time.curtimestr) == 0 or
 				Time.cmp(int(Time.curtime) + 1, Time.curtimestr) == 0)
 		time.sleep(1.05)
