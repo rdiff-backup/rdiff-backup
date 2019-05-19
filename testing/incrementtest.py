@@ -7,7 +7,7 @@ Globals.change_source_perms = 1
 Log.setverbosity(3)
 
 def getrp(ending):
-	return rpath.RPath(lc, "testfiles/various_file_types/" + ending)
+	return rpath.RPath(lc, os.path.join(old_test_dir, "various_file_types", ending))
 
 rf = getrp("regular_file")
 rf2 = getrp("two_hardlinked_files1")
@@ -20,15 +20,15 @@ dir = getrp(".")
 sym = getrp("symbolic_link")
 nothing = getrp("nothing")
 
-target = rpath.RPath(lc, "testfiles/output/out")
-out2 = rpath.RPath(lc, "testfiles/output/out2")
-out_gz = rpath.RPath(lc, "testfiles/output/out.gz")
+target = rpath.RPath(lc, os.path.join(abs_output_dir, "out"))
+out2 = rpath.RPath(lc, os.path.join(abs_output_dir, "out2"))
+out_gz = rpath.RPath(lc, os.path.join(abs_output_dir, "out.gz"))
 
 Time.setcurtime(1000000000)
 Time.setprevtime(999424113)
 prevtimestr = "2001-09-02T02:48:33-07:00"
-t_pref = "testfiles/output/out.2001-09-02T02:48:33-07:00"
-t_diff = "testfiles/output/out.2001-09-02T02:48:33-07:00.diff"
+t_pref = os.path.join(abs_output_dir, "out.%s" % prevtimestr)
+t_diff = os.path.join(abs_output_dir, "out.%s.diff" % prevtimestr)
 
 Globals.no_compression_regexp = \
 			 re.compile(Globals.no_compression_regexp_string, re.I)
