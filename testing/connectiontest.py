@@ -138,7 +138,7 @@ class PipeConnectionTest(unittest.TestCase):
 	def testIterators(self):
 		"""Test transmission of iterators"""
 		i = iter([5, 10, 15]*100)
-		assert self.conn.hasattr(i, "__next__")
+		assert self.conn.hasattr(i, "__next__") and self.conn.hasattr(i, "__iter__")
 		ret_val = self.conn.reval("lambda i: next(i)*next(i)", i)
 		assert ret_val == 50, ret_val
 

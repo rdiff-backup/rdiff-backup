@@ -136,7 +136,8 @@ class LowLevelPipeConnection(Connection):
 		elif isinstance(obj, rpath.RORPath): self._putrorpath(obj, req_num)
 		elif ((hasattr(obj, "read") or hasattr(obj, "write"))
 			  and hasattr(obj, "close")): self._putfile(obj, req_num)
-		elif hasattr(obj, "next"): self._putiter(obj, req_num)
+		elif hasattr(obj, "__next__") and hasattr(obj, "__iter__"):
+			self._putiter(obj, req_num)
 		else: self._putobj(obj, req_num)
 
 	def _putobj(self, obj, req_num):
