@@ -202,10 +202,10 @@ class FileWrappingIter:
 				self.currently_in_file = currentobj
 				self.addfromfile("f")
 			else:
-				pickle = pickle.dumps(currentobj, 1)
+				pickled_data = pickle.dumps(currentobj, 1)
 				self.array_buf.frombytes("o")
-				self.array_buf.frombytes(self._i2b(len(pickle), 7))
-				self.array_buf.frombytes(pickle)
+				self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
+				self.array_buf.frombytes(pickled_data)
 		return 1
 
 	def addfromfile(self, prefix_letter):
@@ -344,22 +344,22 @@ class MiscIterToFile(FileWrappingIter):
 
 	def add_misc(self, obj):
 		"""Add an arbitrary pickleable object to the buffer"""
-		pickle = pickle.dumps(obj, 1)
+		pickled_data = pickle.dumps(obj, 1)
 		self.array_buf.frombytes("o")
-		self.array_buf.frombytes(self._i2b(len(pickle), 7))
-		self.array_buf.frombytes(pickle)
+		self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
+		self.array_buf.frombytes(pickled_data)
 
 	def addrorp(self, rorp):
 		"""Add a rorp to the buffer"""
 		if rorp.file:
-			pickle = pickle.dumps((rorp.index, rorp.data, 1), 1)
+			pickled_data = pickle.dumps((rorp.index, rorp.data, 1), 1)
 			self.next_in_line = rorp.file
 		else:
-			pickle = pickle.dumps((rorp.index, rorp.data, 0), 1)
+			pickled_data = pickle.dumps((rorp.index, rorp.data, 0), 1)
 			self.rorps_in_buffer += 1
 		self.array_buf.frombytes("r")
-		self.array_buf.frombytes(self._i2b(len(pickle), 7))
-		self.array_buf.frombytes(pickle)
+		self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
+		self.array_buf.frombytes(pickled_data)
 
 	def addfinal(self):
 		"""Signal the end of the iterator to the other end"""
