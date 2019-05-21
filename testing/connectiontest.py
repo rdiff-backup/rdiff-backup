@@ -1,7 +1,7 @@
 import unittest, types, tempfile, os, sys, subprocess
 from commontest import *
 from rdiff_backup.connection import *
-from rdiff_backup import Globals, rpath, FilenameMapping
+from rdiff_backup import Globals, rpath, FilenameMapping #, log
 
 SourceDir = 'rdiff_backup'
 regfilename = os.path.join(old_test_dir, "various_file_types", "regular_file")
@@ -94,7 +94,7 @@ class PipeConnectionTest(unittest.TestCase):
 		self.conn = PipeConnection(stdout, stdin)
 		Globals.security_level = "override"
 		#self.conn.Log.setverbosity(9)
-		#Log.setverbosity(9)
+		#log.Log.setverbosity(9)
 
 	def testBasic(self):
 		"""Test some basic pipe functions"""
