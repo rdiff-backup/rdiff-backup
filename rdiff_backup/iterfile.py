@@ -49,11 +49,12 @@ class UnwrapFile:
 		if not header: return None, None
 		if len(header) != 8:
 			assert None, "Header %s is only %d bytes" % (header, len(header))
-		type, length = header[0], self._b2i(header[1:])
+		# [0:1] makes sure that the type remains a byte and not an int
+		type, length = header[0:1], self._b2i(header[1:])
 		buf = self.file.read(length)
-		if type in ("o", "e", "h"): return type, pickle.loads(buf)
+		if type in b"oeh": return type, pickle.loads(buf)
 		else:
-			assert type in ("f", "c")
+			assert type in b"fc"
 			return type, buf
 
 	def _b2i(self, b):
@@ -79,8 +80,8 @@ class IterWrappingFile(UnwrapFile):
 			self.currently_in_file.close() # no error checking by this point
 		type, data = self._get()
 		if not type: raise StopIteration
-		if type == "o" or type == "e": return data
-		elif type == "f": return IterVirtualFile(self, data)
+		if type == b"o" or type == b"e": return data
+		elif type == b"f": return IterVirtualFile(self, data)
 		else: raise IterFileException("Bad file type %s" % type)
 
 
@@ -128,10 +129,10 @@ class IterVirtualFile(UnwrapFile):
 		"""Read a chunk from the file and add it to the buffer"""
 		assert self.iwf.currently_in_file
 		type, data = self.iwf._get()
-		if type == "e":
+		if type == b"e":
 			self.iwf.currently_in_file = None
 			raise data
-		assert type == "c", "Type is %s instead of c" % type
+		assert type == b"c", "Type is %s instead of c" % type
 		if data:
 			self.buffer += data
 			return 1
@@ -144,7 +145,7 @@ class IterVirtualFile(UnwrapFile):
 		assert self.iwf.currently_in_file
 		self.iwf.currently_in_file = None
 		type, object = self.iwf._get()
-		assert type == 'h', type
+		assert type == b'h', type
 		self.close_value = object
 
 	def close(self):
@@ -194,16 +195,16 @@ class FileWrappingIter:
 		otherwise return true.
 
 		"""
-		if self.currently_in_file: self.addfromfile("c")
+		if self.currently_in_file: self.addfromfile(b"c")
 		else:
 			try: currentobj = next(self.iter)
 			except StopIteration: return None
 			if hasattr(currentobj, "read") and hasattr(currentobj, "close"):
 				self.currently_in_file = currentobj
-				self.addfromfile("f")
+				self.addfromfile(b"f")
 			else:
 				pickled_data = pickle.dumps(currentobj, 1)
-				self.array_buf.frombytes("o")
+				self.array_buf.frombytes(b"o")
 				self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
 				self.array_buf.frombytes(pickled_data)
 		return 1
@@ -222,28 +223,19 @@ class FileWrappingIter:
 		if buf is None: # error occurred above, encode exception
 			self.currently_in_file = None
 			excstr = pickle.dumps(self.last_exception, 1)
-			total = "".join(('e', self._i2b(len(excstr), 7), excstr))
+			total = b"".join((b'e', self._i2b(len(excstr), 7), excstr))
 		else:
-			total = "".join((prefix_letter, self._i2b(len(buf), 7), buf))
-			if buf == "": # end of file
+			total = b"".join((prefix_letter, self._i2b(len(buf), 7), buf))
+			if buf == b"": # end of file
 				cstr = pickle.dumps(self.currently_in_file.close(), 1)
 				self.currently_in_file = None
-				total += "".join(('h', self._i2b(len(cstr), 7), cstr))
+				total += b"".join((b'h', self._i2b(len(cstr), 7), cstr))
 		self.array_buf.frombytes(total)
 
 	def read_error_handler(self, exc, blocksize):
 		"""Log error when reading from file"""
 		self.last_exception = exc
 		return None
-
-	def _l2s_old(self, l):
-		"""Convert long int to string of 7 characters"""
-		s = ""
-		for i in range(7):
-			l, remainder = divmod(l, 256)
-			s = chr(remainder) + s
-		assert remainder == 0
-		return s
 
 	def _i2b(self, i, size = 0):
 		"""Convert int to string using big endian byteorder"""
@@ -318,7 +310,7 @@ class MiscIterToFile(FileWrappingIter):
 	def addtobuffer(self):
 		"""Add some number of bytes to the buffer.  Return false if done"""
 		if self.currently_in_file:
-			self.addfromfile("c")
+			self.addfromfile(b"c")
 			if not self.currently_in_file: self.rorps_in_buffer += 1
 		else:
 			if self.next_in_line:
@@ -332,7 +324,7 @@ class MiscIterToFile(FileWrappingIter):
 
 			if hasattr(currentobj, "read") and hasattr(currentobj, "close"):
 				self.currently_in_file = currentobj
-				self.addfromfile("f")
+				self.addfromfile(b"f")
 			elif currentobj is iterfile.MiscIterFlush: return None
 			elif currentobj is iterfile.MiscIterFlushRepeat:
 				self.add_misc(currentobj)
@@ -345,7 +337,7 @@ class MiscIterToFile(FileWrappingIter):
 	def add_misc(self, obj):
 		"""Add an arbitrary pickleable object to the buffer"""
 		pickled_data = pickle.dumps(obj, 1)
-		self.array_buf.frombytes("o")
+		self.array_buf.frombytes(b"o")
 		self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
 		self.array_buf.frombytes(pickled_data)
 
@@ -357,13 +349,13 @@ class MiscIterToFile(FileWrappingIter):
 		else:
 			pickled_data = pickle.dumps((rorp.index, rorp.data, 0), 1)
 			self.rorps_in_buffer += 1
-		self.array_buf.frombytes("r")
+		self.array_buf.frombytes(b"r")
 		self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
 		self.array_buf.frombytes(pickled_data)
 
 	def addfinal(self):
 		"""Signal the end of the iterator to the other end"""
-		self.array_buf.frombytes("z")
+		self.array_buf.frombytes(b"z")
 		self.array_buf.frombytes(self._i2b(0, 7))
 
 	def close(self): self.closed = 1
@@ -373,7 +365,7 @@ class FileToMiscIter(IterWrappingFile):
 	"""Take a MiscIterToFile and turn it back into a iterator"""
 	def __init__(self, file):
 		IterWrappingFile.__init__(self, file)
-		self.buf = ""
+		self.buf = b""
 
 	def __iter__(self): return self
 
@@ -383,9 +375,9 @@ class FileToMiscIter(IterWrappingFile):
 			self.currently_in_file.close()
 		type = None
 		while not type: type, data = self._get()
-		if type == "z": raise StopIteration
-		elif type == "r": return self.get_rorp(data)
-		elif type == "o": return data
+		if type == b"z": raise StopIteration
+		elif type == b"r": return self.get_rorp(data)
+		elif type == b"o": return data
 		else: raise IterFileException("Bad file type %s" % (type,))
 		
 	def get_rorp(self, pickled_tuple):
@@ -400,8 +392,8 @@ class FileToMiscIter(IterWrappingFile):
 	def get_file(self):
 		"""Read file object from file"""
 		type, data = self._get()
-		if type == "f": return IterVirtualFile(self, data)
-		assert type == "e", "Expected type e, got %s" % (type,)
+		if type == b"f": return IterVirtualFile(self, data)
+		assert type == b"e", "Expected type e, got %s" % (type,)
 		assert isinstance(data, Exception)
 		return ErrorFile(data)
 
@@ -418,10 +410,11 @@ class FileToMiscIter(IterWrappingFile):
 		if not self.buf: return None, None
 
 		assert len(self.buf) >= 8, "Unexpected end of MiscIter file"
-		type, length = self.buf[0], self._b2i(self.buf[1:8])
+		# [0:1] makes sure that the type remains a byte and not an int
+		type, length = self.buf[0:1], self._b2i(self.buf[1:8])
 		data = self.buf[8:8+length]
 		self.buf = self.buf[8+length:]
-		if type in "oerh": return type, pickle.loads(data)
+		if type in b"oerh": return type, pickle.loads(data)
 		else: return type, data
 
 
