@@ -47,7 +47,7 @@ class Connection:
 	"""
 	def __repr__(self): return self.__str__()
 	def __str__(self): return "Simple Connection" # override later
-	def __bool__(self): return 1
+	def __bool__(self): return True
 
 class LocalConnection(Connection):
 	"""Local connection
