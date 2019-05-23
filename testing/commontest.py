@@ -238,6 +238,10 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 			src_select.parse_rbdir_exclude()
 			dest_select.parse_rbdir_exclude()
 
+		# always exclude files with non-UTF-8 conform names
+		src_select.parse_brokenname_exclude()
+		dest_select.parse_brokenname_exclude()
+
 		return src_select.set_iter(), dest_select.set_iter()
 
 	def preprocess(src_rorp, dest_rorp):
@@ -251,7 +255,7 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 			Hardlink.del_rorp(src_rorp)
 
 	def equality_func(src_rorp, dest_rorp):
-		"""Combined eq func returns true iff two files compare same"""
+		"""Combined eq func returns true if two files compare same"""
 		if not src_rorp:
 			Log("Source rorp missing: " + str(dest_rorp), 3)
 			return 0

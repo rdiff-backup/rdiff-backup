@@ -1343,6 +1343,8 @@ class RPath(RORPath):
 		fp = self.open("r", compressed)
 		s = fp.read()
 		assert not fp.close()
+		if isinstance(s, bytes) or isinstance(s, bytearray):
+			s = s.decode()
 		return s
 
 	def get_acl(self):

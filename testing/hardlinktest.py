@@ -2,7 +2,7 @@ import os, unittest, time
 from commontest import *
 from rdiff_backup import Globals, Hardlink, selection, rpath
 
-Log.setverbosity(6)
+#Log.setverbosity(6)
 
 class HardlinkTest(unittest.TestCase):
 	"""Test cases for Hard links"""
