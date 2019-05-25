@@ -194,7 +194,7 @@ def set_allowed_requests(sec_level):
 		l.extend(["SetConnections.init_connection_remote",
 				  "log.Log.setverbosity", "log.Log.setterm_verbosity",
 				  "Time.setprevtime_local", "Globals.postset_regexp_local",
-				  "Globals.set_select", "backup.SourceStruct.set_session_info",
+				  "backup.SourceStruct.set_session_info",
 				  "backup.DestinationStruct.set_session_info",
 				  "user_group.init_user_mapping",
 				  "user_group.init_group_mapping"])
