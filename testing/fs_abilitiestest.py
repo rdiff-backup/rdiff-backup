@@ -12,7 +12,7 @@ class FSAbilitiesTest(unittest.TestCase):
 
 	"""
 	# Describes standard linux file system without acls/eas
-	dir_to_test = "testfiles"
+	dir_to_test = abs_test_dir
 	eas = acls = 1
 	chars_to_quote = ""
 	extended_filenames = 1
@@ -34,9 +34,15 @@ class FSAbilitiesTest(unittest.TestCase):
 	#dir_inc_perms = 0
 	#resource_forks = 0
 	#carbonfile = 0
-	
-	# A case insensitive directory (a cdrom mount on my system!)
-	case_insensitive_path = "/media/cdrecorder"
+
+	# A case insensitive directory (FIXME must currently be created by root)
+	# mkdir build/testfiles/fs_insensitive
+	# dd if=/dev/zero of=build/testfiles/fs_fatfile.dd bs=512 count=1024
+	# mkfs.fat build/testfiles/fs_fatfile.dd
+	# sudo mount -o loop,uid=$(id -u) build/testfiles/fs_fatfile.dd build/testfiles/fs_insensitive
+	# touch build/testfiles/fs_fatfile.dd build/testfiles/fs_insensitive/some_File
+
+	case_insensitive_path = os.path.join(abs_test_dir, 'fs_insensitive')
 
 	def testReadOnly(self):
 		"""Test basic querying read only"""
@@ -72,7 +78,7 @@ class FSAbilitiesTest(unittest.TestCase):
 		assert fsa.carbonfile == self.carbonfile, fsa.carbonfile
 		assert fsa.high_perms == self.high_perms, fsa.high_perms
 		assert fsa.extended_filenames == self.extended_filenames
-		
+
 		#ctq_rp = new_dir.append("chars_to_quote")
 		#assert ctq_rp.lstat()
 		#fp = ctq_rp.open('rb')
@@ -82,6 +88,9 @@ class FSAbilitiesTest(unittest.TestCase):
 
 		new_dir.delete()
 
+	@unittest.skipUnless(os.path.isdir(case_insensitive_path),
+				"Case insensitive directory %s does not exist" %
+					case_insensitive_path)
 	def test_case_sensitive(self):
 		"""Test a read-only case-INsensitive directory"""
 		rp = rpath.RPath(Globals.local_connection, self.case_insensitive_path)
