@@ -32,8 +32,9 @@ class FilenameMappingTest(unittest.TestCase):
 	def testLongFilenames(self):
 		"""See if long quoted filenames cause crash"""
 		MakeOutputDir()
-		outrp = rpath.RPath(Globals.local_connection, "testfiles/output")
-		inrp = rpath.RPath(Globals.local_connection, "testfiles/quotetest")
+		outrp = rpath.RPath(Globals.local_connection, abs_output_dir)
+		inrp = rpath.RPath(Globals.local_connection,
+				os.path.join(abs_test_dir, "quotetest"))
 		re_init_rpath_dir(inrp)
 		long_filename = "A"*200 # when quoted should cause overflow
 		longrp = inrp.append(long_filename)
@@ -49,7 +50,7 @@ class FilenameMappingTest(unittest.TestCase):
 		shortrp_out = outrp.append('B')
 		assert shortrp_out.lstat()
 
-		rdiff_backup(1, 1, "testfiles/empty", outrp.path, 200000)
+		rdiff_backup(1, 1, os.path.join(old_test_dir, "empty"), outrp.path, 200000)
 		shortrp_out.setdata()
 		assert not shortrp_out.lstat()
 		rdiff_backup(1, 1, inrp.path, outrp.path, 300000)

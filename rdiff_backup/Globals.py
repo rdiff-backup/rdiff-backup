@@ -159,6 +159,11 @@ rbdir = None
 chars_to_quote = None
 quoting_char = ';'
 
+# evaluate if DOS device names (AUX, PRN, CON, NUL, COM, LPT) should be quoted
+# or spaces at the end of file and directory names.
+# The default is based on the operating system type (nt or posix).
+escape_dos_devices = os.name == 'nt'
+escape_trailing_spaces = os.name == 'nt'
 
 # Some systems don't support unicode in filenames
 use_unicode_paths = None
