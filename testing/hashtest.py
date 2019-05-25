@@ -13,20 +13,21 @@ class HashTest(unittest.TestCase):
 	s3 = "foobar"
 	s3_hash = "8843d7f92416211de9ebb963ff4ce28125932878"
 
-	root_rp = rpath.RPath(Globals.local_connection, "testfiles")
+	root_rp = rpath.RPath(Globals.local_connection, abs_test_dir)
 
 	def test_basic(self):
 		"""Compare sha1sum of a few strings"""
-		sfile = io.StringIO(self.s1)
+		b1 = self.s1.encode()
+		sfile = io.BytesIO(b1)
 		fw = hash.FileWrapper(sfile)
-		assert fw.read() == self.s1
+		assert fw.read() == b1
 		report = fw.close()
 		assert report.sha1_digest == self.s1_hash, report.sha1_digest
 
-		sfile2 = io.StringIO(self.s1)
+		sfile2 = io.BytesIO(b1)
 		fw2 = hash.FileWrapper(sfile2)
-		assert fw2.read(5) == self.s1[:5]
-		assert fw2.read() == self.s1[5:]
+		assert fw2.read(5) == b1[:5]
+		assert fw2.read() == b1[5:]
 		report2 = fw2.close()
 		assert report2.sha1_digest == self.s1_hash, report2.sha1_digest
 
@@ -81,18 +82,19 @@ class HashTest(unittest.TestCase):
 
 		"""
 		in_rp1, hashlist1, in_rp2, hashlist2 = self.make_dirs()
-		Myrm("testfiles/output")
+		Myrm(abs_output_dir)
 
-		rdiff_backup(1, 1, in_rp1.path, "testfiles/output", 10000, "-v3")
+		rdiff_backup(1, 1, in_rp1.path, abs_output_dir, 10000, "-v3")
 		meta_prefix = rpath.RPath(Globals.local_connection,
-					  "testfiles/output/rdiff-backup-data/mirror_metadata")
+						os.path.join(abs_output_dir,
+						  "rdiff-backup-data", "mirror_metadata"))
 		incs = restore.get_inclist(meta_prefix)
 		assert len(incs) == 1
 		metadata_rp = incs[0]
 		hashlist = self.extract_hashs(metadata_rp)
 		assert hashlist == hashlist1, (hashlist1, hashlist)
 
-		rdiff_backup(1, 1, in_rp2.path, "testfiles/output", 20000, "-v3")
+		rdiff_backup(1, 1, in_rp2.path, abs_output_dir, 20000, "-v3")
 		incs = restore.get_inclist(meta_prefix)
 		assert len(incs) == 2
 		if incs[0].getinctype() == 'snapshot': inc = incs[0]
@@ -104,7 +106,8 @@ class HashTest(unittest.TestCase):
 		"""Test if hashes are transferred in files, rorpiter"""
 		#log.Log.setverbosity(5)
 		Globals.security_level = 'override'
-		conn = SetConnections.init_connection('%s ./server.py .' % (sys.executable))
+		conn = SetConnections.init_connection('%s %s/server.py .' %
+					(sys.executable, abs_testing_dir))
 		assert conn.reval("lambda x: x+1", 4) == 5 # connection sanity check
 
 		fp = hash.FileWrapper(io.StringIO(self.s1))
