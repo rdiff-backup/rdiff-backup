@@ -46,7 +46,7 @@ Then calling:
 python3 dist/setup.py clean --all  #<1>
 python3-debug dist/setup.py clean --all
 CFLAGS='-Wall -O0 -g' python3-debug dist/setup.py build  #<2>
-PATH=build/scripts-3.7:$PATH PYTHONPATH=build/lib.linux-x86_64-3.7-pydebug/ rdiff-backup -v 10 \
+PATH=$PWD/build/scripts-3.7:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.7-pydebug/ rdiff-backup -v 10 \
 	/some/dir1 /some/dir2
 [...]
 Segmentation fault (core dumped)
@@ -86,7 +86,7 @@ Jumping between frames and printing the different variables, we can recognize th
 At this stage, it seems to me that the core file has given most of its secrets and I need to debug the live program:
 
 ------------------------------------------------------------------------
-$ PYTHONTRACEMALLOC=1 PATH=build/scripts-3.7:$PATH PYTHONPATH=build/lib.linux-x86_64-3.7-pydebug/ gdb python3-debug
+$ PYTHONTRACEMALLOC=1 PATH=$PWD/build/scripts-3.7:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.7-pydebug/ gdb python3-debug
 (gdb) break rdiff_backup/_librsyncmodule.c:_librsync_new_patchmaker
 (gdb) run build/scripts-3.7/rdiff-backup /some/source/dir /some/target/dir
 ------------------------------------------------------------------------
@@ -118,7 +118,7 @@ ResourceWarning: Enable tracemalloc to get the object allocation traceback
 Reference:: https://docs.python.org/3/library/tracemalloc.html
 
 ------------------------------------------------------------------------
-PYTHONTRACEMALLOC=1 PATH=build/scripts-3.7:$PATH PYTHONPATH=build/lib.linux-x86_64-3.7-pydebug/ \
+PYTHONTRACEMALLOC=1 PATH=$PWD/build/scripts-3.7:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.7-pydebug/ \
 	rdiff-backup -v 10 /tmp/äłtèr /var/tmp/rdiff
 ------------------------------------------------------------------------
 
