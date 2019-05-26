@@ -106,14 +106,14 @@ class HashTest(unittest.TestCase):
 		"""Test if hashes are transferred in files, rorpiter"""
 		#log.Log.setverbosity(5)
 		Globals.security_level = 'override'
-		conn = SetConnections.init_connection('%s %s/server.py .' %
+		conn = SetConnections.init_connection('%s %s/server.py' %
 					(sys.executable, abs_testing_dir))
 		assert conn.reval("lambda x: x+1", 4) == 5 # connection sanity check
 
-		fp = hash.FileWrapper(io.StringIO(self.s1))
+		fp = hash.FileWrapper(io.BytesIO(self.s1.encode()))
 		conn.Globals.set('tmp_file', fp)
 		fp_remote = conn.Globals.get('tmp_file')
-		assert fp_remote.read() == self.s1
+		assert fp_remote.read() == self.s1.encode()
 		assert fp_remote.close().sha1_digest == self.s1_hash
 
 		# Tested xfer of file, now test xfer of files in rorpiter
@@ -130,13 +130,16 @@ class HashTest(unittest.TestCase):
 		remote_iter = conn.Globals.get('tmp_conn_iter')
 
 		rorp1 = next(remote_iter)
-		fp = rorp1.open('rb')
-		assert fp.read() == self.s1, fp.read()
+		fp = hash.FileWrapper(rorp1.open('rb'))
+		read_s1 = fp.read().decode()
+		assert read_s1 == self.s1, "Read string 1 %s isn't the same as written string %s" % (read_s1, self.s1)
 		ret_val = fp.close()
 		assert isinstance(ret_val, hash.Report), ret_val
 		assert ret_val.sha1_digest == self.s1_hash
 		rorp2 = next(remote_iter)
-		fp2 = rorp1.open('rb')
+		fp2 = hash.FileWrapper(rorp2.open('rb'))
+		read_s2 = fp2.read().decode()
+		assert read_s2 == self.s2, "Read string 2 %s isn't the same as written string %s" % (read_s2, self.s2)
 		assert fp2.close().sha1_digest == self.s2_hash
 
 		conn.quit()
