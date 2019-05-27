@@ -1204,7 +1204,11 @@ class RPath(RORPath):
 		"""
 		log.Log("Writing file object to " + self.path, 7)
 		assert not self.lstat(), "File %s already exists" % self.path
-		outfp = self.open("wb", compress = compress)
+                try:
+		        outfp = self.open("wb", compress = compress)
+                except IOError, e:
+                        raise RPathException("Error opening file: %s" %
+                                             str(e))
 		copyfileobj(fp, outfp)
 		if outfp.close(): raise RPathException("Error closing file")
 		self.setdata()
