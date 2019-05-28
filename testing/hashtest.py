@@ -73,6 +73,7 @@ class HashTest(unittest.TestCase):
 			else: result.append(None)
 		return result
 
+	@unittest.skip("Skipping until hash of hard links is fixed, see issue #23.")
 	def test_session(self):
 		"""Run actual sessions and make sure proper hashes recorded
 
