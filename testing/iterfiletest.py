@@ -11,7 +11,7 @@ class FileException:
 	def read(self, l):
 		self.count += l
 		if self.count > self.max: raise IOError(13, "Permission Denied")
-		return "a"*l
+		return b"a"*l
 	def close(self): return None
 
 
@@ -28,28 +28,29 @@ class testIterFile(unittest.TestCase):
 
 	def testFile(self):
 		"""Test sending files through iters"""
-		buf1 = "hello"*10000
-		file1 = io.StringIO(buf1)
-		buf2 = "goodbye"*10000
-		file2 = io.StringIO(buf2)
+		buf1 = b"hello"*10000
+		file1 = io.BytesIO(buf1)
+		buf2 = b"goodbye"*10000
+		file2 = io.BytesIO(buf2)
 		file_iter = FileWrappingIter(iter([file1, file2]))
 
 		new_iter = IterWrappingFile(file_iter)
-		assert new_iter.next().read() == buf1
-		assert new_iter.next().read() == buf2
+		assert next(new_iter).read() == buf1
+		assert next(new_iter).read() == buf2
+
 		self.assertRaises(StopIteration, new_iter.__next__)
 
 	def testFileException(self):
 		"""Test encoding a file which raises an exception"""
 		f = FileException(200*1024) # size depends on buffer size
-		new_iter = IterWrappingFile(FileWrappingIter(iter([f, "foo"])))
+		new_iter = IterWrappingFile(FileWrappingIter(iter([f, b"foo"])))
 		f_out = next(new_iter)
-		assert f_out.read(50000) == "a"*50000
+		assert f_out.read(50000) == b"a"*50000
 		try: buf = f_out.read(190*1024)
 		except IOError: pass
 		else: assert 0, len(buf)
 
-		assert next(new_iter) == "foo"
+		assert next(new_iter) == b"foo"
 		self.assertRaises(StopIteration, new_iter.__next__)
 
 
@@ -57,9 +58,8 @@ class testMiscIters(unittest.TestCase):
 	"""Test sending rorpiter back and forth"""
 	def setUp(self):
 		"""Make testfiles/output directory and a few files"""
-		Myrm("testfiles/output")
-		self.outputrp = rpath.RPath(Globals.local_connection,
-									"testfiles/output")
+		Myrm(abs_output_dir)
+		self.outputrp = rpath.RPath(Globals.local_connection, abs_output_dir)
 		self.regfile1 = self.outputrp.append("reg1")
 		self.regfile2 = self.outputrp.append("reg2")
 		self.regfile3 = self.outputrp.append("reg3")
@@ -67,7 +67,7 @@ class testMiscIters(unittest.TestCase):
 		self.outputrp.mkdir()
 
 		fp = self.regfile1.open("wb")
-		fp.write("hello")
+		fp.write(b"hello")
 		fp.close()
 		self.regfile1.setfile(self.regfile1.open("rb"))
 
@@ -75,7 +75,7 @@ class testMiscIters(unittest.TestCase):
 		self.regfile2.setfile(self.regfile2.open("rb"))
 
 		fp = self.regfile3.open("wb")
-		fp.write("goodbye")
+		fp.write(b"goodbye")
 		fp.close()
 		self.regfile3.setfile(self.regfile3.open("rb"))
 		
@@ -88,7 +88,7 @@ class testMiscIters(unittest.TestCase):
 		while 1:
 			buf = rpiter_file.read()
 			sys.stdout.write(buf)
-			if buf[0] == "z": break
+			if buf[0] == b"z": break
 
 	def testBasic(self):
 		"""Test basic conversion"""
@@ -101,13 +101,13 @@ class testMiscIters(unittest.TestCase):
 		out2 = next(i_out)
 		assert out2 == self.regfile1
 		fp = out2.open("rb")
-		assert fp.read() == "hello"
+		assert fp.read() == b"hello"
 		assert not fp.close()
 
 		out3 = next(i_out)
 		assert out3 == self.regfile2
 		fp = out3.open("rb")
-		assert fp.read() == ""
+		assert fp.read() == b""
 		assert not fp.close()
 
 		next(i_out)
@@ -117,7 +117,7 @@ class testMiscIters(unittest.TestCase):
 		"""Test a mix of RPs and ordinary objects"""
 		l = [5, self.regfile3, "hello"]
 		s = MiscIterToFile(iter(l)).read()
-		i_out = FileToMiscIter(io.StringIO(s))
+		i_out = FileToMiscIter(io.BytesIO(s))
 
 		out1 = next(i_out)
 		assert out1 == 5, out1
@@ -125,7 +125,7 @@ class testMiscIters(unittest.TestCase):
 		out2 = next(i_out)
 		assert out2 == self.regfile3
 		fp = out2.open("rb")
-		assert fp.read() == "goodbye"
+		assert fp.read() == b"goodbye"
 		assert not fp.close()
 
 		out3 = next(i_out)
@@ -137,8 +137,7 @@ class testMiscIters(unittest.TestCase):
 		"""Test flushing property of MiscIterToFile"""
 		l = [self.outputrp, MiscIterFlush, self.outputrp]
 		filelike = MiscIterToFile(iter(l))
-		new_filelike = io.StringIO((filelike.read() + "z" +
-										  C.long2str(0)))
+		new_filelike = io.BytesIO((filelike.read() + b"z" + filelike._i2b(0, 7)))
 
 		i_out = FileToMiscIter(new_filelike)
 		assert next(i_out) == self.outputrp
@@ -152,8 +151,7 @@ class testMiscIters(unittest.TestCase):
 		"""Test flushing like above, but have Flush obj emerge from iter"""
 		l = [self.outputrp, MiscIterFlushRepeat, self.outputrp]
 		filelike = MiscIterToFile(iter(l))
-		new_filelike = io.StringIO((filelike.read() + "z" +
-										  C.long2str(0)))
+		new_filelike = io.BytesIO((filelike.read() + b"z" + filelike._i2b(0, 7)))
 
 		i_out = FileToMiscIter(new_filelike)
 		assert next(i_out) == self.outputrp
