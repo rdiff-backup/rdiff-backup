@@ -50,7 +50,17 @@ class FileWrapper:
 class Report:
 	"""Hold final information about a byte stream"""
 	def __init__(self, close_val, sha1_digest):
-		assert not close_val # For now just assume inner file closes correctly
+		# FIXME this is a strange construct because it looks like the fileobj
+		# wrapped in a FileWrapper already returns a Report as closing value,
+		# which we can't wrap again in a Report, so we only check that the
+		# hash values do fit.
+		if isinstance(close_val, Report):
+			assert close_val.sha1_digest == sha1_digest, \
+				"Hashes from return code %s and given %s don't match" % \
+					(close_val.sha1_digest, sha1_digest)
+		else:
+			assert not close_val, "Return code %s of type %s isn't null" % \
+					(close_val, type(close_val))
 		self.sha1_digest = sha1_digest
 
 
