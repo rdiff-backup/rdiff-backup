@@ -19,7 +19,7 @@ class MatchingTest(unittest.TestCase):
 
 	def testRegexp(self):
 		"""Test regular expression selection func"""
-		sf1 = self.Select.regexp_get_sf(".*\.py", 1)
+		sf1 = self.Select.regexp_get_sf(".*\\.py", 1)
 		assert sf1(self.makeext("1.py")) == 1
 		assert sf1(self.makeext("usr/foo.py")) == 1
 		assert sf1(self.root.append("1.doc")) == None
