@@ -1,7 +1,7 @@
 
 import unittest, time, pickle
 from commontest import *
-from rdiff_backup import log, rpath, rorpiter, Globals, lazy
+from rdiff_backup import log, rpath, rorpiter, Globals
 from functools import reduce
 
 #Log.setverbosity(8)
@@ -30,13 +30,13 @@ class RORPIterTest(unittest.TestCase):
 		makeiter3 = lambda: iter(map(helper, [1,2]))
 
 		outiter = rorpiter.CollateIterators(makeiter1(), makeiter2())
-		assert lazy.Iter.equal(outiter,
+		assert iter_equal(outiter,
 							   iter([(indicies[0], indicies[0]),
 									 (indicies[1], indicies[1]),
 									 (indicies[2], None),
 									 (indicies[3], indicies[3])]))
 
-		assert lazy.Iter.equal(rorpiter.CollateIterators(makeiter1(),
+		assert iter_equal(rorpiter.CollateIterators(makeiter1(),
 														 makeiter2(),
 														 makeiter3()),
 							   iter([(indicies[0], indicies[0], None),
@@ -44,10 +44,10 @@ class RORPIterTest(unittest.TestCase):
 									 (indicies[2], None, indicies[2]),
 									 (indicies[3], indicies[3], None)]))
 
-		assert lazy.Iter.equal(rorpiter.CollateIterators(makeiter1(),
+		assert iter_equal(rorpiter.CollateIterators(makeiter1(),
 														 iter([])),
 							   iter([(i, None) for i in indicies]))
-		assert lazy.Iter.equal(iter([(i, None) for i in indicies]),
+		assert iter_equal(iter([(i, None) for i in indicies]),
 							   rorpiter.CollateIterators(makeiter1(),
 														 iter([])))
 		

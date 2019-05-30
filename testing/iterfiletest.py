@@ -1,7 +1,6 @@
 import unittest, io
 from commontest import *
 from rdiff_backup.iterfile import *
-from rdiff_backup import lazy
 
 class FileException:
 	"""Like a file, but raise exception after certain # bytes read"""
@@ -23,8 +22,7 @@ class testIterFile(unittest.TestCase):
 	def testConversion(self):
 		"""Test iter to file conversion"""
 		for itm in [self.iter1maker, self.iter2maker]:
-			assert lazy.Iter.equal(itm(),
-								   IterWrappingFile(FileWrappingIter(itm())))
+			assert iter_equal(itm(), IterWrappingFile(FileWrappingIter(itm())))
 
 	def testFile(self):
 		"""Test sending files through iters"""

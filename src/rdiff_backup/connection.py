@@ -536,7 +536,7 @@ class VirtualFile:
 # everything has to be available here for remote connection's use, but
 # put at bottom to reduce circularities.
 from . import Globals, Time, Rdiff, Hardlink, FilenameMapping, Security, \
-	   Main, rorpiter, selection, increment, statistics, manage, lazy, \
+	   Main, rorpiter, selection, increment, statistics, manage, \
 	   iterfile, rpath, robust, restore, manage, backup, connection, \
 	   TempFile, SetConnections, librsync, log, regress, fs_abilities, \
 	   eas_acls, user_group, compare

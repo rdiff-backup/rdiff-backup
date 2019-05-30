@@ -5,7 +5,7 @@ import os, sys, code, shutil
 from rdiff_backup.log import Log
 from rdiff_backup.rpath import RPath
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
-	 selection, lazy, Time, rpath, eas_acls, rorpiter, Security
+	 selection, Time, rpath, eas_acls, rorpiter, Security
 
 
 RBBin = shutil.which("rdiff-backup")
@@ -428,6 +428,31 @@ def getrefs(i, depth):
 			print("Max depth ", d)
 			return o
 	return o
+
+
+def iter_equal(iter1, iter2, verbose = None, operator = lambda x, y: x == y):
+	"""True if iterator 1 has same elements as iterator 2
+
+	Use equality operator, or == if it is unspecified.
+
+	"""
+	for i1 in iter1:
+		try: i2 = next(iter2)
+		except StopIteration:
+			if verbose: print("End when i1 = %s" % (i1,))
+			return False
+		if not operator(i1, i2):
+			if verbose: print("%s not equal to %s" % (i1, i2))
+			return False
+	try: i2 = next(iter2)
+	except StopIteration: return True
+	if verbose: print("End when i2 = %s" % (i2,))
+	return False
+
+
+def iter_map(function, iterator):
+	"""Like map in a lazy functional programming language"""
+	for i in iterator: yield function(i)
 
 if __name__ == '__main__':
     os.makedirs(abs_test_dir, exist_ok=True)

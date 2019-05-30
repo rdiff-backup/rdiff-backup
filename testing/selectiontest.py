@@ -2,7 +2,7 @@
 import re, io, unittest, types
 from commontest import *
 from rdiff_backup.selection import *
-from rdiff_backup import Globals, rpath, lazy
+from rdiff_backup import Globals, rpath
 
 
 class MatchingTest(unittest.TestCase):
@@ -295,8 +295,7 @@ class ParseArgsTest(unittest.TestCase):
 		self.Select = Select(self.root)
 		self.Select.ParseArgs(tuplelist, self.remake_filelists(filelists))
 		self.Select.set_iter()
-		assert lazy.Iter.equal(lazy.Iter.map(lambda dsrp: dsrp.index,
-											 self.Select),
+		assert iter_equal(iter_map(lambda dsrp: dsrp.index, self.Select),
 							   iter(indicies), verbose = 1)
 
 	def remake_filelists(self, filelist):
@@ -432,20 +431,6 @@ testfiles/select**/2
 						("--include", "/home"),
 						("--exclude", "/")],
 					   [(), ("home",)])
-
-#	def testParseStartingFrom(self):
-#		"""Test parse, this time starting from inside"""
-#		self.root = rpath.RPath(Globals.local_connection, "testfiles/select")
-#		self.Select = Select(self.root)
-#		self.Select.ParseArgs([("--include", "testfiles/select/1/1"),
-#							   ("--exclude", "**")], [])
-#		self.Select.set_iter(('1', '1'))
-#		assert lazy.Iter.equal(lazy.Iter.map(lambda dsrp: dsrp.index,
-#											 self.Select),
-#						  iter([("1", '1', '1'),
-#								('1', '1', '2'),
-#								('1', '1', '3')]),
-#						  verbose = 1)
 
 
 class CommandTest(unittest.TestCase):

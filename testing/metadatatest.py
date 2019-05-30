@@ -1,5 +1,6 @@
 import unittest, os, io, time
-from rdiff_backup import rpath, connection, Globals, selection, lazy
+from commontest import *
+from rdiff_backup import rpath, connection, Globals, selection
 from rdiff_backup.metadata import *
 
 tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
@@ -171,7 +172,7 @@ class MetadataTest(unittest.TestCase):
 			metawriter.close()
 
 		def compare(man, rootrp, time):
-			assert lazy.Iter.equal(selection.Select(rootrp).set_iter(),
+			assert iter_equal(selection.Select(rootrp).set_iter(),
 								   man.get_meta_at_time(time, None))
 
 
