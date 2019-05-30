@@ -3,7 +3,7 @@ from commontest import *
 from rdiff_backup import rpath, connection, Globals, selection
 from rdiff_backup.metadata import *
 
-tempdir = rpath.RPath(Globals.local_connection, "testfiles/output")
+tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 
 class MetadataTest(unittest.TestCase):
 	def make_temp(self):
@@ -25,7 +25,7 @@ class MetadataTest(unittest.TestCase):
 	def get_rpaths(self):
 		"""Return list of rorps"""
 		vft = rpath.RPath(Globals.local_connection,
-						  "testfiles/various_file_types")
+						os.path.join(old_test_dir, "various_file_types"))
 		rpaths = [vft.append(x) for x in vft.listdir()]
 		extra_rpaths = [rpath.RPath(Globals.local_connection, x) for x in ['/bin/ls', '/dev/ttyS0', '/dev/hda', 'aoeuaou']]
 		return [vft] + rpaths + extra_rpaths
@@ -64,7 +64,8 @@ class MetadataTest(unittest.TestCase):
 		if temprp.lstat(): return temprp
 
 		self.make_temp()
-		rootrp = rpath.RPath(Globals.local_connection, "testfiles/bigdir")
+		rootrp = rpath.RPath(Globals.local_connection,
+						  os.path.join(old_test_dir, "bigdir"))
 		rpath_iter = selection.Select(rootrp).set_iter()
 
 		start_time = time.time()
@@ -117,7 +118,7 @@ class MetadataTest(unittest.TestCase):
 
 		self.make_temp()
 		rootrp = rpath.RPath(Globals.local_connection,
-							 "testfiles/various_file_types")
+						os.path.join(old_test_dir, "various_file_types"))
 		dirlisting = rootrp.listdir()
 		dirlisting.sort()
 		rps = list(map(rootrp.append, dirlisting))
@@ -136,7 +137,10 @@ class MetadataTest(unittest.TestCase):
 	def test_patch(self):
 		"""Test combining 3 iters of metadata rorps"""
 		self.make_temp()
-		os.system('cp -a testfiles/various_file_types/* ' + tempdir.path)
+		# shutil.copytree fails on the fifo file in the directory
+		os.system('cp -a %s/* %s' %
+				(os.path.join(old_test_dir, "various_file_types"),
+				tempdir.path))
 
 		rp1 = tempdir.append('regular_file')
 		rp2 = tempdir.append('subdir')
@@ -179,10 +183,14 @@ class MetadataTest(unittest.TestCase):
 		self.make_temp()
 		Globals.rbdir = tempdir
 		man = PatchDiffMan()
-		inc1 = rpath.RPath(Globals.local_connection, "testfiles/increment1")
-		inc2 = rpath.RPath(Globals.local_connection, "testfiles/increment2")
-		inc3 = rpath.RPath(Globals.local_connection, "testfiles/increment3")
-		inc4 = rpath.RPath(Globals.local_connection, "testfiles/increment4")
+		inc1 = rpath.RPath(Globals.local_connection,
+					os.path.join(old_test_dir, "increment1"))
+		inc2 = rpath.RPath(Globals.local_connection,
+					os.path.join(old_test_dir, "increment2"))
+		inc3 = rpath.RPath(Globals.local_connection,
+					os.path.join(old_test_dir, "increment3"))
+		inc4 = rpath.RPath(Globals.local_connection,
+					os.path.join(old_test_dir, "increment4"))
 		write_dir_to_meta(man, inc1, 10000)
 		compare(man, inc1, 10000)
 		write_dir_to_meta(man, inc2, 20000)
