@@ -119,9 +119,10 @@ class MetadataTest(unittest.TestCase):
 		self.make_temp()
 		rootrp = rpath.RPath(Globals.local_connection,
 						os.path.join(old_test_dir, "various_file_types"))
-		dirlisting = rootrp.listdir()
-		dirlisting.sort()
-		rps = list(map(rootrp.append, dirlisting))
+		# the following 3 lines make sure that we ignore incorrect files
+		sel = selection.Select(rootrp)
+		sel.ParseArgs((), ())
+		rps = list(sel.set_iter())
 
 		assert not temprp.lstat()
 		write_mf = MetadataFile(temprp, 'w')
@@ -171,12 +172,16 @@ class MetadataTest(unittest.TestCase):
 		def write_dir_to_meta(manager, rp, time):
 			"""Record the metadata under rp to a mirror_metadata file"""
 			metawriter = man.get_meta_writer('snapshot', time)
-			for rorp in selection.Select(rp).set_iter():
+			sel = selection.Select(rp)
+			sel.ParseArgs((), ())  # make sure incorrect files are filtered out
+			for rorp in sel.set_iter():
 				metawriter.write_object(rorp)
 			metawriter.close()
 
 		def compare(man, rootrp, time):
-			assert iter_equal(selection.Select(rootrp).set_iter(),
+			sel = selection.Select(rootrp)
+			sel.ParseArgs((), ())  # make sure incorrect files are filtered out
+			assert iter_equal(sel.set_iter(),
 								   man.get_meta_at_time(time, None))
 
 
