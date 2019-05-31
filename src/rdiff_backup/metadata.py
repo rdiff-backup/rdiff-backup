@@ -302,7 +302,11 @@ class FlatExtractor:
 		assert not self.buf or self.buf.endswith("\n")
 		while 1:
 			self.buf = self.fileobj.read(self.blocksize)
-			self.buf += self.fileobj.readline()
+			if type(self.buf) != str:
+				self.buf = self.buf.decode()
+				self.buf += self.fileobj.readline().decode()
+			else:
+				self.buf += self.fileobj.readline()
 			if not self.buf:
 				self.at_end = 1
 				return
