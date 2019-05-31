@@ -20,22 +20,22 @@ def MakeRandomFile(path, length = None):
 
 class LibrsyncTest(unittest.TestCase):
 	"""Test various librsync wrapper functions"""
-	basis = RPath(Globals.local_connection, "testfiles/basis")
-	new = RPath(Globals.local_connection, "testfiles/new")
-	new2 = RPath(Globals.local_connection, "testfiles/new2")
-	sig = RPath(Globals.local_connection, "testfiles/signature")
-	sig2 = RPath(Globals.local_connection, "testfiles/signature2")
-	delta = RPath(Globals.local_connection, "testfiles/delta")
+	basis = RPath(Globals.local_connection, os.path.join(abs_test_dir, "basis"))
+	new = RPath(Globals.local_connection, os.path.join(abs_test_dir, "new"))
+	new2 = RPath(Globals.local_connection, os.path.join(abs_test_dir, "new2"))
+	sig = RPath(Globals.local_connection, os.path.join(abs_test_dir, "signature"))
+	sig2 = RPath(Globals.local_connection, os.path.join(abs_test_dir, "signature2"))
+	delta = RPath(Globals.local_connection, os.path.join(abs_test_dir, "delta"))
+
 	def sig_file_test_helper(self, blocksize, iterations, file_len = None):
 		"""Compare SigFile output to rdiff output at given blocksize"""
 		for i in range(iterations):
 			MakeRandomFile(self.basis.path, file_len)
 			if self.sig.lstat(): self.sig.delete()
-			assert not os.system("rdiff -b %s signature %s %s" %
+			assert not os.system("rdiff -b %s -H md4 signature %s %s" %
 								 (blocksize, self.basis.path, self.sig.path))
-			fp = self.sig.open("rb")
-			rdiff_sig = fp.read()
-			fp.close()
+			with self.sig.open("rb") as fp:
+				rdiff_sig = fp.read()
 
 			sf = librsync.SigFile(self.basis.open("rb"), blocksize)
 			librsync_sig = sf.read()
@@ -43,7 +43,7 @@ class LibrsyncTest(unittest.TestCase):
 
 			assert rdiff_sig == librsync_sig, \
 				   (len(rdiff_sig), len(librsync_sig))
-		
+
 	def testSigFile(self):
 		"""Make sure SigFile generates same data as rdiff, blocksize 512"""
 		self.sig_file_test_helper(512, 5)
@@ -64,12 +64,12 @@ class LibrsyncTest(unittest.TestCase):
 			sf.close()
 
 			sig_gen = librsync.SigGenerator()
-			infile = self.basis.open("rb")
-			while 1:
-				buf = infile.read(1000)
-				if not buf: break
-				sig_gen.update(buf)
-			siggen_string = sig_gen.getsig()
+			with self.basis.open("rb") as infile:
+				while 1:
+					buf = infile.read(1000)
+					if not buf: break
+					sig_gen.update(buf)
+				siggen_string = sig_gen.getsig()
 
 			assert sigfile_string == siggen_string, \
 				   (len(sigfile_string), len(siggen_string))
@@ -152,4 +152,3 @@ class LibrsyncTest(unittest.TestCase):
 
 
 if __name__ == "__main__": unittest.main()
-			

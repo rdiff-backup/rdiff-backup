@@ -153,11 +153,18 @@ class PatchedFile(LikeFile):
 		"""
 		LikeFile.__init__(self, delta_file)
 		if hasattr(basis_file, 'file'):
-			basis_file = basis_file.file
-		if not (basis_file.fileno() and basis_file.seekable()):
+			self.basis_file = basis_file.file
+		else:
+			self.basis_file = basis_file
+		if not (self.basis_file.fileno() and self.basis_file.seekable()):
 			raise TypeError("basis_file must be a (true) file")
-		try: self.maker = _librsync.new_patchmaker(basis_file)
+		try: self.maker = _librsync.new_patchmaker(self.basis_file)
 		except _librsync.librsyncError as e: raise librsyncError(str(e))		
+
+	def close(self):
+		delta_close = LikeFile.close(self)
+		return self.basis_file.close() and delta_close
+
 
 
 class SigGenerator:
@@ -172,8 +179,8 @@ class SigGenerator:
 		try: self.sig_maker = _librsync.new_sigmaker(blocksize)
 		except _librsync.librsyncError as e: raise librsyncError(str(e))
 		self.gotsig = None
-		self.buffer = ""
-		self.sig_string = ""
+		self.buffer = b""
+		self.sig_string = b""
 
 	def update(self, buf):
 		"""Add buf to data that signature will be calculated over"""
