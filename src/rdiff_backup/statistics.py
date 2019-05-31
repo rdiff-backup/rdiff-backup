@@ -27,8 +27,6 @@ class StatsException(Exception): pass
 
 class StatsObj:
 	"""Contains various statistics, provide string conversion functions"""
-	# used when quoting files in get_stats_line
-	space_regex = re.compile(" ")
 
 	stat_file_attrs = ('SourceFiles', 'SourceFileSize',
 					   'MirrorFiles', 'MirrorFileSize',
@@ -98,16 +96,16 @@ class StatsObj:
 		self.TotalDestinationSizeChange = result
 		return result
 
-	def get_stats_line(self, index, use_repr = 1):
+	def get_stats_line(self, index, quote_filename = 1):
 		"""Return one line abbreviated version of full stats string"""
 		file_attrs = [str(self.get_stat(attr)) for attr in self.stat_file_attrs]
 		if not index: filename = "."
 		else:
 			filename = os.path.join(*index)
-			if use_repr:
-				# use repr to quote newlines in relative filename, then
-				# take of leading and trailing quote and quote spaces.
-				filename = self.space_regex.sub("\\x20", repr(filename)[1:-1])
+			if quote_filename:
+				# quote filename to make sure it doesn't have spaces
+				# or newlines impeaching proper parsing of the line
+				filename = filename.replace('\n', '\\n').replace(' ','\\x20')
 		return " ".join([filename,] + file_attrs)
 
 	def set_stats_from_line(self, line):

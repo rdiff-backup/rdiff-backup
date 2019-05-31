@@ -1440,14 +1440,14 @@ class MaybeUnicode:
 
 	def read(self, length = -1):
 		data = self.fileobj.read(length)
-		if Globals.use_unicode_paths:
-			data = str(data, 'utf-8')
+		if Globals.use_unicode_paths and not isinstance(data, str):
+			data = data.decode('utf-8')
 		return data
 
 	def readline(self, length=-1):
 		data = self.fileobj.readline(length)
-		if Globals.use_unicode_paths:
-			data = str(data, 'utf-8')
+		if Globals.use_unicode_paths and not isinstance(data, str):
+			data = data.decode('utf-8')
 		return data
 
 	def write(self, buf):
