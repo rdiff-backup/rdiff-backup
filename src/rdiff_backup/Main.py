@@ -277,7 +277,7 @@ def init_user_group_mapping(destination_conn):
 def take_action(rps):
 	"""Do whatever action says"""
 	if action == "server":
-		connection.PipeConnection(sys.stdin, sys.stdout).Server()
+		connection.PipeConnection(sys.stdin.buffer, sys.stdout.buffer).Server()
 		sys.exit(0)
 	elif action == "backup": Backup(rps[0], rps[1])
 	elif action == "calculate-average": CalculateAverage(rps)
