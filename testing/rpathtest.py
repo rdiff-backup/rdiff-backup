@@ -5,10 +5,9 @@ from rdiff_backup import rpath
 
 class RPathTest(unittest.TestCase):
 	lc = Globals.local_connection
-	prefix = "testfiles/various_file_types/"
-	mainprefix = "testfiles/"
+	mainprefix = old_test_dir
+	prefix = os.path.join(mainprefix, "various_file_types")
 	rp_prefix = RPath(lc, prefix, ())
-	rp_main = RPath(lc, mainprefix, ())
 
 
 class RORPStateTest(RPathTest):
@@ -54,9 +53,18 @@ class CheckTypes(RPathTest):
 		assert RPath(self.lc, "/dev/tty2", ()).ischardev()
 		assert not RPath(self.lc, self.prefix, ("regular_file",)).ischardev()
 
+	@unittest.skipUnless(os.path.exists('/dev/sda') or os.path.exists('/dev/nvme0n1'),
+			"Test requires either /dev/sda or /dev/nvme0n1")
 	def testBlockDev(self):
 		"""Block special files identified"""
-		assert RPath(self.lc, "/dev/hda", ()).isblkdev()
+		# Introducing a new dependency just for a few tests doesn't sound
+		# reasonable, especially as it doesn't solve minor/major questions
+		# somediskdev = os.path.realpath(psutil.disk_partitions()[0].device)
+		# We assume that anybody must have a hard drive, SSD or NVMe
+		if (os.path.exists('/dev/sda')):
+			assert RPath(self.lc, '/dev/sda', ()).isblkdev()
+		else:
+			assert RPath(self.lc, '/dev/nvme0n1', ()).isblkdev()
 		assert not RPath(self.lc, self.prefix, ("regular_file",)).isblkdev()
 
 
@@ -69,7 +77,7 @@ class CheckPerms(RPathTest):
 
 	def testhighbits(self):
 		"""Test reporting of highbit permissions"""
-		p = RPath(self.lc, "testfiles/rpath2/foobar").getperms()
+		p = RPath(self.lc, os.path.join(self.mainprefix, "rpath2", "foobar")).getperms()
 		assert p == 0o4100, p
 
 	def testOrdinaryReport(self):
@@ -88,7 +96,7 @@ class CheckPerms(RPathTest):
 	def testExceptions(self):
 		"""What happens when file absent"""
 		self.assertRaises(Exception,
-						  RPath(self.lc, self.prefix, ("aoeunto",)).getperms)
+						  RPath(self.lc, self.prefix, ("aoeunto",)).getperms())
 
 
 class CheckTimes(RPathTest):
@@ -261,10 +269,16 @@ class FilenameOps(RPathTest):
 			assert result == split, \
 				   "%s => %s instead of %s" % (full, result, split)
 
+	@unittest.skipUnless(os.path.exists('/dev/sda') or os.path.exists('/dev/nvme0n1'),
+			"Test requires either /dev/sda or /dev/nvme0n1")
 	def testGetnums(self):
 		"""Test getting file numbers"""
-		devnums = RPath(self.lc, "/dev/hda", ()).getdevnums()
-		assert devnums == (3, 0), devnums
+		if (os.path.exists('/dev/sda')):
+			devnums = RPath(self.lc, "/dev/sda", ()).getdevnums()
+			assert devnums == (8, 0), devnums
+		else:
+			devnums = RPath(self.lc, "/dev/nvme0n1", ()).getdevnums()
+			assert devnums == (259, 0), devnums
 		devnums = RPath(self.lc, "/dev/tty2", ()).getdevnums()
 		assert devnums == (4, 2), devnums
 
@@ -273,61 +287,59 @@ class FileIO(RPathTest):
 	"""Test file input and output"""
 	def testRead(self):
 		"""File reading"""
-		fp = RPath(self.lc, self.prefix, ("executable",)).open("r")
-		assert fp.read(6) == "#!/bin"
-		fp.close()
+		with RPath(self.lc, self.prefix, ("executable",)).open("r") as fp:
+			assert fp.read(6) == "#!/bin"
 
 	def testWrite(self):
 		"""File writing"""
 		rp = RPath(self.lc, self.mainprefix, ("testfile",))
-		fp = rp.open("w")
-		fp.write("hello")
-		fp.close()
-		fp_input = rp.open("r")
-		assert fp_input.read() == "hello"
-		fp_input.close()
+		with rp.open("w") as fp:
+			fp.write("hello")
+		with rp.open("r") as fp_input:
+			assert fp_input.read() == "hello"
 		rp.delete()
 
 	def testGzipWrite(self):
 		"""Test writing of gzipped files"""
-		try: os.mkdir("testfiles/output")
+		try: os.mkdir(abs_output_dir)
 		except OSError: pass
-		rp_gz = RPath(self.lc, "testfiles/output/file.gz")
-		rp = RPath(self.lc, "testfiles/output/file")
-		if rp.lstat(): rp.delete()
-		s = "Hello, world!"
-		
-		fp_out = rp_gz.open("wb", compress = 1)
-		fp_out.write(s)
-		assert not fp_out.close()
-		assert not os.system("gunzip testfiles/output/file.gz")
-		fp_in = rp.open("rb")
-		assert fp_in.read() == s
-		fp_in.close()
+		file_nogz = os.path.join(abs_output_dir, "file")
+		file_gz = file_nogz + ".gz"
+		rp_gz = RPath(self.lc, file_gz)
+		rp_nogz = RPath(self.lc, file_nogz)
+		if rp_nogz.lstat(): rp_nogz.delete()
+		s = b"Hello, world!"
+
+		with rp_gz.open("wb", compress = 1) as fp_out:
+			fp_out.write(s)
+		assert not os.system("gunzip %s" % file_gz)
+		with rp_nogz.open("rb") as fp_in:
+			assert fp_in.read() == s
 
 	def testGzipRead(self):
 		"""Test reading of gzipped files"""
-		try: os.mkdir("testfiles/output")
+		try: os.mkdir(abs_output_dir)
 		except OSError: pass
-		rp_gz = RPath(self.lc, "testfiles/output/file.gz")
+		file_nogz = os.path.join(abs_output_dir, "file")
+		file_gz = file_nogz + ".gz"
+		rp_gz = RPath(self.lc, file_gz)
 		if rp_gz.lstat(): rp_gz.delete()
-		rp = RPath(self.lc, "testfiles/output/file")
+		rp_nogz = RPath(self.lc, file_nogz)
 		s = "Hello, world!"
 		
-		fp_out = rp.open("wb")
-		fp_out.write(s)
-		assert not fp_out.close()
-		rp.setdata()
-		assert rp.lstat()
+		with rp_nogz.open("w") as fp_out:
+			fp_out.write(s)
+		rp_nogz.setdata()
+		assert rp_nogz.lstat()
 
-		assert not os.system("gzip testfiles/output/file")
-		rp.setdata()
+		assert not os.system("gzip %s" % file_nogz)
+		rp_nogz.setdata()
 		rp_gz.setdata()
-		assert not rp.lstat()
+		assert not rp_nogz.lstat()
 		assert rp_gz.lstat()
-		fp_in = rp_gz.open("rb", compress = 1)
-		assert fp_in.read() == s
-		assert not fp_in.close()		
+		with rp_gz.open("r", compress = 1) as fp_in:
+			read_s = fp_in.read().decode()  # zip is always binary hence bytes
+			assert read_s == s, "Read string %s not like written %s." % (read_s, s)
 
 
 class FileCopying(RPathTest):
@@ -361,8 +373,10 @@ class FileCopying(RPathTest):
 	def testDirSizeComp(self):
 		"""Make sure directories can be equal,
 		even if they are of different sizes"""
-		smalldir = RPath(Globals.local_connection, "testfiles/dircomptest/1")
-		bigdir = RPath(Globals.local_connection, "testfiles/dircomptest/2")
+		smalldir = RPath(Globals.local_connection,
+				os.path.join(old_test_dir, "dircomptest", "1"))
+		bigdir = RPath(Globals.local_connection,
+				os.path.join(old_test_dir, "dircomptest", "2"))
 		# Can guarantee below by adding files to bigdir
 		assert bigdir.getsize() > smalldir.getsize()
 		assert smalldir == bigdir
@@ -458,7 +472,7 @@ class Gzip(RPathTest):
 	"""Test the gzip related functions/classes"""
 	def test_maybe_gzip(self):
 		"""Test MaybeGzip"""
-		dirrp = rpath.RPath(self.lc, "testfiles/output")
+		dirrp = rpath.RPath(self.lc, abs_output_dir)
 		re_init_rpath_dir(dirrp)
 
 		base_rp = dirrp.append('foo')
@@ -472,15 +486,14 @@ class Gzip(RPathTest):
 		base_gz = dirrp.append('foo.gz')
 		assert not base_gz.lstat()
 		fileobj = rpath.MaybeGzip(base_rp)
-		fileobj.write("lala")
+		fileobj.write(b"lala")
 		fileobj.close()
 		base_rp.setdata()
 		base_gz.setdata()
 		assert not base_rp.lstat()
 		assert base_gz.isreg(), base_gz
-		data = base_gz.get_data(compressed = 1)
-		assert data == "lala", data
-		
+		data = base_gz.get_bytes(compressed = 1)
+		assert data == b"lala", data
 
-if __name__ == "__main__":
-	unittest.main()
+
+if __name__ == "__main__": unittest.main()
