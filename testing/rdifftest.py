@@ -17,18 +17,20 @@ def MakeRandomFile(path):
 class RdiffTest(unittest.TestCase):
 	"""Test rdiff"""
 	lc = Globals.local_connection
-	basis = rpath.RPath(lc, "testfiles/basis")
-	new = rpath.RPath(lc, "testfiles/new")
-	output = rpath.RPath(lc, "testfiles/output")
-	delta = rpath.RPath(lc, "testfiles/delta")
-	signature = rpath.RPath(lc, "testfiles/signature")
+
+	basis = rpath.RPath(lc, os.path.join(abs_test_dir, "basis"))
+	new = rpath.RPath(lc, os.path.join(abs_test_dir, "new"))
+	output = rpath.RPath(lc, abs_output_dir)
+	delta = rpath.RPath(lc, os.path.join(abs_test_dir, "delta"))
+	signature = rpath.RPath(lc, os.path.join(abs_test_dir, "signature"))
 
 	def testRdiffSig(self):
 		"""Test making rdiff signatures"""
-		sig = rpath.RPath(self.lc,
-						  "testfiles/various_file_types/regular_file.sig")
-		sigfp = sig.open("r")
-		rfsig = Rdiff.get_signature(RPath(self.lc, "testfiles/various_file_types/regular_file"), 2048)
+		sig = rpath.RPath(self.lc, os.path.join(old_test_dir,
+					"various_file_types", "regular_file.sig"))
+		sigfp = sig.open("rb")
+		rfsig = Rdiff.get_signature(rpath.RPath(self.lc, os.path.join(old_test_dir,
+					"various_file_types", "regular_file")), 2048)
 		assert rpath.cmpfileobj(sigfp, rfsig)
 		sigfp.close()
 		rfsig.close()
@@ -48,7 +50,7 @@ class RdiffTest(unittest.TestCase):
 			self.signature.write_from_fileobj(Rdiff.get_signature(self.basis))
 			assert self.signature.lstat()
 			self.delta.write_from_fileobj(Rdiff.get_delta_sigrp(self.signature,
-																self.new))
+										self.new))
 			assert self.delta.lstat()
 			Rdiff.patch_local(self.basis, self.delta, self.output)
 			assert rpath.cmp(self.new, self.output)
@@ -70,7 +72,7 @@ class RdiffTest(unittest.TestCase):
 		self.delta.write_from_fileobj(Rdiff.get_delta_sigrp(self.signature,
 															self.new))
 		assert self.delta.lstat()
-		os.system("gzip " + self.delta.path)
+		os.system("gzip %s" % self.delta.path)
 		os.system("mv %s %s" % (self.delta.path + ".gz", self.delta.path))
 		self.delta.setdata()
 
@@ -106,7 +108,7 @@ class RdiffTest(unittest.TestCase):
 
 		Rdiff.write_delta(self.basis, self.new, delta_gz, 1)
 		assert delta_gz.lstat()
-		os.system("gunzip " + delta_gz.path)
+		os.system("gunzip %s" % delta_gz.path)
 		delta_gz.setdata()
 		self.delta.setdata()
 		Rdiff.patch_local(self.basis, self.delta, self.output)
@@ -126,7 +128,7 @@ class RdiffTest(unittest.TestCase):
 		self.signature.write_from_fileobj(Rdiff.get_signature(self.basis))
 		assert self.signature.lstat()
 		self.delta.write_from_fileobj(Rdiff.get_delta_sigrp(self.signature,
-															self.new))
+										self.new))
 		assert self.delta.lstat()
 		Rdiff.patch_local(self.basis, self.delta)
 		assert rpath.cmp(self.basis, self.new)
@@ -146,5 +148,4 @@ class RdiffTest(unittest.TestCase):
 		list(map(rpath.RPath.delete, rplist))
 
 
-if __name__ == '__main__':
-	unittest.main()
+if __name__ == '__main__': unittest.main()
