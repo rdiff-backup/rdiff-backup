@@ -15,10 +15,12 @@ class index:
 class RORPIterTest(unittest.TestCase):
 	def setUp(self):
 		self.lc = Globals.local_connection
-		self.inc0rp = rpath.RPath(self.lc, "testfiles/empty", ())
-		self.inc1rp = rpath.RPath(self.lc, "testfiles/inc-reg-perms1", ())
-		self.inc2rp = rpath.RPath(self.lc, "testfiles/inc-reg-perms2", ())
-		self.output = rpath.RPath(self.lc, "testfiles/output", ())
+		self.inc0rp = rpath.RPath(self.lc, os.path.join(old_test_dir, "empty"), ())
+		self.inc1rp = rpath.RPath(self.lc,
+				os.path.join(old_test_dir, "inc-reg-perms1"), ())
+		self.inc2rp = rpath.RPath(self.lc,
+				os.path.join(old_test_dir, "inc-reg-perms2"), ())
+		self.output = rpath.RPath(self.lc, abs_output_dir, ())
 
 	def testCollateIterators(self):
 		"""Test basic collating"""
@@ -84,7 +86,7 @@ class DirHandlerTest(unittest.TestCase):
 	made_test_dir = 0 # Set to 1 once we have made the test dir
 	def make_test_dir(self):
 		"""Make the test directory"""
-		self.rootrp = RPath(Globals.local_connection, "testfiles/output")
+		self.rootrp = RPath(Globals.local_connection, abs_output_dir)
 		self.rootrp.delete()
 		self.rootrp.mkdir()
 		
@@ -144,7 +146,7 @@ class DirHandlerTest(unittest.TestCase):
 class FillTest(unittest.TestCase):
 	def test_fill_in(self):
 		"""Test fill_in_iter"""
-		rootrp = RPath(Globals.local_connection, "testfiles/output")
+		rootrp = RPath(Globals.local_connection, abs_output_dir)
 		def get_rpiter():
 			for int_index in [(1,2), (1,3), (1,4),
 							  (2,), (2,1),
