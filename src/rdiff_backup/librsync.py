@@ -163,7 +163,9 @@ class PatchedFile(LikeFile):
 
 	def close(self):
 		delta_close = LikeFile.close(self)
-		return self.basis_file.close() and delta_close
+		self.basis_file.close()
+		# sadly, we can only return one value, which also contains the SHA1 digest
+		return delta_close
 
 
 
