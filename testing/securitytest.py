@@ -124,7 +124,7 @@ class SecurityTest(unittest.TestCase):
 		Myrm(abs_restore_dir)
 		rdiff_backup(1, 1, self.various_files_dir, abs_output_dir)
 		self.secure_rdiff_backup(abs_output_dir, abs_restore_dir, 1,
-								 '--restrict %' % output2_dir,
+								 '--restrict %s' % output2_dir,
 								 extra_args = '-r now',
 								 success = 0)
 

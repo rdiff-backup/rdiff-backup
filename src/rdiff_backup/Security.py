@@ -201,11 +201,11 @@ def set_allowed_requests(sec_level):
 	allowed_requests = {}
 	for req in l: allowed_requests[req] = None
 
-def raise_violation(request, arglist):
+def raise_violation(reason, request, arglist):
 	"""Raise a security violation about given request"""
-	raise Violation("\nWarning Security Violation!\n"
-					"Bad request for function: %s\n"
-					"with arguments: %s\n" % (request.function_string,
+	raise Violation("\nWARNING: Security Violation!\n"
+					"%s for function: %s\n"
+					"with arguments: %s\n" % (reason, request.function_string,
 											  arglist))
 
 def vet_request(request, arglist):
@@ -215,18 +215,30 @@ def vet_request(request, arglist):
 	if security_level == "override": return
 	if Globals.restrict_path:
 		for arg in arglist:
-			if isinstance(arg, rpath.RPath): vet_rpath(arg)
+			if isinstance(arg, rpath.RPath): _vet_rpath(arg, request, arglist)
 		if request.function_string in file_requests:
 			vet_filename(request, arglist)
 	if request.function_string in allowed_requests: return
 	if request.function_string in ("Globals.set", "Globals.set_local"):
 		if arglist[0] not in disallowed_server_globals: return
-	raise_violation(request, arglist)
+	raise_violation("Invalid request", request, arglist)
 
-def vet_rpath(rpath):
-	"""Require rpath not to step outside retricted directory"""
-	if Globals.restrict_path and rpath.conn is Globals.local_connection:
-		normalized, restrict = rpath.normalize().path, Globals.restrict_path
+
+def vet_filename(request, arglist):
+	"""Check to see if file operation is within the restrict_path"""
+	i = file_requests[request.function_string]
+	if len(arglist) <= i: raise_violation("Argument list shorter than %d" % i+1, request, arglist)
+	filename = arglist[i]
+	if not (isinstance(filename, bytes) or isinstance(filename, str)):
+		raise_violation("Argument %d doesn't look like a filename" % i, request, arglist)
+
+	_vet_rpath(rpath.RPath(Globals.local_connection, filename), request, arglist)
+
+
+def _vet_rpath(rp, request, arglist):
+	"""Internal function to validate that a specific path isn't restricted"""
+	if Globals.restrict_path and rp.conn is Globals.local_connection:
+		normalized, restrict = rp.normalize().path, Globals.restrict_path
 		if restrict == "/": return
 		components = normalized.split("/")
 		# 3 cases for restricted dir /usr/foo:  /var, /usr/foobar, /usr/foo/..
@@ -234,17 +246,6 @@ def vet_rpath(rpath):
 			(len(normalized) > len(restrict) and
 			 normalized[len(restrict)] != "/") or
 			".." in components):
-			raise Violation("\nWarning Security Violation!\n"
-							"Request to handle path %s\n"
-							"which doesn't appear to be within "
-							"restrict path %s.\n" % (normalized, restrict))
-
-def vet_filename(request, arglist):
-	"""Check to see if file operation is within the restrict_path"""
-	i = file_requests[request.function_string]
-	if len(arglist) <= i: raise_violation(request, arglist)
-	filename = arglist[i]
-	if type(filename) is not bytes:
-		raise_violation(request, arglist)
-	vet_rpath(rpath.RPath(Globals.local_connection, filename))
+			raise_violation("Normalized path %s not within restricted path %s" % (normalized, restrict),
+						request, arglist)
 
