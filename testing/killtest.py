@@ -10,26 +10,22 @@ Log.setverbosity(3)
 class Local:
 	"""Hold some local RPaths"""
 	def get_local_rp(ext):
-		return RPath(Globals.local_connection, "testfiles/" + ext)
+		return RPath(Globals.local_connection, os.path.join(abs_test_dir, ext))
 
-	kt1rp = get_local_rp('killtest1')
-	kt2rp = get_local_rp('killtest2')
-	kt3rp = get_local_rp('killtest3')
-	kt4rp = get_local_rp('killtest4')
+	ktrp = []
+	for i in range(4):
+		ktrp.append(get_local_rp('killtest%d' % (i+1)))
 
 	rpout = get_local_rp('output')
 	rpout_inc = get_local_rp('output_inc')
-	rpout1 = get_local_rp('restoretarget1')
-	rpout2 = get_local_rp('restoretarget2')
-	rpout3 = get_local_rp('restoretarget3')
-	rpout4 = get_local_rp('restoretarget4')
-	rpout5 = get_local_rp('restoretarget5')
 
-	back1 = get_local_rp('backup1')
-	back2 = get_local_rp('backup2')
-	back3 = get_local_rp('backup3')
-	back4 = get_local_rp('backup4')
-	back5 = get_local_rp('backup5')
+	outrp = []
+	for i in range(5):
+		outrp.append(get_local_rp('restoretarget%d' % (i+1)))
+
+	backrp = []
+	for i in range(5):
+		backrp.append(get_local_rp('backup%d' % (i+1)))
 
 class TimingError(Exception):
 	"""Indicates timing error - process killed too soon or too late"""
@@ -40,13 +36,16 @@ class ProcessFuncs(unittest.TestCase):
 	"""Subclassed by Resume and NoResume"""
 	def delete_tmpdirs(self):
 		"""Remove any temp directories created by previous tests"""
-		assert not os.system(MiscDir + '/myrm testfiles/output* '
-							 'testfiles/restoretarget* testfiles/vft_out '
-							 'timbar.pyc testfiles/vft2_out')
+		if Local.rpout.lstat(): Local.rpout.delete()
+		if Local.rpout_inc.lstat(): Local.rpout_inc.delete()
+		for rp in Local.outrp:
+			if rp.lstat(): rp.delete()
+		# TODO check if following files really need to be deleted:
+		# testfiles/vft_out timbar.pyc testfiles/vft2_out
 
 	def exec_rb(self, time, wait, *args):
 		"""Run rdiff-backup return pid.  Wait until done if wait is true"""
-		arglist = [sys.executable, '../rdiff-backup', '-v3']
+		arglist = [sys.executable, 'rdiff-backup', '-v3']
 		if time:
 			arglist.append("--current-time")
 			arglist.append(str(time))
@@ -92,13 +91,10 @@ class ProcessFuncs(unittest.TestCase):
 			assert not os.system("cp -a %s %s/killtesta" % (input, output))
 			assert not os.system("cp -a %s %s/killtestb" % (input, output))
 
-		if (Local.kt1rp.lstat() and Local.kt2rp.lstat() and
-			Local.kt3rp.lstat() and Local.kt4rp.lstat()): return
-		
-		assert not os.system("rm -rf testfiles/killtest?")
-		for i in [1, 2, 3, 4]:
-			copy_thrice("testfiles/increment%d" % i,
-						"testfiles/killtest%d" % i)
+		for i in range(len(Local.ktrp)):
+			if Local.ktrp[i].lstat(): Local.ktrp[i].delete()
+			copy_thrice(os.path.join(old_test_dir, "increment%d" % (i+1)),
+					Local.ktrp[i].path)
 
 	def runtest_sequence(self, total_tests,
 						 exclude_rbdir, ignore_tmp, compare_links,
@@ -131,12 +127,10 @@ class KillTest(ProcessFuncs):
 
 	def setUp(self):
 		"""Create killtest? and backup? directories if necessary"""
-		Local.kt1rp.setdata()
-		Local.kt2rp.setdata()
-		Local.kt3rp.setdata()		
-		Local.kt4rp.setdata()
-		if (not Local.kt1rp.lstat() or not Local.kt2rp.lstat() or
-			not Local.kt3rp.lstat() or not Local.kt4rp.lstat()):
+		for rp in Local.ktrp:
+			rp.setdata()
+		if (not Local.ktrp[0].lstat() or not Local.ktrp[1].lstat() or
+			not Local.ktrp[2].lstat() or not Local.ktrp[3].lstat()):
 			self.create_killtest_dirs()
 
 	def testTiming(self):
@@ -151,11 +145,11 @@ class KillTest(ProcessFuncs):
 
 		for i in range(iterations):
 			self.delete_tmpdirs()
-			run_once(10000, Local.kt3rp, 0)
-			run_once(20000, Local.kt1rp, 1)
-			run_once(30000, Local.kt3rp, 2)
-			run_once(40000, Local.kt3rp, 3)
-			run_once(50000, Local.kt3rp, 4)			
+			run_once(10000, Local.ktrp[2], 0)
+			run_once(20000, Local.ktrp[0], 1)
+			run_once(30000, Local.ktrp[2], 2)
+			run_once(40000, Local.ktrp[2], 3)
+			run_once(50000, Local.ktrp[2], 4)
 
 		for i in range(len(time_list)):
 			print("%s -> %s" % (i, " ".join(map(str, time_list[i]))))
@@ -206,8 +200,8 @@ class KillTest(ProcessFuncs):
 		# Back up killtest3 first because it is big and the first case
 		# is kind of special (there's no incrementing, so different
 		# code)
-		self.exec_rb(10000, 1, Local.kt3rp.path, Local.rpout.path)
-		assert CompareRecursive(Local.kt3rp, Local.rpout)
+		self.exec_rb(10000, 1, Local.ktrp[2].path, Local.rpout.path)
+		assert CompareRecursive(Local.ktrp[2], Local.rpout)
 
 		def cycle_once(min_max_time_pair, curtime, input_rp, old_rp):
 			"""Backup input_rp, kill, regress, and then compare"""
@@ -220,34 +214,34 @@ class KillTest(ProcessFuncs):
 			assert CompareRecursive(old_rp, Local.rpout, compare_hardlinks = 0)
 			return result
 
-		# Keep backing kt1rp, and then regressing to kt3rp.  Then go to kt1rp
+		# Keep backing ktrp[0], and then regressing to ktrp[2].  Then go to ktrp[0]
 		for i in range(count):
 			result = cycle_once(self.time_pairs[1], 20000,
-								Local.kt1rp, Local.kt3rp)
+								Local.ktrp[0], Local.ktrp[2])
 			if result == 0: killed_too_late[0] += 1
 			elif result == -1: killed_too_soon[0] += 1
-		self.exec_rb(20000, 1, Local.kt1rp.path, Local.rpout.path)
+		self.exec_rb(20000, 1, Local.ktrp[0].path, Local.rpout.path)
 
-		# Now keep regressing from kt2rp, only staying there at the end
+		# Now keep regressing from ktrp[1], only staying there at the end
 		for i in range(count):
 			result = cycle_once(self.time_pairs[2], 30000,
-								Local.kt2rp, Local.kt1rp)
+								Local.ktrp[1], Local.ktrp[0])
 			if result == 0: killed_too_late[1] += 1
 			elif result == -1: killed_too_soon[1] += 1
-		self.exec_rb(30000, 1, Local.kt2rp.path, Local.rpout.path)
+		self.exec_rb(30000, 1, Local.ktrp[1].path, Local.rpout.path)
 
-		# Now keep regressing from kt3rp, only staying there at the end
+		# Now keep regressing from ktrp[2], only staying there at the end
 		for i in range(count):
 			result = cycle_once(self.time_pairs[3], 40000,
-								Local.kt3rp, Local.kt2rp)
+								Local.ktrp[2], Local.ktrp[1])
 			if result == 0: killed_too_late[2] += 1
 			elif result == -1: killed_too_soon[2] += 1
-		self.exec_rb(40000, 1, Local.kt3rp.path, Local.rpout.path)
+		self.exec_rb(40000, 1, Local.ktrp[2].path, Local.rpout.path)
 
-		# Now keep regressing from kt4rp, only staying there at the end
+		# Now keep regressing from ktrp[3], only staying there at the end
 		for i in range(count):
 			result = cycle_once(self.time_pairs[4], 50000,
-								Local.kt4rp, Local.kt3rp)
+								Local.ktrp[3], Local.ktrp[2])
 			if result == 0: killed_too_late[3] += 1
 			elif result == -1: killed_too_soon[3] += 1
 
