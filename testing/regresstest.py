@@ -11,12 +11,12 @@ from rdiff_backup import regress, Time
 Log.setverbosity(3)
 
 class RegressTest(unittest.TestCase):
-	output_rp = rpath.RPath(Globals.local_connection, "testfiles/output")
+	output_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
 	output_rbdir_rp = output_rp.append_path("rdiff-backup-data")
-	inc1_rp = rpath.RPath(Globals.local_connection, "testfiles/increment1")
-	inc2_rp = rpath.RPath(Globals.local_connection, "testfiles/increment2")
-	inc3_rp = rpath.RPath(Globals.local_connection, "testfiles/increment3")
-	inc4_rp = rpath.RPath(Globals.local_connection, "testfiles/increment4")
+	incrp = []
+	for i in range(4):
+		incrp.append(rpath.RPath(Globals.local_connection,
+				os.path.join(old_test_dir, "increment%d" % (i+1))))
 
 	def runtest(self, regress_function):
 		"""Test regressing a full directory to older state
@@ -32,32 +32,32 @@ class RegressTest(unittest.TestCase):
 		self.output_rp.setdata()
 		if self.output_rp.lstat(): Myrm(self.output_rp.path)
 
-		rdiff_backup(1, 1, self.inc1_rp.path, self.output_rp.path,
+		rdiff_backup(1, 1, self.incrp[0].path, self.output_rp.path,
 					 current_time = 10000)
-		assert CompareRecursive(self.inc1_rp, self.output_rp)
+		assert CompareRecursive(self.incrp[0], self.output_rp)
 
-		rdiff_backup(1, 1, self.inc2_rp.path, self.output_rp.path,
+		rdiff_backup(1, 1, self.incrp[1].path, self.output_rp.path,
 					 current_time = 20000)
-		assert CompareRecursive(self.inc2_rp, self.output_rp)
+		assert CompareRecursive(self.incrp[1], self.output_rp)
 
-		rdiff_backup(1, 1, self.inc3_rp.path, self.output_rp.path,
+		rdiff_backup(1, 1, self.incrp[2].path, self.output_rp.path,
 					 current_time = 30000)
-		assert CompareRecursive(self.inc3_rp, self.output_rp)
+		assert CompareRecursive(self.incrp[2], self.output_rp)
 
-		rdiff_backup(1, 1, self.inc4_rp.path, self.output_rp.path,
+		rdiff_backup(1, 1, self.incrp[3].path, self.output_rp.path,
 					 current_time = 40000)
-		assert CompareRecursive(self.inc4_rp, self.output_rp)
+		assert CompareRecursive(self.incrp[3], self.output_rp)
 
 		Globals.rbdir = self.output_rbdir_rp
 
 		regress_function(30000)
-		assert CompareRecursive(self.inc3_rp, self.output_rp,
+		assert CompareRecursive(self.incrp[2], self.output_rp,
 								compare_hardlinks = 0)
 		regress_function(20000)
-		assert CompareRecursive(self.inc2_rp, self.output_rp,
+		assert CompareRecursive(self.incrp[1], self.output_rp,
 								compare_hardlinks = 0)
 		regress_function(10000)
-		assert CompareRecursive(self.inc1_rp, self.output_rp,
+		assert CompareRecursive(self.incrp[0], self.output_rp,
 								compare_hardlinks = 0)
 
 	def regress_to_time_local(self, time):
@@ -66,7 +66,7 @@ class RegressTest(unittest.TestCase):
 		self.output_rbdir_rp.setdata()
 		self.add_current_mirror(time)
 		regress.Regress(self.output_rp)
-			
+
 	def add_current_mirror(self, time):
 		"""Add current_mirror marker at given time"""
 		cur_mirror_rp = self.output_rbdir_rp.append(
@@ -78,12 +78,9 @@ class RegressTest(unittest.TestCase):
 		self.output_rp.setdata()
 		self.output_rbdir_rp.setdata()
 		self.add_current_mirror(time)
-		cmdline = (SourceDir +
-				   "/../rdiff-backup -v3 --check-destination-dir "
-				   "--remote-schema './chdir-wrapper2 %s' "
-				   "test1::../" + self.output_rp.path)
-		print("Running:", cmdline)
-		assert not os.system(cmdline)
+
+		rdiff_backup(False, False, self.output_rp.path, None,
+				extra_options="-v3 --check-destination-dir")
 
 	def test_local(self):
 		"""Run regress test locally"""
@@ -106,7 +103,7 @@ class RegressTest(unittest.TestCase):
 		marker.touch()
 		self.change_unreadable()
 
-		cmd = "rdiff-backup --check-destination-dir " + self.output_rp.path
+		cmd = "rdiff-backup --check-destination-dir %s" % self.output_rp.path
 		print("Executing:", cmd)
 		assert not os.system(cmd)
 
@@ -118,7 +115,8 @@ class RegressTest(unittest.TestCase):
 		unreadable.
 
 		"""
-		rp = rpath.RPath(Globals.local_connection, "testfiles/regress")
+		rp = rpath.RPath(Globals.local_connection,
+				os.path.join(abs_test_dir, "regress"))
 		if rp.lstat(): Myrm(rp.path)
 		rp.setdata()
 		rp.mkdir()
@@ -135,7 +133,7 @@ class RegressTest(unittest.TestCase):
 		rp1_1 = subdir.append('to_be_unreadable')
 		rp1_1.chmod(0)
 		subdir.chmod(0)
-		
+
 
 if __name__ == "__main__": unittest.main()
 
