@@ -4,5 +4,5 @@ build/
 __pycache__
 
 # tox testing stuff
-.tox/
+.tox*
 MANIFEST

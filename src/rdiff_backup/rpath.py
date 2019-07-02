@@ -530,8 +530,10 @@ class RORPath:
 				  self.data[key] != other.data[key]):
 				if key not in other.data:
 					log.Log("Second is missing key %s" % (key,), verbosity)
-				else: log.Log("Value of %s differs: %s vs %s" %
-							  (key, self.data[key], other.data[key]),
+				else: log.Log("Value of %s differs between %s and %s: %s vs %s" %
+							  (key, self.get_indexpath(),
+							  other.get_indexpath(),
+							  self.data[key], other.data[key]),
 							  verbosity)
 				return None
 		return 1
@@ -983,13 +985,14 @@ class RPath(RORPath):
 	def chown(self, uid, gid):
 		"""Set file's uid and gid"""
 		if self.issym():
-			try: self.conn.C.lchown(self.path, uid, gid)
+			try: self.conn.os.lchown(self.path, uid, gid)
 			except AttributeError:
 				log.Log("Warning: lchown missing, cannot change ownership "
 						"of symlink " + self.path, 2)
-		else: os.chown(self.path, uid, gid)
-		self.data['uid'] = uid
-		self.data['gid'] = gid
+		else: self.conn.os.chown(self.path, uid, gid)
+		# uid/gid equal to -1 is ignored by chown/lchown
+		if uid >= 0: self.data['uid'] = uid
+		if gid >= 0: self.data['gid'] = gid
 
 	def mkdir(self):
 		log.Log("Making directory " + self.path, 6)

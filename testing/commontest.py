@@ -35,12 +35,13 @@ def Myrm(dirstring):
 		if rp.isdir(): rp.chmod(0o700) # otherwise may not be able to remove
 	assert not os.system("rm -rf %s" % (dirstring,))
 
-def re_init_rpath_dir(rp):
+def re_init_rpath_dir(rp, uid=-1, gid=-1):
 	"""Delete directory if present, then recreate"""
 	if rp.lstat():
 		Myrm(rp.path)
 		rp.setdata()
 	rp.mkdir()
+	rp.chown(uid, gid)
 
 
 def re_init_subdir(maindir, subdir):

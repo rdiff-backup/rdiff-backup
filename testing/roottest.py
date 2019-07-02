@@ -1,6 +1,6 @@
 import unittest, os
 from commontest import *
-from rdiff_backup import Globals, log
+from rdiff_backup import Globals
 
 """Root tests - contain tests which need to be run as root.
 
@@ -11,21 +11,32 @@ if you aren't me, check out the 'user' global variable.
 
 Globals.set('change_source_perms', None)
 Globals.counter = 0
-verbosity = 5
-log.Log.setverbosity(verbosity)
-user = 'ben' # Non-root user to su to
-userid = 500 # id of user above
+verbosity = 1
+Log.setverbosity(verbosity)
+
 assert os.getuid() == 0, "Run this test as root!"
+
+# we need a normal user for our test, we use environment variables to use
+# the right one, either through SUDO_* variables set by sudo, or set
+# explicitly by the tester.
+userid = int(os.getenv('RDIFF_TEST_UID', os.getenv('SUDO_UID')))
+user = os.getenv('RDIFF_TEST_USER', os.getenv('SUDO_USER'))
+assert userid, "Unable to assess ID of non-root user to be used for tests"
+assert user, "Unable to assess name of non-root user to be used for tests"
+
 
 def Run(cmd):
 	print("Running: ", cmd)
-	assert not os.system(cmd)
+	rc = os.system(cmd)
+	assert not rc, "Command `%s` failed with rc=%d" % (cmd, rc)
 
 class RootTest(unittest.TestCase):
-	dirlist1 = ["testfiles/root", "testfiles/various_file_types",
-				"testfiles/increment4"]
-	dirlist2 = ["testfiles/increment4", "testfiles/root",
-				"testfiles/increment1"]
+	dirlist1 = [os.path.join(old_test_dir, "root"),
+			os.path.join(old_test_dir, "various_file_types"),
+			os.path.join(old_test_dir, "increment4")]
+	dirlist2 = [os.path.join(old_test_dir, "increment4"),
+			os.path.join(old_test_dir, "root"),
+			os.path.join(old_test_dir, "increment1")]
 	def testLocal1(self):
 		BackupRestoreSeries(1, 1, self.dirlist1, compare_ownership = 1)
 	def testLocal2(self):
@@ -43,7 +54,8 @@ class RootTest(unittest.TestCase):
 		(Earlier symlink ownership was not preserved.)
 
 		"""
-		dirrp = rpath.RPath(Globals.local_connection, "testfiles/root_owner")
+		dirrp = rpath.RPath(Globals.local_connection,
+				os.path.join(abs_test_dir, "root_owner"))
 		def make_dir():
 			re_init_rpath_dir(dirrp)
 			rp1 = dirrp.append('file1')
@@ -62,11 +74,12 @@ class RootTest(unittest.TestCase):
 			rp4.chown(2003, 2003)
 			rp5.chown(2004, 2004)
 		make_dir()
-		BackupRestoreSeries(1, 1, ['testfiles/root_owner', 'testfiles/empty',
-								   'testfiles/root_owner'],
-							compare_ownership = 1)
+		dirlist = [os.path.join(abs_test_dir, "root_owner"),
+				os.path.join(old_test_dir, "empty"),
+				os.path.join(abs_test_dir, "root_owner")]
+		BackupRestoreSeries(1, 1, dirlist, compare_ownership = 1)
 		symrp = rpath.RPath(Globals.local_connection,
-							'testfiles/output/symlink')
+						os.path.join(abs_output_dir, 'symlink'))
 		assert symrp.issym(), symrp
 		assert symrp.getuidgid() == (2004, 2004), symrp.getuidgid()
 
@@ -75,7 +88,7 @@ class RootTest(unittest.TestCase):
 		def write_ownership_dir():
 			"""Write the directory testfiles/root_mapping"""
 			rp = rpath.RPath(Globals.local_connection,
-							 "testfiles/root_mapping")
+						os.path.join(abs_test_dir, "root_mapping"))
 			re_init_rpath_dir(rp)
 			rp1 = rp.append('1')
 			rp1.touch()
@@ -100,7 +113,7 @@ class RootTest(unittest.TestCase):
 
 		in_rp = write_ownership_dir()
 		user_map, group_map = write_mapping_files(in_rp)
-		out_rp = rpath.RPath(Globals.local_connection, 'testfiles/output')
+		out_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
 		if out_rp.lstat(): Myrm(out_rp.path)
 
 		assert get_ownership(in_rp) == ((0,0), (userid, 1)), \
@@ -122,7 +135,7 @@ class RootTest(unittest.TestCase):
 		def write_ownership_dir():
 			"""Write the directory testfiles/root_mapping"""
 			rp = rpath.RPath(Globals.local_connection,
-							 "testfiles/root_mapping")
+						os.path.join(abs_test_dir, "root_mapping"))
 			re_init_rpath_dir(rp)
 			rp1 = rp.append('1')
 			rp1.touch()
@@ -138,7 +151,7 @@ class RootTest(unittest.TestCase):
 			return (rp1.getuidgid(), rp2.getuidgid())
 
 		in_rp = write_ownership_dir()
-		out_rp = rpath.RPath(Globals.local_connection, 'testfiles/output')
+		out_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
 		if out_rp.lstat(): Myrm(out_rp.path)
 
 		assert get_ownership(in_rp) == ((0,0), (userid, 1)), \
@@ -147,6 +160,11 @@ class RootTest(unittest.TestCase):
 					 extra_options = ("--preserve-numerical-ids"))
 		assert get_ownership(out_rp) == ((0,0), (userid, 1)), \
 			   get_ownership(in_rp)
+
+	def tearDown(self):
+		# especially the logfile might still appear opened if a test was interrupted
+		Main.cleanup()
+
 
 
 class HalfRoot(unittest.TestCase):
@@ -158,7 +176,8 @@ class HalfRoot(unittest.TestCase):
 		self-readable.  (Caused problems earlier.)
 
 		"""
-		rp1 = rpath.RPath(Globals.local_connection, "testfiles/root_half1")
+		rp1 = rpath.RPath(Globals.local_connection,
+						os.path.join(abs_test_dir, "root_half1"))
 		re_init_rpath_dir(rp1)
 		rp1_1 = rp1.append('foo')
 		rp1_1.write_string('hello')
@@ -179,7 +198,8 @@ class HalfRoot(unittest.TestCase):
 		rp1_3_2.chmod(0)
 		rp1_3.chmod(0)
 
-		rp2 = rpath.RPath(Globals.local_connection, "testfiles/root_half2")
+		rp2 = rpath.RPath(Globals.local_connection,
+						os.path.join(abs_test_dir, "root_half2"))
 		re_init_rpath_dir(rp2)
 		rp2_1 = rp2.append('foo')
 		rp2_1.write_string('goodbye')
@@ -235,35 +255,31 @@ class HalfRoot(unittest.TestCase):
 	def test_backup(self):
 		"""Test back up, simple restores"""
 		in_rp1, in_rp2 = self.make_dirs()
-		outrp = rpath.RPath(Globals.local_connection, "testfiles/output")
-		if outrp.lstat(): outrp.delete()
+		outrp = rpath.RPath(Globals.local_connection, abs_output_dir)
+		re_init_rpath_dir(outrp, userid)
 		remote_schema = 'su -c "rdiff-backup --server" %s' % (user,)
 		cmd_schema = ("rdiff-backup -v" + str(verbosity) +
 					  " --current-time %s --remote-schema '%%s' %s '%s'::%s")
 
 		cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
-		print("Executing: ", cmd1)
-		assert not os.system(cmd1)
+		Run(cmd1)
 		in_rp1.setdata()
 		outrp.setdata()
-		assert CompareRecursive(in_rp1, outrp)
 
 		cmd2 = cmd_schema % (20000, in_rp2.path, remote_schema, outrp.path)
-		print("Executing: ", cmd2)
-		assert not os.system(cmd2)
+		Run(cmd2)
 		in_rp2.setdata()
 		outrp.setdata()
-		assert CompareRecursive(in_rp2, outrp)
+		#assert CompareRecursive(in_rp2, outrp)
 
-		rout_rp = rpath.RPath(Globals.local_connection,
-							  "testfiles/restore_out")
+		rout_rp = rpath.RPath(Globals.local_connection, abs_restore_dir)
 		restore_schema = ("rdiff-backup -v" + str(verbosity) +
 						  " -r %s --remote-schema '%%s' '%s'::%s %s")
 		Myrm(rout_rp.path)
 		cmd3 = restore_schema % (10000, remote_schema, outrp.path,
 								 rout_rp.path)
-		print("Executing restore: ", cmd3)
-		assert not os.system(cmd3)
+		Run(cmd3)
+		assert CompareRecursive(in_rp1, rout_rp)
 		rout_perms = rout_rp.append('unreadable_dir').getperms()
 		outrp_perms = outrp.append('unreadable_dir').getperms()
 		assert rout_perms == 0, rout_perms
@@ -272,8 +288,8 @@ class HalfRoot(unittest.TestCase):
 		Myrm(rout_rp.path)
 		cmd4 = restore_schema % ("now", remote_schema, outrp.path,
 								 rout_rp.path)
-		print("Executing restore: ", cmd4)
-		assert not os.system(cmd4)
+		Run(cmd4)
+		assert CompareRecursive(in_rp2, rout_rp)
 		rout_perms = rout_rp.append('unreadable_dir').getperms()
 		outrp_perms = outrp.append('unreadable_dir').getperms()
 		assert rout_perms == 0, rout_perms
@@ -282,9 +298,8 @@ class HalfRoot(unittest.TestCase):
 		self.cause_regress(outrp)
 		cmd5 = ('su -c "rdiff-backup --check-destination-dir %s" %s' %
 				(outrp.path, user))
-		print("Executing regress: ", cmd5)
-		assert not os.system(cmd5)
-		
+		Run(cmd5)
+
 
 class NonRoot(unittest.TestCase):
 	"""Test backing up as non-root user
@@ -296,7 +311,8 @@ class NonRoot(unittest.TestCase):
 	"""
 	def make_root_dirs(self):
 		"""Make directory createable only by root"""
-		rp = rpath.RPath(Globals.local_connection, "testfiles/root_out1")
+		rp = rpath.RPath(Globals.local_connection,
+						os.path.join(abs_test_dir, "root_out1"))
 		re_init_rpath_dir(rp)
 		rp1 = rp.append("1")
 		rp1.touch()
@@ -309,7 +325,8 @@ class NonRoot(unittest.TestCase):
 		rp4 = rp.append("dev")
 		rp4.makedev('c', 4, 28)
 
-		sp = rpath.RPath(Globals.local_connection, "testfiles/root_out2")
+		sp = rpath.RPath(Globals.local_connection,
+						os.path.join(abs_test_dir, "root_out2"))
 		if sp.lstat(): Myrm(sp.path)
 		Run("cp -a %s %s" % (rp.path, sp.path))
 		rp2 = sp.append("2")
@@ -328,7 +345,6 @@ class NonRoot(unittest.TestCase):
 		Run("su %s -c '%s'" % (user, backup_cmd))
 
 	def restore(self, dest_rp, restore_rp, time = None):
-		assert restore_rp.path == "testfiles/rest_out"
 		Myrm(restore_rp.path)
 		if time is None: time = "now"
 		restore_cmd = "rdiff-backup -r %s %s %s" % (time, dest_rp.path,
@@ -337,13 +353,13 @@ class NonRoot(unittest.TestCase):
 
 	def test_non_root(self):
 		"""Main non-root -> root test"""
-		Myrm("testfiles/output")
 		input_rp1, input_rp2 = self.make_root_dirs()
 		Globals.change_ownership = 1
-		output_rp = rpath.RPath(Globals.local_connection, "testfiles/output")
-		restore_rp = rpath.RPath(Globals.local_connection,
-								 "testfiles/rest_out")
-		empty_rp = rpath.RPath(Globals.local_connection, "testfiles/empty")
+		output_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
+		re_init_rpath_dir(output_rp, userid)
+		restore_rp = rpath.RPath(Globals.local_connection, abs_restore_dir)
+		empty_rp = rpath.RPath(Globals.local_connection,
+						os.path.join(old_test_dir, "empty"))
 
 		self.backup(input_rp1, output_rp, 1000000)
 		self.restore(output_rp, restore_rp)
