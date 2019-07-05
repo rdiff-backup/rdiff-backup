@@ -11,7 +11,7 @@ Some notes for developers and other people willing to help development.
 - run `tox` to use the default `tox.ini`
 - or `tox -c tox_slow.ini` for long tests
 
-NOTE: the test files are currently still available from https://download-mirror.savannah.gnu.org/releases/rdiff-backup/testfiles.tar.gz until I've found a better place or approach. For now you need to unpack the archive file and rename the created directory according to the above instructions.
+NOTE: the test files previously available from https://download-mirror.savannah.gnu.org/releases/rdiff-backup/testfiles.tar.gz are now available as release under https://github.com/ericzolf/rdiff-backup/releases with some improvements. You'll need to unpack the file as root and do some more manipulations as explained in the notes of the latest release.
 
 That's it...
 
