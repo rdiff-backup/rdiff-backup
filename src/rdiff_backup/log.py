@@ -249,7 +249,7 @@ class ErrorLog:
 		if not Globals.isbackup_writer:
 			return Globals.backup_writer.log.ErrorLog.write(error_type,
 															rp, exc)
-		s = cls.get_log_string(error_type, rp, exc)
+		s = str(cls.get_log_string(error_type, rp, exc))
 		Log(s, 2)
 		if Globals.null_separator: s += "\0"
 		else:

@@ -135,6 +135,22 @@ class LongNameTest(unittest.TestCase):
 		"""Test regressing when increments would be too long"""
 		self.generic_regress_test('')
 
+	def test_long_socket_name(self):
+		"""Test when socket name is saved to a backup directory with a long name
+		It addresses an issue where socket wasn't created with mknod but
+		with socket.socket and bind, which has a limit at 107 characters."""
+		input_dir = os.path.join(old_test_dir, "select", "filetypes")
+		# create a target directory with a long name next to 107
+		output_dir = os.path.join(abs_test_dir, "tenletters"*10)
+		Myrm(output_dir)
+		restore_dir = os.path.join(abs_test_dir, "restoresme"*10)
+		Myrm(restore_dir)
+		# backup and restore the input directory with socket, then compare
+		rdiff_backup(True, True, input_dir, output_dir)
+		rdiff_backup(True, True, output_dir, restore_dir, extra_options='-r 0')
+		CompareRecursive(rpath.RPath(Globals.local_connection, input_dir),
+				rpath.RPath(Globals.local_connection, restore_dir))
+
 
 if __name__ == "__main__": unittest.main()
 

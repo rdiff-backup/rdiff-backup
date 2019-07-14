@@ -359,10 +359,7 @@ def make_socket_local(rpath):
 
 	"""
 	assert rpath.conn is Globals.local_connection
-	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-	try: s.bind(rpath.path)
-	except socket.error as exc:
-		raise SkipFileException("Socket error: " + str(exc))
+	rpath.conn.os.mknod(rpath.path, stat.S_IFSOCK)
 
 def gzip_open_local_read(rpath):
 	"""Return open GzipFile.  See security note directly above"""
@@ -1533,6 +1530,7 @@ class MaybeGzip:
 
 	def write(self, buf):
 		"""Write buf to fileobj"""
+		if isinstance(buf, str): buf = buf.encode()
 		if self.fileobj: return self.fileobj.write(buf)
 		if not buf: return
 
