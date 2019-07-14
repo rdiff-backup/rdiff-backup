@@ -65,7 +65,7 @@ def MakeOutputDir():
 
 def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 				 current_time = None, extra_options = "",
-				 check_return_val = 1):
+				 check_return_val = 1, expected_ret_val = 0):
 	"""Run rdiff-backup with the given options
 
 	source_local and dest_local are boolean values.  If either is
@@ -98,7 +98,12 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 	print("Executing: ", cmdline)
 	ret_val = os.system(cmdline)
 	if check_return_val:
-		assert not ret_val, "Return code %d of command `%s` isn't zero." % (ret_val, cmdline)
+		# the construct is needed because os.system seemingly doesn't
+		# respect expected return values (FIXME)
+		assert ((expected_ret_val == 0 and ret_val == 0) or
+                                (expected_ret_val > 0 and ret_val > 0)), \
+			"Return code %d of command `%s` isn't expected %d." % \
+						(ret_val, cmdline, expected_ret_val)
 	return ret_val
 
 def InternalBackup(source_local, dest_local, src_dir, dest_dir,
