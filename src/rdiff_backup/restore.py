@@ -284,12 +284,14 @@ class TargetStruct:
 		"""Return a selection object iterating the rorpaths in target"""
 		cls._select = selection.Select(target)
 		cls._select.ParseArgs(select_opts, filelists)
-		cls._select.set_iter()
 
 	@classmethod
 	def get_initial_iter(cls, target):
 		"""Return selector previously set with set_initial_iter"""
-		return cls._select or selection.Select(target).set_iter()
+		if cls._select:
+			return cls._select.set_iter()
+		else:
+			return selection.Select(target).set_iter()
 
 	@classmethod
 	def patch(cls, target, diff_iter):
