@@ -362,7 +362,7 @@ class CachedRF:
 			log.Log("Error: Unable to retrieve data for file %s!\nThe "
 					"cause is probably data loss from the backup repository."
 					% (index and "/".join(index) or '.',), 2)
-			return io.StringIO('')
+			return io.BytesIO()
 		return rf.get_restore_fp()
 
 	def add_rfs(self, index, mir_rorp = None):
@@ -485,7 +485,7 @@ class RestoreFile:
 		def error_handler(exc):
 			log.Log("Error reading %s, substituting empty file." %
 					(self.mirror_rp.path,), 2)
-			return io.BytesIO(b'')
+			return io.BytesIO('')
 
 		if not self.relevant_incs[-1].isreg():
 			log.Log("""Warning: Could not restore file %s!
@@ -496,7 +496,7 @@ constructed from existing increments because last increment had type
 created.  This error is probably caused by data loss in the
 rdiff-backup destination directory, or a bug in rdiff-backup""" %
 	    (self.mirror_rp.get_safepath(), self.relevant_incs[-1].lstat()), 2)
-			return io.StringIO('')
+			return io.BytesIO()
 		return robust.check_common_error(error_handler, get_fp)
 
 	def get_first_fp(self):
