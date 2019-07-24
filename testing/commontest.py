@@ -1,6 +1,6 @@
 """commontest - Some functions and constants common to several test cases.
 Can be called also directly to setup the test environment"""
-import os, sys, code, shutil
+import os, sys, code, shutil, subprocess
 # Avoid circularities
 from rdiff_backup.log import Log
 from rdiff_backup.rpath import RPath
@@ -64,7 +64,7 @@ def MakeOutputDir():
 	return rp
 
 def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
-				 current_time = None, extra_options = "",
+				 current_time = None, extra_options = "", input=None,
 				 check_return_val = 1, expected_ret_val = 0):
 	"""Run rdiff-backup with the given options
 
@@ -96,7 +96,8 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 	if dest_dir: cmdargs.append(dest_dir)
 	cmdline = " ".join(cmdargs)
 	print("Executing: ", cmdline)
-	ret_val = os.system(cmdline)
+	ret_val = subprocess.run(cmdline, shell=True,
+					input=input, universal_newlines=True).returncode
 	if check_return_val:
 		# the construct is needed because os.system seemingly doesn't
 		# respect expected return values (FIXME)

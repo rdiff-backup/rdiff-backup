@@ -432,51 +432,32 @@ class FinalSelection(PathSetter):
 		# Now try reading list of files
 		rdiff_backup(True, True, inc2_rel, out_rel,
 					extra_options="--current-time 20000 "
-						 + " --include %s" % os.path.join(inc2_rel, "test.py")
-						 + " --include %s" % os.path.join(inc2_rel, "changed_dir")
-						 + " --exclude '**' ")
-# TODO extend rdiff_backup to handle stdin parameters
-#		fp = os.popen(self.rb_schema +
-#					  "--current-time 20000 "
-#					  "--include-filelist-stdin --exclude '**' "
-#					  "testfiles/increment2 testfiles/output", "w")
-#		fp.write("""
-#testfiles/increment2/test.py
-#testfiles/increment2/changed_dir""")
-#		assert not fp.close()
+						+ " --include-filelist-stdin"
+						+ " --exclude '**' ",
+						input="\n"
+						+ os.path.join(inc2_rel, "test.py") + "\n"
+						+ os.path.join(inc2_rel, "changed_dir"))
 
 		# check that two included files exist and two excluded don't
 		assert os.lstat(os.path.join(out_rel, "changed_dir"))
 		assert os.lstat(os.path.join(out_rel, "test.py"))
 		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, "various_file_types"))
-		# TODO reintroduce following check with above 2nd command with stdin parameters
-		# self.assertRaises(OSError, os.lstat, os.path.join(out_rel, "changed_dir", "foo"))
+		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, "changed_dir", "foo"))
 
 		# Test selective restoring
 		mirror_rp = rpath.RPath(Globals.local_connection, out_rel)
 		restore_filename = get_increment_rp(mirror_rp, 10000).path
 
 		rdiff_backup(True, True, restore_filename, rest1_rel,
-					extra_options="--include %s" % os.path.join(rest1_rel,
-								"various_file_types", "regular_file")
-						 + " --exclude '**'")
+					extra_options="--include-filelist-stdin "
+						+ " --exclude '**'",
+						input="\n" + os.path.join(rest1_rel,
+							"various_file_types", "regular_file"))
 
 		assert os.lstat(os.path.join(rest1_rel, "various_file_types", "regular_file"))
 		self.assertRaises(OSError, os.lstat, os.path.join(rest1_rel, "tester"))
 		self.assertRaises(OSError, os.lstat,
-					os.path.join(rest1_rel, "various_file_types", "executable"))
-
-# TODO extend rdiff_backup to handle stdin parameters
-#		fp = os.popen(self.rb_schema +
-#					  "--include-filelist-stdin " + restore_filename +
-#					  " testfiles/restoretarget2", "w")
-#		fp.write("""
-#- testfiles/restoretarget2/various_file_types/executable""")
-#		assert not fp.close()
-#		assert os.lstat("testfiles/restoretarget2/various_file_types/"
-#						"regular_file")
-#		self.assertRaises(OSError, os.lstat,
-#			   "testfiles/restoretarget2/various_file_types/executable")
+				os.path.join(rest1_rel, "various_file_types", "executable"))
 
 	def testSelFilesRemote(self):
 		"""Test for bug found in 0.7.[34] - filelist where source remote"""
