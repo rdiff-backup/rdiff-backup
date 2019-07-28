@@ -27,7 +27,7 @@ access_control_lists.<time>.snapshot.
 """
 
 
-import base64, errno, re
+import base64, errno, re, io
 try: import posix1e
 except ImportError: pass
 from . import Globals, connection, metadata, rorpiter, log, C, \
