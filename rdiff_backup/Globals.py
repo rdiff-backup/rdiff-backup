@@ -23,7 +23,7 @@ import re, os
 
 
 # The current version of rdiff-backup
-version = "1.2.8"
+version = "1.3.3"
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
@@ -158,6 +158,11 @@ rbdir = None
 # should be escaped (see FilenameMapping for more info).
 chars_to_quote = None
 quoting_char = ';'
+
+# If true, the timestamps use the following format: "2008-09-01T04-49-04-07-00"
+# (instead of "2008-09-01T04:49:04-07:00"). This creates timestamps which
+# don't need to be escaped on Windows.
+use_compatible_timestamps = 0 
 
 # If true, emit output intended to be easily readable by a
 # computer.  False means output is intended for humans.
