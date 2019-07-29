@@ -4,8 +4,7 @@
 	dh $@ --with python2
 
 override_dh_install:
-	install -D -m 0644 debian/local/bash-completion debian/rdiff-backup/etc/bash_completion.d/rdiff-backup
+	install -D -m 0644 debian/local/bash-completion debian/rdiff-backup/usr/share/bash-completion/completions/rdiff-backup
 
 	# Removing useless files
 	rm -rf debian/rdiff-backup/usr/share/doc/rdiff-backup-*
-
