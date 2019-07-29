@@ -61,8 +61,13 @@ def setprevtime_local(timeinseconds, timestr):
 	prevtime, prevtimestr = timeinseconds, timestr
 
 def timetostring(timeinseconds):
-	"""Return w3 datetime compliant listing of timeinseconds"""
-	s = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(timeinseconds))
+	"""Return w3 datetime compliant listing of timeinseconds, or one in
+	which :'s have been replaced with -'s"""
+	if not Globals.use_compatible_timestamps:
+		format_string = "%Y-%m-%dT%H:%M:%S"
+	else:
+		format_string = "%Y-%m-%dT%H-%M-%S"
+	s = time.strftime(format_string, time.localtime(timeinseconds))
 	return s + gettzd(timeinseconds)
 
 def stringtotime(timestring):
@@ -72,10 +77,13 @@ def stringtotime(timestring):
 	like a w3 datetime string, return None.
 
 	"""
+
+	regexp = re.compile('[-:]')
+
 	try:
 		date, daytime = timestring[:19].split("T")
 		year, month, day = map(int, date.split("-"))
-		hour, minute, second = map(int, daytime.split(":"))
+		hour, minute, second = map(int, regexp.split(daytime))
 		assert 1900 < year < 2100, year
 		assert 1 <= month <= 12
 		assert 1 <= day <= 31
@@ -157,16 +165,18 @@ def gettzd(timeinseconds = None):
 	elif offset < 0: prefix = "-"
 	else: return "Z" # time is already in UTC
 
+	if Globals.use_compatible_timestamps: time_separator = '-'
+	else: time_separator = ':'
 	hours, minutes = map(abs, divmod(offset, 60))
 	assert 0 <= hours <= 23
 	assert 0 <= minutes <= 59
-	return "%s%02d:%02d" % (prefix, hours, minutes)
+	return "%s%02d%s%02d" % (prefix, hours, time_separator, minutes)
 
 def tzdtoseconds(tzd):
 	"""Given w3 compliant TZD, return how far ahead UTC is"""
 	if tzd == "Z": return 0
 	assert len(tzd) == 6 # only accept forms like +08:00 for now
-	assert (tzd[0] == "-" or tzd[0] == "+") and tzd[3] == ":"
+	assert (tzd[0] == "-" or tzd[0] == "+") and (tzd[3] == ":" or tzd[3] == "-")
 	return -60 * (60 * int(tzd[:3]) + int(tzd[4:]))
 
 def cmp(time1, time2):

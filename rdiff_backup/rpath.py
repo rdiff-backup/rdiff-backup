@@ -1491,6 +1491,11 @@ def setdata_local(rpath):
 
 	"""
 	assert rpath.conn is Globals.local_connection
+	reset_perms = False
+	if (Globals.process_uid != 0 and not rpath.readable() and rpath.isowner()):
+		reset_perms = True
+		rpath.chmod(0400 | rpath.getperms())
+
 	rpath.data['uname'] = user_group.uid2uname(rpath.data['uid'])
 	rpath.data['gname'] = user_group.gid2gname(rpath.data['gid'])
 	if Globals.eas_conn: rpath.data['ea'] = ea_get(rpath)
@@ -1501,6 +1506,9 @@ def setdata_local(rpath):
 		rpath.get_resource_fork()
 	if Globals.carbonfile_conn and rpath.isreg():
 		rpath.data['carbonfile'] = carbonfile_get(rpath)
+
+	if reset_perms: rpath.chmod(rpath.getperms() & ~0400)
+
 
 def carbonfile_get(rpath):
 	"""Return carbonfile value for local rpath"""

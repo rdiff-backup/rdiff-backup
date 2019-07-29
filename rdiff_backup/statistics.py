@@ -333,21 +333,21 @@ def process_increment(inc_rorp):
 	"""Add statistics of increment rp incrp if there is active statfile"""
 	if _active_statfileobj: _active_statfileobj.add_increment(inc_rorp)
 
-def write_active_statfileobj():
+def write_active_statfileobj(end_time = None):
 	"""Write active StatFileObj object to session statistics file"""
 	global _active_statfileobj
 	assert _active_statfileobj
 	rp_base = Globals.rbdir.append("session_statistics")
 	session_stats_rp = increment.get_inc(rp_base, 'data', Time.curtime)
-	_active_statfileobj.finish()
+	_active_statfileobj.finish(end_time)
 	_active_statfileobj.write_stats_to_rp(session_stats_rp)
 	_active_statfileobj = None
 
-def print_active_stats():
+def print_active_stats(end_time = None):
 	"""Print statistics of active statobj to stdout and log"""
 	global _active_statfileobj
 	assert _active_statfileobj
-	_active_statfileobj.finish()
+	_active_statfileobj.finish(end_time)
 	statmsg = _active_statfileobj.get_stats_logstring("Session statistics")
 	log.Log.log_to_file(statmsg)
 	Globals.client_conn.sys.stdout.write(statmsg)
