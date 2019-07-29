@@ -1,4 +1,4 @@
-rdiff-backup (1.2.8-8) UNRELEASED; urgency=low
+rdiff-backup (1.2.8-8) unstable; urgency=medium
 
   [ Jakub Wilk ]
   * Use canonical URIs for Vcs-* fields.
@@ -7,7 +7,23 @@ rdiff-backup (1.2.8-8) UNRELEASED; urgency=low
   * d/changelog: Remove trailing whitespaces
   * d/control: Remove ancient X-Python-Version field
 
- -- Jakub Wilk <jwilk@debian.org>  Sun, 05 May 2013 18:05:42 +0200
+  [ Otto Kekäläinen ]
+  * Add Salsa-CI for quality assurance
+  * Allow gbp to build from any branch so that merge requests etc can be built
+  * Organize control file with wrap-and-sort -a
+  * Mark Otto Kekäläinen as new Debian maintainer and developer
+  * Install bash completion file in correct path
+  * Add upstream metadata with new upstream at Github.com/Rdiff-backup
+  * Update copyright to follow DEP5 format
+  * Add dh-python as build dependency
+  * Switch to buildsystem pybuild
+  * Fail on missing files to be explicit on what files go where
+  * Watch for updates for any release, not just 1.2.x series
+  * Add simple Debian autopkgtest smoke test
+  * Build using librsync 2.0 series to fix security issue (Closes: #928885)
+  * Sync _librsyncmodule.c from Duplicity to be librsync2 compatible
+
+ -- Otto Kekäläinen <otto@debian.org>  Tue, 30 Jul 2019 00:12:53 +0300
 
 rdiff-backup (1.2.8-7) unstable; urgency=low
 
