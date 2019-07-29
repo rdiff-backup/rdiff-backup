@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@ --buildsystem=pybuild --with python2
+	dh $@ --buildsystem=pybuild --with python2 --fail-missing
 
 override_dh_install:
 	install -D -m 0644 debian/local/bash-completion debian/rdiff-backup/usr/share/bash-completion/completions/rdiff-backup
