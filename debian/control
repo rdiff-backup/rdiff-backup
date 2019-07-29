@@ -3,12 +3,12 @@ Section: utils
 Priority: optional
 Maintainer: Python Applications Packaging Team <python-apps-team@lists.alioth.debian.org>
 Uploaders: Otto Kekäläinen <otto@debian.org>
-Build-Depends: debhelper (>= 7.3.5~),
+Build-Depends: debhelper (>= 9),
                librsync-dev,
                python-all-dev,
                python-pylibacl,
                python-pyxattr
-Standards-Version: 3.9.2
+Standards-Version: 4.4.0
 Homepage: http://rdiff-backup.nongnu.org/
 Vcs-Git: https://salsa.debian.org/python-team/applications/rdiff-backup.git
 Vcs-Browser: https://salsa.debian.org/python-team/applications/rdiff-backup
