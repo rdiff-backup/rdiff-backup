@@ -1,6 +1,6 @@
-rdiff-backup (1.2.8-9) UNRELEASED; urgency=low
+rdiff-backup (1.3.3-1) UNRELEASED; urgency=low
 
-  * Open new changelog entry
+  * New upstream release 1.3.3
 
  -- Otto Kekäläinen <otto@debian.org>  Tue, 30 Jul 2019 00:24:25 +0300
 

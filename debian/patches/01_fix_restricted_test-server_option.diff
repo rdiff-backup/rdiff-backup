@@ -1,10 +1,9 @@
 # Description: 01_fix_restricted_test-server_option.diff
 # Author: Carl Chenet <chaica@ohmytux.com>
 
-diff -urNad rdiff-backup-1.2.8~/rdiff_backup/Main.py rdiff-backup-1.2.8/rdiff_backup/Main.py
---- rdiff-backup-1.2.8~/rdiff_backup/Main.py	2009-03-16 15:36:21.000000000 +0100
-+++ rdiff-backup-1.2.8/rdiff_backup/Main.py	2010-02-20 11:26:27.000000000 +0100
-@@ -288,7 +288,7 @@
+--- a/rdiff_backup/Main.py
++++ b/rdiff_backup/Main.py
+@@ -290,7 +290,7 @@ def take_action(rps):
  	elif action == "remove-older-than": RemoveOlderThan(rps[0])
  	elif action == "restore": Restore(*rps)
  	elif action == "restore-as-of": Restore(rps[0], rps[1], 1)
@@ -13,10 +12,9 @@ diff -urNad rdiff-backup-1.2.8~/rdiff_backup/Main.py rdiff-backup-1.2.8/rdiff_ba
  	elif action == "verify": Verify(rps[0])
  	else: raise AssertionError("Unknown action " + action)
  
-diff -urNad rdiff-backup-1.2.8~/rdiff_backup/SetConnections.py rdiff-backup-1.2.8/rdiff_backup/SetConnections.py
---- rdiff-backup-1.2.8~/rdiff_backup/SetConnections.py	2009-03-16 15:36:21.000000000 +0100
-+++ rdiff-backup-1.2.8/rdiff_backup/SetConnections.py	2010-02-20 11:29:43.000000000 +0100
-@@ -241,20 +241,25 @@
+--- a/rdiff_backup/SetConnections.py
++++ b/rdiff_backup/SetConnections.py
+@@ -241,20 +241,25 @@ def CloseConnections():
  	Globals.backup_reader = Globals.isbackup_reader = \
  		  Globals.backup_writer = Globals.isbackup_writer = None
  

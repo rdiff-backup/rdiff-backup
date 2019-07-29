@@ -4,10 +4,9 @@
 # Apply hard-links bug fix patch
 # https://savannah.nongnu.org/bugs/index.php?26848
 
-diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' rdiff-backup-1.2.8~/rdiff_backup/Hardlink.py rdiff-backup-1.2.8/rdiff_backup/Hardlink.py
---- rdiff-backup-1.2.8~/rdiff_backup/Hardlink.py	2009-03-16 14:36:21.000000000 +0000
-+++ rdiff-backup-1.2.8/rdiff_backup/Hardlink.py	2012-01-03 11:44:21.708987145 +0000
-@@ -95,7 +95,13 @@
+--- a/rdiff_backup/Hardlink.py
++++ b/rdiff_backup/Hardlink.py
+@@ -95,7 +95,13 @@ def rorp_eq(src_rorp, dest_rorp):
  		src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1):
  		return 1 # Hard links don't apply
  
@@ -22,10 +21,9 @@ diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' 
  	src_key = get_inode_key(src_rorp)
  	index, remaining, dest_key, digest = _inode_index[src_key]
  	if dest_key == "NA":
-diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' rdiff-backup-1.2.8~/rdiff_backup/compare.py rdiff-backup-1.2.8/rdiff_backup/compare.py
---- rdiff-backup-1.2.8~/rdiff_backup/compare.py	2009-03-16 14:36:21.000000000 +0000
-+++ rdiff-backup-1.2.8/rdiff_backup/compare.py	2012-01-03 11:43:33.792989189 +0000
-@@ -25,7 +25,7 @@
+--- a/rdiff_backup/compare.py
++++ b/rdiff_backup/compare.py
+@@ -25,7 +25,7 @@ compare.  This uses elements of the back
  """
  
  from __future__ import generators
@@ -34,7 +32,7 @@ diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' 
  
  def Compare(src_rp, mirror_rp, inc_rp, compare_time):
  	"""Compares metadata in src_rp dir with metadata in mirror_rp at time"""
-@@ -80,14 +80,15 @@
+@@ -80,14 +80,15 @@ def Verify(mirror_rp, inc_rp, verify_tim
  	bad_files = 0
  	for repo_rorp in repo_iter:
  		if not repo_rorp.isreg(): continue
@@ -52,7 +50,7 @@ diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' 
  			log.Log("Verified SHA1 digest of " + repo_rorp.get_indexpath(), 5)
  		else:
  			bad_files += 1
-@@ -95,11 +96,24 @@
+@@ -95,11 +96,24 @@ def Verify(mirror_rp, inc_rp, verify_tim
  					"doesn't match recorded digest of\n   %s\n"
  					"Your backup repository may be corrupted!" %
  					(repo_rorp.get_indexpath(), computed_hash,
@@ -78,7 +76,7 @@ diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' 
  def print_reports(report_iter):
  	"""Given an iter of CompareReport objects, print them to screen"""
  	assert not Globals.server
-@@ -199,12 +213,13 @@
+@@ -199,12 +213,13 @@ class DataSide(backup.SourceStruct):
  		"""Like above, but also compare sha1 sums of any regular files"""
  		def hashes_changed(src_rp, mir_rorp):
  			"""Return 0 if their data hashes same, 1 otherwise"""

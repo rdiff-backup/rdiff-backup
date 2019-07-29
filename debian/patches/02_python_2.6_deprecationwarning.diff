@@ -7,10 +7,9 @@
 # Also, the *nix version of rdiff-backup requires shell=True instead of
 # shell=False in the subprocess.Popen call
 
-diff -urNad rdiff-backup-1.2.8~/rdiff_backup/SetConnections.py rdiff-backup-1.2.8/rdiff_backup/SetConnections.py
---- rdiff-backup-1.2.8~/rdiff_backup/SetConnections.py	2009-03-16 15:36:21.000000000 +0100
-+++ rdiff-backup-1.2.8/rdiff_backup/SetConnections.py	2009-10-03 19:27:54.935647306 +0200
-@@ -135,10 +135,10 @@
+--- a/rdiff_backup/SetConnections.py
++++ b/rdiff_backup/SetConnections.py
+@@ -135,10 +135,10 @@ def init_connection(remote_cmd):
  	if not remote_cmd: return Globals.local_connection
  
  	Log("Executing " + remote_cmd, 4)
