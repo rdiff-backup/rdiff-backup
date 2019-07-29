@@ -1,2 +1,2 @@
 version=3
-http://savannah.nongnu.org/download/rdiff-backup/ rdiff-backup-(1.2.*)\.tar.gz
+http://savannah.nongnu.org/download/rdiff-backup/ rdiff-backup-(.+)\.tar.gz
