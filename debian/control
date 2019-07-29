@@ -5,7 +5,7 @@ Maintainer: Python Applications Packaging Team <python-apps-team@lists.alioth.de
 Uploaders: Otto Kekäläinen <otto@debian.org>
 Build-Depends: debhelper (>= 9),
                dh-python,
-               librsync-dev,
+               librsync-dev (>= 2.0),
                python-all-dev,
                python-pylibacl,
                python-pyxattr
