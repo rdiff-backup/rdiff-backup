@@ -2,7 +2,7 @@ Source: rdiff-backup
 Section: utils
 Priority: optional
 Maintainer: Python Applications Packaging Team <python-apps-team@lists.alioth.debian.org>
-Uploaders: Carl Chenet <chaica@ohmytux.com>
+Uploaders: Otto Kekäläinen <otto@debian.org>
 Build-Depends: debhelper (>= 7.3.5~),
                librsync-dev,
                python-all-dev,
