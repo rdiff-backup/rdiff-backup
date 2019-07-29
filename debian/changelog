@@ -1,3 +1,9 @@
+rdiff-backup (1.2.8-9) UNRELEASED; urgency=low
+
+  * Open new changelog entry
+
+ -- Otto Kekäläinen <otto@debian.org>  Tue, 30 Jul 2019 00:24:25 +0300
+
 rdiff-backup (1.2.8-8) unstable; urgency=medium
 
   [ Jakub Wilk ]
