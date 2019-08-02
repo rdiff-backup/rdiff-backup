@@ -3,3 +3,4 @@
 03_fix_hardlinks.diff
 librsync2.patch
 extend--no-compress-files.patch
+rdiff-backup-enodata-fix.patch
