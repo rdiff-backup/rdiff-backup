@@ -1436,6 +1436,7 @@ class MaybeUnicode:
 	""" Wraps a RPath and reads/writes unicode if Globals.use_unicode_paths is on. """
 
 	def __init__(self, fileobj):
+		log.Log("Creating MaybeUnicode object from '%s'." % (str(fileobj),), 9)
 		self.fileobj = fileobj
 
 	def read(self, length = -1):
