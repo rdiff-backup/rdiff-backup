@@ -100,6 +100,13 @@ class ExtendedAttributes:
 					log.Log("Warning: unable to remove xattr %s from %s"
 						% (name, repr(rp.path)), 7)
 					continue
+				except OSError as exc:
+					# can happen because trusted.SGI_ACL_FILE is deleted together with
+					# system.posix_acl_access on XFS file systems.
+					if exc.errno == errno.ENODATA:
+						continue
+					else:  # can be anything, just fail
+						raise
 		except io.UnsupportedOperation as exc:  # errno.EOPNOTSUPP or errno.EPERM
 			return # if not supported, consider empty
 		except FileNotFoundError as exc:
