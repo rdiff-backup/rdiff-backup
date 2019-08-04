@@ -111,7 +111,7 @@ class MirrorStruct:
 	@classmethod
 	def get_mirror_time(cls):
 		"""Return time (in seconds) of latest mirror"""
-		cur_mirror_incs = get_inclist(Globals.rbdir.append("current_mirror"))
+		cur_mirror_incs = get_inclist(Globals.rbdir.append(b"current_mirror"))
 		if not cur_mirror_incs:
 			log.Log.FatalError("Could not get time of current mirror")
 		elif len(cur_mirror_incs) > 1:
@@ -150,9 +150,9 @@ class MirrorStruct:
 		# use dictionary to remove dups
 		if not cls._mirror_time: d = {cls.get_mirror_time(): None}
 		else: d = {cls._mirror_time: None}
-		if not rp or not rp.index: rp = Globals.rbdir.append("increments")
+		if not rp or not rp.index: rp = Globals.rbdir.append(b"increments")
 		for inc in get_inclist(rp): d[inc.getinctime()] = None
-		for inc in get_inclist(Globals.rbdir.append("mirror_metadata")):
+		for inc in get_inclist(Globals.rbdir.append(b"mirror_metadata")):
 			d[inc.getinctime()] = None
 		return_list = list(d.keys())
 		return_list.sort()
@@ -305,7 +305,7 @@ class TargetStruct:
 		"""
 		ITR = rorpiter.IterTreeReducer(PatchITRB, [target])
 		for diff in rorpiter.FillInIter(diff_iter, target):
-			log.Log("Processing changed file " + diff.get_safepath(), 5)
+			log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
 			ITR(diff.index, diff)
 		ITR.Finish()
 		target.setdata()
@@ -419,7 +419,7 @@ class RestoreFile:
 		it will be (first) in relevant_incs.
 
 		"""
-		self.mirror_rp.inc_type = 'snapshot'
+		self.mirror_rp.inc_type = b'snapshot'
 		self.mirror_rp.inc_compressed = 0
 		if (not self.inc_list or
 			MirrorStruct._rest_time >= MirrorStruct._mirror_time):
@@ -430,11 +430,11 @@ class RestoreFile:
 		i = 0
 		while(i < len(newer_incs)):
 			# Only diff type increments require later versions
-			if newer_incs[i].getinctype() != "diff": break
+			if newer_incs[i].getinctype() != b"diff": break
 			i = i+1
 		self.relevant_incs = newer_incs[:i+1]
 		if (not self.relevant_incs or
-			self.relevant_incs[-1].getinctype() == "diff"):
+			self.relevant_incs[-1].getinctype() == b"diff"):
 			self.relevant_incs.append(self.mirror_rp)
 		self.relevant_incs.reverse() # return in reversed order
 		
@@ -463,11 +463,11 @@ class RestoreFile:
 
 		"""
 		last_inc = self.relevant_incs[-1]
-		if last_inc.getinctype() == 'missing': return rpath.RORPath(self.index)
+		if last_inc.getinctype() == b'missing': return rpath.RORPath(self.index)
 
 		rorp = last_inc.getRORPath()
 		rorp.index = self.index
-		if last_inc.getinctype() == 'dir': rorp.data['type'] = 'dir'
+		if last_inc.getinctype() == b'dir': rorp.data['type'] = 'dir'
 		return rorp
 
 	def get_restore_fp(self):
@@ -475,8 +475,8 @@ class RestoreFile:
 		def get_fp():
 			current_fp = self.get_first_fp()
 			for inc_diff in self.relevant_incs[1:]:
-				log.Log("Applying patch %s" % (inc_diff.get_safepath(),), 7)
-				assert inc_diff.getinctype() == 'diff'
+				log.Log("Applying patch %s" % (inc_diff.get_safeindexpath(),), 7)
+				assert inc_diff.getinctype() == b'diff'
 				delta_fp = inc_diff.open("rb", inc_diff.isinccompressed())
 				new_fp = tempfile.TemporaryFile()
 				Rdiff.write_patched_fp(current_fp, delta_fp, new_fp)
@@ -497,14 +497,14 @@ constructed from existing increments because last increment had type
 %s.  Instead of the actual file's data, an empty length file will be
 created.  This error is probably caused by data loss in the
 rdiff-backup destination directory, or a bug in rdiff-backup""" %
-	    (self.mirror_rp.get_safepath(), self.relevant_incs[-1].lstat()), 2)
+	    (self.mirror_rp.get_safeindexpath(), self.relevant_incs[-1].lstat()), 2)
 			return io.BytesIO()
 		return robust.check_common_error(error_handler, get_fp)
 
 	def get_first_fp(self):
 		"""Return first file object from relevant inc list"""
 		first_inc = self.relevant_incs[0]
-		assert first_inc.getinctype() == 'snapshot'
+		assert first_inc.getinctype() == b'snapshot'
 		if not first_inc.isinccompressed(): return first_inc.open("rb")
 
 		# current_fp must be a real (uncompressed) file
@@ -540,7 +540,7 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
 		assert mirrorrp.isdir()
 		for filename in robust.listrp(mirrorrp):
 			rp = mirrorrp.append(filename)
-			if rp.index != ('rdiff-backup-data',): yield rp
+			if rp.index != (b'rdiff-backup-data',): yield rp
 
 	def yield_inc_complexes(self, inc_rpath):
 		"""Yield (sub_inc_rpath, inc_list) IndexedTuples from given inc_rpath
@@ -559,8 +559,8 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
 			def add_to_dict(filename):
 				"""Add filename to the inc tuple dictionary"""
 				rp = inc_rpath.append(filename)
-				if rp.isincfile() and rp.getinctype() != 'data':
-					basename = rp.getincbase_str()
+				if rp.isincfile() and rp.getinctype() != b'data':
+					basename = rp.getincbase_bname()
 					inc_filename_list = inc_dict.setdefault(basename, [])
 					inc_filename_list.append(filename)
 				elif rp.isdir(): inc_dict.setdefault(filename, [])
@@ -628,13 +628,13 @@ class PatchITRB(rorpiter.ITRBranch):
 		if not diff_rorp.isreg(): return
 		if not diff_rorp.has_sha1():
 			log.Log("Hash for %s missing, cannot check" %
-					(diff_rorp.get_safepath()), 2)
+					(diff_rorp.get_safeindexpath()), 2)
 		elif copy_report.sha1_digest == diff_rorp.get_sha1():
 			log.Log("Hash %s of %s verified" %
-					(diff_rorp.get_sha1(), diff_rorp.get_safepath()), 6)
+					(diff_rorp.get_sha1(), diff_rorp.get_safeindexpath()), 6)
 		else:
 			log.Log("Warning: Hash %s of %s\ndoesn't match recorded hash %s!"
-					% (copy_report.sha1_digest, diff_rorp.get_safepath(),
+					% (copy_report.sha1_digest, diff_rorp.get_safeindexpath(),
 					   diff_rorp.get_sha1()), 2)
 
 	def patch_to_temp(self, basis_rp, diff_rorp, new):

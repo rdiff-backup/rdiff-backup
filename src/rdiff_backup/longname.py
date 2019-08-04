@@ -152,7 +152,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root = None):
 
 	"""
 	if not inc_root: # make fake inc_root if not available
-		inc_root = mirror_root.append_path('rdiff-backup-data/increments')
+		inc_root = mirror_root.append_path(b'rdiff-backup-data/increments')
 
 	def mir_triple_old(old_rorp):
 		"""Return (mirror_rp, alt_mirror, alt_inc) from old_rorp"""
@@ -184,7 +184,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root = None):
 		elif alt_inc: return (alt_inc, get_long_rp(alt_inc))
 		elif not index: return (None, inc_root)
 
-		trial_inc_index = index[:-1] + (index[-1] + ('a'*50),)
+		trial_inc_index = index[:-1] + (index[-1] + (b'a'*50),)
 		if check_new_index(inc_root, trial_inc_index, make_dirs = 1):
 			return (None, inc_root.new_index(index))
 		alt_inc = get_next_free()
@@ -230,7 +230,7 @@ def update_rf(rf, rorp, mirror_root):
 	def update_incs(rf, inc_base):
 		"""Swap inclist in rf with those with base inc_base and return"""
 		log.Log("Restoring with increment base %s for file %s" %
-				(inc_base, rorp.get_safepath()), 6)
+				(inc_base, rorp.get_safeindexpath()), 6)
 		rf.inc_rp = get_long_rp(inc_base)
 		rf.inc_list = get_inclist(inc_base)
 		rf.set_relevant_incs()

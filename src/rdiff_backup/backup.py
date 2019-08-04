@@ -27,7 +27,7 @@ from . import Globals, metadata, rorpiter, TempFile, Hardlink, robust, increment
 
 def Mirror(src_rpath, dest_rpath):
 	"""Turn dest_rpath into a copy of src_rpath"""
-	log.Log("Starting mirror %s to %s" % (src_rpath.path, dest_rpath.path), 4)
+	log.Log("Starting mirror %s to %s" % (src_rpath.get_safepath(), dest_rpath.get_safepath()), 4)
 	SourceS = src_rpath.conn.backup.SourceStruct
 	DestS = dest_rpath.conn.backup.DestinationStruct
 
@@ -40,7 +40,7 @@ def Mirror(src_rpath, dest_rpath):
 def Mirror_and_increment(src_rpath, dest_rpath, inc_rpath):
 	"""Mirror + put increments in tree based at inc_rpath"""
 	log.Log("Starting increment operation %s to %s" %
-			(src_rpath.path, dest_rpath.path), 4)
+			(src_rpath.get_safepath(), dest_rpath.get_safepath()), 4)
 	SourceS = src_rpath.conn.backup.SourceStruct
 	DestS = dest_rpath.conn.backup.DestinationStruct
 
@@ -243,7 +243,7 @@ class DestinationStruct:
 		"""Patch dest_rpath with an rorpiter of diffs"""
 		ITR = rorpiter.IterTreeReducer(PatchITRB, [dest_rpath, cls.CCPP])
 		for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
-			log.Log("Processing changed file " + diff.get_safepath(), 5)
+			log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
 			ITR(diff.index, diff)
 		ITR.Finish()
 		cls.CCPP.close()
@@ -255,7 +255,7 @@ class DestinationStruct:
 		ITR = rorpiter.IterTreeReducer(IncrementITRB,
 									   [dest_rpath, inc_rpath, cls.CCPP])
 		for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
-			log.Log("Processing changed file " + diff.get_safepath(), 5)
+			log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
 			ITR(diff.index, diff)
 		ITR.Finish()
 		cls.CCPP.close()

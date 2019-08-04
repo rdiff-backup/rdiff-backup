@@ -134,7 +134,7 @@ def init_connection(remote_cmd):
 	"""
 	if not remote_cmd: return Globals.local_connection
 
-	Log("Executing " + remote_cmd, 4)
+	Log("Executing %s" % remote_cmd, 4)
 	try:
 		process = subprocess.Popen(remote_cmd, shell=True, bufsize=0,
 							stdin=subprocess.PIPE, 

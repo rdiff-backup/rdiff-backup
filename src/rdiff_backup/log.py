@@ -260,7 +260,7 @@ class ErrorLog:
 	@classmethod
 	def get_indexpath(cls, obj):
 		"""Return filename for logging.  rp is a rpath, string, or tuple"""
-		try: return obj.get_safepath()
+		try: return obj.get_safeindexpath()
 		except AttributeError:
 			if type(obj) is tuple: return "/".join(obj)
 			else: return repr(obj)

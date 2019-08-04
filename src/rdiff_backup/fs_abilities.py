@@ -34,7 +34,6 @@ from . import Globals, log, TempFile, selection, robust, SetConnections, \
 class FSAbilities:
 	"""Store capabilities of given file system"""
 	extended_filenames = None # True if filenames can have non-ASCII chars
-	unicode_filenames = None # True if we can use unicode in paths
 	win_reserved_filenames = None # True if filenames can't have ",*,: etc.
 	case_sensitive = None # True if "foobar" and "FoObAr" are different files
 	ownership = None # True if chown works on this filesystem
@@ -99,7 +98,7 @@ class FSAbilities:
 							  ('Extended filenames', self.extended_filenames),
 							  ('Windows reserved filenames',
 							   self.win_reserved_filenames),
-							  ('Unicode filenames', self.unicode_filenames)])
+							  ])
 		add_boolean_list([('Access control lists', self.acls),
 						  ('Extended attributes', self.eas),
 						  ('Windows access control lists', self.win_acls),
@@ -155,7 +154,6 @@ class FSAbilities:
 
 		self.set_extended_filenames(subdir)
 		self.set_win_reserved_filenames(subdir)
-		self.set_unicode_filenames(subdir)
 		self.set_case_sensitive_readwrite(subdir)
 		self.set_ownership(subdir)
 		self.set_hardlinks(subdir)
@@ -200,7 +198,7 @@ class FSAbilities:
 		except (IOError, OSError, AttributeError):
 			if Globals.preserve_hardlinks != 0:
 				log.Log("Warning: hard linking not supported by filesystem "
-						"at %s" % (self.root_rp.path,), 3)
+						"at %s" % self.root_rp.get_safepath(), 3)
 			self.hardlinks = None
 		else: self.hardlinks = 1
 
@@ -210,7 +208,7 @@ class FSAbilities:
 		try: testdir.fsync()
 		except (IOError, OSError):
 			log.Log("Directories on file system at %s are not fsyncable.\n"
-					"Assuming it's unnecessary." % (testdir.path,), 4)
+					"Assuming it's unnecessary." % testdir.get_safepath(), 4)
 			self.fsync_dirs = 0
 		else: self.fsync_dirs = 1
 
@@ -219,13 +217,13 @@ class FSAbilities:
 		assert not self.read_only
 
 		# Make sure ordinary filenames ok
-		ordinary_filename = '5-_ a.snapshot.gz'
+		ordinary_filename = b'5-_ a.snapshot.gz'
 		ord_rp = subdir.append(ordinary_filename)
 		ord_rp.touch()
 		assert ord_rp.lstat()
 		ord_rp.delete()
 
-		# Try a UTF-8 encoded character
+		# Try a UTF-8 encoded character, it's a path as string FIXME?
 		extended_filename = 'uni' + chr(225) + chr(132) + chr(137)
 		ext_rp = None
 		try:
@@ -271,24 +269,6 @@ class FSAbilities:
 			else:
 				self.win_reserved_filenames = 0
 
-	def set_unicode_filenames(self, subdir):
-		"""Set self.unicode_filenames by trying to write a path"""
-		assert not self.read_only
-
-		# Try a unicode filename
-		unicode_filename = '\u3046\u3069\u3093\u5c4b.txt'
-		unicode_rp = None
-		try:
-			unicode_rp = subdir.append(unicode_filename)
-			unicode_rp.touch()
-		except UnicodeEncodeError:
-			if unicode_rp: assert not unicode_rp.lstat()
-			self.unicode_filenames = 0
-		else:
-			assert unicode_rp.lstat()
-			unicode_rp.delete()
-			self.unicode_filenames = 1
-
 	def set_acls(self, rp):
 		"""Set self.acls based on rp.  Does not write.  Needs to be local"""
 		assert Globals.local_connection is rp.conn
@@ -302,14 +282,14 @@ class FSAbilities:
 		try: import posix1e
 		except ImportError:
 			log.Log("Unable to import module posix1e from pylibacl "
-					"package.\nPOSIX ACLs not supported on filesystem at %s" %
-					(rp.path,), 4)
+					"package.\nPOSIX ACLs not supported on filesystem at %s"
+					% rp.get_safepath(), 4)
 			self.acls = 0
 			return
 
 		try: posix1e.ACL(file=rp.path)
 		except IOError:
-			log.Log("POSIX ACLs not supported by filesystem at %s" % (rp.path,), 4)
+			log.Log("POSIX ACLs not supported by filesystem at %s" % rp.get_safepath(), 4)
 			self.acls = 0
 		else: self.acls = 1
 
@@ -338,7 +318,6 @@ class FSAbilities:
 			where the list is of the directory containing rp.
 
 			"""
-			subdir.path = str(subdir.path)
 			l = robust.listrp(subdir)
 			for filename in l:
 				if filename != filename.swapcase():
@@ -367,9 +346,10 @@ class FSAbilities:
 		triple = find_letter(rp)
 		if not triple:
 			log.Log("Warning: could not determine case sensitivity of "
-					"source directory at\n  " + rp.path + "\n"
+					"source directory at\n  %s\n"
 					"because we can't find any files with letters in them.\n"
-					"It will be treated as case sensitive.", 2)
+					"It will be treated as case sensitive."
+					% rp.get_safepath(), 2)
 			self.case_sensitive = 1
 			return
 
@@ -387,7 +367,7 @@ class FSAbilities:
 		try: import xattr
 		except ImportError:
 			log.Log("Unable to import module xattr.\nExtended attributes not "
-					"supported on filesystem at %s" % (rp.path,), 4)
+					"supported on filesystem at %s" % (rp.get_safepath(),), 4)
 			self.eas = 0
 			return
 
@@ -404,18 +384,18 @@ class FSAbilities:
 		try:
 			xattr.listxattr(rp.path)
 			if write:
-				xattr.setxattr(rp.path, "user.test", "test val")
-				assert str(xattr.getxattr(rp.path, "user.test"),'utf8') == "test val"
+				xattr.setxattr(rp.path, b"user.test", b"test val")
+				assert xattr.getxattr(rp.path, b"user.test") == b"test val"
 		except IOError:
 			log.Log("Extended attributes not supported by "
-					"filesystem at %s" % (rp.path,), 4)
+					"filesystem at %s" % (rp.get_safepath(),), 4)
 			self.eas = 0
 		except AssertionError:
 			log.Log("Extended attributes support is broken on filesystem at "
 					"%s.\nPlease upgrade the filesystem driver, contact the "
 					"developers,\nor use the --no-eas option to disable "
 					"extended attributes\nsupport and suppress this message."
-					% (rp.path,), 1)
+					% (rp.get_safepath(),), 1)
 			self.eas = 0
 		else: self.eas = 1
 
@@ -433,7 +413,7 @@ class FSAbilities:
 			import win32security, pywintypes
 		except ImportError:
 			log.Log("Unable to import win32security module. Windows ACLs\n"
-					"not supported by filesystem at %s" % dir_rp.path, 4)
+					"not supported by filesystem at %s" % dir_rp.get_safepath(), 4)
 			self.win_acls = 0
 			return
 		try:
@@ -456,7 +436,7 @@ class FSAbilities:
 						None)
 		except (OSError, AttributeError, pywintypes.error):
 			log.Log("Unable to load a Windows ACL.\nWindows ACLs not supported "
-					"by filesystem at %s" % dir_rp.path, 4)
+					"by filesystem at %s" % dir_rp.get_safepath(), 4)
 			self.win_acls = 0
 			return
 		
@@ -464,7 +444,7 @@ class FSAbilities:
 			win_acls.init_acls()
 		except (OSError, AttributeError, pywintypes.error):
 			log.Log("Unable to init win_acls.\nWindows ACLs not supported by "
-					"filesystem at %s" % dir_rp.path, 4)
+					"filesystem at %s" % dir_rp.get_safepath(), 4)
 			self.win_acls = 0
 			return
 		self.win_acls = 1
@@ -511,11 +491,11 @@ class FSAbilities:
 
 		s = 'test string---this should end up in resource fork'
 		try:
-			fp_write = open(os.path.join(reg_rp.path, '..namedfork', 'rsrc'), 'wb')
+			fp_write = open(os.path.join(reg_rp.path, b'..namedfork', b'rsrc'), 'wb')
 			fp_write.write(s)
 			assert not fp_write.close()
 
-			fp_read = open(os.path.join(reg_rp.path, '..namedfork', 'rsrc'), 'rb')
+			fp_read = open(os.path.join(reg_rp.path, b'..namedfork', b'rsrc'), 'rb')
 			s_back = fp_read.read()
 			assert not fp_read.close()
 		except (OSError, IOError): self.resource_forks = 0
@@ -533,7 +513,7 @@ class FSAbilities:
 		for rp in selection.Select(dir_rp).set_iter():
 			if rp.isreg():
 				try:
-					rfork = rp.append(os.path.join('..namedfork', 'rsrc'))
+					rfork = rp.append(os.path.join(b'..namedfork', b'rsrc'))
 					fp = rfork.open('rb')
 					fp.read()
 					assert not fp.close()
@@ -546,9 +526,9 @@ class FSAbilities:
 
 	def set_high_perms_readwrite(self, dir_rp):
 		"""Test for writing high-bit permissions like suid"""
-		tmpf_rp = dir_rp.append("high_perms_file")
+		tmpf_rp = dir_rp.append(b"high_perms_file")
 		tmpf_rp.touch()
-		tmpd_rp = dir_rp.append("high_perms_dir")
+		tmpd_rp = dir_rp.append(b"high_perms_dir")
 		tmpd_rp.touch()
 		try:
 			tmpf_rp.chmod(0o7000, 4)
@@ -562,11 +542,11 @@ class FSAbilities:
 
 	def set_symlink_perms(self, dir_rp):
 		"""Test if symlink permissions are affected by umask"""
-		sym_source = dir_rp.append("symlinked_file1")
+		sym_source = dir_rp.append(b"symlinked_file1")
 		sym_source.touch()
-		sym_dest = dir_rp.append("symlinked_file2")
+		sym_dest = dir_rp.append(b"symlinked_file2")
 		try:
-			sym_dest.symlink("symlinked_file1")
+			sym_dest.symlink(b"symlinked_file1")
 		except (OSError, AttributeError):
 			self.symlink_perms = 0
 		else:
@@ -599,7 +579,7 @@ class FSAbilities:
 			return
 
 		try:
-			device_rp = subdir.append("con")
+			device_rp = subdir.append(b"con")
 			if device_rp.lstat():
 				self.escape_dos_devices = 1
 			else:
@@ -644,7 +624,7 @@ class FSAbilities:
 			except OSError:
 				return 0
 			assert test_rp.lstat(), test_rp
-			period = filename + '.' 
+			period = filename + b'.' 
 			if period in dirlist: return 0 
 
 			return 0  # FIXME the following lines fail if filename is almost too long
@@ -656,10 +636,11 @@ class FSAbilities:
 		if len(dirlist):
 			self.escape_trailing_spaces = test_period(rp, dirlist)
 		else:
-			log.Log("Warning: could not determine if source directory at\n  "
-					+ rp.path + "\npermits trailing spaces or periods in "
+			log.Log("Warning: could not determine if source directory at\n"
+					"  %s\npermits trailing spaces or periods in "
 					"filenames because we can't find any files.\n"
-					"It will be treated as permitting such files.", 2)
+					"It will be treated as permitting such files."
+					% rp.get_safepath(), 2)
 			self.escape_trailing_spaces = 0
 
 
@@ -701,10 +682,6 @@ class SetGlobals:
 	def set_win_acls(self):
 		self.update_triple(self.src_fsa.win_acls, self.dest_fsa.win_acls,
 			  ('win_acls_active', 'win_acls_write', 'win_acls_conn'))
-
-	def set_unicode_filenames(self):
-		SetConnections.UpdateGlobal('use_unicode_paths',
-									self.dest_fsa.unicode_filenames)
 
 	def set_resource_forks(self):
 		self.update_triple(self.src_fsa.resource_forks,
@@ -873,7 +850,7 @@ backed up onto it.
 
 By specifying the --force option, rdiff-backup will migrate the
 repository from the old quoting chars to the new ones.""" %
-			(suggested_ctq, actual_ctq, ctq_rp.path))
+			(suggested_ctq, actual_ctq, ctq_rp.get_safepath()))
 		return (actual_ctq, None) # Maintain Globals override
 
 
@@ -990,7 +967,6 @@ def backup_set_globals(rpin, force):
 	bsg.set_eas()
 	bsg.set_acls()
 	bsg.set_win_acls()
-	bsg.set_unicode_filenames()
 	bsg.set_resource_forks()
 	bsg.set_carbonfile()
 	bsg.set_hardlinks()
@@ -1019,7 +995,6 @@ def restore_set_globals(rpout):
 	rsg.set_eas()
 	rsg.set_acls()
 	rsg.set_win_acls()
-	rsg.set_unicode_filenames()
 	rsg.set_resource_forks()
 	rsg.set_carbonfile()
 	rsg.set_hardlinks()

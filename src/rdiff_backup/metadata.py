@@ -95,73 +95,73 @@ def string2carbonfile(data):
 
 def RORP2Record(rorpath):
 	"""From RORPath, return text record of file's metadata"""
-	str_list = ["File %s\n" % quote_path(rorpath.get_indexpath())]
+	str_list = [b"File %s\n" % quote_path(rorpath.get_indexpath())]
 
 	# Store file type, e.g. "dev", "reg", or "sym", and type-specific data
 	type = rorpath.gettype()
 	if type is None: type = "None"
-	str_list.append("  Type %s\n" % type)
+	str_list.append(b"  Type %b\n" % type.encode('ascii'))
 	if type == "reg":
-		str_list.append("  Size %s\n" % rorpath.getsize())
+		str_list.append(b"  Size %i\n" % rorpath.getsize())
 
 		# If there is a resource fork, save it.
 		if rorpath.has_resource_fork():
 			if not rorpath.get_resource_fork(): rf = "None"
 			else: rf = binascii.hexlify(rorpath.get_resource_fork())
-			str_list.append("  ResourceFork %s\n" % (rf,))
+			str_list.append(b"  ResourceFork %b\n" % (rf,))
                 
 		# If there is Carbon data, save it.
 		if rorpath.has_carbonfile():
 			cfile = carbonfile2string(rorpath.get_carbonfile())
-			str_list.append("  CarbonFile %s\n" % (cfile,))
+			str_list.append(b"  CarbonFile %b\n" % (cfile,))
 
 		# If file is hardlinked, add that information
 		if Globals.preserve_hardlinks != 0:
 			numlinks = rorpath.getnumlinks()
 			if numlinks > 1:
-				str_list.append("  NumHardLinks %s\n" % numlinks)
-				str_list.append("  Inode %s\n" % rorpath.getinode())
-				str_list.append("  DeviceLoc %s\n" % rorpath.getdevloc())
+				str_list.append(b"  NumHardLinks %i\n" % numlinks)
+				str_list.append(b"  Inode %i\n" % rorpath.getinode())
+				str_list.append(b"  DeviceLoc %i\n" % rorpath.getdevloc())
 
 		# Save any hashes, if available
 		if rorpath.has_sha1():
-			str_list.append('  SHA1Digest %s\n' % rorpath.get_sha1())
+			str_list.append(b'  SHA1Digest %b\n' % rorpath.get_sha1().encode('ascii'))
 
-	elif type == "None": return "".join(str_list)
+	elif type == "None": return b"".join(str_list)
 	elif type == "dir" or type == "sock" or type == "fifo": pass
 	elif type == "sym":
-		str_list.append("  SymData %s\n" % quote_path(rorpath.readlink()))
+		str_list.append(b"  SymData %b\n" % quote_path(rorpath.readlink()))
 	elif type == "dev":
 		major, minor = rorpath.getdevnums()
 		if rorpath.isblkdev(): devchar = "b"
 		else:
 			assert rorpath.ischardev()
 			devchar = "c"
-		str_list.append("  DeviceNum %s %s %s\n" % (devchar, major, minor))
+		str_list.append(b"  DeviceNum %c %i %i\n" % (devchar, major, minor))
 
 	# Store time information
 	if type != 'sym' and type != 'dev':
-		str_list.append("  ModTime %s\n" % rorpath.getmtime())
+		str_list.append(b"  ModTime %i\n" % rorpath.getmtime())
 
 	# Add user, group, and permission information
 	uid, gid = rorpath.getuidgid()
-	str_list.append("  Uid %s\n" % uid)
-	str_list.append("  Uname %s\n" % (rorpath.getuname() or ":"))
-	str_list.append("  Gid %s\n" % gid)
-	str_list.append("  Gname %s\n" % (rorpath.getgname() or ":"))
-	str_list.append("  Permissions %s\n" % rorpath.getperms())
+	str_list.append(b"  Uid %i\n" % uid)
+	str_list.append(b"  Uname %b\n" % (rorpath.getuname().encode() or b":"))
+	str_list.append(b"  Gid %i\n" % gid)
+	str_list.append(b"  Gname %b\n" % (rorpath.getgname().encode() or b":"))
+	str_list.append(b"  Permissions %d\n" % rorpath.getperms())
 
 	# Add long filename information
 	if rorpath.has_alt_mirror_name():
-		str_list.append("  AlternateMirrorName %s\n" %
+		str_list.append(b"  AlternateMirrorName %b\n" %
 						(rorpath.get_alt_mirror_name(),))
 	elif rorpath.has_alt_inc_name():
-		str_list.append("  AlternateIncrementName %s\n" %
+		str_list.append(b"  AlternateIncrementName %b\n" %
 						(rorpath.get_alt_inc_name(),))
 
-	return "".join(str_list)
+	return b"".join(str_list)
 
-line_parsing_regexp = re.compile("^ *([A-Za-z0-9]+) (.+)$", re.M)
+line_parsing_regexp = re.compile(b"^ *([A-Za-z0-9]+) (.+)$", re.M)
 def Record2RORP(record_string):
 	"""Given record_string, return RORPath
 
@@ -172,43 +172,44 @@ def Record2RORP(record_string):
 	"""
 	data_dict = {}
 	for field, data in line_parsing_regexp.findall(record_string):
+		field = field.decode('ascii')
 		if field == "File": index = quoted_filename_to_index(data)
 		elif field == "Type":
-			if data == "None": data_dict['type'] = None
-			else: data_dict['type'] = data
+			if data == b"None": data_dict['type'] = None
+			else: data_dict['type'] = data.decode('ascii')
 		elif field == "Size": data_dict['size'] = int(data)
 		elif field == "ResourceFork":
-			if data == "None": data_dict['resourcefork'] = ""
+			if data == b"None": data_dict['resourcefork'] = ""
 			else: data_dict['resourcefork'] = binascii.unhexlify(data)
 		elif field == "CarbonFile":
-			if data == "None": data_dict['carbonfile'] = None
+			if data == b"None": data_dict['carbonfile'] = None
 			else: data_dict['carbonfile'] = string2carbonfile(data)
-		elif field == "SHA1Digest": data_dict['sha1'] = data
+		elif field == "SHA1Digest": data_dict['sha1'] = data.decode('ascii')
 		elif field == "NumHardLinks": data_dict['nlink'] = int(data)
 		elif field == "Inode": data_dict['inode'] = int(data)
 		elif field == "DeviceLoc": data_dict['devloc'] = int(data)
 		elif field == "SymData": data_dict['linkname'] = unquote_path(data)
 		elif field == "DeviceNum":
-			devchar, major_str, minor_str = data.split(" ")
+			devchar, major_str, minor_str = data.split(b" ")
 			data_dict['devnums'] = (devchar, int(major_str), int(minor_str))
 		elif field == "ModTime": data_dict['mtime'] = int(data)
 		elif field == "Uid": data_dict['uid'] = int(data)
 		elif field == "Gid": data_dict['gid'] = int(data)
 		elif field == "Uname":
-			if data == ":" or data == 'None': data_dict['uname'] = None
-			else: data_dict['uname'] = data
+			if data == b":" or data == b'None': data_dict['uname'] = None
+			else: data_dict['uname'] = data.decode()
 		elif field == "Gname":
 			if data == ':' or data == 'None': data_dict['gname'] = None
-			else: data_dict['gname'] = data
+			else: data_dict['gname'] = data.decode()
 		elif field == "Permissions": data_dict['perms'] = int(data)
 		elif field == "AlternateMirrorName": data_dict['mirrorname'] = data
 		elif field == "AlternateIncrementName": data_dict['incname'] = data
 		else: log.Log("Unknown field in line '%s %s'" % (field, data), 2)
 	return rpath.RORPath(index, data_dict)
 
-chars_to_quote = re.compile("\\n|\\\\")
+chars_to_quote = re.compile(b"\\n|\\\\")
 def quote_path(path_string):
-	"""Return quoted verson of path_string
+	"""Return quoted version of path_string
 
 	Because newlines are used to separate fields in a record, they are
 	replaced with \n.  Backslashes become \\ and everything else is
@@ -218,8 +219,8 @@ def quote_path(path_string):
 	def replacement_func(match_obj):
 		"""This is called on the match obj of any char that needs quoting"""
 		char = match_obj.group(0)
-		if char == "\n": return "\\n"
-		elif char == "\\": return "\\\\"
+		if char == b"\n": return b"\\n"
+		elif char == b"\\": return b"\\\\"
 		assert 0, "Bad char %s needs quoting" % char
 	return chars_to_quote.sub(replacement_func, path_string)
 
@@ -228,16 +229,16 @@ def unquote_path(quoted_string):
 	def replacement_func(match_obj):
 		"""Unquote match obj of two character sequence"""
 		two_chars = match_obj.group(0)
-		if two_chars == "\\n": return "\n"
-		elif two_chars == "\\\\": return "\\"
+		if two_chars == b"\\n": return b"\n"
+		elif two_chars == b"\\\\": return b"\\"
 		log.Log("Warning, unknown quoted sequence %s found" % two_chars, 2)
 		return two_chars
-	return re.sub("\\\\n|\\\\\\\\", replacement_func, quoted_string)
+	return re.sub(b"\\\\n|\\\\\\\\", replacement_func, quoted_string)
 
 def quoted_filename_to_index(quoted_filename):
 	"""Return tuple index given quoted filename"""
-	if quoted_filename == '.': return ()
-	else: return tuple(unquote_path(quoted_filename).split('/'))
+	if quoted_filename == b'.': return ()
+	else: return tuple(unquote_path(quoted_filename).split(b'/'))
 
 class FlatExtractor:
 	"""Controls iterating objects from flat file"""
@@ -253,7 +254,7 @@ class FlatExtractor:
 
 	def __init__(self, fileobj):
 		self.fileobj = fileobj # holds file object we are reading from
-		self.buf = "" # holds the next part of the file
+		self.buf = b"" # holds the next part of the file
 		self.at_end = 0 # True if we are at the end of the file
 		self.blocksize = 32 * 1024
 
@@ -268,8 +269,6 @@ class FlatExtractor:
 					self.at_end = 1
 					return len(self.buf)
 				else:
-					if type(newbuf) != str:
-						newbuf = str(newbuf, 'utf8')
 					self.buf += newbuf
 
 	def iterate(self):
@@ -347,19 +346,22 @@ class FlatExtractor:
 
 class RorpExtractor(FlatExtractor):
 	"""Iterate rorps from metadata file"""
-	record_boundary_regexp = re.compile("(?:\\n|^)(File (.*?))\\n")
+	record_boundary_regexp = re.compile(b"(?:\\n|^)(File (.*?))\\n")
 	record_to_object = staticmethod(Record2RORP)
 	filename_to_index = staticmethod(quoted_filename_to_index)
 
 
 class FlatFile:
-	"""Manage a flat (probably text) file containing info on various files
+	"""Manage a flat file containing info on various files
 
 	This is used for metadata information, and possibly EAs and ACLs.
 	The main read interface is as an iterator.  The storage format is
 	a flat, probably compressed file, so random access is not
 	recommended.
 
+	Even if the file looks like a text file, it is actually a binary file,
+	so that (especially) paths can be stored as bytes, without issue
+	with encoding / decoding.
 	"""
 	rp, fileobj, mode = None, None, None
 	_buffering_on = 1 # Buffering may be useful because gzip writes are slow
@@ -380,29 +382,28 @@ class FlatFile:
 		self._record_buffer = []
 		if check_path:
 			assert (rp_base.isincfile() and
-					rp_base.getincbase_str() == self._prefix), rp_base
+					rp_base.getincbase_bname() == self._prefix), rp_base
 			compress = 1
-		if mode == 'r':
+		if mode == 'r' or mode == 'rb':
 			self.rp = rp_base
-			self.fileobj = rpath.MaybeUnicode(self.rp.open("r", compress))
+			self.fileobj = self.rp.open("rb", compress)
 		else:
-			assert mode == 'w'
+			assert mode == 'w' or mode == 'wb', \
+					"File opening mode must be one of r, rb, w or wb, and not %s." % mode
 			if compress and check_path and not rp_base.isinccompressed():
 				def callback(rp): self.rp = rp
-				self.fileobj = rpath.MaybeUnicode(rpath.MaybeGzip(rp_base,
-												callback))
+				self.fileobj = rpath.MaybeGzip(rp_base, callback)
 			else:
 				self.rp = rp_base
 				assert not self.rp.lstat(), self.rp
-				self.fileobj = rpath.MaybeUnicode(self.rp.open("w", 
-												compress = compress))
+				self.fileobj = self.rp.open("wb", compress = compress)
 
 	def write_record(self, record):
 		"""Write a (text) record into the file"""
 		if self._buffering_on:
 			self._record_buffer.append(record)
 			if len(self._record_buffer) >= self._max_buffer_size:
-				self.fileobj.write("".join(self._record_buffer))
+				self.fileobj.write(b"".join(self._record_buffer))
 				self._record_buffer = []
 		else: self.fileobj.write(record)
 
@@ -424,7 +425,7 @@ class FlatFile:
 		"""Close file, for when any writing is done"""
 		assert self.fileobj, "File already closed"
 		if self._buffering_on and self._record_buffer: 
-			self.fileobj.write("".join(self._record_buffer))
+			self.fileobj.write(b"".join(self._record_buffer))
 			self._record_buffer = []
 		result = self.fileobj.close()
 		self.fileobj = None
@@ -435,7 +436,7 @@ class FlatFile:
 
 class MetadataFile(FlatFile):
 	"""Store/retrieve metadata from mirror_metadata as rorps"""
-	_prefix = "mirror_metadata"
+	_prefix = b"mirror_metadata"
 	_extractor = RorpExtractor
 	_object_to_record = staticmethod(RORP2Record)
 
@@ -466,10 +467,10 @@ class CombinedWriter:
 
 class Manager:
 	"""Read/Combine/Write metadata files by time"""
-	meta_prefix = 'mirror_metadata'
-	acl_prefix = 'access_control_lists'
-	ea_prefix = 'extended_attributes'
-	wacl_prefix = 'win_access_control_lists'
+	meta_prefix = b'mirror_metadata'
+	acl_prefix = b'access_control_lists'
+	ea_prefix = b'extended_attributes'
+	wacl_prefix = b'win_access_control_lists'
 
 	def __init__(self):
 		"""Set listing of rdiff-backup-data dir"""
@@ -488,7 +489,7 @@ class Manager:
 			self.timerpmap[time].append(rp)
 		else: self.timerpmap[time] = [rp]
 
-		incbase = rp.getincbase_str()
+		incbase = rp.getincbase_bname()
 		if incbase in self.prefixmap: self.prefixmap[incbase].append(rp)
 		else: self.prefixmap[incbase] = [rp]
 
@@ -496,7 +497,7 @@ class Manager:
 		"""Used below to find the right kind of file by time"""
 		if time not in self.timerpmap: return None
 		for rp in self.timerpmap[time]:
-			if rp.getincbase_str() == prefix:
+			if rp.getincbase_bname() == prefix:
 				return flatfileclass(rp, 'r').get_objects(restrict_index)
 		return None
 
@@ -553,8 +554,9 @@ class Manager:
 	def _writer_helper(self, prefix, flatfileclass, typestr, time):
 		"""Used in the get_xx_writer functions, returns a writer class"""
 		if time is None: timestr = Time.curtimestr
-		else: timestr = Time.timetostring(time)		
-		filename = '%s.%s.%s' % (prefix, timestr, typestr)
+		else: timestr = Time.timetobytes(time)
+		triple = map(os.fsencode, (prefix, timestr, typestr))
+		filename = b'.'.join(triple)
 		rp = Globals.rbdir.append(filename)
 		assert not rp.lstat(), "File %s already exists!" % (rp.path,)
 		assert rp.isincfile()
@@ -580,7 +582,7 @@ class Manager:
 		return self._writer_helper(self.wacl_prefix,
 						 win_acls.WinAccessControlListFile, typestr, time)
 
-	def GetWriter(self, typestr = 'snapshot', time = None):
+	def GetWriter(self, typestr = b'snapshot', time = None):
 		"""Get a writer object that can write meta and possibly acls/eas"""
 		metawriter = self.get_meta_writer(typestr, time)
 		if not Globals.eas_active and not Globals.acls_active and \
@@ -632,15 +634,15 @@ class PatchDiffMan(Manager):
 
 	def check_needs_diff(self):
 		"""Check if we should diff, returns (new, old) rps, or (None, None)"""
-		inclist = self.sorted_prefix_inclist('mirror_metadata')
+		inclist = self.sorted_prefix_inclist(b'mirror_metadata')
 		assert len(inclist) >= 1
 		if len(inclist) == 1: return (None, None)
 		newrp, oldrp = inclist[:2]
-		assert newrp.getinctype() == oldrp.getinctype() == 'snapshot'
+		assert newrp.getinctype() == oldrp.getinctype() == b'snapshot'
 
 		chainlen = 1
 		for rp in inclist[2:]:
-			if rp.getinctype() != 'diff': break
+			if rp.getinctype() != b'diff': break
 			chainlen += 1
 		if chainlen >= self.max_diff_chain: return (None, None)
 		return (newrp, oldrp)
@@ -651,7 +653,7 @@ class PatchDiffMan(Manager):
 		if not newrp: return
 		log.Log("Writing mirror_metadata diff", 6)
 
-		diff_writer = self.get_meta_writer('diff', oldrp.getinctime())
+		diff_writer = self.get_meta_writer(b'diff', oldrp.getinctime())
 		new_iter = MetadataFile(newrp, 'r').get_objects()
 		old_iter = MetadataFile(oldrp, 'r').get_objects()
 		for diff_rorp in self.get_diffiter(new_iter, old_iter):
@@ -669,11 +671,11 @@ class PatchDiffMan(Manager):
 
 	def relevant_meta_incs(self, time):
 		"""Return list [snapshotrp, diffrps ...] time sorted"""
-		inclist = self.sorted_prefix_inclist('mirror_metadata', min_time=time)
+		inclist = self.sorted_prefix_inclist(b'mirror_metadata', min_time=time)
 		if not inclist: return inclist
 		assert inclist[-1].getinctime() == time, inclist[-1]
 		for i in range(len(inclist)-1, -1, -1):
-			if inclist[i].getinctype() == 'snapshot':
+			if inclist[i].getinctype() == b'snapshot':
 				return inclist[i:]
 		assert 0, "Inclist %s contains no snapshots" % (inclist,)
 

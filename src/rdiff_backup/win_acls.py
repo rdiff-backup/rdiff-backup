@@ -31,11 +31,6 @@ except ImportError:
 
 	pywintypes = None
 
-def encode(str_):
-	if type(str_) == str:
-		return str_.encode('utf-8')
-	return str_
-
 class ACL:
 	flags = (GROUP_SECURITY_INFORMATION|
 		 OWNER_SECURITY_INFORMATION|
@@ -218,16 +213,16 @@ def WACL2Record(wacl):
 
 class WACLExtractor(metadata.FlatExtractor):
 	"""Iterate ExtendedAttributes objects from the WACL information file"""
-	record_boundary_regexp = re.compile('(?:\\n|^)(# file: (.*?))\\n')
+	record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
 	record_to_object = staticmethod(Record2WACL)
 	def filename_to_index(self, filename):
 		"""Convert possibly quoted filename to index tuple"""
-		if filename == '.': return ()
-		else: return tuple(C.acl_unquote(filename).split('/'))
+		if filename == b'.': return ()
+		else: return tuple(C.acl_unquote(filename).split(b'/'))
 
 class WinAccessControlListFile(metadata.FlatFile):
 	"""Store/retrieve ACLs from extended_attributes file"""
-	_prefix = "win_access_control_lists"
+	_prefix = b"win_access_control_lists"
 	_extractor = WACLExtractor
 	_object_to_record = staticmethod(WACL2Record)
 

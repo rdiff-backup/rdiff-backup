@@ -76,7 +76,7 @@ def check_for_files(*rps):
 	"""Make sure that all the rps exist, raise error if not"""
 	for rp in rps:
 		if not rp.lstat():
-			raise RPathException("File %s does not exist" % rp.get_safepath())
+			raise RPathException("File %s does not exist" % rp.get_safeindexpath())
 
 def move(rpin, rpout):
 	"""Move rpin to rpout, renaming if possible"""
@@ -92,7 +92,7 @@ def copy(rpin, rpout, compress = 0):
 	to pass hashes on.
 
 	"""
-	log.Log("Regular copying %s to %s" % (rpin.index, rpout.path), 6)
+	log.Log("Regular copying %s to %s" % (rpin.index, rpout.get_safepath()), 6)
 	if not rpin.lstat():
 		if rpout.lstat(): rpout.delete()
 		return
@@ -118,7 +118,7 @@ def copy(rpin, rpout, compress = 0):
 		rpout.makedev("b", major, minor)
 	elif rpin.isfifo(): rpout.mkfifo()
 	elif rpin.issock(): rpout.mksock()
-	else: raise RPathException("File %s has unknown type" % rpin.path)
+	else: raise RPathException("File %s has unknown type" % rpin.get_safepath())
 
 def copy_reg_file(rpin, rpout, compress = 0):
 	"""Copy regular file rpin to rpout, possibly avoiding connection"""
@@ -137,7 +137,7 @@ def copy_reg_file(rpin, rpout, compress = 0):
 							   "If you are using a Mac, this is probably "
 							   "the result of HFS+ filesystem corruption. "
 							   "Please exclude this file from your backup "
-							   "before proceeding." % rpin.path)
+							   "before proceeding." % rpin.get_safepath())
 		else:
 			raise
 
@@ -165,7 +165,7 @@ def cmp(rpin, rpout):
 		return rpout.isblkdev() and (rpin.getdevnums() == rpout.getdevnums())
 	elif rpin.isfifo(): return rpout.isfifo()
 	elif rpin.issock(): return rpout.issock()
-	else: raise RPathException("File %s has unknown type" % rpin.path)
+	else: raise RPathException("File %s has unknown type" % rpin.get_safepath())
 
 def copy_attribs(rpin, rpout):
 	"""Change file attributes of rpout to match rpin
@@ -174,7 +174,7 @@ def copy_attribs(rpin, rpout):
 	timestamps, so both must already exist.
 
 	"""
-	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.path), 7)
+	log.Log("Copying attributes from %s to %s" % (rpin.index, rpout.get_safepath()), 7)
 	assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
 	if Globals.change_ownership:
 		rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
@@ -199,7 +199,7 @@ def copy_attribs_inc(rpin, rpout):
 	permissions.
 
 	"""
-	log.Log("Copying inc attrs from %s to %s" % (rpin.index, rpout.path), 7)
+	log.Log("Copying inc attrs from %s to %s" % (rpin.index, rpout.get_safepath()), 7)
 	check_for_files(rpin, rpout)
 	if Globals.change_ownership: rpout.chown(*rpin.getuidgid())
 	if Globals.eas_write: rpout.write_ea(rpin.get_ea())
@@ -235,7 +235,7 @@ def cmp_attribs(rp1, rp2):
 		result = ((rp1.getctime() == rp2.getctime()) and
 			(rp1.getmtime() == rp2.getmtime()))
 	log.Log("Compare attribs of %s and %s: %s" %
-			(rp1.get_safepath(), rp2.get_safepath(), result), 7)
+			(rp1.get_safeindexpath(), rp2.get_safeindexpath(), result), 7)
 	return result
 
 def copy_with_attribs(rpin, rpout, compress = 0):
@@ -246,13 +246,13 @@ def copy_with_attribs(rpin, rpout, compress = 0):
 def rename(rp_source, rp_dest):
 	"""Rename rp_source to rp_dest"""
 	assert rp_source.conn is rp_dest.conn
-	log.Log(lambda: "Renaming %s to %s" % (rp_source.path, rp_dest.path), 7)
+	log.Log(lambda: "Renaming %s to %s" % (rp_source.get_safepath(), rp_dest.get_safepath()), 7)
 	if not rp_source.lstat(): rp_dest.delete()
 	else:
 		if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode() and \
 				rp_source.getinode() != 0:
 			log.Log("Warning: Attempt to rename over same inode: %s to %s"
-					% (rp_source.path, rp_dest.path), 2)
+					% (rp_source.get_safepath(), rp_dest.get_safepath()), 2)
 			# You can't rename one hard linked file over another
 			rp_source.delete()
 		else:
@@ -263,7 +263,7 @@ def rename(rp_source, rp_dest):
 				# pathname too long on Windows
 				if error.errno != errno.EEXIST:
 					log.Log("OSError while renaming %s to %s"
-							% (rp_source.path, rp_dest.path), 1)
+							% (rp_source.get_safepath(), rp_dest.get_safepath()), 1)
 					raise
 
 				# On Windows, files can't be renamed on top of an existing file
@@ -374,8 +374,8 @@ def open_local_read(rpath):
 def get_incfile_info(basename):
 	"""Returns None or tuple of
 	(is_compressed, timestr, type, and basename)"""
-	dotsplit = basename.split(".")
-	if dotsplit[-1] == "gz":
+	dotsplit = basename.split(b'.')
+	if dotsplit[-1] == b'gz':
 		compressed = 1
 		if len(dotsplit) < 4: return None
 		timestring, ext = dotsplit[-3:-1]
@@ -383,12 +383,12 @@ def get_incfile_info(basename):
 		compressed = None
 		if len(dotsplit) < 3: return None
 		timestring, ext = dotsplit[-2:]
-	if Time.stringtotime(timestring) is None: return None
-	if not (ext == "snapshot" or ext == "dir" or
-			ext == "missing" or ext == "diff" or ext == "data"):
+	if Time.bytestotime(timestring) is None: return None
+	if not (ext == b"snapshot" or ext == b"dir" or
+			ext == b"missing" or ext == b"diff" or ext == b"data"):
 		return None
-	if compressed: basestr = ".".join(dotsplit[:-3])
-	else: basestr = ".".join(dotsplit[:-2])
+	if compressed: basestr = b'.'.join(dotsplit[:-3])
+	else: basestr = b'.'.join(dotsplit[:-2])
 	return (compressed, timestring, ext, basestr)
 
 def delete_dir_no_files(rp):
@@ -410,7 +410,7 @@ class RORPath:
 
 	"""
 	def __init__(self, index, data = None):
-		self.index = index
+		self.index = tuple(map(os.fsencode, index))
 		if data: self.data = data
 		else: self.data = {'type':None} # signify empty file
 		self.file = None
@@ -549,11 +549,11 @@ class RORPath:
 
 	def __str__(self):
 		"""Pretty print file statistics"""
-		return "Index: %s\nData: %s" % (self.index, self.data)
+		return "Index: %s\nData: %s" % (self.get_safeindex(), self.data)
 
 	def summary_string(self):
 		"""Return summary string"""
-		return "%s %s" % (self.get_safepath(), self.lstat())
+		return "%s %s" % (self.get_safeindexpath(), self.lstat())
 
 	def __getstate__(self):
 		"""Return picklable state
@@ -689,23 +689,30 @@ class RORPath:
 		self.file = RPathFileHook(file, closing_hook)
 		self.file_already_open = None
 
+	def get_safeindex(self):
+		"""Return index as a tuple of strings with safe decoding
+
+		For instance, if the index is (b"a", b"b"), return ("a", "b")
+
+		"""
+		return tuple(map(lambda f:f.decode(errors='replace'), self.index))
+
 	def get_indexpath(self):
 		"""Return path of index portion
 
 		For instance, if the index is ("a", "b"), return "a/b".
 
 		"""
-		if not self.index: return "."
-		return "/".join(self.index)
+		if not self.index: return b'.'
+		return os.path.join(*self.index)
 
-	def get_safepath(self):
+	def get_safeindexpath(self):
 		"""Return safe path of index even with names throwing UnicodeEncodeError
 
 		For instance, if the index is ("a", "b"), return "'a/b'".
 
 		"""
-		if not self.index: return "."
-		return repr("/".join(self.index))
+		return self.get_indexpath().decode(errors='replace')
 
 	def get_attached_filetype(self):
 		"""If there is a file attached, say what it is
@@ -751,7 +758,7 @@ class RORPath:
 			while self.file.read(Globals.blocksize): pass
 			assert not self.file.close(), \
 			  "Error closing file\ndata = %s\nindex = %s\n" % (self.data,
-															   self.index)
+															   self.get_safeindex())
 			self.file_already_open = None
 
 	def set_acl(self, acl):
@@ -885,19 +892,18 @@ class RPath(RORPath):
 		"/".
 
 		"""
+		super().__init__(index, data)
 		self.conn = connection
-		self.index = index
-		self.base = base
 		if base is not None:
-			if base == "/": self.path = "/" + "/".join(index)
-			else: self.path = "/".join((base,) + index)
-		self.file = None
-		if data or base is None: self.data = data
-		else: self.setdata()
+			self.base = os.fsencode(base)  # path is always bytes
+			self.path = os.path.join(self.base, *self.index)
+			if data is None: self.setdata()
+		else: self.base = None
+
 
 	def __str__(self):
-		return "Path: %s\nIndex: %s\nData: %s" % (self.path, self.index,
-												  self.data)
+		return "%s: Path: %s\nIndex: %s\nData: %s" \
+			% (self.__class__.__name__, self.get_safepath(), self.get_safeindex(), self.data)
 
 	def __getstate__(self):
 		"""Return picklable state
@@ -913,7 +919,7 @@ class RPath(RORPath):
 		"""Reproduce RPath from __getstate__ output"""
 		conn_number, self.base, self.index, self.data = rpath_state
 		self.conn = Globals.connection_dict[conn_number]
-		self.path = "/".join((self.base,) + self.index)
+		self.path = os.path.join(self.base, *self.index)
 
 	def setdata(self):
 		"""Set data dictionary using the wrapper"""
@@ -953,7 +959,7 @@ class RPath(RORPath):
 
 	def settime(self, accesstime, modtime):
 		"""Change file modification times"""
-		log.Log("Setting time of %s to %d" % (self.path, modtime), 7)
+		log.Log("Setting time of %s to %d" % (self.get_safepath(), modtime), 7)
 		try: self.conn.os.utime(self.path, (accesstime, modtime))
 		except OverflowError:
 			log.Log("Cannot change times of %s to %s - problem is probably"
@@ -965,7 +971,7 @@ class RPath(RORPath):
 
 	def setmtime(self, modtime):
 		"""Set only modtime (access time to present)"""
-		log.Log(lambda: "Setting time of %s to %d" % (self.path, modtime), 7)
+		log.Log(lambda: "Setting time of %s to %d" % (self.get_safepath(), modtime), 7)
 		if modtime < 0: log.Log("Warning: modification time of %s is"
 								"before 1970" % self.path, 2)
 		try: self.conn.os.utime(self.path, (int(time.time()), modtime))
@@ -985,34 +991,30 @@ class RPath(RORPath):
 			try: self.conn.os.lchown(self.path, uid, gid)
 			except AttributeError:
 				log.Log("Warning: lchown missing, cannot change ownership "
-						"of symlink " + self.path, 2)
+						"of symlink %s" % self.get_safepath(), 2)
 		else: self.conn.os.chown(self.path, uid, gid)
 		# uid/gid equal to -1 is ignored by chown/lchown
 		if uid >= 0: self.data['uid'] = uid
 		if gid >= 0: self.data['gid'] = gid
 
 	def mkdir(self):
-		log.Log("Making directory " + self.path, 6)
+		log.Log("Making directory %s" % self.get_safepath(), 6)
 		self.conn.os.mkdir(self.path)
 		self.setdata()
 
 	def makedirs(self):
-		log.Log("Making directory path " + self.path, 6)
+		log.Log("Making directory path %s" % self.get_safepath(), 6)
 		self.conn.os.makedirs(self.path)
 		self.setdata()
 
 	def rmdir(self):
-		log.Log("Removing directory " + self.path, 6)
+		log.Log("Removing directory %s" % self.get_safepath(), 6)
 		self.conn.os.rmdir(self.path)
 		self.data = {'type': None}
 
 	def listdir(self):
 		"""Return list of string paths returned by os.listdir"""
 		path = self.path
-		# Use pass in unicode to os.listdir, so that the returned
-		# entries are in unicode.
-		if type(path) != str and Globals.use_unicode_paths:
-			path = str(path, 'utf-8')
 		return self.conn.os.listdir(path)
 
 	def symlink(self, linktext):
@@ -1023,7 +1025,7 @@ class RPath(RORPath):
 
 	def hardlink(self, linkpath):
 		"""Make self into a hardlink joined to linkpath"""
-		log.Log("Hard linking %s to %s" % (self.path, linkpath), 6)
+		log.Log("Hard linking %s to %s" % (self.get_safepath(), self.get_safepath(linkpath)), 6)
 		self.conn.os.link(linkpath, self.path)
 		self.setdata()
 
@@ -1041,8 +1043,8 @@ class RPath(RORPath):
 
 	def touch(self):
 		"""Make sure file at self.path exists"""
-		log.Log("Touching " + self.path, 7)
-		self.conn.open(self.path, "w").close()
+		log.Log("Touching %s" % self.get_safepath(), 7)
+		self.conn.open(self.path, "wb").close()
 		self.setdata()
 		assert self.isreg(), self.path
 
@@ -1080,7 +1082,7 @@ class RPath(RORPath):
 
 	def delete(self):
 		"""Delete file at self.path.  Recursively deletes directories."""
-		log.Log("Deleting %s" % self.path, 7)
+		log.Log("Deleting %s" % self.get_safepath(), 7)
 		if self.isdir():
 			try: self.rmdir()
 			except os.error:
@@ -1101,7 +1103,7 @@ class RPath(RORPath):
 
 	def contains_files(self):
 		"""Returns true if self (or subdir) contains any regular files."""
-		log.Log("Determining if directory contains files: %s" % self.path, 7)
+		log.Log("Determining if directory contains files: %s" % self.get_safepath(), 7)
 		if not self.isdir():
 			return False
 		dir_entries = self.listdir()
@@ -1127,9 +1129,9 @@ class RPath(RORPath):
 		be retained.
 
 		"""
-		newpath = "/".join([x for x in self.path.split("/") if x and x != "."])
-		if self.path[0] == "/": newpath = "/" + newpath
-		elif not newpath: newpath = "."
+		newpath = os.path.join(*[x for x in self.path.split(b"/") if x and x != b"."])
+		if self.path[0:1] == b"/": newpath = b"/" + newpath
+		elif not newpath: newpath = b"."
 		return self.newpath(newpath)
 
 	def dirsplit(self):
@@ -1145,9 +1147,32 @@ class RPath(RORPath):
 
 		"""
 		normed = self.normalize()
-		if normed.path.find("/") == -1: return (".", normed.path)
-		comps = normed.path.split("/")
-		return "/".join(comps[:-1]), comps[-1]
+		if normed.path.find(b"/") == -1: return (".", normed.path)
+		(dirname, basename) = os.path.split(normed.path)
+		# the following to keep the same interface as before but FIXME
+		if dirname == b'/':
+			if basename == b'':
+				return (b'', b'/')
+			else:
+				return (b'', basename)
+		else:
+			return (dirname, basename)
+
+	def get_safepath(self, somepath = None):
+		"""Return safely decoded version of path into the current encoding
+
+		it's meant only for logging and outputting to user
+
+		"""
+		if somepath is not None:
+			# somepath should never be a string but just to be sure
+			# we check before we decode it
+			if isinstance(somepath, str):
+				return somepath
+			else:
+				return somepath.decode(errors='replace')
+		else:
+			return self.path.decode(errors='replace')
 
 	def get_parent_rp(self):
 		"""Return new RPath of directory self is in"""
@@ -1155,7 +1180,7 @@ class RPath(RORPath):
 			return self.__class__(self.conn, self.base, self.index[:-1])
 		dirname = self.dirsplit()[0]
 		if dirname: return self.__class__(self.conn, dirname)
-		else: return self.__class__(self.conn, "/")
+		else: return self.__class__(self.conn, b"/")
 
 	def newpath(self, newpath, index = ()):
 		"""Return new RPath with the same connection but different path"""
@@ -1167,7 +1192,8 @@ class RPath(RORPath):
 
 	def append_path(self, ext, new_index = ()):
 		"""Like append, but add ext to path instead of to index"""
-		return self.__class__(self.conn, "/".join((self.base, ext)), new_index)
+		# ext can be a string but shouldn't hence we transform it into bytes
+		return self.__class__(self.conn, os.path.join(self.base, os.fsencode(ext)), new_index)
 
 	def new_index(self, index):
 		"""Return similar RPath but with new index"""
@@ -1206,7 +1232,7 @@ class RPath(RORPath):
 		written to self.  Returns closing value of fp.
 
 		"""
-		log.Log("Writing file object to " + self.path, 7)
+		log.Log("Writing file object to %s" % self.get_safepath(), 7)
 		assert not self.lstat(), "File %s already exists" % self.path
 		outfp = self.open("wb", compress = compress)
 		copyfileobj(fp, outfp)
@@ -1217,9 +1243,15 @@ class RPath(RORPath):
 	def write_string(self, s, compress = None):
 		"""Write string s into rpath"""
 		assert not self.lstat(), "File %s already exists" % (self.path,)
-		outfp = self.open("w", compress = compress)
-		outfp.write(s)
-		assert not outfp.close()
+		with self.open("w", compress = compress) as outfp:
+			outfp.write(s)
+		self.setdata()
+
+	def write_bytes(self, s, compress = None):
+		"""Write data s into rpath"""
+		assert not self.lstat(), "File %s already exists" % (self.path,)
+		with self.open("wb", compress = compress) as outfp:
+			outfp.write(s)
 		self.setdata()
 
 	def isincfile(self):
@@ -1250,7 +1282,7 @@ class RPath(RORPath):
 
 	def getinctime(self):
 		"""Return time in seconds of an increment file"""
-		return Time.stringtotime(self.inc_timestr)
+		return Time.bytestotime(self.inc_timestr)
 	
 	def getincbase(self):
 		"""Return the base filename of an increment file in rp form"""
@@ -1259,8 +1291,8 @@ class RPath(RORPath):
 								  (self.inc_basestr,))
 		else: return self.__class__(self.conn, self.inc_basestr)
 
-	def getincbase_str(self):
-		"""Return the base filename string of an increment file"""
+	def getincbase_bname(self):
+		"""Return the base filename as bytes of an increment file"""
 		rp = self.getincbase()
 		if rp.index: return rp.index[-1]
 		else: return rp.dirsplit()[1]
@@ -1279,7 +1311,7 @@ class RPath(RORPath):
 			if isinstance(e, AttributeError) or e.errno == errno.EPERM:
 				# AttributeError will be raised by Python 2.2, which
 				# doesn't have os.mknod
-				log.Log("unable to mknod %s -- using touch instead" % self.path, 4)
+				log.Log("unable to mknod %s -- using touch instead" % self.get_safepath(), 4)
 				self.touch()
 		self.setdata()
 
@@ -1432,33 +1464,6 @@ class RPath(RORPath):
 		write_win_acl(self, acl)
 		self.data['win_acl'] = acl
 
-class MaybeUnicode:
-	""" Wraps a RPath and reads/writes unicode if Globals.use_unicode_paths is on. """
-
-	def __init__(self, fileobj):
-		log.Log("Creating MaybeUnicode object from '%s'." % (str(fileobj),), 9)
-		self.fileobj = fileobj
-
-	def read(self, length = -1):
-		data = self.fileobj.read(length)
-		if Globals.use_unicode_paths and not isinstance(data, str):
-			data = data.decode('utf-8')
-		return data
-
-	def readline(self, length=-1):
-		data = self.fileobj.readline(length)
-		if Globals.use_unicode_paths and not isinstance(data, str):
-			data = data.decode('utf-8')
-		return data
-
-	def write(self, buf):
-		if type(buf) == str:
-			buf = buf.encode('utf-8')
-		return self.fileobj.write(buf)
-
-	def close(self):
-		return self.fileobj.close()
-
 class RPathFileHook:
 	"""Look like a file, but add closing hook"""
 	def __init__(self, file, closing_thunk):
@@ -1488,11 +1493,8 @@ class GzipFile(gzip.GzipFile):
 		unicode with the filename."""
 		if mode and 'b' not in mode:
 			mode += 'b'
-		if type(filename) != str and Globals.use_unicode_paths:
-			filename = str(filename, 'utf-8')
 		fileobj = open(filename, mode or 'rb')
-		gzip.GzipFile.__init__(self, filename.encode('utf-8'),
-							mode=mode, fileobj=fileobj)
+		gzip.GzipFile.__init__(self, filename, mode=mode, fileobj=fileobj)
 
 	def __del__(self): pass
 	def __getattr__(self, name):
@@ -1525,9 +1527,9 @@ class MaybeGzip:
 	def get_gzipped_rp(self):
 		"""Return gzipped rp by adding .gz to base_rp"""
 		if self.base_rp.index:
-			newind = self.base_rp.index[:-1] + (self.base_rp.index[-1]+'.gz',)
+			newind = self.base_rp.index[:-1] + (self.base_rp.index[-1]+b'.gz',)
 			return self.base_rp.new_index(newind)
-		else: return self.base_rp.append_path('.gz')
+		else: return self.base_rp.append_path(b'.gz')
 
 	def write(self, buf):
 		"""Write buf to fileobj"""

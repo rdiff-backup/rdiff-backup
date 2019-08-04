@@ -201,8 +201,8 @@ class LowLevelPipeConnection(Connection):
 		"""Write header and then data to the pipe"""
 		assert len(headerchar) == 1, \
 			"Header type %s can only have one letter/byte" % headerchar
-		if isinstance(headerchar, str):
-			headerchar = headerchar.encode()
+		if isinstance(headerchar, str):  # it can only be an ASCII character
+			headerchar = headerchar.encode('ascii')
 		try:
 			self.outpipe.write(headerchar + self._i2b(req_num, 1) +
 							   self._i2b(len(data), 7))
