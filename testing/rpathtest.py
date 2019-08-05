@@ -6,7 +6,7 @@ from rdiff_backup import rpath
 class RPathTest(unittest.TestCase):
 	lc = Globals.local_connection
 	mainprefix = old_test_dir
-	prefix = os.path.join(mainprefix, "various_file_types")
+	prefix = os.path.join(mainprefix, b"various_file_types")
 	rp_prefix = RPath(lc, prefix, ())
 
 
@@ -77,7 +77,7 @@ class CheckPerms(RPathTest):
 
 	def testhighbits(self):
 		"""Test reporting of highbit permissions"""
-		p = RPath(self.lc, os.path.join(self.mainprefix, "rpath2", "foobar")).getperms()
+		p = RPath(self.lc, os.path.join(self.mainprefix, b"rpath2", b"foobar")).getperms()
 		assert p == 0o4100, p
 
 	def testOrdinaryReport(self):
@@ -230,16 +230,16 @@ class MiscFileInfo(RPathTest):
 class FilenameOps(RPathTest):
 	"""Check filename operations"""
 	weirdfilename = eval('\'\\xd8\\xab\\xb1Wb\\xae\\xc5]\\x8a\\xbb\\x15v*\\xf4\\x0f!\\xf9>\\xe2Y\\x86\\xbb\\xab\\xdbp\\xb0\\x84\\x13k\\x1d\\xc2\\xf1\\xf5e\\xa5U\\x82\\x9aUV\\xa0\\xf4\\xdf4\\xba\\xfdX\\x03\\x82\\x07s\\xce\\x9e\\x8b\\xb34\\x04\\x9f\\x17 \\xf4\\x8f\\xa6\\xfa\\x97\\xab\\xd8\\xac\\xda\\x85\\xdcKvC\\xfa#\\x94\\x92\\x9e\\xc9\\xb7\\xc3_\\x0f\\x84g\\x9aB\\x11<=^\\xdbM\\x13\\x96c\\x8b\\xa7|*"\\\\\\\'^$@#!(){}?+ ~` \'')
-	normdict = {"/": "/",
-				".": ".",
-				"//": "/",
-				"/a/b": "/a/b",
-				"a/b": "a/b",
-				"a//b": "a/b",
-				"a////b//c": "a/b/c",
-				"..": "..",
-				"a/": "a",
-				"/a//b///": "/a/b"}
+	normdict = {b"/": b"/",
+				b".": b".",
+				b"//": b"/",
+				b"/a/b": b"/a/b",
+				b"a/b": b"a/b",
+				b"a//b": b"a/b",
+				b"a////b//c": b"a/b/c",
+				b"..": b"..",
+				b"a/": b"a",
+				b"/a//b///": b"/a/b"}
 	dirsplitdict = {"/": ("", ""),
 					"/a": ("", "a"),
 					"/a/b": ("/a", "b"),
@@ -260,7 +260,7 @@ class FilenameOps(RPathTest):
 		"""rpath.normalize() dictionary test"""
 		for (before, after) in list(self.normdict.items()):
 			assert RPath(self.lc, before, ()).normalize().path == after, \
-				   "Normalize fails for %s => %s" % (before, after)
+				   "Normalize fails for %a => %a" % (before, after)
 
 	def testDirsplit(self):
 		"""Test splitting of various directories"""
@@ -303,7 +303,7 @@ class FileIO(RPathTest):
 		"""Test writing of gzipped files"""
 		try: os.mkdir(abs_output_dir)
 		except OSError: pass
-		file_nogz = os.path.join(abs_output_dir, "file")
+		file_nogz = os.path.join(abs_output_dir, b"file")
 		file_gz = file_nogz + ".gz"
 		rp_gz = RPath(self.lc, file_gz)
 		rp_nogz = RPath(self.lc, file_nogz)
@@ -320,7 +320,7 @@ class FileIO(RPathTest):
 		"""Test reading of gzipped files"""
 		try: os.mkdir(abs_output_dir)
 		except OSError: pass
-		file_nogz = os.path.join(abs_output_dir, "file")
+		file_nogz = os.path.join(abs_output_dir, b"file")
 		file_gz = file_nogz + ".gz"
 		rp_gz = RPath(self.lc, file_gz)
 		if rp_gz.lstat(): rp_gz.delete()
@@ -374,9 +374,9 @@ class FileCopying(RPathTest):
 		"""Make sure directories can be equal,
 		even if they are of different sizes"""
 		smalldir = RPath(Globals.local_connection,
-				os.path.join(old_test_dir, "dircomptest", "1"))
+				os.path.join(old_test_dir, b"dircomptest", b"1"))
 		bigdir = RPath(Globals.local_connection,
-				os.path.join(old_test_dir, "dircomptest", "2"))
+				os.path.join(old_test_dir, b"dircomptest", b"2"))
 		# Can guarantee below by adding files to bigdir
 		assert bigdir.getsize() > smalldir.getsize()
 		assert smalldir == bigdir
@@ -385,7 +385,7 @@ class FileCopying(RPathTest):
 		"""Test copy of various files"""
 		for rp in [self.sl, self.rf, self.fifo, self.dir]:
 			rpath.copy(rp, self.dest)
-			assert self.dest.lstat(), "%s doesn't exist" % self.dest.path
+			assert self.dest.lstat(), "%a doesn't exist" % self.dest.path
 			assert rpath.cmp(rp, self.dest)
 			assert rpath.cmp(self.dest, rp)
 			self.dest.delete()
@@ -407,8 +407,8 @@ class FileAttributes(FileCopying):
 		"""Test attribute comparison success"""
 		testpairs = [(self.hl1, self.hl2)]
 		for a, b in testpairs:
-			assert a.equal_loose(b), "Err with %s %s" % (a.path, b.path)
-			assert b.equal_loose(a), "Err with %s %s" % (b.path, a.path)
+			assert a.equal_loose(b), "Err with %a %a" % (a.path, b.path)
+			assert b.equal_loose(a), "Err with %a %a" % (b.path, a.path)
 
 	def testCompFail(self):
 		"""Test attribute comparison failures"""
@@ -416,8 +416,8 @@ class FileAttributes(FileCopying):
 					 (self.exec1, self.exec2),
 					 (self.rf, self.hl1)]
 		for a, b in testpairs:
-			assert not a.equal_loose(b), "Err with %s %s" % (a.path, b.path)
-			assert not b.equal_loose(a), "Err with %s %s" % (b.path, a.path)
+			assert not a.equal_loose(b), "Err with %a %a" % (a.path, b.path)
+			assert not b.equal_loose(a), "Err with %a %a" % (b.path, a.path)
 
 	def testCheckRaise(self):
 		"""Should raise exception when file missing"""
@@ -462,11 +462,11 @@ class CheckPath(unittest.TestCase):
 	def testpath(self):
 		"""Test root paths"""
 		root = RPath(Globals.local_connection, "/")
-		assert root.path == "/", root.path
+		assert root.path == b"/", root.path
 		bin = root.append("bin")
-		assert bin.path == "/bin", bin.path
+		assert bin.path == b"/bin", bin.path
 		bin2 = RPath(Globals.local_connection, "/bin")
-		assert bin.path == "/bin", bin2.path
+		assert bin2.path == b"/bin", bin2.path
 
 class Gzip(RPathTest):
 	"""Test the gzip related functions/classes"""

@@ -34,7 +34,7 @@ class FilenameMappingTest(unittest.TestCase):
 		MakeOutputDir()
 		outrp = rpath.RPath(Globals.local_connection, abs_output_dir)
 		inrp = rpath.RPath(Globals.local_connection,
-				os.path.join(abs_test_dir, "quotetest"))
+				os.path.join(abs_test_dir, b"quotetest"))
 		re_init_rpath_dir(inrp)
 		long_filename = "A"*200 # when quoted should cause overflow
 		longrp = inrp.append(long_filename)
@@ -43,14 +43,14 @@ class FilenameMappingTest(unittest.TestCase):
 		shortrp.touch()
 
 		rdiff_backup(1, 1, inrp.path, outrp.path, 100000,
-					 extra_options = "--override-chars-to-quote A")
+					 extra_options = b"--override-chars-to-quote A")
 
 		longrp_out = outrp.append(long_filename)
 		assert not longrp_out.lstat()
 		shortrp_out = outrp.append('B')
 		assert shortrp_out.lstat()
 
-		rdiff_backup(1, 1, os.path.join(old_test_dir, "empty"), outrp.path, 200000)
+		rdiff_backup(1, 1, os.path.join(old_test_dir, b"empty"), outrp.path, 200000)
 		shortrp_out.setdata()
 		assert not shortrp_out.lstat()
 		rdiff_backup(1, 1, inrp.path, outrp.path, 300000)

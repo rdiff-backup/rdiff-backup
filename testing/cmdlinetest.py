@@ -100,7 +100,7 @@ class PathSetter(unittest.TestCase):
 
 		# Getting restore rps
 		inc_paths = self.getinc_paths("increments.",
-									  os.path.join(Local.rpout.path, "rdiff-backup-data"))
+									  os.path.join(Local.rpout.path, b"rdiff-backup-data"))
 		assert len(inc_paths) == 3
 
 		# Restoring increment1
@@ -118,14 +118,14 @@ class PathSetter(unittest.TestCase):
 		# Test restoration of a few random files
 		vft_paths = self.getinc_paths("various_file_types.",
 					     os.path.join(Local.rpout.path,
-						     "rdiff-backup-data", "increments"))
+						     b"rdiff-backup-data", b"increments"))
 		rdiff_backup(from_local, to_local, vft_paths[1], Local.vft_out.path)
 		self.refresh(Local.vft_in, Local.vft_out)
 		assert CompareRecursive(Local.vft_in, Local.vft_out)
 
 		timbar_paths = self.getinc_paths("timbar.pyc.",
 					     os.path.join(Local.rpout.path,
-						     "rdiff-backup-data", "increments"))
+						     b"rdiff-backup-data", b"increments"))
 		rdiff_backup(from_local, to_local, timbar_paths[0], Local.timbar_out.path)
 		self.refresh(Local.timbar_in, Local.timbar_out)
 		assert Local.timbar_in.equal_loose(Local.timbar_out)
@@ -139,7 +139,7 @@ class PathSetter(unittest.TestCase):
 		# Make sure too many increment files not created
 		assert len(self.getinc_paths("nochange.",
 					     os.path.join(Local.rpout.path,
-						     "rdiff-backup-data", "increments"))) == 0
+						     b"rdiff-backup-data", b"increments"))) == 0
 		nochange_incs = len(self.getinc_paths("",
 					     os.path.join(Local.rpout.path,
 						     "rdiff-backup-data", "increments", "nochange")))
@@ -183,7 +183,7 @@ class Final(PathSetter):
 	@unittest.skip("Not sure it makes any sense to backup proc FIXME")
 	def testProcLocal(self):
 		"""Test initial backup of /proc locally"""
-		procout_dir = os.path.join(abs_test_dir, "procoutput")
+		procout_dir = os.path.join(abs_test_dir, b"procoutput")
 		Myrm(procout_dir)
 		procout = rpath.RPath(Globals.local_connection, procout_dir)
 		rdiff_backup(True, True, '/proc', procout.path, current_time=10000)
@@ -198,7 +198,7 @@ class Final(PathSetter):
 	@unittest.skip("Not sure it makes any sense to backup proc FIXME")
 	def testProcLocalToRemote(self):
 		"""Test mirroring proc remote"""
-		procout_dir = os.path.join(abs_test_dir, "procoutput")
+		procout_dir = os.path.join(abs_test_dir, b"procoutput")
 		Myrm(procout_dir)
 		procout = rpath.RPath(Globals.local_connection, procout_dir)
 		rdiff_backup(True, False, '/proc', procout.path, current_time=10000)
@@ -213,7 +213,7 @@ class Final(PathSetter):
 	@unittest.skip("Not sure it makes any sense to backup proc FIXME")
 	def testProcRemoteToLocal(self):
 		"""Test mirroring proc, this time when proc is remote, dest local"""
-		procout_dir = os.path.join(abs_test_dir, "procoutput")
+		procout_dir = os.path.join(abs_test_dir, b"procoutput")
 		Myrm(procout_dir)
 		procout = rpath.RPath(Globals.local_connection, procout_dir)
 		rdiff_backup(False, True, '/proc', procout.path)
@@ -421,43 +421,43 @@ class FinalSelection(PathSetter):
 
 		# Test --include option
 		rdiff_backup(True, True, inc2_rel, out_rel,
-					extra_options="--current-time 10000 "
-						 + "--include %s" % os.path.join(inc2_rel, "various_file_types")
-						 + " --exclude '**' ")
+					extra_options=b"--current-time 10000 "
+						 + b"--include %s" % os.path.join(inc2_rel, b"various_file_types")
+						 + b" --exclude '**' ")
 
 		# check that one included file exists and one excluded doesn't
-		assert os.lstat(os.path.join(out_rel, "various_file_types", "regular_file"))
-		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, "test.py"))
+		assert os.lstat(os.path.join(out_rel, b"various_file_types", b"regular_file"))
+		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, b"test.py"))
 
 		# Now try reading list of files
 		rdiff_backup(True, True, inc2_rel, out_rel,
-					extra_options="--current-time 20000 "
-						+ " --include-filelist-stdin"
-						+ " --exclude '**' ",
-						input="\n"
-						+ os.path.join(inc2_rel, "test.py") + "\n"
-						+ os.path.join(inc2_rel, "changed_dir"))
+					extra_options=b"--current-time 20000 "
+						+ b" --include-filelist-stdin"
+						+ b" --exclude '**' ",
+						input=b"\n"
+						+ os.path.join(inc2_rel, b"test.py") + b"\n"
+						+ os.path.join(inc2_rel, b"changed_dir"))
 
 		# check that two included files exist and two excluded don't
-		assert os.lstat(os.path.join(out_rel, "changed_dir"))
-		assert os.lstat(os.path.join(out_rel, "test.py"))
-		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, "various_file_types"))
-		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, "changed_dir", "foo"))
+		assert os.lstat(os.path.join(out_rel, b"changed_dir"))
+		assert os.lstat(os.path.join(out_rel, b"test.py"))
+		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, b"various_file_types"))
+		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, b"changed_dir", b"foo"))
 
 		# Test selective restoring
 		mirror_rp = rpath.RPath(Globals.local_connection, out_rel)
 		restore_filename = get_increment_rp(mirror_rp, 10000).path
 
 		rdiff_backup(True, True, restore_filename, rest1_rel,
-					extra_options="--include-filelist-stdin "
-						+ " --exclude '**'",
-						input="\n" + os.path.join(rest1_rel,
-							"various_file_types", "regular_file"))
+					extra_options=b"--include-filelist-stdin "
+						+ b" --exclude '**'",
+						input=b"\n" + os.path.join(rest1_rel,
+							b"various_file_types", b"regular_file"))
 
-		assert os.lstat(os.path.join(rest1_rel, "various_file_types", "regular_file"))
-		self.assertRaises(OSError, os.lstat, os.path.join(rest1_rel, "tester"))
+		assert os.lstat(os.path.join(rest1_rel, b"various_file_types", b"regular_file"))
+		self.assertRaises(OSError, os.lstat, os.path.join(rest1_rel, b"tester"))
 		self.assertRaises(OSError, os.lstat,
-				os.path.join(rest1_rel, "various_file_types", "executable"))
+				os.path.join(rest1_rel, b"various_file_types", b"executable"))
 
 	def testSelFilesRemote(self):
 		"""Test for bug found in 0.7.[34] - filelist where source remote"""
@@ -466,25 +466,25 @@ class FinalSelection(PathSetter):
 		Local.vft_out.mkdir()
 		# Make an exclude list
 		excluderp = Local.vft_out.append("exclude")
-		with excluderp.open("w") as fp:
+		with excluderp.open("wb") as fp:
 			fp.write(Local.vftrp.append('regular_file').path)
 			fp.write(Local.vftrp.append('test').path)
 
 		# Make an include list
 		includerp = Local.vft_out.append("include")
-		with includerp.open("w") as fp:
+		with includerp.open("wb") as fp:
 			fp.write(Local.vftrp.append('executable').path)
 			fp.write(Local.vftrp.append('symbolic_link').path)
 			fp.write(Local.vftrp.append('regular_file').path)
 			fp.write(Local.vftrp.append('test').path)
 
 		rdiff_backup(False, False, Local.vftrp.path, Local.rpout.path,
-					extra_options="--exclude-filelist %s" % excluderp.path
-						+ " --include-filelist %s" % includerp.path
-						+ " --exclude '**'")
+					extra_options=b"--exclude-filelist %s" % excluderp.path
+						+ b" --include-filelist %s" % includerp.path
+						+ b" --exclude '**'")
 
 		rdiff_backup(False, False, Local.rpout.path, Local.rpout1.path,
-				extra_options="--restore-as-of now")
+				extra_options=b"--restore-as-of now")
 		assert os.lstat(Local.rpout1.append('executable').path)
 		# FIXME: should symbolic links to excluded files be included?
 		# assert os.lstat(Local.rpout1.append('symbolic_link').path)
@@ -505,10 +505,10 @@ class FinalSelection(PathSetter):
 		existing_file = self.make_restore_existing_target()
 		file1_target = Local.rpout1.append("file1")
 		file2_target = Local.rpout1.append("file2")
-		excludes = ("--exclude %s --exclude %s --force" %
+		excludes = (b"--exclude %s --exclude %s --force" %
 					(file1_target.path, existing_file.path))
 		rdiff_backup(source_local, dest_local, Local.rpout.path, Local.rpout1.path,
-				extra_options="--restore-as-of now " + excludes)
+				extra_options=b"--restore-as-of now " + excludes)
 		for rp in (file1_target, file2_target, existing_file):
 			rp.setdata()
 		assert not file1_target.lstat(), file1_target.lstat()
@@ -550,7 +550,7 @@ class FinalCorrupt(PathSetter):
 
 		rp2 = Local.get_tgt_local_rp('final_deleted2')
 		if rp2.lstat(): Myrm(rp2.path)
-		os.system('cp -a %s %s' % (rp1.path, rp2.path))
+		os.system(b'cp -a %s %s' % (rp1.path, rp2.path))
 		rp2_2_1 = rp2.append('dir').append('regfile2')
 		assert rp2_2_1.lstat()
 		rp2_2_1.delete()
@@ -568,10 +568,10 @@ class FinalCorrupt(PathSetter):
 		rdiff_backup(True, True, in_dir1.path, Local.rpout.path, current_time=10000)
 
 		out_subdir = Local.rpout.append(in_subdir.index[-1])
-		Log("Deleting %s" % (out_subdir.path,), 3)
+		Log("Deleting %s" % out_subdir.get_safepath(), 3)
 		out_subdir.delete()
 		rdiff_backup(True, True, Local.rpout.path, Local.rpout1.path,
-							 extra_options="--restore-as-of 10000")
+							 extra_options=b"--restore-as-of 10000")
 
 
 class FinalBugs(PathSetter):

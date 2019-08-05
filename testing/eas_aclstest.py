@@ -24,11 +24,11 @@ class EATest(unittest.TestCase):
 	ea2.set(b'user.third', b'Another random attribute')
 	ea3 = ExtendedAttributes(('e3',))
 	ea4 = ExtendedAttributes(('e4',), {b'user.deleted': b'File to be deleted'})
-	ea_test1_dir = os.path.join(abs_test_dir, 'ea_test1')
+	ea_test1_dir = os.path.join(abs_test_dir, b'ea_test1')
 	ea_test1_rpath = rpath.RPath(Globals.local_connection, ea_test1_dir)
-	ea_test2_dir = os.path.join(abs_test_dir, 'ea_test2')
+	ea_test2_dir = os.path.join(abs_test_dir, b'ea_test2')
 	ea_test2_rpath = rpath.RPath(Globals.local_connection, ea_test2_dir)
-	ea_empty_dir = os.path.join(abs_test_dir, 'ea_empty')
+	ea_empty_dir = os.path.join(abs_test_dir, b'ea_empty')
 	ea_empty_rpath = rpath.RPath(Globals.local_connection, ea_empty_dir)
 
 	def make_temp_out_dirs(self):
@@ -212,7 +212,7 @@ user.empty
 		assert CompareRecursive(self.ea_test2_rpath, tempdir, compare_eas = 1)
 
 		rdiff_backup(1, 1, tempdir.path, restore_dir.path,
-					 extra_options = '-r 10000')
+					 extra_options = b'-r 10000')
 		assert CompareRecursive(self.ea_test1_rpath, restore_dir, compare_eas = 1)
 
 
@@ -257,11 +257,11 @@ group::r-x
 mask::---
 other::---""")
 	empty_acl = AccessControlLists((), "user::rwx\ngroup::---\nother::---")
-	acl_test1_dir = os.path.join(abs_test_dir, 'acl_test1')
+	acl_test1_dir = os.path.join(abs_test_dir, b'acl_test1')
 	acl_test1_rpath = rpath.RPath(Globals.local_connection, acl_test1_dir)
-	acl_test2_dir = os.path.join(abs_test_dir, 'acl_test2')
+	acl_test2_dir = os.path.join(abs_test_dir, b'acl_test2')
 	acl_test2_rpath = rpath.RPath(Globals.local_connection, acl_test2_dir)
-	acl_empty_dir = os.path.join(abs_test_dir, 'acl_empty')
+	acl_empty_dir = os.path.join(abs_test_dir, b'acl_empty')
 	acl_empty_rpath = rpath.RPath(Globals.local_connection, acl_empty_dir)
 	def make_temp_out_dirs(self):
 		"""Make temp output and restore directories empty"""
@@ -450,13 +450,13 @@ other::---
 		assert CompareRecursive(self.acl_test2_rpath, tempdir, compare_acls = 1)
 
 		rdiff_backup(1, 1, tempdir.path, restore_dir.path,
-					 extra_options = '-r 10000')
+					 extra_options = b'-r 10000')
 		assert CompareRecursive(self.acl_test1_rpath, restore_dir,
 								compare_acls = 1)
 
 		restore_dir.delete()
 		rdiff_backup(1, 1, tempdir.path, restore_dir.path,
-					 extra_options = '-r now')
+					 extra_options = b'-r now')
 		assert CompareRecursive(self.acl_test2_rpath, restore_dir,
 								compare_acls = 1)
 
@@ -494,12 +494,12 @@ other::---""".format(self.current_user, self.current_group))
 
 		self.make_temp_out_dirs()
 		rootrp = rpath.RPath(Globals.local_connection,
-							os.path.join(abs_test_dir, 'acl_map_test'))
+							os.path.join(abs_test_dir, b'acl_map_test'))
 		rp = make_dir(rootrp)
 		map_rp = write_mapping_file(rootrp)
 
 		rdiff_backup(1, 1, rootrp.path, tempdir.path,
-					 extra_options = "--user-mapping-file %s" % (map_rp.path,))
+					 extra_options = b"--user-mapping-file %b" % (map_rp.path,))
 
 		out_rp = tempdir.append('a1')
 		assert out_rp.isreg()
@@ -548,11 +548,11 @@ other::---""")
 
 class CombinedTest(unittest.TestCase):
 	"""Test backing up and restoring directories with both EAs and ACLs"""
-	combo_test1_dir = os.path.join(abs_test_dir, 'ea_acl_test1')
+	combo_test1_dir = os.path.join(abs_test_dir, b'ea_acl_test1')
 	combo_test1_rpath = rpath.RPath(Globals.local_connection, combo_test1_dir)
-	combo_test2_dir = os.path.join(abs_test_dir, 'ea_acl_test2')
+	combo_test2_dir = os.path.join(abs_test_dir, b'ea_acl_test2')
 	combo_test2_rpath = rpath.RPath(Globals.local_connection, combo_test2_dir)
-	combo_empty_dir = os.path.join(abs_test_dir, 'ea_acl_empty')
+	combo_empty_dir = os.path.join(abs_test_dir, b'ea_acl_empty')
 	combo_empty_rpath = rpath.RPath(Globals.local_connection, combo_empty_dir)
 
 	def make_backup_dirs(self):

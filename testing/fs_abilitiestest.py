@@ -42,7 +42,7 @@ class FSAbilitiesTest(unittest.TestCase):
 	# sudo mount -o loop,uid=$(id -u) build/testfiles/fs_fatfile.dd build/testfiles/fs_insensitive
 	# touch build/testfiles/fs_fatfile.dd build/testfiles/fs_insensitive/some_File
 
-	case_insensitive_path = os.path.join(abs_test_dir, 'fs_insensitive')
+	case_insensitive_path = os.path.join(abs_test_dir, b'fs_insensitive')
 
 	def testReadOnly(self):
 		"""Test basic querying read only"""

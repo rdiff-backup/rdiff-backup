@@ -458,8 +458,8 @@ class CommandTest(unittest.TestCase):
 		emptydir.mkdir()
 
 		rdiff_backup(1, 1, selrp.path, outrp.path,
-					 extra_options = ("--include **XX "
-									  "--exclude testfiles/seltest/YYYY"))
+					 extra_options = (b"--include **XX "
+									  b"--exclude testfiles/seltest/YYYY"))
 
 		outempty = outrp.append('emptydir')
 		assert outempty.isdir(), outempty

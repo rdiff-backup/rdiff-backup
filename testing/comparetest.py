@@ -54,24 +54,24 @@ class CompareTest(unittest.TestCase):
 
 	def generic_selective_test(self, local, compare_option):
 		"""Used for selective tests--just compare part of a backup"""
-		rdiff_backup(local, local, os.path.join(old_inc3_dir, 'various_file_types'),
-					 os.path.join(abs_output_dir, 'various_file_types'),
+		rdiff_backup(local, local, os.path.join(old_inc3_dir, b'various_file_types'),
+					 os.path.join(abs_output_dir, b'various_file_types'),
 					 extra_options = compare_option)
 		ret_val = rdiff_backup(local, local,
-							   os.path.join(old_inc2_dir, 'increment1'),
-							   os.path.join(abs_output_dir, 'increment1'),
+							   os.path.join(old_inc2_dir, b'increment1'),
+							   os.path.join(abs_output_dir, b'increment1'),
 							   extra_options = compare_option,
 							   check_return_val = 0)
 		assert ret_val, ret_val
 
 		rdiff_backup(local, local,
-					 os.path.join(old_inc2_dir, 'newdir'),
-					 os.path.join(abs_output_dir, 'newdir'),
-					 extra_options = compare_option + "-at-time 10000")
+					 os.path.join(old_inc2_dir, b'newdir'),
+					 os.path.join(abs_output_dir, b'newdir'),
+					 extra_options = compare_option + b"-at-time 10000")
 		ret_val = rdiff_backup(local, local,
-							   os.path.join(old_inc3_dir, 'newdir'),
-							   os.path.join(abs_output_dir, 'newdir'),
-						extra_options = compare_option + "-at-time 10000",
+							   os.path.join(old_inc3_dir, b'newdir'),
+							   os.path.join(abs_output_dir, b'newdir'),
+						extra_options = compare_option + b"-at-time 10000",
 							   check_return_val = 0)
 		assert ret_val, ret_val
 
@@ -116,27 +116,27 @@ class CompareTest(unittest.TestCase):
 
 		def modify_diff():
 			"""Write to the stph_icons.h diff"""
-			incs_dir = os.path.join(abs_output_dir, 'rdiff-backup-data', 'increments')
+			incs_dir = os.path.join(abs_output_dir, b'rdiff-backup-data', b'increments')
 			l = [filename for filename in os.listdir(incs_dir)
-				 if filename.startswith('stph_icons.h')]
+				 if filename.startswith(b'stph_icons.h')]
 			assert len(l) == 1, l
 			diff_rp = rpath.RPath(Globals.local_connection,
 			  os.path.join(incs_dir, l[0]))
 			change_file(diff_rp)
 
 		rdiff_backup(local, local, abs_output_dir, None,
-					 extra_options = "--verify")
+					 extra_options = b"--verify")
 		rdiff_backup(local, local, abs_output_dir, None,
-					 extra_options = "--verify-at-time 10000")
+					 extra_options = b"--verify-at-time 10000")
 		modify_diff()
 		ret_val =  rdiff_backup(local, local, abs_output_dir, None,
-					 extra_options = "--verify-at-time 10000",
+					 extra_options = b"--verify-at-time 10000",
 								check_return_val = 0)
 		assert ret_val, ret_val
 		change_file(rpath.RPath(Globals.local_connection,
-								os.path.join(abs_output_dir, 'stph_icons.h')))
+								os.path.join(abs_output_dir, b'stph_icons.h')))
 		ret_val =  rdiff_backup(local, local, abs_output_dir, None,
-					 extra_options = "--verify", check_return_val = 0)
+					 extra_options = b"--verify", check_return_val = 0)
 		assert ret_val, ret_val
 
 	def testVerifyLocal(self):

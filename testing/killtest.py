@@ -14,18 +14,18 @@ class Local:
 
 	ktrp = []
 	for i in range(4):
-		ktrp.append(get_local_rp('killtest%d' % (i+1)))
+		ktrp.append(get_local_rp(b'killtest%d' % (i+1)))
 
-	rpout = get_local_rp('output')
-	rpout_inc = get_local_rp('output_inc')
+	rpout = get_local_rp(b'output')
+	rpout_inc = get_local_rp(b'output_inc')
 
 	outrp = []
 	for i in range(5):
-		outrp.append(get_local_rp('restoretarget%d' % (i+1)))
+		outrp.append(get_local_rp(b'restoretarget%d' % (i+1)))
 
 	backrp = []
 	for i in range(5):
-		backrp.append(get_local_rp('backup%d' % (i+1)))
+		backrp.append(get_local_rp(b'backup%d' % (i+1)))
 
 class TimingError(Exception):
 	"""Indicates timing error - process killed too soon or too late"""
@@ -87,13 +87,13 @@ class ProcessFuncs(unittest.TestCase):
 		"""
 		def copy_thrice(input, output):
 			"""Copy input directory to output directory three times"""
-			assert not os.system("cp -a %s %s" % (input, output))
-			assert not os.system("cp -a %s %s/killtesta" % (input, output))
-			assert not os.system("cp -a %s %s/killtestb" % (input, output))
+			assert not os.system(b"cp -a %s %s" % (input, output))
+			assert not os.system(b"cp -a %s %s/killtesta" % (input, output))
+			assert not os.system(b"cp -a %s %s/killtestb" % (input, output))
 
 		for i in range(len(Local.ktrp)):
 			if Local.ktrp[i].lstat(): Local.ktrp[i].delete()
-			copy_thrice(os.path.join(old_test_dir, "increment%d" % (i+1)),
+			copy_thrice(os.path.join(old_test_dir, b"increment%d" % (i+1)),
 					Local.ktrp[i].path)
 
 	def runtest_sequence(self, total_tests,

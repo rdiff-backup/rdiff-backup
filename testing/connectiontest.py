@@ -4,7 +4,7 @@ from rdiff_backup.connection import *
 from rdiff_backup import Globals, rpath, FilenameMapping #, log
 
 SourceDir = 'rdiff_backup'
-regfilename = os.path.join(old_test_dir, "various_file_types", "regular_file")
+regfilename = os.path.join(old_test_dir, b"various_file_types", b"regular_file")
 
 class LocalConnectionTest(unittest.TestCase):
 	"""Test the dummy connection"""
@@ -105,14 +105,14 @@ class PipeConnectionTest(unittest.TestCase):
 	def testModules(self):
 		"""Test module emulation"""
 		assert type(self.conn.tempfile.mktemp()) is str
-		assert self.conn.os.path.join("a", "b") == "a/b"
+		assert self.conn.os.path.join(b"a", b"b") == b"a/b"
 		rp1 = rpath.RPath(self.conn, regfilename)
 		assert rp1.isreg()
 
 	def testVirtualFiles(self):
 		"""Testing virtual files"""
 		# generate file name for temporary file
-		temp_file = os.path.join(abs_test_dir, "tempout")
+		temp_file = os.path.join(abs_test_dir, b"tempout")
 
 		tempout = self.conn.open(temp_file, "wb")
 		assert isinstance(tempout, VirtualFile)

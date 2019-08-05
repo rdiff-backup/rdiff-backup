@@ -9,11 +9,11 @@ class HardlinkTest(unittest.TestCase):
 	outputrp = rpath.RPath(Globals.local_connection, abs_output_dir)
 	re_init_rpath_dir(outputrp)
 
-	hlinks_dir = os.path.join(old_test_dir, "hardlinks")
-	hlinks_dir1 = os.path.join(hlinks_dir, "dir1")
-	hlinks_dir1copy = os.path.join(hlinks_dir, "dir1copy")
-	hlinks_dir2 = os.path.join(hlinks_dir, "dir2")
-	hlinks_dir3 = os.path.join(hlinks_dir, "dir3")
+	hlinks_dir = os.path.join(old_test_dir, b"hardlinks")
+	hlinks_dir1 = os.path.join(hlinks_dir, b"dir1")
+	hlinks_dir1copy = os.path.join(hlinks_dir, b"dir1copy")
+	hlinks_dir2 = os.path.join(hlinks_dir, b"dir2")
+	hlinks_dir3 = os.path.join(hlinks_dir, b"dir3")
 	hlinks_rp1 = rpath.RPath(Globals.local_connection, hlinks_dir1)
 	hlinks_rp1copy = rpath.RPath(Globals.local_connection, hlinks_dir1copy)
 	hlinks_rp2 = rpath.RPath(Globals.local_connection, hlinks_dir2)
@@ -54,7 +54,7 @@ class HardlinkTest(unittest.TestCase):
 	def testSeries(self):
 		"""Test hardlink system by backing up and restoring a few dirs"""
 		dirlist = [self.hlinks_dir1, self.hlinks_dir2, self.hlinks_dir3,
-				   os.path.join(old_test_dir, 'various_file_types')]
+				   os.path.join(old_test_dir, b'various_file_types')]
 		BackupRestoreSeries(None, None, dirlist, compare_hardlinks=1)
 		BackupRestoreSeries(1, 1, dirlist, compare_hardlinks=1)
 
@@ -62,8 +62,8 @@ class HardlinkTest(unittest.TestCase):
 		"""Restore part of a dir, see if hard links preserved"""
 		MakeOutputDir()
 		output = rpath.RPath(Globals.local_connection, abs_output_dir)
-		hlout1_dir = os.path.join(abs_test_dir, "out_hardlink1")
-		hlout2_dir = os.path.join(abs_test_dir, "out_hardlink2")
+		hlout1_dir = os.path.join(abs_test_dir, b"out_hardlink1")
+		hlout2_dir = os.path.join(abs_test_dir, b"out_hardlink2")
 
 		# Now set up directories out_hardlink1 and out_hardlink2
 		hlout1 = rpath.RPath(Globals.local_connection, hlout1_dir)
@@ -119,8 +119,8 @@ class HardlinkTest(unittest.TestCase):
 			   out_subdir.append("hardlink2").getinode()
 
 		# Now try restoring, still checking hard links.
-		sub_dir = os.path.join(abs_output_dir, "subdir")
-		out2_dir = os.path.join(abs_test_dir, "out2")
+		sub_dir = os.path.join(abs_output_dir, b"subdir")
+		out2_dir = os.path.join(abs_test_dir, b"out2")
 		out2 = rpath.RPath(Globals.local_connection, out2_dir)
 		hlout1 = out2.append("hardlink1")
 		hlout2 = out2.append("hardlink2")
@@ -141,7 +141,7 @@ class HardlinkTest(unittest.TestCase):
 		out2.setdata()
 		for rp in [hlout1, hlout2, hlout3, hlout4]: rp.setdata()
 		assert hlout1.getinode() == hlout4.getinode(), \
-			   "%s %s" % (hlout1.path, hlout4.path)
+			   "%a %a" % (hlout1.path, hlout4.path)
 		assert hlout2.getinode() == hlout3.getinode()
 		assert hlout1.getinode() != hlout2.getinode()
 

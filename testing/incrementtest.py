@@ -7,28 +7,28 @@ Globals.change_source_perms = 1
 Log.setverbosity(3)
 
 def getrp(ending):
-	return rpath.RPath(lc, os.path.join(old_test_dir, "various_file_types", ending))
+	return rpath.RPath(lc, os.path.join(old_test_dir, b"various_file_types", ending))
 
-rf = getrp("regular_file")
-rf2 = getrp("two_hardlinked_files1")
-exec1 = getrp("executable")
-exec2 = getrp("executable2")
-sig = getrp("regular_file.sig")
-hl1, hl2 = list(map(getrp, ["two_hardlinked_files1", "two_hardlinked_files2"]))
-test = getrp("test")
-dir = getrp(".")
-sym = getrp("symbolic_link")
-nothing = getrp("nothing")
+rf = getrp(b"regular_file")
+rf2 = getrp(b"two_hardlinked_files1")
+exec1 = getrp(b"executable")
+exec2 = getrp(b"executable2")
+sig = getrp(b"regular_file.sig")
+hl1, hl2 = list(map(getrp, [b"two_hardlinked_files1", b"two_hardlinked_files2"]))
+test = getrp(b"test")
+dir = getrp(b".")
+sym = getrp(b"symbolic_link")
+nothing = getrp(b"nothing")
 
-target = rpath.RPath(lc, os.path.join(abs_output_dir, "out"))
-out2 = rpath.RPath(lc, os.path.join(abs_output_dir, "out2"))
-out_gz = rpath.RPath(lc, os.path.join(abs_output_dir, "out.gz"))
+target = rpath.RPath(lc, os.path.join(abs_output_dir, b"out"))
+out2 = rpath.RPath(lc, os.path.join(abs_output_dir, b"out2"))
+out_gz = rpath.RPath(lc, os.path.join(abs_output_dir, b"out.gz"))
 
 Time.setcurtime(1000000000)
 Time.setprevtime(999424113)
-prevtimestr = "2001-09-02T02:48:33-07:00"
-t_pref = os.path.join(abs_output_dir, "out.%s" % prevtimestr)
-t_diff = os.path.join(abs_output_dir, "out.%s.diff" % prevtimestr)
+prevtimestr = b"2001-09-02T02:48:33-07:00"
+t_pref = os.path.join(abs_output_dir, b"out.%s" % prevtimestr)
+t_diff = os.path.join(abs_output_dir, b"out.%s.diff" % prevtimestr)
 
 Globals.no_compression_regexp = \
 			 re.compile(Globals.no_compression_regexp_string, re.I)
