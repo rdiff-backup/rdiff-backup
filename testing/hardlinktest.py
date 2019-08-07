@@ -83,7 +83,7 @@ class HardlinkTest(unittest.TestCase):
 
 		hlout2 = rpath.RPath(Globals.local_connection, hlout2_dir)
 		if hlout2.lstat(): hlout2.delete()
-		assert not os.system("cp -a %s %s" % (hlout1_dir, hlout2_dir))
+		assert not os.system(b"cp -a %s %s" % (hlout1_dir, hlout2_dir))
 		hlout2_sub = hlout2.append("subdir")
 		hl2_1 = hlout2_sub.append("hardlink1")
 		hl2_2 = hlout2_sub.append("hardlink2")

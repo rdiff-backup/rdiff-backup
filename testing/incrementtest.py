@@ -57,14 +57,14 @@ class inctest(unittest.TestCase):
 		assert diffrp.isreg(), diffrp
 		assert diffrp.equal_verbose(exec1, check_index = 0, compare_size = 0)
 		self.check_time(diffrp)
-		assert diffrp.getinctype() == 'diff', diffrp.getinctype()
+		assert diffrp.getinctype() == b'diff', diffrp.getinctype()
 		diffrp.delete()
 
 	def testmissing(self):
 		"""Test creation of missing files"""
 		missing_rp = increment.Increment(rf, nothing, target)
 		self.check_time(missing_rp)
-		assert missing_rp.getinctype() == 'missing'
+		assert missing_rp.getinctype() == b'missing', missing_rp.getinctype()
 		missing_rp.delete()
 
 	def testsnapshot(self):

@@ -8,7 +8,7 @@ from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
 	 selection, Time, rpath, eas_acls, rorpiter, Security
 
 
-RBBin = shutil.which("rdiff-backup").encode()
+RBBin = os.fsencode(shutil.which("rdiff-backup"))
 
 # Working directory is defined by Tox, venv or the current build directory
 abs_work_dir = os.getenvb(b'TOX_ENV_DIR', os.getenvb(b'VIRTUAL_ENV',
@@ -124,10 +124,10 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 
 	if not source_local:
 		src_dir = b"cd %s; %s/server.py::%s" % \
-				  (abs_remote1_dir.encode(), abs_testing_dir, src_dir)
+				  (abs_remote1_dir, abs_testing_dir, src_dir)
 	if not dest_local:
 		dest_dir = b"cd %s; %s/server.py::%s" \
-				   % (abs_remote2_dir.encode(), abs_testing_dir, dest_dir)
+				   % (abs_remote2_dir, abs_testing_dir, dest_dir)
 
 	cmdpairs = SetConnections.get_cmd_pairs([src_dir, dest_dir], remote_schema)
 	Security.initialize("backup", cmdpairs)
@@ -174,10 +174,10 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time,
 	#_reset_connections()
 	if not mirror_local:
 		mirror_dir = b"cd %s; %s/server.py::%s" % \
-					 (abs_remote1_dir.encode(), abs_testing_dir.encode(), mirror_dir)
+					 (abs_remote1_dir, abs_testing_dir, mirror_dir)
 	if not dest_local:
 		dest_dir = b"cd %s; %s/server.py::%s" \
-				   % (abs_remote2_dir.encode(), abs_testing_dir.encode(), dest_dir)
+				   % (abs_remote2_dir, abs_testing_dir, dest_dir)
 
 	cmdpairs = SetConnections.get_cmd_pairs([mirror_dir, dest_dir],
 											remote_schema)
