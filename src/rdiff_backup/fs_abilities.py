@@ -715,7 +715,7 @@ class SetGlobals:
 									self.dest_fsa.symlink_perms)
 	
 	def set_compatible_timestamps(self):
-		if Globals.chars_to_quote.find(":") > -1:
+		if Globals.chars_to_quote.find(b":") > -1:
 			SetConnections.UpdateGlobal('use_compatible_timestamps', 1)
 			Time.setcurtime(Time.curtime) # update Time.curtimestr on all conns
 			log.Log("Enabled use_compatible_timestamps", 4)
@@ -795,34 +795,34 @@ class BackupSetGlobals(SetGlobals):
 		ctq = []
 
 		if self.src_fsa.case_sensitive and not self.dest_fsa.case_sensitive:
-			ctq.append("A-Z") # Quote upper case
+			ctq.append(b"A-Z") # Quote upper case
 		if not self.dest_fsa.extended_filenames:
-			ctq.append('\000-\037') # Quote 0 - 31
-			ctq.append('\200-\377') # Quote non-ASCII characters 0x80 - 0xFF
+			ctq.append(b'\000-\037') # Quote 0 - 31
+			ctq.append(b'\200-\377') # Quote non-ASCII characters 0x80 - 0xFF
 		if self.dest_fsa.win_reserved_filenames:
 			if self.dest_fsa.extended_filenames:
-				ctq.append('\000-\037') # Quote 0 - 31
+				ctq.append(b'\000-\037') # Quote 0 - 31
 			# Quote ", *, /, :, <, >, ?, \, |, and 127 (DEL)
-			ctq.append('\"*/:<>?\\\\|\177')
+			ctq.append(b'\"*/:<>?\\\\|\177')
 
 		# Quote quoting char if quoting anything
 		if ctq: ctq.append(Globals.quoting_char)
-		return "".join(ctq)
+		return b"".join(ctq)
 
 	def compare_ctq_file(self, rbdir, suggested_ctq, force):
 		"""Compare ctq file with suggested result, return actual ctq"""
-		ctq_rp = rbdir.append("chars_to_quote")
+		ctq_rp = rbdir.append(b"chars_to_quote")
 		if not ctq_rp.lstat():
 			if Globals.chars_to_quote is None: actual_ctq = suggested_ctq
 			else: actual_ctq = Globals.chars_to_quote
-			ctq_rp.write_string(actual_ctq)
+			ctq_rp.write_bytes(actual_ctq)
 			return (actual_ctq, None)
 
-		if Globals.chars_to_quote is None: actual_ctq = ctq_rp.get_string()
+		if Globals.chars_to_quote is None: actual_ctq = ctq_rp.get_bytes()
 		else: actual_ctq = Globals.chars_to_quote # Globals override
 
 		if actual_ctq == suggested_ctq: return (actual_ctq, None)
-		if suggested_ctq == "":
+		if suggested_ctq == b"":
 			log.Log("Warning: File system no longer needs quoting, "
 					"but we will retain for backwards compatibility.", 2)
 			return (actual_ctq, None)
@@ -832,7 +832,7 @@ class BackupSetGlobals(SetGlobals):
 						"old quoting chars %r to new quoting chars %r" %
 						(actual_ctq, suggested_ctq), 2)
 				ctq_rp.delete()
-				ctq_rp.write_string(suggested_ctq)
+				ctq_rp.write_bytes(suggested_ctq)
 				return  (suggested_ctq, 1)
 			else:
 				log.Log.FatalError("""New quoting requirements!
@@ -906,9 +906,9 @@ class RestoreSetGlobals(SetGlobals):
 		"""Set chars_to_quote from rdiff-backup-data dir"""
 		if Globals.chars_to_quote is not None: return # already overridden
 		
-		ctq_rp = rbdir.append("chars_to_quote")
+		ctq_rp = rbdir.append(b"chars_to_quote")
 		if ctq_rp.lstat():
-			SetConnections.UpdateGlobal("chars_to_quote", ctq_rp.get_string())
+			SetConnections.UpdateGlobal("chars_to_quote", ctq_rp.get_bytes())
 		else:
 			log.Log("Warning: chars_to_quote file not found,\n"
 					"assuming no quoting in backup repository.", 2)

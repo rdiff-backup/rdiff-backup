@@ -137,7 +137,7 @@ def RORP2Record(rorpath):
 		else:
 			assert rorpath.ischardev()
 			devchar = "c"
-		str_list.append(b"  DeviceNum %c %i %i\n" % (devchar, major, minor))
+		str_list.append(b"  DeviceNum %b %i %i\n" % (devchar.encode(), major, minor))
 
 	# Store time information
 	if type != 'sym' and type != 'dev':
@@ -191,7 +191,7 @@ def Record2RORP(record_string):
 		elif field == "SymData": data_dict['linkname'] = unquote_path(data)
 		elif field == "DeviceNum":
 			devchar, major_str, minor_str = data.split(b" ")
-			data_dict['devnums'] = (devchar, int(major_str), int(minor_str))
+			data_dict['devnums'] = (devchar.decode('ascii'), int(major_str), int(minor_str))
 		elif field == "ModTime": data_dict['mtime'] = int(data)
 		elif field == "Uid": data_dict['uid'] = int(data)
 		elif field == "Gid": data_dict['gid'] = int(data)

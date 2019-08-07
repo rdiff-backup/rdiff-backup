@@ -170,7 +170,7 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 		elif opt == "--null-separator": Globals.set("null_separator", 1)
 		elif opt == "--override-chars-to-quote":
-			Globals.set('chars_to_quote', arg)
+			Globals.set('chars_to_quote', arg.encode())
 		elif opt == "--parsable-output": Globals.set('parsable_output', 1)
 		elif opt == "--preserve-numerical-ids": preserve_numerical_ids = 1
 		elif opt == "--print-statistics": Globals.set('print_statistics', 1)
@@ -689,7 +689,7 @@ def restore_set_root(rpin):
 
 	i = len(pathcomps)
 	while i >= min_len_pathcomps:
-		parent_dir = rpath.RPath(rpin.conn, os.path.join(*pathcomps[:i]))
+		parent_dir = rpath.RPath(rpin.conn, b'/'.join(pathcomps[:i]))
 		if (parent_dir.isdir() and parent_dir.readable() and
 			b"rdiff-backup-data" in parent_dir.listdir()): break
 		if parent_dir.path == rpin.conn.Globals.get('restrict_path'):

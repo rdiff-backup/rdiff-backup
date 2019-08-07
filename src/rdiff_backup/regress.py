@@ -124,7 +124,7 @@ def regress_rbdir(meta_manager):
 	if has_meta_diff and not has_meta_snap: recreate_meta(meta_manager)
 
 	for new_rp in meta_manager.timerpmap[unsuccessful_backup_time]:
-		if new_rp.getincbase_bname() != 'bcurrent_mirror':
+		if new_rp.getincbase_bname() != b'current_mirror':
 			log.Log("Deleting old diff at %s" % new_rp.get_safepath(), 5)
 			new_rp.delete()
 	for rp in meta_manager.timerpmap[regress_time]:
@@ -148,8 +148,8 @@ def recreate_meta(meta_manager):
 		writer.write_object(rorp)
 	writer.close()
 
-	finalrp = Globals.rbdir.append(b"mirror_metadata.%s.snapshot.gz" %
-								   Time.timetostring(regress_time))
+	finalrp = Globals.rbdir.append(b"mirror_metadata.%b.snapshot.gz" %
+								   Time.timetobytes(regress_time))
 	assert not finalrp.lstat(), finalrp
 	rpath.rename(temprp[0], finalrp)
 	if Globals.fsync_directories: Globals.rbdir.fsync()

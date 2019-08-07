@@ -118,7 +118,7 @@ def copy(rpin, rpout, compress = 0):
 		rpout.makedev("b", major, minor)
 	elif rpin.isfifo(): rpout.mkfifo()
 	elif rpin.issock(): rpout.mksock()
-	else: raise RPathException("File %s has unknown type" % rpin.get_safepath())
+	else: raise RPathException("File %a has unknown type" % rpin.path)
 
 def copy_reg_file(rpin, rpout, compress = 0):
 	"""Copy regular file rpin to rpout, possibly avoiding connection"""
@@ -876,7 +876,7 @@ class RPath(RORPath):
 	dictionary, they are the same file).
 
 	"""
-	regex_chars_to_quote = re.compile("[\\\\\\\"\\$`]")
+	regex_chars_to_quote = re.compile(b"[\\\\\\\"\\$`]")
 
 	def __init__(self, connection, base, index = (), data = None):
 		"""RPath constructor
@@ -1118,8 +1118,8 @@ class RPath(RORPath):
 
 	def quote(self):
 		"""Return quoted self.path for use with os.system()"""
-		return '"%s"' % self.regex_chars_to_quote.sub(
-			lambda m: "\\"+m.group(0), self.path)
+		return b'"%s"' % self.regex_chars_to_quote.sub(
+			lambda m: b"\\"+m.group(0), self.path)
 
 	def normalize(self):
 		"""Return RPath canonical version of self.path

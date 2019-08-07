@@ -157,7 +157,7 @@ rbdir = None
 # should be true if certain characters in filenames on the source side
 # should be escaped (see FilenameMapping for more info).
 chars_to_quote = None
-quoting_char = ';'
+quoting_char = b';'
 
 # evaluate if DOS device names (AUX, PRN, CON, NUL, COM, LPT) should be quoted
 # or spaces at the end of file and directory names.

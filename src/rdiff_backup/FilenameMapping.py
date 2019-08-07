@@ -58,19 +58,19 @@ def set_init_quote_vals_local():
 	chars_to_quote = Globals.chars_to_quote
 	if len(Globals.quoting_char) != 1:
 		log.Log.FatalError("Expected single character for quoting char,"
-						   "got '%s' instead" % (Globals.quoting_char,))
+						   "got '%a' instead" % (Globals.quoting_char,))
 	quoting_char = Globals.quoting_char
 	init_quoting_regexps()
 
 def init_quoting_regexps():
 	"""Compile quoting regular expressions"""
 	global chars_to_quote_regexp, unquoting_regexp
-	assert chars_to_quote and type(chars_to_quote) is str, \
-		   "Chars to quote: '%s'" % (chars_to_quote,)
+	assert chars_to_quote and isinstance(chars_to_quote, bytes), \
+		   "Chars to quote are wrong: %a" % chars_to_quote
 	try:
 		chars_to_quote_regexp = \
-				 re.compile("[%s]|%s" % (chars_to_quote, quoting_char), re.S)
-		unquoting_regexp = re.compile("%s[0-9]{3}" % quoting_char, re.S)
+				 re.compile(b"[%b]|%b" % (chars_to_quote, quoting_char), re.S)
+		unquoting_regexp = re.compile(b"%b[0-9]{3}" % quoting_char, re.S)
 	except re.error:
 		log.Log.FatalError("Error '%s' when processing char quote list %r" %
 						   (re.error, chars_to_quote))
@@ -91,24 +91,24 @@ def quote(path):
 	# Escape a trailing space or period (invalid in names on FAT32 under DOS,
 	# Windows and modern Linux)
 	if Globals.escape_trailing_spaces:
-		if len(QuotedPath) and (QuotedPath[-1] == ' ' or QuotedPath[-1] == '.'):
+		if len(QuotedPath) and (QuotedPath[-1] == b' ' or QuotedPath[-1] == b'.'):
 			QuotedPath = QuotedPath[:-1] + \
-				"%s%03d" % (quoting_char, ord(QuotedPath[-1]))
+				b"%b%03d" % (quoting_char, ord(QuotedPath[-1]))
 
 		if not Globals.escape_dos_devices:
 			return QuotedPath
 
 	# Escape first char of any special DOS device files even if filename has an
 	# extension.  Special names are: aux, prn, con, nul, com0-9, and lpt1-9.
-	if not re.search(r"^aux(\..*)*$|^prn(\..*)*$|^con(\..*)*$|^nul(\..*)*$|" \
-					 r"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$", QuotedPath, \
+	if not re.search(br"^aux(\..*)*$|^prn(\..*)*$|^con(\..*)*$|^nul(\..*)*$|" \
+					 br"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$", QuotedPath, \
 					 re.I):
 		return QuotedPath
-	return "%s%03d" % (quoting_char, ord(QuotedPath[0])) + QuotedPath[1:]
+	return b"%b%03d" % (quoting_char, ord(QuotedPath[0])) + QuotedPath[1:]
 
 def quote_single(match):
 	"""Return replacement for a single character"""
-	return "%s%03d" % (quoting_char, ord(match.group()))
+	return b"%b%03d" % (quoting_char, ord(match.group()))
 
 def unquote(path):
 	"""Return original version of quoted filename"""
@@ -117,10 +117,10 @@ def unquote(path):
 def unquote_single(match):
 	"""Unquote a single quoted character"""
 	if not len(match.group()) == 4:
-		raise QuotingException("Quoted group wrong size: " + match.group())
+		raise QuotingException("Quoted group wrong size: %a" % match.group())
 	try: return chr(int(match.group()[1:]))
 	except ValueError:
-		raise QuotingException("Quoted out of range: " + match.group())
+		raise QuotingException("Quoted out of range: %a" % match.group())
 
 
 class QuotedRPath(rpath.RPath):

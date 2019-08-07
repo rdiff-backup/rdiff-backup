@@ -41,7 +41,7 @@ it later.
 import types, errno
 from . import log, Globals, restore, rpath, FilenameMapping, regress
 
-long_name_dir = "long_filename_data"
+long_name_dir = b"long_filename_data"
 rootrp = None
 
 def get_long_rp(base = None):
@@ -62,7 +62,7 @@ def get_long_rp(base = None):
 free_name_counter = None
 
 # Filename which holds the next available free name in it
-counter_filename = "next_free"
+counter_filename = b"next_free"
 
 def get_next_free():
 	"""Return next free filename available in the long filename directory"""
@@ -72,7 +72,7 @@ def get_next_free():
 		log.Log("Setting next free from long filenames dir", 5)
 		cur_high = 0
 		for filename in get_long_rp().listdir():
-			try: i = int(filename.split('.')[0])
+			try: i = int(filename.split(b'.')[0])
 			except ValueError: continue
 			if i > cur_high: cur_high = i
 		return cur_high + 1
@@ -92,9 +92,9 @@ def get_next_free():
 
 	if not free_name_counter: free_name_counter = read_next_free()
 	if not free_name_counter: free_name_counter = scan_next_free()
-	filename = str(free_name_counter)
+	filename = b'%i' % free_name_counter
 	rp = get_long_rp(filename)
-	assert not rp.lstat(), "Unexpected file at %s found" % (rp.path,)
+	assert not rp.lstat(), "Unexpected file at %a found" % (rp.path,)
 	free_name_counter += 1
 	write_next_free(free_name_counter)
 	return filename
@@ -229,7 +229,7 @@ def update_rf(rf, rorp, mirror_root):
 	"""Return new or updated restorefile based on alt name info in rorp"""
 	def update_incs(rf, inc_base):
 		"""Swap inclist in rf with those with base inc_base and return"""
-		log.Log("Restoring with increment base %s for file %s" %
+		log.Log("Restoring with increment base %a for file %s" %
 				(inc_base, rorp.get_safeindexpath()), 6)
 		rf.inc_rp = get_long_rp(inc_base)
 		rf.inc_list = get_inclist(inc_base)
