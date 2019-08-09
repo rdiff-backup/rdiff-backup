@@ -32,8 +32,8 @@ from . import Globals, connection, rpath
 # This is the schema that determines how rdiff-backup will open a
 # pipe to the remote system.  If the file is given as A::B, %s will
 # be substituted with A in the schema.
-__cmd_schema = 'ssh -C %s rdiff-backup --server'
-__cmd_schema_no_compress = 'ssh %s rdiff-backup --server'
+__cmd_schema = b'ssh -C %s rdiff-backup --server'
+__cmd_schema_no_compress = b'ssh %s rdiff-backup --server'
 
 # This is a list of remote commands used to start the connections.
 # The first is None because it is the local connection.
@@ -53,7 +53,7 @@ def get_cmd_pairs(arglist, remote_schema = None, remote_cmd = None):
 	elif not Globals.ssh_compression: __cmd_schema = __cmd_schema_no_compress
 
 	if Globals.remote_tempdir:
-		__cmd_schema += (" --tempdir=" + Globals.remote_tempdir)
+		__cmd_schema += (b" --tempdir=" + Globals.remote_tempdir)
 
 	if not arglist: return []
 	desc_pairs = list(map(parse_file_desc, arglist))
@@ -102,27 +102,27 @@ def parse_file_desc(file_desc):
 		if i == len(file_desc):
 			return (None, file_desc)
 
-		if file_desc[i] == '\\':
+		if file_desc[i] == ord('\\'):  # byte[n] is the numerical value hence ord
 			i = i+1
 			check_len(i)
 			last_was_quoted = 1
-		elif (file_desc[i] == ":" and i > 0 and file_desc[i-1] == ":"
+		elif (file_desc[i] == ord(":") and i > 0 and file_desc[i-1] == ord(":")
 			  and not last_was_quoted):
 			host_info_list.pop() # Remove last colon from name
 			break
 		else: last_was_quoted = None
-		host_info_list.append(file_desc[i])
+		host_info_list.append(file_desc[i:i+1])
 		i = i+1
 
 	check_len(i+1)
-	return ("".join(host_info_list), file_desc[i+1:])
+	return (b"".join(host_info_list), file_desc[i+1:])
 
 def fill_schema(host_info):
 	"""Fills host_info into the schema and returns remote command"""
 	try:
 		return __cmd_schema % host_info
 	except TypeError:
-		Log.FatalError("Invalid remote schema:\n\n%s\n" % __cmd_schema)
+		Log.FatalError("Invalid remote schema:\n\n%a\n" % __cmd_schema)
 
 def init_connection(remote_cmd):
 	"""Run remote_cmd, register connection, and then return it
@@ -134,7 +134,7 @@ def init_connection(remote_cmd):
 	"""
 	if not remote_cmd: return Globals.local_connection
 
-	Log("Executing %s" % remote_cmd, 4)
+	Log("Executing %a" % remote_cmd, 4)
 	try:
 		process = subprocess.Popen(remote_cmd, shell=True, bufsize=0,
 							stdin=subprocess.PIPE, 
@@ -159,7 +159,7 @@ def check_connection_version(conn, remote_cmd):
 
 Couldn't start up the remote connection by executing
 
-    %s
+    %a
 
 Remember that, under the default settings, rdiff-backup must be
 installed in the PATH on the remote system.  See the man page for more
@@ -175,11 +175,11 @@ remote connection by executing
 Please make sure that nothing is printed (e.g., by your login shell) when this
 command executes. Try running this command:
 
-    %s
+    %a
 	
 which should only print out the text: rdiff-backup <version>""" % (remote_cmd,
-	remote_cmd.replace("--server", "--version")))
-		
+	remote_cmd.replace(b"--server", b"--version")))
+
 	if remote_version != Globals.version:
 		Log("Warning: Local version %s does not match remote version %s."
 			% (Globals.version, remote_version), 2)

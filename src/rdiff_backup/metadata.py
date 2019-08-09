@@ -298,14 +298,10 @@ class FlatExtractor:
 		we will not be splitting lines in half.
 
 		"""
-		assert not self.buf or self.buf.endswith("\n")
+		assert not self.buf or self.buf.endswith(b"\n")
 		while 1:
 			self.buf = self.fileobj.read(self.blocksize)
-			if type(self.buf) != str:
-				self.buf = self.buf.decode()
-				self.buf += self.fileobj.readline().decode()
-			else:
-				self.buf += self.fileobj.readline()
+			self.buf += self.fileobj.readline()
 			if not self.buf:
 				self.at_end = 1
 				return

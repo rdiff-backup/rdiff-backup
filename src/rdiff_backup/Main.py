@@ -128,7 +128,7 @@ def parse_cmdlineoptions(arglist):
 								"standard input"))
 			select_files.append(sys.stdin)
 		elif opt == "--force": force = 1
-		elif opt == "--group-mapping-file": group_mapping_filename = arg
+		elif opt == "--group-mapping-file": group_mapping_filename = os.fsencode(arg)
 		elif (opt == "--include" or
 			  opt == "--include-special-files" or
 			  opt == "--include-symbolic-links"):
@@ -164,21 +164,21 @@ def parse_cmdlineoptions(arglist):
 		elif opt == "--no-compare-inode": Globals.set("compare_inode", 0)
 		elif opt == "--no-compression": Globals.set("compression", None)
 		elif opt == "--no-compression-regexp":
-			Globals.set("no_compression_regexp_string", arg)
+			Globals.set("no_compression_regexp_string", os.fsencode(arg))
 		elif opt == "--no-eas": Globals.set("eas_active", 0)
 		elif opt == "--no-file-statistics": Globals.set('file_statistics', 0)
 		elif opt == "--no-hard-links": Globals.set('preserve_hardlinks', 0)
 		elif opt == "--null-separator": Globals.set("null_separator", 1)
 		elif opt == "--override-chars-to-quote":
-			Globals.set('chars_to_quote', arg.encode())
+			Globals.set('chars_to_quote', os.fsencode(arg))
 		elif opt == "--parsable-output": Globals.set('parsable_output', 1)
 		elif opt == "--preserve-numerical-ids": preserve_numerical_ids = 1
 		elif opt == "--print-statistics": Globals.set('print_statistics', 1)
 		elif opt == "-r" or opt == "--restore-as-of":
 			restore_timestr, action = arg, "restore-as-of"
-		elif opt == "--remote-cmd": remote_cmd = arg
-		elif opt == "--remote-schema": remote_schema = arg
-		elif opt == "--remote-tempdir": Globals.remote_tempdir = arg
+		elif opt == "--remote-cmd": remote_cmd = os.fsencode(arg)
+		elif opt == "--remote-schema": remote_schema = os.fsencode(arg)
+		elif opt == "--remote-tempdir": Globals.remote_tempdir = os.fsencode(arg)
 		elif opt == "--remove-older-than":
 			remove_older_than_string = arg
 			action = "remove-older-than"
@@ -196,12 +196,12 @@ def parse_cmdlineoptions(arglist):
 			Globals.server = 1
 		elif opt == "--ssh-no-compression":
 			Globals.set('ssh_compression', None)
-		elif opt == "--tempdir": tempfile.tempdir = arg
+		elif opt == "--tempdir": tempfile.tempdir = os.fsencode(arg)
 		elif opt == "--terminal-verbosity": Log.setterm_verbosity(arg)
 		elif opt == "--test-server": action = "test-server"
 		elif opt == "--use-compatible-timestamps":
 			Globals.set("use_compatible_timestamps", 1)
-		elif opt == "--user-mapping-file": user_mapping_filename = arg
+		elif opt == "--user-mapping-file": user_mapping_filename = os.fsencode(arg)
 		elif opt == "-v" or opt == "--verbosity": Log.setverbosity(arg)
 		elif opt == "--verify": action, restore_timestr = "verify", "now"
 		elif opt == "--verify-at-time": action, restore_timestr = "verify", arg
