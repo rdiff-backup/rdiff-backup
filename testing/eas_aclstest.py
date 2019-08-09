@@ -91,21 +91,21 @@ user.empty
 # file: 2foo/\\012
 user.empty
 """
-		extractor = EAExtractor(io.StringIO(record_list))
+		extractor = EAExtractor(io.BytesIO(os.fsencode(record_list)))
 		ea_iter = extractor.iterate_starting_with(())
 		first = next(ea_iter)
-		assert first.index == ('0foo',), first
+		assert first.index == (b'0foo',), first
 		second = next(ea_iter)
-		assert second.index == ('1foo', 'bar', 'baz'), second
+		assert second.index == (b'1foo', b'bar', b'baz'), second
 		third = next(ea_iter) # Test quoted filenames
-		assert third.index == ('2foo', '\n'), third.index
+		assert third.index == (b'2foo', b'\n'), third.index
 		try: next(ea_iter)
 		except StopIteration: pass
 		else: assert 0, "Too many elements in iterator"
 
-		extractor = EAExtractor(io.StringIO(record_list))
-		ea_iter = extractor.iterate_starting_with(('1foo', 'bar'))
-		assert next(ea_iter).index == ('1foo', 'bar', 'baz')
+		extractor = EAExtractor(io.BytesIO(os.fsencode(record_list)))
+		ea_iter = extractor.iterate_starting_with((b'1foo', b'bar'))
+		assert next(ea_iter).index == (b'1foo', b'bar', b'baz')
 		try: next(ea_iter)
 		except StopIteration: pass
 		else: assert 0, "Too many elements in iterator"
@@ -240,18 +240,18 @@ default:user:root:---
 default:group::r-x
 default:mask::r-x
 default:other::---""")
-	acl1 = AccessControlLists(('a1',), """user::r--
+	acl1 = AccessControlLists((b'a1',), """user::r--
 user:{0}:---
 group::---
 group:root:---
 mask::---
 other::---""".format(current_user))
-	acl2 = AccessControlLists(('a2',), """user::rwx
+	acl2 = AccessControlLists((b'a2',), """user::rwx
 group::r-x
 group:{0}:rwx
 mask::---
 other::---""".format(current_group))
-	acl3 = AccessControlLists(('a3',), """user::rwx
+	acl3 = AccessControlLists((b'a3',), """user::rwx
 user:root:---
 group::r-x
 mask::---
@@ -345,21 +345,21 @@ group:root:---
 mask::---
 other::---
 """.format(self.current_user)
-		extractor = ACLExtractor(io.StringIO(record_list))
+		extractor = ACLExtractor(io.BytesIO(os.fsencode(record_list)))
 		acl_iter = extractor.iterate_starting_with(())
 		first = next(acl_iter)
-		assert first.index == ('0foo',), first
+		assert first.index == (b'0foo',), first
 		second = next(acl_iter)
-		assert second.index == ('1foo', 'bar', 'baz'), second
+		assert second.index == (b'1foo', b'bar', b'baz'), second
 		third = next(acl_iter) # Test quoted filenames
-		assert third.index == ('2foo', '\n'), third.index
+		assert third.index == (b'2foo', b'\n'), third.index
 		try: next(acl_iter)
 		except StopIteration: pass
 		else: assert 0, "Too many elements in iterator"
 
-		extractor = ACLExtractor(io.StringIO(record_list))
-		acl_iter = extractor.iterate_starting_with(('1foo', 'bar'))
-		assert next(acl_iter).index == ('1foo', 'bar', 'baz')
+		extractor = ACLExtractor(io.BytesIO(os.fsencode(record_list)))
+		acl_iter = extractor.iterate_starting_with((b'1foo', b'bar'))
+		assert next(acl_iter).index == (b'1foo', b'bar', b'baz')
 		try: next(acl_iter)
 		except StopIteration: pass
 		else: assert 0, "Too many elements in iterator"

@@ -207,7 +207,7 @@ class ExtendedAttributesFile(metadata.FlatFile):
 def join_ea_iter(rorp_iter, ea_iter):
 	"""Update a rorp iter by adding the information from ea_iter"""
 	for rorp, ea in rorpiter.CollateIterators(rorp_iter, ea_iter):
-		assert rorp, "Missing rorp for index %s" % (ea.index,)
+		assert rorp, "Missing rorp for index %a" % (ea.index,)
 		if not ea: ea = ExtendedAttributes(rorp.index)
 		rorp.set_ea(ea)
 		yield rorp
@@ -230,13 +230,13 @@ class AccessControlLists:
 	def set_from_text(self, text):
 		"""Set self.entry_list and self.default_entry_list from text"""
 		self.entry_list, self.default_entry_list = [], []
-		for line in text.split(b'\n'):
-			comment_pos = line.find(b'#')
+		for line in text.split('\n'):
+			comment_pos = line.find('#')
 			if comment_pos >= 0: line = line[:comment_pos]
 			line = line.strip()
 			if not line: continue
 
-			if line.startswith(b'default:'):
+			if line.startswith('default:'):
 				entrytuple = self.text_to_entrytuple(line[8:])
 				self.default_entry_list.append(entrytuple)
 			else: self.entry_list.append(self.text_to_entrytuple(line))
@@ -347,7 +347,7 @@ class AccessControlLists:
 			return 0
 		return 1
 
-	def get_indexpath(self): return self.index and '/'.join(self.index) or '.'
+	def get_indexpath(self): return self.index and b'/'.join(self.index) or b'.'
 
 	def is_basic(self):
 		"""True if acl can be reduced to standard unix permissions
@@ -535,7 +535,7 @@ def acl_compare_rps(rp1, rp2):
 def ACL2Record(acl):
 	"""Convert an AccessControlLists object into a text record"""
 	return b'# file: %b\n%b\n' % \
-		(C.acl_quote(acl.get_indexpath()), acl)
+		(C.acl_quote(acl.get_indexpath()), os.fsencode(str(acl)))
 
 def Record2ACL(record):
 	"""Convert text record to an AccessControlLists object"""
@@ -548,7 +548,7 @@ def Record2ACL(record):
 	else:
 		unquoted_filename = C.acl_unquote(filename)
 		index = tuple(unquoted_filename.split(b'/'))
-	return AccessControlLists(index, record[newline_pos:])
+	return AccessControlLists(index, os.fsdecode(record[newline_pos:]))
 
 class ACLExtractor(EAExtractor):
 	"""Iterate AccessControlLists objects from the ACL information file
