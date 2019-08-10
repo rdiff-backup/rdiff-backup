@@ -487,7 +487,7 @@ class RestoreFile:
 		def error_handler(exc):
 			log.Log("Error reading %s, substituting empty file." %
 					(self.mirror_rp.path,), 2)
-			return io.BytesIO('')
+			return io.BytesIO(b'')
 
 		if not self.relevant_incs[-1].isreg():
 			log.Log("""Warning: Could not restore file %s!

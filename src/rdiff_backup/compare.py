@@ -24,7 +24,7 @@ compare.  This uses elements of the backup and restore modules.
 
 """
 
-
+import os
 from . import Globals, restore, rorpiter, log, backup, rpath, hash, robust
 
 def Compare(src_rp, mirror_rp, inc_rp, compare_time):
@@ -106,8 +106,8 @@ def print_reports(report_iter):
 	changed_files_found = 0
 	for report in report_iter:
 		changed_files_found = 1
-		indexpath = report.index and "/".join(report.index) or "."
-		print("%s: %s" % (report.reason, indexpath))
+		indexpath = report.index and b"/".join(report.index) or b"."
+		print("%s: %s" % (report.reason, os.fsdecode(indexpath)))
 
 	if not changed_files_found:
 		log.Log("No changes found.  Directory matches archive data.", 3)
