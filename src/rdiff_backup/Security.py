@@ -239,13 +239,13 @@ def _vet_rpath(rp, request, arglist):
 	"""Internal function to validate that a specific path isn't restricted"""
 	if Globals.restrict_path and rp.conn is Globals.local_connection:
 		normalized, restrict = rp.normalize().path, Globals.restrict_path
-		if restrict == "/": return
-		components = normalized.split("/")
+		if restrict == b"/": return
+		components = normalized.split(b"/")
 		# 3 cases for restricted dir /usr/foo:  /var, /usr/foobar, /usr/foo/..
 		if (not normalized.startswith(restrict) or
 			(len(normalized) > len(restrict) and
-			 normalized[len(restrict)] != "/") or
-			".." in components):
+			 normalized[len(restrict)] != ord("/")) or
+			b".." in components):
 			raise_violation("Normalized path %s not within restricted path %s" % (normalized, restrict),
 						request, arglist)
 

@@ -98,6 +98,7 @@ def parse_file_desc(file_desc):
 				"Unexpected end to file description %s" % file_desc)
 
 	host_info_list, i, last_was_quoted = [], 0, None
+	file_desc = os.fsencode(file_desc)  # paths and similar must always be bytes
 	while 1:
 		if i == len(file_desc):
 			return (None, file_desc)

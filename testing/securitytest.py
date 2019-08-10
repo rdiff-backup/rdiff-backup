@@ -24,7 +24,7 @@ class SecurityTest(unittest.TestCase):
 		remote_cmd = b"%s --server --restrict-read-only foo" % RBBin
 		conn = SetConnections.init_connection(remote_cmd)
 		assert type(conn.os.getuid()) is type(5)
-		try: conn.os.remove("/tmp/foobar")
+		try: conn.os.remove(b"/tmp/foobar")
 		except Exception as e: self.assert_exc_sec(e)
 		else: assert 0, "No exception raised"
 		SetConnections.CloseConnections()
@@ -34,7 +34,7 @@ class SecurityTest(unittest.TestCase):
 		remote_cmd = b"%s --server --restrict-update-only foo" % RBBin
 		conn = SetConnections.init_connection(remote_cmd)
 		assert type(conn.os.getuid()) is type(5)
-		try: conn.os.remove("/tmp/foobar")
+		try: conn.os.remove(b"/tmp/foobar")
 		except Exception as e: self.assert_exc_sec(e)
 		else: assert 0, "No exception raised"
 		SetConnections.CloseConnections()
@@ -44,20 +44,20 @@ class SecurityTest(unittest.TestCase):
 		remote_cmd = b"%s --server --restrict-update-only foo" % RBBin
 		conn = SetConnections.init_connection(remote_cmd)
 
-		for rp in [RPath(Globals.local_connection, "blahblah"),
-				   RPath(conn, "foo/bar")]:
+		for rp in [RPath(Globals.local_connection, b"blahblah"),
+				   RPath(conn, b"foo/bar")]:
 			conn.Globals.set("TEST_var", rp)
 			assert conn.Globals.get("TEST_var").path == rp.path
 
-		for path in ["foobar", "/usr/local", "foo/../bar"]:
+		for path in [b"foobar", b"/usr/local", b"foo/../bar"]:
 			try:
 				rp = rpath.RPath(conn, path)
 				conn.Globals.set("TEST_var", rp)
 			except Exception as e:
 				self.assert_exc_sec(e)
 				continue
-			assert 0, "No violation raised by rp %s" % (rp,)
-			
+			assert 0, "No violation raised by rp %s" % str(rp)
+
 		SetConnections.CloseConnections()
 
 	def test_vet_rpath_root(self):
@@ -71,18 +71,18 @@ class SecurityTest(unittest.TestCase):
 		SetConnections.CloseConnections()
 
 	def secure_rdiff_backup(self, in_dir, out_dir, in_local, restrict_args,
-							extra_args = "", success = 1, current_time = None):
+							extra_args = b"", success = 1, current_time = None):
 		"""Run rdiff-backup locally, with given restrict settings"""
 		if not current_time: current_time = int(time.time())
 		# escape the %s of the remote schema with double %
-		prefix = (b'%s --current-time %b --remote-schema %%s ' % (RBBin, current_time))
+		prefix = (b'%b --current-time %i --remote-schema %%s ' % (RBBin, current_time))
 
-		if in_local: out_dir = (b"'%s %s --server'::%s" %
+		if in_local: out_dir = (b"'%b %b --server'::%b" %
 								(RBBin, restrict_args, out_dir))
-		else: in_dir = (b"'%s %s --server'::%s" %
+		else: in_dir = (b"'%b %b --server'::%b" %
 						(RBBin, restrict_args, in_dir))
 
-		cmdline = b"%s %s %s %s" % (prefix, extra_args, in_dir, out_dir)
+		cmdline = b"%b %b %b %b" % (prefix, extra_args, in_dir, out_dir)
 		print("Executing:", cmdline)
 		exit_val = os.system(cmdline)
 		if success: assert not exit_val
@@ -99,7 +99,7 @@ class SecurityTest(unittest.TestCase):
 		self.secure_rdiff_backup(self.various_files_dir, abs_output_dir, 1,
 								 b'--restrict %b' % abs_output_dir,
 								 current_time = 10000)
-		# Note the backslash below -- test for bug in path normalization
+		# Note the backslash below -- eest for bug in path normalization
 		self.secure_rdiff_backup(self.various_files_dir, abs_output_dir, 1,
 								 b'--restrict %b/' % abs_output_dir)
 
@@ -160,7 +160,7 @@ class SecurityTest(unittest.TestCase):
 		rdiff_backup(1, 1, self.various_files_dir, abs_output_dir)
 		self.secure_rdiff_backup(abs_output_dir, abs_restore_dir, 1,
 								 b'--restrict-read-only %b' % abs_restore_dir,
-								 extra_args = '-r now',
+								 extra_args = b'-r now',
 								 success = 0)
 
 	def test_restrict_updateonly_positive(self):

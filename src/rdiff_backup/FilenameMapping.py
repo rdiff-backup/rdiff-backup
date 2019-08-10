@@ -170,6 +170,10 @@ class QuotedRPath(rpath.RPath):
 			result = rpath.RPath.isincfile(self)
 			if result: self.inc_basestr = unquote(self.inc_basestr)
 		return result
+
+	def get_path(self):
+		"""Just a getter to return the path unquoted"""
+		return unquote(self.path)
 		
 def get_quotedrpath(rp, separate_basename = 0):
 	"""Return quoted version of rpath rp"""

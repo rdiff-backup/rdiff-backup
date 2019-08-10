@@ -1151,6 +1151,10 @@ class RPath(RORPath):
 		comps = normed.path.split(b"/")
 		return b"/".join(comps[:-1]), comps[-1]
 
+	def get_path(self):
+		"""Just a getter for the path variable that can be overwritten by QuotedRPath"""
+		return self.path
+
 	def get_safepath(self, somepath = None):
 		"""Return safely decoded version of path into the current encoding
 
