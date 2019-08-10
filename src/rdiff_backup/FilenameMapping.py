@@ -91,9 +91,9 @@ def quote(path):
 	# Escape a trailing space or period (invalid in names on FAT32 under DOS,
 	# Windows and modern Linux)
 	if Globals.escape_trailing_spaces:
-		if len(QuotedPath) and (QuotedPath[-1] == b' ' or QuotedPath[-1] == b'.'):
+		if len(QuotedPath) and (QuotedPath[-1] == ord(' ') or QuotedPath[-1] == ord('.')):
 			QuotedPath = QuotedPath[:-1] + \
-				b"%b%03d" % (quoting_char, ord(QuotedPath[-1]))
+				b"%b%03d" % (quoting_char, QuotedPath[-1])
 
 		if not Globals.escape_dos_devices:
 			return QuotedPath
@@ -104,7 +104,7 @@ def quote(path):
 					 br"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$", QuotedPath, \
 					 re.I):
 		return QuotedPath
-	return b"%b%03d" % (quoting_char, ord(QuotedPath[0])) + QuotedPath[1:]
+	return b"%b%03d" % (quoting_char, QuotedPath[0]) + QuotedPath[1:]
 
 def quote_single(match):
 	"""Return replacement for a single character"""
@@ -118,7 +118,7 @@ def unquote_single(match):
 	"""Unquote a single quoted character"""
 	if not len(match.group()) == 4:
 		raise QuotingException("Quoted group wrong size: %a" % match.group())
-	try: return chr(int(match.group()[1:]))
+	try: return os.fsencode(chr(int(match.group()[1:])))
 	except ValueError:
 		raise QuotingException("Quoted out of range: %a" % match.group())
 
@@ -135,6 +135,11 @@ class QuotedRPath(rpath.RPath):
 		"""Make new QuotedRPath"""
 		super().__init__(connection, base, index, data)
 		self.quoted_index = tuple(map(quote, self.index))
+		# we need to recalculate path and data on the basis of
+		# quoted_index (parent class does it on the basis of index)
+		if base is not None:
+			self.path = os.path.join(self.base, *self.quoted_index)
+			if data is None: self.setdata()
 
 	def __setstate__(self, rpath_state):
 		"""Reproduce QuotedRPath from __getstate__ output"""
