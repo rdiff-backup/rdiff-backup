@@ -50,7 +50,7 @@ def parse_cmdlineoptions(arglist):
 
 	def sel_fl(filename):
 		"""Helper function for including/excluding filelists below"""
-		try: return open(filename, "r")
+		try: return open(filename, "rb")  # files match paths hence bytes/bin
 		except IOError: Log.FatalError("Error opening file %s" % filename)
 
 	def normalize_path(path):

@@ -1,5 +1,5 @@
 
-import re, io, unittest, types
+import re, io, unittest, types, os
 from commontest import *
 from rdiff_backup.selection import *
 from rdiff_backup import Globals, rpath
@@ -32,7 +32,7 @@ class MatchingTest(unittest.TestCase):
 	def testTupleInclude(self):
 		"""Test include selection function made from a regular filename"""
 		self.assertRaises(FilePrefixError,
-						  self.Select.glob_get_filename_sf, "foo", 1)
+						  self.Select.glob_get_filename_sf, b"foo", 1)
 
 		sf2 = self.Select.glob_get_sf("rdiff-backup_testfiles/select/usr/local/bin/", 1)
 		assert sf2(self.makeext("usr")) == 1
@@ -45,7 +45,7 @@ class MatchingTest(unittest.TestCase):
 	def testTupleExclude(self):
 		"""Test exclude selection function made from a regular filename"""
 		self.assertRaises(FilePrefixError,
-						  self.Select.glob_get_filename_sf, "foo", 0)
+						  self.Select.glob_get_filename_sf, b"foo", 0)
 
 		sf2 = self.Select.glob_get_sf("rdiff-backup_testfiles/select/usr/local/bin/", 0)
 		assert sf2(self.makeext("usr")) == None
@@ -80,7 +80,7 @@ class MatchingTest(unittest.TestCase):
 
 	def testFilelistInclude(self):
 		"""Test included filelist"""
-		fp = io.StringIO("""
+		fp = io.BytesIO(b"""
 rdiff-backup_testfiles/select/1/2
 rdiff-backup_testfiles/select/1
 rdiff-backup_testfiles/select/1/2/3
@@ -97,7 +97,7 @@ rdiff-backup_testfiles/select/3/3/2""")
 
 	def testFilelistWhitespaceInclude(self):
 		"""Test included filelist, with some whitespace"""
-		fp = io.StringIO("""
+		fp = io.BytesIO(b"""
 + rdiff-backup_testfiles/select/1  
 - rdiff-backup_testfiles/select/2  
 rdiff-backup_testfiles/select/3\t""")
@@ -110,7 +110,7 @@ rdiff-backup_testfiles/select/3\t""")
 
 	def testFilelistIncludeNullSep(self):
 		"""Test included filelist but with null_separator set"""
-		fp = io.StringIO("""\0rdiff-backup_testfiles/select/1/2\0rdiff-backup_testfiles/select/1\0rdiff-backup_testfiles/select/1/2/3\0rdiff-backup_testfiles/select/3/3/2\0rdiff-backup_testfiles/select/hello\nthere\0""")
+		fp = io.BytesIO(b"""\0rdiff-backup_testfiles/select/1/2\0rdiff-backup_testfiles/select/1\0rdiff-backup_testfiles/select/1/2/3\0rdiff-backup_testfiles/select/3/3/2\0rdiff-backup_testfiles/select/hello\nthere\0""")
 		Globals.null_separator = 1
 		sf = self.Select.filelist_get_sf(fp, 1, "test")
 		assert sf(self.root) == 1
@@ -126,7 +126,7 @@ rdiff-backup_testfiles/select/3\t""")
 
 	def testFilelistExclude(self):
 		"""Test included filelist"""
-		fp = io.StringIO("""
+		fp = io.BytesIO(b"""
 rdiff-backup_testfiles/select/1/2
 rdiff-backup_testfiles/select/1
 this is a badly formed line which should be ignored
@@ -145,7 +145,7 @@ rdiff-backup_testfiles/select/3/3/2""")
 
 	def testFilelistInclude2(self):
 		"""testFilelistInclude2 - with modifiers"""
-		fp = io.StringIO("""
+		fp = io.BytesIO(b"""
 rdiff-backup_testfiles/select/1/1
 - rdiff-backup_testfiles/select/1/2
 + rdiff-backup_testfiles/select/1/3
@@ -162,7 +162,7 @@ rdiff-backup_testfiles/select/1/1
 
 	def testFilelistExclude2(self):
 		"""testFilelistExclude2 - with modifiers"""
-		fp = io.StringIO("""
+		fp = io.BytesIO(b"""
 rdiff-backup_testfiles/select/1/1
 - rdiff-backup_testfiles/select/1/2
 + rdiff-backup_testfiles/select/1/3
@@ -182,29 +182,31 @@ rdiff-backup_testfiles/select/1/1
 
 	def testGlobRE(self):
 		"""testGlobRE - test translation of shell pattern to regular exp"""
-		assert self.Select.glob_to_re("hello") == "hello"
-		assert self.Select.glob_to_re(".e?ll**o") == "\\.e[^/]ll.*o"
+		# we can use str as input because glob_to_re works for bytes and str
+		# but always returns bytes.
+		assert self.Select.glob_to_re("hello") == b"hello"
+		assert self.Select.glob_to_re(".e?ll**o") == b"\\.e[^/]ll.*o"
 		r = self.Select.glob_to_re("[abc]el[^de][!fg]h")
-		assert r == "[abc]el[^de][^fg]h", r
+		assert r == b"[abc]el[^de][^fg]h", r
 		r = self.Select.glob_to_re("/usr/*/bin/")
                 # since Python 3.7 only characters special to reg expr are quoted
 		if (sys.version_info >= (3, 7)):
-			assert r == "/usr/[^/]*/bin/", r
+			assert r == b"/usr/[^/]*/bin/", r
 		else:
-			assert r == "\\/usr\\/[^/]*\\/bin\\/", r
-		assert self.Select.glob_to_re("[a.b/c]") == "[a.b/c]"
+			assert r == b"\\/usr\\/[^/]*\\/bin\\/", r
+		assert self.Select.glob_to_re("[a.b/c]") == b"[a.b/c]"
 		r = self.Select.glob_to_re("[a*b-c]e[!]]")
-		assert r == "[a*b-c]e[^]]", r
+		assert r == b"[a*b-c]e[^]]", r
 
 	def testGlobSFException(self):
 		"""testGlobSFException - see if globbing errors returned"""
 		self.assertRaises(GlobbingError, self.Select.glob_get_normal_sf,
-						  "rdiff-backup_testfiles/select/hello//there", 1)
+						  b"rdiff-backup_testfiles/select/hello//there", 1)
 		self.assertRaises(FilePrefixError,
-						  self.Select.glob_get_sf, "rdiff-backup_testfiles/whatever", 1)
+						  self.Select.glob_get_sf, b"rdiff-backup_testfiles/whatever", 1)
 		self.assertRaises(FilePrefixError,
-						  self.Select.glob_get_sf, "rdiff-backup_testfiles/?hello", 0)
-		assert self.Select.glob_get_normal_sf("**", 1)
+						  self.Select.glob_get_sf, b"rdiff-backup_testfiles/?hello", 0)
+		assert self.Select.glob_get_normal_sf(b"**", 1)
 
 	def testIgnoreCase(self):
 		"""testIgnoreCase - try a few expressions with ignorecase:"""
@@ -213,7 +215,7 @@ rdiff-backup_testfiles/select/1/1
 		assert sf(self.makeext("foo/bar")) == 1
 		assert sf(self.makeext("fOo/BaR")) == 1
 		self.assertRaises(FilePrefixError, self.Select.glob_get_sf,
-						  "ignorecase:tesfiles/sect/foo/bar", 1)
+						  b"ignorecase:tesfiles/sect/foo/bar", 1)
 						  
 	def testDev(self):
 		"""Test device and special file selection"""
@@ -273,11 +275,11 @@ rdiff-backup_testfiles/select/1/1
 		assert select.glob_get_sf("**", 0)(root) == 0
 		assert select.glob_get_sf("/foo/*", 0)(root) == None
 
-		select.filelist_get_sf(io.StringIO("/"), 1, "test")(root) == 1
-		select.filelist_get_sf(io.StringIO("/foo/bar"), 1,
+		select.filelist_get_sf(io.BytesIO(b"/"), 1, "test")(root) == 1
+		select.filelist_get_sf(io.BytesIO(b"/foo/bar"), 1,
 							   "test")(root) == 1
-		select.filelist_get_sf(io.StringIO("/"), 0, "test")(root) == 0
-		select.filelist_get_sf(io.StringIO("/foo/bar"), 0,
+		select.filelist_get_sf(io.BytesIO(b"/"), 0, "test")(root) == 0
+		select.filelist_get_sf(io.BytesIO(b"/foo/bar"), 0,
 							   "test")(root) == None
 
 	def testOtherFilesystems(self):
@@ -298,19 +300,21 @@ class ParseArgsTest(unittest.TestCase):
 	root = None
 	def ParseTest(self, tuplelist, indicies, filelists = []):
 		"""No error if running select on tuple goes over indicies"""
+		def tuple_fsencode(filetuple):
+			return tuple(map(os.fsencode, filetuple))
 		if not self.root:
 			self.root = RPath(Globals.local_connection, "rdiff-backup_testfiles/select")
 		self.Select = Select(self.root)
 		self.Select.ParseArgs(tuplelist, self.remake_filelists(filelists))
 		assert iter_equal(iter_map(lambda dsrp: dsrp.index, self.Select.set_iter()),
-							   iter(indicies), verbose = 1)
+							   map(tuple_fsencode, indicies), verbose = 1)
 
 	def remake_filelists(self, filelist):
 		"""Turn strings in filelist into fileobjs"""
 		new_filelists = []
 		for f in filelist:
-			if type(f) is str:
-				new_filelists.append(io.StringIO(f))
+			if isinstance(f, str) or isinstance(f, bytes):
+				new_filelists.append(io.BytesIO(os.fsencode(f)))
 			else: new_filelists.append(f)
 		return new_filelists
 
