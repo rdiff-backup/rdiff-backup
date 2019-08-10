@@ -1129,7 +1129,7 @@ class RPath(RORPath):
 		be retained.
 
 		"""
-		newpath = os.path.join(*[x for x in self.path.split(b"/") if x and x != b"."])
+		newpath = os.path.join(b'', *[x for x in self.path.split(b"/") if x and x != b"."])
 		if self.path[0:1] == b"/": newpath = b"/" + newpath
 		elif not newpath: newpath = b"."
 		return self.newpath(newpath)
@@ -1147,16 +1147,9 @@ class RPath(RORPath):
 
 		"""
 		normed = self.normalize()
-		if normed.path.find(b"/") == -1: return (".", normed.path)
-		(dirname, basename) = os.path.split(normed.path)
-		# the following to keep the same interface as before but FIXME
-		if dirname == b'/':
-			if basename == b'':
-				return (b'', b'/')
-			else:
-				return (b'', basename)
-		else:
-			return (dirname, basename)
+		if normed.path.find(b"/") == -1: return (b".", normed.path)
+		comps = normed.path.split(b"/")
+		return b"/".join(comps[:-1]), comps[-1]
 
 	def get_safepath(self, somepath = None):
 		"""Return safely decoded version of path into the current encoding
