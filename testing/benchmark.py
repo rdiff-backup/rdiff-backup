@@ -18,7 +18,7 @@ def run_cmd(cmd):
 	time.sleep(1)  # just to be sure to not have the infamous message
 	# Fatal Error: Time of Last backup is not in the past.  This is probably caused
 	# by running two backups in less than a second.  Wait a second and try again.
-	if new_pythonpath: full_cmd = "PYTHONPATH=%s %s" % (new_pythonpath, cmd)
+	if new_pythonpath: full_cmd = b"PYTHONPATH=%b %b" % (new_pythonpath, cmd)
 	else: full_cmd = cmd
 	print("Running command '%s'" % (full_cmd,))
 	t = time.time()
@@ -36,7 +36,7 @@ def create_many_files(dirname, s, count = 1000):
 	dir_rp = rpath.RPath(Globals.local_connection, dirname)
 	if (not dir_rp.isdir()): dir_rp.mkdir()
 	for i in range(count):
-		rp = dir_rp.append("file_%d" % i)
+		rp = dir_rp.append(b"file_%d" % i)
 		fp = rp.open("w")
 		fp.write(s)
 		assert not fp.close()
@@ -54,7 +54,7 @@ def create_nested(dirname, s, depth, branch_factor = 10):
 		if depth == 1: list(map(write, sub_rps))
 		else: list(map(lambda rp: helper(rp, depth-1), sub_rps))
 
-	nestedout_dir = re_init_subdir(abs_test_dir, 'nested_out')
+	nestedout_dir = re_init_subdir(abs_test_dir, b'nested_out')
 	helper(rpath.RPath(Globals.local_connection, dirname), depth)
 
 def benchmark(backup_cmd, restore_cmd, desc, update_func = None):
@@ -70,18 +70,18 @@ def benchmark(backup_cmd, restore_cmd, desc, update_func = None):
 		update_func()
 		print("Updating %s, all changed: %ss" % (desc, run_cmd(backup_cmd)))
 
-	restout_dir = re_init_subdir(abs_test_dir, 'rest_out')
+	restout_dir = re_init_subdir(abs_test_dir, b'rest_out')
 	print("Restoring %s to empty dir: %ss" % (desc, run_cmd(restore_cmd)))
 	print("Restoring %s to unchanged dir: %ss" % (desc, run_cmd(restore_cmd)))
 
 def many_files():
 	"""Time backup and restore of 2000 files"""
 	count = 2000
-	manyout_dir = re_init_subdir(abs_test_dir, 'many_out')
-	restout_dir = re_init_subdir(abs_test_dir, 'rest_out')
+	manyout_dir = re_init_subdir(abs_test_dir, b'many_out')
+	restout_dir = re_init_subdir(abs_test_dir, b'rest_out')
 	create_many_files(manyout_dir, "a", count)
-	backup_cmd = "rdiff-backup '%s' '%s'" % (manyout_dir, output_desc)
-	restore_cmd = "rdiff-backup --force -r now '%s' '%s'" % \
+	backup_cmd = b"rdiff-backup '%b' '%b'" % (manyout_dir, output_desc)
+	restore_cmd = b"rdiff-backup --force -r now '%b' '%b'" % \
 				  (output_desc, restout_dir)
 	update_func = lambda: create_many_files(manyout_dir, "e", count)
 	benchmark(backup_cmd, restore_cmd, "2000 1-byte files", update_func)
@@ -89,9 +89,9 @@ def many_files():
 def many_files_rsync():
 	"""Test rsync benchmark"""
 	count = 2000
-	manyout_dir = re_init_subdir(abs_test_dir, 'many_out')
+	manyout_dir = re_init_subdir(abs_test_dir, b'many_out')
 	create_many_files(manyout_dir, "a", count)
-	rsync_command = "rsync -e ssh -aH --delete '%s' '%s'" % \
+	rsync_command = b"rsync -e ssh -aH --delete '%s' '%s'" % \
 					 (manyout_dir, output_desc)
 	print("Initial rsync: %ss" % (run_cmd(rsync_command),))
 	print("rsync update: %ss" % (run_cmd(rsync_command),))
@@ -102,11 +102,11 @@ def many_files_rsync():
 def nested_files():
 	"""Time backup and restore of 10000 nested files"""
 	depth = 4
-	nestedout_dir = re_init_subdir(abs_test_dir, 'nested_out')
-	restout_dir = re_init_subdir(abs_test_dir, 'rest_out')
+	nestedout_dir = re_init_subdir(abs_test_dir, b'nested_out')
+	restout_dir = re_init_subdir(abs_test_dir, b'rest_out')
 	create_nested(nestedout_dir, "a", depth)
-	backup_cmd = "rdiff-backup '%s' '%s'" % (nestedout_dir, output_desc)
-	restore_cmd = "rdiff-backup --force -r now '%s' '%s'" % \
+	backup_cmd = b"rdiff-backup '%b' '%b'" % (nestedout_dir, output_desc)
+	restore_cmd = b"rdiff-backup --force -r now '%b' '%b'" % \
 				  (output_desc, restout_dir)
 	update_func = lambda: create_nested(nestedout_dir, "e", depth)
 	benchmark(backup_cmd, restore_cmd, "10000 1-byte nested files",
@@ -115,9 +115,9 @@ def nested_files():
 def nested_files_rsync():
 	"""Test rsync on nested files"""
 	depth = 4
-	nestedout_dir = re_init_subdir(abs_test_dir, 'nested_out')
+	nestedout_dir = re_init_subdir(abs_test_dir, b'nested_out')
 	create_nested(nestedout_dir, "a", depth)
-	rsync_command = "rsync -e ssh -aH --delete '%s' '%s'" % \
+	rsync_command = b"rsync -e ssh -aH --delete '%b' '%b'" % \
 					(nestedout_dir, output_desc)
 	print("Initial rsync: %ss" % (run_cmd(rsync_command),))
 	print("rsync update: %ss" % (run_cmd(rsync_command),))
@@ -134,16 +134,16 @@ if len(sys.argv) < 2 or len(sys.argv) > 3:
 	sys.exit(1)
 
 if len(sys.argv) == 3:
-	output_desc = sys.argv[2]
-	if ":" not in output_desc:  # file is local
+	output_desc = os.fsencode(sys.argv[2])
+	if b":" not in output_desc:  # file is local
 		assert not rpath.RPath(Globals.local_connection, output_desc).lstat(), \
-		   "Outfile file '%s' exists, try deleting it first." % (output_desc,)
+		   "Outfile file '%a' exists, try deleting it first." % (output_desc,)
 else:   # we assume we can always remove the default output directory
 	Myrm(output_desc)
 
 
 if 'BENCHMARKPYPATH' in os.environ:
-	new_pythonpath = os.environ['BENCHMARKPYPATH']
+	new_pythonpath = os.fsencode(os.environ['BENCHMARKPYPATH'])
 
 function_name = sys.argv[1]
 print("Running ", function_name)
