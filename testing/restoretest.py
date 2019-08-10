@@ -80,7 +80,7 @@ class RestoreTest(unittest.TestCase):
 		rfs = base_rf.yield_sub_rfs()
 		rfcs = []
 		for rf in rfs:
-			if rf.mirror_rp.dirsplit()[1] in ["dir"]:
+			if rf.mirror_rp.dirsplit()[1] in [b"dir"]:
 				Log("skipping 'dir'", 5)
 				continue
 
@@ -98,14 +98,14 @@ class RestoreTest(unittest.TestCase):
 		assert -1 < test_time < 2000000000, test_time
 		dirname, basename = mirror_rp.dirsplit()
 		for filename in restore_base_filenames:
-			comps = filename.split(".")
-			base = ".".join(comps[:-1])
-			t = Time.stringtotime(comps[-1])
+			comps = filename.split(b".")
+			base = b".".join(comps[:-1])
+			t = Time.bytestotime(comps[-1])
 			if t == test_time and basename == base:
 				return restore_base_rp.append(filename)
 		# Correct rp must be empty
-		return restore_base_rp.append("%s.%s" %
-							 (basename, Time.timetostring(test_time)))
+		return restore_base_rp.append(b"%b.%b" %
+							 (basename, Time.timetobytes(test_time)))
 
 	def testRestoreSingle(self):
 		"""Test restoring files one at at a time"""

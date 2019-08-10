@@ -97,7 +97,7 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 	cmdline = b" ".join(cmdargs)
 	print("Executing: ", cmdline)
 	ret_val = subprocess.run(cmdline, shell=True,
-					input=input, universal_newlines=True).returncode
+					input=input, universal_newlines=False).returncode
 	if check_return_val:
 		# the construct is needed because os.system seemingly doesn't
 		# respect expected return values (FIXME)

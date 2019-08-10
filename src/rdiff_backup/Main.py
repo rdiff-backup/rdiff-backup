@@ -119,14 +119,14 @@ def parse_cmdlineoptions(arglist):
 			select_files.append(sel_fl(arg))
 		elif opt == "--exclude-filelist-stdin":
 			select_opts.append(("--exclude-filelist", "standard input"))
-			select_files.append(sys.stdin)
+			select_files.append(sys.stdin.buffer)
 		elif opt == "--exclude-globbing-filelist":
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))
 		elif opt == "--exclude-globbing-filelist-stdin":
 			select_opts.append(("--exclude-globbing-filelist",
 								"standard input"))
-			select_files.append(sys.stdin)
+			select_files.append(sys.stdin.buffer)
 		elif opt == "--force": force = 1
 		elif opt == "--group-mapping-file": group_mapping_filename = os.fsencode(arg)
 		elif (opt == "--include" or
@@ -138,14 +138,14 @@ def parse_cmdlineoptions(arglist):
 			select_files.append(sel_fl(arg))
 		elif opt == "--include-filelist-stdin":
 			select_opts.append(("--include-filelist", "standard input"))
-			select_files.append(sys.stdin)
+			select_files.append(sys.stdin.buffer)
 		elif opt == "--include-globbing-filelist":
 			select_opts.append((opt, arg))
 			select_files.append(sel_fl(arg))
 		elif opt == "--include-globbing-filelist-stdin":
 			select_opts.append(("--include-globbing-filelist",
 								"standard input"))
-			select_files.append(sys.stdin)
+			select_files.append(sys.stdin.buffer)
 		elif opt == "--include-regexp": select_opts.append((opt, arg))
 		elif opt == "--list-at-time":
 			restore_timestr, action = arg, "list-at-time"
@@ -609,7 +609,7 @@ def restore_set_select(mirror_rp, target):
 	select filtering.  For instance, if a file is excluded it should
 	not be deleted from the target directory.
 
-	The StringIO stuff is because filelists need to be read and then
+	The BytesIO stuff is because filelists need to be read and then
 	duplicated, because we need two copies of them now.
 
 	"""
@@ -620,9 +620,9 @@ def restore_set_select(mirror_rp, target):
 	select_data = list(map(fp2string, select_files))
 	if select_opts: 
 		mirror_rp.conn.restore.MirrorStruct.set_mirror_select(
-			target, select_opts, *list(map(io.StringIO, select_data)))
+			target, select_opts, *list(map(io.BytesIO, select_data)))
 		target.conn.restore.TargetStruct.set_target_select(
-			target, select_opts, *list(map(io.StringIO, select_data)))
+			target, select_opts, *list(map(io.BytesIO, select_data)))
 
 def restore_start_log(rpin, target, time):
 	"""Open restore log file, log initial message"""
