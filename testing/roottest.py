@@ -259,7 +259,7 @@ class HalfRoot(unittest.TestCase):
 		re_init_rpath_dir(outrp, userid)
 		remote_schema = b'su -c "rdiff-backup --server" %s' % (user.encode(),)
 		cmd_schema = (b"rdiff-backup -v%i" % verbosity +
-					  b" --current-time %s --remote-schema '%%s' %s '%s'::%s")
+					  b" --current-time %i --remote-schema '%%s' %b '%b'::%b")
 
 		cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
 		Run(cmd1)
@@ -274,9 +274,9 @@ class HalfRoot(unittest.TestCase):
 
 		rout_rp = rpath.RPath(Globals.local_connection, abs_restore_dir)
 		restore_schema = (b"rdiff-backup -v%i" % verbosity +
-						  b" -r %s --remote-schema '%%s' '%s'::%s %s")
+						  b" -r %b --remote-schema '%%s' '%b'::%b %b")
 		Myrm(rout_rp.path)
-		cmd3 = restore_schema % (10000, remote_schema, outrp.path,
+		cmd3 = restore_schema % (b'10000', remote_schema, outrp.path,
 								 rout_rp.path)
 		Run(cmd3)
 		assert CompareRecursive(in_rp1, rout_rp)
@@ -340,15 +340,16 @@ class NonRoot(unittest.TestCase):
 	def backup(self, input_rp, output_rp, time):
 		global user
 		backup_cmd = (b"rdiff-backup --no-compare-inode "
-					  "--current-time %s %s %s" %
+					  b"--current-time %i %b %b" %
 					  (time, input_rp.path, output_rp.path))
 		Run(b"su %s -c '%s'" % (user.encode(), backup_cmd))
 
 	def restore(self, dest_rp, restore_rp, time = None):
 		Myrm(restore_rp.path)
-		if time is None: time = "now"
-		restore_cmd = b"rdiff-backup -r %s %s %s" % (time.encode(), dest_rp.path,
-													restore_rp.path,)
+		if time is None or time == "now":
+			restore_cmd = b"rdiff-backup -r now %b %b" % (dest_rp.path, restore_rp.path)
+		else:
+			restore_cmd = b"rdiff-backup -r %i %b %b" % (time, dest_rp.path, restore_rp.path)
 		Run(restore_cmd)
 
 	def test_non_root(self):

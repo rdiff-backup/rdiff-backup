@@ -146,9 +146,9 @@ def RORP2Record(rorpath):
 	# Add user, group, and permission information
 	uid, gid = rorpath.getuidgid()
 	str_list.append(b"  Uid %i\n" % uid)
-	str_list.append(b"  Uname %b\n" % (rorpath.getuname().encode() or b":"))
+	str_list.append(b"  Uname %b\n" % (rorpath.getuname() or ":").encode())
 	str_list.append(b"  Gid %i\n" % gid)
-	str_list.append(b"  Gname %b\n" % (rorpath.getgname().encode() or b":"))
+	str_list.append(b"  Gname %b\n" % (rorpath.getgname() or ":").encode())
 	str_list.append(b"  Permissions %d\n" % rorpath.getperms())
 
 	# Add long filename information
