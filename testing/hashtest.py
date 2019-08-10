@@ -107,8 +107,8 @@ class HashTest(unittest.TestCase):
 		"""Test if hashes are transferred in files, rorpiter"""
 		#log.Log.setverbosity(5)
 		Globals.security_level = 'override'
-		conn = SetConnections.init_connection('%s %s/server.py' %
-					(sys.executable, abs_testing_dir))
+		conn = SetConnections.init_connection(b'%b %b/server.py' %
+					(os.fsencode(sys.executable), abs_testing_dir))
 		assert conn.reval("lambda x: x+1", 4) == 5 # connection sanity check
 
 		fp = hash.FileWrapper(io.BytesIO(self.s1.encode()))
