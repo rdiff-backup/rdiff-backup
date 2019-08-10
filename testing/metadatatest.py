@@ -14,11 +14,11 @@ class MetadataTest(unittest.TestCase):
 
 	def testQuote(self):
 		"""Test quoting and unquoting"""
-		filenames = ["foo", ".", "hello\nthere", "\\", "\\\\\\",
-					 "h\no\t\x87\n", " "]
+		filenames = [b"foo", b".", b"hello\nthere", b"\\", b"\\\\\\",
+					 b"h\no\t\x87\n", b" "]
 		for filename in filenames:
 			quoted = quote_path(filename)
-			assert not "\n" in quoted
+			assert not b"\n" in quoted
 			result = unquote_path(quoted)
 			assert result == filename, (quoted, result, filename)
 
@@ -27,7 +27,7 @@ class MetadataTest(unittest.TestCase):
 		vft = rpath.RPath(Globals.local_connection,
 						os.path.join(old_test_dir, b"various_file_types"))
 		rpaths = [vft.append(x) for x in vft.listdir()]
-		extra_rpaths = [rpath.RPath(Globals.local_connection, x) for x in ['/bin/ls', '/dev/ttyS0', '/dev/hda', 'aoeuaou']]
+		extra_rpaths = [rpath.RPath(Globals.local_connection, x) for x in [b'/bin/ls', b'/dev/ttyS0', b'/dev/hda', b'aoeuaou']]
 		return [vft] + rpaths + extra_rpaths
 
 	def testRORP2Record(self):
@@ -44,7 +44,7 @@ class MetadataTest(unittest.TestCase):
 			for rorp in rorp_iter: file.write(RORP2Record(rorp))
 
 		l = self.get_rpaths()
-		fp = io.StringIO()
+		fp = io.BytesIO()
 		write_rorp_iter_to_file(iter(l), fp)
 		fp.seek(0)
 		cstring = fp.read()
@@ -87,11 +87,10 @@ class MetadataTest(unittest.TestCase):
 
 		start_time = time.time()
 		blocksize = 32 * 1024
-		tempfp = temprp.open("rb", compress = 1)
-		while 1:
-			buf = tempfp.read(blocksize)
-			if not buf: break
-		assert not tempfp.close()
+		with temprp.open("rb", compress = 1) as tempfp:
+			while 1:
+				buf = tempfp.read(blocksize)
+				if not buf: break
 		print("Simply decompressing metadata file took %s seconds" % \
 			  (time.time() - start_time))
 
@@ -103,9 +102,9 @@ class MetadataTest(unittest.TestCase):
 
 		"""
 		temprp = self.write_metadata_to_temp()
-		mf = MetadataFile(temprp, 'r')
+		mf = MetadataFile(temprp, 'rb')
 		start_time = time.time(); i = 0
-		for rorp in mf.get_objects(("subdir3", "subdir10")): i += 1
+		for rorp in mf.get_objects((b"subdir3", b"subdir10")): i += 1
 		print("Reading %s metadata entries took %s seconds." % \
 			  (i, time.time() - start_time))
 		assert i == 51
@@ -141,7 +140,7 @@ class MetadataTest(unittest.TestCase):
 		# shutil.copytree fails on the fifo file in the directory
 		os.system(b'cp -a %s/* %s' %
 				(os.path.join(old_test_dir, b"various_file_types"),
-				tempdir.get_safepath()))
+				tempdir.path))
 
 		rp1 = tempdir.append('regular_file')
 		rp2 = tempdir.append('subdir')
@@ -171,7 +170,7 @@ class MetadataTest(unittest.TestCase):
 		"""Create various metadata rorps, diff them, then compare"""
 		def write_dir_to_meta(manager, rp, time):
 			"""Record the metadata under rp to a mirror_metadata file"""
-			metawriter = man.get_meta_writer('snapshot', time)
+			metawriter = man.get_meta_writer(b'snapshot', time)
 			sel = selection.Select(rp)
 			sel.ParseArgs((), ())  # make sure incorrect files are filtered out
 			for rorp in sel.set_iter():
@@ -212,14 +211,14 @@ class MetadataTest(unittest.TestCase):
 		man.ConvertMetaToDiff()
 
 		man = PatchDiffMan()
-		l = man.sorted_prefix_inclist('mirror_metadata')
-		assert l[0].getinctype() == 'snapshot'
+		l = man.sorted_prefix_inclist(b'mirror_metadata')
+		assert l[0].getinctype() == b'snapshot'
 		assert l[0].getinctime() == 40000
-		assert l[1].getinctype() == 'snapshot'
+		assert l[1].getinctype() == b'snapshot'
 		assert l[1].getinctime() == 30000
-		assert l[2].getinctype() == 'diff'
+		assert l[2].getinctype() == b'diff'
 		assert l[2].getinctime() == 20000
-		assert l[3].getinctype() == 'diff'
+		assert l[3].getinctype() == b'diff'
 		assert l[3].getinctime() == 10000
 
 		compare(man, inc1, 10000)
