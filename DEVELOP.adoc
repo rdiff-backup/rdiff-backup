@@ -68,7 +68,7 @@ backtrace  #<1>
 bt full    #<2>
 py-bt      #<3>
 frame <FrameNumber>   #<4>
-p <SomeVar> #<5> 
+p <SomeVar> #<5>
 ------------------------------------------------------------------------
 <1> get a backtrace of all function calls leading to the coredump (also `bt`)
 <2> backtrace with local vars

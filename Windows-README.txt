@@ -46,7 +46,7 @@ possible for this to work. Follow this example:
 
 > mkdir c:\foo
 > cd "c:\Documents and Settings"
-> rdiff-backup.exe --include c:\\/foo --exclude c:\\/** c:\/ c:\bar 
+> rdiff-backup.exe --include c:\\/foo --exclude c:\\/** c:\/ c:\bar
 
 The \\ is necessary in the --include and --exclude options because those
 options permit regular-expressions, and \ is the escape character in
@@ -56,7 +56,7 @@ regular-expressions, and thus needs to be escaped itself.
 TROUBLESHOOTING:
 
 If you have everything installed properly, and it still doesn't work,
-see the enclosed manual, FAQ, the web page at http://rdiff-backup.nongnu.org,
+see the enclosed manual, FAQ, the web page at https://rdiff-backup.net,
 and/or the mailing list. You can subscribe to the mailing list at:
 http://lists.nongnu.org/mailman/listinfo/rdiff-backup-users
 

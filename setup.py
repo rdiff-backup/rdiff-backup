@@ -6,7 +6,7 @@ from distutils.core import setup, Extension
 version_string = "2.0.0"
 
 if sys.version_info[:2] < (3,5):
-	print("Sorry, rdiff-backup requires version 3.5 or later of python")
+	print("Sorry, rdiff-backup requires version 3.5 or later of Python")
 	sys.exit(1)
 
 # Defaults
@@ -61,9 +61,9 @@ if os.name == 'nt':
 setup(name="rdiff-backup",
 	  version=version_string,
 	  description="Local/remote mirroring+incremental backup",
-	  author="Ben Escoto",
-	  author_email="rdiff-backup@emerose.org",
-	  url="http://rdiff-backup.nongnu.org/",
+	  author="The rdiff-backup project",
+	  author_email="rdiff-backup-users@nongnu.org",
+	  url="http://rdiff-backup.net/",
 	  packages = ['rdiff_backup'],
 	  package_dir={'':'src'},  # tell distutils packages are under src
 	  ext_modules = [Extension("rdiff_backup.C", ["src/cmodule.c"]),
@@ -77,4 +77,3 @@ setup(name="rdiff-backup",
 					('share/doc/rdiff-backup-%s' % (version_string,),
 					 ['CHANGELOG', 'COPYING', 'README', 'FAQ-body.html'])],
 					**extra_options) # FIXME improve FAQ.html vs. body
-

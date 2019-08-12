@@ -7,8 +7,8 @@ Summary: Convenient and transparent local/remote incremental mirror/backup
 Name: rdiff-backup
 Release: 1
 Epoch: 0
-URL: http://www.nongnu.org/rdiff-backup/
-Source: http://savannah.nongnu.org/download/rdiff-backup/rdiff-backup-%{version}.tar.gz
+URL: https://rdiff-backup.net/
+Source: https://github.com/rdiff-backup/rdiff-backup/archive/r%{version}.tar.gz
 License: GPL
 Group: Applications/Archiving
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -37,7 +37,7 @@ differences from the previous backup will be transmitted.
 %{PYTHON_NAME} setup.py install --root $RPM_BUILD_ROOT
 # Produce .pyo files for %ghost directive later
 %{PYTHON_NAME} -Oc 'from compileall import *; compile_dir("'$RPM_BUILD_ROOT/%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup'")'
-rm -rf $RPM_BUILD_ROOT/usr/share/doc/* 
+rm -rf $RPM_BUILD_ROOT/usr/share/doc/*
 
 %clean
 rm -rf $RPM_BUILD_ROOT

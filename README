@@ -55,7 +55,7 @@ REQUIREMENTS:
 
 Remember that you must have Python 3.5 or later and librsync 1.0.0 or
 later installed.  For Python, see http://www.python.org.  The
-rdiff-backup homepage at http://rdiff-backup.nongnu.org/ should
+rdiff-backup homepage at https://rdiff-backup.net/ should
 have a recent version of librsync; otherwise see the librsync homepage
 at http://librsync.sourceforge.net/. On Windows, you must have the
 Python for Windows extensions installed if you are building from source.

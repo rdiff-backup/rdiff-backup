@@ -71,7 +71,7 @@ Enter calculate average mode.  The arguments should be a number of
 statistics files.  rdiff-backup will print the average of the listed
 statistics files and exit.
 .TP
-.B \-\-carbonfile 
+.B \-\-carbonfile
 Enable backup of MacOS X carbonfile information.
 .TP
 .B \-\-check-destination-dir
@@ -112,9 +112,9 @@ side and comparing it to the digest recorded in the metadata.
 .B \-\-create-full-path
 Normally only the final directory of the destination path will be
 created if it does not exist. With this option, all missing directories
-on the destination path will be created. Use this option with care: if 
-there is a typo in the remote path, the remote filesystem could fill up 
-very quickly (by creating a duplicate backup tree). For this reason 
+on the destination path will be created. Use this option with care: if
+there is a typo in the remote path, the remote filesystem could fill up
+very quickly (by creating a duplicate backup tree). For this reason
 this option is primarily aimed at scripts which automate backups.
 .TP
 .BI "\-\-current-time " seconds
@@ -138,7 +138,7 @@ reasons or if rdiff-backup is not handling device files correctly.
 Exclude all fifo files.
 .TP
 .BI "\-\-exclude-filelist " filename
-Excludes the files listed in 
+Excludes the files listed in
 .IR filename .
 If
 .I filename
@@ -203,9 +203,9 @@ instance, when overwriting of a destination path, or when removing
 multiple sessions with
 .BR \-\-remove-older-than ).
 rdiff-backup will generally tell you if it needs this.
-.BR WARNING: 
+.BR WARNING:
 You can cause data loss if you mis-use this option.
-Furthermore, do NOT use this option when doing a restore, as it will 
+Furthermore, do NOT use this option when doing a restore, as it will
 DELETE FILES, unless you absolutely know what you are doing.
 .TP
 .BI "\-\-group-mapping-file " filename
@@ -367,7 +367,7 @@ or
 .B \-\-list-increments
 switches, where the time will be given in seconds since the epoch.
 .TP
-.B \-\-override-chars-to-quote 
+.B \-\-override-chars-to-quote
 If the filesystem to which we are backing up is not case-sensitive, automatic 'quoting' of characters occurs. For example, a file 'Developer.doc' will be converted into ';068eveloper.doc'. To override this behavior, you need to specify this option.
 .TP
 .B \-\-preserve-numerical-ids
@@ -428,8 +428,8 @@ files in it, you must run rdiff-backup twice.
 
 By default, rdiff-backup will only delete information from one session
 at a time.  To remove two or more sessions at the same time, supply the
-.B \-\-force 
-option (rdiff-backup will tell you if 
+.B \-\-force
+option (rdiff-backup will tell you if
 .B \-\-force
 is required).
 
@@ -457,7 +457,7 @@ but also reject all write requests.
 .BI "\-\-restrict-update-only " path
 Like
 .BR \-\-restrict ,
-but only allow writes as part of an incremental backup.  Requests for other types of writes (for instance, deleting 
+but only allow writes as part of an incremental backup.  Requests for other types of writes (for instance, deleting
 .IR path )
 will be rejected.
 .TP
@@ -596,7 +596,7 @@ the string "now" (refers to the current time)
 a sequences of digits, like "123456890" (indicating the time in
 seconds after the epoch)
 .IP 3.
-A string like "2002-01-25T07:00:00+02:00" in datetime format 
+A string like "2002-01-25T07:00:00+02:00" in datetime format
 .IP 4.
 An interval, which is a number followed by one of the characters s, m,
 h, D, W, M, or Y (indicating seconds, minutes, hours, days, weeks,
@@ -768,13 +768,13 @@ insensitive), then this prefix will be removed and any character in
 the string can be replaced with an upper- or lowercase version of
 itself.
 
-If you need to match filenames which contain the above globbing 
+If you need to match filenames which contain the above globbing
 characters, they may be escaped using a backslash "\\". The backslash
-will only escape the character following it so for 
+will only escape the character following it so for
 .B **
-you will need 
-to use "\\*\\*" to avoid escaping it to the 
-.B * 
+you will need
+to use "\\*\\*" to avoid escaping it to the
+.B *
 globbing character.
 
 Remember that you may need to quote these characters when typing them
@@ -1011,7 +1011,7 @@ in the source so that they are owned by
 .I ben
 in the repository, and now you want to restore, making sure the files owned originally by
 .I alice
-are still owned by 
+are still owned by
 .IR alice .
 In this case there is no need to use any of the mapping options.
 However, if you wanted to restore the files so that the files
@@ -1078,6 +1078,5 @@ Feel free to ask me questions or send me bug reports, but you may want to see th
 .BR rsync (1),
 .BR ssh (1).
 The main rdiff-backup web page is at
-.IR http://rdiff-backup.nongnu.org/ .
+.IR https://rdiff-backup.net/ .
 It has more information, links to the mailing list and CVS, etc.
-
