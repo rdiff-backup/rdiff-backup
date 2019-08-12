@@ -1,0 +1,12 @@
+#!/bin/sh
+set -ex
+
+# dep8 smoke test for rdiff-backup
+# Author: Otto Kekäläinen <otto@debian.org>
+#
+# This very simple test just checks that the binary starts and prints out
+# the usual complaint:
+#   Fatal Error: No arguments given
+#   See the rdiff-backup manual page for more information.
+
+rdiff-backup --print-statistics 2>&1 | grep 'No arguments given'
