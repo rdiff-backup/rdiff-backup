@@ -3,7 +3,7 @@
 import sys, os, getopt
 from distutils.core import setup, Extension
 
-version_string = "1.3.4"
+version_string = "2.0.0"
 
 if sys.version_info[:2] < (3,5):
 	print("Sorry, rdiff-backup requires version 3.5 or later of python")
