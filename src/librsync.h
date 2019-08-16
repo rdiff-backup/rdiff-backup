@@ -47,9 +47,6 @@ extern "C" {
  * \sa \ref versioning */
 extern char const rs_librsync_version[];
 
-/** Summary of the licence for librsync. */
-extern char const rs_licence_string[];
-
 /** Flag to turn on signature rollsum paranoia mode. */
 extern int rs_roll_paranoia;
 
