@@ -49,7 +49,7 @@
 #include "util.h"
 
 /** Whole file IO buffer sizes. */
-int rs_inbuflen = 0, rs_outbuflen = 0;
+LIBRSYNC_EXPORT int rs_inbuflen = 0, rs_outbuflen = 0;
 
 /** Run a job continuously, with input to/from the two specified files.
  *

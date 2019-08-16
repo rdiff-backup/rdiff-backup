@@ -340,6 +340,9 @@ set(rsync_LIB_SRCS
     ${blake2_SRCS})
 
 add_library(rsync SHARED ${rsync_LIB_SRCS})
+include(GenerateExportHeader)
+generate_export_header(rsync BASE_NAME librsync
+    EXPORT_FILE_NAME ${CMAKE_SOURCE_DIR}/src/librsync_export.h)
 target_link_libraries(rsync ${blake2_LIBS})
 
 # Optionally link zlib and bzip2 if
@@ -353,8 +356,10 @@ if (ENABLE_COMPRESSION)
   endif (ZLIB_FOUND AND BZIP2_FOUND)
 endif (ENABLE_COMPRESSION)
 
-set_target_properties(rsync PROPERTIES VERSION ${LIBRSYNC_VERSION}
-        SOVERSION ${LIBRSYNC_MAJOR_VERSION})
+set_target_properties(rsync PROPERTIES
+    VERSION ${LIBRSYNC_VERSION}
+    SOVERSION ${LIBRSYNC_MAJOR_VERSION}
+    C_VISIBILITY_PRESET hidden)
 install(TARGETS rsync ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 
@@ -379,16 +384,17 @@ endif (BUILD_RDIFF)
 ########### install files ###############
 
 install(FILES
-        src/librsync.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    src/librsync.h
+    src/librsync_export.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 message (STATUS "CMAKE_C_FLAGS  = ${CMAKE_C_FLAGS}")
 
 install(FILES
-	doc/librsync.3
-	DESTINATION ${CMAKE_INSTALL_MANDIR}/man3)
+    doc/librsync.3
+    DESTINATION ${CMAKE_INSTALL_MANDIR}/man3)
 install(FILES
-	doc/rdiff.1
-	DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+    doc/rdiff.1
+    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
 # vim: shiftwidth=4 expandtab

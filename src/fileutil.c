@@ -73,13 +73,6 @@
 #  define fileno(f) _fileno((f))
 #endif
 
-/** Open a file with special handling for '-' or unspecified filenames.
- *
- * \param filename - The filename to open.
- *
- * \param mode - fopen style mode string.
- *
- * \param force - bool to force overwriting of existing files. */
 FILE *rs_file_open(char const *filename, char const *mode, int force)
 {
     FILE *f;

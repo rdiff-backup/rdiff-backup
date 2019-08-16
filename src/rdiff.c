@@ -47,8 +47,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
-#include <fcntl.h>
 #include <popt.h>
 
 #ifdef HAVE_ZLIB_H
@@ -60,13 +60,7 @@
 #endif
 
 #include "librsync.h"
-#include "fileutil.h"
-#include "util.h"
-#include "trace.h"
 #include "isprefix.h"
-#include "sumset.h"
-
-#define PROGRAM "rdiff"
 
 static size_t block_len = RS_DEFAULT_BLOCK_LEN;
 static size_t strong_len = 0;
@@ -81,7 +75,6 @@ enum {
     OPT_GZIP = 1069, OPT_BZIP2
 };
 
-extern int rs_roll_paranoia;
 char *rs_hash_name;
 
 const struct poptOption opts[] = {
@@ -103,24 +96,29 @@ const struct poptOption opts[] = {
     {0}
 };
 
-static void rdiff_usage(const char *error)
+static void rdiff_usage(const char *error, ...)
 {
-    fprintf(stderr, "%s\n" "Try `%s --help' for more information.\n", error,
-            PROGRAM);
+    va_list va;
+    char buf[256];
+
+    va_start(va, error);
+    vsnprintf(buf, sizeof(buf), error, va);
+    va_end(va);
+    fprintf(stderr, "rdiff: %s\n\nTry `rdiff --help' for more information.\n",
+            buf);
 }
 
 static void rdiff_no_more_args(poptContext opcon)
 {
     if (poptGetArg(opcon)) {
-        rdiff_usage("rdiff: too many arguments");
+        rdiff_usage("Too many arguments.");
         exit(RS_SYNTAX_ERROR);
     }
 }
 
 static void bad_option(poptContext opcon, int error)
 {
-    fprintf(stderr, "%s: %s: %s", PROGRAM, poptStrerror(error),
-            poptBadOption(opcon, 0));
+    rdiff_usage("%s: %s", poptStrerror(error), poptBadOption(opcon, 0));
     exit(RS_SYNTAX_ERROR);
 }
 
@@ -192,7 +190,7 @@ static void rdiff_options(poptContext opcon)
             exit(RS_DONE);
         case 'v':
             if (!rs_supports_trace()) {
-                rs_error("library does not support trace");
+                fprintf(stderr, "rdiff: Library does not support trace.\n");
             }
             rs_trace_set_level(RS_LOG_DEBUG);
             break;
@@ -211,7 +209,7 @@ static void rdiff_options(poptContext opcon)
                 else
                     bzip2_level = 9;    /* demand the best */
             }
-            rs_error("sorry, compression is not really implemented yet");
+            rdiff_usage("Sorry, compression is not implemented yet.");
             exit(RS_UNIMPLEMENTED);
 
         default:
@@ -243,8 +241,8 @@ static rs_result rdiff_sig(poptContext opcon)
             strong_len = 8;
         sig_magic = RS_MD4_SIG_MAGIC;
     } else {
-        rs_error("unknown hash algorithm %s", rs_hash_name);
-        return RS_PARAM_ERROR;
+        rdiff_usage("Unknown hash algorithm '%s'.", rs_hash_name);
+        exit(RS_SYNTAX_ERROR);
     }
 
     result =
@@ -273,7 +271,7 @@ static rs_result rdiff_delta(poptContext opcon)
     if (!(sig_name = poptGetArg(opcon))) {
         rdiff_usage("Usage for delta: "
                     "rdiff [OPTIONS] delta SIGNATURE [NEWFILE [DELTA]]");
-        return RS_SYNTAX_ERROR;
+        exit(RS_SYNTAX_ERROR);
     }
 
     sig_file = rs_file_open(sig_name, "rb", file_force);
@@ -319,7 +317,7 @@ static rs_result rdiff_patch(poptContext opcon)
     if (!(basis_name = poptGetArg(opcon))) {
         rdiff_usage("Usage for patch: "
                     "rdiff [OPTIONS] patch BASIS [DELTA [NEW]]");
-        return RS_SYNTAX_ERROR;
+        exit(RS_SYNTAX_ERROR);
     }
 
     basis_file = rs_file_open(basis_name, "rb", file_force);
@@ -354,8 +352,8 @@ static rs_result rdiff_action(poptContext opcon)
         return rdiff_patch(opcon);
 
     rdiff_usage
-        ("rdiff: You must specify an action: `signature', `delta', or `patch'.");
-    return RS_SYNTAX_ERROR;
+        ("You must specify an action: `signature', `delta', or `patch'.");
+    exit(RS_SYNTAX_ERROR);
 }
 
 int main(const int argc, const char *argv[])
@@ -363,12 +361,12 @@ int main(const int argc, const char *argv[])
     poptContext opcon;
     rs_result result;
 
-    opcon = poptGetContext(PROGRAM, argc, argv, opts, 0);
+    opcon = poptGetContext("rdiff", argc, argv, opts, 0);
     rdiff_options(opcon);
     result = rdiff_action(opcon);
 
     if (result != RS_DONE)
-        rs_log(RS_LOG_ERR | RS_LOG_NONAME, "%s", rs_strerror(result));
+        fprintf(stderr, "rdiff: Failed, %s.\n", rs_strerror(result));
 
     poptFreeContext(opcon);
     return result;
