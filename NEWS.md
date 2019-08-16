@@ -4,6 +4,9 @@
 
 NOT RELEASED YET
 
+ * Fix Please don't export private symbols (dbaarda,
+   https://github.com/librsync/librsync/issues/130)
+
 ## librsync 2.0.2
 
 Released 2018-02-27
@@ -25,7 +28,7 @@ Released 2018-02-27
 
  * Removed perl as a build dependency. Note it is still required for some
    tests. (dbaarda, https://github.com/librsync/librsync/issues/75)
-   
+
  * Update RPM spec file for v2.0.2 and fix cmake man page install. (deajan,
    https://github.com/librsync/librsync/issues/47)
 
