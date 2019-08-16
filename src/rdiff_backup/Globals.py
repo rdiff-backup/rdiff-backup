@@ -21,8 +21,10 @@
 import re
 import os
 
+from . import Version
+
 # The current version of rdiff-backup
-version = "1.3.4"
+version = Version.version
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
