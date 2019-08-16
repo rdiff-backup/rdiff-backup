@@ -2,6 +2,8 @@
 .*.swp
 build/
 __pycache__
+src/rdiff_backup.egg-info/
+src/rdiff_backup/Version.py
 
 # tox testing stuff
 .tox*

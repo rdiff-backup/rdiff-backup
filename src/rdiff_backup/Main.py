@@ -243,7 +243,7 @@ def parse_cmdlineoptions(arglist):
         elif opt == "--verify-at-time":
             action, restore_timestr = "verify", arg
         elif opt == "-V" or opt == "--version":
-            print("rdiff-backup " + Globals.version)
+            print("rdiff-backup %s" % Globals.version)
             sys.exit(0)
         else:
             Log.FatalError("Unknown option %s" % opt)
