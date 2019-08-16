@@ -93,18 +93,16 @@ static void rs_log_va(int flags, char const *fn, char const *fmt, va_list va)
 
     if (rs_trace_impl && level <= rs_trace_level) {
         char buf[1000];
-        char full_buf[1000];
+        char full_buf[1040];
 
-        vsnprintf(buf, sizeof buf - 1, fmt, va);
-
+        vsnprintf(buf, sizeof(buf), fmt, va);
         if (flags & RS_LOG_NONAME) {
-            snprintf(full_buf, sizeof full_buf - 1, "%s: %s%s\n", MY_NAME,
+            snprintf(full_buf, sizeof(full_buf), "%s: %s%s\n", MY_NAME,
                      rs_severities[level], buf);
         } else {
-            snprintf(full_buf, sizeof full_buf - 1, "%s: %s(%s) %s\n", MY_NAME,
+            snprintf(full_buf, sizeof(full_buf), "%s: %s(%s) %s\n", MY_NAME,
                      rs_severities[level], fn, buf);
         }
-
         rs_trace_impl(level, full_buf);
     }
 }
