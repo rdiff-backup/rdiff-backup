@@ -32,7 +32,7 @@ struct rs_job {
     rs_buffers_t *stream;
 
     /** Callback for each processing step. */
-    rs_result (*statefn) (rs_job_t *);
+    rs_result (*statefn)(rs_job_t *);
 
     /** Final result of processing job. Used by rs_job_s_failed(). */
     rs_result final_result;
@@ -97,7 +97,7 @@ struct rs_job {
 
 };
 
-rs_job_t *rs_job_new(const char *, rs_result (*statefn) (rs_job_t *));
+rs_job_t *rs_job_new(const char *, rs_result (*statefn)(rs_job_t *));
 
 int rs_job_input_is_ending(rs_job_t *job);
 

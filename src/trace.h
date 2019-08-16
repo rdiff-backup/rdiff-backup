@@ -48,7 +48,7 @@
  * it's called. */
 
 void rs_log0(int level, char const *fn, char const *fmt, ...)
-    __attribute__ ((format(printf, 3, 4)));
+    __attribute__((format(printf, 3, 4)));
 
 #  ifdef DO_RS_TRACE
 #    define rs_trace(fmt, arg...) \

@@ -49,7 +49,7 @@
 
 static rs_result rs_job_work(rs_job_t *job, rs_buffers_t *buffers);
 
-rs_job_t *rs_job_new(char const *job_name, rs_result (*statefn) (rs_job_t *))
+rs_job_t *rs_job_new(char const *job_name, rs_result (*statefn)(rs_job_t *))
 {
     rs_job_t *job;
 
