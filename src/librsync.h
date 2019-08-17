@@ -475,15 +475,14 @@ LIBRSYNC_EXPORT FILE *rs_file_open(char const *filename, char const *mode,
  *
  * This will not actually close the file if it is stdin or stdout.
  *
- * \param file - the stdio file to close.
- */
+ * \param file - the stdio file to close. */
 LIBRSYNC_EXPORT int rs_file_close(FILE *file);
 
 /** Get the size of a file.
  *
- * This provides a platform independent way to get the size of large files.
- * It will return 0 if the size cannot be determined because it is not a
- * regular file.
+ * This provides a platform independent way to get the size of large files. It
+ * will return 0 if the size cannot be determined because it is not a regular
+ * file.
  *
  * \param file - the stdio file to get the size of. */
 LIBRSYNC_EXPORT rs_long_t rs_file_size(FILE *file);
