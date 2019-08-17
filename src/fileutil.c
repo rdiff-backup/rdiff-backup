@@ -41,7 +41,6 @@
 #include <errno.h>
 
 #include "librsync.h"
-#include "fileutil.h"
 #include "trace.h"
 
 /* Use fseeko64, _fseeki64, or fseeko for long files if they exist. */
@@ -119,12 +118,12 @@ int rs_file_close(FILE *f)
     return fclose(f);
 }
 
-void rs_get_filesize(FILE *f, rs_long_t *size)
+rs_long_t rs_file_size(FILE *f)
 {
     struct stat st;
-    if (size && (fstat(fileno(f), &st) == 0) && (S_ISREG(st.st_mode))) {
-        *size = st.st_size;
-    }
+    if ((fstat(fileno(f), &st) == 0) && (S_ISREG(st.st_mode)))
+        return st.st_size;
+    return 0;
 }
 
 rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf)

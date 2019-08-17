@@ -458,10 +458,10 @@ LIBRSYNC_EXPORT rs_job_t *rs_patch_begin(rs_copy_cb * copy_cb, void *copy_arg);
 #  ifndef RSYNC_NO_STDIO_INTERFACE
 #    include <stdio.h>
 
-/** Open a file with special handling for '-' or unspecified filenames.
+/** Open a file with special handling for stdin or stdout.
  *
  * This provides a platform independent way to open large binary files. A
- * filename "" or "-" means stdin for reading, or stdout for writing.
+ * filename "" or "-" means use stdin for reading, or stdout for writing.
  *
  * \param filename - The filename to open.
  *
@@ -471,8 +471,22 @@ LIBRSYNC_EXPORT rs_job_t *rs_patch_begin(rs_copy_cb * copy_cb, void *copy_arg);
 LIBRSYNC_EXPORT FILE *rs_file_open(char const *filename, char const *mode,
                                    int force);
 
-/** Close a file with special handling for stdin or stdout. */
+/** Close a file with special handling for stdin or stdout.
+ *
+ * This will not actually close the file if it is stdin or stdout.
+ *
+ * \param file - the stdio file to close.
+ */
 LIBRSYNC_EXPORT int rs_file_close(FILE *file);
+
+/** Get the size of a file.
+ *
+ * This provides a platform independent way to get the size of large files.
+ * It will return 0 if the size cannot be determined because it is not a
+ * regular file.
+ *
+ * \param file - the stdio file to get the size of. */
+LIBRSYNC_EXPORT rs_long_t rs_file_size(FILE *file);
 
 /** ::rs_copy_cb that reads from a stdio file. */
 LIBRSYNC_EXPORT rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len,
