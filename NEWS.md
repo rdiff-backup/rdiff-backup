@@ -6,16 +6,27 @@ NOT RELEASED YET
 
  * Bump minor version from 2.0.3 to 2.1.0 to reflect additions to librsync.h.
 
- * Fix exporting of private symbols from librsync library (dbaarda,
-   https://github.com/librsync/librsync/issues/130).
+ * Fix exporting of private symbols from librsync library. Add export of
+   useful large file functions `rs_file_open()`, `rs_file_close()`, and
+   `rs_file_size()` to librsync.h. Add export of `rs_signature_log_stats()` to
+   log signature hashtable hit/miss stats. Improve rdiff error output.
+   (dbaarda, https://github.com/librsync/librsync/issues/130)
 
- * Add export of useful large file functions rs_file_open(), rs_file_close(),
-   and rs_file_size() to librsync.h.
+ * Updated release process to include stable tarballs. (dbaarda,
+   https://github.com/librsync/librsync/issues/146)
 
- * Add export of rs_signature_log_stats() to log signature hashtable hit/miss
-   stats.
+ * Remove redundant and broken `--paranoia` argument from rdiff. (dbaarda,
+   https://github.com/librsync/librsync/issues/155)
 
- * Improved rdiff error output.
+ * Fix memory leak of `rs_signature_t->block_sigs` when freeing signatures.
+   (telles-simbiose, https://github.com/librsync/librsync/pull/147)
+
+ * Document delta file format. (zmj,
+   https://github.com/librsync/librsync/issues/46)
+
+ * Fix up doxygen comments. (dbaarda,
+   https://github.com/librsync/librsync/pull/151)
+
 
 ## librsync 2.0.2
 
