@@ -92,7 +92,6 @@ const struct poptOption opts[] = {
     {"gzip", 'z', POPT_ARG_NONE, 0, OPT_GZIP},
     {"bzip2", 'i', POPT_ARG_NONE, 0, OPT_BZIP2},
     {"force", 'f', POPT_ARG_NONE, &file_force},
-    {"paranoia", 0, POPT_ARG_NONE, &rs_roll_paranoia},
     {0}
 };
 
@@ -138,7 +137,6 @@ static void help(void)
            "Delta-encoding options:\n"
            "  -b, --block-size=BYTES    Signature block size\n"
            "  -S, --sum-size=BYTES      Set signature strength\n"
-           "      --paranoia            Verify all rolling checksums\n"
            "IO options:\n" "  -I, --input-size=BYTES    Input buffer size\n"
            "  -O, --output-size=BYTES   Output buffer size\n"
            "  -z, --gzip[=LEVEL]        gzip-compress deltas\n"

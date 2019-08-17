@@ -47,9 +47,6 @@ extern "C" {
  * \sa \ref versioning */
 extern char const rs_librsync_version[];
 
-/** Flag to turn on signature rollsum paranoia mode. */
-extern int rs_roll_paranoia;
-
 typedef uint8_t rs_byte_t;
 typedef intmax_t rs_long_t;
 
