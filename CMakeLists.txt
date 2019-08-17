@@ -340,9 +340,10 @@ set(rsync_LIB_SRCS
     ${blake2_SRCS})
 
 add_library(rsync SHARED ${rsync_LIB_SRCS})
-include(GenerateExportHeader)
-generate_export_header(rsync BASE_NAME librsync
-    EXPORT_FILE_NAME ${CMAKE_SOURCE_DIR}/src/librsync_export.h)
+# TODO: Enable this when GenerateExportHeader works more widely.
+# include(GenerateExportHeader)
+# generate_export_header(rsync BASE_NAME librsync
+#     EXPORT_FILE_NAME ${CMAKE_SOURCE_DIR}/src/librsync_export.h)
 target_link_libraries(rsync ${blake2_LIBS})
 
 # Optionally link zlib and bzip2 if
