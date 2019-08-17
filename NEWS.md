@@ -1,8 +1,21 @@
 # librsync NEWS
 
-## librsync 2.0.3
+## librsync 2.1.0
 
 NOT RELEASED YET
+
+ * Bump minor version from 2.0.3 to 2.1.0 to reflect additions to librsync.h.
+
+ * Fix exporting of private symbols from librsync library (dbaarda,
+   https://github.com/librsync/librsync/issues/130).
+
+ * Add export of useful large file functions rs_file_open(), rs_file_close(),
+   and rs_file_size() to librsync.h.
+
+ * Add export of rs_signature_log_stats() to log signature hashtable hit/miss
+   stats.
+
+ * Improved rdiff error output.
 
 ## librsync 2.0.2
 
@@ -25,7 +38,7 @@ Released 2018-02-27
 
  * Removed perl as a build dependency. Note it is still required for some
    tests. (dbaarda, https://github.com/librsync/librsync/issues/75)
-   
+
  * Update RPM spec file for v2.0.2 and fix cmake man page install. (deajan,
    https://github.com/librsync/librsync/issues/47)
 

@@ -1,9 +1,3 @@
-* Fix symbol names:
-
-  * Rename all symbols that are intended to be private to `rs__`
-
-  * Rename those that don't match either prefix.
-
 * We have a few functions to do with reading a netint, stashing
   it somewhere, then moving into a different state.  Is it worth
   writing generic functions for that, or would it be too confusing?

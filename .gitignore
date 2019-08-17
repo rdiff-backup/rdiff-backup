@@ -4,7 +4,6 @@ CMakeCache.txt
 CTestTestfile.cmake
 config.h
 *.cbp
-librsync-config.h
 librsync.so*
 librsync.a
 librsync*.dylib

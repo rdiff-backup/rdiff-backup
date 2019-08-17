@@ -41,7 +41,6 @@
 #include "librsync.h"
 
 #include "trace.h"
-#include "fileutil.h"
 #include "sumset.h"
 #include "job.h"
 #include "buf.h"
@@ -49,7 +48,7 @@
 #include "util.h"
 
 /** Whole file IO buffer sizes. */
-int rs_inbuflen = 0, rs_outbuflen = 0;
+LIBRSYNC_EXPORT int rs_inbuflen = 0, rs_outbuflen = 0;
 
 /** Run a job continuously, with input to/from the two specified files.
  *
@@ -115,8 +114,8 @@ rs_result rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset,
     rs_result r;
 
     job = rs_loadsig_begin(sumset);
-    /* Estimate a number of signatures by file size */
-    rs_get_filesize(sig_file, &job->sig_fsize);
+    /* Set filesize used to estimate signature size. */
+    job->sig_fsize = rs_file_size(sig_file);
     /* Size inbuf for 1024x 16 byte blocksums. */
     r = rs_whole_run(job, sig_file, NULL, 1024 * 16, 0);
     if (stats)

@@ -14,8 +14,6 @@ application control, by passing a ::rs_magic_number when creating a job.
 
 The library version can be checked at runtime in ::rs_librsync_version.
 
-A brief summary of the licence on librsync is in ::rs_licence_string.
-
 See [NEWS.md](NEWS.md) for a list of changes.
 
 \note Only the public interface, defined in \ref librsync.h, is covered

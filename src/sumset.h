@@ -77,9 +77,6 @@ rs_block_sig_t *rs_signature_add_block(rs_signature_t *sig,
 rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum,
                                   void const *buf, size_t len);
 
-/** Log the rs_signature_find_match() stats. */
-void rs_signature_log_stats(rs_signature_t const *sig);
-
 /** Assert that a signature is valid.
  *
  * We don't use a static inline function here so that assert failure output
