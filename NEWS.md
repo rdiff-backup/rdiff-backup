@@ -1,5 +1,9 @@
 # librsync NEWS
 
+## librsync 2.1.1
+
+NOT RELEASED YET
+
 ## librsync 2.1.0
 
 Released 2019-08-19
@@ -26,7 +30,6 @@ Released 2019-08-19
 
  * Fix up doxygen comments. (dbaarda,
    https://github.com/librsync/librsync/pull/151)
-
 
 ## librsync 2.0.2
 
