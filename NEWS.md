@@ -2,7 +2,7 @@
 
 ## librsync 2.1.0
 
-NOT RELEASED YET
+Released 2019-08-19
 
  * Bump minor version from 2.0.3 to 2.1.0 to reflect additions to librsync.h.
 
