@@ -2,17 +2,17 @@ INSTALLATION:
 
 Thank you for trying rdiff-backup.  To install, run:
 
-	python3 dist/setup.py install
+	python3 setup.py install
 
 The build process can be also be run separately:
 
-	python3 dist/setup.py build
+	python3 setup.py build
 
 The default prefix is generally /usr, so files would be put in /usr/bin,
 /usr/share/man/, etc.  An alternate prefix can be specified using the
 --prefix=<prefix> option.  For example:
 
-	python3 dist/setup.py install --prefix=/usr/local
+	python3 setup.py install --prefix=/usr/local
 
 The default prefix depends on how you (or your distribution) installed and
 configured Python. Suggested reading is "How installation works" from the
@@ -24,7 +24,7 @@ default location, usually /usr/include and /usr/lib.  If you want the
 setup script to check different locations, use the --librsync-dir
 switch or the LIBRSYNC_DIR environment variable.  For instance,
 
-	python3 dist/setup.py --librsync-dir=/usr/local build
+	python3 setup.py --librsync-dir=/usr/local build
 
 instructs the setup program to look in /usr/local/include and
 /usr/local/lib for the librsync files.
@@ -34,7 +34,7 @@ environment variables are also recognized.  Running setup.py with no
 arguments will display some help. Additional help is displayed by the
 command:
 
-	python3 dist/setup.py install --help
+	python3 setup.py install --help
 
 More information about using setup.py and how rdiff-backup is installed
 is available from the Python guide, Installing Python Modules for System
@@ -46,7 +46,7 @@ to save a list of the files installed to <file>.
 
 To build from source on Windows, you can use the command:
 
-	python3 dist/setup.py py2exe --single-file
+	python3 setup.py py2exe --single-file
 
 to build a single executable file which contains Python, librsync, and
 all required modules.
