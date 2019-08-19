@@ -7,6 +7,7 @@ Some notes for developers and other people willing to help development.
 - Install:
 * tox
 * libacl-devel (for sys/acl.h)
+* rdiff (with support for -H parameter)
 - unpack the test-files (see note) to a directory `rdiff-backup_testfiles` next to the cloned Git repository
 - run `tox` to use the default `tox.ini`
 - or `tox -c tox_slow.ini` for long tests
