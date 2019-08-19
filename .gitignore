@@ -1,1 +1,11 @@
-librsync-bin
+*~
+.*.swp
+build/
+__pycache__
+
+# tox testing stuff
+.tox*
+MANIFEST
+
+# just ignore files marked local through their name
+*[._]local[._]*
