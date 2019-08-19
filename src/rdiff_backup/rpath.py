@@ -1001,7 +1001,7 @@ class RPath(RORPath):
 
 	def rmdir(self):
 		log.Log("Removing directory " + self.path, 6)
-		self.conn.os.chmod(self.path, 0700)
+		self.conn.os.chmod(self.path, 0o700)
 		self.conn.os.rmdir(self.path)
 		self.data = {'type': None}
 
@@ -1093,9 +1093,9 @@ class RPath(RORPath):
 					# Remove the read-only attribute and try again.
 					self.chmod(0o700)
 					self.conn.os.unlink(self.path)
-                                elif error.errno == errno.ENOENT:
-                                        log.Log("Warning: file %s does not exist. We had to "
-                                                "delete it, so we are going on anyway." % self.path, 2)
+				elif error.errno == errno.ENOENT:
+					log.Log("Warning: file %s does not exist. We had to "
+						"delete it, so we are going on anyway." % self.path, 2)
 				else:
 					raise
 
@@ -1210,11 +1210,10 @@ class RPath(RORPath):
 		"""
 		log.Log("Writing file object to " + self.path, 7)
 		assert not self.lstat(), "File %s already exists" % self.path
-                try:
-		        outfp = self.open("wb", compress = compress)
-                except IOError, e:
-                        raise RPathException("Error opening file: %s" %
-                                             str(e))
+		try:
+			outfp = self.open("wb", compress = compress)
+		except IOError as e:
+			raise RPathException("Error opening file: %s" % str(e))
 		copyfileobj(fp, outfp)
 		if outfp.close(): raise RPathException("Error closing file")
 		self.setdata()

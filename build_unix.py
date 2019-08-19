@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This script compiles and bundles together librsync and rdiff-backup
 
@@ -18,10 +18,6 @@ def runCommand(*args):
         sys.stderr.write("The command gave an error:\n  %s\n" % " ".join(args))
         sys.exit(1)
 
-if len(sys.argv) != 2:
-    sys.stderr.write("Usage: %s version\n" % sys.argv[0])
-    sys.exit(1)
-version = sys.argv[1]
 # Compilation of librsync
 os.chdir("librsync")
 runCommand("cmake", "-DCMAKE_BUILD_TYPE=Release",
@@ -30,13 +26,6 @@ runCommand("make")
 runCommand("make", "install")
 os.chdir("..")
 # Build of rdiff-backup
-os.chdir("rdiff-backup")
-runCommand(sys.executable, os.path.join(".", "dist", "makedist"), "--no-tar",
-           version)
-versionedDir = "rdiff-backup-%s" % version
-shutil.move(versionedDir, os.path.join(".."))
-os.chdir(os.path.join("..", versionedDir))
-runCommand(sys.executable, "setup.py", "build")
-
-print ("\n\nrdiff-backup is now ready to be installed from directory\n  %s\n"
-       "with command\n  ./setup.py install\n" % os.getcwd())
+runCommand(sys.executable, os.path.join(".", "setup.py"),
+           "--librsync-dir=librsync-bin", "build")
+# TODO
