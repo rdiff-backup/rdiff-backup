@@ -1,0 +1,31 @@
+language: python
+
+# Ubuntu 18.04 ships with Python 3.6
+dist: bionic
+sudo: false
+
+cache: pip
+
+before_cache:
+  - rm -f $HOME/.cache/pip/log/debug.log
+
+# Don't run tests on WIP branches
+branches:
+  except:
+    - /^WIP-.*$/
+
+addons:
+  apt:
+    packages:
+    - libacl1-dev
+    - librsync-dev
+    - rdiff
+
+install:
+  - pip install -U pip tox virtualenv
+
+matrix:
+  include:
+    - python: 3.7
+      script: tox -e flake8
+      env: FLAKE8
