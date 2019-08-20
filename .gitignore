@@ -3,6 +3,9 @@
 build/
 __pycache__
 
+# Testa data files are not currently tracked in git
+testfiles*
+
 # tox testing stuff
 .tox*
 MANIFEST
