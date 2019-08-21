@@ -24,9 +24,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
     apt-get install -y --no-install-recommends \
     tox \
-    libacl1-dev # /usr/include/sys/acl.h \
-    rdiff
-
+    rdiff \
+    libacl1-dev # /usr/include/sys/acl.h
+ 
 # Build dev image
 # docker build --pull --tag rdiff-backup-dev:debian-sid .
 
@@ -35,5 +35,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
 
 # Run tests
 # docker run -it -v ${PWD}:/build -w /build rdiff-backup-dev:debian-sid bash
-#   curl -O https://download-mirror.savannah.gnu.org/releases/rdiff-backup/testfiles.tar.gz && tar xvf testfiles.tar.gz
+#   curl -LO https://github.com/ericzolf/rdiff-backup/releases/download/Testfiles2019-08-10/rdiff-backup_testfiles_2019-08-10.tar.gz
+#   tar xvf *.tar.gz
+#   mv rdiff-backup_testfiles testfiles
 #   tox -e py37
+
