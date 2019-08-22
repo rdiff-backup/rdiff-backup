@@ -8,23 +8,23 @@ from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
 	 selection, Time, rpath, eas_acls, rorpiter, Security
 
 
-RBBin = shutil.which("rdiff-backup")
+RBBin = os.fsencode(shutil.which("rdiff-backup"))
 
 # Working directory is defined by Tox, venv or the current build directory
-abs_work_dir = os.getenv('TOX_ENV_DIR', os.getenv('VIRTUAL_ENV',
-    os.path.join(os.getcwd(), 'build')))
-abs_test_dir = os.path.join(abs_work_dir, 'testfiles')
-abs_output_dir = os.path.join(abs_test_dir, 'output')
-abs_restore_dir = os.path.join(abs_test_dir, 'restore')
+abs_work_dir = os.getenvb(b'TOX_ENV_DIR', os.getenvb(b'VIRTUAL_ENV',
+    os.path.join(os.getcwdb(), b'build')))
+abs_test_dir = os.path.join(abs_work_dir, b'testfiles')
+abs_output_dir = os.path.join(abs_test_dir, b'output')
+abs_restore_dir = os.path.join(abs_test_dir, b'restore')
 
-old_test_dir = os.getcwd() + '_testfiles'
-old_inc1_dir = os.path.join(old_test_dir, 'increment1')
-old_inc2_dir = os.path.join(old_test_dir, 'increment2')
-old_inc3_dir = os.path.join(old_test_dir, 'increment3')
-old_inc4_dir = os.path.join(old_test_dir, 'increment4')
+old_test_dir = os.getcwdb() + b'_testfiles'
+old_inc1_dir = os.path.join(old_test_dir, b'increment1')
+old_inc2_dir = os.path.join(old_test_dir, b'increment2')
+old_inc3_dir = os.path.join(old_test_dir, b'increment3')
+old_inc4_dir = os.path.join(old_test_dir, b'increment4')
 
 # the directory in which all testing scripts are placed is the one
-abs_testing_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+abs_testing_dir = os.path.dirname(os.path.abspath(os.fsencode(sys.argv[0])))
 
 __no_execute__ = 1 # Keeps the actual rdiff-backup program from running
 
@@ -33,7 +33,7 @@ def Myrm(dirstring):
 	root_rp = rpath.RPath(Globals.local_connection, dirstring)
 	for rp in selection.Select(root_rp).set_iter():
 		if rp.isdir(): rp.chmod(0o700) # otherwise may not be able to remove
-	assert not os.system("rm -rf %s" % (dirstring,))
+	assert not os.system(b"rm -rf %s" % (root_rp.path,))
 
 def re_init_rpath_dir(rp, uid=-1, gid=-1):
 	"""Delete directory if present, then recreate"""
@@ -53,8 +53,8 @@ def re_init_subdir(maindir, subdir):
 	return dir
 
 # two temporary directories to simulate remote actions
-abs_remote1_dir = re_init_subdir(abs_test_dir, 'remote1')
-abs_remote2_dir = re_init_subdir(abs_test_dir, 'remote2')
+abs_remote1_dir = re_init_subdir(abs_test_dir, b'remote1')
+abs_remote2_dir = re_init_subdir(abs_test_dir, b'remote2')
 
 def MakeOutputDir():
 	"""Initialize the output directory"""
@@ -64,7 +64,7 @@ def MakeOutputDir():
 	return rp
 
 def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
-				 current_time = None, extra_options = "", input=None,
+				 current_time = None, extra_options = b"", input=None,
 				 check_return_val = 1, expected_ret_val = 0):
 	"""Run rdiff-backup with the given options
 
@@ -83,27 +83,27 @@ def rdiff_backup(source_local, dest_local, src_dir, dest_dir,
 
 	"""
 	if not source_local:
-		src_dir = ("'cd %s; %s --server'::%s" % (abs_remote1_dir, RBBin, src_dir))
+		src_dir = (b"'cd %s; %s --server'::%s" % (abs_remote1_dir, RBBin, src_dir))
 	if dest_dir and not dest_local:
-		dest_dir = ("'cd %s; %s --server'::%s" %
+		dest_dir = (b"'cd %s; %s --server'::%s" %
 					(abs_remote2_dir, RBBin, dest_dir))
 
 	cmdargs = [RBBin, extra_options]
-	if not (source_local and dest_local): cmdargs.append("--remote-schema %s")
+	if not (source_local and dest_local): cmdargs.append(b"--remote-schema %s")
 
-	if current_time: cmdargs.append("--current-time %s" % current_time)
+	if current_time: cmdargs.append(b"--current-time %i" % current_time)
 	cmdargs.append(src_dir)
 	if dest_dir: cmdargs.append(dest_dir)
-	cmdline = " ".join(cmdargs)
+	cmdline = b" ".join(cmdargs)
 	print("Executing: ", cmdline)
 	ret_val = subprocess.run(cmdline, shell=True,
-					input=input, universal_newlines=True).returncode
+					input=input, universal_newlines=False).returncode
 	if check_return_val:
 		# the construct is needed because os.system seemingly doesn't
 		# respect expected return values (FIXME)
 		assert ((expected_ret_val == 0 and ret_val == 0) or
                                 (expected_ret_val > 0 and ret_val > 0)), \
-			"Return code %d of command `%s` isn't expected %d." % \
+			"Return code %d of command `%a` isn't expected %d." % \
 						(ret_val, cmdline, expected_ret_val)
 	return ret_val
 
@@ -120,13 +120,13 @@ def InternalBackup(source_local, dest_local, src_dir, dest_dir,
 	Globals.current_time = current_time
 	#_reset_connections()
 	Globals.security_level = "override"
-	remote_schema = '%s'
+	remote_schema = b'%s'
 
 	if not source_local:
-		src_dir = "cd %s; %s/server.py::%s" % \
+		src_dir = b"cd %s; %s/server.py::%s" % \
 				  (abs_remote1_dir, abs_testing_dir, src_dir)
 	if not dest_local:
-		dest_dir = "cd %s; %s/server.py::%s" \
+		dest_dir = b"cd %s; %s/server.py::%s" \
 				   % (abs_remote2_dir, abs_testing_dir, dest_dir)
 
 	cmdpairs = SetConnections.get_cmd_pairs([src_dir, dest_dir], remote_schema)
@@ -169,14 +169,14 @@ def InternalRestore(mirror_local, dest_local, mirror_dir, dest_dir, time,
 	"""
 	Main.force = 1
 	Main.restore_root_set = 0
-	remote_schema = '%s'
+	remote_schema = b'%s'
 	Globals.security_level = "override"
 	#_reset_connections()
 	if not mirror_local:
-		mirror_dir = "cd %s; %s/server.py::%s" % \
+		mirror_dir = b"cd %s; %s/server.py::%s" % \
 					 (abs_remote1_dir, abs_testing_dir, mirror_dir)
 	if not dest_local:
-		dest_dir = "cd %s; %s/server.py::%s" \
+		dest_dir = b"cd %s; %s/server.py::%s" \
 				   % (abs_remote2_dir, abs_testing_dir, dest_dir)
 
 	cmdpairs = SetConnections.get_cmd_pairs([mirror_dir, dest_dir],
@@ -201,7 +201,7 @@ def get_increment_rp(mirror_rp, time):
 	if not data_rp.isdir(): return None
 	for filename in data_rp.listdir():
 		rp = data_rp.append(filename)
-		if rp.isincfile() and rp.getincbase_str() == "increments":
+		if rp.isincfile() and rp.getincbase_bname() == b"increments":
 			if rp.getinctime() == time: return rp
 	return None # Couldn't find appropriate increment
 
@@ -245,10 +245,6 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 			src_select.parse_rbdir_exclude()
 			dest_select.parse_rbdir_exclude()
 
-		# always exclude files with non-UTF-8 conform names
-		src_select.parse_brokenname_exclude()
-		dest_select.parse_brokenname_exclude()
-
 		return src_select.set_iter(), dest_select.set_iter()
 
 	def preprocess(src_rorp, dest_rorp):
@@ -290,7 +286,7 @@ def CompareRecursive(src_rp, dest_rp, compare_hardlinks = 1,
 		return 1
 
 	Log("Comparing %s and %s, hardlinks %s, eas %s, acls %s" %
-		(src_rp.path, dest_rp.path, compare_hardlinks,
+		(src_rp.get_safepath(), dest_rp.get_safepath(), compare_hardlinks,
 		 compare_eas, compare_acls), 3)
 	if compare_hardlinks: reset_hardlink_dicts()
 	src_iter, dest_iter = get_selection_functions()

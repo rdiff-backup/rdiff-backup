@@ -19,6 +19,7 @@
 
 """Provides functions and *ITR classes, for writing increment files"""
 
+import os
 from . import Globals, Time, rpath, Rdiff, log, statistics, robust
 
 
@@ -33,7 +34,7 @@ def Increment(new, mirror, incpref):
 	file to incpref.
 
 	"""
-	log.Log("Incrementing mirror file " + mirror.path, 5)
+	log.Log("Incrementing mirror file %s" % mirror.get_safepath(), 5)
 	if ((new and new.isdir()) or mirror.isdir()) and not incpref.lstat():
 		incpref.mkdir()
 
@@ -60,8 +61,8 @@ def makesnapshot(mirror, incpref):
 	"""Copy mirror to incfile, since new is quite different"""
 	compress = iscompressed(mirror)
 	if compress and mirror.isreg():
-		snapshotrp = get_inc(incpref, "snapshot.gz")
-	else: snapshotrp = get_inc(incpref, "snapshot")
+		snapshotrp = get_inc(incpref, b"snapshot.gz")
+	else: snapshotrp = get_inc(incpref, b"snapshot")
 
 	if mirror.isspecial(): # check for errors when creating special increments
 		eh = robust.get_error_handler("SpecialFileError")
@@ -76,8 +77,8 @@ def makesnapshot(mirror, incpref):
 def makediff(new, mirror, incpref):
 	"""Make incfile which is a diff new -> mirror"""
 	compress = iscompressed(mirror)
-	if compress: diff = get_inc(incpref, "diff.gz")
-	else:  diff = get_inc(incpref, "diff")
+	if compress: diff = get_inc(incpref, b"diff.gz")
+	else:  diff = get_inc(incpref, b"diff")
 
 	old_new_perms, old_mirror_perms = (None, None)
 
@@ -113,7 +114,7 @@ def get_inc(rp, typestr, time = None):
 
 	"""
 	if time is None: time = Time.prevtime
-	addtostr = lambda s: "%s.%s.%s" % (s, Time.timetostring(time), typestr)
+	addtostr = lambda s: b'.'.join(map(os.fsencode,(s, Time.timetostring(time), typestr)))
 	if rp.index:
 		incrp = rp.__class__(rp.conn, rp.base, rp.index[:-1] +
 							 (addtostr(rp.index[-1]),))

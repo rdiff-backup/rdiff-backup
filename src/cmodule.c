@@ -93,7 +93,7 @@ static PyObject *c_make_file_dict(self, args)
   long int mode, perms;
   int res;
 
-  if (!PyArg_ParseTuple(args, "s", &filename)) return NULL;
+  if (!PyArg_ParseTuple(args, "y", &filename)) return NULL;
 
   Py_BEGIN_ALLOW_THREADS
   res = LSTAT(filename, &sbuf);
@@ -160,7 +160,7 @@ static PyObject *c_make_file_dict(self, args)
 	  return_val = NULL;
 	} else {
 	  linkname[len_link] = '\0';
-	  return_val = Py_BuildValue("{s:s,s:O,s:l,s:l,s:l,s:O,s:O,s:l,s:s}",
+	  return_val = Py_BuildValue("{s:s,s:O,s:l,s:l,s:l,s:O,s:O,s:l,s:y}",
 								 "type", "sym",
 								 "size", size,
 								 "perms", perms,
@@ -331,8 +331,8 @@ static PyObject *acl_quote(PyObject *self, PyObject *args)
 {
   char *s;
 
-  if (!PyArg_ParseTuple(args, "s", &s)) return NULL;
-  return Py_BuildValue("s", quote(s));
+  if (!PyArg_ParseTuple(args, "y", &s)) return NULL;
+  return Py_BuildValue("y", quote(s));
 }
 
 /* Translate unquote above into python */
@@ -340,8 +340,8 @@ static PyObject *acl_unquote(PyObject *self, PyObject *args)
 {
   char *s;
 
-  if (!PyArg_ParseTuple(args, "s", &s)) return NULL;
-  return Py_BuildValue("s", unquote(s));
+  if (!PyArg_ParseTuple(args, "y", &s)) return NULL;
+  return Py_BuildValue("y", unquote(s));
 }
 
 /* ------------- Python export lists -------------------------------- */

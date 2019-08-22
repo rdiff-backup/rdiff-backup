@@ -217,13 +217,13 @@ class StatsObj:
 
 	def write_stats_to_rp(self, rp):
 		"""Write statistics string to given rpath"""
-		fp = rpath.MaybeUnicode(rp.open("wb"))
+		fp = rp.open("w")  # statistics are a text file
 		fp.write(self.get_stats_string())
 		assert not fp.close()
 
 	def read_stats_from_rp(self, rp):
 		"""Set statistics from rpath, return self for convenience"""
-		fp = rpath.MaybeUnicode(rp.open("r"))
+		fp = rp.open("r")  # statistics are a text file
 		self.set_stats_from_string(fp.read())
 		fp.close()
 		return self
@@ -335,7 +335,7 @@ def write_active_statfileobj(end_time = None):
 	"""Write active StatFileObj object to session statistics file"""
 	global _active_statfileobj
 	assert _active_statfileobj
-	rp_base = Globals.rbdir.append("session_statistics")
+	rp_base = Globals.rbdir.append(b"session_statistics")
 	session_stats_rp = increment.get_inc(rp_base, 'data', Time.curtime)
 	_active_statfileobj.finish(end_time)
 	_active_statfileobj.write_stats_to_rp(session_stats_rp)
@@ -359,24 +359,23 @@ class FileStats:
 	def init(cls):
 		"""Open file stats object and prepare to write"""
 		assert not (cls._fileobj or cls._rp), (cls._fileobj, cls._rp)
-		rpbase = Globals.rbdir.append("file_statistics")
+		rpbase = Globals.rbdir.append(b"file_statistics")
 		suffix = Globals.compression and 'data.gz' or 'data'
 		cls._rp = increment.get_inc(rpbase, suffix, Time.curtime)
 		assert not cls._rp.lstat()
-		cls._fileobj = rpath.MaybeUnicode(cls._rp.open("wb", 
-							compress = Globals.compression))
+		cls._fileobj = cls._rp.open("wb", compress = Globals.compression)
 
-		cls._line_sep = Globals.null_separator and '\0' or '\n'
+		cls._line_sep = Globals.null_separator and b'\0' or b'\n'
 		cls.write_docstring()
 		cls.line_buffer = []
 
 	@classmethod
 	def write_docstring(cls):
 		"""Write the first line (a documentation string) into file"""
-		cls._fileobj.write("# Format of each line in file statistics file:")
+		cls._fileobj.write(b"# Format of each line in file statistics file:")
 		cls._fileobj.write(cls._line_sep)
-		cls._fileobj.write("# Filename Changed SourceSize MirrorSize "
-						   "IncrementSize" + cls._line_sep)
+		cls._fileobj.write(b"# Filename Changed SourceSize MirrorSize "
+						   b"IncrementSize" + cls._line_sep)
 
 	@classmethod
 	def update(cls, source_rorp, dest_rorp, changed, inc):
@@ -386,16 +385,16 @@ class FileStats:
 		filename = metadata.quote_path(filename)
 
 		size_list = list(map(cls.get_size, [source_rorp, dest_rorp, inc]))
-		line = " ".join([filename, str(changed)] + size_list)
+		line = b" ".join([filename, str(changed).encode()] + size_list)
 		cls.line_buffer.append(line)
 		if len(cls.line_buffer) >= 100: cls.write_buffer()
 
 	@classmethod
 	def get_size(cls, rorp):
-		"""Return the size of rorp as string, or "NA" if not a regular file"""
-		if not rorp: return "NA"
-		if rorp.isreg(): return str(rorp.getsize())
-		else: return "0"
+		"""Return the size of rorp as bytes, or "NA" if not a regular file"""
+		if not rorp: return b"NA"
+		if rorp.isreg(): return str(rorp.getsize()).encode()
+		else: return b"0"
 
 	@classmethod
 	def write_buffer(cls):
@@ -406,7 +405,7 @@ class FileStats:
 
 		"""
 		assert cls.line_buffer and cls._fileobj
-		cls.line_buffer.append('') # have join add _line_sep to end also
+		cls.line_buffer.append(b'') # have join add _line_sep to end also
 		cls._fileobj.write(cls._line_sep.join(cls.line_buffer))
 		cls.line_buffer = []
 

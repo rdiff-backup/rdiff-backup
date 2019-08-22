@@ -70,6 +70,10 @@ def timetostring(timeinseconds):
 	s = time.strftime(format_string, time.localtime(timeinseconds))
 	return s + gettzd(timeinseconds)
 
+def timetobytes(timeinseconds):
+	return timetostring(timeinseconds).encode('ascii')
+
+
 def stringtotime(timestring):
 	"""Return time in seconds from w3 timestring
 
@@ -95,6 +99,10 @@ def stringtotime(timestring):
 
 		return int(utc_in_secs) + tzdtoseconds(timestring[19:])
 	except (TypeError, ValueError, AssertionError): return None
+
+def bytestotime(timebytes):
+	return stringtotime(timebytes.decode('ascii'))
+
 
 def timetopretty(timeinseconds):
 	"""Return pretty version of time"""

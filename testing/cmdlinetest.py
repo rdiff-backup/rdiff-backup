@@ -5,7 +5,7 @@ from rdiff_backup import Globals, log, rpath, robust, FilenameMapping
 
 """Regression tests"""
 
-Globals.exclude_mirror_regexps = [re.compile(".*/rdiff-backup-data")]
+Globals.exclude_mirror_regexps = [re.compile(b".*/rdiff-backup-data")]
 Log.setverbosity(3)
 
 lc = Globals.local_connection
@@ -16,11 +16,11 @@ class Local:
 
 	def get_src_local_rp(extension):
 		return rpath.RPath(Globals.local_connection,
-				os.path.join(old_test_dir, extension))
+				os.path.join(old_test_dir, os.fsencode(extension)))
 
 	def get_tgt_local_rp(extension):
 		return rpath.RPath(Globals.local_connection,
-				os.path.join(abs_test_dir, extension))
+				os.path.join(abs_test_dir, os.fsencode(extension)))
 
 	vftrp = get_src_local_rp('various_file_types')
 	emptyrp = get_src_local_rp('empty')
@@ -99,8 +99,8 @@ class PathSetter(unittest.TestCase):
 		assert CompareRecursive(Local.inc4rp, Local.rpout)
 
 		# Getting restore rps
-		inc_paths = self.getinc_paths("increments.",
-									  os.path.join(Local.rpout.path, "rdiff-backup-data"))
+		inc_paths = self.getinc_paths(b"increments.",
+									  os.path.join(Local.rpout.path, b"rdiff-backup-data"))
 		assert len(inc_paths) == 3
 
 		# Restoring increment1
@@ -116,33 +116,33 @@ class PathSetter(unittest.TestCase):
 		assert CompareRecursive(Local.inc3rp, Local.rpout3)
 
 		# Test restoration of a few random files
-		vft_paths = self.getinc_paths("various_file_types.",
+		vft_paths = self.getinc_paths(b"various_file_types.",
 					     os.path.join(Local.rpout.path,
-						     "rdiff-backup-data", "increments"))
+						     b"rdiff-backup-data", b"increments"))
 		rdiff_backup(from_local, to_local, vft_paths[1], Local.vft_out.path)
 		self.refresh(Local.vft_in, Local.vft_out)
 		assert CompareRecursive(Local.vft_in, Local.vft_out)
 
-		timbar_paths = self.getinc_paths("timbar.pyc.",
+		timbar_paths = self.getinc_paths(b"timbar.pyc.",
 					     os.path.join(Local.rpout.path,
-						     "rdiff-backup-data", "increments"))
+						     b"rdiff-backup-data", b"increments"))
 		rdiff_backup(from_local, to_local, timbar_paths[0], Local.timbar_out.path)
 		self.refresh(Local.timbar_in, Local.timbar_out)
 		assert Local.timbar_in.equal_loose(Local.timbar_out)
 
 		rdiff_backup(from_local, to_local, Local.rpout.append('various_file_types').path,
 							 Local.vft_recover.path,
-							 extra_options="--restore-as-of 25000")
+							 extra_options=b"--restore-as-of 25000")
 		self.refresh(Local.vft_recover, Local.vft_in)
 		assert CompareRecursive(Local.vft_recover, Local.vft_in)
 
 		# Make sure too many increment files not created
-		assert len(self.getinc_paths("nochange.",
+		assert len(self.getinc_paths(b"nochange.",
 					     os.path.join(Local.rpout.path,
-						     "rdiff-backup-data", "increments"))) == 0
-		nochange_incs = len(self.getinc_paths("",
+						     b"rdiff-backup-data", b"increments"))) == 0
+		nochange_incs = len(self.getinc_paths(b"",
 					     os.path.join(Local.rpout.path,
-						     "rdiff-backup-data", "increments", "nochange")))
+						     b"rdiff-backup-data", b"increments", b"nochange")))
 		assert nochange_incs == 1 or nochange_incs == 0, nochange_incs
 
 	def getinc_paths(self, basename, directory, quoted = 0):
@@ -183,7 +183,7 @@ class Final(PathSetter):
 	@unittest.skip("Not sure it makes any sense to backup proc FIXME")
 	def testProcLocal(self):
 		"""Test initial backup of /proc locally"""
-		procout_dir = os.path.join(abs_test_dir, "procoutput")
+		procout_dir = os.path.join(abs_test_dir, b"procoutput")
 		Myrm(procout_dir)
 		procout = rpath.RPath(Globals.local_connection, procout_dir)
 		rdiff_backup(True, True, '/proc', procout.path, current_time=10000)
@@ -198,7 +198,7 @@ class Final(PathSetter):
 	@unittest.skip("Not sure it makes any sense to backup proc FIXME")
 	def testProcLocalToRemote(self):
 		"""Test mirroring proc remote"""
-		procout_dir = os.path.join(abs_test_dir, "procoutput")
+		procout_dir = os.path.join(abs_test_dir, b"procoutput")
 		Myrm(procout_dir)
 		procout = rpath.RPath(Globals.local_connection, procout_dir)
 		rdiff_backup(True, False, '/proc', procout.path, current_time=10000)
@@ -213,7 +213,7 @@ class Final(PathSetter):
 	@unittest.skip("Not sure it makes any sense to backup proc FIXME")
 	def testProcRemoteToLocal(self):
 		"""Test mirroring proc, this time when proc is remote, dest local"""
-		procout_dir = os.path.join(abs_test_dir, "procoutput")
+		procout_dir = os.path.join(abs_test_dir, b"procoutput")
 		Myrm(procout_dir)
 		procout = rpath.RPath(Globals.local_connection, procout_dir)
 		rdiff_backup(False, True, '/proc', procout.path)
@@ -233,43 +233,43 @@ class Final(PathSetter):
 				if len(rp.dirsplit()[1]) > length: rp.delete()
 
 		if not Local.wininc2.lstat() or not Local.wininc3.lstat():
-			os.system("cp -a testfiles/increment2 testfiles/win-increment2")
-			os.system("cp -a testfiles/increment3 testfiles/win-increment3")
+			os.system(b"cp -a testfiles/increment2 testfiles/win-increment2")
+			os.system(b"cp -a testfiles/increment3 testfiles/win-increment3")
 			delete_long(Local.wininc2)
 			delete_long(Local.wininc3)
 
 		old_schema = self.rb_schema
-		self.rb_schema = old_schema+" --override-chars-to-quote '^a-z0-9_ -.' "
+		self.rb_schema = old_schema+b" --override-chars-to-quote '^a-z0-9_ -.' "
 		self.set_connections(None, None, None, None)
 
 		self.delete_tmpdirs()
 		# Back up increment2, this contains a file with colons
-		self.exec_rb(20000, 'testfiles/win-increment2', 'testfiles/output')
+		self.exec_rb(20000, b'testfiles/win-increment2', b'testfiles/output')
 		self.rb_schema = old_schema # Quoting setting should now be saved
 		time.sleep(1)
 
 		# Back up increment3
-		self.exec_rb(30000, 'testfiles/win-increment3', 'testfiles/output')
+		self.exec_rb(30000, b'testfiles/win-increment3', b'testfiles/output')
 
 		# Now check to make sure no ":" in output directory
-		popen_fp = os.popen("find testfiles/output -name '*:*' | wc")
+		popen_fp = os.popen(b"find testfiles/output -name '*:*' | wc")
 		wc_output = popen_fp.read()
 		popen_fp.close()
-		assert wc_output.split() == ["0", "0", "0"], wc_output
+		assert wc_output.split() == [b"0", b"0", b"0"], wc_output
 
 		# Start restore of increment 2
-		Globals.chars_to_quote = '^a-z0-9_ -.'
-		inc_paths = self.getinc_paths("increments.",
-									  "testfiles/output/rdiff-backup-data", 1)
+		Globals.chars_to_quote = b'^a-z0-9_ -.'
+		inc_paths = self.getinc_paths(b"increments.",
+									  b"testfiles/output/rdiff-backup-data", 1)
 		Globals.chars_to_quote = None
 		assert len(inc_paths) == 1, inc_paths
-		self.exec_rb(None, inc_paths[0], 'testfiles/restoretarget2')
+		self.exec_rb(None, inc_paths[0], b'testfiles/restoretarget2')
 		assert CompareRecursive(Local.wininc2, Local.rpout2,
 								compare_hardlinks = 0)
 
 		# Restore increment 3 again, using different syntax
-		self.rb_schema = old_schema + '-r 30000 '
-		self.exec_rb(None, 'testfiles/output', 'testfiles/restoretarget3')
+		self.rb_schema = old_schema + b'-r 30000 '
+		self.exec_rb(None, b'testfiles/output', b'testfiles/restoretarget3')
 		assert CompareRecursive(Local.wininc3, Local.rpout3,
 								compare_hardlinks = 0)
 		self.rb_schema = old_schema
@@ -280,10 +280,11 @@ class Final(PathSetter):
 		rdiff_backup(True, True, Local.vftrp.path, Local.rpout.path, current_time=10000)
 		rdiff_backup(True, True, Local.emptyrp.path, Local.rpout.path, current_time=20000)
 		# remove mirror_metadata files to simulate old style backups
-		for mirror_file in pathlib.Path(Local.rpout.append('rdiff-backup-data').path
+		# pathlib.Path doesn't work with bytes hence need to work with str path
+		for mirror_file in pathlib.Path(os.fsdecode(Local.rpout.append(b'rdiff-backup-data').path)
 						).glob('mirror_metadata*'):
 			mirror_file.unlink()
-		rdiff_backup(True, True, Local.rpout.path, Local.rpout1.path, extra_options='-r0')
+		rdiff_backup(True, True, Local.rpout.path, Local.rpout1.path, extra_options=b'-r0')
 		assert CompareRecursive(Local.vftrp, Local.rpout1, compare_hardlinks = 0)
 
 
@@ -297,44 +298,44 @@ class FinalMisc(PathSetter):
 	def testListIncrementsLocal(self):
 		"""Test --list-increments switch.  Assumes restoretest3 valid rd dir"""
 		rdiff_backup(True, True, Local.backup3rp.path, None,
-						extra_options='--list-increments')
+						extra_options=b'--list-increments')
 
 	def testListIncrementsRemote(self):
 		"""Test --list-increments mode remotely.  Uses restoretest3"""
 		rdiff_backup(False, True, Local.backup3rp.path, None,
-						extra_options='--list-increments')
+						extra_options=b'--list-increments')
 
 	def testListChangeSinceLocal(self):
 		"""Test --list-changed-since mode locally.  Uses restoretest3"""
 		rdiff_backup(True, True, Local.backup3rp.path, None,
-						extra_options='--list-changed-since 10000')
+						extra_options=b'--list-changed-since 10000')
 		rdiff_backup(True, True, Local.backup3rp.path, None,
-						extra_options='--list-changed-since 2B')
+						extra_options=b'--list-changed-since 2B')
 
 	def testListChangeSinceRemote(self):
 		"""Test --list-changed-since mode remotely.  Uses restoretest3"""
 		rdiff_backup(False, True, Local.backup3rp.path, None,
-						extra_options='--list-changed-since 10000')
+						extra_options=b'--list-changed-since 10000')
 
 	def testListAtTimeLocal(self):
 		"""Test --list-at-time mode locally.  Uses restoretest3"""
 		rdiff_backup(True, True, Local.backup3rp.path, None,
-						extra_options='--list-at-time 20000')
+						extra_options=b'--list-at-time 20000')
 
 	def testListAtTimeRemote(self):
 		"""Test --list-at-time mode locally.  Uses restoretest3"""
 		rdiff_backup(False, True, Local.backup3rp.path, None,
-						extra_options='--list-at-time 20000')
+						extra_options=b'--list-at-time 20000')
 
 	def testListIncrementSizesLocal(self):
 		"""Test --list-increment-sizes switch.  Uses restoretest3"""
 		rdiff_backup(True, True, Local.backup3rp.path, None,
-						extra_options='--list-increment-sizes')
+						extra_options=b'--list-increment-sizes')
 
 	def testListIncrementSizesRemote(self):
 		"""Test --list-increment-sizes switch.  Uses restoretest3"""
 		rdiff_backup(False, True, Local.backup3rp.path, None,
-						extra_options='--list-increment-sizes')
+						extra_options=b'--list-increment-sizes')
 
 	def get_all_increments(self, rp):
 		"""Iterate all increments at or below given directory"""
@@ -351,9 +352,9 @@ class FinalMisc(PathSetter):
 	def testRemoveOlderThan(self):
 		"""Test --remove-older-than.  Uses restoretest3"""
 		Myrm(Local.rpout.path)
-		assert not os.system("cp -a %s %s" % (Local.backup3rp.path, Local.rpout.path))
+		assert not os.system(b"cp -a %s %s" % (Local.backup3rp.path, Local.rpout.path))
 		rdiff_backup(True, True, Local.rpout.path, None,
-						extra_options="--remove-older-than 20000")
+						extra_options=b"--remove-older-than 20000")
 		rbdir = Local.rpout.append("rdiff-backup-data")
 		for inc in self.get_all_increments(rbdir):
 			assert inc.getinctime() >= 20000
@@ -361,9 +362,9 @@ class FinalMisc(PathSetter):
 	def testRemoveOlderThan2(self):
 		"""Test --remove-older-than, but '1B'.  Uses restoretest3"""
 		Myrm(Local.rpout.path)
-		assert not os.system("cp -a %s %s" % (Local.backup3rp.path, Local.rpout.path))
+		assert not os.system(b"cp -a %s %s" % (Local.backup3rp.path, Local.rpout.path))
 		rdiff_backup(True, True, Local.rpout.path, None,
-						extra_options="--remove-older-than 1B --force")
+						extra_options=b"--remove-older-than 1B --force")
 		rbdir = Local.rpout.append("rdiff-backup-data")
 		for inc in self.get_all_increments(rbdir):
 			assert inc.getinctime() >= 30000
@@ -371,16 +372,16 @@ class FinalMisc(PathSetter):
 	def testRemoveOlderThanCurrent(self):
 		"""Make sure --remove-older-than doesn't delete current incs"""
 		Myrm(Local.rpout.path)
-		assert not os.system("cp -a %s %s" % (Local.backup3rp.path, Local.rpout.path))
+		assert not os.system(b"cp -a %s %s" % (Local.backup3rp.path, Local.rpout.path))
 		rdiff_backup(True, True, Local.rpout.path, None,
-						extra_options="--remove-older-than now --force")
+						extra_options=b"--remove-older-than now --force")
 		rbdir = Local.rpout.append("rdiff-backup-data")
 
 		has_cur_mirror, has_metadata = 0, 0
 		for inc in self.get_all_increments(rbdir):
-			if inc.getincbase().index[-1] == 'current_mirror':
+			if inc.getincbase().index[-1] == b'current_mirror':
 				has_cur_mirror = 1
-			elif inc.getincbase().index[-1] == 'mirror_metadata':
+			elif inc.getincbase().index[-1] == b'mirror_metadata':
 				has_metadata = 1
 		assert has_cur_mirror and has_metadata, (has_cur_mirror, has_metadata)
 
@@ -388,20 +389,20 @@ class FinalMisc(PathSetter):
 		"""Test --remove-older-than when dest directory is quoted"""
 		Myrm(Local.rpout.path)
 		rdiff_backup(True, True, Local.inc1rp.path, Local.rpout.path,
-					extra_options="--override-chars-to-quote '^a-z0-9_ -.'"
-						" --current-time 10000")
+					extra_options=b"--override-chars-to-quote '^a-z0-9_ -.'"
+						b" --current-time 10000")
 		rdiff_backup(True, True, Local.inc2rp.path, Local.rpout.path,
-					extra_options="--override-chars-to-quote '^a-z0-9_ -.'"
-						" --current-time 20000")
+					extra_options=b"--override-chars-to-quote '^a-z0-9_ -.'"
+						b" --current-time 20000")
 		rdiff_backup(True, True, Local.rpout.path, None,
-						extra_options="--remove-older-than now")
+						extra_options=b"--remove-older-than now")
 
 	def testRemoveOlderThanRemote(self):
 		"""Test --remove-older-than remotely"""
 		Myrm(Local.rpout.path)
-		assert not os.system("cp -a %s %s" % (Local.backup3rp.path, Local.rpout.path))
+		assert not os.system(b"cp -a %s %s" % (Local.backup3rp.path, Local.rpout.path))
 		rdiff_backup(False, True, Local.rpout.path, None,
-						extra_options="--remove-older-than 20000")
+						extra_options=b"--remove-older-than 20000")
 		rbdir = Local.rpout.append("rdiff-backup-data")
 		for inc in self.get_all_increments(rbdir):
 			assert inc.getinctime() >= 20000
@@ -421,43 +422,43 @@ class FinalSelection(PathSetter):
 
 		# Test --include option
 		rdiff_backup(True, True, inc2_rel, out_rel,
-					extra_options="--current-time 10000 "
-						 + "--include %s" % os.path.join(inc2_rel, "various_file_types")
-						 + " --exclude '**' ")
+					extra_options=b"--current-time 10000 "
+						 + b"--include %s" % os.path.join(inc2_rel, b"various_file_types")
+						 + b" --exclude '**' ")
 
 		# check that one included file exists and one excluded doesn't
-		assert os.lstat(os.path.join(out_rel, "various_file_types", "regular_file"))
-		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, "test.py"))
+		assert os.lstat(os.path.join(out_rel, b"various_file_types", b"regular_file"))
+		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, b"test.py"))
 
 		# Now try reading list of files
 		rdiff_backup(True, True, inc2_rel, out_rel,
-					extra_options="--current-time 20000 "
-						+ " --include-filelist-stdin"
-						+ " --exclude '**' ",
-						input="\n"
-						+ os.path.join(inc2_rel, "test.py") + "\n"
-						+ os.path.join(inc2_rel, "changed_dir"))
+					extra_options=b"--current-time 20000 "
+						+ b" --include-filelist-stdin"
+						+ b" --exclude '**' ",
+						input=b"\n"
+						+ os.path.join(inc2_rel, b"test.py") + b"\n"
+						+ os.path.join(inc2_rel, b"changed_dir"))
 
 		# check that two included files exist and two excluded don't
-		assert os.lstat(os.path.join(out_rel, "changed_dir"))
-		assert os.lstat(os.path.join(out_rel, "test.py"))
-		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, "various_file_types"))
-		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, "changed_dir", "foo"))
+		assert os.lstat(os.path.join(out_rel, b"changed_dir"))
+		assert os.lstat(os.path.join(out_rel, b"test.py"))
+		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, b"various_file_types"))
+		self.assertRaises(OSError, os.lstat, os.path.join(out_rel, b"changed_dir", b"foo"))
 
 		# Test selective restoring
 		mirror_rp = rpath.RPath(Globals.local_connection, out_rel)
 		restore_filename = get_increment_rp(mirror_rp, 10000).path
 
 		rdiff_backup(True, True, restore_filename, rest1_rel,
-					extra_options="--include-filelist-stdin "
-						+ " --exclude '**'",
-						input="\n" + os.path.join(rest1_rel,
-							"various_file_types", "regular_file"))
+					extra_options=b"--include-filelist-stdin "
+						+ b" --exclude '**'",
+						input=b"\n" + os.path.join(rest1_rel,
+							b"various_file_types", b"regular_file"))
 
-		assert os.lstat(os.path.join(rest1_rel, "various_file_types", "regular_file"))
-		self.assertRaises(OSError, os.lstat, os.path.join(rest1_rel, "tester"))
+		assert os.lstat(os.path.join(rest1_rel, b"various_file_types", b"regular_file"))
+		self.assertRaises(OSError, os.lstat, os.path.join(rest1_rel, b"tester"))
 		self.assertRaises(OSError, os.lstat,
-				os.path.join(rest1_rel, "various_file_types", "executable"))
+				os.path.join(rest1_rel, b"various_file_types", b"executable"))
 
 	def testSelFilesRemote(self):
 		"""Test for bug found in 0.7.[34] - filelist where source remote"""
@@ -466,25 +467,25 @@ class FinalSelection(PathSetter):
 		Local.vft_out.mkdir()
 		# Make an exclude list
 		excluderp = Local.vft_out.append("exclude")
-		with excluderp.open("w") as fp:
+		with excluderp.open("wb") as fp:
 			fp.write(Local.vftrp.append('regular_file').path)
 			fp.write(Local.vftrp.append('test').path)
 
 		# Make an include list
 		includerp = Local.vft_out.append("include")
-		with includerp.open("w") as fp:
+		with includerp.open("wb") as fp:
 			fp.write(Local.vftrp.append('executable').path)
 			fp.write(Local.vftrp.append('symbolic_link').path)
 			fp.write(Local.vftrp.append('regular_file').path)
 			fp.write(Local.vftrp.append('test').path)
 
 		rdiff_backup(False, False, Local.vftrp.path, Local.rpout.path,
-					extra_options="--exclude-filelist %s" % excluderp.path
-						+ " --include-filelist %s" % includerp.path
-						+ " --exclude '**'")
+					extra_options=b"--exclude-filelist %s" % excluderp.path
+						+ b" --include-filelist %s" % includerp.path
+						+ b" --exclude '**'")
 
 		rdiff_backup(False, False, Local.rpout.path, Local.rpout1.path,
-				extra_options="--restore-as-of now")
+				extra_options=b"--restore-as-of now")
 		assert os.lstat(Local.rpout1.append('executable').path)
 		# FIXME: should symbolic links to excluded files be included?
 		# assert os.lstat(Local.rpout1.append('symbolic_link').path)
@@ -505,10 +506,10 @@ class FinalSelection(PathSetter):
 		existing_file = self.make_restore_existing_target()
 		file1_target = Local.rpout1.append("file1")
 		file2_target = Local.rpout1.append("file2")
-		excludes = ("--exclude %s --exclude %s --force" %
+		excludes = (b"--exclude %s --exclude %s --force" %
 					(file1_target.path, existing_file.path))
 		rdiff_backup(source_local, dest_local, Local.rpout.path, Local.rpout1.path,
-				extra_options="--restore-as-of now " + excludes)
+				extra_options=b"--restore-as-of now " + excludes)
 		for rp in (file1_target, file2_target, existing_file):
 			rp.setdata()
 		assert not file1_target.lstat(), file1_target.lstat()
@@ -550,7 +551,7 @@ class FinalCorrupt(PathSetter):
 
 		rp2 = Local.get_tgt_local_rp('final_deleted2')
 		if rp2.lstat(): Myrm(rp2.path)
-		os.system('cp -a %s %s' % (rp1.path, rp2.path))
+		os.system(b'cp -a %s %s' % (rp1.path, rp2.path))
 		rp2_2_1 = rp2.append('dir').append('regfile2')
 		assert rp2_2_1.lstat()
 		rp2_2_1.delete()
@@ -568,10 +569,10 @@ class FinalCorrupt(PathSetter):
 		rdiff_backup(True, True, in_dir1.path, Local.rpout.path, current_time=10000)
 
 		out_subdir = Local.rpout.append(in_subdir.index[-1])
-		Log("Deleting %s" % (out_subdir.path,), 3)
+		Log("Deleting %s" % out_subdir.get_safepath(), 3)
 		out_subdir.delete()
 		rdiff_backup(True, True, Local.rpout.path, Local.rpout1.path,
-							 extra_options="--restore-as-of 10000")
+							 extra_options=b"--restore-as-of 10000")
 
 
 class FinalBugs(PathSetter):
@@ -613,11 +614,11 @@ class FinalBugs(PathSetter):
 
 		# Regress
 		rdiff_backup(True, True, Local.rpout.path, None, current_time=30000,
-							 extra_options='--check-destination-dir')
+							 extra_options=b'--check-destination-dir')
 
 		# Check to see if file still there
 		rp1_d_f.setdata()
-		assert rp1_d_f.isreg(), 'File %s corrupted' % (rp1_d_f.path,)
+		assert rp1_d_f.isreg(), 'File %a corrupted' % (rp1_d_f.path,)
 
 	def test_CCPP_keyerror(self):
 		"""Test when no change until middle of a directory

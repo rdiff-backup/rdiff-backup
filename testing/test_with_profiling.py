@@ -7,9 +7,9 @@ import profile, pstats
 from metadatatest import *
 
 # Create a profile output filename (don't forget to adapt the name)
-abs_work_dir = os.getenv('TOX_ENV_DIR', os.getenv('VIRTUAL_ENV',
-    os.path.join(os.getcwd(), 'build')))
-profile_output = os.path.join(abs_work_dir, "profile-metadatatest.out")
+abs_work_dir = os.getenvb(b'TOX_ENV_DIR', os.getenvb(b'VIRTUAL_ENV',
+    os.path.join(os.getcwdb(), b'build')))
+profile_output = os.path.join(abs_work_dir, b"profile-metadatatest.out")
 
 # Run and output the test profile
 profile.run("unittest.main()", profile_output)

@@ -157,16 +157,13 @@ rbdir = None
 # should be true if certain characters in filenames on the source side
 # should be escaped (see FilenameMapping for more info).
 chars_to_quote = None
-quoting_char = ';'
+quoting_char = b';'
 
 # evaluate if DOS device names (AUX, PRN, CON, NUL, COM, LPT) should be quoted
 # or spaces at the end of file and directory names.
 # The default is based on the operating system type (nt or posix).
 escape_dos_devices = os.name == 'nt'
 escape_trailing_spaces = os.name == 'nt'
-
-# Some systems don't support unicode in filenames
-use_unicode_paths = None
 
 # If true, the timestamps use the following format: "2008-09-01T04-49-04-07-00"
 # (instead of "2008-09-01T04:49:04-07:00"). This creates timestamps which
@@ -192,9 +189,9 @@ compression = 1
 # case-insensitive regular expression won't be compressed (applies
 # to .snapshots and .diffs).  The second below will be the
 # compiled version of the first.
-no_compression_regexp_string = ("(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|"
-    "jpg|jpeg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov|flac|shn|pgp|"
-    "gpg|rz|lzh|zoo|lharc|rar|arj|asc)$")
+no_compression_regexp_string = (b"(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|"
+    b"jpg|jpeg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov|flac|shn|pgp|"
+    b"gpg|rz|lzh|zoo|lharc|rar|arj|asc)$")
 no_compression_regexp = None
 
 # If true, filelists and directory statistics will be split on

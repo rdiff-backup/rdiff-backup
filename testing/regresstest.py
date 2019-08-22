@@ -16,7 +16,7 @@ class RegressTest(unittest.TestCase):
 	incrp = []
 	for i in range(4):
 		incrp.append(rpath.RPath(Globals.local_connection,
-				os.path.join(old_test_dir, "increment%d" % (i+1))))
+				os.path.join(old_test_dir, b"increment%d" % (i+1))))
 
 	def runtest(self, regress_function):
 		"""Test regressing a full directory to older state
@@ -80,7 +80,7 @@ class RegressTest(unittest.TestCase):
 		self.add_current_mirror(time)
 
 		rdiff_backup(False, False, self.output_rp.path, None,
-				extra_options="-v3 --check-destination-dir")
+				extra_options=b"-v3 --check-destination-dir")
 
 	def test_local(self):
 		"""Run regress test locally"""
@@ -103,7 +103,7 @@ class RegressTest(unittest.TestCase):
 		marker.touch()
 		self.change_unreadable()
 
-		cmd = "rdiff-backup --check-destination-dir %s" % self.output_rp.path
+		cmd = b"rdiff-backup --check-destination-dir %s" % self.output_rp.path
 		print("Executing:", cmd)
 		assert not os.system(cmd)
 
@@ -116,7 +116,7 @@ class RegressTest(unittest.TestCase):
 
 		"""
 		rp = rpath.RPath(Globals.local_connection,
-				os.path.join(abs_test_dir, "regress"))
+				os.path.join(abs_test_dir, b"regress"))
 		if rp.lstat(): Myrm(rp.path)
 		rp.setdata()
 		rp.mkdir()

@@ -6,7 +6,7 @@ Log.setverbosity(3)
 lc = Globals.local_connection
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 restore_base_rp = rpath.RPath(Globals.local_connection,
-				os.path.join(old_test_dir, "restoretest"))
+				os.path.join(old_test_dir, b"restoretest"))
 restore_base_filenames = restore_base_rp.listdir()
 mirror_time = 1041109438 # just some late time
 
@@ -62,7 +62,7 @@ class RestoreTimeTest(unittest.TestCase):
 		"""
 		restore.MirrorStruct._mirror_time = None # Reset
 		Globals.rbdir = rpath.RPath(lc,
-				os.path.join(old_test_dir, "restoretest3", "rdiff-backup-data"))
+				os.path.join(old_test_dir, b"restoretest3", b"rdiff-backup-data"))
 		assert Time.genstrtotime("0B") == Time.time_from_session(0)
 		assert Time.genstrtotime("2B") == Time.time_from_session(2)
 		assert Time.genstrtotime("23B") == Time.time_from_session(23)
@@ -80,7 +80,7 @@ class RestoreTest(unittest.TestCase):
 		rfs = base_rf.yield_sub_rfs()
 		rfcs = []
 		for rf in rfs:
-			if rf.mirror_rp.dirsplit()[1] in ["dir"]:
+			if rf.mirror_rp.dirsplit()[1] in [b"dir"]:
 				Log("skipping 'dir'", 5)
 				continue
 
@@ -98,21 +98,21 @@ class RestoreTest(unittest.TestCase):
 		assert -1 < test_time < 2000000000, test_time
 		dirname, basename = mirror_rp.dirsplit()
 		for filename in restore_base_filenames:
-			comps = filename.split(".")
-			base = ".".join(comps[:-1])
-			t = Time.stringtotime(comps[-1])
+			comps = filename.split(b".")
+			base = b".".join(comps[:-1])
+			t = Time.bytestotime(comps[-1])
 			if t == test_time and basename == base:
 				return restore_base_rp.append(filename)
 		# Correct rp must be empty
-		return restore_base_rp.append("%s.%s" %
-							 (basename, Time.timetostring(test_time)))
+		return restore_base_rp.append(b"%b.%b" %
+							 (basename, Time.timetobytes(test_time)))
 
 	def testRestoreSingle(self):
 		"""Test restoring files one at at a time"""
 		MakeOutputDir()
 		for rfc in self.get_rfcs():
 			if rfc.rf.inc_rp.isincfile(): continue
-			Log("Comparing %s" % (rfc.rf.inc_rp.path,), 5)
+			Log("Comparing %a" % (rfc.rf.inc_rp.path,), 5)
 			rfc.compare_all()
 		
 	def testBothLocal(self):
@@ -139,17 +139,17 @@ class RestoreTest(unittest.TestCase):
 
 		"""
 		Myrm(abs_output_dir)
-		restore3_dir = os.path.join(old_test_dir, "restoretest3")
+		restore3_dir = os.path.join(old_test_dir, b"restoretest3")
 		target_rp = rpath.RPath(Globals.local_connection, abs_output_dir)
 		mirror_rp = rpath.RPath(Globals.local_connection, restore3_dir)
 		inc1_rp = rpath.RPath(Globals.local_connection,
-					os.path.join(old_test_dir, "increment1"))
+					os.path.join(old_test_dir, b"increment1"))
 		inc2_rp = rpath.RPath(Globals.local_connection,
-					os.path.join(old_test_dir, "increment2"))
+					os.path.join(old_test_dir, b"increment2"))
 		inc3_rp = rpath.RPath(Globals.local_connection,
-					os.path.join(old_test_dir, "increment3"))
+					os.path.join(old_test_dir, b"increment3"))
 		inc4_rp = rpath.RPath(Globals.local_connection,
-					os.path.join(old_test_dir, "increment4"))
+					os.path.join(old_test_dir, b"increment4"))
 
 		InternalRestore(mirror_local, dest_local, restore3_dir,
 						abs_output_dir, 45000)
@@ -167,7 +167,7 @@ class RestoreTest(unittest.TestCase):
 	def testRestoreNoincs(self):
 		"""Test restoring a directory with no increments, just mirror"""
 		Myrm(abs_output_dir)
-		InternalRestore(1, 1, os.path.join(old_test_dir, 'restoretest5', 'regular_file'),
+		InternalRestore(1, 1, os.path.join(old_test_dir, b'restoretest5', b'regular_file'),
 				abs_output_dir, 10000)
 		assert os.lstat(abs_output_dir)
 

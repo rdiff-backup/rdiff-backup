@@ -27,7 +27,7 @@ def get_signature(rp, blocksize = None):
 	"""Take signature of rpin file and return in file object"""
 	if not blocksize: blocksize = find_blocksize(rp.getsize())
 	log.Log("Getting signature of %s with blocksize %s" %
-			(rp.get_safepath(), blocksize), 7)
+			(rp.get_safeindexpath(), blocksize), 7)
 	return librsync.SigFile(rp.open("rb"), blocksize)
 
 def find_blocksize(file_len):
@@ -44,19 +44,19 @@ def find_blocksize(file_len):
 
 def get_delta_sigfileobj(sig_fileobj, rp_new):
 	"""Like get_delta but signature is in a file object"""
-	log.Log("Getting delta of %s with signature stream" % (rp_new.path,), 7)
+	log.Log("Getting delta of %s with signature stream" % rp_new.get_safepath(), 7)
 	return librsync.DeltaFile(sig_fileobj, rp_new.open("rb"))
 
 def get_delta_sigrp(rp_signature, rp_new):
 	"""Take signature rp and new rp, return delta file object"""
 	log.Log("Getting delta of %s with signature %s" %
-			(rp_new.path, rp_signature.get_safepath()), 7)
+			(rp_new.get_safepath(), rp_signature.get_safeindexpath()), 7)
 	return librsync.DeltaFile(rp_signature.open("rb"), rp_new.open("rb"))
 
 def get_delta_sigrp_hash(rp_signature, rp_new):
 	"""Like above but also calculate hash of new as close() value"""
 	log.Log("Getting delta (with hash) of %s with signature %s" %
-			(rp_new.path, rp_signature.get_safepath()), 7)
+			(rp_new.get_safepath(), rp_signature.get_safeindexpath()), 7)
 	return librsync.DeltaFile(rp_signature.open("rb"),
 							  hash.FileWrapper(rp_new.open("rb")))
 	
@@ -64,7 +64,7 @@ def get_delta_sigrp_hash(rp_signature, rp_new):
 def write_delta(basis, new, delta, compress = None):
 	"""Write rdiff delta which brings basis to new"""
 	log.Log("Writing delta %s from %s -> %s" %
-			(basis.path, new.path, delta.path), 7)
+			(basis.get_safepath(), new.get_safepath(), delta.get_safepath()), 7)
 	deltafile = librsync.DeltaFile(get_signature(basis), new.open("rb"))
 	delta.write_from_fileobj(deltafile, compress)
 

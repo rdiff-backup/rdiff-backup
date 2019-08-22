@@ -37,11 +37,11 @@ def get_inc_type(inc):
 	"""Return file type increment represents"""
 	assert inc.isincfile()
 	type = inc.getinctype()
-	if type == "dir": return "directory"
-	elif type == "diff": return "regular"
-	elif type == "missing": return "missing"
-	elif type == "snapshot": return get_file_type(inc)
-	else: assert None, "Unknown type %s" % (type,)
+	if type == b"dir": return "directory"
+	elif type == b"diff": return "regular"
+	elif type == b"missing": return "missing"
+	elif type == b"snapshot": return get_file_type(inc)
+	else: assert None, "Unknown type %s" % type
 
 def describe_incs_parsable(incs, mirror_time, mirrorrp):
 	"""Return a string parsable by computer describing the increments
@@ -103,7 +103,7 @@ def delete_earlier_than_local(baserp, time):
 	for rp in yield_files(baserp):
 		if ((rp.isincfile() and rp.getinctime() < time) or
 			(rp.isdir() and not rp.listdir())):
-			Log("Deleting increment file %s" % rp.path, 5)
+			Log("Deleting increment file %s" % rp.get_safepath(), 5)
 			rp.delete()
 
 
@@ -117,7 +117,7 @@ class IncObj:
 
 		"""
 		if not incrp.isincfile():
-			raise ManageException("%s is not an inc file" % incrp.path)
+			raise ManageException("%s is not an inc file" % incrp.get_safepath())
 		self.incrp = incrp
 		self.time = incrp.getinctime()
 
@@ -128,12 +128,6 @@ class IncObj:
 	def pretty_time(self):
 		"""Return a formatted version of inc's time"""
 		return Time.timetopretty(self.time)
-
-	def full_description(self):
-		"""Return string describing increment"""
-		s = ["Increment file %s" % self.incrp.path,
-			 "Date: %s" % self.pretty_time()]
-		return "\n".join(s)
 
 
 def ListIncrementSizes(mirror_root, index):
@@ -165,7 +159,7 @@ def ListIncrementSizes(mirror_root, index):
 
 	def get_inc_select():
 		"""Return iterator of increment rpaths"""
-		inc_base = Globals.rbdir.append_path('increments', index)
+		inc_base = Globals.rbdir.append_path(b'increments', index)
 		for base_inc in restore.get_inclist(inc_base): yield base_inc
 		if inc_base.isdir():
 			inc_select = selection.Select(inc_base).set_iter()
@@ -175,7 +169,7 @@ def ListIncrementSizes(mirror_root, index):
 		"""Return list of triples (time, size, cumulative size)"""
 		triples = []
 
-		cur_mir_base = Globals.rbdir.append('current_mirror')
+		cur_mir_base = Globals.rbdir.append(b'current_mirror')
 		mirror_time = restore.get_inclist(cur_mir_base)[0].getinctime()
 		triples.append((mirror_time, mirror_total, mirror_total))
 

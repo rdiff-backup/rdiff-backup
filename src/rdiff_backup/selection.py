@@ -25,7 +25,7 @@ documentation on what this code does can be found on the man page.
 """
 
 
-import re
+import re, os
 from . import FilenameMapping, robust, rpath, Globals, log, rorpiter
 
 
@@ -77,7 +77,7 @@ class Select:
 
 	"""
 	# This re should not match normal filenames, but usually just globs
-	glob_re = re.compile("(.*[*?[\\\\]|ignorecase\\:)", re.I | re.S)
+	glob_re = re.compile(b"(.*[*?[\\\\]|ignorecase\\:)", re.I | re.S)
 
 	def __init__(self, rootrp):
 		"""Select initializer.  rpath is the root directory"""
@@ -284,7 +284,6 @@ class Select:
 
 		self.parse_last_excludes()
 		self.parse_rbdir_exclude()
-		self.parse_brokenname_exclude()
 
 	def parse_catch_error(self, exc):
 		"""Deal with selection error exc"""
@@ -305,23 +304,7 @@ pattern (such as '**') which matches the base directory.""" %
 	def parse_rbdir_exclude(self):
 		"""Add exclusion of rdiff-backup-data dir to front of list"""
 		self.add_selection_func(
-			self.glob_get_tuple_sf(("rdiff-backup-data",), 0), 1)
-
-	def parse_brokenname_exclude(self):
-		"""Add exclusion of files with broken unicode names to front of list"""
-
-		def exclude_broken_name_func(rp):
-			try:
-				rp.path.encode('utf8')
-				return None # no exception, let it go
-			except UnicodeEncodeError as exc:
-				log.Log("Warning: ignoring file %s with wrong encoding: %s" % \
-					(repr(rp.path), exc), 2)
-				return 0 # something wrong with encoding, ignore
-
-		exclude_broken_name_func.exclude = 1
-		exclude_broken_name_func.name = "Exclude broken file names"
-		self.add_selection_func(exclude_broken_name_func, 1)
+			self.glob_get_tuple_sf((b"rdiff-backup-data",), 0), 1)
 
 	def parse_last_excludes(self):
 		"""Exit with error if last selection function isn't an exclude"""
@@ -385,7 +368,7 @@ probably isn't what you meant.""" %
 					log.Log("Future prefix errors will not be logged.", 2)
 
 		something_excluded, tuple_list = None, []
-		separator = Globals.null_separator and "\0" or "\n"
+		separator = Globals.null_separator and b"\0" or b"\n"
 		for line in filelist_fp.read().split(separator):
 			if not line: continue # skip blanks
 			try: tuple = self.filelist_parse_line(line, include)
@@ -407,16 +390,16 @@ probably isn't what you meant.""" %
 		prefix is the string that the index is relative to.
 
 		"""
-		if line[:2] == "+ ": # Check for "+ "/"- " syntax
+		if line[:2] == b"+ ": # Check for "+ "/"- " syntax
 			include = 1
 			line = line[2:]
-		elif line[:2] == "- ":
+		elif line[:2] == b"- ":
 			include = 0
 			line = line[2:]
 
 		if not line.startswith(self.prefix): raise FilePrefixError(line)
 		line = line[len(self.prefix):] # Discard prefix
-		index = tuple([x for x in line.split("/") if x]) # remove empties
+		index = tuple([x for x in line.split(b"/") if x]) # remove empties
 		return (index, include)
 
 	def filelist_pair_match(self, rp, pair):
@@ -454,11 +437,11 @@ probably isn't what you meant.""" %
 
 		"""
 		log.Log("Reading globbing filelist %s" % list_name, 4)
-		separator = Globals.null_separator and "\0" or "\n"
+		separator = Globals.null_separator and b"\0" or b"\n"
 		for line in filelist_fp.read().split(separator):
 			if not line: continue # skip blanks
-			if line[:2] == "+ ": yield self.glob_get_sf(line[2:], 1)
-			elif line[:2] == "- ": yield self.glob_get_sf(line[2:], 0)
+			if line[:2] == b"+ ": yield self.glob_get_sf(line[2:], 1)
+			elif line[:2] == b"- ": yield self.glob_get_sf(line[2:], 0)
 			else: yield self.glob_get_sf(line, inc_default)
 
 	def other_filesystems_get_sf(self, include):
@@ -475,7 +458,7 @@ probably isn't what you meant.""" %
 	def regexp_get_sf(self, regexp_string, include):
 		"""Return selection function given by regexp_string"""
 		assert include == 0 or include == 1
-		try: regexp = re.compile(regexp_string)
+		try: regexp = re.compile(os.fsencode(regexp_string))
 		except:
 			log.Log("Error compiling regular expression %s" % regexp_string, 1)
 			raise
@@ -557,7 +540,8 @@ probably isn't what you meant.""" %
 	def glob_get_sf(self, glob_str, include):
 		"""Return selection function given by glob string"""
 		assert include == 0 or include == 1
-		if glob_str == "**": sel_func = lambda rp: include
+		glob_str = os.fsencode(glob_str)  # paths and glob must be bytes
+		if glob_str == b"**": sel_func = lambda rp: include
 		elif not self.glob_re.match(glob_str): # normal file
 			sel_func = self.glob_get_filename_sf(glob_str, include)
 		else: sel_func = self.glob_get_normal_sf(glob_str, include)
@@ -578,7 +562,7 @@ probably isn't what you meant.""" %
 		"""
 		if not filename.startswith(self.prefix):
 			raise FilePrefixError(filename)
-		index = tuple([x for x in filename[len(self.prefix):].split("/") if x])
+		index = tuple([x for x in filename[len(self.prefix):].split(b"/") if x])
 		return self.glob_get_tuple_sf(index, include)
 
 	def glob_get_tuple_sf(self, tuple, include):
@@ -615,19 +599,18 @@ probably isn't what you meant.""" %
 		things similar to this.
 
 		"""
-		if glob_str.lower().startswith("ignorecase:"):
+		if glob_str.lower().startswith(b"ignorecase:"):
 			re_comp = lambda r: re.compile(r, re.I | re.S)
-			glob_str = glob_str[len("ignorecase:"):]
+			glob_str = glob_str[len(b"ignorecase:"):]
 		else: re_comp = lambda r: re.compile(r, re.S)
 
 		# matches what glob matches and any files in directory
-		glob_comp_re = re_comp("^%s($|/)" % self.glob_to_re(glob_str))
+		glob_comp_re = re_comp(b"^%b($|/)" % self.glob_to_re(glob_str))
 
-		if glob_str.find("**") != -1:
-			glob_str = glob_str[:glob_str.find("**")+2] # truncate after **
+		if glob_str.find(b"**") != -1:
+			glob_str = glob_str[:glob_str.find(b"**")+2] # truncate after **
 
-		scan_comp_re = re_comp("^(%s)$" %
-							   "|".join(self.glob_get_prefix_res(glob_str)))
+		scan_comp_re = re_comp(b"^(%s)$" % b"|".join(self.glob_get_prefix_res(glob_str)))
 
 		def include_sel_func(rp):
 			if glob_comp_re.match(rp.path): return 1
@@ -646,14 +629,14 @@ probably isn't what you meant.""" %
 
 	def glob_get_prefix_res(self, glob_str):
 		"""Return list of regexps equivalent to prefixes of glob_str"""
-		glob_parts = glob_str.split("/")
-		if "" in glob_parts[1:-1]: # "" OK if comes first or last, as in /foo/
-			raise GlobbingError("Consecutive '/'s found in globbing string "
-								+ glob_str)
+		glob_parts = glob_str.split(b"/")
+		if b"" in glob_parts[1:-1]: # "" OK if comes first or last, as in /foo/
+			raise GlobbingError("Consecutive '/'s found in globbing string %a"
+								% glob_str)
 
-		prefixes = ["/".join(glob_parts[:i+1]) for i in range(len(glob_parts))]
+		prefixes = [b"/".join(glob_parts[:i+1]) for i in range(len(glob_parts))]
 		# we must make exception for root "/", only dir to end in slash
-		if prefixes[0] == "": prefixes[0] = "/"
+		if prefixes[0] == b"": prefixes[0] = b"/"
 		return list(map(self.glob_to_re, prefixes))
 
 	def glob_to_re(self, pat):
@@ -668,8 +651,10 @@ probably isn't what you meant.""" %
 
 		"""
 		i, n, res = 0, len(pat), ''
+                # trying to analyze bytes would be quite complicated hence back to str
+		str_pat = os.fsdecode(pat)
 		while i < n:
-			c, s = pat[i], pat[i:i+2]
+			c, s = str_pat[i], str_pat[i:i+2]
 			i = i+1
 			if c == '\\':
 				res = res + re.escape(s[-1])
@@ -681,17 +666,17 @@ probably isn't what you meant.""" %
 			elif c == '?': res = res + '[^/]'
 			elif c == '[':
 				j = i
-				if j < n and pat[j] in '!^': j = j+1
-				if j < n and pat[j] == ']': j = j+1
-				while j < n and pat[j] != ']': j = j+1
+				if j < n and str_pat[j] in '!^': j = j+1
+				if j < n and str_pat[j] == ']': j = j+1
+				while j < n and str_pat[j] != ']': j = j+1
 				if j >= n: res = res + '\\[' # interpret the [ literally
 				else: # Deal with inside of [..]
-					stuff = pat[i:j].replace('\\','\\\\')
+					stuff = str_pat[i:j].replace('\\','\\\\')
 					i = j+1
 					if stuff[0] in '!^': stuff = '^' + stuff[1:]
 					res = res + '[' + stuff + ']'
 			else: res = res + re.escape(c)
-		return res
+		return os.fsencode(res)  # but we want a bytes matching pattern
 
 
 class FilterIter:

@@ -7,21 +7,21 @@ class SetConnectionsTest(unittest.TestCase):
 	def testParsing(self):
 		"""Test parsing of various file descriptors"""
 		pfd = SetConnections.parse_file_desc
-		assert pfd("bescoto@folly.stanford.edu::/usr/bin/ls") == \
-			   ("bescoto@folly.stanford.edu", "/usr/bin/ls")
-		assert pfd("hello there::/goodbye:euoeu") == \
-			   ("hello there", "/goodbye:euoeu")
-		assert pfd(r"test\\ing\::more::and more\\..") == \
-			   (r"test\ing::more", r"and more\\.."), \
+		assert pfd(b"bescoto@folly.stanford.edu::/usr/bin/ls") == \
+			   (b"bescoto@folly.stanford.edu", b"/usr/bin/ls")
+		assert pfd(b"hello there::/goodbye:euoeu") == \
+			   (b"hello there", b"/goodbye:euoeu")
+		assert pfd(rb"test\\ing\::more::and more\\..") == \
+			   (rb"test\ing::more", rb"and more\\.."), \
 			   pfd(r"test\\ing\::more::and more\\..")
-		assert pfd("a:b:c:d::e") == ("a:b:c:d", "e")
-		assert pfd("foobar") == (None, "foobar")
-		assert pfd(r"hello\::there") == (None, "hello\::there")
+		assert pfd(b"a:b:c:d::e") == (b"a:b:c:d", b"e")
+		assert pfd(b"foobar") == (None, b"foobar")
+		assert pfd(rb"hello\::there") == (None, b"hello\::there")
 
 		self.assertRaises(SetConnections.SetConnectionsException,
-						  pfd, r"hello\:there::")
+						  pfd, rb"hello\:there::")
 		self.assertRaises(SetConnections.SetConnectionsException,
-						  pfd, "foobar\\")
+						  pfd, b"foobar\\")
 
 
 if __name__ == "__main__": unittest.main()

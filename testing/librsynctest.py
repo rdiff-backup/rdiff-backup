@@ -20,19 +20,19 @@ def MakeRandomFile(path, length = None):
 
 class LibrsyncTest(unittest.TestCase):
 	"""Test various librsync wrapper functions"""
-	basis = RPath(Globals.local_connection, os.path.join(abs_test_dir, "basis"))
-	new = RPath(Globals.local_connection, os.path.join(abs_test_dir, "new"))
-	new2 = RPath(Globals.local_connection, os.path.join(abs_test_dir, "new2"))
-	sig = RPath(Globals.local_connection, os.path.join(abs_test_dir, "signature"))
-	sig2 = RPath(Globals.local_connection, os.path.join(abs_test_dir, "signature2"))
-	delta = RPath(Globals.local_connection, os.path.join(abs_test_dir, "delta"))
+	basis = RPath(Globals.local_connection, os.path.join(abs_test_dir, b"basis"))
+	new = RPath(Globals.local_connection, os.path.join(abs_test_dir, b"new"))
+	new2 = RPath(Globals.local_connection, os.path.join(abs_test_dir, b"new2"))
+	sig = RPath(Globals.local_connection, os.path.join(abs_test_dir, b"signature"))
+	sig2 = RPath(Globals.local_connection, os.path.join(abs_test_dir, b"signature2"))
+	delta = RPath(Globals.local_connection, os.path.join(abs_test_dir, b"delta"))
 
 	def sig_file_test_helper(self, blocksize, iterations, file_len = None):
 		"""Compare SigFile output to rdiff output at given blocksize"""
 		for i in range(iterations):
 			MakeRandomFile(self.basis.path, file_len)
-			if self.sig.lstat(): self.sig.delete()
-			assert not os.system("rdiff -b %s -H md4 signature %s %s" %
+			self._clean_file(self.sig)
+			assert not os.system(b"rdiff -b %i -H md4 signature %s %s" %
 								 (blocksize, self.basis.path, self.sig.path))
 			with self.sig.open("rb") as fp:
 				rdiff_sig = fp.read()
@@ -43,6 +43,11 @@ class LibrsyncTest(unittest.TestCase):
 
 			assert rdiff_sig == librsync_sig, \
 				   (len(rdiff_sig), len(librsync_sig))
+
+	def _clean_file(self, rp):
+		"""Make sure the given rpath is properly cleaned"""
+		rp.setdata()
+		if rp.lstat(): rp.delete()
 
 	def testSigFile(self):
 		"""Make sure SigFile generates same data as rdiff, blocksize 512"""
@@ -77,12 +82,12 @@ class LibrsyncTest(unittest.TestCase):
 	def OldtestDelta(self):
 		"""Test delta generation against Rdiff"""
 		MakeRandomFile(self.basis.path)
-		assert not os.system("rdiff signature %s %s" %
-							 (self.basis.path, self.sig.path))
+		assert not os.system(b"rdiff signature %s %s" %
+							(self.basis.path, self.sig.path))
 		for i in range(5):
 			MakeRandomFile(self.new.path)
-			assert not os.system("rdiff delta %s %s %s" %
-						  (self.sig.path, self.new.path, self.delta.path))
+			assert not os.system(b"rdiff delta %b %b %b" %
+						(self.sig.path, self.new.path, self.delta.path))
 			fp = self.delta.open("rb")
 			rdiff_delta = fp.read()
 			fp.close()
@@ -104,7 +109,8 @@ class LibrsyncTest(unittest.TestCase):
 
 		"""
 		MakeRandomFile(self.basis.path)
-		assert not os.system("rdiff signature %s %s" %
+		self._clean_file(self.sig)
+		assert not os.system(b"rdiff signature %s %s" %
 							 (self.basis.path, self.sig.path))
 		for i in range(5):
 			MakeRandomFile(self.new.path)
@@ -115,7 +121,8 @@ class LibrsyncTest(unittest.TestCase):
 			fp.write(librsync_delta)
 			fp.close()
 
-			assert not os.system("rdiff patch %s %s %s" %
+			self._clean_file(self.new2)
+			assert not os.system(b"rdiff patch %s %s %s" %
 								 (self.basis.path, self.delta.path,
 								  self.new2.path))
 			new_fp = self.new.open("rb")
@@ -131,11 +138,13 @@ class LibrsyncTest(unittest.TestCase):
 	def testPatch(self):
 		"""Test patching against Rdiff"""
 		MakeRandomFile(self.basis.path)
-		assert not os.system("rdiff signature %s %s" %
+		self._clean_file(self.sig)
+		assert not os.system(b"rdiff signature %s %s" %
 							 (self.basis.path, self.sig.path))
 		for i in range(5):
 			MakeRandomFile(self.new.path)
-			assert not os.system("rdiff delta %s %s %s" %
+			self._clean_file(self.delta)
+			assert not os.system(b"rdiff delta %s %s %s" %
 						  (self.sig.path, self.new.path, self.delta.path))
 			fp = self.new.open("rb")
 			real_new = fp.read()

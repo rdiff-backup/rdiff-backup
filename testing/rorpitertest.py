@@ -15,11 +15,11 @@ class index:
 class RORPIterTest(unittest.TestCase):
 	def setUp(self):
 		self.lc = Globals.local_connection
-		self.inc0rp = rpath.RPath(self.lc, os.path.join(old_test_dir, "empty"), ())
+		self.inc0rp = rpath.RPath(self.lc, os.path.join(old_test_dir, b"empty"), ())
 		self.inc1rp = rpath.RPath(self.lc,
-				os.path.join(old_test_dir, "inc-reg-perms1"), ())
+				os.path.join(old_test_dir, b"inc-reg-perms1"), ())
 		self.inc2rp = rpath.RPath(self.lc,
-				os.path.join(old_test_dir, "inc-reg-perms2"), ())
+				os.path.join(old_test_dir, b"inc-reg-perms2"), ())
 		self.output = rpath.RPath(self.lc, abs_output_dir, ())
 
 	def testCollateIterators(self):

@@ -58,19 +58,19 @@ def set_init_quote_vals_local():
 	chars_to_quote = Globals.chars_to_quote
 	if len(Globals.quoting_char) != 1:
 		log.Log.FatalError("Expected single character for quoting char,"
-						   "got '%s' instead" % (Globals.quoting_char,))
+						   "got '%a' instead" % (Globals.quoting_char,))
 	quoting_char = Globals.quoting_char
 	init_quoting_regexps()
 
 def init_quoting_regexps():
 	"""Compile quoting regular expressions"""
 	global chars_to_quote_regexp, unquoting_regexp
-	assert chars_to_quote and type(chars_to_quote) is str, \
-		   "Chars to quote: '%s'" % (chars_to_quote,)
+	assert chars_to_quote and isinstance(chars_to_quote, bytes), \
+		   "Chars to quote are wrong: %a" % chars_to_quote
 	try:
 		chars_to_quote_regexp = \
-				 re.compile("[%s]|%s" % (chars_to_quote, quoting_char), re.S)
-		unquoting_regexp = re.compile("%s[0-9]{3}" % quoting_char, re.S)
+				 re.compile(b"[%b]|%b" % (chars_to_quote, quoting_char), re.S)
+		unquoting_regexp = re.compile(b"%b[0-9]{3}" % quoting_char, re.S)
 	except re.error:
 		log.Log.FatalError("Error '%s' when processing char quote list %r" %
 						   (re.error, chars_to_quote))
@@ -91,24 +91,24 @@ def quote(path):
 	# Escape a trailing space or period (invalid in names on FAT32 under DOS,
 	# Windows and modern Linux)
 	if Globals.escape_trailing_spaces:
-		if len(QuotedPath) and (QuotedPath[-1] == ' ' or QuotedPath[-1] == '.'):
+		if len(QuotedPath) and (QuotedPath[-1] == ord(' ') or QuotedPath[-1] == ord('.')):
 			QuotedPath = QuotedPath[:-1] + \
-				"%s%03d" % (quoting_char, ord(QuotedPath[-1]))
+				b"%b%03d" % (quoting_char, QuotedPath[-1])
 
 		if not Globals.escape_dos_devices:
 			return QuotedPath
 
 	# Escape first char of any special DOS device files even if filename has an
 	# extension.  Special names are: aux, prn, con, nul, com0-9, and lpt1-9.
-	if not re.search(r"^aux(\..*)*$|^prn(\..*)*$|^con(\..*)*$|^nul(\..*)*$|" \
-					 r"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$", QuotedPath, \
+	if not re.search(br"^aux(\..*)*$|^prn(\..*)*$|^con(\..*)*$|^nul(\..*)*$|" \
+					 br"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$", QuotedPath, \
 					 re.I):
 		return QuotedPath
-	return "%s%03d" % (quoting_char, ord(QuotedPath[0])) + QuotedPath[1:]
+	return b"%b%03d" % (quoting_char, QuotedPath[0]) + QuotedPath[1:]
 
 def quote_single(match):
 	"""Return replacement for a single character"""
-	return "%s%03d" % (quoting_char, ord(match.group()))
+	return b"%b%03d" % (quoting_char, ord(match.group()))
 
 def unquote(path):
 	"""Return original version of quoted filename"""
@@ -117,10 +117,10 @@ def unquote(path):
 def unquote_single(match):
 	"""Unquote a single quoted character"""
 	if not len(match.group()) == 4:
-		raise QuotingException("Quoted group wrong size: " + match.group())
-	try: return chr(int(match.group()[1:]))
+		raise QuotingException("Quoted group wrong size: %a" % match.group())
+	try: return os.fsencode(chr(int(match.group()[1:])))
 	except ValueError:
-		raise QuotingException("Quoted out of range: " + match.group())
+		raise QuotingException("Quoted out of range: %a" % match.group())
 
 
 class QuotedRPath(rpath.RPath):
@@ -133,23 +133,20 @@ class QuotedRPath(rpath.RPath):
 	"""
 	def __init__(self, connection, base, index = (), data = None):
 		"""Make new QuotedRPath"""
-		self.quoted_index = tuple(map(quote, index))
-		self.conn = connection
-		self.index = index
-		self.base = base
+		super().__init__(connection, base, index, data)
+		self.quoted_index = tuple(map(quote, self.index))
+		# we need to recalculate path and data on the basis of
+		# quoted_index (parent class does it on the basis of index)
 		if base is not None:
-			if base == "/": self.path = "/" + "/".join(self.quoted_index)
-			else: self.path = "/".join((base,) + self.quoted_index)
-		self.file = None
-		if data or base is None: self.data = data
-		else: self.setdata()
+			self.path = os.path.join(self.base, *self.quoted_index)
+			if data is None: self.setdata()
 
 	def __setstate__(self, rpath_state):
 		"""Reproduce QuotedRPath from __getstate__ output"""
 		conn_number, self.base, self.index, self.data = rpath_state
 		self.conn = Globals.connection_dict[conn_number]
 		self.quoted_index = tuple(map(quote, self.index))
-		self.path = "/".join((self.base,) + self.quoted_index)
+		self.path = os.path.join(self.base, *self.quoted_index)
 
 	def listdir(self):
 		"""Return list of unquoted filenames in current directory
@@ -158,14 +155,7 @@ class QuotedRPath(rpath.RPath):
 		correctly and append()ed to the currect QuotedRPath.
 
 		"""
-		path = self.path
-		if type(path) != str and Globals.use_unicode_paths:
-			path = str(path, 'utf-8')
-		return list(map(unquote, self.conn.os.listdir(path)))
-
-	def __str__(self):
-		return "QuotedPath: %s\nIndex: %s\nData: %s" % \
-			   (self.path, self.index, self.data)
+		return list(map(unquote, self.conn.os.listdir(self.path)))
 
 	def isincfile(self):
 		"""Return true if path indicates increment, sets various variables"""
@@ -180,6 +170,10 @@ class QuotedRPath(rpath.RPath):
 			result = rpath.RPath.isincfile(self)
 			if result: self.inc_basestr = unquote(self.inc_basestr)
 		return result
+
+	def get_path(self):
+		"""Just a getter to return the path unquoted"""
+		return unquote(self.path)
 		
 def get_quotedrpath(rp, separate_basename = 0):
 	"""Return quoted version of rpath rp"""
@@ -214,14 +208,14 @@ def update_quoting(rbdir):
 				list.append(new_name)
 			name_rp = dirpath_rp.append(name)
 			new_rp = dirpath_rp.append(new_name)
-			log.Log("Re-quoting %s to %s" % (name_rp.path, new_rp.path), 5)
+			log.Log("Re-quoting %s to %s" % (name_rp.get_safepath(), new_rp.get_safepath()), 5)
 			rpath.move(name_rp, new_rp)
 
 	assert rbdir.conn is Globals.local_connection
 	mirror_rp = rbdir.get_parent_rp()
 	mirror = mirror_rp.path
 
-	log.Log("Re-quoting repository %s" % mirror_rp.path, 3)
+	log.Log("Re-quoting repository %s" % mirror_rp.get_safepath(), 3)
 
 	try:
 		os_walk = os.walk

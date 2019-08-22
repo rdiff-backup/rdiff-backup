@@ -27,7 +27,7 @@ access_control_lists.<time>.snapshot.
 """
 
 
-import base64, errno, re, io
+import base64, errno, re, io, os
 try: import posix1e
 except ImportError: pass
 from . import Globals, connection, metadata, rorpiter, log, C, \
@@ -37,11 +37,6 @@ from . import Globals, connection, metadata, rorpiter, log, C, \
 # only used so that only the first dropped ACL for any given name
 # triggers a warning.
 dropped_acl_names = {}
-
-def encode(str_):
-	if type(str_) == str:
-		return str_.encode('utf-8')
-	return str_
 
 class ExtendedAttributes:
 	"""Hold a file's extended attribute information"""
@@ -57,7 +52,7 @@ class ExtendedAttributes:
 		return ea.attr_dict == self.attr_dict
 	def __ne__(self, ea): return not self.__eq__(ea)
 
-	def get_indexpath(self): return self.index and '/'.join(self.index) or '.'
+	def get_indexpath(self): return self.index and b'/'.join(self.index) or b'.'
 
 	def read_from_rp(self, rp):
 		"""Set the extended attributes from an rpath"""
@@ -67,7 +62,7 @@ class ExtendedAttributes:
 			if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
 				return # if not supported, consider empty
 			if exc.errno in (errno.EACCES, errno.ENOENT, errno.ELOOP):
-				log.Log("Warning: listattr(%s): %s" % (repr(rp.path), exc), 4)
+				log.Log("Warning: listattr(%s): %s" % (rp.get_safepath(), exc), 4)
 				return
 			raise
 		for attr in attr_list:
@@ -98,7 +93,7 @@ class ExtendedAttributes:
 					# SELinux attributes cannot be removed, and we don't want
 					# to bail out or be too noisy at low log levels.
 					log.Log("Warning: unable to remove xattr %s from %s"
-						% (name, repr(rp.path)), 7)
+						% (name, rp.get_safepath()), 7)
 					continue
 				except OSError as exc:
 					# can happen because trusted.SGI_ACL_FILE is deleted together with
@@ -111,7 +106,7 @@ class ExtendedAttributes:
 			return # if not supported, consider empty
 		except FileNotFoundError as exc:
 			log.Log("Warning: unable to clear xattrs on %s: %s" %
-				(repr(rp.path), exc), 3)
+				(rp.get_safepath(), exc), 3)
 			return
 
 	def write_to_rp(self, rp):
@@ -126,7 +121,7 @@ class ExtendedAttributes:
 				if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.EACCES,
 						errno.ENOENT, errno.EINVAL):
 					log.Log("Warning: unable to write xattr %s to %s"
-							% (name, repr(rp.path)), 6)
+							% (name, rp.get_safepath()), 6)
 					continue
 				else: raise
 
@@ -157,70 +152,62 @@ def ea_compare_rps(rp1, rp2):
 
 def EA2Record(ea):
 	"""Convert ExtendedAttributes object to text record"""
-	str_list = ['# file: %s' % C.acl_quote(ea.get_indexpath())]
-
-	def b2s(b):
-		"""Transforms nicely a byte-like object into a string, without b prefix"""
-		return str(b,'utf8')
+	str_list = [b'# file: %s' % C.acl_quote(ea.get_indexpath())]
 
 	for (name, val) in ea.attr_dict.items():
-		if not val: str_list.append(b2s(name))
+		if not val: str_list.append(name)
 		else:
-			encoded_val = b2s(base64.b64encode(val))
-			try:
-				str_list.append('%s=0s%s' % (C.acl_quote(b2s(name)), encoded_val))
-			except UnicodeEncodeError:
-				log.Log("Warning: unable to store Unicode extended attribute %s"
-							% repr(name), 3)
-	return '\n'.join(str_list)+'\n'
+			encoded_val = base64.b64encode(val)
+			str_list.append(b'%s=0s%s' % (C.acl_quote(name), encoded_val))
+	return b'\n'.join(str_list) + b'\n'
 
 def Record2EA(record):
 	"""Convert text record to ExtendedAttributes object"""
-	lines = record.split('\n')
+	lines = record.split(b'\n')
 	first = lines.pop(0)
-	if not first[:8] == "# file: ":
-		raise metadata.ParsingError("Bad record beginning: " + first[:8])
+	if not first[:8] == b'# file: ':
+		raise metadata.ParsingError("Bad record beginning: %b" % first[:8])
 	filename = first[8:]
-	if filename == '.': index = ()
+	if filename == b'.': index = ()
 	else:
 		unquoted_filename = C.acl_unquote(filename)
-		index = tuple(unquoted_filename.split('/'))
+		index = tuple(unquoted_filename.split(b'/'))
 	ea = ExtendedAttributes(index)
 
 	for line in lines:
 		line = line.strip()
 		if not line: continue
-		assert line[0] != '#', line
-		eq_pos = line.find('=')
-		if eq_pos == -1: ea.set(line.encode())
+		assert line[0] != b'#', line
+		eq_pos = line.find(b'=')
+		if eq_pos == -1: ea.set(line)
 		else:
 			name = line[:eq_pos]
-			assert line[eq_pos+1:eq_pos+3] == '0s', \
+			assert line[eq_pos+1:eq_pos+3] == b'0s', \
 				   "Currently only base64 encoding supported"
 			encoded_val = line[eq_pos+3:]
-			ea.set(name.encode(), base64.b64decode(encoded_val))
+			ea.set(name, base64.b64decode(encoded_val))
 	return ea
 
 
 class EAExtractor(metadata.FlatExtractor):
 	"""Iterate ExtendedAttributes objects from the EA information file"""
-	record_boundary_regexp = re.compile('(?:\\n|^)(# file: (.*?))\\n')
+	record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
 	record_to_object = staticmethod(Record2EA)
 	def filename_to_index(self, filename):
 		"""Convert possibly quoted filename to index tuple"""
-		if filename == '.': return ()
-		else: return tuple(C.acl_unquote(filename).split('/'))
+		if filename == b'.': return ()
+		else: return tuple(C.acl_unquote(filename).split(b'/'))
 
 class ExtendedAttributesFile(metadata.FlatFile):
 	"""Store/retrieve EAs from extended_attributes file"""
-	_prefix = "extended_attributes"
+	_prefix = b"extended_attributes"
 	_extractor = EAExtractor
 	_object_to_record = staticmethod(EA2Record)
 
 def join_ea_iter(rorp_iter, ea_iter):
 	"""Update a rorp iter by adding the information from ea_iter"""
 	for rorp, ea in rorpiter.CollateIterators(rorp_iter, ea_iter):
-		assert rorp, "Missing rorp for index %s" % (ea.index,)
+		assert rorp, "Missing rorp for index %a" % (ea.index,)
 		if not ea: ea = ExtendedAttributes(rorp.index)
 		rorp.set_ea(ea)
 		yield rorp
@@ -360,7 +347,7 @@ class AccessControlLists:
 			return 0
 		return 1
 
-	def get_indexpath(self): return self.index and '/'.join(self.index) or '.'
+	def get_indexpath(self): return self.index and b'/'.join(self.index) or b'.'
 
 	def is_basic(self):
 		"""True if acl can be reduced to standard unix permissions
@@ -397,7 +384,7 @@ def set_rp_acl(rp, entry_list = None, default_entry_list = None,
 	except IOError as exc:
 		if exc.errno == errno.EOPNOTSUPP:
 			log.Log("Warning: unable to set ACL on %s: %s" % 
-					(repr(rp.path), exc), 4)
+					(rp.get_safepath(), exc), 4)
 			return
 		else: raise
 
@@ -413,17 +400,17 @@ def get_acl_lists_from_rp(rp):
 	try: acl = posix1e.ACL(file=rp.path)
 	except (FileNotFoundError, UnicodeEncodeError) as exc:
 		log.Log("Warning: unable to read ACL from %s: %s"
-				% (repr(rp.path), exc), 3)
+				% (rp.get_safepath(), exc), 3)
 		acl = None
 	except IOError as exc:
 		if exc.errno == errno.EOPNOTSUPP:
 			acl = None
 		else: raise
 	if rp.isdir():
-		try: def_acl = posix1e.ACL(filedef=rp.path)
+		try: def_acl = posix1e.ACL(filedef=os.fsdecode(rp.path))
 		except (FileNotFoundError, UnicodeEncodeError) as exc:
 			log.Log("Warning: unable to read default ACL from %s: %s"
-				% (repr(rp.path), exc), 3)
+				% (rp.get_safepath(), exc), 3)
 			def_acl = None
 		except IOError as exc:
 			if exc.errno == errno.EOPNOTSUPP:
@@ -547,21 +534,21 @@ def acl_compare_rps(rp1, rp2):
 
 def ACL2Record(acl):
 	"""Convert an AccessControlLists object into a text record"""
-	return '# file: %s\n%s\n' % \
-		(C.acl_quote(acl.get_indexpath()), str(acl))
+	return b'# file: %b\n%b\n' % \
+		(C.acl_quote(acl.get_indexpath()), os.fsencode(str(acl)))
 
 def Record2ACL(record):
 	"""Convert text record to an AccessControlLists object"""
-	newline_pos = record.find('\n')
+	newline_pos = record.find(b'\n')
 	first_line = record[:newline_pos]
-	if not first_line.startswith('# file: '):
-		raise metadata.ParsingError("Bad record beginning: "+ first_line)
+	if not first_line.startswith(b'# file: '):
+		raise metadata.ParsingError("Bad record beginning: %b" % first_line)
 	filename = first_line[8:]
-	if filename == '.': index = ()
+	if filename == b'.': index = ()
 	else:
 		unquoted_filename = C.acl_unquote(filename)
-		index = tuple(unquoted_filename.split('/'))
-	return AccessControlLists(index, record[newline_pos:])
+		index = tuple(unquoted_filename.split(b'/'))
+	return AccessControlLists(index, os.fsdecode(record[newline_pos:]))
 
 class ACLExtractor(EAExtractor):
 	"""Iterate AccessControlLists objects from the ACL information file
@@ -574,7 +561,7 @@ class ACLExtractor(EAExtractor):
 
 class AccessControlListFile(metadata.FlatFile):
 	"""Store/retrieve ACLs from extended attributes file"""
-	_prefix = 'access_control_lists'
+	_prefix = b'access_control_lists'
 	_extractor = ACLExtractor
 	_object_to_record = staticmethod(ACL2Record)
 
@@ -585,7 +572,7 @@ def join_acl_iter(rorp_iter, acl_iter):
 		if not acl: acl = AccessControlLists(rorp.index)
 		rorp.set_acl(acl)
 		yield rorp
-	
+
 
 def rpath_acl_get(rp):
 	"""Get acls of given rpath rp.

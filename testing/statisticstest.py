@@ -108,7 +108,7 @@ TotalDestinationSizeChange 7 (7 bytes)
 	def test_write_rp(self):
 		"""Test reading and writing of statistics object"""
 		rp = rpath.RPath(Globals.local_connection,
-				os.path.join(abs_test_dir, "statstest"))
+				os.path.join(abs_test_dir, b"statstest"))
 		if rp.lstat(): rp.delete()
 		s = statistics.StatsObj()
 		self.set_obj(s)
@@ -179,12 +179,12 @@ class IncStatTest(unittest.TestCase):
 
 		Globals.compression = 1
 		Myrm(abs_output_dir)
-		InternalBackup(1, 1, os.path.join(old_test_dir, "stattest1"), abs_output_dir)
-		InternalBackup(1, 1, os.path.join(old_test_dir, "stattest2"), abs_output_dir,
+		InternalBackup(1, 1, os.path.join(old_test_dir, b"stattest1"), abs_output_dir)
+		InternalBackup(1, 1, os.path.join(old_test_dir, b"stattest2"), abs_output_dir,
 					   time.time()+1)
 
 		rbdir = rpath.RPath(Globals.local_connection,
-				os.path.join(abs_output_dir, "rdiff-backup-data"))
+				os.path.join(abs_output_dir, b"rdiff-backup-data"))
 
 		incs = sorti(restore.get_inclist(rbdir.append("session_statistics")))
 		assert len(incs) == 2

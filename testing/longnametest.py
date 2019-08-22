@@ -87,20 +87,20 @@ class LongNameTest(unittest.TestCase):
 		# Now try restoring
 		Myrm(restore_dir.path)
 		rdiff_backup(inlocal, outlocal, self.out_rp.path, restore_dir.path,
-					 30000, extra_options = "-r now " + extra_args)
+					 30000, extra_options = b"-r now " + extra_args)
 		self.check_dir2(restore_dir)
 		Myrm(restore_dir.path)
 		rdiff_backup(1, 1, self.out_rp.path, restore_dir.path, 30000,
-					 extra_options = "-r 10000 " + extra_args)
+					 extra_options = b"-r 10000 " + extra_args)
 		self.check_dir1(restore_dir)
 
 	def test_basic_local(self):
 		"""Test backup session when increment would be too long"""
-		self.generic_test(1, 1, "", 1)
+		self.generic_test(1, 1, b"", 1)
 
 	def test_quoting_local(self):
 		"""Test backup session with quoting, so reg files also too long"""
-		self.generic_test(1, 1, "--override-chars-to-quote A-Z", 0)
+		self.generic_test(1, 1, b"--override-chars-to-quote A-Z", 0)
 
 	def generic_regress_test(self, extra_args):
 		"""Used for regress tests below"""
@@ -122,7 +122,7 @@ class LongNameTest(unittest.TestCase):
 		
 		# Restore in1 and compare
 		rdiff_backup(1, 1, self.out_rp.path, restore_dir.path, 30000,
-					 extra_options = '-r now ' + extra_args)
+					 extra_options = b'-r now ' + extra_args)
 		self.check_dir1(restore_dir)
 
 	def add_current_mirror(self, time):
@@ -133,25 +133,24 @@ class LongNameTest(unittest.TestCase):
 
 	def test_regress_basic(self):
 		"""Test regressing when increments would be too long"""
-		self.generic_regress_test('')
+		self.generic_regress_test(b'')
 
 	def test_long_socket_name(self):
 		"""Test when socket name is saved to a backup directory with a long name
 		It addresses an issue where socket wasn't created with mknod but
 		with socket.socket and bind, which has a limit at 107 characters."""
-		input_dir = os.path.join(old_test_dir, "select", "filetypes")
+		input_dir = os.path.join(old_test_dir, b"select", b"filetypes")
 		# create a target directory with a long name next to 107
-		output_dir = os.path.join(abs_test_dir, "tenletters"*10)
+		output_dir = os.path.join(abs_test_dir, b"tenletters"*10)
 		Myrm(output_dir)
-		restore_dir = os.path.join(abs_test_dir, "restoresme"*10)
+		restore_dir = os.path.join(abs_test_dir, b"restoresme"*10)
 		Myrm(restore_dir)
 		# backup and restore the input directory with socket, then compare
 		rdiff_backup(True, True, input_dir, output_dir)
-		rdiff_backup(True, True, output_dir, restore_dir, extra_options='-r 0')
+		rdiff_backup(True, True, output_dir, restore_dir, extra_options=b'-r 0')
 		CompareRecursive(rpath.RPath(Globals.local_connection, input_dir),
 				rpath.RPath(Globals.local_connection, restore_dir))
 
 
 if __name__ == "__main__": unittest.main()
-
 
