@@ -1,4 +1,6 @@
-INSTALLATION:
+# rdiff-backup
+
+## INSTALLATION
 
 Thank you for trying rdiff-backup.  To install, run:
 
@@ -51,7 +53,7 @@ To build from source on Windows, you can use the command:
 to build a single executable file which contains Python, librsync, and
 all required modules.
 
-REQUIREMENTS:
+### REQUIREMENTS
 
 Remember that you must have Python 3.5 or later and librsync 1.0.0 or
 later installed.  For Python, see http://www.python.org.  The
@@ -80,7 +82,7 @@ http://cheeseshop.python.org/pypi/xattr
 In order to build rdiff-backup, you need python3-devel and librsync-devel, as
 well as a C compiler (gcc).
 
-TROUBLESHOOTING:
+## TROUBLESHOOTING
 
 If you have everything installed properly, and it still doesn't work,
 see the enclosed FAQ.html, the web page at http://rdiff-backup.nongnu.org
