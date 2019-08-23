@@ -260,6 +260,7 @@ add_test(NAME hashtable_test COMMAND hashtable_test)
 add_executable(sumset_test
     tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c
     src/checksum.c src/rollsum.c src/mdfour.c src/hashtable.c ${blake2_SRCS})
+target_compile_options(sumset_test PRIVATE -DLIBRSYNC_STATIC_DEFINE)
 target_link_libraries(sumset_test ${blake2_LIBS})
 add_test(NAME sumset_test COMMAND sumset_test)
 
@@ -361,7 +362,11 @@ set_target_properties(rsync PROPERTIES
     VERSION ${LIBRSYNC_VERSION}
     SOVERSION ${LIBRSYNC_MAJOR_VERSION}
     C_VISIBILITY_PRESET hidden)
-install(TARGETS rsync ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS rsync ${INSTALL_TARGETS_DEFAULT_ARGS}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
 
 ########### next target ###############
@@ -378,7 +383,11 @@ if (BUILD_RDIFF)
     message (WARNING "Popt library is required for rdiff target")
   endif (POPT_FOUND)
 
-  install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION ${CMAKE_INSTALL_BINDIR})
+  install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS}
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
 endif (BUILD_RDIFF)
 
 

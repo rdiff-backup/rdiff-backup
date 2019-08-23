@@ -4,6 +4,11 @@
 
 NOT RELEASED YET
 
+ * Fix MSVC builds by adding missing LIBRSYNC_EXPORT to variables in
+   librsync.h, add -DLIBRSYNC_STATIC_DEFINE to the sumset_test target,
+   and correctly install .dll files in the bin directory.
+   (adsun701, https://github.com/librsync/librsync/pull/161)
+
 ## librsync 2.1.0
 
 Released 2019-08-19
