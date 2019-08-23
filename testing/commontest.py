@@ -17,7 +17,8 @@ abs_test_dir = os.path.join(abs_work_dir, b'testfiles')
 abs_output_dir = os.path.join(abs_test_dir, b'output')
 abs_restore_dir = os.path.join(abs_test_dir, b'restore')
 
-old_test_dir = os.getcwdb() + b'_testfiles'
+# the directory with the testfiles used as input is in the parent directory of the Git clone
+old_test_dir = os.path.join(os.path.dirname(os.getcwdb()), b'rdiff-backup_testfiles')
 old_inc1_dir = os.path.join(old_test_dir, b'increment1')
 old_inc2_dir = os.path.join(old_test_dir, b'increment2')
 old_inc3_dir = os.path.join(old_test_dir, b'increment3')
