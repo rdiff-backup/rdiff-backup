@@ -8,13 +8,21 @@ Some notes for developers and other people willing to help development.
 * tox
 * libacl-devel (for sys/acl.h)
 * rdiff (with support for -H parameter)
-- unpack the test-files (see note) to a directory `rdiff-backup_testfiles` next to the cloned Git repository
+- unpack the test files previously available from
+https://download-mirror.savannah.gnu.org/releases/rdiff-backup/testfiles.tar.gz and now temporarily available as
+release under https://github.com/ericzolf/rdiff-backup/releases[]:
+* The extraction as root (e.g. `sudo tar xvzf rdiff-backup_testfiles_ISORELEASEDATE.tar.gz`) is sadly necessary
+because else the device files won't be extracted as normal user. This needs to happen in the _parent_ directory
+of the Git directory.
+* You then possibly need to fix (again as root) the access rights so that the user/group you're using normally in your
+daily development life is set instead of my user and group with ID 1000. For this you may use the helper script
+provided in the archive and call `sudo ./rdiff-backup_testfiles.fix.sh`.
+
+That's it, you can now run the tests:
+
 - run `tox` to use the default `tox.ini`
 - or `tox -c tox_slow.ini` for long tests
-
-NOTE: the test files previously available from https://download-mirror.savannah.gnu.org/releases/rdiff-backup/testfiles.tar.gz are now available as release under https://github.com/ericzolf/rdiff-backup/releases with some improvements. You'll need to unpack the file as root and do some more manipulations as explained in the notes of the latest release.
-
-That's it...
+- or `sudo tox -c tox_root.ini` for the few tests needing root rights
 
 == How to debug rdiff-backup?
 
