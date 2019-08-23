@@ -75,5 +75,5 @@ setup(name="rdiff-backup",
 	  scripts = ['rdiff-backup', 'rdiff-backup-statistics'],
 	  data_files = [('share/man/man1', ['rdiff-backup.1', 'rdiff-backup-statistics.1']),
 					('share/doc/rdiff-backup-%s' % (version_string,),
-					 ['CHANGELOG', 'COPYING', 'README', 'FAQ-body.html'])],
+					 ['CHANGELOG', 'COPYING', 'README.md', 'FAQ-body.html'])],
 					**extra_options) # FIXME improve FAQ.html vs. body
