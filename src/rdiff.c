@@ -77,24 +77,6 @@ enum {
 
 char *rs_hash_name;
 
-const struct poptOption opts[] = {
-    {"verbose", 'v', POPT_ARG_NONE, 0, 'v'},
-    {"version", 'V', POPT_ARG_NONE, 0, 'V'},
-    {"input-size", 'I', POPT_ARG_INT, &rs_inbuflen},
-    {"output-size", 'O', POPT_ARG_INT, &rs_outbuflen},
-    {"hash", 'H', POPT_ARG_STRING, &rs_hash_name},
-    {"help", '?', POPT_ARG_NONE, 0, 'h'},
-    {0, 'h', POPT_ARG_NONE, 0, 'h'},
-    {"block-size", 'b', POPT_ARG_INT, &block_len},
-    {"sum-size", 'S', POPT_ARG_INT, &strong_len},
-    {"statistics", 's', POPT_ARG_NONE, &show_stats},
-    {"stats", 0, POPT_ARG_NONE, &show_stats},
-    {"gzip", 'z', POPT_ARG_NONE, 0, OPT_GZIP},
-    {"bzip2", 'i', POPT_ARG_NONE, 0, OPT_BZIP2},
-    {"force", 'f', POPT_ARG_NONE, &file_force},
-    {0}
-};
-
 static void rdiff_usage(const char *error, ...)
 {
     va_list va;
@@ -356,6 +338,25 @@ static rs_result rdiff_action(poptContext opcon)
 
 int main(const int argc, const char *argv[])
 {
+    /* Initialize opts at runtime to avoid unknown address values. */
+    const struct poptOption opts[] = {
+        {"verbose", 'v', POPT_ARG_NONE, 0, 'v'},
+        {"version", 'V', POPT_ARG_NONE, 0, 'V'},
+        {"input-size", 'I', POPT_ARG_INT, &rs_inbuflen},
+        {"output-size", 'O', POPT_ARG_INT, &rs_outbuflen},
+        {"hash", 'H', POPT_ARG_STRING, &rs_hash_name},
+        {"help", '?', POPT_ARG_NONE, 0, 'h'},
+        {0, 'h', POPT_ARG_NONE, 0, 'h'},
+        {"block-size", 'b', POPT_ARG_INT, &block_len},
+        {"sum-size", 'S', POPT_ARG_INT, &strong_len},
+        {"statistics", 's', POPT_ARG_NONE, &show_stats},
+        {"stats", 0, POPT_ARG_NONE, &show_stats},
+        {"gzip", 'z', POPT_ARG_NONE, 0, OPT_GZIP},
+        {"bzip2", 'i', POPT_ARG_NONE, 0, OPT_BZIP2},
+        {"force", 'f', POPT_ARG_NONE, &file_force},
+        {0}
+    };
+
     poptContext opcon;
     rs_result result;
 

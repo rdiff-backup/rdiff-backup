@@ -45,7 +45,7 @@ extern "C" {
 /** Library version string.
  *
  * \sa \ref versioning */
-extern char const rs_librsync_version[];
+LIBRSYNC_EXPORT extern char const rs_librsync_version[];
 
 typedef uint8_t rs_byte_t;
 typedef intmax_t rs_long_t;
@@ -215,7 +215,7 @@ typedef struct rs_stats {
  * \sa rs_mdfour(), rs_mdfour_begin(), rs_mdfour_update(), rs_mdfour_result() */
 typedef struct rs_mdfour rs_mdfour_t;
 
-extern const int RS_MD4_SUM_LENGTH, RS_BLAKE2_SUM_LENGTH;
+LIBRSYNC_EXPORT extern const int RS_MD4_SUM_LENGTH, RS_BLAKE2_SUM_LENGTH;
 
 #  define RS_MAX_STRONG_SUM_LENGTH 32
 
@@ -493,7 +493,7 @@ LIBRSYNC_EXPORT rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len,
  * The default 0 means use the recommended buffer size for the operation being
  * performed, any other value will override the recommended sizes. You probably
  * only need to change these in testing. */
-extern int rs_inbuflen, rs_outbuflen;
+LIBRSYNC_EXPORT extern int rs_inbuflen, rs_outbuflen;
 
 /** Generate the signature of a basis file, and write it out to another.
  *
