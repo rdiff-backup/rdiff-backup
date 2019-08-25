@@ -1,5 +1,4 @@
-
-import re, io, unittest, types, os
+import re, io, unittest, types, os, subprocess
 from commontest import *
 from rdiff_backup.selection import *
 from rdiff_backup import Globals, rpath
@@ -292,8 +291,12 @@ rdiff-backup_testfiles/select/1/1
 			   "Assumption: /usr/bin is on the same filesystem as /"
 		assert sf(RPath(Globals.local_connection, "/proc")) == 0, \
 			   "Assumption: /proc is on a different filesystem"
-		assert sf(RPath(Globals.local_connection, "/boot")) == 0, \
-			   "Assumption: /boot is on a different filesystem"
+		if b' /boot ' in subprocess.check_output('mount'):
+			assert sf(RPath(Globals.local_connection, "/boot")) == 0, \
+				   "Assumption: /boot is on a different filesystem"
+		if b' /boot/efi ' in subprocess.check_output('mount'):
+			assert sf(RPath(Globals.local_connection, "/boot/efi")) == 0, \
+				   "Assumption: /boot/efi is on a different filesystem"
 
 class ParseArgsTest(unittest.TestCase):
 	"""Test argument parsing as well as filelist globbing"""
