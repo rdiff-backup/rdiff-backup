@@ -5,22 +5,6 @@ from rdiff_backup.rpath import *
 
 class CTest(unittest.TestCase):
 	"""Test the C module by comparing results to python functions"""
-	def test_make_dict(self):
-		"""Test making stat dictionaries"""
-		rp1 = RPath(Globals.local_connection, "/dev/ttyS1")
-		rp2 = RPath(Globals.local_connection, "./ctest.py")
-		rp3 = RPath(Globals.local_connection, "aestu/aeutoheu/oeu")
-		rp4 = RPath(Globals.local_connection, "testfiles/various_file_types/symbolic_link")
-		rp5 = RPath(Globals.local_connection, "testfiles/various_file_types/fifo")
-
-		for rp in [rp1, rp2, rp3, rp4, rp5]:
-			dict1 = make_file_dict_python(rp.path)
-			dict2 = C.make_file_dict(rp.path)
-			if dict1 != dict2:
-				print("Python dictionary: ", dict1)
-				print("not equal to C dictionary: ", dict2)
-				print("for path ", rp.path)
-				assert 0
 
 	def test_sync(self):
 		"""Test running C.sync"""

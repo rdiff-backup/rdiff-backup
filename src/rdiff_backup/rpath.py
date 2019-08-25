@@ -282,29 +282,10 @@ def make_file_dict(filename):
 	filename over the network, thus avoiding the need to pickle an
 	(incomplete) rpath object.
 	"""
-	if os.name != 'nt':
-		try:
-			return C.make_file_dict(filename)
-		except OSError as error:
-			# Unicode filenames should be processed by the Python version
-			if error.errno != errno.EILSEQ and error.errno != errno.EINVAL:
-				raise
-		except UnicodeEncodeError as error:
-			pass
 
-	return make_file_dict_python(filename)
-
-def make_file_dict_python(filename):
-	"""Create the data dictionary using a Python call to os.lstat
-	
-	We do this on Windows since Python's implementation is much better
-	than the one in cmodule.c    Eventually, we will move to using
-	this on all platforms since CPUs have gotten much faster than
-	they were when it was necessary to write cmodule.c
-	"""
 	try:
 		statblock = os.lstat(filename)
-	except os.error:
+	except (FileNotFoundError, NotADirectoryError):
 		return {'type':None}
 	data = {}
 	mode = statblock[stat.ST_MODE]
