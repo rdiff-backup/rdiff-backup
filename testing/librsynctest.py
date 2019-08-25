@@ -1,4 +1,4 @@
-import unittest, random
+import unittest, random, subprocess
 from commontest import *
 from rdiff_backup import librsync, log
 
@@ -32,8 +32,12 @@ class LibrsyncTest(unittest.TestCase):
 		for i in range(iterations):
 			MakeRandomFile(self.basis.path, file_len)
 			self._clean_file(self.sig)
-			assert not os.system(b"rdiff -b %i -H md4 signature %s %s" %
-								 (blocksize, self.basis.path, self.sig.path))
+			if b'-H' in subprocess.check_output(["rdiff", "--help"]):
+				assert not os.system(b"rdiff -b %i -H md4 signature %b %b" %
+									 (blocksize, self.basis.path, self.sig.path))
+			else:
+				assert not os.system(b"rdiff -b %i signature %b %b" %
+									 (blocksize, self.basis.path, self.sig.path))
 			with self.sig.open("rb") as fp:
 				rdiff_sig = fp.read()
 
