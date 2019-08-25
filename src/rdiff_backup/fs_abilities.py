@@ -223,8 +223,8 @@ class FSAbilities:
 		assert ord_rp.lstat()
 		ord_rp.delete()
 
-		# Try a UTF-8 encoded character, it's a path as string FIXME?
-		extended_filename = 'uni' + chr(225) + chr(132) + chr(137)
+		# Try path with UTF-8 encoded character
+		extended_filename = ('uni' + chr(225) + chr(132) + chr(137)).encode('utf-8')
 		ext_rp = None
 		try:
 			ext_rp = subdir.append(extended_filename)
