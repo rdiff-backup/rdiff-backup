@@ -16,19 +16,16 @@ import re
 import glob
 
 parser = argparse.ArgumentParser(
-    description=
-    "Delete files or directories from rdiff-backup mirrors including metadata",
+    description="Delete files or directories from rdiff-backup mirrors including metadata",
     epilog='')
 
 parser.add_argument(
     'base',
-    help=
-    'base directory of the backup (the one containing the rdiff-backup-data directory)')
+    help='base directory of the backup (the one containing the rdiff-backup-data directory)')
 
 parser.add_argument(
     'path',
-    help=
-    'path of the file or directory to delete, relative to the base directory')
+    help='path of the file or directory to delete, relative to the base directory')
 
 parser.add_argument(
     '-d',
@@ -43,10 +40,8 @@ dryrun = parser.parse_args().dry
 
 def check_type(base, path):
     """
-
-    Determine whether specified path is a single file/link or 
+    Determine whether specified path is a single file/link or
     directory that needs to be deleted recursively
-
     """
     filetype = None
     p = base + '/' + path
@@ -62,15 +57,13 @@ def check_type(base, path):
 
 def delete_entry(base, path):
     """
-
-    Delete specified path, recursively if it is a directory.  Fall through 
-    if it doesn't exist (ie if it was removed from the source or mirror 
+    Delete specified path, recursively if it is a directory.  Fall through
+    if it doesn't exist (ie if it was removed from the source or mirror
     prior to script execution)
-
     """
     filetype = check_type(base, path)
     p = (base + '/' + path).replace('//', '/')
-    if filetype == None:
+    if filetype is None:
         # print "File/Directory '%s' doesn't appear to exist, skipping deletion" % p
         return
     if filetype == 'dir':

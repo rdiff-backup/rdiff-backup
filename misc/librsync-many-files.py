@@ -2,7 +2,6 @@
 """Use librsync to transform everything in one dir to another"""
 
 import sys
-import os
 import librsync
 
 dir1, dir2 = sys.argv[1:3]

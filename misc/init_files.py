@@ -7,7 +7,6 @@ specified directory.
 """
 
 import os
-import stat
 import sys
 import math
 
@@ -27,8 +26,10 @@ filecount = int(sys.argv[3])
 block_size = 16384
 block = "." * block_size
 block_change = "." * (filesize % block_size)
-if len(sys.argv) == 4: base = 50
-else: base = int(sys.argv[4])
+if len(sys.argv) == 4:
+    base = 50
+else:
+    base = int(sys.argv[4])
 
 
 def make_file(path):
