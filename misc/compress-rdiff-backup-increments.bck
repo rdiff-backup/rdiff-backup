@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+#
+# Compresses old rdiff-backup increments.  See
+# http://www.stanford.edu/~bescoto/rdiff-backup for information on
+# rdiff-backup.
+
+from __future__ import nested_scopes, generators
+import os, sys, getopt
+
+rdiff_backup_location = "/usr/bin/rdiff-backup"
+no_compression_regexp_string = None
+__no_execute__ = 1
+
+def print_help():
+	"""Print usage, exit"""
+	print """
+Usage: compress-rdiff-backup-increments [options] mirror_directory
+
+This script will compress the old rdiff-backup increments under
+mirror_directory, in a format compatible with rdiff-backup version
+0.7.1 and later.  So for instance if you were using an old version
+of rdiff-backup like this:
+
+rdiff-backup /foo /backup
+
+and now you want to take advantage of v0.7.1's space saving
+compression, you can run:
+
+compress-rdiff-backup-increments /backup
+
+
+Options:
+
+--rdiff-backup-location location
+    This script reads your rdiff-backup executable.  The default
+    is "/usr/bin/rdiff-backup", so if your rdiff-backup is in a
+    different location, you must use this switch.
+
+--no-compression-regexp regexp
+    Any increments whose base name match this regular expression
+    won't be compressed.  This is generally used to avoid
+    compressing already compressed files.  See the rdiff-backup
+    man page for the default.
+"""
+	sys.exit(1)
+	
+def parse_args(arglist):
+	"""Check and evaluate command line arguments, return dirname"""
+	global rdiff_backup_location
+	global no_compression_regexp_string
+	try: optlist, args = getopt.getopt(arglist, "v:",
+									   ["rdiff-backup-location=",
+										"no-compression-regexp="])
+	except getopt.error: print_help()
+
+	for opt, arg in optlist:
+		if opt == "--no-compression-regexp":
+			no_compression_regexp_string = arg
+		elif opt == "--rdiff-backup-location": rdiff_backup_location = arg
+		else:
+			print "Bad option: ", opt
+			print_help()
+
+	if len(args) != 1:
+		print "Wrong number of arguments"
+		print_help()
+	return args[0]
+
+def exec_rdiff_backup():
+	"""Execs rdiff-backup"""
+	try: execfile(rdiff_backup_location, globals())
+	except IOError:
+		print "Unable to read", rdiff_backup_location
+		print "You may need to use the --rdiff-backup-location argument"
+		sys.exit(1)
+
+	if not map(int, Globals.version.split(".")) >= [0, 7, 1]:
+		print "This script requires rdiff-backup version 0.7.1 or later,",
+		print "found version", Globals.version
+		sys.exit(1)
+
+def gzip_file(rp):
+	"""gzip rp, adding .gz to path and deleting original"""
+	newrp = RPath(rp.conn, rp.base, rp.index[:-1] + (rp.index[-1]+".gz",))
+	if newrp.lstat():
+		print "Warning: %s already exists, skipping" % newrp.path
+		return
+
+	print "gzipping ", rp.path
+	newrp.write_from_fileobj(rp.open("rb"), compress = 1)
+	RPath.copy_attribs(rp, newrp)
+	rp.delete()
+
+def Main():
+	dirname = parse_args(sys.argv[1:])
+	exec_rdiff_backup()
+	if no_compression_regexp_string is not None:
+		no_compression_regexp = re.compile(no_compression_regexp_string, re.I)
+	else: no_compression_regexp = \
+		  re.compile(Globals.no_compression_regexp_string, re.I)
+	Globals.change_source_perms = 1
+	Globals.change_ownership = (os.getuid() == 0)
+
+	# Check to make sure rbdir exists
+	root_rp = RPath(Globals.local_connection, dirname)
+	rbdir = root_rp.append("rdiff-backup-data")
+	if not rbdir.lstat():
+		print "Cannot find %s, exiting" % rbdir.path
+		sys.exit(1)
+
+	for dsrp in DestructiveStepping.Iterate_with_Finalizer(rbdir, 1):
+		if (dsrp.isincfile() and dsrp.isreg() and
+			not dsrp.isinccompressed() and
+			(dsrp.getinctype() == "diff" or dsrp.getinctype() == "snapshot")
+			and dsrp.getsize() != 0 and
+			not no_compression_regexp.match(dsrp.getincbase_str())):
+			gzip_file(dsrp)
+
+Main()
+

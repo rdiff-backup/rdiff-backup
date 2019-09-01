@@ -1,30 +1,40 @@
 #!/usr/bin/env python3
 
 from __future__ import generators
-import sys, os, stat
+import sys
+import os
+import stat
+
 
 def usage():
-	print "Usage: find2dirs dir1 dir2"
-	print
-	print "Given the name of two directories, list all the files in both, one"
-	print "per line, but don't repeat a file even if it is in both directories"
-	sys.exit(1)
+    print "Usage: find2dirs dir1 dir2"
+    print
+    print "Given the name of two directories, list all the files in both, one"
+    print "per line, but don't repeat a file even if it is in both directories"
+    sys.exit(1)
 
-def getlist(base, ext = ""):
-	"""Return iterator yielding filenames from directory"""
-	if ext: yield ext
-	else: yield "."
 
-	fullname = os.path.join(base, ext)
-	if stat.S_ISDIR(stat.S_IFMT(os.lstat(fullname)[stat.ST_MODE])):
-		for subfile in os.listdir(fullname):
-			for fn in getlist(base, os.path.join(ext, subfile)): yield fn
+def getlist(base, ext=""):
+    """Return iterator yielding filenames from directory"""
+    if ext: yield ext
+    else: yield "."
+
+    fullname = os.path.join(base, ext)
+    if stat.S_ISDIR(stat.S_IFMT(os.lstat(fullname)[stat.ST_MODE])):
+        for subfile in os.listdir(fullname):
+            for fn in getlist(base, os.path.join(ext, subfile)):
+                yield fn
+
 
 def main(dir1, dir2):
-	d = {}
-	for fn in getlist(dir1): d[fn] = 1
-	for fn in getlist(dir2): d[fn] = 1
-	for fn in d.keys(): print fn
+    d = {}
+    for fn in getlist(dir1):
+        d[fn] = 1
+    for fn in getlist(dir2):
+        d[fn] = 1
+    for fn in d.keys():
+        print fn
+
 
 if not len(sys.argv) == 3: usage()
 else: main(sys.argv[1], sys.argv[2])
