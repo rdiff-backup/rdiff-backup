@@ -272,9 +272,9 @@ user.empty
 class ACLTest(unittest.TestCase):
     """Test access control lists"""
 
-    # find out current user and group
-    current_user = pwd.getpwuid(os.getuid()).pw_name
-    current_group = grp.getgrgid(os.getgid()).gr_name
+    # @TODO: Use the instrumented testuser here in case tests are run as root
+    current_user = 'testuser' # pwd.getpwuid(os.getuid()).pw_name
+    current_group = 'testuser' # grp.getgrgid(os.getgid()).gr_name
 
     sample_acl = AccessControlLists((), """user::rwx
 user:root:rwx

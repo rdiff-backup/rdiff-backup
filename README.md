@@ -1,5 +1,7 @@
 # rdiff-backup
 
+[![Build Status](https://travis-ci.org/rdiff-backup/rdiff-backup.svg?branch=master)](https://travis-ci.org/rdiff-backup/rdiff-backup)
+
 ## INSTALLATION
 
 Thank you for trying rdiff-backup.  To install, run:
