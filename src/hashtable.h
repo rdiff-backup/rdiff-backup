@@ -34,13 +34,14 @@
  * data. The hash() function doesn't need to avoid clustering behaviour.
  *
  * It uses open addressing with quadratic probing for collisions. The
- * MurmurHash3 finalization function is used on the hash() output to avoid
- * clustering. There is no support for removing entries, only adding them.
- * Multiple entries with the same key can be added, and you can use a fancy
- * cmp() function to find particular entries by more than just their key. There
- * is an iterator for iterating through all entries in the hashtable. There are
- * optional hashtable_find() find/match/hashcmp/entrycmp stats counters that
- * can be disabled by defining HASHTABLE_NSTATS.
+ * MurmurHash3 finalization function is optionally used on the hash() output
+ * to avoid clustering and can be disabled by setting HASHTABLE_NMIX32. There
+ * is no support for removing entries, only adding them. Multiple entries
+ * with the same key can be added, and you can use a fancy cmp() function to
+ * find particular entries by more than just their key. There is an iterator
+ * for iterating through all entries in the hashtable. There are optional
+ * hashtable_find() find/match/hashcmp/entrycmp stats counters that can be
+ * disabled by defining HASHTABLE_NSTATS.
  *
  * The types and methods of the hashtable and its contents are specified by
  * using \#define parameters set to their basenames (the prefixes for the *_t
@@ -190,14 +191,20 @@ static inline unsigned mix32(unsigned int h)
 #  define MATCH_CMP(m, e) _JOIN(MATCH, _cmp)(m, e)
 #  define _FUNC(f) _JOIN(NAME, f)
 
+/* Modified hash() with/without mix32() and non-zero output. */
+#  ifdef HASHTABLE_NMIX32
+#    define _KEY_HASH(k) ({unsigned hk=KEY_HASH((KEY_T *)k); hk ? hk : -1;})
+#  else
+#    define _KEY_HASH(k) ({unsigned hk=mix32(KEY_HASH((KEY_T *)k)); hk ? hk : -1;})
+#  endif
+
 /* Loop macro for probing table t for key k, setting hk to the hash for k
    reserving zero for empty buckets, and iterating with index i and entry hash
    h, terminating at an empty bucket. */
 #  define _for_probe(t, k, hk, i, h) \
     const unsigned mask = t->size - 1;\
-    unsigned hk = KEY_HASH((KEY_T *)k), i, s, h;\
-    hk = hk ? hk : -1;\
-    for (i = mix32(hk) & mask, s = 0; (h = t->ktable[i]); i = (i + ++s) & mask)
+    unsigned hk = _KEY_HASH(k), i, s, h;\
+    for (i = hk & mask, s = 0; (h = t->ktable[i]); i = (i + ++s) & mask)
 
 /* Conditional macro for incrementing stats counters. */
 #  ifndef HASHTABLE_NSTATS
@@ -330,4 +337,5 @@ static inline ENTRY_T *_FUNC(_next) (hashtable_iter_t *i) {
 #  undef KEY_HASH
 #  undef MATCH_CMP
 #  undef _FUNC
+#  undef _KEY_HASH
 #endif                          /* ENTRY */
