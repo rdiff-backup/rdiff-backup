@@ -34,12 +34,12 @@
  * data. The hash() function doesn't need to avoid clustering behaviour.
  *
  * It uses open addressing with quadratic probing for collisions. The
- * MurmurHash3 finalization function is optionally used on the hash() output
- * to avoid clustering and can be disabled by setting HASHTABLE_NMIX32. There
- * is no support for removing entries, only adding them. Multiple entries
- * with the same key can be added, and you can use a fancy cmp() function to
- * find particular entries by more than just their key. There is an iterator
- * for iterating through all entries in the hashtable. There are optional
+ * MurmurHash3 finalization function is optionally used on the hash() output to
+ * avoid clustering and can be disabled by setting HASHTABLE_NMIX32. There is
+ * no support for removing entries, only adding them. Multiple entries with the
+ * same key can be added, and you can use a fancy cmp() function to find
+ * particular entries by more than just their key. There is an iterator for
+ * iterating through all entries in the hashtable. There are optional
  * hashtable_find() find/match/hashcmp/entrycmp stats counters that can be
  * disabled by defining HASHTABLE_NSTATS.
  *
@@ -292,6 +292,7 @@ static inline ENTRY_T *_FUNC(_find) (hashtable_t *t, MATCH_T * m) {
 }
 
 static inline ENTRY_T *_FUNC(_next) (hashtable_t *t, int *i);
+
 /** Initialize a iteration and return the first entry.
  *
  * This works together with hashtable_next() for iterating through all entries
@@ -311,20 +312,25 @@ static inline ENTRY_T *_FUNC(_iter) (hashtable_t *t, int *i) {
     assert(t != NULL);
     assert(i != NULL);
     *i = 0;
-    return _FUNC(_next)(t, i);
+    return _FUNC(_next) (t, i);
 }
 
 /** Get the next entry from a hashtable iterator or NULL when finished.
  *
- * \param *i - the hashtable iterator to use.
+ * This works together with hashtable_iter() for iterating through all entries
+ * in a hashtable.
+ *
+ * \param *t - the hashtable to iterate over.
+ *
+ * \param *i - the int iterator index to use.
  *
  * \return The next entry or NULL if the iterator is finished. */
 static inline ENTRY_T *_FUNC(_next) (hashtable_t *t, int *i) {
     assert(t != NULL);
     assert(i != NULL);
-    ENTRY_T *e=NULL;
+    ENTRY_T *e = NULL;
 
-    while ((*i < t->size) && !(e = t->etable[(*i)++]));
+    while ((*i < t->size) && !(e = t->etable[(*i)++])) ;
     return e;
 }
 
