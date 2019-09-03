@@ -36,7 +36,8 @@ are dealing with are local or remote.
 
 import os
 import stat
-import reimport sys
+import re
+import sys
 import shutil
 import gzip
 import socket
