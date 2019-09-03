@@ -84,9 +84,9 @@
  *   k = ...;
  *   e = myentry_hashtable_find(t, &k);
  *
- *   hashtable_iter_t i;
- *   for (e = myentry_hashtable_iter(&i, t); e != NULL;
- *        e = myentry_hashtable_next(&i))
+ *   int i;
+ *   for (e = myentry_hashtable_iter(t, &i); e != NULL;
+ *        e = myentry_hashtable_next(t, &i))
  *     ...
  *
  *   myentry_hashtable_free(t);
@@ -139,17 +139,9 @@ typedef struct hashtable {
     unsigned ktable[];          /**< Table of hash keys. */
 } hashtable_t;
 
-/** The hashtable iterator type. */
-typedef struct hashtable_iter {
-    hashtable_t *htable;        /**< The hashtable to iterate over. */
-    int index;                  /**< The index to scan from next. */
-} hashtable_iter_t;
-
 /* void* implementations for the type-safe static inline wrappers below. */
 hashtable_t *_hashtable_new(int size);
 void _hashtable_free(hashtable_t *t);
-void *_hashtable_iter(hashtable_iter_t *i, hashtable_t *t);
-void *_hashtable_next(hashtable_iter_t *i);
 
 /** MurmurHash3 finalization mix function. */
 static inline unsigned mix32(unsigned int h)
@@ -299,23 +291,27 @@ static inline ENTRY_T *_FUNC(_find) (hashtable_t *t, MATCH_T * m) {
     return NULL;
 }
 
-/** Initialize a hashtable_iter_t and return the first entry.
+static inline ENTRY_T *_FUNC(_next) (hashtable_t *t, int *i);
+/** Initialize a iteration and return the first entry.
  *
  * This works together with hashtable_next() for iterating through all entries
  * in a hashtable.
  *
  * Example: \code
- *   for (e = hashtable_iter(&i, t); e != NULL; e = hashtable_next(&i))
+ *   for (e = hashtable_iter(t, &i); e != NULL; e = hashtable_next(t, &i))
  *     ...
  * \endcode
  *
- * \param *i - the hashtable iterator to initialize.
- *
  * \param *t - the hashtable to iterate over.
  *
+ * \param *i - the int iterator index to initialize.
+ *
  * \return The first entry or NULL if the hashtable is empty. */
-static inline ENTRY_T *_FUNC(_iter) (hashtable_iter_t *i, hashtable_t *t) {
-    return _hashtable_iter(i, t);
+static inline ENTRY_T *_FUNC(_iter) (hashtable_t *t, int *i) {
+    assert(t != NULL);
+    assert(i != NULL);
+    *i = 0;
+    return _FUNC(_next)(t, i);
 }
 
 /** Get the next entry from a hashtable iterator or NULL when finished.
@@ -323,8 +319,13 @@ static inline ENTRY_T *_FUNC(_iter) (hashtable_iter_t *i, hashtable_t *t) {
  * \param *i - the hashtable iterator to use.
  *
  * \return The next entry or NULL if the iterator is finished. */
-static inline ENTRY_T *_FUNC(_next) (hashtable_iter_t *i) {
-    return _hashtable_next(i);
+static inline ENTRY_T *_FUNC(_next) (hashtable_t *t, int *i) {
+    assert(t != NULL);
+    assert(i != NULL);
+    ENTRY_T *e=NULL;
+
+    while ((*i < t->size) && !(e = t->etable[(*i)++]));
+    return e;
 }
 
 #  undef ENTRY

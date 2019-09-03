@@ -64,26 +64,3 @@ void _hashtable_free(hashtable_t *t)
         free(t);
     }
 }
-
-void *_hashtable_iter(hashtable_iter_t *i, hashtable_t *t)
-{
-    assert(i != NULL);
-    assert(t != NULL);
-    i->htable = t;
-    i->index = 0;
-    return _hashtable_next(i);
-}
-
-void *_hashtable_next(hashtable_iter_t *i)
-{
-    assert(i->htable != NULL);
-    assert(i->index <= i->htable->size);
-    const hashtable_t *t = i->htable;
-    void *e;
-
-    while (i->index < t->size) {
-        if ((e = t->etable[i->index++]))
-            return e;
-    }
-    return NULL;
-}
