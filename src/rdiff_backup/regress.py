@@ -78,7 +78,7 @@ def Regress(mirror_rp):
 
 
 def set_regress_time():
-    """Set global regress_time to previous sucessful backup
+    """Set global regress_time to previous successful backup
 
 	If there are two current_mirror increments, then the last one
 	corresponds to a backup session that failed.
