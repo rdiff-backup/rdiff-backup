@@ -336,7 +336,7 @@ class CacheCollatedPostProcess:
         # exists.  It is used to record file statistics.
 
         self.cache_dict = {}
-        self.cache_indicies = []
+        self.cache_indices = []
 
         # Contains a list of pairs (destination_rps, permissions) to
         # be used to reset the permissions of certain directories
@@ -356,9 +356,9 @@ class CacheCollatedPostProcess:
         self.pre_process(source_rorp, dest_rorp)
         index = source_rorp and source_rorp.index or dest_rorp.index
         self.cache_dict[index] = [source_rorp, dest_rorp, 0, 0, None]
-        self.cache_indicies.append(index)
+        self.cache_indices.append(index)
 
-        if len(self.cache_indicies) > self.cache_size: self.shorten_cache()
+        if len(self.cache_indices) > self.cache_size: self.shorten_cache()
         return source_rorp, dest_rorp
 
     def pre_process(self, source_rorp, dest_rorp):
@@ -389,8 +389,8 @@ class CacheCollatedPostProcess:
 
     def shorten_cache(self):
         """Remove one element from cache, possibly adding it to metadata"""
-        first_index = self.cache_indicies[0]
-        del self.cache_indicies[0]
+        first_index = self.cache_indices[0]
+        del self.cache_indices[0]
         try:
             (old_source_rorp, old_dest_rorp, changed_flag, success_flag,
              inc) = self.cache_dict[first_index]
@@ -507,9 +507,9 @@ class CacheCollatedPostProcess:
 
     def get_source_rorp(self, index):
         """Retrieve source_rorp with given index from cache"""
-        assert index >= self.cache_indicies[0], \
+        assert index >= self.cache_indices[0], \
             ("CCPP index out of order: %s %s" %
-          (repr(index), repr(self.cache_indicies[0])))
+          (repr(index), repr(self.cache_indices[0])))
         try:
             return self.cache_dict[index][0]
         except KeyError:
@@ -536,7 +536,7 @@ class CacheCollatedPostProcess:
 
     def close(self):
         """Process the remaining elements in the cache"""
-        while self.cache_indicies:
+        while self.cache_indices:
             self.shorten_cache()
         while self.dir_perms_list:
             dir_rp, perms = self.dir_perms_list.pop()
