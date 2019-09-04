@@ -34,7 +34,7 @@ reasons for this:
 
 2)  Metadata can be more quickly read from a file than it can by
     traversing the mirror directory over and over again.  In many
-    cases most of rdiff-backup's time is spent compaing metadata (like
+    cases most of rdiff-backup's time is spent comparing metadata (like
     file size and modtime), trying to find differences.  Reading this
     data sequentially from a file is significantly less taxing than
     listing directories and statting files all over the mirror
