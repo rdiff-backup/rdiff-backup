@@ -1253,7 +1253,7 @@ class RPath(RORPath):
     def contains_files(self):
         """Returns true if self (or subdir) contains any regular files."""
         log.Log(
-            "Determining if directory contains files: %s" %
+            "Determinating if directory contains files: %s" %
             self.get_safepath(), 7)
         if not self.isdir():
             return False
