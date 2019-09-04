@@ -1800,7 +1800,7 @@ New in v0.3.0 (2001/9/9 - Billennium edition)
 rdiff-backup has been almost completely rewritten for v0.3.0, as it
 was for v0.1.0.  The main problem with versions 0.2.x was that the
 networking code was added to the not-remote-capable v0.1, and the
-result was unyieldy and prone to bugs when operating over a pipe.
+result was unwieldy and prone to bugs when operating over a pipe.
 
 There are some new features:
 
