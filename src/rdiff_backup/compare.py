@@ -280,7 +280,7 @@ class CompareReport:
 	connection as an iter of CompareReports.
 
 	"""
-    # self.file is added so that CompareReports can masquerate as
+    # self.file is added so that CompareReports can masquerade as
     # RORPaths when in an iterator, and thus get pipelined.
     file = None
 
