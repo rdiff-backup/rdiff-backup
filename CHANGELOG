@@ -525,7 +525,7 @@ quoting to work properly with cygwin.  (Marc Dyksterhouse)
 Allow for preservation of FinderInfo for folders and fix typo
 in Time.py. (Patch from Andrew Ferguson.)
 
-Test for symlink permissions support to avoid unncessary syscalls on
+Test for symlink permissions support to avoid unnecessary syscalls on
 platforms that don't support them. (Patch from Andrew Ferguson.)
 
 RPM specfile update from Gordon Rowell.
