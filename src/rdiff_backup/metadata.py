@@ -517,7 +517,7 @@ class MetadataFile(FlatFile):
 
 
 class CombinedWriter:
-    """Used for simultaneously writting metadata, eas, and acls"""
+    """Used for simultaneously writing metadata, eas, and acls"""
 
     def __init__(self, metawriter, eawriter, aclwriter, winaclwriter):
         self.metawriter = metawriter
