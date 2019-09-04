@@ -117,7 +117,7 @@ class MirrorStruct:
 
     @classmethod
     def set_mirror_and_rest_times(cls, restore_to_time):
-        """Set class variabels _mirror_time and _rest_time on mirror conn"""
+        """Set class variables _mirror_time and _rest_time on mirror conn"""
         MirrorStruct._mirror_time = cls.get_mirror_time()
         MirrorStruct._rest_time = cls.get_rest_time(restore_to_time)
 
