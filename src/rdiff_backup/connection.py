@@ -442,7 +442,7 @@ class PipeConnection(LowLevelPipeConnection):
     def get_new_req_num(self):
         """Allot a new request number and return it"""
         if not self.unused_request_numbers:
-            raise ConnectionError("Exhaused possible connection numbers")
+            raise ConnectionError("Exhausted possible connection numbers")
         req_num = list(self.unused_request_numbers.keys())[0]
         del self.unused_request_numbers[req_num]
         return req_num
