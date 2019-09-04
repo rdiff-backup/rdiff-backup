@@ -294,7 +294,7 @@ class CacheCollatedPostProcess:
 	    directory.  If there is an error, either we do not update the
 	    dest directory for that file and the old metadata is used, or
 	    the file is deleted on the other end..  Thus we cannot write
-	    any metadata until we know the file has been procesed
+	    any metadata until we know the file has been processed
 	    correctly.
 
 	3.  We may lack permissions on certain destination directories.
