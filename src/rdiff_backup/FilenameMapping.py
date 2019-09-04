@@ -163,7 +163,7 @@ class QuotedRPath(rpath.RPath):
         """Return list of unquoted filenames in current directory
 
 		We want them unquoted so that the results can be sorted
-		correctly and append()ed to the currect QuotedRPath.
+		correctly and append()ed to the current QuotedRPath.
 
 		"""
         return list(map(unquote, self.conn.os.listdir(self.path)))
