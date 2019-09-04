@@ -253,6 +253,10 @@ add_executable(rollsum_test
     tests/rollsum_test.c src/rollsum.c)
 add_test(NAME rollsum_test COMMAND rollsum_test)
 
+add_executable(rabinkarp_test
+    tests/rabinkarp_test.c)
+add_test(NAME rabinkarp_test COMMAND rabinkarp_test)
+
 add_executable(hashtable_test
     tests/hashtable_test.c src/hashtable.c)
 add_test(NAME hashtable_test COMMAND hashtable_test)
@@ -290,7 +294,7 @@ else (BUILD_RDIFF)
   set(LAST_TARGET rsync)
 endif (BUILD_RDIFF)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test hashtable_test sumset_test)
+add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test rabinkarp_test hashtable_test sumset_test)
 
 
 enable_testing()
