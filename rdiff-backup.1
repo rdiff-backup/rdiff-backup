@@ -1065,7 +1065,7 @@ The gzip library in versions 2.2 and earlier of python (but fixed in
 2.3a1) has trouble producing files over 2GB in length.  This bug will
 prevent rdiff-backup from producing large compressed increments
 (snapshots or diffs).  A workaround is to disable compression for
-large uncompressable files.
+large incompressible files.
 
 .SH AUTHOR
 Ben Escoto <ben@emerose.org>
