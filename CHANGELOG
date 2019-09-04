@@ -1233,7 +1233,7 @@ pointing out that command line length could otherwise be a problem.
 Fixed bug in filelist processing that ignored leading or trailing
 whitespace in filelists.  Now filenames with, for instance, trailing
 spaces can be used in filelists.  Filelists which took advantage of
-this bug for formatting may have to be editted.
+this bug for formatting may have to be edited.
 
 Applied major/minor patch contributed by David S.  rdiff-backup should
 now correctly copy device files on platforms such as NetBSD.
