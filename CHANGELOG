@@ -1582,7 +1582,7 @@ New in v0.5.2 (2002/03/02)
 Fixed bugs which made rdiff-backup try to preserve mod times when it
 wasn't necessary, and exit instead of warning when it wasn't being run
 as root and found a file it didn't own.  (Reported by Alberto
-Accomazi.)
+Accomazzi.)
 
 Added some more error checking; maybe this will fix a bug reported by
 John Goerzen wherein rdiff-backup can crash if file is deleted while
