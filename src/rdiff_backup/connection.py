@@ -483,7 +483,7 @@ class RedirectedConnection(Connection):
         self.routing_conn = Globals.connection_dict[routing_number]
 
     def reval(self, function_string, *args):
-        """Evalution function_string on args on remote connection"""
+        """Evaluation function_string on args on remote connection"""
         return self.routing_conn.reval("RedirectedRun", self.conn_number,
                                        function_string, *args)
 
