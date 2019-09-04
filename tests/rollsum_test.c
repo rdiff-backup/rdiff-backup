@@ -26,9 +26,7 @@
 #include <assert.h>
 #include "rollsum.h"
 
-/*
- * Test driver for rollsum.
- */
+/* Test driver for rollsum. */
 int main(int argc, char **argv)
 {
     Rollsum r;

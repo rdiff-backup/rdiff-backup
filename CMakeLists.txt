@@ -214,7 +214,7 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 # Code tidy target to reformat code with indent.
-file(GLOB tidy_SRCS src/*.[ch])
+file(GLOB tidy_SRCS src/*.[ch] tests/*.[ch])
 set(TYPE_RE "(\\w+_t)")
 set(CAST_RE "(\\(${TYPE_RE}( \\*+)?\\))")
 add_custom_target(tidy

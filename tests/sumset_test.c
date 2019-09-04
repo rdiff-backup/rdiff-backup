@@ -105,15 +105,16 @@ int main(int argc, char **argv)
     assert(sig.size == 16);
     assert(sig.block_sigs != NULL);
     assert(((rs_block_sig_t *)sig.block_sigs)->weak_sum == 0x12345678);
-    assert(memcmp(((rs_block_sig_t *)sig.block_sigs)->strong_sum, &strong, 6) == 0);
+    assert(memcmp(((rs_block_sig_t *)sig.block_sigs)->strong_sum, &strong, 6)
+           == 0);
     rs_signature_done(&sig);
 
     /* Prepare rs_build_hash_table() and rs_signature_find_match() tests. */
     res = rs_signature_init(&sig, 0, 16, 6, 0);
-    for (i = 0; i < 256; i+=16) {
+    for (i = 0; i < 256; i += 16) {
         weak = rs_calc_weak_sum(&buf[i], 16);
-	rs_signature_calc_strong_sum(&sig, &buf[i], 16, &strong);
-	rs_signature_add_block(&sig, weak, &strong);
+        rs_signature_calc_strong_sum(&sig, &buf[i], 16, &strong);
+        rs_signature_add_block(&sig, weak, &strong);
     }
 
     /* Test rs_build_hash_table(). */
@@ -126,7 +127,7 @@ int main(int argc, char **argv)
     /* Matching weak, different block. */
     assert(rs_signature_find_match(&sig, weak, &buf[2], 16) == -1);
     /* Matching weak, matching block. */
-    assert(rs_signature_find_match(&sig, weak, &buf[15*16], 16) == 15*16);
+    assert(rs_signature_find_match(&sig, weak, &buf[15 * 16], 16) == 15 * 16);
 #ifndef HASHTABLE_NSTATS
     assert(sig.calc_strong_count == 2);
 #endif
