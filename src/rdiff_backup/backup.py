@@ -236,7 +236,7 @@ class DestinationStruct:
                 and dest_rp.isowner()):
             # This branch can happen with root source and non-root
             # destination.  Permissions are changed permanently, which
-            # should propogate to the diffs
+            # should propagate to the diffs
             dest_rp.chmod(0o400 | dest_rp.getperms())
         try:
             return Rdiff.get_signature(dest_rp)
