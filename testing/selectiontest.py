@@ -228,7 +228,7 @@ rdiff-backup_testfiles/select/1/1
         assert sf(self.makeext("foo/bar")) == 1
         assert sf(self.makeext("fOo/BaR")) == 1
         self.assertRaises(FilePrefixError, self.Select.glob_get_sf,
-                          b"ignorecase:tesfiles/sect/foo/bar", 1)
+                          b"ignorecase:testfiles/sect/foo/bar", 1)
 
     def testDev(self):
         """Test device and special file selection"""
