@@ -178,7 +178,7 @@ class RepoSide(restore.MirrorStruct):
         """Return rorp iter at given compare time"""
         cls.set_mirror_and_rest_times(compare_time)
         cls.initialize_rf_cache(mirror_rp, inc_rp)
-        return cls.subtract_indicies(cls.mirror_base.index,
+        return cls.subtract_indices(cls.mirror_base.index,
                                      cls.get_mirror_rorp_iter())
 
     @classmethod

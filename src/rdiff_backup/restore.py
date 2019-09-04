@@ -237,10 +237,10 @@ class MirrorStruct:
                     yield attribs
 
     @classmethod
-    def subtract_indicies(cls, index, rorp_iter):
+    def subtract_indices(cls, index, rorp_iter):
         """Subtract index from index of each rorp in rorp_iter
 
-		subtract_indicies and add_indicies are necessary because we
+		subtract_indices and add_indicies are necessary because we
 		may not be restoring from the root index.
 
 		"""
@@ -263,7 +263,7 @@ class MirrorStruct:
 		snapshots.
 
 		"""
-        mir_iter = cls.subtract_indicies(cls.mirror_base.index,
+        mir_iter = cls.subtract_indices(cls.mirror_base.index,
                                          cls.get_mirror_rorp_iter())
         collated = rorpiter.Collate2Iters(mir_iter, target_iter)
         return cls.get_diffs_from_collated(collated)
