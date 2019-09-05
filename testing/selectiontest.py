@@ -316,8 +316,8 @@ class ParseArgsTest(unittest.TestCase):
     """Test argument parsing as well as filelist globbing"""
     root = None
 
-    def ParseTest(self, tuplelist, indicies, filelists=[]):
-        """No error if running select on tuple goes over indicies"""
+    def ParseTest(self, tuplelist, indices, filelists=[]):
+        """No error if running select on tuple goes over indices"""
         def tuple_fsencode(filetuple):
             return tuple(map(os.fsencode, filetuple))
 
@@ -328,7 +328,7 @@ class ParseArgsTest(unittest.TestCase):
         self.Select.ParseArgs(tuplelist, self.remake_filelists(filelists))
         assert iter_equal(iter_map(lambda dsrp: dsrp.index,
                                    self.Select.set_iter()),
-                          map(tuple_fsencode, indicies),
+                          map(tuple_fsencode, indices),
                           verbose=1)
 
     def remake_filelists(self, filelist):

@@ -240,7 +240,7 @@ class MirrorStruct:
     def subtract_indices(cls, index, rorp_iter):
         """Subtract index from index of each rorp in rorp_iter
 
-		subtract_indices and add_indicies are necessary because we
+		subtract_indices is necessary because we
 		may not be restoring from the root index.
 
 		"""
@@ -346,7 +346,7 @@ class CachedRF:
 
 	Thus, when a CachedRF retrieves an RestoreFile, it creates all the
 	RFs of that directory at the same time, and doesn't have to
-	recalculate.  It assumes the indicies will be in order, so the
+	recalculate.  It assumes the indices will be in order, so the
 	cache is deleted if a later index is requested.
 
 	"""
@@ -359,7 +359,7 @@ class CachedRF:
             self.perm_changer = PermissionChanger(root_rf.mirror_rp)
 
     def list_rfs_in_cache(self, index):
-        """Used for debugging, return indicies of cache rfs for printing"""
+        """Used for debugging, return indices of cache rfs for printing"""
         s1 = "-------- Cached RF for %s -------" % (index, )
         s2 = " ".join([str(rf.index) for rf in self.rf_list])
         s3 = "--------------------------"
@@ -376,7 +376,7 @@ class CachedRF:
                     self.perm_changer(index, mir_rorp)
                 return rf
             elif rf.index > index:
-                # Try to add earlier indicies.  But if first is
+                # Try to add earlier indices.  But if first is
                 # already from same directory, or we can't find any
                 # from that directory, then we know it can't be added.
                 if (index[:-1] == rf.index[:-1]
@@ -783,7 +783,7 @@ class PermissionChanger:
         self.add_new(old_index, index)
 
     def restore_old(self, index):
-        """Restore permissions for indicies we are done with"""
+        """Restore permissions for indices we are done with"""
         while self.open_index_list:
             old_index, old_rp, old_perms = self.open_index_list[0]
             if index[:len(old_index)] > old_index: old_rp.chmod(old_perms)

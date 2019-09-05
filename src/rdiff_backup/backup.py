@@ -323,7 +323,7 @@ class CacheCollatedPostProcess:
         if Globals.file_statistics: statistics.FileStats.init()
         self.metawriter = metadata.ManagerObj.GetWriter()
 
-        # the following should map indicies to lists
+        # the following should map indices to lists
         # [source_rorp, dest_rorp, changed_flag, success_flag, increment]
 
         # changed_flag should be true if the rorps are different, and

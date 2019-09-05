@@ -215,7 +215,7 @@ class Select:
         """Filter rorp_iter using Select below, removing excluded rorps"""
 
         def getrpiter(rorp_iter):
-            """Return rp iter by adding indicies of rorp_iter to self.rpath"""
+            """Return rp iter by adding indices of rorp_iter to self.rpath"""
             for rorp in rorp_iter:
                 yield rpath.RPath(self.rpath.conn, self.rpath.base, rorp.index,
                                   rorp.data)

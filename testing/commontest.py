@@ -369,8 +369,8 @@ def CompareRecursive(src_rp,
         elif src_rorp.equal_verbose(dest_rorp,
                                     compare_ownership=compare_ownership):
             return 1
-        Log("%s: %s" % (src_rorp.index, Hardlink.get_indicies(src_rorp, 1)), 3)
-        Log("%s: %s" % (dest_rorp.index, Hardlink.get_indicies(dest_rorp, None)), 3)
+        Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+        Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
         return None
 
 

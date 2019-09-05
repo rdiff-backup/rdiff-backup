@@ -26,29 +26,29 @@ class RORPIterTest(unittest.TestCase):
 
     def testCollateIterators(self):
         """Test basic collating"""
-        indicies = list(map(index, [0, 1, 2, 3]))
+        indices = list(map(index, [0, 1, 2, 3]))
 
-        helper = lambda i: indicies[i]  # noqa: E731 use def instead of lambda
-        makeiter1 = lambda: iter(indicies)  # noqa: E731 use def instead of lambda
+        helper = lambda i: indices[i]  # noqa: E731 use def instead of lambda
+        makeiter1 = lambda: iter(indices)  # noqa: E731 use def instead of lambda
         makeiter2 = lambda: iter(map(helper, [0, 1, 3]))  # noqa: E731 use def instead of lambda
         makeiter3 = lambda: iter(map(helper, [1, 2]))  # noqa: E731 use def instead of lambda
 
         outiter = rorpiter.CollateIterators(makeiter1(), makeiter2())
         assert iter_equal(
             outiter,
-            iter([(indicies[0], indicies[0]), (indicies[1], indicies[1]),
-                  (indicies[2], None), (indicies[3], indicies[3])]))
+            iter([(indices[0], indices[0]), (indices[1], indices[1]),
+                  (indices[2], None), (indices[3], indices[3])]))
 
         assert iter_equal(
             rorpiter.CollateIterators(makeiter1(), makeiter2(), makeiter3()),
-            iter([(indicies[0], indicies[0], None),
-                  (indicies[1], indicies[1], indicies[1]),
-                  (indicies[2], None, indicies[2]),
-                  (indicies[3], indicies[3], None)]))
+            iter([(indices[0], indices[0], None),
+                  (indices[1], indices[1], indices[1]),
+                  (indices[2], None, indices[2]),
+                  (indices[3], indices[3], None)]))
 
         assert iter_equal(rorpiter.CollateIterators(makeiter1(), iter([])),
-                          iter([(i, None) for i in indicies]))
-        assert iter_equal(iter([(i, None) for i in indicies]),
+                          iter([(i, None) for i in indices]))
+        assert iter_equal(iter([(i, None) for i in indices]),
                           rorpiter.CollateIterators(makeiter1(), iter([])))
 
     def compare_no_times(self, src_rp, dest_rp):
