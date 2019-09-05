@@ -240,7 +240,7 @@ class MirrorStruct:
     def subtract_indices(cls, index, rorp_iter):
         """Subtract index from index of each rorp in rorp_iter
 
-		subtract_indices and add_indicies are necessary because we
+		subtract_indices is necessary because we
 		may not be restoring from the root index.
 
 		"""
