@@ -197,7 +197,7 @@ page for more information.
 def gettzd(timeinseconds=None):
     """Return w3's timezone identification string.
 
-	Expresed as [+/-]hh:mm.  For instance, PDT is -07:00 during
+	Expressed as [+/-]hh:mm.  For instance, PDT is -07:00 during
 	dayling savings and -08:00 otherwise.  Zone coincides with what
 	localtime(), etc., use.  If no argument given, use the current
 	time.
@@ -284,7 +284,7 @@ def genstrtotime(timestr, curtime=None, rp=None):
     def error():
         raise TimeException("""Bad time string "%s"
 
-The acceptible time strings are intervals (like "3D64s"), w3-datetime
+The acceptable time strings are intervals (like "3D64s"), w3-datetime
 strings, like "2002-04-26T04:22:01-07:00" (strings like
 "2002-04-26T04:22:01" are also acceptable - rdiff-backup will use the
 current time zone), or ordinary dates like 2/4/1997 or 2001-04-23

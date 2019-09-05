@@ -83,7 +83,7 @@ class RestoreTest(unittest.TestCase):
     """Test Restore class"""
 
     def get_rfcs(self):
-        """Return available RestoreFileCompararer objects"""
+        """Return available RestoreFileComparer objects"""
         base_rf = restore.RestoreFile(restore_base_rp, restore_base_rp, [])
         rfs = base_rf.yield_sub_rfs()
         rfcs = []

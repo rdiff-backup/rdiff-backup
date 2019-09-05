@@ -1253,7 +1253,7 @@ class RPath(RORPath):
     def contains_files(self):
         """Returns true if self (or subdir) contains any regular files."""
         log.Log(
-            "Determining if directory contains files: %s" %
+            "Determinating if directory contains files: %s" %
             self.get_safepath(), 7)
         if not self.isdir():
             return False
@@ -1341,7 +1341,7 @@ class RPath(RORPath):
         return self.__class__(self.conn, newpath, index)
 
     def append(self, ext):
-        """Return new RPath with same connection by adjoing ext"""
+        """Return new RPath with same connection by adjoining ext"""
         return self.__class__(self.conn, self.base, self.index + (ext, ))
 
     def append_path(self, ext, new_index=()):

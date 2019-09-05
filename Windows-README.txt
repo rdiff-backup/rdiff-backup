@@ -16,7 +16,7 @@ program". To install the redistributables for all users, install the package
 available from Microsoft.com (search for "visual c 2008 redistributable").
 
 Alternatively, you can install the redistributable in a "side-by-side"
-configuration, which does not require administrator privelges. Simply
+configuration, which does not require administrator privileges. Simply
 download the DLL package from:
 http://download.savannah.gnu.org/releases/rdiff-backup/Microsoft.VC90.zip
 and copy the four enclosed files to the same directory as rdiff-backup.exe.

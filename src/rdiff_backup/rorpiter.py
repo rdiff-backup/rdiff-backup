@@ -372,23 +372,23 @@ class CacheIndexable:
         self.cache_size = cache_size
         self.iter = indexed_iter
         self.cache_dict = {}
-        self.cache_indicies = []
+        self.cache_indices = []
 
     def __next__(self):
         """Return next elem, add to cache.  StopIteration passed upwards"""
         next_elem = next(self.iter)
         next_index = next_elem.index
         self.cache_dict[next_index] = next_elem
-        self.cache_indicies.append(next_index)
+        self.cache_indices.append(next_index)
 
-        if len(self.cache_indicies) > self.cache_size:
+        if len(self.cache_indices) > self.cache_size:
             try:
-                del self.cache_dict[self.cache_indicies[0]]
+                del self.cache_dict[self.cache_indices[0]]
             except KeyError:
                 log.Log(
                     "Warning: index %s missing from iterator cache" %
-                    (self.cache_indicies[0], ), 2)
-            del self.cache_indicies[0]
+                    (self.cache_indices[0], ), 2)
+            del self.cache_indices[0]
 
         return next_elem
 
@@ -400,6 +400,6 @@ class CacheIndexable:
         try:
             return self.cache_dict[index]
         except KeyError:
-            assert index >= self.cache_indicies[0], \
-                "Index out of order: "+repr((index, self.cache_indicies[0]))
+            assert index >= self.cache_indices[0], \
+                "Index out of order: "+repr((index, self.cache_indices[0]))
             return None

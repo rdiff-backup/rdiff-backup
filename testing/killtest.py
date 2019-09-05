@@ -208,7 +208,7 @@ class KillTest(ProcessFuncs):
         return result
 
     def testTerm(self):
-        """Run rdiff-backup, termining and regressing each time
+        """Run rdiff-backup, terminating and regressing each time
 
         Because rdiff-backup must be killed, the timing should be
         updated

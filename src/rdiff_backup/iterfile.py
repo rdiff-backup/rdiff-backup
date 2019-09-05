@@ -40,7 +40,7 @@ class UnwrapFile:
 		type is a single character which is either
 		"o" for an object,
 		"f" for file,
-		"c" for a continution of a file,
+		"c" for a continuation of a file,
 		"h" for the close value of a file
 		"e" for an exception, or
 		None if no more data can be read.

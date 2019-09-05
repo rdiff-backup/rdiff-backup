@@ -28,7 +28,7 @@ how much is required? What is the problem if rdiff-backup says
 <li><a href="#touple">What does "<code>touple index out of range</code>" mean?</a></li>
 <li><a href="#crc">What does "<code>IO Error: CRC check failed</code>" mean?</a></li>
 <li><a href="#badindex">What does "<code>AssertionError: Bad index order</code>" mean?</a></li>
-<li><a href="#utc">How can rdiff-backup use UTC as the timzeone?</a></li>
+<li><a href="#utc">How can rdiff-backup use UTC as the timezone?</a></li>
 </ol>
 <h3><a name="ToC4">Questions and Answers</a></h3>
 <ol>
@@ -388,7 +388,7 @@ also contains the patch. More information is also available in
 value of bash's <code>$PATH</code> is set differently when you login to an interactive shell than when you run a command remotely via SSH. For more
 information, read the <a href="http://linux.die.net/man/1/bash">bash manpage</a> and look at your
 <code>.bashrc</code> and <code>.bash_profile</code> files.</p>
-<p>In particular, this can happen if rdiff-backup was installed via Fink on a remote Mac OS X system. <code>/sw/bin</code> is magically added to your <code>$PATH</code> by the script <code>/sw/bin/init.sh</code> when you login with an interative shell. Fink did this behind the scenes when you set it up. Simply add <code>/sw/bin</code> to your path manually, or copy rdiff-backup to a directory that is in your <code>$PATH</code>.</p>
+<p>In particular, this can happen if rdiff-backup was installed via Fink on a remote Mac OS X system. <code>/sw/bin</code> is magically added to your <code>$PATH</code> by the script <code>/sw/bin/init.sh</code> when you login with an interactive shell. Fink did this behind the scenes when you set it up. Simply add <code>/sw/bin</code> to your path manually, or copy rdiff-backup to a directory that is in your <code>$PATH</code>.</p>
 </li>
 <li><strong><a name="touple">What does "<code>touple index out of range</code>" mean?</a></strong>
 
@@ -403,7 +403,7 @@ If you get this error message for an unrelated reason, try contacting the mailin
 <li><strong><a name="crc">What does "<code>IO Error: CRC check failed</code>" mean?</a></strong>
 
 <p>This error message means that a 
-<a href="http://en.wikipedia.org/wiki/Cyclic_redundancy_check">Cyclic Redudancy 
+<a href="http://en.wikipedia.org/wiki/Cyclic_redundancy_check">Cyclic Redundancy 
 Check</a> failed during some operation, most likely while gzip'ing or 
 un-gzip'ing a file. Possible causes of this error include an incomplete 
 gzip operation, and hardware failure. A brute-force way to recover from this 
@@ -421,11 +421,11 @@ mailing list post: <a href="http://lists.nongnu.org/archive/html/rdiff-backup-us
 rdiff-backup is running. Possible ways of dealing with this situation  include 
 implementing filesystem snapshots using the volume manager, excluding the 
 offending directory, or suspending the process that is changing the directory. 
-After the text "Bad index order", the error messge will indicate which files 
+After the text "Bad index order", the error message will indicate which files 
 have caused the problem.
 </p>
 
-<p>If you get this message for an unreleated reason, try contacting the mailing 
+<p>If you get this message for an unrelated reason, try contacting the mailing 
 list.</p>
 
 </li>

@@ -24,7 +24,7 @@ operation. Closes Ubuntu bug #329722. (Andrew Ferguson)
 
 Don't crash on zlib errors. Closes Debian bug #518531. (Andrew Ferguson)
 
-Make sticky bit warnings quieter while determining file system abilities.
+Make sticky bit warnings quieter while determinating file system abilities.
 Closes Savannah bug #25788. (Andrew Ferguson)
 
 Fix situation where destination file cannot be opened because of an access
@@ -270,7 +270,7 @@ Support for Windows ACLs. (Patch from Josh Nisly and Fred Gansevles)
 Fix user_group.py to run on native Windows, which lacks grp and pwd Python
 modules. (Patch from Fred Gansevles)
 
-Optimize --check-destination and other functions by determining the increment
+Optimize --check-destination and other functions by determinating the increment
 files server-side instead of client-side. (Patch from Josh Nisly)
 
 Actually make rdiff-backup robust to failure to read an ACL because the file
@@ -316,7 +316,7 @@ when printing them in log messages from eas_acls.py. (Fix from
 Saptarshi Guha)
 
 Handle Windows' lack of getuid(), getgid(), hardlinks and symlinks in
-fs_abilities.py. Use subproces.Popen() on Windows since it does not support
+fs_abilities.py. Use subprocess.Popen() on Windows since it does not support
 os.popen2(). (Patch from Josh Nisly)
 
 Let setup.py accept arguments on Windows. (Patch from Josh Nisly)
@@ -525,7 +525,7 @@ quoting to work properly with cygwin.  (Marc Dyksterhouse)
 Allow for preservation of FinderInfo for folders and fix typo
 in Time.py. (Patch from Andrew Ferguson.)
 
-Test for symlink permissions support to avoid unncessary syscalls on
+Test for symlink permissions support to avoid unnecessary syscalls on
 platforms that don't support them. (Patch from Andrew Ferguson.)
 
 RPM specfile update from Gordon Rowell.
@@ -798,7 +798,7 @@ trying to back up a directory into itself.
 
 Fix for restoring certain directories when not run as root.
 
-Now when determining group permissions check supplementary groups as
+Now when determinating group permissions check supplementary groups as
 well as main group.  (Bug report by Ryan Castle.)
 
 Fixed bug which could cause crash when backing up 3 or more hard
@@ -1233,7 +1233,7 @@ pointing out that command line length could otherwise be a problem.
 Fixed bug in filelist processing that ignored leading or trailing
 whitespace in filelists.  Now filenames with, for instance, trailing
 spaces can be used in filelists.  Filelists which took advantage of
-this bug for formatting may have to be editted.
+this bug for formatting may have to be edited.
 
 Applied major/minor patch contributed by David S.  rdiff-backup should
 now correctly copy device files on platforms such as NetBSD.
@@ -1582,7 +1582,7 @@ New in v0.5.2 (2002/03/02)
 Fixed bugs which made rdiff-backup try to preserve mod times when it
 wasn't necessary, and exit instead of warning when it wasn't being run
 as root and found a file it didn't own.  (Reported by Alberto
-Accomazi.)
+Accomazzi.)
 
 Added some more error checking; maybe this will fix a bug reported by
 John Goerzen wherein rdiff-backup can crash if file is deleted while
@@ -1800,7 +1800,7 @@ New in v0.3.0 (2001/9/9 - Billennium edition)
 rdiff-backup has been almost completely rewritten for v0.3.0, as it
 was for v0.1.0.  The main problem with versions 0.2.x was that the
 networking code was added to the not-remote-capable v0.1, and the
-result was unyieldy and prone to bugs when operating over a pipe.
+result was unwieldy and prone to bugs when operating over a pipe.
 
 There are some new features:
 

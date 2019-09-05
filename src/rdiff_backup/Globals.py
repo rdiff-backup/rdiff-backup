@@ -233,7 +233,7 @@ restrict_path = None
 compare_inode = 1
 
 # If set, directories can be fsync'd just like normal files, to
-# guarantee that any changes have been committed to disk.
+# guarantee that any changes have been comitted to disk.
 fsync_directories = None
 
 # If set, exit with error instead of dropping ACLs or ACL entries.

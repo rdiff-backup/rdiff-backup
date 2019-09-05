@@ -114,7 +114,7 @@ class LibrsyncTest(unittest.TestCase):
     def testDelta(self):
         """Test delta generation by making sure rdiff can process output
 
-        There appears to be some undeterminism so we can't just
+        There appears to be some indeterminism so we can't just
         byte-compare the deltas produced by rdiff and DeltaFile.
 
         """

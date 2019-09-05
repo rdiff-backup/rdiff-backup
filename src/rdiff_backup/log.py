@@ -37,7 +37,7 @@ class Logger:
         self.log_file_open = None
         self.log_file_local = None
         self.verbosity = self.term_verbosity = 3
-        # termverbset is true if the term_verbosity has been explicity set
+        # termverbset is true if the term_verbosity has been explicitly set
         self.termverbset = None
 
     def setverbosity(self, verbosity_string):
