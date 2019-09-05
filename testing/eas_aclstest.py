@@ -272,9 +272,8 @@ user.empty
 class ACLTest(unittest.TestCase):
     """Test access control lists"""
 
-    # @TODO: Use the instrumented testuser here in case tests are run as root
-    current_user = 'testuser' # pwd.getpwuid(os.getuid()).pw_name
-    current_group = 'testuser' # grp.getgrgid(os.getgid()).gr_name
+    current_user = os.getenv('RDIFF_TEST_USER', pwd.getpwuid(os.getuid()).pw_name)
+    current_group = os.getenv('RDIFF_TEST_GROUP', grp.getgrgid(os.getgid()).gr_name)
 
     sample_acl = AccessControlLists((), """user::rwx
 user:root:rwx
