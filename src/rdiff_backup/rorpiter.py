@@ -181,9 +181,9 @@ class IndexedTuple(collections.UserList):
 
 
 def FillInIter(rpiter, rootrp):
-    """Given ordered rpiter and rootrp, fill in missing indicies with rpaths
+    """Given ordered rpiter and rootrp, fill in missing indices with rpaths
 
-	For instance, suppose rpiter contains rpaths with indicies (),
+	For instance, suppose rpiter contains rpaths with indices (),
 	(1,2), (2,5).  Then return iter with rpaths (), (1,), (1,2), (2,),
 	(2,5).  This is used when we need to process directories before or
 	after processing a file in that directory.
@@ -223,7 +223,7 @@ def FillInIter(rpiter, rootrp):
 class IterTreeReducer:
     """Tree style reducer object for iterator
 
-	The indicies of a RORPIter form a tree type structure.  This class
+	The indices of a RORPIter form a tree type structure.  This class
 	can be used on each element of an iter in sequence and the result
 	will be as if the corresponding tree was reduced.  This tries to
 	bridge the gap between the tree nature of directories, and the

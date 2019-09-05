@@ -793,7 +793,7 @@ class FinalBugs(PathSetter):
         """Test when no change until middle of a directory
 
         This tests CCPP, to make sure it isn't asked to provide rorps
-        for indicies that are out of the cache.
+        for indices that are out of the cache.
 
         """
         self.delete_tmpdirs()
