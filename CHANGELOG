@@ -24,7 +24,7 @@ operation. Closes Ubuntu bug #329722. (Andrew Ferguson)
 
 Don't crash on zlib errors. Closes Debian bug #518531. (Andrew Ferguson)
 
-Make sticky bit warnings quieter while determinating file system abilities.
+Make sticky bit warnings quieter while determining file system abilities.
 Closes Savannah bug #25788. (Andrew Ferguson)
 
 Fix situation where destination file cannot be opened because of an access
@@ -270,7 +270,7 @@ Support for Windows ACLs. (Patch from Josh Nisly and Fred Gansevles)
 Fix user_group.py to run on native Windows, which lacks grp and pwd Python
 modules. (Patch from Fred Gansevles)
 
-Optimize --check-destination and other functions by determinating the increment
+Optimize --check-destination and other functions by determining the increment
 files server-side instead of client-side. (Patch from Josh Nisly)
 
 Actually make rdiff-backup robust to failure to read an ACL because the file
@@ -798,7 +798,7 @@ trying to back up a directory into itself.
 
 Fix for restoring certain directories when not run as root.
 
-Now when determinating group permissions check supplementary groups as
+Now when determining group permissions check supplementary groups as
 well as main group.  (Bug report by Ryan Castle.)
 
 Fixed bug which could cause crash when backing up 3 or more hard
