@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 {
     /* Test mykey_hashtable instance. */
     hashtable_t *kt;
-    hashtable_iter_t ki;
+    int ki;
     mykey_t k1, k2;
 
     mykey_init(&k1, 1);
@@ -110,8 +110,8 @@ int main(int argc, char **argv)
     assert(mykey_hashtable_add(kt, &k1) == &k1);
     assert(mykey_hashtable_find(kt, &k1) == &k1);
     assert(mykey_hashtable_find(kt, &k2) == NULL);
-    assert(mykey_hashtable_iter(&ki, kt) == &k1);
-    assert(mykey_hashtable_next(&ki) == NULL);
+    assert(mykey_hashtable_iter(kt, &ki) == &k1);
+    assert(mykey_hashtable_next(kt, &ki) == NULL);
 
     /* Test myhashtable instance. */
     hashtable_t *t;
@@ -166,9 +166,9 @@ int main(int argc, char **argv)
 
     /* Test hashtable iterators */
     myentry_t *p;
-    hashtable_iter_t iter;
+    int iter;
     int count = 0;
-    for (p = myhashtable_iter(&iter, t); p != NULL; p = myhashtable_next(&iter)) {
+    for (p = myhashtable_iter(t, &iter); p != NULL; p = myhashtable_next(t, &iter)) {
         assert(p == &e || (&entry[0] <= p && p <= &entry[255]));
         count++;
     }
