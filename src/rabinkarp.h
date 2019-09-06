@@ -77,7 +77,8 @@ static inline void rabinkarp_init(rabinkarp_t *sum)
     sum->mult = 1;
 }
 
-void rabinkarp_update(rabinkarp_t *sum, const unsigned char *buf, size_t len)
+static inline void rabinkarp_update(rabinkarp_t *sum, const unsigned char *buf,
+                                    size_t len)
 {
     for (size_t i = len; i; i--) {
         sum->hash = sum->hash * RABINKARP_MULT + *buf++;
