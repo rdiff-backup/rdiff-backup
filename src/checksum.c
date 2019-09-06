@@ -27,11 +27,17 @@
 /** A simple 32bit checksum that can be incrementally updated. */
 rs_weak_sum_t rs_calc_weak_sum(weaksum_kind_t kind, void const *buf, size_t len)
 {
-    weaksum_t sum;
-
-    weaksum_init(&sum, kind);
-    weaksum_update(&sum, buf, len);
-    return weaksum_digest(&sum);
+    if (kind == RS_ROLLSUM) {
+        Rollsum sum;
+        RollsumInit(&sum);
+        RollsumUpdate(&sum, buf, len);
+        return RollsumDigest(&sum);
+    } else {
+        rabinkarp_t sum;
+        rabinkarp_init(&sum);
+        rabinkarp_update(&sum, buf, len);
+        return rabinkarp_digest(&sum);
+    }
 }
 
 /** Calculate and store into SUM a strong checksum.

@@ -25,6 +25,7 @@
 #  include "rollsum.h"
 #  include "rabinkarp.h"
 #  include "blake2.h"
+#  include "hashtable.h"
 
 /** Weaksum implementations. */
 typedef enum {
@@ -127,13 +128,19 @@ static inline rs_weak_sum_t weaksum_digest(weaksum_t *sum)
 {
     switch (sum->kind) {
     case RS_ROLLSUM:
-        return RollsumDigest(&sum->rs);
+        /* We apply mix32() to rollsums before using them for matching. */
+        return mix32(RollsumDigest(&sum->rs));
     case RS_RABINKARP:
         return rabinkarp_digest(&sum->rk);
     }
 }
 
-/** Calculate a weaksum. */
+/** Calculate a weaksum.
+ *
+ * Note this does not apply mix32() to rollsum digests, unlike
+ * weaksum_digest(). This is because rollsums are stored raw without mix32()
+ * applied for backwards-compatibility, but we apply mix32() when adding them
+ * into a signature and when getting the digest for calculating deltas. */
 rs_weak_sum_t rs_calc_weak_sum(weaksum_kind_t kind, void const *buf,
                                size_t len);
 

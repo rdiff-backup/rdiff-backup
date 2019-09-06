@@ -84,6 +84,9 @@ static inline int rs_block_match_cmp(rs_block_match_t *match,
                   match->signature->strong_sum_len);
 }
 
+/* Disable mix32() in the hashtable because RabinKarp doesn't need it. We
+   manually apply mix32() to rollsums before using them in the hashtable. */
+#define HASHTABLE_NMIX32
 /* Instantiate hashtable for rs_block_sig and rs_block_match. */
 #define ENTRY rs_block_sig
 #define MATCH rs_block_match
@@ -178,6 +181,9 @@ rs_block_sig_t *rs_signature_add_block(rs_signature_t *sig,
                                        rs_strong_sum_t *strong_sum)
 {
     rs_signature_check(sig);
+    /* Apply mix32() to rollsum weaksums to improve their distribution. */
+    if (rs_signature_weaksum_kind(sig) == RS_ROLLSUM)
+        weak_sum = mix32(weak_sum);
     /* If block_sigs is full, allocate more space. */
     if (sig->count == sig->size) {
         sig->size = sig->size ? sig->size * 2 : 16;
