@@ -1,0 +1,7 @@
+---
+librsync_git_ref: master
+librsync_src_git: https://github.com/librsync/librsync.git
+librsync_version: 2.0.2
+librsync_src_tarfile: https://github.com/librsync/librsync/releases/download/v{{ librsync_version }}/librsync-{{ librsync_version }}.tar.gz
+librsync_dir: "{{ working_dir }}/librsync-{{ librsync_version }}"
+librsync_install_dir: "{{ working_dir }}/librsync.d"

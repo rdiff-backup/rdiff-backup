@@ -1,0 +1,2 @@
+---
+rdiffbackup_dir: "{{ working_dir }}/rdiff-backup"

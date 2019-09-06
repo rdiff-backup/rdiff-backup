@@ -1,0 +1,44 @@
+---
+- name: Prepare Windows for rdiff-backup development
+  hosts: all
+  gather_facts: false
+  tasks:
+  - name: enable running chocolatey scripts without confirmation
+    win_chocolatey_feature:
+      name: allowGlobalConfirmation
+      state: enabled
+  - name: install basis development tools via chocolatey
+    win_chocolatey:
+      name:
+      - virtio-drivers
+      - python
+      - git
+      - dotnetfx  # dependency of visualstudio, allows for reboot in-between
+      - cmake
+      state: present
+    register: base_pkg
+  - name: execute reboot
+    win_reboot:
+    when: base_pkg.changed
+  - name: install further development tools via chocolatey (still failing)
+    win_chocolatey:
+      name:
+      - visualstudio2017buildtools # didn't work here (memory?)
+      - vscode # Visual Studio Code (editor)
+      #- visualstudio2017-workload-vctools # fails...
+      #instead run from cmd as Administrator, possibly without quiet:
+      #"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools" --includeRecommended --norestart --quiet --add Microsoft.VisualStudio.Workload.VCTools
+      state: present
+    # once successful up until here, restart the playbook
+  - name: install necessary python libraries
+    win_command: pip.exe install py2exe pywin32 pyinstaller
+    register: pipcmd
+    changed_when:
+      - "'Requirement already satisfied: py2exe' not in pipcmd.stdout"
+      - "'Requirement already satisfied: pywin32' not in pipcmd.stdout"
+      - "'Requirement already satisfied: pyinstaller' not in pipcmd.stdout"
+    # pylibacl and pyxattr aren't supported under Windows
+  - name: validate that python seems to work as it should
+    win_shell: "python.exe -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'"
+    changed_when: false  # this command doesn't change anything ever
+  # TODO install / compile librsync
