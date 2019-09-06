@@ -20,7 +20,7 @@
  */
 
 #include "mdfour.h"
-#include "rollsum.h"
+#include "checksum.h"
 
 /** The contents of this structure are private. */
 struct rs_job {
@@ -60,7 +60,7 @@ struct rs_job {
     rs_weak_sum_t weak_sig;
 
     /** The rollsum weak signature accumulator used by delta.c */
-    Rollsum weak_sum;
+    weaksum_t weak_sum;
 
     /** Lengths of expected parameters. */
     rs_long_t param1, param2;

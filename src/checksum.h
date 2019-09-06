@@ -18,18 +18,25 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-
-#include <assert.h>
-#include "librsync.h"
-#include "rollsum.h"
-#include "rabinkarp.h"
-#include "blake2.h"
+#ifndef _CHECKSUM_H_
+#  define _CHECKSUM_H_
+#  include <assert.h>
+#  include "librsync.h"
+#  include "rollsum.h"
+#  include "rabinkarp.h"
+#  include "blake2.h"
 
 /** Weaksum implementations. */
 typedef enum {
     RS_ROLLSUM,
     RS_RABINKARP,
 } weaksum_kind_t;
+
+/** Strongsum implementations. */
+typedef enum {
+    RS_MD4,
+    RS_BLAKE2,
+} strongsum_kind_t;
 
 /** Abstract wrapper around weaksum implementations.
  *
@@ -131,3 +138,5 @@ rs_weak_sum_t rs_calc_weak_sum(weaksum_kind_t kind, void const *buf,
 
 void rs_calc_md4_sum(void const *buf, size_t buf_len, rs_strong_sum_t *);
 void rs_calc_blake2_sum(void const *buf, size_t buf_len, rs_strong_sum_t *);
+
+#endif                          /* _CHECKSUM_H_ */

@@ -101,7 +101,7 @@
 #include "sumset.h"
 #include "job.h"
 #include "trace.h"
-#include "rollsum.h"
+#include "checksum.h"
 
 static rs_result rs_delta_s_scan(rs_job_t *job);
 static rs_result rs_delta_s_flush(rs_job_t *job);
@@ -139,11 +139,11 @@ static rs_result rs_delta_s_scan(rs_job_t *job)
         if (rs_findmatch(job, &match_pos, &match_len)) {
             /* append the match and reset the weak_sum */
             result = rs_appendmatch(job, match_pos, match_len);
-            RollsumInit(&job->weak_sum);
+            weaksum_reset(&job->weak_sum);
         } else {
             /* rotate the weak_sum and append the miss byte */
-            RollsumRotate(&job->weak_sum, job->scoop_next[job->scoop_pos],
-                          job->scoop_next[job->scoop_pos + block_len]);
+            weaksum_rotate(&job->weak_sum, job->scoop_next[job->scoop_pos],
+                           job->scoop_next[job->scoop_pos + block_len]);
             result = rs_appendmiss(job, 1);
         }
     }
@@ -178,11 +178,12 @@ static rs_result rs_delta_s_flush(rs_job_t *job)
         if (rs_findmatch(job, &match_pos, &match_len)) {
             /* append the match and reset the weak_sum */
             result = rs_appendmatch(job, match_pos, match_len);
-            RollsumInit(&job->weak_sum);
+            weaksum_reset(&job->weak_sum);
         } else {
             /* rollout from weak_sum and append the miss byte */
-            RollsumRollout(&job->weak_sum, job->scoop_next[job->scoop_pos]);
-            rs_trace("block reduced to " FMT_SIZE "", job->weak_sum.count);
+            weaksum_rollout(&job->weak_sum, job->scoop_next[job->scoop_pos]);
+            rs_trace("block reduced to " FMT_SIZE "",
+                     weaksum_count(&job->weak_sum));
             result = rs_appendmiss(job, 1);
         }
     }
@@ -228,23 +229,23 @@ static inline int rs_findmatch(rs_job_t *job, rs_long_t *match_pos,
     const size_t block_len = job->signature->block_len;
 
     /* calculate the weak_sum if we don't have one */
-    if (job->weak_sum.count == 0) {
+    if (weaksum_count(&job->weak_sum) == 0) {
         /* set match_len to min(block_len, scan_avail) */
         *match_len = job->scoop_avail - job->scoop_pos;
         if (*match_len > block_len) {
             *match_len = block_len;
         }
         /* Update the weak_sum */
-        RollsumUpdate(&job->weak_sum, job->scoop_next + job->scoop_pos,
-                      *match_len);
+        weaksum_update(&job->weak_sum, job->scoop_next + job->scoop_pos,
+                       *match_len);
         rs_trace("calculate weak sum from scratch length " FMT_SIZE "",
-                 job->weak_sum.count);
+                 weaksum_count(&job->weak_sum));
     } else {
         /* set the match_len to the weak_sum count */
-        *match_len = job->weak_sum.count;
+        *match_len = weaksum_count(&job->weak_sum);
     }
     *match_pos =
-        rs_signature_find_match(job->signature, RollsumDigest(&job->weak_sum),
+        rs_signature_find_match(job->signature, weaksum_digest(&job->weak_sum),
                                 job->scoop_next + job->scoop_pos, *match_len);
     return *match_pos != -1;
 }
@@ -397,7 +398,7 @@ rs_job_t *rs_delta_begin(rs_signature_t *sig)
         /* Caller must have called rs_build_hash_table() by now. */
         assert(sig->hashtable);
         job->signature = sig;
-        RollsumInit(&job->weak_sum);
+        weaksum_init(&job->weak_sum, rs_signature_weaksum_kind(sig));
     }
     return job;
 }
