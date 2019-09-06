@@ -124,12 +124,14 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len,
     int max_strong_len;
 
     /* Check and set default arguments. */
-    magic = magic ? magic : RS_BLAKE2_SIG_MAGIC;
+    magic = magic ? magic : RS_RK_BLAKE2_SIG_MAGIC;
     switch (magic) {
     case RS_BLAKE2_SIG_MAGIC:
+    case RS_RK_BLAKE2_SIG_MAGIC:
         max_strong_len = RS_BLAKE2_SUM_LENGTH;
         break;
     case RS_MD4_SIG_MAGIC:
+    case RS_RK_MD4_SIG_MAGIC:
         max_strong_len = RS_MD4_SUM_LENGTH;
         break;
     default:

@@ -82,20 +82,39 @@ rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum,
  * We don't use a static inline function here so that assert failure output
  * points at where rs_signature_check() was called from. */
 #define rs_signature_check(sig) do {\
-    assert(((sig)->magic == RS_BLAKE2_SIG_MAGIC && (sig)->strong_sum_len <= RS_BLAKE2_SUM_LENGTH)\
-           || ((sig)->magic == RS_MD4_SIG_MAGIC && (sig)->strong_sum_len <= RS_MD4_SUM_LENGTH));\
+    assert((((sig)->magic == RS_BLAKE2_SIG_MAGIC ||\
+	     (sig)->magic == RS_RK_BLAKE2_SIG_MAGIC) &&\
+	    (sig)->strong_sum_len <= RS_BLAKE2_SUM_LENGTH) ||\
+	   (((sig)->magic == RS_MD4_SIG_MAGIC ||\
+	     (sig)->magic == RS_RK_MD4_SIG_MAGIC) &&\
+	    (sig)->strong_sum_len <= RS_MD4_SUM_LENGTH));\
     assert(0 < (sig)->block_len);\
-    assert(0 < (sig)->strong_sum_len && (sig)->strong_sum_len <= RS_MAX_STRONG_SUM_LENGTH);\
+    assert(0 < (sig)->strong_sum_len &&\
+	   (sig)->strong_sum_len <= RS_MAX_STRONG_SUM_LENGTH);\
     assert(0 <= (sig)->count && (sig)->count <= (sig)->size);\
     assert(!(sig)->hashtable || (sig)->hashtable->count <= (sig)->count);\
 } while (0)
+
+/** Calculate the weak sum of a buffer. */
+static inline rs_weak_sum_t rs_signature_calc_weak_sum(rs_signature_t const
+                                                       *sig, void const *buf,
+                                                       size_t len)
+{
+    if (sig->magic == RS_RK_BLAKE2_SIG_MAGIC
+        || sig->magic == RS_RK_MD4_SIG_MAGIC) {
+        return rs_calc_weak_sum(RS_RABINKARP, buf, len);
+    } else {
+        return rs_calc_weak_sum(RS_ROLLSUM, buf, len);
+    }
+}
 
 /** Calculate the strong sum of a buffer. */
 static inline void rs_signature_calc_strong_sum(rs_signature_t const *sig,
                                                 void const *buf, size_t len,
                                                 rs_strong_sum_t *sum)
 {
-    if (sig->magic == RS_BLAKE2_SIG_MAGIC) {
+    if (sig->magic == RS_RK_BLAKE2_SIG_MAGIC
+        || sig->magic == RS_BLAKE2_SIG_MAGIC) {
         rs_calc_blake2_sum(buf, len, sum);
     } else {
         rs_calc_md4_sum(buf, len, sum);
