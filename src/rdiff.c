@@ -227,8 +227,8 @@ static rs_result rdiff_sig(poptContext opcon)
         exit(RS_SYNTAX_ERROR);
     }
     if (!rs_rollsum_name || !strcmp(rs_rollsum_name, "rabinkarp")) {
-        /* The RabinKarp magics are 16 greater than the rollsum magics. */
-        sig_magic += 16;
+        /* The RabinKarp magics are 0x10 greater than the rollsum magics. */
+        sig_magic += 0x10;
     } else if (strcmp(rs_rollsum_name, "rollsum")) {
         rdiff_usage("Unknown rollsum algorithm '%s'.", rs_rollsum_name);
         exit(RS_SYNTAX_ERROR);
