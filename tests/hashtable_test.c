@@ -168,7 +168,8 @@ int main(int argc, char **argv)
     myentry_t *p;
     int iter;
     int count = 0;
-    for (p = myhashtable_iter(t, &iter); p != NULL; p = myhashtable_next(t, &iter)) {
+    for (p = myhashtable_iter(t, &iter); p != NULL;
+         p = myhashtable_next(t, &iter)) {
         assert(p == &e || (&entry[0] <= p && p <= &entry[255]));
         count++;
     }
