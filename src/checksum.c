@@ -34,8 +34,7 @@ rs_weak_sum_t rs_calc_weak_sum(weaksum_kind_t kind, void const *buf, size_t len)
     return weaksum_digest(&sum);
 }
 
-/** Calculate and store into SUM a strong MD4 checksum of the file blocks seen
- * so far.
+/** Calculate and store into SUM a strong checksum.
  *
  * In plain rsync, the checksum is perturbed by a seed value. This is used when
  * retrying a failed transmission: we've discovered that the hashes collided at
@@ -43,17 +42,17 @@ rs_weak_sum_t rs_calc_weak_sum(weaksum_kind_t kind, void const *buf, size_t len)
  * can get it right. (Check tridge's thesis for details and to see if that's
  * correct.)
  *
- * Since we can't retry a web transaction I'm not sure if it's very useful in
- * rproxy. */
-void rs_calc_md4_sum(void const *buf, size_t len, rs_strong_sum_t *sum)
+ * Since we can't retry I'm not sure if it's very useful for librsync, except
+ * perhaps as protection against hash collision attacks. */
+void rs_calc_strong_sum(strongsum_kind_t kind, void const *buf, size_t len,
+                        rs_strong_sum_t *sum)
 {
-    rs_mdfour((unsigned char *)sum, buf, len);
-}
-
-void rs_calc_blake2_sum(void const *buf, size_t len, rs_strong_sum_t *sum)
-{
-    blake2b_state ctx;
-    blake2b_init(&ctx, RS_MAX_STRONG_SUM_LENGTH);
-    blake2b_update(&ctx, (const uint8_t *)buf, len);
-    blake2b_final(&ctx, (uint8_t *)sum, RS_MAX_STRONG_SUM_LENGTH);
+    if (kind == RS_MD4) {
+        rs_mdfour((unsigned char *)sum, buf, len);
+    } else {
+        blake2b_state ctx;
+        blake2b_init(&ctx, RS_MAX_STRONG_SUM_LENGTH);
+        blake2b_update(&ctx, (const uint8_t *)buf, len);
+        blake2b_final(&ctx, (uint8_t *)sum, RS_MAX_STRONG_SUM_LENGTH);
+    }
 }

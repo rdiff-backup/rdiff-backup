@@ -133,10 +133,12 @@ static inline rs_weak_sum_t weaksum_digest(weaksum_t *sum)
     }
 }
 
+/** Calculate a weaksum. */
 rs_weak_sum_t rs_calc_weak_sum(weaksum_kind_t kind, void const *buf,
                                size_t len);
 
-void rs_calc_md4_sum(void const *buf, size_t buf_len, rs_strong_sum_t *);
-void rs_calc_blake2_sum(void const *buf, size_t buf_len, rs_strong_sum_t *);
+/** Calculate a strongsum. */
+void rs_calc_strong_sum(strongsum_kind_t kind, void const *buf, size_t len,
+                        rs_strong_sum_t *sum);
 
 #endif                          /* _CHECKSUM_H_ */

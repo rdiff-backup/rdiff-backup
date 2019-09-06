@@ -96,13 +96,15 @@ rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum,
 } while (0)
 
 /** Get the weaksum kind for a signature. */
-static inline weaksum_kind_t rs_signature_weaksum_kind(rs_signature_t *sig)
+static inline weaksum_kind_t rs_signature_weaksum_kind(rs_signature_t const
+                                                       *sig)
 {
     return (sig->magic & 0xf0) == 0x30 ? RS_ROLLSUM : RS_RABINKARP;
 }
 
 /** Get the strongsum kind for a signature. */
-static inline strongsum_kind_t rs_signature_strongsum_kind(rs_signature_t *sig)
+static inline strongsum_kind_t rs_signature_strongsum_kind(rs_signature_t const
+                                                           *sig)
 {
     return (sig->magic & 0x0f) == 0x06 ? RS_MD4 : RS_BLAKE2;
 }
@@ -112,12 +114,7 @@ static inline rs_weak_sum_t rs_signature_calc_weak_sum(rs_signature_t const
                                                        *sig, void const *buf,
                                                        size_t len)
 {
-    if (sig->magic == RS_RK_BLAKE2_SIG_MAGIC
-        || sig->magic == RS_RK_MD4_SIG_MAGIC) {
-        return rs_calc_weak_sum(RS_RABINKARP, buf, len);
-    } else {
-        return rs_calc_weak_sum(RS_ROLLSUM, buf, len);
-    }
+    return rs_calc_weak_sum(rs_signature_weaksum_kind(sig), buf, len);
 }
 
 /** Calculate the strong sum of a buffer. */
@@ -125,10 +122,5 @@ static inline void rs_signature_calc_strong_sum(rs_signature_t const *sig,
                                                 void const *buf, size_t len,
                                                 rs_strong_sum_t *sum)
 {
-    if (sig->magic == RS_RK_BLAKE2_SIG_MAGIC
-        || sig->magic == RS_BLAKE2_SIG_MAGIC) {
-        rs_calc_blake2_sum(buf, len, sum);
-    } else {
-        rs_calc_md4_sum(buf, len, sum);
-    }
+    rs_calc_strong_sum(rs_signature_strongsum_kind(sig), buf, len, sum);
 }
