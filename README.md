@@ -21,7 +21,7 @@ The default prefix is generally /usr, so files would be put in /usr/bin,
 The default prefix depends on how you (or your distribution) installed and
 configured Python. Suggested reading is "How installation works" from the
 Python docs, which includes commands to determine your default prefix:
-http://docs.python.org/install/index.html#how-installation-works
+https://docs.python.org/3/install/index.html#how-installation-works
 
 The setup script expects to find librsync headers and libraries in the
 default location, usually /usr/include and /usr/lib.  If you want the
@@ -42,7 +42,7 @@ command:
 
 More information about using setup.py and how rdiff-backup is installed
 is available from the Python guide, Installing Python Modules for System
-Administrators, located at http://docs.python.org/install/index.html
+Administrators, located at https://docs.python.org/3/install/index.html
 
 NB: There is no uninstall command provided by the Python distutils system.
 One strategy is to use the python3 setup.py install --record <file> option
@@ -58,7 +58,7 @@ all required modules.
 ### REQUIREMENTS
 
 Remember that you must have Python 3.5 or later and librsync 1.0.0 or
-later installed.  For Python, see http://www.python.org.  The
+later installed.  For Python, see https://www.python.org/.  The
 rdiff-backup homepage at https://rdiff-backup.net/ should
 have a recent version of librsync; otherwise see the librsync homepage
 at http://librsync.sourceforge.net/. On Windows, you must have the
@@ -79,7 +79,7 @@ system(s) also support these features.  Pylibacl and pyxattr can be
 downloaded from http://pylibacl.sourceforge.net/ and
 http://pyxattr.sourceforge.net/. Mac OS X users need a different
 pyxattr module, which can be downloaded from
-http://cheeseshop.python.org/pypi/xattr
+https://pypi.org/project/xattr/
 
 In order to build rdiff-backup, you need python3-devel and librsync-devel, as
 well as a C compiler (gcc).
@@ -87,7 +87,7 @@ well as a C compiler (gcc).
 ## TROUBLESHOOTING
 
 If you have everything installed properly, and it still doesn't work,
-see the enclosed FAQ.html, the web page at http://rdiff-backup.nongnu.org
+see the enclosed FAQ.html, the web page at https://www.nongnu.org/rdiff-backup/
 and/or the mailing list.
 
 The FAQ in particular is an important reference, especially if you are
