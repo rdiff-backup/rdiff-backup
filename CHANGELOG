@@ -1816,7 +1816,7 @@ There are some new features:
   bothered. :-)
 
 - New more standard format for increment files.  See
-  http://www.w3.org/TR/NOTE-datetime for the time standard.  The old
+  https://www.w3.org/TR/NOTE-datetime for the time standard.  The old
   format, besides being less standard, didn't take timezones into
   account.
 
