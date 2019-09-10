@@ -235,58 +235,10 @@ def update_quoting(rbdir):
 
     log.Log("Re-quoting repository %s" % mirror_rp.get_safepath(), 3)
 
-    try:
-        os_walk = os.walk
-    except AttributeError:
-        os_walk = walk
-
-    for dirpath, dirs, files in os_walk(mirror):
+    for dirpath, dirs, files in os.walk(mirror):
         dirpath_rp = mirror_rp.newpath(dirpath)
 
         for name in dirs:
             process(dirpath_rp, name, dirs)
         for name in files:
             process(dirpath_rp, name, None)
-
-
-"""
-os.walk() copied directly from Python 2.5.1's os.py
-
-Backported here for Python 2.2 support. os.walk() was first added
-in Python 2.3.
-"""
-
-
-def walk(top, topdown=True, onerror=None):
-    from os import error, listdir
-    from os.path import join, isdir, islink
-    # We may not have read permission for top, in which case we can't
-    # get a list of the files the directory contains.  os.path.walk
-    # always suppressed the exception then, rather than blow up for a
-    # minor reason when (say) a thousand readable directories are still
-    # left to visit.  That logic is copied here.
-    try:
-        # Note that listdir and error are globals in this module due
-        # to earlier import-*.
-        names = listdir(top)
-    except error as err:
-        if onerror is not None:
-            onerror(err)
-        return
-
-    dirs, nondirs = [], []
-    for name in names:
-        if isdir(join(top, name)):
-            dirs.append(name)
-        else:
-            nondirs.append(name)
-
-    if topdown:
-        yield top, dirs, nondirs
-    for name in dirs:
-        path = join(top, name)
-        if not islink(path):
-            for x in walk(path, topdown, onerror):
-                yield x
-    if not topdown:
-        yield top, dirs, nondirs
