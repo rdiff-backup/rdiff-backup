@@ -23,6 +23,7 @@
 
 #include "config.h"
 #include "checksum.h"
+#include "blake2.h"
 
 /** A simple 32bit checksum that can be incrementally updated. */
 rs_weak_sum_t rs_calc_weak_sum(weaksum_kind_t kind, void const *buf, size_t len)

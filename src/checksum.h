@@ -24,7 +24,6 @@
 #  include "librsync.h"
 #  include "rollsum.h"
 #  include "rabinkarp.h"
-#  include "blake2.h"
 #  include "hashtable.h"
 
 /** Weaksum implementations. */
@@ -48,7 +47,7 @@ typedef enum {
  * different methods for different rollsum implementations, they are getting
  * more complicated. Is it better to delegate calls to the right implementation
  * using static inline switch statements, or stop inlining them and use virtual
- * method pointers? */
+ * method pointers? Tests suggest inlined switch statements is faster. */
 typedef struct weaksum {
     weaksum_kind_t kind;
     union {
@@ -88,8 +87,6 @@ static inline void weaksum_update(weaksum_t *sum, const unsigned char *buf,
         return RollsumUpdate(&sum->rs, buf, len);
     case RS_RABINKARP:
         return rabinkarp_update(&sum->rk, buf, len);
-    default:
-        assert(0 && "Invalid weaksum kind.");
     }
 }
 
