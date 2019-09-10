@@ -261,6 +261,12 @@ add_executable(hashtable_test
     tests/hashtable_test.c src/hashtable.c)
 add_test(NAME hashtable_test COMMAND hashtable_test)
 
+add_executable(checksum_test
+    tests/checksum_test.c src/checksum.c src/rollsum.c src/mdfour.c ${blake2_SRCS})
+target_compile_options(checksum_test PRIVATE -DLIBRSYNC_STATIC_DEFINE)
+target_link_libraries(checksum_test ${blake2_LIBS})
+add_test(NAME checksum_test COMMAND checksum_test)
+
 add_executable(sumset_test
     tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c
     src/checksum.c src/rollsum.c src/mdfour.c src/hashtable.c ${blake2_SRCS})
@@ -294,7 +300,7 @@ else (BUILD_RDIFF)
   set(LAST_TARGET rsync)
 endif (BUILD_RDIFF)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test rabinkarp_test hashtable_test sumset_test)
+add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test rabinkarp_test hashtable_test checksum_test sumset_test)
 
 
 enable_testing()
