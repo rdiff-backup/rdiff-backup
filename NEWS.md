@@ -9,6 +9,13 @@ NOT RELEASED YET
    and correctly install .dll files in the bin directory.
    (adsun701, https://github.com/librsync/librsync/pull/161)
 
+ * Add RabinKarp rollsum support and make it the default. RabinKarp is a much
+   better rolling hash, which reduces the risk of hash collision corruption
+   and speeds up delta calculations. The rdiff cmd gets a new `-R
+   (rollsum|rabinkarp)` argument with the default being `rabinkarp`, Use `-R
+   rollsum` to generate backwards-compatible signatures. (dbaarda,
+   https://github.com/librsync/librsync/issues/3).
+
 ## librsync 2.1.0
 
 Released 2019-08-19

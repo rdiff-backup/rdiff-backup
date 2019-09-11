@@ -1,6 +1,6 @@
 /*= -*- c-basic-offset: 4; indent-tabs-mode: nil; -*-
  *
- * rollsum_test -- tests for the librsync rolling checksum.
+ * rabinkarp_test -- tests for the rabinkarp_t rolling checksum.
  *
  * Copyright (C) 2003 by Donovan Baarda <abo@minkirri.apana.org.au>
  *
@@ -24,56 +24,54 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <assert.h>
-#include "rollsum.h"
+#include "rabinkarp.h"
 
-/* Test driver for rollsum. */
 int main(int argc, char **argv)
 {
-    Rollsum r;
+    rabinkarp_t r;
     int i;
     unsigned char buf[256];
 
-    /* Test RollsumInit() */
-    RollsumInit(&r);
+    /* Test rabinkarp_init() */
+    rabinkarp_init(&r);
     assert(r.count == 0);
-    assert(r.s1 == 0);
-    assert(r.s2 == 0);
-    assert(RollsumDigest(&r) == 0x00000000);
+    assert(r.hash == 1);
+    assert(rabinkarp_digest(&r) == 0x00000001);
 
-    /* Test RollsumRollin() */
-    RollsumRollin(&r, 0);       /* [0] */
+    /* Test rabinkarp_rollin() */
+    rabinkarp_rollin(&r, 0);    /* [0] */
     assert(r.count == 1);
-    assert(RollsumDigest(&r) == 0x001f001f);
-    RollsumRollin(&r, 1);
-    RollsumRollin(&r, 2);
-    RollsumRollin(&r, 3);       /* [0,1,2,3] */
+    assert(rabinkarp_digest(&r) == 0x08104225);
+    rabinkarp_rollin(&r, 1);
+    rabinkarp_rollin(&r, 2);
+    rabinkarp_rollin(&r, 3);    /* [0,1,2,3] */
     assert(r.count == 4);
-    assert(RollsumDigest(&r) == 0x01400082);
+    assert(rabinkarp_digest(&r) == 0xaf981e97);
 
-    /* Test RollsumRotate() */
-    RollsumRotate(&r, 0, 4);    /* [1,2,3,4] */
+    /* Test rabinkarp_rotate() */
+    rabinkarp_rotate(&r, 0, 4); /* [1,2,3,4] */
     assert(r.count == 4);
-    assert(RollsumDigest(&r) == 0x014a0086);
-    RollsumRotate(&r, 1, 5);
-    RollsumRotate(&r, 2, 6);
-    RollsumRotate(&r, 3, 7);    /* [4,5,6,7] */
+    assert(rabinkarp_digest(&r) == 0xe2ef15f3);
+    rabinkarp_rotate(&r, 1, 5);
+    rabinkarp_rotate(&r, 2, 6);
+    rabinkarp_rotate(&r, 3, 7); /* [4,5,6,7] */
     assert(r.count == 4);
-    assert(RollsumDigest(&r) == 0x01680092);
+    assert(rabinkarp_digest(&r) == 0x7cf3fc07);
 
-    /* Test RollsumRollout() */
-    RollsumRollout(&r, 4);      /* [5,6,7] */
+    /* Test rabinkarp_rollout() */
+    rabinkarp_rollout(&r, 4);   /* [5,6,7] */
     assert(r.count == 3);
-    assert(RollsumDigest(&r) == 0x00dc006f);
-    RollsumRollout(&r, 5);
-    RollsumRollout(&r, 6);
-    RollsumRollout(&r, 7);      /* [] */
+    assert(rabinkarp_digest(&r) == 0xf284a77f);
+    rabinkarp_rollout(&r, 5);
+    rabinkarp_rollout(&r, 6);
+    rabinkarp_rollout(&r, 7);   /* [] */
     assert(r.count == 0);
-    assert(RollsumDigest(&r) == 0x00000000);
+    assert(rabinkarp_digest(&r) == 0x00000001);
 
-    /* Test RollsumUpdate() */
+    /* Test rabinkarp_update() */
     for (i = 0; i < 256; i++)
         buf[i] = i;
-    RollsumUpdate(&r, buf, 256);
-    assert(RollsumDigest(&r) == 0x3a009e80);
+    rabinkarp_update(&r, buf, 256);
+    assert(rabinkarp_digest(&r) == 0xc1972381);
     return 0;
 }

@@ -87,7 +87,28 @@ typedef enum {
      * The four-byte literal \c "rs\x017".
      *
      * \sa rs_sig_begin() */
-    RS_BLAKE2_SIG_MAGIC = 0x72730137
+    RS_BLAKE2_SIG_MAGIC = 0x72730137,
+
+    /** A signature file with RabinKarp rollsum and MD4 hash.
+     *
+     * Uses a faster/safer rollsum, but still strongly discouraged because of
+     * MD4's security vulnerability. Supported since librsync 2.2.0.
+     *
+     * The four-byte literal \c "rs\x01F".
+     *
+     * \sa rs_sig_begin() */
+    RS_RK_MD4_SIG_MAGIC = 0x72730146,
+
+    /** A signature file with RabinKarp rollsum and BLAKE2 hash.
+     *
+     * Uses a faster/safer rollsum together with the safer BLAKE2 hash. This is
+     * the recommended default supported since librsync 2.2.0.
+     *
+     * The four-byte literal \c "rs\x01G".
+     *
+     * \sa rs_sig_begin() */
+    RS_RK_BLAKE2_SIG_MAGIC = 0x72730147,
+
 } rs_magic_number;
 
 /** Log severity levels.

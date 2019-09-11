@@ -27,9 +27,7 @@
 
 #include "isprefix.h"
 
-/*
- * Test driver for isprefix.
- */
+/* Test driver for isprefix. */
 int main(int argc, char **argv)
 {
     assert(isprefix("foo", "foobar"));

@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     /* Default zero magic. */
     res = rs_signature_init(&sig, 0, 16, 6, 0);
     assert(res == RS_DONE);
-    assert(sig.magic == RS_BLAKE2_SIG_MAGIC);
+    assert(sig.magic == RS_RK_BLAKE2_SIG_MAGIC);
     assert(sig.block_len == 16);
     assert(sig.strong_sum_len == 6);
     assert(sig.count == 0);
@@ -66,6 +66,16 @@ int main(int argc, char **argv)
     assert(res == RS_DONE);
     assert(sig.magic == RS_MD4_SIG_MAGIC);
 
+    /* RabinKarp + Blake2 magic. */
+    res = rs_signature_init(&sig, RS_RK_BLAKE2_SIG_MAGIC, 16, 6, 0);
+    assert(res == RS_DONE);
+    assert(sig.magic == RS_RK_BLAKE2_SIG_MAGIC);
+
+    /* RabinKarp + MD4 magic. */
+    res = rs_signature_init(&sig, RS_RK_MD4_SIG_MAGIC, 16, 6, 0);
+    assert(res == RS_DONE);
+    assert(sig.magic == RS_RK_MD4_SIG_MAGIC);
+
     /* Bad magic. */
     res = rs_signature_init(&sig, 1, 16, 6, 0);
     assert(res == RS_BAD_MAGIC);
@@ -73,11 +83,13 @@ int main(int argc, char **argv)
     /* Bad strong_sum_len. */
     res = rs_signature_init(&sig, RS_MD4_SIG_MAGIC, 16, 17, 0);
     assert(res == RS_PARAM_ERROR);
+    res = rs_signature_init(&sig, RS_RK_MD4_SIG_MAGIC, 16, 17, 0);
+    assert(res == RS_PARAM_ERROR);
 
     /* With sig_fsize provided. */
     res = rs_signature_init(&sig, 0, 16, 6, 92);
     assert(res == RS_DONE);
-    assert(sig.magic == RS_BLAKE2_SIG_MAGIC);
+    assert(sig.magic == RS_RK_BLAKE2_SIG_MAGIC);
     assert(sig.block_len == 16);
     assert(sig.strong_sum_len == 6);
     assert(sig.count == 0);
@@ -105,15 +117,16 @@ int main(int argc, char **argv)
     assert(sig.size == 16);
     assert(sig.block_sigs != NULL);
     assert(((rs_block_sig_t *)sig.block_sigs)->weak_sum == 0x12345678);
-    assert(memcmp(((rs_block_sig_t *)sig.block_sigs)->strong_sum, &strong, 6) == 0);
+    assert(memcmp(((rs_block_sig_t *)sig.block_sigs)->strong_sum, &strong, 6)
+           == 0);
     rs_signature_done(&sig);
 
     /* Prepare rs_build_hash_table() and rs_signature_find_match() tests. */
     res = rs_signature_init(&sig, 0, 16, 6, 0);
-    for (i = 0; i < 256; i+=16) {
-        weak = rs_calc_weak_sum(&buf[i], 16);
-	rs_signature_calc_strong_sum(&sig, &buf[i], 16, &strong);
-	rs_signature_add_block(&sig, weak, &strong);
+    for (i = 0; i < 256; i += 16) {
+        weak = rs_signature_calc_weak_sum(&sig, &buf[i], 16);
+        rs_signature_calc_strong_sum(&sig, &buf[i], 16, &strong);
+        rs_signature_add_block(&sig, weak, &strong);
     }
 
     /* Test rs_build_hash_table(). */
@@ -126,7 +139,7 @@ int main(int argc, char **argv)
     /* Matching weak, different block. */
     assert(rs_signature_find_match(&sig, weak, &buf[2], 16) == -1);
     /* Matching weak, matching block. */
-    assert(rs_signature_find_match(&sig, weak, &buf[15*16], 16) == 15*16);
+    assert(rs_signature_find_match(&sig, weak, &buf[15 * 16], 16) == 15 * 16);
 #ifndef HASHTABLE_NSTATS
     assert(sig.calc_strong_count == 2);
 #endif
