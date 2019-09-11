@@ -130,6 +130,7 @@ static inline rs_weak_sum_t weaksum_digest(weaksum_t *sum)
     case RS_RABINKARP:
         return rabinkarp_digest(&sum->rk);
     }
+    return 0;
 }
 
 /** Calculate a weaksum.
