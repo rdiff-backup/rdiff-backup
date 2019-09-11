@@ -51,20 +51,26 @@ void rs_emit_delta_header(rs_job_t *job)
 void rs_emit_literal_cmd(rs_job_t *job, int len)
 {
     int cmd;
-    int param_len = rs_int_len(len);
+    int param_len = len <= 64 ? 0 : rs_int_len(len);
 
-    if (param_len == 1)
+    if (param_len == 0) {
+        cmd = len;
+        rs_trace("emit LITERAL_%d, cmd_byte=%#04x", len, cmd);
+    } else if (param_len == 1) {
         cmd = RS_OP_LITERAL_N1;
-    else if (param_len == 2)
+        rs_trace("emit LITERAL_N1(len=%d), cmd_byte=%#04x", len, cmd);
+    } else if (param_len == 2) {
         cmd = RS_OP_LITERAL_N2;
-    else {
+        rs_trace("emit LITERAL_N2(len=%d), cmd_byte=%#04x", len, cmd);
+    } else {
         assert(param_len == 4);
         cmd = RS_OP_LITERAL_N4;
+        rs_trace("emit LITERAL_N4(len=%d), cmd_byte=%#04x", len, cmd);
     }
 
-    rs_trace("emit LITERAL_N%d(len=%d), cmd_byte=%#04x", param_len, len, cmd);
     rs_squirt_byte(job, cmd);
-    rs_squirt_netint(job, len, param_len);
+    if (param_len)
+        rs_squirt_netint(job, len, param_len);
 
     job->stats.lit_cmds++;
     job->stats.lit_bytes += len;

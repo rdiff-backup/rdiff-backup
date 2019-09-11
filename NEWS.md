@@ -16,6 +16,10 @@ NOT RELEASED YET
    rollsum` to generate backwards-compatible signatures. (dbaarda,
    https://github.com/librsync/librsync/issues/3).
 
+ * Use single-byte literal commands for small inserts in deltas. This makes
+   each small insert use 1 less byte in deltas. (dbaarda,
+   https://github.com/librsync/librsync/issues/120)
+ 
 ## librsync 2.1.0
 
 Released 2019-08-19

@@ -146,16 +146,9 @@ rs_result rs_suck_n4(rs_job_t *job, int *v)
 
 int rs_int_len(rs_long_t val)
 {
-    if (!(val & ~(rs_long_t)0xff))
-        return 1;
-    else if (!(val & ~(rs_long_t)0xffff))
-        return 2;
-    else if (!(val & ~(rs_long_t)0xffffffff))
-        return 4;
-    else if (!(val & ~(rs_long_t)0xffffffffffffffff))
-        return 8;
-    else {
-        rs_fatal("can't encode integer " FMT_LONG " yet", val);
-        return -1;
-    }
+    int i;
+
+    for (i = 8; val >> i; i *= 2) ;
+    assert(i <= 64);
+    return i / 8;
 }
