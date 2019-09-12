@@ -139,8 +139,8 @@ rs_result rs_suck_n4(rs_job_t *job, int *v)
     rs_result result;
     rs_long_t d;
 
-    result = rs_suck_netint(job, &d, 4);
-    *v = d;
+    if ((result = rs_suck_netint(job, &d, 4)) == RS_DONE)
+        *v = d;
     return result;
 }
 
