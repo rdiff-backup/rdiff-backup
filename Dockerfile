@@ -18,8 +18,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
     librsync-dev \
     python3-all-dev \
     python3-pylibacl \
-    python3-pyxattr \
-    python3-setuptools-scm
+    python3-pyxattr
 
 # Build dependencies specific for rdiff-backup development and testing
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \

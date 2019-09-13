@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
 import sys, os, getopt
-from setuptools import setup, Extension
+from distutils.core import setup, Extension
 
-# we need to get the version if we want to use it for the docs dir
-from setuptools_scm import get_version
-version_string = get_version()
+version_string = "1.3.4"
 
 if sys.version_info[:2] < (3,5):
 	print("Sorry, rdiff-backup requires version 3.5 or later of Python")
@@ -61,14 +59,11 @@ if os.name == 'nt':
 			})
 
 setup(name="rdiff-backup",
+	  version=version_string,
 	  description="Local/remote mirroring+incremental backup",
 	  author="The rdiff-backup project",
 	  author_email="rdiff-backup-users@nongnu.org",
 	  url="https://rdiff-backup.net/",
-	  use_scm_version={
-	    'write_to': 'src/rdiff_backup/Version.py',
-	  },
-	  setup_requires=['setuptools_scm'],
 	  packages = ['rdiff_backup'],
 	  package_dir={'':'src'},  # tell distutils packages are under src
 	  ext_modules = [Extension("rdiff_backup.C", ["src/cmodule.c"]),
