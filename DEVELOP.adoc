@@ -8,6 +8,7 @@ Some notes for developers and other people willing to help development.
 * tox
 * libacl-devel (for sys/acl.h)
 * rdiff
+* python3-setuptools (for setup.py)
 - unpack the test files previously available from
 https://download-mirror.savannah.gnu.org/releases/rdiff-backup/testfiles.tar.gz and now temporarily available as
 release under https://github.com/ericzolf/rdiff-backup/releases[]:
