@@ -228,9 +228,7 @@ inline static void rs_mdfour_block(rs_mdfour_t *md, void const *p)
    buffer first. */
 inline static void rs_mdfour_block(rs_mdfour_t *md, void const *p)
 {
-    unsigned long ptrval = (unsigned long)p;
-
-    if (ptrval & 3) {
+    if ((uintptr_t)p & 3) {
         uint32_t M[16];
 
         memcpy(M, p, 16 * sizeof(uint32_t));
