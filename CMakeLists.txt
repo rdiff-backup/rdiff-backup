@@ -109,14 +109,14 @@ check_type_size ( "unsigned long" SIZEOF_UNSIGNED_LONG )
 check_type_size ( "unsigned short" SIZEOF_UNSIGNED_SHORT )
 
 # Check for printf "%zu" size_t formatting support.
-if(CMAKE_CROSSCOMPILING)
-  if(WIN32)
-    set(HAVE_PRINTF_Z OFF)
-    message (STATUS "Cross compiling to Win32 - printf \"%zu\" size_t formatting support disabled")
-  else()
-    set(HAVE_PRINTF_Z ON)
-    message (STATUS "Cross compiling - assuming printf \"%zu\" size_t formatting support")
-  endif()
+if(WIN32)
+  # CheckCSourceRuns checking for "%zu" succeeds but still gives warnings on win32.
+  set(HAVE_PRINTF_Z OFF)
+  message (STATUS "Compiling to Win32 - printf \"%zu\" size_t formatting support disabled")
+elseif(CMAKE_CROSSCOMPILING)
+  # CheckCSourceRuns doesn't work when cross-compiling.
+  set(HAVE_PRINTF_Z ON)
+  message (STATUS "Cross compiling - assuming printf \"%zu\" size_t formatting support")
 else()
   include(CheckCSourceRuns)
   check_c_source_runs("#include <stdio.h>\nint main(){char o[8];sprintf(o, \"%zu\", (size_t)7);return o[0] != '7';}" HAVE_PRINTF_Z)
