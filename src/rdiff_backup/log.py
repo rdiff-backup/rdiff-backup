@@ -18,7 +18,7 @@
 # USA
 """Manage logging, displaying and recording messages with required verbosity"""
 
-import time
+import datetime
 import sys
 import traceback
 import types
@@ -109,8 +109,12 @@ class Logger:
         if verbosity < 9:
             return "%s\n" % message
         else:
-            return "%s  %s\n" % (time.asctime(time.localtime(time.time())),
-                                 message)
+            timestamp = datetime.datetime.now().astimezone().strftime("%F %H:%M:%S.%f %z")
+            if Globals.server:
+                role = "SERVER"
+            else:
+                role = "CLIENT"
+            return "%s  <%s>  %s\n" % (timestamp, role, message)
 
     def __call__(self, message, verbosity):
         """Log message that has verbosity importance
@@ -172,7 +176,7 @@ class Logger:
         else:
             result_repr = str(result)
         # shorten the result to a max size of 720 chars with ellipsis if needed
-        result_repr = result_repr[:720] + (result_repr[720:] and '[...]')
+        #result_repr = result_repr[:720] + (result_repr[720:] and '[...]')
         if Globals.server:
             conn_str = "Server"
         else:
