@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
     /* Test rs_signature_init() */
     /* Default zero magic. */
-    res = rs_signature_init(&sig, 0, 16, 6, 0);
+    res = rs_signature_init(&sig, 0, 16, 6, -1);
     assert(res == RS_DONE);
     assert(sig.magic == RS_RK_BLAKE2_SIG_MAGIC);
     assert(sig.block_len == 16);
@@ -57,33 +57,37 @@ int main(int argc, char **argv)
 #endif
 
     /* Blake2 magic. */
-    res = rs_signature_init(&sig, RS_BLAKE2_SIG_MAGIC, 16, 6, 0);
+    res = rs_signature_init(&sig, RS_BLAKE2_SIG_MAGIC, 16, 6, -1);
     assert(res == RS_DONE);
     assert(sig.magic == RS_BLAKE2_SIG_MAGIC);
 
     /* MD4 magic. */
-    res = rs_signature_init(&sig, RS_MD4_SIG_MAGIC, 16, 6, 0);
+    res = rs_signature_init(&sig, RS_MD4_SIG_MAGIC, 16, 6, -1);
     assert(res == RS_DONE);
     assert(sig.magic == RS_MD4_SIG_MAGIC);
 
     /* RabinKarp + Blake2 magic. */
-    res = rs_signature_init(&sig, RS_RK_BLAKE2_SIG_MAGIC, 16, 6, 0);
+    res = rs_signature_init(&sig, RS_RK_BLAKE2_SIG_MAGIC, 16, 6, -1);
     assert(res == RS_DONE);
     assert(sig.magic == RS_RK_BLAKE2_SIG_MAGIC);
 
     /* RabinKarp + MD4 magic. */
-    res = rs_signature_init(&sig, RS_RK_MD4_SIG_MAGIC, 16, 6, 0);
+    res = rs_signature_init(&sig, RS_RK_MD4_SIG_MAGIC, 16, 6, -1);
     assert(res == RS_DONE);
     assert(sig.magic == RS_RK_MD4_SIG_MAGIC);
 
     /* Bad magic. */
-    res = rs_signature_init(&sig, 1, 16, 6, 0);
+    res = rs_signature_init(&sig, 1, 16, 6, -1);
     assert(res == RS_BAD_MAGIC);
 
     /* Bad strong_sum_len. */
-    res = rs_signature_init(&sig, RS_MD4_SIG_MAGIC, 16, 17, 0);
+    res = rs_signature_init(&sig, RS_MD4_SIG_MAGIC, 16, 17, -1);
     assert(res == RS_PARAM_ERROR);
-    res = rs_signature_init(&sig, RS_RK_MD4_SIG_MAGIC, 16, 17, 0);
+    res = rs_signature_init(&sig, RS_RK_MD4_SIG_MAGIC, 16, 17, -1);
+    assert(res == RS_PARAM_ERROR);
+    res = rs_signature_init(&sig, RS_BLAKE2_SIG_MAGIC, 16, 33, -1);
+    assert(res == RS_PARAM_ERROR);
+    res = rs_signature_init(&sig, RS_RK_BLAKE2_SIG_MAGIC, 16, 33, -1);
     assert(res == RS_PARAM_ERROR);
 
     /* With sig_fsize provided. */
@@ -102,16 +106,16 @@ int main(int argc, char **argv)
     assert(sig.block_sigs == NULL);
 
     /* Test rs_signature_calc_strong_sum(). */
-    res = rs_signature_init(&sig, RS_MD4_SIG_MAGIC, 16, 6, 0);
+    res = rs_signature_init(&sig, RS_MD4_SIG_MAGIC, 16, 6, -1);
     rs_signature_calc_strong_sum(&sig, &buf, 256, &strong);
     assert(memcmp(&strong, "\x29\x8a\x05\xbc\x50\x6e", 6) == 0);
 
-    res = rs_signature_init(&sig, RS_BLAKE2_SIG_MAGIC, 16, 6, 0);
+    res = rs_signature_init(&sig, RS_BLAKE2_SIG_MAGIC, 16, 6, -1);
     rs_signature_calc_strong_sum(&sig, &buf, 256, &strong);
     assert(memcmp(&strong, "\x39\xa7\xeb\x9f\xed\xc1", 6) == 0);
 
     /* Test rs_signature_add_block(). */
-    res = rs_signature_init(&sig, 0, 16, 6, 0);
+    res = rs_signature_init(&sig, 0, 16, 6, -1);
     rs_signature_add_block(&sig, weak, &strong);
     assert(sig.count == 1);
     assert(sig.size == 16);
@@ -122,7 +126,7 @@ int main(int argc, char **argv)
     rs_signature_done(&sig);
 
     /* Prepare rs_build_hash_table() and rs_signature_find_match() tests. */
-    res = rs_signature_init(&sig, 0, 16, 6, 0);
+    res = rs_signature_init(&sig, 0, 16, 6, -1);
     for (i = 0; i < 256; i += 16) {
         weak = rs_signature_calc_weak_sum(&sig, &buf[i], 16);
         rs_signature_calc_strong_sum(&sig, &buf[i], 16, &strong);

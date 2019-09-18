@@ -123,7 +123,7 @@ rs_long_t rs_file_size(FILE *f)
     struct stat st;
     if ((fstat(fileno(f), &st) == 0) && (S_ISREG(st.st_mode)))
         return st.st_size;
-    return 0;
+    return -1;
 }
 
 rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf)

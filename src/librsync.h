@@ -499,7 +499,7 @@ LIBRSYNC_EXPORT int rs_file_close(FILE *file);
 /** Get the size of a file.
  *
  * This provides a platform independent way to get the size of large files. It
- * will return 0 if the size cannot be determined because it is not a regular
+ * will return -1 if the size cannot be determined because it is not a regular
  * file.
  *
  * \param file - the stdio file to get the size of. */

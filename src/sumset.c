@@ -151,7 +151,7 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len,
     /* Calculate the number of blocks if we have the signature file size. */
     /* Magic+header is 12 bytes, each block thereafter is 4 bytes
        weak_sum+strong_sum_len bytes */
-    sig->size = (int)(sig_fsize ? (sig_fsize - 12) / (4 + strong_len) : 0);
+    sig->size = (int)(sig_fsize < 12 ? 0 : (sig_fsize - 12) / (4 + strong_len));
     if (sig->size)
         sig->block_sigs =
             rs_alloc(sig->size * rs_block_sig_size(sig),
