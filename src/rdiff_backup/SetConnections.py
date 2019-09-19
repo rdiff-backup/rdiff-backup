@@ -158,10 +158,11 @@ def init_connection(remote_cmd):
 
     Log("Executing %a" % remote_cmd, 4)
     try:
+        # we need buffered read on SSH communications, hence using
+        # default value for bufsize parameter
         process = subprocess.Popen(
             remote_cmd,
             shell=True,
-            bufsize=0,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE)
         (stdin, stdout) = (process.stdin, process.stdout)
