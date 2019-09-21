@@ -699,7 +699,7 @@ class FinalCorrupt(PathSetter):
         if rp2.lstat():
             Myrm(rp2.path)
         os.system(b'cp -a %b %b' % (rp1.path, rp2.path))
-        rp2_2_1 = rp2.append('dir').append('regfile2')
+        rp2_2_1 = rp2.append('dir', 'regfile2')
         assert rp2_2_1.lstat()
         rp2_2_1.delete()
         rp2_2_1.touch()
@@ -799,7 +799,7 @@ class FinalBugs(PathSetter):
         self.delete_tmpdirs()
         bigrp = Local.get_src_local_rp('bigdir')
         rdiff_backup(True, True, bigrp.path, Local.rpout.path)
-        rp = bigrp.append('subdir3').append('subdir49').append('file49')
+        rp = bigrp.append('subdir3', 'subdir49', 'file49')
         assert rp.isreg(), rp
         rp.touch()
         rdiff_backup(True, True, bigrp.path, Local.rpout.path)
