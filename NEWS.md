@@ -14,12 +14,15 @@ NOT RELEASED YET
    and speeds up delta calculations. The rdiff cmd gets a new `-R
    (rollsum|rabinkarp)` argument with the default being `rabinkarp`, Use `-R
    rollsum` to generate backwards-compatible signatures. (dbaarda,
-   https://github.com/librsync/librsync/issues/3).
+   https://github.com/librsync/librsync/issues/3)
 
  * Use single-byte literal commands for small inserts in deltas. This makes
    each small insert use 1 less byte in deltas. (dbaarda,
    https://github.com/librsync/librsync/issues/120)
- 
+
+ * Change rs_file_size() to report -1 instead of 0 for unknown file sizes (not
+   a regular file). (dbaarda https://github.com/librsync/librsync/pull/168)
+
 ## librsync 2.1.0
 
 Released 2019-08-19
