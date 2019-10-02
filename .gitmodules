@@ -1,0 +1,3 @@
+[submodule "librsync"]
+	path = librsync
+	url = https://github.com/ardovm/librsync
