@@ -9,3 +9,7 @@ MANIFEST
 
 # just ignore files marked local through their name
 *[._]local[._]*
+
+# setup.py installation files
+dist/*.egg
+src/rdiff_backup.egg-info/

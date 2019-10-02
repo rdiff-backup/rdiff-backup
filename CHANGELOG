@@ -316,7 +316,7 @@ when printing them in log messages from eas_acls.py. (Fix from
 Saptarshi Guha)
 
 Handle Windows' lack of getuid(), getgid(), hardlinks and symlinks in
-fs_abilities.py. Use subproces.Popen() on Windows since it does not support
+fs_abilities.py. Use subprocess.Popen() on Windows since it does not support
 os.popen2(). (Patch from Josh Nisly)
 
 Let setup.py accept arguments on Windows. (Patch from Josh Nisly)
@@ -525,7 +525,7 @@ quoting to work properly with cygwin.  (Marc Dyksterhouse)
 Allow for preservation of FinderInfo for folders and fix typo
 in Time.py. (Patch from Andrew Ferguson.)
 
-Test for symlink permissions support to avoid unncessary syscalls on
+Test for symlink permissions support to avoid unnecessary syscalls on
 platforms that don't support them. (Patch from Andrew Ferguson.)
 
 RPM specfile update from Gordon Rowell.
@@ -1233,7 +1233,7 @@ pointing out that command line length could otherwise be a problem.
 Fixed bug in filelist processing that ignored leading or trailing
 whitespace in filelists.  Now filenames with, for instance, trailing
 spaces can be used in filelists.  Filelists which took advantage of
-this bug for formatting may have to be editted.
+this bug for formatting may have to be edited.
 
 Applied major/minor patch contributed by David S.  rdiff-backup should
 now correctly copy device files on platforms such as NetBSD.
@@ -1582,7 +1582,7 @@ New in v0.5.2 (2002/03/02)
 Fixed bugs which made rdiff-backup try to preserve mod times when it
 wasn't necessary, and exit instead of warning when it wasn't being run
 as root and found a file it didn't own.  (Reported by Alberto
-Accomazi.)
+Accomazzi.)
 
 Added some more error checking; maybe this will fix a bug reported by
 John Goerzen wherein rdiff-backup can crash if file is deleted while
@@ -1800,7 +1800,7 @@ New in v0.3.0 (2001/9/9 - Billennium edition)
 rdiff-backup has been almost completely rewritten for v0.3.0, as it
 was for v0.1.0.  The main problem with versions 0.2.x was that the
 networking code was added to the not-remote-capable v0.1, and the
-result was unyieldy and prone to bugs when operating over a pipe.
+result was unwieldy and prone to bugs when operating over a pipe.
 
 There are some new features:
 
@@ -1816,7 +1816,7 @@ There are some new features:
   bothered. :-)
 
 - New more standard format for increment files.  See
-  http://www.w3.org/TR/NOTE-datetime for the time standard.  The old
+  https://www.w3.org/TR/NOTE-datetime for the time standard.  The old
   format, besides being less standard, didn't take timezones into
   account.
 

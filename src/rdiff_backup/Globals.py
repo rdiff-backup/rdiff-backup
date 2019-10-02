@@ -16,14 +16,14 @@
 # along with rdiff-backup; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-
 """Hold a variety of constants usually set at initialization."""
 
-import re, os
-
+import re
+import os
+from . import Version
 
 # The current version of rdiff-backup
-version = "1.3.4"
+version = Version.version
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
@@ -48,13 +48,13 @@ server = None
 # uid and gid of the owner of the rdiff-backup process.  This can
 # vary depending on the connection.
 try:
-	process_uid = os.getuid()
-	process_gid = os.getgid()
-	process_groups = [process_gid] + os.getgroups()
+    process_uid = os.getuid()
+    process_gid = os.getgid()
+    process_groups = [process_gid] + os.getgroups()
 except AttributeError:
-	process_uid = 0
-	process_gid = 0
-	process_groups = [0]
+    process_uid = 0
+    process_gid = 0
+    process_groups = [0]
 
 # If true, when copying attributes, also change target's uid/gid
 change_ownership = None
@@ -157,7 +157,7 @@ rbdir = None
 # should be true if certain characters in filenames on the source side
 # should be escaped (see FilenameMapping for more info).
 chars_to_quote = None
-quoting_char = ';'
+quoting_char = b';'
 
 # evaluate if DOS device names (AUX, PRN, CON, NUL, COM, LPT) should be quoted
 # or spaces at the end of file and directory names.
@@ -165,13 +165,10 @@ quoting_char = ';'
 escape_dos_devices = os.name == 'nt'
 escape_trailing_spaces = os.name == 'nt'
 
-# Some systems don't support unicode in filenames
-use_unicode_paths = None
-
 # If true, the timestamps use the following format: "2008-09-01T04-49-04-07-00"
 # (instead of "2008-09-01T04:49:04-07:00"). This creates timestamps which
 # don't need to be escaped on Windows.
-use_compatible_timestamps = 0 
+use_compatible_timestamps = 0
 
 # If true, emit output intended to be easily readable by a
 # computer.  False means output is intended for humans.
@@ -192,9 +189,10 @@ compression = 1
 # case-insensitive regular expression won't be compressed (applies
 # to .snapshots and .diffs).  The second below will be the
 # compiled version of the first.
-no_compression_regexp_string = ("(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|"
-    "jpg|jpeg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov|flac|shn|pgp|"
-    "gpg|rz|lzh|zoo|lharc|rar|arj|asc)$")
+no_compression_regexp_string = (
+    b"(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|"
+    b"jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|avi|wmv|mpeg|mpg|rm|mov|flac|shn|pgp|"
+    b"gpg|rz|lzh|zoo|lharc|rar|arj|asc|vob|mdf)$")
 no_compression_regexp = None
 
 # If true, filelists and directory statistics will be split on
@@ -236,7 +234,7 @@ restrict_path = None
 compare_inode = 1
 
 # If set, directories can be fsync'd just like normal files, to
-# guarantee that any changes have been committed to disk.
+# guarantee that any changes have been comitted to disk.
 fsync_directories = None
 
 # If set, exit with error instead of dropping ACLs or ACL entries.
@@ -255,16 +253,19 @@ symlink_perms = None
 # tempfile.tempdir value on remote connections
 remote_tempdir = None
 
+
 def get(name):
-	"""Return the value of something in this module"""
-	return globals()[name]
+    """Return the value of something in this module"""
+    return globals()[name]
+
 
 def is_not_None(name):
-	"""Returns true if value is not None"""
-	return globals()[name] is not None
+    """Returns true if value is not None"""
+    return globals()[name] is not None
+
 
 def set(name, val):
-	"""Set the value of something in this module
+    """Set the value of something in this module
 
 	Use this instead of writing the values directly if the setting
 	matters to remote sides.  This function updates the
@@ -272,63 +273,83 @@ def set(name, val):
 	changes.
 
 	"""
-	changed_settings.append(name)
-	globals()[name] = val
+    changed_settings.append(name)
+    globals()[name] = val
+
 
 def set_local(name, val):
-	"""Like set above, but only set current connection"""
-	globals()[name] = val
+    """Like set above, but only set current connection"""
+    globals()[name] = val
+
 
 def set_integer(name, val):
-	"""Like set, but make sure val is an integer"""
-	try: intval = int(val)
-	except ValueError:
-		Log.FatalError("Variable %s must be set to an integer -\n"
-					   "received %s instead." % (name, val))
-	set(name, intval)
+    """Like set, but make sure val is an integer"""
+    try:
+        intval = int(val)
+    except ValueError:
+        Log.FatalError("Variable %s must be set to an integer -\n"
+                       "received %s instead." % (name, val))
+    set(name, intval)
 
-def set_float(name, val, min = None, max = None, inclusive = 1):
-	"""Like set, but make sure val is float within given bounds"""
-	def error():
-		s = "Variable %s must be set to a float" % (name,)
-		if min is not None and max is not None:
-			s += " between %s and %s " % (min, max)
-			if inclusive: s += "inclusive"
-			else: s += "not inclusive"
-		elif min is not None or max is not None:
-			if inclusive: inclusive_string = "or equal to "
-			else: inclusive_string = ""
-			if min is not None:
-				s += " greater than %s%s" % (inclusive_string, min)
-			else: s+= " less than %s%s" % (inclusive_string, max)
-		Log.FatalError(s)
 
-	try: f = float(val)
-	except ValueError: error()
-	if min is not None:
-		if inclusive and f < min: error()
-		elif not inclusive and f <= min: error()
-	if max is not None:
-		if inclusive and f > max: error()
-		elif not inclusive and f >= max: error()
-	set(name, f)
+def set_float(name, val, min=None, max=None, inclusive=1):
+    """Like set, but make sure val is float within given bounds"""
+
+    def error():
+        s = "Variable %s must be set to a float" % (name, )
+        if min is not None and max is not None:
+            s += " between %s and %s " % (min, max)
+            if inclusive:
+                s += "inclusive"
+            else:
+                s += "not inclusive"
+        elif min is not None or max is not None:
+            if inclusive:
+                inclusive_string = "or equal to "
+            else:
+                inclusive_string = ""
+            if min is not None:
+                s += " greater than %s%s" % (inclusive_string, min)
+            else:
+                s += " less than %s%s" % (inclusive_string, max)
+        Log.FatalError(s)
+
+    try:
+        f = float(val)
+    except ValueError:
+        error()
+    if min is not None:
+        if inclusive and f < min:
+            error()
+        elif not inclusive and f <= min:
+            error()
+    if max is not None:
+        if inclusive and f > max:
+            error()
+        elif not inclusive and f >= max:
+            error()
+    set(name, f)
+
 
 def get_dict_val(name, key):
-	"""Return val from dictionary in this class"""
-	return globals()[name][key]
+    """Return val from dictionary in this class"""
+    return globals()[name][key]
+
 
 def set_dict_val(name, key, val):
-	"""Set value for dictionary in this class"""
-	globals()[name][key] = val
+    """Set value for dictionary in this class"""
+    globals()[name][key] = val
 
-def postset_regexp(name, re_string, flags = None):
-	"""Compile re_string on all existing connections, set to name"""
-	for conn in connections:
-		conn.Globals.postset_regexp_local(name, re_string, flags)
+
+def postset_regexp(name, re_string, flags=None):
+    """Compile re_string on all existing connections, set to name"""
+    for conn in connections:
+        conn.Globals.postset_regexp_local(name, re_string, flags)
+
 
 def postset_regexp_local(name, re_string, flags):
-	"""Set name to compiled re_string locally"""
-	if flags: globals()[name] = re.compile(re_string, flags)
-	else: globals()[name] = re.compile(re_string)
-
-
+    """Set name to compiled re_string locally"""
+    if flags:
+        globals()[name] = re.compile(re_string, flags)
+    else:
+        globals()[name] = re.compile(re_string)

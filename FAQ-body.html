@@ -28,7 +28,7 @@ how much is required? What is the problem if rdiff-backup says
 <li><a href="#touple">What does "<code>touple index out of range</code>" mean?</a></li>
 <li><a href="#crc">What does "<code>IO Error: CRC check failed</code>" mean?</a></li>
 <li><a href="#badindex">What does "<code>AssertionError: Bad index order</code>" mean?</a></li>
-<li><a href="#utc">How can rdiff-backup use UTC as the timzeone?</a></li>
+<li><a href="#utc">How can rdiff-backup use UTC as the timezone?</a></li>
 </ol>
 <h3><a name="ToC4">Questions and Answers</a></h3>
 <ol>
@@ -64,13 +64,13 @@ recommended that you upgrade the older version before reporting any issues.</p>
 
 </li>
 <li><strong><a name="windows">Does rdiff-backup run under Windows?</a></strong>
-<p>Yes, although it is not a heavily tested configuration. Rdiff-backup can be run as a native Windows application or under Cygwin. To run as a native Windows application, simply download the provided .exe binary. To setup remote operation, you will also need an SSH client, such as <a href="http://www.chiark.greenend.org.uk/~sgtatham/putty/">Putty</a> or <a href="http://www.ssh.com">SSH Secure Shell</a>.</p>
+<p>Yes, although it is not a heavily tested configuration. Rdiff-backup can be run as a native Windows application or under Cygwin. To run as a native Windows application, simply download the provided .exe binary. To setup remote operation, you will also need an SSH client, such as <a href="https://www.chiark.greenend.org.uk/~sgtatham/putty/">Putty</a> or <a href="https://www.ssh.com">SSH Secure Shell</a>.</p>
 
 <p>If you wish to run rdiff-backup under Cygwin, use at least version 1.1.12. The setup under Cygwin is the same as under other Unix-like operating systems. From the Cygwin installer you will need Python 3.5 or higher (under Interpreters), autoconf, automake, binutils, gcc, make, and patchutils (all under Devel). Then you will need to compile and install librsync, which can be downloaded <a href="https://sourceforge.net/project/showfiles.php?group_id=56125">from Sourceforge</a>. Finally, you can compile and install rdiff-backup using the usual instructions.</p>
 <p>Although some Windows filesystems lack features like FIFOs, case
 sensitive filenames, or files with colons (":") in them, all of these situations should
 be autodetected and compensated for by rdiff-backup.</p>
-<p>If you would like more detailed instructions for compiling and installing rdiff-backup on Cygwin, you can read this blog entry: <a href="http://katastrophos.net/andre/blog/?p=19">http://katastrophos.net/andre/blog/?p=19</a>. Note: The patch that the blog suggests that you download is no longer necessary starting with version 1.1.8 of rdiff-backup.</p>
+<p>If you would like more detailed instructions for compiling and installing rdiff-backup on Cygwin, you can read this blog entry: <a href="https://katastrophos.net/andre/blog/2005/11/02/rdiff-backup-on-windows/">https://katastrophos.net/andre/blog/2005/11/02/rdiff-backup-on-windows/</a>. Note: The patch that the blog suggests that you download is no longer necessary starting with version 1.1.8 of rdiff-backup.</p>
 </li>
 <li><strong><a name="OSX">Does rdiff-backup run under Mac OS X?</a></strong>
 <p>Yes, quite a few people seem to be using rdiff-backup under Mac OS
@@ -84,7 +84,7 @@ which can install rdiff-backup automatically for you. With Fink, you
 should install the <code>librsync</code>, <code>librsync-shlibs</code>,
 <code>python25</code>, <code>python25-shlibs</code>, <code>xattr-py25</code>,
 and <code>rdiff-backup</code> packages. Another option is DarwinPorts 
-<a href="http://www.macports.org/">http://www.macports.org/</a>, for which
+<a href="https://www.macports.org/">https://www.macports.org/</a>, for which
 you should install the <code>py-xattr</code> and <code>rdiff-backup</code> packages.</p>
 <p>If you want to build rdiff-backup yourself, you should be able to build
 librsync and rdiff-backup using the standard Unix instructions.
@@ -108,7 +108,7 @@ of Python will install rdiff-backup in something like
 will not be in your <code>$PATH</code>. You can copy rdiff-backup out of this folder and into
 someplace reasonable like <code>/usr/bin</code> or another directory in your <code>$PATH</code> to use it. For
 a full explanation of why this happens see this post to the mailing list:
-<a href="http://lists.nongnu.org/archive/html/rdiff-backup-users/2007-06/msg00107.html">http://lists.nongnu.org/archive/html/rdiff-backup-users/2007-06/msg00107.html</a>.</p>
+<a href="https://lists.nongnu.org/archive/html/rdiff-backup-users/2007-06/msg00107.html">https://lists.nongnu.org/archive/html/rdiff-backup-users/2007-06/msg00107.html</a>.</p>
 </li>
 <li><strong><a name="cifs">Can I backup files to a CIFS or smbfs mount?</a></strong>
 <p>You can certainly try! Using a CIFS or smbfs mount as the mirror directory has been troublesome for
@@ -144,7 +144,7 @@ deprecated on Linux. CIFS users sometimes experience one of these common errors:
 	worked for that NAS appliance.</li>
 </ul>
 <p>If you're still having trouble backing up to a CIFS or smbfs mount, try searching the
-<a href="http://lists.gnu.org/archive/html/rdiff-backup-users/">mailing-list archives</a> and then sending
+<a href="https://lists.gnu.org/archive/html/rdiff-backup-users/">mailing-list archives</a> and then sending
 further questions to the list.</p>
 </li>
 <li><strong><a name="case_insensitive">Help! Why do all my filenames now look like ;077y;070ile ?!</a></strong>
@@ -271,7 +271,7 @@ taken up by the hardlink_data file to record hard links.</p>
 bandwidth usage, as in rsync's --bwlimit option?</a></strong>
 <p>There is no internal rdiff-backup option to do this. However,
 external utilities such as <a
-href="http://www.cons.org/cracauer/cstream.html">cstream</a> can be
+href="https://www.cons.org/cracauer/cstream.html">cstream</a> can be
 used to monitor bandwidth explicitly. trevor@tecnopolis.ca
 writes:</p>
 <pre>rdiff-backup --remote-schema
@@ -297,7 +297,7 @@ rdiff-backup to exceed it for significant periods.</li>
 </ol>
 <p>Another option is to limit bandwidth at a lower (and perhaps more
 appropriate) level. Adam Lazur mentions <a
-href="http://lartc.org/wondershaper/">The Wonder Shaper</a>.</p>
+href="https://lartc.org/wondershaper/">The Wonder Shaper</a>.</p>
 </li>
 <li><strong><a name="leak">How much memory should rdiff-backup use? Is there a
 memory leak?</a></strong>
@@ -362,7 +362,7 @@ directory. Under unix systems this is usually the <code>/tmp</code>
 directory. The temp directory that rdiff-backup uses can be set using the
 <code>--tempdir</code> and <code>--remote-tempdir</code> options available
 in versions 1.1.13 and newer. See the entry for <code>tempfile.tempdir</code> in the <a
-href="http://www.python.org/doc/2.4.1/lib/module-tempfile.html">Python
+href="https://docs.python.org/3/library/tempfile.html">Python
 tempfile docs</a> for more
 information on the default temp directory. The amount of free space
 required can vary, but it usually about the size of the largest file
@@ -380,15 +380,15 @@ when transferring between a 32-bit host and a 64-bit host.
 from the librsync project page on Sourceforge. The
 <a href="https://sourceforge.net/cvs/?group_id=56125">CVS version</a> of librsync
 also contains the patch. More information is also available in
-<a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=355178">Debian bug report #355178</a>.</p>
+<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=355178">Debian bug report #355178</a>.</p>
 </li>
 <li><strong><a name="path">Why does rdiff-backup say it's not in my $PATH? It is when I login!</a></strong>
 <p>If you get an error like <code>sh: line1: rdiff-backup: command not found</code>, but rdiff-backup
 <i>is</i> in your <code>$PATH</code> when you login to the remote host, it is happening because the
 value of bash's <code>$PATH</code> is set differently when you login to an interactive shell than when you run a command remotely via SSH. For more
-information, read the <a href="http://linux.die.net/man/1/bash">bash manpage</a> and look at your
+information, read the <a href="https://linux.die.net/man/1/bash">bash manpage</a> and look at your
 <code>.bashrc</code> and <code>.bash_profile</code> files.</p>
-<p>In particular, this can happen if rdiff-backup was installed via Fink on a remote Mac OS X system. <code>/sw/bin</code> is magically added to your <code>$PATH</code> by the script <code>/sw/bin/init.sh</code> when you login with an interative shell. Fink did this behind the scenes when you set it up. Simply add <code>/sw/bin</code> to your path manually, or copy rdiff-backup to a directory that is in your <code>$PATH</code>.</p>
+<p>In particular, this can happen if rdiff-backup was installed via Fink on a remote Mac OS X system. <code>/sw/bin</code> is magically added to your <code>$PATH</code> by the script <code>/sw/bin/init.sh</code> when you login with an interactive shell. Fink did this behind the scenes when you set it up. Simply add <code>/sw/bin</code> to your path manually, or copy rdiff-backup to a directory that is in your <code>$PATH</code>.</p>
 </li>
 <li><strong><a name="touple">What does "<code>touple index out of range</code>" mean?</a></strong>
 
@@ -403,7 +403,7 @@ If you get this error message for an unrelated reason, try contacting the mailin
 <li><strong><a name="crc">What does "<code>IO Error: CRC check failed</code>" mean?</a></strong>
 
 <p>This error message means that a 
-<a href="http://en.wikipedia.org/wiki/Cyclic_redundancy_check">Cyclic Redudancy 
+<a href="https://en.wikipedia.org/wiki/Cyclic_redundancy_check">Cyclic Redundancy
 Check</a> failed during some operation, most likely while gzip'ing or 
 un-gzip'ing a file. Possible causes of this error include an incomplete 
 gzip operation, and hardware failure. A brute-force way to recover from this 
@@ -412,7 +412,7 @@ all of your past increments. A better approach may be to delete the particular
 file that is causing the problem. A command like:<br><br>
 <code>$ find rdiff-backup-data -type f -name \*.gz -print0 | xargs -0r gzip --test</code><br><br>
 will find the failing file. For more information on this approach, see this 
-mailing list post: <a href="http://lists.nongnu.org/archive/html/rdiff-backup-users/2007-11/msg00008.html">http://lists.nongnu.org/archive/html/rdiff-backup-users/2007-11/msg00008.html</a>.</p>
+mailing list post: <a href="https://lists.nongnu.org/archive/html/rdiff-backup-users/2007-11/msg00008.html">https://lists.nongnu.org/archive/html/rdiff-backup-users/2007-11/msg00008.html</a>.</p>
 </li>
 
 <li><strong><a name="badindex">What does "<code>AssertionError: Bad index order</code>" mean?</a></strong>
@@ -421,11 +421,11 @@ mailing list post: <a href="http://lists.nongnu.org/archive/html/rdiff-backup-us
 rdiff-backup is running. Possible ways of dealing with this situation  include 
 implementing filesystem snapshots using the volume manager, excluding the 
 offending directory, or suspending the process that is changing the directory. 
-After the text "Bad index order", the error messge will indicate which files 
+After the text "Bad index order", the error message will indicate which files 
 have caused the problem.
 </p>
 
-<p>If you get this message for an unreleated reason, try contacting the mailing 
+<p>If you get this message for an unrelated reason, try contacting the mailing 
 list.</p>
 
 </li>

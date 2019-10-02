@@ -80,7 +80,7 @@ def VersionedCopy(source, dest, munge_date = 0):
 	outbuf = re.sub("\$version", Version, inbuf)
 	if outbuf == inbuf: assert 0, "No $version string replaced"
 	assert not re.search("\$version", outbuf), \
-		   "Some $version strings not repleased in %s" % (source,)
+		   "Some $version strings not replaced in %s" % (source,)
 
 	if munge_date:
 		inbuf = outbuf

@@ -22,12 +22,12 @@
 
 import os, sys, re, getopt
 from rdiff_backup import connection, regress, rpath, Globals, restore, \
-	 Time, lazy, FilenameMapping, robust
+	 Time, FilenameMapping, robust
 
 begin_time = None # Parse statistics at or after this time...
 end_time = None # ... and at or before this time (epoch seconds)
 min_ratio = .05 # report only files/directories over this number
-separator = "\n" # The line separator in file_statistics file
+separator = b"\n" # The line separator in file_statistics file
 quiet = False # Suppress the "Processing statistics from session ..." lines
 
 def parse_args():
@@ -41,7 +41,7 @@ def parse_args():
 		if opt == "--begin-time": begin_time = Time.genstrtotime(arg)
 		elif opt == "--end-time": end_time = Time.genstrtotime(arg)
 		elif opt == "--minimum-ratio": min_ratio = float(arg)
-		elif opt == "--null-separator": separator = '\0'
+		elif opt == "--null-separator": separator = b'\0'
 		elif opt == "--quiet": quiet = True
 		else: assert 0
 
@@ -52,14 +52,14 @@ def parse_args():
 				 % (sys.argv[0],))
 
 	Globals.rbdir = rpath.RPath(Globals.local_connection,
-								os.path.join(args[0], 'rdiff-backup-data'))
+								os.path.join(os.fsencode(args[0]), b'rdiff-backup-data'))
 	if not Globals.rbdir.isdir():
-		sys.exit("Directory %s not found" % (Globals.rbdir.path,))
+		sys.exit("Directory %a not found" % (Globals.rbdir.path,))
 	if len(sys.argv) == 3: tag = sys.argv[2]
 
 def system(cmd):
 	sys.stdout.flush()
-	if os.system(cmd): sys.exit("Error running command '%s'\n" % (cmd,))
+	if os.system(cmd): sys.exit("Error running command '%a'\n" % (cmd,))
 
 
 class StatisticsRPaths:
@@ -95,14 +95,14 @@ class StatisticsRPaths:
 		for time in keylist:
 			if time in filestat_dict:
 				result.append((session_dict[time], filestat_dict[time]))
-			else: sys.stderr.write("No file_statistics to match %s\n" %
+			else: sys.stderr.write("No file_statistics to match %a\n" %
 								   (session_dict[time].path,))
 		return result
 
 def print_session_statistics(stat_rpaths):
 	print("Session statistics:")
-	system('rdiff-backup --calculate-average "' +
-		   '" "'.join([inc.path for inc in stat_rpaths.session_rps]) + '"')
+	system(b'rdiff-backup --calculate-average "' +
+		   b'" "'.join([inc.path for inc in stat_rpaths.session_rps]) + b'"')
 
 
 class FileStatisticsTree:
@@ -124,7 +124,7 @@ class FileStatisticsTree:
 		total_children = {}
 		mine = dict([(child.nametuple, child) for child in myfs.children])
 		others = dict([(child.nametuple, child) for child in otherfs.children])
-		for name in mine.keys() + others.keys(): # Remove duplicates
+		for name in list(mine.keys()) + list(others.keys()):  # Remove duplicates
 			if name not in total_children:
 				total_children[name] = (mine.get(name), others.get(name))
 
@@ -176,8 +176,8 @@ class FileStatisticsTree:
 		"""Print the top directories in sorted order"""
 		def print_line(fs, val):
 			percentage = float(val)/fs_func(self.fs_root) * 100
-			path = fs.nametuple and '/'.join(fs.nametuple) or '.'
-			print('%s (%02.1f%%)' % (path, percentage))
+			path = fs.nametuple and b'/'.join(fs.nametuple) or b'.'
+			print('%s (%02.1f%%)' % (path.decode(errors='replace'), percentage))
 
 		s = "Top directories by %s (percent of total)" % (label,)
 		print("\n%s\n%s" % (s, ('-'*len(s))))
@@ -195,10 +195,10 @@ def make_fst(session_rp, filestat_rp):
 	"""
 	def get_ss_dict():
 		"""Parse session statistics file and return dictionary with ss data"""
-		fileobj = session_rp.open('r', session_rp.isinccompressed())
+		fileobj = session_rp.open('rb', session_rp.isinccompressed())
 		return_val = {}
 		for line in fileobj:
-			if line.startswith('#'): continue
+			if line.startswith(b'#'): continue
 			comps = line.split()
 			if len(comps) < 2:
 				sys.stderr.write("Unable to parse session statistics line: "
@@ -215,32 +215,32 @@ def make_fst(session_rp, filestat_rp):
 
 		"""
 		def get_min(attrib): return min_ratio*session_dict[attrib]
-		min_changed = min_ratio*(session_dict['NewFiles'] +
-				session_dict['ChangedFiles'] + session_dict['NewFiles'])
-		return FileStat((), min_changed, get_min('SourceFileSize'),
-						get_min('IncrementFileSize'))
+		min_changed = min_ratio*(session_dict[b'NewFiles'] +
+				session_dict[b'ChangedFiles'] + session_dict[b'NewFiles'])
+		return FileStat((), min_changed, get_min(b'SourceFileSize'),
+						get_min(b'IncrementFileSize'))
 
 	def yield_fs_objs(filestatsobj):
 		"""Iterate FileStats by processing file_statistics fileobj"""
-		r = re.compile("^(.*) ([0-9]+) ([0-9]+|NA) ([0-9]+|NA) "
-					   "([0-9]+|NA)%s?$" % (separator,))
+		r = re.compile(b"^(.*) ([0-9]+) ([0-9]+|NA) ([0-9]+|NA) "
+					   b"([0-9]+|NA)%b?$" % (separator,))
 		for line in filestatsobj:
-			if line.startswith('#'): continue
+			if line.startswith(b'#'): continue
 			match = r.match(line)
 			if not match:
-				sys.stderr.write("Error parsing line: %s\n" % (line,))
+				sys.stderr.write("Error parsing line: %a\n" % (line,))
 				continue
 
 			filename = match.group(1)
-			if filename == '.': nametuple = ()
-			else: nametuple = tuple(filename.split('/'))
+			if filename == b'.': nametuple = ()
+			else: nametuple = tuple(filename.split(b'/'))
 
 			sourcesize_str = match.group(3)
-			if sourcesize_str == 'NA': sourcesize = 0
+			if sourcesize_str == b'NA': sourcesize = 0
 			else: sourcesize = int(sourcesize_str)
 
 			incsize_str = match.group(5)
-			if incsize_str == 'NA': incsize = 0
+			if incsize_str == b'NA': incsize = 0
 			else: incsize = int(incsize_str)
 
 			yield FileStat(nametuple, int(match.group(2)), sourcesize, incsize)
@@ -308,8 +308,7 @@ def make_fst(session_rp, filestat_rp):
 	cutoff_fs = get_cutoff_fs(get_ss_dict())
 	filestat_fileobj = ReadlineBuffer(filestat_rp)
 	accumulated_iter = accumulate_fs(yield_fs_objs(filestat_fileobj))
-	important_iter = lazy.Iter.filter(lambda fs: fs >= cutoff_fs,
-									  accumulated_iter)
+	important_iter = filter(lambda fs: fs >= cutoff_fs, accumulated_iter)
 	trimmed_tree = make_root_tree(important_iter)
 	return FileStatisticsTree(cutoff_fs, trimmed_tree)
 
@@ -382,12 +381,12 @@ class ReadlineBuffer:
 	blocksize = 65536
 	def __init__(self, rp):
 		"""Initialize with rpath"""
-		self.buffer = ['']
+		self.buffer = [b'']
 		self.at_end = 0
-		
+
 		if rp.isincfile():
-			self.fileobj = rp.open('r', rp.isinccompressed())
-		else: self.fileobj = rp.open('r')
+			self.fileobj = rp.open('rb', rp.isinccompressed())
+		else: self.fileobj = rp.open('rb')
 
 	def __iter__(self):
 		"""Yield the lines in self.fileobj"""
@@ -402,7 +401,7 @@ class ReadlineBuffer:
 		"""Read next block from fileobj, split and add to bufferlist"""
 		block = self.fileobj.read(self.blocksize)
 		if block:
-			split = block.decode().split(separator)
+			split = block.split(separator)
 			self.buffer[0] += split[0]
 			self.buffer.extend(split[1:])
 		else: self.at_end = 1
