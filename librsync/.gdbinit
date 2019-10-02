@@ -1,1 +1,0 @@
-set print pretty
