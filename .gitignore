@@ -13,3 +13,6 @@ MANIFEST
 # setup.py installation files
 dist/*.egg
 src/rdiff_backup.egg-info/
+
+# compiled librsync
+librsync-bin
