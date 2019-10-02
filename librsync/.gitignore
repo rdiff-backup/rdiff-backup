@@ -4,7 +4,6 @@ CMakeCache.txt
 CTestTestfile.cmake
 config.h
 *.cbp
-librsync-config.h
 librsync.so*
 librsync.a
 librsync*.dylib
@@ -31,6 +30,10 @@ Testing
 rsync.dll
 rsync.dll.manifest
 install_manifest
+
+# CMake generated Doxygen files
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake
 
 # Editor temp files
 .sw?

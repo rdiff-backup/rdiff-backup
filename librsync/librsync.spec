@@ -1,7 +1,7 @@
-# This RPM supposes that you download the release zip file from github to SOURCES directory as v2.0.2.zip
+# This RPM supposes that you download the release zip file from github to SOURCES directory as v2.1.0.zip
 
 %define name librsync
-%define version 2.0.2
+%define version 2.1.0
 %define gitsource https://github.com/librsync/%{name}/archive/v%{version}.zip
 
 Summary:  	Rsync libraries
@@ -72,6 +72,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/%{name}*
 
 %changelog
+* Sat Aug 17 2019 Donovan Baarda <abo@minkirri.apana.org.au>
+- Updated SPEC file for librsync 2.1.0
 * Tue Feb 27 2018 Orsiris de Jong <ozy@netpower>
 - Updated SPEC file for librsync 2.0.2
 - Fixed cmake paths for RHEL 7 64 bits

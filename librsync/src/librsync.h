@@ -27,8 +27,8 @@
                                |        -- Henrik Ibsen
                                */
 
-/** \file librsync.h Public header for librsync. */
-
+/** \file librsync.h
+ * Public header for librsync. */
 #ifndef _RSYNC_H
 #  define _RSYNC_H
 
@@ -40,6 +40,7 @@
 #  include <stdint.h>
 #endif
 #  include <time.h>
+#  include "librsync_export.h"
 
 #  ifdef __cplusplus
 extern "C" {
@@ -48,10 +49,7 @@ extern "C" {
 /** Library version string.
  *
  * \sa \ref versioning */
-extern char const rs_librsync_version[];
-
-/** Summary of the licence for librsync. */
-extern char const rs_licence_string[];
+LIBRSYNC_EXPORT extern char const rs_librsync_version[];
 
 typedef uint8_t rs_byte_t;
 typedef intmax_t rs_long_t;
@@ -93,7 +91,28 @@ typedef enum {
      * The four-byte literal \c "rs\x017".
      *
      * \sa rs_sig_begin() */
-    RS_BLAKE2_SIG_MAGIC = 0x72730137
+    RS_BLAKE2_SIG_MAGIC = 0x72730137,
+
+    /** A signature file with RabinKarp rollsum and MD4 hash.
+     *
+     * Uses a faster/safer rollsum, but still strongly discouraged because of
+     * MD4's security vulnerability. Supported since librsync 2.2.0.
+     *
+     * The four-byte literal \c "rs\x01F".
+     *
+     * \sa rs_sig_begin() */
+    RS_RK_MD4_SIG_MAGIC = 0x72730146,
+
+    /** A signature file with RabinKarp rollsum and BLAKE2 hash.
+     *
+     * Uses a faster/safer rollsum together with the safer BLAKE2 hash. This is
+     * the recommended default supported since librsync 2.2.0.
+     *
+     * The four-byte literal \c "rs\x01G".
+     *
+     * \sa rs_sig_begin() */
+    RS_RK_BLAKE2_SIG_MAGIC = 0x72730147,
+
 } rs_magic_number;
 
 /** Log severity levels.
@@ -112,7 +131,7 @@ typedef enum {
     RS_LOG_DEBUG = 7            /**< Debug-level messages */
 } rs_loglevel;
 
-/** \typedef rs_trace_fn_t Callback to write out log messages.
+/** Callback to write out log messages.
  *
  * \param level a syslog level.
  *
@@ -124,19 +143,19 @@ typedef void rs_trace_fn_t(rs_loglevel level, char const *msg);
 /** Set the least important message severity that will be output.
  *
  * \sa \ref api_trace */
-void rs_trace_set_level(rs_loglevel level);
+LIBRSYNC_EXPORT void rs_trace_set_level(rs_loglevel level);
 
 /** Set trace callback.
  *
  * \sa \ref api_trace */
-void rs_trace_to(rs_trace_fn_t *);
+LIBRSYNC_EXPORT void rs_trace_to(rs_trace_fn_t *);
 
 /** Default trace callback that writes to stderr.
  *
  * Implements ::rs_trace_fn_t, and may be passed to rs_trace_to().
  *
  * \sa \ref api_trace */
-void rs_trace_stderr(rs_loglevel level, char const *msg);
+LIBRSYNC_EXPORT void rs_trace_stderr(rs_loglevel level, char const *msg);
 
 /** Check whether the library was compiled with debugging trace.
  *
@@ -145,21 +164,22 @@ void rs_trace_stderr(rs_loglevel level, char const *msg);
  * If this returns false, then trying to turn trace on will achieve nothing.
  *
  * \sa \ref api_trace */
-int rs_supports_trace(void);
+LIBRSYNC_EXPORT int rs_supports_trace(void);
 
 /** Convert \p from_len bytes at \p from_buf into a hex representation in \p
  * to_buf, which must be twice as long plus one byte for the null terminator. */
-void rs_hexify(char *to_buf, void const *from_buf, int from_len);
+LIBRSYNC_EXPORT void rs_hexify(char *to_buf, void const *from_buf,
+                               int from_len);
 
 /** Decode a base64 buffer in place.
  *
  * \returns The number of binary bytes. */
-size_t rs_unbase64(char *s);
+LIBRSYNC_EXPORT size_t rs_unbase64(char *s);
 
 /** Encode a buffer as base64. */
-void rs_base64(unsigned char const *buf, int n, char *out);
+LIBRSYNC_EXPORT void rs_base64(unsigned char const *buf, int n, char *out);
 
-/** \enum rs_result Return codes from nonblocking rsync operations.
+/** Return codes from nonblocking rsync operations.
  *
  * \sa rs_strerror() \sa api_callbacks */
 typedef enum rs_result {
@@ -187,7 +207,7 @@ typedef enum rs_result {
 } rs_result;
 
 /** Return an English description of a ::rs_result value. */
-char const *rs_strerror(rs_result r);
+LIBRSYNC_EXPORT char const *rs_strerror(rs_result r);
 
 /** Performance statistics from a librsync encoding or decoding operation.
  *
@@ -215,22 +235,20 @@ typedef struct rs_stats {
     time_t start, end;
 } rs_stats_t;
 
-/** \typedef struct rs_mdfour rs_mdfour_t
- *
- * \brief MD4 message-digest accumulator.
+/** MD4 message-digest accumulator.
  *
  * \sa rs_mdfour(), rs_mdfour_begin(), rs_mdfour_update(), rs_mdfour_result() */
 typedef struct rs_mdfour rs_mdfour_t;
 
-extern const int RS_MD4_SUM_LENGTH, RS_BLAKE2_SUM_LENGTH;
+LIBRSYNC_EXPORT extern const int RS_MD4_SUM_LENGTH, RS_BLAKE2_SUM_LENGTH;
 
 #  define RS_MAX_STRONG_SUM_LENGTH 32
 
 typedef uint32_t rs_weak_sum_t;
 typedef unsigned char rs_strong_sum_t[RS_MAX_STRONG_SUM_LENGTH];
 
-void rs_mdfour(unsigned char *out, void const *in, size_t);
-void rs_mdfour_begin( /* @out@ */ rs_mdfour_t *md);
+LIBRSYNC_EXPORT void rs_mdfour(unsigned char *out, void const *in, size_t);
+LIBRSYNC_EXPORT void rs_mdfour_begin( /* @out@ */ rs_mdfour_t *md);
 
 /** Feed some data into the MD4 accumulator.
  *
@@ -239,8 +257,9 @@ void rs_mdfour_begin( /* @out@ */ rs_mdfour_t *md);
  * \param in_void Data to add.
  *
  * \param n Number of bytes fed in. */
-void rs_mdfour_update(rs_mdfour_t *md, void const *in_void, size_t n);
-void rs_mdfour_result(rs_mdfour_t *md, unsigned char *out);
+LIBRSYNC_EXPORT void rs_mdfour_update(rs_mdfour_t *md, void const *in_void,
+                                      size_t n);
+LIBRSYNC_EXPORT void rs_mdfour_result(rs_mdfour_t *md, unsigned char *out);
 
 /** Return a human-readable representation of statistics.
  *
@@ -256,21 +275,25 @@ void rs_mdfour_result(rs_mdfour_t *md, unsigned char *out);
  * \return \p buf.
  *
  * \sa \ref api_stats */
-char *rs_format_stats(rs_stats_t const *stats, char *buf, size_t size);
+LIBRSYNC_EXPORT char *rs_format_stats(rs_stats_t const *stats, char *buf,
+                                      size_t size);
 
 /** Write statistics into the current log as text.
  *
  * \sa \ref api_stats \sa \ref api_trace */
-int rs_log_stats(rs_stats_t const *stats);
+LIBRSYNC_EXPORT int rs_log_stats(rs_stats_t const *stats);
 
-/** \typedef rs_signature_t */
+/** The signature datastructure type. */
 typedef struct rs_signature rs_signature_t;
 
+/** Log the rs_signature_delta match stats. */
+LIBRSYNC_EXPORT void rs_signature_log_stats(rs_signature_t const *sig);
+
 /** Deep deallocation of checksums. */
-void rs_free_sumset(rs_signature_t *);
+LIBRSYNC_EXPORT void rs_free_sumset(rs_signature_t *);
 
 /** Dump signatures to the log. */
-void rs_sumset_dump(rs_signature_t const *);
+LIBRSYNC_EXPORT void rs_sumset_dump(rs_signature_t const *);
 
 /** Description of input and output buffers.
  *
@@ -364,7 +387,7 @@ typedef struct rs_job rs_job_t;
  * there, without trying to accumulate anything else.
  *
  * \sa \ref api_streaming */
-rs_result rs_job_iter(rs_job_t *job, rs_buffers_t *buffers);
+LIBRSYNC_EXPORT rs_result rs_job_iter(rs_job_t *job, rs_buffers_t *buffers);
 
 /** Type of application-supplied function for rs_job_drive().
  *
@@ -374,14 +397,15 @@ typedef rs_result rs_driven_cb(rs_job_t *job, rs_buffers_t *buf,
 
 /** Actively process a job, by making callbacks to fill and empty the buffers
  * until the job is done. */
-rs_result rs_job_drive(rs_job_t *job, rs_buffers_t *buf, rs_driven_cb in_cb,
-                       void *in_opaque, rs_driven_cb out_cb, void *out_opaque);
+LIBRSYNC_EXPORT rs_result rs_job_drive(rs_job_t *job, rs_buffers_t *buf,
+                                       rs_driven_cb in_cb, void *in_opaque,
+                                       rs_driven_cb out_cb, void *out_opaque);
 
 /** Return a pointer to the statistics in a job. */
-const rs_stats_t *rs_job_statistics(rs_job_t *job);
+LIBRSYNC_EXPORT const rs_stats_t *rs_job_statistics(rs_job_t *job);
 
 /** Deallocate job state. */
-rs_result rs_job_free(rs_job_t *);
+LIBRSYNC_EXPORT rs_result rs_job_free(rs_job_t *);
 
 /** Start generating a signature.
  *
@@ -398,14 +422,15 @@ rs_result rs_job_free(rs_job_t *);
  * at zero to get the full strength.
  *
  * \sa rs_sig_file() */
-rs_job_t *rs_sig_begin(size_t new_block_len, size_t strong_sum_len,
-                       rs_magic_number sig_magic);
+LIBRSYNC_EXPORT rs_job_t *rs_sig_begin(size_t new_block_len,
+                                       size_t strong_sum_len,
+                                       rs_magic_number sig_magic);
 
 /** Prepare to compute a streaming delta.
  *
  * \todo Add a version of this that takes a ::rs_magic_number controlling the
  * delta format. */
-rs_job_t *rs_delta_begin(rs_signature_t *);
+LIBRSYNC_EXPORT rs_job_t *rs_delta_begin(rs_signature_t *);
 
 /** Read a signature from a file into an ::rs_signature structure in memory.
  *
@@ -414,12 +439,12 @@ rs_job_t *rs_delta_begin(rs_signature_t *);
  *
  * \note After loading the signatures, you must call \ref rs_build_hash_table()
  * before you can use them. */
-rs_job_t *rs_loadsig_begin(rs_signature_t **);
+LIBRSYNC_EXPORT rs_job_t *rs_loadsig_begin(rs_signature_t **);
 
 /** Call this after loading a signature to index it.
  *
  * Use rs_free_sumset() to release it after use. */
-rs_result rs_build_hash_table(rs_signature_t *sums);
+LIBRSYNC_EXPORT rs_result rs_build_hash_table(rs_signature_t *sums);
 
 /** Callback used to retrieve parts of the basis file.
  *
@@ -450,17 +475,50 @@ typedef rs_result rs_copy_cb(void *opaque, rs_long_t pos, size_t *len,
  * \todo Implement COPY commands.
  *
  * \sa rs_patch_file() \sa \ref api_streaming */
-rs_job_t *rs_patch_begin(rs_copy_cb * copy_cb, void *copy_arg);
+LIBRSYNC_EXPORT rs_job_t *rs_patch_begin(rs_copy_cb * copy_cb, void *copy_arg);
 
 #  ifndef RSYNC_NO_STDIO_INTERFACE
 #    include <stdio.h>
+
+/** Open a file with special handling for stdin or stdout.
+ *
+ * This provides a platform independent way to open large binary files. A
+ * filename "" or "-" means use stdin for reading, or stdout for writing.
+ *
+ * \param filename - The filename to open.
+ *
+ * \param mode - fopen style mode string.
+ *
+ * \param force - bool to force overwriting of existing files. */
+LIBRSYNC_EXPORT FILE *rs_file_open(char const *filename, char const *mode,
+                                   int force);
+
+/** Close a file with special handling for stdin or stdout.
+ *
+ * This will not actually close the file if it is stdin or stdout.
+ *
+ * \param file - the stdio file to close. */
+LIBRSYNC_EXPORT int rs_file_close(FILE *file);
+
+/** Get the size of a file.
+ *
+ * This provides a platform independent way to get the size of large files. It
+ * will return -1 if the size cannot be determined because it is not a regular
+ * file.
+ *
+ * \param file - the stdio file to get the size of. */
+LIBRSYNC_EXPORT rs_long_t rs_file_size(FILE *file);
+
+/** ::rs_copy_cb that reads from a stdio file. */
+LIBRSYNC_EXPORT rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len,
+                                          void **buf);
 
 /** Buffer sizes for file IO.
  *
  * The default 0 means use the recommended buffer size for the operation being
  * performed, any other value will override the recommended sizes. You probably
  * only need to change these in testing. */
-extern int rs_inbuflen, rs_outbuflen;
+LIBRSYNC_EXPORT extern int rs_inbuflen, rs_outbuflen;
 
 /** Generate the signature of a basis file, and write it out to another.
  *
@@ -477,9 +535,10 @@ extern int rs_inbuflen, rs_outbuflen;
  * \param stats Optional pointer to receive statistics.
  *
  * \sa \ref api_whole */
-rs_result rs_sig_file(FILE *old_file, FILE *sig_file, size_t block_len,
-                      size_t strong_len, rs_magic_number sig_magic,
-                      rs_stats_t *stats);
+LIBRSYNC_EXPORT rs_result rs_sig_file(FILE *old_file, FILE *sig_file,
+                                      size_t block_len, size_t strong_len,
+                                      rs_magic_number sig_magic,
+                                      rs_stats_t *stats);
 
 /** Load signatures from a signature file into memory.
  *
@@ -490,23 +549,21 @@ rs_result rs_sig_file(FILE *old_file, FILE *sig_file, size_t block_len,
  * \param stats Optional pointer to receive statistics.
  *
  * \sa \ref api_whole */
-rs_result rs_loadsig_file(FILE *sig_file, rs_signature_t **sumset,
-                          rs_stats_t *stats);
-
-/** ::rs_copy_cb that reads from a stdio file. */
-rs_result rs_file_copy_cb(void *arg, rs_long_t pos, size_t *len, void **buf);
+LIBRSYNC_EXPORT rs_result rs_loadsig_file(FILE *sig_file,
+                                          rs_signature_t **sumset,
+                                          rs_stats_t *stats);
 
 /** Generate a delta between a signature and a new file into a delta file.
  *
  * \sa \ref api_whole */
-rs_result rs_delta_file(rs_signature_t *, FILE *new_file, FILE *delta_file,
-                        rs_stats_t *);
+LIBRSYNC_EXPORT rs_result rs_delta_file(rs_signature_t *, FILE *new_file,
+                                        FILE *delta_file, rs_stats_t *);
 
 /** Apply a patch, relative to a basis, into a new file.
  *
  * \sa \ref api_whole */
-rs_result rs_patch_file(FILE *basis_file, FILE *delta_file, FILE *new_file,
-                        rs_stats_t *);
+LIBRSYNC_EXPORT rs_result rs_patch_file(FILE *basis_file, FILE *delta_file,
+                                        FILE *new_file, rs_stats_t *);
 #  endif                        /* !RSYNC_NO_STDIO_INTERFACE */
 
 #  ifdef __cplusplus

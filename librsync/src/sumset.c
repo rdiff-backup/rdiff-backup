@@ -33,9 +33,6 @@
 #include "util.h"
 #include "trace.h"
 
-const int RS_MD4_SUM_LENGTH = 16;
-const int RS_BLAKE2_SUM_LENGTH = 32;
-
 static void rs_block_sig_init(rs_block_sig_t *sig, rs_weak_sum_t weak_sum,
                               rs_strong_sum_t *strong_sum, int strong_len)
 {
@@ -84,6 +81,9 @@ static inline int rs_block_match_cmp(rs_block_match_t *match,
                   match->signature->strong_sum_len);
 }
 
+/* Disable mix32() in the hashtable because RabinKarp doesn't need it. We
+   manually apply mix32() to rollsums before using them in the hashtable. */
+#define HASHTABLE_NMIX32
 /* Instantiate hashtable for rs_block_sig and rs_block_match. */
 #define ENTRY rs_block_sig
 #define MATCH rs_block_match
@@ -124,12 +124,14 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len,
     int max_strong_len;
 
     /* Check and set default arguments. */
-    magic = magic ? magic : RS_BLAKE2_SIG_MAGIC;
+    magic = magic ? magic : RS_RK_BLAKE2_SIG_MAGIC;
     switch (magic) {
     case RS_BLAKE2_SIG_MAGIC:
+    case RS_RK_BLAKE2_SIG_MAGIC:
         max_strong_len = RS_BLAKE2_SUM_LENGTH;
         break;
     case RS_MD4_SIG_MAGIC:
+    case RS_RK_MD4_SIG_MAGIC:
         max_strong_len = RS_MD4_SUM_LENGTH;
         break;
     default:
@@ -149,7 +151,7 @@ rs_result rs_signature_init(rs_signature_t *sig, int magic, int block_len,
     /* Calculate the number of blocks if we have the signature file size. */
     /* Magic+header is 12 bytes, each block thereafter is 4 bytes
        weak_sum+strong_sum_len bytes */
-    sig->size = (int)(sig_fsize ? (sig_fsize - 12) / (4 + strong_len) : 0);
+    sig->size = (int)(sig_fsize < 12 ? 0 : (sig_fsize - 12) / (4 + strong_len));
     if (sig->size)
         sig->block_sigs =
             rs_alloc(sig->size * rs_block_sig_size(sig),
@@ -177,6 +179,9 @@ rs_block_sig_t *rs_signature_add_block(rs_signature_t *sig,
 {
     rs_block_sig_t *b;
     rs_signature_check(sig);
+    /* Apply mix32() to rollsum weaksums to improve their distribution. */
+    if (rs_signature_weaksum_kind(sig) == RS_ROLLSUM)
+        weak_sum = mix32(weak_sum);
     /* If block_sigs is full, allocate more space. */
     if (sig->count == sig->size) {
         sig->size = sig->size ? sig->size * 2 : 16;

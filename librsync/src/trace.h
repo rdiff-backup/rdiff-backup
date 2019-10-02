@@ -19,7 +19,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/** \file trace.h logging functions.
+/** \file trace.h
+ * logging functions.
  *
  * trace may be turned off.
  *
@@ -51,7 +52,7 @@
  * it's called. */
 
 void rs_log0(int level, char const *fn, char const *fmt, ...)
-    __attribute__ ((format(printf, 3, 4)));
+    __attribute__((format(printf, 3, 4)));
 
 #  ifdef DO_RS_TRACE
 #    define rs_trace(fmt, arg...) \
@@ -94,8 +95,7 @@ enum {
     RS_LOG_NONAME = 8           /**< \b Don't show function name in message. */
 };
 
-/** \macro rs_trace_enabled()
- *
+/** \def rs_trace_enabled()
  * Call this before putting too much effort into generating trace messages. */
 
 extern int rs_trace_level;

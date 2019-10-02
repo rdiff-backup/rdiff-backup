@@ -23,8 +23,8 @@ INCLUDE(CMakeDependentOption)
 include(GNUInstallDirs)
 
 set(LIBRSYNC_MAJOR_VERSION 2)
-set(LIBRSYNC_MINOR_VERSION 0)
-set(LIBRSYNC_PATCH_VERSION 3)
+set(LIBRSYNC_MINOR_VERSION 1)
+set(LIBRSYNC_PATCH_VERSION 1)
 
 set(LIBRSYNC_VERSION
   ${LIBRSYNC_MAJOR_VERSION}.${LIBRSYNC_MINOR_VERSION}.${LIBRSYNC_PATCH_VERSION})
@@ -109,7 +109,12 @@ check_type_size ( "unsigned long" SIZEOF_UNSIGNED_LONG )
 check_type_size ( "unsigned short" SIZEOF_UNSIGNED_SHORT )
 
 # Check for printf "%zu" size_t formatting support.
-if(CMAKE_CROSSCOMPILING)
+if(WIN32)
+  # CheckCSourceRuns checking for "%zu" succeeds but still gives warnings on win32.
+  set(HAVE_PRINTF_Z OFF)
+  message (STATUS "Compiling to Win32 - printf \"%zu\" size_t formatting support disabled")
+elseif(CMAKE_CROSSCOMPILING)
+  # CheckCSourceRuns doesn't work when cross-compiling.
   set(HAVE_PRINTF_Z ON)
   message (STATUS "Cross compiling - assuming printf \"%zu\" size_t formatting support")
 else()
@@ -214,7 +219,7 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 # Code tidy target to reformat code with indent.
-file(GLOB tidy_SRCS src/*.[ch])
+file(GLOB tidy_SRCS src/*.[ch] tests/*.[ch])
 set(TYPE_RE "(\\w+_t)")
 set(CAST_RE "(\\(${TYPE_RE}( \\*+)?\\))")
 add_custom_target(tidy
@@ -253,13 +258,24 @@ add_executable(rollsum_test
     tests/rollsum_test.c src/rollsum.c)
 add_test(NAME rollsum_test COMMAND rollsum_test)
 
+add_executable(rabinkarp_test
+    tests/rabinkarp_test.c)
+add_test(NAME rabinkarp_test COMMAND rabinkarp_test)
+
 add_executable(hashtable_test
     tests/hashtable_test.c src/hashtable.c)
 add_test(NAME hashtable_test COMMAND hashtable_test)
 
+add_executable(checksum_test
+    tests/checksum_test.c src/checksum.c src/rollsum.c src/mdfour.c ${blake2_SRCS})
+target_compile_options(checksum_test PRIVATE -DLIBRSYNC_STATIC_DEFINE)
+target_link_libraries(checksum_test ${blake2_LIBS})
+add_test(NAME checksum_test COMMAND checksum_test)
+
 add_executable(sumset_test
     tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c
     src/checksum.c src/rollsum.c src/mdfour.c src/hashtable.c ${blake2_SRCS})
+target_compile_options(sumset_test PRIVATE -DLIBRSYNC_STATIC_DEFINE)
 target_link_libraries(sumset_test ${blake2_LIBS})
 add_test(NAME sumset_test COMMAND sumset_test)
 
@@ -289,7 +305,7 @@ else (BUILD_RDIFF)
   set(LAST_TARGET rsync)
 endif (BUILD_RDIFF)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test hashtable_test sumset_test)
+add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test rabinkarp_test hashtable_test checksum_test sumset_test)
 
 
 enable_testing()
@@ -340,6 +356,10 @@ set(rsync_LIB_SRCS
     ${blake2_SRCS})
 
 add_library(rsync SHARED ${rsync_LIB_SRCS})
+# TODO: Enable this when GenerateExportHeader works more widely.
+# include(GenerateExportHeader)
+# generate_export_header(rsync BASE_NAME librsync
+#     EXPORT_FILE_NAME ${CMAKE_SOURCE_DIR}/src/librsync_export.h)
 target_link_libraries(rsync ${blake2_LIBS})
 
 # Optionally link zlib and bzip2 if
@@ -353,9 +373,15 @@ if (ENABLE_COMPRESSION)
   endif (ZLIB_FOUND AND BZIP2_FOUND)
 endif (ENABLE_COMPRESSION)
 
-set_target_properties(rsync PROPERTIES VERSION ${LIBRSYNC_VERSION}
-        SOVERSION ${LIBRSYNC_MAJOR_VERSION})
-install(TARGETS rsync ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION ${CMAKE_INSTALL_LIBDIR})
+set_target_properties(rsync PROPERTIES
+    VERSION ${LIBRSYNC_VERSION}
+    SOVERSION ${LIBRSYNC_MAJOR_VERSION}
+    C_VISIBILITY_PRESET hidden)
+install(TARGETS rsync ${INSTALL_TARGETS_DEFAULT_ARGS}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
 
 ########### next target ###############
@@ -372,15 +398,20 @@ if (BUILD_RDIFF)
     message (WARNING "Popt library is required for rdiff target")
   endif (POPT_FOUND)
 
-  install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS} DESTINATION ${CMAKE_INSTALL_BINDIR})
+  install(TARGETS rdiff ${INSTALL_TARGETS_DEFAULT_ARGS}
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
 endif (BUILD_RDIFF)
 
 
 ########### install files ###############
 
 install(FILES
-        src/librsync.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    src/librsync.h
+    src/librsync_export.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(FILES
         src/msvcstdint.h
@@ -389,10 +420,10 @@ install(FILES
 message (STATUS "CMAKE_C_FLAGS  = ${CMAKE_C_FLAGS}")
 
 install(FILES
-	doc/librsync.3
-	DESTINATION ${CMAKE_INSTALL_MANDIR}/man3)
+    doc/librsync.3
+    DESTINATION ${CMAKE_INSTALL_MANDIR}/man3)
 install(FILES
-	doc/rdiff.1
-	DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+    doc/rdiff.1
+    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
 # vim: shiftwidth=4 expandtab

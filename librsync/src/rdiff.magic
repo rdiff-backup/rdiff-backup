@@ -8,10 +8,18 @@
 
 0       belong          0x72730236      rdiff network-delta data
 
-0       belong          0x72730136      rdiff network-delta signature data (MD4,
+0       belong          0x72730136      rdiff network-delta signature data (Rollsum, MD4,
 >4      belong          x               block length=%d,
 >8      belong          x               signature strength=%d)
 
-0       belong          0x72730137      rdiff network-delta signature data (BLAKE2,
+0       belong          0x72730137      rdiff network-delta signature data (Rollsum, BLAKE2,
+>4      belong          x               block length=%d,
+>8      belong          x               signature strength=%d)
+
+0       belong          0x72730146      rdiff network-delta signature data (RabinKarp, MD4,
+>4      belong          x               block length=%d,
+>8      belong          x               signature strength=%d)
+
+0       belong          0x72730147      rdiff network-delta signature data (RabinKarp, BLAKE2,
 >4      belong          x               block length=%d,
 >8      belong          x               signature strength=%d)

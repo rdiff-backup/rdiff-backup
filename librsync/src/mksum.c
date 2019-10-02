@@ -20,7 +20,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/** \file mksum.c Generate file signatures.
+/** \file mksum.c
+ * Generate file signatures.
  *
  * Generating checksums is pretty easy, since we can always just process
  * whatever data is available. When a whole block has arrived, or we've reached
@@ -77,7 +78,7 @@ static rs_result rs_sig_do_block(rs_job_t *job, const void *block, size_t len)
     rs_weak_sum_t weak_sum;
     rs_strong_sum_t strong_sum;
 
-    weak_sum = rs_calc_weak_sum(block, len);
+    weak_sum = rs_signature_calc_weak_sum(sig, block, len);
     rs_signature_calc_strong_sum(sig, block, len, &strong_sum);
     rs_squirt_n4(job, weak_sum);
     rs_tube_write(job, strong_sum, sig->strong_sum_len);

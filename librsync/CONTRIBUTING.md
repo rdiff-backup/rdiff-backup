@@ -35,17 +35,18 @@ The preferred style for docbook comments is javadoc with autobrief as
 follows;
 
 ```C
-/** \file file.c Brief summary paragraph.
+/** /file file.c
+  * Brief summary paragraph.
   *
   * With blank line paragraph delimiters and leading stars.
   *
-  * \param foo parameter descriptions...
+  * /param foo parameter descriptions...
   *
-  * \param bar ...in separate blank-line delimited paragraphs.
+  * /param bar ...in separate blank-line delimited paragraphs.
   *
-  * Example:\code
+  * Example:/code
   *  code blocks that will never be reformated.
-  * \endcode
+  * /endcode
   *
   * Without blank-line comment delimiters. */
 
@@ -103,13 +104,25 @@ Please try to update docs and tests in parallel with code changes.
 If you are making a new tarball release of librsync, follow this checklist:
 
 * NEWS.md - make sure the top "Changes in X.Y.Z" is correct, and the date is
-  correct.
+  correct. Make sure the changes since the last release are documented.
 
 * `CMakeLists.txt` - version is correct.
 
 * `librsync.spec` - make sure version and URL are right.
 
-* Run `make all doc check` in a clean checkout of the release tag.
+* Run `make all doc check` in a clean checkout of the release tag. Also check
+  the travis-cl check status of the last commit on github.
+
+* Draft a new release on github, typing in the release details including an
+  overview, included changes, and known issues. The overview should give an
+  indication of the magnitude of the changes and their impact, and the
+  relative urgency to upgrade. The included changes should come from the
+  NEWS.md for the release. It's probably easiest to copy and edit the previous
+  release.
+
+* After creating the release, download the tar.gz version, edit the release,
+  and re-upload it. This ensures that the release includes a stable tarball
+  (See https://github.com/librsync/librsync/issues/146 for details).
 
 Test results for builds of public github branches are at
 https://travis-ci.org/librsync/librsync.

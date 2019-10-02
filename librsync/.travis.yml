@@ -32,24 +32,24 @@ matrix:
       script:
         - make check doc
 
-    - dist: precise
+    - dist: xenial
       sudo: false
 
     - compiler: clang
-      dist: trusty
+      dist: xenial
 
     - compiler: clang
       env: CMAKE_GENERATOR="-G Ninja"
-      dist: trusty
+      dist: xenial
       script:
         - ninja check doc
 
-    - dist: precise
+    - dist: xenial
       sudo: false
       env: CMAKE_OPTIONS="-D BUILD_RDIFF=OFF"
 
 
-# Docs are tested on Trusty with Ninja, and on OSX (which might have a more
-# recent Doxygen.)
+# All tests are on xenial and OSX (which probably has older versions of
+# everything).
 
 # vim: shiftwidth=2 expandtab

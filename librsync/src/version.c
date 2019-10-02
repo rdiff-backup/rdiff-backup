@@ -20,5 +20,6 @@
  */
 
 #include "config.h"
+#include "librsync_export.h"
 
-char const rs_librsync_version[] = (PACKAGE " " VERSION);
+LIBRSYNC_EXPORT char const rs_librsync_version[] = (PACKAGE " " VERSION);

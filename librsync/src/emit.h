@@ -19,7 +19,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/** \file emit.h How to emit commands to the client. */
+/** \file emit.h
+ * How to emit commands to the client. */
 
 void rs_emit_delta_header(rs_job_t *);
 void rs_emit_literal_cmd(rs_job_t *, int len);

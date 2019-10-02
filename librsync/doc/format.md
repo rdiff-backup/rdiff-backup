@@ -12,7 +12,8 @@ All integers are big-endian.
 
 ## Magic numbers
 
-All librsync files start with a `uint32` magic number identifying them. These are declared in `librsync.h`:
+All librsync files start with a `uint32` magic number identifying them.
+These are declared in `librsync.h`:
 
 ```
 /** A delta file. At present, there's only one delta format. **/
@@ -65,4 +66,27 @@ Each signature block format is (see `rs_sig_do_block`):
 
 ## Delta files
 
-TODO(https://github.com/librsync/librsync/issues/46): Document delta format.
+Deltas consist of the delta magic constant `RS_DELTA_MAGIC` followed by a
+series of commands. Commands tell the patch logic how to construct the result
+file (new version) from the basis file (old version).
+
+There are three kinds of commands: the literal command, the copy command, and
+the end command. A command consists of a single byte followed by zero or more
+arguments. The number and size of the arguments are defined in `prototab.c`.
+
+A literal command describes data not present in the basis file. It has one
+argument: `length`. The format is:
+
+    u8 command; // in the range 0x41 through 0x44 inclusive
+    u8[arg1_len] length;
+    u8[length] data; // new data to append
+
+A copy command describes a range of data in the basis file. It has two
+arguments: `start` and `length`. The format is:
+
+    u8 command; // in the range 0x45 through 0x54 inclusive
+    u8[arg1_len] start; // offset in the basis to begin copying data
+    u8[arg2_len] length; // number of bytes to copy from the basis
+
+The end command indicates the end of the delta file. It consists of a single
+null byte and has no arguments.

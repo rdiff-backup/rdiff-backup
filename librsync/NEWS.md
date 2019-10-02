@@ -1,8 +1,54 @@
 # librsync NEWS
 
-## librsync 2.0.3
+## librsync 2.1.1
 
 NOT RELEASED YET
+
+ * Fix MSVC builds by adding missing LIBRSYNC_EXPORT to variables in
+   librsync.h, add -DLIBRSYNC_STATIC_DEFINE to the sumset_test target,
+   and correctly install .dll files in the bin directory.
+   (adsun701, https://github.com/librsync/librsync/pull/161)
+
+ * Add RabinKarp rollsum support and make it the default. RabinKarp is a much
+   better rolling hash, which reduces the risk of hash collision corruption
+   and speeds up delta calculations. The rdiff cmd gets a new `-R
+   (rollsum|rabinkarp)` argument with the default being `rabinkarp`, Use `-R
+   rollsum` to generate backwards-compatible signatures. (dbaarda,
+   https://github.com/librsync/librsync/issues/3)
+
+ * Use single-byte literal commands for small inserts in deltas. This makes
+   each small insert use 1 less byte in deltas. (dbaarda,
+   https://github.com/librsync/librsync/issues/120)
+
+ * Change rs_file_size() to report -1 instead of 0 for unknown file sizes (not
+   a regular file). (dbaarda https://github.com/librsync/librsync/pull/168)
+
+## librsync 2.1.0
+
+Released 2019-08-19
+
+ * Bump minor version from 2.0.3 to 2.1.0 to reflect additions to librsync.h.
+
+ * Fix exporting of private symbols from librsync library. Add export of
+   useful large file functions `rs_file_open()`, `rs_file_close()`, and
+   `rs_file_size()` to librsync.h. Add export of `rs_signature_log_stats()` to
+   log signature hashtable hit/miss stats. Improve rdiff error output.
+   (dbaarda, https://github.com/librsync/librsync/issues/130)
+
+ * Updated release process to include stable tarballs. (dbaarda,
+   https://github.com/librsync/librsync/issues/146)
+
+ * Remove redundant and broken `--paranoia` argument from rdiff. (dbaarda,
+   https://github.com/librsync/librsync/issues/155)
+
+ * Fix memory leak of `rs_signature_t->block_sigs` when freeing signatures.
+   (telles-simbiose, https://github.com/librsync/librsync/pull/147)
+
+ * Document delta file format. (zmj,
+   https://github.com/librsync/librsync/issues/46)
+
+ * Fix up doxygen comments. (dbaarda,
+   https://github.com/librsync/librsync/pull/151)
 
 ## librsync 2.0.2
 
@@ -25,7 +71,7 @@ Released 2018-02-27
 
  * Removed perl as a build dependency. Note it is still required for some
    tests. (dbaarda, https://github.com/librsync/librsync/issues/75)
-   
+
  * Update RPM spec file for v2.0.2 and fix cmake man page install. (deajan,
    https://github.com/librsync/librsync/issues/47)
 

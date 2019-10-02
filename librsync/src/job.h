@@ -20,9 +20,9 @@
  */
 
 #include "mdfour.h"
-#include "rollsum.h"
+#include "checksum.h"
 
-/** \struct rs_job The contents of this structure are private. */
+/** The contents of this structure are private. */
 struct rs_job {
     int dogtag;
 
@@ -32,7 +32,7 @@ struct rs_job {
     rs_buffers_t *stream;
 
     /** Callback for each processing step. */
-    rs_result (*statefn) (rs_job_t *);
+    rs_result (*statefn)(rs_job_t *);
 
     /** Final result of processing job. Used by rs_job_s_failed(). */
     rs_result final_result;
@@ -60,7 +60,7 @@ struct rs_job {
     rs_weak_sum_t weak_sig;
 
     /** The rollsum weak signature accumulator used by delta.c */
-    Rollsum weak_sum;
+    weaksum_t weak_sum;
 
     /** Lengths of expected parameters. */
     rs_long_t param1, param2;
@@ -97,7 +97,7 @@ struct rs_job {
 
 };
 
-rs_job_t *rs_job_new(const char *, rs_result (*statefn) (rs_job_t *));
+rs_job_t *rs_job_new(const char *, rs_result (*statefn)(rs_job_t *));
 
 int rs_job_input_is_ending(rs_job_t *job);
 

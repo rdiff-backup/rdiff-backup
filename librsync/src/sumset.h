@@ -77,30 +77,50 @@ rs_block_sig_t *rs_signature_add_block(rs_signature_t *sig,
 rs_long_t rs_signature_find_match(rs_signature_t *sig, rs_weak_sum_t weak_sum,
                                   void const *buf, size_t len);
 
-/** Log the rs_signature_find_match() stats. */
-void rs_signature_log_stats(rs_signature_t const *sig);
-
 /** Assert that a signature is valid.
  *
  * We don't use a static inline function here so that assert failure output
  * points at where rs_signature_check() was called from. */
 #define rs_signature_check(sig) do {\
-    assert(((sig)->magic == RS_BLAKE2_SIG_MAGIC && (sig)->strong_sum_len <= RS_BLAKE2_SUM_LENGTH)\
-           || ((sig)->magic == RS_MD4_SIG_MAGIC && (sig)->strong_sum_len <= RS_MD4_SUM_LENGTH));\
+    assert(((sig)->magic & 0xffffff00) == (RS_MD4_SIG_MAGIC & 0xffffff00));\
+    assert(((sig)->magic & 0xf0) == 0x30 || ((sig)->magic & 0xf0) == 0x40);\
+    assert((((sig)->magic & 0x0f) == 0x07 &&\
+	    (sig)->strong_sum_len <= RS_BLAKE2_SUM_LENGTH) ||\
+	   (((sig)->magic & 0x0f) == 0x06 &&\
+	    (sig)->strong_sum_len <= RS_MD4_SUM_LENGTH));\
     assert(0 < (sig)->block_len);\
-    assert(0 < (sig)->strong_sum_len && (sig)->strong_sum_len <= RS_MAX_STRONG_SUM_LENGTH);\
+    assert(0 < (sig)->strong_sum_len &&\
+	   (sig)->strong_sum_len <= RS_MAX_STRONG_SUM_LENGTH);\
     assert(0 <= (sig)->count && (sig)->count <= (sig)->size);\
     assert(!(sig)->hashtable || (sig)->hashtable->count <= (sig)->count);\
 } while (0)
+
+/** Get the weaksum kind for a signature. */
+static inline weaksum_kind_t rs_signature_weaksum_kind(rs_signature_t const
+                                                       *sig)
+{
+    return (sig->magic & 0xf0) == 0x30 ? RS_ROLLSUM : RS_RABINKARP;
+}
+
+/** Get the strongsum kind for a signature. */
+static inline strongsum_kind_t rs_signature_strongsum_kind(rs_signature_t const
+                                                           *sig)
+{
+    return (sig->magic & 0x0f) == 0x06 ? RS_MD4 : RS_BLAKE2;
+}
+
+/** Calculate the weak sum of a buffer. */
+static inline rs_weak_sum_t rs_signature_calc_weak_sum(rs_signature_t const
+                                                       *sig, void const *buf,
+                                                       size_t len)
+{
+    return rs_calc_weak_sum(rs_signature_weaksum_kind(sig), buf, len);
+}
 
 /** Calculate the strong sum of a buffer. */
 static inline void rs_signature_calc_strong_sum(rs_signature_t const *sig,
                                                 void const *buf, size_t len,
                                                 rs_strong_sum_t *sum)
 {
-    if (sig->magic == RS_BLAKE2_SIG_MAGIC) {
-        rs_calc_blake2_sum(buf, len, sum);
-    } else {
-        rs_calc_md4_sum(buf, len, sum);
-    }
+    rs_calc_strong_sum(rs_signature_strongsum_kind(sig), buf, len, sum);
 }

@@ -25,7 +25,8 @@
                                | sheltering.
                                */
 
-/** \file job.c Generic state-machine interface.
+/** \file job.c
+ * Generic state-machine interface.
  *
  * The point of this is that we need to be able to suspend and resume
  * processing at any point at which the buffers may block.
@@ -48,7 +49,7 @@
 
 static rs_result rs_job_work(rs_job_t *job, rs_buffers_t *buffers);
 
-rs_job_t *rs_job_new(char const *job_name, rs_result (*statefn) (rs_job_t *))
+rs_job_t *rs_job_new(char const *job_name, rs_result (*statefn)(rs_job_t *))
 {
     rs_job_t *job;
 
