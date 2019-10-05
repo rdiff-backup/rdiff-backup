@@ -1,6 +1,7 @@
 *~
 .*.swp
 build/
+dist/
 __pycache__
 
 # tox testing stuff
@@ -11,5 +12,4 @@ MANIFEST
 *[._]local[._]*
 
 # setup.py installation files
-dist/*.egg
 src/rdiff_backup.egg-info/
