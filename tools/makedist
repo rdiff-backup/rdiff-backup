@@ -129,8 +129,8 @@ def MakeTar(specfiles):
 				  % (tardir,), 1)
 	VersionedCopy(DistDir + "/setup.py", "%s/setup.py" % (tardir,))
 
-	os.chmod(os.path.join(tardir, "setup.py"), 0755)
-	os.chmod(os.path.join(tardir, "rdiff-backup"), 0644)
+	os.chmod(os.path.join(tardir, "setup.py"), 0o755)
+	os.chmod(os.path.join(tardir, "rdiff-backup"), 0o644)
 	CopyMan(os.path.join(tardir, "rdiff-backup.1"), Version)
 	CopyMan(os.path.join(tardir, "rdiff-backup-statistics.1"), Version)
 	if os.name != 'nt':
@@ -156,7 +156,7 @@ def parse_cmdline(arglist):
 	"""Returns action"""
 	global Version
 	def error():
-		print "Syntax: makedist [--html-only] [version_number]"
+		print("Syntax: makedist [--html-only] [version_number]")
 		sys.exit(1)		
 
 	optlist, args = getopt.getopt(arglist, "", ["html-only"])
@@ -170,19 +170,19 @@ def parse_cmdline(arglist):
 
 def Main():
 	action = parse_cmdline(sys.argv[1:])
-	print "Making HTML"
+	print("Making HTML")
 	MakeHTML("FAQ", "rdiff-backup FAQ")
 	MakeHTML("examples", "rdiff-backup examples")
 
 	if action != "HTML":
 		assert action == "All"
-		print "Processing version " + Version
+		print("Processing version " + Version)
 		specfiles = MakeSpecFile()
-		print "Made specfiles ", specfiles
+		print("Made specfiles ", specfiles)
 		tarfile = MakeTar(specfiles)
-		print "Made tar file " + tarfile
+		print("Made tar file " + tarfile)
 
 
-if __name__ == "__main__" and not globals().has_key('__no_execute__'):
+if __name__ == "__main__" and '__no_execute__' not in globals():
 	Main()
 
