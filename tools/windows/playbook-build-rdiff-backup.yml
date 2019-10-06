@@ -7,11 +7,11 @@
       win_file:
         state: directory
         path: "{{ working_dir }}"
-    - name: clone the sources from Git
+    - name: clone the rdiff-backup sources from Git
       win_command: >
         git.exe clone
         {% if rdiff_version_tag is defined %}--branch {{ rdiff_version_tag }}{% endif %}
-        https://github.com/rdiff-backup/rdiff-backup.git
+        {{ rdiffbackup_git_repo }}
         "{{ rdiffbackup_dir }}"
       args:
         creates: "{{ rdiffbackup_dir }}"
@@ -32,13 +32,14 @@
       win_command: >
         pyinstaller --onefile
         --paths=build/lib.win-amd64-3.7 --paths={{ librsync_install_dir }}/lib
+        --paths={{ librsync_install_dir }}/bin
         --console build/scripts-3.7/rdiff-backup
       environment:
         LIBRSYNC_DIR: "{{ librsync_install_dir }}"
       args:
         chdir: "{{ rdiffbackup_dir }}"
     - name: copy rsync.dll to build directory to call rdiff-backup from there
-      win_copy:
-        src: "{{ librsync_install_dir }}/lib/rsync.dll"
+      win_copy:  # newer versions of rsync.dll are installed in bin not lib
+        src: "{{ librsync_install_dir }}/{{ librsync_git_repo is defined | ternary('bin', 'lib') }}/rsync.dll"
         remote_src: true  # file is already on the Windows machine
         dest: "{{ rdiffbackup_dir }}/build/"

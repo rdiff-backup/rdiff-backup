@@ -15,26 +15,10 @@
         name: Pscx
         state: present
         allow_clobber: true
-    - name:
-      set_fact:
-        librsync_tarfile: "{{ working_dir }}/{{ librsync_src_tarfile | urlsplit('path') | basename }}"
-    - name: download librsync sources
-      win_get_url:
-        dest: "{{ librsync_tarfile }}"
-        url: "{{ librsync_src_tarfile }}"
-    - name: extract librsync sources
-      win_unzip:
-        dest: "{{ working_dir }}"
-        src: "{{ librsync_tarfile }}"
-        recurse: true  # else the tarfile is only ungzipped
-    - name: use cmake to generate build system
-      win_command: >
-        "{{ cmake_exe }}" -G "Visual Studio 15 2017" -A x64 -D BUILD_RDIFF=OFF .
-        -D CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -D BUILD_SHARED_LIBS=TRUE
-        -DCMAKE_INSTALL_PREFIX={{ librsync_install_dir }}
-      args:
-        chdir: "{{ librsync_dir }}"
-      # also possible: -A Win32 / -S source_dir / -B build_dir
+
+    - name: include tasks to download and prepare librsync sources
+      include_tasks: tasks/get-librsync-{{ librsync_git_repo is defined | ternary('git', 'tarball') }}.yml
+
     - name: build librsync with MSBuild
       win_command: >
         "{{ msbuild_exe }}" librsync.sln /target:Build /property:Configuration=Release
@@ -52,8 +36,3 @@
         "{{ cmake_exe }}" --install . --config Release
       args:
         chdir: "{{ librsync_dir }}"
-# from https://github.com/ardovm/rdiff-backup/blob/master/dist_win32.py - Compilation of librsync
-#os.chdir("librsync")
-#runCommand("cmake", "-DCMAKE_INSTALL_PREFIX=../librsync-bin", "-A", "Win32", ".")
-#runCommand("cmake", "--build", ".", "--config", "Release")
-#runCommand("cmake", "--install", ".", "--config", "Release")
