@@ -1,0 +1,17 @@
+---
+- name: clone the librsync sources from Git
+  win_command: >
+    git.exe clone
+    {% if librsync_git_ref is defined %}--branch {{ librsync_git_ref }}{% endif %}
+    {{ librsync_git_repo }}
+    "{{ librsync_dir }}"
+  args:
+    creates: "{{ librsync_dir }}"
+- name: use cmake to generate build system for recent librsync sources
+  win_command: >
+    "{{ cmake_exe }}" -G "Visual Studio 15 2017" -A x64 -D BUILD_RDIFF=OFF .
+    -D BUILD_SHARED_LIBS=TRUE
+    -DCMAKE_INSTALL_PREFIX={{ librsync_install_dir }}
+  args:
+    chdir: "{{ librsync_dir }}"
+  # also possible: -A Win32 / -S source_dir / -B build_dir

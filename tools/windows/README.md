@@ -18,6 +18,8 @@ ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inve
 ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory playbook-build-rdiff-backup.yml
 ```
 
+> **NOTE:** you can use the variables under `group_vars/all` to steer the build process, check the comments there for more details.
+
 ## Develop and try under Windows
 
 Open a console and type:
