@@ -1340,9 +1340,9 @@ class RPath(RORPath):
         """Return new RPath with the same connection but different path"""
         return self.__class__(self.conn, newpath, index)
 
-    def append(self, ext):
+    def append(self, *ext):
         """Return new RPath with same connection by adjoining ext"""
-        return self.__class__(self.conn, self.base, self.index + (ext, ))
+        return self.__class__(self.conn, self.base, self.index + ext)
 
     def append_path(self, ext, new_index=()):
         """Like append, but add ext to path instead of to index"""
