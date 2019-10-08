@@ -1,6 +1,7 @@
 *~
 .*.swp
 build/
+dist/
 __pycache__
 
 # tox testing stuff
@@ -9,3 +10,6 @@ MANIFEST
 
 # just ignore files marked local through their name
 *[._]local[._]*
+
+# setup.py installation files
+src/rdiff_backup.egg-info/

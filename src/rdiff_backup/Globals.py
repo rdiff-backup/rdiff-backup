@@ -20,9 +20,10 @@
 
 import re
 import os
+from . import Version
 
 # The current version of rdiff-backup
-version = "1.3.4"
+version = Version.version
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
@@ -190,8 +191,8 @@ compression = 1
 # compiled version of the first.
 no_compression_regexp_string = (
     b"(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|"
-    b"jpg|jpeg|gif|png|jp2|mp3|ogg|avi|wmv|mpeg|mpg|rm|mov|flac|shn|pgp|"
-    b"gpg|rz|lzh|zoo|lharc|rar|arj|asc)$")
+    b"jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|avi|wmv|mpeg|mpg|rm|mov|flac|shn|pgp|"
+    b"gpg|rz|lzh|zoo|lharc|rar|arj|asc|vob|mdf)$")
 no_compression_regexp = None
 
 # If true, filelists and directory statistics will be split on

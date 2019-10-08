@@ -8,6 +8,7 @@ Some notes for developers and other people willing to help development.
 * tox
 * libacl-devel (for sys/acl.h)
 * rdiff
+* python3-setuptools (for setup.py)
 - unpack the test files previously available from
 https://download-mirror.savannah.gnu.org/releases/rdiff-backup/testfiles.tar.gz and now temporarily available as
 release under https://github.com/ericzolf/rdiff-backup/releases[]:
@@ -132,3 +133,16 @@ PYTHONTRACEMALLOC=1 PATH=$PWD/build/scripts-3.7:$PATH PYTHONPATH=$PWD/build/lib.
 ------------------------------------------------------------------------
 
 This tells you indeed where the file was opened: `Object allocated at (most recent call last)` but it didn't really help me get rid of the warning, hence https://github.com/ericzolf/rdiff-backup/issues/18 until further notice.
+
+=== Debug client / server mode
+
+In order to make sure the debug messages are properly sorted, you need to have the verbosity
+level 9 set-up, mix stdout and stderr, and then use the date/time output to properly sort
+the lines coming both from server and client, while making sure that lines belonging together
+stay together. The result command line might look as follows:
+
+------------------------------------------------------------------------
+rdiff-backup -v9 localhost::/sourcedir /backupdir 2>&1 | awk \
+	'/^2019-09-16/ { if (line) print line; line = $0 } ! /^2019-09-16/ { line = line " ## " $0 }' \
+	| sort | sed 's/ ## /\n/g'
+------------------------------------------------------------------------

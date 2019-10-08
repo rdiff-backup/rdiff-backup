@@ -56,11 +56,11 @@ class CheckTypes(RPathTest):
         assert rpath.RPath(self.lc, self.prefix, ("fifo", )).isfifo()
         assert not rpath.RPath(self.lc, self.prefix, ()).isfifo()
 
-    # @TODO: One cannot really assume tty2 exists everywhere
-    #def testCharDev(self):
-    #    """Char special files identified"""
-    #    assert rpath.RPath(self.lc, "/dev/tty2", ()).ischardev()
-    #    assert not rpath.RPath(self.lc, self.prefix, ("regular_file", )).ischardev()
+    @unittest.skipUnless(os.path.exists('/dev/tty2'), "Test requires /dev/tty2")
+    def testCharDev(self):
+        """Char special files identified"""
+        assert rpath.RPath(self.lc, "/dev/tty2", ()).ischardev()
+        assert not rpath.RPath(self.lc, self.prefix, ("regular_file", )).ischardev()
 
     @unittest.skipUnless(
         os.path.exists('/dev/sda') or os.path.exists('/dev/nvme0n1'),
@@ -302,7 +302,8 @@ class FilenameOps(RPathTest):
                 "%s => %s instead of %s" % (full, result, split)
 
     @unittest.skipUnless(
-        os.path.exists('/dev/sda') or os.path.exists('/dev/nvme0n1'),
+        (os.path.exists('/dev/sda') or os.path.exists('/dev/nvme0n1'))
+        and os.path.exists('/dev/tty2'),
         "Test requires either /dev/sda or /dev/nvme0n1")
     def testGetnums(self):
         """Test getting file numbers"""
