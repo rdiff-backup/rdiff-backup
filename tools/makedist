@@ -2,22 +2,14 @@
 
 import os, re, shutil, time, sys, getopt
 
-PySourceDir = "src/rdiff_backup"
-CSourceDir = "src"
-DistDir = "tools"
-
-# This needs to be done this way as the path is outside the package path.
-import importlib.util
-spec = importlib.util.spec_from_file_location("Version_mod", PySourceDir + "/Version.py")
-Version_mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(Version_mod)
-Version = Version_mod.version
+SourceDir = "rdiff_backup"
+DistDir = "dist"
 
 # Various details about the files must also be specified by the rpm
 # spec template.
-spec_template = DistDir + "/rdiff-backup.spec.template"
+spec_template = "dist/rdiff-backup.spec.template"
 # The Fedora distribution has its own spec template
-fedora_spec_template = DistDir + "/rdiff-backup.spec.template-fedora"
+fedora_spec_template = "dist/rdiff-backup.spec.template-fedora"
 
 def CopyMan(destination, version):
 	"""Create updated man page at the specified location"""
@@ -79,7 +71,7 @@ def VersionedCopy(source, dest, munge_date = 0):
 	8, 2003".
 
 	"""
-	fin = open(source, "r")
+	fin = open(source, "rb")
 	inbuf = fin.read()
 	assert not fin.close()
 
@@ -94,7 +86,7 @@ def VersionedCopy(source, dest, munge_date = 0):
 		if outbuf == inbuf: assert 0, "No $date string replaced"
 		assert not re.search("\$date", outbuf), "Two $date strings found"
 
-	fout = open(dest, "w")
+	fout = open(dest, "wb")
 	fout.write(outbuf)
 	assert not fout.close()
 
@@ -107,23 +99,19 @@ def MakeTar(specfiles):
 		shutil.rmtree(tardir)
 	except OSError: pass
 	os.mkdir(tardir)
-	for filename in ["CHANGELOG", "COPYING", "README.md", "Windows-README.txt",
+	for filename in ["CHANGELOG", "COPYING", "README", "Windows-README.txt",
 					 "FAQ.html", "examples.html",
-					 "setup.py"] + specfiles:
+					 SourceDir + "/cmodule.c",
+					 SourceDir + "/_librsyncmodule.c",
+					 DistDir + "/setup.py"] + specfiles:
 		shutil.copyfile(filename,
 						os.path.join(tardir, os.path.basename(filename)))
 
-	os.mkdir(tardir+"/"+CSourceDir)
-	for filename in ["cmodule.c", "_librsyncmodule.c"]:
-		shutil.copyfile(os.path.join(CSourceDir, filename),
-						os.path.join(tardir, CSourceDir, filename))
-
-	os.mkdir(tardir+"/"+PySourceDir)
+	os.mkdir(tardir+"/rdiff_backup")
 	for filename in ["eas_acls.py", "backup.py", "connection.py", "compare.py",
 					 "FilenameMapping.py", "fs_abilities.py",
-                                         "Globals.py", "Version.py",
 					 "Hardlink.py", "hash.py", "increment.py", "__init__.py",
-					 "iterfile.py", "librsync.py",
+					 "iterfile.py", "lazy.py", "librsync.py",
 					 "log.py", "longname.py", "Main.py", "manage.py",
 					 "metadata.py", "Rdiff.py", "regress.py", "restore.py",
 					 "robust.py", "rorpiter.py", "rpath.py",
@@ -131,12 +119,15 @@ def MakeTar(specfiles):
 					 "SetConnections.py",
 					 "statistics.py", "TempFile.py", "Time.py",
 					 "user_group.py", "win_acls.py"]:
-		shutil.copyfile(os.path.join(PySourceDir, filename),
-						os.path.join(tardir, PySourceDir, filename))
+		shutil.copyfile(os.path.join(SourceDir, filename),
+						os.path.join(tardir, "rdiff_backup", filename))
 
+	VersionedCopy("%s/Globals.py" % (SourceDir,),
+				  "%s/rdiff_backup/Globals.py" % (tardir,))
 	VersionedCopy("rdiff-backup", "%s/rdiff-backup" % (tardir,), 1)
 	VersionedCopy("rdiff-backup-statistics", "%s/rdiff-backup-statistics"
 				  % (tardir,), 1)
+	VersionedCopy(DistDir + "/setup.py", "%s/setup.py" % (tardir,))
 
 	os.chmod(os.path.join(tardir, "setup.py"), 0o755)
 	os.chmod(os.path.join(tardir, "rdiff-backup"), 0o644)
@@ -169,8 +160,8 @@ def parse_cmdline(arglist):
 		sys.exit(1)		
 
 	optlist, args = getopt.getopt(arglist, "", ["html-only"])
-	if len(args) > 1: error()
-	elif len(args) == 1: Version = args[0]
+	if len(args) != 1: error()
+	else: Version = args[0]
 
 	for opt, arg in optlist:
 		if opt == "--html-only": return "HTML"
