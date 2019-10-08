@@ -641,7 +641,7 @@ other::---""")
                      self.acl_test1_rpath.path,
                      tempdir.path,
                      current_time=20000)
-        incdir = tempdir.append('rdiff-backup-data').append('increments')
+        incdir = tempdir.append('rdiff-backup-data', 'increments')
         assert incdir.isdir(), incdir
         assert not incdir.listdir(), incdir.listdir()
 

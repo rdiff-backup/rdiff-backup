@@ -63,7 +63,7 @@ rdiff-backup homepage at https://rdiff-backup.net/ should
 have a recent version of librsync; otherwise see the librsync homepage
 at http://librsync.sourceforge.net/. On Windows, you must have the
 Python for Windows extensions installed if you are building from source.
-The extensions can be downloaded from: http://pywin32.sourceforge.net/
+The extensions can be downloaded from: https://github.com/mhammond/pywin32
 If you are not building from source on Windows, you do not need Python
 or librsync; they are bundled with the executable.
 

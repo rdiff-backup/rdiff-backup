@@ -1,0 +1,21 @@
+---
+- name:
+  set_fact:
+    librsync_tarfile: "{{ working_dir }}/{{ librsync_src_tarfile | urlsplit('path') | basename }}"
+- name: download librsync sources
+  win_get_url:
+    dest: "{{ librsync_tarfile }}"
+    url: "{{ librsync_src_tarfile }}"
+- name: extract librsync sources
+  win_unzip:
+    dest: "{{ working_dir }}"
+    src: "{{ librsync_tarfile }}"
+    recurse: true  # else the tarfile is only ungzipped
+- name: use cmake to generate build system for released build sources
+  win_command: >
+    "{{ cmake_exe }}" -G "Visual Studio 15 2017" -A x64 -D BUILD_RDIFF=OFF .
+    -D CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -D BUILD_SHARED_LIBS=TRUE
+    -DCMAKE_INSTALL_PREFIX={{ librsync_install_dir }}
+  args:
+    chdir: "{{ librsync_dir }}"
+  # also possible: -A Win32 / -S source_dir / -B build_dir

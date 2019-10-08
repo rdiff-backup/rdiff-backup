@@ -1,0 +1,5 @@
+---
+# where to get the source code from
+rdiffbackup_git_repo: "https://github.com/rdiff-backup/rdiff-backup.git"
+# where to put the source code of rdiff-backup
+rdiffbackup_dir: "{{ working_dir }}/rdiff-backup"

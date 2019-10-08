@@ -1,0 +1,6 @@
+---
+working_dir: "C:/Users/IEUser/Develop"
+# define msbuild_exe if you want to use MSBuild directly instead of CMake
+#msbuild_exe: "C:/Program Files (x86)/Microsoft Visual Studio/2017/BuildTools/MSBuild/15.0/Bin/MSBuild.exe"
+# full path to CMake command
+cmake_exe: "C:/Program Files/CMake/bin/cmake.exe"
