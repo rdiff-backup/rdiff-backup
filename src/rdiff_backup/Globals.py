@@ -253,6 +253,11 @@ symlink_perms = None
 # tempfile.tempdir value on remote connections
 remote_tempdir = None
 
+# Fsync everything by default. Use --no-fsync only if you really know what you are doing
+# Not having the data written to disk may render your backup unusable in case of FS failure.
+# Using --no-fsync disables only fsync of files during backup and sync() system call upon backup finish
+# and pre-regress
+do_fsync = True
 
 def get(name):
     """Return the value of something in this module"""

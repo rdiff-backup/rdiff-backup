@@ -551,7 +551,7 @@ class FSAbilities:
         for rp in selection.Select(dir_rp).set_iter():
             if rp.isreg():
                 try:
-                    rfork = rp.append(os.path.join(b'..namedfork', b'rsrc'))
+                    rfork = rp.append(b'..namedfork', b'rsrc')
                     fp = rfork.open('rb')
                     fp.read()
                     assert not fp.close()

@@ -1,0 +1,33 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+  # Our box, we will have copied it manually to:
+  # 	~/.vagrant.d/boxes/MSEdgeWin10/X/libvirt
+  config.vm.box = "MSEdgeWin10"
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.memory = 4096  # installation of VS fails with too little memory
+  end
+
+  # WARNING: if following line is removed, Vagrant seems to act like it would
+  # be Linux with following error:
+  # At line:1 char:33
+  # + ip=$(which ip); ${ip:-/sbin/ip} addr show | grep -i 'inet ' | grep -v ...
+  # +                                 ~~~~
+  # Unexpected token 'addr' in expression or statement.
+  #    + CategoryInfo          : ParserError: (:) [Invoke-Expression], ParseException
+  #    + FullyQualifiedErrorId : UnexpectedToken,Microsoft.PowerShell.Commands.InvokeExpressionCommand
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  # the following parameters can be adapted, the certificate validation must
+  # be ignored because the box is setup with a self-signed certificate.
+  # Check ~/.vagrant.d/boxes/MSEdgeWin10/X/libvirt/Vagrantfile for other
+  # parameters you may want to overwrite.
+  config.vm.provision "ansible" do |ansible|
+    ansible.verbose = "v"
+    ansible.groups = { "all:vars" => { "ansible_winrm_server_cert_validation" => "ignore" } }
+    ansible.playbook = "playbook-provision-windows.yml"
+  end
+
+end

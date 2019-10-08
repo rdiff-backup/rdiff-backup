@@ -102,6 +102,22 @@ def many_files():
     benchmark(backup_cmd, restore_cmd, "2000 1-byte files", update_func)
 
 
+def many_files_no_fsync():
+    """Time backup and restore of 2000 files"""
+    count = 2000
+    manyout_dir = re_init_subdir(abs_test_dir, b'many_out')
+    restout_dir = re_init_subdir(abs_test_dir, b'rest_out')
+    create_many_files(manyout_dir, "a", count)
+    backup_cmd = b"rdiff-backup --no-fsync '%b' '%b'" % (manyout_dir, output_desc)
+    restore_cmd = b"rdiff-backup --no-fsync --force -r now '%b' '%b'" % \
+        (output_desc, restout_dir)
+
+    def update_func():
+        create_many_files(manyout_dir, "e", count)
+
+    benchmark(backup_cmd, restore_cmd, "2000 1-byte files", update_func)
+
+
 def many_files_rsync():
     """Test rsync benchmark"""
     count = 2000
@@ -152,7 +168,7 @@ if len(sys.argv) < 2 or len(sys.argv) > 3:
     print("")
     print("Where output_description defaults to '%s'." % abs_output_dir)
     print("Currently benchmark_func includes:")
-    print("'many_files', 'many_files_rsync', and, 'nested_files'.")
+    print("'many_files', 'many_files_no_fsync', 'many_files_rsync', and, 'nested_files'.")
     sys.exit(1)
 
 if len(sys.argv) == 3:

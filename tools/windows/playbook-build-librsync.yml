@@ -1,0 +1,38 @@
+---
+- name: Build librsync on a prepared Windows
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: make sure working directory {{ working_dir }} exists
+      win_file:
+        state: directory
+        path: "{{ working_dir }}"
+    - name: Install NuGet to overcome issue 50332 in Ansible
+      # https://github.com/ansible/ansible/issues/50332
+      win_shell: Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+    - name: install the Powershell Community Extensions for win_unzip
+      win_psmodule:
+        name: Pscx
+        state: present
+        allow_clobber: true
+
+    - name: include tasks to download and prepare librsync sources
+      include_tasks: tasks/get-librsync-{{ librsync_git_repo is defined | ternary('git', 'tarball') }}.yml
+
+    - name: build librsync with MSBuild
+      win_command: >
+        "{{ msbuild_exe }}" librsync.sln /target:Build /property:Configuration=Release
+      args:
+        chdir: "{{ librsync_dir }}"
+      when: msbuild_exe is defined
+    - name: build librsync with CMake
+      win_command: >
+        "{{ cmake_exe }}" --build . --config Release
+      args:
+        chdir: "{{ librsync_dir }}"
+      when: msbuild_exe is not defined
+    - name: use CMake to install librsync
+      win_command: >
+        "{{ cmake_exe }}" --install . --config Release
+      args:
+        chdir: "{{ librsync_dir }}"
