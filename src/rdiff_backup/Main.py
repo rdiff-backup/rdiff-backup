@@ -825,7 +825,7 @@ def restore_set_root(rpin):
         # For security checking consistency, don't get absolute path
         pathcomps = relpath.split(b'/')
     else:
-        pathcomps = os.path.join(os.getcwdb(), relpath).split(b'/')
+        pathcomps = rpath.RORPath.path_join(rpath.RORPath.getcwdb(), relpath).split(b'/')
     if not pathcomps[0]:
         min_len_pathcomps = 2  # treat abs paths differently
     else:

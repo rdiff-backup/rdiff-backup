@@ -449,7 +449,7 @@ class FSAbilities:
             return
         try:
             sd = win32security.GetNamedSecurityInfo(
-                dir_rp.path, win32security.SE_FILE_OBJECT,
+                os.fsdecode(dir_rp.path), win32security.SE_FILE_OBJECT,
                 win32security.OWNER_SECURITY_INFORMATION
                 | win32security.GROUP_SECURITY_INFORMATION
                 | win32security.DACL_SECURITY_INFORMATION)
@@ -457,7 +457,7 @@ class FSAbilities:
             n = acl.GetAceCount()
             if write:
                 win32security.SetNamedSecurityInfo(
-                    dir_rp.path, win32security.SE_FILE_OBJECT,
+                    os.fsdecode(dir_rp.path), win32security.SE_FILE_OBJECT,
                     win32security.OWNER_SECURITY_INFORMATION
                     | win32security.GROUP_SECURITY_INFORMATION
                     | win32security.DACL_SECURITY_INFORMATION,
