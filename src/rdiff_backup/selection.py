@@ -630,7 +630,7 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 		globbing characters are used.
 
 		"""
-        if not filename.startswith(self.prefix):
+        if not filename.startswith(self.prefix + b"/"):
             raise FilePrefixError(filename)
         index = tuple(
             [x for x in filename[len(self.prefix):].split(b"/") if x])
