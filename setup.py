@@ -55,11 +55,7 @@ if os.name == 'nt':
 		if '--single-file' in sys.argv[1:]:
 			sys.argv.remove('--single-file')
 			extra_options.update({
-				'options': {'py2exe':
-                                            {'bundle_files': 1,
-                                             'dll_excludes':
-                                             ['mswsock.dll', 'powrprof.dll',
-                                              'crypt32.dll'],}},
+				'options': {'py2exe': {'bundle_files': 1}},
 				'zipfile': None
 			})
 
