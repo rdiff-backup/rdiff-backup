@@ -1,0 +1,15 @@
+---
+# Always needed, the version of librsync
+librsync_version: 2.0.2
+# where to grab the librsync tarball from
+librsync_src_tarfile: https://github.com/librsync/librsync/releases/download/v{{ librsync_version }}/librsync-{{ librsync_version }}.tar.gz
+
+# where to put the source code of librsync
+librsync_dir: "{{ working_dir }}/librsync-{{ librsync_version }}"
+# where to install the compiled librsync
+librsync_install_dir: "{{ working_dir }}/librsync.d"
+
+# Define the git_repo variable if you want to clone the source code from there
+#librsync_git_repo: https://github.com/librsync/librsync.git
+# Only needed if you want to pull something else than the default branch
+#librsync_git_ref: master

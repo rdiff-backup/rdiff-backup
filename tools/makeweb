@@ -3,16 +3,16 @@
 import sys, os
 
 def RunCommand(cmd, ignore_error = 0):
-	print cmd
+	print(cmd)
 	if ignore_error: os.system(cmd)
 	else: assert not os.system(cmd)
 
 webprefix = "/home/ben/misc/html/mirror/rdiff-backup/"
 
 if not sys.argv[1:]:
-	print 'Call with version number, as in "./makeweb 0.3.1"'
-	print "to move new rpms and tarballs.  Now just remaking FAQ and man page."
-	print
+	print('Call with version number, as in "./makeweb 0.3.1"')
+	print("to move new rpms and tarballs.  Now just remaking FAQ and man page.")
+	print()
 else:
 	version = sys.argv[1]
 	RunCommand("cp *%s* %s" % (version, webprefix))
@@ -27,7 +27,7 @@ if sys.argv[1:]:
 	RunCommand("cp rdiff-backup-%s.tar.gz rdiff-backup-%s*rpm %s/OLD/%s" %
 			   (version, version, webprefix, version))
 os.chdir(webprefix)
-print "cd ", webprefix
+print("cd ", webprefix)
 if sys.argv[1:]:
 	for filename in os.listdir('OLD/' + version):
 	    try: os.lstat(filename)
