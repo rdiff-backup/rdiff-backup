@@ -63,11 +63,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.so
 %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup-*-py?.?.egg-info
 %ghost %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/__pycache__/*.pyo
-<<<<<<< HEAD
 %doc CHANGELOG COPYING FAQ.html examples.html README.md DEVELOP.md
-=======
-%doc CHANGELOG COPYING FAQ-body.html examples-body.html README.md DEVELOP.adoc
->>>>>>> Revert "Revert "Update makedist to work with the new directory structure for the project.""
 
 %changelog
 * Sat Feb 16 2019 Eric Lavarde <ewl+rdiffbackup@lavar.de> 1.3.0-1
