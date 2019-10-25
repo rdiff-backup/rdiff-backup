@@ -48,10 +48,7 @@ NB: There is no uninstall command provided by the Python distutils system.
 One strategy is to use the python3 setup.py install --record <file> option
 to save a list of the files installed to <file>.
 
-To build from source on Windows, you can use the command:
-
-	python3 setup.py py2exe --single-file
-
+To build from source on Windows, check the [Windows tools](tools/windows)
 to build a single executable file which contains Python, librsync, and
 all required modules.
 
@@ -87,8 +84,13 @@ well as a C compiler (gcc).
 ## TROUBLESHOOTING
 
 If you have everything installed properly, and it still doesn't work,
-see the enclosed FAQ.html, the web page at https://www.nongnu.org/rdiff-backup/
-and/or the mailing list.
+see the enclosed [FAQ.html](FAQ.html), the [rdiff-backup web page](https://rdiff-backup.net/)
+and/or the [rdiff-backup-users mailing list](https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users).
+
+We're also happy to help if you create an issue to our
+[GitHub repo](https://github.com/rdiff-backup/rdiff-backup). The most
+important is probably to explain what happened and attach the output of
+rdiff-backup run with the very verbose option `-v9`.
 
 The FAQ in particular is an important reference, especially if you are
 using smbfs/CIFS, Windows, or have compiled by hand on Mac OS X.
