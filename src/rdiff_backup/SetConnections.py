@@ -117,6 +117,9 @@ def parse_file_desc(file_desc):
         file_desc)  # paths and similar must always be bytes
     while 1:
         if i == len(file_desc):
+            # make sure paths under Windows use / instead of \
+            if os.path.altsep:  # only Windows has an alternative separator for paths
+                file_desc = file_desc.replace(os.fsencode(os.path.sep), b'/')
             return (None, file_desc)
 
         if file_desc[i] == ord(
@@ -134,7 +137,13 @@ def parse_file_desc(file_desc):
         i = i + 1
 
     check_len(i + 1)
-    return (b"".join(host_info_list), file_desc[i + 1:])
+
+    filename = file_desc[i+1:]
+    # make sure paths under Windows use / instead of \
+    if os.path.altsep:  # only Windows has an alternative separator for paths
+        filename = filename.replace(os.fsencode(os.path.sep), b'/')
+
+    return (b"".join(host_info_list), filename)
 
 
 def fill_schema(host_info):

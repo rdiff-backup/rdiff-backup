@@ -3,3 +3,6 @@
 rdiffbackup_git_repo: "https://github.com/rdiff-backup/rdiff-backup.git"
 # where to put the source code of rdiff-backup
 rdiffbackup_dir: "{{ working_dir }}/rdiff-backup"
+
+# the local dist directory where to fetch rdiff-backup.exe
+rdiffbackup_local_dist_dir: ../../dist

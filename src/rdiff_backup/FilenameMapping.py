@@ -149,7 +149,7 @@ class QuotedRPath(rpath.RPath):
         # we need to recalculate path and data on the basis of
         # quoted_index (parent class does it on the basis of index)
         if base is not None:
-            self.path = os.path.join(self.base, *self.quoted_index)
+            self.path = self.path_join(self.base, *self.quoted_index)
             if data is None: self.setdata()
 
     def __setstate__(self, rpath_state):
@@ -157,7 +157,7 @@ class QuotedRPath(rpath.RPath):
         conn_number, self.base, self.index, self.data = rpath_state
         self.conn = Globals.connection_dict[conn_number]
         self.quoted_index = tuple(map(quote, self.index))
-        self.path = os.path.join(self.base, *self.quoted_index)
+        self.path = self.path_join(self.base, *self.quoted_index)
 
     def listdir(self):
         """Return list of unquoted filenames in current directory

@@ -47,7 +47,7 @@ import codecs
 from . import Globals, Time, log, user_group, C
 
 try:
-    import win32file, winnt
+    import win32api, win32con
 except ImportError:
     pass
 
@@ -389,12 +389,8 @@ def make_file_dict(filename):
     data['nlink'] = statblock[stat.ST_NLINK]
 
     if os.name == 'nt':
-        global type
-        if type(filename) == str:
-            attribs = win32file.GetFileAttributesW(filename)
-        else:
-            attribs = win32file.GetFileAttributes(filename)
-        if attribs & winnt.FILE_ATTRIBUTE_REPARSE_POINT:
+        attribs = win32api.GetFileAttributes(os.fsdecode(filename))
+        if attribs & win32con.FILE_ATTRIBUTE_REPARSE_POINT:
             data['type'] = 'sym'
             data['linkname'] = None
 
@@ -672,6 +668,33 @@ class RORPath:
         """Return new rorpath based on self"""
         return RORPath(self.index, self.data.copy())
 
+    @classmethod
+    def path_join(self, *filenames):
+        """Simulate the os.path.join function to have the same separator '/' on all platforms"""
+
+        def abs_drive(filename):
+            """Because os.path.join does make out of a tuple with a drive letter under Windows
+            a path _relative_ to the current directory on the drive, we need to make it
+            absolute ourselves by adding a slash at the end."""
+            if re.match(b"^[A-Za-z]:$", filename):  # if filename is a drive
+                return filename + b'/'  # os.path.join won't make a drive absolute for us
+            else:
+                return filename
+
+        if os.path.altsep:  # only Windows has an alternative separator for paths
+            filenames = tuple(map(abs_drive, filenames))
+            return os.path.join(*filenames).replace(os.fsencode(os.path.sep), b'/')
+        else:
+            return os.path.join(*filenames)
+
+    @classmethod
+    def getcwdb(self):
+        """A getcwdb function that makes sure that also under Windows '/' are used"""
+        if os.path.altsep:  # only Windows has an alternative separator for paths
+            return os.getcwdb().replace(os.fsencode(os.path.sep), b'/')
+        else:
+            return os.getcwdb()
+
     def lstat(self):
         """Returns type of file
 
@@ -817,7 +840,7 @@ class RORPath:
 		"""
         if not self.index:
             return b'.'
-        return os.path.join(*self.index)
+        return self.path_join(*self.index)
 
     def get_safeindexpath(self):
         """Return safe path of index even with names throwing UnicodeEncodeError
@@ -1014,7 +1037,7 @@ class RPath(RORPath):
         self.conn = connection
         if base is not None:
             self.base = os.fsencode(base)  # path is always bytes
-            self.path = os.path.join(self.base, *self.index)
+            self.path = self.path_join(self.base, *self.index)
             if data is None: self.setdata()
         else:
             self.base = None
@@ -1037,7 +1060,7 @@ class RPath(RORPath):
         """Reproduce RPath from __getstate__ output"""
         conn_number, self.base, self.index, self.data = rpath_state
         self.conn = Globals.connection_dict[conn_number]
-        self.path = os.path.join(self.base, *self.index)
+        self.path = self.path_join(self.base, *self.index)
 
     def setdata(self):
         """Set data dictionary using the wrapper"""
@@ -1280,8 +1303,7 @@ class RPath(RORPath):
 		be retained.
 
 		"""
-        newpath = os.path.join(
-            b'', *[x for x in self.path.split(b"/") if x and x != b"."])
+        newpath = self.path_join(b'', *[x for x in self.path.split(b"/") if x and x != b"."])
         if self.path[0:1] == b"/":
             newpath = b"/" + newpath
         elif not newpath:
@@ -1348,7 +1370,7 @@ class RPath(RORPath):
         """Like append, but add ext to path instead of to index"""
         # ext can be a string but shouldn't hence we transform it into bytes
         return self.__class__(self.conn,
-                              os.path.join(self.base, os.fsencode(ext)),
+                              self.path_join(self.base, os.fsencode(ext)),
                               new_index)
 
     def new_index(self, index):
@@ -1793,7 +1815,6 @@ def setdata_local(rpath):
         rpath.data['carbonfile'] = carbonfile_get(rpath)
 
     if reset_perms: rpath.chmod(rpath.getperms() & ~0o400)
-
 
 def carbonfile_get(rpath):
     """Return carbonfile value for local rpath"""

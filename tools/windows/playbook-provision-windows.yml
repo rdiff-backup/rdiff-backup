@@ -13,8 +13,11 @@
       - virtio-drivers
       - python
       - git
-      - dotnetfx  # dependency of visualstudio, allows for reboot in-between
+      #- cygwin  # sadly broken
+      #- cyg-get  # depends on cygwin
       - cmake
+      - 7zip
+      - dotnetfx  # dependency of visualstudio, allows for reboot in-between
       state: present
     register: base_pkg
   - name: execute reboot

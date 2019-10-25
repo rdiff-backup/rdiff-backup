@@ -112,7 +112,7 @@ class StatsObj:
         if not index:
             filename = "."
         else:
-            filename = os.path.join(*index)
+            filename = '/'.join(index)  # RORPath.path_join works only with bytes paths
             if quote_filename:
                 # quote filename to make sure it doesn't have spaces
                 # or newlines impeaching proper parsing of the line

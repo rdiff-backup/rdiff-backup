@@ -18,6 +18,7 @@
 # USA
 
 import re
+import os
 from . import C, metadata, rorpiter, rpath, log
 
 try:
@@ -36,11 +37,11 @@ class ACL:
              | DACL_SECURITY_INFORMATION)
 
     def __init__(self, index=()):
-        self.__acl = ""
+        self.__acl = b""
         self.index = index
 
     def get_indexpath(self):
-        return self.index and '/'.join(self.index) or '.'
+        return self.index and b'/'.join(self.index) or b'.'
 
     def load_from_rp(self, rp, skip_inherit_only=True):
         self.index = rp.index
@@ -52,7 +53,7 @@ class ACL:
 
         try:
             sd = rp.conn.win32security. \
-              GetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags)
+              GetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to read ACL from %s: %s" % (repr(rp.path),
@@ -100,13 +101,14 @@ class ACL:
                 "Warning: unable to convert ACL from %s to string: %s" % (repr(
                     rp.path), exc), 4)
             self.__acl = ''
+        self.__acl = os.fsencode(self.__acl)
 
     def clear_rp(self, rp):
         # not sure how to interpret this
         # I'll just clear all acl-s from rp.path
         try:
             sd = rp.conn.win32security. \
-              GetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags)
+              GetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to read ACL from %s for clearing: %s" % (repr(
@@ -134,7 +136,7 @@ class ACL:
 
         try:
             rp.conn.win32security. \
-             SetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags,
+             SetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags,
              sd.GetSecurityDescriptorOwner(),sd.GetSecurityDescriptorGroup(),
              sd.GetSecurityDescriptorDacl(),
              (ACL.flags & SACL_SECURITY_INFORMATION) and
@@ -151,7 +153,7 @@ class ACL:
         try:
             sd = rp.conn.win32security. \
              ConvertStringSecurityDescriptorToSecurityDescriptor(
-              self.__acl, SDDL_REVISION_1)
+              os.fsdecode(self.__acl), SDDL_REVISION_1)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to convert string %s to ACL: %s" % (repr(
@@ -185,7 +187,7 @@ class ACL:
 
         try:
             rp.conn.win32security. \
-             SetNamedSecurityInfo(rp.path, SE_FILE_OBJECT, ACL.flags,
+             SetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags,
              sd.GetSecurityDescriptorOwner(),sd.GetSecurityDescriptorGroup(),
              sd.GetSecurityDescriptorDacl(),
              (ACL.flags & SACL_SECURITY_INFORMATION) and
@@ -195,21 +197,23 @@ class ACL:
                 "Warning: unable to set ACL on %s: %s" % (repr(rp.path), exc),
                 4)
 
+    def __bytes__(self):
+        return b'# file: %b\n%b\n' % \
+           (C.acl_quote(self.get_indexpath()), self.__acl)
+
     def __str__(self):
-        return '# file: %s\n%s\n' % \
-           (C.acl_quote(self.get_indexpath()),
-           str(self.__acl))
+        return os.fsdecode(self.__bytes__())
 
     def from_string(self, acl_str):
         lines = acl_str.splitlines()
-        if len(lines) != 2 or not lines[0][:8] == "# file: ":
-            raise metadata.ParsingError("Bad record beginning: " +
-                                        lines[0][:8])
+        if len(lines) != 2 or not lines[0][:8] == b"# file: ":
+            raise metadata.ParsingError(
+                "Bad record beginning: %a" % lines[0][:8])
         filename = lines[0][8:]
-        if filename == '.':
+        if filename == b'.':
             self.index = ()
         else:
-            self.index = tuple(C.acl_unquote(filename).split('/'))
+            self.index = tuple(C.acl_unquote(filename).split(b'/'))
         self.__acl = lines[1]
 
 
@@ -220,7 +224,7 @@ def Record2WACL(record):
 
 
 def WACL2Record(wacl):
-    return str(wacl)
+    return bytes(wacl)
 
 
 class WACLExtractor(metadata.FlatExtractor):
@@ -249,14 +253,14 @@ def join_wacl_iter(rorp_iter, wacl_iter):
         assert rorp, "Missing rorp for index %s" % (wacl.index, )
         if not wacl:
             wacl = ACL(rorp.index)
-        rorp.set_win_acl(str(wacl))
+        rorp.set_win_acl(bytes(wacl))
         yield rorp
 
 
 def rpath_acl_win_get(rpath):
     acl = ACL()
     acl.load_from_rp(rpath)
-    return str(acl)
+    return bytes(acl)
 
 
 rpath.win_acl_get = rpath_acl_win_get
@@ -264,7 +268,7 @@ rpath.win_acl_get = rpath_acl_win_get
 
 def rpath_get_blank_win_acl(index):
     acl = ACL(index)
-    return str(acl)
+    return bytes(acl)
 
 
 rpath.get_blank_win_acl = rpath_get_blank_win_acl
