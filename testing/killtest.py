@@ -43,11 +43,14 @@ class ProcessFuncs(unittest.TestCase):
 
     def delete_tmpdirs(self):
         """Remove any temp directories created by previous tests"""
+        Local.rpout.setdata()
         if Local.rpout.lstat():
             Local.rpout.delete()
+        Local.rpout_inc.setdata()
         if Local.rpout_inc.lstat():
             Local.rpout_inc.delete()
         for rp in Local.outrp:
+            rp.setdata()
             if rp.lstat():
                 rp.delete()
         # TODO check if following files really need to be deleted:
@@ -84,7 +87,9 @@ class ProcessFuncs(unittest.TestCase):
         while 1:
             pid, exitstatus = os.waitpid(pid, os.WNOHANG)
             if pid:
-                assert exitstatus != 0
+                assert exitstatus != 0, \
+                    ("Pid %d killed but exited with return code 0, "
+                     "probably a timing issue, retry!") % pid
                 break
             time.sleep(0.2)
         print("---------------------- killed")
@@ -105,6 +110,7 @@ class ProcessFuncs(unittest.TestCase):
             assert not os.system(b"cp -a %s %s/killtestb" % (input, output))
 
         for i in range(len(Local.ktrp)):
+            Local.ktrp[i].setdata()
             if Local.ktrp[i].lstat():
                 Local.ktrp[i].delete()
             copy_thrice(os.path.join(old_test_dir, b"increment%d" % (i + 1)),
@@ -142,7 +148,7 @@ class KillTest(ProcessFuncs):
     # The following are lower and upper bounds on the amount of time
     # rdiff-backup is expected to run.  They are used to determine how
     # long to wait before killing the rdiff-backup process
-    time_pairs = [(0.0, 3.7), (0.0, 3.7), (0.0, 3.0), (0.0, 5.0), (0.0, 5.0)]
+    time_pairs = [(0.0, 1.0), (0.0, 6.0), (0.0, 4.0), (0.0, 0.5), (0.0, 0.5)]
 
     def setUp(self):
         """Create killtest? and backup? directories if necessary"""
@@ -151,11 +157,12 @@ class KillTest(ProcessFuncs):
         if (not Local.ktrp[0].lstat() or not Local.ktrp[1].lstat()
                 or not Local.ktrp[2].lstat() or not Local.ktrp[3].lstat()):
             self.create_killtest_dirs()
+        self.setTiming()
 
-    def testTiming(self):
-        """Run each rdiff-backup sequence 10 times, printing average time"""
+    def setTiming(self):
+        """Run each rdiff-backup sequence x times, gathering min/max time"""
         time_list = [[], [], [], [], []]  # List of time lists
-        iterations = 10
+        iterations = 3
 
         def run_once(current_time, input_rp, index):
             start_time = time.time()
@@ -171,7 +178,13 @@ class KillTest(ProcessFuncs):
             run_once(50000, Local.ktrp[2], 4)
 
         for i in range(len(time_list)):
-            print("%s -> %s" % (i, " ".join(map(str, time_list[i]))))
+            # overwrite time_pairs with runtime values from the actual environment
+            # max time is somewhere between half of the minimum time measured
+            # and the difference between min and max removed from min
+            max_time = max(min(time_list[i]) * 2 - max(time_list[i]),
+                           min(time_list[i]) / 2)
+            self.time_pairs[i] = (0, max_time)
+            print("%d -> min %s, max %s" % (i, 0, max_time))
 
     def mark_incomplete(self, curtime, rp):
         """Check the date of current mirror
