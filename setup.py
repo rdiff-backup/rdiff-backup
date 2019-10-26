@@ -11,11 +11,6 @@ from distutils.debug import DEBUG
 import distutils.command.clean
 from distutils import log
 
-from src.rdiff_backup import Version
-
-version_string = Version.version
-
-
 # --- handling compilation and linking with librsync ---
 
 lflags_arg = []
@@ -59,10 +54,6 @@ class build_templates(Command):
         ('template-files=', None, 'list of tuples of source template and destination files'),
         # TODO we could add the replacement dict as well but not for now
     ]
-    replacement_dict = {
-        "version": version_string,
-        "month_year": time.strftime("%B %Y", time.localtime(time.time()))
-    }
 
     def initialize_options(self):
         """Set default values for options."""
@@ -92,10 +83,14 @@ class build_templates(Command):
     def run(self):
         if DEBUG:
             self.debug_print(self.distribution.dump_option_dicts())
+        replacement_dict = {
+            "version": self.distribution.get_version(),
+            "month_year": time.strftime("%B %Y", time.localtime(time.time()))
+        }
         for template in self.template_files:
             self.make_file(
                 (template[0]), template[1],
-                self.make_template, (template[0], template[1], self.replacement_dict),
+                self.make_template, (template[0], template[1], replacement_dict),
                 exec_msg='templating %s -> %s' % (template[0], template[1])
             )
 
@@ -135,7 +130,7 @@ class clean(distutils.command.clean.clean):
 
 setup(
     name="rdiff-backup",
-    version=version_string,
+    use_scm_version=True,
     description="Local/remote mirroring+incremental backup",
     author="The rdiff-backup project",
     author_email="rdiff-backup-users@nongnu.org",
@@ -158,7 +153,7 @@ setup(
     data_files=[
         ("share/man/man1", ["build/rdiff-backup.1", "build/rdiff-backup-statistics.1"]),
         (
-            "share/doc/rdiff-backup-%s" % (version_string,),
+            "share/doc/rdiff-backup",
             [
                 "CHANGELOG",
                 "COPYING",
@@ -184,4 +179,5 @@ setup(
         'build_py': build_py,
         'clean': clean,
     },
+    setup_requires=['setuptools_scm'],
 )

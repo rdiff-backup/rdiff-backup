@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # rdiff-backup-statistics -- Summarize rdiff-backup statistics files
-# Version $version released $date
 # Copyright 2005 Dean Gaudet, Ben Escoto
 #
 # This file is part of rdiff-backup.
