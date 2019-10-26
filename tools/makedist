@@ -69,7 +69,7 @@ def MakeDir(specfiles):
 		shutil.rmtree(tardir)
 	except OSError: pass
 	os.mkdir(tardir)
-	for filename in ["CHANGELOG", "COPYING", "README.md", "docs/Windows-README.txt",
+	for filename in ["CHANGELOG", "COPYING", "README.md", "docs/Windows-README.md",
 					 "docs/FAQ.md", "docs/examples.md", "docs/DEVELOP.md",
 					 "setup.py"] + specfiles:
 		shutil.copyfile(filename,

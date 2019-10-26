@@ -78,6 +78,7 @@ setup(
                 "docs/FAQ.html",
                 "docs/examples.html",
                 "docs/DEVELOP.md",
+                "docs/Windows-README.md",
             ],
         ),
     ],
