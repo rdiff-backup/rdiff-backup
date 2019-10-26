@@ -25,6 +25,8 @@ That's it, you can now run the tests:
 * or `tox -c tox_slow.ini` for long tests
 * or `sudo tox -c tox_root.ini` for the few tests needing root rights
 
+> **NOTE:** if you plan to use `./setup.py bdist_rpm` to create an RPM, you would need rpm-build but be aware that it will currently fail due to a [known bug in setuptools with compressed man pages](https://github.com/pypa/setuptools/issues/1277).
+
 ## How to debug rdiff-backup?
 
 ### Trace back a coredump
@@ -54,9 +56,9 @@ sudo dnf debuginfo-install bzip2-libs-1.0.6-28.fc29.x86_64 glibc-2.28-27.fc29.x8
 Then calling:
 
 ```
-python3 dist/setup.py clean --all  #<1>
-python3-debug dist/setup.py clean --all
-CFLAGS='-Wall -O0 -g' python3-debug dist/setup.py build  #<2>
+python3 ./setup.py clean --all  #<1>
+python3-debug ./setup.py clean --all
+CFLAGS='-Wall -O0 -g' python3-debug ./setup.py build  #<2>
 PATH=$PWD/build/scripts-3.7:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.7-pydebug/ rdiff-backup -v 10 \
 	/some/dir1 /some/dir2
 [...]
