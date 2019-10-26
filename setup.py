@@ -66,7 +66,7 @@ setup(
             extra_link_args=lflags_arg,
         ),
     ],
-    scripts=["rdiff-backup", "rdiff-backup-statistics"],
+    scripts=["src/rdiff-backup", "src/rdiff-backup-statistics"],
     data_files=[
         ("share/man/man1", ["docs/rdiff-backup.1", "docs/rdiff-backup-statistics.1"]),
         (
