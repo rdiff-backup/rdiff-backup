@@ -21,7 +21,7 @@ spec_template = DistDir + "/rdiff-backup.spec.template"
 # The Fedora distribution has its own spec template
 fedora_spec_template = DistDir + "/rdiff-backup.spec.template-fedora"
 
-def CopyMan(destination, version):
+def CopyMan(destination, version, sourcedir = "."):
 	"""Create updated man page at the specified location"""
 	fp = open(destination, "w")
 	date = time.strftime("%B %Y", time.localtime(time.time()))
@@ -29,50 +29,11 @@ def CopyMan(destination, version):
 	firstline = ('.TH RDIFF-BACKUP 1 "%s" "%s" "User Manuals"\n' %
 				 (date, version))
 	fp.write(firstline)
-	infp = open(os.path.basename(destination), "r")
+	infp = open(op.path.join(sourcedir, os.path.basename(destination)), "r")
 	infp.readline()
 	fp.write(infp.read())
 	fp.close()
 	infp.close()
-
-def MakeHTML(input_prefix, title):
-	"""Create html and wml versions from given html body
-
-	Input expected in <input_prefix>-body.html, and output will be put
-	in <input_prefix>.wml and <input_prefix>.html.
-
-	"""
-	body_fp = open("%s-body.html" % (input_prefix,), "r")
-	body_string = body_fp.read()
-	body_fp.close()
-
-	wml_fp = open("%s.wml" % (input_prefix,), "w")
-	wml_fp.write(
-"""#include 'template.wml' home=. curpage=none title="%s"
-
-<divert body>
-<p><h2>%s</h2>
-
-""" % (title, title))
-	wml_fp.write(body_string)
-	wml_fp.write("\n</divert>\n")
-	wml_fp.close()
-
-	html_fp = open("%s.html" % (input_prefix,), "w")
-	html_fp.write(
-"""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-
-<html>
-  <head>
-    <title>%s</title>
-  </head>
-
-  <body>
-  <h1>%s</h1>
-""" % (title, title))
-	html_fp.write(body_string)
-	html_fp.write("\n</body></html>")
-	html_fp.close()
 
 def VersionedCopy(source, dest, munge_date = 0):
 	"""Copy source to dest, substituting $version with version
@@ -108,8 +69,8 @@ def MakeDir(specfiles):
 		shutil.rmtree(tardir)
 	except OSError: pass
 	os.mkdir(tardir)
-	for filename in ["CHANGELOG", "COPYING", "README.md", "Windows-README.txt",
-					 "FAQ.html", "examples.html",
+	for filename in ["CHANGELOG", "COPYING", "README.md", "docs/Windows-README.md",
+					 "docs/FAQ.md", "docs/examples.md", "docs/DEVELOP.md",
 					 "setup.py"] + specfiles:
 		shutil.copyfile(filename,
 						os.path.join(tardir, os.path.basename(filename)))
@@ -141,8 +102,8 @@ def MakeDir(specfiles):
 
 	os.chmod(os.path.join(tardir, "setup.py"), 0o755)
 	os.chmod(os.path.join(tardir, "rdiff-backup"), 0o644)
-	CopyMan(os.path.join(tardir, "rdiff-backup.1"), Version)
-	CopyMan(os.path.join(tardir, "rdiff-backup-statistics.1"), Version)
+	CopyMan(os.path.join(tardir, "rdiff-backup.1"), Version, "docs")
+	CopyMan(os.path.join(tardir, "rdiff-backup-statistics.1"), Version, "docs")
 	return tardir
 
 def MakeTar(tardir):
@@ -171,16 +132,14 @@ def parse_cmdline(arglist):
 	"""Returns action"""
 	global Version, TarRequested
 	def error():
-		print("Syntax: makedist [--html-only] [--no-tar] [version_number]")
+		print("Syntax: makedist [--no-tar] [version_number]")
 		sys.exit(1)		
 
 	try:
-		optlist, args = getopt.getopt(arglist, "h", ["help", "html-only", "no-tar"])
+		optlist, args = getopt.getopt(arglist, "h", ["help", "no-tar"])
 		retval = "All"
 		for opt, arg in optlist:
-			if opt == "--html-only":
-				retval = "HTML"
-			elif opt == "--no-tar":
+			if opt == "--no-tar":
 				TarRequested = False
 			elif opt in ("-h", "--help"):
 				error()
@@ -196,21 +155,17 @@ def parse_cmdline(arglist):
 
 def Main():
 	action = parse_cmdline(sys.argv[1:])
-	print("Making HTML")
-	MakeHTML("FAQ", "rdiff-backup FAQ")
-	MakeHTML("examples", "rdiff-backup examples")
 
-	if action != "HTML":
-		assert action == "All"
-		print("Processing version " + Version)
-		specfiles = MakeSpecFile()
-		print("Made specfiles ", specfiles)
-		dirName = MakeDir(specfiles)
-		if TarRequested:
-			tarfile = MakeTar(dirName)
-			print("Made tar file " + tarfile)
-		else:
-			print("Made directory " + dirName)
+        assert action == "All"
+        print("Processing version " + Version)
+        specfiles = MakeSpecFile()
+        print("Made specfiles ", specfiles)
+        dirName = MakeDir(specfiles)
+        if TarRequested:
+                tarfile = MakeTar(dirName)
+                print("Made tar file " + tarfile)
+        else:
+                print("Made directory " + dirName)
 
 
 if __name__ == "__main__" and '__no_execute__' not in globals():

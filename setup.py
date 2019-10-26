@@ -68,16 +68,17 @@ setup(
     ],
     scripts=["rdiff-backup", "rdiff-backup-statistics"],
     data_files=[
-        ("share/man/man1", ["rdiff-backup.1", "rdiff-backup-statistics.1"]),
+        ("share/man/man1", ["docs/rdiff-backup.1", "docs/rdiff-backup-statistics.1"]),
         (
             "share/doc/rdiff-backup-%s" % (version_string,),
             [
                 "CHANGELOG",
                 "COPYING",
                 "README.md",
-                "FAQ.html",
-                "examples.html",
-                "DEVELOP.md",
+                "docs/FAQ.md",
+                "docs/examples.md",
+                "docs/DEVELOP.md",
+                "docs/Windows-README.md",
             ],
         ),
     ],
