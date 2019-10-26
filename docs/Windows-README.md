@@ -1,4 +1,6 @@
-### INSTALLATION:
+# Using rdiff-backup under Windows
+
+## INSTALLATION:
 
 Thank you for trying *rdiff-backup* on Windows. Native support for the Windows
 environment is quite new in *rdiff-backup*. Please read the manual page, FAQ and
@@ -23,7 +25,7 @@ and copy the four enclosed files to the same directory as *rdiff-backup.exe*.
 
 You will need to follow either method only once.
 
-### ADDITIONAL ISSUES:
+## ADDITIONAL ISSUES:
 
 Currently, *rdiff-backup*'s `--include` and `--exclude` options do not support
 Windows paths with `\` as the directory separator. Instead, it is necessary to
@@ -53,7 +55,7 @@ The `\\` is necessary in the `--include` and `--exclude` options because those
 options permit regular-expressions, and `\` is the escape character in
 regular-expressions, and thus needs to be escaped itself.
 
-### TROUBLESHOOTING:
+## TROUBLESHOOTING:
 
 If you have everything installed properly, and it still doesn't work,
 see the enclosed manual, FAQ, the web page at
