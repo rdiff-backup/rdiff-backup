@@ -52,7 +52,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyc
 %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.so
 %ghost %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyo
-%doc CHANGELOG COPYING FAQ.html examples.html README.md DEVELOP.md
+%doc CHANGELOG COPYING FAQ.md examples.md README.md DEVELOP.md
 
 %changelog
 * Sat Feb 16 2019 Eric Lavarde <ewl+rdiffbackup@lavar.de> 1.3.0-1
