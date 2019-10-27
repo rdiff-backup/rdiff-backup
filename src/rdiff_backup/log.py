@@ -258,7 +258,8 @@ class ErrorLog:
         base_rp = Globals.rbdir.append("error_log.%s.data" % (time_string, ))
         if compress:
             cls._log_fileobj = rpath.MaybeGzip(base_rp)
-        else: cls._log_fileobj = base_rp.open("wb", compress=0)
+        else:
+            cls._log_fileobj = base_rp.open("wb", compress=0)
 
     @classmethod
     def isopen(cls):
@@ -291,7 +292,8 @@ class ErrorLog:
         except AttributeError:
             if type(obj) is tuple:
                 return "/".join(obj)
-            else: return repr(obj)
+            else:
+                return repr(obj)
 
     @classmethod
     def write_if_open(cls, error_type, rp, exc):

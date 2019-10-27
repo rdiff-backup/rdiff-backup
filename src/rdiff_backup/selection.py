@@ -716,7 +716,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
     def glob_get_prefix_res(self, glob_str):
         """Return list of regexps equivalent to prefixes of glob_str"""
         glob_parts = glob_str.split(b"/")
-        if b"" in glob_parts[1:-1]:  # "" OK if comes first or last, as in /foo/
+        if b"" in glob_parts[1:
+                             -1]:  # "" OK if comes first or last, as in /foo/
             raise GlobbingError(
                 "Consecutive '/'s found in globbing string %a" % glob_str)
 

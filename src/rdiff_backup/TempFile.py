@@ -47,7 +47,7 @@ def new_in_dir(dir_rp):
         tf = dir_rp.append('rdiff-backup.tmp.%d' % _tfindex)
         _tfindex = _tfindex + 1
         if not tf.lstat():
-        	return tf
+            return tf
 
 
 class TempFile(rpath.RPath):
@@ -57,7 +57,7 @@ class TempFile(rpath.RPath):
         """Rename temp file to permanent location, possibly overwriting"""
         if not self.lstat():  # "Moving" empty file, so just delete
             if rp_dest.lstat():
-            	rp_dest.delete()
+                rp_dest.delete()
             remove_listing(self)
             return
 
@@ -75,7 +75,7 @@ class TempFile(rpath.RPath):
             rpath.rename(self, rp_dest)
             self.setdata()
             if self.lstat():
-            	raise OSError("Cannot rename tmp file correctly")
+                raise OSError("Cannot rename tmp file correctly")
         remove_listing(self)
 
     def delete(self):

@@ -180,7 +180,7 @@ class QuotedRPath(rpath.RPath):
         else:
             result = rpath.RPath.isincfile(self)
             if result:
-            	self.inc_basestr = unquote(self.inc_basestr)
+                self.inc_basestr = unquote(self.inc_basestr)
         return result
 
     def get_path(self):

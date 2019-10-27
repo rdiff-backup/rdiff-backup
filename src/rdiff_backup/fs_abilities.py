@@ -938,7 +938,7 @@ class RestoreSetGlobals(SetGlobals):
             return  # don't override 0
         for attr in attr_triple:
             SetConnections.UpdateGlobal(attr, None)
-        if not dest_support: 
+        if not dest_support:
             return  # if dest doesn't support, do nothing
         SetConnections.UpdateGlobal(active_attr, 1)
         self.out_conn.Globals.set_local(conn_attr, 1)

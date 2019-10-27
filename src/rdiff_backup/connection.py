@@ -18,7 +18,6 @@
 # USA
 """Support code for remote execution and data transfer"""
 
-
 import types
 import os
 import tempfile
@@ -28,7 +27,6 @@ import traceback
 import socket
 import sys
 import gzip
-
 
 # The following EA and ACL modules may be used if available
 try:

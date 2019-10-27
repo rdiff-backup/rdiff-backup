@@ -69,7 +69,8 @@ def add_rorp(rorp, dest_rorp=None):
             dest_key = None
         elif dest_rorp.getnumlinks() == 1:
             dest_key = "NA"
-        else: dest_key = get_inode_key(dest_rorp)
+        else:
+            dest_key = get_inode_key(dest_rorp)
         digest = rorp.has_sha1() and rorp.get_sha1() or None
         _inode_index[rp_inode_key] = (rorp.index, rorp.getnumlinks(), dest_key,
                                       digest)

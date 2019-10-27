@@ -128,7 +128,7 @@ class SourceStruct:
                 if dest_sig.isreg(): attach_diff(diff_rorp, src_rp, dest_sig)
                 else: attach_snapshot(diff_rorp, src_rp)
 
-                if reset_perms: 
+                if reset_perms:
                     src_rp.chmod(src_rp.getperms() & ~0o400)
             else:
                 dest_sig.close_if_necessary()
@@ -217,7 +217,7 @@ class DestinationStruct:
             if dest_rorp.isreg():
                 dest_rp = longname.get_mirror_rp(dest_base_rpath, dest_rorp)
                 sig_fp = cls.get_one_sig_fp(dest_rp)
-                if sig_fp is None: 
+                if sig_fp is None:
                     return None
                 dest_sig.setfile(sig_fp)
         else:
