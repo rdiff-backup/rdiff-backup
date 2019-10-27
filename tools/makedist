@@ -96,12 +96,12 @@ def MakeDir(specfiles):
 		shutil.copyfile(os.path.join(PySourceDir, filename),
 						os.path.join(tardir, PySourceDir, filename))
 
-	VersionedCopy("src/rdiff-backup", "%s/rdiff-backup" % (tardir,), 1)
-	VersionedCopy("src/rdiff-backup-statistics", "%s/rdiff-backup-statistics"
+	VersionedCopy("src/rdiff-backup", "%s/src/rdiff-backup" % (tardir,), 1)
+	VersionedCopy("src/rdiff-backup-statistics", "%s/src/rdiff-backup-statistics"
 				  % (tardir,), 1)
 
 	os.chmod(os.path.join(tardir, "setup.py"), 0o755)
-	os.chmod(os.path.join(tardir, "rdiff-backup"), 0o644)
+	os.chmod(os.path.join(tardir, "src/rdiff-backup"), 0o644)
 	CopyMan(os.path.join(tardir, "rdiff-backup.1"), Version, "docs")
 	CopyMan(os.path.join(tardir, "rdiff-backup-statistics.1"), Version, "docs")
 	return tardir
