@@ -41,11 +41,11 @@ def Compare(src_rp, mirror_rp, inc_rp, compare_time):
 def Compare_hash(src_rp, mirror_rp, inc_rp, compare_time):
     """Compare files at src_rp with repo at compare_time
 
-	Note metadata differences, but also check to see if file data is
-	different.  If two regular files have the same size, hash the
-	source and compare to the hash presumably already present in repo.
+    Note metadata differences, but also check to see if file data is
+    different.  If two regular files have the same size, hash the
+    source and compare to the hash presumably already present in repo.
 
-	"""
+    """
     repo_side = mirror_rp.conn.compare.RepoSide
     data_side = src_rp.conn.compare.DataSide
 
@@ -58,10 +58,10 @@ def Compare_hash(src_rp, mirror_rp, inc_rp, compare_time):
 def Compare_full(src_rp, mirror_rp, inc_rp, compare_time):
     """Compare full data of files at src_rp with repo at compare_time
 
-	Like Compare_hash, but do not rely on hashes, instead copy full
-	data over.
+    Like Compare_hash, but do not rely on hashes, instead copy full
+    data over.
 
-	"""
+    """
     repo_side = mirror_rp.conn.compare.RepoSide
     data_side = src_rp.conn.compare.DataSide
 
@@ -105,7 +105,8 @@ def Verify(mirror_rp, inc_rp, verify_time):
                 (repo_rorp.get_safeindexpath(), computed_hash,
                  repo_rorp.get_sha1()), 2)
     RepoSide.close_rf_cache()
-    if not bad_files: log.Log("Every file verified successfully.", 3)
+    if not bad_files:
+        log.Log("Every file verified successfully.", 3)
     return bad_files
 
 
@@ -126,12 +127,12 @@ def print_reports(report_iter):
 def get_basic_report(src_rp, repo_rorp, comp_data_func=None):
     """Compare src_rp and repo_rorp, return CompareReport
 
-	comp_data_func should be a function that accepts (src_rp,
-	repo_rorp) as arguments, and return 1 if they have the same data,
-	0 otherwise.  If comp_data_func is false, don't compare file data,
-	only metadata.
+    comp_data_func should be a function that accepts (src_rp,
+    repo_rorp) as arguments, and return 1 if they have the same data,
+    0 otherwise.  If comp_data_func is false, don't compare file data,
+    only metadata.
 
-	"""
+    """
     if src_rp:
         index = src_rp.index
     else:
@@ -141,7 +142,8 @@ def get_basic_report(src_rp, repo_rorp, comp_data_func=None):
     elif not src_rp or not src_rp.lstat():
         return CompareReport(index, "deleted")
     elif comp_data_func and src_rp.isreg() and repo_rorp.isreg():
-        if src_rp == repo_rorp: meta_changed = 0
+        if src_rp == repo_rorp:
+            meta_changed = 0
         else:
             meta_changed = 1
         data_changed = comp_data_func(src_rp, repo_rorp)
@@ -179,17 +181,17 @@ class RepoSide(restore.MirrorStruct):
         cls.set_mirror_and_rest_times(compare_time)
         cls.initialize_rf_cache(mirror_rp, inc_rp)
         return cls.subtract_indices(cls.mirror_base.index,
-                                     cls.get_mirror_rorp_iter())
+                                    cls.get_mirror_rorp_iter())
 
     @classmethod
     def attach_files(cls, src_iter, mirror_rp, inc_rp, compare_time):
         """Attach data to all the files that need checking
 
-		Return an iterator of repo rorps that includes all the files
-		that may have changed, and has the fileobj set on all rorps
-		that need it.
+        Return an iterator of repo rorps that includes all the files
+        that may have changed, and has the fileobj set on all rorps
+        that need it.
 
-		"""
+        """
         repo_iter = cls.init_and_get_iter(mirror_rp, inc_rp, compare_time)
         base_index = cls.mirror_base.index
         for src_rorp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
@@ -204,7 +206,8 @@ class RepoSide(restore.MirrorStruct):
                     mir_rorp.setfile(fp)
                     mir_rorp.set_attached_filetype('snapshot')
 
-            if mir_rorp: yield mir_rorp
+            if mir_rorp:
+                yield mir_rorp
             else:
                 yield rpath.RORPath(index)  # indicate deleted mir_rorp
 
@@ -274,12 +277,12 @@ class DataSide(backup.SourceStruct):
 class CompareReport:
     """When two files don't match, this tells you how they don't match
 
-	This is necessary because the system that is doing the actual
-	comparing may not be the one printing out the reports.  For speed
-	the compare information can be pipelined back to the client
-	connection as an iter of CompareReports.
+    This is necessary because the system that is doing the actual
+    comparing may not be the one printing out the reports.  For speed
+    the compare information can be pipelined back to the client
+    connection as an iter of CompareReports.
 
-	"""
+    """
     # self.file is added so that CompareReports can masquerade as
     # RORPaths when in an iterator, and thus get pipelined.
     file = None
