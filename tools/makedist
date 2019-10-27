@@ -29,7 +29,7 @@ def CopyMan(destination, version, sourcedir = "."):
 	firstline = ('.TH RDIFF-BACKUP 1 "%s" "%s" "User Manuals"\n' %
 				 (date, version))
 	fp.write(firstline)
-	infp = open(op.path.join(sourcedir, os.path.basename(destination)), "r")
+	infp = open(os.path.join(sourcedir, os.path.basename(destination)), "r")
 	infp.readline()
 	fp.write(infp.read())
 	fp.close()
@@ -156,16 +156,16 @@ def parse_cmdline(arglist):
 def Main():
 	action = parse_cmdline(sys.argv[1:])
 
-        assert action == "All"
-        print("Processing version " + Version)
-        specfiles = MakeSpecFile()
-        print("Made specfiles ", specfiles)
-        dirName = MakeDir(specfiles)
-        if TarRequested:
-                tarfile = MakeTar(dirName)
-                print("Made tar file " + tarfile)
-        else:
-                print("Made directory " + dirName)
+	assert action == "All"
+	print("Processing version " + Version)
+	specfiles = MakeSpecFile()
+	print("Made specfiles ", specfiles)
+	dirName = MakeDir(specfiles)
+	if TarRequested:
+		tarfile = MakeTar(dirName)
+		print("Made tar file " + tarfile)
+	else:
+		print("Made directory " + dirName)
 
 
 if __name__ == "__main__" and '__no_execute__' not in globals():
