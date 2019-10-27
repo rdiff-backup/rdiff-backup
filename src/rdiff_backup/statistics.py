@@ -83,10 +83,10 @@ class StatsObj:
     def get_total_dest_size_change(self):
         """Return total destination size change
 
-		This represents the total change in the size of the
-		rdiff-backup destination directory.
+        This represents the total change in the size of the
+        rdiff-backup destination directory.
 
-		"""
+        """
         addvals = [
             self.NewFileSize, self.ChangedSourceSize, self.IncrementFileSize
         ]
@@ -476,10 +476,10 @@ class FileStats:
     def write_buffer(cls):
         """Write buffer to file because buffer is full
 
-		The buffer part is necessary because the GzipFile.write()
-		method seems fairly slow.
+        The buffer part is necessary because the GzipFile.write()
+        method seems fairly slow.
 
-		"""
+        """
         assert cls.line_buffer and cls._fileobj
         cls.line_buffer.append(b'')  # have join add _line_sep to end also
         cls._fileobj.write(cls._line_sep.join(cls.line_buffer))

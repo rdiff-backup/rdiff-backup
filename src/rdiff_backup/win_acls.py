@@ -52,8 +52,8 @@ class ACL:
             return
 
         try:
-            sd = rp.conn.win32security. \
-              GetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
+            sd = rp.conn.win32security.GetNamedSecurityInfo(os.fsdecode(rp.path),
+                                                            SE_FILE_OBJECT, ACL.flags)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to read ACL from %s: %s" % (repr(rp.path),
@@ -87,15 +87,14 @@ class ACL:
 
         if not sd.GetSecurityDescriptorDacl():
             sd.SetSecurityDescriptorDacl(0, None, 0)
-        if (ACL.flags & SACL_SECURITY_INFORMATION) and not \
-          sd.GetSecurityDescriptorSacl():
+        if (ACL.flags & SACL_SECURITY_INFORMATION) and not sd.GetSecurityDescriptorSacl():
             sd.SetSecurityDescriptorSacl(0, None, 0)
 
         try:
             self.__acl = \
-             rp.conn.win32security. \
-              ConvertSecurityDescriptorToStringSecurityDescriptor(sd,
-              SDDL_REVISION_1, ACL.flags)
+                rp.conn.win32security.ConvertSecurityDescriptorToStringSecurityDescriptor(sd,
+                                                                                          SDDL_REVISION_1,
+                                                                                          ACL.flags)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to convert ACL from %s to string: %s" % (repr(
@@ -108,7 +107,7 @@ class ACL:
         # I'll just clear all acl-s from rp.path
         try:
             sd = rp.conn.win32security. \
-              GetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
+                GetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to read ACL from %s for clearing: %s" % (repr(
@@ -136,11 +135,14 @@ class ACL:
 
         try:
             rp.conn.win32security. \
-             SetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags,
-             sd.GetSecurityDescriptorOwner(),sd.GetSecurityDescriptorGroup(),
-             sd.GetSecurityDescriptorDacl(),
-             (ACL.flags & SACL_SECURITY_INFORMATION) and
-              sd.GetSecurityDescriptorSacl() or None)
+                SetNamedSecurityInfo(os.fsdecode(rp.path),
+                                     SE_FILE_OBJECT,
+                                     ACL.flags,
+                                     sd.GetSecurityDescriptorOwner(),
+                                     sd.GetSecurityDescriptorGroup(),
+                                     sd.GetSecurityDescriptorDacl(),
+                                     (ACL.flags & SACL_SECURITY_INFORMATION)
+                                     and sd.GetSecurityDescriptorSacl() or None)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to set ACL on %s after clearing: %s" % (repr(
@@ -152,8 +154,9 @@ class ACL:
 
         try:
             sd = rp.conn.win32security. \
-             ConvertStringSecurityDescriptorToSecurityDescriptor(
-              os.fsdecode(self.__acl), SDDL_REVISION_1)
+                ConvertStringSecurityDescriptorToSecurityDescriptor(
+                    os.fsdecode(self.__acl),
+                    SDDL_REVISION_1)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to convert string %s to ACL: %s" % (repr(
@@ -162,19 +165,19 @@ class ACL:
         # Enable next block of code for dirs after we have a mechanism in
         # backup.py (and similar) to do a first pass to see if a directory
         # has SE_DACL_PROTECTED. In that case, we will need to
-        #		1) dest_rorp.write_win_acl(source_rorp.get_win_acl())
-        #				--> And clear existing dest_rorp one while doing so
-        #		2) Check if backup user has Admin privs to write dest_rorp
-        #				--> May need to use Win32 AccessCheck() API
-        #		3) If not, add Admin write privs to dest_rorp and add dir
-        #				to dir_perms_list-equivalent
-        #		4) THEN, allow the pre_process() function to finish and the
-        #				files be copied over. Those files which wish to
-        #				will now inherit the correct ACE objects.
-        #		5) If dir was on dir_perms_list-equivalent, drop the write
-        #				write permission we added.
-        #		6) When copy_attribs is called in end_process, make sure
-        #				that the write_win_acl() call isn't made this time
+        #       1) dest_rorp.write_win_acl(source_rorp.get_win_acl())
+        #               --> And clear existing dest_rorp one while doing so
+        #       2) Check if backup user has Admin privs to write dest_rorp
+        #               --> May need to use Win32 AccessCheck() API
+        #       3) If not, add Admin write privs to dest_rorp and add dir
+        #               to dir_perms_list-equivalent
+        #       4) THEN, allow the pre_process() function to finish and the
+        #               files be copied over. Those files which wish to
+        #               will now inherit the correct ACE objects.
+        #       5) If dir was on dir_perms_list-equivalent, drop the write
+        #               write permission we added.
+        #       6) When copy_attribs is called in end_process, make sure
+        #               that the write_win_acl() call isn't made this time
         # The reason we will need to do this is because otherwise, the files
         # which are created during step 4 will reference the ACE entries
         # which we clear during step 6. We need to clear them *before* the
@@ -187,11 +190,13 @@ class ACL:
 
         try:
             rp.conn.win32security. \
-             SetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags,
-             sd.GetSecurityDescriptorOwner(),sd.GetSecurityDescriptorGroup(),
-             sd.GetSecurityDescriptorDacl(),
-             (ACL.flags & SACL_SECURITY_INFORMATION) and
-              sd.GetSecurityDescriptorSacl() or None)
+                SetNamedSecurityInfo(os.fsdecode(rp.path),
+                                     SE_FILE_OBJECT, ACL.flags,
+                                     sd.GetSecurityDescriptorOwner(),
+                                     sd.GetSecurityDescriptorGroup(),
+                                     sd.GetSecurityDescriptorDacl(),
+                                     (ACL.flags & SACL_SECURITY_INFORMATION)
+                                     and sd.GetSecurityDescriptorSacl() or None)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to set ACL on %s: %s" % (repr(rp.path), exc),
@@ -199,7 +204,7 @@ class ACL:
 
     def __bytes__(self):
         return b'# file: %b\n%b\n' % \
-           (C.acl_quote(self.get_indexpath()), self.__acl)
+            (C.acl_quote(self.get_indexpath()), self.__acl)
 
     def __str__(self):
         return os.fsdecode(self.__bytes__())
