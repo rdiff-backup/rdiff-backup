@@ -259,6 +259,7 @@ remote_tempdir = None
 # and pre-regress
 do_fsync = True
 
+
 def get(name):
     """Return the value of something in this module"""
     return globals()[name]
