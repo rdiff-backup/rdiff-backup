@@ -37,28 +37,28 @@ class UnwrapFile:
     def _get(self):
         """Return pair (type, data) next in line on the file
 
-		type is a single character which is either
-		"o" for an object,
-		"f" for file,
-		"c" for a continuation of a file,
-		"h" for the close value of a file
-		"e" for an exception, or
-		None if no more data can be read.
+        type is a single character which is either
+        "o" for an object,
+        "f" for file,
+        "c" for a continuation of a file,
+        "h" for the close value of a file
+        "e" for an exception, or
+        None if no more data can be read.
 
-		Data is either the file's data, if type is "c" or "f", or the
-		actual object if the type is "o", "e", or "r"
+        Data is either the file's data, if type is "c" or "f", or the
+        actual object if the type is "o", "e", or "r"
 
-		"""
+        """
         header = self.file.read(8)
         if not header:
-        	return None, None
+            return None, None
         if len(header) != 8:
             assert None, "Header %s is only %d bytes" % (header, len(header))
         # [0:1] makes sure that the type remains a byte and not an int
         type, length = header[0:1], self._b2i(header[1:])
         buf = self.file.read(length)
         if type in b"oeh":
-        	return type, pickle.loads(buf)
+            return type, pickle.loads(buf)
         else:
             assert type in b"fc"
             return type, buf
@@ -71,10 +71,10 @@ class UnwrapFile:
 class IterWrappingFile(UnwrapFile):
     """An iterator generated from a file.
 
-	Initialize with a file type object, and then it will return the
-	elements of the file in order.
+    Initialize with a file type object, and then it will return the
+    elements of the file in order.
 
-	"""
+    """
 
     def __init__(self, file):
         UnwrapFile.__init__(self, file)
@@ -88,38 +88,38 @@ class IterWrappingFile(UnwrapFile):
             self.currently_in_file.close()  # no error checking by this point
         type, data = self._get()
         if not type:
-        	raise StopIteration
+            raise StopIteration
         if type == b"o" or type == b"e":
-        	return data
+            return data
         elif type == b"f":
-        	return IterVirtualFile(self, data)
+            return IterVirtualFile(self, data)
         else:
-        	raise IterFileException("Bad file type %s" % type)
+            raise IterFileException("Bad file type %s" % type)
 
 
 class IterVirtualFile(UnwrapFile):
     """Another version of a pretend file
 
-	This is returned by IterWrappingFile when a file is embedded in
-	the main file that the IterWrappingFile is based around.
+    This is returned by IterWrappingFile when a file is embedded in
+    the main file that the IterWrappingFile is based around.
 
-	"""
+    """
 
     def __init__(self, iwf, initial_data):
         """Initializer
 
-		initial_data is the data from the first block of the file.
-		iwf is the iter wrapping file that spawned this
-		IterVirtualFile.
+        initial_data is the data from the first block of the file.
+        iwf is the iter wrapping file that spawned this
+        IterVirtualFile.
 
-		"""
+        """
         UnwrapFile.__init__(self, iwf.file)
         self.iwf = iwf
         iwf.currently_in_file = self
         self.buffer = initial_data
         self.closed = None
         if not initial_data:
-        	self.set_close_val()
+            self.set_close_val()
 
     def read(self, length=-1):
         """Read length bytes from the file, updating buffers as necessary"""
@@ -128,12 +128,12 @@ class IterVirtualFile(UnwrapFile):
             if length >= 0:
                 while length >= len(self.buffer):
                     if not self.addtobuffer():
-                    	break
+                        break
                 real_len = min(length, len(self.buffer))
             else:
                 while 1:
                     if not self.addtobuffer():
-                    	break
+                        break
                 real_len = len(self.buffer)
         else:
             real_len = min(length, len(self.buffer))
@@ -177,17 +177,17 @@ class IterVirtualFile(UnwrapFile):
 class FileWrappingIter:
     """A file interface wrapping around an iterator
 
-	This is initialized with an iterator, and then converts it into a
-	stream of characters.  The object will evaluate as little of the
-	iterator as is necessary to provide the requested bytes.
+    This is initialized with an iterator, and then converts it into a
+    stream of characters.  The object will evaluate as little of the
+    iterator as is necessary to provide the requested bytes.
 
-	The actual file is a sequence of marshaled objects, each preceded
-	by 8 bytes which identifies the following the type of object, and
-	specifies its length.  File objects are not marshalled, but the
-	data is written in chunks of Globals.blocksize, and the following
-	blocks can identify themselves as continuations.
+    The actual file is a sequence of marshaled objects, each preceded
+    by 8 bytes which identifies the following the type of object, and
+    specifies its length.  File objects are not marshalled, but the
+    data is written in chunks of Globals.blocksize, and the following
+    blocks can identify themselves as continuations.
 
-	"""
+    """
 
     def __init__(self, iter):
         """Initialize with iter"""
@@ -201,7 +201,7 @@ class FileWrappingIter:
         assert not self.closed
         while len(self.array_buf) < length:
             if not self.addtobuffer():
-            	break
+                break
 
         result = self.array_buf[:length].tobytes()
         del self.array_buf[:length]
@@ -210,11 +210,12 @@ class FileWrappingIter:
     def addtobuffer(self):
         """Updates self.buffer, adding a chunk from the iterator.
 
-		Returns None if we have reached the end of the iterator,
-		otherwise return true.
+        Returns None if we have reached the end of the iterator,
+        otherwise return true.
 
-		"""
-        if self.currently_in_file: self.addfromfile(b"c")
+        """
+        if self.currently_in_file:
+            self.addfromfile(b"c")
         else:
             try:
                 currentobj = next(self.iter)
@@ -233,11 +234,11 @@ class FileWrappingIter:
     def addfromfile(self, prefix_letter):
         """Read a chunk from the current file and add to array_buf
 
-		prefix_letter and the length will be prepended to the file
-		data.  If there is an exception while reading the file, the
-		exception will be added to array_buf instead.
+        prefix_letter and the length will be prepended to the file
+        data.  If there is an exception while reading the file, the
+        exception will be added to array_buf instead.
 
-		"""
+        """
         buf = robust.check_common_error(self.read_error_handler,
                                         self.currently_in_file.read,
                                         [Globals.blocksize])
@@ -276,37 +277,37 @@ class MiscIterFlush:
 class MiscIterFlushRepeat(MiscIterFlush):
     """Flush, but then cause Misc Iter to yield this same object
 
-	Thus if we put together a pipeline of these, one MiscIterFlushRepeat
-	can cause all the segments to flush in sequence.
+    Thus if we put together a pipeline of these, one MiscIterFlushRepeat
+    can cause all the segments to flush in sequence.
 
-	"""
+    """
     pass
 
 
 class MiscIterToFile(FileWrappingIter):
     """Take an iter and give it a file-ish interface
 
-	This expands on the FileWrappingIter by understanding how to
-	process RORPaths with file objects attached.  It adds a new
-	character "r" to mark these.
+    This expands on the FileWrappingIter by understanding how to
+    process RORPaths with file objects attached.  It adds a new
+    character "r" to mark these.
 
-	This is how we send signatures and diffs across the line.  As
-	sending each one separately via a read() call would result in a
-	lot of latency, the read()'s are buffered - a read() call with no
-	arguments will return a variable length string (possibly empty).
+    This is how we send signatures and diffs across the line.  As
+    sending each one separately via a read() call would result in a
+    lot of latency, the read()'s are buffered - a read() call with no
+    arguments will return a variable length string (possibly empty).
 
-	To flush the MiscIterToFile, have the iterator yield a
-	MiscIterFlush class.
+    To flush the MiscIterToFile, have the iterator yield a
+    MiscIterFlush class.
 
-	"""
+    """
 
     def __init__(self, rpiter, max_buffer_bytes=None, max_buffer_rps=None):
         """MiscIterToFile initializer
 
-		max_buffer_bytes is the maximum size of the buffer in bytes.
-		max_buffer_rps is the maximum size of the buffer in rorps.
+        max_buffer_bytes is the maximum size of the buffer in bytes.
+        max_buffer_rps is the maximum size of the buffer in rorps.
 
-		"""
+        """
         self.max_buffer_bytes = max_buffer_bytes or Globals.conn_bufsize
         self.max_buffer_rps = max_buffer_rps or Globals.pipeline_max_length
         self.rorps_in_buffer = 0
@@ -320,7 +321,7 @@ class MiscIterToFile(FileWrappingIter):
             while (len(self.array_buf) < self.max_buffer_bytes
                    and self.rorps_in_buffer < self.max_buffer_rps):
                 if not self.addtobuffer():
-                	break
+                    break
 
             result = self.array_buf.tobytes()
             del self.array_buf[:]
@@ -339,7 +340,7 @@ class MiscIterToFile(FileWrappingIter):
         if self.currently_in_file:
             self.addfromfile(b"c")
             if not self.currently_in_file:
-            	self.rorps_in_buffer += 1
+                self.rorps_in_buffer += 1
         else:
             if self.next_in_line:
                 currentobj = self.next_in_line
@@ -411,13 +412,13 @@ class FileToMiscIter(IterWrappingFile):
         while not type:
             type, data = self._get()
         if type == b"z":
-        	raise StopIteration
+            raise StopIteration
         elif type == b"r":
-        	return self.get_rorp(data)
+            return self.get_rorp(data)
         elif type == b"o":
-        	return data
+            return data
         else:
-        	raise IterFileException("Bad file type %s" % (type, ))
+            raise IterFileException("Bad file type %s" % (type, ))
 
     def get_rorp(self, pickled_tuple):
         """Return rorp that data represents"""
@@ -432,7 +433,7 @@ class FileToMiscIter(IterWrappingFile):
         """Read file object from file"""
         type, data = self._get()
         if type == b"f":
-        	return IterVirtualFile(self, data)
+            return IterVirtualFile(self, data)
         assert type == b"e", "Expected type e, got %s" % (type, )
         assert isinstance(data, Exception)
         return ErrorFile(data)
@@ -440,16 +441,16 @@ class FileToMiscIter(IterWrappingFile):
     def _get(self):
         """Return (type, data or object) pair
 
-		This is like UnwrapFile._get() but reads in variable length
-		blocks.  Also type "z" is allowed, which means end of
-		iterator.  An empty read() is not considered to mark the end
-		of remote iter.
+        This is like UnwrapFile._get() but reads in variable length
+        blocks.  Also type "z" is allowed, which means end of
+        iterator.  An empty read() is not considered to mark the end
+        of remote iter.
 
-		"""
+        """
         if not self.buf:
-        	self.buf += self.file.read()
+            self.buf += self.file.read()
         if not self.buf:
-        	return None, None
+            return None, None
 
         assert len(self.buf) >= 8, "Unexpected end of MiscIter file"
         # [0:1] makes sure that the type remains a byte and not an int
@@ -457,9 +458,9 @@ class FileToMiscIter(IterWrappingFile):
         data = self.buf[8:8 + length]
         self.buf = self.buf[8 + length:]
         if type in b"oerh":
-        	return type, pickle.loads(data)
+            return type, pickle.loads(data)
         else:
-        	return type, data
+            return type, data
 
 
 class ErrorFile:

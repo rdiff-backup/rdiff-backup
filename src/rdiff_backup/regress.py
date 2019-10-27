@@ -55,12 +55,12 @@ class RegressException(Exception):
 def Regress(mirror_rp):
     """Bring mirror and inc directory back to regress_to_time
 
-	Also affects the rdiff-backup-data directory, so Globals.rbdir
-	should be set.  Regress should only work one step at a time
-	(i.e. don't "regress" through two separate backup sets.  This
-	function should be run locally to the rdiff-backup-data directory.
+    Also affects the rdiff-backup-data directory, so Globals.rbdir
+    should be set.  Regress should only work one step at a time
+    (i.e. don't "regress" through two separate backup sets.  This
+    function should be run locally to the rdiff-backup-data directory.
 
-	"""
+    """
     inc_rpath = Globals.rbdir.append_path(b"increments")
     assert mirror_rp.index == () and inc_rpath.index == ()
     assert mirror_rp.isdir() and inc_rpath.isdir()
@@ -81,10 +81,10 @@ def Regress(mirror_rp):
 def set_regress_time():
     """Set global regress_time to previous successful backup
 
-	If there are two current_mirror increments, then the last one
-	corresponds to a backup session that failed.
+    If there are two current_mirror increments, then the last one
+    corresponds to a backup session that failed.
 
-	"""
+    """
     global regress_time, unsuccessful_backup_time
     manager = metadata.SetManager()
     curmir_incs = manager.sorted_prefix_inclist(b'current_mirror')
@@ -100,10 +100,10 @@ def set_regress_time():
 def set_restore_times():
     """Set _rest_time and _mirror_time in the restore module
 
-	_rest_time (restore time) corresponds to the last successful
-	backup time.  _mirror_time is the unsuccessful backup time.
+    _rest_time (restore time) corresponds to the last successful
+    backup time.  _mirror_time is the unsuccessful backup time.
 
-	"""
+    """
     restore.MirrorStruct._mirror_time = unsuccessful_backup_time
     restore.MirrorStruct._rest_time = regress_time
 
@@ -111,15 +111,15 @@ def set_restore_times():
 def regress_rbdir(meta_manager):
     """Delete the increments in the rdiff-backup-data directory
 
-	Returns the former current mirror rp so we can delete it later.
-	All of the other rp's should be deleted before the actual regress,
-	to clear up disk space the rest of the procedure may need.
+    Returns the former current mirror rp so we can delete it later.
+    All of the other rp's should be deleted before the actual regress,
+    to clear up disk space the rest of the procedure may need.
 
-	Also, in case the previous session failed while diffing the
-	metadata file, either recreate the mirror_metadata snapshot, or
-	delete the extra regress_time diff.
+    Also, in case the previous session failed while diffing the
+    metadata file, either recreate the mirror_metadata snapshot, or
+    delete the extra regress_time diff.
 
-	"""
+    """
     has_meta_diff, has_meta_snap = 0, 0
     for old_rp in meta_manager.timerpmap[regress_time]:
         if old_rp.getincbase_bname() == b'mirror_metadata':
@@ -145,11 +145,11 @@ def regress_rbdir(meta_manager):
 def recreate_meta(meta_manager):
     """Make regress_time mirror_metadata snapshot by patching
 
-	We write to a tempfile first.  Otherwise, in case of a crash, it
-	would seem we would have an intact snapshot and partial diff, not
-	the reverse.
+    We write to a tempfile first.  Otherwise, in case of a crash, it
+    would seem we would have an intact snapshot and partial diff, not
+    the reverse.
 
-	"""
+    """
     temprp = [TempFile.new_in_dir(Globals.rbdir)]
 
     def callback(rp):
@@ -165,16 +165,17 @@ def recreate_meta(meta_manager):
         b"mirror_metadata.%b.snapshot.gz" % Time.timetobytes(regress_time))
     assert not finalrp.lstat(), finalrp
     rpath.rename(temprp[0], finalrp)
-    if Globals.fsync_directories: Globals.rbdir.fsync()
+    if Globals.fsync_directories:
+        Globals.rbdir.fsync()
 
 
 def iterate_raw_rfs(mirror_rp, inc_rp):
     """Iterate all RegressFile objects in mirror/inc directory
 
-	Also changes permissions of unreadable files.  We don't have to
-	change them back later because regress will do that for us.
+    Also changes permissions of unreadable files.  We don't have to
+    change them back later because regress will do that for us.
 
-	"""
+    """
     root_rf = RegressFile(mirror_rp, inc_rp, restore.get_inclist(inc_rp))
 
     def helper(rf):
@@ -206,11 +207,11 @@ def yield_metadata():
 def iterate_meta_rfs(mirror_rp, inc_rp):
     """Yield RegressFile objects with extra metadata information added
 
-	Each RegressFile will have an extra object variable .metadata_rorp
-	which will contain the metadata attributes of the mirror file at
-	regress_time.
+    Each RegressFile will have an extra object variable .metadata_rorp
+    which will contain the metadata attributes of the mirror file at
+    regress_time.
 
-	"""
+    """
     raw_rfs = iterate_raw_rfs(mirror_rp, inc_rp)
     collated = rorpiter.Collate2Iters(raw_rfs, yield_metadata())
     for raw_rf, metadata_rorp in collated:
@@ -228,11 +229,11 @@ def iterate_meta_rfs(mirror_rp, inc_rp):
 class RegressFile(restore.RestoreFile):
     """Like RestoreFile but with metadata
 
-	Hold mirror_rp and related incs, but also put metadata info for
-	the mirror file at regress time in self.metadata_rorp.
-	self.metadata_rorp is not set in this class.
+    Hold mirror_rp and related incs, but also put metadata info for
+    the mirror file at regress time in self.metadata_rorp.
+    self.metadata_rorp is not set in this class.
 
-	"""
+    """
 
     def __init__(self, mirror_rp, inc_rp, inc_list):
         restore.RestoreFile.__init__(self, mirror_rp, inc_rp, inc_list)
@@ -263,20 +264,20 @@ class RegressFile(restore.RestoreFile):
 class RegressITRB(rorpiter.ITRBranch):
     """Turn back state of dest directory (use with IterTreeReducer)
 
-	The arguments to the ITR will be RegressFiles.  There are two main
-	assumptions this procedure makes (besides those mentioned above):
+    The arguments to the ITR will be RegressFiles.  There are two main
+    assumptions this procedure makes (besides those mentioned above):
 
-	1.  The mirror_rp and the metadata_rorp equal_loose correctly iff
-	    they contain the same data.  If this is the case, then the inc
-	    file is unnecessary and we can delete it.
+    1.  The mirror_rp and the metadata_rorp equal_loose correctly iff
+        they contain the same data.  If this is the case, then the inc
+        file is unnecessary and we can delete it.
 
-	2.  If the don't match, then applying the inc file will
-	    successfully get us back to the previous state.
+    2.  If the don't match, then applying the inc file will
+        successfully get us back to the previous state.
 
-	Since the metadata file is required, the two above really only
-	matter for regular files.
+    Since the metadata file is required, the two above really only
+    matter for regular files.
 
-	"""
+    """
 
     def __init__(self):
         """Just initialize some variables to None"""
@@ -309,11 +310,11 @@ class RegressITRB(rorpiter.ITRBranch):
     def restore_orig_regfile(self, rf):
         """Restore original regular file
 
-		This is the trickiest case for avoiding information loss,
-		because we don't want to delete the increment before the
-		mirror is fully written.
+        This is the trickiest case for avoiding information loss,
+        because we don't want to delete the increment before the
+        mirror is fully written.
 
-		"""
+        """
         assert rf.metadata_rorp.isreg()
         if rf.mirror_rp.isreg():
             tf = TempFile.new(rf.mirror_rp)
@@ -377,8 +378,10 @@ def check_pids(curmir_incs):
     def extract_pid(curmir_rp):
         """Return process ID from a current mirror marker, if any"""
         match = pid_re.search(curmir_rp.get_string())
-        if not match: return None
-        else: return int(match.group(1))
+        if not match:
+            return None
+        else:
+            return int(match.group(1))
 
     def pid_running(pid):
         """True if we know if process with pid is currently running"""
@@ -392,7 +395,9 @@ def check_pids(curmir_incs):
                 2)
         except AttributeError:
             assert os.name == 'nt'
-            import win32api, win32con, pywintypes
+            import win32api
+            import win32con
+            import pywintypes
             process = None
             try:
                 process = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 0,

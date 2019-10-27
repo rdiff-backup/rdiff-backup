@@ -48,10 +48,10 @@ class SetConnectionsException(Exception):
 def get_cmd_pairs(arglist, remote_schema=None, remote_cmd=None):
     """Map the given file descriptions into command pairs
 
-	Command pairs are tuples cmdpair with length 2.  cmdpair[0] is
-	None iff it describes a local path, and cmdpair[1] is the path.
+    Command pairs are tuples cmdpair with length 2.  cmdpair[0] is
+    None iff it describes a local path, and cmdpair[1] is the path.
 
-	"""
+    """
     global __cmd_schema
     if remote_schema:
         __cmd_schema = remote_schema
@@ -100,12 +100,12 @@ def desc2cmd_pairs(desc_pair):
 def parse_file_desc(file_desc):
     """Parse file description returning pair (host_info, filename)
 
-	In other words, bescoto@folly.stanford.edu::/usr/bin/ls =>
-	("bescoto@folly.stanford.edu", "/usr/bin/ls").  The
-	complication is to allow for quoting of : by a \.  If the
-	string is not separated by :, then the host_info is None.
+    In other words, bescoto@folly.stanford.edu::/usr/bin/ls =>
+    ("bescoto@folly.stanford.edu", "/usr/bin/ls").  The
+    complication is to allow for quoting of : by a \.  If the
+    string is not separated by :, then the host_info is None.
 
-	"""
+    """
 
     def check_len(i):
         if i >= len(file_desc):
@@ -138,7 +138,7 @@ def parse_file_desc(file_desc):
 
     check_len(i + 1)
 
-    filename = file_desc[i+1:]
+    filename = file_desc[i + 1:]
     # make sure paths under Windows use / instead of \
     if os.path.altsep:  # only Windows has an alternative separator for paths
         filename = filename.replace(os.fsencode(os.path.sep), b'/')
@@ -157,11 +157,11 @@ def fill_schema(host_info):
 def init_connection(remote_cmd):
     """Run remote_cmd, register connection, and then return it
 
-	If remote_cmd is None, then the local connection will be
-	returned.  This also updates some settings on the remote side,
-	like global settings, its connection number, and verbosity.
+    If remote_cmd is None, then the local connection will be
+    returned.  This also updates some settings on the remote side,
+    like global settings, its connection number, and verbosity.
 
-	"""
+    """
     if not remote_cmd:
         return Globals.local_connection
 
@@ -214,7 +214,7 @@ Please make sure that nothing is printed (e.g., by your login shell) when this
 command executes. Try running this command:
 
     %a
-	
+    
 which should only print out the text: rdiff-backup <version>""" %
             (remote_cmd, remote_cmd.replace(b"--server", b"--version")))
 
@@ -281,7 +281,7 @@ def CloseConnections():
     del Globals.connections[1:]  # Only leave local connection
     Globals.connection_dict = {0: Globals.local_connection}
     Globals.backup_reader = Globals.isbackup_reader = \
-       Globals.backup_writer = Globals.isbackup_writer = None
+        Globals.backup_writer = Globals.isbackup_writer = None
 
 
 def TestConnections(rpaths):

@@ -80,11 +80,11 @@ def reset_restrict_path(rp):
 def set_security_level(action, cmdpairs):
     """If running client, set security level and restrict_path
 
-	To find these settings, we must look at the action to see what is
-	supposed to happen, and then look at the cmdpairs to see what end
-	the client is on.
+    To find these settings, we must look at the action to see what is
+    supposed to happen, and then look at the cmdpairs to see what end
+    the client is on.
 
-	"""
+    """
 
     def islocal(cmdpair):
         return not cmdpair[0]
@@ -98,9 +98,11 @@ def set_security_level(action, cmdpairs):
     def getpath(cmdpair):
         return cmdpair[1]
 
-    if Globals.server: return
+    if Globals.server:
+        return
     cp1 = cmdpairs[0]
-    if len(cmdpairs) > 1: cp2 = cmdpairs[1]
+    if len(cmdpairs) > 1:
+        cp2 = cmdpairs[1]
     else:
         cp2 = cp1
 
@@ -123,7 +125,8 @@ def set_security_level(action, cmdpairs):
             sec_level = "read-only"
             Main.restore_set_root(
                 rpath.RPath(Globals.local_connection, getpath(cp1)))
-            if Main.restore_root: rdir = Main.restore_root.path
+            if Main.restore_root:
+                rdir = Main.restore_root.path
             else:
                 log.Log.FatalError("Invalid restore directory")
         else:
@@ -245,13 +248,14 @@ def raise_violation(reason, request, arglist):
 
 def vet_request(request, arglist):
     """Examine request for security violations"""
-    #if Globals.server: sys.stderr.write(str(request) + "\n")
+    # if Globals.server: sys.stderr.write(str(request) + "\n")
     security_level = Globals.security_level
     if security_level == "override":
         return
     if Globals.restrict_path:
         for arg in arglist:
-            if isinstance(arg, rpath.RPath): _vet_rpath(arg, request, arglist)
+            if isinstance(arg, rpath.RPath):
+                _vet_rpath(arg, request, arglist)
         if request.function_string in file_requests:
             vet_filename(request, arglist)
     if request.function_string in allowed_requests:

@@ -37,11 +37,11 @@ from . import Globals, rpath, iterfile, log
 def CollateIterators(*rorp_iters):
     """Collate RORPath iterators by index
 
-	So it takes two or more iterators of rorps and returns an
-	iterator yielding tuples like (rorp1, rorp2) with the same
-	index.  If one or the other lacks that index, it will be None
+    So it takes two or more iterators of rorps and returns an
+    iterator yielding tuples like (rorp1, rorp2) with the same
+    index.  If one or the other lacks that index, it will be None
 
-	"""
+    """
     # overflow[i] means that iter[i] has been exhausted
     # rorps[i] is None means that it is time to replenish it.
     iter_num = len(rorp_iters)
@@ -86,11 +86,11 @@ def CollateIterators(*rorp_iters):
 def Collate2Iters(riter1, riter2):
     """Special case of CollateIterators with 2 arguments
 
-	This does the same thing but is faster because it doesn't have
-	to consider the >2 iterator case.  Profiler says speed is
-	important here.
+    This does the same thing but is faster because it doesn't have
+    to consider the >2 iterator case.  Profiler says speed is
+    important here.
 
-	"""
+    """
     relem1, relem2 = None, None
     while 1:
         if not relem1:
@@ -128,10 +128,10 @@ def Collate2Iters(riter1, riter2):
 class IndexedTuple(collections.UserList):
     """Like a tuple, but has .index
 
-	This is used by CollateIterator above, and can be passed to the
-	IterTreeReducer.
+    This is used by CollateIterator above, and can be passed to the
+    IterTreeReducer.
 
-	"""
+    """
 
     def __init__(self, index, sequence):
         self.index = index
@@ -183,12 +183,12 @@ class IndexedTuple(collections.UserList):
 def FillInIter(rpiter, rootrp):
     """Given ordered rpiter and rootrp, fill in missing indices with rpaths
 
-	For instance, suppose rpiter contains rpaths with indices (),
-	(1,2), (2,5).  Then return iter with rpaths (), (1,), (1,2), (2,),
-	(2,5).  This is used when we need to process directories before or
-	after processing a file in that directory.
+    For instance, suppose rpiter contains rpaths with indices (),
+    (1,2), (2,5).  Then return iter with rpaths (), (1,), (1,2), (2,),
+    (2,5).  This is used when we need to process directories before or
+    after processing a file in that directory.
 
-	"""
+    """
     # Handle first element as special case
     try:
         first_rp = next(rpiter)
@@ -223,14 +223,14 @@ def FillInIter(rpiter, rootrp):
 class IterTreeReducer:
     """Tree style reducer object for iterator
 
-	The indices of a RORPIter form a tree type structure.  This class
-	can be used on each element of an iter in sequence and the result
-	will be as if the corresponding tree was reduced.  This tries to
-	bridge the gap between the tree nature of directories, and the
-	iterator nature of the connection between hosts and the temporal
-	order in which the files are processed.
+    The indices of a RORPIter form a tree type structure.  This class
+    can be used on each element of an iter in sequence and the result
+    will be as if the corresponding tree was reduced.  This tries to
+    bridge the gap between the tree nature of directories, and the
+    iterator nature of the connection between hosts and the temporal
+    order in which the files are processed.
 
-	"""
+    """
 
     def __init__(self, branch_class, branch_args):
         """ITR initializer"""
@@ -244,12 +244,12 @@ class IterTreeReducer:
     def finish_branches(self, index):
         """Run Finish() on all branches index has passed
 
-		When we pass out of a branch, delete it and process it with
-		the parent.  The innermost branches will be the last in the
-		list.  Return None if we are out of the entire tree, and 1
-		otherwise.
+        When we pass out of a branch, delete it and process it with
+        the parent.  The innermost branches will be the last in the
+        list.  Return None if we are out of the entire tree, and 1
+        otherwise.
 
-		"""
+        """
         branches = self.branches
         while 1:
             to_be_finished = branches[-1]
@@ -285,14 +285,14 @@ class IterTreeReducer:
     def __call__(self, *args):
         """Process args, where args[0] is current position in iterator
 
-		Returns true if args successfully processed, false if index is
-		not in the current tree and thus the final result is
-		available.
+        Returns true if args successfully processed, false if index is
+        not in the current tree and thus the final result is
+        available.
 
-		Also note below we set self.index after doing the necessary
-		start processing, in case there is a crash in the middle.
+        Also note below we set self.index after doing the necessary
+        start processing, in case there is a crash in the middle.
 
-		"""
+        """
         index = args[0]
         if self.index is None:
             self.root_branch.base_index = index
@@ -325,12 +325,12 @@ class IterTreeReducer:
 class ITRBranch:
     """Helper class for IterTreeReducer above
 
-	There are five stub functions below: start_process, end_process,
-	branch_process, can_fast_process, and fast_process.  A class that
-	subclasses this one will probably fill in these functions to do
-	more.
+    There are five stub functions below: start_process, end_process,
+    branch_process, can_fast_process, and fast_process.  A class that
+    subclasses this one will probably fill in these functions to do
+    more.
 
-	"""
+    """
     base_index = index = None
 
     def start_process(self, *args):
@@ -357,15 +357,15 @@ class ITRBranch:
 class CacheIndexable:
     """Cache last few indexed elements in iterator
 
-	This class should be initialized with an iterator yielding
-	.index'd objects.  It looks like it is just the same iterator as
-	the one that initialized it.  Luckily, it does more, caching the
-	last few elements iterated, which can be retrieved using the
-	.get() method.
+    This class should be initialized with an iterator yielding
+    .index'd objects.  It looks like it is just the same iterator as
+    the one that initialized it.  Luckily, it does more, caching the
+    last few elements iterated, which can be retrieved using the
+    .get() method.
 
-	If the index is not in the cache, return None.
+    If the index is not in the cache, return None.
 
-	"""
+    """
 
     def __init__(self, indexed_iter, cache_size=None):
         """Make new CacheIndexable.  Cache_size is max cache length"""
@@ -401,5 +401,5 @@ class CacheIndexable:
             return self.cache_dict[index]
         except KeyError:
             assert index >= self.cache_indices[0], \
-                "Index out of order: "+repr((index, self.cache_indices[0]))
+                "Index out of order: " + repr((index, self.cache_indices[0]))
             return None

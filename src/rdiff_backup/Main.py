@@ -37,8 +37,7 @@ remote_cmd, remote_schema = None, None
 force = None
 select_opts = []
 select_files = []
-user_mapping_filename, group_mapping_filename, preserve_numerical_ids = \
-        None, None, None
+user_mapping_filename, group_mapping_filename, preserve_numerical_ids = None, None, None
 
 # These are global because they are set while we are trying to figure
 # whether to restore or to backup
@@ -91,8 +90,7 @@ def parse_cmdlineoptions(arglist):
             "restrict-read-only=", "restrict-update-only=", "server",
             "ssh-no-compression", "tempdir=", "terminal-verbosity=",
             "test-server", "use-compatible-timestamps", "user-mapping-file=",
-            "verbosity=", "verify", "verify-at-time=", "version",
-            "no-fsync"
+            "verbosity=", "verify", "verify-at-time=", "version", "no-fsync"
         ])
     except getopt.error as e:
         commandline_error("Bad commandline options: " + str(e))
@@ -246,7 +244,8 @@ def parse_cmdlineoptions(arglist):
         elif opt == "-V" or opt == "--version":
             print("rdiff-backup " + Globals.version)
             sys.exit(0)
-        elif opt == "--no-fsync": Globals.do_fsync = False
+        elif opt == "--no-fsync":
+            Globals.do_fsync = False
         else:
             Log.FatalError("Unknown option %s" % opt)
     Log("Using rdiff-backup version %s" % (Globals.version), 4)
@@ -492,7 +491,7 @@ def check_failed_initial_backup():
         # If we have no current_mirror marker, and the increments directory
         # is empty, we most likely have a failed backup.
         return not mirror_markers and len(error_logs) <= 1 and \
-          len(metadata_mirrors) <= 1
+            len(metadata_mirrors) <= 1
     return False
 
 
@@ -620,15 +619,15 @@ by running two backups in less than a second.  Wait a second and try again.""")
 def backup_touch_curmirror_local(rpin, rpout):
     """Make a file like current_mirror.time.data to record time
 
-	When doing an incremental backup, this should happen before any
-	other writes, and the file should be removed after all writes.
-	That way we can tell whether the previous session aborted if there
-	are two current_mirror files.
+    When doing an incremental backup, this should happen before any
+    other writes, and the file should be removed after all writes.
+    That way we can tell whether the previous session aborted if there
+    are two current_mirror files.
 
-	When doing the initial full backup, the file can be created after
-	everything else is in place.
+    When doing the initial full backup, the file can be created after
+    everything else is in place.
 
-	"""
+    """
     mirrorrp = Globals.rbdir.append(b'.'.join(
         map(os.fsencode, (b"current_mirror", Time.curtimestr, "data"))))
     Log("Writing mirror marker %s" % mirrorrp.get_safepath(), 6)
@@ -656,12 +655,12 @@ def backup_remove_curmirror_local():
 
 def backup_close_statistics(end_time):
     """Close out the tracking of the backup statistics.
-	
-	Moved to run at this point so that only the clock of the system on which
-	rdiff-backup is run is used (set by passing in time.time() from that
-	system). Use at end of session.
+    
+    Moved to run at this point so that only the clock of the system on which
+    rdiff-backup is run is used (set by passing in time.time() from that
+    system). Use at end of session.
 
-	"""
+    """
     assert Globals.rbdir.conn is Globals.local_connection
     if Globals.print_statistics:
         statistics.print_active_stats(end_time)
@@ -673,10 +672,10 @@ def backup_close_statistics(end_time):
 def Restore(src_rp, dest_rp, restore_as_of=None):
     """Main restoring function
 
-	Here src_rp should be the source file (either an increment or
-	mirror file), dest_rp should be the target rp to be written.
+    Here src_rp should be the source file (either an increment or
+    mirror file), dest_rp should be the target rp to be written.
 
-	"""
+    """
     if not restore_root_set and not restore_set_root(src_rp):
         Log.FatalError("Could not find rdiff-backup repository at %s" %
                        src_rp.get_safepath())
@@ -731,14 +730,14 @@ def restore_init_quoting(src_rp):
 def restore_set_select(mirror_rp, target):
     """Set the selection iterator on both side from command line args
 
-	We must set both sides because restore filtering is different from
-	select filtering.  For instance, if a file is excluded it should
-	not be deleted from the target directory.
+    We must set both sides because restore filtering is different from
+    select filtering.  For instance, if a file is excluded it should
+    not be deleted from the target directory.
 
-	The BytesIO stuff is because filelists need to be read and then
-	duplicated, because we need two copies of them now.
+    The BytesIO stuff is because filelists need to be read and then
+    duplicated, because we need two copies of them now.
 
-	"""
+    """
 
     def fp2string(fp):
         buf = fp.read()
@@ -805,17 +804,17 @@ Try restoring from an increment file (the filenames look like
 def restore_set_root(rpin):
     """Set data dir, restore_root and index, or return None if fail
 
-	The idea here is to keep backing up on the path until we find
-	a directory that contains "rdiff-backup-data".  That is the
-	mirror root.  If the path from there starts
-	"rdiff-backup-data/increments*", then the index is the
-	remainder minus that.  Otherwise the index is just the path
-	minus the root.
+    The idea here is to keep backing up on the path until we find
+    a directory that contains "rdiff-backup-data".  That is the
+    mirror root.  If the path from there starts
+    "rdiff-backup-data/increments*", then the index is the
+    remainder minus that.  Otherwise the index is just the path
+    minus the root.
 
-	All this could fail if the increment file is pointed to in a
-	funny way, using symlinks or somesuch.
+    All this could fail if the increment file is pointed to in a
+    funny way, using symlinks or somesuch.
 
-	"""
+    """
     global restore_root, restore_index, restore_root_set
     if rpin.isincfile():
         relpath = rpin.getincbase().path
@@ -825,7 +824,8 @@ def restore_set_root(rpin):
         # For security checking consistency, don't get absolute path
         pathcomps = relpath.split(b'/')
     else:
-        pathcomps = rpath.RORPath.path_join(rpath.RORPath.getcwdb(), relpath).split(b'/')
+        pathcomps = rpath.RORPath.path_join(rpath.RORPath.getcwdb(),
+                                            relpath).split(b'/')
     if not pathcomps[0]:
         min_len_pathcomps = 2  # treat abs paths differently
     else:
@@ -857,9 +857,9 @@ def restore_set_root(rpin):
     if not from_datadir or from_datadir[0] != b"rdiff-backup-data":
         restore_index = from_datadir  # in mirror, not increments
     else:
-        assert (from_datadir[1] == b"increments" or
-                (len(from_datadir) == 2
-                 and from_datadir[1].startswith(b'increments'))), from_datadir
+        assert (from_datadir[1] == b"increments"
+                or (len(from_datadir) == 2
+                    and from_datadir[1].startswith(b'increments'))), from_datadir
         restore_index = from_datadir[2:]
     restore_root_set = 1
     return 1
@@ -882,10 +882,10 @@ def ListIncrements(rp):
 def require_root_set(rp, read_only):
     """Make sure rp is or is in a valid rdiff-backup dest directory.
 
-	Also initializes fs_abilities (read or read/write) and quoting and
-	return quoted rp if necessary.
+    Also initializes fs_abilities (read or read/write) and quoting and
+    return quoted rp if necessary.
 
-	"""
+    """
     if not restore_set_root(rp):
         Log.FatalError(
             "Bad directory %s.\n"
@@ -1000,13 +1000,13 @@ def ListAtTime(rp):
 def Compare(compare_type, src_rp, dest_rp, compare_time=None):
     """Compare metadata in src_rp with metadata of backup session
 
-	Prints to stdout whenever a file in the src_rp directory has
-	different metadata than what is recorded in the metadata for the
-	appropriate session.
+    Prints to stdout whenever a file in the src_rp directory has
+    different metadata than what is recorded in the metadata for the
+    appropriate session.
 
-	Session time is read from restore_timestr if compare_time is None.
+    Session time is read from restore_timestr if compare_time is None.
 
-	"""
+    """
     global return_val
     dest_rp = require_root_set(dest_rp, 1)
     if not compare_time:
@@ -1104,9 +1104,9 @@ information in it.
 def checkdest_if_necessary(dest_rp):
     """Check the destination dir if necessary.
 
-	This can/should be run before an incremental backup.
+    This can/should be run before an incremental backup.
 
-	"""
+    """
     need_check = checkdest_need_check(dest_rp)
     if need_check == 1:
         Log(

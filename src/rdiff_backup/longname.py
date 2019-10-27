@@ -116,10 +116,10 @@ def get_next_free():
 def check_new_index(base, index, make_dirs=0):
     """Return new rpath with given index, or None if that is too long
 
-	If make_dir is True, make any parent directories to assure that
-	file is really too long, and not just in directories that don't exist.
+    If make_dir is True, make any parent directories to assure that
+    file is really too long, and not just in directories that don't exist.
 
-	"""
+    """
 
     def wrap_call(func, *args):
         try:
@@ -153,11 +153,11 @@ def check_new_index(base, index, make_dirs=0):
 def get_mirror_rp(mirror_base, mirror_rorp):
     """Get the mirror_rp for reading a regular file
 
-	This will just be in the mirror_base, unless rorp has an alt
-	mirror name specified.  Use new_rorp, unless it is None or empty,
-	and mirror_rorp exists.
+    This will just be in the mirror_base, unless rorp has an alt
+    mirror name specified.  Use new_rorp, unless it is None or empty,
+    and mirror_rorp exists.
 
-	"""
+    """
     if mirror_rorp.has_alt_mirror_name():
         return get_long_rp(mirror_rorp.get_alt_mirror_name())
     else:
@@ -171,10 +171,10 @@ def get_mirror_rp(mirror_base, mirror_rorp):
 def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
     """Get (mirror_rp, inc_rp) pair, possibly making new longname base
 
-	To test inc_rp, pad incbase with 50 random (non-quoted) characters
-	and see if that raises an error.
+    To test inc_rp, pad incbase with 50 random (non-quoted) characters
+    and see if that raises an error.
 
-	"""
+    """
     if not inc_root:  # make fake inc_root if not available
         inc_root = mirror_root.append_path(b'rdiff-backup-data/increments')
 
@@ -304,7 +304,8 @@ def update_rf(rf, rorp, mirror_root):
         update_incs(rf, inc_name)
         return rf
 
-    if not rorp: return rf
+    if not rorp:
+        return rf
     if rf and not rorp.has_alt_mirror_name() and not rorp.has_alt_inc_name():
         return rf  # Most common case
     if rf:

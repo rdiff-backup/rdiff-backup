@@ -35,12 +35,13 @@ def get_signature(rp, blocksize=None):
 def find_blocksize(file_len):
     """Return a reasonable block size to use on files of length file_len
 
-	If the block size is too big, deltas will be bigger than is
-	necessary.  If the block size is too small, making deltas and
-	patching can take a really long time.
+    If the block size is too big, deltas will be bigger than is
+    necessary.  If the block size is too small, making deltas and
+    patching can take a really long time.
 
-	"""
-    if file_len < 4096: return 64  # set minimum of 64 bytes
+    """
+    if file_len < 4096:
+        return 64  # set minimum of 64 bytes
     else:  # Use square root, rounding to nearest 16
         return int(pow(file_len, 0.5) / 16) * 16
 
@@ -95,14 +96,14 @@ def write_via_tempfile(fp, rp):
 def patch_local(rp_basis, rp_delta, outrp=None, delta_compressed=None):
     """Patch routine that must be run locally, writes to outrp
 
-	This should be run local to rp_basis because it needs to be a real
-	file (librsync may need to seek around in it).  If outrp is None,
-	patch rp_basis instead.
+    This should be run local to rp_basis because it needs to be a real
+    file (librsync may need to seek around in it).  If outrp is None,
+    patch rp_basis instead.
 
-	The return value is the close value of the delta, so it can be
-	used to produce hashes.
+    The return value is the close value of the delta, so it can be
+    used to produce hashes.
 
-	"""
+    """
     assert rp_basis.conn is Globals.local_connection
     if delta_compressed:
         deltafile = rp_delta.open("rb", 1)
