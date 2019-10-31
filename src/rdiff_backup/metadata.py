@@ -28,9 +28,9 @@ reasons for this:
     cannot set uid/gid.  Or the source side may have ACLs and the
     destination side doesn't.
 
-	Hopefully every file system can store binary data.  Storing
-	metadata separately allows us to back up anything (ok, maybe
-	strange filenames are still a problem).
+    Hopefully every file system can store binary data.  Storing
+    metadata separately allows us to back up anything (ok, maybe
+    strange filenames are still a problem).
 
 2)  Metadata can be more quickly read from a file than it can by
     traversing the mirror directory over and over again.  In many
@@ -84,7 +84,7 @@ def carbonfile2string(cfile):
 
 def string2carbonfile(data):
     """Re-constitute CarbonFile data from a string stored by 
-	carbonfile2string."""
+    carbonfile2string."""
     retval = {}
     for component in data.split('|'):
         key, value = component.split(':')
@@ -185,11 +185,11 @@ line_parsing_regexp = re.compile(b"^ *([A-Za-z0-9]+) (.+)$", re.M)
 def Record2RORP(record_string):
     """Given record_string, return RORPath
 
-	For speed reasons, write the RORPath data dictionary directly
-	instead of calling rorpath functions.  Profiling has shown this to
-	be a time critical function.
+    For speed reasons, write the RORPath data dictionary directly
+    instead of calling rorpath functions.  Profiling has shown this to
+    be a time critical function.
 
-	"""
+    """
     data_dict = {}
     for field, data in line_parsing_regexp.findall(record_string):
         field = field.decode('ascii')
@@ -259,11 +259,11 @@ chars_to_quote = re.compile(b"\\n|\\\\")
 def quote_path(path_string):
     """Return quoted version of path_string
 
-	Because newlines are used to separate fields in a record, they are
-	replaced with \n.  Backslashes become \\ and everything else is
-	left the way it is.
+    Because newlines are used to separate fields in a record, they are
+    replaced with \n.  Backslashes become \\ and everything else is
+    left the way it is.
 
-	"""
+    """
 
     def replacement_func(match_obj):
         """This is called on the match obj of any char that needs quoting"""
@@ -360,10 +360,10 @@ class FlatExtractor:
     def skip_to_index(self, index):
         """Scan through the file, set buffer to beginning of index record
 
-		Here we make sure that the buffer always ends in a newline, so
-		we will not be splitting lines in half.
+        Here we make sure that the buffer always ends in a newline, so
+        we will not be splitting lines in half.
 
-		"""
+        """
         assert not self.buf or self.buf.endswith(b"\n")
         while 1:
             self.buf = self.fileobj.read(self.blocksize)
@@ -405,10 +405,10 @@ class FlatExtractor:
     def filename_to_index(self, filename):
         """Translate filename, possibly quoted, into an index tuple
 
-		The filename is the first group matched by
-		regexp_boundary_regexp.
+        The filename is the first group matched by
+        regexp_boundary_regexp.
 
-		"""
+        """
         assert 0  # subclass
 
 
@@ -422,15 +422,15 @@ class RorpExtractor(FlatExtractor):
 class FlatFile:
     """Manage a flat file containing info on various files
 
-	This is used for metadata information, and possibly EAs and ACLs.
-	The main read interface is as an iterator.  The storage format is
-	a flat, probably compressed file, so random access is not
-	recommended.
+    This is used for metadata information, and possibly EAs and ACLs.
+    The main read interface is as an iterator.  The storage format is
+    a flat, probably compressed file, so random access is not
+    recommended.
 
-	Even if the file looks like a text file, it is actually a binary file,
-	so that (especially) paths can be stored as bytes, without issue
-	with encoding / decoding.
-	"""
+    Even if the file looks like a text file, it is actually a binary file,
+    so that (especially) paths can be stored as bytes, without issue
+    with encoding / decoding.
+    """
     rp, fileobj, mode = None, None, None
     _buffering_on = 1  # Buffering may be useful because gzip writes are slow
     _record_buffer, _max_buffer_size = None, 100
@@ -441,10 +441,10 @@ class FlatFile:
     def __init__(self, rp_base, mode, check_path=1, compress=1, callback=None):
         """Open rp (or rp+'.gz') for reading ('r') or writing ('w')
 
-		If callback is available, it will be called on the rp upon
-		closing (because the rp may not be known in advance).
+        If callback is available, it will be called on the rp upon
+        closing (because the rp may not be known in advance).
 
-		"""
+        """
         self.mode = mode
         self.callback = callback
         self._record_buffer = []
@@ -457,7 +457,7 @@ class FlatFile:
             self.fileobj = self.rp.open("rb", compress)
         else:
             assert mode == 'w' or mode == 'wb', \
-              "File opening mode must be one of r, rb, w or wb, and not %s." % mode
+                "File opening mode must be one of r, rb, w or wb, and not %s." % mode
             if compress and check_path and not rp_base.isinccompressed():
 
                 def callback(rp):
@@ -522,7 +522,7 @@ class CombinedWriter:
     def __init__(self, metawriter, eawriter, aclwriter, winaclwriter):
         self.metawriter = metawriter
         self.eawriter, self.aclwriter, self.winaclwriter = \
-          eawriter, aclwriter, winaclwriter # these can be None
+            eawriter, aclwriter, winaclwriter  # these can be None
 
     def write_object(self, rorp):
         """Write information in rorp to all the writers"""
@@ -677,7 +677,7 @@ class Manager:
         """Get a writer object that can write meta and possibly acls/eas"""
         metawriter = self.get_meta_writer(typestr, time)
         if not Globals.eas_active and not Globals.acls_active and \
-          not Globals.win_acls_active:
+           not Globals.win_acls_active:
             return metawriter  # no need for a CombinedWriter
 
         if Globals.eas_active:
@@ -699,19 +699,19 @@ class Manager:
 class PatchDiffMan(Manager):
     """Contains functions for patching and diffing metadata
 
-	To save space, we can record a full list of only the most recent
-	metadata, using the normal rdiff-backup reverse increment
-	strategy.  Instead of using librsync to compute diffs, though, we
-	use our own technique so that the diff files are still
-	hand-editable.
+    To save space, we can record a full list of only the most recent
+    metadata, using the normal rdiff-backup reverse increment
+    strategy.  Instead of using librsync to compute diffs, though, we
+    use our own technique so that the diff files are still
+    hand-editable.
 
-	A mirror_metadata diff has the same format as a mirror_metadata
-	snapshot.  If the record for an index is missing from the diff, it
-	indicates no change from the original.  If it is present it
-	replaces the mirror_metadata entry, unless it has Type None, which
-	indicates the record should be deleted from the original.
+    A mirror_metadata diff has the same format as a mirror_metadata
+    snapshot.  If the record for an index is missing from the diff, it
+    indicates no change from the original.  If it is present it
+    replaces the mirror_metadata entry, unless it has Type None, which
+    indicates the record should be deleted from the original.
 
-	"""
+    """
     max_diff_chain = 9  # After this many diffs, make a new snapshot
 
     def get_diffiter(self, new_iter, old_iter):
@@ -791,11 +791,11 @@ class PatchDiffMan(Manager):
     def iterate_patched_meta(self, meta_iter_list):
         """Return an iter of metadata rorps by combining the given iters
 
-		The iters should be given as a list/tuple in reverse
-		chronological order.  The earliest rorp in each iter will
-		supercede all the later ones.
+        The iters should be given as a list/tuple in reverse
+        chronological order.  The earliest rorp in each iter will
+        supercede all the later ones.
 
-		"""
+        """
         for meta_tuple in rorpiter.CollateIterators(*meta_iter_list):
             for i in range(len(meta_tuple) - 1, -1, -1):
                 if meta_tuple[i]:

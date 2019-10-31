@@ -25,14 +25,14 @@ from . import Globals, Time, rpath, Rdiff, log, statistics, robust
 def Increment(new, mirror, incpref):
     """Main file incrementing function, returns inc file created
 
-	new is the file on the active partition,
-	mirror is the mirrored file from the last backup,
-	incpref is the prefix of the increment file.
+    new is the file on the active partition,
+    mirror is the mirrored file from the last backup,
+    incpref is the prefix of the increment file.
 
-	This function basically moves the information about the mirror
-	file to incpref.
+    This function basically moves the information about the mirror
+    file to incpref.
 
-	"""
+    """
     log.Log("Incrementing mirror file %s" % mirror.get_safepath(), 5)
     if ((new and new.isdir()) or mirror.isdir()) and not incpref.lstat():
         incpref.mkdir()
@@ -124,13 +124,13 @@ def makedir(mirrordir, incpref):
 def get_inc(rp, typestr, time=None):
     """Return increment like rp but with time and typestr suffixes
 
-	To avoid any quoting, the returned rpath has empty index, and the
-	whole filename is in the base (which is not quoted).
+    To avoid any quoting, the returned rpath has empty index, and the
+    whole filename is in the base (which is not quoted).
 
-	"""
+    """
     if time is None:
         time = Time.prevtime
-    addtostr = lambda s: b'.'.join(map(os.fsencode,(s, Time.timetostring(time), typestr)))
+    addtostr = lambda s: b'.'.join(map(os.fsencode, (s, Time.timetostring(time), typestr)))
     if rp.index:
         incrp = rp.__class__(rp.conn, rp.base,
                              rp.index[:-1] + (addtostr(rp.index[-1]), ))

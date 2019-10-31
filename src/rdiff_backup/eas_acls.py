@@ -86,7 +86,7 @@ class ExtendedAttributes:
                 continue
             try:
                 self.attr_dict[attr] = \
-                 rp.conn.xattr.getxattr(rp.path, attr, rp.issym())
+                    rp.conn.xattr.getxattr(rp.path, attr, rp.issym())
             except IOError as exc:
                 # File probably modified while reading, just continue
                 if exc.errno == errno.ENODATA:
@@ -208,7 +208,7 @@ def Record2EA(record):
             ea.set(line)
         else:
             name = line[:eq_pos]
-            assert line[eq_pos+1:eq_pos+3] == b'0s', \
+            assert line[eq_pos + 1:eq_pos + 3] == b'0s', \
                 "Currently only base64 encoding supported"
             encoded_val = line[eq_pos + 3:]
             ea.set(name, base64.b64decode(encoded_val))
@@ -248,11 +248,11 @@ def join_ea_iter(rorp_iter, ea_iter):
 class AccessControlLists:
     """Hold a file's access control list information
 
-	Since posix1e.ACL objects cannot be pickled, and because they lack
-	user/group name information, store everything in self.entry_list
-	and self.default_entry_list.
+    Since posix1e.ACL objects cannot be pickled, and because they lack
+    user/group name information, store everything in self.entry_list
+    and self.default_entry_list.
 
-	"""
+    """
 
     def __init__(self, index, acl_text=None):
         """Initialize object with index and possibly acl_text"""
@@ -317,9 +317,9 @@ class AccessControlLists:
     def text_to_entrytuple(self, text):
         """Return entrytuple given text like 'user:foo:r--'
 
-		See the acl_to_list function for entrytuple documentation.
+        See the acl_to_list function for entrytuple documentation.
 
-		"""
+        """
         typetext, qualifier, permtext = text.split(':')
         if qualifier:
             try:
@@ -381,10 +381,10 @@ class AccessControlLists:
     def __eq__(self, acl):
         """Compare self and other access control list
 
-		Basic acl permissions are considered equal to an empty acl
-		object.
+        Basic acl permissions are considered equal to an empty acl
+        object.
 
-		"""
+        """
         assert isinstance(acl, self.__class__)
         if self.is_basic():
             return acl.is_basic()
@@ -412,11 +412,11 @@ class AccessControlLists:
     def is_basic(self):
         """True if acl can be reduced to standard unix permissions
 
-		Assume that if they are only three entries, they correspond to
-		user, group, and other, and thus don't use any special ACL
-		features.
+        Assume that if they are only three entries, they correspond to
+        user, group, and other, and thus don't use any special ACL
+        features.
 
-		"""
+        """
         if not self.entry_list and not self.default_entry_list:
             return 1
         assert len(self.entry_list) >= 3, self.entry_list
@@ -425,7 +425,7 @@ class AccessControlLists:
     def read_from_rp(self, rp):
         """Set self.ACL from an rpath, or None if not supported"""
         self.entry_list, self.default_entry_list = \
-             rp.conn.eas_acls.get_acl_lists_from_rp(rp)
+            rp.conn.eas_acls.get_acl_lists_from_rp(rp)
 
     def write_to_rp(self, rp, map_names=1):
         """Write current access control list to RPath rp"""
@@ -436,7 +436,8 @@ class AccessControlLists:
 def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
     """Set given rp with ACL that acl_text defines.  rp should be local"""
     assert rp.conn is Globals.local_connection
-    if entry_list: acl = list_to_acl(entry_list, map_names)
+    if entry_list:
+        acl = list_to_acl(entry_list, map_names)
     else:
         acl = posix1e.ACL()
 
@@ -495,23 +496,23 @@ def get_acl_lists_from_rp(rp):
 def acl_to_list(acl):
     """Return list representation of posix1e.ACL object
 
-	ACL objects cannot be pickled, so this representation keeps
-	the structure while adding that option.  Also we insert the
-	username along with the id, because that information will be
-	lost when moved to another system.
+    ACL objects cannot be pickled, so this representation keeps
+    the structure while adding that option.  Also we insert the
+    username along with the id, because that information will be
+    lost when moved to another system.
 
-	The result will be a list of tuples.  Each tuple will have the
-	form (acltype, (uid or gid, uname or gname) or None, permissions
-	as an int).  acltype is encoded as a single character:
+    The result will be a list of tuples.  Each tuple will have the
+    form (acltype, (uid or gid, uname or gname) or None, permissions
+    as an int).  acltype is encoded as a single character:
 
-	U - ACL_USER_OBJ
-	u - ACL_USER
-	G - ACL_GROUP_OBJ
-	g - ACL_GROUP
-	M - ACL_MASK
-	O - ACL_OTHER
+    U - ACL_USER_OBJ
+    u - ACL_USER
+    G - ACL_GROUP_OBJ
+    g - ACL_GROUP
+    M - ACL_MASK
+    O - ACL_OTHER
 
-	"""
+    """
 
     def acltag_to_char(tag):
         if tag == posix1e.ACL_USER_OBJ:
@@ -549,13 +550,13 @@ def acl_to_list(acl):
 def list_to_acl(entry_list, map_names=1):
     """Return posix1e.ACL object from list representation
 
-	If map_names is true, use user_group to update the names for the
-	current system, and drop if not available.  Otherwise just use the
-	same id.
+    If map_names is true, use user_group to update the names for the
+    current system, and drop if not available.  Otherwise just use the
+    same id.
 
-	See the acl_to_list function for the format of an acllist.
+    See the acl_to_list function for the format of an acllist.
 
-	"""
+    """
 
     def char_to_acltag(typechar):
         """Given typechar, query posix1e module for appropriate constant"""
@@ -607,7 +608,8 @@ def list_to_acl(entry_list, map_names=1):
 
         entry = posix1e.Entry(acl)
         entry.tag_type = char_to_acltag(typechar)
-        if id is not None: entry.qualifier = id
+        if id is not None:
+            entry.qualifier = id
         entry.permset.read = perms >> 2
         entry.permset.write = perms >> 1 & 1
         entry.permset.execute = perms & 1
@@ -625,8 +627,7 @@ def acl_compare_rps(rp1, rp2):
 
 def ACL2Record(acl):
     """Convert an AccessControlLists object into a text record"""
-    return b'# file: %b\n%b\n' % \
-     (C.acl_quote(acl.get_indexpath()), os.fsencode(str(acl)))
+    return b'# file: %b\n%b\n' % (C.acl_quote(acl.get_indexpath()), os.fsencode(str(acl)))
 
 
 def Record2ACL(record):
@@ -647,10 +648,10 @@ def Record2ACL(record):
 class ACLExtractor(EAExtractor):
     """Iterate AccessControlLists objects from the ACL information file
 
-	Except for the record_to_object method, we can reuse everything in
-	the EAExtractor class because the file formats are so similar.
+    Except for the record_to_object method, we can reuse everything in
+    the EAExtractor class because the file formats are so similar.
 
-	"""
+    """
     record_to_object = staticmethod(Record2ACL)
 
 
@@ -674,11 +675,12 @@ def join_acl_iter(rorp_iter, acl_iter):
 def rpath_acl_get(rp):
     """Get acls of given rpath rp.
 
-	This overrides a function in the rpath module.
+    This overrides a function in the rpath module.
 
-	"""
+    """
     acl = AccessControlLists(rp.index)
-    if not rp.issym(): acl.read_from_rp(rp)
+    if not rp.issym():
+        acl.read_from_rp(rp)
     return acl
 
 
@@ -696,9 +698,9 @@ rpath.get_blank_acl = rpath_get_blank_acl
 def rpath_ea_get(rp):
     """Get extended attributes of given rpath
 
-	This overrides a function in the rpath module.
+    This overrides a function in the rpath module.
 
-	"""
+    """
     ea = ExtendedAttributes(rp.index)
     if not rp.issock() and not rp.isfifo():
         ea.read_from_rp(rp)

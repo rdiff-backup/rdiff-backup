@@ -259,6 +259,7 @@ remote_tempdir = None
 # and pre-regress
 do_fsync = True
 
+
 def get(name):
     """Return the value of something in this module"""
     return globals()[name]
@@ -272,12 +273,12 @@ def is_not_None(name):
 def set(name, val):
     """Set the value of something in this module
 
-	Use this instead of writing the values directly if the setting
-	matters to remote sides.  This function updates the
-	changed_settings list, so other connections know to copy the
-	changes.
+    Use this instead of writing the values directly if the setting
+    matters to remote sides.  This function updates the
+    changed_settings list, so other connections know to copy the
+    changes.
 
-	"""
+    """
     changed_settings.append(name)
     globals()[name] = val
 

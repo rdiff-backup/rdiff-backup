@@ -18,7 +18,6 @@
 # USA
 """Support code for remote execution and data transfer"""
 
-
 import types
 import os
 import tempfile
@@ -28,7 +27,6 @@ import traceback
 import socket
 import sys
 import gzip
-
 
 # The following EA and ACL modules may be used if available
 try:
@@ -64,12 +62,12 @@ class ConnectionQuit(Exception):
 class Connection:
     """Connection class - represent remote execution
 
-	The idea is that, if c is an instance of this class, c.foo will
-	return the object on the remote side.  For functions, c.foo will
-	return a function that, when called, executes foo on the remote
-	side, sending over the arguments and sending back the result.
+    The idea is that, if c is an instance of this class, c.foo will
+    return the object on the remote side.  For functions, c.foo will
+    return a function that, when called, executes foo on the remote
+    side, sending over the arguments and sending back the result.
 
-	"""
+    """
 
     def __repr__(self):
         return self.__str__()
@@ -84,10 +82,10 @@ class Connection:
 class LocalConnection(Connection):
     """Local connection
 
-	This is a dummy connection class, so that LC.foo just evaluates to
-	foo using global scope.
+    This is a dummy connection class, so that LC.foo just evaluates to
+    foo using global scope.
 
-	"""
+    """
 
     def __init__(self):
         """This prevents two instances of LocalConnection"""
@@ -133,24 +131,24 @@ class ConnectionRequest:
 class LowLevelPipeConnection(Connection):
     """Routines for just sending objects from one side of pipe to another
 
-	Each thing sent down the pipe is paired with a request number,
-	currently limited to be between 0 and 255.  The size of each thing
-	should be less than 2^56.
+    Each thing sent down the pipe is paired with a request number,
+    currently limited to be between 0 and 255.  The size of each thing
+    should be less than 2^56.
 
-	Each thing also has a type, indicated by one of the following
-	characters:
+    Each thing also has a type, indicated by one of the following
+    characters:
 
-	o - generic object
-	i - iterator/generator of RORPs
-	f - file object
-	b - string
-	q - quit signal
-	R - RPath
-	Q - QuotedRPath
-	r - RORPath only
-	c - PipeConnection object
+    o - generic object
+    i - iterator/generator of RORPs
+    f - file object
+    b - string
+    q - quit signal
+    R - RPath
+    Q - QuotedRPath
+    r - RORPath only
+    c - PipeConnection object
 
-	"""
+    """
 
     def __init__(self, inpipe, outpipe):
         """inpipe is a file-type open for reading, outpipe for writing"""
@@ -160,11 +158,11 @@ class LowLevelPipeConnection(Connection):
     def __str__(self):
         """Return string version
 
-		This is actually an important function, because otherwise
-		requests to represent this object would result in "__str__"
-		being executed on the other side of the connection.
+        This is actually an important function, because otherwise
+        requests to represent this object would result in "__str__"
+        being executed on the other side of the connection.
 
-		"""
+        """
         return "LowLevelPipeConnection"
 
     def _put(self, obj, req_num):
@@ -209,10 +207,10 @@ class LowLevelPipeConnection(Connection):
     def _putrpath(self, rpath, req_num):
         """Put an rpath into the pipe
 
-		The rpath's connection will be encoded as its conn_number.  It
-		and the other information is put in a tuple.
+        The rpath's connection will be encoded as its conn_number.  It
+        and the other information is put in a tuple.
 
-		"""
+        """
         rpath_repr = (rpath.conn.conn_number, rpath.base, rpath.index,
                       rpath.data)
         self._write("R", pickle.dumps(rpath_repr, 1), req_num)
@@ -226,20 +224,20 @@ class LowLevelPipeConnection(Connection):
     def _putrorpath(self, rorpath, req_num):
         """Put an rorpath into the pipe
 
-		This is only necessary because if there is a .file attached,
-		it must be excluded from the pickling
+        This is only necessary because if there is a .file attached,
+        it must be excluded from the pickling
 
-		"""
+        """
         rorpath_repr = (rorpath.index, rorpath.data)
         self._write("r", pickle.dumps(rorpath_repr, 1), req_num)
 
     def _putconn(self, pipeconn, req_num):
         """Put a connection into the pipe
 
-		A pipe connection is represented just as the integer (in
-		string form) of its connection number it is *connected to*.
+        A pipe connection is represented just as the integer (in
+        string form) of its connection number it is *connected to*.
 
-		"""
+        """
         self._write("c", self._i2b(pipeconn.conn_number), req_num)
 
     def _putquit(self):
@@ -249,12 +247,12 @@ class LowLevelPipeConnection(Connection):
     def _write(self, headerchar, data, req_num):
         """Write header and then data to the pipe"""
         assert len(headerchar) == 1, \
-         "Header type %s can only have one letter/byte" % headerchar
+            "Header type %s can only have one letter/byte" % headerchar
         if isinstance(headerchar, str):  # it can only be an ASCII character
             headerchar = headerchar.encode('ascii')
         try:
-            self.outpipe.write(headerchar + self._i2b(req_num, 1) +
-                               self._i2b(len(data), 7))
+            self.outpipe.write(headerchar + self._i2b(req_num, 1)
+             + self._i2b(len(data), 7))
             self.outpipe.write(data)
             self.outpipe.flush()
         except (IOError, AttributeError):
@@ -338,24 +336,24 @@ class LowLevelPipeConnection(Connection):
 class PipeConnection(LowLevelPipeConnection):
     """Provide server and client functions for a Pipe Connection
 
-	Both sides act as modules that allows for remote execution.  For
-	instance, self.conn.pow(2,8) will execute the operation on the
-	server side.
+    Both sides act as modules that allows for remote execution.  For
+    instance, self.conn.pow(2,8) will execute the operation on the
+    server side.
 
-	The only difference between the client and server is that the
-	client makes the first request, and the server listens first.
+    The only difference between the client and server is that the
+    client makes the first request, and the server listens first.
 
-	"""
+    """
 
     def __init__(self, inpipe, outpipe, conn_number=0):
         """Init PipeConnection
 
-		conn_number should be a unique (to the session) integer to
-		identify the connection.  For instance, all connections to the
-		client have conn_number 0.  Other connections can use this
-		number to route commands to the correct process.
+        conn_number should be a unique (to the session) integer to
+        identify the connection.  For instance, all connections to the
+        client have conn_number 0.  Other connections can use this
+        number to route commands to the correct process.
 
-		"""
+        """
         LowLevelPipeConnection.__init__(self, inpipe, outpipe)
         self.conn_number = conn_number
         self.unused_request_numbers = {}
@@ -368,12 +366,12 @@ class PipeConnection(LowLevelPipeConnection):
     def get_response(self, desired_req_num):
         """Read from pipe, responding to requests until req_num.
 
-		Sometimes after a request is sent, the other side will make
-		another request before responding to the original one.  In
-		that case, respond to the request.  But return once the right
-		response is given.
+        Sometimes after a request is sent, the other side will make
+        another request before responding to the original one.  In
+        that case, respond to the request.  But return once the right
+        response is given.
 
-		"""
+        """
         while 1:
             try:
                 req_num, object = self._get()
@@ -381,7 +379,8 @@ class PipeConnection(LowLevelPipeConnection):
                 self._put("quitting", self.get_new_req_num())
                 self._close()
                 return
-            if req_num == desired_req_num: return object
+            if req_num == desired_req_num:
+                return object
             else:
                 assert isinstance(object, ConnectionRequest)
                 self.answer_request(object, req_num)
@@ -423,21 +422,25 @@ class PipeConnection(LowLevelPipeConnection):
     def reval(self, function_string, *args):
         """Execute command on remote side
 
-		The first argument should be a string that evaluates to a
-		function, like "pow", and the remaining are arguments to that
-		function.
+        The first argument should be a string that evaluates to a
+        function, like "pow", and the remaining are arguments to that
+        function.
 
-		"""
+        """
         req_num = self.get_new_req_num()
         self._put(ConnectionRequest(function_string, len(args)), req_num)
         for arg in args:
             self._put(arg, req_num)
         result = self.get_response(req_num)
         self.unused_request_numbers[req_num] = None
-        if isinstance(result, Exception): raise result
-        elif isinstance(result, SystemExit): raise result
-        elif isinstance(result, KeyboardInterrupt): raise result
-        else: return result
+        if isinstance(result, Exception):
+            raise result
+        elif isinstance(result, SystemExit):
+            raise result
+        elif isinstance(result, KeyboardInterrupt):
+            raise result
+        else:
+            return result
 
     def get_new_req_num(self):
         """Allot a new request number and return it"""
@@ -462,22 +465,22 @@ class PipeConnection(LowLevelPipeConnection):
 class RedirectedConnection(Connection):
     """Represent a connection more than one move away
 
-	For instance, suppose things are connected like this: S1---C---S2.
-	If Server1 wants something done by Server2, it will have to go
-	through the Client.  So on S1's side, S2 will be represented by a
-	RedirectedConnection.
+    For instance, suppose things are connected like this: S1---C---S2.
+    If Server1 wants something done by Server2, it will have to go
+    through the Client.  So on S1's side, S2 will be represented by a
+    RedirectedConnection.
 
-	"""
+    """
 
     def __init__(self, conn_number, routing_number=0):
         """RedirectedConnection initializer
 
-		Returns a RedirectedConnection object for the given
-		conn_number, where commands are routed through the connection
-		with the given routing_number.  0 is the client, so the
-		default shouldn't have to be changed.
+        Returns a RedirectedConnection object for the given
+        conn_number, where commands are routed through the connection
+        with the given routing_number.  0 is the client, so the
+        default shouldn't have to be changed.
 
-		"""
+        """
         self.conn_number = conn_number
         self.routing_number = routing_number
         self.routing_conn = Globals.connection_dict[routing_number]
@@ -499,12 +502,12 @@ class RedirectedConnection(Connection):
 def RedirectedRun(conn_number, func, *args):
     """Run func with args on connection with conn number conn_number
 
-	This function is meant to redirect requests from one connection to
-	another, so conn_number must not be the local connection (and also
-	for security reasons since this function is always made
-	available).
+    This function is meant to redirect requests from one connection to
+    another, so conn_number must not be the local connection (and also
+    for security reasons since this function is always made
+    available).
 
-	"""
+    """
     conn = Globals.connection_dict[conn_number]
     assert conn is not Globals.local_connection, conn
     return conn.reval(func, *args)
@@ -544,11 +547,11 @@ class EmulateCallableRedirected:
 class VirtualFile:
     """When the client asks for a file over the connection, it gets this
 
-	The returned instance then forwards requests over the connection.
-	The class's dictionary is used by the server to associate each
-	with a unique file number.
+    The returned instance then forwards requests over the connection.
+    The class's dictionary is used by the server to associate each
+    with a unique file number.
 
-	"""
+    """
     #### The following are used by the server
     vfiles = {}
     counter = 0

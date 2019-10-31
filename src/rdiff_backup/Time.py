@@ -80,7 +80,7 @@ def setprevtime_local(timeinseconds, timestr):
 
 def timetostring(timeinseconds):
     """Return w3 datetime compliant listing of timeinseconds, or one in
-	which :'s have been replaced with -'s"""
+    which :'s have been replaced with -'s"""
     if not Globals.use_compatible_timestamps:
         format_string = "%Y-%m-%dT%H:%M:%S"
     else:
@@ -96,10 +96,10 @@ def timetobytes(timeinseconds):
 def stringtotime(timestring):
     """Return time in seconds from w3 timestring
 
-	If there is an error parsing the string, or it doesn't look
-	like a w3 datetime string, return None.
+    If there is an error parsing the string, or it doesn't look
+    like a w3 datetime string, return None.
 
-	"""
+    """
 
     regexp = re.compile('[-:]')
 
@@ -179,7 +179,8 @@ allowed special characters are s, m, h, D, W, M, and Y.  See the man
 page for more information.
 """ % interval_string)
 
-    if len(interval_string) < 2: error()
+    if len(interval_string) < 2:
+        error()
 
     total = 0
     while interval_string:
@@ -197,12 +198,12 @@ page for more information.
 def gettzd(timeinseconds=None):
     """Return w3's timezone identification string.
 
-	Expressed as [+/-]hh:mm.  For instance, PDT is -07:00 during
-	dayling savings and -08:00 otherwise.  Zone coincides with what
-	localtime(), etc., use.  If no argument given, use the current
-	time.
+    Expressed as [+/-]hh:mm.  For instance, PDT is -07:00 during
+    dayling savings and -08:00 otherwise.  Zone coincides with what
+    localtime(), etc., use.  If no argument given, use the current
+    time.
 
-	"""
+    """
     if timeinseconds is None:
         timeinseconds = time.time()
     dst_in_effect = time.daylight and time.localtime(timeinseconds)[8]
@@ -257,10 +258,10 @@ def cmp(time1, time2):
 def time_from_session(session_num, rp=None):
     """Return time in seconds of given backup
 
-	The current mirror is session_num 0, the next oldest increment has
-	number 1, etc.  Requires that the Globals.rbdir directory be set.
+    The current mirror is session_num 0, the next oldest increment has
+    number 1, etc.  Requires that the Globals.rbdir directory be set.
 
-	"""
+    """
     session_times = Globals.rbdir.conn.restore.MirrorStruct \
         .get_increment_times()
     session_times.sort()
@@ -272,10 +273,10 @@ def time_from_session(session_num, rp=None):
 def genstrtotime(timestr, curtime=None, rp=None):
     """Convert a generic time string to a time in seconds
 
-	rp is used when the time is of the form "4B" or similar.  Then the
-	times of the increments of that particular file are used.
+    rp is used when the time is of the form "4B" or similar.  Then the
+    times of the increments of that particular file are used.
 
-	"""
+    """
     if curtime is None:
         curtime = globals()['curtime']
     if timestr == "now":
@@ -316,7 +317,7 @@ the day).""" % timestr)
 
     # Now check for dates like 2001/3/23
     match = _genstr_date_regexp1.search(timestr) or \
-      _genstr_date_regexp2.search(timestr)
+        _genstr_date_regexp2.search(timestr)
     if not match:
         error()
     timestr = "%s-%02d-%02dT00:00:00%s" % (match.group('year'),

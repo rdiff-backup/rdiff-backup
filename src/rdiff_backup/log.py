@@ -62,10 +62,10 @@ class Logger:
     def open_logfile(self, rpath):
         """Inform all connections of an open logfile.
 
-		rpath.conn will write to the file, and the others will pass
-		write commands off to it.
+        rpath.conn will write to the file, and the others will pass
+        write commands off to it.
 
-		"""
+        """
         assert not self.log_file_open
         rpath.conn.log.Log.open_logfile_local(rpath)
         for conn in Globals.connections:
@@ -109,7 +109,8 @@ class Logger:
         if verbosity < 9:
             return "%s\n" % message
         else:
-            timestamp = datetime.datetime.now().astimezone().strftime("%F %H:%M:%S.%f %z")
+            timestamp = datetime.datetime.now().astimezone().strftime(
+                "%F %H:%M:%S.%f %z")
             if Globals.server:
                 role = "SERVER"
             else:
@@ -119,12 +120,12 @@ class Logger:
     def __call__(self, message, verbosity):
         """Log message that has verbosity importance
 
-		message can be a string, which is logged as-is, or a function,
-		which is then called and should return the string to be
-		logged.  We do it this way in case producing the string would
-		take a significant amount of CPU.
-		
-		"""
+        message can be a string, which is logged as-is, or a function,
+        which is then called and should return the string to be
+        logged.  We do it this way in case producing the string would
+        take a significant amount of CPU.
+        
+        """
         if verbosity > self.verbosity and verbosity > self.term_verbosity:
             return
 
@@ -163,12 +164,12 @@ class Logger:
     def conn(self, direction, result, req_num):
         """Log some data on the connection
 
-		The main worry with this function is that something in here
-		will create more network traffic, which will spiral to
-		infinite regress.  So, for instance, logging must only be done
-		to the terminal, because otherwise the log file may be remote.
+        The main worry with this function is that something in here
+        will create more network traffic, which will spiral to
+        infinite regress.  So, for instance, logging must only be done
+        to the terminal, because otherwise the log file may be remote.
 
-		"""
+        """
         if self.term_verbosity < 9:
             return
         if type(result) is bytes:
@@ -214,11 +215,11 @@ class Logger:
     def exception(self, only_terminal=0, verbosity=5):
         """Log an exception and traceback
 
-		If only_terminal is None, log normally.  If it is 1, then only
-		log to disk if log file is local (self.log_file_open = 1).  If
-		it is 2, don't log to disk at all.
+        If only_terminal is None, log normally.  If it is 1, then only
+        log to disk if log file is local (self.log_file_open = 1).  If
+        it is 2, don't log to disk at all.
 
-		"""
+        """
         assert only_terminal in (0, 1, 2)
         if (only_terminal == 0 or (only_terminal == 1 and self.log_file_open)):
             logging_func = self.__call__
@@ -241,13 +242,13 @@ Log = Logger()
 class ErrorLog:
     """Log each recoverable error in error_log file
 
-	There are three types of recoverable errors:  ListError, which
-	happens trying to list a directory or stat a file, UpdateError,
-	which happen when trying to update a changed file, and
-	SpecialFileError, which happen when a special file cannot be
-	created.  See the error policy file for more info.
+    There are three types of recoverable errors:  ListError, which
+    happens trying to list a directory or stat a file, UpdateError,
+    which happen when trying to update a changed file, and
+    SpecialFileError, which happen when a special file cannot be
+    created.  See the error policy file for more info.
 
-	"""
+    """
     _log_fileobj = None
 
     @classmethod
@@ -262,7 +263,8 @@ class ErrorLog:
         base_rp = Globals.rbdir.append("error_log.%s.data" % (time_string, ))
         if compress:
             cls._log_fileobj = rpath.MaybeGzip(base_rp)
-        else: cls._log_fileobj = base_rp.open("wb", compress=0)
+        else:
+            cls._log_fileobj = base_rp.open("wb", compress=0)
 
     @classmethod
     def isopen(cls):
@@ -295,7 +297,8 @@ class ErrorLog:
         except AttributeError:
             if type(obj) is tuple:
                 return "/".join(obj)
-            else: return repr(obj)
+            else:
+                return repr(obj)
 
     @classmethod
     def write_if_open(cls, error_type, rp, exc):
@@ -311,8 +314,8 @@ class ErrorLog:
     @classmethod
     def get_log_string(cls, error_type, rp, exc):
         """Return log string to put in error log"""
-        assert (error_type == "ListError" or error_type == "UpdateError" or
-                error_type == "SpecialFileError"), "Unknown type " + error_type
+        assert (error_type == "ListError" or error_type == "UpdateError"
+                or error_type == "SpecialFileError"), "Unknown type " + error_type
         tmpstr = "%s %s %s" % (error_type, cls.get_indexpath(rp), str(exc))
         return tmpstr.encode('utf-8')
 

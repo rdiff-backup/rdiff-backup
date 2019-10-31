@@ -27,10 +27,10 @@ from . import librsync, C, rpath, Globals, log, statistics, connection
 def check_common_error(error_handler, function, args=[]):
     """Apply function to args, if error, run error_handler on exception
 
-	This uses the catch_error predicate below to only catch
-	certain exceptions which seems innocent enough.
+    This uses the catch_error predicate below to only catch
+    certain exceptions which seems innocent enough.
 
-	"""
+    """
     try:
         return function(*args)
     except (Exception, KeyboardInterrupt, SystemExit) as exc:
@@ -56,16 +56,17 @@ def catch_error(exc):
     for exception_class in (rpath.SkipFileException, rpath.RPathException,
                             librsync.librsyncError, C.UnknownFileTypeError,
                             zlib.error):
-        if isinstance(exc, exception_class): return 1
-    if (isinstance(exc, EnvironmentError) and
+        if isinstance(exc, exception_class):
+            return 1
+    if (isinstance(exc, EnvironmentError)
             # the invalid mode shows up in backups of /proc for some reason
-        ('invalid mode: rb' in str(exc) or 'Not a gzipped file' in str(exc)
-         or exc.errno in (errno.EPERM, errno.ENOENT, errno.EACCES, errno.EBUSY,
-                          errno.EEXIST, errno.ENOTDIR, errno.EILSEQ,
-                          errno.ENAMETOOLONG, errno.EINTR, errno.ESTALE,
-                          errno.ENOTEMPTY, errno.EIO, errno.ETXTBSY,
-                          errno.ESRCH, errno.EINVAL, errno.EDEADLOCK,
-                          errno.EDEADLK, errno.EOPNOTSUPP, errno.ETIMEDOUT))):
+        and ('invalid mode: rb' in str(exc) or 'Not a gzipped file' in str(exc)
+        or exc.errno in (errno.EPERM, errno.ENOENT, errno.EACCES, errno.EBUSY,
+                         errno.EEXIST, errno.ENOTDIR, errno.EILSEQ,
+                         errno.ENAMETOOLONG, errno.EINTR, errno.ESTALE,
+                         errno.ENOTEMPTY, errno.EIO, errno.ETXTBSY,
+                         errno.ESRCH, errno.EINVAL, errno.EDEADLOCK,
+                         errno.EDEADLK, errno.EOPNOTSUPP, errno.ETIMEDOUT))):
         return 1
     return 0
 
@@ -73,11 +74,11 @@ def catch_error(exc):
 def is_routine_fatal(exc):
     """Return string if exception is non-error unrecoverable, None otherwise
 
-	Used to suppress a stack trace for exceptions like keyboard
-	interrupts or connection drops.  Return value is string to use as
-	an exit message.
+    Used to suppress a stack trace for exceptions like keyboard
+    interrupts or connection drops.  Return value is string to use as
+    an exit message.
 
-	"""
+    """
     if isinstance(exc, KeyboardInterrupt):
         return "User abort"
     elif isinstance(exc, connection.ConnectionError):
@@ -92,11 +93,11 @@ def is_routine_fatal(exc):
 def get_error_handler(error_type):
     """Return error handler function that can be used above
 
-	Function will just log error to the error_log and then return
-	None.  First two arguments must be the exception and then an rp
-	(from which the filename will be extracted).
+    Function will just log error to the error_log and then return
+    None.  First two arguments must be the exception and then an rp
+    (from which the filename will be extracted).
 
-	"""
+    """
 
     def error_handler(exc, rp, *args):
         log.ErrorLog.write_if_open(error_type, rp, exc)
@@ -146,10 +147,10 @@ class TracebackArchive:
     def add(cls, extra_args=[]):
         """Add most recent exception to archived list
 
-		If extra_args are present, convert to strings and add them as
-		extra information to same traceback archive.
+        If extra_args are present, convert to strings and add them as
+        extra information to same traceback archive.
 
-		"""
+        """
         cls._traceback_strings.append(log.Log.exception_to_string(extra_args))
         if len(cls._traceback_strings) > 10:
             cls._traceback_strings = cls._traceback_strings[:10]
