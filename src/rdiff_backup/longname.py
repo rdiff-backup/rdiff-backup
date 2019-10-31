@@ -37,9 +37,8 @@ it later.
 
 """
 
-import types
 import errno
-from . import log, Globals, restore, rpath, FilenameMapping, regress
+from . import log, Globals, restore, regress
 
 long_name_dir = b"long_filename_data"
 rootrp = None
@@ -165,7 +164,9 @@ def get_mirror_rp(mirror_base, mirror_rorp):
         if rp:
             return rp
         else:
-            return mirror_base.new_index_empty(index)
+            raise Exception("the following line doesn't make any sense but does it matter?")
+            # FIXME index isn't defined anywhere, is mirror_rorp.index meant?
+            # return mirror_base.new_index_empty(index)
 
 
 def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
@@ -279,7 +280,9 @@ def update_rf(rf, rorp, mirror_root):
         """Update rf based on rorp, don't make new one"""
         if rorp.has_alt_mirror_name():
             inc_name = rorp.get_alt_mirror_name()
-            rf.mirror_rp = get_long_rp(mirror_name)
+            raise Exception("the following line doesn't make any sense but does it matter?")
+            # FIXME mirror_name isn't defined anywhere, is inc_name meant?
+            # rf.mirror_rp = get_long_rp(mirror_name)
         elif rorp.has_alt_inc_name():
             inc_name = rorp.get_alt_inc_name()
         else:

@@ -18,9 +18,7 @@
 # USA
 """Functions to make sure remote requests are kosher"""
 
-import sys
 import tempfile
-import types
 from . import Globals, Main, rpath, log
 
 
@@ -163,7 +161,7 @@ def set_security_level(action, cmdpairs):
 def set_allowed_requests(sec_level):
     """Set the allowed requests list using the security level"""
     global allowed_requests
-    l = [
+    requests = [
         "VirtualFile.readfromid", "VirtualFile.closebyid", "Globals.get",
         "Globals.is_not_None", "Globals.get_dict_val",
         "log.Log.open_logfile_allconn", "log.Log.close_logfile_allconn",
@@ -174,7 +172,7 @@ def set_allowed_requests(sec_level):
     ]
     if (sec_level == "read-only" or sec_level == "update-only"
             or sec_level == "all"):
-        l.extend([
+        requests.extend([
             "rpath.make_file_dict", "os.listdir", "rpath.ea_get",
             "rpath.acl_get", "rpath.setdata_local", "log.Log.log_to_file",
             "os.getuid", "rpath.gzip_open_local_read", "rpath.open_local_read",
@@ -182,7 +180,7 @@ def set_allowed_requests(sec_level):
             "user_group.gid2gname"
         ])
     if sec_level == "read-only" or sec_level == "all":
-        l.extend([
+        requests.extend([
             "fs_abilities.get_readonly_fsa",
             "restore.MirrorStruct.get_increment_times",
             "restore.MirrorStruct.set_mirror_and_rest_times",
@@ -200,7 +198,7 @@ def set_allowed_requests(sec_level):
             "compare.DataSide.compare_full", "compare.Verify"
         ])
     if sec_level == "update-only" or sec_level == "all":
-        l.extend([
+        requests.extend([
             "log.Log.open_logfile_local", "log.Log.close_logfile_local",
             "log.ErrorLog.open", "log.ErrorLog.isopen", "log.ErrorLog.close",
             "backup.DestinationStruct.set_rorp_cache",
@@ -213,7 +211,7 @@ def set_allowed_requests(sec_level):
             "log.ErrorLog.write_if_open", "fs_abilities.backup_set_globals"
         ])
     if sec_level == "all":
-        l.extend([
+        requests.extend([
             "os.mkdir", "os.chown", "os.lchown", "os.rename", "os.unlink",
             "os.remove", "os.chmod", "os.makedirs",
             "rpath.delete_dir_no_files", "backup.DestinationStruct.patch",
@@ -225,7 +223,7 @@ def set_allowed_requests(sec_level):
             "manage.delete_earlier_than_local"
         ])
     if Globals.server:
-        l.extend([
+        requests.extend([
             "SetConnections.init_connection_remote", "log.Log.setverbosity",
             "log.Log.setterm_verbosity", "Time.setprevtime_local",
             "Globals.postset_regexp_local",
@@ -234,7 +232,7 @@ def set_allowed_requests(sec_level):
             "user_group.init_user_mapping", "user_group.init_group_mapping"
         ])
     allowed_requests = {}
-    for req in l:
+    for req in requests:
         allowed_requests[req] = None
 
 
@@ -248,7 +246,6 @@ def raise_violation(reason, request, arglist):
 
 def vet_request(request, arglist):
     """Examine request for security violations"""
-    # if Globals.server: sys.stderr.write(str(request) + "\n")
     security_level = Globals.security_level
     if security_level == "override":
         return

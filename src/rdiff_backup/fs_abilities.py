@@ -339,11 +339,11 @@ class FSAbilities:
             where the list is of the directory containing rp.
 
             """
-            l = robust.listrp(subdir)
-            for filename in l:
+            files_list = robust.listrp(subdir)
+            for filename in files_list:
                 if filename != filename.swapcase():
-                    return (subdir, l, filename)
-            for filename in l:
+                    return (subdir, files_list, filename)
+            for filename in files_list:
                 dir_rp = subdir.append(filename)
                 if dir_rp.isdir():
                     subsearch = find_letter(dir_rp)
@@ -457,7 +457,7 @@ class FSAbilities:
                 | win32security.GROUP_SECURITY_INFORMATION
                 | win32security.DACL_SECURITY_INFORMATION)
             acl = sd.GetSecurityDescriptorDacl()
-            n = acl.GetAceCount()
+            acl.GetAceCount()  # to verify that it works
             if write:
                 win32security.SetNamedSecurityInfo(
                     os.fsdecode(dir_rp.path), win32security.SE_FILE_OBJECT,
@@ -507,14 +507,13 @@ class FSAbilities:
         can be used to obtain Finder info (creator/type)."""
         try:
             import Carbon.File
-            import MacOS
         except (ImportError, AttributeError):
             self.carbonfile = 0
             return
 
         try:
-            x = Carbon.File.FSSpec('.')
-        except:
+            Carbon.File.FSSpec('.')  # just to verify that it works
+        except BaseException:
             self.carbonfile = 0
             return
 

@@ -19,7 +19,6 @@
 """Read increment files and restore to original"""
 
 import tempfile
-import os
 import io
 from . import rorpiter, FilenameMapping
 
@@ -49,7 +48,6 @@ def get_inclist(inc_rpath):
     parent_dir = inc_rpath.__class__(inc_rpath.conn, dirname, ())
     if not parent_dir.isdir():
         return []  # inc directory not created yet
-    index = inc_rpath.index
 
     inc_list = []
     for filename in parent_dir.listdir():
@@ -180,7 +178,7 @@ class MirrorStruct:
     def initialize_rf_cache(cls, mirror_base, inc_base):
         """Set cls.rf_cache to CachedRF object"""
         inc_list = get_inclist(inc_base)
-        rf = RestoreFile(mirror_base, inc_base, get_inclist(inc_base))
+        rf = RestoreFile(mirror_base, inc_base, inc_list)
         cls.mirror_base, cls.inc_base = mirror_base, inc_base
         cls.root_rf = rf
         cls.rf_cache = CachedRF(rf)
@@ -445,13 +443,13 @@ class RestoreFile:
 
     def relevant_incs_string(self):
         """Return printable string of relevant incs, used for debugging"""
-        l = ["---- Relevant incs for %s" % ("/".join(self.index), )]
-        l.extend([
+        inc_header = ["---- Relevant incs for %s" % ("/".join(self.index), )]
+        inc_header.extend([
             "%s %s %s" % (inc.getinctype(), inc.lstat(), inc.path)
             for inc in self.relevant_incs
         ])
-        l.append("--------------------------------")
-        return "\n".join(l)
+        inc_header.append("--------------------------------")
+        return "\n".join(inc_header)
 
     def set_relevant_incs(self):
         """Set self.relevant_incs to increments that matter for restoring
@@ -629,12 +627,12 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
 
         def inc_filenames2incrps(filenames):
             """Map list of filenames into increment rps"""
-            l = []
+            inc_list = []
             for filename in filenames:
                 rp = inc_rpath.append(filename)
                 assert rp.isincfile(), rp.path
-                l.append(rp)
-            return l
+                inc_list.append(rp)
+            return inc_list
 
         items = get_inc_pairs()
         items.sort()  # Sorting on basis of basename now
@@ -831,5 +829,6 @@ class PermissionChanger:
             rp.chmod(perms)
 
 
-from . import Globals, Time, Rdiff, Hardlink, selection, rpath, \
-    log, robust, metadata, statistics, TempFile, hash, longname
+from . import (  # noqa: E402
+    Globals, Rdiff, Hardlink, selection, rpath,
+    log, robust, metadata, TempFile, hash, longname)

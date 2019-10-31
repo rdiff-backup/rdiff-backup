@@ -27,11 +27,8 @@ files), where files is the number of files attached (usually 1 or
 
 """
 
-import os
-import tempfile
 import collections
-import types
-from . import Globals, rpath, iterfile, log
+from . import log
 
 
 def CollateIterators(*rorp_iters):
@@ -67,7 +64,7 @@ def CollateIterators(*rorp_iters):
     def yield_tuples(iter_num, overflow, rorps):
         while 1:
             setrorps(overflow, rorps)
-            if not None in overflow:
+            if None not in overflow:
                 break
 
             index = getleastindex(rorps)

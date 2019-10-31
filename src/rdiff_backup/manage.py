@@ -217,11 +217,11 @@ def ListIncrementSizes(mirror_root, index):
     time_dict = get_time_dict(get_inc_select())
     triples = get_summary_triples(mirror_total, time_dict)
 
-    l = [
+    sizes = [
         '%12s %9s  %15s   %20s' % ('Time', '', 'Size', 'Cumulative size'),
         '-' * 77,
         triple_to_line(triples[0]) + '   (current mirror)'
     ]
     for triple in triples[1:]:
-        l.append(triple_to_line(triple))
-    return '\n'.join(l)
+        sizes.append(triple_to_line(triple))
+    return '\n'.join(sizes)

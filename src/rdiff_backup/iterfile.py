@@ -20,8 +20,7 @@
 
 import pickle
 import array
-import types
-from . import Globals, C, robust, log, rpath
+from . import Globals, robust, rpath
 
 
 class IterFileException(Exception):
@@ -470,11 +469,11 @@ class ErrorFile:
         """Initialize new ErrorFile.  exc is the exception to raise on read"""
         self.exc = exc
 
-    def read(self, l=-1):
+    def read(self, lines=-1):
         raise self.exc
 
     def close(self):
         return None
 
 
-from . import iterfile
+from . import iterfile  # noqa: E402

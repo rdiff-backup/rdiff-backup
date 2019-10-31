@@ -18,7 +18,6 @@
 # USA
 """Invoke rdiff utility to make signatures, deltas, or patch"""
 
-import os
 from . import Globals, log, TempFile, rpath, hash, librsync
 
 

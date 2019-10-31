@@ -130,7 +130,10 @@ def get_inc(rp, typestr, time=None):
     """
     if time is None:
         time = Time.prevtime
-    addtostr = lambda s: b'.'.join(map(os.fsencode, (s, Time.timetostring(time), typestr)))
+
+    def addtostr(s):
+        return b'.'.join(map(os.fsencode, (s, Time.timetostring(time), typestr)))
+
     if rp.index:
         incrp = rp.__class__(rp.conn, rp.base,
                              rp.index[:-1] + (addtostr(rp.index[-1]), ))

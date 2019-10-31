@@ -25,7 +25,7 @@ documentation on what this code does can be found on the man page.
 
 import re
 import os
-from . import FilenameMapping, robust, rpath, Globals, log, rorpiter
+from . import robust, rpath, Globals, log, rorpiter
 
 
 class SelectError(Exception):
@@ -210,20 +210,6 @@ class Select:
             if new_rp:
                 for rp in rec_func(new_rp, rec_func, sel_func):
                     yield rp
-
-    def FilterIter(self, rorp_iter):
-        """Filter rorp_iter using Select below, removing excluded rorps"""
-
-        def getrpiter(rorp_iter):
-            """Return rp iter by adding indices of rorp_iter to self.rpath"""
-            for rorp in rorp_iter:
-                yield rpath.RPath(self.rpath.conn, self.rpath.base, rorp.index,
-                                  rorp.data)
-
-        ITR = rorpiter.IterTreeReducer(FilterIterITRB, [self])
-        for rp in rp_iter:
-            ITR(rp.index, rp)
-        ITR.Finish()
 
     def Select(self, rp):
         """Run through the selection functions and return dominant val 0/1/2"""
@@ -512,7 +498,7 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
         assert include == 0 or include == 1
         try:
             regexp = re.compile(os.fsencode(regexp_string))
-        except:
+        except re.error:
             log.Log("Error compiling regular expression %s" % regexp_string, 1)
             raise
 
@@ -542,7 +528,7 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def gen_get_sf(self, pred, include, name):
         """Returns a selection function that uses pred to test
-        
+
         RPath is matched if pred returns true on it.  Name is a string
         summarizing the test to the user.
 
@@ -609,7 +595,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
         assert include == 0 or include == 1
         glob_str = os.fsencode(glob_str)  # paths and glob must be bytes
         if glob_str == b"**":
-            sel_func = lambda rp: include
+            def sel_func(rp):
+                return include
         elif not self.glob_re.match(glob_str):  # normal file
             sel_func = self.glob_get_filename_sf(glob_str, include)
         else:
@@ -675,10 +662,12 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
         """
         if glob_str.lower().startswith(b"ignorecase:"):
-            re_comp = lambda r: re.compile(r, re.I | re.S)
+            def re_comp(r):
+                return re.compile(r, re.I | re.S)
             glob_str = glob_str[len(b"ignorecase:"):]
         else:
-            re_comp = lambda r: re.compile(r, re.S)
+            def re_comp(r):
+                return re.compile(r, re.S)
 
         # matches what glob matches and any files in directory
         glob_comp_re = re_comp(b"^%b($|/)" % self.glob_to_re(glob_str))

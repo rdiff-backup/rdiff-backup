@@ -20,7 +20,7 @@
 
 import re
 import os
-from . import Version
+from . import Version, log
 
 # The current version of rdiff-backup
 version = Version.version
@@ -293,8 +293,8 @@ def set_integer(name, val):
     try:
         intval = int(val)
     except ValueError:
-        Log.FatalError("Variable %s must be set to an integer -\n"
-                       "received %s instead." % (name, val))
+        log.Log.FatalError("Variable %s must be set to an integer -\n"
+                           "received %s instead." % (name, val))
     set(name, intval)
 
 
@@ -318,7 +318,7 @@ def set_float(name, val, min=None, max=None, inclusive=1):
                 s += " greater than %s%s" % (inclusive_string, min)
             else:
                 s += " less than %s%s" % (inclusive_string, max)
-        Log.FatalError(s)
+        log.Log.FatalError(s)
 
     try:
         f = float(val)

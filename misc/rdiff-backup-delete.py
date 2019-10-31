@@ -94,7 +94,7 @@ def remove_increments():
     global base
     global path
     global dryrun
-    pattern = "^%s\\.[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.+?[0-9]{2}:[0-9]{2}\.(dir|missing|diff|diff\.gz)$"
+    pattern = r"^%s\.[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.+?[0-9]{2}:[0-9]{2}\.(dir|missing|diff|diff\.gz)$"
     p = (base + '/rdiff-backup-data/increments' + '/' + '/'.join(
         path.split('/')[0:-1])).rstrip('/')
     print("\nLooking for increments in %s" % p)
@@ -116,8 +116,8 @@ def remove_metadata():
     global dryrun
     global filetype
     p = base + "/rdiff-backup-data"
-    pattern_head = "^File\s+%s(/.*)?$"
-    pattern_body = "^\s+.*$"
+    pattern_head = r"^File\s+%s(/.*)?$"
+    pattern_body = r"^\s+.*$"
     print("\nLooking for mirror metadata in %s" % p)
     metadata = []
     list([
@@ -161,7 +161,7 @@ def remove_statistics():
     global dryrun
     global filetype
     p = base + "/rdiff-backup-data"
-    pattern = "^%s(/[^\s]*)?(\s[^\s]+){4}$"
+    pattern = r"^%s(/[^\s]*)?(\s[^\s]+){4}$"
     print("\nLooking for statistics in %s" % p)
     statistics = []
     list([

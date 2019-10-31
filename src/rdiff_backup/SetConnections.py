@@ -72,10 +72,10 @@ def get_cmd_pairs(arglist, remote_schema=None, remote_cmd=None):
     elif remote_schema:
         Log("Remote schema option ignored - no remote file "
             "descriptions.", 2)
-    cmdpairs = list(map(desc2cmd_pairs, desc_pairs))
+    cmd_pairs = list(map(desc2cmd_pairs, desc_pairs))
     if remote_cmd:  # last file description gets remote_cmd
         cmd_pairs[-1] = (remote_cmd, cmd_pairs[-1][1])
-    return cmdpairs
+    return cmd_pairs
 
 
 def cmdpair2rp(cmd_pair):
@@ -102,7 +102,7 @@ def parse_file_desc(file_desc):
 
     In other words, bescoto@folly.stanford.edu::/usr/bin/ls =>
     ("bescoto@folly.stanford.edu", "/usr/bin/ls").  The
-    complication is to allow for quoting of : by a \.  If the
+    complication is to allow for quoting of : by a \\.  If the
     string is not separated by :, then the host_info is None.
 
     """
@@ -203,9 +203,9 @@ installed in the PATH on the remote system.  See the man page for more
 information on this.  This message may also be displayed if the remote
 version of rdiff-backup is quite different from the local version (%s).""" %
                        (exception, remote_cmd, Globals.version))
-    except OverflowError as exc:
+    except OverflowError:
         Log.FatalError(
-            """Integer overflow while attempting to establish the 
+            """Integer overflow while attempting to establish the
 remote connection by executing
 
     %s
@@ -214,7 +214,7 @@ Please make sure that nothing is printed (e.g., by your login shell) when this
 command executes. Try running this command:
 
     %a
-    
+
 which should only print out the text: rdiff-backup <version>""" %
             (remote_cmd, remote_cmd.replace(b"--server", b"--version")))
 
@@ -305,7 +305,7 @@ def test_connection(conn_number, rp):
         except AttributeError:  # Windows doesn't support os.getuid()
             assert type(conn.os.listdir(rp.path)) is list
         version = conn.Globals.get('version')
-    except:
+    except BaseException:
         sys.stderr.write("Server tests failed\n")
         raise
     if not version == Globals.version:

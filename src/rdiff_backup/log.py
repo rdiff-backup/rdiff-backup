@@ -124,13 +124,13 @@ class Logger:
         which is then called and should return the string to be
         logged.  We do it this way in case producing the string would
         take a significant amount of CPU.
-        
+
         """
         if verbosity > self.verbosity and verbosity > self.term_verbosity:
             return
 
         if not (type(message) is bytes or type(message) is str):
-            assert type(message) is types.FunctionType
+            assert isinstance(message, types.FunctionType)
             message = message()
 
         if verbosity <= self.verbosity:
@@ -177,7 +177,7 @@ class Logger:
         else:
             result_repr = str(result)
         # shorten the result to a max size of 720 chars with ellipsis if needed
-        #result_repr = result_repr[:720] + (result_repr[720:] and '[...]')
+        #result_repr = result_repr[:720] + (result_repr[720:] and '[...]')  # noqa: E265
         if Globals.server:
             conn_str = "Server"
         else:
@@ -193,8 +193,6 @@ class Logger:
         else:
             prefix_string = "Fatal Error: "
         self.log_to_term(prefix_string + message, 1)
-        #import Main
-        #Main.cleanup()
         sys.exit(errlevel)
 
     def exception_to_string(self, arglist=[]):

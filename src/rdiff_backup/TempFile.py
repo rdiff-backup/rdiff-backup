@@ -23,8 +23,7 @@ Now we just use normal rpaths instead of the TempFile class.
 
 """
 
-import os
-from . import Globals, rpath
+from . import Globals, log
 
 # To make collisions less likely, this gets put in the file name
 # and incremented whenever a new file is requested.
@@ -42,42 +41,9 @@ def new_in_dir(dir_rp):
     assert dir_rp.conn is Globals.local_connection
     while 1:
         if _tfindex > 100000000:
-            Log("Warning: Resetting tempfile index", 2)
+            log.Log("Warning: Resetting tempfile index", 2)
             _tfindex = 0
         tf = dir_rp.append('rdiff-backup.tmp.%d' % _tfindex)
         _tfindex = _tfindex + 1
         if not tf.lstat():
             return tf
-
-
-class TempFile(rpath.RPath):
-    """Like an RPath, but keep track of which ones are still here"""
-
-    def rename(self, rp_dest):
-        """Rename temp file to permanent location, possibly overwriting"""
-        if not self.lstat():  # "Moving" empty file, so just delete
-            if rp_dest.lstat():
-                rp_dest.delete()
-            remove_listing(self)
-            return
-
-        if self.isdir() and not rp_dest.isdir():
-            # Cannot move a directory directly over another file
-            rp_dest.delete()
-        rpath.rename(self, rp_dest)
-
-        # Sometimes this just seems to fail silently, as in one
-        # hardlinked twin is moved over the other.  So check to make
-        # sure below.
-        self.setdata()
-        if self.lstat():
-            rp_dest.delete()
-            rpath.rename(self, rp_dest)
-            self.setdata()
-            if self.lstat():
-                raise OSError("Cannot rename tmp file correctly")
-        remove_listing(self)
-
-    def delete(self):
-        rpath.RPath.delete(self)
-        remove_listing(self)
