@@ -22,7 +22,24 @@ import os
 from . import C, metadata, rorpiter, rpath, log
 
 try:
-    from win32security import *
+    from win32security import (
+        AdjustTokenPrivileges,
+        GetTokenInformation,
+        INHERIT_ONLY_ACE,
+        LookupPrivilegeValue,
+        OpenProcessToken,
+        SACL_SECURITY_INFORMATION,
+        SDDL_REVISION_1,
+        SE_BACKUP_NAME,
+        SE_DACL_PROTECTED,
+        SE_FILE_OBJECT,
+        SE_PRIVILEGE_ENABLED,
+        SE_RESTORE_NAME,
+        SE_SECURITY_NAME,
+        TOKEN_ADJUST_PRIVILEGES,
+        TokenPrivileges,
+        TOKEN_QUERY,
+    )
     import pywintypes
 except ImportError:
     GROUP_SECURITY_INFORMATION = 0
@@ -302,7 +319,9 @@ def init_acls():
         return
     try:
         try:
-            lpv = lambda priv: LookupPrivilegeValue(None, priv)
+            def lpv(priv):
+                return LookupPrivilegeValue(None, priv)
+
             # enable the SE_*_NAME privileges
             SecurityName = lpv(SE_SECURITY_NAME)
             AdjustTokenPrivileges(

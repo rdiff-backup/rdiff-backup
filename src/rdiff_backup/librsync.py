@@ -23,7 +23,6 @@ which is written in C.  The goal was to use C as little as possible...
 
 """
 
-import io
 import array
 from . import _librsync
 

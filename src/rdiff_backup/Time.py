@@ -19,9 +19,7 @@
 """Provide time related exceptions and functions"""
 
 import time
-import types
 import re
-import sys
 import calendar
 from . import Globals
 
@@ -188,7 +186,7 @@ page for more information.
         if not match:
             error()
         num, ext = int(match.group(1)), match.group(2)
-        if not ext in _interval_conv_dict or num < 0:
+        if ext not in _interval_conv_dict or num < 0:
             error()
         total += num * _interval_conv_dict[ext]
         interval_string = interval_string[match.end(0):]

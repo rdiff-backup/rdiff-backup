@@ -18,11 +18,9 @@
 # USA
 """Generate and process aggregated backup information"""
 
-import re
-import os
 import time
 from functools import reduce
-from . import Globals, Time, increment, log, metadata, rpath
+from . import Globals, Time, increment, log, metadata
 
 
 class StatsException(Exception):
@@ -130,10 +128,10 @@ class StatsObj:
         if line[-1] == "\n":
             line = line[:-1]
         lineparts = line.split(" ")
-        if len(lineparts) < len(stat_file_attrs):
+        if len(lineparts) < len(self.stat_file_attrs):
             error()
-        for attr, val_string in zip(stat_file_attrs,
-                                    lineparts[-len(stat_file_attrs):]):
+        for attr, val_string in zip(self.stat_file_attrs,
+                                    lineparts[-len(self.stat_file_attrs):]):
             try:
                 val = int(val_string)
             except ValueError:
@@ -242,7 +240,7 @@ class StatsObj:
             if len(line_parts) < 2:
                 error(line)
             attr, value_string = line_parts[:2]
-            if not attr in self.stat_attrs:
+            if attr not in self.stat_attrs:
                 error(line)
             try:
                 try:
@@ -303,7 +301,7 @@ class StatsObj:
 
     def get_statsobj_copy(self):
         """Return new StatsObj object with same stats as self"""
-        s = StatObj()
+        s = StatsObj()
         for attr in self.stat_attrs:
             s.set_stat(attr, self.get_stat(attr))
         return s

@@ -36,9 +36,8 @@ except ImportError:
     pass
 
 from . import log
-from . import Globals
 
-############ "Private" section - don't use outside user_group ###########
+# ----------- "Private" section - don't use outside user_group -----------
 
 # This should be set to the user UserMap class object if using
 # user-defined user mapping, and a Map class object otherwise.
@@ -194,7 +193,7 @@ class NumericalMap:
         return id
 
 
-############ Public section - can use these outside user_group ###########
+# ----------- Public section - can use these outside user_group -----------
 
 
 def uid2uname(uid):
@@ -204,7 +203,7 @@ def uid2uname(uid):
     except KeyError:
         try:
             uname = pwd.getpwuid(uid)[0]
-        except (KeyError, OverflowError, NameError) as e:
+        except (KeyError, OverflowError, NameError):
             uname = None
         uid2uname_dict[uid] = uname
         return uname
@@ -217,7 +216,7 @@ def gid2gname(gid):
     except KeyError:
         try:
             gname = grp.getgrgid(gid)[0]
-        except (KeyError, OverflowError, NameError) as e:
+        except (KeyError, OverflowError, NameError):
             gname = None
         gid2gname_dict[gid] = gname
         return gname

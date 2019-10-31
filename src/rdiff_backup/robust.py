@@ -21,7 +21,7 @@
 import errno
 import signal
 import zlib
-from . import librsync, C, rpath, Globals, log, statistics, connection
+from . import librsync, C, rpath, Globals, log, connection
 
 
 def check_common_error(error_handler, function, args=[]):

@@ -37,13 +37,9 @@ are dealing with are local or remote.
 import os
 import stat
 import re
-import sys
-import shutil
 import gzip
-import socket
 import time
 import errno
-import codecs
 from . import Globals, Time, log, user_group, C
 
 try:
@@ -712,7 +708,6 @@ class RORPath:
         for a regular file, 'dir' for a directory, 'dev' for a device
         file, 'fifo' for a fifo, 'sock' for a socket, and 'sym' for a
         symlink.
-        
         """
         return self.data['type']
 
@@ -1500,10 +1495,8 @@ class RPath(RORPath):
     def makedev(self, type, major, minor):
         """Make a special file with specified type, and major/minor nums"""
         if type == 'c':
-            datatype = 'chr'
             mode = stat.S_IFCHR | 0o600
         elif type == 'b':
-            datatype = 'blk'
             mode = stat.S_IFBLK | 0o600
         else:
             raise RPathException
@@ -1631,7 +1624,6 @@ class RPath(RORPath):
         from Carbon.File import FSSpec
         from Carbon.File import FSRef
         import Carbon.Files
-        import MacOS
         fsobj = FSSpec(self.path)
         finderinfo = fsobj.FSpGetFInfo()
         finderinfo.Creator = cfile['creator']
@@ -1663,7 +1655,7 @@ class RPath(RORPath):
                     os.path.join(self.path, '..namedfork', 'rsrc'), 'rb')
                 rfork = rfork_fp.read()
                 assert not rfork_fp.close()
-            except (IOError, OSError) as e:
+            except (IOError, OSError):
                 rfork = ''
             self.data['resourcefork'] = rfork
         return rfork

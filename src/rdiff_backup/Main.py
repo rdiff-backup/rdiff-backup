@@ -20,16 +20,16 @@
 
 import getopt
 import sys
-import re
 import os
 import io
 import tempfile
 import time
 import errno
 from .log import Log, LoggerError, ErrorLog
-from . import Globals, Time, SetConnections, selection, robust, rpath, \
-    manage, backup, connection, restore, FilenameMapping, \
-    Security, Hardlink, regress, C, fs_abilities, statistics, compare
+from . import (
+    Globals, Time, SetConnections, robust, rpath,
+    manage, backup, connection, restore, FilenameMapping,
+    Security, C, statistics, compare)
 
 action = None
 create_full_path = None
@@ -45,7 +45,7 @@ restore_root, restore_index, restore_root_set = None, None, 0
 return_val = None  # Set to cause exit code to be specified value
 
 
-def parse_cmdlineoptions(arglist):
+def parse_cmdlineoptions(arglist):  # noqa: C901
     """Parse argument list and set global preferences"""
     global args, action, create_full_path, force, restore_timestr, remote_cmd
     global remote_schema, remove_older_than_string
@@ -266,17 +266,17 @@ def check_action():
             'compare-full'
         ]
     }
-    l = len(args)
-    if l == 0 and action not in arg_action_dict[l]:
+    args_len = len(args)
+    if args_len == 0 and action not in arg_action_dict[args_len]:
         commandline_error("No arguments given")
     elif not action:
-        if l == 2:
+        if args_len == 2:
             pass  # Will determine restore or backup later
         else:
             commandline_error("Switches missing or wrong number of arguments")
     elif action == 'test-server' or action == 'calculate-average':
         pass  # these two take any number of args
-    elif l > 2 or action not in arg_action_dict[l]:
+    elif args_len > 2 or action not in arg_action_dict[args_len]:
         commandline_error("Wrong number of arguments given.")
 
 
@@ -633,7 +633,7 @@ def backup_touch_curmirror_local(rpin, rpout):
     Log("Writing mirror marker %s" % mirrorrp.get_safepath(), 6)
     try:
         pid = os.getpid()
-    except:
+    except BaseException:
         pid = "NA"
     mirrorrp.write_string("PID %s\n" % (pid, ))
     mirrorrp.fsync_with_dir()
@@ -655,7 +655,7 @@ def backup_remove_curmirror_local():
 
 def backup_close_statistics(end_time):
     """Close out the tracking of the backup statistics.
-    
+
     Moved to run at this point so that only the clock of the system on which
     rdiff-backup is run is used (set by passing in time.time() from that
     system). Use at end of session.

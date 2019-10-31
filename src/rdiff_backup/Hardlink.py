@@ -30,7 +30,6 @@ source side should only transmit inode information.
 """
 
 import errno
-from . import Globals, Time, log, robust
 
 # The keys in this dictionary are (inode, devloc) pairs.  The values
 # are a pair (index, remaining_links, dest_key, sha1sum) where index

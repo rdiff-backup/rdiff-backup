@@ -34,8 +34,7 @@ try:
     import posix1e
 except ImportError:
     pass
-from . import Globals, connection, metadata, rorpiter, log, C, \
-    rpath, user_group
+from . import Globals, connection, metadata, rorpiter, log, C, rpath, user_group  # noqa: F401
 
 # When an ACL gets dropped, put name in dropped_acl_names.  This is
 # only used so that only the first dropped ACL for any given name
@@ -105,7 +104,7 @@ class ExtendedAttributes:
             for name in rp.conn.xattr.listxattr(rp.path, rp.issym()):
                 try:
                     rp.conn.xattr.removexattr(rp.path, name, rp.issym())
-                except PermissionError as exc:  # errno.EACCES
+                except PermissionError:  # errno.EACCES
                     # SELinux attributes cannot be removed, and we don't want
                     # to bail out or be too noisy at low log levels.
                     log.Log(
@@ -119,7 +118,7 @@ class ExtendedAttributes:
                         continue
                     else:  # can be anything, just fail
                         raise
-        except io.UnsupportedOperation as exc:  # errno.EOPNOTSUPP or errno.EPERM
+        except io.UnsupportedOperation:  # errno.EOPNOTSUPP or errno.EPERM
             return  # if not supported, consider empty
         except FileNotFoundError as exc:
             log.Log(

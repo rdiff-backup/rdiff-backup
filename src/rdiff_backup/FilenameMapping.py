@@ -30,7 +30,6 @@ handle that error.)
 
 import os
 import re
-import types
 from . import Globals, log, rpath
 
 # If true, enable character quoting, and set characters making

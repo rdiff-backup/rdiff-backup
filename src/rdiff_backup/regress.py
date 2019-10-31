@@ -32,12 +32,10 @@ be recovered.
 
 """
 
-import signal
-import errno
 import re
 import os
 from . import Globals, restore, log, rorpiter, TempFile, metadata, rpath, C, \
-    Time, backup, robust, longname
+    Time, robust, longname
 
 # regress_time should be set to the time we want to regress back to
 # (usually the time of the last successful backup)
@@ -373,7 +371,7 @@ class RegressITRB(rorpiter.ITRBranch):
 
 def check_pids(curmir_incs):
     """Check PIDs in curmir markers to make sure rdiff-backup not running"""
-    pid_re = re.compile("^PID\s*([0-9]+)", re.I | re.M)
+    pid_re = re.compile(r"^PID\s*([0-9]+)", re.I | re.M)
 
     def extract_pid(curmir_rp):
         """Return process ID from a current mirror marker, if any"""
@@ -387,9 +385,9 @@ def check_pids(curmir_incs):
         """True if we know if process with pid is currently running"""
         try:
             os.kill(pid, 0)
-        except ProcessLookupError as exc:  # errno.ESRCH - pid doesn't exist
+        except ProcessLookupError:  # errno.ESRCH - pid doesn't exist
             return 0
-        except OSError as exc:  # any other OS error
+        except OSError:  # any other OS error
             log.Log(
                 "Warning: unable to check if PID %d still running" % (pid, ),
                 2)

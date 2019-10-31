@@ -54,11 +54,9 @@ field names and values.
 """
 
 import re
-import gzip
 import os
 import binascii
-import codecs
-from . import log, Globals, rpath, Time, robust, increment, rorpiter
+from . import log, Globals, rpath, Time, rorpiter
 
 
 class ParsingError(Exception):
@@ -83,7 +81,7 @@ def carbonfile2string(cfile):
 
 
 def string2carbonfile(data):
-    """Re-constitute CarbonFile data from a string stored by 
+    """Re-constitute CarbonFile data from a string stored by
     carbonfile2string."""
     retval = {}
     for component in data.split('|'):
@@ -815,4 +813,4 @@ def SetManager():
     return ManagerObj
 
 
-from . import eas_acls, win_acls  # put at bottom to avoid python circularity bug
+from . import eas_acls, win_acls  # noqa: E402

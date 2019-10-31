@@ -18,27 +18,27 @@
 # USA
 """Support code for remote execution and data transfer"""
 
-import types
-import os
-import tempfile
-import pickle
-import shutil
-import traceback
-import socket
-import sys
-import gzip
+import types  # noqa: F401
+import os  # noqa: F401
+import tempfile  # noqa: F401
+import pickle  # noqa: F401
+import shutil  # noqa: F401
+import traceback  # noqa: F401
+import socket  # noqa: F401
+import sys  # noqa: F401
+import gzip  # noqa: F401
 
 # The following EA and ACL modules may be used if available
 try:
-    import xattr
+    import xattr  # noqa: F401
 except ImportError:
     pass
 try:
-    import posix1e
+    import posix1e  # noqa: F401
 except ImportError:
     pass
 try:
-    import win32security
+    import win32security  # noqa: F401
 except ImportError:
     pass
 
@@ -251,8 +251,7 @@ class LowLevelPipeConnection(Connection):
         if isinstance(headerchar, str):  # it can only be an ASCII character
             headerchar = headerchar.encode('ascii')
         try:
-            self.outpipe.write(headerchar + self._i2b(req_num, 1)
-             + self._i2b(len(data), 7))
+            self.outpipe.write(headerchar + self._i2b(req_num, 1) + self._i2b(len(data), 7))
             self.outpipe.write(data)
             self.outpipe.flush()
         except (IOError, AttributeError):
@@ -396,7 +395,7 @@ class PipeConnection(LowLevelPipeConnection):
         try:
             Security.vet_request(request, argument_list)
             result = eval(request.function_string)(*argument_list)
-        except:
+        except BaseException:
             result = self.extract_exception()
         self._put(result, req_num)
         self.unused_request_numbers[req_num] = None
@@ -552,7 +551,7 @@ class VirtualFile:
     with a unique file number.
 
     """
-    #### The following are used by the server
+    # The following are used by the server
     vfiles = {}
     counter = 0
 
@@ -595,7 +594,7 @@ class VirtualFile:
 
     new = classmethod(new)
 
-    #### And these are used by the client
+    # And these are used by the client
     def __init__(self, connection, id):
         self.connection = connection
         self.id = id
@@ -623,14 +622,15 @@ class VirtualFile:
 
 # everything has to be available here for remote connection's use, but
 # put at bottom to reduce circularities.
-from . import Globals, Time, Rdiff, Hardlink, FilenameMapping, Security, \
-    Main, rorpiter, selection, increment, statistics, manage, \
-    iterfile, rpath, robust, restore, manage, backup, connection, \
-    TempFile, SetConnections, librsync, log, regress, fs_abilities, \
-    eas_acls, user_group, compare
+from . import (  # noqa: E402,F401
+    Globals, Time, Rdiff, Hardlink, FilenameMapping, Security,
+    Main, rorpiter, selection, increment, statistics, manage,
+    iterfile, rpath, robust, restore, backup, connection,
+    TempFile, SetConnections, librsync, log, regress, fs_abilities,
+    eas_acls, user_group, compare)
 
 try:
-    from . import win_acls
+    from . import win_acls  # noqa: F401
 except ImportError:
     pass
 
