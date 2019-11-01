@@ -23,9 +23,19 @@ else
 	else  # update the existing Git repo
 		git -C ${TESTREPODIR} pull --ff-only  # fail if things don't look right
 	fi
-	sudo rm -fr ${OLDTESTDIR}  # Clean away potential cruft
-	sudo tar xf ${TESTREPODIR}/${TESTTARFILE}
-	sudo ${TESTREPODIR}/rdiff-backup_testfiles.fix.sh "${RDIFF_TEST_USER}" "${RDIFF_TEST_GROUP}"
+
+	if [ $(id -u) -eq 0 ]
+	then  # we do this because sudo might not be installed
+		SUDO=
+	else
+		SUDO=sudo
+	fi
+
+	# the following commands must be run as root
+	${SUDO} rm -fr ${OLDTESTDIR}  # Clean away potential cruft
+	${SUDO} tar xf ${TESTREPODIR}/${TESTTARFILE}
+	${SUDO} ${TESTREPODIR}/rdiff-backup_testfiles.fix.sh "${RDIFF_TEST_USER}" "${RDIFF_TEST_GROUP}"
+
 	cd rdiff-backup
 fi
 
