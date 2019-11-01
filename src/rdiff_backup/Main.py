@@ -1097,7 +1097,8 @@ information in it.
             except (OSError, IOError) as exc:
                 Log.FatalError("Could not check if rdiff-backup is currently"
                                "running due to\n%s" % exc)
-        assert len(curmir_incs) == 2, "Found too many current_mirror incs!"
+        assert len(curmir_incs) == 2, \
+            "Found too many current_mirror incs in %s!" % Globals.rbdir.get_safepath()
         return 1
 
 
