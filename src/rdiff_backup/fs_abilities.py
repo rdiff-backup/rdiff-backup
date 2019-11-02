@@ -992,7 +992,7 @@ class RestoreSetGlobals(SetGlobals):
             log.Log(
                 "Warning: chars_to_quote file not found,\n"
                 "assuming no quoting in backup repository.", 2)
-            SetConnections.UpdateGlobal("chars_to_quote", "")
+            SetConnections.UpdateGlobal("chars_to_quote", b"")
 
 
 class SingleSetGlobals(RestoreSetGlobals):
