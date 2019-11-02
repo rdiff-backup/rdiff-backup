@@ -23,14 +23,10 @@ env:
   - MAKE_STEP=test-runtime-root
   - MAKE_STEP=test-runtime-slow
 
-matrix:
-  allow_failures:
-    - env: MAKE_STEP=test-static
-
 script: make $MAKE_STEP
 
 # Travis-CI cannot cache the plain testfiles due to permission errors, thus we
-# have the .tar.gz stored in the cache dir to aboid too many re-downloads.
+# have the .tar.gz stored in the cache dir to avoid too many re-downloads.
 cache:
   directories:
     - $HOME/build/rdiff-backup/cache

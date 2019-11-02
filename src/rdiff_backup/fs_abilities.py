@@ -117,13 +117,13 @@ class FSAbilities:
     def init_readonly(self, rp):
         """Set variables using fs tested at RPath rp.  Run locally.
 
-		This method does not write to the file system at all, and
-		should be run on the file system when the file system will
-		only need to be read.
+        This method does not write to the file system at all, and
+        should be run on the file system when the file system will
+        only need to be read.
 
-		Only self.acls and self.eas are set.
+        Only self.acls and self.eas are set.
 
-		"""
+        """
         assert rp.conn is Globals.local_connection
         self.root_rp = rp
         self.read_only = 1
@@ -140,11 +140,11 @@ class FSAbilities:
     def init_readwrite(self, rbdir):
         """Set variables using fs tested at rp_base.  Run locally.
 
-		This method creates a temp directory in rp_base and writes to
-		it in order to test various features.  Use on a file system
-		that will be written to.
+        This method creates a temp directory in rp_base and writes to
+        it in order to test various features.  Use on a file system
+        that will be written to.
 
-		"""
+        """
         assert rbdir.conn is Globals.local_connection
         if not rbdir.isdir():
             assert not rbdir.lstat(), (rbdir.path, rbdir.lstat())
@@ -240,7 +240,8 @@ class FSAbilities:
             ext_rp = subdir.append(extended_filename)
             ext_rp.touch()
         except (IOError, OSError):
-            if ext_rp: assert not ext_rp.lstat()
+            if ext_rp:
+                assert not ext_rp.lstat()
             self.extended_filenames = 0
         else:
             assert ext_rp.lstat()
@@ -333,20 +334,21 @@ class FSAbilities:
         def find_letter(subdir):
             """Find a (subdir_rp, dirlist) with a letter in it, or None
 
-			Recurse down the directory, looking for any file that has
-			a letter in it.  Return the pair (rp, [list of filenames])
-			where the list is of the directory containing rp.
+            Recurse down the directory, looking for any file that has
+            a letter in it.  Return the pair (rp, [list of filenames])
+            where the list is of the directory containing rp.
 
-			"""
-            l = robust.listrp(subdir)
-            for filename in l:
+            """
+            files_list = robust.listrp(subdir)
+            for filename in files_list:
                 if filename != filename.swapcase():
-                    return (subdir, l, filename)
-            for filename in l:
+                    return (subdir, files_list, filename)
+            for filename in files_list:
                 dir_rp = subdir.append(filename)
                 if dir_rp.isdir():
                     subsearch = find_letter(dir_rp)
-                    if subsearch: return subsearch
+                    if subsearch:
+                        return subsearch
             return None
 
         def test_triple(dir_rp, dirlist, filename):
@@ -440,7 +442,8 @@ class FSAbilities:
             return
 
         try:
-            import win32security, pywintypes
+            import win32security
+            import pywintypes
         except ImportError:
             log.Log(
                 "Unable to import win32security module. Windows ACLs\n"
@@ -454,7 +457,7 @@ class FSAbilities:
                 | win32security.GROUP_SECURITY_INFORMATION
                 | win32security.DACL_SECURITY_INFORMATION)
             acl = sd.GetSecurityDescriptorDacl()
-            n = acl.GetAceCount()
+            acl.GetAceCount()  # to verify that it works
             if write:
                 win32security.SetNamedSecurityInfo(
                     os.fsdecode(dir_rp.path), win32security.SE_FILE_OBJECT,
@@ -501,17 +504,16 @@ class FSAbilities:
 
     def set_carbonfile(self):
         """Test for support of the Mac Carbon library.  This library
-		can be used to obtain Finder info (creator/type)."""
+        can be used to obtain Finder info (creator/type)."""
         try:
             import Carbon.File
-            import MacOS
         except (ImportError, AttributeError):
             self.carbonfile = 0
             return
 
         try:
-            x = Carbon.File.FSSpec('.')
-        except:
+            Carbon.File.FSSpec('.')  # just to verify that it works
+        except BaseException:
             self.carbonfile = 0
             return
 
@@ -543,11 +545,11 @@ class FSAbilities:
     def set_resource_fork_readonly(self, dir_rp):
         """Test for resource fork support by testing an regular file
 
-		Launches search for regular file in given directory.  If no
-		regular file is found, resource_fork support will be turned
-		off by default.
+        Launches search for regular file in given directory.  If no
+        regular file is found, resource_fork support will be turned
+        off by default.
 
-		"""
+        """
         for rp in selection.Select(dir_rp).set_iter():
             if rp.isreg():
                 try:
@@ -592,28 +594,30 @@ class FSAbilities:
         else:
             sym_dest.setdata()
             assert sym_dest.issym()
-            if sym_dest.getperms() == 0o700: self.symlink_perms = 1
-            else: self.symlink_perms = 0
+            if sym_dest.getperms() == 0o700:
+                self.symlink_perms = 1
+            else:
+                self.symlink_perms = 0
             sym_dest.delete()
         sym_source.delete()
 
     def set_escape_dos_devices(self, subdir):
         """Test if DOS device files can be used as filenames.
 
-		This test must detect if the underlying OS is Windows, whether we are
-		running under Cygwin or natively. Cygwin allows these special files to
-		be stat'd from any directory. Native Windows returns OSError (like
-		non-Cygwin POSIX), but we can check for that using os.name.
+        This test must detect if the underlying OS is Windows, whether we are
+        running under Cygwin or natively. Cygwin allows these special files to
+        be stat'd from any directory. Native Windows returns OSError (like
+        non-Cygwin POSIX), but we can check for that using os.name.
 
-		Note that 'con' and 'aux' have some unusual behaviors as shown below.
+        Note that 'con' and 'aux' have some unusual behaviors as shown below.
 
-		os.lstat() 	 |	con			aux			prn
-		-------------+-------------------------------------
-		Unix		 |	OSError,2	OSError,2	OSError,2
-		Cygwin/NTFS	 |	-success-	-success-	-success-
-		Cygwin/FAT32 |	-success-	-HANGS-
-		Native Win	 |	WinError,2	WinError,87	WinError,87
-		"""
+        os.lstat()   |  con         aux         prn
+        -------------+-------------------------------------
+        Unix         |  OSError,2   OSError,2   OSError,2
+        Cygwin/NTFS  |  -success-   -success-   -success-
+        Cygwin/FAT32 |  -success-   -HANGS-
+        Native Win   |  WinError,2  WinError,87 WinError,87
+        """
         if os.name == "nt":
             self.escape_dos_devices = 1
             return
@@ -628,14 +632,14 @@ class FSAbilities:
             self.escape_dos_devices = 1
 
     def set_escape_trailing_spaces_readwrite(self, testdir):
-        """Windows and Linux/FAT32 will not preserve trailing spaces or periods.
-	
-		Linux/FAT32 behaves inconsistently: It will give an OSError,22 if
-		os.mkdir() is called on a directory name with a space at the end, but
-		will give an IOError("invalid mode") if you attempt to create a filename
-		with a space at the end. However, if a period is placed at the end of
-		the name, Linux/FAT32 is consistent with Cygwin and Native Windows.
-		"""
+        """
+        Windows and Linux/FAT32 will not preserve trailing spaces or periods.
+        Linux/FAT32 behaves inconsistently: It will give an OSError,22 if
+        os.mkdir() is called on a directory name with a space at the end, but
+        will give an IOError("invalid mode") if you attempt to create a filename
+        with a space at the end. However, if a period is placed at the end of
+        the name, Linux/FAT32 is consistent with Cygwin and Native Windows.
+        """
 
         period_rp = testdir.append("foo.")
         assert not period_rp.lstat()
@@ -654,7 +658,7 @@ class FSAbilities:
 
     def set_escape_trailing_spaces_readonly(self, rp):
         """Determine if directory at rp permits filenames with trailing
-		spaces or periods without writing."""
+        spaces or periods without writing."""
 
         def test_period(dir_rp, dirlist):
             """Return 1 if trailing spaces and periods should be escaped"""
@@ -690,11 +694,11 @@ class FSAbilities:
 def get_readonly_fsa(desc_string, rp):
     """Return an fsa with given description_string
 
-	Will be initialized read_only with given RPath rp.  We separate
-	this out into a separate function so the request can be vetted by
-	the security module.
+    Will be initialized read_only with given RPath rp.  We separate
+    this out into a separate function so the request can be vetted by
+    the security module.
 
-	"""
+    """
     if os.name == 'nt':
         log.Log("Hardlinks disabled by default on Windows", 4)
         SetConnections.UpdateGlobal('preserve_hardlinks', 0)
@@ -704,9 +708,9 @@ def get_readonly_fsa(desc_string, rp):
 class SetGlobals:
     """Various functions for setting Globals vars given FSAbilities above
 
-	Container for BackupSetGlobals and RestoreSetGlobals (don't use directly)
+    Container for BackupSetGlobals and RestoreSetGlobals (don't use directly)
 
-	"""
+    """
 
     def __init__(self, in_conn, out_conn, src_fsa, dest_fsa):
         """Just store some variables for use below"""
@@ -789,19 +793,19 @@ class BackupSetGlobals(SetGlobals):
 
     def set_special_escapes(self, rbdir):
         """Escaping DOS devices and trailing periods/spaces works like
-		regular filename escaping. If only the destination requires it,
-		then we do it. Otherwise, it is not necessary, since the files
-		couldn't have been created in the first place. We also record
-		whether we have done it in order to handle the case where a
-		volume which was escaped is later restored by an OS that does
-		not require it.
+        regular filename escaping. If only the destination requires it,
+        then we do it. Otherwise, it is not necessary, since the files
+        couldn't have been created in the first place. We also record
+        whether we have done it in order to handle the case where a
+        volume which was escaped is later restored by an OS that does
+        not require it.
 
         """
 
-        suggested_edd = (self.dest_fsa.escape_dos_devices and not \
-          self.src_fsa.escape_dos_devices)
-        suggested_ets = (self.dest_fsa.escape_trailing_spaces and not \
-          self.src_fsa.escape_trailing_spaces)
+        suggested_edd = (self.dest_fsa.escape_dos_devices
+                         and not self.src_fsa.escape_dos_devices)
+        suggested_ets = (self.dest_fsa.escape_trailing_spaces
+                         and not self.src_fsa.escape_trailing_spaces)
 
         se_rp = rbdir.append("special_escapes")
         if not se_rp.lstat():
@@ -836,16 +840,17 @@ class BackupSetGlobals(SetGlobals):
     def set_chars_to_quote(self, rbdir, force):
         """Set chars_to_quote setting for backup session
 
-		Unlike most other options, the chars_to_quote setting also
-		depends on the current settings in the rdiff-backup-data
-		directory, not just the current fs features.
+        Unlike most other options, the chars_to_quote setting also
+        depends on the current settings in the rdiff-backup-data
+        directory, not just the current fs features.
 
-		"""
+        """
         (ctq, update) = self.compare_ctq_file(rbdir, self.get_ctq_from_fsas(),
                                               force)
 
         SetConnections.UpdateGlobal('chars_to_quote', ctq)
-        if Globals.chars_to_quote: FilenameMapping.set_init_quote_vals()
+        if Globals.chars_to_quote:
+            FilenameMapping.set_init_quote_vals()
         return update
 
     def get_ctq_from_fsas(self):
@@ -927,18 +932,18 @@ class RestoreSetGlobals(SetGlobals):
     def update_triple(self, src_support, dest_support, attr_triple):
         """Update global settings for feature based on fsa results
 
-		This is slightly different from BackupSetGlobals.update_triple
-		because (using the mirror_metadata file) rpaths from the
-		source may have more information than the file system
-		supports.
+        This is slightly different from BackupSetGlobals.update_triple
+        because (using the mirror_metadata file) rpaths from the
+        source may have more information than the file system
+        supports.
 
-		"""
+        """
         active_attr, write_attr, conn_attr = attr_triple
         if Globals.get(active_attr) == 0:
             return  # don't override 0
         for attr in attr_triple:
             SetConnections.UpdateGlobal(attr, None)
-        if not dest_support: 
+        if not dest_support:
             return  # if dest doesn't support, do nothing
         SetConnections.UpdateGlobal(active_attr, 1)
         self.out_conn.Globals.set_local(conn_attr, 1)
@@ -948,7 +953,7 @@ class RestoreSetGlobals(SetGlobals):
 
     def set_special_escapes(self, rbdir):
         """Set escape_dos_devices and escape_trailing_spaces from
-		rdiff-backup-data dir, just like chars_to_quote"""
+        rdiff-backup-data dir, just like chars_to_quote"""
         se_rp = rbdir.append("special_escapes")
         if se_rp.lstat():
             se = se_rp.get_string().split("\n")
@@ -1037,10 +1042,10 @@ class SingleSetGlobals(RestoreSetGlobals):
 def backup_set_globals(rpin, force):
     """Given rps for source filesystem and repository, set fsa globals
 
-	This should be run on the destination connection, because we may
-	need to write a new chars_to_quote file.
+    This should be run on the destination connection, because we may
+    need to write a new chars_to_quote file.
 
-	"""
+    """
     assert Globals.rbdir.conn is Globals.local_connection
     src_fsa = rpin.conn.fs_abilities.get_readonly_fsa('source', rpin)
     log.Log(str(src_fsa), 4)

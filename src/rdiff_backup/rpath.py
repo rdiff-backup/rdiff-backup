@@ -37,17 +37,14 @@ are dealing with are local or remote.
 import os
 import stat
 import re
-import sys
-import shutil
 import gzip
-import socket
 import time
 import errno
-import codecs
 from . import Globals, Time, log, user_group, C
 
 try:
-    import win32api, win32con
+    import win32api
+    import win32con
 except ImportError:
     pass
 
@@ -55,11 +52,11 @@ except ImportError:
 class SkipFileException(Exception):
     """Signal that the current file should be skipped but then continue
 
-	This exception will often be raised when there is problem reading
-	an individual file, but it makes sense for the rest of the backup
-	to keep going.
+    This exception will often be raised when there is problem reading
+    an individual file, but it makes sense for the rest of the backup
+    to keep going.
 
-	"""
+    """
     pass
 
 
@@ -109,10 +106,10 @@ def move(rpin, rpout):
 def copy(rpin, rpout, compress=0):
     """Copy RPath rpin to rpout.  Works for symlinks, dirs, etc.
 
-	Returns close value of input for regular file, which can be used
-	to pass hashes on.
+    Returns close value of input for regular file, which can be used
+    to pass hashes on.
 
-	"""
+    """
     log.Log("Regular copying %s to %s" % (rpin.index, rpout.get_safepath()), 6)
     if not rpin.lstat():
         if rpout.lstat():
@@ -178,10 +175,10 @@ def copy_reg_file(rpin, rpout, compress=0):
 def cmp(rpin, rpout):
     """True if rpin has the same data as rpout
 
-	cmp does not compare file ownership, permissions, or times, or
-	examine the contents of a directory.
+    cmp does not compare file ownership, permissions, or times, or
+    examine the contents of a directory.
 
-	"""
+    """
     check_for_files(rpin, rpout)
     if rpin.isreg():
         if not rpout.isreg():
@@ -210,10 +207,10 @@ def cmp(rpin, rpout):
 def copy_attribs(rpin, rpout):
     """Change file attributes of rpout to match rpin
 
-	Only changes the chmoddable bits, uid/gid ownership, and
-	timestamps, so both must already exist.
+    Only changes the chmoddable bits, uid/gid ownership, and
+    timestamps, so both must already exist.
 
-	"""
+    """
     log.Log(
         "Copying attributes from %s to %s" % (rpin.index,
                                               rpout.get_safepath()), 7)
@@ -241,11 +238,11 @@ def copy_attribs(rpin, rpout):
 def copy_attribs_inc(rpin, rpout):
     """Change file attributes of rpout to match rpin
 
-	Like above, but used to give increments the same attributes as the
-	originals.  Therefore, don't copy all directory acl and
-	permissions.
+    Like above, but used to give increments the same attributes as the
+    originals.  Therefore, don't copy all directory acl and
+    permissions.
 
-	"""
+    """
     log.Log(
         "Copying inc attrs from %s to %s" % (rpin.index, rpout.get_safepath()),
         7)
@@ -275,10 +272,10 @@ def copy_attribs_inc(rpin, rpout):
 def cmp_attribs(rp1, rp2):
     """True if rp1 has the same file attributes as rp2
 
-	Does not compare file access times.  If not changing
-	ownership, do not check user/group id.
+    Does not compare file access times.  If not changing
+    ownership, do not check user/group id.
 
-	"""
+    """
     check_for_files(rp1, rp2)
     if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
         result = None
@@ -315,7 +312,7 @@ def rename(rp_source, rp_dest):
         rp_dest.delete()
     else:
         if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode() and \
-          rp_source.getinode() != 0:
+           rp_source.getinode() != 0:
             log.Log(
                 "Warning: Attempt to rename over same inode: %s to %s" %
                 (rp_source.get_safepath(), rp_dest.get_safepath()), 2)
@@ -345,11 +342,11 @@ def rename(rp_source, rp_dest):
 def make_file_dict(filename):
     """Generate the data dictionary for the given RPath
 
-	This is a global function so that os.name can be called locally,
-	thus avoiding network lag and so that we only need to send the
-	filename over the network, thus avoiding the need to pickle an
-	(incomplete) rpath object.
-	"""
+    This is a global function so that os.name can be called locally,
+    thus avoiding network lag and so that we only need to send the
+    filename over the network, thus avoiding the need to pickle an
+    (incomplete) rpath object.
+    """
 
     try:
         statblock = os.lstat(filename)
@@ -405,10 +402,10 @@ def make_file_dict(filename):
 def make_socket_local(rpath):
     """Make a local socket at the given path
 
-	This takes an rpath so that it will be checked by Security.
-	(Miscellaneous strings will not be.)
+    This takes an rpath so that it will be checked by Security.
+    (Miscellaneous strings will not be.)
 
-	"""
+    """
     assert rpath.conn is Globals.local_connection
     rpath.conn.os.mknod(rpath.path, stat.S_IFSOCK)
 
@@ -427,17 +424,20 @@ def open_local_read(rpath):
 
 def get_incfile_info(basename):
     """Returns None or tuple of
-	(is_compressed, timestr, type, and basename)"""
+    (is_compressed, timestr, type, and basename)"""
     dotsplit = basename.split(b'.')
     if dotsplit[-1] == b'gz':
         compressed = 1
-        if len(dotsplit) < 4: return None
+        if len(dotsplit) < 4:
+            return None
         timestring, ext = dotsplit[-3:-1]
     else:
         compressed = None
-        if len(dotsplit) < 3: return None
+        if len(dotsplit) < 3:
+            return None
         timestring, ext = dotsplit[-2:]
-    if Time.bytestotime(timestring) is None: return None
+    if Time.bytestotime(timestring) is None:
+        return None
     if not (ext == b"snapshot" or ext == b"dir" or ext == b"missing"
             or ext == b"diff" or ext == b"data"):
         return None
@@ -450,7 +450,7 @@ def get_incfile_info(basename):
 
 def delete_dir_no_files(rp):
     """Deletes the directory at rp.path if empty. Raises if the
-	directory contains files."""
+    directory contains files."""
     assert rp.isdir()
     if rp.contains_files():
         raise RPathException("Directory contains files.")
@@ -460,17 +460,19 @@ def delete_dir_no_files(rp):
 class RORPath:
     """Read Only RPath - carry information about a path
 
-	These contain information about a file, and possible the file's
-	data, but do not have a connection and cannot be written to or
-	changed.  The advantage of these objects is that they can be
-	communicated by encoding their index and data dictionary.
+    These contain information about a file, and possible the file's
+    data, but do not have a connection and cannot be written to or
+    changed.  The advantage of these objects is that they can be
+    communicated by encoding their index and data dictionary.
 
-	"""
+    """
 
     def __init__(self, index, data=None):
         self.index = tuple(map(os.fsencode, index))
-        if data: self.data = data
-        else: self.data = {'type': None}  # signify empty file
+        if data:
+            self.data = data
+        else:
+            self.data = {'type': None}  # signify empty file
         self.file = None
 
     def zero(self):
@@ -485,7 +487,8 @@ class RORPath:
 
     def __eq__(self, other):
         """True iff the two rorpaths are equivalent"""
-        if self.index != other.index: return None
+        if self.index != other.index:
+            return None
 
         for key in list(self.data.keys()):  # compare dicts key by key
             if self.issym() and key in ('uid', 'gid', 'uname', 'gname'):
@@ -524,18 +527,19 @@ class RORPath:
                     other_val = other.data[key]
                 except KeyError:
                     return None
-                if self.data[key] != other_val: return None
+                if self.data[key] != other_val:
+                    return None
         return 1
 
     def equal_loose(self, other):
         """True iff the two rorpaths are kinda equivalent
 
-		Sometimes because permissions cannot be set, a file cannot be
-		replicated exactly on the remote side.  This function tells
-		you whether the two files are close enough.  self must be the
-		original rpath.
+        Sometimes because permissions cannot be set, a file cannot be
+        replicated exactly on the remote side.  This function tells
+        you whether the two files are close enough.  self must be the
+        original rpath.
 
-		"""
+        """
         for key in list(self.data.keys()):  # compare dicts key by key
             if key in ('uid', 'gid', 'uname', 'gname'):
                 pass
@@ -572,7 +576,8 @@ class RORPath:
         if self.lstat() and not self.issym() and Globals.change_ownership:
             # Now compare ownership.  Symlinks don't have ownership
             try:
-                if user_group.map_rpath(self) != other.getuidgid(): return 0
+                if user_group.map_rpath(self) != other.getuidgid():
+                    return 0
             except KeyError:
                 return 0  # uid/gid might be missing if metadata file is corrupt
 
@@ -654,10 +659,10 @@ class RORPath:
     def __getstate__(self):
         """Return picklable state
 
-		This is necessary in case the RORPath is carrying around a
-		file object, which can't/shouldn't be pickled.
+        This is necessary in case the RORPath is carrying around a
+        file object, which can't/shouldn't be pickled.
 
-		"""
+        """
         return (self.index, self.data)
 
     def __setstate__(self, rorp_state):
@@ -683,7 +688,8 @@ class RORPath:
 
         if os.path.altsep:  # only Windows has an alternative separator for paths
             filenames = tuple(map(abs_drive, filenames))
-            return os.path.join(*filenames).replace(os.fsencode(os.path.sep), b'/')
+            return os.path.join(*filenames).replace(
+                os.fsencode(os.path.sep), b'/')
         else:
             return os.path.join(*filenames)
 
@@ -698,12 +704,11 @@ class RORPath:
     def lstat(self):
         """Returns type of file
 
-		The allowable types are None if the file doesn't exist, 'reg'
-		for a regular file, 'dir' for a directory, 'dev' for a device
-		file, 'fifo' for a fifo, 'sock' for a socket, and 'sym' for a
-		symlink.
-		
-		"""
+        The allowable types are None if the file doesn't exist, 'reg'
+        for a regular file, 'dir' for a directory, 'dev' for a device
+        file, 'fifo' for a fifo, 'sock' for a socket, and 'sym' for a
+        symlink.
+        """
         return self.data['type']
 
     gettype = lstat
@@ -827,17 +832,17 @@ class RORPath:
     def get_safeindex(self):
         """Return index as a tuple of strings with safe decoding
 
-		For instance, if the index is (b"a", b"b"), return ("a", "b")
+        For instance, if the index is (b"a", b"b"), return ("a", "b")
 
-		"""
+        """
         return tuple(map(lambda f: f.decode(errors='replace'), self.index))
 
     def get_indexpath(self):
         """Return path of index portion
 
-		For instance, if the index is ("a", "b"), return "a/b".
+        For instance, if the index is ("a", "b"), return "a/b".
 
-		"""
+        """
         if not self.index:
             return b'.'
         return self.path_join(*self.index)
@@ -845,18 +850,18 @@ class RORPath:
     def get_safeindexpath(self):
         """Return safe path of index even with names throwing UnicodeEncodeError
 
-		For instance, if the index is ("a", "b"), return "'a/b'".
+        For instance, if the index is ("a", "b"), return "'a/b'".
 
-		"""
+        """
         return self.get_indexpath().decode(errors='replace')
 
     def get_attached_filetype(self):
         """If there is a file attached, say what it is
 
-		Currently the choices are 'snapshot' meaning an exact copy of
-		something, and 'diff' for an rdiff style diff.
+        Currently the choices are 'snapshot' meaning an exact copy of
+        something, and 'diff' for an rdiff style diff.
 
-		"""
+        """
         return self.data['filetype']
 
     def set_attached_filetype(self, type):
@@ -866,10 +871,10 @@ class RORPath:
     def isflaglinked(self):
         """True if rorp is a signature/diff for a hardlink file
 
-		This indicates that a file's data need not be transferred
-		because it is hardlinked on the remote side.
+        This indicates that a file's data need not be transferred
+        because it is hardlinked on the remote side.
 
-		"""
+        """
         return 'linked' in self.data
 
     def get_link_flag(self):
@@ -895,8 +900,8 @@ class RORPath:
             while self.file.read(Globals.blocksize):
                 pass
             assert not self.file.close(), \
-              "Error closing file\ndata = %s\nindex = %s\n" % (self.data,
-                           self.get_safeindex())
+                "Error closing file\ndata = %s\nindex = %s\n" % (self.data,
+                                                                 self.get_safeindex())
             self.file_already_open = None
 
     def set_acl(self, acl):
@@ -970,11 +975,11 @@ class RORPath:
     def set_alt_mirror_name(self, filename):
         """Set alternate mirror name to filename
 
-		Instead of writing to the traditional mirror file, store
-		mirror information in filename in the long filename
-		directory.
+        Instead of writing to the traditional mirror file, store
+        mirror information in filename in the long filename
+        directory.
 
-		"""
+        """
         self.data['mirrorname'] = filename
 
     def has_alt_inc_name(self):
@@ -988,11 +993,11 @@ class RORPath:
     def set_alt_inc_name(self, name):
         """Set alternate increment name to name
 
-		If set, increments will be in the long name directory with
-		name as their base.  If the alt mirror name is set, this
-		should be set to the same.
+        If set, increments will be in the long name directory with
+        name as their base.  If the alt mirror name is set, this
+        should be set to the same.
 
-		"""
+        """
         self.data['incname'] = name
 
     def has_sha1(self):
@@ -1011,49 +1016,50 @@ class RORPath:
 class RPath(RORPath):
     """Remote Path class - wrapper around a possibly non-local pathname
 
-	This class contains a dictionary called "data" which should
-	contain all the information about the file sufficient for
-	identification (i.e. if two files have the the same (==) data
-	dictionary, they are the same file).
+    This class contains a dictionary called "data" which should
+    contain all the information about the file sufficient for
+    identification (i.e. if two files have the the same (==) data
+    dictionary, they are the same file).
 
-	"""
+    """
     regex_chars_to_quote = re.compile(b"[\\\\\\\"\\$`]")
 
     def __init__(self, connection, base, index=(), data=None):
         """RPath constructor
 
-		connection = self.conn is the Connection the RPath will use to
-		make system calls, and index is the name of the rpath used for
-		comparison, and should be a tuple consisting of the parts of
-		the rpath after the base split up.  For instance ("foo",
-		"bar") for "foo/bar" (no base), and ("local", "bin") for
-		"/usr/local/bin" if the base is "/usr".
+        connection = self.conn is the Connection the RPath will use to
+        make system calls, and index is the name of the rpath used for
+        comparison, and should be a tuple consisting of the parts of
+        the rpath after the base split up.  For instance ("foo",
+        "bar") for "foo/bar" (no base), and ("local", "bin") for
+        "/usr/local/bin" if the base is "/usr".
 
-		For the root directory "/", the index is empty and the base is
-		"/".
+        For the root directory "/", the index is empty and the base is
+        "/".
 
-		"""
+        """
         super().__init__(index, data)
         self.conn = connection
         if base is not None:
             self.base = os.fsencode(base)  # path is always bytes
             self.path = self.path_join(self.base, *self.index)
-            if data is None: self.setdata()
+            if data is None:
+                self.setdata()
         else:
             self.base = None
 
     def __str__(self):
         return "%s: Path: %s\nIndex: %s\nData: %s" \
-         % (self.__class__.__name__, self.get_safepath(), self.get_safeindex(), self.data)
+            % (self.__class__.__name__, self.get_safepath(), self.get_safeindex(), self.data)
 
     def __getstate__(self):
         """Return picklable state
 
-		The rpath's connection will be encoded as its conn_number.  It
-		and the other information is put in a tuple. Data and any attached
-		file won't be saved.
+        The rpath's connection will be encoded as its conn_number.  It
+        and the other information is put in a tuple. Data and any attached
+        file won't be saved.
 
-		"""
+        """
         return (self.conn.conn_number, self.base, self.index, self.data)
 
     def __setstate__(self, rpath_state):
@@ -1071,10 +1077,10 @@ class RPath(RORPath):
     def check_consistency(self):
         """Raise an error if consistency of rp broken
 
-		This is useful for debugging when the cache and disk get out
-		of sync and you need to find out where it happened.
+        This is useful for debugging when the cache and disk get out
+        of sync and you need to find out where it happened.
 
-		"""
+        """
         temptype = self.data['type']
         self.setdata()
         assert temptype == self.data['type'], \
@@ -1088,7 +1094,7 @@ class RPath(RORPath):
                                permissions & Globals.permission_mask)
         except OSError as e:
             if e.strerror == "Inappropriate file type or format" \
-              and not self.isdir():
+                    and not self.isdir():
                 # Some systems throw this error if try to set sticky bit
                 # on a non-directory. Remove sticky bit and try again.
                 log.Log(
@@ -1246,8 +1252,8 @@ class RPath(RORPath):
 
     def isgroup(self):
         """Return true if process has group of rp"""
-        return ('gid' in self.data and \
-          self.data['gid'] in self.conn.Globals.get('process_groups'))
+        return ('gid' in self.data
+                and self.data['gid'] in self.conn.Globals.get('process_groups'))
 
     def delete(self):
         """Delete file at self.path.  Recursively deletes directories."""
@@ -1298,12 +1304,13 @@ class RPath(RORPath):
     def normalize(self):
         """Return RPath canonical version of self.path
 
-		This just means that redundant /'s will be removed, including
-		the trailing one, even for directories.  ".." components will
-		be retained.
+        This just means that redundant /'s will be removed, including
+        the trailing one, even for directories.  ".." components will
+        be retained.
 
-		"""
-        newpath = self.path_join(b'', *[x for x in self.path.split(b"/") if x and x != b"."])
+        """
+        newpath = self.path_join(
+            b'', *[x for x in self.path.split(b"/") if x and x != b"."])
         if self.path[0:1] == b"/":
             newpath = b"/" + newpath
         elif not newpath:
@@ -1313,15 +1320,15 @@ class RPath(RORPath):
     def dirsplit(self):
         """Returns a tuple of strings (dirname, basename)
 
-		Basename is never '' unless self is root, so it is unlike
-		os.path.basename.  If path is just above root (so dirname is
-		root), then dirname is ''.  In all other cases dirname is not
-		the empty string.  Also, dirsplit depends on the format of
-		self, so basename could be ".." and dirname could be a
-		subdirectory.  For an atomic relative path, dirname will be
-		'.'.
+        Basename is never '' unless self is root, so it is unlike
+        os.path.basename.  If path is just above root (so dirname is
+        root), then dirname is ''.  In all other cases dirname is not
+        the empty string.  Also, dirsplit depends on the format of
+        self, so basename could be ".." and dirname could be a
+        subdirectory.  For an atomic relative path, dirname will be
+        '.'.
 
-		"""
+        """
         normed = self.normalize()
         if normed.path.find(b"/") == -1:
             return (b".", normed.path)
@@ -1335,9 +1342,9 @@ class RPath(RORPath):
     def get_safepath(self, somepath=None):
         """Return safely decoded version of path into the current encoding
 
-		it's meant only for logging and outputting to user
+        it's meant only for logging and outputting to user
 
-		"""
+        """
         if somepath is not None:
             # somepath should never be a string but just to be sure
             # we check before we decode it
@@ -1384,12 +1391,12 @@ class RPath(RORPath):
     def open(self, mode, compress=None):
         """Return open file.  Supports modes "w" and "r".
 
-		If compress is true, data written/read will be gzip
-		compressed/decompressed on the fly.  The extra complications
-		below are for security reasons - try to make the extent of the
-		risk apparent from the remote call.
+        If compress is true, data written/read will be gzip
+        compressed/decompressed on the fly.  The extra complications
+        below are for security reasons - try to make the extent of the
+        risk apparent from the remote call.
 
-		"""
+        """
         if self.conn is Globals.local_connection:
             if compress:
                 return GzipFile(self.path, mode)
@@ -1410,10 +1417,10 @@ class RPath(RORPath):
     def write_from_fileobj(self, fp, compress=None):
         """Reads fp and writes to self.path.  Closes both when done
 
-		If compress is true, fp will be gzip compressed before being
-		written to self.  Returns closing value of fp.
+        If compress is true, fp will be gzip compressed before being
+        written to self.  Returns closing value of fp.
 
-		"""
+        """
         log.Log("Writing file object to %s" % self.get_safepath(), 7)
         assert not self.lstat(), "File %s already exists" % self.path
         outfp = self.open("wb", compress=compress)
@@ -1440,9 +1447,9 @@ class RPath(RORPath):
     def isincfile(self):
         """Return true if path looks like an increment file
 
-		Also sets various inc information used by the *inc* functions.
+        Also sets various inc information used by the *inc* functions.
 
-		"""
+        """
         if self.index:
             basename = self.index[-1]
         else:
@@ -1452,7 +1459,7 @@ class RPath(RORPath):
 
         if inc_info:
             self.inc_compressed, self.inc_timestr, \
-             self.inc_type, self.inc_basestr = inc_info
+                self.inc_type, self.inc_basestr = inc_info
             return 1
         else:
             return None
@@ -1488,10 +1495,8 @@ class RPath(RORPath):
     def makedev(self, type, major, minor):
         """Make a special file with specified type, and major/minor nums"""
         if type == 'c':
-            datatype = 'chr'
             mode = stat.S_IFCHR | 0o600
         elif type == 'b':
-            datatype = 'blk'
             mode = stat.S_IFBLK | 0o600
         else:
             raise RPathException
@@ -1511,10 +1516,10 @@ class RPath(RORPath):
     def fsync(self, fp=None):
         """fsync the current file or directory
 
-		If fp is none, get the file description by opening the file.
-		This can be useful for directories.
+        If fp is none, get the file description by opening the file.
+        This can be useful for directories.
 
-		"""
+        """
         if Globals.do_fsync:
             if not fp:
                 self.conn.rpath.RPath.fsync_local(self)
@@ -1524,10 +1529,10 @@ class RPath(RORPath):
     def fsync_local(self, thunk=None):
         """fsync current file, run locally
 
-		If thunk is given, run it before syncing but after gathering
-		the file's file descriptor.
+        If thunk is given, run it before syncing but after gathering
+        the file's file descriptor.
 
-		"""
+        """
         assert Globals.do_fsync
         assert self.conn is Globals.local_connection
         try:
@@ -1537,8 +1542,7 @@ class RPath(RORPath):
         except OSError as e:
             if 'fd' in locals():
                 os.close(fd)
-            if (e.errno not in (errno.EPERM, errno.EACCES, errno.EBADF)) \
-             or self.isdir():
+            if (e.errno not in (errno.EPERM, errno.EACCES, errno.EBADF)) or self.isdir():
                 raise
 
             # Maybe the system doesn't like read-only fsyncing.
@@ -1593,9 +1597,9 @@ class RPath(RORPath):
     def write_acl(self, acl, map_names=1):
         """Change access control list of rp
 
-		If map_names is true, map the ids in acl by user/group names.
+        If map_names is true, map the ids in acl by user/group names.
 
-		"""
+        """
         acl.write_to_rp(self, map_names)
         self.data['acl'] = acl
 
@@ -1620,7 +1624,6 @@ class RPath(RORPath):
         from Carbon.File import FSSpec
         from Carbon.File import FSRef
         import Carbon.Files
-        import MacOS
         fsobj = FSSpec(self.path)
         finderinfo = fsobj.FSpGetFInfo()
         finderinfo.Creator = cfile['creator']
@@ -1652,7 +1655,7 @@ class RPath(RORPath):
                     os.path.join(self.path, '..namedfork', 'rsrc'), 'rb')
                 rfork = rfork_fp.read()
                 assert not rfork_fp.close()
-            except (IOError, OSError) as e:
+            except (IOError, OSError):
                 rfork = ''
             self.data['resourcefork'] = rfork
         return rfork
@@ -1703,15 +1706,15 @@ class RPathFileHook:
 class GzipFile(gzip.GzipFile):
     """Like gzip.GzipFile, except remove destructor
 
-	The default GzipFile's destructor prints out some messy error
-	messages.  Use this class instead to clean those up.
+    The default GzipFile's destructor prints out some messy error
+    messages.  Use this class instead to clean those up.
 
-	"""
+    """
 
     def __init__(self, filename=None, mode=None):
         """ This is needed because we need to write an
-		encoded filename to the file, but use normal
-		unicode with the filename."""
+        encoded filename to the file, but use normal
+        unicode with the filename."""
         if mode and 'b' not in mode:
             mode += 'b'
         fileobj = open(filename, mode or 'rb')
@@ -1730,12 +1733,12 @@ class GzipFile(gzip.GzipFile):
 class MaybeGzip:
     """Represent a file object that may or may not be compressed
 
-	We don't want to compress 0 length files.  This class lets us
-	delay the opening of the file until either the first write (so we
-	know it has data and should be compressed), or close (when there's
-	no data).
+    We don't want to compress 0 length files.  This class lets us
+    delay the opening of the file until either the first write (so we
+    know it has data and should be compressed), or close (when there's
+    no data).
 
-	"""
+    """
 
     def __init__(self, base_rp, callback=None):
         """Return file-like object with filename based on base_rp"""
@@ -1791,10 +1794,10 @@ class MaybeGzip:
 def setdata_local(rpath):
     """Set eas/acls, uid/gid, resource fork in data dictionary
 
-	This is a global function because it must be called locally, since
-	these features may exist or not depending on the connection.
+    This is a global function because it must be called locally, since
+    these features may exist or not depending on the connection.
 
-	"""
+    """
     assert rpath.conn is Globals.local_connection
     reset_perms = False
     if (Globals.process_uid != 0 and not rpath.readable() and rpath.isowner()):
@@ -1814,7 +1817,9 @@ def setdata_local(rpath):
     if Globals.carbonfile_conn and rpath.isreg():
         rpath.data['carbonfile'] = carbonfile_get(rpath)
 
-    if reset_perms: rpath.chmod(rpath.getperms() & ~0o400)
+    if reset_perms:
+        rpath.chmod(rpath.getperms() & ~0o400)
+
 
 def carbonfile_get(rpath):
     """Return carbonfile value for local rpath"""

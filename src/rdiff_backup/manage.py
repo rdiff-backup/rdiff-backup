@@ -57,16 +57,16 @@ def get_inc_type(inc):
 def describe_incs_parsable(incs, mirror_time, mirrorrp):
     """Return a string parsable by computer describing the increments
 
-	Each line is a time in seconds of the increment, and then the
-	type of the file.  It will be sorted oldest to newest.  For example:
+    Each line is a time in seconds of the increment, and then the
+    type of the file.  It will be sorted oldest to newest.  For example:
 
-	10000 regular
-	20000 directory
-	30000 special
-	40000 missing
-	50000 regular    <- last will be the current mirror
+    10000 regular
+    20000 directory
+    30000 special
+    40000 missing
+    50000 regular    <- last will be the current mirror
 
-	"""
+    """
     incpairs = [(inc.getinctime(), inc) for inc in incs]
     incpairs.sort()
     result = ["%s %s" % (time, get_inc_type(inc)) for time, inc in incpairs]
@@ -95,11 +95,11 @@ def describe_incs_human(incs, mirror_time, mirrorrp):
 def delete_earlier_than(baserp, time):
     """Deleting increments older than time in directory baserp
 
-	time is in seconds.  It will then delete any empty directories
-	in the tree.  To process the entire backup area, the
-	rdiff-backup-data directory should be the root of the tree.
+    time is in seconds.  It will then delete any empty directories
+    in the tree.  To process the entire backup area, the
+    rdiff-backup-data directory should be the root of the tree.
 
-	"""
+    """
     baserp.conn.manage.delete_earlier_than_local(baserp, time)
 
 
@@ -127,10 +127,10 @@ class IncObj:
     def __init__(self, incrp):
         """IncObj initializer
 
-		incrp is an RPath of a path like increments.TIMESTR.dir
-		standing for the root of the increment.
+        incrp is an RPath of a path like increments.TIMESTR.dir
+        standing for the root of the increment.
 
-		"""
+        """
         if not incrp.isincfile():
             raise ManageException(
                 "%s is not an inc file" % incrp.get_safepath())
@@ -210,18 +210,18 @@ def ListIncrementSizes(mirror_root, index):
         time, size, cum_size = triple
         return "%24s   %13s   %15s" % \
             (Time.timetopretty(time),
-          stat_obj.get_byte_summary_string(size),
-          stat_obj.get_byte_summary_string(cum_size))
+             stat_obj.get_byte_summary_string(size),
+             stat_obj.get_byte_summary_string(cum_size))
 
     mirror_total = get_total(get_mirror_select())
     time_dict = get_time_dict(get_inc_select())
     triples = get_summary_triples(mirror_total, time_dict)
 
-    l = [
+    sizes = [
         '%12s %9s  %15s   %20s' % ('Time', '', 'Size', 'Cumulative size'),
         '-' * 77,
         triple_to_line(triples[0]) + '   (current mirror)'
     ]
     for triple in triples[1:]:
-        l.append(triple_to_line(triple))
-    return '\n'.join(l)
+        sizes.append(triple_to_line(triple))
+    return '\n'.join(sizes)

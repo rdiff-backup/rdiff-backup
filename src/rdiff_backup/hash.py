@@ -25,13 +25,13 @@ from . import Globals
 class FileWrapper:
     """Wrapper around a file-like object
 
-	Only use this with files that will be read through in a single
-	pass and then closed.  (There is no seek().)  When you close it,
-	return value will be a Report.
+    Only use this with files that will be read through in a single
+    pass and then closed.  (There is no seek().)  When you close it,
+    return value will be a Report.
 
-	Currently this just calculates a sha1sum of the datastream.
+    Currently this just calculates a sha1sum of the datastream.
 
-	"""
+    """
 
     def __init__(self, fileobj):
         self.fileobj = fileobj
@@ -58,11 +58,11 @@ class Report:
         # hash values do fit.
         if isinstance(close_val, Report):
             assert close_val.sha1_digest == sha1_digest, \
-             "Hashes from return code %s and given %s don't match" % \
-              (close_val.sha1_digest, sha1_digest)
+                "Hashes from return code %s and given %s don't match" % \
+                (close_val.sha1_digest, sha1_digest)
         else:
             assert not close_val, "Return code %s of type %s isn't null" % \
-              (close_val, type(close_val))
+                (close_val, type(close_val))
         self.sha1_digest = sha1_digest
 
 

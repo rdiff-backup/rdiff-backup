@@ -30,7 +30,6 @@ handle that error.)
 
 import os
 import re
-import types
 from . import Globals, log, rpath
 
 # If true, enable character quoting, and set characters making
@@ -72,8 +71,8 @@ def init_quoting_regexps():
     assert chars_to_quote and isinstance(chars_to_quote, bytes), \
         "Chars to quote are wrong: %a" % chars_to_quote
     try:
-        chars_to_quote_regexp = \
-           re.compile(b"[%b]|%b" % (chars_to_quote, quoting_char), re.S)
+        chars_to_quote_regexp = re.compile(b"[%b]|%b" %
+                                           (chars_to_quote, quoting_char), re.S)
         unquoting_regexp = re.compile(b"%b[0-9]{3}" % quoting_char, re.S)
     except re.error:
         log.Log.FatalError("Error '%s' when processing char quote list %r" %
@@ -83,12 +82,12 @@ def init_quoting_regexps():
 def quote(path):
     """Return quoted version of given path
 
-	Any characters quoted will be replaced by the quoting char and
-	the ascii number of the character.  For instance, "10:11:12"
-	would go to "10;05811;05812" if ":" were quoted and ";" were
-	the quoting character.
+    Any characters quoted will be replaced by the quoting char and
+    the ascii number of the character.  For instance, "10:11:12"
+    would go to "10;05811;05812" if ":" were quoted and ";" were
+    the quoting character.
 
-	"""
+    """
     QuotedPath = chars_to_quote_regexp.sub(quote_single, path)
     if not Globals.escape_dos_devices and not Globals.escape_trailing_spaces:
         return QuotedPath
@@ -99,16 +98,16 @@ def quote(path):
         if len(QuotedPath) and (QuotedPath[-1] == ord(' ')
                                 or QuotedPath[-1] == ord('.')):
             QuotedPath = QuotedPath[:-1] + \
-             b"%b%03d" % (quoting_char, QuotedPath[-1])
+                b"%b%03d" % (quoting_char, QuotedPath[-1])
 
         if not Globals.escape_dos_devices:
             return QuotedPath
 
     # Escape first char of any special DOS device files even if filename has an
     # extension.  Special names are: aux, prn, con, nul, com0-9, and lpt1-9.
-    if not re.search(br"^aux(\..*)*$|^prn(\..*)*$|^con(\..*)*$|^nul(\..*)*$|" \
-         br"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$", QuotedPath, \
-         re.I):
+    if not re.search(br"^aux(\..*)*$|^prn(\..*)*$|^con(\..*)*$|^nul(\..*)*$|"
+                     br"^com[0-9](\..*)*$|^lpt[1-9]{1}(\..*)*$", QuotedPath,
+                     re.I):
         return QuotedPath
     return b"%b%03d" % (quoting_char, QuotedPath[0]) + QuotedPath[1:]
 
@@ -136,11 +135,11 @@ def unquote_single(match):
 class QuotedRPath(rpath.RPath):
     """RPath where the filename is quoted version of index
 
-	We use QuotedRPaths so we don't need to remember to quote RPaths
-	derived from this one (via append or new_index).  Note that only
-	the index is quoted, not the base.
+    We use QuotedRPaths so we don't need to remember to quote RPaths
+    derived from this one (via append or new_index).  Note that only
+    the index is quoted, not the base.
 
-	"""
+    """
 
     def __init__(self, connection, base, index=(), data=None):
         """Make new QuotedRPath"""
@@ -150,7 +149,8 @@ class QuotedRPath(rpath.RPath):
         # quoted_index (parent class does it on the basis of index)
         if base is not None:
             self.path = self.path_join(self.base, *self.quoted_index)
-            if data is None: self.setdata()
+            if data is None:
+                self.setdata()
 
     def __setstate__(self, rpath_state):
         """Reproduce QuotedRPath from __getstate__ output"""
@@ -162,10 +162,10 @@ class QuotedRPath(rpath.RPath):
     def listdir(self):
         """Return list of unquoted filenames in current directory
 
-		We want them unquoted so that the results can be sorted
-		correctly and append()ed to the current QuotedRPath.
+        We want them unquoted so that the results can be sorted
+        correctly and append()ed to the current QuotedRPath.
 
-		"""
+        """
         return list(map(unquote, self.conn.os.listdir(self.path)))
 
     def isincfile(self):
@@ -180,7 +180,7 @@ class QuotedRPath(rpath.RPath):
         else:
             result = rpath.RPath.isincfile(self)
             if result:
-            	self.inc_basestr = unquote(self.inc_basestr)
+                self.inc_basestr = unquote(self.inc_basestr)
         return result
 
     def get_path(self):
@@ -205,8 +205,8 @@ def get_quoted_sep_base(filename):
 
 def update_quoting(rbdir):
     """Update the quoting of a repository by renaming any
-	files that should be quoted differently.
-	"""
+    files that should be quoted differently.
+    """
 
     def requote(name):
         unquoted_name = unquote(name)
