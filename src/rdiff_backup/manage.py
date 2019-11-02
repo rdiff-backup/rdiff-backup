@@ -18,6 +18,7 @@
 # USA
 """list, delete, and otherwise manage increments"""
 
+import os
 from .log import Log
 from . import Globals, Time, statistics, restore, selection, FilenameMapping
 
@@ -82,12 +83,14 @@ def describe_incs_human(incs, mirror_time, mirrorrp):
     result = ["Found %d increments:" % len(incpairs)]
     if Globals.chars_to_quote:
         for time, inc in incpairs:
-            result.append("    %s   %s" % (FilenameMapping.unquote(
-                inc.dirsplit()[1]), Time.timetopretty(time)))
+            result.append("    %s   %s" % (
+                os.fsdecode(FilenameMapping.unquote(inc.dirsplit()[1])),
+                Time.timetopretty(time)))
     else:
         for time, inc in incpairs:
-            result.append(
-                "    %s   %s" % (inc.dirsplit()[1], Time.timetopretty(time)))
+            result.append("    %s   %s" % (
+                os.fsdecode(inc.dirsplit()[1]),
+                Time.timetopretty(time)))
     result.append("Current mirror: %s" % Time.timetopretty(mirror_time))
     return "\n".join(result)
 
