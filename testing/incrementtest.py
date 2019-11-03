@@ -2,11 +2,10 @@ import unittest
 import os
 import re
 from commontest import old_test_dir, abs_output_dir, MakeOutputDir
-from rdiff_backup import Globals, log, rpath, increment, Time, Rdiff
+from rdiff_backup import Globals, rpath, increment, Time, Rdiff
 
 lc = Globals.local_connection
 Globals.change_source_perms = 1
-log.Log.setverbosity(3)
 
 
 def getrp(ending):

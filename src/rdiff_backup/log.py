@@ -23,6 +23,7 @@ import sys
 import traceback
 import types
 import re
+import os  # needed to grab verbosity as environment variable
 from . import Globals, rpath
 
 
@@ -36,7 +37,8 @@ class Logger:
     def __init__(self):
         self.log_file_open = None
         self.log_file_local = None
-        self.verbosity = self.term_verbosity = 3
+        self.verbosity = self.term_verbosity = int(
+            os.getenv('RDIFF_BACKUP_VERBOSITY', '3'))
         # termverbset is true if the term_verbosity has been explicitly set
         self.termverbset = None
 
@@ -109,8 +111,9 @@ class Logger:
         if verbosity < 9:
             return "%s\n" % message
         else:
-            timestamp = datetime.datetime.now().astimezone().strftime(
-                "%F %H:%M:%S.%f %z")
+            timestamp = datetime.datetime.now(
+                datetime.timezone.utc).astimezone().strftime(
+                    "%F %H:%M:%S.%f %z")
             if Globals.server:
                 role = "SERVER"
             else:
