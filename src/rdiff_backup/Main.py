@@ -981,7 +981,7 @@ def ListChangedSince(rp):
     inc_rp = mirror_rp.append_path(b"increments", restore_index)
     for rorp in rp.conn.restore.ListChangedSince(mirror_rp, inc_rp, rest_time):
         # This is a hack, see restore.ListChangedSince for rationale
-        print(rorp.index[0])
+        print(rorp.get_safeindexpath())
 
 
 def ListAtTime(rp):
@@ -994,7 +994,7 @@ def ListAtTime(rp):
     mirror_rp = restore_root.new_index(restore_index)
     inc_rp = mirror_rp.append_path(b"increments", restore_index)
     for rorp in rp.conn.restore.ListAtTime(mirror_rp, inc_rp, rest_time):
-        print(rorp.get_indexpath())
+        print(rorp.get_safeindexpath())
 
 
 def Compare(compare_type, src_rp, dest_rp, compare_time=None):
