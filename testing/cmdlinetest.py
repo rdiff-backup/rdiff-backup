@@ -10,7 +10,6 @@ from rdiff_backup import Globals, log, rpath, robust, FilenameMapping, Time, sel
 """Regression tests"""
 
 Globals.exclude_mirror_regexps = [re.compile(b".*/rdiff-backup-data")]
-log.Log.setverbosity(3)
 
 lc = Globals.local_connection
 

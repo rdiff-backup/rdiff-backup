@@ -5,7 +5,7 @@ import pwd
 import grp
 from rdiff_backup.eas_acls import AccessControlLists, metadata, ACLExtractor, \
     Record2ACL, ACL2Record, ExtendedAttributes, EAExtractor, EA2Record, Record2EA
-from rdiff_backup import Globals, rpath, user_group, log
+from rdiff_backup import Globals, rpath, user_group
 from commontest import rdiff_backup, abs_test_dir, abs_output_dir, abs_restore_dir, \
     BackupRestoreSeries, CompareRecursive
 
@@ -13,7 +13,6 @@ user_group.init_user_mapping()
 user_group.init_group_mapping()
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 restore_dir = rpath.RPath(Globals.local_connection, abs_restore_dir)
-log.Log.setverbosity(3)
 
 
 class EATest(unittest.TestCase):

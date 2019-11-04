@@ -5,10 +5,8 @@ import sys
 import random
 import time
 from commontest import abs_test_dir, old_test_dir, CompareRecursive, RBBin
-from rdiff_backup import Globals, restore, rpath, Time, log
+from rdiff_backup import Globals, restore, rpath, Time
 """Test consistency by killing rdiff-backup as it is backing up"""
-
-log.Log.setverbosity(3)
 
 
 class Local:
@@ -58,7 +56,7 @@ class ProcessFuncs(unittest.TestCase):
 
     def exec_rb(self, time, wait, *args):
         """Run rdiff-backup return pid.  Wait until done if wait is true"""
-        arglist = [sys.executable, RBBin, '-v3']
+        arglist = [sys.executable, RBBin]
         if time:
             arglist.append("--current-time")
             arglist.append(str(time))

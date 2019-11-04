@@ -2,9 +2,7 @@ import unittest
 import random
 import os
 from commontest import abs_test_dir, old_test_dir, abs_output_dir
-from rdiff_backup import Globals, Rdiff, log, rpath
-
-log.Log.setverbosity(7)
+from rdiff_backup import Globals, Rdiff, rpath
 
 
 def MakeRandomFile(path):
