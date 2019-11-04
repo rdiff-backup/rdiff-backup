@@ -413,7 +413,7 @@ def make_socket_local(rpath):
 def gzip_open_local_read(rpath):
     """Return open GzipFile.  See security note directly above"""
     assert rpath.conn is Globals.local_connection
-    return GzipFile(rpath.path, "rb")
+    return gzip.GzipFile(rpath.path, "rb")
 
 
 def open_local_read(rpath):
@@ -1399,7 +1399,7 @@ class RPath(RORPath):
         """
         if self.conn is Globals.local_connection:
             if compress:
-                return GzipFile(self.path, mode)
+                return gzip.GzipFile(self.path, mode)
             else:
                 return open(self.path, mode)
 
@@ -1407,7 +1407,7 @@ class RPath(RORPath):
             if mode == "r" or mode == "rb":
                 return self.conn.rpath.gzip_open_local_read(self)
             else:
-                return self.conn.rpath.GzipFile(self.path, mode)
+                return self.conn.gzip.GzipFile(self.path, mode)
         else:
             if mode == "r" or mode == "rb":
                 return self.conn.rpath.open_local_read(self)
@@ -1701,33 +1701,6 @@ class RPathFileHook:
         result = self.file.close()
         self.closing_thunk()
         return result
-
-
-class GzipFile(gzip.GzipFile):
-    """Like gzip.GzipFile, except remove destructor
-
-    The default GzipFile's destructor prints out some messy error
-    messages.  Use this class instead to clean those up.
-
-    """
-
-    def __init__(self, filename=None, mode=None):
-        """ This is needed because we need to write an
-        encoded filename to the file, but use normal
-        unicode with the filename."""
-        if mode and 'b' not in mode:
-            mode += 'b'
-        fileobj = open(filename, mode or 'rb')
-        gzip.GzipFile.__init__(self, filename, mode=mode, fileobj=fileobj)
-
-    def __del__(self):
-        pass
-
-    def __getattr__(self, name):
-        if name == 'fileno':
-            return self.fileobj.fileno
-        else:
-            raise AttributeError(name)
 
 
 class MaybeGzip:
