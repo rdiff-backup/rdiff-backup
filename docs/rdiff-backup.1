@@ -522,6 +522,12 @@ hashes stored in the metadata file.
 .B "-V, \-\-version"
 Print the current version and exit
 
+.SH ENVIRONMENT
+.TP
+.BI "RDIFF_BACKUP_VERBOSITY"=[0-9]
+Sets the default verbosity for log file and terminal, can be overwritten
+by the corresponding options "\-v/\-\-verbosity" and "\-\-terminal-verbosity".
+
 .SH RESTORING
 There are two ways to tell rdiff-backup to restore a file or
 directory.  Firstly, you can run rdiff-backup on a mirror file and use

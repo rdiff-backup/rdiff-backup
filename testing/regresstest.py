@@ -8,9 +8,7 @@ import unittest
 import os
 from commontest import abs_output_dir, abs_test_dir, old_test_dir, Myrm, \
     CompareRecursive, rdiff_backup
-from rdiff_backup import regress, Time, log, rpath, Globals
-
-log.Log.setverbosity(3)
+from rdiff_backup import regress, Time, rpath, Globals
 
 
 class RegressTest(unittest.TestCase):
@@ -103,7 +101,7 @@ class RegressTest(unittest.TestCase):
                      False,
                      self.output_rp.path,
                      None,
-                     extra_options=b"-v3 --check-destination-dir")
+                     extra_options=b"--check-destination-dir")
 
     def test_local(self):
         """Run regress test locally"""
