@@ -1,6 +1,6 @@
 import unittest
 from commontest import MirrorTest, old_inc1_dir, old_inc2_dir, old_inc3_dir, old_inc4_dir
-from rdiff_backup import Globals, SetConnections, user_group, log
+from rdiff_backup import Globals, SetConnections, user_group
 
 
 class RemoteMirrorTest(unittest.TestCase):
@@ -8,7 +8,6 @@ class RemoteMirrorTest(unittest.TestCase):
 
     def setUp(self):
         """Start server"""
-        log.Log.setverbosity(5)
         Globals.change_source_perms = 1
         SetConnections.UpdateGlobal('checkpoint_interval', 3)
         user_group.init_user_mapping()

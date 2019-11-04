@@ -110,8 +110,6 @@ class PipeConnectionTest(unittest.TestCase):
         (stdin, stdout) = (self.p.stdin, self.p.stdout)
         self.conn = PipeConnection(stdout, stdin)
         Globals.security_level = "override"
-        # self.conn.Log.setverbosity(9)
-        # log.Log.setverbosity(9)
 
     def testBasic(self):
         """Test some basic pipe functions"""
