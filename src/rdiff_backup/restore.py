@@ -84,8 +84,8 @@ def ListChangedSince(mirror_rp, inc_rp, restore_to_time):
             continue
         else:
             change = "changed"
-        path_desc = (old_rorp and old_rorp.get_indexpath()
-                     or cur_rorp.get_indexpath())
+        path_desc = (old_rorp and old_rorp.get_safeindexpath()
+                     or cur_rorp.get_safeindexpath())
         yield rpath.RORPath(("%-7s %s" % (change, path_desc), ))
     MirrorStruct.close_rf_cache()
 

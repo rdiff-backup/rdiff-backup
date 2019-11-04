@@ -94,7 +94,7 @@ class HashTest(unittest.TestCase):
         in_rp1, hashlist1, in_rp2, hashlist2 = self.make_dirs()
         Myrm(abs_output_dir)
 
-        rdiff_backup(1, 1, in_rp1.path, abs_output_dir, 10000, b"-v3")
+        rdiff_backup(1, 1, in_rp1.path, abs_output_dir, 10000)
         meta_prefix = rpath.RPath(
             Globals.local_connection,
             os.path.join(abs_output_dir, b"rdiff-backup-data",
@@ -105,7 +105,7 @@ class HashTest(unittest.TestCase):
         hashlist = self.extract_hashs(metadata_rp)
         assert hashlist == hashlist1, (hashlist1, hashlist)
 
-        rdiff_backup(1, 1, in_rp2.path, abs_output_dir, 20000, b"-v3")
+        rdiff_backup(1, 1, in_rp2.path, abs_output_dir, 20000)
         incs = restore.get_inclist(meta_prefix)
         assert len(incs) == 2
         if incs[0].getinctype() == 'snapshot':

@@ -3,7 +3,7 @@ import os
 from commontest import old_test_dir, abs_test_dir, abs_output_dir, Myrm, \
     abs_restore_dir, re_init_rpath_dir, CompareRecursive, BackupRestoreSeries, \
     rdiff_backup
-from rdiff_backup import Globals, log, rpath, Main
+from rdiff_backup import Globals, rpath, Main
 """Root tests - contain tests which need to be run as root.
 
 Some of the quoting here may not work with csh (works on bash).  Also,
@@ -13,8 +13,6 @@ if you aren't me, check out the 'user' global variable.
 
 Globals.set('change_source_perms', None)
 Globals.counter = 0
-verbosity = 1
-log.Log.setverbosity(verbosity)
 
 assert os.getuid() == 0, "Run this test as root!"
 
@@ -282,8 +280,7 @@ class HalfRoot(unittest.TestCase):
         outrp = rpath.RPath(Globals.local_connection, abs_output_dir)
         re_init_rpath_dir(outrp, userid)
         remote_schema = b'su -c "rdiff-backup --server" %s' % (user.encode(), )
-        cmd_schema = (b"rdiff-backup -v%i" % verbosity
-                      + b" --current-time %i --remote-schema '%%s' %b '%b'::%b")
+        cmd_schema = (b"rdiff-backup --current-time %i --remote-schema '%%s' %b '%b'::%b")
 
         cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
         Run(cmd1)
@@ -296,8 +293,7 @@ class HalfRoot(unittest.TestCase):
         outrp.setdata()
 
         rout_rp = rpath.RPath(Globals.local_connection, abs_restore_dir)
-        restore_schema = (b"rdiff-backup -v%i" % verbosity
-                          + b" -r %b --remote-schema '%%s' '%b'::%b %b")
+        restore_schema = (b"rdiff-backup -r %b --remote-schema '%%s' '%b'::%b %b")
         Myrm(rout_rp.path)
         cmd3 = restore_schema % (b'10000', remote_schema, outrp.path,
                                  rout_rp.path)
