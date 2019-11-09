@@ -9,7 +9,9 @@
 #
 # Feel free to send comments or suggestions.
 
-shopt -s extglob
+# Set extglob, saving whether it was already set so we know whether to unset it
+shopt -q extglob; _rdiff_backup_extglob=$?
+if ((_rdiff_backup_extglob)); then shopt -s extglob; fi
 
 _rdiff_backup ()
 {
@@ -95,3 +97,7 @@ _rdiff_backup ()
 }
 
 complete -F _rdiff_backup -o filenames rdiff-backup
+
+# unset extglob if it wasn't originally set
+if ((_rdiff_backup_extglob)); then shopt -u extglob; fi
+unset _rdiff_backup_extglob
