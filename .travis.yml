@@ -1,29 +1,45 @@
-# Since we create our own virtualens via Tox, don't use any of Travis-CI Python
-# templates/features and could as well have "language: generic" here.
 language: python
+
+python:
+  - 3.7
 
 # Don't run tests on WIP branches
 branches:
   except:
     - /^WIP-.*$/
 
+addons:
+  apt:
+    packages:
+      - librsync-dev
+      - libacl1-dev
+      - rdiff  # needed by tests in tox.ini
+
+install: pip3 install --upgrade pip tox pyxattr pylibacl
+
 # We utilize Docker images, thus must have a Docker service
-services:
-  - docker
+#services:
+#  - docker
 
 # Build Docker image for development and testing
-before_script:
-  - make container
+#before_script:
+#  - make container
 
 # Each env becomes a separate job. Add more Python versions to have a matrix.
 env:
-  - MAKE_STEP=test-static
-  - MAKE_STEP=build
-  - MAKE_STEP=test-runtime-base
-  - MAKE_STEP=test-runtime-root
-  - MAKE_STEP=test-runtime-slow
+  - MAKE_STEP=test-static RUN_COMMAND= SUDO=sudo
+  - MAKE_STEP=build RUN_COMMAND= SUDO=sudo
+  - MAKE_STEP=test-runtime-base RUN_COMMAND= SUDO=sudo
+  - MAKE_STEP=test-runtime-root RUN_COMMAND= SUDO=root  # see below
+  - MAKE_STEP=test-runtime-slow RUN_COMMAND= SUDO=sudo
 
-script: make $MAKE_STEP
+script:
+  # We need the following line because travis runs already in a virtualenv
+  # and tox as well, so that we need to use tricks to run as root
+  # Especially the env is set _before_ the virtualenv is joined so that
+  # the next line doesn't work in the "env" section
+  - if [[ $SUDO == root ]]; then export SUDO="sudo -E env PATH=$PATH"; fi
+  - make $MAKE_STEP
 
 # Travis-CI cannot cache the plain testfiles due to permission errors, thus we
 # have the .tar.gz stored in the cache dir to avoid too many re-downloads.

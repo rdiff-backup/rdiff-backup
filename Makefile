@@ -4,6 +4,10 @@
 # be extended to have more options.
 RUN_COMMAND ?= docker run -i -v ${PWD}/..:/build -w /build/rdiff-backup rdiff-backup-dev:debian-sid
 
+# Define SUDO=sudo if you don't want to run the whole thing as root
+# we set SUDO="sudo -E env PATH=$PATH" if we want to keep the whole environment
+SUDO ?=
+
 all: clean container test build
 
 test: test-static test-runtime
@@ -15,7 +19,7 @@ test-runtime: test-runtime-base test-runtime-root test-runtime-slow
 
 test-runtime-files:
 	@echo "=== Install files required by the tests ==="
-	${RUN_COMMAND} ./tools/setup-testfiles.sh # This must run as root
+	${RUN_COMMAND} ./tools/setup-testfiles.sh  # This must run as root or sudo be available
 
 test-runtime-base: test-runtime-files
 	@echo "=== Base tests ==="
@@ -23,7 +27,7 @@ test-runtime-base: test-runtime-files
 
 test-runtime-root: test-runtime-files
 	@echo "=== Tests that require root permissions ==="
-	${RUN_COMMAND} tox -c tox_root.ini -e py37 # This must be run as root
+	${RUN_COMMAND} ${SUDO} tox -c tox_root.ini -e py37  # This must run as root
 	# NOTE! Session will user=root inside Docker)
 
 test-runtime-slow: test-runtime-files
@@ -31,7 +35,7 @@ test-runtime-slow: test-runtime-files
 	${RUN_COMMAND} tox -c tox_slow.ini -e py37
 
 build:
-	# Build rdiff-backup (assumes source is in directory 'rdiff-backup' and it's
+	# Build rdiff-backup (assumes src/ is in directory 'rdiff-backup' and it's
 	# parent is writeable)
 	${RUN_COMMAND} ./setup.py build
 
@@ -40,4 +44,5 @@ container:
 	docker build --pull --tag rdiff-backup-dev:debian-sid .
 
 clean:
-	${RUN_COMMAND} rm -rf .tox.root/	.tox/	MANIFEST build/ testing/__pycache__/
+	${RUN_COMMAND} rm -rf .tox/ MANIFEST build/ testing/__pycache__/ dist/
+	${RUN_COMMAND} ${SUDO} rm -rf .tox.root/
