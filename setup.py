@@ -2,6 +2,7 @@
 
 import sys
 import os
+import time
 
 from setuptools import setup, Extension
 
@@ -46,6 +47,28 @@ if os.name == "posix" or os.name == "nt":
         if "-lrsync" in LIBS:
             libname = []
 
+replacement_dict = {
+    "version": version_string,
+    "month_year": time.strftime("%B %Y", time.localtime(time.time()))
+}
+template_files = (
+    ("tools/rdiff-backup.spec.template", "build/rdiff-backup.spec"),
+    ("tools/rdiff-backup.spec.template-fedora", "build/rdiff-backup.fedora.spec"),
+    ("docs/rdiff-backup.1", "build/rdiff-backup.1"),
+    ("docs/rdiff-backup-statistics.1", "build/rdiff-backup-statistics.1"),
+)
+
+if any(map(lambda x: x.startswith('build') or x.startswith('bdist') or x.startswith('install'),
+           sys.argv)):
+    for template in template_files:
+        os.makedirs(os.path.dirname(template[1]), exist_ok=True)
+        with open(template[0], "r") as infp, open(template[1], "w") as outfp:
+            for line in infp:
+                if ("{{" in line):
+                    for key, value in replacement_dict.items():
+                        line = line.replace("{{ %s }}" % key, value)
+                outfp.write(line)
+
 setup(
     name="rdiff-backup",
     version=version_string,
@@ -68,7 +91,7 @@ setup(
     ],
     scripts=["src/rdiff-backup", "src/rdiff-backup-statistics"],
     data_files=[
-        ("share/man/man1", ["docs/rdiff-backup.1", "docs/rdiff-backup-statistics.1"]),
+        ("share/man/man1", ["build/rdiff-backup.1", "build/rdiff-backup-statistics.1"]),
         (
             "share/doc/rdiff-backup-%s" % (version_string,),
             [
