@@ -118,7 +118,7 @@ class Logger:
                 role = "SERVER"
             else:
                 role = "CLIENT"
-            return "%s  <%s>  %s\n" % (timestamp, role, message)
+            return "%s  <%s-%d>  %s\n" % (timestamp, role, os.getpid(), message)
 
     def __call__(self, message, verbosity):
         """Log message that has verbosity importance
