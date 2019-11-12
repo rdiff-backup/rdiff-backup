@@ -24,10 +24,13 @@ from . import C, metadata, rorpiter, rpath, log
 try:
     from win32security import (
         AdjustTokenPrivileges,
+        DACL_SECURITY_INFORMATION,
         GetTokenInformation,
+        GROUP_SECURITY_INFORMATION,
         INHERIT_ONLY_ACE,
         LookupPrivilegeValue,
         OpenProcessToken,
+        OWNER_SECURITY_INFORMATION,
         SACL_SECURITY_INFORMATION,
         SDDL_REVISION_1,
         SE_BACKUP_NAME,
