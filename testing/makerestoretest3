@@ -6,5 +6,5 @@
 rm -rvf ${PWD}_testfiles/restoretest3
 for i in 1 2 3 4
 do
-	rdiff-backup -v5 --current-time $((i * 10000)) ${PWD}_testfiles/increment${i} ${PWD}_testfiles/restoretest3
+	rdiff-backup --current-time $((i * 10000)) ${PWD}_testfiles/increment${i} ${PWD}_testfiles/restoretest3
 done

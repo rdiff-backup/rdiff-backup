@@ -4,7 +4,6 @@ from commontest import abs_output_dir, old_test_dir, Myrm, MakeOutputDir, \
     InternalRestore, CompareRecursive
 from rdiff_backup import restore, Globals, rpath, TempFile, Time, log, Main
 
-log.Log.setverbosity(3)
 lc = Globals.local_connection
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 restore_base_rp = rpath.RPath(Globals.local_connection,

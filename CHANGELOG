@@ -1,5 +1,7 @@
-New in v1.3.4 (????/??/??)
+New in v1.3.6 (????/??/??)
 ---------------------------
+
+Add RDIFF_BACKUP_VERBOSITY environment variable (Eric Lavarde)
 
 Add support for Python 3.5 to 3.8, remove support for Python 2.x (Eric Lavarde)
 

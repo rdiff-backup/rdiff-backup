@@ -15,7 +15,7 @@ test-runtime: test-runtime-base test-runtime-root test-runtime-slow
 
 test-runtime-files:
 	@echo "=== Install files required by the tests ==="
-	${RUN_COMMAND} ./setup-testfiles.sh # This must run as root
+	${RUN_COMMAND} ./tools/setup-testfiles.sh # This must run as root
 
 test-runtime-base: test-runtime-files
 	@echo "=== Base tests ==="
