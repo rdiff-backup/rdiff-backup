@@ -1173,6 +1173,7 @@ class RPath(RORPath):
 
     def rmdir(self):
         log.Log("Removing directory %s" % self.get_safepath(), 6)
+        self.conn.os.chmod(self.path, 0o700)
         self.conn.os.rmdir(self.path)
         self.data = {'type': None}
 
