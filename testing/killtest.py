@@ -62,11 +62,13 @@ class ProcessFuncs(unittest.TestCase):
             arglist.append(str(time))
         arglist.extend(args)
 
-        print("Running ", arglist)
         if wait:
+            print("Waiting for ", arglist)
             return os.spawnvp(os.P_WAIT, sys.executable, arglist)
         else:
-            return os.spawnvp(os.P_NOWAIT, sys.executable, arglist)
+            pid = os.spawnvp(os.P_NOWAIT, sys.executable, arglist)
+            print("Running ", arglist, " PID: ", pid)
+            return pid
 
     def exec_and_kill(self, min_max_pair, backup_time, arg1, arg2):
         """Run rdiff-backup, then kill and run again
@@ -78,19 +80,25 @@ class ProcessFuncs(unittest.TestCase):
         mintime, maxtime = min_max_pair
         pid = self.exec_rb(backup_time, None, arg1, arg2)
         time.sleep(random.uniform(mintime, maxtime))
-        if os.waitpid(pid, os.WNOHANG)[0] != 0:
-            # Timing problem, process already terminated (max time too big?)
-            return -1
+        # kill doesn't fail on finished but still defunct (not waited) processes
         os.kill(pid, self.killsignal)
-        while 1:
-            pid, exitstatus = os.waitpid(pid, os.WNOHANG)
-            if pid:
-                assert exitstatus != 0, \
-                    ("Pid %d killed but exited with return code 0, "
-                     "probably a timing issue, retry!") % pid
-                break
-            time.sleep(0.2)
-        print("---------------------- killed")
+        # we can waitpid only once for a finished process, hence we need to keep state
+        exitpid, exitstatus = (0, 0)
+        while (exitpid, exitstatus) == (0, 0):  # until process terminates...
+            exitpid, exitstatus = os.waitpid(pid, os.WNOHANG)
+            time.sleep(0.1)
+        if (exitpid == pid and exitstatus == 0):
+            # process already terminated before we killed it (max time too big?)
+            print("---------------------- missed killing PID %d" % (pid))
+            return -1
+        else:
+            print("---------------------- killed PID/RC %d/%d" % (exitpid, exitstatus))
+            # it should be like that but robust handling changes exit code:
+            # assert exitstatus & (1<<8-1) == self.killsignal, (
+            assert exitstatus != 0, (
+                "Pid %d/%d killed but exited with return code %d, "
+                "unequal to signal %d, error unidentified!") % (
+                    pid, exitpid, exitstatus, self.killsignal)
 
     def create_killtest_dirs(self):
         """Create testfiles/killtest? directories
@@ -160,7 +168,7 @@ class KillTest(ProcessFuncs):
     def setTiming(self):
         """Run each rdiff-backup sequence x times, gathering min/max time"""
         time_list = [[], [], [], [], []]  # List of time lists
-        iterations = 3
+        iterations = 2  # we don't really care about precision but time it takes
 
         def run_once(current_time, input_rp, index):
             start_time = time.time()
@@ -177,10 +185,8 @@ class KillTest(ProcessFuncs):
 
         for i in range(len(time_list)):
             # overwrite time_pairs with runtime values from the actual environment
-            # max time is somewhere between half of the minimum time measured
-            # and the difference between min and max removed from min
-            max_time = max(min(time_list[i]) * 2 - max(time_list[i]),
-                           min(time_list[i]) / 2)
+            # max time is the average of the times measured
+            max_time = sum(time_list[i]) / len(time_list[i])
             self.time_pairs[i] = (0, max_time)
             print("%d -> min %s, max %s" % (i, 0, max_time))
 
