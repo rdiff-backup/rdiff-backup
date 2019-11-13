@@ -2,7 +2,7 @@ import unittest
 import os
 from commontest import old_test_dir, abs_test_dir, abs_output_dir, Myrm, \
     abs_restore_dir, re_init_rpath_dir, CompareRecursive, BackupRestoreSeries, \
-    rdiff_backup
+    rdiff_backup, RBBin
 from rdiff_backup import Globals, rpath, Main
 """Root tests - contain tests which need to be run as root.
 
@@ -279,8 +279,8 @@ class HalfRoot(unittest.TestCase):
         in_rp1, in_rp2 = self.make_dirs()
         outrp = rpath.RPath(Globals.local_connection, abs_output_dir)
         re_init_rpath_dir(outrp, userid)
-        remote_schema = b'su -c "rdiff-backup --server" %s' % (user.encode(), )
-        cmd_schema = (b"rdiff-backup --current-time %i --remote-schema '%%s' %b '%b'::%b")
+        remote_schema = b'su -c "%s --server" %s' % (RBBin, user.encode())
+        cmd_schema = (RBBin + b" --current-time %i --remote-schema '%%s' %b '%b'::%b")
 
         cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
         Run(cmd1)
@@ -293,7 +293,7 @@ class HalfRoot(unittest.TestCase):
         outrp.setdata()
 
         rout_rp = rpath.RPath(Globals.local_connection, abs_restore_dir)
-        restore_schema = (b"rdiff-backup -r %b --remote-schema '%%s' '%b'::%b %b")
+        restore_schema = (RBBin + b" -r %b --remote-schema '%%s' '%b'::%b %b")
         Myrm(rout_rp.path)
         cmd3 = restore_schema % (b'10000', remote_schema, outrp.path,
                                  rout_rp.path)
@@ -315,8 +315,8 @@ class HalfRoot(unittest.TestCase):
         assert outrp_perms == 0, outrp_perms
 
         self.cause_regress(outrp)
-        cmd5 = (b'su -c "rdiff-backup --check-destination-dir %s" %s' %
-                (outrp.path, user.encode()))
+        cmd5 = (b'su -c "%s --check-destination-dir %s" %s' %
+                (RBBin, outrp.path, user.encode()))
         Run(cmd5)
 
 
@@ -360,19 +360,18 @@ class NonRoot(unittest.TestCase):
 
     def backup(self, input_rp, output_rp, time):
         global user
-        backup_cmd = (b"rdiff-backup --no-compare-inode "
-                      b"--current-time %i %b %b" %
-                      (time, input_rp.path, output_rp.path))
+        backup_cmd = (b"%s --no-compare-inode --current-time %i %b %b" % (
+                      RBBin, time, input_rp.path, output_rp.path))
         Run(b"su %s -c '%s'" % (user.encode(), backup_cmd))
 
     def restore(self, dest_rp, restore_rp, time=None):
         Myrm(restore_rp.path)
         if time is None or time == "now":
-            restore_cmd = b"rdiff-backup -r now %b %b" % (dest_rp.path,
-                                                          restore_rp.path)
+            restore_cmd = b"%s -r now %b %b" % (
+                          RBBin, dest_rp.path, restore_rp.path)
         else:
-            restore_cmd = b"rdiff-backup -r %i %b %b" % (time, dest_rp.path,
-                                                         restore_rp.path)
+            restore_cmd = b"%s -r %i %b %b" % (
+                          RBBin, time, dest_rp.path, restore_rp.path)
         Run(restore_cmd)
 
     def test_non_root(self):
