@@ -81,6 +81,7 @@ setup(
                 "docs/Windows-README.md",
             ],
         ),
+        ("share/bash-completion/completions", ["tools/bash-completion/rdiff-backup"]),
     ],
     **extra_options
 )

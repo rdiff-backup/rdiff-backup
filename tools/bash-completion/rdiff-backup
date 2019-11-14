@@ -1,0 +1,103 @@
+# /etc/bash_completion.d/rdiff-backup - bash-completion for rdiff-backup
+# 2008 Andreas Olsson <andreas@arrakis.se>
+#
+# Developed for 1.2.x but can be "ported" to older version by modifying the
+# lists of available options.
+#
+# Besides supplying options it will also try to determine
+# when it is suitible to complete what.
+#
+# Feel free to send comments or suggestions.
+
+# Set extglob, saving whether it was already set so we know whether to unset it
+shopt -q extglob; _rdiff_backup_extglob=$?
+if ((_rdiff_backup_extglob)); then shopt -s extglob; fi
+
+_rdiff_backup ()
+{
+	local cur prev wfilearg wpatharg wnumarg wotherarg longopts shortopts options
+	COMPREPLAY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+	# These options will be completed by the path to a filename.
+	wfilearg="--exclude-filelist|--exclude-globbing-filelist|--exclude-if-present|
+		|--group-mapping-file|--include-filelist|--include-globbing-filelist|
+		|--user-mapping-file"
+
+	# These options will be completed by the path to a directory.
+	wpatharg="--remote-tempdir|--restrict|--restrict-read-only|
+		|--restrict-update-only|--tempdir"
+
+	# These options will be completed by a number, from 0 to 9.
+	wnumarg="--terminal-verbosity|--verbosity|-v"
+
+	# These options requires a non-completable argument.
+	# They won't be completed at all.
+	wotherarg="--compare-at-time|--compare-full-at-time|--compare-hash-at-time|
+		|--current-time|--exclude|--exclude-regexp|--include|--include-regexp|
+		|--list-at-time|--list-changed-since|--max-file-size|--min-file-size|
+		|--no-compression-regexp|-r|--restore-as-of|--remote-schema|
+		|--remove-older-than|--verify-at-time"
+
+	# Available long options
+	longopts="--backup-mode --calculate-average --carbonfile --check-destination-dir \
+		--compare --compare-at-time --compare-full --compare-full-at-time \
+		--compare-hash --compare-hash-at-time --create-full-path --current-time \
+		--exclude --exclude-device-files --exclude-fifos --exclude-filelist \
+		--exclude-filelist-stdin --exclude-globbing-filelist --exclude-globbing-filelist-stdin \
+		--exclude-other-filesystems --exclude-regexp --exclude-special-files --exclude-sockets \
+		--exclude-symbolic-links --exclude-if-present --force --group-mapping-file --include \
+		--include-filelist --include-filelist-stdin --include-globbing-filelist \
+		--include-globbing-filelist-stdin --include-regexp --include-special-files \
+		--include-symbolic-links --list-at-time --list-changed-since --list-increments \
+		--list-increment-sizes --max-file-size --min-file-size --never-drop-acls --no-acls \
+		--no-carbonfile --no-compare-inode --no-compression --no-compression-regexp  --no-eas \
+		--no-file-statistics --no-fsync --no-hard-links --null-separator --parsable-output  \
+		--override-chars-to-quote --preserve-numerical-ids --print-statistics --restore-as-of \
+		--remote-schema --remote-tempdir --remove-older-than --restrict \
+		--restrict-read-only --restrict-update-only --ssh-no-compression --tempdir \
+		--terminal-verbosity --test-server --user-mapping-file --verbosity --verify \
+		--verify-at-time --version"
+
+	# Available short options
+	shortopts="-b -l -r -v -V"
+
+	options=${longopts}" "${shortopts}
+
+	case "$prev" in
+		@($wfilearg))
+			_filedir
+			return 0
+			;;
+
+		@($wpatharg))
+			_filedir -d
+			return 0
+			;;
+
+		@($wotherarg))
+			return 0
+			;;
+
+		@($wnumarg))
+			COMPREPLY=( $( compgen -W '0 1 2 3 4 5 6 7 8 9' -- $cur ) )
+			return 0
+			;;
+	esac
+
+	if [[ ${cur} == -* ]]
+	then
+		COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
+		return 0
+	else
+		_filedir
+		return 0
+	fi
+}
+
+complete -F _rdiff_backup -o filenames rdiff-backup
+
+# unset extglob if it wasn't originally set
+if ((_rdiff_backup_extglob)); then shopt -u extglob; fi
+unset _rdiff_backup_extglob

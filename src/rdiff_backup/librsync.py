@@ -23,7 +23,6 @@ which is written in C.  The goal was to use C as little as possible...
 
 """
 
-import io
 import array
 from . import _librsync
 
@@ -33,12 +32,12 @@ blocksize = _librsync.RS_JOB_BLOCKSIZE
 class librsyncError(Exception):
     """Signifies error in internal librsync processing (bad signature, etc.)
 
-	underlying _librsync.librsyncError's are regenerated using this
-	class because the C-created exceptions are by default
-	unPickleable.  There is probably a way to fix this in _librsync,
-	but this scheme was easier.
+    underlying _librsync.librsyncError's are regenerated using this
+    class because the C-created exceptions are by default
+    unPickleable.  There is probably a way to fix this in _librsync,
+    but this scheme was easier.
 
-	"""
+    """
     pass
 
 
@@ -121,10 +120,10 @@ class SigFile(LikeFile):
     def __init__(self, infile, blocksize=_librsync.RS_DEFAULT_BLOCK_LEN):
         """SigFile initializer - takes basis file
 
-		basis file only needs to have read() and close() methods.  It
-		will be closed when we come to the end of the signature.
+        basis file only needs to have read() and close() methods.  It
+        will be closed when we come to the end of the signature.
 
-		"""
+        """
         LikeFile.__init__(self, infile)
         try:
             self.maker = _librsync.new_sigmaker(blocksize)
@@ -138,11 +137,11 @@ class DeltaFile(LikeFile):
     def __init__(self, signature, new_file):
         """DeltaFile initializer - call with signature and new file
 
-		Signature can either be a string or a file with read() and
-		close() methods.  New_file also only needs to have read() and
-		close() methods.  It will be closed when self is closed.
+        Signature can either be a string or a file with read() and
+        close() methods.  New_file also only needs to have read() and
+        close() methods.  It will be closed when self is closed.
 
-		"""
+        """
         LikeFile.__init__(self, new_file)
         if type(signature) is bytes:
             sig_string = signature
@@ -162,11 +161,11 @@ class PatchedFile(LikeFile):
     def __init__(self, basis_file, delta_file):
         """PatchedFile initializer - call with basis delta
 
-		Here basis_file must be a true Python file, because we may
-		need to seek() around in it a lot, and this is done in C.
-		delta_file only needs read() and close() methods.
+        Here basis_file must be a true Python file, because we may
+        need to seek() around in it a lot, and this is done in C.
+        delta_file only needs read() and close() methods.
 
-		"""
+        """
         LikeFile.__init__(self, delta_file)
         if hasattr(basis_file, 'file'):
             self.basis_file = basis_file.file
@@ -189,10 +188,10 @@ class PatchedFile(LikeFile):
 class SigGenerator:
     """Calculate signature.
 
-	Input and output is same as SigFile, but the interface is like md5
-	module, not filelike object
+    Input and output is same as SigFile, but the interface is like md5
+    module, not filelike object
 
-	"""
+    """
 
     def __init__(self, blocksize=_librsync.RS_DEFAULT_BLOCK_LEN):
         """Return new signature instance"""

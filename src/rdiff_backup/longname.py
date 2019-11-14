@@ -37,9 +37,8 @@ it later.
 
 """
 
-import types
 import errno
-from . import log, Globals, restore, rpath, FilenameMapping, regress
+from . import log, Globals, restore, regress
 
 long_name_dir = b"long_filename_data"
 rootrp = None
@@ -116,10 +115,10 @@ def get_next_free():
 def check_new_index(base, index, make_dirs=0):
     """Return new rpath with given index, or None if that is too long
 
-	If make_dir is True, make any parent directories to assure that
-	file is really too long, and not just in directories that don't exist.
+    If make_dir is True, make any parent directories to assure that
+    file is really too long, and not just in directories that don't exist.
 
-	"""
+    """
 
     def wrap_call(func, *args):
         try:
@@ -153,11 +152,11 @@ def check_new_index(base, index, make_dirs=0):
 def get_mirror_rp(mirror_base, mirror_rorp):
     """Get the mirror_rp for reading a regular file
 
-	This will just be in the mirror_base, unless rorp has an alt
-	mirror name specified.  Use new_rorp, unless it is None or empty,
-	and mirror_rorp exists.
+    This will just be in the mirror_base, unless rorp has an alt
+    mirror name specified.  Use new_rorp, unless it is None or empty,
+    and mirror_rorp exists.
 
-	"""
+    """
     if mirror_rorp.has_alt_mirror_name():
         return get_long_rp(mirror_rorp.get_alt_mirror_name())
     else:
@@ -165,16 +164,18 @@ def get_mirror_rp(mirror_base, mirror_rorp):
         if rp:
             return rp
         else:
-            return mirror_base.new_index_empty(index)
+            raise Exception("the following line doesn't make any sense but does it matter?")
+            # FIXME index isn't defined anywhere, is mirror_rorp.index meant?
+            # return mirror_base.new_index_empty(index)
 
 
 def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
     """Get (mirror_rp, inc_rp) pair, possibly making new longname base
 
-	To test inc_rp, pad incbase with 50 random (non-quoted) characters
-	and see if that raises an error.
+    To test inc_rp, pad incbase with 50 random (non-quoted) characters
+    and see if that raises an error.
 
-	"""
+    """
     if not inc_root:  # make fake inc_root if not available
         inc_root = mirror_root.append_path(b'rdiff-backup-data/increments')
 
@@ -279,7 +280,9 @@ def update_rf(rf, rorp, mirror_root):
         """Update rf based on rorp, don't make new one"""
         if rorp.has_alt_mirror_name():
             inc_name = rorp.get_alt_mirror_name()
-            rf.mirror_rp = get_long_rp(mirror_name)
+            raise Exception("the following line doesn't make any sense but does it matter?")
+            # FIXME mirror_name isn't defined anywhere, is inc_name meant?
+            # rf.mirror_rp = get_long_rp(mirror_name)
         elif rorp.has_alt_inc_name():
             inc_name = rorp.get_alt_inc_name()
         else:
@@ -304,7 +307,8 @@ def update_rf(rf, rorp, mirror_root):
         update_incs(rf, inc_name)
         return rf
 
-    if not rorp: return rf
+    if not rorp:
+        return rf
     if rf and not rorp.has_alt_mirror_name() and not rorp.has_alt_inc_name():
         return rf  # Most common case
     if rf:

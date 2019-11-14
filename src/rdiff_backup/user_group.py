@@ -30,13 +30,14 @@ objects should only be used on the destination.
 """
 
 try:
-    import grp, pwd
+    import grp
+    import pwd
 except ImportError:
     pass
 
-from . import log, Globals
+from . import log
 
-############ "Private" section - don't use outside user_group ###########
+# ----------- "Private" section - don't use outside user_group -----------
 
 # This should be set to the user UserMap class object if using
 # user-defined user mapping, and a Map class object otherwise.
@@ -102,11 +103,11 @@ class Map:
     def map_acl(self, id, name=None):
         """Like get_id, but use this for ACLs.  Return id or None
 
-		Unlike ordinary user/group ownership, ACLs are not required
-		and can be dropped.  If we cannot map the name over, return
-		None.
+        Unlike ordinary user/group ownership, ACLs are not required
+        and can be dropped.  If we cannot map the name over, return
+        None.
 
-		"""
+        """
         if not name:
             return id
         return self.name2id(name)
@@ -115,19 +116,19 @@ class Map:
 class DefinedMap(Map):
     """Map names and ids on source side to appropriate ids on dest side
 
-	Like map, but initialize with user-defined mapping string, which
-	supersedes Map.
+    Like map, but initialize with user-defined mapping string, which
+    supersedes Map.
 
-	"""
+    """
 
     def __init__(self, is_user, mapping_string):
         """Initialize object with given mapping string
 
-		The mapping_string should consist of a number of lines, each which
-		should have the form "source_id_or_name:dest_id_or_name".  Do user
-		mapping unless user is false, then do group.
+        The mapping_string should consist of a number of lines, each which
+        should have the form "source_id_or_name:dest_id_or_name".  Do user
+        mapping unless user is false, then do group.
 
-		"""
+        """
         Map.__init__(self, is_user)
         self.name_mapping_dict = {}
         self.id_mapping_dict = {}
@@ -138,8 +139,8 @@ class DefinedMap(Map):
                 continue
             comps = line.split(':')
             if not len(comps) == 2:
-                log.Log.FatalError("Error parsing mapping file, bad line: " +
-                                   line)
+                log.Log.FatalError("Error parsing mapping file, bad line: "
+                                   + line)
             old, new = comps
 
             try:
@@ -155,8 +156,8 @@ class DefinedMap(Map):
             try:
                 return self.name2id(id_or_name)
             except KeyError:
-                log.Log.FatalError("Cannot get id for user or group name " +
-                                   id_or_name)
+                log.Log.FatalError("Cannot get id for user or group name "
+                                   + id_or_name)
 
     def __call__(self, id, name=None):
         """Return new id given old id and name"""
@@ -192,7 +193,7 @@ class NumericalMap:
         return id
 
 
-############ Public section - can use these outside user_group ###########
+# ----------- Public section - can use these outside user_group -----------
 
 
 def uid2uname(uid):
@@ -202,7 +203,7 @@ def uid2uname(uid):
     except KeyError:
         try:
             uname = pwd.getpwuid(uid)[0]
-        except (KeyError, OverflowError, NameError) as e:
+        except (KeyError, OverflowError, NameError):
             uname = None
         uid2uname_dict[uid] = uname
         return uname
@@ -215,7 +216,7 @@ def gid2gname(gid):
     except KeyError:
         try:
             gname = grp.getgrgid(gid)[0]
-        except (KeyError, OverflowError, NameError) as e:
+        except (KeyError, OverflowError, NameError):
             gname = None
         gid2gname_dict[gid] = gname
         return gname
@@ -224,10 +225,10 @@ def gid2gname(gid):
 def init_user_mapping(mapping_string=None, numerical_ids=None):
     """Initialize user mapping with given mapping string
 
-	If numerical_ids is set, just keep the same uid.  If either
-	argument is None, default to preserving uname where possible.
+    If numerical_ids is set, just keep the same uid.  If either
+    argument is None, default to preserving uname where possible.
 
-	"""
+    """
     global UserMap
     if numerical_ids:
         UserMap = NumericalMap()
@@ -240,10 +241,10 @@ def init_user_mapping(mapping_string=None, numerical_ids=None):
 def init_group_mapping(mapping_string=None, numerical_ids=None):
     """Initialize group mapping with given mapping string
 
-	If numerical_ids is set, just keep the same gid.  If either
-	argument is None, default to preserving gname where possible.
+    If numerical_ids is set, just keep the same gid.  If either
+    argument is None, default to preserving gname where possible.
 
-	"""
+    """
     global GroupMap
     if numerical_ids:
         GroupMap = NumericalMap()
@@ -256,10 +257,10 @@ def init_group_mapping(mapping_string=None, numerical_ids=None):
 def map_rpath(rp):
     """Return mapped (newuid, newgid) from rpath's initial info
 
-	This is the main function exported by the user_group module.  Note
-	that it is connection specific.
+    This is the main function exported by the user_group module.  Note
+    that it is connection specific.
 
-	"""
+    """
     uid, gid = rp.getuidgid()
     uname, gname = rp.getuname(), rp.getgname()
     return (UserMap(uid, uname), GroupMap(gid, gname))
