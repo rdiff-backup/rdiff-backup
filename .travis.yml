@@ -16,6 +16,7 @@ addons:
       - librsync-dev
       - libacl1-dev
       - rdiff  # needed by tests in tox.ini
+      - python3-setuptools-scm
 
 install: pip3 install --upgrade pip tox pyxattr pylibacl
 

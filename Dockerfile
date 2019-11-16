@@ -25,6 +25,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
     apt-get install -y --no-install-recommends \
     tox \
     rdiff \
+    python3-setuptools-scm \
     # /usr/include/sys/acl.h is required by test builds
     libacl1-dev \
     # tox_slow uses rsync for comperative benchmarking
