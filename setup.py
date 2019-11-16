@@ -83,6 +83,7 @@ class build_templates(Command):
                 outfp.write(line)
 
     def run(self):
+        self.warn("FILE: %s / CWD: %s" % (__file__, os.getcwd()))
         if DEBUG:
             self.debug_print(self.distribution.dump_option_dicts())
         for template in self.template_files:
