@@ -4,21 +4,17 @@ import sys
 import os
 import time
 
-from setuptools import setup, Extension
+from setuptools import setup, Extension, Command
+import setuptools.command.build_py
 
 from src.rdiff_backup import Version
 
 version_string = Version.version
 
-if sys.version_info[:2] < (3, 5):
-    print("Sorry, rdiff-backup requires version 3.5 or later of Python")
-    sys.exit(1)
-
 # Defaults
 lflags_arg = []
 libname = ["rsync"]
 incdir_list = libdir_list = None
-extra_options = {}
 
 if os.name == "posix" or os.name == "nt":
     LIBRSYNC_DIR = os.environ.get("LIBRSYNC_DIR", "")
@@ -47,27 +43,49 @@ if os.name == "posix" or os.name == "nt":
         if "-lrsync" in LIBS:
             libname = []
 
-replacement_dict = {
-    "version": version_string,
-    "month_year": time.strftime("%B %Y", time.localtime(time.time()))
-}
-template_files = (
-    ("tools/rdiff-backup.spec.template", "build/rdiff-backup.spec"),
-    ("tools/rdiff-backup.spec.template-fedora", "build/rdiff-backup.fedora.spec"),
-    ("docs/rdiff-backup.1", "build/rdiff-backup.1"),
-    ("docs/rdiff-backup-statistics.1", "build/rdiff-backup-statistics.1"),
-)
+class build_templates(Command):
+    description = 'build template files replacing {{ }} placeholders'
+    user_options = [
+        # The format is (long option, short option, description).
+        ('template-files=', None, 'list of tuples of source template and destination files'),
+        # TODO we could add the replacement dict as well but not for now
+    ]
+    replacement_dict = {
+        "version": version_string,
+        "month_year": time.strftime("%B %Y", time.localtime(time.time()))
+    }
 
-if any(map(lambda x: x.startswith('build') or x.startswith('bdist') or x.startswith('install'),
-           sys.argv)):
-    for template in template_files:
-        os.makedirs(os.path.dirname(template[1]), exist_ok=True)
-        with open(template[0], "r") as infp, open(template[1], "w") as outfp:
-            for line in infp:
-                if ("{{" in line):
-                    for key, value in replacement_dict.items():
-                        line = line.replace("{{ %s }}" % key, value)
-                outfp.write(line)
+    def initialize_options(self):
+        """Set default values for options."""
+        # Each user option must be listed here with their default value.
+        self.template_files = []
+
+    def finalize_options(self):
+        """Post-process options."""
+        #if 'template_files' in self.distribution.get_option_dict('build_templates'):
+        #    self.template_files.extend(self.distribution.get_option_dict('build_templates')['template_files'][1])
+        if self.template_files:
+            assert all(map(lambda x: len(x) == 2, self.template_files)), (
+              'Each element of the list must be a tuple of source template and destination files' % self.template_files)
+
+    def run(self):
+        # self.announce(self.distribution.dump_option_dicts())
+        for template in self.template_files:
+            os.makedirs(os.path.dirname(template[1]), exist_ok=True)
+            with open(template[0], "r") as infp, open(template[1], "w") as outfp:
+                for line in infp:
+                    if ("{{" in line):
+                        for key, value in self.replacement_dict.items():
+                            line = line.replace("{{ %s }}" % key, value)
+                    outfp.write(line)
+
+
+class build_py(setuptools.command.build_py.build_py):
+  """Inject our build sub-command in the build step"""
+
+  def run(self):
+    self.run_command('build_templates')
+    setuptools.command.build_py.build_py.run(self)
 
 setup(
     name="rdiff-backup",
@@ -76,6 +94,7 @@ setup(
     author="The rdiff-backup project",
     author_email="rdiff-backup-users@nongnu.org",
     url="https://rdiff-backup.net/",
+    python_requires='~=3.5',
     packages=["rdiff_backup"],
     package_dir={"": "src"},  # tell distutils packages are under src
     ext_modules=[
@@ -106,5 +125,16 @@ setup(
         ),
         ("share/bash-completion/completions", ["tools/bash-completion/rdiff-backup"]),
     ],
-    **extra_options
+    # options is a hash of hash with command -> option -> value
+    # the value happens here to be a list of file couples/tuples
+    options={'build_templates': { 'template_files' : [
+        ("tools/rdiff-backup.spec.template", "build/rdiff-backup.spec"),
+        ("tools/rdiff-backup.spec.template-fedora", "build/rdiff-backup.fedora.spec"),
+        ("docs/rdiff-backup.1", "build/rdiff-backup.1"),
+        ("docs/rdiff-backup-statistics.1", "build/rdiff-backup-statistics.1"),
+    ]}},
+    cmdclass={
+        'build_templates': build_templates,
+        'build_py': build_py,
+    },
 )
