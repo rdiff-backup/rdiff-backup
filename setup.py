@@ -9,10 +9,6 @@ from src.rdiff_backup import Version
 
 version_string = Version.version
 
-if sys.version_info[:2] < (3, 5):
-    print("Sorry, rdiff-backup requires version 3.5 or later of Python")
-    sys.exit(1)
-
 # Defaults
 lflags_arg = []
 libname = ["rsync"]
@@ -53,6 +49,7 @@ setup(
     author="The rdiff-backup project",
     author_email="rdiff-backup-users@nongnu.org",
     url="https://rdiff-backup.net/",
+    python_requires='~=3.5',
     packages=["rdiff_backup"],
     package_dir={"": "src"},  # tell distutils packages are under src
     ext_modules=[
