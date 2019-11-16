@@ -6,6 +6,7 @@ import time
 
 from setuptools import setup, Extension, Command
 import setuptools.command.build_py
+from distutils.debug import DEBUG
 
 from src.rdiff_backup import Version
 
@@ -43,6 +44,7 @@ if os.name == "posix" or os.name == "nt":
         if "-lrsync" in LIBS:
             libname = []
 
+
 class build_templates(Command):
     description = 'build template files replacing {{ }} placeholders'
     user_options = [
@@ -62,30 +64,42 @@ class build_templates(Command):
 
     def finalize_options(self):
         """Post-process options."""
-        #if 'template_files' in self.distribution.get_option_dict('build_templates'):
-        #    self.template_files.extend(self.distribution.get_option_dict('build_templates')['template_files'][1])
+        # we would need to do more if we would want to support command line
+        # and/or setup.cfg as we would need to parse a string into a list of tuples
         if self.template_files:
             assert all(map(lambda x: len(x) == 2, self.template_files)), (
-              'Each element of the list must be a tuple of source template and destination files' % self.template_files)
+                'Each element of the list must be a tuple of source template and target files'
+                % self.template_files)
+
+    def make_template(self, infile, outfile, repl_dict={}):
+        """A helper function replacing {{ place_holders }} defined in repl_dict,
+        creating the outfile out of the source template file infile."""
+        self.mkpath(os.path.dirname(outfile))
+        with open(infile, "r") as infp, open(outfile, "w") as outfp:
+            for line in infp:
+                if ("{{" in line):
+                    for key, value in repl_dict.items():
+                        line = line.replace("{{ %s }}" % key, value)
+                outfp.write(line)
 
     def run(self):
-        # self.announce(self.distribution.dump_option_dicts())
+        if DEBUG:
+            self.debug_print(self.distribution.dump_option_dicts())
         for template in self.template_files:
-            os.makedirs(os.path.dirname(template[1]), exist_ok=True)
-            with open(template[0], "r") as infp, open(template[1], "w") as outfp:
-                for line in infp:
-                    if ("{{" in line):
-                        for key, value in self.replacement_dict.items():
-                            line = line.replace("{{ %s }}" % key, value)
-                    outfp.write(line)
+            self.make_file(
+                (template[0]), template[1],
+                self.make_template, (template[0], template[1], self.replacement_dict),
+                exec_msg='templating %s -> %s' % (template[0], template[1])
+            )
 
 
 class build_py(setuptools.command.build_py.build_py):
-  """Inject our build sub-command in the build step"""
+    """Inject our build sub-command in the build step"""
 
-  def run(self):
-    self.run_command('build_templates')
-    setuptools.command.build_py.build_py.run(self)
+    def run(self):
+        self.run_command('build_templates')
+        setuptools.command.build_py.build_py.run(self)
+
 
 setup(
     name="rdiff-backup",
@@ -127,7 +141,7 @@ setup(
     ],
     # options is a hash of hash with command -> option -> value
     # the value happens here to be a list of file couples/tuples
-    options={'build_templates': { 'template_files' : [
+    options={'build_templates': {'template_files': [
         ("tools/rdiff-backup.spec.template", "build/rdiff-backup.spec"),
         ("tools/rdiff-backup.spec.template-fedora", "build/rdiff-backup.fedora.spec"),
         ("docs/rdiff-backup.1", "build/rdiff-backup.1"),
