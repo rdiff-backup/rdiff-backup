@@ -354,9 +354,9 @@ class MiscIterToFile(FileWrappingIter):
             if hasattr(currentobj, "read") and hasattr(currentobj, "close"):
                 self.currently_in_file = currentobj
                 self.addfromfile(b"f")
-            elif currentobj is iterfile.MiscIterFlush:
+            elif currentobj is MiscIterFlush:
                 return None
-            elif currentobj is iterfile.MiscIterFlushRepeat:
+            elif currentobj is MiscIterFlushRepeat:
                 self.add_misc(currentobj)
                 return None
             elif isinstance(currentobj, rpath.RORPath):
@@ -474,6 +474,3 @@ class ErrorFile:
 
     def close(self):
         return None
-
-
-from . import iterfile  # noqa: E402

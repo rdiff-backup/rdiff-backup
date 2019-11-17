@@ -831,4 +831,5 @@ class PermissionChanger:
 
 from . import (  # noqa: E402
     Globals, Rdiff, Hardlink, selection, rpath,
-    log, robust, metadata, TempFile, hash, longname)
+    log, robust, metadata, TempFile, hash, longname
+)
