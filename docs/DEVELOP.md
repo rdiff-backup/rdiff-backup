@@ -9,6 +9,7 @@ Some notes for developers and other people willing to help development.
     * libacl-devel (for sys/acl.h)
     * rdiff
     * python3-setuptools (for setup.py)
+    * setuptools-scm (also for setup.py, to gather all source files in sdist)
 * unpack the test files previously available from
 https://download-mirror.savannah.gnu.org/releases/rdiff-backup/testfiles.tar.gz and now temporarily available as
 release under https://github.com/ericzolf/rdiff-backup/releases[]:
