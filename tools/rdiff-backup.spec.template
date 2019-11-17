@@ -51,6 +51,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.py
 %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyc
 %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.so
+%{_datadir}/bash-completion/completions/rdiff-backup
 %ghost %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyo
 %doc CHANGELOG COPYING docs/FAQ.md docs/examples.md docs/README.md docs/DEVELOP.md
 
