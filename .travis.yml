@@ -1,5 +1,7 @@
 language: python
 
+dist: bionic
+
 python:
   - 3.7
 
@@ -15,7 +17,7 @@ addons:
       - libacl1-dev
       - rdiff  # needed by tests in tox.ini
 
-install: pip3 install --upgrade pip tox pyxattr pylibacl
+install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
 
 # We utilize Docker images, thus must have a Docker service
 #services:
