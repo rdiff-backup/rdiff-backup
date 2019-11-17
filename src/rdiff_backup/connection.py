@@ -170,7 +170,7 @@ class LowLevelPipeConnection(Connection):
         log.Log.conn("sending", obj, req_num)
         if type(obj) is bytes:
             self._putbuf(obj, req_num)
-        elif isinstance(obj, connection.Connection):
+        elif isinstance(obj, Connection):
             self._putconn(obj, req_num)
         elif isinstance(obj, FilenameMapping.QuotedRPath):
             self._putqrpath(obj, req_num)
@@ -625,10 +625,10 @@ class VirtualFile:
 from . import (  # noqa: E402,F401
     Globals, Time, Rdiff, Hardlink, FilenameMapping, Security,
     Main, rorpiter, selection, increment, statistics, manage,
-    iterfile, rpath, robust, restore, backup, connection,
+    iterfile, rpath, robust, restore, backup,
     TempFile, SetConnections, librsync, log, regress, fs_abilities,
-    eas_acls, user_group, compare)
-
+    eas_acls, user_group, compare
+)
 try:
     from . import win_acls  # noqa: F401
 except ImportError:
