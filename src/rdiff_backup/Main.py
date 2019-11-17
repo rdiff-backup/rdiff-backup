@@ -29,7 +29,8 @@ from .log import Log, LoggerError, ErrorLog
 from . import (
     Globals, Time, SetConnections, robust, rpath,
     manage, backup, connection, restore, FilenameMapping,
-    Security, C, statistics, compare)
+    Security, C, statistics, compare
+)
 
 action = None
 create_full_path = None
