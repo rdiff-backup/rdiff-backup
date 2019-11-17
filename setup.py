@@ -4,15 +4,20 @@ import sys
 import os
 import time
 
+# we need all this to extend the distutils/setuptools commands
 from setuptools import setup, Extension, Command
 import setuptools.command.build_py
 from distutils.debug import DEBUG
+import distutils.command.clean
+from distutils import log
 
 from src.rdiff_backup import Version
 
 version_string = Version.version
 
-# Defaults
+
+# --- handling compilation and linking with librsync ---
+
 lflags_arg = []
 libname = ["rsync"]
 incdir_list = libdir_list = None
@@ -44,6 +49,8 @@ if os.name == "posix" or os.name == "nt":
         if "-lrsync" in LIBS:
             libname = []
 
+
+# --- extend the build command to do templating of files ---
 
 class build_templates(Command):
     description = 'build template files replacing {{ }} placeholders'
@@ -83,7 +90,6 @@ class build_templates(Command):
                 outfp.write(line)
 
     def run(self):
-        self.warn("FILE: %s / CWD: %s" % (__file__, os.getcwd()))
         if DEBUG:
             self.debug_print(self.distribution.dump_option_dicts())
         for template in self.template_files:
@@ -100,6 +106,31 @@ class build_py(setuptools.command.build_py.build_py):
     def run(self):
         self.run_command('build_templates')
         setuptools.command.build_py.build_py.run(self)
+
+
+# --- extend the clean command to remove templated files ---
+
+class clean(distutils.command.clean.clean):
+    """Extend the clean class to also delete templated files"""
+
+    def initialize_options(self):
+        self.template_files = None
+        super().initialize_options()
+
+    def finalize_options(self):
+        """Post-process options."""
+        # take over the option from our build_templates command
+        self.set_undefined_options('build_templates', ('template_files', 'template_files'))
+        super().finalize_options()
+
+    def run(self):
+        if self.all:
+            for template in self.template_files:
+                if os.path.isfile(template[1]):
+                    if not self.dry_run:
+                        os.remove(template[1])
+                    log.info("removing '%s'", template[1])
+        super().run()
 
 
 setup(
@@ -151,5 +182,6 @@ setup(
     cmdclass={
         'build_templates': build_templates,
         'build_py': build_py,
+        'clean': clean,
     },
 )
