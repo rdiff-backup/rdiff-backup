@@ -20,10 +20,15 @@
 
 import re
 import os
-from . import Version, log
+from . import log
 
 # The current version of rdiff-backup
-version = Version.version
+# Get it from package info or fall back to DEV version.
+try:
+    import pkg_resources
+    version = pkg_resources.get_distribution("rdiff-backup").version
+except BaseException:
+    version = "DEV"
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.

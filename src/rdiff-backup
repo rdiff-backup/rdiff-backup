@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # rdiff-backup -- Mirror files while keeping incremental changes
-# Version $version released $date
 # Copyright (C) 2001-2005  Ben Escoto <rdiff-backup@emerose.org>
 #
 # This program is licensed under the GNU General Public License (GPL).
