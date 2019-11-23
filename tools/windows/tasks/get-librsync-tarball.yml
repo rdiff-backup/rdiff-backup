@@ -6,6 +6,8 @@
   win_get_url:
     dest: "{{ librsync_tarfile }}"
     url: "{{ librsync_src_tarfile }}"
+    # the following option exists only with Ansible >= 2.9
+    follow_redirects: "{{ ansible_version.full is version('2.9', '>=') | ternary('all', omit) }}"
 - name: extract librsync sources
   win_unzip:
     dest: "{{ working_dir }}"
