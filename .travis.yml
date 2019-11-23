@@ -3,7 +3,10 @@ language: python
 dist: bionic
 
 python:
+  - 3.5
+  - 3.6
   - 3.7
+  - 3.8
 
 # Don't run tests on WIP branches
 branches:
