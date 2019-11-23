@@ -23,16 +23,16 @@ test-runtime-files:
 
 test-runtime-base: test-runtime-files
 	@echo "=== Base tests ==="
-	${RUN_COMMAND} tox -c tox.ini -e py37
+	${RUN_COMMAND} tox -c tox.ini -e py
 
 test-runtime-root: test-runtime-files
 	@echo "=== Tests that require root permissions ==="
-	${RUN_COMMAND} ${SUDO} tox -c tox_root.ini -e py37  # This must run as root
+	${RUN_COMMAND} ${SUDO} tox -c tox_root.ini -e py  # This must run as root
 	# NOTE! Session will user=root inside Docker)
 
 test-runtime-slow: test-runtime-files
 	@echo "=== Long running performance tests ==="
-	${RUN_COMMAND} tox -c tox_slow.ini -e py37
+	${RUN_COMMAND} tox -c tox_slow.ini -e py
 
 build:
 	# Build rdiff-backup (assumes src/ is in directory 'rdiff-backup' and it's
