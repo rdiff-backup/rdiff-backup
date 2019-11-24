@@ -56,8 +56,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.so
 %{_datadir}/bash-completion/completions/rdiff-backup
 %ghost %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/*.pyo
-%doc CHANGELOG COPYING README.md
-%doc docs/FAQ.md docs/examples.md docs/DEVELOP.md docs/Windows-README.md
+%doc CHANGELOG COPYING README.md docs/*.md
 
 %changelog
 * Sat Nov 23 2019 Eric Lavarde <ewl+rdiffbackup@lavar.de> 1.4.0b0-1
