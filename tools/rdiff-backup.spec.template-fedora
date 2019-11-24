@@ -11,14 +11,18 @@ Name: rdiff-backup
 Release: 1
 Epoch: 0
 
+# This may be different from the version, so check it.
+%global gittag %{version}
+
 URL: https://rdiff-backup.net/
-Source: https://github.com/rdiff-backup/rdiff-backup/archive/r%{version}.tar.gz
+Source: https://github.com/%{name}/%{name}/releases/download/v%{gittag}/%{name}-%{version}.tar.gz
 
 License: GPLv2+
 Group: Applications/Archiving
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires: %{PYTHON_NAME} >= %{PYTHON_VERSION}, %{PYTHON_NAME} < %{NEXT_PYTHON_VERSION}
 BuildRequires: %{PYTHON_NAME}-devel >= 3.2, librsync-devel >= 1.0.0
+BuildRequires: %{PYTHON_NAME}-setuptools_scm
 BuildRequires: gcc
 
 #recommended runtime dependencies
@@ -47,7 +51,6 @@ differences from the previous backup will be transmitted.
 %{PYTHON_NAME} setup.py install --root $RPM_BUILD_ROOT
 # Produce .pyo files for %ghost directive later
 %{PYTHON_NAME} -Oc 'from compileall import *; compile_dir("'$RPM_BUILD_ROOT/%{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup'")'
-rm -rf $RPM_BUILD_ROOT/usr/share/doc/*
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -64,9 +67,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup-*-py?.?.egg-info
 %{_datadir}/bash-completion/completions/rdiff-backup
 %ghost %{_libdir}/python%{PYTHON_VERSION}/site-packages/rdiff_backup/__pycache__/*.pyo
-%doc CHANGELOG COPYING docs/FAQ.md docs/examples.md docs/README.md docs/DEVELOP.md
+%doc CHANGELOG COPYING README.md
+%doc docs/FAQ.md docs/examples.md docs/DEVELOP.md docs/Windows-README.md
 
 %changelog
+* Sat Nov 23 2019 Eric Lavarde <ewl+rdiffbackup@lavar.de> 1.4.0b0-1
+- Beta release of upgrade to Python3.
+
 * Sat Feb 16 2019 Eric Lavarde <ewl+rdiffbackup@lavar.de> 1.3.0-1
 - Update URLs
 
