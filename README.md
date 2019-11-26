@@ -2,95 +2,105 @@
 
 [![Build Status](https://travis-ci.org/rdiff-backup/rdiff-backup.svg?branch=master)](https://travis-ci.org/rdiff-backup/rdiff-backup)
 
+rdiff-backup is a simple backup tool which can be used locally and remotely,
+on Linux and Windows, and even cross-platform between both.
+Users have reported using it successfully on FreeBSD and MacOS X.
+
+Beside it's ease of use, one of the main advantages of rdiff-backup is that it
+does use the same efficient protocol as rsync to transfer and store data.
+Because rdiff-backup only stores the differences from the previous backup to
+the latest one (a so called
+[reverse incremental backup](https://en.wikipedia.org/wiki/Incremental_backup#Reverse_incremental)),
+the latest backup is always a full backup, making it easiest
+and fastest to restore the most recent backups, combining the space
+advantages of incremental backups while keeping the speed advantages of full
+backups (at least for recent ones).
+
+If the optional dependencies pylibacl and pyxattr are installed,
+rdiff-backup will support
+[Access Control Lists](https://en.wikipedia.org/wiki/Access-control_list#Filesystem_ACLs)
+and [Extended Attributes](https://en.wikipedia.org/wiki/Extended_file_attributes)
+provided the file system(s) also support these features.
+
 ## INSTALLATION
 
-Thank you for trying rdiff-backup.  To install, run:
+### From Linux system package
 
-	python3 setup.py install
+Many Linux distributions have packaged rdiff-backup, which can then easiest be installed
+using the system tool e.g. `apt|yum|dnf|zypper install rdiff-backup`.
 
-The build process can be also be run separately:
+> **NOTE:** consider that the package might not install the optional dependencies
+pylibacl and pyxattr, packaged e.g. as python3-pyxattr and py3libacl.
 
-	python3 setup.py build
+### From our own packaging
 
-The default prefix is generally /usr, so files would be put in /usr/bin,
-/usr/share/man/, etc.  An alternate prefix can be specified using the
---prefix=<prefix> option.  For example:
+If you want or need a more recent version than provided by your distribution,
+the [rdiff-project releases its' own packages](https://github.com/rdiff-backup/rdiff-backup/releases), which you can install as follows.
 
-	python3 setup.py install --prefix=/usr/local
+> **IMPORTANT:** the following instructions assume the availability of a
+version of rdiff-backup equal or higher to 1.4.0 (beta) or 2.0.0 (stable).
 
-The default prefix depends on how you (or your distribution) installed and
-configured Python. Suggested reading is "How installation works" from the
-Python docs, which includes commands to determine your default prefix:
-https://docs.python.org/3/install/index.html#how-installation-works
+#### On Linux
 
-The setup script expects to find librsync headers and libraries in the
-default location, usually /usr/include and /usr/lib.  If you want the
-setup script to check different locations, use the --librsync-dir
-switch or the LIBRSYNC_DIR environment variable.  For instance,
+You need to make sure that the following requirements are met:
 
-	python3 setup.py --librsync-dir=/usr/local build
+* Python 3.5 or higher
+* librsync 1.0.0 or higher
+* pylibacl (optional, to support ACLs)
+* pyxattr (optional, to support extended attributes)
+* SSH for remote operations
 
-instructs the setup program to look in /usr/local/include and
-/usr/local/lib for the librsync files.
+Then you can install one of the following packages:
 
-Finally, the --lflags and --libs options, and the LFLAGS and LIBS
-environment variables are also recognized.  Running setup.py with no
-arguments will display some help. Additional help is displayed by the
-command:
+* `rdiff_backup-VERSION-PYVER-PLATFORM.whl` - wheel distribution - this is the recommended installation approach (because you can easily deinstall), either with `sudo pip install rdiff_backup...whl` to install globally for all users, or with `pip install --user rdiff_backup...whl` for only the current user. Advanced and cautious users can of course install within a virtualenv. Deinstallation works similarly with `sudo pip uninstall rdiff-backup` (global) resp. `pip uninstall rdiff-backup` (user).
+* `rdiff-backup-VERSION-PLATFORM.tar.gz` - binary distribution - can be "installed" using `tar xvzf rdiff-backup...tar.gz -C /` but it can't be easily deinstalled, you'll need to do it manually.
 
-	python3 setup.py install --help
+> **NOTE:** the installation approach should make sure that rdiff-backup is in the PATH, which makes remote operations a lot easier.
 
-More information about using setup.py and how rdiff-backup is installed
-is available from the Python guide, Installing Python Modules for System
-Administrators, located at https://docs.python.org/3/install/index.html
+#### On Windows
 
-NB: There is no uninstall command provided by the Python distutils system.
-One strategy is to use the python3 setup.py install --record <file> option
-to save a list of the files installed to <file>.
+Just drop the binary `rdiff-backup-VERSION-PLATFORM.exe`, possibly renamed to `rdiff-backup`,
+somewhere in your PATH and it should work, as it comes with all dependencies included.
 
-To build from source on Windows, check the [Windows tools](tools/windows)
-to build a single executable file which contains Python, librsync, and
-all required modules.
+For remote operations, you will need to have an SSH package installed (also on Linux but it is
+generally more obvious).
 
-### REQUIREMENTS
+> **NOTE:** for now the documentation under Windows is available online from the [documentation folder](docs/).
 
-Remember that you must have Python 3.5 or later and librsync 1.0.0 or
-later installed.  For Python, see https://www.python.org/.  The
-rdiff-backup homepage at https://rdiff-backup.net/ should
-have a recent version of librsync; otherwise see the librsync homepage
-at http://librsync.sourceforge.net/. On Windows, you must have the
-Python for Windows extensions installed if you are building from source.
-The extensions can be downloaded from: https://github.com/mhammond/pywin32
-If you are not building from source on Windows, you do not need Python
-or librsync; they are bundled with the executable.
+### From source code
 
-For remote operation, rdiff-backup should be installed and in the
-PATH on remote system(s) (see man page for more information). On
-Windows, if you are using the provided .exe binary, you must have an
-SSH package installed for remote operation.
+This is an advanced topic, but necessary for platforms like MacOS X and FreeBSD, and
+described in the [developer documentation](docs/DEVELOP.md).
 
-The python modules pylibacl and pyxattr are optional.  If they are
-installed and in the default pythonpath, rdiff-backup will support
-access control lists and user extended attributes, provided the file
-system(s) also support these features.  Pylibacl and pyxattr can be
-downloaded from http://pylibacl.sourceforge.net/ and
-http://pyxattr.sourceforge.net/. Mac OS X users need a different
-pyxattr module, which can be downloaded from
-https://pypi.org/project/xattr/
+## BASIC USAGE
 
-In order to build rdiff-backup, you need python3-devel and librsync-devel, as
-well as a C compiler (gcc).
+Creating your first backup is as easy as calling `rdiff-backup <source-dir> <backup-dir>`
+(possibly as root), e.g. `rdiff-backup -v5 /home/myuser /run/media/myuser/MYUSBDRIVE/homebackup`
+would save your whole home directory (under Linux) to a USB drive (which you should have
+formatted with a POSIX file system, e.g. ext4 or xfs). Without the `-v5` (v for verbosity),
+rdiff-backup isn't very talkative, hence the recommendation.
+
+Subsequent backups can simply be done by calling exactly the same command, again and again.
+Only the differences will be saved to the backup directory.
+
+If you need to restore the latest version of a file you lost, it can be as simple as copying
+it back using normal operating system means (cp or copy, or even pointing your file browser at
+the backup directory). E.g. taking the above example `cp -i /run/media/myuser/MYUSBDRIVE/homebackup/mydir/myfile /home/myuser/mydir/myfile` and the lost file is back!
+
+There are many more ways to use and tweak rdiff-backup, they're documented in the man pages,
+in the [documentation directory](docs/), or on [our website](https://rdiff-backup.net).
 
 ## TROUBLESHOOTING
 
 If you have everything installed properly, and it still doesn't work,
-see the enclosed [FAQ.html](FAQ.html), the [rdiff-backup web page](https://rdiff-backup.net/)
+see the enclosed [FAQ](docs/FAQ.md), the [rdiff-backup web page](https://rdiff-backup.net/)
 and/or the [rdiff-backup-users mailing list](https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users).
 
 We're also happy to help if you create an issue to our
-[GitHub repo](https://github.com/rdiff-backup/rdiff-backup). The most
-important is probably to explain what happened and attach the output of
-rdiff-backup run with the very verbose option `-v9`.
+[GitHub repo](https://github.com/rdiff-backup/rdiff-backup/issues). The most
+important is probably to explain what happened with which version of rdiff-backup,
+with which command parameters on which operating system version, and attach the output
+of rdiff-backup run with the very verbose option `-v9`.
 
 The FAQ in particular is an important reference, especially if you are
 using smbfs/CIFS, Windows, or have compiled by hand on Mac OS X.
