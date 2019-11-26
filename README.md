@@ -47,16 +47,22 @@ You need to make sure that the following requirements are met:
 * Python 3.5 or higher
 * pylibacl (optional, to support ACLs)
 * pyxattr (optional, to support))
+* SSH for remote operations
 
 Then you can install one of the following packages:
 
 * `rdiff_backup-VERSION-PYVER-PLATFORM.whl` - wheel distribution - this is the recommended installation approach (because you can easily deinstall), either with `sudo pip install rdiff_backup...whl` to install globally for all users, or with `pip install --user rdiff_backup...whl` for only the current user. Advanced and cautious users can of course install within a virtualenv. Deinstallation works similarly with `sudo pip uninstall rdiff-backup` (global) resp. `pip uninstall rdiff-backup` (user).
 * `rdiff-backup-VERSION-PLATFORM.tar.gz` - binary distribution - can be "installed" using `tar xvzf rdiff-backup...tar.gz -C /` but it can't be easily deinstalled, you'll need to do it manually.
 
+> **NOTE:** the installation approach should make sure that rdiff-backup is in the PATH, which makes remote operations a lot easier.
+
 #### On Windows
 
 Just drop the binary `rdiff-backup-VERSION-PLATFORM.exe`, possibly renamed to `rdiff-backup`,
 somewhere in your PATH and it should work, as it comes with all dependencies included.
+
+For remote operations, you will need to have an SSH package installed (also on Linux but it is
+generally more obvious).
 
 > **NOTE:** for now the documentation under Windows is available online from the [documentation folder](docs/).
 

@@ -2,6 +2,43 @@
 
 Some notes for developers and other people willing to help development.
 
+## PRE-REQUISITES
+
+Remember that you must have Python 3.5 or later and librsync 1.0.0 or
+later installed.  For Python, see https://www.python.org/.  The
+rdiff-backup homepage at https://rdiff-backup.net/ should
+have a recent version of librsync; otherwise see the librsync homepage
+at http://librsync.sourceforge.net/. On Windows, you must have the
+Python for Windows extensions installed if you are building from source.
+The extensions can be downloaded from: https://github.com/mhammond/pywin32
+If you are not building from source on Windows, you do not need Python
+or librsync; they are bundled with the executable.
+
+The python modules pylibacl and pyxattr are optional.  If they are
+installed and in the default pythonpath, rdiff-backup will support
+access control lists and user extended attributes, provided the file
+system(s) also support these features.  Pylibacl and pyxattr can be
+downloaded from http://pylibacl.sourceforge.net/ and
+http://pyxattr.sourceforge.net/. Mac OS X users need a different
+pyxattr module, which can be downloaded from
+https://pypi.org/project/xattr/
+
+In order to build rdiff-backup, you need python3-devel and librsync-devel, as
+well as a C compiler (gcc).
+
+* Install:
+    * python3-setuptools (for setup.py)
+    * setuptools-scm (also for setup.py, to gather all source files in sdist)
+    * libacl-devel (for sys/acl.h)
+    * tox (for testing)
+    * rdiff (for testing)
+
+ Pylibacl and pyxattr can be
+downloaded from http://pylibacl.sourceforge.net/ and
+http://pyxattr.sourceforge.net/. Mac OS X users need a different
+pyxattr module, which can be downloaded from
+https://pypi.org/project/xattr/
+
 ## INSTALLATION FROM SOURCE CODE
 
 Thank you for trying rdiff-backup.  To install, run:
@@ -52,50 +89,8 @@ To build from source on Windows, check the [Windows tools](tools/windows)
 to build a single executable file which contains Python, librsync, and
 all required modules.
 
- Pylibacl and pyxattr can be
-downloaded from http://pylibacl.sourceforge.net/ and
-http://pyxattr.sourceforge.net/. Mac OS X users need a different
-pyxattr module, which can be downloaded from
-https://pypi.org/project/xattr/
-
-### REQUIREMENTS
-
-Remember that you must have Python 3.5 or later and librsync 1.0.0 or
-later installed.  For Python, see https://www.python.org/.  The
-rdiff-backup homepage at https://rdiff-backup.net/ should
-have a recent version of librsync; otherwise see the librsync homepage
-at http://librsync.sourceforge.net/. On Windows, you must have the
-Python for Windows extensions installed if you are building from source.
-The extensions can be downloaded from: https://github.com/mhammond/pywin32
-If you are not building from source on Windows, you do not need Python
-or librsync; they are bundled with the executable.
-
-For remote operation, rdiff-backup should be installed and in the
-PATH on remote system(s) (see man page for more information). On
-Windows, if you are using the provided .exe binary, you must have an
-SSH package installed for remote operation.
-
-The python modules pylibacl and pyxattr are optional.  If they are
-installed and in the default pythonpath, rdiff-backup will support
-access control lists and user extended attributes, provided the file
-system(s) also support these features.  Pylibacl and pyxattr can be
-downloaded from http://pylibacl.sourceforge.net/ and
-http://pyxattr.sourceforge.net/. Mac OS X users need a different
-pyxattr module, which can be downloaded from
-https://pypi.org/project/xattr/
-
-In order to build rdiff-backup, you need python3-devel and librsync-devel, as
-well as a C compiler (gcc).
-
-
 ## Testing rdiff-backup
 
-* Install:
-    * tox
-    * libacl-devel (for sys/acl.h)
-    * rdiff
-    * python3-setuptools (for setup.py)
-    * setuptools-scm (also for setup.py, to gather all source files in sdist)
 * unpack the test files previously available from
 https://download-mirror.savannah.gnu.org/releases/rdiff-backup/testfiles.tar.gz and now temporarily available as
 release under https://github.com/ericzolf/rdiff-backup/releases[]:
