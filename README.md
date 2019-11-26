@@ -45,8 +45,9 @@ version of rdiff-backup equal or higher to 1.4.0 (beta) or 2.0.0 (stable).
 You need to make sure that the following requirements are met:
 
 * Python 3.5 or higher
+* librsync 1.0.0 or higher
 * pylibacl (optional, to support ACLs)
-* pyxattr (optional, to support))
+* pyxattr (optional, to support extended attributes)
 * SSH for remote operations
 
 Then you can install one of the following packages:
