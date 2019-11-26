@@ -13,7 +13,7 @@ MANIFEST
 
 # setup.py installation files
 src/rdiff_backup.egg-info/
-
+.eggs/
 
 # Windows build file
 rdiff-backup.spec
