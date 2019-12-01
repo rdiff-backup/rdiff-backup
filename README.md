@@ -9,7 +9,7 @@ Users have reported using it successfully on FreeBSD and MacOS X.
 Beside it's ease of use, one of the main advantages of rdiff-backup is that it
 does use the same efficient protocol as rsync to transfer and store data.
 Because rdiff-backup only stores the differences from the previous backup to
-the latest one (a so called
+the next one (a so called
 [reverse incremental backup](https://en.wikipedia.org/wiki/Incremental_backup#Reverse_incremental)),
 the latest backup is always a full backup, making it easiest
 and fastest to restore the most recent backups, combining the space
