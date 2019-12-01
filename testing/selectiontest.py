@@ -41,6 +41,10 @@ class MatchingTest(unittest.TestCase):
         """Test include selection function made from a regular filename"""
         self.assertRaises(FilePrefixError, self.Select.glob_get_filename_sf,
                           b"foo", 1)
+        self.assertRaises(FilePrefixError, self.Select.glob_get_filename_sf,
+                          b"rdiff-backup_testfiles/sel", 1)
+        self.assertRaises(FilePrefixError, self.Select.glob_get_filename_sf,
+                          b"rdiff-backup_testfiles/selection", 1)
 
         sf2 = self.Select.glob_get_sf(
             "rdiff-backup_testfiles/select/usr/local/bin/", 1)
@@ -55,6 +59,10 @@ class MatchingTest(unittest.TestCase):
         """Test exclude selection function made from a regular filename"""
         self.assertRaises(FilePrefixError, self.Select.glob_get_filename_sf,
                           b"foo", 0)
+        self.assertRaises(FilePrefixError, self.Select.glob_get_filename_sf,
+                          b"rdiff-backup_testfiles/sel", 0)
+        self.assertRaises(FilePrefixError, self.Select.glob_get_filename_sf,
+                          b"rdiff-backup_testfiles/selection", 0)
 
         sf2 = self.Select.glob_get_sf(
             "rdiff-backup_testfiles/select/usr/local/bin/", 0)
