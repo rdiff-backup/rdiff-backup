@@ -86,6 +86,7 @@ class Select:
         self.selection_functions = []
         self.rpath = rootrp
         self.prefix = self.rpath.path
+        self.prefixindex = tuple([x for x in self.prefix.split(b"/") if x])
 
     def set_iter(self, sel_func=None):
         """Initialize more variables, get ready to iterate
@@ -184,6 +185,17 @@ class Select:
                     yield rp2
         else:
             assert 0, "Invalid selection result %s" % (str(s), )
+
+    def get_relative_index(self, filename):
+        """return the index of a file relative to the current prefix
+        or fail if they're not relative to each other"""
+
+        fileindex = tuple([x for x in filename.split(b"/") if x])
+
+        # are the first elements of the path the same?
+        if fileindex[:len(self.prefixindex)] != self.prefixindex:
+                    raise FilePrefixError(filename)
+        return fileindex[len(self.prefixindex):]
 
     def listdir(self, dir_rp):
         """List directory rpath with error logging"""
@@ -420,10 +432,7 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
             include = 0
             line = line[2:]
 
-        if not line.startswith(self.prefix):
-            raise FilePrefixError(line)
-        line = line[len(self.prefix):]  # Discard prefix
-        index = tuple([x for x in line.split(b"/") if x])  # remove empties
+        index = self.get_relative_index(line)
         return (index, include)
 
     def filelist_pair_match(self, rp, pair):
@@ -616,10 +625,7 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
         globbing characters are used.
 
         """
-        if not filename.startswith(self.prefix):
-            raise FilePrefixError(filename)
-        index = tuple(
-            [x for x in filename[len(self.prefix):].split(b"/") if x])
+        index = self.get_relative_index(filename)
         return self.glob_get_tuple_sf(index, include)
 
     def glob_get_tuple_sf(self, tuple, include):
