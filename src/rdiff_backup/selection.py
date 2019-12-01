@@ -194,7 +194,7 @@ class Select:
 
         # are the first elements of the path the same?
         if fileindex[:len(self.prefixindex)] != self.prefixindex:
-                    raise FilePrefixError(filename)
+            raise FilePrefixError(filename)
         return fileindex[len(self.prefixindex):]
 
     def listdir(self, dir_rp):
