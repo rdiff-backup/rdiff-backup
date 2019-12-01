@@ -131,11 +131,46 @@ class clean(distutils.command.clean.clean):
 setup(
     name="rdiff-backup",
     use_scm_version=True,
-    description="Local/remote mirroring+incremental backup",
+    description="Backup and Restore utility, easy to use, efficient, locally and remotely usable",
+    long_description="""
+        rdiff-backup is a simple backup tool which can be used locally and remotely,
+        on Linux and Windows, and even cross-platform between both.
+        Users have reported using it successfully on FreeBSD and MacOS X.
+
+        Beside it's ease of use, one of the main advantages of rdiff-backup is that it
+        does use the same efficient protocol as rsync to transfer and store data.
+        Because rdiff-backup only stores the differences from the previous backup to
+        the next one (a so called reverse incremental backup),
+        the latest backup is always a full backup, making it easiest
+        and fastest to restore the most recent backups, combining the space
+        advantages of incremental backups while keeping the speed advantages of full
+        backups (at least for recent ones).
+
+        If the optional dependencies pylibacl and pyxattr are installed,
+        rdiff-backup will support Access Control Lists and Extended Attributes
+        provided the file system(s) also support these features.""",
+    keywords=['backup', 'simple', 'easy', 'remote', 'incremental', 'efficient', 'cross-platform'],
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: End Users/Desktop',
+        'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
+        'Natural Language :: English',
+        'Operating System :: POSIX :: Linux',
+        'Operating System :: POSIX',  # generic because users reported FreeBSD to work
+        'Operating System :: Microsoft :: Windows',
+        'Programming Language :: Python :: 3',
+        'Topic :: System :: Archiving :: Backup',
+    ],
+    license="GPLv2+",
     author="The rdiff-backup project",
     author_email="rdiff-backup-users@nongnu.org",
+    # maintainer and maintainer_email could be used to differentiate the package owner
     url="https://rdiff-backup.net/",
+    download_url="https://github.com/rdiff-backup/rdiff-backup/releases",
     python_requires='~=3.5',
+    platforms=['linux', 'win32'],
     packages=["rdiff_backup"],
     package_dir={"": "src"},  # tell distutils packages are under src
     ext_modules=[
