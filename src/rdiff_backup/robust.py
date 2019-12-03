@@ -21,7 +21,7 @@
 import errno
 import signal
 import zlib
-from . import librsync, C, rpath, Globals, log, connection
+from . import librsync, rpath, Globals, log, connection
 
 
 def check_common_error(error_handler, function, args=[]):
@@ -54,8 +54,7 @@ def check_common_error(error_handler, function, args=[]):
 def catch_error(exc):
     """Return true if exception exc should be caught"""
     for exception_class in (rpath.SkipFileException, rpath.RPathException,
-                            librsync.librsyncError, C.UnknownFileTypeError,
-                            zlib.error):
+                            librsync.librsyncError, zlib.error):
         if isinstance(exc, exception_class):
             return 1
     if (isinstance(exc, EnvironmentError)

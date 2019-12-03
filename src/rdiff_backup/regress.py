@@ -34,7 +34,7 @@ be recovered.
 
 import re
 import os
-from . import Globals, restore, log, rorpiter, TempFile, metadata, rpath, C, \
+from . import Globals, restore, log, rorpiter, TempFile, metadata, rpath, \
     Time, robust, longname
 
 # regress_time should be set to the time we want to regress back to
@@ -72,7 +72,7 @@ def Regress(mirror_rp):
     ITR.Finish()
     if former_current_mirror_rp:
         if Globals.do_fsync:
-            C.sync()  # Sync first, since we are marking dest dir as good now
+            os.sync()  # Sync first, since we are marking dest dir as good now
         former_current_mirror_rp.delete()
 
 

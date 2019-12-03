@@ -40,7 +40,7 @@ import re
 import gzip
 import time
 import errno
-from . import Globals, Time, log, user_group, C
+from . import Globals, Time, log, user_group
 
 try:
     import win32api
@@ -375,7 +375,8 @@ def make_file_dict(filename):
     elif stat.S_ISSOCK(mode):
         type_ = 'sock'
     else:
-        raise C.UnknownFileError(filename)
+        # TODO Should we create a UnknownFileTypeError ??
+        raise IOError(filename)
     data['type'] = type_
     data['size'] = statblock[stat.ST_SIZE]
     data['perms'] = stat.S_IMODE(mode)

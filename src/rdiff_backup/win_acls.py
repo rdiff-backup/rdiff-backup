@@ -19,7 +19,7 @@
 
 import re
 import os
-from . import C, metadata, rorpiter, rpath, log
+from . import metadata, rorpiter, rpath, log
 
 try:
     from win32security import (
@@ -224,7 +224,7 @@ class ACL:
 
     def __bytes__(self):
         return b'# file: %b\n%b\n' % \
-            (C.acl_quote(self.get_indexpath()), self.__acl)
+            (metadata.meta_quote(self.get_indexpath()), self.__acl)
 
     def __str__(self):
         return os.fsdecode(self.__bytes__())
@@ -238,7 +238,7 @@ class ACL:
         if filename == b'.':
             self.index = ()
         else:
-            self.index = tuple(C.acl_unquote(filename).split(b'/'))
+            self.index = tuple(metadata.meta_unquote(filename).split(b'/'))
         self.__acl = lines[1]
 
 
@@ -262,7 +262,7 @@ class WACLExtractor(metadata.FlatExtractor):
         if filename == b'.':
             return ()
         else:
-            return tuple(C.acl_unquote(filename).split(b'/'))
+            return tuple(metadata.meta_unquote(filename).split(b'/'))
 
 
 class WinAccessControlListFile(metadata.FlatFile):

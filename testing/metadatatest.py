@@ -5,7 +5,8 @@ import time
 from commontest import old_test_dir, abs_output_dir, iter_equal
 from rdiff_backup import rpath, Globals, selection
 from rdiff_backup.metadata import MetadataFile, PatchDiffMan, \
-    quote_path, unquote_path, RORP2Record, Record2RORP, RorpExtractor
+    quote_path, unquote_path, RORP2Record, Record2RORP, RorpExtractor, \
+    meta_quote, meta_unquote
 
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 
@@ -247,6 +248,29 @@ class MetadataTest(unittest.TestCase):
         compare(man, inc2, 20000)
         compare(man, inc3, 30000)
         compare(man, inc4, 40000)
+
+    def test_meta_quote(self):
+        """Test meta_quote()"""
+        expected = b'\\001\\002\\003\\004\\005\\006\\007\\010\\011\\012\\013\\014\\015\\016\\017\\020\\021\\022\\023\\024\\025\\026\\027\\030\\031\\032\\033\\034\\035\\036\\037\\040!"#$%&\'()*+,-./0123456789:;<\\075>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\134]^_`abcdefghijklmnopqrstuvwxyz{|}~\\177\\200\\201\\202\\203\\204\\205\\206\\207\\210\\211\\212\\213\\214\\215\\216\\217\\220\\221\\222\\223\\224\\225\\226\\227\\230\\231\\232\\233\\234\\235\\236\\237\\240\\241\\242\\243\\244\\245\\246\\247\\250\\251\\252\\253\\254\\255\\256\\257\\260\\261\\262\\263\\264\\265\\266\\267\\270\\271\\272\\273\\274\\275\\276\\277\\300\\301\\302\\303\\304\\305\\306\\307\\310\\311\\312\\313\\314\\315\\316\\317\\320\\321\\322\\323\\324\\325\\326\\327\\330\\331\\332\\333\\334\\335\\336\\337\\340\\341\\342\\343\\344\\345\\346\\347\\350\\351\\352\\353\\354\\355\\356\\357\\360\\361\\362\\363\\364\\365\\366\\367\\370\\371\\372\\373\\374\\375\\376\\377'
+        assert expected == meta_quote(bytes(range(1, 256)))
+
+    def test_meta_quoting(self):
+        """Test the meta_quote and meta_unquote functions"""
+        assert meta_quote(b'foo') == b'foo', meta_quote(b'foo')
+        assert meta_quote(b'\n') == b'\\012', meta_quote(b'\n')
+        assert meta_unquote(b'\\012') == b'\n'
+        s = b'\\\n\t\145\n\01=='
+        assert meta_unquote(meta_quote(s)) == s
+
+    def test_meta_quoting2(self):
+        """This string used to segfault the quoting code, try now"""
+        s = b'\xd8\xab\xb1Wb\xae\xc5]\x8a\xbb\x15v*\xf4\x0f!\xf9>\xe2Y\x86\xbb\xab\xdbp\xb0\x84\x13k\x1d\xc2\xf1\xf5e\xa5U\x82\x9aUV\xa0\xf4\xdf4\xba\xfdX\x03\x82\x07s\xce\x9e\x8b\xb34\x04\x9f\x17 \xf4\x8f\xa6\xfa\x97\xab\xd8\xac\xda\x85\xdcKvC\xfa#\x94\x92\x9e\xc9\xb7\xc3_\x0f\x84g\x9aB\x11<=^\xdbM\x13\x96c\x8b\xa7|*"\\\'^$@#!(){}?+ ~` '
+        quoted = meta_quote(s)
+        assert meta_unquote(quoted) == s
+
+    def test_meta_quoting_equals(self):
+        """Make sure the equals character is quoted"""
+        assert meta_quote(b'=') != b'='
 
 
 if __name__ == "__main__":

@@ -29,7 +29,7 @@ from .log import Log, LoggerError, ErrorLog
 from . import (
     Globals, Time, SetConnections, robust, rpath,
     manage, backup, connection, restore, FilenameMapping,
-    Security, C, statistics, compare
+    Security, statistics, compare
 )
 
 action = None
@@ -650,7 +650,7 @@ def backup_remove_curmirror_local():
     else:
         older_inc = curmir_incs[1]
     if Globals.do_fsync:
-        C.sync()  # Make sure everything is written before curmirror is removed
+        os.sync()  # Make sure everything is written before curmirror is removed
     older_inc.delete()
 
 

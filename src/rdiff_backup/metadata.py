@@ -99,6 +99,36 @@ def string2carbonfile(data):
             retval['createDate'] = int(value)
     return retval
 
+# Table mapping for meta_quote and meta_unquote
+_safe = b'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<>?@[]^_`{|}~'
+_meta_quote_map = {}
+_meta_unquote_map = {}
+for i in range(1, 256):
+    c = bytes([i])
+    if c in _safe:
+        _meta_quote_map[i] = c
+    else:
+        _meta_quote_map[i] = '\\{:03o}'.format(i).encode('ascii')
+        _meta_unquote_map['{:03o}'.format(i).encode('ascii')] = c
+
+
+def meta_quote(s):
+    """Quote filename for ACL usages."""
+    return b''.join(map(_meta_quote_map.__getitem__, s))
+
+
+def meta_unquote(s):
+    """Unquote filename from ACL format."""
+    try:
+        bits = s.split(b'\\')
+        res = bits[0]
+        for item in bits[1:]:
+            res += _meta_unquote_map[item[:3]]
+            res += item[3:]
+        return res
+    except KeyError:
+        raise ValueError('invalid quoted string: %r' % (s,))
+
 
 def RORP2Record(rorpath):
     """From RORPath, return text record of file's metadata"""
@@ -118,12 +148,12 @@ def RORP2Record(rorpath):
                 rf = "None"
             else:
                 rf = binascii.hexlify(rorpath.get_resource_fork())
-            str_list.append(b"  ResourceFork %b\n" % (rf, ))
+            str_list.append(b"  ResourceFork %b\n" % (rf,))
 
         # If there is Carbon data, save it.
         if rorpath.has_carbonfile():
             cfile = carbonfile2string(rorpath.get_carbonfile())
-            str_list.append(b"  CarbonFile %b\n" % (cfile, ))
+            str_list.append(b"  CarbonFile %b\n" % (cfile,))
 
         # If file is hardlinked, add that information
         if Globals.preserve_hardlinks != 0:
@@ -169,10 +199,10 @@ def RORP2Record(rorpath):
     # Add long filename information
     if rorpath.has_alt_mirror_name():
         str_list.append(
-            b"  AlternateMirrorName %b\n" % (rorpath.get_alt_mirror_name(), ))
+            b"  AlternateMirrorName %b\n" % (rorpath.get_alt_mirror_name(),))
     elif rorpath.has_alt_inc_name():
         str_list.append(
-            b"  AlternateIncrementName %b\n" % (rorpath.get_alt_inc_name(), ))
+            b"  AlternateIncrementName %b\n" % (rorpath.get_alt_inc_name(),))
 
     return b"".join(str_list)
 
@@ -390,7 +420,7 @@ class FlatExtractor:
             try:
                 obj = self.record_to_object(self.buf[:next_pos])
             except (ParsingError, ValueError) as e:
-                log.Log("Error parsing metadata file: %s" % (e, ), 2)
+                log.Log("Error parsing metadata file: %s" % (e,), 2)
             else:
                 if obj.index[:len(index)] != index:
                     break
@@ -647,7 +677,7 @@ class Manager:
         triple = map(os.fsencode, (prefix, timestr, typestr))
         filename = b'.'.join(triple)
         rp = Globals.rbdir.append(filename)
-        assert not rp.lstat(), "File %s already exists!" % (rp.path, )
+        assert not rp.lstat(), "File %s already exists!" % (rp.path,)
         assert rp.isincfile()
         return flatfileclass(rp, 'w', callback=self.add_incrp)
 
@@ -784,7 +814,7 @@ class PatchDiffMan(Manager):
         for i in range(len(inclist) - 1, -1, -1):
             if inclist[i].getinctype() == b'snapshot':
                 return inclist[i:]
-        assert 0, "Inclist %s contains no snapshots" % (inclist, )
+        assert 0, "Inclist %s contains no snapshots" % (inclist,)
 
     def iterate_patched_meta(self, meta_iter_list):
         """Return an iter of metadata rorps by combining the given iters

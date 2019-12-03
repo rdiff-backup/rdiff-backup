@@ -34,7 +34,7 @@ try:
     import posix1e
 except ImportError:
     pass
-from . import Globals, connection, metadata, rorpiter, log, C, rpath, user_group  # noqa: F401
+from . import Globals, connection, metadata, rorpiter, log, rpath, user_group  # noqa: F401
 
 # When an ACL gets dropped, put name in dropped_acl_names.  This is
 # only used so that only the first dropped ACL for any given name
@@ -172,14 +172,14 @@ def ea_compare_rps(rp1, rp2):
 
 def EA2Record(ea):
     """Convert ExtendedAttributes object to text record"""
-    str_list = [b'# file: %s' % C.acl_quote(ea.get_indexpath())]
+    str_list = [b'# file: %s' % metadata.meta_quote(ea.get_indexpath())]
 
     for (name, val) in ea.attr_dict.items():
         if not val:
             str_list.append(name)
         else:
             encoded_val = base64.b64encode(val)
-            str_list.append(b'%s=0s%s' % (C.acl_quote(name), encoded_val))
+            str_list.append(b'%s=0s%s' % (metadata.meta_quote(name), encoded_val))
     return b'\n'.join(str_list) + b'\n'
 
 
@@ -193,7 +193,7 @@ def Record2EA(record):
     if filename == b'.':
         index = ()
     else:
-        unquoted_filename = C.acl_unquote(filename)
+        unquoted_filename = metadata.meta_unquote(filename)
         index = tuple(unquoted_filename.split(b'/'))
     ea = ExtendedAttributes(index)
 
@@ -224,7 +224,7 @@ class EAExtractor(metadata.FlatExtractor):
         if filename == b'.':
             return ()
         else:
-            return tuple(C.acl_unquote(filename).split(b'/'))
+            return tuple(metadata.meta_unquote(filename).split(b'/'))
 
 
 class ExtendedAttributesFile(metadata.FlatFile):
@@ -626,7 +626,7 @@ def acl_compare_rps(rp1, rp2):
 
 def ACL2Record(acl):
     """Convert an AccessControlLists object into a text record"""
-    return b'# file: %b\n%b\n' % (C.acl_quote(acl.get_indexpath()), os.fsencode(str(acl)))
+    return b'# file: %b\n%b\n' % (metadata.meta_quote(acl.get_indexpath()), os.fsencode(str(acl)))
 
 
 def Record2ACL(record):
@@ -639,7 +639,7 @@ def Record2ACL(record):
     if filename == b'.':
         index = ()
     else:
-        unquoted_filename = C.acl_unquote(filename)
+        unquoted_filename = metadata.meta_unquote(filename)
         index = tuple(unquoted_filename.split(b'/'))
     return AccessControlLists(index, os.fsdecode(record[newline_pos:]))
 
