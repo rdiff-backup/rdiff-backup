@@ -34,12 +34,13 @@
       state: present
     # once successful up until here, restart the playbook
   - name: install necessary python libraries
-    win_command: pip.exe install py2exe pywin32 pyinstaller
+    win_command: pip.exe install py2exe pywin32 pyinstaller wheel
     register: pipcmd
-    changed_when:
-      - "'Requirement already satisfied: py2exe' not in pipcmd.stdout"
-      - "'Requirement already satisfied: pywin32' not in pipcmd.stdout"
-      - "'Requirement already satisfied: pyinstaller' not in pipcmd.stdout"
+    changed_when: >
+      'Successfully installed py2exe' in pipcmd.stdout
+      or 'Successfully installed pywin32' in pipcmd.stdout
+      or 'Successfully installed pyinstaller' in pipcmd.stdout
+      or 'Successfully installed wheel' in pipcmd.stdout
     # pylibacl and pyxattr aren't supported under Windows
   - name: validate that python seems to work as it should
     win_shell: "python.exe -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'"
