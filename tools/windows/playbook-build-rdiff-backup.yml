@@ -15,34 +15,43 @@
         "{{ rdiffbackup_dir }}"
       args:
         creates: "{{ rdiffbackup_dir }}"
-    - name: build rdiff-backup
+    - name: build rdiff-backup and package it as wheel
       win_command: >
-        python.exe setup.py build --librsync-dir="{{ librsync_install_dir }}"
+        python.exe setup.py bdist_wheel --librsync-dir="{{ librsync_install_dir }}"
         --lflags="/NODEFAULTLIB:libcmt.lib msvcrt.lib"
       args:
         chdir: "{{ rdiffbackup_dir }}"
-
-# py2exe doesn't currently work with Python 3.7
-#    - name: compile rdiff-backup into an executable using py2exe
-#      win_command: python.exe setup.py py2exe --single-file
-#      args:
-#        chdir: "{{ rdiffbackup_dir }}"
-
+      register: bdist_wheel
+    - name: find out the name of the wheel package just created
+      set_fact:
+        wheel_pkg: "{{ bdist_wheel.stdout | regex_search('rdiff_backup-[^ ]*.whl') }}"
     - name: compile rdiff-backup into an executable using pyinstaller
       win_command: >
         pyinstaller --onefile
         --paths=build/lib.win-amd64-3.7 --paths={{ librsync_install_dir }}/lib
         --paths={{ librsync_install_dir }}/bin
         --console build/scripts-3.7/rdiff-backup
+        --add-data src/rdiff_backup.egg-info/PKG-INFO;rdiff_backup.egg-info
       environment:
         LIBRSYNC_DIR: "{{ librsync_install_dir }}"
       args:
         chdir: "{{ rdiffbackup_dir }}"
-    - name: fetch the compiled rdiff-backup.exe file into the local dist directory
+    - name: generate a versioned and specific name for the compiled executable
+      set_fact:
+        bin_exe: "{{ wheel_pkg | regex_replace('^rdiff_backup', 'rdiff-backup') | regex_replace('.whl$', '.exe') }}"
+    - name: rename the compiled executable
+      win_shell: >
+        Move-Item -Force
+        -Path {{ rdiffbackup_dir }}/dist/rdiff-backup.exe 
+        -Destination {{ rdiffbackup_dir }}/dist/{{ bin_exe }}
+    - name: fetch generated binary files into the local dist directory
       fetch:
-        src: "{{ rdiffbackup_dir }}/dist/rdiff-backup.exe"
+        src: "{{ rdiffbackup_dir }}/dist/{{ item }}"
         dest: "{{ rdiffbackup_local_dist_dir }}/"
         flat: true  # copy without the directory
+      loop:
+        - "{{ bin_exe }}"
+        - "{{ wheel_pkg }}"
 
     # the following lines are not absolutely necessary but help debugging rdiff-backup
 
