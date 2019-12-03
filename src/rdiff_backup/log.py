@@ -132,7 +132,7 @@ class Logger:
         if verbosity > self.verbosity and verbosity > self.term_verbosity:
             return
 
-        if not (type(message) is bytes or type(message) is str):
+        if not isinstance(message, (bytes, str)):
             assert isinstance(message, types.FunctionType)
             message = message()
 
@@ -281,14 +281,16 @@ class ErrorLog:
         if not Globals.isbackup_writer:
             return Globals.backup_writer.log.ErrorLog.write(
                 error_type, rp, exc)
-        s = str(cls.get_log_string(error_type, rp, exc))
-        Log(s, 2)
+        logstr = cls.get_log_string(error_type, rp, exc)
+        Log(logstr, 2)
+        if isinstance(logstr, bytes):
+            logstr = logstr.decode('utf-8')
         if Globals.null_separator:
-            s += "\0"
+            logstr += "\0"
         else:
-            s = re.sub("\n", " ", s)
-            s += "\n"
-        cls._log_fileobj.write(s)
+            logstr = re.sub("\n", " ", logstr)
+            logstr += "\n"
+        cls._log_fileobj.write(logstr)
 
     @classmethod
     def get_indexpath(cls, obj):
@@ -306,7 +308,7 @@ class ErrorLog:
         """Call cls.write(...) if error log open, only log otherwise"""
         if not Globals.isbackup_writer and Globals.backup_writer:
             return Globals.backup_writer.log.ErrorLog.write_if_open(
-                error_type, rp, str(exc))  # convert exc bc of exc picking prob
+                error_type, rp, exc)
         if cls.isopen():
             cls.write(error_type, rp, exc)
         else:
@@ -317,8 +319,7 @@ class ErrorLog:
         """Return log string to put in error log"""
         assert (error_type == "ListError" or error_type == "UpdateError"
                 or error_type == "SpecialFileError"), "Unknown type " + error_type
-        tmpstr = "%s %s %s" % (error_type, cls.get_indexpath(rp), str(exc))
-        return tmpstr.encode('utf-8')
+        return "%s: '%s' %s" % (error_type, cls.get_indexpath(rp), exc)
 
     @classmethod
     def close(cls):
