@@ -3,8 +3,10 @@
 # This script will create the testing/restoretest3 directory as it
 # needs to be for one of the tests in restoretest.py to work.
 
-rm -rvf ${PWD}_testfiles/restoretest3
+OLDTESTDIR=$(dirname $0)/../../rdiff-backup_testfiles
+rm -rvf ${OLDTESTDIR}/restoretest3
 for i in 1 2 3 4
 do
-	rdiff-backup --current-time $((i * 10000)) ${PWD}_testfiles/increment${i} ${PWD}_testfiles/restoretest3
+	rdiff-backup --current-time $((i * 10000)) \
+		${OLDTESTDIR}/increment${i} ${OLDTESTDIR}/restoretest3
 done
