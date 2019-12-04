@@ -4,10 +4,10 @@ install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
 
 matrix:
   include:
-   - os: linux
-     dist: bionic
-     python: 3.5 # TODO also indicate 3.6, 3.7, 3.8
-   - windows
+#   - os: linux
+#     dist: bionic
+#     python: 3.5 # TODO also indicate 3.6, 3.7, 3.8
+   - os: windows
      language: sh
      before_install:
        - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
