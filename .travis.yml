@@ -1,22 +1,35 @@
 language: python
 
-install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
+install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm PyInstaller
+
+os: linux
+dist: bionic
+python: 3.5 # TODO also indicate 3.6, 3.7, 3.8
+before_install:
+  - export MAKE=make
 
 matrix:
+  exclude:
+   - os: linux
   include:
-#   - os: linux
-#     dist: bionic
-#     python: 3.5 # TODO also indicate 3.6, 3.7, 3.8
    - os: windows
      language: sh
      before_install:
+       - choco install cygwin
+       - C:\\tools\\cygwin\\cygwinsetup.exe -q -P make
        - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
+       - ls /C # FIXME
+       - ls /C/tools/cygwin # FIXME
+       - ls /C/tools/cygwin/bin # FIXME
+       - export MAKE=/C/tools/cygwin/bin/make.exe
        - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
-       - pyenv install -q 3.5
+       - pyenv install --list
+       - pyenv install -q 3.5.4
+       - pyenv global 3.5.4
        - pyenv rehash
-       - pyenv local 3.5
+       - pyenv local 3.5.4
        - python --version
-     install: pip install --upgrade pip tox pyxattr pylibacl setuptools-scm
+     install: pip install --upgrade tox pywin32 setuptools-scm PyInstaller
 
 
 # Don't run tests on WIP branches
@@ -54,7 +67,7 @@ script:
   # Especially the env is set _before_ the virtualenv is joined so that
   # the next line doesn't work in the "env" section
   - if [[ $SUDO == root ]]; then export SUDO="sudo -E env PATH=$PATH"; fi
-  - make $MAKE_STEP
+  - $MAKE $MAKE_STEP
 
 # Travis-CI cannot cache the plain testfiles due to permission errors, thus we
 # have the .tar.gz stored in the cache dir to avoid too many re-downloads.
