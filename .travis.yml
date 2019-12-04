@@ -1,12 +1,23 @@
 language: python
 
-dist: bionic
+install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
 
-python:
-  - 3.5
-  - 3.6
-  - 3.7
-  - 3.8
+matrix:
+  include:
+   - os: linux
+     dist: bionic
+     python: 3.5 # TODO also indicate 3.6, 3.7, 3.8
+   - windows
+     language: sh
+     before_install:
+       - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
+       - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
+       - pyenv install -q 3.5
+       - pyenv rehash
+       - pyenv local 3.5
+       - python --version
+     install: pip install --upgrade pip tox pyxattr pylibacl setuptools-scm
+
 
 # Don't run tests on WIP branches
 branches:
@@ -20,7 +31,6 @@ addons:
       - libacl1-dev
       - rdiff  # needed by tests in tox.ini
 
-install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
 
 # We utilize Docker images, thus must have a Docker service
 #services:
