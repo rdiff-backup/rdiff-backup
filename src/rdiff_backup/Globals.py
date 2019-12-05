@@ -195,7 +195,7 @@ compression = 1
 # to .snapshots and .diffs).  The second below will be the
 # compiled version of the first.
 no_compression_regexp_string = (
-    b"(?i).*\\.(gz|z|bz|bz2|tgz|zip|rpm|deb|"
+    b"(?i).*\\.(gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
     b"jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|avi|wmv|mpeg|mpg|rm|mov|flac|shn|pgp|"
     b"gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf)$")
 no_compression_regexp = None
