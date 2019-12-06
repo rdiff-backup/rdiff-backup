@@ -390,7 +390,12 @@ _librsync_new_patchmaker(PyObject* self, PyObject* args)
 
   pm->basis_file = python_file;
   cfile = fdopen(python_fd, "rb"); /* same mode as in the Python code */
-  if (cfile == NULL) return NULL;
+  if (cfile == NULL) {
+      char error_string[200];
+      snprintf(error_string, 200, "fdopen(): %s (%d)", strerror(errno), errno);
+      PyErr_SetString(librsyncError, error_string);
+      return NULL;
+  }
   pm->patch_job = rs_patch_begin(rs_file_copy_cb, cfile);
 
   return (PyObject*)pm;
