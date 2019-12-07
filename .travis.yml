@@ -15,13 +15,9 @@ matrix:
    - os: windows
      language: sh
      before_install:
-       - choco install cygwin
-       - C:\\tools\\cygwin\\cygwinsetup.exe -q -P make
+       - choco install make
+       - export MAKE=make
        - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
-       - ls /C # FIXME
-       - ls /C/tools/cygwin # FIXME
-       - ls /C/tools/cygwin/bin # FIXME
-       - export MAKE=/C/tools/cygwin/bin/make.exe
        - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
        - pyenv install --list
        - pyenv install -q 3.5.4
@@ -29,7 +25,9 @@ matrix:
        - pyenv rehash
        - pyenv local 3.5.4
        - python --version
-     install: pip install --upgrade tox pywin32 setuptools-scm PyInstaller
+     install:
+       - pip install --upgrade tox pywin32 setuptools-scm PyInstaller
+       - pyenv rehash
 
 
 # Don't run tests on WIP branches
