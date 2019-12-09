@@ -1,14 +1,15 @@
 language: python
 
-install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm PyInstaller
-
 os: linux
 dist: bionic
+
+install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm PyInstaller
+
 python:
- - 3.5 
- - 3.6
- - 3.7
- - 3.8
+  - 3.5
+  - 3.6
+  - 3.7
+  - 3.8
 
 matrix:
   include:
@@ -18,11 +19,12 @@ matrix:
        - choco install make
        - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
        - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
+       - export pyver=3.7.5
        - pyenv install --list
-       - pyenv install -q 3.5.4
-       - pyenv global 3.5.4
+       - pyenv install -q $pyver || pyenv rehash
+       - pyenv global $pyver
        - pyenv rehash
-       - pyenv local 3.5.4
+       - pyenv local $pyver
        - python --version
      install:
        - pip install --upgrade tox pywin32 setuptools-scm PyInstaller
@@ -35,7 +37,7 @@ matrix:
        - cmake --install . --config Release
        - popd
      script:
-       - make build
+       - python setup.py build
 
 # Don't run tests on WIP branches
 branches:
