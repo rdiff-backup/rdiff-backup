@@ -4,19 +4,18 @@ install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm PyInstal
 
 os: linux
 dist: bionic
-python: 3.5 # TODO also indicate 3.6, 3.7, 3.8
-before_install:
-  - export MAKE=make
+python:
+ - 3.5 
+ - 3.6
+ - 3.7
+ - 3.8
 
 matrix:
-  exclude:
-   - os: linux
   include:
    - os: windows
      language: sh
      before_install:
        - choco install make
-       - export MAKE=make
        - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
        - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
        - pyenv install --list
@@ -35,6 +34,8 @@ matrix:
        - cmake --build . --config Release
        - cmake --install . --config Release
        - popd
+     script:
+       - make build
 
 # Don't run tests on WIP branches
 branches:
@@ -71,7 +72,7 @@ script:
   # Especially the env is set _before_ the virtualenv is joined so that
   # the next line doesn't work in the "env" section
   - if [[ $SUDO == root ]]; then export SUDO="sudo -E env PATH=$PATH"; fi
-  - $MAKE $MAKE_STEP
+  - make $MAKE_STEP
 
 # Travis-CI cannot cache the plain testfiles due to permission errors, thus we
 # have the .tar.gz stored in the cache dir to avoid too many re-downloads.

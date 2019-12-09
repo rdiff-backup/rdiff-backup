@@ -49,6 +49,7 @@ if os.name == "nt":
     # We rely on statically linked librsync
     librsync_macros = [("rsync_EXPORTS", None)]
 
+
 # --- extend the build command to do templating of files ---
 
 class build_templates(Command):
