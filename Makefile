@@ -2,7 +2,7 @@
 
 # Currently all steps are run isolated inside a Docker image, but this could
 # be extended to have more options.
-RUN_COMMAND ?= docker run -i -v ${PWD}/..:/build/ -w /build/$(shell basename `pwd`) rdiff-backup-dev:debian-sid
+RUN_COMMAND ?= docker run --rm -i -v ${PWD}/..:/build/ -w /build/$(shell basename `pwd`) rdiff-backup-dev:debian-sid
 
 # Define SUDO=sudo if you don't want to run the whole thing as root
 # we set SUDO="sudo -E env PATH=$PATH" if we want to keep the whole environment
