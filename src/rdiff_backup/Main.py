@@ -25,6 +25,7 @@ import io
 import tempfile
 import time
 import errno
+import platform
 from .log import Log, LoggerError, ErrorLog
 from . import (
     Globals, Time, SetConnections, robust, rpath,
@@ -250,6 +251,11 @@ def parse_cmdlineoptions(arglist):  # noqa: C901
         else:
             Log.FatalError("Unknown option %s" % opt)
     Log("Using rdiff-backup version %s" % (Globals.version), 4)
+    Log("\twith %s %s version %s" % (
+        sys.implementation.name,
+        sys.executable,
+        platform.python_version()), 4)
+    Log("\ton %s, fs encoding %s" % (platform.platform(), sys.getfilesystemencoding()), 4)
 
 
 def check_action():
