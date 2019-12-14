@@ -22,3 +22,6 @@ rdiff-backup.spec
 /.project
 /.pydevproject
 /.externalToolBuilders/
+
+# Jekyll static sites
+_site/
