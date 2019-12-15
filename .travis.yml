@@ -3,7 +3,7 @@ language: python
 os: linux
 dist: bionic
 
-install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm PyInstaller
+install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
 
 python:
   - 3.5
