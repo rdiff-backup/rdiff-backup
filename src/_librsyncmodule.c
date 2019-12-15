@@ -364,6 +364,7 @@ typedef struct {
   PyObject_HEAD
   PyObject *x_attr;
   rs_job_t *patch_job;
+  FILE *patch_file;
   PyObject *basis_file;
 } _librsync_PatchMakerObject;
 
@@ -373,7 +374,6 @@ _librsync_new_patchmaker(PyObject* self, PyObject* args)
 {
   _librsync_PatchMakerObject* pm;
   PyObject *python_file;
-  FILE *cfile;
 
   if (!PyArg_ParseTuple(args, "O:new_patchmaker", &python_file))
 	return NULL;
@@ -389,14 +389,21 @@ _librsync_new_patchmaker(PyObject* self, PyObject* args)
   pm->x_attr = NULL;
 
   pm->basis_file = python_file;
-  cfile = fdopen(python_fd, "rb"); /* same mode as in the Python code */
-  if (cfile == NULL) {
+  int my_fd = dup(python_fd);
+  if (my_fd < 0) {
+      char error_string[200];
+      snprintf(error_string, 200, "fdup(): %s (%d)", strerror(errno), errno);
+      PyErr_SetString(librsyncError, error_string);
+      return NULL;
+  }
+  pm->patch_file = fdopen(my_fd, "rb"); /* same mode as in the Python code */
+  if (pm->patch_file == NULL) {
       char error_string[200];
       snprintf(error_string, 200, "fdopen(): %s (%d)", strerror(errno), errno);
       PyErr_SetString(librsyncError, error_string);
       return NULL;
   }
-  pm->patch_job = rs_patch_begin(rs_file_copy_cb, cfile);
+  pm->patch_job = rs_patch_begin(rs_file_copy_cb, pm->patch_file);
 
   return (PyObject*)pm;
 }
@@ -407,6 +414,7 @@ _librsync_patchmaker_dealloc(PyObject* self)
   _librsync_PatchMakerObject *pm = (_librsync_PatchMakerObject *)self;
   Py_DECREF(pm->basis_file);
   rs_job_free(pm->patch_job);
+  fclose(pm->patch_file);
   PyObject_Del(self);
 }
 
