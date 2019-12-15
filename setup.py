@@ -15,6 +15,7 @@ from distutils import log
 
 lflags_arg = []
 libname = ["rsync"]
+librsync_macros = []
 incdir_list = libdir_list = None
 
 if os.name == "posix" or os.name == "nt":
@@ -43,6 +44,10 @@ if os.name == "posix" or os.name == "nt":
             libdir_list = [os.path.join(LIBRSYNC_DIR, "lib")]
         if "-lrsync" in LIBS:
             libname = []
+
+if os.name == "nt":
+    # We rely on statically linked librsync
+    librsync_macros = [("rsync_EXPORTS", None)]
 
 
 # --- extend the build command to do templating of files ---
@@ -178,6 +183,7 @@ setup(
         Extension(
             "rdiff_backup._librsync",
             ["src/_librsyncmodule.c"],
+            define_macros=librsync_macros,
             include_dirs=incdir_list,
             library_dirs=libdir_list,
             libraries=libname,
