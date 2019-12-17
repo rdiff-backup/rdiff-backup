@@ -11,12 +11,22 @@ python:
   - 3.7
   - 3.8
 
+deploy:
+  provider: releases
+  file_glob: true
+  file: dist/*
+  skip_cleanup: true
+  draft: true
+  on:
+    all_branches: true
+
 matrix:
+  exclude:
+   - os: linux
   include:
    - os: windows
      language: sh
      before_install:
-       - choco install make
        - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
        - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
        - export pyver=3.7.5
@@ -37,7 +47,16 @@ matrix:
        - cmake --install . --config Release
        - popd
      script:
-       - python setup.py build
+       - python setup.py bdist
+       - PyInstaller --onefile --distpath dist/win32 --paths=build/lib.win32-* --add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info --console build/scripts-*/rdiff-backup
+     deploy:
+       provider: releases
+       file_glob: true
+       file: dist/win32/*
+       skip_cleanup: true
+       draft: true
+       on:
+          all_branches: true
 
 # Don't run tests on WIP branches
 branches:
