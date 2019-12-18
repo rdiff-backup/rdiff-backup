@@ -1,12 +1,43 @@
 language: python
 
+os: linux
 dist: bionic
+
+install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
 
 python:
   - 3.5
   - 3.6
   - 3.7
   - 3.8
+
+matrix:
+  include:
+   - os: windows
+     language: sh
+     before_install:
+       - choco install make
+       - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
+       - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
+       - export pyver=3.7.5
+       - pyenv install --list
+       - pyenv install -q $pyver || pyenv rehash
+       - pyenv global $pyver
+       - pyenv rehash
+       - pyenv local $pyver
+       - python --version
+     install:
+       - pip install --upgrade tox pywin32 setuptools-scm PyInstaller
+       - pyenv rehash
+       - git clone -b v2.2.1 https://github.com/librsync/librsync.git $HOME/.librsync
+       - export LIBRSYNC_DIR=$HOME/librsync
+       - pushd $HOME/.librsync
+       - cmake -DCMAKE_INSTALL_PREFIX=$LIBRSYNC_DIR -A Win32 -DBUILD_SHARED_LIBS=OFF .
+       - cmake --build . --config Release
+       - cmake --install . --config Release
+       - popd
+     script:
+       - python setup.py build
 
 # Don't run tests on WIP branches
 branches:
@@ -20,7 +51,6 @@ addons:
       - libacl1-dev
       - rdiff  # needed by tests in tox.ini
 
-install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
 
 # We utilize Docker images, thus must have a Docker service
 #services:
