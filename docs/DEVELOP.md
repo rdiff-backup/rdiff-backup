@@ -83,7 +83,7 @@ as it can be installed and deinstalled.
 
 > **NOTE:** if you plan to use `./setup.py bdist_rpm` to create an RPM, you would need rpm-build but be aware that it will currently fail due to a [known bug in setuptools with compressed man pages](https://github.com/pypa/setuptools/issues/1277).
 
-To build from source on Windows, check the [Windows tools](tools/windows)
+To build from source on Windows, check the [Windows tools](../tools/windows)
 to build a single executable file which contains Python, librsync, and
 all required modules.
 
