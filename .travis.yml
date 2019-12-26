@@ -18,7 +18,7 @@ deploy:
   skip_cleanup: true
   draft: true
   api_key:
-    secure: tHUhJ+e55wS+eedqv/fECriaa0tgdBAz51tMHZIV2ng2Mo59KEgoauMvGryCRG1GU2X408wL0EmVVFQgq62z/cPMCB9rJw87kldohNGXps5T0EvmH+8qUfWo9eqpvM3Z7rDXsLcm5KkrJ72IcMt+lV+1y0cTCIRNY16zWZ9/WhkSZcRcTxc2ZiReErZYJkZxfAsOgJVmvxA6h7CTHvXb6JOTqdgvGCJACN3iD4HhlMJeCH5ulzP7rCpraA1qA8OcPNF2v41xByAdveDsl7d51fUmM2z7GZDbQm/3aDITW+zhyBhLcJKlchLyIXvBk6TiBrNCjC0yG/8weAeTV568zYSNobSZisYVkU0OwEAjH0z81saC3T9SE95pnKOYjcaciWptdX7U6KyuAx40VVBO7bBwg7ollcrf9N4ZvnF+usKkFa1m2zSCqSRlGTUyV6yHgvlUtyfWKE6my8PYeba69zjy5oRnW8NQkMt84yVIdnBzghKJs95CQ0/08JF7c6tP4KAFQFTtMbFkw85d0ZfnmamzADNSPCcLvxSO+e0WgzcEoRGHSm0LCAWoBEhWTxh4tCQoxxekgwAU6Ibik+3ROiDdpNeOcV8tuttOkRcEKs5Tt1jkdYDSHEVXh6hpxQ9KaXEog5U1WQexsfYkZp10h/7sqJVRUP66zhlj89x3VAQ=
+    secure: FIXME
   on:
     all_branches: true
 
@@ -58,7 +58,7 @@ matrix:
        skip_cleanup: true
        draft: true
        api_key:
-         secure: tHUhJ+e55wS+eedqv/fECriaa0tgdBAz51tMHZIV2ng2Mo59KEgoauMvGryCRG1GU2X408wL0EmVVFQgq62z/cPMCB9rJw87kldohNGXps5T0EvmH+8qUfWo9eqpvM3Z7rDXsLcm5KkrJ72IcMt+lV+1y0cTCIRNY16zWZ9/WhkSZcRcTxc2ZiReErZYJkZxfAsOgJVmvxA6h7CTHvXb6JOTqdgvGCJACN3iD4HhlMJeCH5ulzP7rCpraA1qA8OcPNF2v41xByAdveDsl7d51fUmM2z7GZDbQm/3aDITW+zhyBhLcJKlchLyIXvBk6TiBrNCjC0yG/8weAeTV568zYSNobSZisYVkU0OwEAjH0z81saC3T9SE95pnKOYjcaciWptdX7U6KyuAx40VVBO7bBwg7ollcrf9N4ZvnF+usKkFa1m2zSCqSRlGTUyV6yHgvlUtyfWKE6my8PYeba69zjy5oRnW8NQkMt84yVIdnBzghKJs95CQ0/08JF7c6tP4KAFQFTtMbFkw85d0ZfnmamzADNSPCcLvxSO+e0WgzcEoRGHSm0LCAWoBEhWTxh4tCQoxxekgwAU6Ibik+3ROiDdpNeOcV8tuttOkRcEKs5Tt1jkdYDSHEVXh6hpxQ9KaXEog5U1WQexsfYkZp10h/7sqJVRUP66zhlj89x3VAQ=
+         secure: FIXME
        on:
           all_branches: true
 
