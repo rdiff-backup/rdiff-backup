@@ -18,7 +18,7 @@ deploy:
   skip_cleanup: true
   draft: true
   api_key:
-    secure: FIXME
+    secure: tHUhJ+e55wS+eedqv/fECriaa0tgdBAz51tMHZIV2ng2Mo59KEgoauMvGryCRG1GU2X408wL0EmVVFQgq62z/cPMCB9rJw87kldohNGXps5T0EvmH+8qUfWo9eqpvM3Z7rDXsLcm5KkrJ72IcMt+lV+1y0cTCIRNY16zWZ9/WhkSZcRcTxc2ZiReErZYJkZxfAsOgJVmvxA6h7CTHvXb6JOTqdgvGCJACN3iD4HhlMJeCH5ulzP7rCpraA1qA8OcPNF2v41xByAdveDsl7d51fUmM2z7GZDbQm/3aDITW+zhyBhLcJKlchLyIXvBk6TiBrNCjC0yG/8weAeTV568zYSNobSZisYVkU0OwEAjH0z81saC3T9SE95pnKOYjcaciWptdX7U6KyuAx40VVBO7bBwg7ollcrf9N4ZvnF+usKkFa1m2zSCqSRlGTUyV6yHgvlUtyfWKE6my8PYeba69zjy5oRnW8NQkMt84yVIdnBzghKJs95CQ0/08JF7c6tP4KAFQFTtMbFkw85d0ZfnmamzADNSPCcLvxSO+e0WgzcEoRGHSm0LCAWoBEhWTxh4tCQoxxekgwAU6Ibik+3ROiDdpNeOcV8tuttOkRcEKs5Tt1jkdYDSHEVXh6hpxQ9KaXEog5U1WQexsfYkZp10h/7sqJVRUP66zhlj89x3VAQ=
   on:
     all_branches: true
 
@@ -51,14 +51,19 @@ matrix:
      script:
        - python setup.py bdist
        - PyInstaller --onefile --distpath dist/win32 --paths=build/lib.win32-* --add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info --console build/scripts-*/rdiff-backup
+     before_deploy:
+       - cp CHANGELOG COPYING README.md docs/FAQ.md docs/examples.md docs/DEVELOP.md docs/Windows-README.md dist/win32
+       - pushd dist/win32
+       - 7z a -tzip rdiff_backup.zip *
+       - popd
      deploy:
        provider: releases
        file_glob: true
-       file: dist/win32/*
+       file: dist/win32/rdiff_backup.zip
        skip_cleanup: true
        draft: true
        api_key:
-         secure: FIXME
+         secure: tHUhJ+e55wS+eedqv/fECriaa0tgdBAz51tMHZIV2ng2Mo59KEgoauMvGryCRG1GU2X408wL0EmVVFQgq62z/cPMCB9rJw87kldohNGXps5T0EvmH+8qUfWo9eqpvM3Z7rDXsLcm5KkrJ72IcMt+lV+1y0cTCIRNY16zWZ9/WhkSZcRcTxc2ZiReErZYJkZxfAsOgJVmvxA6h7CTHvXb6JOTqdgvGCJACN3iD4HhlMJeCH5ulzP7rCpraA1qA8OcPNF2v41xByAdveDsl7d51fUmM2z7GZDbQm/3aDITW+zhyBhLcJKlchLyIXvBk6TiBrNCjC0yG/8weAeTV568zYSNobSZisYVkU0OwEAjH0z81saC3T9SE95pnKOYjcaciWptdX7U6KyuAx40VVBO7bBwg7ollcrf9N4ZvnF+usKkFa1m2zSCqSRlGTUyV6yHgvlUtyfWKE6my8PYeba69zjy5oRnW8NQkMt84yVIdnBzghKJs95CQ0/08JF7c6tP4KAFQFTtMbFkw85d0ZfnmamzADNSPCcLvxSO+e0WgzcEoRGHSm0LCAWoBEhWTxh4tCQoxxekgwAU6Ibik+3ROiDdpNeOcV8tuttOkRcEKs5Tt1jkdYDSHEVXh6hpxQ9KaXEog5U1WQexsfYkZp10h/7sqJVRUP66zhlj89x3VAQ=
        on:
           all_branches: true
 
