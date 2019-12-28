@@ -32,6 +32,7 @@ matrix:
        - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
        - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
        - export pyver=3.7.5
+       - export pyverbrief=${pyver:0:3}
        - pyenv install --list
        - pyenv install -q $pyver || pyenv rehash
        - pyenv global $pyver
@@ -51,7 +52,7 @@ matrix:
      script:
        - python setup.py bdist
        - ls build # FIXME
-       - PyInstaller --onefile --distpath dist/win32 --paths=build/lib.win32-* --add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info --console build/scripts-*/rdiff-backup
+       - PyInstaller --onefile --distpath dist/win32 --paths=build/lib.win32-$pyverbrief --add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info --console build/scripts-$pyverbrief/rdiff-backup
      before_deploy:
        - cp CHANGELOG COPYING README.md docs/FAQ.md docs/examples.md docs/DEVELOP.md docs/Windows-README.md dist/win32
        - pushd dist/win32
