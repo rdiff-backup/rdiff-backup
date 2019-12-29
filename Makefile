@@ -39,6 +39,12 @@ build:
 	# parent is writeable)
 	${RUN_COMMAND} ./setup.py build
 
+wheel:
+	# Prepare wheel for deployment.
+	# See the notes for target "build"
+	${RUN_COMMAND} ./setup.py bdist_wheel
+	${RUN_COMMAND} auditwheel repair dist/*.whl
+
 container:
 	# Build development image
 	docker build --pull --tag rdiff-backup-dev:debian-sid .
