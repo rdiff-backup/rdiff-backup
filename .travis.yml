@@ -54,8 +54,8 @@ matrix:
        - PyInstaller --onefile --distpath dist/win32 --paths=build/lib.win32-$pyverbrief --add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info --console build/scripts-$pyverbrief/rdiff-backup
      before_deploy:
        - cp CHANGELOG COPYING README.md docs/FAQ.md docs/examples.md docs/DEVELOP.md docs/Windows-README.md dist/win32
+       - version=`python setup.py --version`
        - pushd dist/win32
-       - version=`./rdiff-backup.exe --version | awk '{ print $2 }'`
        - 7z a -tzip rdiff-backup-$version.zip *
        - popd
      deploy:
