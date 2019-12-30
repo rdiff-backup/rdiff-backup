@@ -355,7 +355,12 @@ static PyTypeObject _librsync_DeltaMakerType = {
 };
 
 
-/* --------------- PatchMaker Object for incremental patching */
+/* --------------- PatchMaker Object for incremental patching 
+
+   Librsync needs a FILE* handle, but Python only gives us file
+   descriptors (int); we need fdopen() to convert a fd to a FILE*
+   handle.  Such handle will have to be closed with fclose().
+*/
 
 
 static PyTypeObject _librsync_PatchMakerType;
@@ -364,6 +369,7 @@ typedef struct {
   PyObject_HEAD
   PyObject *x_attr;
   rs_job_t *patch_job;
+  FILE *patch_file;
   PyObject *basis_file;
 } _librsync_PatchMakerObject;
 
@@ -373,7 +379,6 @@ _librsync_new_patchmaker(PyObject* self, PyObject* args)
 {
   _librsync_PatchMakerObject* pm;
   PyObject *python_file;
-  FILE *cfile;
 
   if (!PyArg_ParseTuple(args, "O:new_patchmaker", &python_file))
 	return NULL;
@@ -389,9 +394,18 @@ _librsync_new_patchmaker(PyObject* self, PyObject* args)
   pm->x_attr = NULL;
 
   pm->basis_file = python_file;
-  cfile = fdopen(python_fd, "rb"); /* same mode as in the Python code */
-  if (cfile == NULL) return NULL;
-  pm->patch_job = rs_patch_begin(rs_file_copy_cb, cfile);
+  /* We duplicate python_fd so that we will be able to call fclose()
+     on our FILE* handle, avoiding any conflicts with the destruction
+     of python_file. */
+  int dup_fd = dup(python_fd);
+  if (dup_fd < 0) {
+      return PyErr_SetFromErrno(librsyncError);
+  }
+  pm->patch_file = fdopen(dup_fd, "rb"); /* same mode as in the Python code */
+  if (pm->patch_file == NULL) {
+      return PyErr_SetFromErrno(librsyncError);
+  }
+  pm->patch_job = rs_patch_begin(rs_file_copy_cb, pm->patch_file);
 
   return (PyObject*)pm;
 }
@@ -402,6 +416,7 @@ _librsync_patchmaker_dealloc(PyObject* self)
   _librsync_PatchMakerObject *pm = (_librsync_PatchMakerObject *)self;
   Py_DECREF(pm->basis_file);
   rs_job_free(pm->patch_job);
+  fclose(pm->patch_file);
   PyObject_Del(self);
 }
 
