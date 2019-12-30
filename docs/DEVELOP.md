@@ -286,3 +286,43 @@ stay together. The result command line might look as follows:
 	rdiff-backup -v9 localhost::/sourcedir /backupdir 2>&1 | awk \
 		'/^2019-09-16/ { if (line) print line; line = $0 } ! /^2019-09-16/ { line = line " ## " $0 }' \
 		| sort | sed 's/ ## /\n/g'
+
+## RELEASING
+
+> **NOTE:** work in progress
+
+### Install the Travis client locally
+
+See https://github.com/travis-ci/travis.rb for details, here only the gist of it:
+
+```
+ruby -v               # version >= 2
+dnf install rubygems  # or zipper, apt, yum...
+gem install travis    # as non-root keeps everybody more happy
+travis version        # 1.8.10 -> all OK
+```
+
+> **NOTE:** installing travis gem also pulls the dependencies multipart-post, faraday, faraday_middleware, highline, backports, net-http-pipeline, net-http-persistent, addressable, multi_json, gh, launchy, ethon, typhoeus, websocket, pusher-client. You might want to install some of them via your preferred package manager instead.
+
+### Create an OAuth key
+
+Use the travis client to generate a secure API key (you can throw away other changes to the `.travis.yml` file). You will need the password of the rdiff-backup-admin, hence only project admins can generate it:
+
+```
+$ travis setup releases
+Detected repository as rdiff-backup/rdiff-backup, is this correct? |yes| 
+Username: rdiff-backup-admin
+Password for rdiff-backup-admin: ********************
+File to Upload: dist/*
+Deploy only from rdiff-backup/rdiff-backup? |yes| 
+Encrypt API key? |yes| 
+```
+
+The key to add looks then as follows for GitHub deployment (the concrete key shown here isn't valid though):
+
+```
+deploy:
+  provider: releases
+  api_key:
+    secure: lqg+HZoy68WudiogbEnOmhxfw9zEJhPOyM4bLJdU2lRBlUZbf0uFvpVJdJqPB7rovKpDknapg4xdXdpbLbD0r/PwsSI9UyFLmyhGn24pnSlrFFjFm2AIQQJUMiCcqsPqNc7fXNMC1BwuM1/RjO3hIxfPxI+A9MSVqW3qhzmerOKXeKFiOLXJ0FkTomRdWGhCEafWO1Ibz5O2d5psK1N/r1ni8kv+E6GPjHk54vmKNcFg8uB7+cPs7ONtW2F+M/h12UVZkC+hy8Bss+esQIMYdVLW5JkKSFfNwKs57qDYYd0lWLzMRti+S+0k/1O6l51BzLY61C4FlRwrMWAy4HIYn5ui39GXIYtGXq9zW+EpYvqTsar+KDU+DGzsr+hAt+eCQpbmZ2SpA7B8Mb3x+BwAcEkvCql789FhWCOd3arUm3H6Ng6yNt50crafJeboHhmitgFQ9uTM7AnXwMnIYVkl6IAZlPkIj20TF1JSdmzpPG2jEJATsMybCuaAuS+ngq4DnJ1axGcclIr4AY9RkSI8EVrL1HTcVLaIH0JnWdO/YC7DSZloC0oswbch1qaW3WsWkJspeaLRvochyFYsatAbvZ46Mzt5uuJUPtSNUVizeb7kBhVGzLVYIepd5XYPgc3Qxp23hu2k9lwg4vjq8WFegC5a34SW/zEZeuFP3HTnD+4=
+```
