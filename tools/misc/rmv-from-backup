@@ -1,0 +1,641 @@
+#!/bin/bash
+#####
+# Removes files from an rdiff-backup set.
+#
+# Copyright (c) 2019 Robert Nichols
+# License: WTFPL version 2 <https://choosealicense.com/licenses/wtfpl/>
+#
+# Deletes files and directories from the backup set, including the current
+# mirror and all increments, and removes references from metadata files.
+# In the metadata directory, log files, session_statistics files, and backup
+# files (names ending with ~) are left as-is.
+#
+# FIXME -- Metadata for Mac resource forks is not handled,
+#          long_filename_data is not handled.
+#
+#          If the same full pathname has, at various times, been used both for
+#          a directory and for a non-directory, then removal of the
+#          non-directory file will not be possible unless the "-R" option is
+#          given to remove the directory and its contents as well.  See the
+#          WARNING message below.
+#
+#          When removing some, but not all, of the links to a file with
+#          multiple hard links, the link counts for the other hard links
+#          should be adjusted.  That is extraordinarily difficult to do in a
+#          metadata diff chain, and the consequences of not adjusting the
+#          count are benign.  (Those link counts are already too high if not
+#          all of the links to an inode were originally included in the backup
+#          set.)
+#
+# The commented-out "touch -r ..." lines would implement a semi-"stealth"
+# mode, in which the modified metadata files retain their original timestamps.
+#####
+
+Cmd="${0##*/}"
+
+usage() {
+    cat >&2 <<EOF
+Usage: $Cmd [-DRrnk] backup_dir path_glob [path_glob ...]
+       $Cmd {-h|--help}
+  -D         (Debug) Never delete the temp directory
+  -k         Keep the backup copies of changed metadata files (needs a
+             lot of space in the rdiff-backup-data directory).
+  -R         Recursively delete directories matched by a path_glob
+  -r         Limited recursion.  Allow a wildcard in the final
+             portion of a path_glob to match both directory components
+             and non-directories, but leave the directory structure
+             intact.
+  -n         Print commands that would be executed, but do nothing
+  -h --help  Print full help.
+EOF
+    [ "$1" = -v ] && cat >&2 <<EOF
+
+Every path_glob must be absolute (begin with '/') and is rooted at
+backup_dir.  The '.' character is NOT special in a path glob, and with
+the "-R" or "-r" option netiher is '/', so "/xxx/foo*" would then match
+all paths that begin with "/xxx/foo", including, for example,
+"/xxx/foo23/dir1/dir2/somefile".
+
+You do get a chance to review the list of files to be deleted and decide
+whether to continue.  Generating the new metadata files can take a long
+time, but that occurs in a temporary directory and can be safely
+interrupted.  Once installation of the new files begins, the process
+becomes non-interruptable.  If something does kill the process before it
+completes, recovery can usually be accomplished re-running the exact
+same command.
+
+EOF
+}
+
+KeepDir=onFail
+KeepB=n
+Echo=
+Prune="-prune"
+Recurse=n
+for Arg in "$@"; do
+    [ "$Arg" = --help ] && { usage -v; exit 0; }
+done
+while getopts DkRrnh Arg; do
+    case "$Arg" in
+    D)  KeepDir=y;;
+    k)  KeepB=y;;
+    R)  Recurse=y;;
+    r)  Prune="";;
+    n)  Echo="echo ##";;
+    h)  usage -v; exit 0;;
+    *)  usage; exit 1;;
+    esac
+done
+shift $((OPTIND-1))
+[ $# = 0 ] &&  { usage -v; exit 0; }
+if [ $Recurse = y ]; then
+    if [ -z "$Prune" ]; then
+	echo "[$Cmd]: Conflicting options \"-R\" and \"-r\"" >&2
+	usage
+	exit 1
+    fi
+    Prune=""
+fi
+if [ $# -lt 2 ]; then
+    usage
+    exit 1
+fi
+
+function nul2nl {
+    # Read input file(s) converting from NUL separator to newline and making
+    # backslash escapes for backslash and newline.  Result is written to
+    # stdout after removing any leading "./" from each line.
+    sed -e 's/\\/&&/g;s/$/\\n/;$s/\\n$//' "$@" | tr -d '\n' | tr '\0' '\n' \
+	| sed -e 's;^\./;;'
+}
+
+cd "$1/rdiff-backup-data" || exit
+# Warn about future permissions problems, read-only file system, etc.
+# (Non-fatal since there might be no intent of actually applying the changes.)
+Xxx="$(touch -r "$PWD" "$PWD" 2>&1)"
+if [ $? != 0 ]; then
+    if [[ $Xxx =~ "permission denied" || $Xxx =~ "not permitted" ]]; then
+	echo "**WARNING**: No write permission in $PWD" >&2
+    elif [[ $Xxx =~ "Read-only file system" ]]; then
+	echo "**WARNING**: Read-only file system" >&2
+    else  echo "**WARNING**: $PWD: ${Xxx##*:}" >&2
+    fi
+fi
+
+if [[ -d long_filename_data  && \
+      -n "$(find long_filename_data -mindepth 1 ! -name next_free -print -quit)" ]]
+then
+    echo "[$Cmd]: Cannot handle long_filename_data in archive" >&2
+    exit 1
+fi
+
+cd ..
+bd="`/bin/pwd`"
+echo $bd
+shift
+
+Tmpdir=`mktemp -d /var/tmp/rmbk.XXXXXX` || exit
+
+trap 'rc=$?; [ $KeepDir = n -o $KeepDir = onFail -a $rc = 0 ] && rm -r $Tmpdir || \
+      echo $Tmpdir not removed >&2; exit $rc' 0
+
+if [ $# = 0 ]; then
+    echo "$Cmd: nothing to do" >&2
+    exit 1
+fi
+
+# Args must be absolute paths without redundant components
+for X in "$@"; do
+    if [[ ! $X =~ ^/ ]]; then
+	echo "[$Cmd]: Patterns must be absolute paths" >&2
+	KeepDir=n; exit 1
+    elif [[ $X =~ // ]]; then
+	echo "[$Cmd]: Illegal \"//\" in \"$X\"" >&2
+	KeepDir=n; exit 1
+    elif [[ $X =~ /[.]{1,2}/ ]]; then
+	echo "[$Cmd]: Illegal \".\" or \"..\" in \"$X\"" >&2
+	KeepDir=n; exit 1
+    fi
+done
+
+# For the non-recursion case, working from longest common path prefix is a
+# huge speedup if deleting from just a small portion of the fs tree.  Can't
+# allow shell meta-characters in the prefix, though, as those can result in
+# some unbelievably long command lines when expanded in the increments
+# directory.
+args=("$@")
+pfx="${args[0]%/*}"
+while [ -n "$pfx" ]; do
+    if [[ ! $pfx =~ [*?[] ]]; then	# Any meta-characters force mismatch
+	for (( n=1; n < ${#args[*]}; ++n )); do
+	    [[ ! ${args[$n]} =~ ^$pfx/ ]] && break
+	done
+	[ $n -ge ${#args[*]} ] && break
+    fi
+    if [[ ! $pfx =~ / ]]; then
+	echo "It should be impossible to reach this code, but here we are." >&2
+	pfx=.
+	break
+    fi
+    pfx="${pfx%/*}"
+done
+[ -z "$pfx" ] && pfx=.
+if [ -n "$pfx" -a "$pfx" != . ]; then
+    for (( n=0; n < ${#args[*]}; ++n )); do
+	args[$n]="${args[$n]#$pfx/}"
+    done
+    pfx="${pfx#/}"
+fi
+
+# Building Gpat and Ipat as arrays allows embedded whitespace, quotes, and shell
+# meta-characters to be passed unchanged to the 'find' commands.
+unset Gpat Ipat
+declare -a Gpat Ipat
+n=0
+for X in "${args[@]}"; do
+    if [ $n -gt 0 ]; then
+	Gpat[$n]="-o"
+	Ipat[$n]="-o"
+	n=$((n+1))
+    fi
+    Gpat[$n]="-path"
+    Ipat[$n]="-path"
+    n=$((n+1))
+    Gpat[$n]="$pfx/${X#/}"
+    Ipat[$n]="$pfx/${X#/}.????-??-??T??:??:??-??:??.*"
+    n=$((n+1))
+done
+
+#####
+# Find files in current mirror.  Generate two list files with NUL separator:
+#	curr_list0 -- non-directory files
+#	cdir_list0 -- directories
+# Recurse into directories only if "-R" option was used.
+#
+# Then, process the NUL separator files to produce files curr_list and
+# cdir_list with '\n' separators and backslash escapes for embedded '\' and
+# '\n' characters.
+#####
+export LC_CTYPE=C
+echo "Finding files..."
+if [ $Recurse = y ]; then
+    find "$pfx" \( -path "$pfx/rdiff-backup-data" -prune \) -o \
+	\( "${Gpat[@]}" \) \( \
+	  \( -type d -prune -exec find {} -depth -type d -fprint0 >(cat >>$Tmpdir/cdir_list0) -o ! -type d -print0 \; \) \
+	   -o \( ! -type d -print0 \) \
+	\) | sort -uz >$Tmpdir/curr_list0
+else
+    find "$pfx" \( -path "$pfx/rdiff-backup-data" -prune \) -o \
+	\( "${Gpat[@]}" \) \( \
+	    -type d -fprint0 $Tmpdir/cdir_list0 $Prune \
+	    -o ! -type d -fprint0 $Tmpdir/curr_list0 \
+	\)
+fi
+[ $? = 0 ] || exit
+for F in $Tmpdir/{cdir_list0,curr_list0}; do
+    nul2nl "$F" >"${F%0}"	# Convert separator from NUL to newline
+done
+echo "Found `wc -l <$Tmpdir/curr_list` current files"
+[ $Recurse = y ] && echo "      `wc -l <$Tmpdir/cdir_list` current directories"
+
+#####
+# Now generate similar files (incr_list0 for non-directories, idir_list0 for
+# directories) for all the increments.  Actual directories will never have
+# timestamp+suffix appended, so Gpat[] is what will match.  All non-directory
+# files _will_ have an appended .timestamp.type plus a possible .gz .
+# 
+# The result from the 'find' for non-directories also includes increment files
+# for directories, so it is stored temporarily in file incr_found0, and gets
+# filtered later to make incr_list0.
+#####
+cd rdiff-backup-data/increments || exit
+if [ $Recurse = y ]; then
+    find "$pfx" \( \( "${Gpat[@]}" \) \( \
+		   -type d -prune -exec find {} -depth -type d -fprint0 >(cat >>$Tmpdir/idir_list0) -o ! -type d -print0 \; \
+		   -o ! -type d -print0 \) \
+		\) -o \( "${Ipat[@]}" \) \( ! -type d -print0 \) | sort -uz >$Tmpdir/incr_found0
+else
+    find "$pfx" \( \( "${Gpat[@]}" \) -type d -fprint0 $Tmpdir/idir_list0 $Prune \) -o \
+	      \( "${Ipat[@]}" \) \( ! -type d -fprint0 $Tmpdir/incr_found0 \)
+fi
+[ $? = 0 ] || exit
+#####
+# Build idir_list with the names (less the timestamp and type) of meta-files
+# for directories that will not be deleted from the archive.
+#####
+if [ $Recurse = y ]; then
+    : >$Tmpdir/idir_list	# No filtering -- empty list
+else
+    nul2nl $Tmpdir/idir_list0 >$Tmpdir/idir_list
+fi
+#####
+# Build NUL-terminated incr_list0 and '\n' terminated incr_list by filtering
+# out the directory names found in idir_list.
+#
+# While processing the increment list, keep track of the earliest increment
+# found for each name and the overall earliest increment.  If every name has
+# at least one increment and the earliest one is a ".missing" increment, it is
+# OK to skip the processing of metadata files older than the overall earliest
+# increment.
+#####
+touch $Tmpdir/incr_list0
+nul2nl $Tmpdir/incr_found0 \
+ | awk -v tmpdir=$Tmpdir '
+    BEGIN {
+      incrlist0 = tmpdir "/incr_list0"
+      cutoff = tmpdir "/cutdate"
+      earliest = "9999-99-99"
+      stderr = "/dev/stderr"
+
+      # Fill the dirnames[] array with the directory names to be filtered out
+      idirlist = tmpdir "/idir_list"
+      while(getline <idirlist)  dirnames[$0] = 1
+
+      # For any name being removed that exists in the current mirror fake an
+      # entry with a very large timestamp string.  Any of these that do not
+      # get replaced with another type of increment indicate files that
+      # existed unchanged from the beginning.
+      currlist = tmpdir "/curr_list"
+      cdirlist = tmpdir "/cdir_list"
+      while(getline <currlist)  finalinc[$0] = "9999-99-99"
+      while(getline <cdirlist)  finalinc[$0] = "9999-99-99"
+    }
+    { if(match($0, "\\.....-..-..T..:..:..[-+]..:..\\.(snapshot|diff|dir|missing)(\\.gz)?")) {
+	  name=substr($0, 1, RSTART-1)
+	  if(! (name in dirnames)) {
+	      print
+	      s = ""
+	      nch = split($0, aa, "")
+	      for(n = 1; n <= nch; ++n) {
+		  c = aa[n];
+
+		  if(c == "\\") {
+		      if(aa[n+1] == "\\") { ; }
+		      else if(aa[n+1] == "n")  c = "\n"
+		      else  c = aa[n+1]
+		      ++n
+		  }
+		  s = s c
+	      }
+	      printf "%s\0", s >incrlist0
+
+	      tstamp = substr($0, RSTART+1)
+	      if( !(name in finalinc) || tstamp < finalinc[name]) {
+	          finalinc[name] = tstamp
+		  if(tstamp < earliest)  earliest = tstamp
+	      }
+	  }
+      }
+      else print "???", $0 >stderr
+    }
+    END {
+	for(name in finalinc) {
+	    if(substr(finalinc[name], 26) != ".missing") {
+		++need_full  # This one goes all the way back,
+		if(need_full <= 5)  print "[@EPOCH]", name "." finalinc[name] >stderr
+	    }
+	}
+	if(need_full > 5)  print "  ...    +", need_full-5, "other file" \
+			       ((need_full > 6) ? "s" : "") >stderr
+	if(!need_full) print substr(earliest, 1, 25) >cutoff
+    }
+' >$Tmpdir/incr_list
+
+echo "Found `wc -l <$Tmpdir/incr_list` increment files"
+if [ $Recurse = y ]; then
+    nidirs=`tr '\n\0' ' \n' <$Tmpdir/cdir_list0 | wc -l `
+    echo "      $nidirs increment directories"
+fi
+
+# Generate combined lists of names with version tags removed for use in
+# filtering the various files in rdiff-backup-data.  Filter out the ".dir"
+# files and directory names unless recursively deleting directories.
+#
+# FIXME - Is there any chance of metadata for a directory that does
+#         not exist as such anywhere in the mirror or increments?
+if [ $Recurse = y ]; then
+    sort -u $Tmpdir/curr_list $Tmpdir/cdir_list \
+	<(sed -ne 's/\.....-..-..T..:..:..-..:..\.\(snapshot\|diff\|dir\|missing\)\(.gz\)\?$//p' $Tmpdir/incr_list) \
+	>$Tmpdir/comb_list
+else
+    sort -u $Tmpdir/{cdir_list,idir_list} >$Tmpdir/dir_list
+    sort -u $Tmpdir/curr_list \
+	<(sed -ne 's/\.....-..-..T..:..:..-..:..\.\(snapshot\|diff\|missing\)\(.gz\)\?$//p' $Tmpdir/incr_list) \
+	| fgrep -vx -f $Tmpdir/dir_list >$Tmpdir/comb_list
+    # Check for mixed dir and non-dir use of the same pathname.
+    sort -u $Tmpdir/curr_list \
+	<(sed -ne 's/\.....-..-..T..:..:..-..:..\.snapshot\(.gz\)\?$//p' <(nul2nl $Tmpdir/incr_found0)) \
+        | fgrep -x -f $Tmpdir/dir_list >$Tmpdir/will_miss_list
+fi
+if [ -s $Tmpdir/will_miss_list ]; then
+    NFiles="$(wc -l <$Tmpdir/will_miss_list) files"
+    [ $NFiles = "1 files" ] && NFiles=file
+    {   echo "***WARNING"
+	cat $Tmpdir/will_miss_list
+	cat <<EOF
+***WARNING: The above $NFiles will not be removed!
+            Pathnames that have been used for both directories and
+            non-directory files cannot be removed without also removing
+            the directories and their contents (use the "-R" option).
+EOF
+    } >&2
+fi
+ToDo=`wc -l <$Tmpdir/comb_list`
+echo "      $ToDo files in combined list"
+if [ "$ToDo" = 0 ]; then
+    echo "[$Cmd]: Nothing to do"
+    exit 0
+fi
+if [ -s $Tmpdir/cutdate ]; then
+    echo "Metadata prior to $(cat $Tmpdir/cutdate) will not be affected"
+else
+    echo "Metadata files for all dates will be examined"
+fi
+
+chmod -w $Tmpdir/comb_list
+KSum="$(md5sum $Tmpdir/comb_list)"
+while read -p "Go for it?? (v to view list) [yvN]: " && [[ $REPLY =~ [Vv] ]]; do
+    ${VIEWER:-less} $Tmpdir/comb_list || exit
+done
+[[ $REPLY =~ ^[Yy] ]] || exit
+chmod u+w $Tmpdir/comb_list
+if ! md5sum --quiet -c <(echo "$KSum"); then
+    echo "ERROR [$Cmd]: List was changed -- aborting" >&2
+    exit 1
+fi
+
+set -e
+cd $bd/rdiff-backup-data
+
+echo "Cleaning metadata..."
+umask 077
+rm -f $Tmpdir/new_files
+CutDate=
+[ -s $Tmpdir/cutdate ] && CutDate=$(cat $Tmpdir/cutdate)
+
+for Mfile in mirror_metadata.*; do
+    [[ $Mfile =~ ~$ ]] && continue
+    [[ -n "$CutDate" && ${Mfile#*.} < $CutDate ]] && continue
+    if [ ! -f "$Mfile" ]; then
+	echo "[$Cmd]: $Mfile: No such file" >&2
+	exit 1
+    fi
+    echo -n "   $Mfile... "
+    # Most of the complexity here is to handle the case of removing the first
+    # (checksum bearing) entry for a file with multiple hard links.  That
+    # checksum needs to be inserted into the first (if any) remaining entry
+    # for that same inode.  Whether this works in all cases for a .diff file
+    # is not certain, but attempts to generate an otherwise valid .diff file
+    # where this fails have been unsuccessful.
+    gunzip -f <$Mfile | awk '
+	ARGIND==1 { ftbl[$0] = 1; next; }
+	/^File / {
+	    while(! eof) {
+		if(eof)  break
+		match($0, "^File +");
+		curpath = substr($0, RLENGTH+1)
+		while((err = getline) > 0) {
+		    if($1 == "File")  break
+		    else if($1 == "Inode")  node = $2
+		    else if($1 == "DeviceLoc")  device = $2
+		    else if($1 == "SHA1Digest")  cksum = $2
+		    attr[$1] = attrcount
+		    cur[attrcount++] = $0
+		}
+		if(err == 0)  ++eof
+		else if(err < 0) {
+		    print ERRNO, "reading", ARGV[ARGIND] >stderr
+		    exit 1
+		}
+		if(curpath in ftbl) {
+		    if("Inode" in attr && "SHA1Digest" in attr) {
+			sums[device,node] = cksum
+		    }
+		    didit = 1
+		}
+		else {
+		    print "File", curpath
+		    for(n = 0; n < attrcount; ++n) {
+			print cur[n]
+			if("DeviceLoc" in attr && \
+			   attr["DeviceLoc"] == n && \
+			   (device,node) in sums) {
+			    if(!("SHA1Digest" in attr)) {
+				print "  SHA1Digest", sums[device,node]
+			    }
+			    delete sums[device,node]
+			}
+		    }
+		}
+		attrcount = 0
+		delete attr
+	    }
+	}
+	END { exit (didit > 0 ? 0 : 199) }
+	'  $Tmpdir/comb_list - >$Tmpdir/${Mfile%.gz}.new | true
+    rc=$((${PIPESTATUS[0]} ? ${PIPESTATUS[0]} : ${PIPESTATUS[1]}))
+    case $rc in
+    0)
+	echo done
+#	touch -r $Mfile $Tmpdir/${Mfile%.gz}.new
+	if [ ${Mfile%.gz} != $Mfile ]; then
+	    gzip -9 $Tmpdir/${Mfile%.gz}.new
+	    echo $Tmpdir/${Mfile%.gz}.new.gz $Mfile >>$Tmpdir/new_files
+	else
+	    echo $Tmpdir/$Mfile.new $Mfile >>$Tmpdir/new_files
+	fi;;
+    199)
+	rm $Tmpdir/${Mfile%.gz}.new
+	echo "n/c";;
+    *)
+	exit $rc;;
+    esac
+done
+
+echo "Cleaning ACLs and extended attributes..."
+for Mfile in access_control_lists.* extended_attributes.*; do
+    [[ $Mfile =~ ~$ ]] && continue
+    [[ -n "$CutDate" && ${Mfile#*.} < $CutDate ]] && continue
+    if [ ! -f "$Mfile" ]; then
+	echo "[$Cmd]: $Mfile: No such file (This is not fatal.)" >&2
+	continue
+    fi
+    echo -n "   $Mfile... "
+    gunzip -f <$Mfile | awk '
+	BEGIN {  # Octal escapes for non-graphics, backslash, and '='
+	    for(n = 1; n <= 255; ++n) {
+		c = sprintf("%c", n);
+		if(c >= "!" && c <= "~" && c != "\\" && c != "=")  etab[c] = c
+		else  etab[c] = sprintf("\\%03o", n)
+	    }
+	}
+
+	ARGIND==1 {
+	    nch = split($0, aa, "")
+	    s = ""
+	    for(n = 1; n <= nch; ++n) {
+		c = aa[n]
+		if(c == "\\") {
+		    if(aa[n+1] == "\\")  ++n
+		    else if(aa[n+1] == "n") {
+			c = "\n"
+			++n
+		    }
+		}
+		s = s etab[c]
+	    }
+	    ftbl[s] = 1
+	    next
+	}
+	/^# file: / {
+	    match($0, "^# file: +");
+	    path = substr($0, RLENGTH+1);
+	    if(path in ftbl) { skipping = 1; didit = 1; next; }
+	}
+	/^# file: / { skipping = 0; }
+	{ if(!skipping) print }
+	END { exit (didit > 0 ? 0 : 199) }
+	'  $Tmpdir/comb_list - >$Tmpdir/${Mfile%.gz}.new | true
+    rc=$((${PIPESTATUS[0]} ? ${PIPESTATUS[0]} : ${PIPESTATUS[1]}))
+    case $rc in
+    0)
+	echo done
+#	touch -r $Mfile $Tmpdir/${Mfile%.gz}.new
+	if [ ${Mfile%.gz} != $Mfile ]; then
+	    gzip -9 $Tmpdir/${Mfile%.gz}.new
+	    echo $Tmpdir/${Mfile%.gz}.new.gz $Mfile >>$Tmpdir/new_files
+	else
+	    echo $Tmpdir/$Mfile.new $Mfile >>$Tmpdir/new_files
+	fi;;
+    199)
+	rm $Tmpdir/${Mfile%.gz}.new
+	echo "n/c";;
+    *)
+	exit $rc;;
+    esac
+done
+
+echo "Cleaning file statistics..."
+for Mfile in file_statistics.*; do
+    [[ $Mfile =~ ~$ ]] && continue
+    [[ -n "$CutDate" && ${Mfile#*.} < $CutDate ]] && continue
+    if [ ! -f "$Mfile" ]; then
+	echo "[$Cmd]: $Mfile: No such file" >&2
+	exit 1
+    fi
+    echo -n "   $Mfile... "
+    # Possible NUL separators here.  Actual embedded newline characters in paths
+    # are always represented by the two character sequence "\n", so translating
+    # NUL to NL on input and then back to NUL on output is safe.
+    Csep='\n'
+    [ $(gunzip -f <$Mfile | head --bytes=300 | wc -l) = 0 ] && Csep='\0'
+    gunzip -f <$Mfile | tr "$Csep" '\n' | awk --re-interval '
+	ARGIND==1 { ftbl[$0] = 1; next; }
+	{
+	    if(match($0, "( [0-9]+| NA){4}$") && \
+		substr($0, 1, length($0)-RLENGTH) in ftbl) { didit = 1;  next; }
+	    print;
+	}
+	END { exit (didit > 0 ? 0 : 199) }
+	'  $Tmpdir/comb_list - | tr '\n' "$Csep" >$Tmpdir/${Mfile%.gz}.new | true
+    rc=$((${PIPESTATUS[0]} ? ${PIPESTATUS[0]} : ${PIPESTATUS[2]}))
+    case $rc in
+    0)
+	echo done
+#	touch -r $Mfile $Tmpdir/${Mfile%.gz}.new
+	if [ ${Mfile%.gz} != $Mfile ]; then
+	    gzip -9 $Tmpdir/${Mfile%.gz}.new
+	    echo $Tmpdir/${Mfile%.gz}.new.gz $Mfile >>$Tmpdir/new_files
+	else
+	    echo $Tmpdir/$Mfile.new $Mfile >>$Tmpdir/new_files
+	fi;;
+    199)
+	rm $Tmpdir/${Mfile%.gz}.new
+	echo "n/c";;
+    *)
+	exit $rc;;
+    esac
+done
+
+if [ $KeepB != n ]; then
+    Duse=($(du -kc --files0-from <(while read F Junk; do echo -ne $F\\0; done <$Tmpdir/new_files) | tail -1))
+    Bneed=($((${Duse[0]} + 1000)))
+    Bhave=$(df . | sed -nre 's/.* +[0-9]+ +[0-9]+ +([0-9]+) +[0-9]+% .*/\1/p')
+    if [ $Bhave -lt $Bneed ]; then
+	echo "[$Cmd]: Insufficient space to save backup metadata files" >&2
+	echo "      Need $Bneed KB on $PWD" >&2
+	echo "      No action taken" >&2
+	KeepDir=n
+	exit 1
+    fi
+fi
+
+[ -z "$Echo" ] && trap "" 1 2
+echo "Installing changed metadata files..."
+unset VERSION_CONTROL
+while read Src Dest Junk; do
+    if [ -n "$Junk" ]; then
+	echo "[$Cmd]: Badly formatted line on $Tmpdir/new_files:" >&2
+	echo "$Src $Dest $Junk" >&2
+	exit 1
+    fi
+#    [ -z "$Echo" ] && echo "  $Dest"
+    if ! $Echo cp -a --backup=simple -S \~rmbk$$\~ $Src $Dest; then
+	mv -v ${Dest}\~rmbk$$\~ ${Dest}
+	exit 1
+    fi
+    # Remove the backup file immediately to minimize the chances of running
+    # out of space at the destination.
+    [ $KeepB = n ] && $Echo rm ${Dest}\~rmbk$$\~ 
+done <$Tmpdir/new_files
+
+echo "Removing mirror files..."
+(cd $bd && xargs -r -0 $Echo rm -v -- <$Tmpdir/curr_list0)
+[ $Recurse = y ] &&  (cd $bd && xargs -r -0 $Echo rmdir -v -- <$Tmpdir/cdir_list0)
+echo "Removing increments..."
+(cd $bd/rdiff-backup-data/increments && xargs -r -0 $Echo rm -v -- <$Tmpdir/incr_list0)
+
+# Last step uses "if ... then" to get correct exit code from script.
+if [ $Recurse = y ]; then
+    (cd $bd/rdiff-backup-data/increments && xargs -r -0 $Echo rmdir -v -- <$Tmpdir/idir_list0)
+fi
