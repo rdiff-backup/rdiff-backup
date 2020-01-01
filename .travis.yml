@@ -3,7 +3,7 @@ language: python
 os: linux
 dist: bionic
 
-install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
+install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm auditwheel
 
 python:
   - 3.5
@@ -11,15 +11,28 @@ python:
   - 3.7
   - 3.8
 
+deploy:
+  provider: releases
+  file_glob: true
+  file: wheelhouse/*.whl
+  skip_cleanup: true
+  draft: true
+  api_key:
+    secure: V1Ad29+3lIQB1Sxqt8RiNKwferucTIr2mJo1Ka0m8Y1GdscP0ZkvHN4Vzjb0hts+lap8cU24tJ1zq9k22bdsNmoS3/YEg7fwbQSOPCJSYbjwMQeitDc1NP3u1mp5LWiEnQ7cflalIkmWUVpwGbwPSnUQdW3JyheUm4DP6jndGHmv3sC2r4WtZDkVY44SI5OGjvOTStTLnXhVlwXMIBKzw+o9BNdmIcpRvI3UTR+C9mA2yoNE7qgpzALZ4qn7qAmTMJzcVQb22yVZqXVCF8VD72Z66GHx75aatMmsJ/2isOEap19sVYt03fY8lchsTUsdRRCAIInxUvbdfgaEoBWj8Vfv2r/vm5DgWh93amv1RkJdmAYAMTGZG/k20vd7N+sNGKCdAF0W8hj5kriGkNnSQg7dFd+NWrF3pX9XcUkT9IGzv5eT5eYeS+yzgB3YPy8qGKwF5dRkRf7Ylw68j8YOly40rAAfgEx/pcFlYrJh62LDPr5RNhKA679+9UAp0rgkiszNH327bj1i0drqeDIhJAZSXw86B8tJZI1JRBVllKNbwDc5GRFNyms4+pvKCO+lAy5Pcn0bQMUq49qxDsdnM1t2RISivWy5CdkOTNW5WYglhovOSoA8/NjcxmsOpOazCaENEvsB3AogI+LRmpZ7lUZKxjaILuVUM2rwXlKxFB0=
+  on:
+    all_branches: true
+    condition: $MAKE_STEP = bdist_wheel
+
 matrix:
   include:
+   # Build and deploy Windows executable
    - os: windows
      language: sh
      before_install:
-       - choco install make
        - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
        - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
        - export pyver=3.7.5
+       - export pyverbrief=${pyver:0:3}
        - pyenv install --list
        - pyenv install -q $pyver || pyenv rehash
        - pyenv global $pyver
@@ -37,7 +50,88 @@ matrix:
        - cmake --install . --config Release
        - popd
      script:
-       - python setup.py build
+       - python setup.py bdist
+       - PyInstaller --onefile --distpath dist/win32 --paths=build/lib.win32-$pyverbrief --add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info --console build/scripts-$pyverbrief/rdiff-backup
+     before_deploy:
+       - cp CHANGELOG COPYING README.md docs/FAQ.md docs/examples.md docs/DEVELOP.md docs/Windows-README.md dist/win32
+       - version=`python setup.py --version`
+       - pushd dist/win32
+       - 7z a -tzip rdiff-backup-$version.zip *
+       - popd
+     deploy:
+       provider: releases
+       file_glob: true
+       file: dist/win32/rdiff-backup*.zip
+       skip_cleanup: true
+       draft: true
+       api_key:
+         secure: V1Ad29+3lIQB1Sxqt8RiNKwferucTIr2mJo1Ka0m8Y1GdscP0ZkvHN4Vzjb0hts+lap8cU24tJ1zq9k22bdsNmoS3/YEg7fwbQSOPCJSYbjwMQeitDc1NP3u1mp5LWiEnQ7cflalIkmWUVpwGbwPSnUQdW3JyheUm4DP6jndGHmv3sC2r4WtZDkVY44SI5OGjvOTStTLnXhVlwXMIBKzw+o9BNdmIcpRvI3UTR+C9mA2yoNE7qgpzALZ4qn7qAmTMJzcVQb22yVZqXVCF8VD72Z66GHx75aatMmsJ/2isOEap19sVYt03fY8lchsTUsdRRCAIInxUvbdfgaEoBWj8Vfv2r/vm5DgWh93amv1RkJdmAYAMTGZG/k20vd7N+sNGKCdAF0W8hj5kriGkNnSQg7dFd+NWrF3pX9XcUkT9IGzv5eT5eYeS+yzgB3YPy8qGKwF5dRkRf7Ylw68j8YOly40rAAfgEx/pcFlYrJh62LDPr5RNhKA679+9UAp0rgkiszNH327bj1i0drqeDIhJAZSXw86B8tJZI1JRBVllKNbwDc5GRFNyms4+pvKCO+lAy5Pcn0bQMUq49qxDsdnM1t2RISivWy5CdkOTNW5WYglhovOSoA8/NjcxmsOpOazCaENEvsB3AogI+LRmpZ7lUZKxjaILuVUM2rwXlKxFB0=
+       on:
+          all_branches: true
+   # Build and deploy Linux wheels using manylinux Docker containers
+   # avoiding manylinux2014_i686 because it does not provide librsync-devel
+   - os: linux
+     sudo: required
+     services:
+       - docker
+     env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
+          PLAT=manylinux1_x86_64
+          MAKE_STEP=bdist_wheel
+     install:
+       - docker pull $DOCKER_IMAGE
+     script:
+       - docker run --rm -e PLAT=$PLAT -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/tools/build_wheels.sh
+       - ls wheelhouse/
+   - os: linux
+     sudo: required
+     services:
+       - docker
+     env: DOCKER_IMAGE=quay.io/pypa/manylinux1_i686
+          PRE_CMD=linux32
+          PLAT=manylinux1_i686
+          MAKE_STEP=bdist_wheel
+     install:
+       - docker pull $DOCKER_IMAGE
+     script:
+       - docker run --rm -e PLAT=$PLAT -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/tools/build_wheels.sh
+       - ls wheelhouse/
+   - os: linux
+     sudo: required
+     services:
+       - docker
+     env: DOCKER_IMAGE=quay.io/pypa/manylinux2010_x86_64
+          PLAT=manylinux2010_x86_64
+          MAKE_STEP=bdist_wheel
+     install:
+       - docker pull $DOCKER_IMAGE
+     script:
+       - docker run --rm -e PLAT=$PLAT -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/tools/build_wheels.sh
+       - ls wheelhouse/
+   - os: linux
+     sudo: required
+     services:
+       - docker
+     env: DOCKER_IMAGE=quay.io/pypa/manylinux2010_i686
+          PRE_CMD=linux32
+          PLAT=manylinux2010_i686
+          MAKE_STEP=bdist_wheel
+     install:
+       - docker pull $DOCKER_IMAGE
+     script:
+       - docker run --rm -e PLAT=$PLAT -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/tools/build_wheels.sh
+       - ls wheelhouse/
+   - os: linux
+     sudo: required
+     services:
+       - docker
+     env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64
+          PLAT=manylinux2014_x86_64
+          MAKE_STEP=bdist_wheel
+     install:
+       - docker pull $DOCKER_IMAGE
+     script:
+       - docker run --rm -e PLAT=$PLAT -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/tools/build_wheels.sh
+       - ls wheelhouse/
 
 # Don't run tests on WIP branches
 branches:
@@ -50,6 +144,7 @@ addons:
       - librsync-dev
       - libacl1-dev
       - rdiff  # needed by tests in tox.ini
+      - patchelf # needed by auditwheel
 
 
 # We utilize Docker images, thus must have a Docker service
