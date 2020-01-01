@@ -31,7 +31,7 @@ matrix:
      before_install:
        - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
        - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
-       - export pyver=3.7.5
+       - export pyver=3.8.1
        - export pyverbrief=${pyver:0:3}
        - pyenv install --list
        - pyenv install -q $pyver || pyenv rehash
