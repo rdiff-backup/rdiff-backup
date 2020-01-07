@@ -1,0 +1,18 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: rdiff-backup
+Upstream-Contact: rdiff-backup-users@nongnu.org
+Source: https://github.com/rdiff-backup/rdiff-backup
+
+Files: *
+Copyright: 2001-2008 Ben Escoto <bescoto@stanford.edu>
+           2019-2020 Eric Lavarde <ewl+rdiffbackup-at-lavar.de>
+License: GPL-2+
+
+Files: debian/*
+Copyright: 2005-2009 Daniel Baumann <daniel@debian.org>,
+           2019 Otto Kekäläinen <otto@debian.org>
+License: GPL-2+
+
+License: GPL-2+
+ On Debian based systems the full text of the GNU General Public License version
+ 2 can be found in the file `/usr/share/common-licenses/GPL-2`.

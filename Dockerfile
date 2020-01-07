@@ -10,7 +10,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \
     ccache \
     git \
     git-buildpackage \
-    pristine-tar
+    pristine-tar \
+    dh-python \
+    build-essential
 
 # Build dependencies specific for rdiff-backup
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -yqq && \

@@ -46,6 +46,9 @@ bdist_wheel:
 	${RUN_COMMAND} ./setup.py bdist_wheel
 	# ${RUN_COMMAND} auditwheel repair dist/*.whl
 
+build_deb:
+	${RUN_COMMAND} gbp buildpackage -us -uc
+
 container:
 	# Build development image
 	docker build --pull --tag rdiff-backup-dev:debian-sid .
