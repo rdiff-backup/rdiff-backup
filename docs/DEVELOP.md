@@ -241,3 +241,16 @@ deploy:
   api_key:
     secure: lqg+HZoy68WudiogbEnOmhxfw9zEJhPOyM4bLJdU2lRBlUZbf0uFvpVJdJqPB7rovKpDknapg4xdXdpbLbD0r/PwsSI9UyFLmyhGn24pnSlrFFjFm2AIQQJUMiCcqsPqNc7fXNMC1BwuM1/RjO3hIxfPxI+A9MSVqW3qhzmerOKXeKFiOLXJ0FkTomRdWGhCEafWO1Ibz5O2d5psK1N/r1ni8kv+E6GPjHk54vmKNcFg8uB7+cPs7ONtW2F+M/h12UVZkC+hy8Bss+esQIMYdVLW5JkKSFfNwKs57qDYYd0lWLzMRti+S+0k/1O6l51BzLY61C4FlRwrMWAy4HIYn5ui39GXIYtGXq9zW+EpYvqTsar+KDU+DGzsr+hAt+eCQpbmZ2SpA7B8Mb3x+BwAcEkvCql789FhWCOd3arUm3H6Ng6yNt50crafJeboHhmitgFQ9uTM7AnXwMnIYVkl6IAZlPkIj20TF1JSdmzpPG2jEJATsMybCuaAuS+ngq4DnJ1axGcclIr4AY9RkSI8EVrL1HTcVLaIH0JnWdO/YC7DSZloC0oswbch1qaW3WsWkJspeaLRvochyFYsatAbvZ46Mzt5uuJUPtSNUVizeb7kBhVGzLVYIepd5XYPgc3Qxp23hu2k9lwg4vjq8WFegC5a34SW/zEZeuFP3HTnD+4=
 ```
+
+### Delete draft releases
+
+Because there is one draft release created for each pipeline job, it can be quite a lot when one tests the release pipeline. The GitHub WebUI requires quite a lot of clicks to delete them. A way to simplify (a bit) the deletion is to install the command line tool `hub` and call the following command:
+
+```
+hub release --include-drafts -f '%U %S %cr%n' | \
+	awk '$2 == "draft" && $4 == "days" && $3 > 2 {print $1}' | xargs firefox
+```
+
+the `2` compared to `$3` is the number of days, so that you get one tab opened in firefox for each draft release, so that you only need 2 clicks and one Ctrl+W (close the tab) to delete those releases.
+
+> **NOTE:** deletion directly using hub isn't possible as it only supports tags and not release IDs. Drafts do NOT have tags...
