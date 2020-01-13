@@ -616,8 +616,12 @@ class PatchITRB(rorpiter.ITRBranch):
                 return 1  # SpecialFile
         elif not self.patch_diff_to_temp(basis_rp, diff_rorp, new):
             return 0
-        if new.lstat() and not diff_rorp.isflaglinked():
-            rpath.copy_attribs(diff_rorp, new)
+        if new.lstat():
+            if diff_rorp.isflaglinked():
+                if Globals.eas_write:
+                    new.data['ea'] = diff_rorp.get_ea()
+            else:
+                rpath.copy_attribs(diff_rorp, new)
         return self.matches_cached_rorp(diff_rorp, new)
 
     def patch_hardlink_to_temp(self, diff_rorp, new):
