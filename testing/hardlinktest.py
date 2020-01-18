@@ -156,6 +156,121 @@ class HardlinkTest(unittest.TestCase):
         assert hlout2.getinode() == hlout3.getinode()
         assert hlout1.getinode() != hlout2.getinode()
 
+    def testHardlinkBug1(self):
+        """Test bug 26848, part 1: https://savannah.nongnu.org/bugs/?26848"""
+        MakeOutputDir()
+        output = rpath.RPath(Globals.local_connection, abs_output_dir)
+        hlout3_dir = os.path.join(abs_test_dir, b"out_hardlink3")
+
+        hlout3 = rpath.RPath(Globals.local_connection, hlout3_dir)
+        if hlout3.lstat():
+            hlout3.delete()
+        hlout3.mkdir()
+        hlout3_sub = hlout3.append("subdir")
+        hlout3_sub.mkdir()
+        hl3_1 = hlout3_sub.append("hardlink1")
+        hl3_3 = hlout3_sub.append("hardlink3")
+        hl3_1.touch()
+        hl3_3.hardlink(hl3_1.path)
+
+        InternalBackup(1, 1, hlout3.path, output.path)
+        out_subdir = output.append("subdir")
+        assert out_subdir.append("hardlink1").getinode() == \
+            out_subdir.append("hardlink3").getinode()
+
+        # Create a new hardlinked file between "hardlink1" and "hardlink3"
+        hl3_2 = hlout3_sub.append("hardlink2")
+        hl3_2.hardlink(hl3_1.path)
+
+        time.sleep(1)
+        InternalBackup(1, 1, hlout3.path, output.path)
+        out_subdir.setdata()
+        assert out_subdir.append("hardlink1").getinode() == \
+            out_subdir.append("hardlink2").getinode()
+        assert out_subdir.append("hardlink1").getinode() == \
+            out_subdir.append("hardlink3").getinode()
+
+        # Now try restoring, still checking hard links.
+        sub_dir = os.path.join(abs_output_dir, b"subdir")
+        out3_dir = os.path.join(abs_test_dir, b"out3")
+        out3 = rpath.RPath(Globals.local_connection, out3_dir)
+        hlout1 = out3.append("hardlink1")
+        hlout2 = out3.append("hardlink2")
+        hlout3 = out3.append("hardlink3")
+
+        if out3.lstat():
+            out3.delete()
+        InternalRestore(1, 1, sub_dir, out3_dir, 1)
+        out3.setdata()
+        for rp in [hlout1, hlout3]:
+            rp.setdata()
+        assert hlout1.getinode() == hlout3.getinode()
+
+        if out3.lstat():
+            out3.delete()
+        InternalRestore(1, 1, sub_dir, out3_dir, int(time.time()))
+        out3.setdata()
+        for rp in [hlout1, hlout2, hlout3]:
+            rp.setdata()
+        assert hlout1.getinode() == hlout2.getinode()
+        assert hlout1.getinode() == hlout3.getinode()
+
+    def testHardlinkBug2(self):
+        """Test bug 26848, part 2: https://savannah.nongnu.org/bugs/?26848"""
+        MakeOutputDir()
+        output = rpath.RPath(Globals.local_connection, abs_output_dir)
+        hlout4_dir = os.path.join(abs_test_dir, b"out_hardlink4")
+
+        hlout4 = rpath.RPath(Globals.local_connection, hlout4_dir)
+        if hlout4.lstat():
+            hlout4.delete()
+        hlout4.mkdir()
+        hlout4_sub = hlout4.append("subdir")
+        hlout4_sub.mkdir()
+        hl4_1 = hlout4_sub.append("hardlink1")
+        hl4_2 = hlout4_sub.append("hardlink2")
+        hl4_1.touch()
+        hl4_2.hardlink(hl4_1.path)
+
+        InternalBackup(1, 1, hlout4.path, output.path)
+        out_subdir = output.append("subdir")
+        assert out_subdir.append("hardlink1").getinode() == \
+            out_subdir.append("hardlink2").getinode()
+
+        # Move the first hardlinked file to be last
+        hl4_3 = hlout4_sub.append("hardlink3")
+        rpath.rename(hl4_1, hl4_3)
+
+        time.sleep(1)
+        InternalBackup(1, 1, hlout4.path, output.path)
+        out_subdir.setdata()
+        assert out_subdir.append("hardlink2").getinode() == \
+            out_subdir.append("hardlink3").getinode()
+
+        # Now try restoring, still checking hard links.
+        sub_dir = os.path.join(abs_output_dir, b"subdir")
+        out4_dir = os.path.join(abs_test_dir, b"out4")
+        out4 = rpath.RPath(Globals.local_connection, out4_dir)
+        hlout1 = out4.append("hardlink1")
+        hlout2 = out4.append("hardlink2")
+        hlout3 = out4.append("hardlink3")
+
+        if out4.lstat():
+            out4.delete()
+        InternalRestore(1, 1, sub_dir, out4_dir, 1)
+        out4.setdata()
+        for rp in [hlout1, hlout2]:
+            rp.setdata()
+        assert hlout1.getinode() == hlout2.getinode()
+
+        if out4.lstat():
+            out4.delete()
+        InternalRestore(1, 1, sub_dir, out4_dir, int(time.time()))
+        out4.setdata()
+        for rp in [hlout2, hlout3]:
+            rp.setdata()
+        assert hlout2.getinode() == hlout3.getinode()
+
 
 if __name__ == "__main__":
     unittest.main()
