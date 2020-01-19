@@ -600,16 +600,16 @@ class FinalSelection(PathSetter):
         # Make an exclude list
         excluderp = Local.vft_out.append("exclude")
         with excluderp.open("wb") as fp:
-            fp.write(Local.vftrp.append('regular_file').path)
-            fp.write(Local.vftrp.append('test').path)
+            fp.write(Local.vftrp.append('regular_file\n').path)
+            fp.write(Local.vftrp.append('test\n').path)
 
         # Make an include list
         includerp = Local.vft_out.append("include")
         with includerp.open("wb") as fp:
-            fp.write(Local.vftrp.append('executable').path)
-            fp.write(Local.vftrp.append('symbolic_link').path)
-            fp.write(Local.vftrp.append('regular_file').path)
-            fp.write(Local.vftrp.append('test').path)
+            fp.write(Local.vftrp.append('executable\n').path)
+            fp.write(Local.vftrp.append('symbolic_link\n').path)
+            fp.write(Local.vftrp.append('regular_file\n').path)
+            fp.write(Local.vftrp.append('test\n').path)
 
         rdiff_backup(False,
                      False,
@@ -624,8 +624,7 @@ class FinalSelection(PathSetter):
                      Local.rpout1.path,
                      extra_options=b"--restore-as-of now")
         assert os.lstat(Local.rpout1.append('executable').path)
-        # FIXME: should symbolic links to excluded files be included?
-        # assert os.lstat(Local.rpout1.append('symbolic_link').path)
+        assert os.lstat(Local.rpout1.append('symbolic_link').path)
         self.assertRaises(OSError, os.lstat,
                           Local.rpout1.append('regular_file').path)
         self.assertRaises(OSError, os.lstat,
