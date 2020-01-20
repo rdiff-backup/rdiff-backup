@@ -54,7 +54,7 @@ class HashTest(unittest.TestCase):
         d1f2l.hardlink(d1f2.path)
 
         d1_hashlist = [
-            None, self.s1_hash, self.s1_hash, self.s2_hash, self.s2_hash
+            None, self.s1_hash, None, self.s2_hash, None
         ]
 
         d2f1 = d2.append("file1")
@@ -81,8 +81,6 @@ class HashTest(unittest.TestCase):
                 result.append(None)
         return result
 
-    @unittest.skip("Skipping until hash of hard links is fixed, see issue #23."
-                   )
     def test_session(self):
         """Run actual sessions and make sure proper hashes recorded
 
@@ -108,7 +106,7 @@ class HashTest(unittest.TestCase):
         rdiff_backup(1, 1, in_rp2.path, abs_output_dir, 20000)
         incs = restore.get_inclist(meta_prefix)
         assert len(incs) == 2
-        if incs[0].getinctype() == 'snapshot':
+        if incs[0].getinctype() == b'snapshot':
             inc = incs[0]
         else:
             inc = incs[1]
