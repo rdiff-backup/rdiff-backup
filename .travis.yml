@@ -134,7 +134,7 @@ jobs:
 branches:
   only:
     - master
-    - /[^_]$/  # put an underscore at the end of the branch name to avoid building
+    - /_$/  # put an underscore at the end of the branch name to force building
 
 addons:
   apt:
