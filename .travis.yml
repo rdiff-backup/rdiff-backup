@@ -59,7 +59,7 @@ jobs:
       before_deploy:
         - cp CHANGELOG COPYING README.md docs/FAQ.md docs/examples.md docs/DEVELOP.md docs/Windows-README.md build/$vername
         - pushd build
-        - 7z a -tzip ../dist/$vername.zip $vername
+        - 7z a -tzip ../dist/$vername.win32exe.zip $vername
         - popd
     # Build and deploy Linux wheels using manylinux Docker containers
     # avoiding manylinux2014_i686 because it does not provide librsync-devel
