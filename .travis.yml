@@ -100,7 +100,7 @@ jobs:
         - ls dist/
     - os: linux
       language: shell
-      env: MAKE_STEP=build_deb RUN_COMMAND=
+      env: MAKE_STEP=bdist_deb RUN_COMMAND=
       addons:
         apt:
           packages:  # make sure these match debian/control contents
