@@ -135,6 +135,7 @@ branches:
   only:
     - master
     - /_$/  # put an underscore at the end of the branch name to force building
+    - /^v\d+\.\d+\.\d+[a-z]?[0-9]?$/  # we need to whitelist tags or nothing will happen
 
 addons:
   apt:
