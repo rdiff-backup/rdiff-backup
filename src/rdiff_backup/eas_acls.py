@@ -77,6 +77,8 @@ class ExtendedAttributes:
                 return
             raise
         for attr in attr_list:
+            if isinstance(attr, str):
+                attr = bytes(attr, 'utf-8')
             if attr.startswith(b'system.'):
                 # Do not preserve system extended attributes
                 continue
