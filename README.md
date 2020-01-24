@@ -47,7 +47,7 @@ You need to make sure that the following requirements are met:
 * Python 3.5 or higher
 * librsync 1.0.0 or higher
 * pylibacl (optional, to support ACLs)
-* pyxattr (optional, to support extended attributes)
+* pyxattr (optional, to support extended attributes) - **not** the xattr library!
 * SSH for remote operations
 
 Then you can install one of the following packages:

@@ -12,7 +12,7 @@ required as well:
 * Python 3.5 or higher
 * librsync 1.0.0 or higher
 * pylibacl (optional, to support ACLs)
-* pyxattr (optional, to support extended attributes)
+* pyxattr (optional, to support extended attributes) - **not** the xattr library!
 
 Additionally are following pre-requisites needed:
 
