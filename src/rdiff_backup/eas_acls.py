@@ -77,7 +77,7 @@ class ExtendedAttributes:
                 return
             raise
         for attr in attr_list:
-            os = os.encode(attr)
+            attr = os.encode(attr)
             if attr.startswith(b'system.'):
                 # Do not preserve system extended attributes
                 continue

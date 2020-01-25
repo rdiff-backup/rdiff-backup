@@ -33,7 +33,7 @@ try:
     import xattr  # noqa: F401
 except ImportError:
     try:
-        import xattr.pyxattr_compat as xattr
+        import xattr.pyxattr_compat as xattr  # noqa: F401
     except ImportError:
         pass
 try:
