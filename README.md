@@ -16,8 +16,7 @@ and fastest to restore the most recent backups, combining the space
 advantages of incremental backups while keeping the speed advantages of full
 backups (at least for recent ones).
 
-If the optional dependencies pylibacl and pyxattr are installed,
-rdiff-backup will support
+If the optional dependencies pylibacl and pyxattr are installed, rdiff-backup will support
 [Access Control Lists](https://en.wikipedia.org/wiki/Access-control_list#Filesystem_ACLs)
 and [Extended Attributes](https://en.wikipedia.org/wiki/Extended_file_attributes)
 provided the file system(s) also support these features.
@@ -47,7 +46,7 @@ You need to make sure that the following requirements are met:
 * Python 3.5 or higher
 * librsync 1.0.0 or higher
 * pylibacl (optional, to support ACLs)
-* pyxattr (optional, to support extended attributes) - **not** the xattr library!
+* pyxattr (optional, to support extended attributes) - the xattr library (without py) isn't regularly tested but should work and you will be helped
 * SSH for remote operations
 
 Then you can install one of the following packages:

@@ -32,7 +32,10 @@ import gzip  # noqa: F401
 try:
     import xattr  # noqa: F401
 except ImportError:
-    pass
+    try:
+        import xattr.pyxattr_compat as xattr
+    except ImportError:
+        pass
 try:
     import posix1e  # noqa: F401
 except ImportError:
