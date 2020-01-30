@@ -8,15 +8,15 @@ yum install -y librsync-devel
 
 # Compile wheels
 for PYBIN in $pybindirs; do
-    "${PYBIN}/pip" wheel /io/ -w wheelhouse/
+    "${PYBIN}/pip" wheel /io/ -w dist/
 done
 
 # Bundle external shared libraries into the wheels
-for whl in wheelhouse/*.whl; do
-    auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
+for whl in dist/*.whl; do
+    auditwheel repair "$whl" --plat $PLAT -w /io/dist/
 done
 
 # Install packages
 for PYBIN in $pybindirs; do
-    "${PYBIN}/pip" install rdiff-backup --no-index -f /io/wheelhouse
+    "${PYBIN}/pip" install rdiff-backup --no-index -f /io/dist
 done
