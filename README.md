@@ -129,7 +129,7 @@ When testing and giving feedback, please make sure you are running the latest de
 
 For most platforms the easiest way to install the [latest development version of rdiff-backup is via the Python package installer](https://pypi.org/project/rdiff-backup/#history):
 
-  pip3 install --pre rdiff-backup
+    pip3 install --pre rdiff-backup
 
 Note the `--pre` switch. If it fails to compile, you might also need to install `librsync-dev` first.
 
@@ -137,14 +137,14 @@ Note the `--pre` switch. If it fails to compile, you might also need to install 
 
 For Ubuntu users there exists a [PPA](https://code.launchpad.net/~rdiff-backup/+archive/ubuntu/rdiff-backup-development) that updates daily to have the latest git master version easily available. To install, simply run:
 
-  sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-development
-  sudo apt-get update
+    sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-development
+    sudo apt-get update
 
 ### Development version from Copr (for Fedora/CentOS/Red Hat)
 
 For Fedora users there exists a [Copr](https://copr.fedorainfracloud.org/coprs/frankcrawford/rdiff-backup/) where the rdiff-backup development version is frequently updated to. To enable it, simply run:
 
-  dnf copr enable frankcrawford/rdiff-backup
+    dnf copr enable frankcrawford/rdiff-backup
 
 
 ## Contribute by developing code
