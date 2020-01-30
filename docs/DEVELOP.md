@@ -91,7 +91,7 @@ The same pre-requisites as for the installation of rdiff-backup also apply for b
 * Python 3.5 or higher
 * librsync 1.0.0 or higher
 * pylibacl (optional, to support ACLs)
-* pyxattr (optional, to support extended attributes)
+* pyxattr (optional, to support extended attributes) - even if the xattr library (without py) isn't part of our CI/CD pipeline, feel free to use it for your development
 
 Additionally are following pre-requisites needed:
 
