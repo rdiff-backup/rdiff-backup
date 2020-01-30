@@ -30,9 +30,12 @@ import gzip  # noqa: F401
 
 # The following EA and ACL modules may be used if available
 try:
-    import xattr  # noqa: F401
+    import xattr.pyxattr_compat as xattr  # noqa: F401
 except ImportError:
-    pass
+    try:
+        import xattr  # noqa: F401
+    except ImportError:
+        pass
 try:
     import posix1e  # noqa: F401
 except ImportError:

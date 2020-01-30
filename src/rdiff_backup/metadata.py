@@ -236,7 +236,7 @@ def Record2RORP(record_string):
             else:
                 data_dict['uname'] = data.decode()
         elif field == "Gname":
-            if data == ':' or data == 'None':
+            if data == b':' or data == b'None':
                 data_dict['gname'] = None
             else:
                 data_dict['gname'] = data.decode()
