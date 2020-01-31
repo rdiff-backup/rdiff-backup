@@ -1,5 +1,13 @@
-New in v1.3.6 (????/??/??)
----------------------------
+New in v2.0.0 (????/??/??)
+--------------------------
+
+Different bug fixes, improvements in code and documentation - too many to list
+(Andreas Olsson, Andrew Foster, Arrigo Marchiori, bigbear3001, davekempe,
+David I. Lehn, elMor3no, Eric Lavarde, Frank Crawford, Jiri Lunacek, joshn, Josh Soref,
+mestre, Oliver Lowe, orangenschalen, Otto Kekäläinen, owsla, Patrik Dufresne, Reio Remma,
+Rodrigo Silva, Stefan Seyfried, Wes Cilldhaire, zjw)
+
+Add automated of different package formats (Otto Kekäläinen, Arrigo Marchiori, Eric Lavarde)
 
 Add RDIFF_BACKUP_VERBOSITY environment variable (Eric Lavarde)
 
