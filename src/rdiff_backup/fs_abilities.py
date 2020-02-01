@@ -390,24 +390,16 @@ class FSAbilities:
             self.eas = 0
             return
         try:
-            import xattr
+            import xattr.pyxattr_compat as xattr
         except ImportError:
-            log.Log(
-                "Unable to import module xattr.\nExtended attributes not "
-                "supported on filesystem at %s" % (rp.get_safepath(), ), 4)
-            self.eas = 0
-            return
-
-        try:
-            ver = xattr.__version__
-        except AttributeError:
-            ver = 'unknown'
-        if ver < '0.2.2' or ver == 'unknown':
-            log.Log(
-                "Warning: Your version of pyxattr (%s) has broken support "
-                "for extended\nattributes on symlinks. If you choose not "
-                "to upgrade to a more recent version,\nyou may see many "
-                "warning messages from listattr().\n" % (ver, ), 3)
+            try:
+                import xattr
+            except ImportError:
+                log.Log(
+                    "Unable to import module (py)xattr.\nExtended attributes not "
+                    "supported on filesystem at %s" % (rp.get_safepath(), ), 4)
+                self.eas = 0
+                return
 
         try:
             xattr.listxattr(rp.path)

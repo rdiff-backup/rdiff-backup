@@ -39,6 +39,20 @@ build:
 	# parent is writeable)
 	${RUN_COMMAND} ./setup.py build
 
+bdist_wheel:
+	# Prepare wheel for deployment.
+	# See the notes for target "build"
+	# auditwheel unfortunately does not work with modern glibc
+	${RUN_COMMAND} ./setup.py bdist_wheel
+	# ${RUN_COMMAND} auditwheel repair dist/*.whl
+
+sdist:
+	# Prepare wheel for deployment.
+	${RUN_COMMAND} ./setup.py sdist
+
+bdist_deb:
+	${RUN_COMMAND} gbp buildpackage -us -uc
+
 container:
 	# Build development image
 	docker build --pull --tag rdiff-backup-dev:debian-sid .
