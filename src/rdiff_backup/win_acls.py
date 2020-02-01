@@ -230,10 +230,18 @@ class ACL:
         return os.fsdecode(self.__bytes__())
 
     def from_string(self, acl_str):
+
+        def _safe_str(cmd):
+            """Transform bytes into string without risk of conversion error"""
+            if isinstance(cmd, str):
+                return cmd
+            else:
+                return str(cmd, errors='replace')
+
         lines = acl_str.splitlines()
         if len(lines) != 2 or not lines[0][:8] == b"# file: ":
             raise metadata.ParsingError(
-                "Bad record beginning: %a" % lines[0][:8])
+                "Bad record beginning: %s" % _safe_str(lines[0][:8]))
         filename = lines[0][8:]
         if filename == b'.':
             self.index = ()
