@@ -43,7 +43,7 @@ jobs:
         - pyenv local $pyver
         - python --version
       install:
-        - pip install --upgrade tox pywin32 setuptools-scm PyInstaller
+        - pip install --upgrade tox pywin32 setuptools-scm PyInstaller wheel
         - pyenv rehash
         - git clone -b v2.2.1 https://github.com/librsync/librsync.git $HOME/.librsync
         - export LIBRSYNC_DIR=$HOME/librsync
@@ -53,7 +53,7 @@ jobs:
         - cmake --install . --config Release
         - popd
       script:
-        - python setup.py bdist
+        - python setup.py bdist_wheel
         - vername=rdiff-backup-`python setup.py --version`
         - PyInstaller --onefile --distpath build/$vername --paths=build/lib.win32-$pyverbrief --add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info --console build/scripts-$pyverbrief/rdiff-backup
       before_deploy:
