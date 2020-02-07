@@ -36,7 +36,7 @@ deploy:
       all_branches: true
       condition: >
         $MAKE_STEP =~ ^(bdist_wheel|sdist)$
-        AND tag =~ /^v\d+\.\d+\.\d+((a|b|rc)[0-9])?$/
+        AND tag =~ ^v\d+\.\d+\.\d+((a|b|rc)[0-9])?$
       # TODO add |bdist_win to release also Windows wheel
   # we use dev version tags to release to test.pypi.org
   - provider: pypi
@@ -56,7 +56,7 @@ deploy:
       all_branches: true
       condition: >
         $MAKE_STEP =~ ^(bdist_wheel|sdist|bdist_win)$
-        AND tag =~ /^v\d+\.\d+\.\d+((a|b|rc)[0-9])?\.dev[0-9]$/
+        AND tag =~ ^v\d+\.\d+\.\d+((a|b|rc)[0-9])?\.dev[0-9]$
 
 jobs:
   include:
