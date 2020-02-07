@@ -34,7 +34,10 @@ deploy:
     on:
       tags: true
       all_branches: true
-      condition: $MAKE_STEP =~ ^(bdist_wheel|bdist_win|sdist)$
+      condition: >
+        $MAKE_STEP =~ ^(bdist_wheel|sdist)$
+        AND tag =~ /^v\d+\.\d+\.\d+[a-z]?[0-9]?$/
+      # TODO add |bdist_win to release also Windows wheel
 
 jobs:
   include:
