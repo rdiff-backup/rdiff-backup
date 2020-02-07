@@ -36,9 +36,9 @@ deploy:
       all_branches: true
       condition: >
         $MAKE_STEP =~ ^(bdist_wheel|sdist)$
-        AND tag =~ /^v\d+\.\d+\.\d+[a-y]?[0-9]?$/
+        AND tag =~ /^v\d+\.\d+\.\d+((a|b|rc)[0-9])?$/
       # TODO add |bdist_win to release also Windows wheel
-  # we use 'vA.B.CzD' version tags to release to test.pypi.org
+  # we use dev version tags to release to test.pypi.org
   - provider: pypi
     user: "__token__"
     password:
@@ -47,7 +47,7 @@ deploy:
     skip_existing: true
     skip_cleanup: true
     server: https://test.pypi.org/legacy/
-    # workaround to make deploy possibly work under Windows
+    # FIXME workaround to make deploy possibly work under Windows, remove once released
     edge:
       source: native-api/dpl
       branch: z-quotes
@@ -56,7 +56,7 @@ deploy:
       all_branches: true
       condition: >
         $MAKE_STEP =~ ^(bdist_wheel|sdist|bdist_win)$
-        AND tag =~ /^v\d+\.\d+\.\d+z[0-9]?$/
+        AND tag =~ /^v\d+\.\d+\.\d+((a|b|rc)[0-9])?\.dev[0-9]$/
 
 jobs:
   include:
@@ -168,7 +168,7 @@ branches:
   only:
     - master
     - /_$/  # put an underscore at the end of the branch name to force building
-    - /^v\d+\.\d+\.\d+[a-z]?[0-9]?$/  # we need to whitelist tags or nothing will happen
+    - /^v\d+\.\d+\.\d+((a|b|rc)[0-9])?(\.dev[0-9])?$/  # we need to whitelist tags or nothing will happen PEP440
 
 addons:
   apt:
