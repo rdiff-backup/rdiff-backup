@@ -52,7 +52,7 @@ deploy:
     on:
       tags: true
       all_branches: true
-      condition: env(MAKE_STEP) IN (bdist_wheel, sdist, bdist_win) AND tag =~ /^v[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9])?\.dev[0-9]$/
+      condition: $MAKE_STEP =~ ^(bdist_wheel|sdist|bdist_win)$ && $TRAVIS_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9])?\.dev[0-9]$
 
 jobs:
   include:
