@@ -88,9 +88,10 @@ class build_templates(Command):
     def run(self):
         if DEBUG:
             self.debug_print(self.distribution.dump_option_dicts())
+        build_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
         replacement_dict = {
             "version": self.distribution.get_version(),
-            "month_year": time.strftime("%B %Y", time.localtime(time.time()))
+            "month_year": time.strftime("%B %Y", time.gmtime(build_time))
         }
         for template in self.template_files:
             self.make_file(
