@@ -12,6 +12,13 @@ python:
   - 3.7
   - 3.8
 
+#=== DEPLOYMENTS ===
+# - everything to GitHub releases
+# - wheels to PyPI (if tag looks like an alpha, beta, rc or final release)
+# - sdist to PyPI (if tag looks like an alpha, beta, rc or final release)
+# - wheels to Test PyPI (if tag looks like a development release)
+# - sdist to Test PyPI (if tag looks like a development release)
+
 deploy:
   - provider: releases
     file_glob: true
@@ -83,9 +90,11 @@ deploy:
       all_branches: true
       condition: $MAKE_STEP == sdist && $TRAVIS_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9])?\.dev[0-9]+$
 
+#=== ADDITIONAL JOBS ===
+
 jobs:
   include:
-    # Build and deploy Windows executable
+    #--- Build and deploy Windows executable ---
     - os: windows
       language: shell
       env: MAKE_STEP=bdist_win
@@ -119,7 +128,11 @@ jobs:
         - pushd build
         - 7z a -tzip ../dist/$vername.win32exe.zip $vername
         - popd
-    # Build and deploy Linux wheels using manylinux Docker containers
+
+    #--- Build and deploy Linux wheels using manylinux Docker containers ---
+    # - build manylinux2010 (and manylinux1) x64
+    # - build manylinux2010 i686
+    # - build manylinux2014 x64
     # avoiding manylinux2014_i686 because it does not provide librsync-devel
     - os: linux
       sudo: required
@@ -156,6 +169,8 @@ jobs:
       script:
         - docker run --rm -e PLAT=$PLAT -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/tools/build_wheels.sh
         - ls dist/
+
+    #--- Build and deploy Debian packages ---
     - os: linux
       language: shell
       env: MAKE_STEP=bdist_deb RUN_COMMAND=
@@ -180,6 +195,8 @@ jobs:
         - cat ../*.changes
         - mkdir -vp dist
         - cp -v ../*.* dist/
+
+    #--- Build and deploy Debian packages ---
     - os: linux
       env: MAKE_STEP=sdist RUN_COMMAND=
       install:
