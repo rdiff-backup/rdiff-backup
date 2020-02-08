@@ -24,17 +24,6 @@ deploy:
       tags: true
       all_branches: true
       condition: $MAKE_STEP == ?dist*
-#  - provider: pypi
-#    user: "__token__"
-#    password:
-#      secure: QGprJSAZR3X88Ir4qpJpNdel5m6CngEtYlD2DAgwRuyPHClhMhXcayB7NbRqACRdtsqBBdQHSOnPO6jBcrhvTIeFbyhiSWZKME113yn4RFD3E+z/p8otb02Lk0DvFTakeC2qxsJ1nlwxGte7qT5Ac9dL7U5O3SSlWNoq2c3QmoD/d+fVdtjf6tp4QywlOIr4Jyx2WWFBQDSQB2cjY7YfwgcQchXkOoVog83dUID4pTh15HlM1Q9E8k0EKueGrDVkS3hhlbPimv1C1coM/IAIAXaTSR1AZZCZELsVSbBOW1hMaAL4MPpr9ekKx/eErnZiIkCuovBTk0XKvzfOyPluFjnuxazKWH9EU5WutCzfxtXh29fLNLYKaqalgjI024kvzTxVFtxJFvCcnhEjcqgs6sxh4nrzAosK163LViFRlJjgbT+2kVgeWiA51fjFTdIj0ep3/NMN8SgvSWQu7SRA8Vtxx9NLzTu57QPKZdRLOW98XUnnSwWPvFymNJ3JHQtp3tsRvTaLcbECvpI82bQa/9+MEszGXwm5TdM3Ogie7OUgDReq6fYbSCYXli5800QwA8Zj6zwJH2qG7l2VAPm0Gd0O9RPP/U2DCxDVAHPDV8VYzKsLWeCQ0Rsxz0S0d1r1Vss15rZ/C/RaCXUJB9ba4F1uRMh4l8Jm4/eSAcuAryI=
-#    distributions: "sdist bdist_wheel"
-#    skip_existing: true
-#    skip_cleanup: true
-#    on:
-#      tags: true
-#      all_branches: true
-#      condition: $MAKE_STEP =~ ^(bdist_wheel|sdist)$ && tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9])?$
   # we use beta/alpha/rc/final version tags to release to pypi.org
   - provider: pypi
     user: "__token__"
