@@ -344,6 +344,10 @@ The following rules apply:
   something to the pipeline), create a branch or a tag with an underscore at
   the end of their name. Just make sure that you remove such tags, and
   potential draft releases, after usage.
+* If you want, again for test purposes, to trigger a PyPI deployment towards
+  test.pypi.org, tag the commit before you push it with a development release
+  tag, like `vA.B.CbD.devN`, then explicitly push the tag and the branch at
+  the same time e.g. with `git push origin vA.B.CbD.devN myname-mybranch`.
 
 > **TIP:** Travis will not trigger again on a commit which has already gone
            through the pipeline, even if you add a tag. This applies especially
@@ -377,6 +381,11 @@ Given the above rules, a release cycle looks roughly as follows:
 > **IMPORTANT:** if not everything goes well, remove the tag both locally with
                  `git tag -d TAG` and remotely with `git push -d origin TAG`.
                  Then fix the issue with a new PR and start from the beginning.
+
+> **TIP:** the PyPI deploy pipeline is for now broken under Windows on Travis-CI.
+           You may download the Windows wheel(s) from GitHub and upload them to
+           PyPI from the command line using twine:
+           `twine upload [--repository-url https://test.pypi.org/legacy/] dist/rdiff\_backup-*-win32.whl`
 
 The following sub-chapters list some learnings and specifities in case you need to modify the pipeline.
 
