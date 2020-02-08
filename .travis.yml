@@ -41,7 +41,7 @@ deploy:
     user: "__token__"
     password:
       secure: KYfWfkPfllpPq+qkAXiX5KEPNrPu/L46DkZ1H6VWE69zQMuuTdlfC4UiQ28tt5HeeFt7Wxnn1JlfWuaFhIZx+xMa3oa3ln9BINXZmfMUcX6xpK5Uegtd8Y0ywiZJsd5PN1ZmthfgWTLJ9mJydYb13OpgzNxqpO9eiYz/4xpnSm7zG5OYfmzt5gR+CbzIEcL0VS15Os7i/aCEes32HNcqyl4Dwx7mJ0lFgzRTChYTzsifrtD4XmH6p5H+WrPIx336Wz/8jrBgcM20kXwHiyWGjg7gnWCx8+fcPhHWa0e3iC48KoSd3ixeK1QyrPt2jbUtuMmB6x5yM/fxloWyMCj8W0jU1jJgzrZA3TzV2EPym54BoDz2lZ1xTeAxeCk1nYcA6wT6Xea6MwSGTvV/qPLEnXIafEt9bcD0ox+JfCjNVrw3baQqnwAWnyKCFKYJ3IHJCXz23J26pLlv10DgEtxI5/U2nUU/Nx9f/fJn/CJlz1X1TOFygqPICoUSE3t4jsqbLbA48UJz6fZnzSwFO2FN+wGUqudq/JkAaRcLu4/W+1f4HrQ5UVk8Ql4wDUS3iBr8FYsQ+S8fxvHRJGaCVSO1KCUcX//DHV3iB2VwDNHiD8zF3FtRuyODpFbo5BlL3eIX5w1dCTx/6SgDpNb/PofkQdaHi6woIzX+8zoymMT+4QA=
-    distributions: "sdist bdist_wheel"
+    distributions: bdist_wheel
     skip_existing: true
     skip_cleanup: true
     server: https://test.pypi.org/legacy/
@@ -52,7 +52,23 @@ deploy:
     on:
       tags: true
       all_branches: true
-      condition: $MAKE_STEP =~ ^(bdist_wheel|sdist|bdist_win)$ && $TRAVIS_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9])?\.dev[0-9]$
+      condition: $MAKE_STEP =~ ^(bdist_wheel|bdist_win)$ && $TRAVIS_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9])?\.dev[0-9]+$
+  - provider: pypi
+    user: "__token__"
+    password:
+      secure: KYfWfkPfllpPq+qkAXiX5KEPNrPu/L46DkZ1H6VWE69zQMuuTdlfC4UiQ28tt5HeeFt7Wxnn1JlfWuaFhIZx+xMa3oa3ln9BINXZmfMUcX6xpK5Uegtd8Y0ywiZJsd5PN1ZmthfgWTLJ9mJydYb13OpgzNxqpO9eiYz/4xpnSm7zG5OYfmzt5gR+CbzIEcL0VS15Os7i/aCEes32HNcqyl4Dwx7mJ0lFgzRTChYTzsifrtD4XmH6p5H+WrPIx336Wz/8jrBgcM20kXwHiyWGjg7gnWCx8+fcPhHWa0e3iC48KoSd3ixeK1QyrPt2jbUtuMmB6x5yM/fxloWyMCj8W0jU1jJgzrZA3TzV2EPym54BoDz2lZ1xTeAxeCk1nYcA6wT6Xea6MwSGTvV/qPLEnXIafEt9bcD0ox+JfCjNVrw3baQqnwAWnyKCFKYJ3IHJCXz23J26pLlv10DgEtxI5/U2nUU/Nx9f/fJn/CJlz1X1TOFygqPICoUSE3t4jsqbLbA48UJz6fZnzSwFO2FN+wGUqudq/JkAaRcLu4/W+1f4HrQ5UVk8Ql4wDUS3iBr8FYsQ+S8fxvHRJGaCVSO1KCUcX//DHV3iB2VwDNHiD8zF3FtRuyODpFbo5BlL3eIX5w1dCTx/6SgDpNb/PofkQdaHi6woIzX+8zoymMT+4QA=
+    distributions: sdist
+    skip_existing: true
+    skip_cleanup: true
+    server: https://test.pypi.org/legacy/
+    # FIXME workaround to make deploy possibly work under Windows, remove once released
+    edge:
+      source: native-api/dpl
+      branch: z-quotes
+    on:
+      tags: true
+      all_branches: true
+      condition: $MAKE_STEP == sdist && $TRAVIS_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9])?\.dev[0-9]+$
 
 jobs:
   include:
@@ -164,7 +180,7 @@ branches:
   only:
     - master
     - /_$/  # put an underscore at the end of the branch name to force building
-    - /^v\d+\.\d+\.\d+((a|b|rc)[0-9])?(\.dev[0-9])?$/  # we need to whitelist tags or nothing will happen PEP440
+    - /^v\d+\.\d+\.\d+((a|b|rc)[0-9])?(\.dev[0-9]+)?$/  # we need to whitelist tags or nothing will happen PEP440
 
 addons:
   apt:
