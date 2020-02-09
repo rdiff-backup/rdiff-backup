@@ -1,4 +1,4 @@
-rdiff-backup (1.4.0b1) unstable; urgency=medium
+rdiff-backup (1.9.0b0) unstable; urgency=medium
 
   * Initial changelog entry for native rdiff-backup packaging.
 
