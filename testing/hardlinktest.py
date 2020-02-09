@@ -4,7 +4,7 @@ import time
 from commontest import abs_test_dir, abs_output_dir, old_test_dir, re_init_rpath_dir, \
     CompareRecursive, BackupRestoreSeries, InternalBackup, InternalRestore, \
     MakeOutputDir, reset_hardlink_dicts
-from rdiff_backup import Globals, Hardlink, selection, rpath
+from rdiff_backup import Globals, Hardlink, selection, rpath, restore, metadata
 
 
 class HardlinkTest(unittest.TestCase):
@@ -21,6 +21,8 @@ class HardlinkTest(unittest.TestCase):
     hlinks_rp1copy = rpath.RPath(Globals.local_connection, hlinks_dir1copy)
     hlinks_rp2 = rpath.RPath(Globals.local_connection, hlinks_dir2)
     hlinks_rp3 = rpath.RPath(Globals.local_connection, hlinks_dir3)
+    hello_str = "Hello, world!"
+    hello_str_hash = "943a702d06f34599aee1f8da8ef9f7296031d699"
 
     def testEquality(self):
         """Test rorp_eq function in conjunction with CompareRecursive"""
@@ -156,120 +158,211 @@ class HardlinkTest(unittest.TestCase):
         assert hlout2.getinode() == hlout3.getinode()
         assert hlout1.getinode() != hlout2.getinode()
 
-    def testHardlinkBug1(self):
-        """Test bug 26848, part 1: https://savannah.nongnu.org/bugs/?26848"""
+    def extract_metadata(self, metadata_rp):
+        """Return lists of hashes and hardlink counts in the metadata_rp"""
+        hashes = []
+        link_counts = []
+        comp = metadata_rp.isinccompressed()
+        extractor = metadata.RorpExtractor(metadata_rp.open("r", comp))
+        for rorp in extractor.iterate():
+            link_counts.append(rorp.getnumlinks())
+            if rorp.has_sha1():
+                hashes.append(rorp.get_sha1())
+            else:
+                hashes.append(None)
+        return (hashes, link_counts)
+
+    def test_adding_hardlinks(self):
+        """Test the addition of a new hardlinked file.
+
+        This test is directed at some previously buggy code that 1) failed to
+        keep the correct number of hardlinks in the mirror metadata, and 2)
+        failed to restore hardlinked files so that they are linked the same as
+        when they were backed up. One of the conditions that triggered these
+        bugs included adding a new hardlinked file somewhere in the middle of a
+        list of previously linked files.  The bug was originally reported here:
+        https://savannah.nongnu.org/bugs/?26848
+        """
+
+        # Setup initial backup
         MakeOutputDir()
         output = rpath.RPath(Globals.local_connection, abs_output_dir)
-        hlout3_dir = os.path.join(abs_test_dir, b"out_hardlink3")
+        hlsrc_dir = os.path.join(abs_test_dir, b"src_hardlink")
 
-        hlout3 = rpath.RPath(Globals.local_connection, hlout3_dir)
-        if hlout3.lstat():
-            hlout3.delete()
-        hlout3.mkdir()
-        hlout3_sub = hlout3.append("subdir")
-        hlout3_sub.mkdir()
-        hl3_1 = hlout3_sub.append("hardlink1")
-        hl3_3 = hlout3_sub.append("hardlink3")
-        hl3_1.touch()
-        hl3_3.hardlink(hl3_1.path)
+        hlsrc = rpath.RPath(Globals.local_connection, hlsrc_dir)
+        if hlsrc.lstat():
+            hlsrc.delete()
+        hlsrc.mkdir()
+        hlsrc_sub = hlsrc.append("subdir")
+        hlsrc_sub.mkdir()
+        hl_file1 = hlsrc_sub.append("hardlink1")
+        hl_file1.write_string(self.hello_str)
+        hl_file3 = hlsrc_sub.append("hardlink3")
+        hl_file3.hardlink(hl_file1.path)
 
-        InternalBackup(1, 1, hlout3.path, output.path)
+        InternalBackup(1, 1, hlsrc.path, output.path, 10000)
         out_subdir = output.append("subdir")
         assert out_subdir.append("hardlink1").getinode() == \
             out_subdir.append("hardlink3").getinode()
 
-        # Create a new hardlinked file between "hardlink1" and "hardlink3"
-        hl3_2 = hlout3_sub.append("hardlink2")
-        hl3_2.hardlink(hl3_1.path)
+        # validate that hashes and link counts are correctly saved in metadata
+        meta_prefix = rpath.RPath(
+            Globals.local_connection,
+            os.path.join(abs_output_dir, b"rdiff-backup-data",
+                         b"mirror_metadata"))
+        incs = restore.get_inclist(meta_prefix)
+        assert len(incs) == 1
+        metadata_rp = incs[0]
+        hashes, link_counts = self.extract_metadata(metadata_rp)
+        # hashes for ., ./subdir, ./subdir/hardlink1, ./subdir/hardlink3
+        expected_hashes = [None, None, self.hello_str_hash, None]
+        assert expected_hashes == hashes, (expected_hashes, hashes)
+        expected_link_counts = [1, 1, 2, 2]
+        assert expected_link_counts == link_counts, (expected_link_counts, link_counts)
 
-        time.sleep(1)
-        InternalBackup(1, 1, hlout3.path, output.path)
-        out_subdir.setdata()
+        # Create a new hardlinked file between "hardlink1" and "hardlink3" and perform another backup
+        hl_file2 = hlsrc_sub.append("hardlink2")
+        hl_file2.hardlink(hl_file1.path)
+
+        InternalBackup(1, 1, hlsrc.path, output.path, 20000)
         assert out_subdir.append("hardlink1").getinode() == \
             out_subdir.append("hardlink2").getinode()
         assert out_subdir.append("hardlink1").getinode() == \
             out_subdir.append("hardlink3").getinode()
+
+        # validate that hashes and link counts are correctly saved in metadata
+        incs = restore.get_inclist(meta_prefix)
+        assert len(incs) == 2
+        if incs[0].getinctype() == b'snapshot':
+            metadata_rp = incs[0]
+        else:
+            metadata_rp = incs[1]
+        hashes, link_counts = self.extract_metadata(metadata_rp)
+        # hashes for ., ./subdir/, ./subdir/hardlink1, ./subdir/hardlink2, ./subdir/hardlink3
+        expected_hashes = [None, None, self.hello_str_hash, None, None]
+        assert expected_hashes == hashes, (expected_hashes, hashes)
+        expected_link_counts = [1, 1, 3, 3, 3]
+        # The following assertion would fail as a result of bugs that are now fixed
+        assert expected_link_counts == link_counts, (expected_link_counts, link_counts)
 
         # Now try restoring, still checking hard links.
-        sub_dir = os.path.join(abs_output_dir, b"subdir")
-        out3_dir = os.path.join(abs_test_dir, b"out3")
-        out3 = rpath.RPath(Globals.local_connection, out3_dir)
-        hlout1 = out3.append("hardlink1")
-        hlout2 = out3.append("hardlink2")
-        hlout3 = out3.append("hardlink3")
+        sub_path = os.path.join(abs_output_dir, b"subdir")
+        restore_path = os.path.join(abs_test_dir, b"hl_restore")
+        restore_dir = rpath.RPath(Globals.local_connection, restore_path)
+        hlrestore_file1 = restore_dir.append("hardlink1")
+        hlrestore_file2 = restore_dir.append("hardlink2")
+        hlrestore_file3 = restore_dir.append("hardlink3")
 
-        if out3.lstat():
-            out3.delete()
-        InternalRestore(1, 1, sub_dir, out3_dir, 1)
-        out3.setdata()
-        for rp in [hlout1, hlout3]:
+        if restore_dir.lstat():
+            restore_dir.delete()
+        InternalRestore(1, 1, sub_path, restore_path, 10000)
+        for rp in [hlrestore_file1, hlrestore_file3]:
             rp.setdata()
-        assert hlout1.getinode() == hlout3.getinode()
+        assert hlrestore_file1.getinode() == hlrestore_file3.getinode()
 
-        if out3.lstat():
-            out3.delete()
-        InternalRestore(1, 1, sub_dir, out3_dir, int(time.time()))
-        out3.setdata()
-        for rp in [hlout1, hlout2, hlout3]:
+        if restore_dir.lstat():
+            restore_dir.delete()
+        InternalRestore(1, 1, sub_path, restore_path, 20000)
+        for rp in [hlrestore_file1, hlrestore_file2, hlrestore_file3]:
             rp.setdata()
-        assert hlout1.getinode() == hlout2.getinode()
-        assert hlout1.getinode() == hlout3.getinode()
+        assert hlrestore_file1.getinode() == hlrestore_file2.getinode()
+        # The following assertion would fail as a result of bugs that are now fixed
+        assert hlrestore_file1.getinode() == hlrestore_file3.getinode()
 
-    def testHardlinkBug2(self):
-        """Test bug 26848, part 2: https://savannah.nongnu.org/bugs/?26848"""
+    def test_moving_hardlinks(self):
+        """Test moving the first hardlinked file in a series to later place in the series.
+
+        This test is directed at some previously buggy code that failed to
+        always keep a sha1 hash in the metadata for the first (and only the
+        first) file among a series of linked files. The condition that
+        triggered this bug involved removing the first file from a list of
+        linked files, while also adding a new file at some later position in
+        the list. The total number of hardlinked files in the list remains
+        unchanged.  None of the files had a sha1 hash saved in its metadata.
+        The bug was originally reported here:
+        https://savannah.nongnu.org/bugs/?26848
+        """
+
+        # Setup initial backup
         MakeOutputDir()
         output = rpath.RPath(Globals.local_connection, abs_output_dir)
-        hlout4_dir = os.path.join(abs_test_dir, b"out_hardlink4")
+        hlsrc_dir = os.path.join(abs_test_dir, b"src_hardlink")
 
-        hlout4 = rpath.RPath(Globals.local_connection, hlout4_dir)
-        if hlout4.lstat():
-            hlout4.delete()
-        hlout4.mkdir()
-        hlout4_sub = hlout4.append("subdir")
-        hlout4_sub.mkdir()
-        hl4_1 = hlout4_sub.append("hardlink1")
-        hl4_2 = hlout4_sub.append("hardlink2")
-        hl4_1.touch()
-        hl4_2.hardlink(hl4_1.path)
+        hlsrc = rpath.RPath(Globals.local_connection, hlsrc_dir)
+        if hlsrc.lstat():
+            hlsrc.delete()
+        hlsrc.mkdir()
+        hlsrc_sub = hlsrc.append("subdir")
+        hlsrc_sub.mkdir()
+        hl_file1 = hlsrc_sub.append("hardlink1")
+        hl_file1.write_string(self.hello_str)
+        hl_file2 = hlsrc_sub.append("hardlink2")
+        hl_file2.hardlink(hl_file1.path)
 
-        InternalBackup(1, 1, hlout4.path, output.path)
+        InternalBackup(1, 1, hlsrc.path, output.path, 10000)
         out_subdir = output.append("subdir")
         assert out_subdir.append("hardlink1").getinode() == \
             out_subdir.append("hardlink2").getinode()
 
-        # Move the first hardlinked file to be last
-        hl4_3 = hlout4_sub.append("hardlink3")
-        rpath.rename(hl4_1, hl4_3)
+        # validate that hashes and link counts are correctly saved in metadata
+        meta_prefix = rpath.RPath(
+            Globals.local_connection,
+            os.path.join(abs_output_dir, b"rdiff-backup-data",
+                         b"mirror_metadata"))
+        incs = restore.get_inclist(meta_prefix)
+        assert len(incs) == 1
+        metadata_rp = incs[0]
+        hashes, link_counts = self.extract_metadata(metadata_rp)
+        # hashes for ., ./subdir, ./subdir/hardlink1, ./subdir/hardlink3
+        expected_hashes = [None, None, self.hello_str_hash, None]
+        assert expected_hashes == hashes, (expected_hashes, hashes)
+        expected_link_counts = [1, 1, 2, 2]
+        assert expected_link_counts == link_counts, (expected_link_counts, link_counts)
 
-        time.sleep(1)
-        InternalBackup(1, 1, hlout4.path, output.path)
-        out_subdir.setdata()
+        # Move the first hardlinked file to be last
+        hl_file3 = hlsrc_sub.append("hardlink3")
+        rpath.rename(hl_file1, hl_file3)
+
+        InternalBackup(1, 1, hlsrc.path, output.path, 20000)
         assert out_subdir.append("hardlink2").getinode() == \
             out_subdir.append("hardlink3").getinode()
 
+        # validate that hashes and link counts are correctly saved in metadata
+        incs = restore.get_inclist(meta_prefix)
+        assert len(incs) == 2
+        if incs[0].getinctype() == b'snapshot':
+            metadata_rp = incs[0]
+        else:
+            metadata_rp = incs[1]
+        hashes, link_counts = self.extract_metadata(metadata_rp)
+        # hashes for ., ./subdir/, ./subdir/hardlink2, ./subdir/hardlink3
+        expected_hashes = [None, None, self.hello_str_hash, None]
+        # The following assertion would fail as a result of bugs that are now fixed
+        assert expected_hashes == hashes, (expected_hashes, hashes)
+        expected_link_counts = [1, 1, 2, 2]
+        assert expected_link_counts == link_counts, (expected_link_counts, link_counts)
+
         # Now try restoring, still checking hard links.
-        sub_dir = os.path.join(abs_output_dir, b"subdir")
-        out4_dir = os.path.join(abs_test_dir, b"out4")
-        out4 = rpath.RPath(Globals.local_connection, out4_dir)
-        hlout1 = out4.append("hardlink1")
-        hlout2 = out4.append("hardlink2")
-        hlout3 = out4.append("hardlink3")
+        sub_path = os.path.join(abs_output_dir, b"subdir")
+        restore_path = os.path.join(abs_test_dir, b"hl_restore")
+        restore_dir = rpath.RPath(Globals.local_connection, restore_path)
+        hlrestore_file1 = restore_dir.append("hardlink1")
+        hlrestore_file2 = restore_dir.append("hardlink2")
+        hlrestore_file3 = restore_dir.append("hardlink3")
 
-        if out4.lstat():
-            out4.delete()
-        InternalRestore(1, 1, sub_dir, out4_dir, 1)
-        out4.setdata()
-        for rp in [hlout1, hlout2]:
+        if restore_dir.lstat():
+            restore_dir.delete()
+        InternalRestore(1, 1, sub_path, restore_path, 10000)
+        for rp in [hlrestore_file1, hlrestore_file2]:
             rp.setdata()
-        assert hlout1.getinode() == hlout2.getinode()
+        assert hlrestore_file1.getinode() == hlrestore_file2.getinode()
 
-        if out4.lstat():
-            out4.delete()
-        InternalRestore(1, 1, sub_dir, out4_dir, int(time.time()))
-        out4.setdata()
-        for rp in [hlout2, hlout3]:
+        if restore_dir.lstat():
+            restore_dir.delete()
+        InternalRestore(1, 1, sub_path, restore_path, 20000)
+        for rp in [hlrestore_file2, hlrestore_file3]:
             rp.setdata()
-        assert hlout2.getinode() == hlout3.getinode()
+        assert hlrestore_file2.getinode() == hlrestore_file3.getinode()
 
 
 if __name__ == "__main__":
