@@ -67,11 +67,32 @@ class RPathException(Exception):
 def copyfileobj(inputfp, outputfp):
     """Copies file inputfp to outputfp in blocksize intervals"""
     blocksize = Globals.blocksize
+
+    sparse = False
+    """Negative seeks are not supported by GzipFile"""
+    compressed = False
+    if isinstance(outputfp, gzip.GzipFile):
+        compressed = True
+
     while 1:
         inbuf = inputfp.read(blocksize)
         if not inbuf:
             break
-        outputfp.write(inbuf)
+
+        buflen = len(inbuf)
+        if not compressed and inbuf == b"\x00" * buflen:
+            outputfp.seek(buflen, os.SEEK_CUR)
+            # flag sparse=True, that we seek()ed, but have not written yet
+            # The filesize is wrong until we write
+            sparse = True
+        else:
+            outputfp.write(inbuf)
+            # We wrote, so clear sparse.
+            sparse = False
+
+    if sparse:
+        outputfp.seek(-1, os.SEEK_CUR)
+        outputfp.write(b"\x00")
 
 
 def cmpfileobj(fp1, fp2):
