@@ -709,11 +709,19 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def glob_get_prefix_res(self, glob_str):
         """Return list of regexps equivalent to prefixes of glob_str"""
+
+        def _safe_str(cmd):
+            """Transform bytes into string without risk of conversion error"""
+            if isinstance(cmd, str):
+                return cmd
+            else:
+                return str(cmd, errors='replace')
+
         glob_parts = glob_str.split(b"/")
         if b"" in glob_parts[1:
                              -1]:  # "" OK if comes first or last, as in /foo/
             raise GlobbingError(
-                "Consecutive '/'s found in globbing string %a" % glob_str)
+                "Consecutive '/'s found in globbing string %s" % _safe_str(glob_str))
 
         prefixes = [
             b"/".join(glob_parts[:i + 1]) for i in range(len(glob_parts))
