@@ -151,7 +151,7 @@ def fill_schema(host_info):
     try:
         return __cmd_schema % host_info
     except TypeError:
-        Log.FatalError("Invalid remote schema:\n\n%a\n" % __cmd_schema)
+        Log.FatalError("Invalid remote schema:\n\n%s\n" % _safe_str(__cmd_schema))
 
 
 def init_connection(remote_cmd):
@@ -165,7 +165,7 @@ def init_connection(remote_cmd):
     if not remote_cmd:
         return Globals.local_connection
 
-    Log("Executing %a" % remote_cmd, 4)
+    Log("Executing %s" % _safe_str(remote_cmd), 4)
     try:
         # we need buffered read on SSH communications, hence using
         # default value for bufsize parameter
@@ -196,13 +196,13 @@ def check_connection_version(conn, remote_cmd):
 
 Couldn't start up the remote connection by executing
 
-    %a
+    %s
 
 Remember that, under the default settings, rdiff-backup must be
 installed in the PATH on the remote system.  See the man page for more
 information on this.  This message may also be displayed if the remote
 version of rdiff-backup is quite different from the local version (%s).""" %
-                       (exception, remote_cmd, Globals.version))
+                       (exception, _safe_str(remote_cmd), Globals.version))
     except OverflowError:
         Log.FatalError(
             """Integer overflow while attempting to establish the
@@ -213,10 +213,11 @@ remote connection by executing
 Please make sure that nothing is printed (e.g., by your login shell) when this
 command executes. Try running this command:
 
-    %a
+    %s
 
 which should only print out the text: rdiff-backup <version>""" %
-            (remote_cmd, remote_cmd.replace(b"--server", b"--version")))
+            (_safe_str(remote_cmd),
+             _safe_str(remote_cmd.replace(b"--server", b"--version"))))
 
     if remote_version != Globals.version:
         Log(
@@ -320,3 +321,11 @@ and 0.13.3, nor 0.13.2 and 0.13.4.
 """ % (Globals.version, version))
     else:
         print("Server OK")
+
+
+def _safe_str(cmd):
+    """Transform bytes into string without risk of conversion error"""
+    if isinstance(cmd, str):
+        return cmd
+    else:
+        return str(cmd, errors='replace')
