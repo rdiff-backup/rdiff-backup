@@ -8,7 +8,7 @@ import subprocess
 # Avoid circularities
 from rdiff_backup.log import Log
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
-    selection, rpath, eas_acls, rorpiter, Security
+    selection, rpath, eas_acls, rorpiter, Security, hash
 
 RBBin = os.fsencode(shutil.which("rdiff-backup"))
 
@@ -286,15 +286,49 @@ def CompareRecursive(src_rp,
 
         return src_select.set_iter(), dest_select.set_iter()
 
-    def preprocess(src_rorp, dest_rorp):
-        """Initially process src and dest_rorp"""
-        if compare_hardlinks and src_rorp:
-            Hardlink.add_rorp(src_rorp, dest_rorp)
-
-    def postprocess(src_rorp, dest_rorp):
-        """After comparison, process src_rorp and dest_rorp"""
-        if compare_hardlinks and src_rorp:
-            Hardlink.del_rorp(src_rorp)
+    def hardlink_rorp_eq(src_rorp, dest_rorp):
+        Hardlink.add_rorp(dest_rorp)
+        Hardlink.add_rorp(src_rorp, dest_rorp)
+        rorp_eq = Hardlink.rorp_eq(src_rorp, dest_rorp)
+        if not src_rorp.isreg() or not dest_rorp.isreg() or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1:
+            if not rorp_eq:
+                Log("Hardlink compare error with when no links exist exist", 3)
+                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+                return 0
+        elif src_rorp.getnumlinks() > 1 and not Hardlink.islinked(src_rorp):
+            if rorp_eq:
+                Log("Hardlink compare error with first linked src_rorp and no dest_rorp sha1", 3)
+                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+                return 0
+            hash.compute_sha1(dest_rorp)
+            rorp_eq = Hardlink.rorp_eq(src_rorp, dest_rorp)
+            if src_rorp.getnumlinks() != dest_rorp.getnumlinks():
+                if rorp_eq:
+                    Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with differing link counts", 3)
+                    Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+                    Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+                    return 0
+            elif not rorp_eq:
+                Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with equal link counts", 3)
+                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+                return 0
+        elif src_rorp.getnumlinks() != dest_rorp.getnumlinks():
+            if rorp_eq:
+                Log("Hardlink compare error with non-first linked src_rorp and with differing link counts", 3)
+                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+                return 0
+        elif not rorp_eq:
+            Log("Hardlink compare error with non-first linked src_rorp and with equal link counts", 3)
+            Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+            Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+            return 0
+        Hardlink.del_rorp(src_rorp)
+        Hardlink.del_rorp(dest_rorp)
+        return 1
 
     def equality_func(src_rorp, dest_rorp):
         """Combined eq func returns true if two files compare same"""
@@ -307,10 +341,7 @@ def CompareRecursive(src_rp,
         if not src_rorp.equal_verbose(dest_rorp,
                                       compare_ownership=compare_ownership):
             return 0
-        if compare_hardlinks and not Hardlink.rorp_eq(src_rorp, dest_rorp):
-            Log("Hardlink compare failure", 3)
-            Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-            Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+        if compare_hardlinks and not hardlink_rorp_eq(src_rorp, dest_rorp):
             return 0
         if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
             Log(
@@ -332,10 +363,8 @@ def CompareRecursive(src_rp,
         reset_hardlink_dicts()
     src_iter, dest_iter = get_selection_functions()
     for src_rorp, dest_rorp in rorpiter.Collate2Iters(src_iter, dest_iter):
-        preprocess(src_rorp, dest_rorp)
         if not equality_func(src_rorp, dest_rorp):
             return 0
-        postprocess(src_rorp, dest_rorp)
     return 1
 
     def rbdir_equal(src_rorp, dest_rorp):
