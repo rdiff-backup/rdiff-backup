@@ -46,7 +46,11 @@ bdist_wheel:
 	${RUN_COMMAND} ./setup.py bdist_wheel
 	# ${RUN_COMMAND} auditwheel repair dist/*.whl
 
-build_deb:
+sdist:
+	# Prepare wheel for deployment.
+	${RUN_COMMAND} ./setup.py sdist
+
+bdist_deb:
 	${RUN_COMMAND} gbp buildpackage -us -uc
 
 container:

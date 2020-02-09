@@ -16,8 +16,7 @@ and fastest to restore the most recent backups, combining the space
 advantages of incremental backups while keeping the speed advantages of full
 backups (at least for recent ones).
 
-If the optional dependencies pylibacl and pyxattr are installed,
-rdiff-backup will support
+If the optional dependencies pylibacl and pyxattr are installed, rdiff-backup will support
 [Access Control Lists](https://en.wikipedia.org/wiki/Access-control_list#Filesystem_ACLs)
 and [Extended Attributes](https://en.wikipedia.org/wiki/Extended_file_attributes)
 provided the file system(s) also support these features.
@@ -47,7 +46,7 @@ You need to make sure that the following requirements are met:
 * Python 3.5 or higher
 * librsync 1.0.0 or higher
 * pylibacl (optional, to support ACLs)
-* pyxattr (optional, to support extended attributes)
+* pyxattr (optional, to support extended attributes) - the xattr library (without py) isn't regularly tested but should work and you will be helped
 * SSH for remote operations
 
 Then you can install one of the following packages:
@@ -104,3 +103,50 @@ of rdiff-backup run with the very verbose option `-v9`.
 
 The FAQ in particular is an important reference, especially if you are
 using smbfs/CIFS, Windows, or have compiled by hand on Mac OS X.
+
+
+## CONTRIBUTING
+
+Rdiff-backup is an open source software developed by many people over a long period of time. There is no particular company backing the development of rdiff-backup, so we rely very much on individual contributors who "scratch their itch". **All contributions are welcome!**
+
+There are many ways to contribute:
+
+- Testing, troubleshooting and writing good bug reports that are easy for other developers to read and act upon
+- Reviewing and triaging [existing bug reports and issues](https://github.com/rdiff-backup/rdiff-backup/issues), helping other developers focus their efforts
+- Writing documentation (e.g. the [man page](https://github.com/rdiff-backup/rdiff-backup/blob/master/rdiff-backup.1)), or updating the webpage rdiff-backup.net
+- Packaging and shipping rdiff-backup in your own favorite Linux distribution or operating system
+- Running tests on your favorite platforms and fixing failing tests
+- Writing new tests to get test coverage up
+- Fixing bug in existing features or adding new features
+
+If you don't have anything particular in your mind but want to help out, just browse the list of issues. Both coding and non-coding tasks have been filed as issues.
+
+## Installing the latest development version
+
+When testing and giving feedback, please make sure you are running the latest development version.
+
+### Development version from PyPi
+
+For most platforms the easiest way to install the [latest development version of rdiff-backup is via the Python package installer](https://pypi.org/project/rdiff-backup/#history):
+
+    pip3 install --pre rdiff-backup
+
+Note the `--pre` switch. If it fails to compile, you might also need to install `librsync-dev` first.
+
+### Development version from PPA (for Ubuntu)
+
+For Ubuntu users there exists a [PPA](https://code.launchpad.net/~rdiff-backup/+archive/ubuntu/rdiff-backup-development) that updates daily to have the latest git master version easily available. To install, simply run:
+
+    sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-development
+    sudo apt-get update
+
+### Development version from Copr (for Fedora/CentOS/Red Hat)
+
+For Fedora users there exists a [Copr](https://copr.fedorainfracloud.org/coprs/frankcrawford/rdiff-backup/) where the rdiff-backup development version is frequently updated to. To enable it, simply run:
+
+    dnf copr enable frankcrawford/rdiff-backup
+
+
+## Contribute by developing code
+
+For source code related documentation see [docs/DEVELOP.md](DEVELOP.md)
