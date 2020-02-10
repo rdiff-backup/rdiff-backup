@@ -236,8 +236,16 @@ class ExtendedAttributesFile(metadata.FlatFile):
 
 def join_ea_iter(rorp_iter, ea_iter):
     """Update a rorp iter by adding the information from ea_iter"""
+
+    def _safe_str(cmd):
+        """Transform bytes into string without risk of conversion error"""
+        if isinstance(cmd, str):
+            return cmd
+        else:
+            return str(cmd, errors='replace')
+
     for rorp, ea in rorpiter.CollateIterators(rorp_iter, ea_iter):
-        assert rorp, "Missing rorp for index %a" % (ea.index, )
+        assert rorp, "Missing rorp for index '%s'." % _safe_str(ea.index)
         if not ea:
             ea = ExtendedAttributes(rorp.index)
         rorp.set_ea(ea)

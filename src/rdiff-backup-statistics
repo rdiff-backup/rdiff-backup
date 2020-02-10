@@ -78,13 +78,13 @@ def parse_args():
         os.path.join(os.fsencode(args[0]), b"rdiff-backup-data"),
     )
     if not Globals.rbdir.isdir():
-        sys.exit("Directory %a not found" % (Globals.rbdir.path,))
+        sys.exit("Directory %s not found" % (Globals.rbdir.get_safepath(),))
 
 
 def system(cmd):
     sys.stdout.flush()
     if os.system(cmd):
-        sys.exit("Error running command '%a'\n" % (cmd,))
+        sys.exit("Error running command '%s'\n" % _safe_str(cmd))
 
 
 class StatisticsRPaths:
@@ -125,7 +125,7 @@ class StatisticsRPaths:
                 result.append((session_dict[time], filestat_dict[time]))
             else:
                 sys.stderr.write(
-                    "No file_statistics to match %a\n" % (session_dict[time].path,)
+                    "No file_statistics to match '%s'\n" % session_dict[time].get_safepath()
                 )
         return result
 
@@ -284,7 +284,7 @@ def make_fst(session_rp, filestat_rp):
                 continue
             match = r.match(line)
             if not match:
-                sys.stderr.write("Error parsing line: %a\n" % (line,))
+                sys.stderr.write("Error parsing line: %s\n" % _safe_str(line))
                 continue
 
             filename = match.group(1)
@@ -519,6 +519,14 @@ def set_chars_to_quote():
         Globals.must_escape_dos_devices = 0  # No DOS devices will be present
         FilenameMapping.set_init_quote_vals()
         Globals.rbdir = FilenameMapping.get_quotedrpath(Globals.rbdir)
+
+
+def _safe_str(cmd):
+    """Transform bytes into string without risk of conversion error"""
+    if isinstance(cmd, str):
+        return cmd
+    else:
+        return str(cmd, errors='replace')
 
 
 def Main():

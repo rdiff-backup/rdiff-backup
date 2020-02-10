@@ -166,7 +166,7 @@ def copy(rpin, rpout, compress=0):
     elif rpin.issock():
         rpout.mksock()
     else:
-        raise RPathException("File %a has unknown type" % rpin.path)
+        raise RPathException("File '%s' has unknown type." % rpin.get_safepath())
 
 
 def copy_reg_file(rpin, rpout, compress=0):

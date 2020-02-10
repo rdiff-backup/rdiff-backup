@@ -48,6 +48,14 @@ class QuotingException(Exception):
     pass
 
 
+def _safe_str(cmd):
+    """Transform bytes into string without risk of conversion error"""
+    if isinstance(cmd, str):
+        return cmd
+    else:
+        return str(cmd, errors='replace')
+
+
 def set_init_quote_vals():
     """Set quoting value from Globals on all conns"""
     for conn in Globals.connections:
@@ -60,7 +68,7 @@ def set_init_quote_vals_local():
     chars_to_quote = Globals.chars_to_quote
     if len(Globals.quoting_char) != 1:
         log.Log.FatalError("Expected single character for quoting char,"
-                           "got '%a' instead" % (Globals.quoting_char, ))
+                           "got '%s' instead." % _safe_str(Globals.quoting_char))
     quoting_char = Globals.quoting_char
     init_quoting_regexps()
 
@@ -69,7 +77,7 @@ def init_quoting_regexps():
     """Compile quoting regular expressions"""
     global chars_to_quote_regexp, unquoting_regexp
     assert chars_to_quote and isinstance(chars_to_quote, bytes), \
-        "Chars to quote are wrong: %a" % chars_to_quote
+        "Chars to quote are wrong: '%s'." % _safe_str(chars_to_quote)
     try:
         chars_to_quote_regexp = re.compile(b"[%b]|%b" %
                                            (chars_to_quote, quoting_char), re.S)
@@ -125,11 +133,11 @@ def unquote(path):
 def unquote_single(match):
     """Unquote a single quoted character"""
     if not len(match.group()) == 4:
-        raise QuotingException("Quoted group wrong size: %a" % match.group())
+        raise QuotingException("Quoted group wrong size: '%s'." % _safe_str(match.group()))
     try:
         return os.fsencode(chr(int(match.group()[1:])))
     except ValueError:
-        raise QuotingException("Quoted out of range: %a" % match.group())
+        raise QuotingException("Quoted out of range: '%s'." % _safe_str(match.group()))
 
 
 class QuotedRPath(rpath.RPath):
