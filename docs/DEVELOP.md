@@ -49,24 +49,7 @@ been merged, or even in parallel if the changes are in different files or at
 least on different lines and do not cause merge conflicts if worked on.
 
 It is the responsibility of the PR author to keep it without conflict with
-master (e.g. if not quickly merged). The recommended approach is to merge
-regularly the latest version of master into the PR branch, fix the conflicts
-and push the commits to GitHub. The process can look as follows:
-
-```
-git checkout master
-git pull
-git checkout PR-BRANCH
-git pull
-git merge master
-# fix potential conflicts
-git push
-```
-
-> **NOTE:** the above approach gives "ugly" merge requests with useless
-            commits but it also makes interaction between author and reviewers
-            easier as it keeps the history of the PR, and as long as the PR is
-            squashed, the "ugliness" doesn't reach the master branch.
+master (e.g. if not quickly merged) and overall to support the review process.
 
 Ideally each pull request gets some feedback within 24 hours from it having been
 filed, and is merged within days or a couple of weeks. Each author should
