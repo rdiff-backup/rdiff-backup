@@ -88,7 +88,7 @@ sudo pip3 install rdiff-backup
 ----
 
 NOTE: If your platform is not i386 or amd64, e.g.
-ARM/MIPS/etc,   you may need the build dependencies `build-essentials`, `librsync-dev`.
+ARM/MIPS/etc, you may need the build dependencies `build-essentials`, `librsync-dev`.
 
 === CentOS and RHEL 6 (from PyPi)
 
@@ -130,7 +130,7 @@ sudo pip3 install rdiff-backup
 ----
 
 NOTE: especially if your platform is not i386 or amd64, e.g.
-ARM/MIPS/PowerPC/etc,   but also if the pip3 installation fails with `+include [...].h+` files missing,   you may need the build dependencies named like `python3-devel` or `librsync-dev`.
+ARM/MIPS/PowerPC/etc, but also if the pip3 installation fails with `+include [...].h+` files missing, you may need the build dependencies named like `python3-devel` or `librsync-dev`.
 
 === Windows
 
