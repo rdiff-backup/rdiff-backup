@@ -169,11 +169,19 @@ def init_connection(remote_cmd):
     try:
         # we need buffered read on SSH communications, hence using
         # default value for bufsize parameter
-        process = subprocess.Popen(
-            remote_cmd,
-            shell=True,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE)
+        if os.name == 'nt':
+            # FIXME workaround because python 3.7 doesn't yet accept bytes
+            process = subprocess.Popen(
+                os.fsdecode(remote_cmd),
+                shell=True,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE)
+        else:
+            process = subprocess.Popen(
+                remote_cmd,
+                shell=True,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE)
         (stdin, stdout) = (process.stdin, process.stdout)
     except OSError:
         (stdin, stdout) = (None, None)
