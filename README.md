@@ -58,13 +58,14 @@ Then you can install one of the following packages:
 
 #### On Windows
 
-Just drop the binary `rdiff-backup-VERSION-PLATFORM.exe`, possibly renamed to `rdiff-backup`,
-somewhere in your PATH and it should work, as it comes with all dependencies included.
+Just download and unpack the file `rdiff-backup-VERSION.winBITS.zip`
+available as _asset_ attached to one of the releases available in the
+[releases section](https://github.com/rdiff-backup/rdiff-backup/releases) and
+drop the binary `rdiff-backup.exe` somewhere in your PATH and it should work,
+as it comes with all dependencies included.
 
 For remote operations, you will need to have an SSH package installed (also on Linux but it is
 generally more obvious).
-
-> **NOTE:** for now the documentation under Windows is available online from the [documentation folder](docs/).
 
 ### From source code
 
