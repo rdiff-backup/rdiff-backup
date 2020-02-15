@@ -286,3 +286,25 @@ stay together. The result command line might look as follows:
 	rdiff-backup -v9 localhost::/sourcedir /backupdir 2>&1 | awk \
 		'/^2019-09-16/ { if (line) print line; line = $0 } ! /^2019-09-16/ { line = line " ## " $0 }' \
 		| sort | sed 's/ ## /\n/g'
+
+### Debug iterators
+
+When debugging, the fact that rdiff-backup uses a lot of iterators makes it
+rather complex to understand what's happening. It would sometimes make it
+easier to have a list to study at once of iterating painfully through each
+_but_ if you simply use `p list(some_iter_var)`, you basically run through
+the iterator and it's lost for the program, which can only fail.
+
+The solution is to use `itertools.tee`, create a copy of the iterator and
+print the copy, e.g.:
+
+```
+(Pdb) import itertools
+(Pdb) inc_pair_iter,mycopy = itertools.tee(inc_pair_iter)
+(Pdb) p list(map(lambda x: [str(x[0]),list(map(str,x[1]))], mycopy))
+[... whatever output ...]
+```
+
+Assuming the iteration has no side effects, the initial variable `inc_pair_iter`
+is still valid for the rest of the program, whereas the `mycopy` is "dried out"
+(but you can repeat the `tee` operation as often as you want).
