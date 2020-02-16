@@ -191,8 +191,6 @@ class QuotedRPath(rpath.RPath):
                 self.inc_timestr = unquote(temp_rp.inc_timestr)
         else:
             result = rpath.RPath.isincfile(self)
-            if result:
-                self.inc_basestr = unquote(self.inc_basestr)
         return result
 
     def get_path(self):
