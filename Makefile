@@ -51,7 +51,7 @@ sdist:
 	${RUN_COMMAND} ./setup.py sdist
 
 bdist_deb:
-	${RUN_COMMAND} gbp buildpackage -us -uc
+	${RUN_COMMAND} debian/autobuild.sh
 
 container:
 	# Build development image
