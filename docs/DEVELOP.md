@@ -10,7 +10,8 @@ Simply clone the source with:
 	git clone https://github.com/rdiff-backup/rdiff-backup.git
 
 > **NOTE:** If you plan to provide your own code, you should first fork
-our repo and clone your own forked repo. How is described at
+our repo and clone your own forked repo (probably using ssh not https).
+How is described at
 https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/working-with-forks
 
 
@@ -18,9 +19,9 @@ https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/wo
 
 - Before committing to a lot of writing or coding, please file an issue on Github and discuss your plans and gather feedback. Eventually it will be much easier to merge your change request if the idea and design has been agreed upon, and there will be less work for you as a contributor if you implement your idea along the correct lines to begin with.
 - Please check out [existing issues](https://github.com/rdiff-backup/rdiff-backup/issues) and [existing merge requests](https://github.com/rdiff-backup/rdiff-backup/pulls) and browse the [git history](https://github.com/rdiff-backup/rdiff-backup/commits/master) to see if somebody already tried to address the thing you have are interested in. It might provide useful insight why the current state is as it is.
-- Changes can be submitted using the typical Github workflow: clone this repository, make your changes, test and verify, and submit a Pull Request.
-- Each change (= pull request) should focus on some topic and resist changing anything else. Keeping the scope clear also makes it easier to review the pull request. A good pull request has only one or a few commits, with each commit having a good commit subject and if needed also a body that explains the change.
-- For all code changes, please remember also to include inline comments and update tests where needed.
+- Changes can be submitted using the typical Github workflow: clone this repository, make your changes, test and verify, and submit a Pull Request (PR).
+- For all code changes, please remember also to include inline comments and
+  update tests where needed.
 
 ### License
 
@@ -35,6 +36,11 @@ clone this repository and branch off from *master* and expect test suite to pass
 and the code and other contents to be of good quality and a reasonable
 foundation for them to continue development on.
 
+Each PR focuses on some topic and resist changing anything else. Keeping the
+scope clear also makes it easier to review the pull request. A good pull
+request has only one or a few commits, with each commit having a good commit
+subject and if needed also a body that explains the change.
+
 Each pull request has only one author, but anybody can give feedback. The
 original author should be given time to address the feedback – reviewers should
 not do the fixes for the author, but instead let the author keep the authorship.
@@ -42,14 +48,24 @@ Things can always be iterated and extended in future commits once the PR has
 been merged, or even in parallel if the changes are in different files or at
 least on different lines and do not cause merge conflicts if worked on.
 
-If a pull requests for whatever reason is not quickly merged, should it be
-refreshed by [rebasing](https://git-scm.com/docs/git-rebase) it on latest
-upstream master.
+It is the responsibility of the PR author to keep it without conflict with
+master (e.g. if not quickly merged) and overall to support the review process.
 
 Ideally each pull request gets some feedback within 24 hours from it having been
 filed, and is merged within days or a couple of weeks. Each author should
 facilitate quick reviews and merges by making clean and neat commits and pull
 requests that are quick to review and do not spiral out in long discussions.
+
+If something is of interest for the changelog, prefix the statement in the
+commit body with a three uppercase letters and a column; which acronym is
+not that important but here is a list of recommended ones (see the release
+section to understand why it's important):
+
+* FIX: for a bug fix
+* NEW: for a new feature
+* CHG: for a change requesting consideration when upgrading
+* DOC: for documentation aspects
+* WEB: anything regarding the website
 
 #### Merging changes to master
 
@@ -63,6 +79,12 @@ with write access to the main repository can merge and land commits in the
 master branch. To get write access, the person mush exhibit commitment to high
 standards and have a track record of meaningful contributions over several
 months.
+
+It is the responsibility of the merging developer to make sure that the PR
+is _squashed_ and that the squash commit message helps the release process
+with the right description and 3-capital-letters prefix (it is still the
+obligation of the PR author to provide enough information in their commit
+messages).
 
 ### Coding style
 
@@ -308,3 +330,114 @@ print the copy, e.g.:
 Assuming the iteration has no side effects, the initial variable `inc_pair_iter`
 is still valid for the rest of the program, whereas the `mycopy` is "dried out"
 (but you can repeat the `tee` operation as often as you want).
+
+## RELEASING
+
+We use [Travis CI](https://travis-ci.org) to release automatically, as setup in the [Travis configuration file](../.travis.yml).
+
+The following rules apply:
+
+* each modification to master happens through a Pull Request (PR) which triggers
+  a pipeline job, which must be succesful for the merge to have a chance to
+  happen. Such PR jobs will _not_ trigger a release.
+* GitHub releases are generated as draft only on Git tags looking like a release.
+  The release manager reviews then the draft release, names and describes it
+  before they makes it visible. An automated Pypi release is foreseen but not
+  yet implemented.
+* If you need to trigger a job for test purposes (e.g. because you changed
+  something to the pipeline), create a branch or a tag with an underscore at
+  the end of their name. Just make sure that you remove such tags, and
+  potential draft releases, after usage.
+* If you want, again for test purposes, to trigger a PyPI deployment towards
+  test.pypi.org, tag the commit before you push it with a development release
+  tag, like `vA.B.CbD.devN`, then explicitly push the tag and the branch at
+  the same time e.g. with `git push origin vA.B.CbD.devN myname-mybranch`.
+
+> **TIP:** Travis will not trigger again on a commit which has already gone
+           through the pipeline, even if you add a tag. This applies especially
+           to PR commits merged to master without squashing.
+
+Given the above rules, a release cycle looks roughly as follows:
+
+1. Call `./tools/get_changelog_since.sh PREVIOUSTAG` to get a list of changes
+   (see above) since the last release and a sorted and unique list of authors,
+   on which basis you can extend the [CHANGELOG](../CHANGELOG) for the
+   new release.
+   **IMPORTANT:** make sure that the PR is squashed or you won't be able to
+   trigger the release pipeline via a tag on master.
+2. Make sure you have the latest master commits with
+   `git checkout master && git pull --prune`.
+3. Tag the last commit with `git tag vX.Y.ZbN` (beta) or `git tag vX.y.Z" (stable).
+4. Push the tag to GitHub with `git push --tags`.
+5. You won't see anything in GitHub at first and need to go directly to
+   [Travis builds](https://travis-ci.org/rdiff-backup/rdiff-backup/builds) to
+   verify that the pipeline has started.
+6. If everything goes well, you should see the
+   [new draft release](https://github.com/rdiff-backup/rdiff-backup/releases)
+   with all assets (aka packages) attached to it after all jobs have finished
+   in Travis.
+7. Give the release a title and description and save it to make it visible to
+   everybody.
+8. You'll get a notification e-mail telling you that rdiff-backup-admin has
+   released a new version.
+9. Use this e-mail to inform the [rdiff-backup users](rdiff-backup-users@nongnu.org).
+
+> **IMPORTANT:** if not everything goes well, remove the tag both locally with
+                 `git tag -d TAG` and remotely with `git push -d origin TAG`.
+                 Then fix the issue with a new PR and start from the beginning.
+
+> **TIP:** the PyPI deploy pipeline is for now broken under Windows on Travis-CI.
+           You may download the Windows wheel(s) from GitHub and upload them to
+           PyPI from the command line using twine:
+           `twine upload [--repository-url https://test.pypi.org/legacy/] dist/rdiff\_backup-*-win32.whl`
+
+The following sub-chapters list some learnings and specifities in case you need to modify the pipeline.
+
+### Install the Travis client locally
+
+See https://github.com/travis-ci/travis.rb for details, here only the gist of it:
+
+```
+ruby -v               # version >= 2
+dnf install rubygems  # or zipper, apt, yum...
+gem install travis    # as non-root keeps everybody more happy
+travis version        # 1.8.10 -> all OK
+```
+
+> **NOTE:** installing travis gem also pulls the dependencies multipart-post, faraday, faraday_middleware, highline, backports, net-http-pipeline, net-http-persistent, addressable, multi_json, gh, launchy, ethon, typhoeus, websocket, pusher-client. You might want to install some of them via your preferred package manager instead.
+
+### Create an OAuth key
+
+Use the travis client to generate a secure API key (you can throw away other changes to the `.travis.yml` file). You will need the password of the rdiff-backup-admin, hence only project admins can generate it:
+
+```
+$ travis setup releases
+Detected repository as rdiff-backup/rdiff-backup, is this correct? |yes| 
+Username: rdiff-backup-admin
+Password for rdiff-backup-admin: ********************
+File to Upload: dist/*
+Deploy only from rdiff-backup/rdiff-backup? |yes| 
+Encrypt API key? |yes| 
+```
+
+The key to add looks then as follows for GitHub deployment (the concrete key shown here isn't valid though):
+
+```
+deploy:
+  provider: releases
+  api_key:
+    secure: lqg+HZoy68WudiogbEnOmhxfw9zEJhPOyM4bLJdU2lRBlUZbf0uFvpVJdJqPB7rovKpDknapg4xdXdpbLbD0r/PwsSI9UyFLmyhGn24pnSlrFFjFm2AIQQJUMiCcqsPqNc7fXNMC1BwuM1/RjO3hIxfPxI+A9MSVqW3qhzmerOKXeKFiOLXJ0FkTomRdWGhCEafWO1Ibz5O2d5psK1N/r1ni8kv+E6GPjHk54vmKNcFg8uB7+cPs7ONtW2F+M/h12UVZkC+hy8Bss+esQIMYdVLW5JkKSFfNwKs57qDYYd0lWLzMRti+S+0k/1O6l51BzLY61C4FlRwrMWAy4HIYn5ui39GXIYtGXq9zW+EpYvqTsar+KDU+DGzsr+hAt+eCQpbmZ2SpA7B8Mb3x+BwAcEkvCql789FhWCOd3arUm3H6Ng6yNt50crafJeboHhmitgFQ9uTM7AnXwMnIYVkl6IAZlPkIj20TF1JSdmzpPG2jEJATsMybCuaAuS+ngq4DnJ1axGcclIr4AY9RkSI8EVrL1HTcVLaIH0JnWdO/YC7DSZloC0oswbch1qaW3WsWkJspeaLRvochyFYsatAbvZ46Mzt5uuJUPtSNUVizeb7kBhVGzLVYIepd5XYPgc3Qxp23hu2k9lwg4vjq8WFegC5a34SW/zEZeuFP3HTnD+4=
+```
+
+### Delete draft releases
+
+Because there is one draft release created for each pipeline job, it can be quite a lot when one tests the release pipeline. The GitHub WebUI requires quite a lot of clicks to delete them. A way to simplify (a bit) the deletion is to install the command line tool `hub` and call the following command:
+
+```
+hub release --include-drafts -f '%U %S %cr%n' | \
+	awk '$2 == "draft" && $4 == "days" && $3 > 2 {print $1}' | xargs firefox
+```
+
+the `2` compared to `$3` is the number of days, so that you get one tab opened in firefox for each draft release, so that you only need 2 clicks and one Ctrl+W (close the tab) to delete those releases.
+
+> **NOTE:** deletion directly using hub isn't possible as it only supports tags and not release IDs. Drafts do NOT have tags...
