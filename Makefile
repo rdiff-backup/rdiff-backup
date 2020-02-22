@@ -50,7 +50,7 @@ sdist:
 	# Prepare wheel for deployment.
 	${RUN_COMMAND} ./setup.py sdist
 
-bdist_deb:
+dist_deb:
 	${RUN_COMMAND} debian/autobuild.sh
 
 container:
