@@ -180,7 +180,7 @@ class FSAbilities:
         tmp_rp.touch()
         uid, gid = tmp_rp.getuidgid()
         try:
-            tmp_rp.chown(uid + 1, gid + 1)  # just choose random uid/gid
+            tmp_rp.chown(uid // 2 + 1, gid // 2 + 1)  # just choose random uid/gid
             tmp_rp.chown(0, 0)
         except (IOError, OSError, AttributeError):
             self.ownership = 0
