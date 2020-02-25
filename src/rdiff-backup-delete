@@ -1,0 +1,335 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (C) 2020 Patrik Dufresne<info@patrikdufresne.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+#
+# rdiff-backup-delete
+#
+# Deletes files and directorys from a rdiff-backup repository, including the
+# current mirror and all its history. Also remove any reference from the
+# metadata.
+#
+
+import os
+import sys
+
+import getopt
+import gzip
+import re
+import stat
+import struct
+
+PY2 = sys.version_info < (3,)
+PY3 = sys.version_info > (3,)
+
+# List of suffixes for increments
+SUFFIXES = [b".missing", b".snapshot.gz", b".snapshot",
+            b".diff.gz", b".data.gz", b".data", b".dir", b".diff"]
+
+
+def _bytes(value):
+    if isinstance(value, bytes if PY3 else str):
+        return value
+    if PY3:
+        return value.encode('utf8', errors='surrogateescape')
+    else:
+        return value.encode('utf8')
+
+
+def _str(value):
+    if isinstance(value, str if PY3 else unicode):
+        return value
+    return value.decode('utf-8', errors='replace')
+
+
+def _print_usage(error_message=None):
+    if error_message:
+        print(error_message)
+    print("Usage: %s [--rdiff-backup-dir=<backup-dir>] <folder-or-file-to-delete>\n\n"
+        "--rdiff-backup-dir\n\n"
+        "        Define the relative or absolute path to the root of the \n"
+        "        rdiff-backup directory. When running inside a rdiff-backup\n"
+        "        repository, this option is not required. Could also be define\n"
+        "        with `RDIFF_BACKUP_DIR` environment variable.\n\n"
+        "<folder-or-file-to-delete>\n\n"
+        "        Should be a path relative to rdiff-backup-dir if provided or\n"
+        "        a relative path to the current directory or an absolute path\n"
+        % (sys.argv[0],))
+    sys.exit(1 if error_message else 0)
+
+
+def _check_rdiff_backup_dir(rdiff_backup_dir):
+    """
+    Search for rdiff-backup-data folder. Either from `rdiff_backup_dir` when
+    provided or from working directory.
+    Exist the application with an error message if the folder can't be found.
+    """
+    if rdiff_backup_dir:
+        rdiff_backup_data = os.path.join(rdiff_backup_dir, b'rdiff-backup-data')
+        if not os.path.isdir(rdiff_backup_data):
+            sys.exit("fatal: can't find rdiff-backup-data folder in directory: %s" % (_str(rdiff_backup_dir),))
+        return rdiff_backup_dir
+
+    dir = _bytes(os.getcwd())
+    while dir != b'/':
+        rdiff_backup_data = os.path.join(dir, b'rdiff-backup-data')
+        if os.path.isdir(rdiff_backup_data):
+            return dir
+        # Continue with parent directory.
+        dir = os.path.dirname(dir)
+
+    sys.exit("fatal: not a rdiff-backup repository (or any parent up to mount point /)")
+
+
+def _parse_options():
+    """
+    Used to parse the arguments.
+    """
+    # Support environment variable
+    rdiff_backup_dir = None
+    if 'RDIFF_BACKUP_DIR' in os.environ:
+        rdiff_backup_dir = _bytes(os.environ('RDIFF_BACKUP_DIR'))
+    try:
+        optlist, args = getopt.getopt(
+            sys.argv[1:],
+            "hd:",
+            ["help", "rdiff-backup-dir="],
+        )
+    except getopt.GetoptError as e:
+        _print_usage("fatal: bad command line: " + str(e))
+    for opt, arg in optlist:
+        if opt in ["-d", "--rdiff-backup-dir"]:
+            rdiff_backup_dir = _bytes(arg)
+        elif opt in ["-h", "--help"]:
+            _print_usage()
+        else:
+            _print_usage("fatal: invalid arguments: %s" % opt)
+
+    # Make sure we get a folder or a file to be deleted.
+    if len(args) != 1:
+        _print_usage('fatal: missing arguments')
+
+    # Validate the backup dir path
+    root = _check_rdiff_backup_dir(rdiff_backup_dir)
+    if rdiff_backup_dir:
+        relpath = _bytes(args[0])
+    else:
+        abspath = os.path.abspath(_bytes(args[0]))
+        relpath = os.path.relpath(abspath, start=root)
+
+    if relpath == b'rdiff-backup-data':
+        sys.exit("fatal: can't delete rdiff-backup-data")
+
+    return root, relpath
+
+
+def _filename_from_increment(file):
+    """
+    Return the filename from an increment entry.
+    e.g.: Revisions.2014-11-05T16:04:30-05:00.dir
+    return "Revision"
+    """
+    for suffix in SUFFIXES:
+        if file.endswith(suffix):
+            with_suffix = file[:-len(suffix)]
+            return with_suffix.rsplit(b".", 1)[0]
+    return None
+
+
+def _remove_from_metadata(repopath, file):
+    """
+    This function is used to remove the repo path from the given `file` metadata.
+    """
+    if os.path.basename(file).startswith(b'file_statistics'):
+        start_marker = b''
+
+        def matches(line):
+            path = line.rsplit(b' ', 4)[0]
+            return path == repopath.metaquote or path.startswith(repopath.metaquote + b'/')
+
+    elif os.path.basename(file).startswith(b'mirror_metadata'):
+        start_marker = b'File '
+
+        def matches(line):
+            return line == b'File ' + repopath.metaquote + b'\n' or line.startswith(b'File ' + repopath.metaquote + b'/')
+
+    elif (os.path.basename(file).startswith(b'extended_attributes')
+          or os.path.basename(file).startswith(b'access_control_lists')):
+        start_marker = b'# file: '
+
+        def matches(line):
+            return line == b'# file: ' + repopath.aclquote + b'\n' or line.startswith(b'# file: ' + repopath.aclquote + b'/')
+
+    else:
+        return
+
+    print('deleting `%s` from %s' % (_str(repopath.relpath), _str(file)))
+    _open = gzip.open if file.endswith(b'.gz') else open
+    input = _open(file, 'rb')
+    tmp_file = os.path.join(os.path.dirname(file), b'.tmp.' + os.path.basename(file))
+    output = _open(tmp_file, 'wb')
+    try:
+        line = input.readline()
+        while line:
+            if line.startswith(start_marker) and matches(line):
+                line = input.readline()
+                while line and not line.startswith(start_marker):
+                    if line.startswith(b'  AlternateMirrorName '):
+                        _remove_long_filename(repopath, line.rsplit(b' ', 1)[0])
+                    line = input.readline()
+            else:
+                output.write(line)
+                line = input.readline()
+    finally:
+        input.close()
+        output.close()
+    os.rename(tmp_file, file)
+
+
+def _remove_long_filename(repopath, id):
+    """
+    Remove file from long_filename_data
+    """
+    path = os.path.join(repopath.long_filename_data, id)
+    print('deleting directory `%s` recursively' % (_str(path),))
+    _rmtree(path)
+
+    # Then let find all the increment entries (.missing, .dir, .gz, .diff.gz)
+    for p in os.listdir(repopath.increments):
+        if path == _filename_from_increment(p):
+            # Remove the increment entry
+            file = os.path.join(repopath.increments, p)
+            print('deleting increments `%s`' % (_str(file),))
+            os.remove(file)
+
+
+def _rmtree(path):
+    """
+    Custom implementation of shutil.rmtree() to support deletion of symlink.
+    """
+    try:
+        mode = os.lstat(path).st_mode
+    except os.error:
+        mode = 0
+    if stat.S_ISDIR(mode):
+        names = []
+        names = os.listdir(path)
+        for name in names:
+            fullname = os.path.join(path, name)
+            _rmtree(fullname)
+        os.rmdir(path)
+    elif mode:
+        os.remove(path)
+
+
+def _unquote(name):
+        """Remove quote (;000) from the given name."""
+        assert isinstance(name, bytes)
+
+        # This function just gives back the original text if it can decode it
+        def unquoted_char(match):
+            """For each ;000 return the corresponding byte."""
+            if not len(match.group()) == 4:
+                return match.group
+            try:
+                return bytes([int(match.group()[1:])])
+            except:
+                return match.group
+
+        # Remove quote using regex
+        return re.sub(b";[0-9]{3}", unquoted_char, name, re.S)
+
+
+def _acl_quote(s):
+    """Quote filename for ACL usages."""
+    # Table mapping for meta_quote and meta_unquote
+    _safe = b'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&\'()*+,-./:;<>?@[]^_`{|}~'
+    _meta_quote_map = {}
+    for i in range(1, 256):
+        c = struct.pack('B', i)
+        k = i if PY3 else c
+        if c in _safe:
+            _meta_quote_map[k] = c
+        else:
+            _meta_quote_map[k] = '\\{0:03o}'.format(i).encode('ascii')
+    return b''.join(map(_meta_quote_map.__getitem__, s))
+
+
+class RepoPath():
+    """
+    Object used to provide all the variation of the same path with different escaping.
+    
+    root: absolute location of the rdiff-backup repository
+    relpath: relative path to the file of folder to be deleted
+    abspath: absolute path to the file or folder to be delete (may not exists)
+    metaquote: unquoted relative path (;000 replace by bytes) with quoted \
+    aclquote: quoted relative path (bytes converted into \000)
+    
+    rdiff_backup_data: <root>/rdiff-backup-data/
+    long_filename_data: <root>/rdiff-backup-data/long_filename_data/
+    increments: <root>/rdiff-backup-data/increments/
+    """
+
+    def __init__(self, root, relpath):
+        assert root
+        assert isinstance(root, bytes if PY3 else str)
+        assert os.path.isdir(root)
+        assert os.path.isdir(os.path.join(root, b'rdiff-backup-data'))
+        assert relpath
+        assert isinstance(relpath, bytes if PY3 else str)
+        assert relpath != b'rdiff-backup-data'
+        self.root = root
+        self.relpath = relpath
+        self.metaquote = _unquote(self.relpath).replace(b'\\', b'\\\\')
+        self.aclquote = _acl_quote(self.relpath)
+
+        # Return the absolute location of this path on the filesystem
+        self.abspath = os.path.join(self.root, self.relpath)
+        self.rdiff_backup_data = os.path.join(self.root, b'rdiff-backup-data')
+        self.long_filename_data = os.path.join(self.rdiff_backup_data, b'rdiff-backup-data')
+        self.increments = os.path.join(self.rdiff_backup_data, b'increments')
+
+
+def main():
+    # Parse the arguments.
+    # root maybe None
+    root, relpath = _parse_options()
+    repopath = RepoPath(root, relpath)
+    print("deleting path `%s` from repository %s" % (_str(relpath), _str(root)))
+
+    # Remove any entries from metadata files: file_statistics, mirror_metadata, extended_attributes, access_control_lists
+    for f in os.listdir(repopath.rdiff_backup_data):
+        _remove_from_metadata(repopath, os.path.join(repopath.rdiff_backup_data , f))
+
+    print('deleting directory `%s` recursively' % (_str(repopath.abspath),))
+    _rmtree(repopath.abspath)
+
+    # Then let find all the increment entries (.missing, .dir, .gz, .diff.gz)
+    if os.path.isdir(repopath.increments):
+        for p in os.listdir(repopath.increments):
+            if repopath.relpath == _filename_from_increment(p):
+                # Remove the increment entry
+                file = os.path.join(repopath.increments, p)
+                print('deleting increments `%s`' % (_str(file),))
+                os.remove(file)
+
+    print('done')
+
+
+# Call main if this script is call directly.
+if __name__ == "__main__":
+    main()
