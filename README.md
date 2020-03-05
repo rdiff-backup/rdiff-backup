@@ -1,6 +1,22 @@
-# rdiff-backup
+![rdiff-backup banner](docs/resources/logo-banner.png)
 
-[![Build Status](https://travis-ci.org/rdiff-backup/rdiff-backup.svg?branch=master)](https://travis-ci.org/rdiff-backup/rdiff-backup)
+<p align="center">
+  <strong>
+    <a href="https://rdiff-backup.net/">website</a>
+    •
+    <a href="https://rdiff-backup.net/docs/docs.html">docs</a>
+    •
+    <a href="https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users">community</a>
+  </strong>
+</p>
+
+<p align="center">
+<a href="https://travis-ci.org/rdiff-backup/rdiff-backup"><img alt="Build Status" src="https://travis-ci.org/rdiff-backup/rdiff-backup.svg?branch=master"></a>
+<a href="COPYING"><img alt="License" src="https://img.shields.io/github/license/rdiff-backup/rdiff-backup"></a>
+<a href="http://hits.dwyl.io/rdiff-backup/rdiff-backup"><img alt="HitCount" src="http://hits.dwyl.io/rdiff-backup/rdiff-backup.svg"></a>
+</p>
+
+# rdiff-backup
 
 rdiff-backup is a simple backup tool which can be used locally and remotely,
 on Linux and Windows, and even cross-platform between both.
