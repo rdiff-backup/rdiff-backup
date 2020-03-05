@@ -204,6 +204,7 @@ setup(
                 "docs/examples.md",
                 "docs/DEVELOP.md",
                 "docs/Windows-README.md",
+                "docs/Windows-DEVELOP.md",
             ],
         ),
         ("share/bash-completion/completions", ["tools/bash-completion/rdiff-backup"]),
