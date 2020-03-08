@@ -616,8 +616,24 @@ class PatchITRB(rorpiter.ITRBranch):
                 return 1  # SpecialFile
         elif not self.patch_diff_to_temp(basis_rp, diff_rorp, new):
             return 0
-        if new.lstat() and not diff_rorp.isflaglinked():
-            rpath.copy_attribs(diff_rorp, new)
+        if new.lstat():
+            if diff_rorp.isflaglinked():
+                if Globals.eas_write:
+                    """ `isflaglinked() == True` implies that we are processing
+                    the 2nd (or later) file in a group of files linked to an
+                    inode.  As such, we don't need to perform the usual
+                    `copy_attribs(diff_rorp, new)` for the inode because that
+                    was already done when the 1st file in the group was
+                    processed.  Nonetheless, we still must perform the following
+                    task (which would have normally been performed by
+                    `copy_attribs()`).  Otherwise, the subsequent call to
+                    `matches_cached_rorp(diff_rorp, new)` will fail because the
+                    new rorp's metadata would be missing the extended attribute
+                    data.
+                    """
+                    new.data['ea'] = diff_rorp.get_ea()
+            else:
+                rpath.copy_attribs(diff_rorp, new)
         return self.matches_cached_rorp(diff_rorp, new)
 
     def patch_hardlink_to_temp(self, diff_rorp, new):
