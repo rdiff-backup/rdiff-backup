@@ -14,8 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with rdiff-backup; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA
 """Preserve and restore hard links
 
 If the preserve_hardlinks option is selected, linked files in the
@@ -105,7 +105,14 @@ def rorp_eq(src_rorp, dest_rorp):
             or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1):
         return 1  # Hard links don't apply
 
-    if src_rorp.getnumlinks() < dest_rorp.getnumlinks():
+    """The sha1 of linked files is only stored in the metadata of the first
+    linked file on the dest side.  If the first linked file on the src side is
+    deleted, then the sha1 will also be deleted on the dest side, so we test for this
+    & report not equal so that another sha1 will be stored with the next linked
+    file on the dest side"""
+    if (not islinked(src_rorp) and not dest_rorp.has_sha1()):
+        return 0
+    if src_rorp.getnumlinks() != dest_rorp.getnumlinks():
         return 0
     src_key = get_inode_key(src_rorp)
     index, remaining, dest_key, digest = _inode_index[src_key]

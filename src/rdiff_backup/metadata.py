@@ -14,8 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with rdiff-backup; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA
 """Store and retrieve metadata in destination directory
 
 The plan is to store metadata information for all files in the
@@ -236,7 +236,7 @@ def Record2RORP(record_string):
             else:
                 data_dict['uname'] = data.decode()
         elif field == "Gname":
-            if data == ':' or data == 'None':
+            if data == b':' or data == b'None':
                 data_dict['gname'] = None
             else:
                 data_dict['gname'] = data.decode()

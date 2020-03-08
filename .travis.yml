@@ -1,9 +1,10 @@
+---
 language: python
 
 os: linux
 dist: bionic
 
-install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm auditwheel
+install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
 
 python:
   - 3.5
@@ -11,23 +12,92 @@ python:
   - 3.7
   - 3.8
 
+#=== DEPLOYMENTS ===
+# - everything to GitHub releases
+# - wheels to PyPI (if tag looks like an alpha, beta, rc or final release)
+# - sdist to PyPI (if tag looks like an alpha, beta, rc or final release)
+# - wheels to Test PyPI (if tag looks like a development release)
+# - sdist to Test PyPI (if tag looks like a development release)
+
 deploy:
-  provider: releases
-  file_glob: true
-  file: wheelhouse/*.whl
-  skip_cleanup: true
-  draft: true
-  token:
-    secure: V1Ad29+3lIQB1Sxqt8RiNKwferucTIr2mJo1Ka0m8Y1GdscP0ZkvHN4Vzjb0hts+lap8cU24tJ1zq9k22bdsNmoS3/YEg7fwbQSOPCJSYbjwMQeitDc1NP3u1mp5LWiEnQ7cflalIkmWUVpwGbwPSnUQdW3JyheUm4DP6jndGHmv3sC2r4WtZDkVY44SI5OGjvOTStTLnXhVlwXMIBKzw+o9BNdmIcpRvI3UTR+C9mA2yoNE7qgpzALZ4qn7qAmTMJzcVQb22yVZqXVCF8VD72Z66GHx75aatMmsJ/2isOEap19sVYt03fY8lchsTUsdRRCAIInxUvbdfgaEoBWj8Vfv2r/vm5DgWh93amv1RkJdmAYAMTGZG/k20vd7N+sNGKCdAF0W8hj5kriGkNnSQg7dFd+NWrF3pX9XcUkT9IGzv5eT5eYeS+yzgB3YPy8qGKwF5dRkRf7Ylw68j8YOly40rAAfgEx/pcFlYrJh62LDPr5RNhKA679+9UAp0rgkiszNH327bj1i0drqeDIhJAZSXw86B8tJZI1JRBVllKNbwDc5GRFNyms4+pvKCO+lAy5Pcn0bQMUq49qxDsdnM1t2RISivWy5CdkOTNW5WYglhovOSoA8/NjcxmsOpOazCaENEvsB3AogI+LRmpZ7lUZKxjaILuVUM2rwXlKxFB0=
-  on:
-    all_branches: true
-    condition: $MAKE_STEP = bdist_wheel
+  - provider: releases
+    file_glob: true
+    file: dist/*.*
+    skip_cleanup: true
+    draft: true
+    token:
+      secure: V1Ad29+3lIQB1Sxqt8RiNKwferucTIr2mJo1Ka0m8Y1GdscP0ZkvHN4Vzjb0hts+lap8cU24tJ1zq9k22bdsNmoS3/YEg7fwbQSOPCJSYbjwMQeitDc1NP3u1mp5LWiEnQ7cflalIkmWUVpwGbwPSnUQdW3JyheUm4DP6jndGHmv3sC2r4WtZDkVY44SI5OGjvOTStTLnXhVlwXMIBKzw+o9BNdmIcpRvI3UTR+C9mA2yoNE7qgpzALZ4qn7qAmTMJzcVQb22yVZqXVCF8VD72Z66GHx75aatMmsJ/2isOEap19sVYt03fY8lchsTUsdRRCAIInxUvbdfgaEoBWj8Vfv2r/vm5DgWh93amv1RkJdmAYAMTGZG/k20vd7N+sNGKCdAF0W8hj5kriGkNnSQg7dFd+NWrF3pX9XcUkT9IGzv5eT5eYeS+yzgB3YPy8qGKwF5dRkRf7Ylw68j8YOly40rAAfgEx/pcFlYrJh62LDPr5RNhKA679+9UAp0rgkiszNH327bj1i0drqeDIhJAZSXw86B8tJZI1JRBVllKNbwDc5GRFNyms4+pvKCO+lAy5Pcn0bQMUq49qxDsdnM1t2RISivWy5CdkOTNW5WYglhovOSoA8/NjcxmsOpOazCaENEvsB3AogI+LRmpZ7lUZKxjaILuVUM2rwXlKxFB0=
+    on:
+      tags: true
+      all_branches: true
+      condition: $MAKE_STEP == ?dist*
+  # we use beta/alpha/rc/final version tags to release to pypi.org
+  - provider: pypi
+    user: "__token__"
+    password:
+      secure: QGprJSAZR3X88Ir4qpJpNdel5m6CngEtYlD2DAgwRuyPHClhMhXcayB7NbRqACRdtsqBBdQHSOnPO6jBcrhvTIeFbyhiSWZKME113yn4RFD3E+z/p8otb02Lk0DvFTakeC2qxsJ1nlwxGte7qT5Ac9dL7U5O3SSlWNoq2c3QmoD/d+fVdtjf6tp4QywlOIr4Jyx2WWFBQDSQB2cjY7YfwgcQchXkOoVog83dUID4pTh15HlM1Q9E8k0EKueGrDVkS3hhlbPimv1C1coM/IAIAXaTSR1AZZCZELsVSbBOW1hMaAL4MPpr9ekKx/eErnZiIkCuovBTk0XKvzfOyPluFjnuxazKWH9EU5WutCzfxtXh29fLNLYKaqalgjI024kvzTxVFtxJFvCcnhEjcqgs6sxh4nrzAosK163LViFRlJjgbT+2kVgeWiA51fjFTdIj0ep3/NMN8SgvSWQu7SRA8Vtxx9NLzTu57QPKZdRLOW98XUnnSwWPvFymNJ3JHQtp3tsRvTaLcbECvpI82bQa/9+MEszGXwm5TdM3Ogie7OUgDReq6fYbSCYXli5800QwA8Zj6zwJH2qG7l2VAPm0Gd0O9RPP/U2DCxDVAHPDV8VYzKsLWeCQ0Rsxz0S0d1r1Vss15rZ/C/RaCXUJB9ba4F1uRMh4l8Jm4/eSAcuAryI=
+    distributions: bdist_wheel
+    skip_existing: true
+    skip_cleanup: true
+    on:
+      tags: true
+      all_branches: true
+      condition: $MAKE_STEP =~ ^(bdist_wheel)$ && $TRAVIS_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?$
+      # TODO add |bdist_win to release also Windows wheel
+  - provider: pypi
+    user: "__token__"
+    password:
+      secure: QGprJSAZR3X88Ir4qpJpNdel5m6CngEtYlD2DAgwRuyPHClhMhXcayB7NbRqACRdtsqBBdQHSOnPO6jBcrhvTIeFbyhiSWZKME113yn4RFD3E+z/p8otb02Lk0DvFTakeC2qxsJ1nlwxGte7qT5Ac9dL7U5O3SSlWNoq2c3QmoD/d+fVdtjf6tp4QywlOIr4Jyx2WWFBQDSQB2cjY7YfwgcQchXkOoVog83dUID4pTh15HlM1Q9E8k0EKueGrDVkS3hhlbPimv1C1coM/IAIAXaTSR1AZZCZELsVSbBOW1hMaAL4MPpr9ekKx/eErnZiIkCuovBTk0XKvzfOyPluFjnuxazKWH9EU5WutCzfxtXh29fLNLYKaqalgjI024kvzTxVFtxJFvCcnhEjcqgs6sxh4nrzAosK163LViFRlJjgbT+2kVgeWiA51fjFTdIj0ep3/NMN8SgvSWQu7SRA8Vtxx9NLzTu57QPKZdRLOW98XUnnSwWPvFymNJ3JHQtp3tsRvTaLcbECvpI82bQa/9+MEszGXwm5TdM3Ogie7OUgDReq6fYbSCYXli5800QwA8Zj6zwJH2qG7l2VAPm0Gd0O9RPP/U2DCxDVAHPDV8VYzKsLWeCQ0Rsxz0S0d1r1Vss15rZ/C/RaCXUJB9ba4F1uRMh4l8Jm4/eSAcuAryI=
+    distributions: sdist
+    skip_existing: true
+    skip_cleanup: true
+    on:
+      tags: true
+      all_branches: true
+      condition: $MAKE_STEP == sdist && $TRAVIS_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?$
+  # we use dev version tags to release to test.pypi.org
+  - provider: pypi
+    user: "__token__"
+    password:
+      secure: KYfWfkPfllpPq+qkAXiX5KEPNrPu/L46DkZ1H6VWE69zQMuuTdlfC4UiQ28tt5HeeFt7Wxnn1JlfWuaFhIZx+xMa3oa3ln9BINXZmfMUcX6xpK5Uegtd8Y0ywiZJsd5PN1ZmthfgWTLJ9mJydYb13OpgzNxqpO9eiYz/4xpnSm7zG5OYfmzt5gR+CbzIEcL0VS15Os7i/aCEes32HNcqyl4Dwx7mJ0lFgzRTChYTzsifrtD4XmH6p5H+WrPIx336Wz/8jrBgcM20kXwHiyWGjg7gnWCx8+fcPhHWa0e3iC48KoSd3ixeK1QyrPt2jbUtuMmB6x5yM/fxloWyMCj8W0jU1jJgzrZA3TzV2EPym54BoDz2lZ1xTeAxeCk1nYcA6wT6Xea6MwSGTvV/qPLEnXIafEt9bcD0ox+JfCjNVrw3baQqnwAWnyKCFKYJ3IHJCXz23J26pLlv10DgEtxI5/U2nUU/Nx9f/fJn/CJlz1X1TOFygqPICoUSE3t4jsqbLbA48UJz6fZnzSwFO2FN+wGUqudq/JkAaRcLu4/W+1f4HrQ5UVk8Ql4wDUS3iBr8FYsQ+S8fxvHRJGaCVSO1KCUcX//DHV3iB2VwDNHiD8zF3FtRuyODpFbo5BlL3eIX5w1dCTx/6SgDpNb/PofkQdaHi6woIzX+8zoymMT+4QA=
+    distributions: bdist_wheel
+    skip_existing: true
+    skip_cleanup: true
+    server: https://test.pypi.org/legacy/
+    # FIXME workaround to make deploy possibly work under Windows, remove once released
+    edge:
+      source: native-api/dpl
+      branch: z-quotes
+    on:
+      tags: true
+      all_branches: true
+      condition: $MAKE_STEP =~ ^(bdist_wheel)$ && $TRAVIS_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?\.dev[0-9]+$
+      # TODO add |bdist_win to release also Windows wheel
+  - provider: pypi
+    user: "__token__"
+    password:
+      secure: KYfWfkPfllpPq+qkAXiX5KEPNrPu/L46DkZ1H6VWE69zQMuuTdlfC4UiQ28tt5HeeFt7Wxnn1JlfWuaFhIZx+xMa3oa3ln9BINXZmfMUcX6xpK5Uegtd8Y0ywiZJsd5PN1ZmthfgWTLJ9mJydYb13OpgzNxqpO9eiYz/4xpnSm7zG5OYfmzt5gR+CbzIEcL0VS15Os7i/aCEes32HNcqyl4Dwx7mJ0lFgzRTChYTzsifrtD4XmH6p5H+WrPIx336Wz/8jrBgcM20kXwHiyWGjg7gnWCx8+fcPhHWa0e3iC48KoSd3ixeK1QyrPt2jbUtuMmB6x5yM/fxloWyMCj8W0jU1jJgzrZA3TzV2EPym54BoDz2lZ1xTeAxeCk1nYcA6wT6Xea6MwSGTvV/qPLEnXIafEt9bcD0ox+JfCjNVrw3baQqnwAWnyKCFKYJ3IHJCXz23J26pLlv10DgEtxI5/U2nUU/Nx9f/fJn/CJlz1X1TOFygqPICoUSE3t4jsqbLbA48UJz6fZnzSwFO2FN+wGUqudq/JkAaRcLu4/W+1f4HrQ5UVk8Ql4wDUS3iBr8FYsQ+S8fxvHRJGaCVSO1KCUcX//DHV3iB2VwDNHiD8zF3FtRuyODpFbo5BlL3eIX5w1dCTx/6SgDpNb/PofkQdaHi6woIzX+8zoymMT+4QA=
+    distributions: sdist
+    skip_existing: true
+    skip_cleanup: true
+    server: https://test.pypi.org/legacy/
+    # FIXME workaround to make deploy possibly work under Windows, remove once released
+    edge:
+      source: native-api/dpl
+      branch: z-quotes
+    on:
+      tags: true
+      all_branches: true
+      condition: $MAKE_STEP == sdist && $TRAVIS_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?\.dev[0-9]+$
+
+#=== ADDITIONAL JOBS ===
 
 jobs:
   include:
-    # Build and deploy Windows executable
+    #--- Build and deploy Windows executable ---
     - os: windows
       language: shell
+      env: MAKE_STEP=bdist_win
       before_install:
         - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
         - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
@@ -40,7 +110,7 @@ jobs:
         - pyenv local $pyver
         - python --version
       install:
-        - pip install --upgrade tox pywin32 setuptools-scm PyInstaller
+        - pip install --upgrade tox pywin32 setuptools-scm PyInstaller wheel
         - pyenv rehash
         - git clone -b v2.2.1 https://github.com/librsync/librsync.git $HOME/.librsync
         - export LIBRSYNC_DIR=$HOME/librsync
@@ -50,25 +120,19 @@ jobs:
         - cmake --install . --config Release
         - popd
       script:
-        - python setup.py bdist
-        - PyInstaller --onefile --distpath dist/win32 --paths=build/lib.win32-$pyverbrief --add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info --console build/scripts-$pyverbrief/rdiff-backup
+        - python setup.py bdist_wheel
+        - vername=rdiff-backup-`python setup.py --version`
+        - PyInstaller --onefile --distpath build/$vername --paths=build/lib.win32-$pyverbrief --add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info --console build/scripts-$pyverbrief/rdiff-backup
       before_deploy:
-        - cp CHANGELOG COPYING README.md docs/FAQ.md docs/examples.md docs/DEVELOP.md docs/Windows-README.md dist/win32
-        - version=`python setup.py --version`
-        - pushd dist/win32
-        - 7z a -tzip rdiff-backup-$version.zip *
+        - cp CHANGELOG COPYING README.md docs/FAQ.md docs/examples.md docs/DEVELOP.md docs/Windows-README.md docs/Windows-DEVELOP.md build/$vername
+        - pushd build
+        - 7z a -tzip ../dist/$vername.win32exe.zip $vername
         - popd
-      deploy:
-        provider: releases
-        file_glob: true
-        file: dist/win32/rdiff-backup*.zip
-        skip_cleanup: true
-        draft: true
-        token:
-          secure: V1Ad29+3lIQB1Sxqt8RiNKwferucTIr2mJo1Ka0m8Y1GdscP0ZkvHN4Vzjb0hts+lap8cU24tJ1zq9k22bdsNmoS3/YEg7fwbQSOPCJSYbjwMQeitDc1NP3u1mp5LWiEnQ7cflalIkmWUVpwGbwPSnUQdW3JyheUm4DP6jndGHmv3sC2r4WtZDkVY44SI5OGjvOTStTLnXhVlwXMIBKzw+o9BNdmIcpRvI3UTR+C9mA2yoNE7qgpzALZ4qn7qAmTMJzcVQb22yVZqXVCF8VD72Z66GHx75aatMmsJ/2isOEap19sVYt03fY8lchsTUsdRRCAIInxUvbdfgaEoBWj8Vfv2r/vm5DgWh93amv1RkJdmAYAMTGZG/k20vd7N+sNGKCdAF0W8hj5kriGkNnSQg7dFd+NWrF3pX9XcUkT9IGzv5eT5eYeS+yzgB3YPy8qGKwF5dRkRf7Ylw68j8YOly40rAAfgEx/ pcFlYrJh62LDPr5RNhKA679+9UAp0rgkiszNH327bj1i0drqeDIhJAZSXw86B8tJZI1JRBVllKNbwDc5GRFNyms4+pvKCO+lAy5Pcn0bQMUq49qxDsdnM1t2RISivWy5CdkOTNW5WYglhovOSoA8/NjcxmsOpOazCaENEvsB3AogI+LRmpZ7lUZKxjaILuVUM2rwXlKxFB0=
-        on:
-          all_branches: true
-    # Build and deploy Linux wheels using manylinux Docker containers
+
+    #--- Build and deploy Linux wheels using manylinux Docker containers ---
+    # - build manylinux2010 (and manylinux1) x64
+    # - build manylinux2010 i686
+    # - build manylinux2014 x64
     # avoiding manylinux2014_i686 because it does not provide librsync-devel
     - os: linux
       sudo: required
@@ -81,7 +145,7 @@ jobs:
         - docker pull $DOCKER_IMAGE
       script:
         - docker run --rm -e PLAT=$PLAT -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/tools/build_wheels.sh
-        - ls wheelhouse/
+        - ls dist/
     - os: linux
       services:
         - docker
@@ -93,7 +157,7 @@ jobs:
         - docker pull $DOCKER_IMAGE
       script:
         - docker run --rm -e PLAT=$PLAT -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/tools/build_wheels.sh
-        - ls wheelhouse/
+        - ls dist/
     - os: linux
       services:
         - docker
@@ -104,37 +168,47 @@ jobs:
         - docker pull $DOCKER_IMAGE
       script:
         - docker run --rm -e PLAT=$PLAT -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/tools/build_wheels.sh
-        - ls wheelhouse/
+        - ls dist/
+
+    #--- Build Debian packages ---
     - os: linux
       language: shell
-      env: MAKE_STEP=build_deb RUN_COMMAND=
+      env: MAKE_STEP=dist_deb RUN_COMMAND=
       addons:
         apt:
-          packages: # make sure these match debian/control contents
-          - build-essential
-          - debhelper-compat
-          - dh-python
-          - fakeroot
-          - git-buildpackage
-          - librsync-dev
-          - python3-all-dev
-          - python3-pylibacl
-          - python3-pyxattr
-          - python3-setuptools
-          - python3-setuptools-scm
+          packages:  # make sure these match debian/control contents
+            - build-essential
+            - debhelper-compat
+            - dh-python
+            - fakeroot
+            - git-buildpackage
+            - librsync-dev
+            - python3-all-dev
+            - python3-pylibacl
+            - python3-pyxattr
+            - python3-setuptools
+            - python3-setuptools-scm
       install:
         - echo "No pip here"
       script:
         - make $MAKE_STEP
         - cat ../*.changes
-        - mkdir -vp dist
-        - cp -v ../*.* dist/
+
+    #--- Build and deploy Debian packages ---
+    - os: linux
+      env: MAKE_STEP=sdist RUN_COMMAND=
+      install:
+        - echo "No pip here"
+      script:
+        - make $MAKE_STEP
+        - ls dist/
 
 # Only run tests (and deploy) on master and specific branches
 branches:
   only:
-  - master
-  - /-dodeploy$/
+    - master
+    - /_$/  # put an underscore at the end of the branch name to force building
+    - /^v\d+\.\d+\.\d+((a|b|rc)[0-9])?(\.dev[0-9]+)?$/  # we need to whitelist tags or nothing will happen PEP440
 
 addons:
   apt:
@@ -142,16 +216,6 @@ addons:
       - librsync-dev
       - libacl1-dev
       - rdiff  # needed by tests in tox.ini
-      - patchelf # needed by auditwheel
-
-
-# We utilize Docker images, thus must have a Docker service
-#services:
-#  - docker
-
-# Build Docker image for development and testing
-#before_script:
-#  - make container
 
 # Each env becomes a separate job. Add more Python versions to have a matrix.
 env:

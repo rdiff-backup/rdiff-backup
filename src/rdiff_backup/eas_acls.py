@@ -14,8 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with rdiff-backup; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA
 """Store and retrieve extended attributes and access control lists
 
 Not all file systems will have EAs and ACLs, but if they do, store
@@ -236,8 +236,16 @@ class ExtendedAttributesFile(metadata.FlatFile):
 
 def join_ea_iter(rorp_iter, ea_iter):
     """Update a rorp iter by adding the information from ea_iter"""
+
+    def _safe_str(cmd):
+        """Transform bytes into string without risk of conversion error"""
+        if isinstance(cmd, str):
+            return cmd
+        else:
+            return str(cmd, errors='replace')
+
     for rorp, ea in rorpiter.CollateIterators(rorp_iter, ea_iter):
-        assert rorp, "Missing rorp for index %a" % (ea.index, )
+        assert rorp, "Missing rorp for index '%s'." % _safe_str(ea.index)
         if not ea:
             ea = ExtendedAttributes(rorp.index)
         rorp.set_ea(ea)

@@ -14,8 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with rdiff-backup; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA
 """Handle long filenames
 
 rdiff-backup sometimes wants to write filenames longer than allowed by
@@ -106,7 +106,7 @@ def get_next_free():
         free_name_counter = scan_next_free()
     filename = b'%i' % free_name_counter
     rp = get_long_rp(filename)
-    assert not rp.lstat(), "Unexpected file at %a found" % (rp.path, )
+    assert not rp.lstat(), "Unexpected file at '%s' found" % rp.get_safepath()
     free_name_counter += 1
     write_next_free(free_name_counter)
     return filename
@@ -267,11 +267,18 @@ def get_inclist(inc_base_name):
 def update_rf(rf, rorp, mirror_root):
     """Return new or updated restorefile based on alt name info in rorp"""
 
+    def _safe_str(cmd):
+        """Transform bytes into string without risk of conversion error"""
+        if isinstance(cmd, str):
+            return cmd
+        else:
+            return str(cmd, errors='replace')
+
     def update_incs(rf, inc_base):
         """Swap inclist in rf with those with base inc_base and return"""
         log.Log(
-            "Restoring with increment base %a for file %s" %
-            (inc_base, rorp.get_safeindexpath()), 6)
+            "Restoring with increment base %s for file %s" %
+            (_safe_str(inc_base), rorp.get_safeindexpath()), 6)
         rf.inc_rp = get_long_rp(inc_base)
         rf.inc_list = get_inclist(inc_base)
         rf.set_relevant_incs()

@@ -14,8 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with rdiff-backup; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA
 """Read increment files and restore to original"""
 
 import tempfile
@@ -28,7 +28,10 @@ class RestoreError(Exception):
 
 
 def Restore(mirror_rp, inc_rpath, target, restore_to_time):
-    """Recursively restore mirror and inc_rpath to target at rest_time"""
+    """Recursively restore mirror and inc_rpath to target at restore_to_time
+    in epoch format"""
+
+    # Store references to classes over the connection
     MirrorS = mirror_rp.conn.restore.MirrorStruct
     TargetS = target.conn.restore.TargetStruct
 
@@ -440,6 +443,11 @@ class RestoreFile:
         self.mirror_rp = mirror_rp
         self.inc_rp, self.inc_list = inc_rp, inc_list
         self.set_relevant_incs()
+
+    def __str__(self):
+        return "Index: %s, Mirror: %s, Increment: %s\nIncList: %s\nIncRel: %s" % (
+            self.index, self.mirror_rp, self.inc_rp,
+            list(map(str, self.inc_list)), list(map(str, self.relevant_incs)))
 
     def relevant_incs_string(self):
         """Return printable string of relevant incs, used for debugging"""

@@ -14,8 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with rdiff-backup; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA
 """Support code for remote execution and data transfer"""
 
 import types  # noqa: F401
@@ -30,9 +30,12 @@ import gzip  # noqa: F401
 
 # The following EA and ACL modules may be used if available
 try:
-    import xattr  # noqa: F401
+    import xattr.pyxattr_compat as xattr  # noqa: F401
 except ImportError:
-    pass
+    try:
+        import xattr  # noqa: F401
+    except ImportError:
+        pass
 try:
     import posix1e  # noqa: F401
 except ImportError:

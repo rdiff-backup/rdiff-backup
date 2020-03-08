@@ -14,8 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with rdiff-backup; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA
 """Determine the capabilities of given file system
 
 rdiff-backup needs to read and write to file systems with varying
@@ -180,7 +180,7 @@ class FSAbilities:
         tmp_rp.touch()
         uid, gid = tmp_rp.getuidgid()
         try:
-            tmp_rp.chown(uid + 1, gid + 1)  # just choose random uid/gid
+            tmp_rp.chown(uid // 2 + 1, gid // 2 + 1)  # just choose random uid/gid
             tmp_rp.chown(0, 0)
         except (IOError, OSError, AttributeError):
             self.ownership = 0
@@ -390,24 +390,16 @@ class FSAbilities:
             self.eas = 0
             return
         try:
-            import xattr
+            import xattr.pyxattr_compat as xattr
         except ImportError:
-            log.Log(
-                "Unable to import module xattr.\nExtended attributes not "
-                "supported on filesystem at %s" % (rp.get_safepath(), ), 4)
-            self.eas = 0
-            return
-
-        try:
-            ver = xattr.__version__
-        except AttributeError:
-            ver = 'unknown'
-        if ver < '0.2.2' or ver == 'unknown':
-            log.Log(
-                "Warning: Your version of pyxattr (%s) has broken support "
-                "for extended\nattributes on symlinks. If you choose not "
-                "to upgrade to a more recent version,\nyou may see many "
-                "warning messages from listattr().\n" % (ver, ), 3)
+            try:
+                import xattr
+            except ImportError:
+                log.Log(
+                    "Unable to import module (py)xattr.\nExtended attributes not "
+                    "supported on filesystem at %s" % (rp.get_safepath(), ), 4)
+                self.eas = 0
+                return
 
         try:
             xattr.listxattr(rp.path)

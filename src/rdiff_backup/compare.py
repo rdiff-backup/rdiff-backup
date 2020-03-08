@@ -14,8 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with rdiff-backup; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA
 """Perform various kinds of comparisons.
 
 For instance, full-file compare, compare by hash, and metadata-only
@@ -24,7 +24,7 @@ compare.  This uses elements of the backup and restore modules.
 """
 
 import os
-from . import Globals, restore, rorpiter, log, backup, rpath, hash, robust
+from . import Globals, restore, rorpiter, log, backup, rpath, hash, robust, Hardlink
 
 
 def Compare(src_rp, mirror_rp, inc_rp, compare_time):
@@ -84,7 +84,8 @@ def Verify(mirror_rp, inc_rp, verify_time):
     for repo_rorp in repo_iter:
         if not repo_rorp.isreg():
             continue
-        if not repo_rorp.has_sha1():
+        verify_sha1 = get_hash(repo_rorp)
+        if not verify_sha1:
             log.Log(
                 "Warning: Cannot find SHA1 digest for file %s,\n"
                 "perhaps because this feature was added in v1.1.1" %
@@ -92,7 +93,7 @@ def Verify(mirror_rp, inc_rp, verify_time):
             continue
         fp = RepoSide.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
         computed_hash = hash.compute_sha1_fp(fp)
-        if computed_hash == repo_rorp.get_sha1():
+        if computed_hash == verify_sha1:
             log.Log(
                 "Verified SHA1 digest of %s" % repo_rorp.get_safeindexpath(),
                 5)
@@ -103,11 +104,25 @@ def Verify(mirror_rp, inc_rp, verify_time):
                 "doesn't match recorded digest of\n   %s\n"
                 "Your backup repository may be corrupted!" %
                 (repo_rorp.get_safeindexpath(), computed_hash,
-                 repo_rorp.get_sha1()), 2)
+                 verify_sha1), 2)
     RepoSide.close_rf_cache()
     if not bad_files:
         log.Log("Every file verified successfully.", 3)
     return bad_files
+
+
+def get_hash(repo_rorp):
+    """ Try to get a sha1 digest from the repository.  If hardlinks
+    are saved in the metadata, get the sha1 from the first hardlink """
+    Hardlink.add_rorp(repo_rorp)
+    if Hardlink.islinked(repo_rorp):
+        verify_sha1 = Hardlink.get_sha1(repo_rorp)
+    elif repo_rorp.has_sha1():
+        verify_sha1 = repo_rorp.get_sha1()
+    else:
+        verify_sha1 = None
+    Hardlink.del_rorp(repo_rorp)
+    return verify_sha1
 
 
 def print_reports(report_iter):
@@ -232,13 +247,14 @@ class DataSide(backup.SourceStruct):
 
         def hashes_changed(src_rp, mir_rorp):
             """Return 0 if their data hashes same, 1 otherwise"""
-            if not mir_rorp.has_sha1():
+            verify_sha1 = get_hash(mir_rorp)
+            if not verify_sha1:
                 log.Log(
                     "Warning: Metadata file has no digest for %s, "
                     "unable to compare." % (mir_rorp.get_safeindexpath(), ), 2)
                 return 0
             elif (src_rp.getsize() == mir_rorp.getsize()
-                  and hash.compute_sha1(src_rp) == mir_rorp.get_sha1()):
+                  and hash.compute_sha1(src_rp) == verify_sha1):
                 return 0
             return 1
 

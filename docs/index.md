@@ -6,8 +6,9 @@ Read further:
 
 * [Usage examples](examples.md)
 * [Frequently asked questions](FAQ.md)
-* [Windows specific documentation](Windows-README.md) - possibly outdated
 * [Developer documentation](DEVELOP.md)
+* [Windows specific documentation](Windows-README.md) - possibly outdated
+* [Windows specific Developer documentation](Windows-DEVELOP.md)
 
 ## Authors and Contributors
 

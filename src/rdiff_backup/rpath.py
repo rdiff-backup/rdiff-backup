@@ -14,8 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with rdiff-backup; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA
 """Wrapper class around a real path like "/usr/bin/env"
 
 The RPath (short for Remote Path) and associated classes make some
@@ -67,11 +67,32 @@ class RPathException(Exception):
 def copyfileobj(inputfp, outputfp):
     """Copies file inputfp to outputfp in blocksize intervals"""
     blocksize = Globals.blocksize
+
+    sparse = False
+    """Negative seeks are not supported by GzipFile"""
+    compressed = False
+    if isinstance(outputfp, gzip.GzipFile):
+        compressed = True
+
     while 1:
         inbuf = inputfp.read(blocksize)
         if not inbuf:
             break
-        outputfp.write(inbuf)
+
+        buflen = len(inbuf)
+        if not compressed and inbuf == b"\x00" * buflen:
+            outputfp.seek(buflen, os.SEEK_CUR)
+            # flag sparse=True, that we seek()ed, but have not written yet
+            # The filesize is wrong until we write
+            sparse = True
+        else:
+            outputfp.write(inbuf)
+            # We wrote, so clear sparse.
+            sparse = False
+
+    if sparse:
+        outputfp.seek(-1, os.SEEK_CUR)
+        outputfp.write(b"\x00")
 
 
 def cmpfileobj(fp1, fp2):
@@ -145,7 +166,7 @@ def copy(rpin, rpout, compress=0):
     elif rpin.issock():
         rpout.mksock()
     else:
-        raise RPathException("File %a has unknown type" % rpin.path)
+        raise RPathException("File '%s' has unknown type." % rpin.get_safepath())
 
 
 def copy_reg_file(rpin, rpout, compress=0):

@@ -1,5 +1,42 @@
-New in v1.3.6 (????/??/??)
----------------------------
+New in v1.9.1b0 (2020-02-23)
+----------------------------
+
+## Changes
+
+* FIX: remove too specific Debian packages from GitHub deployment, closes #263
+* NEW: add a new tool to help generate the changelog (description in DEVELOP.md)
+* DOC: new release rules and procedure added to docs/DEVELOP.md
+* FIX: avoid double unquoting of increment file infos, closes #266
+* FIX: versioning of Debian packages follows without glitch the overall tag based versioning.
+* DEV: automate via Travis deployment pipeline release to PyPI and Test PyPI.
+* FIX: remove some more ugly bytes output in strings using _safe_str, closes #238
+* FIX: added and moved hardlinks were not correctly counted and restored, Closes #239
+* FIX: rdiff-backup complained about missing SHA checksums of hardlinks, Closes #78
+* FIX: avoid int is not iterable error when calling remote command on Windows
+* DEV: flake8 checks only setup.py, src, testing and tools code.
+* NEW: add support for SOURCE_DATE_EPOCH to override the build date, making reproducible builds possible.
+* NEW: sparse files are handled more efficiently, if not compressed and depending on file system
+
+## Authors
+
+* Bernhard M. Wiedemann
+* Eric L
+* Otto Kekäläinen
+* Patrik Dufresne
+* Stefan Seyfried
+* zjw
+
+
+New in v1.9.0b0 (2020-01-31)
+----------------------------
+
+Different bug fixes, improvements in code and documentation - too many to list
+(Andreas Olsson, Andrew Foster, Arrigo Marchiori, bigbear3001, davekempe,
+David I. Lehn, elMor3no, Eric Lavarde, Frank Crawford, Jiri Lunacek, joshn, Josh Soref,
+mestre, Oliver Lowe, orangenschalen, Otto Kekäläinen, owsla, Patrik Dufresne, Reio Remma,
+Rodrigo Silva, Stefan Seyfried, Wes Cilldhaire, zjw)
+
+Add automated of different package formats (Otto Kekäläinen, Arrigo Marchiori, Eric Lavarde)
 
 Add RDIFF_BACKUP_VERBOSITY environment variable (Eric Lavarde)
 
@@ -858,7 +895,7 @@ intended and documented but not very convenient.  Thanks to Oliver
 Kaltenecker for bug report.
 
 Fixed error when --restrict path given with trailing backslash.  Bug
-report by �ke Br�nnstr�m.
+report by Åke Brännström.
 
 Fixed many functions like --list-increments, --remove-older-than,
 etc. which previously didn't work with filename quoting.  Thanks to
@@ -1225,7 +1262,7 @@ sockets, and device files.
 
 --windows-mode is now short for --windows-time-format --chars-to-quote
 A-Z: --no-hard-links --exclude-special-files.  Thanks to Paul-Erik
-T�rr�nen for some helpful windows info.
+Törrönen for some helpful windows info.
 
 Multiple --include and --exclude statements can now be given in a
 single file.  See the documentation on

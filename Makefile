@@ -46,8 +46,12 @@ bdist_wheel:
 	${RUN_COMMAND} ./setup.py bdist_wheel
 	# ${RUN_COMMAND} auditwheel repair dist/*.whl
 
-build_deb:
-	${RUN_COMMAND} gbp buildpackage -us -uc
+sdist:
+	# Prepare wheel for deployment.
+	${RUN_COMMAND} ./setup.py sdist
+
+dist_deb:
+	${RUN_COMMAND} debian/autobuild.sh
 
 container:
 	# Build development image
