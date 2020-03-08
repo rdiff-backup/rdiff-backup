@@ -9,7 +9,7 @@ then
 fi
 RELTAG="${1}"
 
-echo "(make sure the version is the next correct one)"
+echo "(make sure the version is the next correct one)" >&2
 echo
 echo "New in v$($(dirname $0)/../setup.py --version) ($(date -I))"
 echo "----------------------------"

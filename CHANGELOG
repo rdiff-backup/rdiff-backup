@@ -1,3 +1,19 @@
+New in v1.9.2rc0 (2020-03-08)
+-----------------------------
+
+## Changes
+
+* FIX: UpdateError: Updated mirror temp file does not match source, Closes #237
+* CHG: Add new logo and improve visual appeal of the README (Closes: #286) (#287)
+* NEW: Add Windows developments documentations, closes #220
+* FIX: do not fail when starting with uid/gid equal to maximum, avoid OverflowError on os.chown
+
+## Authors
+
+* Eric L
+* Patrik Dufresne
+* zjw
+
 New in v1.9.1b0 (2020-02-23)
 ----------------------------
 
