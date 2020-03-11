@@ -485,6 +485,27 @@ class CommandTest(unittest.TestCase):
         outempty = outrp.append('emptydir')
         assert outempty.isdir(), outempty
 
+    def test_overlapping_dirs(self):
+        """Test if we can backup a directory containing the backup repo
+        while ignoring this repo"""
+
+        testrp = rpath.RPath(Globals.local_connection,
+                             abs_test_dir).append('selection_overlap')
+        re_init_rpath_dir(testrp)
+        backuprp = testrp.append('backup')
+        emptyrp = testrp.append('empty')  # just to have something to backup
+        emptyrp.mkdir()
+
+        rdiff_backup(1,
+                     1,
+                     testrp.path,
+                     backuprp.path,
+                     extra_options=b"--exclude %s" % backuprp.path)
+
+        assert backuprp.append('rdiff-backup-data').isdir() and \
+               backuprp.append('empty').isdir(), \
+               "Backup to %s didn't happen properly." % backuprp.getsafepath()
+
 
 if __name__ == "__main__":
     unittest.main()
