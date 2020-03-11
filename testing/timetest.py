@@ -35,6 +35,15 @@ class TimeTest(unittest.TestCase):
         assert cmp("2001-09-01T12:00:00-08:00",
                    "2001-09-01T12:00:00-07:00") == 1
 
+    def testBytestotime(self):
+        """Test converting byte string to time"""
+        timesec = int(time.time())
+        assert timesec == int(Time.bytestotime(Time.timetostring(timesec).encode('ascii')))
+
+        # assure that non-ascii byte strings return None and that they don't
+        # throw an exception (issue #295)
+        assert Time.bytestotime(b'\xff') is None
+
     def testStringtotime(self):
         """Test converting string to time"""
         timesec = int(time.time())
