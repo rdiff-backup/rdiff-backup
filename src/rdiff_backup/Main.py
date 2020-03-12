@@ -584,15 +584,18 @@ def backup_warn_if_infinite_regress(rpin, rpout):
         return
 
     relative_rpout_comps = tuple(rpout.path[len(rpin.path) + 1:].split(b'/'))
-    relative_rpout = rpin.new_index(relative_rpout_comps)
-    if not Globals.select_mirror.Select(relative_rpout):
-        return
+    relative_rpout = rpin.new_index(relative_rpout_comps)  # noqa: F841
+    # FIXME: this fails currently because the selection object isn't stored
+    #        but an iterable, the object not being pickable.
+    #        Related to issue #296
+    #if not Globals.select_mirror.Select(relative_rpout):  # noqa: E265
+    #    return
 
     Log(
         """Warning: The destination directory '%s' may be contained in the
 source directory '%s'.  This could cause an infinite regress.  You
-may need to use the --exclude option.""" % (rpout.get_safepath(),
-                                            rpin.get_safepath()), 2)
+may need to use the --exclude option (which you might already have done)."""
+        % (rpout.get_safepath(), rpin.get_safepath()), 2)
 
 
 def backup_get_mirrortime():
