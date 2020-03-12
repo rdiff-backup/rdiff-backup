@@ -34,6 +34,7 @@ import stat
 import struct
 
 PY2 = sys.version_info < (3,)
+PY26 = sys.version_info = (2, 7)
 PY3 = sys.version_info > (3,)
 
 # List of suffixes for increments
@@ -53,7 +54,10 @@ def _bytes(value):
 def _str(value):
     if isinstance(value, str if PY3 else unicode):
         return value
-    return value.decode('utf-8', errors='replace')
+    if PY26:
+        return value.decode('utf-8')
+    else:
+        return value.decode('utf-8', errors='replace')
 
 
 def _print_usage(error_message=None):
