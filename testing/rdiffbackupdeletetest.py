@@ -17,10 +17,10 @@ def rdiff_backup_delete(to_delete=None, extra_args=[], expected_ret_val=0, expec
     bin = spawn.find_executable(u"rdiff-backup-delete")
     assert bin, "can't find rdiff-backup-delete"
     cmdargs = [bin.encode('utf8')]
-    if to_delete:
-        cmdargs.append(to_delete)
     if extra_args:
         cmdargs.extend(extra_args)
+    if to_delete:
+        cmdargs.append(to_delete)
     cmdline = b" ".join(cmdargs)
     print("Executing: %r" % (cmdline,))
     p = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -132,6 +132,11 @@ class RdiffBackupDeleteTest(unittest.TestCase):
     def test_extended_attributes(self):
         self._copy_repo(b'restoretest3')
         rdiff_backup_delete(to_delete=os.path.join(self.repo, b'newdir'))
+        rdiff_backup_verify(self.repo)
+
+    def test_delete_with_dryrun(self):
+        self._copy_repo(b'restoretest4')
+        rdiff_backup_delete(to_delete=os.path.join(self.repo, b'tmp'), extra_args=[b'--dry-run'])
         rdiff_backup_verify(self.repo)
 
 

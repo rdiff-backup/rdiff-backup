@@ -19,7 +19,7 @@
 #
 # rdiff-backup-delete
 #
-# Deletes files and directorys from a rdiff-backup repository, including the
+# Deletes files and directories from a rdiff-backup repository, including the
 # current mirror and all its history. Also remove any reference from the
 # metadata.
 #
@@ -32,7 +32,6 @@ import gzip
 import re
 import stat
 import struct
-
 
 PY2 = sys.version_info < (3,)
 PY26 = sys.version_info > (2, 6) and sys.version_info < (2, 7)
@@ -64,9 +63,16 @@ def _str(value):
 def _print_usage(error_message=None):
     if error_message:
         print(error_message)
-    print("Usage: %s <path-to-delete>\n\n"
-        "<path-to-delete>\n\n"
-        "        A relative or absolute path to be deleted.\n"
+    print("Usage: %s [OPTION]... PATH\n\n"
+        "Delete PATH from a rdiff-backup repository including the current \n"
+        "mirror and all its history.\n\n"
+        "-h, --help\n\n"
+        "        Display this help text and exit\n\n"
+        "-d, --dry-run\n\n"
+        "        Run the script without doing modifications to the repository.\n\n"
+        "PATH\n\n"
+        "        A relative or absolute path to be deleted. This path must be\n"
+        "        inside a rdiff-backup repository.\n"
         % (sys.argv[0],))
     sys.exit(1 if error_message else 0)
 
@@ -78,13 +84,16 @@ def _parse_options():
     # Support environment variable
     try:
         optlist, args = getopt.getopt(
-            sys.argv[1:], "h", ["help"],
+            sys.argv[1:], "hd", ["help", "dry-run"],
         )
     except getopt.GetoptError as e:
         _print_usage("fatal: bad command line: " + str(e))
+    dry_run = False
     for opt, arg in optlist:
         if opt in ["-h", "--help"]:
             _print_usage()
+        elif opt in ["-d", "--dry-run"]:
+            dry_run = True
         else:
             _print_usage("fatal: invalid arguments: %s" % opt)
 
@@ -102,7 +111,7 @@ def _parse_options():
             relpath = os.path.relpath(path, start=dir)
             if relpath == b'rdiff-backup-data':
                 sys.exit("fatal: can't delete rdiff-backup-data")
-            return dir, relpath
+            return dir, relpath, dry_run
         # Continue with parent directory.
         dir = os.path.dirname(dir)
 
@@ -122,7 +131,7 @@ def _filename_from_increment(file):
     return None
 
 
-def _remove_from_metadata(repopath, file):
+def _remove_from_metadata(repopath, file, dry_run):
     """
     This function is used to remove the repo path from the given `file` metadata.
     """
@@ -149,7 +158,7 @@ def _remove_from_metadata(repopath, file):
     else:
         return
 
-    print('deleting `%s` from %s' % (_str(repopath.relpath), _str(file)))
+    print('removing entries `%s` from %s' % (_str(repopath.relpath), _str(file)))
     _open = gzip.open if file.endswith(b'.gz') else open
     input = _open(file, 'rb')
     tmp_file = os.path.join(os.path.dirname(file), b'.tmp.' + os.path.basename(file))
@@ -161,7 +170,7 @@ def _remove_from_metadata(repopath, file):
                 line = input.readline()
                 while line and not line.startswith(start_marker):
                     if line.startswith(b'  AlternateMirrorName '):
-                        _remove_long_filename(repopath, line.rsplit(b' ', 1)[0])
+                        _remove_long_filename(repopath, line.rsplit(b' ', 1)[0], dry_run)
                     line = input.readline()
             else:
                 output.write(line)
@@ -169,16 +178,19 @@ def _remove_from_metadata(repopath, file):
     finally:
         input.close()
         output.close()
-    os.rename(tmp_file, file)
+    if not dry_run:
+        os.rename(tmp_file, file)
+    else:
+        os.remove(tmp_file)
 
 
-def _remove_long_filename(repopath, id):
+def _remove_long_filename(repopath, id, dry_run):
     """
     Remove file from long_filename_data
     """
     path = os.path.join(repopath.long_filename_data, id)
     print('deleting directory `%s` recursively' % (_str(path),))
-    _rmtree(path)
+    _rmtree(path, dry_run)
 
     # Then let find all the increment entries (.missing, .dir, .gz, .diff.gz)
     for p in os.listdir(repopath.increments):
@@ -186,10 +198,11 @@ def _remove_long_filename(repopath, id):
             # Remove the increment entry
             file = os.path.join(repopath.increments, p)
             print('deleting increments `%s`' % (_str(file),))
-            os.remove(file)
+            if not dry_run:
+                os.remove(file)
 
 
-def _rmtree(path):
+def _rmtree(path, dry_run):
     """
     Custom implementation of shutil.rmtree() to support deletion of symlink.
     """
@@ -202,10 +215,12 @@ def _rmtree(path):
         names = os.listdir(path)
         for name in names:
             fullname = os.path.join(path, name)
-            _rmtree(fullname)
-        os.rmdir(path)
+            _rmtree(fullname, dry_run)
+        if not dry_run:
+            os.rmdir(path)
     elif mode:
-        os.remove(path)
+        if not dry_run:
+            os.remove(path)
 
 
 def _unquote(name):
@@ -279,16 +294,18 @@ class RepoPath():
 def main():
     # Parse the arguments.
     # root maybe None
-    root, relpath = _parse_options()
+    root, relpath, dry_run = _parse_options()
     repopath = RepoPath(root, relpath)
-    print("deleting path `%s` from repository %s" % (_str(relpath), _str(root)))
+    print("start deleting path `%s` from repository %s" % (_str(relpath), _str(root)))
+    if dry_run:
+        print("running in dry-run mode")
 
     # Remove any entries from metadata files: file_statistics, mirror_metadata, extended_attributes, access_control_lists
     for f in os.listdir(repopath.rdiff_backup_data):
-        _remove_from_metadata(repopath, os.path.join(repopath.rdiff_backup_data , f))
+        _remove_from_metadata(repopath, os.path.join(repopath.rdiff_backup_data , f), dry_run)
 
     print('deleting directory `%s` recursively' % (_str(repopath.abspath),))
-    _rmtree(repopath.abspath)
+    _rmtree(repopath.abspath, dry_run)
 
     # Then let find all the increment entries (.missing, .dir, .gz, .diff.gz)
     if os.path.isdir(repopath.increments):
@@ -297,7 +314,8 @@ def main():
                 # Remove the increment entry
                 file = os.path.join(repopath.increments, p)
                 print('deleting increments `%s`' % (_str(file),))
-                os.remove(file)
+                if not dry_run:
+                    os.remove(file)
 
     print('done')
 
