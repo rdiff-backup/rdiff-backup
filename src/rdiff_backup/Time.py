@@ -120,7 +120,10 @@ def stringtotime(timestring):
 
 
 def bytestotime(timebytes):
-    return stringtotime(timebytes.decode('ascii'))
+    try:
+        return stringtotime(timebytes.decode('ascii'))
+    except UnicodeDecodeError:
+        return None
 
 
 def timetopretty(timeinseconds):
