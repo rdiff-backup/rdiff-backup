@@ -503,8 +503,8 @@ class CommandTest(unittest.TestCase):
                      extra_options=b"--exclude %s" % backuprp.path)
 
         assert backuprp.append('rdiff-backup-data').isdir() and \
-               backuprp.append('empty').isdir(), \
-               "Backup to %s didn't happen properly." % backuprp.getsafepath()
+            backuprp.append('empty').isdir(), \
+            "Backup to %s didn't happen properly." % backuprp.getsafepath()
 
 
 if __name__ == "__main__":
