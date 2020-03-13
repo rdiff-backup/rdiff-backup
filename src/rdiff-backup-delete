@@ -33,8 +33,9 @@ import re
 import stat
 import struct
 
+
 PY2 = sys.version_info < (3,)
-PY26 = sys.version_info = (2, 7)
+PY26 = sys.version_info > (2, 6) and sys.version_info < (2, 7)
 PY3 = sys.version_info > (3,)
 
 # List of suffixes for increments
@@ -63,40 +64,11 @@ def _str(value):
 def _print_usage(error_message=None):
     if error_message:
         print(error_message)
-    print("Usage: %s [--rdiff-backup-dir=<backup-dir>] <folder-or-file-to-delete>\n\n"
-        "--rdiff-backup-dir\n\n"
-        "        Define the relative or absolute path to the root of the \n"
-        "        rdiff-backup directory. When running inside a rdiff-backup\n"
-        "        repository, this option is not required. Could also be define\n"
-        "        with `RDIFF_BACKUP_DIR` environment variable.\n\n"
-        "<folder-or-file-to-delete>\n\n"
-        "        Should be a path relative to rdiff-backup-dir if provided or\n"
-        "        a relative path to the current directory or an absolute path\n"
+    print("Usage: %s <path-to-delete>\n\n"
+        "<path-to-delete>\n\n"
+        "        A relative or absolute path to be deleted.\n"
         % (sys.argv[0],))
     sys.exit(1 if error_message else 0)
-
-
-def _check_rdiff_backup_dir(rdiff_backup_dir):
-    """
-    Search for rdiff-backup-data folder. Either from `rdiff_backup_dir` when
-    provided or from working directory.
-    Exist the application with an error message if the folder can't be found.
-    """
-    if rdiff_backup_dir:
-        rdiff_backup_data = os.path.join(rdiff_backup_dir, b'rdiff-backup-data')
-        if not os.path.isdir(rdiff_backup_data):
-            sys.exit("fatal: can't find rdiff-backup-data folder in directory: %s" % (_str(rdiff_backup_dir),))
-        return rdiff_backup_dir
-
-    dir = _bytes(os.getcwd())
-    while dir != b'/':
-        rdiff_backup_data = os.path.join(dir, b'rdiff-backup-data')
-        if os.path.isdir(rdiff_backup_data):
-            return dir
-        # Continue with parent directory.
-        dir = os.path.dirname(dir)
-
-    sys.exit("fatal: not a rdiff-backup repository (or any parent up to mount point /)")
 
 
 def _parse_options():
@@ -104,41 +76,37 @@ def _parse_options():
     Used to parse the arguments.
     """
     # Support environment variable
-    rdiff_backup_dir = None
-    if 'RDIFF_BACKUP_DIR' in os.environ:
-        rdiff_backup_dir = _bytes(os.environ('RDIFF_BACKUP_DIR'))
     try:
         optlist, args = getopt.getopt(
-            sys.argv[1:],
-            "hd:",
-            ["help", "rdiff-backup-dir="],
+            sys.argv[1:], "h", ["help"],
         )
     except getopt.GetoptError as e:
         _print_usage("fatal: bad command line: " + str(e))
     for opt, arg in optlist:
-        if opt in ["-d", "--rdiff-backup-dir"]:
-            rdiff_backup_dir = _bytes(arg)
-        elif opt in ["-h", "--help"]:
+        if opt in ["-h", "--help"]:
             _print_usage()
         else:
             _print_usage("fatal: invalid arguments: %s" % opt)
 
     # Make sure we get a folder or a file to be deleted.
-    if len(args) != 1:
+    if len(args) == 0:
         _print_usage('fatal: missing arguments')
+    elif len(args) > 1:
+        _print_usage('fatal: too many arguments')
 
-    # Validate the backup dir path
-    root = _check_rdiff_backup_dir(rdiff_backup_dir)
-    if rdiff_backup_dir:
-        relpath = _bytes(args[0])
-    else:
-        abspath = os.path.abspath(_bytes(args[0]))
-        relpath = os.path.relpath(abspath, start=root)
+    # Check the repository.
+    dir = path = os.path.abspath(_bytes(args[0]))
+    while dir != b'/':
+        rdiff_backup_data = os.path.join(dir, b'rdiff-backup-data')
+        if os.path.isdir(rdiff_backup_data):
+            relpath = os.path.relpath(path, start=dir)
+            if relpath == b'rdiff-backup-data':
+                sys.exit("fatal: can't delete rdiff-backup-data")
+            return dir, relpath
+        # Continue with parent directory.
+        dir = os.path.dirname(dir)
 
-    if relpath == b'rdiff-backup-data':
-        sys.exit("fatal: can't delete rdiff-backup-data")
-
-    return root, relpath
+    sys.exit("fatal: not a rdiff-backup repository (or any parent up to mount point /)")
 
 
 def _filename_from_increment(file):
