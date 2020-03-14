@@ -1,15 +1,14 @@
 import os
 import sys
 
+from commontest import old_test_dir, abs_test_dir
 from distutils import spawn
 import subprocess
 import unittest
 
+
 PY2 = sys.version_info < (3,)
 PY3 = sys.version_info > (3,)
-
-# Working directories
-old_test_dir = os.path.join(os.path.dirname(os.getcwd()), 'rdiff-backup_testfiles')
 
 
 # Lookup for rdiff-backup-delete location.
@@ -27,10 +26,10 @@ def rdiff_backup_delete(to_delete=None, extra_args=[], expected_ret_val=0, expec
     output, error = p.communicate()
     ret_val = p.poll()
     if expected_ret_val is not None:
-        assert ret_val == expected_ret_val, "Return code %d of command `%s` doesn't matches expected value: %d.\n%s\n%s" % \
+        assert ret_val == expected_ret_val, "Return code %d of command '%s' doesn't match expected value: %d.\n%s\n%s" % \
             (ret_val, cmdline, expected_ret_val, output, error)
     if expected_output is not None:
-        assert expected_output in output or expected_output in error, "Output %s %s of command `%s` doesn't matches expected output:\n`%s`" % \
+        assert expected_output in output or expected_output in error, "Output %s %s of command '%s' doesn't match expected output:\n'%s'" % \
             (output, error, cmdline, expected_output)
 
 
@@ -61,10 +60,10 @@ class RdiffBackupDeleteTest(unittest.TestCase):
     def _copy_repo(self, reponame):
         # Copy the required repo to a temporary location.
         # We need to use os command line to properly copy and delete special files.
-        self.repo = b"/tmp/deletetest"
+        self.repo = os.path.join(abs_test_dir, b'/tmp/deletetest')
         if os.path.exists(self.repo):
             subprocess.check_call([b'rm', b'-Rf', self.repo])
-        src = os.path.join(old_test_dir.encode('utf8'), reponame)
+        src = os.path.join(old_test_dir, reponame)
         subprocess.check_call([b'cp', b'-R', src, self.repo])
 
     def tearDown(self):
