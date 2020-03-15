@@ -1,3 +1,17 @@
+New in v2.0.0 (2020-03-15)
+--------------------------
+
+## Changes
+
+* FIX: Add workaround to avoid error when backup directory is under the source directory (see issue #296), there is a warning but the backup can succeed.
+* FIX: bytestotime() should return None on decode failure (Closes #295)
+* NEW: add a unit test for bytestotime() in order to avoid a regression like issue #295.
+
+## Authors
+
+* Eric L
+* zjw
+
 New in v1.9.2rc0 (2020-03-08)
 -----------------------------
 
