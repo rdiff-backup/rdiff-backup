@@ -169,8 +169,11 @@ def _remove_from_metadata(repopath, file, dry_run):
             if line.startswith(start_marker) and matches(line):
                 line = input.readline()
                 while line and not line.startswith(start_marker):
-                    if line.startswith(b'  AlternateMirrorName '):
-                        _remove_long_filename(repopath, line.rsplit(b' ', 1)[0], dry_run)
+                    # Special case to handle longfilename
+                    if line.startswith(b'  AlternateIncrementName ') or line.startswith(b'  AlternateMirrorName '):
+                        name = line.strip(b'\n').rsplit(b' ', 1)[1]
+                        path = os.path.join(repopath.long_filename_data, name)
+                        _remove_increments(path, dry_run)
                     line = input.readline()
             else:
                 output.write(line)
@@ -184,22 +187,25 @@ def _remove_from_metadata(repopath, file, dry_run):
         os.remove(tmp_file)
 
 
-def _remove_long_filename(repopath, id, dry_run):
+def _remove_increments(path, dry_run):
     """
-    Remove file from long_filename_data
+    Remove all <path>.*.<suffixes> 
     """
-    path = os.path.join(repopath.long_filename_data, id)
-    print('deleting directory `%s` recursively' % (_str(path),))
+    # If the increment is a directory, remove it and all it's content.
     _rmtree(path, dry_run)
-
+    
     # Then let find all the increment entries (.missing, .dir, .gz, .diff.gz)
-    for p in os.listdir(repopath.increments):
-        if path == _filename_from_increment(p):
-            # Remove the increment entry
-            file = os.path.join(repopath.increments, p)
-            print('deleting increments `%s`' % (_str(file),))
-            if not dry_run:
-                os.remove(file)
+    dir = os.path.dirname(path)
+    fn = os.path.basename(path)
+    
+    if os.path.isdir(dir):
+        for p in os.listdir(dir):
+            if fn == _filename_from_increment(p):
+                # Remove the increment entry
+                file = os.path.join(dir, p)
+                print('deleting increments `%s`' % (_str(file),))
+                if not dry_run:
+                    os.remove(file)
 
 
 def _rmtree(path, dry_run):
@@ -265,10 +271,10 @@ class RepoPath():
     abspath: absolute path to the file or folder to be delete (may not exists)
     metaquote: unquoted relative path (;000 replace by bytes) with quoted \
     aclquote: quoted relative path (bytes converted into \000)
+    increments: <root>/rdiff-backup-data/increments/<relpath>
     
     rdiff_backup_data: <root>/rdiff-backup-data/
     long_filename_data: <root>/rdiff-backup-data/long_filename_data/
-    increments: <root>/rdiff-backup-data/increments/
     """
 
     def __init__(self, root, relpath):
@@ -287,8 +293,8 @@ class RepoPath():
         # Return the absolute location of this path on the filesystem
         self.abspath = os.path.join(self.root, self.relpath)
         self.rdiff_backup_data = os.path.join(self.root, b'rdiff-backup-data')
-        self.long_filename_data = os.path.join(self.rdiff_backup_data, b'rdiff-backup-data')
-        self.increments = os.path.join(self.rdiff_backup_data, b'increments')
+        self.long_filename_data = os.path.join(self.rdiff_backup_data, b'long_filename_data')
+        self.increments = os.path.join(self.rdiff_backup_data, b'increments', self.relpath)
 
 
 def main():
@@ -308,14 +314,7 @@ def main():
     _rmtree(repopath.abspath, dry_run)
 
     # Then let find all the increment entries (.missing, .dir, .gz, .diff.gz)
-    if os.path.isdir(repopath.increments):
-        for p in os.listdir(repopath.increments):
-            if repopath.relpath == _filename_from_increment(p):
-                # Remove the increment entry
-                file = os.path.join(repopath.increments, p)
-                print('deleting increments `%s`' % (_str(file),))
-                if not dry_run:
-                    os.remove(file)
+    _remove_increments(repopath.increments, dry_run)
 
     print('done')
 
