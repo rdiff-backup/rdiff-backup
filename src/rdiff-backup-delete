@@ -200,9 +200,9 @@ def _remove_increments(path, dry_run):
     
     if os.path.isdir(dir):
         for p in os.listdir(dir):
-            if fn == _filename_from_increment(p):
+            file = os.path.join(dir, p)
+            if not os.path.isdir(file) and fn == _filename_from_increment(p):
                 # Remove the increment entry
-                file = os.path.join(dir, p)
                 print('deleting increments `%s`' % (_str(file),))
                 if not dry_run:
                     os.remove(file)
