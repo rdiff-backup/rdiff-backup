@@ -39,54 +39,61 @@ provided the file system(s) also support these features.
 
 ## INSTALLATION
 
-### From Linux system package
+Latest version of rdiff-backup is available from various sources. Follow the
+instructions for your specific platform.
 
-Many Linux distributions have packaged rdiff-backup, which can then easiest be installed
-using the system tool e.g. `apt|yum|dnf|zypper install rdiff-backup`.
+### Ubuntu (From PPA)
 
-> **NOTE:** consider that the package might not install the optional dependencies
-pylibacl and pyxattr, packaged e.g. as python3-pyxattr and py3libacl.
+	sudo apt update && sudo apt install software-properties-common
+	sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-development
+	sudo apt update
+	sudo apt install rdiff-backup
 
-### From our own packaging
+### CentOS 7 (From CORP)
 
-If you want or need a more recent version than provided by your distribution,
-the [rdiff-project releases its' own packages](https://github.com/rdiff-backup/rdiff-backup/releases), which you can install as follows.
+	yum install yum-plugin-copr epel-release
+	yum copr enable frankcrawford/rdiff-backup
+	yum install rdiff-backup
 
-> **IMPORTANT:** the following instructions assume the availability of a
-version of rdiff-backup equal or higher to 1.4.0 (beta) or 2.0.0 (stable).
+### CentOS 8 (From CORP)
 
-#### On Linux
+	yum install dnf-plugins-core epel-release
+	dnf copr enable frankcrawford/rdiff-backup
+	yum install rdiff-backup
+
+### Debian (From pypi)
+
+	sudo apt update
+	sudo apt install python3 python3-setuptools python3-pylibacl python3-pyxattr curl
+	curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+	sudo python3 get-pip.py
+	sudo pip3 install rdiff-backup
+
+### Other Linux (From pypi)
 
 You need to make sure that the following requirements are met:
 
 * Python 3.5 or higher
-* librsync 1.0.0 or higher
+* librsync 2.0.0
 * pylibacl (optional, to support ACLs)
 * pyxattr (optional, to support extended attributes) - the xattr library (without py) isn't regularly tested but should work and you will be helped
 * SSH for remote operations
 
-Then you can install one of the following packages:
 
-* `rdiff_backup-VERSION-PYVER-PLATFORM.whl` - wheel distribution - this is the recommended installation approach (because you can easily deinstall), either with `sudo pip install rdiff_backup...whl` to install globally for all users, or with `pip install --user rdiff_backup...whl` for only the current user. Advanced and cautious users can of course install within a virtualenv. Deinstallation works similarly with `sudo pip uninstall rdiff-backup` (global) resp. `pip uninstall rdiff-backup` (user).
-* `rdiff-backup-VERSION-PLATFORM.tar.gz` - binary distribution - can be "installed" using `tar xvzf rdiff-backup...tar.gz -C /` but it can't be easily deinstalled, you'll need to do it manually.
+	curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+	sudo python3 get-pip.py
+	sudo pip3 install rdiff-backup
 
-> **NOTE:** the installation approach should make sure that rdiff-backup is in the PATH, which makes remote operations a lot easier.
+### Windows
 
-#### On Windows
-
-Just download and unpack the file `rdiff-backup-VERSION.winBITS.zip`
+Just download and unpack the file `rdiff-backup-VERSION.win32exe.zip`
 available as _asset_ attached to one of the releases available in the
 [releases section](https://github.com/rdiff-backup/rdiff-backup/releases) and
 drop the binary `rdiff-backup.exe` somewhere in your PATH and it should work,
 as it comes with all dependencies included.
 
-For remote operations, you will need to have an SSH package installed (also on Linux but it is
-generally more obvious).
-
-### From source code
-
-This is an advanced topic, but necessary for platforms like MacOS X and FreeBSD, and
-described in the [developer documentation](docs/DEVELOP.md).
+For remote operations, you will need to have an SSH package installed.
+We recommand using OpenSSH from http://www.mls-software.com/opensshd.html
 
 ## BASIC USAGE
 
@@ -137,33 +144,5 @@ There are many ways to contribute:
 - Fixing bug in existing features or adding new features
 
 If you don't have anything particular in your mind but want to help out, just browse the list of issues. Both coding and non-coding tasks have been filed as issues.
-
-## Installing the latest development version
-
-When testing and giving feedback, please make sure you are running the latest development version.
-
-### Development version from PyPi
-
-For most platforms the easiest way to install the [latest development version of rdiff-backup is via the Python package installer](https://pypi.org/project/rdiff-backup/#history):
-
-    pip3 install --pre rdiff-backup
-
-Note the `--pre` switch. If it fails to compile, you might also need to install `librsync-dev` first.
-
-### Development version from PPA (for Ubuntu)
-
-For Ubuntu users there exists a [PPA](https://code.launchpad.net/~rdiff-backup/+archive/ubuntu/rdiff-backup-development) that updates daily to have the latest git master version easily available. To install, simply run:
-
-    sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-development
-    sudo apt-get update
-
-### Development version from Copr (for Fedora/CentOS/Red Hat)
-
-For Fedora users there exists a [Copr](https://copr.fedorainfracloud.org/coprs/frankcrawford/rdiff-backup/) where the rdiff-backup development version is frequently updated to. To enable it, simply run:
-
-    dnf copr enable frankcrawford/rdiff-backup
-
-
-## Contribute by developing code
 
 For source code related documentation see [docs/DEVELOP.md](DEVELOP.md)
