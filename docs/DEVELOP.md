@@ -183,7 +183,7 @@ Administrators, located at https://docs.python.org/3/install/index.html
 
 > **NOTE:** There is no uninstall command provided by the Python
 distutils/setuptools system. One strategy is to use the `python3 setup.py
-install --record <file>` option to save a list of the files installed to <file>,
+install --record <file>` option to save a list of the files installed to `<file>`,
 another is to created a wheel package with `python3 setup.py bdist_wheel`,
 as it can be installed and deinstalled.
 
