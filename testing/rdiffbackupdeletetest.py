@@ -39,7 +39,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
     def _copy_repo(self, reponame):
         # Copy the required repo to a temporary location.
         # We need to use os command line to properly copy and delete special files.
-        self.repo = os.path.join(abs_test_dir, b'/tmp/deletetest')
+        self.repo = os.path.join(abs_test_dir, b'deletetest')
         if os.path.exists(self.repo):
             subprocess.check_call([b'rm', b'-Rf', self.repo])
         src = os.path.join(old_test_dir, reponame)
@@ -142,6 +142,14 @@ class RdiffBackupDeleteTest(unittest.TestCase):
         rdiff_backup_delete(to_delete=os.path.join(self.repo, b'tmp'), extra_args=[b'--dry-run'])
         rdiff_backup(1, 1, self.repo, None, extra_options=b"--verify")
         self.assertFound(b'tmp')
+
+    def test_delete_with_running_backup(self):
+        self._copy_repo(b'restoretest4')
+        current_mirror = os.path.join(self.repo, b'rdiff-backup-data', b'current_mirror.2020-01-01T00:20:00-07:00.snapshot')
+        with open(current_mirror, 'wb') as f:
+            f.write(b'PID 1234')
+        rdiff_backup_delete(to_delete=os.path.join(self.repo, b'tmp'), expected_ret_val=1,
+                            expected_output=b'fail to acquired repository lock. A backup may be running.')
 
 
 if __name__ == "__main__":

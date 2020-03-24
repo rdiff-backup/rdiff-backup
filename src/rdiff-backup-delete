@@ -172,7 +172,7 @@ def _remove_from_metadata(repopath, file, dry_run):
                     # Special case to handle longfilename
                     if line.startswith(b'  AlternateIncrementName ') or line.startswith(b'  AlternateMirrorName '):
                         name = line.strip(b'\n').rsplit(b' ', 1)[1]
-                        path = os.path.join(repopath.long_filename_data, name)
+                        path = os.path.join(repopath.repo.long_filename_data, name)
                         _remove_increments(path, dry_run)
                     line = input.readline()
             else:
@@ -193,11 +193,11 @@ def _remove_increments(path, dry_run):
     """
     # If the increment is a directory, remove it and all it's content.
     _rmtree(path, dry_run)
-    
+
     # Then let find all the increment entries (.missing, .dir, .gz, .diff.gz)
     dir = os.path.dirname(path)
     fn = os.path.basename(path)
-    
+
     if os.path.isdir(dir):
         for p in os.listdir(dir):
             file = os.path.join(dir, p)
@@ -262,6 +262,29 @@ def _acl_quote(s):
     return b''.join(map(_meta_quote_map.__getitem__, s))
 
 
+class Repo():
+    """
+    Represent the rediff-backup repository.
+    
+    rdiff_backup_data: <root>/rdiff-backup-data/
+    long_filename_data: <root>/rdiff-backup-data/long_filename_data/
+    """
+
+    def __init__(self, root):
+        self.root = root
+        self.rdiff_backup_data = os.path.join(self.root, b'rdiff-backup-data')
+        self.long_filename_data = os.path.join(self.rdiff_backup_data, b'long_filename_data')
+
+    def is_lock(self):
+        """
+        Try to lock the repository. Raise an error if the repository
+        is already locked by another process.
+        """
+        # Check if the repository has multiple current_mirror.
+        count = len([x for x in os.listdir(self.rdiff_backup_data) if x.startswith(b'current_mirror.')])
+        return count > 1
+
+
 class RepoPath():
     """
     Object used to provide all the variation of the same path with different escaping.
@@ -272,9 +295,6 @@ class RepoPath():
     metaquote: unquoted relative path (;000 replace by bytes) with quoted \
     aclquote: quoted relative path (bytes converted into \000)
     increments: <root>/rdiff-backup-data/increments/<relpath>
-    
-    rdiff_backup_data: <root>/rdiff-backup-data/
-    long_filename_data: <root>/rdiff-backup-data/long_filename_data/
     """
 
     def __init__(self, root, relpath):
@@ -285,16 +305,14 @@ class RepoPath():
         assert relpath
         assert isinstance(relpath, bytes if PY3 else str)
         assert relpath != b'rdiff-backup-data'
-        self.root = root
+        self.repo = Repo(root)
         self.relpath = relpath
         self.metaquote = _unquote(self.relpath).replace(b'\\', b'\\\\')
         self.aclquote = _acl_quote(self.relpath)
 
         # Return the absolute location of this path on the filesystem
-        self.abspath = os.path.join(self.root, self.relpath)
-        self.rdiff_backup_data = os.path.join(self.root, b'rdiff-backup-data')
-        self.long_filename_data = os.path.join(self.rdiff_backup_data, b'long_filename_data')
-        self.increments = os.path.join(self.rdiff_backup_data, b'increments', self.relpath)
+        self.abspath = os.path.join(self.repo.root, self.relpath)
+        self.increments = os.path.join(self.repo.rdiff_backup_data, b'increments', self.relpath)
 
 
 def main():
@@ -302,20 +320,24 @@ def main():
     # root maybe None
     root, relpath, dry_run = _parse_options()
     repopath = RepoPath(root, relpath)
+    if repopath.repo.is_lock():
+        sys.exit('fail to acquired repository lock. A backup may be running.')
+    
+    # Check if the repository is "locked"
     print("start deleting path `%s` from repository %s" % (_str(relpath), _str(root)))
     if dry_run:
         print("running in dry-run mode")
 
     # Remove any entries from metadata files: file_statistics, mirror_metadata, extended_attributes, access_control_lists
-    for f in os.listdir(repopath.rdiff_backup_data):
-        _remove_from_metadata(repopath, os.path.join(repopath.rdiff_backup_data , f), dry_run)
+    dir = repopath.repo.rdiff_backup_data
+    for f in os.listdir(dir):
+        _remove_from_metadata(repopath, os.path.join(dir, f), dry_run)
 
     print('deleting directory `%s` recursively' % (_str(repopath.abspath),))
     _rmtree(repopath.abspath, dry_run)
 
     # Then let find all the increment entries (.missing, .dir, .gz, .diff.gz)
     _remove_increments(repopath.increments, dry_run)
-
     print('done')
 
 
