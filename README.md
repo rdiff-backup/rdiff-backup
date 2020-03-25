@@ -49,13 +49,13 @@ instructions for your specific platform.
 	sudo apt update
 	sudo apt install rdiff-backup
 
-### CentOS 7 (From CORP)
+### CentOS 7 (From COPR)
 
 	yum install yum-plugin-copr epel-release
 	yum copr enable frankcrawford/rdiff-backup
 	yum install rdiff-backup
 
-### CentOS 8 (From CORP)
+### CentOS 8 (From COPR)
 
 	yum install dnf-plugins-core epel-release
 	dnf copr enable frankcrawford/rdiff-backup
@@ -74,7 +74,7 @@ instructions for your specific platform.
 You need to make sure that the following requirements are met:
 
 * Python 3.5 or higher
-* librsync 2.0.0
+* librsync 1.0.0
 * pylibacl (optional, to support ACLs)
 * pyxattr (optional, to support extended attributes) - the xattr library (without py) isn't regularly tested but should work and you will be helped
 * SSH for remote operations
