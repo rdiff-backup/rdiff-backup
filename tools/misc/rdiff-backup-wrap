@@ -1,0 +1,48 @@
+#!/bin/sh
+# Copyright (C) 2020 Patrik Dufresne <patrik@ikus-soft.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+#
+# rdiff-backup-wrap
+#
+# This script is used to help the migration from legacy version (v1.2.8)
+# to new version (v2.0.0) by auto-detecting the remote rdiff-backup version
+# and then launch the right version locally.
+
+# Extract the source and destination from the arguments
+for ARG in "$@"; do
+    SOURCE=$DEST
+    DEST=$ARG
+done
+
+# Check if the source is remote.
+case "$SOURCE" in
+    *::*) REMOTE_SOURCE=1;;
+    *) REMOTE_SOURCE=0;;
+esac
+
+# Pick the right version of rdiff-backup
+if [ $REMOTE_SOURCE -eq 0 ]; then
+    CMD="rdiff-backup2"
+else
+    if rdiff-backup --test-server "$SOURCE" 2>&1 > /dev/null; then
+        CMD="rdiff-backup"
+    else
+        CMD="rdiff-backup2"
+    fi
+fi
+
+"$CMD" $@
