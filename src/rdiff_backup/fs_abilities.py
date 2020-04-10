@@ -517,7 +517,7 @@ class FSAbilities:
         reg_rp = dir_rp.append('regfile')
         reg_rp.touch()
 
-        s = 'test string---this should end up in resource fork'
+        s = b'test string---this should end up in resource fork'
         try:
             fp_write = open(
                 os.path.join(reg_rp.path, b'..namedfork', b'rsrc'), 'wb')

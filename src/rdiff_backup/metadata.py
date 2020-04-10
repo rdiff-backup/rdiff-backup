@@ -115,7 +115,7 @@ def RORP2Record(rorpath):
         # If there is a resource fork, save it.
         if rorpath.has_resource_fork():
             if not rorpath.get_resource_fork():
-                rf = "None"
+                rf = b"None"
             else:
                 rf = binascii.hexlify(rorpath.get_resource_fork())
             str_list.append(b"  ResourceFork %b\n" % (rf, ))
@@ -202,7 +202,7 @@ def Record2RORP(record_string):
             data_dict['size'] = int(data)
         elif field == "ResourceFork":
             if data == b"None":
-                data_dict['resourcefork'] = ""
+                data_dict['resourcefork'] = b""
             else:
                 data_dict['resourcefork'] = binascii.unhexlify(data)
         elif field == "CarbonFile":
