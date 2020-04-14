@@ -44,30 +44,40 @@ instructions for your specific platform.
 
 ### Ubuntu (From PPA)
 
-	sudo apt update && sudo apt install software-properties-common
-	sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-development
-	sudo apt update
-	sudo apt install rdiff-backup
+```
+sudo apt update && sudo apt install software-properties-common
+sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-development
+sudo apt update
+sudo apt install rdiff-backup
+```
 
 ### CentOS 7 (From COPR)
 
-	yum install yum-plugin-copr epel-release
-	yum copr enable frankcrawford/rdiff-backup
-	yum install rdiff-backup
+```
+yum install yum-plugin-copr epel-release
+yum copr enable frankcrawford/rdiff-backup
+yum install rdiff-backup
+```
 
 ### CentOS 8 (From COPR)
 
-	yum install dnf-plugins-core epel-release
-	dnf copr enable frankcrawford/rdiff-backup
-	yum install rdiff-backup
+```
+yum install dnf-plugins-core epel-release
+dnf copr enable frankcrawford/rdiff-backup
+yum install rdiff-backup
+```
 
 ### Debian (From pypi)
 
-	sudo apt update
-	sudo apt install python3 python3-setuptools python3-pylibacl python3-pyxattr curl
-	curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-	sudo python3 get-pip.py
-	sudo pip3 install rdiff-backup
+```
+sudo apt update
+sudo apt install python3 python3-setuptools python3-pylibacl python3-pyxattr curl
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+sudo python3 get-pip.py
+sudo pip3 install rdiff-backup
+```
+	
+Notice: If your platform is not i386 or amd64, you may need other dependencies `build-essentials`, `librsync-dev`.
 
 ### Other Linux (From pypi)
 
@@ -79,10 +89,11 @@ You need to make sure that the following requirements are met:
 * pyxattr (optional, to support extended attributes) - the xattr library (without py) isn't regularly tested but should work and you will be helped
 * SSH for remote operations
 
-
-	curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-	sudo python3 get-pip.py
-	sudo pip3 install rdiff-backup
+```
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+sudo python3 get-pip.py
+sudo pip3 install rdiff-backup
+```
 
 ### Windows
 
