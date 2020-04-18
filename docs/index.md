@@ -1,44 +1,15 @@
 # rdiff-backup
 
-rdiff-backup backs up one directory to another, possibly over a network. The target directory ends up a copy of the source directory, but extra reverse diffs are stored in a special subdirectory of that target directory, so you can still recover files lost some time ago. The idea is to combine the best features of a mirror and an incremental backup. rdiff-backup also preserves subdirectories, hard links, dev files, permissions, uid/gid ownership (if it is running as root), modification times, acls, eas, resource forks, etc. Finally, rdiff-backup can operate in a bandwidth efficient manner over a pipe, like rsync. Thus you can use rdiff-backup and ssh to securely back a hard drive up to a remote location, and only the differences will be transmitted. 
+Rdiff-backup backs up one directory to another, possibly over a network. The target directory ends up a copy of the source directory, but extra reverse diffs are stored in a special subdirectory of that target directory, so you can still recover files lost some time ago. The idea is to combine the best features of a mirror and an incremental backup. Rdiff-backup also preserves subdirectories, hard links, dev files, permissions, uid/gid ownership (if it is running as root), modification times, acls, eas, resource forks, etc. Finally, rdiff-backup can operate in a bandwidth efficient manner over a pipe, like rsync. Thus you can use rdiff-backup and ssh to securely back a hard drive up to a remote location, and only the differences will be transmitted.
 
 Read further:
 
 * [Usage examples](examples.md)
 * [Frequently asked questions](FAQ.md)
+* [Authors and credits](credits.md)
 * [Developer documentation](DEVELOP.md)
 * [Windows specific documentation](Windows-README.md) - possibly outdated
 * [Windows specific Developer documentation](Windows-DEVELOP.md)
-
-## Authors and Contributors
-
-[rdiff-backup](https://github.com/rdiff-backup) is the current maintainer of rdiff-backup. 
-
-Project Lead / Maintainer History:
-
-* From August 2019 onwards the main driver for the project is Eric L. supported by Seravo.
-* Sol1 has officially taken over stewardship of rdiff-backup from February 2016.
-* Edward Ned Harvey, maintainer 2012 to 2016
-* Andrew Ferguson, maintainer 2008 to 2012
-* Dean Gaudet, maintainer 2006 to 2007
-* Ben Escoto, original author, maintainer 2001 to 2005.
-
-Other code contributors are:
-
-* Daniel Hazelbaker, who contributed Mac OS X resource fork support. (July 2003)
-* Dean Gaudet, for checking in many patches, and for finding and fixing many bugs.
-* Andrew Ferguson, for improving Mac OS X support and fixing many user-reported bugs.
-* Josh Nisly, for contributing native Windows support. (June 2008)
-* Fred Gansevles, for contributing Windows ACLs support. (July 2008)
-
-
-Thanks also to:
-
-* The [Free Software Foundation](http://www.fsf.org/), for previously hosting the rdiff-backup project via their Savannah system.
-* Andrew Tridgell and Martin Pool for writing rdiff, and also for rsync, which gave Ben Escoto the idea
-* Martin Pool and Donovan Baarda for their work on librsync, which rdiff-backup needs.
-* Michael Friedlander for initially acting interested in the idea and giving me accounts for testing
-* Lots of people on the mailing list for their helpful comments, advice, and patches, particularly Alberto Accomazzi, Donovan Baarda, Jeb Campbell, Greg Freemyer, Jamie Heilman, Marc Dyksterhouse, and Ralph Lehmann.
 
 
 ## Support or Contact
@@ -52,3 +23,14 @@ We're also happy to help if you create an issue to our
 important is probably to explain what happened with which version of rdiff-backup,
 with which command parameters on which operating system version, and attach the output
 of rdiff-backup run with the very verbose option `-v9`.
+
+This is an open source project and contributions are welcome!
+
+
+## History
+
+Rdiff-backup has been around for almost 20 years now and has proved to be a very solid solution for backups and it is still unique in its model of unlimited incrementals with no need to space consuming regular full backups.
+
+Current lead developers are Eric Lavarde, Patric Dufresene and Otto Kekäläinen. Full list of core developers available at [rdiff-backup Github page](https://github.com/rdiff-backup/rdiff-backup/people) and on the [credits page](credits.md).
+
+The original author and maintainer was **Ben Escoto** from 2001 to 2005. Key contributors from 2005 to 2016 were Dean Gaudet, Andrew Ferguson and Edward Ned Harvey. After some hibernation time Sol1 took over the stewardship of rdiff-backup from February 2016 but there were no new releases. In August 2019 [Eric Lavarde](https://www.lavar.de/) with the support of Otto Kekäläinen from [Seravo](https://seravo.com/) and Patrik Dufresne from [Minarca](http://www.patrikdufresne.com/en/minarca/) took over, completed the Python 3 rewrite and finally released rdiff-backup 2.0 in March 2020.
