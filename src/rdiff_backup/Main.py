@@ -67,6 +67,7 @@ def parse_cmdlineoptions(arglist):  # noqa: C901
 
     try:
         optlist, args = getopt.getopt(arglist, "blr:sv:V", [
+            "allow-duplicate-timestamps",
             "backup-mode", "calculate-average", "carbonfile",
             "check-destination-dir", "compare", "compare-at-time=",
             "compare-hash", "compare-hash-at-time=", "compare-full",
@@ -235,6 +236,8 @@ def parse_cmdlineoptions(arglist):  # noqa: C901
             action = "test-server"
         elif opt == "--use-compatible-timestamps":
             Globals.set("use_compatible_timestamps", 1)
+        elif opt == "--allow-duplicate-timestamps":
+            Globals.set("allow_duplicate_timestamps", True)
         elif opt == "--user-mapping-file":
             user_mapping_filename = os.fsencode(arg)
         elif opt == "-v" or opt == "--verbosity":
