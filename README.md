@@ -39,14 +39,19 @@ provided the file system(s) also support these features.
 
 ## INSTALLATION
 
-Latest version of rdiff-backup is available from various sources. Follow the
-instructions for your specific platform.
+In older Linux distributions the rdiff-backup versions are of the 1.x series, which is not recommended for new installs anymore. Follow the instructions below to install the latest 2.x release of rdiff-backup.
 
-### Ubuntu (From PPA)
+### Ubuntu Focal or Debian Bullseye or newer (has 2.0)
 
 ```
-sudo apt update && sudo apt install software-properties-common
-sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-development
+sudo apt install rdiff-backup
+```
+
+### Ubuntu backports for older versions (needs a backported 2.0)
+
+```
+sudo apt install software-properties-common
+sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-backports
 sudo apt update
 sudo apt install rdiff-backup
 ```
@@ -67,19 +72,16 @@ dnf copr enable frankcrawford/rdiff-backup
 yum install rdiff-backup
 ```
 
-### Debian (From pypi)
+### Debian (From PyPi)
 
 ```
-sudo apt update
-sudo apt install python3 python3-setuptools python3-pylibacl python3-pyxattr curl
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-sudo python3 get-pip.py
+sudo apt install python3-pip python3-setuptools python3-pylibacl python3-pyxattr
 sudo pip3 install rdiff-backup
 ```
-	
+
 Notice: If your platform is not i386 or amd64, you may need other dependencies `build-essentials`, `librsync-dev`.
 
-### Other Linux (From pypi)
+### Other Linux (From PyPi)
 
 You need to make sure that the following requirements are met:
 
@@ -157,3 +159,21 @@ There are many ways to contribute:
 If you don't have anything particular in your mind but want to help out, just browse the list of issues. Both coding and non-coding tasks have been filed as issues.
 
 For source code related documentation see [docs/DEVELOP.md](DEVELOP.md)
+
+### Installing latest development release
+
+To provide meaningful bug reports and help with testing, please use the latest development release.
+
+#### Ubuntu and Debian development releases
+
+```
+sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-development
+sudo apt update
+sudo apt install rdiff-backup
+```
+
+#### PyPi pre-releases
+
+```
+sudo pip3 install rdiff-backup --pre
+```
