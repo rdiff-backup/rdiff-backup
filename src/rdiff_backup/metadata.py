@@ -742,14 +742,15 @@ class PatchDiffMan(Manager):
                             "recover files on or earlier than this date. "
                             "Assuming you're in the process of cleaning your "
                             "repository." %
-                            rp.getsafepath(), 2)
+                            rp.get_safepath(), 2)
                 else:
-                    log.FatalError("Metadata file '%s' has a duplicate "
-                                   "timestamp date, you might not be able to "
-                                   "recover files on or earlier than this date. "
-                                   "You should clean your repository using "
-                                   "e.g. the '--remove-older-than' option." %
-                                   rp.getsafepath())
+                    log.Log.FatalError(
+                        "Metadata file '%s' has a duplicate timestamp date, "
+                        "you might not be able to recover files on or earlier "
+                        "than this date. "
+                        "You should clean your repository using "
+                        "e.g. the '--remove-older-than' option." %
+                        rp.get_safepath())
             else:
                 unique_set.add(time)
 
