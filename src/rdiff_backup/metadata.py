@@ -726,8 +726,34 @@ class PatchDiffMan(Manager):
         if prefix not in self.prefixmap:
             return []
         sortlist = [(rp.getinctime(), rp) for rp in self.prefixmap[prefix]]
-        sortlist.sort()
-        sortlist.reverse()
+
+        # we sort before we validate against duplicates so that we tell
+        # first about the youngest case of duplication
+        sortlist.sort(reverse=True, key=lambda x: x[0])
+
+        # we had cases where the timestamp of the metadata files were
+        # duplicates, we need to fail or at least warn about such cases
+        unique_set = set()
+        for (time, rp) in sortlist:
+            if time in unique_set:
+                if Globals.allow_duplicate_timestamps:
+                    log.Log("Warning: metadata file '%s' has a duplicate "
+                            "timestamp date, you might not be able to "
+                            "recover files on or earlier than this date. "
+                            "Assuming you're in the process of cleaning your "
+                            "repository." %
+                            rp.get_safepath(), 2)
+                else:
+                    log.Log.FatalError(
+                        "Metadata file '%s' has a duplicate timestamp date, "
+                        "you might not be able to recover files on or earlier "
+                        "than this date. "
+                        "You should clean your repository using "
+                        "e.g. the '--remove-older-than' option." %
+                        rp.get_safepath())
+            else:
+                unique_set.add(time)
+
         return [rp for (time, rp) in sortlist if time >= min_time]
 
     def check_needs_diff(self):

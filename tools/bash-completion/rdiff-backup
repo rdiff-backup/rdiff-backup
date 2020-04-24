@@ -41,7 +41,8 @@ _rdiff_backup ()
 		|--remove-older-than|--verify-at-time"
 
 	# Available long options
-	longopts="--backup-mode --calculate-average --carbonfile --check-destination-dir \
+	longopts="--allow-duplicate-timestamps --backup-mode \
+		--calculate-average --carbonfile --check-destination-dir \
 		--compare --compare-at-time --compare-full --compare-full-at-time \
 		--compare-hash --compare-hash-at-time --create-full-path --current-time \
 		--exclude --exclude-device-files --exclude-fifos --exclude-filelist \
@@ -57,8 +58,9 @@ _rdiff_backup ()
 		--override-chars-to-quote --preserve-numerical-ids --print-statistics --restore-as-of \
 		--remote-schema --remote-tempdir --remove-older-than --restrict \
 		--restrict-read-only --restrict-update-only --ssh-no-compression --tempdir \
-		--terminal-verbosity --test-server --user-mapping-file --verbosity --verify \
-		--verify-at-time --version"
+		--terminal-verbosity --test-server --use-compatible-timestamps \
+		--user-mapping-file --verbosity --verify --verify-at-time \
+		--version"
 
 	# Available short options
 	shortopts="-b -l -r -v -V"
