@@ -111,6 +111,8 @@ The rules are currently as follows (check the `.travis.yml` file for details):
 - all commits where the "version tag" is a development one, i.e. like previously
   with an additional `.devM` at the end, are released to 
   [Test PyPI](https://test.pypi.org/project/rdiff-backup/#history).
+  They are meant mostly to test the deployment itself (use alpha versions to
+  release development code).
 
 > **NOTE:** the GitHub releases are created as draft, meaning that a maintainer
 >	must review them and publish them before they become visible.
