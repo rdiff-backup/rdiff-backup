@@ -99,6 +99,28 @@ In versioning we utilize git tags as understood by
 Version strings follow the [PEP-440
 standard](https://www.python.org/dev/peps/pep-0440/).
 
+The rules are currently as follows (check the `.travis.yml` file for details):
+
+- all commits tagged with an underscore at the end or with a tag looking like a
+  version number (i.e. as in next two bullets) are released to
+  [GitHub](https://github.com/rdiff-backup/rdiff-backup/releases/).
+- all commits tagged with alpha, beta, rc or final format are released to
+  [PyPI](https://pypi.org/project/rdiff-backup/#history), i.e. the ones looking
+  like: vX.Y.ZaN (alpha), vX.Y.ZbN (beta), vX.Y.ZrcN (release candidate) or
+  vX.Y.Z (final).
+- all commits where the "version tag" is a development one, i.e. like previously
+  with an additional `.devM` at the end, are released to 
+  [Test PyPI](https://test.pypi.org/project/rdiff-backup/#history).
+  They are meant mostly to test the deployment itself (use alpha versions to
+  release development code).
+
+> **NOTE:** the GitHub releases are created as draft, meaning that a maintainer
+>	must review them and publish them before they become visible.
+
+> **CAUTION:** due to a bug in Travis CI, the Windows wheel can't currently be
+>	published to PyPI and needs to be downloaded from GitHub and manually
+>	uploaded to PyPI.
+
 ## Releases
 
 There is no prior release schedule – they are made when deemed fit.
