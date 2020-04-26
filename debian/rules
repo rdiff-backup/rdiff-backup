@@ -1,10 +1,14 @@
 #!/usr/bin/make -f
 
+INSTALL_DIR:=$(CURDIR)/debian/rdiff-backup-1-compat
+
 %:
 	dh $@ --buildsystem=pybuild --with python2 --fail-missing
 
 override_dh_install:
-	install -D -m 0644 debian/local/bash-completion debian/rdiff-backup/usr/share/bash-completion/completions/rdiff-backup
-
-	# Removing useless files
-	rm -rf debian/rdiff-backup/usr/share/doc/rdiff-backup-*
+	find $(INSTALL_DIR) -ls
+	# Rename command name
+	mv -v $(INSTALL_DIR)/usr/bin/rdiff-backup $(INSTALL_DIR)/usr/bin/rdiff-backup-1
+	# Removing everything we don't need
+	rm -rv $(INSTALL_DIR)/usr/bin/rdiff-backup-statistics
+	rm -rv $(INSTALL_DIR)/usr/share
