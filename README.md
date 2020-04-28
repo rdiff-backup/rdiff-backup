@@ -55,30 +55,49 @@ sudo apt update
 sudo apt install rdiff-backup
 ```
 
-### CentOS 7 (From COPR)
+### CentOS and RHEL 7 (From COPR)
 
 ```
-yum install yum-plugin-copr epel-release
-yum copr enable frankcrawford/rdiff-backup
-yum install rdiff-backup
+sudo yum install yum-plugin-copr epel-release
+sudo yum copr enable frankcrawford/rdiff-backup
+sudo yum install rdiff-backup
 ```
 
-### CentOS 8 (From COPR)
+### CentOS and RHEL 8 (From COPR)
 
 ```
-yum install dnf-plugins-core epel-release
-dnf copr enable frankcrawford/rdiff-backup
-yum install rdiff-backup
+sudo yum install dnf-plugins-core epel-release
+sudo dnf copr enable frankcrawford/rdiff-backup
+sudo yum install rdiff-backup
 ```
 
-### Debian (From PyPi)
+### Fedora 32+
+
+```
+sudo dnf install rdiff-backup
+```
+
+> **NOTE:** for earlier versions, see the COPR instructions below.
+
+### Debian and derivatives, Raspbian, etc. (from PyPi)
 
 ```
 sudo apt install python3-pip python3-setuptools python3-pylibacl python3-pyxattr
 sudo pip3 install rdiff-backup
 ```
 
-Notice: If your platform is not i386 or amd64, you may need other dependencies `build-essentials`, `librsync-dev`.
+> **NOTE:** If your platform is not i386 or amd64, e.g. ARM/MIPS/etc,
+  you may need the build dependencies `build-essentials`, `librsync-dev`.
+
+### Fedora and derivatives (from PyPI)
+
+```
+sudo dnf install python3-pip python3-setuptools py3libacl python3-pyxattr
+sudo pip3 install rdiff-backup
+```
+
+> **NOTE:** If your platform is not i386 or amd64, e.g. ARM/MIPS/PowerPC/etc,
+  you may need the build dependencies `python3-devel`, `librsync-dev`.
 
 ### Other Linux (From PyPi)
 
@@ -169,6 +188,24 @@ To provide meaningful bug reports and help with testing, please use the latest d
 sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-development
 sudo apt update
 sudo apt install rdiff-backup
+```
+
+### Fedora, CentOS and RHEL
+
+On CentOS and RHEL (7 and 8):
+
+```
+sudo yum install dnf-plugins-core epel-release
+sudo yum copr enable frankcrawford/rdiff-backup
+sudo yum install rdiff-backup
+```
+
+On Fedora 30+:
+
+```
+sudo dnf install dnf-plugins-core
+sudo dnf copr enable frankcrawford/rdiff-backup
+sudo dnf install rdiff-backup
 ```
 
 #### PyPi pre-releases
