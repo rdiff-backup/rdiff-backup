@@ -11,38 +11,58 @@
     win_chocolatey:
       name:
       - virtio-drivers
-      - python
       - git
-      #- cygwin  # sadly broken
-      #- cyg-get  # depends on cygwin
+      - cygwin
+      - cyg-get  # depends on cygwin
       - cmake
       - 7zip
-      - dotnetfx  # dependency of visualstudio, allows for reboot in-between
+      - vscode # Visual Studio Code (editor)
       state: present
-    register: base_pkg
-  - name: execute reboot
-    win_reboot:
-    when: base_pkg.changed
-  - name: install further development tools via chocolatey (still failing)
+  - name: install python via chocolatey
+    win_chocolatey:
+      name: python
+      version: '3.7.7'
+      state: present
+      # we need to pin the version because pyinstaller doesn't support 3.8
+      # https://github.com/pyinstaller/pyinstaller/issues/4311
+  - name: install dependency of visualstudio, allows for reboot in-between
     win_chocolatey:
       name:
-      - visualstudio2017buildtools # didn't work here (memory?)
-      - vscode # Visual Studio Code (editor)
-      #- visualstudio2017-workload-vctools # fails...
-      #instead run from cmd as Administrator, possibly without quiet:
-      #"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools" --includeRecommended --norestart --quiet --add Microsoft.VisualStudio.Workload.VCTools
+      - dotnetfx
+      - vcredist140
       state: present
+    register: vs_deps
+  - name: execute reboot if something has changed to VS dependencies
+    win_reboot:
+    when: vs_deps is changed
+  - name: install visual studio tools via chocolatey
+    win_chocolatey:
+      name:  # VC 2017 is the version available on Travis CI
+      - visualstudio2017buildtools
+      - visualstudio2017-workload-python
+      - visualstudio2017-workload-vctools
+      state: present
+    register: vs
+  - name: execute reboot if something has been changed to visual studio
+    win_reboot:
+    when: vs is changed
+
     # once successful up until here, restart the playbook
+
   - name: install necessary python libraries
-    win_command: pip.exe install py2exe pywin32 pyinstaller wheel
+    win_command: pip.exe install py2exe pywin32 pyinstaller wheel certifi setuptools-scm
     register: pipcmd
-    changed_when: >
-      'Successfully installed py2exe' in pipcmd.stdout
-      or 'Successfully installed pywin32' in pipcmd.stdout
-      or 'Successfully installed pyinstaller' in pipcmd.stdout
-      or 'Successfully installed wheel' in pipcmd.stdout
+    changed_when: "'Successfully installed ' in pipcmd.stdout"
     # pylibacl and pyxattr aren't supported under Windows
   - name: validate that python seems to work as it should
     win_shell: "python.exe -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'"
     changed_when: false  # this command doesn't change anything ever
-  # TODO install / compile librsync
+
+  - name: Install NuGet to overcome issue 50332 in Ansible
+    # https://github.com/ansible/ansible/issues/50332
+    win_shell: Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+  - name: install the Powershell Community Extensions for win_unzip
+    win_psmodule:
+      name: Pscx
+      state: present
+      allow_clobber: true

@@ -2,12 +2,41 @@
 
 ## Create the Windows VM
 
-Starting from https://github.com/redhat-cop/automate-windows/tree/master/vagrant-libvirt-image, create a Windows VM
-usable by Ansible (any other alternative approach to a such VM is of course valid).
+A simple `vagrant up` should do, using a default Windows image, and you'll get
+in the best case a fully workable rdiff-backup development environment on Windows.
 
-Then apply the playbook playbook-provision-windows.yml using Ansible to the Windows you've just created to create the necessary development environment (a `vagrant up` resp. `vagrant provision` in the current directory might be sufficient).
+> **NOTE:** Starting from https://github.com/redhat-cop/automate-windows/tree/master/vagrant-libvirt-image,
+>	you can create your own Windows VM usable by Ansible (any other alternative
+>	approach to a such VM is of course valid).
+
+You can re-apply the changes using `vagrant provision` or direcly apply the
+playbook `playbook-provision-windows.yml` using Ansible to the Windows you've
+just created to create the necessary development environment.
 
 > **IMPORTANT:** The current state of the automation isn't very satisfying, the more complex packages need to be installed manually from the command line with something like `choco install <packagename>` and the playbook restarted. A few reboots in-between might be necessary.
+
+If you already have a Windows VM/PC/laptop/server, you'd like to use for
+rdiff-backup development, you don't need to use Vagrant, you can directly
+use Ansible:
+
+1. Make your [Windows host ready for Ansible](https://docs.ansible.com/ansible/latest/user_guide/windows_setup.html).
+2. Create an inventory that looks as after this list.
+3. Call directly the provisioning playbook
+   `ansible-playbook -i YOURINVENTORYFILE playbook-provision-windows.yml`.
+
+Your inventory should look as follows, depending on your exact Windows setup,
+replacing at least the `MY*` placeholders (some level of Ansible knowledge
+doesn't hurt here):
+
+```
+[windows_ansible]
+MYWINDOWSHOST ansible_host=192.168.1.MYIP ansible_user='MYUSER' ansible_password='MYPASSWORD'
+
+[windows_ansible:vars]
+ansible_connection=winrm
+ansible_port=5986
+ansible_winrm_server_cert_validation=ignore
+```
 
 ## Build librsync and rdiff-backup
 
@@ -66,3 +95,8 @@ Those two settings didn't work as expected and made boot resp. network fail:
 ### Chocolatey
 
 The logs of Chocolatey are available under `C:\ProgramData\chocolatey\logs` and `C:\Users\IEUser\AppData\Local\Temp\chcolatey`.
+
+At some point in time, the VS Code packaging for the VC workload was broken and
+the only solution was to call _as administrator_ from the command line in the
+Windows VM
+`C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools" --includeRecommended --norestart --quiet --add Microsoft.VisualStudio.Workload.VCTools`.
