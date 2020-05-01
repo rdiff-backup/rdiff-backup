@@ -2,8 +2,16 @@
 
 ## Create the Windows VM
 
-A simple `vagrant up` should do, using a default Windows image, and you'll get
-in the best case a fully workable rdiff-backup development environment on Windows.
+Install Vagrant, ruby-devel and libvirt-devel as root and the necessary
+plug-ins with `vagrant plugin install <plugin>`:
+
+- vagrant-libvirt (_not_ libvirt!)
+- winrm
+- winrm-elevated
+
+A simple `vagrant up` should now do, using a default Windows image, and you'll
+get in the best case a fully workable rdiff-backup development environment on
+Windows.
 
 > **NOTE:** Starting from https://github.com/redhat-cop/automate-windows/tree/master/vagrant-libvirt-image,
 >	you can create your own Windows VM usable by Ansible (any other alternative
