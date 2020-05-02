@@ -215,7 +215,9 @@ rdiff-backup_testfiles/select/1/1
 
         cmp_glob_to_re("hello", b"hello")
         cmp_glob_to_re(".e?ll**o", b"\\.e[^/]ll.*o")
-        cmp_glob_to_re("*/é", os.fsencode("[^/]*/é"))
+        # since Python 3.7 only characters special to reg expr are quoted
+        # it seems that also non-ASCII characters were quoted before
+        cmp_glob_to_re("*/é", os.fsencode("[^/]*/é"), os.fsencode("[^/]*\\/\\é"))
         cmp_glob_to_re("[abc]el[^de][!fg]h", b"[abc]el[^de][^fg]h")
         # since Python 3.7 only characters special to reg expr are quoted
         cmp_glob_to_re("/usr/*/bin/", b"/usr/[^/]*/bin/", b"\\/usr\\/[^/]*\\/bin\\/")
