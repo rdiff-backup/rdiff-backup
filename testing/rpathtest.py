@@ -268,7 +268,9 @@ class FilenameOps(RPathTest):
         b"a////b//c": b"a/b/c",
         b"..": b"..",
         b"a/": b"a",
-        b"/a//b///": b"/a/b"
+        b"/a//b///": b"/a/b",
+        b"//host/share": b"//host/share",
+        b"//host//share/": b"//host/share",
     }
     dirsplitdict = {
         b"/": (b"", b""),
@@ -276,7 +278,8 @@ class FilenameOps(RPathTest):
         b"/a/b": (b"/a", b"b"),
         b".": (b".", b"."),
         b"b/c": (b"b", b"c"),
-        b"a": (b".", b"a")
+        b"a": (b".", b"a"),
+        b"//host/share": (b"//host", b"share"),
     }
 
     def testQuote(self):
