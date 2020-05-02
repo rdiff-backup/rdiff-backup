@@ -1349,6 +1349,8 @@ class RPath(RORPath):
             b'', *[x for x in self.path.split(b"/") if x and x != b"."])
         if self.path[0:1] == b"/":
             newpath = b"/" + newpath
+            if self.path[1:2] == b"/":  # we assume a Windows share
+                newpath = b"/" + newpath
         elif not newpath:
             newpath = b"."
         return self.newpath(newpath)
