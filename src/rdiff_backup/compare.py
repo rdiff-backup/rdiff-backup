@@ -106,9 +106,11 @@ def Verify(mirror_rp, inc_rp, verify_time):
                 (repo_rorp.get_safeindexpath(), computed_hash,
                  verify_sha1), 2)
     RepoSide.close_rf_cache()
-    if not bad_files:
-        log.Log("Every file verified successfully.", 3)
-    return bad_files
+    if bad_files:
+        log.Log("Not all files could be verified.", 3)
+        return 2
+    log.Log("Every file verified successfully.", 3)
+    return 0
 
 
 def get_hash(repo_rorp):
