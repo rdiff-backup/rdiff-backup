@@ -202,21 +202,25 @@ rdiff-backup_testfiles/select/1/1
 
     def testGlobRE(self):
         """testGlobRE - test translation of shell pattern to regular exp"""
-        # we can use str as input because glob_to_re works for bytes and str
-        # but always returns bytes.
-        assert self.Select.glob_to_re("hello") == b"hello"
-        assert self.Select.glob_to_re(".e?ll**o") == b"\\.e[^/]ll.*o"
-        r = self.Select.glob_to_re("[abc]el[^de][!fg]h")
-        assert r == b"[abc]el[^de][^fg]h", r
-        r = self.Select.glob_to_re("/usr/*/bin/")
+
+        def cmp_glob_to_re(src_glob, ref_re, old_ref_re=None, ver_limit=(3, 7)):
+            """Helper function to compare a glob and the resulting regexp"""
+            res_re = self.Select.glob_to_re(os.fsencode(src_glob))
+            # in case something has changed between Python versions
+            if old_ref_re and sys.version_info < ver_limit:
+                ref_re = old_ref_re
+            self.assertEqual(res_re, ref_re,
+                             "Regexp '%s' from '%s' doesn't equal to %s" % (
+                                 res_re, src_glob, ref_re))
+
+        cmp_glob_to_re("hello", b"hello")
+        cmp_glob_to_re(".e?ll**o", b"\\.e[^/]ll.*o")
+        cmp_glob_to_re("*/é", os.fsencode("[^/]*/é"))
+        cmp_glob_to_re("[abc]el[^de][!fg]h", b"[abc]el[^de][^fg]h")
         # since Python 3.7 only characters special to reg expr are quoted
-        if (sys.version_info >= (3, 7)):
-            assert r == b"/usr/[^/]*/bin/", r
-        else:
-            assert r == b"\\/usr\\/[^/]*\\/bin\\/", r
-        assert self.Select.glob_to_re("[a.b/c]") == b"[a.b/c]"
-        r = self.Select.glob_to_re("[a*b-c]e[!]]")
-        assert r == b"[a*b-c]e[^]]", r
+        cmp_glob_to_re("/usr/*/bin/", b"/usr/[^/]*/bin/", b"\\/usr\\/[^/]*\\/bin\\/")
+        cmp_glob_to_re("[a.b/c]", b"[a.b/c]")
+        cmp_glob_to_re("[a*b-c]e[!]]", b"[a*b-c]e[^]]")
 
     def testGlobSFException(self):
         """testGlobSFException - see if globbing errors returned"""
