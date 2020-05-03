@@ -46,6 +46,8 @@ ansible_port=5986
 ansible_winrm_server_cert_validation=ignore
 ```
 
+> **TIP:** with the newest version of Windows, you can even connect to the VM using SSH e.g. with `vagrant ssh`.
+
 ## Build librsync and rdiff-backup
 
 It can be as easy as calling twice ansible-playbook:
@@ -108,3 +110,10 @@ At some point in time, the VS Code packaging for the VC workload was broken and
 the only solution was to call _as administrator_ from the command line in the
 Windows VM
 `C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools" --includeRecommended --norestart --quiet --add Microsoft.VisualStudio.Workload.VCTools`.
+
+### Cygwin
+
+You can install new Cygwin packages using `cyg-get.bat`, e.g. `cyg-get vim` or `cyg-get /?` (`cyg-get --help` isn't foreseen but seems to give much more parameters).
+
+You can start Cygwin using `\tools\cygwin\Cygwin.bat`.
+
