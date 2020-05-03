@@ -50,7 +50,7 @@
     # once successful up until here, restart the playbook
 
   - name: install necessary python libraries
-    win_command: pip.exe install py2exe pywin32 pyinstaller wheel certifi setuptools-scm
+    win_command: pip.exe install py2exe pywin32 pyinstaller wheel certifi setuptools-scm tox
     register: pipcmd
     changed_when: "'Successfully installed ' in pipcmd.stdout"
     # pylibacl and pyxattr aren't supported under Windows
