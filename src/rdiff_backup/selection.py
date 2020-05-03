@@ -742,9 +742,9 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
         by Donovan Baarda.
 
         """
-        i, n, res = 0, len(pat), ''
         # trying to analyze bytes would be quite complicated hence back to str
         str_pat = os.fsdecode(pat)
+        i, n, res = 0, len(str_pat), ''
         while i < n:
             c, s = str_pat[i], str_pat[i:i + 2]
             i = i + 1
