@@ -740,16 +740,16 @@ class PatchDiffMan(Manager):
                     log.Log("Warning: metadata file '%s' has a duplicate "
                             "timestamp date, you might not be able to "
                             "recover files on or earlier than this date. "
-                            "Assuming you're in the process of cleaning your "
-                            "repository." %
+                            "Assuming you're in the process of cleaning up "
+                            "your repository." %
                             rp.get_safepath(), 2)
                 else:
                     log.Log.FatalError(
                         "Metadata file '%s' has a duplicate timestamp date, "
                         "you might not be able to recover files on or earlier "
                         "than this date. "
-                        "You should clean your repository using "
-                        "e.g. the '--remove-older-than' option." %
+                        "Check the man page on how to clean up your repository "
+                        "using the '--allow-duplicate-timestamps' option." %
                         rp.get_safepath())
             else:
                 unique_set.add(time)
