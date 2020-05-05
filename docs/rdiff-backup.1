@@ -62,6 +62,16 @@ out the examples.html file included in the rdiff-backup distribution.
 
 .SH OPTIONS
 .TP
+.B \-\-allow-duplicate-timestamps
+This option is only to be used if you encounter the issue of metadata
+mirrors with the same timestamp. In such cases, you may use this flag
+to first recover from the failed backup with something like
+.B rdiff-backup \-\-allow-duplicate-timestamps \-\-check-destination-dir <targetdir>
+after which you will need to remove those old duplicate entries
+using the
+.B \-\-remove-older-than
+parameter.
+.TP
 .B \-b, \-\-backup-mode
 Force backup mode even if first argument appears to be an increment or
 mirror file.

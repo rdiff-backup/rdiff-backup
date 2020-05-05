@@ -50,6 +50,7 @@ sudo apt install rdiff-backup
 ### Ubuntu backports for older versions (needs a backported 2.0)
 
 ```
+sudo apt install software-properties-common
 sudo add-apt-repository ppa:rdiff-backup/rdiff-backup-backports
 sudo apt update
 sudo apt install rdiff-backup
