@@ -26,6 +26,14 @@ import re
 import os  # needed to grab verbosity as environment variable
 from . import Globals, rpath
 
+# FIXME Dirty hack in order to make sure that log files are written in Unicode
+# format because else they are written as cp1252 under Windows
+# Influences program-wide all writing in text mode, not binary.
+if os.name == "nt":
+    import _locale
+    _locale._gdl_bak = _locale._getdefaultlocale
+    _locale._getdefaultlocale = (lambda *args: (_locale._gdl_bak()[0], 'utf8'))
+
 
 class LoggerError(Exception):
     pass

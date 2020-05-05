@@ -7,14 +7,6 @@
       win_file:
         state: directory
         path: "{{ working_dir }}"
-    - name: Install NuGet to overcome issue 50332 in Ansible
-      # https://github.com/ansible/ansible/issues/50332
-      win_shell: Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
-    - name: install the Powershell Community Extensions for win_unzip
-      win_psmodule:
-        name: Pscx
-        state: present
-        allow_clobber: true
 
     - name: include tasks to download and prepare librsync sources
       include_tasks: tasks/get-librsync-{{ librsync_git_repo is defined | ternary('git', 'tarball') }}.yml
