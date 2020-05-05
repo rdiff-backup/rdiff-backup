@@ -5,9 +5,9 @@ Vagrant.configure("2") do |config|
 
   # Our box, we will have copied it manually to:
   # 	~/.vagrant.d/boxes/MSEdgeWin10/X/libvirt
-  config.vm.box = "MSEdgeWin10"
+  config.vm.box = "jborean93/WindowsServer2019"
   config.vm.provider :libvirt do |libvirt|
-    libvirt.memory = 4096  # installation of VS fails with too little memory
+    libvirt.memory = 8192  # installation of VS fails with too little memory
   end
 
   # WARNING: if following line is removed, Vagrant seems to act like it would
@@ -29,5 +29,11 @@ Vagrant.configure("2") do |config|
     ansible.groups = { "all:vars" => { "ansible_winrm_server_cert_validation" => "ignore" } }
     ansible.playbook = "playbook-provision-windows.yml"
   end
-
+  config.vm.guest = :windows
+  config.vm.communicator = "winrm"
+  config.vm.boot_timeout = 600
+  config.vm.graceful_halt_timeout = 600
+  config.winrm.transport = :ssl
+  config.winrm.basic_auth_only = true
+  config.winrm.ssl_peer_verification = false
 end

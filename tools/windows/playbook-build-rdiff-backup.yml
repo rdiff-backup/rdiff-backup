@@ -57,7 +57,7 @@
 
     - name: copy rsync.dll to build directory to call rdiff-backup from there
       win_copy:  # newer versions of rsync.dll are installed in bin not lib
-        src: "{{ librsync_install_dir }}/{{ librsync_git_repo is defined | ternary('bin', 'lib') }}/rsync.dll"
+        src: "{{ librsync_install_dir }}/bin/rsync.dll"
         remote_src: true  # file is already on the Windows machine
         dest: "{{ rdiffbackup_dir }}/build/"
       tags: debug_help
