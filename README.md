@@ -190,7 +190,7 @@ sudo apt update
 sudo apt install rdiff-backup
 ```
 
-### Fedora, CentOS and RHEL
+#### Fedora, CentOS and RHEL
 
 On CentOS and RHEL (7 and 8):
 
