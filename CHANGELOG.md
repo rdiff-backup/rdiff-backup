@@ -3,22 +3,37 @@ New in v2.0.1rc0 (2020-05-05)
 
 ## Changes
 
-* CHG: return error code 2 instead of number of failed files during repo verification to have a consistent return code (1 would be any other kind of error, or 0 if everything is well), closes #338
-* FIX: Added backticks to `<file>` in develop docs so missing word is shown, closes #303
+* CHG: return error code 2 instead of number of failed files during 
+       repo verification to have a consistent return code (1 would be any 
+       other kind of error, or 0 if everything is well), closes #338
+* FIX: Added backticks to `<file>` in develop docs so missing word is 
+       shown, closes #303
 * FIX: allow again to backup from and to Windows shares, closes #337
-* FIX: avoid bytes/str object issue under MacOS/X while checking forks FS abilities, closes #320
-* FIX: avoid charmap encoding errors during logging on Windows due to extended characters, closes #344
-* FIX: avoid IndexError: string index out of range error when using accentuated characters in exclude/include patterns, closes #340
-* FIX: avoid test error when using librsync >= 2.2 by adding -R rollsum to rdiff call in librsynctest, closes #304
-* FIX: fail with meaningful error message on metadata mirror files with duplicate timestamps, closes #322
-* FIX: sequence of exception leading to abort when logging tuple of bytes because of unreachable directory, closes #310
-* NEW: Create a new rdiff-backup-delete script which can remove a file and all its history from a backup repository (use with care).
-* NEW: option --allow-duplicate-timestamps to only warn about duplicate timestamps in metadata mirror files, use this option with care and only to clean an impacted backup repository.
-* DOC: add Fedora and RHEL to installation instructions, and evoke Raspbian, closes #316
+* FIX: avoid bytes/str object issue under MacOS/X while checking forks 
+       FS abilities, closes #320
+* FIX: avoid charmap encoding errors during logging on Windows due to 
+       extended characters, closes #344
+* FIX: avoid IndexError: string index out of range error when using 
+       accentuated characters in exclude/include patterns, closes #340
+* FIX: avoid test error when using librsync >= 2.2 by adding -R rollsum 
+       to rdiff call in librsynctest, closes #304
+* FIX: fail with meaningful error message on metadata mirror files with 
+       duplicate timestamps, closes #322
+* FIX: sequence of exception leading to abort when logging tuple of 
+       bytes because of unreachable directory, closes #310
+* NEW: Create a new rdiff-backup-delete script which can remove a file 
+       and all its history from a backup repository (use with care).
+* NEW: option --allow-duplicate-timestamps to only warn about duplicate 
+       timestamps in metadata mirror files, use this option with care and only 
+       to clean an impacted backup repository.
+* DOC: add Fedora and RHEL to installation instructions, and evoke 
+       Raspbian, closes #316
 * DOC: Update installation steps to make them clearer to users
 * DOC: improved installation and contributors documentation
-* DEV: clarify version tag pattern and their influence on releases, closes #326
-* DEV: much better automated installation of Windows development VM via Vagrant/Ansible
+* DEV: clarify version tag pattern and their influence on releases, 
+       closes #326
+* DEV: much better automated installation of Windows development VM via 
+       Vagrant/Ansible
 * DEV: errorsrecovertest test script to test recovering from old errors.
 
 ## Authors
@@ -35,9 +50,12 @@ New in v2.0.0 (2020-03-15)
 
 ## Changes
 
-* FIX: Add workaround to avoid error when backup directory is under the source directory (see issue #296), there is a warning but the backup can succeed.
+* FIX: Add workaround to avoid error when backup directory is under the 
+       source directory (see issue #296), there is a warning but the backup 
+       can succeed.
 * FIX: bytestotime() should return None on decode failure (Closes #295)
-* NEW: add a unit test for bytestotime() in order to avoid a regression like issue #295.
+* NEW: add a unit test for bytestotime() in order to avoid a regression 
+       like issue #295.
 
 ## Authors
 
@@ -49,10 +67,13 @@ New in v1.9.2rc0 (2020-03-08)
 
 ## Changes
 
-* FIX: UpdateError: Updated mirror temp file does not match source, Closes #237
-* CHG: Add new logo and improve visual appeal of the README (Closes: #286) (#287)
+* FIX: UpdateError: Updated mirror temp file does not match source, 
+       Closes #237
+* CHG: Add new logo and improve visual appeal of the README (Closes: 
+       #286) (#287)
 * NEW: Add Windows developments documentations, closes #220
-* FIX: do not fail when starting with uid/gid equal to maximum, avoid OverflowError on os.chown
+* FIX: do not fail when starting with uid/gid equal to maximum, avoid 
+       OverflowError on os.chown
 
 ## Authors
 
@@ -65,19 +86,29 @@ New in v1.9.1b0 (2020-02-23)
 
 ## Changes
 
-* FIX: remove too specific Debian packages from GitHub deployment, closes #263
-* NEW: add a new tool to help generate the changelog (description in DEVELOP.md)
+* FIX: remove too specific Debian packages from GitHub deployment, 
+       closes #263
+* NEW: add a new tool to help generate the changelog (description in 
+       DEVELOP.md)
 * DOC: new release rules and procedure added to docs/DEVELOP.md
 * FIX: avoid double unquoting of increment file infos, closes #266
-* FIX: versioning of Debian packages follows without glitch the overall tag based versioning.
-* DEV: automate via Travis deployment pipeline release to PyPI and Test PyPI.
-* FIX: remove some more ugly bytes output in strings using _safe_str, closes #238
-* FIX: added and moved hardlinks were not correctly counted and restored, Closes #239
-* FIX: rdiff-backup complained about missing SHA checksums of hardlinks, Closes #78
-* FIX: avoid int is not iterable error when calling remote command on Windows
+* FIX: versioning of Debian packages follows without glitch the overall 
+       tag based versioning.
+* DEV: automate via Travis deployment pipeline release to PyPI and Test 
+       PyPI.
+* FIX: remove some more ugly bytes output in strings using _safe_str, 
+       closes #238
+* FIX: added and moved hardlinks were not correctly counted and 
+       restored, Closes #239
+* FIX: rdiff-backup complained about missing SHA checksums of 
+       hardlinks, Closes #78
+* FIX: avoid int is not iterable error when calling remote command on 
+       Windows
 * DEV: flake8 checks only setup.py, src, testing and tools code.
-* NEW: add support for SOURCE_DATE_EPOCH to override the build date, making reproducible builds possible.
-* NEW: sparse files are handled more efficiently, if not compressed and depending on file system
+* NEW: add support for SOURCE_DATE_EPOCH to override the build date, 
+       making reproducible builds possible.
+* NEW: sparse files are handled more efficiently, if not compressed and 
+       depending on file system
 
 ## Authors
 
