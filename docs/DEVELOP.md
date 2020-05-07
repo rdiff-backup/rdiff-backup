@@ -384,7 +384,7 @@ Given the above rules, a release cycle looks roughly as follows:
 
 1. Call `./tools/get_changelog_since.sh PREVIOUSTAG` to get a list of changes
    (see above) since the last release and a sorted and unique list of authors,
-   on which basis you can extend the [CHANGELOG](../CHANGELOG) for the
+   on which basis you can extend the [CHANGELOG](../CHANGELOG.md) for the
    new release.
    **IMPORTANT:** make sure that the PR is squashed or you won't be able to
    trigger the release pipeline via a tag on master.
