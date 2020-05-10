@@ -90,6 +90,17 @@ sudo pip3 install rdiff-backup
 > **NOTE:** If your platform is not i386 or amd64, e.g. ARM/MIPS/etc,
   you may need the build dependencies `build-essentials`, `librsync-dev`.
 
+### CentOS and RHEL 6 (from PyPi)
+
+```
+sudo yum install centos-release-scl
+sudo yum install rh-python36 gcc libacl-devel
+scl enable rh-python36 bash
+sudo pip install rdiff-backup pyxattr pylibacl
+echo 'exec scl enable rh-python36 -- rdiff-backup "$@"' | sudo tee /usr/bin/rdiff-backup
+sudo chmod +x /usr/bin/rdiff-backup
+```
+
 ### Fedora and derivatives (from PyPI)
 
 ```
