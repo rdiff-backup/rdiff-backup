@@ -197,7 +197,7 @@ setup(
         (
             "share/doc/rdiff-backup",
             [
-                "CHANGELOG",
+                "CHANGELOG.md",
                 "COPYING",
                 "README.md",
                 "docs/FAQ.md",

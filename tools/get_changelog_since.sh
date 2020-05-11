@@ -16,7 +16,8 @@ echo "----------------------------"
 
 echo -e "\n## Changes\n"
 git log ${RELTAG}.. |
-	sed -n '/^ *[A-Z][A-Z][A-Z]: / s/^ */* /p' | sort
+	sed -n '/^ *[A-Z][A-Z][A-Z]: / s/^ */* /p' | sort \
+	| fold -w 72 -s | sed 's/^\([^*]\)/       \1/'
 
 echo -e "\n## Authors\n"
 git log ${RELTAG}.. |
