@@ -383,6 +383,19 @@ rdiff-backup_testfiles/select/1/1
 - **
 """])
 
+    def test_globbing_filelist_winending(self):
+        """Filelist glob test with Windows/DOS endings"""
+        # the \r's are used to test Windows/DOS endings
+        self.ParseTest([("--include-globbing-filelist", "file")],
+                       [(), ('1', ), ('1', '1'), ('1', '1', '2'),
+                        ('1', '1', '3')], [
+                            """
+- rdiff-backup_testfiles/select/1/1/1\r
+rdiff-backup_testfiles/select/1/1\r
+- rdiff-backup_testfiles/select/1\r
+- **\r
+"""])
+
     def testGlob(self):
         """Test globbing expression"""
         self.ParseTest([("--exclude", "**[3-5]"),
