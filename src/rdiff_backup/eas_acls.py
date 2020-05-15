@@ -188,7 +188,7 @@ def Record2EA(record):
     lines = record.split(b'\n')
     first = lines.pop(0)
     if not first[:8] == b'# file: ':
-        raise metadata.ParsingError("Bad record beginning: %b" % first[:8])
+        raise metadata.ParsingError("Bad record beginning: %r" % first[:8])
     filename = first[8:]
     if filename == b'.':
         index = ()
@@ -642,7 +642,7 @@ def Record2ACL(record):
     newline_pos = record.find(b'\n')
     first_line = record[:newline_pos]
     if not first_line.startswith(b'# file: '):
-        raise metadata.ParsingError("Bad record beginning: %b" % first_line)
+        raise metadata.ParsingError("Bad record beginning: %r" % first_line)
     filename = first_line[8:]
     if filename == b'.':
         index = ()
