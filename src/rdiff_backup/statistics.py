@@ -95,8 +95,8 @@ class StatsObj:
                 break
         else:
 
-            def addlist(l):
-                return reduce(lambda x, y: x + y, l)
+            def addlist(somelist):
+                return reduce(lambda x, y: x + y, somelist)
 
             result = addlist(addvals) - addlist(subtractvals)
         self.TotalDestinationSizeChange = result
