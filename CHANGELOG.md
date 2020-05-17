@@ -1,7 +1,7 @@
 RDIFF-BACKUP CHANGELOG
 ======================
 
-New in v2.0.2
+New in v2.0.3
 -------------
 
 ## Changes
