@@ -1,6 +1,24 @@
 RDIFF-BACKUP CHANGELOG
 ======================
 
+New in v2.0.2
+-------------
+
+## Changes
+
+* CHG: multimedia files with extensions ogv, oga, ogm and mkv aren't 
+       compressed any more.
+* CHG: Rename CHANGELOG to CHANGELOG.md, format to markdown and fix 
+       references, closes #279
+* FIX: handle properly include/exclude files with Windows/DOS endings, 
+       closes #357
+
+## Authors
+
+* Eric L
+* Jannis
+* Patrik Dufresne
+
 New in v2.0.1rc0 (2020-05-05)
 -----------------------------
 
