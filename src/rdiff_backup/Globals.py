@@ -202,7 +202,7 @@ compression = 1
 # compiled version of the first.
 no_compression_regexp_string = (
     b"(?i).*\\.(gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
-    b"jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|avi|wmv|mpeg|mpg|rm|mov|flac|shn|pgp|"
+    b"jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
     b"gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf)$")
 no_compression_regexp = None
 
