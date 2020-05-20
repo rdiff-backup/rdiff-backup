@@ -51,6 +51,20 @@ def check_common_error(error_handler, function, args=[]):
         raise
 
 
+# Those are the signals we want to catch because they relate to conditions
+# impacting only a single file, especially on remote file systems.
+# We list first only the POSIX conform signals, present on all platforms.
+_robust_errno_list = [errno.EPERM, errno.ENOENT, errno.EACCES, errno.EBUSY,
+                      errno.EEXIST, errno.ENOTDIR, errno.EILSEQ,
+                      errno.ENAMETOOLONG, errno.EINTR, errno.ESTALE,
+                      errno.ENOTEMPTY, errno.EIO, errno.ETXTBSY,
+                      errno.ESRCH, errno.EINVAL, errno.EDEADLK,
+                      errno.EOPNOTSUPP, errno.ETIMEDOUT]
+# Skip on resource deadlock only if the error is defined (_not_ on MacOSX)
+if hasattr(errno, 'EDEADLOCK'):
+    _robust_errno_list.append(errno.EDEADLOCK)
+
+
 def catch_error(exc):
     """Return true if exception exc should be caught"""
     for exception_class in (rpath.SkipFileException, rpath.RPathException,
@@ -60,13 +74,9 @@ def catch_error(exc):
             return 1
     if (isinstance(exc, EnvironmentError)
             # the invalid mode shows up in backups of /proc for some reason
-        and ('invalid mode: rb' in str(exc) or 'Not a gzipped file' in str(exc)
-        or exc.errno in (errno.EPERM, errno.ENOENT, errno.EACCES, errno.EBUSY,
-                         errno.EEXIST, errno.ENOTDIR, errno.EILSEQ,
-                         errno.ENAMETOOLONG, errno.EINTR, errno.ESTALE,
-                         errno.ENOTEMPTY, errno.EIO, errno.ETXTBSY,
-                         errno.ESRCH, errno.EINVAL, errno.EDEADLOCK,
-                         errno.EDEADLK, errno.EOPNOTSUPP, errno.ETIMEDOUT))):
+            and ('invalid mode: rb' in str(exc)
+                 or 'Not a gzipped file' in str(exc)
+                 or exc.errno in _robust_errno_list)):
         return 1
     return 0
 
