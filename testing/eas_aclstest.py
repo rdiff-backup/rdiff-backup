@@ -3,8 +3,9 @@ import os
 import io
 import pwd
 import grp
-from rdiff_backup.eas_acls import AccessControlLists, metadata, ACLExtractor, \
-    Record2ACL, ACL2Record, ExtendedAttributes, EAExtractor, EA2Record, Record2EA
+from rdiff_backup.eas_acls import metadata, \
+    AccessControlLists, ACLExtractor, AccessControlListFile, \
+    ExtendedAttributes, EAExtractor, ExtendedAttributesFile
 from rdiff_backup import Globals, rpath, user_group
 from commontest import rdiff_backup, abs_test_dir, abs_output_dir, abs_restore_dir, \
     BackupRestoreSeries, CompareRecursive
@@ -81,8 +82,8 @@ class EATest(unittest.TestCase):
 
     def testRecord(self):
         """Test writing a record and reading it back"""
-        record = EA2Record(self.sample_ea)
-        new_ea = Record2EA(record)
+        record = ExtendedAttributesFile._object_to_record(self.sample_ea)
+        new_ea = EAExtractor.record_to_object(record)
         if not new_ea == self.sample_ea:
             new_list = list(new_ea.attr_dict.keys())
             sample_list = list(self.sample_ea.attr_dict.keys())
@@ -360,8 +361,8 @@ other::---""")
 
     def testRecord(self):
         """Test writing a record and reading it back"""
-        record = ACL2Record(self.sample_acl)
-        new_acl = Record2ACL(record)
+        record = AccessControlListFile._object_to_record(self.sample_acl)
+        new_acl = ACLExtractor.record_to_object(record)
         if new_acl != self.sample_acl:
             print("New_acl", new_acl.entry_list)
             print("sample_acl", self.sample_acl.entry_list)
@@ -369,8 +370,8 @@ other::---""")
             print("sample acl text", str(self.sample_acl))
             assert 0
 
-        record2 = ACL2Record(self.dir_acl)
-        new_acl2 = Record2ACL(record2)
+        record2 = AccessControlListFile._object_to_record(self.dir_acl)
+        new_acl2 = ACLExtractor.record_to_object(record2)
         if not new_acl2 == self.dir_acl:
             assert new_acl2.eq_verbose(self.dir_acl)
             assert 0

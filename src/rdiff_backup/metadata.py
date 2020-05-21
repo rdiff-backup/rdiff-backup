@@ -525,7 +525,7 @@ class CombinedWriter:
     def write_object(self, rorp):
         """Write information in rorp to all the writers"""
         self.metawriter.write_object(rorp)
-        if self.eawriter and not rorp.get_ea().empty():
+        if self.eawriter and not rorp.get_ea().is_empty():
             self.eawriter.write_object(rorp.get_ea())
         if self.aclwriter and not rorp.get_acl().is_basic():
             self.aclwriter.write_object(rorp.get_acl())
