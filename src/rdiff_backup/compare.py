@@ -33,7 +33,7 @@ def Compare(src_rp, mirror_rp, inc_rp, compare_time):
     data_side = src_rp.conn.compare.DataSide
 
     repo_iter = repo_side.init_and_get_iter(mirror_rp, inc_rp, compare_time)
-    return_val = print_reports(data_side.compare_fast(repo_iter))
+    return_val = _print_reports(data_side.compare_fast(repo_iter))
     repo_side.close_rf_cache()
     return return_val
 
@@ -50,7 +50,7 @@ def Compare_hash(src_rp, mirror_rp, inc_rp, compare_time):
     data_side = src_rp.conn.compare.DataSide
 
     repo_iter = repo_side.init_and_get_iter(mirror_rp, inc_rp, compare_time)
-    return_val = print_reports(data_side.compare_hash(repo_iter))
+    return_val = _print_reports(data_side.compare_hash(repo_iter))
     repo_side.close_rf_cache()
     return return_val
 
@@ -69,7 +69,7 @@ def Compare_full(src_rp, mirror_rp, inc_rp, compare_time):
     attached_repo_iter = repo_side.attach_files(src_iter, mirror_rp, inc_rp,
                                                 compare_time)
     report_iter = data_side.compare_full(src_rp, attached_repo_iter)
-    return_val = print_reports(report_iter)
+    return_val = _print_reports(report_iter)
     repo_side.close_rf_cache()
     return return_val
 
@@ -84,7 +84,7 @@ def Verify(mirror_rp, inc_rp, verify_time):
     for repo_rorp in repo_iter:
         if not repo_rorp.isreg():
             continue
-        verify_sha1 = get_hash(repo_rorp)
+        verify_sha1 = _get_hash(repo_rorp)
         if not verify_sha1:
             log.Log(
                 "Warning: Cannot find SHA1 digest for file %s,\n"
@@ -113,7 +113,7 @@ def Verify(mirror_rp, inc_rp, verify_time):
     return 0
 
 
-def get_hash(repo_rorp):
+def _get_hash(repo_rorp):
     """ Try to get a sha1 digest from the repository.  If hardlinks
     are saved in the metadata, get the sha1 from the first hardlink """
     Hardlink.add_rorp(repo_rorp)
@@ -127,7 +127,7 @@ def get_hash(repo_rorp):
     return verify_sha1
 
 
-def print_reports(report_iter):
+def _print_reports(report_iter):
     """Given an iter of CompareReport objects, print them to screen"""
     assert not Globals.server
     changed_files_found = 0
@@ -141,7 +141,7 @@ def print_reports(report_iter):
     return changed_files_found
 
 
-def get_basic_report(src_rp, repo_rorp, comp_data_func=None):
+def _get_basic_report(src_rp, repo_rorp, comp_data_func=None):
     """Compare src_rp and repo_rorp, return CompareReport
 
     comp_data_func should be a function that accepts (src_rp,
@@ -182,7 +182,7 @@ def get_basic_report(src_rp, repo_rorp, comp_data_func=None):
         return CompareReport(index, "changed")
 
 
-def log_success(src_rorp, mir_rorp=None):
+def _log_success(src_rorp, mir_rorp=None):
     """Log that src_rorp and mir_rorp compare successfully"""
     path = src_rorp and src_rorp.get_safeindexpath(
     ) or mir_rorp.get_safeindexpath()
@@ -215,7 +215,7 @@ class RepoSide(restore.MirrorStruct):
             index = src_rorp and src_rorp.index or mir_rorp.index
             if src_rorp and mir_rorp:
                 if not src_rorp.isreg() and src_rorp == mir_rorp:
-                    log_success(src_rorp, mir_rorp)
+                    _log_success(src_rorp, mir_rorp)
                     continue  # They must be equal, nothing else to check
                 if (src_rorp.isreg() and mir_rorp.isreg()
                         and src_rorp.getsize() == mir_rorp.getsize()):
@@ -237,11 +237,11 @@ class DataSide(backup.SourceStruct):
         """Compare rorps (metadata only) quickly, return report iter"""
         src_iter = cls.get_source_select()
         for src_rorp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
-            report = get_basic_report(src_rorp, mir_rorp)
+            report = _get_basic_report(src_rorp, mir_rorp)
             if report:
                 yield report
             else:
-                log_success(src_rorp, mir_rorp)
+                _log_success(src_rorp, mir_rorp)
 
     @classmethod
     def compare_hash(cls, repo_iter):
@@ -249,7 +249,7 @@ class DataSide(backup.SourceStruct):
 
         def hashes_changed(src_rp, mir_rorp):
             """Return 0 if their data hashes same, 1 otherwise"""
-            verify_sha1 = get_hash(mir_rorp)
+            verify_sha1 = _get_hash(mir_rorp)
             if not verify_sha1:
                 log.Log(
                     "Warning: Metadata file has no digest for %s, "
@@ -262,11 +262,11 @@ class DataSide(backup.SourceStruct):
 
         src_iter = cls.get_source_select()
         for src_rp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
-            report = get_basic_report(src_rp, mir_rorp, hashes_changed)
+            report = _get_basic_report(src_rp, mir_rorp, hashes_changed)
             if report:
                 yield report
             else:
-                log_success(src_rp, mir_rorp)
+                _log_success(src_rp, mir_rorp)
 
     @classmethod
     def compare_full(cls, src_root, repo_iter):
@@ -285,11 +285,11 @@ class DataSide(backup.SourceStruct):
 
         for repo_rorp in repo_iter:
             src_rp = src_root.new_index(repo_rorp.index)
-            report = get_basic_report(src_rp, repo_rorp, data_changed)
+            report = _get_basic_report(src_rp, repo_rorp, data_changed)
             if report:
                 yield report
             else:
-                log_success(repo_rorp)
+                _log_success(repo_rorp)
 
 
 class CompareReport:
