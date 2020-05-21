@@ -229,6 +229,8 @@ def parse_cmdlineoptions(arglist):  # noqa: C901
         elif opt == "--ssh-no-compression":
             Globals.set('ssh_compression', None)
         elif opt == "--tempdir":
+            if (not os.path.isdir(arg)):
+                Log.FatalError("Temporary directory '%s' doesn't exist." % arg)
             tempfile.tempdir = os.fsencode(arg)
         elif opt == "--terminal-verbosity":
             Log.setterm_verbosity(arg)
