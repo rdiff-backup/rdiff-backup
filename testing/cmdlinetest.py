@@ -528,6 +528,16 @@ class FinalMisc(PathSetter):
         for inc in self.get_all_increments(rbdir):
             assert inc.getinctime() >= 20000
 
+    def testNonExistingTempDir(self):
+        """Test that a missing tempdir is properly catched as an error"""
+        Myrm(Local.rpout.path)
+        rdiff_backup(True,
+                     True,
+                     Local.vftrp.path,
+                     Local.rpout.path,
+                     extra_options=b"--tempdir DoesSurelyNotExist",
+                     expected_ret_val=1)
+
 
 class FinalSelection(PathSetter):
     """Test selection options"""
