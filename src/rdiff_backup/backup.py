@@ -205,7 +205,7 @@ class DestinationStruct:
 
                 index = src_rorp and src_rorp.index or dest_rorp.index
                 sig = cls._get_one_sig(dest_base_rpath, index, src_rorp,
-                                      dest_rorp)
+                                       dest_rorp)
                 if sig:
                     cls.CCPP.flag_changed(index)
                     yield sig
@@ -408,7 +408,7 @@ class CacheCollatedPostProcess:
             return
         del self.cache_dict[first_index]
         self._post_process(old_source_rorp, old_dest_rorp, changed_flag,
-                          success_flag, inc)
+                           success_flag, inc)
         if self.dir_perms_list:
             self._reset_dir_perms(first_index)
         self._update_parent_list(first_index, old_source_rorp, old_dest_rorp)
