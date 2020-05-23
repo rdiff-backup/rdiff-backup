@@ -36,7 +36,7 @@ class LibrsyncTest(unittest.TestCase):
             rdiff_help_text = subprocess.check_output(["rdiff", "--help"])
             if b'-R' in rdiff_help_text:
                 assert not os.system(
-                    b"rdiff -b %i -R rollup -H md4 signature %b %b" %
+                    b"rdiff -b %i -R rollsum -S 8 -H md4 signature %b %b" %
                     (blocksize, self.basis.path, self.sig.path))
             elif b'-H' in rdiff_help_text:
                 assert not os.system(
