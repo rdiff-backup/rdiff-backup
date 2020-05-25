@@ -8,22 +8,20 @@
 
 DEVUSER=devuser
 
+# upgrade all packages
+#pacman -Syu --noconfirm
+
 # packages under Arch generally contains what other distros place in -dev/-devel packages
-pacman -S librsync
-pacman -S python
-pacman -S python-pylibacl
-pacman -S python-pyxattr
-pacman -S python-setuptools
-pacman -S python-setuptools-scm
-pacman -S git
-pacman -S openssh
-pacman -S tox
-pacman -S base-devel
-pacman -S vim  # optional if you like vim as editor
+pacman -S --noconfirm librsync libffi
+pacman -S --noconfirm python python-pylibacl python-pyxattr
+pacman -S --noconfirm python-setuptools python-setuptools-scm tox
+pacman -S --noconfirm git openssh
+pacman -S --noconfirm base-devel
+pacman -S --noconfirm vim  # optional if you like vim as editor
 
 # in order to not always work as root (though it might not be an issue in a container)
 useradd -m ${DEVUSER}
-cd ~${DEVUSER}
+cd /home/${DEVUSER}
 
 # only if you need a specific version of a package (just an example):
 #pacman -U https://archive.archlinux.org/packages/l/librsync/librsync-1%3A2.0.2-1-x86_64.pkg.tar.xz
@@ -35,7 +33,6 @@ su - ${DEVUSER} -c 'git clone https://github.com/rdiff-backup/rdiff-backup-files
 #su - ${DEVUSER} -c 'git clone git@github.com:rdiff-backup/rdiff-backup.git'
 #su - ${DEVUSER} -c 'git clone git@github.com:rdiff-backup/rdiff-backup-filesrepo.git'
 
-sudo tar xvf ./rdiff-backup-filesrepo/rdiff-backup_testfiles.tar
 tar xvf ./rdiff-backup-filesrepo/rdiff-backup_testfiles.tar
 # if devuser hasn't the ID 1000, you will need following command, assuming 1234 is the UID/GID:
 #./rdiff-backup-filesrepo/rdiff-backup_testfiles.fix.sh 1234 1234
