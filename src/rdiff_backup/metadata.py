@@ -309,7 +309,7 @@ class FlatExtractor:
     record_boundary_regexp = None
 
     # Set in subclass to function that converts text record to object
-    record_to_object = None
+    _record_to_object = None
 
     def __init__(self, fileobj):
         self.fileobj = fileobj  # holds file object we are reading from
@@ -335,7 +335,7 @@ class FlatExtractor:
         """Return iterator that yields all objects with records"""
         for record in self.iterate_records():
             try:
-                yield self.record_to_object(record)
+                yield self._record_to_object(record)
             except (ParsingError, ValueError) as e:
                 if self.at_end:
                     break  # Ignore whitespace/bad records at end
@@ -388,7 +388,7 @@ class FlatExtractor:
         while 1:
             next_pos = self.get_next_pos()
             try:
-                obj = self.record_to_object(self.buf[:next_pos])
+                obj = self._record_to_object(self.buf[:next_pos])
             except (ParsingError, ValueError) as e:
                 log.Log("Error parsing metadata file: %s" % (e, ), 2)
             else:
@@ -413,7 +413,7 @@ class FlatExtractor:
 class RorpExtractor(FlatExtractor):
     """Iterate rorps from metadata file"""
     record_boundary_regexp = re.compile(b"(?:\\n|^)(File (.*?))\\n")
-    record_to_object = staticmethod(Record2RORP)
+    _record_to_object = staticmethod(Record2RORP)
     filename_to_index = staticmethod(quoted_filename_to_index)
 
 

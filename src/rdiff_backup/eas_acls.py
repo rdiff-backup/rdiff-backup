@@ -183,7 +183,7 @@ class EAExtractor(metadata.FlatExtractor):
             return tuple(C.acl_unquote(filename).split(b'/'))
 
     @staticmethod
-    def record_to_object(record):
+    def _record_to_object(record):
         """Convert text record to ExtendedAttributes object"""
         lines = record.split(b'\n')
         first = lines.pop(0)

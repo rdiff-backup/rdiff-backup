@@ -263,7 +263,7 @@ def WACL2Record(wacl):
 class WACLExtractor(metadata.FlatExtractor):
     """Iterate ExtendedAttributes objects from the WACL information file"""
     record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
-    record_to_object = staticmethod(Record2WACL)
+    _record_to_object = staticmethod(Record2WACL)
 
     def filename_to_index(self, filename):
         """Convert possibly quoted filename to index tuple"""
