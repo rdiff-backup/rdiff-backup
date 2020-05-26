@@ -636,13 +636,13 @@ def acl_compare_rps(rp1, rp2):
 class ACLExtractor(EAExtractor):
     """Iterate AccessControlLists objects from the ACL information file
 
-    Except for the record_to_object method, we can reuse everything in
+    Except for the _record_to_object method, we can reuse everything in
     the EAExtractor class because the file formats are so similar.
 
     """
 
     @staticmethod
-    def record_to_object(record):
+    def _record_to_object(record):
         """Convert text record to an AccessControlLists object"""
         newline_pos = record.find(b'\n')
         first_line = record[:newline_pos]
