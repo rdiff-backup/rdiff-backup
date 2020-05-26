@@ -24,12 +24,10 @@ class FilenameMappingTest(unittest.TestCase):
 
     def testQuotedRPath(self):
         """Test the QuotedRPath class"""
-
-    def testQuotedSepBase(self):
-        """Test get_quoted_sep_base function"""
         path = (b"/usr/local/mirror_metadata"
                 b".1969-12-31;08421;05833;05820-07;05800.data.gz")
-        qrp = FilenameMapping.get_quoted_sep_base(path)
+        qrp = FilenameMapping.get_quotedrpath(
+            rpath.RPath(Globals.local_connection, path), 1)
         assert qrp.base == b"/usr/local", qrp.base
         assert len(qrp.index) == 1, qrp.index
         assert (qrp.index[0] == b"mirror_metadata.1969-12-31T21:33:20-07:00.data.gz")
