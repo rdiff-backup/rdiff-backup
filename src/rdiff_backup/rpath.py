@@ -384,7 +384,7 @@ def make_file_dict(filename):
 
     try:
         statblock = os.lstat(filename)
-    except (FileNotFoundError, NotADirectoryError):
+    except OSError:
         return {'type': None}
     data = {}
     mode = statblock[stat.ST_MODE]
