@@ -26,14 +26,6 @@ import re
 import os  # needed to grab verbosity as environment variable
 from . import Globals, rpath
 
-# FIXME Dirty hack in order to make sure that log files are written in Unicode
-# format because else they are written as cp1252 under Windows
-# Influences program-wide all writing in text mode, not binary.
-if os.name == "nt":
-    import _locale
-    _locale._gdl_bak = _locale._getdefaultlocale
-    _locale._getdefaultlocale = (lambda *args: (_locale._gdl_bak()[0], 'utf8'))
-
 
 class LoggerError(Exception):
     pass
@@ -90,7 +82,7 @@ class Logger:
         """Open logfile locally - should only be run on one connection"""
         assert rpath.conn is Globals.local_connection
         try:
-            self.logfp = rpath.open("a")
+            self.logfp = rpath.open("ab")
         except (OSError, IOError) as e:
             raise LoggerError(
                 "Unable to open logfile %s: %s" % (rpath.path, e))
@@ -154,8 +146,8 @@ class Logger:
         if self.log_file_open:
             if self.log_file_local:
                 tmpstr = self.format(message, self.verbosity)
-                if type(tmpstr) != str:  # transform bytes into string
-                    tmpstr = str(tmpstr, 'utf-8')
+                if type(tmpstr) == str:  # transform string in bytes
+                    tmpstr = tmpstr.encode('utf-8', 'backslashreplace')
                 self.logfp.write(tmpstr)
                 self.logfp.flush()
             else:
@@ -164,12 +156,12 @@ class Logger:
     def log_to_term(self, message, verbosity):
         """Write message to stdout/stderr"""
         if verbosity <= 2 or Globals.server:
-            termfp = sys.stderr
+            termfp = sys.stderr.buffer
         else:
-            termfp = sys.stdout
+            termfp = sys.stdout.buffer
         tmpstr = self.format(message, self.term_verbosity)
-        if type(tmpstr) != str:  # transform bytes in string
-            tmpstr = str(tmpstr, 'utf-8')
+        if type(tmpstr) == str:  # transform string in bytes
+            tmpstr = tmpstr.encode(sys.stdout.encoding, 'backslashreplace')
         termfp.write(tmpstr)
 
     def conn(self, direction, result, req_num):
