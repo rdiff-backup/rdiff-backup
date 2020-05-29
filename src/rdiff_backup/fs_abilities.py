@@ -127,14 +127,14 @@ class FSAbilities:
         assert rp.conn is Globals.local_connection
         self.root_rp = rp
         self.read_only = 1
-        self.set_eas(rp, 0)
-        self.set_acls(rp)
-        self.set_win_acls(rp, 0)
-        self.set_resource_fork_readonly(rp)
-        self.set_carbonfile()
-        self.set_case_sensitive_readonly(rp)
-        self.set_escape_dos_devices(rp)
-        self.set_escape_trailing_spaces_readonly(rp)
+        self._detect_eas(rp, 0)
+        self._detect_acls(rp)
+        self._detect_win_acls(rp, 0)
+        self._detect_resource_fork_readonly(rp)
+        self._detect_carbonfile()
+        self._detect_case_sensitive_readonly(rp)
+        self._detect_escape_dos_devices(rp)
+        self._detect_escape_trailing_spaces_readonly(rp)
         return self
 
     def init_readwrite(self, rbdir):
@@ -154,27 +154,27 @@ class FSAbilities:
         subdir = TempFile.new_in_dir(rbdir)
         subdir.mkdir()
 
-        self.set_extended_filenames(subdir)
-        self.set_win_reserved_filenames(subdir)
-        self.set_case_sensitive_readwrite(subdir)
-        self.set_ownership(subdir)
-        self.set_hardlinks(subdir)
-        self.set_fsync_dirs(subdir)
-        self.set_eas(subdir, 1)
-        self.set_acls(subdir)
-        self.set_win_acls(subdir, 1)
-        self.set_dir_inc_perms(subdir)
-        self.set_resource_fork_readwrite(subdir)
-        self.set_carbonfile()
-        self.set_high_perms_readwrite(subdir)
-        self.set_symlink_perms(subdir)
-        self.set_escape_dos_devices(subdir)
-        self.set_escape_trailing_spaces_readwrite(subdir)
+        self._detect_extended_filenames(subdir)
+        self._detect_win_reserved_filenames(subdir)
+        self._detect_case_sensitive_readwrite(subdir)
+        self._detect_ownership(subdir)
+        self._detect_hardlinks(subdir)
+        self._detect_fsync_dirs(subdir)
+        self._detect_eas(subdir, 1)
+        self._detect_acls(subdir)
+        self._detect_win_acls(subdir, 1)
+        self._detect_dir_inc_perms(subdir)
+        self._detect_resource_fork_readwrite(subdir)
+        self._detect_carbonfile()
+        self._detect_high_perms_readwrite(subdir)
+        self._detect_symlink_perms(subdir)
+        self._detect_escape_dos_devices(subdir)
+        self._detect_escape_trailing_spaces_readwrite(subdir)
 
         subdir.delete()
         return self
 
-    def set_ownership(self, testdir):
+    def _detect_ownership(self, testdir):
         """Set self.ownership to true iff testdir's ownership can be changed"""
         tmp_rp = testdir.append("foo")
         tmp_rp.touch()
@@ -188,7 +188,7 @@ class FSAbilities:
             self.ownership = 1
         tmp_rp.delete()
 
-    def set_hardlinks(self, testdir):
+    def _detect_hardlinks(self, testdir):
         """Set self.hardlinks to true iff hard linked files can be made"""
         hl_source = testdir.append("hardlinked_file1")
         hl_dir = testdir.append("hl")
@@ -208,7 +208,7 @@ class FSAbilities:
         else:
             self.hardlinks = 1
 
-    def set_fsync_dirs(self, testdir):
+    def _detect_fsync_dirs(self, testdir):
         """Set self.fsync_dirs if directories can be fsync'd"""
         assert testdir.conn is Globals.local_connection
         try:
@@ -221,7 +221,7 @@ class FSAbilities:
         else:
             self.fsync_dirs = 1
 
-    def set_extended_filenames(self, subdir):
+    def _detect_extended_filenames(self, subdir):
         """Set self.extended_filenames by trying to write a path"""
         assert not self.read_only
 
@@ -259,7 +259,7 @@ class FSAbilities:
                     "transformed to a '?'")
             self.extended_filenames = 1
 
-    def set_win_reserved_filenames(self, subdir):
+    def _detect_win_reserved_filenames(self, subdir):
         """Set self.win_reserved_filenames by trying to write a path"""
         assert not self.read_only
 
@@ -282,7 +282,7 @@ class FSAbilities:
             else:
                 self.win_reserved_filenames = 0
 
-    def set_acls(self, rp):
+    def _detect_acls(self, rp):
         """Set self.acls based on rp.  Does not write.  Needs to be local"""
         assert Globals.local_connection is rp.conn
         assert rp.lstat()
@@ -313,7 +313,7 @@ class FSAbilities:
         else:
             self.acls = 1
 
-    def set_case_sensitive_readwrite(self, subdir):
+    def _detect_case_sensitive_readwrite(self, subdir):
         """Determine if directory at rp is case sensitive by writing"""
         assert not self.read_only
         upper_a = subdir.append("A")
@@ -328,7 +328,7 @@ class FSAbilities:
             upper_a.delete()
             self.case_sensitive = 1
 
-    def set_case_sensitive_readonly(self, rp):
+    def _detect_case_sensitive_readonly(self, rp):
         """Determine if directory at rp is case sensitive without writing"""
 
         def find_letter(subdir):
@@ -379,7 +379,7 @@ class FSAbilities:
 
         self.case_sensitive = test_triple(*triple)
 
-    def set_eas(self, rp, write):
+    def _detect_eas(self, rp, write):
         """Set extended attributes from rp. Tests writing if write is true."""
         assert Globals.local_connection is rp.conn
         assert rp.lstat()
@@ -422,7 +422,7 @@ class FSAbilities:
         else:
             self.eas = 1
 
-    def set_win_acls(self, dir_rp, write):
+    def _detect_win_acls(self, dir_rp, write):
         """Test if windows access control lists are supported"""
         assert Globals.local_connection is dir_rp.conn
         assert dir_rp.lstat()
@@ -476,7 +476,7 @@ class FSAbilities:
             return
         self.win_acls = 1
 
-    def set_dir_inc_perms(self, rp):
+    def _detect_dir_inc_perms(self, rp):
         """See if increments can have full permissions like a directory"""
         test_rp = rp.append('dir_inc_check')
         test_rp.touch()
@@ -494,7 +494,7 @@ class FSAbilities:
             self.dir_inc_perms = 0
         test_rp.delete()
 
-    def set_carbonfile(self):
+    def _detect_carbonfile(self):
         """Test for support of the Mac Carbon library.  This library
         can be used to obtain Finder info (creator/type)."""
         try:
@@ -511,7 +511,7 @@ class FSAbilities:
 
         self.carbonfile = 1
 
-    def set_resource_fork_readwrite(self, dir_rp):
+    def _detect_resource_fork_readwrite(self, dir_rp):
         """Test for resource forks by writing to regular_file/..namedfork/rsrc"""
         assert dir_rp.conn is Globals.local_connection
         reg_rp = dir_rp.append('regfile')
@@ -534,7 +534,7 @@ class FSAbilities:
             self.resource_forks = (s_back == s)
         reg_rp.delete()
 
-    def set_resource_fork_readonly(self, dir_rp):
+    def _detect_resource_fork_readonly(self, dir_rp):
         """Test for resource fork support by testing an regular file
 
         Launches search for regular file in given directory.  If no
@@ -556,7 +556,7 @@ class FSAbilities:
                 return
         self.resource_forks = 0
 
-    def set_high_perms_readwrite(self, dir_rp):
+    def _detect_high_perms_readwrite(self, dir_rp):
         """Test for writing high-bit permissions like suid"""
         tmpf_rp = dir_rp.append(b"high_perms_file")
         tmpf_rp.touch()
@@ -574,7 +574,7 @@ class FSAbilities:
         tmpf_rp.delete()
         tmpd_rp.delete()
 
-    def set_symlink_perms(self, dir_rp):
+    def _detect_symlink_perms(self, dir_rp):
         """Test if symlink permissions are affected by umask"""
         sym_source = dir_rp.append(b"symlinked_file1")
         sym_source.touch()
@@ -593,7 +593,7 @@ class FSAbilities:
             sym_dest.delete()
         sym_source.delete()
 
-    def set_escape_dos_devices(self, subdir):
+    def _detect_escape_dos_devices(self, subdir):
         """Test if DOS device files can be used as filenames.
 
         This test must detect if the underlying OS is Windows, whether we are
@@ -623,7 +623,7 @@ class FSAbilities:
         except (OSError):
             self.escape_dos_devices = 1
 
-    def set_escape_trailing_spaces_readwrite(self, testdir):
+    def _detect_escape_trailing_spaces_readwrite(self, testdir):
         """
         Windows and Linux/FAT32 will not preserve trailing spaces or periods.
         Linux/FAT32 behaves inconsistently: It will give an OSError,22 if
@@ -648,7 +648,7 @@ class FSAbilities:
 
         tmp_rp.delete()
 
-    def set_escape_trailing_spaces_readonly(self, rp):
+    def _detect_escape_trailing_spaces_readonly(self, rp):
         """Determine if directory at rp permits filenames with trailing
         spaces or periods without writing."""
 
@@ -710,29 +710,29 @@ class SetGlobals:
         self.src_fsa, self.dest_fsa = src_fsa, dest_fsa
 
     def set_eas(self):
-        self.update_triple(self.src_fsa.eas, self.dest_fsa.eas,
-                           ('eas_active', 'eas_write', 'eas_conn'))
+        self._update_triple(self.src_fsa.eas, self.dest_fsa.eas,
+                            ('eas_active', 'eas_write', 'eas_conn'))
 
     def set_acls(self):
-        self.update_triple(self.src_fsa.acls, self.dest_fsa.acls,
-                           ('acls_active', 'acls_write', 'acls_conn'))
+        self._update_triple(self.src_fsa.acls, self.dest_fsa.acls,
+                            ('acls_active', 'acls_write', 'acls_conn'))
         if Globals.never_drop_acls and not Globals.acls_active:
             log.Log.FatalError("--never-drop-acls specified, but ACL support\n"
                                "missing from source filesystem")
 
     def set_win_acls(self):
-        self.update_triple(
+        self._update_triple(
             self.src_fsa.win_acls, self.dest_fsa.win_acls,
             ('win_acls_active', 'win_acls_write', 'win_acls_conn'))
 
     def set_resource_forks(self):
-        self.update_triple(self.src_fsa.resource_forks,
-                           self.dest_fsa.resource_forks,
-                           ('resource_forks_active', 'resource_forks_write',
-                            'resource_forks_conn'))
+        self._update_triple(
+            self.src_fsa.resource_forks, self.dest_fsa.resource_forks,
+            ('resource_forks_active', 'resource_forks_write',
+             'resource_forks_conn'))
 
     def set_carbonfile(self):
-        self.update_triple(
+        self._update_triple(
             self.src_fsa.carbonfile, self.dest_fsa.carbonfile,
             ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
 
@@ -768,7 +768,7 @@ class SetGlobals:
 class BackupSetGlobals(SetGlobals):
     """Functions for setting fsa related globals for backup session"""
 
-    def update_triple(self, src_support, dest_support, attr_triple):
+    def _update_triple(self, src_support, dest_support, attr_triple):
         """Many of the settings have a common form we can handle here"""
         active_attr, write_attr, conn_attr = attr_triple
         if Globals.get(active_attr) == 0:
@@ -837,15 +837,15 @@ class BackupSetGlobals(SetGlobals):
         directory, not just the current fs features.
 
         """
-        (ctq, update) = self.compare_ctq_file(rbdir, self.get_ctq_from_fsas(),
-                                              force)
+        (ctq, update) = self._compare_ctq_file(rbdir, self._get_ctq_from_fsas(),
+                                               force)
 
         SetConnections.UpdateGlobal('chars_to_quote', ctq)
         if Globals.chars_to_quote:
             FilenameMapping.set_init_quote_vals()
         return update
 
-    def get_ctq_from_fsas(self):
+    def _get_ctq_from_fsas(self):
         """Determine chars_to_quote just from filesystems, no ctq file"""
         ctq = []
 
@@ -865,7 +865,7 @@ class BackupSetGlobals(SetGlobals):
             ctq.append(Globals.quoting_char)
         return b"".join(ctq)
 
-    def compare_ctq_file(self, rbdir, suggested_ctq, force):
+    def _compare_ctq_file(self, rbdir, suggested_ctq, force):
         """Compare ctq file with suggested result, return actual ctq"""
         ctq_rp = rbdir.append(b"chars_to_quote")
         if not ctq_rp.lstat():
@@ -921,10 +921,10 @@ repository from the old quoting chars to the new ones.""" %
 class RestoreSetGlobals(SetGlobals):
     """Functions for setting fsa-related globals for restore session"""
 
-    def update_triple(self, src_support, dest_support, attr_triple):
+    def _update_triple(self, src_support, dest_support, attr_triple):
         """Update global settings for feature based on fsa results
 
-        This is slightly different from BackupSetGlobals.update_triple
+        This is slightly different from BackupSetGlobals._update_triple
         because (using the mirror_metadata file) rpaths from the
         source may have more information than the file system
         supports.
@@ -994,7 +994,7 @@ class SingleSetGlobals(RestoreSetGlobals):
         self.conn = conn
         self.dest_fsa = fsa
 
-    def update_triple(self, fsa_support, attr_triple):
+    def _update_triple(self, fsa_support, attr_triple):
         """Update global vars from single fsa test"""
         active_attr, write_attr, conn_attr = attr_triple
         if Globals.get(active_attr) == 0:
@@ -1008,25 +1008,26 @@ class SingleSetGlobals(RestoreSetGlobals):
         self.conn.Globals.set_local(conn_attr, 1)
 
     def set_eas(self):
-        self.update_triple(self.dest_fsa.eas,
-                           ('eas_active', 'eas_write', 'eas_conn'))
+        self._update_triple(
+            self.dest_fsa.eas, ('eas_active', 'eas_write', 'eas_conn'))
 
     def set_acls(self):
-        self.update_triple(self.dest_fsa.acls,
-                           ('acls_active', 'acls_write', 'acls_conn'))
+        self._update_triple(
+            self.dest_fsa.acls, ('acls_active', 'acls_write', 'acls_conn'))
 
     def set_win_acls(self):
-        self.update_triple(
+        self._update_triple(
             self.src_fsa.win_acls, self.dest_fsa.win_acls,
             ('win_acls_active', 'win_acls_write', 'win_acls_conn'))
 
     def set_resource_forks(self):
-        self.update_triple(self.dest_fsa.resource_forks,
-                           ('resource_forks_active', 'resource_forks_write',
-                            'resource_forks_conn'))
+        self._update_triple(
+            self.dest_fsa.resource_forks,
+            ('resource_forks_active', 'resource_forks_write',
+             'resource_forks_conn'))
 
     def set_carbonfile(self):
-        self.update_triple(
+        self._update_triple(
             self.dest_fsa.carbonfile,
             ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
 
