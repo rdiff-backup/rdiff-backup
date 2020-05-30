@@ -118,7 +118,7 @@ class IterVirtualFile(UnwrapFile):
         self.buffer = initial_data
         self.closed = None
         if not initial_data:
-            self.set_close_val()
+            self._set_close_val()
 
     def read(self, length=-1):
         """Read length bytes from the file, updating buffers as necessary"""
@@ -126,12 +126,12 @@ class IterVirtualFile(UnwrapFile):
         if self.iwf.currently_in_file:
             if length >= 0:
                 while length >= len(self.buffer):
-                    if not self.addtobuffer():
+                    if not self._add_to_buffer():
                         break
                 real_len = min(length, len(self.buffer))
             else:
                 while 1:
-                    if not self.addtobuffer():
+                    if not self._add_to_buffer():
                         break
                 real_len = len(self.buffer)
         else:
@@ -141,7 +141,15 @@ class IterVirtualFile(UnwrapFile):
         self.buffer = self.buffer[real_len:]
         return return_val
 
-    def addtobuffer(self):
+    def close(self):
+        """Currently just reads whats left and discards it"""
+        while self.iwf.currently_in_file:
+            self._add_to_buffer()
+            self.buffer = ""
+        self.closed = 1
+        return self.close_value
+
+    def _add_to_buffer(self):
         """Read a chunk from the file and add it to the buffer"""
         assert self.iwf.currently_in_file
         type, data = self.iwf._get()
@@ -153,24 +161,16 @@ class IterVirtualFile(UnwrapFile):
             self.buffer += data
             return 1
         else:
-            self.set_close_val()
+            self._set_close_val()
             return None
 
-    def set_close_val(self):
+    def _set_close_val(self):
         """Read the close value and clear currently_in_file"""
         assert self.iwf.currently_in_file
         self.iwf.currently_in_file = None
         type, object = self.iwf._get()
         assert type == b'h', type
         self.close_value = object
-
-    def close(self):
-        """Currently just reads whats left and discards it"""
-        while self.iwf.currently_in_file:
-            self.addtobuffer()
-            self.buffer = ""
-        self.closed = 1
-        return self.close_value
 
 
 class FileWrappingIter:
@@ -199,14 +199,17 @@ class FileWrappingIter:
         """Return next length bytes in file"""
         assert not self.closed
         while len(self.array_buf) < length:
-            if not self.addtobuffer():
+            if not self._add_to_buffer():
                 break
 
         result = self.array_buf[:length].tobytes()
         del self.array_buf[:length]
         return result
 
-    def addtobuffer(self):
+    def close(self):
+        self.closed = 1
+
+    def _add_to_buffer(self):
         """Updates self.buffer, adding a chunk from the iterator.
 
         Returns None if we have reached the end of the iterator,
@@ -214,7 +217,7 @@ class FileWrappingIter:
 
         """
         if self.currently_in_file:
-            self.addfromfile(b"c")
+            self._add_from_file(b"c")
         else:
             try:
                 currentobj = next(self.iter)
@@ -222,7 +225,7 @@ class FileWrappingIter:
                 return None
             if hasattr(currentobj, "read") and hasattr(currentobj, "close"):
                 self.currently_in_file = currentobj
-                self.addfromfile(b"f")
+                self._add_from_file(b"f")
             else:
                 pickled_data = pickle.dumps(currentobj, 1)
                 self.array_buf.frombytes(b"o")
@@ -230,7 +233,7 @@ class FileWrappingIter:
                 self.array_buf.frombytes(pickled_data)
         return 1
 
-    def addfromfile(self, prefix_letter):
+    def _add_from_file(self, prefix_letter):
         """Read a chunk from the current file and add to array_buf
 
         prefix_letter and the length will be prepended to the file
@@ -238,7 +241,7 @@ class FileWrappingIter:
         exception will be added to array_buf instead.
 
         """
-        buf = robust.check_common_error(self.read_error_handler,
+        buf = robust.check_common_error(self._read_error_handler,
                                         self.currently_in_file.read,
                                         [Globals.blocksize])
         if buf is None:  # error occurred above, encode exception
@@ -253,7 +256,7 @@ class FileWrappingIter:
                 total += b"".join((b'h', self._i2b(len(cstr), 7), cstr))
         self.array_buf.frombytes(total)
 
-    def read_error_handler(self, exc, blocksize):
+    def _read_error_handler(self, exc, blocksize):
         """Log error when reading from file"""
         self.last_exception = exc
         return None
@@ -263,9 +266,6 @@ class FileWrappingIter:
         if (size == 0):
             size = (i.bit_length() + 7) // 8
         return i.to_bytes(size, byteorder='big')
-
-    def close(self):
-        self.closed = 1
 
 
 class MiscIterFlush:
@@ -319,7 +319,7 @@ class MiscIterToFile(FileWrappingIter):
         if length is None:
             while (len(self.array_buf) < self.max_buffer_bytes
                    and self.rorps_in_buffer < self.max_buffer_rps):
-                if not self.addtobuffer():
+                if not self._add_to_buffer():
                     break
 
             result = self.array_buf.tobytes()
@@ -334,10 +334,13 @@ class MiscIterToFile(FileWrappingIter):
             self.array_buf.frombytes(read_buffer[length:])
             return read_buffer[length:]
 
-    def addtobuffer(self):
+    def close(self):
+        self.closed = 1
+
+    def _add_to_buffer(self):
         """Add some number of bytes to the buffer.  Return false if done"""
         if self.currently_in_file:
-            self.addfromfile(b"c")
+            self._add_from_file(b"c")
             if not self.currently_in_file:
                 self.rorps_in_buffer += 1
         else:
@@ -348,31 +351,31 @@ class MiscIterToFile(FileWrappingIter):
                 try:
                     currentobj = next(self.iter)
                 except StopIteration:
-                    self.addfinal()
+                    self._add_final()
                     return None
 
             if hasattr(currentobj, "read") and hasattr(currentobj, "close"):
                 self.currently_in_file = currentobj
-                self.addfromfile(b"f")
+                self._add_from_file(b"f")
             elif currentobj is MiscIterFlush:
                 return None
             elif currentobj is MiscIterFlushRepeat:
-                self.add_misc(currentobj)
+                self._add_misc_object(currentobj)
                 return None
             elif isinstance(currentobj, rpath.RORPath):
-                self.addrorp(currentobj)
+                self._add_rorp(currentobj)
             else:
-                self.add_misc(currentobj)
+                self._add_misc_object(currentobj)
         return 1
 
-    def add_misc(self, obj):
+    def _add_misc_object(self, obj):
         """Add an arbitrary pickleable object to the buffer"""
         pickled_data = pickle.dumps(obj, 1)
         self.array_buf.frombytes(b"o")
         self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
         self.array_buf.frombytes(pickled_data)
 
-    def addrorp(self, rorp):
+    def _add_rorp(self, rorp):
         """Add a rorp to the buffer"""
         if rorp.file:
             pickled_data = pickle.dumps((rorp.index, rorp.data, 1), 1)
@@ -384,13 +387,10 @@ class MiscIterToFile(FileWrappingIter):
         self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
         self.array_buf.frombytes(pickled_data)
 
-    def addfinal(self):
+    def _add_final(self):
         """Signal the end of the iterator to the other end"""
         self.array_buf.frombytes(b"z")
         self.array_buf.frombytes(self._i2b(0, 7))
-
-    def close(self):
-        self.closed = 1
 
 
 class FileToMiscIter(IterWrappingFile):
@@ -413,22 +413,22 @@ class FileToMiscIter(IterWrappingFile):
         if type == b"z":
             raise StopIteration
         elif type == b"r":
-            return self.get_rorp(data)
+            return self._get_rorp(data)
         elif type == b"o":
             return data
         else:
             raise IterFileException("Bad file type %s" % (type, ))
 
-    def get_rorp(self, pickled_tuple):
+    def _get_rorp(self, pickled_tuple):
         """Return rorp that data represents"""
         index, data_dict, num_files = pickled_tuple
         rorp = rpath.RORPath(index, data_dict)
         if num_files:
             assert num_files == 1, "Only one file accepted right now"
-            rorp.setfile(self.get_file())
+            rorp.setfile(self._get_file())
         return rorp
 
-    def get_file(self):
+    def _get_file(self):
         """Read file object from file"""
         type, data = self._get()
         if type == b"f":
