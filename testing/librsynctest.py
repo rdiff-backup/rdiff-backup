@@ -88,7 +88,7 @@ class LibrsyncTest(unittest.TestCase):
                     if not buf:
                         break
                     sig_gen.update(buf)
-                siggen_string = sig_gen.getsig()
+                siggen_string = sig_gen.get_sig()
 
             assert sigfile_string == siggen_string, \
                 (len(sigfile_string), len(siggen_string))
