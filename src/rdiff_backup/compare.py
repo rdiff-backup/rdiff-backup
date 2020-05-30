@@ -117,7 +117,7 @@ def _get_hash(repo_rorp):
     """ Try to get a sha1 digest from the repository.  If hardlinks
     are saved in the metadata, get the sha1 from the first hardlink """
     Hardlink.add_rorp(repo_rorp)
-    if Hardlink.islinked(repo_rorp):
+    if Hardlink.is_linked(repo_rorp):
         verify_sha1 = Hardlink.get_sha1(repo_rorp)
     elif repo_rorp.has_sha1():
         verify_sha1 = repo_rorp.get_sha1()

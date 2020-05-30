@@ -214,7 +214,7 @@ class DestinationStruct:
     def _get_one_sig(cls, dest_base_rpath, index, src_rorp, dest_rorp):
         """Return a signature given source and destination rorps"""
         if (Globals.preserve_hardlinks and src_rorp
-                and Hardlink.islinked(src_rorp)):
+                and Hardlink.is_linked(src_rorp)):
             dest_sig = rpath.RORPath(index)
             dest_sig.flaglinked(Hardlink.get_link_index(src_rorp))
         elif dest_rorp:

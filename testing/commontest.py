@@ -293,38 +293,38 @@ def CompareRecursive(src_rp,
         if not src_rorp.isreg() or not dest_rorp.isreg() or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1:
             if not rorp_eq:
                 Log("Hardlink compare error with when no links exist exist", 3)
-                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+                Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+                Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
                 return 0
-        elif src_rorp.getnumlinks() > 1 and not Hardlink.islinked(src_rorp):
+        elif src_rorp.getnumlinks() > 1 and not Hardlink.is_linked(src_rorp):
             if rorp_eq:
                 Log("Hardlink compare error with first linked src_rorp and no dest_rorp sha1", 3)
-                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+                Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+                Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
                 return 0
             hash.compute_sha1(dest_rorp)
             rorp_eq = Hardlink.rorp_eq(src_rorp, dest_rorp)
             if src_rorp.getnumlinks() != dest_rorp.getnumlinks():
                 if rorp_eq:
                     Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with differing link counts", 3)
-                    Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-                    Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+                    Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+                    Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
                     return 0
             elif not rorp_eq:
                 Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with equal link counts", 3)
-                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+                Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+                Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
                 return 0
         elif src_rorp.getnumlinks() != dest_rorp.getnumlinks():
             if rorp_eq:
                 Log("Hardlink compare error with non-first linked src_rorp and with differing link counts", 3)
-                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+                Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+                Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
                 return 0
         elif not rorp_eq:
             Log("Hardlink compare error with non-first linked src_rorp and with equal link counts", 3)
-            Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-            Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+            Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+            Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
             return 0
         Hardlink.del_rorp(src_rorp)
         Hardlink.del_rorp(dest_rorp)
@@ -398,8 +398,8 @@ def CompareRecursive(src_rp,
         elif src_rorp.equal_verbose(dest_rorp,
                                     compare_ownership=compare_ownership):
             return 1
-        Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-        Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+        Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+        Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
         return None
 
 

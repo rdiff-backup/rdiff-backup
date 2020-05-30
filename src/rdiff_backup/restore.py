@@ -292,7 +292,7 @@ class MirrorStruct:
         """Get a diff for mir_rorp at time"""
         if not mir_rorp:
             mir_rorp = rpath.RORPath(target_rorp.index)
-        elif Globals.preserve_hardlinks and Hardlink.islinked(mir_rorp):
+        elif Globals.preserve_hardlinks and Hardlink.is_linked(mir_rorp):
             mir_rorp.flaglinked(Hardlink.get_link_index(mir_rorp))
         elif mir_rorp.isreg():
             expanded_index = cls.mirror_base.index + mir_rorp.index
