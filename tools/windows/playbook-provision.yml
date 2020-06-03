@@ -72,5 +72,7 @@
   become: true
   gather_facts: true
   roles:
-  - bertvv.rh-base
-  - bertvv.samba
+    #- bertvv.rh-base
+  - rh-base
+    #- bertvv.samba
+  - samba

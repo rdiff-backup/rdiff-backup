@@ -1,0 +1,22 @@
+# roles/rh-base/handlers/main.yml
+---
+
+- name: restart journald
+  service:
+    name: systemd-journald
+    state: restarted
+
+- name: restart firewalld
+  service:
+    name: firewalld
+    state: restarted
+
+- name: restart updates
+  service:
+    name: "{{ rhbase_updates_service }}"
+    state: restarted
+
+- name: restart sshd
+  service:
+    name: sshd
+    state: restarted

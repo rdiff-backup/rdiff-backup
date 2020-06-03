@@ -1,0 +1,41 @@
+# rhbase/tasks/services.yml
+# Make sure the necessary services are enabled
+---
+- name: Services | Ensure SSH daemon is running
+  service:
+    name: sshd
+    enabled: true
+    state: started
+  tags:
+    - rhbase
+    - services
+
+- name: Services | Ensure `/var/log/journal` exists
+  file:
+    path: /var/log/journal
+    state: directory
+  notify:
+    - restart journald
+  tags:
+    - rhbase
+    - services
+
+- name: Services | Ensure specified services are running
+  service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  with_items: "{{ rhbase_start_services }}"
+  tags:
+    - rhbase
+    - services
+
+- name: Services | Ensure specified services are NOT running
+  service:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  with_items: "{{ rhbase_stop_services }}"
+  tags:
+    - rhbase
+    - services

@@ -1,0 +1,63 @@
+# roles/rh-base/defaults/main.yml
+---
+
+# Package management
+rhbase_enable_repos: []
+rhbase_install_packages: []
+rhbase_remove_packages: []
+rhbase_repo_exclude: []
+rhbase_repo_gpgcheck: false
+rhbase_repo_installonly_limit: 3
+rhbase_repo_remove_dependencies: true
+rhbase_repo_exclude_from_update: []
+rhbase_repositories: []
+rhbase_update: false
+
+# Automatic updates
+rhbase_automatic_updates: false
+
+rhbase_updates_type: default
+rhbase_updates_random_sleep: 360
+rhbase_updates_download: true
+rhbase_updates_apply: true
+rhbase_updates_message: true
+rhbase_updates_emit_via: stdio
+rhbase_updates_email_from: root
+rhbase_updates_email_to: root
+rhbase_updates_email_host: localhost
+rhbase_updates_debuglevel: 0
+
+# Yum-cron
+rhbase_yum_cron_hourly_sleep_time: 15
+rhbase_yum_cron_hourly_update_level: minimal
+rhbase_yum_cron_hourly_update_messages: true
+rhbase_yum_cron_hourly_download_updates: true
+rhbase_yum_cron_hourly_install_updates: false
+
+# Configuration
+rhbase_override_firewalld_zones: false
+rhbase_hosts_entry: false
+rhbase_motd: false
+rhbase_tz: :/etc/localtime
+rhbase_dynamic_motd: false
+rhbase_ssh_hostbasedauthentication: 'no'
+rhbase_ssh_ignorerhosts: 'yes'
+rhbase_ssh_permitemptypasswords: 'no'
+rhbase_ssh_protocol_version: 2
+rhbase_ssh_rhostsrsaauthentication: 'no'
+
+# Services
+rhbase_start_services: []
+rhbase_stop_services: []
+
+# Security
+rhbase_firewall_allow_services: []
+rhbase_firewall_allow_ports: []
+rhbase_firewall_interfaces: []
+rhbase_selinux_state: enforcing
+rhbase_selinux_booleans: []
+
+# Users
+rhbase_users: []
+rhbase_user_groups: []
+rhbase_ssh_allow_groups: []

@@ -1,0 +1,92 @@
+# roles/rhbase/tasks/install.yml
+#
+# Install custom repositories and packages. Repositories should be installed
+# using an RPM package. A list of URLs to the RPMs for these repositories
+# should be specified in group_vars or host_vars.
+---
+- name: Install | Check minimal value of ‘rhbase_repo_installonly_limit’ (>= 2)
+  debug:
+    msg: >-
+      The value of ‘rhbase_repo_installonly_limit’ should be at least 2,
+      actual value is {{ rhbase_repo_installonly_limit }}.
+  failed_when: rhbase_repo_installonly_limit < 2
+  tags:
+    - rhbase
+    - install
+
+- name: Install | Ensure the machine-ID is available
+  command: systemd-machine-id-setup
+  args:
+    creates: /etc/machine-id
+  tags: rhbase
+
+- name: Install | Ensure basic systemd services are running
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  with_items: "{{ rhbase_systemd_services }}"
+  tags: rhbase
+
+- name: Install | Role/Ansible dependencies
+  package:
+    name: "{{ rhbase_dependencies }}"
+    state: installed
+  tags:
+    - rhbase
+    - install
+
+- name: Install | Package management configuration ({{ rhbase_package_manager }})
+  template:
+    src: "etc_{{ rhbase_package_manager }}.conf.j2"
+    dest: "{{ rhbase_package_manager_configuration }}"
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - rhbase
+    - install
+
+- name: Install | Ensure specified external repositories are installed
+  package:
+    name: "{{ rhbase_repositories }}"
+    state: installed
+  tags:
+    - rhbase
+    - install
+
+- name: Install | Ensure specified repositories are enabled
+  lineinfile:
+    dest: "/etc/yum.repos.d/{{ item }}.repo"
+    line: 'enabled=1'
+    state: present
+    regexp: '^enabled='
+  with_items: "{{ rhbase_enable_repos }}"
+  tags:
+    - rhbase
+    - install
+
+- name: Install | Ensure specified packages are installed
+  package:
+    name: "{{ rhbase_install_packages }}"
+    state: installed
+  tags:
+    - rhbase
+    - install
+
+- name: Install | Ensure specified packages are NOT installed
+  package:
+    name: "{{ rhbase_remove_packages }}"
+    state: absent
+  tags:
+    - rhbase
+    - install
+
+- name: Install | Ensure all updates are installed
+  package:
+    name: '*'
+    state: latest
+  when: rhbase_update
+  tags:
+    - rhbase
+    - install

@@ -1,0 +1,42 @@
+# roles/rhbase/tasks/users.yml
+#
+# Create groups and users on the system
+---
+- name: Users | Process groups
+  set_fact:
+    rhbase_user_groups: "{{ rhbase_user_groups }} + {{ item.groups|default([]) }}"
+  with_items: "{{ rhbase_users }}"
+  tags:
+    - rhbase
+    - users
+
+- name: Users | Add groups
+  group:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ rhbase_user_groups | unique }}"
+  tags:
+    - rhbase
+    - users
+
+- name: Users | Add users
+  user:
+    name: "{{ item.name }}"
+    state: present
+    comment: "{{ item.comment|default('') }}"
+    shell: "{{ item.shell|default('/bin/bash') }}"
+    groups: "{{ ','.join(item.groups) if item.groups is defined else [] }}"
+    password: "{{ item.password|default('!!') }}"
+  with_items: "{{ rhbase_users }}"
+  tags:
+    - rhbase
+    - users
+
+- name: "Users | Set up SSH key for user {{ rhbase_ssh_user|default('(not specified)') }}"
+  authorized_key:
+    user: "{{ rhbase_ssh_user }}"
+    key: "{{ rhbase_ssh_key }}"
+  when: rhbase_ssh_user is defined
+  tags:
+    - rhbase
+    - users

@@ -1,0 +1,81 @@
+# roles/rhbase/tasks/security.yml
+#
+# Basic security settings
+---
+- name: Security | Make sure SELinux has the desired state ({{ rhbase_selinux_state }})
+  selinux:
+    policy: targeted
+    state: "{{ rhbase_selinux_state }}"
+  tags:
+    - rhbase
+    - security
+
+- name: Security | Enable SELinux booleans
+  seboolean:
+    name: "{{ item }}"
+    state: true
+    persistent: true
+  with_items: "{{ rhbase_selinux_booleans }}"
+  when: rhbase_selinux_state == 'enforcing' or rhbase_selinux_state == 'permissive'
+  tags:
+    - rhbase
+    - security
+
+- name: Security | Make sure the firewall is running
+  service:
+    name: firewalld
+    state: started
+    enabled: true
+  tags:
+    - rhbase
+    - security
+
+- name: Security | Make sure basic services can pass through firewall
+  firewalld:
+    service: "{{ item }}"
+    permanent: true
+    state: enabled
+  with_items:
+    - dhcpv6-client
+    - ssh
+  notify:
+    - restart firewalld
+  tags:
+    - rhbase
+    - security
+
+- name: Security | Make sure user specified services can pass through firewall
+  firewalld:
+    service: "{{ item }}"
+    permanent: true
+    state: enabled
+  with_items: "{{ rhbase_firewall_allow_services }}"
+  notify:
+    - restart firewalld
+  tags:
+    - rhbase
+    - security
+
+- name: Security | Make sure user specified ports can pass through firewall
+  firewalld:
+    port: "{{ item }}"
+    permanent: true
+    state: enabled
+  with_items: "{{ rhbase_firewall_allow_ports }}"
+  notify:
+    - restart firewalld
+  tags:
+    - rhbase
+    - security
+- name: Security | Make sure specified interfaces are added
+  firewalld:
+    interface: "{{ item }}"
+    zone: public
+    permanent: true
+    state: enabled
+  with_items: "{{ rhbase_firewall_interfaces }}"
+  notify:
+    - restart firewalld
+  tags:
+    - rhbase
+    - security
