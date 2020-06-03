@@ -1,6 +1,6 @@
 ---
 - name: Build rdiff-backup on a prepared Windows
-  hosts: all
+  hosts: windows_builders
   gather_facts: false
   tasks:
     - name: make sure working directory {{ working_dir }} exists

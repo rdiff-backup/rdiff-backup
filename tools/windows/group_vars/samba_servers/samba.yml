@@ -1,0 +1,12 @@
+---
+samba_users:
+- name: vagrant
+  password: vagrant
+
+samba_shares:
+  - name: readonlyshare
+    browseable: true
+  - name: readwriteshare
+    browseable: true
+    group: vagrant
+    write_list: +vagrant

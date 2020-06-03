@@ -1,0 +1,3 @@
+---
+rhbase_firewall_allow_services:
+- samba

@@ -1,0 +1,4 @@
+---
+# ansible-galaxy install --roles-path roles -r roles/requirements.yml
+- src: bertvv.rh-base
+- src: bertvv.samba

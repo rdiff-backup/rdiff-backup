@@ -1,6 +1,6 @@
 ---
 - name: Prepare Windows for rdiff-backup development
-  hosts: all
+  hosts: windows_hosts
   gather_facts: false
   tasks:
   - name: enable running chocolatey scripts without confirmation
@@ -10,7 +10,7 @@
   - name: install basis development tools via chocolatey
     win_chocolatey:
       name:
-      - virtio-drivers
+      #- virtio-drivers
       - git
       - cygwin
       - cyg-get  # depends on cygwin
@@ -66,3 +66,11 @@
       name: Pscx
       state: present
       allow_clobber: true
+
+- name: Prepare Linux to be used as Samba server
+  hosts: samba_servers
+  become: true
+  gather_facts: true
+  roles:
+  - bertvv.rh-base
+  - bertvv.samba
