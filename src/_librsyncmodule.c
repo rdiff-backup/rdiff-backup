@@ -20,7 +20,7 @@
  *   02110-1301, USA
  *
  * ----------------------------------------------------------------------- */
-
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <librsync.h>
 #define RS_JOB_BLOCKSIZE 65536
@@ -50,7 +50,7 @@ static PyObject*
 _librsync_new_sigmaker(PyObject* self, PyObject* args)
 {
   _librsync_SigMakerObject* sm;
-  long blocklen;
+  Py_ssize_t blocklen;
 
   if (!PyArg_ParseTuple(args, "l:new_sigmaker", &blocklen))
 	return NULL;
@@ -85,7 +85,7 @@ static PyObject *
 _librsync_sigmaker_cycle(_librsync_SigMakerObject *self, PyObject *args)
 {
   char *inbuf, outbuf[RS_JOB_BLOCKSIZE];
-  int inbuf_length;
+  Py_ssize_t inbuf_length;
   rs_buffers_t buf;
   rs_result result;
 
@@ -201,19 +201,16 @@ _librsync_new_deltamaker(PyObject* self, PyObject* args)
 {
   _librsync_DeltaMakerObject* dm;
   char *sig_string, outbuf[RS_JOB_BLOCKSIZE];
-  int sig_length;
+  Py_ssize_t sig_length;
   rs_job_t *sig_loader;
   rs_signature_t *sig_ptr;
   rs_buffers_t buf;
   rs_result result;
-
   if (!PyArg_ParseTuple(args,"y#:new_deltamaker", &sig_string, &sig_length))
 	return NULL;
-
   dm = PyObject_New(_librsync_DeltaMakerObject, &_librsync_DeltaMakerType);
   if (dm == NULL) return NULL;
   dm->x_attr = NULL;
-
   /* Put signature at sig_ptr and build hash */
   sig_loader = rs_loadsig_begin(&sig_ptr);
   buf.next_in = sig_string;
@@ -257,7 +254,7 @@ static PyObject *
 _librsync_deltamaker_cycle(_librsync_DeltaMakerObject *self, PyObject *args)
 {
   char *inbuf, outbuf[RS_JOB_BLOCKSIZE];
-  int inbuf_length;
+  Py_ssize_t inbuf_length;
   rs_buffers_t buf;
   rs_result result;
 
@@ -429,7 +426,7 @@ static PyObject *
 _librsync_patchmaker_cycle(_librsync_PatchMakerObject *self, PyObject *args)
 {
   char *inbuf, outbuf[RS_JOB_BLOCKSIZE];
-  int inbuf_length;
+  Py_ssize_t inbuf_length;
   rs_buffers_t buf;
   rs_result result;
 
