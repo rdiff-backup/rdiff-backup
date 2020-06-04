@@ -71,6 +71,10 @@
   hosts: samba_servers
   become: true
   gather_facts: true
+  pre_tasks:
+  - name: set hostname of server
+    hostname:
+      name: "{{ inventory_hostname_short }}.vagrant.example.com"
   roles:
     #- bertvv.rh-base
   - rh-base

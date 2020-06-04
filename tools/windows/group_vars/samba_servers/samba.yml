@@ -10,3 +10,5 @@ samba_shares:
     browseable: true
     group: vagrant
     write_list: +vagrant
+
+samba_netbios_name: "{{ inventory_hostname_short }}"
