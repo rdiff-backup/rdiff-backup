@@ -1,0 +1,20 @@
+# roles/rh-base/vars/Fedora.yml
+---
+rhbase_systemd_services:
+  - systemd-journald.service
+  - systemd-tmpfiles-setup-dev.service
+  - systemd-tmpfiles-setup.service
+
+rhbase_dependencies:
+  - firewalld
+  - python3-firewall
+  - python3-libsemanage
+
+rhbase_package_manager: dnf
+rhbase_package_manager_configuration: /etc/dnf/dnf.conf
+
+rhbase_updates_packages:
+  - dnf-automatic
+rhbase_updates_service: dnf-automatic.timer
+rhbase_updates_config:
+  - automatic.conf

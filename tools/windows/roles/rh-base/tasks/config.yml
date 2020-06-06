@@ -1,0 +1,146 @@
+# roles/rhbase/tasks/config.yml
+---
+
+# This speeds up the Gathering Facts phase and several other situations where
+# a DNS lookup is performed on the host name.
+- name: Config | Ensure host name is in the hosts file
+  lineinfile:
+    dest: /etc/hosts
+    state: present
+    line: "{{ ansible_all_ipv4_addresses|last }} {{ ansible_hostname }} {{ ansible_hostname }}.{{ ansible_domain }}"
+    regexp: "{{ ansible_hostname }}"
+  when: rhbase_hosts_entry
+  tags:
+    - rhbase
+    - config
+
+- name: Config | Install dependency for dynamic MotD
+  package:
+    name: 'figlet'
+    state: present
+  when: rhbase_dynamic_motd
+  tags:
+    - rhbase
+    - config
+
+- name: Config | Install script generating dynamic MotD
+  copy:
+    src: dynamic-motd.sh
+    dest: /etc/profile.d/dynamic-motd.sh
+    owner: root
+    group: root
+    mode: 0644
+  when: rhbase_dynamic_motd
+  tags:
+    - rhbase
+    - config
+
+# Workaround for bug https://bugs.centos.org/view.php?id=7407
+# NetworkManager by default manages firewall zones, which overrides rules you
+# add with --permanent.
+
+- name: Config | Check if ifup-eth script overrides firewall zone
+  shell: 'grep "Inform firewall which network zone" /etc/sysconfig/network-scripts/ifup-eth'
+  register: ifup_eth_match
+  when: not rhbase_override_firewalld_zones
+  changed_when: false
+  failed_when: false
+  tags:
+    - rhbase
+    - config
+
+- name: Config | Don’t override firewall zone in ifup-eth script
+  shell: "sed -i -e '/Inform firewall which network zone/,+4d' /etc/sysconfig/network-scripts/ifup-eth"
+  when: not rhbase_override_firewalld_zones and ifup_eth_match.stdout != ''
+  tags:
+    - rhbase
+    - config
+
+- name: Config | Check if ifup-post script overrides firewall zone
+  shell: 'grep "Inform firewall which network zone" /etc/sysconfig/network-scripts/ifup-post'
+  register: ifup_post_match
+  when: not rhbase_override_firewalld_zones
+  changed_when: false
+  failed_when: false
+  tags:
+    - rhbase
+    - config
+
+- name: Config | Don’t override firewall zone in ifup-post script
+  shell: "sed -i -e '/Inform firewall which network zone/,+4d' /etc/sysconfig/network-scripts/ifup-post"
+  when: not rhbase_override_firewalld_zones and ifup_post_match.stdout != ''
+  tags:
+    - rhbase
+    - config
+
+- name: Config | Set the TZ environment variable
+  template:
+    src: etc_profile.d_localtime.j2
+    dest: /etc/profile.d/localtime.sh
+  tags:
+    - rhbase
+    - config
+
+- name: Config | Set protocol version for SSH
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    state: present
+    create: yes
+    regexp: '^Protocol'
+    line: "Protocol {{rhbase_ssh_protocol_version}}"
+  notify: restart sshd
+  tags:
+    - rhbase
+    - config
+
+- name: Config | Set PermitEmptyPasswords
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    state: present
+    create: yes
+    regexp: '^PermitEmptyPasswords'
+    insertafter: '^#PermitEmptyPasswords'
+    line: "PermitEmptyPasswords {{ rhbase_ssh_permitemptypasswords }}"
+  notify: restart sshd
+  tags:
+    - rhbase
+    - config
+
+- name: Config | Set IgnoreRhosts
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    state: present
+    create: yes
+    regexp: '^IgnoreRhosts'
+    insertafter: '^#IgnoreRhosts'
+    line: "IgnoreRhosts {{ rhbase_ssh_ignorerhosts }}"
+  notify: restart sshd
+  tags:
+    - rhbase
+    - config
+
+- name: Config | Set HostbasedAuthentication
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    state: present
+    create: yes
+    regexp: '^HostbasedAuthentication'
+    insertafter: '^#HostbasedAuthentication'
+    line: "HostbasedAuthentication {{ rhbase_ssh_hostbasedauthentication }}"
+  notify: restart sshd
+  tags:
+    - rhbase
+    - config
+
+- name: Config | Set RhostsRSAAuthentication
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    state: present
+    create: yes
+    regexp: '^RhostsRSAAuthentication'
+    insertafter: '^#RhostsRSAAuthentication'
+    line: "RhostsRSAAuthentication {{ rhbase_ssh_rhostsrsaauthentication }}"
+  notify: restart sshd
+  tags:
+    - rhbase
+    - config

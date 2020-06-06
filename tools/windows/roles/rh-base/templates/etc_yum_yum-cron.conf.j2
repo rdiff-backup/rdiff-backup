@@ -1,0 +1,28 @@
+# Yum-cron automatic updates configuration
+# {{ ansible_managed }}
+[commands]
+update_cmd = {{ rhbase_updates_type }}
+random_sleep = {{ rhbase_updates_random_sleep }}
+download_updates = {{ 'yes' if rhbase_updates_download else 'no' }}
+apply_updates = {{ 'yes' if rhbase_updates_apply else 'no' }}
+update_messages = {{ 'yes' if rhbase_updates_message else 'no' }}
+
+[emitters]
+system_name = {{ ansible_hostname }}
+emit_via = {{ rhbase_updates_emit_via }}
+output_width = 80
+
+[email]
+email_from = {{ rhbase_updates_email_from }}
+email_to = {{ rhbase_updates_email_to }}
+email_host = {{ rhbase_updates_email_host }}
+
+[groups]
+group_list = None
+group_package_types = mandatory, default
+
+[base]
+debuglevel = -{{ rhbase_updates_debuglevel }}
+mdpolicy = group:main
+
+## vim: ft=dosini

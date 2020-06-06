@@ -1,0 +1,50 @@
+# Yum-cron hourly task configuration
+# {{ ansible_managed }}
+[commands]
+#  What kind of update to use:
+# default                            = yum upgrade
+# security                           = yum --security upgrade
+# security-severity:Critical         = yum --sec-severity=Critical upgrade
+# minimal                            = yum --bugfix update-minimal
+# minimal-security                   = yum --security update-minimal
+# minimal-security-severity:Critical =  --sec-severity=Critical update-minimal
+update_cmd = {{ rhbase_yum_cron_hourly_update_level }}
+
+# Whether a message should emitted when updates are available.
+update_messages = {{ 'yes' if rhbase_yum_cron_hourly_update_messages else 'no' }}
+
+# Whether updates should be downloaded when they are available. Note
+# that updates_messages must also be yes for updates to be downloaded.
+download_updates = {{ 'yes' if rhbase_yum_cron_hourly_download_updates else 'no' }}
+
+# Whether updates should be applied when they are available.  Note
+# that both update_messages and download_updates must also be yes for
+# the update to be applied
+apply_updates = {{ 'yes' if rhbase_yum_cron_hourly_install_updates else 'no' }}
+
+# Maximum amout of time to randomly sleep, in minutes.  The program
+# will sleep for a random amount of time between 0 and random_sleep
+# minutes before running.  This is useful for e.g. staggering the
+# times that multiple systems will access update servers.  If
+# random_sleep is 0 or negative, the program will run immediately.
+random_sleep = {{ rhbase_yum_cron_hourly_sleep_time }}
+
+[emitters]
+system_name = {{ ansible_hostname }}
+emit_via = {{ rhbase_updates_emit_via }}
+output_width = 80
+
+[email]
+email_from = {{ rhbase_updates_email_from }}
+email_to = {{ rhbase_updates_email_to }}
+email_host = {{ rhbase_updates_email_host }}
+
+[groups]
+group_list = None
+group_package_types = mandatory, default
+
+[base]
+debuglevel = -{{ rhbase_updates_debuglevel }}
+mdpolicy = group:main
+
+## vim: ft=dosini

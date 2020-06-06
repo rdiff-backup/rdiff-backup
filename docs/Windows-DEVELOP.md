@@ -29,7 +29,7 @@ Use Windows Update to upgrade your system. Then proceed with the installation.
 
 ### Python 3
 
-[Download Python 3.7.5 x86](https://www.python.org/ftp/python/3.7.3/python-3.7.3-amd64.exe)
+[Download Python 3.7.5 x86](https://www.python.org/ftp/python/3.7.5/python-3.7.5.exe)
 
 1. Check "Add Python 3.7 to PATH"
 2. Choose "Customize instalation" to select the installation path.

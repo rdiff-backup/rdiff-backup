@@ -75,6 +75,16 @@ If you do changes to the source code, just rebuild using one or both playbooks a
 
 > **NOTE**: If you do changes outside of the VM, you'll need to do `git pull` on your own, the playbooks doesn't (yet) take care of it for you.
 
+## Samba server
+
+If you need a samba server to do some specific tests, you can simply call
+explicitly `vagrant up samba`, followed by something like `vagrant ssh samba`
+to log onto the machine.
+
+There are 2 shares available, one `\\samba\readonlyshare` and one `\\samba\readwriteshare`,
+(the difference should be obvious), which you can map on the Windows VM using
+a command like `net use x: \\samba\whichevershare` (or use directly).
+
 ## Miscellaneous considerations
 
 ### Vagrant and Ansible
