@@ -1,0 +1,33 @@
+# roles/rhbase/tasks/yum-cron.yml
+#
+# Settings regarding yum-cron
+---
+- name: Updates | Install automatic updates service ({{ rhbase_updates_service }})
+  package:
+    name: "{{ rhbase_updates_packages }}"
+    state: present
+  tags:
+    - rhbase
+    - updates
+
+- name: Updates | Install automatic updates configuration
+  template:
+    src: "etc_{{ rhbase_package_manager }}_{{ item }}.j2"
+    dest: "/etc/{{ rhbase_package_manager }}/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items: "{{ rhbase_updates_config }}"
+  notify: restart updates
+  tags:
+    - rhbase
+    - updates
+
+- name: Updates | Ensure automatic updates service is running
+  service:
+    name: "{{ rhbase_updates_service }}"
+    state: started
+    enabled: true
+  tags:
+    - rhbase
+    - updates
