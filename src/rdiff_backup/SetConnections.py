@@ -298,7 +298,9 @@ def TestConnections(rpaths):
     if len(Globals.connections) == 1:
         print("No remote connections specified")
     else:
-        assert len(Globals.connections) == len(rpaths) + 1
+        assert len(Globals.connections) == len(rpaths) + 1, \
+            "All %d parameters must be remote of the form 'server::path'." % \
+            len(rpaths)
         for i in range(1, len(Globals.connections)):
             test_connection(i, rpaths[i - 1])
 
