@@ -45,6 +45,7 @@ from . import Globals, Time, log, user_group, C
 try:
     import win32api
     import win32con
+    import pywintypes
 except ImportError:
     pass
 
@@ -385,6 +386,9 @@ def make_file_dict(filename):
     try:
         statblock = os.lstat(filename)
     except (FileNotFoundError, NotADirectoryError):
+        # FIXME not sure if this shouldn't trigger a warning but doing it
+        # generates (too) many messages during the tests
+        # log.Log("Warning: missing file '%s' couldn't be assessed." % filename, 2)
         return {'type': None}
     data = {}
     mode = statblock[stat.ST_MODE]
@@ -422,7 +426,18 @@ def make_file_dict(filename):
     data['nlink'] = statblock[stat.ST_NLINK]
 
     if os.name == 'nt':
-        attribs = win32api.GetFileAttributes(os.fsdecode(filename))
+        try:
+            attribs = win32api.GetFileAttributes(os.fsdecode(filename))
+        except pywintypes.error as exc:
+            if (exc.args[0] == 32):  # file in use
+                # we could also ignore with: return {'type': None}
+                # but this approach seems to be better handled
+                attribs = 0
+            else:
+                # we replace the specific Windows exception by a generic
+                # one also understood by a potential Linux client/server
+                raise OSError(None, exc.args[1] + " - " + exc.args[2],
+                              filename, exc.args[0]) from None
         if attribs & win32con.FILE_ATTRIBUTE_REPARSE_POINT:
             data['type'] = 'sym'
             data['linkname'] = None
