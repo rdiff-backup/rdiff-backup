@@ -25,6 +25,7 @@ the related connections.
 """
 
 import os
+import re
 import sys
 import subprocess
 from .log import Log
@@ -107,43 +108,34 @@ def parse_file_desc(file_desc):
 
     """
 
-    def check_len(i):
-        if i >= len(file_desc):
-            raise SetConnectionsException(
-                "Unexpected end to file description %s" % file_desc)
+    # paths and similar objects must always be bytes
+    file_desc = os.fsencode(file_desc)
+    # match double colon not preceded by an odd number of backslashes
+    file_match = re.fullmatch(rb"^(?P<host>.*[^\\](?:\\\\)*)::(?P<path>.*)$",
+                              file_desc)
+    if file_match:
+        file_host = file_match.group("host")
+        # According to description, the backslashes must be unquoted, i.e.
+        # double backslashes replaced by single ones, and single ones removed.
+        # Hence we split along double ones, remove single ones in each element,
+        # and join back with a single backslash.
+        file_host = b'\\'.join(
+            [x.replace(b'\\',b'') for x in re.split(rb'\\\\', file_host) if x])
+        file_path = file_match.group("path")
+    else:
+        if re.match(rb"^::", file_desc):
+            raise SetConnectionsException("No file host in '%s'" % file_desc)
+        file_host = None
+        file_path = file_desc
 
-    host_info_list, i, last_was_quoted = [], 0, None
-    file_desc = os.fsencode(
-        file_desc)  # paths and similar must always be bytes
-    while 1:
-        if i == len(file_desc):
-            # make sure paths under Windows use / instead of \
-            if os.path.altsep:  # only Windows has an alternative separator for paths
-                file_desc = file_desc.replace(os.fsencode(os.path.sep), b'/')
-            return (None, file_desc)
-
-        if file_desc[i] == ord(
-                '\\'):  # byte[n] is the numerical value hence ord
-            i = i + 1
-            check_len(i)
-            last_was_quoted = 1
-        elif (file_desc[i] == ord(":") and i > 0
-              and file_desc[i - 1] == ord(":") and not last_was_quoted):
-            host_info_list.pop()  # Remove last colon from name
-            break
-        else:
-            last_was_quoted = None
-        host_info_list.append(file_desc[i:i + 1])
-        i = i + 1
-
-    check_len(i + 1)
-
-    filename = file_desc[i + 1:]
     # make sure paths under Windows use / instead of \
     if os.path.altsep:  # only Windows has an alternative separator for paths
-        filename = filename.replace(os.fsencode(os.path.sep), b'/')
+        file_path = file_path.replace(os.fsencode(os.path.sep), b'/')
 
-    return (b"".join(host_info_list), filename)
+    if not file_path:
+        raise SetConnectionsException("No file path in '%s'" % file_desc)
+
+    return (file_host, file_path)
 
 
 def fill_schema(host_info):
