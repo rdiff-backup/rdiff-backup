@@ -120,7 +120,7 @@ def parse_file_desc(file_desc):
         # Hence we split along double ones, remove single ones in each element,
         # and join back with a single backslash.
         file_host = b'\\'.join(
-            [x.replace(b'\\',b'') for x in re.split(rb'\\\\', file_host) if x])
+            [x.replace(b'\\', b'') for x in re.split(rb'\\\\', file_host) if x])
         file_path = file_match.group("path")
     else:
         if re.match(rb"^::", file_desc):
