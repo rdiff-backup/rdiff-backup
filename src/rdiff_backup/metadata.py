@@ -145,14 +145,9 @@ def RORP2Record(rorpath):
     elif type == "sym":
         str_list.append(b"  SymData %b\n" % quote_path(rorpath.readlink()))
     elif type == "dev":
-        major, minor = rorpath.getdevnums()
-        if rorpath.isblkdev():
-            devchar = "b"
-        else:
-            assert rorpath.ischardev()
-            devchar = "c"
+        devchar, major, minor = rorpath.getdevnums()
         str_list.append(
-            b"  DeviceNum %b %i %i\n" % (devchar.encode(), major, minor))
+            b"  DeviceNum %b %i %i\n" % (devchar.encode('ascii'), major, minor))
 
     # Store time information
     if type != 'sym' and type != 'dev':
