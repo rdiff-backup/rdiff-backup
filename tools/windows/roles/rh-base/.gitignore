@@ -1,0 +1,19 @@
+# .gitignore
+
+# Hidden Vagrant-directory
+.vagrant
+
+# Backup files (e.g. Vim, Gedit, etc.)
+*~
+
+# Vagrant base boxes (you never know when someone puts one in the repository)
+*.box
+
+# Python artefacts
+.ropeproject
+*.pyc
+
+# Ignore test directory
+tests/
+vagrant-tests/
+docker-tests/

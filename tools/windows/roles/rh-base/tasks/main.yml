@@ -1,0 +1,18 @@
+# roles/rhbase/tasks/main.yml
+---
+
+- include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}{{ ansible_distribution_major_version }}.yml"
+    - "{{ ansible_os_family }}.yml"
+  tags: rhbase
+
+- include_tasks: install.yml   # Install repositories and packages
+- include_tasks: config.yml    # Configuration (/etc/)
+- include_tasks: services.yml  # Start/stop basic services
+- include_tasks: security.yml  # Security settings
+- include_tasks: users.yml     # Create users
+- include_tasks: admin.yml     # Admin user (a.o. SSH key)
+- include_tasks: auto-updates.yml  # Automatic updates
+  when: rhbase_automatic_updates

@@ -312,12 +312,12 @@ class FilenameOps(RPathTest):
         """Test getting file numbers"""
         if (os.path.exists(b'/dev/sda')):
             devnums = rpath.RPath(self.lc, b"/dev/sda", ()).getdevnums()
-            assert devnums == (8, 0), devnums
+            self.assertEqual(devnums, ('b', 8, 0))
         else:
             devnums = rpath.RPath(self.lc, b"/dev/nvme0n1", ()).getdevnums()
-            assert devnums == (259, 0), devnums
+            self.assertEqual(devnums, ('b', 259, 0))
         devnums = rpath.RPath(self.lc, b"/dev/tty2", ()).getdevnums()
-        assert devnums == (4, 2), devnums
+        self.assertEqual(devnums, ('c', 4, 2))
 
 
 class FileIO(RPathTest):
