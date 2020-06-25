@@ -928,7 +928,7 @@ def _require_root_set(rp, read_only):
 def _action_list_increment_sizes(rp):
     """Print out a summary of the increments """
     rp = _require_root_set(rp, 1)
-    print(manage.ListIncrementSizes(restore_root, _restore_index))
+    print(manage.list_increment_sizes(restore_root, _restore_index))
 
 
 def _action_calculate_average(rps):
