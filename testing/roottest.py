@@ -185,7 +185,7 @@ class RootTest(unittest.TestCase):
 
     def tearDown(self):
         # especially the logfile might still appear opened if a test was interrupted
-        Main.cleanup()
+        Main._cleanup()
 
 
 class HalfRoot(unittest.TestCase):

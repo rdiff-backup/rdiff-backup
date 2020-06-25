@@ -161,9 +161,9 @@ def InternalBackup(source_local,
         SetConnections.UpdateGlobal(attr, eas)
     for attr in ('acls_active', 'acls_write', 'acls_conn'):
         SetConnections.UpdateGlobal(attr, acls)
-    Main.misc_setup([rpin, rpout])
-    Main.Backup(rpin, rpout)
-    Main.cleanup()
+    Main._misc_setup([rpin, rpout])
+    Main._action_backup(rpin, rpout)
+    Main._cleanup()
 
 
 def InternalMirror(source_local, dest_local, src_dir, dest_dir):
@@ -199,8 +199,8 @@ def InternalRestore(mirror_local,
     the testing directory and will be modified for remote trials.
 
     """
-    Main.force = 1
-    Main.restore_root_set = 0
+    Main._force = 1
+    Main._restore_root_set = 0
     remote_schema = b'%s'
     Globals.security_level = "override"
     if not mirror_local:
@@ -216,14 +216,14 @@ def InternalRestore(mirror_local,
         SetConnections.UpdateGlobal(attr, eas)
     for attr in ('acls_active', 'acls_write', 'acls_conn'):
         SetConnections.UpdateGlobal(attr, acls)
-    Main.misc_setup([mirror_rp, dest_rp])
+    Main._misc_setup([mirror_rp, dest_rp])
     inc = get_increment_rp(mirror_rp, time)
     if inc:
-        Main.Restore(get_increment_rp(mirror_rp, time), dest_rp)
+        Main._action_restore(get_increment_rp(mirror_rp, time), dest_rp)
     else:  # use alternate syntax
-        Main.restore_timestr = str(time)
-        Main.Restore(mirror_rp, dest_rp, restore_as_of=1)
-    Main.cleanup()
+        Main._restore_timestr = str(time)
+        Main._action_restore(mirror_rp, dest_rp, restore_as_of=1)
+    Main._cleanup()
 
 
 def get_increment_rp(mirror_rp, time):
@@ -244,7 +244,7 @@ def _reset_connections(src_rp, dest_rp):
     Globals.security_level = "override"
     Globals.isbackup_reader = Globals.isbackup_writer = None
     SetConnections.UpdateGlobal('rbdir', None)
-    Main.misc_setup([src_rp, dest_rp])
+    Main._misc_setup([src_rp, dest_rp])
 
 
 def CompareRecursive(src_rp,
@@ -488,8 +488,8 @@ def MirrorTest(source_local,
     """Mirror each of list_of_dirnames, and compare after each"""
     Globals.set('preserve_hardlinks', compare_hardlinks)
     dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
-    old_force_val = Main.force
-    Main.force = 1
+    old_force_val = Main._force
+    Main._force = 1
 
     Myrm(dest_dirname)
     for dirname in list_of_dirnames:
@@ -500,7 +500,7 @@ def MirrorTest(source_local,
         InternalMirror(source_local, dest_local, dirname, dest_dirname)
         _reset_connections(src_rp, dest_rp)
         assert CompareRecursive(src_rp, dest_rp, compare_hardlinks)
-    Main.force = old_force_val
+    Main._force = old_force_val
 
 
 def raise_interpreter(use_locals=None):

@@ -181,7 +181,7 @@ class RestoreTest(unittest.TestCase):
 
     def tearDown(self):
         # especially the logfile might still appear opened if a test was interrupted
-        Main.cleanup()
+        Main._cleanup()
 
 
 if __name__ == "__main__":
