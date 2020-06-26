@@ -156,12 +156,9 @@ def copy(rpin, rpout, compress=0):
         rpout.symlink(rpin.readlink())
         if Globals.symlink_perms:
             os.umask(orig_umask)  # restore previous umask
-    elif rpin.ischardev():
-        major, minor = rpin.getdevnums()
-        rpout.makedev("c", major, minor)
-    elif rpin.isblkdev():
-        major, minor = rpin.getdevnums()
-        rpout.makedev("b", major, minor)
+    elif rpin.isdev():
+        dev_type, major, minor = rpin.getdevnums()
+        rpout.makedev(dev_type, major, minor)
     elif rpin.isfifo():
         rpout.mkfifo()
     elif rpin.issock():
@@ -214,10 +211,8 @@ def cmp(rpin, rpout):
         return rpout.isdir()
     elif rpin.issym():
         return rpout.issym() and (rpin.readlink() == rpout.readlink())
-    elif rpin.ischardev():
-        return rpout.ischardev() and (rpin.getdevnums() == rpout.getdevnums())
-    elif rpin.isblkdev():
-        return rpout.isblkdev() and (rpin.getdevnums() == rpout.getdevnums())
+    elif rpin.isdev():
+        return rpout.isdev() and (rpin.getdevnums() == rpout.getdevnums())
     elif rpin.isfifo():
         return rpout.isfifo()
     elif rpin.issock():
@@ -400,11 +395,11 @@ def make_file_dict(filename):
     elif stat.S_ISCHR(mode):
         type_ = 'dev'
         s = statblock.st_rdev
-        data['devnums'] = ('c', ) + (s >> 8, s & 0xff)
+        data['devnums'] = ('c', os.major(s), os.minor(s))
     elif stat.S_ISBLK(mode):
         type_ = 'dev'
         s = statblock.st_rdev
-        data['devnums'] = ('b', ) + (s >> 8, s & 0xff)
+        data['devnums'] = ('b', os.major(s), os.minor(s))
     elif stat.S_ISFIFO(mode):
         type_ = 'fifo'
     elif stat.S_ISLNK(mode):
@@ -866,8 +861,8 @@ class RORPath:
         return self.data['linkname']
 
     def getdevnums(self):
-        """Return a devices major/minor numbers from dictionary"""
-        return self.data['devnums'][1:]
+        """Return a device's type and major/minor numbers from dictionary"""
+        return self.data['devnums']
 
     def setfile(self, file):
         """Right now just set self.file to be the already opened file"""
