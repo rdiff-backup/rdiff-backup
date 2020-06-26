@@ -62,15 +62,24 @@ sudo apt install rdiff-backup
 sudo yum install yum-plugin-copr epel-release
 sudo yum copr enable frankcrawford/rdiff-backup
 sudo yum install rdiff-backup
+sudo yum install py3libacl pyxattr
 ```
+
+> **NOTE:** the last line is optional to get ACLs and EAs support.
 
 ### CentOS and RHEL 8 (From COPR)
 
 ```
-sudo yum install dnf-plugins-core epel-release
+sudo dnf install dnf-plugins-core epel-release
 sudo dnf copr enable frankcrawford/rdiff-backup
-sudo yum install rdiff-backup
+sudo dnf --enablerepo=PowerTools install rdiff-backup
 ```
+
+> **NOTE:** you can add the option `--setopt=install_weak_deps=False` to the
+	last line if you don't need ACLs and EAs support. You can install
+	`python3-pylibacl` and `python3-pyxattr` also separately.
+	Under RHEL, the repo to enable is [codeready-builder-for-rhel-8-x86_64-rpms](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/package_manifest/codereadylinuxbuilder-repository) in order to get access
+	to pyxattr, instead of PowerTools.
 
 ### Fedora 32+
 
