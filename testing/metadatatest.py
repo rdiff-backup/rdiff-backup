@@ -5,7 +5,7 @@ import time
 from commontest import old_test_dir, abs_output_dir, iter_equal
 from rdiff_backup import rpath, Globals, selection
 from rdiff_backup.metadata import MetadataFile, PatchDiffMan, \
-    quote_path, unquote_path, RORP2Record, Record2RORP, RorpExtractor
+    quote_path, unquote_path, RorpExtractor
 
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 
@@ -44,8 +44,8 @@ class MetadataTest(unittest.TestCase):
     def testRORP2Record(self):
         """Test turning RORPs into records and back again"""
         for rp in self.get_rpaths():
-            record = RORP2Record(rp)
-            new_rorp = Record2RORP(record)
+            record = MetadataFile._object_to_record(rp)
+            new_rorp = RorpExtractor._record_to_object(record)
             assert new_rorp == rp, (new_rorp, rp, record)
 
     def testIterator(self):
@@ -53,7 +53,7 @@ class MetadataTest(unittest.TestCase):
 
         def write_rorp_iter_to_file(rorp_iter, file):
             for rorp in rorp_iter:
-                file.write(RORP2Record(rorp))
+                file.write(MetadataFile._object_to_record(rorp))
 
         rplist = self.get_rpaths()
         fp = io.BytesIO()

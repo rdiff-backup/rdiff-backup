@@ -64,7 +64,7 @@ class ParsingError(Exception):
     pass
 
 
-def carbonfile2string(cfile):
+def _carbonfile2string(cfile):
     """Convert CarbonFile data to a string suitable for storing."""
     if not cfile:
         return "None"
@@ -80,9 +80,9 @@ def carbonfile2string(cfile):
     return '|'.join(retvalparts)
 
 
-def string2carbonfile(data):
+def _string2carbonfile(data):
     """Re-constitute CarbonFile data from a string stored by
-    carbonfile2string."""
+    _carbonfile2string."""
     retval = {}
     for component in data.split('|'):
         key, value = component.split(':')
@@ -100,153 +100,7 @@ def string2carbonfile(data):
     return retval
 
 
-def RORP2Record(rorpath):
-    """From RORPath, return text record of file's metadata"""
-    str_list = [b"File %s\n" % quote_path(rorpath.get_indexpath())]
-
-    # Store file type, e.g. "dev", "reg", or "sym", and type-specific data
-    type = rorpath.gettype()
-    if type is None:
-        type = "None"
-    str_list.append(b"  Type %b\n" % type.encode('ascii'))
-    if type == "reg":
-        str_list.append(b"  Size %i\n" % rorpath.getsize())
-
-        # If there is a resource fork, save it.
-        if rorpath.has_resource_fork():
-            if not rorpath.get_resource_fork():
-                rf = b"None"
-            else:
-                rf = binascii.hexlify(rorpath.get_resource_fork())
-            str_list.append(b"  ResourceFork %b\n" % (rf, ))
-
-        # If there is Carbon data, save it.
-        if rorpath.has_carbonfile():
-            cfile = carbonfile2string(rorpath.get_carbonfile())
-            str_list.append(b"  CarbonFile %b\n" % (cfile, ))
-
-        # If file is hardlinked, add that information
-        if Globals.preserve_hardlinks != 0:
-            numlinks = rorpath.getnumlinks()
-            if numlinks > 1:
-                str_list.append(b"  NumHardLinks %i\n" % numlinks)
-                str_list.append(b"  Inode %i\n" % rorpath.getinode())
-                str_list.append(b"  DeviceLoc %i\n" % rorpath.getdevloc())
-
-        # Save any hashes, if available
-        if rorpath.has_sha1():
-            str_list.append(
-                b'  SHA1Digest %b\n' % rorpath.get_sha1().encode('ascii'))
-
-    elif type == "None":
-        return b"".join(str_list)
-    elif type == "dir" or type == "sock" or type == "fifo":
-        pass
-    elif type == "sym":
-        str_list.append(b"  SymData %b\n" % quote_path(rorpath.readlink()))
-    elif type == "dev":
-        devchar, major, minor = rorpath.getdevnums()
-        str_list.append(
-            b"  DeviceNum %b %i %i\n" % (devchar.encode('ascii'), major, minor))
-
-    # Store time information
-    if type != 'sym' and type != 'dev':
-        str_list.append(b"  ModTime %i\n" % rorpath.getmtime())
-
-    # Add user, group, and permission information
-    uid, gid = rorpath.getuidgid()
-    str_list.append(b"  Uid %i\n" % uid)
-    str_list.append(b"  Uname %b\n" % (rorpath.getuname() or ":").encode())
-    str_list.append(b"  Gid %i\n" % gid)
-    str_list.append(b"  Gname %b\n" % (rorpath.getgname() or ":").encode())
-    str_list.append(b"  Permissions %d\n" % rorpath.getperms())
-
-    # Add long filename information
-    if rorpath.has_alt_mirror_name():
-        str_list.append(
-            b"  AlternateMirrorName %b\n" % (rorpath.get_alt_mirror_name(), ))
-    elif rorpath.has_alt_inc_name():
-        str_list.append(
-            b"  AlternateIncrementName %b\n" % (rorpath.get_alt_inc_name(), ))
-
-    return b"".join(str_list)
-
-
-line_parsing_regexp = re.compile(b"^ *([A-Za-z0-9]+) (.+)$", re.M)
-
-
-def Record2RORP(record_string):
-    """Given record_string, return RORPath
-
-    For speed reasons, write the RORPath data dictionary directly
-    instead of calling rorpath functions.  Profiling has shown this to
-    be a time critical function.
-
-    """
-    data_dict = {}
-    for field, data in line_parsing_regexp.findall(record_string):
-        field = field.decode('ascii')
-        if field == "File":
-            index = quoted_filename_to_index(data)
-        elif field == "Type":
-            if data == b"None":
-                data_dict['type'] = None
-            else:
-                data_dict['type'] = data.decode('ascii')
-        elif field == "Size":
-            data_dict['size'] = int(data)
-        elif field == "ResourceFork":
-            if data == b"None":
-                data_dict['resourcefork'] = b""
-            else:
-                data_dict['resourcefork'] = binascii.unhexlify(data)
-        elif field == "CarbonFile":
-            if data == b"None":
-                data_dict['carbonfile'] = None
-            else:
-                data_dict['carbonfile'] = string2carbonfile(data)
-        elif field == "SHA1Digest":
-            data_dict['sha1'] = data.decode('ascii')
-        elif field == "NumHardLinks":
-            data_dict['nlink'] = int(data)
-        elif field == "Inode":
-            data_dict['inode'] = int(data)
-        elif field == "DeviceLoc":
-            data_dict['devloc'] = int(data)
-        elif field == "SymData":
-            data_dict['linkname'] = unquote_path(data)
-        elif field == "DeviceNum":
-            devchar, major_str, minor_str = data.split(b" ")
-            data_dict['devnums'] = (devchar.decode('ascii'), int(major_str),
-                                    int(minor_str))
-        elif field == "ModTime":
-            data_dict['mtime'] = int(data)
-        elif field == "Uid":
-            data_dict['uid'] = int(data)
-        elif field == "Gid":
-            data_dict['gid'] = int(data)
-        elif field == "Uname":
-            if data == b":" or data == b'None':
-                data_dict['uname'] = None
-            else:
-                data_dict['uname'] = data.decode()
-        elif field == "Gname":
-            if data == b':' or data == b'None':
-                data_dict['gname'] = None
-            else:
-                data_dict['gname'] = data.decode()
-        elif field == "Permissions":
-            data_dict['perms'] = int(data)
-        elif field == "AlternateMirrorName":
-            data_dict['mirrorname'] = data
-        elif field == "AlternateIncrementName":
-            data_dict['incname'] = data
-        else:
-            log.Log("Unknown field in line '%s %s'" % (field, data), 2)
-    return rpath.RORPath(index, data_dict)
-
-
-chars_to_quote = re.compile(b"\\n|\\\\")
+_chars_to_quote = re.compile(b"\\n|\\\\")
 
 
 def quote_path(path_string):
@@ -267,7 +121,7 @@ def quote_path(path_string):
             return b"\\\\"
         assert 0, "Bad char %s needs quoting" % char
 
-    return chars_to_quote.sub(replacement_func, path_string)
+    return _chars_to_quote.sub(replacement_func, path_string)
 
 
 def unquote_path(quoted_string):
@@ -284,14 +138,6 @@ def unquote_path(quoted_string):
         return two_chars
 
     return re.sub(b"\\\\n|\\\\\\\\", replacement_func, quoted_string)
-
-
-def quoted_filename_to_index(quoted_filename):
-    """Return tuple index given quoted filename"""
-    if quoted_filename == b'.':
-        return ()
-    else:
-        return tuple(unquote_path(quoted_filename).split(b'/'))
 
 
 class FlatExtractor:
@@ -395,7 +241,8 @@ class FlatExtractor:
             self.buf = self.buf[next_pos:]
         assert not self.fileobj.close()
 
-    def filename_to_index(self, filename):
+    @staticmethod
+    def filename_to_index(filename):
         """Translate filename, possibly quoted, into an index tuple
 
         The filename is the first group matched by
@@ -408,8 +255,86 @@ class FlatExtractor:
 class RorpExtractor(FlatExtractor):
     """Iterate rorps from metadata file"""
     record_boundary_regexp = re.compile(b"(?:\\n|^)(File (.*?))\\n")
-    _record_to_object = staticmethod(Record2RORP)
-    filename_to_index = staticmethod(quoted_filename_to_index)
+    line_parsing_regexp = re.compile(b"^ *([A-Za-z0-9]+) (.+)$", re.M)
+
+    @classmethod
+    def _record_to_object(cls, record_string):
+        """Given record_string, return RORPath
+
+        For speed reasons, write the RORPath data dictionary directly
+        instead of calling rorpath functions.  Profiling has shown this to
+        be a time critical function.
+
+        """
+        data_dict = {}
+        for field, data in cls.line_parsing_regexp.findall(record_string):
+            field = field.decode('ascii')
+            if field == "File":
+                index = cls.filename_to_index(data)
+            elif field == "Type":
+                if data == b"None":
+                    data_dict['type'] = None
+                else:
+                    data_dict['type'] = data.decode('ascii')
+            elif field == "Size":
+                data_dict['size'] = int(data)
+            elif field == "ResourceFork":
+                if data == b"None":
+                    data_dict['resourcefork'] = b""
+                else:
+                    data_dict['resourcefork'] = binascii.unhexlify(data)
+            elif field == "CarbonFile":
+                if data == b"None":
+                    data_dict['carbonfile'] = None
+                else:
+                    data_dict['carbonfile'] = _string2carbonfile(data)
+            elif field == "SHA1Digest":
+                data_dict['sha1'] = data.decode('ascii')
+            elif field == "NumHardLinks":
+                data_dict['nlink'] = int(data)
+            elif field == "Inode":
+                data_dict['inode'] = int(data)
+            elif field == "DeviceLoc":
+                data_dict['devloc'] = int(data)
+            elif field == "SymData":
+                data_dict['linkname'] = unquote_path(data)
+            elif field == "DeviceNum":
+                devchar, major_str, minor_str = data.split(b" ")
+                data_dict['devnums'] = (devchar.decode('ascii'), int(major_str),
+                                        int(minor_str))
+            elif field == "ModTime":
+                data_dict['mtime'] = int(data)
+            elif field == "Uid":
+                data_dict['uid'] = int(data)
+            elif field == "Gid":
+                data_dict['gid'] = int(data)
+            elif field == "Uname":
+                if data == b":" or data == b'None':
+                    data_dict['uname'] = None
+                else:
+                    data_dict['uname'] = data.decode()
+            elif field == "Gname":
+                if data == b':' or data == b'None':
+                    data_dict['gname'] = None
+                else:
+                    data_dict['gname'] = data.decode()
+            elif field == "Permissions":
+                data_dict['perms'] = int(data)
+            elif field == "AlternateMirrorName":
+                data_dict['mirrorname'] = data
+            elif field == "AlternateIncrementName":
+                data_dict['incname'] = data
+            else:
+                log.Log("Unknown field in line '%s %s'" % (field, data), 2)
+        return rpath.RORPath(index, data_dict)
+
+    @staticmethod
+    def filename_to_index(quoted_filename):
+        """Return tuple index given quoted filename"""
+        if quoted_filename == b'.':
+            return ()
+        else:
+            return tuple(unquote_path(quoted_filename).split(b'/'))
 
 
 class FlatFile:
@@ -506,7 +431,78 @@ class MetadataFile(FlatFile):
     """Store/retrieve metadata from mirror_metadata as rorps"""
     _prefix = b"mirror_metadata"
     _extractor = RorpExtractor
-    _object_to_record = staticmethod(RORP2Record)
+
+    @staticmethod
+    def _object_to_record(rorpath):
+        """From RORPath, return text record of file's metadata"""
+        str_list = [b"File %s\n" % quote_path(rorpath.get_indexpath())]
+
+        # Store file type, e.g. "dev", "reg", or "sym", and type-specific data
+        type = rorpath.gettype()
+        if type is None:
+            type = "None"
+        str_list.append(b"  Type %b\n" % type.encode('ascii'))
+        if type == "reg":
+            str_list.append(b"  Size %i\n" % rorpath.getsize())
+
+            # If there is a resource fork, save it.
+            if rorpath.has_resource_fork():
+                if not rorpath.get_resource_fork():
+                    rf = b"None"
+                else:
+                    rf = binascii.hexlify(rorpath.get_resource_fork())
+                str_list.append(b"  ResourceFork %b\n" % (rf, ))
+
+            # If there is Carbon data, save it.
+            if rorpath.has_carbonfile():
+                cfile = _carbonfile2string(rorpath.get_carbonfile())
+                str_list.append(b"  CarbonFile %b\n" % (cfile, ))
+
+            # If file is hardlinked, add that information
+            if Globals.preserve_hardlinks != 0:
+                numlinks = rorpath.getnumlinks()
+                if numlinks > 1:
+                    str_list.append(b"  NumHardLinks %i\n" % numlinks)
+                    str_list.append(b"  Inode %i\n" % rorpath.getinode())
+                    str_list.append(b"  DeviceLoc %i\n" % rorpath.getdevloc())
+
+            # Save any hashes, if available
+            if rorpath.has_sha1():
+                str_list.append(
+                    b'  SHA1Digest %b\n' % rorpath.get_sha1().encode('ascii'))
+
+        elif type == "None":
+            return b"".join(str_list)
+        elif type == "dir" or type == "sock" or type == "fifo":
+            pass
+        elif type == "sym":
+            str_list.append(b"  SymData %b\n" % quote_path(rorpath.readlink()))
+        elif type == "dev":
+            devchar, major, minor = rorpath.getdevnums()
+            str_list.append(
+                b"  DeviceNum %b %i %i\n" % (devchar.encode('ascii'), major, minor))
+
+        # Store time information
+        if type != 'sym' and type != 'dev':
+            str_list.append(b"  ModTime %i\n" % rorpath.getmtime())
+
+        # Add user, group, and permission information
+        uid, gid = rorpath.getuidgid()
+        str_list.append(b"  Uid %i\n" % uid)
+        str_list.append(b"  Uname %b\n" % (rorpath.getuname() or ":").encode())
+        str_list.append(b"  Gid %i\n" % gid)
+        str_list.append(b"  Gname %b\n" % (rorpath.getgname() or ":").encode())
+        str_list.append(b"  Permissions %d\n" % rorpath.getperms())
+
+        # Add long filename information
+        if rorpath.has_alt_mirror_name():
+            str_list.append(
+                b"  AlternateMirrorName %b\n" % (rorpath.get_alt_mirror_name(), ))
+        elif rorpath.has_alt_inc_name():
+            str_list.append(
+                b"  AlternateIncrementName %b\n" % (rorpath.get_alt_inc_name(), ))
+
+        return b"".join(str_list)
 
 
 class CombinedWriter:
