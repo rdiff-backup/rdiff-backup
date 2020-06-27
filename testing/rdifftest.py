@@ -57,7 +57,7 @@ class RdiffTest(unittest.TestCase):
             self.signature.write_from_fileobj(Rdiff.get_signature(self.basis))
             assert self.signature.lstat()
             self.delta.write_from_fileobj(
-                Rdiff.get_delta_sigrp(self.signature, self.new))
+                Rdiff.get_delta_sigrp_hash(self.signature, self.new))
             assert self.delta.lstat()
             Rdiff.patch_local(self.basis, self.delta, self.output)
             assert rpath.cmp(self.new, self.output)
@@ -79,7 +79,7 @@ class RdiffTest(unittest.TestCase):
         self.signature.write_from_fileobj(Rdiff.get_signature(self.basis))
         assert self.signature.lstat()
         self.delta.write_from_fileobj(
-            Rdiff.get_delta_sigrp(self.signature, self.new))
+            Rdiff.get_delta_sigrp_hash(self.signature, self.new))
         assert self.delta.lstat()
         os.system(b"gzip %s" % self.delta.path)
         os.system(b"mv %s.gz %s" % (self.delta.path, self.delta.path))
@@ -142,23 +142,9 @@ class RdiffTest(unittest.TestCase):
         self.signature.write_from_fileobj(Rdiff.get_signature(self.basis))
         assert self.signature.lstat()
         self.delta.write_from_fileobj(
-            Rdiff.get_delta_sigrp(self.signature, self.new))
+            Rdiff.get_delta_sigrp_hash(self.signature, self.new))
         assert self.delta.lstat()
         Rdiff.patch_local(self.basis, self.delta)
-        assert rpath.cmp(self.basis, self.new)
-        list(map(rpath.RPath.delete, rplist))
-
-    def testCopy(self):
-        """Using rdiff to copy two files"""
-        rplist = [self.basis, self.new]
-        for rp in rplist:
-            if rp.lstat():
-                rp.delete()
-
-        MakeRandomFile(self.basis.path)
-        MakeRandomFile(self.new.path)
-        list(map(rpath.RPath.setdata, rplist))
-        Rdiff.copy_local(self.basis, self.new)
         assert rpath.cmp(self.basis, self.new)
         list(map(rpath.RPath.delete, rplist))
 
