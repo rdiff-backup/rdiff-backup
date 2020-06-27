@@ -26,6 +26,17 @@ import re
 import os  # needed to grab verbosity as environment variable
 from . import Globals, rpath
 
+LOGFILE_ENCODING = 'utf-8'
+
+
+def _to_bytes(logline, encoding=LOGFILE_ENCODING):
+    """
+    Convert string into bytes for logging into file.
+    """
+    assert logline
+    assert isinstance(logline, str)
+    return logline.encode(encoding, 'backslashreplace')
+
 
 class LoggerError(Exception):
     pass
@@ -146,9 +157,7 @@ class Logger:
         if self.log_file_open:
             if self.log_file_local:
                 tmpstr = self.format(message, self.verbosity)
-                if type(tmpstr) == str:  # transform string in bytes
-                    tmpstr = tmpstr.encode('utf-8', 'backslashreplace')
-                self.logfp.write(tmpstr)
+                self.logfp.write(_to_bytes(tmpstr))
                 self.logfp.flush()
             else:
                 self.log_file_conn.log.Log.log_to_file(message)
@@ -160,9 +169,7 @@ class Logger:
         else:
             termfp = sys.stdout.buffer
         tmpstr = self.format(message, self.term_verbosity)
-        if type(tmpstr) == str:  # transform string in bytes
-            tmpstr = tmpstr.encode(sys.stdout.encoding, 'backslashreplace')
-        termfp.write(tmpstr)
+        termfp.write(_to_bytes(tmpstr, encoding=sys.stdout.encoding))
 
     def conn(self, direction, result, req_num):
         """Log some data on the connection
@@ -261,7 +268,7 @@ class ErrorLog:
         assert not cls._log_fileobj, "log already open"
         assert Globals.isbackup_writer
 
-        base_rp = Globals.rbdir.append("error_log.%s.data" % (time_string, ))
+        base_rp = Globals.rbdir.append("error_log.%s.data" % time_string)
         if compress:
             cls._log_fileobj = rpath.MaybeGzip(base_rp)
         else:
@@ -283,14 +290,12 @@ class ErrorLog:
                 error_type, rp, exc)
         logstr = cls.get_log_string(error_type, rp, exc)
         Log(logstr, 2)
-        if isinstance(logstr, bytes):
-            logstr = logstr.decode('utf-8')
         if Globals.null_separator:
             logstr += "\0"
         else:
             logstr = re.sub("\n", " ", logstr)
             logstr += "\n"
-        cls._log_fileobj.write(logstr)
+        cls._log_fileobj.write(_to_bytes(logstr))
 
     @classmethod
     def get_indexpath(cls, obj):
