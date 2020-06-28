@@ -175,7 +175,7 @@ class EAExtractor(metadata.FlatExtractor):
     """Iterate ExtendedAttributes objects from the EA information file"""
     record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
 
-    def filename_to_index(self, filename):
+    def _filename_to_index(self, filename):
         """Convert possibly quoted filename to index tuple"""
         if filename == b'.':
             return ()

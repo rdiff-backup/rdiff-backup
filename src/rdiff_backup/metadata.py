@@ -158,7 +158,7 @@ class FlatExtractor:
         self.at_end = 0  # True if we are at the end of the file
         self.blocksize = 32 * 1024
 
-    def get_next_pos(self):
+    def _get_next_pos(self):
         """Return position of next record in buffer, or end pos if none"""
         while 1:
             m = self.record_boundary_regexp.search(self.buf, 1)
@@ -174,7 +174,7 @@ class FlatExtractor:
 
     def iterate(self):
         """Return iterator that yields all objects with records"""
-        for record in self.iterate_records():
+        for record in self._iterate_records():
             try:
                 yield self._record_to_object(record)
             except (ParsingError, ValueError) as e:
@@ -184,10 +184,10 @@ class FlatExtractor:
                     "Error parsing flat file: %s [%s(%s)]" %
                     (e, type(self), self.fileobj.fileobj.name), 2)
 
-    def iterate_records(self):
+    def _iterate_records(self):
         """Yield all text records in order"""
         while 1:
-            next_pos = self.get_next_pos()
+            next_pos = self._get_next_pos()
             if self.at_end:
                 if next_pos:
                     yield self.buf[:next_pos]
@@ -196,7 +196,7 @@ class FlatExtractor:
             self.buf = self.buf[next_pos:]
         assert not self.fileobj.close()
 
-    def skip_to_index(self, index):
+    def _skip_to_index(self, index):
         """Scan through the file, set buffer to beginning of index record
 
         Here we make sure that the buffer always ends in a newline, so
@@ -214,20 +214,20 @@ class FlatExtractor:
                 m = self.record_boundary_regexp.search(self.buf)
                 if not m:
                     break
-                cur_index = self.filename_to_index(m.group(2))
+                cur_index = self._filename_to_index(m.group(2))
                 if cur_index >= index:
                     self.buf = self.buf[m.start(1):]
                     return
                 else:
                     self.buf = self.buf[m.end(1):]
 
-    def iterate_starting_with(self, index):
+    def _iterate_starting_with(self, index):
         """Iterate objects whose index starts with given index"""
-        self.skip_to_index(index)
+        self._skip_to_index(index)
         if self.at_end:
             return
         while 1:
-            next_pos = self.get_next_pos()
+            next_pos = self._get_next_pos()
             try:
                 obj = self._record_to_object(self.buf[:next_pos])
             except (ParsingError, ValueError) as e:
@@ -242,7 +242,7 @@ class FlatExtractor:
         assert not self.fileobj.close()
 
     @staticmethod
-    def filename_to_index(filename):
+    def _filename_to_index(filename):
         """Translate filename, possibly quoted, into an index tuple
 
         The filename is the first group matched by
@@ -270,7 +270,7 @@ class RorpExtractor(FlatExtractor):
         for field, data in cls.line_parsing_regexp.findall(record_string):
             field = field.decode('ascii')
             if field == "File":
-                index = cls.filename_to_index(data)
+                index = cls._filename_to_index(data)
             elif field == "Type":
                 if data == b"None":
                     data_dict['type'] = None
@@ -329,7 +329,7 @@ class RorpExtractor(FlatExtractor):
         return rpath.RORPath(index, data_dict)
 
     @staticmethod
-    def filename_to_index(quoted_filename):
+    def _filename_to_index(quoted_filename):
         """Return tuple index given quoted filename"""
         if quoted_filename == b'.':
             return ()
@@ -387,7 +387,7 @@ class FlatFile:
                 assert not self.rp.lstat(), self.rp
                 self.fileobj = self.rp.open("wb", compress=compress)
 
-    def write_record(self, record):
+    def _write_record(self, record):
         """Write a (text) record into the file"""
         if self._buffering_on:
             self._record_buffer.append(record)
@@ -399,18 +399,14 @@ class FlatFile:
 
     def write_object(self, object):
         """Convert one object to record and write to file"""
-        self.write_record(self._object_to_record(object))
+        self._write_record(self._object_to_record(object))
 
     def get_objects(self, restrict_index=None):
         """Return iterator of objects records from file rp"""
         if not restrict_index:
             return self._extractor(self.fileobj).iterate()
         extractor = self._extractor(self.fileobj)
-        return extractor.iterate_starting_with(restrict_index)
-
-    def get_records(self):
-        """Return iterator of text records"""
-        return self._extractor(self.fileobj).iterate_records()
+        return extractor._iterate_starting_with(restrict_index)
 
     def close(self):
         """Close file, for when any writing is done"""
@@ -547,9 +543,9 @@ class Manager:
         for filename in Globals.rbdir.listdir():
             rp = Globals.rbdir.append(filename)
             if rp.isincfile():
-                self.add_incrp(rp)
+                self._add_incrp(rp)
 
-    def add_incrp(self, rp):
+    def _add_incrp(self, rp):
         """Add rp to list of inc rps in the rbdir"""
         assert rp.isincfile(), rp
         self.rplist.append(rp)
@@ -579,19 +575,19 @@ class Manager:
         return self._iter_helper(self.meta_prefix, MetadataFile, time,
                                  restrict_index)
 
-    def get_eas_at_time(self, time, restrict_index):
+    def _get_eas_at_time(self, time, restrict_index):
         """Return Extended Attributes iter at given time (or None)"""
         return self._iter_helper(self.ea_prefix,
                                  eas_acls.ExtendedAttributesFile, time,
                                  restrict_index)
 
-    def get_acls_at_time(self, time, restrict_index):
+    def _get_acls_at_time(self, time, restrict_index):
         """Return ACLs iter at given time from recordfile (or None)"""
         return self._iter_helper(self.acl_prefix,
                                  eas_acls.AccessControlListFile, time,
                                  restrict_index)
 
-    def get_win_acls_at_time(self, time, restrict_index):
+    def _get_win_acls_at_time(self, time, restrict_index):
         """Return WACLs iter at given time from recordfile (or None)"""
         return self._iter_helper(self.wacl_prefix,
                                  win_acls.WinAccessControlListFile, time,
@@ -607,19 +603,19 @@ class Manager:
             return None
 
         if Globals.acls_active:
-            acl_iter = self.get_acls_at_time(time, restrict_index)
+            acl_iter = self._get_acls_at_time(time, restrict_index)
             if not acl_iter:
                 log.Log("Warning: Access Control List file not found", 2)
                 acl_iter = iter([])
             cur_iter = eas_acls.join_acl_iter(cur_iter, acl_iter)
         if Globals.eas_active:
-            ea_iter = self.get_eas_at_time(time, restrict_index)
+            ea_iter = self._get_eas_at_time(time, restrict_index)
             if not ea_iter:
                 log.Log("Warning: Extended Attributes file not found", 2)
                 ea_iter = iter([])
             cur_iter = eas_acls.join_ea_iter(cur_iter, ea_iter)
         if Globals.win_acls_active:
-            wacl_iter = self.get_win_acls_at_time(time, restrict_index)
+            wacl_iter = self._get_win_acls_at_time(time, restrict_index)
             if not wacl_iter:
                 log.Log(
                     "Warning: Windows Access Control List file not"
@@ -640,45 +636,45 @@ class Manager:
         rp = Globals.rbdir.append(filename)
         assert not rp.lstat(), "File %s already exists!" % (rp.path, )
         assert rp.isincfile()
-        return flatfileclass(rp, 'w', callback=self.add_incrp)
+        return flatfileclass(rp, 'w', callback=self._add_incrp)
 
-    def get_meta_writer(self, typestr, time):
+    def _get_meta_writer(self, typestr, time):
         """Return MetadataFile object opened for writing at given time"""
         return self._writer_helper(self.meta_prefix, MetadataFile, typestr,
                                    time)
 
-    def get_ea_writer(self, typestr, time):
+    def _get_ea_writer(self, typestr, time):
         """Return ExtendedAttributesFile opened for writing"""
         return self._writer_helper(
             self.ea_prefix, eas_acls.ExtendedAttributesFile, typestr, time)
 
-    def get_acl_writer(self, typestr, time):
+    def _get_acl_writer(self, typestr, time):
         """Return AccessControlListFile opened for writing"""
         return self._writer_helper(
             self.acl_prefix, eas_acls.AccessControlListFile, typestr, time)
 
-    def get_win_acl_writer(self, typestr, time):
+    def _get_win_acl_writer(self, typestr, time):
         """Return WinAccessControlListFile opened for writing"""
         return self._writer_helper(
             self.wacl_prefix, win_acls.WinAccessControlListFile, typestr, time)
 
     def GetWriter(self, typestr=b'snapshot', time=None):
         """Get a writer object that can write meta and possibly acls/eas"""
-        metawriter = self.get_meta_writer(typestr, time)
+        metawriter = self._get_meta_writer(typestr, time)
         if not Globals.eas_active and not Globals.acls_active and \
            not Globals.win_acls_active:
             return metawriter  # no need for a CombinedWriter
 
         if Globals.eas_active:
-            ea_writer = self.get_ea_writer(typestr, time)
+            ea_writer = self._get_ea_writer(typestr, time)
         else:
             ea_writer = None
         if Globals.acls_active:
-            acl_writer = self.get_acl_writer(typestr, time)
+            acl_writer = self._get_acl_writer(typestr, time)
         else:
             acl_writer = None
         if Globals.win_acls_active:
-            win_acl_writer = self.get_win_acl_writer(typestr, time)
+            win_acl_writer = self._get_win_acl_writer(typestr, time)
         else:
             win_acl_writer = None
         return CombinedWriter(metawriter, ea_writer, acl_writer,
@@ -703,7 +699,7 @@ class PatchDiffMan(Manager):
     """
     max_diff_chain = 9  # After this many diffs, make a new snapshot
 
-    def get_diffiter(self, new_iter, old_iter):
+    def _get_diffiter(self, new_iter, old_iter):
         """Iterate meta diffs of new_iter -> old_iter"""
         for new_rorp, old_rorp in rorpiter.Collate2Iters(new_iter, old_iter):
             if not old_rorp:
@@ -747,7 +743,7 @@ class PatchDiffMan(Manager):
 
         return [rp for (time, rp) in sortlist if time >= min_time]
 
-    def check_needs_diff(self):
+    def _check_needs_diff(self):
         """Check if we should diff, returns (new, old) rps, or (None, None)"""
         inclist = self.sorted_prefix_inclist(b'mirror_metadata')
         assert len(inclist) >= 1
@@ -767,15 +763,15 @@ class PatchDiffMan(Manager):
 
     def ConvertMetaToDiff(self):
         """Replace a mirror snapshot with a diff if it's appropriate"""
-        newrp, oldrp = self.check_needs_diff()
+        newrp, oldrp = self._check_needs_diff()
         if not newrp:
             return
         log.Log("Writing mirror_metadata diff", 6)
 
-        diff_writer = self.get_meta_writer(b'diff', oldrp.getinctime())
+        diff_writer = self._get_meta_writer(b'diff', oldrp.getinctime())
         new_iter = MetadataFile(newrp, 'r').get_objects()
         old_iter = MetadataFile(oldrp, 'r').get_objects()
-        for diff_rorp in self.get_diffiter(new_iter, old_iter):
+        for diff_rorp in self._get_diffiter(new_iter, old_iter):
             diff_writer.write_object(diff_rorp)
         diff_writer.close()  # includes sync
         oldrp.delete()
@@ -784,15 +780,15 @@ class PatchDiffMan(Manager):
         """Get metadata rorp iter, possibly by patching with diffs"""
         meta_iters = [
             MetadataFile(rp, 'r').get_objects(restrict_index)
-            for rp in self.relevant_meta_incs(time)
+            for rp in self._relevant_meta_incs(time)
         ]
         if not meta_iters:
             return None
         if len(meta_iters) == 1:
             return meta_iters[0]
-        return self.iterate_patched_meta(meta_iters)
+        return self._iterate_patched_meta(meta_iters)
 
-    def relevant_meta_incs(self, time):
+    def _relevant_meta_incs(self, time):
         """Return list [snapshotrp, diffrps ...] time sorted"""
         inclist = self.sorted_prefix_inclist(b'mirror_metadata', min_time=time)
         if not inclist:
@@ -803,7 +799,7 @@ class PatchDiffMan(Manager):
                 return inclist[i:]
         assert 0, "Inclist %s contains no snapshots" % (inclist, )
 
-    def iterate_patched_meta(self, meta_iter_list):
+    def _iterate_patched_meta(self, meta_iter_list):
         """Return an iter of metadata rorps by combining the given iters
 
         The iters should be given as a list/tuple in reverse

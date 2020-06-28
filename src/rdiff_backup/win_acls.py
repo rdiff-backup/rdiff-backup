@@ -265,7 +265,7 @@ class WACLExtractor(metadata.FlatExtractor):
     record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
     _record_to_object = staticmethod(Record2WACL)
 
-    def filename_to_index(self, filename):
+    def _filename_to_index(self, filename):
         """Convert possibly quoted filename to index tuple"""
         if filename == b'.':
             return ()

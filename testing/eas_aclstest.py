@@ -114,7 +114,7 @@ user.empty
 user.empty
 """
         extractor = EAExtractor(io.BytesIO(os.fsencode(record_list)))
-        ea_iter = extractor.iterate_starting_with(())
+        ea_iter = extractor._iterate_starting_with(())
         first = next(ea_iter)
         assert first.index == (b'0foo', ), first
         second = next(ea_iter)
@@ -129,7 +129,7 @@ user.empty
             assert 0, "Too many elements in iterator"
 
         extractor = EAExtractor(io.BytesIO(os.fsencode(record_list)))
-        ea_iter = extractor.iterate_starting_with((b'1foo', b'bar'))
+        ea_iter = extractor._iterate_starting_with((b'1foo', b'bar'))
         assert next(ea_iter).index == (b'1foo', b'bar', b'baz')
         try:
             next(ea_iter)
@@ -185,7 +185,7 @@ user.empty
         # Now write records corresponding to above rps into file
         Globals.rbdir = tempdir
         man = metadata.PatchDiffMan()
-        writer = man.get_ea_writer('snapshot', 10000)
+        writer = man._get_ea_writer('snapshot', 10000)
         for rp in [self.ea_test1_rpath, rp1, rp2, rp3]:
             ea = ExtendedAttributes(rp.index)
             ea.read_from_rp(rp)
@@ -193,7 +193,7 @@ user.empty
         writer.close()
 
         # Read back records and compare
-        ea_iter = man.get_eas_at_time(10000, None)
+        ea_iter = man._get_eas_at_time(10000, None)
         assert ea_iter, "No extended_attributes.<time> file found"
         sample_ea_reread = next(ea_iter)
         # we ignore SELinux extended attributes for comparaison
@@ -401,7 +401,7 @@ mask::---
 other::---
 """.format(self.current_user)
         extractor = ACLExtractor(io.BytesIO(os.fsencode(record_list)))
-        acl_iter = extractor.iterate_starting_with(())
+        acl_iter = extractor._iterate_starting_with(())
         first = next(acl_iter)
         assert first.index == (b'0foo', ), first
         second = next(acl_iter)
@@ -416,7 +416,7 @@ other::---
             assert 0, "Too many elements in iterator"
 
         extractor = ACLExtractor(io.BytesIO(os.fsencode(record_list)))
-        acl_iter = extractor.iterate_starting_with((b'1foo', b'bar'))
+        acl_iter = extractor._iterate_starting_with((b'1foo', b'bar'))
         assert next(acl_iter).index == (b'1foo', b'bar', b'baz')
         try:
             next(acl_iter)
@@ -466,7 +466,7 @@ other::---
         # Now write records corresponding to above rps into file
         Globals.rbdir = tempdir
         man = metadata.PatchDiffMan()
-        writer = man.get_acl_writer('snapshot', 10000)
+        writer = man._get_acl_writer('snapshot', 10000)
         for rp in [self.acl_test1_rpath, rp1, rp2, rp3]:
             acl = AccessControlLists(rp.index)
             acl.read_from_rp(rp)
@@ -474,7 +474,7 @@ other::---
         writer.close()
 
         # Read back records and compare
-        acl_iter = man.get_acls_at_time(10000, None)
+        acl_iter = man._get_acls_at_time(10000, None)
         assert acl_iter, "No acl file found"
         dir_acl_reread = next(acl_iter)
         assert dir_acl_reread == self.dir_acl

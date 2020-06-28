@@ -178,7 +178,7 @@ class MetadataTest(unittest.TestCase):
         diff2 = [rp1new, rp2, zero]
 
         Globals.rbdir = tempdir
-        output = PatchDiffMan().iterate_patched_meta(
+        output = PatchDiffMan()._iterate_patched_meta(
             [iter(current), iter(diff1),
              iter(diff2)])
         out1 = next(output)
@@ -194,7 +194,7 @@ class MetadataTest(unittest.TestCase):
 
         def write_dir_to_meta(manager, rp, time):
             """Record the metadata under rp to a mirror_metadata file"""
-            metawriter = man.get_meta_writer(b'snapshot', time)
+            metawriter = man._get_meta_writer(b'snapshot', time)
             sel = selection.Select(rp)
             sel.ParseArgs((), ())  # make sure incorrect files are filtered out
             for rorp in sel.set_iter():
