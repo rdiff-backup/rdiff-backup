@@ -1,0 +1,30 @@
+- name: provision with an old version of rdiff-backup for cross-version tests
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+  - name: install software collections (SCL) repository and Ansible dependencies
+    package:
+      name:
+      - centos-release-scl
+      - libselinux-python
+      state: present
+  - name: install python 3 and other build dependencies
+    package:
+      name:
+      - rh-python36
+      - gcc
+      - libacl-devel
+      state: present
+  - name: install rdiff-backup and dependencies using pip within the SCL environment
+    command: >
+      scl enable rh-python36
+      -- pip install --upgrade rdiff-backup=={{ rdiff_backup_old_version }} pyxattr pylibacl
+  - name: create rdiff-backup wrapper to always use the SCL version
+    copy:
+      dest: /usr/bin/rdiff-backup
+      content: |
+        #!/bin/sh
+        exec scl enable rh-python36 -- rdiff-backup "$@"
+      mode: a+rx
