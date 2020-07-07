@@ -1,0 +1,112 @@
+- name: do some smoke tests between the current version of rdiff-backup and a deemed older version
+  hosts: all
+  become: false
+  gather_facts: true
+
+  vars:
+    test_user: vagrant
+    test_server: oldrdiffbackup
+    ssh_config: ssh.local.cfg
+    remote_schema: 'ssh -F {{ ssh_config }} -C %s rdiff-backup --server'
+    remote_base_dir: '/home/{{ test_user }}/smoke.local.d'
+    local_base_dir: '../smoke.local.d'
+
+  pre_tasks:
+
+  - name: generate the necessary SSH configuration
+    shell: vagrant ssh-config oldrdiffbackup > "{{ ssh_config }}"
+    args:
+      creates: "{{ ssh_config }}"
+    delegate_to: localhost
+  - name: remove remote base directory {{ remote_base_dir }}
+    file:
+      path: "{{ remote_base_dir }}"
+      state: absent
+  - name: remove local base directory {{ local_base_dir }}
+    file:
+      path: "{{ local_base_dir }}"
+      state: absent
+    delegate_to: localhost
+  - name: create remote base directory {{ remote_base_dir }}
+    file:
+      path: "{{ remote_base_dir }}"
+      state: directory
+  - name: create local base directory {{ local_base_dir }}
+    file:
+      path: "{{ local_base_dir }}"
+      state: directory
+    delegate_to: localhost
+  - name: delete dummy file
+    file:
+      path: file.local.txt
+      state: absent
+    delegate_to: localhost
+
+  tasks:
+
+  - name: call remote rdiff-backup --version
+    command: rdiff-backup --version
+
+  - name: call remote rdiff-backup --verbosity 9 (with expected failure)
+    command: rdiff-backup --verbosity 9
+    register: rb_res
+    failed_when: rb_res.rc != 1
+
+  - name: call local rdiff-backup --version
+    command: rdiff-backup --version
+    delegate_to: localhost
+
+  - name: call local rdiff-backup --verbosity 9 (with expected failure)
+    command: rdiff-backup --verbosity 9
+    register: rb_res
+    failed_when: rb_res.rc != 1
+    delegate_to: localhost
+
+  - name: check that the remote rdiff-backup works
+    command: >
+      rdiff-backup --remote-schema '{{ remote_schema }}' --test-server
+      {{ test_user }}\@{{ test_server }}::{{ remote_base_dir }}/simplebackup
+    delegate_to: localhost
+
+  - name: make a simple backup from the local directory to remote repo
+    command: >
+      rdiff-backup --remote-schema '{{ remote_schema }}'
+      . {{ test_user }}\@{{ test_server }}::{{ remote_base_dir }}/simplebackup
+    delegate_to: localhost
+
+  - name: compare the current directory with the remote repo
+    command: >
+      rdiff-backup --remote-schema '{{ remote_schema }}' --compare-hash
+      . {{ test_user }}\@{{ test_server }}::{{ remote_base_dir }}/simplebackup
+    delegate_to: localhost
+
+  - name: create a dummy file to modify the local directory
+    copy:
+      dest: file.local.txt
+      content: "{{ now() }}"
+    delegate_to: localhost
+
+  - name: re-make a simple backup from the local directory to remote repo
+    command: >
+      rdiff-backup --remote-schema '{{ remote_schema }}'
+      . {{ test_user }}\@{{ test_server }}::{{ remote_base_dir }}/simplebackup
+    delegate_to: localhost
+
+  - name: list the increments with size in the remote repo
+    command: >
+      rdiff-backup --remote-schema '{{ remote_schema }}' --list-increment-sizes
+      {{ test_user }}\@{{ test_server }}::{{ remote_base_dir }}/simplebackup
+    delegate_to: localhost
+
+  - name: verify using the remote rdiff-backup the hashes in the repo
+    command: >
+      rdiff-backup --remote-schema '{{ remote_schema }}' --verify
+      {{ remote_base_dir }}/simplebackup
+
+  - name: restore from remote repo to local directory
+    command: >
+      rdiff-backup --remote-schema '{{ remote_schema }}' --restore-as-of now
+      {{ test_user }}\@{{ test_server }}::{{ remote_base_dir }}/simplebackup
+      {{ local_base_dir }}/simplerestore
+    delegate_to: localhost
+
