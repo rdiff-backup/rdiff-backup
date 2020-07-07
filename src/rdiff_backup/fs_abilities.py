@@ -409,10 +409,10 @@ class FSAbilities:
                 return
 
         try:
-            xattr.listxattr(rp.path)
+            xattr.list(rp.path)
             if write:
-                xattr.setxattr(rp.path, b"user.test", b"test val")
-                assert xattr.getxattr(rp.path, b"user.test") == b"test val"
+                xattr.set(rp.path, b"user.test", b"test val")
+                assert xattr.get(rp.path, b"user.test") == b"test val"
         except IOError:
             log.Log(
                 "Extended attributes not supported by "

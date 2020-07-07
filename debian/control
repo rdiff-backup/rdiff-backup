@@ -21,7 +21,8 @@ Depends: ${misc:Depends},
          ${python3:Depends},
          ${shlibs:Depends}
 Recommends: python3-pylibacl,
-            python3-pyxattr
+            python3-pyxattr,
+            python3-setuptools
 Description: remote incremental backup
  rdiff-backup backs up one directory to another, possibly over a network. The
  target directory ends up a copy of the source directory, but extra reverse
