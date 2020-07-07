@@ -1,0 +1,3 @@
+.vagrant/
+# ignore roles installed using ansible-galaxy
+roles/*.*/
