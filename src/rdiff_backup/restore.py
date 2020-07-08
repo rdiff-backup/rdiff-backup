@@ -120,7 +120,7 @@ class MirrorStruct:
     def set_mirror_and_rest_times(cls, restore_to_time):
         """Set class variables _mirror_time and _rest_time on mirror conn"""
         MirrorStruct._mirror_time = cls.get_mirror_time()
-        MirrorStruct._rest_time = cls.get_rest_time(restore_to_time)
+        MirrorStruct._rest_time = cls._get_rest_time(restore_to_time)
 
     @classmethod
     def get_mirror_time(cls):
@@ -133,7 +133,7 @@ class MirrorStruct:
         return cur_mirror_incs[0].getinctime()
 
     @classmethod
-    def get_rest_time(cls, restore_to_time):
+    def _get_rest_time(cls, restore_to_time):
         """Return older time, if restore_to_time is in between two inc times
 
         There is a slightly tricky reason for doing this: The rest of the
@@ -214,7 +214,7 @@ class MirrorStruct:
             log.Log(
                 "Warning: Mirror metadata not found, "
                 "reading from directory", 2)
-            rorp_iter = cls.get_rorp_iter_from_rf(cls.root_rf)
+            rorp_iter = cls._get_rorp_iter_from_rf(cls.root_rf)
 
         if cls._select:
             rorp_iter = selection.FilterIter(cls._select, rorp_iter)
@@ -228,13 +228,13 @@ class MirrorStruct:
         cls._select.ParseArgs(select_opts, filelists)
 
     @classmethod
-    def get_rorp_iter_from_rf(cls, rf):
+    def _get_rorp_iter_from_rf(cls, rf):
         """Recursively yield mirror rorps from rf"""
         rorp = rf.get_attribs()
         yield rorp
         if rorp.isdir():
             for sub_rf in rf.yield_sub_rfs():
-                for attribs in cls.get_rorp_iter_from_rf(sub_rf):
+                for attribs in cls._get_rorp_iter_from_rf(sub_rf):
                     yield attribs
 
     @classmethod
@@ -268,10 +268,10 @@ class MirrorStruct:
         mir_iter = cls.subtract_indices(cls.mirror_base.index,
                                         cls.get_mirror_rorp_iter())
         collated = rorpiter.Collate2Iters(mir_iter, target_iter)
-        return cls.get_diffs_from_collated(collated)
+        return cls._get_diffs_from_collated(collated)
 
     @classmethod
-    def get_diffs_from_collated(cls, collated):
+    def _get_diffs_from_collated(cls, collated):
         """Get diff iterator from collated"""
         for mir_rorp, target_rorp in collated:
             if Globals.preserve_hardlinks and mir_rorp:
@@ -279,7 +279,7 @@ class MirrorStruct:
             if (not target_rorp or not mir_rorp or not mir_rorp == target_rorp
                     or (Globals.preserve_hardlinks
                         and not Hardlink.rorp_eq(mir_rorp, target_rorp))):
-                diff = cls.get_diff(mir_rorp, target_rorp)
+                diff = cls._get_diff(mir_rorp, target_rorp)
             else:
                 diff = None
             if Globals.preserve_hardlinks and mir_rorp:
@@ -288,7 +288,7 @@ class MirrorStruct:
                 yield diff
 
     @classmethod
-    def get_diff(cls, mir_rorp, target_rorp):
+    def _get_diff(cls, mir_rorp, target_rorp):
         """Get a diff for mir_rorp at time"""
         if not mir_rorp:
             mir_rorp = rpath.RORPath(target_rorp.index)
@@ -360,18 +360,18 @@ class CachedRF:
         if Globals.process_uid != 0:
             self.perm_changer = PermissionChanger(root_rf.mirror_rp)
 
-    def list_rfs_in_cache(self, index):
+    def _list_rfs_in_cache(self, index):
         """Used for debugging, return indices of cache rfs for printing"""
         s1 = "-------- Cached RF for %s -------" % (index, )
         s2 = " ".join([str(rf.index) for rf in self.rf_list])
         s3 = "--------------------------"
         return "\n".join((s1, s2, s3))
 
-    def get_rf(self, index, mir_rorp=None):
+    def _get_rf(self, index, mir_rorp=None):
         """Get a RestoreFile for given index, or None"""
         while 1:
             if not self.rf_list:
-                if not self.add_rfs(index, mir_rorp):
+                if not self._add_rfs(index, mir_rorp):
                     return None
             rf = self.rf_list[0]
             if rf.index == index:
@@ -383,7 +383,7 @@ class CachedRF:
                 # already from same directory, or we can't find any
                 # from that directory, then we know it can't be added.
                 if (index[:-1] == rf.index[:-1]
-                        or not self.add_rfs(index, mir_rorp)):
+                        or not self._add_rfs(index, mir_rorp)):
                     return None
             else:
                 del self.rf_list[0]
@@ -391,7 +391,7 @@ class CachedRF:
     def get_fp(self, index, mir_rorp):
         """Return the file object (for reading) of given index"""
         rf = longname.update_rf(
-            self.get_rf(index, mir_rorp), mir_rorp, self.root_rf.mirror_rp)
+            self._get_rf(index, mir_rorp), mir_rorp, self.root_rf.mirror_rp)
         if not rf:
             log.Log(
                 "Error: Unable to retrieve data for file %s!\nThe "
@@ -400,7 +400,7 @@ class CachedRF:
             return io.BytesIO()
         return rf.get_restore_fp()
 
-    def add_rfs(self, index, mir_rorp=None):
+    def _add_rfs(self, index, mir_rorp=None):
         """Given index, add the rfs in that same directory
 
         Returns false if no rfs are available, which usually indicates
@@ -449,7 +449,7 @@ class RestoreFile:
             self.index, self.mirror_rp, self.inc_rp,
             list(map(str, self.inc_list)), list(map(str, self.relevant_incs)))
 
-    def relevant_incs_string(self):
+    def _relevant_incs_string(self):
         """Return printable string of relevant incs, used for debugging"""
         inc_header = ["---- Relevant incs for %s" % ("/".join(self.index), )]
         inc_header.extend([
@@ -525,7 +525,7 @@ class RestoreFile:
         """Return file object of restored data"""
 
         def get_fp():
-            current_fp = self.get_first_fp()
+            current_fp = self._get_first_fp()
             for inc_diff in self.relevant_incs[1:]:
                 log.Log("Applying patch %s" % (inc_diff.get_safeindexpath(), ),
                         7)
@@ -557,7 +557,7 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
             return io.BytesIO()
         return robust.check_common_error(error_handler, get_fp)
 
-    def get_first_fp(self):
+    def _get_first_fp(self):
         """Return first file object from relevant inc list"""
         first_inc = self.relevant_incs[0]
         assert first_inc.getinctype() == b'snapshot'
@@ -577,7 +577,7 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
         if not self.mirror_rp.isdir() and not self.inc_rp.isdir():
             return
         if self.mirror_rp.isdir():
-            mirror_iter = self.yield_mirrorrps(self.mirror_rp)
+            mirror_iter = self._yield_mirrorrps(self.mirror_rp)
         else:
             mirror_iter = iter([])
         if self.inc_rp.isdir():
@@ -596,7 +596,7 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
                 mirror_rp = self.mirror_rp.new_index_empty(inc_rp.index)
             yield self.__class__(mirror_rp, inc_rp, inc_list)
 
-    def yield_mirrorrps(self, mirrorrp):
+    def _yield_mirrorrps(self, mirrorrp):
         """Yield mirrorrps underneath given mirrorrp"""
         assert mirrorrp.isdir()
         for filename in robust.listrp(mirrorrp):
@@ -672,7 +672,7 @@ class PatchITRB(rorpiter.ITRBranch):
         self.dir_replacement, self.dir_update = None, None
         self.cached_rp = None
 
-    def get_rp_from_root(self, index):
+    def _get_rp_from_root(self, index):
         """Return RPath by adding index to self.basis_root_rp"""
         if not self.cached_rp or self.cached_rp.index != index:
             self.cached_rp = self.basis_root_rp.new_index(index)
@@ -680,17 +680,17 @@ class PatchITRB(rorpiter.ITRBranch):
 
     def can_fast_process(self, index, diff_rorp):
         """True if diff_rorp and mirror are not directories"""
-        rp = self.get_rp_from_root(index)
+        rp = self._get_rp_from_root(index)
         return not diff_rorp.isdir() and not rp.isdir()
 
     def fast_process(self, index, diff_rorp):
         """Patch base_rp with diff_rorp (case where neither is directory)"""
-        rp = self.get_rp_from_root(index)
+        rp = self._get_rp_from_root(index)
         tf = TempFile.new(rp)
-        self.patch_to_temp(rp, diff_rorp, tf)
+        self._patch_to_temp(rp, diff_rorp, tf)
         rpath.rename(tf, rp)
 
-    def check_hash(self, copy_report, diff_rorp):
+    def _check_hash(self, copy_report, diff_rorp):
         """Check the hash in the copy_report with hash in diff_rorp"""
         if not diff_rorp.isreg():
             return
@@ -708,7 +708,7 @@ class PatchITRB(rorpiter.ITRBranch):
                 (copy_report.sha1_digest, diff_rorp.get_safeindexpath(),
                  diff_rorp.get_sha1()), 2)
 
-    def patch_to_temp(self, basis_rp, diff_rorp, new):
+    def _patch_to_temp(self, basis_rp, diff_rorp, new):
         """Patch basis_rp, writing output in new, which doesn't exist yet"""
         if diff_rorp.isflaglinked():
             Hardlink.link_rp(diff_rorp, new, self.basis_root_rp)
@@ -718,20 +718,20 @@ class PatchITRB(rorpiter.ITRBranch):
         else:
             assert diff_rorp.get_attached_filetype() == 'diff'
             copy_report = Rdiff.patch_local(basis_rp, diff_rorp, new)
-        self.check_hash(copy_report, diff_rorp)
+        self._check_hash(copy_report, diff_rorp)
         if new.lstat():
             rpath.copy_attribs(diff_rorp, new)
 
     def start_process(self, index, diff_rorp):
         """Start processing directory - record information for later"""
-        base_rp = self.base_rp = self.get_rp_from_root(index)
+        base_rp = self.base_rp = self._get_rp_from_root(index)
         assert diff_rorp.isdir() or base_rp.isdir() or not base_rp.index
         if diff_rorp.isdir():
-            self.prepare_dir(diff_rorp, base_rp)
+            self._prepare_dir(diff_rorp, base_rp)
         else:
-            self.set_dir_replacement(diff_rorp, base_rp)
+            self._set_dir_replacement(diff_rorp, base_rp)
 
-    def set_dir_replacement(self, diff_rorp, base_rp):
+    def _set_dir_replacement(self, diff_rorp, base_rp):
         """Set self.dir_replacement, which holds data until done with dir
 
         This is used when base_rp is a dir, and diff_rorp is not.
@@ -743,7 +743,7 @@ class PatchITRB(rorpiter.ITRBranch):
         if base_rp.isdir():
             base_rp.chmod(0o700)
 
-    def prepare_dir(self, diff_rorp, base_rp):
+    def _prepare_dir(self, diff_rorp, base_rp):
         """Prepare base_rp to turn into a directory"""
         self.dir_update = diff_rorp.getRORPath()  # make copy in case changes
         if not base_rp.isdir():
@@ -789,10 +789,10 @@ class PermissionChanger:
         self.current_index = index
         if not index or index <= old_index:
             return
-        self.restore_old(index)
-        self.add_new(old_index, index)
+        self._restore_old(index)
+        self._add_chmod_new(old_index, index)
 
-    def restore_old(self, index):
+    def _restore_old(self, index):
         """Restore permissions for indices we are done with"""
         while self.open_index_list:
             old_index, old_rp, old_perms = self.open_index_list[0]
@@ -802,9 +802,9 @@ class PermissionChanger:
                 break
             del self.open_index_list[0]
 
-    def add_new(self, old_index, index):
+    def _add_chmod_new(self, old_index, index):
         """Change permissions of directories between old_index and index"""
-        for rp in self.get_new_rp_list(old_index, index):
+        for rp in self._get_new_rp_list(old_index, index):
             if ((rp.isreg() and not rp.readable())
                     or (rp.isdir() and not (rp.executable() and rp.readable()))):
                 old_perms = rp.getperms()
@@ -814,7 +814,7 @@ class PermissionChanger:
                 else:
                     rp.chmod(0o700 | old_perms)
 
-    def get_new_rp_list(self, old_index, index):
+    def _get_new_rp_list(self, old_index, index):
         """Return list of new rp's between old_index and index
 
         Do this lazily so that the permissions on the outer
