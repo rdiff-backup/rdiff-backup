@@ -12,7 +12,7 @@ for PYBIN in $pybindirs; do
 done
 
 # Bundle external shared libraries into the wheels
-for whl in dist/*.whl; do
+for whl in dist/rdiff_backup*.whl; do
     auditwheel repair "$whl" --plat $PLAT -w /io/dist/
 done
 
