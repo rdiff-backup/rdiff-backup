@@ -34,7 +34,6 @@ def check_common_error(error_handler, function, args=[]):
     try:
         return function(*args)
     except (Exception, KeyboardInterrupt, SystemExit) as exc:
-        TracebackArchive.add([function] + list(args))
         if catch_error(exc):
             log.Log.exception()
             conn = Globals.backup_writer
@@ -128,7 +127,7 @@ def listrp(rp):
     return dir_listing
 
 
-def signal_handler(signum, frame):
+def _signal_handler(signum, frame):
     """This is called when signal signum is caught"""
     raise SignalException(signum)
 
@@ -141,35 +140,9 @@ def install_signal_handlers():
     except AttributeError:
         pass
     for signum in signals:
-        signal.signal(signum, signal_handler)
+        signal.signal(signum, _signal_handler)
 
 
 class SignalException(Exception):
     """SignalException(signum) means signal signum has been received"""
     pass
-
-
-class TracebackArchive:
-    """Save last 10 caught exceptions, so they can be printed if fatal"""
-    _traceback_strings = []
-
-    @classmethod
-    def add(cls, extra_args=[]):
-        """Add most recent exception to archived list
-
-        If extra_args are present, convert to strings and add them as
-        extra information to same traceback archive.
-
-        """
-        cls._traceback_strings.append(log.Log.exception_to_string(extra_args))
-        if len(cls._traceback_strings) > 10:
-            cls._traceback_strings = cls._traceback_strings[:10]
-
-    @classmethod
-    def log(cls):
-        """Print all exception information to log file"""
-        if cls._traceback_strings:
-            log.Log(
-                "------------ Old traceback info -----------\n%s\n"
-                "-------------------------------------------" % ("\n".join(
-                    cls._traceback_strings), ), 3)
