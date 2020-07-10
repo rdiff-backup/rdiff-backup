@@ -192,9 +192,9 @@ class RedirectedConnectionTest(unittest.TestCase):
 
     def setUp(self):
         """Must start two servers for this"""
-        self.conna = SetConnections.init_connection(
+        self.conna = SetConnections._init_connection(
             "%s testing/server.py %s" % (sys.executable, SourceDir))
-        self.connb = SetConnections.init_connection(
+        self.connb = SetConnections._init_connection(
             "%s testing/server.py %s" % (sys.executable, SourceDir))
 
     def testBasic(self):
