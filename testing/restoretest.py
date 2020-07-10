@@ -43,11 +43,11 @@ class RestoreFileComparer:
         if out_rorpath.isreg():
             out_rorpath.setfile(self.rf.get_restore_fp())
         rpath.copy_with_attribs(out_rorpath, tf)
-        assert tf.equal_verbose(correct_result, check_index=0), \
+        assert tf._equal_verbose(correct_result, check_index=0), \
             "%s, %s" % (tf, correct_result)
         if tf.isreg():
             with tf.open("rb") as tf_fd, correct_result.open("rb") as corr_fd:
-                assert rpath.cmpfileobj(tf_fd, corr_fd)
+                assert rpath._cmp_file_obj(tf_fd, corr_fd)
         if tf.lstat():
             tf.delete()
 

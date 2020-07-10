@@ -36,7 +36,7 @@ class RdiffTest(unittest.TestCase):
                 self.lc,
                 os.path.join(old_test_dir, b"various_file_types",
                              b"regular_file")), 2048)
-        assert rpath.cmpfileobj(sigfp, rfsig)
+        assert rpath._cmp_file_obj(sigfp, rfsig)
         sigfp.close()
         rfsig.close()
 

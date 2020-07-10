@@ -64,7 +64,7 @@ class MetadataTest(unittest.TestCase):
         outlist = list(RorpExtractor(fp).iterate())
         assert len(rplist) == len(outlist), (len(rplist), len(outlist))
         for i in range(len(rplist)):
-            if not rplist[i].equal_verbose(outlist[i]):
+            if not rplist[i]._equal_verbose(outlist[i]):
                 assert 0, (i, str(rplist[i]), str(outlist[i]))
         fp.close()
 

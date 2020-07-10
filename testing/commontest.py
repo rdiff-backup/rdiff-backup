@@ -338,8 +338,8 @@ def CompareRecursive(src_rp,
         if not dest_rorp:
             Log("Dest rorp missing: %s" % str(src_rorp), 3)
             return 0
-        if not src_rorp.equal_verbose(dest_rorp,
-                                      compare_ownership=compare_ownership):
+        if not src_rorp._equal_verbose(dest_rorp,
+                                       compare_ownership=compare_ownership):
             return 0
         if compare_hardlinks and not hardlink_rorp_eq(src_rorp, dest_rorp):
             return 0
@@ -395,8 +395,8 @@ def CompareRecursive(src_rp,
         if compare_hardlinks:
             if Hardlink.rorp_eq(src_rorp, dest_rorp):
                 return 1
-        elif src_rorp.equal_verbose(dest_rorp,
-                                    compare_ownership=compare_ownership):
+        elif src_rorp._equal_verbose(dest_rorp,
+                                     compare_ownership=compare_ownership):
             return 1
         Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
         Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
