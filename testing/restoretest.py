@@ -59,7 +59,7 @@ class RestoreFileComparer:
 
 class RestoreTimeTest(unittest.TestCase):
     def test_time_from_session(self):
-        """Test getting time from session number (as in Time.time_from_session)
+        """Test getting time from session number (as in Time._time_from_session)
 
         Test here instead of in timetest because it depends on an
         rdiff-backup-data directory already being laid out.
@@ -69,13 +69,13 @@ class RestoreTimeTest(unittest.TestCase):
         Globals.rbdir = rpath.RPath(
             lc,
             os.path.join(old_test_dir, b"restoretest3", b"rdiff-backup-data"))
-        assert Time.genstrtotime("0B") == Time.time_from_session(0)
-        assert Time.genstrtotime("2B") == Time.time_from_session(2)
-        assert Time.genstrtotime("23B") == Time.time_from_session(23)
+        assert Time.genstrtotime("0B") == Time._time_from_session(0)
+        assert Time.genstrtotime("2B") == Time._time_from_session(2)
+        assert Time.genstrtotime("23B") == Time._time_from_session(23)
 
-        assert Time.time_from_session(0) == 40000, Time.time_from_session(0)
-        assert Time.time_from_session(2) == 20000, Time.time_from_session(2)
-        assert Time.time_from_session(5) == 10000, Time.time_from_session(5)
+        assert Time._time_from_session(0) == 40000, Time._time_from_session(0)
+        assert Time._time_from_session(2) == 20000, Time._time_from_session(2)
+        assert Time._time_from_session(5) == 10000, Time._time_from_session(5)
 
 
 class RestoreTest(unittest.TestCase):
