@@ -207,7 +207,7 @@ def _set_allowed_requests(sec_level):
             "Main.backup_touch_curmirror_local",
             "Main.backup_remove_curmirror_local",
             "Main.backup_close_statistics", "regress.check_pids",
-            "Globals.ITRB.increment_stat", "statistics.record_error",
+            "statistics.record_error",
             "log.ErrorLog.write_if_open", "fs_abilities.backup_set_globals"
         ])
     if sec_level == "all":
