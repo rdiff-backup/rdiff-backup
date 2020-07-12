@@ -22,7 +22,7 @@ python:
 deploy:
   - provider: releases
     file_glob: true
-    file: dist/*.*
+    file: dist/rdiff*.*
     skip_cleanup: true
     draft: true
     token:
