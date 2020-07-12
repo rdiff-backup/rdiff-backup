@@ -1,8 +1,64 @@
 RDIFF-BACKUP CHANGELOG
 ======================
 
-New in v2.0.3
--------------
+New in v2.0.4rc0 (2020-07-12)
+-----------------------------
+
+## Changes
+
+* CHG: explicitly refuse to back-up to exFAT because it doesn't handle 
+       properly case insensitive deletion of files, closes #38
+* CHG: setuptools is a runtime dependency for installation and tests so 
+       that version appears correctly instead of DEV, closes #305
+* CHG: testing explicitly for existence of tempdir might make certain 
+       setups fail now because tempdir was silently ignored
+* DEV: Add a misc script to setup an ArchLinux as development platform
+* DEV: add a new Vagrant configuration to do some smoke tests between 
+       the current/development version and any older one
+* DEV: Add samba server with pre-defined shares to Windows vagrant 
+       setup to allow for more extensive tests on shares
+* DEV: fix compatibility in rollsum and sum-size with rdiff 2.2/2.3 
+       leading to errors in librsynctest, closes #304
+* DEV: function rpath.getdevnums now also returns the device type, 
+       block or char
+* DEV: replace deprecated xattr.<verb>xattr with xattr.<verb> function, 
+       closes #177
+* DOC: added clearer instructions for installing weak dependencies to 
+       support ACLs and EAs under CentOS and RHEL
+* DOC: fix semi-broken nongnu.org links in manpages of rdiff-backup and 
+       rdiff-backup-statistics
+* FIX: add python3-setuptools as a run time dependency to Debian 
+       package so --version works and doesn't output DEV, closes #305.
+* FIX: address `PY_SSIZE_T` deprecation warning appearing under Python 
+       3.8 in the C code, closes #374
+* FIX: avoid error module 'errno' has no attribute 'EDEADLOCK' under 
+       MacOSX, closes #366
+* FIX: avoid issue with backslash at the end of file path under 
+       Windows, closes #395
+* FIX: avoid TypeError: a bytes-like object is required, not 'str' when 
+       logging error message by fixing encoding, closes #380
+* FIX: explicitly test existence of tempdir and avoid "Can't mix 
+       strings and bytes in path components" error, closes #367
+* FIX: failed on certain device files with no such file or directory 
+       error, closes #401
+* FIX: Force encoding of log file to be UTF-8 on all platforms and be 
+       lenient to avoid codec errors on logging, closes #356
+* FIX: Improve handling of files in use under Windows, closes #392
+* FIX: more meaningful error message when trying to test-server a local 
+       path, closes #396
+
+## Authors
+
+* Andreas Olsson
+* Eric L
+* Jirka Vejrazka
+* Neha S
+* Otto Kekäläinen
+* Patrik Dufresne
+
+
+New in v2.0.3 (2020-05-17)
+--------------------------
 
 ## Changes
 
