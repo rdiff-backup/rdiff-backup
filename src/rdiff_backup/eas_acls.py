@@ -67,7 +67,7 @@ class ExtendedAttributes:
     def read_from_rp(self, rp):
         """Set the extended attributes from an rpath"""
         try:
-            attr_list = rp.conn.xattr.listxattr(rp.path, rp.issym())
+            attr_list = rp.conn.xattr.list(rp.path, rp.issym())
         except IOError as exc:
             if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
                 return  # if not supported, consider empty
@@ -85,7 +85,7 @@ class ExtendedAttributes:
                 continue
             try:
                 self.attr_dict[attr] = \
-                    rp.conn.xattr.getxattr(rp.path, attr, rp.issym())
+                    rp.conn.xattr.get(rp.path, attr, rp.issym())
             except IOError as exc:
                 # File probably modified while reading, just continue
                 if exc.errno == errno.ENODATA:
@@ -101,9 +101,9 @@ class ExtendedAttributes:
     def _clear_rp(self, rp):
         """Delete all the extended attributes in rpath"""
         try:
-            for name in rp.conn.xattr.listxattr(rp.path, rp.issym()):
+            for name in rp.conn.xattr.list(rp.path, rp.issym()):
                 try:
-                    rp.conn.xattr.removexattr(rp.path, name, rp.issym())
+                    rp.conn.xattr.remove(rp.path, name, rp.issym())
                 except PermissionError:  # errno.EACCES
                     # SELinux attributes cannot be removed, and we don't want
                     # to bail out or be too noisy at low log levels.
@@ -131,10 +131,10 @@ class ExtendedAttributes:
         self._clear_rp(rp)
         for (name, value) in self.attr_dict.items():
             try:
-                rp.conn.xattr.setxattr(rp.path, name, value, 0, rp.issym())
+                rp.conn.xattr.set(rp.path, name, value, 0, rp.issym())
             except IOError as exc:
                 # Mac and Linux attributes have different namespaces, so
-                # fail gracefully if can't call setxattr
+                # fail gracefully if can't call xattr.set
                 if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.EACCES,
                                  errno.ENOENT, errno.EINVAL):
                     log.Log(

@@ -234,3 +234,7 @@ sudo dnf install rdiff-backup
 ```
 sudo pip3 install rdiff-backup --pre
 ```
+
+## Packaging status in distros
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/rdiff-backup.svg)](https://repology.org/project/rdiff-backup/versions)

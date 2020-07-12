@@ -222,5 +222,6 @@ setup(
         'build_py': build_py,
         'clean': clean,
     },
+    install_requires=['setuptools'],
     setup_requires=['setuptools_scm'],
 )
