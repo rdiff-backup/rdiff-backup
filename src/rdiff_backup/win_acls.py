@@ -122,7 +122,7 @@ class ACL:
             self.__acl = ''
         self.__acl = os.fsencode(self.__acl)
 
-    def clear_rp(self, rp):
+    def _clear_rp(self, rp):
         # not sure how to interpret this
         # I'll just clear all acl-s from rp.path
         try:
@@ -206,7 +206,7 @@ class ACL:
 
         (flags, revision) = sd.GetSecurityDescriptorControl()
         if (not rp.isdir() and flags & SE_DACL_PROTECTED):
-            self.clear_rp(rp)
+            self._clear_rp(rp)
 
         try:
             rp.conn.win32security. \
@@ -250,20 +250,15 @@ class ACL:
         self.__acl = lines[1]
 
 
-def Record2WACL(record):
-    acl = ACL()
-    acl.from_string(record)
-    return acl
-
-
-def WACL2Record(wacl):
-    return bytes(wacl)
-
-
 class WACLExtractor(metadata.FlatExtractor):
-    """Iterate ExtendedAttributes objects from the WACL information file"""
+    """Iterate Windows ACL objects from the WACL information file"""
     record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
-    _record_to_object = staticmethod(Record2WACL)
+
+    @staticmethod
+    def _record_to_object(record):
+        acl = ACL()
+        acl.from_string(record)
+        return acl
 
     def _filename_to_index(self, filename):
         """Convert possibly quoted filename to index tuple"""
@@ -274,10 +269,13 @@ class WACLExtractor(metadata.FlatExtractor):
 
 
 class WinAccessControlListFile(metadata.FlatFile):
-    """Store/retrieve ACLs from extended_attributes file"""
+    """Store/retrieve ACLs from Windows ACLs file"""
     _prefix = b"win_access_control_lists"
     _extractor = WACLExtractor
-    _object_to_record = staticmethod(WACL2Record)
+
+    @staticmethod
+    def _object_to_record(wacl):
+        return bytes(wacl)
 
 
 def join_wacl_iter(rorp_iter, wacl_iter):
@@ -290,30 +288,30 @@ def join_wacl_iter(rorp_iter, wacl_iter):
         yield rorp
 
 
-def rpath_acl_win_get(rpath):
+def _rpath_win_acl_get(rpath):
     acl = ACL()
     acl.load_from_rp(rpath)
     return bytes(acl)
 
 
-rpath.win_acl_get = rpath_acl_win_get
+rpath.win_acl_get = _rpath_win_acl_get
 
 
-def rpath_get_blank_win_acl(index):
+def _rpath_get_blank_win_acl(index):
     acl = ACL(index)
     return bytes(acl)
 
 
-rpath.get_blank_win_acl = rpath_get_blank_win_acl
+rpath.get_blank_win_acl = _rpath_get_blank_win_acl
 
 
-def rpath_set_win_acl(rp, acl_str):
+def _rpath_write_win_acl(rp, acl_str):
     acl = ACL()
     acl.from_string(acl_str)
     acl.write_to_rp(rp)
 
 
-rpath.write_win_acl = rpath_set_win_acl
+rpath.write_win_acl = _rpath_write_win_acl
 
 
 def init_acls():
