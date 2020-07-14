@@ -360,7 +360,7 @@ class CachedRF:
         if Globals.process_uid != 0:
             self.perm_changer = PermissionChanger(root_rf.mirror_rp)
 
-    def _list_rfs_in_cache(self, index):
+    def _debug_list_rfs_in_cache(self, index):
         """Used for debugging, return indices of cache rfs for printing"""
         s1 = "-------- Cached RF for %s -------" % (index, )
         s2 = " ".join([str(rf.index) for rf in self.rf_list])
@@ -449,7 +449,7 @@ class RestoreFile:
             self.index, self.mirror_rp, self.inc_rp,
             list(map(str, self.inc_list)), list(map(str, self.relevant_incs)))
 
-    def _relevant_incs_string(self):
+    def _debug_relevant_incs_string(self):
         """Return printable string of relevant incs, used for debugging"""
         inc_header = ["---- Relevant incs for %s" % ("/".join(self.index), )]
         inc_header.extend([

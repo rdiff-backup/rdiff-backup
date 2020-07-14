@@ -161,9 +161,9 @@ class ExtendedAttributes:
         return not self.attr_dict
 
 
-def ea_compare_rps(rp1, rp2):
+def _ea_compare_rps(rp1, rp2):
     """Return true if rp1 and rp2 have same extended attributes.
-    FIXME: This function is used solely as part of the test suite."""
+    TEST: This function is used solely as part of the test suite."""
     ea1 = ExtendedAttributes(rp1.index)
     ea1.read_from_rp(rp1)
     ea2 = ExtendedAttributes(rp2.index)
@@ -401,9 +401,9 @@ class AccessControlLists:
     def __ne__(self, acl):
         return not self.__eq__(acl)
 
-    def eq_verbose(self, acl):
+    def _eq_verbose(self, acl):
         """Returns same as __eq__ but print explanation if not equal.
-        FIXME: This function is used solely as part of the test suite."""
+        TEST: This function is used solely as part of the test suite."""
         if not self.cmp_entry_list(self.entry_list, acl.entry_list):
             print("ACL entries for %s compare differently" % (self.index, ))
             return 0
@@ -623,9 +623,9 @@ def _list_to_acl(entry_list, map_names=1):
     return acl
 
 
-def acl_compare_rps(rp1, rp2):
+def _acl_compare_rps(rp1, rp2):
     """Return true if rp1 and rp2 have same acl information.
-    FIXME: This function is used solely as part of the test suite."""
+    TEST: This function is used solely as part of the test suite."""
     acl1 = AccessControlLists(rp1.index)
     acl1.read_from_rp(rp1)
     acl2 = AccessControlLists(rp2.index)

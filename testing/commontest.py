@@ -343,12 +343,12 @@ def CompareRecursive(src_rp,
             return 0
         if compare_hardlinks and not hardlink_rorp_eq(src_rorp, dest_rorp):
             return 0
-        if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
+        if compare_eas and not eas_acls._ea_compare_rps(src_rorp, dest_rorp):
             Log(
                 "Different EAs in files %s and %s" %
                 (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
             return 0
-        if compare_acls and not eas_acls.acl_compare_rps(src_rorp, dest_rorp):
+        if compare_acls and not eas_acls._acl_compare_rps(src_rorp, dest_rorp):
             Log(
                 "Different ACLs in files %s and %s" %
                 (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
@@ -383,11 +383,11 @@ def CompareRecursive(src_rp,
                 # Don't compare .missing increments because they don't matter
                 if dest_rorp.index[-1].endswith('.missing'):
                     return 1
-        if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
+        if compare_eas and not eas_acls._ea_compare_rps(src_rorp, dest_rorp):
             Log("Different EAs in files %s and %s" %
                 (src_rorp.get_indexpath(), dest_rorp.get_indexpath()))
             return None
-        if compare_acls and not eas_acls.acl_compare_rps(src_rorp, dest_rorp):
+        if compare_acls and not eas_acls._acl_compare_rps(src_rorp, dest_rorp):
             Log(
                 "Different ACLs in files %s and %s" %
                 (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)

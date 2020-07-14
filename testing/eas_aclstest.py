@@ -356,8 +356,8 @@ other::---""")
         new_acl.read_from_rp(tempdir)
         assert not new_acl.is_basic()
         if not new_acl == self.dir_acl:
-            assert new_acl.eq_verbose(self.dir_acl)
-            assert 0, "Shouldn't be here---eq != eq_verbose?"
+            assert new_acl._eq_verbose(self.dir_acl)
+            assert 0, "Shouldn't be here---eq != _eq_verbose?"
 
     def testRecord(self):
         """Test writing a record and reading it back"""
@@ -373,7 +373,7 @@ other::---""")
         record2 = AccessControlListFile._object_to_record(self.dir_acl)
         new_acl2 = ACLExtractor._record_to_object(record2)
         if not new_acl2 == self.dir_acl:
-            assert new_acl2.eq_verbose(self.dir_acl)
+            assert new_acl2._eq_verbose(self.dir_acl)
             assert 0
 
     def testExtractor(self):
