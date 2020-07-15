@@ -8,6 +8,8 @@ yum install -y librsync-devel
 
 # Compile wheels
 for PYBIN in $pybindirs; do
+    "${PYBIN}/pip" install --user \
+        'importlib-metadata ~= 1.0 ; python_version < "3.8"'
     "${PYBIN}/pip" wheel /io/ -w dist/
 done
 
