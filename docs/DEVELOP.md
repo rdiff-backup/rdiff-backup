@@ -355,6 +355,44 @@ Assuming the iteration has no side effects, the initial variable `inc_pair_iter`
 is still valid for the rest of the program, whereas the `mycopy` is "dried out"
 (but you can repeat the `tee` operation as often as you want).
 
+### Profile rdiff-backup
+
+After having called `./setup.py build`, you may call something like the following
+to profile the current code (adapt to your Python version):
+
+```
+PATH=$PWD/build/scripts-3.8:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.8 \
+	python -m cProfile -s tottime \
+	build/scripts-3.8/rdiff-backup [... rdiff-backup parameters ...]
+```
+
+The `-s tottime` option _sorts_ by total time spent in the function.
+More information can be found in the
+[profile documentation](https://docs.python.org/3/library/profile.html).
+
+You may also do memory profiling using the
+[memory-profiler](https://pypi.org/project/memory-profiler/),
+though more detailed information requires changes to the code by adding
+the `@profile` decorator to functions:
+
+```
+pip install --user memory-profiler
+PATH=$PWD/build/scripts-3.8:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.8 \
+	mprof run \
+	build/scripts-3.8/rdiff-backup [... rdiff-backup parameters ...]
+mprof plot
+mprof clean
+```
+
+> **NOTE:** sometimes calling rdiff-backup this way fails, it's due to the
+	script having a wrong interpreter (because of wheel building).
+	Call `./setup.sh clean --all && ./setup.py build` to fix it.
+
+> **TIP:** there is also a
+	[line-profiler](https://pypi.org/project/line-profiler/),
+	but I didn't try it because it requires changes to the code
+	(again the `@profile` decorator).
+
 ## RELEASING
 
 We use [Travis CI](https://travis-ci.org) to release automatically, as setup in the [Travis configuration file](../.travis.yml).

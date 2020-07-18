@@ -25,3 +25,6 @@ rdiff-backup.spec
 
 # Jekyll static sites
 _site/
+
+# Profiling information
+mprofile_*.dat
