@@ -357,6 +357,8 @@ is still valid for the rest of the program, whereas the `mycopy` is "dried out"
 
 ### Profile rdiff-backup
 
+#### Profiling without code changes
+
 After having called `./setup.py build`, you may call something like the following
 to profile the current code (adapt to your Python version):
 
@@ -369,6 +371,9 @@ PATH=$PWD/build/scripts-3.8:$PATH PYTHONPATH=$PWD/build/lib.linux-x86_64-3.8 \
 The `-s tottime` option _sorts_ by total time spent in the function.
 More information can be found in the
 [profile documentation](https://docs.python.org/3/library/profile.html).
+
+> **TIP:** if you're into graphical tools and overviews, have a look e.g.
+	at  https://pythonhosted.org//ProfileEye/ ?
 
 You may also do memory profiling using the
 [memory-profiler](https://pypi.org/project/memory-profiler/),
@@ -392,6 +397,31 @@ mprof clean
 	[line-profiler](https://pypi.org/project/line-profiler/),
 	but I didn't try it because it requires changes to the code
 	(again the `@profile` decorator).
+
+#### More profiling with code changes
+
+Once you have found by profiling an object that uses a lot of memory,
+one can use `print(sys.getsizeof(x))` to print it's memory footprint then iterating for a code solution to bring it down.
+
+Memory can be freed manually with:
+
+```
+import gc
+collected_objects = gc.collect()
+```
+
+This can also be run in Python:
+
+```
+import cProfile, pstats, StringIO 
+pr = cProfile.Profile() 
+pr.enable() 
+# ... do something ... pr.disable() 
+s = StringIO.StringIO()
+ps = pstats.Stats(pr, stream=s).sort_stats(‘cumulative’) 
+ps.print_stats() 
+print s.getvalue()
+```
 
 ## RELEASING
 
