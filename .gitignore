@@ -26,5 +26,8 @@ rdiff-backup.spec
 # Jekyll static sites
 _site/
 
-# coverage files
+# test coverage files
 .coverage*
+
+# Profiling information
+mprofile_*.dat
