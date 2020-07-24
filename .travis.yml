@@ -219,11 +219,9 @@ addons:
 
 # Each env becomes a separate job. Add more Python versions to have a matrix.
 env:
-  - MAKE_STEP=test-static RUN_COMMAND= SUDO=sudo
-  - MAKE_STEP=build RUN_COMMAND= SUDO=sudo
+  - MAKE_STEP=test-misc         RUN_COMMAND= SUDO=sudo
   - MAKE_STEP=test-runtime-base RUN_COMMAND= SUDO=sudo
   - MAKE_STEP=test-runtime-root RUN_COMMAND= SUDO=root  # see below
-  - MAKE_STEP=test-runtime-slow RUN_COMMAND= SUDO=sudo
 
 script:
   # We need the following line because travis runs already in a virtualenv
