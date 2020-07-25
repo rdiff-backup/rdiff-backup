@@ -1,6 +1,26 @@
 RDIFF-BACKUP CHANGELOG
 ======================
 
+New in v2.0.5 (2020-07-25)
+--------------------------
+
+## Changes
+
+* CHG: development status now set to stable in PyPI classifiers
+* CHG: increased version of bundled Python Windows version from 3.7.5 
+       to 3.7.7. (#426)
+* DEV: add measurement of test coverage to tox.ini and limit to 70% for 
+       further improvement, closes #113
+* DEV: make CI pipeline faster by joining small jobs together to avoid 
+       VM creation overhead.
+* DOC: add few development notes about profiling rdiff-backup for time 
+       and memory consumption
+
+## Authors
+
+* Eric L
+
+
 New in v2.0.4rc0 (2020-07-12)
 -----------------------------
 
