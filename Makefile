@@ -34,6 +34,8 @@ test-runtime-slow: test-runtime-files
 	@echo "=== Long running performance tests ==="
 	${RUN_COMMAND} tox -c tox_slow.ini -e py
 
+test-misc: clean build test-static test-runtime-slow
+
 build:
 	# Build rdiff-backup (assumes src/ is in directory 'rdiff-backup' and it's
 	# parent is writeable)

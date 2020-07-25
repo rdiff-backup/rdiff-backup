@@ -157,7 +157,7 @@ setup(
         provided the file system(s) also support these features.""",
     keywords=['backup', 'simple', 'easy', 'remote', 'incremental', 'efficient', 'cross-platform'],
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: End Users/Desktop',
         'Intended Audience :: System Administrators',
