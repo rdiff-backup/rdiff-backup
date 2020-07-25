@@ -148,7 +148,8 @@ Additionally are following pre-requisites needed:
 * libacl-devel (for sys/acl.h)
 * tox (for testing)
 * rdiff (for testing)
-* flake8 (optional, but helpful to validate code correctness)
+* flake8 (optional, but helpful to validate code correctness locally)
+* coverage (optional, but helpful to validate test coverage locally)
 
 All of those should come packaged with your system or available from
 https://pypi.org/ but if you need them otherwise, here are some sources:
