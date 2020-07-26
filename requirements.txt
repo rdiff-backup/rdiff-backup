@@ -1,0 +1,25 @@
+# This file describes the (development) dependencies so that we can be warned
+# by GitHub dependency graph if something is compromised, see:
+# https://docs.github.com/en/github/visualizing-repository-data-with-graphs/about-the-dependency-graph
+
+# We don't pin versions unless we see a reason for it. Having developers with
+# slightly different versions of the dependencies increases our chance to
+# detect non working combinations.
+
+# You can also use the file to install your environment with the following command:
+#	pip install -r requirements.txt
+
+# mandatory
+setuptools
+setuptools-scm
+importlib-metadata ~= 1.0 ; python_version < "3.8"
+
+# optional
+pylibacl
+pyxattr
+# or xattr under SuSE Linux & Co
+
+# purely for development and testing purposes
+tox
+flake8
+coverage
