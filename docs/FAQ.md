@@ -41,6 +41,7 @@ rdiff-backup FAQ
 19. [What does \"`IO Error: CRC check failed`\" mean?](#crc)
 20. [What does \"`AssertionError: Bad index order`\" mean?](#badindex)
 21. [How can rdiff-backup use UTC as the timezone?](#utc)
+22. [I've done a blunder in my last backup, how to roll-back?](#rollback)
 
 ### [Questions and Answers]{#ToC4}
 
@@ -559,3 +560,18 @@ rdiff-backup FAQ
     the command line used to run rdiff-backup. On Windows, the command
     `USE TZ=UTC` sets the `%TZ%` environment variable, and can be used
     either in a batch script, or at the DOS prompt.
+
+22. **[I've done a blunder in my last backup, how to roll-back?]{#rollback}**
+
+    If you've done something wrong in your last back-up, you have
+    potentially two solutions to get rid of it. If you've backed-up a
+    file or directory you shouldn't have backed-up, you can remove it
+    again using `rdiff-backup-delete <repo>/<file-or-dir>`; beware that
+    _all_ files, including all earlier versions, will be removed
+    without any question back! If the situation is more complicated,
+    you might want to have a look at
+    [rdiff-backup-regress](https://www.timedicer.co.uk/programs/help/rdiff-backup-regress.sh.php)
+    which completely removes the last made backup, but beware that
+    regression takes a long time. Note that we made a copy of this nice
+    utility, placed under `tools/misc` in our Git repo, just to be
+    sure it doesn't get lost.
