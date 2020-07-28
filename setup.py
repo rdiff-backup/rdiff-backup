@@ -222,6 +222,6 @@ setup(
         'build_py': build_py,
         'clean': clean,
     },
-    install_requires=['setuptools'],
+    install_requires=['importlib-metadata ~= 1.0 ; python_version < "3.8"'],
     setup_requires=['setuptools_scm'],
 )
