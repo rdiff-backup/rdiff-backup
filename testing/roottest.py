@@ -1,8 +1,8 @@
 import unittest
 import os
 from commontest import old_test_dir, abs_test_dir, abs_output_dir, Myrm, \
-    abs_restore_dir, re_init_rpath_dir, CompareRecursive, BackupRestoreSeries, \
-    rdiff_backup, RBBin
+    abs_restore_dir, re_init_rpath_dir, compare_recursive, \
+    BackupRestoreSeries, rdiff_backup, RBBin
 from rdiff_backup import Globals, rpath, Main
 """Root tests - contain tests which need to be run as root.
 
@@ -298,7 +298,7 @@ class HalfRoot(unittest.TestCase):
         cmd3 = restore_schema % (b'10000', remote_schema, outrp.path,
                                  rout_rp.path)
         Run(cmd3)
-        assert CompareRecursive(in_rp1, rout_rp)
+        assert compare_recursive(in_rp1, rout_rp)
         rout_perms = rout_rp.append('unreadable_dir').getperms()
         outrp_perms = outrp.append('unreadable_dir').getperms()
         assert rout_perms == 0, rout_perms
@@ -308,7 +308,7 @@ class HalfRoot(unittest.TestCase):
         cmd4 = restore_schema % (b"now", remote_schema, outrp.path,
                                  rout_rp.path)
         Run(cmd4)
-        assert CompareRecursive(in_rp2, rout_rp)
+        assert compare_recursive(in_rp2, rout_rp)
         rout_perms = rout_rp.append('unreadable_dir').getperms()
         outrp_perms = outrp.append('unreadable_dir').getperms()
         assert rout_perms == 0, rout_perms
@@ -354,7 +354,7 @@ class NonRoot(unittest.TestCase):
         rp2.chown(2, 2)
         rp3 = sp.append("3")
         rp3.chown(1, 1)
-        assert not CompareRecursive(rp, sp, compare_ownership=1)
+        assert not compare_recursive(rp, sp, compare_ownership=1)
 
         return rp, sp
 
@@ -386,21 +386,21 @@ class NonRoot(unittest.TestCase):
 
         self.backup(input_rp1, output_rp, 1000000)
         self.restore(output_rp, restore_rp)
-        assert CompareRecursive(input_rp1, restore_rp, compare_ownership=1)
+        assert compare_recursive(input_rp1, restore_rp, compare_ownership=1)
 
         self.backup(input_rp2, output_rp, 2000000)
         self.restore(output_rp, restore_rp)
-        assert CompareRecursive(input_rp2, restore_rp, compare_ownership=1)
+        assert compare_recursive(input_rp2, restore_rp, compare_ownership=1)
 
         self.backup(empty_rp, output_rp, 3000000)
         self.restore(output_rp, restore_rp)
-        assert CompareRecursive(empty_rp, restore_rp, compare_ownership=1)
+        assert compare_recursive(empty_rp, restore_rp, compare_ownership=1)
 
         self.restore(output_rp, restore_rp, 1000000)
-        assert CompareRecursive(input_rp1, restore_rp, compare_ownership=1)
+        assert compare_recursive(input_rp1, restore_rp, compare_ownership=1)
 
         self.restore(output_rp, restore_rp, 2000000)
-        assert CompareRecursive(input_rp2, restore_rp, compare_ownership=1)
+        assert compare_recursive(input_rp2, restore_rp, compare_ownership=1)
 
 
 if __name__ == "__main__":

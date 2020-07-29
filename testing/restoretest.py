@@ -1,7 +1,7 @@
 import unittest
 import os
 from commontest import abs_output_dir, old_test_dir, Myrm, MakeOutputDir, \
-    InternalRestore, CompareRecursive
+    InternalRestore, compare_recursive
 from rdiff_backup import restore, Globals, rpath, TempFile, Time, log, Main
 
 lc = Globals.local_connection
@@ -160,16 +160,16 @@ class RestoreTest(unittest.TestCase):
 
         InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir,
                         45000)
-        assert CompareRecursive(inc4_rp, target_rp)
+        assert compare_recursive(inc4_rp, target_rp)
         InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir,
                         35000)
-        assert CompareRecursive(inc3_rp, target_rp, compare_hardlinks=0)
+        assert compare_recursive(inc3_rp, target_rp, compare_hardlinks=0)
         InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir,
                         25000)
-        assert CompareRecursive(inc2_rp, target_rp, compare_hardlinks=0)
+        assert compare_recursive(inc2_rp, target_rp, compare_hardlinks=0)
         InternalRestore(mirror_local, dest_local, restore3_dir, abs_output_dir,
                         5000)
-        assert CompareRecursive(inc1_rp, target_rp, compare_hardlinks=0)
+        assert compare_recursive(inc1_rp, target_rp, compare_hardlinks=0)
 
     def testRestoreNoincs(self):
         """Test restoring a directory with no increments, just mirror"""

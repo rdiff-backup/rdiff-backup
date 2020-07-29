@@ -4,7 +4,7 @@ import re
 import sys
 import time
 import pathlib
-from commontest import rdiff_backup, Myrm, CompareRecursive, \
+from commontest import rdiff_backup, Myrm, compare_recursive, \
     old_test_dir, abs_test_dir, get_increment_rp
 from rdiff_backup import Globals, log, rpath, robust, FilenameMapping, Time, selection
 """Regression tests"""
@@ -95,7 +95,7 @@ class PathSetter(unittest.TestCase):
                      Local.inc1rp.path,
                      Local.rpout.path,
                      current_time=10000)
-        assert CompareRecursive(Local.inc1rp, Local.rpout)
+        assert compare_recursive(Local.inc1rp, Local.rpout)
         time.sleep(1)
 
         # Backing up increment2
@@ -104,7 +104,7 @@ class PathSetter(unittest.TestCase):
                      Local.inc2rp.path,
                      Local.rpout.path,
                      current_time=20000)
-        assert CompareRecursive(Local.inc2rp, Local.rpout)
+        assert compare_recursive(Local.inc2rp, Local.rpout)
         time.sleep(1)
 
         # Backing up increment3
@@ -113,7 +113,7 @@ class PathSetter(unittest.TestCase):
                      Local.inc3rp.path,
                      Local.rpout.path,
                      current_time=30000)
-        assert CompareRecursive(Local.inc3rp, Local.rpout)
+        assert compare_recursive(Local.inc3rp, Local.rpout)
         time.sleep(1)
 
         # Backing up increment4
@@ -122,7 +122,7 @@ class PathSetter(unittest.TestCase):
                      Local.inc4rp.path,
                      Local.rpout.path,
                      current_time=40000)
-        assert CompareRecursive(Local.inc4rp, Local.rpout)
+        assert compare_recursive(Local.inc4rp, Local.rpout)
 
         # Getting restore rps
         inc_paths = self.getinc_paths(
@@ -132,15 +132,15 @@ class PathSetter(unittest.TestCase):
 
         # Restoring increment1
         rdiff_backup(from_local, to_local, inc_paths[0], Local.rpout1.path)
-        assert CompareRecursive(Local.inc1rp, Local.rpout1)
+        assert compare_recursive(Local.inc1rp, Local.rpout1)
 
         # Restoring increment2
         rdiff_backup(from_local, to_local, inc_paths[1], Local.rpout2.path)
-        assert CompareRecursive(Local.inc2rp, Local.rpout2)
+        assert compare_recursive(Local.inc2rp, Local.rpout2)
 
         # Restoring increment3
         rdiff_backup(from_local, to_local, inc_paths[2], Local.rpout3.path)
-        assert CompareRecursive(Local.inc3rp, Local.rpout3)
+        assert compare_recursive(Local.inc3rp, Local.rpout3)
 
         # Test restoration of a few random files
         vft_paths = self.getinc_paths(
@@ -149,7 +149,7 @@ class PathSetter(unittest.TestCase):
                          b"increments"))
         rdiff_backup(from_local, to_local, vft_paths[1], Local.vft_out.path)
         self.refresh(Local.vft_in, Local.vft_out)
-        assert CompareRecursive(Local.vft_in, Local.vft_out)
+        assert compare_recursive(Local.vft_in, Local.vft_out)
 
         timbar_paths = self.getinc_paths(
             b"timbar.pyc.",
@@ -166,7 +166,7 @@ class PathSetter(unittest.TestCase):
                      Local.vft_recover.path,
                      extra_options=b"--restore-as-of 25000")
         self.refresh(Local.vft_recover, Local.vft_in)
-        assert CompareRecursive(Local.vft_recover, Local.vft_in)
+        assert compare_recursive(Local.vft_recover, Local.vft_in)
 
         # Make sure too many increment files not created
         assert len(
@@ -236,7 +236,7 @@ class Final(PathSetter):
                      Local.inc1rp.path,
                      procout.path,
                      current_time=30000)
-        assert CompareRecursive(Local.inc1rp, procout)
+        assert compare_recursive(Local.inc1rp, procout)
         time.sleep(1)
         rdiff_backup(True, True, '/proc', procout.path, current_time=40000)
 
@@ -255,7 +255,7 @@ class Final(PathSetter):
                      Local.inc1rp.path,
                      procout.path,
                      current_time=30000)
-        assert CompareRecursive(Local.inc1rp, procout)
+        assert compare_recursive(Local.inc1rp, procout)
         time.sleep(1)
         rdiff_backup(True, False, '/proc', procout.path, current_time=40000)
 
@@ -316,16 +316,16 @@ class Final(PathSetter):
         Globals.chars_to_quote = None
         assert len(inc_paths) == 1, inc_paths
         self.exec_rb(None, inc_paths[0], b'testfiles/restoretarget2')
-        assert CompareRecursive(Local.wininc2,
-                                Local.rpout2,
-                                compare_hardlinks=0)
+        assert compare_recursive(Local.wininc2,
+                                 Local.rpout2,
+                                 compare_hardlinks=0)
 
         # Restore increment 3 again, using different syntax
         self.rb_schema = old_schema + b'-r 30000 '
         self.exec_rb(None, b'testfiles/output', b'testfiles/restoretarget3')
-        assert CompareRecursive(Local.wininc3,
-                                Local.rpout3,
-                                compare_hardlinks=0)
+        assert compare_recursive(Local.wininc3,
+                                 Local.rpout3,
+                                 compare_hardlinks=0)
         self.rb_schema = old_schema
 
     def testLegacy(self):
@@ -352,7 +352,7 @@ class Final(PathSetter):
                      Local.rpout.path,
                      Local.rpout1.path,
                      extra_options=b'-r0')
-        assert CompareRecursive(Local.vftrp, Local.rpout1, compare_hardlinks=0)
+        assert compare_recursive(Local.vftrp, Local.rpout1, compare_hardlinks=0)
 
 
 class FinalMisc(PathSetter):

@@ -247,15 +247,115 @@ def _reset_connections(src_rp, dest_rp):
     Main.misc_setup([src_rp, dest_rp])
 
 
-def CompareRecursive(src_rp,
-                     dest_rp,
-                     compare_hardlinks=1,
-                     equality_func=None,
-                     exclude_rbdir=1,
-                     ignore_tmp_files=None,
-                     compare_ownership=0,
-                     compare_eas=0,
-                     compare_acls=0):
+def _hardlink_rorp_eq(src_rorp, dest_rorp):
+    """Compare two files for hardlink equality, encompassing being hard-linked,
+    having the same hashsum, and the same number of link counts."""
+    Hardlink.add_rorp(dest_rorp)
+    Hardlink.add_rorp(src_rorp, dest_rorp)
+    rorp_eq = Hardlink.rorp_eq(src_rorp, dest_rorp)
+    if not src_rorp.isreg() or not dest_rorp.isreg() or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1:
+        if not rorp_eq:
+            Log("Hardlink compare error with when no links exist", 3)
+            Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+            Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+            return False
+    elif src_rorp.getnumlinks() > 1 and not Hardlink.islinked(src_rorp):
+        if rorp_eq:
+            Log("Hardlink compare error with first linked src_rorp and no dest_rorp sha1", 3)
+            Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+            Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+            return False
+        hash.compute_sha1(dest_rorp)
+        rorp_eq = Hardlink.rorp_eq(src_rorp, dest_rorp)
+        if src_rorp.getnumlinks() != dest_rorp.getnumlinks():
+            if rorp_eq:
+                Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with differing link counts", 3)
+                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+                return False
+        elif not rorp_eq:
+            Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with equal link counts", 3)
+            Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+            Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+            return False
+    elif src_rorp.getnumlinks() != dest_rorp.getnumlinks():
+        if rorp_eq:
+            Log("Hardlink compare error with non-first linked src_rorp and with differing link counts", 3)
+            Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+            Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+            return False
+    elif not rorp_eq:
+        Log("Hardlink compare error with non-first linked src_rorp and with equal link counts", 3)
+        Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
+        Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+        return False
+    Hardlink.del_rorp(src_rorp)
+    Hardlink.del_rorp(dest_rorp)
+    return True
+
+
+def _files_rorp_eq(src_rorp, dest_rorp,
+                   compare_hardlinks=True,
+                   compare_ownership=False,
+                   compare_eas=False,
+                   compare_acls=False):
+    """Combined eq func returns true if two files compare same"""
+    if not src_rorp:
+        Log("Source rorp missing: %s" % str(dest_rorp), 3)
+        return False
+    if not dest_rorp:
+        Log("Dest rorp missing: %s" % str(src_rorp), 3)
+        return False
+    if not src_rorp.equal_verbose(dest_rorp,
+                                  compare_ownership=compare_ownership):
+        return False
+    if compare_hardlinks and not _hardlink_rorp_eq(src_rorp, dest_rorp):
+        return False
+    if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
+        Log(
+            "Different EAs in files %s and %s" %
+            (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
+        return False
+    if compare_acls and not eas_acls.acl_compare_rps(src_rorp, dest_rorp):
+        Log(
+            "Different ACLs in files %s and %s" %
+            (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
+        return False
+    return True
+
+
+def _get_selection_functions(src_rp, dest_rp,
+                             exclude_rbdir=True,
+                             ignore_tmp_files=False):
+    """Return generators of files in source, dest"""
+    src_rp.setdata()
+    dest_rp.setdata()
+    src_select = selection.Select(src_rp)
+    dest_select = selection.Select(dest_rp)
+
+    if ignore_tmp_files:
+        # Ignoring temp files can be useful when we want to check the
+        # correctness of a backup which aborted in the middle.  In
+        # these cases it is OK to have tmp files lying around.
+        src_select.add_selection_func(
+            src_select.regexp_get_sf(".*rdiff-backup.tmp.[^/]+$", 0))
+        dest_select.add_selection_func(
+            dest_select.regexp_get_sf(".*rdiff-backup.tmp.[^/]+$", 0))
+
+    if exclude_rbdir:  # Exclude rdiff-backup-data directory
+        src_select.parse_rbdir_exclude()
+        dest_select.parse_rbdir_exclude()
+
+    return src_select.set_iter(), dest_select.set_iter()
+
+
+def compare_recursive(src_rp, dest_rp,
+                      compare_hardlinks=True,
+                      exclude_rbdir=True,
+                      ignore_tmp_files=False,
+                      compare_ownership=False,
+                      compare_eas=False,
+                      compare_acls=False):
     """Compare src_rp and dest_rp, which can be directories
 
     This only compares file attributes, not the actual data.  This
@@ -264,143 +364,24 @@ def CompareRecursive(src_rp,
 
     """
 
-    def get_selection_functions():
-        """Return generators of files in source, dest"""
-        src_rp.setdata()
-        dest_rp.setdata()
-        src_select = selection.Select(src_rp)
-        dest_select = selection.Select(dest_rp)
-
-        if ignore_tmp_files:
-            # Ignoring temp files can be useful when we want to check the
-            # correctness of a backup which aborted in the middle.  In
-            # these cases it is OK to have tmp files lying around.
-            src_select.add_selection_func(
-                src_select.regexp_get_sf(".*rdiff-backup.tmp.[^/]+$", 0))
-            dest_select.add_selection_func(
-                dest_select.regexp_get_sf(".*rdiff-backup.tmp.[^/]+$", 0))
-
-        if exclude_rbdir:  # Exclude rdiff-backup-data directory
-            src_select.parse_rbdir_exclude()
-            dest_select.parse_rbdir_exclude()
-
-        return src_select.set_iter(), dest_select.set_iter()
-
-    def hardlink_rorp_eq(src_rorp, dest_rorp):
-        Hardlink.add_rorp(dest_rorp)
-        Hardlink.add_rorp(src_rorp, dest_rorp)
-        rorp_eq = Hardlink.rorp_eq(src_rorp, dest_rorp)
-        if not src_rorp.isreg() or not dest_rorp.isreg() or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1:
-            if not rorp_eq:
-                Log("Hardlink compare error with when no links exist exist", 3)
-                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
-                return 0
-        elif src_rorp.getnumlinks() > 1 and not Hardlink.islinked(src_rorp):
-            if rorp_eq:
-                Log("Hardlink compare error with first linked src_rorp and no dest_rorp sha1", 3)
-                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
-                return 0
-            hash.compute_sha1(dest_rorp)
-            rorp_eq = Hardlink.rorp_eq(src_rorp, dest_rorp)
-            if src_rorp.getnumlinks() != dest_rorp.getnumlinks():
-                if rorp_eq:
-                    Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with differing link counts", 3)
-                    Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-                    Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
-                    return 0
-            elif not rorp_eq:
-                Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with equal link counts", 3)
-                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
-                return 0
-        elif src_rorp.getnumlinks() != dest_rorp.getnumlinks():
-            if rorp_eq:
-                Log("Hardlink compare error with non-first linked src_rorp and with differing link counts", 3)
-                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
-                return 0
-        elif not rorp_eq:
-            Log("Hardlink compare error with non-first linked src_rorp and with equal link counts", 3)
-            Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-            Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
-            return 0
-        Hardlink.del_rorp(src_rorp)
-        Hardlink.del_rorp(dest_rorp)
-        return 1
-
-    def equality_func(src_rorp, dest_rorp):
-        """Combined eq func returns true if two files compare same"""
-        if not src_rorp:
-            Log("Source rorp missing: %s" % str(dest_rorp), 3)
-            return 0
-        if not dest_rorp:
-            Log("Dest rorp missing: %s" % str(src_rorp), 3)
-            return 0
-        if not src_rorp.equal_verbose(dest_rorp,
-                                      compare_ownership=compare_ownership):
-            return 0
-        if compare_hardlinks and not hardlink_rorp_eq(src_rorp, dest_rorp):
-            return 0
-        if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
-            Log(
-                "Different EAs in files %s and %s" %
-                (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
-            return 0
-        if compare_acls and not eas_acls.acl_compare_rps(src_rorp, dest_rorp):
-            Log(
-                "Different ACLs in files %s and %s" %
-                (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
-            return 0
-        return 1
-
     Log(
         "Comparing %s and %s, hardlinks %s, eas %s, acls %s" %
         (src_rp.get_safepath(), dest_rp.get_safepath(), compare_hardlinks,
          compare_eas, compare_acls), 3)
     if compare_hardlinks:
         reset_hardlink_dicts()
-    src_iter, dest_iter = get_selection_functions()
+    src_iter, dest_iter = _get_selection_functions(
+        src_rp, dest_rp,
+        exclude_rbdir=exclude_rbdir,
+        ignore_tmp_files=ignore_tmp_files)
     for src_rorp, dest_rorp in rorpiter.Collate2Iters(src_iter, dest_iter):
-        if not equality_func(src_rorp, dest_rorp):
+        if not _files_rorp_eq(src_rorp, dest_rorp,
+                              compare_hardlinks=compare_hardlinks,
+                              compare_ownership=compare_ownership,
+                              compare_eas=compare_eas,
+                              compare_acls=compare_acls):
             return 0
     return 1
-
-    def rbdir_equal(src_rorp, dest_rorp):
-        """Like hardlink_equal, but make allowances for data directories"""
-        if not src_rorp.index and not dest_rorp.index:
-            return 1
-        if (src_rorp.index and src_rorp.index[0] == 'rdiff-backup-data' and src_rorp.index == dest_rorp.index):
-            # Don't compare dirs - they don't carry significant info
-            if dest_rorp.isdir() and src_rorp.isdir():
-                return 1
-            if dest_rorp.isreg() and src_rorp.isreg():
-                # Don't compare gzipped files because it is apparently
-                # non-deterministic.
-                if dest_rorp.index[-1].endswith('gz'):
-                    return 1
-                # Don't compare .missing increments because they don't matter
-                if dest_rorp.index[-1].endswith('.missing'):
-                    return 1
-        if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
-            Log("Different EAs in files %s and %s" %
-                (src_rorp.get_indexpath(), dest_rorp.get_indexpath()))
-            return None
-        if compare_acls and not eas_acls.acl_compare_rps(src_rorp, dest_rorp):
-            Log(
-                "Different ACLs in files %s and %s" %
-                (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
-            return None
-        if compare_hardlinks:
-            if Hardlink.rorp_eq(src_rorp, dest_rorp):
-                return 1
-        elif src_rorp.equal_verbose(dest_rorp,
-                                    compare_ownership=compare_ownership):
-            return 1
-        Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-        Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
-        return None
 
 
 def reset_hardlink_dicts():
@@ -447,12 +428,12 @@ def BackupRestoreSeries(source_local,
         time += 10000
         _reset_connections(src_rp, dest_rp)
         if compare_backups:
-            assert CompareRecursive(src_rp,
-                                    dest_rp,
-                                    compare_hardlinks,
-                                    compare_eas=compare_eas,
-                                    compare_acls=compare_acls,
-                                    compare_ownership=compare_ownership)
+            assert compare_recursive(src_rp,
+                                     dest_rp,
+                                     compare_hardlinks,
+                                     compare_eas=compare_eas,
+                                     compare_acls=compare_acls,
+                                     compare_ownership=compare_ownership)
 
     time = 10000
     for dirname in list_of_dirnames[:-1]:
@@ -466,11 +447,11 @@ def BackupRestoreSeries(source_local,
                         eas=compare_eas,
                         acls=compare_acls)
         src_rp = rpath.RPath(Globals.local_connection, dirname)
-        assert CompareRecursive(src_rp,
-                                restore_rp,
-                                compare_eas=compare_eas,
-                                compare_acls=compare_acls,
-                                compare_ownership=compare_ownership)
+        assert compare_recursive(src_rp,
+                                 restore_rp,
+                                 compare_eas=compare_eas,
+                                 compare_acls=compare_acls,
+                                 compare_ownership=compare_ownership)
 
         # Restore should default back to newest time older than it
         # with a backup then.
@@ -499,7 +480,7 @@ def MirrorTest(source_local,
 
         InternalMirror(source_local, dest_local, dirname, dest_dirname)
         _reset_connections(src_rp, dest_rp)
-        assert CompareRecursive(src_rp, dest_rp, compare_hardlinks)
+        assert compare_recursive(src_rp, dest_rp, compare_hardlinks)
     Main.force = old_force_val
 
 
