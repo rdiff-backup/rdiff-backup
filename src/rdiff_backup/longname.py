@@ -40,21 +40,21 @@ it later.
 import errno
 from . import log, Globals, restore, regress
 
-long_name_dir = b"long_filename_data"
-rootrp = None
+_long_name_dir = b"long_filename_data"
+_long_name_rootrp = None
 
 
-def get_long_rp(base=None):
+def _get_long_rp(base=None):
     """Return an rpath in long name directory with given base"""
-    global rootrp
-    if not rootrp:
-        rootrp = Globals.rbdir.append(long_name_dir)
-        if not rootrp.lstat():
-            rootrp.mkdir()
+    global _long_name_rootrp
+    if not _long_name_rootrp:
+        _long_name_rootrp = Globals.rbdir.append(_long_name_dir)
+        if not _long_name_rootrp.lstat():
+            _long_name_rootrp.mkdir()
     if base:
-        return rootrp.append(base)
+        return _long_name_rootrp.append(base)
     else:
-        return rootrp
+        return _long_name_rootrp
 
 
 # ------------------------------------------------------------------
@@ -62,21 +62,21 @@ def get_long_rp(base=None):
 
 # integer number of next free prefix.  Names will be created from
 # integers consecutively like '1', '2', and so on.
-free_name_counter = None
+_free_name_counter = None
 
 # Filename which holds the next available free name in it
-counter_filename = b"next_free"
+_counter_filename = b"next_free"
 
 
-def get_next_free():
+def _get_next_free_filename():
     """Return next free filename available in the long filename directory"""
-    global free_name_counter
+    global _free_name_counter
 
     def scan_next_free():
-        """Return value of free_name_counter by listing long filename dir"""
+        """Return value of _free_name_counter by listing long filename dir"""
         log.Log("Setting next free from long filenames dir", 5)
         cur_high = 0
-        for filename in get_long_rp().listdir():
+        for filename in _get_long_rp().listdir():
             try:
                 i = int(filename.split(b'.')[0])
             except ValueError:
@@ -87,32 +87,32 @@ def get_next_free():
 
     def read_next_free():
         """Return next int free by reading the next_free file, or None"""
-        rp = get_long_rp(counter_filename)
+        rp = _get_long_rp(_counter_filename)
         if not rp.lstat():
             return None
         return int(rp.get_string())
 
     def write_next_free(i):
         """Write value i into the counter file"""
-        rp = get_long_rp(counter_filename)
+        rp = _get_long_rp(_counter_filename)
         if rp.lstat():
             rp.delete()
-        rp.write_string(str(free_name_counter))
+        rp.write_string(str(_free_name_counter))
         rp.fsync_with_dir()
 
-    if not free_name_counter:
-        free_name_counter = read_next_free()
-    if not free_name_counter:
-        free_name_counter = scan_next_free()
-    filename = b'%i' % free_name_counter
-    rp = get_long_rp(filename)
+    if not _free_name_counter:
+        _free_name_counter = read_next_free()
+    if not _free_name_counter:
+        _free_name_counter = scan_next_free()
+    filename = b'%i' % _free_name_counter
+    rp = _get_long_rp(filename)
     assert not rp.lstat(), "Unexpected file at '%s' found" % rp.get_safepath()
-    free_name_counter += 1
-    write_next_free(free_name_counter)
+    _free_name_counter += 1
+    write_next_free(_free_name_counter)
     return filename
 
 
-def check_new_index(base, index, make_dirs=0):
+def _check_new_index(base, index, make_dirs=0):
     """Return new rpath with given index, or None if that is too long
 
     If make_dir is True, make any parent directories to assure that
@@ -158,9 +158,9 @@ def get_mirror_rp(mirror_base, mirror_rorp):
 
     """
     if mirror_rorp.has_alt_mirror_name():
-        return get_long_rp(mirror_rorp.get_alt_mirror_name())
+        return _get_long_rp(mirror_rorp.get_alt_mirror_name())
     else:
-        rp = check_new_index(mirror_base, mirror_rorp.index)
+        rp = _check_new_index(mirror_base, mirror_rorp.index)
         if rp:
             return rp
         else:
@@ -183,7 +183,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
         """Return (mirror_rp, alt_mirror, alt_inc) from old_rorp"""
         if old_rorp.has_alt_mirror_name():
             alt_mirror = old_rorp.get_alt_mirror_name()
-            return (get_long_rp(alt_mirror), alt_mirror, None)
+            return (_get_long_rp(alt_mirror), alt_mirror, None)
         else:
             mirror_rp = mirror_root.new_index(old_rorp.index)
             if old_rorp.has_alt_inc_name():
@@ -193,11 +193,11 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
 
     def mir_triple_new(new_rorp):
         """Return (mirror_rp, alt_mirror, None) from new_rorp"""
-        mirror_rp = check_new_index(mirror_root, new_rorp.index)
+        mirror_rp = _check_new_index(mirror_root, new_rorp.index)
         if mirror_rp:
             return (mirror_rp, None, None)
-        alt_mirror = get_next_free()
-        return (get_long_rp(alt_mirror), alt_mirror, None)
+        alt_mirror = _get_next_free_filename()
+        return (_get_long_rp(alt_mirror), alt_mirror, None)
 
     def update_rorp(new_rorp, alt_mirror, alt_inc):
         """Update new_rorp with alternate mirror/inc information"""
@@ -213,15 +213,15 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
         if alt_mirror:
             return (None, mirror_rp)
         elif alt_inc:
-            return (alt_inc, get_long_rp(alt_inc))
+            return (alt_inc, _get_long_rp(alt_inc))
         elif not index:
             return (None, inc_root)
 
         trial_inc_index = index[:-1] + (index[-1] + (b'a' * 50), )
-        if check_new_index(inc_root, trial_inc_index, make_dirs=1):
+        if _check_new_index(inc_root, trial_inc_index, make_dirs=1):
             return (None, inc_root.new_index(index))
-        alt_inc = get_next_free()
-        return (alt_inc, get_long_rp(alt_inc))
+        alt_inc = _get_next_free_filename()
+        return (alt_inc, _get_long_rp(alt_inc))
 
     (new_rorp, old_rorp) = rorp_pair
     if old_rorp and old_rorp.lstat():
@@ -243,23 +243,23 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
 # This holds a dictionary {incbase: inclist}.  The keys are increment
 # bases like '1' or '23', and the values are lists containing the
 # associated increments.
-restore_inc_cache = None
+_restore_inc_cache = None
 
 
-def set_restore_cache():
-    """Initialize restore_inc_cache based on long filename dir"""
-    global restore_inc_cache
-    restore_inc_cache = {}
-    root_rf = restore.RestoreFile(get_long_rp(), get_long_rp(), [])
-    for incbase_rp, inclist in root_rf.yield_inc_complexes(get_long_rp()):
-        restore_inc_cache[incbase_rp.index[-1]] = inclist
+def _set_restore_cache():
+    """Initialize _restore_inc_cache based on long filename dir"""
+    global _restore_inc_cache
+    _restore_inc_cache = {}
+    root_rf = restore.RestoreFile(_get_long_rp(), _get_long_rp(), [])
+    for incbase_rp, inclist in root_rf.yield_inc_complexes(_get_long_rp()):
+        _restore_inc_cache[incbase_rp.index[-1]] = inclist
 
 
-def get_inclist(inc_base_name):
-    if not restore_inc_cache:
-        set_restore_cache()
+def _get_inclist(inc_base_name):
+    if not _restore_inc_cache:
+        _set_restore_cache()
     try:
-        return restore_inc_cache[inc_base_name]
+        return _restore_inc_cache[inc_base_name]
     except KeyError:
         return []
 
@@ -279,8 +279,8 @@ def update_rf(rf, rorp, mirror_root):
         log.Log(
             "Restoring with increment base %s for file %s" %
             (_safe_str(inc_base), rorp.get_safeindexpath()), 6)
-        rf.inc_rp = get_long_rp(inc_base)
-        rf.inc_list = get_inclist(inc_base)
+        rf.inc_rp = _get_long_rp(inc_base)
+        rf.inc_list = _get_inclist(inc_base)
         rf.set_relevant_incs()
 
     def update_existing_rf(rf, rorp):
@@ -289,7 +289,7 @@ def update_rf(rf, rorp, mirror_root):
             inc_name = rorp.get_alt_mirror_name()
             raise Exception("the following line doesn't make any sense but does it matter?")
             # FIXME mirror_name isn't defined anywhere, is inc_name meant?
-            # rf.mirror_rp = get_long_rp(mirror_name)
+            # rf.mirror_rp = _get_long_rp(mirror_name)
         elif rorp.has_alt_inc_name():
             inc_name = rorp.get_alt_inc_name()
         else:
@@ -302,7 +302,7 @@ def update_rf(rf, rorp, mirror_root):
         """Make a new rf when long name info is available"""
         if rorp.has_alt_mirror_name():
             inc_name = rorp.get_alt_mirror_name()
-            mirror_rp = get_long_rp(inc_name)
+            mirror_rp = _get_long_rp(inc_name)
         else:
             mirror_rp = mirror_root.new_index(rorp.index)
             if rorp.has_alt_inc_name():

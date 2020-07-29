@@ -137,13 +137,13 @@ class PipeConnectionTest(unittest.TestCase):
         regfilefp.close()
         tempoutlocal = open(temp_file, "rb")
         regfilefp = open(regfilename, "rb")
-        assert rpath.cmpfileobj(regfilefp, tempoutlocal)
+        assert rpath._cmp_file_obj(regfilefp, tempoutlocal)
         tempoutlocal.close()
         regfilefp.close()
         os.unlink(temp_file)
 
         with open(regfilename, "rb") as localfh:
-            assert rpath.cmpfileobj(self.conn.open(regfilename, "rb"), localfh)
+            assert rpath._cmp_file_obj(self.conn.open(regfilename, "rb"), localfh)
 
     def testString(self):
         """Test transmitting strings"""
@@ -192,9 +192,9 @@ class RedirectedConnectionTest(unittest.TestCase):
 
     def setUp(self):
         """Must start two servers for this"""
-        self.conna = SetConnections.init_connection(
+        self.conna = SetConnections._init_connection(
             "%s testing/server.py %s" % (sys.executable, SourceDir))
-        self.connb = SetConnections.init_connection(
+        self.connb = SetConnections._init_connection(
             "%s testing/server.py %s" % (sys.executable, SourceDir))
 
     def testBasic(self):

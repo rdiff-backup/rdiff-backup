@@ -39,11 +39,11 @@ class StatsObjTest(unittest.TestCase):
     def test_get_stats_string(self):
         """Test conversion of stat object into string"""
         s = statistics.StatsObj()
-        stats_string = s.get_stats_string()
+        stats_string = s._get_stats_string()
         assert stats_string == "", stats_string
 
         self.set_obj(s)
-        stats_string = s.get_stats_string()
+        stats_string = s._get_stats_string()
         ss_list = stats_string.split("\n")
         tail = "\n".join(ss_list[2:])  # Time varies by time zone, don't check
         # """StartTime 11.00 (Wed Dec 31 16:00:11 1969)
@@ -69,14 +69,14 @@ TotalDestinationSizeChange 7 (7 bytes)
         """Test conversion to a single line"""
         s = statistics.StatsObj()
         self.set_obj(s)
-        statline = s.get_stats_line(("sample", "index", "w", "new\nline"))
+        statline = s._get_stats_line(("sample", "index", "w", "new\nline"))
         assert statline == "sample/index/w/new\\nline 1 2 13 14 " \
             "3 4 5 6 7 8 9 15 10", repr(statline)
 
-        statline = s.get_stats_line(())
+        statline = s._get_stats_line(())
         assert statline == ". 1 2 13 14 3 4 5 6 7 8 9 15 10"
 
-        statline = s.get_stats_line(("file name with spaces", ))
+        statline = s._get_stats_line(("file name with spaces", ))
         assert statline == "file\\x20name\\x20with\\x20spaces 1 2 13 14 " \
             "3 4 5 6 7 8 9 15 10", repr(statline)
 
@@ -95,8 +95,8 @@ TotalDestinationSizeChange 7 (7 bytes)
     def test_init_stats(self):
         """Test setting stat object from string"""
         s = statistics.StatsObj()
-        s.set_stats_from_string("NewFiles 3 hello there")
-        for attr in s.stat_attrs:
+        s._set_stats_from_string("NewFiles 3 hello there")
+        for attr in s._stat_attrs:
             if attr == 'NewFiles':
                 assert s.get_stat(attr) == 3
             else:
@@ -104,11 +104,11 @@ TotalDestinationSizeChange 7 (7 bytes)
 
         s1 = statistics.StatsObj()
         self.set_obj(s1)
-        assert not s1.stats_equal(s)
+        assert not s1._stats_equal(s)
 
         s2 = statistics.StatsObj()
-        s2.set_stats_from_string(s1.get_stats_string())
-        assert s1.stats_equal(s2)
+        s2._set_stats_from_string(s1._get_stats_string())
+        assert s1._stats_equal(s2)
 
     def test_write_rp(self):
         """Test reading and writing of statistics object"""
@@ -121,9 +121,9 @@ TotalDestinationSizeChange 7 (7 bytes)
         s.write_stats_to_rp(rp)
 
         s2 = statistics.StatsObj()
-        assert not s2.stats_equal(s)
+        assert not s2._stats_equal(s)
         s2.read_stats_from_rp(rp)
-        assert s2.stats_equal(s)
+        assert s2._stats_equal(s)
 
     def testAverage(self):
         """Test making an average statsobj"""

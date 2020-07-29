@@ -24,14 +24,14 @@ from . import Globals, log, TempFile, rpath, hash, librsync
 def get_signature(rp, blocksize=None):
     """Take signature of rpin file and return in file object"""
     if not blocksize:
-        blocksize = find_blocksize(rp.getsize())
+        blocksize = _find_blocksize(rp.getsize())
     log.Log(
         "Getting signature of %s with blocksize %s" % (rp.get_safeindexpath(),
                                                        blocksize), 7)
     return librsync.SigFile(rp.open("rb"), blocksize)
 
 
-def find_blocksize(file_len):
+def _find_blocksize(file_len):
     """Return a reasonable block size to use on files of length file_len
 
     If the block size is too big, deltas will be bigger than is
@@ -43,21 +43,6 @@ def find_blocksize(file_len):
         return 64  # set minimum of 64 bytes
     else:  # Use square root, rounding to nearest 16
         return int(pow(file_len, 0.5) / 16) * 16
-
-
-def get_delta_sigfileobj(sig_fileobj, rp_new):
-    """Like get_delta but signature is in a file object"""
-    log.Log(
-        "Getting delta of %s with signature stream" % rp_new.get_safepath(), 7)
-    return librsync.DeltaFile(sig_fileobj, rp_new.open("rb"))
-
-
-def get_delta_sigrp(rp_signature, rp_new):
-    """Take signature rp and new rp, return delta file object"""
-    log.Log(
-        "Getting delta of %s with signature %s" %
-        (rp_new.get_safepath(), rp_signature.get_safeindexpath()), 7)
-    return librsync.DeltaFile(rp_signature.open("rb"), rp_new.open("rb"))
 
 
 def get_delta_sigrp_hash(rp_signature, rp_new):
@@ -84,7 +69,7 @@ def write_patched_fp(basis_fp, delta_fp, out_fp):
     assert not basis_fp.close() and not delta_fp.close()
 
 
-def write_via_tempfile(fp, rp):
+def _write_via_tempfile(fp, rp):
     """Write fileobj fp to rp by writing to tempfile and renaming"""
     tf = TempFile.new(rp)
     retval = tf.write_from_fileobj(fp)
@@ -112,17 +97,4 @@ def patch_local(rp_basis, rp_delta, outrp=None, delta_compressed=None):
     if outrp:
         return outrp.write_from_fileobj(patchfile)
     else:
-        return write_via_tempfile(patchfile, rp_basis)
-
-
-def copy_local(rpin, rpout, rpnew=None):
-    """Write rpnew == rpin using rpout as basis.  rpout and rpnew local"""
-    assert rpout.conn is Globals.local_connection
-    deltafile = rpin.conn.librsync.DeltaFile(
-        get_signature(rpout), rpin.open("rb"))
-    patched_file = librsync.PatchedFile(rpout.open("rb"), deltafile)
-
-    if rpnew:
-        rpnew.write_from_fileobj(patched_file)
-    else:
-        write_via_tempfile(patched_file, rpout)
+        return _write_via_tempfile(patchfile, rp_basis)

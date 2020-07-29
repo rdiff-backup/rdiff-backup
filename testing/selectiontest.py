@@ -27,26 +27,26 @@ class MatchingTest(unittest.TestCase):
 
     def testRegexp(self):
         """Test regular expression selection func"""
-        sf1 = self.Select.regexp_get_sf(".*\\.py", 1)
+        sf1 = self.Select._regexp_get_sf(".*\\.py", 1)
         assert sf1(self.makeext("1.py")) == 1
         assert sf1(self.makeext("usr/foo.py")) == 1
         assert sf1(self.root.append("1.doc")) is None
 
-        sf2 = self.Select.regexp_get_sf("hello", 0)
+        sf2 = self.Select._regexp_get_sf("hello", 0)
         assert sf2(self.makerp("hello")) == 0
         assert sf2(self.makerp("foohello_there")) == 0
         assert sf2(self.makerp("foo")) is None
 
     def testTupleInclude(self):
         """Test include selection function made from a regular filename"""
-        self.assertRaises(FilePrefixError, self.Select.glob_get_filename_sf,
+        self.assertRaises(FilePrefixError, self.Select._glob_get_filename_sf,
                           b"foo", 1)
-        self.assertRaises(FilePrefixError, self.Select.glob_get_filename_sf,
+        self.assertRaises(FilePrefixError, self.Select._glob_get_filename_sf,
                           b"rdiff-backup_testfiles/sel", 1)
-        self.assertRaises(FilePrefixError, self.Select.glob_get_filename_sf,
+        self.assertRaises(FilePrefixError, self.Select._glob_get_filename_sf,
                           b"rdiff-backup_testfiles/selection", 1)
 
-        sf2 = self.Select.glob_get_sf(
+        sf2 = self.Select._glob_get_sf(
             "rdiff-backup_testfiles/select/usr/local/bin/", 1)
         assert sf2(self.makeext("usr")) == 1
         assert sf2(self.makeext("usr/local")) == 1
@@ -57,14 +57,14 @@ class MatchingTest(unittest.TestCase):
 
     def testTupleExclude(self):
         """Test exclude selection function made from a regular filename"""
-        self.assertRaises(FilePrefixError, self.Select.glob_get_filename_sf,
+        self.assertRaises(FilePrefixError, self.Select._glob_get_filename_sf,
                           b"foo", 0)
-        self.assertRaises(FilePrefixError, self.Select.glob_get_filename_sf,
+        self.assertRaises(FilePrefixError, self.Select._glob_get_filename_sf,
                           b"rdiff-backup_testfiles/sel", 0)
-        self.assertRaises(FilePrefixError, self.Select.glob_get_filename_sf,
+        self.assertRaises(FilePrefixError, self.Select._glob_get_filename_sf,
                           b"rdiff-backup_testfiles/selection", 0)
 
-        sf2 = self.Select.glob_get_sf(
+        sf2 = self.Select._glob_get_sf(
             "rdiff-backup_testfiles/select/usr/local/bin/", 0)
         assert sf2(self.makeext("usr")) is None
         assert sf2(self.makeext("usr/local")) is None
@@ -75,11 +75,11 @@ class MatchingTest(unittest.TestCase):
 
     def testGlobStarInclude(self):
         """Test a few globbing patterns, including **"""
-        sf1 = self.Select.glob_get_sf("**", 1)
+        sf1 = self.Select._glob_get_sf("**", 1)
         assert sf1(self.makeext("foo")) == 1
         assert sf1(self.makeext("")) == 1
 
-        sf2 = self.Select.glob_get_sf("**.py", 1)
+        sf2 = self.Select._glob_get_sf("**.py", 1)
         assert sf2(self.makeext("foo")) == 2
         assert sf2(self.makeext("usr/local/bin")) == 2
         assert sf2(self.makeext("what/ever.py")) == 1
@@ -87,10 +87,10 @@ class MatchingTest(unittest.TestCase):
 
     def testGlobStarExclude(self):
         """Test a few glob excludes, including **"""
-        sf1 = self.Select.glob_get_sf("**", 0)
+        sf1 = self.Select._glob_get_sf("**", 0)
         assert sf1(self.makeext("/usr/local/bin")) == 0
 
-        sf2 = self.Select.glob_get_sf("**.py", 0)
+        sf2 = self.Select._glob_get_sf("**.py", 0)
         assert sf2(self.makeext("foo")) is None, sf2(self.makeext("foo"))
         assert sf2(self.makeext("usr/local/bin")) is None
         assert sf2(self.makeext("what/ever.py")) == 0
@@ -103,7 +103,7 @@ rdiff-backup_testfiles/select/1/2
 rdiff-backup_testfiles/select/1
 rdiff-backup_testfiles/select/1/2/3
 rdiff-backup_testfiles/select/3/3/2""")
-        sf = self.Select.filelist_get_sf(fp, 1, "test")
+        sf = self.Select._filelist_get_sf(fp, 1, "test")
         assert sf(self.root) == 1
         assert sf(self.makeext("1")) == 1
         assert sf(self.makeext("1/1")) is None
@@ -119,7 +119,7 @@ rdiff-backup_testfiles/select/3/3/2""")
 + rdiff-backup_testfiles/select/1  
 - rdiff-backup_testfiles/select/2  
 rdiff-backup_testfiles/select/3\t""")  # noqa: W291 trailing whitespaces
-        sf = self.Select.filelist_get_sf(fp, 1, "test")
+        sf = self.Select._filelist_get_sf(fp, 1, "test")
         assert sf(self.root) == 1
         assert sf(self.makeext("1  ")) == 1
         assert sf(self.makeext("2  ")) == 0
@@ -132,7 +132,7 @@ rdiff-backup_testfiles/select/3\t""")  # noqa: W291 trailing whitespaces
             b"""\0rdiff-backup_testfiles/select/1/2\0rdiff-backup_testfiles/select/1\0rdiff-backup_testfiles/select/1/2/3\0rdiff-backup_testfiles/select/3/3/2\0rdiff-backup_testfiles/select/hello\nthere\0"""
         )
         Globals.null_separator = 1
-        sf = self.Select.filelist_get_sf(fp, 1, "test")
+        sf = self.Select._filelist_get_sf(fp, 1, "test")
         assert sf(self.root) == 1
         assert sf(self.makeext("1")) == 1
         assert sf(self.makeext("1/1")) is None
@@ -153,7 +153,7 @@ this is a badly formed line which should be ignored
 
 rdiff-backup_testfiles/select/1/2/3
 rdiff-backup_testfiles/select/3/3/2""")
-        sf = self.Select.filelist_get_sf(fp, 0, "test")
+        sf = self.Select._filelist_get_sf(fp, 0, "test")
         assert sf(self.root) is None
         assert sf(self.makeext("1")) == 0
         assert sf(self.makeext("1/1")) == 0
@@ -170,7 +170,7 @@ rdiff-backup_testfiles/select/1/1
 - rdiff-backup_testfiles/select/1/2
 + rdiff-backup_testfiles/select/1/3
 - rdiff-backup_testfiles/select/3""")
-        sf = self.Select.filelist_get_sf(fp, 1, "test1")
+        sf = self.Select._filelist_get_sf(fp, 1, "test1")
         assert sf(self.makeext("1")) == 1
         assert sf(self.makeext("1/1")) == 1
         assert sf(self.makeext("1/1/2")) is None
@@ -187,7 +187,7 @@ rdiff-backup_testfiles/select/1/1
 - rdiff-backup_testfiles/select/1/2
 + rdiff-backup_testfiles/select/1/3
 - rdiff-backup_testfiles/select/3""")
-        sf = self.Select.filelist_get_sf(fp, 0, "test1")
+        sf = self.Select._filelist_get_sf(fp, 0, "test1")
         sf_val1 = sf(self.root)
         assert sf_val1 == 1 or sf_val1 is None  # either is OK
         sf_val2 = sf(self.makeext("1"))
@@ -205,7 +205,7 @@ rdiff-backup_testfiles/select/1/1
 
         def cmp_glob_to_re(src_glob, ref_re, old_ref_re=None, ver_limit=(3, 7)):
             """Helper function to compare a glob and the resulting regexp"""
-            res_re = self.Select.glob_to_re(os.fsencode(src_glob))
+            res_re = self.Select._glob_to_re(os.fsencode(src_glob))
             # in case something has changed between Python versions
             if old_ref_re and sys.version_info < ver_limit:
                 ref_re = old_ref_re
@@ -226,22 +226,22 @@ rdiff-backup_testfiles/select/1/1
 
     def testGlobSFException(self):
         """testGlobSFException - see if globbing errors returned"""
-        self.assertRaises(GlobbingError, self.Select.glob_get_normal_sf,
+        self.assertRaises(GlobbingError, self.Select._glob_get_normal_sf,
                           b"rdiff-backup_testfiles/select/hello//there", 1)
-        self.assertRaises(FilePrefixError, self.Select.glob_get_sf,
+        self.assertRaises(FilePrefixError, self.Select._glob_get_sf,
                           b"rdiff-backup_testfiles/whatever", 1)
-        self.assertRaises(FilePrefixError, self.Select.glob_get_sf,
+        self.assertRaises(FilePrefixError, self.Select._glob_get_sf,
                           b"rdiff-backup_testfiles/?hello", 0)
-        assert self.Select.glob_get_normal_sf(b"**", 1)
+        assert self.Select._glob_get_normal_sf(b"**", 1)
 
     def testIgnoreCase(self):
         """testIgnoreCase - try a few expressions with ignorecase:"""
-        sf = self.Select.glob_get_sf(
+        sf = self.Select._glob_get_sf(
             "ignorecase:rdiff-backup_testfiles/SeLect/foo/bar", 1)
         assert sf(self.makeext("FOO/BAR")) == 1
         assert sf(self.makeext("foo/bar")) == 1
         assert sf(self.makeext("fOo/BaR")) == 1
-        self.assertRaises(FilePrefixError, self.Select.glob_get_sf,
+        self.assertRaises(FilePrefixError, self.Select._glob_get_sf,
                           b"ignorecase:testfiles/sect/foo/bar", 1)
 
     def testDev(self):
@@ -264,12 +264,12 @@ rdiff-backup_testfiles/select/1/1
         # sudo mknod ../rdiff-backup_testfiles/select/filetypes/ttyS1 c 4 65
         assert dev.isdev(), dev
 
-        sf = self.Select.devfiles_get_sf(0)
+        sf = self.Select._devfiles_get_sf(0)
         assert sf(dir) is None
         assert sf(dev) == 0
         assert sf(sock) is None
 
-        sf2 = self.Select.special_get_sf(0)
+        sf2 = self.Select._special_get_sf(0)
         assert sf2(dir) is None
         assert sf2(reg) is None
         assert sf2(dev) == 0
@@ -277,7 +277,7 @@ rdiff-backup_testfiles/select/1/1
         assert sf2(fifo) == 0
         assert sf2(sym) == 0
 
-        sf3 = self.Select.symlinks_get_sf(0)
+        sf3 = self.Select._symlinks_get_sf(0)
         assert sf3(dir) is None
         assert sf3(reg) is None
         assert sf3(dev) is None
@@ -290,29 +290,29 @@ rdiff-backup_testfiles/select/1/1
         root = rpath.RPath(Globals.local_connection, "/")
         select = Select(root)
 
-        assert select.glob_get_sf("/", 1)(root) == 1
-        assert select.glob_get_sf("/foo", 1)(root) == 1
-        assert select.glob_get_sf("/foo/bar", 1)(root) == 1
-        assert select.glob_get_sf("/", 0)(root) == 0
-        assert select.glob_get_sf("/foo", 0)(root) is None
+        assert select._glob_get_sf("/", 1)(root) == 1
+        assert select._glob_get_sf("/foo", 1)(root) == 1
+        assert select._glob_get_sf("/foo/bar", 1)(root) == 1
+        assert select._glob_get_sf("/", 0)(root) == 0
+        assert select._glob_get_sf("/foo", 0)(root) is None
 
-        assert select.glob_get_sf("**.py", 1)(root) == 2
-        assert select.glob_get_sf("**", 1)(root) == 1
-        assert select.glob_get_sf("ignorecase:/", 1)(root) == 1
-        assert select.glob_get_sf("**.py", 0)(root) is None
-        assert select.glob_get_sf("**", 0)(root) == 0
-        assert select.glob_get_sf("/foo/*", 0)(root) is None
+        assert select._glob_get_sf("**.py", 1)(root) == 2
+        assert select._glob_get_sf("**", 1)(root) == 1
+        assert select._glob_get_sf("ignorecase:/", 1)(root) == 1
+        assert select._glob_get_sf("**.py", 0)(root) is None
+        assert select._glob_get_sf("**", 0)(root) == 0
+        assert select._glob_get_sf("/foo/*", 0)(root) is None
 
-        assert select.filelist_get_sf(io.BytesIO(b"/"), 1, "test")(root) == 1
-        assert select.filelist_get_sf(io.BytesIO(b"/foo/bar"), 1, "test")(root) == 1
-        assert select.filelist_get_sf(io.BytesIO(b"/"), 0, "test")(root) == 0
-        assert select.filelist_get_sf(io.BytesIO(b"/foo/bar"), 0, "test")(root) is None
+        assert select._filelist_get_sf(io.BytesIO(b"/"), 1, "test")(root) == 1
+        assert select._filelist_get_sf(io.BytesIO(b"/foo/bar"), 1, "test")(root) == 1
+        assert select._filelist_get_sf(io.BytesIO(b"/"), 0, "test")(root) == 0
+        assert select._filelist_get_sf(io.BytesIO(b"/foo/bar"), 0, "test")(root) is None
 
     def testOtherFilesystems(self):
         """Test to see if --exclude-other-filesystems works correctly"""
         root = rpath.RPath(Globals.local_connection, "/")
         select = Select(root)
-        sf = select.other_filesystems_get_sf(0)
+        sf = select._other_filesystems_get_sf(0)
         assert sf(root) is None
         assert sf(rpath.RPath(Globals.local_connection, "/usr/bin")) is None, \
             "Assumption: /usr/bin is on the same filesystem as /"

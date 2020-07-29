@@ -29,19 +29,19 @@ class Violation(Exception):
 
 # This will store the list of functions that will be honored from
 # remote connections.
-allowed_requests = None
+_allowed_requests = None
 
 # This stores the list of global variables that the client can not
 # set on the server.
-disallowed_server_globals = ["server", "security_level", "restrict_path"]
+_disallowed_server_globals = ["server", "security_level", "restrict_path"]
 
 # Some common file commands we may want to check to make sure they are
 # in the right directory.  Any commands accessing files that could be
-# added to allowed_requests must be here.
+# added to _allowed_requests must be here.
 #
 # The keys are files request, the value is the index of the argument
 # taking a file.
-file_requests = {
+_file_requests = {
     'os.listdir': 0,
     'rpath.make_file_dict': 0,
     'os.chmod': 0,
@@ -64,9 +64,9 @@ file_requests = {
 
 def initialize(action, cmdpairs):
     """Initialize allowable request list and chroot"""
-    global allowed_requests
-    set_security_level(action, cmdpairs)
-    set_allowed_requests(Globals.security_level)
+    global _allowed_requests
+    _set_security_level(action, cmdpairs)
+    _set_allowed_requests(Globals.security_level)
 
 
 def reset_restrict_path(rp):
@@ -75,7 +75,7 @@ def reset_restrict_path(rp):
     Globals.restrict_path = rp.normalize().path
 
 
-def set_security_level(action, cmdpairs):
+def _set_security_level(action, cmdpairs):
     """If running client, set security level and restrict_path
 
     To find these settings, we must look at the action to see what is
@@ -158,9 +158,9 @@ def set_security_level(action, cmdpairs):
                                         rdir).normalize().path
 
 
-def set_allowed_requests(sec_level):
+def _set_allowed_requests(sec_level):
     """Set the allowed requests list using the security level"""
-    global allowed_requests
+    global _allowed_requests
     requests = [
         "VirtualFile.readfromid", "VirtualFile.closebyid", "Globals.get",
         "Globals.is_not_None", "Globals.get_dict_val",
@@ -207,7 +207,7 @@ def set_allowed_requests(sec_level):
             "Main.backup_touch_curmirror_local",
             "Main.backup_remove_curmirror_local",
             "Main.backup_close_statistics", "regress.check_pids",
-            "Globals.ITRB.increment_stat", "statistics.record_error",
+            "statistics.record_error",
             "log.ErrorLog.write_if_open", "fs_abilities.backup_set_globals"
         ])
     if sec_level == "all":
@@ -231,12 +231,12 @@ def set_allowed_requests(sec_level):
             "backup.DestinationStruct.set_session_info",
             "user_group.init_user_mapping", "user_group.init_group_mapping"
         ])
-    allowed_requests = {}
+    _allowed_requests = {}
     for req in requests:
-        allowed_requests[req] = None
+        _allowed_requests[req] = None
 
 
-def raise_violation(reason, request, arglist):
+def _raise_violation(reason, request, arglist):
     """Raise a security violation about given request"""
     raise Violation(
         "\nWARNING: Security Violation!\n"
@@ -253,26 +253,26 @@ def vet_request(request, arglist):
         for arg in arglist:
             if isinstance(arg, rpath.RPath):
                 _vet_rpath(arg, request, arglist)
-        if request.function_string in file_requests:
-            vet_filename(request, arglist)
-    if request.function_string in allowed_requests:
+        if request.function_string in _file_requests:
+            _vet_filename(request, arglist)
+    if request.function_string in _allowed_requests:
         return
     if request.function_string in ("Globals.set", "Globals.set_local"):
-        if arglist[0] not in disallowed_server_globals:
+        if arglist[0] not in _disallowed_server_globals:
             return
-    raise_violation("Invalid request", request, arglist)
+    _raise_violation("Invalid request", request, arglist)
 
 
-def vet_filename(request, arglist):
+def _vet_filename(request, arglist):
     """Check to see if file operation is within the restrict_path"""
-    i = file_requests[request.function_string]
+    i = _file_requests[request.function_string]
     if len(arglist) <= i:
-        raise_violation("Argument list shorter than %d" % i + 1, request,
-                        arglist)
+        _raise_violation("Argument list shorter than %d" % i + 1, request,
+                         arglist)
     filename = arglist[i]
     if not (isinstance(filename, bytes) or isinstance(filename, str)):
-        raise_violation("Argument %d doesn't look like a filename" % i,
-                        request, arglist)
+        _raise_violation("Argument %d doesn't look like a filename" % i,
+                         request, arglist)
 
     _vet_rpath(
         rpath.RPath(Globals.local_connection, filename), request, arglist)
@@ -290,6 +290,6 @@ def _vet_rpath(rp, request, arglist):
                 or (len(normalized) > len(restrict)
                     and normalized[len(restrict)] != ord("/"))
                 or b".." in components):
-            raise_violation(
+            _raise_violation(
                 "Normalized path %s not within restricted path %s" %
                 (normalized, restrict), request, arglist)
