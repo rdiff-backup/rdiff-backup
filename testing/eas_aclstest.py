@@ -7,8 +7,8 @@ from rdiff_backup.eas_acls import metadata, \
     AccessControlLists, ACLExtractor, AccessControlListFile, \
     ExtendedAttributes, EAExtractor, ExtendedAttributesFile
 from rdiff_backup import Globals, rpath, user_group
-from commontest import rdiff_backup, abs_test_dir, abs_output_dir, abs_restore_dir, \
-    BackupRestoreSeries, CompareRecursive
+from commontest import rdiff_backup, abs_test_dir, abs_output_dir, \
+    abs_restore_dir, BackupRestoreSeries, compare_recursive
 
 user_group.init_user_mapping()
 user_group.init_group_mapping()
@@ -250,23 +250,23 @@ user.empty
                      self.ea_test1_rpath.path,
                      tempdir.path,
                      current_time=10000)
-        assert CompareRecursive(self.ea_test1_rpath, tempdir, compare_eas=1)
+        assert compare_recursive(self.ea_test1_rpath, tempdir, compare_eas=1)
 
         rdiff_backup(1,
                      1,
                      self.ea_test2_rpath.path,
                      tempdir.path,
                      current_time=20000)
-        assert CompareRecursive(self.ea_test2_rpath, tempdir, compare_eas=1)
+        assert compare_recursive(self.ea_test2_rpath, tempdir, compare_eas=1)
 
         rdiff_backup(1,
                      1,
                      tempdir.path,
                      restore_dir.path,
                      extra_options=b'-r 10000')
-        assert CompareRecursive(self.ea_test1_rpath,
-                                restore_dir,
-                                compare_eas=1)
+        assert compare_recursive(self.ea_test1_rpath,
+                                 restore_dir,
+                                 compare_eas=1)
 
 
 class ACLTest(unittest.TestCase):
@@ -518,23 +518,23 @@ other::---
                      self.acl_test1_rpath.path,
                      tempdir.path,
                      current_time=10000)
-        assert CompareRecursive(self.acl_test1_rpath, tempdir, compare_acls=1)
+        assert compare_recursive(self.acl_test1_rpath, tempdir, compare_acls=1)
 
         rdiff_backup(1,
                      1,
                      self.acl_test2_rpath.path,
                      tempdir.path,
                      current_time=20000)
-        assert CompareRecursive(self.acl_test2_rpath, tempdir, compare_acls=1)
+        assert compare_recursive(self.acl_test2_rpath, tempdir, compare_acls=1)
 
         rdiff_backup(1,
                      1,
                      tempdir.path,
                      restore_dir.path,
                      extra_options=b'-r 10000')
-        assert CompareRecursive(self.acl_test1_rpath,
-                                restore_dir,
-                                compare_acls=1)
+        assert compare_recursive(self.acl_test1_rpath,
+                                 restore_dir,
+                                 compare_acls=1)
 
         restore_dir.delete()
         rdiff_backup(1,
@@ -542,9 +542,9 @@ other::---
                      tempdir.path,
                      restore_dir.path,
                      extra_options=b'-r now')
-        assert CompareRecursive(self.acl_test2_rpath,
-                                restore_dir,
-                                compare_acls=1)
+        assert compare_recursive(self.acl_test2_rpath,
+                                 restore_dir,
+                                 compare_acls=1)
 
     def test_acl_mapping(self):
         """Test mapping ACL names"""
