@@ -24,11 +24,22 @@ from . import log
 
 # The current version of rdiff-backup
 # Get it from package info or fall back to DEV version.
+# importlib/metadata is the new approach, pkg_resources the old one, kept for
+# compatibility reasons (and because importlib_metadata -for Python < 3.8-
+# isn't yet packaged for all distros).
 try:
-    import pkg_resources
-    version = pkg_resources.get_distribution("rdiff-backup").version
-except BaseException:
-    version = "DEV"
+    from importlib import metadata
+    version = metadata.version('rdiff-backup')
+except ImportError:
+    try:  # the fallback library for Python below 3.8
+        import importlib_metadata as metadata
+        version = metadata.version('rdiff-backup')
+    except ImportError:
+        try:  # the old method requiring setuptools to be installed
+            import pkg_resources
+            version = pkg_resources.get_distribution("rdiff-backup").version
+        except BaseException:  # if everything else fails...
+            version = "DEV-no-metadata"
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.

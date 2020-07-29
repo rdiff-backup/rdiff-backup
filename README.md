@@ -125,9 +125,11 @@ sudo pip3 install rdiff-backup
 You need to make sure that the following requirements are met:
 
 * Python 3.5 or higher
-* librsync 1.0.0
+* librsync 1.0.0 or higher
 * pylibacl (optional, to support ACLs)
 * pyxattr (optional, to support extended attributes) - the xattr library (without py) isn't regularly tested but should work and you will be helped
+* if Python's version is 3.7.x or below, importlib-metadata 1.x
+  (or alternatively setuptools)
 * SSH for remote operations
 
 ```
