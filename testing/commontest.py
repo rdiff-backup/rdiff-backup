@@ -259,7 +259,7 @@ def _hardlink_rorp_eq(src_rorp, dest_rorp):
             Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
             Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
             return False
-    elif src_rorp.getnumlinks() > 1 and not Hardlink.islinked(src_rorp):
+    elif src_rorp.getnumlinks() > 1 and not Hardlink.is_linked(src_rorp):
         if rorp_eq:
             Log("Hardlink compare error with first linked src_rorp and no dest_rorp sha1", 3)
             Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
@@ -307,7 +307,7 @@ def _files_rorp_eq(src_rorp, dest_rorp,
         Log("Dest rorp missing: %s" % str(src_rorp), 3)
         return False
     if not src_rorp._equal_verbose(dest_rorp,
-                                  compare_ownership=compare_ownership):
+                                   compare_ownership=compare_ownership):
         return False
     if compare_hardlinks and not _hardlink_rorp_eq(src_rorp, dest_rorp):
         return False

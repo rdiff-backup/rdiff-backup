@@ -326,7 +326,7 @@ rdiff-backup_testfiles/select/1/1
                 "Assumption: /boot/efi is on a different filesystem"
 
 
-class ParseArgsTest(unittest.TestCase):
+class ParseSelectionArgsTest(unittest.TestCase):
     """Test argument parsing as well as filelist globbing"""
     root = None
 
@@ -339,7 +339,7 @@ class ParseArgsTest(unittest.TestCase):
             self.root = rpath.RPath(Globals.local_connection,
                                     "rdiff-backup_testfiles/select")
         self.Select = Select(self.root)
-        self.Select.ParseArgs(tuplelist, self.remake_filelists(filelists))
+        self.Select.parse_selection_args(tuplelist, self.remake_filelists(filelists))
         assert iter_equal(iter_map(lambda dsrp: dsrp.index,
                                    self.Select.set_iter()),
                           map(tuple_fsencode, indices),

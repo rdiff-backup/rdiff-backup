@@ -225,7 +225,7 @@ class MirrorStruct:
         """Initialize the mirror selection object"""
         assert select_opts, "If no selection options, don't use selector"
         cls._select = selection.Select(target_rp)
-        cls._select.ParseArgs(select_opts, filelists)
+        cls._select.parse_selection_args(select_opts, filelists)
 
     @classmethod
     def _get_rorp_iter_from_rf(cls, rf):
@@ -310,7 +310,7 @@ class TargetStruct:
     def set_target_select(cls, target, select_opts, *filelists):
         """Return a selection object iterating the rorpaths in target"""
         cls._select = selection.Select(target)
-        cls._select.ParseArgs(select_opts, filelists)
+        cls._select.parse_selection_args(select_opts, filelists)
 
     @classmethod
     def get_initial_iter(cls, target):

@@ -530,51 +530,64 @@ class RORPath:
         self.data = dir_rp.data.copy()
         self.data['perms'] = 0o700
 
+    @staticmethod
+    def _global_ignored_keys():
+        """Returns a set of keys to be ignored during comparaison,
+        based on global settings."""
+        global_ignored_keys = set(())
+        if not Globals.preserve_atime:
+            global_ignored_keys.add('atime')
+        if not Globals.eas_write:
+            global_ignored_keys.add('ea')
+        if not Globals.acls_write:
+            global_ignored_keys.add('acl')
+        if not Globals.win_acls_write:
+            global_ignored_keys.add('win_acl')
+        if not Globals.carbonfile_write:
+            global_ignored_keys.add('carbonfile')
+        if not Globals.resource_forks_write:
+            global_ignored_keys.add('resource_forks')
+        return global_ignored_keys
+
     def __eq__(self, other):
         """True iff the two rorpaths are equivalent"""
         if self.index != other.index:
-            return None
+            return False
 
-        for key in list(self.data.keys()):  # compare dicts key by key
-            if self.issym() and key in ('uid', 'gid', 'uname', 'gname'):
-                pass  # Don't compare gid/uid for symlinks
-            elif key == 'atime' and not Globals.preserve_atime:
-                pass
-            elif key == 'ctime':
-                pass
-            elif key == 'nlink':
-                pass
-            elif key == 'size' and not self.isreg():
-                pass
-            elif key == 'ea' and not Globals.eas_active:
-                pass
-            elif key == 'acl' and not Globals.acls_active:
-                pass
-            elif key == 'win_acl' and not Globals.win_acls_active:
-                pass
-            elif key == 'carbonfile' and not Globals.carbonfile_active:
-                pass
-            elif key == 'resourcefork' and not Globals.resource_forks_active:
-                pass
-            elif key == 'uname' or key == 'gname':
+        # we build a set of keys to be ignored during loose comparaison
+        ignored_keys = set(('ctime', 'nlink'))
+        # add the keys to be globally ignored
+        ignored_keys.update(self._global_ignored_keys())
+        # global and self specific additions
+        if (not self.isreg() or self.getnumlinks() == 1
+                or not Globals.compare_inode
+                or not Globals.preserve_hardlinks):
+            ignored_keys.add('inode')
+            ignored_keys.add('devloc')
+        # self specific additions
+        if not self.isreg():
+            ignored_keys.add('size')
+            if self.issym():
+                # Don't compare gid/uid for symlinks
+                ignored_keys.update(
+                    frozenset(('uid', 'gid', 'uname', 'gname')))
+        # self and other specific additions
+        if (self.isspecial() and other.isreg() and other.getsize() == 0):
+            # Special files may be replaced with empty regular files
+            ignored_keys.add('type')
+
+        # we remove the ignored keys from the set of dictionary keys
+        # before we compare them
+        for key in (frozenset(self.data.keys()) - ignored_keys):
+            if key == 'uname' or key == 'gname':
                 # here for legacy reasons - 0.12.x didn't store u/gnames
                 other_name = other.data.get(key, None)
                 if (other_name and other_name != "None"
                         and other_name != self.data[key]):
-                    return None
-            elif ((key == 'inode' or key == 'devloc')
-                  and (not self.isreg() or self.getnumlinks() == 1
-                       or not Globals.compare_inode
-                       or not Globals.preserve_hardlinks)):
-                pass
-            else:
-                try:
-                    other_val = other.data[key]
-                except KeyError:
-                    return None
-                if self.data[key] != other_val:
-                    return None
-        return 1
+                    return False
+            elif (key not in other.data or self.data[key] != other.data[key]):
+                return False
+        return True
 
     def equal_loose(self, other):
         """True iff the two rorpaths are kinda equivalent
@@ -585,48 +598,37 @@ class RORPath:
         original rpath.
 
         """
-        for key in list(self.data.keys()):  # compare dicts key by key
-            if key in ('uid', 'gid', 'uname', 'gname'):
-                pass
-            elif (key == 'type' and self.isspecial() and other.isreg()
-                  and other.getsize() == 0):
-                pass  # Special files may be replaced with empty regular files
-            elif key == 'atime' and not Globals.preserve_atime:
-                pass
-            elif key == 'ctime':
-                pass
-            elif key == 'devloc' or key == 'nlink':
-                pass
-            elif key == 'size' and not self.isreg():
-                pass
-            elif key == 'inode':
-                pass
-            elif key == 'ea' and not Globals.eas_write:
-                pass
-            elif key == 'acl' and not Globals.acls_write:
-                pass
-            elif key == 'win_acl' and not Globals.win_acls_write:
-                pass
-            elif key == 'carbonfile' and not Globals.carbonfile_write:
-                pass
-            elif key == 'resourcefork' and not Globals.resource_forks_write:
-                pass
-            elif key == 'sha1':
-                pass  # one or other may not have set
-            elif key == 'mirrorname' or key == 'incname':
-                pass
-            elif (key not in other.data or self.data[key] != other.data[key]):
-                return 0
+        # we build a set of keys to be ignored during loose comparaison
+        ignored_keys = set(('uid', 'gid', 'uname', 'gname', 'ctime', 'inode',
+                           'mirrorname', 'incname', 'devloc', 'nlink'))
+        # we ignore the hash because one or the other might not have it FIXME?
+        ignored_keys.add('sha1')
+        # add the keys to be globally ignored
+        ignored_keys.update(self._global_ignored_keys())
+        # self specific additions
+        if not self.isreg():
+            ignored_keys.add('size')
+        # self and other specific additions
+        if (self.isspecial() and other.isreg() and other.getsize() == 0):
+            # Special files may be replaced with empty regular files
+            ignored_keys.add('type')
+
+        # we remove the ignored keys from the set of dictionary keys
+        # before we compare them
+        for key in (frozenset(self.data.keys()) - ignored_keys):
+            if (key not in other.data or self.data[key] != other.data[key]):
+                return False
 
         if self.lstat() and not self.issym() and Globals.change_ownership:
             # Now compare ownership.  Symlinks don't have ownership
             try:
                 if user_group.map_rpath(self) != other.getuidgid():
-                    return 0
+                    return False
             except KeyError:
-                return 0  # uid/gid might be missing if metadata file is corrupt
+                # uid/gid might be missing if metadata file is corrupt
+                return False
 
-        return 1
+        return True
 
     def _equal_verbose(self,
                        other,

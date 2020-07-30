@@ -257,6 +257,25 @@ class RorpExtractor(FlatExtractor):
     record_boundary_regexp = re.compile(b"(?:\\n|^)(File (.*?))\\n")
     line_parsing_regexp = re.compile(b"^ *([A-Za-z0-9]+) (.+)$", re.M)
 
+    # mapping for metadata fields to transform into integer
+    _integer_mapping = {
+        'Size': 'size',
+        'NumHardLinks': 'nlink',
+        'Inode': 'inode',
+        'DeviceLoc': 'devloc',
+        'ModTime': 'mtime',
+        'Uid': 'uid',
+        'Gid': 'gid',
+        'Permissions': 'perms',
+    }
+    # mapping for metadata fields to transform into ascii strings
+    _decode_mapping = {
+        'Type': 'type',
+        'SHA1Digest': 'sha1',
+        'Uname': 'uname',
+        'Gname': 'gname',
+    }
+
     @classmethod
     def _record_to_object(cls, record_string):
         """Given record_string, return RORPath
@@ -269,15 +288,15 @@ class RorpExtractor(FlatExtractor):
         data_dict = {}
         for field, data in cls.line_parsing_regexp.findall(record_string):
             field = field.decode('ascii')
-            if field == "File":
-                index = cls._filename_to_index(data)
-            elif field == "Type":
-                if data == b"None":
-                    data_dict['type'] = None
+            if field in cls._integer_mapping:
+                data_dict[cls._integer_mapping[field]] = int(data)
+            elif field in cls._decode_mapping:
+                if data == b":" or data == b"None":
+                    data_dict[cls._decode_mapping[field]] = None
                 else:
-                    data_dict['type'] = data.decode('ascii')
-            elif field == "Size":
-                data_dict['size'] = int(data)
+                    data_dict[cls._decode_mapping[field]] = data.decode('ascii')
+            elif field == "File":
+                index = cls._filename_to_index(data)
             elif field == "ResourceFork":
                 if data == b"None":
                     data_dict['resourcefork'] = b""
@@ -288,38 +307,12 @@ class RorpExtractor(FlatExtractor):
                     data_dict['carbonfile'] = None
                 else:
                     data_dict['carbonfile'] = _string2carbonfile(data)
-            elif field == "SHA1Digest":
-                data_dict['sha1'] = data.decode('ascii')
-            elif field == "NumHardLinks":
-                data_dict['nlink'] = int(data)
-            elif field == "Inode":
-                data_dict['inode'] = int(data)
-            elif field == "DeviceLoc":
-                data_dict['devloc'] = int(data)
             elif field == "SymData":
                 data_dict['linkname'] = unquote_path(data)
             elif field == "DeviceNum":
                 devchar, major_str, minor_str = data.split(b" ")
                 data_dict['devnums'] = (devchar.decode('ascii'), int(major_str),
                                         int(minor_str))
-            elif field == "ModTime":
-                data_dict['mtime'] = int(data)
-            elif field == "Uid":
-                data_dict['uid'] = int(data)
-            elif field == "Gid":
-                data_dict['gid'] = int(data)
-            elif field == "Uname":
-                if data == b":" or data == b'None':
-                    data_dict['uname'] = None
-                else:
-                    data_dict['uname'] = data.decode()
-            elif field == "Gname":
-                if data == b':' or data == b'None':
-                    data_dict['gname'] = None
-                else:
-                    data_dict['gname'] = data.decode()
-            elif field == "Permissions":
-                data_dict['perms'] = int(data)
             elif field == "AlternateMirrorName":
                 data_dict['mirrorname'] = data
             elif field == "AlternateIncrementName":
