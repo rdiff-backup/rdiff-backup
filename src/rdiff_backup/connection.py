@@ -18,15 +18,16 @@
 # 02110-1301, USA
 """Support code for remote execution and data transfer"""
 
-import types  # noqa: F401
-import os  # noqa: F401
-import tempfile  # noqa: F401
-import pickle  # noqa: F401
-import shutil  # noqa: F401
-import traceback  # noqa: F401
-import socket  # noqa: F401
-import sys  # noqa: F401
+import pickle
+import sys
+import traceback
+# we need those imports because they are used through the connection
 import gzip  # noqa: F401
+import os  # noqa: F401
+import shutil  # noqa: F401
+import socket  # noqa: F401
+import tempfile  # noqa: F401
+import types  # noqa: F401
 
 # The following EA and ACL modules may be used if available
 try:
@@ -191,7 +192,7 @@ class LowLevelPipeConnection(Connection):
 
     def _putobj(self, obj, req_num):
         """Send a generic python obj down the outpipe"""
-        self._write("o", pickle.dumps(obj, 1), req_num)
+        self._write("o", pickle.dumps(obj, Globals.pickle_protocol), req_num)
 
     def _putbuf(self, buf, req_num):
         """Send buffer buf down the outpipe"""
@@ -216,13 +217,13 @@ class LowLevelPipeConnection(Connection):
         """
         rpath_repr = (rpath.conn.conn_number, rpath.base, rpath.index,
                       rpath.data)
-        self._write("R", pickle.dumps(rpath_repr, 1), req_num)
+        self._write("R", pickle.dumps(rpath_repr, Globals.pickle_protocol), req_num)
 
     def _putqrpath(self, qrpath, req_num):
         """Put a quoted rpath into the pipe (similar to _putrpath above)"""
         qrpath_repr = (qrpath.conn.conn_number, qrpath.base, qrpath.index,
                        qrpath.data)
-        self._write("Q", pickle.dumps(qrpath_repr, 1), req_num)
+        self._write("Q", pickle.dumps(qrpath_repr, Globals.pickle_protocol), req_num)
 
     def _putrorpath(self, rorpath, req_num):
         """Put an rorpath into the pipe
@@ -232,7 +233,7 @@ class LowLevelPipeConnection(Connection):
 
         """
         rorpath_repr = (rorpath.index, rorpath.data)
-        self._write("r", pickle.dumps(rorpath_repr, 1), req_num)
+        self._write("r", pickle.dumps(rorpath_repr, Globals.pickle_protocol), req_num)
 
     def _putconn(self, pipeconn, req_num):
         """Put a connection into the pipe

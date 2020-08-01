@@ -281,6 +281,14 @@ remote_tempdir = None
 # and pre-regress
 do_fsync = True
 
+# This represents the pickle protocol used by rdiff-backup over the connection
+# https://docs.python.org/3/library/pickle.html#pickle-protocols
+# Note that the receiving end will automatically recognize the protocol used so
+# that both ends don't need to use the same one to send, as long as they both
+# understand the maximum protocol version used.
+# Protocol 4 is understood since Python 3.4, protocol 5 since 3.8.
+pickle_protocol = 4
+
 
 def get(name):
     """Return the value of something in this module"""
