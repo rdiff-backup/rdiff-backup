@@ -192,7 +192,7 @@ class LowLevelPipeConnection(Connection):
 
     def _putobj(self, obj, req_num):
         """Send a generic python obj down the outpipe"""
-        self._write("o", pickle.dumps(obj, Globals.pickle_protocol), req_num)
+        self._write("o", pickle.dumps(obj, Globals.PICKLE_PROTOCOL), req_num)
 
     def _putbuf(self, buf, req_num):
         """Send buffer buf down the outpipe"""
@@ -217,13 +217,15 @@ class LowLevelPipeConnection(Connection):
         """
         rpath_repr = (rpath.conn.conn_number, rpath.base, rpath.index,
                       rpath.data)
-        self._write("R", pickle.dumps(rpath_repr, Globals.pickle_protocol), req_num)
+        self._write("R", pickle.dumps(rpath_repr,
+                                      Globals.PICKLE_PROTOCOL), req_num)
 
     def _putqrpath(self, qrpath, req_num):
         """Put a quoted rpath into the pipe (similar to _putrpath above)"""
         qrpath_repr = (qrpath.conn.conn_number, qrpath.base, qrpath.index,
                        qrpath.data)
-        self._write("Q", pickle.dumps(qrpath_repr, Globals.pickle_protocol), req_num)
+        self._write("Q", pickle.dumps(qrpath_repr,
+                                      Globals.PICKLE_PROTOCOL), req_num)
 
     def _putrorpath(self, rorpath, req_num):
         """Put an rorpath into the pipe
@@ -233,7 +235,8 @@ class LowLevelPipeConnection(Connection):
 
         """
         rorpath_repr = (rorpath.index, rorpath.data)
-        self._write("r", pickle.dumps(rorpath_repr, Globals.pickle_protocol), req_num)
+        self._write("r", pickle.dumps(rorpath_repr,
+                                      Globals.PICKLE_PROTOCOL), req_num)
 
     def _putconn(self, pipeconn, req_num):
         """Put a connection into the pipe

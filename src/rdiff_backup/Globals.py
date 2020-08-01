@@ -287,7 +287,7 @@ do_fsync = True
 # that both ends don't need to use the same one to send, as long as they both
 # understand the maximum protocol version used.
 # Protocol 4 is understood since Python 3.4, protocol 5 since 3.8.
-pickle_protocol = 4
+PICKLE_PROTOCOL = 4
 
 
 def get(name):
