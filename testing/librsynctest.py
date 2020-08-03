@@ -11,12 +11,10 @@ def MakeRandomFile(path, length=None):
     if not length:
         length = random.randrange(5000, 100000)
     fp = open(path, "wb")
-    fp_random = open('/dev/urandom', 'rb')
-
-    fp.write(fp_random.read(length))
-
-    fp.close()
-    fp_random.close()
+    try:
+        fp.write(os.urandom(length))
+    finally:
+        fp.close()
 
 
 class LibrsyncTest(unittest.TestCase):
