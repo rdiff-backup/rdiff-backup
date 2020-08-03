@@ -40,7 +40,11 @@ def Myrm(dirstring):
     for rp in selection.Select(root_rp).set_iter():
         if rp.isdir():
             rp.chmod(0o700)  # otherwise may not be able to remove
-    assert not os.system(b"rm -rf %s" % (root_rp.path, ))
+    path = root_rp.path
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    elif os.path.isfile(path):
+        os.remove(path)
 
 
 def re_init_rpath_dir(rp, uid=-1, gid=-1):
