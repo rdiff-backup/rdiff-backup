@@ -13,9 +13,9 @@ from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
 RBBin = os.fsencode(shutil.which("rdiff-backup"))
 
 # Working directory is defined by Tox, venv or the current build directory
-abs_work_dir = os.getenv(
+abs_work_dir = os.fsencode(os.getenv(
     'TOX_ENV_DIR',
-    os.getenv('VIRTUAL_ENV', os.path.join(os.getcwdb(), b'build'))).encode()
+    os.getenv('VIRTUAL_ENV', os.path.join(os.getcwd(), 'build'))))
 abs_test_dir = os.path.join(abs_work_dir, b'testfiles')
 abs_output_dir = os.path.join(abs_test_dir, b'output')
 abs_restore_dir = os.path.join(abs_test_dir, b'restore')
