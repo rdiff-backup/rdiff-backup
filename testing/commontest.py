@@ -13,9 +13,9 @@ from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
 RBBin = os.fsencode(shutil.which("rdiff-backup"))
 
 # Working directory is defined by Tox, venv or the current build directory
-abs_work_dir = os.getenvb(
-    b'TOX_ENV_DIR',
-    os.getenvb(b'VIRTUAL_ENV', os.path.join(os.getcwdb(), b'build')))
+abs_work_dir = os.fsencode(os.getenv(
+    'TOX_ENV_DIR',
+    os.getenv('VIRTUAL_ENV', os.path.join(os.getcwd(), 'build'))))
 abs_test_dir = os.path.join(abs_work_dir, b'testfiles')
 abs_output_dir = os.path.join(abs_test_dir, b'output')
 abs_restore_dir = os.path.join(abs_test_dir, b'restore')
@@ -40,7 +40,11 @@ def Myrm(dirstring):
     for rp in selection.Select(root_rp).set_iter():
         if rp.isdir():
             rp.chmod(0o700)  # otherwise may not be able to remove
-    assert not os.system(b"rm -rf %s" % (root_rp.path, ))
+    path = root_rp.path
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    elif os.path.isfile(path):
+        os.remove(path)
 
 
 def re_init_rpath_dir(rp, uid=-1, gid=-1):
