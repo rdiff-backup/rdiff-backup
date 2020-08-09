@@ -10,7 +10,7 @@ from rdiff_backup.log import Log
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
     selection, rpath, eas_acls, rorpiter, Security, hash
 
-RBBin = os.fsencode(shutil.which("rdiff-backup"))
+RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
 
 # Working directory is defined by Tox, venv or the current build directory
 abs_work_dir = os.fsencode(os.getenv(
