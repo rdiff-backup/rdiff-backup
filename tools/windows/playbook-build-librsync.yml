@@ -11,6 +11,17 @@
     - name: include tasks to download and prepare librsync sources
       include_tasks: tasks/get-librsync-{{ librsync_git_repo is defined | ternary('git', 'tarball') }}.yml
 
+    - name: use cmake to generate build system for released build sources
+      win_command: >
+        "{{ cmake_exe }}" -G "Visual Studio 15 2017" -A {{ librsync_win_bits }}
+        -D BUILD_RDIFF=OFF -D BUILD_SHARED_LIBS=TRUE
+        -DCMAKE_INSTALL_PREFIX={{ librsync_install_dir }}
+        .
+      args:
+        chdir: "{{ librsync_dir }}"
+      # also possible: -S source_dir / -B build_dir
+      # -D CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE
+
     - name: build librsync with MSBuild
       win_command: >
         "{{ msbuild_exe }}" librsync.sln /target:Build /property:Configuration=Release
