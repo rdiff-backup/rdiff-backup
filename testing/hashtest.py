@@ -118,7 +118,7 @@ class HashTest(unittest.TestCase):
     def test_rorpiter_xfer(self):
         """Test if hashes are transferred in files, rorpiter"""
         Globals.security_level = 'override'
-        conn = SetConnections.init_connection(
+        conn = SetConnections._init_connection(
             b'%b %b/server.py' %
             (os.fsencode(sys.executable), abs_testing_dir))
         assert conn.reval("lambda x: x+1", 4) == 5  # connection sanity check

@@ -99,7 +99,7 @@ jobs:
       language: shell
       env: MAKE_STEP=bdist_win
       before_install:
-        - git clone https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
+        - git clone --depth 1 --branch v2.32.1 https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
         - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
         - export pyver=3.7.7
         - export pyverbrief=${pyver:0:3}

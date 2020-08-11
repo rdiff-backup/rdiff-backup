@@ -96,8 +96,8 @@ def copyfileobj(inputfp, outputfp):
         outputfp.write(b"\x00")
 
 
-def cmpfileobj(fp1, fp2):
-    """True if file objects fp1 and fp2 contain same data"""
+def _cmp_file_obj(fp1, fp2):
+    """True if file objects fp1 and fp2 contain same data, used for testing"""
     blocksize = Globals.blocksize
     while 1:
         buf1 = fp1.read(blocksize)
@@ -108,7 +108,7 @@ def cmpfileobj(fp1, fp2):
             return 1
 
 
-def check_for_files(*rps):
+def _check_for_files(*rps):
     """Make sure that all the rps exist, raise error if not"""
     for rp in rps:
         if not rp.lstat():
@@ -194,16 +194,16 @@ def copy_reg_file(rpin, rpout, compress=0):
 def cmp(rpin, rpout):
     """True if rpin has the same data as rpout
 
-    cmp does not compare file ownership, permissions, or times, or
+    does not compare file ownership, permissions, or times, or
     examine the contents of a directory.
 
     """
-    check_for_files(rpin, rpout)
+    _check_for_files(rpin, rpout)
     if rpin.isreg():
         if not rpout.isreg():
             return None
         fp1, fp2 = rpin.open("rb"), rpout.open("rb")
-        result = cmpfileobj(fp1, fp2)
+        result = _cmp_file_obj(fp1, fp2)
         if fp1.close() or fp2.close():
             raise RPathException("Error closing file")
         return result
@@ -263,7 +263,7 @@ def copy_attribs_inc(rpin, rpout):
     log.Log(
         "Copying inc attrs from %s to %s" % (rpin.index, rpout.get_safepath()),
         7)
-    check_for_files(rpin, rpout)
+    _check_for_files(rpin, rpout)
     if Globals.change_ownership:
         rpout.chown(*rpin.getuidgid())
     if Globals.eas_write:
@@ -286,14 +286,14 @@ def copy_attribs_inc(rpin, rpout):
         rpout.setmtime(rpin.getmtime())
 
 
-def cmp_attribs(rp1, rp2):
+def _cmp_file_attribs(rp1, rp2):
     """True if rp1 has the same file attributes as rp2
 
     Does not compare file access times.  If not changing
     ownership, do not check user/group id.
 
     """
-    check_for_files(rp1, rp2)
+    _check_for_files(rp1, rp2)
     if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
         result = None
     elif rp1.getperms() != rp2.getperms():
@@ -628,17 +628,17 @@ class RORPath:
 
         return 1
 
-    def equal_verbose(self,
-                      other,
-                      check_index=1,
-                      compare_inodes=0,
-                      compare_ownership=0,
-                      compare_acls=0,
-                      compare_eas=0,
-                      compare_win_acls=0,
-                      compare_size=1,
-                      compare_type=1,
-                      verbosity=2):
+    def _equal_verbose(self,
+                       other,
+                       check_index=1,
+                       compare_inodes=0,
+                       compare_ownership=0,
+                       compare_acls=0,
+                       compare_eas=0,
+                       compare_win_acls=0,
+                       compare_size=1,
+                       compare_type=1,
+                       verbosity=2):
         """Like __eq__, but log more information.  Useful when testing"""
         if check_index and self.index != other.index:
             log.Log("Index %s != index %s" % (self.index, other.index),
@@ -679,27 +679,12 @@ class RORPath:
                 return None
         return 1
 
-    def equal_verbose_auto(self, other, verbosity=2):
-        """Like equal_verbose, but set parameters like __eq__ does"""
-        compare_inodes = ((self.getnumlinks() != 1) and Globals.compare_inode
-                          and Globals.preserve_hardlinks)
-        return self.equal_verbose(
-            other,
-            compare_inodes=compare_inodes,
-            compare_eas=Globals.eas_active,
-            compare_acls=Globals.acls_active,
-            compare_win_acls=Globals.win_acls_active)
-
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __str__(self):
         """Pretty print file statistics"""
         return "Index: %s\nData: %s" % (self.get_safeindex(), self.data)
-
-    def summary_string(self):
-        """Return summary string"""
-        return "%s %s" % (self.get_safeindexpath(), self.lstat())
 
     def __getstate__(self):
         """Return picklable state
@@ -871,7 +856,7 @@ class RORPath:
         def closing_hook():
             self.file_already_open = None
 
-        self.file = RPathFileHook(file, closing_hook)
+        self.file = _RPathFileHook(file, closing_hook)
         self.file_already_open = None
 
     def get_safeindex(self):
@@ -1067,7 +1052,7 @@ class RPath(RORPath):
     dictionary, they are the same file).
 
     """
-    regex_chars_to_quote = re.compile(b"[\\\\\\\"\\$`]")
+    _regex_chars_to_quote = re.compile(b"[\\\\\\\"\\$`]")
 
     def __init__(self, connection, base, index=(), data=None):
         """RPath constructor
@@ -1119,7 +1104,7 @@ class RPath(RORPath):
         if self.lstat():
             self.conn.rpath.setdata_local(self)
 
-    def check_consistency(self):
+    def _debug_consistency(self):
         """Raise an error if consistency of rp broken
 
         This is useful for debugging when the cache and disk get out
@@ -1344,7 +1329,7 @@ class RPath(RORPath):
 
     def quote(self):
         """Return quoted self.path for use with os.system()"""
-        return b'"%s"' % self.regex_chars_to_quote.sub(
+        return b'"%s"' % self._regex_chars_to_quote.sub(
             lambda m: b"\\" + m.group(0), self.path)
 
     def normalize(self):
@@ -1731,7 +1716,7 @@ class RPath(RORPath):
         self.data['win_acl'] = acl
 
 
-class RPathFileHook:
+class _RPathFileHook:
     """Look like a file, but add closing hook"""
 
     def __init__(self, file, closing_thunk):
@@ -1776,7 +1761,7 @@ class MaybeGzip:
         else:
             raise AttributeError(name)
 
-    def get_gzipped_rp(self):
+    def _get_gzipped_rp(self):
         """Return gzipped rp by adding .gz to base_rp"""
         if self.base_rp.index:
             newind = self.base_rp.index[:-1] + (
@@ -1794,7 +1779,7 @@ class MaybeGzip:
         if not buf:
             return
 
-        new_rp = self.get_gzipped_rp()
+        new_rp = self._get_gzipped_rp()
         if self.callback:
             self.callback(new_rp)
         self.fileobj = new_rp.open("wb", compress=1)
@@ -1836,13 +1821,13 @@ def setdata_local(rpath):
     if Globals.resource_forks_conn and rpath.isreg():
         rpath.get_resource_fork()
     if Globals.carbonfile_conn and rpath.isreg():
-        rpath.data['carbonfile'] = carbonfile_get(rpath)
+        rpath.data['carbonfile'] = _carbonfile_get(rpath)
 
     if reset_perms:
         rpath.chmod(rpath.getperms() & ~0o400)
 
 
-def carbonfile_get(rpath):
+def _carbonfile_get(rpath):
     """Return carbonfile value for local rpath"""
     # Note, after we drop support for Mac OS X 10.0 - 10.3, it will no longer
     # be necessary to read the finderinfo struct since it is a strict subset

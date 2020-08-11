@@ -64,7 +64,7 @@ def get_cmd_pairs(arglist, remote_schema=None, remote_cmd=None):
 
     if not arglist:
         return []
-    desc_pairs = list(map(parse_file_desc, arglist))
+    desc_pairs = list(map(_parse_file_desc, arglist))
 
     if [x for x in desc_pairs if x[0]]:  # True if any host_info found
         if remote_cmd:
@@ -73,7 +73,7 @@ def get_cmd_pairs(arglist, remote_schema=None, remote_cmd=None):
     elif remote_schema:
         Log("Remote schema option ignored - no remote file "
             "descriptions.", 2)
-    cmd_pairs = list(map(desc2cmd_pairs, desc_pairs))
+    cmd_pairs = list(map(_desc2cmd_pairs, desc_pairs))
     if remote_cmd:  # last file description gets remote_cmd
         cmd_pairs[-1] = (remote_cmd, cmd_pairs[-1][1])
     return cmd_pairs
@@ -83,22 +83,22 @@ def cmdpair2rp(cmd_pair):
     """Return normalized RPath from cmd_pair (remote_cmd, filename)"""
     cmd, filename = cmd_pair
     if cmd:
-        conn = init_connection(cmd)
+        conn = _init_connection(cmd)
     else:
         conn = Globals.local_connection
     return rpath.RPath(conn, filename).normalize()
 
 
-def desc2cmd_pairs(desc_pair):
+def _desc2cmd_pairs(desc_pair):
     """Return pair (remote_cmd, filename) from desc_pair"""
     host_info, filename = desc_pair
     if not host_info:
         return (None, filename)
     else:
-        return (fill_schema(host_info), filename)
+        return (_fill_schema(host_info), filename)
 
 
-def parse_file_desc(file_desc):
+def _parse_file_desc(file_desc):
     """Parse file description returning pair (host_info, filename)
 
     In other words, bescoto@folly.stanford.edu::/usr/bin/ls =>
@@ -138,7 +138,7 @@ def parse_file_desc(file_desc):
     return (file_host, file_path)
 
 
-def fill_schema(host_info):
+def _fill_schema(host_info):
     """Fills host_info into the schema and returns remote command"""
     try:
         return __cmd_schema % host_info
@@ -146,7 +146,7 @@ def fill_schema(host_info):
         Log.FatalError("Invalid remote schema:\n\n%s\n" % _safe_str(__cmd_schema))
 
 
-def init_connection(remote_cmd):
+def _init_connection(remote_cmd):
     """Run remote_cmd, register connection, and then return it
 
     If remote_cmd is None, then the local connection will be
@@ -180,14 +180,14 @@ def init_connection(remote_cmd):
     conn_number = len(Globals.connections)
     conn = connection.PipeConnection(stdout, stdin, conn_number)
 
-    check_connection_version(conn, remote_cmd)
+    _check_connection_version(conn, remote_cmd)
     Log("Registering connection %d" % conn_number, 7)
-    init_connection_routing(conn, conn_number, remote_cmd)
-    init_connection_settings(conn)
+    _init_connection_routing(conn, conn_number, remote_cmd)
+    _init_connection_settings(conn)
     return conn
 
 
-def check_connection_version(conn, remote_cmd):
+def _check_connection_version(conn, remote_cmd):
     """Log warning if connection has different version"""
     try:
         remote_version = conn.Globals.get('version')
@@ -225,8 +225,8 @@ which should only print out the text: rdiff-backup <version>""" %
             (Globals.version, remote_version), 2)
 
 
-def init_connection_routing(conn, conn_number, remote_cmd):
-    """Called by init_connection, establish routing, conn dict"""
+def _init_connection_routing(conn, conn_number, remote_cmd):
+    """Called by _init_connection, establish routing, conn dict"""
     Globals.connection_dict[conn_number] = conn
 
     conn.SetConnections.init_connection_remote(conn_number)
@@ -238,7 +238,7 @@ def init_connection_routing(conn, conn_number, remote_cmd):
     __conn_remote_cmds.append(remote_cmd)
 
 
-def init_connection_settings(conn):
+def _init_connection_settings(conn):
     """Tell new conn about log settings and updated globals"""
     conn.log.Log.setverbosity(Log.verbosity)
     conn.log.Log.setterm_verbosity(Log.term_verbosity)
@@ -294,10 +294,10 @@ def TestConnections(rpaths):
             "All %d parameters must be remote of the form 'server::path'." % \
             len(rpaths)
         for i in range(1, len(Globals.connections)):
-            test_connection(i, rpaths[i - 1])
+            _test_connection(i, rpaths[i - 1])
 
 
-def test_connection(conn_number, rp):
+def _test_connection(conn_number, rp):
     """Test connection.  conn_number 0 is the local connection"""
     print("Testing server started by: ", __conn_remote_cmds[conn_number])
     conn = Globals.connections[conn_number]

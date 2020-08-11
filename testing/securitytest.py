@@ -27,7 +27,7 @@ class SecurityTest(unittest.TestCase):
     def test_vet_request_ro(self):
         """Test vetting of ConnectionRequests on read-only server"""
         remote_cmd = b"%s --server --restrict-read-only foo" % RBBin
-        conn = SetConnections.init_connection(remote_cmd)
+        conn = SetConnections._init_connection(remote_cmd)
         assert isinstance(conn.os.getuid(), int), conn.os.getuid()
         try:
             conn.os.remove(b"/tmp/foobar")
@@ -40,7 +40,7 @@ class SecurityTest(unittest.TestCase):
     def test_vet_request_minimal(self):
         """Test vetting of ConnectionRequests on minimal server"""
         remote_cmd = b"%s --server --restrict-update-only foo" % RBBin
-        conn = SetConnections.init_connection(remote_cmd)
+        conn = SetConnections._init_connection(remote_cmd)
         assert isinstance(conn.os.getuid(), int), conn.os.getuid()
         try:
             conn.os.remove(b"/tmp/foobar")
@@ -53,7 +53,7 @@ class SecurityTest(unittest.TestCase):
     def test_vet_rpath(self):
         """Test to make sure rpaths not in restricted path will be rejected"""
         remote_cmd = b"%s --server --restrict-update-only foo" % RBBin
-        conn = SetConnections.init_connection(remote_cmd)
+        conn = SetConnections._init_connection(remote_cmd)
 
         for rp in [
                 rpath.RPath(Globals.local_connection, b"blahblah"),
@@ -76,7 +76,7 @@ class SecurityTest(unittest.TestCase):
     def test_vet_rpath_root(self):
         """Test vetting when restricted to root"""
         remote_cmd = b"%s --server --restrict-update-only /" % RBBin
-        conn = SetConnections.init_connection(remote_cmd)
+        conn = SetConnections._init_connection(remote_cmd)
         for rp in [
                 rpath.RPath(Globals.local_connection, "blahblah"),
                 rpath.RPath(conn, "foo/bar")

@@ -84,7 +84,7 @@ def timetostring(timeinseconds):
     else:
         format_string = "%Y-%m-%dT%H-%M-%S"
     s = time.strftime(format_string, time.localtime(timeinseconds))
-    return s + gettzd(timeinseconds)
+    return s + _get_tzd(timeinseconds)
 
 
 def timetobytes(timeinseconds):
@@ -114,7 +114,7 @@ def stringtotime(timestring):
         timetuple = (year, month, day, hour, minute, second, -1, -1, 0)
         utc_in_secs = calendar.timegm(timetuple)
 
-        return int(utc_in_secs) + tzdtoseconds(timestring[19:])
+        return int(utc_in_secs) + _tzd_to_seconds(timestring[19:])
     except (TypeError, ValueError, AssertionError):
         return None
 
@@ -129,11 +129,6 @@ def bytestotime(timebytes):
 def timetopretty(timeinseconds):
     """Return pretty version of time"""
     return time.asctime(time.localtime(timeinseconds))
-
-
-def stringtopretty(timestring):
-    """Return pretty version of time given w3 time string"""
-    return timetopretty(stringtotime(timestring))
 
 
 def prettytotime(prettystring):
@@ -169,7 +164,7 @@ def inttopretty(seconds):
     return " ".join(partlist)
 
 
-def intstringtoseconds(interval_string):
+def _intervalstr_to_seconds(interval_string):
     """Convert a string expressing an interval (e.g. "4D2s") to seconds"""
 
     def error():
@@ -196,7 +191,7 @@ page for more information.
     return total
 
 
-def gettzd(timeinseconds=None):
+def _get_tzd(timeinseconds=None):
     """Return w3's timezone identification string.
 
     Expressed as [+/-]hh:mm.  For instance, PDT is -07:00 during
@@ -229,7 +224,7 @@ def gettzd(timeinseconds=None):
     return "%s%02d%s%02d" % (prefix, hours, time_separator, minutes)
 
 
-def tzdtoseconds(tzd):
+def _tzd_to_seconds(tzd):
     """Given w3 compliant TZD, return how far ahead UTC is"""
     if tzd == "Z":
         return 0
@@ -239,24 +234,7 @@ def tzdtoseconds(tzd):
     return -60 * (60 * int(tzd[:3]) + int(tzd[4:]))
 
 
-def cmp(time1, time2):
-    """Compare time1 and time2 and return -1, 0, or 1"""
-    if type(time1) is str:
-        time1 = stringtotime(time1)
-        assert time1 is not None
-    if type(time2) is str:
-        time2 = stringtotime(time2)
-        assert time2 is not None
-
-    if time1 < time2:
-        return -1
-    elif time1 == time2:
-        return 0
-    else:
-        return 1
-
-
-def time_from_session(session_num, rp=None):
+def _time_from_session(session_num, rp=None):
     """Return time in seconds of given backup
 
     The current mirror is session_num 0, the next oldest increment has
@@ -298,13 +276,13 @@ the day).""" % timestr)
         return int(timestr)
 
     # Test for w3-datetime format, possibly missing tzd
-    t = stringtotime(timestr) or stringtotime(timestr + gettzd())
+    t = stringtotime(timestr) or stringtotime(timestr + _get_tzd())
     if t:
         return t
 
     # Test for time given as number of backups, like 3B
     if _session_regexp.search(timestr):
-        return time_from_session(int(timestr[:-1]), rp)
+        return _time_from_session(int(timestr[:-1]), rp)
 
     # Try for long time, like "Mon Jun 5 11:00:23 1990"
     t = prettytotime(timestr)
@@ -312,7 +290,7 @@ the day).""" % timestr)
         return t
 
     try:  # test for an interval, like "2 days ago"
-        return curtime - intstringtoseconds(timestr)
+        return curtime - _intervalstr_to_seconds(timestr)
     except TimeException:
         pass
 
@@ -323,7 +301,7 @@ the day).""" % timestr)
         error()
     timestr = "%s-%02d-%02dT00:00:00%s" % (match.group('year'),
                                            int(match.group('month')),
-                                           int(match.group('day')), gettzd())
+                                           int(match.group('day')), _get_tzd())
     t = stringtotime(timestr)
     if t is not None:
         return t

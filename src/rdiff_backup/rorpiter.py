@@ -238,7 +238,7 @@ class IterTreeReducer:
         self.branches = [self.root_branch]
         self.root_fast_processed = None
 
-    def finish_branches(self, index):
+    def _finish_branches(self, index):
         """Run Finish() on all branches index has passed
 
         When we pass out of a branch, delete it and process it with
@@ -261,7 +261,7 @@ class IterTreeReducer:
             else:
                 return 1
 
-    def add_branch(self, index):
+    def _add_branch(self, index):
         """Return branch of type self.branch_class, add to branch list"""
         branch = self.branch_class(*self.branch_args)
         branch.base_index = index
@@ -306,13 +306,13 @@ class IterTreeReducer:
         elif index < self.index:
             assert 0, "Bad index order: %s >= %s" % (self.index, index)
         else:  # normal case
-            if self.finish_branches(index) is None:
+            if self._finish_branches(index) is None:
                 return None  # We are no longer in the main tree
             last_branch = self.branches[-1]
             if last_branch.can_fast_process(*args):
                 last_branch.fast_process(*args)
             else:
-                branch = self.add_branch(index)
+                branch = self._add_branch(index)
                 branch.start_process(*args)
 
         self.index = index
