@@ -24,7 +24,7 @@ this.
 
 On the destination connection only, if necessary have a separate
 dictionary of mappings, which specify how to map users/groups on one
-connection to the users/groups on the other.  The UserMap and GroupMap
+connection to the users/groups on the other.  The _user_map and _group_map
 objects should only be used on the destination.
 
 """
@@ -39,56 +39,53 @@ from . import log
 
 # ----------- "Private" section - don't use outside user_group -----------
 
-# This should be set to the user UserMap class object if using
-# user-defined user mapping, and a Map class object otherwise.
-UserMap = None
-
-# This should be set to the group UserMap class object if using
-# user-defined group mapping, and a Map class object otherwise.
-GroupMap = None
+# The following two variables are set by init_user_mapping resp. init_group_mapping
+# to an object of class Map, DefinedMap or NumericalMap depending on mapping type
+_user_map = None
+_group_map = None
 
 # Used to cache by uid2uname and gid2gname below
-uid2uname_dict = {}
-gid2gname_dict = {}
+_uid2uname_dict = {}
+_gid2gname_dict = {}
 
-uname2uid_dict = {}
+_uname2uid_dict = {}
 
 
-def uname2uid(uname):
+def _uname2uid(uname):
     """Given uname, return uid or None if cannot find"""
     try:
-        return uname2uid_dict[uname]
+        return _uname2uid_dict[uname]
     except KeyError:
         try:
             uid = pwd.getpwnam(uname)[2]
         except (KeyError, NameError):
             uid = None
-        uname2uid_dict[uname] = uid
+        _uname2uid_dict[uname] = uid
         return uid
 
 
-gname2gid_dict = {}
+_gname2gid_dict = {}
 
 
-def gname2gid(gname):
+def _gname2gid(gname):
     """Given gname, return gid or None if cannot find"""
     try:
-        return gname2gid_dict[gname]
+        return _gname2gid_dict[gname]
     except KeyError:
         try:
             gid = grp.getgrnam(gname)[2]
         except (KeyError, NameError):
             gid = None
-        gname2gid_dict[gname] = gid
+        _gname2gid_dict[gname] = gid
         return gid
 
 
-class Map:
+class _Map:
     """Used for mapping names and id on source side to dest side"""
 
     def __init__(self, is_user):
         """Initialize, user is true for users, false for groups"""
-        self.name2id = (is_user and uname2uid) or gname2gid
+        self.name2id = (is_user and _uname2uid) or _gname2gid
 
     def __call__(self, id, name=None):
         """Return mapped id from id and, if available, name"""
@@ -113,11 +110,11 @@ class Map:
         return self.name2id(name)
 
 
-class DefinedMap(Map):
+class _DefinedMap(_Map):
     """Map names and ids on source side to appropriate ids on dest side
 
     Like map, but initialize with user-defined mapping string, which
-    supersedes Map.
+    supersedes _Map.
 
     """
 
@@ -129,7 +126,7 @@ class DefinedMap(Map):
         mapping unless user is false, then do group.
 
         """
-        Map.__init__(self, is_user)
+        super().__init__(is_user)
         self.name_mapping_dict = {}
         self.id_mapping_dict = {}
 
@@ -144,11 +141,11 @@ class DefinedMap(Map):
             old, new = comps
 
             try:
-                self.id_mapping_dict[int(old)] = self.init_get_new_id(new)
+                self.id_mapping_dict[int(old)] = self._get_new_id(new)
             except ValueError:
-                self.name_mapping_dict[old] = self.init_get_new_id(new)
+                self.name_mapping_dict[old] = self._get_new_id(new)
 
-    def init_get_new_id(self, id_or_name):
+    def _get_new_id(self, id_or_name):
         """Return id of id_or_name, failing if cannot.  Used in __init__"""
         try:
             return int(id_or_name)
@@ -183,7 +180,7 @@ class DefinedMap(Map):
             return None
 
 
-class NumericalMap:
+class _NumericalMap:
     """Simple Map replacement that just keeps numerical uid or gid"""
 
     def __call__(self, id, name=None):
@@ -199,26 +196,26 @@ class NumericalMap:
 def uid2uname(uid):
     """Given uid, return uname from passwd file, or None if cannot find"""
     try:
-        return uid2uname_dict[uid]
+        return _uid2uname_dict[uid]
     except KeyError:
         try:
             uname = pwd.getpwuid(uid)[0]
         except (KeyError, OverflowError, NameError):
             uname = None
-        uid2uname_dict[uid] = uname
+        _uid2uname_dict[uid] = uname
         return uname
 
 
 def gid2gname(gid):
     """Given gid, return group name from group file or None if cannot find"""
     try:
-        return gid2gname_dict[gid]
+        return _gid2gname_dict[gid]
     except KeyError:
         try:
             gname = grp.getgrgid(gid)[0]
         except (KeyError, OverflowError, NameError):
             gname = None
-        gid2gname_dict[gid] = gname
+        _gid2gname_dict[gid] = gname
         return gname
 
 
@@ -229,13 +226,13 @@ def init_user_mapping(mapping_string=None, numerical_ids=None):
     argument is None, default to preserving uname where possible.
 
     """
-    global UserMap
+    global _user_map
     if numerical_ids:
-        UserMap = NumericalMap()
+        _user_map = _NumericalMap()
     elif mapping_string:
-        UserMap = DefinedMap(1, mapping_string)
+        _user_map = _DefinedMap(1, mapping_string)
     else:
-        UserMap = Map(1)
+        _user_map = _Map(1)
 
 
 def init_group_mapping(mapping_string=None, numerical_ids=None):
@@ -245,13 +242,13 @@ def init_group_mapping(mapping_string=None, numerical_ids=None):
     argument is None, default to preserving gname where possible.
 
     """
-    global GroupMap
+    global _group_map
     if numerical_ids:
-        GroupMap = NumericalMap()
+        _group_map = _NumericalMap()
     elif mapping_string:
-        GroupMap = DefinedMap(0, mapping_string)
+        _group_map = _DefinedMap(0, mapping_string)
     else:
-        GroupMap = Map(0)
+        _group_map = _Map(0)
 
 
 def map_rpath(rp):
@@ -263,12 +260,12 @@ def map_rpath(rp):
     """
     uid, gid = rp.getuidgid()
     uname, gname = rp.getuname(), rp.getgname()
-    return (UserMap(uid, uname), GroupMap(gid, gname))
+    return (_user_map(uid, uname), _group_map(gid, gname))
 
 
 def acl_user_map(uid, uname):
-    return UserMap.map_acl(uid, uname)
+    return _user_map.map_acl(uid, uname)
 
 
 def acl_group_map(gid, gname):
-    return GroupMap.map_acl(gid, gname)
+    return _group_map.map_acl(gid, gname)

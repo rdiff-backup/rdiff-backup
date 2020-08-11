@@ -63,11 +63,11 @@ def Regress(mirror_rp):
     assert mirror_rp.index == () and inc_rpath.index == ()
     assert mirror_rp.isdir() and inc_rpath.isdir()
     assert mirror_rp.conn is inc_rpath.conn is Globals.local_connection
-    manager, former_current_mirror_rp = set_regress_time()
-    set_restore_times()
-    regress_rbdir(manager)
+    manager, former_current_mirror_rp = _set_regress_time()
+    _set_restore_times()
+    _regress_rbdir(manager)
     ITR = rorpiter.IterTreeReducer(RegressITRB, [])
-    for rf in iterate_meta_rfs(mirror_rp, inc_rpath):
+    for rf in _iterate_meta_rfs(mirror_rp, inc_rpath):
         ITR(rf.index, rf)
     ITR.Finish()
     if former_current_mirror_rp:
@@ -76,7 +76,7 @@ def Regress(mirror_rp):
         former_current_mirror_rp.delete()
 
 
-def set_regress_time():
+def _set_regress_time():
     """Set global regress_time to previous successful backup
 
     If there are two current_mirror increments, then the last one
@@ -95,7 +95,7 @@ def set_regress_time():
     return manager, mirror_rp_to_delete
 
 
-def set_restore_times():
+def _set_restore_times():
     """Set _rest_time and _mirror_time in the restore module
 
     _rest_time (restore time) corresponds to the last successful
@@ -106,7 +106,7 @@ def set_restore_times():
     restore.MirrorStruct._rest_time = regress_time
 
 
-def regress_rbdir(meta_manager):
+def _regress_rbdir(meta_manager):
     """Delete the increments in the rdiff-backup-data directory
 
     Returns the former current mirror rp so we can delete it later.
@@ -127,7 +127,7 @@ def regress_rbdir(meta_manager):
                 assert old_rp.getinctype() == b'diff', old_rp
                 has_meta_diff = 1
     if has_meta_diff and not has_meta_snap:
-        recreate_meta(meta_manager)
+        _recreate_meta(meta_manager)
 
     for new_rp in meta_manager.timerpmap[unsuccessful_backup_time]:
         if new_rp.getincbase_bname() != b'current_mirror':
@@ -140,7 +140,7 @@ def regress_rbdir(meta_manager):
             break
 
 
-def recreate_meta(meta_manager):
+def _recreate_meta(meta_manager):
     """Make regress_time mirror_metadata snapshot by patching
 
     We write to a tempfile first.  Otherwise, in case of a crash, it
@@ -167,7 +167,7 @@ def recreate_meta(meta_manager):
         Globals.rbdir.fsync()
 
 
-def iterate_raw_rfs(mirror_rp, inc_rp):
+def _iterate_raw_rfs(mirror_rp, inc_rp):
     """Iterate all RegressFile objects in mirror/inc directory
 
     Also changes permissions of unreadable files.  We don't have to
@@ -192,7 +192,7 @@ def iterate_raw_rfs(mirror_rp, inc_rp):
     return helper(root_rf)
 
 
-def yield_metadata():
+def _yield_metadata():
     """Iterate rorps from metadata file, if any are available"""
     metadata.SetManager()
     metadata_iter = metadata.ManagerObj.GetAtTime(regress_time)
@@ -202,7 +202,7 @@ def yield_metadata():
                        (Time.timetopretty(regress_time), regress_time))
 
 
-def iterate_meta_rfs(mirror_rp, inc_rp):
+def _iterate_meta_rfs(mirror_rp, inc_rp):
     """Yield RegressFile objects with extra metadata information added
 
     Each RegressFile will have an extra object variable .metadata_rorp
@@ -210,8 +210,8 @@ def iterate_meta_rfs(mirror_rp, inc_rp):
     regress_time.
 
     """
-    raw_rfs = iterate_raw_rfs(mirror_rp, inc_rp)
-    collated = rorpiter.Collate2Iters(raw_rfs, yield_metadata())
+    raw_rfs = _iterate_raw_rfs(mirror_rp, inc_rp)
+    collated = rorpiter.Collate2Iters(raw_rfs, _yield_metadata())
     for raw_rf, metadata_rorp in collated:
         raw_rf = longname.update_regressfile(raw_rf, metadata_rorp, mirror_rp)
         if not raw_rf:
@@ -235,7 +235,7 @@ class RegressFile(restore.RestoreFile):
 
     def __init__(self, mirror_rp, inc_rp, inc_list):
         restore.RestoreFile.__init__(self, mirror_rp, inc_rp, inc_list)
-        self.set_regress_inc()
+        self._set_regress_inc()
 
     def set_metadata_rorp(self, metadata_rorp):
         """Set self.metadata_rorp, creating empty if given None"""
@@ -249,7 +249,7 @@ class RegressFile(restore.RestoreFile):
         return ((self.metadata_rorp and self.metadata_rorp.isdir())
                 or (self.mirror_rp and self.mirror_rp.isdir()))
 
-    def set_regress_inc(self):
+    def _set_regress_inc(self):
         """Set self.regress_inc to increment to be removed (or None)"""
         newer_incs = self.get_newer_incs()
         assert len(newer_incs) <= 1, "Too many recent increments"
@@ -292,7 +292,7 @@ class RegressITRB(rorpiter.ITRBranch):
                 "Regressing file %s" % (rf.metadata_rorp.get_safeindexpath()),
                 5)
             if rf.metadata_rorp.isreg():
-                self.restore_orig_regfile(rf)
+                self._restore_orig_regfile(rf)
             else:
                 if rf.mirror_rp.lstat():
                     rf.mirror_rp.delete()
@@ -305,7 +305,7 @@ class RegressITRB(rorpiter.ITRBranch):
             log.Log("Deleting increment %s" % rf.regress_inc.get_safepath(), 5)
             rf.regress_inc.delete()
 
-    def restore_orig_regfile(self, rf):
+    def _restore_orig_regfile(self, rf):
         """Restore original regular file
 
         This is the trickiest case for avoiding information loss,
@@ -360,7 +360,7 @@ class RegressITRB(rorpiter.ITRBranch):
             assert rf.mirror_rp.isdir()
             log.Log("Replacing directory %s" % rf.mirror_rp.get_safepath(), 5)
             if rf.metadata_rorp.isreg():
-                self.restore_orig_regfile(rf)
+                self._restore_orig_regfile(rf)
             else:
                 rf.mirror_rp.delete()
                 rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)

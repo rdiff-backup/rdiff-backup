@@ -98,7 +98,7 @@ class ExtendedAttributes:
                 else:
                     raise
 
-    def clear_rp(self, rp):
+    def _clear_rp(self, rp):
         """Delete all the extended attributes in rpath"""
         try:
             for name in rp.conn.xattr.list(rp.path, rp.issym()):
@@ -128,7 +128,7 @@ class ExtendedAttributes:
 
     def write_to_rp(self, rp):
         """Write extended attributes to rpath rp"""
-        self.clear_rp(rp)
+        self._clear_rp(rp)
         for (name, value) in self.attr_dict.items():
             try:
                 rp.conn.xattr.set(rp.path, name, value, 0, rp.issym())
@@ -156,13 +156,14 @@ class ExtendedAttributes:
         """Delete value associated with given name"""
         del self.attr_dict[name]
 
-    def empty(self):
+    def is_empty(self):
         """Return true if no extended attributes are set"""
         return not self.attr_dict
 
 
-def ea_compare_rps(rp1, rp2):
-    """Return true if rp1 and rp2 have same extended attributes"""
+def _ea_compare_rps(rp1, rp2):
+    """Return true if rp1 and rp2 have same extended attributes.
+    TEST: This function is used solely as part of the test suite."""
     ea1 = ExtendedAttributes(rp1.index)
     ea1.read_from_rp(rp1)
     ea2 = ExtendedAttributes(rp2.index)
@@ -170,68 +171,66 @@ def ea_compare_rps(rp1, rp2):
     return ea1 == ea2
 
 
-def EA2Record(ea):
-    """Convert ExtendedAttributes object to text record"""
-    str_list = [b'# file: %s' % C.acl_quote(ea.get_indexpath())]
-
-    for (name, val) in ea.attr_dict.items():
-        if not val:
-            str_list.append(name)
-        else:
-            encoded_val = base64.b64encode(val)
-            str_list.append(b'%s=0s%s' % (C.acl_quote(name), encoded_val))
-    return b'\n'.join(str_list) + b'\n'
-
-
-def Record2EA(record):
-    """Convert text record to ExtendedAttributes object"""
-    lines = record.split(b'\n')
-    first = lines.pop(0)
-    if not first[:8] == b'# file: ':
-        raise metadata.ParsingError("Bad record beginning: %r" % first[:8])
-    filename = first[8:]
-    if filename == b'.':
-        index = ()
-    else:
-        unquoted_filename = C.acl_unquote(filename)
-        index = tuple(unquoted_filename.split(b'/'))
-    ea = ExtendedAttributes(index)
-
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        assert line[0] != b'#', line
-        eq_pos = line.find(b'=')
-        if eq_pos == -1:
-            ea.set(line)
-        else:
-            name = line[:eq_pos]
-            assert line[eq_pos + 1:eq_pos + 3] == b'0s', \
-                "Currently only base64 encoding supported"
-            encoded_val = line[eq_pos + 3:]
-            ea.set(name, base64.b64decode(encoded_val))
-    return ea
-
-
 class EAExtractor(metadata.FlatExtractor):
     """Iterate ExtendedAttributes objects from the EA information file"""
     record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
-    record_to_object = staticmethod(Record2EA)
 
-    def filename_to_index(self, filename):
+    def _filename_to_index(self, filename):
         """Convert possibly quoted filename to index tuple"""
         if filename == b'.':
             return ()
         else:
             return tuple(C.acl_unquote(filename).split(b'/'))
 
+    @staticmethod
+    def _record_to_object(record):
+        """Convert text record to ExtendedAttributes object"""
+        lines = record.split(b'\n')
+        first = lines.pop(0)
+        if not first[:8] == b'# file: ':
+            raise metadata.ParsingError("Bad record beginning: %r" % first[:8])
+        filename = first[8:]
+        if filename == b'.':
+            index = ()
+        else:
+            unquoted_filename = C.acl_unquote(filename)
+            index = tuple(unquoted_filename.split(b'/'))
+        ea = ExtendedAttributes(index)
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            assert line[0] != b'#', line
+            eq_pos = line.find(b'=')
+            if eq_pos == -1:
+                ea.set(line)
+            else:
+                name = line[:eq_pos]
+                assert line[eq_pos + 1:eq_pos + 3] == b'0s', \
+                    "Currently only base64 encoding supported"
+                encoded_val = line[eq_pos + 3:]
+                ea.set(name, base64.b64decode(encoded_val))
+        return ea
+
 
 class ExtendedAttributesFile(metadata.FlatFile):
     """Store/retrieve EAs from extended_attributes file"""
     _prefix = b"extended_attributes"
     _extractor = EAExtractor
-    _object_to_record = staticmethod(EA2Record)
+
+    @staticmethod
+    def _object_to_record(ea):
+        """Convert ExtendedAttributes object to text record"""
+        str_list = [b'# file: %s' % C.acl_quote(ea.get_indexpath())]
+
+        for (name, val) in ea.attr_dict.items():
+            if not val:
+                str_list.append(name)
+            else:
+                encoded_val = base64.b64encode(val)
+                str_list.append(b'%s=0s%s' % (C.acl_quote(name), encoded_val))
+        return b'\n'.join(str_list) + b'\n'
 
 
 def join_ea_iter(rorp_iter, ea_iter):
@@ -265,11 +264,11 @@ class AccessControlLists:
         """Initialize object with index and possibly acl_text"""
         self.index = index
         if acl_text:
-            self.set_from_text(acl_text)
+            self._set_from_text(acl_text)
         else:
             self.entry_list = self.default_entry_list = None
 
-    def set_from_text(self, text):
+    def _set_from_text(self, text):
         """Set self.entry_list and self.default_entry_list from text"""
         self.entry_list, self.default_entry_list = [], []
         for line in text.split('\n'):
@@ -281,24 +280,24 @@ class AccessControlLists:
                 continue
 
             if line.startswith('default:'):
-                entrytuple = self.text_to_entrytuple(line[8:])
+                entrytuple = self._text_to_entrytuple(line[8:])
                 self.default_entry_list.append(entrytuple)
             else:
-                self.entry_list.append(self.text_to_entrytuple(line))
+                self.entry_list.append(self._text_to_entrytuple(line))
 
     def __str__(self):
         """Return text version of acls"""
         if not self.entry_list:
             return ""
-        slist = list(map(self.entrytuple_to_text, self.entry_list))
+        slist = list(map(self._entrytuple_to_text, self.entry_list))
         if self.default_entry_list:
             slist.extend([
-                "default:" + self.entrytuple_to_text(e)
+                "default:" + self._entrytuple_to_text(e)
                 for e in self.default_entry_list
             ])
         return "\n".join(slist)
 
-    def entrytuple_to_text(self, entrytuple):
+    def _entrytuple_to_text(self, entrytuple):
         """Return text version of entrytuple, as in getfacl"""
         tagchar, name_pair, perms = entrytuple
         if tagchar == "U":
@@ -321,10 +320,10 @@ class AccessControlLists:
                                  or '-', perms & 1 and 'x' or '-')
         return text + permstring
 
-    def text_to_entrytuple(self, text):
+    def _text_to_entrytuple(self, text):
         """Return entrytuple given text like 'user:foo:r--'
 
-        See the acl_to_list function for entrytuple documentation.
+        See the _acl_to_list function for entrytuple documentation.
 
         """
         typetext, qualifier, permtext = text.split(':')
@@ -358,7 +357,7 @@ class AccessControlLists:
         perms = ((read == 'r') << 2 | (write == 'w') << 1 | (execute == 'x'))
         return (typechar, namepair, perms)
 
-    def cmp_entry_list(self, l1, l2):
+    def _cmp_entry_list(self, l1, l2):
         """True if the lists have same entries.  Assume preordered"""
         if not l1:
             return not l2
@@ -395,15 +394,16 @@ class AccessControlLists:
         assert isinstance(acl, self.__class__)
         if self.is_basic():
             return acl.is_basic()
-        return (self.cmp_entry_list(self.entry_list, acl.entry_list)
-                and self.cmp_entry_list(self.default_entry_list,
-                                        acl.default_entry_list))
+        return (self._cmp_entry_list(self.entry_list, acl.entry_list)
+                and self._cmp_entry_list(self.default_entry_list,
+                                         acl.default_entry_list))
 
     def __ne__(self, acl):
         return not self.__eq__(acl)
 
-    def eq_verbose(self, acl):
-        """Returns same as __eq__ but print explanation if not equal"""
+    def _eq_verbose(self, acl):
+        """Returns same as __eq__ but print explanation if not equal.
+        TEST: This function is used solely as part of the test suite."""
         if not self.cmp_entry_list(self.entry_list, acl.entry_list):
             print("ACL entries for %s compare differently" % (self.index, ))
             return 0
@@ -444,7 +444,7 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
     """Set given rp with ACL that acl_text defines.  rp should be local"""
     assert rp.conn is Globals.local_connection
     if entry_list:
-        acl = list_to_acl(entry_list, map_names)
+        acl = _list_to_acl(entry_list, map_names)
     else:
         acl = posix1e.ACL()
 
@@ -461,7 +461,7 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
 
     if rp.isdir():
         if default_entry_list:
-            def_acl = list_to_acl(default_entry_list, map_names)
+            def_acl = _list_to_acl(default_entry_list, map_names)
         else:
             def_acl = posix1e.ACL()
         def_acl.applyto(rp.path, posix1e.ACL_TYPE_DEFAULT)
@@ -497,10 +497,10 @@ def get_acl_lists_from_rp(rp):
                 raise
     else:
         def_acl = None
-    return (acl and acl_to_list(acl), def_acl and acl_to_list(def_acl))
+    return (acl and _acl_to_list(acl), def_acl and _acl_to_list(def_acl))
 
 
-def acl_to_list(acl):
+def _acl_to_list(acl):
     """Return list representation of posix1e.ACL object
 
     ACL objects cannot be pickled, so this representation keeps
@@ -554,14 +554,14 @@ def acl_to_list(acl):
     return list(map(entry_to_tuple, acl))
 
 
-def list_to_acl(entry_list, map_names=1):
+def _list_to_acl(entry_list, map_names=1):
     """Return posix1e.ACL object from list representation
 
     If map_names is true, use user_group to update the names for the
     current system, and drop if not available.  Otherwise just use the
     same id.
 
-    See the acl_to_list function for the format of an acllist.
+    See the _acl_to_list function for the format of an acllist.
 
     """
 
@@ -623,8 +623,9 @@ def list_to_acl(entry_list, map_names=1):
     return acl
 
 
-def acl_compare_rps(rp1, rp2):
-    """Return true if rp1 and rp2 have same acl information"""
+def _acl_compare_rps(rp1, rp2):
+    """Return true if rp1 and rp2 have same acl information.
+    TEST: This function is used solely as part of the test suite."""
     acl1 = AccessControlLists(rp1.index)
     acl1.read_from_rp(rp1)
     acl2 = AccessControlLists(rp2.index)
@@ -632,41 +633,39 @@ def acl_compare_rps(rp1, rp2):
     return acl1 == acl2
 
 
-def ACL2Record(acl):
-    """Convert an AccessControlLists object into a text record"""
-    return b'# file: %b\n%b\n' % (C.acl_quote(acl.get_indexpath()), os.fsencode(str(acl)))
-
-
-def Record2ACL(record):
-    """Convert text record to an AccessControlLists object"""
-    newline_pos = record.find(b'\n')
-    first_line = record[:newline_pos]
-    if not first_line.startswith(b'# file: '):
-        raise metadata.ParsingError("Bad record beginning: %r" % first_line)
-    filename = first_line[8:]
-    if filename == b'.':
-        index = ()
-    else:
-        unquoted_filename = C.acl_unquote(filename)
-        index = tuple(unquoted_filename.split(b'/'))
-    return AccessControlLists(index, os.fsdecode(record[newline_pos:]))
-
-
 class ACLExtractor(EAExtractor):
     """Iterate AccessControlLists objects from the ACL information file
 
-    Except for the record_to_object method, we can reuse everything in
+    Except for the _record_to_object method, we can reuse everything in
     the EAExtractor class because the file formats are so similar.
 
     """
-    record_to_object = staticmethod(Record2ACL)
+
+    @staticmethod
+    def _record_to_object(record):
+        """Convert text record to an AccessControlLists object"""
+        newline_pos = record.find(b'\n')
+        first_line = record[:newline_pos]
+        if not first_line.startswith(b'# file: '):
+            raise metadata.ParsingError("Bad record beginning: %r" % first_line)
+        filename = first_line[8:]
+        if filename == b'.':
+            index = ()
+        else:
+            unquoted_filename = C.acl_unquote(filename)
+            index = tuple(unquoted_filename.split(b'/'))
+        return AccessControlLists(index, os.fsdecode(record[newline_pos:]))
 
 
 class AccessControlListFile(metadata.FlatFile):
     """Store/retrieve ACLs from extended attributes file"""
     _prefix = b'access_control_lists'
     _extractor = ACLExtractor
-    _object_to_record = staticmethod(ACL2Record)
+
+    @staticmethod
+    def _object_to_record(acl):
+        """Convert an AccessControlLists object into a text record"""
+        return b'# file: %b\n%b\n' % (C.acl_quote(acl.get_indexpath()), os.fsencode(str(acl)))
 
 
 def join_acl_iter(rorp_iter, acl_iter):
@@ -677,6 +676,9 @@ def join_acl_iter(rorp_iter, acl_iter):
             acl = AccessControlLists(rorp.index)
         rorp.set_acl(acl)
         yield rorp
+
+
+# FIXME overriding functions in the rpath module doesn't sound right
 
 
 def rpath_acl_get(rp):

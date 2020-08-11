@@ -117,7 +117,7 @@ class Logger:
         assert not self.logfp.close()
         self.log_file_local = None
 
-    def format(self, message, verbosity):
+    def _format(self, message, verbosity):
         """Format the message, possibly adding date information"""
         if verbosity < 9:
             return "%s\n" % message
@@ -156,7 +156,7 @@ class Logger:
         """Write the message to the log file, if possible"""
         if self.log_file_open:
             if self.log_file_local:
-                tmpstr = self.format(message, self.verbosity)
+                tmpstr = self._format(message, self.verbosity)
                 self.logfp.write(_to_bytes(tmpstr))
                 self.logfp.flush()
             else:
@@ -168,7 +168,7 @@ class Logger:
             termfp = sys.stderr.buffer
         else:
             termfp = sys.stdout.buffer
-        tmpstr = self.format(message, self.term_verbosity)
+        tmpstr = self._format(message, self.term_verbosity)
         termfp.write(_to_bytes(tmpstr, encoding=sys.stdout.encoding))
 
     def conn(self, direction, result, req_num):
@@ -288,7 +288,7 @@ class ErrorLog:
         if not Globals.isbackup_writer:
             return Globals.backup_writer.log.ErrorLog.write(
                 error_type, rp, exc)
-        logstr = cls.get_log_string(error_type, rp, exc)
+        logstr = cls._get_log_string(error_type, rp, exc)
         Log(logstr, 2)
         if Globals.null_separator:
             logstr += "\0"
@@ -314,14 +314,7 @@ class ErrorLog:
         if cls.isopen():
             cls.write(error_type, rp, exc)
         else:
-            Log(cls.get_log_string(error_type, rp, exc), 2)
-
-    @classmethod
-    def get_log_string(cls, error_type, rp, exc):
-        """Return log string to put in error log"""
-        assert (error_type == "ListError" or error_type == "UpdateError"
-                or error_type == "SpecialFileError"), "Unknown type " + error_type
-        return "%s: '%s' %s" % (error_type, cls.get_indexpath(rp), exc)
+            Log(cls._get_log_string(error_type, rp, exc), 2)
 
     @classmethod
     def close(cls):
@@ -330,3 +323,10 @@ class ErrorLog:
             return Globals.backup_writer.log.ErrorLog.close()
         assert not cls._log_fileobj.close()
         cls._log_fileobj = None
+
+    @classmethod
+    def _get_log_string(cls, error_type, rp, exc):
+        """Return log string to put in error log"""
+        assert (error_type == "ListError" or error_type == "UpdateError"
+                or error_type == "SpecialFileError"), "Unknown type " + error_type
+        return "%s: '%s' %s" % (error_type, cls.get_indexpath(rp), exc)

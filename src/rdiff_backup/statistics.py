@@ -30,36 +30,35 @@ class StatsException(Exception):
 class StatsObj:
     """Contains various statistics, provide string conversion functions"""
 
-    stat_file_attrs = ('SourceFiles', 'SourceFileSize', 'MirrorFiles',
-                       'MirrorFileSize', 'NewFiles', 'NewFileSize',
-                       'DeletedFiles', 'DeletedFileSize', 'ChangedFiles',
-                       'ChangedSourceSize', 'ChangedMirrorSize',
-                       'IncrementFiles', 'IncrementFileSize')
-    stat_misc_attrs = ('Errors', 'TotalDestinationSizeChange')
-    stat_time_attrs = ('StartTime', 'EndTime', 'ElapsedTime')
-    stat_attrs = (
-        ('Filename', ) + stat_time_attrs + stat_misc_attrs + stat_file_attrs)
+    _stat_file_attrs = ('SourceFiles', 'SourceFileSize', 'MirrorFiles',
+                        'MirrorFileSize', 'NewFiles', 'NewFileSize',
+                        'DeletedFiles', 'DeletedFileSize', 'ChangedFiles',
+                        'ChangedSourceSize', 'ChangedMirrorSize',
+                        'IncrementFiles', 'IncrementFileSize')
+    _stat_misc_attrs = ('Errors', 'TotalDestinationSizeChange')
+    _stat_time_attrs = ('StartTime', 'EndTime', 'ElapsedTime')
+    _stat_attrs = (
+        ('Filename', ) + _stat_time_attrs + _stat_misc_attrs + _stat_file_attrs)
 
     # Below, the second value in each pair is true iff the value
     # indicates a number of bytes
-    stat_file_pairs = (('SourceFiles', None), ('SourceFileSize',
-                                               1), ('MirrorFiles', None),
-                       ('MirrorFileSize',
-                        1), ('NewFiles', None), ('NewFileSize',
-                                                 1), ('DeletedFiles', None),
-                       ('DeletedFileSize',
-                        1), ('ChangedFiles', None), ('ChangedSourceSize', 1),
-                       ('ChangedMirrorSize',
-                        1), ('IncrementFiles', None), ('IncrementFileSize', 1))
+    _stat_file_pairs = (('SourceFiles', None), ('SourceFileSize', 1),
+                        ('MirrorFiles', None), ('MirrorFileSize', 1),
+                        ('NewFiles', None), ('NewFileSize', 1),
+                        ('DeletedFiles', None), ('DeletedFileSize', 1),
+                        ('ChangedFiles', None), ('ChangedSourceSize', 1),
+                        ('ChangedMirrorSize', 1),
+                        ('IncrementFiles', None), ('IncrementFileSize', 1))
 
     # This is used in get_byte_summary_string below
-    byte_abbrev_list = ((1024 * 1024 * 1024 * 1024, "TB"),
-                        (1024 * 1024 * 1024, "GB"), (1024 * 1024,
-                                                     "MB"), (1024, "KB"))
+    _byte_abbrev_list = ((1024 * 1024 * 1024 * 1024, "TB"),
+                         (1024 * 1024 * 1024, "GB"),
+                         (1024 * 1024, "MB"),
+                         (1024, "KB"))
 
     def __init__(self):
         """Set attributes to None"""
-        for attr in self.stat_attrs:
+        for attr in self._stat_attrs:
             self.__dict__[attr] = None
 
     def get_stat(self, attribute):
@@ -70,15 +69,7 @@ class StatsObj:
         """Set attribute to given value"""
         self.__dict__[attr] = value
 
-    def increment_stat(self, attr):
-        """Add 1 to value of attribute"""
-        self.__dict__[attr] += 1
-
-    def add_to_stat(self, attr, value):
-        """Add value to given attribute"""
-        self.__dict__[attr] += value
-
-    def get_total_dest_size_change(self):
+    def _get_total_dest_size_change(self):
         """Return total destination size change
 
         This represents the total change in the size of the
@@ -102,10 +93,10 @@ class StatsObj:
         self.TotalDestinationSizeChange = result
         return result
 
-    def get_stats_line(self, index, quote_filename=1):
-        """Return one line abbreviated version of full stats string"""
+    def _get_stats_line(self, index, quote_filename=1):
+        """TEST: Return one line abbreviated version of full stats string"""
         file_attrs = [
-            str(self.get_stat(attr)) for attr in self.stat_file_attrs
+            str(self.get_stat(attr)) for attr in self._stat_file_attrs
         ]
         if not index:
             filename = "."
@@ -119,36 +110,13 @@ class StatsObj:
             filename,
         ] + file_attrs)
 
-    def set_stats_from_line(self, line):
-        """Set statistics from given line"""
-
-        def error():
-            raise StatsException("Bad line '%s'" % line)
-
-        if line[-1] == "\n":
-            line = line[:-1]
-        lineparts = line.split(" ")
-        if len(lineparts) < len(self.stat_file_attrs):
-            error()
-        for attr, val_string in zip(self.stat_file_attrs,
-                                    lineparts[-len(self.stat_file_attrs):]):
-            try:
-                val = int(val_string)
-            except ValueError:
-                try:
-                    val = float(val_string)
-                except ValueError:
-                    error()
-            self.set_stat(attr, val)
-        return self
-
-    def get_stats_string(self):
+    def _get_stats_string(self):
         """Return extended string printing out statistics"""
-        return "%s%s%s" % (self.get_timestats_string(),
-                           self.get_filestats_string(),
-                           self.get_miscstats_string())
+        return "%s%s%s" % (self._get_timestats_string(),
+                           self._get_filestats_string(),
+                           self._get_miscstats_string())
 
-    def get_timestats_string(self):
+    def _get_timestats_string(self):
         """Return portion of statistics string dealing with time"""
         timelist = []
         if self.StartTime is not None:
@@ -167,7 +135,7 @@ class StatsObj:
                 (self.ElapsedTime, Time.inttopretty(self.ElapsedTime)))
         return "".join(timelist)
 
-    def get_filestats_string(self):
+    def _get_filestats_string(self):
         """Return portion of statistics string about files and bytes"""
 
         def fileline(stat_file_pair):
@@ -182,12 +150,12 @@ class StatsObj:
             else:
                 return "%s %s\n" % (attr, val)
 
-        return "".join(map(fileline, self.stat_file_pairs))
+        return "".join(map(fileline, self._stat_file_pairs))
 
-    def get_miscstats_string(self):
+    def _get_miscstats_string(self):
         """Return portion of extended stat string about misc attributes"""
         misc_string = ""
-        tdsc = self.get_total_dest_size_change()
+        tdsc = self._get_total_dest_size_change()
         if tdsc is not None:
             misc_string += ("TotalDestinationSizeChange %s (%s)\n" %
                             (tdsc, self.get_byte_summary_string(tdsc)))
@@ -203,7 +171,7 @@ class StatsObj:
         else:
             sign = ""
 
-        for abbrev_bytes, abbrev_string in self.byte_abbrev_list:
+        for abbrev_bytes, abbrev_string in self._byte_abbrev_list:
             if byte_count >= abbrev_bytes:
                 # Now get 3 significant figures
                 abbrev_count = float(byte_count) / abbrev_bytes
@@ -222,12 +190,12 @@ class StatsObj:
             return "%s%d bytes" % (sign, byte_count)
 
     def get_stats_logstring(self, title):
-        """Like get_stats_string, but add header and footer"""
+        """Like _get_stats_string, but add header and footer"""
         header = "--------------[ %s ]--------------" % title
         footer = "-" * len(header)
-        return "%s\n%s%s\n" % (header, self.get_stats_string(), footer)
+        return "%s\n%s%s\n" % (header, self._get_stats_string(), footer)
 
-    def set_stats_from_string(self, s):
+    def _set_stats_from_string(self, s):
         """Initialize attributes from string, return self for convenience"""
 
         def error(line):
@@ -240,7 +208,7 @@ class StatsObj:
             if len(line_parts) < 2:
                 error(line)
             attr, value_string = line_parts[:2]
-            if attr not in self.stat_attrs:
+            if attr not in self._stat_attrs:
                 error(line)
             try:
                 try:
@@ -259,30 +227,30 @@ class StatsObj:
     def write_stats_to_rp(self, rp):
         """Write statistics string to given rpath"""
         fp = rp.open("w")  # statistics are a text file
-        fp.write(self.get_stats_string())
+        fp.write(self._get_stats_string())
         assert not fp.close()
 
     def read_stats_from_rp(self, rp):
         """Set statistics from rpath, return self for convenience"""
         fp = rp.open("r")  # statistics are a text file
-        self.set_stats_from_string(fp.read())
+        self._set_stats_from_string(fp.read())
         fp.close()
         return self
 
-    def stats_equal(self, s):
+    def _stats_equal(self, s):
         """Return true if s has same statistics as self"""
         assert isinstance(s, StatsObj)
-        for attr in self.stat_file_attrs:
+        for attr in self._stat_file_attrs:
             if self.get_stat(attr) != s.get_stat(attr):
                 return None
         return 1
 
     def set_to_average(self, statobj_list):
         """Set self's attributes to average of those in statobj_list"""
-        for attr in self.stat_attrs:
+        for attr in self._stat_attrs:
             self.set_stat(attr, 0)
         for statobj in statobj_list:
-            for attr in self.stat_attrs:
+            for attr in self._stat_attrs:
                 if statobj.get_stat(attr) is None:
                     self.set_stat(attr, None)
                 elif self.get_stat(attr) is not None:
@@ -293,18 +261,11 @@ class StatsObj:
         self.StartTime = None
         self.EndTime = None
 
-        for attr in self.stat_attrs:
+        for attr in self._stat_attrs:
             if self.get_stat(attr) is not None:
                 self.set_stat(attr,
                               self.get_stat(attr) / float(len(statobj_list)))
         return self
-
-    def get_statsobj_copy(self):
-        """Return new StatsObj object with same stats as self"""
-        s = StatsObj()
-        for attr in self.stat_attrs:
-            s.set_stat(attr, self.get_stat(attr))
-        return s
 
 
 class StatFileObj(StatsObj):
@@ -313,7 +274,7 @@ class StatFileObj(StatsObj):
     def __init__(self, start_time=None):
         """StatFileObj initializer - zero out file attributes"""
         StatsObj.__init__(self)
-        for attr in self.stat_file_attrs:
+        for attr in self._stat_file_attrs:
             self.set_stat(attr, 0)
         if start_time is None:
             start_time = Time.curtime
@@ -434,11 +395,11 @@ class FileStats:
         cls._fileobj = cls._rp.open("wb", compress=Globals.compression)
 
         cls._line_sep = Globals.null_separator and b'\0' or b'\n'
-        cls.write_docstring()
-        cls.line_buffer = []
+        cls._write_docstring()
+        cls._line_buffer = []
 
     @classmethod
-    def write_docstring(cls):
+    def _write_docstring(cls):
         """Write the first line (a documentation string) into file"""
         cls._fileobj.write(b"# Format of each line in file statistics file:")
         cls._fileobj.write(cls._line_sep)
@@ -454,14 +415,14 @@ class FileStats:
             filename = dest_rorp.get_indexpath()
         filename = metadata.quote_path(filename)
 
-        size_list = list(map(cls.get_size, [source_rorp, dest_rorp, inc]))
+        size_list = list(map(cls._get_size, [source_rorp, dest_rorp, inc]))
         line = b" ".join([filename, str(changed).encode()] + size_list)
-        cls.line_buffer.append(line)
-        if len(cls.line_buffer) >= 100:
-            cls.write_buffer()
+        cls._line_buffer.append(line)
+        if len(cls._line_buffer) >= 100:
+            cls._write_buffer()
 
     @classmethod
-    def get_size(cls, rorp):
+    def _get_size(cls, rorp):
         """Return the size of rorp as bytes, or "NA" if not a regular file"""
         if not rorp:
             return b"NA"
@@ -471,23 +432,23 @@ class FileStats:
             return b"0"
 
     @classmethod
-    def write_buffer(cls):
+    def _write_buffer(cls):
         """Write buffer to file because buffer is full
 
         The buffer part is necessary because the GzipFile.write()
         method seems fairly slow.
 
         """
-        assert cls.line_buffer and cls._fileobj
-        cls.line_buffer.append(b'')  # have join add _line_sep to end also
-        cls._fileobj.write(cls._line_sep.join(cls.line_buffer))
-        cls.line_buffer = []
+        assert cls._line_buffer and cls._fileobj
+        cls._line_buffer.append(b'')  # have join add _line_sep to end also
+        cls._fileobj.write(cls._line_sep.join(cls._line_buffer))
+        cls._line_buffer = []
 
     @classmethod
     def close(cls):
         """Close file stats file"""
         assert cls._fileobj, cls._fileobj
-        if cls.line_buffer:
-            cls.write_buffer()
+        if cls._line_buffer:
+            cls._write_buffer()
         assert not cls._fileobj.close()
         cls._fileobj = cls._rp = None

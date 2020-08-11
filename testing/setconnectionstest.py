@@ -7,7 +7,7 @@ class SetConnectionsTest(unittest.TestCase):
 
     def testParsing(self):
         """Test parsing of various file descriptors"""
-        pfd = SetConnections.parse_file_desc
+        pfd = SetConnections._parse_file_desc
         self.assertEqual(pfd(b"bescoto@folly.stanford.edu::/usr/bin/ls"),
                          (b"bescoto@folly.stanford.edu", b"/usr/bin/ls"))
         self.assertEqual(pfd(b"hello there::/goodbye:euoeu"),

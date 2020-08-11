@@ -64,7 +64,7 @@ class ParsingError(Exception):
     pass
 
 
-def carbonfile2string(cfile):
+def _carbonfile2string(cfile):
     """Convert CarbonFile data to a string suitable for storing."""
     if not cfile:
         return "None"
@@ -80,9 +80,9 @@ def carbonfile2string(cfile):
     return '|'.join(retvalparts)
 
 
-def string2carbonfile(data):
+def _string2carbonfile(data):
     """Re-constitute CarbonFile data from a string stored by
-    carbonfile2string."""
+    _carbonfile2string."""
     retval = {}
     for component in data.split('|'):
         key, value = component.split(':')
@@ -100,153 +100,7 @@ def string2carbonfile(data):
     return retval
 
 
-def RORP2Record(rorpath):
-    """From RORPath, return text record of file's metadata"""
-    str_list = [b"File %s\n" % quote_path(rorpath.get_indexpath())]
-
-    # Store file type, e.g. "dev", "reg", or "sym", and type-specific data
-    type = rorpath.gettype()
-    if type is None:
-        type = "None"
-    str_list.append(b"  Type %b\n" % type.encode('ascii'))
-    if type == "reg":
-        str_list.append(b"  Size %i\n" % rorpath.getsize())
-
-        # If there is a resource fork, save it.
-        if rorpath.has_resource_fork():
-            if not rorpath.get_resource_fork():
-                rf = b"None"
-            else:
-                rf = binascii.hexlify(rorpath.get_resource_fork())
-            str_list.append(b"  ResourceFork %b\n" % (rf, ))
-
-        # If there is Carbon data, save it.
-        if rorpath.has_carbonfile():
-            cfile = carbonfile2string(rorpath.get_carbonfile())
-            str_list.append(b"  CarbonFile %b\n" % (cfile, ))
-
-        # If file is hardlinked, add that information
-        if Globals.preserve_hardlinks != 0:
-            numlinks = rorpath.getnumlinks()
-            if numlinks > 1:
-                str_list.append(b"  NumHardLinks %i\n" % numlinks)
-                str_list.append(b"  Inode %i\n" % rorpath.getinode())
-                str_list.append(b"  DeviceLoc %i\n" % rorpath.getdevloc())
-
-        # Save any hashes, if available
-        if rorpath.has_sha1():
-            str_list.append(
-                b'  SHA1Digest %b\n' % rorpath.get_sha1().encode('ascii'))
-
-    elif type == "None":
-        return b"".join(str_list)
-    elif type == "dir" or type == "sock" or type == "fifo":
-        pass
-    elif type == "sym":
-        str_list.append(b"  SymData %b\n" % quote_path(rorpath.readlink()))
-    elif type == "dev":
-        devchar, major, minor = rorpath.getdevnums()
-        str_list.append(
-            b"  DeviceNum %b %i %i\n" % (devchar.encode('ascii'), major, minor))
-
-    # Store time information
-    if type != 'sym' and type != 'dev':
-        str_list.append(b"  ModTime %i\n" % rorpath.getmtime())
-
-    # Add user, group, and permission information
-    uid, gid = rorpath.getuidgid()
-    str_list.append(b"  Uid %i\n" % uid)
-    str_list.append(b"  Uname %b\n" % (rorpath.getuname() or ":").encode())
-    str_list.append(b"  Gid %i\n" % gid)
-    str_list.append(b"  Gname %b\n" % (rorpath.getgname() or ":").encode())
-    str_list.append(b"  Permissions %d\n" % rorpath.getperms())
-
-    # Add long filename information
-    if rorpath.has_alt_mirror_name():
-        str_list.append(
-            b"  AlternateMirrorName %b\n" % (rorpath.get_alt_mirror_name(), ))
-    elif rorpath.has_alt_inc_name():
-        str_list.append(
-            b"  AlternateIncrementName %b\n" % (rorpath.get_alt_inc_name(), ))
-
-    return b"".join(str_list)
-
-
-line_parsing_regexp = re.compile(b"^ *([A-Za-z0-9]+) (.+)$", re.M)
-
-
-def Record2RORP(record_string):
-    """Given record_string, return RORPath
-
-    For speed reasons, write the RORPath data dictionary directly
-    instead of calling rorpath functions.  Profiling has shown this to
-    be a time critical function.
-
-    """
-    data_dict = {}
-    for field, data in line_parsing_regexp.findall(record_string):
-        field = field.decode('ascii')
-        if field == "File":
-            index = quoted_filename_to_index(data)
-        elif field == "Type":
-            if data == b"None":
-                data_dict['type'] = None
-            else:
-                data_dict['type'] = data.decode('ascii')
-        elif field == "Size":
-            data_dict['size'] = int(data)
-        elif field == "ResourceFork":
-            if data == b"None":
-                data_dict['resourcefork'] = b""
-            else:
-                data_dict['resourcefork'] = binascii.unhexlify(data)
-        elif field == "CarbonFile":
-            if data == b"None":
-                data_dict['carbonfile'] = None
-            else:
-                data_dict['carbonfile'] = string2carbonfile(data)
-        elif field == "SHA1Digest":
-            data_dict['sha1'] = data.decode('ascii')
-        elif field == "NumHardLinks":
-            data_dict['nlink'] = int(data)
-        elif field == "Inode":
-            data_dict['inode'] = int(data)
-        elif field == "DeviceLoc":
-            data_dict['devloc'] = int(data)
-        elif field == "SymData":
-            data_dict['linkname'] = unquote_path(data)
-        elif field == "DeviceNum":
-            devchar, major_str, minor_str = data.split(b" ")
-            data_dict['devnums'] = (devchar.decode('ascii'), int(major_str),
-                                    int(minor_str))
-        elif field == "ModTime":
-            data_dict['mtime'] = int(data)
-        elif field == "Uid":
-            data_dict['uid'] = int(data)
-        elif field == "Gid":
-            data_dict['gid'] = int(data)
-        elif field == "Uname":
-            if data == b":" or data == b'None':
-                data_dict['uname'] = None
-            else:
-                data_dict['uname'] = data.decode()
-        elif field == "Gname":
-            if data == b':' or data == b'None':
-                data_dict['gname'] = None
-            else:
-                data_dict['gname'] = data.decode()
-        elif field == "Permissions":
-            data_dict['perms'] = int(data)
-        elif field == "AlternateMirrorName":
-            data_dict['mirrorname'] = data
-        elif field == "AlternateIncrementName":
-            data_dict['incname'] = data
-        else:
-            log.Log("Unknown field in line '%s %s'" % (field, data), 2)
-    return rpath.RORPath(index, data_dict)
-
-
-chars_to_quote = re.compile(b"\\n|\\\\")
+_chars_to_quote = re.compile(b"\\n|\\\\")
 
 
 def quote_path(path_string):
@@ -267,7 +121,7 @@ def quote_path(path_string):
             return b"\\\\"
         assert 0, "Bad char %s needs quoting" % char
 
-    return chars_to_quote.sub(replacement_func, path_string)
+    return _chars_to_quote.sub(replacement_func, path_string)
 
 
 def unquote_path(quoted_string):
@@ -286,14 +140,6 @@ def unquote_path(quoted_string):
     return re.sub(b"\\\\n|\\\\\\\\", replacement_func, quoted_string)
 
 
-def quoted_filename_to_index(quoted_filename):
-    """Return tuple index given quoted filename"""
-    if quoted_filename == b'.':
-        return ()
-    else:
-        return tuple(unquote_path(quoted_filename).split(b'/'))
-
-
 class FlatExtractor:
     """Controls iterating objects from flat file"""
 
@@ -304,7 +150,7 @@ class FlatExtractor:
     record_boundary_regexp = None
 
     # Set in subclass to function that converts text record to object
-    record_to_object = None
+    _record_to_object = None
 
     def __init__(self, fileobj):
         self.fileobj = fileobj  # holds file object we are reading from
@@ -312,7 +158,7 @@ class FlatExtractor:
         self.at_end = 0  # True if we are at the end of the file
         self.blocksize = 32 * 1024
 
-    def get_next_pos(self):
+    def _get_next_pos(self):
         """Return position of next record in buffer, or end pos if none"""
         while 1:
             m = self.record_boundary_regexp.search(self.buf, 1)
@@ -328,9 +174,9 @@ class FlatExtractor:
 
     def iterate(self):
         """Return iterator that yields all objects with records"""
-        for record in self.iterate_records():
+        for record in self._iterate_records():
             try:
-                yield self.record_to_object(record)
+                yield self._record_to_object(record)
             except (ParsingError, ValueError) as e:
                 if self.at_end:
                     break  # Ignore whitespace/bad records at end
@@ -338,10 +184,10 @@ class FlatExtractor:
                     "Error parsing flat file: %s [%s(%s)]" %
                     (e, type(self), self.fileobj.fileobj.name), 2)
 
-    def iterate_records(self):
+    def _iterate_records(self):
         """Yield all text records in order"""
         while 1:
-            next_pos = self.get_next_pos()
+            next_pos = self._get_next_pos()
             if self.at_end:
                 if next_pos:
                     yield self.buf[:next_pos]
@@ -350,7 +196,7 @@ class FlatExtractor:
             self.buf = self.buf[next_pos:]
         assert not self.fileobj.close()
 
-    def skip_to_index(self, index):
+    def _skip_to_index(self, index):
         """Scan through the file, set buffer to beginning of index record
 
         Here we make sure that the buffer always ends in a newline, so
@@ -368,22 +214,22 @@ class FlatExtractor:
                 m = self.record_boundary_regexp.search(self.buf)
                 if not m:
                     break
-                cur_index = self.filename_to_index(m.group(2))
+                cur_index = self._filename_to_index(m.group(2))
                 if cur_index >= index:
                     self.buf = self.buf[m.start(1):]
                     return
                 else:
                     self.buf = self.buf[m.end(1):]
 
-    def iterate_starting_with(self, index):
+    def _iterate_starting_with(self, index):
         """Iterate objects whose index starts with given index"""
-        self.skip_to_index(index)
+        self._skip_to_index(index)
         if self.at_end:
             return
         while 1:
-            next_pos = self.get_next_pos()
+            next_pos = self._get_next_pos()
             try:
-                obj = self.record_to_object(self.buf[:next_pos])
+                obj = self._record_to_object(self.buf[:next_pos])
             except (ParsingError, ValueError) as e:
                 log.Log("Error parsing metadata file: %s" % (e, ), 2)
             else:
@@ -395,7 +241,8 @@ class FlatExtractor:
             self.buf = self.buf[next_pos:]
         assert not self.fileobj.close()
 
-    def filename_to_index(self, filename):
+    @staticmethod
+    def _filename_to_index(filename):
         """Translate filename, possibly quoted, into an index tuple
 
         The filename is the first group matched by
@@ -408,8 +255,86 @@ class FlatExtractor:
 class RorpExtractor(FlatExtractor):
     """Iterate rorps from metadata file"""
     record_boundary_regexp = re.compile(b"(?:\\n|^)(File (.*?))\\n")
-    record_to_object = staticmethod(Record2RORP)
-    filename_to_index = staticmethod(quoted_filename_to_index)
+    line_parsing_regexp = re.compile(b"^ *([A-Za-z0-9]+) (.+)$", re.M)
+
+    @classmethod
+    def _record_to_object(cls, record_string):
+        """Given record_string, return RORPath
+
+        For speed reasons, write the RORPath data dictionary directly
+        instead of calling rorpath functions.  Profiling has shown this to
+        be a time critical function.
+
+        """
+        data_dict = {}
+        for field, data in cls.line_parsing_regexp.findall(record_string):
+            field = field.decode('ascii')
+            if field == "File":
+                index = cls._filename_to_index(data)
+            elif field == "Type":
+                if data == b"None":
+                    data_dict['type'] = None
+                else:
+                    data_dict['type'] = data.decode('ascii')
+            elif field == "Size":
+                data_dict['size'] = int(data)
+            elif field == "ResourceFork":
+                if data == b"None":
+                    data_dict['resourcefork'] = b""
+                else:
+                    data_dict['resourcefork'] = binascii.unhexlify(data)
+            elif field == "CarbonFile":
+                if data == b"None":
+                    data_dict['carbonfile'] = None
+                else:
+                    data_dict['carbonfile'] = _string2carbonfile(data)
+            elif field == "SHA1Digest":
+                data_dict['sha1'] = data.decode('ascii')
+            elif field == "NumHardLinks":
+                data_dict['nlink'] = int(data)
+            elif field == "Inode":
+                data_dict['inode'] = int(data)
+            elif field == "DeviceLoc":
+                data_dict['devloc'] = int(data)
+            elif field == "SymData":
+                data_dict['linkname'] = unquote_path(data)
+            elif field == "DeviceNum":
+                devchar, major_str, minor_str = data.split(b" ")
+                data_dict['devnums'] = (devchar.decode('ascii'), int(major_str),
+                                        int(minor_str))
+            elif field == "ModTime":
+                data_dict['mtime'] = int(data)
+            elif field == "Uid":
+                data_dict['uid'] = int(data)
+            elif field == "Gid":
+                data_dict['gid'] = int(data)
+            elif field == "Uname":
+                if data == b":" or data == b'None':
+                    data_dict['uname'] = None
+                else:
+                    data_dict['uname'] = data.decode()
+            elif field == "Gname":
+                if data == b':' or data == b'None':
+                    data_dict['gname'] = None
+                else:
+                    data_dict['gname'] = data.decode()
+            elif field == "Permissions":
+                data_dict['perms'] = int(data)
+            elif field == "AlternateMirrorName":
+                data_dict['mirrorname'] = data
+            elif field == "AlternateIncrementName":
+                data_dict['incname'] = data
+            else:
+                log.Log("Unknown field in line '%s %s'" % (field, data), 2)
+        return rpath.RORPath(index, data_dict)
+
+    @staticmethod
+    def _filename_to_index(quoted_filename):
+        """Return tuple index given quoted filename"""
+        if quoted_filename == b'.':
+            return ()
+        else:
+            return tuple(unquote_path(quoted_filename).split(b'/'))
 
 
 class FlatFile:
@@ -462,7 +387,7 @@ class FlatFile:
                 assert not self.rp.lstat(), self.rp
                 self.fileobj = self.rp.open("wb", compress=compress)
 
-    def write_record(self, record):
+    def _write_record(self, record):
         """Write a (text) record into the file"""
         if self._buffering_on:
             self._record_buffer.append(record)
@@ -474,18 +399,14 @@ class FlatFile:
 
     def write_object(self, object):
         """Convert one object to record and write to file"""
-        self.write_record(self._object_to_record(object))
+        self._write_record(self._object_to_record(object))
 
     def get_objects(self, restrict_index=None):
         """Return iterator of objects records from file rp"""
         if not restrict_index:
             return self._extractor(self.fileobj).iterate()
         extractor = self._extractor(self.fileobj)
-        return extractor.iterate_starting_with(restrict_index)
-
-    def get_records(self):
-        """Return iterator of text records"""
-        return self._extractor(self.fileobj).iterate_records()
+        return extractor._iterate_starting_with(restrict_index)
 
     def close(self):
         """Close file, for when any writing is done"""
@@ -506,7 +427,78 @@ class MetadataFile(FlatFile):
     """Store/retrieve metadata from mirror_metadata as rorps"""
     _prefix = b"mirror_metadata"
     _extractor = RorpExtractor
-    _object_to_record = staticmethod(RORP2Record)
+
+    @staticmethod
+    def _object_to_record(rorpath):
+        """From RORPath, return text record of file's metadata"""
+        str_list = [b"File %s\n" % quote_path(rorpath.get_indexpath())]
+
+        # Store file type, e.g. "dev", "reg", or "sym", and type-specific data
+        type = rorpath.gettype()
+        if type is None:
+            type = "None"
+        str_list.append(b"  Type %b\n" % type.encode('ascii'))
+        if type == "reg":
+            str_list.append(b"  Size %i\n" % rorpath.getsize())
+
+            # If there is a resource fork, save it.
+            if rorpath.has_resource_fork():
+                if not rorpath.get_resource_fork():
+                    rf = b"None"
+                else:
+                    rf = binascii.hexlify(rorpath.get_resource_fork())
+                str_list.append(b"  ResourceFork %b\n" % (rf, ))
+
+            # If there is Carbon data, save it.
+            if rorpath.has_carbonfile():
+                cfile = _carbonfile2string(rorpath.get_carbonfile())
+                str_list.append(b"  CarbonFile %b\n" % (cfile, ))
+
+            # If file is hardlinked, add that information
+            if Globals.preserve_hardlinks != 0:
+                numlinks = rorpath.getnumlinks()
+                if numlinks > 1:
+                    str_list.append(b"  NumHardLinks %i\n" % numlinks)
+                    str_list.append(b"  Inode %i\n" % rorpath.getinode())
+                    str_list.append(b"  DeviceLoc %i\n" % rorpath.getdevloc())
+
+            # Save any hashes, if available
+            if rorpath.has_sha1():
+                str_list.append(
+                    b'  SHA1Digest %b\n' % rorpath.get_sha1().encode('ascii'))
+
+        elif type == "None":
+            return b"".join(str_list)
+        elif type == "dir" or type == "sock" or type == "fifo":
+            pass
+        elif type == "sym":
+            str_list.append(b"  SymData %b\n" % quote_path(rorpath.readlink()))
+        elif type == "dev":
+            devchar, major, minor = rorpath.getdevnums()
+            str_list.append(
+                b"  DeviceNum %b %i %i\n" % (devchar.encode('ascii'), major, minor))
+
+        # Store time information
+        if type != 'sym' and type != 'dev':
+            str_list.append(b"  ModTime %i\n" % rorpath.getmtime())
+
+        # Add user, group, and permission information
+        uid, gid = rorpath.getuidgid()
+        str_list.append(b"  Uid %i\n" % uid)
+        str_list.append(b"  Uname %b\n" % (rorpath.getuname() or ":").encode())
+        str_list.append(b"  Gid %i\n" % gid)
+        str_list.append(b"  Gname %b\n" % (rorpath.getgname() or ":").encode())
+        str_list.append(b"  Permissions %d\n" % rorpath.getperms())
+
+        # Add long filename information
+        if rorpath.has_alt_mirror_name():
+            str_list.append(
+                b"  AlternateMirrorName %b\n" % (rorpath.get_alt_mirror_name(), ))
+        elif rorpath.has_alt_inc_name():
+            str_list.append(
+                b"  AlternateIncrementName %b\n" % (rorpath.get_alt_inc_name(), ))
+
+        return b"".join(str_list)
 
 
 class CombinedWriter:
@@ -520,7 +512,7 @@ class CombinedWriter:
     def write_object(self, rorp):
         """Write information in rorp to all the writers"""
         self.metawriter.write_object(rorp)
-        if self.eawriter and not rorp.get_ea().empty():
+        if self.eawriter and not rorp.get_ea().is_empty():
             self.eawriter.write_object(rorp.get_ea())
         if self.aclwriter and not rorp.get_acl().is_basic():
             self.aclwriter.write_object(rorp.get_acl())
@@ -551,9 +543,9 @@ class Manager:
         for filename in Globals.rbdir.listdir():
             rp = Globals.rbdir.append(filename)
             if rp.isincfile():
-                self.add_incrp(rp)
+                self._add_incrp(rp)
 
-    def add_incrp(self, rp):
+    def _add_incrp(self, rp):
         """Add rp to list of inc rps in the rbdir"""
         assert rp.isincfile(), rp
         self.rplist.append(rp)
@@ -583,19 +575,19 @@ class Manager:
         return self._iter_helper(self.meta_prefix, MetadataFile, time,
                                  restrict_index)
 
-    def get_eas_at_time(self, time, restrict_index):
+    def _get_eas_at_time(self, time, restrict_index):
         """Return Extended Attributes iter at given time (or None)"""
         return self._iter_helper(self.ea_prefix,
                                  eas_acls.ExtendedAttributesFile, time,
                                  restrict_index)
 
-    def get_acls_at_time(self, time, restrict_index):
+    def _get_acls_at_time(self, time, restrict_index):
         """Return ACLs iter at given time from recordfile (or None)"""
         return self._iter_helper(self.acl_prefix,
                                  eas_acls.AccessControlListFile, time,
                                  restrict_index)
 
-    def get_win_acls_at_time(self, time, restrict_index):
+    def _get_win_acls_at_time(self, time, restrict_index):
         """Return WACLs iter at given time from recordfile (or None)"""
         return self._iter_helper(self.wacl_prefix,
                                  win_acls.WinAccessControlListFile, time,
@@ -611,19 +603,19 @@ class Manager:
             return None
 
         if Globals.acls_active:
-            acl_iter = self.get_acls_at_time(time, restrict_index)
+            acl_iter = self._get_acls_at_time(time, restrict_index)
             if not acl_iter:
                 log.Log("Warning: Access Control List file not found", 2)
                 acl_iter = iter([])
             cur_iter = eas_acls.join_acl_iter(cur_iter, acl_iter)
         if Globals.eas_active:
-            ea_iter = self.get_eas_at_time(time, restrict_index)
+            ea_iter = self._get_eas_at_time(time, restrict_index)
             if not ea_iter:
                 log.Log("Warning: Extended Attributes file not found", 2)
                 ea_iter = iter([])
             cur_iter = eas_acls.join_ea_iter(cur_iter, ea_iter)
         if Globals.win_acls_active:
-            wacl_iter = self.get_win_acls_at_time(time, restrict_index)
+            wacl_iter = self._get_win_acls_at_time(time, restrict_index)
             if not wacl_iter:
                 log.Log(
                     "Warning: Windows Access Control List file not"
@@ -644,45 +636,45 @@ class Manager:
         rp = Globals.rbdir.append(filename)
         assert not rp.lstat(), "File %s already exists!" % (rp.path, )
         assert rp.isincfile()
-        return flatfileclass(rp, 'w', callback=self.add_incrp)
+        return flatfileclass(rp, 'w', callback=self._add_incrp)
 
-    def get_meta_writer(self, typestr, time):
+    def _get_meta_writer(self, typestr, time):
         """Return MetadataFile object opened for writing at given time"""
         return self._writer_helper(self.meta_prefix, MetadataFile, typestr,
                                    time)
 
-    def get_ea_writer(self, typestr, time):
+    def _get_ea_writer(self, typestr, time):
         """Return ExtendedAttributesFile opened for writing"""
         return self._writer_helper(
             self.ea_prefix, eas_acls.ExtendedAttributesFile, typestr, time)
 
-    def get_acl_writer(self, typestr, time):
+    def _get_acl_writer(self, typestr, time):
         """Return AccessControlListFile opened for writing"""
         return self._writer_helper(
             self.acl_prefix, eas_acls.AccessControlListFile, typestr, time)
 
-    def get_win_acl_writer(self, typestr, time):
+    def _get_win_acl_writer(self, typestr, time):
         """Return WinAccessControlListFile opened for writing"""
         return self._writer_helper(
             self.wacl_prefix, win_acls.WinAccessControlListFile, typestr, time)
 
     def GetWriter(self, typestr=b'snapshot', time=None):
         """Get a writer object that can write meta and possibly acls/eas"""
-        metawriter = self.get_meta_writer(typestr, time)
+        metawriter = self._get_meta_writer(typestr, time)
         if not Globals.eas_active and not Globals.acls_active and \
            not Globals.win_acls_active:
             return metawriter  # no need for a CombinedWriter
 
         if Globals.eas_active:
-            ea_writer = self.get_ea_writer(typestr, time)
+            ea_writer = self._get_ea_writer(typestr, time)
         else:
             ea_writer = None
         if Globals.acls_active:
-            acl_writer = self.get_acl_writer(typestr, time)
+            acl_writer = self._get_acl_writer(typestr, time)
         else:
             acl_writer = None
         if Globals.win_acls_active:
-            win_acl_writer = self.get_win_acl_writer(typestr, time)
+            win_acl_writer = self._get_win_acl_writer(typestr, time)
         else:
             win_acl_writer = None
         return CombinedWriter(metawriter, ea_writer, acl_writer,
@@ -707,7 +699,7 @@ class PatchDiffMan(Manager):
     """
     max_diff_chain = 9  # After this many diffs, make a new snapshot
 
-    def get_diffiter(self, new_iter, old_iter):
+    def _get_diffiter(self, new_iter, old_iter):
         """Iterate meta diffs of new_iter -> old_iter"""
         for new_rorp, old_rorp in rorpiter.Collate2Iters(new_iter, old_iter):
             if not old_rorp:
@@ -751,7 +743,7 @@ class PatchDiffMan(Manager):
 
         return [rp for (time, rp) in sortlist if time >= min_time]
 
-    def check_needs_diff(self):
+    def _check_needs_diff(self):
         """Check if we should diff, returns (new, old) rps, or (None, None)"""
         inclist = self.sorted_prefix_inclist(b'mirror_metadata')
         assert len(inclist) >= 1
@@ -771,15 +763,15 @@ class PatchDiffMan(Manager):
 
     def ConvertMetaToDiff(self):
         """Replace a mirror snapshot with a diff if it's appropriate"""
-        newrp, oldrp = self.check_needs_diff()
+        newrp, oldrp = self._check_needs_diff()
         if not newrp:
             return
         log.Log("Writing mirror_metadata diff", 6)
 
-        diff_writer = self.get_meta_writer(b'diff', oldrp.getinctime())
+        diff_writer = self._get_meta_writer(b'diff', oldrp.getinctime())
         new_iter = MetadataFile(newrp, 'r').get_objects()
         old_iter = MetadataFile(oldrp, 'r').get_objects()
-        for diff_rorp in self.get_diffiter(new_iter, old_iter):
+        for diff_rorp in self._get_diffiter(new_iter, old_iter):
             diff_writer.write_object(diff_rorp)
         diff_writer.close()  # includes sync
         oldrp.delete()
@@ -788,15 +780,15 @@ class PatchDiffMan(Manager):
         """Get metadata rorp iter, possibly by patching with diffs"""
         meta_iters = [
             MetadataFile(rp, 'r').get_objects(restrict_index)
-            for rp in self.relevant_meta_incs(time)
+            for rp in self._relevant_meta_incs(time)
         ]
         if not meta_iters:
             return None
         if len(meta_iters) == 1:
             return meta_iters[0]
-        return self.iterate_patched_meta(meta_iters)
+        return self._iterate_patched_meta(meta_iters)
 
-    def relevant_meta_incs(self, time):
+    def _relevant_meta_incs(self, time):
         """Return list [snapshotrp, diffrps ...] time sorted"""
         inclist = self.sorted_prefix_inclist(b'mirror_metadata', min_time=time)
         if not inclist:
@@ -807,7 +799,7 @@ class PatchDiffMan(Manager):
                 return inclist[i:]
         assert 0, "Inclist %s contains no snapshots" % (inclist, )
 
-    def iterate_patched_meta(self, meta_iter_list):
+    def _iterate_patched_meta(self, meta_iter_list):
         """Return an iter of metadata rorps by combining the given iters
 
         The iters should be given as a list/tuple in reverse

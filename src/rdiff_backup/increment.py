@@ -38,33 +38,59 @@ def Increment(new, mirror, incpref):
         incpref.mkdir()
 
     if not mirror.lstat():
-        incrp = makemissing(incpref)
+        incrp = _make_missing_increment(incpref)
     elif mirror.isdir():
-        incrp = makedir(mirror, incpref)
+        incrp = _make_dir_increment(mirror, incpref)
     elif new.isreg() and mirror.isreg():
-        incrp = makediff(new, mirror, incpref)
+        incrp = _make_diff_increment(new, mirror, incpref)
     else:
-        incrp = makesnapshot(mirror, incpref)
+        incrp = _make_snapshot_increment(mirror, incpref)
     statistics.process_increment(incrp)
     return incrp
 
 
-def makemissing(incpref):
+def get_inc(rp, typestr, time=None):
+    """Return increment like rp but with time and typestr suffixes
+
+    To avoid any quoting, the returned rpath has empty index, and the
+    whole filename is in the base (which is not quoted).
+
+    """
+    if time is None:
+        time = Time.prevtime
+
+    def addtostr(s):
+        return b'.'.join(map(os.fsencode, (s, Time.timetostring(time), typestr)))
+
+    if rp.index:
+        incrp = rp.__class__(rp.conn, rp.base,
+                             rp.index[:-1] + (addtostr(rp.index[-1]), ))
+    else:
+        dirname, basename = rp.dirsplit()
+        incrp = rp.__class__(rp.conn, dirname, (addtostr(basename), ))
+    assert not incrp.lstat(), incrp
+    return incrp
+
+
+# === Internal functions ===
+
+
+def _make_missing_increment(incpref):
     """Signify that mirror file was missing"""
     incrp = get_inc(incpref, "missing")
     incrp.touch()
     return incrp
 
 
-def iscompressed(mirror):
+def _is_compressed(mirror):
     """Return true if mirror's increments should be compressed"""
     return (Globals.compression
             and not Globals.no_compression_regexp.match(mirror.path))
 
 
-def makesnapshot(mirror, incpref):
+def _make_snapshot_increment(mirror, incpref):
     """Copy mirror to incfile, since new is quite different"""
-    compress = iscompressed(mirror)
+    compress = _is_compressed(mirror)
     if compress and mirror.isreg():
         snapshotrp = get_inc(incpref, b"snapshot.gz")
     else:
@@ -83,9 +109,9 @@ def makesnapshot(mirror, incpref):
     return snapshotrp
 
 
-def makediff(new, mirror, incpref):
+def _make_diff_increment(new, mirror, incpref):
     """Make incfile which is a diff new -> mirror"""
-    compress = iscompressed(mirror)
+    compress = _is_compressed(mirror)
     if compress:
         diff = get_inc(incpref, b"diff.gz")
     else:
@@ -113,32 +139,9 @@ def makediff(new, mirror, incpref):
     return diff
 
 
-def makedir(mirrordir, incpref):
+def _make_dir_increment(mirrordir, incpref):
     """Make file indicating directory mirrordir has changed"""
     dirsign = get_inc(incpref, "dir")
     dirsign.touch()
     rpath.copy_attribs_inc(mirrordir, dirsign)
     return dirsign
-
-
-def get_inc(rp, typestr, time=None):
-    """Return increment like rp but with time and typestr suffixes
-
-    To avoid any quoting, the returned rpath has empty index, and the
-    whole filename is in the base (which is not quoted).
-
-    """
-    if time is None:
-        time = Time.prevtime
-
-    def addtostr(s):
-        return b'.'.join(map(os.fsencode, (s, Time.timetostring(time), typestr)))
-
-    if rp.index:
-        incrp = rp.__class__(rp.conn, rp.base,
-                             rp.index[:-1] + (addtostr(rp.index[-1]), ))
-    else:
-        dirname, basename = rp.dirsplit()
-        incrp = rp.__class__(rp.conn, dirname, (addtostr(basename), ))
-    assert not incrp.lstat(), incrp
-    return incrp
