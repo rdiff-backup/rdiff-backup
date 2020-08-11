@@ -134,23 +134,16 @@ The same pre-requisites as for the installation of rdiff-backup also apply for b
 
 * Python 3.5 or higher
 * librsync 1.0.0 or higher
-* pylibacl (optional, to support ACLs)
-* pyxattr (optional, to support extended attributes) - even if the xattr library (without py) isn't part of our CI/CD pipeline, feel free to use it for your development
-* if Python's version is 3.7.x or below, importlib-metadata 1.x
-  (or alternatively setuptools)
 
-Additionally are following pre-requisites needed:
+Further python dependencies are documented in [requirements.txt](../requirements.txt).
+
+Additionally following pre-requisites are needed:
 
 * python3-dev (or -devel)
 * librsync-dev (or -devel)
 * a C compiler (gcc)
-* python3-setuptools (for setup.py)
-* setuptools-scm (also for setup.py, to gather all source files in sdist)
 * libacl-devel (for sys/acl.h)
-* tox (for testing)
 * rdiff (for testing)
-* flake8 (optional, but helpful to validate code correctness locally)
-* coverage (optional, but helpful to validate test coverage locally)
 
 All of those should come packaged with your system or available from
 https://pypi.org/ but if you need them otherwise, here are some sources:
