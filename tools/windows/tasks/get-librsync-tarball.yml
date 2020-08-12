@@ -13,11 +13,3 @@
     dest: "{{ working_dir }}"
     src: "{{ librsync_tarfile }}"
     recurse: true  # else the tarfile is only ungzipped
-- name: use cmake to generate build system for released build sources
-  win_command: >
-    "{{ cmake_exe }}" -G "Visual Studio 15 2017" -A x64 -D BUILD_RDIFF=OFF .
-    -D CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -D BUILD_SHARED_LIBS=TRUE
-    -DCMAKE_INSTALL_PREFIX={{ librsync_install_dir }}
-  args:
-    chdir: "{{ librsync_dir }}"
-  # also possible: -A Win32 / -S source_dir / -B build_dir

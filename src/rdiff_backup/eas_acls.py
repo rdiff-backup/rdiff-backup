@@ -161,16 +161,6 @@ class ExtendedAttributes:
         return not self.attr_dict
 
 
-def _ea_compare_rps(rp1, rp2):
-    """Return true if rp1 and rp2 have same extended attributes.
-    TEST: This function is used solely as part of the test suite."""
-    ea1 = ExtendedAttributes(rp1.index)
-    ea1.read_from_rp(rp1)
-    ea2 = ExtendedAttributes(rp2.index)
-    ea2.read_from_rp(rp2)
-    return ea1 == ea2
-
-
 class EAExtractor(metadata.FlatExtractor):
     """Iterate ExtendedAttributes objects from the EA information file"""
     record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
@@ -621,16 +611,6 @@ def _list_to_acl(entry_list, map_names=1):
         entry.permset.write = perms >> 1 & 1
         entry.permset.execute = perms & 1
     return acl
-
-
-def _acl_compare_rps(rp1, rp2):
-    """Return true if rp1 and rp2 have same acl information.
-    TEST: This function is used solely as part of the test suite."""
-    acl1 = AccessControlLists(rp1.index)
-    acl1.read_from_rp(rp1)
-    acl2 = AccessControlLists(rp2.index)
-    acl2.read_from_rp(rp2)
-    return acl1 == acl2
 
 
 class ACLExtractor(EAExtractor):

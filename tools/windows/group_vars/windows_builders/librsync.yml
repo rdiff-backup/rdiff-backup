@@ -13,3 +13,6 @@ librsync_install_dir: "{{ working_dir }}/librsync.d"
 #librsync_git_repo: https://github.com/librsync/librsync.git
 # Only needed if you want to pull something else than the default branch
 #librsync_git_ref: master
+
+# Bits to be used for compiling librsync, Win32 or x64
+librsync_win_bits: x64

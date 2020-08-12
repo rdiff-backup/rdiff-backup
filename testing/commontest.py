@@ -10,12 +10,12 @@ from rdiff_backup.log import Log
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
     selection, rpath, eas_acls, rorpiter, Security, hash
 
-RBBin = os.fsencode(shutil.which("rdiff-backup"))
+RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
 
 # Working directory is defined by Tox, venv or the current build directory
-abs_work_dir = os.getenvb(
-    b'TOX_ENV_DIR',
-    os.getenvb(b'VIRTUAL_ENV', os.path.join(os.getcwdb(), b'build')))
+abs_work_dir = os.fsencode(os.getenv(
+    'TOX_ENV_DIR',
+    os.getenv('VIRTUAL_ENV', os.path.join(os.getcwd(), 'build'))))
 abs_test_dir = os.path.join(abs_work_dir, b'testfiles')
 abs_output_dir = os.path.join(abs_test_dir, b'output')
 abs_restore_dir = os.path.join(abs_test_dir, b'restore')
@@ -40,7 +40,11 @@ def Myrm(dirstring):
     for rp in selection.Select(root_rp).set_iter():
         if rp.isdir():
             rp.chmod(0o700)  # otherwise may not be able to remove
-    assert not os.system(b"rm -rf %s" % (root_rp.path, ))
+    path = root_rp.path
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    elif os.path.isfile(path):
+        os.remove(path)
 
 
 def re_init_rpath_dir(rp, uid=-1, gid=-1):
@@ -294,6 +298,24 @@ def _hardlink_rorp_eq(src_rorp, dest_rorp):
     return True
 
 
+def _ea_compare_rps(rp1, rp2):
+    """Return true if rp1 and rp2 have same extended attributes."""
+    ea1 = eas_acls.ExtendedAttributes(rp1.index)
+    ea1.read_from_rp(rp1)
+    ea2 = eas_acls.ExtendedAttributes(rp2.index)
+    ea2.read_from_rp(rp2)
+    return ea1 == ea2
+
+
+def _acl_compare_rps(rp1, rp2):
+    """Return true if rp1 and rp2 have same acl information."""
+    acl1 = eas_acls.AccessControlLists(rp1.index)
+    acl1.read_from_rp(rp1)
+    acl2 = eas_acls.AccessControlLists(rp2.index)
+    acl2.read_from_rp(rp2)
+    return acl1 == acl2
+
+
 def _files_rorp_eq(src_rorp, dest_rorp,
                    compare_hardlinks=True,
                    compare_ownership=False,
@@ -311,12 +333,12 @@ def _files_rorp_eq(src_rorp, dest_rorp,
         return False
     if compare_hardlinks and not _hardlink_rorp_eq(src_rorp, dest_rorp):
         return False
-    if compare_eas and not eas_acls._ea_compare_rps(src_rorp, dest_rorp):
+    if compare_eas and not _ea_compare_rps(src_rorp, dest_rorp):
         Log(
             "Different EAs in files %s and %s" %
             (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
         return False
-    if compare_acls and not eas_acls._acl_compare_rps(src_rorp, dest_rorp):
+    if compare_acls and not _acl_compare_rps(src_rorp, dest_rorp):
         Log(
             "Different ACLs in files %s and %s" %
             (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)

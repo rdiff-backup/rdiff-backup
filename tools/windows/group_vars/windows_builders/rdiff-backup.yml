@@ -6,3 +6,6 @@ rdiffbackup_dir: "{{ working_dir }}/rdiff-backup"
 
 # the local dist directory where to fetch rdiff-backup.exe
 rdiffbackup_local_dist_dir: ../../dist
+
+# Bits to be used for compiling librsync, win32 or amd64
+python_win_bits: amd64
