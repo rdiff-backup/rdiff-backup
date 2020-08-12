@@ -10,12 +10,12 @@ from rdiff_backup.log import Log
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
     selection, rpath, eas_acls, rorpiter, Security, hash
 
-RBBin = os.fsencode(shutil.which("rdiff-backup"))
+RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
 
 # Working directory is defined by Tox, venv or the current build directory
-abs_work_dir = os.getenvb(
-    b'TOX_ENV_DIR',
-    os.getenvb(b'VIRTUAL_ENV', os.path.join(os.getcwdb(), b'build')))
+abs_work_dir = os.fsencode(os.getenv(
+    'TOX_ENV_DIR',
+    os.getenv('VIRTUAL_ENV', os.path.join(os.getcwd(), 'build'))))
 abs_test_dir = os.path.join(abs_work_dir, b'testfiles')
 abs_output_dir = os.path.join(abs_test_dir, b'output')
 abs_restore_dir = os.path.join(abs_test_dir, b'restore')
@@ -40,7 +40,11 @@ def Myrm(dirstring):
     for rp in selection.Select(root_rp).set_iter():
         if rp.isdir():
             rp.chmod(0o700)  # otherwise may not be able to remove
-    assert not os.system(b"rm -rf %s" % (root_rp.path, ))
+    path = root_rp.path
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+    elif os.path.isfile(path):
+        os.remove(path)
 
 
 def re_init_rpath_dir(rp, uid=-1, gid=-1):
@@ -161,9 +165,9 @@ def InternalBackup(source_local,
         SetConnections.UpdateGlobal(attr, eas)
     for attr in ('acls_active', 'acls_write', 'acls_conn'):
         SetConnections.UpdateGlobal(attr, acls)
-    Main.misc_setup([rpin, rpout])
-    Main.Backup(rpin, rpout)
-    Main.cleanup()
+    Main._misc_setup([rpin, rpout])
+    Main._action_backup(rpin, rpout)
+    Main._cleanup()
 
 
 def InternalMirror(source_local, dest_local, src_dir, dest_dir):
@@ -199,8 +203,8 @@ def InternalRestore(mirror_local,
     the testing directory and will be modified for remote trials.
 
     """
-    Main.force = 1
-    Main.restore_root_set = 0
+    Main._force = 1
+    Main._restore_root_set = 0
     remote_schema = b'%s'
     Globals.security_level = "override"
     if not mirror_local:
@@ -216,14 +220,14 @@ def InternalRestore(mirror_local,
         SetConnections.UpdateGlobal(attr, eas)
     for attr in ('acls_active', 'acls_write', 'acls_conn'):
         SetConnections.UpdateGlobal(attr, acls)
-    Main.misc_setup([mirror_rp, dest_rp])
+    Main._misc_setup([mirror_rp, dest_rp])
     inc = get_increment_rp(mirror_rp, time)
     if inc:
-        Main.Restore(get_increment_rp(mirror_rp, time), dest_rp)
+        Main._action_restore(get_increment_rp(mirror_rp, time), dest_rp)
     else:  # use alternate syntax
-        Main.restore_timestr = str(time)
-        Main.Restore(mirror_rp, dest_rp, restore_as_of=1)
-    Main.cleanup()
+        Main._restore_timestr = str(time)
+        Main._action_restore(mirror_rp, dest_rp, restore_as_of=1)
+    Main._cleanup()
 
 
 def get_increment_rp(mirror_rp, time):
@@ -244,7 +248,7 @@ def _reset_connections(src_rp, dest_rp):
     Globals.security_level = "override"
     Globals.isbackup_reader = Globals.isbackup_writer = None
     SetConnections.UpdateGlobal('rbdir', None)
-    Main.misc_setup([src_rp, dest_rp])
+    Main._misc_setup([src_rp, dest_rp])
 
 
 def _hardlink_rorp_eq(src_rorp, dest_rorp):
@@ -306,7 +310,7 @@ def _files_rorp_eq(src_rorp, dest_rorp,
     if not dest_rorp:
         Log("Dest rorp missing: %s" % str(src_rorp), 3)
         return False
-    if not src_rorp.equal_verbose(dest_rorp,
+    if not src_rorp._equal_verbose(dest_rorp,
                                   compare_ownership=compare_ownership):
         return False
     if compare_hardlinks and not _hardlink_rorp_eq(src_rorp, dest_rorp):
@@ -469,8 +473,8 @@ def MirrorTest(source_local,
     """Mirror each of list_of_dirnames, and compare after each"""
     Globals.set('preserve_hardlinks', compare_hardlinks)
     dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
-    old_force_val = Main.force
-    Main.force = 1
+    old_force_val = Main._force
+    Main._force = 1
 
     Myrm(dest_dirname)
     for dirname in list_of_dirnames:

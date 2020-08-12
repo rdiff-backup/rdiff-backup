@@ -365,7 +365,7 @@ class PipeConnection(LowLevelPipeConnection):
     def __str__(self):
         return "PipeConnection %d" % self.conn_number
 
-    def get_response(self, desired_req_num):
+    def _get_response(self, desired_req_num):
         """Read from pipe, responding to requests until req_num.
 
         Sometimes after a request is sent, the other side will make
@@ -378,16 +378,16 @@ class PipeConnection(LowLevelPipeConnection):
             try:
                 req_num, object = self._get()
             except ConnectionQuit:
-                self._put("quitting", self.get_new_req_num())
+                self._put("quitting", self._get_new_req_num())
                 self._close()
                 return
             if req_num == desired_req_num:
                 return object
             else:
                 assert isinstance(object, ConnectionRequest)
-                self.answer_request(object, req_num)
+                self._answer_request(object, req_num)
 
-    def answer_request(self, request, req_num):
+    def _answer_request(self, request, req_num):
         """Put the object requested by request down the pipe"""
         del self.unused_request_numbers[req_num]
         argument_list = []
@@ -399,11 +399,11 @@ class PipeConnection(LowLevelPipeConnection):
             Security.vet_request(request, argument_list)
             result = eval(request.function_string)(*argument_list)
         except BaseException:
-            result = self.extract_exception()
+            result = self._extract_exception()
         self._put(result, req_num)
         self.unused_request_numbers[req_num] = None
 
-    def extract_exception(self):
+    def _extract_exception(self):
         """Return active exception"""
         if robust.is_routine_fatal(sys.exc_info()[1]):
             raise  # Fatal error--No logging necessary, but connection down
@@ -419,7 +419,7 @@ class PipeConnection(LowLevelPipeConnection):
         Globals.server = 1
         Globals.connections.append(self)
         log.Log("Starting server", 6)
-        self.get_response(-1)
+        self._get_response(-1)
 
     def reval(self, function_string, *args):
         """Execute command on remote side
@@ -429,11 +429,11 @@ class PipeConnection(LowLevelPipeConnection):
         function.
 
         """
-        req_num = self.get_new_req_num()
+        req_num = self._get_new_req_num()
         self._put(ConnectionRequest(function_string, len(args)), req_num)
         for arg in args:
             self._put(arg, req_num)
-        result = self.get_response(req_num)
+        result = self._get_response(req_num)
         self.unused_request_numbers[req_num] = None
         if isinstance(result, Exception):
             raise result
@@ -444,7 +444,7 @@ class PipeConnection(LowLevelPipeConnection):
         else:
             return result
 
-    def get_new_req_num(self):
+    def _get_new_req_num(self):
         """Allot a new request number and return it"""
         if not self.unused_request_numbers:
             raise ConnectionError("Exhausted possible connection numbers")
@@ -558,44 +558,38 @@ class VirtualFile:
     vfiles = {}
     counter = 0
 
+    @classmethod
     def getbyid(cls, id):
         return cls.vfiles[id]
 
-    getbyid = classmethod(getbyid)
-
+    @classmethod
     def readfromid(cls, id, length):
         if length is None:
             return cls.vfiles[id].read()
         else:
             return cls.vfiles[id].read(length)
 
-    readfromid = classmethod(readfromid)
-
+    @classmethod
     def readlinefromid(cls, id):
         return cls.vfiles[id].readline()
 
-    readlinefromid = classmethod(readlinefromid)
-
+    @classmethod
     def writetoid(cls, id, buffer):
         return cls.vfiles[id].write(buffer)
 
-    writetoid = classmethod(writetoid)
-
+    @classmethod
     def closebyid(cls, id):
         fp = cls.vfiles[id]
         del cls.vfiles[id]
         return fp.close()
 
-    closebyid = classmethod(closebyid)
-
+    @classmethod
     def new(cls, fileobj):
         """Associate a new VirtualFile with a read fileobject, return id"""
         count = cls.counter
         cls.vfiles[count] = fileobj
         cls.counter = count + 1
         return count
-
-    new = classmethod(new)
 
     # And these are used by the client
     def __init__(self, connection, id):

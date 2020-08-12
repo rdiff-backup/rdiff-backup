@@ -133,14 +133,14 @@ class CheckTimes(RPathTest):
         rp.touch()
         rp.chmod(0o700)
         rpath.copy_with_attribs(rp, rp2)
-        assert rpath.cmp_attribs(rp, rp2)
+        assert rpath._cmp_file_attribs(rp, rp2)
 
         time.sleep(1)
         rp2.chmod(0o755)
         rp2.chmod(0o700)
         rp2.setdata()
         assert rp2.getctime() > rp.getctime()
-        assert not rpath.cmp_attribs(rp, rp2)
+        assert not rpath._cmp_file_attribs(rp, rp2)
         rp.delete()
         rp2.delete()
 
@@ -468,9 +468,9 @@ class FileAttributes(FileCopying):
 
     def testCheckRaise(self):
         """Should raise exception when file missing"""
-        self.assertRaises(rpath.RPathException, rpath.check_for_files, self.nothing,
+        self.assertRaises(rpath.RPathException, rpath._check_for_files, self.nothing,
                           self.hl1)
-        self.assertRaises(rpath.RPathException, rpath.check_for_files, self.hl1,
+        self.assertRaises(rpath.RPathException, rpath._check_for_files, self.hl1,
                           self.nothing)
 
     def testCopyAttribs(self):

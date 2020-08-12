@@ -4,18 +4,34 @@ from commontest import *  # noqa: F403, F401 some side effect or test fails
 from rdiff_backup import Globals, Time
 
 
+def cmp_times(time1, time2):
+    """Compare time1 and time2 and return -1, 0, or 1"""
+    if type(time1) is str:
+        time1 = Time.stringtotime(time1)
+        assert time1 is not None
+    if type(time2) is str:
+        time2 = Time.stringtotime(time2)
+        assert time2 is not None
+
+    if time1 < time2:
+        return -1
+    elif time1 == time2:
+        return 0
+    else:
+        return 1
+
+
 class TimeTest(unittest.TestCase):
     def testConversion(self):
         """test timetostring and stringtotime"""
         Time.setcurtime()
         assert type(Time.curtime) is float or int, Time.curtime
         assert type(Time.curtimestr) is str, Time.curtimestr
-        assert (Time.cmp(int(Time.curtime),
-                         Time.curtimestr) == 0 or Time.cmp(int(Time.curtime) + 1,
-                                                           Time.curtimestr) == 0)
+        assert (cmp_times(int(Time.curtime), Time.curtimestr) == 0
+                or cmp_times(int(Time.curtime) + 1, Time.curtimestr) == 0)
         time.sleep(1.05)
-        assert Time.cmp(time.time(), Time.curtime) == 1
-        assert Time.cmp(Time.timetostring(time.time()), Time.curtimestr) == 1
+        assert cmp_times(time.time(), Time.curtime) == 1
+        assert cmp_times(Time.timetostring(time.time()), Time.curtimestr) == 1
 
     def testConversion_separator(self):
         """Same as testConversion, but change time Separator"""
@@ -25,15 +41,13 @@ class TimeTest(unittest.TestCase):
 
     def testCmp(self):
         """Test time comparisons"""
-        cmp = Time.cmp
-        assert cmp(1, 2) == -1
-        assert cmp(2, 2) == 0
-        assert cmp(5, 1) == 1
-        assert cmp("2001-09-01T21:49:04Z", "2001-08-01T21:49:04Z") == 1
-        assert cmp("2001-09-01T04:49:04+03:23", "2001-09-01T21:49:04Z") == -1
-        assert cmp("2001-09-01T12:00:00Z", "2001-09-01T04:00:00-08:00") == 0
-        assert cmp("2001-09-01T12:00:00-08:00",
-                   "2001-09-01T12:00:00-07:00") == 1
+        assert cmp_times(1, 2) == -1
+        assert cmp_times(2, 2) == 0
+        assert cmp_times(5, 1) == 1
+        assert cmp_times("2001-09-01T21:49:04Z", "2001-08-01T21:49:04Z") == 1
+        assert cmp_times("2001-09-01T04:49:04+03:23", "2001-09-01T21:49:04Z") == -1
+        assert cmp_times("2001-09-01T12:00:00Z", "2001-09-01T04:00:00-08:00") == 0
+        assert cmp_times("2001-09-01T12:00:00-08:00", "2001-09-01T12:00:00-07:00") == 1
 
     def testBytestotime(self):
         """Test converting byte string to time"""
@@ -54,7 +68,7 @@ class TimeTest(unittest.TestCase):
 
     def testIntervals(self):
         """Test converting strings to intervals"""
-        i2s = Time.intstringtoseconds
+        i2s = Time._intervalstr_to_seconds
         for s in ["32", "", "d", "231I", "MM", "s", "-2h"]:
             try:
                 i2s(s)
@@ -72,7 +86,7 @@ class TimeTest(unittest.TestCase):
 
     def testIntervalsComposite(self):
         """Like above, but allow composite intervals"""
-        i2s = Time.intstringtoseconds
+        i2s = Time._intervalstr_to_seconds
         assert i2s("7D2h") == 7 * 86400 + 2 * 3600
         assert i2s("2Y3s") == 2 * 365 * 86400 + 3
         assert i2s("1M2W4D2h5m20s") == \
@@ -103,8 +117,8 @@ class TimeTest(unittest.TestCase):
         assert g2t('2001-09-01T21:49:04Z') == \
             Time.stringtotime('2001-09-01T21:49:04Z')
         assert g2t('2002-04-26T04:22:01') == \
-            Time.stringtotime('2002-04-26T04:22:01' + Time.gettzd())
-        t = Time.stringtotime('2001-05-12T00:00:00' + Time.gettzd())
+            Time.stringtotime('2002-04-26T04:22:01' + Time._get_tzd())
+        t = Time.stringtotime('2001-05-12T00:00:00' + Time._get_tzd())
         assert g2t('2001-05-12') == t
         assert g2t('2001/05/12') == t
         assert g2t('5/12/2001') == t

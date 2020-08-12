@@ -10,13 +10,8 @@ def MakeRandomFile(path, length=None):
     """Writes a random file of given length, or random len if unspecified"""
     if not length:
         length = random.randrange(5000, 100000)
-    fp = open(path, "wb")
-    fp_random = open('/dev/urandom', 'rb')
-
-    fp.write(fp_random.read(length))
-
-    fp.close()
-    fp_random.close()
+    with open(path, "wb") as fp:
+        fp.write(os.urandom(length))
 
 
 class LibrsyncTest(unittest.TestCase):
@@ -88,7 +83,7 @@ class LibrsyncTest(unittest.TestCase):
                     if not buf:
                         break
                     sig_gen.update(buf)
-                siggen_string = sig_gen.getsig()
+                siggen_string = sig_gen.get_sig()
 
             assert sigfile_string == siggen_string, \
                 (len(sigfile_string), len(siggen_string))

@@ -27,7 +27,7 @@ class ManageException(Exception):
     pass
 
 
-def get_file_type(rp):
+def _get_file_type(rp):
     """Returns one of "regular", "directory", "missing", or "special"."""
     if not rp.lstat():
         return "missing"
@@ -39,7 +39,7 @@ def get_file_type(rp):
         return "special"
 
 
-def get_inc_type(inc):
+def _get_inc_type(inc):
     """Return file type increment represents"""
     assert inc.isincfile()
     type = inc.getinctype()
@@ -50,7 +50,7 @@ def get_inc_type(inc):
     elif type == b"missing":
         return "missing"
     elif type == b"snapshot":
-        return get_file_type(inc)
+        return _get_file_type(inc)
     else:
         assert None, "Unknown type %s" % type
 
@@ -70,8 +70,8 @@ def describe_incs_parsable(incs, mirror_time, mirrorrp):
     """
     incpairs = [(inc.getinctime(), inc) for inc in incs]
     incpairs.sort()
-    result = ["%s %s" % (time, get_inc_type(inc)) for time, inc in incpairs]
-    result.append("%s %s" % (mirror_time, get_file_type(mirrorrp)))
+    result = ["%s %s" % (time, _get_inc_type(inc)) for time, inc in incpairs]
+    result.append("%s %s" % (mirror_time, _get_file_type(mirrorrp)))
     return "\n".join(result)
 
 
@@ -124,32 +124,7 @@ def delete_earlier_than_local(baserp, time):
             rp.delete()
 
 
-class IncObj:
-    """Increment object - represent a completed increment"""
-
-    def __init__(self, incrp):
-        """IncObj initializer
-
-        incrp is an RPath of a path like increments.TIMESTR.dir
-        standing for the root of the increment.
-
-        """
-        if not incrp.isincfile():
-            raise ManageException(
-                "%s is not an inc file" % incrp.get_safepath())
-        self.incrp = incrp
-        self.time = incrp.getinctime()
-
-    def getbaserp(self):
-        """Return rp of the incrp without extensions"""
-        return self.incrp.getincbase()
-
-    def pretty_time(self):
-        """Return a formatted version of inc's time"""
-        return Time.timetopretty(self.time)
-
-
-def ListIncrementSizes(mirror_root, index):
+def list_increment_sizes(mirror_root, index):
     """Return string summarizing the size of all the increments"""
     stat_obj = statistics.StatsObj()  # used for byte summary string
 

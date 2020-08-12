@@ -70,10 +70,10 @@ def set_init_quote_vals_local():
         log.Log.FatalError("Expected single character for quoting char,"
                            "got '%s' instead." % _safe_str(Globals.quoting_char))
     quoting_char = Globals.quoting_char
-    init_quoting_regexps()
+    _init_quoting_regexps()
 
 
-def init_quoting_regexps():
+def _init_quoting_regexps():
     """Compile quoting regular expressions"""
     global chars_to_quote_regexp, unquoting_regexp
     assert chars_to_quote and isinstance(chars_to_quote, bytes), \
@@ -96,7 +96,7 @@ def quote(path):
     the quoting character.
 
     """
-    QuotedPath = chars_to_quote_regexp.sub(quote_single, path)
+    QuotedPath = chars_to_quote_regexp.sub(_quote_single, path)
     if not Globals.escape_dos_devices and not Globals.escape_trailing_spaces:
         return QuotedPath
 
@@ -120,17 +120,17 @@ def quote(path):
     return b"%b%03d" % (quoting_char, QuotedPath[0]) + QuotedPath[1:]
 
 
-def quote_single(match):
+def _quote_single(match):
     """Return replacement for a single character"""
     return b"%b%03d" % (quoting_char, ord(match.group()))
 
 
 def unquote(path):
     """Return original version of quoted filename"""
-    return unquoting_regexp.sub(unquote_single, path)
+    return unquoting_regexp.sub(_unquote_single, path)
 
 
-def unquote_single(match):
+def _unquote_single(match):
     """Unquote a single quoted character"""
     if not len(match.group()) == 4:
         raise QuotingException("Quoted group wrong size: '%s'." % _safe_str(match.group()))
@@ -206,11 +206,6 @@ def get_quotedrpath(rp, separate_basename=0):
         return QuotedRPath(rp.conn, dirname, (unquote(basename), ), rp.data)
     else:
         return QuotedRPath(rp.conn, rp.base, (), rp.data)
-
-
-def get_quoted_sep_base(filename):
-    """Get QuotedRPath from filename assuming last bit is quoted"""
-    return get_quotedrpath(rpath.RPath(Globals.local_connection, filename), 1)
 
 
 def update_quoting(rbdir):

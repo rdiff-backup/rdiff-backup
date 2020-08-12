@@ -3,8 +3,9 @@ import os
 import io
 import pwd
 import grp
-from rdiff_backup.eas_acls import AccessControlLists, metadata, ACLExtractor, \
-    Record2ACL, ACL2Record, ExtendedAttributes, EAExtractor, EA2Record, Record2EA
+from rdiff_backup.eas_acls import metadata, \
+    AccessControlLists, ACLExtractor, AccessControlListFile, \
+    ExtendedAttributes, EAExtractor, ExtendedAttributesFile
 from rdiff_backup import Globals, rpath, user_group
 from commontest import rdiff_backup, abs_test_dir, abs_output_dir, \
     abs_restore_dir, BackupRestoreSeries, compare_recursive
@@ -62,7 +63,7 @@ class EATest(unittest.TestCase):
         self.make_temp_out_dirs()
         new_ea = ExtendedAttributes(())
         new_ea.read_from_rp(tempdir)
-        # we ignore SELinux extended attributes for comparaison
+        # we ignore SELinux extended attributes for comparison
         if new_ea.attr_dict:
             new_ea.attr_dict.pop(b'security.selinux', None)
         assert not new_ea.attr_dict, "The attributes of %s should have been empty: %s" % (
@@ -81,8 +82,8 @@ class EATest(unittest.TestCase):
 
     def testRecord(self):
         """Test writing a record and reading it back"""
-        record = EA2Record(self.sample_ea)
-        new_ea = Record2EA(record)
+        record = ExtendedAttributesFile._object_to_record(self.sample_ea)
+        new_ea = EAExtractor._record_to_object(record)
         if not new_ea == self.sample_ea:
             new_list = list(new_ea.attr_dict.keys())
             sample_list = list(self.sample_ea.attr_dict.keys())
@@ -113,7 +114,7 @@ user.empty
 user.empty
 """
         extractor = EAExtractor(io.BytesIO(os.fsencode(record_list)))
-        ea_iter = extractor.iterate_starting_with(())
+        ea_iter = extractor._iterate_starting_with(())
         first = next(ea_iter)
         assert first.index == (b'0foo', ), first
         second = next(ea_iter)
@@ -128,7 +129,7 @@ user.empty
             assert 0, "Too many elements in iterator"
 
         extractor = EAExtractor(io.BytesIO(os.fsencode(record_list)))
-        ea_iter = extractor.iterate_starting_with((b'1foo', b'bar'))
+        ea_iter = extractor._iterate_starting_with((b'1foo', b'bar'))
         assert next(ea_iter).index == (b'1foo', b'bar', b'baz')
         try:
             next(ea_iter)
@@ -184,7 +185,7 @@ user.empty
         # Now write records corresponding to above rps into file
         Globals.rbdir = tempdir
         man = metadata.PatchDiffMan()
-        writer = man.get_ea_writer('snapshot', 10000)
+        writer = man._get_ea_writer('snapshot', 10000)
         for rp in [self.ea_test1_rpath, rp1, rp2, rp3]:
             ea = ExtendedAttributes(rp.index)
             ea.read_from_rp(rp)
@@ -192,10 +193,10 @@ user.empty
         writer.close()
 
         # Read back records and compare
-        ea_iter = man.get_eas_at_time(10000, None)
+        ea_iter = man._get_eas_at_time(10000, None)
         assert ea_iter, "No extended_attributes.<time> file found"
         sample_ea_reread = next(ea_iter)
-        # we ignore SELinux extended attributes for comparaison
+        # we ignore SELinux extended attributes for comparison
         if sample_ea_reread.attr_dict:
             sample_ea_reread.attr_dict.pop(b'security.selinux', None)
         assert sample_ea_reread == self.sample_ea, "Re-read EAs %s are different from %s" % \
@@ -355,13 +356,13 @@ other::---""")
         new_acl.read_from_rp(tempdir)
         assert not new_acl.is_basic()
         if not new_acl == self.dir_acl:
-            assert new_acl.eq_verbose(self.dir_acl)
-            assert 0, "Shouldn't be here---eq != eq_verbose?"
+            assert new_acl._eq_verbose(self.dir_acl)
+            assert 0, "Shouldn't be here---eq != _eq_verbose?"
 
     def testRecord(self):
         """Test writing a record and reading it back"""
-        record = ACL2Record(self.sample_acl)
-        new_acl = Record2ACL(record)
+        record = AccessControlListFile._object_to_record(self.sample_acl)
+        new_acl = ACLExtractor._record_to_object(record)
         if new_acl != self.sample_acl:
             print("New_acl", new_acl.entry_list)
             print("sample_acl", self.sample_acl.entry_list)
@@ -369,10 +370,10 @@ other::---""")
             print("sample acl text", str(self.sample_acl))
             assert 0
 
-        record2 = ACL2Record(self.dir_acl)
-        new_acl2 = Record2ACL(record2)
+        record2 = AccessControlListFile._object_to_record(self.dir_acl)
+        new_acl2 = ACLExtractor._record_to_object(record2)
         if not new_acl2 == self.dir_acl:
-            assert new_acl2.eq_verbose(self.dir_acl)
+            assert new_acl2._eq_verbose(self.dir_acl)
             assert 0
 
     def testExtractor(self):
@@ -400,7 +401,7 @@ mask::---
 other::---
 """.format(self.current_user)
         extractor = ACLExtractor(io.BytesIO(os.fsencode(record_list)))
-        acl_iter = extractor.iterate_starting_with(())
+        acl_iter = extractor._iterate_starting_with(())
         first = next(acl_iter)
         assert first.index == (b'0foo', ), first
         second = next(acl_iter)
@@ -415,7 +416,7 @@ other::---
             assert 0, "Too many elements in iterator"
 
         extractor = ACLExtractor(io.BytesIO(os.fsencode(record_list)))
-        acl_iter = extractor.iterate_starting_with((b'1foo', b'bar'))
+        acl_iter = extractor._iterate_starting_with((b'1foo', b'bar'))
         assert next(acl_iter).index == (b'1foo', b'bar', b'baz')
         try:
             next(acl_iter)
@@ -465,7 +466,7 @@ other::---
         # Now write records corresponding to above rps into file
         Globals.rbdir = tempdir
         man = metadata.PatchDiffMan()
-        writer = man.get_acl_writer('snapshot', 10000)
+        writer = man._get_acl_writer('snapshot', 10000)
         for rp in [self.acl_test1_rpath, rp1, rp2, rp3]:
             acl = AccessControlLists(rp.index)
             acl.read_from_rp(rp)
@@ -473,7 +474,7 @@ other::---
         writer.close()
 
         # Read back records and compare
-        acl_iter = man.get_acls_at_time(10000, None)
+        acl_iter = man._get_acls_at_time(10000, None)
         assert acl_iter, "No acl file found"
         dir_acl_reread = next(acl_iter)
         assert dir_acl_reread == self.dir_acl
