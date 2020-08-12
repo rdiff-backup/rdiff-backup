@@ -4,7 +4,7 @@ import signal
 import sys
 import random
 import time
-from commontest import abs_test_dir, old_test_dir, CompareRecursive, RBBin
+from commontest import abs_test_dir, old_test_dir, compare_recursive, RBBin
 from rdiff_backup import Globals, restore, rpath, Time
 """Test consistency by killing rdiff-backup as it is backing up"""
 
@@ -237,7 +237,7 @@ class KillTest(ProcessFuncs):
         # is kind of special (there's no incrementing, so different
         # code)
         self.exec_rb(10000, 1, Local.ktrp[2].path, Local.rpout.path)
-        assert CompareRecursive(Local.ktrp[2], Local.rpout)
+        assert compare_recursive(Local.ktrp[2], Local.rpout)
 
         def cycle_once(min_max_time_pair, curtime, input_rp, old_rp):
             """Backup input_rp, kill, regress, and then compare"""
@@ -247,7 +247,7 @@ class KillTest(ProcessFuncs):
             result = self.mark_incomplete(curtime, Local.rpout)
             assert not self.exec_rb(None, 1, '--check-destination-dir',
                                     Local.rpout.path)
-            assert CompareRecursive(old_rp, Local.rpout, compare_hardlinks=0)
+            assert compare_recursive(old_rp, Local.rpout, compare_hardlinks=0)
             return result
 
         # Keep backing ktrp[0], and then regressing to ktrp[2].  Then go to ktrp[0]

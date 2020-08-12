@@ -7,7 +7,7 @@ Not to be confused with the regression tests.
 import unittest
 import os
 from commontest import abs_output_dir, abs_test_dir, old_test_dir, Myrm, \
-    CompareRecursive, rdiff_backup
+    compare_recursive, rdiff_backup
 from rdiff_backup import regress, Time, rpath, Globals
 
 
@@ -40,43 +40,43 @@ class RegressTest(unittest.TestCase):
                      self.incrp[0].path,
                      self.output_rp.path,
                      current_time=10000)
-        assert CompareRecursive(self.incrp[0], self.output_rp)
+        assert compare_recursive(self.incrp[0], self.output_rp)
 
         rdiff_backup(1,
                      1,
                      self.incrp[1].path,
                      self.output_rp.path,
                      current_time=20000)
-        assert CompareRecursive(self.incrp[1], self.output_rp)
+        assert compare_recursive(self.incrp[1], self.output_rp)
 
         rdiff_backup(1,
                      1,
                      self.incrp[2].path,
                      self.output_rp.path,
                      current_time=30000)
-        assert CompareRecursive(self.incrp[2], self.output_rp)
+        assert compare_recursive(self.incrp[2], self.output_rp)
 
         rdiff_backup(1,
                      1,
                      self.incrp[3].path,
                      self.output_rp.path,
                      current_time=40000)
-        assert CompareRecursive(self.incrp[3], self.output_rp)
+        assert compare_recursive(self.incrp[3], self.output_rp)
 
         Globals.rbdir = self.output_rbdir_rp
 
         regress_function(30000)
-        assert CompareRecursive(self.incrp[2],
-                                self.output_rp,
-                                compare_hardlinks=0)
+        assert compare_recursive(self.incrp[2],
+                                 self.output_rp,
+                                 compare_hardlinks=0)
         regress_function(20000)
-        assert CompareRecursive(self.incrp[1],
-                                self.output_rp,
-                                compare_hardlinks=0)
+        assert compare_recursive(self.incrp[1],
+                                 self.output_rp,
+                                 compare_hardlinks=0)
         regress_function(10000)
-        assert CompareRecursive(self.incrp[0],
-                                self.output_rp,
-                                compare_hardlinks=0)
+        assert compare_recursive(self.incrp[0],
+                                 self.output_rp,
+                                 compare_hardlinks=0)
 
     def regress_to_time_local(self, time):
         """Regress self.output_rp to time by running regress locally"""

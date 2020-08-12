@@ -1,7 +1,8 @@
 import unittest
 import errno
 import os
-from commontest import abs_test_dir, old_test_dir, Myrm, rdiff_backup, CompareRecursive
+from commontest import abs_test_dir, old_test_dir, Myrm, \
+    rdiff_backup, compare_recursive
 from rdiff_backup import rpath, Globals, regress, Time
 
 max_len = 255
@@ -187,8 +188,8 @@ class LongNameTest(unittest.TestCase):
                      output_dir,
                      restore_dir,
                      extra_options=b'-r 0')
-        CompareRecursive(rpath.RPath(Globals.local_connection, input_dir),
-                         rpath.RPath(Globals.local_connection, restore_dir))
+        compare_recursive(rpath.RPath(Globals.local_connection, input_dir),
+                          rpath.RPath(Globals.local_connection, restore_dir))
 
 
 if __name__ == "__main__":

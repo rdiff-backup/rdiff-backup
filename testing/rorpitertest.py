@@ -1,7 +1,8 @@
 import unittest
 import pickle
 import os
-from commontest import old_test_dir, abs_output_dir, CompareRecursive, iter_equal
+from commontest import old_test_dir, abs_output_dir, \
+    compare_recursive, iter_equal
 from rdiff_backup import rpath, rorpiter, Globals
 from functools import reduce
 
@@ -58,7 +59,7 @@ class RORPIterTest(unittest.TestCase):
             return ((src_rorp.isdir() and dest_rorp.isdir())
                     or src_rorp == dest_rorp)
 
-        return CompareRecursive(src_rp, dest_rp, None, equal)
+        return compare_recursive(src_rp, dest_rp, None, equal)
 
 
 class IndexedTupleTest(unittest.TestCase):

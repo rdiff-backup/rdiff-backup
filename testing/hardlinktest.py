@@ -2,7 +2,7 @@ import os
 import unittest
 import time
 from commontest import abs_test_dir, abs_output_dir, old_test_dir, re_init_rpath_dir, \
-    CompareRecursive, BackupRestoreSeries, InternalBackup, InternalRestore, \
+    compare_recursive, BackupRestoreSeries, InternalBackup, InternalRestore, \
     MakeOutputDir, reset_hardlink_dicts
 from rdiff_backup import Globals, Hardlink, selection, rpath, restore, metadata
 
@@ -25,12 +25,12 @@ class HardlinkTest(unittest.TestCase):
     hello_str_hash = "943a702d06f34599aee1f8da8ef9f7296031d699"
 
     def testEquality(self):
-        """Test rorp_eq function in conjunction with CompareRecursive"""
-        assert CompareRecursive(self.hlinks_rp1, self.hlinks_rp1copy)
-        assert CompareRecursive(self.hlinks_rp1,
-                                self.hlinks_rp2,
-                                compare_hardlinks=None)
-        assert not CompareRecursive(
+        """Test rorp_eq function in conjunction with compare_recursive"""
+        assert compare_recursive(self.hlinks_rp1, self.hlinks_rp1copy)
+        assert compare_recursive(self.hlinks_rp1,
+                                 self.hlinks_rp2,
+                                 compare_hardlinks=None)
+        assert not compare_recursive(
             self.hlinks_rp1, self.hlinks_rp2, compare_hardlinks=1)
 
     def testBuildingDict(self):
