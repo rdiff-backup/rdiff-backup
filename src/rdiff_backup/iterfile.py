@@ -227,7 +227,8 @@ class FileWrappingIter:
                 self.currently_in_file = currentobj
                 self._add_from_file(b"f")
             else:
-                pickled_data = pickle.dumps(currentobj, 1)
+                pickled_data = pickle.dumps(currentobj,
+                                            Globals.PICKLE_PROTOCOL)
                 self.array_buf.frombytes(b"o")
                 self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
                 self.array_buf.frombytes(pickled_data)
@@ -246,12 +247,13 @@ class FileWrappingIter:
                                         [Globals.blocksize])
         if buf is None:  # error occurred above, encode exception
             self.currently_in_file = None
-            excstr = pickle.dumps(self.last_exception, 1)
+            excstr = pickle.dumps(self.last_exception, Globals.PICKLE_PROTOCOL)
             total = b"".join((b'e', self._i2b(len(excstr), 7), excstr))
         else:
             total = b"".join((prefix_letter, self._i2b(len(buf), 7), buf))
             if buf == b"":  # end of file
-                cstr = pickle.dumps(self.currently_in_file.close(), 1)
+                cstr = pickle.dumps(self.currently_in_file.close(),
+                                    Globals.PICKLE_PROTOCOL)
                 self.currently_in_file = None
                 total += b"".join((b'h', self._i2b(len(cstr), 7), cstr))
         self.array_buf.frombytes(total)
@@ -370,7 +372,7 @@ class MiscIterToFile(FileWrappingIter):
 
     def _add_misc_object(self, obj):
         """Add an arbitrary pickleable object to the buffer"""
-        pickled_data = pickle.dumps(obj, 1)
+        pickled_data = pickle.dumps(obj, Globals.PICKLE_PROTOCOL)
         self.array_buf.frombytes(b"o")
         self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
         self.array_buf.frombytes(pickled_data)
@@ -378,10 +380,12 @@ class MiscIterToFile(FileWrappingIter):
     def _add_rorp(self, rorp):
         """Add a rorp to the buffer"""
         if rorp.file:
-            pickled_data = pickle.dumps((rorp.index, rorp.data, 1), 1)
+            pickled_data = pickle.dumps((rorp.index, rorp.data, 1),
+                                        Globals.PICKLE_PROTOCOL)
             self.next_in_line = rorp.file
         else:
-            pickled_data = pickle.dumps((rorp.index, rorp.data, 0), 1)
+            pickled_data = pickle.dumps((rorp.index, rorp.data, 0),
+                                        Globals.PICKLE_PROTOCOL)
             self.rorps_in_buffer += 1
         self.array_buf.frombytes(b"r")
         self.array_buf.frombytes(self._i2b(len(pickled_data), 7))
