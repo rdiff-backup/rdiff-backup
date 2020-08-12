@@ -260,42 +260,60 @@ def _hardlink_rorp_eq(src_rorp, dest_rorp):
     if not src_rorp.isreg() or not dest_rorp.isreg() or src_rorp.getnumlinks() == dest_rorp.getnumlinks() == 1:
         if not rorp_eq:
             Log("Hardlink compare error with when no links exist", 3)
-            Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-            Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+            Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+            Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
             return False
-    elif src_rorp.getnumlinks() > 1 and not Hardlink.islinked(src_rorp):
+    elif src_rorp.getnumlinks() > 1 and not Hardlink.is_linked(src_rorp):
         if rorp_eq:
             Log("Hardlink compare error with first linked src_rorp and no dest_rorp sha1", 3)
-            Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-            Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+            Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+            Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
             return False
         hash.compute_sha1(dest_rorp)
         rorp_eq = Hardlink.rorp_eq(src_rorp, dest_rorp)
         if src_rorp.getnumlinks() != dest_rorp.getnumlinks():
             if rorp_eq:
                 Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with differing link counts", 3)
-                Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-                Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+                Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+                Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
                 return False
         elif not rorp_eq:
             Log("Hardlink compare error with first linked src_rorp, with dest_rorp sha1, and with equal link counts", 3)
-            Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-            Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+            Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+            Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
             return False
     elif src_rorp.getnumlinks() != dest_rorp.getnumlinks():
         if rorp_eq:
             Log("Hardlink compare error with non-first linked src_rorp and with differing link counts", 3)
-            Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-            Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+            Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+            Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
             return False
     elif not rorp_eq:
         Log("Hardlink compare error with non-first linked src_rorp and with equal link counts", 3)
-        Log("%s: %s" % (src_rorp.index, Hardlink.get_inode_key(src_rorp)), 3)
-        Log("%s: %s" % (dest_rorp.index, Hardlink.get_inode_key(dest_rorp)), 3)
+        Log("%s: %s" % (src_rorp.index, Hardlink._get_inode_key(src_rorp)), 3)
+        Log("%s: %s" % (dest_rorp.index, Hardlink._get_inode_key(dest_rorp)), 3)
         return False
     Hardlink.del_rorp(src_rorp)
     Hardlink.del_rorp(dest_rorp)
     return True
+
+
+def _ea_compare_rps(rp1, rp2):
+    """Return true if rp1 and rp2 have same extended attributes."""
+    ea1 = eas_acls.ExtendedAttributes(rp1.index)
+    ea1.read_from_rp(rp1)
+    ea2 = eas_acls.ExtendedAttributes(rp2.index)
+    ea2.read_from_rp(rp2)
+    return ea1 == ea2
+
+
+def _acl_compare_rps(rp1, rp2):
+    """Return true if rp1 and rp2 have same acl information."""
+    acl1 = eas_acls.AccessControlLists(rp1.index)
+    acl1.read_from_rp(rp1)
+    acl2 = eas_acls.AccessControlLists(rp2.index)
+    acl2.read_from_rp(rp2)
+    return acl1 == acl2
 
 
 def _files_rorp_eq(src_rorp, dest_rorp,
@@ -315,12 +333,12 @@ def _files_rorp_eq(src_rorp, dest_rorp,
         return False
     if compare_hardlinks and not _hardlink_rorp_eq(src_rorp, dest_rorp):
         return False
-    if compare_eas and not eas_acls.ea_compare_rps(src_rorp, dest_rorp):
+    if compare_eas and not _ea_compare_rps(src_rorp, dest_rorp):
         Log(
             "Different EAs in files %s and %s" %
             (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
         return False
-    if compare_acls and not eas_acls.acl_compare_rps(src_rorp, dest_rorp):
+    if compare_acls and not _acl_compare_rps(src_rorp, dest_rorp):
         Log(
             "Different ACLs in files %s and %s" %
             (src_rorp.get_indexpath(), dest_rorp.get_indexpath()), 3)
