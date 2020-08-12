@@ -329,7 +329,7 @@ def _files_rorp_eq(src_rorp, dest_rorp,
         Log("Dest rorp missing: %s" % str(src_rorp), 3)
         return False
     if not src_rorp._equal_verbose(dest_rorp,
-                                  compare_ownership=compare_ownership):
+                                   compare_ownership=compare_ownership):
         return False
     if compare_hardlinks and not _hardlink_rorp_eq(src_rorp, dest_rorp):
         return False
