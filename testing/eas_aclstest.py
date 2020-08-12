@@ -63,7 +63,7 @@ class EATest(unittest.TestCase):
         self.make_temp_out_dirs()
         new_ea = ExtendedAttributes(())
         new_ea.read_from_rp(tempdir)
-        # we ignore SELinux extended attributes for comparaison
+        # we ignore SELinux extended attributes for comparison
         if new_ea.attr_dict:
             new_ea.attr_dict.pop(b'security.selinux', None)
         assert not new_ea.attr_dict, "The attributes of %s should have been empty: %s" % (
@@ -196,7 +196,7 @@ user.empty
         ea_iter = man._get_eas_at_time(10000, None)
         assert ea_iter, "No extended_attributes.<time> file found"
         sample_ea_reread = next(ea_iter)
-        # we ignore SELinux extended attributes for comparaison
+        # we ignore SELinux extended attributes for comparison
         if sample_ea_reread.attr_dict:
             sample_ea_reread.attr_dict.pop(b'security.selinux', None)
         assert sample_ea_reread == self.sample_ea, "Re-read EAs %s are different from %s" % \

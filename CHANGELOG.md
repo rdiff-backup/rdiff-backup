@@ -1,6 +1,16 @@
 RDIFF-BACKUP CHANGELOG
 ======================
 
+The prefixes are to be understood as follows, in roughly decreasing order
+of importance for rdiff-backup users:
+
+* **CHG** marks changes in the behaviour of rdiff-backup, potentially
+  *incompatible* ones, which you will want to consider before you upgrade
+  or use for the 1st time a new version.
+* **NEW** features and bug-**FIX**es are of course of interest as well.
+* **DOC**umentation and **WEB**-site changes are marked as such.
+* And **DEV**elopment changes are only of interest for developers and testers.
+
 New in v2.0.5 (2020-07-25)
 --------------------------
 
