@@ -359,10 +359,10 @@ def _get_selection_functions(src_rp, dest_rp,
         # Ignoring temp files can be useful when we want to check the
         # correctness of a backup which aborted in the middle.  In
         # these cases it is OK to have tmp files lying around.
-        src_select.add_selection_func(
-            src_select.regexp_get_sf(".*rdiff-backup.tmp.[^/]+$", 0))
-        dest_select.add_selection_func(
-            dest_select.regexp_get_sf(".*rdiff-backup.tmp.[^/]+$", 0))
+        src_select._add_selection_func(
+            src_select._regexp_get_sf(".*rdiff-backup.tmp.[^/]+$", 0))
+        dest_select._add_selection_func(
+            dest_select._regexp_get_sf(".*rdiff-backup.tmp.[^/]+$", 0))
 
     if exclude_rbdir:  # Exclude rdiff-backup-data directory
         src_select.parse_rbdir_exclude()

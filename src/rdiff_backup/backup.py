@@ -73,7 +73,7 @@ class SourceStruct:
 
         """
         sel = selection.Select(rpath)
-        sel.ParseArgs(tuplelist, filelists)
+        sel.parse_selection_args(tuplelist, filelists)
         sel_iter = sel.set_iter()
         cache_size = Globals.pipeline_max_length * 3  # to and from+leeway
         cls._source_select = rorpiter.CacheIndexable(sel_iter, cache_size)

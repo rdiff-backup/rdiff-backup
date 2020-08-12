@@ -80,6 +80,13 @@ class Select:
     # This re should not match normal filenames, but usually just globs
     glob_re = re.compile(b"(.*[*?[\\\\]|ignorecase\\:)", re.I | re.S)
 
+    # Constants to express exclusion or inclusion
+    EXCLUDE = 0
+    INCLUDE = 1
+    # Constants to express if min size or max size
+    MIN = 0
+    MAX = 1
+
     def __init__(self, rootrp):
         """Select initializer.  rpath is the root directory"""
         assert isinstance(rootrp, rpath.RPath)
@@ -87,6 +94,39 @@ class Select:
         self.rpath = rootrp
         self.prefix = self.rpath.path
         self.prefixindex = tuple([x for x in self.prefix.split(b"/") if x])
+        self._init_parsing_mapping()
+
+    def _init_parsing_mapping(self):
+        """Initiates the mapping dictionaries necessary to map command line arguments
+        to selection functions"""
+
+        self._sel_noargs_mapping = {
+            "--exclude-special-files": (self._special_get_sf, Select.EXCLUDE),
+            "--exclude-symbolic-links": (self._symlinks_get_sf, Select.EXCLUDE),
+            "--exclude-device-files": (self._devfiles_get_sf, Select.EXCLUDE),
+            "--exclude-sockets": (self._sockets_get_sf, Select.EXCLUDE),
+            "--exclude-fifos": (self._fifos_get_sf, Select.EXCLUDE),
+            "--exclude-other-filesystems": (self._other_filesystems_get_sf, Select.EXCLUDE),
+            "--include-special-files": (self._special_get_sf, Select.INCLUDE),
+            "--include-symbolic-links": (self._symlinks_get_sf, Select.INCLUDE),
+        }
+        self._sel_onearg_mapping = {
+            "--exclude": (self._glob_get_sf, Select.EXCLUDE),
+            "--exclude-regexp": (self._regexp_get_sf, Select.EXCLUDE),
+            "--exclude-if-present": (self._presence_get_sf, Select.EXCLUDE),
+            "--include": (self._glob_get_sf, Select.INCLUDE),
+            "--include-regexp": (self._regexp_get_sf, Select.INCLUDE),
+            "--min-file-size": (self._size_get_sf, Select.MIN),
+            "--max-file-size": (self._size_get_sf, Select.MAX),
+        }
+        self._sel_filelist_mapping = {
+            "--exclude-filelist": Select.EXCLUDE,
+            "--include-filelist": Select.INCLUDE,
+        }
+        self._sel_globfilelist_mapping = {
+            "--exclude-globbing-filelist": Select.EXCLUDE,
+            "--include-globbing-filelist": Select.INCLUDE,
+        }
 
     def set_iter(self, sel_func=None):
         """Initialize more variables, get ready to iterate
@@ -188,7 +228,7 @@ class Select:
                 scanned = 2
         return 1
 
-    def ParseArgs(self, argtuples, filelists):
+    def parse_selection_args(self, argtuples, filelists):
         """Create selection functions based on list of tuples
 
         The tuples have the form (option string, additional argument)
@@ -203,60 +243,24 @@ class Select:
         filelists_index = 0
         try:
             for opt, arg in argtuples:
-                if opt == "--exclude":
-                    self._add_selection_func(self._glob_get_sf(arg, 0))
-                elif opt == "--exclude-if-present":
-                    self._add_selection_func(self._presence_get_sf(arg, 0))
-                elif opt == "--exclude-device-files":
-                    self._add_selection_func(self._devfiles_get_sf(0))
-                elif opt == "--exclude-symbolic-links":
-                    self._add_selection_func(self._symlinks_get_sf(0))
-                elif opt == "--exclude-sockets":
-                    self._add_selection_func(self._sockets_get_sf(0))
-                elif opt == "--exclude-fifos":
-                    self._add_selection_func(self._fifos_get_sf(0))
-                elif opt == "--exclude-filelist":
+                if opt in self._sel_noargs_mapping:
+                    sel_func, sel_val = self._sel_noargs_mapping[opt]
+                    self._add_selection_func(sel_func(sel_val))
+                elif opt in self._sel_onearg_mapping:
+                    sel_func, sel_val = self._sel_onearg_mapping[opt]
+                    self._add_selection_func(sel_func(arg, sel_val))
+                elif opt in self._sel_filelist_mapping:
                     self._add_selection_func(
-                        self._filelist_get_sf(filelists[filelists_index], 0,
-                                              arg))
+                        self._filelist_get_sf(
+                            filelists[filelists_index], self._sel_filelist_mapping[opt], arg))
                     filelists_index += 1
-                elif opt == "--exclude-globbing-filelist":
+                elif opt in self._sel_globfilelist_mapping:
                     list(
                         map(
                             self._add_selection_func,
                             self._filelist_globbing_get_sfs(
-                                filelists[filelists_index], 0, arg)))
+                                filelists[filelists_index], self._sel_globfilelist_mapping[opt], arg)))
                     filelists_index += 1
-                elif opt == "--exclude-other-filesystems":
-                    self._add_selection_func(self._other_filesystems_get_sf(0))
-                elif opt == "--exclude-regexp":
-                    self._add_selection_func(self._regexp_get_sf(arg, 0))
-                elif opt == "--exclude-special-files":
-                    self._add_selection_func(self._special_get_sf(0))
-                elif opt == "--include":
-                    self._add_selection_func(self._glob_get_sf(arg, 1))
-                elif opt == "--include-filelist":
-                    self._add_selection_func(
-                        self._filelist_get_sf(filelists[filelists_index], 1,
-                                              arg))
-                    filelists_index += 1
-                elif opt == "--include-globbing-filelist":
-                    list(
-                        map(
-                            self._add_selection_func,
-                            self._filelist_globbing_get_sfs(
-                                filelists[filelists_index], 1, arg)))
-                    filelists_index += 1
-                elif opt == "--include-regexp":
-                    self._add_selection_func(self._regexp_get_sf(arg, 1))
-                elif opt == "--include-special-files":
-                    self._add_selection_func(self._special_get_sf(1))
-                elif opt == "--include-symbolic-links":
-                    self._add_selection_func(self._symlinks_get_sf(1))
-                elif opt == "--max-file-size":
-                    self._add_selection_func(self._size_get_sf(1, arg))
-                elif opt == "--min-file-size":
-                    self._add_selection_func(self._size_get_sf(0, arg))
                 else:
                     assert 0, "Bad selection option %s" % opt
         except SelectError as e:
@@ -332,7 +336,7 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
                         continue  # later line may match
                 return include
 
-        selection_function.exclude = something_excluded or inc_default == 0
+        selection_function.exclude = something_excluded or inc_default == Select.EXCLUDE
         selection_function.name = "Filelist: " + filelist_name
         return selection_function
 
@@ -379,10 +383,10 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
         """
         if line[:2] == b"+ ":  # Check for "+ "/"- " syntax
-            include = 1
+            include = Select.INCLUDE
             line = line[2:]
         elif line[:2] == b"- ":
-            include = 0
+            include = Select.EXCLUDE
             line = line[2:]
 
         index = self._get_relative_index(line)
@@ -400,22 +404,22 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
         """
         index, include = pair
-        if include == 1:
+        if include == Select.INCLUDE:
             if index < rp.index:
-                return (None, 1)
+                return (None, True)
             if index == rp.index:
-                return (1, 1)
+                return (Select.INCLUDE, True)
             elif index[:len(rp.index)] == rp.index:
-                return (1, None)  # /foo/bar implicitly includes /foo
+                return (Select.INCLUDE, False)  # /foo/bar implicitly includes /foo
             else:
-                return (None, None)  # rp greater, not initial sequence
-        elif include == 0:
+                return (None, False)  # rp greater, not initial sequence
+        elif include == Select.EXCLUDE:
             if rp.index[:len(index)] == index:
-                return (0, None)  # /foo implicitly excludes /foo/bar
+                return (Select.EXCLUDE, False)  # /foo implicitly excludes /foo/bar
             elif index < rp.index:
-                return (None, 1)
+                return (None, True)
             else:
-                return (None, None)  # rp greater, not initial sequence
+                return (None, False)  # rp greater, not initial sequence
         else:
             assert 0, "Include is %s, should be 0 or 1" % (include, )
 
@@ -443,7 +447,7 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _other_filesystems_get_sf(self, include):
         """Return selection function matching files on other filesystems"""
-        assert include == 0 or include == 1
+        assert include == Select.EXCLUDE or include == Select.INCLUDE
         root_devloc = self.rpath.getdevloc()
 
         def sel_func(rp):
@@ -458,7 +462,7 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _regexp_get_sf(self, regexp_string, include):
         """Return selection function given by regexp_string"""
-        assert include == 0 or include == 1
+        assert include == Select.EXCLUDE or include == Select.INCLUDE
         try:
             regexp = re.compile(os.fsencode(regexp_string))
         except re.error:
@@ -477,7 +481,7 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _presence_get_sf(self, presence_filename, include):
         """Return selection function given by a file if present"""
-        assert include == 0 or include == 1
+        assert include == Select.EXCLUDE or include == Select.INCLUDE
 
         def sel_func(rp):
             if rp.isdir() and rp.readable() and \
@@ -535,7 +539,7 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
         sel_func.name = (include and "include" or "exclude") + " special files"
         return sel_func
 
-    def _size_get_sf(self, min_max, sizestr):
+    def _size_get_sf(self, sizestr, min_max):
         """Return selection function given by filesize"""
         size = int(sizestr)
         assert size > 0
@@ -548,14 +552,14 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
             else:
                 return ((rp.getsize() >= size) and None)
 
-        sel_func.exclude = 1
+        sel_func.exclude = Select.EXCLUDE
         sel_func.name = "%s size %d" % (min_max and "Maximum" or "Minimum",
                                         size)
         return sel_func
 
     def _glob_get_sf(self, glob_str, include):
         """Return selection function given by glob string"""
-        assert include == 0 or include == 1
+        assert include == Select.EXCLUDE or include == Select.INCLUDE
         glob_str = os.fsencode(glob_str)  # paths and glob must be bytes
         if glob_str == b"**":
             def sel_func(rp):
@@ -598,9 +602,9 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
             else:
                 return None
 
-        if include == 1:
+        if include == Select.INCLUDE:
             sel_func = include_sel_func
-        elif include == 0:
+        elif include == Select.EXCLUDE:
             sel_func = exclude_sel_func
         sel_func.exclude = not include
         sel_func.name = "Tuple select %s" % (tuple, )

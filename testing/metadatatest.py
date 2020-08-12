@@ -141,7 +141,7 @@ class MetadataTest(unittest.TestCase):
                              os.path.join(old_test_dir, b"various_file_types"))
         # the following 3 lines make sure that we ignore incorrect files
         sel = selection.Select(rootrp)
-        sel.ParseArgs((), ())
+        sel.parse_selection_args((), ())
         rps = list(sel.set_iter())
 
         assert not temprp.lstat()
@@ -196,14 +196,14 @@ class MetadataTest(unittest.TestCase):
             """Record the metadata under rp to a mirror_metadata file"""
             metawriter = man._get_meta_writer(b'snapshot', time)
             sel = selection.Select(rp)
-            sel.ParseArgs((), ())  # make sure incorrect files are filtered out
+            sel.parse_selection_args((), ())  # make sure incorrect files are filtered out
             for rorp in sel.set_iter():
                 metawriter.write_object(rorp)
             metawriter.close()
 
         def compare(man, rootrp, time):
             sel = selection.Select(rootrp)
-            sel.ParseArgs((), ())  # make sure incorrect files are filtered out
+            sel.parse_selection_args((), ())  # make sure incorrect files are filtered out
             assert iter_equal(sel.set_iter(), man.get_meta_at_time(time, None))
 
         self.make_temp()
