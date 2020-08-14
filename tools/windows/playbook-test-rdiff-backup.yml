@@ -1,0 +1,30 @@
+---
+- name: Test rdiff-backup on a prepared Windows
+  hosts: windows_builders
+  gather_facts: false
+
+  tasks:
+  - name: make sure working directory {{ working_dir }} exists
+    win_file:
+      state: directory
+      path: "{{ working_dir }}"
+  - name: clone the rdiff-backup testfiles from Git
+    win_command: >
+      git.exe clone {{ rdiffbackup_files_git_repo }}
+      "{{ rdiffbackup_files_dir }}"
+    args:
+      creates: "{{ rdiffbackup_files_dir }}"
+
+  - name: unpack the testfiles (one hard link failure expected)
+    win_command: 7z x "{{ rdiffbackup_files_dir }}/rdiff-backup_testfiles.tar"
+    args:
+      chdir: "{{ working_dir }}"
+      creates: "{{ working_dir }}/rdiff-backup_testfiles"
+    ignore_errors: true  # 7z fails to extract one hard link
+
+  - name: test rdiff-backup using tox
+    win_command: tox -c tox_win.ini
+    environment:  # path absolutely needs to be Windows-style
+      LIBRSYNC_DIR: "{{ librsync_install_dir | replace('/', '\\\\') }}"
+    args:
+      chdir: "{{ rdiffbackup_dir }}"
