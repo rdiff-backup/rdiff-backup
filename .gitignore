@@ -31,3 +31,6 @@ _site/
 
 # Profiling information
 mprofile_*.dat
+
+# Ignore Windows artefacts
+*.dll
