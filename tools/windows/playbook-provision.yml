@@ -47,10 +47,10 @@
     win_reboot:
     when: vs is changed
 
-    # once successful up until here, restart the playbook
+# TODO remove importlib-metadata once we've moved to Python 3.8
 
   - name: install necessary python libraries
-    win_command: pip.exe install py2exe pywin32 pyinstaller wheel certifi setuptools-scm tox
+    win_command: pip.exe install py2exe pywin32 pyinstaller wheel certifi setuptools-scm tox importlib-metadata
     register: pipcmd
     changed_when: "'Successfully installed ' in pipcmd.stdout"
     # pylibacl and pyxattr aren't supported under Windows
