@@ -19,7 +19,14 @@ pylibacl
 pyxattr
 # or xattr under SuSE Linux & Co
 
+# for Windows
+py2exe
+pywin32
+pyinstaller
+certifi
+
 # purely for development and testing purposes
 tox
 flake8
 coverage
+wheel
