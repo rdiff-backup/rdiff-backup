@@ -686,7 +686,7 @@ class PatchITRB(rorpiter.ITRBranch):
     def fast_process(self, index, diff_rorp):
         """Patch base_rp with diff_rorp (case where neither is directory)"""
         rp = self._get_rp_from_root(index)
-        tf = TempFile.new(rp)
+        tf = rp.get_temp_rpath(sibling=True)
         self._patch_to_temp(rp, diff_rorp, tf)
         rpath.rename(tf, rp)
 
@@ -738,7 +738,7 @@ class PatchITRB(rorpiter.ITRBranch):
 
         """
         assert diff_rorp.get_attached_filetype() == 'snapshot'
-        self.dir_replacement = TempFile.new(base_rp)
+        self.dir_replacement = base_rp.get_temp_rpath(sibling=True)
         rpath.copy_with_attribs(diff_rorp, self.dir_replacement)
         if base_rp.isdir():
             base_rp.chmod(0o700)
@@ -839,5 +839,5 @@ class PermissionChanger:
 
 from . import (  # noqa: E402
     Globals, Rdiff, Hardlink, selection, rpath,
-    log, robust, metadata, TempFile, hash, longname
+    log, robust, metadata, hash, longname
 )

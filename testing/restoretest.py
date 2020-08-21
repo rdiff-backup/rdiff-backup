@@ -2,7 +2,7 @@ import unittest
 import os
 from commontest import abs_output_dir, old_test_dir, Myrm, MakeOutputDir, \
     InternalRestore, compare_recursive
-from rdiff_backup import restore, Globals, rpath, TempFile, Time, log, Main
+from rdiff_backup import restore, Globals, rpath, Time, log, Main
 
 lc = Globals.local_connection
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
@@ -33,7 +33,7 @@ class RestoreFileComparer:
     def compare_at_time(self, t):
         """Restore file, make sure it is the same at time t"""
         log.Log("Checking result at time %s" % (t, ), 7)
-        tf = TempFile.new(tempdir.append("foo"))
+        tf = tempdir.get_temp_rpath()
         restore.MirrorStruct._mirror_time = mirror_time
         restore.MirrorStruct._rest_time = t
         self.rf.set_relevant_incs()

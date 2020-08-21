@@ -19,7 +19,7 @@
 """High level functions for mirroring and mirror+incrementing"""
 
 import errno
-from . import Globals, metadata, rorpiter, TempFile, Hardlink, robust, \
+from . import Globals, metadata, rorpiter, Hardlink, robust, \
     increment, rpath, log, selection, Time, Rdiff, statistics, iterfile, \
     hash, longname
 
@@ -583,7 +583,7 @@ class PatchITRB(rorpiter.ITRBranch):
         mirror_rp, discard = longname.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp)
         assert not mirror_rp.isdir(), mirror_rp
-        tf = TempFile.new(mirror_rp)
+        tf = mirror_rp.get_temp_rpath(sibling=True)
         if self._patch_to_temp(mirror_rp, diff_rorp, tf):
             if tf.lstat():
                 if robust.check_common_error(self.error_handler, rpath.rename,
@@ -720,7 +720,7 @@ class PatchITRB(rorpiter.ITRBranch):
 
         """
         assert diff_rorp.get_attached_filetype() == 'snapshot'
-        self.dir_replacement = TempFile.new(base_rp)
+        self.dir_replacement = base_rp.get_temp_rpath(sibling=True)
         if not self._patch_to_temp(None, diff_rorp, self.dir_replacement):
             if self.dir_replacement.lstat():
                 self.dir_replacement.delete()
@@ -777,7 +777,7 @@ class IncrementITRB(PatchITRB):
         """Patch base_rp with diff_rorp and write increment (neither is dir)"""
         mirror_rp, inc_prefix = longname.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
-        tf = TempFile.new(mirror_rp)
+        tf = mirror_rp.get_temp_rpath(sibling=True)
         if self._patch_to_temp(mirror_rp, diff_rorp, tf):
             inc = robust.check_common_error(self.error_handler,
                                             increment.Increment,

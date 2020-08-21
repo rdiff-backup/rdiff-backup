@@ -1055,6 +1055,8 @@ class RPath(RORPath):
 
     """
     _regex_chars_to_quote = re.compile(b"[\\\\\\\"\\$`]")
+    # class index to make temporary files unique, see get_temp_rpath
+    _temp_file_index = 0
 
     def __init__(self, connection, base, index=(), data=None):
         """RPath constructor
@@ -1422,6 +1424,26 @@ class RPath(RORPath):
     def new_index_empty(self, index):
         """Return similar RPath with given index, but initialize to empty"""
         return self.__class__(self.conn, self.base, index, {'type': None})
+
+    def get_temp_rpath(self, sibling=False):
+        """Return new temp rpath in given or parent directory"""
+        assert self.conn is Globals.local_connection
+
+        # recursion if current rpath isn't a directory or if explicitly asked
+        if sibling or not self.isdir():
+            return self.get_parent_rp().get_temp_rpath()
+
+        # we have to create our own "uniqueness" as tempfile.mktemp is
+        # obsolete and we just want a name agnostic regarding file vs. dir
+        while True:
+            if self.__class__._temp_file_index > 100000000:
+                log.Log("Warning: Resetting tempfile index", 2)
+                self.__class__._temp_file_index = 0
+            tf = self.append('rdiff-backup.tmp.{index:d}'.format(
+                             index=self.__class__._temp_file_index))
+            self.__class__._temp_file_index += 1
+            if not tf.lstat():
+                return tf
 
     def open(self, mode, compress=None):
         """Return open file.  Supports modes "w" and "r".
