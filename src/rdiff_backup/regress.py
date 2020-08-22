@@ -34,7 +34,7 @@ be recovered.
 
 import re
 import os
-from . import Globals, restore, log, rorpiter, TempFile, metadata, rpath, C, \
+from . import Globals, restore, log, rorpiter, metadata, rpath, C, \
     Time, robust, longname
 
 # regress_time should be set to the time we want to regress back to
@@ -148,7 +148,7 @@ def _recreate_meta(meta_manager):
     the reverse.
 
     """
-    temprp = [TempFile.new_in_dir(Globals.rbdir)]
+    temprp = [Globals.rbdir.get_temp_rpath()]
 
     def callback(rp):
         temprp[0] = rp
@@ -315,7 +315,7 @@ class RegressITRB(rorpiter.ITRBranch):
         """
         assert rf.metadata_rorp.isreg()
         if rf.mirror_rp.isreg():
-            tf = TempFile.new(rf.mirror_rp)
+            tf = rf.mirror_rp.get_temp_rpath(sibling=True)
             tf.write_from_fileobj(rf.get_restore_fp())
             tf.fsync_with_dir()  # make sure tf fully written before move
             rpath.copy_attribs(rf.metadata_rorp, tf)

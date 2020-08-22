@@ -18,7 +18,7 @@
 # 02110-1301, USA
 """Invoke rdiff utility to make signatures, deltas, or patch"""
 
-from . import Globals, log, TempFile, rpath, hash, librsync
+from . import Globals, log, rpath, hash, librsync
 
 
 def get_signature(rp, blocksize=None):
@@ -71,7 +71,7 @@ def write_patched_fp(basis_fp, delta_fp, out_fp):
 
 def _write_via_tempfile(fp, rp):
     """Write fileobj fp to rp by writing to tempfile and renaming"""
-    tf = TempFile.new(rp)
+    tf = rp.get_temp_rpath(sibling=True)
     retval = tf.write_from_fileobj(fp)
     rpath.rename(tf, rp)
     return retval

@@ -627,7 +627,7 @@ from . import (  # noqa: E402,F401
     Globals, Time, Rdiff, Hardlink, FilenameMapping, Security,
     Main, rorpiter, selection, increment, statistics, manage,
     iterfile, rpath, robust, restore, backup,
-    TempFile, SetConnections, librsync, log, regress, fs_abilities,
+    SetConnections, librsync, log, regress, fs_abilities,
     eas_acls, user_group, compare
 )
 try:

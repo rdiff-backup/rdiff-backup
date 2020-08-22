@@ -28,7 +28,7 @@ FSAbilities object describing it.
 
 import errno
 import os
-from . import Globals, log, TempFile, selection, robust, SetConnections, \
+from . import Globals, log, selection, robust, SetConnections, \
     FilenameMapping, win_acls, Time
 
 
@@ -151,7 +151,7 @@ class FSAbilities:
             rbdir.mkdir()
         self.root_rp = rbdir
         self.read_only = 0
-        subdir = TempFile.new_in_dir(rbdir)
+        subdir = rbdir.get_temp_rpath()
         subdir.mkdir()
 
         self._detect_extended_filenames(subdir)
