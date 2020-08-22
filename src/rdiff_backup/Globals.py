@@ -28,18 +28,19 @@ from . import log
 # compatibility reasons (and because importlib_metadata -for Python < 3.8-
 # isn't yet packaged for all distros).
 try:
-    from importlib import metadata
-    version = metadata.version('rdiff-backup')
-except ImportError:
-    try:  # the fallback library for Python below 3.8
-        import importlib_metadata as metadata
+    try:
+        from importlib import metadata
         version = metadata.version('rdiff-backup')
     except ImportError:
-        try:  # the old method requiring setuptools to be installed
+        try:  # the fallback library for Python below 3.8
+            import importlib_metadata as metadata
+            version = metadata.version('rdiff-backup')
+        except ImportError:
+            # the old method requiring setuptools to be installed
             import pkg_resources
             version = pkg_resources.get_distribution("rdiff-backup").version
-        except BaseException:  # if everything else fails...
-            version = "DEV-no-metadata"
+except BaseException:  # if everything else fails...
+    version = "DEV-no-metadata"
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
