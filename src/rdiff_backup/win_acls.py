@@ -72,8 +72,8 @@ class ACL:
             return
 
         try:
-            sd = rp.conn.win32security.GetNamedSecurityInfo(os.fsdecode(rp.path),
-                                                            SE_FILE_OBJECT, ACL.flags)
+            sd = rp.conn.win32security.GetNamedSecurityInfo(
+                os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to read ACL from %s: %s" % (repr(rp.path),
@@ -111,10 +111,8 @@ class ACL:
             sd.SetSecurityDescriptorSacl(0, None, 0)
 
         try:
-            self.__acl = \
-                rp.conn.win32security.ConvertSecurityDescriptorToStringSecurityDescriptor(sd,
-                                                                                          SDDL_REVISION_1,
-                                                                                          ACL.flags)
+            self.__acl = rp.conn.win32security.ConvertSecurityDescriptorToStringSecurityDescriptor(
+                sd, SDDL_REVISION_1, ACL.flags)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to convert ACL from %s to string: %s" % (repr(
@@ -126,8 +124,8 @@ class ACL:
         # not sure how to interpret this
         # I'll just clear all acl-s from rp.path
         try:
-            sd = rp.conn.win32security. \
-                GetNamedSecurityInfo(os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
+            sd = rp.conn.win32security.GetNamedSecurityInfo(
+                os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to read ACL from %s for clearing: %s" % (repr(
@@ -154,15 +152,16 @@ class ACL:
                 sd.SetSecurityDescriptorSacl(0, acl, 0)
 
         try:
-            rp.conn.win32security. \
-                SetNamedSecurityInfo(os.fsdecode(rp.path),
-                                     SE_FILE_OBJECT,
-                                     ACL.flags,
-                                     sd.GetSecurityDescriptorOwner(),
-                                     sd.GetSecurityDescriptorGroup(),
-                                     sd.GetSecurityDescriptorDacl(),
-                                     (ACL.flags & SACL_SECURITY_INFORMATION)
-                                     and sd.GetSecurityDescriptorSacl() or None)
+            rp.conn.win32security.SetNamedSecurityInfo(
+                os.fsdecode(rp.path),
+                SE_FILE_OBJECT,
+                ACL.flags,
+                sd.GetSecurityDescriptorOwner(),
+                sd.GetSecurityDescriptorGroup(),
+                sd.GetSecurityDescriptorDacl(),
+                (ACL.flags & SACL_SECURITY_INFORMATION)
+                and sd.GetSecurityDescriptorSacl() or None
+            )
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to set ACL on %s after clearing: %s" % (repr(
@@ -173,10 +172,8 @@ class ACL:
             return
 
         try:
-            sd = rp.conn.win32security. \
-                ConvertStringSecurityDescriptorToSecurityDescriptor(
-                    os.fsdecode(self.__acl),
-                    SDDL_REVISION_1)
+            sd = rp.conn.win32security.ConvertStringSecurityDescriptorToSecurityDescriptor(
+                os.fsdecode(self.__acl), SDDL_REVISION_1)
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to convert string %s to ACL: %s" % (repr(
@@ -209,14 +206,15 @@ class ACL:
             self._clear_rp(rp)
 
         try:
-            rp.conn.win32security. \
-                SetNamedSecurityInfo(os.fsdecode(rp.path),
-                                     SE_FILE_OBJECT, ACL.flags,
-                                     sd.GetSecurityDescriptorOwner(),
-                                     sd.GetSecurityDescriptorGroup(),
-                                     sd.GetSecurityDescriptorDacl(),
-                                     (ACL.flags & SACL_SECURITY_INFORMATION)
-                                     and sd.GetSecurityDescriptorSacl() or None)
+            rp.conn.win32security.SetNamedSecurityInfo(
+                os.fsdecode(rp.path),
+                SE_FILE_OBJECT, ACL.flags,
+                sd.GetSecurityDescriptorOwner(),
+                sd.GetSecurityDescriptorGroup(),
+                sd.GetSecurityDescriptorDacl(),
+                (ACL.flags & SACL_SECURITY_INFORMATION)
+                and sd.GetSecurityDescriptorSacl() or None
+            )
         except (OSError, IOError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to set ACL on %s: %s" % (repr(rp.path), exc),

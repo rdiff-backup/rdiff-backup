@@ -343,7 +343,7 @@ class PipeConnection(LowLevelPipeConnection):
     """Provide server and client functions for a Pipe Connection
 
     Both sides act as modules that allows for remote execution.  For
-    instance, self.conn.pow(2,8) will execute the operation on the
+    instance, self.connX.pow(2,8) will execute the operation on the
     server side.
 
     The only difference between the client and server is that the
