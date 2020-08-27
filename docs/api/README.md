@@ -7,10 +7,14 @@ installations.
 
 ## API version files
 
-Each version file named vX.Y.md lists the objects and functions or methods
-defining the API interfaces. A basis version can be created using the script
-`tools/prepare_api_doc.sh` but it needs to be improved respecting the
-following structure:
+Each version file named vXYY.md lists the objects and functions or methods
+defining the API interfaces for the major version X, minor version YY.
+We use an integer instead of a traditional version scheme to make comparaisons
+easier internally, and avoid confusion with the application's version.
+
+A basis version of the file can be created using the script
+`tools/prepare_api_doc.sh` but it needs to be improved manually respecting
+the following structure:
 
 * _Format_ contains changes at the communication format as a bulleted
   list of free text describing the changes.
@@ -75,8 +79,8 @@ Each interface is described on a separate line of the following formats,
 * API and application don't need to be aligned, else we wouldn't need to
   consider separate versioning schemes.
 
-> **NOTE:** we consider v1.0 the implicit API version of the 1.y application
-	version and v2.0 the de-facto API version of the 2.0.z application
+> **NOTE:** we consider v100 the implicit API version of the 1.y application
+	version and v200 the de-facto API version of the 2.0.z application
 	versions. The interfaces of both API versions don't differ, they
 	are still incompatible due to changes between Python 2 and 3.
 
@@ -84,12 +88,12 @@ Each interface is described on a separate line of the following formats,
 
 To make the above rules more concrete:
 
-Version 15.0.0 of rdiff-backup uses version 5.0 of the API and has 2 interfaces:
+Version 15.0.0 of rdiff-backup uses version 500 of the API and has 2 interfaces:
 
 * `deepen`
 * `unchain`
 
-A version 5.1 of the API is created with a new function `neglect` and making
+A version 501 of the API is created with a new function `neglect` and making
 `deepen` deprecated:
 
 * `deepen` **deprecated**
@@ -103,20 +107,20 @@ to change API version in a bug-fix version). Version 15.1.0 defines the
 its use, it could be simply a new command line option).
 Version 15.1.0 works hence by default with version 15.0.0.
 
-A version 5.2 of the API could be created, with other changes, but the
+A version 502 of the API could be created, with other changes, but the
 new resp. deprecated states wouldn't change:
 
 * `deepen` **deprecated**
 * `neglect` **new**
 * `unchain`
 
-A version 6.0 of the API can then be created, which removes the deprecated
+A version 600 of the API can then be created, which removes the deprecated
 interface and makes the new interface usable by default:
 
 * `neglect`
 * `unchain`
 
-This version 6.0 could then be used by a new version of rdiff-backup 15.2.0,
+This version 600 could then be used by a new version of rdiff-backup 15.2.0,
 which would work with version 15.1.0 but not with version 15.0.0.
 
 > **NOTE:** we could declare a version 16.0.0 but that shouldn't be necessary

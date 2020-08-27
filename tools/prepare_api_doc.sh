@@ -6,7 +6,7 @@
 
 if ! [ -n "$1" ]
 then
-	echo "Usage: $0 X.Y" >&2
+	echo "Usage: $0 XYY" >&2
 	exit 1
 fi
 
