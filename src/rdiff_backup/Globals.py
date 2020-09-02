@@ -215,7 +215,7 @@ compression = 1
 no_compression_regexp_string = (
     b"(?i).*\\.(gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
     b"jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
-    b"gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf)$")
+    b"gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm)$")
 no_compression_regexp = None
 
 # If true, filelists and directory statistics will be split on
