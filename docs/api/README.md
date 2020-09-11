@@ -73,11 +73,17 @@ Each interface is described on a separate line of the following formats,
     * a **deprecated** interface is being definitely removed,
     * or a **new** interface given free for usage.
     * any incompatible change of the communication format, e.g. pickle format.
-* there must be at least one _application_ version between two increases of
-  the API major version, so that upgrades can be done for clients and servers
-  independently. Application bug-fix versions do _not_ count in this rule.
+* there must be at least one _application_ major version between two increases
+  of the API major version, so that upgrades can be done for clients and servers
+  independently.
+* we strive to have at least one year, better more, between major releases to
+  give enough time for upgrades of big installations. Development constraints
+  might require faster cycles, but those should be avoided with time.
 * API and application don't need to be aligned, else we wouldn't need to
-  consider separate versioning schemes.
+  consider separate versioning schemes, but it makes things simpler when major
+  versions are aligned. Important changes not impacting the interface, e.g. to
+  the repository format, might nevertheless govern the introduction of an
+  application major version, independently of any breaking change to the API.
 
 > **NOTE:** we consider v100 the implicit API version of the 1.y application
 	version and v200 the de-facto API version of the 2.0.z application
@@ -88,7 +94,7 @@ Each interface is described on a separate line of the following formats,
 
 To make the above rules more concrete:
 
-Version 15.0.0 of rdiff-backup uses version 500 of the API and has 2 interfaces:
+Version 5.0.0 of rdiff-backup uses version 500 of the API and has 2 interfaces:
 
 * `deepen`
 * `unchain`
@@ -100,12 +106,12 @@ A version 501 of the API is created with a new function `neglect` and making
 * `neglect` **new**
 * `unchain`
 
-At least one version of rdiff-backup must use the new API version, say 15.1.0.
-A version 15.0.1 wouldn't be sufficient (and it isn't expected or recommended
-to change API version in a bug-fix version). Version 15.1.0 defines the
+At least one version of rdiff-backup must use the new API version, say 5.1.0.
+A version 5.0.1 wouldn't be sufficient (and it isn't expected or recommended
+to change API version in a bug-fix version). Version 5.1.0 defines the
 `neglect` function but does _not_ use it by default (unless a flag enforces
 its use, it could be simply a new command line option).
-Version 15.1.0 works hence by default with version 15.0.0.
+Version 5.1.0 works hence by default with version 5.0.0.
 
 A version 502 of the API could be created, with other changes, but the
 new resp. deprecated states wouldn't change:
@@ -120,8 +126,8 @@ interface and makes the new interface usable by default:
 * `neglect`
 * `unchain`
 
-This version 600 could then be used by a new version of rdiff-backup 15.2.0,
-which would work with version 15.1.0 but not with version 15.0.0.
+This version 600 could then be used by a new version of rdiff-backup 6.0.0,
+which would work with version 5.1.0 but not with version 5.0.z.
 
 > **NOTE:** we could declare a version 16.0.0 but that shouldn't be necessary
 	and should more depend on the importance of the changes rather than
