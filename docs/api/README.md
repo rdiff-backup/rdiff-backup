@@ -129,9 +129,8 @@ interface and makes the new interface usable by default:
 This version 600 could then be used by a new version of rdiff-backup 6.0.0,
 which would work with version 5.1.0 but not with version 5.0.z.
 
-> **NOTE:** we could declare a version 16.0.0 but that shouldn't be necessary
-	and should more depend on the importance of the changes rather than
-	on individual interface changes.
+> **NOTE:** it could be as well a version 7.0.0 should other important changes
+	have justified a major version in-between.
 
 > **NOTE:** the `--version` option should long term also output the API
 	version(s) supported and the correct one be agreed automatically.
