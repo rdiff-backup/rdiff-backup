@@ -180,7 +180,8 @@ def _init_connection(remote_cmd):
     conn_number = len(Globals.connections)
     conn = connection.PipeConnection(stdout, stdin, conn_number)
 
-    _check_connection_version(conn, remote_cmd)
+    if not _check_connection_version(conn, remote_cmd):
+        sys.exit()
     Log("Registering connection %d" % conn_number, 7)
     _init_connection_routing(conn, conn_number, remote_cmd)
     _init_connection_settings(conn)
@@ -192,7 +193,7 @@ def _check_connection_version(conn, remote_cmd):
     try:
         remote_version = conn.Globals.get('version')
     except connection.ConnectionError as exception:
-        Log.FatalError("""%s
+        Log("""%s
 
 Couldn't start up the remote connection by executing
 
@@ -202,9 +203,10 @@ Remember that, under the default settings, rdiff-backup must be
 installed in the PATH on the remote system.  See the man page for more
 information on this.  This message may also be displayed if the remote
 version of rdiff-backup is quite different from the local version (%s).""" %
-                       (exception, _safe_str(remote_cmd), Globals.version))
+                       (exception, _safe_str(remote_cmd), Globals.version), 1)
+        return False
     except OverflowError:
-        Log.FatalError(
+        Log(
             """Integer overflow while attempting to establish the
 remote connection by executing
 
@@ -217,12 +219,22 @@ command executes. Try running this command:
 
 which should only print out the text: rdiff-backup <version>""" %
             (_safe_str(remote_cmd),
-             _safe_str(remote_cmd.replace(b"--server", b"--version"))))
+             _safe_str(remote_cmd.replace(b"--server", b"--version"))), 1)
+        return False
 
-    if remote_version != Globals.version:
-        Log(
-            "Warning: Local version %s does not match remote version %s." %
-            (Globals.version, remote_version), 2)
+    try:
+        remote_api_version = conn.Globals.get('api_version')
+    except:  # the remote side doesn't know yet about api_version
+        raise  # FIXME which exception exactly needs to be catched
+        if remote_version != Globals.version:
+            Log(
+                "Warning: Local version %s does not match remote version %s. "
+                "Compatibility should still be given though, "
+                "but think about upgrading all rdiff-backup instances." %
+                (Globals.version, remote_version), 2)
+        return True
+    print(remote_api_version)  # TODO compare remote and local api_version
+    return True
 
 
 def _init_connection_routing(conn, conn_number, remote_cmd):
@@ -311,17 +323,7 @@ def _test_connection(conn_number, rp):
     except BaseException:
         sys.stderr.write("Server tests failed\n")
         raise
-    if not version == Globals.version:
-        print("""Server may work, but there is a version mismatch:
-Local version: %s
-Remote version: %s
-
-In general, an attempt is made to guarantee compatibility only between
-different minor versions of the same stable series.  For instance, you
-should expect 0.12.4 and 0.12.7 to be compatible, but not 0.12.7
-and 0.13.3, nor 0.13.2 and 0.13.4.
-""" % (Globals.version, version))
-    else:
+    if _check_connection_version(conn, __conn_remote_cmds[conn_number]):
         print("Server OK")
 
 

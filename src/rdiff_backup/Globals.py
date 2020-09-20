@@ -42,6 +42,17 @@ try:
 except BaseException:  # if everything else fails...
     version = "DEV-no-metadata"
 
+# The default, supported (min/max) and actual API versions.
+# An actual value of 0 means that the default version is to be used or whatever
+# makes the connection work within the min-max range, depending on the
+# API versions supported by the remote connection.
+api_version = {
+    "default": 200,
+    "min": 200,
+    "max": 200,
+    "actual": 0
+}
+
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
 current_time = None
