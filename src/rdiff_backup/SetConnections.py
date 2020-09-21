@@ -180,7 +180,7 @@ def _init_connection(remote_cmd):
     conn_number = len(Globals.connections)
     conn = connection.PipeConnection(stdout, stdin, conn_number)
 
-    if not _check_connection_version(conn, remote_cmd):
+    if not _validate_connection_version(conn, remote_cmd):
         sys.exit()
     Log("Registering connection %d" % conn_number, 7)
     _init_connection_routing(conn, conn_number, remote_cmd)
@@ -188,8 +188,14 @@ def _init_connection(remote_cmd):
     return conn
 
 
-def _check_connection_version(conn, remote_cmd):
-    """Log warning if connection has different version"""
+def _validate_connection_version(conn, remote_cmd):
+    """Validate that local and remote versions are compatible.
+    Either the old method using the application version with only a warning
+    if they're not the same, or the new method using the API version and
+    trying to find a common compatible version.
+    Returns False if something goes wrong or no compatible version could
+    be found, else returns True (also in warning case)."""
+
     try:
         remote_version = conn.Globals.get('version')
     except connection.ConnectionError as exception:
@@ -203,7 +209,7 @@ Remember that, under the default settings, rdiff-backup must be
 installed in the PATH on the remote system.  See the man page for more
 information on this.  This message may also be displayed if the remote
 version of rdiff-backup is quite different from the local version (%s).""" %
-                       (exception, _safe_str(remote_cmd), Globals.version), 1)
+            (exception, _safe_str(remote_cmd), Globals.version), 1)
         return False
     except OverflowError:
         Log(
@@ -224,17 +230,66 @@ which should only print out the text: rdiff-backup <version>""" %
 
     try:
         remote_api_version = conn.Globals.get('api_version')
-    except:  # the remote side doesn't know yet about api_version
+    except BaseException:  # the remote side doesn't know yet about api_version
         raise  # FIXME which exception exactly needs to be catched
         if remote_version != Globals.version:
             Log(
                 "Warning: Local version %s does not match remote version %s. "
-                "Compatibility should still be given though, "
+                "Compatibility should still be given though, at least if "
+                "major versions are the same, "
                 "but think about upgrading all rdiff-backup instances." %
                 (Globals.version, remote_version), 2)
         return True
-    print(remote_api_version)  # TODO compare remote and local api_version
-    return True
+
+    # servers don't validate the API version, client does
+    if Globals.server:
+        return True
+
+    # Now compare the remote and local API versions and agree actual version
+
+    # if client and server have no common API version
+    if (min(remote_api_version["max"], Globals.api_version["max"])
+            < max(remote_api_version["min"], Globals.api_version["min"])):
+        Log("""Fatal: local and remote rdiff-backup have no common API version:
+Remote API version for {rem_ver} must be between {rem_min} and {rem_max}.
+Local API version for {loc_ver} must be between {loc_min} and {loc_max}.
+Please make sure you have compatible versions of rdiff-backup.""".format(
+            rem_ver=remote_version,
+            rem_min=remote_api_version["min"],
+            rem_max=remote_api_version["max"],
+            loc_ver=Globals.version,
+            loc_min=Globals.api_version["min"],
+            loc_max=Globals.api_version["max"]), 1)
+        return False
+    # is there an actual API version and does it fit the other side?
+    if Globals.api_version["actual"]:
+        if (Globals.api_version["actual"] >= remote_api_version["min"]
+                and Globals.api_version["actual"] <= remote_api_version["max"]):
+            conn.Globals.set('api_version["actual"]',
+                             Globals.api_version["actual"])
+            Log("API version agreed to be actual {api_ver} with {cmd}.".format(
+                api_ver=Globals.api_version["actual"], cmd=remote_cmd), 4)
+            return True
+        else:  # the actual version doesn't fit the other side
+            Log("Fatal: remote rdiff-backup doesn't accept the API version "
+                "explicitly set locally to {api_ver}. "
+                "It should be between {rem_min} and {rem_max}. "
+                "Use '--api-version' to set another API version.".format(
+                    api_ver=Globals.api_version["actual"],
+                    rem_min=remote_api_version["min"],
+                    rem_max=remote_api_version["max"]), 1)
+            return False
+    else:
+        # use the default local value but make make sure it's between min
+        # and max on the remote side, while using the highest acceptable value:
+        actual_api_version = max(remote_api_version["min"],
+                                 min(remote_api_version["max"],
+                                     Globals.api_version["default"]))
+        Globals.api_version["actual"] = actual_api_version
+        conn.Globals.set('api_version["actual"]', actual_api_version)
+        Log("API version agreed to be {api_ver} with {cmd}.".format(
+            api_ver=actual_api_version, cmd=remote_cmd), 4)
+        return True
 
 
 def _init_connection_routing(conn, conn_number, remote_cmd):
@@ -319,11 +374,10 @@ def _test_connection(conn_number, rp):
             assert type(conn.os.getuid()) is int
         except AttributeError:  # Windows doesn't support os.getuid()
             assert type(conn.os.listdir(rp.path)) is list
-        version = conn.Globals.get('version')
     except BaseException:
         sys.stderr.write("Server tests failed\n")
         raise
-    if _check_connection_version(conn, __conn_remote_cmds[conn_number]):
+    else:
         print("Server OK")
 
 
