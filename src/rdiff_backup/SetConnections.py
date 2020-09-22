@@ -230,16 +230,26 @@ which should only print out the text: rdiff-backup <version>""" %
 
     try:
         remote_api_version = conn.Globals.get('api_version')
-    except BaseException:  # the remote side doesn't know yet about api_version
-        raise  # FIXME which exception exactly needs to be catched
-        if remote_version != Globals.version:
+    except KeyError:  # the remote side doesn't know yet about api_version
+        # Only version 2.0 could _not_ understand api_version but still be
+        # compatible with version 200 of the API
+        if (remote_version.startswith("2.0.")
+                and (Globals.api_version["actual"]
+                     or Globals.api_version["min"]) == 200):
+            Globals.api_version["actual"] == 200
             Log(
-                "Warning: Local version %s does not match remote version %s. "
-                "Compatibility should still be given though, at least if "
-                "major versions are the same, "
-                "but think about upgrading all rdiff-backup instances." %
-                (Globals.version, remote_version), 2)
-        return True
+                "Warning: remote version {rem_ver} doesn't know about API "
+                "versions but should be compatible with 200.".format(
+                    rem_ver=remote_version), 2)
+            return True
+        else:
+            Log(
+                "Fatal: remote version {rem_ver} isn't compatible with local "
+                "API version {api_ver}.".format(
+                    rem_ver=remote_version,
+                    api_ver=(Globals.api_version["actual"]
+                             or Globals.api_version["min"])), 1)
+            return False
 
     # servers don't validate the API version, client does
     if Globals.server:
