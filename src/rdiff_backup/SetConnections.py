@@ -86,7 +86,10 @@ def cmdpair2rp(cmd_pair):
         conn = _init_connection(cmd)
     else:
         conn = Globals.local_connection
-    return rpath.RPath(conn, filename).normalize()
+    if conn:
+        return rpath.RPath(conn, filename).normalize()
+    else:
+        return None
 
 
 def _desc2cmd_pairs(desc_pair):
@@ -181,7 +184,7 @@ def _init_connection(remote_cmd):
     conn = connection.PipeConnection(stdout, stdin, conn_number)
 
     if not _validate_connection_version(conn, remote_cmd):
-        sys.exit()
+        return None
     Log("Registering connection %d" % conn_number, 7)
     _init_connection_routing(conn, conn_number, remote_cmd)
     _init_connection_settings(conn)
@@ -355,7 +358,8 @@ def CloseConnections():
     """Close all connections.  Run by client"""
     assert not Globals.server
     for conn in Globals.connections:
-        conn.quit()
+        if conn:  # could be None, if the connection failed
+            conn.quit()
     del Globals.connections[1:]  # Only leave local connection
     Globals.connection_dict = {0: Globals.local_connection}
     Globals.backup_reader = Globals.isbackup_reader = \
@@ -363,32 +367,55 @@ def CloseConnections():
 
 
 def TestConnections(rpaths):
-    """Test connections, printing results"""
-    if len(Globals.connections) == 1:
-        print("No remote connections specified")
+    """Test connections, printing results.
+    Returns 0 if all connections work, 1 if one or more failed,
+    2 if the length of the list of connections isn't correct, most probably
+    because the user called rdiff-backup incorrectly."""
+    # the function doesn't use the log functions because it might not have
+    # an error or log file to use.
+    conn_len = len(Globals.connections)
+    if conn_len == 1:
+        print("No remote connections specified, only local one available.")
+        return 2
+    elif conn_len != len(rpaths) + 1:
+        print("All %d parameters must be remote of the form 'server::path'." %
+              len(rpaths))
+        return 2
+
+    # we create a list of all test results, skipping the connection 0, which
+    # is the local one.
+    results = map(lambda i: _test_connection(i, rpaths[i - 1]),
+                  range(1, conn_len))
+    if all(results):
+        return 0
     else:
-        assert len(Globals.connections) == len(rpaths) + 1, \
-            "All %d parameters must be remote of the form 'server::path'." % \
-            len(rpaths)
-        for i in range(1, len(Globals.connections)):
-            _test_connection(i, rpaths[i - 1])
+        return 1
 
 
 def _test_connection(conn_number, rp):
-    """Test connection.  conn_number 0 is the local connection"""
+    """Test connection if it is not None, else skip. Returns True/False
+    depending on test results."""
+    # the function doesn't use the log functions because it might not have
+    # an error or log file to use.
     print("Testing server started by: ", __conn_remote_cmds[conn_number])
     conn = Globals.connections[conn_number]
+    if conn is None:
+        sys.stderr.write("- Connection failed, server tests skipped\n")
+        return False
+    # FIXME the tests don't sound right, the path given needs to pre-exist
+    # on Windows but not on Linux? What are we exactly testing here?
     try:
         assert conn.Globals.get('current_time') is None
         try:
             assert type(conn.os.getuid()) is int
         except AttributeError:  # Windows doesn't support os.getuid()
             assert type(conn.os.listdir(rp.path)) is list
-    except BaseException:
-        sys.stderr.write("Server tests failed\n")
-        raise
+    except BaseException as exc:
+        sys.stderr.write(f"- Server tests failed due to {exc}\n")
+        return False
     else:
-        print("Server OK")
+        print("- Server OK")
+        return True
 
 
 def _safe_str(cmd):

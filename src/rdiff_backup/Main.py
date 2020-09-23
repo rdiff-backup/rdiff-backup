@@ -416,6 +416,13 @@ def _Main(arglist):
     cmdpairs = SetConnections.get_cmd_pairs(_args, _remote_schema, _remote_cmd)
     Security.initialize(_action or "mirror", cmdpairs)
     rps = list(map(SetConnections.cmdpair2rp, cmdpairs))
+
+    # if any of the remote paths is None, we have an error.
+    # We continue to test-server so that all connections can be tested at once.
+    if any(map(lambda x: x is None, rps)) and _action != "test-server":
+        _cleanup()
+        _sys.exit(1)
+
     _final_set_action(rps)
     _misc_setup(rps)
     return_val = _take_action(rps)
