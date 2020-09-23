@@ -473,8 +473,9 @@ def get_acl_lists_from_rp(rp):
         else:
             raise
     if rp.isdir():
+        dir_fd = os.open(rp.path, os.O_RDONLY)
         try:
-            def_acl = posix1e.ACL(filedef=os.fsdecode(rp.path))
+            def_acl = posix1e.ACL(fd=dir_fd)
         except (FileNotFoundError, UnicodeEncodeError) as exc:
             log.Log(
                 "Warning: unable to read default ACL from %s: %s" %
@@ -485,6 +486,8 @@ def get_acl_lists_from_rp(rp):
                 def_acl = None
             else:
                 raise
+        finally:
+            os.close(dir_fd)
     else:
         def_acl = None
     return (acl and _acl_to_list(acl), def_acl and _acl_to_list(def_acl))
