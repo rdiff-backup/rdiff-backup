@@ -96,7 +96,8 @@ def _parse_cmdlineoptions(arglist):  # noqa: C901
             "restrict-read-only=", "restrict-update-only=", "server",
             "ssh-no-compression", "tempdir=", "terminal-verbosity=",
             "test-server", "use-compatible-timestamps", "user-mapping-file=",
-            "verbosity=", "verify", "verify-at-time=", "version", "no-fsync"
+            "verbosity=", "verify", "verify-at-time=", "version", "no-fsync",
+            "versions", "api-version="
         ])
     except getopt.error as e:
         _commandline_error("Bad commandline options: " + str(e))
@@ -252,18 +253,39 @@ def _parse_cmdlineoptions(arglist):  # noqa: C901
         elif opt == "--verify-at-time":
             _action, _restore_timestr = "verify", arg
         elif opt == "-V" or opt == "--version":
-            print("rdiff-backup " + Globals.version)
-            sys.exit(0)
+            _action = "version"
+            version_format = "legacy"
+        elif opt == "--versions":
+            _action = "version"
+            version_format = "full"
+        elif opt == "--api-version":
+            Globals.set_api_version(arg)
         elif opt == "--no-fsync":
             Globals.do_fsync = False
         else:
             Log.FatalError("Unknown option %s" % opt)
-    Log("Using rdiff-backup version %s" % (Globals.version), 4)
-    Log("\twith %s %s version %s" % (
-        sys.implementation.name,
-        sys.executable,
-        platform.python_version()), 4)
-    Log("\ton %s, fs encoding %s" % (platform.platform(), sys.getfilesystemencoding()), 4)
+    if _action == "version":
+        _output_version(version_format=version_format, exit=True)
+    else:
+        _output_version(version_format="log")
+
+
+def _output_version(version_format, exit=False):
+    if version_format == "legacy" and Globals.get_api_version() == 200:
+        print("rdiff-backup " + Globals.version)
+    else:
+        # FIXME use proper YAML format
+        version_strings = (
+            f"Using rdiff-backup version {Globals.version}",
+            f"API versions are {Globals.api_version}",
+            f"with {sys.implementation.name} {sys.executable} version {platform.python_version()}",
+            f"on {platform.platform()}, fs encoding {sys.getfilesystemencoding()}")
+        if version_format == "log":
+            Log(", ".join(version_strings), 4)
+        else:
+            print("\n\t".join(version_strings))
+    if exit:
+        sys.exit(0)
 
 
 def _check_action():
