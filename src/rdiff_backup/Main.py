@@ -25,7 +25,7 @@ import io
 import tempfile
 import time
 import errno
-import platform
+import yaml
 from .log import Log, LoggerError, ErrorLog
 from . import (
     Globals, Time, SetConnections, robust, rpath,
@@ -271,19 +271,21 @@ def _parse_cmdlineoptions(arglist):  # noqa: C901
 
 
 def _output_version(version_format, exit=False):
+    """Output either the 'legacy' version string with 'rdiff-backup <version>'
+    or all the runtime information provided as YAML structure, either on
+    one line for the 'log' format or properly for the 'full' format."""
+
     if version_format == "legacy" and Globals.get_api_version() == 200:
         print("rdiff-backup " + Globals.version)
     else:
-        # FIXME use proper YAML format
-        version_strings = (
-            f"Using rdiff-backup version {Globals.version}",
-            f"API versions are {Globals.api_version}",
-            f"with {sys.implementation.name} {sys.executable} version {platform.python_version()}",
-            f"on {platform.platform()}, fs encoding {sys.getfilesystemencoding()}")
+        runtime_info = Globals.get_runtime_info()
         if version_format == "log":
-            Log(", ".join(version_strings), 4)
+            # make sure the YAML output is on one line for logging
+            Log("Runtime information: " + " ".join(yaml.safe_dump(
+                runtime_info, default_flow_style=True).split("\n")), 4)
         else:
-            print("\n\t".join(version_strings))
+            print(yaml.safe_dump(runtime_info,
+                                 explicit_start=True, explicit_end=True))
     if exit:
         sys.exit(0)
 

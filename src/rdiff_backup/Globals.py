@@ -20,6 +20,8 @@
 
 import re
 import os
+import platform
+import sys
 from . import log
 
 # The current version of rdiff-backup
@@ -421,3 +423,25 @@ def get_api_version():
     """Return the actual API version, either set explicitly or the default
     one"""
     return api_version["actual"] or api_version["default"] 
+
+
+def get_runtime_info():
+    """Return a structure containing all relevant runtime information about
+    the executable, Python and the operating system.
+    Beware that additional information might be added at any time."""
+    return {
+        'exec': {
+            'version': version,
+            'api_version': api_version,
+            'argv': sys.argv,
+        },
+        'python': {
+            'name': sys.implementation.name,
+            'executable': sys.executable,
+            'version': platform.python_version(),
+        },
+        'system': {
+            'platform': platform.platform(),
+            'fs_encoding': sys.getfilesystemencoding(),
+        },
+    }

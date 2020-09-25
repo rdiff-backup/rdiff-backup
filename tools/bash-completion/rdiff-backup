@@ -30,7 +30,7 @@ _rdiff_backup ()
 		|--restrict-update-only|--tempdir"
 
 	# These options will be completed by a number, from 0 to 9.
-	wnumarg="--terminal-verbosity|--verbosity|-v"
+	wnumarg="--terminal-verbosity|--verbosity|-v|--api-version"
 
 	# These options requires a non-completable argument.
 	# They won't be completed at all.
@@ -41,7 +41,7 @@ _rdiff_backup ()
 		|--remove-older-than|--verify-at-time"
 
 	# Available long options
-	longopts="--allow-duplicate-timestamps --backup-mode \
+	longopts="--allow-duplicate-timestamps --api-version --backup-mode \
 		--calculate-average --carbonfile --check-destination-dir \
 		--compare --compare-at-time --compare-full --compare-full-at-time \
 		--compare-hash --compare-hash-at-time --create-full-path --current-time \
@@ -60,7 +60,7 @@ _rdiff_backup ()
 		--restrict-read-only --restrict-update-only --ssh-no-compression --tempdir \
 		--terminal-verbosity --test-server --use-compatible-timestamps \
 		--user-mapping-file --verbosity --verify --verify-at-time \
-		--version"
+		--version --versions"
 
 	# Available short options
 	shortopts="-b -l -r -v -V"
