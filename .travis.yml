@@ -7,10 +7,10 @@ dist: bionic
 install: pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
 
 python:
-  - 3.5
+  - 3.7  # default version, used under Windows
   - 3.6
-  - 3.7
   - 3.8
+  - 3.9-dev  # FIXME Python 3.9 is still only release candidate
 
 #=== DEPLOYMENTS ===
 # - everything to GitHub releases

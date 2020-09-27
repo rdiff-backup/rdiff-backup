@@ -132,7 +132,7 @@ There is no prior release schedule – they are made when deemed fit.
 
 The same pre-requisites as for the installation of rdiff-backup also apply for building:
 
-* Python 3.5 or higher
+* Python 3.6 or higher
 * librsync 1.0.0 or higher
 
 Further python dependencies are documented in [requirements.txt](../requirements.txt).
