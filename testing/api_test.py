@@ -35,5 +35,6 @@ class ApiVersionTest(unittest.TestCase):
         out_info = yaml.safe_load(output)
         self.assertEqual(out_info['exec']['api_version']['actual'], api_version['max'])
 
+
 if __name__ == "__main__":
     unittest.main()

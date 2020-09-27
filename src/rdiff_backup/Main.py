@@ -445,7 +445,7 @@ def _Main(arglist):
     # We continue to test-server so that all connections can be tested at once.
     if any(map(lambda x: x is None, rps)) and _action != "test-server":
         _cleanup()
-        _sys.exit(1)
+        sys.exit(1)
 
     _final_set_action(rps)
     _misc_setup(rps)

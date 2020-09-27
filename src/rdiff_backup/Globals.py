@@ -415,14 +415,14 @@ def set_api_version(val):
             f"API version must be set to an integer, received {val} instead.")
     if intval < api_version["min"] or intval > api_version["max"]:
         log.Log.FatalError(f"API version {val} must be between "
-            f"{api_version['min']} and {api_version['max']}.")
+                           f"{api_version['min']} and {api_version['max']}.")
     api_version["actual"] = intval
 
 
 def get_api_version():
     """Return the actual API version, either set explicitly or the default
     one"""
-    return api_version["actual"] or api_version["default"] 
+    return api_version["actual"] or api_version["default"]
 
 
 def get_runtime_info():
