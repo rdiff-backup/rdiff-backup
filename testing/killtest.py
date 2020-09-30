@@ -1,5 +1,6 @@
 import unittest
 import os
+import shutil
 import signal
 import sys
 import random
@@ -95,10 +96,11 @@ class ProcessFuncs(unittest.TestCase):
             print("---------------------- killed PID/RC %d/%d" % (exitpid, exitstatus))
             # it should be like that but robust handling changes exit code:
             # assert exitstatus & (1<<8-1) == self.killsignal, (
-            assert exitstatus != 0, (
-                "Pid %d/%d killed but exited with return code %d, "
-                "unequal to signal %d, error unidentified!") % (
-                    pid, exitpid, exitstatus, self.killsignal)
+            self.assertNotEqual(
+                exitstatus, 0,
+                "Pid {pid}/{exit} killed by signal {sig}, but exited "
+                "with return code {rc} which should be non-zero.".format(
+                    pid=pid, exit=exitpid, rc=exitstatus, sig=self.killsignal))
 
     def create_killtest_dirs(self):
         """Create testfiles/killtest? directories
@@ -111,9 +113,11 @@ class ProcessFuncs(unittest.TestCase):
 
         def copy_thrice(input, output):
             """Copy input directory to output directory three times"""
-            assert not os.system(b"cp -a %s %s" % (input, output))
-            assert not os.system(b"cp -a %s %s/killtesta" % (input, output))
-            assert not os.system(b"cp -a %s %s/killtestb" % (input, output))
+            shutil.copytree(input, output, symlinks=True)
+            shutil.copytree(input, os.path.join(output, b"killtesta"),
+                            symlinks=True)
+            shutil.copytree(input, os.path.join(output, b"killtestb"),
+                            symlinks=True)
 
         for i in range(len(Local.ktrp)):
             Local.ktrp[i].setdata()
@@ -121,30 +125,6 @@ class ProcessFuncs(unittest.TestCase):
                 Local.ktrp[i].delete()
             copy_thrice(os.path.join(old_test_dir, b"increment%d" % (i + 1)),
                         Local.ktrp[i].path)
-
-    def runtest_sequence(self,
-                         total_tests,
-                         exclude_rbdir,
-                         ignore_tmp,
-                         compare_links,
-                         stop_on_error=None):
-        timing_problems, failures = 0, 0
-        for i in range(total_tests):
-            try:
-                result = self.runtest(exclude_rbdir, ignore_tmp, compare_links)
-            except TimingError as te:
-                print(te)
-                timing_problems += 1
-                continue
-            if result != 1:
-                if stop_on_error:
-                    assert 0, "Compare Failure"
-                else:
-                    failures += 1
-
-        print(total_tests, "tests attempted total")
-        print("%s setup problems, %s failures, %s successes" %
-              (timing_problems, failures, total_tests - timing_problems - failures))
 
 
 class KillTest(ProcessFuncs):
@@ -201,26 +181,27 @@ class KillTest(ProcessFuncs):
         """
         rbdir = rp.append_path("rdiff-backup-data")
         inclist = restore.get_inclist(rbdir.append("current_mirror"))
-        assert 1 <= len(inclist) <= 2, str([x.path for x in inclist])
+        self.assertIn(len(inclist), (1, 2),
+            "There must be 1 or 2 elements in '{paths_list}'.".format(
+                paths_list=str([x.path for x in inclist])))
 
         inc_date_pairs = [(inc.getinctime(), inc) for inc in inclist]
         inc_date_pairs.sort()
         if len(inclist) == 2:
-            assert inc_date_pairs[-1][0] == curtime, \
-                (inc_date_pairs[-1][0], curtime)
+            self.assertEqual(inc_date_pairs[-1][0], curtime)
             return 1
 
         if inc_date_pairs[-1][0] == curtime:
             result = 0
             marker_time = curtime - 10000
         else:
-            assert inc_date_pairs[-1][0] == curtime - 10000
+            self.assertEqual(inc_date_pairs[-1][0], curtime - 10000)
             marker_time = curtime
             result = -1
 
         cur_mirror_rp = rbdir.append("current_mirror.%s.data" %
                                      (Time.timetostring(marker_time), ))
-        assert not cur_mirror_rp.lstat()
+        self.assertFalse(cur_mirror_rp.lstat())
         cur_mirror_rp.touch()
         return result
 
@@ -237,7 +218,7 @@ class KillTest(ProcessFuncs):
         # is kind of special (there's no incrementing, so different
         # code)
         self.exec_rb(10000, 1, Local.ktrp[2].path, Local.rpout.path)
-        assert compare_recursive(Local.ktrp[2], Local.rpout)
+        self.assertTrue(compare_recursive(Local.ktrp[2], Local.rpout))
 
         def cycle_once(min_max_time_pair, curtime, input_rp, old_rp):
             """Backup input_rp, kill, regress, and then compare"""
@@ -245,9 +226,10 @@ class KillTest(ProcessFuncs):
             self.exec_and_kill(min_max_time_pair, curtime, input_rp.path,
                                Local.rpout.path)
             result = self.mark_incomplete(curtime, Local.rpout)
-            assert not self.exec_rb(None, 1, '--check-destination-dir',
-                                    Local.rpout.path)
-            assert compare_recursive(old_rp, Local.rpout, compare_hardlinks=0)
+            self.assertFalse(self.exec_rb(None, 1, '--check-destination-dir',
+                                          Local.rpout.path))
+            self.assertTrue(
+                compare_recursive(old_rp, Local.rpout, compare_hardlinks=0))
             return result
 
         # Keep backing ktrp[0], and then regressing to ktrp[2].  Then go to ktrp[0]
