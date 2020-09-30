@@ -48,9 +48,9 @@ class inctest(unittest.TestCase):
 
     def check_time(self, rp):
         """Make sure that rp is an inc file, and time is Time.prevtime"""
-        assert rp.isincfile(), rp
+        self.assertTrue(rp.isincfile())
         t = rp.getinctime()
-        assert t == Time.prevtime, (t, Time.prevtime)
+        self.assertEqual(t, Time.prevtime)
 
     def testreg(self):
         """Test increment of regular files"""
@@ -63,17 +63,18 @@ class inctest(unittest.TestCase):
             rpd.delete()
 
         diffrp = increment.Increment(rf, exec1, target)
-        assert diffrp.isreg(), diffrp
-        assert diffrp._equal_verbose(exec1, check_index=0, compare_size=0)
+        self.assertTrue(diffrp.isreg())
+        self.assertTrue(
+            diffrp._equal_verbose(exec1, check_index=0, compare_size=0))
         self.check_time(diffrp)
-        assert diffrp.getinctype() == b'diff', diffrp.getinctype()
+        self.assertEqual(diffrp.getinctype(), b'diff')
         diffrp.delete()
 
     def testmissing(self):
         """Test creation of missing files"""
         missing_rp = increment.Increment(rf, nothing, target)
         self.check_time(missing_rp)
-        assert missing_rp.getinctype() == b'missing', missing_rp.getinctype()
+        self.assertEqual(missing_rp.getinctype(), b'missing')
         missing_rp.delete()
 
     def testsnapshot(self):
@@ -81,14 +82,14 @@ class inctest(unittest.TestCase):
         Globals.compression = None
         snap_rp = increment.Increment(rf, sym, target)
         self.check_time(snap_rp)
-        assert rpath._cmp_file_attribs(snap_rp, sym)
-        assert rpath.cmp(snap_rp, sym)
+        self.assertTrue(rpath._cmp_file_attribs(snap_rp, sym))
+        self.assertTrue(rpath.cmp(snap_rp, sym))
         snap_rp.delete()
 
         snap_rp2 = increment.Increment(sym, rf, target)
         self.check_time(snap_rp2)
-        assert snap_rp2._equal_verbose(rf, check_index=0)
-        assert rpath.cmp(snap_rp2, rf)
+        self.assertTrue(snap_rp2._equal_verbose(rf, check_index=0))
+        self.assertTrue(rpath.cmp(snap_rp2, rf))
         snap_rp2.delete()
 
     def testGzipsnapshot(self):
@@ -96,28 +97,29 @@ class inctest(unittest.TestCase):
         Globals.compression = 1
         rp = increment.Increment(rf, sym, target)
         self.check_time(rp)
-        assert rp._equal_verbose(sym, check_index=0, compare_size=0)
-        assert rpath.cmp(rp, sym)
+        self.assertTrue(rp._equal_verbose(sym, check_index=0, compare_size=0))
+        self.assertTrue(rpath.cmp(rp, sym))
         rp.delete()
 
         rp = increment.Increment(sym, rf, target)
         self.check_time(rp)
-        assert rp._equal_verbose(rf, check_index=0, compare_size=0)
-        assert rpath._cmp_file_obj(rp.open("rb", 1), rf.open("rb"))
-        assert rp.isinccompressed()
+        self.assertTrue(rp._equal_verbose(rf, check_index=0, compare_size=0))
+        with rp.open("rb", 1) as rp_fd, rf.open("rb") as rf_fd:
+            self.assertTrue(rpath._cmp_file_obj(rp_fd, rf_fd))
+        self.assertTrue(rp.isinccompressed())
         rp.delete()
 
     def testdir(self):
         """Test increment on dir"""
         rp = increment.Increment(sym, dir, target)
         self.check_time(rp)
-        assert rp.lstat()
-        assert target.isdir()
-        assert dir._equal_verbose(rp,
+        self.assertTrue(rp.lstat())
+        self.assertTrue(target.isdir())
+        self.assertTrue(dir._equal_verbose(rp,
                                   check_index=0,
                                   compare_size=0,
-                                  compare_type=0)
-        assert rp.isreg()
+                                  compare_type=0))
+        self.assertTrue(rp.isreg())
         rp.delete()
         target.delete()
 
@@ -126,9 +128,9 @@ class inctest(unittest.TestCase):
         Globals.compression = None
         rp = increment.Increment(rf, rf2, target)
         self.check_time(rp)
-        assert rp._equal_verbose(rf2, check_index=0, compare_size=0)
+        self.assertTrue(rp._equal_verbose(rf2, check_index=0, compare_size=0))
         Rdiff.patch_local(rf, rp, out2)
-        assert rpath.cmp(rf2, out2)
+        self.assertTrue(rpath.cmp(rf2, out2))
         rp.delete()
         out2.delete()
 
@@ -137,9 +139,9 @@ class inctest(unittest.TestCase):
         Globals.compression = 1
         rp = increment.Increment(rf, rf2, target)
         self.check_time(rp)
-        assert rp._equal_verbose(rf2, check_index=0, compare_size=0)
+        self.assertTrue(rp._equal_verbose(rf2, check_index=0, compare_size=0))
         Rdiff.patch_local(rf, rp, out2, delta_compressed=1)
-        assert rpath.cmp(rf2, out2)
+        self.assertTrue(rpath.cmp(rf2, out2))
         rp.delete()
         out2.delete()
 
@@ -147,13 +149,14 @@ class inctest(unittest.TestCase):
         """Here a .gz file shouldn't be compressed"""
         Globals.compression = 1
         rpath.copy(rf, out_gz)
-        assert out_gz.lstat()
+        self.assertTrue(out_gz.lstat())
 
         rp = increment.Increment(rf, out_gz, target)
         self.check_time(rp)
-        assert rp._equal_verbose(out_gz, check_index=0, compare_size=0)
+        self.assertTrue(
+            rp._equal_verbose(out_gz, check_index=0, compare_size=0))
         Rdiff.patch_local(rf, rp, out2)
-        assert rpath.cmp(out_gz, out2)
+        self.assertTrue(rpath.cmp(out_gz, out2))
         rp.delete()
         out2.delete()
         out_gz.delete()
