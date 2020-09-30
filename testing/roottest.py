@@ -25,13 +25,15 @@ assert userid, "Unable to assess ID of non-root user to be used for tests"
 assert user, "Unable to assess name of non-root user to be used for tests"
 
 
-def Run(cmd):
-    print("Running: ", cmd)
-    rc = os.system(cmd)
-    assert not rc, "Command `%a` failed with rc=%d" % (cmd, rc)
+class BaseRootTest(unittest.TestCase):
+    def _run_cmd(self, cmd):
+        print("Running: ", cmd)
+        rc = os.system(cmd)
+        self.assertEqual(
+            rc, 0, "Command '{cmd}' failed with rc={rc}".format(cmd=cmd, rc=rc))
 
 
-class RootTest(unittest.TestCase):
+class RootTest(BaseRootTest):
     dirlist1 = [
         os.path.join(old_test_dir, b"root"),
         os.path.join(old_test_dir, b"various_file_types"),
@@ -188,7 +190,7 @@ class RootTest(unittest.TestCase):
         Main._cleanup()
 
 
-class HalfRoot(unittest.TestCase):
+class HalfRoot(BaseRootTest):
     """Backing up files where origin is root and destination is non-root"""
 
     def make_dirs(self):
@@ -283,12 +285,12 @@ class HalfRoot(unittest.TestCase):
         cmd_schema = (RBBin + b" --current-time %i --remote-schema '%%s' %b '%b'::%b")
 
         cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
-        Run(cmd1)
+        self._run_cmd(cmd1)
         in_rp1.setdata()
         outrp.setdata()
 
         cmd2 = cmd_schema % (20000, in_rp2.path, remote_schema, outrp.path)
-        Run(cmd2)
+        self._run_cmd(cmd2)
         in_rp2.setdata()
         outrp.setdata()
 
@@ -297,7 +299,7 @@ class HalfRoot(unittest.TestCase):
         Myrm(rout_rp.path)
         cmd3 = restore_schema % (b'10000', remote_schema, outrp.path,
                                  rout_rp.path)
-        Run(cmd3)
+        self._run_cmd(cmd3)
         assert compare_recursive(in_rp1, rout_rp)
         rout_perms = rout_rp.append('unreadable_dir').getperms()
         outrp_perms = outrp.append('unreadable_dir').getperms()
@@ -307,7 +309,7 @@ class HalfRoot(unittest.TestCase):
         Myrm(rout_rp.path)
         cmd4 = restore_schema % (b"now", remote_schema, outrp.path,
                                  rout_rp.path)
-        Run(cmd4)
+        self._run_cmd(cmd4)
         assert compare_recursive(in_rp2, rout_rp)
         rout_perms = rout_rp.append('unreadable_dir').getperms()
         outrp_perms = outrp.append('unreadable_dir').getperms()
@@ -317,10 +319,10 @@ class HalfRoot(unittest.TestCase):
         self.cause_regress(outrp)
         cmd5 = (b'su -c "%s --check-destination-dir %s" %s' %
                 (RBBin, outrp.path, user.encode()))
-        Run(cmd5)
+        self._run_cmd(cmd5)
 
 
-class NonRoot(unittest.TestCase):
+class NonRoot(BaseRootTest):
     """Test backing up as non-root user
 
     Test backing up a directory with files of different userids and
@@ -349,7 +351,7 @@ class NonRoot(unittest.TestCase):
                          os.path.join(abs_test_dir, b"root_out2"))
         if sp.lstat():
             Myrm(sp.path)
-        Run(b"cp -a %s %s" % (rp.path, sp.path))
+        self._run_cmd(b"cp -a %s %s" % (rp.path, sp.path))
         rp2 = sp.append("2")
         rp2.chown(2, 2)
         rp3 = sp.append("3")
@@ -362,7 +364,7 @@ class NonRoot(unittest.TestCase):
         global user
         backup_cmd = (b"%s --no-compare-inode --current-time %i %b %b" % (
                       RBBin, time, input_rp.path, output_rp.path))
-        Run(b"su %s -c '%s'" % (user.encode(), backup_cmd))
+        self._run_cmd(b"su %s -c '%s'" % (user.encode(), backup_cmd))
 
     def restore(self, dest_rp, restore_rp, time=None):
         Myrm(restore_rp.path)
@@ -372,7 +374,7 @@ class NonRoot(unittest.TestCase):
         else:
             restore_cmd = b"%s -r %i %b %b" % (
                           RBBin, time, dest_rp.path, restore_rp.path)
-        Run(restore_cmd)
+        self._run_cmd(restore_cmd)
 
     def test_non_root(self):
         """Main non-root -> root test"""
