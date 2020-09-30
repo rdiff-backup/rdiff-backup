@@ -26,9 +26,9 @@ class MetadataTest(unittest.TestCase):
         ]
         for filename in filenames:
             quoted = quote_path(filename)
-            assert b"\n" not in quoted, quoted
+            self.assertNotIn(b"\n", quoted)
             result = unquote_path(quoted)
-            assert result == filename, (quoted, result, filename)
+            self.assertEqual(result, filename)
 
     def get_rpaths(self):
         """Return list of rorps"""
@@ -46,7 +46,7 @@ class MetadataTest(unittest.TestCase):
         for rp in self.get_rpaths():
             record = MetadataFile._object_to_record(rp)
             new_rorp = RorpExtractor._record_to_object(record)
-            assert new_rorp == rp, (new_rorp, rp, record)
+            self.assertEqual(new_rorp, rp)
 
     def testIterator(self):
         """Test writing RORPs to file and iterating them back"""
@@ -62,10 +62,9 @@ class MetadataTest(unittest.TestCase):
         fp.read()
         fp.seek(0)
         outlist = list(RorpExtractor(fp).iterate())
-        assert len(rplist) == len(outlist), (len(rplist), len(outlist))
+        self.assertEqual(len(rplist), len(outlist))
         for i in range(len(rplist)):
-            if not rplist[i]._equal_verbose(outlist[i]):
-                assert 0, (i, str(rplist[i]), str(outlist[i]))
+            self.assertTrue(rplist[i]._equal_verbose(outlist[i]))
         fp.close()
 
     def write_metadata_to_temp(self):
@@ -126,7 +125,7 @@ class MetadataTest(unittest.TestCase):
             i += 1
         print("Reading %s metadata entries took %s seconds." %
               (i, time.time() - start_time))
-        assert i == 51
+        self.assertEqual(i, 51)
 
     def test_write(self):
         """Test writing to metadata file, then reading back contents"""
@@ -144,17 +143,17 @@ class MetadataTest(unittest.TestCase):
         sel.parse_selection_args((), ())
         rps = list(sel.set_iter())
 
-        assert not temprp.lstat()
+        self.assertFalse(temprp.lstat())
         write_mf = MetadataFile(temprp, 'w')
         for rp in rps:
             write_mf.write_object(rp)
         write_mf.close()
-        assert temprp.lstat()
+        self.assertTrue(temprp.lstat())
 
         reread_rps = list(MetadataFile(temprp, 'r').get_objects())
-        assert len(reread_rps) == len(rps), (len(reread_rps), len(rps))
+        self.assertEqual(len(reread_rps), len(rps))
         for i in range(len(reread_rps)):
-            assert reread_rps[i] == rps[i], i
+            self.assertEqual(reread_rps[i], rps[i])
 
     def test_patch(self):
         """Test combining 3 iters of metadata rorps"""
@@ -182,11 +181,11 @@ class MetadataTest(unittest.TestCase):
             [iter(current), iter(diff1),
              iter(diff2)])
         out1 = next(output)
-        assert out1 is rp1new, out1
+        self.assertIs(out1, rp1new)
         out2 = next(output)
-        assert out2 is rp2, out2
+        self.assertIs(out2, rp2)
         out3 = next(output)
-        assert out3 is rp3, out3
+        self.assertIs(out3, rp3)
         self.assertRaises(StopIteration, output.__next__)
 
     def test_meta_patch_cycle(self):
@@ -204,7 +203,8 @@ class MetadataTest(unittest.TestCase):
         def compare(man, rootrp, time):
             sel = selection.Select(rootrp)
             sel.parse_selection_args((), ())  # make sure incorrect files are filtered out
-            assert iter_equal(sel.set_iter(), man.get_meta_at_time(time, None))
+            self.assertTrue(iter_equal(
+                sel.set_iter(), man.get_meta_at_time(time, None)))
 
         self.make_temp()
         Globals.rbdir = tempdir
@@ -234,14 +234,14 @@ class MetadataTest(unittest.TestCase):
 
         man = PatchDiffMan()
         rplist = man.sorted_prefix_inclist(b'mirror_metadata')
-        assert rplist[0].getinctype() == b'snapshot'
-        assert rplist[0].getinctime() == 40000
-        assert rplist[1].getinctype() == b'snapshot'
-        assert rplist[1].getinctime() == 30000
-        assert rplist[2].getinctype() == b'diff'
-        assert rplist[2].getinctime() == 20000
-        assert rplist[3].getinctype() == b'diff'
-        assert rplist[3].getinctime() == 10000
+        self.assertEqual(rplist[0].getinctype(), b'snapshot')
+        self.assertEqual(rplist[0].getinctime(), 40000)
+        self.assertEqual(rplist[1].getinctype(), b'snapshot')
+        self.assertEqual(rplist[1].getinctime(), 30000)
+        self.assertEqual(rplist[2].getinctype(), b'diff')
+        self.assertEqual(rplist[2].getinctime(), 20000)
+        self.assertEqual(rplist[3].getinctype(), b'diff')
+        self.assertEqual(rplist[3].getinctime(), 10000)
 
         compare(man, inc1, 10000)
         compare(man, inc2, 20000)
