@@ -175,7 +175,7 @@ setup(
     # maintainer and maintainer_email could be used to differentiate the package owner
     url="https://rdiff-backup.net/",
     download_url="https://github.com/rdiff-backup/rdiff-backup/releases",
-    python_requires='~=3.5',
+    python_requires='~=3.6',
     platforms=['linux', 'win32'],
     packages=["rdiff_backup"],
     package_dir={"": "src"},  # tell distutils packages are under src
