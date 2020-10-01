@@ -91,7 +91,7 @@ rdiff-backup FAQ
     If you wish to run rdiff-backup under Cygwin, use at least version
     1.1.12. The setup under Cygwin is the same as under other Unix-like
     operating systems. From the Cygwin installer you will need Python
-    3.5 or higher (under Interpreters), autoconf, automake, binutils,
+    3.6 or higher (under Interpreters), autoconf, automake, binutils,
     gcc, make, and patchutils (all under Devel). Then you will need to
     compile and install librsync, which can be downloaded [from
     Sourceforge](https://sourceforge.net/project/showfiles.php?group_id=56125).
