@@ -116,9 +116,9 @@ class inctest(unittest.TestCase):
         self.assertTrue(rp.lstat())
         self.assertTrue(target.isdir())
         self.assertTrue(dir._equal_verbose(rp,
-                                  check_index=0,
-                                  compare_size=0,
-                                  compare_type=0))
+                                           check_index=0,
+                                           compare_size=0,
+                                           compare_type=0))
         self.assertTrue(rp.isreg())
         rp.delete()
         target.delete()

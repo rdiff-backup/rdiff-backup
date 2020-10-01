@@ -181,7 +181,8 @@ class KillTest(ProcessFuncs):
         """
         rbdir = rp.append_path("rdiff-backup-data")
         inclist = restore.get_inclist(rbdir.append("current_mirror"))
-        self.assertIn(len(inclist), (1, 2),
+        self.assertIn(
+            len(inclist), (1, 2),
             "There must be 1 or 2 elements in '{paths_list}'.".format(
                 paths_list=str([x.path for x in inclist])))
 

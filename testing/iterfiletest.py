@@ -56,7 +56,7 @@ class testIterFile(unittest.TestCase):
         f_out = next(new_iter)
         self.assertEqual(f_out.read(50000), b"a" * 50000)
         with self.assertRaises(IOError):
-            buf = f_out.read(190 * 1024)
+            buf = f_out.read(190 * 1024)  # noqa: F841
 
         self.assertEqual(next(new_iter), b"foo")
         self.assertRaises(StopIteration, new_iter.__next__)
