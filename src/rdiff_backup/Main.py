@@ -97,7 +97,7 @@ def _parse_cmdlineoptions(arglist):  # noqa: C901
             "ssh-no-compression", "tempdir=", "terminal-verbosity=",
             "test-server", "use-compatible-timestamps", "user-mapping-file=",
             "verbosity=", "verify", "verify-at-time=", "version", "no-fsync",
-            "versions", "api-version="
+            "api-version="
         ])
     except getopt.error as e:
         _commandline_error("Bad commandline options: " + str(e))
@@ -255,9 +255,6 @@ def _parse_cmdlineoptions(arglist):  # noqa: C901
         elif opt == "-V" or opt == "--version":
             _action = "version"
             version_format = "legacy"
-        elif opt == "--versions":
-            _action = "version"
-            version_format = "full"
         elif opt == "--api-version":
             Globals.set_api_version(arg)
         elif opt == "--no-fsync":
@@ -273,7 +270,8 @@ def _parse_cmdlineoptions(arglist):  # noqa: C901
 def _output_version(version_format, exit=False):
     """Output either the 'legacy' version string with 'rdiff-backup <version>'
     or all the runtime information provided as YAML structure, either on
-    one line for the 'log' format or properly for the 'full' format."""
+    one line for the 'log' format or properly for the 'full' format,
+    implictly used when the API version is more than 200."""
 
     if version_format == "legacy" and Globals.get_api_version() == 200:
         print("rdiff-backup " + Globals.version)

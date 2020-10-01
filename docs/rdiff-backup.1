@@ -75,9 +75,11 @@ parameter.
 .BI "\-\-api-version " api
 Sets the API version to the given integer between minimum and maximum versions
 as given by the
-.B \-\-versions
-option. It is the responsibility of the user to make sure that this version is
-also supported by any server started by this client.
+.B \-\-version
+option, with API above 200, i.e. by calling something like
+.B rdiff-backup \-\-version \-\-api-version 201.
+It is the responsibility of the user to make sure
+that this version is also supported by any server started by this client.
 .TP
 .B \-b, \-\-backup-mode
 Force backup mode even if first argument appears to be an increment or
@@ -536,13 +538,10 @@ Check all the data in the repository at the given time by computing
 the SHA1 hash of all the regular files and comparing them with the
 hashes stored in the metadata file.
 .TP
-.B "-V, \-\-version, \-\-versions"
+.B "-V, \-\-version"
 Print the current version and exit.
-.B \-\-versions
-(plural) is only known
-by rdiff-backup starting with version 2.1 and outputs also information about
-API, call, python and operating system. This is also the default behavior
-of the traditional options if the API version is strictly more than 200.
+Starting with version 201 of the API, it outputs also information about
+API, call, python and operating system.
 
 .SH ENVIRONMENT
 .TP

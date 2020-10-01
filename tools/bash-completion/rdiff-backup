@@ -60,7 +60,7 @@ _rdiff_backup ()
 		--restrict-read-only --restrict-update-only --ssh-no-compression --tempdir \
 		--terminal-verbosity --test-server --use-compatible-timestamps \
 		--user-mapping-file --verbosity --verify --verify-at-time \
-		--version --versions"
+		--version"
 
 	# Available short options
 	shortopts="-b -l -r -v -V"
