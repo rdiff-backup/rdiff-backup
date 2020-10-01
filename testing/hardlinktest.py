@@ -3,7 +3,7 @@ import unittest
 import time
 from commontest import abs_test_dir, abs_output_dir, old_test_dir, re_init_rpath_dir, \
     compare_recursive, BackupRestoreSeries, InternalBackup, InternalRestore, \
-    MakeOutputDir, reset_hardlink_dicts
+    MakeOutputDir, reset_hardlink_dicts, xcopytree
 from rdiff_backup import Globals, Hardlink, selection, rpath, restore, metadata
 
 
@@ -26,12 +26,12 @@ class HardlinkTest(unittest.TestCase):
 
     def testEquality(self):
         """Test rorp_eq function in conjunction with compare_recursive"""
-        assert compare_recursive(self.hlinks_rp1, self.hlinks_rp1copy)
-        assert compare_recursive(self.hlinks_rp1,
-                                 self.hlinks_rp2,
-                                 compare_hardlinks=None)
-        assert not compare_recursive(
-            self.hlinks_rp1, self.hlinks_rp2, compare_hardlinks=1)
+        self.assertTrue(compare_recursive(self.hlinks_rp1, self.hlinks_rp1copy))
+        self.assertTrue(compare_recursive(self.hlinks_rp1,
+                                          self.hlinks_rp2,
+                                          compare_hardlinks=None))
+        self.assertFalse(compare_recursive(
+            self.hlinks_rp1, self.hlinks_rp2, compare_hardlinks=1))
 
     def testBuildingDict(self):
         """See if the partial inode dictionary is correct"""
@@ -40,8 +40,7 @@ class HardlinkTest(unittest.TestCase):
         for dsrp in selection.Select(self.hlinks_rp3).set_iter():
             Hardlink.add_rorp(dsrp)
 
-        assert len(list(Hardlink._inode_index.keys())) == 3, \
-            Hardlink._inode_index
+        self.assertEqual(len(list(Hardlink._inode_index.keys())), 3)
 
     def testCompletedDict(self):
         """See if the hardlink dictionaries are built correctly"""
@@ -49,13 +48,13 @@ class HardlinkTest(unittest.TestCase):
         for dsrp in selection.Select(self.hlinks_rp1).set_iter():
             Hardlink.add_rorp(dsrp)
             Hardlink.del_rorp(dsrp)
-        assert Hardlink._inode_index == {}, Hardlink._inode_index
+        self.assertEqual(Hardlink._inode_index, {})
 
         reset_hardlink_dicts()
         for dsrp in selection.Select(self.hlinks_rp2).set_iter():
             Hardlink.add_rorp(dsrp)
             Hardlink.del_rorp(dsrp)
-        assert Hardlink._inode_index == {}, Hardlink._inode_index
+        self.assertEqual(Hardlink._inode_index, {})
 
     def testSeries(self):
         """Test hardlink system by backing up and restoring a few dirs"""
@@ -93,7 +92,7 @@ class HardlinkTest(unittest.TestCase):
         hlout2 = rpath.RPath(Globals.local_connection, hlout2_dir)
         if hlout2.lstat():
             hlout2.delete()
-        assert not os.system(b"cp -a %s %s" % (hlout1_dir, hlout2_dir))
+        xcopytree(hlout1_dir, hlout2_dir)
         hlout2_sub = hlout2.append("subdir")
         hl2_1 = hlout2_sub.append("hardlink1")
         hl2_2 = hlout2_sub.append("hardlink2")
@@ -111,22 +110,22 @@ class HardlinkTest(unittest.TestCase):
         # Now try backing up twice, making sure hard links are preserved
         InternalBackup(1, 1, hlout1.path, output.path)
         out_subdir = output.append("subdir")
-        assert out_subdir.append("hardlink1").getinode() == \
-            out_subdir.append("hardlink2").getinode()
-        assert out_subdir.append("hardlink3").getinode() == \
-            out_subdir.append("hardlink4").getinode()
-        assert out_subdir.append("hardlink1").getinode() != \
-            out_subdir.append("hardlink3").getinode()
+        self.assertEqual(out_subdir.append("hardlink1").getinode(),
+                         out_subdir.append("hardlink2").getinode())
+        self.assertEqual(out_subdir.append("hardlink3").getinode(),
+                         out_subdir.append("hardlink4").getinode())
+        self.assertNotEqual(out_subdir.append("hardlink1").getinode(),
+                            out_subdir.append("hardlink3").getinode())
 
         time.sleep(1)
         InternalBackup(1, 1, hlout2.path, output.path)
         out_subdir.setdata()
-        assert out_subdir.append("hardlink1").getinode() == \
-            out_subdir.append("hardlink4").getinode()
-        assert out_subdir.append("hardlink2").getinode() == \
-            out_subdir.append("hardlink3").getinode()
-        assert out_subdir.append("hardlink1").getinode() != \
-            out_subdir.append("hardlink2").getinode()
+        self.assertEqual(out_subdir.append("hardlink1").getinode(),
+                         out_subdir.append("hardlink4").getinode())
+        self.assertEqual(out_subdir.append("hardlink2").getinode(),
+                         out_subdir.append("hardlink3").getinode())
+        self.assertNotEqual(out_subdir.append("hardlink1").getinode(),
+                            out_subdir.append("hardlink2").getinode())
 
         # Now try restoring, still checking hard links.
         sub_dir = os.path.join(abs_output_dir, b"subdir")
@@ -143,9 +142,9 @@ class HardlinkTest(unittest.TestCase):
         out2.setdata()
         for rp in [hlout1, hlout2, hlout3, hlout4]:
             rp.setdata()
-        assert hlout1.getinode() == hlout2.getinode()
-        assert hlout3.getinode() == hlout4.getinode()
-        assert hlout1.getinode() != hlout3.getinode()
+        self.assertEqual(hlout1.getinode(), hlout2.getinode())
+        self.assertEqual(hlout3.getinode(), hlout4.getinode())
+        self.assertNotEqual(hlout1.getinode(), hlout3.getinode())
 
         if out2.lstat():
             out2.delete()
@@ -153,10 +152,9 @@ class HardlinkTest(unittest.TestCase):
         out2.setdata()
         for rp in [hlout1, hlout2, hlout3, hlout4]:
             rp.setdata()
-        assert hlout1.getinode() == hlout4.getinode(), \
-            "%a %a" % (hlout1.path, hlout4.path)
-        assert hlout2.getinode() == hlout3.getinode()
-        assert hlout1.getinode() != hlout2.getinode()
+        self.assertEqual(hlout1.getinode(), hlout4.getinode())
+        self.assertEqual(hlout2.getinode(), hlout3.getinode())
+        self.assertNotEqual(hlout1.getinode(), hlout2.getinode())
 
     def extract_metadata(self, metadata_rp):
         """Return lists of hashes and hardlink counts in the metadata_rp"""
@@ -202,8 +200,8 @@ class HardlinkTest(unittest.TestCase):
 
         InternalBackup(1, 1, hlsrc.path, output.path, 10000)
         out_subdir = output.append("subdir")
-        assert out_subdir.append("hardlink1").getinode() == \
-            out_subdir.append("hardlink3").getinode()
+        self.assertEqual(out_subdir.append("hardlink1").getinode(),
+                         out_subdir.append("hardlink3").getinode())
 
         # validate that hashes and link counts are correctly saved in metadata
         meta_prefix = rpath.RPath(
@@ -211,28 +209,28 @@ class HardlinkTest(unittest.TestCase):
             os.path.join(abs_output_dir, b"rdiff-backup-data",
                          b"mirror_metadata"))
         incs = restore.get_inclist(meta_prefix)
-        assert len(incs) == 1
+        self.assertEqual(len(incs), 1)
         metadata_rp = incs[0]
         hashes, link_counts = self.extract_metadata(metadata_rp)
         # hashes for ., ./subdir, ./subdir/hardlink1, ./subdir/hardlink3
         expected_hashes = [None, None, self.hello_str_hash, None]
-        assert expected_hashes == hashes, (expected_hashes, hashes)
+        self.assertEqual(expected_hashes, hashes)
         expected_link_counts = [1, 1, 2, 2]
-        assert expected_link_counts == link_counts, (expected_link_counts, link_counts)
+        self.assertEqual(expected_link_counts, link_counts)
 
         # Create a new hardlinked file between "hardlink1" and "hardlink3" and perform another backup
         hl_file2 = hlsrc_sub.append("hardlink2")
         hl_file2.hardlink(hl_file1.path)
 
         InternalBackup(1, 1, hlsrc.path, output.path, 20000)
-        assert out_subdir.append("hardlink1").getinode() == \
-            out_subdir.append("hardlink2").getinode()
-        assert out_subdir.append("hardlink1").getinode() == \
-            out_subdir.append("hardlink3").getinode()
+        self.assertEqual(out_subdir.append("hardlink1").getinode(),
+                         out_subdir.append("hardlink2").getinode())
+        self.assertEqual(out_subdir.append("hardlink1").getinode(),
+                         out_subdir.append("hardlink3").getinode())
 
         # validate that hashes and link counts are correctly saved in metadata
         incs = restore.get_inclist(meta_prefix)
-        assert len(incs) == 2
+        self.assertEqual(len(incs), 2)
         if incs[0].getinctype() == b'snapshot':
             metadata_rp = incs[0]
         else:
@@ -240,10 +238,10 @@ class HardlinkTest(unittest.TestCase):
         hashes, link_counts = self.extract_metadata(metadata_rp)
         # hashes for ., ./subdir/, ./subdir/hardlink1, ./subdir/hardlink2, ./subdir/hardlink3
         expected_hashes = [None, None, self.hello_str_hash, None, None]
-        assert expected_hashes == hashes, (expected_hashes, hashes)
+        self.assertEqual(expected_hashes, hashes)
         expected_link_counts = [1, 1, 3, 3, 3]
         # The following assertion would fail as a result of bugs that are now fixed
-        assert expected_link_counts == link_counts, (expected_link_counts, link_counts)
+        self.assertEqual(expected_link_counts, link_counts)
 
         # Now try restoring, still checking hard links.
         sub_path = os.path.join(abs_output_dir, b"subdir")
@@ -258,16 +256,16 @@ class HardlinkTest(unittest.TestCase):
         InternalRestore(1, 1, sub_path, restore_path, 10000)
         for rp in [hlrestore_file1, hlrestore_file3]:
             rp.setdata()
-        assert hlrestore_file1.getinode() == hlrestore_file3.getinode()
+        self.assertEqual(hlrestore_file1.getinode(), hlrestore_file3.getinode())
 
         if restore_dir.lstat():
             restore_dir.delete()
         InternalRestore(1, 1, sub_path, restore_path, 20000)
         for rp in [hlrestore_file1, hlrestore_file2, hlrestore_file3]:
             rp.setdata()
-        assert hlrestore_file1.getinode() == hlrestore_file2.getinode()
+        self.assertEqual(hlrestore_file1.getinode(), hlrestore_file2.getinode())
         # The following assertion would fail as a result of bugs that are now fixed
-        assert hlrestore_file1.getinode() == hlrestore_file3.getinode()
+        self.assertEqual(hlrestore_file1.getinode(), hlrestore_file3.getinode())
 
     def test_moving_hardlinks(self):
         """Test moving the first hardlinked file in a series to later place in the series.
@@ -301,8 +299,8 @@ class HardlinkTest(unittest.TestCase):
 
         InternalBackup(1, 1, hlsrc.path, output.path, 10000)
         out_subdir = output.append("subdir")
-        assert out_subdir.append("hardlink1").getinode() == \
-            out_subdir.append("hardlink2").getinode()
+        self.assertEqual(out_subdir.append("hardlink1").getinode(),
+                         out_subdir.append("hardlink2").getinode())
 
         # validate that hashes and link counts are correctly saved in metadata
         meta_prefix = rpath.RPath(
@@ -310,26 +308,26 @@ class HardlinkTest(unittest.TestCase):
             os.path.join(abs_output_dir, b"rdiff-backup-data",
                          b"mirror_metadata"))
         incs = restore.get_inclist(meta_prefix)
-        assert len(incs) == 1
+        self.assertEqual(len(incs), 1)
         metadata_rp = incs[0]
         hashes, link_counts = self.extract_metadata(metadata_rp)
         # hashes for ., ./subdir, ./subdir/hardlink1, ./subdir/hardlink3
         expected_hashes = [None, None, self.hello_str_hash, None]
-        assert expected_hashes == hashes, (expected_hashes, hashes)
+        self.assertEqual(expected_hashes, hashes)
         expected_link_counts = [1, 1, 2, 2]
-        assert expected_link_counts == link_counts, (expected_link_counts, link_counts)
+        self.assertEqual(expected_link_counts, link_counts)
 
         # Move the first hardlinked file to be last
         hl_file3 = hlsrc_sub.append("hardlink3")
         rpath.rename(hl_file1, hl_file3)
 
         InternalBackup(1, 1, hlsrc.path, output.path, 20000)
-        assert out_subdir.append("hardlink2").getinode() == \
-            out_subdir.append("hardlink3").getinode()
+        self.assertEqual(out_subdir.append("hardlink2").getinode(),
+                         out_subdir.append("hardlink3").getinode())
 
         # validate that hashes and link counts are correctly saved in metadata
         incs = restore.get_inclist(meta_prefix)
-        assert len(incs) == 2
+        self.assertEqual(len(incs), 2)
         if incs[0].getinctype() == b'snapshot':
             metadata_rp = incs[0]
         else:
@@ -338,9 +336,9 @@ class HardlinkTest(unittest.TestCase):
         # hashes for ., ./subdir/, ./subdir/hardlink2, ./subdir/hardlink3
         expected_hashes = [None, None, self.hello_str_hash, None]
         # The following assertion would fail as a result of bugs that are now fixed
-        assert expected_hashes == hashes, (expected_hashes, hashes)
+        self.assertEqual(expected_hashes, hashes)
         expected_link_counts = [1, 1, 2, 2]
-        assert expected_link_counts == link_counts, (expected_link_counts, link_counts)
+        self.assertEqual(expected_link_counts, link_counts)
 
         # Now try restoring, still checking hard links.
         sub_path = os.path.join(abs_output_dir, b"subdir")
@@ -355,14 +353,14 @@ class HardlinkTest(unittest.TestCase):
         InternalRestore(1, 1, sub_path, restore_path, 10000)
         for rp in [hlrestore_file1, hlrestore_file2]:
             rp.setdata()
-        assert hlrestore_file1.getinode() == hlrestore_file2.getinode()
+        self.assertEqual(hlrestore_file1.getinode(), hlrestore_file2.getinode())
 
         if restore_dir.lstat():
             restore_dir.delete()
         InternalRestore(1, 1, sub_path, restore_path, 20000)
         for rp in [hlrestore_file2, hlrestore_file3]:
             rp.setdata()
-        assert hlrestore_file2.getinode() == hlrestore_file3.getinode()
+        self.assertEqual(hlrestore_file2.getinode(), hlrestore_file3.getinode())
 
 
 if __name__ == "__main__":

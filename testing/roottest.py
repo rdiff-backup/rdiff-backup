@@ -2,7 +2,7 @@ import unittest
 import os
 from commontest import old_test_dir, abs_test_dir, abs_output_dir, Myrm, \
     abs_restore_dir, re_init_rpath_dir, compare_recursive, \
-    BackupRestoreSeries, rdiff_backup, RBBin
+    BackupRestoreSeries, rdiff_backup, RBBin, xcopytree
 from rdiff_backup import Globals, rpath, Main
 """Root tests - contain tests which need to be run as root.
 
@@ -25,13 +25,15 @@ assert userid, "Unable to assess ID of non-root user to be used for tests"
 assert user, "Unable to assess name of non-root user to be used for tests"
 
 
-def Run(cmd):
-    print("Running: ", cmd)
-    rc = os.system(cmd)
-    assert not rc, "Command `%a` failed with rc=%d" % (cmd, rc)
+class BaseRootTest(unittest.TestCase):
+    def _run_cmd(self, cmd):
+        print("Running: ", cmd)
+        rc = os.system(cmd)
+        self.assertEqual(
+            rc, 0, "Command '{cmd}' failed with rc={rc}".format(cmd=cmd, rc=rc))
 
 
-class RootTest(unittest.TestCase):
+class RootTest(BaseRootTest):
     dirlist1 = [
         os.path.join(old_test_dir, b"root"),
         os.path.join(old_test_dir, b"various_file_types"),
@@ -92,8 +94,8 @@ class RootTest(unittest.TestCase):
         BackupRestoreSeries(1, 1, dirlist, compare_ownership=1)
         symrp = rpath.RPath(Globals.local_connection,
                             os.path.join(abs_output_dir, b'symlink'))
-        assert symrp.issym(), symrp
-        assert symrp.getuidgid() == (2004, 2004), symrp.getuidgid()
+        self.assertTrue(symrp.issym())
+        self.assertEqual(symrp.getuidgid(), (2004, 2004))
 
     def test_ownership_mapping(self):
         """Test --user-mapping-file and --group-mapping-file options"""
@@ -121,7 +123,8 @@ class RootTest(unittest.TestCase):
         def get_ownership(dir_rp):
             """Return pair (ids of dir_rp/1, ids of dir_rp2) of ids"""
             rp1, rp2 = list(map(dir_rp.append, ('1', '2')))
-            assert rp1.isreg() and rp2.isreg(), (rp1.isreg(), rp2.isreg())
+            self.assertTrue(rp1.isreg())
+            self.assertTrue(rp2.isreg())
             return (rp1.getuidgid(), rp2.getuidgid())
 
         in_rp = write_ownership_dir()
@@ -130,8 +133,8 @@ class RootTest(unittest.TestCase):
         if out_rp.lstat():
             Myrm(out_rp.path)
 
-        assert get_ownership(in_rp) == ((0, 0), (userid, 1)), \
-            get_ownership(in_rp)
+        self.assertEqual(get_ownership(in_rp), ((0, 0), (userid, 1)))
+
         rdiff_backup(1,
                      0,
                      in_rp.path,
@@ -139,8 +142,7 @@ class RootTest(unittest.TestCase):
                      extra_options=(b"--user-mapping-file %b "
                                     b"--group-mapping-file %b" %
                                     (user_map, group_map)))
-        assert get_ownership(out_rp) == ((userid, 0), (0, 1)), \
-            get_ownership(out_rp)
+        self.assertEqual(get_ownership(out_rp), ((userid, 0), (0, 1)))
 
     def test_numerical_mapping(self):
         """Test --preserve-numerical-ids option
@@ -165,7 +167,8 @@ class RootTest(unittest.TestCase):
         def get_ownership(dir_rp):
             """Return pair (ids of dir_rp/1, ids of dir_rp2) of ids"""
             rp1, rp2 = list(map(dir_rp.append, ('1', '2')))
-            assert rp1.isreg() and rp2.isreg(), (rp1.isreg(), rp2.isreg())
+            self.assertTrue(rp1.isreg())
+            self.assertTrue(rp2.isreg())
             return (rp1.getuidgid(), rp2.getuidgid())
 
         in_rp = write_ownership_dir()
@@ -173,22 +176,21 @@ class RootTest(unittest.TestCase):
         if out_rp.lstat():
             Myrm(out_rp.path)
 
-        assert get_ownership(in_rp) == ((0, 0), (userid, 1)), \
-            get_ownership(in_rp)
+        self.assertEqual(get_ownership(in_rp), ((0, 0), (userid, 1)))
+
         rdiff_backup(1,
                      0,
                      in_rp.path,
                      out_rp.path,
                      extra_options=(b"--preserve-numerical-ids"))
-        assert get_ownership(out_rp) == ((0, 0), (userid, 1)), \
-            get_ownership(in_rp)
+        self.assertEqual(get_ownership(out_rp), ((0, 0), (userid, 1)))
 
     def tearDown(self):
         # especially the logfile might still appear opened if a test was interrupted
         Main._cleanup()
 
 
-class HalfRoot(unittest.TestCase):
+class HalfRoot(BaseRootTest):
     """Backing up files where origin is root and destination is non-root"""
 
     def make_dirs(self):
@@ -264,7 +266,8 @@ class HalfRoot(unittest.TestCase):
         rp_new = rp.append('lala')
         rp_new.write_string('asoentuh')
         rp_new.chmod(0)
-        assert not os.system(b'chown %s %s' % (user.encode(), rp_new.path))
+        self.assertEqual(
+            os.system(b'chown %s %s' % (user.encode(), rp_new.path)), 0)
         rp1_3 = rp.append('unreadable_dir')
         rp1_3.chmod(0o700)
         rp1_3_1 = rp1_3.append('file_inside')
@@ -283,12 +286,12 @@ class HalfRoot(unittest.TestCase):
         cmd_schema = (RBBin + b" --current-time %i --remote-schema '%%s' %b '%b'::%b")
 
         cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
-        Run(cmd1)
+        self._run_cmd(cmd1)
         in_rp1.setdata()
         outrp.setdata()
 
         cmd2 = cmd_schema % (20000, in_rp2.path, remote_schema, outrp.path)
-        Run(cmd2)
+        self._run_cmd(cmd2)
         in_rp2.setdata()
         outrp.setdata()
 
@@ -297,30 +300,30 @@ class HalfRoot(unittest.TestCase):
         Myrm(rout_rp.path)
         cmd3 = restore_schema % (b'10000', remote_schema, outrp.path,
                                  rout_rp.path)
-        Run(cmd3)
-        assert compare_recursive(in_rp1, rout_rp)
+        self._run_cmd(cmd3)
+        self.assertTrue(compare_recursive(in_rp1, rout_rp))
         rout_perms = rout_rp.append('unreadable_dir').getperms()
         outrp_perms = outrp.append('unreadable_dir').getperms()
-        assert rout_perms == 0, rout_perms
-        assert outrp_perms == 0, outrp_perms
+        self.assertEqual(rout_perms, 0)
+        self.assertEqual(outrp_perms, 0)
 
         Myrm(rout_rp.path)
         cmd4 = restore_schema % (b"now", remote_schema, outrp.path,
                                  rout_rp.path)
-        Run(cmd4)
-        assert compare_recursive(in_rp2, rout_rp)
+        self._run_cmd(cmd4)
+        self.assertTrue(compare_recursive(in_rp2, rout_rp))
         rout_perms = rout_rp.append('unreadable_dir').getperms()
         outrp_perms = outrp.append('unreadable_dir').getperms()
-        assert rout_perms == 0, rout_perms
-        assert outrp_perms == 0, outrp_perms
+        self.assertEqual(rout_perms, 0)
+        self.assertEqual(outrp_perms, 0)
 
         self.cause_regress(outrp)
         cmd5 = (b'su -c "%s --check-destination-dir %s" %s' %
                 (RBBin, outrp.path, user.encode()))
-        Run(cmd5)
+        self._run_cmd(cmd5)
 
 
-class NonRoot(unittest.TestCase):
+class NonRoot(BaseRootTest):
     """Test backing up as non-root user
 
     Test backing up a directory with files of different userids and
@@ -349,12 +352,12 @@ class NonRoot(unittest.TestCase):
                          os.path.join(abs_test_dir, b"root_out2"))
         if sp.lstat():
             Myrm(sp.path)
-        Run(b"cp -a %s %s" % (rp.path, sp.path))
+        xcopytree(rp.path, sp.path)
         rp2 = sp.append("2")
         rp2.chown(2, 2)
         rp3 = sp.append("3")
         rp3.chown(1, 1)
-        assert not compare_recursive(rp, sp, compare_ownership=1)
+        self.assertFalse(compare_recursive(rp, sp, compare_ownership=1))
 
         return rp, sp
 
@@ -362,7 +365,7 @@ class NonRoot(unittest.TestCase):
         global user
         backup_cmd = (b"%s --no-compare-inode --current-time %i %b %b" % (
                       RBBin, time, input_rp.path, output_rp.path))
-        Run(b"su %s -c '%s'" % (user.encode(), backup_cmd))
+        self._run_cmd(b"su %s -c '%s'" % (user.encode(), backup_cmd))
 
     def restore(self, dest_rp, restore_rp, time=None):
         Myrm(restore_rp.path)
@@ -372,7 +375,7 @@ class NonRoot(unittest.TestCase):
         else:
             restore_cmd = b"%s -r %i %b %b" % (
                           RBBin, time, dest_rp.path, restore_rp.path)
-        Run(restore_cmd)
+        self._run_cmd(restore_cmd)
 
     def test_non_root(self):
         """Main non-root -> root test"""
@@ -386,21 +389,26 @@ class NonRoot(unittest.TestCase):
 
         self.backup(input_rp1, output_rp, 1000000)
         self.restore(output_rp, restore_rp)
-        assert compare_recursive(input_rp1, restore_rp, compare_ownership=1)
+        self.assertTrue(
+            compare_recursive(input_rp1, restore_rp, compare_ownership=1))
 
         self.backup(input_rp2, output_rp, 2000000)
         self.restore(output_rp, restore_rp)
-        assert compare_recursive(input_rp2, restore_rp, compare_ownership=1)
+        self.assertTrue(
+            compare_recursive(input_rp2, restore_rp, compare_ownership=1))
 
         self.backup(empty_rp, output_rp, 3000000)
         self.restore(output_rp, restore_rp)
-        assert compare_recursive(empty_rp, restore_rp, compare_ownership=1)
+        self.assertTrue(
+            compare_recursive(empty_rp, restore_rp, compare_ownership=1))
 
         self.restore(output_rp, restore_rp, 1000000)
-        assert compare_recursive(input_rp1, restore_rp, compare_ownership=1)
+        self.assertTrue(
+            compare_recursive(input_rp1, restore_rp, compare_ownership=1))
 
         self.restore(output_rp, restore_rp, 2000000)
-        assert compare_recursive(input_rp2, restore_rp, compare_ownership=1)
+        self.assertTrue(
+            compare_recursive(input_rp2, restore_rp, compare_ownership=1))
 
 
 if __name__ == "__main__":

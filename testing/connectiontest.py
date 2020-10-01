@@ -19,7 +19,7 @@ class LocalConnectionTest(unittest.TestCase):
 
     def testGetAttrs(self):
         """Test getting of various attributes"""
-        assert type(self.lc.LocalConnection) is type
+        self.assertIsInstance(self.lc.LocalConnection, type)
         try:
             self.lc.asotnuhaoseu
         except (NameError, KeyError):
@@ -30,9 +30,9 @@ class LocalConnectionTest(unittest.TestCase):
     def testSetattrs(self):
         """Test setting of global attributes"""
         self.lc.x = 5
-        assert self.lc.x == 5
+        self.assertEqual(self.lc.x, 5)
         self.lc.x = 7
-        assert self.lc.x == 7
+        self.assertEqual(self.lc.x, 7)
 
     def testDelattrs(self):
         """Testing deletion of attributes"""
@@ -47,7 +47,7 @@ class LocalConnectionTest(unittest.TestCase):
 
     def testReval(self):
         """Test string evaluation"""
-        assert self.lc.reval("pow", 2, 3) == 8
+        self.assertEqual(self.lc.reval("pow", 2, 3), 8)
 
 
 class LowLevelPipeConnectionTest(unittest.TestCase):
@@ -66,7 +66,7 @@ class LowLevelPipeConnectionTest(unittest.TestCase):
             LLPC.inpipe = inpipe
             for obj in self.objs:
                 gotten = LLPC._get()
-                assert gotten == (3, obj), gotten
+                self.assertEqual(gotten, (3, obj))
         os.unlink(self.filename)
 
     def testBuf(self):
@@ -78,7 +78,7 @@ class LowLevelPipeConnectionTest(unittest.TestCase):
             LLPC._putbuf(inbuf, 234)
         with open(self.filename, "rb") as inpipe:
             LLPC.inpipe = inpipe
-            assert (234, inbuf) == LLPC._get()
+            self.assertEqual((234, inbuf), LLPC._get())
         os.unlink(self.filename)
 
     def testSendingExceptions(self):
@@ -91,7 +91,7 @@ class LowLevelPipeConnectionTest(unittest.TestCase):
             LLPC.inpipe = inpipe
             for exception in self.excts:
                 incoming_exception = LLPC._get()
-                assert isinstance(incoming_exception[1], exception.__class__)
+                self.assertIsInstance(incoming_exception[1], exception.__class__)
         os.unlink(self.filename)
 
 
@@ -113,16 +113,16 @@ class PipeConnectionTest(unittest.TestCase):
 
     def testBasic(self):
         """Test some basic pipe functions"""
-        assert self.conn.ord("a") == 97
-        assert self.conn.pow(2, 3) == 8
-        assert self.conn.reval("ord", "a") == 97
+        self.assertEqual(self.conn.ord("a"), 97)
+        self.assertEqual(self.conn.pow(2, 3), 8)
+        self.assertEqual(self.conn.reval("ord", "a"), 97)
 
     def testModules(self):
         """Test module emulation"""
-        assert type(self.conn.tempfile.mktemp()) is str
-        assert self.conn.os.path.join(b"a", b"b") == b"a/b"
+        self.assertIsInstance(self.conn.tempfile.mktemp(), str)
+        self.assertEqual(self.conn.os.path.join(b"a", b"b"), b"a/b")
         rp1 = rpath.RPath(self.conn, regfilename)
-        assert rp1.isreg()
+        self.assertTrue(rp1.isreg())
 
     def testVirtualFiles(self):
         """Testing virtual files"""
@@ -130,55 +130,56 @@ class PipeConnectionTest(unittest.TestCase):
         temp_file = os.path.join(abs_test_dir, b"tempout")
 
         tempout = self.conn.open(temp_file, "wb")
-        assert isinstance(tempout, VirtualFile)
+        self.assertIsInstance(tempout, VirtualFile)
         regfilefp = open(regfilename, "rb")
         rpath.copyfileobj(regfilefp, tempout)
         tempout.close()
         regfilefp.close()
         tempoutlocal = open(temp_file, "rb")
         regfilefp = open(regfilename, "rb")
-        assert rpath._cmp_file_obj(regfilefp, tempoutlocal)
+        self.assertTrue(rpath._cmp_file_obj(regfilefp, tempoutlocal))
         tempoutlocal.close()
         regfilefp.close()
         os.unlink(temp_file)
 
         with open(regfilename, "rb") as localfh:
-            assert rpath._cmp_file_obj(self.conn.open(regfilename, "rb"), localfh)
+            self.assertTrue(rpath._cmp_file_obj(self.conn.open(
+                regfilename, "rb"), localfh))
 
     def testString(self):
         """Test transmitting strings"""
-        assert "32" == self.conn.str(32)
-        assert 32 == self.conn.int("32")
+        self.assertEqual("32", self.conn.str(32))
+        self.assertEqual(32, self.conn.int("32"))
 
     def testIterators(self):
         """Test transmission of iterators"""
         i = iter([5, 10, 15] * 100)
-        assert self.conn.hasattr(i, "__next__") and self.conn.hasattr(
-            i, "__iter__")
+        self.assertTrue(self.conn.hasattr(i, "__next__")
+                        and self.conn.hasattr(i, "__iter__"))
         ret_val = self.conn.reval("lambda i: next(i)*next(i)", i)
-        assert ret_val == 50, ret_val
+        self.assertEqual(ret_val, 50)
 
     def testRPaths(self):
         """Test transmission of rpaths"""
         rp = rpath.RPath(self.conn, regfilename)
-        assert self.conn.reval("lambda rp: rp.data", rp) == rp.data
-        assert self.conn.reval(
-            "lambda rp: rp.conn is Globals.local_connection", rp)
+        self.assertEqual(self.conn.reval("lambda rp: rp.data", rp), rp.data)
+        self.assertTrue(self.conn.reval(
+            "lambda rp: rp.conn is Globals.local_connection", rp))
 
     def testQuotedRPaths(self):
         """Test transmission of quoted rpaths"""
         qrp = FilenameMapping.QuotedRPath(self.conn, regfilename)
-        assert self.conn.reval("lambda qrp: qrp.data", qrp) == qrp.data
-        assert qrp.isreg(), qrp
+        self.assertEqual(self.conn.reval("lambda qrp: qrp.data", qrp), qrp.data)
+        self.assertTrue(qrp.isreg())
         qrp_class_str = self.conn.reval("lambda qrp: str(qrp.__class__)", qrp)
-        assert qrp_class_str.find("QuotedRPath") > -1, qrp_class_str
+        self.assertGreater(qrp_class_str.find("QuotedRPath"), -1)
 
     def testExceptions(self):
         """Test exceptional results"""
         self.assertRaises(os.error, self.conn.os.lstat,
                           "asoeut haosetnuhaoseu tn")
         self.assertRaises(SyntaxError, self.conn.reval, "aoetnsu aoehtnsu")
-        assert self.conn.pow(2, 3) == 8
+        self.assertEqual(self.conn.pow(2, 3), 8)
 
     def tearDown(self):
         """Bring down connection"""
@@ -201,33 +202,34 @@ class RedirectedConnectionTest(unittest.TestCase):
         """Test basic operations with redirection"""
         self.conna.Globals.set("tmp_val", 1)
         self.connb.Globals.set("tmp_val", 2)
-        assert self.conna.Globals.get("tmp_val") == 1
-        assert self.connb.Globals.get("tmp_val") == 2
+        self.assertEqual(self.conna.Globals.get("tmp_val"), 1)
+        self.assertEqual(self.connb.Globals.get("tmp_val"), 2)
 
         self.conna.Globals.set("tmp_connb", self.connb)
         self.connb.Globals.set("tmp_conna", self.conna)
-        assert self.conna.Globals.get("tmp_connb") is self.connb
-        assert self.connb.Globals.get("tmp_conna") is self.conna
+        self.assertIs(self.conna.Globals.get("tmp_connb"), self.connb)
+        self.assertIs(self.connb.Globals.get("tmp_conna"), self.conna)
 
         val = self.conna.reval("Globals.get('tmp_connb').Globals.get",
                                "tmp_val")
-        assert val == 2, val
+        self.assertEqual(val, 2)
         val = self.connb.reval("Globals.get('tmp_conna').Globals.get",
                                "tmp_val")
-        assert val == 1, val
+        self.assertEqual(val, 1)
 
-        assert self.conna.reval("Globals.get('tmp_connb').pow", 2, 3) == 8
+        self.assertEqual(
+            self.conna.reval("Globals.get('tmp_connb').pow", 2, 3), 8)
         self.conna.reval("Globals.tmp_connb.reval",
                          "Globals.tmp_conna.Globals.set", "tmp_marker", 5)
-        assert self.conna.Globals.get("tmp_marker") == 5
+        self.assertEqual(self.conna.Globals.get("tmp_marker"), 5)
 
     def testRpaths(self):
         """Test moving rpaths back and forth across connections"""
         rp = rpath.RPath(self.conna, "foo")
         self.connb.Globals.set("tmp_rpath", rp)
         rp_returned = self.connb.Globals.get("tmp_rpath")
-        assert rp_returned.conn is rp.conn
-        assert rp_returned.path == rp.path
+        self.assertIs(rp_returned.conn, rp.conn)
+        self.assertEqual(rp_returned.path, rp.path)
 
     def tearDown(self):
         SetConnections.CloseConnections()

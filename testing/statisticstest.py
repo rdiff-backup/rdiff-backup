@@ -29,18 +29,18 @@ class StatsObjTest(unittest.TestCase):
     def test_get_stats(self):
         """Test reading and writing stat objects"""
         s = statistics.StatsObj()
-        assert s.get_stat('SourceFiles') is None
+        self.assertIsNone(s.get_stat('SourceFiles'))
         self.set_obj(s)
-        assert s.get_stat('SourceFiles') == 1
+        self.assertEqual(s.get_stat('SourceFiles'), 1)
 
         s1 = statistics.StatFileObj()
-        assert s1.get_stat('SourceFiles') == 0
+        self.assertEqual(s1.get_stat('SourceFiles'), 0)
 
     def test_get_stats_string(self):
         """Test conversion of stat object into string"""
         s = statistics.StatsObj()
         stats_string = s._get_stats_string()
-        assert stats_string == "", stats_string
+        self.assertEqual(stats_string, "")
 
         self.set_obj(s)
         stats_string = s._get_stats_string()
@@ -48,7 +48,7 @@ class StatsObjTest(unittest.TestCase):
         tail = "\n".join(ss_list[2:])  # Time varies by time zone, don't check
         # """StartTime 11.00 (Wed Dec 31 16:00:11 1969)
         # EndTime 12.00 (Wed Dec 31 16:00:12 1969)"
-        assert tail == """ElapsedTime 1.00 (1 second)
+        self.assertEqual(tail, """ElapsedTime 1.00 (1 second)
 SourceFiles 1
 SourceFileSize 2 (2 bytes)
 MirrorFiles 13
@@ -63,34 +63,36 @@ ChangedMirrorSize 9 (9 bytes)
 IncrementFiles 15
 IncrementFileSize 10 (10 bytes)
 TotalDestinationSizeChange 7 (7 bytes)
-""", "'%s'" % stats_string
+""")
 
     def test_line_string(self):
         """Test conversion to a single line"""
         s = statistics.StatsObj()
         self.set_obj(s)
         statline = s._get_stats_line(("sample", "index", "w", "new\nline"))
-        assert statline == "sample/index/w/new\\nline 1 2 13 14 " \
-            "3 4 5 6 7 8 9 15 10", repr(statline)
+        self.assertEqual(
+            statline,
+            "sample/index/w/new\\nline 1 2 13 14 3 4 5 6 7 8 9 15 10")
 
         statline = s._get_stats_line(())
-        assert statline == ". 1 2 13 14 3 4 5 6 7 8 9 15 10"
+        self.assertEqual(statline, ". 1 2 13 14 3 4 5 6 7 8 9 15 10")
 
         statline = s._get_stats_line(("file name with spaces", ))
-        assert statline == "file\\x20name\\x20with\\x20spaces 1 2 13 14 " \
-            "3 4 5 6 7 8 9 15 10", repr(statline)
+        self.assertEqual(
+            statline,
+            "file\\x20name\\x20with\\x20spaces 1 2 13 14 3 4 5 6 7 8 9 15 10")
 
     def test_byte_summary(self):
         """Test conversion of bytes to strings like 7.23MB"""
         s = statistics.StatsObj()
         f = s.get_byte_summary_string
-        assert f(1) == "1 byte"
-        assert f(234.34) == "234 bytes"
-        assert f(2048) == "2.00 KB"
-        assert f(3502243) == "3.34 MB"
-        assert f(314992230) == "300 MB"
-        assert f(36874871216) == "34.3 GB", f(36874871216)
-        assert f(3775986812573450) == "3434 TB"
+        self.assertEqual(f(1), "1 byte")
+        self.assertEqual(f(234.34), "234 bytes")
+        self.assertEqual(f(2048), "2.00 KB")
+        self.assertEqual(f(3502243), "3.34 MB")
+        self.assertEqual(f(314992230), "300 MB")
+        self.assertEqual(f(36874871216), "34.3 GB")
+        self.assertEqual(f(3775986812573450), "3434 TB")
 
     def test_init_stats(self):
         """Test setting stat object from string"""
@@ -98,17 +100,17 @@ TotalDestinationSizeChange 7 (7 bytes)
         s._set_stats_from_string("NewFiles 3 hello there")
         for attr in s._stat_attrs:
             if attr == 'NewFiles':
-                assert s.get_stat(attr) == 3
+                self.assertEqual(s.get_stat(attr), 3)
             else:
-                assert s.get_stat(attr) is None, (attr, s.__dict__[attr])
+                self.assertIsNone(s.get_stat(attr))
 
         s1 = statistics.StatsObj()
         self.set_obj(s1)
-        assert not s1._stats_equal(s)
+        self.assertFalse(s1._stats_equal(s))
 
         s2 = statistics.StatsObj()
         s2._set_stats_from_string(s1._get_stats_string())
-        assert s1._stats_equal(s2)
+        self.assertTrue(s1._stats_equal(s2))
 
     def test_write_rp(self):
         """Test reading and writing of statistics object"""
@@ -121,9 +123,9 @@ TotalDestinationSizeChange 7 (7 bytes)
         s.write_stats_to_rp(rp)
 
         s2 = statistics.StatsObj()
-        assert not s2._stats_equal(s)
+        self.assertFalse(s2._stats_equal(s))
         s2.read_stats_from_rp(rp)
-        assert s2._stats_equal(s)
+        self.assertTrue(s2._stats_equal(s))
 
     def testAverage(self):
         """Test making an average statsobj"""
@@ -144,12 +146,13 @@ TotalDestinationSizeChange 7 (7 bytes)
         s2.DeletedFiles = 0
 
         s3 = statistics.StatsObj().set_to_average([s1, s2])
-        assert s3.StartTime is s3.EndTime is None
-        assert s3.ElapsedTime == 7.5
-        assert s3.DeletedFiles is s3.NewFileSize is None, (s3.DeletedFiles,
-                                                           s3.NewFileSize)
-        assert s3.ChangedFiles == 1.5
-        assert s3.SourceFiles == 75
+        self.assertIsNone(s3.StartTime)
+        self.assertIsNone(s3.EndTime)
+        self.assertEqual(s3.ElapsedTime, 7.5)
+        self.assertIsNone(s3.DeletedFiles)
+        self.assertIsNone(s3.NewFileSize)
+        self.assertEqual(s3.ChangedFiles, 1.5)
+        self.assertEqual(s3.SourceFiles, 75)
 
 
 class IncStatTest(unittest.TestCase):
@@ -162,15 +165,18 @@ class IncStatTest(unittest.TestCase):
         exists in the below examples.
 
         """
-        assert s.MirrorFiles == 1 or s.MirrorFiles == 0
-        assert s.MirrorFileSize < 20000
-        assert s.NewFiles <= s.SourceFiles <= s.NewFiles + 1
-        assert s.NewFileSize <= s.SourceFileSize <= s.NewFileSize + 20000
-        assert s.ChangedFiles == 1 or s.ChangedFiles == 0
-        assert s.ChangedSourceSize < 20000
-        assert s.ChangedMirrorSize < 20000
-        assert s.DeletedFiles == s.DeletedFileSize == 0
-        assert s.IncrementFileSize == 0
+        self.assertIn(s.MirrorFiles, (0, 1))
+        self.assertLess(s.MirrorFileSize, 20000)
+        self.assertLessEqual(s.NewFiles, s.SourceFiles)
+        self.assertLessEqual(s.SourceFiles, s.NewFiles + 1)
+        self.assertLessEqual(s.NewFileSize, s.SourceFileSize)
+        self.assertLessEqual(s.SourceFileSize, s.NewFileSize + 20000)
+        self.assertIn(s.ChangedFiles, (0, 1))
+        self.assertLess(s.ChangedSourceSize, 20000)
+        self.assertLess(s.ChangedMirrorSize, 20000)
+        self.assertEqual(s.DeletedFiles, 0)
+        self.assertEqual(s.DeletedFileSize, 0)
+        self.assertEqual(s.IncrementFileSize, 0)
 
     def testStatistics(self):
         """Test the writing of statistics
@@ -197,26 +203,32 @@ class IncStatTest(unittest.TestCase):
                             os.path.join(abs_output_dir, b"rdiff-backup-data"))
 
         incs = sorti(restore.get_inclist(rbdir.append("session_statistics")))
-        assert len(incs) == 2
+        self.assertEqual(len(incs), 2)
         s2 = statistics.StatsObj().read_stats_from_rp(incs[0])
-        assert s2.SourceFiles == 7
-        assert 700000 <= s2.SourceFileSize < 750000, s2.SourceFileSize
+        self.assertEqual(s2.SourceFiles, 7)
+        self.assertLessEqual(700000, s2.SourceFileSize)
+        self.assertLess(s2.SourceFileSize, 750000)
         self.stats_check_initial(s2)
 
         root_stats = statistics.StatsObj().read_stats_from_rp(incs[1])
-        assert root_stats.SourceFiles == 7, root_stats.SourceFiles
-        assert 550000 <= root_stats.SourceFileSize < 570000
-        assert root_stats.MirrorFiles == 7
-        assert 700000 <= root_stats.MirrorFileSize < 750000
-        assert root_stats.NewFiles == 1
-        assert root_stats.NewFileSize == 0
-        assert root_stats.DeletedFiles == 1, root_stats.DeletedFiles
-        assert root_stats.DeletedFileSize == 200000
-        assert 3 <= root_stats.ChangedFiles <= 4, root_stats.ChangedFiles
-        assert 450000 <= root_stats.ChangedSourceSize < 470000
-        assert 400000 <= root_stats.ChangedMirrorSize < 420000, \
-            root_stats.ChangedMirrorSize
-        assert 10 < root_stats.IncrementFileSize < 30000
+        self.assertEqual(root_stats.SourceFiles, 7)
+        self.assertLessEqual(550000, root_stats.SourceFileSize)
+        self.assertLess(root_stats.SourceFileSize, 570000)
+        self.assertEqual(root_stats.MirrorFiles, 7)
+        self.assertLessEqual(700000, root_stats.MirrorFileSize)
+        self.assertLess(root_stats.MirrorFileSize, 750000)
+        self.assertEqual(root_stats.NewFiles, 1)
+        self.assertEqual(root_stats.NewFileSize, 0)
+        self.assertEqual(root_stats.DeletedFiles, 1)
+        self.assertEqual(root_stats.DeletedFileSize, 200000)
+        self.assertLessEqual(3, root_stats.ChangedFiles)
+        self.assertLessEqual(root_stats.ChangedFiles, 4)
+        self.assertLessEqual(450000, root_stats.ChangedSourceSize)
+        self.assertLess(root_stats.ChangedSourceSize, 470000)
+        self.assertLessEqual(400000, root_stats.ChangedMirrorSize)
+        self.assertLess(root_stats.ChangedMirrorSize, 420000)
+        self.assertLess(10, root_stats.IncrementFileSize)
+        self.assertLess(root_stats.IncrementFileSize, 30000)
 
 
 if __name__ == "__main__":

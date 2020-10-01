@@ -16,13 +16,9 @@ class RobustTest(unittest.TestCase):
             ansoethusaotneuhsaotneuhsaontehuaou  # noqa: F821 undefined name
 
         result = robust.check_common_error(None, cause_catchable_error, [1])
-        assert result is None, result
-        try:
+        self.assertIsNone(result)
+        with self.assertRaises(NameError):
             robust.check_common_error(None, cause_uncatchable_error)
-        except NameError:
-            pass
-        else:
-            assert 0, "Key error not raised"
 
 
 if __name__ == '__main__':
