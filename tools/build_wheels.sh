@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e -x
 
-pybindirs="/opt/python/cp35*/bin /opt/python/cp36*/bin /opt/python/cp37*/bin /opt/python/cp38*/bin"
+pybindirs="$*"
 
 # Install a system package required by our library
 yum install -y librsync-devel
