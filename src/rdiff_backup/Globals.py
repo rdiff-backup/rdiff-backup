@@ -412,10 +412,14 @@ def set_api_version(val):
         intval = int(val)
     except ValueError:
         log.Log.FatalError(
-            f"API version must be set to an integer, received {val} instead.")
+            "API version must be set to an integer, "
+            "received {val} instead.".format(val=val))
     if intval < api_version["min"] or intval > api_version["max"]:
-        log.Log.FatalError(f"API version {val} must be between "
-                           f"{api_version['min']} and {api_version['max']}.")
+        log.Log.FatalError(
+            "API version {val} must be between {api_min} and {api_max}.".format(
+                val=val,
+                api_min=api_version["min"],
+                api_max=api_version["max"]))
     api_version["actual"] = intval
 
 

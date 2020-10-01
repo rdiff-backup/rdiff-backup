@@ -411,7 +411,7 @@ def _test_connection(conn_number, rp):
         except AttributeError:  # Windows doesn't support os.getuid()
             assert type(conn.os.listdir(rp.path)) is list
     except BaseException as exc:
-        sys.stderr.write(f"- Server tests failed due to {exc}\n")
+        sys.stderr.write("- Server tests failed due to {exc}\n".format(exc=exc))
         return False
     else:
         print("- Server OK")
