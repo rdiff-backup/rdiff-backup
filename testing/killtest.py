@@ -1,11 +1,11 @@
 import unittest
 import os
-import shutil
 import signal
 import sys
 import random
 import time
-from commontest import abs_test_dir, old_test_dir, compare_recursive, RBBin
+from commontest import abs_test_dir, old_test_dir, compare_recursive, RBBin, \
+    xcopytree
 from rdiff_backup import Globals, restore, rpath, Time
 """Test consistency by killing rdiff-backup as it is backing up"""
 
@@ -113,11 +113,9 @@ class ProcessFuncs(unittest.TestCase):
 
         def copy_thrice(input, output):
             """Copy input directory to output directory three times"""
-            shutil.copytree(input, output, symlinks=True)
-            shutil.copytree(input, os.path.join(output, b"killtesta"),
-                            symlinks=True)
-            shutil.copytree(input, os.path.join(output, b"killtestb"),
-                            symlinks=True)
+            xcopytree(input, output)
+            xcopytree(input, os.path.join(output, b"killtesta"))
+            xcopytree(input, os.path.join(output, b"killtestb"))
 
         for i in range(len(Local.ktrp)):
             Local.ktrp[i].setdata()

@@ -5,7 +5,7 @@ import sys
 import time
 import pathlib
 from commontest import rdiff_backup, Myrm, compare_recursive, \
-    old_test_dir, abs_test_dir, get_increment_rp
+    old_test_dir, abs_test_dir, get_increment_rp, xcopytree
 from rdiff_backup import Globals, log, rpath, robust, FilenameMapping, Time, selection
 """Regression tests"""
 
@@ -281,8 +281,8 @@ class Final(PathSetter):
                     rp.delete()
 
         if not Local.wininc2.lstat() or not Local.wininc3.lstat():
-            os.system(b"cp -a testfiles/increment2 testfiles/win-increment2")
-            os.system(b"cp -a testfiles/increment3 testfiles/win-increment3")
+            xcopytree(b"testfiles/increment2", b"testfiles/win-increment2")
+            xcopytree(b"testfiles/increment3", b"testfiles/win-increment3")
             delete_long(Local.wininc2)
             delete_long(Local.wininc3)
 
@@ -443,9 +443,7 @@ class FinalMisc(PathSetter):
     def testRemoveOlderThan(self):
         """Test --remove-older-than.  Uses restoretest3"""
         Myrm(Local.rpout.path)
-        self.assertEqual(
-            os.system(b"cp -a %b %b" %
-                      (Local.backup3rp.path, Local.rpout.path)), 0)
+        xcopytree(Local.backup3rp.path, Local.rpout.path)
         rdiff_backup(True,
                      True,
                      Local.rpout.path,
@@ -458,9 +456,7 @@ class FinalMisc(PathSetter):
     def testRemoveOlderThan2(self):
         """Test --remove-older-than, but '1B'.  Uses restoretest3"""
         Myrm(Local.rpout.path)
-        self.assertEqual(
-            os.system(b"cp -a %b %b" %
-                      (Local.backup3rp.path, Local.rpout.path)), 0)
+        xcopytree(Local.backup3rp.path, Local.rpout.path)
         rdiff_backup(True,
                      True,
                      Local.rpout.path,
@@ -473,9 +469,7 @@ class FinalMisc(PathSetter):
     def testRemoveOlderThanCurrent(self):
         """Make sure --remove-older-than doesn't delete current incs"""
         Myrm(Local.rpout.path)
-        self.assertEqual(
-            os.system(b"cp -a %b %b" %
-                      (Local.backup3rp.path, Local.rpout.path)), 0)
+        xcopytree(Local.backup3rp.path, Local.rpout.path)
         rdiff_backup(True,
                      True,
                      Local.rpout.path,
@@ -516,9 +510,7 @@ class FinalMisc(PathSetter):
     def testRemoveOlderThanRemote(self):
         """Test --remove-older-than remotely"""
         Myrm(Local.rpout.path)
-        self.assertEqual(
-            os.system(b"cp -a %b %b" %
-                      (Local.backup3rp.path, Local.rpout.path)), 0)
+        xcopytree(Local.backup3rp.path, Local.rpout.path)
         rdiff_backup(False,
                      True,
                      Local.rpout.path,
@@ -707,7 +699,7 @@ class FinalCorrupt(PathSetter):
         rp2 = Local.get_tgt_local_rp('final_deleted2')
         if rp2.lstat():
             Myrm(rp2.path)
-        os.system(b'cp -a %b %b' % (rp1.path, rp2.path))
+        xcopytree(rp1.path, rp2.path)
         rp2_2_1 = rp2.append('dir', 'regfile2')
         self.assertTrue(rp2_2_1.lstat())
         rp2_2_1.delete()

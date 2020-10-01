@@ -3,7 +3,7 @@ import unittest
 import time
 from commontest import abs_test_dir, abs_output_dir, old_test_dir, re_init_rpath_dir, \
     compare_recursive, BackupRestoreSeries, InternalBackup, InternalRestore, \
-    MakeOutputDir, reset_hardlink_dicts
+    MakeOutputDir, reset_hardlink_dicts, xcopytree
 from rdiff_backup import Globals, Hardlink, selection, rpath, restore, metadata
 
 
@@ -92,7 +92,7 @@ class HardlinkTest(unittest.TestCase):
         hlout2 = rpath.RPath(Globals.local_connection, hlout2_dir)
         if hlout2.lstat():
             hlout2.delete()
-        self.assertFalse(os.system(b"cp -a %s %s" % (hlout1_dir, hlout2_dir)))
+        xcopytree(hlout1_dir, hlout2_dir)
         hlout2_sub = hlout2.append("subdir")
         hl2_1 = hlout2_sub.append("hardlink1")
         hl2_2 = hlout2_sub.append("hardlink2")

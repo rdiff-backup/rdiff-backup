@@ -2,7 +2,7 @@ import unittest
 import os
 from commontest import old_test_dir, abs_test_dir, abs_output_dir, Myrm, \
     abs_restore_dir, re_init_rpath_dir, compare_recursive, \
-    BackupRestoreSeries, rdiff_backup, RBBin
+    BackupRestoreSeries, rdiff_backup, RBBin, xcopytree
 from rdiff_backup import Globals, rpath, Main
 """Root tests - contain tests which need to be run as root.
 
@@ -352,7 +352,7 @@ class NonRoot(BaseRootTest):
                          os.path.join(abs_test_dir, b"root_out2"))
         if sp.lstat():
             Myrm(sp.path)
-        self._run_cmd(b"cp -a %s %s" % (rp.path, sp.path))
+        xcopytree(rp.path, sp.path)
         rp2 = sp.append("2")
         rp2.chown(2, 2)
         rp3 = sp.append("3")

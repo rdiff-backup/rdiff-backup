@@ -2,7 +2,7 @@ import unittest
 import os
 import io
 import time
-from commontest import old_test_dir, abs_output_dir, iter_equal
+from commontest import old_test_dir, abs_output_dir, iter_equal, xcopytree
 from rdiff_backup import rpath, Globals, selection
 from rdiff_backup.metadata import MetadataFile, PatchDiffMan, \
     quote_path, unquote_path, RorpExtractor
@@ -158,10 +158,8 @@ class MetadataTest(unittest.TestCase):
     def test_patch(self):
         """Test combining 3 iters of metadata rorps"""
         self.make_temp()
-        # shutil.copytree fails on the fifo file in the directory
-        os.system(
-            b'cp -a %s/* %s' %
-            (os.path.join(old_test_dir, b"various_file_types"), tempdir.path))
+        xcopytree(os.path.join(old_test_dir, b"various_file_types"),
+                  tempdir.path, content=True)
 
         rp1 = tempdir.append('regular_file')
         rp2 = tempdir.append('subdir')
