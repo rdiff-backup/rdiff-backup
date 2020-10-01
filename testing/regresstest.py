@@ -40,43 +40,40 @@ class RegressTest(unittest.TestCase):
                      self.incrp[0].path,
                      self.output_rp.path,
                      current_time=10000)
-        assert compare_recursive(self.incrp[0], self.output_rp)
+        self.assertTrue(compare_recursive(self.incrp[0], self.output_rp))
 
         rdiff_backup(1,
                      1,
                      self.incrp[1].path,
                      self.output_rp.path,
                      current_time=20000)
-        assert compare_recursive(self.incrp[1], self.output_rp)
+        self.assertTrue(compare_recursive(self.incrp[1], self.output_rp))
 
         rdiff_backup(1,
                      1,
                      self.incrp[2].path,
                      self.output_rp.path,
                      current_time=30000)
-        assert compare_recursive(self.incrp[2], self.output_rp)
+        self.assertTrue(compare_recursive(self.incrp[2], self.output_rp))
 
         rdiff_backup(1,
                      1,
                      self.incrp[3].path,
                      self.output_rp.path,
                      current_time=40000)
-        assert compare_recursive(self.incrp[3], self.output_rp)
+        self.assertTrue(compare_recursive(self.incrp[3], self.output_rp))
 
         Globals.rbdir = self.output_rbdir_rp
 
         regress_function(30000)
-        assert compare_recursive(self.incrp[2],
-                                 self.output_rp,
-                                 compare_hardlinks=0)
+        self.assertTrue(compare_recursive(self.incrp[2], self.output_rp,
+                                          compare_hardlinks=0))
         regress_function(20000)
-        assert compare_recursive(self.incrp[1],
-                                 self.output_rp,
-                                 compare_hardlinks=0)
+        self.assertTrue(compare_recursive(self.incrp[1], self.output_rp,
+                                          compare_hardlinks=0))
         regress_function(10000)
-        assert compare_recursive(self.incrp[0],
-                                 self.output_rp,
-                                 compare_hardlinks=0)
+        self.assertTrue(compare_recursive(self.incrp[0], self.output_rp,
+                                          compare_hardlinks=0))
 
     def regress_to_time_local(self, time):
         """Regress self.output_rp to time by running regress locally"""
@@ -130,7 +127,7 @@ class RegressTest(unittest.TestCase):
 
         cmd = b"rdiff-backup --check-destination-dir %s" % self.output_rp.path
         print("Executing:", cmd)
-        assert not os.system(cmd)
+        self.assertEqual(os.system(cmd), 0)
 
     def make_unreadable(self):
         """Make unreadable input directory
@@ -155,7 +152,7 @@ class RegressTest(unittest.TestCase):
     def change_unreadable(self):
         """Change attributes in directory, so regress will request fp"""
         subdir = self.output_rp.append('unreadable_dir')
-        assert subdir.lstat()
+        self.assertTrue(subdir.lstat())
         rp1_1 = subdir.append('to_be_unreadable')
         rp1_1.chmod(0)
         subdir.chmod(0)

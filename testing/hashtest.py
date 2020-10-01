@@ -25,16 +25,16 @@ class HashTest(unittest.TestCase):
         b1 = self.s1.encode()
         sfile = io.BytesIO(b1)
         fw = hash.FileWrapper(sfile)
-        assert fw.read() == b1
+        self.assertEqual(fw.read(), b1)
         report = fw.close()
-        assert report.sha1_digest == self.s1_hash, report.sha1_digest
+        self.assertEqual(report.sha1_digest, self.s1_hash)
 
         sfile2 = io.BytesIO(b1)
         fw2 = hash.FileWrapper(sfile2)
-        assert fw2.read(5) == b1[:5]
-        assert fw2.read() == b1[5:]
+        self.assertEqual(fw2.read(5), b1[:5])
+        self.assertEqual(fw2.read(), b1[5:])
         report2 = fw2.close()
-        assert report2.sha1_digest == self.s1_hash, report2.sha1_digest
+        self.assertEqual(report2.sha1_digest, self.s1_hash)
 
     def make_dirs(self):
         """Make two input directories"""
@@ -100,20 +100,20 @@ class HashTest(unittest.TestCase):
             os.path.join(abs_output_dir, b"rdiff-backup-data",
                          b"mirror_metadata"))
         incs = restore.get_inclist(meta_prefix)
-        assert len(incs) == 1
+        self.assertEqual(len(incs), 1)
         metadata_rp = incs[0]
         hashlist = self.extract_hashs(metadata_rp)
-        assert hashlist == hashlist1, (hashlist1, hashlist)
+        self.assertEqual(hashlist, hashlist1)
 
         rdiff_backup(1, 1, in_rp2.path, abs_output_dir, 20000)
         incs = restore.get_inclist(meta_prefix)
-        assert len(incs) == 2
+        self.assertEqual(len(incs), 2)
         if incs[0].getinctype() == 'snapshot':
             inc = incs[0]
         else:
             inc = incs[1]
         hashlist = self.extract_hashs(inc)
-        assert hashlist == hashlist2, (hashlist2, hashlist)
+        self.assertEqual(hashlist, hashlist2)
 
     def test_rorpiter_xfer(self):
         """Test if hashes are transferred in files, rorpiter"""
@@ -121,13 +121,14 @@ class HashTest(unittest.TestCase):
         conn = SetConnections._init_connection(
             b'%b %b/server.py' %
             (os.fsencode(sys.executable), abs_testing_dir))
-        assert conn.reval("lambda x: x+1", 4) == 5  # connection sanity check
+        # make a connection sanity check
+        self.assertEqual(conn.reval("lambda x: x+1", 4), 5)
 
         fp = hash.FileWrapper(io.BytesIO(self.s1.encode()))
         conn.Globals.set('tmp_file', fp)
         fp_remote = conn.Globals.get('tmp_file')
-        assert fp_remote.read() == self.s1.encode()
-        assert fp_remote.close().sha1_digest == self.s1_hash
+        self.assertEqual(fp_remote.read(), self.s1.encode())
+        self.assertEqual(fp_remote.close().sha1_digest, self.s1_hash)
 
         # Tested xfer of file, now test xfer of files in rorpiter
         root = MakeOutputDir()
@@ -145,17 +146,15 @@ class HashTest(unittest.TestCase):
         rorp1 = next(remote_iter)
         fp = hash.FileWrapper(rorp1.open('rb'))
         read_s1 = fp.read().decode()
-        assert read_s1 == self.s1, "Read string 1 %s isn't the same as written string %s" % (
-            read_s1, self.s1)
+        self.assertEqual(read_s1, self.s1)
         ret_val = fp.close()
-        assert isinstance(ret_val, hash.Report), ret_val
-        assert ret_val.sha1_digest == self.s1_hash
+        self.assertIsInstance(ret_val, hash.Report)
+        self.assertEqual(ret_val.sha1_digest, self.s1_hash)
         rorp2 = next(remote_iter)
         fp2 = hash.FileWrapper(rorp2.open('rb'))
         read_s2 = fp2.read().decode()
-        assert read_s2 == self.s2, "Read string 2 %s isn't the same as written string %s" % (
-            read_s2, self.s2)
-        assert fp2.close().sha1_digest == self.s2_hash
+        self.assertEqual(read_s2, self.s2)
+        self.assertEqual(fp2.close().sha1_digest, self.s2_hash)
 
         conn.quit()
 
