@@ -76,7 +76,9 @@ def Compare_full(src_rp, mirror_rp, inc_rp, compare_time):
 
 def Verify(mirror_rp, inc_rp, verify_time):
     """Compute SHA1 sums of repository files and check against metadata"""
-    assert mirror_rp.conn is Globals.local_connection
+    assert mirror_rp.conn is Globals.local_connection, (
+        "Only verify mirror locally, not remotely over '{conn}'.".format(
+            conn=mirror_rp.conn))
     repo_iter = RepoSide.init_and_get_iter(mirror_rp, inc_rp, verify_time)
     base_index = RepoSide.mirror_base.index
 
@@ -129,7 +131,7 @@ def _get_hash(repo_rorp):
 
 def _print_reports(report_iter):
     """Given an iter of CompareReport objects, print them to screen"""
-    assert not Globals.server
+    assert not Globals.server, "This function shouldn't run as server."
     changed_files_found = 0
     for report in report_iter:
         changed_files_found = 1
