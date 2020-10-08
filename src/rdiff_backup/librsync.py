@@ -103,7 +103,6 @@ class LikeFile:
 
     def _add_to_inbuf(self):
         """Make sure len(self.inbuf) >= blocksize"""
-        assert not self.infile_eof
         while len(self.inbuf) < blocksize:
             new_in = self.infile.read(blocksize)
             if not new_in:
@@ -148,7 +147,7 @@ class DeltaFile(LikeFile):
         else:
             self._check_file(signature)
             sig_string = signature.read()
-            assert not signature.close()
+            signature.close()
         try:
             self.maker = _librsync.new_deltamaker(sig_string)
         except _librsync.librsyncError as e:
