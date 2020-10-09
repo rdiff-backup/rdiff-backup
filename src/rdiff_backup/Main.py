@@ -1067,14 +1067,13 @@ def _action_check_dest(dest_rp):
     dest_rp = _require_root_set(dest_rp, 0)
     need_check = _checkdest_need_check(dest_rp)
     if need_check is None:
-        Log.FatalError(
-            "No destination dir found at %s" % dest_rp.get_safepath())
+        Log("No destination dir found at {ddir}.".format(
+            dest_rp.get_safepath()), 1)
+        return 1
     elif need_check == 0:
-        Log.FatalError(
-            "Destination dir %s does not need checking" %
-            dest_rp.get_safepath(),
-            no_fatal_message=1,
-            errlevel=0)
+        Log("Destination dir {ddir} does not need checking.".format(
+            dest_rp.get_safepath()), 2)
+        return 0
     _init_user_group_mapping(dest_rp.conn)
     dest_rp.conn.regress.Regress(dest_rp)
 

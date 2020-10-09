@@ -33,8 +33,10 @@ def _to_bytes(logline, encoding=LOGFILE_ENCODING):
     """
     Convert string into bytes for logging into file.
     """
-    assert logline
-    assert isinstance(logline, str)
+    assert logline, "There must be a text to encode."
+    assert isinstance(logline, str), (
+        "Text to encode must be str and not {ltype}.".format(
+            ltype=type(logline)))
     return logline.encode(encoding, 'backslashreplace')
 
 
@@ -79,7 +81,7 @@ class Logger:
         write commands off to it.
 
         """
-        assert not self.log_file_open
+        assert not self.log_file_open, "Can't open an already opened logfile."
         rpath.conn.log.Log.open_logfile_local(rpath)
         for conn in Globals.connections:
             conn.log.Log.open_logfile_allconn(rpath.conn)
@@ -91,7 +93,9 @@ class Logger:
 
     def open_logfile_local(self, rpath):
         """Open logfile locally - should only be run on one connection"""
-        assert rpath.conn is Globals.local_connection
+        assert rpath.conn is Globals.local_connection, (
+            "Action only foreseen locally and not over {conn}.".format(
+                conn=rpath.conn))
         try:
             self.logfp = rpath.open("ab")
         except (OSError, IOError) as e:
@@ -113,8 +117,10 @@ class Logger:
 
     def close_logfile_local(self):
         """Run by logging connection - close logfile"""
-        assert self.log_file_conn is Globals.local_connection
-        assert not self.logfp.close()
+        assert self.log_file_conn is Globals.local_connection, (
+            "Action only foreseen locally and not over {conn}.".format(
+                conn=self.log_file_conn))
+        self.logfp.close()
         self.log_file_local = None
 
     def _format(self, message, verbosity):
@@ -144,8 +150,12 @@ class Logger:
             return
 
         if not isinstance(message, (bytes, str)):
-            assert isinstance(message, types.FunctionType)
-            message = message()
+            if isinstance(message, types.FunctionType):
+                message = message()
+            else:
+                raise TypeError(
+                    "You can only log bytes, str or functions to generate "
+                    "messages, and not {ltype}.".format(ltype=type(message)))
 
         if verbosity <= self.verbosity:
             self.log_to_file(message)
@@ -195,15 +205,10 @@ class Logger:
         self.log_to_term(
             "%s %s (%d): %s" % (conn_str, direction, req_num, result_repr), 9)
 
-    def FatalError(self, message, no_fatal_message=0, errlevel=1):
+    def FatalError(self, message, return_code=1):
         """Log a fatal error and exit"""
-        assert no_fatal_message == 0 or no_fatal_message == 1
-        if no_fatal_message:
-            prefix_string = ""
-        else:
-            prefix_string = "Fatal Error: "
-        self.log_to_term(prefix_string + message, 1)
-        sys.exit(errlevel)
+        self.log_to_term("Fatal Error: " + message, 1)
+        sys.exit(return_code)
 
     def exception_to_string(self, arglist=[]):
         """Return string version of current exception plus what's in arglist"""
@@ -223,12 +228,13 @@ class Logger:
     def exception(self, only_terminal=0, verbosity=5):
         """Log an exception and traceback
 
-        If only_terminal is None, log normally.  If it is 1, then only
-        log to disk if log file is local (self.log_file_open = 1).  If
-        it is 2, don't log to disk at all.
-
+        If only_terminal is zero, log normally.
+        If it is 1, then only log to disk if log file is local
+        If it is 2, don't log to disk at all.
         """
-        assert only_terminal in (0, 1, 2)
+        assert only_terminal in (0, 1, 2), (
+            "Variable only_terminal '{oterm}' must be one of [012].".format(
+                oterm=only_terminal))
         if (only_terminal == 0 or (only_terminal == 1 and self.log_file_open)):
             logging_func = self.__call__
         else:
@@ -265,8 +271,7 @@ class ErrorLog:
         if not Globals.isbackup_writer:
             return Globals.backup_writer.log.ErrorLog.open(
                 time_string, compress)
-        assert not cls._log_fileobj, "log already open"
-        assert Globals.isbackup_writer
+        assert not cls._log_fileobj, "Log already open, can't be reopened."
 
         base_rp = Globals.rbdir.append("error_log.%s.data" % time_string)
         if compress:
@@ -321,12 +326,13 @@ class ErrorLog:
         """Close the error log file"""
         if not Globals.isbackup_writer:
             return Globals.backup_writer.log.ErrorLog.close()
-        assert not cls._log_fileobj.close()
+        cls._log_fileobj.close()
         cls._log_fileobj = None
 
     @classmethod
     def _get_log_string(cls, error_type, rp, exc):
         """Return log string to put in error log"""
         assert (error_type == "ListError" or error_type == "UpdateError"
-                or error_type == "SpecialFileError"), "Unknown type " + error_type
+                or error_type == "SpecialFileError"), (
+            "Unknown error type {etype}".format(etype=error_type))
         return "%s: '%s' %s" % (error_type, cls.get_indexpath(rp), exc)
