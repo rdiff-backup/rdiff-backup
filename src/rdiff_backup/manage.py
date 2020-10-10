@@ -41,18 +41,21 @@ def _get_file_type(rp):
 
 def _get_inc_type(inc):
     """Return file type increment represents"""
-    assert inc.isincfile()
-    type = inc.getinctype()
-    if type == b"dir":
+    assert inc.isincfile(), (
+        "File '{inc!s}' must be an increment.".format(inc=inc))
+    inc_type = inc.getinctype()
+    if inc_type == b"dir":
         return "directory"
-    elif type == b"diff":
+    elif inc_type == b"diff":
         return "regular"
-    elif type == b"missing":
+    elif inc_type == b"missing":
         return "missing"
-    elif type == b"snapshot":
+    elif inc_type == b"snapshot":
         return _get_file_type(inc)
     else:
-        assert None, "Unknown type %s" % type
+        Log.FatalError(
+            "Unknown type '{itype}' of increment '{ifile!s}'.".format(
+                itype=inc_type, ifile=inc))
 
 
 def describe_incs_parsable(incs, mirror_time, mirrorrp):
@@ -108,7 +111,9 @@ def delete_earlier_than(baserp, time):
 
 def delete_earlier_than_local(baserp, time):
     """Like delete_earlier_than, but run on local connection for speed"""
-    assert baserp.conn is Globals.local_connection
+    assert baserp.conn is Globals.local_connection, (
+        "Function should be called only locally and not over '{conn}'.".format(
+            conn=baserp.conn))
 
     def yield_files(rp):
         if rp.isdir():

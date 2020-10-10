@@ -119,7 +119,9 @@ def quote_path(path_string):
             return b"\\n"
         elif char == b"\\":
             return b"\\\\"
-        assert 0, "Bad char %s needs quoting" % char
+        else:
+            log.Log.FatalError(
+                "Bad char '{char}' shouldn't need quoting.".format(char=char))
 
     return _chars_to_quote.sub(replacement_func, path_string)
 
@@ -194,7 +196,7 @@ class FlatExtractor:
                 break
             yield self.buf[:next_pos]
             self.buf = self.buf[next_pos:]
-        assert not self.fileobj.close()
+        self.fileobj.close()
 
     def _skip_to_index(self, index):
         """Scan through the file, set buffer to beginning of index record
@@ -203,7 +205,8 @@ class FlatExtractor:
         we will not be splitting lines in half.
 
         """
-        assert not self.buf or self.buf.endswith(b"\n")
+        assert not self.buf or self.buf.endswith(b"\n"), (
+            "Something is wrong with buffer '{buf}'.".format(buf=self.buf))
         while 1:
             self.buf = self.fileobj.read(self.blocksize)
             self.buf += self.fileobj.readline()
@@ -239,7 +242,7 @@ class FlatExtractor:
             if self.at_end:
                 break
             self.buf = self.buf[next_pos:]
-        assert not self.fileobj.close()
+        self.fileobj.close()
 
     @staticmethod
     def _filename_to_index(filename):
@@ -249,7 +252,7 @@ class FlatExtractor:
         regexp_boundary_regexp.
 
         """
-        assert 0  # subclass
+        raise NotImplementedError()
 
 
 class RorpExtractor(FlatExtractor):
@@ -360,15 +363,16 @@ class FlatFile:
         self.callback = callback
         self._record_buffer = []
         if check_path:
-            assert (rp_base.isincfile()
-                    and rp_base.getincbase_bname() == self._prefix), rp_base
-            compress = 1
+            if (rp_base.isincfile()
+                    and rp_base.getincbase_bname() == self._prefix):
+                compress = 1
+            else:
+                log.Log.FatalError(
+                    "Checking the path '{rp!s}' went wrong.".format(rp=rp_base))
         if mode == 'r' or mode == 'rb':
             self.rp = rp_base
             self.fileobj = self.rp.open("rb", compress)
-        else:
-            assert mode == 'w' or mode == 'wb', \
-                "File opening mode must be one of r, rb, w or wb, and not %s." % mode
+        elif mode == 'w' or mode == 'wb':
             if compress and check_path and not rp_base.isinccompressed():
 
                 def callback(rp):
@@ -377,8 +381,14 @@ class FlatFile:
                 self.fileobj = rpath.MaybeGzip(rp_base, callback)
             else:
                 self.rp = rp_base
-                assert not self.rp.lstat(), self.rp
+                assert not self.rp.lstat(), (
+                    "Path '{rp!s}' can't exist before it's opened.".format(
+                        rp=self.rp))
                 self.fileobj = self.rp.open("wb", compress=compress)
+        else:
+            log.Log.FatalError(
+                "File opening mode '{omode}' should have been one of "
+                "r, rb, w or wb.".format(omode=mode))
 
     def _write_record(self, record):
         """Write a (text) record into the file"""
@@ -403,7 +413,7 @@ class FlatFile:
 
     def close(self):
         """Close file, for when any writing is done"""
-        assert self.fileobj, "File already closed"
+        assert self.fileobj, "Can't close file already closed."
         if self._buffering_on and self._record_buffer:
             self.fileobj.write(b"".join(self._record_buffer))
             self._record_buffer = []
@@ -540,7 +550,8 @@ class Manager:
 
     def _add_incrp(self, rp):
         """Add rp to list of inc rps in the rbdir"""
-        assert rp.isincfile(), rp
+        assert rp.isincfile(), (
+            "Path '{irp!s}' must be an increment file.".format(irp=rp))
         self.rplist.append(rp)
         time = rp.getinctime()
         if time in self.timerpmap:
@@ -627,8 +638,9 @@ class Manager:
         triple = map(os.fsencode, (prefix, timestr, typestr))
         filename = b'.'.join(triple)
         rp = Globals.rbdir.append(filename)
-        assert not rp.lstat(), "File %s already exists!" % (rp.path, )
-        assert rp.isincfile()
+        assert not rp.lstat(), "File '{rp!s}' shouldn't exist.".format(rp=rp)
+        assert rp.isincfile(), (
+            "Path '{irp!s}' must be an increment file.".format(irp=rp))
         return flatfileclass(rp, 'w', callback=self._add_incrp)
 
     def _get_meta_writer(self, typestr, time):
@@ -739,11 +751,15 @@ class PatchDiffMan(Manager):
     def _check_needs_diff(self):
         """Check if we should diff, returns (new, old) rps, or (None, None)"""
         inclist = self.sorted_prefix_inclist(b'mirror_metadata')
-        assert len(inclist) >= 1
+        assert len(inclist) >= 1, (
+            "There must be a least one element in '{ilist}'.".format(
+                ilist=inclist))
         if len(inclist) == 1:
             return (None, None)
         newrp, oldrp = inclist[:2]
-        assert newrp.getinctype() == oldrp.getinctype() == b'snapshot'
+        assert newrp.getinctype() == oldrp.getinctype() == b'snapshot', (
+            "New '{nrp!s}' and old '{orp!s}' paths must be of "
+            "type 'snapshot'.".format(nrp=newrp, orp=oldrp))
 
         chainlen = 1
         for rp in inclist[2:]:
@@ -786,11 +802,17 @@ class PatchDiffMan(Manager):
         inclist = self.sorted_prefix_inclist(b'mirror_metadata', min_time=time)
         if not inclist:
             return inclist
-        assert inclist[-1].getinctime() == time, inclist[-1]
+        assert inclist[-1].getinctime() == time, (
+            "The time of the last increment '{itime}' must be equal to "
+            "the given time '{time}'.".format(itime=inclist[-1].getinctime(),
+                                              time=time))
         for i in range(len(inclist) - 1, -1, -1):
             if inclist[i].getinctype() == b'snapshot':
                 return inclist[i:]
-        assert 0, "Inclist %s contains no snapshots" % (inclist, )
+        else:
+            log.Log.FatalError(
+                "Increments list '{ilist}' contains no snapshots".format(
+                    ilist=inclist))
 
     def _iterate_patched_meta(self, meta_iter_list):
         """Return an iter of metadata rorps by combining the given iters
@@ -807,7 +829,7 @@ class PatchDiffMan(Manager):
                         yield meta_tuple[i]
                     break  # move to next index
             else:
-                assert 0, "No valid rorps"
+                log.Log.FatalError("No valid metadata tuple in list")
 
 
 ManagerObj = None  # Set this later to Manager instance
