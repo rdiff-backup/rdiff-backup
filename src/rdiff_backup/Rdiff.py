@@ -66,7 +66,8 @@ def write_delta(basis, new, delta, compress=None):
 def write_patched_fp(basis_fp, delta_fp, out_fp):
     """Write patched file to out_fp given input fps.  Closes input files"""
     rpath.copyfileobj(librsync.PatchedFile(basis_fp, delta_fp), out_fp)
-    assert not basis_fp.close() and not delta_fp.close()
+    basis_fp.close()
+    delta_fp.close()
 
 
 def _write_via_tempfile(fp, rp):
@@ -88,7 +89,9 @@ def patch_local(rp_basis, rp_delta, outrp=None, delta_compressed=None):
     used to produce hashes.
 
     """
-    assert rp_basis.conn is Globals.local_connection
+    assert rp_basis.conn is Globals.local_connection, (
+        "This function must run locally and not over '{conn}'.".format(
+            conn=rp_basis.conn))
     if delta_compressed:
         deltafile = rp_delta.open("rb", 1)
     else:

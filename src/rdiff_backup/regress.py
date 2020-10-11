@@ -60,9 +60,12 @@ def Regress(mirror_rp):
 
     """
     inc_rpath = Globals.rbdir.append_path(b"increments")
-    assert mirror_rp.index == () and inc_rpath.index == ()
-    assert mirror_rp.isdir() and inc_rpath.isdir()
-    assert mirror_rp.conn is inc_rpath.conn is Globals.local_connection
+    assert mirror_rp.index == () and inc_rpath.index == (), (
+        "Mirror and increment paths must have an empty index")
+    assert mirror_rp.isdir() and inc_rpath.isdir(), (
+        "Mirror and increments paths must be directories")
+    assert mirror_rp.conn is inc_rpath.conn is Globals.local_connection, (
+        "Regress must happen locally.")
     manager, former_current_mirror_rp = _set_regress_time()
     _set_restore_times()
     _regress_rbdir(manager)
@@ -86,8 +89,9 @@ def _set_regress_time():
     global regress_time, unsuccessful_backup_time
     manager = metadata.SetManager()
     curmir_incs = manager.sorted_prefix_inclist(b'current_mirror')
-    assert len(curmir_incs) == 2, \
-        "Found %s current_mirror flags, expected 2" % len(curmir_incs)
+    assert len(curmir_incs) == 2, (
+        "Found {ilen} current_mirror flags, expected 2".format(
+            len(curmir_incs)))
     mirror_rp_to_delete = curmir_incs[0]
     regress_time = curmir_incs[1].getinctime()
     unsuccessful_backup_time = mirror_rp_to_delete.getinctime()
@@ -123,9 +127,13 @@ def _regress_rbdir(meta_manager):
         if old_rp.getincbase_bname() == b'mirror_metadata':
             if old_rp.getinctype() == b'snapshot':
                 has_meta_snap = 1
-            else:
-                assert old_rp.getinctype() == b'diff', old_rp
+            elif old_rp.getinctype() == b'diff':
                 has_meta_diff = 1
+            else:
+                raise ValueError(
+                    "Increment type for metadata mirror must be one of "
+                    "'snapshot' or 'diff', not {mtype}.".format(
+                        mtype=old_rp.getinctype()))
     if has_meta_diff and not has_meta_snap:
         _recreate_meta(meta_manager)
 
@@ -161,7 +169,8 @@ def _recreate_meta(meta_manager):
 
     finalrp = Globals.rbdir.append(
         b"mirror_metadata.%b.snapshot.gz" % Time.timetobytes(regress_time))
-    assert not finalrp.lstat(), finalrp
+    assert not finalrp.lstat(), (
+        "Metadata path '{mrp!s}' shouldn't exist.".format(mrp=finalrp))
     rpath.rename(temprp[0], finalrp)
     if Globals.fsync_directories:
         Globals.rbdir.fsync()
@@ -313,7 +322,9 @@ class RegressITRB(rorpiter.ITRBranch):
         mirror is fully written.
 
         """
-        assert rf.metadata_rorp.isreg()
+        assert rf.metadata_rorp.isreg(), (
+            "Metadata path '{mrp!s}' can only be regular file.".format(
+                mrp=rf.metadata_rorp))
         if rf.mirror_rp.isreg():
             tf = rf.mirror_rp.get_temp_rpath(sibling=True)
             tf.write_from_fileobj(rf.get_restore_fp())
@@ -357,7 +368,9 @@ class RegressITRB(rorpiter.ITRBranch):
                 log.Log("Regressing file %s" % rf.mirror_rp.get_safepath(), 5)
                 rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
         else:  # replacing a dir with some other kind of file
-            assert rf.mirror_rp.isdir()
+            assert rf.mirror_rp.isdir(), (
+                "Mirror '{mrp!s}' can only be a directory.".format(
+                    mrp=rf.mirror_rp))
             log.Log("Replacing directory %s" % rf.mirror_rp.get_safepath(), 5)
             if rf.metadata_rorp.isreg():
                 self._restore_orig_regfile(rf)
@@ -382,17 +395,9 @@ def check_pids(curmir_incs):
             return int(match.group(1))
 
     def pid_running(pid):
-        """True if we know if process with pid is currently running"""
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:  # errno.ESRCH - pid doesn't exist
-            return 0
-        except OSError:  # any other OS error
-            log.Log(
-                "Warning: unable to check if PID %d still running" % (pid, ),
-                2)
-        except AttributeError:
-            assert os.name == 'nt'
+        """Return True if we know if process with pid is currently running,
+        False if it isn't running, and None if we don't know for sure."""
+        if os.name == 'nt':
             import win32api
             import win32con
             import pywintypes
@@ -402,19 +407,35 @@ def check_pids(curmir_incs):
                                                pid)
             except pywintypes.error as error:
                 if error[0] == 87:
-                    return 0
+                    return False
                 else:
                     msg = "Warning: unable to check if PID %d still running"
                     log.Log(msg % pid, 2)
-            if process:
-                win32api.CloseHandle(process)
-                return 1
-            return 0
-        return 1
+                    return None  # we don't know if the process is running
+            else:
+                if process:
+                    win32api.CloseHandle(process)
+                    return True
+                else:
+                    return False
+        else:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:  # errno.ESRCH - pid doesn't exist
+                return False
+            except OSError:  # any other OS error
+                log.Log(
+                    "Warning: unable to check if PID %d still running" % (pid, ),
+                    2)
+                return None  # we don't know if the process is still running
+            else:  # the process still exists
+                return True
 
     for curmir_rp in curmir_incs:
         assert Globals.local_connection is curmir_rp.conn
         pid = extract_pid(curmir_rp)
+        # FIXME differentiate between don't know and know and handle err.errno == errno.EPERM:
+        # EPERM clearly means there's a process to deny access to with OSError
         if pid is not None and pid_running(pid):
             log.Log.FatalError(
                 """It appears that a previous rdiff-backup session with process
