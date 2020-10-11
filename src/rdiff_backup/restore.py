@@ -57,7 +57,8 @@ def get_inclist(inc_rpath):
         inc_info = rpath.get_incfile_info(filename)
         if inc_info and inc_info[3] == basename:
             inc = parent_dir.append(filename)
-            assert inc.isincfile()
+            assert inc.isincfile(), (
+                "Path '{irp!s}' must be an increment file".format(irp=inc))
             inc_list.append(inc)
     return inc_list
 
@@ -250,7 +251,9 @@ class MirrorStruct:
 
         def get_iter():
             for rorp in rorp_iter:
-                assert rorp.index[:len(index)] == index, (rorp.index, index)
+                assert rorp.index[:len(index)] == index, (
+                    "Path '{ridx}' must be a sub-path of '{idx}'.".format(
+                        ridx=rorp.index, idx=index))
                 rorp.index = rorp.index[len(index):]
                 yield rorp
 
@@ -529,7 +532,9 @@ class RestoreFile:
             for inc_diff in self.relevant_incs[1:]:
                 log.Log("Applying patch %s" % (inc_diff.get_safeindexpath(), ),
                         7)
-                assert inc_diff.getinctype() == b'diff'
+                assert inc_diff.getinctype() == b'diff', (
+                    "Path '{irp!s}' must be of type 'diff'.".format(
+                        irp=inc_diff))
                 delta_fp = inc_diff.open("rb", inc_diff.isinccompressed())
                 new_fp = tempfile.TemporaryFile()
                 Rdiff.write_patched_fp(current_fp, delta_fp, new_fp)
@@ -560,7 +565,9 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
     def _get_first_fp(self):
         """Return first file object from relevant inc list"""
         first_inc = self.relevant_incs[0]
-        assert first_inc.getinctype() == b'snapshot'
+        assert first_inc.getinctype() == b'snapshot', (
+            "Path '{srp!s}' must be of type 'snapshot'.".format(
+                srp=first_inc))
         if not first_inc.isinccompressed():
             return first_inc.open("rb")
 
@@ -568,7 +575,7 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
         current_fp = tempfile.TemporaryFile()
         fp = first_inc.open("rb", compress=1)
         rpath.copyfileobj(fp, current_fp)
-        assert not fp.close()
+        fp.close()
         current_fp.seek(0)
         return current_fp
 
@@ -598,7 +605,8 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
 
     def _yield_mirrorrps(self, mirrorrp):
         """Yield mirrorrps underneath given mirrorrp"""
-        assert mirrorrp.isdir()
+        assert mirrorrp.isdir(), (
+            "Mirror path '{mrp!s}' must be a directory.".format(mrp=mirrorrp))
         for filename in robust.listrp(mirrorrp):
             rp = mirrorrp.append(filename)
             if rp.index != (b'rdiff-backup-data', ):
@@ -638,7 +646,8 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
             inc_list = []
             for filename in filenames:
                 rp = inc_rpath.append(filename)
-                assert rp.isincfile(), rp.path
+                assert rp.isincfile(), (
+                    "Path '{mrp!s}' must be an increment file.".format(mrp=rp))
                 inc_list.append(rp)
             return inc_list
 
@@ -667,8 +676,9 @@ class PatchITRB(rorpiter.ITRBranch):
 
     def __init__(self, basis_root_rp):
         """Set basis_root_rp, the base of the tree to be incremented"""
+        assert basis_root_rp.conn is Globals.local_connection, (
+            "Function shall be called only locally.")
         self.basis_root_rp = basis_root_rp
-        assert basis_root_rp.conn is Globals.local_connection
         self.dir_replacement, self.dir_update = None, None
         self.cached_rp = None
 
@@ -716,7 +726,9 @@ class PatchITRB(rorpiter.ITRBranch):
         if diff_rorp.get_attached_filetype() == 'snapshot':
             copy_report = rpath.copy(diff_rorp, new)
         else:
-            assert diff_rorp.get_attached_filetype() == 'diff'
+            assert diff_rorp.get_attached_filetype() == 'diff', (
+                "File '{drp!s}' must be of type '{dtype}'.".format(
+                    drp=diff_rorp, dtype='diff'))
             copy_report = Rdiff.patch_local(basis_rp, diff_rorp, new)
         self._check_hash(copy_report, diff_rorp)
         if new.lstat():
@@ -725,7 +737,10 @@ class PatchITRB(rorpiter.ITRBranch):
     def start_process(self, index, diff_rorp):
         """Start processing directory - record information for later"""
         base_rp = self.base_rp = self._get_rp_from_root(index)
-        assert diff_rorp.isdir() or base_rp.isdir() or not base_rp.index
+        assert diff_rorp.isdir() or base_rp.isdir() or not base_rp.index, (
+            "Either difference '{drp!s}' or base '{brp!s}' path must be a "
+            "directory or the index of the base be empty.".format(
+                drp=diff_rorp, brp=base_rp))
         if diff_rorp.isdir():
             self._prepare_dir(diff_rorp, base_rp)
         else:
@@ -737,7 +752,9 @@ class PatchITRB(rorpiter.ITRBranch):
         This is used when base_rp is a dir, and diff_rorp is not.
 
         """
-        assert diff_rorp.get_attached_filetype() == 'snapshot'
+        assert diff_rorp.get_attached_filetype() == 'snapshot', (
+            "File '{drp!s}' must be of type '{dtype}'.".format(
+                drp=diff_rorp, dtype='snapshot'))
         self.dir_replacement = base_rp.get_temp_rpath(sibling=True)
         rpath.copy_with_attribs(diff_rorp, self.dir_replacement)
         if base_rp.isdir():
@@ -755,10 +772,13 @@ class PatchITRB(rorpiter.ITRBranch):
     def end_process(self):
         """Finish processing directory"""
         if self.dir_update:
-            assert self.base_rp.isdir()
+            assert self.base_rp.isdir(), (
+                "Base path '{brp!s}' must be a directory.".format(
+                    brp=self.base_rp))
             rpath.copy_attribs(self.dir_update, self.base_rp)
         else:
-            assert self.dir_replacement
+            assert self.dir_replacement, (
+                "Replacement directory must be defined.")
             self.base_rp.rmdir()
             if self.dir_replacement.lstat():
                 rpath.rename(self.dir_replacement, self.base_rp)
@@ -824,9 +844,7 @@ class PermissionChanger:
         for i in range(len(index) - 1, -1, -1):
             if old_index[:i] == index[:i]:
                 common_prefix_len = i
-                break
-        else:
-            assert 0
+                break  # latest with i==0 does the break happen
 
         for total_len in range(common_prefix_len + 1, len(index) + 1):
             yield self.root_rp.new_index(index[:total_len])
