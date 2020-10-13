@@ -71,7 +71,8 @@ def initialize(action, cmdpairs):
 
 def reset_restrict_path(rp):
     """Reset restrict path to be within rpath"""
-    assert rp.conn is Globals.local_connection
+    assert rp.conn is Globals.local_connection, (
+        "Function works locally not over '{conn}'.".format(conn=rp.conn))
     Globals.restrict_path = rp.normalize().path
 
 
@@ -111,8 +112,7 @@ def _set_security_level(action, cmdpairs):
         elif islocal(cp1):
             sec_level = "read-only"
             rdir = getpath(cp1)
-        else:
-            assert islocal(cp2)
+        else:  # cp2 is local but not cp1
             sec_level = "update-only"
             rdir = getpath(cp2)
     elif action == "restore" or action == "restore-as-of":
@@ -127,8 +127,7 @@ def _set_security_level(action, cmdpairs):
                 rdir = Main.restore_root.path
             else:
                 log.Log.FatalError("Invalid restore directory")
-        else:
-            assert islocal(cp2)
+        else:  # cp2 is local but not cp1
             sec_level = "all"
             rdir = getpath(cp2)
     elif action == "mirror":
@@ -138,8 +137,7 @@ def _set_security_level(action, cmdpairs):
         elif islocal(cp1):
             sec_level = "read-only"
             rdir = getpath(cp1)
-        else:
-            assert islocal(cp2)
+        else:  # cp2 is local but not cp1
             sec_level = "all"
             rdir = getpath(cp2)
     elif action in [
@@ -151,7 +149,7 @@ def _set_security_level(action, cmdpairs):
         sec_level = "minimal"
         rdir = tempfile.gettempdir()
     else:
-        assert 0, "Unknown action %s" % action
+        raise RuntimeError("Unknown action '{act}'.".format(action))
 
     Globals.security_level = sec_level
     Globals.restrict_path = rpath.RPath(Globals.local_connection,

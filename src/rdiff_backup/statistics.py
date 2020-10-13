@@ -228,7 +228,7 @@ class StatsObj:
         """Write statistics string to given rpath"""
         fp = rp.open("w")  # statistics are a text file
         fp.write(self._get_stats_string())
-        assert not fp.close()
+        fp.close()
 
     def read_stats_from_rp(self, rp):
         """Set statistics from rpath, return self for convenience"""
@@ -239,7 +239,8 @@ class StatsObj:
 
     def _stats_equal(self, s):
         """Return true if s has same statistics as self"""
-        assert isinstance(s, StatsObj)
+        assert isinstance(s, StatsObj), (
+            "Can only compare with StatsObj not {stype}.".format(stype=type(s)))
         for attr in self._stat_file_attrs:
             if self.get_stat(attr) != s.get_stat(attr):
                 return None
@@ -333,7 +334,7 @@ _active_statfileobj = None
 def init_statfileobj():
     """Return new stat file object, record as active stat object"""
     global _active_statfileobj
-    assert not _active_statfileobj, _active_statfileobj
+    assert not _active_statfileobj, "Can't set an already set stats object."
     _active_statfileobj = StatFileObj()
     return _active_statfileobj
 
@@ -361,7 +362,7 @@ def process_increment(inc_rorp):
 def write_active_statfileobj(end_time=None):
     """Write active StatFileObj object to session statistics file"""
     global _active_statfileobj
-    assert _active_statfileobj
+    assert _active_statfileobj, "Stats object must be set before writing."
     rp_base = Globals.rbdir.append(b"session_statistics")
     session_stats_rp = increment.get_inc(rp_base, 'data', Time.curtime)
     _active_statfileobj.finish(end_time)
@@ -372,7 +373,7 @@ def write_active_statfileobj(end_time=None):
 def print_active_stats(end_time=None):
     """Print statistics of active statobj to stdout and log"""
     global _active_statfileobj
-    assert _active_statfileobj
+    assert _active_statfileobj, "Stats object must be set before printing."
     _active_statfileobj.finish(end_time)
     statmsg = _active_statfileobj.get_stats_logstring("Session statistics")
     log.Log.log_to_file(statmsg)
@@ -387,11 +388,13 @@ class FileStats:
     @classmethod
     def init(cls):
         """Open file stats object and prepare to write"""
-        assert not (cls._fileobj or cls._rp), (cls._fileobj, cls._rp)
+        assert not (cls._fileobj or cls._rp), (
+            "FileStats has already been initialized.")
         rpbase = Globals.rbdir.append(b"file_statistics")
         suffix = Globals.compression and 'data.gz' or 'data'
         cls._rp = increment.get_inc(rpbase, suffix, Time.curtime)
-        assert not cls._rp.lstat()
+        assert not cls._rp.lstat(), (
+            "Path '{rp!s}' shouldn't be existing.".format(rp=cls._rp))
         cls._fileobj = cls._rp.open("wb", compress=Globals.compression)
 
         cls._line_sep = Globals.null_separator and b'\0' or b'\n'
@@ -439,7 +442,8 @@ class FileStats:
         method seems fairly slow.
 
         """
-        assert cls._line_buffer and cls._fileobj
+        assert cls._line_buffer and cls._fileobj, (
+            "FileStats hasn't been properly initialized.")
         cls._line_buffer.append(b'')  # have join add _line_sep to end also
         cls._fileobj.write(cls._line_sep.join(cls._line_buffer))
         cls._line_buffer = []
@@ -447,8 +451,8 @@ class FileStats:
     @classmethod
     def close(cls):
         """Close file stats file"""
-        assert cls._fileobj, cls._fileobj
+        assert cls._fileobj, ("FileStats hasn't been properly initialized.")
         if cls._line_buffer:
             cls._write_buffer()
-        assert not cls._fileobj.close()
+        cls._fileobj.close()
         cls._fileobj = cls._rp = None
