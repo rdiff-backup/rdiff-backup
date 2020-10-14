@@ -432,7 +432,9 @@ def check_pids(curmir_incs):
                 return True
 
     for curmir_rp in curmir_incs:
-        assert Globals.local_connection is curmir_rp.conn
+        assert curmir_rp.conn is Globals.local_connection, (
+            "Function must be called locally not over '{conn}'.".format(
+                conn=curmir_rp.conn))
         pid = extract_pid(curmir_rp)
         # FIXME differentiate between don't know and know and handle err.errno == errno.EPERM:
         # EPERM clearly means there's a process to deny access to with OSError
