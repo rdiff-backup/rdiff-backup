@@ -524,8 +524,8 @@ class CacheCollatedPostProcess:
     def get_source_rorp(self, index):
         """Retrieve source_rorp with given index from cache"""
         assert index >= self.cache_indices[0], (
-            "CCPP index out of order: {idx!r} vs. {cached!r}.".format(
-                index, self.cache_indices[0]))
+            "CCPP index out of order: {idx!r} shouldn't be less than "
+            "{cached!r}.".format(idx=index, cached=self.cache_indices[0]))
         try:
             return self.cache_dict[index][0]
         except KeyError:

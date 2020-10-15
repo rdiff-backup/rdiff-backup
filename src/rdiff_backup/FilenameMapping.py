@@ -78,7 +78,7 @@ def _init_quoting_regexps():
     global chars_to_quote_regexp, unquoting_regexp
     assert chars_to_quote and isinstance(chars_to_quote, bytes), (
         "Chars to quote must be non-empty bytes: '{ctq}'.".format(
-            _safe_str(chars_to_quote)))
+            ctq=_safe_str(chars_to_quote)))
     try:
         chars_to_quote_regexp = re.compile(b"[%b]|%b" %
                                            (chars_to_quote, quoting_char), re.S)

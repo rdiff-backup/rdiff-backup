@@ -71,7 +71,7 @@ def get_inc(rp, typestr, time=None):
     if incrp.lstat():
         log.Log.FatalError(
             "New increment path '{rp!s}' shouldn't exist, something went "
-            "really wrong.".format(incrp))
+            "really wrong.".format(rp=incrp))
     return incrp
 
 

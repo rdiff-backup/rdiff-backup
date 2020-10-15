@@ -618,7 +618,7 @@ def _backup_get_mirrortime():
     mirror_rps = restore.get_inclist(incbase)
     assert len(mirror_rps) <= 1, (
         "Found {mlen} current_mirror paths, expected <=1".format(
-            len(mirror_rps)))
+            mlen=len(mirror_rps)))
     if mirror_rps:
         return mirror_rps[0].getinctime()
     else:
@@ -1132,7 +1132,7 @@ information in it.
                                "running due to\n%s" % exc)
         assert len(curmir_incs) == 2, (
             "Found more than 2 current_mirror incs in '{rp!s}'.".format(
-                Globals.rbdir))
+                rp=Globals.rbdir))
         return 1
 
 

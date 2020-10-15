@@ -443,7 +443,7 @@ class AccessControlLists:
             return True
         assert len(self.entry_list) >= 3, (
             "Too few ACL entries '{ent}', must be 3 or more.".format(
-                self.entry_list))
+                ent=self.entry_list))
         return len(self.entry_list) == 3 and not self.default_entry_list
 
     def read_from_rp(self, rp):

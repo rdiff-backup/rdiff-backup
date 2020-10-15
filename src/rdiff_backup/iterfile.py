@@ -170,7 +170,7 @@ class IterVirtualFile(UnwrapFile):
                 return None
         else:
             raise ValueError("Type '{itype}' must be one of [ce].".format(
-                iwf_type))
+                itype=iwf_type))
 
     def _set_close_val(self):
         """Read the close value and clear currently_in_file"""
@@ -182,7 +182,7 @@ class IterVirtualFile(UnwrapFile):
             self.close_value = iwf_object
         else:
             raise ValueError("Type '{itype}' must be equal to 'h'.".format(
-                iwf_type))
+                itype=iwf_type))
 
 
 class FileWrappingIter:

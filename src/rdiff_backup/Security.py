@@ -149,7 +149,7 @@ def _set_security_level(action, cmdpairs):
         sec_level = "minimal"
         rdir = tempfile.gettempdir()
     else:
-        raise RuntimeError("Unknown action '{act}'.".format(action))
+        raise RuntimeError("Unknown action '{act}'.".format(act=action))
 
     Globals.security_level = sec_level
     Globals.restrict_path = rpath.RPath(Globals.local_connection,

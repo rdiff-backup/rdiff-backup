@@ -91,7 +91,7 @@ def _set_regress_time():
     curmir_incs = manager.sorted_prefix_inclist(b'current_mirror')
     assert len(curmir_incs) == 2, (
         "Found {ilen} current_mirror flags, expected 2".format(
-            len(curmir_incs)))
+            ilen=len(curmir_incs)))
     mirror_rp_to_delete = curmir_incs[0]
     regress_time = curmir_incs[1].getinctime()
     unsuccessful_backup_time = mirror_rp_to_delete.getinctime()

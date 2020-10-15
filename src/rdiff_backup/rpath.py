@@ -1125,8 +1125,8 @@ class RPath(RORPath):
         self.setdata()
         if temptype != self.data['type']:
             print("\nPath: {rp!s}\nhas cached an inconsistent type\n"
-                  "Old: %s --> New: %s\n".format(
-                      self, temptype, self.data['type']))
+                  "Old: {otype} --> New: {ntype}\n".format(
+                      rp=self, otype=temptype, ntype=self.data['type']))
 
     def chmod(self, permissions, loglevel=2):
         """Wrapper around os.chmod"""

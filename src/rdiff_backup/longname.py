@@ -107,7 +107,7 @@ def _get_next_free_filename():
     filename = b'%i' % _free_name_counter
     rp = _get_long_rp(filename)
     assert not rp.lstat(), (
-        "Unexpected file '{rp!s}' found".format(rp))
+        "Unexpected file '{rp!s}' found".format(rp=rp))
     _free_name_counter += 1
     write_next_free(_free_name_counter)
     return filename
@@ -234,7 +234,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
     else:
         log.Log.FatalError(
             "Neither old '{orp!s}' nor new path '{nrp!s}' is existing.".format(
-                old_rorp, new_rorp))
+                orp=old_rorp, nrp=new_rorp))
 
     alt_inc, inc_rp = find_inc_pair(index, mirror_rp, alt_mirror, alt_inc)
     update_rorp(new_rorp, alt_mirror, alt_inc)
