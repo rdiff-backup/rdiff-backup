@@ -222,6 +222,9 @@ setup(
         'build_py': build_py,
         'clean': clean,
     },
-    install_requires=['importlib-metadata ~= 1.0 ; python_version < "3.8"'],
+    install_requires=[
+        'importlib-metadata ~= 1.0 ; python_version < "3.8"',
+        'PyYAML',
+    ],
     setup_requires=['setuptools_scm'],
 )
