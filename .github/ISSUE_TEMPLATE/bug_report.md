@@ -9,24 +9,27 @@ assignees: ''
 
 ## Bug summary
 
-A clear and concise description of what the bug is.
+REPLACE THIS LINE - A clear and concise description of what the bug is
 
 ## Version, Python, Operating System
 
-Call `rdiff-backup -v9` and paste the output between the backquotes below, repeat for each environment impacted:
+Call `rdiff-backup --version --api-version 201` or `rdiff-backup -v9` and replace the following line with the output, repeat for each environment impacted:
 
-```
+```yaml
+<REPLACE THIS LINE - version info>
 ```
 
 ## rdiff-backup call
 
-How did you call rdiff-backup, with which parameter:
+How did you call rdiff-backup, with which parameters:
 
 ```
+<REPLACE THIS LINE - parameters>
 ```
 
 ## What happened and what did you expect?
 
+REPLACE THIS LINE - what happened, what did you expect?
 
 ## More information
 
