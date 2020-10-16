@@ -30,15 +30,15 @@ class ResourceForkTest(unittest.TestCase):
         self.make_temp()
         rp = self.tempdir.append('test')
         rp.touch()
-        assert rp.get_resource_fork() == '', rp.get_resource_fork()
+        self.assertEqual(rp.get_resource_fork(), '')
 
         s = 'new resource fork data'
         rp.write_resource_fork(s)
-        assert rp.get_resource_fork() == s, rp.get_resource_fork()
+        self.assertEqual(rp.get_resource_fork(), s)
 
         rp2 = self.tempdir.append('test')
-        assert rp2.isreg()
-        assert rp2.get_resource_fork() == s, rp2.get_resource_fork()
+        self.assertTrue(rp2.isreg())
+        self.assertEqual(rp2.get_resource_fork(), s)
 
     def testRecord(self):
         """Test reading, writing, and comparing of records with rforks"""
@@ -49,8 +49,8 @@ class ResourceForkTest(unittest.TestCase):
 
         record = metadata.RORP2Record(rp)
         rorp_out = metadata.Record2RORP(record)
-        assert rorp_out == rp, (rorp_out, rp)
-        assert rorp_out.get_resource_fork() == 'hello'
+        self.assertEqual(rorp_out, rp)
+        self.assertEqual(rorp_out.get_resource_fork(), 'hello')
 
     def make_backup_dirs(self):
         """Create testfiles/resource_fork_test[12] dirs for testing"""

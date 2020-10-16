@@ -30,17 +30,17 @@ class LibrsyncTest(unittest.TestCase):
             self._clean_file(self.sig)
             rdiff_help_text = subprocess.check_output(["rdiff", "--help"])
             if b'-R' in rdiff_help_text:
-                assert not os.system(
+                self.assertEqual(os.system(
                     b"rdiff -b %i -R rollsum -S 8 -H md4 signature %b %b" %
-                    (blocksize, self.basis.path, self.sig.path))
+                    (blocksize, self.basis.path, self.sig.path)), 0)
             elif b'-H' in rdiff_help_text:
-                assert not os.system(
+                self.assertEqual(os.system(
                     b"rdiff -b %i -H md4 signature %b %b" %
-                    (blocksize, self.basis.path, self.sig.path))
+                    (blocksize, self.basis.path, self.sig.path)), 0)
             else:
-                assert not os.system(
+                self.assertEqual(os.system(
                     b"rdiff -b %i signature %b %b" %
-                    (blocksize, self.basis.path, self.sig.path))
+                    (blocksize, self.basis.path, self.sig.path)), 0)
             with self.sig.open("rb") as fp:
                 rdiff_sig = fp.read()
 
@@ -48,8 +48,7 @@ class LibrsyncTest(unittest.TestCase):
             librsync_sig = sf.read()
             sf.close()
 
-            assert rdiff_sig == librsync_sig, \
-                (len(rdiff_sig), len(librsync_sig))
+            self.assertEqual(rdiff_sig, librsync_sig)
 
     def _clean_file(self, rp):
         """Make sure the given rpath is properly cleaned"""
@@ -85,19 +84,18 @@ class LibrsyncTest(unittest.TestCase):
                     sig_gen.update(buf)
                 siggen_string = sig_gen.get_sig()
 
-            assert sigfile_string == siggen_string, \
-                (len(sigfile_string), len(siggen_string))
+            self.assertEqual(sigfile_string, siggen_string)
 
     def OldtestDelta(self):
         """Test delta generation against Rdiff"""
         MakeRandomFile(self.basis.path)
-        assert not os.system(b"rdiff signature %s %s" %
-                             (self.basis.path, self.sig.path))
+        self.assertEqual(os.system(
+            b"rdiff signature %s %s" % (self.basis.path, self.sig.path)), 0)
         for i in range(5):
             MakeRandomFile(self.new.path)
-            assert not os.system(
+            self.assertEqual(os.system(
                 b"rdiff delta %b %b %b" %
-                (self.sig.path, self.new.path, self.delta.path))
+                (self.sig.path, self.new.path, self.delta.path)), 0)
             fp = self.delta.open("rb")
             rdiff_delta = fp.read()
             fp.close()
@@ -109,7 +107,7 @@ class LibrsyncTest(unittest.TestCase):
             print(len(rdiff_delta), len(librsync_delta))
             print(repr(rdiff_delta[:100]))
             print(repr(librsync_delta[:100]))
-            assert rdiff_delta == librsync_delta
+            self.assertEqual(rdiff_delta, librsync_delta)
 
     def testDelta(self):
         """Test delta generation by making sure rdiff can process output
@@ -120,8 +118,8 @@ class LibrsyncTest(unittest.TestCase):
         """
         MakeRandomFile(self.basis.path)
         self._clean_file(self.sig)
-        assert not os.system(b"rdiff signature %s %s" %
-                             (self.basis.path, self.sig.path))
+        self.assertEqual(os.system(
+            b"rdiff signature %s %s" % (self.basis.path, self.sig.path)), 0)
         for i in range(5):
             MakeRandomFile(self.new.path)
             df = librsync.DeltaFile(self.sig.open("rb"), self.new.open("rb"))
@@ -132,9 +130,9 @@ class LibrsyncTest(unittest.TestCase):
             fp.close()
 
             self._clean_file(self.new2)
-            assert not os.system(
+            self.assertEqual(os.system(
                 b"rdiff patch %s %s %s" %
-                (self.basis.path, self.delta.path, self.new2.path))
+                (self.basis.path, self.delta.path, self.new2.path)), 0)
             new_fp = self.new.open("rb")
             new = new_fp.read()
             new_fp.close()
@@ -143,20 +141,20 @@ class LibrsyncTest(unittest.TestCase):
             new2 = new2_fp.read()
             new2_fp.close()
 
-            assert new == new2, (len(new), len(new2))
+            self.assertEqual(new, new2)
 
     def testPatch(self):
         """Test patching against Rdiff"""
         MakeRandomFile(self.basis.path)
         self._clean_file(self.sig)
-        assert not os.system(b"rdiff signature %s %s" %
-                             (self.basis.path, self.sig.path))
+        self.assertEqual(os.system(
+            b"rdiff signature %s %s" % (self.basis.path, self.sig.path)), 0)
         for i in range(5):
             MakeRandomFile(self.new.path)
             self._clean_file(self.delta)
-            assert not os.system(
+            self.assertEqual(os.system(
                 b"rdiff delta %s %s %s" %
-                (self.sig.path, self.new.path, self.delta.path))
+                (self.sig.path, self.new.path, self.delta.path)), 0)
             fp = self.new.open("rb")
             real_new = fp.read()
             fp.close()
@@ -166,8 +164,7 @@ class LibrsyncTest(unittest.TestCase):
             librsync_new = pf.read()
             pf.close()
 
-            assert real_new == librsync_new, \
-                (len(real_new), len(librsync_new))
+            self.assertEqual(real_new, librsync_new)
 
 
 if __name__ == "__main__":

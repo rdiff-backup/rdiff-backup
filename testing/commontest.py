@@ -134,6 +134,27 @@ def rdiff_backup(source_local,
     return ret_val
 
 
+def _internal_get_cmd_pairs(src_local, dest_local, src_dir, dest_dir):
+    """Function returns a tuple of connections based on the given parameters.
+    One or both directories are faked for remote connection if not local,
+    and the connections are set accordingly.
+    Note that the function relies on the global variables
+    abs_remote1_dir, abs_remote2_dir and abs_testing_dir."""
+
+    remote_schema = b'%s'
+    remote_format = b"cd %s; %s/server.py::%s"
+
+    if not src_local:
+        src_dir = remote_format % (abs_remote1_dir, abs_testing_dir, src_dir)
+    if not dest_local:
+        dest_dir = remote_format % (abs_remote2_dir, abs_testing_dir, dest_dir)
+
+    if src_local and dest_local:
+        return SetConnections.get_cmd_pairs([src_dir, dest_dir])
+    else:
+        return SetConnections.get_cmd_pairs([src_dir, dest_dir], remote_schema)
+
+
 def InternalBackup(source_local,
                    dest_local,
                    src_dir,
@@ -151,14 +172,10 @@ def InternalBackup(source_local,
     """
     Globals.current_time = current_time
     Globals.security_level = "override"
-    remote_schema = b'%s'
 
-    if not source_local:
-        src_dir = b"cd %s; %s/server.py::%s" % (abs_remote1_dir, abs_testing_dir, src_dir)
-    if not dest_local:
-        dest_dir = b"cd %s; %s/server.py::%s" % (abs_remote2_dir, abs_testing_dir, dest_dir)
+    cmdpairs = _internal_get_cmd_pairs(source_local, dest_local,
+                                       src_dir, dest_dir)
 
-    cmdpairs = SetConnections.get_cmd_pairs([src_dir, dest_dir], remote_schema)
     Security.initialize("backup", cmdpairs)
     rpin, rpout = list(map(SetConnections.cmdpair2rp, cmdpairs))
     for attr in ('eas_active', 'eas_write', 'eas_conn'):
@@ -205,15 +222,11 @@ def InternalRestore(mirror_local,
     """
     Main._force = 1
     Main._restore_root_set = 0
-    remote_schema = b'%s'
     Globals.security_level = "override"
-    if not mirror_local:
-        mirror_dir = b"cd %s; %s/server.py::%s" % (abs_remote1_dir, abs_testing_dir, mirror_dir)
-    if not dest_local:
-        dest_dir = b"cd %s; %s/server.py::%s" % (abs_remote2_dir, abs_testing_dir, dest_dir)
 
-    cmdpairs = SetConnections.get_cmd_pairs([mirror_dir, dest_dir],
-                                            remote_schema)
+    cmdpairs = _internal_get_cmd_pairs(mirror_local, dest_local,
+                                       mirror_dir, dest_dir)
+
     Security.initialize("restore", cmdpairs)
     mirror_rp, dest_rp = list(map(SetConnections.cmdpair2rp, cmdpairs))
     for attr in ('eas_active', 'eas_write', 'eas_conn'):
@@ -564,6 +577,23 @@ def iter_map(function, iterator):
     """Like map in a lazy functional programming language"""
     for i in iterator:
         yield function(i)
+
+
+def xcopytree(source, dest, content=False):
+    """copytree can't copy all kind of files but is platform independent
+    hence we use it only if the 'cp' utility doesn't exist.
+    If content is True then dest is created if needed and
+    the content of the source is copied into dest and not source itself."""
+    if content:
+        subs = map(lambda d: os.path.join(source, d), os.listdir(source))
+        os.makedirs(dest, exist_ok=True)
+    else:
+        subs = (source,)
+    for sub in subs:
+        if shutil.which('cp'):
+            subprocess.run((b'cp', b'-a', sub, dest), check=True)
+        else:
+            shutil.copytree(sub, dest, symlinks=True)
 
 
 if __name__ == '__main__':

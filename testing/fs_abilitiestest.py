@@ -52,12 +52,12 @@ class FSAbilitiesTest(unittest.TestCase):
         base_dir = rpath.RPath(Globals.local_connection, self.dir_to_test)
         fsa = fs_abilities.FSAbilities('read-only').init_readonly(base_dir)
         print(fsa)
-        assert fsa.read_only == 1, fsa.read_only
-        assert fsa.eas == self.eas, fsa.eas
-        assert fsa.acls == self.acls, fsa.acls
-        assert fsa.resource_forks == self.resource_forks, fsa.resource_forks
-        assert fsa.carbonfile == self.carbonfile, fsa.carbonfile
-        assert fsa.case_sensitive == self.case_sensitive, fsa.case_sensitive
+        self.assertEqual(fsa.read_only, 1)
+        self.assertEqual(fsa.eas, self.eas)
+        self.assertEqual(fsa.acls, self.acls)
+        self.assertEqual(fsa.resource_forks, self.resource_forks)
+        self.assertEqual(fsa.carbonfile, self.carbonfile)
+        self.assertEqual(fsa.case_sensitive, self.case_sensitive)
 
     def testReadWrite(self):
         """Test basic querying read/write"""
@@ -71,17 +71,17 @@ class FSAbilitiesTest(unittest.TestCase):
         fsa = fs_abilities.FSAbilities('read/write').init_readwrite(new_dir)
         print("Time elapsed = ", time.time() - t)
         print(fsa)
-        assert fsa.read_only == 0, fsa.read_only
-        assert fsa.eas == self.eas, fsa.eas
-        assert fsa.acls == self.acls, fsa.acls
-        assert fsa.ownership == self.ownership, fsa.ownership
-        assert fsa.hardlinks == self.hardlinks, fsa.hardlinks
-        assert fsa.fsync_dirs == self.fsync_dirs, fsa.fsync_dirs
-        assert fsa.dir_inc_perms == self.dir_inc_perms, fsa.dir_inc_perms
-        assert fsa.resource_forks == self.resource_forks, fsa.resource_forks
-        assert fsa.carbonfile == self.carbonfile, fsa.carbonfile
-        assert fsa.high_perms == self.high_perms, fsa.high_perms
-        assert fsa.extended_filenames == self.extended_filenames
+        self.assertEqual(fsa.read_only, 0)
+        self.assertEqual(fsa.eas, self.eas)
+        self.assertEqual(fsa.acls, self.acls)
+        self.assertEqual(fsa.ownership, self.ownership)
+        self.assertEqual(fsa.hardlinks, self.hardlinks)
+        self.assertEqual(fsa.fsync_dirs, self.fsync_dirs)
+        self.assertEqual(fsa.dir_inc_perms, self.dir_inc_perms)
+        self.assertEqual(fsa.resource_forks, self.resource_forks)
+        self.assertEqual(fsa.carbonfile, self.carbonfile)
+        self.assertEqual(fsa.high_perms, self.high_perms)
+        self.assertEqual(fsa.extended_filenames, self.extended_filenames)
 
         new_dir.delete()
 
@@ -93,7 +93,7 @@ class FSAbilitiesTest(unittest.TestCase):
         rp = rpath.RPath(Globals.local_connection, self.case_insensitive_path)
         fsa = fs_abilities.FSAbilities('read-only')
         fsa.set_case_sensitive_readonly(rp)
-        assert fsa.case_sensitive == 0, fsa.case_sensitive
+        self.assertEqual(fsa.case_sensitive, 0)
 
 
 if __name__ == "__main__":

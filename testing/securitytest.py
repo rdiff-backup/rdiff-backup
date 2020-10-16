@@ -1,8 +1,6 @@
 import os
 import unittest
 import time
-import traceback
-import sys
 from commontest import old_test_dir, abs_output_dir, abs_restore_dir, Myrm, \
     rdiff_backup, RBBin, SetConnections
 from rdiff_backup import Globals, rpath
@@ -12,42 +10,22 @@ import rdiff_backup.Security as Security
 class SecurityTest(unittest.TestCase):
     various_files_dir = os.path.join(old_test_dir, b"various_file_types")
 
-    def assert_exc_sec(self, exc):
-        """Fudge - make sure exception is a security violation
-
-        This is necessary because of some kind of pickling/module
-        problem.
-
-        """
-        if not isinstance(exc, Security.Violation):
-            type, value, tb = sys.exc_info()
-            print("".join(traceback.format_tb(tb)))
-            raise exc
-
     def test_vet_request_ro(self):
         """Test vetting of ConnectionRequests on read-only server"""
         remote_cmd = b"%s --server --restrict-read-only foo" % RBBin
         conn = SetConnections._init_connection(remote_cmd)
-        assert isinstance(conn.os.getuid(), int), conn.os.getuid()
-        try:
+        self.assertIsInstance(conn.os.getuid(), int)
+        with self.assertRaises(Security.Violation):
             conn.os.remove(b"/tmp/foobar")
-        except Exception as e:
-            self.assert_exc_sec(e)
-        else:
-            assert 0, "No exception raised"
         SetConnections.CloseConnections()
 
     def test_vet_request_minimal(self):
         """Test vetting of ConnectionRequests on minimal server"""
         remote_cmd = b"%s --server --restrict-update-only foo" % RBBin
         conn = SetConnections._init_connection(remote_cmd)
-        assert isinstance(conn.os.getuid(), int), conn.os.getuid()
-        try:
+        self.assertIsInstance(conn.os.getuid(), int)
+        with self.assertRaises(Security.Violation):
             conn.os.remove(b"/tmp/foobar")
-        except Exception as e:
-            self.assert_exc_sec(e)
-        else:
-            assert 0, "No exception raised"
         SetConnections.CloseConnections()
 
     def test_vet_rpath(self):
@@ -60,16 +38,12 @@ class SecurityTest(unittest.TestCase):
                 rpath.RPath(conn, b"foo/bar")
         ]:
             conn.Globals.set("TEST_var", rp)
-            assert conn.Globals.get("TEST_var").path == rp.path
+            self.assertEqual(conn.Globals.get("TEST_var").path, rp.path)
 
         for path in [b"foobar", b"/usr/local", b"foo/../bar"]:
-            try:
+            with self.assertRaises(Security.Violation):
                 rp = rpath.RPath(conn, path)
                 conn.Globals.set("TEST_var", rp)
-            except Exception as e:
-                self.assert_exc_sec(e)
-                continue
-            assert 0, "No violation raised by rp %s" % str(rp)
 
         SetConnections.CloseConnections()
 
@@ -82,7 +56,7 @@ class SecurityTest(unittest.TestCase):
                 rpath.RPath(conn, "foo/bar")
         ]:
             conn.Globals.set("TEST_var", rp)
-            assert conn.Globals.get("TEST_var").path == rp.path
+            self.assertEqual(conn.Globals.get("TEST_var").path, rp.path)
         SetConnections.CloseConnections()
 
     def secure_rdiff_backup(self,
@@ -110,9 +84,9 @@ class SecurityTest(unittest.TestCase):
         print("Executing:", cmdline)
         exit_val = os.system(cmdline)
         if success:
-            assert not exit_val
+            self.assertEqual(exit_val, 0)
         else:
-            assert exit_val, "Success when wanted failure"
+            self.assertNotEqual(exit_val, 0)
 
     def test_restrict_positive(self):
         """Test that --restrict switch doesn't get in the way
@@ -245,7 +219,7 @@ class SecurityTest(unittest.TestCase):
                                  b'--restrict foobar',
                                  success=0)
         output = rpath.RPath(Globals.local_connection, abs_output_dir)
-        assert not output.lstat()
+        self.assertFalse(output.lstat())
 
     def test_quoting_bug(self):
         """Test for bug 14545 --- quoting causes bad violation"""
