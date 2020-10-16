@@ -20,7 +20,7 @@ class FilenameMappingTest(unittest.TestCase):
         ]
         for filename in filenames:
             quoted = FilenameMapping.quote(filename)
-            assert FilenameMapping.unquote(quoted) == filename, filename
+            self.assertEqual(FilenameMapping.unquote(quoted), filename)
 
     def testQuotedRPath(self):
         """Test the QuotedRPath class"""
@@ -28,9 +28,10 @@ class FilenameMappingTest(unittest.TestCase):
                 b".1969-12-31;08421;05833;05820-07;05800.data.gz")
         qrp = FilenameMapping.get_quotedrpath(
             rpath.RPath(Globals.local_connection, path), 1)
-        assert qrp.base == b"/usr/local", qrp.base
-        assert len(qrp.index) == 1, qrp.index
-        assert (qrp.index[0] == b"mirror_metadata.1969-12-31T21:33:20-07:00.data.gz")
+        self.assertEqual(qrp.base, b"/usr/local")
+        self.assertEqual(len(qrp.index), 1)
+        self.assertEqual(qrp.index[0],
+                         b"mirror_metadata.1969-12-31T21:33:20-07:00.data.gz")
 
     def testLongFilenames(self):
         """See if long quoted filenames cause crash"""
@@ -53,17 +54,17 @@ class FilenameMappingTest(unittest.TestCase):
                      extra_options=b"--override-chars-to-quote A")
 
         longrp_out = outrp.append(long_filename)
-        assert not longrp_out.lstat()
+        self.assertFalse(longrp_out.lstat())
         shortrp_out = outrp.append('B')
-        assert shortrp_out.lstat()
+        self.assertTrue(shortrp_out.lstat())
 
         rdiff_backup(1, 1, os.path.join(old_test_dir, b"empty"), outrp.path,
                      200000)
         shortrp_out.setdata()
-        assert not shortrp_out.lstat()
+        self.assertFalse(shortrp_out.lstat())
         rdiff_backup(1, 1, inrp.path, outrp.path, 300000)
         shortrp_out.setdata()
-        assert shortrp_out.lstat()
+        self.assertTrue(shortrp_out.lstat())
 
 
 if __name__ == "__main__":

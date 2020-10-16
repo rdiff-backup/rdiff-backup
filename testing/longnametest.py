@@ -5,7 +5,8 @@ from commontest import abs_test_dir, old_test_dir, Myrm, \
     rdiff_backup, compare_recursive
 from rdiff_backup import rpath, Globals, regress, Time
 
-max_len = 255
+# should generally be 255, FIXME doesn't work under Windows
+NAME_MAX_LEN = os.pathconf(abs_test_dir, 'PC_NAME_MAX')
 
 
 class LongNameTest(unittest.TestCase):
@@ -14,24 +15,24 @@ class LongNameTest(unittest.TestCase):
     out_rp = root_rp.append_path('output')
 
     def test_length_limit(self):
-        """Confirm that length limit is max_len
+        """Confirm that length limit is NAME_MAX_LEN
 
         Some of these tests depend on the length being at most
-        max_len, so check to make sure it's accurate.
+        NAME_MAX_LEN, so check to make sure it's accurate.
 
         """
         Myrm(self.out_rp.path)
         self.out_rp.mkdir()
 
-        really_long = self.out_rp.append('a' * max_len)
+        really_long = self.out_rp.append('a' * NAME_MAX_LEN)
         really_long.touch()
 
-        try:
-            self.out_rp.append("a" * (max_len + 1))
-        except EnvironmentError as e:
-            assert e.errno == errno.ENAMETOOLONG, e
-        else:
-            assert 0, "File made successfully with length " + str(max_len + 1)
+        with self.assertRaises(
+            EnvironmentError,
+            msg="File name could exceed max length '{max}'.".format(
+                max=NAME_MAX_LEN)) as cm:
+            self.out_rp.append("a" * (NAME_MAX_LEN + 1)).touch()
+        self.assertEqual(cm.exception.errno, errno.ENAMETOOLONG)
 
     def make_input_dirs(self):
         """Create two input directories with long filename(s) in them"""
@@ -41,40 +42,40 @@ class LongNameTest(unittest.TestCase):
         Myrm(dir2.path)
 
         dir1.mkdir()
-        rp11 = dir1.append('A' * max_len)
+        rp11 = dir1.append('A' * NAME_MAX_LEN)
         rp11.write_string('foobar')
-        rp12 = dir1.append('B' * max_len)
+        rp12 = dir1.append('B' * NAME_MAX_LEN)
         rp12.mkdir()
-        rp121 = rp12.append('C' * max_len)
+        rp121 = rp12.append('C' * NAME_MAX_LEN)
         rp121.touch()
 
         dir2.mkdir()
-        rp21 = dir2.append('A' * max_len)
+        rp21 = dir2.append('A' * NAME_MAX_LEN)
         rp21.write_string('Hello, world')
-        rp22 = dir2.append('D' * max_len)
+        rp22 = dir2.append('D' * NAME_MAX_LEN)
         rp22.mkdir()
-        rp221 = rp22.append('C' * max_len)
+        rp221 = rp22.append('C' * NAME_MAX_LEN)
         rp221.touch()
 
         return dir1, dir2
 
     def check_dir1(self, dirrp):
         """Make sure dirrp looks like dir1"""
-        rp1 = dirrp.append('A' * max_len)
-        assert rp1.get_string() == 'foobar', "data doesn't match"
-        rp2 = dirrp.append('B' * max_len)
-        assert rp2.isdir(), rp2
-        rp21 = rp2.append('C' * max_len)
-        assert rp21.isreg(), rp21
+        rp1 = dirrp.append('A' * NAME_MAX_LEN)
+        self.assertEqual(rp1.get_string(), 'foobar')
+        rp2 = dirrp.append('B' * NAME_MAX_LEN)
+        self.assertTrue(rp2.isdir())
+        rp21 = rp2.append('C' * NAME_MAX_LEN)
+        self.assertTrue(rp21.isreg())
 
     def check_dir2(self, dirrp):
         """Make sure dirrp looks like dir2"""
-        rp1 = dirrp.append('A' * max_len)
-        assert rp1.get_string() == 'Hello, world', "data doesn't match"
-        rp2 = dirrp.append('D' * max_len)
-        assert rp2.isdir(), rp2
-        rp21 = rp2.append('C' * max_len)
-        assert rp21.isreg(), rp21
+        rp1 = dirrp.append('A' * NAME_MAX_LEN)
+        self.assertEqual(rp1.get_string(), 'Hello, world')
+        rp2 = dirrp.append('D' * NAME_MAX_LEN)
+        self.assertTrue(rp2.isdir())
+        rp21 = rp2.append('C' * NAME_MAX_LEN)
+        self.assertTrue(rp21.isreg())
 
     def generic_test(self, inlocal, outlocal, extra_args, compare_back):
         """Used for some of the tests below"""

@@ -579,5 +579,22 @@ def iter_map(function, iterator):
         yield function(i)
 
 
+def xcopytree(source, dest, content=False):
+    """copytree can't copy all kind of files but is platform independent
+    hence we use it only if the 'cp' utility doesn't exist.
+    If content is True then dest is created if needed and
+    the content of the source is copied into dest and not source itself."""
+    if content:
+        subs = map(lambda d: os.path.join(source, d), os.listdir(source))
+        os.makedirs(dest, exist_ok=True)
+    else:
+        subs = (source,)
+    for sub in subs:
+        if shutil.which('cp'):
+            subprocess.run((b'cp', b'-a', sub, dest), check=True)
+        else:
+            shutil.copytree(sub, dest, symlinks=True)
+
+
 if __name__ == '__main__':
     os.makedirs(abs_test_dir, exist_ok=True)

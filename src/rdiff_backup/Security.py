@@ -241,7 +241,8 @@ def _raise_violation(reason, request, arglist):
     raise Violation(
         "\nWARNING: Security Violation!\n"
         "%s for function: %s\n"
-        "with arguments: %s\n" % (reason, request.function_string, arglist))
+        "with arguments: %s\n" % (reason, request.function_string,
+                                  list(map(str, arglist))))
 
 
 def vet_request(request, arglist):

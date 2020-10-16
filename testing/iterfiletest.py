@@ -32,7 +32,8 @@ class testIterFile(unittest.TestCase):
     def testConversion(self):
         """Test iter to file conversion"""
         for itm in [self.iter1maker, self.iter2maker]:
-            assert iter_equal(itm(), IterWrappingFile(FileWrappingIter(itm())))
+            self.assertTrue(
+                iter_equal(itm(), IterWrappingFile(FileWrappingIter(itm()))))
 
     def testFile(self):
         """Test sending files through iters"""
@@ -43,8 +44,8 @@ class testIterFile(unittest.TestCase):
         file_iter = FileWrappingIter(iter([file1, file2]))
 
         new_iter = IterWrappingFile(file_iter)
-        assert next(new_iter).read() == buf1
-        assert next(new_iter).read() == buf2
+        self.assertEqual(next(new_iter).read(), buf1)
+        self.assertEqual(next(new_iter).read(), buf2)
 
         self.assertRaises(StopIteration, new_iter.__next__)
 
@@ -53,15 +54,11 @@ class testIterFile(unittest.TestCase):
         f = FileException(200 * 1024)  # size depends on buffer size
         new_iter = IterWrappingFile(FileWrappingIter(iter([f, b"foo"])))
         f_out = next(new_iter)
-        assert f_out.read(50000) == b"a" * 50000
-        try:
-            buf = f_out.read(190 * 1024)
-        except IOError:
-            pass
-        else:
-            assert 0, len(buf)
+        self.assertEqual(f_out.read(50000), b"a" * 50000)
+        with self.assertRaises(IOError):
+            buf = f_out.read(190 * 1024)  # noqa: F841
 
-        assert next(new_iter) == b"foo"
+        self.assertEqual(next(new_iter), b"foo")
         self.assertRaises(StopIteration, new_iter.__next__)
 
 
@@ -78,17 +75,15 @@ class testMiscIters(unittest.TestCase):
 
         self.outputrp.mkdir()
 
-        fp = self.regfile1.open("wb")
-        fp.write(b"hello")
-        fp.close()
+        with self.regfile1.open("wb") as fp:
+            fp.write(b"hello")
         self.regfile1.setfile(self.regfile1.open("rb"))
 
         self.regfile2.touch()
         self.regfile2.setfile(self.regfile2.open("rb"))
 
-        fp = self.regfile3.open("wb")
-        fp.write(b"goodbye")
-        fp.close()
+        with self.regfile3.open("wb") as fp:
+            fp.write(b"goodbye")
         self.regfile3.setfile(self.regfile3.open("rb"))
 
         self.regfile1.setdata()
@@ -109,19 +104,19 @@ class testMiscIters(unittest.TestCase):
         i_out = FileToMiscIter(MiscIterToFile(iter(rplist)))
 
         out1 = next(i_out)
-        assert out1 == self.outputrp
+        self.assertEqual(out1, self.outputrp)
 
         out2 = next(i_out)
-        assert out2 == self.regfile1
+        self.assertEqual(out2, self.regfile1)
         fp = out2.open("rb")
-        assert fp.read() == b"hello"
-        assert not fp.close()
+        self.assertEqual(fp.read(), b"hello")
+        self.assertFalse(fp.close())
 
         out3 = next(i_out)
-        assert out3 == self.regfile2
+        self.assertEqual(out3, self.regfile2)
         fp = out3.open("rb")
-        assert fp.read() == b""
-        assert not fp.close()
+        self.assertEqual(fp.read(), b"")
+        self.assertFalse(fp.close())
 
         next(i_out)
         self.assertRaises(StopIteration, i_out.__next__)
@@ -133,16 +128,16 @@ class testMiscIters(unittest.TestCase):
         i_out = FileToMiscIter(io.BytesIO(s))
 
         out1 = next(i_out)
-        assert out1 == 5, out1
+        self.assertEqual(out1, 5)
 
         out2 = next(i_out)
-        assert out2 == self.regfile3
+        self.assertEqual(out2, self.regfile3)
         fp = out2.open("rb")
-        assert fp.read() == b"goodbye"
-        assert not fp.close()
+        self.assertEqual(fp.read(), b"goodbye")
+        self.assertFalse(fp.close())
 
         out3 = next(i_out)
-        assert out3 == "hello", out3
+        self.assertEqual(out3, "hello")
 
         self.assertRaises(StopIteration, i_out.__next__)
 
@@ -154,11 +149,11 @@ class testMiscIters(unittest.TestCase):
             (filelike.read() + b"z" + filelike._i2b(0, 7)))
 
         i_out = FileToMiscIter(new_filelike)
-        assert next(i_out) == self.outputrp
+        self.assertEqual(next(i_out), self.outputrp)
         self.assertRaises(StopIteration, i_out.__next__)
 
         i_out2 = FileToMiscIter(filelike)
-        assert next(i_out2) == self.outputrp
+        self.assertEqual(next(i_out2), self.outputrp)
         self.assertRaises(StopIteration, i_out2.__next__)
 
     def testFlushRepeat(self):
@@ -169,12 +164,12 @@ class testMiscIters(unittest.TestCase):
             (filelike.read() + b"z" + filelike._i2b(0, 7)))
 
         i_out = FileToMiscIter(new_filelike)
-        assert next(i_out) == self.outputrp
-        assert next(i_out) is MiscIterFlushRepeat
+        self.assertEqual(next(i_out), self.outputrp)
+        self.assertIs(next(i_out), MiscIterFlushRepeat)
         self.assertRaises(StopIteration, i_out.__next__)
 
         i_out2 = FileToMiscIter(filelike)
-        assert next(i_out2) == self.outputrp
+        self.assertEqual(next(i_out2), self.outputrp)
         self.assertRaises(StopIteration, i_out2.__next__)
 
 
