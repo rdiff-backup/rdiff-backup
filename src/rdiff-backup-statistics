@@ -45,11 +45,11 @@ def parse_args():
     try:
         optlist, args = getopt.getopt(
             sys.argv[1:],
-            "",
-            ["begin-time=", "end-time=", "minimum-ratio=", "null-separator", "quiet"],
+            "hV",
+            ["begin-time=", "end-time=", "help", "minimum-ratio=", "null-separator", "quiet", "version"],
         )
     except getopt.GetoptError as e:
-        sys.exit("Bad command line: " + str(e))
+        usage(1)
 
     for opt, arg in optlist:
         if opt == "--begin-time":
@@ -62,16 +62,15 @@ def parse_args():
             separator = b"\0"
         elif opt == "--quiet":
             quiet = True
+        elif opt == "-h" or opt == "--help":
+            usage(0)
+        elif opt == "-V" or opt == "--version":
+            version(0)
         else:
-            assert 0
+            usage(1)
 
     if len(args) != 1:
-        sys.exit(
-            "Usage: %s [--begin-time <time>] [--end-time <time>] "
-            "[--minimum-ratio <float>] [--null-separator] <backup-dir>\n\n"
-            "See the rdiff-backup-statistics man page for more information."
-            % (sys.argv[0],)
-        )
+        usage(1)
 
     Globals.rbdir = rpath.RPath(
         Globals.local_connection,
@@ -79,6 +78,24 @@ def parse_args():
     )
     if not Globals.rbdir.isdir():
         sys.exit("Directory %s not found" % (Globals.rbdir.get_safepath(),))
+
+
+def usage(rc):
+    sys.stderr.write("""
+Usage: {cmd}
+       [--begin-time <time>] [--end-time <time>]
+       [--minimum-ratio <float>] [--null-separator]
+       [--help|-h] [-V|--version]
+       <backup-dir>
+
+See the rdiff-backup-statistics man page for more information.
+""".format(cmd=sys.argv[0]))
+    sys.exit(rc)
+
+
+def version(rc):
+    print("{cmd} {ver}".format(cmd=sys.argv[0], ver=Globals.version))
+    sys.exit(rc)
 
 
 def system(cmd):
@@ -155,11 +172,16 @@ class FileStatisticsTree:
 
     def merge_tree(self, myfs, otherfs):
         """Add other_fs's tree to one of my fs trees"""
-        assert myfs.nametuple == otherfs.nametuple
+        if myfs.nametuple != otherfs.nametuple:
+            raise RuntimeError(
+                "Only trees of the same name tuple can be merged but "
+                "{name1} and {name2} are different.".format(
+                    name1=myfs.nametuple, name2=otherfs.nametuple))
         total_children = {}
         mine = dict([(child.nametuple, child) for child in myfs.children])
         others = dict([(child.nametuple, child) for child in otherfs.children])
-        for name in list(mine.keys()) + list(others.keys()):  # Remove duplicates
+        # Remove duplicate children
+        for name in list(mine.keys()) + list(others.keys()):
             if name not in total_children:
                 total_children[name] = (mine.get(name), others.get(name))
 
@@ -180,7 +202,8 @@ class FileStatisticsTree:
                 myfs += otherchild
                 myfs.children.append(otherchild)
             else:
-                assert 0
+                raise RuntimeError(
+                    "Either of both childs should have been defined.")
         myfs += otherfs
 
     def get_top_fs(self, fs_func):
@@ -321,7 +344,10 @@ def make_fst(session_rp, filestat_rp):
 
         """
         root = next(fs_iter)
-        assert root.nametuple == (), root
+        if root.nametuple != ():
+            raise RuntimeException(
+                "Name tuple of root should be empty but is {name}.".format(
+                    name=root.nametuple))
         stack = [root]
         try:
             fs = next(fs_iter)
