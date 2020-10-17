@@ -74,16 +74,24 @@ def benchmark(backup_cmd, restore_cmd, desc, update_func=None):
     If update_func is given, run it and then do backup a third time.
 
     """
-    print("Initially backing up %s: %ss" % (desc, run_cmd(backup_cmd)))
-    print("Updating %s, no change: %ss" % (desc, run_cmd(backup_cmd)))
+    times_list = []
+    times_list.append(run_cmd(backup_cmd))
+    print("Initially backing up %s: %ss" % (desc, times_list[-1]))
+    times_list.append(run_cmd(backup_cmd))
+    print("Updating %s, no change: %ss" % (desc, times_list[-1]))
 
     if update_func:
         update_func()
-        print("Updating %s, all changed: %ss" % (desc, run_cmd(backup_cmd)))
+        times_list.append(run_cmd(backup_cmd))
+        print("Updating %s, all changed: %ss" % (desc, times_list[-1]))
 
     re_init_subdir(abs_test_dir, b'rest_out')
-    print("Restoring %s to empty dir: %ss" % (desc, run_cmd(restore_cmd)))
-    print("Restoring %s to unchanged dir: %ss" % (desc, run_cmd(restore_cmd)))
+    times_list.append(run_cmd(restore_cmd))
+    print("Restoring %s to empty dir: %ss" % (desc, times_list[-1]))
+    times_list.append(run_cmd(restore_cmd))
+    print("Restoring %s to unchanged dir: %ss" % (desc, times_list[-1]))
+
+    return times_list
 
 
 def many_files():
@@ -99,7 +107,7 @@ def many_files():
     def update_func():
         create_many_files(manyout_dir, "e", count)
 
-    benchmark(backup_cmd, restore_cmd, "2000 1-byte files", update_func)
+    return benchmark(backup_cmd, restore_cmd, "2000 1-byte files", update_func)
 
 
 def many_files_no_fsync():
@@ -115,21 +123,24 @@ def many_files_no_fsync():
     def update_func():
         create_many_files(manyout_dir, "e", count)
 
-    benchmark(backup_cmd, restore_cmd, "2000 1-byte files", update_func)
+    return benchmark(backup_cmd, restore_cmd, "2000 1-byte files", update_func)
 
 
 def many_files_rsync():
     """Test rsync benchmark"""
     count = 2000
     manyout_dir = re_init_subdir(abs_test_dir, b'many_out')
+    restout_dir = re_init_subdir(abs_test_dir, b'rest_out')
     create_many_files(manyout_dir, "a", count)
-    rsync_command = b"rsync -e ssh -aH --delete '%s' '%s'" % \
+    backup_cmd = b"rsync -e ssh -aH --delete '%s' '%s'" % \
         (manyout_dir, output_desc)
-    print("Initial rsync: %ss" % (run_cmd(rsync_command), ))
-    print("rsync update: %ss" % (run_cmd(rsync_command), ))
+    restore_cmd = b"rsync -e ssh -aH --delete '%s' '%s'" % \
+        (output_desc, restout_dir)
 
-    create_many_files(manyout_dir, "e", count)
-    print("Update changed rsync: %ss" % (run_cmd(rsync_command), ))
+    def update_func():
+        create_many_files(manyout_dir, "e", count)
+
+    return benchmark(backup_cmd, restore_cmd, "2000 1-byte files", update_func)
 
 
 def nested_files():
@@ -145,23 +156,32 @@ def nested_files():
     def update_func():
         create_nested(nestedout_dir, "e", depth)
 
-    benchmark(backup_cmd, restore_cmd, "10000 1-byte nested files",
-              update_func)
+    return benchmark(backup_cmd, restore_cmd, "10000 1-byte nested files",
+                     update_func)
 
 
 def nested_files_rsync():
     """Test rsync on nested files"""
     depth = 4
     nestedout_dir = re_init_subdir(abs_test_dir, b'nested_out')
+    restout_dir = re_init_subdir(abs_test_dir, b'rest_out')
     create_nested(nestedout_dir, "a", depth)
-    rsync_command = b"rsync -e ssh -aH --delete '%b' '%b'" % \
+    backup_cmd = b"rsync -e ssh -aH --delete '%b' '%b'" % \
         (nestedout_dir, output_desc)
-    print("Initial rsync: %ss" % (run_cmd(rsync_command), ))
-    print("rsync update: %ss" % (run_cmd(rsync_command), ))
+    restore_cmd = b"rsync -e ssh -aH --delete '%b' '%b'" % \
+        (output_desc, restout_dir)
 
-    create_nested(nestedout_dir, "e", depth)
-    print("Update changed rsync: %ss" % (run_cmd(rsync_command), ))
+    def update_func():
+        create_nested(nestedout_dir, "e", depth)
 
+    return benchmark(backup_cmd, restore_cmd, "10000 1-byte nested files",
+                     update_func)
+
+
+benchmarks = {
+    'many': [many_files_rsync, many_files, many_files_no_fsync],
+    'nested': [nested_files_rsync, nested_files],
+}
 
 if len(sys.argv) < 2 or len(sys.argv) > 3:
     print("Syntax:  benchmark.py benchmark_func [output_description]")
@@ -182,6 +202,9 @@ else:  # we assume we can always remove the default output directory
 if 'BENCHMARKPYPATH' in os.environ:
     new_pythonpath = os.fsencode(os.environ['BENCHMARKPYPATH'])
 
-function_name = sys.argv[1]
-print("Running ", function_name)
-eval(sys.argv[1])()
+benchmark_name = sys.argv[1]
+print("Running '{bench}' benchmark".format(bench=benchmark_name))
+benchmark_results = []
+for bench_func in benchmarks[benchmark_name]:
+    benchmark_results.append(bench_func())
+print(benchmark_results)
