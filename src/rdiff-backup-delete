@@ -106,7 +106,7 @@ def _parse_options():
         _print_usage('fatal: too many arguments')
     # NOTE: we can't check for actual existence of path because it might only
     #       exist in past increments
-    #elif not os.path.lexists(args[0]):
+    # elif not os.path.lexists(args[0]):
     #    # we use lexists so that we can delete a dangling link (?)
     #    _print_usage('fatal: path must refer to an existing file or directory')
 

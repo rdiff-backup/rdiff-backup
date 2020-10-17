@@ -48,7 +48,7 @@ def parse_args():
             "hV",
             ["begin-time=", "end-time=", "help", "minimum-ratio=", "null-separator", "quiet", "version"],
         )
-    except getopt.GetoptError as e:
+    except getopt.GetoptError:
         usage(1)
 
     for opt, arg in optlist:
@@ -355,7 +355,7 @@ def _accumulate_fs(fs_iter):
     """
     root = next(fs_iter)
     if root.nametuple != ():
-        raise RuntimeException(
+        raise RuntimeError(
             "Name tuple of root should be empty but is {name}.".format(
                 name=root.nametuple))
     stack = [root]
