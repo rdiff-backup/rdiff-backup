@@ -8,6 +8,8 @@ rdiff-backup-statistics \- summarize rdiff-backup statistics files
 .BI [\-\-minimum-ratio " ratio" ]
 .B [\-\-null-separator]
 .B [\-\-quiet]
+.B [-h|\-\-help]
+.B [-V|\-\-version]
 .I repository
 
 .SH DESCRIPTION
@@ -55,6 +57,9 @@ Like
 but exclude statistics files later than
 .IR time .
 .TP
+.B -h, \-\-help
+Output a short usage description and exit.
+.TP
 .BI \-\-minimum-ratio " ratio"
 Print all directories contributing more than the given ratio to the
 total.  The default value is .05, or 5 percent.
@@ -68,6 +73,9 @@ making the given repository.
 .B \-\-quiet
 Suppress printing of the "Processing statistics from session..."
 output lines.
+.TP
+.B -V, \-\-version
+Output full path to command and version then exit.
 
 .SH BUGS
 When aggregating multiple statistics files, some directories above
