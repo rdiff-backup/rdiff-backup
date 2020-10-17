@@ -25,7 +25,7 @@ import io
 import tempfile
 import time
 import errno
-import platform
+import yaml
 from .log import Log, LoggerError, ErrorLog
 from . import (
     Globals, Time, SetConnections, robust, rpath,
@@ -96,7 +96,8 @@ def _parse_cmdlineoptions(arglist):  # noqa: C901
             "restrict-read-only=", "restrict-update-only=", "server",
             "ssh-no-compression", "tempdir=", "terminal-verbosity=",
             "test-server", "use-compatible-timestamps", "user-mapping-file=",
-            "verbosity=", "verify", "verify-at-time=", "version", "no-fsync"
+            "verbosity=", "verify", "verify-at-time=", "version", "no-fsync",
+            "api-version="
         ])
     except getopt.error as e:
         _commandline_error("Bad commandline options: " + str(e))
@@ -252,18 +253,39 @@ def _parse_cmdlineoptions(arglist):  # noqa: C901
         elif opt == "--verify-at-time":
             _action, _restore_timestr = "verify", arg
         elif opt == "-V" or opt == "--version":
-            print("rdiff-backup " + Globals.version)
-            sys.exit(0)
+            _action = "version"
+            version_format = "legacy"
+        elif opt == "--api-version":
+            Globals.set_api_version(arg)
         elif opt == "--no-fsync":
             Globals.do_fsync = False
         else:
             Log.FatalError("Unknown option %s" % opt)
-    Log("Using rdiff-backup version %s" % (Globals.version), 4)
-    Log("\twith %s %s version %s" % (
-        sys.implementation.name,
-        sys.executable,
-        platform.python_version()), 4)
-    Log("\ton %s, fs encoding %s" % (platform.platform(), sys.getfilesystemencoding()), 4)
+    if _action == "version":
+        _output_version(version_format=version_format, exit=True)
+    else:
+        _output_version(version_format="log")
+
+
+def _output_version(version_format, exit=False):
+    """Output either the 'legacy' version string with 'rdiff-backup <version>'
+    or all the runtime information provided as YAML structure, either on
+    one line for the 'log' format or properly for the 'full' format,
+    implictly used when the API version is more than 200."""
+
+    if version_format == "legacy" and Globals.get_api_version() == 200:
+        print("rdiff-backup " + Globals.version)
+    else:
+        runtime_info = Globals.get_runtime_info()
+        if version_format == "log":
+            # make sure the YAML output is on one line for logging
+            Log("Runtime information: " + " ".join(yaml.safe_dump(
+                runtime_info, default_flow_style=True).split("\n")), 4)
+        else:
+            print(yaml.safe_dump(runtime_info,
+                                 explicit_start=True, explicit_end=True))
+    if exit:
+        sys.exit(0)
 
 
 def _check_action():
@@ -418,6 +440,13 @@ def _Main(arglist):
     cmdpairs = SetConnections.get_cmd_pairs(_args, _remote_schema, _remote_cmd)
     Security.initialize(_action or "mirror", cmdpairs)
     rps = list(map(SetConnections.cmdpair2rp, cmdpairs))
+
+    # if any of the remote paths is None, we have an error.
+    # We continue to test-server so that all connections can be tested at once.
+    if any(map(lambda x: x is None, rps)) and _action != "test-server":
+        _cleanup()
+        sys.exit(1)
+
     _final_set_action(rps)
     _misc_setup(rps)
     return_val = _take_action(rps)

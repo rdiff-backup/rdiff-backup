@@ -166,7 +166,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
             f.write(b'PID 1234')
         self._rdiff_backup_delete(
             to_delete=os.path.join(self.repo, b'tmp'), expected_ret_val=1,
-            expected_output=b'fail to acquired repository lock. A backup may be running.')
+            expected_output=b'failed to acquire repository lock. A backup may be running.')
 
 
 if __name__ == "__main__":

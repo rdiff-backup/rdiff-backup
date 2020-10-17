@@ -20,6 +20,8 @@
 
 import re
 import os
+import platform
+import sys
 from . import log
 
 # The current version of rdiff-backup
@@ -41,6 +43,17 @@ try:
             version = pkg_resources.get_distribution("rdiff-backup").version
 except BaseException:  # if everything else fails...
     version = "DEV-no-metadata"
+
+# The default, supported (min/max) and actual API versions.
+# An actual value of 0 means that the default version is to be used or whatever
+# makes the connection work within the min-max range, depending on the
+# API versions supported by the remote connection.
+api_version = {
+    "default": 200,
+    "min": 200,
+    "max": 201,
+    "actual": 0
+}
 
 # If this is set, use this value in seconds as the current time
 # instead of reading it from the clock.
@@ -390,3 +403,49 @@ def postset_regexp_local(name, re_string, flags):
         globals()[name] = re.compile(re_string, flags)
     else:
         globals()[name] = re.compile(re_string)
+
+
+def set_api_version(val):
+    """sets the actual API version after having verified that the new
+    value is an integer between mix and max values."""
+    try:
+        intval = int(val)
+    except ValueError:
+        log.Log.FatalError(
+            "API version must be set to an integer, "
+            "received {val} instead.".format(val=val))
+    if intval < api_version["min"] or intval > api_version["max"]:
+        log.Log.FatalError(
+            "API version {val} must be between {api_min} and {api_max}.".format(
+                val=val,
+                api_min=api_version["min"],
+                api_max=api_version["max"]))
+    api_version["actual"] = intval
+
+
+def get_api_version():
+    """Return the actual API version, either set explicitly or the default
+    one"""
+    return api_version["actual"] or api_version["default"]
+
+
+def get_runtime_info():
+    """Return a structure containing all relevant runtime information about
+    the executable, Python and the operating system.
+    Beware that additional information might be added at any time."""
+    return {
+        'exec': {
+            'version': version,
+            'api_version': api_version,
+            'argv': sys.argv,
+        },
+        'python': {
+            'name': sys.implementation.name,
+            'executable': sys.executable,
+            'version': platform.python_version(),
+        },
+        'system': {
+            'platform': platform.platform(),
+            'fs_encoding': sys.getfilesystemencoding(),
+        },
+    }
