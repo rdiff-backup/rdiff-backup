@@ -50,7 +50,7 @@ class FSAbilitiesTest(unittest.TestCase):
     def testReadOnly(self):
         """Test basic querying read only"""
         base_dir = rpath.RPath(Globals.local_connection, self.dir_to_test)
-        fsa = fs_abilities.FSAbilities('read-only').init_readonly(base_dir)
+        fsa = fs_abilities.FSAbilities('read-only', base_dir, read_only=True)
         print(fsa)
         self.assertEqual(fsa.read_only, 1)
         self.assertEqual(fsa.eas, self.eas)
@@ -68,7 +68,7 @@ class FSAbilitiesTest(unittest.TestCase):
         new_dir.setdata()
         new_dir.mkdir()
         t = time.time()
-        fsa = fs_abilities.FSAbilities('read/write').init_readwrite(new_dir)
+        fsa = fs_abilities.FSAbilities('read/write', new_dir)
         print("Time elapsed = ", time.time() - t)
         print(fsa)
         self.assertEqual(fsa.read_only, 0)
@@ -91,7 +91,7 @@ class FSAbilitiesTest(unittest.TestCase):
     def test_case_sensitive(self):
         """Test a read-only case-INsensitive directory"""
         rp = rpath.RPath(Globals.local_connection, self.case_insensitive_path)
-        fsa = fs_abilities.FSAbilities('read-only')
+        fsa = fs_abilities.FSAbilities('read-only', rp, read_only=True)
         fsa.set_case_sensitive_readonly(rp)
         self.assertEqual(fsa.case_sensitive, 0)
 
