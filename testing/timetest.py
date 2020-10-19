@@ -71,9 +71,10 @@ class TimeTest(unittest.TestCase):
         timesec = int(time.time())
         self.assertEqual(timesec,
                          int(Time.stringtotime(Time.timetostring(timesec))))
-        self.assertFalse(Time.stringtotime("2001-18-83T03:03:03Z"))
-        self.assertFalse(Time.stringtotime("2001-01-23L03:03:03L"))
-        self.assertFalse(Time.stringtotime("2001_01_23T03:03:03Z"))
+        # stringtotime returns None if the time string is invalid
+        self.assertIsNone(Time.stringtotime("2001-18-83T03:03:03Z"))
+        self.assertIsNone(Time.stringtotime("2001-01-23L03:03:03L"))
+        self.assertIsNone(Time.stringtotime("2001_01_23T03:03:03Z"))
 
     def testIntervals(self):
         """Test converting strings to intervals"""

@@ -76,8 +76,9 @@ def set_init_quote_vals_local():
 def _init_quoting_regexps():
     """Compile quoting regular expressions"""
     global chars_to_quote_regexp, unquoting_regexp
-    assert chars_to_quote and isinstance(chars_to_quote, bytes), \
-        "Chars to quote are wrong: '%s'." % _safe_str(chars_to_quote)
+    assert chars_to_quote and isinstance(chars_to_quote, bytes), (
+        "Chars to quote must be non-empty bytes: '{ctq}'.".format(
+            ctq=_safe_str(chars_to_quote)))
     try:
         chars_to_quote_regexp = re.compile(b"[%b]|%b" %
                                            (chars_to_quote, quoting_char), re.S)
@@ -200,7 +201,8 @@ class QuotedRPath(rpath.RPath):
 
 def get_quotedrpath(rp, separate_basename=0):
     """Return quoted version of rpath rp"""
-    assert not rp.index  # Why would we starting quoting "in the middle"?
+    assert not rp.index, (
+        "Trying to start quoting '{rp!s}' in the middle.".format(rp=rp))
     if separate_basename:
         dirname, basename = rp.dirsplit()
         return QuotedRPath(rp.conn, dirname, (unquote(basename), ), rp.data)
@@ -234,7 +236,9 @@ def update_quoting(rbdir):
                                          new_rp.get_safepath()), 5)
             rpath.move(name_rp, new_rp)
 
-    assert rbdir.conn is Globals.local_connection
+    assert rbdir.conn is Globals.local_connection, (
+        "Function must be called locally not over '{conn}'.".format(
+            conn=rbdir.conn))
     mirror_rp = rbdir.get_parent_rp()
     mirror = mirror_rp.path
 

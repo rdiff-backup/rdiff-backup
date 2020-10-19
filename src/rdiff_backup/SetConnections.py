@@ -356,7 +356,7 @@ def BackupInitConnections(reading_conn, writing_conn):
 
 def CloseConnections():
     """Close all connections.  Run by client"""
-    assert not Globals.server
+    assert not Globals.server, "Connections can't be closed by server."
     for conn in Globals.connections:
         if conn:  # could be None, if the connection failed
             conn.quit()

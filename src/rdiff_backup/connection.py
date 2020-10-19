@@ -93,7 +93,9 @@ class LocalConnection(Connection):
 
     def __init__(self):
         """This prevents two instances of LocalConnection"""
-        assert not Globals.local_connection
+        assert not Globals.local_connection, (
+            "Local connection has already been initialized with {conn}.".format(
+                conn=Globals.local_connection))
         self.conn_number = 0  # changed by SetConnections for server
 
     def __getattr__(self, name):
@@ -253,8 +255,9 @@ class LowLevelPipeConnection(Connection):
 
     def _write(self, headerchar, data, req_num):
         """Write header and then data to the pipe"""
-        assert len(headerchar) == 1, \
-            "Header type %s can only have one letter/byte" % headerchar
+        assert len(headerchar) == 1, (
+            "Header type {hdr} can only have one letter/byte".format(
+                hdr=headerchar))
         if isinstance(headerchar, str):  # it can only be an ASCII character
             headerchar = headerchar.encode('ascii')
         try:
@@ -310,9 +313,11 @@ class LowLevelPipeConnection(Connection):
             result = self._getrpath(data)
         elif format_string == b"Q":
             result = self._getqrpath(data)
-        else:
-            assert format_string == b"c", header_string
+        elif format_string == b"c":
             result = Globals.connection_dict[self._b2i(data)]
+        else:
+            raise ConnectionReadError(
+                "Format character '{form}' invalid.".format(form=format_string))
         log.Log.conn("received", result, req_num)
         return (req_num, result)
 
@@ -388,7 +393,9 @@ class PipeConnection(LowLevelPipeConnection):
             if req_num == desired_req_num:
                 return object
             else:
-                assert isinstance(object, ConnectionRequest)
+                assert isinstance(object, ConnectionRequest), (
+                    "Object '{obj}' isn't a connection request but "
+                    "a '{otype}'.".format(obj=object, otype=type(object)))
                 self._answer_request(object, req_num)
 
     def _answer_request(self, request, req_num):
@@ -397,7 +404,9 @@ class PipeConnection(LowLevelPipeConnection):
         argument_list = []
         for i in range(request.num_args):
             arg_req_num, arg = self._get()
-            assert arg_req_num == req_num
+            assert arg_req_num == req_num, (
+                "Object {rnum} and argument {anum} numbers should be "
+                "the same.".object(rnum=req_num, anum=arg_req_num))
             argument_list.append(arg)
         try:
             Security.vet_request(request, argument_list)
@@ -458,7 +467,7 @@ class PipeConnection(LowLevelPipeConnection):
 
     def quit(self):
         """Close the associated pipes and tell server side to quit"""
-        assert not Globals.server
+        assert not Globals.server, "This function shouldn't run as server."
         self._putquit()
         self._get()
         self._close()
@@ -515,7 +524,9 @@ def RedirectedRun(conn_number, func, *args):
 
     """
     conn = Globals.connection_dict[conn_number]
-    assert conn is not Globals.local_connection, conn
+    assert conn is not Globals.local_connection, (
+        "A redirected run shouldn't be required locally for {fnc}.".format(
+            fnc=func.__name__))
     return conn.reval(func, *args)
 
 

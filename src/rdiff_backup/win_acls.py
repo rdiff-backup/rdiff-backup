@@ -279,7 +279,7 @@ class WinAccessControlListFile(metadata.FlatFile):
 def join_wacl_iter(rorp_iter, wacl_iter):
     """Update a rorp iter by adding the information from acl_iter"""
     for rorp, wacl in rorpiter.CollateIterators(rorp_iter, wacl_iter):
-        assert rorp, "Missing rorp for index %s" % (wacl.index, )
+        assert rorp, "Missing rorp for index {idx}.".format(idx=wacl.index)
         if not wacl:
             wacl = ACL(rorp.index)
         rorp.set_win_acl(bytes(wacl))

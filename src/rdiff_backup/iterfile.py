@@ -52,15 +52,19 @@ class UnwrapFile:
         if not header:
             return None, None
         if len(header) != 8:
-            assert None, "Header %s is only %d bytes" % (header, len(header))
+            raise ValueError(
+                "Header {hdr} is only {length} bytes instead of 8".format(
+                    hdr=header, length=len(header)))
         # [0:1] makes sure that the type remains a byte and not an int
-        type, length = header[0:1], self._b2i(header[1:])
-        buf = self.file.read(length)
-        if type in b"oeh":
-            return type, pickle.loads(buf)
+        data_type, data_len = header[0:1], self._b2i(header[1:])
+        buf = self.file.read(data_len)
+        if data_type in b"oeh":
+            return data_type, pickle.loads(buf)
+        elif data_type in b"fc":
+            return data_type, buf
         else:
-            assert type in b"fc"
-            return type, buf
+            raise ValueError("Data type {dtype} must be one of [oehfc]".format(
+                dtype=data_type))
 
     def _b2i(self, b):
         """Convert bytes to int using big endian byteorder"""
@@ -122,7 +126,7 @@ class IterVirtualFile(UnwrapFile):
 
     def read(self, length=-1):
         """Read length bytes from the file, updating buffers as necessary"""
-        assert not self.closed
+        assert not self.closed, "You can't read from an already closed file."
         if self.iwf.currently_in_file:
             if length >= 0:
                 while length >= len(self.buffer):
@@ -151,26 +155,34 @@ class IterVirtualFile(UnwrapFile):
 
     def _add_to_buffer(self):
         """Read a chunk from the file and add it to the buffer"""
-        assert self.iwf.currently_in_file
-        type, data = self.iwf._get()
-        if type == b"e":
+        assert self.iwf.currently_in_file, (
+            "File {iwf} has already been read.".format(iwf=self.iwf.file))
+        iwf_type, iwf_data = self.iwf._get()
+        if iwf_type == b"e":
             self.iwf.currently_in_file = None
-            raise data
-        assert type == b"c", "Type is %s instead of c" % type
-        if data:
-            self.buffer += data
-            return 1
+            raise iwf_data
+        elif iwf_type == b"c":
+            if iwf_data:
+                self.buffer += iwf_data
+                return 1
+            else:
+                self._set_close_val()
+                return None
         else:
-            self._set_close_val()
-            return None
+            raise ValueError("Type '{itype}' must be one of [ce].".format(
+                itype=iwf_type))
 
     def _set_close_val(self):
         """Read the close value and clear currently_in_file"""
-        assert self.iwf.currently_in_file
+        assert self.iwf.currently_in_file, (
+            "File {iwf} has already been read.".format(iwf=self.iwf.file))
         self.iwf.currently_in_file = None
-        type, object = self.iwf._get()
-        assert type == b'h', type
-        self.close_value = object
+        iwf_type, iwf_object = self.iwf._get()
+        if iwf_type == b'h':
+            self.close_value = iwf_object
+        else:
+            raise ValueError("Type '{itype}' must be equal to 'h'.".format(
+                itype=iwf_type))
 
 
 class FileWrappingIter:
@@ -197,7 +209,7 @@ class FileWrappingIter:
 
     def read(self, length):
         """Return next length bytes in file"""
-        assert not self.closed
+        assert not self.closed, "Can't read from a closed file."
         while len(self.array_buf) < length:
             if not self._add_to_buffer():
                 break
@@ -317,7 +329,10 @@ class MiscIterToFile(FileWrappingIter):
 
     def read(self, length=None):
         """Return some number of bytes, including 0"""
-        assert not self.closed
+        assert not self.closed, "Can't read from a closed file."
+        assert length is None or length >= 0, (
+            "Length {rlen} to read must be None (for all) or "
+            "an integer positive or zero.".format(rlen=length))
         if length is None:
             while (len(self.array_buf) < self.max_buffer_bytes
                    and self.rorps_in_buffer < self.max_buffer_rps):
@@ -329,7 +344,6 @@ class MiscIterToFile(FileWrappingIter):
             self.rorps_in_buffer = 0
             return result
         else:
-            assert length >= 0
             read_buffer = self.read()
             while len(read_buffer) < length:
                 read_buffer += self.read()
@@ -434,12 +448,16 @@ class FileToMiscIter(IterWrappingFile):
 
     def _get_file(self):
         """Read file object from file"""
-        type, data = self._get()
-        if type == b"f":
-            return IterVirtualFile(self, data)
-        assert type == b"e", "Expected type e, got %s" % (type, )
-        assert isinstance(data, Exception)
-        return ErrorFile(data)
+        file_type, file_data = self._get()
+        if file_type == b"f":
+            return IterVirtualFile(self, file_data)
+        elif file_type == b"e" and isinstance(file_data, Exception):
+            return ErrorFile(file_data)
+        else:
+            raise ValueError(
+                "File type is '{ftype}', should be one of [fe], or data "
+                "isn't an _e_xception but a {dtype}.".format(
+                    ftype=file_type, dtype=type(file_data)))
 
     def _get(self):
         """Return (type, data or object) pair

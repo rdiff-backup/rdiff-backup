@@ -63,8 +63,9 @@ def setcurtime_local(timeinseconds):
 
 def setprevtime(timeinseconds):
     """Sets the previous inc time in prevtime and prevtimestr"""
-    assert 0 < timeinseconds < curtime, \
-        "Time %s is out of bounds" % (timeinseconds,)
+    assert 0 < timeinseconds < curtime, (
+        "Time {secs} is either negative or in the future".format(
+            secs=timeinseconds))
     timestr = timetostring(timeinseconds)
     for conn in Globals.connections:
         conn.Time.setprevtime_local(timeinseconds, timestr)
@@ -105,17 +106,22 @@ def stringtotime(timestring):
         date, daytime = timestring[:19].split("T")
         year, month, day = list(map(int, date.split("-")))
         hour, minute, second = list(map(int, regexp.split(daytime)))
-        assert 1900 < year < 2100, year
-        assert 1 <= month <= 12
-        assert 1 <= day <= 31
-        assert 0 <= hour <= 23
-        assert 0 <= minute <= 59
-        assert 0 <= second <= 61  # leap seconds
         timetuple = (year, month, day, hour, minute, second, -1, -1, 0)
+        if not (1900 < year < 2100
+                and 1 <= month <= 12
+                and 1 <= day <= 31
+                and 0 <= hour <= 23
+                and 0 <= minute <= 59
+                and 0 <= second <= 61):  # leap seconds
+            # "Time string {tstr} couldn't be parsed correctly to "
+            # "year/month/day/hour/minute/second/... {ttup}.".format(
+            #    tstr=timestring, ttup=timetuple), 2)
+            return None
+
         utc_in_secs = calendar.timegm(timetuple)
 
         return int(utc_in_secs) + _tzd_to_seconds(timestring[19:])
-    except (TypeError, ValueError, AssertionError):
+    except (TypeError, ValueError):
         return None
 
 
@@ -219,18 +225,24 @@ def _get_tzd(timeinseconds=None):
     else:
         time_separator = ':'
     hours, minutes = list(map(abs, divmod(offset, 60)))
-    assert 0 <= hours <= 23
-    assert 0 <= minutes <= 59
+    assert 0 <= hours <= 23, (
+        "Hours {hrs} must be between 0 and 23".format(hrs=hours))
+    assert 0 <= minutes <= 59, (
+        "Minutes {mins} must be between 0 and 59".format(mins=minutes))
     return "%s%02d%s%02d" % (prefix, hours, time_separator, minutes)
 
 
 def _tzd_to_seconds(tzd):
-    """Given w3 compliant TZD, return how far ahead UTC is"""
+    """Given w3c compliant TZD, return how far ahead UTC is, else raise
+    ValueError exception."""
     if tzd == "Z":
         return 0
-    assert len(tzd) == 6  # only accept forms like +08:00 for now
-    assert (tzd[0] == "-" or tzd[0] == "+") and (tzd[3] == ":"
-                                                 or tzd[3] == "-")
+    if not (len(tzd) == 6
+            and (tzd[0] == "-" or tzd[0] == "+")
+            and (tzd[3] == ":" or tzd[3] == "-")):
+        raise ValueError(
+            "Only timezones like +08:00 are accepted and not '{tzd}'.".format(
+                tzd=tzd))
     return -60 * (60 * int(tzd[:3]) + int(tzd[4:]))
 
 

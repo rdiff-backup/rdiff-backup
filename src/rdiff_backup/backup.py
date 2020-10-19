@@ -426,15 +426,24 @@ class CacheCollatedPostProcess:
         if not (src_rorp and src_rorp.isdir()
                 or dest_rorp and dest_rorp.isdir()):
             return  # neither is directory
-        if not self.parent_list:
-            assert index == (), index
-        else:
+        assert self.parent_list or index == (), (
+            "Index '{idx}' must be empty if no parent in list".format(
+                idx=index))
+        if self.parent_list:
             last_parent_index = self.parent_list[-1][0]
             lp_index, li = len(last_parent_index), len(index)
-            if li > lp_index:  # descended into previous parent
-                assert li == lp_index + 1, (index, last_parent_index)
-            else:  # In new directory
-                assert last_parent_index[:li - 1] == index[:-1], index
+            assert li <= lp_index + 1, (
+                "The length of the current index '{idx}' can't be more than "
+                "one greater than the last parent's '{pidx}'.".format(
+                    idx=index, pidx=last_parent_index))
+            # li == lp_index + 1, means we've descended into previous parent
+            # if li <= lp_index, we're in a new directory but it must have
+            # a common path up to (li - 1) with the last parent
+            if li <= lp_index:
+                assert last_parent_index[:li - 1] == index[:-1], (
+                    "Current index '{idx}' and last parent index '{pidx}' "
+                    "must have a common path up to {lvl} levels.".format(
+                        idx=index, pidx=last_parent_index, lvl=(li - 1)))
                 self.parent_list = self.parent_list[:li]
         self.parent_list.append((index, (src_rorp, dest_rorp)))
 
@@ -514,9 +523,9 @@ class CacheCollatedPostProcess:
 
     def get_source_rorp(self, index):
         """Retrieve source_rorp with given index from cache"""
-        assert index >= self.cache_indices[0], \
-            ("CCPP index out of order: %s %s" %
-                (repr(index), repr(self.cache_indices[0])))
+        assert index >= self.cache_indices[0], (
+            "CCPP index out of order: {idx!r} shouldn't be less than "
+            "{cached!r}.".format(idx=index, cached=self.cache_indices[0]))
         try:
             return self.cache_dict[index][0]
         except KeyError:
@@ -566,7 +575,10 @@ class PatchITRB(rorpiter.ITRBranch):
     def __init__(self, basis_root_rp, CCPP):
         """Set basis_root_rp, the base of the tree to be incremented"""
         self.basis_root_rp = basis_root_rp
-        assert basis_root_rp.conn is Globals.local_connection
+        assert basis_root_rp.conn is Globals.local_connection, (
+            "Basis root path connection {conn} isn't "
+            "local connection {lconn}.".format(
+                conn=basis_root_rp.conn, lconn=Globals.local_connection))
         self.statfileobj = (statistics.get_active_statfileobj()
                             or statistics.StatFileObj())
         self.dir_replacement, self.dir_update = None, None
@@ -582,7 +594,8 @@ class PatchITRB(rorpiter.ITRBranch):
         """Patch base_rp with diff_rorp (case where neither is directory)"""
         mirror_rp, discard = longname.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp)
-        assert not mirror_rp.isdir(), mirror_rp
+        assert not mirror_rp.isdir(), (
+            "Mirror path '{rp!s}' points to a directory.".format(rp=mirror_rp))
         tf = mirror_rp.get_temp_rpath(sibling=True)
         if self._patch_to_temp(mirror_rp, diff_rorp, tf):
             if tf.lstat():
@@ -664,7 +677,10 @@ class PatchITRB(rorpiter.ITRBranch):
 
     def _patch_diff_to_temp(self, basis_rp, diff_rorp, new):
         """Apply diff_rorp to basis_rp, write output in new"""
-        assert diff_rorp.get_attached_filetype() == 'diff'
+        assert diff_rorp.get_attached_filetype() == 'diff', (
+            "Type attached to '{rp!s}' isn't '{exp}' but '{att}'.".format(
+                rp=diff_rorp, exp="diff",
+                att=diff_rorp.get_attached_filetype()))
         report = robust.check_common_error(
             self.error_handler, Rdiff.patch_local, (basis_rp, diff_rorp, new))
         if isinstance(report, hash.Report):
@@ -719,7 +735,10 @@ class PatchITRB(rorpiter.ITRBranch):
         Returns 1 for success or 0 for failure
 
         """
-        assert diff_rorp.get_attached_filetype() == 'snapshot'
+        assert diff_rorp.get_attached_filetype() == 'snapshot', (
+            "Type attached to '{rp!s}' isn't '{exp}' but '{att}'.".format(
+                rp=diff_rorp, exp="snapshot",
+                att=diff_rorp.get_attached_filetype()))
         self.dir_replacement = base_rp.get_temp_rpath(sibling=True)
         if not self._patch_to_temp(None, diff_rorp, self.dir_replacement):
             if self.dir_replacement.lstat():
@@ -748,7 +767,9 @@ class PatchITRB(rorpiter.ITRBranch):
     def end_process(self):
         """Finish processing directory"""
         if self.dir_update:
-            assert self.base_rp.isdir()
+            assert self.base_rp.isdir(), (
+                "Base directory '{rp!s}' isn't a directory.".format(
+                    rp=self.base_rp))
             rpath.copy_attribs(self.dir_update, self.base_rp)
 
             if (Globals.process_uid != 0
@@ -806,9 +827,10 @@ class IncrementITRB(PatchITRB):
         self.base_rp, inc_prefix = longname.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
         self.base_rp.setdata()
-        assert diff_rorp.isdir() or self.base_rp.isdir(), \
-            ("Either %s or %s must be a directory" % (repr(diff_rorp.get_safeindexpath()),
-             repr(self.base_rp.get_safepath())))
+        assert diff_rorp.isdir() or self.base_rp.isdir(), (
+            "Either diff '{ipath}' or base '{bpath}' must be a directory".format(
+                ipath=diff_rorp.get_safeindexpath(),
+                bpath=self.base_rp.get_safepath()))
         if diff_rorp.isdir():
             inc = increment.Increment(diff_rorp, self.base_rp, inc_prefix)
             if inc and inc.isreg():

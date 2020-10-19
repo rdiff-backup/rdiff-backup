@@ -231,7 +231,9 @@ def copy_attribs(rpin, rpout):
     log.Log(
         "Copying attributes from %s to %s" % (rpin.index,
                                               rpout.get_safepath()), 7)
-    assert rpin.lstat() == rpout.lstat() or rpin.isspecial()
+    assert rpin.lstat() == rpout.lstat() or rpin.isspecial(), (
+        "Input '{irp!s}' and output '{orp!s}' paths must exist likewise, "
+        "or input be special.".format(irp=rpin, orp=rpout))
     if Globals.change_ownership:
         rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
     if Globals.eas_write:
@@ -323,7 +325,9 @@ def copy_with_attribs(rpin, rpout, compress=0):
 
 def rename(rp_source, rp_dest):
     """Rename rp_source to rp_dest"""
-    assert rp_source.conn is rp_dest.conn
+    assert rp_source.conn is rp_dest.conn, (
+        "Source '{srp!s}' and destination '{drp!s}' paths must have the "
+        "same connection for renaming.".format(srp=rp_source, drp=rp_dest))
     log.Log(lambda: "Renaming %s to %s" % (rp_source.get_safepath(), rp_dest.get_safepath()), 7)
     if not rp_source.lstat():
         rp_dest.delete()
@@ -451,19 +455,22 @@ def make_socket_local(rpath):
     This takes an rpath so that it will be checked by Security.
     (Miscellaneous strings will not be.)
     """
-    assert rpath.conn is Globals.local_connection
+    assert rpath.conn is Globals.local_connection, (
+        "Function works locally not over '{conn}'.".format(conn=rpath.conn))
     rpath.conn.os.mknod(rpath.path, stat.S_IFSOCK)
 
 
 def gzip_open_local_read(rpath):
     """Return open GzipFile.  See security note directly above"""
-    assert rpath.conn is Globals.local_connection
+    assert rpath.conn is Globals.local_connection, (
+        "Function works locally not over '{conn}'.".format(conn=rpath.conn))
     return gzip.GzipFile(rpath.path, "rb")
 
 
 def open_local_read(rpath):
     """Return open file (provided for security reasons)"""
-    assert rpath.conn is Globals.local_connection
+    assert rpath.conn is Globals.local_connection, (
+        "Function works locally not over '{conn}'.".format(conn=rpath.conn))
     return open(rpath.path, "rb")
 
 
@@ -496,7 +503,8 @@ def get_incfile_info(basename):
 def delete_dir_no_files(rp):
     """Deletes the directory at rp.path if empty. Raises if the
     directory contains files."""
-    assert rp.isdir()
+    assert rp.isdir(), (
+        "Path '{rp!s}' must be a directory to be deleted.".format(rp=rp))
     if rp.contains_files():
         raise RPathException("Directory contains files.")
     rp.delete()
@@ -853,7 +861,7 @@ class RORPath:
 
     def setfile(self, file):
         """Right now just set self.file to be the already opened file"""
-        assert file and not self.file
+        assert file and not self.file, "Can't assign twice a file."
 
         def closing_hook():
             self.file_already_open = None
@@ -931,9 +939,7 @@ class RORPath:
         if self.file:
             while self.file.read(Globals.blocksize):
                 pass
-            assert not self.file.close(), \
-                "Error closing file\ndata = %s\nindex = %s\n" % (self.data,
-                                                                 self.get_safeindex())
+            self.file.close()
             self.file_already_open = None
 
     def set_acl(self, acl):
@@ -1117,9 +1123,10 @@ class RPath(RORPath):
         """
         temptype = self.data['type']
         self.setdata()
-        assert temptype == self.data['type'], \
-            "\nName: %s\nOld: %s --> New: %s\n" % \
-            (self.path, temptype, self.data['type'])
+        if temptype != self.data['type']:
+            print("\nPath: {rp!s}\nhas cached an inconsistent type\n"
+                  "Old: {otype} --> New: {ntype}\n".format(
+                      rp=self, otype=temptype, ntype=self.data['type']))
 
     def chmod(self, permissions, loglevel=2):
         """Wrapper around os.chmod"""
@@ -1220,7 +1227,9 @@ class RPath(RORPath):
         """Make symlink at self.path pointing to linktext"""
         self.conn.os.symlink(linktext, self.path)
         self.setdata()
-        assert self.issym()
+        if not self.issym():
+            raise RPathException("Type of '{rp!s}' isn't '{rtype}'.".format(
+                rp=self, rtype='symlink'))
 
     def hardlink(self, linkpath):
         """Make self into a hardlink joined to linkpath"""
@@ -1234,20 +1243,26 @@ class RPath(RORPath):
         """Make a fifo at self.path"""
         self.conn.os.mkfifo(self.path)
         self.setdata()
-        assert self.isfifo()
+        if not self.isfifo():
+            raise RPathException("Type of '{rp!s}' isn't '{rtype}'.".format(
+                rp=self, rtype='fifo'))
 
     def mksock(self):
         """Make a socket at self.path"""
         self.conn.rpath.make_socket_local(self)
         self.setdata()
-        assert self.issock()
+        if not self.issock():
+            raise RPathException("Type of '{rp!s}' isn't '{rtype}'.".format(
+                rp=self, rtype='socket'))
 
     def touch(self):
         """Make sure file at self.path exists"""
         log.Log("Touching %s" % self.get_safepath(), 7)
         self.conn.open(self.path, "wb").close()
         self.setdata()
-        assert self.isreg(), self.path
+        if not self.isreg():
+            raise RPathException("Type of '{rp!s}' isn't '{rtype}'.".format(
+                rp=self, rtype='regular'))
 
     def hasfullperms(self):
         """Return true if current process has full permissions on the file"""
@@ -1427,7 +1442,9 @@ class RPath(RORPath):
 
     def get_temp_rpath(self, sibling=False):
         """Return new temp rpath in given or parent directory"""
-        assert self.conn is Globals.local_connection
+        assert self.conn is Globals.local_connection, (
+            "Function must be called locally not over {conn}.".format(
+                conn=self.conn))
 
         # recursion if current rpath isn't a directory or if explicitly asked
         if sibling or not self.isdir():
@@ -1479,7 +1496,7 @@ class RPath(RORPath):
 
         """
         log.Log("Writing file object to %s" % self.get_safepath(), 7)
-        assert not self.lstat(), "File %s already exists" % self.path
+        assert not self.lstat(), "File '{rp!s}' already exists".format(rp=self)
         outfp = self.open("wb", compress=compress)
         copyfileobj(fp, outfp)
         if outfp.close():
@@ -1489,14 +1506,14 @@ class RPath(RORPath):
 
     def write_string(self, s, compress=None):
         """Write string s into rpath"""
-        assert not self.lstat(), "File %s already exists" % (self.path, )
+        assert not self.lstat(), "File '{rp!s}' already exists".format(rp=self)
         with self.open("w", compress=compress) as outfp:
             outfp.write(s)
         self.setdata()
 
     def write_bytes(self, s, compress=None):
         """Write data s into rpath"""
-        assert not self.lstat(), "File %s already exists" % (self.path, )
+        assert not self.lstat(), "File '{rp!s}' already exists".format(rp=self)
         with self.open("wb", compress=compress) as outfp:
             outfp.write(s)
         self.setdata()
@@ -1590,8 +1607,9 @@ class RPath(RORPath):
         the file's file descriptor.
 
         """
-        assert Globals.do_fsync
-        assert self.conn is Globals.local_connection
+        assert self.conn is Globals.local_connection, (
+            "Function must be called locally not over {conn}.".format(
+                conn=self.conn))
         try:
             fd = os.open(self.path, os.O_RDONLY)
             os.fsync(fd)
@@ -1631,14 +1649,14 @@ class RPath(RORPath):
         """Open file as a regular file, read data, close, return data"""
         fp = self.open("rb", compressed)
         d = fp.read()
-        assert not fp.close()
+        fp.close()
         return d
 
     def get_string(self, compressed=None):
         """Open file as a regular file, read string, close, return string"""
         fp = self.open("r", compressed)
         s = fp.read()
-        assert not fp.close()
+        fp.close()
         if isinstance(s, bytes) or isinstance(s, bytearray):
             s = s.decode()
         return s
@@ -1703,7 +1721,8 @@ class RPath(RORPath):
 
     def get_resource_fork(self):
         """Return resource fork data, setting if necessary"""
-        assert self.isreg()
+        assert self.isreg(), (
+            "Path '{rp!s}' must point to a regular file.".format(rp=self))
         try:
             rfork = self.data['resourcefork']
         except KeyError:
@@ -1711,7 +1730,7 @@ class RPath(RORPath):
                 rfork_fp = self.conn.open(
                     os.path.join(self.path, b'..namedfork', b'rsrc'), 'rb')
                 rfork = rfork_fp.read()
-                assert not rfork_fp.close()
+                rfork_fp.close()
             except (IOError, OSError):
                 rfork = b''
             self.data['resourcefork'] = rfork
@@ -1723,7 +1742,7 @@ class RPath(RORPath):
         fp = self.conn.open(
             os.path.join(self.path, b'..namedfork', b'rsrc'), 'wb')
         fp.write(rfork_data)
-        assert not fp.close()
+        fp.close()
         self.set_resource_fork(rfork_data)
 
     def get_win_acl(self):
@@ -1772,7 +1791,8 @@ class MaybeGzip:
 
     def __init__(self, base_rp, callback=None):
         """Return file-like object with filename based on base_rp"""
-        assert not base_rp.lstat(), base_rp
+        assert not base_rp.lstat(), (
+            "Path '{rp!s}' shouldn't already exist.".format(rp=base_rp))
         self.base_rp = base_rp
         # callback will be called with final write rp as only argument
         self.callback = callback
@@ -1828,7 +1848,9 @@ def setdata_local(rpath):
     these features may exist or not depending on the connection.
 
     """
-    assert rpath.conn is Globals.local_connection
+    assert rpath.conn is Globals.local_connection, (
+        "Function must be called locally not over {conn}.".format(
+            conn=rpath.conn))
     reset_perms = False
     if (Globals.process_uid != 0 and not rpath.readable() and rpath.isowner()):
         reset_perms = True
@@ -1883,28 +1905,28 @@ def _carbonfile_get(rpath):
 # These functions are overwritten by the eas_acls.py module.  We can't
 # import that module directly because of circular dependency problems.
 def acl_get(rp):
-    assert 0
+    raise NotImplementedError()
 
 
 def get_blank_acl(index):
-    assert 0
+    raise NotImplementedError()
 
 
 def ea_get(rp):
-    assert 0
+    raise NotImplementedError()
 
 
 def get_blank_ea(index):
-    assert 0
+    raise NotImplementedError()
 
 
 def win_acl_get(rp):
-    assert 0
+    raise NotImplementedError()
 
 
 def write_win_acl(rp):
-    assert 0
+    raise NotImplementedError()
 
 
 def get_blank_win_acl():
-    assert 0
+    raise NotImplementedError()

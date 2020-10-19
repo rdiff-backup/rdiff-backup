@@ -89,7 +89,8 @@ class Select:
 
     def __init__(self, rootrp):
         """Select initializer.  rpath is the root directory"""
-        assert isinstance(rootrp, rpath.RPath)
+        assert isinstance(rootrp, rpath.RPath), (
+            "Root path '{rp!s}' must be a real remote path.".format(rp=rootrp))
         self.selection_functions = []
         self.rpath = rootrp
         self.prefix = self.rpath.path
@@ -262,10 +263,13 @@ class Select:
                                 filelists[filelists_index], self._sel_globfilelist_mapping[opt], arg)))
                     filelists_index += 1
                 else:
-                    assert 0, "Bad selection option %s" % opt
+                    raise RuntimeError(
+                        "Bad selection option {opt}.".format(opt=opt))
         except SelectError as e:
             self._parse_catch_error(e)
-        assert filelists_index == len(filelists)
+        assert filelists_index == len(filelists), (
+            "There must be as many selection options with arguments than "
+            "lists of files.")
 
         self._parse_last_excludes()
         self.parse_rbdir_exclude()
@@ -421,7 +425,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
             else:
                 return (None, False)  # rp greater, not initial sequence
         else:
-            assert 0, "Include is %s, should be 0 or 1" % (include, )
+            raise ValueError(
+                "Include is {ival}, should be 0 or 1.".format(ival=include))
 
     def _filelist_globbing_get_sfs(self, filelist_fp, inc_default, list_name):
         """Return list of selection functions by reading fileobj
@@ -447,7 +452,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _other_filesystems_get_sf(self, include):
         """Return selection function matching files on other filesystems"""
-        assert include == Select.EXCLUDE or include == Select.INCLUDE
+        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
+            "Include is {ival}, should be 0 or 1.".format(ival=include))
         root_devloc = self.rpath.getdevloc()
 
         def sel_func(rp):
@@ -462,7 +468,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _regexp_get_sf(self, regexp_string, include):
         """Return selection function given by regexp_string"""
-        assert include == Select.EXCLUDE or include == Select.INCLUDE
+        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
+            "Include is {ival}, should be 0 or 1.".format(ival=include))
         try:
             regexp = re.compile(os.fsencode(regexp_string))
         except re.error:
@@ -481,7 +488,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _presence_get_sf(self, presence_filename, include):
         """Return selection function given by a file if present"""
-        assert include == Select.EXCLUDE or include == Select.INCLUDE
+        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
+            "Include is {ival}, should be 0 or 1.".format(ival=include))
 
         def sel_func(rp):
             if rp.isdir() and rp.readable() and \
@@ -541,8 +549,14 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _size_get_sf(self, sizestr, min_max):
         """Return selection function given by filesize"""
-        size = int(sizestr)
-        assert size > 0
+        try:
+            size = int(sizestr)
+            if size <= 0:
+                raise ValueError()
+        except ValueError:
+            log.Log.FatalError(
+                "Max and min file size must be a positive integer "
+                "and not '{size}'.".format(size=sizestr))
 
         def sel_func(rp):
             if not rp.isreg():
@@ -559,7 +573,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _glob_get_sf(self, glob_str, include):
         """Return selection function given by glob string"""
-        assert include == Select.EXCLUDE or include == Select.INCLUDE
+        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
+            "Include is {ival}, should be 0 or 1.".format(ival=include))
         glob_str = os.fsencode(glob_str)  # paths and glob must be bytes
         if glob_str == b"**":
             def sel_func(rp):
@@ -811,8 +826,8 @@ class _FilterIterITRB(rorpiter.ITRBranch):
                 self.rorp_cache.append(self.base_queue)
                 self.base_queue = None
             self.rorp_cache.append(next_rorp)
-        else:
-            assert s == 0, "Unexpected select value %s" % (s, )
+        elif s != 0:
+            raise ValueError("Unexpected select value {sel}.".format(sel=s))
 
     def start_process(self, index, next_rp, next_rorp):
         s = self.select(next_rp)
@@ -820,6 +835,7 @@ class _FilterIterITRB(rorpiter.ITRBranch):
             self.branch_excluded = 1
         elif s == 1:
             self.rorp_cache.append(next_rorp)
-        else:
-            assert s == 2, s
+        elif s == 2:
             self.base_queue = next_rorp
+        else:
+            raise ValueError("Unexpected select value {sel}.".format(sel=s))

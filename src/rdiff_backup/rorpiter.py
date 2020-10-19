@@ -157,7 +157,10 @@ class IndexedTuple(collections.UserList):
         return self.__cmp__(other) != -1
 
     def __cmp__(self, other):
-        assert isinstance(other, IndexedTuple)
+        if not isinstance(other, IndexedTuple):
+            raise TypeError(
+                "An IndexedTuple can only be compared with another one, "
+                "not {oth}.".format(oth=other))
         if self.index < other.index:
             return -1
         elif self.index == other.index:
@@ -304,8 +307,10 @@ class IterTreeReducer:
             log.Log("Warning, repeated index %s, bad filesystem?" % (index, ),
                     2)
         elif index < self.index:
-            assert 0, "Bad index order: %s >= %s" % (self.index, index)
-        else:  # normal case
+            raise ValueError(
+                "Bad index order: {sidx} should be lower than {idx}.".format(
+                    sidx=self.index, idx=index))
+        else:  # normal case: index > self.index
             if self._finish_branches(index) is None:
                 return None  # We are no longer in the main tree
             last_branch = self.branches[-1]
@@ -397,6 +402,7 @@ class CacheIndexable:
         try:
             return self.cache_dict[index]
         except KeyError:
-            assert index >= self.cache_indices[0], \
-                "Index out of order: " + repr((index, self.cache_indices[0]))
+            assert index >= self.cache_indices[0], (
+                "Index out of order: {idx} should be bigger-equal than "
+                "{cidx}.".format(idx=index, cidx=self.cache_indices[0]))
             return None
