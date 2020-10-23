@@ -74,6 +74,7 @@ def Compare_full(src_rp, mirror_rp, inc_rp, compare_time):
     return return_val
 
 
+# @API(Verify, 200)
 def Verify(mirror_rp, inc_rp, verify_time):
     """Compute SHA1 sums of repository files and check against metadata"""
     assert mirror_rp.conn is Globals.local_connection, (
@@ -115,82 +116,7 @@ def Verify(mirror_rp, inc_rp, verify_time):
     return 0
 
 
-def _get_hash(repo_rorp):
-    """ Try to get a sha1 digest from the repository.  If hardlinks
-    are saved in the metadata, get the sha1 from the first hardlink """
-    Hardlink.add_rorp(repo_rorp)
-    if Hardlink.is_linked(repo_rorp):
-        verify_sha1 = Hardlink.get_sha1(repo_rorp)
-    elif repo_rorp.has_sha1():
-        verify_sha1 = repo_rorp.get_sha1()
-    else:
-        verify_sha1 = None
-    Hardlink.del_rorp(repo_rorp)
-    return verify_sha1
-
-
-def _print_reports(report_iter):
-    """Given an iter of CompareReport objects, print them to screen"""
-    assert not Globals.server, "This function shouldn't run as server."
-    changed_files_found = 0
-    for report in report_iter:
-        changed_files_found = 1
-        indexpath = report.index and b"/".join(report.index) or b"."
-        print("%s: %s" % (report.reason, os.fsdecode(indexpath)))
-
-    if not changed_files_found:
-        log.Log("No changes found.  Directory matches archive data.", 3)
-    return changed_files_found
-
-
-def _get_basic_report(src_rp, repo_rorp, comp_data_func=None):
-    """Compare src_rp and repo_rorp, return CompareReport
-
-    comp_data_func should be a function that accepts (src_rp,
-    repo_rorp) as arguments, and return 1 if they have the same data,
-    0 otherwise.  If comp_data_func is false, don't compare file data,
-    only metadata.
-
-    """
-    if src_rp:
-        index = src_rp.index
-    else:
-        index = repo_rorp.index
-    if not repo_rorp or not repo_rorp.lstat():
-        return CompareReport(index, "new")
-    elif not src_rp or not src_rp.lstat():
-        return CompareReport(index, "deleted")
-    elif comp_data_func and src_rp.isreg() and repo_rorp.isreg():
-        if src_rp == repo_rorp:
-            meta_changed = 0
-        else:
-            meta_changed = 1
-        data_changed = comp_data_func(src_rp, repo_rorp)
-
-        if not meta_changed and not data_changed:
-            return None
-        if meta_changed:
-            meta_string = "metadata changed, "
-        else:
-            meta_string = "metadata the same, "
-        if data_changed:
-            data_string = "data changed"
-        else:
-            data_string = "data the same"
-        return CompareReport(index, meta_string + data_string)
-    elif src_rp == repo_rorp:
-        return None
-    else:
-        return CompareReport(index, "changed")
-
-
-def _log_success(src_rorp, mir_rorp=None):
-    """Log that src_rorp and mir_rorp compare successfully"""
-    path = src_rorp and src_rorp.get_safeindexpath(
-    ) or mir_rorp.get_safeindexpath()
-    log.Log("Successful compare: %s" % (path, ), 5)
-
-
+# @API(RepoSide, 200)
 class RepoSide(restore.MirrorStruct):
     """On the repository side, comparing is like restoring"""
 
@@ -231,6 +157,7 @@ class RepoSide(restore.MirrorStruct):
                 yield rpath.RORPath(index)  # indicate deleted mir_rorp
 
 
+# @API(DataSide, 200)
 class DataSide(backup.SourceStruct):
     """On the side that has the current data, compare is like backing up"""
 
@@ -310,3 +237,79 @@ class CompareReport:
     def __init__(self, index, reason):
         self.index = index
         self.reason = reason
+
+
+def _get_hash(repo_rorp):
+    """ Try to get a sha1 digest from the repository.  If hardlinks
+    are saved in the metadata, get the sha1 from the first hardlink """
+    Hardlink.add_rorp(repo_rorp)
+    if Hardlink.is_linked(repo_rorp):
+        verify_sha1 = Hardlink.get_sha1(repo_rorp)
+    elif repo_rorp.has_sha1():
+        verify_sha1 = repo_rorp.get_sha1()
+    else:
+        verify_sha1 = None
+    Hardlink.del_rorp(repo_rorp)
+    return verify_sha1
+
+
+def _print_reports(report_iter):
+    """Given an iter of CompareReport objects, print them to screen"""
+    assert not Globals.server, "This function shouldn't run as server."
+    changed_files_found = 0
+    for report in report_iter:
+        changed_files_found = 1
+        indexpath = report.index and b"/".join(report.index) or b"."
+        print("%s: %s" % (report.reason, os.fsdecode(indexpath)))
+
+    if not changed_files_found:
+        log.Log("No changes found.  Directory matches archive data.", 3)
+    return changed_files_found
+
+
+def _get_basic_report(src_rp, repo_rorp, comp_data_func=None):
+    """Compare src_rp and repo_rorp, return CompareReport
+
+    comp_data_func should be a function that accepts (src_rp,
+    repo_rorp) as arguments, and return 1 if they have the same data,
+    0 otherwise.  If comp_data_func is false, don't compare file data,
+    only metadata.
+
+    """
+    if src_rp:
+        index = src_rp.index
+    else:
+        index = repo_rorp.index
+    if not repo_rorp or not repo_rorp.lstat():
+        return CompareReport(index, "new")
+    elif not src_rp or not src_rp.lstat():
+        return CompareReport(index, "deleted")
+    elif comp_data_func and src_rp.isreg() and repo_rorp.isreg():
+        if src_rp == repo_rorp:
+            meta_changed = 0
+        else:
+            meta_changed = 1
+        data_changed = comp_data_func(src_rp, repo_rorp)
+
+        if not meta_changed and not data_changed:
+            return None
+        if meta_changed:
+            meta_string = "metadata changed, "
+        else:
+            meta_string = "metadata the same, "
+        if data_changed:
+            data_string = "data changed"
+        else:
+            data_string = "data the same"
+        return CompareReport(index, meta_string + data_string)
+    elif src_rp == repo_rorp:
+        return None
+    else:
+        return CompareReport(index, "changed")
+
+
+def _log_success(src_rorp, mir_rorp=None):
+    """Log that src_rorp and mir_rorp compare successfully"""
+    path = src_rorp and src_rorp.get_safeindexpath(
+    ) or mir_rorp.get_safeindexpath()
+    log.Log("Successful compare: %s" % (path, ), 5)
