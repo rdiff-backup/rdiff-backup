@@ -69,7 +69,7 @@ class Logger:
         if verbosity <= self.term_verbosity:
             self.log_to_term(message, verbosity)
 
-    # @API(log_to_file, 200)
+    # @API(Log.log_to_file, 200)
     def log_to_file(self, message):
         """Write the message to the log file, if possible"""
         if self.log_file_open:
@@ -142,7 +142,7 @@ class Logger:
             print("IOError while trying to log exception!")
             print(exception_string)
 
-    # @API(setverbosity, 200)
+    # @API(Log.setverbosity, 200)
     def setverbosity(self, verbosity_string):
         """Set verbosity levels.  Takes a number string"""
         try:
@@ -153,7 +153,7 @@ class Logger:
         if not self.termverbset:
             self.term_verbosity = self.verbosity
 
-    # @API(setterm_verbosity, 200)
+    # @API(Log.setterm_verbosity, 200)
     def setterm_verbosity(self, termverb_string):
         """Set verbosity to terminal.  Takes a number string"""
         try:
@@ -175,13 +175,13 @@ class Logger:
         for conn in Globals.connections:
             conn.log.Log.open_logfile_allconn(rpath.conn)
 
-    # @API(open_logfile_allconn, 200)
+    # @API(Log.open_logfile_allconn, 200)
     def open_logfile_allconn(self, log_file_conn):
         """Run on all connections to signal log file is open"""
         self.log_file_open = 1
         self.log_file_conn = log_file_conn
 
-    # @API(open_logfile_local, 200)
+    # @API(Log.open_logfile_local, 200)
     def open_logfile_local(self, rpath):
         """Open logfile locally - should only be run on one connection"""
         assert rpath.conn is Globals.local_connection, (
@@ -202,12 +202,12 @@ class Logger:
                 conn.log.Log.close_logfile_allconn()
             self.log_file_conn.log.Log.close_logfile_local()
 
-    # @API(close_logfile_allconn, 200)
+    # @API(Log.close_logfile_allconn, 200)
     def close_logfile_allconn(self):
         """Run on every connection"""
         self.log_file_open = None
 
-    # @API(close_logfile_local, 200)
+    # @API(Log.close_logfile_local, 200)
     def close_logfile_local(self):
         """Run by logging connection - close logfile"""
         assert self.log_file_conn is Globals.local_connection, (
