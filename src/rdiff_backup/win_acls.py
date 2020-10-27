@@ -60,6 +60,13 @@ class ACL:
         self.__acl = b""
         self.index = index
 
+    def __bytes__(self):
+        return b'# file: %b\n%b\n' % \
+            (C.acl_quote(self.get_indexpath()), self.__acl)
+
+    def __str__(self):
+        return os.fsdecode(self.__bytes__())
+
     def get_indexpath(self):
         return self.index and b'/'.join(self.index) or b'.'
 
@@ -120,53 +127,6 @@ class ACL:
             self.__acl = ''
         self.__acl = os.fsencode(self.__acl)
 
-    def _clear_rp(self, rp):
-        # not sure how to interpret this
-        # I'll just clear all acl-s from rp.path
-        try:
-            sd = rp.conn.win32security.GetNamedSecurityInfo(
-                os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
-        except (OSError, IOError, pywintypes.error) as exc:
-            log.Log(
-                "Warning: unable to read ACL from %s for clearing: %s" % (repr(
-                    rp.path), exc), 4)
-            return
-
-        acl = sd.GetSecurityDescriptorDacl()
-        if acl:
-            n = acl.GetAceCount()
-            # traverse the ACL in reverse, so the indices stay correct
-            while n:
-                n -= 1
-                acl.DeleteAce(n)
-            sd.SetSecurityDescriptorDacl(0, acl, 0)
-
-        if ACL.flags & SACL_SECURITY_INFORMATION:
-            acl = sd.GetSecurityDescriptorSacl()
-            if acl:
-                n = acl.GetAceCount()
-                # traverse the ACL in reverse, so the indices stay correct
-                while n:
-                    n -= 1
-                    acl.DeleteAce(n)
-                sd.SetSecurityDescriptorSacl(0, acl, 0)
-
-        try:
-            rp.conn.win32security.SetNamedSecurityInfo(
-                os.fsdecode(rp.path),
-                SE_FILE_OBJECT,
-                ACL.flags,
-                sd.GetSecurityDescriptorOwner(),
-                sd.GetSecurityDescriptorGroup(),
-                sd.GetSecurityDescriptorDacl(),
-                (ACL.flags & SACL_SECURITY_INFORMATION)
-                and sd.GetSecurityDescriptorSacl() or None
-            )
-        except (OSError, IOError, pywintypes.error) as exc:
-            log.Log(
-                "Warning: unable to set ACL on %s after clearing: %s" % (repr(
-                    rp.path), exc), 4)
-
     def write_to_rp(self, rp):
         if not self.__acl:
             return
@@ -220,13 +180,6 @@ class ACL:
                 "Warning: unable to set ACL on %s: %s" % (repr(rp.path), exc),
                 4)
 
-    def __bytes__(self):
-        return b'# file: %b\n%b\n' % \
-            (C.acl_quote(self.get_indexpath()), self.__acl)
-
-    def __str__(self):
-        return os.fsdecode(self.__bytes__())
-
     def from_string(self, acl_str):
 
         def _safe_str(cmd):
@@ -246,6 +199,53 @@ class ACL:
         else:
             self.index = tuple(C.acl_unquote(filename).split(b'/'))
         self.__acl = lines[1]
+
+    def _clear_rp(self, rp):
+        # not sure how to interpret this
+        # I'll just clear all acl-s from rp.path
+        try:
+            sd = rp.conn.win32security.GetNamedSecurityInfo(
+                os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
+        except (OSError, IOError, pywintypes.error) as exc:
+            log.Log(
+                "Warning: unable to read ACL from %s for clearing: %s" % (repr(
+                    rp.path), exc), 4)
+            return
+
+        acl = sd.GetSecurityDescriptorDacl()
+        if acl:
+            n = acl.GetAceCount()
+            # traverse the ACL in reverse, so the indices stay correct
+            while n:
+                n -= 1
+                acl.DeleteAce(n)
+            sd.SetSecurityDescriptorDacl(0, acl, 0)
+
+        if ACL.flags & SACL_SECURITY_INFORMATION:
+            acl = sd.GetSecurityDescriptorSacl()
+            if acl:
+                n = acl.GetAceCount()
+                # traverse the ACL in reverse, so the indices stay correct
+                while n:
+                    n -= 1
+                    acl.DeleteAce(n)
+                sd.SetSecurityDescriptorSacl(0, acl, 0)
+
+        try:
+            rp.conn.win32security.SetNamedSecurityInfo(
+                os.fsdecode(rp.path),
+                SE_FILE_OBJECT,
+                ACL.flags,
+                sd.GetSecurityDescriptorOwner(),
+                sd.GetSecurityDescriptorGroup(),
+                sd.GetSecurityDescriptorDacl(),
+                (ACL.flags & SACL_SECURITY_INFORMATION)
+                and sd.GetSecurityDescriptorSacl() or None
+            )
+        except (OSError, IOError, pywintypes.error) as exc:
+            log.Log(
+                "Warning: unable to set ACL on %s after clearing: %s" % (repr(
+                    rp.path), exc), 4)
 
 
 class WACLExtractor(metadata.FlatExtractor):
@@ -286,32 +286,6 @@ def join_wacl_iter(rorp_iter, wacl_iter):
         yield rorp
 
 
-def _rpath_win_acl_get(rpath):
-    acl = ACL()
-    acl.load_from_rp(rpath)
-    return bytes(acl)
-
-
-rpath.win_acl_get = _rpath_win_acl_get
-
-
-def _rpath_get_blank_win_acl(index):
-    acl = ACL(index)
-    return bytes(acl)
-
-
-rpath.get_blank_win_acl = _rpath_get_blank_win_acl
-
-
-def _rpath_write_win_acl(rp, acl_str):
-    acl = ACL()
-    acl.from_string(acl_str)
-    acl.write_to_rp(rp)
-
-
-rpath.write_win_acl = _rpath_write_win_acl
-
-
 def init_acls():
     # A process that tries to read or write a SACL needs
     # to have and enable the SE_SECURITY_NAME privilege.
@@ -346,3 +320,29 @@ def init_acls():
                 break
     finally:
         win32api.CloseHandle(hnd)
+
+
+def _rpath_win_acl_get(rpath):
+    acl = ACL()
+    acl.load_from_rp(rpath)
+    return bytes(acl)
+
+
+rpath.win_acl_get = _rpath_win_acl_get
+
+
+def _rpath_get_blank_win_acl(index):
+    acl = ACL(index)
+    return bytes(acl)
+
+
+rpath.get_blank_win_acl = _rpath_get_blank_win_acl
+
+
+def _rpath_write_win_acl(rp, acl_str):
+    acl = ACL()
+    acl.from_string(acl_str)
+    acl.write_to_rp(rp)
+
+
+rpath.write_win_acl = _rpath_write_win_acl

@@ -24,10 +24,7 @@ import calendar
 from . import Globals
 
 
-class TimeException(Exception):
-    pass
-
-
+curtime = curtimestr = None
 _interval_conv_dict = {
     "s": 1,
     "m": 60,
@@ -45,7 +42,10 @@ _genstr_date_regexp1 = re.compile(
     "(?P<month>[0-9]{1,2})[-/](?P<day>[0-9]{1,2})$")
 _genstr_date_regexp2 = re.compile("^(?P<month>[0-9]{1,2})[-/]"
                                   "(?P<day>[0-9]{1,2})[-/](?P<year>[0-9]{4})$")
-curtime = curtimestr = None
+
+
+class TimeException(Exception):
+    pass
 
 
 def setcurtime(curtime=None):
@@ -55,6 +55,7 @@ def setcurtime(curtime=None):
         conn.Time.setcurtime_local(int(t))
 
 
+# @API(setcurtime_local, 200)
 def setcurtime_local(timeinseconds):
     """Only set the current time locally"""
     global curtime, curtimestr
@@ -71,6 +72,7 @@ def setprevtime(timeinseconds):
         conn.Time.setprevtime_local(timeinseconds, timestr)
 
 
+# @API(setprevtime_local, 200)
 def setprevtime_local(timeinseconds, timestr):
     """Like setprevtime but only set the local version"""
     global prevtime, prevtimestr
@@ -170,6 +172,66 @@ def inttopretty(seconds):
     return " ".join(partlist)
 
 
+def genstrtotime(timestr, curtime=None, rp=None):
+    """Convert a generic time string to a time in seconds
+
+    rp is used when the time is of the form "4B" or similar.  Then the
+    times of the increments of that particular file are used.
+
+    """
+    if curtime is None:
+        curtime = globals()['curtime']
+    if timestr == "now":
+        return curtime
+
+    def error():
+        raise TimeException("""Bad time string "%s"
+
+The acceptable time strings are intervals (like "3D64s"), w3-datetime
+strings, like "2002-04-26T04:22:01-07:00" (strings like
+"2002-04-26T04:22:01" are also acceptable - rdiff-backup will use the
+current time zone), or ordinary dates like 2/4/1997 or 2001-04-23
+(various combinations are acceptable, but the month always precedes
+the day).""" % timestr)
+
+    # Test for straight integer
+    if _integer_regexp.search(timestr):
+        return int(timestr)
+
+    # Test for w3-datetime format, possibly missing tzd
+    t = stringtotime(timestr) or stringtotime(timestr + _get_tzd())
+    if t:
+        return t
+
+    # Test for time given as number of backups, like 3B
+    if _session_regexp.search(timestr):
+        return _time_from_session(int(timestr[:-1]), rp)
+
+    # Try for long time, like "Mon Jun 5 11:00:23 1990"
+    t = prettytotime(timestr)
+    if t is not None:
+        return t
+
+    try:  # test for an interval, like "2 days ago"
+        return curtime - _intervalstr_to_seconds(timestr)
+    except TimeException:
+        pass
+
+    # Now check for dates like 2001/3/23
+    match = _genstr_date_regexp1.search(timestr) or \
+        _genstr_date_regexp2.search(timestr)
+    if not match:
+        error()
+    timestr = "%s-%02d-%02dT00:00:00%s" % (match.group('year'),
+                                           int(match.group('month')),
+                                           int(match.group('day')), _get_tzd())
+    t = stringtotime(timestr)
+    if t is not None:
+        return t
+    else:
+        error()
+
+
 def _intervalstr_to_seconds(interval_string):
     """Convert a string expressing an interval (e.g. "4D2s") to seconds"""
 
@@ -259,63 +321,3 @@ def _time_from_session(session_num, rp=None):
     if len(session_times) <= session_num:
         return session_times[0]  # Use oldest if too few backups
     return session_times[-session_num - 1]
-
-
-def genstrtotime(timestr, curtime=None, rp=None):
-    """Convert a generic time string to a time in seconds
-
-    rp is used when the time is of the form "4B" or similar.  Then the
-    times of the increments of that particular file are used.
-
-    """
-    if curtime is None:
-        curtime = globals()['curtime']
-    if timestr == "now":
-        return curtime
-
-    def error():
-        raise TimeException("""Bad time string "%s"
-
-The acceptable time strings are intervals (like "3D64s"), w3-datetime
-strings, like "2002-04-26T04:22:01-07:00" (strings like
-"2002-04-26T04:22:01" are also acceptable - rdiff-backup will use the
-current time zone), or ordinary dates like 2/4/1997 or 2001-04-23
-(various combinations are acceptable, but the month always precedes
-the day).""" % timestr)
-
-    # Test for straight integer
-    if _integer_regexp.search(timestr):
-        return int(timestr)
-
-    # Test for w3-datetime format, possibly missing tzd
-    t = stringtotime(timestr) or stringtotime(timestr + _get_tzd())
-    if t:
-        return t
-
-    # Test for time given as number of backups, like 3B
-    if _session_regexp.search(timestr):
-        return _time_from_session(int(timestr[:-1]), rp)
-
-    # Try for long time, like "Mon Jun 5 11:00:23 1990"
-    t = prettytotime(timestr)
-    if t is not None:
-        return t
-
-    try:  # test for an interval, like "2 days ago"
-        return curtime - _intervalstr_to_seconds(timestr)
-    except TimeException:
-        pass
-
-    # Now check for dates like 2001/3/23
-    match = _genstr_date_regexp1.search(timestr) or \
-        _genstr_date_regexp2.search(timestr)
-    if not match:
-        error()
-    timestr = "%s-%02d-%02dT00:00:00%s" % (match.group('year'),
-                                           int(match.group('month')),
-                                           int(match.group('day')), _get_tzd())
-    t = stringtotime(timestr)
-    if t is not None:
-        return t
-    else:
-        error()
