@@ -65,451 +65,6 @@ class RPathException(Exception):
     pass
 
 
-def copyfileobj(inputfp, outputfp):
-    """Copies file inputfp to outputfp in blocksize intervals"""
-    blocksize = Globals.blocksize
-
-    sparse = False
-    """Negative seeks are not supported by GzipFile"""
-    compressed = False
-    if isinstance(outputfp, gzip.GzipFile):
-        compressed = True
-
-    while 1:
-        inbuf = inputfp.read(blocksize)
-        if not inbuf:
-            break
-
-        buflen = len(inbuf)
-        if not compressed and inbuf == b"\x00" * buflen:
-            outputfp.seek(buflen, os.SEEK_CUR)
-            # flag sparse=True, that we seek()ed, but have not written yet
-            # The filesize is wrong until we write
-            sparse = True
-        else:
-            outputfp.write(inbuf)
-            # We wrote, so clear sparse.
-            sparse = False
-
-    if sparse:
-        outputfp.seek(-1, os.SEEK_CUR)
-        outputfp.write(b"\x00")
-
-
-def _cmp_file_obj(fp1, fp2):
-    """True if file objects fp1 and fp2 contain same data, used for testing"""
-    blocksize = Globals.blocksize
-    while 1:
-        buf1 = fp1.read(blocksize)
-        buf2 = fp2.read(blocksize)
-        if buf1 != buf2:
-            return None
-        elif not buf1:
-            return 1
-
-
-def _check_for_files(*rps):
-    """Make sure that all the rps exist, raise error if not"""
-    for rp in rps:
-        if not rp.lstat():
-            raise RPathException(
-                "File %s does not exist" % rp.get_safeindexpath())
-
-
-def move(rpin, rpout):
-    """Move rpin to rpout, renaming if possible"""
-    try:
-        rename(rpin, rpout)
-    except os.error:
-        copy(rpin, rpout)
-        rpin.delete()
-
-
-def copy(rpin, rpout, compress=0):
-    """Copy RPath rpin to rpout.  Works for symlinks, dirs, etc.
-
-    Returns close value of input for regular file, which can be used
-    to pass hashes on.
-
-    """
-    log.Log("Regular copying %s to %s" % (rpin.index, rpout.get_safepath()), 6)
-    if not rpin.lstat():
-        if rpout.lstat():
-            rpout.delete()
-        return
-
-    if rpout.lstat():
-        if rpin.isreg() or not cmp(rpin, rpout):
-            rpout.delete()  # easier to write than compare
-        else:
-            return
-
-    if rpin.isreg():
-        return copy_reg_file(rpin, rpout, compress)
-    elif rpin.isdir():
-        rpout.mkdir()
-    elif rpin.issym():
-        # some systems support permissions for symlinks, but
-        # only by setting at creation via the umask
-        if Globals.symlink_perms:
-            orig_umask = os.umask(0o777 & ~rpin.getperms())
-        rpout.symlink(rpin.readlink())
-        if Globals.symlink_perms:
-            os.umask(orig_umask)  # restore previous umask
-    elif rpin.isdev():
-        dev_type, major, minor = rpin.getdevnums()
-        rpout.makedev(dev_type, major, minor)
-    elif rpin.isfifo():
-        rpout.mkfifo()
-    elif rpin.issock():
-        rpout.mksock()
-    else:
-        raise RPathException("File '%s' has unknown type." % rpin.get_safepath())
-
-
-def copy_reg_file(rpin, rpout, compress=0):
-    """Copy regular file rpin to rpout, possibly avoiding connection"""
-    try:
-        if (rpout.conn is rpin.conn
-                and rpout.conn is not Globals.local_connection):
-            v = rpout.conn.rpath.copy_reg_file(rpin.path, rpout.path, compress)
-            rpout.setdata()
-            return v
-    except AttributeError:
-        pass
-    try:
-        return rpout.write_from_fileobj(rpin.open("rb"), compress=compress)
-    except IOError as e:
-        if (e.errno == errno.ERANGE):
-            log.Log.FatalError(
-                "'IOError - Result too large' while reading %s. "
-                "If you are using a Mac, this is probably "
-                "the result of HFS+ filesystem corruption. "
-                "Please exclude this file from your backup "
-                "before proceeding." % rpin.get_safepath())
-        else:
-            raise
-
-
-def cmp(rpin, rpout):
-    """True if rpin has the same data as rpout
-
-    does not compare file ownership, permissions, or times, or
-    examine the contents of a directory.
-
-    """
-    _check_for_files(rpin, rpout)
-    if rpin.isreg():
-        if not rpout.isreg():
-            return None
-        fp1, fp2 = rpin.open("rb"), rpout.open("rb")
-        result = _cmp_file_obj(fp1, fp2)
-        if fp1.close() or fp2.close():
-            raise RPathException("Error closing file")
-        return result
-    elif rpin.isdir():
-        return rpout.isdir()
-    elif rpin.issym():
-        return rpout.issym() and (rpin.readlink() == rpout.readlink())
-    elif rpin.isdev():
-        return rpout.isdev() and (rpin.getdevnums() == rpout.getdevnums())
-    elif rpin.isfifo():
-        return rpout.isfifo()
-    elif rpin.issock():
-        return rpout.issock()
-    else:
-        raise RPathException("File %s has unknown type" % rpin.get_safepath())
-
-
-def copy_attribs(rpin, rpout):
-    """Change file attributes of rpout to match rpin
-
-    Only changes the chmoddable bits, uid/gid ownership, and
-    timestamps, so both must already exist.
-
-    """
-    log.Log(
-        "Copying attributes from %s to %s" % (rpin.index,
-                                              rpout.get_safepath()), 7)
-    assert rpin.lstat() == rpout.lstat() or rpin.isspecial(), (
-        "Input '{irp!s}' and output '{orp!s}' paths must exist likewise, "
-        "or input be special.".format(irp=rpin, orp=rpout))
-    if Globals.change_ownership:
-        rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
-    if Globals.eas_write:
-        rpout.write_ea(rpin.get_ea())
-    if rpin.issym():
-        return  # symlinks don't have times or perms
-    if (Globals.resource_forks_write and rpin.isreg()
-            and rpin.has_resource_fork()):
-        rpout.write_resource_fork(rpin.get_resource_fork())
-    if (Globals.carbonfile_write and rpin.isreg() and rpin.has_carbonfile()):
-        rpout.write_carbonfile(rpin.get_carbonfile())
-    rpout.chmod(rpin.getperms())
-    if Globals.acls_write:
-        rpout.write_acl(rpin.get_acl())
-    if not rpin.isdev():
-        rpout.setmtime(rpin.getmtime())
-    if Globals.win_acls_write:
-        rpout.write_win_acl(rpin.get_win_acl())
-
-
-def copy_attribs_inc(rpin, rpout):
-    """Change file attributes of rpout to match rpin
-
-    Like above, but used to give increments the same attributes as the
-    originals.  Therefore, don't copy all directory acl and
-    permissions.
-
-    """
-    log.Log(
-        "Copying inc attrs from %s to %s" % (rpin.index, rpout.get_safepath()),
-        7)
-    _check_for_files(rpin, rpout)
-    if Globals.change_ownership:
-        rpout.chown(*rpin.getuidgid())
-    if Globals.eas_write:
-        rpout.write_ea(rpin.get_ea())
-    if rpin.issym():
-        return  # symlinks don't have times or perms
-    if (Globals.resource_forks_write and rpin.isreg()
-            and rpin.has_resource_fork() and rpout.isreg()):
-        rpout.write_resource_fork(rpin.get_resource_fork())
-    if (Globals.carbonfile_write and rpin.isreg() and rpin.has_carbonfile()
-            and rpout.isreg()):
-        rpout.write_carbonfile(rpin.get_carbonfile())
-    if rpin.isdir() and not rpout.isdir():
-        rpout.chmod(rpin.getperms() & 0o777)
-    else:
-        rpout.chmod(rpin.getperms())
-    if Globals.acls_write:
-        rpout.write_acl(rpin.get_acl(), map_names=0)
-    if not rpin.isdev():
-        rpout.setmtime(rpin.getmtime())
-
-
-def _cmp_file_attribs(rp1, rp2):
-    """True if rp1 has the same file attributes as rp2
-
-    Does not compare file access times.  If not changing
-    ownership, do not check user/group id.
-
-    """
-    _check_for_files(rp1, rp2)
-    if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
-        result = None
-    elif rp1.getperms() != rp2.getperms():
-        result = None
-    elif rp1.issym() and rp2.issym():  # Don't check times for some types
-        result = 1
-    elif rp1.isblkdev() and rp2.isblkdev():
-        result = 1
-    elif rp1.ischardev() and rp2.ischardev():
-        result = 1
-    else:
-        result = ((rp1.getctime() == rp2.getctime())
-                  and (rp1.getmtime() == rp2.getmtime()))
-    log.Log(
-        "Compare attribs of %s and %s: %s" % (rp1.get_safeindexpath(),
-                                              rp2.get_safeindexpath(), result),
-        7)
-    return result
-
-
-def copy_with_attribs(rpin, rpout, compress=0):
-    """Copy file and then copy over attributes"""
-    copy(rpin, rpout, compress)
-    if rpin.lstat():
-        copy_attribs(rpin, rpout)
-
-
-def rename(rp_source, rp_dest):
-    """Rename rp_source to rp_dest"""
-    assert rp_source.conn is rp_dest.conn, (
-        "Source '{srp!s}' and destination '{drp!s}' paths must have the "
-        "same connection for renaming.".format(srp=rp_source, drp=rp_dest))
-    log.Log(lambda: "Renaming %s to %s" % (rp_source.get_safepath(), rp_dest.get_safepath()), 7)
-    if not rp_source.lstat():
-        rp_dest.delete()
-    else:
-        if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode() and \
-           rp_source.getinode() != 0:
-            log.Log(
-                "Warning: Attempt to rename over same inode: %s to %s" %
-                (rp_source.get_safepath(), rp_dest.get_safepath()), 2)
-            # You can't rename one hard linked file over another
-            rp_source.delete()
-        else:
-            try:
-                rp_source.conn.os.rename(rp_source.path, rp_dest.path)
-            except OSError as error:
-                # XXX errno.EINVAL and len(rp_dest.path) >= 260 indicates
-                # pathname too long on Windows
-                if error.errno != errno.EEXIST:
-                    log.Log(
-                        "OSError while renaming %s to %s" %
-                        (rp_source.get_safepath(), rp_dest.get_safepath()), 1)
-                    raise
-
-                # On Windows, files can't be renamed on top of an existing file
-                rp_source.conn.os.chmod(rp_dest.path, 0o700)
-                rp_source.conn.os.unlink(rp_dest.path)
-                rp_source.conn.os.rename(rp_source.path, rp_dest.path)
-
-        rp_dest.data = rp_source.data
-        rp_source.data = {'type': None}
-
-
-def make_file_dict(filename):
-    """Generate the data dictionary for the given RPath
-
-    This is a global function so that os.name can be called locally,
-    thus avoiding network lag and so that we only need to send the
-    filename over the network, thus avoiding the need to pickle an
-    (incomplete) rpath object.
-    """
-
-    def _readlink(filename):
-        """FIXME wrapper function to workaround a bug in os.readlink on Windows
-        not accepting bytes path. This function can be removed once pyinstaller
-        supports Python 3.8 and a new release can be made.
-        See https://github.com/pyinstaller/pyinstaller/issues/4311
-        """
-
-        if os.name == 'nt' and not isinstance(filename, str):
-            # we assume a bytes representation
-            return os.fsencode(os.readlink(os.fsdecode(filename)))
-        else:
-            return os.readlink(filename)
-
-    try:
-        statblock = os.lstat(filename)
-    except (FileNotFoundError, NotADirectoryError):
-        # FIXME not sure if this shouldn't trigger a warning but doing it
-        # generates (too) many messages during the tests
-        # log.Log("Warning: missing file '%s' couldn't be assessed." % filename, 2)
-        return {'type': None}
-    data = {}
-    mode = statblock[stat.ST_MODE]
-
-    if stat.S_ISREG(mode):
-        type_ = 'reg'
-    elif stat.S_ISDIR(mode):
-        type_ = 'dir'
-    elif stat.S_ISCHR(mode):
-        type_ = 'dev'
-        s = statblock.st_rdev
-        data['devnums'] = ('c', os.major(s), os.minor(s))
-    elif stat.S_ISBLK(mode):
-        type_ = 'dev'
-        s = statblock.st_rdev
-        data['devnums'] = ('b', os.major(s), os.minor(s))
-    elif stat.S_ISFIFO(mode):
-        type_ = 'fifo'
-    elif stat.S_ISLNK(mode):
-        type_ = 'sym'
-        # FIXME reverse once Python 3.8 can be used under Windows
-        # data['linkname'] = os.readlink(filename)
-        data['linkname'] = _readlink(filename)
-    elif stat.S_ISSOCK(mode):
-        type_ = 'sock'
-    else:
-        raise C.UnknownFileError(filename)
-    data['type'] = type_
-    data['size'] = statblock[stat.ST_SIZE]
-    data['perms'] = stat.S_IMODE(mode)
-    data['uid'] = statblock[stat.ST_UID]
-    data['gid'] = statblock[stat.ST_GID]
-    data['inode'] = statblock[stat.ST_INO]
-    data['devloc'] = statblock[stat.ST_DEV]
-    data['nlink'] = statblock[stat.ST_NLINK]
-
-    if os.name == 'nt':
-        try:
-            attribs = win32api.GetFileAttributes(os.fsdecode(filename))
-        except pywintypes.error as exc:
-            if (exc.args[0] == 32):  # file in use
-                # we could also ignore with: return {'type': None}
-                # but this approach seems to be better handled
-                attribs = 0
-            else:
-                # we replace the specific Windows exception by a generic
-                # one also understood by a potential Linux client/server
-                raise OSError(None, exc.args[1] + " - " + exc.args[2],
-                              filename, exc.args[0]) from None
-        if attribs & win32con.FILE_ATTRIBUTE_REPARSE_POINT:
-            data['type'] = 'sym'
-            data['linkname'] = None
-
-    if not (type_ == 'sym' or type_ == 'dev'):
-        # mtimes on symlinks and dev files don't work consistently
-        data['mtime'] = int(statblock[stat.ST_MTIME])
-        data['atime'] = int(statblock[stat.ST_ATIME])
-        data['ctime'] = int(statblock[stat.ST_CTIME])
-    return data
-
-
-def make_socket_local(rpath):
-    """Make a local socket at the given path
-
-    This takes an rpath so that it will be checked by Security.
-    (Miscellaneous strings will not be.)
-    """
-    assert rpath.conn is Globals.local_connection, (
-        "Function works locally not over '{conn}'.".format(conn=rpath.conn))
-    rpath.conn.os.mknod(rpath.path, stat.S_IFSOCK)
-
-
-def gzip_open_local_read(rpath):
-    """Return open GzipFile.  See security note directly above"""
-    assert rpath.conn is Globals.local_connection, (
-        "Function works locally not over '{conn}'.".format(conn=rpath.conn))
-    return gzip.GzipFile(rpath.path, "rb")
-
-
-def open_local_read(rpath):
-    """Return open file (provided for security reasons)"""
-    assert rpath.conn is Globals.local_connection, (
-        "Function works locally not over '{conn}'.".format(conn=rpath.conn))
-    return open(rpath.path, "rb")
-
-
-def get_incfile_info(basename):
-    """Returns None or tuple of
-    (is_compressed, timestr, type, and basename)"""
-    dotsplit = basename.split(b'.')
-    if dotsplit[-1] == b'gz':
-        compressed = 1
-        if len(dotsplit) < 4:
-            return None
-        timestring, ext = dotsplit[-3:-1]
-    else:
-        compressed = None
-        if len(dotsplit) < 3:
-            return None
-        timestring, ext = dotsplit[-2:]
-    if Time.bytestotime(timestring) is None:
-        return None
-    if not (ext == b"snapshot" or ext == b"dir" or ext == b"missing"
-            or ext == b"diff" or ext == b"data"):
-        return None
-    if compressed:
-        basestr = b'.'.join(dotsplit[:-3])
-    else:
-        basestr = b'.'.join(dotsplit[:-2])
-    return (compressed, timestring, ext, basestr)
-
-
-def delete_dir_no_files(rp):
-    """Deletes the directory at rp.path if empty. Raises if the
-    directory contains files."""
-    assert rp.isdir(), (
-        "Path '{rp!s}' must be a directory to be deleted.".format(rp=rp))
-    if rp.contains_files():
-        raise RPathException("Directory contains files.")
-    rp.delete()
-
-
 class RORPath:
     """Read Only RPath - carry information about a path
 
@@ -519,24 +74,6 @@ class RORPath:
     communicated by encoding their index and data dictionary.
 
     """
-
-    def __init__(self, index, data=None):
-        self.index = tuple(map(os.fsencode, index))
-        if data:
-            self.data = data
-        else:
-            self.data = {'type': None}  # signify empty file
-        self.file = None
-
-    def zero(self):
-        """Set inside of self to type None"""
-        self.data = {'type': None}
-        self.file = None
-
-    def make_zero_dir(self, dir_rp):
-        """Set self.data the same as dir_rp.data but with safe permissions"""
-        self.data = dir_rp.data.copy()
-        self.data['perms'] = 0o700
 
     @staticmethod
     def _global_ignored_keys():
@@ -556,6 +93,42 @@ class RORPath:
         if not Globals.resource_forks_write:
             global_ignored_keys.add('resource_forks')
         return global_ignored_keys
+
+    @classmethod
+    def path_join(self, *filenames):
+        """Simulate the os.path.join function to have the same separator '/' on all platforms"""
+
+        def abs_drive(filename):
+            """Because os.path.join does make out of a tuple with a drive letter under Windows
+            a path _relative_ to the current directory on the drive, we need to make it
+            absolute ourselves by adding a slash at the end."""
+            if re.match(b"^[A-Za-z]:$", filename):  # if filename is a drive
+                return filename + b'/'  # os.path.join won't make a drive absolute for us
+            else:
+                return filename
+
+        if os.path.altsep:  # only Windows has an alternative separator for paths
+            filenames = tuple(map(abs_drive, filenames))
+            return os.path.join(*filenames).replace(
+                os.fsencode(os.path.sep), b'/')
+        else:
+            return os.path.join(*filenames)
+
+    @classmethod
+    def getcwdb(self):
+        """A getcwdb function that makes sure that also under Windows '/' are used"""
+        if os.path.altsep:  # only Windows has an alternative separator for paths
+            return os.getcwdb().replace(os.fsencode(os.path.sep), b'/')
+        else:
+            return os.getcwdb()
+
+    def __init__(self, index, data=None):
+        self.index = tuple(map(os.fsencode, index))
+        if data:
+            self.data = data
+        else:
+            self.data = {'type': None}  # signify empty file
+        self.file = None
 
     def __eq__(self, other):
         """True iff the two rorpaths are equivalent"""
@@ -596,6 +169,36 @@ class RORPath:
             elif (key not in other.data or self.data[key] != other.data[key]):
                 return False
         return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        """Pretty print file statistics"""
+        return "Index: %s\nData: %s" % (self.get_safeindex(), self.data)
+
+    def __getstate__(self):
+        """Return picklable state
+
+        This is necessary in case the RORPath is carrying around a
+        file object, which can't/shouldn't be pickled.
+
+        """
+        return (self.index, self.data)
+
+    def __setstate__(self, rorp_state):
+        """Reproduce RORPath from __getstate__ output"""
+        self.index, self.data = rorp_state
+
+    def zero(self):
+        """Set inside of self to type None"""
+        self.data = {'type': None}
+        self.file = None
+
+    def make_zero_dir(self, dir_rp):
+        """Set self.data the same as dir_rp.data but with safe permissions"""
+        self.data = dir_rp.data.copy()
+        self.data['perms'] = 0o700
 
     def equal_loose(self, other):
         """True iff the two rorpaths are kinda equivalent
@@ -638,108 +241,9 @@ class RORPath:
 
         return True
 
-    def _equal_verbose(self,
-                       other,
-                       check_index=1,
-                       compare_inodes=0,
-                       compare_ownership=0,
-                       compare_acls=0,
-                       compare_eas=0,
-                       compare_win_acls=0,
-                       compare_size=1,
-                       compare_type=1,
-                       verbosity=2):
-        """Like __eq__, but log more information.  Useful when testing"""
-        if check_index and self.index != other.index:
-            log.Log("Index %s != index %s" % (self.index, other.index),
-                    verbosity)
-            return None
-
-        for key in list(self.data.keys()):  # compare dicts key by key
-            if (key in ('uid', 'gid', 'uname', 'gname')
-                    and (self.issym() or not compare_ownership)):
-                # Don't compare gid/uid for symlinks, or if told not to
-                pass
-            elif key == 'type' and not compare_type:
-                pass
-            elif key == 'atime' and not Globals.preserve_atime:
-                pass
-            elif key == 'ctime':
-                pass
-            elif key == 'devloc' or key == 'nlink':
-                pass
-            elif key == 'size' and (not self.isreg() or not compare_size):
-                pass
-            elif key == 'inode' and (not self.isreg() or not compare_inodes):
-                pass
-            elif key == 'ea' and not compare_eas:
-                pass
-            elif key == 'acl' and not compare_acls:
-                pass
-            elif key == 'win_acl' and not compare_win_acls:
-                pass
-            elif (key not in other.data or self.data[key] != other.data[key]):
-                if key not in other.data:
-                    log.Log("Second is missing key %s" % (key, ), verbosity)
-                else:
-                    log.Log(
-                        "Value of %s differs between %s and %s: %s vs %s" %
-                        (key, self.get_indexpath(), other.get_indexpath(),
-                         self.data[key], other.data[key]), verbosity)
-                return None
-        return 1
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __str__(self):
-        """Pretty print file statistics"""
-        return "Index: %s\nData: %s" % (self.get_safeindex(), self.data)
-
-    def __getstate__(self):
-        """Return picklable state
-
-        This is necessary in case the RORPath is carrying around a
-        file object, which can't/shouldn't be pickled.
-
-        """
-        return (self.index, self.data)
-
-    def __setstate__(self, rorp_state):
-        """Reproduce RORPath from __getstate__ output"""
-        self.index, self.data = rorp_state
-
     def getRORPath(self):
         """Return new rorpath based on self"""
         return RORPath(self.index, self.data.copy())
-
-    @classmethod
-    def path_join(self, *filenames):
-        """Simulate the os.path.join function to have the same separator '/' on all platforms"""
-
-        def abs_drive(filename):
-            """Because os.path.join does make out of a tuple with a drive letter under Windows
-            a path _relative_ to the current directory on the drive, we need to make it
-            absolute ourselves by adding a slash at the end."""
-            if re.match(b"^[A-Za-z]:$", filename):  # if filename is a drive
-                return filename + b'/'  # os.path.join won't make a drive absolute for us
-            else:
-                return filename
-
-        if os.path.altsep:  # only Windows has an alternative separator for paths
-            filenames = tuple(map(abs_drive, filenames))
-            return os.path.join(*filenames).replace(
-                os.fsencode(os.path.sep), b'/')
-        else:
-            return os.path.join(*filenames)
-
-    @classmethod
-    def getcwdb(self):
-        """A getcwdb function that makes sure that also under Windows '/' are used"""
-        if os.path.altsep:  # only Windows has an alternative separator for paths
-            return os.getcwdb().replace(os.fsencode(os.path.sep), b'/')
-        else:
-            return os.getcwdb()
 
     def lstat(self):
         """Returns type of file
@@ -1050,6 +554,57 @@ class RORPath:
         """Set sha1 hash (should be in hexdecimal)"""
         self.data['sha1'] = digest
 
+    def _equal_verbose(self,
+                       other,
+                       check_index=1,
+                       compare_inodes=0,
+                       compare_ownership=0,
+                       compare_acls=0,
+                       compare_eas=0,
+                       compare_win_acls=0,
+                       compare_size=1,
+                       compare_type=1,
+                       verbosity=2):
+        """Like __eq__, but log more information.  Useful when testing"""
+        if check_index and self.index != other.index:
+            log.Log("Index %s != index %s" % (self.index, other.index),
+                    verbosity)
+            return None
+
+        for key in list(self.data.keys()):  # compare dicts key by key
+            if (key in ('uid', 'gid', 'uname', 'gname')
+                    and (self.issym() or not compare_ownership)):
+                # Don't compare gid/uid for symlinks, or if told not to
+                pass
+            elif key == 'type' and not compare_type:
+                pass
+            elif key == 'atime' and not Globals.preserve_atime:
+                pass
+            elif key == 'ctime':
+                pass
+            elif key == 'devloc' or key == 'nlink':
+                pass
+            elif key == 'size' and (not self.isreg() or not compare_size):
+                pass
+            elif key == 'inode' and (not self.isreg() or not compare_inodes):
+                pass
+            elif key == 'ea' and not compare_eas:
+                pass
+            elif key == 'acl' and not compare_acls:
+                pass
+            elif key == 'win_acl' and not compare_win_acls:
+                pass
+            elif (key not in other.data or self.data[key] != other.data[key]):
+                if key not in other.data:
+                    log.Log("Second is missing key %s" % (key, ), verbosity)
+                else:
+                    log.Log(
+                        "Value of %s differs between %s and %s: %s vs %s" %
+                        (key, self.get_indexpath(), other.get_indexpath(),
+                         self.data[key], other.data[key]), verbosity)
+                return None
+        return 1
+
 
 class RPath(RORPath):
     """Remote Path class - wrapper around a possibly non-local pathname
@@ -1113,20 +668,6 @@ class RPath(RORPath):
         self.data = self.conn.rpath.make_file_dict(self.path)
         if self.lstat():
             self.conn.rpath.setdata_local(self)
-
-    def _debug_consistency(self):
-        """Raise an error if consistency of rp broken
-
-        This is useful for debugging when the cache and disk get out
-        of sync and you need to find out where it happened.
-
-        """
-        temptype = self.data['type']
-        self.setdata()
-        if temptype != self.data['type']:
-            print("\nPath: {rp!s}\nhas cached an inconsistent type\n"
-                  "Old: {otype} --> New: {ntype}\n".format(
-                      rp=self, otype=temptype, ntype=self.data['type']))
 
     def chmod(self, permissions, loglevel=2):
         """Wrapper around os.chmod"""
@@ -1600,6 +1141,7 @@ class RPath(RORPath):
             else:
                 os.fsync(fp.fileno())
 
+    # @API(RPath.fsync_local, 200)
     def fsync_local(self, thunk=None):
         """fsync current file, run locally
 
@@ -1758,6 +1300,20 @@ class RPath(RORPath):
         write_win_acl(self, acl)
         self.data['win_acl'] = acl
 
+    def _debug_consistency(self):
+        """Raise an error if consistency of rp broken
+
+        This is useful for debugging when the cache and disk get out
+        of sync and you need to find out where it happened.
+
+        """
+        temptype = self.data['type']
+        self.setdata()
+        if temptype != self.data['type']:
+            print("\nPath: {rp!s}\nhas cached an inconsistent type\n"
+                  "Old: {otype} --> New: {ntype}\n".format(
+                      rp=self, otype=temptype, ntype=self.data['type']))
+
 
 class _RPathFileHook:
     """Look like a file, but add closing hook"""
@@ -1805,15 +1361,6 @@ class MaybeGzip:
         else:
             raise AttributeError(name)
 
-    def _get_gzipped_rp(self):
-        """Return gzipped rp by adding .gz to base_rp"""
-        if self.base_rp.index:
-            newind = self.base_rp.index[:-1] + (
-                self.base_rp.index[-1] + b'.gz', )
-            return self.base_rp.new_index(newind)
-        else:
-            return self.base_rp.append_path(b'.gz')
-
     def write(self, buf):
         """Write buf to fileobj"""
         if isinstance(buf, str):
@@ -1840,7 +1387,420 @@ class MaybeGzip:
             self.callback(self.base_rp)
         self.base_rp.touch()
 
+    def _get_gzipped_rp(self):
+        """Return gzipped rp by adding .gz to base_rp"""
+        if self.base_rp.index:
+            newind = self.base_rp.index[:-1] + (
+                self.base_rp.index[-1] + b'.gz', )
+            return self.base_rp.new_index(newind)
+        else:
+            return self.base_rp.append_path(b'.gz')
 
+
+def copyfileobj(inputfp, outputfp):
+    """Copies file inputfp to outputfp in blocksize intervals"""
+    blocksize = Globals.blocksize
+
+    sparse = False
+    """Negative seeks are not supported by GzipFile"""
+    compressed = False
+    if isinstance(outputfp, gzip.GzipFile):
+        compressed = True
+
+    while 1:
+        inbuf = inputfp.read(blocksize)
+        if not inbuf:
+            break
+
+        buflen = len(inbuf)
+        if not compressed and inbuf == b"\x00" * buflen:
+            outputfp.seek(buflen, os.SEEK_CUR)
+            # flag sparse=True, that we seek()ed, but have not written yet
+            # The filesize is wrong until we write
+            sparse = True
+        else:
+            outputfp.write(inbuf)
+            # We wrote, so clear sparse.
+            sparse = False
+
+    if sparse:
+        outputfp.seek(-1, os.SEEK_CUR)
+        outputfp.write(b"\x00")
+
+
+def move(rpin, rpout):
+    """Move rpin to rpout, renaming if possible"""
+    try:
+        rename(rpin, rpout)
+    except os.error:
+        copy(rpin, rpout)
+        rpin.delete()
+
+
+def copy(rpin, rpout, compress=0):
+    """Copy RPath rpin to rpout.  Works for symlinks, dirs, etc.
+
+    Returns close value of input for regular file, which can be used
+    to pass hashes on.
+
+    """
+    log.Log("Regular copying %s to %s" % (rpin.index, rpout.get_safepath()), 6)
+    if not rpin.lstat():
+        if rpout.lstat():
+            rpout.delete()
+        return
+
+    if rpout.lstat():
+        if rpin.isreg() or not cmp(rpin, rpout):
+            rpout.delete()  # easier to write than compare
+        else:
+            return
+
+    if rpin.isreg():
+        return copy_reg_file(rpin, rpout, compress)
+    elif rpin.isdir():
+        rpout.mkdir()
+    elif rpin.issym():
+        # some systems support permissions for symlinks, but
+        # only by setting at creation via the umask
+        if Globals.symlink_perms:
+            orig_umask = os.umask(0o777 & ~rpin.getperms())
+        rpout.symlink(rpin.readlink())
+        if Globals.symlink_perms:
+            os.umask(orig_umask)  # restore previous umask
+    elif rpin.isdev():
+        dev_type, major, minor = rpin.getdevnums()
+        rpout.makedev(dev_type, major, minor)
+    elif rpin.isfifo():
+        rpout.mkfifo()
+    elif rpin.issock():
+        rpout.mksock()
+    else:
+        raise RPathException("File '%s' has unknown type." % rpin.get_safepath())
+
+
+# @API(copy_reg_file, 200)
+def copy_reg_file(rpin, rpout, compress=0):
+    """Copy regular file rpin to rpout, possibly avoiding connection"""
+    try:
+        if (rpout.conn is rpin.conn
+                and rpout.conn is not Globals.local_connection):
+            v = rpout.conn.rpath.copy_reg_file(rpin.path, rpout.path, compress)
+            rpout.setdata()
+            return v
+    except AttributeError:
+        pass
+    try:
+        return rpout.write_from_fileobj(rpin.open("rb"), compress=compress)
+    except IOError as e:
+        if (e.errno == errno.ERANGE):
+            log.Log.FatalError(
+                "'IOError - Result too large' while reading %s. "
+                "If you are using a Mac, this is probably "
+                "the result of HFS+ filesystem corruption. "
+                "Please exclude this file from your backup "
+                "before proceeding." % rpin.get_safepath())
+        else:
+            raise
+
+
+def cmp(rpin, rpout):
+    """True if rpin has the same data as rpout
+
+    does not compare file ownership, permissions, or times, or
+    examine the contents of a directory.
+
+    """
+    _check_for_files(rpin, rpout)
+    if rpin.isreg():
+        if not rpout.isreg():
+            return None
+        fp1, fp2 = rpin.open("rb"), rpout.open("rb")
+        result = _cmp_file_obj(fp1, fp2)
+        if fp1.close() or fp2.close():
+            raise RPathException("Error closing file")
+        return result
+    elif rpin.isdir():
+        return rpout.isdir()
+    elif rpin.issym():
+        return rpout.issym() and (rpin.readlink() == rpout.readlink())
+    elif rpin.isdev():
+        return rpout.isdev() and (rpin.getdevnums() == rpout.getdevnums())
+    elif rpin.isfifo():
+        return rpout.isfifo()
+    elif rpin.issock():
+        return rpout.issock()
+    else:
+        raise RPathException("File %s has unknown type" % rpin.get_safepath())
+
+
+def copy_attribs(rpin, rpout):
+    """Change file attributes of rpout to match rpin
+
+    Only changes the chmoddable bits, uid/gid ownership, and
+    timestamps, so both must already exist.
+
+    """
+    log.Log(
+        "Copying attributes from %s to %s" % (rpin.index,
+                                              rpout.get_safepath()), 7)
+    assert rpin.lstat() == rpout.lstat() or rpin.isspecial(), (
+        "Input '{irp!s}' and output '{orp!s}' paths must exist likewise, "
+        "or input be special.".format(irp=rpin, orp=rpout))
+    if Globals.change_ownership:
+        rpout.chown(*rpout.conn.user_group.map_rpath(rpin))
+    if Globals.eas_write:
+        rpout.write_ea(rpin.get_ea())
+    if rpin.issym():
+        return  # symlinks don't have times or perms
+    if (Globals.resource_forks_write and rpin.isreg()
+            and rpin.has_resource_fork()):
+        rpout.write_resource_fork(rpin.get_resource_fork())
+    if (Globals.carbonfile_write and rpin.isreg() and rpin.has_carbonfile()):
+        rpout.write_carbonfile(rpin.get_carbonfile())
+    rpout.chmod(rpin.getperms())
+    if Globals.acls_write:
+        rpout.write_acl(rpin.get_acl())
+    if not rpin.isdev():
+        rpout.setmtime(rpin.getmtime())
+    if Globals.win_acls_write:
+        rpout.write_win_acl(rpin.get_win_acl())
+
+
+def copy_attribs_inc(rpin, rpout):
+    """Change file attributes of rpout to match rpin
+
+    Like above, but used to give increments the same attributes as the
+    originals.  Therefore, don't copy all directory acl and
+    permissions.
+
+    """
+    log.Log(
+        "Copying inc attrs from %s to %s" % (rpin.index, rpout.get_safepath()),
+        7)
+    _check_for_files(rpin, rpout)
+    if Globals.change_ownership:
+        rpout.chown(*rpin.getuidgid())
+    if Globals.eas_write:
+        rpout.write_ea(rpin.get_ea())
+    if rpin.issym():
+        return  # symlinks don't have times or perms
+    if (Globals.resource_forks_write and rpin.isreg()
+            and rpin.has_resource_fork() and rpout.isreg()):
+        rpout.write_resource_fork(rpin.get_resource_fork())
+    if (Globals.carbonfile_write and rpin.isreg() and rpin.has_carbonfile()
+            and rpout.isreg()):
+        rpout.write_carbonfile(rpin.get_carbonfile())
+    if rpin.isdir() and not rpout.isdir():
+        rpout.chmod(rpin.getperms() & 0o777)
+    else:
+        rpout.chmod(rpin.getperms())
+    if Globals.acls_write:
+        rpout.write_acl(rpin.get_acl(), map_names=0)
+    if not rpin.isdev():
+        rpout.setmtime(rpin.getmtime())
+
+
+def copy_with_attribs(rpin, rpout, compress=0):
+    """Copy file and then copy over attributes"""
+    copy(rpin, rpout, compress)
+    if rpin.lstat():
+        copy_attribs(rpin, rpout)
+
+
+def rename(rp_source, rp_dest):
+    """Rename rp_source to rp_dest"""
+    assert rp_source.conn is rp_dest.conn, (
+        "Source '{srp!s}' and destination '{drp!s}' paths must have the "
+        "same connection for renaming.".format(srp=rp_source, drp=rp_dest))
+    log.Log(lambda: "Renaming %s to %s" % (rp_source.get_safepath(), rp_dest.get_safepath()), 7)
+    if not rp_source.lstat():
+        rp_dest.delete()
+    else:
+        if rp_dest.lstat() and rp_source.getinode() == rp_dest.getinode() and \
+           rp_source.getinode() != 0:
+            log.Log(
+                "Warning: Attempt to rename over same inode: %s to %s" %
+                (rp_source.get_safepath(), rp_dest.get_safepath()), 2)
+            # You can't rename one hard linked file over another
+            rp_source.delete()
+        else:
+            try:
+                rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+            except OSError as error:
+                # XXX errno.EINVAL and len(rp_dest.path) >= 260 indicates
+                # pathname too long on Windows
+                if error.errno != errno.EEXIST:
+                    log.Log(
+                        "OSError while renaming %s to %s" %
+                        (rp_source.get_safepath(), rp_dest.get_safepath()), 1)
+                    raise
+
+                # On Windows, files can't be renamed on top of an existing file
+                rp_source.conn.os.chmod(rp_dest.path, 0o700)
+                rp_source.conn.os.unlink(rp_dest.path)
+                rp_source.conn.os.rename(rp_source.path, rp_dest.path)
+
+        rp_dest.data = rp_source.data
+        rp_source.data = {'type': None}
+
+
+# @API(make_file_dict, 200)
+def make_file_dict(filename):
+    """Generate the data dictionary for the given RPath
+
+    This is a global function so that os.name can be called locally,
+    thus avoiding network lag and so that we only need to send the
+    filename over the network, thus avoiding the need to pickle an
+    (incomplete) rpath object.
+    """
+
+    def _readlink(filename):
+        """FIXME wrapper function to workaround a bug in os.readlink on Windows
+        not accepting bytes path. This function can be removed once pyinstaller
+        supports Python 3.8 and a new release can be made.
+        See https://github.com/pyinstaller/pyinstaller/issues/4311
+        """
+
+        if os.name == 'nt' and not isinstance(filename, str):
+            # we assume a bytes representation
+            return os.fsencode(os.readlink(os.fsdecode(filename)))
+        else:
+            return os.readlink(filename)
+
+    try:
+        statblock = os.lstat(filename)
+    except (FileNotFoundError, NotADirectoryError):
+        # FIXME not sure if this shouldn't trigger a warning but doing it
+        # generates (too) many messages during the tests
+        # log.Log("Warning: missing file '%s' couldn't be assessed." % filename, 2)
+        return {'type': None}
+    data = {}
+    mode = statblock[stat.ST_MODE]
+
+    if stat.S_ISREG(mode):
+        type_ = 'reg'
+    elif stat.S_ISDIR(mode):
+        type_ = 'dir'
+    elif stat.S_ISCHR(mode):
+        type_ = 'dev'
+        s = statblock.st_rdev
+        data['devnums'] = ('c', os.major(s), os.minor(s))
+    elif stat.S_ISBLK(mode):
+        type_ = 'dev'
+        s = statblock.st_rdev
+        data['devnums'] = ('b', os.major(s), os.minor(s))
+    elif stat.S_ISFIFO(mode):
+        type_ = 'fifo'
+    elif stat.S_ISLNK(mode):
+        type_ = 'sym'
+        # FIXME reverse once Python 3.8 can be used under Windows
+        # data['linkname'] = os.readlink(filename)
+        data['linkname'] = _readlink(filename)
+    elif stat.S_ISSOCK(mode):
+        type_ = 'sock'
+    else:
+        raise C.UnknownFileError(filename)
+    data['type'] = type_
+    data['size'] = statblock[stat.ST_SIZE]
+    data['perms'] = stat.S_IMODE(mode)
+    data['uid'] = statblock[stat.ST_UID]
+    data['gid'] = statblock[stat.ST_GID]
+    data['inode'] = statblock[stat.ST_INO]
+    data['devloc'] = statblock[stat.ST_DEV]
+    data['nlink'] = statblock[stat.ST_NLINK]
+
+    if os.name == 'nt':
+        try:
+            attribs = win32api.GetFileAttributes(os.fsdecode(filename))
+        except pywintypes.error as exc:
+            if (exc.args[0] == 32):  # file in use
+                # we could also ignore with: return {'type': None}
+                # but this approach seems to be better handled
+                attribs = 0
+            else:
+                # we replace the specific Windows exception by a generic
+                # one also understood by a potential Linux client/server
+                raise OSError(None, exc.args[1] + " - " + exc.args[2],
+                              filename, exc.args[0]) from None
+        if attribs & win32con.FILE_ATTRIBUTE_REPARSE_POINT:
+            data['type'] = 'sym'
+            data['linkname'] = None
+
+    if not (type_ == 'sym' or type_ == 'dev'):
+        # mtimes on symlinks and dev files don't work consistently
+        data['mtime'] = int(statblock[stat.ST_MTIME])
+        data['atime'] = int(statblock[stat.ST_ATIME])
+        data['ctime'] = int(statblock[stat.ST_CTIME])
+    return data
+
+
+# @API(make_socket_local, 200)
+def make_socket_local(rpath):
+    """Make a local socket at the given path
+
+    This takes an rpath so that it will be checked by Security.
+    (Miscellaneous strings will not be.)
+    """
+    assert rpath.conn is Globals.local_connection, (
+        "Function works locally not over '{conn}'.".format(conn=rpath.conn))
+    rpath.conn.os.mknod(rpath.path, stat.S_IFSOCK)
+
+
+# @API(gzip_open_local_read, 200)
+def gzip_open_local_read(rpath):
+    """Return open GzipFile.  See security note directly above"""
+    assert rpath.conn is Globals.local_connection, (
+        "Function works locally not over '{conn}'.".format(conn=rpath.conn))
+    return gzip.GzipFile(rpath.path, "rb")
+
+
+# @API(open_local_read, 200)
+def open_local_read(rpath):
+    """Return open file (provided for security reasons)"""
+    assert rpath.conn is Globals.local_connection, (
+        "Function works locally not over '{conn}'.".format(conn=rpath.conn))
+    return open(rpath.path, "rb")
+
+
+def get_incfile_info(basename):
+    """Returns None or tuple of
+    (is_compressed, timestr, type, and basename)"""
+    dotsplit = basename.split(b'.')
+    if dotsplit[-1] == b'gz':
+        compressed = 1
+        if len(dotsplit) < 4:
+            return None
+        timestring, ext = dotsplit[-3:-1]
+    else:
+        compressed = None
+        if len(dotsplit) < 3:
+            return None
+        timestring, ext = dotsplit[-2:]
+    if Time.bytestotime(timestring) is None:
+        return None
+    if not (ext == b"snapshot" or ext == b"dir" or ext == b"missing"
+            or ext == b"diff" or ext == b"data"):
+        return None
+    if compressed:
+        basestr = b'.'.join(dotsplit[:-3])
+    else:
+        basestr = b'.'.join(dotsplit[:-2])
+    return (compressed, timestring, ext, basestr)
+
+
+# @API(delete_dir_no_files, 200)
+def delete_dir_no_files(rp):
+    """Deletes the directory at rp.path if empty. Raises if the
+    directory contains files."""
+    assert rp.isdir(), (
+        "Path '{rp!s}' must be a directory to be deleted.".format(rp=rp))
+    if rp.contains_files():
+        raise RPathException("Directory contains files.")
+    rp.delete()
+
+
+# @API(setdata_local, 200)
 def setdata_local(rpath):
     """Set eas/acls, uid/gid, resource fork in data dictionary
 
@@ -1900,6 +1860,54 @@ def _carbonfile_get(rpath):
         log.Log("Cannot read carbonfile information from %s" % (rpath.path, ),
                 2)
         return None
+
+
+def _cmp_file_attribs(rp1, rp2):
+    """True if rp1 has the same file attributes as rp2
+
+    Does not compare file access times.  If not changing
+    ownership, do not check user/group id.
+
+    """
+    _check_for_files(rp1, rp2)
+    if Globals.change_ownership and rp1.getuidgid() != rp2.getuidgid():
+        result = None
+    elif rp1.getperms() != rp2.getperms():
+        result = None
+    elif rp1.issym() and rp2.issym():  # Don't check times for some types
+        result = 1
+    elif rp1.isblkdev() and rp2.isblkdev():
+        result = 1
+    elif rp1.ischardev() and rp2.ischardev():
+        result = 1
+    else:
+        result = ((rp1.getctime() == rp2.getctime())
+                  and (rp1.getmtime() == rp2.getmtime()))
+    log.Log(
+        "Compare attribs of %s and %s: %s" % (rp1.get_safeindexpath(),
+                                              rp2.get_safeindexpath(), result),
+        7)
+    return result
+
+
+def _cmp_file_obj(fp1, fp2):
+    """True if file objects fp1 and fp2 contain same data, used for testing"""
+    blocksize = Globals.blocksize
+    while 1:
+        buf1 = fp1.read(blocksize)
+        buf2 = fp2.read(blocksize)
+        if buf1 != buf2:
+            return None
+        elif not buf1:
+            return 1
+
+
+def _check_for_files(*rps):
+    """Make sure that all the rps exist, raise error if not"""
+    for rp in rps:
+        if not rp.lstat():
+            raise RPathException(
+                "File %s does not exist" % rp.get_safeindexpath())
 
 
 # These functions are overwritten by the eas_acls.py module.  We can't
