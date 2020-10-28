@@ -519,22 +519,6 @@ class RedirectedConnection(Connection):
                                          name)
 
 
-def RedirectedRun(conn_number, func, *args):
-    """Run func with args on connection with conn number conn_number
-
-    This function is meant to redirect requests from one connection to
-    another, so conn_number must not be the local connection (and also
-    for security reasons since this function is always made
-    available).
-
-    """
-    conn = Globals.connection_dict[conn_number]
-    assert conn is not Globals.local_connection, (
-        "A redirected run shouldn't be required locally for {fnc}.".format(
-            fnc=func.__name__))
-    return conn.reval(func, *args)
-
-
 class EmulateCallable:
     """This is used by PipeConnection in calls like conn.os.chmod(foo)"""
 
@@ -635,6 +619,22 @@ class VirtualFile:
 
     def close(self):
         return self.connection.VirtualFile.closebyid(self.id)
+
+
+def RedirectedRun(conn_number, func, *args):
+    """Run func with args on connection with conn number conn_number
+
+    This function is meant to redirect requests from one connection to
+    another, so conn_number must not be the local connection (and also
+    for security reasons since this function is always made
+    available).
+
+    """
+    conn = Globals.connection_dict[conn_number]
+    assert conn is not Globals.local_connection, (
+        "A redirected run shouldn't be required locally for {fnc}.".format(
+            fnc=func.__name__))
+    return conn.reval(func, *args)
 
 
 # everything has to be available here for remote connection's use, but

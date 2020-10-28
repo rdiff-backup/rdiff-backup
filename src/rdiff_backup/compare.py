@@ -27,95 +27,6 @@ import os
 from . import Globals, restore, rorpiter, log, backup, rpath, hash, robust, Hardlink
 
 
-def Compare(src_rp, mirror_rp, inc_rp, compare_time):
-    """Compares metadata in src_rp dir with metadata in mirror_rp at time"""
-    repo_side = mirror_rp.conn.compare.RepoSide
-    data_side = src_rp.conn.compare.DataSide
-
-    repo_iter = repo_side.init_and_get_iter(mirror_rp, inc_rp, compare_time)
-    return_val = _print_reports(data_side.compare_fast(repo_iter))
-    repo_side.close_rf_cache()
-    return return_val
-
-
-def Compare_hash(src_rp, mirror_rp, inc_rp, compare_time):
-    """Compare files at src_rp with repo at compare_time
-
-    Note metadata differences, but also check to see if file data is
-    different.  If two regular files have the same size, hash the
-    source and compare to the hash presumably already present in repo.
-
-    """
-    repo_side = mirror_rp.conn.compare.RepoSide
-    data_side = src_rp.conn.compare.DataSide
-
-    repo_iter = repo_side.init_and_get_iter(mirror_rp, inc_rp, compare_time)
-    return_val = _print_reports(data_side.compare_hash(repo_iter))
-    repo_side.close_rf_cache()
-    return return_val
-
-
-def Compare_full(src_rp, mirror_rp, inc_rp, compare_time):
-    """Compare full data of files at src_rp with repo at compare_time
-
-    Like Compare_hash, but do not rely on hashes, instead copy full
-    data over.
-
-    """
-    repo_side = mirror_rp.conn.compare.RepoSide
-    data_side = src_rp.conn.compare.DataSide
-
-    src_iter = data_side.get_source_select()
-    attached_repo_iter = repo_side.attach_files(src_iter, mirror_rp, inc_rp,
-                                                compare_time)
-    report_iter = data_side.compare_full(src_rp, attached_repo_iter)
-    return_val = _print_reports(report_iter)
-    repo_side.close_rf_cache()
-    return return_val
-
-
-# @API(Verify, 200)
-def Verify(mirror_rp, inc_rp, verify_time):
-    """Compute SHA1 sums of repository files and check against metadata"""
-    assert mirror_rp.conn is Globals.local_connection, (
-        "Only verify mirror locally, not remotely over '{conn}'.".format(
-            conn=mirror_rp.conn))
-    repo_iter = RepoSide.init_and_get_iter(mirror_rp, inc_rp, verify_time)
-    base_index = RepoSide.mirror_base.index
-
-    bad_files = 0
-    for repo_rorp in repo_iter:
-        if not repo_rorp.isreg():
-            continue
-        verify_sha1 = _get_hash(repo_rorp)
-        if not verify_sha1:
-            log.Log(
-                "Warning: Cannot find SHA1 digest for file %s,\n"
-                "perhaps because this feature was added in v1.1.1" %
-                (repo_rorp.get_safeindexpath(), ), 2)
-            continue
-        fp = RepoSide.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
-        computed_hash = hash.compute_sha1_fp(fp)
-        if computed_hash == verify_sha1:
-            log.Log(
-                "Verified SHA1 digest of %s" % repo_rorp.get_safeindexpath(),
-                5)
-        else:
-            bad_files += 1
-            log.Log(
-                "Warning: Computed SHA1 digest of %s\n   %s\n"
-                "doesn't match recorded digest of\n   %s\n"
-                "Your backup repository may be corrupted!" %
-                (repo_rorp.get_safeindexpath(), computed_hash,
-                 verify_sha1), 2)
-    RepoSide.close_rf_cache()
-    if bad_files:
-        log.Log("Not all files could be verified.", 3)
-        return 2
-    log.Log("Every file verified successfully.", 3)
-    return 0
-
-
 # @API(RepoSide, 200)
 class RepoSide(restore.MirrorStruct):
     """On the repository side, comparing is like restoring"""
@@ -237,6 +148,95 @@ class CompareReport:
     def __init__(self, index, reason):
         self.index = index
         self.reason = reason
+
+
+def Compare(src_rp, mirror_rp, inc_rp, compare_time):
+    """Compares metadata in src_rp dir with metadata in mirror_rp at time"""
+    repo_side = mirror_rp.conn.compare.RepoSide
+    data_side = src_rp.conn.compare.DataSide
+
+    repo_iter = repo_side.init_and_get_iter(mirror_rp, inc_rp, compare_time)
+    return_val = _print_reports(data_side.compare_fast(repo_iter))
+    repo_side.close_rf_cache()
+    return return_val
+
+
+def Compare_hash(src_rp, mirror_rp, inc_rp, compare_time):
+    """Compare files at src_rp with repo at compare_time
+
+    Note metadata differences, but also check to see if file data is
+    different.  If two regular files have the same size, hash the
+    source and compare to the hash presumably already present in repo.
+
+    """
+    repo_side = mirror_rp.conn.compare.RepoSide
+    data_side = src_rp.conn.compare.DataSide
+
+    repo_iter = repo_side.init_and_get_iter(mirror_rp, inc_rp, compare_time)
+    return_val = _print_reports(data_side.compare_hash(repo_iter))
+    repo_side.close_rf_cache()
+    return return_val
+
+
+def Compare_full(src_rp, mirror_rp, inc_rp, compare_time):
+    """Compare full data of files at src_rp with repo at compare_time
+
+    Like Compare_hash, but do not rely on hashes, instead copy full
+    data over.
+
+    """
+    repo_side = mirror_rp.conn.compare.RepoSide
+    data_side = src_rp.conn.compare.DataSide
+
+    src_iter = data_side.get_source_select()
+    attached_repo_iter = repo_side.attach_files(src_iter, mirror_rp, inc_rp,
+                                                compare_time)
+    report_iter = data_side.compare_full(src_rp, attached_repo_iter)
+    return_val = _print_reports(report_iter)
+    repo_side.close_rf_cache()
+    return return_val
+
+
+# @API(Verify, 200)
+def Verify(mirror_rp, inc_rp, verify_time):
+    """Compute SHA1 sums of repository files and check against metadata"""
+    assert mirror_rp.conn is Globals.local_connection, (
+        "Only verify mirror locally, not remotely over '{conn}'.".format(
+            conn=mirror_rp.conn))
+    repo_iter = RepoSide.init_and_get_iter(mirror_rp, inc_rp, verify_time)
+    base_index = RepoSide.mirror_base.index
+
+    bad_files = 0
+    for repo_rorp in repo_iter:
+        if not repo_rorp.isreg():
+            continue
+        verify_sha1 = _get_hash(repo_rorp)
+        if not verify_sha1:
+            log.Log(
+                "Warning: Cannot find SHA1 digest for file %s,\n"
+                "perhaps because this feature was added in v1.1.1" %
+                (repo_rorp.get_safeindexpath(), ), 2)
+            continue
+        fp = RepoSide.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
+        computed_hash = hash.compute_sha1_fp(fp)
+        if computed_hash == verify_sha1:
+            log.Log(
+                "Verified SHA1 digest of %s" % repo_rorp.get_safeindexpath(),
+                5)
+        else:
+            bad_files += 1
+            log.Log(
+                "Warning: Computed SHA1 digest of %s\n   %s\n"
+                "doesn't match recorded digest of\n   %s\n"
+                "Your backup repository may be corrupted!" %
+                (repo_rorp.get_safeindexpath(), computed_hash,
+                 verify_sha1), 2)
+    RepoSide.close_rf_cache()
+    if bad_files:
+        log.Log("Not all files could be verified.", 3)
+        return 2
+    log.Log("Every file verified successfully.", 3)
+    return 0
 
 
 def _get_hash(repo_rorp):

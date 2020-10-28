@@ -615,6 +615,36 @@ class PatchITRB(rorpiter.ITRBranch):
             if tf.lstat():
                 tf.delete()
 
+    def start_process(self, index, diff_rorp):
+        """Start processing directory - record information for later"""
+        self.base_rp, discard = longname.get_mirror_inc_rps(
+            self.CCPP.get_rorps(index), self.basis_root_rp)
+        if diff_rorp.isdir():
+            self._prepare_dir(diff_rorp, self.base_rp)
+        elif self._set_dir_replacement(diff_rorp, self.base_rp):
+            if diff_rorp.lstat():
+                self.CCPP.flag_success(index)
+            else:
+                self.CCPP.flag_deleted(index)
+
+    def end_process(self):
+        """Finish processing directory"""
+        if self.dir_update:
+            assert self.base_rp.isdir(), (
+                "Base directory '{rp!s}' isn't a directory.".format(
+                    rp=self.base_rp))
+            rpath.copy_attribs(self.dir_update, self.base_rp)
+
+            if (Globals.process_uid != 0
+                    and self.dir_update.getperms() % 0o1000 < 0o700):
+                # Directory was unreadable at start -- keep it readable
+                # until the end of the backup process.
+                self.base_rp.chmod(0o700 | self.dir_update.getperms())
+        elif self.dir_replacement:
+            self.base_rp.rmdir()
+            if self.dir_replacement.lstat():
+                rpath.rename(self.dir_replacement, self.base_rp)
+
     def _patch_to_temp(self, basis_rp, diff_rorp, new):
         """Patch basis_rp, writing output in new, which doesn't exist yet
 
@@ -719,18 +749,6 @@ class PatchITRB(rorpiter.ITRBranch):
                 new.delete()
             new.touch()
 
-    def start_process(self, index, diff_rorp):
-        """Start processing directory - record information for later"""
-        self.base_rp, discard = longname.get_mirror_inc_rps(
-            self.CCPP.get_rorps(index), self.basis_root_rp)
-        if diff_rorp.isdir():
-            self._prepare_dir(diff_rorp, self.base_rp)
-        elif self._set_dir_replacement(diff_rorp, self.base_rp):
-            if diff_rorp.lstat():
-                self.CCPP.flag_success(index)
-            else:
-                self.CCPP.flag_deleted(index)
-
     def _set_dir_replacement(self, diff_rorp, base_rp):
         """Set self.dir_replacement, which holds data until done with dir
 
@@ -766,24 +784,6 @@ class PatchITRB(rorpiter.ITRBranch):
         else:  # maybe no change, so query CCPP before tagging success
             if self.CCPP.in_cache(diff_rorp.index):
                 self.CCPP.flag_success(diff_rorp.index)
-
-    def end_process(self):
-        """Finish processing directory"""
-        if self.dir_update:
-            assert self.base_rp.isdir(), (
-                "Base directory '{rp!s}' isn't a directory.".format(
-                    rp=self.base_rp))
-            rpath.copy_attribs(self.dir_update, self.base_rp)
-
-            if (Globals.process_uid != 0
-                    and self.dir_update.getperms() % 0o1000 < 0o700):
-                # Directory was unreadable at start -- keep it readable
-                # until the end of the backup process.
-                self.base_rp.chmod(0o700 | self.dir_update.getperms())
-        elif self.dir_replacement:
-            self.base_rp.rmdir()
-            if self.dir_replacement.lstat():
-                rpath.rename(self.dir_replacement, self.base_rp)
 
 
 class IncrementITRB(PatchITRB):

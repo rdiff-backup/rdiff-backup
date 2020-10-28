@@ -52,87 +52,6 @@ _uname2uid_dict = {}
 _gname2gid_dict = {}
 
 
-def uid2uname(uid):
-    """Given uid, return uname from passwd file, or None if cannot find"""
-    try:
-        return _uid2uname_dict[uid]
-    except KeyError:
-        try:
-            uname = pwd.getpwuid(uid)[0]
-        except (KeyError, OverflowError, NameError):
-            uname = None
-        _uid2uname_dict[uid] = uname
-        return uname
-
-
-def gid2gname(gid):
-    """Given gid, return group name from group file or None if cannot find"""
-    try:
-        return _gid2gname_dict[gid]
-    except KeyError:
-        try:
-            gname = grp.getgrgid(gid)[0]
-        except (KeyError, OverflowError, NameError):
-            gname = None
-        _gid2gname_dict[gid] = gname
-        return gname
-
-
-# @API(init_user_mapping, 200)
-def init_user_mapping(mapping_string=None, numerical_ids=None):
-    """Initialize user mapping with given mapping string
-
-    If numerical_ids is set, just keep the same uid.  If either
-    argument is None, default to preserving uname where possible.
-
-    """
-    global _user_map
-    if numerical_ids:
-        _user_map = _NumericalMap()
-    elif mapping_string:
-        _user_map = _DefinedMap(1, mapping_string)
-    else:
-        _user_map = _Map(1)
-
-
-# @API(init_group_mapping, 200)
-def init_group_mapping(mapping_string=None, numerical_ids=None):
-    """Initialize group mapping with given mapping string
-
-    If numerical_ids is set, just keep the same gid.  If either
-    argument is None, default to preserving gname where possible.
-
-    """
-    global _group_map
-    if numerical_ids:
-        _group_map = _NumericalMap()
-    elif mapping_string:
-        _group_map = _DefinedMap(0, mapping_string)
-    else:
-        _group_map = _Map(0)
-
-
-# @API(map_rpath, 200)
-def map_rpath(rp):
-    """Return mapped (newuid, newgid) from rpath's initial info
-
-    This is the main function exported by the user_group module.  Note
-    that it is connection specific.
-
-    """
-    uid, gid = rp.getuidgid()
-    uname, gname = rp.getuname(), rp.getgname()
-    return (_user_map(uid, uname), _group_map(gid, gname))
-
-
-def acl_user_map(uid, uname):
-    return _user_map.map_acl(uid, uname)
-
-
-def acl_group_map(gid, gname):
-    return _group_map.map_acl(gid, gname)
-
-
 class _Map:
     """Used for mapping names and id on source side to dest side"""
 
@@ -241,6 +160,87 @@ class _NumericalMap:
 
     def map_acl(self, id, name=None):
         return id
+
+
+def uid2uname(uid):
+    """Given uid, return uname from passwd file, or None if cannot find"""
+    try:
+        return _uid2uname_dict[uid]
+    except KeyError:
+        try:
+            uname = pwd.getpwuid(uid)[0]
+        except (KeyError, OverflowError, NameError):
+            uname = None
+        _uid2uname_dict[uid] = uname
+        return uname
+
+
+def gid2gname(gid):
+    """Given gid, return group name from group file or None if cannot find"""
+    try:
+        return _gid2gname_dict[gid]
+    except KeyError:
+        try:
+            gname = grp.getgrgid(gid)[0]
+        except (KeyError, OverflowError, NameError):
+            gname = None
+        _gid2gname_dict[gid] = gname
+        return gname
+
+
+# @API(init_user_mapping, 200)
+def init_user_mapping(mapping_string=None, numerical_ids=None):
+    """Initialize user mapping with given mapping string
+
+    If numerical_ids is set, just keep the same uid.  If either
+    argument is None, default to preserving uname where possible.
+
+    """
+    global _user_map
+    if numerical_ids:
+        _user_map = _NumericalMap()
+    elif mapping_string:
+        _user_map = _DefinedMap(1, mapping_string)
+    else:
+        _user_map = _Map(1)
+
+
+# @API(init_group_mapping, 200)
+def init_group_mapping(mapping_string=None, numerical_ids=None):
+    """Initialize group mapping with given mapping string
+
+    If numerical_ids is set, just keep the same gid.  If either
+    argument is None, default to preserving gname where possible.
+
+    """
+    global _group_map
+    if numerical_ids:
+        _group_map = _NumericalMap()
+    elif mapping_string:
+        _group_map = _DefinedMap(0, mapping_string)
+    else:
+        _group_map = _Map(0)
+
+
+# @API(map_rpath, 200)
+def map_rpath(rp):
+    """Return mapped (newuid, newgid) from rpath's initial info
+
+    This is the main function exported by the user_group module.  Note
+    that it is connection specific.
+
+    """
+    uid, gid = rp.getuidgid()
+    uname, gname = rp.getuname(), rp.getgname()
+    return (_user_map(uid, uname), _group_map(gid, gname))
+
+
+def acl_user_map(uid, uname):
+    return _user_map.map_acl(uid, uname)
+
+
+def acl_group_map(gid, gname):
+    return _group_map.map_acl(gid, gname)
 
 
 def _uname2uid(uname):

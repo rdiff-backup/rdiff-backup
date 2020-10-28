@@ -699,21 +699,6 @@ class FSAbilities:
         self.escape_trailing_spaces = 0
 
 
-# @API(get_readonly_fsa, 200)
-def get_readonly_fsa(desc_string, rp):
-    """Return an fsa with given description_string
-
-    Will be initialized read_only with given RPath rp.  We separate
-    this out into a separate function so the request can be vetted by
-    the security module.
-
-    """
-    if os.name == 'nt':
-        log.Log("Hardlinks disabled by default on Windows", 4)
-        SetConnections.UpdateGlobal('preserve_hardlinks', 0)
-    return FSAbilities(desc_string, rp, read_only=True)
-
-
 class SetGlobals:
     """Various functions for setting Globals vars given FSAbilities above
 
@@ -1047,6 +1032,21 @@ class SingleSetGlobals(RestoreSetGlobals):
         SetConnections.UpdateGlobal(active_attr, 1)
         SetConnections.UpdateGlobal(write_attr, 1)
         self.conn.Globals.set_local(conn_attr, 1)
+
+
+# @API(get_readonly_fsa, 200)
+def get_readonly_fsa(desc_string, rp):
+    """Return an fsa with given description_string
+
+    Will be initialized read_only with given RPath rp.  We separate
+    this out into a separate function so the request can be vetted by
+    the security module.
+
+    """
+    if os.name == 'nt':
+        log.Log("Hardlinks disabled by default on Windows", 4)
+        SetConnections.UpdateGlobal('preserve_hardlinks', 0)
+    return FSAbilities(desc_string, rp, read_only=True)
 
 
 # @API(backup_set_globals, 200)

@@ -1315,26 +1315,6 @@ class RPath(RORPath):
                       rp=self, otype=temptype, ntype=self.data['type']))
 
 
-class _RPathFileHook:
-    """Look like a file, but add closing hook"""
-
-    def __init__(self, file, closing_thunk):
-        self.file = file
-        self.closing_thunk = closing_thunk
-
-    def read(self, length=-1):
-        return self.file.read(length)
-
-    def write(self, buf):
-        return self.file.write(buf)
-
-    def close(self):
-        """Close file and then run closing thunk"""
-        result = self.file.close()
-        self.closing_thunk()
-        return result
-
-
 class MaybeGzip:
     """Represent a file object that may or may not be compressed
 
@@ -1395,6 +1375,26 @@ class MaybeGzip:
             return self.base_rp.new_index(newind)
         else:
             return self.base_rp.append_path(b'.gz')
+
+
+class _RPathFileHook:
+    """Look like a file, but add closing hook"""
+
+    def __init__(self, file, closing_thunk):
+        self.file = file
+        self.closing_thunk = closing_thunk
+
+    def read(self, length=-1):
+        return self.file.read(length)
+
+    def write(self, buf):
+        return self.file.write(buf)
+
+    def close(self):
+        """Close file and then run closing thunk"""
+        result = self.file.close()
+        self.closing_thunk()
+        return result
 
 
 def copyfileobj(inputfp, outputfp):

@@ -457,6 +457,42 @@ class AccessControlLists:
         return 1
 
 
+class ACLExtractor(EAExtractor):
+    """Iterate AccessControlLists objects from the ACL information file
+
+    Except for the _record_to_object method, we can reuse everything in
+    the EAExtractor class because the file formats are so similar.
+
+    """
+
+    @staticmethod
+    def _record_to_object(record):
+        """Convert text record to an AccessControlLists object"""
+        newline_pos = record.find(b'\n')
+        first_line = record[:newline_pos]
+        if not first_line.startswith(b'# file: '):
+            raise metadata.ParsingError("Bad record beginning: %r" % first_line)
+        filename = first_line[8:]
+        if filename == b'.':
+            index = ()
+        else:
+            unquoted_filename = C.acl_unquote(filename)
+            index = tuple(unquoted_filename.split(b'/'))
+        return AccessControlLists(index, os.fsdecode(record[newline_pos:]))
+
+
+class AccessControlListFile(metadata.FlatFile):
+    """Store/retrieve ACLs from extended attributes file"""
+    _prefix = b'access_control_lists'
+    _extractor = ACLExtractor
+
+    @staticmethod
+    def _object_to_record(acl):
+        """Convert an AccessControlLists object into a text record"""
+        return b'# file: %b\n%b\n' % (C.acl_quote(acl.get_indexpath()),
+                                      os.fsencode(str(acl)))
+
+
 # @API(set_rp_acl, 200)
 def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
     """Set given rp with ACL that acl_text defines.  rp should be local"""
@@ -521,6 +557,17 @@ def get_acl_lists_from_rp(rp):
     else:
         def_acl = None
     return (acl and _acl_to_list(acl), def_acl and _acl_to_list(def_acl))
+
+
+def join_acl_iter(rorp_iter, acl_iter):
+    """Update a rorp iter by adding the information from acl_iter"""
+    for rorp, acl in rorpiter.CollateIterators(rorp_iter, acl_iter):
+        assert rorp, ("Missing rorp for ACL index '{aidx}'.".format(
+            aidx=acl.index))
+        if not acl:
+            acl = AccessControlLists(rorp.index)
+        rorp.set_acl(acl)
+        yield rorp
 
 
 def _acl_to_list(acl):
@@ -654,53 +701,6 @@ def _list_to_acl(entry_list, map_names=1):
         entry.permset.write = perms >> 1 & 1
         entry.permset.execute = perms & 1
     return acl
-
-
-class ACLExtractor(EAExtractor):
-    """Iterate AccessControlLists objects from the ACL information file
-
-    Except for the _record_to_object method, we can reuse everything in
-    the EAExtractor class because the file formats are so similar.
-
-    """
-
-    @staticmethod
-    def _record_to_object(record):
-        """Convert text record to an AccessControlLists object"""
-        newline_pos = record.find(b'\n')
-        first_line = record[:newline_pos]
-        if not first_line.startswith(b'# file: '):
-            raise metadata.ParsingError("Bad record beginning: %r" % first_line)
-        filename = first_line[8:]
-        if filename == b'.':
-            index = ()
-        else:
-            unquoted_filename = C.acl_unquote(filename)
-            index = tuple(unquoted_filename.split(b'/'))
-        return AccessControlLists(index, os.fsdecode(record[newline_pos:]))
-
-
-class AccessControlListFile(metadata.FlatFile):
-    """Store/retrieve ACLs from extended attributes file"""
-    _prefix = b'access_control_lists'
-    _extractor = ACLExtractor
-
-    @staticmethod
-    def _object_to_record(acl):
-        """Convert an AccessControlLists object into a text record"""
-        return b'# file: %b\n%b\n' % (C.acl_quote(acl.get_indexpath()),
-                                      os.fsencode(str(acl)))
-
-
-def join_acl_iter(rorp_iter, acl_iter):
-    """Update a rorp iter by adding the information from acl_iter"""
-    for rorp, acl in rorpiter.CollateIterators(rorp_iter, acl_iter):
-        assert rorp, ("Missing rorp for ACL index '{aidx}'.".format(
-            aidx=acl.index))
-        if not acl:
-            acl = AccessControlLists(rorp.index)
-        rorp.set_acl(acl)
-        yield rorp
 
 
 # FIXME overriding functions in the rpath module doesn't sound right
