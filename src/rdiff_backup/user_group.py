@@ -49,35 +49,7 @@ _uid2uname_dict = {}
 _gid2gname_dict = {}
 
 _uname2uid_dict = {}
-
-
-def _uname2uid(uname):
-    """Given uname, return uid or None if cannot find"""
-    try:
-        return _uname2uid_dict[uname]
-    except KeyError:
-        try:
-            uid = pwd.getpwnam(uname)[2]
-        except (KeyError, NameError):
-            uid = None
-        _uname2uid_dict[uname] = uid
-        return uid
-
-
 _gname2gid_dict = {}
-
-
-def _gname2gid(gname):
-    """Given gname, return gid or None if cannot find"""
-    try:
-        return _gname2gid_dict[gname]
-    except KeyError:
-        try:
-            gid = grp.getgrnam(gname)[2]
-        except (KeyError, NameError):
-            gid = None
-        _gname2gid_dict[gname] = gid
-        return gid
 
 
 class _Map:
@@ -145,17 +117,6 @@ class _DefinedMap(_Map):
             except ValueError:
                 self.name_mapping_dict[old] = self._get_new_id(new)
 
-    def _get_new_id(self, id_or_name):
-        """Return id of id_or_name, failing if cannot.  Used in __init__"""
-        try:
-            return int(id_or_name)
-        except ValueError:
-            try:
-                return self.name2id(id_or_name)
-            except KeyError:
-                log.Log.FatalError("Cannot get id for user or group name "
-                                   + id_or_name)
-
     def __call__(self, id, name=None):
         """Return new id given old id and name"""
         newid = self.map_acl(id, name)
@@ -179,6 +140,17 @@ class _DefinedMap(_Map):
         except KeyError:
             return None
 
+    def _get_new_id(self, id_or_name):
+        """Return id of id_or_name, failing if cannot.  Used in __init__"""
+        try:
+            return int(id_or_name)
+        except ValueError:
+            try:
+                return self.name2id(id_or_name)
+            except KeyError:
+                log.Log.FatalError("Cannot get id for user or group name "
+                                   + id_or_name)
+
 
 class _NumericalMap:
     """Simple Map replacement that just keeps numerical uid or gid"""
@@ -188,9 +160,6 @@ class _NumericalMap:
 
     def map_acl(self, id, name=None):
         return id
-
-
-# ----------- Public section - can use these outside user_group -----------
 
 
 def uid2uname(uid):
@@ -219,6 +188,7 @@ def gid2gname(gid):
         return gname
 
 
+# @API(init_user_mapping, 200)
 def init_user_mapping(mapping_string=None, numerical_ids=None):
     """Initialize user mapping with given mapping string
 
@@ -235,6 +205,7 @@ def init_user_mapping(mapping_string=None, numerical_ids=None):
         _user_map = _Map(1)
 
 
+# @API(init_group_mapping, 200)
 def init_group_mapping(mapping_string=None, numerical_ids=None):
     """Initialize group mapping with given mapping string
 
@@ -251,6 +222,7 @@ def init_group_mapping(mapping_string=None, numerical_ids=None):
         _group_map = _Map(0)
 
 
+# @API(map_rpath, 200)
 def map_rpath(rp):
     """Return mapped (newuid, newgid) from rpath's initial info
 
@@ -269,3 +241,29 @@ def acl_user_map(uid, uname):
 
 def acl_group_map(gid, gname):
     return _group_map.map_acl(gid, gname)
+
+
+def _uname2uid(uname):
+    """Given uname, return uid or None if cannot find"""
+    try:
+        return _uname2uid_dict[uname]
+    except KeyError:
+        try:
+            uid = pwd.getpwnam(uname)[2]
+        except (KeyError, NameError):
+            uid = None
+        _uname2uid_dict[uname] = uid
+        return uid
+
+
+def _gname2gid(gname):
+    """Given gname, return gid or None if cannot find"""
+    try:
+        return _gname2gid_dict[gname]
+    except KeyError:
+        try:
+            gid = grp.getgrnam(gname)[2]
+        except (KeyError, NameError):
+            gid = None
+        _gname2gid_dict[gname] = gid
+        return gid

@@ -27,34 +27,6 @@ class ManageException(Exception):
     pass
 
 
-def _get_file_type(rp):
-    """Returns one of "regular", "directory", "missing", or "special"."""
-    if not rp.lstat():
-        return "missing"
-    elif rp.isdir():
-        return "directory"
-    elif rp.isreg():
-        return "regular"
-    else:
-        return "special"
-
-
-def _get_inc_type(inc):
-    """Return file type increment represents"""
-    assert inc.isincfile()
-    type = inc.getinctype()
-    if type == b"dir":
-        return "directory"
-    elif type == b"diff":
-        return "regular"
-    elif type == b"missing":
-        return "missing"
-    elif type == b"snapshot":
-        return _get_file_type(inc)
-    else:
-        assert None, "Unknown type %s" % type
-
-
 def describe_incs_parsable(incs, mirror_time, mirrorrp):
     """Return a string parsable by computer describing the increments
 
@@ -106,9 +78,12 @@ def delete_earlier_than(baserp, time):
     baserp.conn.manage.delete_earlier_than_local(baserp, time)
 
 
+# @API(delete_earlier_than_local, 200)
 def delete_earlier_than_local(baserp, time):
     """Like delete_earlier_than, but run on local connection for speed"""
-    assert baserp.conn is Globals.local_connection
+    assert baserp.conn is Globals.local_connection, (
+        "Function should be called only locally and not over '{conn}'.".format(
+            conn=baserp.conn))
 
     def yield_files(rp):
         if rp.isdir():
@@ -203,3 +178,34 @@ def list_increment_sizes(mirror_root, index):
     for triple in triples[1:]:
         sizes.append(triple_to_line(triple))
     return '\n'.join(sizes)
+
+
+def _get_inc_type(inc):
+    """Return file type increment represents"""
+    assert inc.isincfile(), (
+        "File '{inc!s}' must be an increment.".format(inc=inc))
+    inc_type = inc.getinctype()
+    if inc_type == b"dir":
+        return "directory"
+    elif inc_type == b"diff":
+        return "regular"
+    elif inc_type == b"missing":
+        return "missing"
+    elif inc_type == b"snapshot":
+        return _get_file_type(inc)
+    else:
+        Log.FatalError(
+            "Unknown type '{itype}' of increment '{ifile!s}'.".format(
+                itype=inc_type, ifile=inc))
+
+
+def _get_file_type(rp):
+    """Returns one of "regular", "directory", "missing", or "special"."""
+    if not rp.lstat():
+        return "missing"
+    elif rp.isdir():
+        return "directory"
+    elif rp.isreg():
+        return "regular"
+    else:
+        return "special"

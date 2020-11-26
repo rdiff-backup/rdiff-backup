@@ -36,15 +36,16 @@ class FileWrapper:
     def __init__(self, fileobj):
         self.fileobj = fileobj
         self.sha1 = hashlib.sha1()
-        self.closed = 0
+        self.closed = False
 
     def read(self, length=-1):
-        assert not self.closed
+        assert not self.closed, "You can't read from an already closed file."
         buf = self.fileobj.read(length)
         self.sha1.update(buf)
         return buf
 
     def close(self):
+        self.closed = True
         return Report(self.fileobj.close(), self.sha1.hexdigest())
 
 
@@ -57,18 +58,21 @@ class Report:
         # which we can't wrap again in a Report, so we only check that the
         # hash values do fit.
         if isinstance(close_val, Report):
-            assert close_val.sha1_digest == sha1_digest, \
-                "Hashes from return code %s and given %s don't match" % \
-                (close_val.sha1_digest, sha1_digest)
+            assert close_val.sha1_digest == sha1_digest, (
+                "Hashes from return code {hash1} and given {hash2} "
+                "don't match".format(
+                    hash1=close_val.sha1_digest, hash2=sha1_digest))
         else:
-            assert not close_val, "Return code %s of type %s isn't null" % \
-                (close_val, type(close_val))
+            assert not close_val, (
+                "Return code {rc} of type {rctype} isn't null".format(
+                    rc=close_val, rctype=type(close_val)))
         self.sha1_digest = sha1_digest
 
 
 def compute_sha1(rp, compressed=0):
     """Return the hex sha1 hash of given rpath"""
-    assert rp.conn is Globals.local_connection  # inefficient not to do locally
+    assert rp.conn is Globals.local_connection, (
+        "It's inefficient to calculate hash remotely.")
     digest = compute_sha1_fp(rp.open("rb", compressed))
     rp.set_sha1(digest)
     return digest
@@ -78,7 +82,6 @@ def compute_sha1_fp(fp, compressed=0):
     """Return hex sha1 hash of given file-like object"""
     blocksize = Globals.blocksize
     fw = FileWrapper(fp)
-    while 1:
-        if not fw.read(blocksize):
-            break
+    while fw.read(blocksize):
+        pass  # we rely on FileWrapper to calculate the checksum
     return fw.close().sha1_digest

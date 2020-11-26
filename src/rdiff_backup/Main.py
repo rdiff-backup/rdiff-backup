@@ -50,6 +50,174 @@ _restore_timestr, _incdir, _prevtime = None, None, None
 _remove_older_than_string = None
 
 
+def error_check_Main(arglist):
+    """Run Main on arglist, suppressing stack trace for routine errors"""
+    try:
+        _Main(arglist)
+    except SystemExit:
+        raise
+    except (Exception, KeyboardInterrupt) as exc:
+        errmsg = robust.is_routine_fatal(exc)
+        if errmsg:
+            Log.exception(2, 6)
+            Log.FatalError(errmsg)
+        else:
+            Log.exception(2, 2)
+            raise
+
+
+# @API(backup_touch_curmirror_local, 200)
+def backup_touch_curmirror_local(rpin, rpout):
+    """Make a file like current_mirror.time.data to record time
+
+    When doing an incremental backup, this should happen before any
+    other writes, and the file should be removed after all writes.
+    That way we can tell whether the previous session aborted if there
+    are two current_mirror files.
+
+    When doing the initial full backup, the file can be created after
+    everything else is in place.
+
+    """
+    mirrorrp = Globals.rbdir.append(b'.'.join(
+        map(os.fsencode, (b"current_mirror", Time.curtimestr, "data"))))
+    Log("Writing mirror marker %s" % mirrorrp.get_safepath(), 6)
+    try:
+        pid = os.getpid()
+    except BaseException:
+        pid = "NA"
+    mirrorrp.write_string("PID %s\n" % (pid, ))
+    mirrorrp.fsync_with_dir()
+
+
+# @API(backup_remove_curmirror_local, 200)
+def backup_remove_curmirror_local():
+    """Remove the older of the current_mirror files.  Use at end of session"""
+    assert Globals.rbdir.conn is Globals.local_connection, (
+        "Function can only be called locally and not over '{conn}'.".format(
+            conn=Globals.rbdir.conn))
+    curmir_incs = restore.get_inclist(Globals.rbdir.append(b"current_mirror"))
+    assert len(curmir_incs) == 2, (
+        "There must be two current mirrors not '{ilen}'.".format(
+            ilen=len(curmir_incs)))
+    if curmir_incs[0].getinctime() < curmir_incs[1].getinctime():
+        older_inc = curmir_incs[0]
+    else:
+        older_inc = curmir_incs[1]
+    if Globals.do_fsync:
+        C.sync()  # Make sure everything is written before curmirror is removed
+    older_inc.delete()
+
+
+# @API(backup_close_statistics, 200)
+def backup_close_statistics(end_time):
+    """Close out the tracking of the backup statistics.
+
+    Moved to run at this point so that only the clock of the system on which
+    rdiff-backup is run is used (set by passing in time.time() from that
+    system). Use at end of session.
+
+    """
+    assert Globals.rbdir.conn is Globals.local_connection, (
+        "Function can only be called locally and not over '{conn}'.".format(
+            conn=Globals.rbdir.conn))
+    if Globals.print_statistics:
+        statistics.print_active_stats(end_time)
+    if Globals.file_statistics:
+        statistics.FileStats.close()
+    statistics.write_active_statfileobj(end_time)
+
+
+def restore_set_root(rpin):
+    """Set data dir, restore_root and index, or return None if fail
+
+    The idea here is to keep backing up on the path until we find
+    a directory that contains "rdiff-backup-data".  That is the
+    mirror root.  If the path from there starts
+    "rdiff-backup-data/increments*", then the index is the
+    remainder minus that.  Otherwise the index is just the path
+    minus the root.
+
+    All this could fail if the increment file is pointed to in a
+    funny way, using symlinks or somesuch.
+
+    """
+    global restore_root, _restore_index, _restore_root_set
+    if rpin.isincfile():
+        relpath = rpin.getincbase().path
+    else:
+        relpath = rpin.path
+    if rpin.conn is not Globals.local_connection:
+        # For security checking consistency, don't get absolute path
+        pathcomps = relpath.split(b'/')
+    else:
+        pathcomps = rpath.RORPath.path_join(rpath.RORPath.getcwdb(),
+                                            relpath).split(b'/')
+    if not pathcomps[0]:
+        min_len_pathcomps = 2  # treat abs paths differently
+    else:
+        min_len_pathcomps = 1
+
+    i = len(pathcomps)
+    while i >= min_len_pathcomps:
+        parent_dir = rpath.RPath(rpin.conn, b'/'.join(pathcomps[:i]))
+        if (parent_dir.isdir() and parent_dir.readable()
+                and b"rdiff-backup-data" in parent_dir.listdir()):
+            break
+        if parent_dir.path == rpin.conn.Globals.get('restrict_path'):
+            return None
+        i = i - 1
+    else:
+        return None
+
+    restore_root = parent_dir
+    Log("Using mirror root directory %s" % restore_root.get_safepath(), 6)
+    if restore_root.conn is Globals.local_connection:
+        Security.reset_restrict_path(restore_root)
+    SetConnections.UpdateGlobal('rbdir',
+                                restore_root.append_path(b"rdiff-backup-data"))
+    if not Globals.rbdir.isdir():
+        Log.FatalError("Unable to read rdiff-backup-data directory %s" %
+                       Globals.rbdir.get_safepath())
+
+    from_datadir = tuple(pathcomps[i:])
+    if not from_datadir or from_datadir[0] != b"rdiff-backup-data":
+        _restore_index = from_datadir  # in mirror, not increments
+    elif (from_datadir[1] == b"increments"
+            or (len(from_datadir) == 2
+                and from_datadir[1].startswith(b'increments'))):
+        _restore_index = from_datadir[2:]
+    else:
+        raise RuntimeError("Data directory '{ddir}' looks neither like mirror "
+                           "nor like increment.".format(ddir=from_datadir))
+    _restore_root_set = 1
+    return 1
+
+
+def _Main(arglist):
+    """Start everything up!"""
+    _parse_cmdlineoptions(arglist)
+    _check_action()
+    cmdpairs = SetConnections.get_cmd_pairs(_args, _remote_schema, _remote_cmd)
+    Security.initialize(_action or "mirror", cmdpairs)
+    rps = list(map(SetConnections.cmdpair2rp, cmdpairs))
+
+    # if any of the remote paths is None, we have an error.
+    # We continue to test-server so that all connections can be tested at once.
+    if any(map(lambda x: x is None, rps)) and _action != "test-server":
+        _cleanup()
+        sys.exit(1)
+
+    _final_set_action(rps)
+    _misc_setup(rps)
+    return_val = _take_action(rps)
+    _cleanup()
+    if isinstance(return_val, int):
+        sys.exit(return_val)
+    else:
+        sys.exit(0)
+
+
 def _parse_cmdlineoptions(arglist):  # noqa: C901
     """Parse argument list and set global preferences"""
     global _args, _action, _create_full_path, _force, _restore_timestr
@@ -322,11 +490,13 @@ def _final_set_action(rps):
     global _action
     if _action:
         return
-    assert len(rps) == 2, rps
     if restore_set_root(rps[0]):
         _action = "restore"
     else:
         _action = "backup"
+    if len(rps) != 2:
+        Log.FatalError("Action {act} requires two paths.".format(
+            act=_action))
 
 
 def _commandline_error(message):
@@ -401,7 +571,7 @@ def _take_action(rps):
     elif _action == "verify":
         action_result = _action_verify(rps[0])
     else:
-        raise AssertionError("Unknown action " + _action)
+        raise ValueError("Unknown action " + _action)
     return action_result
 
 
@@ -413,46 +583,6 @@ def _cleanup():
     Log.close_logfile()
     if not Globals.server:
         SetConnections.CloseConnections()
-
-
-def error_check_Main(arglist):
-    """Run Main on arglist, suppressing stack trace for routine errors"""
-    try:
-        _Main(arglist)
-    except SystemExit:
-        raise
-    except (Exception, KeyboardInterrupt) as exc:
-        errmsg = robust.is_routine_fatal(exc)
-        if errmsg:
-            Log.exception(2, 6)
-            Log.FatalError(errmsg)
-        else:
-            Log.exception(2, 2)
-            raise
-
-
-def _Main(arglist):
-    """Start everything up!"""
-    _parse_cmdlineoptions(arglist)
-    _check_action()
-    cmdpairs = SetConnections.get_cmd_pairs(_args, _remote_schema, _remote_cmd)
-    Security.initialize(_action or "mirror", cmdpairs)
-    rps = list(map(SetConnections.cmdpair2rp, cmdpairs))
-
-    # if any of the remote paths is None, we have an error.
-    # We continue to test-server so that all connections can be tested at once.
-    if any(map(lambda x: x is None, rps)) and _action != "test-server":
-        _cleanup()
-        sys.exit(1)
-
-    _final_set_action(rps)
-    _misc_setup(rps)
-    return_val = _take_action(rps)
-    _cleanup()
-    if isinstance(return_val, int):
-        sys.exit(return_val)
-    else:
-        sys.exit(0)
 
 
 def _action_backup(rpin, rpout):
@@ -577,7 +707,8 @@ def _backup_set_rbdir(rpin, rpout):
         else:
             raise
 
-    assert rpout.lstat(), (rpout.get_safepath(), rpout.lstat())
+    assert rpout.lstat(), (
+        "Target backup directory '{rp!s}' must exist.".format(rp=rpout))
     if rpout.isdir() and not rpout.listdir():  # rpout is empty dir
         try:
             rpout.chmod(0o700)  # just make sure permissions aren't too lax
@@ -642,8 +773,9 @@ def _backup_get_mirrortime():
     """Return time in seconds of previous mirror, or None if cannot"""
     incbase = Globals.rbdir.append_path(b"current_mirror")
     mirror_rps = restore.get_inclist(incbase)
-    assert len(mirror_rps) <= 1, \
-        "Found %s current_mirror rps, expected <=1" % (len(mirror_rps),)
+    assert len(mirror_rps) <= 1, (
+        "Found {mlen} current_mirror paths, expected <=1".format(
+            mlen=len(mirror_rps)))
     if mirror_rps:
         return mirror_rps[0].getinctime()
     else:
@@ -664,59 +796,6 @@ by running two backups in less than a second.  Wait a second and try again.""")
     ErrorLog.open(Time.curtimestr, compress=Globals.compression)
     if not _incdir.lstat():
         _incdir.mkdir()
-
-
-def backup_touch_curmirror_local(rpin, rpout):
-    """Make a file like current_mirror.time.data to record time
-
-    When doing an incremental backup, this should happen before any
-    other writes, and the file should be removed after all writes.
-    That way we can tell whether the previous session aborted if there
-    are two current_mirror files.
-
-    When doing the initial full backup, the file can be created after
-    everything else is in place.
-
-    """
-    mirrorrp = Globals.rbdir.append(b'.'.join(
-        map(os.fsencode, (b"current_mirror", Time.curtimestr, "data"))))
-    Log("Writing mirror marker %s" % mirrorrp.get_safepath(), 6)
-    try:
-        pid = os.getpid()
-    except BaseException:
-        pid = "NA"
-    mirrorrp.write_string("PID %s\n" % (pid, ))
-    mirrorrp.fsync_with_dir()
-
-
-def backup_remove_curmirror_local():
-    """Remove the older of the current_mirror files.  Use at end of session"""
-    assert Globals.rbdir.conn is Globals.local_connection
-    curmir_incs = restore.get_inclist(Globals.rbdir.append(b"current_mirror"))
-    assert len(curmir_incs) == 2
-    if curmir_incs[0].getinctime() < curmir_incs[1].getinctime():
-        older_inc = curmir_incs[0]
-    else:
-        older_inc = curmir_incs[1]
-    if Globals.do_fsync:
-        C.sync()  # Make sure everything is written before curmirror is removed
-    older_inc.delete()
-
-
-def backup_close_statistics(end_time):
-    """Close out the tracking of the backup statistics.
-
-    Moved to run at this point so that only the clock of the system on which
-    rdiff-backup is run is used (set by passing in time.time() from that
-    system). Use at end of session.
-
-    """
-    assert Globals.rbdir.conn is Globals.local_connection
-    if Globals.print_statistics:
-        statistics.print_active_stats(end_time)
-    if Globals.file_statistics:
-        statistics.FileStats.close()
-    statistics.write_active_statfileobj(end_time)
 
 
 def _action_restore(src_rp, dest_rp, restore_as_of=None):
@@ -791,7 +870,7 @@ def _restore_set_select(mirror_rp, target):
 
     def fp2string(fp):
         buf = fp.read()
-        assert not fp.close()
+        fp.close()
         return buf
 
     select_data = list(map(fp2string, _select_files))
@@ -849,70 +928,6 @@ Try restoring from an increment file (the filenames look like
             "with --check-destination-dir option to revert directory "
             "to state before unsuccessful session." %
             mirror_root.get_safepath())
-
-
-def restore_set_root(rpin):
-    """Set data dir, restore_root and index, or return None if fail
-
-    The idea here is to keep backing up on the path until we find
-    a directory that contains "rdiff-backup-data".  That is the
-    mirror root.  If the path from there starts
-    "rdiff-backup-data/increments*", then the index is the
-    remainder minus that.  Otherwise the index is just the path
-    minus the root.
-
-    All this could fail if the increment file is pointed to in a
-    funny way, using symlinks or somesuch.
-
-    """
-    global restore_root, _restore_index, _restore_root_set
-    if rpin.isincfile():
-        relpath = rpin.getincbase().path
-    else:
-        relpath = rpin.path
-    if rpin.conn is not Globals.local_connection:
-        # For security checking consistency, don't get absolute path
-        pathcomps = relpath.split(b'/')
-    else:
-        pathcomps = rpath.RORPath.path_join(rpath.RORPath.getcwdb(),
-                                            relpath).split(b'/')
-    if not pathcomps[0]:
-        min_len_pathcomps = 2  # treat abs paths differently
-    else:
-        min_len_pathcomps = 1
-
-    i = len(pathcomps)
-    while i >= min_len_pathcomps:
-        parent_dir = rpath.RPath(rpin.conn, b'/'.join(pathcomps[:i]))
-        if (parent_dir.isdir() and parent_dir.readable()
-                and b"rdiff-backup-data" in parent_dir.listdir()):
-            break
-        if parent_dir.path == rpin.conn.Globals.get('restrict_path'):
-            return None
-        i = i - 1
-    else:
-        return None
-
-    restore_root = parent_dir
-    Log("Using mirror root directory %s" % restore_root.get_safepath(), 6)
-    if restore_root.conn is Globals.local_connection:
-        Security.reset_restrict_path(restore_root)
-    SetConnections.UpdateGlobal('rbdir',
-                                restore_root.append_path(b"rdiff-backup-data"))
-    if not Globals.rbdir.isdir():
-        Log.FatalError("Unable to read rdiff-backup-data directory %s" %
-                       Globals.rbdir.get_safepath())
-
-    from_datadir = tuple(pathcomps[i:])
-    if not from_datadir or from_datadir[0] != b"rdiff-backup-data":
-        _restore_index = from_datadir  # in mirror, not increments
-    else:
-        assert (from_datadir[1] == b"increments"
-                or (len(from_datadir) == 2
-                    and from_datadir[1].startswith(b'increments'))), from_datadir
-        _restore_index = from_datadir[2:]
-    _restore_root_set = 1
-    return 1
 
 
 def _action_list_increments(rp):
@@ -1071,9 +1086,12 @@ def _action_compare(compare_type, src_rp, dest_rp, compare_time=None):
         compare_func = compare.Compare
     elif compare_type == "compare-hash":
         compare_func = compare.Compare_hash
-    else:
-        assert compare_type == "compare-full", compare_type
+    elif compare_type == "compare-full":
         compare_func = compare.Compare_full
+    else:
+        raise ValueError(
+            "Comparaison type '{comp}' must be one of compare, "
+            "compare-hash or compare-full.".format(comp=compare_type))
     return compare_func(src_rp, mirror_rp, inc_rp, compare_time)
 
 
@@ -1096,14 +1114,13 @@ def _action_check_dest(dest_rp):
     dest_rp = _require_root_set(dest_rp, 0)
     need_check = _checkdest_need_check(dest_rp)
     if need_check is None:
-        Log.FatalError(
-            "No destination dir found at %s" % dest_rp.get_safepath())
+        Log("No destination dir found at {ddir}.".format(
+            ddir=dest_rp.get_safepath()), 1)
+        return 1
     elif need_check == 0:
-        Log.FatalError(
-            "Destination dir %s does not need checking" %
-            dest_rp.get_safepath(),
-            no_fatal_message=1,
-            errlevel=0)
+        Log("Destination dir {ddir} does not need checking.".format(
+            ddir=dest_rp.get_safepath()), 2)
+        return 0
     _init_user_group_mapping(dest_rp.conn)
     dest_rp.conn.regress.Regress(dest_rp)
 
@@ -1145,8 +1162,9 @@ information in it.
             except (OSError, IOError) as exc:
                 Log.FatalError("Could not check if rdiff-backup is currently"
                                "running due to\n%s" % exc)
-        assert len(curmir_incs) == 2, \
-            "Found too many current_mirror incs in %s!" % Globals.rbdir.get_safepath()
+        assert len(curmir_incs) == 2, (
+            "Found more than 2 current_mirror incs in '{rp!s}'.".format(
+                rp=Globals.rbdir))
         return 1
 
 

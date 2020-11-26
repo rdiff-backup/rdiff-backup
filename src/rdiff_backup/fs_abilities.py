@@ -55,13 +55,21 @@ class FSAbilities:
     # end of filenames aren't preserved
     symlink_perms = None  # True if symlink perms are affected by umask
 
-    def __init__(self, name=None):
+    def __init__(self, name, root_rp, read_only=False):
         """FSAbilities initializer.  name is only used in logging"""
+        assert root_rp.conn is Globals.local_connection, (
+            "Action only foreseen locally and not over {conn}.".format(
+                conn=root_rp.conn))
         self.name = name
+        self.root_rp = root_rp
+        self.read_only = read_only
+        if self.read_only:
+            self._init_readonly()
+        else:
+            self._init_readwrite()
 
     def __str__(self):
         """Return pretty printable version of self"""
-        assert self.read_only == 0 or self.read_only == 1, self.read_only
         s = ['-' * 65]
 
         def addline(desc, val_text):
@@ -76,7 +84,6 @@ class FSAbilities:
                 elif boolean is None:
                     val_text = 'N/A'
                 else:
-                    assert boolean == 0
                     val_text = 'Off'
                 addline(desc, val_text)
 
@@ -114,8 +121,8 @@ class FSAbilities:
         s.append(s[0])
         return '\n'.join(s)
 
-    def init_readonly(self, rp):
-        """Set variables using fs tested at RPath rp.  Run locally.
+    def _init_readonly(self):
+        """Set variables using fs tested at RPath root_rp.
 
         This method does not write to the file system at all, and
         should be run on the file system when the file system will
@@ -124,20 +131,16 @@ class FSAbilities:
         Only self.acls and self.eas are set.
 
         """
-        assert rp.conn is Globals.local_connection
-        self.root_rp = rp
-        self.read_only = 1
-        self._detect_eas(rp, 0)
-        self._detect_acls(rp)
-        self._detect_win_acls(rp, 0)
-        self._detect_resource_fork_readonly(rp)
+        self._detect_eas(self.root_rp, not self.read_only)
+        self._detect_acls(self.root_rp)
+        self._detect_win_acls(self.root_rp, not self.read_only)
+        self._detect_resource_fork_readonly(self.root_rp)
         self._detect_carbonfile()
-        self._detect_case_sensitive_readonly(rp)
-        self._detect_escape_dos_devices(rp)
-        self._detect_escape_trailing_spaces_readonly(rp)
-        return self
+        self._detect_case_sensitive_readonly(self.root_rp)
+        self._detect_escape_dos_devices(self.root_rp)
+        self._detect_escape_trailing_spaces_readonly(self.root_rp)
 
-    def init_readwrite(self, rbdir):
+    def _init_readwrite(self):
         """Set variables using fs tested at rp_base.  Run locally.
 
         This method creates a temp directory in rp_base and writes to
@@ -145,13 +148,12 @@ class FSAbilities:
         that will be written to.
 
         """
-        assert rbdir.conn is Globals.local_connection
-        if not rbdir.isdir():
-            assert not rbdir.lstat(), (rbdir.path, rbdir.lstat())
-            rbdir.mkdir()
-        self.root_rp = rbdir
-        self.read_only = 0
-        subdir = rbdir.get_temp_rpath()
+        if not self.root_rp.isdir():
+            assert not self.root_rp.lstat(), (
+                "Root path '{rp!s}' can't be writable, exist and not be "
+                "a directory.".format(rp=self.root_rp))
+            self.root_rp.mkdir()
+        subdir = self.root_rp.get_temp_rpath()
         subdir.mkdir()
 
         self._detect_extended_filenames(subdir)
@@ -160,9 +162,9 @@ class FSAbilities:
         self._detect_ownership(subdir)
         self._detect_hardlinks(subdir)
         self._detect_fsync_dirs(subdir)
-        self._detect_eas(subdir, 1)
+        self._detect_eas(subdir, not self.read_only)
         self._detect_acls(subdir)
-        self._detect_win_acls(subdir, 1)
+        self._detect_win_acls(subdir, not self.read_only)
         self._detect_dir_inc_perms(subdir)
         self._detect_resource_fork_readwrite(subdir)
         self._detect_carbonfile()
@@ -172,7 +174,6 @@ class FSAbilities:
         self._detect_escape_trailing_spaces_readwrite(subdir)
 
         subdir.delete()
-        return self
 
     def _detect_ownership(self, testdir):
         """Set self.ownership to true iff testdir's ownership can be changed"""
@@ -210,7 +211,6 @@ class FSAbilities:
 
     def _detect_fsync_dirs(self, testdir):
         """Set self.fsync_dirs if directories can be fsync'd"""
-        assert testdir.conn is Globals.local_connection
         try:
             testdir.fsync()
         except (IOError, OSError):
@@ -223,14 +223,19 @@ class FSAbilities:
 
     def _detect_extended_filenames(self, subdir):
         """Set self.extended_filenames by trying to write a path"""
-        assert not self.read_only
+        assert not self.read_only, "Detection method can only work read-write."
 
         # Make sure ordinary filenames ok
-        ordinary_filename = b'5-_ a.snapshot.gz'
-        ord_rp = subdir.append(ordinary_filename)
-        ord_rp.touch()
-        assert ord_rp.lstat()
-        ord_rp.delete()
+        try:
+            ordinary_filename = b'5-_ a.snapshot.gz'
+            ord_rp = subdir.append(ordinary_filename)
+            ord_rp.touch()
+            ord_rp.delete()
+        except (IOError, OSError) as exc:
+            log.Log.FatalError(
+                "File with normal name '{file}' couldn't be created, "
+                "and failed with '{exc}'.".format(
+                    file=ord_rp.get_safepath(), exc=exc))
 
         # Try path with UTF-8 encoded character
         extended_filename = (
@@ -240,11 +245,10 @@ class FSAbilities:
             ext_rp = subdir.append(extended_filename)
             ext_rp.touch()
         except (IOError, OSError):
-            if ext_rp:
-                assert not ext_rp.lstat()
+            if ext_rp and ext_rp.lstat():
+                ext_rp.delete()  # just to be very sure
             self.extended_filenames = 0
         else:
-            assert ext_rp.lstat()
             try:
                 ext_rp.delete()
             except (IOError, OSError):
@@ -261,7 +265,7 @@ class FSAbilities:
 
     def _detect_win_reserved_filenames(self, subdir):
         """Set self.win_reserved_filenames by trying to write a path"""
-        assert not self.read_only
+        assert not self.read_only, "Detection method can only work read-write."
 
         # Try Windows reserved characters
         win_reserved_filename = ':\\"'
@@ -270,11 +274,10 @@ class FSAbilities:
             win_rp = subdir.append(win_reserved_filename)
             win_rp.touch()
         except (IOError, OSError):
-            if win_rp:
-                assert not win_rp.lstat()
+            if win_rp and win_rp.lstat():
+                win_rp.delete()  # just to be very sure
             self.win_reserved_filenames = 1
         else:
-            assert win_rp.lstat()
             try:
                 win_rp.delete()
             except (IOError, OSError):
@@ -284,8 +287,6 @@ class FSAbilities:
 
     def _detect_acls(self, rp):
         """Set self.acls based on rp.  Does not write.  Needs to be local"""
-        assert Globals.local_connection is rp.conn
-        assert rp.lstat()
         if Globals.acls_active == 0:
             log.Log(
                 "POSIX ACLs test skipped. rdiff-backup run "
@@ -315,7 +316,7 @@ class FSAbilities:
 
     def _detect_case_sensitive_readwrite(self, subdir):
         """Determine if directory at rp is case sensitive by writing"""
-        assert not self.read_only
+        assert not self.read_only, "Detection method can only work read-write."
         upper_a = subdir.append("A")
         upper_a.touch()
         lower_a = subdir.append("a")
@@ -348,23 +349,18 @@ class FSAbilities:
             """
             files_list = robust.listrp(subdir)
             for filename in files_list:
+                file_rp = subdir.append(filename)
                 if filename != filename.swapcase():
                     return (subdir, files_list, filename)
-            for filename in files_list:
-                dir_rp = subdir.append(filename)
-                if dir_rp.isdir():
-                    subsearch = find_letter(dir_rp)
+                elif file_rp.isdir():
+                    subsearch = find_letter(file_rp)
                     if subsearch:
                         return subsearch
             return None
 
         def test_triple(dir_rp, dirlist, filename):
             """Return 1 if filename shows system case sensitive"""
-            try:
-                letter_rp = dir_rp.append(filename)
-            except OSError:
-                return 0
-            assert letter_rp.lstat(), letter_rp
+            # TODO move check + lstat to find_letter
             swapped = filename.swapcase()
             if swapped in dirlist:
                 return 1
@@ -388,8 +384,10 @@ class FSAbilities:
 
     def _detect_eas(self, rp, write):
         """Set extended attributes from rp. Tests writing if write is true."""
-        assert Globals.local_connection is rp.conn
-        assert rp.lstat()
+        assert rp.conn is Globals.local_connection, (
+            "Action only foreseen locally and not over {conn}.".format(
+                conn=rp.conn))
+        assert rp.lstat(), "Path '{rp!s}' must exist to test EAs.".format(rp=rp)
         if Globals.eas_active == 0:
             log.Log(
                 "Extended attributes test skipped. rdiff-backup run "
@@ -408,31 +406,36 @@ class FSAbilities:
                 self.eas = 0
                 return
 
+        test_ea = b"test val"
         try:
             xattr.list(rp.path)
             if write:
-                xattr.set(rp.path, b"user.test", b"test val")
-                assert xattr.get(rp.path, b"user.test") == b"test val"
+                xattr.set(rp.path, b"user.test", test_ea)
+                read_ea = xattr.get(rp.path, b"user.test")
         except IOError:
             log.Log(
                 "Extended attributes not supported by "
                 "filesystem at %s" % (rp.get_safepath(), ), 4)
             self.eas = 0
-        except AssertionError:
-            log.Log(
-                "Extended attributes support is broken on filesystem at "
-                "%s.\nPlease upgrade the filesystem driver, contact the "
-                "developers,\nor use the --no-eas option to disable "
-                "extended attributes\nsupport and suppress this message." %
-                (rp.get_safepath(), ), 1)
-            self.eas = 0
         else:
-            self.eas = 1
+            if write and read_ea != test_ea:
+                log.Log(
+                    "Extended attributes support is broken on filesystem at "
+                    "%s.\nPlease upgrade the filesystem driver, contact the "
+                    "developers,\nor use the --no-eas option to disable "
+                    "extended attributes\nsupport and suppress this message." %
+                    (rp.get_safepath(), ), 1)
+                self.eas = 0
+            else:
+                self.eas = 1
 
     def _detect_win_acls(self, dir_rp, write):
         """Test if windows access control lists are supported"""
-        assert Globals.local_connection is dir_rp.conn
-        assert dir_rp.lstat()
+        assert dir_rp.conn is Globals.local_connection, (
+            "Action only foreseen locally and not over {conn}.".format(
+                conn=dir_rp.conn))
+        assert dir_rp.lstat(), "Path '{rp!s}' must exist to test ACLs.".format(
+            rp=dir_rp)
         if Globals.win_acls_active == 0:
             log.Log(
                 "Windows ACLs test skipped. rdiff-backup run "
@@ -494,7 +497,6 @@ class FSAbilities:
             self.dir_inc_perms = 0
             return
         test_rp.setdata()
-        assert test_rp.isreg()
         if test_rp.getperms() == 0o7777 or test_rp.getperms() == 0o6777:
             self.dir_inc_perms = 1
         else:
@@ -520,7 +522,9 @@ class FSAbilities:
 
     def _detect_resource_fork_readwrite(self, dir_rp):
         """Test for resource forks by writing to regular_file/..namedfork/rsrc"""
-        assert dir_rp.conn is Globals.local_connection
+        assert dir_rp.conn is Globals.local_connection, (
+            "Action only foreseen locally and not over {conn}.".format(
+                conn=dir_rp.conn))
         reg_rp = dir_rp.append('regfile')
         reg_rp.touch()
 
@@ -529,12 +533,12 @@ class FSAbilities:
             fp_write = open(
                 os.path.join(reg_rp.path, b'..namedfork', b'rsrc'), 'wb')
             fp_write.write(s)
-            assert not fp_write.close()
+            fp_write.close()
 
             fp_read = open(
                 os.path.join(reg_rp.path, b'..namedfork', b'rsrc'), 'rb')
             s_back = fp_read.read()
-            assert not fp_read.close()
+            fp_read.close()
         except (OSError, IOError):
             self.resource_forks = 0
         else:
@@ -555,7 +559,7 @@ class FSAbilities:
                     rfork = rp.append(b'..namedfork', b'rsrc')
                     fp = rfork.open('rb')
                     fp.read()
-                    assert not fp.close()
+                    fp.close()
                 except (OSError, IOError):
                     self.resource_forks = 0
                     return
@@ -591,8 +595,6 @@ class FSAbilities:
         except (OSError, AttributeError):
             self.symlink_perms = 0
         else:
-            sym_dest.setdata()
-            assert sym_dest.issym()
             if sym_dest.getperms() == 0o700:
                 self.symlink_perms = 1
             else:
@@ -641,11 +643,18 @@ class FSAbilities:
         """
 
         period_rp = testdir.append("foo.")
-        assert not period_rp.lstat()
+        if period_rp.lstat():
+            log.Log.FatalError(
+                "File '{rp!s}' already exists where it shouldn't, something "
+                "is very wrong with your file system.".format(rp=period_rp))
 
         tmp_rp = testdir.append("foo")
         tmp_rp.touch()
-        assert tmp_rp.lstat()
+        if not tmp_rp.lstat():
+            log.Log.FatalError(
+                "File '{rp!s}' doesn't exist even though it's been created, "
+                "something is very wrong with your file system.".format(
+                    rp=tmp_rp))
 
         period_rp.setdata()
         if period_rp.lstat():
@@ -659,49 +668,35 @@ class FSAbilities:
         """Determine if directory at rp permits filenames with trailing
         spaces or periods without writing."""
 
-        def test_period(dir_rp, dirlist):
-            """Return 1 if trailing spaces and periods should be escaped"""
-            filename = dirlist[0]
+        # we check one file after the other in the given directory
+        dirlist = robust.listrp(rp)
+        for filename in dirlist:
             try:
-                test_rp = dir_rp.append(filename)
+                test_rp = rp.append(filename)
             except OSError:
-                return 0
-            assert test_rp.lstat(), test_rp
+                continue  # file is not fit for tests
+            if not test_rp.lstat():
+                continue  # file is not fit for tests
             period = filename + b'.'
             if period in dirlist:
-                return 0
-
-            return 0  # FIXME the following lines fail if filename is almost too long
-            period_rp = dir_rp.append(period)
+                self.escape_trailing_spaces = 0
+                return
+            try:
+                period_rp = rp.append(period)
+            except OSError:
+                continue  # file is not fit for tests
             if period_rp.lstat():
-                return 1
-            return 0
+                self.escape_trailing_spaces = 1
+                return
 
-        dirlist = robust.listrp(rp)
-        if len(dirlist):
-            self.escape_trailing_spaces = test_period(rp, dirlist)
-        else:
-            log.Log(
-                "Warning: could not determine if source directory at\n"
-                "  %s\npermits trailing spaces or periods in "
-                "filenames because we can't find any files.\n"
-                "It will be treated as permitting such files." %
-                rp.get_safepath(), 2)
-            self.escape_trailing_spaces = 0
-
-
-def get_readonly_fsa(desc_string, rp):
-    """Return an fsa with given description_string
-
-    Will be initialized read_only with given RPath rp.  We separate
-    this out into a separate function so the request can be vetted by
-    the security module.
-
-    """
-    if os.name == 'nt':
-        log.Log("Hardlinks disabled by default on Windows", 4)
-        SetConnections.UpdateGlobal('preserve_hardlinks', 0)
-    return FSAbilities(desc_string).init_readonly(rp)
+        # no file could be found to do any test
+        log.Log(
+            "Warning: could not determine if source directory at\n"
+            "  %s\npermits trailing spaces or periods in "
+            "filenames because we can't find any files.\n"
+            "It will be treated as permitting such files." %
+            rp.get_safepath(), 2)
+        self.escape_trailing_spaces = 0
 
 
 class SetGlobals:
@@ -775,21 +770,6 @@ class SetGlobals:
 class BackupSetGlobals(SetGlobals):
     """Functions for setting fsa related globals for backup session"""
 
-    def _update_triple(self, src_support, dest_support, attr_triple):
-        """Many of the settings have a common form we can handle here"""
-        active_attr, write_attr, conn_attr = attr_triple
-        if Globals.get(active_attr) == 0:
-            return  # don't override 0
-        for attr in attr_triple:
-            SetConnections.UpdateGlobal(attr, None)
-        if not src_support:
-            return  # if source doesn't support, nothing
-        SetConnections.UpdateGlobal(active_attr, 1)
-        self.in_conn.Globals.set_local(conn_attr, 1)
-        if dest_support:
-            SetConnections.UpdateGlobal(write_attr, 1)
-            self.out_conn.Globals.set_local(conn_attr, 1)
-
     def set_special_escapes(self, rbdir):
         """Escaping DOS devices and trailing periods/spaces works like
         regular filename escaping. If only the destination requires it,
@@ -851,6 +831,21 @@ class BackupSetGlobals(SetGlobals):
         if Globals.chars_to_quote:
             FilenameMapping.set_init_quote_vals()
         return update
+
+    def _update_triple(self, src_support, dest_support, attr_triple):
+        """Many of the settings have a common form we can handle here"""
+        active_attr, write_attr, conn_attr = attr_triple
+        if Globals.get(active_attr) == 0:
+            return  # don't override 0
+        for attr in attr_triple:
+            SetConnections.UpdateGlobal(attr, None)
+        if not src_support:
+            return  # if source doesn't support, nothing
+        SetConnections.UpdateGlobal(active_attr, 1)
+        self.in_conn.Globals.set_local(conn_attr, 1)
+        if dest_support:
+            SetConnections.UpdateGlobal(write_attr, 1)
+            self.out_conn.Globals.set_local(conn_attr, 1)
 
     def _get_ctq_from_fsas(self):
         """Determine chars_to_quote just from filesystems, no ctq file"""
@@ -928,28 +923,6 @@ repository from the old quoting chars to the new ones.""" %
 class RestoreSetGlobals(SetGlobals):
     """Functions for setting fsa-related globals for restore session"""
 
-    def _update_triple(self, src_support, dest_support, attr_triple):
-        """Update global settings for feature based on fsa results
-
-        This is slightly different from BackupSetGlobals._update_triple
-        because (using the mirror_metadata file) rpaths from the
-        source may have more information than the file system
-        supports.
-
-        """
-        active_attr, write_attr, conn_attr = attr_triple
-        if Globals.get(active_attr) == 0:
-            return  # don't override 0
-        for attr in attr_triple:
-            SetConnections.UpdateGlobal(attr, None)
-        if not dest_support:
-            return  # if dest doesn't support, do nothing
-        SetConnections.UpdateGlobal(active_attr, 1)
-        self.out_conn.Globals.set_local(conn_attr, 1)
-        self.out_conn.Globals.set_local(write_attr, 1)
-        if src_support:
-            self.in_conn.Globals.set_local(conn_attr, 1)
-
     def set_special_escapes(self, rbdir):
         """Set escape_dos_devices and escape_trailing_spaces from
         rdiff-backup-data dir, just like chars_to_quote"""
@@ -993,6 +966,28 @@ class RestoreSetGlobals(SetGlobals):
                 "assuming no quoting in backup repository.", 2)
             SetConnections.UpdateGlobal("chars_to_quote", b"")
 
+    def _update_triple(self, src_support, dest_support, attr_triple):
+        """Update global settings for feature based on fsa results
+
+        This is slightly different from BackupSetGlobals._update_triple
+        because (using the mirror_metadata file) rpaths from the
+        source may have more information than the file system
+        supports.
+
+        """
+        active_attr, write_attr, conn_attr = attr_triple
+        if Globals.get(active_attr) == 0:
+            return  # don't override 0
+        for attr in attr_triple:
+            SetConnections.UpdateGlobal(attr, None)
+        if not dest_support:
+            return  # if dest doesn't support, do nothing
+        SetConnections.UpdateGlobal(active_attr, 1)
+        self.out_conn.Globals.set_local(conn_attr, 1)
+        self.out_conn.Globals.set_local(write_attr, 1)
+        if src_support:
+            self.in_conn.Globals.set_local(conn_attr, 1)
+
 
 class SingleSetGlobals(RestoreSetGlobals):
     """For setting globals when dealing only with one filesystem"""
@@ -1000,19 +995,6 @@ class SingleSetGlobals(RestoreSetGlobals):
     def __init__(self, conn, fsa):
         self.conn = conn
         self.dest_fsa = fsa
-
-    def _update_triple(self, fsa_support, attr_triple):
-        """Update global vars from single fsa test"""
-        active_attr, write_attr, conn_attr = attr_triple
-        if Globals.get(active_attr) == 0:
-            return  # don't override 0
-        for attr in attr_triple:
-            SetConnections.UpdateGlobal(attr, None)
-        if not fsa_support:
-            return
-        SetConnections.UpdateGlobal(active_attr, 1)
-        SetConnections.UpdateGlobal(write_attr, 1)
-        self.conn.Globals.set_local(conn_attr, 1)
 
     def set_eas(self):
         self._update_triple(
@@ -1038,7 +1020,36 @@ class SingleSetGlobals(RestoreSetGlobals):
             self.dest_fsa.carbonfile,
             ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
 
+    def _update_triple(self, fsa_support, attr_triple):
+        """Update global vars from single fsa test"""
+        active_attr, write_attr, conn_attr = attr_triple
+        if Globals.get(active_attr) == 0:
+            return  # don't override 0
+        for attr in attr_triple:
+            SetConnections.UpdateGlobal(attr, None)
+        if not fsa_support:
+            return
+        SetConnections.UpdateGlobal(active_attr, 1)
+        SetConnections.UpdateGlobal(write_attr, 1)
+        self.conn.Globals.set_local(conn_attr, 1)
 
+
+# @API(get_readonly_fsa, 200)
+def get_readonly_fsa(desc_string, rp):
+    """Return an fsa with given description_string
+
+    Will be initialized read_only with given RPath rp.  We separate
+    this out into a separate function so the request can be vetted by
+    the security module.
+
+    """
+    if os.name == 'nt':
+        log.Log("Hardlinks disabled by default on Windows", 4)
+        SetConnections.UpdateGlobal('preserve_hardlinks', 0)
+    return FSAbilities(desc_string, rp, read_only=True)
+
+
+# @API(backup_set_globals, 200)
 def backup_set_globals(rpin, force):
     """Given rps for source filesystem and repository, set fsa globals
 
@@ -1046,10 +1057,12 @@ def backup_set_globals(rpin, force):
     need to write a new chars_to_quote file.
 
     """
-    assert Globals.rbdir.conn is Globals.local_connection
+    assert Globals.rbdir.conn is Globals.local_connection, (
+        "Action only foreseen locally and not over {conn}.".format(
+            conn=Globals.rbdir.conn))
     src_fsa = rpin.conn.fs_abilities.get_readonly_fsa('source', rpin)
     log.Log(str(src_fsa), 4)
-    dest_fsa = FSAbilities('destination').init_readwrite(Globals.rbdir)
+    dest_fsa = FSAbilities('destination', Globals.rbdir)
     log.Log(str(dest_fsa), 4)
 
     bsg = BackupSetGlobals(rpin.conn, Globals.rbdir.conn, src_fsa, dest_fsa)
@@ -1071,13 +1084,16 @@ def backup_set_globals(rpin, force):
         FilenameMapping.update_quoting(Globals.rbdir)
 
 
+# @API(restore_set_globals, 200)
 def restore_set_globals(rpout):
     """Set fsa related globals for restore session, given in/out rps"""
-    assert rpout.conn is Globals.local_connection
+    assert rpout.conn is Globals.local_connection, (
+        "Action only foreseen locally and not over {conn}.".format(
+            conn=rpout.conn))
     src_fsa = Globals.rbdir.conn.fs_abilities.get_readonly_fsa(
         'rdiff-backup repository', Globals.rbdir)
     log.Log(str(src_fsa), 4)
-    dest_fsa = FSAbilities('restore target').init_readwrite(rpout)
+    dest_fsa = FSAbilities('restore target', rpout)
     log.Log(str(dest_fsa), 4)
 
     rsg = RestoreSetGlobals(Globals.rbdir.conn, rpout.conn, src_fsa, dest_fsa)
@@ -1096,12 +1112,13 @@ def restore_set_globals(rpout):
     rsg.set_compatible_timestamps()
 
 
+# @API(single_set_globals, 200)
 def single_set_globals(rp, read_only=None):
     """Set fsa related globals for operation on single filesystem"""
     if read_only:
         fsa = rp.conn.fs_abilities.get_readonly_fsa(rp.path, rp)
     else:
-        fsa = FSAbilities(rp.path).init_readwrite(rp)
+        fsa = FSAbilities(rp.path, rp)
     log.Log(str(fsa), 4)
 
     ssg = SingleSetGlobals(rp.conn, fsa)

@@ -27,168 +27,7 @@ import os
 from . import Globals, restore, rorpiter, log, backup, rpath, hash, robust, Hardlink
 
 
-def Compare(src_rp, mirror_rp, inc_rp, compare_time):
-    """Compares metadata in src_rp dir with metadata in mirror_rp at time"""
-    repo_side = mirror_rp.conn.compare.RepoSide
-    data_side = src_rp.conn.compare.DataSide
-
-    repo_iter = repo_side.init_and_get_iter(mirror_rp, inc_rp, compare_time)
-    return_val = _print_reports(data_side.compare_fast(repo_iter))
-    repo_side.close_rf_cache()
-    return return_val
-
-
-def Compare_hash(src_rp, mirror_rp, inc_rp, compare_time):
-    """Compare files at src_rp with repo at compare_time
-
-    Note metadata differences, but also check to see if file data is
-    different.  If two regular files have the same size, hash the
-    source and compare to the hash presumably already present in repo.
-
-    """
-    repo_side = mirror_rp.conn.compare.RepoSide
-    data_side = src_rp.conn.compare.DataSide
-
-    repo_iter = repo_side.init_and_get_iter(mirror_rp, inc_rp, compare_time)
-    return_val = _print_reports(data_side.compare_hash(repo_iter))
-    repo_side.close_rf_cache()
-    return return_val
-
-
-def Compare_full(src_rp, mirror_rp, inc_rp, compare_time):
-    """Compare full data of files at src_rp with repo at compare_time
-
-    Like Compare_hash, but do not rely on hashes, instead copy full
-    data over.
-
-    """
-    repo_side = mirror_rp.conn.compare.RepoSide
-    data_side = src_rp.conn.compare.DataSide
-
-    src_iter = data_side.get_source_select()
-    attached_repo_iter = repo_side.attach_files(src_iter, mirror_rp, inc_rp,
-                                                compare_time)
-    report_iter = data_side.compare_full(src_rp, attached_repo_iter)
-    return_val = _print_reports(report_iter)
-    repo_side.close_rf_cache()
-    return return_val
-
-
-def Verify(mirror_rp, inc_rp, verify_time):
-    """Compute SHA1 sums of repository files and check against metadata"""
-    assert mirror_rp.conn is Globals.local_connection
-    repo_iter = RepoSide.init_and_get_iter(mirror_rp, inc_rp, verify_time)
-    base_index = RepoSide.mirror_base.index
-
-    bad_files = 0
-    for repo_rorp in repo_iter:
-        if not repo_rorp.isreg():
-            continue
-        verify_sha1 = _get_hash(repo_rorp)
-        if not verify_sha1:
-            log.Log(
-                "Warning: Cannot find SHA1 digest for file %s,\n"
-                "perhaps because this feature was added in v1.1.1" %
-                (repo_rorp.get_safeindexpath(), ), 2)
-            continue
-        fp = RepoSide.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
-        computed_hash = hash.compute_sha1_fp(fp)
-        if computed_hash == verify_sha1:
-            log.Log(
-                "Verified SHA1 digest of %s" % repo_rorp.get_safeindexpath(),
-                5)
-        else:
-            bad_files += 1
-            log.Log(
-                "Warning: Computed SHA1 digest of %s\n   %s\n"
-                "doesn't match recorded digest of\n   %s\n"
-                "Your backup repository may be corrupted!" %
-                (repo_rorp.get_safeindexpath(), computed_hash,
-                 verify_sha1), 2)
-    RepoSide.close_rf_cache()
-    if bad_files:
-        log.Log("Not all files could be verified.", 3)
-        return 2
-    log.Log("Every file verified successfully.", 3)
-    return 0
-
-
-def _get_hash(repo_rorp):
-    """ Try to get a sha1 digest from the repository.  If hardlinks
-    are saved in the metadata, get the sha1 from the first hardlink """
-    Hardlink.add_rorp(repo_rorp)
-    if Hardlink.is_linked(repo_rorp):
-        verify_sha1 = Hardlink.get_sha1(repo_rorp)
-    elif repo_rorp.has_sha1():
-        verify_sha1 = repo_rorp.get_sha1()
-    else:
-        verify_sha1 = None
-    Hardlink.del_rorp(repo_rorp)
-    return verify_sha1
-
-
-def _print_reports(report_iter):
-    """Given an iter of CompareReport objects, print them to screen"""
-    assert not Globals.server
-    changed_files_found = 0
-    for report in report_iter:
-        changed_files_found = 1
-        indexpath = report.index and b"/".join(report.index) or b"."
-        print("%s: %s" % (report.reason, os.fsdecode(indexpath)))
-
-    if not changed_files_found:
-        log.Log("No changes found.  Directory matches archive data.", 3)
-    return changed_files_found
-
-
-def _get_basic_report(src_rp, repo_rorp, comp_data_func=None):
-    """Compare src_rp and repo_rorp, return CompareReport
-
-    comp_data_func should be a function that accepts (src_rp,
-    repo_rorp) as arguments, and return 1 if they have the same data,
-    0 otherwise.  If comp_data_func is false, don't compare file data,
-    only metadata.
-
-    """
-    if src_rp:
-        index = src_rp.index
-    else:
-        index = repo_rorp.index
-    if not repo_rorp or not repo_rorp.lstat():
-        return CompareReport(index, "new")
-    elif not src_rp or not src_rp.lstat():
-        return CompareReport(index, "deleted")
-    elif comp_data_func and src_rp.isreg() and repo_rorp.isreg():
-        if src_rp == repo_rorp:
-            meta_changed = 0
-        else:
-            meta_changed = 1
-        data_changed = comp_data_func(src_rp, repo_rorp)
-
-        if not meta_changed and not data_changed:
-            return None
-        if meta_changed:
-            meta_string = "metadata changed, "
-        else:
-            meta_string = "metadata the same, "
-        if data_changed:
-            data_string = "data changed"
-        else:
-            data_string = "data the same"
-        return CompareReport(index, meta_string + data_string)
-    elif src_rp == repo_rorp:
-        return None
-    else:
-        return CompareReport(index, "changed")
-
-
-def _log_success(src_rorp, mir_rorp=None):
-    """Log that src_rorp and mir_rorp compare successfully"""
-    path = src_rorp and src_rorp.get_safeindexpath(
-    ) or mir_rorp.get_safeindexpath()
-    log.Log("Successful compare: %s" % (path, ), 5)
-
-
+# @API(RepoSide, 200)
 class RepoSide(restore.MirrorStruct):
     """On the repository side, comparing is like restoring"""
 
@@ -229,6 +68,7 @@ class RepoSide(restore.MirrorStruct):
                 yield rpath.RORPath(index)  # indicate deleted mir_rorp
 
 
+# @API(DataSide, 200)
 class DataSide(backup.SourceStruct):
     """On the side that has the current data, compare is like backing up"""
 
@@ -308,3 +148,168 @@ class CompareReport:
     def __init__(self, index, reason):
         self.index = index
         self.reason = reason
+
+
+def Compare(src_rp, mirror_rp, inc_rp, compare_time):
+    """Compares metadata in src_rp dir with metadata in mirror_rp at time"""
+    repo_side = mirror_rp.conn.compare.RepoSide
+    data_side = src_rp.conn.compare.DataSide
+
+    repo_iter = repo_side.init_and_get_iter(mirror_rp, inc_rp, compare_time)
+    return_val = _print_reports(data_side.compare_fast(repo_iter))
+    repo_side.close_rf_cache()
+    return return_val
+
+
+def Compare_hash(src_rp, mirror_rp, inc_rp, compare_time):
+    """Compare files at src_rp with repo at compare_time
+
+    Note metadata differences, but also check to see if file data is
+    different.  If two regular files have the same size, hash the
+    source and compare to the hash presumably already present in repo.
+
+    """
+    repo_side = mirror_rp.conn.compare.RepoSide
+    data_side = src_rp.conn.compare.DataSide
+
+    repo_iter = repo_side.init_and_get_iter(mirror_rp, inc_rp, compare_time)
+    return_val = _print_reports(data_side.compare_hash(repo_iter))
+    repo_side.close_rf_cache()
+    return return_val
+
+
+def Compare_full(src_rp, mirror_rp, inc_rp, compare_time):
+    """Compare full data of files at src_rp with repo at compare_time
+
+    Like Compare_hash, but do not rely on hashes, instead copy full
+    data over.
+
+    """
+    repo_side = mirror_rp.conn.compare.RepoSide
+    data_side = src_rp.conn.compare.DataSide
+
+    src_iter = data_side.get_source_select()
+    attached_repo_iter = repo_side.attach_files(src_iter, mirror_rp, inc_rp,
+                                                compare_time)
+    report_iter = data_side.compare_full(src_rp, attached_repo_iter)
+    return_val = _print_reports(report_iter)
+    repo_side.close_rf_cache()
+    return return_val
+
+
+# @API(Verify, 200)
+def Verify(mirror_rp, inc_rp, verify_time):
+    """Compute SHA1 sums of repository files and check against metadata"""
+    assert mirror_rp.conn is Globals.local_connection, (
+        "Only verify mirror locally, not remotely over '{conn}'.".format(
+            conn=mirror_rp.conn))
+    repo_iter = RepoSide.init_and_get_iter(mirror_rp, inc_rp, verify_time)
+    base_index = RepoSide.mirror_base.index
+
+    bad_files = 0
+    for repo_rorp in repo_iter:
+        if not repo_rorp.isreg():
+            continue
+        verify_sha1 = _get_hash(repo_rorp)
+        if not verify_sha1:
+            log.Log(
+                "Warning: Cannot find SHA1 digest for file %s,\n"
+                "perhaps because this feature was added in v1.1.1" %
+                (repo_rorp.get_safeindexpath(), ), 2)
+            continue
+        fp = RepoSide.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
+        computed_hash = hash.compute_sha1_fp(fp)
+        if computed_hash == verify_sha1:
+            log.Log(
+                "Verified SHA1 digest of %s" % repo_rorp.get_safeindexpath(),
+                5)
+        else:
+            bad_files += 1
+            log.Log(
+                "Warning: Computed SHA1 digest of %s\n   %s\n"
+                "doesn't match recorded digest of\n   %s\n"
+                "Your backup repository may be corrupted!" %
+                (repo_rorp.get_safeindexpath(), computed_hash,
+                 verify_sha1), 2)
+    RepoSide.close_rf_cache()
+    if bad_files:
+        log.Log("Not all files could be verified.", 3)
+        return 2
+    log.Log("Every file verified successfully.", 3)
+    return 0
+
+
+def _get_hash(repo_rorp):
+    """ Try to get a sha1 digest from the repository.  If hardlinks
+    are saved in the metadata, get the sha1 from the first hardlink """
+    Hardlink.add_rorp(repo_rorp)
+    if Hardlink.is_linked(repo_rorp):
+        verify_sha1 = Hardlink.get_sha1(repo_rorp)
+    elif repo_rorp.has_sha1():
+        verify_sha1 = repo_rorp.get_sha1()
+    else:
+        verify_sha1 = None
+    Hardlink.del_rorp(repo_rorp)
+    return verify_sha1
+
+
+def _print_reports(report_iter):
+    """Given an iter of CompareReport objects, print them to screen"""
+    assert not Globals.server, "This function shouldn't run as server."
+    changed_files_found = 0
+    for report in report_iter:
+        changed_files_found = 1
+        indexpath = report.index and b"/".join(report.index) or b"."
+        print("%s: %s" % (report.reason, os.fsdecode(indexpath)))
+
+    if not changed_files_found:
+        log.Log("No changes found.  Directory matches archive data.", 3)
+    return changed_files_found
+
+
+def _get_basic_report(src_rp, repo_rorp, comp_data_func=None):
+    """Compare src_rp and repo_rorp, return CompareReport
+
+    comp_data_func should be a function that accepts (src_rp,
+    repo_rorp) as arguments, and return 1 if they have the same data,
+    0 otherwise.  If comp_data_func is false, don't compare file data,
+    only metadata.
+
+    """
+    if src_rp:
+        index = src_rp.index
+    else:
+        index = repo_rorp.index
+    if not repo_rorp or not repo_rorp.lstat():
+        return CompareReport(index, "new")
+    elif not src_rp or not src_rp.lstat():
+        return CompareReport(index, "deleted")
+    elif comp_data_func and src_rp.isreg() and repo_rorp.isreg():
+        if src_rp == repo_rorp:
+            meta_changed = 0
+        else:
+            meta_changed = 1
+        data_changed = comp_data_func(src_rp, repo_rorp)
+
+        if not meta_changed and not data_changed:
+            return None
+        if meta_changed:
+            meta_string = "metadata changed, "
+        else:
+            meta_string = "metadata the same, "
+        if data_changed:
+            data_string = "data changed"
+        else:
+            data_string = "data the same"
+        return CompareReport(index, meta_string + data_string)
+    elif src_rp == repo_rorp:
+        return None
+    else:
+        return CompareReport(index, "changed")
+
+
+def _log_success(src_rorp, mir_rorp=None):
+    """Log that src_rorp and mir_rorp compare successfully"""
+    path = src_rorp and src_rorp.get_safeindexpath(
+    ) or mir_rorp.get_safeindexpath()
+    log.Log("Successful compare: %s" % (path, ), 5)

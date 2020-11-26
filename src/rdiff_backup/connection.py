@@ -93,7 +93,9 @@ class LocalConnection(Connection):
 
     def __init__(self):
         """This prevents two instances of LocalConnection"""
-        assert not Globals.local_connection
+        assert not Globals.local_connection, (
+            "Local connection has already been initialized with {conn}.".format(
+                conn=Globals.local_connection))
         self.conn_number = 0  # changed by SetConnections for server
 
     def __getattr__(self, name):
@@ -253,8 +255,9 @@ class LowLevelPipeConnection(Connection):
 
     def _write(self, headerchar, data, req_num):
         """Write header and then data to the pipe"""
-        assert len(headerchar) == 1, \
-            "Header type %s can only have one letter/byte" % headerchar
+        assert len(headerchar) == 1, (
+            "Header type {hdr} can only have one letter/byte".format(
+                hdr=headerchar))
         if isinstance(headerchar, str):  # it can only be an ASCII character
             headerchar = headerchar.encode('ascii')
         try:
@@ -310,9 +313,11 @@ class LowLevelPipeConnection(Connection):
             result = self._getrpath(data)
         elif format_string == b"Q":
             result = self._getqrpath(data)
-        else:
-            assert format_string == b"c", header_string
+        elif format_string == b"c":
             result = Globals.connection_dict[self._b2i(data)]
+        else:
+            raise ConnectionReadError(
+                "Format character '{form}' invalid.".format(form=format_string))
         log.Log.conn("received", result, req_num)
         return (req_num, result)
 
@@ -351,6 +356,9 @@ class PipeConnection(LowLevelPipeConnection):
 
     """
 
+    # @API(conn_number, 200)
+    # conn_number is defined in the __init__ function
+
     def __init__(self, inpipe, outpipe, conn_number=0):
         """Init PipeConnection
 
@@ -369,54 +377,9 @@ class PipeConnection(LowLevelPipeConnection):
     def __str__(self):
         return "PipeConnection %d" % self.conn_number
 
-    def _get_response(self, desired_req_num):
-        """Read from pipe, responding to requests until req_num.
-
-        Sometimes after a request is sent, the other side will make
-        another request before responding to the original one.  In
-        that case, respond to the request.  But return once the right
-        response is given.
-
-        """
-        while 1:
-            try:
-                req_num, object = self._get()
-            except ConnectionQuit:
-                self._put("quitting", self._get_new_req_num())
-                self._close()
-                return
-            if req_num == desired_req_num:
-                return object
-            else:
-                assert isinstance(object, ConnectionRequest)
-                self._answer_request(object, req_num)
-
-    def _answer_request(self, request, req_num):
-        """Put the object requested by request down the pipe"""
-        del self.unused_request_numbers[req_num]
-        argument_list = []
-        for i in range(request.num_args):
-            arg_req_num, arg = self._get()
-            assert arg_req_num == req_num
-            argument_list.append(arg)
-        try:
-            Security.vet_request(request, argument_list)
-            result = eval(request.function_string)(*argument_list)
-        except BaseException:
-            result = self._extract_exception()
-        self._put(result, req_num)
-        self.unused_request_numbers[req_num] = None
-
-    def _extract_exception(self):
-        """Return active exception"""
-        if robust.is_routine_fatal(sys.exc_info()[1]):
-            raise  # Fatal error--No logging necessary, but connection down
-        if log.Log.verbosity >= 5 or log.Log.term_verbosity >= 5:
-            log.Log(
-                "Sending back exception %s of type %s: \n%s" %
-                (sys.exc_info()[1], sys.exc_info()[0], "".join(
-                    traceback.format_tb(sys.exc_info()[2]))), 5)
-        return sys.exc_info()[1]
+    def __getattr__(self, name):
+        """Intercept attributes to allow for . invocation"""
+        return EmulateCallable(self, name)
 
     def Server(self):
         """Start server's read eval return loop"""
@@ -425,6 +388,7 @@ class PipeConnection(LowLevelPipeConnection):
         log.Log("Starting server", 6)
         self._get_response(-1)
 
+    # @API(reval, 200)
     def reval(self, function_string, *args):
         """Execute command on remote side
 
@@ -448,6 +412,67 @@ class PipeConnection(LowLevelPipeConnection):
         else:
             return result
 
+    # @API(quit, 200)
+    def quit(self):
+        """Close the associated pipes and tell server side to quit"""
+        assert not Globals.server, "This function shouldn't run as server."
+        self._putquit()
+        self._get()
+        self._close()
+
+    def _get_response(self, desired_req_num):
+        """Read from pipe, responding to requests until req_num.
+
+        Sometimes after a request is sent, the other side will make
+        another request before responding to the original one.  In
+        that case, respond to the request.  But return once the right
+        response is given.
+
+        """
+        while 1:
+            try:
+                req_num, object = self._get()
+            except ConnectionQuit:
+                self._put("quitting", self._get_new_req_num())
+                self._close()
+                return
+            if req_num == desired_req_num:
+                return object
+            else:
+                assert isinstance(object, ConnectionRequest), (
+                    "Object '{obj}' isn't a connection request but "
+                    "a '{otype}'.".format(obj=object, otype=type(object)))
+                self._answer_request(object, req_num)
+
+    def _answer_request(self, request, req_num):
+        """Put the object requested by request down the pipe"""
+        del self.unused_request_numbers[req_num]
+        argument_list = []
+        for i in range(request.num_args):
+            arg_req_num, arg = self._get()
+            assert arg_req_num == req_num, (
+                "Object {rnum} and argument {anum} numbers should be "
+                "the same.".object(rnum=req_num, anum=arg_req_num))
+            argument_list.append(arg)
+        try:
+            Security.vet_request(request, argument_list)
+            result = eval(request.function_string)(*argument_list)
+        except BaseException:
+            result = self._extract_exception()
+        self._put(result, req_num)
+        self.unused_request_numbers[req_num] = None
+
+    def _extract_exception(self):
+        """Return active exception"""
+        if robust.is_routine_fatal(sys.exc_info()[1]):
+            raise  # Fatal error--No logging necessary, but connection down
+        if log.Log.verbosity >= 5 or log.Log.term_verbosity >= 5:
+            log.Log(
+                "Sending back exception %s of type %s: \n%s" %
+                (sys.exc_info()[1], sys.exc_info()[0], "".join(
+                    traceback.format_tb(sys.exc_info()[2]))), 5)
+        return sys.exc_info()[1]
+
     def _get_new_req_num(self):
         """Allot a new request number and return it"""
         if not self.unused_request_numbers:
@@ -455,17 +480,6 @@ class PipeConnection(LowLevelPipeConnection):
         req_num = list(self.unused_request_numbers.keys())[0]
         del self.unused_request_numbers[req_num]
         return req_num
-
-    def quit(self):
-        """Close the associated pipes and tell server side to quit"""
-        assert not Globals.server
-        self._putquit()
-        self._get()
-        self._close()
-
-    def __getattr__(self, name):
-        """Intercept attributes to allow for . invocation"""
-        return EmulateCallable(self, name)
 
 
 class RedirectedConnection(Connection):
@@ -503,20 +517,6 @@ class RedirectedConnection(Connection):
     def __getattr__(self, name):
         return EmulateCallableRedirected(self.conn_number, self.routing_conn,
                                          name)
-
-
-def RedirectedRun(conn_number, func, *args):
-    """Run func with args on connection with conn number conn_number
-
-    This function is meant to redirect requests from one connection to
-    another, so conn_number must not be the local connection (and also
-    for security reasons since this function is always made
-    available).
-
-    """
-    conn = Globals.connection_dict[conn_number]
-    assert conn is not Globals.local_connection, conn
-    return conn.reval(func, *args)
 
 
 class EmulateCallable:
@@ -600,6 +600,14 @@ class VirtualFile:
         self.connection = connection
         self.id = id
 
+    def __iter__(self):
+        """Iterates lines in file, like normal iter(file) behavior"""
+        while 1:
+            line = self.readline()
+            if not line:
+                break
+            yield line
+
     def read(self, length=None):
         return self.connection.VirtualFile.readfromid(self.id, length)
 
@@ -612,13 +620,21 @@ class VirtualFile:
     def close(self):
         return self.connection.VirtualFile.closebyid(self.id)
 
-    def __iter__(self):
-        """Iterates lines in file, like normal iter(file) behavior"""
-        while 1:
-            line = self.readline()
-            if not line:
-                break
-            yield line
+
+def RedirectedRun(conn_number, func, *args):
+    """Run func with args on connection with conn number conn_number
+
+    This function is meant to redirect requests from one connection to
+    another, so conn_number must not be the local connection (and also
+    for security reasons since this function is always made
+    available).
+
+    """
+    conn = Globals.connection_dict[conn_number]
+    assert conn is not Globals.local_connection, (
+        "A redirected run shouldn't be required locally for {fnc}.".format(
+            fnc=func.__name__))
+    return conn.reval(func, *args)
 
 
 # everything has to be available here for remote connection's use, but

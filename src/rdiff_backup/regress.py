@@ -50,180 +50,6 @@ class RegressException(Exception):
     pass
 
 
-def Regress(mirror_rp):
-    """Bring mirror and inc directory back to regress_to_time
-
-    Also affects the rdiff-backup-data directory, so Globals.rbdir
-    should be set.  Regress should only work one step at a time
-    (i.e. don't "regress" through two separate backup sets.  This
-    function should be run locally to the rdiff-backup-data directory.
-
-    """
-    inc_rpath = Globals.rbdir.append_path(b"increments")
-    assert mirror_rp.index == () and inc_rpath.index == ()
-    assert mirror_rp.isdir() and inc_rpath.isdir()
-    assert mirror_rp.conn is inc_rpath.conn is Globals.local_connection
-    manager, former_current_mirror_rp = _set_regress_time()
-    _set_restore_times()
-    _regress_rbdir(manager)
-    ITR = rorpiter.IterTreeReducer(RegressITRB, [])
-    for rf in _iterate_meta_rfs(mirror_rp, inc_rpath):
-        ITR(rf.index, rf)
-    ITR.Finish()
-    if former_current_mirror_rp:
-        if Globals.do_fsync:
-            C.sync()  # Sync first, since we are marking dest dir as good now
-        former_current_mirror_rp.delete()
-
-
-def _set_regress_time():
-    """Set global regress_time to previous successful backup
-
-    If there are two current_mirror increments, then the last one
-    corresponds to a backup session that failed.
-
-    """
-    global regress_time, unsuccessful_backup_time
-    manager = metadata.SetManager()
-    curmir_incs = manager.sorted_prefix_inclist(b'current_mirror')
-    assert len(curmir_incs) == 2, \
-        "Found %s current_mirror flags, expected 2" % len(curmir_incs)
-    mirror_rp_to_delete = curmir_incs[0]
-    regress_time = curmir_incs[1].getinctime()
-    unsuccessful_backup_time = mirror_rp_to_delete.getinctime()
-    log.Log("Regressing to %s" % Time.timetopretty(regress_time), 4)
-    return manager, mirror_rp_to_delete
-
-
-def _set_restore_times():
-    """Set _rest_time and _mirror_time in the restore module
-
-    _rest_time (restore time) corresponds to the last successful
-    backup time.  _mirror_time is the unsuccessful backup time.
-
-    """
-    restore.MirrorStruct._mirror_time = unsuccessful_backup_time
-    restore.MirrorStruct._rest_time = regress_time
-
-
-def _regress_rbdir(meta_manager):
-    """Delete the increments in the rdiff-backup-data directory
-
-    Returns the former current mirror rp so we can delete it later.
-    All of the other rp's should be deleted before the actual regress,
-    to clear up disk space the rest of the procedure may need.
-
-    Also, in case the previous session failed while diffing the
-    metadata file, either recreate the mirror_metadata snapshot, or
-    delete the extra regress_time diff.
-
-    """
-    has_meta_diff, has_meta_snap = 0, 0
-    for old_rp in meta_manager.timerpmap[regress_time]:
-        if old_rp.getincbase_bname() == b'mirror_metadata':
-            if old_rp.getinctype() == b'snapshot':
-                has_meta_snap = 1
-            else:
-                assert old_rp.getinctype() == b'diff', old_rp
-                has_meta_diff = 1
-    if has_meta_diff and not has_meta_snap:
-        _recreate_meta(meta_manager)
-
-    for new_rp in meta_manager.timerpmap[unsuccessful_backup_time]:
-        if new_rp.getincbase_bname() != b'current_mirror':
-            log.Log("Deleting old diff at %s" % new_rp.get_safepath(), 5)
-            new_rp.delete()
-    for rp in meta_manager.timerpmap[regress_time]:
-        if (rp.getincbase_bname() == b'mirror_metadata'
-                and rp.getinctype() == b'diff'):
-            rp.delete()
-            break
-
-
-def _recreate_meta(meta_manager):
-    """Make regress_time mirror_metadata snapshot by patching
-
-    We write to a tempfile first.  Otherwise, in case of a crash, it
-    would seem we would have an intact snapshot and partial diff, not
-    the reverse.
-
-    """
-    temprp = [Globals.rbdir.get_temp_rpath()]
-
-    def callback(rp):
-        temprp[0] = rp
-
-    writer = metadata.MetadataFile(
-        temprp[0], 'wb', check_path=0, callback=callback)
-    for rorp in meta_manager.get_meta_at_time(regress_time, None):
-        writer.write_object(rorp)
-    writer.close()
-
-    finalrp = Globals.rbdir.append(
-        b"mirror_metadata.%b.snapshot.gz" % Time.timetobytes(regress_time))
-    assert not finalrp.lstat(), finalrp
-    rpath.rename(temprp[0], finalrp)
-    if Globals.fsync_directories:
-        Globals.rbdir.fsync()
-
-
-def _iterate_raw_rfs(mirror_rp, inc_rp):
-    """Iterate all RegressFile objects in mirror/inc directory
-
-    Also changes permissions of unreadable files.  We don't have to
-    change them back later because regress will do that for us.
-
-    """
-    root_rf = RegressFile(mirror_rp, inc_rp, restore.get_inclist(inc_rp))
-
-    def helper(rf):
-        mirror_rp = rf.mirror_rp
-        if Globals.process_uid != 0:
-            if mirror_rp.isreg() and not mirror_rp.readable():
-                mirror_rp.chmod(0o400 | mirror_rp.getperms())
-            elif mirror_rp.isdir() and not mirror_rp.hasfullperms():
-                mirror_rp.chmod(0o700 | mirror_rp.getperms())
-        yield rf
-        if rf.mirror_rp.isdir() or rf.inc_rp.isdir():
-            for sub_rf in rf.yield_sub_rfs():
-                for sub_sub_rf in helper(sub_rf):
-                    yield sub_sub_rf
-
-    return helper(root_rf)
-
-
-def _yield_metadata():
-    """Iterate rorps from metadata file, if any are available"""
-    metadata.SetManager()
-    metadata_iter = metadata.ManagerObj.GetAtTime(regress_time)
-    if metadata_iter:
-        return metadata_iter
-    log.Log.FatalError("No metadata for time %s (%s) found,\ncannot regress" %
-                       (Time.timetopretty(regress_time), regress_time))
-
-
-def _iterate_meta_rfs(mirror_rp, inc_rp):
-    """Yield RegressFile objects with extra metadata information added
-
-    Each RegressFile will have an extra object variable .metadata_rorp
-    which will contain the metadata attributes of the mirror file at
-    regress_time.
-
-    """
-    raw_rfs = _iterate_raw_rfs(mirror_rp, inc_rp)
-    collated = rorpiter.Collate2Iters(raw_rfs, _yield_metadata())
-    for raw_rf, metadata_rorp in collated:
-        raw_rf = longname.update_regressfile(raw_rf, metadata_rorp, mirror_rp)
-        if not raw_rf:
-            log.Log(
-                "Warning, metadata file has entry for %s,\n"
-                "but there are no associated files." %
-                (metadata_rorp.get_safeindexpath(), ), 2)
-            continue
-        raw_rf.set_metadata_rorp(metadata_rorp)
-        yield raw_rf
-
-
 class RegressFile(restore.RestoreFile):
     """Like RestoreFile but with metadata
 
@@ -305,30 +131,6 @@ class RegressITRB(rorpiter.ITRBranch):
             log.Log("Deleting increment %s" % rf.regress_inc.get_safepath(), 5)
             rf.regress_inc.delete()
 
-    def _restore_orig_regfile(self, rf):
-        """Restore original regular file
-
-        This is the trickiest case for avoiding information loss,
-        because we don't want to delete the increment before the
-        mirror is fully written.
-
-        """
-        assert rf.metadata_rorp.isreg()
-        if rf.mirror_rp.isreg():
-            tf = rf.mirror_rp.get_temp_rpath(sibling=True)
-            tf.write_from_fileobj(rf.get_restore_fp())
-            tf.fsync_with_dir()  # make sure tf fully written before move
-            rpath.copy_attribs(rf.metadata_rorp, tf)
-            rpath.rename(tf, rf.mirror_rp)  # move is atomic
-        else:
-            if rf.mirror_rp.lstat():
-                rf.mirror_rp.delete()
-            rf.mirror_rp.write_from_fileobj(rf.get_restore_fp())
-            rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
-        if Globals.fsync_directories:
-            rf.mirror_rp.get_parent_rp().fsync(
-            )  # force move before inc delete
-
     def start_process(self, index, rf):
         """Start processing directory"""
         if rf.metadata_rorp.isdir():
@@ -357,7 +159,9 @@ class RegressITRB(rorpiter.ITRBranch):
                 log.Log("Regressing file %s" % rf.mirror_rp.get_safepath(), 5)
                 rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
         else:  # replacing a dir with some other kind of file
-            assert rf.mirror_rp.isdir()
+            assert rf.mirror_rp.isdir(), (
+                "Mirror '{mrp!s}' can only be a directory.".format(
+                    mrp=rf.mirror_rp))
             log.Log("Replacing directory %s" % rf.mirror_rp.get_safepath(), 5)
             if rf.metadata_rorp.isreg():
                 self._restore_orig_regfile(rf)
@@ -368,7 +172,34 @@ class RegressITRB(rorpiter.ITRBranch):
             log.Log("Deleting increment %s" % rf.regress_inc.get_safepath(), 5)
             rf.regress_inc.delete()
 
+    def _restore_orig_regfile(self, rf):
+        """Restore original regular file
 
+        This is the trickiest case for avoiding information loss,
+        because we don't want to delete the increment before the
+        mirror is fully written.
+
+        """
+        assert rf.metadata_rorp.isreg(), (
+            "Metadata path '{mrp!s}' can only be regular file.".format(
+                mrp=rf.metadata_rorp))
+        if rf.mirror_rp.isreg():
+            tf = rf.mirror_rp.get_temp_rpath(sibling=True)
+            tf.write_from_fileobj(rf.get_restore_fp())
+            tf.fsync_with_dir()  # make sure tf fully written before move
+            rpath.copy_attribs(rf.metadata_rorp, tf)
+            rpath.rename(tf, rf.mirror_rp)  # move is atomic
+        else:
+            if rf.mirror_rp.lstat():
+                rf.mirror_rp.delete()
+            rf.mirror_rp.write_from_fileobj(rf.get_restore_fp())
+            rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
+        if Globals.fsync_directories:
+            rf.mirror_rp.get_parent_rp().fsync(
+            )  # force move before inc delete
+
+
+# @API(check_pids, 200)
 def check_pids(curmir_incs):
     """Check PIDs in curmir markers to make sure rdiff-backup not running"""
     pid_re = re.compile(r"^PID\s*([0-9]+)", re.I | re.M)
@@ -382,17 +213,9 @@ def check_pids(curmir_incs):
             return int(match.group(1))
 
     def pid_running(pid):
-        """True if we know if process with pid is currently running"""
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:  # errno.ESRCH - pid doesn't exist
-            return 0
-        except OSError:  # any other OS error
-            log.Log(
-                "Warning: unable to check if PID %d still running" % (pid, ),
-                2)
-        except AttributeError:
-            assert os.name == 'nt'
+        """Return True if we know if process with pid is currently running,
+        False if it isn't running, and None if we don't know for sure."""
+        if os.name == 'nt':
             import win32api
             import win32con
             import pywintypes
@@ -402,19 +225,37 @@ def check_pids(curmir_incs):
                                                pid)
             except pywintypes.error as error:
                 if error[0] == 87:
-                    return 0
+                    return False
                 else:
                     msg = "Warning: unable to check if PID %d still running"
                     log.Log(msg % pid, 2)
-            if process:
-                win32api.CloseHandle(process)
-                return 1
-            return 0
-        return 1
+                    return None  # we don't know if the process is running
+            else:
+                if process:
+                    win32api.CloseHandle(process)
+                    return True
+                else:
+                    return False
+        else:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:  # errno.ESRCH - pid doesn't exist
+                return False
+            except OSError:  # any other OS error
+                log.Log(
+                    "Warning: unable to check if PID %d still running" % (pid, ),
+                    2)
+                return None  # we don't know if the process is still running
+            else:  # the process still exists
+                return True
 
     for curmir_rp in curmir_incs:
-        assert Globals.local_connection is curmir_rp.conn
+        assert curmir_rp.conn is Globals.local_connection, (
+            "Function must be called locally not over '{conn}'.".format(
+                conn=curmir_rp.conn))
         pid = extract_pid(curmir_rp)
+        # FIXME differentiate between don't know and know and handle err.errno == errno.EPERM:
+        # EPERM clearly means there's a process to deny access to with OSError
         if pid is not None and pid_running(pid):
             log.Log.FatalError(
                 """It appears that a previous rdiff-backup session with process
@@ -422,3 +263,187 @@ id %d is still running.  If two different rdiff-backup processes write
 the same repository simultaneously, data corruption will probably
 result.  To proceed with regress anyway, rerun rdiff-backup with the
 --force option.""" % (pid, ))
+
+
+# @API(Regress, 200)
+def Regress(mirror_rp):
+    """Bring mirror and inc directory back to regress_to_time
+
+    Also affects the rdiff-backup-data directory, so Globals.rbdir
+    should be set.  Regress should only work one step at a time
+    (i.e. don't "regress" through two separate backup sets.  This
+    function should be run locally to the rdiff-backup-data directory.
+
+    """
+    inc_rpath = Globals.rbdir.append_path(b"increments")
+    assert mirror_rp.index == () and inc_rpath.index == (), (
+        "Mirror and increment paths must have an empty index")
+    assert mirror_rp.isdir() and inc_rpath.isdir(), (
+        "Mirror and increments paths must be directories")
+    assert mirror_rp.conn is inc_rpath.conn is Globals.local_connection, (
+        "Regress must happen locally.")
+    manager, former_current_mirror_rp = _set_regress_time()
+    _set_restore_times()
+    _regress_rbdir(manager)
+    ITR = rorpiter.IterTreeReducer(RegressITRB, [])
+    for rf in _iterate_meta_rfs(mirror_rp, inc_rpath):
+        ITR(rf.index, rf)
+    ITR.Finish()
+    if former_current_mirror_rp:
+        if Globals.do_fsync:
+            C.sync()  # Sync first, since we are marking dest dir as good now
+        former_current_mirror_rp.delete()
+
+
+def _set_regress_time():
+    """Set global regress_time to previous successful backup
+
+    If there are two current_mirror increments, then the last one
+    corresponds to a backup session that failed.
+
+    """
+    global regress_time, unsuccessful_backup_time
+    manager = metadata.SetManager()
+    curmir_incs = manager.sorted_prefix_inclist(b'current_mirror')
+    assert len(curmir_incs) == 2, (
+        "Found {ilen} current_mirror flags, expected 2".format(
+            ilen=len(curmir_incs)))
+    mirror_rp_to_delete = curmir_incs[0]
+    regress_time = curmir_incs[1].getinctime()
+    unsuccessful_backup_time = mirror_rp_to_delete.getinctime()
+    log.Log("Regressing to %s" % Time.timetopretty(regress_time), 4)
+    return manager, mirror_rp_to_delete
+
+
+def _set_restore_times():
+    """Set _rest_time and _mirror_time in the restore module
+
+    _rest_time (restore time) corresponds to the last successful
+    backup time.  _mirror_time is the unsuccessful backup time.
+
+    """
+    restore.MirrorStruct._mirror_time = unsuccessful_backup_time
+    restore.MirrorStruct._rest_time = regress_time
+
+
+def _regress_rbdir(meta_manager):
+    """Delete the increments in the rdiff-backup-data directory
+
+    Returns the former current mirror rp so we can delete it later.
+    All of the other rp's should be deleted before the actual regress,
+    to clear up disk space the rest of the procedure may need.
+
+    Also, in case the previous session failed while diffing the
+    metadata file, either recreate the mirror_metadata snapshot, or
+    delete the extra regress_time diff.
+
+    """
+    has_meta_diff, has_meta_snap = 0, 0
+    for old_rp in meta_manager.timerpmap[regress_time]:
+        if old_rp.getincbase_bname() == b'mirror_metadata':
+            if old_rp.getinctype() == b'snapshot':
+                has_meta_snap = 1
+            elif old_rp.getinctype() == b'diff':
+                has_meta_diff = 1
+            else:
+                raise ValueError(
+                    "Increment type for metadata mirror must be one of "
+                    "'snapshot' or 'diff', not {mtype}.".format(
+                        mtype=old_rp.getinctype()))
+    if has_meta_diff and not has_meta_snap:
+        _recreate_meta(meta_manager)
+
+    for new_rp in meta_manager.timerpmap[unsuccessful_backup_time]:
+        if new_rp.getincbase_bname() != b'current_mirror':
+            log.Log("Deleting old diff at %s" % new_rp.get_safepath(), 5)
+            new_rp.delete()
+    for rp in meta_manager.timerpmap[regress_time]:
+        if (rp.getincbase_bname() == b'mirror_metadata'
+                and rp.getinctype() == b'diff'):
+            rp.delete()
+            break
+
+
+def _recreate_meta(meta_manager):
+    """Make regress_time mirror_metadata snapshot by patching
+
+    We write to a tempfile first.  Otherwise, in case of a crash, it
+    would seem we would have an intact snapshot and partial diff, not
+    the reverse.
+
+    """
+    temprp = [Globals.rbdir.get_temp_rpath()]
+
+    def callback(rp):
+        temprp[0] = rp
+
+    writer = metadata.MetadataFile(
+        temprp[0], 'wb', check_path=0, callback=callback)
+    for rorp in meta_manager.get_meta_at_time(regress_time, None):
+        writer.write_object(rorp)
+    writer.close()
+
+    finalrp = Globals.rbdir.append(
+        b"mirror_metadata.%b.snapshot.gz" % Time.timetobytes(regress_time))
+    assert not finalrp.lstat(), (
+        "Metadata path '{mrp!s}' shouldn't exist.".format(mrp=finalrp))
+    rpath.rename(temprp[0], finalrp)
+    if Globals.fsync_directories:
+        Globals.rbdir.fsync()
+
+
+def _iterate_raw_rfs(mirror_rp, inc_rp):
+    """Iterate all RegressFile objects in mirror/inc directory
+
+    Also changes permissions of unreadable files.  We don't have to
+    change them back later because regress will do that for us.
+
+    """
+    root_rf = RegressFile(mirror_rp, inc_rp, restore.get_inclist(inc_rp))
+
+    def helper(rf):
+        mirror_rp = rf.mirror_rp
+        if Globals.process_uid != 0:
+            if mirror_rp.isreg() and not mirror_rp.readable():
+                mirror_rp.chmod(0o400 | mirror_rp.getperms())
+            elif mirror_rp.isdir() and not mirror_rp.hasfullperms():
+                mirror_rp.chmod(0o700 | mirror_rp.getperms())
+        yield rf
+        if rf.mirror_rp.isdir() or rf.inc_rp.isdir():
+            for sub_rf in rf.yield_sub_rfs():
+                for sub_sub_rf in helper(sub_rf):
+                    yield sub_sub_rf
+
+    return helper(root_rf)
+
+
+def _iterate_meta_rfs(mirror_rp, inc_rp):
+    """Yield RegressFile objects with extra metadata information added
+
+    Each RegressFile will have an extra object variable .metadata_rorp
+    which will contain the metadata attributes of the mirror file at
+    regress_time.
+
+    """
+    raw_rfs = _iterate_raw_rfs(mirror_rp, inc_rp)
+    collated = rorpiter.Collate2Iters(raw_rfs, _yield_metadata())
+    for raw_rf, metadata_rorp in collated:
+        raw_rf = longname.update_regressfile(raw_rf, metadata_rorp, mirror_rp)
+        if not raw_rf:
+            log.Log(
+                "Warning, metadata file has entry for %s,\n"
+                "but there are no associated files." %
+                (metadata_rorp.get_safeindexpath(), ), 2)
+            continue
+        raw_rf.set_metadata_rorp(metadata_rorp)
+        yield raw_rf
+
+
+def _yield_metadata():
+    """Iterate rorps from metadata file, if any are available"""
+    metadata.SetManager()
+    metadata_iter = metadata.ManagerObj.GetAtTime(regress_time)
+    if metadata_iter:
+        return metadata_iter
+    log.Log.FatalError("No metadata for time %s (%s) found,\ncannot regress" %
+                       (Time.timetopretty(regress_time), regress_time))

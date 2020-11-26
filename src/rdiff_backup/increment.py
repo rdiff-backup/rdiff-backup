@@ -68,7 +68,10 @@ def get_inc(rp, typestr, time=None):
     else:
         dirname, basename = rp.dirsplit()
         incrp = rp.__class__(rp.conn, dirname, (addtostr(basename), ))
-    assert not incrp.lstat(), incrp
+    if incrp.lstat():
+        log.Log.FatalError(
+            "New increment path '{rp!s}' shouldn't exist, something went "
+            "really wrong.".format(rp=incrp))
     return incrp
 
 

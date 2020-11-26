@@ -43,23 +43,6 @@ from . import log, Globals, restore, regress
 _long_name_dir = b"long_filename_data"
 _long_name_rootrp = None
 
-
-def _get_long_rp(base=None):
-    """Return an rpath in long name directory with given base"""
-    global _long_name_rootrp
-    if not _long_name_rootrp:
-        _long_name_rootrp = Globals.rbdir.append(_long_name_dir)
-        if not _long_name_rootrp.lstat():
-            _long_name_rootrp.mkdir()
-    if base:
-        return _long_name_rootrp.append(base)
-    else:
-        return _long_name_rootrp
-
-
-# ------------------------------------------------------------------
-# These functions used mainly for backing up
-
 # integer number of next free prefix.  Names will be created from
 # integers consecutively like '1', '2', and so on.
 _free_name_counter = None
@@ -67,86 +50,15 @@ _free_name_counter = None
 # Filename which holds the next available free name in it
 _counter_filename = b"next_free"
 
-
-def _get_next_free_filename():
-    """Return next free filename available in the long filename directory"""
-    global _free_name_counter
-
-    def scan_next_free():
-        """Return value of _free_name_counter by listing long filename dir"""
-        log.Log("Setting next free from long filenames dir", 5)
-        cur_high = 0
-        for filename in _get_long_rp().listdir():
-            try:
-                i = int(filename.split(b'.')[0])
-            except ValueError:
-                continue
-            if i > cur_high:
-                cur_high = i
-        return cur_high + 1
-
-    def read_next_free():
-        """Return next int free by reading the next_free file, or None"""
-        rp = _get_long_rp(_counter_filename)
-        if not rp.lstat():
-            return None
-        return int(rp.get_string())
-
-    def write_next_free(i):
-        """Write value i into the counter file"""
-        rp = _get_long_rp(_counter_filename)
-        if rp.lstat():
-            rp.delete()
-        rp.write_string(str(_free_name_counter))
-        rp.fsync_with_dir()
-
-    if not _free_name_counter:
-        _free_name_counter = read_next_free()
-    if not _free_name_counter:
-        _free_name_counter = scan_next_free()
-    filename = b'%i' % _free_name_counter
-    rp = _get_long_rp(filename)
-    assert not rp.lstat(), "Unexpected file at '%s' found" % rp.get_safepath()
-    _free_name_counter += 1
-    write_next_free(_free_name_counter)
-    return filename
+# This holds a dictionary {incbase: inclist}.  The keys are increment
+# bases like '1' or '23', and the values are lists containing the
+# associated increments.
+_restore_inc_cache = None
 
 
-def _check_new_index(base, index, make_dirs=0):
-    """Return new rpath with given index, or None if that is too long
-
-    If make_dir is True, make any parent directories to assure that
-    file is really too long, and not just in directories that don't exist.
-
-    """
-
-    def wrap_call(func, *args):
-        try:
-            result = func(*args)
-        except EnvironmentError as exc:
-            if (exc.errno == errno.ENAMETOOLONG):
-                return None
-            raise
-        return result
-
-    def make_parent(rp):
-        parent = rp.get_parent_rp()
-        if parent.lstat():
-            return 1
-        parent.makedirs()
-        return 2
-
-    rp = wrap_call(base.new_index, index)
-    if not make_dirs or not rp or rp.lstat():
-        return rp
-
-    parent_result = wrap_call(make_parent, rp)
-    if not parent_result:
-        return None
-    elif parent_result == 1:
-        return rp
-    else:
-        return wrap_call(base.new_index, index)
+# ------------------------------------------------------------------
+# The following section is for backup
+# ------------------------------------------------------------------
 
 
 def get_mirror_rp(mirror_base, mirror_rorp):
@@ -227,10 +139,13 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
     if old_rorp and old_rorp.lstat():
         mirror_rp, alt_mirror, alt_inc = mir_triple_old(old_rorp)
         index = old_rorp.index
-    else:
-        assert new_rorp and new_rorp.lstat(), (old_rorp, new_rorp)
+    elif new_rorp and new_rorp.lstat():
         mirror_rp, alt_mirror, alt_inc = mir_triple_new(new_rorp)
         index = new_rorp.index
+    else:
+        log.Log.FatalError(
+            "Neither old '{orp!s}' nor new path '{nrp!s}' is existing.".format(
+                orp=old_rorp, nrp=new_rorp))
 
     alt_inc, inc_rp = find_inc_pair(index, mirror_rp, alt_mirror, alt_inc)
     update_rorp(new_rorp, alt_mirror, alt_inc)
@@ -239,29 +154,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
 
 # ------------------------------------------------------------------
 # The following section is for restoring
-
-# This holds a dictionary {incbase: inclist}.  The keys are increment
-# bases like '1' or '23', and the values are lists containing the
-# associated increments.
-_restore_inc_cache = None
-
-
-def _set_restore_cache():
-    """Initialize _restore_inc_cache based on long filename dir"""
-    global _restore_inc_cache
-    _restore_inc_cache = {}
-    root_rf = restore.RestoreFile(_get_long_rp(), _get_long_rp(), [])
-    for incbase_rp, inclist in root_rf.yield_inc_complexes(_get_long_rp()):
-        _restore_inc_cache[incbase_rp.index[-1]] = inclist
-
-
-def _get_inclist(inc_base_name):
-    if not _restore_inc_cache:
-        _set_restore_cache()
-    try:
-        return _restore_inc_cache[inc_base_name]
-    except KeyError:
-        return []
+# ------------------------------------------------------------------
 
 
 def update_rf(rf, rorp, mirror_root):
@@ -331,3 +224,119 @@ def update_regressfile(rf, rorp, mirror_root):
     if isinstance(rf, regress.RegressFile):
         return rf
     return regress.RegressFile(rf.mirror_rp, rf.inc_rp, rf.inc_list)
+
+
+# === INTERNAL FUNCTIONS ===
+
+
+def _get_long_rp(base=None):
+    """Return an rpath in long name directory with given base"""
+    global _long_name_rootrp
+    if not _long_name_rootrp:
+        _long_name_rootrp = Globals.rbdir.append(_long_name_dir)
+        if not _long_name_rootrp.lstat():
+            _long_name_rootrp.mkdir()
+    if base:
+        return _long_name_rootrp.append(base)
+    else:
+        return _long_name_rootrp
+
+
+def _get_next_free_filename():
+    """Return next free filename available in the long filename directory"""
+    global _free_name_counter
+
+    def scan_next_free():
+        """Return value of _free_name_counter by listing long filename dir"""
+        log.Log("Setting next free from long filenames dir", 5)
+        cur_high = 0
+        for filename in _get_long_rp().listdir():
+            try:
+                i = int(filename.split(b'.')[0])
+            except ValueError:
+                continue
+            if i > cur_high:
+                cur_high = i
+        return cur_high + 1
+
+    def read_next_free():
+        """Return next int free by reading the next_free file, or None"""
+        rp = _get_long_rp(_counter_filename)
+        if not rp.lstat():
+            return None
+        return int(rp.get_string())
+
+    def write_next_free(i):
+        """Write value i into the counter file"""
+        rp = _get_long_rp(_counter_filename)
+        if rp.lstat():
+            rp.delete()
+        rp.write_string(str(_free_name_counter))
+        rp.fsync_with_dir()
+
+    if not _free_name_counter:
+        _free_name_counter = read_next_free()
+    if not _free_name_counter:
+        _free_name_counter = scan_next_free()
+    filename = b'%i' % _free_name_counter
+    rp = _get_long_rp(filename)
+    assert not rp.lstat(), (
+        "Unexpected file '{rp!s}' found".format(rp=rp))
+    _free_name_counter += 1
+    write_next_free(_free_name_counter)
+    return filename
+
+
+def _check_new_index(base, index, make_dirs=0):
+    """Return new rpath with given index, or None if that is too long
+
+    If make_dir is True, make any parent directories to assure that
+    file is really too long, and not just in directories that don't exist.
+
+    """
+
+    def wrap_call(func, *args):
+        try:
+            result = func(*args)
+        except EnvironmentError as exc:
+            if (exc.errno == errno.ENAMETOOLONG):
+                return None
+            raise
+        return result
+
+    def make_parent(rp):
+        parent = rp.get_parent_rp()
+        if parent.lstat():
+            return 1
+        parent.makedirs()
+        return 2
+
+    rp = wrap_call(base.new_index, index)
+    if not make_dirs or not rp or rp.lstat():
+        return rp
+
+    parent_result = wrap_call(make_parent, rp)
+    if not parent_result:
+        return None
+    elif parent_result == 1:
+        return rp
+    else:
+        return wrap_call(base.new_index, index)
+
+
+def _get_inclist(inc_base_name):
+    if not _restore_inc_cache:
+        _set_restore_cache()
+    try:
+        return _restore_inc_cache[inc_base_name]
+    except KeyError:
+        return []
+
+
+def _set_restore_cache():
+    """Initialize _restore_inc_cache based on long filename dir"""
+    global _restore_inc_cache
+    _restore_inc_cache = {}
+    root_rf = restore.RestoreFile(_get_long_rp(), _get_long_rp(), [])
+    for incbase_rp, inclist in root_rf.yield_inc_complexes(_get_long_rp()):
+        _restore_inc_cache[incbase_rp.index[-1]] = inclist

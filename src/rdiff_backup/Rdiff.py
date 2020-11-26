@@ -31,20 +31,6 @@ def get_signature(rp, blocksize=None):
     return librsync.SigFile(rp.open("rb"), blocksize)
 
 
-def _find_blocksize(file_len):
-    """Return a reasonable block size to use on files of length file_len
-
-    If the block size is too big, deltas will be bigger than is
-    necessary.  If the block size is too small, making deltas and
-    patching can take a really long time.
-
-    """
-    if file_len < 4096:
-        return 64  # set minimum of 64 bytes
-    else:  # Use square root, rounding to nearest 16
-        return int(pow(file_len, 0.5) / 16) * 16
-
-
 def get_delta_sigrp_hash(rp_signature, rp_new):
     """Like above but also calculate hash of new as close() value"""
     log.Log(
@@ -66,15 +52,8 @@ def write_delta(basis, new, delta, compress=None):
 def write_patched_fp(basis_fp, delta_fp, out_fp):
     """Write patched file to out_fp given input fps.  Closes input files"""
     rpath.copyfileobj(librsync.PatchedFile(basis_fp, delta_fp), out_fp)
-    assert not basis_fp.close() and not delta_fp.close()
-
-
-def _write_via_tempfile(fp, rp):
-    """Write fileobj fp to rp by writing to tempfile and renaming"""
-    tf = rp.get_temp_rpath(sibling=True)
-    retval = tf.write_from_fileobj(fp)
-    rpath.rename(tf, rp)
-    return retval
+    basis_fp.close()
+    delta_fp.close()
 
 
 def patch_local(rp_basis, rp_delta, outrp=None, delta_compressed=None):
@@ -88,7 +67,9 @@ def patch_local(rp_basis, rp_delta, outrp=None, delta_compressed=None):
     used to produce hashes.
 
     """
-    assert rp_basis.conn is Globals.local_connection
+    assert rp_basis.conn is Globals.local_connection, (
+        "This function must run locally and not over '{conn}'.".format(
+            conn=rp_basis.conn))
     if delta_compressed:
         deltafile = rp_delta.open("rb", 1)
     else:
@@ -98,3 +79,25 @@ def patch_local(rp_basis, rp_delta, outrp=None, delta_compressed=None):
         return outrp.write_from_fileobj(patchfile)
     else:
         return _write_via_tempfile(patchfile, rp_basis)
+
+
+def _find_blocksize(file_len):
+    """Return a reasonable block size to use on files of length file_len
+
+    If the block size is too big, deltas will be bigger than is
+    necessary.  If the block size is too small, making deltas and
+    patching can take a really long time.
+
+    """
+    if file_len < 4096:
+        return 64  # set minimum of 64 bytes
+    else:  # Use square root, rounding to nearest 16
+        return int(pow(file_len, 0.5) / 16) * 16
+
+
+def _write_via_tempfile(fp, rp):
+    """Write fileobj fp to rp by writing to tempfile and renaming"""
+    tf = rp.get_temp_rpath(sibling=True)
+    retval = tf.write_from_fileobj(fp)
+    rpath.rename(tf, rp)
+    return retval

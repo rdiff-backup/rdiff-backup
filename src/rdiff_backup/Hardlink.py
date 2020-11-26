@@ -41,6 +41,7 @@ import errno
 _inode_index = None
 
 
+# @API(initialize_dictionaries, 200)
 def initialize_dictionaries():
     """Set all the hard link dictionaries to empty"""
     # FIXME: as we never _re_ initialize the _inode_index, we could directly set it to {}

@@ -71,8 +71,28 @@ def initialize(action, cmdpairs):
 
 def reset_restrict_path(rp):
     """Reset restrict path to be within rpath"""
-    assert rp.conn is Globals.local_connection
+    assert rp.conn is Globals.local_connection, (
+        "Function works locally not over '{conn}'.".format(conn=rp.conn))
     Globals.restrict_path = rp.normalize().path
+
+
+def vet_request(request, arglist):
+    """Examine request for security violations"""
+    security_level = Globals.security_level
+    if security_level == "override":
+        return
+    if Globals.restrict_path:
+        for arg in arglist:
+            if isinstance(arg, rpath.RPath):
+                _vet_rpath(arg, request, arglist)
+        if request.function_string in _file_requests:
+            _vet_filename(request, arglist)
+    if request.function_string in _allowed_requests:
+        return
+    if request.function_string in ("Globals.set", "Globals.set_local"):
+        if arglist[0] not in _disallowed_server_globals:
+            return
+    _raise_violation("Invalid request", request, arglist)
 
 
 def _set_security_level(action, cmdpairs):
@@ -111,8 +131,7 @@ def _set_security_level(action, cmdpairs):
         elif islocal(cp1):
             sec_level = "read-only"
             rdir = getpath(cp1)
-        else:
-            assert islocal(cp2)
+        else:  # cp2 is local but not cp1
             sec_level = "update-only"
             rdir = getpath(cp2)
     elif action == "restore" or action == "restore-as-of":
@@ -127,8 +146,7 @@ def _set_security_level(action, cmdpairs):
                 rdir = Main.restore_root.path
             else:
                 log.Log.FatalError("Invalid restore directory")
-        else:
-            assert islocal(cp2)
+        else:  # cp2 is local but not cp1
             sec_level = "all"
             rdir = getpath(cp2)
     elif action == "mirror":
@@ -138,8 +156,7 @@ def _set_security_level(action, cmdpairs):
         elif islocal(cp1):
             sec_level = "read-only"
             rdir = getpath(cp1)
-        else:
-            assert islocal(cp2)
+        else:  # cp2 is local but not cp1
             sec_level = "all"
             rdir = getpath(cp2)
     elif action in [
@@ -151,7 +168,7 @@ def _set_security_level(action, cmdpairs):
         sec_level = "minimal"
         rdir = tempfile.gettempdir()
     else:
-        assert 0, "Unknown action %s" % action
+        raise RuntimeError("Unknown action '{act}'.".format(act=action))
 
     Globals.security_level = sec_level
     Globals.restrict_path = rpath.RPath(Globals.local_connection,
@@ -236,34 +253,6 @@ def _set_allowed_requests(sec_level):
         _allowed_requests[req] = None
 
 
-def _raise_violation(reason, request, arglist):
-    """Raise a security violation about given request"""
-    raise Violation(
-        "\nWARNING: Security Violation!\n"
-        "%s for function: %s\n"
-        "with arguments: %s\n" % (reason, request.function_string,
-                                  list(map(str, arglist))))
-
-
-def vet_request(request, arglist):
-    """Examine request for security violations"""
-    security_level = Globals.security_level
-    if security_level == "override":
-        return
-    if Globals.restrict_path:
-        for arg in arglist:
-            if isinstance(arg, rpath.RPath):
-                _vet_rpath(arg, request, arglist)
-        if request.function_string in _file_requests:
-            _vet_filename(request, arglist)
-    if request.function_string in _allowed_requests:
-        return
-    if request.function_string in ("Globals.set", "Globals.set_local"):
-        if arglist[0] not in _disallowed_server_globals:
-            return
-    _raise_violation("Invalid request", request, arglist)
-
-
 def _vet_filename(request, arglist):
     """Check to see if file operation is within the restrict_path"""
     i = _file_requests[request.function_string]
@@ -294,3 +283,12 @@ def _vet_rpath(rp, request, arglist):
             _raise_violation(
                 "Normalized path %s not within restricted path %s" %
                 (normalized, restrict), request, arglist)
+
+
+def _raise_violation(reason, request, arglist):
+    """Raise a security violation about given request"""
+    raise Violation(
+        "\nWARNING: Security Violation!\n"
+        "%s for function: %s\n"
+        "with arguments: %s\n" % (reason, request.function_string,
+                                  list(map(str, arglist))))

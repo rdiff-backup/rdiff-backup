@@ -59,85 +59,14 @@ import binascii
 from . import log, Globals, rpath, Time, rorpiter
 
 
+_chars_to_quote = re.compile(b"\\n|\\\\")
+
+ManagerObj = None  # Set this later to Manager instance
+
+
 class ParsingError(Exception):
     """This is raised when bad or unparsable data is received"""
     pass
-
-
-def _carbonfile2string(cfile):
-    """Convert CarbonFile data to a string suitable for storing."""
-    if not cfile:
-        return "None"
-    retvalparts = []
-    retvalparts.append('creator:%s' % binascii.hexlify(cfile['creator']))
-    retvalparts.append('type:%s' % binascii.hexlify(cfile['type']))
-    retvalparts.append('location:%d,%d' % cfile['location'])
-    retvalparts.append('flags:%d' % cfile['flags'])
-    try:
-        retvalparts.append('createDate:%d' % cfile['createDate'])
-    except KeyError:
-        log.Log("Writing pre-1.1.6 style metadata, without creation date", 9)
-    return '|'.join(retvalparts)
-
-
-def _string2carbonfile(data):
-    """Re-constitute CarbonFile data from a string stored by
-    _carbonfile2string."""
-    retval = {}
-    for component in data.split('|'):
-        key, value = component.split(':')
-        if key == 'creator':
-            retval['creator'] = binascii.unhexlify(value)
-        elif key == 'type':
-            retval['type'] = binascii.unhexlify(value)
-        elif key == 'location':
-            a, b = value.split(',')
-            retval['location'] = (int(a), int(b))
-        elif key == 'flags':
-            retval['flags'] = int(value)
-        elif key == 'createDate':
-            retval['createDate'] = int(value)
-    return retval
-
-
-_chars_to_quote = re.compile(b"\\n|\\\\")
-
-
-def quote_path(path_string):
-    """Return quoted version of path_string
-
-    Because newlines are used to separate fields in a record, they are
-    replaced with \n.  Backslashes become \\ and everything else is
-    left the way it is.
-
-    """
-
-    def replacement_func(match_obj):
-        """This is called on the match obj of any char that needs quoting"""
-        char = match_obj.group(0)
-        if char == b"\n":
-            return b"\\n"
-        elif char == b"\\":
-            return b"\\\\"
-        assert 0, "Bad char %s needs quoting" % char
-
-    return _chars_to_quote.sub(replacement_func, path_string)
-
-
-def unquote_path(quoted_string):
-    """Reverse what was done by quote_path"""
-
-    def replacement_func(match_obj):
-        """Unquote match obj of two character sequence"""
-        two_chars = match_obj.group(0)
-        if two_chars == b"\\n":
-            return b"\n"
-        elif two_chars == b"\\\\":
-            return b"\\"
-        log.Log("Warning, unknown quoted sequence %s found" % two_chars, 2)
-        return two_chars
-
-    return re.sub(b"\\\\n|\\\\\\\\", replacement_func, quoted_string)
 
 
 class FlatExtractor:
@@ -152,25 +81,21 @@ class FlatExtractor:
     # Set in subclass to function that converts text record to object
     _record_to_object = None
 
+    @staticmethod
+    def _filename_to_index(filename):
+        """Translate filename, possibly quoted, into an index tuple
+
+        The filename is the first group matched by
+        regexp_boundary_regexp.
+
+        """
+        raise NotImplementedError()
+
     def __init__(self, fileobj):
         self.fileobj = fileobj  # holds file object we are reading from
         self.buf = b""  # holds the next part of the file
         self.at_end = 0  # True if we are at the end of the file
         self.blocksize = 32 * 1024
-
-    def _get_next_pos(self):
-        """Return position of next record in buffer, or end pos if none"""
-        while 1:
-            m = self.record_boundary_regexp.search(self.buf, 1)
-            if m:
-                return m.start(1)
-            else:  # add next block to the buffer, loop again
-                newbuf = self.fileobj.read(self.blocksize)
-                if not newbuf:
-                    self.at_end = 1
-                    return len(self.buf)
-                else:
-                    self.buf += newbuf
 
     def iterate(self):
         """Return iterator that yields all objects with records"""
@@ -194,32 +119,7 @@ class FlatExtractor:
                 break
             yield self.buf[:next_pos]
             self.buf = self.buf[next_pos:]
-        assert not self.fileobj.close()
-
-    def _skip_to_index(self, index):
-        """Scan through the file, set buffer to beginning of index record
-
-        Here we make sure that the buffer always ends in a newline, so
-        we will not be splitting lines in half.
-
-        """
-        assert not self.buf or self.buf.endswith(b"\n")
-        while 1:
-            self.buf = self.fileobj.read(self.blocksize)
-            self.buf += self.fileobj.readline()
-            if not self.buf:
-                self.at_end = 1
-                return
-            while 1:
-                m = self.record_boundary_regexp.search(self.buf)
-                if not m:
-                    break
-                cur_index = self._filename_to_index(m.group(2))
-                if cur_index >= index:
-                    self.buf = self.buf[m.start(1):]
-                    return
-                else:
-                    self.buf = self.buf[m.end(1):]
+        self.fileobj.close()
 
     def _iterate_starting_with(self, index):
         """Iterate objects whose index starts with given index"""
@@ -239,17 +139,47 @@ class FlatExtractor:
             if self.at_end:
                 break
             self.buf = self.buf[next_pos:]
-        assert not self.fileobj.close()
+        self.fileobj.close()
 
-    @staticmethod
-    def _filename_to_index(filename):
-        """Translate filename, possibly quoted, into an index tuple
+    def _skip_to_index(self, index):
+        """Scan through the file, set buffer to beginning of index record
 
-        The filename is the first group matched by
-        regexp_boundary_regexp.
+        Here we make sure that the buffer always ends in a newline, so
+        we will not be splitting lines in half.
 
         """
-        assert 0  # subclass
+        assert not self.buf or self.buf.endswith(b"\n"), (
+            "Something is wrong with buffer '{buf}'.".format(buf=self.buf))
+        while 1:
+            self.buf = self.fileobj.read(self.blocksize)
+            self.buf += self.fileobj.readline()
+            if not self.buf:
+                self.at_end = 1
+                return
+            while 1:
+                m = self.record_boundary_regexp.search(self.buf)
+                if not m:
+                    break
+                cur_index = self._filename_to_index(m.group(2))
+                if cur_index >= index:
+                    self.buf = self.buf[m.start(1):]
+                    return
+                else:
+                    self.buf = self.buf[m.end(1):]
+
+    def _get_next_pos(self):
+        """Return position of next record in buffer, or end pos if none"""
+        while 1:
+            m = self.record_boundary_regexp.search(self.buf, 1)
+            if m:
+                return m.start(1)
+            else:  # add next block to the buffer, loop again
+                newbuf = self.fileobj.read(self.blocksize)
+                if not newbuf:
+                    self.at_end = 1
+                    return len(self.buf)
+                else:
+                    self.buf += newbuf
 
 
 class RorpExtractor(FlatExtractor):
@@ -275,6 +205,14 @@ class RorpExtractor(FlatExtractor):
         'Uname': 'uname',
         'Gname': 'gname',
     }
+
+    @staticmethod
+    def _filename_to_index(quoted_filename):
+        """Return tuple index given quoted filename"""
+        if quoted_filename == b'.':
+            return ()
+        else:
+            return tuple(unquote_path(quoted_filename).split(b'/'))
 
     @classmethod
     def _record_to_object(cls, record_string):
@@ -321,14 +259,6 @@ class RorpExtractor(FlatExtractor):
                 log.Log("Unknown field in line '%s %s'" % (field, data), 2)
         return rpath.RORPath(index, data_dict)
 
-    @staticmethod
-    def _filename_to_index(quoted_filename):
-        """Return tuple index given quoted filename"""
-        if quoted_filename == b'.':
-            return ()
-        else:
-            return tuple(unquote_path(quoted_filename).split(b'/'))
-
 
 class FlatFile:
     """Manage a flat file containing info on various files
@@ -360,15 +290,16 @@ class FlatFile:
         self.callback = callback
         self._record_buffer = []
         if check_path:
-            assert (rp_base.isincfile()
-                    and rp_base.getincbase_bname() == self._prefix), rp_base
-            compress = 1
+            if (rp_base.isincfile()
+                    and rp_base.getincbase_bname() == self._prefix):
+                compress = 1
+            else:
+                log.Log.FatalError(
+                    "Checking the path '{rp!s}' went wrong.".format(rp=rp_base))
         if mode == 'r' or mode == 'rb':
             self.rp = rp_base
             self.fileobj = self.rp.open("rb", compress)
-        else:
-            assert mode == 'w' or mode == 'wb', \
-                "File opening mode must be one of r, rb, w or wb, and not %s." % mode
+        elif mode == 'w' or mode == 'wb':
             if compress and check_path and not rp_base.isinccompressed():
 
                 def callback(rp):
@@ -377,18 +308,14 @@ class FlatFile:
                 self.fileobj = rpath.MaybeGzip(rp_base, callback)
             else:
                 self.rp = rp_base
-                assert not self.rp.lstat(), self.rp
+                assert not self.rp.lstat(), (
+                    "Path '{rp!s}' can't exist before it's opened.".format(
+                        rp=self.rp))
                 self.fileobj = self.rp.open("wb", compress=compress)
-
-    def _write_record(self, record):
-        """Write a (text) record into the file"""
-        if self._buffering_on:
-            self._record_buffer.append(record)
-            if len(self._record_buffer) >= self._max_buffer_size:
-                self.fileobj.write(b"".join(self._record_buffer))
-                self._record_buffer = []
         else:
-            self.fileobj.write(record)
+            log.Log.FatalError(
+                "File opening mode '{omode}' should have been one of "
+                "r, rb, w or wb.".format(omode=mode))
 
     def write_object(self, object):
         """Convert one object to record and write to file"""
@@ -403,7 +330,7 @@ class FlatFile:
 
     def close(self):
         """Close file, for when any writing is done"""
-        assert self.fileobj, "File already closed"
+        assert self.fileobj, "Can't close file already closed."
         if self._buffering_on and self._record_buffer:
             self.fileobj.write(b"".join(self._record_buffer))
             self._record_buffer = []
@@ -414,6 +341,16 @@ class FlatFile:
         if self.callback:
             self.callback(self.rp)
         return result
+
+    def _write_record(self, record):
+        """Write a (text) record into the file"""
+        if self._buffering_on:
+            self._record_buffer.append(record)
+            if len(self._record_buffer) >= self._max_buffer_size:
+                self.fileobj.write(b"".join(self._record_buffer))
+                self._record_buffer = []
+        else:
+            self.fileobj.write(record)
 
 
 class MetadataFile(FlatFile):
@@ -538,52 +475,9 @@ class Manager:
             if rp.isincfile():
                 self._add_incrp(rp)
 
-    def _add_incrp(self, rp):
-        """Add rp to list of inc rps in the rbdir"""
-        assert rp.isincfile(), rp
-        self.rplist.append(rp)
-        time = rp.getinctime()
-        if time in self.timerpmap:
-            self.timerpmap[time].append(rp)
-        else:
-            self.timerpmap[time] = [rp]
-
-        incbase = rp.getincbase_bname()
-        if incbase in self.prefixmap:
-            self.prefixmap[incbase].append(rp)
-        else:
-            self.prefixmap[incbase] = [rp]
-
-    def _iter_helper(self, prefix, flatfileclass, time, restrict_index):
-        """Used below to find the right kind of file by time"""
-        if time not in self.timerpmap:
-            return None
-        for rp in self.timerpmap[time]:
-            if rp.getincbase_bname() == prefix:
-                return flatfileclass(rp, 'r').get_objects(restrict_index)
-        return None
-
     def get_meta_at_time(self, time, restrict_index):
         """Return iter of metadata rorps at given time (or None)"""
         return self._iter_helper(self.meta_prefix, MetadataFile, time,
-                                 restrict_index)
-
-    def _get_eas_at_time(self, time, restrict_index):
-        """Return Extended Attributes iter at given time (or None)"""
-        return self._iter_helper(self.ea_prefix,
-                                 eas_acls.ExtendedAttributesFile, time,
-                                 restrict_index)
-
-    def _get_acls_at_time(self, time, restrict_index):
-        """Return ACLs iter at given time from recordfile (or None)"""
-        return self._iter_helper(self.acl_prefix,
-                                 eas_acls.AccessControlListFile, time,
-                                 restrict_index)
-
-    def _get_win_acls_at_time(self, time, restrict_index):
-        """Return WACLs iter at given time from recordfile (or None)"""
-        return self._iter_helper(self.wacl_prefix,
-                                 win_acls.WinAccessControlListFile, time,
                                  restrict_index)
 
     def GetAtTime(self, time, restrict_index=None):
@@ -618,39 +512,6 @@ class Manager:
 
         return cur_iter
 
-    def _writer_helper(self, prefix, flatfileclass, typestr, time):
-        """Used in the get_xx_writer functions, returns a writer class"""
-        if time is None:
-            timestr = Time.curtimestr
-        else:
-            timestr = Time.timetobytes(time)
-        triple = map(os.fsencode, (prefix, timestr, typestr))
-        filename = b'.'.join(triple)
-        rp = Globals.rbdir.append(filename)
-        assert not rp.lstat(), "File %s already exists!" % (rp.path, )
-        assert rp.isincfile()
-        return flatfileclass(rp, 'w', callback=self._add_incrp)
-
-    def _get_meta_writer(self, typestr, time):
-        """Return MetadataFile object opened for writing at given time"""
-        return self._writer_helper(self.meta_prefix, MetadataFile, typestr,
-                                   time)
-
-    def _get_ea_writer(self, typestr, time):
-        """Return ExtendedAttributesFile opened for writing"""
-        return self._writer_helper(
-            self.ea_prefix, eas_acls.ExtendedAttributesFile, typestr, time)
-
-    def _get_acl_writer(self, typestr, time):
-        """Return AccessControlListFile opened for writing"""
-        return self._writer_helper(
-            self.acl_prefix, eas_acls.AccessControlListFile, typestr, time)
-
-    def _get_win_acl_writer(self, typestr, time):
-        """Return WinAccessControlListFile opened for writing"""
-        return self._writer_helper(
-            self.wacl_prefix, win_acls.WinAccessControlListFile, typestr, time)
-
     def GetWriter(self, typestr=b'snapshot', time=None):
         """Get a writer object that can write meta and possibly acls/eas"""
         metawriter = self._get_meta_writer(typestr, time)
@@ -672,6 +533,84 @@ class Manager:
             win_acl_writer = None
         return CombinedWriter(metawriter, ea_writer, acl_writer,
                               win_acl_writer)
+
+    def _add_incrp(self, rp):
+        """Add rp to list of inc rps in the rbdir"""
+        assert rp.isincfile(), (
+            "Path '{irp!s}' must be an increment file.".format(irp=rp))
+        self.rplist.append(rp)
+        time = rp.getinctime()
+        if time in self.timerpmap:
+            self.timerpmap[time].append(rp)
+        else:
+            self.timerpmap[time] = [rp]
+
+        incbase = rp.getincbase_bname()
+        if incbase in self.prefixmap:
+            self.prefixmap[incbase].append(rp)
+        else:
+            self.prefixmap[incbase] = [rp]
+
+    def _iter_helper(self, prefix, flatfileclass, time, restrict_index):
+        """Used below to find the right kind of file by time"""
+        if time not in self.timerpmap:
+            return None
+        for rp in self.timerpmap[time]:
+            if rp.getincbase_bname() == prefix:
+                return flatfileclass(rp, 'r').get_objects(restrict_index)
+        return None
+
+    def _get_eas_at_time(self, time, restrict_index):
+        """Return Extended Attributes iter at given time (or None)"""
+        return self._iter_helper(self.ea_prefix,
+                                 eas_acls.ExtendedAttributesFile, time,
+                                 restrict_index)
+
+    def _get_acls_at_time(self, time, restrict_index):
+        """Return ACLs iter at given time from recordfile (or None)"""
+        return self._iter_helper(self.acl_prefix,
+                                 eas_acls.AccessControlListFile, time,
+                                 restrict_index)
+
+    def _get_win_acls_at_time(self, time, restrict_index):
+        """Return WACLs iter at given time from recordfile (or None)"""
+        return self._iter_helper(self.wacl_prefix,
+                                 win_acls.WinAccessControlListFile, time,
+                                 restrict_index)
+
+    def _get_meta_writer(self, typestr, time):
+        """Return MetadataFile object opened for writing at given time"""
+        return self._writer_helper(self.meta_prefix, MetadataFile, typestr,
+                                   time)
+
+    def _get_ea_writer(self, typestr, time):
+        """Return ExtendedAttributesFile opened for writing"""
+        return self._writer_helper(
+            self.ea_prefix, eas_acls.ExtendedAttributesFile, typestr, time)
+
+    def _get_acl_writer(self, typestr, time):
+        """Return AccessControlListFile opened for writing"""
+        return self._writer_helper(
+            self.acl_prefix, eas_acls.AccessControlListFile, typestr, time)
+
+    def _get_win_acl_writer(self, typestr, time):
+        """Return WinAccessControlListFile opened for writing"""
+        return self._writer_helper(
+            self.wacl_prefix, win_acls.WinAccessControlListFile, typestr, time)
+
+    def _writer_helper(self, prefix, flatfileclass, typestr, time):
+        """Used in the get_xx_writer functions, returns a writer class"""
+        if time is None:
+            timestr = Time.curtimestr
+        else:
+            timestr = Time.timetobytes(time)
+        triple = map(os.fsencode, (prefix, timestr, typestr))
+        filename = b'.'.join(triple)
+        rp = Globals.rbdir.append(filename)
+        assert not rp.lstat(), "File '{rp!s}' shouldn't exist.".format(rp=rp)
+        assert rp.isincfile(), (
+            "Path '{irp!s}' must be an increment file.".format(irp=rp))
+        return flatfileclass(rp, 'w', callback=self._add_incrp)
 
 
 class PatchDiffMan(Manager):
@@ -739,11 +678,15 @@ class PatchDiffMan(Manager):
     def _check_needs_diff(self):
         """Check if we should diff, returns (new, old) rps, or (None, None)"""
         inclist = self.sorted_prefix_inclist(b'mirror_metadata')
-        assert len(inclist) >= 1
+        assert len(inclist) >= 1, (
+            "There must be a least one element in '{ilist}'.".format(
+                ilist=inclist))
         if len(inclist) == 1:
             return (None, None)
         newrp, oldrp = inclist[:2]
-        assert newrp.getinctype() == oldrp.getinctype() == b'snapshot'
+        assert newrp.getinctype() == oldrp.getinctype() == b'snapshot', (
+            "New '{nrp!s}' and old '{orp!s}' paths must be of "
+            "type 'snapshot'.".format(nrp=newrp, orp=oldrp))
 
         chainlen = 1
         for rp in inclist[2:]:
@@ -786,11 +729,17 @@ class PatchDiffMan(Manager):
         inclist = self.sorted_prefix_inclist(b'mirror_metadata', min_time=time)
         if not inclist:
             return inclist
-        assert inclist[-1].getinctime() == time, inclist[-1]
+        assert inclist[-1].getinctime() == time, (
+            "The time of the last increment '{itime}' must be equal to "
+            "the given time '{time}'.".format(itime=inclist[-1].getinctime(),
+                                              time=time))
         for i in range(len(inclist) - 1, -1, -1):
             if inclist[i].getinctype() == b'snapshot':
                 return inclist[i:]
-        assert 0, "Inclist %s contains no snapshots" % (inclist, )
+        else:
+            log.Log.FatalError(
+                "Increments list '{ilist}' contains no snapshots".format(
+                    ilist=inclist))
 
     def _iterate_patched_meta(self, meta_iter_list):
         """Return an iter of metadata rorps by combining the given iters
@@ -807,16 +756,88 @@ class PatchDiffMan(Manager):
                         yield meta_tuple[i]
                     break  # move to next index
             else:
-                assert 0, "No valid rorps"
+                log.Log.FatalError("No valid metadata tuple in list")
 
 
-ManagerObj = None  # Set this later to Manager instance
+def quote_path(path_string):
+    """Return quoted version of path_string
+
+    Because newlines are used to separate fields in a record, they are
+    replaced with \n.  Backslashes become \\ and everything else is
+    left the way it is.
+
+    """
+
+    def replacement_func(match_obj):
+        """This is called on the match obj of any char that needs quoting"""
+        char = match_obj.group(0)
+        if char == b"\n":
+            return b"\\n"
+        elif char == b"\\":
+            return b"\\\\"
+        else:
+            log.Log.FatalError(
+                "Bad char '{char}' shouldn't need quoting.".format(char=char))
+
+    return _chars_to_quote.sub(replacement_func, path_string)
+
+
+def unquote_path(quoted_string):
+    """Reverse what was done by quote_path"""
+
+    def replacement_func(match_obj):
+        """Unquote match obj of two character sequence"""
+        two_chars = match_obj.group(0)
+        if two_chars == b"\\n":
+            return b"\n"
+        elif two_chars == b"\\\\":
+            return b"\\"
+        log.Log("Warning, unknown quoted sequence %s found" % two_chars, 2)
+        return two_chars
+
+    return re.sub(b"\\\\n|\\\\\\\\", replacement_func, quoted_string)
 
 
 def SetManager():
     global ManagerObj
     ManagerObj = PatchDiffMan()
     return ManagerObj
+
+
+def _carbonfile2string(cfile):
+    """Convert CarbonFile data to a string suitable for storing."""
+    if not cfile:
+        return "None"
+    retvalparts = []
+    retvalparts.append('creator:%s' % binascii.hexlify(cfile['creator']))
+    retvalparts.append('type:%s' % binascii.hexlify(cfile['type']))
+    retvalparts.append('location:%d,%d' % cfile['location'])
+    retvalparts.append('flags:%d' % cfile['flags'])
+    try:
+        retvalparts.append('createDate:%d' % cfile['createDate'])
+    except KeyError:
+        log.Log("Writing pre-1.1.6 style metadata, without creation date", 9)
+    return '|'.join(retvalparts)
+
+
+def _string2carbonfile(data):
+    """Re-constitute CarbonFile data from a string stored by
+    _carbonfile2string."""
+    retval = {}
+    for component in data.split('|'):
+        key, value = component.split(':')
+        if key == 'creator':
+            retval['creator'] = binascii.unhexlify(value)
+        elif key == 'type':
+            retval['type'] = binascii.unhexlify(value)
+        elif key == 'location':
+            a, b = value.split(',')
+            retval['location'] = (int(a), int(b))
+        elif key == 'flags':
+            retval['flags'] = int(value)
+        elif key == 'createDate':
+            retval['createDate'] = int(value)
+    return retval
 
 
 from . import eas_acls, win_acls  # noqa: E402

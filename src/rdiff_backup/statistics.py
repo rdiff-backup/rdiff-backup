@@ -23,6 +23,9 @@ from functools import reduce
 from . import Globals, Time, increment, log, metadata
 
 
+_active_statfileobj = None
+
+
 class StatsException(Exception):
     pass
 
@@ -68,6 +71,73 @@ class StatsObj:
     def set_stat(self, attr, value):
         """Set attribute to given value"""
         self.__dict__[attr] = value
+
+    def get_byte_summary_string(self, byte_count):
+        """Turn byte count into human readable string like "7.23GB" """
+        if byte_count < 0:
+            sign = "-"
+            byte_count = -byte_count
+        else:
+            sign = ""
+
+        for abbrev_bytes, abbrev_string in self._byte_abbrev_list:
+            if byte_count >= abbrev_bytes:
+                # Now get 3 significant figures
+                abbrev_count = float(byte_count) / abbrev_bytes
+                if abbrev_count >= 100:
+                    precision = 0
+                elif abbrev_count >= 10:
+                    precision = 1
+                else:
+                    precision = 2
+                return "%s%%.%df %s" % (sign, precision, abbrev_string) \
+                    % (abbrev_count,)
+        byte_count = round(byte_count)
+        if byte_count == 1:
+            return sign + "1 byte"
+        else:
+            return "%s%d bytes" % (sign, byte_count)
+
+    def get_stats_logstring(self, title):
+        """Like _get_stats_string, but add header and footer"""
+        header = "--------------[ %s ]--------------" % title
+        footer = "-" * len(header)
+        return "%s\n%s%s\n" % (header, self._get_stats_string(), footer)
+
+    def write_stats_to_rp(self, rp):
+        """Write statistics string to given rpath"""
+        fp = rp.open("w")  # statistics are a text file
+        fp.write(self._get_stats_string())
+        fp.close()
+
+    def read_stats_from_rp(self, rp):
+        """Set statistics from rpath, return self for convenience"""
+        fp = rp.open("r")  # statistics are a text file
+        self._set_stats_from_string(fp.read())
+        fp.close()
+        return self
+
+    def set_to_average(self, statobj_list):
+        """Set self's attributes to average of those in statobj_list"""
+        for attr in self._stat_attrs:
+            self.set_stat(attr, 0)
+        for statobj in statobj_list:
+            for attr in self._stat_attrs:
+                if statobj.get_stat(attr) is None:
+                    self.set_stat(attr, None)
+                elif self.get_stat(attr) is not None:
+                    self.set_stat(attr,
+                                  statobj.get_stat(attr) + self.get_stat(attr))
+
+        # Don't compute average starting/stopping time
+        self.StartTime = None
+        self.EndTime = None
+
+        for attr in self._stat_attrs:
+            if self.get_stat(attr) is not None:
+                self.set_stat(attr,
+                              self.get_stat(attr) / float(len(statobj_list)))
+        return self
 
     def _get_total_dest_size_change(self):
         """Return total destination size change
@@ -163,38 +233,6 @@ class StatsObj:
             misc_string += "Errors %d\n" % self.Errors
         return misc_string
 
-    def get_byte_summary_string(self, byte_count):
-        """Turn byte count into human readable string like "7.23GB" """
-        if byte_count < 0:
-            sign = "-"
-            byte_count = -byte_count
-        else:
-            sign = ""
-
-        for abbrev_bytes, abbrev_string in self._byte_abbrev_list:
-            if byte_count >= abbrev_bytes:
-                # Now get 3 significant figures
-                abbrev_count = float(byte_count) / abbrev_bytes
-                if abbrev_count >= 100:
-                    precision = 0
-                elif abbrev_count >= 10:
-                    precision = 1
-                else:
-                    precision = 2
-                return "%s%%.%df %s" % (sign, precision, abbrev_string) \
-                    % (abbrev_count,)
-        byte_count = round(byte_count)
-        if byte_count == 1:
-            return sign + "1 byte"
-        else:
-            return "%s%d bytes" % (sign, byte_count)
-
-    def get_stats_logstring(self, title):
-        """Like _get_stats_string, but add header and footer"""
-        header = "--------------[ %s ]--------------" % title
-        footer = "-" * len(header)
-        return "%s\n%s%s\n" % (header, self._get_stats_string(), footer)
-
     def _set_stats_from_string(self, s):
         """Initialize attributes from string, return self for convenience"""
 
@@ -224,48 +262,14 @@ class StatsObj:
                 error(line)
         return self
 
-    def write_stats_to_rp(self, rp):
-        """Write statistics string to given rpath"""
-        fp = rp.open("w")  # statistics are a text file
-        fp.write(self._get_stats_string())
-        assert not fp.close()
-
-    def read_stats_from_rp(self, rp):
-        """Set statistics from rpath, return self for convenience"""
-        fp = rp.open("r")  # statistics are a text file
-        self._set_stats_from_string(fp.read())
-        fp.close()
-        return self
-
     def _stats_equal(self, s):
         """Return true if s has same statistics as self"""
-        assert isinstance(s, StatsObj)
+        assert isinstance(s, StatsObj), (
+            "Can only compare with StatsObj not {stype}.".format(stype=type(s)))
         for attr in self._stat_file_attrs:
             if self.get_stat(attr) != s.get_stat(attr):
                 return None
         return 1
-
-    def set_to_average(self, statobj_list):
-        """Set self's attributes to average of those in statobj_list"""
-        for attr in self._stat_attrs:
-            self.set_stat(attr, 0)
-        for statobj in statobj_list:
-            for attr in self._stat_attrs:
-                if statobj.get_stat(attr) is None:
-                    self.set_stat(attr, None)
-                elif self.get_stat(attr) is not None:
-                    self.set_stat(attr,
-                                  statobj.get_stat(attr) + self.get_stat(attr))
-
-        # Don't compute average starting/stopping time
-        self.StartTime = None
-        self.EndTime = None
-
-        for attr in self._stat_attrs:
-            if self.get_stat(attr) is not None:
-                self.set_stat(attr,
-                              self.get_stat(attr) / float(len(statobj_list)))
-        return self
 
 
 class StatFileObj(StatsObj):
@@ -327,58 +331,6 @@ class StatFileObj(StatsObj):
         self.EndTime = end_time
 
 
-_active_statfileobj = None
-
-
-def init_statfileobj():
-    """Return new stat file object, record as active stat object"""
-    global _active_statfileobj
-    assert not _active_statfileobj, _active_statfileobj
-    _active_statfileobj = StatFileObj()
-    return _active_statfileobj
-
-
-def get_active_statfileobj():
-    """Return active stat file object if it exists"""
-    if _active_statfileobj:
-        return _active_statfileobj
-    else:
-        return None
-
-
-def record_error():
-    """Record error on active statfileobj, if there is one"""
-    if _active_statfileobj:
-        _active_statfileobj.add_error()
-
-
-def process_increment(inc_rorp):
-    """Add statistics of increment rp incrp if there is active statfile"""
-    if _active_statfileobj:
-        _active_statfileobj.add_increment(inc_rorp)
-
-
-def write_active_statfileobj(end_time=None):
-    """Write active StatFileObj object to session statistics file"""
-    global _active_statfileobj
-    assert _active_statfileobj
-    rp_base = Globals.rbdir.append(b"session_statistics")
-    session_stats_rp = increment.get_inc(rp_base, 'data', Time.curtime)
-    _active_statfileobj.finish(end_time)
-    _active_statfileobj.write_stats_to_rp(session_stats_rp)
-    _active_statfileobj = None
-
-
-def print_active_stats(end_time=None):
-    """Print statistics of active statobj to stdout and log"""
-    global _active_statfileobj
-    assert _active_statfileobj
-    _active_statfileobj.finish(end_time)
-    statmsg = _active_statfileobj.get_stats_logstring("Session statistics")
-    log.Log.log_to_file(statmsg)
-    Globals.client_conn.sys.stdout.write(statmsg)
-
-
 class FileStats:
     """Keep track of less detailed stats on file-by-file basis"""
     _fileobj, _rp = None, None
@@ -387,24 +339,18 @@ class FileStats:
     @classmethod
     def init(cls):
         """Open file stats object and prepare to write"""
-        assert not (cls._fileobj or cls._rp), (cls._fileobj, cls._rp)
+        assert not (cls._fileobj or cls._rp), (
+            "FileStats has already been initialized.")
         rpbase = Globals.rbdir.append(b"file_statistics")
         suffix = Globals.compression and 'data.gz' or 'data'
         cls._rp = increment.get_inc(rpbase, suffix, Time.curtime)
-        assert not cls._rp.lstat()
+        assert not cls._rp.lstat(), (
+            "Path '{rp!s}' shouldn't be existing.".format(rp=cls._rp))
         cls._fileobj = cls._rp.open("wb", compress=Globals.compression)
 
         cls._line_sep = Globals.null_separator and b'\0' or b'\n'
         cls._write_docstring()
         cls._line_buffer = []
-
-    @classmethod
-    def _write_docstring(cls):
-        """Write the first line (a documentation string) into file"""
-        cls._fileobj.write(b"# Format of each line in file statistics file:")
-        cls._fileobj.write(cls._line_sep)
-        cls._fileobj.write(b"# Filename Changed SourceSize MirrorSize "
-                           b"IncrementSize" + cls._line_sep)
 
     @classmethod
     def update(cls, source_rorp, dest_rorp, changed, inc):
@@ -420,6 +366,23 @@ class FileStats:
         cls._line_buffer.append(line)
         if len(cls._line_buffer) >= 100:
             cls._write_buffer()
+
+    @classmethod
+    def close(cls):
+        """Close file stats file"""
+        assert cls._fileobj, ("FileStats hasn't been properly initialized.")
+        if cls._line_buffer:
+            cls._write_buffer()
+        cls._fileobj.close()
+        cls._fileobj = cls._rp = None
+
+    @classmethod
+    def _write_docstring(cls):
+        """Write the first line (a documentation string) into file"""
+        cls._fileobj.write(b"# Format of each line in file statistics file:")
+        cls._fileobj.write(cls._line_sep)
+        cls._fileobj.write(b"# Filename Changed SourceSize MirrorSize "
+                           b"IncrementSize" + cls._line_sep)
 
     @classmethod
     def _get_size(cls, rorp):
@@ -439,16 +402,58 @@ class FileStats:
         method seems fairly slow.
 
         """
-        assert cls._line_buffer and cls._fileobj
+        assert cls._line_buffer and cls._fileobj, (
+            "FileStats hasn't been properly initialized.")
         cls._line_buffer.append(b'')  # have join add _line_sep to end also
         cls._fileobj.write(cls._line_sep.join(cls._line_buffer))
         cls._line_buffer = []
 
-    @classmethod
-    def close(cls):
-        """Close file stats file"""
-        assert cls._fileobj, cls._fileobj
-        if cls._line_buffer:
-            cls._write_buffer()
-        assert not cls._fileobj.close()
-        cls._fileobj = cls._rp = None
+
+def init_statfileobj():
+    """Return new stat file object, record as active stat object"""
+    global _active_statfileobj
+    assert not _active_statfileobj, "Can't set an already set stats object."
+    _active_statfileobj = StatFileObj()
+    return _active_statfileobj
+
+
+def get_active_statfileobj():
+    """Return active stat file object if it exists"""
+    if _active_statfileobj:
+        return _active_statfileobj
+    else:
+        return None
+
+
+# @API(record_error, 200)
+def record_error():
+    """Record error on active statfileobj, if there is one"""
+    if _active_statfileobj:
+        _active_statfileobj.add_error()
+
+
+def process_increment(inc_rorp):
+    """Add statistics of increment rp incrp if there is active statfile"""
+    if _active_statfileobj:
+        _active_statfileobj.add_increment(inc_rorp)
+
+
+def write_active_statfileobj(end_time=None):
+    """Write active StatFileObj object to session statistics file"""
+    global _active_statfileobj
+    assert _active_statfileobj, "Stats object must be set before writing."
+    rp_base = Globals.rbdir.append(b"session_statistics")
+    session_stats_rp = increment.get_inc(rp_base, 'data', Time.curtime)
+    _active_statfileobj.finish(end_time)
+    _active_statfileobj.write_stats_to_rp(session_stats_rp)
+    _active_statfileobj = None
+
+
+def print_active_stats(end_time=None):
+    """Print statistics of active statobj to stdout and log"""
+    global _active_statfileobj
+    assert _active_statfileobj, "Stats object must be set before printing."
+    _active_statfileobj.finish(end_time)
+    statmsg = _active_statfileobj.get_stats_logstring("Session statistics")
+    log.Log.log_to_file(statmsg)
+    Globals.client_conn.sys.stdout.write(statmsg)

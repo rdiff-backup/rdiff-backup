@@ -89,12 +89,89 @@ class Select:
 
     def __init__(self, rootrp):
         """Select initializer.  rpath is the root directory"""
-        assert isinstance(rootrp, rpath.RPath)
+        assert isinstance(rootrp, rpath.RPath), (
+            "Root path '{rp!s}' must be a real remote path.".format(rp=rootrp))
         self.selection_functions = []
         self.rpath = rootrp
         self.prefix = self.rpath.path
         self.prefixindex = tuple([x for x in self.prefix.split(b"/") if x])
         self._init_parsing_mapping()
+
+    def set_iter(self, sel_func=None):
+        """Initialize more variables, get ready to iterate
+
+        Selection function sel_func is called on each rpath and is
+        usually self.select_default.  Returns self.iter just for convenience.
+
+        """
+        if not sel_func:
+            sel_func = self.select_default
+        self.rpath.setdata()  # this may have changed since Select init
+        self.iter = self._Iterate_fast(self.rpath, sel_func)
+        return self.iter
+
+    def select_default(self, rp):
+        """Run through the selection functions and return dominant val 0/1/2"""
+        scanned = 0  # 0, by default, or 2 if prev sel func scanned rp
+        for sf in self.selection_functions:
+            result = sf(rp)
+            if result == 1:
+                return 1
+            elif result == 0:
+                return scanned
+            elif result == 2:
+                scanned = 2
+        return 1
+
+    def parse_selection_args(self, argtuples, filelists):
+        """Create selection functions based on list of tuples
+
+        The tuples have the form (option string, additional argument)
+        and are created when the initial commandline arguments are
+        read.  The reason for the extra level of processing is that
+        the filelists may only be openable by the main connection, but
+        the selection functions need to be on the backup reader or
+        writer side.  When the initial arguments are parsed the right
+        information is sent over the link.
+
+        """
+        filelists_index = 0
+        try:
+            for opt, arg in argtuples:
+                if opt in self._sel_noargs_mapping:
+                    sel_func, sel_val = self._sel_noargs_mapping[opt]
+                    self._add_selection_func(sel_func(sel_val))
+                elif opt in self._sel_onearg_mapping:
+                    sel_func, sel_val = self._sel_onearg_mapping[opt]
+                    self._add_selection_func(sel_func(arg, sel_val))
+                elif opt in self._sel_filelist_mapping:
+                    self._add_selection_func(
+                        self._filelist_get_sf(
+                            filelists[filelists_index], self._sel_filelist_mapping[opt], arg))
+                    filelists_index += 1
+                elif opt in self._sel_globfilelist_mapping:
+                    list(
+                        map(
+                            self._add_selection_func,
+                            self._filelist_globbing_get_sfs(
+                                filelists[filelists_index], self._sel_globfilelist_mapping[opt], arg)))
+                    filelists_index += 1
+                else:
+                    raise RuntimeError(
+                        "Bad selection option {opt}.".format(opt=opt))
+        except SelectError as e:
+            self._parse_catch_error(e)
+        assert filelists_index == len(filelists), (
+            "There must be as many selection options with arguments than "
+            "lists of files.")
+
+        self._parse_last_excludes()
+        self.parse_rbdir_exclude()
+
+    def parse_rbdir_exclude(self):
+        """Add exclusion of rdiff-backup-data dir to front of list"""
+        self._add_selection_func(
+            self._glob_get_tuple_sf((b"rdiff-backup-data", ), 0), 1)
 
     def _init_parsing_mapping(self):
         """Initiates the mapping dictionaries necessary to map command line arguments
@@ -127,19 +204,6 @@ class Select:
             "--exclude-globbing-filelist": Select.EXCLUDE,
             "--include-globbing-filelist": Select.INCLUDE,
         }
-
-    def set_iter(self, sel_func=None):
-        """Initialize more variables, get ready to iterate
-
-        Selection function sel_func is called on each rpath and is
-        usually self.select_default.  Returns self.iter just for convenience.
-
-        """
-        if not sel_func:
-            sel_func = self.select_default
-        self.rpath.setdata()  # this may have changed since Select init
-        self.iter = self._Iterate_fast(self.rpath, sel_func)
-        return self.iter
 
     def _Iterate_fast(self, rpath, sel_func):
         """Like Iterate, but don't recur, saving time"""
@@ -215,61 +279,6 @@ class Select:
         dir_listing.sort()
         return dir_listing
 
-    def select_default(self, rp):
-        """Run through the selection functions and return dominant val 0/1/2"""
-        scanned = 0  # 0, by default, or 2 if prev sel func scanned rp
-        for sf in self.selection_functions:
-            result = sf(rp)
-            if result == 1:
-                return 1
-            elif result == 0:
-                return scanned
-            elif result == 2:
-                scanned = 2
-        return 1
-
-    def parse_selection_args(self, argtuples, filelists):
-        """Create selection functions based on list of tuples
-
-        The tuples have the form (option string, additional argument)
-        and are created when the initial commandline arguments are
-        read.  The reason for the extra level of processing is that
-        the filelists may only be openable by the main connection, but
-        the selection functions need to be on the backup reader or
-        writer side.  When the initial arguments are parsed the right
-        information is sent over the link.
-
-        """
-        filelists_index = 0
-        try:
-            for opt, arg in argtuples:
-                if opt in self._sel_noargs_mapping:
-                    sel_func, sel_val = self._sel_noargs_mapping[opt]
-                    self._add_selection_func(sel_func(sel_val))
-                elif opt in self._sel_onearg_mapping:
-                    sel_func, sel_val = self._sel_onearg_mapping[opt]
-                    self._add_selection_func(sel_func(arg, sel_val))
-                elif opt in self._sel_filelist_mapping:
-                    self._add_selection_func(
-                        self._filelist_get_sf(
-                            filelists[filelists_index], self._sel_filelist_mapping[opt], arg))
-                    filelists_index += 1
-                elif opt in self._sel_globfilelist_mapping:
-                    list(
-                        map(
-                            self._add_selection_func,
-                            self._filelist_globbing_get_sfs(
-                                filelists[filelists_index], self._sel_globfilelist_mapping[opt], arg)))
-                    filelists_index += 1
-                else:
-                    assert 0, "Bad selection option %s" % opt
-        except SelectError as e:
-            self._parse_catch_error(e)
-        assert filelists_index == len(filelists)
-
-        self._parse_last_excludes()
-        self.parse_rbdir_exclude()
-
     def _parse_catch_error(self, exc):
         """Deal with selection error exc"""
         if isinstance(exc, FilePrefixError):
@@ -285,11 +294,6 @@ pattern (such as '**') which matches the base directory.""" % (exc,
                                "%s" % exc)
         else:
             raise
-
-    def parse_rbdir_exclude(self):
-        """Add exclusion of rdiff-backup-data dir to front of list"""
-        self._add_selection_func(
-            self._glob_get_tuple_sf((b"rdiff-backup-data", ), 0), 1)
 
     def _parse_last_excludes(self):
         """Exit with error if last selection function isn't an exclude"""
@@ -421,7 +425,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
             else:
                 return (None, False)  # rp greater, not initial sequence
         else:
-            assert 0, "Include is %s, should be 0 or 1" % (include, )
+            raise ValueError(
+                "Include is {ival}, should be 0 or 1.".format(ival=include))
 
     def _filelist_globbing_get_sfs(self, filelist_fp, inc_default, list_name):
         """Return list of selection functions by reading fileobj
@@ -447,7 +452,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _other_filesystems_get_sf(self, include):
         """Return selection function matching files on other filesystems"""
-        assert include == Select.EXCLUDE or include == Select.INCLUDE
+        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
+            "Include is {ival}, should be 0 or 1.".format(ival=include))
         root_devloc = self.rpath.getdevloc()
 
         def sel_func(rp):
@@ -462,7 +468,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _regexp_get_sf(self, regexp_string, include):
         """Return selection function given by regexp_string"""
-        assert include == Select.EXCLUDE or include == Select.INCLUDE
+        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
+            "Include is {ival}, should be 0 or 1.".format(ival=include))
         try:
             regexp = re.compile(os.fsencode(regexp_string))
         except re.error:
@@ -481,7 +488,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _presence_get_sf(self, presence_filename, include):
         """Return selection function given by a file if present"""
-        assert include == Select.EXCLUDE or include == Select.INCLUDE
+        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
+            "Include is {ival}, should be 0 or 1.".format(ival=include))
 
         def sel_func(rp):
             if rp.isdir() and rp.readable() and \
@@ -541,8 +549,14 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _size_get_sf(self, sizestr, min_max):
         """Return selection function given by filesize"""
-        size = int(sizestr)
-        assert size > 0
+        try:
+            size = int(sizestr)
+            if size <= 0:
+                raise ValueError()
+        except ValueError:
+            log.Log.FatalError(
+                "Max and min file size must be a positive integer "
+                "and not '{size}'.".format(size=sizestr))
 
         def sel_func(rp):
             if not rp.isreg():
@@ -559,7 +573,8 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
     def _glob_get_sf(self, glob_str, include):
         """Return selection function given by glob string"""
-        assert include == Select.EXCLUDE or include == Select.INCLUDE
+        assert include == Select.EXCLUDE or include == Select.INCLUDE, (
+            "Include is {ival}, should be 0 or 1.".format(ival=include))
         glob_str = os.fsencode(glob_str)  # paths and glob must be bytes
         if glob_str == b"**":
             def sel_func(rp):
@@ -811,8 +826,8 @@ class _FilterIterITRB(rorpiter.ITRBranch):
                 self.rorp_cache.append(self.base_queue)
                 self.base_queue = None
             self.rorp_cache.append(next_rorp)
-        else:
-            assert s == 0, "Unexpected select value %s" % (s, )
+        elif s != 0:
+            raise ValueError("Unexpected select value {sel}.".format(sel=s))
 
     def start_process(self, index, next_rp, next_rorp):
         s = self.select(next_rp)
@@ -820,6 +835,7 @@ class _FilterIterITRB(rorpiter.ITRBranch):
             self.branch_excluded = 1
         elif s == 1:
             self.rorp_cache.append(next_rorp)
-        else:
-            assert s == 2, s
+        elif s == 2:
             self.base_queue = next_rorp
+        else:
+            raise ValueError("Unexpected select value {sel}.".format(sel=s))
