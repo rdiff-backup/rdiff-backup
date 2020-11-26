@@ -356,6 +356,9 @@ class PipeConnection(LowLevelPipeConnection):
 
     """
 
+    # @API(conn_number, 200)
+    # conn_number is defined in the __init__ function
+
     def __init__(self, inpipe, outpipe, conn_number=0):
         """Init PipeConnection
 
@@ -373,6 +376,49 @@ class PipeConnection(LowLevelPipeConnection):
 
     def __str__(self):
         return "PipeConnection %d" % self.conn_number
+
+    def __getattr__(self, name):
+        """Intercept attributes to allow for . invocation"""
+        return EmulateCallable(self, name)
+
+    def Server(self):
+        """Start server's read eval return loop"""
+        Globals.server = 1
+        Globals.connections.append(self)
+        log.Log("Starting server", 6)
+        self._get_response(-1)
+
+    # @API(reval, 200)
+    def reval(self, function_string, *args):
+        """Execute command on remote side
+
+        The first argument should be a string that evaluates to a
+        function, like "pow", and the remaining are arguments to that
+        function.
+
+        """
+        req_num = self._get_new_req_num()
+        self._put(ConnectionRequest(function_string, len(args)), req_num)
+        for arg in args:
+            self._put(arg, req_num)
+        result = self._get_response(req_num)
+        self.unused_request_numbers[req_num] = None
+        if isinstance(result, Exception):
+            raise result
+        elif isinstance(result, SystemExit):
+            raise result
+        elif isinstance(result, KeyboardInterrupt):
+            raise result
+        else:
+            return result
+
+    # @API(quit, 200)
+    def quit(self):
+        """Close the associated pipes and tell server side to quit"""
+        assert not Globals.server, "This function shouldn't run as server."
+        self._putquit()
+        self._get()
+        self._close()
 
     def _get_response(self, desired_req_num):
         """Read from pipe, responding to requests until req_num.
@@ -427,36 +473,6 @@ class PipeConnection(LowLevelPipeConnection):
                     traceback.format_tb(sys.exc_info()[2]))), 5)
         return sys.exc_info()[1]
 
-    def Server(self):
-        """Start server's read eval return loop"""
-        Globals.server = 1
-        Globals.connections.append(self)
-        log.Log("Starting server", 6)
-        self._get_response(-1)
-
-    def reval(self, function_string, *args):
-        """Execute command on remote side
-
-        The first argument should be a string that evaluates to a
-        function, like "pow", and the remaining are arguments to that
-        function.
-
-        """
-        req_num = self._get_new_req_num()
-        self._put(ConnectionRequest(function_string, len(args)), req_num)
-        for arg in args:
-            self._put(arg, req_num)
-        result = self._get_response(req_num)
-        self.unused_request_numbers[req_num] = None
-        if isinstance(result, Exception):
-            raise result
-        elif isinstance(result, SystemExit):
-            raise result
-        elif isinstance(result, KeyboardInterrupt):
-            raise result
-        else:
-            return result
-
     def _get_new_req_num(self):
         """Allot a new request number and return it"""
         if not self.unused_request_numbers:
@@ -464,17 +480,6 @@ class PipeConnection(LowLevelPipeConnection):
         req_num = list(self.unused_request_numbers.keys())[0]
         del self.unused_request_numbers[req_num]
         return req_num
-
-    def quit(self):
-        """Close the associated pipes and tell server side to quit"""
-        assert not Globals.server, "This function shouldn't run as server."
-        self._putquit()
-        self._get()
-        self._close()
-
-    def __getattr__(self, name):
-        """Intercept attributes to allow for . invocation"""
-        return EmulateCallable(self, name)
 
 
 class RedirectedConnection(Connection):
@@ -512,22 +517,6 @@ class RedirectedConnection(Connection):
     def __getattr__(self, name):
         return EmulateCallableRedirected(self.conn_number, self.routing_conn,
                                          name)
-
-
-def RedirectedRun(conn_number, func, *args):
-    """Run func with args on connection with conn number conn_number
-
-    This function is meant to redirect requests from one connection to
-    another, so conn_number must not be the local connection (and also
-    for security reasons since this function is always made
-    available).
-
-    """
-    conn = Globals.connection_dict[conn_number]
-    assert conn is not Globals.local_connection, (
-        "A redirected run shouldn't be required locally for {fnc}.".format(
-            fnc=func.__name__))
-    return conn.reval(func, *args)
 
 
 class EmulateCallable:
@@ -611,6 +600,14 @@ class VirtualFile:
         self.connection = connection
         self.id = id
 
+    def __iter__(self):
+        """Iterates lines in file, like normal iter(file) behavior"""
+        while 1:
+            line = self.readline()
+            if not line:
+                break
+            yield line
+
     def read(self, length=None):
         return self.connection.VirtualFile.readfromid(self.id, length)
 
@@ -623,13 +620,21 @@ class VirtualFile:
     def close(self):
         return self.connection.VirtualFile.closebyid(self.id)
 
-    def __iter__(self):
-        """Iterates lines in file, like normal iter(file) behavior"""
-        while 1:
-            line = self.readline()
-            if not line:
-                break
-            yield line
+
+def RedirectedRun(conn_number, func, *args):
+    """Run func with args on connection with conn number conn_number
+
+    This function is meant to redirect requests from one connection to
+    another, so conn_number must not be the local connection (and also
+    for security reasons since this function is always made
+    available).
+
+    """
+    conn = Globals.connection_dict[conn_number]
+    assert conn is not Globals.local_connection, (
+        "A redirected run shouldn't be required locally for {fnc}.".format(
+            fnc=func.__name__))
+    return conn.reval(func, *args)
 
 
 # everything has to be available here for remote connection's use, but

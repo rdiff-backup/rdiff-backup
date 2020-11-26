@@ -55,10 +55,12 @@ def Mirror_and_increment(src_rpath, dest_rpath, inc_rpath):
     DestS.patch_and_increment(dest_rpath, source_diffiter, inc_rpath)
 
 
+# @API(SourceStruct, 200)
 class SourceStruct:
     """Hold info used on source side when backing up"""
     _source_select = None  # will be set to source Select iterator
 
+    # @API(SourceStruct.set_source_select, 200)
     @classmethod
     def set_source_select(cls, rpath, tuplelist, *filelists):
         """Initialize select object using tuplelist
@@ -90,7 +92,7 @@ class SourceStruct:
         source_rps = cls._source_select
         error_handler = robust.get_error_handler("ListError")
 
-        def _attach_snapshot(diff_rorp, src_rp):
+        def attach_snapshot(diff_rorp, src_rp):
             """Attach file of snapshot to diff_rorp, w/ error checking"""
             fileobj = robust.check_common_error(
                 error_handler, rpath.RPath.open, (src_rp, "rb"))
@@ -100,7 +102,7 @@ class SourceStruct:
                 diff_rorp.zero()
             diff_rorp.set_attached_filetype('snapshot')
 
-        def _attach_diff(diff_rorp, src_rp, dest_sig):
+        def attach_diff(diff_rorp, src_rp, dest_sig):
             """Attach file of diff to diff_rorp, w/ error checking"""
             fileobj = robust.check_common_error(
                 error_handler, Rdiff.get_delta_sigrp_hash, (dest_sig, src_rp))
@@ -128,9 +130,9 @@ class SourceStruct:
                     src_rp.chmod(0o400 | src_rp.getperms())
 
                 if dest_sig.isreg():
-                    _attach_diff(diff_rorp, src_rp, dest_sig)
+                    attach_diff(diff_rorp, src_rp, dest_sig)
                 else:
-                    _attach_snapshot(diff_rorp, src_rp)
+                    attach_snapshot(diff_rorp, src_rp)
 
                 if reset_perms:
                     src_rp.chmod(src_rp.getperms() & ~0o400)
@@ -140,32 +142,9 @@ class SourceStruct:
             yield diff_rorp
 
 
+# @API(DestinationStruct, 200)
 class DestinationStruct:
     """Hold info used by destination side when backing up"""
-
-    @classmethod
-    def _get_dest_select(cls, rpath, use_metadata=1):
-        """
-
-        Return destination select rorpath iterator
-
-        If metadata file doesn't exist, select all files on
-        destination except rdiff-backup-data directory.
-
-        """
-
-        def get_iter_from_fs():
-            """Get the combined iterator from the filesystem"""
-            sel = selection.Select(rpath)
-            sel.parse_rbdir_exclude()
-            return sel.set_iter()
-
-        metadata.SetManager()
-        if use_metadata:
-            rorp_iter = metadata.ManagerObj.GetAtTime(Time.prevtime)
-            if rorp_iter:
-                return rorp_iter
-        return get_iter_from_fs()
 
     @classmethod
     def set_rorp_cache(cls, baserp, source_iter, for_increment):
@@ -209,6 +188,53 @@ class DestinationStruct:
                 if sig:
                     cls.CCPP.flag_changed(index)
                     yield sig
+
+    @classmethod
+    def patch(cls, dest_rpath, source_diffiter, start_index=()):
+        """Patch dest_rpath with an rorpiter of diffs"""
+        ITR = rorpiter.IterTreeReducer(PatchITRB, [dest_rpath, cls.CCPP])
+        for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
+            log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
+            ITR(diff.index, diff)
+        ITR.Finish()
+        cls.CCPP.close()
+        dest_rpath.setdata()
+
+    @classmethod
+    def patch_and_increment(cls, dest_rpath, source_diffiter, inc_rpath):
+        """Patch dest_rpath with rorpiter of diffs and write increments"""
+        ITR = rorpiter.IterTreeReducer(IncrementITRB,
+                                       [dest_rpath, inc_rpath, cls.CCPP])
+        for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
+            log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
+            ITR(diff.index, diff)
+        ITR.Finish()
+        cls.CCPP.close()
+        dest_rpath.setdata()
+
+    @classmethod
+    def _get_dest_select(cls, rpath, use_metadata=1):
+        """
+
+        Return destination select rorpath iterator
+
+        If metadata file doesn't exist, select all files on
+        destination except rdiff-backup-data directory.
+
+        """
+
+        def get_iter_from_fs():
+            """Get the combined iterator from the filesystem"""
+            sel = selection.Select(rpath)
+            sel.parse_rbdir_exclude()
+            return sel.set_iter()
+
+        metadata.SetManager()
+        if use_metadata:
+            rorp_iter = metadata.ManagerObj.GetAtTime(Time.prevtime)
+            if rorp_iter:
+                return rorp_iter
+        return get_iter_from_fs()
 
     @classmethod
     def _get_one_sig(cls, dest_base_rpath, index, src_rorp, dest_rorp):
@@ -259,29 +285,6 @@ class DestinationStruct:
                         "permissions on file." % (dest_rp.path, ))
             else:
                 raise
-
-    @classmethod
-    def patch(cls, dest_rpath, source_diffiter, start_index=()):
-        """Patch dest_rpath with an rorpiter of diffs"""
-        ITR = rorpiter.IterTreeReducer(PatchITRB, [dest_rpath, cls.CCPP])
-        for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
-            log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
-            ITR(diff.index, diff)
-        ITR.Finish()
-        cls.CCPP.close()
-        dest_rpath.setdata()
-
-    @classmethod
-    def patch_and_increment(cls, dest_rpath, source_diffiter, inc_rpath):
-        """Patch dest_rpath with rorpiter of diffs and write increments"""
-        ITR = rorpiter.IterTreeReducer(IncrementITRB,
-                                       [dest_rpath, inc_rpath, cls.CCPP])
-        for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
-            log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
-            ITR(diff.index, diff)
-        ITR.Finish()
-        cls.CCPP.close()
-        dest_rpath.setdata()
 
 
 class CacheCollatedPostProcess:
@@ -367,6 +370,72 @@ class CacheCollatedPostProcess:
         if len(self.cache_indices) > self.cache_size:
             self._shorten_cache()
         return source_rorp, dest_rorp
+
+    def in_cache(self, index):
+        """Return true if given index is cached"""
+        return index in self.cache_dict
+
+    def flag_success(self, index):
+        """Signal that the file with given index was updated successfully"""
+        self.cache_dict[index][3] = 1
+
+    def flag_deleted(self, index):
+        """Signal that the destination file was deleted"""
+        self.cache_dict[index][3] = 2
+
+    def flag_changed(self, index):
+        """Signal that the file with given index has changed"""
+        self.cache_dict[index][2] = 1
+
+    def set_inc(self, index, inc):
+        """Set the increment of the current file"""
+        self.cache_dict[index][4] = inc
+
+    def get_rorps(self, index):
+        """Retrieve (source_rorp, dest_rorp) from cache"""
+        try:
+            return self.cache_dict[index][:2]
+        except KeyError:
+            return self._get_parent_rorps(index)
+
+    def get_source_rorp(self, index):
+        """Retrieve source_rorp with given index from cache"""
+        assert index >= self.cache_indices[0], (
+            "CCPP index out of order: {idx!r} shouldn't be less than "
+            "{cached!r}.".format(idx=index, cached=self.cache_indices[0]))
+        try:
+            return self.cache_dict[index][0]
+        except KeyError:
+            return self._get_parent_rorps(index)[0]
+
+    def get_mirror_rorp(self, index):
+        """Retrieve mirror_rorp with given index from cache"""
+        try:
+            return self.cache_dict[index][1]
+        except KeyError:
+            return self._get_parent_rorps(index)[1]
+
+    def update_hash(self, index, sha1sum):
+        """Update the source rorp's SHA1 hash"""
+        self.get_source_rorp(index).set_sha1(sha1sum)
+
+    def update_hardlink_hash(self, diff_rorp):
+        """Tag associated source_rorp with same hash diff_rorp points to"""
+        sha1sum = Hardlink.get_sha1(diff_rorp)
+        if not sha1sum:
+            return
+        source_rorp = self.get_source_rorp(diff_rorp.index)
+        source_rorp.set_sha1(sha1sum)
+
+    def close(self):
+        """Process the remaining elements in the cache"""
+        while self.cache_indices:
+            self._shorten_cache()
+        while self.dir_perms_list:
+            dir_rp, perms = self.dir_perms_list.pop()
+            dir_rp.chmod(perms)
+        self.metawriter.close()
+        metadata.ManagerObj.ConvertMetaToDiff()
 
     def _pre_process(self, source_rorp, dest_rorp):
         """Do initial processing on source_rorp and dest_rorp
@@ -487,78 +556,12 @@ class CacheCollatedPostProcess:
                 and current_index[:len(dir_index)] != dir_index):
             dir_rp.chmod(perms)  # out of directory, reset perms now
 
-    def in_cache(self, index):
-        """Return true if given index is cached"""
-        return index in self.cache_dict
-
-    def flag_success(self, index):
-        """Signal that the file with given index was updated successfully"""
-        self.cache_dict[index][3] = 1
-
-    def flag_deleted(self, index):
-        """Signal that the destination file was deleted"""
-        self.cache_dict[index][3] = 2
-
-    def flag_changed(self, index):
-        """Signal that the file with given index has changed"""
-        self.cache_dict[index][2] = 1
-
-    def set_inc(self, index, inc):
-        """Set the increment of the current file"""
-        self.cache_dict[index][4] = inc
-
     def _get_parent_rorps(self, index):
         """Retrieve (src_rorp, dest_rorp) pair from parent cache"""
         for parent_index, pair in self.parent_list:
             if parent_index == index:
                 return pair
         raise KeyError(index)
-
-    def get_rorps(self, index):
-        """Retrieve (source_rorp, dest_rorp) from cache"""
-        try:
-            return self.cache_dict[index][:2]
-        except KeyError:
-            return self._get_parent_rorps(index)
-
-    def get_source_rorp(self, index):
-        """Retrieve source_rorp with given index from cache"""
-        assert index >= self.cache_indices[0], (
-            "CCPP index out of order: {idx!r} shouldn't be less than "
-            "{cached!r}.".format(idx=index, cached=self.cache_indices[0]))
-        try:
-            return self.cache_dict[index][0]
-        except KeyError:
-            return self._get_parent_rorps(index)[0]
-
-    def get_mirror_rorp(self, index):
-        """Retrieve mirror_rorp with given index from cache"""
-        try:
-            return self.cache_dict[index][1]
-        except KeyError:
-            return self._get_parent_rorps(index)[1]
-
-    def update_hash(self, index, sha1sum):
-        """Update the source rorp's SHA1 hash"""
-        self.get_source_rorp(index).set_sha1(sha1sum)
-
-    def update_hardlink_hash(self, diff_rorp):
-        """Tag associated source_rorp with same hash diff_rorp points to"""
-        sha1sum = Hardlink.get_sha1(diff_rorp)
-        if not sha1sum:
-            return
-        source_rorp = self.get_source_rorp(diff_rorp.index)
-        source_rorp.set_sha1(sha1sum)
-
-    def close(self):
-        """Process the remaining elements in the cache"""
-        while self.cache_indices:
-            self._shorten_cache()
-        while self.dir_perms_list:
-            dir_rp, perms = self.dir_perms_list.pop()
-            dir_rp.chmod(perms)
-        self.metawriter.close()
-        metadata.ManagerObj.ConvertMetaToDiff()
 
 
 class PatchITRB(rorpiter.ITRBranch):
@@ -611,6 +614,36 @@ class PatchITRB(rorpiter.ITRBranch):
             tf.setdata()
             if tf.lstat():
                 tf.delete()
+
+    def start_process(self, index, diff_rorp):
+        """Start processing directory - record information for later"""
+        self.base_rp, discard = longname.get_mirror_inc_rps(
+            self.CCPP.get_rorps(index), self.basis_root_rp)
+        if diff_rorp.isdir():
+            self._prepare_dir(diff_rorp, self.base_rp)
+        elif self._set_dir_replacement(diff_rorp, self.base_rp):
+            if diff_rorp.lstat():
+                self.CCPP.flag_success(index)
+            else:
+                self.CCPP.flag_deleted(index)
+
+    def end_process(self):
+        """Finish processing directory"""
+        if self.dir_update:
+            assert self.base_rp.isdir(), (
+                "Base directory '{rp!s}' isn't a directory.".format(
+                    rp=self.base_rp))
+            rpath.copy_attribs(self.dir_update, self.base_rp)
+
+            if (Globals.process_uid != 0
+                    and self.dir_update.getperms() % 0o1000 < 0o700):
+                # Directory was unreadable at start -- keep it readable
+                # until the end of the backup process.
+                self.base_rp.chmod(0o700 | self.dir_update.getperms())
+        elif self.dir_replacement:
+            self.base_rp.rmdir()
+            if self.dir_replacement.lstat():
+                rpath.rename(self.dir_replacement, self.base_rp)
 
     def _patch_to_temp(self, basis_rp, diff_rorp, new):
         """Patch basis_rp, writing output in new, which doesn't exist yet
@@ -716,18 +749,6 @@ class PatchITRB(rorpiter.ITRBranch):
                 new.delete()
             new.touch()
 
-    def start_process(self, index, diff_rorp):
-        """Start processing directory - record information for later"""
-        self.base_rp, discard = longname.get_mirror_inc_rps(
-            self.CCPP.get_rorps(index), self.basis_root_rp)
-        if diff_rorp.isdir():
-            self._prepare_dir(diff_rorp, self.base_rp)
-        elif self._set_dir_replacement(diff_rorp, self.base_rp):
-            if diff_rorp.lstat():
-                self.CCPP.flag_success(index)
-            else:
-                self.CCPP.flag_deleted(index)
-
     def _set_dir_replacement(self, diff_rorp, base_rp):
         """Set self.dir_replacement, which holds data until done with dir
 
@@ -763,24 +784,6 @@ class PatchITRB(rorpiter.ITRBranch):
         else:  # maybe no change, so query CCPP before tagging success
             if self.CCPP.in_cache(diff_rorp.index):
                 self.CCPP.flag_success(diff_rorp.index)
-
-    def end_process(self):
-        """Finish processing directory"""
-        if self.dir_update:
-            assert self.base_rp.isdir(), (
-                "Base directory '{rp!s}' isn't a directory.".format(
-                    rp=self.base_rp))
-            rpath.copy_attribs(self.dir_update, self.base_rp)
-
-            if (Globals.process_uid != 0
-                    and self.dir_update.getperms() % 0o1000 < 0o700):
-                # Directory was unreadable at start -- keep it readable
-                # until the end of the backup process.
-                self.base_rp.chmod(0o700 | self.dir_update.getperms())
-        elif self.dir_replacement:
-            self.base_rp.rmdir()
-            if self.dir_replacement.lstat():
-                rpath.rename(self.dir_replacement, self.base_rp)
 
 
 class IncrementITRB(PatchITRB):

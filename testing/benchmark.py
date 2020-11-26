@@ -1,7 +1,7 @@
 import sys
 import time
 import os
-from commontest import abs_output_dir, re_init_subdir, abs_test_dir, Myrm
+from commontest import re_init_subdir, abs_test_dir
 from rdiff_backup import rpath, Globals
 """benchmark.py
 
@@ -11,8 +11,15 @@ just use clock time, so this isn't exact at all.
 
 """
 
-output_desc = abs_output_dir
 new_pythonpath = None
+
+# How many files to generate in the "many" benchmark
+MANY_COUNT = 2000
+
+# Which depth and factor to use in the "nested" benchmark
+# Caution: count of files is factor**depth, it increases quickly!
+NESTED_DEPTH = 4
+NESTED_FACTOR = 7
 
 
 def run_cmd(cmd):
@@ -30,7 +37,7 @@ def run_cmd(cmd):
     return time.time() - t
 
 
-def create_many_files(dirname, s, count=1000):
+def create_many(dirname, s, count):
     """Create many short files in the dirname directory
 
     There will be count files in the directory, and each file will
@@ -44,16 +51,16 @@ def create_many_files(dirname, s, count=1000):
         rp = dir_rp.append(b"file_%d" % i)
         fp = rp.open("w")
         fp.write(s)
-        assert not fp.close()
+        fp.close()
 
 
-def create_nested(dirname, s, depth, branch_factor=10):
+def create_nested(dirname, s, depth, branch_factor):
     """Create many short files in branching directory"""
 
     def write(rp):
         fp = rp.open("w")
         fp.write(s)
-        assert not fp.close()
+        fp.close()
 
     def helper(rp, depth):
         if (not rp.isdir()):
@@ -74,114 +81,133 @@ def benchmark(backup_cmd, restore_cmd, desc, update_func=None):
     If update_func is given, run it and then do backup a third time.
 
     """
-    print("Initially backing up %s: %ss" % (desc, run_cmd(backup_cmd)))
-    print("Updating %s, no change: %ss" % (desc, run_cmd(backup_cmd)))
+    times_list = []
+    times_list.append(run_cmd(backup_cmd))
+    print("Initially backing up %s: %ss" % (desc, times_list[-1]))
+    times_list.append(run_cmd(backup_cmd))
+    print("Updating %s, no change: %ss" % (desc, times_list[-1]))
 
     if update_func:
         update_func()
-        print("Updating %s, all changed: %ss" % (desc, run_cmd(backup_cmd)))
+        times_list.append(run_cmd(backup_cmd))
+        print("Updating %s, all changed: %ss" % (desc, times_list[-1]))
 
     re_init_subdir(abs_test_dir, b'rest_out')
-    print("Restoring %s to empty dir: %ss" % (desc, run_cmd(restore_cmd)))
-    print("Restoring %s to unchanged dir: %ss" % (desc, run_cmd(restore_cmd)))
+    times_list.append(run_cmd(restore_cmd))
+    print("Restoring %s to empty dir: %ss" % (desc, times_list[-1]))
+    times_list.append(run_cmd(restore_cmd))
+    print("Restoring %s to unchanged dir: %ss" % (desc, times_list[-1]))
+
+    return times_list
 
 
-def many_files():
-    """Time backup and restore of 2000 files"""
-    count = 2000
+def many(backup, restore, many_count=MANY_COUNT):
+    """Time backup and restore of many_count files"""
     manyout_dir = re_init_subdir(abs_test_dir, b'many_out')
+    backout_dir = re_init_subdir(abs_test_dir, b'back_out')
     restout_dir = re_init_subdir(abs_test_dir, b'rest_out')
-    create_many_files(manyout_dir, "a", count)
-    backup_cmd = b"rdiff-backup '%b' '%b'" % (manyout_dir, output_desc)
-    restore_cmd = b"rdiff-backup --force -r now '%b' '%b'" % \
-        (output_desc, restout_dir)
+    create_many(manyout_dir, "a", many_count)
+    backup_cmd = backup % (manyout_dir, backout_dir)
+    restore_cmd = restore % (backout_dir, restout_dir)
 
     def update_func():
-        create_many_files(manyout_dir, "e", count)
+        create_many(manyout_dir, "e", many_count)
 
-    benchmark(backup_cmd, restore_cmd, "2000 1-byte files", update_func)
-
-
-def many_files_no_fsync():
-    """Time backup and restore of 2000 files"""
-    count = 2000
-    manyout_dir = re_init_subdir(abs_test_dir, b'many_out')
-    restout_dir = re_init_subdir(abs_test_dir, b'rest_out')
-    create_many_files(manyout_dir, "a", count)
-    backup_cmd = b"rdiff-backup --no-fsync '%b' '%b'" % (manyout_dir, output_desc)
-    restore_cmd = b"rdiff-backup --no-fsync --force -r now '%b' '%b'" % \
-        (output_desc, restout_dir)
-
-    def update_func():
-        create_many_files(manyout_dir, "e", count)
-
-    benchmark(backup_cmd, restore_cmd, "2000 1-byte files", update_func)
+    return benchmark(backup_cmd, restore_cmd, "{count} 1-byte files".format(
+        count=many_count), update_func)
 
 
-def many_files_rsync():
-    """Test rsync benchmark"""
-    count = 2000
-    manyout_dir = re_init_subdir(abs_test_dir, b'many_out')
-    create_many_files(manyout_dir, "a", count)
-    rsync_command = b"rsync -e ssh -aH --delete '%s' '%s'" % \
-        (manyout_dir, output_desc)
-    print("Initial rsync: %ss" % (run_cmd(rsync_command), ))
-    print("rsync update: %ss" % (run_cmd(rsync_command), ))
-
-    create_many_files(manyout_dir, "e", count)
-    print("Update changed rsync: %ss" % (run_cmd(rsync_command), ))
-
-
-def nested_files():
-    """Time backup and restore of 10000 nested files"""
-    depth = 4
+def nested(backup, restore, nested_depth=NESTED_DEPTH, nested_factor=NESTED_FACTOR):
+    """Time backup and restore of factor**depth nested files"""
     nestedout_dir = re_init_subdir(abs_test_dir, b'nested_out')
+    backout_dir = re_init_subdir(abs_test_dir, b'back_out')
     restout_dir = re_init_subdir(abs_test_dir, b'rest_out')
-    create_nested(nestedout_dir, "a", depth)
-    backup_cmd = b"rdiff-backup '%b' '%b'" % (nestedout_dir, output_desc)
-    restore_cmd = b"rdiff-backup --force -r now '%b' '%b'" % \
-        (output_desc, restout_dir)
+    create_nested(nestedout_dir, "a", nested_depth, nested_factor)
+    backup_cmd = backup % (nestedout_dir, backout_dir)
+    restore_cmd = restore % (backout_dir, restout_dir)
 
     def update_func():
-        create_nested(nestedout_dir, "e", depth)
+        create_nested(nestedout_dir, "e", nested_depth, nested_factor)
 
-    benchmark(backup_cmd, restore_cmd, "10000 1-byte nested files",
-              update_func)
-
-
-def nested_files_rsync():
-    """Test rsync on nested files"""
-    depth = 4
-    nestedout_dir = re_init_subdir(abs_test_dir, b'nested_out')
-    create_nested(nestedout_dir, "a", depth)
-    rsync_command = b"rsync -e ssh -aH --delete '%b' '%b'" % \
-        (nestedout_dir, output_desc)
-    print("Initial rsync: %ss" % (run_cmd(rsync_command), ))
-    print("rsync update: %ss" % (run_cmd(rsync_command), ))
-
-    create_nested(nestedout_dir, "e", depth)
-    print("Update changed rsync: %ss" % (run_cmd(rsync_command), ))
+    nested_count = nested_factor**nested_depth
+    return benchmark(
+        backup_cmd, restore_cmd, "{count} 1-byte nested files".format(
+            count=nested_count), update_func)
 
 
-if len(sys.argv) < 2 or len(sys.argv) > 3:
-    print("Syntax:  benchmark.py benchmark_func [output_description]")
-    print("")
-    print("Where output_description defaults to '%s'." % abs_output_dir)
-    print("Currently benchmark_func includes:")
-    print("'many_files', 'many_files_no_fsync', 'many_files_rsync', and, 'nested_files'.")
+def print_results(bench, results):
+    """Print a table with the absolute and relative results"""
+    func_names = list(map(lambda x: x['name'], bench))
+    names_width = max(list(map(len, func_names)))
+
+    for ires in range(len(bench)):
+        sys.stdout.write("{name:{width}};".format(name=func_names[ires],
+                                                  width=names_width))
+        all_results = results[ires][0:]  # deep copy
+        for jres in range(len(results[0])):
+            all_results.append(results[ires][jres] / results[0][jres])
+        for value in all_results:
+            sys.stdout.write("{val:6.3f};".format(val=value))
+        print("")
+
+
+# MAIN SECTION
+
+benchmarks = {
+    'many': [
+        {
+            'name': 'many_rsync',
+            'func': many,
+            'backup': b"rsync -e ssh -aH --delete '%s' '%s'",
+            'restore': b"rsync -e ssh -aH --delete '%s' '%s'",
+        },
+        {
+            'name': 'many_normal',
+            'func': many,
+            'backup': b"rdiff-backup '%b' '%b'",
+            'restore': b"rdiff-backup --force -r now '%b' '%b'",
+        },
+        {
+            'name': 'many_no_fsync',
+            'func': many,
+            'backup': b"rdiff-backup --no-fsync '%b' '%b'",
+            'restore': b"rdiff-backup --no-fsync --force -r now '%b' '%b'",
+        },
+    ],
+    'nested': [
+        {
+            'name': 'nested_rsync',
+            'func': nested,
+            'backup': b"rsync -e ssh -aH --delete '%s' '%s'",
+            'restore': b"rsync -e ssh -aH --delete '%s' '%s'",
+        },
+        {
+            'name': 'nested_normal',
+            'func': nested,
+            'backup': b"rdiff-backup '%b' '%b'",
+            'restore': b"rdiff-backup --force -r now '%b' '%b'",
+        },
+        {
+            'name': 'nested_no_fsync',
+            'func': nested,
+            'backup': b"rdiff-backup --no-fsync '%b' '%b'",
+            'restore': b"rdiff-backup --no-fsync --force -r now '%b' '%b'",
+        },
+    ],
+}
+
+if len(sys.argv) != 2:
+    print("Syntax:  benchmark.py many|nested")
     sys.exit(1)
-
-if len(sys.argv) == 3:
-    output_desc = os.fsencode(sys.argv[2])
-    if b":" not in output_desc:  # file is local
-        assert not rpath.RPath(Globals.local_connection, output_desc).lstat(), \
-            "Outfile file '%a' exists, try deleting it first." % (output_desc,)
-else:  # we assume we can always remove the default output directory
-    Myrm(output_desc)
 
 if 'BENCHMARKPYPATH' in os.environ:
     new_pythonpath = os.fsencode(os.environ['BENCHMARKPYPATH'])
 
-function_name = sys.argv[1]
-print("Running ", function_name)
-eval(sys.argv[1])()
+benchmark_name = sys.argv[1]
+print("=== Running '{bench}' benchmark ===".format(bench=benchmark_name))
+benchmark_results = []
+for bench in benchmarks[benchmark_name]:
+    benchmark_results.append(bench['func'](bench['backup'], bench['restore']))
+print("=== Results of '{bench}' benchmark (absolute and relative) ===".format(
+    bench=benchmark_name))
+print_results(benchmarks[benchmark_name], benchmark_results)

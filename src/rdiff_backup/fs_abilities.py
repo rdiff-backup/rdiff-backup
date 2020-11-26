@@ -699,20 +699,6 @@ class FSAbilities:
         self.escape_trailing_spaces = 0
 
 
-def get_readonly_fsa(desc_string, rp):
-    """Return an fsa with given description_string
-
-    Will be initialized read_only with given RPath rp.  We separate
-    this out into a separate function so the request can be vetted by
-    the security module.
-
-    """
-    if os.name == 'nt':
-        log.Log("Hardlinks disabled by default on Windows", 4)
-        SetConnections.UpdateGlobal('preserve_hardlinks', 0)
-    return FSAbilities(desc_string, rp, read_only=True)
-
-
 class SetGlobals:
     """Various functions for setting Globals vars given FSAbilities above
 
@@ -784,21 +770,6 @@ class SetGlobals:
 class BackupSetGlobals(SetGlobals):
     """Functions for setting fsa related globals for backup session"""
 
-    def _update_triple(self, src_support, dest_support, attr_triple):
-        """Many of the settings have a common form we can handle here"""
-        active_attr, write_attr, conn_attr = attr_triple
-        if Globals.get(active_attr) == 0:
-            return  # don't override 0
-        for attr in attr_triple:
-            SetConnections.UpdateGlobal(attr, None)
-        if not src_support:
-            return  # if source doesn't support, nothing
-        SetConnections.UpdateGlobal(active_attr, 1)
-        self.in_conn.Globals.set_local(conn_attr, 1)
-        if dest_support:
-            SetConnections.UpdateGlobal(write_attr, 1)
-            self.out_conn.Globals.set_local(conn_attr, 1)
-
     def set_special_escapes(self, rbdir):
         """Escaping DOS devices and trailing periods/spaces works like
         regular filename escaping. If only the destination requires it,
@@ -860,6 +831,21 @@ class BackupSetGlobals(SetGlobals):
         if Globals.chars_to_quote:
             FilenameMapping.set_init_quote_vals()
         return update
+
+    def _update_triple(self, src_support, dest_support, attr_triple):
+        """Many of the settings have a common form we can handle here"""
+        active_attr, write_attr, conn_attr = attr_triple
+        if Globals.get(active_attr) == 0:
+            return  # don't override 0
+        for attr in attr_triple:
+            SetConnections.UpdateGlobal(attr, None)
+        if not src_support:
+            return  # if source doesn't support, nothing
+        SetConnections.UpdateGlobal(active_attr, 1)
+        self.in_conn.Globals.set_local(conn_attr, 1)
+        if dest_support:
+            SetConnections.UpdateGlobal(write_attr, 1)
+            self.out_conn.Globals.set_local(conn_attr, 1)
 
     def _get_ctq_from_fsas(self):
         """Determine chars_to_quote just from filesystems, no ctq file"""
@@ -937,28 +923,6 @@ repository from the old quoting chars to the new ones.""" %
 class RestoreSetGlobals(SetGlobals):
     """Functions for setting fsa-related globals for restore session"""
 
-    def _update_triple(self, src_support, dest_support, attr_triple):
-        """Update global settings for feature based on fsa results
-
-        This is slightly different from BackupSetGlobals._update_triple
-        because (using the mirror_metadata file) rpaths from the
-        source may have more information than the file system
-        supports.
-
-        """
-        active_attr, write_attr, conn_attr = attr_triple
-        if Globals.get(active_attr) == 0:
-            return  # don't override 0
-        for attr in attr_triple:
-            SetConnections.UpdateGlobal(attr, None)
-        if not dest_support:
-            return  # if dest doesn't support, do nothing
-        SetConnections.UpdateGlobal(active_attr, 1)
-        self.out_conn.Globals.set_local(conn_attr, 1)
-        self.out_conn.Globals.set_local(write_attr, 1)
-        if src_support:
-            self.in_conn.Globals.set_local(conn_attr, 1)
-
     def set_special_escapes(self, rbdir):
         """Set escape_dos_devices and escape_trailing_spaces from
         rdiff-backup-data dir, just like chars_to_quote"""
@@ -1002,6 +966,28 @@ class RestoreSetGlobals(SetGlobals):
                 "assuming no quoting in backup repository.", 2)
             SetConnections.UpdateGlobal("chars_to_quote", b"")
 
+    def _update_triple(self, src_support, dest_support, attr_triple):
+        """Update global settings for feature based on fsa results
+
+        This is slightly different from BackupSetGlobals._update_triple
+        because (using the mirror_metadata file) rpaths from the
+        source may have more information than the file system
+        supports.
+
+        """
+        active_attr, write_attr, conn_attr = attr_triple
+        if Globals.get(active_attr) == 0:
+            return  # don't override 0
+        for attr in attr_triple:
+            SetConnections.UpdateGlobal(attr, None)
+        if not dest_support:
+            return  # if dest doesn't support, do nothing
+        SetConnections.UpdateGlobal(active_attr, 1)
+        self.out_conn.Globals.set_local(conn_attr, 1)
+        self.out_conn.Globals.set_local(write_attr, 1)
+        if src_support:
+            self.in_conn.Globals.set_local(conn_attr, 1)
+
 
 class SingleSetGlobals(RestoreSetGlobals):
     """For setting globals when dealing only with one filesystem"""
@@ -1009,19 +995,6 @@ class SingleSetGlobals(RestoreSetGlobals):
     def __init__(self, conn, fsa):
         self.conn = conn
         self.dest_fsa = fsa
-
-    def _update_triple(self, fsa_support, attr_triple):
-        """Update global vars from single fsa test"""
-        active_attr, write_attr, conn_attr = attr_triple
-        if Globals.get(active_attr) == 0:
-            return  # don't override 0
-        for attr in attr_triple:
-            SetConnections.UpdateGlobal(attr, None)
-        if not fsa_support:
-            return
-        SetConnections.UpdateGlobal(active_attr, 1)
-        SetConnections.UpdateGlobal(write_attr, 1)
-        self.conn.Globals.set_local(conn_attr, 1)
 
     def set_eas(self):
         self._update_triple(
@@ -1047,7 +1020,36 @@ class SingleSetGlobals(RestoreSetGlobals):
             self.dest_fsa.carbonfile,
             ('carbonfile_active', 'carbonfile_write', 'carbonfile_conn'))
 
+    def _update_triple(self, fsa_support, attr_triple):
+        """Update global vars from single fsa test"""
+        active_attr, write_attr, conn_attr = attr_triple
+        if Globals.get(active_attr) == 0:
+            return  # don't override 0
+        for attr in attr_triple:
+            SetConnections.UpdateGlobal(attr, None)
+        if not fsa_support:
+            return
+        SetConnections.UpdateGlobal(active_attr, 1)
+        SetConnections.UpdateGlobal(write_attr, 1)
+        self.conn.Globals.set_local(conn_attr, 1)
 
+
+# @API(get_readonly_fsa, 200)
+def get_readonly_fsa(desc_string, rp):
+    """Return an fsa with given description_string
+
+    Will be initialized read_only with given RPath rp.  We separate
+    this out into a separate function so the request can be vetted by
+    the security module.
+
+    """
+    if os.name == 'nt':
+        log.Log("Hardlinks disabled by default on Windows", 4)
+        SetConnections.UpdateGlobal('preserve_hardlinks', 0)
+    return FSAbilities(desc_string, rp, read_only=True)
+
+
+# @API(backup_set_globals, 200)
 def backup_set_globals(rpin, force):
     """Given rps for source filesystem and repository, set fsa globals
 
@@ -1082,6 +1084,7 @@ def backup_set_globals(rpin, force):
         FilenameMapping.update_quoting(Globals.rbdir)
 
 
+# @API(restore_set_globals, 200)
 def restore_set_globals(rpout):
     """Set fsa related globals for restore session, given in/out rps"""
     assert rpout.conn is Globals.local_connection, (
@@ -1109,6 +1112,7 @@ def restore_set_globals(rpout):
     rsg.set_compatible_timestamps()
 
 
+# @API(single_set_globals, 200)
 def single_set_globals(rp, read_only=None):
     """Set fsa related globals for operation on single filesystem"""
     if read_only:

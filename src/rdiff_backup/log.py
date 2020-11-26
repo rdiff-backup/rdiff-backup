@@ -29,17 +29,6 @@ from . import Globals, rpath
 LOGFILE_ENCODING = 'utf-8'
 
 
-def _to_bytes(logline, encoding=LOGFILE_ENCODING):
-    """
-    Convert string into bytes for logging into file.
-    """
-    assert logline, "There must be a text to encode."
-    assert isinstance(logline, str), (
-        "Text to encode must be str and not {ltype}.".format(
-            ltype=type(logline)))
-    return logline.encode(encoding, 'backslashreplace')
-
-
 class LoggerError(Exception):
     pass
 
@@ -54,88 +43,6 @@ class Logger:
             os.getenv('RDIFF_BACKUP_VERBOSITY', '3'))
         # termverbset is true if the term_verbosity has been explicitly set
         self.termverbset = None
-
-    def setverbosity(self, verbosity_string):
-        """Set verbosity levels.  Takes a number string"""
-        try:
-            self.verbosity = int(verbosity_string)
-        except ValueError:
-            Log.FatalError("Verbosity must be a number, received '%s' "
-                           "instead." % verbosity_string)
-        if not self.termverbset:
-            self.term_verbosity = self.verbosity
-
-    def setterm_verbosity(self, termverb_string):
-        """Set verbosity to terminal.  Takes a number string"""
-        try:
-            self.term_verbosity = int(termverb_string)
-        except ValueError:
-            Log.FatalError("Terminal verbosity must be a number, received "
-                           "'%s' instead." % termverb_string)
-        self.termverbset = 1
-
-    def open_logfile(self, rpath):
-        """Inform all connections of an open logfile.
-
-        rpath.conn will write to the file, and the others will pass
-        write commands off to it.
-
-        """
-        assert not self.log_file_open, "Can't open an already opened logfile."
-        rpath.conn.log.Log.open_logfile_local(rpath)
-        for conn in Globals.connections:
-            conn.log.Log.open_logfile_allconn(rpath.conn)
-
-    def open_logfile_allconn(self, log_file_conn):
-        """Run on all connections to signal log file is open"""
-        self.log_file_open = 1
-        self.log_file_conn = log_file_conn
-
-    def open_logfile_local(self, rpath):
-        """Open logfile locally - should only be run on one connection"""
-        assert rpath.conn is Globals.local_connection, (
-            "Action only foreseen locally and not over {conn}.".format(
-                conn=rpath.conn))
-        try:
-            self.logfp = rpath.open("ab")
-        except (OSError, IOError) as e:
-            raise LoggerError(
-                "Unable to open logfile %s: %s" % (rpath.path, e))
-        self.log_file_local = 1
-        self.logrp = rpath
-
-    def close_logfile(self):
-        """Close logfile and inform all connections"""
-        if self.log_file_open:
-            for conn in Globals.connections:
-                conn.log.Log.close_logfile_allconn()
-            self.log_file_conn.log.Log.close_logfile_local()
-
-    def close_logfile_allconn(self):
-        """Run on every connection"""
-        self.log_file_open = None
-
-    def close_logfile_local(self):
-        """Run by logging connection - close logfile"""
-        assert self.log_file_conn is Globals.local_connection, (
-            "Action only foreseen locally and not over {conn}.".format(
-                conn=self.log_file_conn))
-        self.logfp.close()
-        self.log_file_local = None
-
-    def _format(self, message, verbosity):
-        """Format the message, possibly adding date information"""
-        if verbosity < 9:
-            return "%s\n" % message
-        else:
-            timestamp = datetime.datetime.now(
-                datetime.timezone.utc).astimezone().strftime(
-                    "%F %H:%M:%S.%f %z")
-            if Globals.server:
-                role = "SERVER"
-            else:
-                role = "CLIENT"
-            return "%s  <%s-%d>  %s\n" % (timestamp, role, os.getpid(), message)
 
     def __call__(self, message, verbosity):
         """Log message that has verbosity importance
@@ -162,6 +69,7 @@ class Logger:
         if verbosity <= self.term_verbosity:
             self.log_to_term(message, verbosity)
 
+    # @API(Log.log_to_file, 200)
     def log_to_file(self, message):
         """Write the message to the log file, if possible"""
         if self.log_file_open:
@@ -210,21 +118,6 @@ class Logger:
         self.log_to_term("Fatal Error: " + message, 1)
         sys.exit(return_code)
 
-    def exception_to_string(self, arglist=[]):
-        """Return string version of current exception plus what's in arglist"""
-        type, value, tb = sys.exc_info()
-        s = ("Exception '%s' raised of class '%s':\n%s" %
-             (value, type, "".join(traceback.format_tb(tb))))
-        if arglist:
-            s += "__Arguments:"
-            for arg in arglist:
-                s += "\n"
-                try:
-                    s += str(arg)
-                except UnicodeError:
-                    s += str(arg).encode('ascii', 'replace')
-        return s
-
     def exception(self, only_terminal=0, verbosity=5):
         """Log an exception and traceback
 
@@ -242,12 +135,115 @@ class Logger:
             if verbosity >= self.term_verbosity:
                 return
 
-        exception_string = self.exception_to_string()
+        exception_string = self._exception_to_string()
         try:
             logging_func(exception_string, verbosity)
         except IOError:
             print("IOError while trying to log exception!")
             print(exception_string)
+
+    # @API(Log.setverbosity, 200)
+    def setverbosity(self, verbosity_string):
+        """Set verbosity levels.  Takes a number string"""
+        try:
+            self.verbosity = int(verbosity_string)
+        except ValueError:
+            Log.FatalError("Verbosity must be a number, received '%s' "
+                           "instead." % verbosity_string)
+        if not self.termverbset:
+            self.term_verbosity = self.verbosity
+
+    # @API(Log.setterm_verbosity, 200)
+    def setterm_verbosity(self, termverb_string):
+        """Set verbosity to terminal.  Takes a number string"""
+        try:
+            self.term_verbosity = int(termverb_string)
+        except ValueError:
+            Log.FatalError("Terminal verbosity must be a number, received "
+                           "'%s' instead." % termverb_string)
+        self.termverbset = 1
+
+    def open_logfile(self, rpath):
+        """Inform all connections of an open logfile.
+
+        rpath.conn will write to the file, and the others will pass
+        write commands off to it.
+
+        """
+        assert not self.log_file_open, "Can't open an already opened logfile."
+        rpath.conn.log.Log.open_logfile_local(rpath)
+        for conn in Globals.connections:
+            conn.log.Log.open_logfile_allconn(rpath.conn)
+
+    # @API(Log.open_logfile_allconn, 200)
+    def open_logfile_allconn(self, log_file_conn):
+        """Run on all connections to signal log file is open"""
+        self.log_file_open = 1
+        self.log_file_conn = log_file_conn
+
+    # @API(Log.open_logfile_local, 200)
+    def open_logfile_local(self, rpath):
+        """Open logfile locally - should only be run on one connection"""
+        assert rpath.conn is Globals.local_connection, (
+            "Action only foreseen locally and not over {conn}.".format(
+                conn=rpath.conn))
+        try:
+            self.logfp = rpath.open("ab")
+        except (OSError, IOError) as e:
+            raise LoggerError(
+                "Unable to open logfile %s: %s" % (rpath.path, e))
+        self.log_file_local = 1
+        self.logrp = rpath
+
+    def close_logfile(self):
+        """Close logfile and inform all connections"""
+        if self.log_file_open:
+            for conn in Globals.connections:
+                conn.log.Log.close_logfile_allconn()
+            self.log_file_conn.log.Log.close_logfile_local()
+
+    # @API(Log.close_logfile_allconn, 200)
+    def close_logfile_allconn(self):
+        """Run on every connection"""
+        self.log_file_open = None
+
+    # @API(Log.close_logfile_local, 200)
+    def close_logfile_local(self):
+        """Run by logging connection - close logfile"""
+        assert self.log_file_conn is Globals.local_connection, (
+            "Action only foreseen locally and not over {conn}.".format(
+                conn=self.log_file_conn))
+        self.logfp.close()
+        self.log_file_local = None
+
+    def _exception_to_string(self, arglist=[]):
+        """Return string version of current exception plus what's in arglist"""
+        type, value, tb = sys.exc_info()
+        s = ("Exception '%s' raised of class '%s':\n%s" %
+             (value, type, "".join(traceback.format_tb(tb))))
+        if arglist:
+            s += "__Arguments:"
+            for arg in arglist:
+                s += "\n"
+                try:
+                    s += str(arg)
+                except UnicodeError:
+                    s += str(arg).encode('ascii', 'replace')
+        return s
+
+    def _format(self, message, verbosity):
+        """Format the message, possibly adding date information"""
+        if verbosity < 9:
+            return "%s\n" % message
+        else:
+            timestamp = datetime.datetime.now(
+                datetime.timezone.utc).astimezone().strftime(
+                    "%F %H:%M:%S.%f %z")
+            if Globals.server:
+                role = "SERVER"
+            else:
+                role = "CLIENT"
+            return "%s  <%s-%d>  %s\n" % (timestamp, role, os.getpid(), message)
 
 
 Log = Logger()
@@ -336,3 +332,14 @@ class ErrorLog:
                 or error_type == "SpecialFileError"), (
             "Unknown error type {etype}".format(etype=error_type))
         return "%s: '%s' %s" % (error_type, cls.get_indexpath(rp), exc)
+
+
+def _to_bytes(logline, encoding=LOGFILE_ENCODING):
+    """
+    Convert string into bytes for logging into file.
+    """
+    assert logline, "There must be a text to encode."
+    assert isinstance(logline, str), (
+        "Text to encode must be str and not {ltype}.".format(
+            ltype=type(logline)))
+    return logline.encode(encoding, 'backslashreplace')

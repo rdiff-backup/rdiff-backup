@@ -50,6 +50,222 @@ class RegressException(Exception):
     pass
 
 
+class RegressFile(restore.RestoreFile):
+    """Like RestoreFile but with metadata
+
+    Hold mirror_rp and related incs, but also put metadata info for
+    the mirror file at regress time in self.metadata_rorp.
+    self.metadata_rorp is not set in this class.
+
+    """
+
+    def __init__(self, mirror_rp, inc_rp, inc_list):
+        restore.RestoreFile.__init__(self, mirror_rp, inc_rp, inc_list)
+        self._set_regress_inc()
+
+    def set_metadata_rorp(self, metadata_rorp):
+        """Set self.metadata_rorp, creating empty if given None"""
+        if metadata_rorp:
+            self.metadata_rorp = metadata_rorp
+        else:
+            self.metadata_rorp = rpath.RORPath(self.index)
+
+    def isdir(self):
+        """Return true if regress needs before/after processing"""
+        return ((self.metadata_rorp and self.metadata_rorp.isdir())
+                or (self.mirror_rp and self.mirror_rp.isdir()))
+
+    def _set_regress_inc(self):
+        """Set self.regress_inc to increment to be removed (or None)"""
+        newer_incs = self.get_newer_incs()
+        assert len(newer_incs) <= 1, "Too many recent increments"
+        if newer_incs:
+            self.regress_inc = newer_incs[0]  # first is mirror_rp
+        else:
+            self.regress_inc = None
+
+
+class RegressITRB(rorpiter.ITRBranch):
+    """Turn back state of dest directory (use with IterTreeReducer)
+
+    The arguments to the ITR will be RegressFiles.  There are two main
+    assumptions this procedure makes (besides those mentioned above):
+
+    1.  The mirror_rp and the metadata_rorp equal_loose correctly iff
+        they contain the same data.  If this is the case, then the inc
+        file is unnecessary and we can delete it.
+
+    2.  If the don't match, then applying the inc file will
+        successfully get us back to the previous state.
+
+    Since the metadata file is required, the two above really only
+    matter for regular files.
+
+    """
+
+    def __init__(self):
+        """Just initialize some variables to None"""
+        self.rf = None  # will hold RegressFile applying to a directory
+
+    def can_fast_process(self, index, rf):
+        """True if none of the rps is a directory"""
+        return not rf.mirror_rp.isdir() and not rf.metadata_rorp.isdir()
+
+    def fast_process(self, index, rf):
+        """Process when nothing is a directory"""
+        if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
+            log.Log(
+                "Regressing file %s" % (rf.metadata_rorp.get_safeindexpath()),
+                5)
+            if rf.metadata_rorp.isreg():
+                self._restore_orig_regfile(rf)
+            else:
+                if rf.mirror_rp.lstat():
+                    rf.mirror_rp.delete()
+                if rf.metadata_rorp.isspecial():
+                    robust.check_common_error(None, rpath.copy_with_attribs,
+                                              (rf.metadata_rorp, rf.mirror_rp))
+                else:
+                    rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
+        if rf.regress_inc:
+            log.Log("Deleting increment %s" % rf.regress_inc.get_safepath(), 5)
+            rf.regress_inc.delete()
+
+    def start_process(self, index, rf):
+        """Start processing directory"""
+        if rf.metadata_rorp.isdir():
+            # make sure mirror is a readable dir
+            if not rf.mirror_rp.isdir():
+                if rf.mirror_rp.lstat():
+                    rf.mirror_rp.delete()
+                rf.mirror_rp.mkdir()
+            if not rf.mirror_rp.hasfullperms():
+                rf.mirror_rp.chmod(0o700)
+        self.rf = rf
+
+    def end_process(self):
+        """Finish processing a directory"""
+        rf = self.rf
+        if rf.metadata_rorp.isdir():
+            if rf.mirror_rp.isdir():
+                rf.mirror_rp.setdata()
+                if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
+                    log.Log(
+                        "Regressing attributes of %s" %
+                        rf.mirror_rp.get_safepath(), 5)
+                    rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
+            else:
+                rf.mirror_rp.delete()
+                log.Log("Regressing file %s" % rf.mirror_rp.get_safepath(), 5)
+                rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
+        else:  # replacing a dir with some other kind of file
+            assert rf.mirror_rp.isdir(), (
+                "Mirror '{mrp!s}' can only be a directory.".format(
+                    mrp=rf.mirror_rp))
+            log.Log("Replacing directory %s" % rf.mirror_rp.get_safepath(), 5)
+            if rf.metadata_rorp.isreg():
+                self._restore_orig_regfile(rf)
+            else:
+                rf.mirror_rp.delete()
+                rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
+        if rf.regress_inc:
+            log.Log("Deleting increment %s" % rf.regress_inc.get_safepath(), 5)
+            rf.regress_inc.delete()
+
+    def _restore_orig_regfile(self, rf):
+        """Restore original regular file
+
+        This is the trickiest case for avoiding information loss,
+        because we don't want to delete the increment before the
+        mirror is fully written.
+
+        """
+        assert rf.metadata_rorp.isreg(), (
+            "Metadata path '{mrp!s}' can only be regular file.".format(
+                mrp=rf.metadata_rorp))
+        if rf.mirror_rp.isreg():
+            tf = rf.mirror_rp.get_temp_rpath(sibling=True)
+            tf.write_from_fileobj(rf.get_restore_fp())
+            tf.fsync_with_dir()  # make sure tf fully written before move
+            rpath.copy_attribs(rf.metadata_rorp, tf)
+            rpath.rename(tf, rf.mirror_rp)  # move is atomic
+        else:
+            if rf.mirror_rp.lstat():
+                rf.mirror_rp.delete()
+            rf.mirror_rp.write_from_fileobj(rf.get_restore_fp())
+            rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
+        if Globals.fsync_directories:
+            rf.mirror_rp.get_parent_rp().fsync(
+            )  # force move before inc delete
+
+
+# @API(check_pids, 200)
+def check_pids(curmir_incs):
+    """Check PIDs in curmir markers to make sure rdiff-backup not running"""
+    pid_re = re.compile(r"^PID\s*([0-9]+)", re.I | re.M)
+
+    def extract_pid(curmir_rp):
+        """Return process ID from a current mirror marker, if any"""
+        match = pid_re.search(curmir_rp.get_string())
+        if not match:
+            return None
+        else:
+            return int(match.group(1))
+
+    def pid_running(pid):
+        """Return True if we know if process with pid is currently running,
+        False if it isn't running, and None if we don't know for sure."""
+        if os.name == 'nt':
+            import win32api
+            import win32con
+            import pywintypes
+            process = None
+            try:
+                process = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 0,
+                                               pid)
+            except pywintypes.error as error:
+                if error[0] == 87:
+                    return False
+                else:
+                    msg = "Warning: unable to check if PID %d still running"
+                    log.Log(msg % pid, 2)
+                    return None  # we don't know if the process is running
+            else:
+                if process:
+                    win32api.CloseHandle(process)
+                    return True
+                else:
+                    return False
+        else:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:  # errno.ESRCH - pid doesn't exist
+                return False
+            except OSError:  # any other OS error
+                log.Log(
+                    "Warning: unable to check if PID %d still running" % (pid, ),
+                    2)
+                return None  # we don't know if the process is still running
+            else:  # the process still exists
+                return True
+
+    for curmir_rp in curmir_incs:
+        assert curmir_rp.conn is Globals.local_connection, (
+            "Function must be called locally not over '{conn}'.".format(
+                conn=curmir_rp.conn))
+        pid = extract_pid(curmir_rp)
+        # FIXME differentiate between don't know and know and handle err.errno == errno.EPERM:
+        # EPERM clearly means there's a process to deny access to with OSError
+        if pid is not None and pid_running(pid):
+            log.Log.FatalError(
+                """It appears that a previous rdiff-backup session with process
+id %d is still running.  If two different rdiff-backup processes write
+the same repository simultaneously, data corruption will probably
+result.  To proceed with regress anyway, rerun rdiff-backup with the
+--force option.""" % (pid, ))
+
+
+# @API(Regress, 200)
 def Regress(mirror_rp):
     """Bring mirror and inc directory back to regress_to_time
 
@@ -201,16 +417,6 @@ def _iterate_raw_rfs(mirror_rp, inc_rp):
     return helper(root_rf)
 
 
-def _yield_metadata():
-    """Iterate rorps from metadata file, if any are available"""
-    metadata.SetManager()
-    metadata_iter = metadata.ManagerObj.GetAtTime(regress_time)
-    if metadata_iter:
-        return metadata_iter
-    log.Log.FatalError("No metadata for time %s (%s) found,\ncannot regress" %
-                       (Time.timetopretty(regress_time), regress_time))
-
-
 def _iterate_meta_rfs(mirror_rp, inc_rp):
     """Yield RegressFile objects with extra metadata information added
 
@@ -233,215 +439,11 @@ def _iterate_meta_rfs(mirror_rp, inc_rp):
         yield raw_rf
 
 
-class RegressFile(restore.RestoreFile):
-    """Like RestoreFile but with metadata
-
-    Hold mirror_rp and related incs, but also put metadata info for
-    the mirror file at regress time in self.metadata_rorp.
-    self.metadata_rorp is not set in this class.
-
-    """
-
-    def __init__(self, mirror_rp, inc_rp, inc_list):
-        restore.RestoreFile.__init__(self, mirror_rp, inc_rp, inc_list)
-        self._set_regress_inc()
-
-    def set_metadata_rorp(self, metadata_rorp):
-        """Set self.metadata_rorp, creating empty if given None"""
-        if metadata_rorp:
-            self.metadata_rorp = metadata_rorp
-        else:
-            self.metadata_rorp = rpath.RORPath(self.index)
-
-    def isdir(self):
-        """Return true if regress needs before/after processing"""
-        return ((self.metadata_rorp and self.metadata_rorp.isdir())
-                or (self.mirror_rp and self.mirror_rp.isdir()))
-
-    def _set_regress_inc(self):
-        """Set self.regress_inc to increment to be removed (or None)"""
-        newer_incs = self.get_newer_incs()
-        assert len(newer_incs) <= 1, "Too many recent increments"
-        if newer_incs:
-            self.regress_inc = newer_incs[0]  # first is mirror_rp
-        else:
-            self.regress_inc = None
-
-
-class RegressITRB(rorpiter.ITRBranch):
-    """Turn back state of dest directory (use with IterTreeReducer)
-
-    The arguments to the ITR will be RegressFiles.  There are two main
-    assumptions this procedure makes (besides those mentioned above):
-
-    1.  The mirror_rp and the metadata_rorp equal_loose correctly iff
-        they contain the same data.  If this is the case, then the inc
-        file is unnecessary and we can delete it.
-
-    2.  If the don't match, then applying the inc file will
-        successfully get us back to the previous state.
-
-    Since the metadata file is required, the two above really only
-    matter for regular files.
-
-    """
-
-    def __init__(self):
-        """Just initialize some variables to None"""
-        self.rf = None  # will hold RegressFile applying to a directory
-
-    def can_fast_process(self, index, rf):
-        """True if none of the rps is a directory"""
-        return not rf.mirror_rp.isdir() and not rf.metadata_rorp.isdir()
-
-    def fast_process(self, index, rf):
-        """Process when nothing is a directory"""
-        if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
-            log.Log(
-                "Regressing file %s" % (rf.metadata_rorp.get_safeindexpath()),
-                5)
-            if rf.metadata_rorp.isreg():
-                self._restore_orig_regfile(rf)
-            else:
-                if rf.mirror_rp.lstat():
-                    rf.mirror_rp.delete()
-                if rf.metadata_rorp.isspecial():
-                    robust.check_common_error(None, rpath.copy_with_attribs,
-                                              (rf.metadata_rorp, rf.mirror_rp))
-                else:
-                    rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
-        if rf.regress_inc:
-            log.Log("Deleting increment %s" % rf.regress_inc.get_safepath(), 5)
-            rf.regress_inc.delete()
-
-    def _restore_orig_regfile(self, rf):
-        """Restore original regular file
-
-        This is the trickiest case for avoiding information loss,
-        because we don't want to delete the increment before the
-        mirror is fully written.
-
-        """
-        assert rf.metadata_rorp.isreg(), (
-            "Metadata path '{mrp!s}' can only be regular file.".format(
-                mrp=rf.metadata_rorp))
-        if rf.mirror_rp.isreg():
-            tf = rf.mirror_rp.get_temp_rpath(sibling=True)
-            tf.write_from_fileobj(rf.get_restore_fp())
-            tf.fsync_with_dir()  # make sure tf fully written before move
-            rpath.copy_attribs(rf.metadata_rorp, tf)
-            rpath.rename(tf, rf.mirror_rp)  # move is atomic
-        else:
-            if rf.mirror_rp.lstat():
-                rf.mirror_rp.delete()
-            rf.mirror_rp.write_from_fileobj(rf.get_restore_fp())
-            rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
-        if Globals.fsync_directories:
-            rf.mirror_rp.get_parent_rp().fsync(
-            )  # force move before inc delete
-
-    def start_process(self, index, rf):
-        """Start processing directory"""
-        if rf.metadata_rorp.isdir():
-            # make sure mirror is a readable dir
-            if not rf.mirror_rp.isdir():
-                if rf.mirror_rp.lstat():
-                    rf.mirror_rp.delete()
-                rf.mirror_rp.mkdir()
-            if not rf.mirror_rp.hasfullperms():
-                rf.mirror_rp.chmod(0o700)
-        self.rf = rf
-
-    def end_process(self):
-        """Finish processing a directory"""
-        rf = self.rf
-        if rf.metadata_rorp.isdir():
-            if rf.mirror_rp.isdir():
-                rf.mirror_rp.setdata()
-                if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
-                    log.Log(
-                        "Regressing attributes of %s" %
-                        rf.mirror_rp.get_safepath(), 5)
-                    rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
-            else:
-                rf.mirror_rp.delete()
-                log.Log("Regressing file %s" % rf.mirror_rp.get_safepath(), 5)
-                rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
-        else:  # replacing a dir with some other kind of file
-            assert rf.mirror_rp.isdir(), (
-                "Mirror '{mrp!s}' can only be a directory.".format(
-                    mrp=rf.mirror_rp))
-            log.Log("Replacing directory %s" % rf.mirror_rp.get_safepath(), 5)
-            if rf.metadata_rorp.isreg():
-                self._restore_orig_regfile(rf)
-            else:
-                rf.mirror_rp.delete()
-                rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
-        if rf.regress_inc:
-            log.Log("Deleting increment %s" % rf.regress_inc.get_safepath(), 5)
-            rf.regress_inc.delete()
-
-
-def check_pids(curmir_incs):
-    """Check PIDs in curmir markers to make sure rdiff-backup not running"""
-    pid_re = re.compile(r"^PID\s*([0-9]+)", re.I | re.M)
-
-    def extract_pid(curmir_rp):
-        """Return process ID from a current mirror marker, if any"""
-        match = pid_re.search(curmir_rp.get_string())
-        if not match:
-            return None
-        else:
-            return int(match.group(1))
-
-    def pid_running(pid):
-        """Return True if we know if process with pid is currently running,
-        False if it isn't running, and None if we don't know for sure."""
-        if os.name == 'nt':
-            import win32api
-            import win32con
-            import pywintypes
-            process = None
-            try:
-                process = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 0,
-                                               pid)
-            except pywintypes.error as error:
-                if error[0] == 87:
-                    return False
-                else:
-                    msg = "Warning: unable to check if PID %d still running"
-                    log.Log(msg % pid, 2)
-                    return None  # we don't know if the process is running
-            else:
-                if process:
-                    win32api.CloseHandle(process)
-                    return True
-                else:
-                    return False
-        else:
-            try:
-                os.kill(pid, 0)
-            except ProcessLookupError:  # errno.ESRCH - pid doesn't exist
-                return False
-            except OSError:  # any other OS error
-                log.Log(
-                    "Warning: unable to check if PID %d still running" % (pid, ),
-                    2)
-                return None  # we don't know if the process is still running
-            else:  # the process still exists
-                return True
-
-    for curmir_rp in curmir_incs:
-        assert curmir_rp.conn is Globals.local_connection, (
-            "Function must be called locally not over '{conn}'.".format(
-                conn=curmir_rp.conn))
-        pid = extract_pid(curmir_rp)
-        # FIXME differentiate between don't know and know and handle err.errno == errno.EPERM:
-        # EPERM clearly means there's a process to deny access to with OSError
-        if pid is not None and pid_running(pid):
-            log.Log.FatalError(
-                """It appears that a previous rdiff-backup session with process
-id %d is still running.  If two different rdiff-backup processes write
-the same repository simultaneously, data corruption will probably
-result.  To proceed with regress anyway, rerun rdiff-backup with the
---force option.""" % (pid, ))
+def _yield_metadata():
+    """Iterate rorps from metadata file, if any are available"""
+    metadata.SetManager()
+    metadata_iter = metadata.ManagerObj.GetAtTime(regress_time)
+    if metadata_iter:
+        return metadata_iter
+    log.Log.FatalError("No metadata for time %s (%s) found,\ncannot regress" %
+                       (Time.timetopretty(regress_time), regress_time))
