@@ -100,34 +100,6 @@ class ExtendedAttributes:
                 else:
                     raise
 
-    def _clear_rp(self, rp):
-        """Delete all the extended attributes in rpath"""
-        try:
-            for name in rp.conn.xattr.list(rp.path, rp.issym()):
-                try:
-                    rp.conn.xattr.remove(rp.path, name, rp.issym())
-                except PermissionError:  # errno.EACCES
-                    # SELinux attributes cannot be removed, and we don't want
-                    # to bail out or be too noisy at low log levels.
-                    log.Log(
-                        "Warning: unable to remove xattr %s from %s" %
-                        (name, rp.get_safepath()), 7)
-                    continue
-                except OSError as exc:
-                    # can happen because trusted.SGI_ACL_FILE is deleted together with
-                    # system.posix_acl_access on XFS file systems.
-                    if exc.errno == errno.ENODATA:
-                        continue
-                    else:  # can be anything, just fail
-                        raise
-        except io.UnsupportedOperation:  # errno.EOPNOTSUPP or errno.EPERM
-            return  # if not supported, consider empty
-        except FileNotFoundError as exc:
-            log.Log(
-                "Warning: unable to clear xattrs on %s: %s" %
-                (rp.get_safepath(), exc), 3)
-            return
-
     def write_to_rp(self, rp):
         """Write extended attributes to rpath rp"""
         self._clear_rp(rp)
@@ -162,17 +134,38 @@ class ExtendedAttributes:
         """Return true if no extended attributes are set"""
         return not self.attr_dict
 
+    def _clear_rp(self, rp):
+        """Delete all the extended attributes in rpath"""
+        try:
+            for name in rp.conn.xattr.list(rp.path, rp.issym()):
+                try:
+                    rp.conn.xattr.remove(rp.path, name, rp.issym())
+                except PermissionError:  # errno.EACCES
+                    # SELinux attributes cannot be removed, and we don't want
+                    # to bail out or be too noisy at low log levels.
+                    log.Log(
+                        "Warning: unable to remove xattr %s from %s" %
+                        (name, rp.get_safepath()), 7)
+                    continue
+                except OSError as exc:
+                    # can happen because trusted.SGI_ACL_FILE is deleted together with
+                    # system.posix_acl_access on XFS file systems.
+                    if exc.errno == errno.ENODATA:
+                        continue
+                    else:  # can be anything, just fail
+                        raise
+        except io.UnsupportedOperation:  # errno.EOPNOTSUPP or errno.EPERM
+            return  # if not supported, consider empty
+        except FileNotFoundError as exc:
+            log.Log(
+                "Warning: unable to clear xattrs on %s: %s" %
+                (rp.get_safepath(), exc), 3)
+            return
+
 
 class EAExtractor(metadata.FlatExtractor):
     """Iterate ExtendedAttributes objects from the EA information file"""
     record_boundary_regexp = re.compile(b'(?:\\n|^)(# file: (.*?))\\n')
-
-    def _filename_to_index(self, filename):
-        """Convert possibly quoted filename to index tuple"""
-        if filename == b'.':
-            return ()
-        else:
-            return tuple(C.acl_unquote(filename).split(b'/'))
 
     @staticmethod
     def _record_to_object(record):
@@ -208,6 +201,13 @@ class EAExtractor(metadata.FlatExtractor):
                 encoded_val = line[eq_pos + 3:]
                 ea.set(name, base64.b64decode(encoded_val))
         return ea
+
+    def _filename_to_index(self, filename):
+        """Convert possibly quoted filename to index tuple"""
+        if filename == b'.':
+            return ()
+        else:
+            return tuple(C.acl_unquote(filename).split(b'/'))
 
 
 class ExtendedAttributesFile(metadata.FlatFile):
@@ -267,6 +267,65 @@ class AccessControlLists:
         else:
             self.entry_list = self.default_entry_list = None
 
+    def __str__(self):
+        """Return text version of acls"""
+        if not self.entry_list:
+            return ""
+        slist = list(map(self._entrytuple_to_text, self.entry_list))
+        if self.default_entry_list:
+            slist.extend([
+                "default:" + self._entrytuple_to_text(e)
+                for e in self.default_entry_list
+            ])
+        return "\n".join(slist)
+
+    def __eq__(self, acl):
+        """Compare self and other access control list
+
+        Basic acl permissions are considered equal to an empty acl
+        object.
+
+        """
+        assert isinstance(acl, self.__class__), (
+            "ACLs can only be compared with ACLs not {otype}.".format(
+                otype=type(acl)))
+        if self.is_basic():
+            return acl.is_basic()
+        return (self._cmp_entry_list(self.entry_list, acl.entry_list)
+                and self._cmp_entry_list(self.default_entry_list,
+                                         acl.default_entry_list))
+
+    def __ne__(self, acl):
+        return not self.__eq__(acl)
+
+    def get_indexpath(self):
+        return self.index and b'/'.join(self.index) or b'.'
+
+    def is_basic(self):
+        """True if acl can be reduced to standard unix permissions
+
+        Assume that if they are only three entries, they correspond to
+        user, group, and other, and thus don't use any special ACL
+        features.
+
+        """
+        if not self.entry_list and not self.default_entry_list:
+            return True
+        assert len(self.entry_list) >= 3, (
+            "Too few ACL entries '{ent}', must be 3 or more.".format(
+                ent=self.entry_list))
+        return len(self.entry_list) == 3 and not self.default_entry_list
+
+    def read_from_rp(self, rp):
+        """Set self.ACL from an rpath, or None if not supported"""
+        self.entry_list, self.default_entry_list = \
+            rp.conn.eas_acls.get_acl_lists_from_rp(rp)
+
+    def write_to_rp(self, rp, map_names=1):
+        """Write current access control list to RPath rp"""
+        rp.conn.eas_acls.set_rp_acl(rp, self.entry_list,
+                                    self.default_entry_list, map_names)
+
     def _set_from_text(self, text):
         """Set self.entry_list and self.default_entry_list from text"""
         self.entry_list, self.default_entry_list = [], []
@@ -283,18 +342,6 @@ class AccessControlLists:
                 self.default_entry_list.append(entrytuple)
             else:
                 self.entry_list.append(self._text_to_entrytuple(line))
-
-    def __str__(self):
-        """Return text version of acls"""
-        if not self.entry_list:
-            return ""
-        slist = list(map(self._entrytuple_to_text, self.entry_list))
-        if self.default_entry_list:
-            slist.extend([
-                "default:" + self._entrytuple_to_text(e)
-                for e in self.default_entry_list
-            ])
-        return "\n".join(slist)
 
     def _entrytuple_to_text(self, entrytuple):
         """Return text version of entrytuple, as in getfacl, or
@@ -397,25 +444,6 @@ class AccessControlLists:
                 return 0
         return 1
 
-    def __eq__(self, acl):
-        """Compare self and other access control list
-
-        Basic acl permissions are considered equal to an empty acl
-        object.
-
-        """
-        assert isinstance(acl, self.__class__), (
-            "ACLs can only be compared with ACLs not {otype}.".format(
-                otype=type(acl)))
-        if self.is_basic():
-            return acl.is_basic()
-        return (self._cmp_entry_list(self.entry_list, acl.entry_list)
-                and self._cmp_entry_list(self.default_entry_list,
-                                         acl.default_entry_list))
-
-    def __ne__(self, acl):
-        return not self.__eq__(acl)
-
     def _eq_verbose(self, acl):
         """Returns same as __eq__ but print explanation if not equal.
         TEST: This function is used solely as part of the test suite."""
@@ -428,35 +456,44 @@ class AccessControlLists:
             return 0
         return 1
 
-    def get_indexpath(self):
-        return self.index and b'/'.join(self.index) or b'.'
 
-    def is_basic(self):
-        """True if acl can be reduced to standard unix permissions
+class ACLExtractor(EAExtractor):
+    """Iterate AccessControlLists objects from the ACL information file
 
-        Assume that if they are only three entries, they correspond to
-        user, group, and other, and thus don't use any special ACL
-        features.
+    Except for the _record_to_object method, we can reuse everything in
+    the EAExtractor class because the file formats are so similar.
 
-        """
-        if not self.entry_list and not self.default_entry_list:
-            return True
-        assert len(self.entry_list) >= 3, (
-            "Too few ACL entries '{ent}', must be 3 or more.".format(
-                ent=self.entry_list))
-        return len(self.entry_list) == 3 and not self.default_entry_list
+    """
 
-    def read_from_rp(self, rp):
-        """Set self.ACL from an rpath, or None if not supported"""
-        self.entry_list, self.default_entry_list = \
-            rp.conn.eas_acls.get_acl_lists_from_rp(rp)
-
-    def write_to_rp(self, rp, map_names=1):
-        """Write current access control list to RPath rp"""
-        rp.conn.eas_acls.set_rp_acl(rp, self.entry_list,
-                                    self.default_entry_list, map_names)
+    @staticmethod
+    def _record_to_object(record):
+        """Convert text record to an AccessControlLists object"""
+        newline_pos = record.find(b'\n')
+        first_line = record[:newline_pos]
+        if not first_line.startswith(b'# file: '):
+            raise metadata.ParsingError("Bad record beginning: %r" % first_line)
+        filename = first_line[8:]
+        if filename == b'.':
+            index = ()
+        else:
+            unquoted_filename = C.acl_unquote(filename)
+            index = tuple(unquoted_filename.split(b'/'))
+        return AccessControlLists(index, os.fsdecode(record[newline_pos:]))
 
 
+class AccessControlListFile(metadata.FlatFile):
+    """Store/retrieve ACLs from extended attributes file"""
+    _prefix = b'access_control_lists'
+    _extractor = ACLExtractor
+
+    @staticmethod
+    def _object_to_record(acl):
+        """Convert an AccessControlLists object into a text record"""
+        return b'# file: %b\n%b\n' % (C.acl_quote(acl.get_indexpath()),
+                                      os.fsencode(str(acl)))
+
+
+# @API(set_rp_acl, 200)
 def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
     """Set given rp with ACL that acl_text defines.  rp should be local"""
     assert rp.conn is Globals.local_connection, (
@@ -486,6 +523,7 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
         def_acl.applyto(rp.path, posix1e.ACL_TYPE_DEFAULT)
 
 
+# @API(get_acl_lists_from_rp, 200)
 def get_acl_lists_from_rp(rp):
     """Returns (acl_list, def_acl_list) from an rpath.  Call locally"""
     assert rp.conn is Globals.local_connection, (
@@ -519,6 +557,17 @@ def get_acl_lists_from_rp(rp):
     else:
         def_acl = None
     return (acl and _acl_to_list(acl), def_acl and _acl_to_list(def_acl))
+
+
+def join_acl_iter(rorp_iter, acl_iter):
+    """Update a rorp iter by adding the information from acl_iter"""
+    for rorp, acl in rorpiter.CollateIterators(rorp_iter, acl_iter):
+        assert rorp, ("Missing rorp for ACL index '{aidx}'.".format(
+            aidx=acl.index))
+        if not acl:
+            acl = AccessControlLists(rorp.index)
+        rorp.set_acl(acl)
+        yield rorp
 
 
 def _acl_to_list(acl):
@@ -652,52 +701,6 @@ def _list_to_acl(entry_list, map_names=1):
         entry.permset.write = perms >> 1 & 1
         entry.permset.execute = perms & 1
     return acl
-
-
-class ACLExtractor(EAExtractor):
-    """Iterate AccessControlLists objects from the ACL information file
-
-    Except for the _record_to_object method, we can reuse everything in
-    the EAExtractor class because the file formats are so similar.
-
-    """
-
-    @staticmethod
-    def _record_to_object(record):
-        """Convert text record to an AccessControlLists object"""
-        newline_pos = record.find(b'\n')
-        first_line = record[:newline_pos]
-        if not first_line.startswith(b'# file: '):
-            raise metadata.ParsingError("Bad record beginning: %r" % first_line)
-        filename = first_line[8:]
-        if filename == b'.':
-            index = ()
-        else:
-            unquoted_filename = C.acl_unquote(filename)
-            index = tuple(unquoted_filename.split(b'/'))
-        return AccessControlLists(index, os.fsdecode(record[newline_pos:]))
-
-
-class AccessControlListFile(metadata.FlatFile):
-    """Store/retrieve ACLs from extended attributes file"""
-    _prefix = b'access_control_lists'
-    _extractor = ACLExtractor
-
-    @staticmethod
-    def _object_to_record(acl):
-        """Convert an AccessControlLists object into a text record"""
-        return b'# file: %b\n%b\n' % (C.acl_quote(acl.get_indexpath()), os.fsencode(str(acl)))
-
-
-def join_acl_iter(rorp_iter, acl_iter):
-    """Update a rorp iter by adding the information from acl_iter"""
-    for rorp, acl in rorpiter.CollateIterators(rorp_iter, acl_iter):
-        assert rorp, ("Missing rorp for ACL index '{aidx}'.".format(
-            aidx=acl.index))
-        if not acl:
-            acl = AccessControlLists(rorp.index)
-        rorp.set_acl(acl)
-        yield rorp
 
 
 # FIXME overriding functions in the rpath module doesn't sound right
