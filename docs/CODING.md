@@ -4,6 +4,18 @@ We follow the latest flake8 enforced guidelines, but certain aspects of coding
 can't be enforced through automated checks, hence to be followed by humans
 and reviewers. This document lists such coding conventions.
 
+## PRIVATE AND PUBLIC ITEMS
+
+* we call items any definition of class, function, member, variable, etc...
+* private items are pre-fixed with an underscore
+* public items are to be defined before private ones. Pre-defined functions
+  (generally pre- and post-fixed with two underscores, like `__init__`) are
+  defined before all others.
+* the order should be logical (e.g. called functions after calling ones) rather
+  than lexical.
+* in class definitions, variables are defined before class methods, before
+  instance methods (each in the order defined above).
+
 ## ASSERT STATEMENTS
 
 * assert statements should be used only sparingly, and only for validating

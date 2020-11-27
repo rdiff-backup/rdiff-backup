@@ -304,6 +304,7 @@ do_fsync = True
 PICKLE_PROTOCOL = 4
 
 
+# @API(get, 200)
 def get(name):
     """Return the value of something in this module"""
     return globals()[name]
@@ -314,6 +315,7 @@ def is_not_None(name):
     return globals()[name] is not None
 
 
+# @API(set, 200)
 def set(name, val):
     """Set the value of something in this module
 
@@ -327,6 +329,7 @@ def set(name, val):
     globals()[name] = val
 
 
+# @API(set_local, 200)
 def set_local(name, val):
     """Like set above, but only set current connection"""
     globals()[name] = val
@@ -397,6 +400,7 @@ def postset_regexp(name, re_string, flags=None):
         conn.Globals.postset_regexp_local(name, re_string, flags)
 
 
+# @API(postset_regexp_local, 200)
 def postset_regexp_local(name, re_string, flags):
     """Set name to compiled re_string locally"""
     if flags:

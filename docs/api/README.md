@@ -51,6 +51,41 @@ Each interface is described on a separate line of the following formats,
 * `<module>.<interface>` **deprecated**
 ```
 
+## Mark in code
+
+In order to simplify identification of API elements while coding, each element
+is marked in the code according to the following pattern. Each
+of the API parameters is the API version with which the element has been
+respectively added, deprecated or removed:
+
+```
+# @API(interface_name, min_api, deprecated_api=None, obsolete_api=None)
+```
+
+As an example the minimum syntax should look like as follows for a function
+which hasn't yet been deprecated:
+
+```
+# @API(my_interface_function, 200)
+def my_interface_function(param1, param2, ...)
+    """ [... etc ...] """
+```
+
+Once deprecated with API 212, the same function would look as follows:
+
+```
+# @API(my_interface_function, 200, 212)
+def my_interface_function(param1, param2, ...)
+    """ [... etc ...] """
+```
+
+> **NOTE:** the syntax is very similar to decorators, which could be an option
+	in the future, but wouldn't apply to classes and variables, and for
+	which no added value has been yet identified (with potential
+	performance impact). Important is that it remains easy to detect and
+	parse automatically to simplify future evolutions.
+
+
 ## Rules and conventions
 
 * each call in the code through the connection must be done in the form of

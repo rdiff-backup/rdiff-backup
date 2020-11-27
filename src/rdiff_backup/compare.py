@@ -27,6 +27,129 @@ import os
 from . import Globals, restore, rorpiter, log, backup, rpath, hash, robust, Hardlink
 
 
+# @API(RepoSide, 200)
+class RepoSide(restore.MirrorStruct):
+    """On the repository side, comparing is like restoring"""
+
+    @classmethod
+    def init_and_get_iter(cls, mirror_rp, inc_rp, compare_time):
+        """Return rorp iter at given compare time"""
+        cls.set_mirror_and_rest_times(compare_time)
+        cls.initialize_rf_cache(mirror_rp, inc_rp)
+        return cls.subtract_indices(cls.mirror_base.index,
+                                    cls.get_mirror_rorp_iter())
+
+    @classmethod
+    def attach_files(cls, src_iter, mirror_rp, inc_rp, compare_time):
+        """Attach data to all the files that need checking
+
+        Return an iterator of repo rorps that includes all the files
+        that may have changed, and has the fileobj set on all rorps
+        that need it.
+
+        """
+        repo_iter = cls.init_and_get_iter(mirror_rp, inc_rp, compare_time)
+        base_index = cls.mirror_base.index
+        for src_rorp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
+            index = src_rorp and src_rorp.index or mir_rorp.index
+            if src_rorp and mir_rorp:
+                if not src_rorp.isreg() and src_rorp == mir_rorp:
+                    _log_success(src_rorp, mir_rorp)
+                    continue  # They must be equal, nothing else to check
+                if (src_rorp.isreg() and mir_rorp.isreg()
+                        and src_rorp.getsize() == mir_rorp.getsize()):
+                    fp = cls.rf_cache.get_fp(base_index + index, mir_rorp)
+                    mir_rorp.setfile(fp)
+                    mir_rorp.set_attached_filetype('snapshot')
+
+            if mir_rorp:
+                yield mir_rorp
+            else:
+                yield rpath.RORPath(index)  # indicate deleted mir_rorp
+
+
+# @API(DataSide, 200)
+class DataSide(backup.SourceStruct):
+    """On the side that has the current data, compare is like backing up"""
+
+    @classmethod
+    def compare_fast(cls, repo_iter):
+        """Compare rorps (metadata only) quickly, return report iter"""
+        src_iter = cls.get_source_select()
+        for src_rorp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
+            report = _get_basic_report(src_rorp, mir_rorp)
+            if report:
+                yield report
+            else:
+                _log_success(src_rorp, mir_rorp)
+
+    @classmethod
+    def compare_hash(cls, repo_iter):
+        """Like above, but also compare sha1 sums of any regular files"""
+
+        def hashes_changed(src_rp, mir_rorp):
+            """Return 0 if their data hashes same, 1 otherwise"""
+            verify_sha1 = _get_hash(mir_rorp)
+            if not verify_sha1:
+                log.Log(
+                    "Warning: Metadata file has no digest for %s, "
+                    "unable to compare." % (mir_rorp.get_safeindexpath(), ), 2)
+                return 0
+            elif (src_rp.getsize() == mir_rorp.getsize()
+                  and hash.compute_sha1(src_rp) == verify_sha1):
+                return 0
+            return 1
+
+        src_iter = cls.get_source_select()
+        for src_rp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
+            report = _get_basic_report(src_rp, mir_rorp, hashes_changed)
+            if report:
+                yield report
+            else:
+                _log_success(src_rp, mir_rorp)
+
+    @classmethod
+    def compare_full(cls, src_root, repo_iter):
+        """Given repo iter with full data attached, return report iter"""
+
+        def error_handler(exc, src_rp, repo_rorp):
+            log.Log("Error reading file %s" % src_rp.get_safepath(), 2)
+            return 0  # They aren't the same if we get an error
+
+        def data_changed(src_rp, repo_rorp):
+            """Return 0 if full compare of data matches, 1 otherwise"""
+            if src_rp.getsize() != repo_rorp.getsize():
+                return 1
+            return not robust.check_common_error(error_handler, rpath.cmp,
+                                                 (src_rp, repo_rorp))
+
+        for repo_rorp in repo_iter:
+            src_rp = src_root.new_index(repo_rorp.index)
+            report = _get_basic_report(src_rp, repo_rorp, data_changed)
+            if report:
+                yield report
+            else:
+                _log_success(repo_rorp)
+
+
+class CompareReport:
+    """When two files don't match, this tells you how they don't match
+
+    This is necessary because the system that is doing the actual
+    comparing may not be the one printing out the reports.  For speed
+    the compare information can be pipelined back to the client
+    connection as an iter of CompareReports.
+
+    """
+    # self.file is added so that CompareReports can masquerade as
+    # RORPaths when in an iterator, and thus get pipelined.
+    file = None
+
+    def __init__(self, index, reason):
+        self.index = index
+        self.reason = reason
+
+
 def Compare(src_rp, mirror_rp, inc_rp, compare_time):
     """Compares metadata in src_rp dir with metadata in mirror_rp at time"""
     repo_side = mirror_rp.conn.compare.RepoSide
@@ -74,6 +197,7 @@ def Compare_full(src_rp, mirror_rp, inc_rp, compare_time):
     return return_val
 
 
+# @API(Verify, 200)
 def Verify(mirror_rp, inc_rp, verify_time):
     """Compute SHA1 sums of repository files and check against metadata"""
     assert mirror_rp.conn is Globals.local_connection, (
@@ -189,124 +313,3 @@ def _log_success(src_rorp, mir_rorp=None):
     path = src_rorp and src_rorp.get_safeindexpath(
     ) or mir_rorp.get_safeindexpath()
     log.Log("Successful compare: %s" % (path, ), 5)
-
-
-class RepoSide(restore.MirrorStruct):
-    """On the repository side, comparing is like restoring"""
-
-    @classmethod
-    def init_and_get_iter(cls, mirror_rp, inc_rp, compare_time):
-        """Return rorp iter at given compare time"""
-        cls.set_mirror_and_rest_times(compare_time)
-        cls.initialize_rf_cache(mirror_rp, inc_rp)
-        return cls.subtract_indices(cls.mirror_base.index,
-                                    cls.get_mirror_rorp_iter())
-
-    @classmethod
-    def attach_files(cls, src_iter, mirror_rp, inc_rp, compare_time):
-        """Attach data to all the files that need checking
-
-        Return an iterator of repo rorps that includes all the files
-        that may have changed, and has the fileobj set on all rorps
-        that need it.
-
-        """
-        repo_iter = cls.init_and_get_iter(mirror_rp, inc_rp, compare_time)
-        base_index = cls.mirror_base.index
-        for src_rorp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
-            index = src_rorp and src_rorp.index or mir_rorp.index
-            if src_rorp and mir_rorp:
-                if not src_rorp.isreg() and src_rorp == mir_rorp:
-                    _log_success(src_rorp, mir_rorp)
-                    continue  # They must be equal, nothing else to check
-                if (src_rorp.isreg() and mir_rorp.isreg()
-                        and src_rorp.getsize() == mir_rorp.getsize()):
-                    fp = cls.rf_cache.get_fp(base_index + index, mir_rorp)
-                    mir_rorp.setfile(fp)
-                    mir_rorp.set_attached_filetype('snapshot')
-
-            if mir_rorp:
-                yield mir_rorp
-            else:
-                yield rpath.RORPath(index)  # indicate deleted mir_rorp
-
-
-class DataSide(backup.SourceStruct):
-    """On the side that has the current data, compare is like backing up"""
-
-    @classmethod
-    def compare_fast(cls, repo_iter):
-        """Compare rorps (metadata only) quickly, return report iter"""
-        src_iter = cls.get_source_select()
-        for src_rorp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
-            report = _get_basic_report(src_rorp, mir_rorp)
-            if report:
-                yield report
-            else:
-                _log_success(src_rorp, mir_rorp)
-
-    @classmethod
-    def compare_hash(cls, repo_iter):
-        """Like above, but also compare sha1 sums of any regular files"""
-
-        def hashes_changed(src_rp, mir_rorp):
-            """Return 0 if their data hashes same, 1 otherwise"""
-            verify_sha1 = _get_hash(mir_rorp)
-            if not verify_sha1:
-                log.Log(
-                    "Warning: Metadata file has no digest for %s, "
-                    "unable to compare." % (mir_rorp.get_safeindexpath(), ), 2)
-                return 0
-            elif (src_rp.getsize() == mir_rorp.getsize()
-                  and hash.compute_sha1(src_rp) == verify_sha1):
-                return 0
-            return 1
-
-        src_iter = cls.get_source_select()
-        for src_rp, mir_rorp in rorpiter.Collate2Iters(src_iter, repo_iter):
-            report = _get_basic_report(src_rp, mir_rorp, hashes_changed)
-            if report:
-                yield report
-            else:
-                _log_success(src_rp, mir_rorp)
-
-    @classmethod
-    def compare_full(cls, src_root, repo_iter):
-        """Given repo iter with full data attached, return report iter"""
-
-        def error_handler(exc, src_rp, repo_rorp):
-            log.Log("Error reading file %s" % src_rp.get_safepath(), 2)
-            return 0  # They aren't the same if we get an error
-
-        def data_changed(src_rp, repo_rorp):
-            """Return 0 if full compare of data matches, 1 otherwise"""
-            if src_rp.getsize() != repo_rorp.getsize():
-                return 1
-            return not robust.check_common_error(error_handler, rpath.cmp,
-                                                 (src_rp, repo_rorp))
-
-        for repo_rorp in repo_iter:
-            src_rp = src_root.new_index(repo_rorp.index)
-            report = _get_basic_report(src_rp, repo_rorp, data_changed)
-            if report:
-                yield report
-            else:
-                _log_success(repo_rorp)
-
-
-class CompareReport:
-    """When two files don't match, this tells you how they don't match
-
-    This is necessary because the system that is doing the actual
-    comparing may not be the one printing out the reports.  For speed
-    the compare information can be pipelined back to the client
-    connection as an iter of CompareReports.
-
-    """
-    # self.file is added so that CompareReports can masquerade as
-    # RORPaths when in an iterator, and thus get pipelined.
-    file = None
-
-    def __init__(self, index, reason):
-        self.index = index
-        self.reason = reason

@@ -92,6 +92,74 @@ def cmdpair2rp(cmd_pair):
         return None
 
 
+# @API(init_connection_remote, 200)
+def init_connection_remote(conn_number):
+    """Run on server side to tell self that have given conn_number"""
+    Globals.connection_number = conn_number
+    Globals.local_connection.conn_number = conn_number
+    Globals.connection_dict[0] = Globals.connections[1]
+    Globals.connection_dict[conn_number] = Globals.local_connection
+
+
+# @API(add_redirected_conn, 200)
+def add_redirected_conn(conn_number):
+    """Run on server side - tell about redirected connection"""
+    Globals.connection_dict[conn_number] = \
+        connection.RedirectedConnection(conn_number)
+
+
+def UpdateGlobal(setting_name, val):
+    """Update value of global variable across all connections"""
+    for conn in Globals.connections:
+        conn.Globals.set(setting_name, val)
+
+
+def BackupInitConnections(reading_conn, writing_conn):
+    """Backup specific connection initialization"""
+    reading_conn.Globals.set("isbackup_reader", 1)
+    writing_conn.Globals.set("isbackup_writer", 1)
+    UpdateGlobal("backup_reader", reading_conn)
+    UpdateGlobal("backup_writer", writing_conn)
+
+
+def CloseConnections():
+    """Close all connections.  Run by client"""
+    assert not Globals.server, "Connections can't be closed by server."
+    for conn in Globals.connections:
+        if conn:  # could be None, if the connection failed
+            conn.quit()
+    del Globals.connections[1:]  # Only leave local connection
+    Globals.connection_dict = {0: Globals.local_connection}
+    Globals.backup_reader = Globals.isbackup_reader = \
+        Globals.backup_writer = Globals.isbackup_writer = None
+
+
+def TestConnections(rpaths):
+    """Test connections, printing results.
+    Returns 0 if all connections work, 1 if one or more failed,
+    2 if the length of the list of connections isn't correct, most probably
+    because the user called rdiff-backup incorrectly."""
+    # the function doesn't use the log functions because it might not have
+    # an error or log file to use.
+    conn_len = len(Globals.connections)
+    if conn_len == 1:
+        print("No remote connections specified, only local one available.")
+        return 2
+    elif conn_len != len(rpaths) + 1:
+        print("All %d parameters must be remote of the form 'server::path'." %
+              len(rpaths))
+        return 2
+
+    # we create a list of all test results, skipping the connection 0, which
+    # is the local one.
+    results = map(lambda i: _test_connection(i, rpaths[i - 1]),
+                  range(1, conn_len))
+    if all(results):
+        return 0
+    else:
+        return 1
+
+
 def _desc2cmd_pairs(desc_pair):
     """Return pair (remote_cmd, filename) from desc_pair"""
     host_info, filename = desc_pair
@@ -324,72 +392,6 @@ def _init_connection_settings(conn):
     conn.log.Log.setterm_verbosity(Log.term_verbosity)
     for setting_name in Globals.changed_settings:
         conn.Globals.set(setting_name, Globals.get(setting_name))
-
-
-def init_connection_remote(conn_number):
-    """Run on server side to tell self that have given conn_number"""
-    Globals.connection_number = conn_number
-    Globals.local_connection.conn_number = conn_number
-    Globals.connection_dict[0] = Globals.connections[1]
-    Globals.connection_dict[conn_number] = Globals.local_connection
-
-
-def add_redirected_conn(conn_number):
-    """Run on server side - tell about redirected connection"""
-    Globals.connection_dict[conn_number] = \
-        connection.RedirectedConnection(conn_number)
-
-
-def UpdateGlobal(setting_name, val):
-    """Update value of global variable across all connections"""
-    for conn in Globals.connections:
-        conn.Globals.set(setting_name, val)
-
-
-def BackupInitConnections(reading_conn, writing_conn):
-    """Backup specific connection initialization"""
-    reading_conn.Globals.set("isbackup_reader", 1)
-    writing_conn.Globals.set("isbackup_writer", 1)
-    UpdateGlobal("backup_reader", reading_conn)
-    UpdateGlobal("backup_writer", writing_conn)
-
-
-def CloseConnections():
-    """Close all connections.  Run by client"""
-    assert not Globals.server, "Connections can't be closed by server."
-    for conn in Globals.connections:
-        if conn:  # could be None, if the connection failed
-            conn.quit()
-    del Globals.connections[1:]  # Only leave local connection
-    Globals.connection_dict = {0: Globals.local_connection}
-    Globals.backup_reader = Globals.isbackup_reader = \
-        Globals.backup_writer = Globals.isbackup_writer = None
-
-
-def TestConnections(rpaths):
-    """Test connections, printing results.
-    Returns 0 if all connections work, 1 if one or more failed,
-    2 if the length of the list of connections isn't correct, most probably
-    because the user called rdiff-backup incorrectly."""
-    # the function doesn't use the log functions because it might not have
-    # an error or log file to use.
-    conn_len = len(Globals.connections)
-    if conn_len == 1:
-        print("No remote connections specified, only local one available.")
-        return 2
-    elif conn_len != len(rpaths) + 1:
-        print("All %d parameters must be remote of the form 'server::path'." %
-              len(rpaths))
-        return 2
-
-    # we create a list of all test results, skipping the connection 0, which
-    # is the local one.
-    results = map(lambda i: _test_connection(i, rpaths[i - 1]),
-                  range(1, conn_len))
-    if all(results):
-        return 0
-    else:
-        return 1
 
 
 def _test_connection(conn_number, rp):

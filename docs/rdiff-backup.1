@@ -371,8 +371,9 @@ Use with caution. This may render your backup unusable in case of
 filesystem failure.
 .TP
 .BI \-\-no-hard-links
-Don't replicate hard links on destination side.  If many hard-linked
-files are present, this option can drastically decrease memory usage.
+Don't use hard links on destination side, hard-linked files are copied
+like two different files.  If many hard-linked files are present,
+this option can drastically increase disk usage.
 This option is enabled by default if the backup source or restore
 destination is running on native Windows.
 .TP
