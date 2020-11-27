@@ -117,14 +117,12 @@ sudo dnf install python3-pip python3-setuptools py3libacl python3-pyxattr
 sudo pip3 install rdiff-backup
 ```
 
-> **NOTE:** If your platform is not i386 or amd64, e.g. ARM/MIPS/PowerPC/etc,
-  you may need the build dependencies `python3-devel`, `librsync-dev`.
-
-### Other Linux (From PyPi)
+### Other Linux and UN\*X-oid systems, e.g. BSD (From PyPi)
 
 You need to make sure that the following requirements are met:
 
 * Python 3.6 or higher
+* pip3 e.g. installed with `curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py; sudo python3 get-pip.py`.
 * librsync 1.0.0 or higher
 * pylibacl (optional, to support ACLs)
 * pyxattr (optional, to support extended attributes) - the xattr library (without py) isn't regularly tested but should work and you will be helped
@@ -132,11 +130,15 @@ You need to make sure that the following requirements are met:
   (or alternatively setuptools)
 * SSH for remote operations
 
+Then you should only need to call the following before you can use rdiff-backup:
+
 ```
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-sudo python3 get-pip.py
 sudo pip3 install rdiff-backup
 ```
+
+> **NOTE:** especially if your platform is not i386 or amd64, e.g. ARM/MIPS/PowerPC/etc,
+  but also if the pip3 installation fails with `include [...].h` files missing,
+  you may need the build dependencies named like `python3-devel` or `librsync-dev`.
 
 ### Windows
 
