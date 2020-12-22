@@ -26,7 +26,7 @@ which is written in C.  The goal was to use C as little as possible...
 import array
 from . import _librsync
 
-blocksize = _librsync.RS_JOB_BLOCKSIZE
+blocksize = _librsync.RSM_JOB_BLOCKSIZE
 
 
 class librsyncError(Exception):
