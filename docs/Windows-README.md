@@ -65,3 +65,19 @@ and/or the mailing list. You can subscribe to the mailing list at:
 
 You can also try searching the mailing list archives:
 [https://lists.nongnu.org/archive/html/rdiff-backup-users/](https://lists.nongnu.org/archive/html/rdiff-backup-users/)
+
+## Tips and Tricks
+
+### Using Putty as SSH client
+
+If you have Putty installed (and configured) and don't want to fiddle with
+OpenSSH, add the following parameter to your rdiff-backup call:
+
+```
+--remote-schema "plink.exe -i D:\backup-key.ppk -batch %s rdiff-backup --server"
+```
+
+* `-batch` avoids you from having to press enter to open the session
+* `-i` lets you specify a puttygen-generated private key.
+  and that it's installed there.
+
