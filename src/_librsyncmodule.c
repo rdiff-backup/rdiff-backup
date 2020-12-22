@@ -105,9 +105,9 @@ _librsync_sigmaker_cycle(_librsync_SigMakerObject *self, PyObject *args)
 	return NULL;
   }
 
-  return Py_BuildValue("(ily#)", (result == RS_DONE),
-					   (long)inbuf_length - (long)buf.avail_in,
-					   outbuf, RSM_JOB_BLOCKSIZE - (long)buf.avail_out);
+  return Py_BuildValue("(iny#)", (result == RS_DONE),
+		  (Py_ssize_t)inbuf_length - (Py_ssize_t)buf.avail_in,
+		  outbuf, (Py_ssize_t)RSM_JOB_BLOCKSIZE - (Py_ssize_t)buf.avail_out);
 }
 
 static PyMethodDef _librsync_sigmaker_methods[] = {
@@ -273,9 +273,9 @@ _librsync_deltamaker_cycle(_librsync_DeltaMakerObject *self, PyObject *args)
 	return NULL;
   }
 
-  return Py_BuildValue("(ily#)", (result == RS_DONE),
-					   (long)inbuf_length - (long)buf.avail_in,
-					   outbuf, RSM_JOB_BLOCKSIZE - (long)buf.avail_out);
+  return Py_BuildValue("(iny#)", (result == RS_DONE),
+		  (Py_ssize_t)inbuf_length - (Py_ssize_t)buf.avail_in,
+		  outbuf, (Py_ssize_t)RSM_JOB_BLOCKSIZE - (Py_ssize_t)buf.avail_out);
 }
 
 static PyMethodDef _librsync_deltamaker_methods[] = {
@@ -445,9 +445,9 @@ _librsync_patchmaker_cycle(_librsync_PatchMakerObject *self, PyObject *args)
 	return NULL;
   }
 
-  return Py_BuildValue("(ily#)", (result == RS_DONE),
-					   (long)inbuf_length - (long)buf.avail_in,
-					   outbuf, RSM_JOB_BLOCKSIZE - (long)buf.avail_out);
+  return Py_BuildValue("(iny#)", (result == RS_DONE),
+		  (Py_ssize_t)inbuf_length - (Py_ssize_t)buf.avail_in,
+		  outbuf, (Py_ssize_t)RSM_JOB_BLOCKSIZE - (Py_ssize_t)buf.avail_out);
 }
 
 static PyMethodDef _librsync_patchmaker_methods[] = {
@@ -552,9 +552,9 @@ PyMODINIT_FUNC PyInit__librsync(void)
   librsyncError = PyErr_NewException("_librsync.librsyncError", NULL, NULL);
   PyDict_SetItemString(d, "librsyncError", librsyncError);
   PyDict_SetItemString(d, "RSM_JOB_BLOCKSIZE",
-					   Py_BuildValue("l", (long)RSM_JOB_BLOCKSIZE));
+		  Py_BuildValue("n", (Py_ssize_t)RSM_JOB_BLOCKSIZE));
   PyDict_SetItemString(d, "RS_DEFAULT_BLOCK_LEN",
-					   Py_BuildValue("l", (long)RS_DEFAULT_BLOCK_LEN));
+		  Py_BuildValue("n", (Py_ssize_t)RS_DEFAULT_BLOCK_LEN));
 
   return m;
 }
