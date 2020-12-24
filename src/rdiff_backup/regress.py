@@ -338,30 +338,29 @@ def _regress_rbdir(meta_manager):
     delete the extra regress_time diff.
 
     """
-    has_meta_diff, has_meta_snap = 0, 0
+    meta_diffs = []
+    meta_snaps = []
     for old_rp in meta_manager.timerpmap[regress_time]:
         if old_rp.getincbase_bname() == b'mirror_metadata':
             if old_rp.getinctype() == b'snapshot':
-                has_meta_snap = 1
+                meta_snaps.append(old_rp)
             elif old_rp.getinctype() == b'diff':
-                has_meta_diff = 1
+                meta_diffs.append(old_rp)
             else:
                 raise ValueError(
                     "Increment type for metadata mirror must be one of "
                     "'snapshot' or 'diff', not {mtype}.".format(
                         mtype=old_rp.getinctype()))
-    if has_meta_diff and not has_meta_snap:
+    if meta_diffs and not meta_snaps:
         _recreate_meta(meta_manager)
 
     for new_rp in meta_manager.timerpmap[unsuccessful_backup_time]:
         if new_rp.getincbase_bname() != b'current_mirror':
             log.Log("Deleting old diff at %s" % new_rp.get_safepath(), 5)
             new_rp.delete()
-    for rp in meta_manager.timerpmap[regress_time]:
-        if (rp.getincbase_bname() == b'mirror_metadata'
-                and rp.getinctype() == b'diff'):
-            rp.delete()
-            break
+
+    for rp in meta_diffs:
+        rp.delete()
 
 
 def _recreate_meta(meta_manager):
