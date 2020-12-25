@@ -260,7 +260,7 @@ class TargetStruct:
         for diff in rorpiter.FillInIter(diff_iter, target):
             log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
             ITR(diff.index, diff)
-        ITR.Finish()
+        ITR.finish_processing()
         target.setdata()
 
 
@@ -610,14 +610,14 @@ class PatchITRB(rorpiter.ITRBranch):
         rp = self._get_rp_from_root(index)
         return not diff_rorp.isdir() and not rp.isdir()
 
-    def fast_process(self, index, diff_rorp):
+    def fast_process_file(self, index, diff_rorp):
         """Patch base_rp with diff_rorp (case where neither is directory)"""
         rp = self._get_rp_from_root(index)
         tf = rp.get_temp_rpath(sibling=True)
         self._patch_to_temp(rp, diff_rorp, tf)
         rpath.rename(tf, rp)
 
-    def start_process(self, index, diff_rorp):
+    def start_process_directory(self, index, diff_rorp):
         """Start processing directory - record information for later"""
         base_rp = self.base_rp = self._get_rp_from_root(index)
         assert diff_rorp.isdir() or base_rp.isdir() or not base_rp.index, (
@@ -629,7 +629,7 @@ class PatchITRB(rorpiter.ITRBranch):
         else:
             self._set_dir_replacement(diff_rorp, base_rp)
 
-    def end_process(self):
+    def end_process_directory(self):
         """Finish processing directory"""
         if self.dir_update:
             assert self.base_rp.isdir(), (

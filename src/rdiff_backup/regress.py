@@ -111,7 +111,7 @@ class RegressITRB(rorpiter.ITRBranch):
         """True if none of the rps is a directory"""
         return not rf.mirror_rp.isdir() and not rf.metadata_rorp.isdir()
 
-    def fast_process(self, index, rf):
+    def fast_process_file(self, index, rf):
         """Process when nothing is a directory"""
         if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
             log.Log(
@@ -131,7 +131,7 @@ class RegressITRB(rorpiter.ITRBranch):
             log.Log("Deleting increment %s" % rf.regress_inc.get_safepath(), 5)
             rf.regress_inc.delete()
 
-    def start_process(self, index, rf):
+    def start_process_directory(self, index, rf):
         """Start processing directory"""
         if rf.metadata_rorp.isdir():
             # make sure mirror is a readable dir
@@ -143,7 +143,7 @@ class RegressITRB(rorpiter.ITRBranch):
                 rf.mirror_rp.chmod(0o700)
         self.rf = rf
 
-    def end_process(self):
+    def end_process_directory(self):
         """Finish processing a directory"""
         rf = self.rf
         if rf.metadata_rorp.isdir():
@@ -288,7 +288,7 @@ def Regress(mirror_rp):
     ITR = rorpiter.IterTreeReducer(RegressITRB, [])
     for rf in _iterate_meta_rfs(mirror_rp, inc_rpath):
         ITR(rf.index, rf)
-    ITR.Finish()
+    ITR.finish_processing()
     if former_current_mirror_rp:
         if Globals.do_fsync:
             C.sync()  # Sync first, since we are marking dest dir as good now

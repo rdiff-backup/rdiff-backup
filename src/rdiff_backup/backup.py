@@ -196,7 +196,7 @@ class DestinationStruct:
         for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
             log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
             ITR(diff.index, diff)
-        ITR.Finish()
+        ITR.finish_processing()
         cls.CCPP.close()
         dest_rpath.setdata()
 
@@ -208,7 +208,7 @@ class DestinationStruct:
         for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
             log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
             ITR(diff.index, diff)
-        ITR.Finish()
+        ITR.finish_processing()
         cls.CCPP.close()
         dest_rpath.setdata()
 
@@ -593,7 +593,7 @@ class PatchITRB(rorpiter.ITRBranch):
         mirror_rorp = self.CCPP.get_mirror_rorp(index)
         return not (diff_rorp.isdir() or (mirror_rorp and mirror_rorp.isdir()))
 
-    def fast_process(self, index, diff_rorp):
+    def fast_process_file(self, index, diff_rorp):
         """Patch base_rp with diff_rorp (case where neither is directory)"""
         mirror_rp, discard = longname.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp)
@@ -615,7 +615,7 @@ class PatchITRB(rorpiter.ITRBranch):
             if tf.lstat():
                 tf.delete()
 
-    def start_process(self, index, diff_rorp):
+    def start_process_directory(self, index, diff_rorp):
         """Start processing directory - record information for later"""
         self.base_rp, discard = longname.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp)
@@ -627,7 +627,7 @@ class PatchITRB(rorpiter.ITRBranch):
             else:
                 self.CCPP.flag_deleted(index)
 
-    def end_process(self):
+    def end_process_directory(self):
         """Finish processing directory"""
         if self.dir_update:
             assert self.base_rp.isdir(), (
@@ -797,7 +797,7 @@ class IncrementITRB(PatchITRB):
         self.inc_root_rp = inc_root_rp
         PatchITRB.__init__(self, basis_root_rp, rorp_cache)
 
-    def fast_process(self, index, diff_rorp):
+    def fast_process_file(self, index, diff_rorp):
         """Patch base_rp with diff_rorp and write increment (neither is dir)"""
         mirror_rp, inc_prefix = longname.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
@@ -825,7 +825,7 @@ class IncrementITRB(PatchITRB):
         if tf.lstat():
             tf.delete()
 
-    def start_process(self, index, diff_rorp):
+    def start_process_directory(self, index, diff_rorp):
         """Start processing directory"""
         self.base_rp, inc_prefix = longname.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
