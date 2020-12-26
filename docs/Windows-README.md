@@ -77,7 +77,5 @@ OpenSSH, add the following parameter to your rdiff-backup call:
 --remote-schema "plink.exe -i D:\backup-key.ppk -batch %s rdiff-backup --server"
 ```
 
-* `-batch` avoids you from having to press enter to open the session
-* `-i` lets you specify a puttygen-generated private key.
-  and that it's installed there.
-
+* `-batch` avoids having to press enter to open the session
+* `-i` lets you specify a puttygen-generated private key
