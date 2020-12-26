@@ -12,12 +12,13 @@ DST_DIR=${BASE_DIR}/dest
 longName=b
 a=0123456789
 for (( i = 0; i < 21; i++ )); do
-longName=$longName$a
+	longName=$longName$a
 done
 
 # Set up a source directory containing a file with the long name:
 mkdir -p ${SRC_DIR}
 echo test1 > ${SRC_DIR}/$longName
+echo TEST1 > ${SRC_DIR}/dummy
 ls -l ${SRC_DIR}
 
 # Make a backup:
@@ -28,7 +29,8 @@ sleep 1
 cp ${DST_DIR}/rdiff-backup-data/current_mirror* ${BASE_DIR}
 
 # Modify the ${SRC_DIR} file:
-echo test2 > ${SRC_DIR}/$longName
+echo test22 > ${SRC_DIR}/$longName
+echo TEST22 > ${SRC_DIR}/dummy
 
 # Make a 2nd backup:
 rdiff-backup ${SRC_DIR} ${DST_DIR}
@@ -44,6 +46,12 @@ mv ${BASE_DIR}/current_mirror* ${DST_DIR}/rdiff-backup-data
 
 # rdiff-backup will now report that there is a problem:
 rdiff-backup --list-increments ${DST_DIR}
+
+# this avoids the error in the next call to rdiff-backup
+if [[ "$1" == "nocheck" ]]
+then
+	exit
+fi
 
 # Perform the usual fix for the problem (regress the repository):
 rdiff-backup --check-destination-dir ${DST_DIR}
