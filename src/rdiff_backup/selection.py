@@ -23,8 +23,10 @@ documentation on what this code does can be found on the man page.
 
 """
 
+import git
 import re
 import os
+from pathlib import PurePath
 from . import robust, rpath, Globals, log, rorpiter
 
 
@@ -178,6 +180,7 @@ class Select:
         to selection functions"""
 
         self._sel_noargs_mapping = {
+            "--gitignore": (self._gitignore_get_sf, Select.EXCLUDE),
             "--exclude-special-files": (self._special_get_sf, Select.EXCLUDE),
             "--exclude-symbolic-links": (self._symlinks_get_sf, Select.EXCLUDE),
             "--exclude-device-files": (self._devfiles_get_sf, Select.EXCLUDE),
@@ -545,6 +548,35 @@ probably isn't what you meant.""" % (self.selection_functions[-1].name, ))
 
         sel_func.exclude = not include
         sel_func.name = (include and "include" or "exclude") + " special files"
+        return sel_func
+
+    def _gitignore_get_sf(self, include):
+        """Return selection function given by git.Repo().ignored(path)"""
+
+        def sel_func(rp):
+            parentdir, basename = rp.dirsplit()
+            ignored = False
+            try:
+                # The utf8 decoding is unfortunate and should be unnecessary, but `git.Repo`
+                # inteprets bytestring paths as always being relative even when they start
+                # with b'/' and I can't figure out how to make it not do this, and then
+                # repo.ignored just seems to do the wrong thing entirely with bytestring
+                # paths (or with relative paths)
+
+                # May throw if we are not in a git repo
+                repo = git.Repo(parentdir.decode('utf-8'), search_parent_directories=True)
+                # May throw if we're in .git
+                ignored = repo.ignored(rp.get_path().decode('utf-8'))
+            except Exception:
+                return None
+
+            if len(ignored) > 0:
+                return 0
+            else:
+                return 1
+
+        sel_func.exclude = not include
+        sel_func.name = (include and "include" or "exclude") + " .gitignored files"
         return sel_func
 
     def _size_get_sf(self, sizestr, min_max):

@@ -248,7 +248,7 @@ def _parse_cmdlineoptions(arglist):  # noqa: C901
             "exclude-filelist-stdin", "exclude-globbing-filelist=",
             "exclude-globbing-filelist-stdin", "exclude-mirror=",
             "exclude-other-filesystems", "exclude-regexp=",
-            "exclude-if-present=", "exclude-special-files", "force",
+            "exclude-if-present=", "exclude-special-files", "force", "gitignore",
             "group-mapping-file=", "include=", "include-filelist=",
             "include-filelist-stdin", "include-globbing-filelist=",
             "include-globbing-filelist-stdin", "include-regexp=",
@@ -313,6 +313,8 @@ def _parse_cmdlineoptions(arglist):  # noqa: C901
             _select_files.append(sys.stdin.buffer)
         elif opt == "--force":
             _force = 1
+        elif opt == "--gitignore":
+            _select_opts.append((opt, arg))
         elif opt == "--group-mapping-file":
             _group_mapping_filename = os.fsencode(arg)
         elif (opt == "--include" or opt == "--include-special-files"
