@@ -20,11 +20,12 @@
       state: present
   - name: install python via chocolatey
     win_chocolatey:
-      name: python
-      version: '3.7.7'
+      name: "python3"
+      version: "{{ python_version_full }}"
       state: present
-      # we need to pin the version because pyinstaller doesn't support 3.8
-      # https://github.com/pyinstaller/pyinstaller/issues/4311
+      package_params:
+      - /InstallDir:C:\Python64
+      - /InstallDir32:C:\Python32
   - name: install dependency of visualstudio, allows for reboot in-between
     win_chocolatey:
       name:

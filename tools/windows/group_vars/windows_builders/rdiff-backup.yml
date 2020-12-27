@@ -9,3 +9,6 @@ rdiffbackup_local_dist_dir: ../../dist
 
 # Bits to be used for compiling librsync, win32 or amd64
 python_win_bits: amd64
+
+python_version: 3.9
+python_version_full: "{{ python_version }}.1"
