@@ -99,35 +99,15 @@ jobs:
       language: shell
       env: MAKE_STEP=bdist_win
       before_install:
-        - git clone --depth 1 --branch v2.32.1 https://github.com/pyenv-win/pyenv-win.git $HOME/.pyenv
-        - export PATH="$HOME/.pyenv/pyenv-win/bin:$HOME/.pyenv/pyenv-win/shims:$PATH"
-        - export pyver=3.7.7
-        - export pyverbrief=${pyver:0:3}
-        - pyenv install --list
-        - pyenv install -q $pyver || pyenv rehash
-        - pyenv global $pyver
-        - pyenv rehash
-        - pyenv local $pyver
-        - python --version
+        - export python_version=3.9.1
+        - tools/win_provision.sh ${python_version}
       install:
-        - pip install --upgrade tox pywin32 setuptools-scm PyInstaller wheel PyYAML
-        - pyenv rehash
-        - git clone -b v2.2.1 https://github.com/librsync/librsync.git $HOME/.librsync
-        - export LIBRSYNC_DIR=$HOME/librsync
-        - pushd $HOME/.librsync
-        - cmake -DCMAKE_INSTALL_PREFIX=$LIBRSYNC_DIR -A Win32 -DBUILD_SHARED_LIBS=OFF .
-        - cmake --build . --config Release
-        - cmake --install . --config Release
-        - popd
+        - export librsync_version=v2.2.1
+        - tools/win_build_librsync.sh 64 ${librsync_version}
       script:
-        - python setup.py bdist_wheel
-        - vername=rdiff-backup-`python setup.py --version`
-        - PyInstaller --onefile --distpath build/$vername --paths=build/lib.win32-$pyverbrief --add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info --console build/scripts-$pyverbrief/rdiff-backup
+        - tools/win_build_rdiffbackup.sh 64
       before_deploy:
-        - cp CHANGELOG.md COPYING README.md docs/FAQ.md docs/examples.md docs/DEVELOP.md docs/Windows-README.md docs/Windows-DEVELOP.md build/$vername
-        - pushd build
-        - 7z a -tzip ../dist/$vername.win32exe.zip $vername
-        - popd
+        - tools/win_package_rdiffbackup.sh 64
 
     #--- Build and deploy Linux wheels using manylinux Docker containers ---
     # - build manylinux2010 (and manylinux1) x64

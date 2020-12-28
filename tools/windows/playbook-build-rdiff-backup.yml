@@ -28,7 +28,7 @@
     - name: compile rdiff-backup into an executable using pyinstaller
       win_command: >
         pyinstaller --onefile
-        --paths=build/lib.win-{{ python_win_bits }}-{{ python_version }} --paths={{ librsync_install_dir }}/lib
+        --paths=build/lib.{{ python_win_bits }}-{{ python_version }} --paths={{ librsync_install_dir }}/lib
         --paths={{ librsync_install_dir }}/bin
         --console build/scripts-{{ python_version }}/rdiff-backup
         --add-data src/rdiff_backup.egg-info/PKG-INFO;rdiff_backup.egg-info
@@ -69,7 +69,7 @@
       win_copy:
         content: |
           REM call this script to get the right environment variable and examples
-          SET PYTHONPATH={{ rdiffbackup_dir }}/build/lib.win-{{ python_win_bits }}-{{ python_version }}
+          SET PYTHONPATH={{ rdiffbackup_dir }}/build/lib.{{ python_win_bits }}-{{ python_version }}
           SET PATH={{ rdiffbackup_dir | replace('/', bq) }}\build\scripts-{{ python_version }};%PATH%
         dest: "{{ rdiffbackup_dir }}/build/setup-rdiff-backup.bat"
       tags: debug_help
