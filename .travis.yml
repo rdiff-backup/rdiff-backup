@@ -110,7 +110,7 @@ jobs:
         - pyenv local $pyver
         - python --version
       install:
-        - pip install --upgrade tox pywin32 setuptools-scm PyInstaller wheel
+        - pip install --upgrade tox pywin32 setuptools-scm PyInstaller wheel PyYAML
         - pyenv rehash
         - git clone -b v2.2.1 https://github.com/librsync/librsync.git $HOME/.librsync
         - export LIBRSYNC_DIR=$HOME/librsync
