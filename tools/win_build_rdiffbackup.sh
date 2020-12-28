@@ -1,9 +1,10 @@
 BITS=$1
+PYTHON_VERSION=$2
 
 if [[ ${BITS} -eq 32 ]]
 then
 	lib_win_bits=Win32
-	py_win_bits=Win32
+	py_win_bits=win32
 elif [[ ${BITS} -eq 64 ]]
 then
 	lib_win_bits=x64

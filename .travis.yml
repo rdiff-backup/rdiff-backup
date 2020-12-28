@@ -103,10 +103,13 @@ jobs:
         - tools/win_provision.sh ${python_version}
       install:
         - export librsync_version=v2.2.1
+        - tools/win_build_librsync.sh 32 ${librsync_version}
         - tools/win_build_librsync.sh 64 ${librsync_version}
       script:
-        - tools/win_build_rdiffbackup.sh 64
+        - tools/win_build_rdiffbackup.sh 32 ${python_version}
+        - tools/win_build_rdiffbackup.sh 64 ${python_version}
       before_deploy:
+        - tools/win_package_rdiffbackup.sh 32
         - tools/win_package_rdiffbackup.sh 64
 
     #--- Build and deploy Linux wheels using manylinux Docker containers ---

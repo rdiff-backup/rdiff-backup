@@ -4,7 +4,7 @@ LIBRSYNC_VERSION=$2  # actually the corresponding Git tag
 if [[ ${BITS} -eq 32 ]]
 then
 	lib_win_bits=Win32
-	py_win_bits=Win32
+	py_win_bits=win32
 elif [[ ${BITS} -eq 64 ]]
 then
 	lib_win_bits=x64

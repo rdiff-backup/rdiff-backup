@@ -3,7 +3,7 @@ BITS=$1
 if [[ ${BITS} -eq 32 ]]
 then
 	lib_win_bits=Win32
-	py_win_bits=Win32
+	py_win_bits=win32
 elif [[ ${BITS} -eq 64 ]]
 then
 	lib_win_bits=x64
@@ -20,5 +20,5 @@ cp CHANGELOG.md COPYING README.md \
 	docs/FAQ.md docs/examples.md docs/DEVELOP.md docs/Windows-README.md docs/Windows-DEVELOP.md \
 	build/${ver_name}-${BITS}
 pushd build
-7z a -tzip ../dist/${vername}.${py_win_bits}exe.zip ${vername}-${BITS}
+7z a -tzip ../dist/${ver_name}.${py_win_bits}exe.zip ${ver_name}-${BITS}
 popd
