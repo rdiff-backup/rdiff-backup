@@ -350,6 +350,15 @@ Assuming the iteration has no side effects, the initial variable `inc_pair_iter`
 is still valid for the rest of the program, whereas the `mycopy` is "dried out"
 (but you can repeat the `tee` operation as often as you want).
 
+### Hints where to place breakpoints
+
+Depending on the kind of issue, there are some good places to put a breakpoint:
+
+* if there is a file access issue, `src/rdiff_backup/rpath.py` in the
+  `make_file_dict(filename)` function.
+* if you need to follow the listing of files and directories,
+  `src/rdiff_backup/selection.py` in the `diryield(rpath)` function.
+
 ### Profile rdiff-backup
 
 #### Profiling without code changes
