@@ -1,5 +1,6 @@
 import argparse
 import sys
+import yaml
 
 class SelectAction(argparse.Action):
     """
@@ -97,6 +98,8 @@ def _parse_old(args):
         help="[opt] use null instead of newline in input and output files")
     parser.add_argument("--old", action="store_true",
         help="[opt] enforce the usage of the old parameters")
+    parser.add_argument("--new", action="store_true",
+        help="[opt] enforce the usage of the new parameters")
     parser.add_argument("--override-chars-to-quote", type=str,
         metavar="CHARS_TO_QUOTE",
         help="[opt] string of characters to quote for safe storing")
@@ -161,10 +164,12 @@ def _parse_old(args):
     action_group.add_argument("--list-increment-sizes",
         dest="action", action="store_const", const="list-increment-sizes",
         help="[act] list increments and their size in backup repository")
-    action_group.add_argument("--remove-older-than", type=str, metavar="AT_TIME",
-        help="[act] remove increments older than given time")
-    action_group.add_argument("-r", "--restore-as-of", type=str, metavar="AT_TIME",
-        help="[act] restore files from repo as of given time")
+    action_group.add_argument(
+        "--remove-older-than", type=str, metavar="AT_TIME",
+        help="[act=] remove increments older than given time")
+    action_group.add_argument(
+        "-r", "--restore-as-of", type=str, metavar="AT_TIME",
+        help="[act=] restore files from repo as of given time")
     action_group.add_argument("-s", "--server",
         dest="action", action="store_const", const="server",
         help="[act] start rdiff-backup in server mode")
@@ -175,7 +180,7 @@ def _parse_old(args):
         dest="action", action="store_const", const="verify",
         help="[act] verify hash values in backup repo (at time now)")
     action_group.add_argument("--verify-at-time", type=str, metavar="AT_TIME",
-        help="[act] verify hash values in backup repo (at given time)")
+        help="[act=] verify hash values in backup repo (at given time)")
     action_group.add_argument("-V", "--version",
         dest="action", action="store_const", const="version",
         help="[act] output the rdiff-backup version and exit")
@@ -245,12 +250,12 @@ def _parse_old(args):
         action=argparse.BooleanOptionalAction,
         help="[sub] compress (or not) snapshot and diff files")
     parser.add_argument("--no-compression-regexp", type=str, metavar="REGEXP",
-        default= (b"(?i).*\\.("
-                  b"gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
-                  b"jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
-                  b"mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
-                  b"gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
-                  b")$"),
+        default= ("(?i).*\\.("
+                  "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
+                  "jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
+                  "mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
+                  "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
+                  ")$"),
         help="[sub] regexp to select files not being compressed")
     parser.add_argument("--eas", default=True,
         action=argparse.BooleanOptionalAction,
@@ -275,16 +280,72 @@ def _parse_old(args):
 
     values = parser.parse_args(args)
 
-    if (not values.action):
-        if (values.restore_as_of):
+    # compatbility layer with new parameter handling
+    if not values.action:
+        if values.compare_at_time:
+            values.action = "compare"
+            values.method = "normal"
+            values.at_time = values.compare_at_time
+        elif values.compare_hash_at_time:
+            values.action = "compare"
+            values.method = "hash"
+            values.at_time = values.compare_hash_at_time
+        elif values.compare_full_at_time:
+            values.action = "compare"
+            values.method = "full"
+            values.at_time = values.compare_full_at_time
+        elif values.list_at_time:
+            values.action = "list"
+            values.entity = "files"
+            values.at_time = values.list_at_time
+        elif values.list_changed_since:
+            values.action = "list"
+            values.entity = "files"
+            values.changed_since_time = values.list_changed_since
+        elif values.remove_older_than:
+            values.action = "remove"
+            values.entity = "increments"
+            values.older_than_time = values.remove_older_than
+        elif values.restore_as_of:
             values.action = "restore"
+            values.at_time = values.restore_as_of
+        elif values.verify_at_time:
+            values.action = "verify"
+            values.at_time = values.verify_at_time
+
+        # if there is still no action defined, we set the default
+        if not values.action:
+            values.action = "backup"
+    else:
+        if values.action == "compare":
+            values.method = "normal"
+            values.at_time = "now"
+        elif values.action == "compare-hash":
+            values.action = "compare"
+            values.method = "hash"
+            values.at_time = "now"
+        elif values.action == "compare-full":
+            values.action = "compare"
+            values.method = "full"
+            values.at_time = "now"
+        elif values.action == "list-increments":
+            values.action = "list"
+            values.entity = "increments"
+            values.sizes = False
+        elif values.action == "list-increment-sizes":
+            values.action = "list"
+            values.entity = "increments"
+            values.sizes = True
+        elif values.action == "verify":
+            values.at_time = "now"
 
     return values
 
 
 def _parse_new(args):
     parser = argparse.ArgumentParser(
-        description="local/remote mirror and incremental backup")
+        description="local/remote mirror and incremental backup",
+        fromfile_prefix_chars='@')
     parser.add_argument(
         "-v", "--verbose",
         type=int, default=3, choices=range(1,10),
@@ -360,4 +421,6 @@ def parse(args):
 
 
 if __name__ == "__main__":
-    print(parse(sys.argv[1:]))
+    parsed_args = parse(sys.argv[1:])
+    print(yaml.safe_dump(parsed_args.__dict__,
+                         explicit_start=True, explicit_end=True))
