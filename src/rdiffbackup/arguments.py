@@ -71,20 +71,10 @@ class SelectAction(argparse.Action):
         setattr(namespace, self.dest,
                 old_list + [(option_string.replace('--', ''), values)])
 
-
-def _parse_old(args):
+def _add_common_options_to_parser(parser, version_string):
     """
-    Parse arguments according to old parameters of rdiff-backup.
-    The hint in square brackets at the beginning of the help are in preparation
-    for the new way of parsing:
-        rdiff-backup <opt(ions)> <act(ion)> <sub(-options)> <paths>
-    Note that actions are mutually exclusive and that '[act=]' will need to be
-    split into an action and a sub-option.
+    adds all common options to the given parser
     """
-
-    parser = argparse.ArgumentParser(
-        description="local/remote mirror and incremental backup")
-
     parser.add_argument("--api-version", type=int,
         help="[opt] integer to set the API version forcefully used")
     parser.add_argument("--current-time", type=int,
@@ -96,10 +86,8 @@ def _parse_old(args):
         help="[opt] do (or not) often sync the file system (_not_ doing it is faster but can be dangerous)")
     parser.add_argument("--null-separator", action="store_true",
         help="[opt] use null instead of newline in input and output files")
-    parser.add_argument("--old", action="store_true",
-        help="[opt] enforce the usage of the old parameters")
-    parser.add_argument("--new", action="store_true",
-        help="[opt] enforce the usage of the new parameters")
+    parser.add_argument("--old", "--new", action="store_true",
+        help="[opt] enforce the usage of the old/new parameters")
     parser.add_argument("--override-chars-to-quote", type=str,
         metavar="CHARS_TO_QUOTE",
         help="[opt] string of characters to quote for safe storing")
@@ -125,6 +113,25 @@ def _parse_old(args):
     parser.add_argument("-v", "--verbosity", type=int,
         choices=range(0,10), default=3,
         help="[opt] overall verbosity on terminal and in logfiles (default is 3)")
+    parser.add_argument("-V", "--version",
+        action="version", version=version_string,
+        help="[opt] output the rdiff-backup version and exit")
+
+
+def _parse_old(args, version_string):
+    """
+    Parse arguments according to old parameters of rdiff-backup.
+    The hint in square brackets at the beginning of the help are in preparation
+    for the new way of parsing:
+        rdiff-backup <opt(ions)> <act(ion)> <sub(-options)> <paths>
+    Note that actions are mutually exclusive and that '[act=]' will need to be
+    split into an action and a sub-option.
+    """
+
+    parser = argparse.ArgumentParser(
+        description="local/remote mirror and incremental backup")
+
+    _add_common_options_to_parser(parser, version_string)
 
     action_group = parser.add_mutually_exclusive_group()
     action_group.add_argument(
@@ -181,9 +188,6 @@ def _parse_old(args):
         help="[act] verify hash values in backup repo (at time now)")
     action_group.add_argument("--verify-at-time", type=str, metavar="AT_TIME",
         help="[act=] verify hash values in backup repo (at given time)")
-    action_group.add_argument("-V", "--version",
-        dest="action", action="store_const", const="version",
-        help="[act] output the rdiff-backup version and exit")
 
     parser.add_argument("--allow-duplicate-timestamps", action="store_true",
         help="[sub] ignore duplicate metadata while checking destination dir")
@@ -280,7 +284,7 @@ def _parse_old(args):
 
     values = parser.parse_args(args)
 
-    # compatbility layer with new parameter handling
+    # compatibility layer with new parameter handling
     if not values.action:
         if values.compare_at_time:
             values.action = "compare"
@@ -311,12 +315,18 @@ def _parse_old(args):
             values.at_time = values.restore_as_of
         elif values.verify_at_time:
             values.action = "verify"
+            values.entity = "files"
             values.at_time = values.verify_at_time
-
         # if there is still no action defined, we set the default
         if not values.action:
             values.action = "backup"
     else:
+        if values.action == "calculate-average":
+            value.action = "calculate"
+            values.method = "average"
+        if values.action == "check-destination-dir":
+            value.action = "verify"
+            values.entity = "repositories"
         if values.action == "compare":
             values.method = "normal"
             values.at_time = "now"
@@ -336,91 +346,116 @@ def _parse_old(args):
             values.action = "list"
             values.entity = "increments"
             values.sizes = True
+        elif values.action == "test-server":
+            value.action = "verify"
+            values.entity = "servers"
         elif values.action == "verify":
+            values.entity = "files"
             values.at_time = "now"
 
     return values
 
 
-def _parse_new(args):
+def _parse_new(args, version_string):
     parser = argparse.ArgumentParser(
         description="local/remote mirror and incremental backup",
         fromfile_prefix_chars='@')
-    parser.add_argument(
-        "-v", "--verbose",
-        type=int, default=3, choices=range(1,10),
-        help="Set the verbosity from 1 (low) to 9 (debug)")
-    parser.add_argument(
-        "-V", "--version", action="store_true",
-        help="Output the version and exit")
-    parser.add_argument(
-        "--current-time",
-        type=int,
-        help="fake the current time instead of using the real one")
-    parser.add_argument(
-        "--force", action="store_true",
-        help="enforces certain risky behaviors, like overwriting existing files, use with care!")
+
+    _add_common_options_to_parser(parser, version_string)
 
     subparsers = parser.add_subparsers(
-        title="actions", help="possible actions")
+        title="possible actions",
+        help="call '{bin} <action> --help' for more information".format(
+            bin=sys.argv[0]))
 
-    parsers = {}
-
-    parsers["backup"] = subparsers.add_parser("backup")
-    parsers["backup"].set_defaults(action="backup")
-
-    parsers["calculate-average"] = subparsers.add_parser("calculate-average", aliases=["ca"])
-    parsers["calculate-average"].set_defaults(action="calculate-average")
-
-    parsers["check-destination-dir"] = subparsers.add_parser("check-destination-dir", aliases=["cdd"])
-    parsers["check-destination-dir"].set_defaults(action="check-destination-dir")
-    parsers["check-destination-dir"].add_argument(
-        "--allow-duplicate-timestamps",
-        action="store_true", default=False,
-        help="use this option only if you encounter duplicate metadata mirrors")
-
-    parsers["compare"] = subparsers.add_parser("compare")
-    parsers["compare"].set_defaults(action="compare")
-    parsers["compare"].add_argument(
-            "--method",
-            type=str, default="meta", choices=["meta","full","hash"],
-            help="use metadata, complete file or hash to compare directories")
-    parsers["compare"].add_argument(
-            "--at-time",
-            type=str, default="now",
-            help="compare with the backup at the given time, default is 'now'")
-
-    parsers["list"] = subparsers.add_parser("list")
-    parsers["list"].set_defaults(action="list")
-    # at-time, changed-since, increments, increment-sizes [repo] [subdir]
-
-    parsers["verify"] = subparsers.add_parser("verify")
-    parsers["verify"].set_defaults(action="verify")
-    parsers["verify"].add_argument(
-            "--at-time",
-            type=str, default="now",
-            help="verify the backup at the given time, default is 'now'")
-
-    # --carbonfile Enable backup of MacOS X carbonfile information.
-    # --create-full-path
-    # --group-mapping-file, --user-mapping-file
-
-    # PARENT: --exclude... --include... --max-file-size --min-file-size
+    for action in BaseAction.get_actions().values():
+        action.add_sub_parser(subparsers)
 
     values = parser.parse_args(args)
     return values
 
 
-def parse(args):
+class BaseAction:
+    # name of the action
+    name = "base"
+    # list of parent parsers
+    parent_parsers = []
+
+    @staticmethod
+    def get_actions():
+        return {
+                "backup": BackupAction,
+                "calculate": CalculateAction,
+                "compare": CompareAction,
+                "list": ListAction,
+                "remove": RemoveAction,
+                "restore": RestoreAction,
+                "server": ServerAction,
+                "verify": VerifyAction,
+                }
+
+    @classmethod
+    def add_sub_parser(cls, subparsers):
+        sub_parser = subparsers.add_parser(cls.name,
+                                           parents=cls.parent_parsers)
+        sub_parser.set_defaults(action=cls.name)  # TODO cls instead of name!
+
+        return sub_parser
+
+class BackupAction(BaseAction):
+    name = "backup"
+
+class CalculateAction(BaseAction):
+    name = "calculate"
+
+class CompareAction(BaseAction):
+    name = "compare"
+
+class ListAction(BaseAction):
+    name = "list"
+
+class RemoveAction(BaseAction):
+    name = "remove"
+
+class RestoreAction(BaseAction):
+    name = "restore"
+
+class ServerAction(BaseAction):
+    name = "server"
+
+class VerifyAction(BaseAction):
+    name = "verify"
+
+#    parsers["check-destination-dir"].add_argument(
+#        "--allow-duplicate-timestamps",
+#        action="store_true", default=False,
+#        help="use this option only if you encounter duplicate metadata mirrors")
+#
+#    parsers["compare"].add_argument(
+#            "--method",
+#            type=str, default="meta", choices=["meta","full","hash"],
+#            help="use metadata, complete file or hash to compare directories")
+#    parsers["compare"].add_argument(
+#            "--at-time",
+#            type=str, default="now",
+#            help="compare with the backup at the given time, default is 'now'")
+#
+#    parsers["verify"].add_argument(
+#            "--at-time",
+#            type=str, default="now",
+#            help="verify the backup at the given time, default is 'now'")
+
+
+def parse(args, version_string):
     if ('--new' in args
             or ('--api-version' in args and not '--old' in args)
             or (any(map(lambda x: x.startswith('@'), args)))):
-        return _parse_new(args)
+        return _parse_new(args, version_string)
     else:
-        return _parse_old(args)
+        return _parse_old(args, version_string)
 
 
 if __name__ == "__main__":
-    parsed_args = parse(sys.argv[1:])
+    parsed_args = parse(sys.argv[1:], "british-agent 0.0.7")
     print(yaml.safe_dump(parsed_args.__dict__,
                          explicit_start=True, explicit_end=True))
