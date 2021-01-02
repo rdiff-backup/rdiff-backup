@@ -74,71 +74,54 @@ class SelectAction(argparse.Action):
 
 #### DEFINE PARENT PARSERS ####
 
-#    action_group.add_argument("--compare",
-#        dest="action", action="store_const", const="compare",
-#        help="[act] compare normal (at time now)")
-#    action_group.add_argument("--compare-at-time", type=str, metavar="AT_TIME",
-#        help="[act=] compare normal at given time")
-#    action_group.add_argument("--compare-hash",
-#        dest="action", action="store_const", const="compare-hash",
-#        help="[act] compare by hash (at time now)")
-#    action_group.add_argument("--compare-hash-at-time",
-#        type=str, metavar="AT_TIME",
-#        help="[act=] compare by hash at given time")
-#    action_group.add_argument("--compare-full",
-#        dest="action", action="store_const", const="compare-full",
-#        help="[act] compare full (at time now)")
-#    action_group.add_argument(
-#        "--compare-full-at-time", type=str, metavar="AT_TIME",
-#        help="[act=] compare full at given time")
-#    action_group.add_argument(
-#        "-r", "--restore-as-of", type=str, metavar="AT_TIME",
-#        help="[act=] restore files from repo as of given time")
-
-#    parser.add_argument("--SELECT", action=SelectAction, metavar="GLOB",
-#        help="[sub] SELECT files according to glob pattern")
-#    parser.add_argument("--SELECT-device-files",
-#        action=SelectAction, type=bool, default=True,
-#        help="[sub] SELECT device files")
-#    parser.add_argument("--SELECT-fifos",
-#        action=SelectAction, type=bool, default=True,
-#        help="[sub] SELECT fifo files")
-#    parser.add_argument("--SELECT-filelist",
-#        action=SelectAction, metavar="LIST_FILE",
-#        help="[sub] SELECT files according to list in given file")
-#    parser.add_argument("--SELECT-filelist-stdin",
-#        action=SelectAction, type=bool,
-#        help="[sub] SELECT files according to list from standard input")
-#    parser.add_argument("--SELECT-symbolic-links",
-#        action=SelectAction, type=bool, default=True,
-#        help="[sub] SELECT symbolic links")
-#    parser.add_argument("--SELECT-sockets",
-#        action=SelectAction, type=bool, default=True,
-#        help="[sub] SELECT socket files")
-#    parser.add_argument("--SELECT-globbing-filelist",
-#        action=SelectAction, metavar="GLOBS_FILE",
-#        help="[sub] SELECT files according to glob list in given file")
-#    parser.add_argument("--SELECT-globbing-filelist-stdin",
-#        action=SelectAction, type=bool,
-#        help="[sub] SELECT files according to glob list from standard input")
-#    parser.add_argument("--SELECT-other-filesystems",
-#        action=SelectAction, type=bool, default=True,
-#        help="[sub] SELECT files from other file systems than the source one")
-#    parser.add_argument("--SELECT-regexp",
-#        action=SelectAction, metavar="REGEXP",
-#        help="[sub] SELECT files according to regexp pattern")
-#    parser.add_argument("--SELECT-if-present",
-#        action=SelectAction, metavar="FILENAME",
-#        help="[sub] SELECT directory if it contains the given file")
-#    parser.add_argument("--SELECT-special-files",
-#        action=SelectAction, type=bool, default=True,
-#        help="[sub] SELECT all device, fifo, socket files, and symbolic links")
-#    parser.add_argument("--max-file-size",
-#        action=SelectAction, metavar="SIZE", type=int,
-#        help="[sub] exclude files larger than given size in bytes")
-#    parser.add_argument("--min-file-size",
-#        action=SelectAction, metavar="SIZE", type=int,
-#        help="[sub] exclude files smaller than given size in bytes")
+SELECTION_PARSER = argparse.ArgumentParser(
+    add_help=False,
+    description="[parent] options related to file selection")
+SELECTION_PARSER.add_argument(
+    "--SELECT", action=SelectAction, metavar="GLOB",
+    help="[sub] SELECT files according to glob pattern")
+SELECTION_PARSER.add_argument(
+    "--SELECT-device-files", action=SelectAction, type=bool, default=True,
+    help="[sub] SELECT device files")
+SELECTION_PARSER.add_argument(
+    "--SELECT-fifos", action=SelectAction, type=bool, default=True,
+    help="[sub] SELECT fifo files")
+SELECTION_PARSER.add_argument(
+    "--SELECT-filelist", action=SelectAction, metavar="LIST_FILE",
+    help="[sub] SELECT files according to list in given file")
+SELECTION_PARSER.add_argument(
+    "--SELECT-filelist-stdin", action=SelectAction, type=bool,
+    help="[sub] SELECT files according to list from standard input")
+SELECTION_PARSER.add_argument(
+    "--SELECT-symbolic-links", action=SelectAction, type=bool, default=True,
+    help="[sub] SELECT symbolic links")
+SELECTION_PARSER.add_argument(
+    "--SELECT-sockets", action=SelectAction, type=bool, default=True,
+    help="[sub] SELECT socket files")
+SELECTION_PARSER.add_argument(
+    "--SELECT-globbing-filelist", action=SelectAction, metavar="GLOBS_FILE",
+    help="[sub] SELECT files according to glob list in given file")
+SELECTION_PARSER.add_argument(
+    "--SELECT-globbing-filelist-stdin", action=SelectAction, type=bool,
+    help="[sub] SELECT files according to glob list from standard input")
+SELECTION_PARSER.add_argument(
+    "--SELECT-other-filesystems", action=SelectAction, type=bool, default=True,
+    help="[sub] SELECT files from other file systems than the source one")
+SELECTION_PARSER.add_argument(
+    "--SELECT-regexp", action=SelectAction, metavar="REGEXP",
+    help="[sub] SELECT files according to regexp pattern")
+SELECTION_PARSER.add_argument(
+    "--SELECT-if-present", action=SelectAction, metavar="FILENAME",
+    help="[sub] SELECT directory if it contains the given file")
+SELECTION_PARSER.add_argument(
+    "--SELECT-special-files", action=SelectAction, type=bool, default=True,
+    help="[sub] SELECT all device, fifo, socket files, and symbolic links")
+SELECTION_PARSER.add_argument(
+    "--max-file-size", action=SelectAction, metavar="SIZE", type=int,
+    help="[sub] exclude files larger than given size in bytes")
+SELECTION_PARSER.add_argument(
+    "--min-file-size", action=SelectAction, metavar="SIZE", type=int,
+    help="[sub] exclude files smaller than given size in bytes")
 
 #    parser.add_argument("--acls", default=True,
 #        action=argparse.BooleanOptionalAction,
@@ -525,59 +508,76 @@ class BaseAction:
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
-        sub_parser = sub_handler.add_parser(cls.name,
+        subparser = sub_handler.add_parser(cls.name,
                                            parents=cls.parent_parsers)
-        sub_parser.set_defaults(action=cls.name)  # TODO cls instead of name!
+        subparser.set_defaults(action=cls.name)  # TODO cls instead of name!
 
-        return sub_parser
+        return subparser
 
     @classmethod
-    def _get_subparsers(cls, parser, sub_type, *sub_names):
+    def _get_subparsers(cls, parser, sub_dest, *sub_names):
         sub_handler = parser.add_subparsers()
-        sub_parsers = {}
+        subparsers = {}
         for sub_name in sub_names:
-            sub_parsers[sub_name] = sub_handler.add_parser(sub_name)
-            sub_parsers[sub_name].set_defaults(**{sub_type: sub_name})
-        return sub_parsers
+            subparsers[sub_name] = sub_handler.add_parser(sub_name)
+            subparsers[sub_name].set_defaults(**{sub_dest: sub_name})
+        return subparsers
 
 class BackupAction(BaseAction):
     name = "backup"
-    parent_parsers = [USER_GROUP_PARSER, STATISTICS_PARSER]
+    parent_parsers = [SELECTION_PARSER, USER_GROUP_PARSER, STATISTICS_PARSER]
+
+    @classmethod
+    def add_action_subparser(cls, sub_handler):
+        subparser = super().add_action_subparser(sub_handler)
+        subparser.add_argument(
+            "locations", metavar="LOCATION", nargs=2,
+            help="locations of SOURCE_DIR and to which REPOSITORY to backup")
+        return subparser
 
 class CalculateAction(BaseAction):
     name = "calculate"
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
-        sub_parser = super().add_action_subparser(sub_handler)
-        sub_parser.add_argument(
+        subparser = super().add_action_subparser(sub_handler)
+        subparser.add_argument(
             "--method", choices=["average"], default="average",
             help="what to calculate from the different statistics")
-        sub_parser.add_argument(
-            "locations", metavar="STATISTIC_FILES", nargs="+",
+        subparser.add_argument(
+            "locations", metavar="STATISTIC_FILE", nargs="+",
             help="locations of the statistic files to calculate from")
-        return sub_parser
+        return subparser
+
 
 class CompareAction(BaseAction):
     name = "compare"
+    parent_parsers = [SELECTION_PARSER]
 
-#    parsers["compare"].add_argument(
-#            "--method",
-#            type=str, default="meta", choices=["meta","full","hash"],
-#            help="use metadata, complete file or hash to compare directories")
-#    parsers["compare"].add_argument(
-#            "--at-time",
-#            type=str, default="now",
-#            help="compare with the backup at the given time, default is 'now'")
+    @classmethod
+    def add_action_subparser(cls, sub_handler):
+        subparser = super().add_action_subparser(sub_handler)
+        subparser.add_argument(
+            "--method", choices=["meta", "full", "hash"], default="meta",
+            help="use metadata, complete file or hash to compare directories")
+        subparser.add_argument(
+            "--at", metavar="TIME",
+            help="compare with the backup at the given time, default is 'now'")
+        subparser.add_argument(
+            "locations", metavar="LOCATION", nargs=2,
+            help="locations of SOURCE_DIR and backup REPOSITORY to compare"
+                 " (same order as for a backup)")
+        return subparser
+
 
 class ListAction(BaseAction):
     name = "list"
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
-        sub_parser = super().add_action_subparser(sub_handler)
+        subparser = super().add_action_subparser(sub_handler)
         entity_parsers = cls._get_subparsers(
-            sub_parser, "entity", "files", "increments")
+            subparser, "entity", "files", "increments")
         time_group = entity_parsers["files"].add_mutually_exclusive_group()
         time_group.add_argument(
             "--changed-since", metavar="TIME",
@@ -594,7 +594,7 @@ class ListAction(BaseAction):
         entity_parsers["increments"].add_argument(
             "locations", metavar="REPOSITORY_LOCATION", nargs=1,
             help="location of repository to list increments from")
-        return sub_parser
+        return subparser
 
 
 class RegressAction(BaseAction):
@@ -603,14 +603,14 @@ class RegressAction(BaseAction):
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
-        sub_parser = super().add_action_subparser(sub_handler)
-        sub_parser.add_argument(
+        subparser = super().add_action_subparser(sub_handler)
+        subparser.add_argument(
             "--allow-duplicate-timestamps", action="store_true",
             help="[sub] ignore duplicate metadata while checking repository")
-        sub_parser.add_argument(
+        subparser.add_argument(
             "locations", metavar="REPOSITORY_LOCATION", nargs=1,
             help="location of repository to check and possibly regress")
-        return sub_parser
+        return subparser
 
 
 class RemoveAction(BaseAction):
@@ -618,20 +618,32 @@ class RemoveAction(BaseAction):
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
-        sub_parser = super().add_action_subparser(sub_handler)
+        subparser = super().add_action_subparser(sub_handler)
         entity_parsers = cls._get_subparsers(
-            sub_parser, "entity", "increments")
+            subparser, "entity", "increments")
         entity_parsers["increments"].add_argument(
             "--older-than", metavar="TIME",
             help="remove increments older than given time")
         entity_parsers["increments"].add_argument(
             "locations", metavar="REPOSITORY_LOCATION", nargs=1,
             help="location of repository to remove increments from")
-        return sub_parser
+        return subparser
+
 
 class RestoreAction(BaseAction):
     name = "restore"
-    parent_parsers = [USER_GROUP_PARSER]
+    parent_parsers = [SELECTION_PARSER, USER_GROUP_PARSER]
+
+    @classmethod
+    def add_action_subparser(cls, sub_handler):
+        subparser = super().add_action_subparser(sub_handler)
+        subparser.add_argument(
+            "--at", default="now", metavar="TIME",
+            help="as of which time to restore the files (default is now)")
+        subparser.add_argument(
+            "locations", metavar="LOCATION", nargs=2,
+            help="locations of backup REPOSITORY and to which TARGET_DIR to restore")
+        return subparser
 
 class ServerAction(BaseAction):
     name = "server"
@@ -642,9 +654,9 @@ class VerifyAction(BaseAction):
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
-        sub_parser = super().add_action_subparser(sub_handler)
+        subparser = super().add_action_subparser(sub_handler)
         entity_parsers = cls._get_subparsers(
-            sub_parser, "entity", "files", "servers")
+            subparser, "entity", "files", "servers")
         entity_parsers["files"].add_argument(
             "--at", default="now", metavar="TIME",
             help="at which time to check the files' hashes (default is now)")
@@ -654,7 +666,7 @@ class VerifyAction(BaseAction):
         entity_parsers["servers"].add_argument(
             "locations", metavar="REPOSITORY_LOCATIONS", nargs="+",
             help="location of remote repositories to check for connection")
-        return sub_parser
+        return subparser
 
 
 def parse(args, version_string):
