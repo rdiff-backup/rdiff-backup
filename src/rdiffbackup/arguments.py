@@ -299,6 +299,9 @@ def _parse_old(args, version_string):
     action_group.add_argument(
         "--compare-full-at-time", type=str, metavar="AT_TIME",
         help="[act=] compare full at given time")
+    action_group.add_argument(
+        "--information", action="store_const", const="information",
+        help="[act] output information for bug reports")
     action_group.add_argument("--list-at-time", type=str, metavar="AT_TIME",
         help="[act=] list files and directories at given time")
     action_group.add_argument("--list-changed-since", type=str, metavar="AT_TIME",
@@ -434,6 +437,7 @@ class BaseAction:
                     "backup": BackupAction,
                     "calculate": CalculateAction,
                     "compare": CompareAction,
+                    "information": InformationAction,
                     "list": ListAction,
                     "regress": RegressAction,
                     "remove": RemoveAction,
@@ -523,6 +527,15 @@ class CompareAction(BaseAction):
             help="locations of SOURCE_DIR and backup REPOSITORY to compare"
                  " (same order as for a backup)")
         return subparser
+
+
+class InformationAction(BaseAction):
+    """
+    Output information about the current system, so that it can be used in
+    in a bug report, and exits.
+    """
+    name = "information"
+    # information has no specific sub-options
 
 
 class ListAction(BaseAction):
