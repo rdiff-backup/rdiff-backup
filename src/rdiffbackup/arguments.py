@@ -418,7 +418,7 @@ def _parse_new(args, version_string):
         title="possible actions", required=True, dest='action',
         help="call '%(prog)s <action> --help' for more information")
 
-    for action in BaseAction.get_actions():
+    for action in BaseAction.get_actions().values():
         action.add_action_subparser(sub_handler)
 
     values = parser.parse_args(args)
@@ -426,8 +426,8 @@ def _parse_new(args, version_string):
 
 
 class BaseAction:
-    # name of the action
-    name = "base"
+    # name of the action as a string
+    name = None
     # list of parent parsers
     parent_parsers = []
 
@@ -445,7 +445,7 @@ class BaseAction:
                     "server": ServerAction,
                     "verify": VerifyAction,
                   }
-        return actions.values()
+        return actions
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
