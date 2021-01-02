@@ -72,7 +72,52 @@ class SelectAction(argparse.Action):
         setattr(namespace, self.dest,
                 old_list + [(option_string.replace('--', ''), values)])
 
-#### DEFINE PARENT PARSERS ####
+#=== DEFINE PARENT PARSERS ===#
+
+COMMON_PARSER = argparse.ArgumentParser(
+    add_help=False,
+    description="[parent] common options to all actions")
+COMMON_PARSER.add_argument("--api-version", type=int,
+    help="[opt] integer to set the API version forcefully used")
+COMMON_PARSER.add_argument("--current-time", type=int,
+    help="[opt] fake the current time in seconds (for testing)")
+COMMON_PARSER.add_argument("--force", action="store_true",
+    help="[opt] force action")
+COMMON_PARSER.add_argument("--fsync", default=True,
+    action=argparse.BooleanOptionalAction,
+    help="[opt] do (or not) often sync the file system (_not_ doing it is faster but can be dangerous)")
+COMMON_PARSER.add_argument("--null-separator", action="store_true",
+    help="[opt] use null instead of newline in input and output files")
+COMMON_PARSER.add_argument("--new", default=False,
+    action=argparse.BooleanOptionalAction,
+    help="[opt] enforce (or not) the usage of the new parameters")
+COMMON_PARSER.add_argument("--override-chars-to-quote", type=str,
+    metavar="CHARS_TO_QUOTE",
+    help="[opt] string of characters to quote for safe storing")
+COMMON_PARSER.add_argument("--parsable-output", action="store_true",
+    help="[opt] output in computer parsable format")
+COMMON_PARSER.add_argument("--remote-schema", "--remote-cmd", type=str,
+    help="[opt] alternative command to call remotely rdiff-backup")
+COMMON_PARSER.add_argument("--remote-tempdir", type=str, metavar="DIR_PATH",
+    help="[opt] use path as temporary directory on the remote side")
+COMMON_PARSER.add_argument("--restrict", type=str, metavar="DIR_PATH",
+    help="[opt] restrict remote access to given path")
+COMMON_PARSER.add_argument("--restrict-read-only", type=str, metavar="DIR_PATH",
+    help="[opt] restrict remote access to given path, in read-only mode")
+COMMON_PARSER.add_argument("--restrict-update-only", type=str, metavar="DIR_PATH",
+    help="[opt] restrict remote access to given path, in backup update mode")
+COMMON_PARSER.add_argument("--ssh-no-compression", action="store_true",
+    help="[opt] use SSH without compression with default remote-schema")
+COMMON_PARSER.add_argument("--tempdir", type=str, metavar="DIR_PATH",
+    help="[opt] use given path as temporary directory")
+COMMON_PARSER.add_argument("--terminal-verbosity", type=int,
+    choices=range(0,10),
+    help="[opt] verbosity on the terminal, default given by --verbosity")
+COMMON_PARSER.add_argument("--use-compatible-timestamps", action="store_true",
+    help="[sub] use hyphen '-' instead of colon ':' to represent time")
+COMMON_PARSER.add_argument("-v", "--verbosity", type=int,
+    choices=range(0,10), default=3,
+    help="[opt] overall verbosity on terminal and in logfiles (default is 3)")
 
 SELECTION_PARSER = argparse.ArgumentParser(
     add_help=False,
@@ -123,37 +168,50 @@ SELECTION_PARSER.add_argument(
     "--min-file-size", action=SelectAction, metavar="SIZE", type=int,
     help="[sub] exclude files smaller than given size in bytes")
 
-#    parser.add_argument("--acls", default=True,
-#        action=argparse.BooleanOptionalAction,
-#        help="[sub] handle (or not) Access Control Lists")
-#    parser.add_argument("--carbonfile", default=True,
-#        action=argparse.BooleanOptionalAction,
-#        help="[sub] handle (or not) carbon files on MacOS X")
-#    parser.add_argument("--compare-inode", default=True,
-#        action=argparse.BooleanOptionalAction,
-#        help="[sub] compare (or not) inodes to decide if hard-linked files have changed")
-#    parser.add_argument("--eas", default=True,
-#        action=argparse.BooleanOptionalAction,
-#        help="[sub] handle (or not) Extended Attributes")
-#    parser.add_argument("--hard-links", default=True,
-#        action=argparse.BooleanOptionalAction,
-#        help="[sub] preserve (or not) hard links.")
-#    parser.add_argument("--never-drop-acls", action="store_true",
-#        help="[sub] exit with error instead of dropping acls or acl entries.")
+FILESYSTEM_PARSER = argparse.ArgumentParser(
+    add_help=False,
+    description="[parent] options related to file system capabilities")
+FILESYSTEM_PARSER.add_argument("--acls", default=True,
+    action=argparse.BooleanOptionalAction,
+    help="[sub] handle (or not) Access Control Lists")
+FILESYSTEM_PARSER.add_argument("--carbonfile", default=True,
+    action=argparse.BooleanOptionalAction,
+    help="[sub] handle (or not) carbon files on MacOS X")
+FILESYSTEM_PARSER.add_argument("--compare-inode", default=True,
+    action=argparse.BooleanOptionalAction,
+    help="[sub] compare (or not) inodes to decide if hard-linked files have changed")
+FILESYSTEM_PARSER.add_argument("--eas", default=True,
+    action=argparse.BooleanOptionalAction,
+    help="[sub] handle (or not) Extended Attributes")
+FILESYSTEM_PARSER.add_argument("--hard-links", default=True,
+    action=argparse.BooleanOptionalAction,
+    help="[sub] preserve (or not) hard links.")
+FILESYSTEM_PARSER.add_argument("--never-drop-acls", action="store_true",
+    help="[sub] exit with error instead of dropping acls or acl entries.")
 
-#    parser.add_argument("--create-full-path", action="store_true",
-#        help="[sub] create full necessary path to backup repository")
-#    parser.add_argument("--compression", default=True,
-#        action=argparse.BooleanOptionalAction,
-#        help="[sub] compress (or not) snapshot and diff files")
-#    parser.add_argument("--no-compression-regexp", type=str, metavar="REGEXP",
-#        default= ("(?i).*\\.("
-#                  "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
-#                  "jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
-#                  "mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
-#                  "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
-#                  ")$"),
-#        help="[sub] regexp to select files not being compressed")
+CREATION_PARSER = argparse.ArgumentParser(
+    add_help=False,
+    description="[parent] options related to creation of directories")
+CREATION_PARSER.add_argument(
+    "--create-full-path", action="store_true",
+    help="[sub] create full necessary path to backup repository")
+
+COMPRESSION_PARSER = argparse.ArgumentParser(
+    add_help=False,
+    description="[parent] options related to compression")
+COMPRESSION_PARSER.add_argument("--compression", default=True,
+    action=argparse.BooleanOptionalAction,
+    help="[sub] compress (or not) snapshot and diff files")
+COMPRESSION_PARSER.add_argument(
+    "--not-compressed-regexp", "--no-compression-regexp",
+    type=str, metavar="REGEXP",
+    default= ("(?i).*\\.("
+              "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
+              "jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
+              "mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
+              "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
+              ")$"),
+    help="[sub] regexp to select files not being compressed")
 
 STATISTICS_PARSER = argparse.ArgumentParser(
     add_help=False,
@@ -178,54 +236,15 @@ USER_GROUP_PARSER.add_argument(
     "--user-mapping-file", type=str, metavar="MAP_FILE",
     help="[sub] map users according to file")
 
-#### END DEFINE PARENT PARSERS ####
+#=== END DEFINE PARENT PARSERS ===#
 
 
-def _add_common_options_to_parser(parser, version_string):
+def _add_version_option_to_parser(parser, version_string):
     """
-    adds all common options to the given parser
+    Adds the version option to the given parser, setup with the given version
+    string.
     """
-    parser.add_argument("--api-version", type=int,
-        help="[opt] integer to set the API version forcefully used")
-    parser.add_argument("--current-time", type=int,
-        help="[opt] fake the current time in seconds (for testing)")
-    parser.add_argument("--force", action="store_true",
-        help="[opt] force action")
-    parser.add_argument("--fsync", default=True,
-        action=argparse.BooleanOptionalAction,
-        help="[opt] do (or not) often sync the file system (_not_ doing it is faster but can be dangerous)")
-    parser.add_argument("--null-separator", action="store_true",
-        help="[opt] use null instead of newline in input and output files")
-    parser.add_argument("--new", default=False,
-        action=argparse.BooleanOptionalAction,
-        help="[opt] enforce (or not) the usage of the new parameters")
-    parser.add_argument("--override-chars-to-quote", type=str,
-        metavar="CHARS_TO_QUOTE",
-        help="[opt] string of characters to quote for safe storing")
-    parser.add_argument("--parsable-output", action="store_true",
-        help="[opt] output in computer parsable format")
-    parser.add_argument("--remote-schema", "--remote-cmd", type=str,
-        help="[opt] alternative command to call remotely rdiff-backup")
-    parser.add_argument("--remote-tempdir", type=str, metavar="DIR_PATH",
-        help="[opt] use path as temporary directory on the remote side")
-    parser.add_argument("--restrict", type=str, metavar="DIR_PATH",
-        help="[opt] restrict remote access to given path")
-    parser.add_argument("--restrict-read-only", type=str, metavar="DIR_PATH",
-        help="[opt] restrict remote access to given path, in read-only mode")
-    parser.add_argument("--restrict-update-only", type=str, metavar="DIR_PATH",
-        help="[opt] restrict remote access to given path, in backup update mode")
-    parser.add_argument("--ssh-no-compression", action="store_true",
-        help="[opt] use SSH without compression with default remote-schema")
-    parser.add_argument("--tempdir", type=str, metavar="DIR_PATH",
-        help="[opt] use given path as temporary directory")
-    parser.add_argument("--terminal-verbosity", type=int,
-        choices=range(0,10),
-        help="[opt] verbosity on the terminal, default given by --verbosity")
-    parser.add_argument("--use-compatible-timestamps", action="store_true",
-        help="[sub] use hyphen '-' instead of colon ':' to represent time")
-    parser.add_argument("-v", "--verbosity", type=int,
-        choices=range(0,10), default=3,
-        help="[opt] overall verbosity on terminal and in logfiles (default is 3)")
+
     parser.add_argument("-V", "--version",
         action="version", version=version_string,
         help="[opt] output the rdiff-backup version and exit")
@@ -242,9 +261,15 @@ def _parse_old(args, version_string):
     """
 
     parser = argparse.ArgumentParser(
-        description="local/remote mirror and incremental backup")
+        description="local/remote mirror and incremental backup",
+        parents=[
+            COMMON_PARSER,
+            CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
+            FILESYSTEM_PARSER, USER_GROUP_PARSER, STATISTICS_PARSER,
+            ]
+        )
 
-    _add_common_options_to_parser(parser, version_string)
+    _add_version_option_to_parser(parser, version_string)
 
     action_group = parser.add_mutually_exclusive_group()
     action_group.add_argument(
@@ -301,94 +326,6 @@ def _parse_old(args, version_string):
         help="[act] verify hash values in backup repo (at time now)")
     action_group.add_argument("--verify-at-time", type=str, metavar="AT_TIME",
         help="[act=] verify hash values in backup repo (at given time)")
-
-    parser.add_argument("--allow-duplicate-timestamps", action="store_true",
-        help="[sub] ignore duplicate metadata while checking destination dir")
-    parser.add_argument("--create-full-path", action="store_true",
-        help="[sub] create full necessary path to backup repository")
-    parser.add_argument("--SELECT", action=SelectAction, metavar="GLOB",
-        help="[sub] SELECT files according to glob pattern")
-    parser.add_argument("--SELECT-device-files",
-        action=SelectAction, type=bool, default=True,
-        help="[sub] SELECT device files")
-    parser.add_argument("--SELECT-fifos",
-        action=SelectAction, type=bool, default=True,
-        help="[sub] SELECT fifo files")
-    parser.add_argument("--SELECT-filelist",
-        action=SelectAction, metavar="LIST_FILE",
-        help="[sub] SELECT files according to list in given file")
-    parser.add_argument("--SELECT-filelist-stdin",
-        action=SelectAction, type=bool,
-        help="[sub] SELECT files according to list from standard input")
-    parser.add_argument("--SELECT-symbolic-links",
-        action=SelectAction, type=bool, default=True,
-        help="[sub] SELECT symbolic links")
-    parser.add_argument("--SELECT-sockets",
-        action=SelectAction, type=bool, default=True,
-        help="[sub] SELECT socket files")
-    parser.add_argument("--SELECT-globbing-filelist",
-        action=SelectAction, metavar="GLOBS_FILE",
-        help="[sub] SELECT files according to glob list in given file")
-    parser.add_argument("--SELECT-globbing-filelist-stdin",
-        action=SelectAction, type=bool,
-        help="[sub] SELECT files according to glob list from standard input")
-    parser.add_argument("--SELECT-other-filesystems",
-        action=SelectAction, type=bool, default=True,
-        help="[sub] SELECT files from other file systems than the source one")
-    parser.add_argument("--SELECT-regexp",
-        action=SelectAction, metavar="REGEXP",
-        help="[sub] SELECT files according to regexp pattern")
-    parser.add_argument("--SELECT-if-present",
-        action=SelectAction, metavar="FILENAME",
-        help="[sub] SELECT directory if it contains the given file")
-    parser.add_argument("--SELECT-special-files",
-        action=SelectAction, type=bool, default=True,
-        help="[sub] SELECT all device, fifo, socket files, and symbolic links")
-    parser.add_argument("--group-mapping-file", type=str, metavar="MAP_FILE",
-        help="[sub] map groups according to file")
-    parser.add_argument("--never-drop-acls", action="store_true",
-        help="[sub] exit with error instead of dropping acls or acl entries.")
-    parser.add_argument("--max-file-size",
-        action=SelectAction, metavar="SIZE", type=int,
-        help="[sub] exclude files larger than given size in bytes")
-    parser.add_argument("--min-file-size",
-        action=SelectAction, metavar="SIZE", type=int,
-        help="[sub] exclude files smaller than given size in bytes")
-    parser.add_argument("--acls", default=True,
-        action=argparse.BooleanOptionalAction,
-        help="[sub] handle (or not) Access Control Lists")
-    parser.add_argument("--carbonfile", default=True,
-        action=argparse.BooleanOptionalAction,
-        help="[sub] handle (or not) carbon files on MacOS X")
-    parser.add_argument("--compare-inode", default=True,
-        action=argparse.BooleanOptionalAction,
-        help="[sub] compare (or not) inodes to decide if hard-linked files have changed")
-    parser.add_argument("--compression", default=True,
-        action=argparse.BooleanOptionalAction,
-        help="[sub] compress (or not) snapshot and diff files")
-    parser.add_argument("--no-compression-regexp", type=str, metavar="REGEXP",
-        default= ("(?i).*\\.("
-                  "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
-                  "jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
-                  "mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
-                  "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
-                  ")$"),
-        help="[sub] regexp to select files not being compressed")
-    parser.add_argument("--eas", default=True,
-        action=argparse.BooleanOptionalAction,
-        help="[sub] handle (or not) Extended Attributes")
-    parser.add_argument("--file-statistics", default=True,
-        action=argparse.BooleanOptionalAction,
-        help="[sub] do (or not) generate statistics file during backup")
-    parser.add_argument("--hard-links", default=True,
-        action=argparse.BooleanOptionalAction,
-        help="[sub] preserve (or not) hard links.")
-    parser.add_argument("--preserve-numerical-ids", action="store_true",
-        help="[sub] preserve user and group IDs instead of names")
-    parser.add_argument("--print-statistics", action="store_true",
-        help="[sub] print statistics after a successful backup")
-    parser.add_argument("--user-mapping-file", type=str, metavar="MAP_FILE",
-        help="[sub] map users according to file")
 
     parser.add_argument("locations", nargs='*',
         help="[args] locations remote and local to be handled by chosen action")
@@ -469,14 +406,14 @@ def _parse_old(args, version_string):
 def _parse_new(args, version_string):
     parser = argparse.ArgumentParser(
         description="local/remote mirror and incremental backup",
+        parents=[COMMON_PARSER],
         fromfile_prefix_chars='@')
 
-    _add_common_options_to_parser(parser, version_string)
+    _add_version_option_to_parser(parser, version_string)
 
     sub_handler = parser.add_subparsers(
-        title="possible actions",
-        help="call '{bin} <action> --help' for more information".format(
-            bin=sys.argv[0]))
+        title="possible actions", required=True, dest='action',
+        help="call '%(prog)s <action> --help' for more information")
 
     for action in BaseAction.get_actions():
         action.add_action_subparser(sub_handler)
@@ -498,8 +435,8 @@ class BaseAction:
                     "calculate": CalculateAction,
                     "compare": CompareAction,
                     "list": ListAction,
-                    "remove": RemoveAction,
                     "regress": RegressAction,
+                    "remove": RemoveAction,
                     "restore": RestoreAction,
                     "server": ServerAction,
                     "verify": VerifyAction,
@@ -509,33 +446,47 @@ class BaseAction:
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = sub_handler.add_parser(cls.name,
-                                           parents=cls.parent_parsers)
+                                           parents=cls.parent_parsers,
+                                           description=cls.__doc__)
         subparser.set_defaults(action=cls.name)  # TODO cls instead of name!
 
         return subparser
 
     @classmethod
     def _get_subparsers(cls, parser, sub_dest, *sub_names):
-        sub_handler = parser.add_subparsers()
+        sub_handler = parser.add_subparsers(
+            title="possible {dest}s".format(dest=sub_dest),
+            required=True, dest=sub_dest)
         subparsers = {}
         for sub_name in sub_names:
             subparsers[sub_name] = sub_handler.add_parser(sub_name)
             subparsers[sub_name].set_defaults(**{sub_dest: sub_name})
         return subparsers
 
+
 class BackupAction(BaseAction):
+    """
+    Backup a source directory to a target backup repository.
+    """
     name = "backup"
-    parent_parsers = [SELECTION_PARSER, USER_GROUP_PARSER, STATISTICS_PARSER]
+    parent_parsers = [
+            CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
+            FILESYSTEM_PARSER, USER_GROUP_PARSER, STATISTICS_PARSER,
+            ]
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
-            "locations", metavar="LOCATION", nargs=2,
+            "locations", metavar="[[USER@]SERVER::]PATH", nargs=2,
             help="locations of SOURCE_DIR and to which REPOSITORY to backup")
         return subparser
 
+
 class CalculateAction(BaseAction):
+    """
+    Calculate values (average by default) across multiple statistics files.
+    """
     name = "calculate"
 
     @classmethod
@@ -551,6 +502,10 @@ class CalculateAction(BaseAction):
 
 
 class CompareAction(BaseAction):
+    """
+    Compare the content of a source directory with a backup repository
+    at a given time, using multiple methods.
+    """
     name = "compare"
     parent_parsers = [SELECTION_PARSER]
 
@@ -564,13 +519,17 @@ class CompareAction(BaseAction):
             "--at", metavar="TIME",
             help="compare with the backup at the given time, default is 'now'")
         subparser.add_argument(
-            "locations", metavar="LOCATION", nargs=2,
+            "locations", metavar="[[USER@]SERVER::]PATH", nargs=2,
             help="locations of SOURCE_DIR and backup REPOSITORY to compare"
                  " (same order as for a backup)")
         return subparser
 
 
 class ListAction(BaseAction):
+    """
+    List files at a given time, files changed since a certain time, or
+    increments, with or without size, in a given backup repository.
+    """
     name = "list"
 
     @classmethod
@@ -586,20 +545,24 @@ class ListAction(BaseAction):
             "--at", metavar="TIME",
             help="list files at given time")
         entity_parsers["files"].add_argument(
-            "locations", metavar="REPOSITORY_LOCATION", nargs=1,
+            "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
             help="location of repository to list files from")
         entity_parsers["increments"].add_argument(
             "--sizes", action=argparse.BooleanOptionalAction, default=False,
             help="also output size of each increment (might take longer)")
         entity_parsers["increments"].add_argument(
-            "locations", metavar="REPOSITORY_LOCATION", nargs=1,
+            "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
             help="location of repository to list increments from")
         return subparser
 
 
 class RegressAction(BaseAction):
+    """
+    Regress a backup repository, i.e. remove the last (failed) incremental
+    backup and reverse to the last known good mirror.
+    """
     name = "regress"
-    parent_parsers = [USER_GROUP_PARSER]
+    parent_parsers = [COMPRESSION_PARSER, USER_GROUP_PARSER]
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
@@ -608,12 +571,15 @@ class RegressAction(BaseAction):
             "--allow-duplicate-timestamps", action="store_true",
             help="[sub] ignore duplicate metadata while checking repository")
         subparser.add_argument(
-            "locations", metavar="REPOSITORY_LOCATION", nargs=1,
+            "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
             help="location of repository to check and possibly regress")
         return subparser
 
 
 class RemoveAction(BaseAction):
+    """
+    Remove the oldest increments from a backup repository.
+    """
     name = "remove"
 
     @classmethod
@@ -625,31 +591,47 @@ class RemoveAction(BaseAction):
             "--older-than", metavar="TIME",
             help="remove increments older than given time")
         entity_parsers["increments"].add_argument(
-            "locations", metavar="REPOSITORY_LOCATION", nargs=1,
+            "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
             help="location of repository to remove increments from")
         return subparser
 
 
 class RestoreAction(BaseAction):
+    """
+    Restore a backup at a given time (default is latest) from a repository
+    to a target directory.
+    """
     name = "restore"
-    parent_parsers = [SELECTION_PARSER, USER_GROUP_PARSER]
+    parent_parsers = [
+            CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
+            FILESYSTEM_PARSER, USER_GROUP_PARSER,
+            ]
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
             "--at", default="now", metavar="TIME",
-            help="as of which time to restore the files (default is now)")
+            help="as of which time to restore the files (default is now/latest)")
         subparser.add_argument(
-            "locations", metavar="LOCATION", nargs=2,
+            "locations", metavar="[[USER@]SERVER::]PATH", nargs=2,
             help="locations of backup REPOSITORY and to which TARGET_DIR to restore")
         return subparser
 
+
 class ServerAction(BaseAction):
+    """
+    Start rdiff-backup in server mode (only meant for internal use).
+    """
     name = "server"
     # server has no specific sub-options
 
+
 class VerifyAction(BaseAction):
+    """
+    Verify that files in a backup repository correspond to their stored hash,
+    or that servers are properly reachable.
+    """
     name = "verify"
 
     @classmethod
@@ -659,12 +641,12 @@ class VerifyAction(BaseAction):
             subparser, "entity", "files", "servers")
         entity_parsers["files"].add_argument(
             "--at", default="now", metavar="TIME",
-            help="at which time to check the files' hashes (default is now)")
+            help="as of which time to check the files' hashes (default is now/latest)")
         entity_parsers["files"].add_argument(
-            "locations", metavar="REPOSITORY_LOCATION", nargs=1,
+            "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
             help="location of repository where to check files' hashes")
         entity_parsers["servers"].add_argument(
-            "locations", metavar="REPOSITORY_LOCATIONS", nargs="+",
+            "locations", metavar="[[USER@]SERVER::]PATH", nargs="+",
             help="location of remote repositories to check for connection")
         return subparser
 
