@@ -1,3 +1,31 @@
+# Copyright 2021 the rdiff-backup project
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# rdiff-backup is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with rdiff-backup; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA
+"""
+This module offers mainly a function `parse` to parse command line
+arguments using Python's argparse module and return an
+argparse.Namespace object with the parsed arguments.
+The main section at the very end of this module offers an example on how
+to use it.
+NOTE: the BaseAction class and derived action classes are here only for
+      now.
+"""
+
 import argparse
 import sys
 import yaml
@@ -72,51 +100,66 @@ class SelectAction(argparse.Action):
         setattr(namespace, self.dest,
                 old_list + [(option_string.replace('--', ''), values)])
 
-#=== DEFINE PARENT PARSERS ===#
+
+# === DEFINE PARENT PARSERS ===
+
 
 COMMON_PARSER = argparse.ArgumentParser(
     add_help=False,
     description="[parent] common options to all actions")
-COMMON_PARSER.add_argument("--api-version", type=int,
+COMMON_PARSER.add_argument(
+    "--api-version", type=int,
     help="[opt] integer to set the API version forcefully used")
-COMMON_PARSER.add_argument("--current-time", type=int,
+COMMON_PARSER.add_argument(
+    "--current-time", type=int,
     help="[opt] fake the current time in seconds (for testing)")
-COMMON_PARSER.add_argument("--force", action="store_true",
-    help="[opt] force action")
-COMMON_PARSER.add_argument("--fsync", default=True,
-    action=argparse.BooleanOptionalAction,
+COMMON_PARSER.add_argument(
+    "--force", action="store_true",
+    help="[opt] force action (caution, the result might be dangerous)")
+COMMON_PARSER.add_argument(
+    "--fsync", default=True, action=argparse.BooleanOptionalAction,
     help="[opt] do (or not) often sync the file system (_not_ doing it is faster but can be dangerous)")
-COMMON_PARSER.add_argument("--null-separator", action="store_true",
+COMMON_PARSER.add_argument(
+    "--null-separator", action="store_true",
     help="[opt] use null instead of newline in input and output files")
-COMMON_PARSER.add_argument("--new", default=False,
-    action=argparse.BooleanOptionalAction,
+COMMON_PARSER.add_argument(
+    "--new", default=False, action=argparse.BooleanOptionalAction,
     help="[opt] enforce (or not) the usage of the new parameters")
-COMMON_PARSER.add_argument("--override-chars-to-quote", type=str,
-    metavar="CHARS_TO_QUOTE",
+COMMON_PARSER.add_argument(
+    "--override-chars-to-quote", type=str, metavar="CHARS_TO_QUOTE",
     help="[opt] string of characters to quote for safe storing")
-COMMON_PARSER.add_argument("--parsable-output", action="store_true",
+COMMON_PARSER.add_argument(
+    "--parsable-output", action="store_true",
     help="[opt] output in computer parsable format")
-COMMON_PARSER.add_argument("--remote-schema", "--remote-cmd", type=str,
+COMMON_PARSER.add_argument(
+    "--remote-schema", "--remote-cmd", type=str,
     help="[opt] alternative command to call remotely rdiff-backup")
-COMMON_PARSER.add_argument("--remote-tempdir", type=str, metavar="DIR_PATH",
+COMMON_PARSER.add_argument(
+    "--remote-tempdir", type=str, metavar="DIR_PATH",
     help="[opt] use path as temporary directory on the remote side")
-COMMON_PARSER.add_argument("--restrict", type=str, metavar="DIR_PATH",
+COMMON_PARSER.add_argument(
+    "--restrict", type=str, metavar="DIR_PATH",
     help="[opt] restrict remote access to given path")
-COMMON_PARSER.add_argument("--restrict-read-only", type=str, metavar="DIR_PATH",
+COMMON_PARSER.add_argument(
+    "--restrict-read-only", type=str, metavar="DIR_PATH",
     help="[opt] restrict remote access to given path, in read-only mode")
-COMMON_PARSER.add_argument("--restrict-update-only", type=str, metavar="DIR_PATH",
+COMMON_PARSER.add_argument(
+    "--restrict-update-only", type=str, metavar="DIR_PATH",
     help="[opt] restrict remote access to given path, in backup update mode")
-COMMON_PARSER.add_argument("--ssh-no-compression", action="store_true",
+COMMON_PARSER.add_argument(
+    "--ssh-no-compression", action="store_true",
     help="[opt] use SSH without compression with default remote-schema")
-COMMON_PARSER.add_argument("--tempdir", type=str, metavar="DIR_PATH",
+COMMON_PARSER.add_argument(
+    "--tempdir", type=str, metavar="DIR_PATH",
     help="[opt] use given path as temporary directory")
-COMMON_PARSER.add_argument("--terminal-verbosity", type=int,
-    choices=range(0,10),
+COMMON_PARSER.add_argument(
+    "--terminal-verbosity", type=int, choices=range(0, 10),
     help="[opt] verbosity on the terminal, default given by --verbosity")
-COMMON_PARSER.add_argument("--use-compatible-timestamps", action="store_true",
+COMMON_PARSER.add_argument(
+    "--use-compatible-timestamps", action="store_true",
     help="[sub] use hyphen '-' instead of colon ':' to represent time")
-COMMON_PARSER.add_argument("-v", "--verbosity", type=int,
-    choices=range(0,10), default=3,
+COMMON_PARSER.add_argument(
+    "-v", "--verbosity", type=int, choices=range(0, 10), default=3,
     help="[opt] overall verbosity on terminal and in logfiles (default is 3)")
 
 SELECTION_PARSER = argparse.ArgumentParser(
@@ -171,22 +214,23 @@ SELECTION_PARSER.add_argument(
 FILESYSTEM_PARSER = argparse.ArgumentParser(
     add_help=False,
     description="[parent] options related to file system capabilities")
-FILESYSTEM_PARSER.add_argument("--acls", default=True,
-    action=argparse.BooleanOptionalAction,
+FILESYSTEM_PARSER.add_argument(
+    "--acls", default=True, action=argparse.BooleanOptionalAction,
     help="[sub] handle (or not) Access Control Lists")
-FILESYSTEM_PARSER.add_argument("--carbonfile", default=True,
-    action=argparse.BooleanOptionalAction,
+FILESYSTEM_PARSER.add_argument(
+    "--carbonfile", default=True, action=argparse.BooleanOptionalAction,
     help="[sub] handle (or not) carbon files on MacOS X")
-FILESYSTEM_PARSER.add_argument("--compare-inode", default=True,
-    action=argparse.BooleanOptionalAction,
+FILESYSTEM_PARSER.add_argument(
+    "--compare-inode", default=True, action=argparse.BooleanOptionalAction,
     help="[sub] compare (or not) inodes to decide if hard-linked files have changed")
-FILESYSTEM_PARSER.add_argument("--eas", default=True,
-    action=argparse.BooleanOptionalAction,
+FILESYSTEM_PARSER.add_argument(
+    "--eas", default=True, action=argparse.BooleanOptionalAction,
     help="[sub] handle (or not) Extended Attributes")
-FILESYSTEM_PARSER.add_argument("--hard-links", default=True,
-    action=argparse.BooleanOptionalAction,
+FILESYSTEM_PARSER.add_argument(
+    "--hard-links", default=True, action=argparse.BooleanOptionalAction,
     help="[sub] preserve (or not) hard links.")
-FILESYSTEM_PARSER.add_argument("--never-drop-acls", action="store_true",
+FILESYSTEM_PARSER.add_argument(
+    "--never-drop-acls", action="store_true",
     help="[sub] exit with error instead of dropping acls or acl entries.")
 
 CREATION_PARSER = argparse.ArgumentParser(
@@ -199,18 +243,19 @@ CREATION_PARSER.add_argument(
 COMPRESSION_PARSER = argparse.ArgumentParser(
     add_help=False,
     description="[parent] options related to compression")
-COMPRESSION_PARSER.add_argument("--compression", default=True,
-    action=argparse.BooleanOptionalAction,
+COMPRESSION_PARSER.add_argument(
+    "--compression", default=True, action=argparse.BooleanOptionalAction,
     help="[sub] compress (or not) snapshot and diff files")
 COMPRESSION_PARSER.add_argument(
-    "--not-compressed-regexp", "--no-compression-regexp",
-    type=str, metavar="REGEXP",
-    default= ("(?i).*\\.("
-              "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
-              "jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
-              "mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
-              "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
-              ")$"),
+    "--not-compressed-regexp", "--no-compression-regexp", metavar="REGEXP",
+    default=(
+        "(?i).*\\.("
+        "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
+        "jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
+        "mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
+        "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
+        ")$"
+    ),
     help="[sub] regexp to select files not being compressed")
 
 STATISTICS_PARSER = argparse.ArgumentParser(
@@ -236,196 +281,24 @@ USER_GROUP_PARSER.add_argument(
     "--user-mapping-file", type=str, metavar="MAP_FILE",
     help="[sub] map users according to file")
 
-#=== END DEFINE PARENT PARSERS ===#
+PARENT_PARSERS = [
+    COMMON_PARSER,
+    CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
+    FILESYSTEM_PARSER, USER_GROUP_PARSER, STATISTICS_PARSER,
+]
 
 
-def _add_version_option_to_parser(parser, version_string):
-    """
-    Adds the version option to the given parser, setup with the given version
-    string.
-    """
-
-    parser.add_argument("-V", "--version",
-        action="version", version=version_string,
-        help="[opt] output the rdiff-backup version and exit")
-
-
-def _parse_old(args, version_string):
-    """
-    Parse arguments according to old parameters of rdiff-backup.
-    The hint in square brackets at the beginning of the help are in preparation
-    for the new way of parsing:
-        rdiff-backup <opt(ions)> <act(ion)> <sub(-options)> <paths>
-    Note that actions are mutually exclusive and that '[act=]' will need to be
-    split into an action and a sub-option.
-    """
-
-    parser = argparse.ArgumentParser(
-        description="local/remote mirror and incremental backup",
-        parents=[
-            COMMON_PARSER,
-            CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
-            FILESYSTEM_PARSER, USER_GROUP_PARSER, STATISTICS_PARSER,
-            ]
-        )
-
-    _add_version_option_to_parser(parser, version_string)
-
-    action_group = parser.add_mutually_exclusive_group()
-    action_group.add_argument(
-        "-b", "--backup-mode",
-        dest="action", action="store_const", const="backup",
-        help="[act] back-up directory into back-up repository")
-    action_group.add_argument("--calculate-average",
-        dest="action", action="store_const", const="calculate-average",
-        help="[act] calculate average across multiple statistic files")
-    action_group.add_argument("--check-destination-dir",
-        dest="action", action="store_const", const="check-destination-dir",
-        help="[act] check-destination-dir")
-    action_group.add_argument("--compare",
-        dest="action", action="store_const", const="compare",
-        help="[act] compare normal (at time now)")
-    action_group.add_argument("--compare-at-time", type=str, metavar="AT_TIME",
-        help="[act=] compare normal at given time")
-    action_group.add_argument("--compare-hash",
-        dest="action", action="store_const", const="compare-hash",
-        help="[act] compare by hash (at time now)")
-    action_group.add_argument("--compare-hash-at-time",
-        type=str, metavar="AT_TIME",
-        help="[act=] compare by hash at given time")
-    action_group.add_argument("--compare-full",
-        dest="action", action="store_const", const="compare-full",
-        help="[act] compare full (at time now)")
-    action_group.add_argument(
-        "--compare-full-at-time", type=str, metavar="AT_TIME",
-        help="[act=] compare full at given time")
-    action_group.add_argument(
-        "--information", action="store_const", const="information",
-        help="[act] output information for bug reports")
-    action_group.add_argument("--list-at-time", type=str, metavar="AT_TIME",
-        help="[act=] list files and directories at given time")
-    action_group.add_argument("--list-changed-since", type=str, metavar="AT_TIME",
-        help="[act=] list changed files and directories since given time")
-    action_group.add_argument("-l", "--list-increments",
-        dest="action", action="store_const", const="list-increments",
-        help="[act] list increments in backup repository")
-    action_group.add_argument("--list-increment-sizes",
-        dest="action", action="store_const", const="list-increment-sizes",
-        help="[act] list increments and their size in backup repository")
-    action_group.add_argument(
-        "--remove-older-than", type=str, metavar="AT_TIME",
-        help="[act=] remove increments older than given time")
-    action_group.add_argument(
-        "-r", "--restore-as-of", type=str, metavar="AT_TIME",
-        help="[act=] restore files from repo as of given time")
-    action_group.add_argument("-s", "--server",
-        dest="action", action="store_const", const="server",
-        help="[act] start rdiff-backup in server mode")
-    action_group.add_argument("--test-server",
-        dest="action", action="store_const", const="test-server",
-        help="[act] test communication to multiple remote servers")
-    action_group.add_argument("--verify",
-        dest="action", action="store_const", const="verify",
-        help="[act] verify hash values in backup repo (at time now)")
-    action_group.add_argument("--verify-at-time", type=str, metavar="AT_TIME",
-        help="[act=] verify hash values in backup repo (at given time)")
-
-    parser.add_argument("locations", nargs='*',
-        help="[args] locations remote and local to be handled by chosen action")
-
-    values = parser.parse_args(args)
-
-    # compatibility layer with new parameter handling
-    if not values.action:
-        if values.compare_at_time:
-            values.action = "compare"
-            values.method = "normal"
-            values.at = values.compare_at_time
-        elif values.compare_hash_at_time:
-            values.action = "compare"
-            values.method = "hash"
-            values.at = values.compare_hash_at_time
-        elif values.compare_full_at_time:
-            values.action = "compare"
-            values.method = "full"
-            values.at = values.compare_full_at_time
-        elif values.list_at_time:
-            values.action = "list"
-            values.entity = "files"
-            values.at = values.list_at_time
-        elif values.list_changed_since:
-            values.action = "list"
-            values.entity = "files"
-            values.changed_since_time = values.list_changed_since
-        elif values.remove_older_than:
-            values.action = "remove"
-            values.entity = "increments"
-            values.older_than = values.remove_older_than
-        elif values.restore_as_of:
-            values.action = "restore"
-            values.at = values.restore_as_of
-        elif values.verify_at_time:
-            values.action = "verify"
-            values.entity = "files"
-            values.at = values.verify_at_time
-        # if there is still no action defined, we set the default
-        if not values.action:
-            values.action = "backup"
-    else:
-        if values.action == "calculate-average":
-            value.action = "calculate"
-            values.method = "average"
-        if values.action == "check-destination-dir":
-            value.action = "regress"
-        if values.action == "compare":
-            values.method = "normal"
-            values.at = "now"
-        elif values.action == "compare-hash":
-            values.action = "compare"
-            values.method = "hash"
-            values.at = "now"
-        elif values.action == "compare-full":
-            values.action = "compare"
-            values.method = "full"
-            values.at = "now"
-        elif values.action == "list-increments":
-            values.action = "list"
-            values.entity = "increments"
-            values.sizes = False
-        elif values.action == "list-increment-sizes":
-            values.action = "list"
-            values.entity = "increments"
-            values.sizes = True
-        elif values.action == "test-server":
-            value.action = "verify"
-            values.entity = "servers"
-        elif values.action == "verify":
-            values.entity = "files"
-            values.at = "now"
-
-    return values
-
-
-def _parse_new(args, version_string):
-    parser = argparse.ArgumentParser(
-        description="local/remote mirror and incremental backup",
-        parents=[COMMON_PARSER],
-        fromfile_prefix_chars='@')
-
-    _add_version_option_to_parser(parser, version_string)
-
-    sub_handler = parser.add_subparsers(
-        title="possible actions", required=True, dest='action',
-        help="call '%(prog)s <action> --help' for more information")
-
-    for action in BaseAction.get_actions().values():
-        action.add_action_subparser(sub_handler)
-
-    values = parser.parse_args(args)
-    return values
+# === CLASSES ===
+# NOTE: those classes are only a place holder for now and will move to their
+#       own package/modules.
 
 
 class BaseAction:
+    """
+    Base rdiff-backup Action, knows about all available rdiff-backup
+    actions, and is to be used as base class for all these actions.
+    """
+
     # name of the action as a string
     name = None
     # list of parent parsers
@@ -433,22 +306,37 @@ class BaseAction:
 
     @classmethod
     def get_actions(cls):
+        """
+        Return a list of all rdiff-backup actions in the form of a
+        dictionary `{"action_name": SomeAction}`, SomeAction being a class
+        derived from BaseAction.
+        """
+        # the actions can't be defined as class variable because the *Action
+        # classes wouldn't yet be known.
         actions = {
-                    "backup": BackupAction,
-                    "calculate": CalculateAction,
-                    "compare": CompareAction,
-                    "information": InformationAction,
-                    "list": ListAction,
-                    "regress": RegressAction,
-                    "remove": RemoveAction,
-                    "restore": RestoreAction,
-                    "server": ServerAction,
-                    "verify": VerifyAction,
-                  }
+            "backup": BackupAction,
+            "calculate": CalculateAction,
+            "compare": CompareAction,
+            "information": InformationAction,
+            "list": ListAction,
+            "regress": RegressAction,
+            "remove": RemoveAction,
+            "restore": RestoreAction,
+            "server": ServerAction,
+            "verify": VerifyAction,
+        }
         return actions
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
+        """
+        Given a subparsers handle as returned by argparse.add_subparsers,
+        creates the subparser corresponding to the current Action class
+        (as inherited).
+        Most Action classes will need to extend this function with their
+        own subparsers.
+        Returns the computed subparser.
+        """
         subparser = sub_handler.add_parser(cls.name,
                                            parents=cls.parent_parsers,
                                            description=cls.__doc__)
@@ -458,6 +346,13 @@ class BaseAction:
 
     @classmethod
     def _get_subparsers(cls, parser, sub_dest, *sub_names):
+        """
+        This method can be used to add 2nd level subparsers to the action
+        subparser (named here parser). sub_dest would typically be the name
+        of the action, and sub_names are the names for the sub-subparsers.
+        Returns the computed subparsers as dictionary with the sub_names as
+        keys, so that arguments can be added to those subparsers as values.
+        """
         sub_handler = parser.add_subparsers(
             title="possible {dest}s".format(dest=sub_dest),
             required=True, dest=sub_dest)
@@ -467,6 +362,19 @@ class BaseAction:
             subparsers[sub_name].set_defaults(**{sub_dest: sub_name})
         return subparsers
 
+    def __init__(self, values):
+        """
+        Dummy initialization method
+        """
+        self.values = values
+
+    def print_values(self, explicit=True):
+        """
+        Dummy output method
+        """
+        print(yaml.safe_dump(self.values.__dict__,
+                             explicit_start=explicit, explicit_end=explicit))
+
 
 class BackupAction(BaseAction):
     """
@@ -474,9 +382,9 @@ class BackupAction(BaseAction):
     """
     name = "backup"
     parent_parsers = [
-            CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
-            FILESYSTEM_PARSER, USER_GROUP_PARSER, STATISTICS_PARSER,
-            ]
+        CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
+        FILESYSTEM_PARSER, USER_GROUP_PARSER, STATISTICS_PARSER,
+    ]
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
@@ -616,9 +524,9 @@ class RestoreAction(BaseAction):
     """
     name = "restore"
     parent_parsers = [
-            CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
-            FILESYSTEM_PARSER, USER_GROUP_PARSER,
-            ]
+        CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
+        FILESYSTEM_PARSER, USER_GROUP_PARSER,
+    ]
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
@@ -664,16 +572,242 @@ class VerifyAction(BaseAction):
         return subparser
 
 
-def parse(args, version_string):
+# === FUNCTIONS ===
+
+
+def parse(args, version_string, parent_parsers, actions=None):
+    """
+    Parses the given arguments, using the version string for --version,
+    parents is a list of parent parsers, where the first one is assumed to
+    be the commone one, sole one required by the new parser.
+    And actions is a dictionary of the form `{"action_name": ActionClass}`.
+    Returns an argparse Namespace containing the parsed parameters.
+    """
+    # we try to recognize if the user wants the old or the new parameters
+    # it's the case if --new is explicitly given, or if any parameter starts
+    # with an @ (meaning read from file), or if api-version is used, or if
+    # any of the action names is found in the parameters, without `--no-new`
+    # being found.
+    # note: `set1 & set2` is the intersection of two sets
     if ('--new' in args
-            or ('--api-version' in args and not '--no-new' in args)
-            or (any(map(lambda x: x.startswith('@'), args)))):
-        return _parse_new(args, version_string)
+            or (any(map(lambda x: x.startswith('@'), args)))
+            or ('--no-new' not in args
+                and ('--api-version' in args
+                     or (set(actions.keys()) & set(args))))):
+        return _parse_new(args, version_string, parent_parsers[0:1], actions)
     else:
-        return _parse_old(args, version_string)
+        return _parse_old(args, version_string, parent_parsers)
+
+
+def _parse_new(args, version_string, parent_parsers, actions):
+    """
+    Parse arguments according to new parameters of rdiff-backup, i.e.
+        rdiff-backup <opt(ions)> <act(ion)> <sub(-options)> <paths>
+    """
+    parser = argparse.ArgumentParser(
+        description="local/remote mirror and incremental backup",
+        parents=parent_parsers, fromfile_prefix_chars='@')
+
+    _add_version_option_to_parser(parser, version_string)
+
+    sub_handler = parser.add_subparsers(
+        title="possible actions", required=True, dest='action',
+        help="call '%(prog)s <action> --help' for more information")
+
+    for action in actions.values():
+        action.add_action_subparser(sub_handler)
+
+    parsed_args = parser.parse_args(args)
+    return parsed_args
+
+
+def _parse_old(args, version_string, parent_parsers=[]):
+    """
+    Parse arguments according to old parameters of rdiff-backup.
+    The hint in square brackets at the beginning of the help are in preparation
+    for the new way of parsing:
+        rdiff-backup <opt(ions)> <act(ion)> <sub(-options)> <paths>
+    Note that actions are mutually exclusive and that '[act=]' will need to be
+    split into an action and a sub-option.
+    """
+
+    parser = argparse.ArgumentParser(
+        description="local/remote mirror and incremental backup",
+        parents=parent_parsers
+    )
+
+    _add_version_option_to_parser(parser, version_string)
+
+    action_group = parser.add_mutually_exclusive_group()
+    action_group.add_argument(
+        "-b", "--backup-mode",
+        dest="action", action="store_const", const="backup",
+        help="[act] back-up directory into back-up repository")
+    action_group.add_argument(
+        "--calculate-average",
+        dest="action", action="store_const", const="calculate-average",
+        help="[act] calculate average across multiple statistic files")
+    action_group.add_argument(
+        "--check-destination-dir",
+        dest="action", action="store_const", const="check-destination-dir",
+        help="[act] check-destination-dir")
+    action_group.add_argument(
+        "--compare", dest="action", action="store_const", const="compare",
+        help="[act] compare normal (at time now)")
+    action_group.add_argument(
+        "--compare-at-time", type=str, metavar="AT_TIME",
+        help="[act=] compare normal at given time")
+    action_group.add_argument(
+        "--compare-hash",
+        dest="action", action="store_const", const="compare-hash",
+        help="[act] compare by hash (at time now)")
+    action_group.add_argument(
+        "--compare-hash-at-time", type=str, metavar="AT_TIME",
+        help="[act=] compare by hash at given time")
+    action_group.add_argument(
+        "--compare-full",
+        dest="action", action="store_const", const="compare-full",
+        help="[act] compare full (at time now)")
+    action_group.add_argument(
+        "--compare-full-at-time", type=str, metavar="AT_TIME",
+        help="[act=] compare full at given time")
+    action_group.add_argument(
+        "--information", action="store_const", const="information",
+        help="[act] output information for bug reports")
+    action_group.add_argument(
+        "--list-at-time", type=str, metavar="AT_TIME",
+        help="[act=] list files and directories at given time")
+    action_group.add_argument(
+        "--list-changed-since", type=str, metavar="AT_TIME",
+        help="[act=] list changed files and directories since given time")
+    action_group.add_argument(
+        "-l", "--list-increments",
+        dest="action", action="store_const", const="list-increments",
+        help="[act] list increments in backup repository")
+    action_group.add_argument(
+        "--list-increment-sizes",
+        dest="action", action="store_const", const="list-increment-sizes",
+        help="[act] list increments and their size in backup repository")
+    action_group.add_argument(
+        "--remove-older-than", type=str, metavar="AT_TIME",
+        help="[act=] remove increments older than given time")
+    action_group.add_argument(
+        "-r", "--restore-as-of", type=str, metavar="AT_TIME",
+        help="[act=] restore files from repo as of given time")
+    action_group.add_argument(
+        "-s", "--server", dest="action", action="store_const", const="server",
+        help="[act] start rdiff-backup in server mode")
+    action_group.add_argument(
+        "--test-server",
+        dest="action", action="store_const", const="test-server",
+        help="[act] test communication to multiple remote servers")
+    action_group.add_argument(
+        "--verify", dest="action", action="store_const", const="verify",
+        help="[act] verify hash values in backup repo (at time now)")
+    action_group.add_argument(
+        "--verify-at-time", type=str, metavar="AT_TIME",
+        help="[act=] verify hash values in backup repo (at given time)")
+
+    parser.add_argument(
+        "locations", nargs='*',
+        help="[args] locations remote and local to be handled by chosen action")
+
+    values = parser.parse_args(args)
+
+    # compatibility layer with new parameter handling
+    if not values.action:
+        if values.compare_at_time:
+            values.action = "compare"
+            values.method = "normal"
+            values.at = values.compare_at_time
+        elif values.compare_hash_at_time:
+            values.action = "compare"
+            values.method = "hash"
+            values.at = values.compare_hash_at_time
+        elif values.compare_full_at_time:
+            values.action = "compare"
+            values.method = "full"
+            values.at = values.compare_full_at_time
+        elif values.list_at_time:
+            values.action = "list"
+            values.entity = "files"
+            values.at = values.list_at_time
+        elif values.list_changed_since:
+            values.action = "list"
+            values.entity = "files"
+            values.changed_since_time = values.list_changed_since
+        elif values.remove_older_than:
+            values.action = "remove"
+            values.entity = "increments"
+            values.older_than = values.remove_older_than
+        elif values.restore_as_of:
+            values.action = "restore"
+            values.at = values.restore_as_of
+        elif values.verify_at_time:
+            values.action = "verify"
+            values.entity = "files"
+            values.at = values.verify_at_time
+        # if there is still no action defined, we set the default
+        if not values.action:
+            values.action = "backup"
+    else:
+        if values.action == "calculate-average":
+            values.action = "calculate"
+            values.method = "average"
+        if values.action == "check-destination-dir":
+            values.action = "regress"
+        if values.action == "compare":
+            values.method = "normal"
+            values.at = "now"
+        elif values.action == "compare-hash":
+            values.action = "compare"
+            values.method = "hash"
+            values.at = "now"
+        elif values.action == "compare-full":
+            values.action = "compare"
+            values.method = "full"
+            values.at = "now"
+        elif values.action == "list-increments":
+            values.action = "list"
+            values.entity = "increments"
+            values.sizes = False
+        elif values.action == "list-increment-sizes":
+            values.action = "list"
+            values.entity = "increments"
+            values.sizes = True
+        elif values.action == "test-server":
+            values.action = "verify"
+            values.entity = "servers"
+        elif values.action == "verify":
+            values.entity = "files"
+            values.at = "now"
+
+    return values
+
+
+def _add_version_option_to_parser(parser, version_string):
+    """
+    Adds the version option to the given parser, setup with the given
+    version string.
+    """
+
+    parser.add_argument(
+        "-V", "--version", action="version", version=version_string,
+        help="[opt] output the rdiff-backup version and exit")
+
+
+# === MAIN ===
 
 
 if __name__ == "__main__":
-    parsed_args = parse(sys.argv[1:], "british-agent 0.0.7")
-    print(yaml.safe_dump(parsed_args.__dict__,
-                         explicit_start=True, explicit_end=True))
+    """
+    We simulate the usage of arguments parsing in rdiff-backup.
+    Call `python3 arguments.py [--new] --help` for usage.
+    """
+    actions = BaseAction.get_actions()
+    values = parse(sys.argv[1:], "british-agent 0.0.7",
+                   PARENT_PARSERS, actions)
+    action_object = actions[values.action](values)
+    action_object.print_values()
+    # in real life, the action_object would then do the action for which
+    # it's been created
