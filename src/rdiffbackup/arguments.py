@@ -2,6 +2,7 @@ import argparse
 import sys
 import yaml
 
+
 class SelectAction(argparse.Action):
     """
     argparse Action class which can handle placeholder options, adding them all
@@ -71,6 +72,123 @@ class SelectAction(argparse.Action):
         setattr(namespace, self.dest,
                 old_list + [(option_string.replace('--', ''), values)])
 
+#### DEFINE PARENT PARSERS ####
+
+#    action_group.add_argument("--compare",
+#        dest="action", action="store_const", const="compare",
+#        help="[act] compare normal (at time now)")
+#    action_group.add_argument("--compare-at-time", type=str, metavar="AT_TIME",
+#        help="[act=] compare normal at given time")
+#    action_group.add_argument("--compare-hash",
+#        dest="action", action="store_const", const="compare-hash",
+#        help="[act] compare by hash (at time now)")
+#    action_group.add_argument("--compare-hash-at-time",
+#        type=str, metavar="AT_TIME",
+#        help="[act=] compare by hash at given time")
+#    action_group.add_argument("--compare-full",
+#        dest="action", action="store_const", const="compare-full",
+#        help="[act] compare full (at time now)")
+#    action_group.add_argument(
+#        "--compare-full-at-time", type=str, metavar="AT_TIME",
+#        help="[act=] compare full at given time")
+#    action_group.add_argument(
+#        "-r", "--restore-as-of", type=str, metavar="AT_TIME",
+#        help="[act=] restore files from repo as of given time")
+
+#    parser.add_argument("--SELECT", action=SelectAction, metavar="GLOB",
+#        help="[sub] SELECT files according to glob pattern")
+#    parser.add_argument("--SELECT-device-files",
+#        action=SelectAction, type=bool, default=True,
+#        help="[sub] SELECT device files")
+#    parser.add_argument("--SELECT-fifos",
+#        action=SelectAction, type=bool, default=True,
+#        help="[sub] SELECT fifo files")
+#    parser.add_argument("--SELECT-filelist",
+#        action=SelectAction, metavar="LIST_FILE",
+#        help="[sub] SELECT files according to list in given file")
+#    parser.add_argument("--SELECT-filelist-stdin",
+#        action=SelectAction, type=bool,
+#        help="[sub] SELECT files according to list from standard input")
+#    parser.add_argument("--SELECT-symbolic-links",
+#        action=SelectAction, type=bool, default=True,
+#        help="[sub] SELECT symbolic links")
+#    parser.add_argument("--SELECT-sockets",
+#        action=SelectAction, type=bool, default=True,
+#        help="[sub] SELECT socket files")
+#    parser.add_argument("--SELECT-globbing-filelist",
+#        action=SelectAction, metavar="GLOBS_FILE",
+#        help="[sub] SELECT files according to glob list in given file")
+#    parser.add_argument("--SELECT-globbing-filelist-stdin",
+#        action=SelectAction, type=bool,
+#        help="[sub] SELECT files according to glob list from standard input")
+#    parser.add_argument("--SELECT-other-filesystems",
+#        action=SelectAction, type=bool, default=True,
+#        help="[sub] SELECT files from other file systems than the source one")
+#    parser.add_argument("--SELECT-regexp",
+#        action=SelectAction, metavar="REGEXP",
+#        help="[sub] SELECT files according to regexp pattern")
+#    parser.add_argument("--SELECT-if-present",
+#        action=SelectAction, metavar="FILENAME",
+#        help="[sub] SELECT directory if it contains the given file")
+#    parser.add_argument("--SELECT-special-files",
+#        action=SelectAction, type=bool, default=True,
+#        help="[sub] SELECT all device, fifo, socket files, and symbolic links")
+#    parser.add_argument("--max-file-size",
+#        action=SelectAction, metavar="SIZE", type=int,
+#        help="[sub] exclude files larger than given size in bytes")
+#    parser.add_argument("--min-file-size",
+#        action=SelectAction, metavar="SIZE", type=int,
+#        help="[sub] exclude files smaller than given size in bytes")
+
+#    parser.add_argument("--acls", default=True,
+#        action=argparse.BooleanOptionalAction,
+#        help="[sub] handle (or not) Access Control Lists")
+#    parser.add_argument("--carbonfile", default=True,
+#        action=argparse.BooleanOptionalAction,
+#        help="[sub] handle (or not) carbon files on MacOS X")
+#    parser.add_argument("--compare-inode", default=True,
+#        action=argparse.BooleanOptionalAction,
+#        help="[sub] compare (or not) inodes to decide if hard-linked files have changed")
+#    parser.add_argument("--eas", default=True,
+#        action=argparse.BooleanOptionalAction,
+#        help="[sub] handle (or not) Extended Attributes")
+#    parser.add_argument("--hard-links", default=True,
+#        action=argparse.BooleanOptionalAction,
+#        help="[sub] preserve (or not) hard links.")
+#    parser.add_argument("--never-drop-acls", action="store_true",
+#        help="[sub] exit with error instead of dropping acls or acl entries.")
+
+#    parser.add_argument("--create-full-path", action="store_true",
+#        help="[sub] create full necessary path to backup repository")
+#    parser.add_argument("--compression", default=True,
+#        action=argparse.BooleanOptionalAction,
+#        help="[sub] compress (or not) snapshot and diff files")
+#    parser.add_argument("--no-compression-regexp", type=str, metavar="REGEXP",
+#        default= ("(?i).*\\.("
+#                  "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
+#                  "jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
+#                  "mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
+#                  "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
+#                  ")$"),
+#        help="[sub] regexp to select files not being compressed")
+#    parser.add_argument("--file-statistics", default=True,
+#        action=argparse.BooleanOptionalAction,
+#        help="[sub] do (or not) generate statistics file during backup")
+#    parser.add_argument("--print-statistics", action="store_true",
+#        help="[sub] print statistics after a successful backup")
+#    parser.add_argument("--use-compatible-timestamps", action="store_true",
+#        help="[sub] use hyphen instead of colon to represent time")
+
+#    parser.add_argument("--group-mapping-file", type=str, metavar="MAP_FILE",
+#        help="[sub] map groups according to file")
+#    parser.add_argument("--preserve-numerical-ids", action="store_true",
+#        help="[sub] preserve user and group IDs instead of names")
+#    parser.add_argument("--user-mapping-file", type=str, metavar="MAP_FILE",
+#        help="[sub] map users according to file")
+
+#### END DEFINE PARENT PARSERS ####
+
+
 def _add_common_options_to_parser(parser, version_string):
     """
     adds all common options to the given parser
@@ -86,8 +204,9 @@ def _add_common_options_to_parser(parser, version_string):
         help="[opt] do (or not) often sync the file system (_not_ doing it is faster but can be dangerous)")
     parser.add_argument("--null-separator", action="store_true",
         help="[opt] use null instead of newline in input and output files")
-    parser.add_argument("--old", "--new", action="store_true",
-        help="[opt] enforce the usage of the old/new parameters")
+    parser.add_argument("--new", default=False,
+        action=argparse.BooleanOptionalAction,
+        help="[opt] enforce (or not) the usage of the new parameters")
     parser.add_argument("--override-chars-to-quote", type=str,
         metavar="CHARS_TO_QUOTE",
         help="[opt] string of characters to quote for safe storing")
@@ -289,19 +408,19 @@ def _parse_old(args, version_string):
         if values.compare_at_time:
             values.action = "compare"
             values.method = "normal"
-            values.at_time = values.compare_at_time
+            values.at = values.compare_at_time
         elif values.compare_hash_at_time:
             values.action = "compare"
             values.method = "hash"
-            values.at_time = values.compare_hash_at_time
+            values.at = values.compare_hash_at_time
         elif values.compare_full_at_time:
             values.action = "compare"
             values.method = "full"
-            values.at_time = values.compare_full_at_time
+            values.at = values.compare_full_at_time
         elif values.list_at_time:
             values.action = "list"
             values.entity = "files"
-            values.at_time = values.list_at_time
+            values.at = values.list_at_time
         elif values.list_changed_since:
             values.action = "list"
             values.entity = "files"
@@ -309,14 +428,14 @@ def _parse_old(args, version_string):
         elif values.remove_older_than:
             values.action = "remove"
             values.entity = "increments"
-            values.older_than_time = values.remove_older_than
+            values.older_than = values.remove_older_than
         elif values.restore_as_of:
             values.action = "restore"
-            values.at_time = values.restore_as_of
+            values.at = values.restore_as_of
         elif values.verify_at_time:
             values.action = "verify"
             values.entity = "files"
-            values.at_time = values.verify_at_time
+            values.at = values.verify_at_time
         # if there is still no action defined, we set the default
         if not values.action:
             values.action = "backup"
@@ -329,15 +448,15 @@ def _parse_old(args, version_string):
             values.entity = "repositories"
         if values.action == "compare":
             values.method = "normal"
-            values.at_time = "now"
+            values.at = "now"
         elif values.action == "compare-hash":
             values.action = "compare"
             values.method = "hash"
-            values.at_time = "now"
+            values.at = "now"
         elif values.action == "compare-full":
             values.action = "compare"
             values.method = "full"
-            values.at_time = "now"
+            values.at = "now"
         elif values.action == "list-increments":
             values.action = "list"
             values.entity = "increments"
@@ -351,7 +470,7 @@ def _parse_old(args, version_string):
             values.entity = "servers"
         elif values.action == "verify":
             values.entity = "files"
-            values.at_time = "now"
+            values.at = "now"
 
     return values
 
@@ -363,13 +482,13 @@ def _parse_new(args, version_string):
 
     _add_common_options_to_parser(parser, version_string)
 
-    subparsers = parser.add_subparsers(
+    sub_handler = parser.add_subparsers(
         title="possible actions",
         help="call '{bin} <action> --help' for more information".format(
             bin=sys.argv[0]))
 
-    for action in BaseAction.get_actions().values():
-        action.add_sub_parser(subparsers)
+    for action in BaseAction.get_actions():
+        action.add_action_subparser(sub_handler)
 
     values = parser.parse_args(args)
     return values
@@ -381,26 +500,36 @@ class BaseAction:
     # list of parent parsers
     parent_parsers = []
 
-    @staticmethod
-    def get_actions():
-        return {
-                "backup": BackupAction,
-                "calculate": CalculateAction,
-                "compare": CompareAction,
-                "list": ListAction,
-                "remove": RemoveAction,
-                "restore": RestoreAction,
-                "server": ServerAction,
-                "verify": VerifyAction,
-                }
+    @classmethod
+    def get_actions(cls):
+        actions = {
+                    "backup": BackupAction,
+                    "calculate": CalculateAction,
+                    "compare": CompareAction,
+                    "list": ListAction,
+                    "remove": RemoveAction,
+                    "restore": RestoreAction,
+                    "server": ServerAction,
+                    "verify": VerifyAction,
+                  }
+        return actions.values()
 
     @classmethod
-    def add_sub_parser(cls, subparsers):
-        sub_parser = subparsers.add_parser(cls.name,
+    def add_action_subparser(cls, sub_handler):
+        sub_parser = sub_handler.add_parser(cls.name,
                                            parents=cls.parent_parsers)
         sub_parser.set_defaults(action=cls.name)  # TODO cls instead of name!
 
         return sub_parser
+
+    @classmethod
+    def _get_subparsers(cls, parser, sub_type, *sub_names):
+        sub_handler = parser.add_subparsers()
+        sub_parsers = {}
+        for sub_name in sub_names:
+            sub_parsers[sub_name] = sub_handler.add_parser(sub_name)
+            sub_parsers[sub_name].set_defaults(**{sub_type: sub_name})
+        return sub_parsers
 
 class BackupAction(BaseAction):
     name = "backup"
@@ -408,29 +537,20 @@ class BackupAction(BaseAction):
 class CalculateAction(BaseAction):
     name = "calculate"
 
+    @classmethod
+    def add_action_subparser(cls, sub_handler):
+        sub_parser = super().add_action_subparser(sub_handler)
+        sub_parser.add_argument(
+            "--method", choices=["average"], default="average",
+            help="what to calculate from the different statistics")
+        sub_parser.add_argument(
+            "locations", metavar="STATISTIC_FILES", nargs="+",
+            help="locations of the statistic files to calculate from")
+        return sub_parser
+
 class CompareAction(BaseAction):
     name = "compare"
 
-class ListAction(BaseAction):
-    name = "list"
-
-class RemoveAction(BaseAction):
-    name = "remove"
-
-class RestoreAction(BaseAction):
-    name = "restore"
-
-class ServerAction(BaseAction):
-    name = "server"
-
-class VerifyAction(BaseAction):
-    name = "verify"
-
-#    parsers["check-destination-dir"].add_argument(
-#        "--allow-duplicate-timestamps",
-#        action="store_true", default=False,
-#        help="use this option only if you encounter duplicate metadata mirrors")
-#
 #    parsers["compare"].add_argument(
 #            "--method",
 #            type=str, default="meta", choices=["meta","full","hash"],
@@ -439,16 +559,85 @@ class VerifyAction(BaseAction):
 #            "--at-time",
 #            type=str, default="now",
 #            help="compare with the backup at the given time, default is 'now'")
-#
-#    parsers["verify"].add_argument(
-#            "--at-time",
-#            type=str, default="now",
-#            help="verify the backup at the given time, default is 'now'")
+
+class ListAction(BaseAction):
+    name = "list"
+
+    @classmethod
+    def add_action_subparser(cls, sub_handler):
+        sub_parser = super().add_action_subparser(sub_handler)
+        entity_parsers = cls._get_subparsers(
+            sub_parser, "entity", "files", "increments")
+        time_group = entity_parsers["files"].add_mutually_exclusive_group()
+        time_group.add_argument(
+            "--changed-since", metavar="TIME",
+            help="list files modified since given time")
+        time_group.add_argument(
+            "--at", metavar="TIME",
+            help="list files at given time")
+        entity_parsers["files"].add_argument(
+            "locations", metavar="REPOSITORY_LOCATION", nargs=1,
+            help="location of repository to list files from")
+        entity_parsers["increments"].add_argument(
+            "--sizes", action=argparse.BooleanOptionalAction, default=False,
+            help="also output size of each increment (might take longer)")
+        entity_parsers["increments"].add_argument(
+            "locations", metavar="REPOSITORY_LOCATION", nargs=1,
+            help="location of repository to list increments from")
+        return sub_parser
+
+class RemoveAction(BaseAction):
+    name = "remove"
+
+    @classmethod
+    def add_action_subparser(cls, sub_handler):
+        sub_parser = super().add_action_subparser(sub_handler)
+        entity_parsers = cls._get_subparsers(
+            sub_parser, "entity", "increments")
+        entity_parsers["increments"].add_argument(
+            "--older-than", metavar="TIME",
+            help="remove increments older than given time")
+        entity_parsers["increments"].add_argument(
+            "locations", metavar="REPOSITORY_LOCATION", nargs=1,
+            help="location of repository to remove increments from")
+        return sub_parser
+
+class RestoreAction(BaseAction):
+    name = "restore"
+
+class ServerAction(BaseAction):
+    name = "server"
+    # server has no specific sub-options
+
+class VerifyAction(BaseAction):
+    name = "verify"
+
+    @classmethod
+    def add_action_subparser(cls, sub_handler):
+        sub_parser = super().add_action_subparser(sub_handler)
+        entity_parsers = cls._get_subparsers(
+            sub_parser, "entity", "files", "servers", "repository")
+        entity_parsers["files"].add_argument(
+            "--at", default="now", metavar="TIME",
+            help="at which time to check the files' hashes (default is now)")
+        entity_parsers["files"].add_argument(
+            "locations", metavar="REPOSITORY_LOCATION", nargs=1,
+            help="location of repository where to check files' hashes")
+        entity_parsers["servers"].add_argument(
+            "locations", metavar="REPOSITORY_LOCATIONS", nargs="+",
+            help="location of remote repositories to check for connection")
+        entity_parsers["repository"].add_argument(
+            "--allow-duplicate-timestamps", action="store_true",
+            help="[sub] ignore duplicate metadata while checking repository")
+        entity_parsers["repository"].add_argument(
+            "locations", metavar="REPOSITORY_LOCATION", nargs=1,
+            help="location of repository to check and possibly regress")
+        return sub_parser
 
 
 def parse(args, version_string):
     if ('--new' in args
-            or ('--api-version' in args and not '--old' in args)
+            or ('--api-version' in args and not '--no-new' in args)
             or (any(map(lambda x: x.startswith('@'), args)))):
         return _parse_new(args, version_string)
     else:
