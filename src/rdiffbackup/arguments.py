@@ -171,20 +171,29 @@ class SelectAction(argparse.Action):
 #                  "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
 #                  ")$"),
 #        help="[sub] regexp to select files not being compressed")
-#    parser.add_argument("--file-statistics", default=True,
-#        action=argparse.BooleanOptionalAction,
-#        help="[sub] do (or not) generate statistics file during backup")
-#    parser.add_argument("--print-statistics", action="store_true",
-#        help="[sub] print statistics after a successful backup")
-#    parser.add_argument("--use-compatible-timestamps", action="store_true",
-#        help="[sub] use hyphen instead of colon to represent time")
 
-#    parser.add_argument("--group-mapping-file", type=str, metavar="MAP_FILE",
-#        help="[sub] map groups according to file")
-#    parser.add_argument("--preserve-numerical-ids", action="store_true",
-#        help="[sub] preserve user and group IDs instead of names")
-#    parser.add_argument("--user-mapping-file", type=str, metavar="MAP_FILE",
-#        help="[sub] map users according to file")
+STATISTICS_PARSER = argparse.ArgumentParser(
+    add_help=False,
+    description="[parent] options related to backup statistics")
+STATISTICS_PARSER.add_argument(
+    "--file-statistics", default=True, action=argparse.BooleanOptionalAction,
+    help="[sub] do (or not) generate statistics file during backup")
+STATISTICS_PARSER.add_argument(
+    "--print-statistics", default=False, action=argparse.BooleanOptionalAction,
+    help="[sub] print (or not) statistics after a successful backup")
+
+USER_GROUP_PARSER = argparse.ArgumentParser(
+    add_help=False,
+    description="[parent] options related to user and group mapping")
+USER_GROUP_PARSER.add_argument(
+    "--group-mapping-file", type=str, metavar="MAP_FILE",
+    help="[sub] map groups according to file")
+USER_GROUP_PARSER.add_argument(
+    "--preserve-numerical-ids", action="store_true",
+    help="[sub] preserve user and group IDs instead of names")
+USER_GROUP_PARSER.add_argument(
+    "--user-mapping-file", type=str, metavar="MAP_FILE",
+    help="[sub] map users according to file")
 
 #### END DEFINE PARENT PARSERS ####
 
@@ -229,6 +238,8 @@ def _add_common_options_to_parser(parser, version_string):
     parser.add_argument("--terminal-verbosity", type=int,
         choices=range(0,10),
         help="[opt] verbosity on the terminal, default given by --verbosity")
+    parser.add_argument("--use-compatible-timestamps", action="store_true",
+        help="[sub] use hyphen '-' instead of colon ':' to represent time")
     parser.add_argument("-v", "--verbosity", type=int,
         choices=range(0,10), default=3,
         help="[opt] overall verbosity on terminal and in logfiles (default is 3)")
@@ -393,13 +404,11 @@ def _parse_old(args, version_string):
         help="[sub] preserve user and group IDs instead of names")
     parser.add_argument("--print-statistics", action="store_true",
         help="[sub] print statistics after a successful backup")
-    parser.add_argument("--use-compatible-timestamps", action="store_true",
-        help="[sub] use hyphen instead of colon to represent time")
     parser.add_argument("--user-mapping-file", type=str, metavar="MAP_FILE",
         help="[sub] map users according to file")
 
-    parser.add_argument("paths", nargs='*',
-        help="[args] paths to be handled by the chosen action")
+    parser.add_argument("locations", nargs='*',
+        help="[args] locations remote and local to be handled by chosen action")
 
     values = parser.parse_args(args)
 
@@ -444,8 +453,7 @@ def _parse_old(args, version_string):
             value.action = "calculate"
             values.method = "average"
         if values.action == "check-destination-dir":
-            value.action = "verify"
-            values.entity = "repositories"
+            value.action = "regress"
         if values.action == "compare":
             values.method = "normal"
             values.at = "now"
@@ -508,6 +516,7 @@ class BaseAction:
                     "compare": CompareAction,
                     "list": ListAction,
                     "remove": RemoveAction,
+                    "regress": RegressAction,
                     "restore": RestoreAction,
                     "server": ServerAction,
                     "verify": VerifyAction,
@@ -533,6 +542,7 @@ class BaseAction:
 
 class BackupAction(BaseAction):
     name = "backup"
+    parent_parsers = [USER_GROUP_PARSER, STATISTICS_PARSER]
 
 class CalculateAction(BaseAction):
     name = "calculate"
@@ -586,6 +596,23 @@ class ListAction(BaseAction):
             help="location of repository to list increments from")
         return sub_parser
 
+
+class RegressAction(BaseAction):
+    name = "regress"
+    parent_parsers = [USER_GROUP_PARSER]
+
+    @classmethod
+    def add_action_subparser(cls, sub_handler):
+        sub_parser = super().add_action_subparser(sub_handler)
+        sub_parser.add_argument(
+            "--allow-duplicate-timestamps", action="store_true",
+            help="[sub] ignore duplicate metadata while checking repository")
+        sub_parser.add_argument(
+            "locations", metavar="REPOSITORY_LOCATION", nargs=1,
+            help="location of repository to check and possibly regress")
+        return sub_parser
+
+
 class RemoveAction(BaseAction):
     name = "remove"
 
@@ -604,6 +631,7 @@ class RemoveAction(BaseAction):
 
 class RestoreAction(BaseAction):
     name = "restore"
+    parent_parsers = [USER_GROUP_PARSER]
 
 class ServerAction(BaseAction):
     name = "server"
@@ -616,7 +644,7 @@ class VerifyAction(BaseAction):
     def add_action_subparser(cls, sub_handler):
         sub_parser = super().add_action_subparser(sub_handler)
         entity_parsers = cls._get_subparsers(
-            sub_parser, "entity", "files", "servers", "repository")
+            sub_parser, "entity", "files", "servers")
         entity_parsers["files"].add_argument(
             "--at", default="now", metavar="TIME",
             help="at which time to check the files' hashes (default is now)")
@@ -626,12 +654,6 @@ class VerifyAction(BaseAction):
         entity_parsers["servers"].add_argument(
             "locations", metavar="REPOSITORY_LOCATIONS", nargs="+",
             help="location of remote repositories to check for connection")
-        entity_parsers["repository"].add_argument(
-            "--allow-duplicate-timestamps", action="store_true",
-            help="[sub] ignore duplicate metadata while checking repository")
-        entity_parsers["repository"].add_argument(
-            "locations", metavar="REPOSITORY_LOCATION", nargs=1,
-            help="location of repository to check and possibly regress")
         return sub_parser
 
 
