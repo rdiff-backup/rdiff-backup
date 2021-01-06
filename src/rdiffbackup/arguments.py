@@ -30,6 +30,50 @@ import argparse
 import sys
 import yaml
 
+try:
+    from argparse import BooleanOptionalAction
+except ImportError:
+    # the class exists only since Python 3.9
+    class BooleanOptionalAction(argparse.Action):
+        def __init__(self,
+                     option_strings,
+                     dest,
+                     default=None,
+                     type=None,
+                     choices=None,
+                     required=False,
+                     help=None,
+                     metavar=None):
+
+            _option_strings = []
+            for option_string in option_strings:
+                _option_strings.append(option_string)
+
+                if option_string.startswith('--'):
+                    option_string = '--no-' + option_string[2:]
+                    _option_strings.append(option_string)
+
+            if help is not None and default is not None:
+                help += f" (default: {default})"
+
+            super().__init__(
+                option_strings=_option_strings,
+                dest=dest,
+                nargs=0,
+                default=default,
+                type=type,
+                choices=choices,
+                required=required,
+                help=help,
+                metavar=metavar)
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            if option_string in self.option_strings:
+                setattr(namespace, self.dest, not option_string.startswith('--no-'))
+
+        def format_usage(self):
+            return ' | '.join(self.option_strings)
+
 
 class SelectAction(argparse.Action):
     """
@@ -117,13 +161,13 @@ COMMON_PARSER.add_argument(
     "--force", action="store_true",
     help="[opt] force action (caution, the result might be dangerous)")
 COMMON_PARSER.add_argument(
-    "--fsync", default=True, action=argparse.BooleanOptionalAction,
+    "--fsync", default=True, action=BooleanOptionalAction,
     help="[opt] do (or not) often sync the file system (_not_ doing it is faster but can be dangerous)")
 COMMON_PARSER.add_argument(
     "--null-separator", action="store_true",
     help="[opt] use null instead of newline in input and output files")
 COMMON_PARSER.add_argument(
-    "--new", default=False, action=argparse.BooleanOptionalAction,
+    "--new", default=False, action=BooleanOptionalAction,
     help="[opt] enforce (or not) the usage of the new parameters")
 COMMON_PARSER.add_argument(
     "--override-chars-to-quote", type=str, metavar="CHARS_TO_QUOTE",
@@ -215,19 +259,19 @@ FILESYSTEM_PARSER = argparse.ArgumentParser(
     add_help=False,
     description="[parent] options related to file system capabilities")
 FILESYSTEM_PARSER.add_argument(
-    "--acls", default=True, action=argparse.BooleanOptionalAction,
+    "--acls", default=True, action=BooleanOptionalAction,
     help="[sub] handle (or not) Access Control Lists")
 FILESYSTEM_PARSER.add_argument(
-    "--carbonfile", default=True, action=argparse.BooleanOptionalAction,
+    "--carbonfile", default=True, action=BooleanOptionalAction,
     help="[sub] handle (or not) carbon files on MacOS X")
 FILESYSTEM_PARSER.add_argument(
-    "--compare-inode", default=True, action=argparse.BooleanOptionalAction,
+    "--compare-inode", default=True, action=BooleanOptionalAction,
     help="[sub] compare (or not) inodes to decide if hard-linked files have changed")
 FILESYSTEM_PARSER.add_argument(
-    "--eas", default=True, action=argparse.BooleanOptionalAction,
+    "--eas", default=True, action=BooleanOptionalAction,
     help="[sub] handle (or not) Extended Attributes")
 FILESYSTEM_PARSER.add_argument(
-    "--hard-links", default=True, action=argparse.BooleanOptionalAction,
+    "--hard-links", default=True, action=BooleanOptionalAction,
     help="[sub] preserve (or not) hard links.")
 FILESYSTEM_PARSER.add_argument(
     "--never-drop-acls", action="store_true",
@@ -244,7 +288,7 @@ COMPRESSION_PARSER = argparse.ArgumentParser(
     add_help=False,
     description="[parent] options related to compression")
 COMPRESSION_PARSER.add_argument(
-    "--compression", default=True, action=argparse.BooleanOptionalAction,
+    "--compression", default=True, action=BooleanOptionalAction,
     help="[sub] compress (or not) snapshot and diff files")
 COMPRESSION_PARSER.add_argument(
     "--not-compressed-regexp", "--no-compression-regexp", metavar="REGEXP",
@@ -262,10 +306,10 @@ STATISTICS_PARSER = argparse.ArgumentParser(
     add_help=False,
     description="[parent] options related to backup statistics")
 STATISTICS_PARSER.add_argument(
-    "--file-statistics", default=True, action=argparse.BooleanOptionalAction,
+    "--file-statistics", default=True, action=BooleanOptionalAction,
     help="[sub] do (or not) generate statistics file during backup")
 STATISTICS_PARSER.add_argument(
-    "--print-statistics", default=False, action=argparse.BooleanOptionalAction,
+    "--print-statistics", default=False, action=BooleanOptionalAction,
     help="[sub] print (or not) statistics after a successful backup")
 
 USER_GROUP_PARSER = argparse.ArgumentParser(
@@ -353,9 +397,15 @@ class BaseAction:
         Returns the computed subparsers as dictionary with the sub_names as
         keys, so that arguments can be added to those subparsers as values.
         """
-        sub_handler = parser.add_subparsers(
-            title="possible {dest}s".format(dest=sub_dest),
-            required=True, dest=sub_dest)
+        if sys.version_info.major >= 3 and sys.version_info.minor >= 7:
+            sub_handler = parser.add_subparsers(
+                title="possible {dest}s".format(dest=sub_dest),
+                required=True, dest=sub_dest)
+        else:  # required didn't exist in Python 3.6
+            sub_handler = parser.add_subparsers(
+                title="possible {dest}s".format(dest=sub_dest),
+                dest=sub_dest)
+
         subparsers = {}
         for sub_name in sub_names:
             subparsers[sub_name] = sub_handler.add_parser(sub_name)
@@ -469,7 +519,7 @@ class ListAction(BaseAction):
             "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
             help="location of repository to list files from")
         entity_parsers["increments"].add_argument(
-            "--sizes", action=argparse.BooleanOptionalAction, default=False,
+            "--sizes", action=BooleanOptionalAction, default=False,
             help="also output size of each increment (might take longer)")
         entity_parsers["increments"].add_argument(
             "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
@@ -610,14 +660,25 @@ def _parse_new(args, version_string, parent_parsers, actions):
 
     _add_version_option_to_parser(parser, version_string)
 
-    sub_handler = parser.add_subparsers(
-        title="possible actions", required=True, dest='action',
-        help="call '%(prog)s <action> --help' for more information")
+    if sys.version_info.major >= 3 and sys.version_info.minor >= 7:
+        sub_handler = parser.add_subparsers(
+            title="possible actions", required=True, dest='action',
+            help="call '%(prog)s <action> --help' for more information")
+    else:  # required didn't exist in Python 3.6
+        sub_handler = parser.add_subparsers(
+            title="possible actions", dest='action',
+            help="call '%(prog)s <action> --help' for more information")
 
     for action in actions.values():
         action.add_action_subparser(sub_handler)
 
     parsed_args = parser.parse_args(args)
+
+    if not (sys.version_info.major >= 3 and sys.version_info.minor >= 7):
+        # we need a work-around as long as Python 3.6 doesn't know about required
+        if not parsed_args.action:
+            parser.error(message="the following arguments are required: action")
+
     return parsed_args
 
 
