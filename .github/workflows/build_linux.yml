@@ -1,0 +1,33 @@
+---
+name: Build-Linux
+
+on:
+  push:
+    branches: ['*_']
+    tags: ['*_']
+    paths-ignore: ['docs/**']
+  pull_request:
+    branches: [ $default-branch ]
+    paths-ignore: ['docs/**']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9,3.8,3.7,3.6]
+        test-step: [misc, runtime-base, runtime-root]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
+        apt install librsync-dev libacl1-dev rdiff
+    - name: Execute tests ${{ matrix.test-step }}
+      run: |
+        if [[ ${{ test-step }} == *root ]]; then export SUDO="sudo -E env PATH=$PATH"; else export SUDO=sudo; fi
+        make test-${{ test-step }}

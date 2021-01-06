@@ -1,12 +1,14 @@
 BITS=$1
 LIBRSYNC_VERSION=$2  # actually the corresponding Git tag
 
-if [[ ${BITS} -eq 32 ]]
+if [[ "${BITS}" == *32 ]] || [[ "${BITS}" == x86 ]]
 then
+	bits=32
 	lib_win_bits=Win32
 	py_win_bits=win32
-elif [[ ${BITS} -eq 64 ]]
+elif [[ "${BITS}" == *64 ]]
 then
+	bits=64
 	lib_win_bits=x64
 	py_win_bits=win-amd64
 else
@@ -14,8 +16,8 @@ else
 	exit 1
 fi
 
-LIBRSYNC_GIT_DIR=${HOME}/.librsync${BITS}
-LIBRSYNC_DIR=${HOME}/librsync${BITS}
+LIBRSYNC_GIT_DIR=${HOME}/.librsync${bits}
+LIBRSYNC_DIR=${HOME}/librsync${bits}
 export LIBRSYNC_DIR
 
 git clone -b ${LIBRSYNC_VERSION} https://github.com/librsync/librsync.git ${LIBRSYNC_GIT_DIR}
