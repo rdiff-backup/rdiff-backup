@@ -25,8 +25,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
         apt install librsync-dev libacl1-dev rdiff
+        pip3 install --upgrade pip tox pyxattr pylibacl setuptools-scm
     - name: Execute tests ${{ matrix.test-step }}
       run: |
         if [[ ${{ matrix.test-step }} == *root ]]; then export SUDO="sudo -E env PATH=$PATH"; else export SUDO=sudo; fi
