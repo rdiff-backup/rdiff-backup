@@ -30,4 +30,6 @@ jobs:
     - name: Execute tests ${{ matrix.test-step }}
       run: |
         if [[ ${{ matrix.test-step }} == *root ]]; then export SUDO="sudo -E env PATH=$PATH"; else export SUDO=sudo; fi
+        export RUN_COMMAND=
         make test-${{ matrix.test-step }}
+      # the empty RUN_COMMAND avoids using docker
