@@ -29,5 +29,5 @@ jobs:
         apt install librsync-dev libacl1-dev rdiff
     - name: Execute tests ${{ matrix.test-step }}
       run: |
-        if [[ ${{ test-step }} == *root ]]; then export SUDO="sudo -E env PATH=$PATH"; else export SUDO=sudo; fi
-        make test-${{ test-step }}
+        if [[ ${{ matrix.test-step }} == *root ]]; then export SUDO="sudo -E env PATH=$PATH"; else export SUDO=sudo; fi
+        make test-${{ matrix.test-step }}
