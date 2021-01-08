@@ -7,7 +7,7 @@ on:
     tags: ['*_']
     paths-ignore: ['docs/**']
   pull_request:
-    branches: [ $default-branch ]
+#    branches: [ $default-branch ]
     paths-ignore: ['docs/**']
 
 env:
