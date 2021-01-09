@@ -21,15 +21,18 @@ jobs:
         # - build manylinux2014 x64
         # avoiding manylinux2014_i686 because does not provide librsync-devel
         many-linux: [2010_x86_64, 2010_i686, 2014_x86_64]
-    container: quay.io/pypa/manylinux${{ matrix.many-linux }}
     steps:
     - uses: actions/checkout@v2
-    - name: create manylinux wheel(s)
-      run: |
-        if [[ ${{ matrix.many-linux }} != *64 ]]; then PRE_CMD=linux32; fi
-        py=$(echo ${{ matrix.python-version }} | tr -d .
-        plat=manylinux_${{ matrix.many-linux }}
-        $PRE_CMD tools/build_wheels.sh . ${plat} /opt/python/cp${py}*/bin
+    - name: create manylinux wheel(s) in a container
+      uses: addnab/docker-run-action@v1
+      with:
+        image: quay.io/pypa/manylinux${{ matrix.many-linux }}
+        options: -v $GITHUB_WORKSPACE:/io
+        run: |
+          if [[ ${{ matrix.many-linux }} != *64 ]]; then PRE_CMD=linux32; fi
+          py=$(echo ${{ matrix.python-version }} | tr -d .
+          plat=manylinux_${{ matrix.many-linux }}
+          $PRE_CMD tools/build_wheels.sh /io ${plat} /opt/python/cp${py}*/bin
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
