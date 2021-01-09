@@ -32,5 +32,5 @@ cp CHANGELOG.md COPYING README.md \
 	docs/Windows-README.md docs/Windows-DEVELOP.md \
 	build/${ver_name}-${bits}
 pushd build
-7z a -tzip ../dist/${ver_name}.${py_win_bits}exe.zip ${ver_name}-${bits}
+7z a -tzip ../dist/${ver_name}.win${bits}exe.zip ${ver_name}-${bits}
 popd
