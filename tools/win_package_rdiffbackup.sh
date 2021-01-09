@@ -25,7 +25,7 @@ then
 	PYINST=${py_dir}/Scripts/${PYINST}
 fi
 
-ver_name=rdiff-backup-$(${PYTHON} setup.py --version)
+ver_name=rdiff-backup-$(${PYEXE} setup.py --version)
 
 cp CHANGELOG.md COPYING README.md \
 	docs/FAQ.md docs/examples.md docs/DEVELOP.md \
