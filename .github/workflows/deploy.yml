@@ -51,7 +51,7 @@ jobs:
       with:
         fetch-depth: 0  # to have the correct version
     - name: create source dist package
-      run: make sdist
+      run: python setup.py sdist
     - name: Upload sdist artifact
       uses: actions/upload-artifact@v2
       with:
