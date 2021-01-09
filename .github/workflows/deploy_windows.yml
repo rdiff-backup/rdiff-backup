@@ -52,6 +52,7 @@ jobs:
         if-no-files-found: error
 
   release:
+    runs-on: windows-latest
     needs: build
     steps:
     - name: Download artifacts
