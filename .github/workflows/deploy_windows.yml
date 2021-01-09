@@ -1,0 +1,95 @@
+---
+name: Deploy-Windows
+
+on:
+  push:
+    branches: ['*_']
+    tags: ['*_', 'v[0-9]*']
+  pull_request:
+#    branches: [ $default-branch ]
+    paths-ignore: ['docs/**']
+
+env:
+  PYTHON_VERSION: 3.9.1
+  LIBRSYNC_VERSION: v2.2.1
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x86, x64]
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        architecture: ${{ matrix.arch }}
+    - name: Install dependencies
+      run: |
+        python.exe -VV
+        pip.exe install --upgrade pywin32 pyinstaller wheel certifi setuptools-scm tox PyYAML
+        python.exe -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'
+    - name: Build librsync
+      run: tools/win_build_librsync.sh ${{ matrix.arch }} ${LIBRSYNC_VERSION}
+    - name: Build rdiff-backup
+      run: tools/win_build_rdiffbackup.sh ${{ matrix.arch }} ${PYTHON_VERSION}
+    - name: Package rdiff-backup
+      run: tools/win_package_rdiffbackup.sh ${{ matrix.arch }}
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: windows-artifacts
+        path: dist/*.*
+        if-no-files-found: error
+
+  release:
+    needs: build
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: windows-artifacts
+        path: dist
+    - name: create release and upload assets
+      uses: meeDamian/github-release@2.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.ref }}
+        name: Release ${{ github.ref }}
+        draft: true
+        prerelease: true
+        files: dist/
+
+#    - name: Create Release
+#      id: create-release
+#      uses: actions/create-release@v1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions
+#      with:
+#        tag_name: ${{ github.ref }}
+#        release_name: Release ${{ github.ref }}
+#        body: |
+#          Changes in this Release
+#          - First Change
+#          - Second Change
+#        draft: true
+#        prerelease: true
+#    - name: Upload Release Asset
+#      id: upload-release-asset 
+#      uses: actions/upload-release-asset@v1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ steps.create-release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+#        asset_path: ./my-artifact.zip
+#        asset_name: my-artifact.zip
+#        asset_content_type: application/zip
