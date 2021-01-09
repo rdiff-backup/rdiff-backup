@@ -14,7 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9,3.8,3.7,3.6]
+        # we could do it also as matrix but it takes longer
+        #python-version: [3.9,3.8,3.7,3.6]
         #--- Build and deploy Linux wheels using manylinux containers ---
         # - build manylinux2010 (and manylinux1) x64
         # - build manylinux2010 i686
@@ -23,6 +24,8 @@ jobs:
         many-linux: [2010_x86_64, 2010_i686, 2014_x86_64]
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0  # to have the correct version
     - name: create manylinux wheel(s) in a container
       uses: addnab/docker-run-action@v1
       with:
@@ -30,9 +33,9 @@ jobs:
         options: -v ${{ github.workspace }}:/ws
         run: |
           if [[ ${{ matrix.many-linux }} != *64 ]]; then PRE_CMD=linux32; fi
-          py=$(echo ${{ matrix.python-version }} | tr -d .)
+          #py=$(echo ${{ matrix.python-version }} | tr -d .)
           plat=manylinux${{ matrix.many-linux }}
-          $PRE_CMD /ws/tools/build_wheels.sh /ws ${plat} /opt/python/cp${py}*/bin
+          $PRE_CMD /ws/tools/build_wheels.sh /ws ${plat} /opt/python/cp3{9,8,7,6}*/bin
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
