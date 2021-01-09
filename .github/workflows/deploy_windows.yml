@@ -56,10 +56,13 @@ jobs:
     needs: build
     steps:
     - name: Download artifacts
+      id: download
       uses: actions/download-artifact@v2
       with:
         name: windows-artifacts
         path: dist
+    - name: export artifacts
+      runs: echo ::set-env name=ARTIFACTS::${{ steps.download.outputs.download-path }}/*.*
     - name: create release and upload assets
       uses: meeDamian/github-release@2.0
       with:
@@ -68,7 +71,8 @@ jobs:
         name: Release ${{ github.ref }}
         draft: true
         prerelease: true
-        files: dist/
+        files: ${{ env.ARTIFACTS }}
+        gzip: false
 
 #    - name: Create Release
 #      id: create-release
