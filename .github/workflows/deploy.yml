@@ -9,6 +9,10 @@ on:
 #    branches: [ $default-branch ]
     paths-ignore: ['docs/**']
 
+defaults:
+  run:
+    shell: bash
+
 env:
   WIN_PYTHON_VERSION: 3.9.1
   WIN_LIBRSYNC_VERSION: v2.2.1
