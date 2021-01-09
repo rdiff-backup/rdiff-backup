@@ -9,6 +9,10 @@ on:
 #    branches: [ $default-branch ]
     paths-ignore: ['docs/**']
 
+env:
+  WIN_PYTHON_VERSION: 3.9.1
+  WIN_LIBRSYNC_VERSION: v2.2.1
+
 jobs:
 
   build-manylinux:
@@ -68,10 +72,10 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0  # to have the correct version
-    - name: Set up Python ${{ env.PYTHON_VERSION }}
+    - name: Set up Python ${{ env.WIN_PYTHON_VERSION }}
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version: ${{ env.WIN_PYTHON_VERSION }}
         architecture: ${{ matrix.arch }}
     - name: Install dependencies
       run: |
@@ -79,9 +83,9 @@ jobs:
         pip.exe install --upgrade pywin32 pyinstaller wheel certifi setuptools-scm tox PyYAML
         python.exe -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'
     - name: Build librsync
-      run: tools/win_build_librsync.sh ${{ matrix.arch }} ${LIBRSYNC_VERSION}
+      run: tools/win_build_librsync.sh ${{ matrix.arch }} ${WIN_LIBRSYNC_VERSION}
     - name: Build rdiff-backup
-      run: tools/win_build_rdiffbackup.sh ${{ matrix.arch }} ${PYTHON_VERSION}
+      run: tools/win_build_rdiffbackup.sh ${{ matrix.arch }} ${WIN_PYTHON_VERSION}
     - name: Package rdiff-backup
       run: tools/win_package_rdiffbackup.sh ${{ matrix.arch }}
     - name: Upload artifacts
