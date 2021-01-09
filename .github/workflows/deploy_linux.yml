@@ -27,12 +27,12 @@ jobs:
       uses: addnab/docker-run-action@v1
       with:
         image: quay.io/pypa/manylinux${{ matrix.many-linux }}
-        options: -v ${{ github.workspace }}:/io
+        options: -v ${{ github.workspace }}:/ws
         run: |
           if [[ ${{ matrix.many-linux }} != *64 ]]; then PRE_CMD=linux32; fi
           py=$(echo ${{ matrix.python-version }} | tr -d .)
           plat=manylinux_${{ matrix.many-linux }}
-          $PRE_CMD tools/build_wheels.sh /io ${plat} /opt/python/cp${py}*/bin
+          $PRE_CMD /ws/tools/build_wheels.sh /ws ${plat} /opt/python/cp${py}*/bin
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
