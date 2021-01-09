@@ -2,9 +2,8 @@
 set -e -x
 
 basedir=$1
-shift
 plat=$2
-shift
+shift 2
 pybindirs="$@"
 
 build_dir=${basedir}/build
