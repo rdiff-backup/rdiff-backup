@@ -27,7 +27,7 @@ jobs:
       uses: addnab/docker-run-action@v1
       with:
         image: quay.io/pypa/manylinux${{ matrix.many-linux }}
-        options: -v $GITHUB_WORKSPACE:/io
+        options: -v ${{ github.workspace }}:/io
         run: |
           if [[ ${{ matrix.many-linux }} != *64 ]]; then PRE_CMD=linux32; fi
           py=$(echo ${{ matrix.python-version }} | tr -d .
