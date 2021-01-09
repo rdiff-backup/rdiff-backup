@@ -37,9 +37,14 @@ jobs:
         pip.exe install --upgrade pywin32 pyinstaller wheel certifi setuptools-scm tox PyYAML
         python.exe -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'
     - name: Build librsync
-      run: |
-        tools/win_build_librsync.sh ${{ matrix.arch }} ${LIBRSYNC_VERSION}
+      run: tools/win_build_librsync.sh ${{ matrix.arch }} ${LIBRSYNC_VERSION}
     - name: Build rdiff-backup
-      run: |
-        tools/win_build_rdiffbackup.sh ${{ matrix.arch }} ${PYTHON_VERSION}
-        tools/win_package_rdiffbackup.sh ${{ matrix.arch }}
+      run: tools/win_build_rdiffbackup.sh ${{ matrix.arch }} ${PYTHON_VERSION}
+    - name: Package rdiff-backup
+      run: tools/win_package_rdiffbackup.sh ${{ matrix.arch }}
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: windows-artifacts
+        path: dist/*.*
+        if-no-files-found: error
