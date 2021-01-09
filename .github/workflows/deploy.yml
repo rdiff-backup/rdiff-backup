@@ -131,7 +131,8 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN_TEST }}
         TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/ 
       run: |
-        twine upload --non-interactive --skip-existing dist/*.{whl,tar.gz}
+        twine upload --skip-existing dist/*.{whl,tar.gz}
+        # old versions don't understnad --non-interactive
 
 #    #--- Build Debian packages ---
 #    - os: linux
