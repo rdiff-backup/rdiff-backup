@@ -61,9 +61,11 @@ jobs:
       with:
         name: windows-artifacts
         path: dist
-    - name: export artifacts
-      runs: echo ::set-env name=ARTIFACTS::${{ steps.download.outputs.download-path }}/*.*
-    - name: create release and upload assets
+    - name: Export artifacts
+      id: export
+      run: echo ::set-output name=artifact_files::${{ steps.download.outputs.download-path }}/*.*
+      # see https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+    - name: Create release and upload assets
       uses: meeDamian/github-release@2.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
@@ -71,7 +73,7 @@ jobs:
         name: Release ${{ github.ref }}
         draft: true
         prerelease: true
-        files: ${{ env.ARTIFACTS }}
+        files: ${{ steps.export.outputs.artifact_files }}
         gzip: false
 
 #    - name: Create Release
