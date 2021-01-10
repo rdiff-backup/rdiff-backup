@@ -128,8 +128,8 @@ jobs:
     - name: Install twine
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
       run: |
-        python -m pip install --upgrade pip
-        pip install twine
+        sudo python -m pip install --upgrade pip
+        sudo pip install twine
     - name: publish to test PyPI repository
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && contains(github.ref, '.dev')
       env:
