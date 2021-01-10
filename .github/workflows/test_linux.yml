@@ -10,7 +10,7 @@ on:
     - 'v[0-9]+.[0-9]+.[0-9]+[abrc]+[0-9]+'  # alpha, beta, release candidate (rc)
     - 'v[0-9]+.[0-9]+.[0-9]+.dev[0-9]+'  # development versions
   pull_request:
-    paths-ignore: ['docs/**']
+  #  paths-ignore: ['docs/**']  # we can't use it and enforce some checks
 
 jobs:
   test:
