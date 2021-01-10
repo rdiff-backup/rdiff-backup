@@ -112,7 +112,7 @@ class RegressITRB(rorpiter.ITRBranch):
         """True if none of the rps is a directory"""
         return not rf.mirror_rp.isdir() and not rf.metadata_rorp.isdir()
 
-    def fast_process(self, index, rf):
+    def fast_process_file(self, index, rf):
         """Process when nothing is a directory"""
         if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
             log.Log(
@@ -132,7 +132,7 @@ class RegressITRB(rorpiter.ITRBranch):
             log.Log("Deleting increment %s" % rf.regress_inc.get_safepath(), 5)
             rf.regress_inc.delete()
 
-    def start_process(self, index, rf):
+    def start_process_directory(self, index, rf):
         """Start processing directory"""
         if rf.metadata_rorp.isdir():
             # make sure mirror is a readable dir
@@ -144,7 +144,7 @@ class RegressITRB(rorpiter.ITRBranch):
                 rf.mirror_rp.chmod(0o700)
         self.rf = rf
 
-    def end_process(self):
+    def end_process_directory(self):
         """Finish processing a directory"""
         rf = self.rf
         if rf.metadata_rorp.isdir():
@@ -225,8 +225,12 @@ def check_pids(curmir_incs):
                 process = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 0,
                                                pid)
             except pywintypes.error as error:
-                if error[0] == 87:
+                if error.winerror == 87:
+                    # parameter incorrect, PID does not exist
                     return False
+                elif error.winerror == 5:
+                    # access denied, means nevertheless PID still exists
+                    return True
                 else:
                     msg = "Warning: unable to check if PID %d still running"
                     log.Log(msg % pid, 2)
@@ -289,7 +293,7 @@ def Regress(mirror_rp):
     ITR = rorpiter.IterTreeReducer(RegressITRB, [])
     for rf in _iterate_meta_rfs(mirror_rp, inc_rpath):
         ITR(rf.index, rf)
-    ITR.Finish()
+    ITR.finish_processing()
     if former_current_mirror_rp:
         if Globals.do_fsync:
             C.sync()  # Sync first, since we are marking dest dir as good now
@@ -339,30 +343,29 @@ def _regress_rbdir(meta_manager):
     delete the extra regress_time diff.
 
     """
-    has_meta_diff, has_meta_snap = 0, 0
+    meta_diffs = []
+    meta_snaps = []
     for old_rp in meta_manager.timerpmap[regress_time]:
         if old_rp.getincbase_bname() == b'mirror_metadata':
             if old_rp.getinctype() == b'snapshot':
-                has_meta_snap = 1
+                meta_snaps.append(old_rp)
             elif old_rp.getinctype() == b'diff':
-                has_meta_diff = 1
+                meta_diffs.append(old_rp)
             else:
                 raise ValueError(
                     "Increment type for metadata mirror must be one of "
                     "'snapshot' or 'diff', not {mtype}.".format(
                         mtype=old_rp.getinctype()))
-    if has_meta_diff and not has_meta_snap:
+    if meta_diffs and not meta_snaps:
         _recreate_meta(meta_manager)
 
     for new_rp in meta_manager.timerpmap[unsuccessful_backup_time]:
         if new_rp.getincbase_bname() != b'current_mirror':
             log.Log("Deleting old diff at %s" % new_rp.get_safepath(), 5)
             new_rp.delete()
-    for rp in meta_manager.timerpmap[regress_time]:
-        if (rp.getincbase_bname() == b'mirror_metadata'
-                and rp.getinctype() == b'diff'):
-            rp.delete()
-            break
+
+    for rp in meta_diffs:
+        rp.delete()
 
 
 def _recreate_meta(meta_manager):
