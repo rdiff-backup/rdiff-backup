@@ -1,0 +1,37 @@
+---
+name: Test-Linux
+
+on:
+  push:
+    branches: ['*_']
+    tags:
+    - '*_'  # ending underscore for trying things
+    - 'v[0-9]+.[0-9]+.[0-9]+'  # final version
+    - 'v[0-9]+.[0-9]+.[0-9]+[abrc]+[0-9]+'  # alpha, beta, release candidate (rc)
+    - 'v[0-9]+.[0-9]+.[0-9]+.dev[0-9]+'  # development versions
+  pull_request:
+    paths-ignore: ['docs/**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9,3.8,3.7,3.6]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        sudo apt install librsync-dev libacl1-dev rdiff
+        sudo pip3 install --upgrade pip setuptools-scm
+        sudo pip3 install --upgrade tox pyxattr pylibacl
+    - name: Execute tests ${{ matrix.test-step }}
+      run: |
+        export RUN_COMMAND=
+        export SUDO=sudo
+        make test
+      # the empty RUN_COMMAND avoids using docker
