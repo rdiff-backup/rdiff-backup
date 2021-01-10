@@ -60,8 +60,18 @@ class RegressFile(restore.RestoreFile):
     """
 
     def __init__(self, mirror_rp, inc_rp, inc_list):
-        restore.RestoreFile.__init__(self, mirror_rp, inc_rp, inc_list)
-        self._set_regress_inc()
+        super().__init__(mirror_rp, inc_rp, inc_list)
+
+    def set_relevant_incs(self):
+        super().set_relevant_incs()
+
+        # Set self.regress_inc to increment to be removed (or None)
+        newer_incs = self.get_newer_incs()
+        assert len(newer_incs) <= 1, "Too many recent increments"
+        if newer_incs:
+            self.regress_inc = newer_incs[0]  # first is mirror_rp
+        else:
+            self.regress_inc = None
 
     def set_metadata_rorp(self, metadata_rorp):
         """Set self.metadata_rorp, creating empty if given None"""
@@ -74,15 +84,6 @@ class RegressFile(restore.RestoreFile):
         """Return true if regress needs before/after processing"""
         return ((self.metadata_rorp and self.metadata_rorp.isdir())
                 or (self.mirror_rp and self.mirror_rp.isdir()))
-
-    def _set_regress_inc(self):
-        """Set self.regress_inc to increment to be removed (or None)"""
-        newer_incs = self.get_newer_incs()
-        assert len(newer_incs) <= 1, "Too many recent increments"
-        if newer_incs:
-            self.regress_inc = newer_incs[0]  # first is mirror_rp
-        else:
-            self.regress_inc = None
 
 
 class RegressITRB(rorpiter.ITRBranch):
