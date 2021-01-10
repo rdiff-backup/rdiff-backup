@@ -65,3 +65,50 @@ and/or the mailing list. You can subscribe to the mailing list at:
 
 You can also try searching the mailing list archives:
 [https://lists.nongnu.org/archive/html/rdiff-backup-users/](https://lists.nongnu.org/archive/html/rdiff-backup-users/)
+
+## Tips and Tricks
+
+### Using Putty as SSH client
+
+If you have Putty installed (and configured) and don't want to fiddle with
+OpenSSH, add the following parameter to your rdiff-backup call:
+
+```
+--remote-schema "plink.exe -i D:\backup-key.ppk -batch %s rdiff-backup --server"
+```
+
+* `-batch` avoids having to press enter to open the session
+* `-i` lets you specify a puttygen-generated private key
+
+### Using Microsoft's OpenSSH client on Windows 10
+
+If rdiff-backup can't seem to find the native SSH client offered by Windows,
+even if it is definitely in your PATH (as proven by `where ssh`), and even if
+you use the full path `C:\Windows\System32\OpenSSH\ssh.exe`, it's most probably
+because you're using the 32 bits version of rdiff-backup on a 64 bits Windows,
+they just don't see this path.
+
+You have two solutions:
+
+1. install the 64 bits version of rdiff-backup (at time of writing, it will
+   _soon_ be available).
+2. add the remote schema option to your call of rdiff-backup with something
+   like `--remote-schema "C:\Windows\SysNative\OpenSSH\ssh.exe %s rdiff-backup --server"`
+   (adding the path to the front of your PATH environment variable might also
+   be an option).
+
+### Create a bat script to call rdiff-backup
+
+Create a file `rdiff-backup.bat` somewhere in your `PATH`. The content can be
+as simple as the following:
+
+```
+C:\FULLPATH\rdiff-backup.exe -v5 -b --exclude-globbing-file "%~dpn0.txt" source target
+```
+
+so that you can put your exclusion patterns in a file called `rdiff-backup.txt`
+placed in the same directory as your bat-script.
+
+> **TIP:** if you set the remote-schema in your bat-script, don't forget to
+  duplicate the percentage sign to `%%s`, so that the bat-interpreter doesn't
+  "interpret" it as variable.

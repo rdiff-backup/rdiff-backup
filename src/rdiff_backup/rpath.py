@@ -1670,10 +1670,11 @@ def make_file_dict(filename):
 
     try:
         statblock = os.lstat(filename)
-    except (FileNotFoundError, NotADirectoryError):
+    except (FileNotFoundError, NotADirectoryError, PermissionError):
         # FIXME not sure if this shouldn't trigger a warning but doing it
         # generates (too) many messages during the tests
         # log.Log("Warning: missing file '%s' couldn't be assessed." % filename, 2)
+        # FIXME perhaps we should have a different type/flag for this case?
         return {'type': None}
     data = {}
     mode = statblock[stat.ST_MODE]
