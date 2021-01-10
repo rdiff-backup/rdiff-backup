@@ -125,10 +125,10 @@ class IterTreeReducer:
         if self.index is None:
             self.root_branch.base_index = index
             if self.root_branch.can_fast_process(*args):
-                self.root_branch.fast_process(*args)
+                self.root_branch.fast_process_file(*args)
                 self.root_fast_processed = 1
             else:
-                self.root_branch.start_process(*args)
+                self.root_branch.start_process_directory(*args)
             self.index = index
             return 1
         if index == self.index:
@@ -143,24 +143,24 @@ class IterTreeReducer:
                 return None  # We are no longer in the main tree
             last_branch = self.branches[-1]
             if last_branch.can_fast_process(*args):
-                last_branch.fast_process(*args)
+                last_branch.fast_process_file(*args)
             else:
                 branch = self._add_branch(index)
-                branch.start_process(*args)
+                branch.start_process_directory(*args)
 
         self.index = index
         return 1
 
-    def Finish(self):
+    def finish_processing(self):
         """Call at end of sequence to tie everything up"""
         if self.index is None or self.root_fast_processed:
             return
         while 1:
             to_be_finished = self.branches.pop()
-            to_be_finished.end_process()
+            to_be_finished.end_process_directory()
             if not self.branches:
                 break
-            self.branches[-1].branch_process(to_be_finished)
+            self.branches[-1].gather_from_child(to_be_finished)
 
     def _finish_branches(self, index):
         """Run Finish() on all branches index has passed
@@ -177,11 +177,11 @@ class IterTreeReducer:
             base_index = to_be_finished.base_index
             if base_index != index[:len(base_index)]:
                 # out of the tree, finish with to_be_finished
-                to_be_finished.end_process()
+                to_be_finished.end_process_directory()
                 del branches[-1]
                 if not branches:
                     return None
-                branches[-1].branch_process(to_be_finished)
+                branches[-1].gather_from_child(to_be_finished)
             else:
                 return 1
 
@@ -196,31 +196,32 @@ class IterTreeReducer:
 class ITRBranch:
     """Helper class for IterTreeReducer above
 
-    There are five stub functions below: start_process, end_process,
-    branch_process, can_fast_process, and fast_process.  A class that
-    subclasses this one will probably fill in these functions to do
+    There are five stub functions below:
+    start_process_directory, end_process_directory,
+    gather_from_child, can_fast_process, and fast_process_file.
+    A class that subclasses this one will probably fill in these functions to do
     more.
 
     """
     base_index = index = None
 
-    def start_process(self, *args):
+    def start_process_directory(self, *args):
         """Do some initial processing (stub)"""
         pass
 
-    def end_process(self):
+    def end_process_directory(self):
         """Do any final processing before leaving branch (stub)"""
         pass
 
-    def branch_process(self, branch):
-        """Process a branch right after it is finished (stub)"""
+    def gather_from_child(self, sub_branch):
+        """Gather results from a child branch right after it is finished (stub)"""
         pass
 
     def can_fast_process(self, *args):
         """True if object can be processed without new branch (stub)"""
         return None
 
-    def fast_process(self, *args):
+    def fast_process_file(self, *args):
         """Process args without new child branch (stub)"""
         pass
 
