@@ -20,11 +20,10 @@
       state: present
   - name: install python via chocolatey
     win_chocolatey:
-      name: python
-      version: '3.7.7'
+      name: "python3"
+      version: "{{ python_version_full }}"
       state: present
-      # we need to pin the version because pyinstaller doesn't support 3.8
-      # https://github.com/pyinstaller/pyinstaller/issues/4311
+      package_params: /InstallDir:C:\Python64 /InstallDir32:C:\Python32
   - name: install dependency of visualstudio, allows for reboot in-between
     win_chocolatey:
       name:
@@ -47,16 +46,20 @@
     win_reboot:
     when: vs is changed
 
-# TODO remove importlib-metadata once we've moved to Python 3.8
-
   - name: install necessary python libraries
-    win_command: pip.exe install py2exe pywin32 pyinstaller wheel certifi setuptools-scm tox importlib-metadata PyYAML
+    win_command: "\\{{ item }}\\Scripts\\pip.exe install --upgrade pywin32 pyinstaller wheel certifi setuptools-scm tox PyYAML"
     register: pipcmd
     changed_when: "'Successfully installed ' in pipcmd.stdout"
     # pylibacl and pyxattr aren't supported under Windows
+    loop:
+      - Python64
+      - Python32
   - name: validate that python seems to work as it should
-    win_shell: "python.exe -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'"
+    win_shell: "\\{{ item }}\\python.exe -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'"
     changed_when: false  # this command doesn't change anything ever
+    loop:
+      - Python64
+      - Python32
 
   - name: Install NuGet to overcome issue 50332 in Ansible
     # https://github.com/ansible/ansible/issues/50332
