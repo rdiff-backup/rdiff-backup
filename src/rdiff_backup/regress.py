@@ -224,8 +224,12 @@ def check_pids(curmir_incs):
                 process = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, 0,
                                                pid)
             except pywintypes.error as error:
-                if error[0] == 87:
+                if error.winerror == 87:
+                    # parameter incorrect, PID does not exist
                     return False
+                elif error.winerror == 5:
+                    # access denied, means nevertheless PID still exists
+                    return True
                 else:
                     msg = "Warning: unable to check if PID %d still running"
                     log.Log(msg % pid, 2)

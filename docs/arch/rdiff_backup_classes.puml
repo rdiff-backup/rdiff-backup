@@ -1,0 +1,195 @@
+@startuml
+package backup {
+	class CacheCollatedPostProcess
+	class DestinationStruct
+	class IncrementITRB
+	PatchITRB <|-- IncrementITRB
+	class PatchITRB
+	rorpiter.ITRBranch <|-- PatchITRB
+	class SourceStruct
+}
+package compare {
+	class CompareReport
+	class DataSide
+	backup.SourceStruct <|-- DataSide
+	class RepoSide
+	restore.MirrorStruct <|-- RepoSide
+}
+package connection {
+	class Connection
+	class ConnectionError << (E,#FF7700) Exception >>
+	class ConnectionQuit << (E,#FF7700) Exception >>
+	class ConnectionReadError << (E,#FF7700) Exception >>
+	ConnectionError <|-- ConnectionReadError
+	class ConnectionRequest
+	class ConnectionWriteError << (E,#FF7700) Exception >>
+	ConnectionError <|-- ConnectionWriteError
+	class EmulateCallable
+	class EmulateCallableRedirected
+	class LocalConnection
+	Connection <|-- LocalConnection
+	class LowLevelPipeConnection
+	Connection <|-- LowLevelPipeConnection
+	class PipeConnection
+	LowLevelPipeConnection <|-- PipeConnection
+	class RedirectedConnection
+	Connection <|-- RedirectedConnection
+	class VirtualFile
+}
+package eas_acls {
+	class AccessControlListFile
+	metadata.FlatFile <|-- AccessControlListFile
+	class AccessControlLists
+	class ACLExtractor
+	EAExtractor <|-- ACLExtractor
+	class EAExtractor
+	metadata.FlatExtractor <|-- EAExtractor
+	class ExtendedAttributes
+	class ExtendedAttributesFile
+	metadata.FlatFile <|-- ExtendedAttributesFile
+}
+package FilenameMapping {
+	class QuotedRPath
+	rpath.RPath <|-- QuotedRPath
+	class QuotingException << (E,#FF7700) Exception >>
+}
+package fs_abilities {
+	class BackupSetGlobals
+	SetGlobals <|-- BackupSetGlobals
+	class FSAbilities
+	class RestoreSetGlobals
+	SetGlobals <|-- RestoreSetGlobals
+	class SetGlobals
+	class SingleSetGlobals
+	RestoreSetGlobals <|-- SingleSetGlobals
+}
+package hash {
+	class FileWrapper
+	class Report
+}
+package iterfile {
+	class ErrorFile
+	class FileToMiscIter
+	IterWrappingFile <|-- FileToMiscIter
+	class FileWrappingIter
+	class IterFileException << (E,#FF7700) Exception >>
+	class IterVirtualFile
+	UnwrapFile <|-- IterVirtualFile
+	class IterWrappingFile
+	UnwrapFile <|-- IterWrappingFile
+	class MiscIterFlush
+	class MiscIterFlushRepeat
+	MiscIterFlush <|-- MiscIterFlushRepeat
+	class MiscIterToFile
+	FileWrappingIter <|-- MiscIterToFile
+	class UnwrapFile
+}
+package librsync {
+	class DeltaFile
+	LikeFile <|-- DeltaFile
+	class librsyncError << (E,#FF7700) Exception >>
+	class LikeFile
+	class PatchedFile
+	LikeFile <|-- PatchedFile
+	class SigFile
+	LikeFile <|-- SigFile
+	class SigGenerator
+}
+package log {
+	class ErrorLog
+	class Logger
+	class LoggerError << (E,#FF7700) Exception >>
+}
+package manage {
+	class ManageException << (E,#FF7700) Exception >>
+}
+package metadata {
+	class CombinedWriter
+	class FlatExtractor
+	class FlatFile
+	class Manager
+	class MetadataFile
+	FlatFile <|-- MetadataFile
+	class ParsingError << (E,#FF7700) Exception >>
+	class PatchDiffMan
+	Manager <|-- PatchDiffMan
+	class RorpExtractor
+	FlatExtractor <|-- RorpExtractor
+}
+package regress {
+	class RegressException << (E,#FF7700) Exception >>
+	class RegressFile
+	restore.RestoreFile <|-- RegressFile
+	class RegressITRB
+	rorpiter.ITRBranch <|-- RegressITRB
+}
+package restore {
+	class CachedRF
+	class MirrorStruct
+	class PatchITRB
+	rorpiter.ITRBranch <|-- PatchITRB
+	class PermissionChanger
+	class RestoreError << (E,#FF7700) Exception >>
+	class RestoreFile
+	class TargetStruct
+}
+package robust {
+	class SignalException << (E,#FF7700) Exception >>
+}
+package rorpiter {
+	class CacheIndexable
+	class IndexedTuple
+	collections.UserList <|-- IndexedTuple
+	class IterTreeReducer
+	class ITRBranch
+}
+package rpath {
+	class MaybeGzip
+	class RORPath
+	class RPathException << (E,#FF7700) Exception >>
+	class _RPathFileHook
+	class RPath
+	RORPath <|-- RPath
+	class SkipFileException << (E,#FF7700) Exception >>
+}
+package Security {
+	class Violation << (E,#FF7700) Exception >>
+}
+package selection {
+	class FilePrefixError << (E,#FF7700) Exception >>
+	SelectError <|-- FilePrefixError
+	class FilterIter
+	class _FilterIterITRB
+	rorpiter.ITRBranch <|-- _FilterIterITRB
+	class GlobbingError << (E,#FF7700) Exception >>
+	SelectError <|-- GlobbingError
+	class Select
+	class SelectError << (E,#FF7700) Exception >>
+}
+package SetConnections {
+	class SetConnectionsException << (E,#FF7700) Exception >>
+}
+package statistics {
+	class FileStats
+	class StatFileObj
+	StatsObj <|-- StatFileObj
+	class StatsException << (E,#FF7700) Exception >>
+	class StatsObj
+}
+package Time {
+	class TimeException << (E,#FF7700) Exception >>
+}
+package user_group {
+	class _DefinedMap
+	_Map <|-- _DefinedMap
+	class _Map
+	class _NumericalMap
+}
+package win_acls {
+	class ACL
+	class WACLExtractor
+	metadata.FlatExtractor <|-- WACLExtractor
+	class WinAccessControlListFile
+	metadata.FlatFile <|-- WinAccessControlListFile
+}
+@enduml
