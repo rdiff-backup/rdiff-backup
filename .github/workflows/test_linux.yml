@@ -20,16 +20,26 @@ jobs:
         python-version: [3.9,3.8,3.7,3.6]
     steps:
     - uses: actions/checkout@v2
+    - name: skip workflow if only docs PR
+      id: skip-docs # id used for referencing step
+      uses: saulmaldonado/skip-workflow@v1.1.0
+      with:
+        phrase: '[DOC]'
+        search: '["pull_request"]'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Set up Python ${{ matrix.python-version }}
+      if: '!steps.skip-docs.outputs.skip'
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
+      if: '!steps.skip-docs.outputs.skip'
       run: |
         sudo apt install librsync-dev libacl1-dev rdiff
         sudo pip3 install --upgrade pip setuptools-scm
         sudo pip3 install --upgrade tox pyxattr pylibacl
     - name: Execute tests ${{ matrix.test-step }}
+      if: '!steps.skip-docs.outputs.skip'
       run: |
         export RUN_COMMAND=
         export SUDO=sudo
