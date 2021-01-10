@@ -4,11 +4,13 @@ name: Deploy-All
 on:
   push:
     branches: ['*_']
-    tags: ['*_', 'v[0-9]*']
-  pull_request:
-#    branches: [ $default-branch ]
-    paths-ignore: ['docs/**']
+    tags:
+    - '*_'  # ending underscore for trying things
+    - 'v[0-9]+.[0-9]+.[0-9]+'  # final version
+    - 'v[0-9]+.[0-9]+.[0-9]+[abrc]+[0-9]+'  # alpha, beta, release candidate (rc)
+    - 'v[0-9]+.[0-9]+.[0-9]+.dev[0-9]+'  # development versions
 
+# necessary for Windows
 defaults:
   run:
     shell: bash
@@ -124,15 +126,25 @@ jobs:
         files: ${{ steps.export.outputs.artifact_files }}
         gzip: false
     - name: Install twine
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
       run: sudo apt install twine
-    - name: Build and publish
+    - name: publish to test PyPI repository
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && contains(github.ref, '.dev')
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN_TEST }}
         TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/ 
       run: |
-        twine upload --skip-existing dist/*.{whl,tar.gz}
-        # old versions don't understnad --non-interactive
+        twine upload --skip-existing dist/rdiff*.{whl,tar.gz}
+        # old versions don't understand --non-interactive
+    - name: publish to PyPI repository
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && ! contains(github.ref, '.dev')
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+      run: |
+        twine upload --skip-existing dist/rdiff*.{whl,tar.gz}
+        # old versions don't understand --non-interactive
 
 #    #--- Build Debian packages ---
 #    - os: linux
