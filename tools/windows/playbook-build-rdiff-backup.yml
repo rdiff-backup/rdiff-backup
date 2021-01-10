@@ -28,9 +28,9 @@
     - name: compile rdiff-backup into an executable using pyinstaller
       win_command: >
         pyinstaller --onefile
-        --paths=build/lib.win-{{ python_win_bits }}-3.7 --paths={{ librsync_install_dir }}/lib
+        --paths=build/lib.{{ python_win_bits }}-{{ python_version }} --paths={{ librsync_install_dir }}/lib
         --paths={{ librsync_install_dir }}/bin
-        --console build/scripts-3.7/rdiff-backup
+        --console build/scripts-{{ python_version }}/rdiff-backup
         --add-data src/rdiff_backup.egg-info/PKG-INFO;rdiff_backup.egg-info
       environment:
         LIBRSYNC_DIR: "{{ librsync_install_dir }}"
@@ -59,7 +59,7 @@
       win_copy:  # newer versions of rsync.dll are installed in bin not lib
         src: "{{ librsync_install_dir }}/bin/rsync.dll"
         remote_src: true  # file is already on the Windows machine
-        dest: "{{ rdiffbackup_dir }}/"
+        dest: "{{ rdiffbackup_dir }}/build/lib.{{ python_win_bits }}-{{ python_version }}/rdiff_backup/"
       tags: debug_help
     - name: prepare variable backquote to avoid quoting issues
       set_fact:
@@ -69,8 +69,8 @@
       win_copy:
         content: |
           REM call this script to get the right environment variable and examples
-          SET PYTHONPATH={{ rdiffbackup_dir }}/build/lib.win-{{ python_win_bits }}-3.7
-          SET PATH={{ rdiffbackup_dir | replace('/', bq) }}\build\scripts-3.7;%PATH%
+          SET PYTHONPATH={{ rdiffbackup_dir }}/build/lib.{{ python_win_bits }}-{{ python_version }}
+          SET PATH={{ rdiffbackup_dir | replace('/', bq) }}\build\scripts-{{ python_version }};%PATH%
         dest: "{{ rdiffbackup_dir }}/build/setup-rdiff-backup.bat"
       tags: debug_help
     - name: create a wrapper script to call rdiff-backup from the repo
@@ -80,5 +80,5 @@
           REM simple wrapper script to call rdiff-backup from the repo
           REM d=Disk, p=(dir)path, n=name(without extension), x=extension
           python "%~dpn0" %*
-        dest: "{{ rdiffbackup_dir }}/build/scripts-3.7/rdiff-backup.bat"
+        dest: "{{ rdiffbackup_dir }}/build/scripts-{{ python_version }}/rdiff-backup.bat"
       tags: debug_help
