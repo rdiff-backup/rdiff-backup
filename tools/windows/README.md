@@ -53,8 +53,8 @@ ansible_winrm_server_cert_validation=ignore
 It can be as easy as calling twice ansible-playbook:
 
 ```
-ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory playbook-build-librsync.yml
-ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory playbook-build-rdiff-backup.yml
+ansible-playbook playbook-build-librsync.yml
+ansible-playbook playbook-build-rdiff-backup.yml
 ```
 
 > **NOTE:** you can use the variables under `group_vars/all` to steer the build process, check the comments there for more details.
@@ -64,10 +64,11 @@ ansible-playbook -i .vagrant/provisioners/ansible/inventory/vagrant_ansible_inve
 Open a console and type:
 
 ```
-set PYTHONPATH=C:\Users\IEUser\Develop\rdiff-backup\build\lib.win-amd64.3.7
-cd \Users\IEUser\Develop\rdiff-backup\build  # the rsync.dll in this dir makes it work
-.\scripts-3.7\rdiff-backup --version
-.\scripts-3.7\rdiff-backup sourcedir targetdir
+cd %HOME%\Develop\rdiff-backup
+.\build\setup-rdiff-backup.bat
+.\build\scripts-3.9\rdiff-backup --version
+.\build\scripts-3.9\rdiff-backup sourcedir targetdir
+python -m pdb .\build\scripts-3.9\rdiff-backup sourcedir targetdir
 [...]
 ```
 

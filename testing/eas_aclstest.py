@@ -544,16 +544,19 @@ other::---""".format(self.current_user, self.current_group))
             rp.write_acl(acl)
             return rp
 
-        def write_mapping_file(rootrp):
-            map_rp = rootrp.append('mapping_file')
-            map_rp.write_string("root:{1}\n{0}:bin\nbin:root".format(
-                self.current_user, self.current_group))
-            return map_rp
+        def write_mapping_files(rootrp):
+            users_map_rp = rootrp.append('users_map_file')
+            users_map_rp.write_string("root:{u}\n{u}:bin\nbin:root".format(
+                u=self.current_user))
+            groups_map_rp = rootrp.append('groups_map_file')
+            groups_map_rp.write_string("root:{g}\n{g}:bin\nbin:root".format(
+                g=self.current_group))
+            return (users_map_rp, groups_map_rp)
 
-        def get_perms_of_user(acl, user):
+        def get_perms(acl, owner, owner_type):
             """Return the permissions of ACL_USER in acl, or None"""
             for typechar, owner_pair, perms in acl.entry_list:
-                if typechar == "u" and owner_pair[1] == user:
+                if typechar == owner_type and owner_pair[1] == owner:
                     return perms
             return None
 
@@ -561,20 +564,22 @@ other::---""".format(self.current_user, self.current_group))
         rootrp = rpath.RPath(Globals.local_connection,
                              os.path.join(abs_test_dir, b'acl_map_test'))
         make_dir(rootrp)
-        map_rp = write_mapping_file(rootrp)
+        (users_map_rp, groups_map_rp) = write_mapping_files(rootrp)
 
-        rdiff_backup(1,
-                     1,
-                     rootrp.path,
-                     tempdir.path,
-                     extra_options=b"--user-mapping-file %b" % (map_rp.path, ))
+        rdiff_backup(
+            1, 1, rootrp.path, tempdir.path,
+            extra_options=b"--user-mapping-file %b --group-mapping-file %b" % (
+                users_map_rp.path, groups_map_rp.path))
 
         out_rp = tempdir.append('a1')
         self.assertTrue(out_rp.isreg())
         out_acl = tempdir.append('a1').get_acl()
-        self.assertEqual(get_perms_of_user(out_acl, 'root'), 4)
-        self.assertEqual(get_perms_of_user(out_acl, self.current_user), 7)
-        self.assertEqual(get_perms_of_user(out_acl, 'bin'), 0)
+        self.assertEqual(get_perms(out_acl, 'root', 'u'), 4)
+        self.assertEqual(get_perms(out_acl, self.current_user, 'u'), 7)
+        self.assertEqual(get_perms(out_acl, 'bin', 'u'), 0)
+        self.assertEqual(get_perms(out_acl, 'root', 'g'), None)
+        self.assertEqual(get_perms(out_acl, self.current_group, 'g'), 5)
+        self.assertEqual(get_perms(out_acl, 'bin', 'g'), 2)
 
     def test_acl_dropping(self):
         """Test dropping of ACL names"""
