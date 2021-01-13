@@ -170,28 +170,27 @@ COMMON_PARSER.add_argument(
     "--new", default=False, action=BooleanOptionalAction,
     help="[opt] enforce (or not) the usage of the new parameters")
 COMMON_PARSER.add_argument(
-    "--override-chars-to-quote", type=str, metavar="CHARS_TO_QUOTE",
+    "--chars-to-quote", "--override-chars-to-quote",
+    type=str, metavar="CHARS",
     help="[opt] string of characters to quote for safe storing")
 COMMON_PARSER.add_argument(
     "--parsable-output", action="store_true",
     help="[opt] output in computer parsable format")
 COMMON_PARSER.add_argument(
-    "--remote-schema", "--remote-cmd", type=str,
+    "--remote-schema", type=str,
     help="[opt] alternative command to call remotely rdiff-backup")
 COMMON_PARSER.add_argument(
     "--remote-tempdir", type=str, metavar="DIR_PATH",
     help="[opt] use path as temporary directory on the remote side")
 COMMON_PARSER.add_argument(
-    "--restrict", type=str, metavar="DIR_PATH",
+    "--restrict-path", type=str, metavar="DIR_PATH",
     help="[opt] restrict remote access to given path")
 COMMON_PARSER.add_argument(
-    "--restrict-read-only", type=str, metavar="DIR_PATH",
-    help="[opt] restrict remote access to given path, in read-only mode")
+    "--restrict-mode", type=str,
+    choices=["read-write", "read-only", "update-only"], default="read-write",
+    help="[opt] restriction mode for directory (default is 'read-write')")
 COMMON_PARSER.add_argument(
-    "--restrict-update-only", type=str, metavar="DIR_PATH",
-    help="[opt] restrict remote access to given path, in backup update mode")
-COMMON_PARSER.add_argument(
-    "--ssh-no-compression", action="store_true",
+    "--ssh-compression", default=True, action=BooleanOptionalAction,
     help="[opt] use SSH without compression with default remote-schema")
 COMMON_PARSER.add_argument(
     "--tempdir", type=str, metavar="DIR_PATH",
@@ -205,6 +204,23 @@ COMMON_PARSER.add_argument(
 COMMON_PARSER.add_argument(
     "-v", "--verbosity", type=int, choices=range(0, 10), default=3,
     help="[opt] overall verbosity on terminal and in logfiles (default is 3)")
+
+COMMON_COMPAT200_PARSER = argparse.ArgumentParser(
+    add_help=False,
+    description="[parent] common options to all actions (compat200)")
+restrict_group = COMMON_COMPAT200_PARSER.add_mutually_exclusive_group()
+restrict_group.add_argument(
+    "--restrict", type=str, metavar="DIR_PATH",
+    help="[compat200] restrict remote access to given path, in read-write mode")
+restrict_group.add_argument(
+    "--restrict-read-only", type=str, metavar="DIR_PATH",
+    help="[compat200] restrict remote access to given path, in read-only mode")
+restrict_group.add_argument(
+    "--restrict-update-only", type=str, metavar="DIR_PATH",
+    help="[compat200] restrict remote access to given path, in backup update mode")
+COMMON_COMPAT200_PARSER.add_argument(
+    "--ssh-no-compression", action="store_true",
+    help="[compat200] use SSH without compression with default remote-schema")
 
 SELECTION_PARSER = argparse.ArgumentParser(
     add_help=False,
@@ -274,6 +290,9 @@ FILESYSTEM_PARSER.add_argument(
     "--hard-links", default=True, action=BooleanOptionalAction,
     help="[sub] preserve (or not) hard links.")
 FILESYSTEM_PARSER.add_argument(
+    "--resource-forks", default=True, action=BooleanOptionalAction,
+    help="[sub] preserve (or not) resource forks on MacOS X.")
+FILESYSTEM_PARSER.add_argument(
     "--never-drop-acls", action="store_true",
     help="[sub] exit with error instead of dropping acls or acl entries.")
 
@@ -326,7 +345,7 @@ USER_GROUP_PARSER.add_argument(
     help="[sub] map users according to file")
 
 PARENT_PARSERS = [
-    COMMON_PARSER,
+    COMMON_PARSER, COMMON_COMPAT200_PARSER,
     CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
     FILESYSTEM_PARSER, USER_GROUP_PARSER, STATISTICS_PARSER,
 ]
@@ -361,7 +380,7 @@ class BaseAction:
             "backup": BackupAction,
             "calculate": CalculateAction,
             "compare": CompareAction,
-            "information": InformationAction,
+            "info": InfoAction,
             "list": ListAction,
             "regress": RegressAction,
             "remove": RemoveAction,
@@ -478,7 +497,7 @@ class CompareAction(BaseAction):
             "--method", choices=["meta", "full", "hash"], default="meta",
             help="use metadata, complete file or hash to compare directories")
         subparser.add_argument(
-            "--at", metavar="TIME",
+            "--at", metavar="TIME", default="now",
             help="compare with the backup at the given time, default is 'now'")
         subparser.add_argument(
             "locations", metavar="[[USER@]SERVER::]PATH", nargs=2,
@@ -487,12 +506,12 @@ class CompareAction(BaseAction):
         return subparser
 
 
-class InformationAction(BaseAction):
+class InfoAction(BaseAction):
     """
     Output information about the current system, so that it can be used in
     in a bug report, and exits.
     """
-    name = "information"
+    name = "info"
     # information has no specific sub-options
 
 
@@ -513,13 +532,13 @@ class ListAction(BaseAction):
             "--changed-since", metavar="TIME",
             help="list files modified since given time")
         time_group.add_argument(
-            "--at", metavar="TIME",
-            help="list files at given time")
+            "--at", metavar="TIME", default="now",
+            help="list files at given time (default is now/latest)")
         entity_parsers["files"].add_argument(
             "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
             help="location of repository to list files from")
         entity_parsers["increments"].add_argument(
-            "--sizes", action=BooleanOptionalAction, default=False,
+            "--size", action=BooleanOptionalAction, default=False,
             help="also output size of each increment (might take longer)")
         entity_parsers["increments"].add_argument(
             "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
@@ -582,7 +601,7 @@ class RestoreAction(BaseAction):
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
-            "--at", default="now", metavar="TIME",
+            "--at", metavar="TIME", default="now",
             help="as of which time to restore the files (default is now/latest)")
         subparser.add_argument(
             "locations", metavar="[[USER@]SERVER::]PATH", nargs=2,
@@ -611,7 +630,7 @@ class VerifyAction(BaseAction):
         entity_parsers = cls._get_subparsers(
             subparser, "entity", "files", "servers")
         entity_parsers["files"].add_argument(
-            "--at", default="now", metavar="TIME",
+            "--at", metavar="TIME", default="now",
             help="as of which time to check the files' hashes (default is now/latest)")
         entity_parsers["files"].add_argument(
             "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
@@ -646,7 +665,7 @@ def parse(args, version_string, parent_parsers, actions=None):
                      or (set(actions.keys()) & set(args))))):
         return _parse_new(args, version_string, parent_parsers[0:1], actions)
     else:
-        return _parse_old(args, version_string, parent_parsers)
+        return _parse_compat200(args, version_string, parent_parsers)
 
 
 def _parse_new(args, version_string, parent_parsers, actions):
@@ -682,7 +701,7 @@ def _parse_new(args, version_string, parent_parsers, actions):
     return parsed_args
 
 
-def _parse_old(args, version_string, parent_parsers=[]):
+def _parse_compat200(args, version_string, parent_parsers=[]):
     """
     Parse arguments according to old parameters of rdiff-backup.
     The hint in square brackets at the beginning of the help are in preparation
@@ -733,8 +752,8 @@ def _parse_old(args, version_string, parent_parsers=[]):
         "--compare-full-at-time", type=str, metavar="AT_TIME",
         help="[act=] compare full at given time")
     action_group.add_argument(
-        "--information", action="store_const", const="information",
-        help="[act] output information for bug reports")
+        "--info", action="store_const", const="info",
+        help="[act] output information e.g. for bug reports")
     action_group.add_argument(
         "--list-at-time", type=str, metavar="AT_TIME",
         help="[act=] list files and directories at given time")
@@ -796,7 +815,7 @@ def _parse_old(args, version_string, parent_parsers=[]):
         elif values.list_changed_since:
             values.action = "list"
             values.entity = "files"
-            values.changed_since_time = values.list_changed_since
+            values.changed_since = values.list_changed_since
         elif values.remove_older_than:
             values.action = "remove"
             values.entity = "increments"
@@ -835,13 +854,27 @@ def _parse_old(args, version_string, parent_parsers=[]):
         elif values.action == "list-increment-sizes":
             values.action = "list"
             values.entity = "increments"
-            values.sizes = True
+            values.size = True
         elif values.action == "test-server":
             values.action = "verify"
             values.entity = "servers"
         elif values.action == "verify":
             values.entity = "files"
             values.at = "now"
+
+    # those are a bit critical because they are duplicates between
+    # new and old options
+    if values.ssh_no_compression == True:
+        values.ssh_compression = False
+    if values.restrict and not values.restrict_path:
+        values.restrict_path = values.restrict
+        values.restrict_mode = "read-write"
+    elif values.restrict_read_only and not values.restrict_path:
+        values.restrict_path = values.restrict_read_only
+        values.restrict_mode = "read-only"
+    elif values.restrict_update_only and not values.restrict_path:
+        values.restrict_path = values.restrict_update_only
+        values.restrict_mode = "update-only"
 
     return values
 
