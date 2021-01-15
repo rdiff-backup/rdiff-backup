@@ -808,7 +808,7 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
     if not values.action:
         if values.compare_at_time:
             values.action = "compare"
-            values.method = "normal"
+            values.method = "meta"
             values.at = values.compare_at_time
         elif values.compare_hash_at_time:
             values.action = "compare"
@@ -847,7 +847,7 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
         if values.action == "check-destination-dir":
             values.action = "regress"
         if values.action == "compare":
-            values.method = "normal"
+            values.method = "meta"
             values.at = "now"
         elif values.action == "compare-hash":
             values.action = "compare"

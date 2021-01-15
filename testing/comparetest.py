@@ -35,7 +35,7 @@ class CompareTest(unittest.TestCase):
                          local,
                          old_inc3_dir,
                          self.outdir,
-                         extra_options=compare_option + b"-at-time 10000",
+                         extra_options=compare_option + b"-at-time 20000",
                          check_return_val=0))
 
     def testBasicLocal(self):
