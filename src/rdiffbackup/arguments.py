@@ -30,6 +30,18 @@ import argparse
 import sys
 import yaml
 
+
+# The default regexp for not compressing those files
+# COMPAT200: it is also used by Main.py to avoid having a 2nd default
+DEFAULT_NOT_COMPRESSED_REGEXP = (
+        "(?i).*\\.("
+        "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
+        "jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
+        "mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
+        "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
+        ")$"
+    )
+
 try:
     from argparse import BooleanOptionalAction
 except ImportError:
@@ -311,14 +323,7 @@ COMPRESSION_PARSER.add_argument(
     help="[sub] compress (or not) snapshot and diff files")
 COMPRESSION_PARSER.add_argument(
     "--not-compressed-regexp", "--no-compression-regexp", metavar="REGEXP",
-    default=(
-        "(?i).*\\.("
-        "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
-        "jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
-        "mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
-        "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
-        ")$"
-    ),
+    default=DEFAULT_NOT_COMPRESSED_REGEXP,
     help="[sub] regexp to select files not being compressed")
 
 STATISTICS_PARSER = argparse.ArgumentParser(
@@ -330,6 +335,13 @@ STATISTICS_PARSER.add_argument(
 STATISTICS_PARSER.add_argument(
     "--print-statistics", default=False, action=BooleanOptionalAction,
     help="[sub] print (or not) statistics after a successful backup")
+
+TIMESTAMP_PARSER = argparse.ArgumentParser(
+    add_help=False,
+    description="[parent] options related to regress timestamps")
+TIMESTAMP_PARSER.add_argument(
+    "--allow-duplicate-timestamps", action="store_true",
+    help="[sub] ignore duplicate metadata while checking repository")
 
 USER_GROUP_PARSER = argparse.ArgumentParser(
     add_help=False,
@@ -348,6 +360,7 @@ PARENT_PARSERS = [
     COMMON_PARSER, COMMON_COMPAT200_PARSER,
     CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
     FILESYSTEM_PARSER, USER_GROUP_PARSER, STATISTICS_PARSER,
+    TIMESTAMP_PARSER
 ]
 
 
@@ -552,14 +565,11 @@ class RegressAction(BaseAction):
     backup and reverse to the last known good mirror.
     """
     name = "regress"
-    parent_parsers = [COMPRESSION_PARSER, USER_GROUP_PARSER]
+    parent_parsers = [COMPRESSION_PARSER, TIMESTAMP_PARSER, USER_GROUP_PARSER]
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
-        subparser.add_argument(
-            "--allow-duplicate-timestamps", action="store_true",
-            help="[sub] ignore duplicate metadata while checking repository")
         subparser.add_argument(
             "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
             help="location of repository to check and possibly regress")

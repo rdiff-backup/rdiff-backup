@@ -9,6 +9,7 @@ import subprocess
 from rdiff_backup.log import Log
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
     selection, rpath, eas_acls, rorpiter, Security, hash
+from rdiffbackup import arguments
 
 RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
 
@@ -172,6 +173,8 @@ def InternalBackup(source_local,
     """
     Globals.current_time = current_time
     Globals.security_level = "override"
+    Globals.set("no_compression_regexp_string",
+                os.fsencode(arguments.DEFAULT_NOT_COMPRESSED_REGEXP))
 
     cmdpairs = _internal_get_cmd_pairs(source_local, dest_local,
                                        src_dir, dest_dir)
@@ -223,6 +226,8 @@ def InternalRestore(mirror_local,
     Main._force = 1
     Main._restore_root_set = 0
     Globals.security_level = "override"
+    Globals.set("no_compression_regexp_string",
+                os.fsencode(arguments.DEFAULT_NOT_COMPRESSED_REGEXP))
 
     cmdpairs = _internal_get_cmd_pairs(mirror_local, dest_local,
                                        mirror_dir, dest_dir)
@@ -443,6 +448,8 @@ def BackupRestoreSeries(source_local,
 
     """
     Globals.set('preserve_hardlinks', compare_hardlinks)
+    Globals.set("no_compression_regexp_string",
+                os.fsencode(arguments.DEFAULT_NOT_COMPRESSED_REGEXP))
     time = 10000
     dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
     restore_rp = rpath.RPath(Globals.local_connection, restore_dirname)
@@ -503,6 +510,8 @@ def MirrorTest(source_local,
                dest_dirname=abs_output_dir):
     """Mirror each of list_of_dirnames, and compare after each"""
     Globals.set('preserve_hardlinks', compare_hardlinks)
+    Globals.set("no_compression_regexp_string",
+                os.fsencode(arguments.DEFAULT_NOT_COMPRESSED_REGEXP))
     dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
     old_force_val = Main._force
     Main._force = 1

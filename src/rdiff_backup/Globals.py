@@ -400,6 +400,7 @@ def postset_regexp(name, re_string, flags=None):
 # @API(postset_regexp_local, 200)
 def postset_regexp_local(name, re_string, flags):
     """Set name to compiled re_string locally"""
+    re_string = os.fsencode(re_string)
     if flags:
         globals()[name] = re.compile(re_string, flags)
     else:

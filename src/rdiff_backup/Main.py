@@ -57,6 +57,8 @@ def error_check_Main(arglist):
         arglist, "rdiff-backup {ver}".format(ver=Globals.version),
         arguments.PARENT_PARSERS, arguments.BaseAction.get_actions())
     _parse_cmdlineoptions_compat200(parsed_args)
+    if parsed_args.action == "info":
+        _output_info(exit=True)
     _check_action()
     try:
         _Main(parsed_args)
@@ -254,6 +256,8 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         _restore_timestr = "now"
     elif arglist.action == "regress":
         _action = "check-destination-dir"
+        Globals.set("allow_duplicate_timestamps",
+                    arglist.allow_duplicate_timestamps)
     elif arglist.action == "list":
         if arglist.entity == "files":
             if arglist.changed_since:
@@ -286,26 +290,36 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
     else:
         _action = arglist.action
 
-    Globals.set("allow_duplicate_timestamps", arglist.allow_duplicate_timestamps)
-    Globals.set("carbonfile_active", arglist.carbonfile)
-    Globals.set("never_drop_acls", arglist.never_drop_acls)
-    Globals.set("acls_active", arglist.acls)
-    Globals.set("win_acls_active", arglist.acls)
-    Globals.set("carbonfile_active", arglist.carbonfile)
-    Globals.set("compare_inode", arglist.compare_inode)
-    Globals.set("compression", arglist.compression)
-    Globals.set("eas_active", arglist.eas)
-    Globals.set("file_statistics", arglist.file_statistics)
-    Globals.set("preserve_hardlinks", arglist.hard_links)
+    if arglist.action in ('backup', 'restore'):
+        Globals.set("acls_active", arglist.acls)
+        Globals.set("win_acls_active", arglist.acls)
+        Globals.set("carbonfile_active", arglist.carbonfile)
+        Globals.set("compare_inode", arglist.compare_inode)
+        Globals.set("eas_active", arglist.eas)
+        Globals.set("preserve_hardlinks", arglist.hard_links)
+        Globals.set("resource_forks_active", arglist.resource_forks)
+        Globals.set("never_drop_acls", arglist.never_drop_acls)
+        _create_full_path = arglist.create_full_path
+    if arglist.action in ('backup', 'regress', 'restore'):
+        Globals.set("compression", arglist.compression)
+        Globals.set("no_compression_regexp_string",
+                    os.fsencode(arglist.not_compressed_regexp))
+        _preserve_numerical_ids = arglist.preserve_numerical_ids
+        if arglist.group_mapping_file is not None:
+            _group_mapping_filename = os.fsencode(arglist.group_mapping_file)
+        if arglist.user_mapping_file is not None:
+            _user_mapping_filename = os.fsencode(arglist.user_mapping_file)
+    else:
+        Globals.set("no_compression_regexp_string",
+                    os.fsencode(arguments.DEFAULT_NOT_COMPRESSED_REGEXP))
+    if arglist.action in ('backup'):
+        Globals.set("file_statistics", arglist.file_statistics)
+        Globals.set("print_statistics", arglist.print_statistics)
     Globals.set("null_separator", arglist.null_separator)
     Globals.set("parsable_output", arglist.parsable_output)
-    Globals.set("print_statistics", arglist.print_statistics)
-    Globals.set("resource_forks_active", arglist.resource_forks)
     Globals.set("ssh_compression", arglist.ssh_compression)
     Globals.set("use_compatible_timestamps", arglist.use_compatible_timestamps)
     Globals.set("do_fsync", arglist.fsync)
-    Globals.set("no_compression_regexp_string",
-                os.fsencode(arglist.not_compressed_regexp))
     if arglist.current_time is not None:
         Globals.set_integer('current_time', arglist.current_time)
     if arglist.chars_to_quote is not None:
@@ -314,16 +328,13 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         Globals.remote_tempdir = os.fsencode(arglist.remote_tempdir)
     if arglist.restrict_path is not None:
         Globals.restrict_path = normalize_path(arglist.restrict_path)
-        Globals.security_level = arglist.restrict_mode
+        if arglist.restrict_mode == "read-write":
+            Globals.security_level = "all"
+        else:
+            Globals.security_level = arglist.restrict_mode
     if arglist.api_version is not None:  # FIXME
-        Globals.set_api_version(arg)
-    _create_full_path = arglist.create_full_path
+        Globals.set_api_version(arglist.api_version)
     _force = arglist.force
-    _preserve_numerical_ids = arglist.preserve_numerical_ids
-    if arglist.group_mapping_file is not None:
-        _group_mapping_filename = os.fsencode(arglist.group_mapping_file)
-    if arglist.user_mapping_file is not None:
-        _user_mapping_filename = os.fsencode(arglist.user_mapping_file)
     if arglist.remote_schema is not None:
         _remote_schema = os.fsencode(arglist.remote_schema)
     if arglist.terminal_verbosity is not None:
@@ -336,7 +347,9 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
                     dir=arglist.tempdir))
         tempfile.tempdir = os.fsencode(arglist.tempdir)
 
-    if arglist.selections:
+    # handle selection options
+    if (arglist.action in ('backup', 'compare', 'restore')
+            and arglist.selections):
         for selection in arglist.selections:
             if 'filelist' in selection[0]:
                 if selection[0].endswith("-stdin"):
@@ -349,7 +362,10 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
             else:
                 _select_opts.append(("--" + selection[0], selection[1]))
 
-    _args = arglist.locations
+    if arglist.action in ('info', 'server'):
+        _args = []
+    else:
+        _args = arglist.locations
 
 
 def _output_info(version_format="full", exit=False):
