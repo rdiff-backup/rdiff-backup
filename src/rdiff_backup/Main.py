@@ -59,7 +59,6 @@ def error_check_Main(arglist):
     _parse_cmdlineoptions_compat200(parsed_args)
     if parsed_args.action == "info":
         _output_info(exit=True)
-    _check_action()
     try:
         _Main(parsed_args)
     except SystemExit:
@@ -384,35 +383,6 @@ def _output_info(version_format="full", exit=False):
                              explicit_start=True, explicit_end=True))
     if exit:
         sys.exit(0)
-
-
-def _check_action():
-    """Check to make sure _action is compatible with _args"""
-    global _action
-    arg_action_dict = {
-        0: ['server'],
-        1: [
-            'list-increments', 'list-increment-sizes', 'remove-older-than',
-            'list-at-time', 'list-changed-since', 'check-destination-dir',
-            'verify'
-        ],
-        2: [
-            'backup', 'restore', 'restore-as-of', 'compare', 'compare-hash',
-            'compare-full'
-        ]
-    }
-    args_len = len(_args)
-    if args_len == 0 and _action not in arg_action_dict[args_len]:
-        _commandline_error("No arguments given")
-    elif not _action:
-        if args_len == 2:
-            pass  # Will determine restore or backup later
-        else:
-            _commandline_error("Switches missing or wrong number of arguments")
-    elif _action == 'test-server' or _action == 'calculate-average':
-        pass  # these two take any number of args
-    elif args_len > 2 or _action not in arg_action_dict[args_len]:
-        _commandline_error("Wrong number of arguments given.")
 
 
 def _final_set_action(rps):

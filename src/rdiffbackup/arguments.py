@@ -886,6 +886,34 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
         values.restrict_path = values.restrict_update_only
         values.restrict_mode = "update-only"
 
+    # Because the traditional argument parsing doesn't allow to validate the
+    # number of locations for each action, we need to do it ourselves
+
+    # number of locations for each action, a negative value represents a minimum
+    locs_action_lens = {
+            "backup": 2,
+            "calculate": -1,
+            "compare": 2,
+            "info": 0,
+            "list": 1,
+            "regress": 1,
+            "remove": 1,
+            "restore": 2,
+            "server": 0,
+            "verify": -1,
+        }
+
+    locs_len = len(values.locations)
+    if locs_action_lens[values.action] >= 0 and locs_action_lens[values.action] != locs_len:
+        parser.error(message="Action {act} requires {nr} location(s) instead of {locs}.".format(
+            act=values.action, nr=locs_action_lens[values.action], locs=values.locations))
+    elif locs_action_lens[values.action] < 0 and -locs_action_lens[values.action] > locs_len:
+        parser.error(message="Action {act} requires at least {nr} location(s) instead of {locs}.".format(
+            act=values.action, nr=-locs_action_lens[values.action], locs=values.locations))
+    elif values.action == "verify" and values.entity == "files" and locs_len != 1:
+        parser.error(message="Action verify/files requires 1 location instead of {locs}.".format(
+            locs=values.locations))
+
     return values
 
 
