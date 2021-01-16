@@ -610,12 +610,16 @@ class RestoreAction(BaseAction):
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
-        subparser.add_argument(
-            "--at", metavar="TIME", default="now",
-            help="as of which time to restore the files (default is now/latest)")
+        restore_group = subparser.add_mutually_exclusive_group()
+        restore_group.add_argument(
+            "--at", metavar="TIME",
+            help="restore files as of a specific time")
+        restore_group.add_argument(
+            "--increment", action="store_true",
+            help="restore from a specific increment as first parameter")
         subparser.add_argument(
             "locations", metavar="[[USER@]SERVER::]PATH", nargs=2,
-            help="locations of backup REPOSITORY and to which TARGET_DIR to restore")
+            help="locations of backup REPOSITORY/INCREMENT and to which TARGET_DIR to restore")
         return subparser
 
 
@@ -836,6 +840,7 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
         elif values.restore_as_of:
             values.action = "restore"
             values.at = values.restore_as_of
+            values.increment = False
         elif values.verify_at_time:
             values.action = "verify"
             values.entity = "files"
@@ -868,13 +873,14 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
             values.action = "list"
             values.entity = "increments"
             values.size = True
+        elif values.action == "restore":
+            values.increment = True
+            values.at = None
         elif values.action == "test-server":
             values.action = "verify"
             values.entity = "servers"
         elif values.action == "verify":
             values.entity = "files"
-            values.at = "now"
-        elif values.action == "restore":
             values.at = "now"
 
     # those are a bit critical because they are duplicates between
