@@ -223,16 +223,16 @@ COMMON_COMPAT200_PARSER = argparse.ArgumentParser(
 restrict_group = COMMON_COMPAT200_PARSER.add_mutually_exclusive_group()
 restrict_group.add_argument(
     "--restrict", type=str, metavar="DIR_PATH",
-    help="[compat200] restrict remote access to given path, in read-write mode")
+    help="[deprecated] restrict remote access to given path, in read-write mode")
 restrict_group.add_argument(
     "--restrict-read-only", type=str, metavar="DIR_PATH",
-    help="[compat200] restrict remote access to given path, in read-only mode")
+    help="[deprecated] restrict remote access to given path, in read-only mode")
 restrict_group.add_argument(
     "--restrict-update-only", type=str, metavar="DIR_PATH",
-    help="[compat200] restrict remote access to given path, in backup update mode")
+    help="[deprecated] restrict remote access to given path, in backup update mode")
 COMMON_COMPAT200_PARSER.add_argument(
     "--ssh-no-compression", action="store_true",
-    help="[compat200] use SSH without compression with default remote-schema")
+    help="[deprecated] use SSH without compression with default remote-schema")
 
 SELECTION_PARSER = argparse.ArgumentParser(
     add_help=False,
@@ -785,6 +785,9 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
         "-r", "--restore-as-of", type=str, metavar="AT_TIME",
         help="[act=] restore files from repo as of given time")
     action_group.add_argument(
+        "--restore", dest="action", action="store_const", const="restore",
+        help="[act] restore a specific increment")
+    action_group.add_argument(
         "-s", "--server", dest="action", action="store_const", const="server",
         help="[act] start rdiff-backup in server mode")
     action_group.add_argument(
@@ -844,9 +847,9 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
         if values.action == "calculate-average":
             values.action = "calculate"
             values.method = "average"
-        if values.action == "check-destination-dir":
+        elif values.action == "check-destination-dir":
             values.action = "regress"
-        if values.action == "compare":
+        elif values.action == "compare":
             values.method = "meta"
             values.at = "now"
         elif values.action == "compare-hash":
@@ -870,6 +873,8 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
             values.entity = "servers"
         elif values.action == "verify":
             values.entity = "files"
+            values.at = "now"
+        elif values.action == "restore":
             values.at = "now"
 
     # those are a bit critical because they are duplicates between

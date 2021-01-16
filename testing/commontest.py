@@ -130,7 +130,7 @@ def rdiff_backup(source_local,
         # the construct is needed because os.system seemingly doesn't
         # respect expected return values (FIXME)
         assert ((expected_ret_val == 0 and ret_val == 0) or (expected_ret_val > 0 and ret_val > 0)), \
-            "Return code %d of command `%a` isn't expected %d." % \
+            "Return code %d of command `%a` isn't as expected %d." % \
             (ret_val, cmdline, expected_ret_val)
     return ret_val
 
@@ -241,10 +241,11 @@ def InternalRestore(mirror_local,
     Main._misc_setup([mirror_rp, dest_rp])
     inc = get_increment_rp(mirror_rp, time)
     if inc:
+        Main._restore_timestr = None
         Main._action_restore(get_increment_rp(mirror_rp, time), dest_rp)
     else:  # use alternate syntax
         Main._restore_timestr = str(time)
-        Main._action_restore(mirror_rp, dest_rp, restore_as_of=1)
+        Main._action_restore(mirror_rp, dest_rp)
     Main._cleanup()
 
 

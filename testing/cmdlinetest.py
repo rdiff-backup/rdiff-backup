@@ -131,15 +131,18 @@ class PathSetter(unittest.TestCase):
         self.assertEqual(len(inc_paths), 3)
 
         # Restoring increment1
-        rdiff_backup(from_local, to_local, inc_paths[0], Local.rpout1.path)
+        rdiff_backup(from_local, to_local, inc_paths[0], Local.rpout1.path,
+                     extra_options=b"--restore")
         self.assertTrue(compare_recursive(Local.inc1rp, Local.rpout1))
 
         # Restoring increment2
-        rdiff_backup(from_local, to_local, inc_paths[1], Local.rpout2.path)
+        rdiff_backup(from_local, to_local, inc_paths[1], Local.rpout2.path,
+                     extra_options=b"--restore")
         self.assertTrue(compare_recursive(Local.inc2rp, Local.rpout2))
 
         # Restoring increment3
-        rdiff_backup(from_local, to_local, inc_paths[2], Local.rpout3.path)
+        rdiff_backup(from_local, to_local, inc_paths[2], Local.rpout3.path,
+                     extra_options=b"--restore")
         self.assertTrue(compare_recursive(Local.inc3rp, Local.rpout3))
 
         # Test restoration of a few random files
@@ -147,7 +150,8 @@ class PathSetter(unittest.TestCase):
             b"various_file_types.",
             os.path.join(Local.rpout.path, b"rdiff-backup-data",
                          b"increments"))
-        rdiff_backup(from_local, to_local, vft_paths[1], Local.vft_out.path)
+        rdiff_backup(from_local, to_local, vft_paths[1], Local.vft_out.path,
+                extra_options=b"--restore")
         self.refresh(Local.vft_in, Local.vft_out)
         self.assertTrue(compare_recursive(Local.vft_in, Local.vft_out))
 
@@ -156,7 +160,8 @@ class PathSetter(unittest.TestCase):
             os.path.join(Local.rpout.path, b"rdiff-backup-data",
                          b"increments"))
         rdiff_backup(from_local, to_local, timbar_paths[0],
-                     Local.timbar_out.path)
+                     Local.timbar_out.path,
+                     extra_options=b"--restore")
         self.refresh(Local.timbar_in, Local.timbar_out)
         self.assertTrue(Local.timbar_in.equal_loose(Local.timbar_out))
 

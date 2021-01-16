@@ -252,7 +252,7 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         _action = arglist.action
         if arglist.method != "meta":
             _action += "-" + arglist.method
-        _restore_timestr = "now"
+        _restore_timestr = arglist.at
     elif arglist.action == "regress":
         _action = "check-destination-dir"
         Globals.set("allow_duplicate_timestamps",
@@ -272,7 +272,7 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
                 _action = "list-increments"
     elif arglist.action == "restore":
             _restore_timestr = arglist.at
-            _action = "restore-as-of"
+            _action = "restore"
     elif arglist.action == "remove":
         if arglist.entities == "increments":
             _remove_older_than_string = arglist.older_than
@@ -465,9 +465,7 @@ def _take_action(rps):
     elif _action == "remove-older-than":
         action_result = _action_remove_older_than(rps[0])
     elif _action == "restore":
-        action_result = _action_restore(*rps)
-    elif _action == "restore-as-of":
-        action_result = _action_restore(rps[0], rps[1], 1)
+        action_result = _action_restore(rps[0], rps[1])
     elif _action == "verify":
         action_result = _action_verify(rps[0])
     else:
@@ -698,13 +696,21 @@ by running two backups in less than a second.  Wait a second and try again.""")
         _incdir.mkdir()
 
 
-def _action_restore(src_rp, dest_rp, restore_as_of=None):
+def _action_restore(src_rp, dest_rp):
     """Main restoring function
 
     Here src_rp should be the source file (either an increment or
     mirror file), dest_rp should be the target rp to be written.
 
     """
+    if src_rp.isincfile():
+        if _restore_timestr and _restore_timestr != "now":
+            Log.FatalError("You can't give an increment and a time to restore at the same time.")
+        else:
+            restore_as_of = False
+    else:
+        restore_as_of = True
+
     if not _restore_root_set and not restore_set_root(src_rp):
         Log.FatalError("Could not find rdiff-backup repository at %s" %
                        src_rp.get_safepath())
@@ -797,9 +803,9 @@ def _restore_start_log(rpin, target, time):
         Log.log_to_file(log_message)
 
 
-def _restore_check_paths(rpin, rpout, restoreasof=None):
+def _restore_check_paths(rpin, rpout, restore_as_of=None):
     """Make sure source and destination exist, and have appropriate type"""
-    if not restoreasof:
+    if not restore_as_of:
         if not rpin.lstat():
             Log.FatalError(
                 "Source file %s does not exist" % rpin.get_safepath())
