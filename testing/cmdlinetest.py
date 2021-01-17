@@ -151,7 +151,7 @@ class PathSetter(unittest.TestCase):
             os.path.join(Local.rpout.path, b"rdiff-backup-data",
                          b"increments"))
         rdiff_backup(from_local, to_local, vft_paths[1], Local.vft_out.path,
-                extra_options=b"--restore")
+                     extra_options=b"--restore")
         self.refresh(Local.vft_in, Local.vft_out)
         self.assertTrue(compare_recursive(Local.vft_in, Local.vft_out))
 

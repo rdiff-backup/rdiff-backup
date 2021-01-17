@@ -34,13 +34,13 @@ import yaml
 # The default regexp for not compressing those files
 # COMPAT200: it is also used by Main.py to avoid having a 2nd default
 DEFAULT_NOT_COMPRESSED_REGEXP = (
-        "(?i).*\\.("
-        "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
-        "jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
-        "mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
-        "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
-        ")$"
-    )
+    "(?i).*\\.("
+    "gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
+    "jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|"
+    "mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
+    "gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm"
+    ")$"
+)
 
 try:
     from argparse import BooleanOptionalAction
@@ -811,6 +811,18 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
 
     values = parser.parse_args(args)
 
+    _make_values_like_new_compat200(values)
+    _validate_number_locations_compat200(values, parser)
+
+    return values
+
+
+def _make_values_like_new_compat200(values):  # noqa C901 "too complex"
+    """
+    A helper function which returns the Namespace values parsed by the old CLI
+    as if they had been parsed by the new CLI.
+    """
+
     # compatibility layer with new parameter handling
     if not values.action:
         if values.compare_at_time:
@@ -886,7 +898,7 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
 
     # those are a bit critical because they are duplicates between
     # new and old options
-    if values.ssh_no_compression == True:
+    if values.ssh_no_compression is True:
         values.ssh_compression = False
     if values.restrict and not values.restrict_path:
         values.restrict_path = values.restrict
@@ -898,22 +910,28 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
         values.restrict_path = values.restrict_update_only
         values.restrict_mode = "update-only"
 
-    # Because the traditional argument parsing doesn't allow to validate the
-    # number of locations for each action, we need to do it ourselves
+    return values
+
+
+def _validate_number_locations_compat200(values, parser):
+    """
+    Because the traditional argument parsing doesn't allow to validate the
+    number of locations for each action, we need to do it ourselves
+    """
 
     # number of locations for each action, a negative value represents a minimum
     locs_action_lens = {
-            "backup": 2,
-            "calculate": -1,
-            "compare": 2,
-            "info": 0,
-            "list": 1,
-            "regress": 1,
-            "remove": 1,
-            "restore": 2,
-            "server": 0,
-            "verify": -1,
-        }
+        "backup": 2,
+        "calculate": -1,
+        "compare": 2,
+        "info": 0,
+        "list": 1,
+        "regress": 1,
+        "remove": 1,
+        "restore": 2,
+        "server": 0,
+        "verify": -1,
+    }
 
     locs_len = len(values.locations)
     if locs_action_lens[values.action] >= 0 and locs_action_lens[values.action] != locs_len:
@@ -925,8 +943,6 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
     elif values.action == "verify" and values.entity == "files" and locs_len != 1:
         parser.error(message="Action verify/files requires 1 location instead of {locs}.".format(
             locs=values.locations))
-
-    return values
 
 
 def _add_version_option_to_parser(parser, version_string):

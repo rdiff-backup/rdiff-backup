@@ -18,13 +18,12 @@
 # 02110-1301, USA
 """Start (and end) here - read arguments, set global settings, etc."""
 
-import getopt
-import sys
-import os
+import errno
 import io
+import os
+import sys
 import tempfile
 import time
-import errno
 import yaml
 from .log import Log, LoggerError, ErrorLog
 from . import (
