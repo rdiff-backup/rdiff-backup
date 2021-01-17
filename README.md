@@ -41,6 +41,9 @@ provided the file system(s) also support these features.
 
 In older Linux distributions the rdiff-backup versions are of the 1.x series, which is not recommended for new installs anymore. Follow the instructions below to install the latest 2.x release of rdiff-backup.
 
+> **CAUTION:** rdiff-backup 1.x and 2.x aren't compatible and can't be mixed in server/client mode!
+	See [how to migrate side-by-side](docs/migration.md).
+
 ### Ubuntu Focal or Debian Bullseye or newer (has 2.0)
 
 ```
