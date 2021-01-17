@@ -588,7 +588,7 @@ class FinalSelection(PathSetter):
             True,
             restore_filename,
             rest1_rel,
-            extra_options=b"--include-filelist-stdin " + b" --exclude '**'",
+            extra_options=b"--include-filelist-stdin --exclude '**' --restore",
             input=b"\n%b" % os.path.join(rest1_rel, b"various_file_types", b"regular_file"))
 
         self.assertTrue(os.lstat(

@@ -829,6 +829,7 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
             values.action = "list"
             values.entity = "files"
             values.at = values.list_at_time
+            values.changed_since = None
         elif values.list_changed_since:
             values.action = "list"
             values.entity = "files"
@@ -868,7 +869,7 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
         elif values.action == "list-increments":
             values.action = "list"
             values.entity = "increments"
-            values.sizes = False
+            values.size = False
         elif values.action == "list-increment-sizes":
             values.action = "list"
             values.entity = "increments"

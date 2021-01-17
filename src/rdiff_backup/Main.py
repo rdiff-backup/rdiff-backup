@@ -213,7 +213,6 @@ def _Main(arglist):
         _cleanup()
         sys.exit(1)
 
-    _final_set_action(rps)
     _misc_setup(rps)
     return_val = _take_action(rps)
     _cleanup()
@@ -271,10 +270,11 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
             else:
                 _action = "list-increments"
     elif arglist.action == "restore":
+        if not arglist.increment:
             _restore_timestr = arglist.at
-            _action = "restore"
+        _action = "restore"
     elif arglist.action == "remove":
-        if arglist.entities == "increments":
+        if arglist.entity == "increments":
             _remove_older_than_string = arglist.older_than
             _action = "remove-older-than"
     elif arglist.action == "server":
@@ -383,20 +383,6 @@ def _output_info(version_format="full", exit=False):
                              explicit_start=True, explicit_end=True))
     if exit:
         sys.exit(0)
-
-
-def _final_set_action(rps):
-    """If no action set, decide between backup and restore at this point"""
-    global _action
-    if _action:
-        return
-    if restore_set_root(rps[0]):
-        _action = "restore"
-    else:
-        _action = "backup"
-    if len(rps) != 2:
-        Log.FatalError("Action {act} requires two paths.".format(
-            act=_action))
 
 
 def _commandline_error(message):
