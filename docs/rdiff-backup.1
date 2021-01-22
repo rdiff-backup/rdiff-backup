@@ -3,9 +3,9 @@
 rdiff-backup \- local/remote mirror and incremental backup
 .SH SYNOPSIS
 .B rdiff-backup
-.BI [ options ]
-.BI [[[ user@ ] host1.foo ]:: source_directory ]
-.BI [[[ user@ ] host2.foo ]:: destination_directory ]
+.BI [ options... ]
+.BI [[ user@ ] host1.foo:: ] source_directory
+.BI [[ user@ ] host2.foo:: ] destination_directory
 
 .B rdiff-backup
 .B {{ \-l | \-\-list-increments }
@@ -15,14 +15,14 @@ rdiff-backup \- local/remote mirror and incremental backup
 .B "| \-\-list-increment-sizes "
 .B "| \-\-verify"
 .BI "| \-\-verify-at-time " time }
-.BI [[[ user@ ] host2.foo ]:: destination_directory ]
+.BI [[ user@ ] host2.foo:: ] destination_directory
 
 .B rdiff-backup \-\-calculate-average
 .I statfile1 statfile2 ...
 
 .B rdiff-backup \-\-test-server
-.BI [ user1 ] @host1.net1 :: path
-.BI [[ user2 ] @host2.net2 :: path ]
+.BI [ user1@ ] host1.net1::path
+.BI [[ user2@ ] host2.net2::path ]
 .I ...
 
 .SH DESCRIPTION
