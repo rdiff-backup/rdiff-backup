@@ -725,8 +725,15 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
     split into an action and a sub-option.
     """
 
+    DEPRECATION_MESSAGE = (
+        "CAUTION: this command line interface is deprecated and will "
+        "disappear, start using the new one as described with '--new --help'."
+    )
+
     parser = argparse.ArgumentParser(
-        description="local/remote mirror and incremental backup",
+        description="local/remote mirror and incremental backup "
+                    "(deprecated interface)",
+        epilog=DEPRECATION_MESSAGE,
         parents=parent_parsers
     )
 
@@ -813,6 +820,8 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
 
     _make_values_like_new_compat200(values)
     _validate_number_locations_compat200(values, parser)
+
+    sys.stderr.write(DEPRECATION_MESSAGE + "\n")
 
     return values
 
