@@ -283,7 +283,7 @@ class HalfRoot(BaseRootTest):
         outrp = rpath.RPath(Globals.local_connection, abs_output_dir)
         re_init_rpath_dir(outrp, userid)
         remote_schema = b'su -c "%s --server" %s' % (RBBin, user.encode())
-        cmd_schema = (RBBin + b" --current-time %i --remote-schema '%%s' %b '%b'::%b")
+        cmd_schema = (RBBin + b" --current-time %i --remote-schema '{h}' %b '%b'::%b")
 
         cmd1 = cmd_schema % (10000, in_rp1.path, remote_schema, outrp.path)
         self._run_cmd(cmd1)
@@ -296,7 +296,7 @@ class HalfRoot(BaseRootTest):
         outrp.setdata()
 
         rout_rp = rpath.RPath(Globals.local_connection, abs_restore_dir)
-        restore_schema = (RBBin + b" -r %b --remote-schema '%%s' '%b'::%b %b")
+        restore_schema = (RBBin + b" -r %b --remote-schema '{h}' '%b'::%b %b")
         Myrm(rout_rp.path)
         cmd3 = restore_schema % (b'10000', remote_schema, outrp.path,
                                  rout_rp.path)

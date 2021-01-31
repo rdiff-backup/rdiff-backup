@@ -71,7 +71,7 @@ class SecurityTest(unittest.TestCase):
         if not current_time:
             current_time = int(time.time())
         # escape the %s of the remote schema with double %
-        prefix = (b'%b --current-time %i --remote-schema %%s ' %
+        prefix = (b'%b --current-time %i --remote-schema {h} ' %
                   (RBBin, current_time))
 
         if in_local:
