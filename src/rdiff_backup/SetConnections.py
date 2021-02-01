@@ -213,6 +213,9 @@ def _fill_schema(host_info):
     """
     Fills host_info and optionally the version into the schema and returns remote command.
     """
+    assert isinstance(host_info, bytes), (
+        "host_info parameter must be bytes not {thi}.".format(
+            thi=type(host_info)))
     try:
         # for security reasons, we accept only specific format placeholders
         # h for host_info, vx,vy,vz for version x.y.z

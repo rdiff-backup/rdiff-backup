@@ -4,6 +4,15 @@ We follow the latest flake8 enforced guidelines, but certain aspects of coding
 can't be enforced through automated checks, hence to be followed by humans
 and reviewers. This document lists such coding conventions.
 
+## QUOTING
+
+* the [style guide for Python code (PEP 8)](https://www.python.org/dev/peps/pep-0008/#string-quotes)
+  doesn't recommend single vs. double quotes but states that triple-quoted
+  strings should use double quotes "to be consistent with the docstring
+  convention in [PEP 257](https://www.python.org/dev/peps/pep-0257)".
+* for this reason, we use double quotes everywhere, unless the text contains
+  itself a double quote, in which case single quotes are obviously preferred.
+
 ## PRIVATE AND PUBLIC ITEMS
 
 * we call items any definition of class, function, member, variable, etc...
@@ -53,3 +62,14 @@ and reviewers. This document lists such coding conventions.
 
 > **NOTE:** one of the main driver for the above recommendations is the
 	possibility to translate those strings in the future.
+
+## BYTES VS. STR
+
+* Paths and commands are expressed in bytes to avoid issues with cross-platform
+  encoding conversion, any function manipulating such things must return bytes.
+* Only methods creating a Path/Command object (`__init__` and similar) might
+  accept strings as input and convert them internally to bytes. Other functions
+  must make sure that they don't accept strings as input (this is one of the
+  few reasons to use asserts).
+* Any conversion between strings and bytes happens with `os.fsencode/fsdecode`.
+* Messages are to be expressed in strings (log, errors, etc).
