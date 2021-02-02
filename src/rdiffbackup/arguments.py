@@ -773,9 +773,6 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
         "--compare-full-at-time", type=str, metavar="AT_TIME",
         help="[act=] compare full at given time")
     action_group.add_argument(
-        "--info", action="store_const", const="info",
-        help="[act] output information e.g. for bug reports")
-    action_group.add_argument(
         "--list-at-time", type=str, metavar="AT_TIME",
         help="[act=] list files and directories at given time")
     action_group.add_argument(

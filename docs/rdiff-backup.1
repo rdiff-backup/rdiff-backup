@@ -73,11 +73,7 @@ using the
 parameter.
 .TP
 .BI "\-\-api-version " api
-Sets the API version to the given integer between minimum and maximum versions
-as given by the
-.B \-\-version
-option, with API above 200, i.e. by calling something like
-.B rdiff-backup \-\-version \-\-api-version 201.
+Sets the API version to the given integer between minimum and maximum versions.
 It is the responsibility of the user to make sure
 that this version is also supported by any server started by this client.
 .TP
@@ -328,13 +324,13 @@ this may happen (with a warning) because the destination does not
 support them or because the relevant user/group names do not exist on
 the destination side.
 .TP
-.B \-\-no-acls
+.BR \-\-acls , " \-\-no-acls"
 No Access Control Lists - disable backup of ACLs
 .TP
-.B \-\-no-carbonfile
+.BR \-\-carbonfile , " \-\-no-carbonfile"
 Disable backup of MacOS X carbonfile information
 .TP
-.B \-\-no-compare-inode
+.BR \-\-compare-inode , " \-\-no-compare-inode"
 This option prevents rdiff-backup from flagging a hardlinked file as changed
 when its device number and/or inode changes.  This option is useful in
 situations where the source filesystem lacks persistent device and/or inode
@@ -345,32 +341,36 @@ would generally have same inode number); and there are filesystems which
 don't even have the same inode numbers from use to use.  Without the
 option rdiff-backup may generate unnecessary numbers of tiny diff files.
 .TP
-.B \-\-no-compression
+.BR \-\-compression , " \-\-no-compression"
 Disable the default gzip compression of most of the .snapshot and .diff
 increment files stored in the rdiff-backup-data directory.  A backup
 volume can contain compressed and uncompressed increments, so using
-this option inconsistently is fine.
+this option inconsistently is fine. Default is to compress.
 .TP
-.B "\-\-no-compression-regexp " regexp
+.BI "\-\-not-compressed-regexp, \-\-no-compression-regexp " regexp
 Do not compress increments based on files whose filenames match
 regexp.  The default includes many common audiovisual and archive
 files, and may be found in Globals.py.
 .TP
-.B \-\-no-eas
+.BR \-\-eas , " \-\-no-eas"
 No Extended Attributes support - disable backup of EAs.
 .TP
-.B \-\-no-file-statistics
+.BR \-\-file-statistics , " \-\-no-file-statistics"
 This will disable writing to the file_statistics file in the
 rdiff-backup-data directory.  rdiff-backup will run slightly quicker
 and take up a bit less space.
 .TP
-.B \-\-no-fsync
+.BR \-\-fsync , " \-\-no-fsync"
 This will disable issuing fsync from rdiff-backup altogether.
 This option is designed to optimize performance on busy backup systems.
 Use with caution. This may render your backup unusable in case of
-filesystem failure.
+filesystem failure. Default is to use fsync.
 .TP
-.BI \-\-no-hard-links
+.BR \-\-no-new , " \-\-new"
+Use the new command line interface (not described in this man-page).
+This will soon be the default behavior.
+.TP
+.BR \-\-hard-links  , " \-\-no-hard-links"
 Don't use hard links on destination side, hard-linked files are copied
 like two different files.  If many hard-linked files are present,
 this option can drastically increase disk usage.
@@ -393,8 +393,8 @@ or
 .B \-\-list-increments
 switches, where the time will be given in seconds since the epoch.
 .TP
-.B \-\-override-chars-to-quote
-If the filesystem to which we are backing up is not case-sensitive, automatic 'quoting' of characters occurs. For example, a file 'Developer.doc' will be converted into ';068eveloper.doc'. To override this behavior, you need to specify this option.
+.BI "\-\-chars-to-quote, \-\-override-chars-to-quote " chars
+If the filesystem to which we are backing up is not case-sensitive, automatic 'quoting' of characters occurs. For example, a file 'Developer.doc' will be converted into ';068eveloper.doc'. To override this behavior, you need to specify this option and list the characters to quote in this way.
 .TP
 .B \-\-preserve-numerical-ids
 If set, rdiff-backup will preserve uids/gids instead of trying to
@@ -402,12 +402,18 @@ preserve unames and gnames.  See the
 .B USERS AND GROUPS
 section for more information.
 .TP
-.B \-\-print-statistics
+.BR \-\-no-print-statistics , " \-\-print-statistics"
 If set, summary statistics will be printed after a successful backup.
 If not set, this information will still be available from the
 session statistics file.  See the
 .B STATISTICS
-section for more information.
+section for more information. Default is to not print statistics.
+.TP
+.BR \-\-resource-forks  , " \-\-no-resource-forks"
+Preserve or not resource forks under MacOS X.
+.TP
+.BI \-\-restore
+Restore the specified increment to the given directory.
 .TP
 .BI "\-r, \-\-restore-as-of " restore_time
 Restore the specified directory as it was as of
@@ -419,9 +425,6 @@ section for more information on the format of
 and see the
 .B RESTORING
 section for more information on restoring.
-.TP
-.BI "\-\-remote-cmd " cmd
-Deprecated. Please use \-\-remote-schema instead
 .TP
 .BI "\-\-remote-schema " schema
 Specify an alternate method of connecting to a remote computer.  This
@@ -466,6 +469,27 @@ today, no trace of that file would remain.  Finally, file selection
 options such as \-\-include and \-\-exclude don't affect
 \-\-remove-older-than.
 .TP
+.BI "\-\-restrict-path " path
+Together with
+.B \-\-restrict-mode
+this option is a new alternative to using the now deprecated
+.B \-\-restrict
+,
+.B \-\-restrict-read-only
+or
+.B \-\-restrict-update-only
+options. It gives the path to which operations are to be restricted.
+.TP
+.BI "\-\-restrict-mode " mode
+Defines the mode in which the path given by
+.B \-\-restrict-path
+shall be restricted: either
+.I read-write
+(the default),
+.I read-only
+or
+.IR update-only .
+.TP
 .BI "\-\-restrict " path
 Require that all file access be inside the given path.  This switch,
 and the following two, are intended to be used with the \-\-server
@@ -491,11 +515,11 @@ will be rejected.
 Enter server mode (not to be invoked directly, but instead used by
 another rdiff-backup process on a remote computer).
 .TP
-.B \-\-ssh-no-compression
+.BR \-\-ssh-compression , " \-\-no-ssh-compression" , " \-\-ssh-no-compression"
 When running ssh, do not use the \-C option to enable compression.
-.B \-\-ssh-no-compression
-is ignored if you specify a new schema using
-.B \-\-remote-schema.
+This option is ignored if you specify a new schema using
+.BR \-\-remote-schema .
+The default is to use SSH compression.
 .TP
 .BI "\-\-tempdir " path
 Sets the directory that rdiff-backup uses for temporary files to
@@ -557,7 +581,9 @@ the
 .B \-r
 or
 .B \-\-restore-as-of
-options.  Secondly, you can run it on an increment file.
+options.  Secondly, you can run it on an increment file with the
+.B \-\-restore
+option.
 .PP
 For example, suppose in the past you have run:
 .PP
@@ -601,7 +627,7 @@ these may be gzip-compressed, and have an extra ".gz" to indicate
 this).  Then running:
 .PP
 .RS
-rdiff-backup /backup/rdiff-backup-data/increments/usr/local.<time>.dir /usr/local.old
+rdiff-backup \-\-restore /backup/rdiff-backup-data/increments/usr/local.<time>.dir /usr/local.old
 .PP
 .RE
 would also restore the file as desired.
@@ -723,24 +749,20 @@ have no special significance.)
 The file selection system comprises a number of file
 selection conditions, which are set using one of the following command
 line options:
-.BR \-\-exclude ,
-.BR \-\-exclude-filelist ,
-.BR \-\-exclude-device-files ,
-.BR \-\-exclude-fifos ,
-.BR \-\-exclude-sockets ,
-.BR \-\-exclude-symbolic-links ,
-.BR \-\-exclude-globbing-filelist ,
-.BR \-\-exclude-globbing-filelist-stdin ,
-.BR \-\-exclude-filelist-stdin ,
-.BR \-\-exclude-regexp ,
-.BR \-\-exclude-special-files ,
-.BR \-\-include ,
-.BR \-\-include-filelist ,
-.BR \-\-include-globbing-filelist ,
-.BR \-\-include-globbing-filelist-stdin ,
-.BR \-\-include-filelist-stdin ,
-and
-.BR \-\-include-regexp .
+.BR \-\-exclude GLOB , \-\-include GLOB ,
+.BR \-\-exclude-device-files , \-\-include-device-files ,
+.BR \-\-exclude-fifos , \-\-include-fifos ,
+.BR \-\-exclude-filelist LIST_FILE , \-\-include-filelist LIST_FILE ,
+.BR \-\-exclude-filelist-stdin , \-\-include-filelist-stdin ,
+.BR \-\-exclude-symbolic-links , \-\-include-symbolic-links ,
+.BR \-\-exclude-sockets , \-\-include-sockets ,
+.BR \-\-exclude-globbing-filelist GLOBS_FILE , \-\-include-globbing-filelist GLOBS_FILE ,
+.BR \-\-exclude-globbing-filelist-stdin , \-\-include-globbing-filelist-stdin ,
+.BR \-\-exclude-other-filesystems , \-\-include-other-filesystems ,
+.BR \-\-exclude-regexp REGEXP , \-\-include-regexp REGEXP ,
+.BR \-\-exclude-if-present FILENAME , \-\-include-if-present FILENAME ,
+.BR \-\-exclude-special-files , \-\-include-special-files .
+
 Each file selection condition either matches or doesn't match a given
 file.  A given file is excluded by the file selection system exactly
 when the first matching file selection condition specifies that the
