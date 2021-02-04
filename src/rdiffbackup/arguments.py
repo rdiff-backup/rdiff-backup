@@ -212,7 +212,7 @@ COMMON_PARSER.add_argument(
     help="[opt] verbosity on the terminal, default given by --verbosity")
 COMMON_PARSER.add_argument(
     "--use-compatible-timestamps", action="store_true",
-    help="[sub] use hyphen '-' instead of colon ':' to represent time")
+    help="[opt] use hyphen '-' instead of colon ':' to represent time")
 COMMON_PARSER.add_argument(
     "-v", "--verbosity", type=int, choices=range(0, 10), default=3,
     help="[opt] overall verbosity on terminal and in logfiles (default is 3)")
