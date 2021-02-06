@@ -5,7 +5,6 @@ restore.
 '''
 
 import importlib
-import os
 import pkgutil
 
 import rdiffbackup.actions
@@ -38,6 +37,14 @@ def get_discovered_actions():
         in discovered_action_plugins.values()
     }
     return actions
+
+
+def get_generic_parsers():
+    return rdiffbackup.actions.GENERIC_PARSERS
+
+
+def get_parent_parsers():
+    return rdiffbackup.actions.PARENT_PARSERS
 
 
 def _iter_namespace(nsp):
