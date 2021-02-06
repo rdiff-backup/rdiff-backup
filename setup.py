@@ -177,7 +177,7 @@ setup(
     download_url="https://github.com/rdiff-backup/rdiff-backup/releases",
     python_requires='~=3.6',
     platforms=['linux', 'win32'],
-    packages=["rdiff_backup"],
+    packages=["rdiff_backup", "rdiffbackup"],
     package_dir={"": "src"},  # tell distutils packages are under src
     ext_modules=[
         Extension("rdiff_backup.C", ["src/cmodule.c"]),

@@ -18,13 +18,12 @@
 # 02110-1301, USA
 """Start (and end) here - read arguments, set global settings, etc."""
 
-import getopt
-import sys
-import os
+import errno
 import io
+import os
+import sys
 import tempfile
 import time
-import errno
 import yaml
 from .log import Log, LoggerError, ErrorLog
 from . import (
@@ -32,6 +31,7 @@ from . import (
     manage, backup, connection, restore, FilenameMapping,
     Security, C, statistics, compare
 )
+from rdiffbackup import arguments
 
 _action = None
 _create_full_path = None
@@ -52,8 +52,14 @@ _remove_older_than_string = None
 
 def error_check_Main(arglist):
     """Run Main on arglist, suppressing stack trace for routine errors"""
+    parsed_args = arguments.parse(
+        arglist, "rdiff-backup {ver}".format(ver=Globals.version),
+        arguments.PARENT_PARSERS, arguments.BaseAction.get_actions())
+    _parse_cmdlineoptions_compat200(parsed_args)
+    if parsed_args.action == "info":
+        _output_info(exit=True)
     try:
-        _Main(arglist)
+        _Main(parsed_args)
     except SystemExit:
         raise
     except (Exception, KeyboardInterrupt) as exc:
@@ -196,8 +202,6 @@ def restore_set_root(rpin):
 
 def _Main(arglist):
     """Start everything up!"""
-    _parse_cmdlineoptions(arglist)
-    _check_action()
     cmdpairs = SetConnections.get_cmd_pairs(_args, _remote_schema, _remote_cmd)
     Security.initialize(_action or "mirror", cmdpairs)
     rps = list(map(SetConnections.cmdpair2rp, cmdpairs))
@@ -208,7 +212,6 @@ def _Main(arglist):
         _cleanup()
         sys.exit(1)
 
-    _final_set_action(rps)
     _misc_setup(rps)
     return_val = _take_action(rps)
     _cleanup()
@@ -218,8 +221,11 @@ def _Main(arglist):
         sys.exit(0)
 
 
-def _parse_cmdlineoptions(arglist):  # noqa: C901
-    """Parse argument list and set global preferences"""
+def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
+    """
+    Parse argument list and set global preferences, compatibility function
+    between old and new way of parsing parameters.
+    """
     global _args, _action, _create_full_path, _force, _restore_timestr
     global _remote_cmd, _remote_schema, _remove_older_than_string
     global _user_mapping_filename, _group_mapping_filename, \
@@ -227,6 +233,8 @@ def _parse_cmdlineoptions(arglist):  # noqa: C901
 
     def sel_fl(filename):
         """Helper function for including/excluding filelists below"""
+        if filename is True:  # we really mean the boolean True
+            return sys.stdin.buffer
         try:
             return open(filename, "rb")  # files match paths hence bytes/bin
         except IOError:
@@ -236,267 +244,144 @@ def _parse_cmdlineoptions(arglist):  # noqa: C901
         """Used below to normalize the security paths before setting"""
         return rpath.RPath(Globals.local_connection, path).normalize().path
 
-    try:
-        optlist, _args = getopt.getopt(arglist, "blr:sv:V", [
-            "allow-duplicate-timestamps",
-            "backup-mode", "calculate-average", "carbonfile",
-            "check-destination-dir", "compare", "compare-at-time=",
-            "compare-hash", "compare-hash-at-time=", "compare-full",
-            "compare-full-at-time=", "create-full-path", "current-time=",
-            "exclude=", "exclude-device-files", "exclude-fifos",
-            "exclude-filelist=", "exclude-symbolic-links", "exclude-sockets",
-            "exclude-filelist-stdin", "exclude-globbing-filelist=",
-            "exclude-globbing-filelist-stdin", "exclude-mirror=",
-            "exclude-other-filesystems", "exclude-regexp=",
-            "exclude-if-present=", "exclude-special-files", "force",
-            "group-mapping-file=", "include=", "include-filelist=",
-            "include-filelist-stdin", "include-globbing-filelist=",
-            "include-globbing-filelist-stdin", "include-regexp=",
-            "include-special-files", "include-symbolic-links", "list-at-time=",
-            "list-changed-since=", "list-increments", "list-increment-sizes",
-            "never-drop-acls", "max-file-size=", "min-file-size=", "no-acls",
-            "no-carbonfile", "no-compare-inode", "no-compression",
-            "no-compression-regexp=", "no-eas", "no-file-statistics",
-            "no-hard-links", "null-separator", "override-chars-to-quote=",
-            "parsable-output", "preserve-numerical-ids", "print-statistics",
-            "remote-cmd=", "remote-schema=", "remote-tempdir=",
-            "remove-older-than=", "restore-as-of=", "restrict=",
-            "restrict-read-only=", "restrict-update-only=", "server",
-            "ssh-no-compression", "tempdir=", "terminal-verbosity=",
-            "test-server", "use-compatible-timestamps", "user-mapping-file=",
-            "verbosity=", "verify", "verify-at-time=", "version", "no-fsync",
-            "api-version="
-        ])
-    except getopt.error as e:
-        _commandline_error("Bad commandline options: " + str(e))
-
-    for opt, arg in optlist:
-        if opt == "-b" or opt == "--backup-mode":
-            _action = "backup"
-        elif opt == "--calculate-average":
-            _action = "calculate-average"
-        elif opt == "--carbonfile":
-            Globals.set("carbonfile_active", 1)
-        elif opt == "--check-destination-dir":
-            _action = "check-destination-dir"
-        elif opt in ("--compare", "--compare-at-time", "--compare-hash",
-                     "--compare-hash-at-time", "--compare-full",
-                     "--compare-full-at-time"):
-            if opt[-8:] == "-at-time":
-                _restore_timestr, opt = arg, opt[:-8]
+    if arglist.action == "calculate":
+        _action = arglist.action + "-" + arglist.method
+    elif arglist.action == "compare":
+        _action = arglist.action
+        if arglist.method != "meta":
+            _action += "-" + arglist.method
+        _restore_timestr = arglist.at
+    elif arglist.action == "regress":
+        _action = "check-destination-dir"
+        Globals.set("allow_duplicate_timestamps",
+                    arglist.allow_duplicate_timestamps)
+    elif arglist.action == "list":
+        if arglist.entity == "files":
+            if arglist.changed_since:
+                _restore_timestr = arglist.changed_since
+                _action = "list-changed-since"
             else:
-                _restore_timestr = "now"
-            _action = opt[2:]
-        elif opt == "--create-full-path":
-            _create_full_path = 1
-        elif opt == "--current-time":
-            Globals.set_integer('current_time', arg)
-        elif (opt == "--exclude" or opt == "--exclude-device-files"
-              or opt == "--exclude-fifos"
-              or opt == "--exclude-other-filesystems"
-              or opt == "--exclude-regexp" or opt == "--exclude-if-present"
-              or opt == "--exclude-special-files" or opt == "--exclude-sockets"
-              or opt == "--exclude-symbolic-links"):
-            _select_opts.append((opt, arg))
-        elif opt == "--exclude-filelist":
-            _select_opts.append((opt, arg))
-            _select_files.append(sel_fl(arg))
-        elif opt == "--exclude-filelist-stdin":
-            _select_opts.append(("--exclude-filelist", "standard input"))
-            _select_files.append(sys.stdin.buffer)
-        elif opt == "--exclude-globbing-filelist":
-            _select_opts.append((opt, arg))
-            _select_files.append(sel_fl(arg))
-        elif opt == "--exclude-globbing-filelist-stdin":
-            _select_opts.append(("--exclude-globbing-filelist",
-                                "standard input"))
-            _select_files.append(sys.stdin.buffer)
-        elif opt == "--force":
-            _force = 1
-        elif opt == "--group-mapping-file":
-            _group_mapping_filename = os.fsencode(arg)
-        elif (opt == "--include" or opt == "--include-special-files"
-              or opt == "--include-symbolic-links"):
-            _select_opts.append((opt, arg))
-        elif opt == "--include-filelist":
-            _select_opts.append((opt, arg))
-            _select_files.append(sel_fl(arg))
-        elif opt == "--include-filelist-stdin":
-            _select_opts.append(("--include-filelist", "standard input"))
-            _select_files.append(sys.stdin.buffer)
-        elif opt == "--include-globbing-filelist":
-            _select_opts.append((opt, arg))
-            _select_files.append(sel_fl(arg))
-        elif opt == "--include-globbing-filelist-stdin":
-            _select_opts.append(("--include-globbing-filelist",
-                                "standard input"))
-            _select_files.append(sys.stdin.buffer)
-        elif opt == "--include-regexp":
-            _select_opts.append((opt, arg))
-        elif opt == "--list-at-time":
-            _restore_timestr, _action = arg, "list-at-time"
-        elif opt == "--list-changed-since":
-            _restore_timestr, _action = arg, "list-changed-since"
-        elif opt == "-l" or opt == "--list-increments":
-            _action = "list-increments"
-        elif opt == '--list-increment-sizes':
-            _action = 'list-increment-sizes'
-        elif opt == "--max-file-size":
-            _select_opts.append((opt, arg))
-        elif opt == "--min-file-size":
-            _select_opts.append((opt, arg))
-        elif opt == "--never-drop-acls":
-            Globals.set("never_drop_acls", 1)
-        elif opt == "--no-acls":
-            Globals.set("acls_active", 0)
-            Globals.set("win_acls_active", 0)
-        elif opt == "--no-carbonfile":
-            Globals.set("carbonfile_active", 0)
-        elif opt == "--no-compare-inode":
-            Globals.set("compare_inode", 0)
-        elif opt == "--no-compression":
-            Globals.set("compression", None)
-        elif opt == "--no-compression-regexp":
-            Globals.set("no_compression_regexp_string", os.fsencode(arg))
-        elif opt == "--no-eas":
-            Globals.set("eas_active", 0)
-        elif opt == "--no-file-statistics":
-            Globals.set('file_statistics', 0)
-        elif opt == "--no-hard-links":
-            Globals.set('preserve_hardlinks', 0)
-        elif opt == "--null-separator":
-            Globals.set("null_separator", 1)
-        elif opt == "--override-chars-to-quote":
-            Globals.set('chars_to_quote', os.fsencode(arg))
-        elif opt == "--parsable-output":
-            Globals.set('parsable_output', 1)
-        elif opt == "--preserve-numerical-ids":
-            _preserve_numerical_ids = 1
-        elif opt == "--print-statistics":
-            Globals.set('print_statistics', 1)
-        elif opt == "-r" or opt == "--restore-as-of":
-            _restore_timestr, _action = arg, "restore-as-of"
-        elif opt == "--remote-cmd":
-            _remote_cmd = os.fsencode(arg)
-        elif opt == "--remote-schema":
-            _remote_schema = os.fsencode(arg)
-        elif opt == "--remote-tempdir":
-            Globals.remote_tempdir = os.fsencode(arg)
-        elif opt == "--remove-older-than":
-            _remove_older_than_string = arg
+                _restore_timestr = arglist.at
+                _action = "list-at-time"
+        elif arglist.entity == "increments":
+            if arglist.size:
+                _action = 'list-increment-sizes'
+            else:
+                _action = "list-increments"
+    elif arglist.action == "restore":
+        if not arglist.increment:
+            _restore_timestr = arglist.at
+        _action = "restore"
+    elif arglist.action == "remove":
+        if arglist.entity == "increments":
+            _remove_older_than_string = arglist.older_than
             _action = "remove-older-than"
-        elif opt == "--no-resource-forks":
-            Globals.set('resource_forks_active', 0)
-        elif opt == "--restrict":
-            Globals.restrict_path = normalize_path(arg)
-        elif opt == "--restrict-read-only":
-            Globals.security_level = "read-only"
-            Globals.restrict_path = normalize_path(arg)
-        elif opt == "--restrict-update-only":
-            Globals.security_level = "update-only"
-            Globals.restrict_path = normalize_path(arg)
-        elif opt == "-s" or opt == "--server":
-            _action = "server"
-            Globals.server = 1
-        elif opt == "--ssh-no-compression":
-            Globals.set('ssh_compression', None)
-        elif opt == "--tempdir":
-            if (not os.path.isdir(arg)):
-                Log.FatalError("Temporary directory '%s' doesn't exist." % arg)
-            tempfile.tempdir = os.fsencode(arg)
-        elif opt == "--terminal-verbosity":
-            Log.setterm_verbosity(arg)
-        elif opt == "--test-server":
+    elif arglist.action == "server":
+        _action = "server"
+        Globals.server = True
+    elif arglist.action == "verify":
+        if arglist.entity == "servers":
             _action = "test-server"
-        elif opt == "--use-compatible-timestamps":
-            Globals.set("use_compatible_timestamps", 1)
-        elif opt == "--allow-duplicate-timestamps":
-            Globals.set("allow_duplicate_timestamps", True)
-        elif opt == "--user-mapping-file":
-            _user_mapping_filename = os.fsencode(arg)
-        elif opt == "-v" or opt == "--verbosity":
-            Log.setverbosity(arg)
-        elif opt == "--verify":
-            _action, _restore_timestr = "verify", "now"
-        elif opt == "--verify-at-time":
-            _action, _restore_timestr = "verify", arg
-        elif opt == "-V" or opt == "--version":
-            _action = "version"
-            version_format = "legacy"
-        elif opt == "--api-version":
-            Globals.set_api_version(arg)
-        elif opt == "--no-fsync":
-            Globals.do_fsync = False
-        else:
-            Log.FatalError("Unknown option %s" % opt)
-    if _action == "version":
-        _output_version(version_format=version_format, exit=True)
+        elif arglist.entity == "files":
+            _action = "verify"
+            _restore_timestr = arglist.at
     else:
-        _output_version(version_format="log")
+        _action = arglist.action
 
-
-def _output_version(version_format, exit=False):
-    """Output either the 'legacy' version string with 'rdiff-backup <version>'
-    or all the runtime information provided as YAML structure, either on
-    one line for the 'log' format or properly for the 'full' format,
-    implictly used when the API version is more than 200."""
-
-    if version_format == "legacy" and Globals.get_api_version() == 200:
-        print("rdiff-backup " + Globals.version)
+    if arglist.action in ('backup', 'restore'):
+        Globals.set("acls_active", arglist.acls)
+        Globals.set("win_acls_active", arglist.acls)
+        Globals.set("carbonfile_active", arglist.carbonfile)
+        Globals.set("compare_inode", arglist.compare_inode)
+        Globals.set("eas_active", arglist.eas)
+        Globals.set("preserve_hardlinks", arglist.hard_links)
+        Globals.set("resource_forks_active", arglist.resource_forks)
+        Globals.set("never_drop_acls", arglist.never_drop_acls)
+        _create_full_path = arglist.create_full_path
+    if arglist.action in ('backup', 'regress', 'restore'):
+        Globals.set("compression", arglist.compression)
+        Globals.set("no_compression_regexp_string",
+                    os.fsencode(arglist.not_compressed_regexp))
+        _preserve_numerical_ids = arglist.preserve_numerical_ids
+        if arglist.group_mapping_file is not None:
+            _group_mapping_filename = os.fsencode(arglist.group_mapping_file)
+        if arglist.user_mapping_file is not None:
+            _user_mapping_filename = os.fsencode(arglist.user_mapping_file)
     else:
-        runtime_info = Globals.get_runtime_info()
-        if version_format == "log":
-            # make sure the YAML output is on one line for logging
-            Log("Runtime information: " + " ".join(yaml.safe_dump(
-                runtime_info, default_flow_style=True).split("\n")), 4)
+        Globals.set("no_compression_regexp_string",
+                    os.fsencode(arguments.DEFAULT_NOT_COMPRESSED_REGEXP))
+    if arglist.action in ('backup'):
+        Globals.set("file_statistics", arglist.file_statistics)
+        Globals.set("print_statistics", arglist.print_statistics)
+    Globals.set("null_separator", arglist.null_separator)
+    Globals.set("parsable_output", arglist.parsable_output)
+    Globals.set("ssh_compression", arglist.ssh_compression)
+    Globals.set("use_compatible_timestamps", arglist.use_compatible_timestamps)
+    Globals.set("do_fsync", arglist.fsync)
+    if arglist.current_time is not None:
+        Globals.set_integer('current_time', arglist.current_time)
+    if arglist.chars_to_quote is not None:
+        Globals.set('chars_to_quote', os.fsencode(arglist.chars_to_quote))
+    if arglist.remote_tempdir is not None:
+        Globals.remote_tempdir = os.fsencode(arglist.remote_tempdir)
+    if arglist.restrict_path is not None:
+        Globals.restrict_path = normalize_path(arglist.restrict_path)
+        if arglist.restrict_mode == "read-write":
+            Globals.security_level = "all"
         else:
-            print(yaml.safe_dump(runtime_info,
-                                 explicit_start=True, explicit_end=True))
+            Globals.security_level = arglist.restrict_mode
+    if arglist.api_version is not None:  # FIXME
+        Globals.set_api_version(arglist.api_version)
+    _force = arglist.force
+    if arglist.remote_schema is not None:
+        _remote_schema = os.fsencode(arglist.remote_schema)
+    if arglist.terminal_verbosity is not None:
+        Log.setterm_verbosity(arglist.terminal_verbosity)
+    Log.setverbosity(arglist.verbosity)
+    if arglist.tempdir is not None:
+        if not os.path.isdir(arglist.tempdir):
+            Log.FatalError(
+                "Temporary directory '{dir}' doesn't exist.".format(
+                    dir=arglist.tempdir))
+        tempfile.tempdir = os.fsencode(arglist.tempdir)
+
+    # handle selection options
+    if (arglist.action in ('backup', 'compare', 'restore')
+            and arglist.selections):
+        for selection in arglist.selections:
+            if 'filelist' in selection[0]:
+                if selection[0].endswith("-stdin"):
+                    _select_opts.append((
+                        "--" + selection[0][:-6],  # remove '-stdin'
+                        "standard input"))
+                else:
+                    _select_opts.append(("--" + selection[0], selection[1]))
+                _select_files.append(sel_fl(selection[1]))
+            else:
+                _select_opts.append(("--" + selection[0], selection[1]))
+
+    if arglist.action in ('info', 'server'):
+        _args = []
+    else:
+        _args = arglist.locations
+
+
+def _output_info(version_format="full", exit=False):
+    """
+    Output all the runtime information provided as YAML structure, either on
+    one line for the 'log' format or properly for the 'full' format.
+    """
+
+    runtime_info = Globals.get_runtime_info()
+    if version_format == "log":
+        # make sure the YAML output is on one line for logging
+        Log("Runtime information: " + " ".join(yaml.safe_dump(
+            runtime_info, default_flow_style=True).split("\n")), 4)
+    else:
+        print(yaml.safe_dump(runtime_info,
+                             explicit_start=True, explicit_end=True))
     if exit:
         sys.exit(0)
-
-
-def _check_action():
-    """Check to make sure _action is compatible with _args"""
-    global _action
-    arg_action_dict = {
-        0: ['server'],
-        1: [
-            'list-increments', 'list-increment-sizes', 'remove-older-than',
-            'list-at-time', 'list-changed-since', 'check-destination-dir',
-            'verify'
-        ],
-        2: [
-            'backup', 'restore', 'restore-as-of', 'compare', 'compare-hash',
-            'compare-full'
-        ]
-    }
-    args_len = len(_args)
-    if args_len == 0 and _action not in arg_action_dict[args_len]:
-        _commandline_error("No arguments given")
-    elif not _action:
-        if args_len == 2:
-            pass  # Will determine restore or backup later
-        else:
-            _commandline_error("Switches missing or wrong number of arguments")
-    elif _action == 'test-server' or _action == 'calculate-average':
-        pass  # these two take any number of args
-    elif args_len > 2 or _action not in arg_action_dict[args_len]:
-        _commandline_error("Wrong number of arguments given.")
-
-
-def _final_set_action(rps):
-    """If no action set, decide between backup and restore at this point"""
-    global _action
-    if _action:
-        return
-    if restore_set_root(rps[0]):
-        _action = "restore"
-    else:
-        _action = "backup"
-    if len(rps) != 2:
-        Log.FatalError("Action {act} requires two paths.".format(
-            act=_action))
 
 
 def _commandline_error(message):
@@ -565,9 +450,7 @@ def _take_action(rps):
     elif _action == "remove-older-than":
         action_result = _action_remove_older_than(rps[0])
     elif _action == "restore":
-        action_result = _action_restore(*rps)
-    elif _action == "restore-as-of":
-        action_result = _action_restore(rps[0], rps[1], 1)
+        action_result = _action_restore(rps[0], rps[1])
     elif _action == "verify":
         action_result = _action_verify(rps[0])
     else:
@@ -798,13 +681,21 @@ by running two backups in less than a second.  Wait a second and try again.""")
         _incdir.mkdir()
 
 
-def _action_restore(src_rp, dest_rp, restore_as_of=None):
+def _action_restore(src_rp, dest_rp):
     """Main restoring function
 
     Here src_rp should be the source file (either an increment or
     mirror file), dest_rp should be the target rp to be written.
 
     """
+    if src_rp.isincfile():
+        if _restore_timestr and _restore_timestr != "now":
+            Log.FatalError("You can't give an increment and a time to restore at the same time.")
+        else:
+            restore_as_of = False
+    else:
+        restore_as_of = True
+
     if not _restore_root_set and not restore_set_root(src_rp):
         Log.FatalError("Could not find rdiff-backup repository at %s" %
                        src_rp.get_safepath())
@@ -897,9 +788,9 @@ def _restore_start_log(rpin, target, time):
         Log.log_to_file(log_message)
 
 
-def _restore_check_paths(rpin, rpout, restoreasof=None):
+def _restore_check_paths(rpin, rpout, restore_as_of=None):
     """Make sure source and destination exist, and have appropriate type"""
-    if not restoreasof:
+    if not restore_as_of:
         if not rpin.lstat():
             Log.FatalError(
                 "Source file %s does not exist" % rpin.get_safepath())

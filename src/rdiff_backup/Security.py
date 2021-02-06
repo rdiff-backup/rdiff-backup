@@ -288,7 +288,9 @@ def _vet_rpath(rp, request, arglist):
 def _raise_violation(reason, request, arglist):
     """Raise a security violation about given request"""
     raise Violation(
-        "\nWARNING: Security Violation!\n"
-        "%s for function: %s\n"
-        "with arguments: %s\n" % (reason, request.function_string,
-                                  list(map(str, arglist))))
+        "\nWARNING: Security Violation {sv} for function: {func}"
+        "\nwith arguments: {args}"
+        "\nCompared to {path} restricted {level}.\n".format(
+            sv=reason, func=request.function_string,
+            args=list(map(str, arglist)),
+            path=Globals.restrict_path, level=Globals.security_level))

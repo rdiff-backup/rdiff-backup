@@ -85,6 +85,9 @@ def my_interface_function(param1, param2, ...)
 	performance impact). Important is that it remains easy to detect and
 	parse automatically to simplify future evolutions.
 
+Functions created in order to guarantee compatibility with an older API version
+are to be named `_compatNNN`, e.g. `_compat200`, so that it is clear that they
+can be removed once the API version isn't supported any more.
 
 ## Rules and conventions
 

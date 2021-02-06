@@ -223,12 +223,9 @@ compression = 1
 
 # Increments based on files whose names match this
 # case-insensitive regular expression won't be compressed (applies
-# to .snapshots and .diffs).  The second below will be the
-# compiled version of the first.
-no_compression_regexp_string = (
-    b"(?i).*\\.(gz|z|bz|bz2|tgz|zip|zst|rpm|deb|"
-    b"jpg|jpeg|gif|png|jp2|mp3|mp4|ogg|ogv|oga|ogm|avi|wmv|mpeg|mpg|rm|mov|mkv|flac|shn|pgp|"
-    b"gpg|rz|lz4|lzh|lzo|zoo|lharc|rar|arj|asc|vob|mdf|tzst|webm)$")
+# to .snapshots and .diffs).
+# The regexp is the compiled version of the argument provided by
+# --no-compression-regexp (or its default value)
 no_compression_regexp = None
 
 # If true, filelists and directory statistics will be split on
@@ -403,6 +400,7 @@ def postset_regexp(name, re_string, flags=None):
 # @API(postset_regexp_local, 200)
 def postset_regexp_local(name, re_string, flags):
     """Set name to compiled re_string locally"""
+    re_string = os.fsencode(re_string)
     if flags:
         globals()[name] = re.compile(re_string, flags)
     else:
