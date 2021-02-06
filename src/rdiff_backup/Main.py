@@ -54,7 +54,8 @@ def error_check_Main(arglist):
     """Run Main on arglist, suppressing stack trace for routine errors"""
     parsed_args = arguments.parse(
         arglist, "rdiff-backup {ver}".format(ver=Globals.version),
-        actions_mgr.get_generic_parsers(), actions_mgr.get_parent_parsers(),
+        actions_mgr.get_generic_parsers(),
+        actions_mgr.get_parent_parsers_compat200(),
         actions_mgr.get_discovered_actions())
     _parse_cmdlineoptions_compat200(parsed_args)
     if parsed_args.action == "info":

@@ -29,13 +29,13 @@ class ArgumentsTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             values = arguments.parse(["--version"], "testing 0.0.1",
                                      actions_mgr.get_generic_parsers(),
-                                     actions_mgr.get_parent_parsers(),
+                                     actions_mgr.get_parent_parsers_compat200(),
                                      disc_actions)
 
         # positive test of the parsing
         values = arguments.parse(["list", "increments", "dummy_test_repo"], "testing 0.0.2",
                                  actions_mgr.get_generic_parsers(),
-                                 actions_mgr.get_parent_parsers(),
+                                 actions_mgr.get_parent_parsers_compat200(),
                                  disc_actions)
         self.assertEqual("list", values.action)
         self.assertEqual("increments", values.entity)
@@ -45,12 +45,12 @@ class ArgumentsTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             values = arguments.parse(["backup", "from", "to", "toomuch"], "testing 0.0.3",
                                      actions_mgr.get_generic_parsers(),
-                                     actions_mgr.get_parent_parsers(),
+                                     actions_mgr.get_parent_parsers_compat200(),
                                      disc_actions)
         with self.assertRaises(SystemExit):
             values = arguments.parse(["restore", "--no-such-thing", "from", "to"], "testing 0.0.4",
                                      actions_mgr.get_generic_parsers(),
-                                     actions_mgr.get_parent_parsers(),
+                                     actions_mgr.get_parent_parsers_compat200(),
                                      disc_actions)
 
 

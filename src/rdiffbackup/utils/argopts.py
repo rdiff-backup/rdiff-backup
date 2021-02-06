@@ -1,3 +1,26 @@
+# Copyright 2021 the rdiff-backup project
+#
+# This file is part of rdiff-backup.
+#
+# rdiff-backup is free software; you can redistribute it and/or modify
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# rdiff-backup is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with rdiff-backup; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA
+
+"""
+Module containing the definition of argparse options actions.
+"""
+
 import argparse
 
 try:
@@ -5,6 +28,10 @@ try:
 except ImportError:
     # the class exists only since Python 3.9
     class BooleanOptionalAction(argparse.Action):
+        """
+        Copy of the standard implementation in argparse,
+        introduced in Python 3.9.
+        """
         def __init__(self,
                      option_strings,
                      dest,
@@ -55,8 +82,8 @@ class SelectAction(argparse.Action):
     by just defining the arguments '--SELECT', '--SELECT-perhaps' and '--max'.
     """
 
-    placeholder = 'SELECT'
-    default_dest = 'selections'
+    placeholder = "SELECT"
+    default_dest = "selections"
 
     def __init__(self, option_strings, dest,
                  type=str, nargs=None, help=None, default=None, **kwargs):
@@ -69,7 +96,7 @@ class SelectAction(argparse.Action):
         # because the argparse framework always sets 'dest',
         # we need to guess if dest was explicitly set, and if not,
         # we can overwrite it with the default value
-        if ('--' + dest.replace('_', '-')) in option_strings:
+        if ("--" + dest.replace("_", "-")) in option_strings:
             dest = self.default_dest
         # we want to make sure that toggles/booleans have a correct value
         if type is bool and nargs is None:
@@ -78,15 +105,15 @@ class SelectAction(argparse.Action):
                 default = True
         # replace placeholder with both include and exclude options
         include_opts = list(map(
-            lambda x: x.replace(self.placeholder, 'include'), option_strings))
+            lambda x: x.replace(self.placeholder, "include"), option_strings))
         exclude_opts = list(map(
-            lambda x: x.replace(self.placeholder, 'exclude'), option_strings))
+            lambda x: x.replace(self.placeholder, "exclude"), option_strings))
         if exclude_opts != include_opts:
             # SELECT was found hence we need to duplicate the options
             # and update accordingly the help text
             option_strings = exclude_opts + include_opts
             if help:
-                help = help.replace(self.placeholder, 'exclude/include')
+                help = help.replace(self.placeholder, "exclude/include")
                 if default is None:
                     help += " (no default)"
                 elif default:
@@ -112,4 +139,4 @@ class SelectAction(argparse.Action):
         if values == [] and self.default is not None:
             values = self.default
         setattr(namespace, self.dest,
-                old_list + [(option_string.replace('--', ''), values)])
+                old_list + [(option_string.replace("--", ""), values)])

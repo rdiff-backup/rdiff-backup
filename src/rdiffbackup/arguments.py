@@ -16,6 +16,7 @@
 # along with rdiff-backup; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA
+
 """
 This module offers mainly a function `parse` to parse command line
 arguments using Python's argparse module and return an
@@ -348,7 +349,7 @@ if __name__ == "__main__":
     disc_actions = actions_mgr.get_discovered_actions()
     values = parse(sys.argv[1:], "british-agent 0.0.7",
                    actions_mgr.get_generic_parsers(),
-                   actions_mgr.get_parent_parsers(),
+                   actions_mgr.get_parent_parsers_compat200(),
                    disc_actions)
     action_object = disc_actions[values.action](values)
     action_object.print_values()
