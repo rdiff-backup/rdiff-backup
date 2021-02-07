@@ -183,8 +183,8 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
         help="[act] start rdiff-backup in server mode")
     action_group.add_argument(
         "--test-server",
-        dest="action", action="store_const", const="test-server",
-        help="[act] test communication to multiple remote servers")
+        dest="action", action="store_const", const="test",
+        help="[act] test communication to one or multiple remote servers")
     action_group.add_argument(
         "--verify", dest="action", action="store_const", const="verify",
         help="[act] verify hash values in backup repo (at time now)")
@@ -247,7 +247,6 @@ def _make_values_like_new_compat200(values):  # noqa C901 "too complex"
             values.increment = False
         elif values.verify_at_time:
             values.action = "verify"
-            values.entity = "files"
             values.at = values.verify_at_time
         # if there is still no action defined, we set the default
         if not values.action:
@@ -280,11 +279,7 @@ def _make_values_like_new_compat200(values):  # noqa C901 "too complex"
         elif values.action == "restore":
             values.increment = True
             values.at = None
-        elif values.action == "test-server":
-            values.action = "verify"
-            values.entity = "servers"
         elif values.action == "verify":
-            values.entity = "files"
             values.at = "now"
 
     # those are a bit critical because they are duplicates between
@@ -323,7 +318,8 @@ def _validate_number_locations_compat200(values, parser):
         "remove": 1,
         "restore": 2,
         "server": 0,
-        "verify": -1,
+        "test": -1,
+        "verify": 1,
     }
 
     locs_len = len(values.locations)
@@ -333,9 +329,6 @@ def _validate_number_locations_compat200(values, parser):
     elif locs_action_lens[values.action] < 0 and -locs_action_lens[values.action] > locs_len:
         parser.error(message="Action {act} requires at least {nr} location(s) instead of {locs}.".format(
             act=values.action, nr=-locs_action_lens[values.action], locs=values.locations))
-    elif values.action == "verify" and values.entity == "files" and locs_len != 1:
-        parser.error(message="Action verify/files requires 1 location instead of {locs}.".format(
-            locs=values.locations))
 
 
 def _add_version_option_to_parser(parser, version_string):

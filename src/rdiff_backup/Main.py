@@ -281,12 +281,11 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
     elif arglist.action == "server":
         _action = "server"
         Globals.server = True
+    elif arglist.action == "test":
+        _action = "test-server"
     elif arglist.action == "verify":
-        if arglist.entity == "servers":
-            _action = "test-server"
-        elif arglist.entity == "files":
-            _action = "verify"
-            _restore_timestr = arglist.at
+        _restore_timestr = arglist.at
+        _action = "verify"
     else:
         _action = arglist.action
 

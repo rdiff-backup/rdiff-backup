@@ -18,33 +18,29 @@
 # 02110-1301, USA
 
 """
-A built-in rdiff-backup action plug-in to verify a repository.
+A built-in rdiff-backup action plug-in to test servers.
 
-This plug-in verifies that files in a repository at a given time
-have the correct hash.
+This plug-in tests that all remote locations are properly reachable and
+usable for a back-up.
 """
 
 from rdiffbackup import actions
 
 
-class VerifyAction(actions.BaseAction):
+class TestAction(actions.BaseAction):
     """
-    Verify that files in a backup repository correspond to their stored hash,
-    or that servers are properly reachable.
+    Test that servers are properly reachable and usable for back-ups.
     """
-    name = "verify"
+    name = "test"
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
-            "--at", metavar="TIME", default="now",
-            help="as of which time to check the files' hashes (default is now/latest)")
-        subparser.add_argument(
-            "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
-            help="location of repository where to check files' hashes")
+            "locations", metavar="[[USER@]SERVER::]PATH", nargs="+",
+            help="location of remote repositories to check for connection")
         return subparser
 
 
 def get_action_class():
-    return VerifyAction
+    return TestAction
