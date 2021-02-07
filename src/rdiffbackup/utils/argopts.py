@@ -18,7 +18,11 @@
 # 02110-1301, USA
 
 """
-Module containing the definition of argparse options actions.
+Definition of custom argparse options actions.
+
+The 'BooleanOptionalAction' is only defined to compensate the fact that
+the argparse module defines it only since Python 3.9.
+Other custom argparse actions are listed below.
 """
 
 import argparse
@@ -29,8 +33,9 @@ except ImportError:
     # the class exists only since Python 3.9
     class BooleanOptionalAction(argparse.Action):
         """
-        Copy of the standard implementation in argparse,
-        introduced in Python 3.9.
+        Copy of the standard implementation in argparse
+
+        Only introduced in Python 3.9, hence required for earlier versions.
         """
         def __init__(self,
                      option_strings,
@@ -74,24 +79,36 @@ except ImportError:
 
 class SelectAction(argparse.Action):
     """
-    argparse Action class which can handle placeholder options, adding them all
-    together under one destination and keeping the same order as the arguments
-    on the command line.
-    e.g. '--exclude value1 --include-perhaps --max 10' is interpreted as
-    selections=[('exclude', value1), ('include-perhaps', True), ('max', 10)]
-    by just defining the arguments '--SELECT', '--SELECT-perhaps' and '--max'.
+    argparse Action class which can handle placeholder selection options
+
+    It adds all options of the type together under one default destination
+    and keeps the same order as the arguments on the command line. E.g.
+
+        --exclude value1 --include-perhaps --max 10
+
+    is interpreted as
+
+        selections=[('exclude', value1), ('include-perhaps', True), ('max', 10)]
+
+    by just defining the arguments '--SELECT', '--SELECT-perhaps' and '--max'
+    with the action 'SelectAction'.
+    In this example, 'SELECT' is the placeholder, and 'selections' the default
+    destination.
     """
 
+    #: placeholder name to be used for creating the different options
     placeholder = "SELECT"
+    #: name of the default namespace key holding the sorted list of options
     default_dest = "selections"
 
     def __init__(self, option_strings, dest,
                  type=str, nargs=None, help=None, default=None, **kwargs):
         """
-        Initialize the placeholder-argument object, making sure that both
-        exclude and include arguments are allowed, that booleans have
-        a meaningful True value, and that all values are by default are
-        gathered under the same 'selections' destination.
+        Initialize the placeholder-argument object
+
+        It makes sure that both exclude and include arguments are allowed,
+        that booleans have a meaningful True value, and that all values are
+        by default gathered under the same 'selections' destination.
         """
         # because the argparse framework always sets 'dest',
         # we need to guess if dest was explicitly set, and if not,
@@ -126,8 +143,9 @@ class SelectAction(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         """
-        append the selection criteria (option_string, values) to the
-        ordered list of selection criteria.
+        Append the selection criteria (option_string, values)
+
+        They are added to the ordered list of selection criteria.
         """
 
         old_list = getattr(namespace, self.dest, [])

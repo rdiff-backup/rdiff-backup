@@ -18,9 +18,10 @@
 # 02110-1301, USA
 
 """
-rdiff-backup Actions Manager - a module to discover and return built-in and
-3rd party plugins for actions (used on the command line), like backup or
-restore.
+rdiff-backup Actions Manager
+
+A module to discover and return built-in and 3rd party plugins for
+actions (used on the command line), like backup or restore.
 """
 
 import importlib
@@ -31,8 +32,10 @@ import rdiffbackup.actions
 
 def get_discovered_actions():
     """
-    Discover all rdiff-backup actions, either from the 'rdiffbackup.actions'
-    spacename, or top-level modules with a name starting with 'rdb_action_'.
+    Discover all rdiff-backup action plug-ins
+
+    They may come either from the 'rdiffbackup.actions' spacename, or
+    top-level modules with a name starting with 'rdb_action_'.
     Returns a dictionary with the name of each Action-class as key, and
     the class returned by get_action_class() as value.
     """
@@ -50,26 +53,28 @@ def get_discovered_actions():
         in _iter_namespace(rdiffbackup.actions)
     })
     # then we create the dictionary of {action_name: ActionClass}
-    actions = {
+    disc_actions = {
         action.get_action_class().get_name(): action.get_action_class()
         for action
         in discovered_action_plugins.values()
     }
-    return actions
+    return disc_actions
 
 
 def get_generic_parsers():
     """
-    Return a list of generic parsers used to parse generic options common
-    to all actions.
+    Return a list of generic parsers
+
+    This list is used to parse generic options common to all actions.
     """
     return rdiffbackup.actions.GENERIC_PARSERS
 
 
 def get_parent_parsers_compat200():
     """
-    Return a list of all parent sub-options used by all actions 
-    to simulate the old command line interface.
+    Return a list of all parent sub-options used by all actions
+
+    This list is solely used to simulate the old command line interface.
     """
     return rdiffbackup.actions.PARENT_PARSERS
 
@@ -77,6 +82,7 @@ def get_parent_parsers_compat200():
 def _iter_namespace(nsp):
     """
     Return an iterator of names of modules found in a specific namespace.
+
     The names are made absolute, with the namespace as prefix, to simplify
     import.
     """

@@ -18,13 +18,13 @@
 # 02110-1301, USA
 
 """
+Command-line arguments parsing module.
+
 This module offers mainly a function `parse` to parse command line
 arguments using Python's argparse module and return an
 argparse.Namespace object with the parsed arguments.
 The main section at the very end of this module offers an example on how
 to use it.
-NOTE: the BaseAction class and derived action classes are here only for
-      now.
 """
 
 import argparse
@@ -35,10 +35,14 @@ import sys
 
 def parse(args, version_string, generic_parsers, parent_parsers, actions_dict=None):
     """
+    Parse the given command-line arguments.
+
     Parses the given arguments, using the version string for --version,
-    parents is a list of parent parsers, where the first one is assumed to
-    be the commone one, sole one required by the new parser.
+    the generic_parsers is a list of argument parsers common to all actions,
+    parent_parsers is a concanated list of all parsers used by all actions
+    so that the compatibility command line can be simulated.
     And actions is a dictionary of the form `{"action_name": ActionClass}`.
+
     Returns an argparse Namespace containing the parsed parameters.
     """
     # we try to recognize if the user wants the old or the new parameters
@@ -60,6 +64,7 @@ def parse(args, version_string, generic_parsers, parent_parsers, actions_dict=No
 def _parse_new(args, version_string, parent_parsers, actions_dict):
     """
     Parse arguments according to new parameters of rdiff-backup, i.e.
+
         rdiff-backup <opt(ions)> <act(ion)> <sub(-options)> <paths>
     """
     parser = argparse.ArgumentParser(
@@ -93,9 +98,12 @@ def _parse_new(args, version_string, parent_parsers, actions_dict):
 def _parse_compat200(args, version_string, parent_parsers=[]):
     """
     Parse arguments according to old parameters of rdiff-backup.
+
     The hint in square brackets at the beginning of the help are in preparation
     for the new way of parsing:
+
         rdiff-backup <opt(ions)> <act(ion)> <sub(-options)> <paths>
+
     Note that actions are mutually exclusive and that '[act=]' will need to be
     split into an action and a sub-option.
     """
@@ -200,6 +208,8 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
 
 def _make_values_like_new_compat200(values):  # noqa C901 "too complex"
     """
+    Return the Namespace values transformed into new model.
+
     A helper function which returns the Namespace values parsed by the old CLI
     as if they had been parsed by the new CLI.
     """
@@ -296,6 +306,8 @@ def _make_values_like_new_compat200(values):  # noqa C901 "too complex"
 
 def _validate_number_locations_compat200(values, parser):
     """
+    Validate the expected number of locations for each action.
+
     Because the traditional argument parsing doesn't allow to validate the
     number of locations for each action, we need to do it ourselves
     """
@@ -328,8 +340,11 @@ def _validate_number_locations_compat200(values, parser):
 
 def _add_version_option_to_parser(parser, version_string):
     """
-    Adds the version option to the given parser, setup with the given
-    version string.
+    Adds the version option to the given parser
+
+    The option is setup with the given version string.
+
+    Returns nothing, the parser is modified "in-place".
     """
 
     parser.add_argument(
