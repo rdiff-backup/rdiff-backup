@@ -262,37 +262,54 @@ class BaseAction:
     # version of the action
     __version__ = "0.0.0"
 
-    # list of parent parsers
+    # list of parent parsers as defined above
     parent_parsers = []
 
     @classmethod
     def get_name(cls):
+        """
+        Return the name of the Action class.
+
+        Children classes only need to define the class member 'name'.
+        """
         return cls.name
 
     @classmethod
     def get_version(cls):
+        """
+        Return the version of the Action class.
+
+        Children classes only need to define the class member '__version__'.
+        """
         return cls.__version__
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
         """
+        Define a parser for the sub-options of the action.
+
         Given a subparsers handle as returned by argparse.add_subparsers,
         creates the subparser corresponding to the current Action class
         (as inherited).
         Most Action classes will need to extend this function with their
-        own subparsers.
+        own subparsers. Though they can use the class member
+        'parent_parsers' to list which parent parsers defined in this module
+        they want to inherit from, so that they only need to add the very
+        specific options to this subparser.
         Returns the computed subparser.
         """
         subparser = sub_handler.add_parser(cls.name,
                                            parents=cls.parent_parsers,
                                            description=cls.__doc__)
-        subparser.set_defaults(action=cls.name)  # TODO cls instead of name!
+        subparser.set_defaults(action=cls.name)
 
         return subparser
 
     @classmethod
     def _get_subparsers(cls, parser, sub_dest, *sub_names):
         """
+        Helper for action plug-ins needing themselves sub-actions.
+
         This method can be used to add 2nd level subparsers to the action
         subparser (named here parser). sub_dest would typically be the name
         of the action, and sub_names are the names for the sub-subparsers.
@@ -329,4 +346,10 @@ class BaseAction:
 
 
 def get_action_class():
+    """
+    Pre-defined function returning the Action class of the current module.
+
+    This function is called by the Actions manager after it has identified
+    a fitting action plug-in module.
+    """
     return BaseAction
