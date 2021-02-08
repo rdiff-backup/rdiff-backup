@@ -47,7 +47,8 @@ The rdiff-backup commands knows four types of parameters
 
 1. generic options valid for all actions,
 2. one action out of **backup**, **calculate**, **compare**, **info**,
-   **list**, **regress**, **remove**, **restore**, **server**, **verify**,
+   **list**, **regress**, **remove**, **restore**, **server**, **test**,
+   **verify**,
 3. sub-options applicable to each action specifically, even though some are
    common to multiple actions,
 4. zero, one, two or more location paths, either local or remote.
@@ -196,26 +197,93 @@ consider that it is deprecated and will disappear.
     and 9 is noisiest). This determines how much is written to the
     log file, and without using **\--terminal-verbosity** to the terminal..
 
+## Actions
+
+backup [[CREATION OPTIONS](#creation)] [[COMPRESSION OPTIONS](#compression)] [[SELECTION OPTIONS](#selection)] [[FILESYSTEM OPTIONS](#filesystem)] [[USER GROUP OPTIONS](#usergroup)] [[STATISTICS OPTIONS](#statistics)] _sourcedir_ _targetdir_
+
+:   back-up a source directory to a target backup repository.
+
+calculate [\--method **average**] _statfile1_ _statfile2_ [...]
+
+:   calculate average across multiple statistics files
+
+    \--method **average**
+
+    :   there is currently only one method and it is the default, but it might
+        change in the future.
+
+compare [[SELECTION OPTIONS](#selection)] [\--method _method_] [\--at _time_] _sourcedir_ _targetdir_
+
+:   Compare a directory with the backup set at the given time. This
+    can be useful to see how archived data differs from current
+    data, or to check that a backup is current.
+
+    \--method _method_
+
+    :   method used to compare can be either **meta**, **full** or **hash**,
+        where the default is **meta**, which is also how rdiff-backup decides
+        which file needs to be backed-up. Note that with **full**, the
+        repository data will be copied in its entirety to the source side and
+        compared byte by byte. This is the slowest but most complete compare
+        method. With **hash** only the SHA1 checksum of regular files will be
+        compared. With **meta** only the metadata of files will be compared
+        (name, size, date, type, etc).
+
+    \--at _time_
+
+    :   at which _time_ of the back-up directory should the comparaison take
+        place. The default is **now**, meaning the latest version.
+
+info
+
+:   outputs information about the current system in YAML format, so that it
+    can be used in a bug report, and exits.
+
+list
+regress
+remove
+restore
+server
+test
+verify
+
+# <a name="compression">COMPRESSION OPTIONS</a>
+# <a name="creation">CREATION OPTIONS</a>
+# <a name="filesystem">FILESYSTEM OPTIONS</a>
+# <a name="selection">SELECTION OPTIONS</a>
+# <a name="statistics">STATISTICS OPTIONS</a>
+# <a name="usergroup">USER GROUP OPTIONS</a>
+
 # FILES
 
-*~/.hellorc*
+*any config file*
 
-:   Per-user default dedication file.
+:   you can create a file with one option/action/sub-option per line and
+    use it on the command line with _\@anyconfigfile_ and its content
+    will be interpreted as if given on the command line.
 
-*/etc/hello.conf*
+    For example, creating a file '`mybackup`' with following content:
 
-:   Global default dedication file.
+        backup
+        source_dir
+        target_dir
+
+    and calling '`rdiff-backup @mybackup`' will be the same as calling
+    '`rdiff-backup backup source_dir target_dir`'.
 
 # ENVIRONMENT
 
-**DEFAULT_HELLO_DEDICATION**
+**RDIFF_BACKUP_VERBOSITY**=_[0-9]_
 
-:   The default dedication if none is given. Has the highest precedence
-    if a dedication is not supplied on the command line.
+:   the default verbosity for log file and terminal, can be
+    overwritten by the corresponding options **-v/\--verbosity** and
+    **\--terminal-verbosity**.
 
 # BUGS
 
-See GitHub Issues: <https://github.com/[owner]/[repo]/issues>
+See GitHub Issues:
+
+:   <https://github.com/rdiff-backup/rdiff-backup/issues>
 
 # SEE ALSO
 
