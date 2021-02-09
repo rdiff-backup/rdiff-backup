@@ -34,8 +34,8 @@ from . import Globals, connection, rpath
 # This is the schema that determines how rdiff-backup will open a
 # pipe to the remote system.  If the file is given as A::B, %s will
 # be substituted with A in the schema.
-__cmd_schema = b'ssh -C %s rdiff-backup --server'
-__cmd_schema_no_compress = b'ssh %s rdiff-backup --server'
+__cmd_schema = b"ssh -C {h} rdiff-backup --server"
+__cmd_schema_no_compress = b"ssh {h} rdiff-backup --server"
 
 # This is a list of remote commands used to start the connections.
 # The first is None because it is the local connection.
@@ -210,11 +210,32 @@ def _parse_file_desc(file_desc):
 
 
 def _fill_schema(host_info):
-    """Fills host_info into the schema and returns remote command"""
+    """
+    Fills host_info and optionally the version into the schema and returns remote command.
+    """
+    assert isinstance(host_info, bytes), (
+        "host_info parameter must be bytes not {thi}.".format(
+            thi=type(host_info)))
     try:
-        return __cmd_schema % host_info
-    except TypeError:
-        Log.FatalError("Invalid remote schema:\n\n%s\n" % _safe_str(__cmd_schema))
+        # for security reasons, we accept only specific format placeholders
+        # h for host_info, vx,vy,vz for version x.y.z
+        # and the host placeholder is mandatory
+        if ((re.findall(b"{[^}]*}", __cmd_schema)
+             != re.findall(b"{h}|{v[xyz]}", __cmd_schema))
+                or (b"{h}" not in __cmd_schema
+                    and b"%s" not in __cmd_schema)):  # compat200
+            raise KeyError
+        if b"{h}" in __cmd_schema:
+            ver_split = Globals.version.split(".")
+            # bytes doesn't have a format method, hence the conversions
+            return os.fsencode(os.fsdecode(__cmd_schema).format(
+                h=os.fsdecode(host_info),
+                vx=ver_split[0], vy=ver_split[1], vz=ver_split[2]))
+        else:  # compat200: accepts "%s" as host place-holder
+            return __cmd_schema % host_info
+    except (TypeError, KeyError):
+        Log.FatalError("Invalid remote schema:\n\n{schema}\n".format(
+            schema=_safe_str(__cmd_schema)))
 
 
 def _init_connection(remote_cmd):

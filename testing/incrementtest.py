@@ -3,6 +3,7 @@ import os
 import re
 from commontest import old_test_dir, abs_output_dir, MakeOutputDir
 from rdiff_backup import Globals, rpath, increment, Time, Rdiff
+from rdiffbackup import arguments
 
 lc = Globals.local_connection
 Globals.change_source_perms = 1
@@ -35,8 +36,8 @@ prevtimestr = b"2001-09-02T02:48:33-07:00"
 t_pref = os.path.join(abs_output_dir, b"out.%s" % prevtimestr)
 t_diff = os.path.join(abs_output_dir, b"out.%s.diff" % prevtimestr)
 
-Globals.no_compression_regexp = \
-    re.compile(Globals.no_compression_regexp_string, re.I)
+Globals.postset_regexp_local("no_compression_regexp",
+                             arguments.DEFAULT_NOT_COMPRESSED_REGEXP, re.I)
 
 
 class inctest(unittest.TestCase):

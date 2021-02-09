@@ -9,6 +9,7 @@ import subprocess
 from rdiff_backup.log import Log
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
     selection, rpath, eas_acls, rorpiter, Security, hash
+from rdiffbackup import arguments
 
 RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
 
@@ -112,7 +113,7 @@ def rdiff_backup(source_local,
 
     cmdargs = [RBBin, extra_options]
     if not (source_local and dest_local):
-        cmdargs.append(b"--remote-schema %s")
+        cmdargs.append(b"--remote-schema {h}")
 
     if current_time:
         cmdargs.append(b"--current-time %i" % current_time)
@@ -129,7 +130,7 @@ def rdiff_backup(source_local,
         # the construct is needed because os.system seemingly doesn't
         # respect expected return values (FIXME)
         assert ((expected_ret_val == 0 and ret_val == 0) or (expected_ret_val > 0 and ret_val > 0)), \
-            "Return code %d of command `%a` isn't expected %d." % \
+            "Return code %d of command `%a` isn't as expected %d." % \
             (ret_val, cmdline, expected_ret_val)
     return ret_val
 
@@ -141,7 +142,7 @@ def _internal_get_cmd_pairs(src_local, dest_local, src_dir, dest_dir):
     Note that the function relies on the global variables
     abs_remote1_dir, abs_remote2_dir and abs_testing_dir."""
 
-    remote_schema = b'%s'
+    remote_schema = b'%s'  # compat200: replace with {h}
     remote_format = b"cd %s; %s/server.py::%s"
 
     if not src_local:
@@ -172,6 +173,8 @@ def InternalBackup(source_local,
     """
     Globals.current_time = current_time
     Globals.security_level = "override"
+    Globals.set("no_compression_regexp_string",
+                os.fsencode(arguments.DEFAULT_NOT_COMPRESSED_REGEXP))
 
     cmdpairs = _internal_get_cmd_pairs(source_local, dest_local,
                                        src_dir, dest_dir)
@@ -223,6 +226,8 @@ def InternalRestore(mirror_local,
     Main._force = 1
     Main._restore_root_set = 0
     Globals.security_level = "override"
+    Globals.set("no_compression_regexp_string",
+                os.fsencode(arguments.DEFAULT_NOT_COMPRESSED_REGEXP))
 
     cmdpairs = _internal_get_cmd_pairs(mirror_local, dest_local,
                                        mirror_dir, dest_dir)
@@ -236,10 +241,11 @@ def InternalRestore(mirror_local,
     Main._misc_setup([mirror_rp, dest_rp])
     inc = get_increment_rp(mirror_rp, time)
     if inc:
+        Main._restore_timestr = None
         Main._action_restore(get_increment_rp(mirror_rp, time), dest_rp)
     else:  # use alternate syntax
         Main._restore_timestr = str(time)
-        Main._action_restore(mirror_rp, dest_rp, restore_as_of=1)
+        Main._action_restore(mirror_rp, dest_rp)
     Main._cleanup()
 
 
@@ -443,6 +449,8 @@ def BackupRestoreSeries(source_local,
 
     """
     Globals.set('preserve_hardlinks', compare_hardlinks)
+    Globals.set("no_compression_regexp_string",
+                os.fsencode(arguments.DEFAULT_NOT_COMPRESSED_REGEXP))
     time = 10000
     dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
     restore_rp = rpath.RPath(Globals.local_connection, restore_dirname)
@@ -503,6 +511,8 @@ def MirrorTest(source_local,
                dest_dirname=abs_output_dir):
     """Mirror each of list_of_dirnames, and compare after each"""
     Globals.set('preserve_hardlinks', compare_hardlinks)
+    Globals.set("no_compression_regexp_string",
+                os.fsencode(arguments.DEFAULT_NOT_COMPRESSED_REGEXP))
     dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
     old_force_val = Main._force
     Main._force = 1
