@@ -239,7 +239,38 @@ info
 :   outputs information about the current system in YAML format, so that it
     can be used in a bug report, and exits.
 
-list
+    The **info** action has no sub-options.
+
+list **files** [**\--changed-since** _time_|**\--at** _time_] _repository_
+
+:   list modified or existing files in a given back-up repository.
+
+    \--changed-since _time_
+
+    :   List the files that have changed in the destination directory
+        since the given time. See TIME FORMATS for the format of time.
+        If a directory in the archive is specified, list only the files
+        under that directory. This option does not read the source di‐
+        rectory; it is used to compare the contents of two different
+        rdiff-backup sessions.
+
+    \--at _time_
+
+    :   List the files in the archive that were present at the given
+        time. If a directory in the archive is specified, list only the
+        files under that directory.
+
+list **increments** [**\--no-size**|**\--size**] _repository_
+
+:   list increments with date in a given back-up repository.
+
+    \--no-size,\--size
+
+    :   Show or not the size of each increment in the repository. The default
+        is to _not_ show sizes. When showing sizes, it becomes allowable to
+        specify a directory within a repository, then only the cumulated
+        sizes of that directory will be shown.
+
 regress
 remove
 restore
@@ -264,12 +295,14 @@ verify
 
     For example, creating a file '`mybackup`' with following content:
 
+	--verbosity
+	9
         backup
         source_dir
         target_dir
 
     and calling '`rdiff-backup @mybackup`' will be the same as calling
-    '`rdiff-backup backup source_dir target_dir`'.
+    '`rdiff-backup --verbosity 9 backup source_dir target_dir`'.
 
 # ENVIRONMENT
 
