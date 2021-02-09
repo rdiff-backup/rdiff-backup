@@ -113,7 +113,7 @@ def rdiff_backup(source_local,
 
     cmdargs = [RBBin, extra_options]
     if not (source_local and dest_local):
-        cmdargs.append(b"--remote-schema %s")
+        cmdargs.append(b"--remote-schema {h}")
 
     if current_time:
         cmdargs.append(b"--current-time %i" % current_time)
@@ -142,7 +142,7 @@ def _internal_get_cmd_pairs(src_local, dest_local, src_dir, dest_dir):
     Note that the function relies on the global variables
     abs_remote1_dir, abs_remote2_dir and abs_testing_dir."""
 
-    remote_schema = b'%s'
+    remote_schema = b'%s'  # compat200: replace with {h}
     remote_format = b"cd %s; %s/server.py::%s"
 
     if not src_local:
