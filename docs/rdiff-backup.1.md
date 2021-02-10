@@ -11,10 +11,12 @@ author:
 
 **rdiff-backup** — local/remote mirror and incremental backup
 
+
 # SYNOPSIS
 
-| **rdiff-backup** \[options...] _action_ \[sub-options...] [_locations_...]
+| **rdiff-backup** \[options...] _action_ \[_sub-options_...] [_locations_...]
 | **rdiff-backup** \[**\--new**] \[**-h**|**\--help**|**-V**|**\--version**]
+
 
 # DESCRIPTION
 
@@ -31,8 +33,8 @@ pipe, like **rsync(1)**. Thus you can use ssh and rdiff-backup to securely
 back a hard drive up to a remote location, and only the differences
 will be transmitted. Using the default settings, rdiff-backup requires
 that the remote system accept ssh connections, and that rdiff-backup is
-installed in the user's PATH on the remote system. For information on
-other options, see the section on REMOTE OPERATION.
+installed in the user's PATH on the remote system.
+See the [REMOTE OPERATION](#remote) section for details.
 
 Note that you should not write to the mirror directory except with
 rdiff-backup. Many of the increments are stored as reverse diffs, so
@@ -69,29 +71,29 @@ consider that it is deprecated and will disappear.
 
 :   Prints the current version number and exits.
 
-\--api-version _API-VERSION_
+\--api-version _apiversion_
 
 :   Sets the API version to the given integer between minimum and
     maximum versions as given by the **info** action.
     It is the responsibility of the user to make sure that this version is
     also supported by any server started by this client.
 
-\--chars-to-quote, \--override-chars-to-quote _CHARS_
+\--chars-to-quote, \--override-chars-to-quote _chars_
 
 :   If the filesystem to which we are backing up is not case-sensitive,
-    automatic 'quoting' of characters occurs. For example, a file
-    'Developer.doc' will be converted into ';068eveloper.doc'.
+    automatic "quoting" of characters occurs. For example, a file
+    '`Developer.doc`' will be converted into '`;068eveloper.doc`'.
     To quote other characters or force quoting, e.g. in case rdiff-backup
     doesn't recognize a case-insensitive file system, you need to specify
-    this option. _CHARS_ is a string of characters fit to be used in regexp
-    square brackets (e.g. 'A-Z' as in '[A-Z]').
+    this option. _chars_ is a string of characters fit to be used in regexp
+    square brackets (e.g. '`A-Z`' as in '`[A-Z]`').
 
     **CAUTION:** do NOT change the chars to quote within the same repository!
     Actually, you only need to set this parameter when creating a new backup
     repository. Do also NOT quote any character used by rdiff-backup  in
     rdiff-backup-data (any of 'a-z0-9._-')!
 
-\--current-time _CURRENT-TIME_
+\--current-time _currenttime_
 
 :   This option is useful mainly for testing. If set, rdiff-backup
     will use it for the current time instead of consulting the
@@ -101,7 +103,7 @@ consider that it is deprecated and will disappear.
 
 :   Authorize a more drastic modification of a directory than usual
     (for instance, when overwriting of a destination path, or when
-    removing multiple sessions with \--remove-older-than). rdiff-backup
+    removing multiple sessions with **remove**). rdiff-backup
     will generally tell you if it needs this.
 
     **CAUTION:** You can cause data loss if you mis-use this option.
@@ -124,7 +126,7 @@ consider that it is deprecated and will disappear.
 
 \--null-separator
 
-:   Use nulls (\0) instead of newlines (\n) as line separators,
+:   Use nulls (`\0`) instead of newlines (`\n`) as line separators,
     which may help when dealing with filenames containing newlines.
     This affects the expected format of the files specified by the
     **\--{include|exclude}-filelist[-stdin]** switches as well as the
@@ -134,28 +136,29 @@ consider that it is deprecated and will disappear.
 
 :   If set, rdiff-backup's output will be tailored for easy parsing
     by computers, instead of convenience for humans. Currently this
-    only applies when listing increments using the 'list increments' action,
+    only applies when listing increments using the **list increments** action,
     where the time will be given in seconds since the epoch.
 
-\--remote-schema _REMOTE-SCHEMA_
+\--remote-schema _remoteschema_
 
 :   Specify an alternate method of connecting to a remote computer.
     This is necessary to get rdiff-backup not to use ssh for remote
     backups, or if, for instance, rdiff-backup is not in the PATH on
-    the remote side. See the REMOTE OPERATION section for more information.
+    the remote side.
+    See the [REMOTE OPERATION](#remote) section for details.
 
-\--remote-tempdir _DIR-PATH_
+\--remote-tempdir _dirpath_
 
 :   use path as temporary directory on the remote side of the connection.
 
-\--restrict-path _DIR-PATH_
+\--restrict-path _dirpath_
 
 :   Require that all file access be inside the given path. This
     switch, and **\--restrict-mode**, are intended to be used with the
-    \--server switch to provide a bit more protection when doing au‐
-    tomated remote backups.
+    **\--server** switch to provide a bit more protection when doing
+    automated remote backups.
 
-    **CAUTION:** Those options are not intended as your only line
+    **CAUTION:** Those options are _not_ intended as your only line
     of defense so please don't do something silly like allow public
     access to an rdiff-backup server run with **\--restrict-mode read-only**.
 
@@ -171,7 +174,7 @@ consider that it is deprecated and will disappear.
     option is ignored when using **\--remote-schema**. Compression is on by
     default.
 
-\--tempdir _DIR-PATH_
+\--tempdir _dirpath_
 
 :   Sets the directory that rdiff-backup uses for temporary files to
     the given path. The environment variables TMPDIR, TEMP, and TMP
@@ -233,13 +236,12 @@ compare [[SELECTION OPTIONS](#selection)] [\--method _method_] [\--at _time_] _s
 
     :   at which _time_ of the back-up directory should the comparaison take
         place. The default is **now**, meaning the latest version.
+	See [TIME FORMATS](#time) for details.
 
 info
 
 :   outputs information about the current system in YAML format, so that it
     can be used in a bug report, and exits.
-
-    The **info** action has no sub-options.
 
 list **files** [**\--changed-since** _time_|**\--at** _time_] _repository_
 
@@ -250,15 +252,17 @@ list **files** [**\--changed-since** _time_|**\--at** _time_] _repository_
     :   List the files that have changed in the destination directory
         since the given time. See TIME FORMATS for the format of time.
         If a directory in the archive is specified, list only the files
-        under that directory. This option does not read the source di‐
-        rectory; it is used to compare the contents of two different
+        under that directory. This option does not read the source
+        directory; it is used to compare the contents of two different
         rdiff-backup sessions.
+	See [TIME FORMATS](#time) for details.
 
     \--at _time_
 
     :   List the files in the archive that were present at the given
         time. If a directory in the archive is specified, list only the
         files under that directory.
+	See [TIME FORMATS](#time) for details.
 
 list **increments** [**\--no-size**|**\--size**] _repository_
 
@@ -271,38 +275,113 @@ list **increments** [**\--no-size**|**\--size**] _repository_
         specify a directory within a repository, then only the cumulated
         sizes of that directory will be shown.
 
-regress
-remove
-restore
+regress [[COMPRESSION OPTIONS](#compression)] [[USER GROUP OPTIONS](#usergroup)] [[TIMESTAMP OPTIONS](#timestamp)] _repository_
+
+:   If an rdiff-backup session fails, this action will undo the failed
+    directory. This happens automatically if you attempt to back-up to a
+    directory and the last backup failed.
+
+remove **increments** **\--older-than** _time_
+
+:   Remove the incremental backup information in the destination directory
+    that has been around longer than the given time, or the oldest one if
+    no time is provided.
+
+    By default, rdiff-backup will only delete information from one
+    session at a time. To remove two or more sessions at the same
+    time, supply the **--force** option (rdiff-backup will tell you if
+    it is required).
+
+    Note that snapshots of deleted files are covered by this operation.
+    Thus if you deleted a file two weeks ago, backed up immediately
+    afterwards, and then ran rdiff-backup with remove-
+    older-than 10D today, no trace of that file would remain.
+
+    \--older-than _time_
+
+    :   all the increments older than the given time will be deleted.
+        See [TIME FORMATS](#time) for details.
+
+restore [[CREATION OPTIONS](#creation)] [[COMPRESSION OPTIONS](#compression)] [[SELECTION OPTIONS](#selection)] [[FILESYSTEM OPTIONS](#filesystem)] [[USER GROUP OPTIONS](#usergroup)] [**--at** _time_|**--increment**] _source_ _targetdir_
+
+:   restore a source backup repository at a specific time or a specific
+    source increment to a target directory.
+    See [RESTORING](#restoring) for details.
+
+    \--at _time_
+
+    :   the _source_ parameter is interpreted as a back-up directory, and
+        the content is restored from the given time.
+        See [TIME FORMATS](#time) for details.
+
+    \--increment
+
+    :   the _source_ parameter is expected to be an increment within a
+        back-up repository, to be restored into the given target directory.
+
 server
-test
-verify
+
+:   Enter server mode (not to be invoked directly, but instead used
+    by another rdiff-backup process on a remote computer).
+
+test _remote_location_1_ [_remote_location_2_ ...]
+
+:   Test for the presence of a compatible rdiff-backup server as
+    specified in the following remote location argument(s) (of which
+    the filename section will be ignored).
+    See the [REMOTE OPERATION](#remote) section for details.
+
+verify **\--at** _time_
+
+:   Check all the data in the repository at the given time by computing
+    the SHA1 hash of all the regular files and comparing them
+    with the hashes stored in the metadata file.
+
+    \--at _time_
+
+    :   the time of the data which needs to be verified.
+        See [TIME FORMATS](#time) for details.
+
 
 # <a name="compression">COMPRESSION OPTIONS</a>
 # <a name="creation">CREATION OPTIONS</a>
 # <a name="filesystem">FILESYSTEM OPTIONS</a>
 # <a name="selection">SELECTION OPTIONS</a>
 # <a name="statistics">STATISTICS OPTIONS</a>
+# <a name="timestamp">TIMESTAMP OPTIONS</a>
 # <a name="usergroup">USER GROUP OPTIONS</a>
+
+
+# <a name="restoring">RESTORING</a>
+# <a name="time">TIME FORMATS</a>
+# <a name="remote">REMOTE OPERATION</a>
+# <a name="selection">FILE SELECTION</a>
+# <a name="usersgroups">USERS AND GROUPS</a>
+# <a name="statistics">STATISTICS</a>
+
 
 # FILES
 
-*any config file*
+*any-config-file*
 
 :   you can create a file with one option/action/sub-option per line and
-    use it on the command line with _\@anyconfigfile_ and its content
+    use it on the command line with an ampersand prefix like
+    _\@any-config-file_ and its content
     will be interpreted as if given on the command line.
 
     For example, creating a file '`mybackup`' with following content:
 
-	--verbosity
-	9
-        backup
-        source_dir
-        target_dir
+    ```
+    --verbosity
+    5
+    backup
+    source_dir
+    target_dir
+    ```
 
     and calling '`rdiff-backup @mybackup`' will be the same as calling
-    '`rdiff-backup --verbosity 9 backup source_dir target_dir`'.
+    '`rdiff-backup --verbosity 5 backup source_dir target_dir`'.
+
 
 # ENVIRONMENT
 
@@ -312,15 +391,20 @@ verify
     overwritten by the corresponding options **-v/\--verbosity** and
     **\--terminal-verbosity**.
 
+
 # BUGS
 
 See GitHub Issues:
 
 :   <https://github.com/rdiff-backup/rdiff-backup/issues>
 
+
 # SEE ALSO
 
-**hi(1)**, **hello(3)**, **hello.conf(4)**
+**python(1)**, **rdiff(1)**, **rsync(1)**, **ssh(1)**.
+
+The main rdiff-backup web page is at <https://rdiff-backup.net/>.
+It has more documentation, links to the mailing list and source code.
 
 <!---
 pandoc --standalone --to man --variable date="$(date -I)" --variable footer="Version $(./setup.py --version)" docs/rdiff-backup.1.md -o /tmp/rdiff-backup.1 && man -l /tmp/rdiff-backup.1
