@@ -144,6 +144,7 @@ Additionally following pre-requisites are needed:
 * a C compiler (gcc)
 * libacl-devel (for sys/acl.h)
 * rdiff (for testing)
+* pandoc (for documentation generation)
 
 All of those should come packaged with your system or available from
 https://pypi.org/ but if you need them otherwise, here are some sources:

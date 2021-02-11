@@ -2,6 +2,7 @@
 
 import sys
 import os
+import subprocess
 import time
 
 # we need all this to extend the distutils/setuptools commands
@@ -49,6 +50,49 @@ if os.name == "nt":
     # We rely on statically linked librsync
     librsync_macros = [("rsync_EXPORTS", None)]
 
+# --- extend the build command to execute a command ---
+
+class build_exec(Command):
+    description = 'build template files executing a shell command'
+    user_options = [
+        # The format is (long option, short option, description).
+        ('commands=', None, 'list of command strings'),
+    ]
+
+    def initialize_options(self):
+        """Set default values for options."""
+        # Each user option must be listed here with their default value.
+        self.commands = []
+
+    def finalize_options(self):
+        """Post-process options."""
+        # we would need to do more if we would want to support command line
+        # and/or setup.cfg as we would need to parse a string into a list of tuples
+        if self.commands:
+            assert all(map(lambda x: len(x) == 3, self.commands)), (
+                "Each element of the list '{}' must be a tuple of "
+                "command, source and target".format(
+                  self.commands))
+
+    def _make_exec(self, cmd, infile, outfile, repl_dict={}):
+        self.mkpath(os.path.dirname(outfile))
+        full_cmd = cmd.format(infile=infile, outfile=outfile, **repl_dict)
+        subprocess.call(full_cmd, shell=True)
+
+    def run(self):
+        if DEBUG:
+            self.debug_print(self.distribution.dump_option_dicts())
+        build_time = int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
+        replacement_dict = {
+            "ver": self.distribution.get_version(),
+            "date": time.strftime("%B %Y", time.gmtime(build_time))
+        }
+        for command in self.commands:
+            self.make_file(
+                (command[1]), command[2],
+                self._make_exec, (*command, replacement_dict),
+                exec_msg="executing {}".format(command)
+            )
 
 # --- extend the build command to do templating of files ---
 
@@ -71,10 +115,10 @@ class build_templates(Command):
         # and/or setup.cfg as we would need to parse a string into a list of tuples
         if self.template_files:
             assert all(map(lambda x: len(x) == 2, self.template_files)), (
-                'Each element of the list must be a tuple of source template and target files'
-                % self.template_files)
+                "Each element of the list '{}' must be a tuple of source "
+                "template and target files".format(self.template_files))
 
-    def make_template(self, infile, outfile, repl_dict={}):
+    def _make_template(self, infile, outfile, repl_dict={}):
         """A helper function replacing {{ place_holders }} defined in repl_dict,
         creating the outfile out of the source template file infile."""
         self.mkpath(os.path.dirname(outfile))
@@ -96,7 +140,8 @@ class build_templates(Command):
         for template in self.template_files:
             self.make_file(
                 (template[0]), template[1],
-                self.make_template, (template[0], template[1], replacement_dict),
+                self._make_template, (template[0], template[1],
+                                      replacement_dict),
                 exec_msg='templating %s -> %s' % (template[0], template[1])
             )
 
@@ -105,32 +150,37 @@ class build_py(setuptools.command.build_py.build_py):
     """Inject our build sub-command in the build step"""
 
     def run(self):
+        self.run_command('build_exec')
         self.run_command('build_templates')
         setuptools.command.build_py.build_py.run(self)
 
 
-# --- extend the clean command to remove templated files ---
+# --- extend the clean command to remove templated and exec files ---
 
 class clean(distutils.command.clean.clean):
-    """Extend the clean class to also delete templated files"""
+    """Extend the clean class to also delete templated and exec files"""
 
     def initialize_options(self):
         self.template_files = None
+        self.commands = None
         super().initialize_options()
 
     def finalize_options(self):
         """Post-process options."""
         # take over the option from our build_templates command
-        self.set_undefined_options('build_templates', ('template_files', 'template_files'))
+        self.set_undefined_options('build_templates',
+                                   ('template_files', 'template_files'))
+        self.set_undefined_options('build_exec',
+                                   ('commands', 'commands'))
         super().finalize_options()
 
     def run(self):
         if self.all:
-            for template in self.template_files:
-                if os.path.isfile(template[1]):
+            for outfile in self.template_files + self.commands:
+                if os.path.isfile(outfile[-1]):
                     if not self.dry_run:
-                        os.remove(template[1])
-                    log.info("removing '%s'", template[1])
+                        os.remove(outfile[-1])
+                    log.info("removing '%s'", outfile[-1])
         super().run()
 
 
@@ -193,16 +243,18 @@ setup(
     ],
     scripts=["src/rdiff-backup", "src/rdiff-backup-statistics", "src/rdiff-backup-delete"],
     data_files=[
-        ("share/man/man1", ["build/rdiff-backup.1", "build/rdiff-backup-statistics.1"]),
+        ("share/man/man1", ["build/rdiff-backup-old.1", "build/rdiff-backup-statistics.1"]),
         (
             "share/doc/rdiff-backup",
             [
                 "CHANGELOG.md",
                 "COPYING",
                 "README.md",
-                "docs/FAQ.md",
-                "docs/examples.md",
+                "docs/credits.md",
                 "docs/DEVELOP.md",
+                "docs/examples.md",
+                "docs/FAQ.md",
+                "docs/migration.md",
                 "docs/Windows-README.md",
                 "docs/Windows-DEVELOP.md",
             ],
@@ -211,13 +263,21 @@ setup(
     ],
     # options is a hash of hash with command -> option -> value
     # the value happens here to be a list of file couples/tuples
-    options={'build_templates': {'template_files': [
-        ("tools/rdiff-backup.spec.template", "build/rdiff-backup.spec"),
-        ("tools/rdiff-backup.spec.template-fedora", "build/rdiff-backup.fedora.spec"),
-        ("docs/rdiff-backup.1", "build/rdiff-backup.1"),
-        ("docs/rdiff-backup-statistics.1", "build/rdiff-backup-statistics.1"),
-    ]}},
+    options={
+        'build_templates': {'template_files': [
+            ("tools/rdiff-backup.spec.template", "build/rdiff-backup.spec"),
+            ("tools/rdiff-backup.spec.template-fedora", "build/rdiff-backup.fedora.spec"),
+            ("docs/rdiff-backup-old.1", "build/rdiff-backup-old.1"),
+            ("docs/rdiff-backup-statistics.1", "build/rdiff-backup-statistics.1"),
+        ]},
+        "build_exec": {"commands": [
+            ("pandoc --standalone --to man --variable date='{date}' "
+             "--variable footer='Version {ver}' {infile} -o {outfile}",
+             "docs/rdiff-backup.1.md", "build/rdiff-backup.1")
+        ]},
+    },
     cmdclass={
+        'build_exec': build_exec,
         'build_templates': build_templates,
         'build_py': build_py,
         'clean': clean,
