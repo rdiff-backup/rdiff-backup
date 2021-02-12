@@ -50,7 +50,9 @@ if os.name == "nt":
     # We rely on statically linked librsync
     librsync_macros = [("rsync_EXPORTS", None)]
 
+
 # --- extend the build command to execute a command ---
+
 
 class build_exec(Command):
     description = 'build template files executing a shell command'
@@ -72,7 +74,7 @@ class build_exec(Command):
             assert all(map(lambda x: len(x) == 3, self.commands)), (
                 "Each element of the list '{}' must be a tuple of "
                 "command, source and target".format(
-                  self.commands))
+                    self.commands))
 
     def _make_exec(self, cmd, infile, outfile, repl_dict={}):
         self.mkpath(os.path.dirname(outfile))
@@ -94,7 +96,9 @@ class build_exec(Command):
                 exec_msg="executing {}".format(command)
             )
 
+
 # --- extend the build command to do templating of files ---
+
 
 class build_templates(Command):
     description = 'build template files replacing {{ }} placeholders'
@@ -243,10 +247,11 @@ setup(
     ],
     scripts=["src/rdiff-backup", "src/rdiff-backup-statistics", "src/rdiff-backup-delete"],
     data_files=[
-        ("share/man/man1", ["build/rdiff-backup-old.1", "build/rdiff-backup-statistics.1"]),
+        ("share/man/man1", ["build/rdiff-backup.1",
+                            "build/rdiff-backup-old.1",
+                            "build/rdiff-backup-statistics.1"]),
         (
-            "share/doc/rdiff-backup",
-            [
+            "share/doc/rdiff-backup", [
                 "CHANGELOG.md",
                 "COPYING",
                 "README.md",

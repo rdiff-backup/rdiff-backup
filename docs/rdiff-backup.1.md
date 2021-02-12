@@ -34,7 +34,7 @@ back a hard drive up to a remote location, and only the differences
 will be transmitted. Using the default settings, rdiff-backup requires
 that the remote system accept ssh connections, and that rdiff-backup is
 installed in the user's PATH on the remote system.
-See the [REMOTE OPERATION](#remote) section for details.
+See the [REMOTE OPERATION](#remote-operation) section for details.
 
 Note that you should not write to the mirror directory except with
 rdiff-backup. Many of the increments are stored as reverse diffs, so
@@ -145,7 +145,7 @@ consider that it is deprecated and will disappear.
     This is necessary to get rdiff-backup not to use ssh for remote
     backups, or if, for instance, rdiff-backup is not in the PATH on
     the remote side.
-    See the [REMOTE OPERATION](#remote) section for details.
+    See the [REMOTE OPERATION](#remote-operation) section for details.
 
 \--remote-tempdir _dirpath_
 
@@ -202,7 +202,7 @@ consider that it is deprecated and will disappear.
 
 ## Actions
 
-backup [[CREATION OPTIONS](#creation)] [[COMPRESSION OPTIONS](#compression)] [[SELECTION OPTIONS](#selection)] [[FILESYSTEM OPTIONS](#filesystem)] [[USER GROUP OPTIONS](#usergroup)] [[STATISTICS OPTIONS](#statistics)] _sourcedir_ _targetdir_
+backup [[CREATION OPTIONS](#creation-options)] [[COMPRESSION OPTIONS](#compression-options)] [[SELECTION OPTIONS](#selection-options)] [[FILESYSTEM OPTIONS](#filesystem-options)] [[USER GROUP OPTIONS](#user-group-options)] [[STATISTICS OPTIONS](#statistics-options)] _sourcedir_ _targetdir_
 
 :   back-up a source directory to a target backup repository.
 
@@ -215,7 +215,7 @@ calculate [\--method **average**] _statfile1_ _statfile2_ [...]
     :   there is currently only one method and it is the default, but it might
         change in the future.
 
-compare [[SELECTION OPTIONS](#selection)] [\--method _method_] [\--at _time_] _sourcedir_ _targetdir_
+compare [[SELECTION OPTIONS](#selection-options)] [\--method _method_] [\--at _time_] _sourcedir_ _targetdir_
 
 :   Compare a directory with the backup set at the given time. This
     can be useful to see how archived data differs from current
@@ -236,7 +236,7 @@ compare [[SELECTION OPTIONS](#selection)] [\--method _method_] [\--at _time_] _s
 
     :   at which _time_ of the back-up directory should the comparaison take
         place. The default is **now**, meaning the latest version.
-	See [TIME FORMATS](#time) for details.
+	See [TIME FORMATS](#time-formats) for details.
 
 info
 
@@ -255,14 +255,14 @@ list **files** [**\--changed-since** _time_|**\--at** _time_] _repository_
         under that directory. This option does not read the source
         directory; it is used to compare the contents of two different
         rdiff-backup sessions.
-	See [TIME FORMATS](#time) for details.
+	See [TIME FORMATS](#time-formats) for details.
 
     \--at _time_
 
     :   List the files in the archive that were present at the given
         time. If a directory in the archive is specified, list only the
         files under that directory.
-	See [TIME FORMATS](#time) for details.
+	See [TIME FORMATS](#time-formats) for details.
 
 list **increments** [**\--no-size**|**\--size**] _repository_
 
@@ -275,7 +275,7 @@ list **increments** [**\--no-size**|**\--size**] _repository_
         specify a directory within a repository, then only the cumulated
         sizes of that directory will be shown.
 
-regress [[COMPRESSION OPTIONS](#compression)] [[USER GROUP OPTIONS](#usergroup)] [[TIMESTAMP OPTIONS](#timestamp)] _repository_
+regress [[COMPRESSION OPTIONS](#compression-options)] [[USER GROUP OPTIONS](#user-group-options)] [[TIMESTAMP OPTIONS](#timestamp-options)] _repository_
 
 :   If an rdiff-backup session fails, this action will undo the failed
     directory. This happens automatically if you attempt to back-up to a
@@ -300,9 +300,9 @@ remove **increments** **\--older-than** _time_
     \--older-than _time_
 
     :   all the increments older than the given time will be deleted.
-        See [TIME FORMATS](#time) for details.
+        See [TIME FORMATS](#time-formats) for details.
 
-restore [[CREATION OPTIONS](#creation)] [[COMPRESSION OPTIONS](#compression)] [[SELECTION OPTIONS](#selection)] [[FILESYSTEM OPTIONS](#filesystem)] [[USER GROUP OPTIONS](#usergroup)] [**--at** _time_|**--increment**] _source_ _targetdir_
+restore [[CREATION OPTIONS](#creation-options)] [[COMPRESSION OPTIONS](#compression-options-options)] [[SELECTION OPTIONS](#selection-options)] [[FILESYSTEM OPTIONS](#filesystem-options)] [[USER GROUP OPTIONS](#user-group-options)] [**--at** _time_|**--increment**] _source_ _targetdir_
 
 :   restore a source backup repository at a specific time or a specific
     source increment to a target directory.
@@ -312,7 +312,7 @@ restore [[CREATION OPTIONS](#creation)] [[COMPRESSION OPTIONS](#compression)] [[
 
     :   the _source_ parameter is interpreted as a back-up directory, and
         the content is restored from the given time.
-        See [TIME FORMATS](#time) for details.
+        See [TIME FORMATS](#time-formats) for details.
 
     \--increment
 
@@ -329,9 +329,9 @@ test _remote_location_1_ [_remote_location_2_ ...]
 :   Test for the presence of a compatible rdiff-backup server as
     specified in the following remote location argument(s) (of which
     the filename section will be ignored).
-    See the [REMOTE OPERATION](#remote) section for details.
+    See the [REMOTE OPERATION](#remote-operation) section for details.
 
-verify **\--at** _time_
+verify **\--at** _time_ _location_
 
 :   Check all the data in the repository at the given time by computing
     the SHA1 hash of all the regular files and comparing them
@@ -340,24 +340,49 @@ verify **\--at** _time_
     \--at _time_
 
     :   the time of the data which needs to be verified.
-        See [TIME FORMATS](#time) for details.
+        See [TIME FORMATS](#time-formats) for details.
 
 
-# <a name="compression">COMPRESSION OPTIONS</a>
-# <a name="creation">CREATION OPTIONS</a>
-# <a name="filesystem">FILESYSTEM OPTIONS</a>
-# <a name="selection">SELECTION OPTIONS</a>
-# <a name="statistics">STATISTICS OPTIONS</a>
-# <a name="timestamp">TIMESTAMP OPTIONS</a>
-# <a name="usergroup">USER GROUP OPTIONS</a>
+# COMPRESSION OPTIONS
+
+\--compression, \--no-compression
+
+:   Disable the default gzip compression of most of the `.snapshot`
+    and `.diff` increment files stored in the rdiff-backup-data directory.
+    A backup volume can contain compressed and uncompressed
+    increments, so using this option inconsistently is fine. 
+
+\--not-compressed-regexp _regexp_
+
+:   Do not compress increments based on files whose filenames match
+    regexp. The default includes many common audiovisual and archive
+    files, and may be found from the help.
+
+# CREATION OPTIONS
+
+\--create-full-path
+
+:   Normally only the final directory of the destination path will
+    be created if it does not exist. With this option, all missing
+    directories on the destination path will be created. Use this
+    option with care: if there is a typo in the remote path, the remote
+    filesystem could fill up very quickly (by creating a duplicate
+    backup tree). For this reason this option is primarily aimed at
+    scripts which automate backups.
+
+# FILESYSTEM OPTIONS
+# SELECTION OPTIONS
+# STATISTICS OPTIONS
+# TIMESTAMP OPTIONS
+# USER GROUP OPTIONS
 
 
-# <a name="restoring">RESTORING</a>
-# <a name="time">TIME FORMATS</a>
-# <a name="remote">REMOTE OPERATION</a>
-# <a name="selection">FILE SELECTION</a>
-# <a name="usersgroups">USERS AND GROUPS</a>
-# <a name="statistics">STATISTICS</a>
+# RESTORING
+# TIME FORMATS
+# REMOTE OPERATION
+# FILE SELECTION
+# USERS AND GROUPS
+# STATISTICS
 
 
 # FILES
@@ -405,7 +430,3 @@ See GitHub Issues:
 
 The main rdiff-backup web page is at <https://rdiff-backup.net/>.
 It has more documentation, links to the mailing list and source code.
-
-<!---
-pandoc --standalone --to man --variable date="$(date -I)" --variable footer="Version $(./setup.py --version)" docs/rdiff-backup.1.md -o /tmp/rdiff-backup.1 && man -l /tmp/rdiff-backup.1
--->
