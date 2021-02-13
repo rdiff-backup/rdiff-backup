@@ -130,7 +130,7 @@ consider that it is deprecated and will disappear.
     which may help when dealing with filenames containing newlines.
     This affects the expected format of the files specified by the
     **\--{include|exclude}-filelist[-stdin]** switches as well as the
-    format of the directory statistics file.
+    format of the files statistics.
 
 \--parsable-output
 
@@ -289,7 +289,7 @@ remove **increments** **\--older-than** _time_
 
     By default, rdiff-backup will only delete information from one
     session at a time. To remove two or more sessions at the same
-    time, supply the **--force** option (rdiff-backup will tell you if
+    time, supply the **\--force** option (rdiff-backup will tell you if
     it is required).
 
     Note that snapshots of deleted files are covered by this operation.
@@ -302,7 +302,7 @@ remove **increments** **\--older-than** _time_
     :   all the increments older than the given time will be deleted.
         See [TIME FORMATS](#time-formats) for details.
 
-restore [[CREATION OPTIONS](#creation-options)] [[COMPRESSION OPTIONS](#compression-options-options)] [[SELECTION OPTIONS](#selection-options)] [[FILESYSTEM OPTIONS](#filesystem-options)] [[USER GROUP OPTIONS](#user-group-options)] [**--at** _time_|**--increment**] _source_ _targetdir_
+restore [[CREATION OPTIONS](#creation-options)] [[COMPRESSION OPTIONS](#compression-options-options)] [[SELECTION OPTIONS](#selection-options)] [[FILESYSTEM OPTIONS](#filesystem-options)] [[USER GROUP OPTIONS](#user-group-options)] [**\--at** _time_|**\--increment**] _source_ _targetdir_
 
 :   restore a source backup repository at a specific time or a specific
     source increment to a target directory.
@@ -373,12 +373,50 @@ verify **\--at** _time_ _location_
 # FILESYSTEM OPTIONS
 
 \--acls, \--no-acls
+
+:   enable/disable back-up of Access Control Lists.
+
 \--carbonfile, \--no-carbonfile
-\--compare-inode, \--no-compare-inode
+
+:   enable/disable back-up of carbon files (MacOS X).
+
 \--eas, \--no-eas
-\--hard-links, \--no-hard-links
+
+:   enable/disable back-up of Extended Attributes.
+
 \--resource-forks, \--no-resource-forks
+
+:   enable/disable back-up of resource forks (MacOS X).
+
+\--hard-links, \--no-hard-links
+
+:   do (or not) keep hard-link relationships between files.
+    Disabling hard-links generally increases the disk space usage
+    but decreases memory usage. Hard-links are disabled by
+    default if the backup source or restore destination is
+    running on native Windows.
+
+\--compare-inode, \--no-compare-inode
+
+:   This option prevents rdiff-backup from flagging a
+    hardlinked file as changed when its device number and/or
+    inode changes. This option is useful in situations where
+    the source filesystem lacks persistent device and/or inode
+    numbering. For example, network filesystems may have
+    mount-to-mount differences in their device number (but
+    possibly stable inode numbers); USB/1394 devices may come
+    up at different device numbers each remount (but would
+    generally have same inode number); and there are filesystems
+    which don't even have the same inode numbers from
+    use to use. Without the option rdiff-backup may generate
+    unnecessary numbers of tiny diff files.
+
 \--never-drop-acls
+
+:   Exit with error instead of dropping ACLs or ACL entries.
+    Normally this may happen (with a warning) because the
+    destination does not support them or because the relevant
+    user/group names do not exist on the destination side.
 
 # SELECTION OPTIONS
 
@@ -469,19 +507,36 @@ explicitly isn't generally required. Exceptions are described.
 
 # STATISTICS OPTIONS
 
-\--file-statistics
+\--file-statistics, \--no-file-statistics
 
-:   
+:   Enable/disable writing to the '`file_statistics`' file in
+    the rdiff-backup-data directory. rdiff-backup will run
+    slightly quicker and take up a bit less space.
+    Default is to write the statistics file(s).
 
-\--print-statistics
+    See the [FILES](#files) section for more information about
+    statistics files.
 
-:   
+\--no-print-statistics, \--print-statistics
+
+:   Summary statistics will be printed (or not) after a successful backup.
+    Even if disabled (the default), this information will still be available
+    from the session statistics file.
 
 # TIMESTAMP OPTIONS
 
 \--allow-duplicate-timestamps
 
-:   
+:   This option is only to be used if you encounter the issue
+    of metadata mirrors with the same timestamp. In such
+    cases, you may use this flag to first recover from the
+    failed backup with something like
+
+         rdiff-backup --allow-duplicate-timestamps \
+                      --check-destination-dir <targetdir>
+
+    after which you will need to remove those old duplicate
+    entries using the **remove increments** action. 
 
 # USER GROUP OPTIONS
 
@@ -676,12 +731,11 @@ digits which aren't followed by 'foo'. However, it wouldn't
 match '`/home`' even if '`/home/ben/1234567`' existed.
 
 # USERS AND GROUPS
-# STATISTICS
 
 
 # FILES
 
-*any-config-file*
+_any-config-file_
 
 :   you can create a file with one option/action/sub-option per line and
     use it on the command line with an ampersand prefix like
@@ -700,6 +754,39 @@ match '`/home`' even if '`/home/ben/1234567`' existed.
 
     and calling '`rdiff-backup @mybackup`' will be the same as calling
     '`rdiff-backup --verbosity 5 backup source_dir target_dir`'.
+
+**session_statistics**, **file_statistics**
+
+:   Every session rdiff-backup saves various statistics into two
+    files, the session statistics file at
+    '`rdiff-backup-data/session_statistics.<datetime>.data`'
+    and the files statistics at
+    '`rdiff-backup-data/directory_statistics.<datetime>.data`'.
+    They are both text files and contain similar information: how many files
+    changed, how many were deleted, the total size of increment
+    files created, etc. However, the session statistics file is intended
+    to be very readable and only describes the session as a
+    whole. The files statistics file is more compact (and
+    slightly less readable) but describes every directory backed up.
+    It also may be compressed to save space.
+
+    See also [STATISTICS OPTIONS](#statistics-options) and the
+    **\--null-separator** option.
+
+**backup.log**, **restore.log**, **error_log**
+
+:   rdiff-backup will save various messages to the log file,
+    which is '`rdiff-backup-data/backup.log`' for backup sessions and
+    '`rdiff-backup-data/restore.log`' for restore sessions. Generally
+    what is written to this file will coincide with the messages
+    displayed to stdout or stderr, although this can be changed with
+    the **\--terminal-verbosity** option.
+
+    Errors during backup are also written to a file
+    '`rdiff-backup-data/error_log.<datetime>.data`.
+
+    The log files are not compressed and can become quite large if
+    rdiff-backup is run with high verbosity.
 
 
 # ENVIRONMENT
