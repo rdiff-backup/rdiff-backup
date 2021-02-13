@@ -20,7 +20,7 @@ author:
 
 # DESCRIPTION
 
-rdiff-backup is a script, written in **python(1)** that backs up one directory
+rdiff-backup is a script, written in **python**(1) that backs up one directory
 to another. The target directory ends up a copy (mirror) of the source
 directory, but extra reverse diffs are stored in a special sub-directory of
 that target directory, so you can still recover files lost
@@ -29,7 +29,7 @@ and an incremental backup. rdiff-backup also preserves symlinks, special files, 
 times.
 
 rdiff-backup can also operate in a bandwidth efficient manner over a
-pipe, like **rsync(1)**. Thus you can use ssh and rdiff-backup to securely
+pipe, like **rsync**(1). Thus you can use ssh and rdiff-backup to securely
 back a hard drive up to a remote location, and only the differences
 will be transmitted. Using the default settings, rdiff-backup requires
 that the remote system accept ssh connections, and that rdiff-backup is
@@ -294,8 +294,9 @@ remove **increments** **\--older-than** _time_
 
     Note that snapshots of deleted files are covered by this operation.
     Thus if you deleted a file two weeks ago, backed up immediately
-    afterwards, and then ran rdiff-backup with remove-
-    older-than 10D today, no trace of that file would remain.
+    afterwards, and then ran rdiff-backup with
+    '`remove increments --older-than 10D`' today, no trace of that file
+    would remain.
 
     \--older-than _time_
 
@@ -533,7 +534,7 @@ explicitly isn't generally required. Exceptions are described.
     failed backup with something like
 
          rdiff-backup --allow-duplicate-timestamps \
-                      --check-destination-dir <targetdir>
+                      --check-destination-dir {targetdir}
 
     after which you will need to remove those old duplicate
     entries using the **remove increments** action. 
@@ -556,8 +557,172 @@ See the [USERS AND GROUPS](#users-and-groups) section for more information.
     trying to preserve unames and gnames.
 
 # RESTORING
+
+There are two ways to tell rdiff-backup to restore a file or directory:
+
+1. you can run rdiff-backup **restore** on a mirror file and define
+   a time from which to restore (by default the latest one).
+2. you can run the **restore** action on an increment file with the
+   sub-option **\--increment**.
+
+For example, suppose in the past you have run:
+
+    rdiff-backup backup /usr /usr.backup
+
+to back up the '`/usr`' directory into the '`/usr.backup`' directory, and
+now want a copy of the '`/usr/local`' directory the way it was 3 days
+ago placed at '`/usr/local.old`'.
+
+One way to do this is to run:
+
+    rdiff-backup restore --at 3D /usr.backup/local /usr/local.old
+
+where above the "3D" means 3 days (for other ways to specify the
+time, see the [TIME FORMATS](#time-formats) section). The
+'`/usr.backup/local`' directory was selected, because that is the
+directory containing the current version of '`usr/local`'.
+
+Note that the parameter of **\--at** always specifies an exact
+time. (So "3D" refers to the moment 72 hours before the present).
+If there was no backup made at that time, rdiff-backup restores the
+state recorded for the previous backup. For instance, in the above
+case, if "3D" is used, and there are only backups from 2 days and 4
+days ago, '`/usr/local`' as it was 4 days ago will be restored.
+
+The second way to restore files involves finding the corresponding
+increment file. It would be in the
+'`/backup/rdiff-backup-data/increments/usr`'
+directory, and its name would be something like
+'`local.2002-11-09T12:43:53-04:00.dir`' where the time indicates it is
+from 3 days ago. Note that the increment files all end in '`.diff`',
+'`.snapshot`', '`.dir`', or '`.missing`', where '`.missing`' just means that
+the file didn't exist at that time (finally, some of these may be
+gzip-compressed, and have an extra '`.gz`' to indicate this). Then
+running:
+
+    rdiff-backup restore --increment \
+        /backup/rdiff-backup-data/increments/usr/local.{time}.dir \
+        /usr/local.old
+
+would also restore the file as desired.
+
+If you are not sure exactly which version of a file you need, it is
+probably easiest to either restore from the increments files as described
+immediately above, or to see which increments are available
+with '`list increments`', and then specify an exact time with **\--at**.
+
 # TIME FORMATS
+
+rdiff-backup uses time strings in two places.
+
+Firstly, all of the increment files rdiff-backup creates will have
+the time in their filenames in the w3 datetime format as described
+in a w3 note at <https://www.w3.org/TR/NOTE-datetime>.
+Basically they look like
+"2001-07-15T04:09:38-07:00", which is basically
+"{Year}-{Month}-{Day}T{Hours}:{Minutes}:{Seconds}{Timezone}",
+the time zone being 7 hours _behind_ UTC in this example (hence the minus).
+
+Secondly, the **\--at**, **\--changed-since**, **\--older-than** options
+take a time string, which can be given in any of several formats:
+
+1. the string "now" (refers to the current time)
+
+2. a sequences of digits, like "123456890" (indicating the time
+   in seconds after the epoch)
+
+3. A string like "2002-01-25T07:00:00+02:00" in datetime format
+
+4. An interval, which is a number followed by one of the characters
+   s, m, h, D, W, M, or Y (indicating seconds, minutes,
+   hours, days, weeks, months, or years respectively), or a series
+   of such pairs. In this case the string refers to the
+   time that preceded the current time by the length of the interval.
+   For instance, "1h78m" indicates the time that was
+   one hour and 78 minutes ago. The calendar here is unsophisticated:
+   a month is always 30 days, a year is always 365
+   days, and a day is always 86400 seconds.
+
+5. A date format of the form "YYYY/MM/DD", "YYYY-MM-DD", "MM/DD/YYYY",
+   or "MM-DD-YYYY", which indicates midnight on the day in question,
+   relative to the current timezone settings. For instance,
+   "2002/3/5", "03-05-2002", and "2002-3-05" all mean
+   March 5th, 2002 (needless to say that starting with the year is less
+   confusing for non-Americans).
+
+6. A backup session specification which is a non-negative integer
+   followed by '`B`'. For instance, '`0B`' specifies the time
+   of the current mirror, and '`3B`' specifies the time of the 3rd
+   newest increment.
+
 # REMOTE OPERATION
+
+In order to access remote files, rdiff-backup opens up a pipe to a
+copy of rdiff-backup running on the remote machine. Thus rdiff-backup
+must be installed on both ends. To open this pipe, rdiff-backup
+first splits the location into '`host_info::pathname`'. It then
+substitutes '`host_info`' into the remote schema, and runs the resulting
+command, reading its input and output.
+
+The default remote schema is '`ssh -C {h} rdiff-backup --server`' where
+'`host_info`' is substituted for '`{h}`'. So if the '`host_info`' is
+'`user@host.net`', then rdiff-backup runs
+'`ssh user@host.net rdiff-backup --server`'. Using **\--remote-schema**,
+rdiff-backup can invoke an arbitrary command in order to open up a
+remote pipe. For instance,
+
+    rdiff-backup backup --remote-schema 'cd /usr; {h}' \
+                        foo 'rdiff-backup --server'::bar
+
+is basically equivalent to (but slower than)
+
+    rdiff-backup backup foo /usr/bar
+
+Concerning quoting, if for some reason you need to put two consecutive
+colons in the '`host_info`' section of a '`host_info::pathname`' argument,
+or in the pathname of a local file, you can quote one of them
+by prepending a backslash. So in '`a\::b::c`', '`host_info`' is '`a::b`'
+and the pathname is '`c`'. Similarly, if you want to refer to a local
+file whose filename contains two consecutive colons, like
+'`strange::file`', you'll have to quote one of the colons as in
+'`strange\::file`'. Because the backslash is a quote character in
+these circumstances, it too must be quoted to get a literal backslash,
+so '`foo\::\\bar`' evaluates to '`foo::\bar`'. To make things
+more complicated, because the backslash is also a common shell quoting
+character, you may need to type in '`\\\\`' at the shell prompt to
+get a literal backslash.
+
+You may also use the placehoders '`{vx}`', '`{vy}`' and '`{vz}`' for
+the '`x.y.z`' version of rdiff-backup, so that you can have multiple
+versions of rdiff-backup installed on the server, and automatically
+targeted from the client.
+
+For example, if you have rdiff-backup 2.1.5 and 2.2.1 installed in
+virtual environments on the server, respectively under
+'`/usr/local/lib/rdiff-backup-2.0`' and '`/usr/local/lib/rdiff-backup-2.1`'
+(we assume that the z-Version isn't relevant to any kind of compatibility),
+then the client may be called with the following remote schema:
+
+    ssh -C {h} /usr/local/lib/rdiff-backup-{vx}.{vy} --server
+
+The client will then use the correct version of rdiff-backup based on
+its own version '`x.y.z`'. You'll find more explanations in the
+**migration.md** file in the documentation.
+
+And finally, to include a literal '`%`' in the string specified by
+**\--remote-schema**, quote it with another '`%`', as in '`%%`'
+(this is due to the compatibility with the deprecated host placeholder
+'`%s`', which you shouldn't use anymore).
+
+Although ssh itself may be secure, using rdiff-backup in the default
+way presents some security risks. For instance if the server is run
+as root, then an attacker who compromised the client could then use
+rdiff-backup to overwrite arbitrary server files by "backing up"
+over them. Such a setup can be made more secure by using the sshd
+configuration option '`command="rdiff-backup --server"`' possibly along
+with the **\--restrict-path** and **\--restrict-mode** options to
+rdiff-backup. For more information, see the web page, the wiki, and the
+entries for those options on this man page.
 
 # FILE SELECTION
 
@@ -618,8 +783,8 @@ and any character in the string can be replaced with an
 upper- or lowercase version of itself.
 
 If you need to match filenames which contain the above globbing
-characters, they may be escaped using a backslash '`\`'. The back‐
-slash will only escape the character following it so for '`**`' you
+characters, they may be escaped using a backslash '`\`'. The backslash
+will only escape the character following it so for '`**`' you
 will need to use '`\*\*`' to avoid escaping it to the '`*`' globbing
 character.
 
@@ -683,7 +848,7 @@ way extended shell patterns are, with a few exceptions:
    is included. So '`/usr/local`' in an include file will not
    match '`/usr/local/doc`'.
 
-3. Lines starting with '<code>+ [...]</code>' (plus followed by a space) ares
+3. Lines starting with '<code>+ [...]</code>' (plus followed by a space) are
    interpreted as include directives, even if found in a filelist referenced by
    **\--exclude-filelist**.
    Similarly, lines starting with '<code>- [...]</code>' (minus followed by a
@@ -766,7 +931,7 @@ The user and group mapping files both have the same format:
 
     old_name_or_id1:new_name_or_id1
     old_name_or_id2:new_name_or_id2
-    <etc>
+    [...etc...]
 
 Each line should contain a name or id, followed by a colon '`:`',
 followed by another name or id. If a name or id is not listed,
@@ -815,9 +980,9 @@ _any-config-file_
 
 :   Every session rdiff-backup saves various statistics into two
     files, the session statistics file at
-    '`rdiff-backup-data/session_statistics.<datetime>.data`'
+    '`rdiff-backup-data/session_statistics.{datetime}.data`'
     and the files statistics at
-    '`rdiff-backup-data/directory_statistics.<datetime>.data`'.
+    '`rdiff-backup-data/directory_statistics.{datetime}.data`'.
     They are both text files and contain similar information: how many files
     changed, how many were deleted, the total size of increment
     files created, etc. However, the session statistics file is intended
@@ -839,7 +1004,7 @@ _any-config-file_
     the **\--terminal-verbosity** option.
 
     Errors during backup are also written to a file
-    '`rdiff-backup-data/error_log.<datetime>.data`.
+    '`rdiff-backup-data/error_log.{datetime}.data`'.
 
     The log files are not compressed and can become quite large if
     rdiff-backup is run with high verbosity.
@@ -856,14 +1021,17 @@ _any-config-file_
 
 # BUGS
 
-See GitHub Issues:
+See GitHub issues:
 
 :   <https://github.com/rdiff-backup/rdiff-backup/issues>
 
+In doubt subscribe to and ask the mailing list:
+
+:   <https://lists.nongnu.org/mailman/listinfo/rdiff-backup-users>
 
 # SEE ALSO
 
-**python(1)**, **rdiff(1)**, **rsync(1)**, **ssh(1)**.
+**python**(1), **rdiff**(1), **rsync**(1), **ssh**(1).
 
 The main rdiff-backup web page is at <https://rdiff-backup.net/>.
 It has more documentation, links to the mailing list and source code.
