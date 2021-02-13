@@ -90,9 +90,12 @@ class build_exec(Command):
             "date": time.strftime("%B %Y", time.gmtime(build_time))
         }
         for command in self.commands:
+            cmd = command[0]
+            inpath = os.path.join(*command[1])
+            outpath = os.path.join(*command[2])
             self.make_file(
-                (command[1]), command[2],
-                self._make_exec, (*command, replacement_dict),
+                (inpath), outpath,
+                self._make_exec, (cmd, inpath, outpath, replacement_dict),
                 exec_msg="executing {}".format(command)
             )
 
@@ -180,11 +183,17 @@ class clean(distutils.command.clean.clean):
 
     def run(self):
         if self.all:
-            for outfile in self.template_files + self.commands:
+            for outfile in self.template_files:
                 if os.path.isfile(outfile[-1]):
                     if not self.dry_run:
                         os.remove(outfile[-1])
                     log.info("removing '%s'", outfile[-1])
+            for outfile in self.commands:
+                outpath = os.path.join(*outfile[-1])
+                if os.path.isfile(outpath):
+                    if not self.dry_run:
+                        os.remove(outpath)
+                    log.info("removing '%s'", outpath)
         super().run()
 
 
@@ -276,9 +285,9 @@ setup(
             ("docs/rdiff-backup-statistics.1", "build/rdiff-backup-statistics.1"),
         ]},
         "build_exec": {"commands": [
-            ("pandoc --standalone --to man --variable date='{date}' "
-             "--variable footer='Version {ver}' {infile} -o {outfile}",
-             "docs/rdiff-backup.1.md", "build/rdiff-backup.1")
+            ("pandoc --standalone --to man --variable date=\"{date}\" "
+             "--variable footer=\"Version {ver}\" {infile} -o {outfile}",
+             ("docs", "rdiff-backup.1.md"), ("build", "rdiff-backup.1"))
         ]},
     },
     cmdclass={
