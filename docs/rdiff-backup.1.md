@@ -540,17 +540,20 @@ explicitly isn't generally required. Exceptions are described.
 
 # USER GROUP OPTIONS
 
+See the [USERS AND GROUPS](#users-and-groups) section for more information.
+
 \--group-mapping-file _mapfile_
 
-:   
-
-\--preserve-numerical-ids
-
-:   
+:   Map group names and IDs according to the group mapping file _mapfile_.
 
 \--user-mapping-file _mapfile_
 
-:   
+:   Map user names and IDs according to the user mapping file _mapfile_.
+
+\--preserve-numerical-ids
+
+:   If set, rdiff-backup will preserve uids/gids instead of
+    trying to preserve unames and gnames.
 
 # RESTORING
 # TIME FORMATS
@@ -732,6 +735,59 @@ match '`/home`' even if '`/home/ben/1234567`' existed.
 
 # USERS AND GROUPS
 
+There can be complications preserving ownership across systems.
+For instance the username that owns a file on the source system
+may not exist on the destination. Here is how rdiff-backup maps
+ownership on the source to the destination (or vice-versa, in
+the case of restoring):
+
+1. If the **\--preserve-numerical-ids** option is given, the remote
+   files will always have the same uid and gid, both
+   for ownership and ACL entries. This may cause unames and
+   gnames to change.
+
+2. Otherwise, attempt to preserve the user and group names
+   for ownership and in ACLs. This may result in files having
+   different uids and gids across systems.
+
+3. If a name cannot be preserved (e.g. because the username
+   does not exist), preserve the original id, but only in
+   cases of user and group ownership. For ACLs, omit any
+   entry that has a bad user or group name.
+
+4. The **\--user-mapping-file** and **\--group-mapping-file** options
+   override this behavior. If either of these options is
+   given, the policy described in 2 and 3 above will be followed,
+   but with the mapped user and group instead of the
+   original. If you specify both **\--preserve-numerical-ids**
+   and one of the mapping options, the behavior is undefined.
+
+The user and group mapping files both have the same format:
+
+    old_name_or_id1:new_name_or_id1
+    old_name_or_id2:new_name_or_id2
+    <etc>
+
+Each line should contain a name or id, followed by a colon '`:`',
+followed by another name or id. If a name or id is not listed,
+they are treated in the default way described above.
+
+When restoring, the above behavior is also followed, but note
+that the original source user/group information will be the input,
+not the already mapped user/group information present in
+the backup repository. For instance, suppose you have mapped
+all the files owned by alice in the source so that they are
+owned by ben in the repository, and now you want to restore,
+making sure the files owned originally by alice are still owned
+by alice. In this case there is no need to use any of the mapping
+options. However, if you wanted to restore the files so
+that the files originally owned by alice on the source are now
+owned by ben, you would have to use the mapping options, even
+though you just want the unames of the repository's files preserved
+in the restored files.
+
+See [USER GROUP OPTIONS](#user-group-options) for a list and description
+of related options.
 
 # FILES
 
