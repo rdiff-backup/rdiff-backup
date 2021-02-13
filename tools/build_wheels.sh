@@ -10,7 +10,7 @@ build_dir=${basedir}/build
 dist_dir=${basedir}/dist
 
 # Install a system package required by our library
-yum install -y librsync-devel
+yum install -y librsync-devel pandoc
 
 # Compile wheels
 for PYBIN in $pybindirs; do
