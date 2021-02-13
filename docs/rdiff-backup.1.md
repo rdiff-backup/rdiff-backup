@@ -371,16 +371,310 @@ verify **\--at** _time_ _location_
     scripts which automate backups.
 
 # FILESYSTEM OPTIONS
+
+\--acls, \--no-acls
+\--carbonfile, \--no-carbonfile
+\--compare-inode, \--no-compare-inode
+\--eas, \--no-eas
+\--hard-links, \--no-hard-links
+\--resource-forks, \--no-resource-forks
+\--never-drop-acls
+
 # SELECTION OPTIONS
+
+This section only quickly lists the existing options, the section
+[FILE SELECTION](#file-selection) explains those more in details.
+
+## Globs, Regex, File lists selection
+
+\--include,\--exclude _glob_
+
+:   Include/exclude the file or files matched by _glob_ (also known as shell
+    pattern). If a directory is excluded, then files under that directory
+    will also be excluded.
+
+\--include-globbing-filelist,\--exclude-globbing-filelist _globsfile_
+
+:  Include/exclude according to the listed globs, similar to **\--include**
+   or **\--exclude**.
+
+\--include-globbing-filelist-stdin,\--exclude-globbing-filelist-stdin
+
+:   Like the previous option but the list of globs is coming from
+    standard input.
+
+\--include-regexp,\--exclude-regexp _regexp_
+
+:   Include/exclude files matching the given regexp (according to Python
+    rules).
+
+\--include-filelist,\--exclude-filelist _listfile_
+
+:   Include/exclude the files listed in _filelist_. This is a best fit for
+    an automatically generated list of files, else use globbing.
+
+\--include-filelist-stdin,\--exclude-filelist-stdin
+
+:   Like the previous but the filelist is coming from standard input.
+
+## Special files selection
+
+**NOTE:** All special files are included by default, so that including them
+explicitly isn't generally required. Exceptions are described.
+
+\--include-device-files,\--exclude-device-files
+
+:   Include/exclude all device files. This can be useful for
+    security/permissions reasons or if rdiff-backup is not handling device
+    files correctly.
+
+\--include-fifos,\--exclude-fifos
+
+:   Include/exclude all fifo files.
+
+\--include-sockets,\--exclude-sockets
+
+:   Include/exclude all socket files.
+
+\--include-symbolic-links,\--exclude-symbolic-links
+
+:   Include/exclude all symbolic links.
+    Contrary to the general rule, symlinks are excluded by default under
+    Windows so that NTFS reparse points aren't backed-up.
+
+\--include-special-files,\--exclude-special-files
+
+:   Include/exclude all the special files listed above.
+
+## Other selections
+
+\--include-other-filesystems,\--exclude-other-filesystems
+
+:   Include/exclude files on file systems (identified by device number)
+    other than the file system the root of the source directory is on.
+    The default is to include other filesystems.
+
+\--include-if-present,\--exclude-if-present _filename_
+
+:   Include/exclude directories if they contain the given _filename_.
+
+\--max-file-size _sizeinbytes_
+
+:   Exclude files that are larger than the given size in bytes.
+
+\--min-file-size _sizeinbytes_
+
+:   Exclude files that are smaller than the given size in bytes.
+
+
 # STATISTICS OPTIONS
+
+\--file-statistics
+
+:   
+
+\--print-statistics
+
+:   
+
 # TIMESTAMP OPTIONS
+
+\--allow-duplicate-timestamps
+
+:   
+
 # USER GROUP OPTIONS
 
+\--group-mapping-file _mapfile_
+
+:   
+
+\--preserve-numerical-ids
+
+:   
+
+\--user-mapping-file _mapfile_
+
+:   
 
 # RESTORING
 # TIME FORMATS
 # REMOTE OPERATION
+
 # FILE SELECTION
+
+rdiff-backup has a number of file selection options. When
+rdiff-backup is run, it searches through the given source directory
+and backs up all the files matching the specified options.
+This selection system may appear complicated, but it is supposed
+to be flexible and easy-to-use. If you just want to learn the
+basics, first look at the selection examples in the examples.html
+file included in the package, or on the web at
+<https://rdiff-backup.net/docs/examples.html>.
+
+rdiff-backup's selection system was originally inspired by
+**rsync**(1), but there are many differences. (For instance, trailing
+backslashes have no special significance.)
+
+All the available file selection conditions are listed under
+[SELECTION OPTIONS](#selection-options).
+Each file selection condition either matches or doesn't match a given
+file. A given file is excluded by the file selection system exactly when
+the first matching file selection condition specifies that the file
+be excluded; otherwise the file is included. When backing up,
+if a file is excluded, rdiff-backup acts as if that file does
+not exist in the source directory. When restoring, an excluded
+file is considered not to exist in either the source or target
+directories.
+
+For instance,
+
+    rdiff-backup backup --include /usr \
+                        --exclude /usr /usr /backup
+
+is exactly the same as
+
+    rdiff-backup backup /usr /backup
+
+because the include and exclude directives match exactly the
+same files, and the **\--include** comes first, giving it precedence.
+Similarly,
+
+    rdiff-backup backup --include /usr/local/bin \
+                        --exclude /usr/local /usr /backup
+
+would backup the '`/usr/local/bin`' directory (and its contents),
+but not '`/usr/local/doc`'.
+
+The include, exclude, include-globbing-filelist, and exclude-globbing-filelist
+options accept extended shell globbing patterns.
+These patterns can contain the special patterns '`*`', '`**`',
+'`?`', and '`[...]`'. As in a normal shell, '`*`' can be expanded to any
+string of characters not containing '`/`', '`?`' expands to any character
+except '`/`', and '`[...]`' expands to a single character of
+those characters specified (ranges are acceptable). The new
+special pattern, '`**`', expands to any string of characters whether
+or not it contains '`/`'. Furthermore, if the pattern starts with
+'`ignorecase:`' (case insensitive), then this prefix will be removed
+and any character in the string can be replaced with an
+upper- or lowercase version of itself.
+
+If you need to match filenames which contain the above globbing
+characters, they may be escaped using a backslash '`\`'. The back‐
+slash will only escape the character following it so for '`**`' you
+will need to use '`\*\*`' to avoid escaping it to the '`*`' globbing
+character.
+
+Remember that you may need to quote these characters when typing
+them into a shell, so the shell does not interpret the globbing
+patterns before rdiff-backup sees them.
+
+The **\--exclude** _pattern_ option matches a file if and only if:
+
+1. pattern can be expanded into the file's filename, or
+
+2. the file is inside a directory matched by the option.
+
+Conversely, **\--include** _pattern_ matches a file if and only if:
+
+1. pattern can be expanded into the file's filename,
+
+2. the file is inside a directory matched by the option, or
+
+3. the file is a directory which contains a file matched by
+    the option.
+
+For example,
+
+    --exclude /usr/local
+
+matches '`/usr/local`', '`/usr/local/lib`', and '`/usr/local/lib/netscape`'.
+It is the same as
+
+    --exclude /usr/local --exclude '/usr/local/**'
+
+And similarly:
+
+    --include /usr/local
+
+specifies that '`/usr`', '`/usr/local`', '`/usr/local/lib`', and
+'`/usr/local/lib/netscape`' (but not '`/usr/doc`') all be backed up.
+Thus you don't have to worry about including parent directories to make
+sure that included subdirectories have somewhere to go. Finally,
+
+    --include ignorecase:'/usr/[a-z0-9]foo/*/**.py'
+
+would match a file like '`/usr/5fOO/hello/there/world.py`'. If it
+did match anything, it would also match '`/usr`'. If there is no
+existing file that the given pattern can be expanded into, the
+option will not match '`/usr`'.
+
+The **\--include-filelist**, **\--exclude-filelist**,
+**\--include-filelist-stdin**, and **\--exclude-filelist-stdin**
+options also introduce file selection conditions.
+They direct rdiff-backup to read in a file, each line of which is
+a file specification, and to include
+or exclude the matching files. Lines are separated by newlines
+or nulls, depending on whether the **\--null-separator** switch was
+given. Each line in a filelist is interpreted similarly to the
+way extended shell patterns are, with a few exceptions:
+
+1. Globbing patterns like '`*`', '`**`', '`?`', and '`[...]`' are not expanded.
+'
+2. Include patterns do not match files in a directory that
+   is included. So '`/usr/local`' in an include file will not
+   match '`/usr/local/doc`'.
+
+3. Lines starting with '<code>+ [...]</code>' (plus followed by a space) ares
+   interpreted as include directives, even if found in a filelist referenced by
+   **\--exclude-filelist**.
+   Similarly, lines starting with '<code>- [...]</code>' (minus followed by a
+   space) exclude files even if they are found within an include filelist.
+
+For example, if the file '`list.txt`' contains the lines:
+
+    /usr/local
+    - /usr/local/doc
+    /usr/local/bin
+    + /var
+    - /var
+
+then '`--include-filelist list.txt`' would include '`/usr`',
+'`/usr/local`', and '`/usr/local/bin`'. It would exclude '`/usr/local/doc`',
+'`/usr/local/doc/python`', etc. It neither excludes nor includes
+'`/usr/local/man`', leaving the fate of this directory to the next
+specification condition. Finally, it is undefined what happens
+with `'/var`'. A single file list should not contain conflicting
+file specifications.
+
+The **\--include-globbing-filelist** and **\--exclude-globbing-filelist**
+options also specify filelists, but each line in the filelist
+will be interpreted as a globbing pattern the way **\--include** and
+**\--exclude** options are interpreted (although '`+ `' and '`- `'
+prefixing is still allowed). For instance, if the file
+'`globbing-list.txt`' contains the lines:
+
+    dir/foo
+
+Then '`--include-globbing-filelist globbing-list.txt`' would be
+exactly the same as specifying on the command line:
+
+    --include dir/foo --include dir/bar --exclude **
+
+Finally, the **\--include-regexp** and **\--exclude-regexp** allow files
+to be included and excluded if their filenames match a python
+regular expression. Regular expression syntax is too complicated
+to explain here, but is covered in Python's library reference.
+Unlike the **\--include** and **\--exclude** options, the regular
+expression options don't match files containing or contained in
+matched files. So for instance
+
+    --include '[0-9]{7}(?!foo)'
+
+matches any files whose full pathnames contain 7 consecutive
+digits which aren't followed by 'foo'. However, it wouldn't
+match '`/home`' even if '`/home/ben/1234567`' existed.
+
 # USERS AND GROUPS
 # STATISTICS
 
