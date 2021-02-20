@@ -35,7 +35,7 @@ jobs:
     - name: Install dependencies
       if: '!steps.skip-docs.outputs.skip'
       run: |
-        sudo apt install librsync-dev libacl1-dev rdiff
+        sudo apt install librsync-dev libacl1-dev rdiff pandoc
         sudo pip3 install --upgrade pip setuptools-scm
         sudo pip3 install --upgrade tox pyxattr pylibacl
     - name: Execute tests ${{ matrix.test-step }}

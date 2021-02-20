@@ -88,6 +88,7 @@ jobs:
         python.exe -VV
         pip.exe install --upgrade pywin32 pyinstaller wheel certifi setuptools-scm tox PyYAML
         python.exe -c 'import pywintypes, winnt, win32api, win32security, win32file, win32con'
+        choco install pandoc
     - name: Build librsync
       run: tools/win_build_librsync.sh ${{ matrix.arch }} ${WIN_LIBRSYNC_VERSION}
     - name: Build rdiff-backup

@@ -16,6 +16,7 @@
       - cyg-get  # depends on cygwin
       - cmake
       - 7zip
+      - pandoc
       - vscode # Visual Studio Code (editor)
       state: present
   - name: install python via chocolatey
