@@ -13,7 +13,7 @@ REPLACE THIS LINE - A clear and concise description of what the bug is
 
 ## Version, Python, Operating System
 
-Call `rdiff-backup --version --api-version 201` or `rdiff-backup -v9` and replace the following line with the output, repeat for each environment impacted:
+Call `rdiff-backup info` (version >= 2.1) or `rdiff-backup -v9` and replace the following line with the output, repeat for each environment impacted:
 
 ```yaml
 <REPLACE THIS LINE - version info>

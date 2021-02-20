@@ -73,3 +73,23 @@ and reviewers. This document lists such coding conventions.
   few reasons to use asserts).
 * Any conversion between strings and bytes happens with `os.fsencode/fsdecode`.
 * Messages are to be expressed in strings (log, errors, etc).
+
+## DOCSTRINGS
+
+* docstrings are quoted with three double quotes (see above).
+* each triple quotes are alone on their line (this is a deviation from some
+  recommendations) so that it is readable.
+* each docstring starts with a single line summarizing the purpose of the
+  object.
+* further descriptions are written after a blank line.
+
+## IMPORT
+
+* import in such a way that a single module name remains but not the packages
+  from its hierarchy. This means to avoid using imported functions, classes and
+  variables without module's name in front. For example `from package import
+  module` or `import module`, but _neither_ `import package.module` _nor_
+  `from module import func_or_var_or_class`.
+* acceptable exceptions are standard modules (e.g. `os.path`) or where the
+  purpose of the import is to wrap the variable/function/class and do as if it
+  would belong to the importing module.

@@ -31,7 +31,7 @@ from . import (
     manage, backup, connection, restore, FilenameMapping,
     Security, C, statistics, compare
 )
-from rdiffbackup import arguments
+from rdiffbackup import arguments, actions_mgr, actions
 
 _action = None
 _create_full_path = None
@@ -54,7 +54,9 @@ def error_check_Main(arglist):
     """Run Main on arglist, suppressing stack trace for routine errors"""
     parsed_args = arguments.parse(
         arglist, "rdiff-backup {ver}".format(ver=Globals.version),
-        arguments.PARENT_PARSERS, arguments.BaseAction.get_actions())
+        actions_mgr.get_generic_parsers(),
+        actions_mgr.get_parent_parsers_compat200(),
+        actions_mgr.get_discovered_actions())
     _parse_cmdlineoptions_compat200(parsed_args)
     if parsed_args.action == "info":
         _output_info(exit=True)
@@ -279,12 +281,11 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
     elif arglist.action == "server":
         _action = "server"
         Globals.server = True
+    elif arglist.action == "test":
+        _action = "test-server"
     elif arglist.action == "verify":
-        if arglist.entity == "servers":
-            _action = "test-server"
-        elif arglist.entity == "files":
-            _action = "verify"
-            _restore_timestr = arglist.at
+        _restore_timestr = arglist.at
+        _action = "verify"
     else:
         _action = arglist.action
 
@@ -309,7 +310,7 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
             _user_mapping_filename = os.fsencode(arglist.user_mapping_file)
     else:
         Globals.set("no_compression_regexp_string",
-                    os.fsencode(arguments.DEFAULT_NOT_COMPRESSED_REGEXP))
+                    os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP))
     if arglist.action in ('backup'):
         Globals.set("file_statistics", arglist.file_statistics)
         Globals.set("print_statistics", arglist.print_statistics)
