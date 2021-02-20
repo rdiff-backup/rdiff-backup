@@ -3,7 +3,7 @@ import os
 import re
 from commontest import old_test_dir, abs_output_dir, MakeOutputDir
 from rdiff_backup import Globals, rpath, increment, Time, Rdiff
-from rdiffbackup import arguments
+from rdiffbackup import actions
 
 lc = Globals.local_connection
 Globals.change_source_perms = 1
@@ -37,7 +37,7 @@ t_pref = os.path.join(abs_output_dir, b"out.%s" % prevtimestr)
 t_diff = os.path.join(abs_output_dir, b"out.%s.diff" % prevtimestr)
 
 Globals.postset_regexp_local("no_compression_regexp",
-                             arguments.DEFAULT_NOT_COMPRESSED_REGEXP, re.I)
+                             actions.DEFAULT_NOT_COMPRESSED_REGEXP, re.I)
 
 
 class inctest(unittest.TestCase):

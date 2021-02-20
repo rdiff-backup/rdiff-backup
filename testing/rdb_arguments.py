@@ -1,7 +1,7 @@
 import subprocess
 import unittest
 from commontest import RBBin
-from rdiffbackup import arguments
+from rdiffbackup import arguments, actions_mgr
 
 
 class ArgumentsTest(unittest.TestCase):
@@ -23,16 +23,20 @@ class ArgumentsTest(unittest.TestCase):
         """
         - verify that the --version option exits and make a few more smoke tests of the parse option
         """
-        actions = arguments.BaseAction.get_actions()
+        disc_actions = actions_mgr.get_discovered_actions()
 
         # verify that the --version option exits the program
         with self.assertRaises(SystemExit):
             values = arguments.parse(["--version"], "testing 0.0.1",
-                                     arguments.PARENT_PARSERS, actions)
+                                     actions_mgr.get_generic_parsers(),
+                                     actions_mgr.get_parent_parsers_compat200(),
+                                     disc_actions)
 
         # positive test of the parsing
         values = arguments.parse(["list", "increments", "dummy_test_repo"], "testing 0.0.2",
-                                 arguments.PARENT_PARSERS, actions)
+                                 actions_mgr.get_generic_parsers(),
+                                 actions_mgr.get_parent_parsers_compat200(),
+                                 disc_actions)
         self.assertEqual("list", values.action)
         self.assertEqual("increments", values.entity)
         self.assertIn("dummy_test_repo", values.locations)
@@ -40,10 +44,14 @@ class ArgumentsTest(unittest.TestCase):
         # negative test of the parsing due to too many or wrong arguments
         with self.assertRaises(SystemExit):
             values = arguments.parse(["backup", "from", "to", "toomuch"], "testing 0.0.3",
-                                     arguments.PARENT_PARSERS, actions)
+                                     actions_mgr.get_generic_parsers(),
+                                     actions_mgr.get_parent_parsers_compat200(),
+                                     disc_actions)
         with self.assertRaises(SystemExit):
             values = arguments.parse(["restore", "--no-such-thing", "from", "to"], "testing 0.0.4",
-                                     arguments.PARENT_PARSERS, actions)
+                                     actions_mgr.get_generic_parsers(),
+                                     actions_mgr.get_parent_parsers_compat200(),
+                                     disc_actions)
 
 
 if __name__ == "__main__":
