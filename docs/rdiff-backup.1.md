@@ -736,8 +736,12 @@ file included in the package, or on the web at
 <https://rdiff-backup.net/docs/examples.html>.
 
 rdiff-backup's selection system was originally inspired by
-**rsync**(1), but there are many differences. (For instance, trailing
-backslashes have no special significance.)
+**rsync**(1), but there are many differences. For instance, trailing
+backslashes have no special significance.
+
+**IMPORTANT:** include and exclude patterns under Windows solely support
+slashes '`/`' as file separators, given that backslashes '`\`' have a
+special meaning in regex/glob patterns.
 
 All the available file selection conditions are listed under
 [SELECTION OPTIONS](#selection-options).
