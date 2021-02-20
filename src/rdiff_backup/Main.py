@@ -35,7 +35,7 @@ from rdiffbackup import arguments, actions_mgr, actions
 
 _action = None
 _create_full_path = None
-_remote_cmd, _remote_schema = None, None
+_remote_schema = None
 _force = None
 _select_opts = []
 _select_files = []
@@ -51,9 +51,11 @@ _remove_older_than_string = None
 
 
 def error_check_Main(arglist):
-    """Run Main on arglist, suppressing stack trace for routine errors"""
+    """
+    Run Main on arglist, suppressing stack trace for routine errors
+    """
 
-    # get a dictionary of discovered actions
+    # get a dictionary of discovered action plugins
     discovered_actions = actions_mgr.get_discovered_actions()
 
     # parse accordingly the arguments
@@ -71,29 +73,41 @@ def error_check_Main(arglist):
     _parse_cmdlineoptions_compat200(parsed_args)
 
     # validate that everything looks good before really starting
-    return_code = action.pre_check()
-    if return_code != 0:
-        Log("Action {act} failed on pre-check. Exiting.".format(
-            act=parsed_args.action), 1)
-        sys.exit(return_code)
+    _validate_call(parsed_args.action, action.pre_check)
 
     # compatibility plug
     if parsed_args.action == "info":
         _output_info(exit=True)
 
-    # now start for real
-    try:
-        _Main(parsed_args)
-    except SystemExit:
-        raise
-    except (Exception, KeyboardInterrupt) as exc:
-        errmsg = robust.is_routine_fatal(exc)
-        if errmsg:
-            Log.exception(2, 6)
-            Log.FatalError(errmsg)
-        else:
-            Log.exception(2, 2)
+    # now start for real, conn_act and action are the same object
+    with action.connect() as conn_act:
+        _validate_call(parsed_args.action, conn_act.check)
+
+        try:
+            _Main(conn_act.connected_locations)
+        except SystemExit:
             raise
+        except (Exception, KeyboardInterrupt) as exc:
+            errmsg = robust.is_routine_fatal(exc)
+            if errmsg:
+                Log.exception(2, 6)
+                Log.FatalError(errmsg)
+            else:
+                Log.exception(2, 2)
+                raise
+
+
+def _validate_call(action, function):
+    """
+    Validate that the given function returns 0 else exit with error message.
+
+    action is used in the error message as action name.
+    """
+    return_code = function()
+    if return_code != 0:
+        Log("Action {act} failed on {func}. Exiting.".format(
+            act=action, func=function.__name__), Log.ERROR)
+        sys.exit(return_code)
 
 
 # @API(backup_touch_curmirror_local, 200)
@@ -224,17 +238,8 @@ def restore_set_root(rpin):
     return 1
 
 
-def _Main(arglist):
+def _Main(rps):
     """Start everything up!"""
-    cmdpairs = SetConnections.get_cmd_pairs(_args, _remote_schema, _remote_cmd)
-    Security.initialize(_action or "mirror", cmdpairs)
-    rps = list(map(SetConnections.cmdpair2rp, cmdpairs))
-
-    # if any of the remote paths is None, we have an error.
-    # We continue to test-server so that all connections can be tested at once.
-    if any(map(lambda x: x is None, rps)) and _action != "test-server":
-        _cleanup()
-        sys.exit(1)
 
     _misc_setup(rps)
     return_val = _take_action(rps)
@@ -251,7 +256,7 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
     between old and new way of parsing parameters.
     """
     global _args, _action, _create_full_path, _force, _restore_timestr
-    global _remote_cmd, _remote_schema, _remove_older_than_string
+    global _remote_schema, _remove_older_than_string
     global _user_mapping_filename, _group_mapping_filename, \
         _preserve_numerical_ids
 
@@ -338,7 +343,6 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         Globals.set("print_statistics", arglist.print_statistics)
     Globals.set("null_separator", arglist.null_separator)
     Globals.set("parsable_output", arglist.parsable_output)
-    Globals.set("ssh_compression", arglist.ssh_compression)
     Globals.set("use_compatible_timestamps", arglist.use_compatible_timestamps)
     Globals.set("do_fsync", arglist.fsync)
     if arglist.current_time is not None:

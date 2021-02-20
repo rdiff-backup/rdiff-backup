@@ -180,7 +180,7 @@ def InternalBackup(source_local,
                                        src_dir, dest_dir)
 
     Security.initialize("backup", cmdpairs)
-    rpin, rpout = list(map(SetConnections.cmdpair2rp, cmdpairs))
+    rpin, rpout = list(map(SetConnections.get_connected_rpath, cmdpairs))
     for attr in ('eas_active', 'eas_write', 'eas_conn'):
         SetConnections.UpdateGlobal(attr, eas)
     for attr in ('acls_active', 'acls_write', 'acls_conn'):
@@ -233,7 +233,8 @@ def InternalRestore(mirror_local,
                                        mirror_dir, dest_dir)
 
     Security.initialize("restore", cmdpairs)
-    mirror_rp, dest_rp = list(map(SetConnections.cmdpair2rp, cmdpairs))
+    mirror_rp, dest_rp = list(map(
+        SetConnections.get_connected_rpath, cmdpairs))
     for attr in ('eas_active', 'eas_write', 'eas_conn'):
         SetConnections.UpdateGlobal(attr, eas)
     for attr in ('acls_active', 'acls_write', 'acls_conn'):

@@ -29,6 +29,7 @@ class ServerAction(actions.BaseAction):
     Start rdiff-backup in server mode (only meant for internal use).
     """
     name = "server"
+    # server's security is given by the client
     # server has no specific sub-options
 
 

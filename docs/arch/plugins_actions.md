@@ -31,28 +31,51 @@ this single class.
 
 The Action class has the following interface:
 
-* the class method `cls.get_name()` returns the name of the plug-in, only this name
-  will be used in the code, and it doesn't need to be aligned with the name of
-  the module or of the class (but it should). Only requirement is that it is
+* the class method `cls.get_name()` returns the name of the plug-in, only this
+  name will be used in the code, and it doesn't need to be aligned with the name
+  of the module or of the class (but it should). Only requirement is that it is
   unique or plug-ins will overwrite each other.
-* the class method `cls.get_version()` returns the version of the plug-in as a string.
-* the class method `cls.add_action_subparser(sub_handler)` returns a subparser as
-  returned by argparse's `sub_handler.add_parser` function, so that the sub-options
-  of the action can be parsed by the `rdiffbackup.arguments.parse` function.
-* the method `self.__init__(args, log, errlog)` initializes the class as object, based
-  on the namespace returned by argparse, a Log and an ErrorLog object.
-* the method `self.pre_check()` just validates that the arguments passed were correct,
-  beyond what argparse could do, and shouldn't try to connect yet to any remote
-  location. A return value unequal 0 means an error, which can be used as exit code.
+* the class method `cls.get_security_class()` returns the security class of
+  the action plug-in, one of `backup`, `restore` or `validate`.
+* the class method `cls.get_version()` returns the version of the plug-in as a
+  string.
+* the class method `cls.add_action_subparser(sub_handler)` returns a subparser
+  as returned by argparse's `sub_handler.add_parser` function, so that the
+  sub-options of the action can be parsed by the `rdiffbackup.arguments.parse`
+  function.
+* the method `self.__init__(args, log, errlog)` initializes the class as object,
+  based on the namespace returned by argparse, a Log and an ErrorLog object.
+* the method `self.pre_check()` just validates that the arguments passed were
+  correct, beyond what argparse could do, and shouldn't try to connect yet to
+  any remote location. A return value unequal 0 means an error, which can be
+  used as exit code.
+* the method `self.connect()` returns a
+  [context manager object](https://docs.python.org/3/reference/datamodel.html#with-statement-context-managers)
+  which can be used in a `with action.connect() as conn_act:` construct.
+  It is expected that the action object itself is the context manager, but it
+  isn't absolutely necessary (but the default implementation offered by the
+  BaseAction). The returned class must hence have two methods `self.__enter__()`
+  and `self.__exit__(self, exc_type, exc_value, traceback)` (closing the
+  connections). Again, it is expected that the runtime context object returned
+  by `__enter__` is the same action object (aka `return self`), but it isn't
+  an obligation.
 
-> **TODO:** further interface aspects haven't yet been defined but will definitely be
-  added step by step as the code progress. The current direction is to have the class
-  being instantiated from the Namespace resulting of the parsing of the CLI arguments,
-  and then object methods representing a workflow through the action be called one after
-  the other, something like:
-  `pre_check` → `connect` → `execute` → `clean_up`.
+  This context object has the following interface, usable through the
+  connection(s) started by `connect()`:
+    * `self.check()` to validate the environment before doing changes.
+      It returns 0 in case of success, else an integer to be used as exit code.
+    * `self.setup()` still doesn't do changes but prepares the environment.
+      It returns 0 in case of success, else an integer to be used as exit code.
+    * `self.run()` finally does whatever the action is supposed to do.
+      It might return 0 in case of success, else an integer to be used as exit
+      code. It is the only function that might exit directly instead, even
+      though it isn't the recommended approach (but a matter of fact for most
+      existing actions).
 
-Of course, action classes inheriting from the BaseAction class don't need to define all
-aspects themselves, making the life of plug-in developers easier.
+> **NOTE:** the context object doesn't need a "cleanup" action as clean-up is to
+  be done as part of the `__exit__` method provided by the context manager.
+
+Of course, action classes inheriting from the BaseAction class don't need to
+define all aspects themselves, making the life of plug-in developers easier.
 
 > **NOTE:** more information is provided with `pydoc rdiffbackup.actions`.

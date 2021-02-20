@@ -31,6 +31,7 @@ class InfoAction(actions.BaseAction):
     in a bug report, and exits.
     """
     name = "info"
+    security = "validate"  # FIXME introduce a "none" security level?
     # information has no specific sub-options
 
 

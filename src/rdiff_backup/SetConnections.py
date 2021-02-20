@@ -46,35 +46,36 @@ class SetConnectionsException(Exception):
     pass
 
 
-def get_cmd_pairs(arglist, remote_schema=None, remote_cmd=None):
+def get_cmd_pairs(locations, remote_schema=None, ssh_compression=True):
     """Map the given file descriptions into command pairs
 
     Command pairs are tuples cmdpair with length 2.  cmdpair[0] is
     None iff it describes a local path, and cmdpair[1] is the path.
 
     """
+    assert remote_schema is None or isinstance(remote_schema, bytes), (
+        "remote_schema parameter must be bytes or None not {ths}.".format(
+            ths=type(remote_schema)))
+
     global __cmd_schema
     if remote_schema:
         __cmd_schema = remote_schema
-    elif not Globals.ssh_compression:
+    elif not ssh_compression:
         __cmd_schema = __cmd_schema_no_compress
 
     if Globals.remote_tempdir:
         __cmd_schema += (b" --tempdir=" + Globals.remote_tempdir)
 
-    if not arglist:
+    if not locations:
         return []
-    desc_triples = list(map(parse_location, arglist))
+    desc_triples = list(map(parse_location, locations))
 
     # was any error string be returned as third in the list?
     for err in [triple[2] for triple in desc_triples if triple[2]]:
         raise SetConnectionsException(err)
 
-    if [x for x in desc_triples if x[0]]:  # True if any host_info found
-        if remote_cmd:
-            Log.FatalError("The --remote-cmd flag is not compatible "
-                           "with remote file descriptions.")
-    elif remote_schema:
+    if remote_schema and not [x for x in desc_triples if x[0]]:
+        # remote schema defined but no remote location found
         Log("Remote schema option ignored - no remote file "
             "descriptions.", 2)
 
@@ -82,13 +83,14 @@ def get_cmd_pairs(arglist, remote_schema=None, remote_cmd=None):
     desc_pairs = [triple[:2] for triple in desc_triples]
 
     cmd_pairs = list(map(_desc2cmd_pairs, desc_pairs))
-    if remote_cmd:  # last file description gets remote_cmd
-        cmd_pairs[-1] = (remote_cmd, cmd_pairs[-1][1])
+
     return cmd_pairs
 
 
-def cmdpair2rp(cmd_pair):
-    """Return normalized RPath from cmd_pair (remote_cmd, filename)"""
+def get_connected_rpath(cmd_pair):
+    """
+    Return normalized RPath from command pair (remote_cmd, filename)
+    """
     cmd, filename = cmd_pair
     if cmd:
         conn = _init_connection(cmd)

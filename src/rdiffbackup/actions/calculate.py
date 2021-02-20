@@ -29,6 +29,7 @@ class CalculateAction(actions.BaseAction):
     Calculate values (average by default) across multiple statistics files.
     """
     name = "calculate"
+    security = "validate"
 
     @classmethod
     def add_action_subparser(cls, sub_handler):

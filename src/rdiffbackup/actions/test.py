@@ -33,6 +33,7 @@ class TestAction(actions.BaseAction):
     Test that servers are properly reachable and usable for back-ups.
     """
     name = "test"
+    security = "validate"
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
@@ -56,6 +57,19 @@ class TestAction(actions.BaseAction):
                 return_code |= 1  # binary 'or' to always get 1
 
         return return_code
+
+    def check(self):
+        # we call the parent check only to output the failed connections
+        return_code = super().check()
+
+        # even if some connections are bad, we want to validate the remaining
+        # ones later on. The 'None' filter keeps only trueish values.
+        self.connected_locations = list(filter(None, self.connected_locations))
+        if self.connected_locations:
+            # at least one location is apparently valid
+            return 0
+        else:
+            return return_code
 
 
 def get_action_class():
