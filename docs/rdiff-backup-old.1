@@ -749,8 +749,13 @@ web at
 .BR rdiff-backup 's
 selection system was originally inspired by
 .BR rsync (1),
-but there are many differences.  (For instance, trailing backslashes
-have no special significance.)
+but there are many differences. For instance, trailing backslashes
+have no special significance.
+
+.BR IMPORTANT:
+include and exclude patterns under Windows solely support
+slashes "/" as file separators, given that backslashes "\\" have a special
+meaning in regex/glob patterns.
 
 The file selection system comprises a number of file
 selection conditions, which are set using one of the following command

@@ -481,7 +481,7 @@ def _action_backup(rpin, rpout):
     _init_user_group_mapping(rpout.conn)
     _backup_final_init(rpout)
     _backup_set_select(rpin)
-    _backup_warn_if_infinite_regress(rpin, rpout)
+    _backup_warn_if_infinite_recursion(rpin, rpout)
     if _prevtime:
         Time.setprevtime(_prevtime)
         rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
@@ -628,7 +628,7 @@ destination directory: %s""" % (Globals.rbdir.get_safepath(), exc,
     SetConnections.UpdateGlobal('rbdir', Globals.rbdir)
 
 
-def _backup_warn_if_infinite_regress(rpin, rpout):
+def _backup_warn_if_infinite_recursion(rpin, rpout):
     """Warn user if destination area contained in source area"""
     # Just a few heuristics, we don't have to get every case
     if rpout.conn is not rpin.conn:
@@ -648,7 +648,7 @@ def _backup_warn_if_infinite_regress(rpin, rpout):
 
     Log(
         """Warning: The destination directory '%s' may be contained in the
-source directory '%s'.  This could cause an infinite regress.  You
+source directory '%s'.  This could cause an infinite recursion.  You
 may need to use the --exclude option (which you might already have done)."""
         % (rpout.get_safepath(), rpin.get_safepath()), 2)
 
