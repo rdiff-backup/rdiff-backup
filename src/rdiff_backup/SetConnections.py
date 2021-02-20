@@ -64,15 +64,23 @@ def get_cmd_pairs(arglist, remote_schema=None, remote_cmd=None):
 
     if not arglist:
         return []
-    desc_pairs = list(map(_parse_file_desc, arglist))
+    desc_triples = list(map(parse_location, arglist))
 
-    if [x for x in desc_pairs if x[0]]:  # True if any host_info found
+    # was any error string be returned as third in the list?
+    for err in [triple[2] for triple in desc_triples if triple[2]]:
+        raise SetConnectionsException(err)
+
+    if [x for x in desc_triples if x[0]]:  # True if any host_info found
         if remote_cmd:
             Log.FatalError("The --remote-cmd flag is not compatible "
                            "with remote file descriptions.")
     elif remote_schema:
         Log("Remote schema option ignored - no remote file "
             "descriptions.", 2)
+
+    # strip the error field from the triples to get pairs
+    desc_pairs = [triple[:2] for triple in desc_triples]
+
     cmd_pairs = list(map(_desc2cmd_pairs, desc_pairs))
     if remote_cmd:  # last file description gets remote_cmd
         cmd_pairs[-1] = (remote_cmd, cmd_pairs[-1][1])
@@ -169,14 +177,15 @@ def _desc2cmd_pairs(desc_pair):
         return (_fill_schema(host_info), filename)
 
 
-def _parse_file_desc(file_desc):
-    """Parse file description returning pair (host_info, filename)
+def parse_location(file_desc):
+    """
+    Parse file description returning triple (host_info, filename, error)
 
     In other words, bescoto@folly.stanford.edu::/usr/bin/ls =>
-    ("bescoto@folly.stanford.edu", "/usr/bin/ls").  The
+    ("bescoto@folly.stanford.edu", "/usr/bin/ls", None).  The
     complication is to allow for quoting of : by a \\.  If the
-    string is not separated by :, then the host_info is None.
-
+    string is not separated by ::, then the host_info is None.
+    If the error isn't None, it is an error message explaining the issue.
     """
 
     # paths and similar objects must always be bytes
@@ -195,7 +204,9 @@ def _parse_file_desc(file_desc):
         file_path = file_match.group("path")
     else:
         if re.match(rb"^::", file_desc):
-            raise SetConnectionsException("No file host in '%s'" % file_desc)
+            return (None, None,
+                    "No file host in {desc} starting with '::'.".format(
+                        desc=file_desc))
         file_host = None
         file_path = file_desc
 
@@ -204,9 +215,9 @@ def _parse_file_desc(file_desc):
         file_path = file_path.replace(os.fsencode(os.path.sep), b'/')
 
     if not file_path:
-        raise SetConnectionsException("No file path in '%s'" % file_desc)
+        return (None, None, "No file path in {desc}.".format(desc=file_desc))
 
-    return (file_host, file_path)
+    return (file_host, file_path, None)
 
 
 def _fill_schema(host_info):

@@ -39,6 +39,11 @@ The Action class has the following interface:
 * the class method `cls.add_action_subparser(sub_handler)` returns a subparser as
   returned by argparse's `sub_handler.add_parser` function, so that the sub-options
   of the action can be parsed by the `rdiffbackup.arguments.parse` function.
+* the method `self.__init__(args, log, errlog)` initializes the class as object, based
+  on the namespace returned by argparse, a Log and an ErrorLog object.
+* the method `self.pre_check()` just validates that the arguments passed were correct,
+  beyond what argparse could do, and shouldn't try to connect yet to any remote
+  location. A return value unequal 0 means an error, which can be used as exit code.
 
 > **TODO:** further interface aspects haven't yet been defined but will definitely be
   added step by step as the code progress. The current direction is to have the class

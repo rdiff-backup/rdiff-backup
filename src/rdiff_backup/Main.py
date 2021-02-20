@@ -52,14 +52,36 @@ _remove_older_than_string = None
 
 def error_check_Main(arglist):
     """Run Main on arglist, suppressing stack trace for routine errors"""
+
+    # get a dictionary of discovered actions
+    discovered_actions = actions_mgr.get_discovered_actions()
+
+    # parse accordingly the arguments
     parsed_args = arguments.parse(
         arglist, "rdiff-backup {ver}".format(ver=Globals.version),
         actions_mgr.get_generic_parsers(),
         actions_mgr.get_parent_parsers_compat200(),
-        actions_mgr.get_discovered_actions())
+        discovered_actions)
+
+    # instantiate the action object from the dictionary, handing over the
+    # parsed arguments
+    action = discovered_actions[parsed_args.action](parsed_args, Log, ErrorLog)
+
+    # compatibility plug, we need verbosity set properly asap
     _parse_cmdlineoptions_compat200(parsed_args)
+
+    # validate that everything looks good before really starting
+    return_code = action.pre_check()
+    if return_code != 0:
+        Log("Action {act} failed on pre-check. Exiting.".format(
+            act=parsed_args.action), 1)
+        sys.exit(return_code)
+
+    # compatibility plug
     if parsed_args.action == "info":
         _output_info(exit=True)
+
+    # now start for real
     try:
         _Main(parsed_args)
     except SystemExit:

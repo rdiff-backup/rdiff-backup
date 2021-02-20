@@ -331,18 +331,38 @@ class BaseAction:
             subparsers[sub_name].set_defaults(**{sub_dest: sub_name})
         return subparsers
 
-    def __init__(self, values):
+    def __init__(self, values, log, errlog):
         """
-        Dummy initialization method
+        Instantiate an action class.
+        values is a Namespace as returned by argparse.
+        log is a log.Log object and errlog a log.ErrorLog object.
         """
         self.values = values
+        self.log = log
+        self.errlog = errlog
 
     def print_values(self, explicit=True):
         """
-        Dummy output method
+        Debug output method
         """
         print(yaml.safe_dump(self.values.__dict__,
                              explicit_start=explicit, explicit_end=explicit))
+
+    def pre_check(self):
+        """
+        Validate that the values given look correct. This method isn't meant to
+        try to access any file system and even less a remote location, it is
+        really only meant to validate the values beyond what argparse can do.
+        Return 0 if everything looked good, else an error code.
+        Try to check everything before returning and not force the user to fix their
+        entries step by step.
+        """
+        if self.values.action == self.name:
+            return 0
+        else:
+            self.log("Action '{act}' doesn't fit name of action class '{name}'.".format(
+                act=self.values.action, name=self.name), self.log.ERROR)
+            return 1
 
 
 def get_action_class():

@@ -35,6 +35,11 @@ class LoggerError(Exception):
 
 class Logger:
     """All functions which deal with logging"""
+    ERROR = 1
+    WARNING = 2
+    DEFAULT = 3
+    INFO = 5
+    DEBUG = 9
 
     def __init__(self):
         self.log_file_open = None
