@@ -116,7 +116,7 @@ def _set_security_level(security_class, cmdpairs):
     def getpath(cmdpair):
         return cmdpair[1]
 
-    if Globals.server:
+    if security_class == "server":
         return
     cp1 = cmdpairs[0]
     if len(cmdpairs) > 1:

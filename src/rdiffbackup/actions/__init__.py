@@ -262,6 +262,7 @@ class BaseAction:
     name = None
 
     # type of action for security purposes, one of backup, restore, validate
+    # or server
     security = None
 
     # version of the action
