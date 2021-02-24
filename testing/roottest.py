@@ -3,7 +3,7 @@ import os
 from commontest import old_test_dir, abs_test_dir, abs_output_dir, Myrm, \
     abs_restore_dir, re_init_rpath_dir, compare_recursive, \
     BackupRestoreSeries, rdiff_backup, RBBin, xcopytree
-from rdiff_backup import Globals, rpath, Main
+from rdiff_backup import Globals, rpath
 """Root tests - contain tests which need to be run as root.
 
 Some of the quoting here may not work with csh (works on bash).  Also,
@@ -184,10 +184,6 @@ class RootTest(BaseRootTest):
                      out_rp.path,
                      extra_options=(b"--preserve-numerical-ids"))
         self.assertEqual(get_ownership(out_rp), ((0, 0), (userid, 1)))
-
-    def tearDown(self):
-        # especially the logfile might still appear opened if a test was interrupted
-        Main._cleanup()
 
 
 class HalfRoot(BaseRootTest):

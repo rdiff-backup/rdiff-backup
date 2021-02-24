@@ -28,7 +28,7 @@ import os
 import sys
 import yaml
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
-from rdiff_backup import SetConnections, Security
+from rdiff_backup import Globals, Security, SetConnections, Time
 
 # The default regexp for not compressing those files
 # compat200: it is also used by Main.py to avoid having a 2nd default
@@ -376,8 +376,11 @@ class BaseAction:
 
         Returns False to propagate potential exception, else True.
         """
-        for location in self.connected_locations:
-            pass  # TODO disconnect
+        self.log("Cleaning up", self.log.INFO)
+        self.errlog.close()
+        self.log.close_logfile()
+        if self.security != "server":
+            SetConnections.CloseConnections()
 
         return False
 
@@ -426,7 +429,7 @@ class BaseAction:
                 ssh_compression=self.values.ssh_compression)
             Security.initialize(self.get_security_class(), cmdpairs)
             self.connected_locations = list(
-                    map(SetConnections.get_connected_rpath, cmdpairs))
+                map(SetConnections.get_connected_rpath, cmdpairs))
         else:
             self.connected_locations = []
 
@@ -452,6 +455,22 @@ class BaseAction:
                 return_code |= 1
 
         return return_code
+
+    def setup(self):
+        """
+        Prepare the execution of the action.
+        """
+        # Set default change ownership flag, umask, relay regexps
+        os.umask(0o77)
+        Time.setcurtime(Globals.current_time)
+        SetConnections.UpdateGlobal("client_conn", Globals.local_connection)
+        Globals.postset_regexp('no_compression_regexp',
+                               Globals.no_compression_regexp_string)
+        for conn in Globals.connections:
+            conn.robust.install_signal_handlers()
+            conn.Hardlink.initialize_dictionaries()
+
+        return 0
 
 
 def get_action_class():

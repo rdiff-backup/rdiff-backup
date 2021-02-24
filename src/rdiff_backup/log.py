@@ -325,10 +325,11 @@ class ErrorLog:
     @classmethod
     def close(cls):
         """Close the error log file"""
-        if not Globals.isbackup_writer:
-            return Globals.backup_writer.log.ErrorLog.close()
-        cls._log_fileobj.close()
-        cls._log_fileobj = None
+        if cls.isopen():
+            if not Globals.isbackup_writer:
+                return Globals.backup_writer.log.ErrorLog.close()
+            cls._log_fileobj.close()
+            cls._log_fileobj = None
 
     @classmethod
     def _get_log_string(cls, error_type, rp, exc):

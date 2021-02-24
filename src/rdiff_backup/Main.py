@@ -50,9 +50,12 @@ _restore_timestr, _incdir, _prevtime = None, None, None
 _remove_older_than_string = None
 
 
-def error_check_Main(arglist):
+def main_run(arglist, security_override=False, do_exit=True):
     """
-    Run Main on arglist, suppressing stack trace for routine errors
+    Main function to be called with arguments list without the name of the
+    program, aka $0 resp. sys.argv[0].
+
+    The security override and the exit boolean are only meant for test purposes
     """
 
     # get a dictionary of discovered action plugins
@@ -81,10 +84,17 @@ def error_check_Main(arglist):
 
     # now start for real, conn_act and action are the same object
     with action.connect() as conn_act:
-        _validate_call(parsed_args.action, conn_act.check)
 
+        # For test purposes
+        if security_override:
+            Globals.security_level = "override"
+
+        _validate_call(parsed_args.action, conn_act.check)
+        _validate_call(parsed_args.action, conn_act.setup)
+
+        return_val = 0
         try:
-            _Main(conn_act.connected_locations)
+            return_val = _take_action(conn_act.connected_locations)
         except SystemExit:
             raise
         except (Exception, KeyboardInterrupt) as exc:
@@ -95,6 +105,11 @@ def error_check_Main(arglist):
             else:
                 Log.exception(2, 2)
                 raise
+
+    if do_exit:
+        sys.exit(return_val)
+    else:  # for test purposes
+        return return_val
 
 
 def _validate_call(action, function):
@@ -236,18 +251,6 @@ def restore_set_root(rpin):
                            "nor like increment.".format(ddir=from_datadir))
     _restore_root_set = 1
     return 1
-
-
-def _Main(rps):
-    """Start everything up!"""
-
-    _misc_setup(rps)
-    return_val = _take_action(rps)
-    _cleanup()
-    if isinstance(return_val, int):
-        sys.exit(return_val)
-    else:
-        sys.exit(0)
 
 
 def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
@@ -416,18 +419,6 @@ def _commandline_error(message):
         "%s\nSee the rdiff-backup manual page for more information." % message)
 
 
-def _misc_setup(rps):
-    """Set default change ownership flag, umask, relay regexps"""
-    os.umask(0o77)
-    Time.setcurtime(Globals.current_time)
-    SetConnections.UpdateGlobal("client_conn", Globals.local_connection)
-    Globals.postset_regexp('no_compression_regexp',
-                           Globals.no_compression_regexp_string)
-    for conn in Globals.connections:
-        conn.robust.install_signal_handlers()
-        conn.Hardlink.initialize_dictionaries()
-
-
 def _init_user_group_mapping(destination_conn):
     """Initialize user and group mapping on destination connection"""
     global _user_mapping_filename, _group_mapping_filename, \
@@ -483,16 +474,6 @@ def _take_action(rps):
     else:
         raise ValueError("Unknown action " + _action)
     return action_result
-
-
-def _cleanup():
-    """Do any last minute cleaning before exiting"""
-    Log("Cleaning up", 6)
-    if ErrorLog.isopen():
-        ErrorLog.close()
-    Log.close_logfile()
-    if not Globals.server:
-        SetConnections.CloseConnections()
 
 
 def _action_backup(rpin, rpout):
