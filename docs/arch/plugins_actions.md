@@ -8,21 +8,26 @@ An action plug-in is:
    how built-in action modules are packaged),
 2. or a top-level module with a name `rdb_action_[...].py`
 
-All those plug-ins are found by the action manager module `rdiffbackup.actions_mgr`
-and returned as a hash made of key-value pairs by the function `get_discovered_actions`:
+All those plug-ins are found by the action manager module
+`rdiffbackup.actions_mgr` and returned as a hash made of key-value pairs by the function `get_discovered_actions`:
 
 * key is the name returned by the Action class (see below the `get_name` method)
-* value is the Action class itself, as returned by the `get_action_class` function
-  of the action plug-in module.
+* value is the Action class itself, as returned by the `get_action_class`
+  function of the action plug-in module.
 
 > **NOTE:** more information is provided with `pydoc rdiffbackup.actions_mgr`.
 
+The actions manager also has two functions to get lists of argparse parsers
+to use with `arguments.parse`, `get_generic_parsers` for generic parsers
+common to all actions, and `get_parent_parsers_compat200` to get all
+parsers of all "traditional" actions, for faking the old CLI.
+
 ## Module interface
 
-Each action plug-in module contains one single Action-class. This action class is
-returned by the function `get_action_class` of the module. How the action class is
-named and of which hierarchy it descends is irrelevant (though it makes sense to
-derive it from the rdiffbackup.actions.BaseAction class).
+Each action plug-in module contains one single Action-class. This action class
+is returned by the function `get_action_class` of the module. How the action
+class is named and of which hierarchy it descends is irrelevant (though it
+makes sense to derive it from the rdiffbackup.actions.BaseAction class).
 
 All further action plug-in interactions are executed through the interface of
 this single class.
@@ -79,3 +84,27 @@ Of course, action classes inheriting from the BaseAction class don't need to
 define all aspects themselves, making the life of plug-in developers easier.
 
 > **NOTE:** more information is provided with `pydoc rdiffbackup.actions`.
+
+## Pseudo-code
+
+Taking all together, the code to use an action plugin would look as follows,
+without any error handling:
+
+```
+discovered_actions = actions_mgr.get_discovered_actions()
+parsed_args = arguments.parse(
+	arglist, "rdiff-backup {ver}".format(ver=Globals.version),
+	actions_mgr.get_generic_parsers(),
+	actions_mgr.get_parent_parsers_compat200(),
+	discovered_actions)
+action = discovered_actions[parsed_args.action](parsed_args, Log, ErrorLog)
+action.pre_check()
+# implicit context_manager.__enter__()
+with action.connect() as conn_act:
+	conn_act.check()
+	conn_act.setup()
+	conn_act.run()
+# implicit context_manager.__exit__(exc_type, exc_val, exc_tb)
+```
+
+> **TIP:** the actual code can be found in `rdiff_backup.Main.main_run()`.

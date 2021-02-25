@@ -286,7 +286,7 @@ class BaseAction:
         Return the security class of the Action class.
 
         Children classes only need to define the class member 'security',
-        with one of the values 'backup', 'restore' or 'validate'.
+        with one of the values 'backup', 'restore', 'server' or 'validate'.
         """
         return cls.security
 
