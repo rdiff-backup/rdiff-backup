@@ -28,7 +28,6 @@ is recommended for **small deployment**. If this is your case, just
 recommended for **large deployment**. If this is your case, just
 continue reading.
 
-  
 
 If your rdiff-backup deployment is large, upgrading all instances at the
 same time might not be possible. The following section describes a way
@@ -62,7 +61,7 @@ line where the source is local and the destination is remote. e.g.:
 > **NOTE:** With this use case you must be careful as rdiff-backup
 legacy version is not compatible with the new version due to the
 migration to Python 3.
-  
+
 
 #### On Remote
 
@@ -72,7 +71,7 @@ side-by-side on the remote server as follows:
 ##### On Debian
 
         $ sudo apt update
-        $ sudo apt install python3-dev libacl1-dev virtualenv build-essential curl  
+        $ sudo apt install python3-dev libacl1-dev virtualenv build-essential curl
         $ curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
         $ sudo python3 get-pip.py
         $ sudo virtualenv -p python3 /opt/rdiff-backup2
@@ -147,7 +146,7 @@ that is used to auto-detect the version of rdiff-backup to be used.
 #### On Remote
 
 Once the local server is supporting both versions, you may then start
-upgrading remote instances to the new version by 
+upgrading remote instances to the new version by
 [following the installation instruction](https://github.com/rdiff-backup/rdiff-backup#installation).
 This will upgrade rdiff-backup to the new version.
 
@@ -233,3 +232,57 @@ rdiff-backup --remote-schema 'ssh -C {h} rdiff-backup-{vx}.{vy} server' \
 	line of `$(rdiff-backup --version | awk -F'[. ]' '{print $2 "." $3}')`.
 
 And that's it for the side-by-side installation...
+
+## Migration from old to new CLI
+
+After version 2.0.5, a new Command Line Interface (CLI) has been introduced
+in rdiff-backup, which offers also a compatibility layer, which means that we
+have effectively three CLIs:
+
+1. the old CLI until 2.0.5
+2. the legacy CLI, mimicking the old one, starting with 2.1+ (and deprecated)
+3. the new CLI, starting with 2.1+ as well
+
+The following tables show the main differences between those three versions of
+the rdiff-backup CLI, using typical usage examples.
+
+> **NOTE:** the new features aren't explained, only the mapping from the old
+	syntax to the new one.
+
+The differences between the old and the legacy CLI are, obviously, limited and
+restricted to the restore use cases:
+
+|Description | old CLI | legacy CLI |
+|------------|---------|------------|
+| Restore an increment file | `rdiff-backup {backup-repo}/rdiff-backup-data/{dated-increment} {target-dir}` | `rdiff-backup --restore {backup-repo}/rdiff-backup-data/{dated-increment} {target-dir}` |
+
+The differences between the old and the new CLI are more important, especially
+because the new CLI as a more strict approach to the differentiation between
+actions and options.
+
+|Description | old CLI | new CLI |
+|------------|---------|---------|
+| backup | `rdiff-backup [-b] {source-dir} {target-dir}` (`-b` or `--backup-mode`) | `rdiff-backup backup {source-dir} {target-dir}` |
+| backup with custom compression regexp | `rdiff-backup [-b] --no-compression-regexp {regexp} {source-dir} {target-dir}` (`-b` or `--backup-mode`) | `rdiff-backup backup --not-compressed-regexp {regexp} {source-dir} {target-dir}` |
+| restrict read-write | `--restrict {path}` | `--restrict-path {path} [--restrict-mode read-write]` |
+| restrict read-only | `--restrict-read-only {path}` | `--restrict-path {path} --restrict-mode read-only` |
+| restrict update-only | `--restrict-update-only {path}` | `--restrict-path {path} --restrict-mode update-only` |
+| remote mode without compression | `--ssh-no-compression` | `--no-ssh-compression` |
+| calculate | `rdiff-backup --calculate-average {stat-file1} {state-files...}` | `rdiff-backup calculate [--method average] {stat-file1} {state-files...}` |
+| compare by metadata with the latest increment | `rdiff-backup --compare {source-dir} {target-dir}` | `rdiff-backup compare [--at now] [--method meta] {source-dir} {target-dir}` |
+| compare by metadata at given date/time | `rdiff-backup --compare-at-time {datetime} {source-dir} {target-dir}` | `rdiff-backup compare --at {datetime} [--method meta] {source-dir} {target-dir}` |
+| full compare with the latest increment | `rdiff-backup --compare-full {source-dir} {target-dir}` | `rdiff-backup compare [--at now] --method full {source-dir} {target-dir}` |
+| full compare at given date/time | `rdiff-backup --compare-full-at-time {datetime} {source-dir} {target-dir}` | `rdiff-backup compare --at {datetime} --method full {source-dir} {target-dir}` |
+| compare by hash with the latest increment | `rdiff-backup --compare-hash {source-dir} {target-dir}` | `rdiff-backup compare [--at now] --method hash {source-dir} {target-dir}` |
+| compare by hash at given date/time | `rdiff-backup --compare-hash-at-time {datetime} {source-dir} {target-dir}` | `rdiff-backup compare --at {datetime} --method hash {source-dir} {target-dir}` |
+| list files at given time in backup repo | `rdiff-backup --list-at-time {datetime} {backup-repo}` | `rdiff-backup list files --at {datetime} {backup-repo}` |
+| list files changed since given time in backup repo | `rdiff-backup --list-changed-since {datetime} {backup-repo}` | `rdiff-backup list files --changed-since {datetime} {backup-repo}` |
+| list increments in backup repo | `rdiff-backup --list-increments {backup-repo}` | `rdiff-backup list increments {backup-repo}` |
+| list increment sizes in backup repo | `rdiff-backup --list-increment-sizes {backup-repo}` | `rdiff-backup list increments --size {backup-repo}` |
+| check and correct a backup repo in case of failed backup | `rdiff-backup --check-destination-dir {backup-repo}` | `rdiff-backup regress {backup-repo}` |
+| Restore from a backup repo | `rdiff-backup -r {datetime} {backup-repo} {target-dir}` (`-r` or `--restore-as-of`) | `rdiff-backup restore --at {datetime} {backup-repo} {target-dir}` |
+| Restore an increment file | `rdiff-backup {backup-repo}/rdiff-backup-data/{dated-increment} {target-dir}` | `rdiff-backup restore [--increment] {backup-repo}/rdiff-backup-data/{dated-increment} {target-dir}` |
+| Start a server | `rdiff-backup --server` | `rdiff-backup server` |
+| Test one or more server connections | `rdiff-backup --test-server {remote-locations...}` | `rdiff-backup test {remote-locations...}` |
+| Verify hashes of last backup | `rdiff-backup --verify {backup-repo}` | `rdiff-backup verify [--at now] {backup-repo}` |
+| Verify hashes of backup at given time | `rdiff-backup --verify-at-time {datetime} {backup-repo}` | `rdiff-backup verify --at {datetime} {backup-repo}` |
