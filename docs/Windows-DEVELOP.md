@@ -72,11 +72,17 @@ Install with default settings.
 1. Extract it content using 7z `C:\librsync-2.2.1\`.
 2. Open a "Developer Command Prompt for VS2019" from the start menu.
 3. Type `cd C:\librsync-2.2.1\` 
-4. `cmake -DCMAKE_INSTALL_PREFIX=C:\librsync\ -A Win32 -DBUILD_SHARED_LIBS=OFF .`
+4. `cmake -DCMAKE_INSTALL_PREFIX=C:\librsync\ -A x64 -DBUILD_SHARED_LIBS=OFF .`
 5. `cmake --build . --config Release`
 6. `cmake --install . --config Release`
 
-Notice: Source directory `C:\librsync-2.2.1\` should be in a seperate directory then target directory `C:\librsync\`.
+Note: Source directory `C:\librsync-2.2.1\` should be in a separate directory then target directory `C:\librsync\`.
+
+These steps build a 64-bit version of librsync, suitable for use in a 64-bit version of Python. If using a 32-bit version
+of python, use this in place of the first `cmake` command:
+
+1. `cmake -DCMAKE_INSTALL_PREFIX=C:\librsync\ -A Win32 -DBUILD_SHARED_LIBS=OFF .`
+
 
 ## Build rdiff-backup
 
@@ -116,3 +122,14 @@ The expected output should be as follow:
     
     /out:hello.exe
     hello.obj
+
+### unresolved external symbol
+
+If you see link errors like these:
+
+    _librsyncmodule.obj : error LNK2001: unresolved external symbol rs_sig_begin
+    _librsyncmodule.obj : error LNK2001: unresolved external symbol rs_job_free
+    _librsyncmodule.obj : error LNK2001: unresolved external symbol rs_loadsig_begin
+
+then you have probably compiled librsync for the wrong architecture. Try both `-A Win32`/`-A x64` switches when running
+cmake to build librsync.
