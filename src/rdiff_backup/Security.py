@@ -127,7 +127,7 @@ def _set_security_level(action, cmdpairs):
     if action == "backup" or action == "check-destination-dir":
         if bothlocal(cp1, cp2) or bothremote(cp1, cp2):
             sec_level = "minimal"
-            rdir = tempfile.gettempdir()
+            rdir = tempfile.gettempdirb()
         elif islocal(cp1):
             sec_level = "read-only"
             rdir = getpath(cp1)
@@ -137,7 +137,7 @@ def _set_security_level(action, cmdpairs):
     elif action == "restore" or action == "restore-as-of":
         if len(cmdpairs) == 1 or bothlocal(cp1, cp2) or bothremote(cp1, cp2):
             sec_level = "minimal"
-            rdir = tempfile.gettempdir()
+            rdir = tempfile.gettempdirb()
         elif islocal(cp1):
             sec_level = "read-only"
             Main.restore_set_root(
@@ -152,7 +152,7 @@ def _set_security_level(action, cmdpairs):
     elif action == "mirror":
         if bothlocal(cp1, cp2) or bothremote(cp1, cp2):
             sec_level = "minimal"
-            rdir = tempfile.gettempdir()
+            rdir = tempfile.gettempdirb()
         elif islocal(cp1):
             sec_level = "read-only"
             rdir = getpath(cp1)
@@ -166,7 +166,7 @@ def _set_security_level(action, cmdpairs):
             "verify"
     ]:
         sec_level = "minimal"
-        rdir = tempfile.gettempdir()
+        rdir = tempfile.gettempdirb()
     else:
         raise RuntimeError("Unknown action '{act}'.".format(act=action))
 
