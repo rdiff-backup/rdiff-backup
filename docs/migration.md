@@ -257,7 +257,7 @@ restricted to the restore use cases:
 | Restore an increment file | `rdiff-backup {backup-repo}/rdiff-backup-data/{dated-increment} {target-dir}` | `rdiff-backup --restore {backup-repo}/rdiff-backup-data/{dated-increment} {target-dir}` |
 
 The differences between the old and the new CLI are more important, especially
-because the new CLI as a more strict approach to the differentiation between
+because the new CLI has a more strict approach to the differentiation between
 actions and options.
 
 |Description | old CLI | new CLI |
