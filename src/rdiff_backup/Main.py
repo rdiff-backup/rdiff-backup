@@ -344,7 +344,10 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
             Log.FatalError(
                 "Temporary directory '{dir}' doesn't exist.".format(
                     dir=arglist.tempdir))
-        tempfile.tempdir = os.fsencode(arglist.tempdir)
+        # At least until Python 3.10, the module tempfile doesn't work properly,
+        # especially under Windows, if tempdir is stored as bytes.
+        # See https://github.com/python/cpython/pull/20442
+        tempfile.tempdir = arglist.tempdir
 
     # handle selection options
     if (arglist.action in ('backup', 'compare', 'restore')
