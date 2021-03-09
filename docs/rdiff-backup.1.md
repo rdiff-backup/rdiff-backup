@@ -745,6 +745,23 @@ special meaning in regex/glob patterns.
 
 All the available file selection conditions are listed under
 [SELECTION OPTIONS](#selection-options).
+
+Two principles need to be understood before really starting:
+
+1. pattern matching is stupid about paths, it just does pattern matching and
+   can't interpret patterns like path, especially it can't resolve absolute
+   into relative paths and vice-versa (compare with the '`-path`' option of
+   find).
+2. pattern matching is done on the complete path of each found file (no partial
+   matching and no file name matching).
+   Beware that complete path does _not_ mean full path, it can be a complete
+   relative path.
+
+For example, the pattern '`bar`' matches the path '`bar`', but doesn't match
+the path '`foo/bar`' and neither the path '`./bar`'. Both are matched by the
+pattern '`*/bar`', as well as by '`**/bar`'. This last pattern would match
+any path containing the file '`bar`', e.g. '`foo/boz/bar`'.
+
 Each file selection condition either matches or doesn't match a given
 file. A given file is excluded by the file selection system exactly when
 the first matching file selection condition specifies that the file
