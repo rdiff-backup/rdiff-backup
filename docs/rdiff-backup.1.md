@@ -757,6 +757,11 @@ Two principles need to be understood before really starting:
    Beware that complete path does _not_ mean full path, it can be a complete
    relative path.
 
+For example, the pattern '`bar`' matches the path '`bar`', but doesn't match
+the path '`foo/bar`' and neither the path '`./bar`'. Both are matched by the
+pattern '`*/bar`', as well as by '`**/bar`'. This last pattern would match
+any path containing the file '`bar`', e.g. '`foo/boz/bar`'.
+
 Each file selection condition either matches or doesn't match a given
 file. A given file is excluded by the file selection system exactly when
 the first matching file selection condition specifies that the file
