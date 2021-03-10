@@ -127,7 +127,7 @@ def _set_security_level(security_class, cmdpairs):
     if security_class == "backup":
         if bothlocal(cp1, cp2) or bothremote(cp1, cp2):
             sec_level = "minimal"
-            rdir = tempfile.gettempdir()
+            rdir = tempfile.gettempdirb()
         elif islocal(cp1):
             sec_level = "read-only"
             rdir = getpath(cp1)
@@ -137,7 +137,7 @@ def _set_security_level(security_class, cmdpairs):
     elif security_class == "restore":
         if len(cmdpairs) == 1 or bothlocal(cp1, cp2) or bothremote(cp1, cp2):
             sec_level = "minimal"
-            rdir = tempfile.gettempdir()
+            rdir = tempfile.gettempdirb()
         elif islocal(cp1):
             sec_level = "read-only"
             # FIXME it shouldn't be necessary to call back Main's function.
@@ -153,7 +153,7 @@ def _set_security_level(security_class, cmdpairs):
     elif security_class == "mirror":  # compat200 not sure what this was?!?
         if bothlocal(cp1, cp2) or bothremote(cp1, cp2):
             sec_level = "minimal"
-            rdir = tempfile.gettempdir()
+            rdir = tempfile.gettempdirb()
         elif islocal(cp1):
             sec_level = "read-only"
             rdir = getpath(cp1)
@@ -162,7 +162,7 @@ def _set_security_level(security_class, cmdpairs):
             rdir = getpath(cp2)
     elif security_class == "validate":
         sec_level = "minimal"
-        rdir = tempfile.gettempdir()
+        rdir = tempfile.gettempdirb()
     else:
         raise RuntimeError("Unknown action security class '{sec}'.".format(
             sec=security_class))
