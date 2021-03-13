@@ -16,7 +16,6 @@
       - cyg-get  # depends on cygwin
       - cmake
       - 7zip
-      - pandoc
       - vscode # Visual Studio Code (editor)
       state: present
   - name: install python via chocolatey
@@ -25,9 +24,10 @@
       version: "{{ python_version_full }}"
       state: present
       package_params: /InstallDir:C:\Python64 /InstallDir32:C:\Python32
-  - name: install dependency of visualstudio, allows for reboot in-between
+  - name: install dependencies, allows for reboot in-between
     win_chocolatey:
       name:
+      - ruby  # dependency of asciidoctor, requires reboot
       - dotnetfx
       - vcredist140
       state: present
@@ -70,6 +70,10 @@
       name: Pscx
       state: present
       allow_clobber: true
+  - name: refresh the environment variables as we need gem in the PATH
+    win_command: refreshenv.cmd
+  - name: install asciidoctor gem
+    win_command: gem.cmd install asciidoctor
 
 - name: Prepare Linux to be used as Samba server
   hosts: samba_servers
