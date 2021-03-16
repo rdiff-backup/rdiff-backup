@@ -95,10 +95,6 @@ def _main_run(arglist, security_override=False):
             act=parsed_args.action, func="pre_check"), Log.ERROR)
         return ret_val
 
-    # compatibility plug
-    if parsed_args.action == "info":
-        _output_info(exit=True)
-
     # now start for real, conn_act and action are the same object
     with action.connect() as conn_act:
 
@@ -118,21 +114,13 @@ def _main_run(arglist, security_override=False):
                 act=parsed_args.action, func="setup"), Log.ERROR)
             return ret_val
 
-        return_val = 0
-        try:
-            return_val = _take_action(conn_act.connected_locations)
-        except SystemExit:
-            raise
-        except (Exception, KeyboardInterrupt) as exc:
-            errmsg = robust.is_routine_fatal(exc)
-            if errmsg:
-                Log.exception(2, 6)
-                Log.FatalError(errmsg)
-            else:
-                Log.exception(2, 2)
-                raise
+        ret_val = conn_act.run()
+        if ret_val != 0:
+            Log("Action {act} failed on {func}.".format(
+                act=parsed_args.action, func="run"), Log.ERROR)
+            return ret_val
 
-    return return_val
+    return ret_val
 
 
 # @API(backup_touch_curmirror_local, 200)
@@ -407,24 +395,6 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         _args = []
     else:
         _args = arglist.locations
-
-
-def _output_info(version_format="full", exit=False):
-    """
-    Output all the runtime information provided as YAML structure, either on
-    one line for the 'log' format or properly for the 'full' format.
-    """
-
-    runtime_info = Globals.get_runtime_info()
-    if version_format == "log":
-        # make sure the YAML output is on one line for logging
-        Log("Runtime information: " + " ".join(yaml.safe_dump(
-            runtime_info, default_flow_style=True).split("\n")), 4)
-    else:
-        print(yaml.safe_dump(runtime_info,
-                             explicit_start=True, explicit_end=True))
-    if exit:
-        sys.exit(0)
 
 
 def _commandline_error(message):

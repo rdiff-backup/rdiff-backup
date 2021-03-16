@@ -22,7 +22,10 @@ A built-in rdiff-backup action plug-in to output info, especially useful
 for documenting an issue.
 """
 
+import yaml
+
 from rdiffbackup import actions
+from rdiff_backup import Globals
 
 
 class InfoAction(actions.BaseAction):
@@ -36,8 +39,13 @@ class InfoAction(actions.BaseAction):
 
     def setup(self):
         # there is nothing to setup for the info action
-        pass
+        return 0
 
+    def run(self):
+        runtime_info = Globals.get_runtime_info()
+        print(yaml.safe_dump(runtime_info,
+                             explicit_start=True, explicit_end=True))
+        return 0
 
 def get_action_class():
     return InfoAction
