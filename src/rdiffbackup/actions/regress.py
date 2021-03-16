@@ -31,6 +31,7 @@ class RegressAction(actions.BaseAction):
     backup and reverse to the last known good mirror.
     """
     name = "regress"
+    security = "backup"
     parent_parsers = [actions.COMPRESSION_PARSER, actions.TIMESTAMP_PARSER,
                       actions.USER_GROUP_PARSER]
 

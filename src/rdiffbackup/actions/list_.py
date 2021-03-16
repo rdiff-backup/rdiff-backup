@@ -20,6 +20,9 @@
 """
 A built-in rdiff-backup action plug-in to list increments and files in a
 back-up repository.
+
+The module is named with an underscore at the end to avoid overwriting the
+builtin 'list' class.
 """
 
 from rdiffbackup import actions
@@ -32,6 +35,7 @@ class ListAction(actions.BaseAction):
     increments, with or without size, in a given backup repository.
     """
     name = "list"
+    security = "validate"
 
     @classmethod
     def add_action_subparser(cls, sub_handler):

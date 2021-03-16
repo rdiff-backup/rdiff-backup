@@ -62,10 +62,10 @@ _file_requests = {
 }
 
 
-def initialize(action, cmdpairs):
+def initialize(security_class, cmdpairs):
     """Initialize allowable request list and chroot"""
     global _allowed_requests
-    _set_security_level(action, cmdpairs)
+    _set_security_level(security_class, cmdpairs)
     _set_allowed_requests(Globals.security_level)
 
 
@@ -95,13 +95,13 @@ def vet_request(request, arglist):
     _raise_violation("Invalid request", request, arglist)
 
 
-def _set_security_level(action, cmdpairs):
-    """If running client, set security level and restrict_path
+def _set_security_level(security_class, cmdpairs):
+    """
+    If running client, set security level and restrict_path
 
-    To find these settings, we must look at the action to see what is
-    supposed to happen, and then look at the cmdpairs to see what end
-    the client is on.
-
+    To find these settings, we must look at the action's security class
+    to see what is supposed to happen, and then look at the cmdpairs to
+    see what end the client is on.
     """
 
     def islocal(cmdpair):
@@ -116,7 +116,7 @@ def _set_security_level(action, cmdpairs):
     def getpath(cmdpair):
         return cmdpair[1]
 
-    if Globals.server:
+    if security_class == "server":
         return
     cp1 = cmdpairs[0]
     if len(cmdpairs) > 1:
@@ -124,7 +124,7 @@ def _set_security_level(action, cmdpairs):
     else:
         cp2 = cp1
 
-    if action == "backup" or action == "check-destination-dir":
+    if security_class == "backup":
         if bothlocal(cp1, cp2) or bothremote(cp1, cp2):
             sec_level = "minimal"
             rdir = tempfile.gettempdirb()
@@ -134,12 +134,13 @@ def _set_security_level(action, cmdpairs):
         else:  # cp2 is local but not cp1
             sec_level = "update-only"
             rdir = getpath(cp2)
-    elif action == "restore" or action == "restore-as-of":
+    elif security_class == "restore":
         if len(cmdpairs) == 1 or bothlocal(cp1, cp2) or bothremote(cp1, cp2):
             sec_level = "minimal"
             rdir = tempfile.gettempdirb()
         elif islocal(cp1):
             sec_level = "read-only"
+            # FIXME it shouldn't be necessary to call back Main's function.
             Main.restore_set_root(
                 rpath.RPath(Globals.local_connection, getpath(cp1)))
             if Main.restore_root:
@@ -149,7 +150,7 @@ def _set_security_level(action, cmdpairs):
         else:  # cp2 is local but not cp1
             sec_level = "all"
             rdir = getpath(cp2)
-    elif action == "mirror":
+    elif security_class == "mirror":  # compat200 not sure what this was?!?
         if bothlocal(cp1, cp2) or bothremote(cp1, cp2):
             sec_level = "minimal"
             rdir = tempfile.gettempdirb()
@@ -159,16 +160,12 @@ def _set_security_level(action, cmdpairs):
         else:  # cp2 is local but not cp1
             sec_level = "all"
             rdir = getpath(cp2)
-    elif action in [
-            "test-server", "list-increments", 'list-increment-sizes',
-            "list-at-time", "list-changed-since", "calculate-average",
-            "remove-older-than", "compare", "compare-hash", "compare-full",
-            "verify"
-    ]:
+    elif security_class == "validate":
         sec_level = "minimal"
         rdir = tempfile.gettempdirb()
     else:
-        raise RuntimeError("Unknown action '{act}'.".format(act=action))
+        raise RuntimeError("Unknown action security class '{sec}'.".format(
+            sec=security_class))
 
     Globals.security_level = sec_level
     Globals.restrict_path = rpath.RPath(Globals.local_connection,
@@ -178,7 +175,7 @@ def _set_security_level(action, cmdpairs):
 def _set_allowed_requests(sec_level):
     """Set the allowed requests list using the security level"""
     global _allowed_requests
-    requests = [
+    requests = [  # minimal set of requests
         "VirtualFile.readfromid", "VirtualFile.closebyid", "Globals.get",
         "Globals.is_not_None", "Globals.get_dict_val",
         "log.Log.open_logfile_allconn", "log.Log.close_logfile_allconn",

@@ -55,12 +55,12 @@ rdiff-backup FAQ
       1   Fatal Errors displayed
       2   Warnings
       3   Important messages, and maybe later some global statistics (default)
-      4   Some global settings, miscellaneous messages
+      4   Some global settings, miscellaneous messages (obsolete)
       5   Mentions which files were changed
-      6   More information on each file processed
-      7   More information on various things
-      8   All logging is dated
-      9   Details on which objects are moving across the connection
+      6   More information on each file processed (obsolete)
+      7   More information on various things (obsolete)
+      8   (not used)
+      9   Details on which objects are moving across the connection, debug (with timestamp)
       --- ----------------------------------------------------------------------
 
 2.  **[Is rdiff-backup backwards compatible?]{#compatible}**

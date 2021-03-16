@@ -35,7 +35,7 @@ from rdiffbackup import arguments, actions_mgr, actions
 
 _action = None
 _create_full_path = None
-_remote_cmd, _remote_schema = None, None
+_remote_schema = None
 _force = None
 _select_opts = []
 _select_files = []
@@ -50,28 +50,79 @@ _restore_timestr, _incdir, _prevtime = None, None, None
 _remove_older_than_string = None
 
 
-def error_check_Main(arglist):
-    """Run Main on arglist, suppressing stack trace for routine errors"""
+def main_run(arglist, security_override=False, do_exit=True):
+    """
+    Main function to be called with arguments list without the name of the
+    program, aka $0 resp. sys.argv[0].
+
+    The security override and the exit boolean are only meant for test purposes
+    """
+
+    # get a dictionary of discovered action plugins
+    discovered_actions = actions_mgr.get_discovered_actions()
+
+    # parse accordingly the arguments
     parsed_args = arguments.parse(
         arglist, "rdiff-backup {ver}".format(ver=Globals.version),
         actions_mgr.get_generic_parsers(),
         actions_mgr.get_parent_parsers_compat200(),
-        actions_mgr.get_discovered_actions())
+        discovered_actions)
+
+    # instantiate the action object from the dictionary, handing over the
+    # parsed arguments
+    action = discovered_actions[parsed_args.action](parsed_args, Log, ErrorLog)
+
+    # compatibility plug, we need verbosity set properly asap
     _parse_cmdlineoptions_compat200(parsed_args)
+
+    # validate that everything looks good before really starting
+    _validate_call(parsed_args.action, action.pre_check)
+
+    # compatibility plug
     if parsed_args.action == "info":
         _output_info(exit=True)
-    try:
-        _Main(parsed_args)
-    except SystemExit:
-        raise
-    except (Exception, KeyboardInterrupt) as exc:
-        errmsg = robust.is_routine_fatal(exc)
-        if errmsg:
-            Log.exception(2, 6)
-            Log.FatalError(errmsg)
-        else:
-            Log.exception(2, 2)
+
+    # now start for real, conn_act and action are the same object
+    with action.connect() as conn_act:
+
+        # For test purposes
+        if security_override:
+            Globals.security_level = "override"
+
+        _validate_call(parsed_args.action, conn_act.check)
+        _validate_call(parsed_args.action, conn_act.setup)
+
+        return_val = 0
+        try:
+            return_val = _take_action(conn_act.connected_locations)
+        except SystemExit:
             raise
+        except (Exception, KeyboardInterrupt) as exc:
+            errmsg = robust.is_routine_fatal(exc)
+            if errmsg:
+                Log.exception(2, 6)
+                Log.FatalError(errmsg)
+            else:
+                Log.exception(2, 2)
+                raise
+
+    if do_exit:
+        sys.exit(return_val)
+    else:  # for test purposes
+        return return_val
+
+
+def _validate_call(action, function):
+    """
+    Validate that the given function returns 0 else exit with error message.
+
+    action is used in the error message as action name.
+    """
+    return_code = function()
+    if return_code != 0:
+        Log("Action {act} failed on {func}. Exiting.".format(
+            act=action, func=function.__name__), Log.ERROR)
+        sys.exit(return_code)
 
 
 # @API(backup_touch_curmirror_local, 200)
@@ -202,34 +253,13 @@ def restore_set_root(rpin):
     return 1
 
 
-def _Main(arglist):
-    """Start everything up!"""
-    cmdpairs = SetConnections.get_cmd_pairs(_args, _remote_schema, _remote_cmd)
-    Security.initialize(_action or "mirror", cmdpairs)
-    rps = list(map(SetConnections.cmdpair2rp, cmdpairs))
-
-    # if any of the remote paths is None, we have an error.
-    # We continue to test-server so that all connections can be tested at once.
-    if any(map(lambda x: x is None, rps)) and _action != "test-server":
-        _cleanup()
-        sys.exit(1)
-
-    _misc_setup(rps)
-    return_val = _take_action(rps)
-    _cleanup()
-    if isinstance(return_val, int):
-        sys.exit(return_val)
-    else:
-        sys.exit(0)
-
-
 def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
     """
     Parse argument list and set global preferences, compatibility function
     between old and new way of parsing parameters.
     """
     global _args, _action, _create_full_path, _force, _restore_timestr
-    global _remote_cmd, _remote_schema, _remove_older_than_string
+    global _remote_schema, _remove_older_than_string
     global _user_mapping_filename, _group_mapping_filename, \
         _preserve_numerical_ids
 
@@ -316,7 +346,6 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         Globals.set("print_statistics", arglist.print_statistics)
     Globals.set("null_separator", arglist.null_separator)
     Globals.set("parsable_output", arglist.parsable_output)
-    Globals.set("ssh_compression", arglist.ssh_compression)
     Globals.set("use_compatible_timestamps", arglist.use_compatible_timestamps)
     Globals.set("do_fsync", arglist.fsync)
     if arglist.current_time is not None:
@@ -393,18 +422,6 @@ def _commandline_error(message):
         "%s\nSee the rdiff-backup manual page for more information." % message)
 
 
-def _misc_setup(rps):
-    """Set default change ownership flag, umask, relay regexps"""
-    os.umask(0o77)
-    Time.setcurtime(Globals.current_time)
-    SetConnections.UpdateGlobal("client_conn", Globals.local_connection)
-    Globals.postset_regexp('no_compression_regexp',
-                           Globals.no_compression_regexp_string)
-    for conn in Globals.connections:
-        conn.robust.install_signal_handlers()
-        conn.Hardlink.initialize_dictionaries()
-
-
 def _init_user_group_mapping(destination_conn):
     """Initialize user and group mapping on destination connection"""
     global _user_mapping_filename, _group_mapping_filename, \
@@ -460,16 +477,6 @@ def _take_action(rps):
     else:
         raise ValueError("Unknown action " + _action)
     return action_result
-
-
-def _cleanup():
-    """Do any last minute cleaning before exiting"""
-    Log("Cleaning up", 6)
-    if ErrorLog.isopen():
-        ErrorLog.close()
-    Log.close_logfile()
-    if not Globals.server:
-        SetConnections.CloseConnections()
 
 
 def _action_backup(rpin, rpout):

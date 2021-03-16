@@ -56,10 +56,8 @@
     command: rdiff-backup --version
     delegate_to: localhost
 
-  - name: call local rdiff-backup --verbosity 9 (with expected failure)
-    command: rdiff-backup --verbosity 9
-    register: rb_res
-    failed_when: rb_res.rc != 1
+  - name: call local rdiff-backup info
+    command: rdiff-backup info
     delegate_to: localhost
 
   - name: check that the remote rdiff-backup works

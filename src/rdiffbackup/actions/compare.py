@@ -32,6 +32,7 @@ class CompareAction(actions.BaseAction):
     at a given time, using multiple methods.
     """
     name = "compare"
+    security = "validate"
     parent_parsers = [actions.SELECTION_PARSER]
 
     @classmethod

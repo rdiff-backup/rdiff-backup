@@ -232,9 +232,6 @@ no_compression_regexp = None
 # nulls instead of newlines.
 null_separator = None
 
-# Determines whether or not ssh will be run with the -C switch
-ssh_compression = 1
-
 # If true, print statistics after successful backup
 print_statistics = None
 

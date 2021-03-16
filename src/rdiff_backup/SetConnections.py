@@ -46,41 +46,51 @@ class SetConnectionsException(Exception):
     pass
 
 
-def get_cmd_pairs(arglist, remote_schema=None, remote_cmd=None):
+def get_cmd_pairs(locations, remote_schema=None, ssh_compression=True):
     """Map the given file descriptions into command pairs
 
     Command pairs are tuples cmdpair with length 2.  cmdpair[0] is
     None iff it describes a local path, and cmdpair[1] is the path.
 
     """
+    assert remote_schema is None or isinstance(remote_schema, bytes), (
+        "remote_schema parameter must be bytes or None not {ths}.".format(
+            ths=type(remote_schema)))
+
     global __cmd_schema
     if remote_schema:
         __cmd_schema = remote_schema
-    elif not Globals.ssh_compression:
+    elif not ssh_compression:
         __cmd_schema = __cmd_schema_no_compress
 
     if Globals.remote_tempdir:
         __cmd_schema += (b" --tempdir=" + Globals.remote_tempdir)
 
-    if not arglist:
+    if not locations:
         return []
-    desc_pairs = list(map(_parse_file_desc, arglist))
+    desc_triples = list(map(parse_location, locations))
 
-    if [x for x in desc_pairs if x[0]]:  # True if any host_info found
-        if remote_cmd:
-            Log.FatalError("The --remote-cmd flag is not compatible "
-                           "with remote file descriptions.")
-    elif remote_schema:
+    # was any error string be returned as third in the list?
+    for err in [triple[2] for triple in desc_triples if triple[2]]:
+        raise SetConnectionsException(err)
+
+    if remote_schema and not [x for x in desc_triples if x[0]]:
+        # remote schema defined but no remote location found
         Log("Remote schema option ignored - no remote file "
             "descriptions.", 2)
+
+    # strip the error field from the triples to get pairs
+    desc_pairs = [triple[:2] for triple in desc_triples]
+
     cmd_pairs = list(map(_desc2cmd_pairs, desc_pairs))
-    if remote_cmd:  # last file description gets remote_cmd
-        cmd_pairs[-1] = (remote_cmd, cmd_pairs[-1][1])
+
     return cmd_pairs
 
 
-def cmdpair2rp(cmd_pair):
-    """Return normalized RPath from cmd_pair (remote_cmd, filename)"""
+def get_connected_rpath(cmd_pair):
+    """
+    Return normalized RPath from command pair (remote_cmd, filename)
+    """
     cmd, filename = cmd_pair
     if cmd:
         conn = _init_connection(cmd)
@@ -169,14 +179,15 @@ def _desc2cmd_pairs(desc_pair):
         return (_fill_schema(host_info), filename)
 
 
-def _parse_file_desc(file_desc):
-    """Parse file description returning pair (host_info, filename)
+def parse_location(file_desc):
+    """
+    Parse file description returning triple (host_info, filename, error)
 
     In other words, bescoto@folly.stanford.edu::/usr/bin/ls =>
-    ("bescoto@folly.stanford.edu", "/usr/bin/ls").  The
+    ("bescoto@folly.stanford.edu", "/usr/bin/ls", None).  The
     complication is to allow for quoting of : by a \\.  If the
-    string is not separated by :, then the host_info is None.
-
+    string is not separated by ::, then the host_info is None.
+    If the error isn't None, it is an error message explaining the issue.
     """
 
     # paths and similar objects must always be bytes
@@ -195,7 +206,9 @@ def _parse_file_desc(file_desc):
         file_path = file_match.group("path")
     else:
         if re.match(rb"^::", file_desc):
-            raise SetConnectionsException("No file host in '%s'" % file_desc)
+            return (None, None,
+                    "No file host in {desc} starting with '::'.".format(
+                        desc=file_desc))
         file_host = None
         file_path = file_desc
 
@@ -204,9 +217,9 @@ def _parse_file_desc(file_desc):
         file_path = file_path.replace(os.fsencode(os.path.sep), b'/')
 
     if not file_path:
-        raise SetConnectionsException("No file path in '%s'" % file_desc)
+        return (None, None, "No file path in {desc}.".format(desc=file_desc))
 
-    return (file_host, file_path)
+    return (file_host, file_path, None)
 
 
 def _fill_schema(host_info):

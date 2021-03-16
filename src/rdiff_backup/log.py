@@ -35,6 +35,11 @@ class LoggerError(Exception):
 
 class Logger:
     """All functions which deal with logging"""
+    ERROR = 1
+    WARNING = 2
+    DEFAULT = 3
+    INFO = 5
+    DEBUG = 9
 
     def __init__(self):
         self.log_file_open = None
@@ -320,10 +325,11 @@ class ErrorLog:
     @classmethod
     def close(cls):
         """Close the error log file"""
-        if not Globals.isbackup_writer:
-            return Globals.backup_writer.log.ErrorLog.close()
-        cls._log_fileobj.close()
-        cls._log_fileobj = None
+        if cls.isopen():
+            if not Globals.isbackup_writer:
+                return Globals.backup_writer.log.ErrorLog.close()
+            cls._log_fileobj.close()
+            cls._log_fileobj = None
 
     @classmethod
     def _get_log_string(cls, error_type, rp, exc):

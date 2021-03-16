@@ -29,6 +29,7 @@ class BackupAction(actions.BaseAction):
     Backup a source directory to a target backup repository.
     """
     name = "backup"
+    security = "backup"
     parent_parsers = [
         actions.CREATION_PARSER, actions.COMPRESSION_PARSER, actions.SELECTION_PARSER,
         actions.FILESYSTEM_PARSER, actions.USER_GROUP_PARSER, actions.STATISTICS_PARSER,

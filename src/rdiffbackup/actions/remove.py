@@ -30,6 +30,7 @@ class RemoveAction(actions.BaseAction):
     Remove the oldest increments from a backup repository.
     """
     name = "remove"
+    security = "validate"  # FIXME doesn't sound right, rather backup
 
     @classmethod
     def add_action_subparser(cls, sub_handler):

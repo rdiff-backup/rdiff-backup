@@ -25,6 +25,7 @@ usable for a back-up.
 """
 
 from rdiffbackup import actions
+from rdiff_backup import SetConnections
 
 
 class TestAction(actions.BaseAction):
@@ -32,14 +33,43 @@ class TestAction(actions.BaseAction):
     Test that servers are properly reachable and usable for back-ups.
     """
     name = "test"
+    security = "validate"
 
     @classmethod
     def add_action_subparser(cls, sub_handler):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
-            "locations", metavar="[[USER@]SERVER::]PATH", nargs="+",
+            "locations", metavar="[USER@]SERVER::PATH", nargs="+",
             help="location of remote repositories to check for connection")
         return subparser
+
+    def pre_check(self):
+        return_code = super().pre_check()
+        # validate that all locations are remote
+        for location in self.values.locations:
+            (file_host, file_path, err) = SetConnections.parse_location(location)
+            if err:
+                self.log(err, self.log.ERROR)
+                return_code |= 1  # binary 'or' to always get 1
+            elif not file_host:
+                self.log("Only remote locations can be tested but '{loc}' "
+                         "isn't remote.".format(loc=location), self.log.ERROR)
+                return_code |= 1  # binary 'or' to always get 1
+
+        return return_code
+
+    def check(self):
+        # we call the parent check only to output the failed connections
+        return_code = super().check()
+
+        # even if some connections are bad, we want to validate the remaining
+        # ones later on. The 'None' filter keeps only trueish values.
+        self.connected_locations = list(filter(None, self.connected_locations))
+        if self.connected_locations:
+            # at least one location is apparently valid
+            return 0
+        else:
+            return return_code
 
 
 def get_action_class():

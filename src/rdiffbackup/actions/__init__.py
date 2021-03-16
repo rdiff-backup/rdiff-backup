@@ -24,9 +24,11 @@ plugins can inheritate default behaviors.
 """
 
 import argparse
+import os
 import sys
 import yaml
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
+from rdiff_backup import Globals, Security, SetConnections, Time
 
 # The default regexp for not compressing those files
 # compat200: it is also used by Main.py to avoid having a 2nd default
@@ -259,6 +261,10 @@ class BaseAction:
     # name of the action as a string
     name = None
 
+    # type of action for security purposes, one of backup, restore, validate
+    # or server
+    security = None
+
     # version of the action
     __version__ = "0.0.0"
 
@@ -273,6 +279,16 @@ class BaseAction:
         Children classes only need to define the class member 'name'.
         """
         return cls.name
+
+    @classmethod
+    def get_security_class(cls):
+        """
+        Return the security class of the Action class.
+
+        Children classes only need to define the class member 'security',
+        with one of the values 'backup', 'restore', 'server' or 'validate'.
+        """
+        return cls.security
 
     @classmethod
     def get_version(cls):
@@ -331,18 +347,130 @@ class BaseAction:
             subparsers[sub_name].set_defaults(**{sub_dest: sub_name})
         return subparsers
 
-    def __init__(self, values):
+    def __init__(self, values, log=None, errlog=None):
         """
-        Dummy initialization method
+        Instantiate an action plug-in class.
+
+        values is a Namespace as returned by argparse.
+        log is a log.Log object and errlog a log.ErrorLog object.
         """
         self.values = values
+        if self.values.remote_schema:
+            self.remote_schema = os.fsencode(self.values.remote_schema)
+        else:
+            self.remote_schema = None
+        self.log = log
+        self.errlog = errlog
+
+    def __enter__(self):
+        """
+        Context manager interface to enter with-as context.
+
+        Returns self to be used 'as' value.
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Context manager interface to exit with-as context.
+
+        Returns False to propagate potential exception, else True.
+        """
+        self.log("Cleaning up", self.log.INFO)
+        self.errlog.close()
+        self.log.close_logfile()
+        if self.security != "server":
+            SetConnections.CloseConnections()
+
+        return False
 
     def print_values(self, explicit=True):
         """
-        Dummy output method
+        Debug output method
         """
         print(yaml.safe_dump(self.values.__dict__,
                              explicit_start=explicit, explicit_end=explicit))
+
+    def pre_check(self):
+        """
+        Validate that the values given look correct.
+
+        This method isn't meant to try to access any file system and even less
+        a remote location, it is really only meant to validate the values
+        beyond what argparse can do.
+        Return 0 if everything looked good, else an error code.
+
+        Try to check everything before returning and not force the user to fix their
+        entries step by step.
+        """
+        if self.values.action == self.name:
+            return 0
+        else:
+            self.log("Action '{act}' doesn't fit name of action class "
+                     "'{name}'.".format(act=self.values.action, name=self.name),
+                     self.log.ERROR)
+            return 1
+
+    def connect(self):
+        """
+        Connect to potentially provided locations arguments, remote or local.
+
+        Returns self, to be used as context manager.
+        """
+
+        if 'locations' in self.values:
+            # TODO encapsulate the following lines into one
+            # connections/connections_mgr construct, so that the action doesn't
+            # need to care about cmdpairs and Security (which would become a
+            # feature of the connection).
+            cmdpairs = SetConnections.get_cmd_pairs(
+                self.values.locations,
+                remote_schema=self.remote_schema,
+                ssh_compression=self.values.ssh_compression)
+            Security.initialize(self.get_security_class(), cmdpairs)
+            self.connected_locations = list(
+                map(SetConnections.get_connected_rpath, cmdpairs))
+        else:
+            self.connected_locations = []
+
+        return self
+
+    def check(self):
+        """
+        Checks that all connections are looking fine.
+
+        Whatever can be checked without changing anything to the environment.
+        Return 0 if everything looked good, else an error code.
+        """
+        return_code = 0
+
+        if 'locations' not in self.values:
+            return return_code
+
+        # if a connection is None, it's an error
+        for conn, loc in zip(self.connected_locations, self.values.locations):
+            if conn is None:
+                self.log("Location '{loc}' couldn't be connected.".format(
+                    loc=loc), self.log.ERROR)
+                return_code |= 1
+
+        return return_code
+
+    def setup(self):
+        """
+        Prepare the execution of the action.
+        """
+        # Set default change ownership flag, umask, relay regexps
+        os.umask(0o77)
+        Time.setcurtime(Globals.current_time)
+        SetConnections.UpdateGlobal("client_conn", Globals.local_connection)
+        Globals.postset_regexp('no_compression_regexp',
+                               Globals.no_compression_regexp_string)
+        for conn in Globals.connections:
+            conn.robust.install_signal_handlers()
+            conn.Hardlink.initialize_dictionaries()
+
+        return 0
 
 
 def get_action_class():

@@ -33,6 +33,7 @@ class VerifyAction(actions.BaseAction):
     or that servers are properly reachable.
     """
     name = "verify"
+    security = "validate"
 
     @classmethod
     def add_action_subparser(cls, sub_handler):

@@ -8,7 +8,7 @@ import subprocess
 # Avoid circularities
 from rdiff_backup.log import Log
 from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
-    selection, rpath, eas_acls, rorpiter, Security, hash
+    selection, rpath, eas_acls, rorpiter, hash
 from rdiffbackup import actions
 
 RBBin = os.fsencode(shutil.which("rdiff-backup") or "rdiff-backup")
@@ -135,6 +135,29 @@ def rdiff_backup(source_local,
     return ret_val
 
 
+def _get_locations(src_local, dest_local, src_dir, dest_dir):
+    """
+    Return a tuple of remote or local source and destination locations
+    """
+    remote_location = "cd {rdir}; {tdir}/server.py::{dir}"
+
+    if not src_local:
+        src_dir = remote_location.format(
+            rdir=os.fsdecode(abs_remote1_dir),
+            tdir=os.fsdecode(abs_testing_dir),
+            dir=os.fsdecode(src_dir))
+    else:
+        src_dir = os.fsdecode(src_dir)
+    if not dest_local:
+        dest_dir = remote_location.format(
+            rdir=os.fsdecode(abs_remote2_dir),
+            tdir=os.fsdecode(abs_testing_dir),
+            dir=os.fsdecode(dest_dir))
+    else:
+        dest_dir = os.fsdecode(dest_dir)
+    return (src_dir, dest_dir)
+
+
 def _internal_get_cmd_pairs(src_local, dest_local, src_dir, dest_dir):
     """Function returns a tuple of connections based on the given parameters.
     One or both directories are faked for remote connection if not local,
@@ -162,7 +185,8 @@ def InternalBackup(source_local,
                    dest_dir,
                    current_time=None,
                    eas=None,
-                   acls=None):
+                   acls=None,
+                   force=False):
     """Backup src to dest internally
 
     This is like rdiff_backup but instead of running a separate
@@ -171,38 +195,43 @@ def InternalBackup(source_local,
     correct line/file references.
 
     """
-    Globals.current_time = current_time
-    Globals.security_level = "override"
-    Globals.set("no_compression_regexp_string",
-                os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP))
+    args = []
+    if current_time is not None:
+        args.append("--current-time")
+        args.append(str(current_time))
+    if not (source_local and dest_local):
+        args.append("--remote-schema")
+        args.append("{h}")
+    if force:
+        args.append("--force")
+    args.append("backup")
+    if eas:
+        args.append("--eas")
+    else:
+        args.append("--no-eas")
+    if acls:
+        args.append("--acls")
+    else:
+        args.append("--no-acls")
 
-    cmdpairs = _internal_get_cmd_pairs(source_local, dest_local,
-                                       src_dir, dest_dir)
+    args.extend(_get_locations(source_local, dest_local, src_dir, dest_dir))
 
-    Security.initialize("backup", cmdpairs)
-    rpin, rpout = list(map(SetConnections.cmdpair2rp, cmdpairs))
-    for attr in ('eas_active', 'eas_write', 'eas_conn'):
-        SetConnections.UpdateGlobal(attr, eas)
-    for attr in ('acls_active', 'acls_write', 'acls_conn'):
-        SetConnections.UpdateGlobal(attr, acls)
-    Main._misc_setup([rpin, rpout])
-    Main._action_backup(rpin, rpout)
-    Main._cleanup()
+    Main.main_run(args, security_override=True, do_exit=False)
 
 
-def InternalMirror(source_local, dest_local, src_dir, dest_dir):
-    """Mirror src to dest internally
+def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
+    """
+    Mirror src to dest internally
 
     like InternalBackup, but only mirror.  Do this through
     InternalBackup, but then delete rdiff-backup-data directory.
-
     """
     # Save attributes of root to restore later
     src_root = rpath.RPath(Globals.local_connection, src_dir)
     dest_root = rpath.RPath(Globals.local_connection, dest_dir)
     dest_rbdir = dest_root.append("rdiff-backup-data")
 
-    InternalBackup(source_local, dest_local, src_dir, dest_dir)
+    InternalBackup(source_local, dest_local, src_dir, dest_dir, force=force)
     dest_root.setdata()
     Myrm(dest_rbdir.path)
     # Restore old attributes
@@ -223,30 +252,28 @@ def InternalRestore(mirror_local,
     the testing directory and will be modified for remote trials.
 
     """
-    Main._force = 1
-    Main._restore_root_set = 0
-    Globals.security_level = "override"
-    Globals.set("no_compression_regexp_string",
-                os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP))
+    Main._restore_root_set = 0  # FIXME required?
+    args = []
+    args.append("--force")
+    if not (mirror_local and dest_local):
+        args.append("--remote-schema")
+        args.append("{h}")
+    args.append("restore")
+    if eas:
+        args.append("--eas")
+    else:
+        args.append("--no-eas")
+    if acls:
+        args.append("--acls")
+    else:
+        args.append("--no-acls")
+    if time:
+        args.append("--at")
+        args.append(str(time))
 
-    cmdpairs = _internal_get_cmd_pairs(mirror_local, dest_local,
-                                       mirror_dir, dest_dir)
+    args.extend(_get_locations(mirror_local, dest_local, mirror_dir, dest_dir))
 
-    Security.initialize("restore", cmdpairs)
-    mirror_rp, dest_rp = list(map(SetConnections.cmdpair2rp, cmdpairs))
-    for attr in ('eas_active', 'eas_write', 'eas_conn'):
-        SetConnections.UpdateGlobal(attr, eas)
-    for attr in ('acls_active', 'acls_write', 'acls_conn'):
-        SetConnections.UpdateGlobal(attr, acls)
-    Main._misc_setup([mirror_rp, dest_rp])
-    inc = get_increment_rp(mirror_rp, time)
-    if inc:
-        Main._restore_timestr = None
-        Main._action_restore(get_increment_rp(mirror_rp, time), dest_rp)
-    else:  # use alternate syntax
-        Main._restore_timestr = str(time)
-        Main._action_restore(mirror_rp, dest_rp)
-    Main._cleanup()
+    Main.main_run(args, security_override=True, do_exit=False)
 
 
 def get_increment_rp(mirror_rp, time):
@@ -267,7 +294,6 @@ def _reset_connections(src_rp, dest_rp):
     Globals.security_level = "override"
     Globals.isbackup_reader = Globals.isbackup_writer = None
     SetConnections.UpdateGlobal('rbdir', None)
-    Main._misc_setup([src_rp, dest_rp])
 
 
 def _hardlink_rorp_eq(src_rorp, dest_rorp):
@@ -523,7 +549,8 @@ def MirrorTest(source_local,
         reset_hardlink_dicts()
         _reset_connections(src_rp, dest_rp)
 
-        InternalMirror(source_local, dest_local, dirname, dest_dirname)
+        InternalMirror(source_local, dest_local, dirname, dest_dirname,
+                       force=True)
         _reset_connections(src_rp, dest_rp)
         assert compare_recursive(src_rp, dest_rp, compare_hardlinks)
     Main.force = old_force_val
