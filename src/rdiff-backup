@@ -29,4 +29,4 @@ except ImportError:
 
 # the __no_execute__ flag is used for tests
 if __name__ == "__main__" and "__no_execute__" not in globals():
-    rdiff_backup.Main.main_run(sys.argv[1:])
+    rdiff_backup.Main.main_run_and_exit(sys.argv[1:])

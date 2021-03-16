@@ -50,12 +50,25 @@ _restore_timestr, _incdir, _prevtime = None, None, None
 _remove_older_than_string = None
 
 
-def main_run(arglist, security_override=False, do_exit=True):
+def main_run_and_exit(arglist):
     """
     Main function to be called with arguments list without the name of the
     program, aka $0 resp. sys.argv[0].
+    
+    The function simply calls the internal function '_main_run' and exits
+    with the code returned.
+    """
+    sys.exit(_main_run(arglist))
 
-    The security override and the exit boolean are only meant for test purposes
+
+def _main_run(arglist, security_override=False):
+    """
+    Internal main function to be called with arguments list without the
+    name of the program, aka $0 resp. sys.argv[0].
+
+    The security override is only meant for test purposes
+
+    The function returns with an error code.
     """
 
     # get a dictionary of discovered action plugins
@@ -76,7 +89,11 @@ def main_run(arglist, security_override=False, do_exit=True):
     _parse_cmdlineoptions_compat200(parsed_args)
 
     # validate that everything looks good before really starting
-    _validate_call(parsed_args.action, action.pre_check)
+    ret_val = action.pre_check()
+    if ret_val != 0:
+        Log("Action {act} failed on {func}.".format(
+            act=parsed_args.action, func="pre_check"), Log.ERROR)
+        return ret_val
 
     # compatibility plug
     if parsed_args.action == "info":
@@ -89,8 +106,17 @@ def main_run(arglist, security_override=False, do_exit=True):
         if security_override:
             Globals.security_level = "override"
 
-        _validate_call(parsed_args.action, conn_act.check)
-        _validate_call(parsed_args.action, conn_act.setup)
+        ret_val = conn_act.check()
+        if ret_val != 0:
+            Log("Action {act} failed on {func}.".format(
+                act=parsed_args.action, func="check"), Log.ERROR)
+            return ret_val
+
+        ret_val = conn_act.setup()
+        if ret_val != 0:
+            Log("Action {act} failed on {func}.".format(
+                act=parsed_args.action, func="setup"), Log.ERROR)
+            return ret_val
 
         return_val = 0
         try:
@@ -106,23 +132,7 @@ def main_run(arglist, security_override=False, do_exit=True):
                 Log.exception(2, 2)
                 raise
 
-    if do_exit:
-        sys.exit(return_val)
-    else:  # for test purposes
-        return return_val
-
-
-def _validate_call(action, function):
-    """
-    Validate that the given function returns 0 else exit with error message.
-
-    action is used in the error message as action name.
-    """
-    return_code = function()
-    if return_code != 0:
-        Log("Action {act} failed on {func}. Exiting.".format(
-            act=action, func=function.__name__), Log.ERROR)
-        sys.exit(return_code)
+    return return_val
 
 
 # @API(backup_touch_curmirror_local, 200)
