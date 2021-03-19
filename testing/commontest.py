@@ -540,8 +540,6 @@ def MirrorTest(source_local,
     Globals.set("no_compression_regexp_string",
                 os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP))
     dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
-    old_force_val = Main._force
-    Main._force = 1
 
     Myrm(dest_dirname)
     for dirname in list_of_dirnames:
@@ -553,7 +551,6 @@ def MirrorTest(source_local,
                        force=True)
         _reset_connections(src_rp, dest_rp)
         assert compare_recursive(src_rp, dest_rp, compare_hardlinks)
-    Main.force = old_force_val
 
 
 def raise_interpreter(use_locals=None):

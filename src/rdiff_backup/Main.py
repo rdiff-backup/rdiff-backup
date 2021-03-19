@@ -23,30 +23,22 @@ import io
 import os
 import sys
 import tempfile
-import time
-import yaml
 from .log import Log, LoggerError, ErrorLog
 from . import (
-    Globals, Time, SetConnections, robust, rpath,
-    manage, backup, connection, restore, FilenameMapping,
+    Globals, Time, SetConnections, rpath,
+    manage, connection, restore, FilenameMapping,
     Security, C, statistics, compare
 )
 from rdiffbackup import arguments, actions_mgr, actions
 
 _action = None
-_create_full_path = None
-_remote_schema = None
-_force = None
-_select_opts = []
-_select_files = []
-_user_mapping_filename, _group_mapping_filename, _preserve_numerical_ids = None, None, None
 
 # These are global because they are set while we are trying to figure
 # whether to restore or to backup
 restore_root, _restore_index, _restore_root_set = None, None, 0
 
 # Those global variables are listed here to make the list complete
-_restore_timestr, _incdir, _prevtime = None, None, None
+_restore_timestr = None
 _remove_older_than_string = None
 
 
@@ -54,7 +46,7 @@ def main_run_and_exit(arglist):
     """
     Main function to be called with arguments list without the name of the
     program, aka $0 resp. sys.argv[0].
-    
+
     The function simply calls the internal function '_main_run' and exits
     with the code returned.
     """
@@ -256,10 +248,8 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
     Parse argument list and set global preferences, compatibility function
     between old and new way of parsing parameters.
     """
-    global _args, _action, _create_full_path, _force, _restore_timestr
-    global _remote_schema, _remove_older_than_string
-    global _user_mapping_filename, _group_mapping_filename, \
-        _preserve_numerical_ids
+    global _args, _action, _restore_timestr
+    global _remove_older_than_string
 
     def sel_fl(filename):
         """Helper function for including/excluding filelists below"""
@@ -326,16 +316,10 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         Globals.set("preserve_hardlinks", arglist.hard_links)
         Globals.set("resource_forks_active", arglist.resource_forks)
         Globals.set("never_drop_acls", arglist.never_drop_acls)
-        _create_full_path = arglist.create_full_path
     if arglist.action in ('backup', 'regress', 'restore'):
         Globals.set("compression", arglist.compression)
         Globals.set("no_compression_regexp_string",
                     os.fsencode(arglist.not_compressed_regexp))
-        _preserve_numerical_ids = arglist.preserve_numerical_ids
-        if arglist.group_mapping_file is not None:
-            _group_mapping_filename = os.fsencode(arglist.group_mapping_file)
-        if arglist.user_mapping_file is not None:
-            _user_mapping_filename = os.fsencode(arglist.user_mapping_file)
     else:
         Globals.set("no_compression_regexp_string",
                     os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP))
@@ -360,9 +344,6 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
             Globals.security_level = arglist.restrict_mode
     if arglist.api_version is not None:  # FIXME
         Globals.set_api_version(arglist.api_version)
-    _force = arglist.force
-    if arglist.remote_schema is not None:
-        _remote_schema = os.fsencode(arglist.remote_schema)
     if arglist.terminal_verbosity is not None:
         Log.setterm_verbosity(arglist.terminal_verbosity)
     Log.setverbosity(arglist.verbosity)
@@ -376,53 +357,10 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         # See https://github.com/python/cpython/pull/20442
         tempfile.tempdir = arglist.tempdir
 
-    # handle selection options
-    if (arglist.action in ('backup', 'compare', 'restore')
-            and arglist.selections):
-        for selection in arglist.selections:
-            if 'filelist' in selection[0]:
-                if selection[0].endswith("-stdin"):
-                    _select_opts.append((
-                        "--" + selection[0][:-6],  # remove '-stdin'
-                        "standard input"))
-                else:
-                    _select_opts.append(("--" + selection[0], selection[1]))
-                _select_files.append(sel_fl(selection[1]))
-            else:
-                _select_opts.append(("--" + selection[0], selection[1]))
-
     if arglist.action in ('info', 'server'):
         _args = []
     else:
         _args = arglist.locations
-
-
-def _commandline_error(message):
-    Log.FatalError(
-        "%s\nSee the rdiff-backup manual page for more information." % message)
-
-
-def _init_user_group_mapping(destination_conn):
-    """Initialize user and group mapping on destination connection"""
-    global _user_mapping_filename, _group_mapping_filename, \
-        _preserve_numerical_ids
-
-    def get_string_from_file(filename):
-        if not filename:
-            return None
-        rp = rpath.RPath(Globals.local_connection, filename)
-        try:
-            return rp.get_string()
-        except OSError as e:
-            Log.FatalError(
-                "Error '%s' reading mapping file '%s'" % (str(e), filename))
-
-    user_mapping_string = get_string_from_file(_user_mapping_filename)
-    destination_conn.user_group.init_user_mapping(user_mapping_string,
-                                                  _preserve_numerical_ids)
-    group_mapping_string = get_string_from_file(_group_mapping_filename)
-    destination_conn.user_group.init_group_mapping(group_mapping_string,
-                                                   _preserve_numerical_ids)
 
 
 def _take_action(rps):
@@ -457,219 +395,6 @@ def _take_action(rps):
     else:
         raise ValueError("Unknown action " + _action)
     return action_result
-
-
-def _action_backup(rpin, rpout):
-    """Backup, possibly incrementally, src_path to dest_path."""
-    global _incdir
-    SetConnections.BackupInitConnections(rpin.conn, rpout.conn)
-    _backup_check_dirs(rpin, rpout)
-    _backup_set_rbdir(rpin, rpout)
-    rpout.conn.fs_abilities.backup_set_globals(rpin, _force)
-    if Globals.chars_to_quote:
-        rpout = _backup_quoted_rpaths(rpout)
-    _init_user_group_mapping(rpout.conn)
-    _backup_final_init(rpout)
-    _backup_set_select(rpin)
-    _backup_warn_if_infinite_recursion(rpin, rpout)
-    if _prevtime:
-        Time.setprevtime(_prevtime)
-        rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
-        backup.Mirror_and_increment(rpin, rpout, _incdir)
-        rpout.conn.Main.backup_remove_curmirror_local()
-    else:
-        backup.Mirror(rpin, rpout)
-        rpout.conn.Main.backup_touch_curmirror_local(rpin, rpout)
-    rpout.conn.Main.backup_close_statistics(time.time())
-
-
-def _backup_quoted_rpaths(rpout):
-    """Get QuotedRPath versions of important RPaths.  Return rpout"""
-    global _incdir
-    SetConnections.UpdateGlobal('rbdir',
-                                FilenameMapping.get_quotedrpath(Globals.rbdir))
-    _incdir = FilenameMapping.get_quotedrpath(_incdir)
-    return FilenameMapping.get_quotedrpath(rpout)
-
-
-def _backup_set_select(rpin):
-    """Create Select objects on source connection"""
-    if rpin.conn.os.name == 'nt':
-        Log("Symbolic links excluded by default on Windows", 4)
-        _select_opts.append(("--exclude-symbolic-links", None))
-    rpin.conn.backup.SourceStruct.set_source_select(rpin, _select_opts,
-                                                    *_select_files)
-
-
-def _backup_check_dirs(rpin, rpout):
-    """Make sure in and out dirs exist and are directories"""
-    if rpout.lstat() and not rpout.isdir():
-        if not _force:
-            Log.FatalError("Destination %s exists and is not a "
-                           "directory" % rpout.get_safepath())
-        else:
-            Log("Deleting %s" % rpout.get_safepath(), 3)
-            rpout.delete()
-    if not rpout.lstat():
-        try:
-            if _create_full_path:
-                rpout.makedirs()
-            else:
-                rpout.mkdir()
-        except os.error:
-            Log.FatalError(
-                "Unable to create directory %s" % rpout.get_safepath())
-
-    if not rpin.lstat():
-        Log.FatalError(
-            "Source directory %s does not exist" % rpin.get_safepath())
-    elif not rpin.isdir():
-        Log.FatalError("Source %s is not a directory" % rpin.get_safepath())
-    Globals.rbdir = rpout.append_path(b"rdiff-backup-data")
-
-
-def _check_failed_initial_backup():
-    """Returns true if it looks like initial backup failed."""
-    if Globals.rbdir.lstat():
-        rbdir_files = Globals.rbdir.listdir()
-        mirror_markers = [
-            x for x in rbdir_files if x.startswith(b"current_mirror")
-        ]
-        error_logs = [x for x in rbdir_files if x.startswith(b"error_log")]
-        metadata_mirrors = [
-            x for x in rbdir_files if x.startswith(b"mirror_metadata")
-        ]
-        # If we have no current_mirror marker, and the increments directory
-        # is empty, we most likely have a failed backup.
-        return not mirror_markers and len(error_logs) <= 1 and \
-            len(metadata_mirrors) <= 1
-    return False
-
-
-def _fix_failed_initial_backup():
-    """Clear Globals.rbdir after a failed initial backup"""
-    Log("Found interrupted initial backup. Removing...", 2)
-    rbdir_files = Globals.rbdir.listdir()
-    # Try to delete the increments dir first
-    if b'increments' in rbdir_files:
-        rbdir_files.remove(b'increments')
-        rp = Globals.rbdir.append(b'increments')
-        try:
-            rp.conn.rpath.delete_dir_no_files(rp)
-        except rpath.RPathException:
-            Log("Increments dir contains files.", 4)
-            return
-        except Security.Violation:
-            Log("Server doesn't support resuming.", 2)
-            return
-
-    for file_name in rbdir_files:
-        rp = Globals.rbdir.append_path(file_name)
-        if not rp.isdir():  # Only remove files, not folders
-            rp.delete()
-
-
-def _backup_set_rbdir(rpin, rpout):
-    """Initialize data dir and logging"""
-    global _incdir
-    try:
-        _incdir = Globals.rbdir.append_path(b"increments")
-    except IOError as exc:
-        if exc.errno == errno.EACCES:
-            print("\n")
-            Log.FatalError("Could not begin backup due to\n%s" % exc)
-        else:
-            raise
-
-    assert rpout.lstat(), (
-        "Target backup directory '{rp!s}' must exist.".format(rp=rpout))
-    if rpout.isdir() and not rpout.listdir():  # rpout is empty dir
-        try:
-            rpout.chmod(0o700)  # just make sure permissions aren't too lax
-        except OSError:
-            Log("Cannot change permissions on target directory.", 2)
-    elif not Globals.rbdir.lstat() and not _force:
-        Log.FatalError("""Destination directory
-
-%s
-
-exists, but does not look like a rdiff-backup directory.  Running
-rdiff-backup like this could mess up what is currently in it.  If you
-want to update or overwrite it, run rdiff-backup with the --force
-option.""" % rpout.get_safepath())
-    elif _check_failed_initial_backup():
-        _fix_failed_initial_backup()
-
-    if not Globals.rbdir.lstat():
-        try:
-            Globals.rbdir.mkdir()
-        except (OSError, IOError) as exc:
-            Log.FatalError("""Could not create rdiff-backup directory
-
-%s
-
-due to
-
-%s
-
-Please check that the rdiff-backup user can create files and directories in the
-destination directory: %s""" % (Globals.rbdir.get_safepath(), exc,
-                                rpout.get_safepath()))
-    SetConnections.UpdateGlobal('rbdir', Globals.rbdir)
-
-
-def _backup_warn_if_infinite_recursion(rpin, rpout):
-    """Warn user if destination area contained in source area"""
-    # Just a few heuristics, we don't have to get every case
-    if rpout.conn is not rpin.conn:
-        return
-    if len(rpout.path) <= len(rpin.path) + 1:
-        return
-    if rpout.path[:len(rpin.path) + 1] != rpin.path + b'/':
-        return
-
-    relative_rpout_comps = tuple(rpout.path[len(rpin.path) + 1:].split(b'/'))
-    relative_rpout = rpin.new_index(relative_rpout_comps)  # noqa: F841
-    # FIXME: this fails currently because the selection object isn't stored
-    #        but an iterable, the object not being pickable.
-    #        Related to issue #296
-    #if not Globals.select_mirror.Select(relative_rpout):  # noqa: E265
-    #    return
-
-    Log(
-        """Warning: The destination directory '%s' may be contained in the
-source directory '%s'.  This could cause an infinite recursion.  You
-may need to use the --exclude option (which you might already have done)."""
-        % (rpout.get_safepath(), rpin.get_safepath()), 2)
-
-
-def _backup_get_mirrortime():
-    """Return time in seconds of previous mirror, or None if cannot"""
-    incbase = Globals.rbdir.append_path(b"current_mirror")
-    mirror_rps = restore.get_inclist(incbase)
-    assert len(mirror_rps) <= 1, (
-        "Found {mlen} current_mirror paths, expected <=1".format(
-            mlen=len(mirror_rps)))
-    if mirror_rps:
-        return mirror_rps[0].getinctime()
-    else:
-        return 0  # is always in the past
-
-
-def _backup_final_init(rpout):
-    """Open the backup log and the error log, create increments dir"""
-    global _prevtime, _incdir
-    if Log.verbosity > 0:
-        Log.open_logfile(Globals.rbdir.append("backup.log"))
-    _checkdest_if_necessary(rpout)
-    _prevtime = _backup_get_mirrortime()
-    if _prevtime >= Time.curtime:
-        Log.FatalError(
-            """Time of Last backup is not in the past.  This is probably caused
-by running two backups in less than a second.  Wait a second and try again.""")
-    ErrorLog.open(Time.curtimestr, compress=Globals.compression)
-    if not _incdir.lstat():
-        _incdir.mkdir()
 
 
 def _action_restore(src_rp, dest_rp):
@@ -1048,22 +773,3 @@ information in it.
             "Found more than 2 current_mirror incs in '{rp!s}'.".format(
                 rp=Globals.rbdir))
         return 1
-
-
-def _checkdest_if_necessary(dest_rp):
-    """Check the destination dir if necessary.
-
-    This can/should be run before an incremental backup.
-
-    """
-    need_check = _checkdest_need_check(dest_rp)
-    if need_check == 1:
-        Log(
-            "Previous backup seems to have failed, regressing "
-            "destination now.", 2)
-        try:
-            dest_rp.conn.regress.Regress(dest_rp)
-        except Security.Violation:
-            Log.FatalError("Security violation while attempting to regress "
-                           "destination, perhaps due to --restrict-read-only "
-                           "or --restrict-update-only.")

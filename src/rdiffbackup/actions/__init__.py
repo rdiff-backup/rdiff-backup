@@ -28,7 +28,7 @@ import os
 import sys
 import yaml
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
-from rdiff_backup import Globals, Security, SetConnections, Time
+from rdiff_backup import Globals, rpath, Security, SetConnections, Time
 
 # The default regexp for not compressing those files
 # compat200: it is also used by Main.py to avoid having a 2nd default
@@ -415,6 +415,8 @@ class BaseAction:
         """
         Connect to potentially provided locations arguments, remote or local.
 
+        Defines the current time as being the time of a potentially upcoming
+        backup.
         Returns self, to be used as context manager.
         """
 
@@ -432,6 +434,10 @@ class BaseAction:
                 map(SetConnections.get_connected_rpath, cmdpairs))
         else:
             self.connected_locations = []
+
+        # once the connection is set, we can define "now" as being the current
+        # time, unless the user defined a fixed a current time.
+        Time.setcurtime(self.values.current_time)
 
         return self
 
@@ -459,10 +465,11 @@ class BaseAction:
     def setup(self):
         """
         Prepare the execution of the action.
+
+        Return 0 if everything looked good, else an error code.
         """
         # Set default change ownership flag, umask, relay regexps
         os.umask(0o77)
-        Time.setcurtime(Globals.current_time)
         SetConnections.UpdateGlobal("client_conn", Globals.local_connection)
         Globals.postset_regexp('no_compression_regexp',
                                Globals.no_compression_regexp_string)
@@ -471,6 +478,41 @@ class BaseAction:
             conn.Hardlink.initialize_dictionaries()
 
         return 0
+
+    def run(self):
+        """
+        Execute the given action.
+
+        Return 0 if everything looked good, else an error code.
+        """
+        return 0
+
+    def _init_user_group_mapping(self, dest_conn):
+        """
+        Initialize user and group mapping on destination connection
+        """
+        def get_string_from_file(filename):
+            """
+            Helper function to extract string at once from a given file
+            """
+            if not filename:
+                return None
+            rp = rpath.RPath(Globals.local_connection, os.fsencode(filename))
+            try:
+                return rp.get_string()
+            except OSError as e:
+                self.log.FatalError(
+                    "Error '{err!s}' reading mapping file '{file}'".format(
+                        err=e, file=filename))
+
+        user_mapping_string = get_string_from_file(
+            self.values.user_mapping_file)
+        dest_conn.user_group.init_user_mapping(
+            user_mapping_string, self.values.preserve_numerical_ids)
+        group_mapping_string = get_string_from_file(
+            self.values.group_mapping_file)
+        dest_conn.user_group.init_group_mapping(
+            group_mapping_string, self.values.preserve_numerical_ids)
 
 
 def get_action_class():

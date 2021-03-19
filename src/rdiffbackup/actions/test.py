@@ -75,5 +75,6 @@ class TestAction(actions.BaseAction):
         result = SetConnections.TestConnections(self.connected_locations)
         return result
 
+
 def get_action_class():
     return TestAction
