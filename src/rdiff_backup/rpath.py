@@ -982,6 +982,9 @@ class RPath(RORPath):
         return self.__class__(self.conn, self.base, index, {'type': None})
 
     def get_temp_rpath(self, sibling=False):
+        import tempfile
+        import shutil
+
         """Return new temp rpath in given or parent directory"""
         assert self.conn is Globals.local_connection, (
             "Function must be called locally not over {conn}.".format(
@@ -993,20 +996,26 @@ class RPath(RORPath):
 
         # we have to create our own "uniqueness" as tempfile.mktemp is
         # obsolete and we just want a name agnostic regarding file vs. dir
-        import tempfile
         while True:
             if self.__class__._temp_file_index > 100000000:
                 log.Log("Warning: Resetting tempfile index", 2)
                 self.__class__._temp_file_index = 0
 
-            # here to catch the bytes string passed via cli opts
-            if type(tempfile.tempdir) == bytes:
-                tempdir = tempfile.tempdir.decode()
+            if tempfile.tempdir and (shutil.disk_usage.free == 0):
+                # here to catch the bytes string passed via cli opts
+                if type(tempfile.tempdir) == bytes:
+                    tempdir = tempfile.tempdir.decode()
+                else:
+                    tempdir = tempfile.tempdir
             else:
-                tempdir = tempfile.tempdir
+                tempdir = None
 
-            tf = self.append(os.path.join(tempdir, 'rdiff-backup.tmp.{index:d}'.format(
-                             index=self.__class__._temp_file_index)))
+            if not tempdir:
+                tf = self.append('rdiff-backup.tmp.{index:d}'.format(
+                                 index=self.__class__._temp_file_index))
+            else:
+                tf = self.append(os.path.join(tempdir, 'rdiff-backup.tmp.{index:d}'.format(
+                                 index=self.__class__._temp_file_index)))
             self.__class__._temp_file_index += 1
             if not tf.lstat():
                 return tf
