@@ -993,6 +993,7 @@ class RPath(RORPath):
 
         # we have to create our own "uniqueness" as tempfile.mktemp is
         # obsolete and we just want a name agnostic regarding file vs. dir
+        import tempfile
         while True:
             if self.__class__._temp_file_index > 100000000:
                 log.Log("Warning: Resetting tempfile index", 2)
