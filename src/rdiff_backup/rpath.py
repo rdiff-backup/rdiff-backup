@@ -997,8 +997,15 @@ class RPath(RORPath):
             if self.__class__._temp_file_index > 100000000:
                 log.Log("Warning: Resetting tempfile index", 2)
                 self.__class__._temp_file_index = 0
-            tf = self.append('rdiff-backup.tmp.{index:d}'.format(
-                             index=self.__class__._temp_file_index))
+
+            # here to catch the bytes string passed via cli opts
+            if type(tempfile.tempdir) == bytes:
+              tempdir = tempfile.tempdir.decode()
+            else:
+              tempdir = tempfile.tempdir
+
+            tf = self.append(os.path.join(tempdir, 'rdiff-backup.tmp.{index:d}'.format(
+                             index=self.__class__._temp_file_index)))
             self.__class__._temp_file_index += 1
             if not tf.lstat():
                 return tf
