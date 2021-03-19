@@ -1001,7 +1001,7 @@ class RPath(RORPath):
                 log.Log("Warning: Resetting tempfile index", 2)
                 self.__class__._temp_file_index = 0
 
-            if tempfile.tempdir and (shutil.disk_usage(self).free == 0):
+            if tempfile.tempdir and (shutil.disk_usage(self.path).free == 0):
                 # here to catch the bytes string passed via cli opts
                 if type(tempfile.tempdir) == bytes:
                     tempdir = tempfile.tempdir.decode()
