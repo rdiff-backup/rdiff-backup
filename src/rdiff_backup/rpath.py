@@ -1001,9 +1001,9 @@ class RPath(RORPath):
 
             # here to catch the bytes string passed via cli opts
             if type(tempfile.tempdir) == bytes:
-              tempdir = tempfile.tempdir.decode()
+                tempdir = tempfile.tempdir.decode()
             else:
-              tempdir = tempfile.tempdir
+                tempdir = tempfile.tempdir
 
             tf = self.append(os.path.join(tempdir, 'rdiff-backup.tmp.{index:d}'.format(
                              index=self.__class__._temp_file_index)))
