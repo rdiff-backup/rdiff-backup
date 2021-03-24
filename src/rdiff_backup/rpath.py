@@ -34,12 +34,14 @@ are dealing with are local or remote.
 
 """
 
-import os
-import stat
-import re
-import gzip
-import time
 import errno
+import gzip
+import os
+import re
+import shutil
+import stat
+import tempfile
+import time
 from . import Globals, Time, log, user_group, C
 
 try:
@@ -982,9 +984,6 @@ class RPath(RORPath):
         return self.__class__(self.conn, self.base, index, {'type': None})
 
     def get_temp_rpath(self, sibling=False):
-        import tempfile
-        import shutil
-
         """Return new temp rpath in given or parent directory"""
         assert self.conn is Globals.local_connection, (
             "Function must be called locally not over {conn}.".format(
