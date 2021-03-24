@@ -1000,21 +1000,25 @@ class RPath(RORPath):
                 log.Log("Warning: Resetting tempfile index", 2)
                 self.__class__._temp_file_index = 0
 
+            # When the file system hosting the rdiff-backup-data directory
+            # is full and when the --tempdir flag is defined, attempt to save
+            # temporary files on a different path / file system.
             if tempfile.tempdir and (shutil.disk_usage(self.path).free == 0):
-                # here to catch the bytes string passed via cli opts
+                # If tempfile.tempdir is manually passed in via the --tempdir
+                # cli flag, it defaults being a bytes string, as such we need to
+                # convert the target path to a string first
                 if type(tempfile.tempdir) == bytes:
-                    tempdir = tempfile.tempdir.decode()
+                    tempdir = os.fsdecode(tempfile.tempdir)
                 else:
                     tempdir = tempfile.tempdir
             else:
                 tempdir = None
 
+            _tf = 'rdiff-backup.tmp.{index:d}'.format(index=self.__class__._temp_file_index)
             if not tempdir:
-                tf = self.append('rdiff-backup.tmp.{index:d}'.format(
-                                 index=self.__class__._temp_file_index))
+                tf = self.append(_tf)
             else:
-                tf = self.append(os.path.join(tempdir, 'rdiff-backup.tmp.{index:d}'.format(
-                                 index=self.__class__._temp_file_index)))
+                tf = os.path.join(tempdir, _tf)
             self.__class__._temp_file_index += 1
             if not tf.lstat():
                 return tf
