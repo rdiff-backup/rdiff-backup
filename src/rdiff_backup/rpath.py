@@ -960,6 +960,67 @@ class RPath(RORPath):
         else:
             return self.__class__(self.conn, b"/")
 
+    def get_repository_dirs(self):
+        """
+        Determine the base_dir of a repo based on a given path.
+
+        The rpath can be either the repository itself, a sub-directory
+        (in the mirror) or a dated increment file.
+        Return a tuple made of (the identified base directory, a path index,
+        the recovery type). The path index is the split relative path of the
+        sub-directory to restore (or of the path corresponding to the
+        increment). The type is either 'base', 'subdir', 'inc' or None if the
+        given rpath couldn't be properly analyzed.
+
+        Note that the current path can be relative but must still
+        contain the name of the repository (it can't be just within it).
+        """
+        # get the path as a list of directories/file
+        path_list = self._get_path_as_list()
+        if self.isincfile():
+            if (b"rdiff-backup-data" not in path_list
+                    or b"increments" not in path_list):
+                log.Log("Path '{rp}' looks like an increment but doesn't "
+                        "have 'rdiff-backup-data/increments' "
+                        "in its path.".format(rp=self.get_safepath()),
+                        log.Log.ERROR)
+                return (self, [], None)
+            else:
+                data_idx = path_list.index(b"rdiff-backup-data")
+                inc_idx = path_list.index(b"increments")
+                if (inc_idx != data_idx + 1):
+                    log.Log("Path '{rp}' looks like an increment but doesn't "
+                            "have 'rdiff-backup-data/increments' "
+                            "in its path.".format(
+                                rp=self.get_safepath()), log.Log.ERROR)
+                    return (self, [], None)
+                else:
+                    # base_dir is the directory above the data directory
+                    base_dir = rpath.RPath(self.conn,
+                                           b"/".join(path_list[:data_idx]))
+                    # base_index is the path within the increments directory,
+                    # replacing the name of the increment with the name of the
+                    # file it represents
+                    base_index = path_list[inc_idx + 1:-1]
+                    base_index.append(self.inc_basestr)
+                    return (base_dir, base_index, "inc")
+        else:
+            # rpath is either the base directory itself or a sub-dir of it
+            if (self.lstat() and self.isdir()
+                    and b"rdiff-backup-data" in self.listdir()):
+                # it's a base directory, simple case...
+                return (self, [], "base")
+            parent_rp = self
+            for element in range(1, len(path_list)):
+                parent_rp = parent_rp.get_parent_rp()
+                if (parent_rp.lstat() and parent_rp.isdir()
+                        and b"rdiff-backup-data" in parent_rp.listdir()):
+                    return (parent_rp, path_list[-element:], "subdir")
+            log.Log("Path '{rp}' couldn't be identified as fitting "
+                    "for a restore action".format(
+                        rp=self.get_safepath()), log.Log.ERROR)
+            return (self, [], None)
+
     def newpath(self, newpath, index=()):
         """Return new RPath with the same connection but different path"""
         return self.__class__(self.conn, newpath, index)
@@ -1330,6 +1391,12 @@ class RPath(RORPath):
             print("\nPath: {rp!s}\nhas cached an inconsistent type\n"
                   "Old: {otype} --> New: {ntype}\n".format(
                       rp=self, otype=temptype, ntype=self.data['type']))
+
+    def _get_path_as_list(self):
+        """
+        Return the complete path (base and index) as list of file names.
+        """
+        return self.path.split(b"/")
 
 
 class MaybeGzip:

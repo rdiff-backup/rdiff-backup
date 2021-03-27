@@ -24,7 +24,10 @@ A built-in rdiff-backup action plug-in to backup a source to a target directory.
 import time
 
 from rdiff_backup import (
+    log,
     backup,
+    Security,
+    selection,
     SetConnections,
     Time,
 )
@@ -81,6 +84,10 @@ class BackupAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
+        return_code = self.source.setup()
+        if return_code != 0:
+            return return_code
+
         return_code = self.target.setup()
         if return_code != 0:
             return return_code
@@ -94,11 +101,19 @@ class BackupAction(actions.BaseAction):
         self.target.init_quoting(self.values.chars_to_quote)
         self._init_user_group_mapping(self.target.base_dir.conn)
         if self.log.verbosity > 0:
-            self.log.open_logfile(self.target.data_dir.append("backup.log"))
-        # FIXME checkdest used to happen here
+            try:  # the target repository must be writable
+                self.log.open_logfile(
+                    self.target.data_dir.append("backup.log"))
+            except (log.LoggerError, Security.Violation) as exc:
+                self.log("Unable to open logfile due to '{exc}'".format(
+                    exc=exc), self.log.ERROR)
+                return 1
+        # TODO could we get rid of the error log?
         self.errlog.open(Time.curtimestr, compress=self.values.compression)
 
-        self.source.set_select(self.values.selections)
+        (select_opts, select_data) = selection.get_prepared_selections(
+            self.values.selections)
+        self.source.set_select(select_opts, select_data)
         self._warn_if_infinite_recursion(self.source.base_dir,
                                          self.target.base_dir)
 

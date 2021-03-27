@@ -21,7 +21,7 @@
 A location module to define repository classes as created by rdiff-backup
 """
 
-import os
+import io
 
 from rdiffbackup import locations
 
@@ -58,124 +58,6 @@ class Repo():
         else:  # it's the first backup
             return 0  # is always in the past
 
-
-class ReadRepo(Repo, locations.ReadLocation):
-    """
-    A writable/updatable Repository as target for a backup
-    """
-
-    def __init__(self, base_dir, log, force):
-        super().__init__(base_dir, log, force)
-        self.data_dir = self.base_dir.append_path(b"rdiff-backup-data")
-        self.incs_dir = self.data_dir.append_path(b"increments")
-
-
-class WriteRepo(Repo, locations.WriteLocation):
-    """
-    A writable/updatable Repository as target for a backup
-    """
-
-    def __init__(self, base_dir, log, force, create_full_path):
-        super().__init__(base_dir, log, force, create_full_path)
-        self.data_dir = self.base_dir.append_path(b"rdiff-backup-data")
-        self.incs_dir = self.data_dir.append_path(b"increments")
-
-    def check(self):
-        return_code = 0
-        # check that target is a directory or doesn't exist
-        if (self.base_dir.lstat() and not self.base_dir.isdir()):
-            if self.force:
-                self.log(
-                    "Destination {rp} exists but isn't a directory, "
-                    "and will be force deleted".format(
-                        rp=self.base_dir.get_safepath()),
-                    self.log.WARNING)
-            else:
-                self.log(
-                    "Destination {rp} exists and is not a directory, "
-                    "call with '--force' to overwrite".format(
-                        rp=self.base_dir.get_safepath()),
-                    self.log.ERROR)
-                return_code |= 1
-        # if the target is a non-empty existing directory
-        # without rdiff-backup-data sub-directory
-        elif (self.base_dir.lstat()
-              and self.base_dir.isdir()
-              and self.base_dir.listdir()):
-            if self.data_dir.lstat():
-                previous_time = self.get_mirror_time()
-                if previous_time >= Time.curtime:
-                    self.log("Time of last backup is not in the past. "
-                             "This is probably caused by running two backups "
-                             "in less than a second. "
-                             "Wait a second and try again.",
-                             self.log.ERROR)
-                    return_code |= 1
-            else:
-                if self.force:
-                    self.log(
-                        "Target '{repo}' does not look like a rdiff-backup "
-                        "repository but will be force overwritten".format(
-                            repo=self.base_dir.get_safepath()),
-                        self.log.WARNING)
-                else:
-                    self.log(
-                        "Target '{repo}' does not look like a rdiff-backup "
-                        "repository, "
-                        "call with '--force' to overwrite".format(
-                            repo=self.base_dir.get_safepath()),
-                        self.log.ERROR)
-                    return_code |= 1
-        return return_code
-
-    def setup(self):
-        # make sure the target directory is present
-        try:
-            # if the target exists and isn't a directory, force delete it
-            if (self.base_dir.lstat() and not self.base_dir.isdir()
-                    and self.force):
-                self.base_dir.delete()
-
-            # if the target doesn't exist, create it
-            if not self.base_dir.lstat():
-                if self.create_full_path:
-                    self.base_dir.makedirs()
-                else:
-                    self.base_dir.mkdir()
-                self.base_dir.chmod(0o700)  # only read-writable by its owner
-        except os.error:
-            self.log("Unable to delete and/or create directory {rp}".format(
-                rp=self.base_dir.get_safepath()), self.log.ERROR)
-            return 1
-
-        Globals.rbdir = self.data_dir  # compat200
-
-        # define a few essential subdirectories
-        if not self.data_dir.lstat():
-            try:
-                self.data_dir.mkdir()
-            except (OSError, IOError) as exc:
-                self.log("Could not create 'rdiff-backup-data' sub-directory "
-                         "in '{rp}' due to '{exc}'. "
-                         "Please fix the access rights and retry.".format(
-                             rp=self.base_dir, exc=exc), self.log.ERROR)
-                return 1
-        elif self._is_failed_initial_backup():
-            self._fix_failed_initial_backup()
-        if not self.incs_dir.lstat():
-            try:
-                self.incs_dir.mkdir()
-            except (OSError, IOError) as exc:
-                self.log("Could not create 'increments' sub-directory "
-                         "in '{rp}' due to '{exc}'. "
-                         "Please fix the access rights and retry.".format(
-                             rp=self.data_dir, exc=exc), self.log.ERROR)
-                return 1
-
-        SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
-
-        return 0
-
     def init_quoting(self, chars_to_quote):
         """
         Set QuotedRPath versions of important RPaths if chars_to_quote is set.
@@ -185,10 +67,13 @@ class WriteRepo(Repo, locations.WriteLocation):
         if not chars_to_quote:
             return False
 
-        SetConnections.UpdateGlobal(  # compat200
-            'rbdir', FilenameMapping.get_quotedrpath(self.data_dir))
-        self.incs_dir = FilenameMapping.get_quotedrpath(self.incs_dir)
+        FilenameMapping.set_init_quote_vals()  # compat200
+
         self.base_dir = FilenameMapping.get_quotedrpath(self.base_dir)
+        self.data_dir = FilenameMapping.get_quotedrpath(self.data_dir)
+        self.incs_dir = FilenameMapping.get_quotedrpath(self.incs_dir)
+
+        SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
 
         return True
 
@@ -244,6 +129,150 @@ information in it.
                 "Found more than 2 current_mirror incs in '{rp!s}'.".format(
                     rp=self.data_dir))
             return True
+
+
+class ReadRepo(Repo, locations.ReadLocation):
+    """
+    A read-only Repository as source for a restore or other read actions.
+    """
+
+    def __init__(self, base_dir, log, force):
+        # the base_dir can actually be a repository, but also a sub-directory
+        # or even an increment file, hence we need to process it accordingly
+        self.orig_path = base_dir
+        (base_dir, restore_index, restore_type) = base_dir.get_repository_dirs()
+        super().__init__(base_dir, log, force)
+        if restore_type:
+            self.data_dir = self.base_dir.append_path(b"rdiff-backup-data")
+            self.incs_dir = self.data_dir.append_path(b"increments")
+            self.restore_index = restore_index
+            self.restore_type = restore_type
+
+    def check(self):
+        if self.restore_type is None:
+            # there is nothing to save, the user must first give a correct path
+            return 1
+        else:
+            self.log("Using repository '{rp}'".format(
+                rp=self.base_dir.get_safepath()), self.log.INFO)
+        ret_code = super().check()
+        if not self.data_dir.isdir():
+            self.log("Source '{rp}' doesn't have an 'rdiff-backup-data' "
+                     "sub-directory".format(rp=self.base_dir.get_safepath()),
+                     self.log.ERROR)
+            ret_code |= 1
+        elif not self.incs_dir.isdir():
+            self.log("Data directory '{rp}' doesn't have an 'increments' "
+                     "sub-directory".format(rp=self.data_dir.get_safepath()),
+                     self.log.WARNING)  # used to be normal  # compat200
+            # ret_code |= 1  # compat200
+        return ret_code
+
+    def setup(self):
+        ret_code = super().setup()
+        if ret_code != 0:
+            return ret_code
+
+        if self.base_dir.conn is Globals.local_connection:
+            Security.reset_restrict_path(self.base_dir)
+        SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
+
+        return 0  # all is good
+
+    def set_select(self, select_opts, select_data):
+        """
+        Set the selection and selection data on the repository
+
+        Accepts a tuple of two lists:
+        * one of selection tuple made of (selection method, parameter)
+        * and one of the content of the selection files
+
+        Saves the selections list and makes it ready for usage on the source
+        side over its connection.
+        """
+
+        # FIXME we're retransforming bytes into a file pointer
+        if select_opts:
+            self.base_dir.conn.restore.MirrorStruct.set_mirror_select(
+                self.base_dir, select_opts, *list(map(io.BytesIO, select_data)))
+
+
+class WriteRepo(Repo, locations.WriteLocation):
+    """
+    A writable/updatable Repository as target for a backup
+    """
+
+    def __init__(self, base_dir, log, force, create_full_path):
+        super().__init__(base_dir, log, force, create_full_path)
+        self.data_dir = self.base_dir.append_path(b"rdiff-backup-data")
+        self.incs_dir = self.data_dir.append_path(b"increments")
+
+    def check(self):
+        ret_code = super().check()
+
+        # if the target is a non-empty existing directory
+        # without rdiff-backup-data sub-directory
+        if (self.base_dir.lstat()
+                and self.base_dir.isdir()
+                and self.base_dir.listdir()):
+            if self.data_dir.lstat():
+                previous_time = self.get_mirror_time()
+                if previous_time >= Time.curtime:
+                    self.log("Time of last backup is not in the past. "
+                             "This is probably caused by running two backups "
+                             "in less than a second. "
+                             "Wait a second and try again.",
+                             self.log.ERROR)
+                    ret_code |= 1
+            else:
+                if self.force:
+                    self.log(
+                        "Target '{repo}' does not look like a rdiff-backup "
+                        "repository but will be force overwritten".format(
+                            repo=self.base_dir.get_safepath()),
+                        self.log.WARNING)
+                else:
+                    self.log(
+                        "Target '{repo}' does not look like a rdiff-backup "
+                        "repository, "
+                        "call with '--force' to overwrite".format(
+                            repo=self.base_dir.get_safepath()),
+                        self.log.ERROR)
+                    ret_code |= 1
+        return ret_code
+
+    def setup(self):
+        ret_code = super().setup()
+        if ret_code != 0:
+            return ret_code
+
+        Globals.rbdir = self.data_dir  # compat200
+
+        # define a few essential subdirectories
+        if not self.data_dir.lstat():
+            try:
+                self.data_dir.mkdir()
+            except (OSError, IOError) as exc:
+                self.log("Could not create 'rdiff-backup-data' sub-directory "
+                         "in '{rp}' due to '{exc}'. "
+                         "Please fix the access rights and retry.".format(
+                             rp=self.base_dir, exc=exc), self.log.ERROR)
+                return 1
+        elif self._is_failed_initial_backup():
+            self._fix_failed_initial_backup()
+        if not self.incs_dir.lstat():
+            try:
+                self.incs_dir.mkdir()
+            except (OSError, IOError) as exc:
+                self.log("Could not create 'increments' sub-directory "
+                         "in '{rp}' due to '{exc}'. "
+                         "Please fix the access rights and retry.".format(
+                             rp=self.data_dir, exc=exc), self.log.ERROR)
+                return 1
+
+        SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
+
+        return 0
 
     def regress(self):
         """

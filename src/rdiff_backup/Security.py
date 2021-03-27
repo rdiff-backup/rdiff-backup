@@ -140,13 +140,14 @@ def _set_security_level(security_class, cmdpairs):
             rdir = tempfile.gettempdirb()
         elif islocal(cp1):
             sec_level = "read-only"
-            # FIXME it shouldn't be necessary to call back Main's function.
-            Main.restore_set_root(
-                rpath.RPath(Globals.local_connection, getpath(cp1)))
-            if Main.restore_root:
-                rdir = Main.restore_root.path
-            else:
-                log.Log.FatalError("Invalid restore directory")
+            rp1 = rpath.RPath(Globals.local_connection,  getpath(cp1))
+            (base_dir, restore_index, restore_type) = rp1.get_repository_dirs()
+            if restore_type is None:
+                # the error will be catched later more cleanly, so that the
+                # connections can be properly closed
+                log.Log("Invalid restore directory '{path}'".format(
+                    path=getpath(cp1)), log.Log.ERROR)
+            rdir = base_dir.path
         else:  # cp2 is local but not cp1
             sec_level = "all"
             rdir = getpath(cp2)

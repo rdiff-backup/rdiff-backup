@@ -387,6 +387,7 @@ class PipeConnection(LowLevelPipeConnection):
         Globals.connections.append(self)
         log.Log("Starting server", 6)
         self._get_response(-1)
+        return 0  # all is well...
 
     # @API(reval, 200)
     def reval(self, function_string, *args):
