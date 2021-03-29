@@ -34,12 +34,14 @@ are dealing with are local or remote.
 
 """
 
-import os
-import stat
-import re
-import gzip
-import time
 import errno
+import gzip
+import os
+import re
+import shutil
+import stat
+import tempfile
+import time
 from . import Globals, Time, log, user_group, C
 
 try:
@@ -997,8 +999,23 @@ class RPath(RORPath):
             if self.__class__._temp_file_index > 100000000:
                 log.Log("Warning: Resetting tempfile index", 2)
                 self.__class__._temp_file_index = 0
-            tf = self.append('rdiff-backup.tmp.{index:d}'.format(
-                             index=self.__class__._temp_file_index))
+
+            # When the file system hosting the rdiff-backup-data directory
+            # is full and when the --tempdir flag is defined, attempt to save
+            # temporary files on a different path / file system.
+            if tempfile.tempdir and (shutil.disk_usage(self.path).free == 0):
+                # If tempfile.tempdir is manually passed in via the --tempdir
+                # cli flag, it defaults being a bytes string, as such we need to
+                # convert the target path to a string first
+                tempdir = os.fsdecode(tempfile.tempdir)
+            else:
+                tempdir = None
+
+            _tf = 'rdiff-backup.tmp.{index:d}'.format(index=self.__class__._temp_file_index)
+            if not tempdir:
+                tf = self.append(_tf)
+            else:
+                tf = os.path.join(tempdir, _tf)
             self.__class__._temp_file_index += 1
             if not tf.lstat():
                 return tf
