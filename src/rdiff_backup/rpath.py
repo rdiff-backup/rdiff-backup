@@ -1007,10 +1007,7 @@ class RPath(RORPath):
                 # If tempfile.tempdir is manually passed in via the --tempdir
                 # cli flag, it defaults being a bytes string, as such we need to
                 # convert the target path to a string first
-                if type(tempfile.tempdir) == bytes:
-                    tempdir = os.fsdecode(tempfile.tempdir)
-                else:
-                    tempdir = tempfile.tempdir
+                tempdir = os.fsdecode(tempfile.tempdir)
             else:
                 tempdir = None
 
