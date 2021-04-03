@@ -400,8 +400,8 @@ class BaseAction:
         beyond what argparse can do.
         Return 0 if everything looked good, else an error code.
 
-        Try to check everything before returning and not force the user to fix their
-        entries step by step.
+        Try to check everything before returning and not force the user to fix
+        their entries step by step.
         """
         if self.values.action == self.name:
             return 0

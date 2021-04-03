@@ -299,9 +299,7 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
 
 def _take_action(rps):
     """Do whatever action says"""
-    if _action.startswith("compare"):
-        action_result = _action_compare(_action, rps[0], rps[1])
-    elif _action == "list-at-time":
+    if _action == "list-at-time":
         action_result = _action_list_at_time(rps[0])
     elif _action == "list-changed-since":
         action_result = _action_list_changed_since(rps[0])
@@ -440,39 +438,6 @@ def _action_list_at_time(rp):
     inc_rp = mirror_rp.append_path(b"increments", _restore_index)
     for rorp in rp.conn.restore.ListAtTime(mirror_rp, inc_rp, rest_time):
         print(rorp.get_safeindexpath())
-
-
-def _action_compare(compare_type, src_rp, dest_rp, compare_time=None):
-    """Compare metadata in src_rp with metadata of backup session
-
-    Prints to stdout whenever a file in the src_rp directory has
-    different metadata than what is recorded in the metadata for the
-    appropriate session.
-
-    Session time is read from _restore_timestr if compare_time is None.
-
-    """
-    dest_rp = _require_root_set(dest_rp, 1)
-    if not compare_time:
-        try:
-            compare_time = Time.genstrtotime(_restore_timestr)
-        except Time.TimeException as exc:
-            Log.FatalError(str(exc))
-
-    mirror_rp = restore_root.new_index(_restore_index)
-    inc_rp = Globals.rbdir.append_path(b"increments", _restore_index)
-    _backup_set_select(src_rp)  # Sets source rorp iterator
-    if compare_type == "compare":
-        compare_func = compare.Compare
-    elif compare_type == "compare-hash":
-        compare_func = compare.Compare_hash
-    elif compare_type == "compare-full":
-        compare_func = compare.Compare_full
-    else:
-        raise ValueError(
-            "Comparaison type '{comp}' must be one of compare, "
-            "compare-hash or compare-full.".format(comp=compare_type))
-    return compare_func(src_rp, mirror_rp, inc_rp, compare_time)
 
 
 def _action_verify(dest_rp, verify_time=None):

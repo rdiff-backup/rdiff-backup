@@ -23,7 +23,9 @@ a back-up repository with the current state of a directory.
 Comparaison can be done using metadata, file content or hashes.
 """
 
+from rdiff_backup import (compare, selection, Time)
 from rdiffbackup import actions
+from rdiffbackup.locations import (directory, repository)
 
 
 class CompareAction(actions.BaseAction):
@@ -49,6 +51,75 @@ class CompareAction(actions.BaseAction):
             help="locations of SOURCE_DIR and backup REPOSITORY to compare"
                  " (same order as for a backup)")
         return subparser
+
+    def connect(self):
+        conn_value = super().connect()
+        if conn_value:
+            self.source = directory.ReadDir(self.connected_locations[0],
+                                            self.log, self.values.force)
+            self.target = repository.ReadRepo(self.connected_locations[1],
+                                              self.log, self.values.force)
+        return conn_value
+
+    def check(self):
+        # we try to identify as many potential errors as possible before we
+        # return, so we gather all potential issues and return only the final
+        # result
+        return_code = super().check()
+
+        # we verify that source directory and target repository are correct
+        return_code |= self.source.check()
+        return_code |= self.target.check()
+
+        return return_code
+
+    def setup(self):
+        # in setup we return as soon as we detect an issue to avoid changing
+        # too much
+        return_code = super().setup()
+        if return_code != 0:
+            return return_code
+
+        return_code = self.source.setup()
+        if return_code != 0:
+            return return_code
+
+        return_code = self.target.setup()
+        if return_code != 0:
+            return return_code
+
+        (select_opts, select_data) = selection.get_prepared_selections(
+            self.values.selections)
+        self.source.set_select(select_opts, select_data)
+
+        self.mirror_rpath = self.target.base_dir.new_index(
+            self.target.restore_index)
+        self.inc_rpath = self.target.data_dir.append_path(
+            b'increments', self.target.restore_index)
+
+        try:
+            self.compare_time = Time.genstrtotime(self.values.at,
+                                                  rp=self.inc_rpath)
+        except Time.TimeException as exc:
+            self.log("Time string '{tstr}' couldn't be parsed "
+                     "due to '{exc}'".format(tstr=self.values.at, exc=exc),
+                     self.log.ERROR)
+            return 1
+
+        return 0  # all is good
+
+    def run(self):
+        # call the right comparaison function for the chosen method
+        compare_funcs = {
+            "meta": compare.Compare,
+            "hash": compare.Compare_hash,
+            "full": compare.Compare_full
+        }
+        ret_code = compare_funcs[self.values.method](self.source.base_dir,
+                                                     self.mirror_rpath,
+                                                     self.inc_rpath,
+                                                     self.compare_time)
+        return ret_code
 
 
 def get_action_class():
