@@ -299,9 +299,7 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
 
 def _take_action(rps):
     """Do whatever action says"""
-    if _action == "check-destination-dir":
-        action_result = _action_check_dest(rps[0])
-    elif _action.startswith("compare"):
+    if _action.startswith("compare"):
         action_result = _action_compare(_action, rps[0], rps[1])
     elif _action == "list-at-time":
         action_result = _action_list_at_time(rps[0])
@@ -489,22 +487,6 @@ def _action_verify(dest_rp, verify_time=None):
     mirror_rp = restore_root.new_index(_restore_index)
     inc_rp = Globals.rbdir.append_path(b"increments", _restore_index)
     return dest_rp.conn.compare.Verify(mirror_rp, inc_rp, verify_time)
-
-
-def _action_check_dest(dest_rp):
-    """Check the destination directory, """
-    dest_rp = _require_root_set(dest_rp, 0)
-    need_check = _checkdest_need_check(dest_rp)
-    if need_check is None:
-        Log("No destination dir found at {ddir}.".format(
-            ddir=dest_rp.get_safepath()), 1)
-        return 1
-    elif need_check == 0:
-        Log("Destination dir {ddir} does not need checking.".format(
-            ddir=dest_rp.get_safepath()), 2)
-        return 0
-    _init_user_group_mapping(dest_rp.conn)
-    dest_rp.conn.regress.Regress(dest_rp)
 
 
 def _checkdest_need_check(dest_rp):

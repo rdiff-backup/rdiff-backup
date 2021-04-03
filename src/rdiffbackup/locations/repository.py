@@ -130,6 +130,26 @@ information in it.
                     rp=self.data_dir))
             return True
 
+    def regress(self):
+        """
+        Regress the backup repository in case the last backup failed
+
+        This can/should be run before any action on the repository to start
+        with a clean state.
+        """
+        self.log(
+            "Previous backup seems to have failed, regressing "
+            "destination now.", self.log.WARNING)
+        try:
+            self.base_dir.conn.regress.Regress(self.base_dir)
+            return 0
+        except Security.Violation:
+            self.log(
+                "Security violation while attempting to regress destination, "
+                "perhaps due to --restrict-read-only or "
+                "--restrict-update-only.", self.log.ERROR)
+            return 1
+
 
 class ReadRepo(Repo, locations.ReadLocation):
     """
@@ -145,8 +165,8 @@ class ReadRepo(Repo, locations.ReadLocation):
         if restore_type:
             self.data_dir = self.base_dir.append_path(b"rdiff-backup-data")
             self.incs_dir = self.data_dir.append_path(b"increments")
-            self.restore_index = restore_index
-            self.restore_type = restore_type
+        self.restore_index = restore_index
+        self.restore_type = restore_type
 
     def check(self):
         if self.restore_type is None:
@@ -273,24 +293,6 @@ class WriteRepo(Repo, locations.WriteLocation):
         SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
 
         return 0
-
-    def regress(self):
-        """
-        Regress the backup repository in case the last backup failed
-
-        This can/should be run before any action on the repository to start
-        with a clean state.
-        """
-        self.log(
-            "Previous backup seems to have failed, regressing "
-            "destination now.", self.log.WARNING)
-        try:
-            self.base_dir.conn.regress.Regress(self.base_dir)
-        except Security.Violation:
-            self.log.FatalError(
-                "Security violation while attempting to regress destination, "
-                "perhaps due to --restrict-read-only or "
-                "--restrict-update-only.")
 
     def _is_failed_initial_backup(self):
         """

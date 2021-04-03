@@ -1016,8 +1016,8 @@ class RPath(RORPath):
                 if (parent_rp.lstat() and parent_rp.isdir()
                         and b"rdiff-backup-data" in parent_rp.listdir()):
                     return (parent_rp, path_list[-element:], "subdir")
-            log.Log("Path '{rp}' couldn't be identified as fitting "
-                    "for a restore action".format(
+            log.Log("Path '{rp}' couldn't be identified as being within "
+                    "an existing backup repository".format(
                         rp=self.get_safepath()), log.Log.ERROR)
             return (self, [], None)
 
