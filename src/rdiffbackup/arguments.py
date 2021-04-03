@@ -47,14 +47,14 @@ def parse(args, version_string, generic_parsers, parent_parsers, actions_dict=No
     """
     # we try to recognize if the user wants the old or the new parameters
     # it's the case if --new is explicitly given, or if any parameter starts
-    # with an @ (meaning read from file), or if api-version is used, or if
-    # any of the action names is found in the parameters, without `--no-new`
-    # being found.
+    # with an @ (meaning read from file), or if api-version or help is used,
+    # or if any of the action names is found in the parameters,
+    # without `--no-new` being found.
     # note: `set1 & set2` is the intersection of two sets
     if ('--new' in args
             or (any(map(lambda x: x.startswith('@'), args)))
             or ('--no-new' not in args
-                and ('--api-version' in args
+                and ('--api-version' in args or '--help' in args
                      or (set(actions_dict.keys()) & set(args))))):
         return _parse_new(args, version_string, generic_parsers, actions_dict)
     else:
