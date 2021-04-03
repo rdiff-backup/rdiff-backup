@@ -299,9 +299,7 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
 
 def _take_action(rps):
     """Do whatever action says"""
-    if _action == "calculate-average":
-        action_result = _action_calculate_average(rps)
-    elif _action == "check-destination-dir":
+    if _action == "check-destination-dir":
         action_result = _action_check_dest(rps[0])
     elif _action.startswith("compare"):
         action_result = _action_compare(_action, rps[0], rps[1])
@@ -365,14 +363,6 @@ def _action_list_increment_sizes(rp):
     """Print out a summary of the increments """
     rp = _require_root_set(rp, 1)
     print(manage.list_increment_sizes(restore_root, _restore_index))
-
-
-def _action_calculate_average(rps):
-    """Print out the average of the given statistics files"""
-    statobjs = [statistics.StatsObj().read_stats_from_rp(rp) for rp in rps]
-    average_stats = statistics.StatsObj().set_to_average(statobjs)
-    print(average_stats.get_stats_logstring(
-        "Average of %d stat files" % len(rps)))
 
 
 def _action_remove_older_than(rootrp):

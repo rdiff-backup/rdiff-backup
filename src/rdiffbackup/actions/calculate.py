@@ -18,9 +18,11 @@
 # 02110-1301, USA
 
 """
-A built-in rdiff-backup action plug-in to calculate average across multiple statistics files.
+A built-in rdiff-backup action plug-in to calculate average across multiple
+statistics files.
 """
 
+from rdiff_backup import statistics
 from rdiffbackup import actions
 
 
@@ -36,11 +38,26 @@ class CalculateAction(actions.BaseAction):
         subparser = super().add_action_subparser(sub_handler)
         subparser.add_argument(
             "--method", choices=["average"], default="average",
-            help="what to calculate from the different statistics")
+            help="what to calculate from the different session statistics")
         subparser.add_argument(
             "locations", metavar="STATISTIC_FILE", nargs="+",
-            help="locations of the statistic files to calculate from")
+            help="locations of the session statistic files to calculate from")
         return subparser
+
+    def run(self):
+        """
+        Print out the calculation of the given statistics files, according
+        to calculation method.
+        """
+        statobjs = [
+            statistics.StatsObj().read_stats_from_rp(loc)
+            for loc in self.connected_locations
+        ]
+        if self.values.method == "average":
+            calc_stats = statistics.StatsObj().set_to_average(statobjs)
+        print(calc_stats.get_stats_logstring(
+            "Average of %d stat files" % len(self.connected_locations)))
+        return 0
 
 
 def get_action_class():
