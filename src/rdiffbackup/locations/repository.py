@@ -321,7 +321,7 @@ class WriteRepo(Repo, locations.WriteLocation):
         """
         self.log("Found interrupted initial backup in {rp}. "
                  "Removing...".format(rp=self.data_dir.get_safepath()),
-                 self.log.DEFAULT)
+                 self.log.NOTE)
         rbdir_files = self.data_dir.listdir()
 
         # Try to delete the increments dir first

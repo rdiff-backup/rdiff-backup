@@ -95,8 +95,8 @@ class RegressAction(actions.BaseAction):
         if self.source.needs_regress():
             return self.source.regress()
         else:
-            self.log("Given repository doesn't need to be regressed.",
-                     self.log.DEFAULT)
+            self.log("Given repository doesn't need to be regressed",
+                     self.log.NOTE)
             return 0  # all is good
 
 def get_action_class():

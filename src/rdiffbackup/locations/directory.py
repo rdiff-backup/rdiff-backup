@@ -51,7 +51,7 @@ class ReadDir(Dir, locations.ReadLocation):
         # FIXME not sure we couldn't support symbolic links nowadays on Windows
         if self.base_dir.conn.os.name == 'nt':
             self.log("Symbolic links excluded by default on Windows",
-                     self.log.DEFAULT)
+                     self.log.NOTE)
             select_opts.append(("--exclude-symbolic-links", None))
         # FIXME we're retransforming bytes into a file pointer
         self.base_dir.conn.backup.SourceStruct.set_source_select(
