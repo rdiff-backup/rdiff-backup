@@ -18,28 +18,13 @@
 # 02110-1301, USA
 """Start (and end) here - read arguments, set global settings, etc."""
 
-import errno
-import io
 import os
 import sys
 import tempfile
-from .log import Log, LoggerError, ErrorLog
-from . import (
-    Globals, Time, SetConnections, rpath,
-    manage, connection, restore, FilenameMapping,
-    Security, C, statistics, compare
+from rdiff_backup import (
+    C, Globals, log, restore, rpath, statistics, Time,
 )
 from rdiffbackup import arguments, actions_mgr, actions
-
-_action = None
-
-# These are global because they are set while we are trying to figure
-# whether to restore or to backup
-restore_root, _restore_index, _restore_root_set = None, None, 0
-
-# Those global variables are listed here to make the list complete
-_restore_timestr = None
-_remove_older_than_string = None
 
 
 def main_run_and_exit(arglist):
@@ -75,7 +60,8 @@ def _main_run(arglist, security_override=False):
 
     # instantiate the action object from the dictionary, handing over the
     # parsed arguments
-    action = discovered_actions[parsed_args.action](parsed_args, Log, ErrorLog)
+    action = discovered_actions[parsed_args.action](parsed_args,
+                                                    log.Log, log.ErrorLog)
 
     # compatibility plug, we need verbosity set properly asap
     _parse_cmdlineoptions_compat200(parsed_args)
@@ -83,8 +69,8 @@ def _main_run(arglist, security_override=False):
     # validate that everything looks good before really starting
     ret_val = action.pre_check()
     if ret_val != 0:
-        Log("Action {act} failed on {func}.".format(
-            act=parsed_args.action, func="pre_check"), Log.ERROR)
+        log.Log("Action {act} failed on {func}.".format(
+            act=parsed_args.action, func="pre_check"), log.Log.ERROR)
         return ret_val
 
     # now start for real, conn_act and action are the same object
@@ -96,20 +82,20 @@ def _main_run(arglist, security_override=False):
 
         ret_val = conn_act.check()
         if ret_val != 0:
-            Log("Action {act} failed on {func}.".format(
-                act=parsed_args.action, func="check"), Log.ERROR)
+            log.Log("Action {act} failed on {func}.".format(
+                act=parsed_args.action, func="check"), log.Log.ERROR)
             return ret_val
 
         ret_val = conn_act.setup()
         if ret_val != 0:
-            Log("Action {act} failed on {func}.".format(
-                act=parsed_args.action, func="setup"), Log.ERROR)
+            log.Log("Action {act} failed on {func}.".format(
+                act=parsed_args.action, func="setup"), log.Log.ERROR)
             return ret_val
 
         ret_val = conn_act.run()
         if ret_val != 0:
-            Log("Action {act} failed on {func}.".format(
-                act=parsed_args.action, func="run"), Log.ERROR)
+            log.Log("Action {act} failed on {func}.".format(
+                act=parsed_args.action, func="run"), log.Log.ERROR)
             return ret_val
 
     return ret_val
@@ -130,7 +116,7 @@ def backup_touch_curmirror_local(rpin, rpout):
     """
     mirrorrp = Globals.rbdir.append(b'.'.join(
         map(os.fsencode, (b"current_mirror", Time.curtimestr, "data"))))
-    Log("Writing mirror marker %s" % mirrorrp.get_safepath(), 6)
+    log.Log("Writing mirror marker %s" % mirrorrp.get_safepath(), 6)
     try:
         pid = os.getpid()
     except BaseException:
@@ -182,64 +168,11 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
     Parse argument list and set global preferences, compatibility function
     between old and new way of parsing parameters.
     """
-    global _args, _action, _restore_timestr
-    global _remove_older_than_string
-
-    def sel_fl(filename):
-        """Helper function for including/excluding filelists below"""
-        if filename is True:  # we really mean the boolean True
-            return sys.stdin.buffer
-        try:
-            return open(filename, "rb")  # files match paths hence bytes/bin
-        except IOError:
-            Log.FatalError("Error opening file %s" % filename)
+    global _args, _action
 
     def normalize_path(path):
         """Used below to normalize the security paths before setting"""
         return rpath.RPath(Globals.local_connection, path).normalize().path
-
-    if arglist.action == "calculate":
-        _action = arglist.action + "-" + arglist.method
-    elif arglist.action == "compare":
-        _action = arglist.action
-        if arglist.method != "meta":
-            _action += "-" + arglist.method
-        _restore_timestr = arglist.at
-    elif arglist.action == "regress":
-        _action = "check-destination-dir"
-        Globals.set("allow_duplicate_timestamps",
-                    arglist.allow_duplicate_timestamps)
-    elif arglist.action == "list":
-        if arglist.entity == "files":
-            if arglist.changed_since:
-                _restore_timestr = arglist.changed_since
-                _action = "list-changed-since"
-            else:
-                _restore_timestr = arglist.at
-                _action = "list-at-time"
-        elif arglist.entity == "increments":
-            if arglist.size:
-                _action = 'list-increment-sizes'
-            else:
-                _action = "list-increments"
-    elif arglist.action == "restore":
-        if not arglist.increment:
-            _restore_timestr = arglist.at
-        _action = "restore"
-    elif arglist.action == "remove":
-        if arglist.entity == "increments":
-            _remove_older_than_string = arglist.older_than
-            _action = "remove-older-than"
-    elif arglist.action == "server":
-        _action = "server"
-        Globals.server = True
-    elif arglist.action == "test":
-        _action = "test-server"
-    elif arglist.action == "verify":
-        _restore_timestr = arglist.at
-        _action = "verify"
-    else:
-        _action = arglist.action
 
     if arglist.action in ('backup', 'restore'):
         Globals.set("acls_active", arglist.acls)
@@ -278,11 +211,11 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
     if arglist.api_version is not None:  # FIXME
         Globals.set_api_version(arglist.api_version)
     if arglist.terminal_verbosity is not None:
-        Log.setterm_verbosity(arglist.terminal_verbosity)
-    Log.setverbosity(arglist.verbosity)
+        log.Log.setterm_verbosity(arglist.terminal_verbosity)
+    log.Log.setverbosity(arglist.verbosity)
     if arglist.tempdir is not None:
         if not os.path.isdir(arglist.tempdir):
-            Log.FatalError(
+            log.Log.FatalError(
                 "Temporary directory '{dir}' doesn't exist.".format(
                     dir=arglist.tempdir))
         # At least until Python 3.10, the module tempfile doesn't work properly,
@@ -294,64 +227,3 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         _args = []
     else:
         _args = arglist.locations
-
-
-def _take_action(rps):
-    """Do whatever action says"""
-    if _action == "remove-older-than":
-        action_result = _action_remove_older_than(rps[0])
-    else:
-        raise ValueError("Unknown action " + _action)
-    return action_result
-
-
-def _action_remove_older_than(rootrp):
-    """Remove all increment files older than a certain time"""
-    rootrp = _require_root_set(rootrp, 0)
-    _rot_require_rbdir_base(rootrp)
-
-    time = _rot_check_time(_remove_older_than_string)
-    if time is None:
-        return
-    Log("Actual remove older than time: %s" % (time, ), 6)
-    manage.delete_earlier_than(Globals.rbdir, time)
-
-
-def _rot_check_time(time_string):
-    """Check remove older than time_string, return time in seconds"""
-    try:
-        time = Time.genstrtotime(time_string)
-    except Time.TimeException as exc:
-        Log.FatalError(str(exc))
-
-    times_in_secs = [
-        inc.getinctime() for inc in restore.get_inclist(
-            Globals.rbdir.append_path(b"increments"))
-    ]
-    times_in_secs = [t for t in times_in_secs if t < time]
-    if not times_in_secs:
-        Log(
-            "No increments older than %s found, exiting." %
-            (Time.timetopretty(time), ), 3)
-        return None
-
-    times_in_secs.sort()
-    inc_pretty_time = "\n".join(map(Time.timetopretty, times_in_secs))
-    if len(times_in_secs) > 1 and not _force:
-        Log.FatalError(
-            "Found %d relevant increments, dated:\n%s"
-            "\nIf you want to delete multiple increments in this way, "
-            "use the --force." % (len(times_in_secs), inc_pretty_time))
-    if len(times_in_secs) == 1:
-        Log("Deleting increment at time:\n%s" % inc_pretty_time, 3)
-    else:
-        Log("Deleting increments at times:\n%s" % inc_pretty_time, 3)
-    return times_in_secs[-1] + 1  # make sure we don't delete current increment
-
-
-def _rot_require_rbdir_base(rootrp):
-    """Make sure pointing to base of rdiff-backup dir"""
-    if _restore_index != ():
-        Log.FatalError("Increments for directory %s cannot be removed "
-                       "separately.\nInstead run on entire directory %s." %
-                       (rootrp.get_safepath(), restore_root.get_safepath()))

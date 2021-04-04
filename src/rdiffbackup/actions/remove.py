@@ -22,7 +22,9 @@ A built-in rdiff-backup action plug-in to remove increments from a back-up
 repository.
 """
 
+from rdiff_backup import (log, manage, restore, Security, Time)
 from rdiffbackup import actions
+from rdiffbackup.locations import repository
 
 
 class RemoveAction(actions.BaseAction):
@@ -44,6 +46,113 @@ class RemoveAction(actions.BaseAction):
             "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
             help="location of repository to remove increments from")
         return subparser
+
+    def connect(self):
+        conn_value = super().connect()
+        if conn_value:
+            self.source = repository.ReadRepo(self.connected_locations[0],
+                                              self.log, self.values.force)
+        return conn_value
+
+    def check(self):
+        # we try to identify as many potential errors as possible before we
+        # return, so we gather all potential issues and return only the final
+        # result
+        return_code = super().check()
+
+        # we verify that the source repository is correct
+        return_code |= self.source.check()
+
+        # the source directory must directly point at the base directory of
+        # the repository
+        if self.source.restore_index:
+            self.log("Increments for directory '{odir}' cannot be removed "
+                     "separately.\n"
+                     "Instead run on entire directory '{bdir}'.".format(
+                         odir=self.source.orig_path.get_safepath(),
+                         bdir=self.source.base_dir.get_safepath()),
+                     self.log.ERROR)
+            return_code |= 1
+
+        return return_code
+
+    def setup(self):
+        # in setup we return as soon as we detect an issue to avoid changing
+        # too much
+        return_code = super().setup()
+        if return_code != 0:
+            return return_code
+
+        return_code = self.source.setup()
+        if return_code != 0:
+            return return_code
+
+        # TODO validate how much of the following lines and methods
+        # should go into the directory/repository modules
+        if self.log.verbosity > 0:
+            try:  # the source repository must be writable
+                self.log.open_logfile(
+                    self.source.data_dir.append(self.name + ".log"))
+            except (log.LoggerError, Security.Violation) as exc:
+                self.log("Unable to open logfile due to '{exc}'".format(
+                    exc=exc), self.log.ERROR)
+                return 1
+
+        return 0
+
+    def run(self):
+        """
+        Check the given repository and remove old increments
+        """
+
+        action_time = self._get_parsed_time(self.values.older_than)
+        if action_time is None:
+            return 1
+        manage.delete_earlier_than(self.source.base_dir, action_time)
+
+        return 0
+
+    def _get_parsed_time(self, time_string):
+        """
+        Check remove older than time_string, return time in seconds
+
+        Return None if the time string can't be interpreted as such, or
+        if more than one increment would be removed, without the force option,
+        or if no increment would be removed.
+        """
+        action_time = super()._get_parsed_time(time_string)
+        if action_time is None:
+            return None
+
+        times_in_secs = [
+            inc.getinctime() for inc in restore.get_inclist(
+                self.source.incs_dir)
+        ]
+        times_in_secs = [t for t in times_in_secs if t < action_time]
+        if not times_in_secs:
+            self.log("No increments older than {atim} found, exiting.".format(
+                atim=Time.timetopretty(action_time)), self.log.NOTE)
+            return None
+
+        times_in_secs.sort()
+        pretty_times = "\n".join(map(Time.timetopretty, times_in_secs))
+        if len(times_in_secs) > 1:
+            if not self.values.force:
+                self.log(
+                    "Found {lent} relevant increments, dated:\n{ptim}\n"
+                    "If you want to delete multiple increments in this way, "
+                    "use the --force option.".format(lent=len(times_in_secs),
+                                                     ptim=pretty_times),
+                    self.log.ERROR)
+                return None
+            else:
+                self.log("Deleting increments at times:\n{ptim}".format(
+                    ptim=pretty_times), self.log.NOTE)
+        else:
+            self.log("Deleting increment at time:\n{ptim}".format(
+                ptim=pretty_times), self.log.INFO)
+        # make sure we don't delete current increment
+        return times_in_secs[-1] + 1
 
 
 def get_action_class():

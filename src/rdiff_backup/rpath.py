@@ -996,8 +996,7 @@ class RPath(RORPath):
                     return (self, [], None)
                 else:
                     # base_dir is the directory above the data directory
-                    base_dir = rpath.RPath(self.conn,
-                                           b"/".join(path_list[:data_idx]))
+                    base_dir = RPath(self.conn, b"/".join(path_list[:data_idx]))
                     # base_index is the path within the increments directory,
                     # replacing the name of the increment with the name of the
                     # file it represents

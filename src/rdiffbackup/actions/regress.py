@@ -22,7 +22,7 @@ A built-in rdiff-backup action plug-in to regress a failed back-up from a
 back-up repository.
 """
 
-from rdiff_backup import (log, regress, Security)
+from rdiff_backup import (log, Security)
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 
@@ -98,6 +98,7 @@ class RegressAction(actions.BaseAction):
             self.log("Given repository doesn't need to be regressed",
                      self.log.NOTE)
             return 0  # all is good
+
 
 def get_action_class():
     return RegressAction

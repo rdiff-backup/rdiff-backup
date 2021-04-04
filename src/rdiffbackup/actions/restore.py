@@ -22,13 +22,7 @@ A built-in rdiff-backup action plug-in to restore a certain state of a back-up
 repository to a directory.
 """
 
-from rdiff_backup import (
-    log,
-    restore,
-    selection,
-    Security,
-    Time,
-)
+from rdiff_backup import (log, restore, selection, Security)
 from rdiffbackup import actions
 from rdiffbackup.locations import (directory, repository)
 

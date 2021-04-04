@@ -19,7 +19,7 @@
 """Functions to make sure remote requests are kosher"""
 
 import tempfile
-from . import Globals, Main, rpath, log
+from . import Globals, log, rpath
 
 
 class Violation(Exception):
@@ -140,7 +140,7 @@ def _set_security_level(security_class, cmdpairs):
             rdir = tempfile.gettempdirb()
         elif islocal(cp1):
             sec_level = "read-only"
-            rp1 = rpath.RPath(Globals.local_connection,  getpath(cp1))
+            rp1 = rpath.RPath(Globals.local_connection, getpath(cp1))
             (base_dir, restore_index, restore_type) = rp1.get_repository_dirs()
             if restore_type is None:
                 # the error will be catched later more cleanly, so that the

@@ -23,7 +23,7 @@ a back-up repository with the current state of a directory.
 Comparaison can be done using metadata, file content or hashes.
 """
 
-from rdiff_backup import (compare, selection, Time)
+from rdiff_backup import (compare, selection)
 from rdiffbackup import actions
 from rdiffbackup.locations import (directory, repository)
 

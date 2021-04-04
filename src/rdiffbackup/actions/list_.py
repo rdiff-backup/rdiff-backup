@@ -25,7 +25,7 @@ The module is named with an underscore at the end to avoid overwriting the
 builtin 'list' class.
 """
 
-from rdiff_backup import (Globals, manage, restore)
+from rdiff_backup import (manage, restore)
 from rdiffbackup import actions
 from rdiffbackup.locations import repository
 from rdiffbackup.utils.argopts import BooleanOptionalAction
@@ -151,6 +151,7 @@ class ListAction(actions.BaseAction):
         for rorp in self.source.base_dir.conn.restore.ListAtTime(
                 self.mirror_rpath, self.inc_rpath, self.action_time):
             print(rorp.get_safeindexpath())
+
 
 def get_action_class():
     return ListAction
