@@ -138,11 +138,9 @@ class RestoreAction(actions.BaseAction):
         self.inc_rpath = self.source.data_dir.append_path(
             b'increments', self.source.restore_index)
         if self.values.at:
-            try:
-                self.restore_time = Time.genstrtotime(self.values.at,
-                                                      rp=self.inc_rpath)
-            except Time.TimeException as exc:
-                self.log(str(exc), self.log.ERROR)
+            self.restore_time = self._get_parsed_time(self.values.at,
+                                                      ref_rp=self.inc_rpath)
+            if self.restore_time is None:
                 return 1
         elif self.values.increment:
             self.restore_time = self.source.orig_path.getinctime()

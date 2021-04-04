@@ -97,13 +97,9 @@ class CompareAction(actions.BaseAction):
         self.inc_rpath = self.target.data_dir.append_path(
             b'increments', self.target.restore_index)
 
-        try:
-            self.compare_time = Time.genstrtotime(self.values.at,
-                                                  rp=self.inc_rpath)
-        except Time.TimeException as exc:
-            self.log("Time string '{tstr}' couldn't be parsed "
-                     "due to '{exc}'".format(tstr=self.values.at, exc=exc),
-                     self.log.ERROR)
+        self.compare_time = self._get_parsed_time(self.values.at,
+                                                  ref_rp=self.inc_rpath)
+        if self.compare_time is None:
             return 1
 
         return 0  # all is good
