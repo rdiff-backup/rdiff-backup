@@ -97,9 +97,9 @@ class CompareAction(actions.BaseAction):
         self.inc_rpath = self.target.data_dir.append_path(
             b'increments', self.target.restore_index)
 
-        self.compare_time = self._get_parsed_time(self.values.at,
-                                                  ref_rp=self.inc_rpath)
-        if self.compare_time is None:
+        self.action_time = self._get_parsed_time(self.values.at,
+                                                 ref_rp=self.inc_rpath)
+        if self.action_time is None:
             return 1
 
         return 0  # all is good
@@ -114,7 +114,7 @@ class CompareAction(actions.BaseAction):
         ret_code = compare_funcs[self.values.method](self.source.base_dir,
                                                      self.mirror_rpath,
                                                      self.inc_rpath,
-                                                     self.compare_time)
+                                                     self.action_time)
         return ret_code
 
 

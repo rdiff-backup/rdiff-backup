@@ -98,12 +98,12 @@ class ListAction(actions.BaseAction):
 
         if self.values.entity == "files":
             if self.values.changed_since:
-                self.list_time = self._get_parsed_time(
+                self.action_time = self._get_parsed_time(
                     self.values.changed_since, ref_rp=self.inc_rpath)
             elif self.values.at:
-                self.list_time = self._get_parsed_time(
+                self.action_time = self._get_parsed_time(
                     self.values.at, ref_rp=self.inc_rpath)
-            if self.list_time is None:
+            if self.action_time is None:
                 return 1
 
         return 0  # all is good
@@ -142,14 +142,14 @@ class ListAction(actions.BaseAction):
     def _list_files_changed_since(self):
         """List all the files under rp that have changed since restoretime"""
         for rorp in self.source.base_dir.conn.restore.ListChangedSince(
-                self.mirror_rpath, self.inc_rpath, self.list_time):
+                self.mirror_rpath, self.inc_rpath, self.action_time):
             # This is a hack, see restore.ListChangedSince for rationale
             print(rorp.get_safeindexpath())
 
     def _list_files_at_time(self):
         """List files in archive under rp that are present at restoretime"""
         for rorp in self.source.base_dir.conn.restore.ListAtTime(
-                self.mirror_rpath, self.inc_rpath, self.list_time):
+                self.mirror_rpath, self.inc_rpath, self.action_time):
             print(rorp.get_safeindexpath())
 
 def get_action_class():

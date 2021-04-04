@@ -138,12 +138,12 @@ class RestoreAction(actions.BaseAction):
         self.inc_rpath = self.source.data_dir.append_path(
             b'increments', self.source.restore_index)
         if self.values.at:
-            self.restore_time = self._get_parsed_time(self.values.at,
-                                                      ref_rp=self.inc_rpath)
-            if self.restore_time is None:
+            self.action_time = self._get_parsed_time(self.values.at,
+                                                     ref_rp=self.inc_rpath)
+            if self.action_time is None:
                 return 1
         elif self.values.increment:
-            self.restore_time = self.source.orig_path.getinctime()
+            self.action_time = self.source.orig_path.getinctime()
         else:  # this should have been catched in the check method
             self.log("This shouldn't happen but neither restore time nor "
                      "an increment have been identified so far", self.log.ERROR)
@@ -173,7 +173,7 @@ class RestoreAction(actions.BaseAction):
         try:
             restore.Restore(
                 self.source.base_dir.new_index(self.source.restore_index),
-                self.inc_rpath, self.target.base_dir, self.restore_time)
+                self.inc_rpath, self.target.base_dir, self.action_time)
         except IOError as exc:
             self.log("Could not complete restore due to\n{exc}".format(exc=exc),
                      self.log.ERROR)

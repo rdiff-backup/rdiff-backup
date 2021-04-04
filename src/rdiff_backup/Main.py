@@ -300,8 +300,6 @@ def _take_action(rps):
     """Do whatever action says"""
     if _action == "remove-older-than":
         action_result = _action_remove_older_than(rps[0])
-    elif _action == "verify":
-        action_result = _action_verify(rps[0])
     else:
         raise ValueError("Unknown action " + _action)
     return action_result
@@ -357,17 +355,3 @@ def _rot_require_rbdir_base(rootrp):
         Log.FatalError("Increments for directory %s cannot be removed "
                        "separately.\nInstead run on entire directory %s." %
                        (rootrp.get_safepath(), restore_root.get_safepath()))
-
-
-def _action_verify(dest_rp, verify_time=None):
-    """Check the hashes of the regular files against mirror_metadata"""
-    dest_rp = _require_root_set(dest_rp, 1)
-    if not verify_time:
-        try:
-            verify_time = Time.genstrtotime(_restore_timestr)
-        except Time.TimeException as exc:
-            Log.FatalError(str(exc))
-
-    mirror_rp = restore_root.new_index(_restore_index)
-    inc_rp = Globals.rbdir.append_path(b"increments", _restore_index)
-    return dest_rp.conn.compare.Verify(mirror_rp, inc_rp, verify_time)

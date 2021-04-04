@@ -25,6 +25,7 @@ have the correct hash.
 """
 
 from rdiffbackup import actions
+from rdiffbackup.locations import repository
 
 
 class VerifyAction(actions.BaseAction):
@@ -45,6 +46,51 @@ class VerifyAction(actions.BaseAction):
             "locations", metavar="[[USER@]SERVER::]PATH", nargs=1,
             help="location of repository where to check files' hashes")
         return subparser
+
+    def connect(self):
+        conn_value = super().connect()
+        if conn_value:
+            self.source = repository.ReadRepo(self.connected_locations[0],
+                                              self.log, self.values.force)
+        return conn_value
+
+    def check(self):
+        # we try to identify as many potential errors as possible before we
+        # return, so we gather all potential issues and return only the final
+        # result
+        return_code = super().check()
+
+        # we verify that source repository is correct
+        return_code |= self.source.check()
+
+        return return_code
+
+    def setup(self):
+        # in setup we return as soon as we detect an issue to avoid changing
+        # too much
+        return_code = super().setup()
+        if return_code != 0:
+            return return_code
+
+        return_code = self.source.setup()
+        if return_code != 0:
+            return return_code
+
+        self.mirror_rpath = self.source.base_dir.new_index(
+            self.source.restore_index)
+        self.inc_rpath = self.source.data_dir.append_path(
+            b'increments', self.source.restore_index)
+
+        self.action_time = self._get_parsed_time(self.values.at,
+                                                 ref_rp=self.inc_rpath)
+        if self.action_time is None:
+            return 1
+
+        return 0  # all is good
+
+    def run(self):
+        return self.source.base_dir.conn.compare.Verify(
+            self.mirror_rpath, self.inc_rpath, self.action_time)
 
 
 def get_action_class():
