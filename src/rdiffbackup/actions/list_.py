@@ -25,7 +25,9 @@ The module is named with an underscore at the end to avoid overwriting the
 builtin 'list' class.
 """
 
+from rdiff_backup import (Globals, manage, restore)
 from rdiffbackup import actions
+from rdiffbackup.locations import repository
 from rdiffbackup.utils.argopts import BooleanOptionalAction
 
 
@@ -60,6 +62,95 @@ class ListAction(actions.BaseAction):
             help="location of repository to list increments from")
         return subparser
 
+    def connect(self):
+        conn_value = super().connect()
+        if conn_value:
+            self.source = repository.ReadRepo(self.connected_locations[0],
+                                              self.log, self.values.force)
+        return conn_value
+
+    def check(self):
+        # we try to identify as many potential errors as possible before we
+        # return, so we gather all potential issues and return only the final
+        # result
+        return_code = super().check()
+
+        # we verify that source repository is correct
+        return_code |= self.source.check()
+
+        return return_code
+
+    def setup(self):
+        # in setup we return as soon as we detect an issue to avoid changing
+        # too much
+        return_code = super().setup()
+        if return_code != 0:
+            return return_code
+
+        return_code = self.source.setup()
+        if return_code != 0:
+            return return_code
+
+        self.mirror_rpath = self.source.base_dir.new_index(
+            self.source.restore_index)
+        self.inc_rpath = self.source.data_dir.append_path(
+            b'increments', self.source.restore_index)
+
+        if self.values.entity == "files":
+            if self.values.changed_since:
+                self.list_time = self._get_parsed_time(
+                    self.values.changed_since, ref_rp=self.inc_rpath)
+            elif self.values.at:
+                self.list_time = self._get_parsed_time(
+                    self.values.at, ref_rp=self.inc_rpath)
+            if self.list_time is None:
+                return 1
+
+        return 0  # all is good
+
+    def run(self):
+        if self.values.entity == "increments":
+            if self.values.size:
+                self._list_increments_sizes()
+            else:
+                self._list_increments()
+        elif self.values.entity == "files":
+            if self.values.changed_since:
+                self._list_files_changed_since()
+            elif self.values.at:
+                self._list_files_at_time()
+        return 0  # all is good
+
+    def _list_increments_sizes(self):
+        """
+        Print out a summary of the increments
+        """
+        print(manage.list_increment_sizes(self.source.base_dir,
+                                          self.source.restore_index))
+
+    def _list_increments(self):
+        """Print out a summary of the increments and their times"""
+        incs = restore.get_inclist(self.inc_rpath)
+        mirror_time = restore.MirrorStruct.get_mirror_time()
+        if self.values.parsable_output:
+            print(manage.describe_incs_parsable(incs, mirror_time,
+                                                self.mirror_rpath))
+        else:
+            print(manage.describe_incs_human(incs, mirror_time,
+                                             self.mirror_rpath))
+
+    def _list_files_changed_since(self):
+        """List all the files under rp that have changed since restoretime"""
+        for rorp in self.source.base_dir.conn.restore.ListChangedSince(
+                self.mirror_rpath, self.inc_rpath, self.list_time):
+            # This is a hack, see restore.ListChangedSince for rationale
+            print(rorp.get_safeindexpath())
+
+    def _list_files_at_time(self):
+        """List files in archive under rp that are present at restoretime"""
+        for rorp in self.source.base_dir.conn.restore.ListAtTime(
+                self.mirror_rpath, self.inc_rpath, self.list_time):
+            print(rorp.get_safeindexpath())
 
 def get_action_class():
     return ListAction

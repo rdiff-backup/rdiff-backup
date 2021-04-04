@@ -261,7 +261,6 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         Globals.set("file_statistics", arglist.file_statistics)
         Globals.set("print_statistics", arglist.print_statistics)
     Globals.set("null_separator", arglist.null_separator)
-    Globals.set("parsable_output", arglist.parsable_output)
     Globals.set("use_compatible_timestamps", arglist.use_compatible_timestamps)
     Globals.set("do_fsync", arglist.fsync)
     if arglist.current_time is not None:
@@ -299,66 +298,13 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
 
 def _take_action(rps):
     """Do whatever action says"""
-    if _action == "list-at-time":
-        action_result = _action_list_at_time(rps[0])
-    elif _action == "list-changed-since":
-        action_result = _action_list_changed_since(rps[0])
-    elif _action == "list-increments":
-        action_result = _action_list_increments(rps[0])
-    elif _action == 'list-increment-sizes':
-        action_result = _action_list_increment_sizes(rps[0])
-    elif _action == "remove-older-than":
+    if _action == "remove-older-than":
         action_result = _action_remove_older_than(rps[0])
     elif _action == "verify":
         action_result = _action_verify(rps[0])
     else:
         raise ValueError("Unknown action " + _action)
     return action_result
-
-
-def _action_list_increments(rp):
-    """Print out a summary of the increments and their times"""
-    rp = _require_root_set(rp, 1)
-    _restore_check_backup_dir(restore_root)
-    mirror_rp = restore_root.new_index(_restore_index)
-    inc_rpath = Globals.rbdir.append_path(b'increments', _restore_index)
-    incs = restore.get_inclist(inc_rpath)
-    mirror_time = restore.MirrorStruct.get_mirror_time()
-    if Globals.parsable_output:
-        print(manage.describe_incs_parsable(incs, mirror_time, mirror_rp))
-    else:
-        print(manage.describe_incs_human(incs, mirror_time, mirror_rp))
-
-
-def _require_root_set(rp, read_only):
-    """Make sure rp is or is in a valid rdiff-backup dest directory.
-
-    Also initializes fs_abilities (read or read/write) and quoting and
-    return quoted rp if necessary.
-
-    """
-    if not restore_set_root(rp):
-        Log.FatalError(
-            "Bad directory %s.\n"
-            "It doesn't appear to be an rdiff-backup destination dir." %
-            rp.get_safepath())
-    try:
-        Globals.rbdir.conn.fs_abilities.single_set_globals(
-            Globals.rbdir, read_only)
-    except (OSError, IOError) as exc:
-        print("\n")
-        Log.FatalError("Could not open rdiff-backup directory\n\n%s\n\n"
-                       "due to\n\n%s" % (Globals.rbdir.get_safepath(), exc))
-    if Globals.chars_to_quote:
-        return _restore_init_quoting(rp)
-    else:
-        return rp
-
-
-def _action_list_increment_sizes(rp):
-    """Print out a summary of the increments """
-    rp = _require_root_set(rp, 1)
-    print(manage.list_increment_sizes(restore_root, _restore_index))
 
 
 def _action_remove_older_than(rootrp):
@@ -413,33 +359,6 @@ def _rot_require_rbdir_base(rootrp):
                        (rootrp.get_safepath(), restore_root.get_safepath()))
 
 
-def _action_list_changed_since(rp):
-    """List all the files under rp that have changed since restoretime"""
-    rp = _require_root_set(rp, 1)
-    try:
-        rest_time = Time.genstrtotime(_restore_timestr)
-    except Time.TimeException as exc:
-        Log.FatalError(str(exc))
-    mirror_rp = restore_root.new_index(_restore_index)
-    inc_rp = mirror_rp.append_path(b"increments", _restore_index)
-    for rorp in rp.conn.restore.ListChangedSince(mirror_rp, inc_rp, rest_time):
-        # This is a hack, see restore.ListChangedSince for rationale
-        print(rorp.get_safeindexpath())
-
-
-def _action_list_at_time(rp):
-    """List files in archive under rp that are present at restoretime"""
-    rp = _require_root_set(rp, 1)
-    try:
-        rest_time = Time.genstrtotime(_restore_timestr)
-    except Time.TimeException as exc:
-        Log.FatalError(str(exc))
-    mirror_rp = restore_root.new_index(_restore_index)
-    inc_rp = mirror_rp.append_path(b"increments", _restore_index)
-    for rorp in rp.conn.restore.ListAtTime(mirror_rp, inc_rp, rest_time):
-        print(rorp.get_safeindexpath())
-
-
 def _action_verify(dest_rp, verify_time=None):
     """Check the hashes of the regular files against mirror_metadata"""
     dest_rp = _require_root_set(dest_rp, 1)
@@ -452,46 +371,3 @@ def _action_verify(dest_rp, verify_time=None):
     mirror_rp = restore_root.new_index(_restore_index)
     inc_rp = Globals.rbdir.append_path(b"increments", _restore_index)
     return dest_rp.conn.compare.Verify(mirror_rp, inc_rp, verify_time)
-
-
-def _checkdest_need_check(dest_rp):
-    """Return None if no dest dir found, 1 if dest dir needs check, 0 o/w"""
-    if not dest_rp.isdir() or not Globals.rbdir.isdir():
-        return None
-    for filename in Globals.rbdir.listdir():
-        if filename not in [
-                b'chars_to_quote', b'special_escapes', b'backup.log'
-        ]:
-            break
-    else:  # This may happen the first backup just after we test for quoting
-        return None
-    curmirroot = Globals.rbdir.append(b"current_mirror")
-    curmir_incs = restore.get_inclist(curmirroot)
-    if not curmir_incs:
-        Log.FatalError("""Bad rdiff-backup-data dir on destination side
-
-The rdiff-backup data directory
-%s
-exists, but we cannot find a valid current_mirror marker.  You can
-avoid this message by removing the rdiff-backup-data directory;
-however any data in it will be lost.
-
-Probably this error was caused because the first rdiff-backup session
-into a new directory failed.  If this is the case it is safe to delete
-the rdiff-backup-data directory because there is no important
-information in it.
-
-""" % (Globals.rbdir.get_safepath(), ))
-    elif len(curmir_incs) == 1:
-        return 0
-    else:
-        if not _force:
-            try:
-                curmir_incs[0].conn.regress.check_pids(curmir_incs)
-            except (OSError, IOError) as exc:
-                Log.FatalError("Could not check if rdiff-backup is currently"
-                               "running due to\n%s" % exc)
-        assert len(curmir_incs) == 2, (
-            "Found more than 2 current_mirror incs in '{rp!s}'.".format(
-                rp=Globals.rbdir))
-        return 1

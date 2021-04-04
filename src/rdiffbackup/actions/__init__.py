@@ -27,8 +27,10 @@ import argparse
 import os
 import sys
 import yaml
+from rdiff_backup import (
+    Globals, rpath, Security, SetConnections, Time
+)
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
-from rdiff_backup import Globals, rpath, Security, SetConnections, Time
 
 # The default regexp for not compressing those files
 # compat200: it is also used by Main.py to avoid having a 2nd default
@@ -513,6 +515,23 @@ class BaseAction:
             self.values.group_mapping_file)
         dest_conn.user_group.init_group_mapping(
             group_mapping_string, self.values.preserve_numerical_ids)
+
+    def _get_parsed_time(self, timestr, ref_rp=None):
+        """
+        Parse time string, potentially using the given remote path as reference
+
+        Returns None if the time string couldn't be parsed, else the time in
+        seconds.
+        The reference remote path is used when the time string consists in a
+        number of past backups.
+        """
+        try:
+            return Time.genstrtotime(timestr, rp=ref_rp)
+        except Time.TimeException as exc:
+            self.log("Time string '{tstr}' couldn't be parsed "
+                     "due to '{exc}'".format(tstr=timestr, exc=exc),
+                     self.log.ERROR)
+            return None
 
 
 def get_action_class():
