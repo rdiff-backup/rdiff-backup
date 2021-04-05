@@ -87,6 +87,11 @@ class RemoveAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
+        # set the filesystem properties of the repository
+        self.source.base_dir.conn.fs_abilities.single_set_globals(
+            self.source.base_dir, 0)  # read_only=False
+        self.source.init_quoting(self.values.chars_to_quote)
+
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
         if self.log.verbosity > 0:
@@ -150,7 +155,7 @@ class RemoveAction(actions.BaseAction):
                     ptim=pretty_times), self.log.NOTE)
         else:
             self.log("Deleting increment at time:\n{ptim}".format(
-                ptim=pretty_times), self.log.INFO)
+                ptim=pretty_times), self.log.NOTE)
         # make sure we don't delete current increment
         return times_in_secs[-1] + 1
 

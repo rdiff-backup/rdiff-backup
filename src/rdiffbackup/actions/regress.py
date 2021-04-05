@@ -74,6 +74,11 @@ class RegressAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
+        # set the filesystem properties of the repository
+        self.source.base_dir.conn.fs_abilities.single_set_globals(
+            self.source.base_dir, 0)  # read_only=False
+        self.source.init_quoting(self.values.chars_to_quote)
+
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
         self._init_user_group_mapping(self.source.base_dir.conn)

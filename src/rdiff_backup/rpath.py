@@ -978,31 +978,35 @@ class RPath(RORPath):
         # get the path as a list of directories/file
         path_list = self._get_path_as_list()
         if self.isincfile():
-            if (b"rdiff-backup-data" not in path_list
-                    or b"increments" not in path_list):
+            if (b"rdiff-backup-data" not in path_list):
                 log.Log("Path '{rp}' looks like an increment but doesn't "
-                        "have 'rdiff-backup-data/increments' "
-                        "in its path.".format(rp=self.get_safepath()),
+                        "have 'rdiff-backup-data' in its path.".format(
+                            rp=self.get_safepath()),
                         log.Log.ERROR)
                 return (self, [], None)
             else:
                 data_idx = path_list.index(b"rdiff-backup-data")
-                inc_idx = path_list.index(b"increments")
+                if b"increments" in path_list:
+                    inc_idx = path_list.index(b"increments")
+                    # base_index is the path within the increments directory,
+                    # replacing the name of the increment with the name of the
+                    # file it represents
+                    base_index = path_list[inc_idx + 1:-1]
+                    base_index.append(self.inc_basestr.split(b"/")[-1])
+                elif path_list[-1].startswith(b"increments."):
+                    inc_idx = len(path_list) - 1
+                    base_index = []
+                else:
+                    inc_idx = -1
                 if (inc_idx != data_idx + 1):
                     log.Log("Path '{rp}' looks like an increment but doesn't "
                             "have 'rdiff-backup-data/increments' "
                             "in its path.".format(
                                 rp=self.get_safepath()), log.Log.ERROR)
                     return (self, [], None)
-                else:
-                    # base_dir is the directory above the data directory
-                    base_dir = RPath(self.conn, b"/".join(path_list[:data_idx]))
-                    # base_index is the path within the increments directory,
-                    # replacing the name of the increment with the name of the
-                    # file it represents
-                    base_index = path_list[inc_idx + 1:-1]
-                    base_index.append(self.inc_basestr)
-                    return (base_dir, base_index, "inc")
+                # base_dir is the directory above the data directory
+                base_dir = RPath(self.conn, b"/".join(path_list[:data_idx]))
+                return (base_dir, base_index, "inc")
         else:
             # rpath is either the base directory itself or a sub-dir of it
             if (self.lstat() and self.isdir()

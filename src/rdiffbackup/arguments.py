@@ -201,7 +201,8 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
     _make_values_like_new_compat200(values)
     _validate_number_locations_compat200(values, parser)
 
-    sys.stderr.write(DEPRECATION_MESSAGE + "\n")
+    if "--no-new" not in args:
+        sys.stderr.write(DEPRECATION_MESSAGE + "\n")
 
     return values
 

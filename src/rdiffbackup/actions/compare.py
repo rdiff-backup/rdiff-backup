@@ -88,6 +88,11 @@ class CompareAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
+        # set the filesystem properties of the repository
+        self.target.base_dir.conn.fs_abilities.single_set_globals(
+            self.target.base_dir, 1)  # read_only=True
+        self.target.init_quoting(self.values.chars_to_quote)
+
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values.selections)
         self.source.set_select(select_opts, select_data)

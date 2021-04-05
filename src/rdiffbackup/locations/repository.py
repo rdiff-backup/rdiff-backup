@@ -64,7 +64,10 @@ class Repo():
 
         Return True if quoting needed to be done, False else.
         """
-        if not chars_to_quote:
+        # FIXME the problem is that the chars_to_quote can come from the command
+        # line but can also be a value coming from the repository itself,
+        # set globally by the fs_abilities.xxx_set_globals functions.
+        if not Globals.chars_to_quote:
             return False
 
         FilenameMapping.set_init_quote_vals()  # compat200
@@ -199,13 +202,14 @@ class ReadRepo(Repo, locations.ReadLocation):
 
         return 0  # all is good
 
-    def set_select(self, select_opts, select_data):
+    def set_select(self, select_opts, select_data, target_rp):
         """
         Set the selection and selection data on the repository
 
         Accepts a tuple of two lists:
         * one of selection tuple made of (selection method, parameter)
         * and one of the content of the selection files
+        And an rpath of the target directory to map the selection criteria.
 
         Saves the selections list and makes it ready for usage on the source
         side over its connection.
@@ -214,7 +218,7 @@ class ReadRepo(Repo, locations.ReadLocation):
         # FIXME we're retransforming bytes into a file pointer
         if select_opts:
             self.base_dir.conn.restore.MirrorStruct.set_mirror_select(
-                self.base_dir, select_opts, *list(map(io.BytesIO, select_data)))
+                target_rp, select_opts, *list(map(io.BytesIO, select_data)))
 
 
 class WriteRepo(Repo, locations.WriteLocation):

@@ -76,6 +76,11 @@ class VerifyAction(actions.BaseAction):
         if return_code != 0:
             return return_code
 
+        # set the filesystem properties of the repository
+        self.source.base_dir.conn.fs_abilities.single_set_globals(
+            self.source.base_dir, 1)  # read_only=True
+        self.source.init_quoting(self.values.chars_to_quote)
+
         self.mirror_rpath = self.source.base_dir.new_index(
             self.source.restore_index)
         self.inc_rpath = self.source.data_dir.append_path(

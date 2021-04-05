@@ -147,7 +147,7 @@ class RestoreAction(actions.BaseAction):
         # We must set both sides because restore filtering is different from
         # select filtering.  For instance, if a file is excluded it should
         # not be deleted from the target directory.
-        self.source.set_select(select_opts, select_data)
+        self.source.set_select(select_opts, select_data, self.target.base_dir)
         self.target.set_select(select_opts, select_data)
 
         return 0  # all is good
