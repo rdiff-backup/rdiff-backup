@@ -109,7 +109,7 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
     """
 
     DEPRECATION_MESSAGE = (
-        "CAUTION: this command line interface is deprecated and will "
+        "WARNING: this command line interface is deprecated and will "
         "disappear, start using the new one as described with '--new --help'."
     )
 

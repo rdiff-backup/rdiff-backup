@@ -190,6 +190,8 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
     else:
         Globals.set("no_compression_regexp_string",
                     os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP))
+    if arglist.action in ('server'):
+        Globals.server = True
     if arglist.action in ('backup'):
         Globals.set("file_statistics", arglist.file_statistics)
         Globals.set("print_statistics", arglist.print_statistics)
