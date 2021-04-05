@@ -234,31 +234,23 @@ class WriteRepo(Repo, locations.WriteLocation):
         # without rdiff-backup-data sub-directory
         if (self.base_dir.lstat()
                 and self.base_dir.isdir()
-                and self.base_dir.listdir()):
-            if self.data_dir.lstat():
-                previous_time = self.get_mirror_time()
-                if previous_time >= Time.curtime:
-                    self.log("Time of last backup is not in the past. "
-                             "This is probably caused by running two backups "
-                             "in less than a second. "
-                             "Wait a second and try again.",
-                             self.log.ERROR)
-                    ret_code |= 1
+                and self.base_dir.listdir()
+                and not self.data_dir.lstat()):
+            if self.force:
+                self.log(
+                    "Target '{repo}' does not look like a rdiff-backup "
+                    "repository but will be force overwritten".format(
+                        repo=self.base_dir.get_safepath()),
+                    self.log.WARNING)
             else:
-                if self.force:
-                    self.log(
-                        "Target '{repo}' does not look like a rdiff-backup "
-                        "repository but will be force overwritten".format(
-                            repo=self.base_dir.get_safepath()),
-                        self.log.WARNING)
-                else:
-                    self.log(
-                        "Target '{repo}' does not look like a rdiff-backup "
-                        "repository, "
-                        "call with '--force' to overwrite".format(
-                            repo=self.base_dir.get_safepath()),
-                        self.log.ERROR)
-                    ret_code |= 1
+                self.log(
+                    "Target '{repo}' does not look like a rdiff-backup "
+                    "repository, "
+                    "call with '--force' to overwrite".format(
+                        repo=self.base_dir.get_safepath()),
+                    self.log.ERROR)
+                ret_code |= 1
+
         return ret_code
 
     def setup(self):

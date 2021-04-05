@@ -100,6 +100,11 @@ class BackupAction(actions.BaseAction):
             self.source.base_dir, self.values.force)
         self.target.init_quoting(self.values.chars_to_quote)
         self._init_user_group_mapping(self.target.base_dir.conn)
+        previous_time = self.target.get_mirror_time()
+        if previous_time >= Time.curtime:
+            self.log("The last backup is not in the past. Aborting.",
+                     self.log.ERROR)
+            return 1
         if self.log.verbosity > 0:
             try:  # the target repository must be writable
                 self.log.open_logfile(
