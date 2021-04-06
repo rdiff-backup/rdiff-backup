@@ -195,6 +195,9 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
     if arglist.action in ('backup'):
         Globals.set("file_statistics", arglist.file_statistics)
         Globals.set("print_statistics", arglist.print_statistics)
+    if arglist.action in ('regress'):
+        Globals.set("allow_duplicate_timestamps",
+                    arglist.allow_duplicate_timestamps)
     Globals.set("null_separator", arglist.null_separator)
     Globals.set("use_compatible_timestamps", arglist.use_compatible_timestamps)
     Globals.set("do_fsync", arglist.fsync)
