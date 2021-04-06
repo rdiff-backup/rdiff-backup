@@ -379,9 +379,9 @@ class BaseAction:
         Returns False to propagate potential exception, else True.
         """
         self.log("Cleaning up", self.log.INFO)
-        self.errlog.close()
-        self.log.close_logfile()
         if self.security != "server":
+            self.errlog.close()
+            self.log.close_logfile()
             SetConnections.CloseConnections()
 
         return False
