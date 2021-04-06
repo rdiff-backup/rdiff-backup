@@ -34,4 +34,4 @@ except (OSError, IOError, ImportError):
     raise
 
 rdiff_backup.Globals.security_level = "override"
-PipeConnection(sys.stdin.buffer, sys.stdout.buffer).Server()
+sys.exit(PipeConnection(sys.stdin.buffer, sys.stdout.buffer).Server())

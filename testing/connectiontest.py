@@ -1,8 +1,9 @@
-import unittest
-import tempfile
 import os
 import sys
 import subprocess
+import tempfile
+import time
+import unittest
 from commontest import old_test_dir, abs_test_dir
 from rdiff_backup.connection import LowLevelPipeConnection, PipeConnection, \
     VirtualFile, SetConnections
@@ -184,6 +185,7 @@ class PipeConnectionTest(unittest.TestCase):
     def tearDown(self):
         """Bring down connection"""
         self.conn.quit()
+        time.sleep(0.1)  # give the process time to quit
         if (self.p.poll() is None):
             self.p.terminate()
 
