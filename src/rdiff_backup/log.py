@@ -37,9 +37,9 @@ class Logger:
     """All functions which deal with logging"""
     ERROR = 1
     WARNING = 2
-    DEFAULT = 3
+    NOTE = 3
     INFO = 5
-    DEBUG = 9
+    DEBUG = 8  # we reserve 9 for adding the timestamp
 
     def __init__(self):
         self.log_file_open = None

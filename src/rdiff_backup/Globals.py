@@ -206,10 +206,6 @@ use_compatible_timestamps = 0
 
 allow_duplicate_timestamps = False
 
-# If true, emit output intended to be easily readable by a
-# computer.  False means output is intended for humans.
-parsable_output = None
-
 # If true, then hardlinks will be preserved to mirror and recorded
 # in the increments directory.  There is also a difference here
 # between None and 0.  When restoring, None or 1 means to preserve

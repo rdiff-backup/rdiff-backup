@@ -67,9 +67,11 @@ The Action class has the following interface:
 
   This context object has the following interface, usable through the
   connection(s) started by `connect()`:
-    * `self.check()` to validate the environment before doing changes.
+    * `self.check()` to validate the environment before doing _any_ changes.
+      The check method continues to verify the environment and report as many issues as it can, as to help the user to fix them at once.
       It returns 0 in case of success, else an integer to be used as exit code.
-    * `self.setup()` still doesn't do changes but prepares the environment.
+    * `self.setup()` prepares the environment (define variables, etc), it might create empty directories and logfiles, but it can't lead under any circumstances to a broken repository requiring a regression.
+      The setup method returns as soon as it finds an issue and doesn't try to continue.
       It returns 0 in case of success, else an integer to be used as exit code.
     * `self.run()` finally does whatever the action is supposed to do.
       It might return 0 in case of success, else an integer to be used as exit
@@ -80,8 +82,7 @@ The Action class has the following interface:
 > **NOTE:** the context object doesn't need a "cleanup" action as clean-up is to
   be done as part of the `__exit__` method provided by the context manager.
 
-Of course, action classes inheriting from the BaseAction class don't need to
-define all aspects themselves, making the life of plug-in developers easier.
+Of course, action classes inheriting from the BaseAction class don't need to define all aspects themselves, making the life of plug-in developers easier.
 
 > **NOTE:** more information is provided with `pydoc rdiffbackup.actions`.
 
@@ -107,4 +108,4 @@ with action.connect() as conn_act:
 # implicit context_manager.__exit__(exc_type, exc_val, exc_tb)
 ```
 
-> **TIP:** the actual code can be found in `rdiff_backup.Main.main_run()`.
+> **TIP:** the actual code can be found in `rdiff_backup.Main._main_run()`.

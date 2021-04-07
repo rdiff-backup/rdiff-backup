@@ -47,14 +47,14 @@ def parse(args, version_string, generic_parsers, parent_parsers, actions_dict=No
     """
     # we try to recognize if the user wants the old or the new parameters
     # it's the case if --new is explicitly given, or if any parameter starts
-    # with an @ (meaning read from file), or if api-version is used, or if
-    # any of the action names is found in the parameters, without `--no-new`
-    # being found.
+    # with an @ (meaning read from file), or if api-version or help is used,
+    # or if any of the action names is found in the parameters,
+    # without `--no-new` being found.
     # note: `set1 & set2` is the intersection of two sets
     if ('--new' in args
             or (any(map(lambda x: x.startswith('@'), args)))
             or ('--no-new' not in args
-                and ('--api-version' in args
+                and ('--api-version' in args or '--help' in args
                      or (set(actions_dict.keys()) & set(args))))):
         return _parse_new(args, version_string, generic_parsers, actions_dict)
     else:
@@ -109,7 +109,7 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
     """
 
     DEPRECATION_MESSAGE = (
-        "CAUTION: this command line interface is deprecated and will "
+        "WARNING: this command line interface is deprecated and will "
         "disappear, start using the new one as described with '--new --help'."
     )
 
@@ -201,7 +201,8 @@ def _parse_compat200(args, version_string, parent_parsers=[]):
     _make_values_like_new_compat200(values)
     _validate_number_locations_compat200(values, parser)
 
-    sys.stderr.write(DEPRECATION_MESSAGE + "\n")
+    if "--no-new" not in args:
+        sys.stderr.write(DEPRECATION_MESSAGE + "\n")
 
     return values
 

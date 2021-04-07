@@ -216,7 +216,7 @@ def InternalBackup(source_local,
 
     args.extend(_get_locations(source_local, dest_local, src_dir, dest_dir))
 
-    Main.main_run(args, security_override=True, do_exit=False)
+    Main._main_run(args, security_override=True)
 
 
 def InternalMirror(source_local, dest_local, src_dir, dest_dir, force=False):
@@ -273,7 +273,7 @@ def InternalRestore(mirror_local,
 
     args.extend(_get_locations(mirror_local, dest_local, mirror_dir, dest_dir))
 
-    Main.main_run(args, security_override=True, do_exit=False)
+    Main._main_run(args, security_override=True)
 
 
 def get_increment_rp(mirror_rp, time):
@@ -540,8 +540,6 @@ def MirrorTest(source_local,
     Globals.set("no_compression_regexp_string",
                 os.fsencode(actions.DEFAULT_NOT_COMPRESSED_REGEXP))
     dest_rp = rpath.RPath(Globals.local_connection, dest_dirname)
-    old_force_val = Main._force
-    Main._force = 1
 
     Myrm(dest_dirname)
     for dirname in list_of_dirnames:
@@ -553,7 +551,6 @@ def MirrorTest(source_local,
                        force=True)
         _reset_connections(src_rp, dest_rp)
         assert compare_recursive(src_rp, dest_rp, compare_hardlinks)
-    Main.force = old_force_val
 
 
 def raise_interpreter(use_locals=None):

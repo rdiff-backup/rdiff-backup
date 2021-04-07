@@ -21,7 +21,10 @@
 A built-in rdiff-backup action plug-in to start a remote server process.
 """
 
+import sys
+
 from rdiffbackup import actions
+from rdiff_backup import connection
 
 
 class ServerAction(actions.BaseAction):
@@ -31,6 +34,10 @@ class ServerAction(actions.BaseAction):
     name = "server"
     security = "server"
     # server has no specific sub-options
+
+    def run(self):
+        return connection.PipeConnection(sys.stdin.buffer,
+                                         sys.stdout.buffer).Server()
 
 
 def get_action_class():
