@@ -35,5 +35,6 @@ py_ver_brief=${PYTHON_VERSION%.[0-9]}
 ${PYEXE} setup.py bdist_wheel
 ${PYINST} --onefile --distpath build/${ver_name}-${bits} \
 	--paths=build/lib.win32-${py_ver_brief} \
+	--additional-hooks-dir=tools
 	--console build/scripts-${py_ver_brief}/rdiff-backup \
 	--add-data=src/rdiff_backup.egg-info/PKG-INFO\;rdiff_backup.egg-info
