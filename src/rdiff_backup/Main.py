@@ -116,7 +116,7 @@ def backup_touch_curmirror_local(rpin, rpout):
     """
     mirrorrp = Globals.rbdir.append(b'.'.join(
         map(os.fsencode, (b"current_mirror", Time.curtimestr, "data"))))
-    log.Log("Writing mirror marker %s" % mirrorrp.get_safepath(), 6)
+    log.Log("Writing mirror marker {rp}".format(rp=mirrorrp), 6)
     try:
         pid = os.getpid()
     except BaseException:

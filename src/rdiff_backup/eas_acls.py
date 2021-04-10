@@ -74,8 +74,8 @@ class ExtendedAttributes:
             if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
                 return  # if not supported, consider empty
             if exc.errno in (errno.EACCES, errno.ENOENT, errno.ELOOP):
-                log.Log("Warning: listattr(%s): %s" % (rp.get_safepath(), exc),
-                        4)
+                log.Log("Warning: listattr({rp}): {exc}".format(
+                    rp=rp, exc=exc), 4)
                 return
             raise
         for attr in attr_list:
@@ -111,9 +111,8 @@ class ExtendedAttributes:
                 # fail gracefully if can't call xattr.set
                 if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.EACCES,
                                  errno.ENOENT, errno.EINVAL):
-                    log.Log(
-                        "Warning: unable to write xattr %s to %s" %
-                        (name, rp.get_safepath()), 6)
+                    log.Log("Warning: unable to write xattr "
+                            "{xat} to {rp}".format(xat=name, rp=rp), 6)
                     continue
                 else:
                     raise
@@ -143,9 +142,8 @@ class ExtendedAttributes:
                 except PermissionError:  # errno.EACCES
                     # SELinux attributes cannot be removed, and we don't want
                     # to bail out or be too noisy at low log levels.
-                    log.Log(
-                        "Warning: unable to remove xattr %s from %s" %
-                        (name, rp.get_safepath()), 7)
+                    log.Log("Warning: unable to remove xattr "
+                            "{xat} from {rp}".format(xat=name, rp=rp), 7)
                     continue
                 except OSError as exc:
                     # can happen because trusted.SGI_ACL_FILE is deleted together with
@@ -157,9 +155,8 @@ class ExtendedAttributes:
         except io.UnsupportedOperation:  # errno.EOPNOTSUPP or errno.EPERM
             return  # if not supported, consider empty
         except FileNotFoundError as exc:
-            log.Log(
-                "Warning: unable to clear xattrs on %s: %s" %
-                (rp.get_safepath(), exc), 3)
+            log.Log("Warning: unable to clear xattrs on {rp}: {exc}".format(
+                rp=rp, exc=exc), 3)
             return
 
 
@@ -448,11 +445,11 @@ class AccessControlLists:
         """Returns same as __eq__ but print explanation if not equal.
         TEST: This function is used solely as part of the test suite."""
         if not self.cmp_entry_list(self.entry_list, acl.entry_list):
-            print("ACL entries for %s compare differently" % (self.index, ))
+            print("ACL entries for {rp} compare differently".format(rp=self))
             return 0
         if not self.cmp_entry_list(self.default_entry_list,
                                    acl.default_entry_list):
-            print("Default ACL entries for %s do not compare" % (self.index, ))
+            print("Default ACL entries for {rp} do not compare".format(rp=self))
             return 0
         return 1
 
@@ -508,9 +505,8 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
         acl.applyto(rp.path)
     except IOError as exc:
         if exc.errno == errno.EOPNOTSUPP:
-            log.Log(
-                "Warning: unable to set ACL on %s: %s" % (rp.get_safepath(),
-                                                          exc), 4)
+            log.Log("Warning: unable to set ACL on {rp}: {exc}".format(
+                rp=rp, exc=exc), 4)
             return
         else:
             raise
@@ -532,9 +528,8 @@ def get_acl_lists_from_rp(rp):
     try:
         acl = posix1e.ACL(file=rp.path)
     except (FileNotFoundError, UnicodeEncodeError) as exc:
-        log.Log(
-            "Warning: unable to read ACL from %s: %s" % (rp.get_safepath(),
-                                                         exc), 3)
+        log.Log("Warning: unable to read ACL from {rp}: {exc}".format(
+            rp=rp, exc=exc), 3)
         acl = None
     except IOError as exc:
         if exc.errno == errno.EOPNOTSUPP:
@@ -545,9 +540,8 @@ def get_acl_lists_from_rp(rp):
         try:
             def_acl = posix1e.ACL(filedef=os.fsdecode(rp.path))
         except (FileNotFoundError, UnicodeEncodeError) as exc:
-            log.Log(
-                "Warning: unable to read default ACL from %s: %s" %
-                (rp.get_safepath(), exc), 3)
+            log.Log("Warning: unable to read default ACL from {rp}: "
+                    "{exc}".format(rp=rp, exc=exc), 3)
             def_acl = None
         except IOError as exc:
             if exc.errno == errno.EOPNOTSUPP:

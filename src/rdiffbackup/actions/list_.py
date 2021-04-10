@@ -149,13 +149,13 @@ class ListAction(actions.BaseAction):
         for rorp in self.source.base_dir.conn.restore.ListChangedSince(
                 self.mirror_rpath, self.inc_rpath, self.action_time):
             # This is a hack, see restore.ListChangedSince for rationale
-            print(rorp.get_safeindexpath())
+            print(str(rorp))
 
     def _list_files_at_time(self):
         """List files in archive under rp that are present at restoretime"""
         for rorp in self.source.base_dir.conn.restore.ListAtTime(
                 self.mirror_rpath, self.inc_rpath, self.action_time):
-            print(rorp.get_safeindexpath())
+            print(str(rorp))
 
 
 def get_action_class():

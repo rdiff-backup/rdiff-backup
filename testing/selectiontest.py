@@ -530,7 +530,7 @@ class CommandTest(unittest.TestCase):
         self.assertTrue(
             backuprp.append('rdiff-backup-data').isdir()
             and backuprp.append('empty').isdir(),
-            "Backup to %s didn't happen properly." % backuprp.get_safepath())
+            "Backup to {rp} didn't happen properly.".format(rp=backuprp))
 
 
 if __name__ == "__main__":

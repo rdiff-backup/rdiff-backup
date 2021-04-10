@@ -82,9 +82,8 @@ class ACL:
             sd = rp.conn.win32security.GetNamedSecurityInfo(
                 os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
         except (OSError, IOError, pywintypes.error) as exc:
-            log.Log(
-                "Warning: unable to read ACL from %s: %s" % (repr(rp.path),
-                                                             exc), 4)
+            log.Log("Warning: unable to read ACL from {rp}: {exc}".format(
+                rp=rp, exc=exc), 4)
             return
 
         if skip_inherit_only:
@@ -176,9 +175,8 @@ class ACL:
                 and sd.GetSecurityDescriptorSacl() or None
             )
         except (OSError, IOError, pywintypes.error) as exc:
-            log.Log(
-                "Warning: unable to set ACL on %s: %s" % (repr(rp.path), exc),
-                4)
+            log.Log("Warning: unable to set ACL on {rp}: {exc}".format(
+                rp=rp, exc=exc), 4)
 
     def from_string(self, acl_str):
 

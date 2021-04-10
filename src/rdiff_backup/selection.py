@@ -91,7 +91,7 @@ class Select:
     def __init__(self, rootrp):
         """Select initializer.  rpath is the root directory"""
         assert isinstance(rootrp, rpath.RPath), (
-            "Root path '{rp!s}' must be a real remote path.".format(rp=rootrp))
+            "Root path '{rp}' must be a real remote path.".format(rp=rootrp))
         self.selection_functions = []
         self.rpath = rootrp
         self.prefix = self.rpath.path
