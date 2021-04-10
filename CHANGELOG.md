@@ -11,6 +11,19 @@ of importance for rdiff-backup users:
 * **DOC**umentation and **WEB**-site changes are marked as such.
 * And **DEV**elopment changes are only of interest for developers and testers.
 
+New in v2.1.0a1 (2021-04-10)
+----------------------------
+
+## Changes
+
+* FIX: 64 bits version compiled with PyInstaller for Windows couldn't 
+       find its module rdiff_backup, closes #555
+
+## Authors
+
+* Eric L
+
+
 New in v2.1.0a0 (2021-04-08)
 ----------------------------
 
