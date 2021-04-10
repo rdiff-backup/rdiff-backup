@@ -25,6 +25,8 @@ and copy the four enclosed files to the same directory as *rdiff-backup.exe*.
 
 You will need to follow either method only once.
 
+> **NOTE:** you might want to [enable long paths support in Windows 10 v1607 or later](https://docs.microsoft.com/windows/win32/fileio/maximum-file-path-limitation#enable-long-paths-in-windows-10-version-1607-and-later)
+
 ## Additional Issues
 
 Currently, *rdiff-backup*'s `--include` and `--exclude` options do not support

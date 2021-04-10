@@ -197,7 +197,7 @@ class IncStatTest(unittest.TestCase):
                        abs_output_dir)
         InternalBackup(1, 1, os.path.join(old_test_dir, b"stattest2"),
                        abs_output_dir,
-                       time.time() + 1)
+                       int(time.time()) + 1)
 
         rbdir = rpath.RPath(Globals.local_connection,
                             os.path.join(abs_output_dir, b"rdiff-backup-data"))

@@ -2,7 +2,7 @@ import unittest
 import os
 from commontest import abs_output_dir, old_test_dir, Myrm, MakeOutputDir, \
     InternalRestore, compare_recursive
-from rdiff_backup import restore, Globals, rpath, Time, log, Main
+from rdiff_backup import restore, Globals, rpath, Time, log
 
 lc = Globals.local_connection
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
@@ -196,10 +196,6 @@ class RestoreTest(unittest.TestCase):
             1, 1, os.path.join(old_test_dir, b'restoretest5', b'regular_file'),
             abs_output_dir, 10000)
         self.assertTrue(os.lstat(abs_output_dir))
-
-    def tearDown(self):
-        # especially the logfile might still appear opened if a test was interrupted
-        Main._cleanup()
 
 
 if __name__ == "__main__":

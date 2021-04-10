@@ -11,6 +11,164 @@ of importance for rdiff-backup users:
 * **DOC**umentation and **WEB**-site changes are marked as such.
 * And **DEV**elopment changes are only of interest for developers and testers.
 
+New in v2.1.0a1 (2021-04-10)
+----------------------------
+
+## Changes
+
+* FIX: 64 bits version compiled with PyInstaller for Windows couldn't 
+       find its module rdiff_backup, closes #555
+
+## Authors
+
+* Eric L
+
+
+New in v2.1.0a0 (2021-04-08)
+----------------------------
+
+## Changes
+
+* CHG: Add no-compression defaults for videos .webm and tar 
+       zStandart-compressed files .tzst
+* CHG: depend on importlib-metadata instead of setuptools to get 
+       rdiff-backup veersion, closes #418
+* CHG: man page rdiff-backup-old(1) describes the old CLI, 
+       rdiff-backup(1) the new one
+* CHG: option \--test-server will test all servers even if one fails, 
+       returning 1 in such case, 2 if the parameters were incorrect, output 
+       has also slightly changed.
+* CHG: option \--version outputs extended version information when used 
+       in API versions above 200
+* CHG: Pickle protocol raised from 1 to 4, it shouldn't impact older 
+       versions of rdiff-backup as protocol 4 is known since Python 3.4 and 
+       the protocol version is recognized automatically on the receiving end
+* CHG: rdiff-backup now supports the newly released Python 3.9 and 
+       stops supporting the obsolete Python 3.5.
+* CHG: restoring a specific increment requires now the use of 
+       '\--restore' parameter
+* CHG: the host placeholder in the remote schema is now '{h}', '%s' is 
+       deprecated.
+* CHG: the old command line interface without explicit actions is 
+       considered deprecated
+* CHG: the Windows build uses Python 3.9 instead of Python 3.7 (nobody 
+       should notice)
+* DEV: action plugins are described and implemented as context manager
+* DEV: add coding conventions under docs/CODING.md to be followed by 
+       developers and reviewers. This is a living document which will be 
+       expanded over time.
+* DEV: add docs/api folder with API description to be followed and API 
+       v200.
+* DEV: added coding rules for sorting of items like functions, 
+       variables, methods, classes, etc.
+* DEV: add Globals.PICKLE_PROTOCOL constant and raise it's version from 
+       1 to 4
+* DEV: add new package rdiffbackup.locations for directory and 
+       repository modules.
+* DEV: add requirements.txt to help GitHub detect our dependencies and 
+       warn about security flaws, closes #434
+* DEV: all API interfaces are marked directly in the code with @API to 
+       simply recognition while coding.
+* DEV: document docstrings and import recommendations.
+* DEV: documented that compatibility functions are to have a postfix 
+       `_compat<API>`.
+* DEV: Explain or remove many asserts throughout the code, closes #398
+* DEV: fix issue in ACL tests when user isn't named like group
+* DEV: increase crossversion check to old version 2.0.5
+* DEV: introduction of an 'actions' plug-in interface described in the 
+       architecture documentation.
+* DEV: Make flake8 check python scripts and simplify 
+       rdiff-backup-statistics
+* DEV: make it easier to use and test rdiff-backup directly from the 
+       Git repo under Windows using Vagrant
+* DEV: man page can be generated from markdown
+* DEV: migrate from Travis-CI (thanks for all the fish) to GitHub 
+       actions for our CI/CD pipeline
+* DEV: pin specific version of pyenv-win in Travis CI so that changes 
+       don't make the pipeline without control
+* DEV: prefix all internal functions, variables and classes with 
+       underscore to get more clarify in the code
+* DEV: reduce max complexity to 20 by simplfiying more functions, 
+       mostly using mapping dictionaries
+* DEV: reduce max complexity to 30 and rename CompareRecursive to 
+       compare_recursive.
+* DEV: Re-write tox.ini to make sure that also sub-processes are part 
+       of the coverage calculation, raises test coverage above 80%
+* DEV: TempFile.new(\_in_dir) is replaced by RPath.get_temp_rpath
+* DEV: there is a new namespace 'rdiffbackup' for new/clean code 
+       according to strategy.
+* DOC: add architecture documentation for better understanding of the 
+       overall code structure
+* DOC: add hint on how to use batch file under Windows
+* DOC: add how to use Microsoft's OpenSSH from 32-bits rdiff-backup, 
+       closes #494, closes #496
+* DOC: clarify in the man page(s) that only slashes are allowed in 
+       selection patterns under Windows, closes #531
+* DOC: clarify selection principles in man-page that pattern matching 
+       doesn't resolve relative vs. absolute paths and that it is done on the 
+       complete path, closes #533
+* DOC: clarify that the host part belongs together with the double 
+       colons, closes #480
+* DOC: comparaison of old and new Command Line Interface added to the 
+       migration documentation
+* DOC: comparaison of old and new Command Line Interface added to the 
+       migration documentation
+* DOC: docs/migration.md describes how to install rdiff-backup side by 
+       side and use old versions 'forever', closes #523
+* DOC: document how to use Putty as SSH client thanks to @xastor in #496
+* DOC: document more clearly that rdiff-backup 1.x and 2.x are 
+       incompatible, closes #513
+* DOC: explain the prefixes used in the changelog with focus on 
+       potentially incompatible *CH*an*G*es, closes #436
+* DOC: make the installation instructions for other Linux and UN*X-OID 
+       e.g. BSD systems using PyPI more complete, considering build 
+       dependencies. Closes #487
+* DOC: man page has been clarified regarding \--no-hard-links option
+* FIX: avoid breaking on non-readable files, causing ListError, closes 
+       #34, closes #245
+* FIX: avoids MemoryError on Windows when compiling for 64 bits, closes 
+       #453
+* FIX: cross device link error on ZFS with project quota, closes #519 
+       (#522)
+* FIX: get rid of spurious resource warnings due to subprocess still 
+       running, closes #165
+* FIX: longnames are correctly reversed when regressing a failed 
+       back-up, closes #9
+* FIX: PID handling when process is interrupted now works properly 
+       under Windows.
+* FIX: setting tempdir under Windows might fail with error about mix of 
+       bytes and str, closes #540
+* FIX: support long paths under Windows 10 v1607 or later, once enabled 
+       in registry/GPO (see Windows README for details), closes #236
+* FIX: When using the \--remove-older-than option with \--tempdir, the 
+       \--tempdir
+* NEW: both 32 and 64 bits version of rdiff-backup are now built for 
+       Windows
+* NEW: new action 'info' to output system information, try 
+       'rdiff-backup info'
+* NEW: option \--api-version to explicitly set the actual API version, 
+       maximum version is 201, default is 200, compatible with 2.0.x
+* NEW: rdiff-backup has a `--help` parameter, closes #280
+* NEW: rdiff-backup has a new interface with actions and sub-options, 
+       use `--new --help` to get the help
+* NEW: rdiff-backup has the concept of API version between client and 
+       server
+* NEW: rdiff-backup-statistics has \--help and \--version options
+* NEW: the current rdiff-backup version can be used in the remote 
+       schema with 'x.y.z' being split as placeholders '{vx}', '{vy}', '{vz}' 
+       so that one can install (via pip) and use a specific major/minor 
+       version of rdiff-backup (see the migration docs for details).
+
+## Authors
+
+* Andrea Veri
+* dgasaway
+* Eric L
+* Felix Yan
+* Patrik Dufresne
+* t9t
+
+
 New in v2.0.5 (2020-07-25)
 --------------------------
 
@@ -2202,4 +2360,3 @@ version highlights:
 However, the new version is much cleaner and better documented.  This
 version should have fewer bugs, and it should be easier to fix any
 future bugs.
-
