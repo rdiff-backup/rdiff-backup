@@ -204,7 +204,7 @@ There are many ways to contribute:
 
 If you don't have anything particular in your mind but want to help out, just browse the list of issues. Both coding and non-coding tasks have been filed as issues.
 
-For source code related documentation see [docs/DEVELOP.md](https://github.com/rdiff-backup/rdiff-backup/blob/master/docs/DEVELOP.md)
+For source code related documentation see [docs/DEVELOP.md](docs/DEVELOP.md)
 
 ### Installing latest development release
 
