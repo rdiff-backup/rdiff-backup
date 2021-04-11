@@ -195,8 +195,8 @@ Rdiff-backup is an open source software developed by many people over a long per
 There are many ways to contribute:
 
 - Testing, troubleshooting and writing good bug reports that are easy for other developers to read and act upon
-- Reviewing and triaging [existing bug reports and issues](https://github.com/rdiff-backup/rdiff-backup/issues), helping other developers focus their efforts
-- Writing documentation (e.g. the [man page](https://github.com/rdiff-backup/rdiff-backup/blob/master/rdiff-backup.1)), or updating the webpage rdiff-backup.net
+- Reviewing and triaging [existing bug reports and issues](../../issues), helping other developers focus their efforts
+- Writing documentation (e.g. the [man page](docs/rdiff-backup.1.md)), or updating the webpage rdiff-backup.net
 - Packaging and shipping rdiff-backup in your own favorite Linux distribution or operating system
 - Running tests on your favorite platforms and fixing failing tests
 - Writing new tests to get test coverage up
@@ -204,7 +204,7 @@ There are many ways to contribute:
 
 If you don't have anything particular in your mind but want to help out, just browse the list of issues. Both coding and non-coding tasks have been filed as issues.
 
-For source code related documentation see [docs/DEVELOP.md](DEVELOP.md)
+For source code related documentation see [docs/DEVELOP.md](docs/DEVELOP.md)
 
 ### Installing latest development release
 
