@@ -195,7 +195,7 @@ Rdiff-backup is an open source software developed by many people over a long per
 There are many ways to contribute:
 
 - Testing, troubleshooting and writing good bug reports that are easy for other developers to read and act upon
-- Reviewing and triaging [existing bug reports and issues](./issues), helping other developers focus their efforts
+- Reviewing and triaging [existing bug reports and issues](../../issues), helping other developers focus their efforts
 - Writing documentation (e.g. the [man page](docs/rdiff-backup.1.md)), or updating the webpage rdiff-backup.net
 - Packaging and shipping rdiff-backup in your own favorite Linux distribution or operating system
 - Running tests on your favorite platforms and fixing failing tests
