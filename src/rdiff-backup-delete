@@ -164,7 +164,8 @@ def _remove_from_metadata(repopath, file, dry_run):
             return line == b'File ' + repopath.metaquote + b'\n' or line.startswith(b'File ' + repopath.metaquote + b'/')
 
     elif (os.path.basename(file).startswith(b'extended_attributes')
-          or os.path.basename(file).startswith(b'access_control_lists')):
+          or os.path.basename(file).startswith(b'access_control_lists')
+          or os.path.basename(file).startswith(b'win_access_control_lists')):
         start_marker = b'# file: '
 
         def matches(line):
