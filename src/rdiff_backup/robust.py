@@ -110,19 +110,20 @@ def check_common_error(error_handler, function, args=[]):
 
 
 def catch_error(exc):
-    """Return true if exception exc should be caught"""
-    for exception_class in (rpath.SkipFileException, rpath.RPathException,
-                            librsync.librsyncError, C.UnknownFileTypeError,
-                            zlib.error):
-        if isinstance(exc, exception_class):
-            return 1
-    if (isinstance(exc, EnvironmentError)
+    """
+    Return True if exception exc should be caught, else False.
+    """
+    if isinstance(exc, (rpath.SkipFileException, rpath.RPathException,
+                        librsync.librsyncError, C.UnknownFileTypeError,
+                        zlib.error)):
+        return True
+    if (isinstance(exc, OSError)
             # the invalid mode shows up in backups of /proc for some reason
             and ('invalid mode: rb' in str(exc)
                  or 'Not a gzipped file' in str(exc)
                  or exc.errno in _robust_errno_list)):
-        return 1
-    return 0
+        return True
+    return False
 
 
 def is_routine_fatal(exc):
@@ -139,7 +140,7 @@ def is_routine_fatal(exc):
         return "Lost connection to the remote system"
     elif isinstance(exc, SignalException):
         return "Killed with signal %s" % (exc, )
-    elif isinstance(exc, EnvironmentError) and exc.errno == errno.ENOTCONN:
+    elif isinstance(exc, OSError) and exc.errno == errno.ENOTCONN:
         return ("Filesystem reports connection failure:\n%s" % exc)
     return None
 

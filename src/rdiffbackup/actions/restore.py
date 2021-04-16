@@ -114,7 +114,7 @@ class RestoreAction(actions.BaseAction):
         try:
             self.target.base_dir.conn.fs_abilities.restore_set_globals(
                 self.target.base_dir)
-        except IOError as exc:
+        except OSError as exc:
             self.log("Could not begin restore due to\n{exc}".format(exc=exc),
                      self.log.ERROR)
             return 1
@@ -167,7 +167,7 @@ class RestoreAction(actions.BaseAction):
             restore.Restore(
                 self.source.base_dir.new_index(self.source.restore_index),
                 self.inc_rpath, self.target.base_dir, self.action_time)
-        except IOError as exc:
+        except OSError as exc:
             self.log("Could not complete restore due to '{exc}'".format(
                 exc=exc), self.log.ERROR)
             return 1
