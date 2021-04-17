@@ -446,6 +446,7 @@ class BaseAction:
             self.connected_locations = list(
                 map(SetConnections.get_connected_rpath, cmdpairs))
         else:
+            Security.initialize(self.get_security_class(), [])
             self.connected_locations = []
 
         # once the connection is set, we can define "now" as being the current
