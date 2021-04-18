@@ -34,7 +34,7 @@ class InfoAction(actions.BaseAction):
     in a bug report, and exits.
     """
     name = "info"
-    security = "validate"  # FIXME introduce a "none" security level?
+    security = None
     # information has no specific sub-options
 
     def setup(self):
