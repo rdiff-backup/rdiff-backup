@@ -75,7 +75,7 @@ def listrp(rp):
     """Like rp.listdir() but return [] if error, and sort results"""
 
     def error_handler(exc):
-        log.Log("Error listing directory %s" % rp.get_safepath(), 2)
+        log.Log("Error listing directory {rp}".format(rp=rp), 2)
         return []
 
     dir_listing = check_common_error(error_handler, rp.listdir)

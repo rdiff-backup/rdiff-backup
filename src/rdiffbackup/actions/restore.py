@@ -160,17 +160,16 @@ class RestoreAction(actions.BaseAction):
             # source could be read-only, so we don't try to regress it
             self.log("Previous backup to {rp} seems to have failed. "
                      "Use rdiff-backup to 'regress' first the failed backup, "
-                     "then try again to restore.".format(
-                         rp=self.source.base_dir.get_safepath()),
-                     self.log.ERROR)
+                     "then try again to restore".format(
+                         rp=self.source.base_dir), self.log.ERROR)
             return 1
         try:
             restore.Restore(
                 self.source.base_dir.new_index(self.source.restore_index),
                 self.inc_rpath, self.target.base_dir, self.action_time)
         except IOError as exc:
-            self.log("Could not complete restore due to\n{exc}".format(exc=exc),
-                     self.log.ERROR)
+            self.log("Could not complete restore due to '{exc}'".format(
+                exc=exc), self.log.ERROR)
             return 1
         else:
             self.log("Restore successfully finished", self.log.INFO)

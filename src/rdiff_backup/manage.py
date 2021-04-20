@@ -95,7 +95,7 @@ def delete_earlier_than_local(baserp, time):
     for rp in yield_files(baserp):
         if ((rp.isincfile() and rp.getinctime() < time)
                 or (rp.isdir() and not rp.listdir())):
-            Log("Deleting increment file %s" % rp.get_safepath(), 5)
+            Log("Deleting increment file {rp}".format(rp=rp), 5)
             rp.delete()
 
 

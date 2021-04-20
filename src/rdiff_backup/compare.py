@@ -91,9 +91,8 @@ class DataSide(backup.SourceStruct):
             """Return 0 if their data hashes same, 1 otherwise"""
             verify_sha1 = _get_hash(mir_rorp)
             if not verify_sha1:
-                log.Log(
-                    "Warning: Metadata file has no digest for %s, "
-                    "unable to compare." % (mir_rorp.get_safeindexpath(), ), 2)
+                log.Log("Warning: Metadata file has no digest for {rp}, "
+                        "unable to compare.".format(rp=mir_rorp), 2)
                 return 0
             elif (src_rp.getsize() == mir_rorp.getsize()
                   and hash.compute_sha1(src_rp) == verify_sha1):
@@ -113,7 +112,7 @@ class DataSide(backup.SourceStruct):
         """Given repo iter with full data attached, return report iter"""
 
         def error_handler(exc, src_rp, repo_rorp):
-            log.Log("Error reading file %s" % src_rp.get_safepath(), 2)
+            log.Log("Error reading file {rp}".format(rp=src_rp), 2)
             return 0  # They aren't the same if we get an error
 
         def data_changed(src_rp, repo_rorp):
@@ -212,25 +211,20 @@ def Verify(mirror_rp, inc_rp, verify_time):
             continue
         verify_sha1 = _get_hash(repo_rorp)
         if not verify_sha1:
-            log.Log(
-                "Warning: Cannot find SHA1 digest for file %s,\n"
-                "perhaps because this feature was added in v1.1.1" %
-                (repo_rorp.get_safeindexpath(), ), 2)
+            log.Log("Warning: Cannot find SHA1 digest for file {rp},\n"
+                    "perhaps because this feature was added in v1.1.1".format(
+                        rp=repo_rorp), 2)
             continue
         fp = RepoSide.rf_cache.get_fp(base_index + repo_rorp.index, repo_rorp)
         computed_hash = hash.compute_sha1_fp(fp)
         if computed_hash == verify_sha1:
-            log.Log(
-                "Verified SHA1 digest of %s" % repo_rorp.get_safeindexpath(),
-                5)
+            log.Log("Verified SHA1 digest of {rp}".format(rp=repo_rorp), 5)
         else:
             bad_files += 1
-            log.Log(
-                "Warning: Computed SHA1 digest of %s\n   %s\n"
-                "doesn't match recorded digest of\n   %s\n"
-                "Your backup repository may be corrupted!" %
-                (repo_rorp.get_safeindexpath(), computed_hash,
-                 verify_sha1), 2)
+            log.Log("Warning: Computed SHA1 digest of {rp}\n   {chsh}\n"
+                    "doesn't match recorded digest of\n   {rhsh}\n"
+                    "Your backup repository may be corrupted!".format(
+                        rp=repo_rorp, chsh=computed_hash, rhsh=verify_sha1), 2)
     RepoSide.close_rf_cache()
     if bad_files:
         log.Log("Not all files could be verified.", 3)
@@ -310,6 +304,5 @@ def _get_basic_report(src_rp, repo_rorp, comp_data_func=None):
 
 def _log_success(src_rorp, mir_rorp=None):
     """Log that src_rorp and mir_rorp compare successfully"""
-    path = src_rorp and src_rorp.get_safeindexpath(
-    ) or mir_rorp.get_safeindexpath()
-    log.Log("Successful compare: %s" % (path, ), 5)
+    path = src_rorp and str(src_rorp) or str(mir_rorp)
+    log.Log("Successful compare: {rp}".format(rp=path), 5)

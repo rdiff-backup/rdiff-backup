@@ -66,12 +66,11 @@ class RemoveAction(actions.BaseAction):
         # the source directory must directly point at the base directory of
         # the repository
         if self.source.restore_index:
-            self.log("Increments for directory '{odir}' cannot be removed "
+            self.log("Increments for directory '{orp}' cannot be removed "
                      "separately.\n"
-                     "Instead run on entire directory '{bdir}'.".format(
-                         odir=self.source.orig_path.get_safepath(),
-                         bdir=self.source.base_dir.get_safepath()),
-                     self.log.ERROR)
+                     "Instead run on entire directory '{brp}'.".format(
+                         orp=self.source.orig_path,
+                         brp=self.source.base_dir), self.log.ERROR)
             return_code |= 1
 
         return return_code

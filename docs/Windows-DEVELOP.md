@@ -29,15 +29,12 @@ Use Windows Update to upgrade your system. Then proceed with the installation.
 
 ### Python 3
 
-[Download Python 3.7.5 x86](https://www.python.org/ftp/python/3.7.5/python-3.7.5.exe)
+[Download Python 3.9.4 x64](https://www.python.org/ftp/python/3.9.4/python-3.9.4-amd64.exe)
 
-1. Check "Add Python 3.7 to PATH"
-2. Choose "Customize instalation" to select the installation path.
-3. Check "Install for all users". That should install Python to `C:\Program Files (x86)\Python37-32`
+1. Check "Add Python 3.9 to PATH"
+2. Choose "Customize installation" to select the installation path.
 
 You could verify if Python is working by executing `python --version` in a new command line windows.
-
-NOTICE: Python 3.7.3 is not supported because it failed to compile external libraries.
 
 ### Python dependencies
 
@@ -70,13 +67,20 @@ Install with default settings.
 [Download librsync 2.2.1 sources](https://github.com/librsync/librsync/releases/download/v2.2.1/librsync-2.2.1.tar.gz)
 
 1. Extract it content using 7z `C:\librsync-2.2.1\`.
-2. Open a "Developer Command Prompt for VS2019" from the start menu.
+2. Open a "x64 Native Tools Command Prompt for VS 2019" from the start menu.
 3. Type `cd C:\librsync-2.2.1\` 
-4. `cmake -DCMAKE_INSTALL_PREFIX=C:\librsync\ -A Win32 -DBUILD_SHARED_LIBS=OFF .`
+4. `cmake -DCMAKE_INSTALL_PREFIX=C:\librsync\ -A x64 -DBUILD_SHARED_LIBS=OFF .`
 5. `cmake --build . --config Release`
 6. `cmake --install . --config Release`
 
-Notice: Source directory `C:\librsync-2.2.1\` should be in a seperate directory then target directory `C:\librsync\`.
+Note: Source directory `C:\librsync-2.2.1\` is different to the target directory `C:\librsync\`.
+
+These steps build a 64-bit version of librsync, suitable for use in a 64-bit version of Python. If using a 32-bit version
+of python, use this in place of the first `cmake` command:
+
+1. `cmake -DCMAKE_INSTALL_PREFIX=C:\librsync\ -A Win32 -DBUILD_SHARED_LIBS=OFF .`
+2. Use the "Developer Command Prompt for VS2019" instead of the x64 variant.
+
 
 ## Build rdiff-backup
 
@@ -116,3 +120,23 @@ The expected output should be as follow:
     
     /out:hello.exe
     hello.obj
+
+### unresolved external symbol
+
+If you see link errors like these:
+
+    _librsyncmodule.obj : error LNK2001: unresolved external symbol rs_sig_begin
+    _librsyncmodule.obj : error LNK2001: unresolved external symbol rs_job_free
+    _librsyncmodule.obj : error LNK2001: unresolved external symbol rs_loadsig_begin
+
+then you have probably compiled librsync for the wrong architecture. Try both `-A Win32`/`-A x64` switches when running
+cmake to build librsync.
+
+If you see link errors like these:
+
+    cmodule.obj : error LNK2001: unresolved external symbol __imp__Py_BuildValue
+    cmodule.obj : error LNK2001: unresolved external symbol __imp__PyDict_SetItemString
+    cmodule.obj : error LNK2001: unresolved external symbol __imp__PyModule_GetDict
+
+then you are using the wrong bitness build tools. Try both "x64 Native Tools Command Prompt for VS 2019" as well as
+"Developer Command Prompt for VS2019".
