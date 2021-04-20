@@ -183,7 +183,7 @@ class FSAbilities:
         try:
             tmp_rp.chown(uid // 2 + 1, gid // 2 + 1)  # just choose random uid/gid
             tmp_rp.chown(0, 0)
-        except (IOError, OSError, AttributeError):
+        except (OSError, AttributeError):
             self.ownership = 0
         else:
             self.ownership = 1
@@ -199,8 +199,8 @@ class FSAbilities:
         try:
             hl_dest.hardlink(hl_source.path)
             if hl_source.getinode() != hl_dest.getinode():
-                raise IOError(errno.EOPNOTSUPP, "Hard links don't compare")
-        except (IOError, OSError, AttributeError):
+                raise OSError(errno.EOPNOTSUPP, "Hard links don't compare")
+        except (OSError, AttributeError):
             if Globals.preserve_hardlinks != 0:
                 log.Log("Warning: hard linking not supported by filesystem "
                         "at {rp}".format(rp=self.root_rp), 3)
@@ -212,7 +212,7 @@ class FSAbilities:
         """Set self.fsync_dirs if directories can be fsync'd"""
         try:
             testdir.fsync()
-        except (IOError, OSError):
+        except OSError:
             log.Log("Directories on file system at {rp} are not fsyncable."
                     "Assuming it's unnecessary.".format(rp=testdir), 4)
             self.fsync_dirs = 0
@@ -229,7 +229,7 @@ class FSAbilities:
             ord_rp = subdir.append(ordinary_filename)
             ord_rp.touch()
             ord_rp.delete()
-        except (IOError, OSError) as exc:
+        except OSError as exc:
             log.Log.FatalError(
                 "File with normal name '{rp}' couldn't be created, "
                 "and failed with '{exc}'.".format(rp=ord_rp, exc=exc))
@@ -241,14 +241,14 @@ class FSAbilities:
         try:
             ext_rp = subdir.append(extended_filename)
             ext_rp.touch()
-        except (IOError, OSError):
+        except OSError:
             if ext_rp and ext_rp.lstat():
                 ext_rp.delete()  # just to be very sure
             self.extended_filenames = 0
         else:
             try:
                 ext_rp.delete()
-            except (IOError, OSError):
+            except OSError:
                 # Broken CIFS setups will sometimes create UTF-8 files
                 # and even stat them, but not let us perform file operations
                 # on them. Test file cannot be deleted. UTF-8 chars not in the
@@ -270,14 +270,14 @@ class FSAbilities:
         try:
             win_rp = subdir.append(win_reserved_filename)
             win_rp.touch()
-        except (IOError, OSError):
+        except OSError:
             if win_rp and win_rp.lstat():
                 win_rp.delete()  # just to be very sure
             self.win_reserved_filenames = 1
         else:
             try:
                 win_rp.delete()
-            except (IOError, OSError):
+            except OSError:
                 self.win_reserved_filenames = 1
             else:
                 self.win_reserved_filenames = 0
@@ -302,7 +302,7 @@ class FSAbilities:
 
         try:
             posix1e.ACL(file=rp.path)
-        except IOError:
+        except OSError:
             log.Log("POSIX ACLs not supported by filesystem at {rp}".format(
                 rp=rp), 4)
             self.acls = 0
@@ -407,7 +407,7 @@ class FSAbilities:
             if write:
                 xattr.set(rp.path, b"user.test", test_ea)
                 read_ea = xattr.get(rp.path, b"user.test")
-        except IOError:
+        except OSError:
             log.Log("Extended attributes not supported by "
                     "filesystem at {rp}".format(rp=rp), 4)
             self.eas = 0
@@ -530,7 +530,7 @@ class FSAbilities:
                 os.path.join(reg_rp.path, b'..namedfork', b'rsrc'), 'rb')
             s_back = fp_read.read()
             fp_read.close()
-        except (OSError, IOError):
+        except OSError:
             self.resource_forks = 0
         else:
             self.resource_forks = (s_back == s)
@@ -551,7 +551,7 @@ class FSAbilities:
                     fp = rfork.open('rb')
                     fp.read()
                     fp.close()
-                except (OSError, IOError):
+                except OSError:
                     self.resource_forks = 0
                     return
                 self.resource_forks = 1
@@ -569,7 +569,7 @@ class FSAbilities:
             tmpf_rp.chmod(0o7777, 4)
             tmpd_rp.chmod(0o7000, 4)
             tmpd_rp.chmod(0o7777, 4)
-        except (OSError, IOError):
+        except OSError:
             self.high_perms = 0
         else:
             self.high_perms = 1
@@ -628,7 +628,7 @@ class FSAbilities:
         Windows and Linux/FAT32 will not preserve trailing spaces or periods.
         Linux/FAT32 behaves inconsistently: It will give an OSError,22 if
         os.mkdir() is called on a directory name with a space at the end, but
-        will give an IOError("invalid mode") if you attempt to create a filename
+        will give an OSError("invalid mode") if you attempt to create a filename
         with a space at the end. However, if a period is placed at the end of
         the name, Linux/FAT32 is consistent with Cygwin and Native Windows.
         """
