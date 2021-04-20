@@ -58,13 +58,18 @@ def _main_run(arglist, security_override=False):
         actions_mgr.get_parent_parsers_compat200(),
         discovered_actions)
 
+    # we need verbosity set properly asap
+    if parsed_args.terminal_verbosity is not None:
+        log.Log.setterm_verbosity(parsed_args.terminal_verbosity)
+    log.Log.setverbosity(parsed_args.verbosity)
+
+    # compatibility plug
+    _parse_cmdlineoptions_compat200(parsed_args)
+
     # instantiate the action object from the dictionary, handing over the
     # parsed arguments
     action = discovered_actions[parsed_args.action](parsed_args,
                                                     log.Log, log.ErrorLog)
-
-    # compatibility plug, we need verbosity set properly asap
-    _parse_cmdlineoptions_compat200(parsed_args)
 
     # validate that everything looks good before really starting
     ret_val = action.pre_check()
@@ -168,7 +173,6 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
     Parse argument list and set global preferences, compatibility function
     between old and new way of parsing parameters.
     """
-    global _args, _action
 
     def normalize_path(path):
         """Used below to normalize the security paths before setting"""
@@ -205,8 +209,6 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         Globals.set_integer('current_time', arglist.current_time)
     if arglist.chars_to_quote is not None:
         Globals.set('chars_to_quote', os.fsencode(arglist.chars_to_quote))
-    if arglist.remote_tempdir is not None:
-        Globals.remote_tempdir = os.fsencode(arglist.remote_tempdir)
     if arglist.restrict_path is not None:
         Globals.restrict_path = normalize_path(arglist.restrict_path)
         if arglist.restrict_mode == "read-write":
@@ -215,9 +217,6 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
             Globals.security_level = arglist.restrict_mode
     if arglist.api_version is not None:  # FIXME
         Globals.set_api_version(arglist.api_version)
-    if arglist.terminal_verbosity is not None:
-        log.Log.setterm_verbosity(arglist.terminal_verbosity)
-    log.Log.setverbosity(arglist.verbosity)
     if arglist.tempdir is not None:
         if not os.path.isdir(arglist.tempdir):
             log.Log.FatalError(
@@ -227,8 +226,3 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         # especially under Windows, if tempdir is stored as bytes.
         # See https://github.com/python/cpython/pull/20442
         tempfile.tempdir = arglist.tempdir
-
-    if arglist.action in ('info', 'server'):
-        _args = []
-    else:
-        _args = arglist.locations

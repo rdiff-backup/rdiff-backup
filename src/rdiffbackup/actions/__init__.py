@@ -357,12 +357,16 @@ class BaseAction:
         log is a log.Log object and errlog a log.ErrorLog object.
         """
         self.values = values
+        self.log = log
+        self.errlog = errlog
         if self.values.remote_schema:
             self.remote_schema = os.fsencode(self.values.remote_schema)
         else:
             self.remote_schema = None
-        self.log = log
-        self.errlog = errlog
+        if self.values.remote_tempdir:
+            self.remote_tempdir = os.fsencode(self.values.remote_tempdir)
+        else:
+            self.remote_tempdir = None
 
     def __enter__(self):
         """
@@ -430,7 +434,9 @@ class BaseAction:
             cmdpairs = SetConnections.get_cmd_pairs(
                 self.values.locations,
                 remote_schema=self.remote_schema,
-                ssh_compression=self.values.ssh_compression)
+                ssh_compression=self.values.ssh_compression,
+                remote_tempdir=self.remote_tempdir
+            )
             Security.initialize(self.get_security_class(), cmdpairs)
             self.connected_locations = list(
                 map(SetConnections.get_connected_rpath, cmdpairs))
