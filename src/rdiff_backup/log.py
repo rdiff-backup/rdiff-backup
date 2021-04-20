@@ -196,7 +196,7 @@ class Logger:
             self.logfp = rpath.open("ab")
         except (OSError, IOError) as e:
             raise LoggerError(
-                "Unable to open logfile %s: %s" % (rpath.path, e))
+                "Unable to open logfile {rp}: {exc}".format(rp=rpath, exc=e))
         self.log_file_local = 1
         self.logrp = rpath
 
@@ -304,14 +304,6 @@ class ErrorLog:
         cls._log_fileobj.write(_to_bytes(logstr))
 
     @classmethod
-    def get_indexpath(cls, obj):
-        """Return filename for logging.  rp is a rpath, string, or tuple"""
-        if getattr(obj, 'get_safeindexpath', None):
-            return obj.get_safeindexpath()
-        else:
-            return repr(obj)
-
-    @classmethod
     def write_if_open(cls, error_type, rp, exc):
         """Call cls.write(...) if error log open, only log otherwise"""
         if not Globals.isbackup_writer and Globals.backup_writer:
@@ -337,7 +329,7 @@ class ErrorLog:
         assert (error_type == "ListError" or error_type == "UpdateError"
                 or error_type == "SpecialFileError"), (
             "Unknown error type {etype}".format(etype=error_type))
-        return "%s: '%s' %s" % (error_type, cls.get_indexpath(rp), exc)
+        return "%s: '%s' %s" % (error_type, str(rp), exc)
 
 
 def _to_bytes(logline, encoding=LOGFILE_ENCODING):

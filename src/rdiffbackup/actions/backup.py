@@ -173,13 +173,12 @@ class BackupAction(actions.BaseAction):
         # if not Globals.select_mirror.Select(relative_rpout):
         #     return
 
-        self.log("The target directory '{tgt}' may be contained in the "
-                 "source directory '{src}'. "
+        self.log("The target directory '{trp}' may be contained in the "
+                 "source directory '{srp}'. "
                  "This could cause an infinite recursion. "
                  "You may need to use the --exclude option "
                  "(which you might already have done).".format(
-                     tgt=rpout.get_safepath(), src=rpin.get_safepath()),
-                 self.log.WARNING)
+                     trp=rpout, srp=rpin), self.log.WARNING)
 
 
 def get_action_class():

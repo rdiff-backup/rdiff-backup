@@ -345,7 +345,7 @@ class FileStats:
         suffix = Globals.compression and 'data.gz' or 'data'
         cls._rp = increment.get_inc(rpbase, suffix, Time.curtime)
         assert not cls._rp.lstat(), (
-            "Path '{rp!s}' shouldn't be existing.".format(rp=cls._rp))
+            "Path '{rp}' shouldn't be existing.".format(rp=cls._rp))
         cls._fileobj = cls._rp.open("wb", compress=Globals.compression)
 
         cls._line_sep = Globals.null_separator and b'\0' or b'\n'

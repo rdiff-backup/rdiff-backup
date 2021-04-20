@@ -39,11 +39,11 @@ class ReadLocation(Location):
         # check that the source exists and is a directory
         if not self.base_dir.lstat():
             self.log("Source path {rp} does not exist".format(
-                rp=self.base_dir.get_safepath()), self.log.ERROR)
+                rp=self.base_dir), self.log.ERROR)
             return_code |= 1
         elif not self.base_dir.isdir():
             self.log("Source path {rp} is not a directory".format(
-                rp=self.base_dir.get_safepath()), self.log.ERROR)
+                rp=self.base_dir), self.log.ERROR)
             return_code |= 1
         return return_code
 
@@ -63,17 +63,13 @@ class WriteLocation(Location):
         # check that target is a directory or doesn't exist
         if (self.base_dir.lstat() and not self.base_dir.isdir()):
             if self.force:
-                self.log(
-                    "Target {rp} exists but isn't a directory, "
-                    "and will be force deleted".format(
-                        rp=self.base_dir.get_safepath()),
-                    self.log.WARNING)
+                self.log("Target {rp} exists but isn't a directory, "
+                         "and will be force deleted".format(
+                             rp=self.base_dir), self.log.WARNING)
             else:
-                self.log(
-                    "Target {rp} exists and is not a directory, "
-                    "call with '--force' to overwrite".format(
-                        rp=self.base_dir.get_safepath()),
-                    self.log.ERROR)
+                self.log("Target {rp} exists and is not a directory, "
+                         "call with '--force' to overwrite".format(
+                             rp=self.base_dir), self.log.ERROR)
                 ret_code |= 1
 
         return ret_code
@@ -95,7 +91,7 @@ class WriteLocation(Location):
                 self.base_dir.chmod(0o700)  # only read-writable by its owner
         except os.error:
             self.log("Unable to delete and/or create directory {rp}".format(
-                rp=self.base_dir.get_safepath()), self.log.ERROR)
+                rp=self.base_dir), self.log.ERROR)
             return 1
 
         return 0  # all is good

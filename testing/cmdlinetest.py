@@ -726,7 +726,7 @@ class FinalCorrupt(PathSetter):
                      current_time=10000)
 
         out_subdir = Local.rpout.append(in_subdir.index[-1])
-        log.Log("Deleting %s" % out_subdir.get_safepath(), 3)
+        log.Log("Deleting {rp}".format(rp=out_subdir), 3)
         out_subdir.delete()
         rdiff_backup(True,
                      True,

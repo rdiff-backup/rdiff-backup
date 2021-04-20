@@ -68,17 +68,13 @@ class WriteDir(Dir, locations.WriteLocation):
                 and self.base_dir.isdir()
                 and self.base_dir.listdir()):
             if self.force:
-                self.log(
-                    "Target {rp} exists and isn't empty, "
-                    "content might be force overwritten by restore".format(
-                        rp=self.base_dir.get_safepath()),
-                    self.log.WARNING)
+                self.log("Target {rp} exists and isn't empty, content might "
+                         "be force overwritten by restore".format(
+                             rp=self.base_dir), self.log.WARNING)
             else:
-                self.log(
-                    "Target {rp} exists and isn't empty, "
-                    "call with '--force' to overwrite".format(
-                        rp=self.base_dir.get_safepath()),
-                    self.log.ERROR)
+                self.log("Target {rp} exists and isn't empty, "
+                         "call with '--force' to overwrite".format(
+                             rp=self.base_dir), self.log.ERROR)
                 ret_code |= 1
 
         return ret_code
