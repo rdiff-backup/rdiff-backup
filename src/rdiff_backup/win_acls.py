@@ -81,7 +81,7 @@ class ACL:
         try:
             sd = rp.conn.win32security.GetNamedSecurityInfo(
                 os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
-        except (OSError, IOError, pywintypes.error) as exc:
+        except (OSError, pywintypes.error) as exc:
             log.Log("Warning: unable to read ACL from {rp}: {exc}".format(
                 rp=rp, exc=exc), 4)
             return
@@ -119,7 +119,7 @@ class ACL:
         try:
             self.__acl = rp.conn.win32security.ConvertSecurityDescriptorToStringSecurityDescriptor(
                 sd, SDDL_REVISION_1, ACL.flags)
-        except (OSError, IOError, pywintypes.error) as exc:
+        except (OSError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to convert ACL from %s to string: %s" % (repr(
                     rp.path), exc), 4)
@@ -133,7 +133,7 @@ class ACL:
         try:
             sd = rp.conn.win32security.ConvertStringSecurityDescriptorToSecurityDescriptor(
                 os.fsdecode(self.__acl), SDDL_REVISION_1)
-        except (OSError, IOError, pywintypes.error) as exc:
+        except (OSError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to convert string %s to ACL: %s" % (repr(
                     self.__acl), exc), 4)
@@ -174,7 +174,7 @@ class ACL:
                 (ACL.flags & SACL_SECURITY_INFORMATION)
                 and sd.GetSecurityDescriptorSacl() or None
             )
-        except (OSError, IOError, pywintypes.error) as exc:
+        except (OSError, pywintypes.error) as exc:
             log.Log("Warning: unable to set ACL on {rp}: {exc}".format(
                 rp=rp, exc=exc), 4)
 
@@ -204,7 +204,7 @@ class ACL:
         try:
             sd = rp.conn.win32security.GetNamedSecurityInfo(
                 os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
-        except (OSError, IOError, pywintypes.error) as exc:
+        except (OSError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to read ACL from %s for clearing: %s" % (repr(
                     rp.path), exc), 4)
@@ -240,7 +240,7 @@ class ACL:
                 (ACL.flags & SACL_SECURITY_INFORMATION)
                 and sd.GetSecurityDescriptorSacl() or None
             )
-        except (OSError, IOError, pywintypes.error) as exc:
+        except (OSError, pywintypes.error) as exc:
             log.Log(
                 "Warning: unable to set ACL on %s after clearing: %s" % (repr(
                     rp.path), exc), 4)

@@ -268,7 +268,7 @@ class DestinationStruct:
             dest_rp.chmod(0o400 | dest_rp.getperms())
         try:
             return Rdiff.get_signature(dest_rp)
-        except IOError as e:
+        except OSError as e:
             if (e.errno == errno.EPERM or e.errno == errno.EACCES):
                 try:
                     # Try chmod'ing anyway -- This can work on NFS and AFS
@@ -276,7 +276,7 @@ class DestinationStruct:
                     # above for performance reasons.
                     dest_rp.chmod(0o400 | dest_rp.getperms())
                     return Rdiff.get_signature(dest_rp)
-                except (IOError, OSError):
+                except OSError:
                     log.Log.FatalError(
                         "Could not open {rp} for reading. Check "
                         "permissions on file.".format(rp=dest_rp))

@@ -297,8 +297,13 @@ def _check_new_index(base, index, make_dirs=0):
     def wrap_call(func, *args):
         try:
             result = func(*args)
-        except EnvironmentError as exc:
-            if (exc.errno == errno.ENAMETOOLONG):
+        except OSError as exc:
+            # Windows with enabled long paths seems to consider too long
+            # filenames as having an incorrect syntax, but only under certain
+            # circumstances
+            if (exc.errno == errno.ENAMETOOLONG
+                    or (exc.errno == errno.EINVAL
+                        and hasattr(exc, "winerror") and exc.winerror == 123)):
                 return None
             raise
         return result

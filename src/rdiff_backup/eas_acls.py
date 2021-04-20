@@ -70,7 +70,7 @@ class ExtendedAttributes:
         """Set the extended attributes from an rpath"""
         try:
             attr_list = rp.conn.xattr.list(rp.path, rp.issym())
-        except IOError as exc:
+        except OSError as exc:
             if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.ETXTBSY):
                 return  # if not supported, consider empty
             if exc.errno in (errno.EACCES, errno.ENOENT, errno.ELOOP):
@@ -88,7 +88,7 @@ class ExtendedAttributes:
             try:
                 self.attr_dict[attr] = \
                     rp.conn.xattr.get(rp.path, attr, rp.issym())
-            except IOError as exc:
+            except OSError as exc:
                 # File probably modified while reading, just continue
                 if exc.errno == errno.ENODATA:
                     continue
@@ -106,7 +106,7 @@ class ExtendedAttributes:
         for (name, value) in self.attr_dict.items():
             try:
                 rp.conn.xattr.set(rp.path, name, value, 0, rp.issym())
-            except IOError as exc:
+            except OSError as exc:
                 # Mac and Linux attributes have different namespaces, so
                 # fail gracefully if can't call xattr.set
                 if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.EACCES,
@@ -503,7 +503,7 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
 
     try:
         acl.applyto(rp.path)
-    except IOError as exc:
+    except OSError as exc:
         if exc.errno == errno.EOPNOTSUPP:
             log.Log("Warning: unable to set ACL on {rp}: {exc}".format(
                 rp=rp, exc=exc), 4)
@@ -531,7 +531,7 @@ def get_acl_lists_from_rp(rp):
         log.Log("Warning: unable to read ACL from {rp}: {exc}".format(
             rp=rp, exc=exc), 3)
         acl = None
-    except IOError as exc:
+    except OSError as exc:
         if exc.errno == errno.EOPNOTSUPP:
             acl = None
         else:
@@ -543,7 +543,7 @@ def get_acl_lists_from_rp(rp):
             log.Log("Warning: unable to read default ACL from {rp}: "
                     "{exc}".format(rp=rp, exc=exc), 3)
             def_acl = None
-        except IOError as exc:
+        except OSError as exc:
             if exc.errno == errno.EOPNOTSUPP:
                 def_acl = None
             else:

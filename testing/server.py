@@ -29,7 +29,7 @@ try:
     import rdiff_backup.Globals
     import rdiff_backup.Security
     from rdiff_backup.connection import PipeConnection
-except (OSError, IOError, ImportError):
+except (OSError, ImportError):
     print_usage()
     raise
 

@@ -28,7 +28,7 @@ class LongNameTest(unittest.TestCase):
         really_long.touch()
 
         with self.assertRaises(
-            EnvironmentError,
+            OSError,
             msg="File name could exceed max length '{max}'.".format(
                 max=NAME_MAX_LEN)) as cm:
             self.out_rp.append("a" * (NAME_MAX_LEN + 1)).touch()

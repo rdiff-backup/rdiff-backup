@@ -143,8 +143,8 @@ class Logger:
         exception_string = self._exception_to_string()
         try:
             logging_func(exception_string, verbosity)
-        except IOError:
-            print("IOError while trying to log exception!")
+        except OSError:
+            print("OS error while trying to log exception!")
             print(exception_string)
 
     # @API(Log.setverbosity, 200)
@@ -194,7 +194,7 @@ class Logger:
                 conn=rpath.conn))
         try:
             self.logfp = rpath.open("ab")
-        except (OSError, IOError) as e:
+        except OSError as e:
             raise LoggerError(
                 "Unable to open logfile {rp}: {exc}".format(rp=rpath, exc=e))
         self.log_file_local = 1

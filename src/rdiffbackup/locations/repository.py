@@ -123,7 +123,7 @@ information in it.
             if not self.force:
                 try:
                     curmir_incs[0].conn.regress.check_pids(curmir_incs)
-                except (OSError, IOError) as exc:
+                except OSError as exc:
                     self.log.FatalError(
                         "Could not check if rdiff-backup is currently"
                         "running due to\n{exc}".format(exc=exc))
@@ -261,7 +261,7 @@ class WriteRepo(Repo, locations.WriteLocation):
         if not self.data_dir.lstat():
             try:
                 self.data_dir.mkdir()
-            except (OSError, IOError) as exc:
+            except OSError as exc:
                 self.log("Could not create 'rdiff-backup-data' sub-directory "
                          "in '{rp}' due to '{exc}'. "
                          "Please fix the access rights and retry.".format(
@@ -272,7 +272,7 @@ class WriteRepo(Repo, locations.WriteLocation):
         if not self.incs_dir.lstat():
             try:
                 self.incs_dir.mkdir()
-            except (OSError, IOError) as exc:
+            except OSError as exc:
                 self.log("Could not create 'increments' sub-directory "
                          "in '{rp}' due to '{exc}'. "
                          "Please fix the access rights and retry.".format(
