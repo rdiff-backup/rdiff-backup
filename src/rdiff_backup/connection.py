@@ -285,7 +285,9 @@ class LowLevelPipeConnection(Connection):
         return i.to_bytes(size, byteorder='big')
 
     def _get(self):
-        """Read an object from the pipe and return (req_num, value)"""
+        """
+        Read an object from the pipe and return (req_num, value)
+        """
         header_string = self.inpipe.read(9)
         if not len(header_string) == 9:
             raise ConnectionReadError(
@@ -295,12 +297,6 @@ class LowLevelPipeConnection(Connection):
         format_string = header_string[0:1]
         req_num = self._b2i(header_string[1:2])
         length = self._b2i(header_string[2:])
-
-        if format_string not in b"qobfirRQc":
-            raise ConnectionReadError(
-                "Format character '{form}' invalid in <{hdr}> "
-                "(problem probably originated remotely)".format(
-                    hdr=header_string, form=format_string))
 
         if format_string == b"q":
             raise ConnectionQuit("Received quit signal")
@@ -330,6 +326,11 @@ class LowLevelPipeConnection(Connection):
             result = self._getqrpath(data)
         elif format_string == b"c":
             result = Globals.connection_dict[self._b2i(data)]
+        else:
+            raise ConnectionReadError(
+                "Format character '{form}' invalid in <{hdr}> "
+                "(problem probably originated remotely)".format(
+                    hdr=header_string, form=format_string))
 
         log.Log.conn("received", result, req_num)
         return (req_num, result)
