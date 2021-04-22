@@ -20,7 +20,6 @@
 
 import os
 import sys
-import tempfile
 from rdiff_backup import (
     C, Globals, log, restore, rpath, statistics, Time,
 )
@@ -217,12 +216,3 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
             Globals.security_level = arglist.restrict_mode
     if arglist.api_version is not None:  # FIXME
         Globals.set_api_version(arglist.api_version)
-    if arglist.tempdir is not None:
-        if not os.path.isdir(arglist.tempdir):
-            log.Log.FatalError(
-                "Temporary directory '{dir}' doesn't exist.".format(
-                    dir=arglist.tempdir))
-        # At least until Python 3.10, the module tempfile doesn't work properly,
-        # especially under Windows, if tempdir is stored as bytes.
-        # See https://github.com/python/cpython/pull/20442
-        tempfile.tempdir = arglist.tempdir
