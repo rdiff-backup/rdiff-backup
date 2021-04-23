@@ -27,13 +27,25 @@ class Violation(Exception):
     pass
 
 
+# security_level has 4 values and controls which requests from remote
+# systems will be honored.  "read-write" means anything goes. "read-only"
+# means that the requests must not write to disk.  "update-only" means
+# that requests shouldn't destructively update the disk (but normal
+# incremental updates are OK).  "minimal" means only listen to a few
+# basic requests.
+_security_level = None
+
+# If this is set, it indicates that the remote connection should only
+# deal with paths inside of restrict_path.
+_restrict_path = None
+
 # This will store the list of functions that will be honored from
 # remote connections.
 _allowed_requests = None
 
 # This stores the list of global variables that the client can not
 # set on the server.
-_disallowed_server_globals = ["server", "security_level", "restrict_path"]
+_disallowed_server_globals = ["server"]
 
 # Some common file commands we may want to check to make sure they are
 # in the right directory.  Any commands accessing files that could be
@@ -62,26 +74,36 @@ _file_requests = {
 }
 
 
-def initialize(security_class, cmdpairs):
-    """Initialize allowable request list and chroot"""
-    global _allowed_requests
-    _set_security_level(security_class, cmdpairs)
-    _set_allowed_requests(Globals.security_level)
+def initialize(security_class, cmdpairs,
+               security_level="read-write", restrict_path=None):
+    """
+    Initialize allowable request list and kind of restricted "chroot".
+
+    security_level and restrict_path are only of importance if in server class.
+    """
+    global _allowed_requests, _security_level, _restrict_path
+
+    security_level, restrict_path = _set_security_level(
+        security_class, security_level, restrict_path, cmdpairs)
+    _security_level = security_level
+    if restrict_path:
+        _restrict_path = rpath.RPath(Globals.local_connection,
+                                     restrict_path).normalize().path
+    _allowed_requests = _set_allowed_requests(security_class, security_level)
 
 
 def reset_restrict_path(rp):
     """Reset restrict path to be within rpath"""
     assert rp.conn is Globals.local_connection, (
         "Function works locally not over '{conn}'.".format(conn=rp.conn))
-    Globals.restrict_path = rp.normalize().path
+    _restrict_path = rp.normalize().path
 
 
 def vet_request(request, arglist):
     """Examine request for security violations"""
-    security_level = Globals.security_level
-    if security_level == "override":
+    if _security_level == "override":
         return
-    if Globals.restrict_path:
+    if _restrict_path:
         for arg in arglist:
             if isinstance(arg, rpath.RPath):
                 _vet_rpath(arg, request, arglist)
@@ -95,13 +117,15 @@ def vet_request(request, arglist):
     _raise_violation("Invalid request", request, arglist)
 
 
-def _set_security_level(security_class, cmdpairs):
+def _set_security_level(security_class, security_level, restrict_path,
+                        cmdpairs):
     """
     If running client, set security level and restrict_path
 
     To find these settings, we must look at the action's security class
     to see what is supposed to happen, and then look at the cmdpairs to
-    see what end the client is on.
+    see what end the client is on, unless we're in server security class,
+    in which case, we just return what's been chosen by the user.
     """
 
     def islocal(cmdpair):
@@ -116,8 +140,10 @@ def _set_security_level(security_class, cmdpairs):
     def getpath(cmdpair):
         return cmdpair[1]
 
+    # in security class model, we use the restrictions given by the user
     if security_class is None or security_class == "server":
-        return
+        return (security_level, restrict_path)
+
     cp1 = cmdpairs[0]
     if len(cmdpairs) > 1:
         cp2 = cmdpairs[1]
@@ -149,7 +175,7 @@ def _set_security_level(security_class, cmdpairs):
                     path=getpath(cp1)), log.Log.ERROR)
             rdir = base_dir.path
         else:  # cp2 is local but not cp1
-            sec_level = "all"
+            sec_level = "read-write"
             rdir = getpath(cp2)
     elif security_class == "mirror":  # compat200 not sure what this was?!?
         if bothlocal(cp1, cp2) or bothremote(cp1, cp2):
@@ -159,7 +185,7 @@ def _set_security_level(security_class, cmdpairs):
             sec_level = "read-only"
             rdir = getpath(cp1)
         else:  # cp2 is local but not cp1
-            sec_level = "all"
+            sec_level = "read-write"
             rdir = getpath(cp2)
     elif security_class == "validate":
         sec_level = "minimal"
@@ -168,15 +194,14 @@ def _set_security_level(security_class, cmdpairs):
         raise RuntimeError("Unknown action security class '{sec}'.".format(
             sec=security_class))
 
-    Globals.security_level = sec_level
-    Globals.restrict_path = rpath.RPath(Globals.local_connection,
-                                        rdir).normalize().path
+    return (sec_level, rdir)
 
 
-def _set_allowed_requests(sec_level):
-    """Set the allowed requests list using the security level"""
-    global _allowed_requests
-    requests = [  # minimal set of requests
+def _set_allowed_requests(sec_class, sec_level):
+    """
+    Set the allowed requests list using the security level
+    """
+    requests = {  # minimal set of requests
         "VirtualFile.readfromid", "VirtualFile.closebyid", "Globals.get",
         "Globals.is_not_None", "Globals.get_dict_val",
         "log.Log.open_logfile_allconn", "log.Log.close_logfile_allconn",
@@ -184,18 +209,18 @@ def _set_allowed_requests(sec_level):
         "FilenameMapping.set_init_quote_vals", "Time.setcurtime_local",
         "SetConnections.add_redirected_conn", "RedirectedRun",
         "sys.stdout.write", "robust.install_signal_handlers"
-    ]
+    }
     if (sec_level == "read-only" or sec_level == "update-only"
-            or sec_level == "all"):
-        requests.extend([
+            or sec_level == "read-write"):
+        requests.update([
             "rpath.make_file_dict", "os.listdir", "rpath.ea_get",
             "rpath.acl_get", "rpath.setdata_local", "log.Log.log_to_file",
             "os.getuid", "rpath.gzip_open_local_read", "rpath.open_local_read",
             "Hardlink.initialize_dictionaries", "user_group.uid2uname",
             "user_group.gid2gname"
         ])
-    if sec_level == "read-only" or sec_level == "all":
-        requests.extend([
+    if sec_level == "read-only" or sec_level == "read-write":
+        requests.update([
             "fs_abilities.get_readonly_fsa",
             "restore.MirrorStruct.get_increment_times",
             "restore.MirrorStruct.set_mirror_and_rest_times",
@@ -212,8 +237,8 @@ def _set_allowed_requests(sec_level):
             "compare.DataSide.compare_fast", "compare.DataSide.compare_hash",
             "compare.DataSide.compare_full", "compare.Verify"
         ])
-    if sec_level == "update-only" or sec_level == "all":
-        requests.extend([
+    if sec_level == "update-only" or sec_level == "read-write":
+        requests.update([
             "log.Log.open_logfile_local", "log.Log.close_logfile_local",
             "log.ErrorLog.open", "log.ErrorLog.isopen", "log.ErrorLog.close",
             "backup.DestinationStruct.set_rorp_cache",
@@ -225,8 +250,8 @@ def _set_allowed_requests(sec_level):
             "statistics.record_error",
             "log.ErrorLog.write_if_open", "fs_abilities.backup_set_globals"
         ])
-    if sec_level == "all":
-        requests.extend([
+    if sec_level == "read-write":
+        requests.update([
             "os.mkdir", "os.chown", "os.lchown", "os.rename", "os.unlink",
             "os.remove", "os.chmod", "os.makedirs",
             "rpath.delete_dir_no_files", "backup.DestinationStruct.patch",
@@ -237,8 +262,8 @@ def _set_allowed_requests(sec_level):
             "fs_abilities.single_set_globals", "regress.Regress",
             "manage.delete_earlier_than_local"
         ])
-    if Globals.server:
-        requests.extend([
+    if sec_class == "server":
+        requests.update([
             "SetConnections.init_connection_remote", "log.Log.setverbosity",
             "log.Log.setterm_verbosity", "Time.setprevtime_local",
             "Globals.postset_regexp_local",
@@ -246,9 +271,7 @@ def _set_allowed_requests(sec_level):
             "backup.DestinationStruct.set_session_info",
             "user_group.init_user_mapping", "user_group.init_group_mapping"
         ])
-    _allowed_requests = {}
-    for req in requests:
-        _allowed_requests[req] = None
+    return requests
 
 
 def _vet_filename(request, arglist):
@@ -268,8 +291,8 @@ def _vet_filename(request, arglist):
 
 def _vet_rpath(rp, request, arglist):
     """Internal function to validate that a specific path isn't restricted"""
-    if Globals.restrict_path and rp.conn is Globals.local_connection:
-        normalized, restrict = rp.normalize().path, Globals.restrict_path
+    if _restrict_path and rp.conn is Globals.local_connection:
+        normalized, restrict = rp.normalize().path, _restrict_path
         if restrict == b"/":
             return
         components = normalized.split(b"/")
@@ -291,4 +314,4 @@ def _raise_violation(reason, request, arglist):
         "\nCompared to {path} restricted {level}.\n".format(
             sv=reason, func=request.function_string,
             args=list(map(str, arglist)),
-            path=Globals.restrict_path, level=Globals.security_level))
+            path=_restrict_path, level=_security_level))
