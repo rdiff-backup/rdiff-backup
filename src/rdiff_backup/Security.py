@@ -38,6 +38,7 @@ _security_level = None
 # If this is set, it indicates that the remote connection should only
 # deal with paths inside of restrict_path.
 _restrict_path = None
+_restrict_path_list = []
 
 # This will store the list of functions that will be honored from
 # remote connections.
@@ -81,22 +82,30 @@ def initialize(security_class, cmdpairs,
 
     security_level and restrict_path are only of importance if in server class.
     """
-    global _allowed_requests, _security_level, _restrict_path
+    global _allowed_requests, _security_level
 
     security_level, restrict_path = _set_security_level(
         security_class, security_level, restrict_path, cmdpairs)
     _security_level = security_level
     if restrict_path:
-        _restrict_path = rpath.RPath(Globals.local_connection,
-                                     restrict_path).normalize().path
+        reset_restrict_path(rpath.RPath(Globals.local_connection,
+                                        restrict_path))
     _allowed_requests = _set_allowed_requests(security_class, security_level)
 
 
 def reset_restrict_path(rp):
-    """Reset restrict path to be within rpath"""
+    """
+    Reset global variable _restrict_path to be within rpath
+
+    Normalize the remote path and extract its path.
+    Also set the global variable _restrict_path_list as list of path components.
+    It is assumed that the new path is a proper path, else function will fail.
+    """
     assert rp.conn is Globals.local_connection, (
         "Function works locally not over '{conn}'.".format(conn=rp.conn))
+    global _restrict_path, _restrict_path_list
     _restrict_path = rp.normalize().path
+    _restrict_path_list = _restrict_path.split(b"/")
 
 
 def vet_request(request, arglist):
@@ -114,7 +123,7 @@ def vet_request(request, arglist):
     if request.function_string in ("Globals.set", "Globals.set_local"):
         if arglist[0] not in _disallowed_server_globals:
             return
-    _raise_violation("Invalid request", request, arglist)
+    _raise_violation("invalid request", request, arglist)
 
 
 def _set_security_level(security_class, security_level, restrict_path,
@@ -278,11 +287,11 @@ def _vet_filename(request, arglist):
     """Check to see if file operation is within the restrict_path"""
     i = _file_requests[request.function_string]
     if len(arglist) <= i:
-        _raise_violation("Argument list shorter than %d" % i + 1, request,
+        _raise_violation("argument list shorter than %d" % i + 1, request,
                          arglist)
     filename = arglist[i]
-    if not (isinstance(filename, bytes) or isinstance(filename, str)):
-        _raise_violation("Argument %d doesn't look like a filename" % i,
+    if not isinstance(filename, (bytes, str)):
+        _raise_violation("argument %d doesn't look like a filename" % i,
                          request, arglist)
 
     _vet_rpath(
@@ -292,24 +301,30 @@ def _vet_filename(request, arglist):
 def _vet_rpath(rp, request, arglist):
     """Internal function to validate that a specific path isn't restricted"""
     if _restrict_path and rp.conn is Globals.local_connection:
-        normalized, restrict = rp.normalize().path, _restrict_path
-        if restrict == b"/":
+        norm_path = rp.normalize().path
+        components = norm_path.split(b"/")
+        # we can't properly assess paths with parent directory, so we reject
+        if b".." in components:
+            _raise_violation("normalized path '{np}' can't contain "
+                             "parent directory '..'".format(np=norm_path),
+                             request, arglist)
+        # the restrict path being root is a special case, we could check it
+        # earlier but we would miss the previous checks
+        if _restrict_path == b"/":
             return
-        components = normalized.split(b"/")
-        # 3 cases for restricted dir /usr/foo:  /var, /usr/foobar, /usr/foo/..
-        if (not normalized.startswith(restrict)
-                or (len(normalized) > len(restrict)
-                    and normalized[len(restrict)] != ord("/"))
-                or b".." in components):
-            _raise_violation(
-                "Normalized path %s not within restricted path %s" %
-                (normalized, restrict), request, arglist)
+        # the normalized path must begin with the restricted path
+        # using lists, we avoid /bla/foobar being deemed within /bla/foo
+        if components[:len(_restrict_path_list)] != _restrict_path_list:
+            _raise_violation("normalized path '{np}' not within restricted "
+                             "path '{rp}'".format(np=norm_path,
+                                                  rp=_restrict_path),
+                             request, arglist)
 
 
 def _raise_violation(reason, request, arglist):
     """Raise a security violation about given request"""
     raise Violation(
-        "\nWARNING: Security Violation {sv} for function: {func}"
+        "\nWARNING: Security Violation due to {sv} for function: {func}"
         "\nwith arguments: {args}"
         "\nCompared to {path} restricted {level}.\n".format(
             sv=reason, func=request.function_string,

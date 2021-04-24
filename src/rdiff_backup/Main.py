@@ -83,6 +83,7 @@ def _main_run(arglist, security_override=False):
         # For test purposes only, hence we allow ourselves to overwrite a
         # "private" variable
         if security_override:
+            from rdiff_backup import Security
             Security._security_level = "override"
 
         ret_val = conn_act.check()

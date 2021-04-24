@@ -333,7 +333,7 @@ def _validate_number_locations_compat200(values, parser):
                          act=values.action, nr=locs_action_lens[values.action],
                          locs=values.locations))
     elif (locs_action_lens[values.action] < 0
-              and -locs_action_lens[values.action] > locs_len):
+            and -locs_action_lens[values.action] > locs_len):
         parser.error(message="Action {act} requires at least {nr} location(s) "
                      "instead of {locs}.".format(
                          act=values.action, nr=-locs_action_lens[values.action],
