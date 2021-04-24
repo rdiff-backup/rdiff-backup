@@ -40,8 +40,8 @@ The Action class has the following interface:
   name will be used in the code, and it doesn't need to be aligned with the name
   of the module or of the class (but it should). Only requirement is that it is
   unique or plug-ins will overwrite each other.
-* the class method `cls.get_security_class()` returns the security class of
-  the action plug-in, one of `backup`, `restore` or `validate`.
+* the class method `cls.get_security_class()` returns the security class of the action plug-in, one of `backup`, `restore`, `server` or `validate`.
+  A security class of `None` is only applicable to actions without client/server context (e.g. `info`).
 * the class method `cls.get_version()` returns the version of the plug-in as a
   string.
 * the class method `cls.add_action_subparser(sub_handler)` returns a subparser

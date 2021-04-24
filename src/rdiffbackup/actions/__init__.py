@@ -265,7 +265,7 @@ class BaseAction:
     name = None
 
     # type of action for security purposes, one of backup, restore, validate
-    # or server
+    # or server (or None if client/server isn't relevant)
     security = None
 
     # version of the action
@@ -420,6 +420,11 @@ class BaseAction:
             self.log("Temporary directory '{dir}' doesn't exist.".format(
                      dir=self.values.tempdir), self.log.ERROR)
             return_code |= 1
+        if (self.security is None
+                and "locations" in self.values and self.values.locations):
+            self.log("Action '{act}' must have a security class to handle "
+                     "locations".format(act=self.name), self.log.ERROR)
+            return_code |= 1
         return return_code
 
     def connect(self):
@@ -446,6 +451,7 @@ class BaseAction:
             self.connected_locations = list(
                 map(SetConnections.get_connected_rpath, cmdpairs))
         else:
+            Security.initialize(self.get_security_class(), [])
             self.connected_locations = []
 
         # once the connection is set, we can define "now" as being the current
