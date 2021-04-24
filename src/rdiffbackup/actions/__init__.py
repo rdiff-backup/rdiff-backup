@@ -26,6 +26,7 @@ plugins can inheritate default behaviors.
 import argparse
 import os
 import sys
+import tempfile
 import yaml
 from rdiff_backup import (
     Globals, rpath, Security, SetConnections, Time
@@ -409,13 +410,17 @@ class BaseAction:
         Try to check everything before returning and not force the user to fix
         their entries step by step.
         """
-        if self.values.action == self.name:
-            return 0
-        else:
+        return_code = 0
+        if self.values.action != self.name:
             self.log("Action '{act}' doesn't fit name of action class "
                      "'{name}'.".format(act=self.values.action, name=self.name),
                      self.log.ERROR)
-            return 1
+            return_code |= 1
+        if self.values.tempdir and not os.path.isdir(self.values.tempdir):
+            self.log("Temporary directory '{dir}' doesn't exist.".format(
+                     dir=self.values.tempdir), self.log.ERROR)
+            return_code |= 1
+        return return_code
 
     def connect(self):
         """
@@ -476,6 +481,12 @@ class BaseAction:
 
         Return 0 if everything looked good, else an error code.
         """
+        if self.values.tempdir:
+            # At least until Python 3.10, the module tempfile doesn't work
+            # properly,
+            # especially under Windows, if tempdir is stored as bytes.
+            # See https://github.com/python/cpython/pull/20442
+            tempfile.tempdir = self.values.tempdir
         # Set default change ownership flag, umask, relay regexps
         os.umask(0o77)
         SetConnections.UpdateGlobal("client_conn", Globals.local_connection)
