@@ -285,11 +285,15 @@ class LowLevelPipeConnection(Connection):
         return i.to_bytes(size, byteorder='big')
 
     def _get(self):
-        """Read an object from the pipe and return (req_num, value)"""
+        """
+        Read an object from the pipe and return (req_num, value)
+        """
         header_string = self.inpipe.read(9)
         if not len(header_string) == 9:
-            raise ConnectionReadError("Truncated header string (problem "
-                                      "probably originated remotely)")
+            raise ConnectionReadError(
+                "Truncated header <{hdr}> "
+                "(problem probably originated remotely)".format(
+                    hdr=header_string))
         format_string = header_string[0:1]
         req_num = self._b2i(header_string[1:2])
         length = self._b2i(header_string[2:])
@@ -297,7 +301,14 @@ class LowLevelPipeConnection(Connection):
         if format_string == b"q":
             raise ConnectionQuit("Received quit signal")
 
-        data = self._read(length)
+        try:
+            data = self._read(length)
+        except MemoryError:
+            raise ConnectionReadError(
+                "Impossibly high data amount evaluated in header <{hdr}> "
+                "(problem probably originated remotely)".format(
+                    hdr=header_string))
+
         if format_string == b"o":
             result = pickle.loads(data)
         elif format_string == b"b":
@@ -317,7 +328,10 @@ class LowLevelPipeConnection(Connection):
             result = Globals.connection_dict[self._b2i(data)]
         else:
             raise ConnectionReadError(
-                "Format character '{form}' invalid.".format(form=format_string))
+                "Format character '{form}' invalid in <{hdr}> "
+                "(problem probably originated remotely)".format(
+                    hdr=header_string, form=format_string))
+
         log.Log.conn("received", result, req_num)
         return (req_num, result)
 
