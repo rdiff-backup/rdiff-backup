@@ -26,6 +26,7 @@ plugins can inheritate default behaviors.
 import argparse
 import os
 import sys
+import tempfile
 import yaml
 from rdiff_backup import (
     Globals, rpath, Security, SetConnections, Time
@@ -264,7 +265,7 @@ class BaseAction:
     name = None
 
     # type of action for security purposes, one of backup, restore, validate
-    # or server
+    # or server (or None if client/server isn't relevant)
     security = None
 
     # version of the action
@@ -357,12 +358,16 @@ class BaseAction:
         log is a log.Log object and errlog a log.ErrorLog object.
         """
         self.values = values
+        self.log = log
+        self.errlog = errlog
         if self.values.remote_schema:
             self.remote_schema = os.fsencode(self.values.remote_schema)
         else:
             self.remote_schema = None
-        self.log = log
-        self.errlog = errlog
+        if self.values.remote_tempdir:
+            self.remote_tempdir = os.fsencode(self.values.remote_tempdir)
+        else:
+            self.remote_tempdir = None
 
     def __enter__(self):
         """
@@ -405,13 +410,22 @@ class BaseAction:
         Try to check everything before returning and not force the user to fix
         their entries step by step.
         """
-        if self.values.action == self.name:
-            return 0
-        else:
+        return_code = 0
+        if self.values.action != self.name:
             self.log("Action '{act}' doesn't fit name of action class "
                      "'{name}'.".format(act=self.values.action, name=self.name),
                      self.log.ERROR)
-            return 1
+            return_code |= 1
+        if self.values.tempdir and not os.path.isdir(self.values.tempdir):
+            self.log("Temporary directory '{dir}' doesn't exist.".format(
+                     dir=self.values.tempdir), self.log.ERROR)
+            return_code |= 1
+        if (self.security is None
+                and "locations" in self.values and self.values.locations):
+            self.log("Action '{act}' must have a security class to handle "
+                     "locations".format(act=self.name), self.log.ERROR)
+            return_code |= 1
+        return return_code
 
     def connect(self):
         """
@@ -430,11 +444,14 @@ class BaseAction:
             cmdpairs = SetConnections.get_cmd_pairs(
                 self.values.locations,
                 remote_schema=self.remote_schema,
-                ssh_compression=self.values.ssh_compression)
+                ssh_compression=self.values.ssh_compression,
+                remote_tempdir=self.remote_tempdir
+            )
             Security.initialize(self.get_security_class(), cmdpairs)
             self.connected_locations = list(
                 map(SetConnections.get_connected_rpath, cmdpairs))
         else:
+            Security.initialize(self.get_security_class(), [])
             self.connected_locations = []
 
         # once the connection is set, we can define "now" as being the current
@@ -470,6 +487,12 @@ class BaseAction:
 
         Return 0 if everything looked good, else an error code.
         """
+        if self.values.tempdir:
+            # At least until Python 3.10, the module tempfile doesn't work
+            # properly,
+            # especially under Windows, if tempdir is stored as bytes.
+            # See https://github.com/python/cpython/pull/20442
+            tempfile.tempdir = self.values.tempdir
         # Set default change ownership flag, umask, relay regexps
         os.umask(0o77)
         SetConnections.UpdateGlobal("client_conn", Globals.local_connection)

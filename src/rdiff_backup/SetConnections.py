@@ -50,25 +50,22 @@ class SetConnectionsException(Exception):
     pass
 
 
-def get_cmd_pairs(locations, remote_schema=None, ssh_compression=True):
+def get_cmd_pairs(locations, remote_schema=None, ssh_compression=True,
+                  remote_tempdir=None):
     """Map the given file descriptions into command pairs
 
     Command pairs are tuples cmdpair with length 2.  cmdpair[0] is
     None iff it describes a local path, and cmdpair[1] is the path.
 
     """
-    assert remote_schema is None or isinstance(remote_schema, bytes), (
-        "remote_schema parameter must be bytes or None not {ths}.".format(
-            ths=type(remote_schema)))
-
     global __cmd_schema
     if remote_schema:
         __cmd_schema = remote_schema
     elif not ssh_compression:
         __cmd_schema = __cmd_schema_no_compress
 
-    if Globals.remote_tempdir:
-        __cmd_schema += (b" --tempdir=" + Globals.remote_tempdir)
+    if remote_tempdir:
+        __cmd_schema += (b" --tempdir=" + remote_tempdir)
 
     if not locations:
         return []

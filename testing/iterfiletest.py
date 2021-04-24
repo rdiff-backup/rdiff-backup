@@ -17,7 +17,7 @@ class FileException:
     def read(self, chars):
         self.count += chars
         if self.count > self.max:
-            raise IOError(13, "Permission Denied")
+            raise OSError(13, "Permission Denied")
         return b"a" * chars
 
     def close(self):
@@ -55,7 +55,7 @@ class testIterFile(unittest.TestCase):
         new_iter = IterWrappingFile(FileWrappingIter(iter([f, b"foo"])))
         f_out = next(new_iter)
         self.assertEqual(f_out.read(50000), b"a" * 50000)
-        with self.assertRaises(IOError):
+        with self.assertRaises(OSError):
             buf = f_out.read(190 * 1024)  # noqa: F841
 
         self.assertEqual(next(new_iter), b"foo")

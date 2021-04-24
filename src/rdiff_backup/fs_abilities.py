@@ -150,7 +150,7 @@ class FSAbilities:
         """
         if not self.root_rp.isdir():
             assert not self.root_rp.lstat(), (
-                "Root path '{rp!s}' can't be writable, exist and not be "
+                "Root path '{rp}' can't be writable, exist and not be "
                 "a directory.".format(rp=self.root_rp))
             self.root_rp.mkdir()
         subdir = self.root_rp.get_temp_rpath()
@@ -183,7 +183,7 @@ class FSAbilities:
         try:
             tmp_rp.chown(uid // 2 + 1, gid // 2 + 1)  # just choose random uid/gid
             tmp_rp.chown(0, 0)
-        except (IOError, OSError, AttributeError):
+        except (OSError, AttributeError):
             self.ownership = 0
         else:
             self.ownership = 1
@@ -199,12 +199,11 @@ class FSAbilities:
         try:
             hl_dest.hardlink(hl_source.path)
             if hl_source.getinode() != hl_dest.getinode():
-                raise IOError(errno.EOPNOTSUPP, "Hard links don't compare")
-        except (IOError, OSError, AttributeError):
+                raise OSError(errno.EOPNOTSUPP, "Hard links don't compare")
+        except (OSError, AttributeError):
             if Globals.preserve_hardlinks != 0:
-                log.Log(
-                    "Warning: hard linking not supported by filesystem "
-                    "at %s" % self.root_rp.get_safepath(), 3)
+                log.Log("Warning: hard linking not supported by filesystem "
+                        "at {rp}".format(rp=self.root_rp), 3)
             self.hardlinks = None
         else:
             self.hardlinks = 1
@@ -213,10 +212,9 @@ class FSAbilities:
         """Set self.fsync_dirs if directories can be fsync'd"""
         try:
             testdir.fsync()
-        except (IOError, OSError):
-            log.Log(
-                "Directories on file system at %s are not fsyncable.\n"
-                "Assuming it's unnecessary." % testdir.get_safepath(), 4)
+        except OSError:
+            log.Log("Directories on file system at {rp} are not fsyncable."
+                    "Assuming it's unnecessary.".format(rp=testdir), 4)
             self.fsync_dirs = 0
         else:
             self.fsync_dirs = 1
@@ -231,11 +229,10 @@ class FSAbilities:
             ord_rp = subdir.append(ordinary_filename)
             ord_rp.touch()
             ord_rp.delete()
-        except (IOError, OSError) as exc:
+        except OSError as exc:
             log.Log.FatalError(
-                "File with normal name '{file}' couldn't be created, "
-                "and failed with '{exc}'.".format(
-                    file=ord_rp.get_safepath(), exc=exc))
+                "File with normal name '{rp}' couldn't be created, "
+                "and failed with '{exc}'.".format(rp=ord_rp, exc=exc))
 
         # Try path with UTF-8 encoded character
         extended_filename = (
@@ -244,14 +241,14 @@ class FSAbilities:
         try:
             ext_rp = subdir.append(extended_filename)
             ext_rp.touch()
-        except (IOError, OSError):
+        except OSError:
             if ext_rp and ext_rp.lstat():
                 ext_rp.delete()  # just to be very sure
             self.extended_filenames = 0
         else:
             try:
                 ext_rp.delete()
-            except (IOError, OSError):
+            except OSError:
                 # Broken CIFS setups will sometimes create UTF-8 files
                 # and even stat them, but not let us perform file operations
                 # on them. Test file cannot be deleted. UTF-8 chars not in the
@@ -273,14 +270,14 @@ class FSAbilities:
         try:
             win_rp = subdir.append(win_reserved_filename)
             win_rp.touch()
-        except (IOError, OSError):
+        except OSError:
             if win_rp and win_rp.lstat():
                 win_rp.delete()  # just to be very sure
             self.win_reserved_filenames = 1
         else:
             try:
                 win_rp.delete()
-            except (IOError, OSError):
+            except OSError:
                 self.win_reserved_filenames = 1
             else:
                 self.win_reserved_filenames = 0
@@ -297,19 +294,17 @@ class FSAbilities:
         try:
             import posix1e
         except ImportError:
-            log.Log(
-                "Unable to import module posix1e from pylibacl "
-                "package.\nPOSIX ACLs not supported on filesystem at %s" %
-                rp.get_safepath(), 4)
+            log.Log("Unable to import module posix1e from pylibacl package. "
+                    "POSIX ACLs not supported on filesystem at {rp}".format(
+                        rp=rp), 4)
             self.acls = 0
             return
 
         try:
             posix1e.ACL(file=rp.path)
-        except IOError:
-            log.Log(
-                "POSIX ACLs not supported by filesystem at %s" %
-                rp.get_safepath(), 4)
+        except OSError:
+            log.Log("POSIX ACLs not supported by filesystem at {rp}".format(
+                rp=rp), 4)
             self.acls = 0
         else:
             self.acls = 1
@@ -327,10 +322,10 @@ class FSAbilities:
                 # we know that (fuse-)exFAT 1.3.0 takes 1sec to register the
                 # deletion (July 2020)
                 log.Log.FatalError(
-                    "We're sorry but the target file system at '%s' isn't "
+                    "We're sorry but the target file system at '{rp}' isn't "
                     "deemed reliable enough for a backup. It takes too long "
-                    "or doesn't register case insensitive deletion of files."
-                    % subdir.get_safepath())
+                    "or doesn't register case insensitive deletion of "
+                    "files.".format(rp=subdir))
             self.case_sensitive = 0
         else:
             upper_a.delete()
@@ -374,9 +369,9 @@ class FSAbilities:
         if not triple:
             log.Log(
                 "Warning: could not determine case sensitivity of "
-                "source directory at\n  %s\n"
+                "source directory at\n  {rp}\n"
                 "because we can't find any files with letters in them.\n"
-                "It will be treated as case sensitive." % rp.get_safepath(), 2)
+                "It will be treated as case sensitive.".format(rp=rp), 2)
             self.case_sensitive = 1
             return
 
@@ -387,7 +382,7 @@ class FSAbilities:
         assert rp.conn is Globals.local_connection, (
             "Action only foreseen locally and not over {conn}.".format(
                 conn=rp.conn))
-        assert rp.lstat(), "Path '{rp!s}' must exist to test EAs.".format(rp=rp)
+        assert rp.lstat(), "Path '{rp}' must exist to test EAs.".format(rp=rp)
         if Globals.eas_active == 0:
             log.Log(
                 "Extended attributes test skipped. rdiff-backup run "
@@ -401,8 +396,8 @@ class FSAbilities:
                 import xattr
             except ImportError:
                 log.Log(
-                    "Unable to import module (py)xattr.\nExtended attributes not "
-                    "supported on filesystem at %s" % (rp.get_safepath(), ), 4)
+                    "Unable to import module (py)xattr. Extended attributes "
+                    "not supported on filesystem at {rp}".format(rp=rp), 4)
                 self.eas = 0
                 return
 
@@ -412,19 +407,18 @@ class FSAbilities:
             if write:
                 xattr.set(rp.path, b"user.test", test_ea)
                 read_ea = xattr.get(rp.path, b"user.test")
-        except IOError:
-            log.Log(
-                "Extended attributes not supported by "
-                "filesystem at %s" % (rp.get_safepath(), ), 4)
+        except OSError:
+            log.Log("Extended attributes not supported by "
+                    "filesystem at {rp}".format(rp=rp), 4)
             self.eas = 0
         else:
             if write and read_ea != test_ea:
                 log.Log(
                     "Extended attributes support is broken on filesystem at "
-                    "%s.\nPlease upgrade the filesystem driver, contact the "
-                    "developers,\nor use the --no-eas option to disable "
-                    "extended attributes\nsupport and suppress this message." %
-                    (rp.get_safepath(), ), 1)
+                    "{rp}. Please upgrade the filesystem driver, contact the "
+                    "developers, or use the --no-eas option to disable "
+                    "extended attributes support and suppress this "
+                    "message.".format(rp=rp), 1)
                 self.eas = 0
             else:
                 self.eas = 1
@@ -434,7 +428,7 @@ class FSAbilities:
         assert dir_rp.conn is Globals.local_connection, (
             "Action only foreseen locally and not over {conn}.".format(
                 conn=dir_rp.conn))
-        assert dir_rp.lstat(), "Path '{rp!s}' must exist to test ACLs.".format(
+        assert dir_rp.lstat(), "Path '{rp}' must exist to test ACLs.".format(
             rp=dir_rp)
         if Globals.win_acls_active == 0:
             log.Log(
@@ -447,9 +441,8 @@ class FSAbilities:
             import win32security
             import pywintypes
         except ImportError:
-            log.Log(
-                "Unable to import win32security module. Windows ACLs\n"
-                "not supported by filesystem at %s" % dir_rp.get_safepath(), 4)
+            log.Log("Unable to import win32security module. Windows ACLs not "
+                    "supported by filesystem at {rp}".format(rp=dir_rp), 4)
             self.win_acls = 0
             return
         try:
@@ -470,18 +463,16 @@ class FSAbilities:
                     sd.GetSecurityDescriptorGroup(),
                     sd.GetSecurityDescriptorDacl(), None)
         except (OSError, AttributeError, pywintypes.error):
-            log.Log(
-                "Unable to load a Windows ACL.\nWindows ACLs not supported "
-                "by filesystem at %s" % dir_rp.get_safepath(), 4)
+            log.Log("Unable to load a Windows ACL. Windows ACLs not supported "
+                    "by filesystem at {rp}".format(rp=dir_rp), 4)
             self.win_acls = 0
             return
 
         try:
             win_acls.init_acls()
         except (OSError, AttributeError, pywintypes.error):
-            log.Log(
-                "Unable to init win_acls.\nWindows ACLs not supported by "
-                "filesystem at %s" % dir_rp.get_safepath(), 4)
+            log.Log("Unable to init win_acls. Windows ACLs not supported by "
+                    "filesystem at {rp}".format(rp=dir_rp), 4)
             self.win_acls = 0
             return
         self.win_acls = 1
@@ -539,7 +530,7 @@ class FSAbilities:
                 os.path.join(reg_rp.path, b'..namedfork', b'rsrc'), 'rb')
             s_back = fp_read.read()
             fp_read.close()
-        except (OSError, IOError):
+        except OSError:
             self.resource_forks = 0
         else:
             self.resource_forks = (s_back == s)
@@ -560,7 +551,7 @@ class FSAbilities:
                     fp = rfork.open('rb')
                     fp.read()
                     fp.close()
-                except (OSError, IOError):
+                except OSError:
                     self.resource_forks = 0
                     return
                 self.resource_forks = 1
@@ -578,7 +569,7 @@ class FSAbilities:
             tmpf_rp.chmod(0o7777, 4)
             tmpd_rp.chmod(0o7000, 4)
             tmpd_rp.chmod(0o7777, 4)
-        except (OSError, IOError):
+        except OSError:
             self.high_perms = 0
         else:
             self.high_perms = 1
@@ -637,7 +628,7 @@ class FSAbilities:
         Windows and Linux/FAT32 will not preserve trailing spaces or periods.
         Linux/FAT32 behaves inconsistently: It will give an OSError,22 if
         os.mkdir() is called on a directory name with a space at the end, but
-        will give an IOError("invalid mode") if you attempt to create a filename
+        will give an OSError("invalid mode") if you attempt to create a filename
         with a space at the end. However, if a period is placed at the end of
         the name, Linux/FAT32 is consistent with Cygwin and Native Windows.
         """
@@ -645,14 +636,14 @@ class FSAbilities:
         period_rp = testdir.append("foo.")
         if period_rp.lstat():
             log.Log.FatalError(
-                "File '{rp!s}' already exists where it shouldn't, something "
+                "File '{rp}' already exists where it shouldn't, something "
                 "is very wrong with your file system.".format(rp=period_rp))
 
         tmp_rp = testdir.append("foo")
         tmp_rp.touch()
         if not tmp_rp.lstat():
             log.Log.FatalError(
-                "File '{rp!s}' doesn't exist even though it's been created, "
+                "File '{rp}' doesn't exist even though it's been created, "
                 "something is very wrong with your file system.".format(
                     rp=tmp_rp))
 
@@ -690,12 +681,10 @@ class FSAbilities:
                 return
 
         # no file could be found to do any test
-        log.Log(
-            "Warning: could not determine if source directory at\n"
-            "  %s\npermits trailing spaces or periods in "
-            "filenames because we can't find any files.\n"
-            "It will be treated as permitting such files." %
-            rp.get_safepath(), 2)
+        log.Log("Warning: could not determine if source directory at "
+                "  {rp} permits trailing spaces or periods in "
+                "filenames because we can't find any files. "
+                "It will be treated as permitting such files.".format(rp=rp), 2)
         self.escape_trailing_spaces = 0
 
 
@@ -900,13 +889,12 @@ class BackupSetGlobals(SetGlobals):
                 ctq_rp.write_bytes(suggested_ctq)
                 return (suggested_ctq, 1)
             else:
-                log.Log.FatalError(
-                    """New quoting requirements!
+                log.Log.FatalError("""New quoting requirements!
 
-The quoting chars this session needs %r do not match
-the repository settings %r listed in
+The quoting chars this session needs '{sctq}' do not match
+the repository settings '{actq}' listed in
 
-%s
+{rp}
 
 This may be caused when you copy an rdiff-backup repository from a
 normal file system onto a windows one that cannot support the same
@@ -915,8 +903,8 @@ case-insensitive one that previously only had case-insensitive ones
 backed up onto it.
 
 By specifying the --force option, rdiff-backup will migrate the
-repository from the old quoting chars to the new ones.""" %
-                    (suggested_ctq, actual_ctq, ctq_rp.get_safepath()))
+repository from the old quoting chars to the new ones.""".format(
+                    sctq=suggested_ctq, actq=actual_ctq, rp=ctq_rp))
         return (actual_ctq, None)  # Maintain Globals override
 
 

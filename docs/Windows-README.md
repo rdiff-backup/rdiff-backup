@@ -25,7 +25,8 @@ and copy the four enclosed files to the same directory as *rdiff-backup.exe*.
 
 You will need to follow either method only once.
 
-> **NOTE:** you might want to [enable long paths support in Windows 10 v1607 or later](https://docs.microsoft.com/windows/win32/fileio/maximum-file-path-limitation#enable-long-paths-in-windows-10-version-1607-and-later)
+> **NOTE:** you might want to [enable long paths support in Windows 10 v1607 or later](https://docs.microsoft.com/windows/win32/fileio/maximum-file-path-limitation#enable-long-paths-in-windows-10-version-1607-and-later).
+A simple alternative from the command line is to query the long path support with `reg query HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled` (the result will be `0x0` for disabled or `0x1` for enabled), and enable it with `reg add HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f`.
 
 ## Additional Issues
 

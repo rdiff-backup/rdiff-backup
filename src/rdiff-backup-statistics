@@ -77,7 +77,7 @@ def parse_args():
         os.path.join(os.fsencode(args[0]), b"rdiff-backup-data"),
     )
     if not Globals.rbdir.isdir():
-        sys.exit("Directory %s not found" % (Globals.rbdir.get_safepath(),))
+        sys.exit("Directory {rp} not found".format(rp=Globals.rbdir))
 
 
 def usage(rc):
@@ -141,9 +141,8 @@ class StatisticsRPaths:
             if time in filestat_dict:
                 result.append((session_dict[time], filestat_dict[time]))
             else:
-                sys.stderr.write(
-                    "No file_statistics to match '%s'\n" % session_dict[time].get_safepath()
-                )
+                sys.stderr.write("No file_statistics to match '{rp}'".format(
+                    rp=session_dict[time]))
         return result
 
 

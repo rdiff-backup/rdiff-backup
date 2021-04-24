@@ -431,10 +431,10 @@ def compare_recursive(src_rp, dest_rp,
 
     """
 
-    Log(
-        "Comparing %s and %s, hardlinks %s, eas %s, acls %s" %
-        (src_rp.get_safepath(), dest_rp.get_safepath(), compare_hardlinks,
-         compare_eas, compare_acls), 3)
+    Log("Comparing {srp} and {drp}, hardlinks {chl}, "
+        "eas {cea}, acls {cacl}".format(
+            srp=src_rp, drp=dest_rp, chl=compare_hardlinks,
+            cea=compare_eas, cacl=compare_acls), 3)
     if compare_hardlinks:
         reset_hardlink_dicts()
     src_iter, dest_iter = _get_selection_functions(

@@ -261,7 +261,7 @@ class TargetStruct:
         """
         ITR = rorpiter.IterTreeReducer(PatchITRB, [target])
         for diff in rorpiter.FillInIter(diff_iter, target):
-            log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
+            log.Log("Processing changed file {rp}".format(rp=diff), 5)
             ITR(diff.index, diff)
         ITR.finish_processing()
         target.setdata()
@@ -446,10 +446,9 @@ class RestoreFile:
         def get_fp():
             current_fp = self._get_first_fp()
             for inc_diff in self.relevant_incs[1:]:
-                log.Log("Applying patch %s" % (inc_diff.get_safeindexpath(), ),
-                        7)
+                log.Log("Applying patch {rp}".format(rp=inc_diff), 7)
                 assert inc_diff.getinctype() == b'diff', (
-                    "Path '{irp!s}' must be of type 'diff'.".format(
+                    "Path '{irp!r}' must be of type 'diff'.".format(
                         irp=inc_diff))
                 delta_fp = inc_diff.open("rb", inc_diff.isinccompressed())
                 new_fp = tempfile.TemporaryFile()
@@ -465,16 +464,14 @@ class RestoreFile:
             return io.BytesIO(b'')
 
         if not self.relevant_incs[-1].isreg():
-            log.Log(
-                """Warning: Could not restore file %s!
+            log.Log("""Warning: Could not restore file {rp}!
 
 A regular file was indicated by the metadata, but could not be
 constructed from existing increments because last increment had type
-%s.  Instead of the actual file's data, an empty length file will be
+{ityp}.  Instead of the actual file's data, an empty length file will be
 created.  This error is probably caused by data loss in the
-rdiff-backup destination directory, or a bug in rdiff-backup""" %
-                (self.mirror_rp.get_safeindexpath(),
-                 self.relevant_incs[-1].lstat()), 2)
+rdiff-backup destination directory, or a bug in rdiff-backup""".format(
+                rp=self.mirror_rp, ityp=self.relevant_incs[-1].lstat()), 2)
             return io.BytesIO()
         return robust.check_common_error(error_handler, get_fp)
 
@@ -537,7 +534,7 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
             for filename in filenames:
                 rp = inc_rpath.append(filename)
                 assert rp.isincfile(), (
-                    "Path '{mrp!s}' must be an increment file.".format(mrp=rp))
+                    "Path '{mrp}' must be an increment file.".format(mrp=rp))
                 inc_list.append(rp)
             return inc_list
 
@@ -553,7 +550,7 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
         """Return first file object from relevant inc list"""
         first_inc = self.relevant_incs[0]
         assert first_inc.getinctype() == b'snapshot', (
-            "Path '{srp!s}' must be of type 'snapshot'.".format(
+            "Path '{srp}' must be of type 'snapshot'.".format(
                 srp=first_inc))
         if not first_inc.isinccompressed():
             return first_inc.open("rb")
@@ -569,7 +566,7 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
     def _yield_mirrorrps(self, mirrorrp):
         """Yield mirrorrps underneath given mirrorrp"""
         assert mirrorrp.isdir(), (
-            "Mirror path '{mrp!s}' must be a directory.".format(mrp=mirrorrp))
+            "Mirror path '{mrp}' must be a directory.".format(mrp=mirrorrp))
         for filename in robust.listrp(mirrorrp):
             rp = mirrorrp.append(filename)
             if rp.index != (b'rdiff-backup-data', ):
@@ -579,7 +576,8 @@ rdiff-backup destination directory, or a bug in rdiff-backup""" %
         """Return printable string of relevant incs, used for debugging"""
         inc_header = ["---- Relevant incs for %s" % ("/".join(self.index), )]
         inc_header.extend([
-            "%s %s %s" % (inc.getinctype(), inc.lstat(), inc.path)
+            "{itp} {ils} {irp}".format(
+                itp=inc.getinctype(), ils=inc.lstat(), irp=inc)
             for inc in self.relevant_incs
         ])
         inc_header.append("--------------------------------")
@@ -624,7 +622,7 @@ class PatchITRB(rorpiter.ITRBranch):
         """Start processing directory - record information for later"""
         base_rp = self.base_rp = self._get_rp_from_root(index)
         assert diff_rorp.isdir() or base_rp.isdir() or not base_rp.index, (
-            "Either difference '{drp!s}' or base '{brp!s}' path must be a "
+            "Either difference '{drp}' or base '{brp}' path must be a "
             "directory or the index of the base be empty.".format(
                 drp=diff_rorp, brp=base_rp))
         if diff_rorp.isdir():
@@ -636,7 +634,7 @@ class PatchITRB(rorpiter.ITRBranch):
         """Finish processing directory"""
         if self.dir_update:
             assert self.base_rp.isdir(), (
-                "Base path '{brp!s}' must be a directory.".format(
+                "Base path '{brp}' must be a directory.".format(
                     brp=self.base_rp))
             rpath.copy_attribs(self.dir_update, self.base_rp)
         else:
@@ -661,7 +659,7 @@ class PatchITRB(rorpiter.ITRBranch):
             copy_report = rpath.copy(diff_rorp, new)
         else:
             assert diff_rorp.get_attached_filetype() == 'diff', (
-                "File '{drp!s}' must be of type '{dtype}'.".format(
+                "File '{drp}' must be of type '{dtype}'.".format(
                     drp=diff_rorp, dtype='diff'))
             copy_report = Rdiff.patch_local(basis_rp, diff_rorp, new)
         self._check_hash(copy_report, diff_rorp)
@@ -673,18 +671,16 @@ class PatchITRB(rorpiter.ITRBranch):
         if not diff_rorp.isreg():
             return
         if not diff_rorp.has_sha1():
-            log.Log(
-                "Hash for %s missing, cannot check" %
-                (diff_rorp.get_safeindexpath()), 2)
+            log.Log("Hash for {rp} missing, cannot check".format(
+                rp=diff_rorp), 2)
         elif copy_report.sha1_digest == diff_rorp.get_sha1():
-            log.Log(
-                "Hash %s of %s verified" % (diff_rorp.get_sha1(),
-                                            diff_rorp.get_safeindexpath()), 6)
+            log.Log("Hash {hsh} of {rp} verified".format(
+                hsh=diff_rorp.get_sha1(), rp=diff_rorp), 6)
         else:
-            log.Log(
-                "Warning: Hash %s of %s\ndoesn't match recorded hash %s!" %
-                (copy_report.sha1_digest, diff_rorp.get_safeindexpath(),
-                 diff_rorp.get_sha1()), 2)
+            log.Log("Warning: Hash {hsh} of {rp}\n"
+                    "doesn't match recorded hash {rhsh}!".format(
+                        hsh=copy_report.sha1_digest, rp=diff_rorp,
+                        rhsh=diff_rorp.get_sha1()), 2)
 
     def _prepare_dir(self, diff_rorp, base_rp):
         """Prepare base_rp to turn into a directory"""
@@ -702,7 +698,7 @@ class PatchITRB(rorpiter.ITRBranch):
 
         """
         assert diff_rorp.get_attached_filetype() == 'snapshot', (
-            "File '{drp!s}' must be of type '{dtype}'.".format(
+            "File '{drp!r}' must be of type '{dtype}'.".format(
                 drp=diff_rorp, dtype='snapshot'))
         self.dir_replacement = base_rp.get_temp_rpath(sibling=True)
         rpath.copy_with_attribs(diff_rorp, self.dir_replacement)
@@ -823,8 +819,7 @@ def ListChangedSince(mirror_rp, inc_rp, restore_to_time):
             continue
         else:
             change = "changed"
-        path_desc = (old_rorp and old_rorp.get_safeindexpath()
-                     or cur_rorp.get_safeindexpath())
+        path_desc = (old_rorp and str(old_rorp) or str(cur_rorp))
         yield rpath.RORPath(("%-7s %s" % (change, path_desc), ))
     MirrorStruct.close_rf_cache()
 
@@ -859,7 +854,7 @@ def get_inclist(inc_rpath):
         if inc_info and inc_info[3] == basename:
             inc = parent_dir.append(filename)
             assert inc.isincfile(), (
-                "Path '{irp!s}' must be an increment file".format(irp=inc))
+                "Path '{irp!r}' must be an increment file".format(irp=inc))
             inc_list.append(inc)
     return inc_list
 

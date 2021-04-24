@@ -144,7 +144,7 @@ def get_mirror_inc_rps(rorp_pair, mirror_root, inc_root=None):
         index = new_rorp.index
     else:
         log.Log.FatalError(
-            "Neither old '{orp!s}' nor new path '{nrp!s}' is existing.".format(
+            "Neither old '{orp}' nor new path '{nrp}' is existing.".format(
                 orp=old_rorp, nrp=new_rorp))
 
     alt_inc, inc_rp = find_inc_pair(index, mirror_rp, alt_mirror, alt_inc)
@@ -169,9 +169,8 @@ def update_rf(rf, rorp, mirror_root):
 
     def update_incs(rf, inc_base):
         """Swap inclist in rf with those with base inc_base and return"""
-        log.Log(
-            "Restoring with increment base %s for file %s" %
-            (_safe_str(inc_base), rorp.get_safeindexpath()), 6)
+        log.Log("Restoring with increment base {inc} for file {rp}".format(
+            inc=_safe_str(inc_base), rp=rf), 6)
         rf.inc_rp = _get_long_rp(inc_base)
         rf.inc_list = _get_inclist(inc_base)
         rf.set_relevant_incs()
@@ -281,7 +280,7 @@ def _get_next_free_filename():
     filename = b'%i' % _free_name_counter
     rp = _get_long_rp(filename)
     assert not rp.lstat(), (
-        "Unexpected file '{rp!s}' found".format(rp=rp))
+        "Unexpected file '{rp}' found".format(rp=rp))
     _free_name_counter += 1
     write_next_free(_free_name_counter)
     return filename
@@ -298,8 +297,13 @@ def _check_new_index(base, index, make_dirs=0):
     def wrap_call(func, *args):
         try:
             result = func(*args)
-        except EnvironmentError as exc:
-            if (exc.errno == errno.ENAMETOOLONG):
+        except OSError as exc:
+            # Windows with enabled long paths seems to consider too long
+            # filenames as having an incorrect syntax, but only under certain
+            # circumstances
+            if (exc.errno == errno.ENAMETOOLONG
+                    or (exc.errno == errno.EINVAL
+                        and hasattr(exc, "winerror") and exc.winerror == 123)):
                 return None
             raise
         return result

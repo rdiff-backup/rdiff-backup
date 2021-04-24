@@ -33,7 +33,7 @@ def Increment(new, mirror, incpref):
     file to incpref.
 
     """
-    log.Log("Incrementing mirror file %s" % mirror.get_safepath(), 5)
+    log.Log("Incrementing mirror file {rp}".format(rp=mirror), 5)
     if ((new and new.isdir()) or mirror.isdir()) and not incpref.lstat():
         incpref.mkdir()
 
@@ -70,7 +70,7 @@ def get_inc(rp, typestr, time=None):
         incrp = rp.__class__(rp.conn, dirname, (addtostr(basename), ))
     if incrp.lstat():
         log.Log.FatalError(
-            "New increment path '{rp!s}' shouldn't exist, something went "
+            "New increment path '{rp}' shouldn't exist, something went "
             "really wrong.".format(rp=incrp))
     return incrp
 

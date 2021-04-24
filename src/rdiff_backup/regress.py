@@ -115,9 +115,7 @@ class RegressITRB(rorpiter.ITRBranch):
     def fast_process_file(self, index, rf):
         """Process when nothing is a directory"""
         if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
-            log.Log(
-                "Regressing file %s" % (rf.metadata_rorp.get_safeindexpath()),
-                5)
+            log.Log("Regressing file {rp}".format(rp=rf.metadata_rorp), 5)
             if rf.metadata_rorp.isreg():
                 self._restore_orig_regfile(rf)
             else:
@@ -129,7 +127,7 @@ class RegressITRB(rorpiter.ITRBranch):
                 else:
                     rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
         if rf.regress_inc:
-            log.Log("Deleting increment %s" % rf.regress_inc.get_safepath(), 5)
+            log.Log("Deleting increment {rp}".format(rp=rf.regress_inc), 5)
             rf.regress_inc.delete()
 
     def start_process_directory(self, index, rf):
@@ -151,26 +149,24 @@ class RegressITRB(rorpiter.ITRBranch):
             if rf.mirror_rp.isdir():
                 rf.mirror_rp.setdata()
                 if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
-                    log.Log(
-                        "Regressing attributes of %s" %
-                        rf.mirror_rp.get_safepath(), 5)
+                    log.Log("Regressing attributes of {rp}".format(rp=rf), 5)
                     rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
             else:
                 rf.mirror_rp.delete()
-                log.Log("Regressing file %s" % rf.mirror_rp.get_safepath(), 5)
+                log.Log("Regressing file {rp}".format(rp=rf.mirror_rp), 5)
                 rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
         else:  # replacing a dir with some other kind of file
             assert rf.mirror_rp.isdir(), (
-                "Mirror '{mrp!s}' can only be a directory.".format(
+                "Mirror '{mrp!r}' can only be a directory.".format(
                     mrp=rf.mirror_rp))
-            log.Log("Replacing directory %s" % rf.mirror_rp.get_safepath(), 5)
+            log.Log("Replacing directory {rp}".format(rp=rf), 5)
             if rf.metadata_rorp.isreg():
                 self._restore_orig_regfile(rf)
             else:
                 rf.mirror_rp.delete()
                 rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
         if rf.regress_inc:
-            log.Log("Deleting increment %s" % rf.regress_inc.get_safepath(), 5)
+            log.Log("Deleting increment {rp}".format(rp=rf), 5)
             rf.regress_inc.delete()
 
     def _restore_orig_regfile(self, rf):
@@ -182,7 +178,7 @@ class RegressITRB(rorpiter.ITRBranch):
 
         """
         assert rf.metadata_rorp.isreg(), (
-            "Metadata path '{mrp!s}' can only be regular file.".format(
+            "Metadata path '{mrp}' can only be regular file.".format(
                 mrp=rf.metadata_rorp))
         if rf.mirror_rp.isreg():
             tf = rf.mirror_rp.get_temp_rpath(sibling=True)
@@ -361,7 +357,7 @@ def _regress_rbdir(meta_manager):
 
     for new_rp in meta_manager.timerpmap[unsuccessful_backup_time]:
         if new_rp.getincbase_bname() != b'current_mirror':
-            log.Log("Deleting old diff at %s" % new_rp.get_safepath(), 5)
+            log.Log("Deleting old diff at {rp}".format(rp=new_rp), 5)
             new_rp.delete()
 
     for rp in meta_diffs:
@@ -390,7 +386,7 @@ def _recreate_meta(meta_manager):
     finalrp = Globals.rbdir.append(
         b"mirror_metadata.%b.snapshot.gz" % Time.timetobytes(regress_time))
     assert not finalrp.lstat(), (
-        "Metadata path '{mrp!s}' shouldn't exist.".format(mrp=finalrp))
+        "Metadata path '{mrp}' shouldn't exist.".format(mrp=finalrp))
     rpath.rename(temprp[0], finalrp)
     if Globals.fsync_directories:
         Globals.rbdir.fsync()
@@ -434,10 +430,9 @@ def _iterate_meta_rfs(mirror_rp, inc_rp):
     for raw_rf, metadata_rorp in collated:
         raw_rf = longname.update_regressfile(raw_rf, metadata_rorp, mirror_rp)
         if not raw_rf:
-            log.Log(
-                "Warning, metadata file has entry for %s,\n"
-                "but there are no associated files." %
-                (metadata_rorp.get_safeindexpath(), ), 2)
+            log.Log("Warning, metadata file has entry for {rp}, "
+                    "but there are no associated files.".format(
+                        rp=metadata_rorp), 2)
             continue
         raw_rf.set_metadata_rorp(metadata_rorp)
         yield raw_rf

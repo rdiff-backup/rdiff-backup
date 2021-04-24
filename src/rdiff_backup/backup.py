@@ -26,9 +26,8 @@ from . import Globals, metadata, rorpiter, Hardlink, robust, \
 
 def Mirror(src_rpath, dest_rpath):
     """Turn dest_rpath into a copy of src_rpath"""
-    log.Log(
-        "Starting mirror %s to %s" % (src_rpath.get_safepath(),
-                                      dest_rpath.get_safepath()), 4)
+    log.Log("Starting mirror {srp} to {drp}".format(
+        srp=src_rpath, drp=dest_rpath), 4)
     SourceS = src_rpath.conn.backup.SourceStruct
     DestS = dest_rpath.conn.backup.DestinationStruct
 
@@ -41,10 +40,8 @@ def Mirror(src_rpath, dest_rpath):
 
 def Mirror_and_increment(src_rpath, dest_rpath, inc_rpath):
     """Mirror + put increments in tree based at inc_rpath"""
-    log.Log(
-        "Starting increment operation %s to %s" % (src_rpath.get_safepath(),
-                                                   dest_rpath.get_safepath()),
-        4)
+    log.Log("Starting increment operation {drp} to {srp}".format(
+        srp=src_rpath, drp=dest_rpath), 4)
     SourceS = src_rpath.conn.backup.SourceStruct
     DestS = dest_rpath.conn.backup.DestinationStruct
 
@@ -194,7 +191,7 @@ class DestinationStruct:
         """Patch dest_rpath with an rorpiter of diffs"""
         ITR = rorpiter.IterTreeReducer(PatchITRB, [dest_rpath, cls.CCPP])
         for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
-            log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
+            log.Log("Processing changed file {rp}".format(rp=diff), 5)
             ITR(diff.index, diff)
         ITR.finish_processing()
         cls.CCPP.close()
@@ -206,7 +203,7 @@ class DestinationStruct:
         ITR = rorpiter.IterTreeReducer(IncrementITRB,
                                        [dest_rpath, inc_rpath, cls.CCPP])
         for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
-            log.Log("Processing changed file %s" % diff.get_safeindexpath(), 5)
+            log.Log("Processing changed file {rp}".format(rp=diff), 5)
             ITR(diff.index, diff)
         ITR.finish_processing()
         cls.CCPP.close()
@@ -271,7 +268,7 @@ class DestinationStruct:
             dest_rp.chmod(0o400 | dest_rp.getperms())
         try:
             return Rdiff.get_signature(dest_rp)
-        except IOError as e:
+        except OSError as e:
             if (e.errno == errno.EPERM or e.errno == errno.EACCES):
                 try:
                     # Try chmod'ing anyway -- This can work on NFS and AFS
@@ -279,10 +276,10 @@ class DestinationStruct:
                     # above for performance reasons.
                     dest_rp.chmod(0o400 | dest_rp.getperms())
                     return Rdiff.get_signature(dest_rp)
-                except (IOError, OSError):
+                except OSError:
                     log.Log.FatalError(
-                        "Could not open %s for reading. Check "
-                        "permissions on file." % (dest_rp.path, ))
+                        "Could not open {rp} for reading. Check "
+                        "permissions on file.".format(rp=dest_rp))
             else:
                 raise
 
@@ -598,7 +595,7 @@ class PatchITRB(rorpiter.ITRBranch):
         mirror_rp, discard = longname.get_mirror_inc_rps(
             self.CCPP.get_rorps(index), self.basis_root_rp)
         assert not mirror_rp.isdir(), (
-            "Mirror path '{rp!s}' points to a directory.".format(rp=mirror_rp))
+            "Mirror path '{rp}' points to a directory.".format(rp=mirror_rp))
         tf = mirror_rp.get_temp_rpath(sibling=True)
         if self._patch_to_temp(mirror_rp, diff_rorp, tf):
             if tf.lstat():
@@ -631,7 +628,7 @@ class PatchITRB(rorpiter.ITRBranch):
         """Finish processing directory"""
         if self.dir_update:
             assert self.base_rp.isdir(), (
-                "Base directory '{rp!s}' isn't a directory.".format(
+                "Base directory '{rp}' isn't a directory.".format(
                     rp=self.base_rp))
             rpath.copy_attribs(self.dir_update, self.base_rp)
 
@@ -711,7 +708,7 @@ class PatchITRB(rorpiter.ITRBranch):
     def _patch_diff_to_temp(self, basis_rp, diff_rorp, new):
         """Apply diff_rorp to basis_rp, write output in new"""
         assert diff_rorp.get_attached_filetype() == 'diff', (
-            "Type attached to '{rp!s}' isn't '{exp}' but '{att}'.".format(
+            "Type attached to '{rp}' isn't '{exp}' but '{att}'.".format(
                 rp=diff_rorp, exp="diff",
                 att=diff_rorp.get_attached_filetype()))
         report = robust.check_common_error(
@@ -737,7 +734,7 @@ class PatchITRB(rorpiter.ITRBranch):
             return 1
         log.ErrorLog.write_if_open(
             "UpdateError", diff_rorp, "Updated mirror "
-            "temp file '%s' does not match source" % new_rp.get_safepath())
+            "temp file '{rp}' does not match source".format(rp=new_rp))
         return 0
 
     def _write_special(self, diff_rorp, new):
@@ -757,7 +754,7 @@ class PatchITRB(rorpiter.ITRBranch):
 
         """
         assert diff_rorp.get_attached_filetype() == 'snapshot', (
-            "Type attached to '{rp!s}' isn't '{exp}' but '{att}'.".format(
+            "Type attached to '{rp}' isn't '{exp}' but '{att}'.".format(
                 rp=diff_rorp, exp="snapshot",
                 att=diff_rorp.get_attached_filetype()))
         self.dir_replacement = base_rp.get_temp_rpath(sibling=True)
@@ -831,9 +828,8 @@ class IncrementITRB(PatchITRB):
             self.CCPP.get_rorps(index), self.basis_root_rp, self.inc_root_rp)
         self.base_rp.setdata()
         assert diff_rorp.isdir() or self.base_rp.isdir(), (
-            "Either diff '{ipath}' or base '{bpath}' must be a directory".format(
-                ipath=diff_rorp.get_safeindexpath(),
-                bpath=self.base_rp.get_safepath()))
+            "Either diff '{ipath!r}' or base '{bpath!r}' "
+            "must be a directory".format(ipath=diff_rorp, bpath=self.base_rp))
         if diff_rorp.isdir():
             inc = increment.Increment(diff_rorp, self.base_rp, inc_prefix)
             if inc and inc.isreg():

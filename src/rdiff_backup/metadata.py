@@ -295,7 +295,7 @@ class FlatFile:
                 compress = 1
             else:
                 log.Log.FatalError(
-                    "Checking the path '{rp!s}' went wrong.".format(rp=rp_base))
+                    "Checking the path '{rp}' went wrong.".format(rp=rp_base))
         if mode == 'r' or mode == 'rb':
             self.rp = rp_base
             self.fileobj = self.rp.open("rb", compress)
@@ -309,7 +309,7 @@ class FlatFile:
             else:
                 self.rp = rp_base
                 assert not self.rp.lstat(), (
-                    "Path '{rp!s}' can't exist before it's opened.".format(
+                    "Path '{rp}' can't exist before it's opened.".format(
                         rp=self.rp))
                 self.fileobj = self.rp.open("wb", compress=compress)
         else:
@@ -537,7 +537,7 @@ class Manager:
     def _add_incrp(self, rp):
         """Add rp to list of inc rps in the rbdir"""
         assert rp.isincfile(), (
-            "Path '{irp!s}' must be an increment file.".format(irp=rp))
+            "Path '{irp}' must be an increment file.".format(irp=rp))
         self.rplist.append(rp)
         time = rp.getinctime()
         if time in self.timerpmap:
@@ -607,9 +607,9 @@ class Manager:
         triple = map(os.fsencode, (prefix, timestr, typestr))
         filename = b'.'.join(triple)
         rp = Globals.rbdir.append(filename)
-        assert not rp.lstat(), "File '{rp!s}' shouldn't exist.".format(rp=rp)
+        assert not rp.lstat(), "File '{rp}' shouldn't exist.".format(rp=rp)
         assert rp.isincfile(), (
-            "Path '{irp!s}' must be an increment file.".format(irp=rp))
+            "Path '{irp}' must be an increment file.".format(irp=rp))
         return flatfileclass(rp, 'w', callback=self._add_incrp)
 
 
@@ -656,20 +656,19 @@ class PatchDiffMan(Manager):
         for (time, rp) in sortlist:
             if time in unique_set:
                 if Globals.allow_duplicate_timestamps:
-                    log.Log("Warning: metadata file '%s' has a duplicate "
+                    log.Log("Warning: metadata file '{rp}' has a duplicate "
                             "timestamp date, you might not be able to "
                             "recover files on or earlier than this date. "
                             "Assuming you're in the process of cleaning up "
-                            "your repository." %
-                            rp.get_safepath(), 2)
+                            "your repository.".format(rp=rp), 2)
                 else:
                     log.Log.FatalError(
-                        "Metadata file '%s' has a duplicate timestamp date, "
-                        "you might not be able to recover files on or earlier "
-                        "than this date. "
+                        "Metadata file '{rp}' has a duplicate timestamp "
+                        "date, you might not be able to recover files on or "
+                        "earlier than this date. "
                         "Check the man page on how to clean up your repository "
-                        "using the '--allow-duplicate-timestamps' option." %
-                        rp.get_safepath())
+                        "using the '--allow-duplicate-timestamps' "
+                        "option.".format(rp=rp))
             else:
                 unique_set.add(time)
 
@@ -685,7 +684,7 @@ class PatchDiffMan(Manager):
             return (None, None)
         newrp, oldrp = inclist[:2]
         assert newrp.getinctype() == oldrp.getinctype() == b'snapshot', (
-            "New '{nrp!s}' and old '{orp!s}' paths must be of "
+            "New '{nrp}' and old '{orp}' paths must be of "
             "type 'snapshot'.".format(nrp=newrp, orp=oldrp))
 
         chainlen = 1

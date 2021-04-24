@@ -264,14 +264,14 @@ class LowLevelPipeConnection(Connection):
             self.outpipe.write(headerchar + self._i2b(req_num, 1) + self._i2b(len(data), 7))
             self.outpipe.write(data)
             self.outpipe.flush()
-        except (IOError, AttributeError):
+        except (OSError, AttributeError):
             raise ConnectionWriteError()
 
     def _read(self, length):
         """Read length bytes from inpipe, returning result"""
         try:
             return self.inpipe.read(length)
-        except IOError:
+        except OSError:
             raise ConnectionReadError()
 
     def _b2i(self, b):

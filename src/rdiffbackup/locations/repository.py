@@ -106,7 +106,7 @@ class Repo():
                 """Bad rdiff-backup-data dir on destination side
 
 The rdiff-backup data directory
-{data}
+{drp}
 exists, but we cannot find a valid current_mirror marker.  You can
 avoid this message by removing the rdiff-backup-data directory;
 however any data in it will be lost.
@@ -116,19 +116,19 @@ into a new directory failed.  If this is the case it is safe to delete
 the rdiff-backup-data directory because there is no important
 information in it.
 
-""".format(data=self.data_dir.get_safepath()))
+""".format(drp=self.data_dir))
         elif len(curmir_incs) == 1:
             return False
         else:
             if not self.force:
                 try:
                     curmir_incs[0].conn.regress.check_pids(curmir_incs)
-                except (OSError, IOError) as exc:
+                except OSError as exc:
                     self.log.FatalError(
                         "Could not check if rdiff-backup is currently"
                         "running due to\n{exc}".format(exc=exc))
             assert len(curmir_incs) == 2, (
-                "Found more than 2 current_mirror incs in '{rp!s}'.".format(
+                "Found more than 2 current_mirror incs in '{rp}'.".format(
                     rp=self.data_dir))
             return True
 
@@ -175,17 +175,16 @@ class ReadRepo(Repo, locations.ReadLocation):
             # there is nothing to save, the user must first give a correct path
             return 1
         else:
-            self.log("Using repository '{rp}'".format(
-                rp=self.base_dir.get_safepath()), self.log.INFO)
+            self.log("Using repository '{rp}'".format(rp=self.base_dir),
+                     self.log.INFO)
         ret_code = super().check()
         if not self.data_dir.isdir():
             self.log("Source '{rp}' doesn't have an 'rdiff-backup-data' "
-                     "sub-directory".format(rp=self.base_dir.get_safepath()),
-                     self.log.ERROR)
+                     "sub-directory".format(rp=self.base_dir), self.log.ERROR)
             ret_code |= 1
         elif not self.incs_dir.isdir():
             self.log("Data directory '{rp}' doesn't have an 'increments' "
-                     "sub-directory".format(rp=self.data_dir.get_safepath()),
+                     "sub-directory".format(rp=self.data_dir),
                      self.log.WARNING)  # used to be normal  # compat200
             # ret_code |= 1  # compat200
         return ret_code
@@ -240,18 +239,13 @@ class WriteRepo(Repo, locations.WriteLocation):
                 and self.base_dir.listdir()
                 and not self.data_dir.lstat()):
             if self.force:
-                self.log(
-                    "Target '{repo}' does not look like a rdiff-backup "
-                    "repository but will be force overwritten".format(
-                        repo=self.base_dir.get_safepath()),
-                    self.log.WARNING)
+                self.log("Target '{rp}' does not look like a rdiff-backup "
+                         "repository but will be force overwritten".format(
+                             rp=self.base_dir), self.log.WARNING)
             else:
-                self.log(
-                    "Target '{repo}' does not look like a rdiff-backup "
-                    "repository, "
-                    "call with '--force' to overwrite".format(
-                        repo=self.base_dir.get_safepath()),
-                    self.log.ERROR)
+                self.log("Target '{rp}' does not look like a rdiff-backup "
+                         "repository, call with '--force' to overwrite".format(
+                             rp=self.base_dir), self.log.ERROR)
                 ret_code |= 1
 
         return ret_code
@@ -267,7 +261,7 @@ class WriteRepo(Repo, locations.WriteLocation):
         if not self.data_dir.lstat():
             try:
                 self.data_dir.mkdir()
-            except (OSError, IOError) as exc:
+            except OSError as exc:
                 self.log("Could not create 'rdiff-backup-data' sub-directory "
                          "in '{rp}' due to '{exc}'. "
                          "Please fix the access rights and retry.".format(
@@ -278,7 +272,7 @@ class WriteRepo(Repo, locations.WriteLocation):
         if not self.incs_dir.lstat():
             try:
                 self.incs_dir.mkdir()
-            except (OSError, IOError) as exc:
+            except OSError as exc:
                 self.log("Could not create 'increments' sub-directory "
                          "in '{rp}' due to '{exc}'. "
                          "Please fix the access rights and retry.".format(
@@ -315,8 +309,7 @@ class WriteRepo(Repo, locations.WriteLocation):
         trying to do a regression, which would probably anyway fail.
         """
         self.log("Found interrupted initial backup in {rp}. "
-                 "Removing...".format(rp=self.data_dir.get_safepath()),
-                 self.log.NOTE)
+                 "Removing...".format(rp=self.data_dir), self.log.NOTE)
         rbdir_files = self.data_dir.listdir()
 
         # Try to delete the increments dir first
