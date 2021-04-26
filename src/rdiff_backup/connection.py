@@ -384,9 +384,7 @@ class PipeConnection(LowLevelPipeConnection):
         """
         LowLevelPipeConnection.__init__(self, inpipe, outpipe)
         self.conn_number = conn_number
-        self.unused_request_numbers = {}
-        for i in range(256):
-            self.unused_request_numbers[i] = None
+        self.unused_request_numbers = set(range(256))
 
     def __str__(self):
         return "PipeConnection %d" % self.conn_number
@@ -417,7 +415,7 @@ class PipeConnection(LowLevelPipeConnection):
         for arg in args:
             self._put(arg, req_num)
         result = self._get_response(req_num)
-        self.unused_request_numbers[req_num] = None
+        self.unused_request_numbers.add(req_num)
         if isinstance(result, Exception):
             raise result
         elif isinstance(result, SystemExit):
@@ -461,7 +459,7 @@ class PipeConnection(LowLevelPipeConnection):
 
     def _answer_request(self, request, req_num):
         """Put the object requested by request down the pipe"""
-        del self.unused_request_numbers[req_num]
+        self.unused_request_numbers.remove(req_num)
         argument_list = []
         for i in range(request.num_args):
             arg_req_num, arg = self._get()
@@ -475,7 +473,7 @@ class PipeConnection(LowLevelPipeConnection):
         except BaseException:
             result = self._extract_exception()
         self._put(result, req_num)
-        self.unused_request_numbers[req_num] = None
+        self.unused_request_numbers.add(req_num)
 
     def _extract_exception(self):
         """Return active exception"""
@@ -492,9 +490,7 @@ class PipeConnection(LowLevelPipeConnection):
         """Allot a new request number and return it"""
         if not self.unused_request_numbers:
             raise ConnectionError("Exhausted possible connection numbers")
-        req_num = list(self.unused_request_numbers.keys())[0]
-        del self.unused_request_numbers[req_num]
-        return req_num
+        return self.unused_request_numbers.pop()
 
 
 class RedirectedConnection(Connection):
