@@ -35,10 +35,69 @@ from rdiff_backup import (
 )
 
 
-class Repo():
+class Repo(locations.Location):
     """
     Represent a Backup Repository as created by rdiff-backup
     """
+    def __init__(self, base_dir, log, force, must_be_writable, must_exist,
+                 create_full_path=False, can_be_sub_path=False):
+        """
+        Initialize the repository class
+
+        can_be_sub_path is True if the base_dir can actually be a repository,
+        but also a sub-directory or even an increment file, mostly used for
+        restore actions.
+        """
+        # if the base_dir can be a sub-file, we need to identify the actual
+        # base directory of the repository
+        if can_be_sub_path:
+            self.orig_path = base_dir
+            (base_dir, restore_index, restore_type) = \
+                base_dir.get_repository_dirs()
+            self.restore_index = restore_index
+            self.restore_type = restore_type
+            # we delay the error handling until the check step
+        else:
+            self.restore_index = None
+            self.restore_type = None
+
+        # Finish the initialization with the identified base_dir
+        super().__init__(base_dir, log, force)
+        self.create_full_path = create_full_path
+        self.must_be_writable = must_be_writable
+        self.must_exist = must_exist
+        self.can_be_sub_path = can_be_sub_path
+        self.data_dir = self.base_dir.append_path(b"rdiff-backup-data")
+        self.incs_dir = self.data_dir.append_path(b"increments")
+
+    def check(self):
+        if self.can_be_sub_path and self.restore_type is None:
+            # there is nothing to save, the user must first give a correct path
+            return 1
+        else:
+            self.log("Using repository '{rp}'".format(rp=self.base_dir),
+                     self.log.INFO)
+        ret_code = 0
+
+        if self.must_exist and not self._is_existing():
+            ret_code |= 1
+
+        if self.must_be_writable and not self._is_writable():
+            ret_code |= 1
+
+        return ret_code
+
+    def setup(self):
+        if self.must_be_writable and not self._create():
+            return 1
+
+        if (self.can_be_sub_path
+                and self.base_dir.conn is Globals.local_connection):
+            Security.reset_restrict_path(self.base_dir)
+
+        SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
+
+        return 0  # all is good
 
     def get_mirror_time(self):
         """
@@ -152,54 +211,6 @@ information in it.
                 "--restrict-update-only.", self.log.ERROR)
             return 1
 
-
-class ReadRepo(Repo, locations.ReadLocation):
-    """
-    A read-only Repository as source for a restore or other read actions.
-    """
-
-    def __init__(self, base_dir, log, force):
-        # the base_dir can actually be a repository, but also a sub-directory
-        # or even an increment file, hence we need to process it accordingly
-        self.orig_path = base_dir
-        (base_dir, restore_index, restore_type) = base_dir.get_repository_dirs()
-        super().__init__(base_dir, log, force)
-        if restore_type:
-            self.data_dir = self.base_dir.append_path(b"rdiff-backup-data")
-            self.incs_dir = self.data_dir.append_path(b"increments")
-        self.restore_index = restore_index
-        self.restore_type = restore_type
-
-    def check(self):
-        if self.restore_type is None:
-            # there is nothing to save, the user must first give a correct path
-            return 1
-        else:
-            self.log("Using repository '{rp}'".format(rp=self.base_dir),
-                     self.log.INFO)
-        ret_code = super().check()
-        if not self.data_dir.isdir():
-            self.log("Source '{rp}' doesn't have an 'rdiff-backup-data' "
-                     "sub-directory".format(rp=self.base_dir), self.log.ERROR)
-            ret_code |= 1
-        elif not self.incs_dir.isdir():
-            self.log("Data directory '{rp}' doesn't have an 'increments' "
-                     "sub-directory".format(rp=self.data_dir),
-                     self.log.WARNING)  # used to be normal  # compat200
-            # ret_code |= 1  # compat200
-        return ret_code
-
-    def setup(self):
-        ret_code = super().setup()
-        if ret_code != 0:
-            return ret_code
-
-        if self.base_dir.conn is Globals.local_connection:
-            Security.reset_restrict_path(self.base_dir)
-        SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
-
-        return 0  # all is good
-
     def set_select(self, select_opts, select_data, target_rp):
         """
         Set the selection and selection data on the repository
@@ -218,20 +229,27 @@ class ReadRepo(Repo, locations.ReadLocation):
             self.base_dir.conn.restore.MirrorStruct.set_mirror_select(
                 target_rp, select_opts, *list(map(io.BytesIO, select_data)))
 
+    def _is_existing(self):
+        # check first that the directory itself exists
+        if not super()._is_existing():
+            return False
 
-class WriteRepo(Repo, locations.WriteLocation):
-    """
-    A writable/updatable Repository as target for a backup
-    """
+        if not self.data_dir.isdir():
+            self.log("Source '{rp}' doesn't have an 'rdiff-backup-data' "
+                     "sub-directory".format(rp=self.base_dir), self.log.ERROR)
+            return False
+        elif not self.incs_dir.isdir():
+            self.log("Data directory '{rp}' doesn't have an 'increments' "
+                     "sub-directory".format(rp=self.data_dir),
+                     self.log.WARNING)  # used to be normal  # compat200
+            # return False # compat200
+        return True
 
-    def __init__(self, base_dir, log, force, create_full_path):
-        super().__init__(base_dir, log, force, create_full_path)
-        self.data_dir = self.base_dir.append_path(b"rdiff-backup-data")
-        self.incs_dir = self.data_dir.append_path(b"increments")
-
-    def check(self):
-        ret_code = super().check()
-
+    def _is_writable(self):
+        # check first that the directory itself is writable
+        # (or doesn't yet exist)
+        if not super()._is_writable():
+            return False
         # if the target is a non-empty existing directory
         # without rdiff-backup-data sub-directory
         if (self.base_dir.lstat()
@@ -246,16 +264,13 @@ class WriteRepo(Repo, locations.WriteLocation):
                 self.log("Target '{rp}' does not look like a rdiff-backup "
                          "repository, call with '--force' to overwrite".format(
                              rp=self.base_dir), self.log.ERROR)
-                ret_code |= 1
+                return False
+        return True
 
-        return ret_code
-
-    def setup(self):
-        ret_code = super().setup()
-        if ret_code != 0:
-            return ret_code
-
-        Globals.rbdir = self.data_dir  # compat200
+    def _create(self):
+        # create the underlying location/directory
+        if not super()._create():
+            return False
 
         # define a few essential subdirectories
         if not self.data_dir.lstat():
@@ -266,7 +281,7 @@ class WriteRepo(Repo, locations.WriteLocation):
                          "in '{rp}' due to '{exc}'. "
                          "Please fix the access rights and retry.".format(
                              rp=self.base_dir, exc=exc), self.log.ERROR)
-                return 1
+                return False
         elif self._is_failed_initial_backup():
             self._fix_failed_initial_backup()
         if not self.incs_dir.lstat():
@@ -277,11 +292,9 @@ class WriteRepo(Repo, locations.WriteLocation):
                          "in '{rp}' due to '{exc}'. "
                          "Please fix the access rights and retry.".format(
                              rp=self.data_dir, exc=exc), self.log.ERROR)
-                return 1
+                return False
 
-        SetConnections.UpdateGlobal('rbdir', self.data_dir)  # compat200
-
-        return 0
+        return True
 
     def _is_failed_initial_backup(self):
         """

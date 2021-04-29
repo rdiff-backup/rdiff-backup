@@ -31,36 +31,25 @@ class Location():
         self.log = log
         self.force = force
 
-
-class ReadLocation(Location):
-
-    def check(self):
-        return_code = 0
-        # check that the source exists and is a directory
+    def _is_existing(self):
+        """
+        check that the location exists and is a directory
+        """
         if not self.base_dir.lstat():
             self.log("Source path {rp} does not exist".format(
                 rp=self.base_dir), self.log.ERROR)
-            return_code |= 1
+            return False
         elif not self.base_dir.isdir():
             self.log("Source path {rp} is not a directory".format(
                 rp=self.base_dir), self.log.ERROR)
-            return_code |= 1
-        return return_code
+            return False
+        return True
 
-    def setup(self):
-        return 0
-
-
-class WriteLocation(Location):
-
-    def __init__(self, base_dir, log, force, create_full_path):
-        super().__init__(base_dir, log, force)
-        self.create_full_path = create_full_path
-
-    def check(self):
-        ret_code = 0
-
-        # check that target is a directory or doesn't exist
+    def _is_writable(self):
+        """
+        check that target is a directory or doesn't exist
+        """
+        # TODO The writable aspect hasn't yet been implemented
         if (self.base_dir.lstat() and not self.base_dir.isdir()):
             if self.force:
                 self.log("Target {rp} exists but isn't a directory, "
@@ -70,12 +59,13 @@ class WriteLocation(Location):
                 self.log("Target {rp} exists and is not a directory, "
                          "call with '--force' to overwrite".format(
                              rp=self.base_dir), self.log.ERROR)
-                ret_code |= 1
+                return False
+        return True
 
-        return ret_code
-
-    def setup(self):
-        # make sure the target directory is present
+    def _create(self):
+        """
+        create the location if it doesn't yet exist
+        """
         try:
             # if the target exists and isn't a directory, force delete it
             if (self.base_dir.lstat() and not self.base_dir.isdir()
@@ -92,6 +82,38 @@ class WriteLocation(Location):
         except os.error:
             self.log("Unable to delete and/or create directory {rp}".format(
                 rp=self.base_dir), self.log.ERROR)
+            return False
+
+        return True  # all is good
+
+
+class ReadLocation(Location):
+
+    def check(self):
+        if self._is_existing():
+            return 0
+        else:
             return 1
 
-        return 0  # all is good
+    def setup(self):
+        return 0
+
+
+class WriteLocation(Location):
+
+    def __init__(self, base_dir, log, force, create_full_path):
+        super().__init__(base_dir, log, force)
+        self.create_full_path = create_full_path
+
+    def check(self):
+        if self._is_writable():
+            return 0
+        else:
+            return 1
+
+    def setup(self):
+        # make sure the target directory is present
+        if self._create():
+            return 0
+        else:
+            return 1

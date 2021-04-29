@@ -1,0 +1,56 @@
+= Locations, Directories and Repositories
+
+A location is any source or target path given on the command line, including the optional user/hostname.
+It can either be a simple directory from which to backup, or to which to restore, or it can be a backup repository.
+
+== Locations
+
+A location has a base_dir represented by an _rpath.RPath_ object.
+
+NOTE: an idea could be to make Location a child class of rpath.RPath, so that it represents its own `base_dir`.
+An alternative idea could to use `__getattr__` to delegate attributes to `base_dir`...
+The author of those lines is still thinking about pros and cons of these options.
+
+The ultimate idea would be to have all client/server communications go through the location because, at the end, it's what is present remotely, and the whole actions only act against those locations, potentially transferring data from one location to the next.
+The current code is far from this ideal, with remote functions all over the place.
+
+The Location class knows two methods `check` and `setup`, which, like the corresponding action methods, return 0 if everything is well, or else 1.
+
+[NOTE]
+====
+The `set_select` method is also common to directories and repositories but is still implemented specifically for each class, and is problably not generic enough as each relies on a different implementation:
+
+* ReadDir.set_select: backup.SourceStruct.set_source_select
+* WriteDir.set_select: restore.TargetStruct.set_target_select
+* Repository.set_select: restore.MirrorStruct.set_mirror_select
+====
+
+== Directories
+
+A directory is either:
+
+* readable and must exist prior to the action (currently only backup),
+* or it must be writable and shouldn't exist prior to the action (currently only restore), or should at least be empty (the force-option overrides this pre-requisite).
+
+This simple dichotomy allows us to have one _ReadDir_ and one _WriteDir_ class.
+
+== Repositories
+
+Most actions act solely on a pre-existing repository, only the backup action creates a new repository.
+This said more actions (delete and regress currently) also modify an existing repository.
+And some actions (restore, verify, compare and list) do not point at the base directory but at some sub-path within it, either a sub-directory or even a dated increment.
+
+These multiple dimensions mean that the differences couldn't be represented by few classes, but had to be implemented by one single _Repository_ class, configured by different flags:
+
+* must_be_writable
+* must_exist
+* can_be_sub_path
+
+The _Repository_ class also knows the following methods:
+
+* __get_mirror_time()__
+* __init_quoting(chars_to_quote)__
+* __needs_regress()__
+* __regress()__
+
+NOTE: this list will become longer as more functions are centralized into this class. It is just too early to finalize the interface.

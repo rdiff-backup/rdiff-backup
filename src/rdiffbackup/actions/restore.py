@@ -58,8 +58,10 @@ class RestoreAction(actions.BaseAction):
     def connect(self):
         conn_value = super().connect()
         if conn_value:
-            self.source = repository.ReadRepo(self.connected_locations[0],
-                                              self.log, self.values.force)
+            self.source = repository.Repo(
+                self.connected_locations[0], self.log, self.values.force,
+                must_be_writable=False, must_exist=True, can_be_sub_path=True
+            )
             self.target = directory.WriteDir(self.connected_locations[1],
                                              self.log, self.values.force,
                                              self.values.create_full_path)
