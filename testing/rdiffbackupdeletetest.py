@@ -43,8 +43,7 @@ class RdiffBackupDeleteTest(unittest.TestCase):
         # Copy the required repo to a temporary location.
         # We need to use os command line to properly copy and delete special files.
         self.repo = os.path.join(abs_test_dir, b'deletetest')
-        if os.path.exists(self.repo):
-            subprocess.check_call([b'rm', b'-Rf', self.repo])
+        self.assertFalse(os.path.exists(self.repo), 'repository should not already exists, previous test fail to clean-up. Run rm -Rf %s' % self.repo.decode('utf-8'))
         src = os.path.join(old_test_dir, reponame)
         subprocess.check_call([b'cp', b'-R', src, self.repo])
 
@@ -67,7 +66,15 @@ class RdiffBackupDeleteTest(unittest.TestCase):
 
     def tearDown(self):
         if os.path.exists(self.repo):
-            subprocess.check_call(['rm', '-Rf', self.repo])
+            for root, dirs, files in os.walk(self.repo, followlinks=False, topdown=False):
+                for f in files:
+                    if not os.path.islink(os.path.join(root, f)):
+                        os.chmod(os.path.join(root, f), 0o777)
+                    os.remove(os.path.join(root, f))
+                for d in dirs:
+                    os.chmod(os.path.join(root, d), 0o777)
+                    os.rmdir(os.path.join(root, d))
+            os.rmdir(self.repo)
 
     def test_arguments(self):
         # Call with --help or -h should return 0 and print the usage.
@@ -99,6 +106,16 @@ class RdiffBackupDeleteTest(unittest.TestCase):
 
     def test_delete_with_directory(self):
         self._copy_repo(b'restoretest4')
+        self._rdiff_backup_delete(to_delete=os.path.join(self.repo, b'tmp'))
+        rdiff_backup(1, 1, self.repo, None, extra_options=b"--verify")
+        self.assertNotFound(b'tmp')
+
+    def test_delete_with_directory_with_perm(self):
+        """
+        Check if rdiff-backup-delete is able to delete file and folder with limited permissions.
+        """
+        self._copy_repo(b'restoretest4')
+        os.chmod(os.path.join(self.repo, b'tmp'), 0o400)
         self._rdiff_backup_delete(to_delete=os.path.join(self.repo, b'tmp'))
         rdiff_backup(1, 1, self.repo, None, extra_options=b"--verify")
         self.assertNotFound(b'tmp')
