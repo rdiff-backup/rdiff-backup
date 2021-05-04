@@ -25,6 +25,9 @@ rdiff-backup.spec
 
 # Jekyll static sites
 _site/
+# generated files
+*.html
+*.pdf
 
 # test coverage files
 .coverage*

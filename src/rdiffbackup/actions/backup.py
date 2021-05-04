@@ -60,9 +60,11 @@ class BackupAction(actions.BaseAction):
         if conn_value:
             self.source = directory.ReadDir(self.connected_locations[0],
                                             self.log, self.values.force)
-            self.target = repository.WriteRepo(self.connected_locations[1],
-                                               self.log, self.values.force,
-                                               self.values.create_full_path)
+            self.target = repository.Repo(
+                self.connected_locations[1], self.log, self.values.force,
+                must_be_writable=True, must_exist=False,
+                create_full_path=self.values.create_full_path
+            )
         return conn_value
 
     def check(self):
