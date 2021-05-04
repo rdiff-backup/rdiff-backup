@@ -21,7 +21,7 @@
 import os
 import sys
 from rdiff_backup import (
-    C, Globals, log, restore, rpath, statistics, Time,
+    C, Globals, log, restore, statistics, Time,
 )
 from rdiffbackup import arguments, actions_mgr, actions
 
@@ -80,9 +80,11 @@ def _main_run(arglist, security_override=False):
     # now start for real, conn_act and action are the same object
     with action.connect() as conn_act:
 
-        # For test purposes
+        # For test purposes only, hence we allow ourselves to overwrite a
+        # "private" variable
         if security_override:
-            Globals.security_level = "override"
+            from rdiff_backup import Security
+            Security._security_level = "override"
 
         ret_val = conn_act.check()
         if ret_val != 0:
@@ -173,10 +175,6 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
     between old and new way of parsing parameters.
     """
 
-    def normalize_path(path):
-        """Used below to normalize the security paths before setting"""
-        return rpath.RPath(Globals.local_connection, path).normalize().path
-
     if arglist.action in ('backup', 'restore'):
         Globals.set("acls_active", arglist.acls)
         Globals.set("win_acls_active", arglist.acls)
@@ -208,11 +206,5 @@ def _parse_cmdlineoptions_compat200(arglist):  # noqa: C901
         Globals.set_integer('current_time', arglist.current_time)
     if arglist.chars_to_quote is not None:
         Globals.set('chars_to_quote', os.fsencode(arglist.chars_to_quote))
-    if arglist.restrict_path is not None:
-        Globals.restrict_path = normalize_path(arglist.restrict_path)
-        if arglist.restrict_mode == "read-write":
-            Globals.security_level = "all"
-        else:
-            Globals.security_level = arglist.restrict_mode
     if arglist.api_version is not None:  # FIXME
         Globals.set_api_version(arglist.api_version)

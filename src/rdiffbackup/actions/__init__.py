@@ -82,13 +82,6 @@ COMMON_PARSER.add_argument(
     "--remote-tempdir", type=str, metavar="DIR_PATH",
     help="[opt] use path as temporary directory on the remote side")
 COMMON_PARSER.add_argument(
-    "--restrict-path", type=str, metavar="DIR_PATH",
-    help="[opt] restrict remote access to given path")
-COMMON_PARSER.add_argument(
-    "--restrict-mode", type=str,
-    choices=["read-write", "read-only", "update-only"], default="read-write",
-    help="[opt] restriction mode for directory (default is 'read-write')")
-COMMON_PARSER.add_argument(
     "--ssh-compression", default=True, action=BooleanOptionalAction,
     help="[opt] use SSH without compression with default remote-schema")
 COMMON_PARSER.add_argument(
@@ -217,6 +210,17 @@ COMPRESSION_PARSER.add_argument(
     default=DEFAULT_NOT_COMPRESSED_REGEXP,
     help="[sub] regexp to select files not being compressed")
 
+RESTRICT_PARSER = argparse.ArgumentParser(
+    add_help=False,
+    description="[parent] options related to restricting access to server")
+RESTRICT_PARSER.add_argument(
+    "--restrict-path", type=str, metavar="DIR_PATH",
+    help="[sub] restrict remote access to given path")
+RESTRICT_PARSER.add_argument(
+    "--restrict-mode", type=str,
+    choices=["read-write", "read-only", "update-only"], default="read-write",
+    help="[sub] restriction mode for directory (default is 'read-write')")
+
 STATISTICS_PARSER = argparse.ArgumentParser(
     add_help=False,
     description="[parent] options related to backup statistics")
@@ -252,7 +256,7 @@ PARENT_PARSERS = [
     COMMON_COMPAT200_PARSER,  # compat200
     CREATION_PARSER, COMPRESSION_PARSER, SELECTION_PARSER,
     FILESYSTEM_PARSER, USER_GROUP_PARSER, STATISTICS_PARSER,
-    TIMESTAMP_PARSER
+    TIMESTAMP_PARSER, RESTRICT_PARSER
 ]
 
 

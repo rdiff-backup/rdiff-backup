@@ -287,15 +287,17 @@ def _make_values_like_new_compat200(values):  # noqa C901 "too complex"
     # new and old options
     if values.ssh_no_compression is True:
         values.ssh_compression = False
-    if values.restrict and not values.restrict_path:
-        values.restrict_path = values.restrict
-        values.restrict_mode = "read-write"
-    elif values.restrict_read_only and not values.restrict_path:
-        values.restrict_path = values.restrict_read_only
-        values.restrict_mode = "read-only"
-    elif values.restrict_update_only and not values.restrict_path:
-        values.restrict_path = values.restrict_update_only
-        values.restrict_mode = "update-only"
+    if values.action == "server" and not values.restrict_path:
+        # if restrict_path would have been set, it would have had priority
+        if values.restrict:
+            values.restrict_path = values.restrict
+            values.restrict_mode = "read-write"
+        elif values.restrict_read_only:
+            values.restrict_path = values.restrict_read_only
+            values.restrict_mode = "read-only"
+        elif values.restrict_update_only:
+            values.restrict_path = values.restrict_update_only
+            values.restrict_mode = "update-only"
 
     return values
 
@@ -324,12 +326,18 @@ def _validate_number_locations_compat200(values, parser):
     }
 
     locs_len = len(values.locations)
-    if locs_action_lens[values.action] >= 0 and locs_action_lens[values.action] != locs_len:
-        parser.error(message="Action {act} requires {nr} location(s) instead of {locs}.".format(
-            act=values.action, nr=locs_action_lens[values.action], locs=values.locations))
-    elif locs_action_lens[values.action] < 0 and -locs_action_lens[values.action] > locs_len:
-        parser.error(message="Action {act} requires at least {nr} location(s) instead of {locs}.".format(
-            act=values.action, nr=-locs_action_lens[values.action], locs=values.locations))
+    if (locs_action_lens[values.action] >= 0
+            and locs_action_lens[values.action] != locs_len):
+        parser.error(message="Action {act} requires {nr} location(s) "
+                     "instead of {locs}.".format(
+                         act=values.action, nr=locs_action_lens[values.action],
+                         locs=values.locations))
+    elif (locs_action_lens[values.action] < 0
+            and -locs_action_lens[values.action] > locs_len):
+        parser.error(message="Action {act} requires at least {nr} location(s) "
+                     "instead of {locs}.".format(
+                         act=values.action, nr=-locs_action_lens[values.action],
+                         locs=values.locations))
 
 
 def _add_version_option_to_parser(parser, version_string):

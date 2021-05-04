@@ -6,7 +6,7 @@ import sys
 import os
 from commontest import abs_test_dir, re_init_rpath_dir, Myrm, \
     abs_output_dir, rdiff_backup, abs_testing_dir, MakeOutputDir
-from rdiff_backup import hash, rpath, restore, metadata, Globals, SetConnections
+from rdiff_backup import hash, rpath, restore, metadata, Globals, Security, SetConnections
 
 
 class HashTest(unittest.TestCase):
@@ -117,7 +117,7 @@ class HashTest(unittest.TestCase):
 
     def test_rorpiter_xfer(self):
         """Test if hashes are transferred in files, rorpiter"""
-        Globals.security_level = 'override'
+        Security._security_level = "override"
         conn = SetConnections._init_connection(
             b'%b %b/server.py' %
             (os.fsencode(sys.executable), abs_testing_dir))

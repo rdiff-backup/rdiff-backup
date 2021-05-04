@@ -243,18 +243,6 @@ select_mirror = None
 # object.  Access is provided to increment error counts.
 ITRB = None
 
-# security_level has 4 values and controls which requests from remote
-# systems will be honored.  "all" means anything goes. "read-only"
-# means that the requests must not write to disk.  "update-only" means
-# that requests shouldn't destructively update the disk (but normal
-# incremental updates are OK).  "minimal" means only listen to a few
-# basic requests.
-security_level = "all"
-
-# If this is set, it indicates that the remote connection should only
-# deal with paths inside of restrict_path.
-restrict_path = None
-
 # If set, a file will be marked as changed if its inode changes.  See
 # the man page under --no-compare-inode for more information.
 compare_inode = 1
