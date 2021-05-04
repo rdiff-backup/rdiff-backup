@@ -24,8 +24,13 @@ from . import Globals, metadata, rorpiter, Hardlink, robust, \
     hash, longname
 
 
-def Mirror(src_rpath, dest_rpath):
-    """Turn dest_rpath into a copy of src_rpath"""
+def mirror(src_rpath, dest_rpath):
+    """
+    Turn dest_rpath into a copy of src_rpath.
+
+    This function is used only when the destination repository is created
+    for the first time.
+    """
     log.Log("Starting mirror {srp} to {drp}".format(
         srp=src_rpath, drp=dest_rpath), 4)
     SourceS = src_rpath.conn.backup.SourceStruct
@@ -38,8 +43,12 @@ def Mirror(src_rpath, dest_rpath):
     DestS.patch(dest_rpath, source_diffiter)
 
 
-def Mirror_and_increment(src_rpath, dest_rpath, inc_rpath):
-    """Mirror + put increments in tree based at inc_rpath"""
+def mirror_and_increment(src_rpath, dest_rpath, inc_rpath):
+    """
+    Mirror + put increments in tree based at inc_rpath.
+
+    This function is used whenever the repository already exists.
+    """
     log.Log("Starting increment operation {drp} to {srp}".format(
         srp=src_rpath, drp=dest_rpath), 4)
     SourceS = src_rpath.conn.backup.SourceStruct
@@ -469,7 +478,7 @@ class CacheCollatedPostProcess:
              inc) = self.cache_dict[first_index]
         except KeyError:  # probably caused by error in file system (dup)
             log.Log(
-                "Warning index %s missing from CCPP cache" % (first_index, ),
+                "Warning index %s missing from CCPP cache" % (first_index,),
                 2)
             return
         del self.cache_dict[first_index]

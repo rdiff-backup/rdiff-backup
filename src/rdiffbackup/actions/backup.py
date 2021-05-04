@@ -140,12 +140,12 @@ class BackupAction(actions.BaseAction):
             Time.setprevtime(previous_time)
             self.target.base_dir.conn.Main.backup_touch_curmirror_local(
                 self.source.base_dir, self.target.base_dir)
-            backup.Mirror_and_increment(self.source.base_dir,
+            backup.mirror_and_increment(self.source.base_dir,
                                         self.target.base_dir,
                                         self.target.incs_dir)
             self.target.base_dir.conn.Main.backup_remove_curmirror_local()
         else:
-            backup.Mirror(self.source.base_dir, self.target.base_dir)
+            backup.mirror(self.source.base_dir, self.target.base_dir)
             self.target.base_dir.conn.Main.backup_touch_curmirror_local(
                 self.source.base_dir, self.target.base_dir)
         self.target.base_dir.conn.Main.backup_close_statistics(time.time())
