@@ -7,7 +7,7 @@ import shutil
 import subprocess
 # Avoid circularities
 from rdiff_backup.log import Log
-from rdiff_backup import Globals, Hardlink, SetConnections, Main, \
+from rdiff_backup import Globals, Hardlink, Security, SetConnections, Main, \
     selection, rpath, eas_acls, rorpiter, hash
 from rdiffbackup import actions
 
@@ -291,7 +291,7 @@ def get_increment_rp(mirror_rp, time):
 
 def _reset_connections(src_rp, dest_rp):
     """Reset some global connection information"""
-    Globals.security_level = "override"
+    Security._security_level = "override"
     Globals.isbackup_reader = Globals.isbackup_writer = None
     SetConnections.UpdateGlobal('rbdir', None)
 

@@ -24,7 +24,7 @@ A built-in rdiff-backup action plug-in to start a remote server process.
 import sys
 
 from rdiffbackup import actions
-from rdiff_backup import connection
+from rdiff_backup import (connection, Security)
 
 
 class ServerAction(actions.BaseAction):
@@ -33,7 +33,15 @@ class ServerAction(actions.BaseAction):
     """
     name = "server"
     security = "server"
-    # server has no specific sub-options
+    parent_parsers = [actions.RESTRICT_PARSER]
+
+    def connect(self):
+        conn_value = super().connect()
+        if conn_value:
+            Security.initialize(self.get_security_class(), [],
+                                security_level=self.values.restrict_mode,
+                                restrict_path=self.values.restrict_path)
+        return conn_value
 
     def run(self):
         return connection.PipeConnection(sys.stdin.buffer,
