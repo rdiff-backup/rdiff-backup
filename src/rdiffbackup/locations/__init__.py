@@ -19,12 +19,17 @@
 
 """
 Generic classes for locations
+
+All those classes should be considered abstract and not instantiated directly.
 """
 
 import os
 
 
 class Location():
+    """
+    Abstract location class representing a user@hostname::/dir location
+    """
 
     def __init__(self, base_dir, log, force):
         self.base_dir = base_dir
@@ -88,6 +93,9 @@ class Location():
 
 
 class ReadLocation(Location):
+    """
+    Abstract read-only, pre-existing location class
+    """
 
     def check(self):
         if self._is_existing():
@@ -100,6 +108,9 @@ class ReadLocation(Location):
 
 
 class WriteLocation(Location):
+    """
+    Abstract writable location class, possibly not pre-existing
+    """
 
     def __init__(self, base_dir, log, force, create_full_path):
         super().__init__(base_dir, log, force)
