@@ -77,10 +77,6 @@
       tags: debug_help
     - name: create a wrapper script to call rdiff-backup from the repo
       win_copy:
-        content: |
-          @ECHO OFF
-          REM simple wrapper script to call rdiff-backup from the repo
-          REM d=Disk, p=(dir)path, n=name(without extension), x=extension
-          python "%~dpn0" %*
+        src: ../rdiff-backup.bat
         dest: "{{ rdiffbackup_dir }}/build/scripts-{{ python_version }}/rdiff-backup.bat"
       tags: debug_help

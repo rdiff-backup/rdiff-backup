@@ -30,4 +30,4 @@ export LIBRSYNC_DIR
 ver_name=rdiff-backup-$(${PYEXE} setup.py --version)
 py_ver_brief=${PYTHON_VERSION%.[0-9]}
 
-${PYEXE} -m tox -c tox_win.ini
+${PYEXE} -m tox -c tox_win.ini -e py
