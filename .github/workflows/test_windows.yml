@@ -43,5 +43,5 @@ jobs:
         choco install pandoc
     - name: Build librsync
       run: tools/win_build_librsync.sh ${{ matrix.arch }} ${WIN_LIBRSYNC_VERSION}
-    - name: Build rdiff-backup
+    - name: Test rdiff-backup
       run: tools/win_test_rdiffbackup.sh ${{ matrix.arch }} ${WIN_PYTHON_VERSION}
