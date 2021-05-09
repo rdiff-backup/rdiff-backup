@@ -23,7 +23,7 @@ export LIBRSYNC_DIR
 git clone -b ${LIBRSYNC_VERSION} https://github.com/librsync/librsync.git ${LIBRSYNC_GIT_DIR}
 
 pushd ${LIBRSYNC_GIT_DIR}
-cmake -DCMAKE_INSTALL_PREFIX=${LIBRSYNC_DIR} -A ${lib_win_bits} -DBUILD_SHARED_LIBS=OFF .
+cmake -DCMAKE_INSTALL_PREFIX=${LIBRSYNC_DIR} -A ${lib_win_bits} -DBUILD_SHARED_LIBS=TRUE -DBUILD_RDIFF=OFF .
 cmake --build . --config Release
 cmake --install . --config Release
 popd
