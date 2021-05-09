@@ -23,8 +23,12 @@ class ApiVersionTest(unittest.TestCase):
         self.assertIn('argv', out_info['exec'])
         out_info['exec'].pop('argv')
         info['exec'].pop('argv')
-        # info['python']['executable'] could also be different but I think that our test
-        # environments make sure that it doesn't happen
+        # info['python']['executable'] could also be different but I think that
+        # our test environments make sure that it doesn't happen, unless Windows
+        if os.name == "nt":
+            info['python']['executable'] = info['python']['executable'].lower()
+            out_info['python']['executable'] = \
+                out_info['python']['executable'].lower()
         self.assertEqual(info, out_info)
 
     def test_default_actual_api(self):
