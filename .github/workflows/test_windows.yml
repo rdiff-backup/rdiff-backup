@@ -21,7 +21,7 @@ env:
   WIN_LIBRSYNC_VERSION: v2.2.1
 
 jobs:
-  test-windows:
+  test-tox-win:
     runs-on: windows-latest
     strategy:
       matrix:
