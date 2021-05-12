@@ -4,6 +4,9 @@ from commontest import MakeOutputDir, abs_output_dir, abs_test_dir, old_test_dir
     re_init_rpath_dir, rdiff_backup
 from rdiff_backup import FilenameMapping, rpath, Globals
 
+if os.name == "nt":
+    Globals.use_compatible_timestamps = 1
+
 
 class FilenameMappingTest(unittest.TestCase):
     """Test the FilenameMapping class, for quoting filenames"""

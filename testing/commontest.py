@@ -54,7 +54,8 @@ def re_init_rpath_dir(rp, uid=-1, gid=-1):
         Myrm(rp.path)
         rp.setdata()
     rp.mkdir()
-    rp.chown(uid, gid)
+    if os.name != "nt":
+        rp.chown(uid, gid)
 
 
 def re_init_subdir(maindir, subdir):
@@ -121,6 +122,8 @@ def rdiff_backup(source_local,
     if dest_dir:
         cmdargs.append(dest_dir)
     cmdline = b" ".join(cmdargs)
+    if os.name == "nt":
+        cmdline = os.fsdecode(cmdline)
     print("Executing: ", cmdline)
     ret_val = subprocess.run(cmdline,
                              shell=True,

@@ -121,7 +121,8 @@ class PipeConnectionTest(unittest.TestCase):
     def testModules(self):
         """Test module emulation"""
         self.assertIsInstance(self.conn.tempfile.mktemp(), str)
-        self.assertEqual(self.conn.os.path.join(b"a", b"b"), b"a/b")
+        self.assertEqual(self.conn.os.path.join(b"a", b"b"),
+                         os.path.join(b"a", b"b"))
         rp1 = rpath.RPath(self.conn, regfilename)
         self.assertTrue(rp1.isreg())
 

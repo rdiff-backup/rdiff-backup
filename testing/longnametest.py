@@ -5,8 +5,10 @@ from commontest import abs_test_dir, old_test_dir, Myrm, \
     rdiff_backup, compare_recursive
 from rdiff_backup import rpath, Globals, regress, Time
 
-# should generally be 255, FIXME doesn't work under Windows
-NAME_MAX_LEN = os.pathconf(abs_test_dir, 'PC_NAME_MAX')
+if os.name == "nt":
+    NAME_MAX_LEN = 255
+else:
+    NAME_MAX_LEN = os.pathconf(abs_test_dir, 'PC_NAME_MAX')
 
 
 class LongNameTest(unittest.TestCase):
