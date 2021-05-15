@@ -7,8 +7,6 @@ from rdiffbackup import actions
 
 lc = Globals.local_connection
 Globals.change_source_perms = 1
-if os.name == "nt":
-    Globals.use_compatible_timestamps = 1
 
 
 def getrp(ending):

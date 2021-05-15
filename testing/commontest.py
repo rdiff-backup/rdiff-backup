@@ -34,6 +34,9 @@ abs_testing_dir = os.path.dirname(os.path.abspath(os.fsencode(sys.argv[0])))
 
 __no_execute__ = 1  # Keeps the actual rdiff-backup program from running
 
+if os.name == "nt":
+    Globals.use_compatible_timestamps = 1
+
 
 def Myrm(dirstring):
     """Run myrm on given directory string"""
