@@ -56,6 +56,7 @@ class CheckTypes(RPathTest):
         self.assertFalse(
             rpath.RPath(self.lc, self.prefix, ("symbolic_link", )).isreg())
 
+    @unittest.skipIf(os.name == "nt", "Fifo don't exist under Windows")
     def testFifo(self):
         """Fifo's identified"""
         self.assertTrue(rpath.RPath(self.lc, self.prefix, ("fifo", )).isfifo())
@@ -200,6 +201,7 @@ class CheckSyms(RPathTest):
         link.delete()
 
 
+@unittest.skipIf(os.name == "nt", "Sockets don't exist under Windows")
 class CheckSockets(RPathTest):
     """Check reading and making sockets"""
 

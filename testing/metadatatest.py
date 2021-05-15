@@ -9,6 +9,9 @@ from rdiff_backup.metadata import MetadataFile, PatchDiffMan, \
 
 tempdir = rpath.RPath(Globals.local_connection, abs_output_dir)
 
+if os.name == "nt":
+    Globals.use_compatible_timestamps = 1
+
 
 class MetadataTest(unittest.TestCase):
     def make_temp(self):

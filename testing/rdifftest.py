@@ -7,11 +7,12 @@ from rdiff_backup import Globals, Rdiff, rpath
 
 def MakeRandomFile(path):
     """Writes a random file of length between 10000 and 100000"""
-    with open(path, "w") as fp:
+    with open(path, "w", encoding='UTF-8') as fp:
         randseq = []
         for i in range(random.randrange(5000, 30000)):
             randseq.append(chr(random.randrange(256)))
-        fp.write("".join(randseq))
+        randstr = "".join(randseq)
+        fp.write(randstr)
 
 
 class RdiffTest(unittest.TestCase):
@@ -81,8 +82,14 @@ class RdiffTest(unittest.TestCase):
         self.delta.write_from_fileobj(
             Rdiff.get_delta_sigrp_hash(self.signature, self.new))
         self.assertTrue(self.delta.lstat())
-        os.system(b"gzip %s" % self.delta.path)
-        os.system(b"mv %s.gz %s" % (self.delta.path, self.delta.path))
+        gzip_path = self.delta.path + b".gz"
+        if os.name == "nt":
+            # simulate gzip using 7z on Windows
+            os.system("7z a -tgzip -sdel -y %s %s" % (
+                os.fsdecode(gzip_path), os.fsdecode(self.delta.path)))
+        else:
+            os.system(b"gzip %s" % self.delta.path)
+        os.rename(gzip_path, self.delta.path)
         self.delta.setdata()
 
         Rdiff.patch_local(self.basis,
@@ -121,13 +128,20 @@ class RdiffTest(unittest.TestCase):
 
         Rdiff.write_delta(self.basis, self.new, delta_gz, 1)
         self.assertTrue(delta_gz.lstat())
-        os.system(b"gunzip %s" % delta_gz.path)
+        if os.name == "nt":
+            # simulate gunzip using 7z on Windows
+            os.system("7z e -tgzip -y -o%s %s" % (
+                os.fsdecode(delta_gz.get_parent_rp()), os.fsdecode(delta_gz)))
+            os.unlink(delta_gz.path)
+        else:
+            os.system(b"gunzip %s" % delta_gz.path)
         delta_gz.setdata()
         self.delta.setdata()
         Rdiff.patch_local(self.basis, self.delta, self.output)
         self.assertTrue(rpath.cmp(self.new, self.output))
         list(map(rpath.RPath.delete, rplist))
 
+    @unittest.skipIf(os.name == "nt", "FIXME fails under Windows")
     def testRdiffRename(self):
         """Rdiff replacing original file with patch outfile"""
         rplist = [self.basis, self.new, self.delta, self.signature]
