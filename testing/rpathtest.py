@@ -4,7 +4,7 @@ import sys
 import unittest
 import time
 from commontest import old_test_dir, abs_test_dir, re_init_subdir, abs_output_dir, \
-    re_init_rpath_dir
+    re_init_rpath_dir, os_system
 from rdiff_backup import Globals, rpath
 
 
@@ -291,8 +291,10 @@ class FilenameOps(RPathTest):
         reg = rpath.RPath(self.lc, self.prefix, (b"regular_file", ))
         self.assertTrue(wtf.lstat())
         self.assertTrue(reg.lstat())
-        self.assertEqual(os.system(b"ls %s >/dev/null 2>&1" % wtf.quote()), 0)
-        self.assertEqual(os.system(b"ls %s >/dev/null 2>&1" % reg.quote()), 0)
+        self.assertEqual(os_system(
+            b"ls %s >/dev/null 2>&1" % wtf.quote()), 0)
+        self.assertEqual(os_system(
+            b"ls %s >/dev/null 2>&1" % reg.quote()), 0)
 
     def testNormalize(self):
         """rpath.normalize() dictionary test"""
@@ -355,7 +357,7 @@ class FileIO(RPathTest):
 
         with rp_gz.open("wb", compress=1) as fp_out:
             fp_out.write(s)
-        self.assertEqual(os.system(b"gunzip %s" % file_gz), 0)
+        self.assertEqual(os_system(b"gunzip %s" % file_gz), 0)
         with rp_nogz.open("rb") as fp_in:
             self.assertEqual(fp_in.read(), s)
 
@@ -378,7 +380,7 @@ class FileIO(RPathTest):
         rp_nogz.setdata()
         self.assertTrue(rp_nogz.lstat())
 
-        self.assertEqual(os.system(b"gzip %s" % file_nogz), 0)
+        self.assertEqual(os_system(b"gzip %s" % file_nogz), 0)
         rp_nogz.setdata()
         rp_gz.setdata()
         self.assertFalse(rp_nogz.lstat())

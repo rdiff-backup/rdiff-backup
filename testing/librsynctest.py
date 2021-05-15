@@ -2,7 +2,7 @@ import unittest
 import random
 import subprocess
 import os
-from commontest import abs_test_dir
+from commontest import abs_test_dir, os_system
 from rdiff_backup import Globals, librsync, rpath
 
 
@@ -29,16 +29,16 @@ class LibrsyncTest(unittest.TestCase):
             MakeRandomFile(self.basis.path, file_len)
             self._clean_file(self.sig)
             rdiff_help_text = subprocess.check_output(["rdiff", "--help"])
-            if b'-R' in rdiff_help_text:
-                self.assertEqual(os.system(
+            if '-R' in rdiff_help_text:
+                self.assertEqual(os_system(
                     b"rdiff -b %i -R rollsum -S 8 -H md4 signature %b %b" %
                     (blocksize, self.basis.path, self.sig.path)), 0)
-            elif b'-H' in rdiff_help_text:
-                self.assertEqual(os.system(
+            elif '-H' in rdiff_help_text:
+                self.assertEqual(os_system(
                     b"rdiff -b %i -H md4 signature %b %b" %
                     (blocksize, self.basis.path, self.sig.path)), 0)
             else:
-                self.assertEqual(os.system(
+                self.assertEqual(os_system(
                     b"rdiff -b %i signature %b %b" %
                     (blocksize, self.basis.path, self.sig.path)), 0)
             with self.sig.open("rb") as fp:
@@ -89,11 +89,11 @@ class LibrsyncTest(unittest.TestCase):
     def OldtestDelta(self):
         """Test delta generation against Rdiff"""
         MakeRandomFile(self.basis.path)
-        self.assertEqual(os.system(
+        self.assertEqual(os_system(
             b"rdiff signature %s %s" % (self.basis.path, self.sig.path)), 0)
         for i in range(5):
             MakeRandomFile(self.new.path)
-            self.assertEqual(os.system(
+            self.assertEqual(os_system(
                 b"rdiff delta %b %b %b" %
                 (self.sig.path, self.new.path, self.delta.path)), 0)
             fp = self.delta.open("rb")
@@ -118,7 +118,7 @@ class LibrsyncTest(unittest.TestCase):
         """
         MakeRandomFile(self.basis.path)
         self._clean_file(self.sig)
-        self.assertEqual(os.system(
+        self.assertEqual(os_system(
             b"rdiff signature %s %s" % (self.basis.path, self.sig.path)), 0)
         for i in range(5):
             MakeRandomFile(self.new.path)
@@ -130,7 +130,7 @@ class LibrsyncTest(unittest.TestCase):
             fp.close()
 
             self._clean_file(self.new2)
-            self.assertEqual(os.system(
+            self.assertEqual(os_system(
                 b"rdiff patch %s %s %s" %
                 (self.basis.path, self.delta.path, self.new2.path)), 0)
             new_fp = self.new.open("rb")
@@ -147,12 +147,12 @@ class LibrsyncTest(unittest.TestCase):
         """Test patching against Rdiff"""
         MakeRandomFile(self.basis.path)
         self._clean_file(self.sig)
-        self.assertEqual(os.system(
+        self.assertEqual(os_system(
             b"rdiff signature %s %s" % (self.basis.path, self.sig.path)), 0)
         for i in range(5):
             MakeRandomFile(self.new.path)
             self._clean_file(self.delta)
-            self.assertEqual(os.system(
+            self.assertEqual(os_system(
                 b"rdiff delta %s %s %s" %
                 (self.sig.path, self.new.path, self.delta.path)), 0)
             fp = self.new.open("rb")

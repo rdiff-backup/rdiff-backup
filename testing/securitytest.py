@@ -2,7 +2,7 @@ import os
 import unittest
 import time
 from commontest import old_test_dir, abs_output_dir, abs_restore_dir, Myrm, \
-    rdiff_backup, RBBin, SetConnections
+    rdiff_backup, RBBin, SetConnections, os_system
 from rdiff_backup import Globals, rpath
 import rdiff_backup.Security as Security
 
@@ -75,14 +75,14 @@ class SecurityTest(unittest.TestCase):
                   (RBBin, current_time))
 
         if in_local:
-            out_dir = (b"'%b %b --server'::%b" %
+            out_dir = (b'"%b %b --server::%b"' %
                        (RBBin, restrict_args, out_dir))
         else:
-            in_dir = (b"'%b %b --server'::%b" % (RBBin, restrict_args, in_dir))
+            in_dir = (b'"%b %b --server::%b"' % (RBBin, restrict_args, in_dir))
 
         cmdline = b"%b %b %b %b" % (prefix, extra_args, in_dir, out_dir)
         print("Executing:", cmdline)
-        exit_val = os.system(cmdline)
+        exit_val = os_system(cmdline)
         if success:
             self.assertEqual(exit_val, 0)
         else:

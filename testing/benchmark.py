@@ -1,7 +1,7 @@
+import os
 import sys
 import time
-import os
-from commontest import re_init_subdir, abs_test_dir
+from commontest import re_init_subdir, abs_test_dir, os_system
 from rdiff_backup import rpath, Globals
 """benchmark.py
 
@@ -33,7 +33,7 @@ def run_cmd(cmd):
         full_cmd = cmd
     print("Running command '%s'" % (full_cmd, ))
     t = time.time()
-    assert not os.system(full_cmd)
+    os_system(full_cmd, check=True)
     return time.time() - t
 
 

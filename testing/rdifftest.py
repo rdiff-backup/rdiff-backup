@@ -1,7 +1,7 @@
 import unittest
 import random
 import os
-from commontest import abs_test_dir, old_test_dir, abs_output_dir
+from commontest import abs_test_dir, old_test_dir, abs_output_dir, os_system
 from rdiff_backup import Globals, Rdiff, rpath
 
 
@@ -85,10 +85,10 @@ class RdiffTest(unittest.TestCase):
         gzip_path = self.delta.path + b".gz"
         if os.name == "nt":
             # simulate gzip using 7z on Windows
-            os.system("7z a -tgzip -sdel -y %s %s" % (
+            os_system("7z a -tgzip -sdel -bb0 -y %s %s" % (
                 os.fsdecode(gzip_path), os.fsdecode(self.delta.path)))
         else:
-            os.system(b"gzip %s" % self.delta.path)
+            os_system(b"gzip %s" % self.delta.path)
         os.rename(gzip_path, self.delta.path)
         self.delta.setdata()
 
@@ -130,11 +130,11 @@ class RdiffTest(unittest.TestCase):
         self.assertTrue(delta_gz.lstat())
         if os.name == "nt":
             # simulate gunzip using 7z on Windows
-            os.system("7z e -tgzip -y -o%s %s" % (
+            os_system("7z e -tgzip -bb0 -y -o%s %s" % (
                 os.fsdecode(delta_gz.get_parent_rp()), os.fsdecode(delta_gz)))
             os.unlink(delta_gz.path)
         else:
-            os.system(b"gunzip %s" % delta_gz.path)
+            os_system(b"gunzip %s" % delta_gz.path)
         delta_gz.setdata()
         self.delta.setdata()
         Rdiff.patch_local(self.basis, self.delta, self.output)
