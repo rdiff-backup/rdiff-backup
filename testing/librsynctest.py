@@ -29,11 +29,11 @@ class LibrsyncTest(unittest.TestCase):
             MakeRandomFile(self.basis.path, file_len)
             self._clean_file(self.sig)
             rdiff_help_text = subprocess.check_output(["rdiff", "--help"])
-            if '-R' in rdiff_help_text:
+            if b'-R' in rdiff_help_text:
                 self.assertEqual(os_system(
                     b"rdiff -b %i -R rollsum -S 8 -H md4 signature %b %b" %
                     (blocksize, self.basis.path, self.sig.path)), 0)
-            elif '-H' in rdiff_help_text:
+            elif b'-H' in rdiff_help_text:
                 self.assertEqual(os_system(
                     b"rdiff -b %i -H md4 signature %b %b" %
                     (blocksize, self.basis.path, self.sig.path)), 0)

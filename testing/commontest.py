@@ -123,8 +123,7 @@ def rdiff_backup(source_local,
         cmdargs.append(dest_dir)
     cmdline = b" ".join(cmdargs)
     print("Executing: ", cmdline)
-    ret_val = os_system(cmdline, shell=True, input=input,
-                        universal_newlines=False)
+    ret_val = os_system(cmdline, input=input, universal_newlines=False)
     if check_return_val:
         # the construct is needed because return code seemingly doesn't
         # respect expected return values (FIXME)
@@ -612,18 +611,20 @@ def iter_map(function, iterator):
         yield function(i)
 
 
-def os_system(cmd, *args, **kwargs):
+def os_system(cmd, **kwargs):
     """
     A wrapper function to use decoded strings instead of bytes under Windows
 
     It simulates os.system and returns the return code value, an integer
     """
-    if os.name == "nt":
-        if isinstance(cmd, bytes):
+    if isinstance(cmd, (list, tuple)):
+        # as list, bytes are accepted even under Windows
+        return subprocess.run(cmd, **kwargs).returncode
+    else:
+        if os.name == "nt":
+            # bytes args is not allowed on Windows
             cmd = os.fsdecode(cmd)
-        elif isinstance(cmd, (list, tuple)):
-            cmd = list(map(os.fsdecode, cmd))
-    return subprocess.run(cmd, *args, **kwargs).returncode
+        return subprocess.run(cmd, shell=True, **kwargs).returncode
 
 
 def xcopytree(source, dest, content=False):
