@@ -1,7 +1,6 @@
 import unittest
 import os
 import re
-import sys
 import time
 import pathlib
 from commontest import rdiff_backup, Myrm, compare_recursive, \
@@ -269,8 +268,7 @@ class Final(PathSetter):
         rdiff_backup(False, True, '/proc', procout.path)
 
     # FIXME: to be done later, Windows isn't yet priority
-    @unittest.skipUnless(sys.platform.startswith("win"),
-                         "Requires Windows support")
+    @unittest.skipUnless(os.name == "nt", "Requires Windows support")
     def testWindowsMode(self):
         """Test backup with quoting enabled
 

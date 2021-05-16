@@ -2,7 +2,7 @@ import unittest
 import os
 from commontest import old_test_dir, abs_test_dir, abs_output_dir, Myrm, \
     abs_restore_dir, re_init_rpath_dir, compare_recursive, \
-    BackupRestoreSeries, rdiff_backup, RBBin, xcopytree
+    BackupRestoreSeries, rdiff_backup, RBBin, xcopytree, os_system
 from rdiff_backup import Globals, rpath
 """Root tests - contain tests which need to be run as root.
 
@@ -28,7 +28,7 @@ assert user, "Unable to assess name of non-root user to be used for tests"
 class BaseRootTest(unittest.TestCase):
     def _run_cmd(self, cmd):
         print("Running: ", cmd)
-        rc = os.system(cmd)
+        rc = os_system(cmd)
         self.assertEqual(
             rc, 0, "Command '{cmd}' failed with rc={rc}".format(cmd=cmd, rc=rc))
 
@@ -263,7 +263,7 @@ class HalfRoot(BaseRootTest):
         rp_new.write_string('asoentuh')
         rp_new.chmod(0)
         self.assertEqual(
-            os.system(b'chown %s %s' % (user.encode(), rp_new.path)), 0)
+            os_system(b'chown %s %s' % (user.encode(), rp_new.path)), 0)
         rp1_3 = rp.append('unreadable_dir')
         rp1_3.chmod(0o700)
         rp1_3_1 = rp1_3.append('file_inside')

@@ -34,6 +34,9 @@ abs_testing_dir = os.path.dirname(os.path.abspath(os.fsencode(sys.argv[0])))
 
 __no_execute__ = 1  # Keeps the actual rdiff-backup program from running
 
+if os.name == "nt":
+    Globals.use_compatible_timestamps = 1
+
 
 def Myrm(dirstring):
     """Run myrm on given directory string"""
@@ -54,7 +57,8 @@ def re_init_rpath_dir(rp, uid=-1, gid=-1):
         Myrm(rp.path)
         rp.setdata()
     rp.mkdir()
-    rp.chown(uid, gid)
+    if os.name != "nt":
+        rp.chown(uid, gid)
 
 
 def re_init_subdir(maindir, subdir):
@@ -105,10 +109,10 @@ def rdiff_backup(source_local,
 
     """
     if not source_local:
-        src_dir = (b"'cd %s; %s --server'::%s" %
+        src_dir = (b'"cd %s; %s --server::%s"' %
                    (abs_remote1_dir, RBBin, src_dir))
     if dest_dir and not dest_local:
-        dest_dir = (b"'cd %s; %s --server'::%s" %
+        dest_dir = (b'"cd %s; %s --server::%s"' %
                     (abs_remote2_dir, RBBin, dest_dir))
 
     cmdargs = [RBBin, extra_options]
@@ -122,12 +126,9 @@ def rdiff_backup(source_local,
         cmdargs.append(dest_dir)
     cmdline = b" ".join(cmdargs)
     print("Executing: ", cmdline)
-    ret_val = subprocess.run(cmdline,
-                             shell=True,
-                             input=input,
-                             universal_newlines=False).returncode
+    ret_val = os_system(cmdline, input=input, universal_newlines=False)
     if check_return_val:
-        # the construct is needed because os.system seemingly doesn't
+        # the construct is needed because return code seemingly doesn't
         # respect expected return values (FIXME)
         assert ((expected_ret_val == 0 and ret_val == 0) or (expected_ret_val > 0 and ret_val > 0)), \
             "Return code %d of command `%a` isn't as expected %d." % \
@@ -613,6 +614,22 @@ def iter_map(function, iterator):
         yield function(i)
 
 
+def os_system(cmd, **kwargs):
+    """
+    A wrapper function to use decoded strings instead of bytes under Windows
+
+    It simulates os.system and returns the return code value, an integer
+    """
+    if isinstance(cmd, (list, tuple)):
+        # as list, bytes are accepted even under Windows
+        return subprocess.run(cmd, **kwargs).returncode
+    else:
+        if os.name == "nt":
+            # bytes args is not allowed on Windows
+            cmd = os.fsdecode(cmd)
+        return subprocess.run(cmd, shell=True, **kwargs).returncode
+
+
 def xcopytree(source, dest, content=False):
     """copytree can't copy all kind of files but is platform independent
     hence we use it only if the 'cp' utility doesn't exist.
@@ -625,7 +642,7 @@ def xcopytree(source, dest, content=False):
         subs = (source,)
     for sub in subs:
         if shutil.which('cp'):
-            subprocess.run((b'cp', b'-a', sub, dest), check=True)
+            os_system((b'cp', b'-a', sub, dest), check=True)
         else:
             shutil.copytree(sub, dest, symlinks=True)
 

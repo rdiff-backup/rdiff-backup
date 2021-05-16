@@ -32,7 +32,10 @@ out_gz = rpath.RPath(lc, os.path.join(abs_output_dir, b"out.gz"))
 
 Time.setcurtime(1000000000)
 Time.setprevtime(999424113)
-prevtimestr = b"2001-09-02T02:48:33-07:00"
+if os.name == "nt":
+    prevtimestr = b"2001-09-02T02-48-33-07-00"
+else:
+    prevtimestr = b"2001-09-02T02:48:33-07:00"
 t_pref = os.path.join(abs_output_dir, b"out.%s" % prevtimestr)
 t_diff = os.path.join(abs_output_dir, b"out.%s.diff" % prevtimestr)
 

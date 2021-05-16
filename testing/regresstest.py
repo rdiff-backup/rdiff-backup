@@ -7,7 +7,7 @@ Not to be confused with the regression tests.
 import unittest
 import os
 from commontest import abs_output_dir, abs_test_dir, old_test_dir, Myrm, \
-    compare_recursive, rdiff_backup
+    compare_recursive, rdiff_backup, os_system
 from rdiff_backup import regress, Time, rpath, Globals
 
 
@@ -127,7 +127,7 @@ class RegressTest(unittest.TestCase):
 
         cmd = b"rdiff-backup --check-destination-dir %s" % self.output_rp.path
         print("Executing:", cmd)
-        self.assertEqual(os.system(cmd), 0)
+        self.assertEqual(os_system(cmd), 0)
 
     def make_unreadable(self):
         """Make unreadable input directory
