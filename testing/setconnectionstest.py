@@ -17,7 +17,7 @@ class SetConnectionsTest(unittest.TestCase):
         self.assertEqual(pl(b"a:b:c:d::e"), (b"a:b:c:d", b"e", None))
         self.assertEqual(pl(b"foobar"), (None, b"foobar", None))
         self.assertEqual(pl(rb"test\\ing\::more::and more\\.."),
-                         (b"test/ing::more", b"and more/..", None))
+                         (b"test\\ing::more", b"and more/..", None))
         self.assertEqual(pl(rb"strangely named\::file"),
                          (None, b"strangely named::file", None))
         self.assertEqual(pl(rb"foobar\\"), (None, b"foobar/", None))

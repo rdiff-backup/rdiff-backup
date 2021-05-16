@@ -240,13 +240,13 @@ def parse_location(file_desc):
     # before colons.
     # Hence we split along double ones, remove single ones in each element,
     # and join back with a single backslash.
-    # And then we make sure that paths under Windows use / instead of \
     if file_host:
         file_host = b'\\'.join(
             [x.replace(b'\\:', b':') for x in file_host.split(b'\\\\')])
-        file_host = file_host.replace(b"\\", b"/")
     file_path = b'\\'.join(
         [x.replace(b'\\:', b':') for x in file_path.split(b'\\\\')])
+    # And then we make sure that paths under Windows use / instead of \
+    # (we don't do it for the host part because it could be a shell command)
     file_path = file_path.replace(b"\\", b"/")
 
     return (file_host, file_path, None)
