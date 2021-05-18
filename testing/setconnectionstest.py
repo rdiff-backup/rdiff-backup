@@ -1,4 +1,3 @@
-import os
 import unittest
 from rdiff_backup import SetConnections
 
@@ -17,16 +16,18 @@ class SetConnectionsTest(unittest.TestCase):
                          (b"hello there", b"/goodbye:euoeu", None))
         self.assertEqual(pl(b"a:b:c:d::e"), (b"a:b:c:d", b"e", None))
         self.assertEqual(pl(b"foobar"), (None, b"foobar", None))
-        if os.name != "nt":  # FIXME must adapt escape handling for Windows
-            self.assertEqual(pl(rb"test\\ing\::more::and more\\.."),
-                             (rb"test\ing::more", rb"and more\\..", None))
-            self.assertEqual(pl(rb"hello\::there"),
-                             (None, rb"hello\::there", None))
-            self.assertEqual(pl(rb"foobar\\"), (None, rb"foobar\\", None))
+        self.assertEqual(pl(rb"test\\ing\::more::and more\\.."),
+                         (b"test\\ing::more", b"and more/..", None))
+        self.assertEqual(pl(rb"strangely named\::file"),
+                         (None, b"strangely named::file", None))
+        self.assertEqual(pl(rb"foobar\\"), (None, b"foobar/", None))
+        self.assertEqual(pl(rb"not\::too::many\\\::paths"),
+                         (b"not::too", b"many/::paths", None))
 
         # test missing path and missing host
-        self.assertIsNotNone(pl(rb"hello\:there::")[2])
+        self.assertIsNotNone(pl(rb"a host without\:path::")[2])
         self.assertIsNotNone(pl(b"::some/path/without/host")[2])
+        self.assertIsNotNone(pl(b"too::many::paths")[2])
 
 
 if __name__ == "__main__":

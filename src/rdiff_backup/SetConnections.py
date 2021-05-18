@@ -194,31 +194,60 @@ def parse_location(file_desc):
     # paths and similar objects must always be bytes
     file_desc = os.fsencode(file_desc)
     # match double colon not preceded by an odd number of backslashes
-    file_match = re.fullmatch(rb"^(?P<host>.*[^\\](?:\\\\)*)::(?P<path>.*)$",
-                              file_desc)
-    if file_match:
-        file_host = file_match.group("host")
-        # According to description, the backslashes must be unquoted, i.e.
-        # double backslashes replaced by single ones, and single ones removed.
-        # Hence we split along double ones, remove single ones in each element,
-        # and join back with a single backslash.
-        file_host = b'\\'.join(
-            [x.replace(b'\\', b'') for x in re.split(rb'\\\\', file_host) if x])
-        file_path = file_match.group("path")
-    else:
-        if re.match(rb"^::", file_desc):
-            return (None, None,
-                    "No file host in {desc} starting with '::'.".format(
-                        desc=file_desc))
+    file_parts = [x for x in re.split(rb"(?<!\\)(\\{2})*::", file_desc)
+                  if x is not None]
+    # because even numbers of backslashes are grouped as part of the split,
+    # we need to stitch them back together,e.g.
+    # "host\\\\::path" becomes ["host","\\\\","path"]
+    # which then becomes ["host\\\\", "path"]
+    concat_parts = []
+    keep = None
+    for part in reversed(file_parts):
+        if re.match(rb"^(\\{2})+$", part):
+            keep = part
+        else:
+            if keep:
+                part += keep
+                keep = None
+            concat_parts.append(part)
+    concat_parts.reverse()
+
+    if len(concat_parts) > 2:
+        return (None, None,
+                "Too many parts separated by double colon in '{desc}'".format(
+                    desc=file_desc))
+    elif len(concat_parts) == 0:  # it's probably not possible but...
+        return (None, None,
+                "No location could be identified in '{desc}'".format(
+                    desc=file_desc))
+    elif len(concat_parts) == 1:  # a local path without remote host
         file_host = None
-        file_path = file_desc
+        file_path = concat_parts[0]
+    else:  # length of 2 is given
+        if not concat_parts[0]:
+            return (None, None,
+                    "No file host in '{desc}' starting with '::'".format(
+                        desc=file_desc))
+        elif not concat_parts[1]:
+            return (None, None,
+                    "No file path in '{desc}' ending with '::'".format(
+                        desc=file_desc))
+        file_host = concat_parts[0]
+        file_path = concat_parts[1]
 
-    # make sure paths under Windows use / instead of \
-    if os.path.altsep:  # only Windows has an alternative separator for paths
-        file_path = file_path.replace(os.fsencode(os.path.sep), b'/')
-
-    if not file_path:
-        return (None, None, "No file path in {desc}.".format(desc=file_desc))
+    # According to description, the backslashes must be unquoted, i.e.
+    # double backslashes replaced by single ones, and single ones removed
+    # before colons.
+    # Hence we split along double ones, remove single ones in each element,
+    # and join back with a single backslash.
+    if file_host:
+        file_host = b'\\'.join(
+            [x.replace(b'\\:', b':') for x in file_host.split(b'\\\\')])
+    file_path = b'\\'.join(
+        [x.replace(b'\\:', b':') for x in file_path.split(b'\\\\')])
+    # And then we make sure that paths under Windows use / instead of \
+    # (we don't do it for the host part because it could be a shell command)
+    file_path = file_path.replace(b"\\", b"/")
 
     return (file_host, file_path, None)
 

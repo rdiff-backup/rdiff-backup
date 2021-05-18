@@ -140,7 +140,10 @@ def _get_locations(src_local, dest_local, src_dir, dest_dir):
     """
     Return a tuple of remote or local source and destination locations
     """
-    remote_location = "cd {rdir}; {tdir}/server.py::{dir}"
+    if os.name == "nt":
+        remote_location = "cd {rdir} & {tdir}\\server.py::{dir}"
+    else:
+        remote_location = "cd {rdir}; {tdir}/server.py::{dir}"
 
     if not src_local:
         src_dir = remote_location.format(
