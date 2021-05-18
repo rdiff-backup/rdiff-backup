@@ -26,6 +26,7 @@ usable for a back-up.
 
 import io
 from rdiffbackup import locations
+from rdiff_backup import log
 
 
 class Dir():
@@ -50,8 +51,8 @@ class ReadDir(Dir, locations.ReadLocation):
 
         # FIXME not sure we couldn't support symbolic links nowadays on Windows
         if self.base_dir.conn.os.name == 'nt':
-            self.log("Symbolic links excluded by default on Windows",
-                     self.log.NOTE)
+            log.Log("Symbolic links excluded by default on Windows",
+                    log.Log.NOTE)
             select_opts.append(("--exclude-symbolic-links", None))
         # FIXME we're retransforming bytes into a file pointer
         self.base_dir.conn.backup.SourceStruct.set_source_select(
@@ -68,13 +69,13 @@ class WriteDir(Dir, locations.WriteLocation):
                 and self.base_dir.isdir()
                 and self.base_dir.listdir()):
             if self.force:
-                self.log("Target {rp} exists and isn't empty, content might "
-                         "be force overwritten by restore".format(
-                             rp=self.base_dir), self.log.WARNING)
+                log.Log("Target {rp} exists and isn't empty, content might "
+                        "be force overwritten by restore".format(
+                            rp=self.base_dir), log.Log.WARNING)
             else:
-                self.log("Target {rp} exists and isn't empty, "
-                         "call with '--force' to overwrite".format(
-                             rp=self.base_dir), self.log.ERROR)
+                log.Log("Target {rp} exists and isn't empty, "
+                        "call with '--force' to overwrite".format(
+                            rp=self.base_dir), log.Log.ERROR)
                 ret_code |= 1
 
         return ret_code

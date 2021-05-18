@@ -24,6 +24,7 @@ All those classes should be considered abstract and not instantiated directly.
 """
 
 import os
+from rdiff_backup import log
 
 
 class Location():
@@ -31,9 +32,8 @@ class Location():
     Abstract location class representing a user@hostname::/dir location
     """
 
-    def __init__(self, base_dir, log, force):
+    def __init__(self, base_dir, force):
         self.base_dir = base_dir
-        self.log = log
         self.force = force
 
     def _is_existing(self):
@@ -41,12 +41,12 @@ class Location():
         check that the location exists and is a directory
         """
         if not self.base_dir.lstat():
-            self.log("Source path {rp} does not exist".format(
-                rp=self.base_dir), self.log.ERROR)
+            log.Log("Source path {rp} does not exist".format(
+                rp=self.base_dir), log.Log.ERROR)
             return False
         elif not self.base_dir.isdir():
-            self.log("Source path {rp} is not a directory".format(
-                rp=self.base_dir), self.log.ERROR)
+            log.Log("Source path {rp} is not a directory".format(
+                rp=self.base_dir), log.Log.ERROR)
             return False
         return True
 
@@ -57,13 +57,13 @@ class Location():
         # TODO The writable aspect hasn't yet been implemented
         if (self.base_dir.lstat() and not self.base_dir.isdir()):
             if self.force:
-                self.log("Target {rp} exists but isn't a directory, "
-                         "and will be force deleted".format(
-                             rp=self.base_dir), self.log.WARNING)
+                log.Log("Target {rp} exists but isn't a directory, "
+                        "and will be force deleted".format(
+                            rp=self.base_dir), log.Log.WARNING)
             else:
-                self.log("Target {rp} exists and is not a directory, "
-                         "call with '--force' to overwrite".format(
-                             rp=self.base_dir), self.log.ERROR)
+                log.Log("Target {rp} exists and is not a directory, "
+                        "call with '--force' to overwrite".format(
+                            rp=self.base_dir), log.Log.ERROR)
                 return False
         return True
 
@@ -85,8 +85,8 @@ class Location():
                     self.base_dir.mkdir()
                 self.base_dir.chmod(0o700)  # only read-writable by its owner
         except os.error:
-            self.log("Unable to delete and/or create directory {rp}".format(
-                rp=self.base_dir), self.log.ERROR)
+            log.Log("Unable to delete and/or create directory {rp}".format(
+                rp=self.base_dir), log.Log.ERROR)
             return False
 
         return True  # all is good
@@ -112,8 +112,8 @@ class WriteLocation(Location):
     Abstract writable location class, possibly not pre-existing
     """
 
-    def __init__(self, base_dir, log, force, create_full_path):
-        super().__init__(base_dir, log, force)
+    def __init__(self, base_dir, force, create_full_path):
+        super().__init__(base_dir, force)
         self.create_full_path = create_full_path
 
     def check(self):

@@ -28,6 +28,7 @@ from rdiffbackup import locations
 from rdiff_backup import (
     FilenameMapping,
     Globals,
+    log,
     restore,  # FIXME shouldn't be necessary!
     rpath,
     Security,
@@ -39,7 +40,7 @@ class Repo(locations.Location):
     """
     Represent a Backup Repository as created by rdiff-backup
     """
-    def __init__(self, base_dir, log, force, must_be_writable, must_exist,
+    def __init__(self, base_dir, force, must_be_writable, must_exist,
                  create_full_path=False, can_be_sub_path=False):
         """
         Initialize the repository class
@@ -62,7 +63,7 @@ class Repo(locations.Location):
             self.restore_type = None
 
         # Finish the initialization with the identified base_dir
-        super().__init__(base_dir, log, force)
+        super().__init__(base_dir, force)
         self.create_full_path = create_full_path
         self.must_be_writable = must_be_writable
         self.must_exist = must_exist
@@ -75,8 +76,8 @@ class Repo(locations.Location):
             # there is nothing to save, the user must first give a correct path
             return 1
         else:
-            self.log("Using repository '{rp}'".format(rp=self.base_dir),
-                     self.log.INFO)
+            log.Log("Using repository '{rp}'".format(rp=self.base_dir),
+                    log.Log.INFO)
         ret_code = 0
 
         if self.must_exist and not self._is_existing():
@@ -161,7 +162,7 @@ class Repo(locations.Location):
         curmirroot = self.data_dir.append(b"current_mirror")
         curmir_incs = restore.get_inclist(curmirroot)  # FIXME belongs here
         if not curmir_incs:
-            self.log.FatalError(
+            log.Log.FatalError(
                 """Bad rdiff-backup-data dir on destination side
 
 The rdiff-backup data directory
@@ -183,7 +184,7 @@ information in it.
                 try:
                     curmir_incs[0].conn.regress.check_pids(curmir_incs)
                 except OSError as exc:
-                    self.log.FatalError(
+                    log.Log.FatalError(
                         "Could not check if rdiff-backup is currently"
                         "running due to\n{exc}".format(exc=exc))
             assert len(curmir_incs) == 2, (
@@ -198,17 +199,17 @@ information in it.
         This can/should be run before any action on the repository to start
         with a clean state.
         """
-        self.log(
+        log.Log(
             "Previous backup seems to have failed, regressing "
-            "destination now.", self.log.WARNING)
+            "destination now.", log.Log.WARNING)
         try:
             self.base_dir.conn.regress.Regress(self.base_dir)
             return 0
         except Security.Violation:
-            self.log(
+            log.Log(
                 "Security violation while attempting to regress destination, "
                 "perhaps due to --restrict-read-only or "
-                "--restrict-update-only.", self.log.ERROR)
+                "--restrict-update-only.", log.Log.ERROR)
             return 1
 
     def set_select(self, select_opts, select_data, target_rp):
@@ -235,13 +236,13 @@ information in it.
             return False
 
         if not self.data_dir.isdir():
-            self.log("Source '{rp}' doesn't have an 'rdiff-backup-data' "
-                     "sub-directory".format(rp=self.base_dir), self.log.ERROR)
+            log.Log("Source '{rp}' doesn't have an 'rdiff-backup-data' "
+                    "sub-directory".format(rp=self.base_dir), log.Log.ERROR)
             return False
         elif not self.incs_dir.isdir():
-            self.log("Data directory '{rp}' doesn't have an 'increments' "
-                     "sub-directory".format(rp=self.data_dir),
-                     self.log.WARNING)  # used to be normal  # compat200
+            log.Log("Data directory '{rp}' doesn't have an 'increments' "
+                    "sub-directory".format(rp=self.data_dir),
+                    log.Log.WARNING)  # used to be normal  # compat200
             # return False # compat200
         return True
 
@@ -257,13 +258,13 @@ information in it.
                 and self.base_dir.listdir()
                 and not self.data_dir.lstat()):
             if self.force:
-                self.log("Target '{rp}' does not look like a rdiff-backup "
-                         "repository but will be force overwritten".format(
-                             rp=self.base_dir), self.log.WARNING)
+                log.Log("Target '{rp}' does not look like a rdiff-backup "
+                        "repository but will be force overwritten".format(
+                            rp=self.base_dir), log.Log.WARNING)
             else:
-                self.log("Target '{rp}' does not look like a rdiff-backup "
-                         "repository, call with '--force' to overwrite".format(
-                             rp=self.base_dir), self.log.ERROR)
+                log.Log("Target '{rp}' does not look like a rdiff-backup "
+                        "repository, call with '--force' to overwrite".format(
+                            rp=self.base_dir), log.Log.ERROR)
                 return False
         return True
 
@@ -277,10 +278,10 @@ information in it.
             try:
                 self.data_dir.mkdir()
             except OSError as exc:
-                self.log("Could not create 'rdiff-backup-data' sub-directory "
-                         "in '{rp}' due to '{exc}'. "
-                         "Please fix the access rights and retry.".format(
-                             rp=self.base_dir, exc=exc), self.log.ERROR)
+                log.Log("Could not create 'rdiff-backup-data' sub-directory "
+                        "in '{rp}' due to '{exc}'. "
+                        "Please fix the access rights and retry.".format(
+                            rp=self.base_dir, exc=exc), log.Log.ERROR)
                 return False
         elif self._is_failed_initial_backup():
             self._fix_failed_initial_backup()
@@ -288,10 +289,10 @@ information in it.
             try:
                 self.incs_dir.mkdir()
             except OSError as exc:
-                self.log("Could not create 'increments' sub-directory "
-                         "in '{rp}' due to '{exc}'. "
-                         "Please fix the access rights and retry.".format(
-                             rp=self.data_dir, exc=exc), self.log.ERROR)
+                log.Log("Could not create 'increments' sub-directory "
+                        "in '{rp}' due to '{exc}'. "
+                        "Please fix the access rights and retry.".format(
+                            rp=self.data_dir, exc=exc), log.Log.ERROR)
                 return False
 
         return True
@@ -321,8 +322,8 @@ information in it.
         Clear the given rdiff-backup-data if possible, it's faster than
         trying to do a regression, which would probably anyway fail.
         """
-        self.log("Found interrupted initial backup in {rp}. "
-                 "Removing...".format(rp=self.data_dir), self.log.NOTE)
+        log.Log("Found interrupted initial backup in {rp}. "
+                "Removing...".format(rp=self.data_dir), log.Log.NOTE)
         rbdir_files = self.data_dir.listdir()
 
         # Try to delete the increments dir first
@@ -335,10 +336,10 @@ information in it.
             try:
                 rp.conn.rpath.delete_dir_no_files(rp)
             except rpath.RPathException:
-                self.log("Increments dir contains files.", self.log.INFO)
+                log.Log("Increments dir contains files.", log.Log.INFO)
                 return
             except Security.Violation:
-                self.log("Server doesn't support resuming.", self.log.WARNING)
+                log.Log("Server doesn't support resuming.", log.Log.WARNING)
                 return
 
         # then delete all remaining files

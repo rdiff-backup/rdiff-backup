@@ -29,7 +29,7 @@ import sys
 import tempfile
 import yaml
 from rdiff_backup import (
-    Globals, rpath, Security, SetConnections, Time
+    Globals, log, rpath, Security, SetConnections, Time
 )
 from rdiffbackup.utils.argopts import BooleanOptionalAction, SelectAction
 
@@ -354,16 +354,13 @@ class BaseAction:
             subparsers[sub_name].set_defaults(**{sub_dest: sub_name})
         return subparsers
 
-    def __init__(self, values, log=None, errlog=None):
+    def __init__(self, values):
         """
         Instantiate an action plug-in class.
 
         values is a Namespace as returned by argparse.
-        log is a log.Log object and errlog a log.ErrorLog object.
         """
         self.values = values
-        self.log = log
-        self.errlog = errlog
         if self.values.remote_schema:
             self.remote_schema = os.fsencode(self.values.remote_schema)
         else:
@@ -387,10 +384,10 @@ class BaseAction:
 
         Returns False to propagate potential exception, else True.
         """
-        self.log("Cleaning up", self.log.INFO)
+        log.Log("Cleaning up", log.Log.INFO)
         if self.security != "server":
-            self.errlog.close()
-            self.log.close_logfile()
+            log.ErrorLog.close()
+            log.Log.close_logfile()
             SetConnections.CloseConnections()
 
         return False

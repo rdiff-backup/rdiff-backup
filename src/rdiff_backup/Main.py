@@ -67,8 +67,7 @@ def _main_run(arglist, security_override=False):
 
     # instantiate the action object from the dictionary, handing over the
     # parsed arguments
-    action = discovered_actions[parsed_args.action](parsed_args,
-                                                    log.Log, log.ErrorLog)
+    action = discovered_actions[parsed_args.action](parsed_args)
 
     # validate that everything looks good before really starting
     ret_val = action.pre_check()

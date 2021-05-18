@@ -19,8 +19,9 @@
 """list, delete, and otherwise manage increments"""
 
 import os
-from .log import Log
-from . import Globals, Time, statistics, restore, selection, FilenameMapping
+from . import (
+    FilenameMapping, Globals, log, restore, selection, statistics, Time
+)
 
 
 class ManageException(Exception):
@@ -95,7 +96,7 @@ def delete_earlier_than_local(baserp, time):
     for rp in yield_files(baserp):
         if ((rp.isincfile() and rp.getinctime() < time)
                 or (rp.isdir() and not rp.listdir())):
-            Log("Deleting increment file {rp}".format(rp=rp), 5)
+            log.Log("Deleting increment file {rp}".format(rp=rp), 5)
             rp.delete()
 
 
@@ -194,7 +195,7 @@ def _get_inc_type(inc):
     elif inc_type == b"snapshot":
         return _get_file_type(inc)
     else:
-        Log.FatalError(
+        log.Log.FatalError(
             "Unknown type '{itype}' of increment '{ifile!s}'.".format(
                 itype=inc_type, ifile=inc))
 

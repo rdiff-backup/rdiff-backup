@@ -49,7 +49,7 @@ class RegressAction(actions.BaseAction):
         conn_value = super().connect()
         if conn_value:
             self.source = repository.Repo(
-                self.connected_locations[0], self.log, self.values.force,
+                self.connected_locations[0], self.values.force,
                 must_be_writable=True, must_exist=True
             )
         return conn_value
@@ -84,13 +84,13 @@ class RegressAction(actions.BaseAction):
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
         self._init_user_group_mapping(self.source.base_dir.conn)
-        if self.log.verbosity > 0:
+        if log.Log.verbosity > 0:
             try:  # the source repository must be writable
-                self.log.open_logfile(
+                log.Log.open_logfile(
                     self.source.data_dir.append(self.name + ".log"))
             except (log.LoggerError, Security.Violation) as exc:
-                self.log("Unable to open logfile due to '{exc}'".format(
-                    exc=exc), self.log.ERROR)
+                log.Log("Unable to open logfile due to '{exc}'".format(
+                    exc=exc), log.Log.ERROR)
                 return 1
 
         return 0
@@ -102,8 +102,8 @@ class RegressAction(actions.BaseAction):
         if self.source.needs_regress():
             return self.source.regress()
         else:
-            self.log("Given repository doesn't need to be regressed",
-                     self.log.NOTE)
+            log.Log("Given repository doesn't need to be regressed",
+                    log.Log.NOTE)
             return 0  # all is good
 
 

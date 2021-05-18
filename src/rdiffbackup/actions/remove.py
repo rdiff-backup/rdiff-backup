@@ -51,7 +51,7 @@ class RemoveAction(actions.BaseAction):
         conn_value = super().connect()
         if conn_value:
             self.source = repository.Repo(
-                self.connected_locations[0], self.log, self.values.force,
+                self.connected_locations[0], self.values.force,
                 must_be_writable=True, must_exist=True
             )
         return conn_value
@@ -68,11 +68,11 @@ class RemoveAction(actions.BaseAction):
         # the source directory must directly point at the base directory of
         # the repository
         if self.source.restore_index:
-            self.log("Increments for directory '{orp}' cannot be removed "
-                     "separately.\n"
-                     "Instead run on entire directory '{brp}'.".format(
-                         orp=self.source.orig_path,
-                         brp=self.source.base_dir), self.log.ERROR)
+            log.Log("Increments for directory '{orp}' cannot be removed "
+                    "separately.\n"
+                    "Instead run on entire directory '{brp}'.".format(
+                        orp=self.source.orig_path,
+                        brp=self.source.base_dir), log.Log.ERROR)
             return_code |= 1
 
         return return_code
@@ -95,13 +95,13 @@ class RemoveAction(actions.BaseAction):
 
         # TODO validate how much of the following lines and methods
         # should go into the directory/repository modules
-        if self.log.verbosity > 0:
+        if log.Log.verbosity > 0:
             try:  # the source repository must be writable
-                self.log.open_logfile(
+                log.Log.open_logfile(
                     self.source.data_dir.append(self.name + ".log"))
             except (log.LoggerError, Security.Violation) as exc:
-                self.log("Unable to open logfile due to '{exc}'".format(
-                    exc=exc), self.log.ERROR)
+                log.Log("Unable to open logfile due to '{exc}'".format(
+                    exc=exc), log.Log.ERROR)
                 return 1
 
         return 0
@@ -136,27 +136,27 @@ class RemoveAction(actions.BaseAction):
         ]
         times_in_secs = [t for t in times_in_secs if t < action_time]
         if not times_in_secs:
-            self.log("No increments older than {atim} found, exiting.".format(
-                atim=Time.timetopretty(action_time)), self.log.NOTE)
+            log.Log("No increments older than {atim} found, exiting.".format(
+                atim=Time.timetopretty(action_time)), log.Log.NOTE)
             return None
 
         times_in_secs.sort()
         pretty_times = "\n".join(map(Time.timetopretty, times_in_secs))
         if len(times_in_secs) > 1:
             if not self.values.force:
-                self.log(
+                log.Log(
                     "Found {lent} relevant increments, dated:\n{ptim}\n"
                     "If you want to delete multiple increments in this way, "
                     "use the --force option.".format(lent=len(times_in_secs),
                                                      ptim=pretty_times),
-                    self.log.ERROR)
+                    log.Log.ERROR)
                 return None
             else:
-                self.log("Deleting increments at times:\n{ptim}".format(
-                    ptim=pretty_times), self.log.NOTE)
+                log.Log("Deleting increments at times:\n{ptim}".format(
+                    ptim=pretty_times), log.Log.NOTE)
         else:
-            self.log("Deleting increment at time:\n{ptim}".format(
-                ptim=pretty_times), self.log.NOTE)
+            log.Log("Deleting increment at time:\n{ptim}".format(
+                ptim=pretty_times), log.Log.NOTE)
         # make sure we don't delete current increment
         return times_in_secs[-1] + 1
 
