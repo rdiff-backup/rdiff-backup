@@ -132,8 +132,8 @@ class IterTreeReducer:
             self.index = index
             return 1
         if index == self.index:
-            log.Log("Warning, repeated index %s, bad filesystem?" % (index, ),
-                    2)
+            log.Log("Repeated index {ri}, bad filesystem?".format(ri=index),
+                    log.WARNING)
         elif index < self.index:
             raise ValueError(
                 "Bad index order: {sidx} should be lower than {idx}.".format(
@@ -257,9 +257,8 @@ class CacheIndexable:
             try:
                 del self.cache_dict[self.cache_indices[0]]
             except KeyError:
-                log.Log(
-                    "Warning: index %s missing from iterator cache" %
-                    (self.cache_indices[0], ), 2)
+                log.Log("Index {ix} missing from iterator cache".format(
+                    ix=self.cache_indices[0]), self.WARNING)
             del self.cache_indices[0]
 
         return next_elem
@@ -399,10 +398,11 @@ def FillInIter(rpiter, rootrp):
                     filler_rp = rootrp.new_index(cur_index[:i])
                     if not filler_rp.isdir():
                         log.Log(
-                            "Warning: expected %s to be a directory but "
-                            "found %s instead.\nThis is probably caused "
-                            "by a bug in versions 1.0.0 and earlier." %
-                            (filler_rp.path, filler_rp.lstat()), 2)
+                            "Expected path {pa} to be a directory but "
+                            "found type {ty} instead. This is probably caused "
+                            "by a bug in versions 1.0.0 and earlier.".format(
+                                pa=filler_rp, ty=filler_rp.lstat()),
+                            log.WARNING)
                         filler_rp.make_zero_dir(rootrp)
                     yield filler_rp
         yield rp

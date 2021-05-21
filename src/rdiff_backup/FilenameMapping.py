@@ -123,8 +123,9 @@ def set_init_quote_vals_local():
     global chars_to_quote, quoting_char
     chars_to_quote = Globals.chars_to_quote
     if len(Globals.quoting_char) != 1:
-        log.Log.FatalError("Expected single character for quoting char,"
-                           "got '%s' instead." % _safe_str(Globals.quoting_char))
+        log.Log.FatalError("Expected single character for quoting char, "
+                           "got '{qc}' instead.".format(
+                               qc=_safe_str(Globals.quoting_char)))
     quoting_char = Globals.quoting_char
     _init_quoting_regexps()
 
@@ -199,8 +200,8 @@ def update_quoting(rbdir):
                 list.append(new_name)
             name_rp = dirpath_rp.append(name)
             new_rp = dirpath_rp.append(new_name)
-            log.Log("Re-quoting {orp} to {nrp}".format(
-                orp=name_rp, nrp=new_rp), 5)
+            log.Log("Re-quoting old path {op} to new path {np}".format(
+                op=name_rp, np=new_rp), log.INFO)
             rpath.move(name_rp, new_rp)
 
     assert rbdir.conn is Globals.local_connection, (
@@ -209,7 +210,7 @@ def update_quoting(rbdir):
     mirror_rp = rbdir.get_parent_rp()
     mirror = mirror_rp.path
 
-    log.Log("Re-quoting repository {rp}".format(rp=mirror_rp), 3)
+    log.Log("Re-quoting repository {re}".format(re=mirror_rp), log.NOTE)
 
     for dirpath, dirs, files in os.walk(mirror):
         dirpath_rp = mirror_rp.newpath(dirpath)
@@ -230,9 +231,10 @@ def _init_quoting_regexps():
         chars_to_quote_regexp = re.compile(b"[%b]|%b" %
                                            (chars_to_quote, quoting_char), re.S)
         unquoting_regexp = re.compile(b"%b[0-9]{3}" % quoting_char, re.S)
-    except re.error:
-        log.Log.FatalError("Error '%s' when processing char quote list %r" %
-                           (re.error, chars_to_quote))
+    except re.error as exc:
+        log.Log.FatalError(
+            "Regex error '{er}' when processing char quote list {ql}".format(
+                er=exc, ql=chars_to_quote))
 
 
 def _quote_single(match):

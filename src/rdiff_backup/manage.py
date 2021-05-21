@@ -96,7 +96,7 @@ def delete_earlier_than_local(baserp, time):
     for rp in yield_files(baserp):
         if ((rp.isincfile() and rp.getinctime() < time)
                 or (rp.isdir() and not rp.listdir())):
-            log.Log("Deleting increment file {rp}".format(rp=rp), 5)
+            log.Log("Deleting increment file {fi}".format(fi=rp), log.INFO)
             rp.delete()
 
 
@@ -195,9 +195,8 @@ def _get_inc_type(inc):
     elif inc_type == b"snapshot":
         return _get_file_type(inc)
     else:
-        log.Log.FatalError(
-            "Unknown type '{itype}' of increment '{ifile!s}'.".format(
-                itype=inc_type, ifile=inc))
+        log.Log.FatalError("Unknown type '{ut}' of increment '{ic}'".format(
+            ut=inc_type, ic=inc))
 
 
 def _get_file_type(rp):

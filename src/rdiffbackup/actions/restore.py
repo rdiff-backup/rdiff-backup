@@ -78,14 +78,14 @@ class RestoreAction(actions.BaseAction):
         if self.source.restore_type == "inc":
             if self.values.at:
                 log.Log("You can't give an increment file and a time to "
-                        "restore at the same time.", log.Log.ERROR)
+                        "restore at the same time.", log.ERROR)
                 return_code |= 1
             elif not self.values.increment:
                 self.values.increment = True
         elif self.source.restore_type in ("base", "subdir"):
             if self.values.increment:
                 log.Log("You can't use the --increment option and _not_ "
-                        "give an increment file", log.Log.ERROR)
+                        "give an increment file", log.ERROR)
                 return_code |= 1
             elif not self.values.at:
                 self.values.at = "now"
@@ -117,8 +117,8 @@ class RestoreAction(actions.BaseAction):
             self.target.base_dir.conn.fs_abilities.restore_set_globals(
                 self.target.base_dir)
         except OSError as exc:
-            log.Log("Could not begin restore due to\n{exc}".format(exc=exc),
-                    log.Log.ERROR)
+            log.Log("Could not begin restore due to exception '{ex}'".format(
+                ex=exc), log.ERROR)
             return 1
         self.source.init_quoting(self.values.chars_to_quote)
         self._init_user_group_mapping(self.target.base_dir.conn)
@@ -127,8 +127,9 @@ class RestoreAction(actions.BaseAction):
                 log.Log.open_logfile(
                     self.source.data_dir.append("restore.log"))
             except (log.LoggerError, Security.Violation) as exc:
-                log.Log("Unable to open logfile due to '{exc}'".format(
-                    exc=exc), log.Log.WARNING)
+                log.Log(
+                    "Unable to open logfile due to exception '{ex}'".format(
+                        ex=exc), log.WARNING)
 
         # we need now to identify the actual time of restore
         self.inc_rpath = self.source.data_dir.append_path(
@@ -142,7 +143,7 @@ class RestoreAction(actions.BaseAction):
             self.action_time = self.source.orig_path.getinctime()
         else:  # this should have been catched in the check method
             log.Log("This shouldn't happen but neither restore time nor "
-                    "an increment have been identified so far", log.Log.ERROR)
+                    "an increment have been identified so far", log.ERROR)
             return 1
         (select_opts, select_data) = selection.get_prepared_selections(
             self.values.selections)
@@ -163,18 +164,18 @@ class RestoreAction(actions.BaseAction):
             log.Log("Previous backup to {rp} seems to have failed. "
                     "Use rdiff-backup to 'regress' first the failed backup, "
                     "then try again to restore".format(
-                        rp=self.source.base_dir), log.Log.ERROR)
+                        rp=self.source.base_dir), log.ERROR)
             return 1
         try:
             restore.Restore(
                 self.source.base_dir.new_index(self.source.restore_index),
                 self.inc_rpath, self.target.base_dir, self.action_time)
         except OSError as exc:
-            log.Log("Could not complete restore due to '{exc}'".format(
-                exc=exc), log.Log.ERROR)
+            log.Log("Could not complete restore due to exception '{ex}'".format(
+                ex=exc), log.ERROR)
             return 1
         else:
-            log.Log("Restore successfully finished", log.Log.INFO)
+            log.Log("Restore successfully finished", log.INFO)
             return 0
 
 

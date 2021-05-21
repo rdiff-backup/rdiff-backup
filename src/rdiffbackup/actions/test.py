@@ -49,11 +49,11 @@ class TestAction(actions.BaseAction):
         for location in self.values.locations:
             (file_host, file_path, err) = SetConnections.parse_location(location)
             if err:
-                log.Log(err, log.Log.ERROR)
+                log.Log(err, log.ERROR)
                 return_code |= 1  # binary 'or' to always get 1
             elif not file_host:
-                log.Log("Only remote locations can be tested but '{loc}' "
-                        "isn't remote.".format(loc=location), log.Log.ERROR)
+                log.Log("Only remote locations can be tested but location "
+                        "'{lo}' isn't remote".format(lo=location), log.ERROR)
                 return_code |= 1  # binary 'or' to always get 1
 
         return return_code

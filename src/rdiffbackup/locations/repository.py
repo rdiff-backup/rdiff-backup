@@ -76,8 +76,8 @@ class Repo(locations.Location):
             # there is nothing to save, the user must first give a correct path
             return 1
         else:
-            log.Log("Using repository '{rp}'".format(rp=self.base_dir),
-                    log.Log.INFO)
+            log.Log("Using repository '{re}'".format(re=self.base_dir),
+                    log.INFO)
         ret_code = 0
 
         if self.must_exist and not self._is_existing():
@@ -166,7 +166,7 @@ class Repo(locations.Location):
                 """Bad rdiff-backup-data dir on destination side
 
 The rdiff-backup data directory
-{drp}
+{dd}
 exists, but we cannot find a valid current_mirror marker.  You can
 avoid this message by removing the rdiff-backup-data directory;
 however any data in it will be lost.
@@ -176,7 +176,7 @@ into a new directory failed.  If this is the case it is safe to delete
 the rdiff-backup-data directory because there is no important
 information in it.
 
-""".format(drp=self.data_dir))
+""".format(dd=self.data_dir))
         elif len(curmir_incs) == 1:
             return False
         else:
@@ -186,10 +186,10 @@ information in it.
                 except OSError as exc:
                     log.Log.FatalError(
                         "Could not check if rdiff-backup is currently"
-                        "running due to\n{exc}".format(exc=exc))
+                        "running due to exception {ex}".format(ex=exc))
             assert len(curmir_incs) == 2, (
-                "Found more than 2 current_mirror incs in '{rp}'.".format(
-                    rp=self.data_dir))
+                "Found more than 2 current_mirror incs in '{ci}'.".format(
+                    ci=self.data_dir))
             return True
 
     def regress(self):
@@ -199,9 +199,8 @@ information in it.
         This can/should be run before any action on the repository to start
         with a clean state.
         """
-        log.Log(
-            "Previous backup seems to have failed, regressing "
-            "destination now.", log.Log.WARNING)
+        log.Log("Previous backup seems to have failed, regressing "
+                "destination now", log.WARNING)
         try:
             self.base_dir.conn.regress.Regress(self.base_dir)
             return 0
@@ -209,7 +208,7 @@ information in it.
             log.Log(
                 "Security violation while attempting to regress destination, "
                 "perhaps due to --restrict-read-only or "
-                "--restrict-update-only.", log.Log.ERROR)
+                "--restrict-update-only", log.ERROR)
             return 1
 
     def set_select(self, select_opts, select_data, target_rp):
@@ -236,13 +235,13 @@ information in it.
             return False
 
         if not self.data_dir.isdir():
-            log.Log("Source '{rp}' doesn't have an 'rdiff-backup-data' "
-                    "sub-directory".format(rp=self.base_dir), log.Log.ERROR)
+            log.Log("Source directory '{sd}' doesn't have a sub-directory "
+                    "'rdiff-backup-data'".format(sd=self.base_dir), log.ERROR)
             return False
         elif not self.incs_dir.isdir():
-            log.Log("Data directory '{rp}' doesn't have an 'increments' "
-                    "sub-directory".format(rp=self.data_dir),
-                    log.Log.WARNING)  # used to be normal  # compat200
+            log.Log("Data directory '{dd}' doesn't have an 'increments' "
+                    "sub-directory".format(dd=self.data_dir),
+                    log.WARNING)  # used to be normal  # compat200
             # return False # compat200
         return True
 
@@ -258,13 +257,13 @@ information in it.
                 and self.base_dir.listdir()
                 and not self.data_dir.lstat()):
             if self.force:
-                log.Log("Target '{rp}' does not look like a rdiff-backup "
+                log.Log("Target path '{tp}' does not look like a rdiff-backup "
                         "repository but will be force overwritten".format(
-                            rp=self.base_dir), log.Log.WARNING)
+                            tp=self.base_dir), log.WARNING)
             else:
-                log.Log("Target '{rp}' does not look like a rdiff-backup "
+                log.Log("Target path '{tp}' does not look like a rdiff-backup "
                         "repository, call with '--force' to overwrite".format(
-                            rp=self.base_dir), log.Log.ERROR)
+                            tp=self.base_dir), log.ERROR)
                 return False
         return True
 
@@ -279,9 +278,9 @@ information in it.
                 self.data_dir.mkdir()
             except OSError as exc:
                 log.Log("Could not create 'rdiff-backup-data' sub-directory "
-                        "in '{rp}' due to '{exc}'. "
+                        "in base directory '{bd}' due to exception '{ex}'. "
                         "Please fix the access rights and retry.".format(
-                            rp=self.base_dir, exc=exc), log.Log.ERROR)
+                            bd=self.base_dir, ex=exc), log.ERROR)
                 return False
         elif self._is_failed_initial_backup():
             self._fix_failed_initial_backup()
@@ -290,9 +289,9 @@ information in it.
                 self.incs_dir.mkdir()
             except OSError as exc:
                 log.Log("Could not create 'increments' sub-directory "
-                        "in '{rp}' due to '{exc}'. "
+                        "in data directory '{dd}' due to exception '{ex}'. "
                         "Please fix the access rights and retry.".format(
-                            rp=self.data_dir, exc=exc), log.Log.ERROR)
+                            dd=self.data_dir, ex=exc), log.ERROR)
                 return False
 
         return True
@@ -322,8 +321,8 @@ information in it.
         Clear the given rdiff-backup-data if possible, it's faster than
         trying to do a regression, which would probably anyway fail.
         """
-        log.Log("Found interrupted initial backup in {rp}. "
-                "Removing...".format(rp=self.data_dir), log.Log.NOTE)
+        log.Log("Found interrupted initial backup in data directory {dd}. "
+                "Removing...".format(dd=self.data_dir), log.NOTE)
         rbdir_files = self.data_dir.listdir()
 
         # Try to delete the increments dir first
@@ -336,10 +335,10 @@ information in it.
             try:
                 rp.conn.rpath.delete_dir_no_files(rp)
             except rpath.RPathException:
-                log.Log("Increments dir contains files.", log.Log.INFO)
+                log.Log("Increments dir contains files", log.INFO)
                 return
             except Security.Violation:
-                log.Log("Server doesn't support resuming.", log.Log.WARNING)
+                log.Log("Server doesn't support resuming", log.WARNING)
                 return
 
         # then delete all remaining files

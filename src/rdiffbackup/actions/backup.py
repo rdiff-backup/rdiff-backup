@@ -105,15 +105,15 @@ class BackupAction(actions.BaseAction):
         previous_time = self.target.get_mirror_time()
         if previous_time >= Time.curtime:
             log.Log("The last backup is not in the past. Aborting.",
-                    log.Log.ERROR)
+                    log.ERROR)
             return 1
         if log.Log.verbosity > 0:
             try:  # the target repository must be writable
                 log.Log.open_logfile(
                     self.target.data_dir.append("backup.log"))
             except (log.LoggerError, Security.Violation) as exc:
-                log.Log("Unable to open logfile due to '{exc}'".format(
-                    exc=exc), log.Log.ERROR)
+                log.Log("Unable to open logfile due to '{ex}'".format(
+                    ex=exc), log.ERROR)
                 return 1
         # TODO could we get rid of the error log?
         log.ErrorLog.open(Time.curtimestr, compress=self.values.compression)
@@ -136,7 +136,7 @@ class BackupAction(actions.BaseAction):
         if previous_time < 0 or previous_time >= Time.curtime:
             log.Log("Either there is more than one current_mirror or "
                     "the last backup is not in the past. Aborting.",
-                    log.Log.ERROR)
+                    log.ERROR)
             return 1
         elif previous_time:
             Time.setprevtime(previous_time)
@@ -175,12 +175,12 @@ class BackupAction(actions.BaseAction):
         # if not Globals.select_mirror.Select(relative_rpout):
         #     return
 
-        log.Log("The target directory '{trp}' may be contained in the "
-                "source directory '{srp}'. "
+        log.Log("The target directory '{td}' may be contained in the "
+                "source directory '{sd}'. "
                 "This could cause an infinite recursion. "
                 "You may need to use the --exclude option "
                 "(which you might already have done).".format(
-                    trp=rpout, srp=rpin), log.Log.WARNING)
+                    td=rpout, sd=rpin), log.WARNING)
 
 
 def get_action_class():

@@ -41,12 +41,12 @@ class Location():
         check that the location exists and is a directory
         """
         if not self.base_dir.lstat():
-            log.Log("Source path {rp} does not exist".format(
-                rp=self.base_dir), log.Log.ERROR)
+            log.Log("Source path {sp} does not exist".format(
+                sp=self.base_dir), log.ERROR)
             return False
         elif not self.base_dir.isdir():
-            log.Log("Source path {rp} is not a directory".format(
-                rp=self.base_dir), log.Log.ERROR)
+            log.Log("Source path {sp} is not a directory".format(
+                sp=self.base_dir), log.ERROR)
             return False
         return True
 
@@ -57,13 +57,13 @@ class Location():
         # TODO The writable aspect hasn't yet been implemented
         if (self.base_dir.lstat() and not self.base_dir.isdir()):
             if self.force:
-                log.Log("Target {rp} exists but isn't a directory, "
+                log.Log("Target path {tp} exists but isn't a directory, "
                         "and will be force deleted".format(
-                            rp=self.base_dir), log.Log.WARNING)
+                            tp=self.base_dir), log.WARNING)
             else:
-                log.Log("Target {rp} exists and is not a directory, "
+                log.Log("Target path {tp} exists and is not a directory, "
                         "call with '--force' to overwrite".format(
-                            rp=self.base_dir), log.Log.ERROR)
+                            tp=self.base_dir), log.ERROR)
                 return False
         return True
 
@@ -85,8 +85,8 @@ class Location():
                     self.base_dir.mkdir()
                 self.base_dir.chmod(0o700)  # only read-writable by its owner
         except os.error:
-            log.Log("Unable to delete and/or create directory {rp}".format(
-                rp=self.base_dir), log.Log.ERROR)
+            log.Log("Unable to delete and/or create directory {di}".format(
+                di=self.base_dir), log.ERROR)
             return False
 
         return True  # all is good

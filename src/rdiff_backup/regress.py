@@ -115,7 +115,8 @@ class RegressITRB(rorpiter.ITRBranch):
     def fast_process_file(self, index, rf):
         """Process when nothing is a directory"""
         if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
-            log.Log("Regressing file {rp}".format(rp=rf.metadata_rorp), 5)
+            log.Log("Regressing file {fi}".format(fi=rf.metadata_rorp),
+                    log.INFO)
             if rf.metadata_rorp.isreg():
                 self._restore_orig_regfile(rf)
             else:
@@ -127,7 +128,8 @@ class RegressITRB(rorpiter.ITRBranch):
                 else:
                     rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
         if rf.regress_inc:
-            log.Log("Deleting increment {rp}".format(rp=rf.regress_inc), 5)
+            log.Log("Deleting increment {ic}".format(ic=rf.regress_inc),
+                    log.INFO)
             rf.regress_inc.delete()
 
     def start_process_directory(self, index, rf):
@@ -149,24 +151,26 @@ class RegressITRB(rorpiter.ITRBranch):
             if rf.mirror_rp.isdir():
                 rf.mirror_rp.setdata()
                 if not rf.metadata_rorp.equal_loose(rf.mirror_rp):
-                    log.Log("Regressing attributes of {rp}".format(rp=rf), 5)
+                    log.Log("Regressing attributes of path {pa}".format(pa=rf),
+                            log.INFO)
                     rpath.copy_attribs(rf.metadata_rorp, rf.mirror_rp)
             else:
                 rf.mirror_rp.delete()
-                log.Log("Regressing file {rp}".format(rp=rf.mirror_rp), 5)
+                log.Log("Regressing file {fi}".format(fi=rf.mirror_rp),
+                        log.INFO)
                 rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
         else:  # replacing a dir with some other kind of file
             assert rf.mirror_rp.isdir(), (
                 "Mirror '{mrp!r}' can only be a directory.".format(
                     mrp=rf.mirror_rp))
-            log.Log("Replacing directory {rp}".format(rp=rf), 5)
+            log.Log("Replacing directory {di}".format(di=rf), log.INFO)
             if rf.metadata_rorp.isreg():
                 self._restore_orig_regfile(rf)
             else:
                 rf.mirror_rp.delete()
                 rpath.copy_with_attribs(rf.metadata_rorp, rf.mirror_rp)
         if rf.regress_inc:
-            log.Log("Deleting increment {rp}".format(rp=rf), 5)
+            log.Log("Deleting increment {ic}".format(ic=rf), log.INFO)
             rf.regress_inc.delete()
 
     def _restore_orig_regfile(self, rf):
@@ -178,8 +182,8 @@ class RegressITRB(rorpiter.ITRBranch):
 
         """
         assert rf.metadata_rorp.isreg(), (
-            "Metadata path '{mrp}' can only be regular file.".format(
-                mrp=rf.metadata_rorp))
+            "Metadata path '{mp}' can only be regular file.".format(
+                mp=rf.metadata_rorp))
         if rf.mirror_rp.isreg():
             tf = rf.mirror_rp.get_temp_rpath(sibling=True)
             tf.write_from_fileobj(rf.get_restore_fp())
@@ -228,8 +232,8 @@ def check_pids(curmir_incs):
                     # access denied, means nevertheless PID still exists
                     return True
                 else:
-                    msg = "Warning: unable to check if PID %d still running"
-                    log.Log(msg % pid, 2)
+                    log.Log("Unable to check if process ID {pi} "
+                            "is still running".format(pi=pid), log.WARNING)
                     return None  # we don't know if the process is running
             else:
                 if process:
@@ -243,9 +247,8 @@ def check_pids(curmir_incs):
             except ProcessLookupError:  # errno.ESRCH - pid doesn't exist
                 return False
             except OSError:  # any other OS error
-                log.Log(
-                    "Warning: unable to check if PID %d still running" % (pid, ),
-                    2)
+                log.Log("Unable to check if process ID {pi} "
+                        "is still running".format(pi=pid), log.WARNING)
                 return None  # we don't know if the process is still running
             else:  # the process still exists
                 return True
@@ -260,10 +263,10 @@ def check_pids(curmir_incs):
         if pid is not None and pid_running(pid):
             log.Log.FatalError(
                 """It appears that a previous rdiff-backup session with process
-id %d is still running.  If two different rdiff-backup processes write
+id {pi} is still running.  If two different rdiff-backup processes write
 the same repository simultaneously, data corruption will probably
 result.  To proceed with regress anyway, rerun rdiff-backup with the
---force option.""" % (pid, ))
+--force option""".format(pi=pid))
 
 
 # @API(Regress, 200)
@@ -312,7 +315,8 @@ def _set_regress_time():
     mirror_rp_to_delete = curmir_incs[0]
     regress_time = curmir_incs[1].getinctime()
     unsuccessful_backup_time = mirror_rp_to_delete.getinctime()
-    log.Log("Regressing to %s" % Time.timetopretty(regress_time), 4)
+    log.Log("Regressing to date/time {dt}".format(
+        dt=Time.timetopretty(regress_time)), log.NOTE)
     return manager, mirror_rp_to_delete
 
 
@@ -357,7 +361,7 @@ def _regress_rbdir(meta_manager):
 
     for new_rp in meta_manager.timerpmap[unsuccessful_backup_time]:
         if new_rp.getincbase_bname() != b'current_mirror':
-            log.Log("Deleting old diff at {rp}".format(rp=new_rp), 5)
+            log.Log("Deleting old diff {od}".format(od=new_rp), log.INFO)
             new_rp.delete()
 
     for rp in meta_diffs:
@@ -430,9 +434,9 @@ def _iterate_meta_rfs(mirror_rp, inc_rp):
     for raw_rf, metadata_rorp in collated:
         raw_rf = longname.update_regressfile(raw_rf, metadata_rorp, mirror_rp)
         if not raw_rf:
-            log.Log("Warning, metadata file has entry for {rp}, "
+            log.Log("Warning, metadata file has entry for path {pa}, "
                     "but there are no associated files.".format(
-                        rp=metadata_rorp), 2)
+                        pa=metadata_rorp), log.WARNING)
             continue
         raw_rf.set_metadata_rorp(metadata_rorp)
         yield raw_rf
@@ -444,5 +448,6 @@ def _yield_metadata():
     metadata_iter = metadata.ManagerObj.GetAtTime(regress_time)
     if metadata_iter:
         return metadata_iter
-    log.Log.FatalError("No metadata for time %s (%s) found,\ncannot regress" %
-                       (Time.timetopretty(regress_time), regress_time))
+    log.Log.FatalError("No metadata for time {pt} ({rt}) found, "
+                       "cannot regress".format(
+                           pt=Time.timetopretty(regress_time), rt=regress_time))

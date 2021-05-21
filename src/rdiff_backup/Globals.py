@@ -318,48 +318,9 @@ def set_integer(name, val):
     try:
         intval = int(val)
     except ValueError:
-        log.Log.FatalError("Variable %s must be set to an integer -\n"
-                           "received %s instead." % (name, val))
+        log.Log.FatalError("Variable {vr} must be set to an integer, received "
+                           "value '{vl}' instead".format(vr=name, vl=val))
     set(name, intval)
-
-
-def set_float(name, val, min=None, max=None, inclusive=1):
-    """Like set, but make sure val is float within given bounds"""
-
-    def error():
-        s = "Variable %s must be set to a float" % (name, )
-        if min is not None and max is not None:
-            s += " between %s and %s " % (min, max)
-            if inclusive:
-                s += "inclusive"
-            else:
-                s += "not inclusive"
-        elif min is not None or max is not None:
-            if inclusive:
-                inclusive_string = "or equal to "
-            else:
-                inclusive_string = ""
-            if min is not None:
-                s += " greater than %s%s" % (inclusive_string, min)
-            else:
-                s += " less than %s%s" % (inclusive_string, max)
-        log.Log.FatalError(s)
-
-    try:
-        f = float(val)
-    except ValueError:
-        error()
-    if min is not None:
-        if inclusive and f < min:
-            error()
-        elif not inclusive and f <= min:
-            error()
-    if max is not None:
-        if inclusive and f > max:
-            error()
-        elif not inclusive and f >= max:
-            error()
-    set(name, f)
 
 
 def get_dict_val(name, key):
@@ -394,15 +355,12 @@ def set_api_version(val):
     try:
         intval = int(val)
     except ValueError:
-        log.Log.FatalError(
-            "API version must be set to an integer, "
-            "received {val} instead.".format(val=val))
+        log.Log.FatalError("API version must be set to an integer, "
+                           "received value {va} instead.".format(va=val))
     if intval < api_version["min"] or intval > api_version["max"]:
         log.Log.FatalError(
-            "API version {val} must be between {api_min} and {api_max}.".format(
-                val=val,
-                api_min=api_version["min"],
-                api_max=api_version["max"]))
+            "API version {av} must be between {mi} and {ma}.".format(
+                av=val, mi=api_version["min"], ma=api_version["max"]))
     api_version["actual"] = intval
 
 

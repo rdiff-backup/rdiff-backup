@@ -397,7 +397,7 @@ class PipeConnection(LowLevelPipeConnection):
         """Start server's read eval return loop"""
         Globals.server = 1
         Globals.connections.append(self)
-        log.Log("Starting server", 6)
+        log.Log("Starting server", log.INFO)
         self._get_response(-1)
         return 0  # all is well...
 
@@ -480,10 +480,11 @@ class PipeConnection(LowLevelPipeConnection):
         if robust.is_routine_fatal(sys.exc_info()[1]):
             raise  # Fatal error--No logging necessary, but connection down
         if log.Log.verbosity >= 5 or log.Log.term_verbosity >= 5:
-            log.Log(
-                "Sending back exception %s of type %s: \n%s" %
-                (sys.exc_info()[1], sys.exc_info()[0], "".join(
-                    traceback.format_tb(sys.exc_info()[2]))), 5)
+            log.Log("Sending back exception {ex} of type {ty} with "
+                    "traceback {tb}".format(
+                        ex=sys.exc_info()[1], ty=sys.exc_info()[0],
+                        tb="".join(traceback.format_tb(sys.exc_info()[2]))),
+                    log.INFO)
         return sys.exc_info()[1]
 
     def _get_new_req_num(self):

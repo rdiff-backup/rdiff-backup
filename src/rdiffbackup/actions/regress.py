@@ -89,8 +89,8 @@ class RegressAction(actions.BaseAction):
                 log.Log.open_logfile(
                     self.source.data_dir.append(self.name + ".log"))
             except (log.LoggerError, Security.Violation) as exc:
-                log.Log("Unable to open logfile due to '{exc}'".format(
-                    exc=exc), log.Log.ERROR)
+                log.Log("Unable to open logfile due to exception '{ex}'".format(
+                    ex=exc), log.ERROR)
                 return 1
 
         return 0
@@ -103,7 +103,7 @@ class RegressAction(actions.BaseAction):
             return self.source.regress()
         else:
             log.Log("Given repository doesn't need to be regressed",
-                    log.Log.NOTE)
+                    log.NOTE)
             return 0  # all is good
 
 

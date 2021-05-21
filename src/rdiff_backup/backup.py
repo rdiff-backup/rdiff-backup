@@ -26,8 +26,8 @@ from . import Globals, metadata, rorpiter, Hardlink, robust, \
 
 def Mirror(src_rpath, dest_rpath):
     """Turn dest_rpath into a copy of src_rpath"""
-    log.Log("Starting mirror {srp} to {drp}".format(
-        srp=src_rpath, drp=dest_rpath), 4)
+    log.Log("Starting mirror from source path {sp} to destination "
+            "path {dp}".format(sp=src_rpath, dp=dest_rpath), log.NOTE)
     SourceS = src_rpath.conn.backup.SourceStruct
     DestS = dest_rpath.conn.backup.DestinationStruct
 
@@ -40,8 +40,8 @@ def Mirror(src_rpath, dest_rpath):
 
 def Mirror_and_increment(src_rpath, dest_rpath, inc_rpath):
     """Mirror + put increments in tree based at inc_rpath"""
-    log.Log("Starting increment operation {drp} to {srp}".format(
-        srp=src_rpath, drp=dest_rpath), 4)
+    log.Log("Starting increment operation from source path {sp} to destination "
+            "path {dp}".format(sp=src_rpath, dp=dest_rpath), log.NOTE)
     SourceS = src_rpath.conn.backup.SourceStruct
     DestS = dest_rpath.conn.backup.DestinationStruct
 
@@ -161,15 +161,14 @@ class DestinationStruct:
 
     @classmethod
     def get_sigs(cls, dest_base_rpath):
-        """Yield signatures of any changed destination files
-
-        If we are backing up across a pipe, we must flush the pipeline
-        every so often so it doesn't get congested on destination end.
-
+        """
+        Yield signatures of any changed destination files
         """
         flush_threshold = Globals.pipeline_max_length - 2
         num_rorps_seen = 0
         for src_rorp, dest_rorp in cls.CCPP:
+            # If we are backing up across a pipe, we must flush the pipeline
+            # every so often so it doesn't get congested on destination end.
             if (Globals.backup_reader is not Globals.backup_writer):
                 num_rorps_seen += 1
                 if (num_rorps_seen > flush_threshold):
@@ -191,7 +190,7 @@ class DestinationStruct:
         """Patch dest_rpath with an rorpiter of diffs"""
         ITR = rorpiter.IterTreeReducer(PatchITRB, [dest_rpath, cls.CCPP])
         for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
-            log.Log("Processing changed file {rp}".format(rp=diff), 5)
+            log.Log("Processing file {cf}".format(cf=diff), log.INFO)
             ITR(diff.index, diff)
         ITR.finish_processing()
         cls.CCPP.close()
@@ -203,7 +202,7 @@ class DestinationStruct:
         ITR = rorpiter.IterTreeReducer(IncrementITRB,
                                        [dest_rpath, inc_rpath, cls.CCPP])
         for diff in rorpiter.FillInIter(source_diffiter, dest_rpath):
-            log.Log("Processing changed file {rp}".format(rp=diff), 5)
+            log.Log("Processing changed file {cf}".format(cf=diff), log.INFO)
             ITR(diff.index, diff)
         ITR.finish_processing()
         cls.CCPP.close()
@@ -278,8 +277,8 @@ class DestinationStruct:
                     return Rdiff.get_signature(dest_rp)
                 except OSError:
                     log.Log.FatalError(
-                        "Could not open {rp} for reading. Check "
-                        "permissions on file.".format(rp=dest_rp))
+                        "Could not open file {fi} for reading. Check "
+                        "permissions on file.".format(fi=dest_rp))
             else:
                 raise
 
@@ -468,9 +467,8 @@ class CacheCollatedPostProcess:
             (old_source_rorp, old_dest_rorp, changed_flag, success_flag,
              inc) = self.cache_dict[first_index]
         except KeyError:  # probably caused by error in file system (dup)
-            log.Log(
-                "Warning index %s missing from CCPP cache" % (first_index, ),
-                2)
+            log.Log("Index {ix} missing from CCPP cache".format(
+                ix=first_index), log.WARNING)
             return
         del self.cache_dict[first_index]
         self._post_process(old_source_rorp, old_dest_rorp, changed_flag,

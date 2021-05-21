@@ -82,8 +82,8 @@ class ACL:
             sd = rp.conn.win32security.GetNamedSecurityInfo(
                 os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
         except (OSError, pywintypes.error) as exc:
-            log.Log("Warning: unable to read ACL from {rp}: {exc}".format(
-                rp=rp, exc=exc), 4)
+            log.Log("Unable to read ACL from path {pa} due to "
+                    "exception {ex}".format(pa=rp, ex=exc), log.INFO)
             return
 
         if skip_inherit_only:
@@ -120,9 +120,8 @@ class ACL:
             self.__acl = rp.conn.win32security.ConvertSecurityDescriptorToStringSecurityDescriptor(
                 sd, SDDL_REVISION_1, ACL.flags)
         except (OSError, pywintypes.error) as exc:
-            log.Log(
-                "Warning: unable to convert ACL from %s to string: %s" % (repr(
-                    rp.path), exc), 4)
+            log.Log("Unable to convert ACL of path {pa} to string "
+                    "due to exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
             self.__acl = ''
         self.__acl = os.fsencode(self.__acl)
 
@@ -134,9 +133,9 @@ class ACL:
             sd = rp.conn.win32security.ConvertStringSecurityDescriptorToSecurityDescriptor(
                 os.fsdecode(self.__acl), SDDL_REVISION_1)
         except (OSError, pywintypes.error) as exc:
-            log.Log(
-                "Warning: unable to convert string %s to ACL: %s" % (repr(
-                    self.__acl), exc), 4)
+            log.Log("Unable to convert ACL string '{st!r}' to security "
+                    "descriptor due to exception '{ex}'".format(
+                        st=self.__acl, ex=exc), log.INFO)
 
         # Enable next block of code for dirs after we have a mechanism in
         # backup.py (and similar) to do a first pass to see if a directory
@@ -175,8 +174,8 @@ class ACL:
                 and sd.GetSecurityDescriptorSacl() or None
             )
         except (OSError, pywintypes.error) as exc:
-            log.Log("Warning: unable to set ACL on {rp}: {exc}".format(
-                rp=rp, exc=exc), 4)
+            log.Log("Unable to set ACL on path '{pa}' "
+                    "due to exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
 
     def from_string(self, acl_str):
 
@@ -205,9 +204,8 @@ class ACL:
             sd = rp.conn.win32security.GetNamedSecurityInfo(
                 os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
         except (OSError, pywintypes.error) as exc:
-            log.Log(
-                "Warning: unable to read ACL from %s for clearing: %s" % (repr(
-                    rp.path), exc), 4)
+            log.Log("Unable to read ACL from path {pa} for clearing them "
+                    "due to exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
             return
 
         acl = sd.GetSecurityDescriptorDacl()
@@ -241,9 +239,8 @@ class ACL:
                 and sd.GetSecurityDescriptorSacl() or None
             )
         except (OSError, pywintypes.error) as exc:
-            log.Log(
-                "Warning: unable to set ACL on %s after clearing: %s" % (repr(
-                    rp.path), exc), 4)
+            log.Log("Unable to set ACL on path {pa} after clearing them "
+                    "due to exception '{ex}".format(pa=rp, ex=exc), log.INFO)
 
 
 class WACLExtractor(metadata.FlatExtractor):
@@ -294,7 +291,8 @@ def init_acls():
         hnd = OpenProcessToken(win32api.GetCurrentProcess(),
                                TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY)
     except win32api.error as exc:
-        log.Log("Warning: unable to open Windows process token: %s" % exc, 5)
+        log.Log("Unable to open Windows process token due to "
+                "exception '{ex}'".format(ex=exc), log.INFO)
         return
     try:
         try:
@@ -308,8 +306,8 @@ def init_acls():
                              (lpv(SE_BACKUP_NAME), SE_PRIVILEGE_ENABLED),
                              (lpv(SE_RESTORE_NAME), SE_PRIVILEGE_ENABLED)])
         except win32api.error as exc:
-            log.Log("Warning: unable to enable SE_*_NAME privileges: %s" % exc,
-                    5)
+            log.Log("unable to enable SE_*_NAME privileges due to "
+                    "exception '{ex}'".format(ex=exc), log.INFO)
             return
         for name, enabled in GetTokenInformation(hnd, TokenPrivileges):
             if name == SecurityName and enabled:

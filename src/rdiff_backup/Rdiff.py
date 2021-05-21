@@ -25,23 +25,23 @@ def get_signature(rp, blocksize=None):
     """Take signature of rpin file and return in file object"""
     if not blocksize:
         blocksize = _find_blocksize(rp.getsize())
-    log.Log("Getting signature of {rp} with blocksize {blks}".format(
-        rp=rp, blks=blocksize), 7)
+    log.Log("Getting signature of file {fi} with blocksize {bs}".format(
+        fi=rp, bs=blocksize), log.DEBUG)
     return librsync.SigFile(rp.open("rb"), blocksize)
 
 
 def get_delta_sigrp_hash(rp_signature, rp_new):
     """Like above but also calculate hash of new as close() value"""
-    log.Log("Getting delta (with hash) of {rp} with signature {srp}".format(
-        rp=rp_new, srp=rp_signature), 7)
+    log.Log("Getting delta (with hash) of file {fi} with signature {si}".format(
+        fi=rp_new, si=rp_signature), log.DEBUG)
     return librsync.DeltaFile(
         rp_signature.open("rb"), hash.FileWrapper(rp_new.open("rb")))
 
 
 def write_delta(basis, new, delta, compress=None):
     """Write rdiff delta which brings basis to new"""
-    log.Log("Writing delta {brp} from {nrp} -> {drp}".format(
-        brp=basis, nrp=new, drp=delta), 7)
+    log.Log("Writing delta {de} from basis {ba} to new {ne}".format(
+        ba=basis, ne=new, de=delta), log.DEBUG)
     deltafile = librsync.DeltaFile(get_signature(basis), new.open("rb"))
     delta.write_from_fileobj(deltafile, compress)
 
