@@ -732,7 +732,7 @@ class PatchITRB(rorpiter.ITRBranch):
             return 1
         log.ErrorLog.write_if_open(
             "UpdateError", diff_rorp, "Updated mirror "
-            "temp file '{rp}' does not match source".format(rp=new_rp))
+            "temp file '{tf}' does not match source".format(tf=new_rp))
         return 0
 
     def _write_special(self, diff_rorp, new):

@@ -33,6 +33,11 @@ bytes).
 * `Globals.set`
 * `Globals.set_local`
 * `Hardlink.initialize_dictionaries`
+* `log.ErrorLog.close`
+* `log.ErrorLog.isopen`
+* `log.ErrorLog.open`
+* `log.ErrorLog.write`
+* `log.ErrorLog.write_if_open`
 * `log.Log.close_logfile_allconn`
 * `log.Log.close_logfile_local`
 * `log.Log.log_to_file`

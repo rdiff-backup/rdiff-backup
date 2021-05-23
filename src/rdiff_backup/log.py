@@ -18,6 +18,7 @@
 # 02110-1301, USA
 """Manage logging, displaying and recording messages with required verbosity"""
 
+# we need to define constants before the imports to avoid circular dependencies
 ERROR = 1
 WARNING = 2
 NOTE = 3
@@ -25,7 +26,7 @@ INFO = 5
 DEBUG = 8  # we reserve 9 for adding the timestamp
 
 # mapping from severity to prefix (must be less than 9 characters)
-LOG_PREFIX = {
+_LOG_PREFIX = {
     1: "ERROR:",
     2: "WARNING:",
     3: "NOTE:",
@@ -34,11 +35,13 @@ LOG_PREFIX = {
 }
 
 import datetime
+import os  # needed to grab verbosity as environment variable
+import re
+import shutil
 import sys
+import textwrap
 import traceback
 import types
-import re
-import os  # needed to grab verbosity as environment variable
 from . import Globals, rpath
 
 LOGFILE_ENCODING = 'utf-8'
@@ -77,10 +80,10 @@ class Logger:
             else:
                 raise TypeError(
                     "You can only log bytes, str or functions to generate "
-                    "messages, and not {lt}.".format(lt=type(message)))
+                    "messages, and not {lt}".format(lt=type(message)))
 
         if Globals.get_api_version() < 201:  # compat200
-            message = "{pre} {msg}.".format(pre=LOG_PREFIX[verbosity],
+            message = "{pre} {msg}".format(pre=_LOG_PREFIX[verbosity],
                                             msg=message)
         if verbosity <= self.verbosity:
             self.log_to_file(message, verbosity)
@@ -94,13 +97,14 @@ class Logger:
             if self.log_file_local:
                 if Globals.get_api_version() < 201:
                     tmpstr = self._format(message, self.verbosity)
+                    self.logfp.write(_to_bytes(tmpstr))
                 else:
                     tmpstr = self._format(message, self.verbosity, verbosity)
-                self.logfp.write(_to_bytes(tmpstr))
+                    self.logfp.write(_to_bytes(tmpstr + "\n"))
                 self.logfp.flush()
             else:
                 if Globals.get_api_version() < 201:  # compat200
-                    self.log_file_conn.log.Log.log_to_file(message)
+                    self.log_file_conn.log.Log.log_to_file(message + "\n")
                 else:
                     self.log_file_conn.log.Log.log_to_file(message, verbosity)
 
@@ -112,9 +116,21 @@ class Logger:
             termfp = sys.stdout.buffer
         if Globals.get_api_version() < 201:  # compat200
             tmpstr = self._format(message, self.term_verbosity)
+            termfp.write(_to_bytes(tmpstr, encoding=sys.stdout.encoding))
         else:
             tmpstr = self._format(message, self.term_verbosity, verbosity)
-        termfp.write(_to_bytes(tmpstr, encoding=sys.stdout.encoding))
+            # if the verbosity is below 9 and the string isn't deemed
+            # pre-formatted (we ignore the last character)
+            if self.verbosity < 9 and "\n" not in tmpstr[:-1]:
+                termfp.write(_to_bytes(
+                    textwrap.fill(
+                        tmpstr, subsequent_indent=" "*9,
+                        break_long_words=False,
+                        break_on_hyphens=False,
+                        width=shutil.get_terminal_size().columns) + "\n",
+                    encoding=sys.stdout.encoding))
+            else:
+                termfp.write(_to_bytes(tmpstr, encoding=sys.stdout.encoding))
 
     def conn(self, direction, result, req_num):
         """Log some data on the connection
@@ -153,7 +169,7 @@ class Logger:
         If it is 2, don't log to disk at all.
         """
         assert only_terminal in (0, 1, 2), (
-            "Variable only_terminal '{ot}' must be one of [012].".format(
+            "Variable only_terminal '{ot}' must be one of [012]".format(
                 ot=only_terminal))
         if (only_terminal == 0 or (only_terminal == 1 and self.log_file_open)):
             logging_func = self.__call__
@@ -176,7 +192,7 @@ class Logger:
             self.verbosity = int(verbosity_string)
         except ValueError:
             Log.FatalError("Verbosity must be a number, received '{vs}' "
-                           "instead.".format(vs=verbosity_string))
+                           "instead".format(vs=verbosity_string))
         if not self.termverbset:
             self.term_verbosity = self.verbosity
 
@@ -187,7 +203,7 @@ class Logger:
             self.term_verbosity = int(termverb_string)
         except ValueError:
             Log.FatalError("Terminal verbosity must be a number, received "
-                           "'{tv}' instead.".format(tv=termverb_string))
+                           "'{tv}' instead".format(tv=termverb_string))
         self.termverbset = 1
 
     def open_logfile(self, rpath):
@@ -197,7 +213,7 @@ class Logger:
         write commands off to it.
 
         """
-        assert not self.log_file_open, "Can't open an already opened logfile."
+        assert not self.log_file_open, "Can't open an already opened logfile"
         rpath.conn.log.Log.open_logfile_local(rpath)
         for conn in Globals.connections:
             conn.log.Log.open_logfile_allconn(rpath.conn)
@@ -212,7 +228,7 @@ class Logger:
     def open_logfile_local(self, rpath):
         """Open logfile locally - should only be run on one connection"""
         assert rpath.conn is Globals.local_connection, (
-            "Action only foreseen locally and not over {conn}.".format(
+            "Action only foreseen locally and not over {conn}".format(
                 conn=rpath.conn))
         try:
             self.logfp = rpath.open("ab")
@@ -238,7 +254,7 @@ class Logger:
     def close_logfile_local(self):
         """Run by logging connection - close logfile"""
         assert self.log_file_conn is Globals.local_connection, (
-            "Action only foreseen locally and not over {lc}.".format(
+            "Action only foreseen locally and not over {lc}".format(
                 lc=self.log_file_conn))
         self.logfp.close()
         self.log_file_local = None
@@ -262,8 +278,8 @@ class Logger:
         """Format the message, possibly adding date information"""
         if verbosity < 9:
             if msg_verbosity:
-                return "{pre:<9}{msg}.\n".format(
-                    pre=LOG_PREFIX[msg_verbosity], msg=message)
+                return "{pre:<9}{msg}\n".format(
+                    pre=_LOG_PREFIX[msg_verbosity], msg=message)
             else:  # compat200
                 return "{msg}\n".format(msg=message)
         else:
@@ -275,11 +291,11 @@ class Logger:
             else:
                 role = "CLIENT"
             if msg_verbosity:
-                return "{time}  <{role}-{pid}>  {pre} {msg}.\n".format(
+                return "{time}  <{role}-{pid}>  {pre} {msg}".format(
                     time=timestamp, role=role, pid=os.getpid(),
-                    pre=LOG_PREFIX[msg_verbosity], msg=message)
+                    pre=_LOG_PREFIX[msg_verbosity], msg=message)
             else:  # compat200
-                return "{time}  <{role}-{pid}>  {msg}\n".format(
+                return "{time}  <{role}-{pid}>  {msg}".format(
                     time=timestamp, role=role, pid=os.getpid(), msg=message)
 
 
@@ -287,24 +303,25 @@ Log = Logger()
 
 
 class ErrorLog:
-    """Log each recoverable error in error_log file
+    """
+    Log each recoverable error in error_log file
 
     There are three types of recoverable errors:  ListError, which
     happens trying to list a directory or stat a file, UpdateError,
     which happen when trying to update a changed file, and
     SpecialFileError, which happen when a special file cannot be
     created.  See the error policy file for more info.
-
     """
     _log_fileobj = None
 
     @classmethod
+    # @API(ErrorLog.open, 200)
     def open(cls, time_string, compress=1):
         """Open the error log, prepare for writing"""
         if not Globals.isbackup_writer:
             return Globals.backup_writer.log.ErrorLog.open(
                 time_string, compress)
-        assert not cls._log_fileobj, "Log already open, can't be reopened."
+        assert not cls._log_fileobj, "Log already open, can't be reopened"
 
         base_rp = Globals.rbdir.append("error_log.%s.data" % time_string)
         if compress:
@@ -313,6 +330,7 @@ class ErrorLog:
             cls._log_fileobj = base_rp.open("wb", compress=0)
 
     @classmethod
+    # @API(ErrorLog.isopen, 200)
     def isopen(cls):
         """True if the error log file is currently open"""
         if Globals.isbackup_writer or not Globals.backup_writer:
@@ -321,6 +339,7 @@ class ErrorLog:
             return Globals.backup_writer.log.ErrorLog.isopen()
 
     @classmethod
+    # @API(ErrorLog.write, 200)
     def write(cls, error_type, rp, exc):
         """Add line to log file indicating error exc with file rp"""
         if not Globals.isbackup_writer:
@@ -336,6 +355,7 @@ class ErrorLog:
         cls._log_fileobj.write(_to_bytes(logstr))
 
     @classmethod
+    # @API(ErrorLog.write_if_open, 200)
     def write_if_open(cls, error_type, rp, exc):
         """Call cls.write(...) if error log open, only log otherwise"""
         if not Globals.isbackup_writer and Globals.backup_writer:
@@ -347,6 +367,7 @@ class ErrorLog:
             Log(cls._get_log_string(error_type, rp, exc), WARNING)
 
     @classmethod
+    # @API(ErrorLog.close, 200)
     def close(cls):
         """Close the error log file"""
         if cls.isopen():
@@ -368,7 +389,7 @@ def _to_bytes(logline, encoding=LOGFILE_ENCODING):
     """
     Convert string into bytes for logging into file.
     """
-    assert logline, "There must be a text to encode."
+    assert logline, "There must be a text to encode"
     assert isinstance(logline, str), (
-        "Text to encode must be str and not {lt}.".format(lt=type(logline)))
+        "Text to encode must be str and not {lt}".format(lt=type(logline)))
     return logline.encode(encoding, 'backslashreplace')
