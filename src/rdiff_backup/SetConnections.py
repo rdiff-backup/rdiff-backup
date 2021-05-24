@@ -230,7 +230,7 @@ def parse_location(file_desc):
                         lo=file_desc))
         elif not concat_parts[1]:
             return (None, None,
-                    "No file path in location '{desc}' ending with '::'".format(
+                    "No file path in location '{lo}' ending with '::'".format(
                         lo=file_desc))
         file_host = concat_parts[0]
         file_path = concat_parts[1]

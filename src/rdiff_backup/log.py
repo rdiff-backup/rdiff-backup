@@ -18,6 +18,18 @@
 # 02110-1301, USA
 """Manage logging, displaying and recording messages with required verbosity"""
 
+import datetime
+import os  # needed to grab verbosity as environment variable
+import re
+import shutil
+import sys
+import textwrap
+import traceback
+import types
+from . import Globals
+
+LOGFILE_ENCODING = 'utf-8'
+
 # we need to define constants before the imports to avoid circular dependencies
 ERROR = 1
 WARNING = 2
@@ -33,18 +45,6 @@ _LOG_PREFIX = {
     5: "*",
     8: "DEBUG:",
 }
-
-import datetime
-import os  # needed to grab verbosity as environment variable
-import re
-import shutil
-import sys
-import textwrap
-import traceback
-import types
-from . import Globals, rpath
-
-LOGFILE_ENCODING = 'utf-8'
 
 
 class LoggerError(Exception):
@@ -84,7 +84,7 @@ class Logger:
 
         if Globals.get_api_version() < 201:  # compat200
             message = "{pre} {msg}".format(pre=_LOG_PREFIX[verbosity],
-                                            msg=message)
+                                           msg=message)
         if verbosity <= self.verbosity:
             self.log_to_file(message, verbosity)
         if verbosity <= self.term_verbosity:
@@ -120,11 +120,11 @@ class Logger:
         else:
             tmpstr = self._format(message, self.term_verbosity, verbosity)
             # if the verbosity is below 9 and the string isn't deemed
-            # pre-formatted (we ignore the last character)
+            # pre-formatted by newlines (we ignore the last character)
             if self.verbosity < 9 and "\n" not in tmpstr[:-1]:
                 termfp.write(_to_bytes(
                     textwrap.fill(
-                        tmpstr, subsequent_indent=" "*9,
+                        tmpstr, subsequent_indent=" " * 9,
                         break_long_words=False,
                         break_on_hyphens=False,
                         width=shutil.get_terminal_size().columns) + "\n",
@@ -206,17 +206,17 @@ class Logger:
                            "'{tv}' instead".format(tv=termverb_string))
         self.termverbset = 1
 
-    def open_logfile(self, rpath):
+    def open_logfile(self, log_rp):
         """Inform all connections of an open logfile.
 
-        rpath.conn will write to the file, and the others will pass
+        log_rp.conn will write to the file, and the others will pass
         write commands off to it.
 
         """
         assert not self.log_file_open, "Can't open an already opened logfile"
-        rpath.conn.log.Log.open_logfile_local(rpath)
+        log_rp.conn.log.Log.open_logfile_local(log_rp)
         for conn in Globals.connections:
-            conn.log.Log.open_logfile_allconn(rpath.conn)
+            conn.log.Log.open_logfile_allconn(log_rp.conn)
 
     # @API(Log.open_logfile_allconn, 200)
     def open_logfile_allconn(self, log_file_conn):
@@ -225,18 +225,17 @@ class Logger:
         self.log_file_conn = log_file_conn
 
     # @API(Log.open_logfile_local, 200)
-    def open_logfile_local(self, rpath):
+    def open_logfile_local(self, log_rp):
         """Open logfile locally - should only be run on one connection"""
-        assert rpath.conn is Globals.local_connection, (
+        assert log_rp.conn is Globals.local_connection, (
             "Action only foreseen locally and not over {conn}".format(
-                conn=rpath.conn))
+                conn=log_rp.conn))
         try:
-            self.logfp = rpath.open("ab")
-        except OSError as e:
+            self.logfp = log_rp.open("ab")
+        except OSError as exc:
             raise LoggerError(
-                "Unable to open logfile {rp}: {ex}".format(rp=rpath, ex=e))
+                "Unable to open logfile {lf}: {ex}".format(lf=log_rp, ex=exc))
         self.log_file_local = 1
-        self.logrp = rpath
 
     def close_logfile(self):
         """Close logfile and inform all connections"""
@@ -325,6 +324,7 @@ class ErrorLog:
 
         base_rp = Globals.rbdir.append("error_log.%s.data" % time_string)
         if compress:
+            from . import rpath
             cls._log_fileobj = rpath.MaybeGzip(base_rp)
         else:
             cls._log_fileobj = base_rp.open("wb", compress=0)
