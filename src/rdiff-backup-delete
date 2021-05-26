@@ -24,14 +24,17 @@
 # metadata.
 #
 
-import os
-import sys
-
 import getopt
 import gzip
+import io
+import os
 import re
 import stat
 import struct
+import subprocess
+import sys
+from distutils import spawn
+
 
 PY2 = sys.version_info < (3,)
 PY26 = sys.version_info > (2, 6) and sys.version_info < (2, 7)
@@ -58,6 +61,67 @@ def _str(value):
         return value.decode('utf-8')
     else:
         return value.decode('utf-8', errors='replace')
+
+
+# Check if gzip is available.
+_GZIP = spawn.find_executable('gzip')
+
+
+class WrapClose:
+    """
+    Helper for _open() -- a proxy for a file whose close waits for the process.
+    """
+
+    def __init__(self, stream, proc):
+        self._stream = stream
+        self._proc = proc
+
+    def close(self):
+        if self._proc.stdin:
+            self._proc.stdin.close()
+        returncode = self._proc.wait()
+        if self._proc.stdout:
+            self._proc.stdout.close()
+        return returncode
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+    def __getattr__(self, name):
+        return getattr(self._stream, name)
+
+    def __iter__(self):
+        return iter(self._stream)
+
+
+def _open(fn, mode):
+    """
+    Wrapper to open a file with or without compression using gzip executable or
+    pure-python implementation.
+    """
+    compress = fn.endswith(b'.gz')
+    buffered = io.BufferedReader if 'r' in mode else io.BufferedWriter
+    # Open file directly if compression is not required
+    if not compress:
+        return buffered(open(fn, mode))
+
+    # Open file using python gzip if zcat and gzip are not available.
+    if not _GZIP:
+        return buffered(gzip.open(fn, mode))
+
+    # When available, open file using subprocess gzip for better performance
+    if 'r' in mode:
+        proc = subprocess.Popen([_bytes(_GZIP), b'-cd', fn],
+                                stdout=subprocess.PIPE)
+        return WrapClose(proc.stdout, proc)
+    else:  # wb
+        proc = subprocess.Popen([_GZIP],
+                                stdin=subprocess.PIPE,
+                                stdout=open(fn, mode))
+        return WrapClose(proc.stdin, proc)
 
 
 def _print_usage(error_message=None):
@@ -175,7 +239,6 @@ def _remove_from_metadata(repopath, file, dry_run):
         return
 
     print('removing entries `%s` from %s' % (_str(repopath.relpath), _str(file)))
-    _open = gzip.open if file.endswith(b'.gz') else open
     input = _open(file, 'rb')
     tmp_file = os.path.join(os.path.dirname(file), b'.tmp.' + os.path.basename(file))
     output = _open(tmp_file, 'wb')
