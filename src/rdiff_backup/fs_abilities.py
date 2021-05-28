@@ -648,10 +648,19 @@ class FSAbilities:
                     rp=tmp_rp))
 
         period_rp.setdata()
+        # either the foo and foo. files are the same, or foo. can't be created,
+        # in both cases, we need to escape trailing blanks/periods.
         if period_rp.lstat():
             self.escape_trailing_spaces = 1
         else:
-            self.escape_trailing_spaces = 0
+            try:
+                period_rp.touch()
+                if period_rp.lstat():
+                    self.escape_trailing_spaces = 0
+                else:
+                    self.escape_trailing_spaces = 1
+            except (OSError):
+                self.escape_trailing_spaces = 1
 
         tmp_rp.delete()
 
@@ -668,6 +677,9 @@ class FSAbilities:
                 continue  # file is not fit for tests
             if not test_rp.lstat():
                 continue  # file is not fit for tests
+            if filename.endswith(b".") or filename.endswith(b" "):
+                self.escape_trailing_spaces = 0
+                return
             period = filename + b'.'
             if period in dirlist:
                 self.escape_trailing_spaces = 0
