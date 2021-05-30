@@ -1,0 +1,149 @@
+= Windows Development Guide for rdiff-backup
+:pp: {plus}{plus}
+:sectnums:
+:toc:
+
+Some notes for developers and other people willing to help development on Windows platform, or simply compile rdiff-backup from source code on Windows.
+
+See also: https://wiki.python.org/moin/WindowsCompilers
+
+== Pre-requisites
+
+Here the list of required component to be install to start developing rdiff-backup on Windows platform.
+
+=== Upgrade your Windows OS
+
+Don't overlook this step.
+Visual Studio required an upgraded OS.
+Use Windows Update to upgrade your system.
+Then proceed with the installation.
+
+=== Visual Studio Build Tools
+
+. To install Visual Studio Build Tools, you need to install .NET Framework 4.6. +
+https://www.microsoft.com/en-US/download/details.aspx?id=53344[Download .NET Framework 4.6]
+. Finally, download Build Tools installation. +
+https://www.visualstudio.com/downloads/#build-tools-for-visual-studio-2019[Microsoft Build Tools for Visual Studio 2019]
+. Once downloaded, the filename should be `vs_buildtools.exe` or similar, launch it to start the installation.
+. From the user interface select "C{pp} Build Tools"
+. In the right panel checked the following items.
+Everything else may be unchecked.
+ ** MSVCv142 - VS 2019 C{pp} x64/x86 build tools
+ ** Windows 10 SDK
+ ** C{pp} CMake Tools for Windows
+
+=== Python 3
+
+https://www.python.org/ftp/python/3.9.4/python-3.9.4-amd64.exe[Download Python 3.9.4 x64]
+
+. Check "Add Python 3.9 to PATH"
+. Choose "Customize installation" to select the installation path.
+
+You could verify if Python is working by executing `python --version` in a new command line windows.
+
+=== Python dependencies
+
+Once python is installed, you should have a `pip` available from command line.
+Open a terminal and execut the following commands to install the dependencies required to compile and run rdiff-backup.
+
+ pip install pywin32 pyinstaller wheel
+
+You could verify if packages are properly installed using:
+
+ python -c "import pywintypes, winnt, win32api, win32security, win32file, win32con"
+
+=== CMake
+
+https://github.com/Kitware/CMake/releases/download/v3.16.2/cmake-3.16.2-win64-x64.msi[Download CMake 3.16.2 x64]
+
+. Make sure to select _Add CMake to the system PATH for all users_.
+. Install CMake to : `C:\Program Files\CMake\`
+
+You could verify if cmake is working.
+Open a new terminal and execute `cmake --version`.
+
+=== 7z
+
+https://www.7-zip.org/a/7z1900-x64.exe[Download 7z 19.00 x64]
+
+Install with default settings.
+
+== Build librsync
+
+https://github.com/librsync/librsync/releases/download/v2.2.1/librsync-2.2.1.tar.gz[Download librsync 2.2.1 sources]
+
+. Extract it content using 7z `C:\librsync-2.2.1\`.
+. Open a "x64 Native Tools Command Prompt for VS 2019" from the start menu.
+. Type `cd C:\librsync-2.2.1\`
+. `cmake -DCMAKE_INSTALL_PREFIX=C:\librsync\ -A x64 -DBUILD_SHARED_LIBS=OFF .`
+. `cmake --build . --config Release`
+. `cmake --install . --config Release`
+
+NOTE: Source directory `C:\librsync-2.2.1\` is different to the target directory `C:\librsync\`.
+
+These steps build a 64-bit version of librsync, suitable for use in a 64-bit version of Python.
+If using a 32-bit version of python, use this in place of the first `cmake` command:
+
+. `cmake -DCMAKE_INSTALL_PREFIX=C:\librsync\ -A Win32 -DBUILD_SHARED_LIBS=OFF .`
+. Use the "Developer Command Prompt for VS2019" instead of the x64 variant.
+
+== Build rdiff-backup
+
+https://github.com/rdiff-backup/rdiff-backup/releases[Download rdiff-backup tar.gz] e.g.: rdiff-backup-1.4.0b0.tar.gz
+
+. Extract it content using 7z `C:\rdiff-backup\`
+. Open a Command line terminal
+. Type `cd C:\rdiff-backup\`
+. `set LIBRSYNC_DIR=C:\librsync`
+. `python setup.py build`
+
+== Troubleshooting
+
+=== Verify if Visual studio compiler is working
+
+You could check if the compiler `cl` is working by calling:
+
+ cl.exe hello.c
+
+Where the file `hello.c` contains:
+
+ #include <stdio.h>
+ int main() {
+    // printf() displays the string inside quotation
+    printf("Hello, World!");
+    return 0;
+ }
+
+The expected output should be as follow:
+
+....
+Compilateur d'optimisation Microsoft (R) C/C++ version 19.24.28314 pour x86
+Copyright (C) Microsoft Corporation. Tous droits réservés.
+
+hello.c
+Microsoft (R) Incremental Linker Version 14.24.28314.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+/out:hello.exe
+hello.obj
+....
+
+=== unresolved external symbol
+
+If you see link errors like these:
+
+ _librsyncmodule.obj : error LNK2001: unresolved external symbol rs_sig_begin
+ _librsyncmodule.obj : error LNK2001: unresolved external symbol rs_job_free
+ _librsyncmodule.obj : error LNK2001: unresolved external symbol rs_loadsig_begin
+
+then you have probably compiled librsync for the wrong architecture.
+Try both `-A Win32`/`-A x64` switches when running cmake to build librsync.
+
+If you see link errors like these:
+
+ cmodule.obj : error LNK2001: unresolved external symbol __imp__Py_BuildValue
+ cmodule.obj : error LNK2001: unresolved external symbol __imp__PyDict_SetItemString
+ cmodule.obj : error LNK2001: unresolved external symbol __imp__PyModule_GetDict
+
+then you are using the wrong bitness build tools.
+Try both "x64 Native Tools Command Prompt for VS 2019" as well as "Developer Command Prompt for VS2019".

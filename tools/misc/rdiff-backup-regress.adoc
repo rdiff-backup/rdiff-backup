@@ -1,0 +1,90 @@
+= rdiff-backup-regress v1.0 [25 Aug 2016] by Dominic
+:sectnums:
+:toc:
+
+____
+*NOTE:* this documentation and the pertaining utility have been copied from the https://www.timedicer.co.uk/programs/help/rdiff-backup-regress.sh.php[TimeDicer web-site] on the 26th of July, 2020.
+All kudos go to Dominic.
+Use at your own risk.
+____
+
+== Description
+
+Regresses an rdiff-backup archive by one or more backup sessions i.e.
+to the state it was in before the last n backup sessions.
+
+rdiff-backup-regress.sh can be used to remove an unwanted recent backup run - for instance one that excludes a lot of the usual data or includes a lot of extraneous data.
+Because rdiff-backup saves a full history of data via incremental diff (delta) files, excluding or including a lot of data on one occasion and then correcting it the next time will bloat your repository/archive substantially (by twice the compressed size of the relevant data).
+By using rdiff-backup-regress.sh to regress the archive back to the point before the incorrect backup, you can undo this and recover the lost space.
+You can consider it a workaround for a missing `--regress` option in rdiff-backup.
+
+If the session (aka run or increment) you want to remove is not the most recent then you can use the -n option to remove the requisite number of sessions from the most recent up to the one you want to remove - it is not possible to remove just one session from the middle of an archive.
+If you want to remove some of the earliest, rather than the most recent, sessions you should instead use rdiff-backup with `--remove-older-than` option.
+
+rdiff-backup-regress.sh can also be used with a corrupted archive if regression does not happen automatically and cannot be initiated with `--check-destination-dir`;
+however this may not be successful, and could make things worse, so you are advised to take a backup of the entire repository first.
+
+rdiff-backup-regress.sh works by 'tricking' rdiff-backup into thinking that the last backup is faulty (by creating a second `current_mirror` file), and then runs `rdiff-backup --check-destination-dir` to perform the regression.
+With `-n` option it just repeats this operation a number of times.
+The methodology was originally suggested by Janne Peltonen - kudos.
+
+Note that regressions can take a long time;
+don't take any other actions on the archive until rdiff-backup-regress.sh has completed.
+
+== Health Warnings
+
+rdiff-backup-regress.sh removes one or more recent backups sessions from your rdiff-backup archive.
+Once removed, a backup session is irrecoverable.
+Earlier sessions in the same archive should still be recoverable.
+
+If rdiff-backup-regress.sh is run with superuser permissions (e.g.
+sudo), and the original archives were created by a different user then after recovery some file ownerships may have changed.
+You are advised if possible to run rdiff-backup-regress.sh as the same user who originally created and updated the rdiff-backup archive that is being regressed.
+Usage
+
+rdiff-backup-regress.sh [options] archive-path Note that, unlike rdiff-backup, rdiff-backup-regress.sh must be run on the machine hosting the repository, or (untested) via NFS mount.
+
+== Example
+
+----
+./rdiff-backup-regress.sh -n 2 /home/fred/backup
+----
+
+== Options
+
+* -f - Force, proceed with no prompt
+* -h - Show this help text and then quit
+* -l - Show changelog and then quit
+* -n num - Regress the backup recursively num times (where num is an integer) - default 1
+* -q - Quiet, no output unless an error occurs
+
+== Dependencies
+
+awk bash coreutils rdiff-backup sed
+
+== License
+
+Copyright © 2016 Dominic Raferd.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at https://www.apache.org/licenses/LICENSE-2.0.
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and limitations under the License.
+
+== Changelog
+
+* 1.0 [25 Aug 2016] - updated help info
+* 0.9 [12 Aug 2016] - improved user comparison
+* 0.8 [23 Sep 2015] - don't descend directories searching for current_mirror(s)
+* 0.7 [09 Dec 2014] - update help and warn if running as superuser
+* 0.6 [22 Jan 2014] - minor text output fixes
+* 0.5 [16 Dec 2013] - help text updated
+* 0.4 [29 Jul 2013] - help text updated, added changelog
+
+== https://www.timedicer.co.uk/programs/rdiff-backup-regress.sh[Download rdiff-backup-regress.sh]
+
+== Donation
+
+I have provided this software free gratis and for nothing.
+If you would like to thank me with a contribution, please link:dominic@timedicer.co.uk[let me know] and I will send you a link.
+Thank you!
