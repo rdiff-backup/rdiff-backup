@@ -27,9 +27,9 @@ fi
 
 ver_name=rdiff-backup-$(${PYEXE} setup.py --version)
 
-cp CHANGELOG.md COPYING README.md \
-	docs/FAQ.md docs/examples.md docs/DEVELOP.md \
-	docs/Windows-README.md docs/Windows-DEVELOP.md \
+cp CHANGELOG.adoc COPYING README.adoc \
+	docs/FAQ.adoc docs/examples.adoc docs/DEVELOP.adoc \
+	docs/Windows-README.adoc docs/Windows-DEVELOP.adoc \
 	build/${ver_name}-${bits}
 pushd build
 7z a -tzip ../dist/${ver_name}.win${bits}exe.zip ${ver_name}-${bits}
