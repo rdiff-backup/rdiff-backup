@@ -1,13 +1,14 @@
-# rdiff-backup API description v200
+= rdiff-backup API description v201
+:sectnums:
+:toc:
 
-## Format
+== Format
 
-* format changed from Python 2 to Python 3 (incompatible types esp. bytes).
+* the old CLI is deprecated and replaced by the new action-based CLI
 
-## Sources
+== Sources
 
-
-### Internal
+=== Internal
 
 * `backup.DestinationStruct`
 * `backup.SourceStruct`
@@ -68,7 +69,7 @@
 * `user_group.init_user_mapping`
 * `user_group.map_rpath`
 
-### External
+=== External
 
 * `gzip.GzipFile`
 * `open`
@@ -100,13 +101,11 @@
 * `xattr.remove`
 * `xattr.set`
 
-## Testing
+== Testing
 
+=== Internal
 
-### Internal
-
-
-### External
+=== External
 
 * `hasattr`
 * `int`
