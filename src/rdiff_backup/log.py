@@ -127,7 +127,7 @@ class Logger:
                         tmpstr, subsequent_indent=" " * 9,
                         break_long_words=False,
                         break_on_hyphens=False,
-                        width=shutil.get_terminal_size().columns) + "\n",
+                        width=shutil.get_terminal_size().columns - 1) + "\n",
                     encoding=sys.stdout.encoding))
             else:
                 termfp.write(_to_bytes(tmpstr, encoding=sys.stdout.encoding))
