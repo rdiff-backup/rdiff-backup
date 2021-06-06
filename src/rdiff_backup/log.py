@@ -100,11 +100,11 @@ class Logger:
                     self.logfp.write(_to_bytes(tmpstr))
                 else:
                     tmpstr = self._format(message, self.verbosity, verbosity)
-                    self.logfp.write(_to_bytes(tmpstr + "\n"))
+                    self.logfp.write(_to_bytes(tmpstr))
                 self.logfp.flush()
             else:
                 if Globals.get_api_version() < 201:  # compat200
-                    self.log_file_conn.log.Log.log_to_file(message + "\n")
+                    self.log_file_conn.log.Log.log_to_file(message)
                 else:
                     self.log_file_conn.log.Log.log_to_file(message, verbosity)
 
@@ -121,7 +121,7 @@ class Logger:
             tmpstr = self._format(message, self.term_verbosity, verbosity)
             # if the verbosity is below 9 and the string isn't deemed
             # pre-formatted by newlines (we ignore the last character)
-            if self.verbosity < 9 and "\n" not in tmpstr[:-1]:
+            if self.verbosity <= DEBUG and "\n" not in tmpstr[:-1]:
                 termfp.write(_to_bytes(
                     textwrap.fill(
                         tmpstr, subsequent_indent=" " * 9,
@@ -141,7 +141,7 @@ class Logger:
         to the terminal, because otherwise the log file may be remote.
 
         """
-        if self.term_verbosity < 9:
+        if self.term_verbosity <= DEBUG:
             return
         if type(result) is bytes:
             result_repr = repr(result)
@@ -275,10 +275,14 @@ class Logger:
 
     def _format(self, message, verbosity, msg_verbosity=None):
         """Format the message, possibly adding date information"""
-        if verbosity < 9:
+        if verbosity <= DEBUG:
             if msg_verbosity:
-                return "{pre:<9}{msg}\n".format(
-                    pre=_LOG_PREFIX[msg_verbosity], msg=message)
+                # pre-formatted informative messages are returned as such
+                if msg_verbosity == INFO and "\n" in message[:-1]:
+                    return "{msg}\n".format(msg=message)
+                else:
+                    return "{pre:<9}{msg}\n".format(
+                        pre=_LOG_PREFIX[msg_verbosity], msg=message)
             else:  # compat200
                 return "{msg}\n".format(msg=message)
         else:
@@ -290,11 +294,11 @@ class Logger:
             else:
                 role = "CLIENT"
             if msg_verbosity:
-                return "{time}  <{role}-{pid}>  {pre} {msg}".format(
+                return "{time}  <{role}-{pid}>  {pre} {msg}\n".format(
                     time=timestamp, role=role, pid=os.getpid(),
                     pre=_LOG_PREFIX[msg_verbosity], msg=message)
             else:  # compat200
-                return "{time}  <{role}-{pid}>  {msg}".format(
+                return "{time}  <{role}-{pid}>  {msg}\n".format(
                     time=timestamp, role=role, pid=os.getpid(), msg=message)
 
 
