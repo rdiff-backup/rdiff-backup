@@ -290,7 +290,7 @@ pattern (such as '**') which matches the base directory""".format(
                 fs=exc, bd=self.prefix))
         elif isinstance(exc, GlobbingError):
             log.Log.FatalError("Fatal Error while processing expression "
-                               "{ex}".format(ex=exc))
+                               "'{ex}'".format(ex=exc))
         else:
             raise
 

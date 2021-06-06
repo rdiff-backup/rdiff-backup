@@ -83,7 +83,7 @@ class ACL:
                 os.fsdecode(rp.path), SE_FILE_OBJECT, ACL.flags)
         except (OSError, pywintypes.error) as exc:
             log.Log("Unable to read ACL from path {pa} due to "
-                    "exception {ex}".format(pa=rp, ex=exc), log.INFO)
+                    "exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
             return
 
         if skip_inherit_only:

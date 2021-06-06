@@ -233,8 +233,8 @@ class Logger:
         try:
             self.logfp = log_rp.open("ab")
         except OSError as exc:
-            raise LoggerError(
-                "Unable to open logfile {lf}: {ex}".format(lf=log_rp, ex=exc))
+            raise LoggerError("Unable to open logfile {lf} due to "
+                              "exception '{ex}'".format(lf=log_rp, ex=exc))
         self.log_file_local = 1
 
     def close_logfile(self):

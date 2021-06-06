@@ -75,7 +75,7 @@ class ExtendedAttributes:
                 return  # if not supported, consider empty
             if exc.errno in (errno.EACCES, errno.ENOENT, errno.ELOOP):
                 log.Log("Listing extended attributes of path {pa} produced "
-                        "exception {ex}, ignored".format(pa=rp, ex=exc),
+                        "exception '{ex}', ignored".format(pa=rp, ex=exc),
                         log.INFO)
                 return
             raise
@@ -113,7 +113,7 @@ class ExtendedAttributes:
                 if exc.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.EACCES,
                                  errno.ENOENT, errno.EINVAL):
                     log.Log("Unable to write xattr {xa} to path {pa} "
-                            "due to exception {ex}, ignoring".format(
+                            "due to exception '{ex}', ignoring".format(
                                 xa=name, pa=rp, ex=exc), log.INFO)
                     continue
                 else:
@@ -159,7 +159,8 @@ class ExtendedAttributes:
             return  # if not supported, consider empty
         except FileNotFoundError as exc:
             log.Log("Unable to clear extended attributes on path {pa} due to "
-                    "exception {ex}, ignoring".format(pa=rp, ex=exc), log.NOTE)
+                    "exception '{ex}', ignoring".format(pa=rp, ex=exc),
+                    log.NOTE)
             return
 
 
@@ -509,7 +510,7 @@ def set_rp_acl(rp, entry_list=None, default_entry_list=None, map_names=1):
     except OSError as exc:
         if exc.errno == errno.EOPNOTSUPP:
             log.Log(
-                "Unable to set ACL on path {pa} due to exception {ex}".format(
+                "Unable to set ACL on path {pa} due to exception '{ex}'".format(
                     pa=rp, ex=exc), log.INFO)
             return
         else:
@@ -533,7 +534,7 @@ def get_acl_lists_from_rp(rp):
         acl = posix1e.ACL(file=rp.path)
     except (FileNotFoundError, UnicodeEncodeError) as exc:
         log.Log(
-            "Unable to read ACL from path {pa} due to exception {ex}".format(
+            "Unable to read ACL from path {pa} due to exception '{ex}'".format(
                 pa=rp, ex=exc), log.NOTE)
         acl = None
     except OSError as exc:
@@ -546,7 +547,7 @@ def get_acl_lists_from_rp(rp):
             def_acl = posix1e.ACL(filedef=os.fsdecode(rp.path))
         except (FileNotFoundError, UnicodeEncodeError) as exc:
             log.Log("Unable to read default ACL from path {pa} due to "
-                    "exception {ex}".format(pa=rp, ex=exc), log.NOTE)
+                    "exception '{ex}'".format(pa=rp, ex=exc), log.NOTE)
             def_acl = None
         except OSError as exc:
             if exc.errno == errno.EOPNOTSUPP:

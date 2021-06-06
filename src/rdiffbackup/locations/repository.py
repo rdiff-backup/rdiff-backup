@@ -186,7 +186,7 @@ information in it.
                 except OSError as exc:
                     log.Log.FatalError(
                         "Could not check if rdiff-backup is currently"
-                        "running due to exception {ex}".format(ex=exc))
+                        "running due to exception '{ex}'".format(ex=exc))
             assert len(curmir_incs) == 2, (
                 "Found more than 2 current_mirror incs in '{ci}'.".format(
                     ci=self.data_dir))

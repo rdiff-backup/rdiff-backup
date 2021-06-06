@@ -1734,7 +1734,7 @@ def rename(rp_source, rp_dest):
                     rp_source.conn.os.unlink(rp_dest.path)
                     rp_source.conn.os.rename(rp_source.path, rp_dest.path)
                 else:
-                    log.Log("Exception {ex} while renaming from path {fp} "
+                    log.Log("Exception '{ex}' while renaming from path {fp} "
                             "to path {tp}".format(
                                 ex=error, fp=rp_source, tp=rp_dest), log.ERROR)
                     raise

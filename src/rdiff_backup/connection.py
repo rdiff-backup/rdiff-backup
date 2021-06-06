@@ -480,7 +480,7 @@ class PipeConnection(LowLevelPipeConnection):
         if robust.is_routine_fatal(sys.exc_info()[1]):
             raise  # Fatal error--No logging necessary, but connection down
         if log.Log.verbosity >= 5 or log.Log.term_verbosity >= 5:
-            log.Log("Sending back exception {ex} of type {ty} with "
+            log.Log("Sending back exception '{ex}' of type {ty} with "
                     "traceback {tb}".format(
                         ex=sys.exc_info()[1], ty=sys.exc_info()[0],
                         tb="".join(traceback.format_tb(sys.exc_info()[2]))),

@@ -106,7 +106,7 @@ class FlatExtractor:
                 if self.at_end:
                     break  # Ignore whitespace/bad records at end
                 log.Log("Error parsing flat file {ff} of type {ty} due to "
-                        "exception {ex}, metadata record ignored".format(
+                        "exception '{ex}', metadata record ignored".format(
                             ex=e, ty=type(self),
                             ff=self.fileobj.fileobj.name), log.WARNING)
 

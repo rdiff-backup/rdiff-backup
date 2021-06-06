@@ -305,7 +305,7 @@ class FSAbilities:
             posix1e.ACL(file=rp.path)
         except OSError as exc:
             log.Log("POSIX ACLs not supported by filesystem at path {pa} "
-                    "due to exception {ex}".format(pa=rp, ex=exc), log.INFO)
+                    "due to exception '{ex}'".format(pa=rp, ex=exc), log.INFO)
             self.acls = 0
         else:
             self.acls = 1
@@ -411,7 +411,7 @@ class FSAbilities:
                 read_ea = xattr.get(rp.path, b"user.test")
         except OSError as exc:
             log.Log("Extended attributes not supported by filesystem at "
-                    "path {pa} due to exception {ex}".format(pa=rp, ex=exc),
+                    "path {pa} due to exception '{ex}'".format(pa=rp, ex=exc),
                     log.NOTE)
             self.eas = 0
         else:
