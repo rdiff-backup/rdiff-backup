@@ -1,21 +1,19 @@
 = RDIFF-BACKUP(1)
 :doctype: manpage
+:docdate: {revdate}
 :man source: rdiff-backup
 :man version: {revnumber}
-:man manual: Rdiff-Backup Manual
+:man manual: Rdiff-Backup Manual {revnumber}
 
 == NAME
 
 rdiff-backup - local/remote mirror and incremental backup
 
-[[synopsis]]
 == SYNOPSIS
 
-*rdiff-backup* [options...] _action_ [_sub-options_...] [_locations_...]
+*rdiff-backup* [options...] _action_ [_sub-options_...] [_locations_...] +
+*rdiff-backup* [*--new*] [*-h*|*--help*|*-V*|*--version*]
 
-*rdiff-backup* [*--new*] [*-h* | *--help* | *-V* | *--version*]
-
-[[description]]
 == DESCRIPTION
 
 rdiff-backup is a script, written in *python*(1) that backs up one directory to another.
@@ -59,15 +57,15 @@ It is the responsibility of the user to make sure that this version is also supp
 
 --chars-to-quote, --override-chars-to-quote _chars_::
 If the filesystem to which we are backing up is not case-sensitive, automatic "quoting" of characters occurs.
-For example, a file '\`Developer.doc`' will be converted into '\`;068eveloper.doc`'.
+For example, a file '[.code]``Developer.doc``' will be converted into '[.code]``;068eveloper.doc``'.
 To quote other characters or force quoting, e.g.
 in case rdiff-backup doesn't recognize a case-insensitive file system, you need to specify this option.
 _chars_ is a string of characters fit to be used in regexp square brackets (e.g.
-'\`A-Z`' as in '\`[A-Z]`').
+'[.code]``A-Z``' as in '[.code]``[A-Z]``').
 +
 *CAUTION:* do NOT change the chars to quote within the same repository!
 Actually, you only need to set this parameter when creating a new backup repository.
-Do also NOT quote any character used by rdiff-backup  in rdiff-backup-data (any of \'a-z0-9._-')!
+Do also NOT quote any character used by rdiff-backup  in rdiff-backup-data (any of 'a-z0-9._-')!
 
 --current-time _currenttime_::
 This option is useful mainly for testing.
@@ -162,25 +160,25 @@ See <<time-formats,TIME FORMATS>> for details.
 
 info:: outputs information about the current system in YAML format, so that it can be used in a bug report, and exits.
 
-list *files* [*--changed-since* _time_ | *--at* _time_] _repository_::
+list *files* [*--changed-since* _time_|*--at* _time_] _repository_::
 list modified or existing files in a given back-up repository.
 
 --changed-since _time_;;
 List the files that have changed in the destination directory
-since the given time. See TIME FORMATS for the format of time.
+since the given time. See <<time-formats,TIME FORMATS>> for the format of time.
 If a directory in the archive is specified, list only the files
 under that directory. This option does not read the source
 directory; it is used to compare the contents of two different
 rdiff-backup sessions.
-See [TIME FORMATS](#time-formats) for details.
+See <<time-formats,TIME FORMATS>> for details.
 
 --at _time_;;
 List the files in the archive that were present at the given
 time. If a directory in the archive is specified, list only the
 files under that directory.
-See [TIME FORMATS](#time-formats) for details.
+See <<time-formats,TIME FORMATS>> for details.
 
-list *increments* [*--no-size* | *--size*] _repository_::
+list *increments* [*--no-size*|*--size*] _repository_::
 list increments with date in a given back-up repository.
 
 --no-size,--size;;
@@ -199,21 +197,20 @@ By default, rdiff-backup will only delete information from one session at a time
 To remove two or more sessions at the same time, supply the *--force* option (rdiff-backup will tell you if it is required).
 +
 Note that snapshots of deleted files are covered by this operation.
-Thus if you deleted a file two weeks ago, backed up immediately afterwards, and then ran rdiff-backup with '\`remove increments --older-than 10D`' today, no trace of that file would remain.
+Thus if you deleted a file two weeks ago, backed up immediately afterwards, and then ran rdiff-backup with '[.code]``remove increments --older-than 10D``' today, no trace of that file would remain.
 
 --older-than _time_;;
 all the increments older than the given time will be deleted.
 See <<time-formats,TIME FORMATS>> for details.
 
-restore [<<creation-options,CREATION OPTIONS>>] [<<compression-options,COMPRESSION OPTIONS>>] [<<selection-options,SELECTION OPTIONS>>] [<<filesystem-options,FILESYSTEM OPTIONS>>] [<<user-group-options,USER GROUP OPTIONS>>] [*--at* _time_ | *--increment*] _source_ _targetdir_::
+restore [<<creation-options,CREATION OPTIONS>>] [<<compression-options,COMPRESSION OPTIONS>>] [<<selection-options,SELECTION OPTIONS>>] [<<filesystem-options,FILESYSTEM OPTIONS>>] [<<user-group-options,USER GROUP OPTIONS>>] [*--at* _time_|*--increment*] _source_ _targetdir_::
 restore a source backup repository at a specific time or a specific     source increment to a target directory.
 See <<restoring,RESTORING>> for details.
 
 --at _time_;;
-
 the _source_ parameter is interpreted as a back-up directory, and
 the content is restored from the given time.
-See [TIME FORMATS](#time-formats) for details.
+See <<time-formats,TIME FORMATS>> for details.
 
 --increment;;
 the _source_ parameter is expected to be an increment within a
@@ -333,11 +330,11 @@ The default is to include other filesystems.
 
 --min-file-size _sizeinbytes_:: Exclude files that are smaller than the given size in bytes.
 
-[[statistics-options]]
+[[satistics-options]]
 == STATISTICS OPTIONS
 
 --file-statistics, --no-file-statistics::
-Enable/disable writing to the '\`file_statistics`' file in the rdiff-backup-data directory.
+Enable/disable writing to the '[.code]``file_statistics``' file in the rdiff-backup-data directory.
 rdiff-backup will run slightly quicker and take up a bit less space.
 Default is to write the statistics file(s).
 +
@@ -354,7 +351,7 @@ Even if disabled (the default), this information will still be available from th
 This option is only to be used if you encounter the issue of metadata mirrors with the same timestamp.
 In such cases, you may use this flag to first recover from the failed backup with something like
 
-  rdiff-backup --allow-duplicate-timestamps \ 
+  rdiff-backup --allow-duplicate-timestamps \
                --check-destination-dir {targetdir}
 +
 after which you will need to remove those old duplicate entries using the *remove increments* action.
@@ -382,23 +379,23 @@ For example, suppose in the past you have run:
 
  rdiff-backup backup /usr /usr.backup
 
-to back up the '\`/usr`' directory into the '\`/usr.backup`' directory, and now want a copy of the '\`/usr/local`' directory the way it was 3 days ago placed at '\`/usr/local.old`'.
+to back up the '[.code]``/usr``' directory into the '[.code]``/usr.backup``' directory, and now want a copy of the '[.code]``/usr/local``' directory the way it was 3 days ago placed at '[.code]``/usr/local.old``'.
 
 One way to do this is to run:
 
  rdiff-backup restore --at 3D /usr.backup/local /usr/local.old
 
 where above the "3D" means 3 days (for other ways to specify the time, see the <<time-formats,TIME FORMATS>> section).
-The '\`/usr.backup/local`' directory was selected, because that is the directory containing the current version of '\`usr/local`'.
+The '[.code]``/usr.backup/local``' directory was selected, because that is the directory containing the current version of '[.code]``usr/local``'.
 
 Note that the parameter of *--at* always specifies an exact time.
 (So "3D" refers to the moment 72 hours before the present).
 If there was no backup made at that time, rdiff-backup restores the state recorded for the previous backup.
-For instance, in the above case, if "3D" is used, and there are only backups from 2 days and 4 days ago, '\`/usr/local`' as it was 4 days ago will be restored.
+For instance, in the above case, if "3D" is used, and there are only backups from 2 days and 4 days ago, '[.code]``/usr/local``' as it was 4 days ago will be restored.
 
 The second way to restore files involves finding the corresponding increment file.
-It would be in the '\`/backup/rdiff-backup-data/increments/usr`' directory, and its name would be something like '\`local.2002-11-09T12:43:53-04:00.dir`' where the time indicates it is from 3 days ago.
-Note that the increment files all end in '\`.diff`', '\`.snapshot`', '\`.dir`', or '\`.missing`', where '\`.missing`' just means that the file didn't exist at that time (finally, some of these may be gzip-compressed, and have an extra '\`.gz`' to indicate this).
+It would be in the '[.code]``/backup/rdiff-backup-data/increments/usr``' directory, and its name would be something like '[.code]``local.2002-11-09T12:43:53-04:00.dir``' where the time indicates it is from 3 days ago.
+Note that the increment files all end in '[.code]``.diff``', '[.code]``.snapshot``', '[.code]``.dir``', or '[.code]``.missing``', where '[.code]``.missing``' just means that the file didn't exist at that time (finally, some of these may be gzip-compressed, and have an extra '[.code]``.gz``' to indicate this).
 Then running:
 
  rdiff-backup restore --increment \
@@ -407,7 +404,7 @@ Then running:
 
 would also restore the file as desired.
 
-If you are not sure exactly which version of a file you need, it is probably easiest to either restore from the increments files as described immediately above, or to see which increments are available with '\`list increments`', and then specify an exact time with *--at*.
+If you are not sure exactly which version of a file you need, it is probably easiest to either restore from the increments files as described immediately above, or to see which increments are available with '[.code]``list increments``', and then specify an exact time with *--at*.
 
 [[time-formats]]
 == TIME FORMATS
@@ -428,19 +425,19 @@ For instance, "1h78m" indicates the time that was one hour and 78 minutes ago.
 The calendar here is unsophisticated: a month is always 30 days, a year is always 365 days, and a day is always 86400 seconds.
 . A date format of the form "YYYY/MM/DD", "YYYY-MM-DD", "MM/DD/YYYY", or "MM-DD-YYYY", which indicates midnight on the day in question, relative to the current timezone settings.
 For instance, "2002/3/5", "03-05-2002", and "2002-3-05" all mean March 5th, 2002 (needless to say that starting with the year is less confusing for non-Americans).
-. A backup session specification which is a non-negative integer followed by '\`B`'.
-For instance, '\`0B`' specifies the time of the current mirror, and '\`3B`' specifies the time of the 3rd newest increment.
+. A backup session specification which is a non-negative integer followed by '[.code]``B``'.
+For instance, '[.code]``0B``' specifies the time of the current mirror, and '[.code]``3B``' specifies the time of the 3rd newest increment.
 
 [[remote-operation]]
 == REMOTE OPERATION
 
 In order to access remote files, rdiff-backup opens up a pipe to a copy of rdiff-backup running on the remote machine.
 Thus rdiff-backup must be installed on both ends.
-To open this pipe, rdiff-backup first splits the location into '\`host_info::pathname`'.
-It then substitutes '\`host_info`' into the remote schema, and runs the resulting command, reading its input and output.
+To open this pipe, rdiff-backup first splits the location into '[.code]``host_info::pathname``'.
+It then substitutes '[.code]``host_info``' into the remote schema, and runs the resulting command, reading its input and output.
 
-The default remote schema is '``+ssh -C {h} rdiff-backup --server+``' where '\`host_info`' is substituted for '``+{h}+`'.
-So if the '\`host_info`' is '\`user@host.net`', then rdiff-backup runs '\`ssh user@host.net rdiff-backup --server`'.
+The default remote schema is '[.code]``ssh -C {h} rdiff-backup --server``' where '[.code]``host_info``' is substituted for '[.code]``{h}``'.
+So if the '[.code]``host_info``' is '[.code]``user@host.net``', then rdiff-backup runs '[.code]``ssh user@host.net rdiff-backup --server``'.
 Using *--remote-schema*, rdiff-backup can invoke an arbitrary command in order to open up a remote pipe.
 For instance,
 
@@ -451,26 +448,26 @@ is basically equivalent to (but slower than)
 
  rdiff-backup backup foo /usr/bar
 
-Concerning quoting, if for some reason you need to put two consecutive colons in the '\`host_info`' section of a '\`host_info::pathname`' argument, or in the pathname of a local file, you can quote one of them by prepending a backslash.
-So in '\`a\::b::c`', '\`host_info`' is '\`a::b`' and the pathname is '\`c`'.
-Similarly, if you want to refer to a local file whose filename contains two consecutive colons, like '\`strange::file`', you'll have to quote one of the colons as in '\`strange\::file`'.
-Because the backslash is a quote character in these circumstances, it too must be quoted to get a literal backslash, so '\`foo\::\\bar`' evaluates to '\`foo::\bar`'.
-To make things more complicated, because the backslash is also a common shell quoting character, you may need to type in '\`\\\\`' at the shell prompt to get a literal backslash.
+Concerning quoting, if for some reason you need to put two consecutive colons in the '[.code]``host_info``' section of a '[.code]``host_info::pathname``' argument, or in the pathname of a local file, you can quote one of them by prepending a backslash.
+So in '[.code]``a\::b::c``', '[.code]``host_info``' is '[.code]``a::b``' and the pathname is '[.code]``c``'.
+Similarly, if you want to refer to a local file whose filename contains two consecutive colons, like '[.code]``strange::file``', you'll have to quote one of the colons as in '[.code]``strange\::file``'.
+Because the backslash is a quote character in these circumstances, it too must be quoted to get a literal backslash, so '[.code]``foo\::\\bar``' evaluates to '[.code]``foo::\bar``'.
+To make things more complicated, because the backslash is also a common shell quoting character, you may need to type in '[.code]``\\\\``' at the shell prompt to get a literal backslash.
 
-You may also use the placehoders '``+{vx}+``', '``+{vy}+``' and '``+{vz}+``' for the '\`x.y.z`' version of rdiff-backup, so that you can have multiple versions of rdiff-backup installed on the server, and automatically targeted from the client.
+You may also use the placehoders '[.code]``{vx}``', '[.code]``{vy}``' and '[.code]``{vz}``' for the '[.code]``x.y.z``' version of rdiff-backup, so that you can have multiple versions of rdiff-backup installed on the server, and automatically targeted from the client.
 
-For example, if you have rdiff-backup 2.1.5 and 2.2.1 installed in virtual environments on the server, respectively under '\`/usr/local/lib/rdiff-backup-2.0`' and '\`/usr/local/lib/rdiff-backup-2.1`' (we assume that the z-Version isn't relevant to any kind of compatibility), then the client may be called with the following remote schema:
+For example, if you have rdiff-backup 2.1.5 and 2.2.1 installed in virtual environments on the server, respectively under '[.code]``/usr/local/lib/rdiff-backup-2.0``' and '[.code]``/usr/local/lib/rdiff-backup-2.1``' (we assume that the z-Version isn't relevant to any kind of compatibility), then the client may be called with the following remote schema:
 
  ssh -C {h} /usr/local/lib/rdiff-backup-{vx}.{vy} --server
 
-The client will then use the correct version of rdiff-backup based on its own version '\`x.y.z`'.
+The client will then use the correct version of rdiff-backup based on its own version '[.code]``x.y.z``'.
 You'll find more explanations in the *migration.md* file in the documentation.
 
-And finally, to include a literal '\`%`' in the string specified by *--remote-schema*, quote it with another '\`%`', as in '\`%%`' (this is due to the compatibility with the deprecated host placeholder '\`%s`', which you shouldn't use anymore).
+And finally, to include a literal '[.code]``%``' in the string specified by *--remote-schema*, quote it with another '[.code]``%``', as in '[.code]``%%``' (this is due to the compatibility with the deprecated host placeholder '[.code]``%s``', which you shouldn't use anymore).
 
 Although ssh itself may be secure, using rdiff-backup in the default way presents some security risks.
 For instance if the server is run as root, then an attacker who compromised the client could then use rdiff-backup to overwrite arbitrary server files by "backing up" over them.
-Such a setup can be made more secure by using the sshd configuration option '\`command="rdiff-backup --server"`' possibly along with the *--restrict-path* and *--restrict-mode* options to rdiff-backup.
+Such a setup can be made more secure by using the sshd configuration option '[.code]``command="rdiff-backup --server"``' possibly along with the *--restrict-path* and *--restrict-mode* options to rdiff-backup.
 For more information, see the web page, the wiki, and the entries for those options on this man page.
 
 [[file-selection]]
@@ -479,25 +476,25 @@ For more information, see the web page, the wiki, and the entries for those opti
 rdiff-backup has a number of file selection options.
 When rdiff-backup is run, it searches through the given source directory and backs up all the files matching the specified options.
 This selection system may appear complicated, but it is supposed to be flexible and easy-to-use.
-If you just want to learn the basics, first look at the selection examples in the examples.html file included in the package, or on the web at \<https://rdiff-backup.net/docs/examples.html>.
+If you just want to learn the basics, first look at the selection examples in the examples.html file included in the package, or on the web at https://rdiff-backup.net/docs/examples.html.
 
 rdiff-backup's selection system was originally inspired by *rsync*(1), but there are many differences.
 For instance, trailing backslashes have no special significance.
 
-*IMPORTANT:* include and exclude patterns under Windows solely support slashes '\`/`' as file separators, given that backslashes '\`\`' have a special meaning in regex/glob patterns.
+*IMPORTANT:* include and exclude patterns under Windows solely support slashes '[.code]``/``' as file separators, given that backslashes '[.code]``\``' have a special meaning in regex/glob patterns.
 
 All the available file selection conditions are listed under <<selection-options,SELECTION OPTIONS>>.
 
 Two principles need to be understood before really starting:
 
-. pattern matching is stupid about paths, it just does pattern matching and can't interpret patterns like path, especially it can't resolve absolute into relative paths and vice-versa (compare with the '\`-path`' option of find).
+. pattern matching is stupid about paths, it just does pattern matching and can't interpret patterns like path, especially it can't resolve absolute into relative paths and vice-versa (compare with the '[.code]``-path``' option of find).
 . pattern matching is done on the complete path of each found file (no partial matching and no file name matching).
 Beware that complete path does _not_ mean full path, it can be a complete relative path.
 
-For example, the pattern '\`bar`' matches the path '\`bar`', but doesn't match the path '\`foo/bar`' and neither the path '\`./bar`'.
-Both are matched by the pattern '\`\*/bar`', as well as by '\`+**/bar+`'.
-This last pattern would match any path containing the file '\`bar`', e.g.
-'\`foo/boz/bar`'.
+For example, the pattern '[.code]``bar``' matches the path '[.code]``bar``', but doesn't match the path '[.code]``foo/bar``' and neither the path '[.code]``./bar``'.
+Both are matched by the pattern '[.code]``\*/bar``', as well as by '[.code]``**/bar``'.
+This last pattern would match any path containing the file '[.code]``bar``', e.g.
+'[.code]``foo/boz/bar``'.
 
 Each file selection condition either matches or doesn't match a given file.
 A given file is excluded by the file selection system exactly when the first matching file selection condition specifies that the file be excluded;
@@ -520,16 +517,16 @@ Similarly,
  rdiff-backup backup --include /usr/local/bin \
                      --exclude /usr/local /usr /backup
 
-would backup the '\`/usr/local/bin`' directory (and its contents), but not '\`/usr/local/doc`'.
+would backup the '[.code]``/usr/local/bin``' directory (and its contents), but not '[.code]``/usr/local/doc``'.
 
 The include, exclude, include-globbing-filelist, and exclude-globbing-filelist options accept extended shell globbing patterns.
-These patterns can contain the special patterns '\`\*`', '\`+\*\*+`', '\`?`', and '\`+[...]+`'.
-As in a normal shell, '\`\*`' can be expanded to any string of characters not containing '\`/`', '\`?`' expands to any character except '\`/`', and '\`+[...]+`' expands to a single character of those characters specified (ranges are acceptable).
-The new special pattern, '\`+**+`', expands to any string of characters whether or not it contains '\`/`'.
-Furthermore, if the pattern starts with '\`ignorecase:`' (case insensitive), then this prefix will be removed and any character in the string can be replaced with an upper- or lowercase version of itself.
+These patterns can contain the special patterns '[.code]``\*``', '[.code]``\**``', '[.code]``?``', and '[.code]``[...]``'.
+As in a normal shell, '[.code]``\*``' can be expanded to any string of characters not containing '[.code]``/``', '[.code]``?``' expands to any character except '[.code]``/``', and '[.code]``[...]``' expands to a single character of those characters specified (ranges are acceptable).
+The new special pattern, '[.code]``**``', expands to any string of characters whether or not it contains '[.code]``/``'.
+Furthermore, if the pattern starts with '[.code]``ignorecase:``' (case insensitive), then this prefix will be removed and any character in the string can be replaced with an upper or lowercase version of itself.
 
-If you need to match filenames which contain the above globbing characters, they may be escaped using a backslash '\`\`'.
-The backslash will only escape the character following it so for '\`+\*\*+`' you will need to use '\`\**`' to avoid escaping it to the '\`*`' globbing character.
+If you need to match filenames which contain the above globbing characters, they may be escaped using a backslash '[.code]``\``'.
+The backslash will only escape the character following it so for '[.code]``\**``' you will need to use '[.code]``\*\\*``' to avoid escaping it to the '[.code]``*``' globbing character.
 
 Remember that you may need to quote these characters when typing them into a shell, so the shell does not interpret the globbing patterns before rdiff-backup sees them.
 
@@ -548,7 +545,7 @@ For example,
 
  --exclude /usr/local
 
-matches '\`/usr/local`', '\`/usr/local/lib`', and '\`/usr/local/lib/netscape`'.
+matches '[.code]``/usr/local``', '[.code]``/usr/local/lib``', and '[.code]``/usr/local/lib/netscape``'.
 It is the same as
 
  --exclude /usr/local --exclude '/usr/local/**'
@@ -557,29 +554,29 @@ And similarly:
 
  --include /usr/local
 
-specifies that '\`/usr`', '\`/usr/local`', '\`/usr/local/lib`', and '\`/usr/local/lib/netscape`' (but not '\`/usr/doc`') all be backed up.
+specifies that '[.code]``/usr``', '[.code]``/usr/local``', '[.code]``/usr/local/lib``', and '[.code]``/usr/local/lib/netscape``' (but not '[.code]``/usr/doc``') all be backed up.
 Thus you don't have to worry about including parent directories to make sure that included subdirectories have somewhere to go.
 Finally,
 
  --include ignorecase:'/usr/[a-z0-9]foo/*/**.py'
 
-would match a file like '\`/usr/5fOO/hello/there/world.py`'.
-If it did match anything, it would also match '\`/usr`'.
-If there is no existing file that the given pattern can be expanded into, the option will not match '\`/usr`'.
+would match a file like '[.code]``/usr/5fOO/hello/there/world.py``'.
+If it did match anything, it would also match '[.code]``/usr``'.
+If there is no existing file that the given pattern can be expanded into, the option will not match '[.code]``/usr``'.
 
 The *--include-filelist*, *--exclude-filelist*, *--include-filelist-stdin*, and *--exclude-filelist-stdin* options also introduce file selection conditions.
 They direct rdiff-backup to read in a file, each line of which is a file specification, and to include or exclude the matching files.
 Lines are separated by newlines or nulls, depending on whether the *--null-separator* switch was given.
 Each line in a filelist is interpreted similarly to the way extended shell patterns are, with a few exceptions:
 
-. Globbing patterns like '\`\*`', '\`+**+`', '\`?`', and '\`+[...]+`' are not expanded.
+. Globbing patterns like '[.code]``\*``', '[.code]``**``', '[.code]``?``', and '[.code]``[...]``' are not expanded.
 
 . Include patterns do not match files in a directory that is included.
-So '\`/usr/local`' in an include file will not match '\`/usr/local/doc`'.
-. Lines starting with '\`++ [...]+`' (plus followed by a space) are interpreted as include directives, even if found in a filelist referenced by *--exclude-filelist*.
-Similarly, lines starting with '\`+- [...]+`' (minus followed by a space) exclude files even if they are found within an include filelist.
+So '[.code]``/usr/local``' in an include file will not match '[.code]``/usr/local/doc``'.
+. Lines starting with '[.code]``+ [...]``' (plus followed by a space) are interpreted as include directives, even if found in a filelist referenced by *--exclude-filelist*.
+Similarly, lines starting with '[.code]``- [...]``' (minus followed by a space) exclude files even if they are found within an include filelist.
 
-For example, if the file '\`list.txt`' contains the lines:
+For example, if the file '[.code]``list.txt``' contains the lines:
 
  /usr/local
  - /usr/local/doc
@@ -587,18 +584,18 @@ For example, if the file '\`list.txt`' contains the lines:
  + /var
  - /var
 
-then '\`--include-filelist list.txt`' would include '\`/usr`', '\`/usr/local`', and '\`/usr/local/bin`'.
-It would exclude '\`/usr/local/doc`', '\`/usr/local/doc/python`', etc.
-It neither excludes nor includes '\`/usr/local/man`', leaving the fate of this directory to the next specification condition.
+then '[.code]``--include-filelist list.txt``' would include '[.code]``/usr``', '[.code]``/usr/local``', and '[.code]``/usr/local/bin``'.
+It would exclude '[.code]``/usr/local/doc``', '[.code]``/usr/local/doc/python``', etc.
+It neither excludes nor includes '[.code]``/usr/local/man``', leaving the fate of this directory to the next specification condition.
 Finally, it is undefined what happens with ``'/var``'.
 A single file list should not contain conflicting file specifications.
 
-The *--include-globbing-filelist* and *--exclude-globbing-filelist* options also specify filelists, but each line in the filelist will be interpreted as a globbing pattern the way *--include* and *--exclude* options are interpreted (although '\`+ `' and `- ` prefixing is still allowed).
-For instance, if the file '`globbing-list.txt`' contains the lines:
+The *--include-globbing-filelist* and *--exclude-globbing-filelist* options also specify filelists, but each line in the filelist will be interpreted as a globbing pattern the way *--include* and *--exclude* options are interpreted (although '[.code]``+ ``' and '[.code]``- ``' prefixing is still allowed).
+For instance, if the file '[.code]``globbing-list.txt``' contains the lines:
 
  dir/foo
 
-Then '\`--include-globbing-filelist globbing-list.txt`' would be exactly the same as specifying on the command line:
+Then '[.code]``--include-globbing-filelist globbing-list.txt``' would be exactly the same as specifying on the command line:
 
  --include dir/foo --include dir/bar --exclude **
 
@@ -610,7 +607,7 @@ So for instance
  --include '[0-9]{7}(?!foo)'
 
 matches any files whose full pathnames contain 7 consecutive digits which aren't followed by 'foo'.
-However, it wouldn't match '\`/home`' even if '\`/home/ben/1234567`' existed.
+However, it wouldn't match '[.code]``/home``' even if '[.code]``/home/ben/1234567``' existed.
 
 [[users-and-groups]]
 == USERS AND GROUPS
@@ -636,7 +633,7 @@ The user and group mapping files both have the same format:
  old_name_or_id2:new_name_or_id2
  [...etc...]
 
-Each line should contain a name or id, followed by a colon '\`:`', followed by another name or id.
+Each line should contain a name or id, followed by a colon '[.code]``:``', followed by another name or id.
 If a name or id is not listed, they are treated in the default way described above.
 
 When restoring, the above behavior is also followed, but note that the original source user/group information will be the input, not the already mapped user/group information present in the backup repository.
@@ -651,7 +648,7 @@ See <<user-group-options,USER GROUP OPTIONS>> for a list and description of rela
 
 _any-config-file_:: you can create a file with one option/action/sub-option per line and use it on the command line with an ampersand prefix like _\@any-config-file_ and its content will be interpreted as if given on the command line.
 +
-For example, creating a file '\`mybackup`' with following content:
+For example, creating a file '[.code]``mybackup``' with following content:
 +
 ----
 --verbosity
@@ -661,10 +658,10 @@ source_dir
 target_dir
 ----
 +
-and calling '\`rdiff-backup @mybackup`' will be the same as calling '\`rdiff-backup --verbosity 5 backup source_dir target_dir`'.
+and calling '[.code]``rdiff-backup @mybackup``' will be the same as calling '[.code]``rdiff-backup --verbosity 5 backup source_dir target_dir``'.
 
 *session_statistics*, *file_statistics*::
-Every session rdiff-backup saves various statistics into two files, the session statistics file at '``+rdiff-backup-data/session_statistics.{datetime}.data+``' and the files statistics at '``+rdiff-backup-data/directory_statistics.{datetime}.data+``'.
+Every session rdiff-backup saves various statistics into two files, the session statistics file at '[.code]``rdiff-backup-data/session_statistics.{datetime}.data``' and the files statistics at '[.code]``rdiff-backup-data/directory_statistics.{datetime}.data``'.
 They are both text files and contain similar information: how many files changed, how many were deleted, the total size of increment files created, etc.
 However, the session statistics file is intended to be very readable and only describes the session as a whole.
 The files statistics file is more compact (and slightly less readable) but describes every directory backed up.
@@ -673,10 +670,10 @@ It also may be compressed to save space.
 See also <<statistics-options,STATISTICS OPTIONS>> and the *--null-separator* option.
 
 *backup.log*, *restore.log*, *error_log*::
-rdiff-backup will save various messages to the log file, which is '\`rdiff-backup-data/backup.log`' for backup sessions and '\`rdiff-backup-data/restore.log`' for restore sessions.
+rdiff-backup will save various messages to the log file, which is '[.code]``rdiff-backup-data/backup.log``' for backup sessions and '[.code]``rdiff-backup-data/restore.log``' for restore sessions.
 Generally what is written to this file will coincide with the messages displayed to stdout or stderr, although this can be changed with the *--terminal-verbosity* option.
 +
-Errors during backup are also written to a file '``+rdiff-backup-data/error_log.{datetime}.data+``'.
+Errors during backup are also written to a file '[.code]``rdiff-backup-data/error_log.{datetime}.data``'.
 +
 The log files are not compressed and can become quite large if rdiff-backup is run with high verbosity.
 
@@ -695,8 +692,8 @@ In doubt subscribe to and ask the mailing list::: https://lists.nongnu.org/mailm
 [[authors]]
 == AUTHORS
 
-. Ben Escoto link:mailto:ben@emerose.org[ben@emerose.org]
-. Eric Lavarde <ewl+rdiffbackup@lavar.de> ...
+* Ben Escoto link:mailto:ben@emerose.org[ben@emerose.org]
+* Eric Lavarde <ewl+rdiffbackup@lavar.de> ...
 
 [[see-also]]
 == SEE ALSO
